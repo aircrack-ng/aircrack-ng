@@ -1,0 +1,179 @@
+diff -ur ../madwifi-cvs-20050707/ath/if_ath.c ./ath/if_ath.c
+--- ../madwifi-cvs-20050707/ath/if_ath.c	2005-06-25 02:35:12.000000000 +0200
++++ ./ath/if_ath.c	2005-07-30 00:27:46.000000000 +0200
+@@ -1117,7 +1117,8 @@
+ 	/*
+ 	 * Encapsulate the packet for transmission.
+ 	 */
+-	skb = ieee80211_encap(ic, skb, &ni);
++	if (ic->ic_opmode != IEEE80211_M_MONITOR)
++		skb = ieee80211_encap(ic, skb, &ni);
+ 	if (skb == NULL) {
+ 		DPRINTF(sc, ATH_DEBUG_XMIT,
+ 			"%s: discard, encapsulation failure\n", __func__);
+@@ -2830,7 +2831,7 @@
+ 	struct ieee80211com *ic = &sc->sc_ic;
+ 	struct ath_hal *ah = sc->sc_ah;
+ 	int iswep, ismcast, keyix, hdrlen, pktlen, try0;
+-	u_int8_t rix, txrate, ctsrate;
++	u_int8_t rix = 0, txrate, ctsrate;
+ 	u_int8_t cix = 0xff;		/* NB: silence compiler */
+ 	struct ath_desc *ds;
+ 	struct ath_txq *txq;
+@@ -2847,7 +2848,7 @@
+ 	hdrlen = ieee80211_anyhdrsize(wh);
+ 	pktlen = skb->len;
+ 
+-	if (iswep) {
++	if (iswep && ic->ic_opmode != IEEE80211_M_MONITOR) {
+ 		const struct ieee80211_cipher *cip;
+ 		struct ieee80211_key *k;
+ 
+@@ -2909,7 +2910,7 @@
+ 	 * use short preamble based on the current mode and
+ 	 * negotiated parameters.
+ 	 */
+-	if ((ic->ic_flags & IEEE80211_F_SHPREAMBLE) &&
++	if ((ic->ic_flags & IEEE80211_F_SHPREAMBLE) && ni != NULL &&
+ 	    (ni->ni_capinfo & IEEE80211_CAPINFO_SHORT_PREAMBLE)) {
+ 		shortPreamble = AH_TRUE;
+ 		sc->sc_stats.ast_tx_shortpre++;
+@@ -2924,6 +2925,11 @@
+ 	 */
+ 	switch (wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK) {
+ 	case IEEE80211_FC0_TYPE_MGT:
++		if (ic->ic_opmode == IEEE80211_M_MONITOR) {
++			atype = HAL_PKT_TYPE_NORMAL;
++			txq = sc->sc_ac2q[skb->priority];
++			break;
++		}
+ 		subtype = wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK;
+ 		if (subtype == IEEE80211_FC0_SUBTYPE_BEACON)
+ 			atype = HAL_PKT_TYPE_BEACON;
+@@ -2943,6 +2949,11 @@
+ 		txq = sc->sc_ac2q[WME_AC_VO];
+ 		break;
+ 	case IEEE80211_FC0_TYPE_CTL:
++		if (ic->ic_opmode == IEEE80211_M_MONITOR) {
++			atype = HAL_PKT_TYPE_NORMAL;
++			txq = sc->sc_ac2q[skb->priority];
++			break;
++		}
+ 		atype = HAL_PKT_TYPE_PSPOLL;	/* stop setting of duration */
+ 		rix = 0;			/* XXX lowest rate */
+ 		try0 = ATH_TXMAXTRY;
+@@ -2958,8 +2969,9 @@
+ 		/*
+ 		 * Data frames; consult the rate control module.
+ 		 */
+-		ath_rate_findrate(sc, an, shortPreamble, skb->len,
+-			&rix, &try0, &txrate);
++		if (ic->ic_opmode != IEEE80211_M_MONITOR)
++			ath_rate_findrate(sc, an, shortPreamble, skb->len,
++					  &rix, &try0, &txrate);
+ 		/*
+ 		 * Default all non-QoS traffic to the background queue.
+ 		 */
+@@ -2970,6 +2982,11 @@
+ 			txq = sc->sc_ac2q[WME_AC_BK];
+ 		break;
+ 	default:
++		if (ic->ic_opmode == IEEE80211_M_MONITOR) {
++			atype = HAL_PKT_TYPE_NORMAL;
++			txq = sc->sc_ac2q[skb->priority];
++			break;
++		}
+ 		printk("%s: bogus frame type 0x%x (%s)\n", dev->name,
+ 			wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK, __func__);
+ 		/* XXX statistic */
+@@ -3092,6 +3109,17 @@
+ 		txq->axq_intrcnt = 0;
+ 	}
+ 
++	if (ic->ic_opmode == IEEE80211_M_MONITOR) {
++		int i;
++		try0 = 1;   /* no retransmissions */
++		txrate = 0;
++		rt = sc->sc_rates[IEEE80211_MODE_11G];
++                for (i = 0; i < rt->rateCount; i++) {
++                        if (rt->info[i].rateKbps == ic->inject_rate)
++                                txrate = rt->info[i].rateCode;
++                }
++	}
++
+ 	/*
+ 	 * Formulate first tx descriptor with tx controls.
+ 	 */
+@@ -3100,7 +3128,7 @@
+ 		, pktlen		/* packet length */
+ 		, hdrlen		/* header length */
+ 		, atype			/* Atheros packet type */
+-		, MIN(ni->ni_txpower,60)/* txpower */
++		, 60                    /* txpower */
+ 		, txrate, try0		/* series 0 rate/tries */
+ 		, keyix			/* key cache index */
+ 		, sc->sc_txantenna	/* antenna mode */
+@@ -3115,7 +3143,7 @@
+ 	 * when the hardware supports multi-rate retry and
+ 	 * we don't use it.
+ 	 */
+-	if (try0 != ATH_TXMAXTRY)
++	if (try0 != ATH_TXMAXTRY && ic->ic_opmode != IEEE80211_M_MONITOR)
+ 		ath_rate_setupxtxdesc(sc, an, ds, shortPreamble, rix);
+ 
+ 	ds->ds_link = 0;
+Only in ./ath: if_ath.c.orig
+diff -ur ../madwifi-cvs-20050707/net80211/ieee80211_var.h ./net80211/ieee80211_var.h
+--- ../madwifi-cvs-20050707/net80211/ieee80211_var.h	2005-02-16 17:09:03.000000000 +0100
++++ ./net80211/ieee80211_var.h	2005-07-29 22:43:08.000000000 +0200
+@@ -307,6 +307,8 @@
+ 	 */
+ 	const struct ieee80211_aclator *ic_acl;
+ 	void			*ic_as;
++
++	int inject_rate;	/* injection rate in Monitor mode */
+ };
+ 
+ #define	IEEE80211_ADDR_EQ(a1,a2)	(memcmp(a1,a2,IEEE80211_ADDR_LEN) == 0)
+diff -ur ../madwifi-cvs-20050707/net80211/ieee80211_wireless.c ./net80211/ieee80211_wireless.c
+--- ../madwifi-cvs-20050707/net80211/ieee80211_wireless.c	2005-03-07 17:35:09.000000000 +0100
++++ ./net80211/ieee80211_wireless.c	2005-07-29 22:50:42.000000000 +0200
+@@ -328,6 +328,18 @@
+ 	struct ifreq ifr;
+ 	int rate;
+ 
++	if (ic->ic_opmode == IEEE80211_M_MONITOR) {
++		rate = rrq->value / 1000;
++		if (rate !=  1000 && rate !=  2000 && rate !=  5500 &&
++		    rate != 11000 && rate !=  6000 && rate !=  9000 &&
++		    rate != 12000 && rate != 18000 && rate != 24000 &&
++		    rate != 36000 && rate != 48000 && rate != 54000 )
++		    return -EINVAL;
++		printk(KERN_DEBUG "setting xmit rate to %d\n", rate);
++		ic->inject_rate = rate;
++		return 0;
++	}
++
+ 	if (!ic->ic_media.ifm_cur)
+ 		return -EINVAL;
+ 	memset(&ifr, 0, sizeof(ifr));
+@@ -354,6 +366,11 @@
+ 	struct ifmediareq imr;
+ 	int rate;
+ 
++	if (ic->ic_opmode == IEEE80211_M_MONITOR) {
++		rrq->value = ic->inject_rate * 1000;
++		return 0;
++	}
++
+ 	memset(&imr, 0, sizeof(imr));
+ 	(*ic->ic_media.ifm_status)(ic->ic_dev, &imr);
+ 
+@@ -782,6 +799,7 @@
+ #if WIRELESS_EXT >= 15
+ 	case IW_MODE_MONITOR:
+ 		ifr.ifr_media |= IFM_IEEE80211_MONITOR;
++		ic->inject_rate = 5500; /* default = 5.5M DSSS */
+ 		break;
+ #endif
+ 	default:

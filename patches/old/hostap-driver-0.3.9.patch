@@ -1,0 +1,181 @@
+diff -ur ../hostap-driver-0.3.9/driver/modules/hostap.c ./driver/modules/hostap.c
+--- ../hostap-driver-0.3.9/driver/modules/hostap.c	2004-08-28 05:26:46.000000000 +0200
++++ ./driver/modules/hostap.c	2005-07-29 12:13:38.000000000 +0200
+@@ -401,7 +401,7 @@
+ 	if (local->iw_mode == IW_MODE_REPEAT)
+ 		return HFA384X_PORTTYPE_WDS;
+ 	if (local->iw_mode == IW_MODE_MONITOR)
+-		return HFA384X_PORTTYPE_PSEUDO_IBSS;
++		return 5; /*HFA384X_PORTTYPE_PSEUDO_IBSS;*/
+ 	return HFA384X_PORTTYPE_HOSTAP;
+ }
+ 
+diff -ur ../hostap-driver-0.3.9/driver/modules/hostap_80211_tx.c ./driver/modules/hostap_80211_tx.c
+--- ../hostap-driver-0.3.9/driver/modules/hostap_80211_tx.c	2004-07-06 01:45:01.000000000 +0200
++++ ./driver/modules/hostap_80211_tx.c	2005-07-29 12:26:05.000000000 +0200
+@@ -51,6 +51,9 @@
+ 	int to_assoc_ap = 0;
+ 	struct hostap_skb_tx_data *meta;
+ 
++	if (local->iw_mode == IW_MODE_MONITOR)
++		goto xmit;
++
+ 	if (skb->len < ETH_HLEN) {
+ 		printk(KERN_DEBUG "%s: hostap_data_start_xmit: short skb "
+ 		       "(len=%d)\n", dev->name, skb->len);
+@@ -216,6 +219,7 @@
+ 		memcpy(skb_put(skb, ETH_ALEN), &hdr.addr4, ETH_ALEN);
+ 	}
+ 
++xmit:
+ 	iface->stats.tx_packets++;
+ 	iface->stats.tx_bytes += skb->len;
+ 
+@@ -376,8 +380,6 @@
+ 	}
+ 
+ 	if (skb->len < 24) {
+-		printk(KERN_DEBUG "%s: hostap_master_start_xmit: short skb "
+-		       "(len=%d)\n", dev->name, skb->len);
+ 		ret = 0;
+ 		iface->stats.tx_dropped++;
+ 		goto fail;
+diff -ur ../hostap-driver-0.3.9/driver/modules/hostap_config.h ./driver/modules/hostap_config.h
+--- ../hostap-driver-0.3.9/driver/modules/hostap_config.h	2005-06-11 05:03:36.000000000 +0200
++++ ./driver/modules/hostap_config.h	2005-07-29 12:13:38.000000000 +0200
+@@ -59,7 +59,7 @@
+  * In addition, please note that it is possible to kill your card with
+  * non-volatile download if you are using incorrect image. This feature has not
+  * been fully tested, so please be careful with it. */
+-/* #define PRISM2_NON_VOLATILE_DOWNLOAD */
++#define PRISM2_NON_VOLATILE_DOWNLOAD
+ #endif /* PRISM2_DOWNLOAD_SUPPORT */
+ 
+ /* Include wireless extensions sub-ioctl support even if wireless extensions
+diff -ur ../hostap-driver-0.3.9/driver/modules/hostap_hw.c ./driver/modules/hostap_hw.c
+--- ../hostap-driver-0.3.9/driver/modules/hostap_hw.c	2005-05-18 05:31:21.000000000 +0200
++++ ./driver/modules/hostap_hw.c	2005-07-29 12:13:38.000000000 +0200
+@@ -1005,6 +1005,35 @@
+ 	return fid;
+ }
+ 
++static int prism2_monitor_enable(struct net_device *dev)
++{
++	if (hostap_set_word(dev, HFA384X_RID_CNFPORTTYPE, 5)) {
++		printk(KERN_DEBUG "Port type setting for monitor mode "
++			"failed\n");
++		return -EOPNOTSUPP;
++	}
++
++	if (hfa384x_cmd(dev, HFA384X_CMDCODE_TEST | (0x0a << 8),
++			     0, NULL, NULL)) {
++		printk(KERN_DEBUG "Could not enter testmode 0x0a\n");
++		return -EOPNOTSUPP;
++	}
++
++	if (hostap_set_word(dev, HFA384X_RID_CNFWEPFLAGS,
++			    HFA384X_WEPFLAGS_PRIVACYINVOKED |
++			    HFA384X_WEPFLAGS_HOSTENCRYPT |
++			    HFA384X_WEPFLAGS_HOSTDECRYPT)) {
++		printk(KERN_DEBUG "WEP flags setting failed\n");
++		return -EOPNOTSUPP;
++	}
++
++	if (hostap_set_word(dev, HFA384X_RID_PROMISCUOUSMODE, 1)) {
++		printk(KERN_DEBUG "Could not set promiscuous mode\n");
++		return -EOPNOTSUPP;
++	}
++
++	return 0;
++}
+ 
+ static int prism2_reset_port(struct net_device *dev)
+ {
+@@ -1028,6 +1057,10 @@
+ 			       "port\n", dev->name);
+ 	}
+ 
++	if (local->iw_mode == IW_MODE_MONITOR)
++		/* force mode 0x0a after port 0 reset */
++		return prism2_monitor_enable(dev);
++
+ 	/* It looks like at least some STA firmware versions reset
+ 	 * fragmentation threshold back to 2346 after enable command. Restore
+ 	 * the configured value, if it differs from this default. */
+@@ -1444,6 +1477,10 @@
+ 		return 1;
+ 	}
+ 
++	if (local->iw_mode == IW_MODE_MONITOR)
++		/* force mode 0x0a after port 0 reset */
++		prism2_monitor_enable(dev);
++
+ 	local->hw_ready = 1;
+ 	local->hw_reset_tries = 0;
+ 	local->hw_resetting = 0;
+@@ -3259,6 +3296,7 @@
+ 	local->func->hw_config = prism2_hw_config;
+ 	local->func->hw_reset = prism2_hw_reset;
+ 	local->func->hw_shutdown = prism2_hw_shutdown;
++	local->func->monitor_enable = prism2_monitor_enable;
+ 	local->func->reset_port = prism2_reset_port;
+ 	local->func->schedule_reset = prism2_schedule_reset;
+ #ifdef PRISM2_DOWNLOAD_SUPPORT
+diff -ur ../hostap-driver-0.3.9/driver/modules/hostap_ioctl.c ./driver/modules/hostap_ioctl.c
+--- ../hostap-driver-0.3.9/driver/modules/hostap_ioctl.c	2005-05-18 05:33:28.000000000 +0200
++++ ./driver/modules/hostap_ioctl.c	2005-07-29 12:13:38.000000000 +0200
+@@ -1067,33 +1067,7 @@
+ 
+ 	printk(KERN_DEBUG "Enabling monitor mode\n");
+ 	hostap_monitor_set_type(local);
+-
+-	if (hostap_set_word(dev, HFA384X_RID_CNFPORTTYPE,
+-			    HFA384X_PORTTYPE_PSEUDO_IBSS)) {
+-		printk(KERN_DEBUG "Port type setting for monitor mode "
+-		       "failed\n");
+-		return -EOPNOTSUPP;
+-	}
+-
+-	/* Host decrypt is needed to get the IV and ICV fields;
+-	 * however, monitor mode seems to remove WEP flag from frame
+-	 * control field */
+-	if (hostap_set_word(dev, HFA384X_RID_CNFWEPFLAGS,
+-			    HFA384X_WEPFLAGS_HOSTENCRYPT |
+-			    HFA384X_WEPFLAGS_HOSTDECRYPT)) {
+-		printk(KERN_DEBUG "WEP flags setting failed\n");
+-		return -EOPNOTSUPP;
+-	}
+-
+-	if (local->func->reset_port(dev) ||
+-	    local->func->cmd(dev, HFA384X_CMDCODE_TEST |
+-			     (HFA384X_TEST_MONITOR << 8),
+-			     0, NULL, NULL)) {
+-		printk(KERN_DEBUG "Setting monitor mode failed\n");
+-		return -EOPNOTSUPP;
+-	}
+-
+-	return 0;
++	return local->func->reset_port(dev);
+ }
+ 
+ 
+@@ -1159,7 +1133,7 @@
+ 	local->iw_mode = *mode;
+ 
+ 	if (local->iw_mode == IW_MODE_MONITOR)
+-		hostap_monitor_mode_enable(local);
++		return hostap_monitor_mode_enable(local);
+ 	else if (local->iw_mode == IW_MODE_MASTER && !local->host_encrypt &&
+ 		 !local->fw_encrypt_ok) {
+ 		printk(KERN_DEBUG "%s: defaulting to host-based encryption as "
+diff -ur ../hostap-driver-0.3.9/driver/modules/hostap_wlan.h ./driver/modules/hostap_wlan.h
+--- ../hostap-driver-0.3.9/driver/modules/hostap_wlan.h	2005-05-18 05:31:22.000000000 +0200
++++ ./driver/modules/hostap_wlan.h	2005-07-29 12:13:38.000000000 +0200
+@@ -591,6 +591,7 @@
+ 	int (*hw_config)(struct net_device *dev, int initial);
+ 	void (*hw_reset)(struct net_device *dev);
+ 	void (*hw_shutdown)(struct net_device *dev, int no_disable);
++	int (*monitor_enable)(struct net_device *dev);
+ 	int (*reset_port)(struct net_device *dev);
+ 	void (*schedule_reset)(local_info_t *local);
+ 	int (*download)(local_info_t *local,

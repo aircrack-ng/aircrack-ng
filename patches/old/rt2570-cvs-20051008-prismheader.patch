@@ -1,0 +1,161 @@
+Only in ./Module: out.cap
+Only in ./Module: out.txt
+diff -ur ../rt2570-cvs-20051025/Module/rt2570sw.h ./Module/rt2570sw.h
+--- ../rt2570-cvs-20051025/Module/rt2570sw.h	2005-10-21 19:31:22.000000000 +0200
++++ ./Module/rt2570sw.h	2005-11-04 11:31:47.000000000 +0100
+@@ -3699,4 +3699,55 @@
+ 
+ int USB_CallUSBD(PRT2570ADAPTER Adapter, 
+                       IN PURB       Urb);
++
++#endif
++
++#ifndef _PRISMHEADER
++#define _PRISMHEADER
++
++enum {
++	DIDmsg_lnxind_wlansniffrm		= 0x00000044,
++	DIDmsg_lnxind_wlansniffrm_hosttime	= 0x00010044,
++	DIDmsg_lnxind_wlansniffrm_mactime	= 0x00020044,
++	DIDmsg_lnxind_wlansniffrm_channel	= 0x00030044,
++	DIDmsg_lnxind_wlansniffrm_rssi		= 0x00040044,
++	DIDmsg_lnxind_wlansniffrm_sq		= 0x00050044,
++	DIDmsg_lnxind_wlansniffrm_signal	= 0x00060044,
++	DIDmsg_lnxind_wlansniffrm_noise		= 0x00070044,
++	DIDmsg_lnxind_wlansniffrm_rate		= 0x00080044,
++	DIDmsg_lnxind_wlansniffrm_istx		= 0x00090044,
++	DIDmsg_lnxind_wlansniffrm_frmlen	= 0x000A0044
++};
++enum {
++	P80211ENUM_msgitem_status_no_value	= 0x00
++};
++enum {
++	P80211ENUM_truth_false			= 0x00,
++	P80211ENUM_truth_true			= 0x01
++};
++
++typedef struct {
++	u_int32_t did;
++	u_int16_t status;
++	u_int16_t len;
++	u_int32_t data;
++} p80211item_uint32_t;
++
++typedef struct {
++	u_int32_t msgcode;
++	u_int32_t msglen;
++#define WLAN_DEVNAMELEN_MAX 16
++	u_int8_t devname[WLAN_DEVNAMELEN_MAX];
++	p80211item_uint32_t hosttime;
++	p80211item_uint32_t mactime;
++	p80211item_uint32_t channel;
++	p80211item_uint32_t rssi;
++	p80211item_uint32_t sq;
++	p80211item_uint32_t signal;
++	p80211item_uint32_t noise;
++	p80211item_uint32_t rate;
++	p80211item_uint32_t istx;
++	p80211item_uint32_t frmlen;
++} wlan_ng_prism2_header;
++
+ #endif
+diff -ur ../rt2570-cvs-20051025/Module/rtusb_data.c ./Module/rtusb_data.c
+--- ../rt2570-cvs-20051025/Module/rtusb_data.c	2005-09-21 01:43:50.000000000 +0200
++++ ./Module/rtusb_data.c	2005-11-04 17:40:27.000000000 +0100
+@@ -40,6 +40,7 @@
+ 	 0, /* RATE_1 */    1, /* RATE_2 */     2, /* RATE_5_5 */   3, /* RATE_11 */    // see BBP spec
+ 	11, /* RATE_6 */   15, /* RATE_9 */    10, /* RATE_12 */   14, /* RATE_18 */    // see IEEE802.11a-1999 p.14
+ 	 9, /* RATE_24 */  13, /* RATE_36 */    8, /* RATE_48 */    12  /* RATE_54 */ }; // see IEEE802.11a-1999 p.14
++static	UINT	_11G_RATES[12] = { 0, 0, 0, 0, 6, 9, 12, 18, 24, 36, 48, 54 };
+ static	UCHAR	SNAP_802_1H[] = {0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00};
+ static	UCHAR	SNAP_BRIDGE_TUNNEL[] = {0xaa, 0xaa, 0x03, 0x00, 0x00, 0xf8};
+ static	UCHAR	EAPOL[] = {0x88, 0x8e};
+@@ -1672,6 +1673,7 @@
+ 	NDIS_802_11_ENCRYPTION_STATUS	Cipher;
+ 	struct sk_buff  *skb;
+ 	PVOID			pManage;
++	wlan_ng_prism2_header	*ph;
+ 
+ 	pRxContext= (PRX_CONTEXT)pUrb->context;
+ 	pAdapter = pRxContext->pAdapter;
+@@ -1709,6 +1711,57 @@
+  	        		struct sk_buff  *skb;
+  	       			if ((skb = __dev_alloc_skb(2048, GFP_DMA|GFP_ATOMIC)) != NULL)
+  	        		{
++		// setup the wlan-ng prismheader
++
++		if (skb_headroom(skb) < sizeof(wlan_ng_prism2_header))
++			pskb_expand_head(skb, sizeof(wlan_ng_prism2_header), 0, GFP_ATOMIC);
++
++		ph = (wlan_ng_prism2_header *)
++			skb_push(skb, sizeof(wlan_ng_prism2_header));
++		memset(ph, 0, sizeof(wlan_ng_prism2_header));
++
++		ph->msgcode	= DIDmsg_lnxind_wlansniffrm;
++		ph->msglen	= sizeof(wlan_ng_prism2_header);
++		strcpy(ph->devname, pAdapter->net->name);
++
++		ph->hosttime.did	= DIDmsg_lnxind_wlansniffrm_hosttime;
++		ph->mactime.did		= DIDmsg_lnxind_wlansniffrm_mactime;
++		ph->channel.did		= DIDmsg_lnxind_wlansniffrm_channel;
++		ph->rssi.did		= DIDmsg_lnxind_wlansniffrm_rssi;
++		ph->signal.did		= DIDmsg_lnxind_wlansniffrm_signal;
++		ph->noise.did		= DIDmsg_lnxind_wlansniffrm_noise;
++		ph->rate.did		= DIDmsg_lnxind_wlansniffrm_rate;
++		ph->istx.did		= DIDmsg_lnxind_wlansniffrm_istx;
++		ph->frmlen.did		= DIDmsg_lnxind_wlansniffrm_frmlen;
++
++		ph->hosttime.len	= 4;
++		ph->mactime.len		= 4;
++		ph->channel.len		= 4;
++		ph->rssi.len		= 4;
++		ph->signal.len		= 4;
++		ph->noise.len		= 4;
++		ph->rate.len		= 4;
++		ph->istx.len		= 4;
++		ph->frmlen.len		= 4;
++
++		ph->hosttime.data	= jiffies;
++		ph->channel.data	= pAdapter->PortCfg.IbssConfig.Channel;
++		ph->signal.data		= pRxD->BBR1;
++		ph->noise.data		= pAdapter->PortCfg.LastR17Value;
++		ph->rssi.data		= ph->signal.data - ph->noise.data;
++		ph->frmlen.data		= pRxD->DataByteCnt;
++
++		if (pRxD->Ofdm == 1)
++		{
++			for (i = 4; i < 12; i++)
++				if (pRxD->BBR0 == PlcpSignal[i])
++					ph->rate.data = _11G_RATES[i] * 2;
++		}
++		else
++			ph->rate.data = pRxD->BBR0 / 5;
++
++		// end prismheader setup
++
+  	      				skb->dev = pAdapter->net;
+  	      				memcpy(skb_put(skb, pRxD->DataByteCnt-4), pData, pRxD->DataByteCnt-4);
+  	       				skb->mac.raw = skb->data;
+diff -ur ../rt2570-cvs-20051025/Module/rtusb_info.c ./Module/rtusb_info.c
+--- ../rt2570-cvs-20051025/Module/rtusb_info.c	2005-10-23 15:33:57.000000000 +0200
++++ ./Module/rtusb_info.c	2005-11-04 11:31:47.000000000 +0100
+@@ -200,7 +200,9 @@
+ 	pAdapter->PortCfg.IbssConfig.Channel = chan;
+ 	DBGPRINT(RT_DEBUG_ERROR, "<==SIOCSIWFREQ[cmd=0x%x] (Channel=%d)\n", SIOCSIWFREQ, pAdapter->PortCfg.IbssConfig.Channel);
+ 
+-	if (pAdapter->PortCfg.BssType == BSS_MONITOR && pAdapter->PortCfg.MallowRFMONTx == TRUE)
++	// CD: setting the channel in Monitor mode is unrelated to RFMONTx
++
++	if (pAdapter->PortCfg.BssType == BSS_MONITOR)
+ 	{
+ 		pAdapter->PortCfg.Channel = pAdapter->PortCfg.IbssConfig.Channel;
+ 		AsicSwitchChannel(pAdapter, pAdapter->PortCfg.Channel);
+@@ -275,7 +277,7 @@
+ 			pAdapter->PortCfg.BssType=BSS_MONITOR;
+ 			RTUSBEnqueueInternalCmd(pAdapter, RT_OID_LINK_DOWN);
+ 			pAdapter->bConfigChanged = TRUE;
+-		        pAdapter->net->type = 801;
++			pAdapter->net->type = 802; // ARPHRD_IEEE80211_PRISM
+ 			RTUSBWriteMACRegister(pAdapter, TXRX_CSR2, 0x4e);
+ 			break;	
+ 		default:

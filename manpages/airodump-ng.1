@@ -1,0 +1,90 @@
+.TH AIRODUMP-NG 1 "September 2006" "Version 0.6.2"
+
+.SH NAME
+.B airodump-ng
+is a packet capture tool for 
+.B aircrack-ng.
+.SH SYNOPSIS
+.B airodump-ng
+[options] <interface name>
+.SH DESCRIPTION
+.BI airodump-ng
+is a packet capture tool for aircrack-ng. It allows dumping packets directly from WLAN interface and saving them to a pcap or IVs file.
+.SH OPTIONS
+.PP
+.TP
+.I -i, --ivs
+It only saves IVs (only usefull for cracking). If this option is specified, you have to give a dump prefix (--write option)
+.TP
+.I -g, --gpsd
+Indicate that airodump-ng should try to use GPSd to get coordinates.
+.TP
+.I -w, --write <prefix>
+Is the dump file prefix to use. If this option is not given, it will only show data on the screen.
+.TP
+.I --beacons
+It will record all beacons into the cap file (by default it only record one).
+.TP
+.I -c, --channel <channel>
+Indicate the channel to listen to. By default airodump-ng hop on all 2.4Ghz channels.
+.TP
+.I -b, --band <abg>
+Indicate the band on which airodump-ng should hop. It can be a combination of 'a', 'b' and 'g' ('b' and 'g' uses 2.4Ghz and 'a' uses 5Ghz)
+.SH EXAMPLES
+.B airodump-ng
+\-\-band bg ath0
+.PP
+Here's an example screenshot:
+.PP
+-----------------------------------------------------------------------
+.br
+  CH  7 ][ BAT: 2 hours 10 mins ][ 2006-03-28 21:00
+.br
+  BSSID              PWR  Beacons     # IV  CH  MB  ENC   ESSID
+.br
+.PP
+  00:13:10:30:24:9C   46       15     3416   6  54. WEP   the ssid
+  00:09:5B:1F:44:10   36       54        0  11  11  OPN   NETGEAR
+.br
+.PP
+  BSSID              STATION            PWR  Packets  Probes
+.br
+.PP
+  00:13:10:30:24:9C  00:09:5B:EB:C5:2B   48      719  the ssid
+  00:13:10:30:24:9C  00:02:2D:C1:5D:1F  190       17  the ssid         
+.br
+-----------------------------------------------------------------------
+.br
+.PP
+            - CH is the channel on which the AP is setup
+            - BAT is the remaining battery time
+            - BSSID is the Access Point MAC address
+            - PWR is the signal power, which depends on the driver
+            - Beacons is the total number of beacons
+            - # IVs: self-explanatory
+            - MB is the maximum communication speed (the dot mean short preamble).
+            - ENC is the encryption protocol in use:
+                OPN = open, WEP? = WEP or WPA (no data), WEP, WPA
+            - ESSID is the network identifier
+
+.PP
+The first part is the detected access points (in this case, only 00:13:10:30:24:9C on channel 6 with WEP encryption). It also displays a list of detected wireless clients ("stations"), in this case 00:09:5B:EB:C5:2B and 00:02:2D:C1:5D:1F. By relying on the signal power, one can even physically pinpoint the location of a given station.
+.SH AUTHOR
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airmon-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)

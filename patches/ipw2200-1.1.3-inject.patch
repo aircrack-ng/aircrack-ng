@@ -1,0 +1,61 @@
+--- ipw2200-1.1.3/ipw2200.c	2006-07-17 21:43:57.000000000 +0000
++++ ipw2200-1.1.3inject/ipw2200inject.c	2006-07-18 00:29:15.000000000 +0000
+@@ -10645,9 +10645,19 @@
+ 
+ static int ipw_tx_skb(struct ipw_priv *priv, struct ieee80211_txb *txb, int pri)
+ {
++	int i = 0;
++	int kk;
++/*	for (kk=0; kk<36; kk++)
++		printk("%02X ", txb->fragments[0]->data[kk]);
++	printk("\n");
++*/
++	skb_pull(txb->fragments[0], 18+6+6);
++/*	for (kk=0; kk<36; kk++)
++		printk("%02X ", txb->fragments[0]->data[kk]);
++	printk("\n");
++	*/
+ 	struct ieee80211_hdr_3addrqos *hdr = (struct ieee80211_hdr_3addrqos *)
+ 	    txb->fragments[0]->data;
+-	int i = 0;
+ 	struct tfd_frame *tfd;
+ #ifdef CONFIG_IPW2200_QOS
+ 	int tx_id = ipw_get_tx_queue_number(priv, pri);
+@@ -10660,6 +10670,28 @@
+ 	u16 remaining_bytes;
+ 	int fc;
+ 
++// memset(hdr->addr1,0x80,18);
++ memset(hdr,           0x08,1);
++/* memset(((void*)hdr)+1,0x00,1);
++ memset(((void*)hdr)+2,0x04,1);
++ memset(((void*)hdr)+3,0x04,1);
++ memset(((void*)hdr)+4,0x00,1);
++ memset(((void*)hdr)+5,0x0f,1);
++ */
++// printk("tx_skb\n");
++char * kkk=hdr;
++for(i=4; i<0x40; i++) {
++//    kkk[i]=0xff;
++}
++/*	for (kk=0; kk<36; kk++)
++		printk("%02X ", txb->fragments[0]->data[kk]);
++	printk("\n");
++ 
++	printk("WENT\n");
++	*/
++ i=0;
++
++
+ 	hdr_len = ieee80211_get_hdrlen(le16_to_cpu(hdr->frame_ctl));
+ 	switch (priv->ieee->iw_mode) {
+ 	case IW_MODE_ADHOC:
+@@ -10711,7 +10743,7 @@
+ 	if (likely(unicast))
+ 		tfd->u.data.tx_flags |= DCT_FLAG_ACK_REQD;
+ 
+-	if (txb->encrypted && !priv->ieee->host_encrypt) {
++	if (0 && txb->encrypted && !priv->ieee->host_encrypt) {
+ 		switch (priv->ieee->sec.level) {
+ 		case SEC_LEVEL_3:
+ 			tfd->u.data.tfd.tfd_24.mchdr.frame_ctl |=
