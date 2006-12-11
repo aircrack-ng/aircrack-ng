@@ -1,0 +1,46 @@
+=== Compilating ===
+
+If you're not compiling aircrack-ng on Linux, first, you have
+ to delete Makefile
+ * cygwin  : rename Makefile.cygwin to Makefile
+ * MacOSX  : rename Makefile.osx to Makefile
+ * windows : use windows package unless you don't need airodump/wzcook
+ * On another OS: That's untested, but you have to rename Makefile.other to Makefile
+
+Compilation:
+ make
+
+REM:
+ * You can find a WPA handshake capture and a dictionnary in "test" directory
+ * If you have trouble compiling and you get align errors with sha1-mmx.S
+   (src/sha1-mmx.S:20:Alignment too large: 15. assumed.), remove line 20
+   (it contains ".align(16)" ) then recompile
+
+You can strip debug informations from executables before
+installing them with:
+ make strip
+
+
+Installing:
+ make install
+
+
+Uninstall:
+ make uninstall
+
+
+=== Using precompiled binaries ===
+
+Linux/BSD:
+ * Use your package manager to download aircrack-ng
+ 
+Windows:
+ * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data)
+   See "Drivers" page on the wiki: http://www.aircrack-ng.org/doku.php?id=drivers and 
+   Wild packet driver page: http://www.wildpackets.com/support/downloads/drivers
+ * Download cygwin1.dll, msvcr70.dll, peek.dll and peek5.sys that you can find on the wiki
+   download page ("more downloads..." link) and put them in the directory you extracted the
+   executable files.
+ * aircrack-ng suite is command line tools. So, you have to open a commandline
+   (Start menu -> Run... -> cmd.exe) then use them
+ * Run the executables without any parameters to have help

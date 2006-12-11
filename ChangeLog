@@ -1,0 +1,403 @@
+Version 0.6.2 (changes from aircrack-ng 0.6.1) - Released 1 October 2006:
+* aireplay-ng: Applied patch to inject packets with an ipw2200
+* aircrack-ng: Fixed: show_wpa_stats() 1 byte array overflow
+* aircrack-ng: Fixed a warning when compiling on 64bit inner_bruteforcer_thread()
+* aircrack-ng: Changed -d option. It's now a mask (use XX for unknown bytes).
+* arpforge-ng: removed. It's replaced by packetforge-ng
+* packetforge-ng: New tool to forge packets (by Martin Beck) + manpage written 
+* aircrack-ng, aireplay-ng, packetforge-ng: new MAC decoding function
+* airmon-ng: Fixed a bug when using it with madwifi-ng
+* airmon-ng: Added ipw3945 detection
+* airodump-ng (windows): now automatically download peek.dll and peek5.sys if needed
+* airodump-ng: LLC null packets are skipped
+* makeivs: added manpage
+* Makefile: Fixed: make aircrack-ng-opt-prof_gen fails
+* updated madwifi-ng patch
+
+Version 0.6.1 (changes from aircrack-ng 0.6) - Released 27 August 2006:
+* aircrack-ng: Fixed missing '-s' option
+* aircrack-ng: Fixed: Show a different ASCII key for a same hex key
+* airodump-ng: Using --band option instead of --bg, --abg, --ab, ...
+* airodump-ng: Fixed: fails to put wlanng in monitor mode
+* airodump-ng: using rtap0 as interface should now work
+* airodump-ng and aireplay-ng: "Can't find wireless tools, exiting." should be fixed if they exist
+* airodump-ng and airmon-ng: rt2570 now uses prismheader (use at least beta 2 driver)
+* airmon-ng: Fixed: discards ipw2200 v1.1.x
+* airmon-ng: Fixed: show newly created madwifi-ng VAP
+* airmon-ng: Should now works with 'ash' shell (Zaurus, OpenWRT, ...)
+* INSTALL: Added a note about warnings when compiling sources
+* INSTALL: Added more informations about installing aircrack-ng on windows
+* updated spec file
+* some other bugfixes
+* cygwin1.dll and msvcr70.dll are now included in windows package
+
+Version 0.6 (changes from aircrack-ng 0.5) - Released 23 June 2006:
+* aircrack-ng: Multithreaded keybytes bruteforcer
+* aircrack-ng: Now bruteforce only last keybyte by default (faster than last 2KB)
+* aircrack-ng: Added option to show ASCII version of the key
+* aircrack-ng: Fixed: bug with -d option. It adds a leading "0x00" to the key
+* aireplay-ng: fixed compilaton issues on some distro
+* aireplay-ng: fixed a bug when using 'ash'
+* aireplay-ng: You can change ring buffer size (-g option)
+* airodump-ng: Log by default only one beacon (added option to log all beacons)
+* airodump-ng: Dump prefix isn't mandatory anymore, not giving it won't store any data
+* airmon-ng: Ralink devices needs be put in ad-hoc prior to inject packets
+* manpages: Added kstat manpage 
+* manpages: fixed airodump-ng manpage (hyphen used as minus sign)
+* Makefile: You can now compile aircrack-ng with Intel C Compiler (really faster)
+* Updated madwifi-ng patch to r1545 (and up; can be applied on madwifi v0.9.0 and v0.9.1)
+* Added instructions to compile on different plateforms/OS
+* Added a WPA2 capture file in test directory
+* Some other fixes
+
+Version 0.5 (changes from aircrack-ng 0.4.4) - Released 04 May 2006:
+* airodump-ng: Hop on 2.4Ghz channels by default
+* airodump-ng: Added support for OpenWrt devices (use prism0 as capture interface)
+* aircrack-ng and aireplay-ng: korek chopchop optimisation (Thanks to ASPj)
+* airodump-ng: Fixed: when starting, it captured data on channel 10
+* aircrack-ng: Fixed: Not using all CPU on SMP systems
+
+Version 0.4.4 (changes from aircrack-ng 0.4.3) - Released 24 april 2006:
+* aircrack-ng: fixed a stupid bug that prevent cracking
+* sha1-mmx.S: GNU_STACK ELF marking
+* updated patch for madwifi-ng r1526 and upper
+
+Version 0.4.3 (changes from aircrack-ng 0.4.2) - Released 24 april 2006:
+* airmon-ng: fixed madwifi-ng (VAP creation-destruction and a cosmetic fix)
+* aircrack-ng: fixed compilation under OSX
+* airodump-ng: added elapsed time
+* Makefile : added a MacOSX makefile (Makefile.osx)
+* updated patch for madwifi-ng r1520 and upper
+
+Version 0.4.2 (changes from aircrack-ng 0.4.1) - Released 20 april 2006:
+* airodump-ng: Fixed: dumpfile prefix took the name of the second argument
+* airodump-ng: Fixed: .gps file creation if GPSd isn't used
+* version.c removed (the content was moved to common.c)
+
+Version 0.4.1 (changes from aircrack-ng 0.4) - Released 19 april 2006:
+* airodump-ng: use of parameters like aircrack-ng, aireplay-ng, ...
+* airodump-ng: more sanity checks
+* airodump-ng & aireplay-ng: forbid the use of ndiswrapper
+* airodump-ng & aireplay-ng: check of iwpriv existence
+* manpages: updated and fixed typos
+* Makefile: fixed "make doc"
+* airmon-ng: fixed and improved madwifi detection
+
+Version 0.4 (changes from aircrack-ng 0.3) - Released 16 april 2006:
+
+* Typos fixed and cosmetic changes in sources and in manpages
+* manpages: updated airodump-ng screenshot
+* manpages and aireplay-ng: renamed attack names
+* airodump-ng: fixed some compile warnings
+* airodump-ng: hopping also on .11a channels if available
+* airodump-ng: fixed: GPS coordinates were never shown
+* airmon-ng: fixed ipw2100 (Thx to OverThere) and madwifi-ng detection
+* aircrack-ng: speed optimizations 
+* aircrack-ng: -x option disable last 2 keybytes bruteforce (WEP cracking is faster)
+* aircrack-ng: with -a option, you can use "wep" or "wpa" instead of numbers
+* ivstools: --merge option fixed
+* Makefiles: improvements
+* Lots of little changes
+* added aircrack-ng.spec for building RPM
+* added slack-desc for building slackware packages
+
+Version 0.3 (changes from aircrack-ng 0.2.1) - Released 30 march 2006:
+
+* aireplay-ng: typo fixed
+* aireplay-ng: Madwifi-ng is now supported
+* airodump-ng: disabled GPS coordinates if connection to gpsd fail
+* airodump-ng: Battery informations fixed (hacked kismet code)
+* airodump-ng: Madwifi-ng is now supported
+* aircrack-ng: corrrected title (when cracking a key)
+* aircrack-ng: uses by default all CPU for cracking (Debian bug report #352877)
+* manpages: Fixed some errors (Debian bug report #356551)
+* manpages: created ivstools manpage
+* Makefiles: cleaning and improvement
+* fixed pcap2ivs bug (it wasn't using the good MAC for bssid)
+* Merged mergeivs and pcap2ivs into ivstools
+* airmon.sh: Fixed (hopefully) detection of ipw2100 and ipw2200 (Debian bug report #340057)
+* airmon.sh: renamed to airmon-ng
+* Updated madwifi-ng patch to r1486
+
+
+Version 0.2.1 (changes from aircrack-ng 0.2) - Released 20 march 2006:
+
+* corrected 2 bugs in airmon.sh and changed another little thing
+* one word missing for option -j in aireplay
+* updated madwifi-old patch to SVN r1475
+* makefile cleaning
+* typo corrected in pcap2ivs
+
+
+Version 0.2 (changes from aircrack-ng 0.1) - Released 19 march 2006:
+
+* updated version number and program name
+* updated airmon.sh
+  added detection of acx, madwifi-ng and bcm43xx
+* added manpages (Thanks to Adam Cecile)
+* added madwifi-ng patches
+* re-added missing drivers patches
+* added uninstall rule in makefile
+* added Sharp Zaurus binaries (Thanks to Rick Farina aka Zero_Chaos)
+* added a cygwin makefile
+
+
+Version 0.1 (changes from aircrack 2.41) 
+
+* updated windows binaries 
+* compiled some files for windows 
+* Separated in multiple packages 
+
+
+----------------------------------------------------------------------------------------------
+Older Changelog:
+
+Version 2.41 released on 2005-11-22. Changes from version 2.4:
+
+    * airodump: show probing clients as "not associated"
+    * airodump: don't substract the noise level unless madwifi
+    * airodump: fixed channel hopping with old orinoco
+    * airmon.sh: added detection of the zd1211 driver 
+
+
+Version 2.4 released on 2005-11-12. Changes from version 2.3:
+
+    * airodump: display ESSIDs from Probe Requests
+    * airodump: don't overwrite existing capture files
+    * airodump: create a logfile of the gps coordinates
+    * airodump: every 20s, sort the detected APs by power
+    * airodump: display the remaining battery capacity
+    * airodump: use ioctl() instead of calling iwconfig
+    * airodump: added support for radiotap headers
+    * aireplay: added option -j (FromDS packet injection)
+    * aireplay: added prismheader support for rt2500 / rt2570
+    * aireplay: fixed attack -0 when injecting on ralink usb
+    * aireplay: fixed attack -3 (ring buffer / deauth problem)
+    * aircrack: don't bruteforce the last 2 keybytes by default
+    * aircrack: changed the fudge factor type to float
+    * aircrack: added option -t (restrict keyspace to BCD)
+    * aircrack: fixed the check_wep_key false positive bug
+    * aircrack: fixed overflow of the number of tested keys
+    * aircrack: lower number of required IVs if -d is used
+    * mergeivs and pcap2ivs: initial release 
+
+
+Version 2.3 released on 2005-08-28. Changes from version 2.23:
+
+    * aireplay: added patch for injection on Ralink USB
+    * aireplay: improved deauthentication attack (-c flag)
+    * aireplay: don't enable the prism header on athXraw
+    * airodump: fixed rare hanging problem in dump_write_csv
+    * airodump: workaround for ipw2200 wep data corruption bug
+    * airodump: tweaked dump_print to make more space for ESSID
+    * aircrack: added support for 152-bit WEP cracking
+    * updated the documentation and merged versioning patch 
+
+
+Version 2.23 released on 2005-08-17. Changes from version 2.22:
+
+    * aireplay: updated the madwifi patch, fixes WEP/WPA support
+    * airodump: fixed a few buffer overflows, code cleanup for gcc4
+    * aircrack: also printf the WEP key if >= 75% ASCII caracters 
+
+
+Version 2.22 released on 2005-08-14. Changes from version 2.21:
+
+    * aireplay: now compatible with madwifi CVS 2005-08-14
+    * airodump: fixed the output power with newer madwifi 
+
+
+Version 2.21 released on 2005-08-09. Changes from version 2.2:
+
+    * airodump: forcefully exit when user presses Ctrl-C
+    * airodump: bugfixed (yet again) ESSID uncloacking
+    * airodump: re-create the ivs file if no header present
+    * aircrack: changed the default fudge factor back to 2
+    * airdecap: fixed the incorrect output pcap header length 
+
+
+Version 2.2 released on 2005-08-03. Changes from version 2.2-beta12:
+
+    * aireplay: (attack 1) added G rates in the association request
+    * fixed the Makefile for compilation on FreeBSD / Mac OS X 
+
+
+Version 2.2-beta12 released on 2005-07-30. Changes from version 2.2-beta11:
+
+    * aireplay: bugfixed the madwifi patch, switched to 20050707
+    * aireplay: avoid triggering "protocol XX00 is buggy" messages
+    * airodump: don't reset the card when hopping between channels
+    * airodump: ipw2200 didn't like calling "iwpriv ethX monitor 1"
+    * airodump: added support for airodump on WRT54G / OpenWRT
+    * airodump: commit the .txt statistics file every 20 seconds
+    * aircrack: increased the default fudge factor (3 for WEP-104) 
+
+
+Version 2.2-beta11 released on 2005-07-27. Changes from version 2.2-beta10:
+
+    * aireplay: updated the madwifi patch to inject in b/g mode
+    * aireplay: fixed attack 2 (it wrongly swapped the smac & dmac)
+    * aircrack: (cygwin) added O_BINARY flag to force binary mode 
+
+
+Version 2.2-beta10 released on 2005-07-23. Changes from version 2.2-beta9:
+
+    * aireplay: fixed the status line not showing in attack -3
+    * aireplay: updated the madwifi and hostap injection patches
+    * aireplay: added patches for injection on rt2500 and rtl8180
+    * aircrack: added detection of 802.1d in check_wep_key
+    * airodump: restore prismheader link level info w/ hostap
+    * airodump: create the output file if there's no pcap header
+    * airdecap: added flag -l to disable ethernet conversion
+    * updated the win32 port and rewrote the documentation 
+
+
+Version 2.2-beta9 released on 2005-07-21. Changes from version 2.2-beta8:
+
+    * aireplay: fixed the invalid rtc file descriptor bug
+    * aircrack: actually fixed the prism header endianness bug 
+
+
+Version 2.2-beta8 released on 2005-07-21. Changes from version 2.2-beta7:
+
+    * aireplay: specify the deauth count instead of delay
+    * aircrack: fixed an endianness issue with the prism header
+    * aircrack: added the experimental single bruteforce attack
+    * airodump: do enable the prismheader with wlan-ng
+    * airodump: WEP/WPA: show the number of data packets
+    * airodump: show total number of captured beacon packets
+    * airodump: orinoco: fixed "iwpriv ethX monitor 1" command
+    * airdecap: fixed an endianness issue with the packet length
+    * airdecap: skip already processed duplicate packets 
+
+
+Version 2.2-beta7 released on 2005-07-14. Changes from version 2.2-beta6:
+
+    * airodump: don't enable the prismheader with wlan-ng
+    * aircrack: fixed check_wepkey() to avoid false positives
+    * completed the preliminary win32 port 
+
+
+Version 2.2-beta6 released on 2005-07-12. Changes from version 2.2-beta5:
+
+    * aireplay: fixed injection of fromds packets on Prism2
+    * aireplay: attack 0: target access point must be specified
+    * aireplay: attack 1: allow the user to change reauth delay
+    * aircrack: fixed race condition when realloc() ap->ivbuf
+    * airodump: fixed endianness issue when parsing prism header 
+
+
+Version 2.2-beta5 released on 2005-07-10. Changes from version 2.2-beta4:
+
+    * aireplay: added patch for single-nic injection on hostap
+    * aireplay: fixed chopchop attack in non-authenticated mode
+    * aireplay: don't flood the AP with authentication requests
+    * aircrack: bruteforce the last two keybytes by default
+    * aircrack: improved handling of partial WPA handshakes
+    * aircrack, airdecap: added WPA2 (RSN / 802.11i) support 
+
+
+Version 2.2-beta4 released on 2005-07-03. Changes from version 2.2-beta3:
+
+    * aircrack: new option to restrict WEP search space to ascii
+    * aircrack: fixed concurrency bug with multiple .cap files
+    * aircrack: fixed incorrect detection of WPA CCMP handshakes
+    * aircrack: fixed incorrect handling of HMAC-SHA1 WPA MIC
+    * aireplay: fixed deauth problem when chopchoping a packet
+    * aireplay: added a workaround for error "Write buffer full"
+    * airodump: added support for prism header on prism54
+    * airodump: save the list of detected wireless clients
+    * airunwep: renamed to airdecap, added WPA decryption support 
+
+
+Version 2.2-beta3 released on 2005-06-28. Changes from version 2.2-beta2:
+
+    * aircrack: fixed the tracking of new IVs
+    * aireplay: fixed the CPU usage bug in attack 3
+    * when reading pcap files, check the packet length 
+
+
+Version 2.2-beta2 released on 2005-06-27. Changes from version 2.2-beta1:
+
+    * aireplay: added fully automated ARP replay attack
+    * aireplay: added automated deauthentication attack
+    * aireplay: added fake authentication in Monitor mode
+    * aircrack: various pthread enhancements & bugfixes 
+
+
+Version 2.2-beta1 released on 2005-06-22. Changes from version 2.1:
+
+    * aircrack: now auto-updates if new IVs are available
+    * aircrack: fixed #285441 (struct pcap_pkthdr on AMD64)
+    * aircrack: fixed the pcap endianness problem
+    * aircrack: added essid filtering option and quiet mode
+    * aircrack: only print status info every 1/20th second
+    * aircrack: added WPA-PSK cracking support from cowpatty
+    * aircrack: added EAPOL frame type detection and display
+    * aircrack: each korek attack can be disabled selectively
+    * airodump: added 802.11 b/g (2.4 GHz) channel hopping
+    * airodump: added a file format for logging only the IVs
+    * airodump: CRC is properly removed if driver is madwifi
+    * airodump: input packets can be read from a pcap file
+    * airodump: bugfixed WPA detection and ESSID uncloaking
+    * airodump: also display a list of detected stations
+    * aireplay: implemented chopchop and arp-forgery
+    * aireplay: added patches for single-nic injection
+    * 802ether: bugfixed and renamed to airunwep 
+
+
+Version 2.1 released on 2004-10-01. Changes from version 2.0.2:
+
+    * added 11g and WPA detection support in airodump
+    * aircrack automatically avoids using WPA IVs
+    * aircrack can break 256-bit and 512-bit WEP keys
+    * win32 - fixed yet again the "missed IVs" bug
+    * win32 - ported the 802ether WEP decryptor program 
+
+
+Version 2.0.2 released on 2004-09-24. Changes from version 2.0.1:
+
+    * win32 - added the WZCOOK key recovery program
+    * fixed a bug in the BSSID iteration code in airodump
+    * completely rewrote the documentation, moved to /docs 
+
+
+Version 2.0.1 released on 2004-09-21. Changes from version 2.0:
+
+    * win32 - fixed the channel reset bug
+    * win32 - fixed the "missed IVs" bug
+    * win32 - rewrote drivers.txt 
+
+
+Version 2.0 released on 2004-09-03. Changes from version 1.4:
+
+    * native win32 port of airodump and aircrack
+    * aireplay better spots potential arp-requests 
+
+
+Version 1.4 released on 2004-08-26. Changes from version 1.3:
+
+    * fixed check_wepkey, works with exotic LLC headers
+    * airodump prints lots of information, Kismet-style 
+
+
+Version 1.3 released on 2004-08-19. Changes from version 1.2:
+
+    * bugfixed and improved KoreK's code
+    * renamed airunwep to 802ether 
+
+
+Version 1.2 released on 2004-08-17. Changes from version 1.1:
+
+    * implemented KoreK's advanced WEP attacks
+    * completely rewrote the SMP engine 
+
+
+Version 1.1 released on 2004-08-11. Changes from version 1.0:
+
+    * implemented WEP arp-requests replay attack
+    * improved the fudge calculation algorithm
+    * added multi-processor support 
+
+
+Version 1.0 released on 2004-07-29 

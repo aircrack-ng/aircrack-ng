@@ -1,0 +1,83 @@
+.TH packetforge-ng 1 "September 2006" "Version 0.6.2"
+
+.SH NAME
+.B packetforge-ng
+forges packets: ARP, UDP, ICMP or custom.
+.SH SYNOPSIS
+.B packetforge-ng
+<mode> <options>
+.SH DESCRIPTION
+.BI packetforge-ng
+is a tool designed to forge ARP-request, UDP, ICMP or custom packets.
+.SH OPTIONS
+.PP
+.TP
+.I -p <fctrl>
+Set frame control word (hex)
+.TP
+.I -a <bssid>
+Set Access Point MAC addres
+.TP
+.I -c <dmac>
+Set Destination MAC address
+.TP
+.I -h <smac>
+Set Source MAC address
+.TP
+.I -j
+set FromDS bit
+.TP
+.I -o
+clear ToDS bit
+.TP
+.I -e
+disable WEP encryption
+.TP
+.I -k <ip:[port]>
+Set source IP (and port)
+.TP
+.I -l <ip:[port]>
+Set destination IP (and port)
+.TP
+.I -w <file
+Write packet to this pcap file
+.TP
+.I -r <file>
+Read packet from this raw file
+.TP
+.I -y <file>
+Read PRGA from this file
+.TP
+.I --arp
+Forge an ARP packet
+.TP
+.I --udp
+Forge an UDP packet
+.TP
+.I --icmp
+Forge an ICMP packet
+.TP
+.I --custom
+Build a custom packet
+.SH EXAMPLE
+.B packetforge-ng
+-y test.xor -a 00:09:5b:12:40:cc -h 00:10:2a:cb:30:14 -k 192.168.1.100 -l 192.168.1.1 -w arp-request.cap
+.SH AUTHOR
+This manual page was written by Thomas d'Otreppe.
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B ivstools(1)
+.br
+.B airmon-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B kstats(1)

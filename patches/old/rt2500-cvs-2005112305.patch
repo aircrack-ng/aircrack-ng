@@ -1,0 +1,54 @@
+diff -ur ../rt2500-cvs-2005112305/Module/rtmp_data.c ./Module/rtmp_data.c
+--- ../rt2500-cvs-2005112305/Module/rtmp_data.c	2005-11-09 04:33:20.000000000 +0100
++++ ./Module/rtmp_data.c	2005-11-23 14:39:33.000000000 +0100
+@@ -1137,6 +1137,9 @@
+  	
+  	            if ((skb = __dev_alloc_skb(2048, GFP_DMA|GFP_ATOMIC)) != NULL)
+  	            {
++			if (pAdapter->PortCfg.MallowRFMONTx == TRUE)
++				goto rfmontx_80211_receive;
++
+ 			// setup the wlan-ng prismheader
+ 
+ 			if (skb_headroom(skb) < sizeof(wlan_ng_prism2_header))
+@@ -1188,6 +1191,8 @@
+ 
+ 			// end prismheader setup
+ 
++		    rfmontx_80211_receive:
++
+  	                skb->dev = pAdapter->net_dev;
+  	                memcpy(skb_put(skb, pRxD->DataByteCnt), pData, pRxD->DataByteCnt);
+  	                skb->mac.raw = skb->data;
+diff -ur ../rt2500-cvs-2005112305/Module/rtmp_info.c ./Module/rtmp_info.c
+--- ../rt2500-cvs-2005112305/Module/rtmp_info.c	2005-11-19 16:48:46.000000000 +0100
++++ ./Module/rtmp_info.c	2005-11-23 15:22:15.000000000 +0100
+@@ -1973,7 +1973,11 @@
+             {
+                 if (pAdapter->PortCfg.BssType == BSS_MONITOR)
+                 {
+-                    pAdapter->net_dev->type = 802; // ARPHRD_IEEE80211_PRISM
++                    if (pAdapter->PortCfg.MallowRFMONTx == TRUE)
++                        pAdapter->net_dev->type = 801; // ARPHRD_IEEE80211
++                    else
++                        pAdapter->net_dev->type = 802; // ARPHRD_IEEE80211_PRISM
++
+                     RTMP_IO_WRITE32(pAdapter, RXCSR0, 0x46);
+                 }
+ 		else if (pAdapter->bAcceptPromiscuous == TRUE)
+@@ -3828,9 +3832,15 @@
+ 	value = *pvalue;
+ 	
+         if (value == 1)
++        {
+            pAdapter->PortCfg.MallowRFMONTx = TRUE;
++           pAdapter->net_dev->type = 801; // ARPHRD_IEEE80211
++        }
+         else if (!value)
++        {
+            pAdapter->PortCfg.MallowRFMONTx = FALSE;
++           pAdapter->net_dev->type = 802; // ARPHRD_IEEE80211_PRISM
++        }
+         else return -EINVAL;
+     }
+ 

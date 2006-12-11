@@ -1,0 +1,127 @@
+.TH AIREPLAY-NG 1 "September 2006" "Version 0.6.2"
+
+.SH NAME
+.B aireplay-ng
+injects ARP-request packets into a wireless network to generate traffic.
+.SH SYNOPSIS
+.B aireplay-ng
+[options] <replay interface>
+.SH DESCRIPTION
+.B aireplay-ng
+injects specially generated ARP-request packets into an existing wireless network in order to generate traffic.
+By sending these ARP-request packets again and again, the target host will respond with encrypted replies, thus
+providing new and possibly weak IVs.
+.br
+.PP
+.B aireplay-ng
+supports single-NIC injection/monitor.
+.br
+This feature needs driver patching.
+.br
+.SH OPTIONS
+.PP
+.TP
+.B Filter options:
+.TP
+.I -b <bssid>
+MAC address of access point.
+.TP
+.I -d <dmac>
+MAC address of destination.
+.TP
+.I -s <smac>
+MAC address of source.
+.TP
+.I -m <len>
+Minimum packet length.
+.TP
+.I -n <len>
+Maximum packet length.
+.TP
+.I -u <type>
+Frame control, type field.
+.TP
+.I -v <subt>
+Frame control, subtype field.
+.TP
+.I -t <tods>
+Frame control, "To" DS bit.
+.TP
+.I -f <fromds>
+Frame control, "From" DS bit.
+.TP
+.I -w <iswep>
+Frame control, WEP bit.
+.PP
+.TP
+.B Replay options:
+.TP
+.I -x <nbpps>
+Number of packets per second.
+.TP
+.I -p <fctrl>
+Set frame control word (hex).
+.TP
+.I -a <bssid>
+Set Access Point MAC address.
+.TP
+.I -c <dmac>
+Set destination MAC address.
+.TP
+.I -h <smac>
+Set source MAC address.
+.TP
+.I -e <essid>
+Set target SSID for Fake Authentication attack (see below).
+.TP
+.I -j
+ARP Replay attack : inject FromDS pakets (see below).
+.TP
+.I -g <rbsize>
+Set ring buffer size (rbsize must be higher or equal to 1 ).
+.PP
+.TP
+.B Source options:
+.TP
+.I -i <iface>
+Capture packets from this interface.
+.TP
+.I -r <file>
+Extract packets from this pcap file.
+.PP
+.TP
+.B Attack modes:          
+.TP
+.I -0, --deauth=<count>
+Deauthenticate stations.
+.TP
+.I -1, --fakeauth=<delay>
+Fake authentication with AP.
+.TP
+.I -2, --interactive
+Interactive frame selection.
+.TP
+.I -3, --arpreplay
+Standard ARP-request replay.
+.TP
+.I -4, --chopchop
+Decrypt/chopchop WEP packet.
+.SH AUTHOR
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airmon-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)

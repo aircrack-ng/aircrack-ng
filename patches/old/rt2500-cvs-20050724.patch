@@ -1,0 +1,63 @@
+diff -ur ../rt2500-cvs-20050724/Module/rtmp_data.c ./Module/rtmp_data.c
+--- ../rt2500-cvs-20050724/Module/rtmp_data.c	2005-07-15 17:40:02.000000000 +0200
++++ ./Module/rtmp_data.c	2005-07-26 19:04:28.000000000 +0200
+@@ -2741,6 +2741,23 @@
+         return (NDIS_STATUS_FAILURE);
+     }
+ 
++    if (pAdapter->PortCfg.BssType == BSS_MONITOR)
++    {
++	pAdapter->TxRing[pAdapter->CurEncryptIndex].FrameType = BTYPE_DATA;
++	pDest = (PUCHAR) pAdapter->TxRing[pAdapter->CurEncryptIndex].va_data_addr;              
++	pTxD  = (PTXD_STRUC) pAdapter->TxRing[pAdapter->CurEncryptIndex].va_addr;
++	MlmeSetPsmBit(pAdapter, PWR_ACTIVE);
++	memcpy(pDest,skb->data,skb->len);
++	RTMPWriteTxDescriptor(pTxD, TRUE, CIPHER_NONE, FALSE, FALSE, FALSE, SHORT_RETRY, IFS_BACKOFF, pAdapter->PortCfg.TxRate, 4, skb->len, pAdapter->PortCfg.TxPreambleInUsed, AccessCategory);
++
++	pAdapter->CurEncryptIndex++;
++	if (pAdapter->CurEncryptIndex >= TX_RING_SIZE)
++		pAdapter->CurEncryptIndex = 0;
++	pAdapter->RalinkCounters.EncryptCount++;
++
++	goto skip_all_this_shit;
++    }
++
+ 	if (EnableTxBurst == 1)
+ 		FrameGap = IFS_SIFS;
+ 	else
+@@ -2779,6 +2796,7 @@
+ 	
+ 	//
+ 	// Start making 802.11 frame header
++	// this whole code is just a pathetic mess
+ 	//
+ 	memset(&Header_802_11, 0, sizeof(HEADER_802_11)); // Initialize 802.11 header for each fragment
+ 	if (INFRA_ON(pAdapter))
+@@ -3411,6 +3429,7 @@
+ 		
+ 	}	while (NumberRequired > 0);
+ 
++skip_all_this_shit:
+ 	
+ 	// Kick Encrypt Control Register at the end of all ring buffer preparation
+ 	RTMP_IO_WRITE32(pAdapter, SECCSR1, 0x1);
+diff -ur ../rt2500-cvs-20050724/Module/rtmp_main.c ./Module/rtmp_main.c
+--- ../rt2500-cvs-20050724/Module/rtmp_main.c	2005-07-15 17:40:02.000000000 +0200
++++ ./Module/rtmp_main.c	2005-07-26 19:03:46.000000000 +0200
+@@ -354,6 +354,7 @@
+ 
+     DBGPRINT(RT_DEBUG_INFO, "<==== RTMPSendPackets\n");
+ 
++/*
+     if (pAdapter->PortCfg.BssType == BSS_MONITOR)
+     {
+        dev_kfree_skb_irq(skb); 
+@@ -368,7 +369,7 @@
+         // And Mibss for Ad-hoc mode setup
+         dev_kfree_skb_irq(skb);
+     }
+-    else
++    else*/
+     {
+         // This function has to manage NdisSendComplete return call within its routine
+         // NdisSendComplete will acknowledge upper layer in two steps.
