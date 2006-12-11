@@ -19,7 +19,7 @@ int check_crc_buf( unsigned char *buf, int len )
     unsigned long crc;
 
     crc = calc_crc(buf, len);
-
+    buf+=len;
     return( ( ( crc       ) & 0xFF ) == buf[0] &&
             ( ( crc >>  8 ) & 0xFF ) == buf[1] &&
             ( ( crc >> 16 ) & 0xFF ) == buf[2] &&
