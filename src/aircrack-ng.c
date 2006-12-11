@@ -782,6 +782,8 @@ void read_thread( void *arg )
 		/* check minimum size */
 
 		z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+		if ( ( h80211[0] & 0x80 ) == 0x80 )
+			z+=2; /* 802.11e QoS */
 
 		if( z + 16 > (int) pkh.caplen )
 			goto unlock_mx_apl;
