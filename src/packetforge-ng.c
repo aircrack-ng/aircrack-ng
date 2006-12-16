@@ -76,7 +76,7 @@ char usage[] =
 "      -e             : disables WEP encryption\n"
 "      -k <ip[:port]> : set Source      IP [Port]\n"
 "      -l <ip[:port]> : set Destination IP [Port]\n"
-"-t ttl         : set Time To Live\n"
+"      -t ttl         : set Time To Live\n"
 "      -w <file>      : write packet to this pcap file\n"
 "\n"
 "  Source options:\n"
