@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <time.h>
 #include <getopt.h>
+#include <wait.h>
 
 #ifdef linux
     int linux_acpi;
@@ -47,6 +48,7 @@
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.c"
+#include "crctable.h"
 
 /* some constants */
 
@@ -59,10 +61,36 @@
 
 #define REFRESH_RATE 100000  /* delay in us between updates */
 
+#define NULL_MAC       "\x00\x00\x00\x00\x00\x00"
 #define BROADCAST_ADDR "\xFF\xFF\xFF\xFF\xFF\xFF"
 
 #define NB_PWR  5       /* size of signal power ring buffer */
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
+
+#define MAX_CARDS 8	/* maximum number of cards to capture from */
+
+#define NULL_MAC "\x00\x00\x00\x00\x00\x00"
+
+#define	STD_OPN		0x0001
+#define	STD_WEP		0x0002
+#define	STD_WPA		0x0004
+#define	STD_WPA2	0x0008
+
+#define	ENC_WEP		0x0010
+#define	ENC_TKIP	0x0020
+#define	ENC_WRAP	0x0040
+#define	ENC_CCMP	0x0080
+#define ENC_WEP40	0x1000
+#define	ENC_WEP104	0x0100
+
+#define	AUTH_OPN	0x0200
+#define	AUTH_PSK	0x0400
+#define	AUTH_MGT	0x0800
+
+#define	QLT_TIME	5
+#define	QLT_COUNT	25
+
+#define	MAX(a,b)	((a)>(b)?(a):(b))
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int betavers);
 extern int is_ndiswrapper(const char * iface, const char * path);
@@ -108,21 +136,36 @@ struct AP_info
     int power_index;          /* index in power ring buf. */
     int power_lvl[NB_PWR];    /* signal power ring buffer */
     int preamble;             /* 0 = long, 1 = short      */
-    int encryption;           /* 0 = none, > 1 = WEP/WPA  */
-	int beacon_logged;        /* We need 1 beacon per AP  */
+    int security;             /* ENC_*, AUTH_*, STD_*     */
+    int beacon_logged;        /* We need 1 beacon per AP  */
+    int dict_started;         /* 1 if dict attack started */
+    int ssid_length;          /* length of ssid           */
 
     unsigned long nb_bcn;     /* total number of beacons  */
     unsigned long nb_pkt;     /* total number of packets  */
     unsigned long nb_data;    /* number of  data packets  */
+    unsigned long nb_data_old;/* number of data packets/sec*/
+    int nb_dataps;  /* number of data packets/sec*/
+    struct timeval tv;        /* time for data per second */
 
     unsigned char bssid[6];   /* the access point's MAC   */
-    unsigned char essid[36];  /* ascii network identifier */
+    unsigned char essid[256]; /* ascii network identifier */
 
     unsigned char lanip[4];   /* last detected ip address */
                               /* if non-encrypted network */
 
     unsigned char **uiv_root; /* unique iv root structure */
                               /* if wep-encrypted network */
+
+    int    rx_quality;        /* percent of captured beacons */
+    int    fcapt;             /* amount of captured frames   */
+    int    fmiss;             /* amount of missed frames     */
+    unsigned int    last_seq; /* last sequence number        */
+    struct timeval ftimef;    /* time of first frame         */
+    struct timeval ftimel;    /* time of last frame          */
+    struct timeval ftimer;    /* time of restart             */
+
+    char *key;		      /* if wep-key found by dict */
 };
 
 /* linked list of detected clients */
@@ -136,8 +179,12 @@ struct ST_info
     unsigned long nb_pkt;    /* total number of packets   */
     unsigned char stmac[6];  /* the client's MAC address  */
     int probe_index;         /* probed ESSIDs ring index  */
-    char probes[NB_PRB][36]; /* probed ESSIDs ring buffer */
+    char probes[NB_PRB][256];/* probed ESSIDs ring buffer */
+    int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
     int power;               /* last signal power         */
+    struct timeval ftimer;   /* time of restart           */
+    int missed;              /* number of missed packets  */
+    unsigned int lastseq;    /* last seen sequnce number  */
 };
 
 /* bunch of global stuff */
@@ -148,31 +195,48 @@ struct globals
     struct ST_info *st_1st, *st_end;
 
     unsigned char prev_bssid[6];
+    unsigned char f_bssid[6];
+    unsigned char f_netmask[6];
+    char *dump_prefix;
+    char *keyout;
+    char *f_cap_name;
 
     int f_index;            /* outfiles index       */
     FILE *f_txt;            /* output csv file      */
     FILE *f_gps;            /* output gps file      */
     FILE *f_cap;            /* output cap file      */
     FILE *f_ivs;            /* output ivs file      */
+    FILE *f_xor;            /* output prga file     */
 
     char * batt;            /* Battery string       */
-    int channel;            /* current channel #    */
+    int channel[MAX_CARDS];           /* current channel #    */
     int ch_pipe[2];         /* current channel pipe */
+    int cd_pipe[2];	    /* current card pipe    */
     int gc_pipe[2];         /* gps coordinates pipe */
     float gps_loc[5];       /* gps coordinates      */
     int save_gps;           /* keep gps file flag   */
     int usegpsd;            /* do we use GPSd?      */
     int * channels;
+    int singlechan;         /* channel hopping set 1*/
+    int chswitch;	    /* switching method */
 
-    int is_wlanng;          /* set if wlan-ng       */
-    int is_orinoco;         /* set if orinoco       */
-    int is_madwifing;       /* set if madwifi-ng    */
+    int is_wlanng[MAX_CARDS];          /* set if wlan-ng       */
+    int is_orinoco[MAX_CARDS];         /* set if orinoco       */
+    int is_madwifing[MAX_CARDS];       /* set if madwifi-ng    */
     int do_exit;            /* interrupt flag       */
     struct winsize ws;      /* console window size  */
 
     char * elapsed_time;	/* capture time			*/
 
     int one_beacon;         /* Record only 1 beacon?*/
+
+    unsigned char sharedkey[3][512]; /* array for 3 packets with a size of \
+                               up to 512Byte */
+    time_t sk_start;
+    char *prefix;
+    int sk_len;
+
+    int * own_channels;	    /* custom channel list  */
 
     int record_data;		/* do we record data?   */
 
@@ -182,6 +246,136 @@ struct globals
 }
 G;
 
+int check_shared_key(unsigned char *h80211, int caplen)
+{
+    int m_bmac = 16, m_smac = 10, m_dmac = 4, n, textlen;
+    char ofn[1024];
+    char text[256];
+    char prga[512];
+    unsigned int long crc;
+
+    if( time(NULL) - G.sk_start > 5)
+    {
+        /* timeout(5sec) - remove all packets, restart timer */
+        memset(G.sharedkey, '\x00', 512*3);
+        G.sk_start = time(NULL);
+    }
+
+    if( (h80211[1] & 0x40) != 0x40 )
+    {
+        /* not encrypted */
+        if( ( h80211[24] + (h80211[25] << 8) ) == 1 )
+        {
+            /* Shared-Key Authentication */
+            if( ( h80211[26] + (h80211[27] << 8) ) == 2 )
+            {
+                /* sequence == 2 */
+                memcpy(G.sharedkey[0], h80211, caplen);
+                G.sk_len = caplen-24;
+            }
+            if( ( h80211[26] + (h80211[27] << 8) ) == 4 )
+            {
+                /* sequence == 4 */
+                memcpy(G.sharedkey[2], h80211, caplen);
+            }
+        }
+        else return 1;
+    }
+    else
+    {
+        /* encrypted */
+        memcpy(G.sharedkey[1], h80211, caplen);
+    }
+
+    /* check if the 3 packets form a proper authentication */
+
+    if( ( memcmp(G.sharedkey[0]+m_bmac, NULL_MAC, 6) == 0 ) ||
+        ( memcmp(G.sharedkey[1]+m_bmac, NULL_MAC, 6) == 0 ) ||
+        ( memcmp(G.sharedkey[2]+m_bmac, NULL_MAC, 6) == 0 ) ) /* some bssids == zero */
+    {
+        return 1;
+    }
+
+    if( ( memcmp(G.sharedkey[0]+m_bmac, G.sharedkey[1]+m_bmac, 6) != 0 ) ||
+        ( memcmp(G.sharedkey[0]+m_bmac, G.sharedkey[2]+m_bmac, 6) != 0 ) ) /* all bssids aren't equal */
+    {
+        return 1;
+    }
+
+    if( ( memcmp(G.sharedkey[0]+m_smac, G.sharedkey[2]+m_smac, 6) != 0 ) ||
+        ( memcmp(G.sharedkey[0]+m_smac, G.sharedkey[1]+m_dmac, 6) != 0 ) ) /* SA in 2&4 1= DA in 3 */
+    {
+        return 1;
+    }
+
+    if( (memcmp(G.sharedkey[0]+m_dmac, G.sharedkey[2]+m_dmac, 6) != 0 ) ||
+        (memcmp(G.sharedkey[0]+m_dmac, G.sharedkey[1]+m_smac, 6) != 0 ) ) /* DA in 2&4 != SA in 3 */
+    {
+        return 1;
+    }
+
+    textlen = G.sk_len;
+
+    memcpy(text, G.sharedkey[0]+24, textlen);
+
+
+    crc = 0xFFFFFFFF;
+
+    for( n = 0; n < textlen; n++ )
+        crc = crc_tbl[(crc ^ text[n]) & 0xFF] ^ (crc >> 8);
+
+    crc = ~crc;
+
+    /* append crc32 over body */
+    text[textlen]     = (crc      ) & 0xFF;
+    text[textlen+1]   = (crc >>  8) & 0xFF;
+    text[textlen+2]   = (crc >> 16) & 0xFF;
+    text[textlen+3]   = (crc >> 24) & 0xFF;
+
+    /* increment sequence number from 2 to 3 */
+    text[2] = text[2]+1;
+
+    /* cleartext XOR cypher */
+    for(n=0; n<(textlen+4); n++)
+    {
+        prga[4+n] = (text[n] ^ G.sharedkey[1][28+n]) & 0xFF;
+    }
+
+    /* write IV+index */
+    prga[0] = G.sharedkey[1][24] & 0xFF;
+    prga[1] = G.sharedkey[1][25] & 0xFF;
+    prga[2] = G.sharedkey[1][26] & 0xFF;
+    prga[3] = G.sharedkey[1][27] & 0xFF;
+
+    if( G.f_xor != NULL )
+    {
+        fclose(G.f_xor);
+        G.f_xor = NULL;
+    }
+
+    snprintf( ofn, sizeof( ofn ) - 1, "%s-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s", G.prefix, G.f_index,
+              *(G.sharedkey[0]+m_bmac), *(G.sharedkey[0]+m_bmac+1), *(G.sharedkey[0]+m_bmac+2),
+              *(G.sharedkey[0]+m_bmac+3), *(G.sharedkey[0]+m_bmac+4), *(G.sharedkey[0]+m_bmac+5), "xor" );
+
+    G.f_xor = fopen( ofn, "w");
+    if(G.f_xor == NULL)
+        return 1;
+
+    for(n=0; n<textlen+8; n++)
+        fputc((prga[n] & 0xFF), G.f_xor);
+
+    fflush(G.f_xor);
+
+    if( G.f_xor != NULL )
+    {
+        fclose(G.f_xor);
+        G.f_xor = NULL;
+    }
+
+    memset(G.sharedkey, '\x00', 512*3);
+    /* ok, keystream saved */
+    return 0;
+}
 
 char usage[] =
 
@@ -190,7 +384,7 @@ char usage[] =
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
-"  usage: airodump-ng <options> <interface>\n"
+"  usage: airodump-ng <options> <interface>[,<interface>,...]\n"
 "\n"
 "  Options:\n"
 "      --ivs               : Save only captured IVs\n"
@@ -198,13 +392,143 @@ char usage[] =
 "      --write    <prefix> : Dump file prefix\n"
 "      -w                  : same as --write \n"
 "      --beacons           : Record all beacons in dump file\n"
+"      --netmask <netmask> : Filter APs by mask\n"
+"      --bssid     <bssid> : Filter APs by BSSID\n"
 "\n"
 "  By default, airodump-ng hop on 2.4Ghz channels.\n"
 "  You can make it capture on other/specific channel(s) by using:\n"
-"      --channel <channel> : Capture on a specific channel\n"
+"      --channel <channels>: Capture on specific channels\n"
 "      --band <abg>        : Band on which airodump-ng should hop\n"
+"      --cswitch  <method> : Set channel switching method \n"
+"                    0     : FIFO (default) \n"
+"                    1     : Round Robin \n"
+"                    2     : Hop on last \n"
+"      -s                  : same as --chswitch \n"
 "\n";
 
+int mac2string(char *dest, unsigned char *mac)
+{
+    if(mac == NULL || dest == NULL) return( 1 );
+    snprintf(dest, 18, "%2X:%2X:%2X:%2X:%2X:%2X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    return(0);
+}
+
+int set_mac(char *dest, char *src)
+{
+    int i;
+    unsigned int dec;
+    char *byte;
+
+    if(dest == NULL || src == NULL) return 1;
+    if(strlen(src) != 17) return 1;
+
+    i=0;
+    byte = strsep(&src, ":");
+
+    while(byte != NULL && i<6)
+    {
+        if( sscanf(byte, "%x", &dec) == 0 )
+        {
+            memset(dest, '\x00', 6);
+            return 1;
+        }
+
+        dest[i] = dec;
+        byte = strsep(&src, ":");
+        i++;
+    }
+
+    return(0);
+}
+
+int is_filtered_netmask(char *bssid)
+{
+    char mac1[6];
+    char mac2[6];
+    int i;
+
+    for(i=0; i<6; i++)
+    {
+        mac1[i] = bssid[i]     & G.f_netmask[i];
+        mac2[i] = G.f_bssid[i] & G.f_netmask[i];
+    }
+
+    if( memcmp(mac1, mac2, 6) != 0 )
+    {
+        return( 1 );
+    }
+
+    return 0;
+}
+
+void update_rx_quality( )
+{
+    unsigned int time_diff, capt_time, miss_time;
+    int missed_frames;
+    struct AP_info *ap_cur = NULL;
+    struct ST_info *st_cur = NULL;
+    struct timeval cur_time;
+
+    ap_cur = G.ap_1st;
+    st_cur = G.st_1st;
+
+    gettimeofday( &cur_time, NULL );
+
+    /* accesspoints */
+    while( ap_cur != NULL )
+    {
+        time_diff = 1000000 * (cur_time.tv_sec  - ap_cur->ftimer.tv_sec )
+                            + (cur_time.tv_usec - ap_cur->ftimer.tv_usec);
+
+        if(ap_cur->fcapt >= QLT_COUNT || time_diff > (QLT_TIME * 1000000) )
+        {
+            if(ap_cur->fcapt > 1)
+            {
+                capt_time =   ( 1000000 * (ap_cur->ftimel.tv_sec  - ap_cur->ftimef.tv_sec )    //time between first and last captured frame
+                                        + (ap_cur->ftimel.tv_usec - ap_cur->ftimef.tv_usec) );
+
+                miss_time =   ( 1000000 * (ap_cur->ftimef.tv_sec  - ap_cur->ftimer.tv_sec )    //time between timer reset and first frame
+                                        + (ap_cur->ftimef.tv_usec - ap_cur->ftimer.tv_usec) )
+                            + ( 1000000 * (cur_time.tv_sec  - ap_cur->ftimel.tv_sec )          //time between last frame and this moment
+                                        + (cur_time.tv_usec - ap_cur->ftimel.tv_usec) );
+
+                //number of frames missed at the time where no frames were captured; extrapolated by assuming a constant framerate
+                if(capt_time > 0 && miss_time > 200000)
+                {
+                    missed_frames = ((float)((float)miss_time/(float)capt_time) * ((float)ap_cur->fcapt + (float)ap_cur->fmiss));
+                    ap_cur->fmiss += missed_frames;
+                }
+
+                ap_cur->rx_quality = ((float)((float)ap_cur->fcapt / ((float)ap_cur->fcapt + (float)ap_cur->fmiss)) * 100.0);
+            }
+            else ap_cur->rx_quality = 0;
+
+            if(ap_cur->rx_quality > 100) ap_cur->rx_quality = 100;
+            if(ap_cur->rx_quality < 0  ) ap_cur->rx_quality =   0;
+
+            ap_cur->fcapt = 0;
+            ap_cur->fmiss = 0;
+            gettimeofday( &(ap_cur->ftimer) ,NULL);
+        }
+        ap_cur = ap_cur->next;
+    }
+
+    /* stations */
+    while( st_cur != NULL )
+    {
+        time_diff = 1000000 * (cur_time.tv_sec  - st_cur->ftimer.tv_sec )
+                            + (cur_time.tv_usec - st_cur->ftimer.tv_usec);
+
+        if( time_diff > 10000000 )
+        {
+            st_cur->missed = 0;
+            gettimeofday( &(st_cur->ftimer), NULL );
+        }
+
+        st_cur = st_cur->next;
+    }
+
+}
 
 /* setup the output files */
 
@@ -249,6 +573,9 @@ int dump_initialize( char *prefix, int ivs_only )
     }
     while( i < 4 );
 
+    G.prefix = (char*) malloc(strlen(prefix)+2);
+    snprintf(G.prefix, strlen(prefix)+1, "%s", prefix);
+
     /* create the output CSV & GPS files */
 
     snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.txt",
@@ -289,6 +616,9 @@ int dump_initialize( char *prefix, int ivs_only )
             return( 1 );
         }
 
+        G.f_cap_name = (char*) malloc(128);
+        snprintf(G.f_cap_name, 127, "%s",ofn);
+
         pfh.magic           = TCPDUMP_MAGIC;
         pfh.version_major   = PCAP_VERSION_MAJOR;
         pfh.version_minor   = PCAP_VERSION_MINOR;
@@ -325,9 +655,39 @@ int dump_initialize( char *prefix, int ivs_only )
     return( 0 );
 }
 
-int dump_add_packet( unsigned char *h80211, int caplen, int power )
+int update_dataps()
 {
-    int i, n, z;
+    struct timeval tv;
+    struct AP_info *ap_cur;
+    int sec, usec, diff, ps;
+    float pause;
+
+    gettimeofday(&tv, NULL);
+
+    ap_cur = G.ap_end;
+
+    while( ap_cur != NULL )
+    {
+        sec = (tv.tv_sec - ap_cur->tv.tv_sec);
+        usec = (tv.tv_usec - ap_cur->tv.tv_usec);
+        pause = (((float)(sec*1000000.0f + usec))/(1000000.0f));
+        if( pause > 2.0f )
+        {
+            diff = ap_cur->nb_data - ap_cur->nb_data_old;
+            ps = (int)(((float)diff)/pause);
+            ap_cur->nb_dataps = ps;
+            ap_cur->nb_data_old = ap_cur->nb_data;
+            gettimeofday(&(ap_cur->tv), NULL);
+        }
+        ap_cur = ap_cur->prev;
+    }
+    return(0);
+}
+
+int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
+{
+    int i, n, z, seq, msd;
+    int type, length, numuni=0, numauth=0;
     struct pcap_pkthdr pkh;
     struct timeval tv;
     unsigned char *p, c;
@@ -355,6 +715,9 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power )
 		if ( memcmp(h80211 + 24, llcnull, 4) == 0)
 			return ( 0 );
 
+    /* grab the sequence number */
+    seq = ((h80211[22]>>4)+(h80211[23]<<4));
+
     /* locate the access point's MAC address */
 
     switch( h80211[1] & 3 )
@@ -363,6 +726,18 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power )
         case  1: memcpy( bssid, h80211 +  4, 6 ); break;
         case  2: memcpy( bssid, h80211 + 10, 6 ); break;
         default: memcpy( bssid, h80211 +  4, 6 ); break;
+    }
+
+    if( memcmp(G.f_bssid, NULL_MAC, 6) != 0 )
+    {
+        if( memcmp(G.f_netmask, NULL_MAC, 6) != 0 )
+        {
+            if(is_filtered_netmask(bssid)) return(1);
+        }
+        else
+        {
+            if( memcmp(G.f_bssid, bssid, 6) != 0 ) return(1);
+        }
     }
 
     /* update our chained list of access points */
@@ -412,11 +787,31 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power )
 
         ap_cur->channel    = -1;
         ap_cur->max_speed  = -1;
-        ap_cur->encryption = -1;
+        ap_cur->security   = 0;
 
         ap_cur->uiv_root = uniqueiv_init();
 
+        ap_cur->nb_dataps = 0;
+        ap_cur->nb_data_old = 0;
+        gettimeofday(&(ap_cur->tv), NULL);
+
+        ap_cur->dict_started = 0;
+
+        ap_cur->key = NULL;
+
         G.ap_end = ap_cur;
+
+        ap_cur->nb_bcn     = 0;
+
+        ap_cur->rx_quality = 0;
+        ap_cur->fcapt      = 0;
+        ap_cur->fmiss      = 0;
+        ap_cur->last_seq   = 0;
+        gettimeofday( &(ap_cur->ftimef), NULL);
+        gettimeofday( &(ap_cur->ftimel), NULL);
+        gettimeofday( &(ap_cur->ftimer), NULL);
+
+        ap_cur->ssid_length = 0;
     }
 
     /* update the last time seen */
@@ -449,6 +844,18 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power )
             ap_cur->avg_power /= n;
         else
             ap_cur->avg_power = -1;
+
+        /* every packet in here comes from the AP */
+
+//        printf("seqnum: %i\n", seq);
+
+        if(ap_cur->fcapt == 0 && ap_cur->fmiss == 0) gettimeofday( &(ap_cur->ftimef), NULL);
+        if(ap_cur->last_seq != 0) ap_cur->fmiss += (seq - ap_cur->last_seq - 1);
+        ap_cur->last_seq = seq;
+        ap_cur->fcapt++;
+        gettimeofday( &(ap_cur->ftimel), NULL);
+
+        if(ap_cur->fcapt >= QLT_COUNT) update_rx_quality();
     }
 
     if( h80211[0] == 0x80 )
@@ -530,10 +937,16 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power )
         st_cur->power = -1;
 
         st_cur->probe_index = -1;
+        st_cur->missed  = 0;
+        st_cur->lastseq = 0;
+        gettimeofday( &(st_cur->ftimer), NULL);
 
         for( i = 0; i < NB_PRB; i++ )
+        {
             memset( st_cur->probes[i], 0, sizeof(
                     st_cur->probes[i] ) );
+            st_cur->ssid_length[i] = 0;
+        }
 
         G.st_end = st_cur;
     }
@@ -555,6 +968,14 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power )
         ( ( h80211[1] & 3 ) == 1 ) )
     {
         st_cur->power = power;
+
+        if(st_cur->lastseq != 0)
+        {
+            msd = seq - st_cur->lastseq - 1;
+            if(msd > 0 && msd < 1000)
+                st_cur->missed += msd;
+        }
+        st_cur->lastseq = seq;
     }
 
     st_cur->nb_pkt++;
@@ -575,7 +996,8 @@ skip_station:
             if( p[0] == 0x00 && p[1] > 0 && p[2] != '\0' &&
                 ( p[1] > 1 || p[2] != ' ' ) )
             {
-                n = ( p[1] > 32 ) ? 32 : p[1];
+//                n = ( p[1] > 32 ) ? 32 : p[1];
+                n = p[1];
 
                 for( i = 0; i < n; i++ )
                     if( p[2 + i] > 0 && p[2 + i] < ' ' )
@@ -589,13 +1011,14 @@ skip_station:
                         goto skip_probe;
 
                 st_cur->probe_index = ( st_cur->probe_index + 1 ) % NB_PRB;
-                memset( st_cur->probes[st_cur->probe_index], 0, 36 );
-                memcpy( st_cur->probes[st_cur->probe_index], p + 2, n );
+                memset( st_cur->probes[st_cur->probe_index], 0, 256 );
+                memcpy( st_cur->probes[st_cur->probe_index], p + 2, n ); //twice?!
+                st_cur->ssid_length[st_cur->probe_index] = n;
 
                 for( i = 0; i < n; i++ )
                 {
                     c = p[2 + i];
-                    if( c == 0 || ( c > 126 && c < 160 ) ) c = '.';
+                    if( c == 0 || ( c > 126 && c < 160 ) ) c = '.';  //could also check ||(c>0 && c<32)
                     st_cur->probes[st_cur->probe_index][i] = c;
                 }
             }
@@ -610,8 +1033,11 @@ skip_probe:
 
     if( h80211[0] == 0x80 || h80211[0] == 0x50 )
     {
-        if( ap_cur->encryption < 0 )
-            ap_cur->encryption = ( h80211[34] & 0x10 ) >> 4;
+        if( !(ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) )
+        {
+            if( ( h80211[34] & 0x10 ) >> 4 ) ap_cur->security |= STD_WEP|ENC_WEP;
+            else ap_cur->security |= STD_OPN;
+        }
 
         ap_cur->preamble = ( h80211[34] & 0x20 ) >> 5;
 
@@ -622,14 +1048,17 @@ skip_probe:
             if( p + 2 + p[1] > h80211 + caplen )
                 break;
 
+            if( p[0] == 0x00 ) ap_cur->ssid_length = p[1];
+
             if( p[0] == 0x00 && p[1] > 0 && p[2] != '\0' &&
                 ( p[1] > 1 || p[2] != ' ' ) )
             {
                 /* found a non-cloaked ESSID */
 
-                n = ( p[1] > 32 ) ? 32 : p[1];
+//                n = ( p[1] > 32 ) ? 32 : p[1];
+                n = p[1];
 
-                memset( ap_cur->essid, 0, 36 );
+                memset( ap_cur->essid, 0, 256 );
                 memcpy( ap_cur->essid, p + 2, n );
 
                 for( i = 0; i < n; i++ )
@@ -647,6 +1076,104 @@ skip_probe:
                 ap_cur->channel = p[2];
 
             p += 2 + p[1];
+        }
+    }
+
+    /* packet parsing: Beacon */
+
+    if( h80211[0] == 0x80 )
+    {
+        p=h80211+36;         //ignore hdr + fixed params
+
+        while( p < h80211 + caplen )
+        {
+            type = p[0];
+            length = p[1];
+
+            if( (type == 0xDD && length >= 22 && (memcmp(p+2, "\x00\x50\xF2\x01\x01\x00", 6) == 0)) || (type == 0x30) )
+            {
+                ap_cur->security &= ~(STD_WEP|ENC_WEP);
+
+                if(type == 0xDD)
+                {
+                    //WPA defined in vendor specific tag -> WPA1 support
+                    ap_cur->security |= STD_WPA;
+
+                    numuni  = p[12] + (p[13]<<8);
+                    numauth = p[14 + 4*numuni] + (p[15 + 4*numuni]<<8);
+
+                    p = p+14;        //point at first unicast cipher
+                }
+
+                if(type == 0x30)
+                {
+                    ap_cur->security |= STD_WPA2;
+
+                    numuni  = p[8] + (p[9]<<8);
+                    numauth = p[10 + 4*numuni] + (p[11 + 4*numuni]<<8);
+
+                    p += 10;
+                }
+
+                for(i=0; i<numuni; i++)
+                {
+                    switch(p[i*4+3])
+                    {
+                    case 0x01:
+                        ap_cur->security |= ENC_WEP;
+                        break;
+                    case 0x02:
+                        ap_cur->security |= ENC_TKIP;
+                        break;
+                    case 0x03:
+                        ap_cur->security |= ENC_WRAP;
+                        break;
+                    case 0x04:
+                        ap_cur->security |= ENC_CCMP;
+                        break;
+                    case 0x05:
+                        ap_cur->security |= ENC_WEP104;
+                        break;
+                    default:
+                        break;
+                    }
+                }
+
+                p += 2+4*numuni;
+
+                for(i=0; i<numauth; i++)
+                {
+                    switch(p[i*4+3])
+                    {
+                    case 0x01:
+                        ap_cur->security |= AUTH_MGT;
+                        break;
+                    case 0x02:
+                        ap_cur->security |= AUTH_PSK;
+                        break;
+                    default:
+                        break;
+                    }
+                }
+
+                p += 2+4*numauth;
+
+                if( type == 0x30 ) p += 2;
+
+            }
+            else p += length+2;
+        }
+    }
+
+    /* packet parsing: Authentication Request */
+
+    if( h80211[0] == 0xB0 )
+    {
+        if( ap_cur->security & STD_WEP )
+        {
+            ap_cur->security &= ~(AUTH_OPN | AUTH_PSK | AUTH_MGT);
+            if(h80211[24] == 0x00) ap_cur->security |= AUTH_OPN;
+            if(h80211[24] == 0x01) ap_cur->security |= AUTH_PSK;
         }
     }
 
@@ -688,7 +1215,7 @@ skip_probe:
         /* update the channel if we didn't get any beacon */
 
         if( ap_cur->channel == -1 )
-            ap_cur->channel = G.channel;
+            ap_cur->channel = G.channel[cardnum];
 
         /* check the SNAP header to see if data is encrypted */
 
@@ -699,8 +1226,8 @@ skip_probe:
 
         if( h80211[z] == h80211[z + 1] && h80211[z + 2] == 0x03 )
         {
-            if( ap_cur->encryption < 0 )
-                ap_cur->encryption = 0;
+//            if( ap_cur->encryption < 0 )
+//                ap_cur->encryption = 0;
 
             /* if ethertype == IPv4, find the LAN address */
 
@@ -711,13 +1238,40 @@ skip_probe:
             if( h80211[z + 6] == 0x08 && h80211[z + 7] == 0x06 )
                 memcpy( ap_cur->lanip, &h80211[z + 22], 4 );
         }
-        else
-            ap_cur->encryption = 2 + ( ( h80211[z + 3] & 0x20 ) >> 5 );
+//        else
+//            ap_cur->encryption = 2 + ( ( h80211[z + 3] & 0x20 ) >> 5 );
+
+        if(ap_cur->security == 0)
+        {
+            if( (h80211[1] & 0x40) != 0x40 )
+            {
+                ap_cur->security |= STD_OPN;
+            }
+            else
+            {
+                if((h80211[z+3] & 0x20) == 0x20)
+                {
+                    ap_cur->security |= STD_WPA;
+                }
+                else
+                {
+                    ap_cur->security |= STD_WEP;
+                    if(h80211[z+3] >= 0x01 && h80211[z+3] <= 0x03)
+                    {
+                        ap_cur->security |= ENC_WEP40;
+                    }
+                    else
+                    {
+                        ap_cur->security |= ENC_WEP;
+                    }
+                }
+            }
+        }
 
         if( z + 10 > caplen )
             goto write_packet;
 
-        if( ap_cur->encryption == 2 )
+        if( ap_cur->security & STD_WEP )
         {
             /* WEP: check if we've already seen this IV */
 
@@ -758,7 +1312,9 @@ skip_probe:
             }
         }
         else
+        {
             ap_cur->nb_data++;
+        }
     }
 
 write_packet:
@@ -767,6 +1323,15 @@ write_packet:
         if( !ap_cur->beacon_logged )
             ap_cur->beacon_logged = 1;
         else return ( 0 );
+    }
+
+    if(G.record_data)
+    {
+        if( ( (h80211[0] & 0x0C) == 0x00 ) && ( (h80211[0] & 0xF0) == 0xB0 ) )
+        {
+            /* authentication packet */
+            check_shared_key(h80211, caplen);
+        }
     }
 
     if( G.f_cap != NULL )
@@ -1085,7 +1650,6 @@ int getBatteryState()
 #endif
 }
 
-
 char * getStringTimeFromSec(double seconds)
 {
 	int hour[3];
@@ -1129,7 +1693,6 @@ char * getStringTimeFromSec(double seconds)
 
 }
 
-
 char * getBatteryString(void)
 {
     int batt_time;
@@ -1155,16 +1718,20 @@ char * getBatteryString(void)
     return ret;
 }
 
-
-void dump_print( int ws_row, int ws_col )
+void dump_print( int ws_row, int ws_col, int if_num )
 {
     time_t tt;
     struct tm *lt;
     int nlines, i, n;
     char strbuf[512];
+    char buffer[512];
     char ssid_list[512];
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
+    int columns_ap = 83;
+    int columns_sta = 65;
+
+    if(!G.singlechan) columns_ap -= 4; //no RXQ in scan mode
 
     nlines = 2;
 
@@ -1183,22 +1750,34 @@ void dump_print( int ws_row, int ws_col )
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
+    snprintf(strbuf, sizeof(strbuf)-1, " CH %2d", G.channel[0]);
+    for(i=1; i<if_num; i++)
+    {
+        memset( buffer, '\0', 512 );
+        snprintf(buffer, 512 , ",%2d", G.channel[i]);
+        strncat(strbuf, buffer, (512-strlen(strbuf)));
+    }
+
+    memset( buffer, '\0', 512 );
 
     if (G.gps_loc[0]) {
-        snprintf( strbuf, sizeof( strbuf ) - 1,
-              " CH %2d %s[ GPS %8.3f %8.3f %8.3f %6.2f "
-              "][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ", G.channel, G.batt,
+        snprintf( buffer, sizeof( buffer ) - 1,
+              " %s[ GPS %8.3f %8.3f %8.3f %6.2f "
+              "][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ", G.batt,
               G.gps_loc[0], G.gps_loc[1], G.gps_loc[2], G.gps_loc[3],
               G.elapsed_time , 1900 + lt->tm_year,
               1 + lt->tm_mon, lt->tm_mday, lt->tm_hour, lt->tm_min );
     }
     else
     {
-        snprintf( strbuf, sizeof( strbuf ) - 1,
-              " CH %2d %s[ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-              G.channel, G.batt, G.elapsed_time, 1900 + lt->tm_year,
+        snprintf( buffer, sizeof( buffer ) - 1,
+              " %s[ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
+              G.batt, G.elapsed_time, 1900 + lt->tm_year,
               1 + lt->tm_mon, lt->tm_mday, lt->tm_hour, lt->tm_min );
     }
+
+    strncat(strbuf, buffer, (512-strlen(strbuf)));
+
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
@@ -1213,8 +1792,17 @@ void dump_print( int ws_row, int ws_col )
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
-    memcpy( strbuf, " BSSID              PWR  Beacons"
-                    "   # Data  CH  MB  ENC   ESSID", 62 );
+    if(G.singlechan)
+    {
+        memcpy( strbuf, " BSSID              PWR RXQ  Beacons"
+                        "    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSID", columns_ap );
+    }
+    else
+    {
+        memcpy( strbuf, " BSSID              PWR  Beacons"
+                        "    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSID", columns_ap );
+    }
+
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
@@ -1238,7 +1826,7 @@ void dump_print( int ws_row, int ws_col )
 
         nlines++;
 
-        if( nlines >= ws_row )
+        if( nlines >= (ws_row-1) )
             return;
 
         fprintf( stderr, " %02X:%02X:%02X:%02X:%02X:%02X",
@@ -1246,30 +1834,63 @@ void dump_print( int ws_row, int ws_col )
                 ap_cur->bssid[2], ap_cur->bssid[3],
                 ap_cur->bssid[4], ap_cur->bssid[5] );
 
-        fprintf( stderr, "  %3d %8ld %8ld",
-                 ap_cur->avg_power,
-                 ap_cur->nb_bcn,
-                 ap_cur->nb_data );
+        if(G.singlechan)
+        {
+            fprintf( stderr, "  %3d %3d %8ld %8ld %4d",
+                     ap_cur->avg_power,
+                     ap_cur->rx_quality,
+                     ap_cur->nb_bcn,
+                     ap_cur->nb_data,
+                     ap_cur->nb_dataps );
+        }
+        else
+        {
+            fprintf( stderr, "  %3d %8ld %8ld %4d",
+                     ap_cur->avg_power,
+                     ap_cur->nb_bcn,
+                     ap_cur->nb_data,
+                     ap_cur->nb_dataps );
+        }
 
         fprintf( stderr, " %3d %3d%c ",
                  ap_cur->channel, ap_cur->max_speed,
                  ( ap_cur->preamble ) ? '.' : ' ' );
 
-        switch( ap_cur->encryption )
-        {
-            case  0: fprintf( stderr, "OPN " ); break;
-            case  1: fprintf( stderr, "WEP?" ); break;
-            case  2: fprintf( stderr, "WEP " ); break;
-            case  3: fprintf( stderr, "WPA " ); break;
-            default: fprintf( stderr, "    " ); break;
-        }
+        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) fprintf( stderr, "    " );
+        else if( ap_cur->security & STD_WPA2 ) fprintf( stderr, "WPA2" );
+        else if( ap_cur->security & STD_WPA  ) fprintf( stderr, "WPA " );
+        else if( ap_cur->security & STD_WEP  ) fprintf( stderr, "WEP " );
+        else if( ap_cur->security & STD_OPN  ) fprintf( stderr, "OPN " );
 
-        if( ws_col > 58 )
+        fprintf( stderr, " ");
+
+        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( stderr, "       ");
+        else if( ap_cur->security & ENC_CCMP   ) fprintf( stderr, "CCMP   ");
+        else if( ap_cur->security & ENC_WRAP   ) fprintf( stderr, "WRAP   ");
+        else if( ap_cur->security & ENC_TKIP   ) fprintf( stderr, "TKIP   ");
+        else if( ap_cur->security & ENC_WEP104 ) fprintf( stderr, "WEP104 ");
+        else if( ap_cur->security & ENC_WEP40  ) fprintf( stderr, "WEP40  ");
+        else if( ap_cur->security & ENC_WEP    ) fprintf( stderr, "WEP    ");
+
+        if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) fprintf( stderr, "   ");
+        else if( ap_cur->security & AUTH_MGT   ) fprintf( stderr, "MGT");
+        else if( ap_cur->security & AUTH_PSK   ) fprintf( stderr, "PSK");
+        else if( ap_cur->security & AUTH_OPN   ) fprintf( stderr, "OPN");
+
+        if( ws_col > (columns_ap - 4) )
         {
             memset( strbuf, 0, sizeof( strbuf ) );
-            snprintf( strbuf,  sizeof( strbuf ) - 1,
-                      "%-256s", ap_cur->essid );
-            strbuf[ws_col - 58] = '\0';
+            if(ap_cur->essid[0] != 0x00)
+            {
+                snprintf( strbuf,  sizeof( strbuf ) - 1,
+                          "%-256s", ap_cur->essid );
+            }
+            else
+            {
+                snprintf( strbuf,  sizeof( strbuf ) - 1,
+                          "<length:%3d>%-256s", ap_cur->ssid_length, "\x00" );
+            }
+            strbuf[ws_col - (columns_ap - 4)] = '\0';
             fprintf( stderr, "  %s", strbuf );
         }
 
@@ -1282,7 +1903,7 @@ void dump_print( int ws_row, int ws_col )
 
     nlines += 3;
 
-    if( nlines >= ws_row )
+    if( nlines >= (ws_row-1) )
         return;
 
     memset( strbuf, ' ', ws_col - 1 );
@@ -1290,7 +1911,7 @@ void dump_print( int ws_row, int ws_col )
     fprintf( stderr, "%s\n", strbuf );
 
     memcpy( strbuf, " BSSID              STATION "
-            "           PWR  Packets  Probes", 59 );
+            "           PWR  Lost  Packets  Probes", columns_sta );
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
@@ -1309,7 +1930,7 @@ void dump_print( int ws_row, int ws_col )
             continue;
         }
 
-        if( nlines >= ws_row )
+        if( nlines >= (ws_row-1) )
             return;
 
         st_cur = G.st_end;
@@ -1341,10 +1962,11 @@ void dump_print( int ws_row, int ws_col )
                     st_cur->stmac[2], st_cur->stmac[3],
                     st_cur->stmac[4], st_cur->stmac[5] );
 
-            fprintf( stderr, "  %3d", st_cur->power );
+            fprintf( stderr, "  %3d", st_cur->power  );
+            fprintf( stderr, "  %4d", st_cur->missed );
             fprintf( stderr, " %8ld", st_cur->nb_pkt );
 
-            if( ws_col > 53 )
+            if( ws_col > (columns_sta - 6) )
             {
                 memset( ssid_list, 0, sizeof( ssid_list ) );
 
@@ -1366,7 +1988,7 @@ void dump_print( int ws_row, int ws_col )
                 memset( strbuf, 0, sizeof( strbuf ) );
                 snprintf( strbuf,  sizeof( strbuf ) - 1,
                           "%-256s", ssid_list );
-                strbuf[ws_col - 53] = '\0';
+                strbuf[ws_col - (columns_sta - 6)] = '\0';
                 fprintf( stderr, " %s", strbuf );
             }
 
@@ -1381,7 +2003,7 @@ void dump_print( int ws_row, int ws_col )
 
 int dump_write_csv( void )
 {
-    int i, n;
+    int i, j, n;
     struct tm *ltime;
     char ssid_list[512];
     struct AP_info *ap_cur;
@@ -1394,7 +2016,7 @@ int dump_write_csv( void )
 
     fprintf( G.f_txt,
         "\r\nBSSID, First time seen, Last time seen, channel, Speed, "
-        "Privacy, Power, # beacons, # IV, LAN IP, ESSID\r\n" );
+        "Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, ID-length, ESSID, Key\r\n" );
 
     ap_cur = G.ap_1st;
 
@@ -1435,13 +2057,36 @@ int dump_write_csv( void )
                  ap_cur->channel,
                  ap_cur->max_speed );
 
-        switch( ap_cur->encryption )
+        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) fprintf( G.f_txt, "    " );
+        else
         {
-            case  0: fprintf( G.f_txt, "OPN " ); break;
-            case  1: fprintf( G.f_txt, "WEP?" ); break;
-            case  2: fprintf( G.f_txt, "WEP " ); break;
-            case  3: fprintf( G.f_txt, "WPA " ); break;
-            default: fprintf( G.f_txt, "    " ); break;
+            if( ap_cur->security & STD_WPA2 ) fprintf( G.f_txt, "WPA2" );
+            if( ap_cur->security & STD_WPA  ) fprintf( G.f_txt, "WPA " );
+            if( ap_cur->security & STD_WEP  ) fprintf( G.f_txt, "WEP " );
+            if( ap_cur->security & STD_OPN  ) fprintf( G.f_txt, "OPN " );
+        }
+
+        fprintf( G.f_txt, ",");
+
+        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( stderr, "       ");
+        else
+        {
+            if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_txt, " CCMP");
+            if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_txt, " WRAP");
+            if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_txt, " TKIP");
+            if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_txt, " WEP104");
+            if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_txt, " WEP40");
+            if( ap_cur->security & ENC_WEP    ) fprintf( G.f_txt, " WEP");
+        }
+
+        fprintf( G.f_txt, ",");
+
+        if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) fprintf( stderr, "   ");
+        else
+        {
+            if( ap_cur->security & AUTH_MGT   ) fprintf( G.f_txt, " MGT");
+            if( ap_cur->security & AUTH_PSK   ) fprintf( G.f_txt, " PSK");
+            if( ap_cur->security & AUTH_OPN   ) fprintf( G.f_txt, " OPN");
         }
 
         fprintf( G.f_txt, ", %3d, %8ld, %8ld, ",
@@ -1453,7 +2098,26 @@ int dump_write_csv( void )
                  ap_cur->lanip[0], ap_cur->lanip[1],
                  ap_cur->lanip[2], ap_cur->lanip[2] );
 
-        fprintf( G.f_txt, "%-32s\r\n", ap_cur->essid );
+        fprintf( G.f_txt, "%3d, ", ap_cur->ssid_length);
+
+        for(i=0; i<ap_cur->ssid_length; i++)
+        {
+            fprintf( G.f_txt, "%c", ap_cur->essid[i] );
+        }
+        fprintf( G.f_txt, ", " );
+
+
+        if(ap_cur->key != NULL)
+        {
+            for(i=0; i<(int)strlen(ap_cur->key); i++)
+            {
+                fprintf( G.f_txt, "%02X", ap_cur->key[i]);
+                if(i<(int)(strlen(ap_cur->key)-1))
+                    fprintf( G.f_txt, ":");
+            }
+        }
+
+        fprintf( G.f_txt, "\r\n");
 
         ap_cur = ap_cur->next;
     }
@@ -1513,9 +2177,15 @@ int dump_write_csv( void )
                 continue;
 
             snprintf( ssid_list + n, sizeof( ssid_list ) - n - 1,
-                      "%c%s", ( i > 0 ) ? ',' : ' ', st_cur->probes[i] );
+                      "%c", ( i > 0 ) ? ',' : ' ' );
 
-            n += ( 1 + strlen( st_cur->probes[i] ) );
+            for(j=0; j<st_cur->ssid_length[i]; j++)
+            {
+                snprintf( ssid_list + n + 1, sizeof( ssid_list ) - n - 2,
+                          "%c", st_cur->probes[i][j]);
+            }
+
+            n += ( 1 + st_cur->ssid_length[i] );
             if( n >= (int) sizeof( ssid_list ) )
                 break;
         }
@@ -1530,7 +2200,6 @@ int dump_write_csv( void )
     sync();
     return 0;
 }
-
 
 void gps_tracker( void )
 {
@@ -1603,12 +2272,17 @@ void gps_tracker( void )
     }
 }
 
-void sighandler( int signum )
+void sighandler( int signum)
 {
+    int card=0;
+
     signal( signum, sighandler );
 
     if( signum == SIGUSR1 )
-        read( G.ch_pipe[0], &G.channel, sizeof( int ) );
+    {
+	read( G.cd_pipe[0], &card, sizeof(int) );
+        read( G.ch_pipe[0], &(G.channel[card]), sizeof( int ) );
+    }
 
     if( signum == SIGUSR2 )
         read( G.gc_pipe[0], &G.gps_loc, sizeof( float ) * 5 );
@@ -1658,7 +2332,7 @@ int disable_wep_key( char *interface, int fd_raw )
     return( ioctl( fd_raw, SIOCSIWENCODE, &wrq ) != 0 );
 }
 
-int set_channel( char *interface, int fd_raw, int channel )
+int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 {
     char s[32];
     int pid, status;
@@ -1666,7 +2340,7 @@ int set_channel( char *interface, int fd_raw, int channel )
 
     memset( s, 0, sizeof( s ) );
 
-    if( G.is_wlanng )
+    if( G.is_wlanng[cardnum] )
     {
         snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
 
@@ -1686,7 +2360,7 @@ int set_channel( char *interface, int fd_raw, int channel )
             return( 1 );
     }
 
-    if( G.is_orinoco )
+    if( G.is_orinoco[cardnum] )
     {
         snprintf( s,  sizeof( s ) - 1, "%d", channel );
 
@@ -1720,13 +2394,13 @@ int set_channel( char *interface, int fd_raw, int channel )
     return( 0 );
 }
 
-int set_monitor( char *interface, int fd_raw )
+int set_monitor( char *interface, int fd_raw, int cardnum )
 {
 	char s[32];
     int pid, status, channel;
     struct iwreq wrq;
 
-	channel = (G.channel == 0 ) ? 10 : G.channel;
+	channel = (G.channel[0] == 0 ) ? 10 : G.channel[0];
 
 	if( strcmp(interface,"prism0") == 0 )
 	{
@@ -1747,7 +2421,7 @@ int set_monitor( char *interface, int fd_raw )
 	}
 	else
 	{
-		if( G.is_wlanng )
+		if( G.is_wlanng[cardnum] )
 		{
 			snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
 			if( ( pid = fork() ) == 0 )
@@ -1782,46 +2456,480 @@ int set_monitor( char *interface, int fd_raw )
 
 	/* Check later if it's really usefull to set channel here */
 
-	set_channel( interface, fd_raw, channel);
+	set_channel( interface, fd_raw, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum], cardnum);
 
     return( 0 );
 }
 
-void channel_hopper( char *interface, int fd_raw )
+int getchancount(int valid)
+{
+    int i=0, chan_count=0;
+
+    while(G.channels[i])
+    {
+        i++;
+        if(G.channels[i] != -1)
+            chan_count++;
+    }
+
+    if(valid) return chan_count;
+    return i;
+}
+
+void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count )
 {
 
-    int ch, ch_idx = 0;
+    int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
 
     while( getppid() != 1 )
     {
-        ++ch_idx;
-
-        if( G.channels[ch_idx] ==  0 )
-            ch_idx = 0;
-
-        if( G.channels[ch_idx] == -1 )
-            continue;
-
-        ch = G.channels[ch_idx];
-
-        if( set_channel( interface, fd_raw, ch ) == 0 )
+        for(j=0; j<if_num; j++)
         {
-            write( G.ch_pipe[1], &ch, sizeof( int ) );
-            kill( getppid(), SIGUSR1 );
-            usleep( 350000 );
+            again=1;
+
+            ch_idx = chi % chan_count;
+
+            card = cai % if_num;
+
+            ++chi;
+            ++cai;
+
+            if( G.chswitch == 2 && !first)
+            {
+                j=(if_num - 1);
+                card = if_num-1;
+                if( getchancount(1) > if_num )
+                {
+                    while( again )
+                    {
+                        again=0;
+                        for(k=0; k<(if_num-1); k++)
+                        {
+                            if(G.channels[ch_idx] == G.channel[k])
+                            {
+                                again = 1;
+                                ch_idx = chi % chan_count;
+                                chi++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if( G.channels[ch_idx] == -1 )
+            {
+                j--;
+                cai--;
+                continue;
+            }
+
+            ch = G.channels[ch_idx];
+
+
+            if( set_channel( interface[card], fd_raw[card], ch, card ) == 0 )
+            {
+                G.channel[card] = ch;
+                write( G.cd_pipe[1], &card, sizeof(int) );
+                write( G.ch_pipe[1], &ch, sizeof( int ) );
+                kill( getppid(), SIGUSR1 );
+                usleep(1000);
+            }
+            else
+            {
+                G.channels[ch_idx] = -1;      /* remove invalid channel */
+                j--;
+                cai--;
+                continue;
+            }
         }
-        else
-            G.channels[ch_idx] = -1;      /* remove invalid channel */
+        if(G.chswitch == 0)
+        {
+            chi=chi-(if_num - 1);
+        }
+        if(first)
+        {
+            first = 0;
+        }
+        usleep( (350000) );
     }
 
     exit( 0 );
 }
 
+int invalid_channel(int chan)
+{
+    int i=0;
+
+    do
+    {
+	if (chan == abg_chans[i] && chan != 0 )
+	    return 0;
+    } while (abg_chans[++i]);
+    return 1;
+}
+
+/* parse a string, for example "1,2,3-7,11" */
+
+int getchannels(const char *optarg)
+{
+    unsigned int i=0,chan_cur=0,chan_first=0,chan_last=0,chan_max=128,chan_remain=0;
+    char *optchan = NULL;
+    char *token = NULL;
+    int *tmp_channels;
+
+    //got a NULL pointer?
+    if(optarg == NULL)
+        return -1;
+
+    chan_remain=chan_max;
+
+    //create a writable string
+    optchan = (char*) malloc(strlen(optarg)+1);
+    strncpy(optchan, optarg, strlen(optarg));
+    optchan[strlen(optarg)]='\0';
+
+    tmp_channels = (int*) malloc(sizeof(int)*(chan_max+1));
+
+    //split string in tokens, separated by ','
+    while( (token = strsep(&optchan,",")) != NULL)
+    {
+	//range defined?
+	if(strchr(token, '-') != NULL)
+	{ 
+	    //only 1 '-' ?
+	    if(strchr(token, '-') == strrchr(token, '-'))
+	    {
+		//are there any illegal characters?
+		for(i=0; i<strlen(token); i++)
+		{
+		    if( (token[i] < '0') && (token[i] > '9') && (token[i] != '-'))
+		    {
+			free(tmp_channels);
+			free(optchan);
+			return -1;
+		    }
+		}
+
+		if( sscanf(token, "%d-%d", &chan_first, &chan_last) != EOF )
+		{
+		    if(chan_first > chan_last)
+		    {
+			free(tmp_channels);
+			free(optchan);
+			return -1;
+		    }
+		    for(i=chan_first; i<=chan_last; i++)
+		    {
+			if( (! invalid_channel(i)) && (chan_remain > 0) )
+			{
+				tmp_channels[chan_max-chan_remain]=i;
+				chan_remain--;
+			}
+		    }
+		}
+		else
+		{
+		    free(tmp_channels);
+		    free(optchan);
+		    return -1;
+		}
+		
+	    }
+	    else
+	    {
+		free(tmp_channels);
+		free(optchan);
+		return -1;
+	    }
+	}
+	else
+	{
+	    //are there any illegal characters?
+	    for(i=0; i<strlen(token); i++)
+	    {
+		if( (token[i] < '0') && (token[i] > '9') )
+		{
+		    free(tmp_channels);
+		    free(optchan);
+		    return -1;
+		}
+	    }
+
+	    if( sscanf(token, "%d", &chan_cur) != EOF)
+	    {
+		if( (! invalid_channel(chan_cur)) && (chan_remain > 0) )
+		{
+			tmp_channels[chan_max-chan_remain]=chan_cur;
+			chan_remain--;
+		}
+		
+	    }
+	    else
+	    {
+		free(tmp_channels);
+		free(optchan);
+		return -1;
+	    }
+	}
+    }
+
+    G.own_channels = (int*) malloc(sizeof(int)*(chan_max - chan_remain + 1));
+
+    for(i=0; i<(chan_max - chan_remain); i++)
+    {
+	G.own_channels[i]=tmp_channels[i];
+    }
+
+    G.own_channels[i]=0;
+
+    free(tmp_channels);
+    free(optchan);
+    if(i==1) return G.own_channels[0];
+    if(i==0) return -1;
+    return 0;
+}
+
+int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct sockaddr_ll *sll, int *fd_raw, int *arptype, int cardnum)
+{
+    int pid=0, n=0;
+    char *buffer;
+    FILE               *check_madwifing;
+
+    /* reserve the buffer space */
+
+    if( ( buffer = (unsigned char *) malloc( 65536 ) ) == NULL )
+    {
+        perror( "malloc failed" );
+        return( 1 );
+    }
+
+    memset( ifr, 0, sizeof( *ifr ) );
+    strncpy( ifr->ifr_name, iface, sizeof( ifr->ifr_name ) - 1 );
+
+    if( ioctl( *fd_raw, SIOCGIFINDEX, ifr ) < 0 )
+    {
+        fprintf( stderr, "%s is not a network interface.\n", iface );
+        return( 1 );
+    }
+
+    /* Exit if ndiswrapper : check iwpriv ndis_reset */
+    
+    if ( is_ndiswrapper(iface, G.iwpriv) ) {
+    	printf("Ndiswrapper doesn't support monitor mode.\n");
+    	return (1);
+    }
+
+    if( strcmp(iface,"prism0") == 0 )
+        G.wl = wiToolsPath("wl");
+
+    memset( sll, 0, sizeof( *sll ) );
+    sll->sll_family   = AF_PACKET;
+    sll->sll_ifindex  = ifr->ifr_ifindex;
+    sll->sll_protocol = htons( ETH_P_ALL );
+
+    if( memcmp( iface, "wlan", 4 ) == 0 )
+    {
+        if( ( pid = fork() ) == 0 )     /* wlan-ng brain damage */
+        {
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execlp( "wlanctl-ng", "wlanctl-ng", iface,
+                    "lnxreq_ifstate", "ifstate=enable", NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &n, 0 );
+
+        if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
+            G.is_wlanng[cardnum] = 1;
+
+        if( ! fork() )                  /* hostap card reset */
+        {
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execlp( "iwpriv", "iwpriv", iface, "reset", "1", NULL );
+            exit( 1 );
+        }
+        wait( NULL );
+    }
+
+    /* test if orinoco */
+
+    if( memcmp( iface, "eth", 3 ) == 0 )
+    {
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execlp( "iwpriv", "iwpriv", iface, "get_port3", NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &n, 0 );
+
+        if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
+            G.is_orinoco[cardnum] = 1;
+    }
+
+    /* Check if madwifi-ng */
+
+    G.is_madwifing[cardnum] = 0;
+    memset( buffer,0, 65536 );
+    snprintf( (char*) buffer, strlen( iface ) + 23,
+        "/proc/sys/net/%s/%%parent", iface );
+    check_madwifing = fopen( (char*) buffer,"r");
+    if (check_madwifing != NULL) {
+        fclose(check_madwifing);
+        G.is_madwifing[cardnum] = 1;
+        memset(buffer,0, 65536);
+        sprintf((char *) buffer, "/proc/sys/net/%s/dev_type", iface);
+        FILE * f = fopen(buffer,"w");
+        if (f != NULL) {
+            char * madwifiPrism2 = "802\n";
+            fprintf(f, madwifiPrism2);
+            fclose(f);
+        }
+        /* Force prism2 header on madwifi-ng */
+    }
+    memset(buffer,0, 65536);
+
+    /* make sure the interface is up */
+
+    ifr->ifr_flags = IFF_UP | IFF_BROADCAST | IFF_RUNNING;        
+
+    if( ioctl( *fd_raw, SIOCSIFFLAGS, ifr ) < 0 )
+    {
+        perror( "ioctl(SIOCSIFFLAGS) failed" );
+        return( 1 );
+    }
+
+    if (set_monitor( iface, *fd_raw, cardnum ))
+    {
+        printf("Error setting monitor mode on %s\n",iface);
+        return( 1 );
+    }
+
+    /* bind the raw socket to the interface */
+
+    if( bind( *fd_raw, (struct sockaddr *) sll,
+              sizeof( *sll ) ) < 0 )
+    {
+        perror( "bind(ETH_P_ALL) failed" );
+        return( 1 );
+    }
+
+    /* couple of iwprivs to enable the prism header */
+
+    if( ! fork() )  /* hostap */
+    {
+        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+        execlp( "iwpriv", "iwpriv", iface, "monitor_type", "1", NULL );
+        exit( 1 );
+    }
+    wait( NULL );
+
+    if( ! fork() )  /* r8180 */
+    {
+        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+        execlp( "iwpriv", "iwpriv", iface, "prismhdr", "1", NULL );
+        exit( 1 );
+    }
+    wait( NULL );
+
+    if( ! fork() )  /* prism54 */
+    {
+        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+        execlp( "iwpriv", "iwpriv", iface, "set_prismhdr", "1", NULL );
+        exit( 1 );
+    }
+    wait( NULL );
+
+    /* make sure the WEP key is off */
+
+    if ( strncmp( iface, "rtap", 4) )
+        disable_wep_key( iface, *fd_raw );
+
+    /* lookup the hardware type */
+
+    if( ioctl( *fd_raw, SIOCGIFHWADDR, ifr ) < 0 )
+    {
+        perror( "ioctl(SIOCGIFHWADDR) failed" );
+        return( 1 );
+    }
+
+    *arptype = ifr->ifr_hwaddr.sa_family;
+
+    if( *arptype != ARPHRD_IEEE80211 &&
+        *arptype != ARPHRD_IEEE80211_PRISM &&
+        *arptype != ARPHRD_IEEE80211_FULL )
+    {
+        if( *arptype == 1 )
+            fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
+        else
+            fprintf( stderr, "\nUnsupported hardware link type %4d ",
+                     *arptype );
+
+        fprintf( stderr, "- expected ARPHRD_IEEE80211\nor ARPHRD_IEEE8021"
+                         "1_PRISM instead.  Make sure RFMON is enabled:\n"
+                         "run 'ifconfig %s up; iwconfig %s mode Monitor "
+                         "channel <#>'\n\n", iface, iface );
+        return( 1 );
+    }
+
+    /* enable promiscuous mode */
+
+    memset( mr, 0, sizeof( *mr ) );
+    mr->mr_ifindex = sll->sll_ifindex;
+    mr->mr_type    = PACKET_MR_PROMISC;
+
+    if( setsockopt( *fd_raw, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
+                    mr, sizeof( *mr ) ) < 0 )
+    {
+        perror( "setsockopt(PACKET_MR_PROMISC) failed" );
+        return( 1 );
+    }
+
+    return( 0 );
+}
+
+int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct packet_mreq mr[], struct sockaddr_ll sll[], int fd_raw[], int arptype[])
+{
+    char *buffer;
+    int if_count=0;
+
+    buffer = (char*) malloc(sizeof(char)*1025);
+    strncpy(buffer, cardstr, 1025);
+    buffer[1024] = '\0';
+
+    while( ((iface[if_count]=strsep(&buffer, ",")) != NULL) && (if_count < MAX_CARDS) )
+    {
+	if(setup_card(iface[if_count], &(ifr[if_count]), &(mr[if_count]), &(sll[if_count]), &(fd_raw[if_count]), &(arptype[if_count]), if_count) != 0)
+		return -1;
+	if_count++;
+    }
+
+    return if_count;
+}
+
+int get_if_num(const char* cardstr)
+{
+    char *buffer;
+    int if_count=0;
+
+    buffer = (char*) malloc(sizeof(char)*1025);
+    strncpy(buffer, cardstr, 1025);
+    buffer[1024] = '\0';
+
+    while( (strsep(&buffer, ",") != NULL) && (if_count < MAX_CARDS) )
+    {
+	if_count++;
+    }
+
+    return if_count;
+}
+
 int main( int argc, char *argv[] )
 {
-    long time_slept;
-    int i, n, caplen, pid;
-    int fd_raw, arptype;
+    long time_slept, cycle_time;
+    int n, caplen, i, cards, fdh, fd_is_set, chan_count;
+    int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
     int ivs_only, power;
     int valid_channel, chanoption;
     int freq [2];
@@ -1829,22 +2937,23 @@ int main( int argc, char *argv[] )
 
     unsigned char      *buffer;
     unsigned char      *h80211;
-    char               *dump_prefix;
-    char               *iface;
+    char               *iface[MAX_CARDS];
 
-    struct ifreq       ifr;
-    struct packet_mreq mr;
-    struct sockaddr_ll sll;
+    struct ifreq       ifr[MAX_CARDS];
+    struct packet_mreq mr[MAX_CARDS];
+    struct sockaddr_ll sll[MAX_CARDS];
     struct timeval     tv0;
     struct timeval     tv1;
     struct timeval     tv2;
+    struct timeval     tv3;
     struct winsize     ws;
+    struct tm          *lt;
+
     /*
     struct sockaddr_in provis_addr;
     */
-
+    
     fd_set             rfds;
-    FILE               *check_madwifing;
 
     /* initialize a bunch of variables */
 
@@ -1853,21 +2962,55 @@ int main( int argc, char *argv[] )
     ivs_only       =  0;
     chanoption     =  0;
     power          = -1;
-    fd_raw         = -1;
-    arptype        =  0;
+//    fd_raw         = -1;
+//    arptype        =  0;
+    cards	   =  0;
+    fdh		   =  0;
+    fd_is_set	   =  0;
+    chan_count	   =  0;
     time_slept     =  0;
     G.batt         =  NULL;
+    G.chswitch     =  0;
     valid_channel  =  0;
     G.usegpsd      =  0;
     G.channels     =  bg_chans;
-    G.channel      =  0;
+//    G.channel      =  0;
     G.one_beacon   =  1;
-    dump_prefix    =  NULL;
+    G.singlechan  =  0;
+    G.dump_prefix    =  NULL;
     G.record_data  =  0;
 	G.f_cap        =  NULL;
 	G.f_ivs        =  NULL;
 	G.f_txt        =  NULL;
     G.f_gps        =  NULL;
+    G.keyout = NULL;
+    G.f_xor        =  NULL;
+    G.sk_len       =  0;
+    G.sk_start     =  0;
+    G.prefix       =  NULL;
+    memset(G.sharedkey, '\x00', 512*3);
+
+    gettimeofday( &tv0, NULL );
+
+    lt = localtime( &tv0.tv_sec );
+
+    G.keyout = (char*) malloc(512);
+    memset( G.keyout, 0, 512 );
+    snprintf( G.keyout,  511,
+              "keyout-%02d%02d-%02d%02d%02d.keys",
+              lt->tm_mon + 1, lt->tm_mday,
+              lt->tm_hour, lt->tm_min, lt->tm_sec );
+
+    for(i=0; i<MAX_CARDS; i++)
+    {
+	arptype[i]=0;
+	fd_raw[i]=-1;
+	G.channel[i]=0;
+    }
+
+    memset(G.f_bssid, '\x00', 6);
+    memset(G.f_netmask, '\x00', 6);
+
 
     #ifdef linux
         linux_acpi =  1;
@@ -1888,18 +3031,21 @@ int main( int argc, char *argv[] )
         int option_index = 0;
 
         static struct option long_options[] = {
-			{"band",    1, 0, 'b'},
-			{"beacon",  0, 0, 'e'},
+            {"band",    1, 0, 'b'},
+            {"beacon",  0, 0, 'e'},
             {"beacons", 0, 0, 'e'},
+            {"cswitch", 1, 0, 's'},
+            {"netmask", 1, 0, 'm'},
+            {"bssid",   1, 0, 'd'},
             {"channel", 1, 0, 'c'},
             {"gpsd",    0, 0, 'g'},
             {"ivs",     0, 0, 'i'},
-			{"write",   1, 0, 'w'},
+            {"write",   1, 0, 'w'},
             {0,         0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "b:c:egiw:",
+                        "b:c:egiw:s",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -1916,20 +3062,21 @@ int main( int argc, char *argv[] )
 
             case 'c' :
 
-				if (G.channel > 0 || chanoption == 1) {
+				if (G.channel[0] > 0 || chanoption == 1) {
 					if (chanoption == 1)
 						printf( "Notice: Channel range already given\n" );
 					else
-						printf( "Notice: Channel already given (%d)\n", G.channel);
+						printf( "Notice: Channel already given (%d)\n", G.channel[0]);
 					break;
 				}
 
-                sscanf(optarg, "%d",&(G.channel));
+		G.channel[0] = getchannels(optarg);
 
-                if ( G.channel < 0 )
+                if ( G.channel[0] < 0 )
                     goto usage;
 
-                if (G.channel != 0)
+                chanoption = 1;
+/*                if (G.channel[0] != 0)
                 {
                     n=0;
                     do {
@@ -1941,11 +3088,15 @@ int main( int argc, char *argv[] )
                     else
                     	chanoption = 1;
                 }
-                /*
-                 * else, hop on 2.4Ghz channels
-				 */
-				G.channels = bg_chans;
-				break;
+                else */
+		if( G.channel[0] == 0 )
+		{
+		    G.channels = G.own_channels;
+//		    chanoption = 1;
+		    break;
+		}
+		G.channels = bg_chans;
+		break;
 
             case 'b' :
 
@@ -1995,24 +3146,64 @@ int main( int argc, char *argv[] )
                 break;
 
             case 'w':
-            	if (dump_prefix != NULL) {
+            	if (G.dump_prefix != NULL) {
             		printf( "Notice: dump prefix already given\n" );
             		break;
             	}
                 /* Write prefix */
-                dump_prefix   = optarg;
+                G.dump_prefix   = optarg;
                 G.record_data = 1;
+                break;
+
+            case 's':
+                if (atoi(optarg) > 2) {
+                    goto usage;
+                }
+                if (G.chswitch != 0) {
+                    printf("Notice: switching method already given\n");
+                    break;
+                }
+                G.chswitch = atoi(optarg);
+                break;
+            case 'm':
+                if ( memcmp(G.f_netmask, NULL_MAC, 6) != 0 )
+                {
+                    printf("Notice: netmask already given\n");
+                    break;
+                }
+                if(set_mac(G.f_netmask, optarg) != 0)
+                {
+                    printf("Notice: invalid netmask\n");
+                    return( 1 );
+                }
+                break;
+            case 'd':
+                if ( memcmp(G.f_bssid, NULL_MAC, 6) != 0 )
+                {
+                    printf("Notice: bssid already given\n");
+                    break;
+                }
+                if(set_mac(G.f_bssid, optarg) != 0)
+                {
+                    printf("Notice: invalid bssid\n");
+                    return( 1 );
+                }
                 break;
 
             default : goto usage;
         }
-    }
-    while ( 1 );
+    }while ( 1 );
 
-	if ( ivs_only && !G.record_data ) {
-		printf( "Missing dump prefix (-w)\n" );
-		return( 1 );
-	}
+    if( ( memcmp(G.f_netmask, NULL_MAC, 6) != 0 ) && ( memcmp(G.f_bssid, NULL_MAC, 6) == 0 ) )
+    {
+        printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
+        return( 1 );
+    }
+
+    if ( ivs_only && !G.record_data ) {
+        printf( "Missing dump prefix (-w)\n" );
+        return( 1 );
+    }
 
     /* Check if we have root privileges */
 
@@ -2021,20 +3212,6 @@ int main( int argc, char *argv[] )
         printf( "This program requires root privileges.\n" );
         return( 1 );
     }
-
-    /* create the raw socket and drop privileges */
-
-    fd_raw = socket( PF_PACKET, SOCK_RAW, htons( ETH_P_ALL ) );
-
-    if( fd_raw < 0 )
-    {
-        perror( "socket(PF_PACKET) failed" );
-        if( getuid() != 0 )
-            fprintf( stderr, "This program requires root privileges.\n" );
-        return( 1 );
-    }
-
-    setuid( getuid() );
 
     /* Check iwpriv existence */
 
@@ -2046,6 +3223,27 @@ int main( int argc, char *argv[] )
         return (1);
     }
 
+    cards = get_if_num(argv[argc-1]);
+
+    /* create the raw socket and drop privileges */
+
+    for(i=0; i<cards; i++)
+    {
+	fd_raw[i] = socket( PF_PACKET, SOCK_RAW, htons( ETH_P_ALL ) );
+
+        if( fd_raw[i] < 0 )
+        {
+            perror( "socket(PF_PACKET) failed" );
+            if( getuid() != 0 )
+                fprintf( stderr, "This program requires root privileges.\n" );
+            return( 1 );
+        }
+	if( fd_raw[i] > fdh)
+		fdh=fd_raw[i];
+    }
+
+    setuid( getuid() );
+
     /* reserve the buffer space */
 
     if( ( buffer = (unsigned char *) malloc( 65536 ) ) == NULL )
@@ -2054,223 +3252,44 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
+    /* initialize cards */
+    cards = init_cards(argv[argc-1], iface, ifr, mr, sll, fd_raw, arptype);
+
+    if(cards <= 0) 
+	return( 1 );
+
+    chan_count = getchancount(0);
+
     /* find the interface index */
-
-    iface = argv[argc-1];
-
-    memset( &ifr, 0, sizeof( ifr ) );
-    strncpy( ifr.ifr_name, iface, sizeof( ifr.ifr_name ) - 1 );
-
-    if( ioctl( fd_raw, SIOCGIFINDEX, &ifr ) < 0 )
-    {
-        fprintf( stderr, "%s is not a network interface.\n", argv[argc-1] );
-        return( 1 );
-    }
-
-    /* Exit if ndiswrapper : check iwpriv ndis_reset */
-
-    if ( is_ndiswrapper(iface, G.iwpriv) ) {
-    	fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
-    	return (1);
-    }
-
-	if( strcmp(iface,"prism0") == 0 )
-		G.wl = wiToolsPath("wl");
-
-    memset( &sll, 0, sizeof( sll ) );
-    sll.sll_family   = AF_PACKET;
-    sll.sll_ifindex  = ifr.ifr_ifindex;
-    sll.sll_protocol = htons( ETH_P_ALL );
-
-    if( memcmp( iface, "wlan", 4 ) == 0 )
-    {
-		G.wlanctlng = wiToolsPath("wlanctl-ng");
-        if( ( pid = fork() ) == 0 )     /* wlan-ng brain damage */
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execl( G.wlanctlng, "wlanctl-ng", iface,
-                    "lnxreq_ifstate", "ifstate=enable", NULL );
-            exit( 1 );
-        }
-
-        waitpid( pid, &n, 0 );
-
-        if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
-            G.is_wlanng = 1;
-
-        if( ! fork() )                  /* hostap card reset */
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execl( G.iwpriv, "iwpriv", iface, "reset", "1", NULL );
-            exit( 1 );
-        }
-        wait( NULL );
-    }
-
-    /* test if orinoco */
-
-    if( memcmp( iface, "eth", 3 ) == 0 )
-    {
-        if( ( pid = fork() ) == 0 )
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execl( G.iwpriv, "iwpriv", iface, "get_port3", NULL );
-            exit( 1 );
-        }
-
-        waitpid( pid, &n, 0 );
-
-        if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
-            G.is_orinoco = 1;
-    }
-
-    /* Check if madwifi-ng */
-
-    G.is_madwifing = 0;
-    memset( buffer,0, 65536 );
-    snprintf( (char*) buffer, strlen( iface ) + 23,
-        "/proc/sys/net/%s/%%parent", iface );
-    check_madwifing = fopen( (char*) buffer,"r");
-    if (check_madwifing != NULL) {
-        fclose(check_madwifing);
-        G.is_madwifing = 1;
-        memset(buffer,0, 65536);
-        sprintf((char *) buffer, "/proc/sys/net/%s/dev_type", iface);
-        FILE * f = fopen((char*)buffer,"w");
-        if (f != NULL) {
-            char * madwifiPrism2 = "802\n";
-            fprintf(f, madwifiPrism2);
-            fclose(f);
-        }
-        /* Force prism2 header on madwifi-ng */
-    }
-    memset(buffer,0, 65536);
-
-    /* make sure the interface is up */
-
-    ifr.ifr_flags = IFF_UP | IFF_BROADCAST | IFF_RUNNING;
-
-    if( ioctl( fd_raw, SIOCSIFFLAGS, &ifr ) < 0 )
-    {
-        perror( "ioctl(SIOCSIFFLAGS) failed" );
-        return( 1 );
-    }
-
-    if ( set_monitor( iface, fd_raw ) )
-    {
-        printf("Error setting monitor mode on %s\n",iface);
-        return( 1 );
-    }
-
-    /* bind the raw socket to the interface */
-
-    if( bind( fd_raw, (struct sockaddr *) &sll,
-              sizeof( sll ) ) < 0 )
-    {
-        perror( "bind(ETH_P_ALL) failed" );
-        return( 1 );
-    }
-
-    /* couple of iwprivs to enable the prism header */
-
-    if( ! fork() )  /* hostap */
-    {
-        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-        execlp( G.iwpriv, "iwpriv", iface, "monitor_type", "1", NULL );
-        exit( 1 );
-    }
-    wait( NULL );
-
-    if( ! fork() )  /* r8180 */
-    {
-        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-        execl( G.iwpriv, "iwpriv", iface, "prismhdr", "1", NULL );
-        exit( 1 );
-    }
-    wait( NULL );
-
-    if( ! fork() )  /* prism54 */
-    {
-        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-        execl( G.iwpriv, "iwpriv", iface, "set_prismhdr", "1", NULL );
-        exit( 1 );
-    }
-    wait( NULL );
-
-    if( ! fork() )  /* rt2570-cvs */
-    {
-        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-        execlp( "iwpriv", "iwpriv", argv[1], "forceprismheader", "1", NULL );
-        exit( 1 );
-    }
-    wait( NULL );
-
-
-    /* make sure the WEP key is off only if it's not rtap0 */
-	if ( strncmp( iface, "rtap", 4) )
-    	disable_wep_key( iface, fd_raw );
-
     /* start a child to hop between channels */
 
-    if( G.channel == 0 )
+    if( G.channel[0] == 0 )
     {
         pipe( G.ch_pipe );
+        pipe( G.cd_pipe );
 
         signal( SIGUSR1, sighandler );
 
         if( ! fork() )
         {
-            channel_hopper( iface, fd_raw );
+            channel_hopper( iface, fd_raw, cards, chan_count );
             exit( 1 );
         }
     }
     else
-        set_channel( iface, fd_raw, G.channel );
-
-    /* lookup the hardware type */
-
-    if( ioctl( fd_raw, SIOCGIFHWADDR, &ifr ) < 0 )
     {
-        perror( "ioctl(SIOCGIFHWADDR) failed" );
-        return( 1 );
-    }
-
-    arptype = ifr.ifr_hwaddr.sa_family;
-
-    if( arptype != ARPHRD_IEEE80211 &&
-        arptype != ARPHRD_IEEE80211_PRISM &&
-        arptype != ARPHRD_IEEE80211_FULL )
-    {
-        if( arptype == 1 )
-            fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
-        else
-            fprintf( stderr, "\nUnsupported hardware link type %4d ",
-                     arptype );
-
-        fprintf( stderr, "- expected ARPHRD_IEEE80211\nor ARPHRD_IEEE8021"
-                         "1_PRISM instead.  Make sure RFMON is enabled:\n"
-                         "run 'ifconfig %s up; iwconfig %s mode Monitor "
-                         "channel <#>'\n\n", iface, iface );
-        return( 1 );
-    }
-
-    /* enable promiscuous mode */
-
-    memset( &mr, 0, sizeof( mr ) );
-    mr.mr_ifindex = sll.sll_ifindex;
-    mr.mr_type    = PACKET_MR_PROMISC;
-
-    if( setsockopt( fd_raw, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
-                    &mr, sizeof( mr ) ) < 0 )
-    {
-        perror( "setsockopt(PACKET_MR_PROMISC) failed" );
-        return( 1 );
+	for(i=0; i<cards; i++)
+	{
+            set_channel( iface[i], fd_raw[i], G.channel[0], i );
+	    G.channel[i] = G.channel[0];
+	}
+        G.singlechan = 1;
     }
 
     /* open or create the output files */
 
     if (G.record_data)
-    	if( dump_initialize( dump_prefix, ivs_only ) )
+    	if( dump_initialize( G.dump_prefix, ivs_only ) )
     	    return( 1 );
 
     signal( SIGINT,   sighandler );
@@ -2303,6 +3322,7 @@ int main( int argc, char *argv[] )
     tt1        = time( NULL );
     tt2        = time( NULL );
     tt3        = time( NULL );
+    gettimeofday( &tv3, NULL );
 
 	G.batt     = getBatteryString();
 
@@ -2311,7 +3331,10 @@ int main( int argc, char *argv[] )
 
     while( 1 )
     {
-        if( G.do_exit ) break;
+        if( G.do_exit )
+        {
+            break;
+        }
 
         if( time( NULL ) - tt1 >= 20 )
         {
@@ -2346,17 +3369,31 @@ int main( int argc, char *argv[] )
             if( G.f_ivs != NULL ) fflush( G.f_ivs );
         }
 
+        gettimeofday( &tv1, NULL );
+
+        cycle_time = 1000000 * ( tv1.tv_sec  - tv3.tv_sec  )
+                             + ( tv1.tv_usec - tv3.tv_usec );
+
+        if( cycle_time > 500000 )
+        {
+            gettimeofday( &tv3, NULL );
+            update_rx_quality( );
+        }
+
         /* capture one packet */
 
         FD_ZERO( &rfds );
-        FD_SET( fd_raw, &rfds );
+	for(i=0; i<cards; i++)
+	{
+            FD_SET( fd_raw[i], &rfds );
+	}
 
         tv0.tv_sec  = 0;
         tv0.tv_usec = REFRESH_RATE;
 
         gettimeofday( &tv1, NULL );
 
-        if( select( fd_raw + 1, &rfds, NULL, NULL, &tv0 ) < 0 )
+        if( select( fdh + 1, &rfds, NULL, NULL, &tv0 ) < 0 )
         {
             if( errno == EINTR ) continue;
             perror( "select failed" );
@@ -2372,6 +3409,8 @@ int main( int argc, char *argv[] )
         {
             time_slept = 0;
 
+            update_dataps();
+
             /* update the window size */
 
             if( ioctl( 0, TIOCGWINSZ, &ws ) < 0 )
@@ -2386,84 +3425,87 @@ int main( int argc, char *argv[] )
             /* display the list of access points we have */
 
             fprintf( stderr, "\33[1;1H" );
-            dump_print( ws.ws_row, ws.ws_col );
+            dump_print( ws.ws_row, ws.ws_col, cards );
             fprintf( stderr, "\33[J" );
             fflush( stdout );
             continue;
         }
 
-        if( ! FD_ISSET( fd_raw, &rfds ) )
-            continue;
+	fd_is_set = 0;
 
-        /* one packet available for reading */
+	for(i=0; i<cards; i++)
+	{
+            if( FD_ISSET( fd_raw[i], &rfds ) )
+	    {
+                memset( buffer, 0, 4096 );
 
-        memset( buffer, 0, 4096 );
+                if( ( caplen = read( fd_raw[i], buffer, 65535 ) ) < 0 )
+                {
+                    perror( "read failed" );
+                    return( 1 );
+                }
 
-        if( ( caplen = read( fd_raw, buffer, 65535 ) ) < 0 )
-        {
-            perror( "read failed" );
-            return( 1 );
-        }
+                /* if device is an atheros, remove the FCS */
 
-        /* if device is an atheros, remove the FCS */
+                if( ! memcmp( iface[i], "ath", 3 ) && (! G.is_madwifing[i]) )
+                    caplen -= 4;
 
-        if( ! memcmp( iface, "ath", 3 ) && (! G.is_madwifing) )
-            caplen -= 4;
+                /* prism (wlan-ng) header parsing */
 
-        /* prism (wlan-ng) header parsing */
+                h80211 = buffer;
 
-        h80211 = buffer;
+                if( arptype[i] == ARPHRD_IEEE80211_PRISM )
+                {
+                    if( buffer[7] == 0x40 )
+                    {
+                        /* prism54 uses a different format */
 
-        if( arptype == ARPHRD_IEEE80211_PRISM )
-        {
-            if( buffer[7] == 0x40 )
-            {
-                /* prism54 uses a different format */
+                        power = buffer[0x33];
 
-                power = buffer[0x33];
+                        n = 0x40;
+                    }
+                    else
+                    {
+                        power = *(int *)( buffer + 0x5C );
 
-                n = 0x40;
-            }
-            else
-            {
-                power = *(int *)( buffer + 0x5C );
+                        if( ! memcmp( iface[i], "ath", 3 ) )
+                            power -= *(int *)( buffer + 0x68 );
 
-                if( ! memcmp( iface, "ath", 3 ) )
-                    power -= *(int *)( buffer + 0x68 );
+                        n = *(int *)( buffer + 4 );
+                    }
 
-                n = *(int *)( buffer + 4 );
-            }
+                    if( n <= 0 || n >= caplen )
+                        continue;
 
-            if( n <= 0 || n >= caplen )
-                continue;
+                    h80211 += n;
+                    caplen -= n;
+                }
 
-            h80211 += n;
-            caplen -= n;
-        }
+                /* radiotap header parsing */
 
-        /* radiotap header parsing */
+                if( arptype[i] == ARPHRD_IEEE80211_FULL )
+                {
+                    if( buffer[0] != 0 )
+                    {
+                        fprintf( stderr, "Wrong radiotap header version.\n" );
+                        return( 1 );
+                    }
 
-        if( arptype == ARPHRD_IEEE80211_FULL )
-        {
-            if( buffer[0] != 0 )
-            {
-                fprintf( stderr, "Wrong radiotap header version.\n" );
-                return( 1 );
-            }
+                    n = *(unsigned short *)( buffer + 2 );
 
-            n = *(unsigned short *)( buffer + 2 );
+                    if( *(int *)( buffer + 4 ) == 0x0000082E )
+                        power = buffer[14];     /* ipw2200 1.0.7 */
 
-            if( *(int *)( buffer + 4 ) == 0x0000082E )
-                power = buffer[14];     /* ipw2200 1.0.7 */
+                    if( n <= 0 || n >= caplen )
+                        continue;
 
-            if( n <= 0 || n >= caplen )
-                continue;
+                    h80211 += n;
+                    caplen -= n;
+                }
 
-            h80211 += n;
-            caplen -= n;
-        }
-
-        dump_add_packet( h80211, caplen, power );
+                dump_add_packet( h80211, caplen, power, i );
+	    }
+	}
     }
 
     if (G.record_data) {
