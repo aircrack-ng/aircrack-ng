@@ -52,6 +52,8 @@
 #define O_BINARY 0
 #endif
 
+#define MAX_DICTS 128
+
 #define ASCII_LOW_T 0x21
 #define ASCII_HIGH_T 0x7E
 #define ASCII_VOTE_STRENGTH_T 150
@@ -111,8 +113,11 @@ struct options
 									multithreaded for SMP*/
 	int do_testy;				 /* experimental attack  */
 
-	FILE *dict;					 /* dictionary file      */
+	char *dicts[MAX_DICTS];			 /* dictionary files     */
+	FILE *dict;				 /* dictionary file      */
+	int nbdict;				 /* current dict number  */
 	int no_stdin;				 /* if dict == stdin     */
+	int hexdict[MAX_DICTS];			 /* if dict in hex       */
 
 	int showASCII;				 /* Show ASCII version of*/
 								 /* the wepkey           */
@@ -1318,7 +1323,7 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 {
 	uchar x1, x2;
 	unsigned long xv;
-	int i, j, n, bad;
+	int i, j, n, bad, tests;
 	int nb_ascii;
 
 	uchar K[64];
@@ -1332,7 +1337,14 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 
 	memcpy( K + 3, wepkey, keylen );
 
-	for( n = 0; n < 32; n++ )
+	tests = 32;
+
+	if(opt.dict) tests = (wep.nb_ivs-5)/5;
+
+	if(tests < 4)  tests=4;
+	if(tests > 32) tests=32;
+
+	for( n = 0; n < tests; n++ )
 	{
 		/* xv = 5 * ( rand() % wep.nb_ivs ); */
 		xv = 5 * n;
@@ -2239,6 +2251,61 @@ uchar mic[16], int force )
 	printf( "\n" );
 }
 
+int next_dict(int nb)
+{
+	if(opt.dict != NULL)
+	{
+		fclose(opt.dict);
+		opt.dict = NULL;
+	}
+	opt.nbdict = nb;
+	if(opt.dicts[opt.nbdict] == NULL)
+		return( FAILURE );
+
+	while(opt.nbdict < MAX_DICTS && opt.dicts[opt.nbdict] != NULL)
+	{
+		if( strcmp( opt.dicts[opt.nbdict], "-" ) == 0 )
+		{
+			if( ( opt.dict = fdopen( 0, "r" ) ) == NULL )
+			{
+				perror( "fopen(dictionary) failed" );
+				opt.nbdict++;
+				continue;
+			}
+		
+			opt.no_stdin = 1;
+		}
+		else
+		{
+			if( ( opt.dict = fopen( opt.dicts[opt.nbdict], "r" ) ) == NULL )
+			{
+				perror( "fopen(dictionary) failed" );
+				opt.nbdict++;
+				continue;
+			}
+		
+			fseek(opt.dict, 0L, SEEK_END);
+		
+			if ( ftell( opt.dict ) <= 0L )
+			{
+				fclose( opt.dict );
+				opt.dict = NULL;
+				printf( "Empty dictionnary\n" );
+				opt.nbdict++;
+				continue;
+			}
+		
+			rewind( opt.dict );
+		}
+		break;
+	}
+
+	if(opt.nbdict >= MAX_DICTS || opt.dicts[opt.nbdict] == NULL)
+	    return( FAILURE );
+
+	return( 0 );
+}
+
 int do_wpa_crack( struct AP_info *ap )
 {
 	int i, cid;
@@ -2309,6 +2376,12 @@ int do_wpa_crack( struct AP_info *ap )
 		{
 			/* read a couple of keys (skip those < 8 chars) */
 
+			if(opt.dict == NULL)
+			{
+				printf( "\nPassphrase not in dictionnary \n" );
+				return( FAILURE );
+			}
+
 			do
 			{
 				if( fgets( key1, sizeof( key1 ), opt.dict ) == NULL )
@@ -2316,9 +2389,15 @@ int do_wpa_crack( struct AP_info *ap )
 					if( opt.l33t )
 						printf( "\33[32;22m" );
 
-					printf( "\nPassphrase not in dictionnary\n" );
-
-					return( FAILURE );
+					printf( "\nPassphrase not in dictionnary %s \n", opt.dicts[opt.nbdict] );
+					if(next_dict(opt.nbdict+1) != 0)
+					{
+						return( FAILURE );
+					}
+					else
+					{
+						continue;
+					}
 				}
 
 				i = strlen( key1 );
@@ -2332,7 +2411,16 @@ int do_wpa_crack( struct AP_info *ap )
 			do
 			{
 				if( fgets( key2, sizeof( key2 ), opt.dict ) == NULL )
-					break;
+				{
+					if(next_dict(opt.nbdict+1) != 0)
+					{
+						break;
+					}
+					else
+					{
+						continue;
+					}
+				}
 
 				i = strlen( key2 );
 
@@ -2450,6 +2538,218 @@ void sighandler( int signum )
 
 	if( signum == SIGWINCH )
 		printf( "\33[2J\n" );
+}
+
+int next_key( char **key, int keysize )
+{
+	char *tmp, *tmp2;
+	int i, rtn;
+	unsigned int dec;
+	char *hex;
+
+	tmp2 = tmp = (char*) malloc(1024);
+
+	while(1)
+	{
+		rtn = 0;
+		tmp = tmp2;
+		if(opt.dict == NULL)
+		{
+			printf( "\nPassphrase not in dictionnary \n" );
+			free(tmp);
+			return( FAILURE );
+		}
+
+		if( opt.hexdict[opt.nbdict] )
+		{
+			if( fgets( tmp, ((keysize*2)+(keysize-1)), opt.dict ) == NULL )
+			{
+				if( opt.l33t )
+					printf( "\33[32;22m" );
+		
+//				printf( "\nPassphrase not in dictionnary \"%s\" \n", opt.dicts[opt.nbdict] );
+				if(next_dict(opt.nbdict+1) != 0)
+				{
+					free(tmp);
+					return( FAILURE );
+				}
+				else
+				{
+					continue;
+				}
+			}
+
+			i=strlen(tmp);
+
+			if( i <= 2 ) continue;
+
+			if( tmp[i - 1] == '\n' ) tmp[--i] = '\0';
+			if( tmp[i - 1] == '\r' ) tmp[--i] = '\0';
+			if( i <= 0 ) continue;
+
+			i=0;
+
+			hex = strsep(&tmp, ":");
+
+			while( i<keysize && hex != NULL )
+			{
+				if(strlen(hex) > 2 || strlen(hex) == 0)
+				{
+					rtn = 1;
+					break;
+				}
+				if(sscanf(hex, "%x", &dec) == 0 )
+				{
+					rtn = 1;
+					break;
+				}
+
+				(*key)[i] = dec;
+				hex = strsep(&tmp, ":");
+				i++;
+			}
+			if(rtn)
+			{
+				continue;
+			}
+		}
+		else
+		{
+			if( fgets( *key, keysize, opt.dict ) == NULL )
+			{
+				if( opt.l33t )
+					printf( "\33[32;22m" );
+		
+//				printf( "\nPassphrase not in dictionnary \"%s\" \n", opt.dicts[opt.nbdict] );
+				if(next_dict(opt.nbdict+1) != 0)
+				{
+					free(tmp);
+					return( FAILURE );
+				}
+				else
+				{
+					continue;
+				}
+			}
+
+			i=strlen(*key);
+
+			if( i <= 2 ) continue;
+
+			if( (*key)[i - 1] == '\n' ) (*key)[--i] = '\0';
+			if( (*key)[i - 1] == '\r' ) (*key)[--i] = '\0';
+
+			if( i <= 0 ) continue;
+		}
+
+		break;
+	}
+
+	free(tmp);
+
+	return( SUCCESS );
+}
+
+int set_dicts(char* optargs)
+{
+	int len;
+	char *optarg;
+
+	opt.nbdict = 0;
+	optarg = strsep(&optargs, ",");
+
+	for(len=0; len<MAX_DICTS; len++)
+	{
+		opt.dicts[len] = NULL;
+	}
+
+	while(optarg != NULL && opt.nbdict<MAX_DICTS)
+	{
+		len = strlen(optarg)+1;
+		opt.dicts[opt.nbdict] = (char*)malloc(len * sizeof(char));
+		if(opt.dicts[opt.nbdict] == NULL)
+		{
+			perror("allocation failed!");
+			return( FAILURE );
+		}
+		if(strncasecmp(optarg, "h:", 2) == 0)
+		{
+			strncpy(opt.dicts[opt.nbdict], optarg+2, len-2);
+			opt.hexdict[opt.nbdict] = 1;
+		}
+		else
+		{
+			strncpy(opt.dicts[opt.nbdict], optarg, len);
+			opt.hexdict[opt.nbdict] = 0;
+		}
+		optarg = strsep(&optargs, ",");
+		opt.nbdict++;
+	}
+
+	next_dict(0);
+
+	while(next_dict(opt.nbdict+1) == 0) {}
+
+	next_dict(0);
+
+	return 0;
+}
+
+int crack_wep_dict()
+{
+	struct timeval t_last;
+	struct timeval t_now;
+	int i, origlen, keysize;
+	char *key;
+
+	key = (char*) malloc(sizeof(char) * (opt.keylen + 1));
+	keysize = opt.keylen+1;
+
+	update_ivbuf();
+
+	if(wep.nb_ivs < 25)
+	{
+		printf( "\ncapture 25 IVs\n" );
+		return( FAILURE );
+	}
+
+	gettimeofday( &t_last, NULL );
+	t_last.tv_sec--;
+
+	while(1)
+	{
+		if( next_key( &key, keysize ) != SUCCESS) return( FAILURE );
+
+		i = strlen( key );
+
+		origlen = i;
+
+		while(i<opt.keylen)
+		{
+			key[i] = key[i - origlen];
+			i++;
+		}
+
+		key[i] = '\0';
+
+		if( ! opt.is_quiet )
+		{
+			gettimeofday( &t_now, NULL );
+			if( (t_now.tv_sec - t_last.tv_sec) > 0)
+			{
+				show_wep_stats(opt.keylen - 1, 1);
+				gettimeofday( &t_last, NULL);
+			}
+		}
+
+		for(i=0; i<=opt.keylen; i++)
+		{
+			wep.key[i] = key[i];
+		}
+
+		if(check_wep_key(key, opt.keylen, 0) == SUCCESS)
+			return( SUCCESS );
+	}
 }
 
 int main( int argc, char *argv[] )
@@ -2699,35 +2999,8 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'w' :
-				if( strcmp( optarg, "-" ) == 0 )
-				{
-					if( ( opt.dict = fdopen( 0, "r" ) ) == NULL )
-					{
-						perror( "fopen(dictionary) failed" );
-						return( FAILURE );
-					}
-
-					opt.no_stdin = 1;
-				}
-				else
-				{
-					if( ( opt.dict = fopen( optarg, "r" ) ) == NULL )
-					{
-						perror( "fopen(dictionary) failed" );
-						return( FAILURE );
-					}
-
-					fseek(opt.dict, 0L, SEEK_END);
-
-					if ( ftell( opt.dict ) <= 0L )
-					{
-						fclose( opt.dict );
-						printf( "Empty dictionnary\n" );
-						return( FAILURE );
-					}
-
-					rewind( opt.dict );
-				}
+				if(set_dicts(optarg) != 0)
+				    return FAILURE;
 				break;
 
 			case '0' :
@@ -2995,74 +3268,81 @@ int main( int argc, char *argv[] )
 
 		memset( &wep, 0, sizeof( wep ) );
 
-		for( i = 0; i < opt.nbcpu; i++ )
+		if(opt.dict != NULL)
 		{
-			/* start one thread per cpu */
-
-			pthread_t tid;
-
-			if (opt.amode<=1 && opt.nbcpu>1 && opt.do_brute && opt.do_mt_brute)
+			crack_wep_dict();
+		}
+		else
+		{
+			for( i = 0; i < opt.nbcpu; i++ )
 			{
-				if (pthread_create( &tid, NULL, (void *) inner_bruteforcer_thread,
-					(void *) (long) i ) != 0)
+				/* start one thread per cpu */
+	
+				pthread_t tid;
+	
+				if (opt.amode<=1 && opt.nbcpu>1 && opt.do_brute && opt.do_mt_brute)
+				{
+					if (pthread_create( &tid, NULL, (void *) inner_bruteforcer_thread,
+						(void *) (long) i ) != 0)
+					{
+						perror( "pthread_create failed" );
+						goto exit_main;
+					}
+				}
+	
+				if( pthread_create( &tid, NULL, (void *) crack_wep_thread,
+					(void *) (long) i ) != 0 )
 				{
 					perror( "pthread_create failed" );
 					goto exit_main;
 				}
 			}
-
-			if( pthread_create( &tid, NULL, (void *) crack_wep_thread,
-				(void *) (long) i ) != 0 )
+	
+			if( ! opt.do_testy )
 			{
-				perror( "pthread_create failed" );
-				goto exit_main;
-			}
-		}
-
-		if( ! opt.do_testy )
-		{
-			do   { ret = do_wep_crack1( 0 ); }
-			while( ret == RESTART );
-
-			if( ret == FAILURE )
-			{
-				printf( "   Attack failed. Possible reasons:\n\n"
-					"     * Out of luck: you must capture more IVs. Usually, 104-bit WEP\n"
-					"       can be cracked with about one million IVs, sometimes more.\n\n"
-					"     * If all votes seem equal, or if there are many negative votes,\n"
-					"       then the capture file is corrupted, or the key is not static.\n\n"
-					"     * A false positive prevented the key from being found.  Try to\n"
-					"       disable each korek attack (-k 1 .. 17), raise the fudge factor\n"
-					"       (-f)" );
-				if (opt.do_testy)
-					printf( "and try the experimental bruteforce attacks (-y)." );
-				printf( "\n" );
-			}
-		}
-		else
-		{
-			for( i = opt.keylen - 3; i < opt.keylen - 2; i++ )
-			{
-				do   { ret = do_wep_crack2( i ); }
+				do   { ret = do_wep_crack1( 0 ); }
 				while( ret == RESTART );
-
-				if( ret == SUCCESS )
-					break;
+	
+				if( ret == FAILURE )
+				{
+					printf( "   Attack failed. Possible reasons:\n\n"
+						"     * Out of luck: you must capture more IVs. Usually, 104-bit WEP\n"
+						"       can be cracked with about one million IVs, sometimes more.\n\n"
+						"     * If all votes seem equal, or if there are many negative votes,\n"
+						"       then the capture file is corrupted, or the key is not static.\n\n"
+						"     * A false positive prevented the key from being found.  Try to\n"
+						"       disable each korek attack (-k 1 .. 17), raise the fudge factor\n"
+						"       (-f)" );
+					if (opt.do_testy)
+						printf( "and try the experimental bruteforce attacks (-y)." );
+					printf( "\n" );
+				}
 			}
-
-			if( ret == FAILURE )
+			else
 			{
-				printf( "   Attack failed. Possible reasons:\n\n"
-					"     * Out of luck: you must capture more IVs. Usually, 104-bit WEP\n"
-					"       can be cracked with about one million IVs, sometimes more.\n\n"
-					"     * If all votes seem equal, or if there are many negative votes,\n"
-					"       then the capture file is corrupted, or the key is not static.\n\n"
-					"     * A false positive prevented the key from being found.  Try to\n"
-					"       disable each korek attack (-k 1 .. 17), raise the fudge factor\n"
-					"       (-f)" );
-				if (opt.do_testy)
-					printf( "or try the standard attack mode instead (no -y option)." );
-				printf( "\n" );
+				for( i = opt.keylen - 3; i < opt.keylen - 2; i++ )
+				{
+					do   { ret = do_wep_crack2( i ); }
+					while( ret == RESTART );
+	
+					if( ret == SUCCESS )
+						break;
+				}
+	
+				if( ret == FAILURE )
+				{
+					printf( "   Attack failed. Possible reasons:\n\n"
+						"     * Out of luck: you must capture more IVs. Usually, 104-bit WEP\n"
+						"       can be cracked with about one million IVs, sometimes more.\n\n"
+						"     * If all votes seem equal, or if there are many negative votes,\n"
+						"       then the capture file is corrupted, or the key is not static.\n\n"
+						"     * A false positive prevented the key from being found.  Try to\n"
+						"       disable each korek attack (-k 1 .. 17), raise the fudge factor\n"
+						"       (-f)" );
+					if (opt.do_testy)
+						printf( "or try the standard attack mode instead (no -y option)." );
+					printf( "\n" );
+				}
 			}
 		}
 	}
