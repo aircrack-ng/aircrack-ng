@@ -14,7 +14,7 @@ echo -e "\nusage: `basename $0` <start|stop> <interface> [channel]\n"
 echo -e "Interface\tChipset\t\tDriver\n"
 
 
-function startStdIface {
+fstartStdIface() {
 	iwconfig $1 mode monitor 2> /dev/null >/dev/null
 	iwconfig $1 channel $2 2> /dev/null >/dev/null
 	iwconfig $1 key off 2> /dev/null >/dev/null
@@ -23,7 +23,7 @@ function startStdIface {
 }
 
 
-function stopStdIface {
+stopStdIface() {
 	ifconfig $1 down 2> /dev/null >/dev/null
 	iwconfig $1 mode Managed 2> /dev/null >/dev/null
 	ifconfig $1 down 2> /dev/null >/dev/null
