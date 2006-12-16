@@ -443,7 +443,7 @@ int read_raw_packet(unsigned char* dest, char* srcfile, int length)
     if(length  <= 0   ) return 1;
     if(length  >= 2048) return 1;
 
-    f = fopen(srcfile, "r");
+    f = fopen(srcfile, "rb");
     if(f == NULL)
     {
         perror("fopen failed.");
@@ -495,6 +495,7 @@ int write_cap_packet(unsigned char* packet, int length)
     if( fwrite( &pfh, 1, n, f ) != (size_t) n )
     {
         fprintf( stderr, "failed: fwrite(pcap file header)\n" );
+        fclose( f );
         return( 1 );
     }
 
@@ -510,6 +511,7 @@ int write_cap_packet(unsigned char* packet, int length)
     if( fwrite( &pkh, 1, n, f ) != (size_t) n )
     {
         fprintf( stderr, "fwrite(packet header) failed\n" );
+        fclose( f );
         return( 1 );
     }
 
@@ -518,9 +520,12 @@ int write_cap_packet(unsigned char* packet, int length)
     if( fwrite( packet, 1, n, f ) != (size_t) n )
     {
         fprintf( stderr, "fwrite(packet data) failed\n");
+        fclose( f );
         return( 1 );
     }
-
+	
+    fclose( f );
+	
     return 0;
 }
 
@@ -532,7 +537,7 @@ int read_prga(unsigned char **dest, char *file)
     if(file == NULL) return( 1 );
     if(*dest == NULL) *dest = (unsigned char*) malloc(1501);
 
-    f = fopen(file, "r");
+    f = fopen(file, "rb");
 
     if(f == NULL)
     {
@@ -541,20 +546,21 @@ int read_prga(unsigned char **dest, char *file)
     }
 
     fseek(f, 0, SEEK_END);
-    size = ftell(f);
+    size = (int)ftell(f);
     rewind(f);
 
     if(size > 1500) size = 1500;
 
-    if( fread( (*dest), size, 1, f ) != 1 )
+    if( (int)fread( (*dest), size, 1, f ) != 1 )
     {
         fprintf( stderr, "fread failed\n" );
+        fclose( f );
         return( 1 );
     }
 
     opt.prgalen = size;
 
-    fclose(f);
+    fclose( f );
     return( 0 );
 }
 
