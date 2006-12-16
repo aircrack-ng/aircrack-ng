@@ -3,7 +3,7 @@ CFLAGS          ?= -g -W -Wall -O3
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 
 destdir         = 
-prefix          = /usr/local
+prefix          = ${PREFIX}
 bindir          = $(prefix)/bin
 sbindir         = $(prefix)/sbin
 mandir          = $(prefix)/man/man1
@@ -48,6 +48,7 @@ install:
 	install -d $(destdir)$(bindir)
 	install -m 755 $(BINFILES) $(destdir)$(bindir)
 	install -d $(destdir)$(sbindir)
+	install -m 755 $(SBINFILES) $(destdir)$(sbindir)
 	install -m 755 $(SCRIPTS) $(destdir)$(sbindir)
 	install -d $(destdir)$(mandir)
 	install -m 644 ./manpages/* $(destdir)$(mandir)
@@ -66,9 +67,7 @@ uninstall:
 	rm -f $(destdir)$(bindir)/ivstools
 	rm -f $(destdir)$(bindir)/kstats
 	rm -f $(destdir)$(bindir)/ivstools-ng
-	rm -f $(destdir)$(sbindir)/airmon.sh
 	rm -f $(destdir)$(sbindir)/airmon-ng
-	rm -f $(destdir)$(sbindir)/airmon
 	rm -f $(destdir)$(mandir)/aircrack-ng.1
 	rm -f $(destdir)$(mandir)/airdecap-ng.1
 	rm -f $(destdir)$(mandir)/airmon.sh.1

@@ -5,6 +5,9 @@ If you're not compiling aircrack-ng on Linux, first, you have
  * cygwin  : rename Makefile.cygwin to Makefile
  * MacOSX  : rename Makefile.osx to Makefile
  * windows : use windows package unless you don't need airodump/wzcook
+ * FreeBSD : rename Makefile.FreeBSD to Makefile
+ * OpenBSD : rename Makefile.OpenBSD to Makefile
+ * NetBSD : rename Makefile.NetBSD to Makefile
  * On another OS: That's untested, but you have to rename Makefile.other to Makefile
 
 Compilation:

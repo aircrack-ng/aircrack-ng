@@ -1,5 +1,3 @@
-CC              = gcc
-CFLAGS          ?= -g -W -Wall -O3
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 
 destdir         = 
