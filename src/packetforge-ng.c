@@ -76,6 +76,7 @@ char usage[] =
 "      -e             : disables WEP encryption\n"
 "      -k <ip[:port]> : set Source      IP [Port]\n"
 "      -l <ip[:port]> : set Destination IP [Port]\n"
+"-t ttl         : set Time To Live\n"
 "      -w <file>      : write packet to this pcap file\n"
 "\n"
 "  Source options:\n"
@@ -107,6 +108,7 @@ struct options
     int mode;
     int pktlen;
     int prgalen;
+    int ttl;
 
     unsigned short sport;
     unsigned short dport;
@@ -363,6 +365,18 @@ int set_sport(unsigned char* packet)
     return 0;
 }
 
+int set_ip_ttl(unsigned char* packet)
+{
+    unsigned char ttl;
+
+    if(packet == NULL) return 1;
+
+    ttl = opt.ttl;
+    memcpy(packet+40, &ttl, 1);
+
+    return 0;
+}
+
 int set_IVidx(unsigned char* packet)
 {
     if(packet == NULL) return 1;
@@ -600,6 +614,8 @@ int forge_udp()
 
     if( set_dip(h80211, 48)  != 0 ) return 1;
     if( set_sip(h80211, 44)  != 0 ) return 1;
+    if( opt.ttl != -1 ) 
+        if( set_ip_ttl(h80211) != 0 ) return 1;
 
     /* set udp length */
     h80211[57] = '\x09';
@@ -630,6 +646,8 @@ int forge_icmp()
 
     if( set_dip(h80211, 48)  != 0 ) return 1;
     if( set_sip(h80211, 44)  != 0 ) return 1;
+    if( opt.ttl != -1 ) 
+        if( set_ip_ttl(h80211) != 0 ) return 1;
 
     /* generate + set ip checksum */
     chksum = ip_chksum((unsigned short*)(h80211+32), 20);
@@ -687,6 +705,7 @@ int main(int argc, char* argv[])
     opt.mode    = -1;
     opt.pktlen  = -1;
     opt.prgalen = -1;
+    opt.ttl     = -1;
 
     opt.sport   = -1;
     opt.dport   = -1;
@@ -708,7 +727,7 @@ int main(int argc, char* argv[])
         };
 
         int option = getopt_long( argc, argv,
-                        "p:a:c:h:jok:l:j:r:y:0129:w:e",
+                        "p:a:c:h:jok:l:j:r:y:0129:w:et:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -728,6 +747,17 @@ int main(int argc, char* argv[])
                 }
                 opt.fctrl[0]=((arg>>8)&0xFF);
                 opt.fctrl[1]=(arg&0xFF);
+                break;
+
+            case 't' :
+
+                sscanf( optarg, "%i", &arg );
+                if( arg < 0 || arg > 255 )
+                {
+                    printf( "Invalid time to live.\n" );
+                    return( 1 );
+                }
+                opt.ttl = arg;
                 break;
 
             case 'a' :
