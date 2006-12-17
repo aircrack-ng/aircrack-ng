@@ -96,6 +96,7 @@
 extern char * getVersion(char * progname, int maj, int min, int submin, int betavers);
 extern int is_ndiswrapper(const char * iface, const char * path);
 extern char * wiToolsPath(const char * tool);
+extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 
 const unsigned char llcnull[4] = {0, 0, 0, 0};
 char *f_ext[4] = { "txt", "gps", "cap", "ivs" };
@@ -406,41 +407,6 @@ char usage[] =
 "                    2     : Hop on last \n"
 "      -s                  : same as --chswitch \n"
 "\n";
-
-int mac2string(char *dest, unsigned char *mac)
-{
-    if(mac == NULL || dest == NULL) return( 1 );
-    snprintf(dest, 18, "%2X:%2X:%2X:%2X:%2X:%2X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    return(0);
-}
-
-int set_mac(uchar *dest, char *src)
-{
-    int i;
-    unsigned int dec;
-    char *byte;
-
-    if(dest == NULL || src == NULL) return 1;
-    if(strlen(src) != 17) return 1;
-
-    i=0;
-    byte = strsep(&src, ":");
-
-    while(byte != NULL && i<6)
-    {
-        if( sscanf(byte, "%x", &dec) == 0 )
-        {
-            memset(dest, '\x00', 6);
-            return 1;
-        }
-
-        dest[i] = dec;
-        byte = strsep(&src, ":");
-        i++;
-    }
-
-    return(0);
-}
 
 int is_filtered_netmask(uchar *bssid)
 {
@@ -3188,7 +3154,7 @@ int main( int argc, char *argv[] )
                     printf("Notice: netmask already given\n");
                     break;
                 }
-                if(set_mac(G.f_netmask, optarg) != 0)
+                if(getmac(optarg, 1, G.f_netmask) != 0)
                 {
                     printf("Notice: invalid netmask\n");
                     return( 1 );
@@ -3200,7 +3166,7 @@ int main( int argc, char *argv[] )
                     printf("Notice: bssid already given\n");
                     break;
                 }
-                if(set_mac(G.f_bssid, optarg) != 0)
+                if(getmac(optarg, 1, G.f_bssid) != 0)
                 {
                     printf("Notice: invalid bssid\n");
                     return( 1 );
