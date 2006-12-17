@@ -38,8 +38,8 @@ kstats: src/kstats.c
 makeivs: test/makeivs.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) test/makeivs.c -o makeivs
 
-strip:
-	strip $(BINFILES) $(SBINFILES) $(TESTFILES)
+strip: $(BINFILES) $(TESTFILES)
+	strip $(BINFILES) $(TESTFILES)
 
 install:
 	install -d $(destdir)$(bindir)
@@ -49,36 +49,34 @@ install:
 	install -m 755 $(SCRIPTS) $(destdir)$(sbindir)
 	install -d $(destdir)$(mandir)
 	install -m 644 ./manpages/* $(destdir)$(mandir)
-	rm -f $(destdir)$(mandir)/airodump-ng.1
-	rm -f $(destdir)$(mandir)/aireplay-ng.1
 
 uninstall:
-	rm -f $(destdir)$(bindir)/aircrack-ng
-	rm -f $(destdir)$(bindir)/airdecap-ng
-	rm -f $(destdir)$(bindir)/arpforge
-	rm -f $(destdir)$(bindir)/packetforge-ng
-	rm -f $(destdir)$(bindir)/aireplay-ng
-	rm -f $(destdir)$(bindir)/airmon.sh
-	rm -f $(destdir)$(bindir)/mergeivs
-	rm -f $(destdir)$(bindir)/pcap2ivs
-	rm -f $(destdir)$(bindir)/ivstools
-	rm -f $(destdir)$(bindir)/kstats
-	rm -f $(destdir)$(bindir)/ivstools-ng
-	rm -f $(destdir)$(sbindir)/airmon-ng
-	rm -f $(destdir)$(mandir)/aircrack-ng.1
-	rm -f $(destdir)$(mandir)/airdecap-ng.1
-	rm -f $(destdir)$(mandir)/airmon.sh.1
-	rm -f $(destdir)$(mandir)/airmon-ng.1
-	rm -f $(destdir)$(mandir)/arpforge.1
-	rm -f $(destdir)$(mandir)/mergeivs.1
-	rm -f $(destdir)$(mandir)/pcap2ivs.1
-	rm -f $(destdir)$(mandir)/ivstools.1
-	rm -f $(destdir)/usr/man/man1/aircrack-ng.1
-	rm -f $(destdir)/usr/man/man1/airdecap-ng.1
-	rm -f $(destdir)/usr/man/man1/airmon.sh.1
-	rm -f $(destdir)/usr/man/man1/arpforge.1
-	rm -f $(destdir)/usr/man/man1/mergeivs.1
-	rm -f $(destdir)/usr/man/man1/pcap2ivs.1
+	-rm -f $(destdir)$(bindir)/aircrack-ng
+	-rm -f $(destdir)$(bindir)/airdecap-ng
+	-rm -f $(destdir)$(bindir)/arpforge
+	-rm -f $(destdir)$(bindir)/packetforge-ng
+	-rm -f $(destdir)$(bindir)/aireplay-ng
+	-rm -f $(destdir)$(bindir)/airmon.sh
+	-rm -f $(destdir)$(bindir)/mergeivs
+	-rm -f $(destdir)$(bindir)/pcap2ivs
+	-rm -f $(destdir)$(bindir)/ivstools
+	-rm -f $(destdir)$(bindir)/kstats
+	-rm -f $(destdir)$(bindir)/ivstools-ng
+	-rm -f $(destdir)$(sbindir)/airmon-ng
+	-rm -f $(destdir)$(mandir)/aircrack-ng.1
+	-rm -f $(destdir)$(mandir)/airdecap-ng.1
+	-rm -f $(destdir)$(mandir)/airmon.sh.1
+	-rm -f $(destdir)$(mandir)/airmon-ng.1
+	-rm -f $(destdir)$(mandir)/arpforge.1
+	-rm -f $(destdir)$(mandir)/mergeivs.1
+	-rm -f $(destdir)$(mandir)/pcap2ivs.1
+	-rm -f $(destdir)$(mandir)/ivstools.1
+	-rm -f $(destdir)/usr/man/man1/aircrack-ng.1
+	-rm -f $(destdir)/usr/man/man1/airdecap-ng.1
+	-rm -f $(destdir)/usr/man/man1/airmon.sh.1
+	-rm -f $(destdir)/usr/man/man1/arpforge.1
+	-rm -f $(destdir)/usr/man/man1/mergeivs.1
+	-rm -f $(destdir)/usr/man/man1/pcap2ivs.1
 	
 doc:
 	install -d $(destdir)$(docdir)
@@ -86,4 +84,4 @@ doc:
 	
 
 clean:
-	rm -f $(destdir)$(SBINFILES) $(destdir)$(BINFILES) $(destdir)$(TESTFILES)
+	-rm -f $(SBINFILES) $(BINFILES) $(TESTFILES)

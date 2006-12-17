@@ -31,23 +31,23 @@ kstats: src/kstats.c
 makeivs: test/makeivs.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) test/makeivs.c -o makeivs
 
-strip:
-	strip $(BINFILES)
+strip: $(BINFILES) $(TESTFILES)
+	strip $(BINFILES) $(TESTFILES)
 
 install:
 	install -d $(destdir)$(bindir)
 	install -m 755 $(BINFILES) $(destdir)$(bindir)
 
 uninstall:
-	rm -f $(destdir)$(bindir)/aircrack-ng.exe
-	rm -f $(destdir)$(bindir)/airdecap-ng.exe
-	rm -f $(destdir)$(bindir)/arpforge.exe
-	rm -f $(destdir)$(bindir)/packetforge-ng.exe
-	rm -f $(destdir)$(bindir)/mergeivs.exe
-	rm -f $(destdir)$(bindir)/pcap2ivs.exe
-	rm -f $(destdir)$(bindir)/ivstools.exe
-	rm -f $(destdir)$(bindir)/kstats.exe
+	-rm -f $(destdir)$(bindir)/aircrack-ng.exe
+	-rm -f $(destdir)$(bindir)/airdecap-ng.exe
+	-rm -f $(destdir)$(bindir)/arpforge.exe
+	-rm -f $(destdir)$(bindir)/packetforge-ng.exe
+	-rm -f $(destdir)$(bindir)/mergeivs.exe
+	-rm -f $(destdir)$(bindir)/pcap2ivs.exe
+	-rm -f $(destdir)$(bindir)/ivstools.exe
+	-rm -f $(destdir)$(bindir)/kstats.exe
 	
 
 clean:
-	rm -f $(destdir)$(BINFILES) $(destdir)$(TESTFILES)
+	-rm -f $(BINFILES) $(TESTFILES)
