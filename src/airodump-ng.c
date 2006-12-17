@@ -413,7 +413,7 @@ int mac2string(char *dest, unsigned char *mac)
     return(0);
 }
 
-int set_mac(char *dest, char *src)
+int set_mac(uchar *dest, char *src)
 {
     int i;
     unsigned int dec;
@@ -441,10 +441,10 @@ int set_mac(char *dest, char *src)
     return(0);
 }
 
-int is_filtered_netmask(char *bssid)
+int is_filtered_netmask(uchar *bssid)
 {
-    char mac1[6];
-    char mac2[6];
+    uchar mac1[6];
+    uchar mac2[6];
     int i;
 
     for(i=0; i<6; i++)
@@ -2692,7 +2692,7 @@ int getchannels(const char *optarg)
 int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct sockaddr_ll *sll, int *fd_raw, int *arptype, int cardnum)
 {
     int pid=0, n=0;
-    char *buffer;
+    uchar *buffer;
     FILE               *check_madwifing;
 
     /* reserve the buffer space */
@@ -2780,7 +2780,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
         G.is_madwifing[cardnum] = 1;
         memset(buffer,0, 65536);
         sprintf((char *) buffer, "/proc/sys/net/%s/dev_type", iface);
-        FILE * f = fopen(buffer,"w");
+        FILE * f = fopen( (char *) buffer,"w");
         if (f != NULL) {
             char * madwifiPrism2 = "802\n";
             fprintf(f, madwifiPrism2);

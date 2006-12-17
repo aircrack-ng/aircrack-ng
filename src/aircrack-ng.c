@@ -2316,6 +2316,8 @@ int do_wpa_crack( struct AP_info *ap )
 	uchar pmk2[40], ptk2[80];
 	uchar mic1[20], mic2[20];
 
+        i=0;
+
 	/* send the ESSID to each thread */
 
 	for( cid = 0; cid < opt.nbcpu; cid++ )
@@ -2744,10 +2746,10 @@ int crack_wep_dict()
 
 		for(i=0; i<=opt.keylen; i++)
 		{
-			wep.key[i] = key[i];
+			wep.key[i] = (uchar)key[i];
 		}
 
-		if(check_wep_key(key, opt.keylen, 0) == SUCCESS)
+		if(check_wep_key(wep.key, opt.keylen, 0) == SUCCESS)
 			return( SUCCESS );
 	}
 }
