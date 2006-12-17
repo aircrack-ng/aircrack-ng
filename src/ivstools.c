@@ -26,9 +26,12 @@
 #include "version.h"
 #include "pcap.h"
 
+#define SPANTREE_ADDR  "\x01\x80\xC2\x00\x00\x00"
+
 extern char * getVersion(char * progname, int maj, int min, int submin, int betavers);
 
-void usage(int what) {
+void usage(int what)
+{
        printf("\n  %s - (C) 2006 Thomas d\'Otreppe\n"
               "  Original work: Christophe Devine\n"
               "  http://www.aircrack-ng.org\n"
@@ -284,8 +287,18 @@ int main( int argc, char *argv[] )
             memcpy( bssid_prv, bssid_cur, 6 );
         }
         else
+        {
             fwrite( "\xFF", 1, 1, f_out );
-
+        }
+        
+        /* Special handling for spanning-tree packets */
+        if( memcmp( h80211 +  4, SPANTREE_ADDR, 6 ) == 0 ||
+            memcmp( h80211 + 16, SPANTREE_ADDR, 6 ) == 0 )
+        {
+            h80211[z + 4] = (h80211[z + 4] ^ 0x42) ^ 0xAA;
+            h80211[z + 5] = (h80211[z + 5] ^ 0x42) ^ 0xAA;
+        }
+        
         fwrite( h80211 + z    , 1, 3, f_out );
         fwrite( h80211 + z + 4, 1, 2, f_out );
         ++nbivs;

@@ -78,6 +78,7 @@ extern int getmac(char * macAddress, int strict, unsigned char * mac);
 
 
 #define BROADCAST "\xFF\xFF\xFF\xFF\xFF\xFF"
+#define SPANTREE  "\x01\x80\xC2\x00\x00\x00"
 
 static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -815,6 +816,14 @@ void read_thread( void *arg )
 
 			memcpy( buffer    , h80211 + z    , 3 );
 			memcpy( buffer + 3, h80211 + z + 4, 2 );
+			
+            /* Special handling for spanning-tree packets */
+            if ( memcmp( h80211 +  4, SPANTREE, 6 ) == 0 ||
+                memcmp( h80211 + 16, SPANTREE, 6 ) == 0 )
+            {
+                buffer[3] = (buffer[3] ^ 0x42) ^ 0xAA;
+                buffer[4] = (buffer[4] ^ 0x42) ^ 0xAA;
+            }
 
 			goto add_wep_iv;
 		}

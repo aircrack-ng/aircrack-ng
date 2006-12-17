@@ -63,6 +63,7 @@
 
 #define NULL_MAC       "\x00\x00\x00\x00\x00\x00"
 #define BROADCAST_ADDR "\xFF\xFF\xFF\xFF\xFF\xFF"
+#define SPANTREE_ADDR  "\x01\x80\xC2\x00\x00\x00"
 
 #define NB_PWR  5       /* size of signal power ring buffer */
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
@@ -1289,6 +1290,14 @@ skip_probe:
                         memcpy( iv_info + 1, &h80211[z    ], 3 );
                         memcpy( iv_info + 4, &h80211[z + 4], 2 );
                         n =  6;
+                        
+                        /* Special handling for spanning-tree packets */
+                        if( memcmp( h80211 +  4, SPANTREE_ADDR, 6 ) == 0 ||
+                            memcmp( h80211 + 16, SPANTREE_ADDR, 6 ) == 0 )
+                        {
+                            iv_info[ 4] = (iv_info[ 4] ^ 0x42) ^ 0xAA;
+                            iv_info[ 5] = (iv_info[ 5] ^ 0x42) ^ 0xAA;
+                        }
                     }
                     else
                     {
@@ -1297,6 +1306,14 @@ skip_probe:
                         memcpy( iv_info + 6 , &h80211[z    ], 3 );
                         memcpy( iv_info + 9 , &h80211[z + 4], 2 );
                         n = 11;
+                        
+                        /* Special handling for spanning-tree packets */
+                        if( memcmp( h80211 +  4, SPANTREE_ADDR, 6 ) == 0 ||
+                            memcmp( h80211 + 16, SPANTREE_ADDR, 6 ) == 0 )
+                        {
+                            iv_info[ 9] = (iv_info[ 9] ^ 0x42) ^ 0xAA;
+                            iv_info[10] = (iv_info[10] ^ 0x42) ^ 0xAA;
+                        }
                     }
 
                     if( fwrite( iv_info, 1, n, G.f_ivs ) != (size_t) n )

