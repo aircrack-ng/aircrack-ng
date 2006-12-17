@@ -1,5 +1,3 @@
-#!/bin/bash
-
 
 IFACE=""
 KISMET=/etc/kismet/kismet.conf

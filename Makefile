@@ -24,7 +24,7 @@ DOCFILES        = ChangeLog INSTALL README LICENSE AUTHORS VERSION
 
 default:all
 
-all: aircrack-ng airdecap-ng packetforge-ng aireplay-ng airodump-ng ivstools kstats makeivs
+all: aircrack-ng airdecap-ng packetforge-ng aireplay-ng airodump-ng ivstools kstats makeivs airmon-ng
 
 aircrack-ng-opt: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt -lpthread
