@@ -29,9 +29,6 @@ airdecap-ng: src/airdecap-ng.c src/crypto.c src/common.c src/crc.c
 packetforge-ng: src/packetforge-ng.c src/common.c src/crc.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) src/packetforge-ng.c src/common.c src/crc.c -o packetforge-ng
 
-airmon-ng: src/airmon-ng.c src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/airmon-ng.c src/common.c -o airodump-ng
-
 ivstools: src/ivstools.c src/common.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) src/ivstools.c src/common.c -o ivstools
 

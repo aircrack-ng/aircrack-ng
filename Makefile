@@ -51,9 +51,6 @@ aireplay-ng: src/aireplay-ng.c src/common.c src/crc.c
 airodump-ng: src/airodump-ng.c src/common.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) src/airodump-ng.c src/common.c -o airodump-ng
 
-airmon-ng: src/airmon-ng.c src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/airmon-ng.c src/common.c -o airodump-ng
-
 ivstools: src/ivstools.c src/common.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) src/ivstools.c src/common.c -o ivstools
 
