@@ -51,7 +51,7 @@ done
 
 sleep 1s
 
-for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID)' | cut -b 1-7 | grep -v wifi`
+for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
 do
  if [ x"`iwpriv $iface 2>/dev/null | grep force_reset`" != "x" ]
  then
@@ -291,6 +291,27 @@ do
          echo "source=rt8180,$iface,Realtek" >>$KISMET
          iwconfig $iface mode Monitor channel $CH
          iwpriv $iface prismhdr 1 &>/dev/null
+         ifconfig $iface up
+         echo -n " (monitor mode enabled)"
+     fi
+     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+         stopStdIface $iface
+     fi
+     echo
+     continue
+ fi
+
+
+ if [ x"`iwpriv $iface 2>/dev/null | grep badcrc`" != "x" ]
+ then
+     echo -e -n "$iface\t\tRTL8187\t\tr8187"
+     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+     then
+         cp $KISMET~ $KISMET 2>/dev/null &&
+         echo "source=rt8180,$iface,Realtek" >>$KISMET
+         iwconfig $iface mode Monitor channel $CH
+         iwpriv $iface rawtx 1 &>/dev/null
          ifconfig $iface up
          echo -n " (monitor mode enabled)"
      fi
