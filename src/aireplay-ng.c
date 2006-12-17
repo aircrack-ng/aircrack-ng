@@ -2725,15 +2725,25 @@ int do_attack_fragment()
 {
     uchar packet[4096];
     uchar prga[4096];
-    char strbuf[256];
     uchar snap_header[] = "\xAA\xAA\x03\x00\x00\x00\x08";
     uchar iv[4];
     uchar ack[14] = "\xd4";
+
+    char strbuf[256];
+
     struct tm *lt;
-
-
-    int done = 0, caplen = 0, arplen = 0, round = 0, prga_len = 0, isrelay = 0, gotit = 0, again = 0;
     struct timeval tv, tv2;
+    struct pcap_pkthdr pkh;
+
+    int done     = 0;
+    int caplen   = 0;
+    int arplen   = 0;
+    int round    = 0;
+    int prga_len = 0;
+    int isrelay  = 0;
+    int gotit    = 0;
+    int again    = 0;
+    int n        = 0;
 
 
     if( memcmp( opt.f_bssid, NULL_MAC, 6 ) == 0 )
@@ -2771,7 +2781,62 @@ int do_attack_fragment()
         round = 0;
         while(1)  //waiting for data packet
         {
-            caplen = read_packet(packet, 4096);
+            if(opt.s_file == NULL)
+            {
+                caplen = read_packet(packet, 4096);
+            }
+            else
+            {
+
+                n = sizeof( pkh );
+
+                if( fread( &pkh, n, 1, dev.f_cap_in ) != 1 )
+                {
+                    printf( "\r\33[KEnd of file.\n" );
+                    opt.s_file = NULL;
+                    continue;
+                }
+
+                if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+                    SWAP32( pkh.caplen );
+
+                tv.tv_sec  = pkh.tv_sec;
+                tv.tv_usec = pkh.tv_usec;
+
+                n = caplen = pkh.caplen;
+
+                if( n <= 0 || n > (int) sizeof( h80211 ) )
+                {
+                    printf( "\r\33[KInvalid packet length %d.\n", n );
+                    opt.s_file = NULL;
+                    continue;
+                }
+
+                if( fread( h80211, n, 1, dev.f_cap_in ) != 1 )
+                {
+                    printf( "\r\33[KEnd of file.\n" );
+                    opt.s_file = NULL;
+                    continue;
+                }
+
+                if( dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER )
+                {
+                    if( h80211[7] == 0x40 )
+                        n = 64;
+                    else
+                        n = *(int *)( h80211 + 4 );
+
+                    if( n < 8 || n >= (int) caplen )
+                        continue;
+
+                    memcpy( tmpbuf, h80211, caplen );
+                    caplen -= n;
+                    memcpy( h80211, tmpbuf + n, caplen );
+                }
+
+                memcpy( packet, h80211, caplen );
+            }
+
             if (packet[0] == '\x08' && 
                 memcmp(packet+10, opt.f_bssid, 6) == 0 &&
                 (packet[1] & 64) == 64 )
