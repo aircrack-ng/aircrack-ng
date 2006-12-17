@@ -2624,7 +2624,7 @@ int do_attack_chopchop( void )
 int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac, uchar *src_ip, uchar *dst_ip, int size)
 {
     // 802.11 part
-    uchar *header80211 = "\x08\x41\x95\x00";
+    uchar header80211[] = "\x08\x41\x95\x00";
     memcpy(h80211,    header80211, 4);
     memcpy(h80211+4,  bssid,       6);
     memcpy(h80211+10, src_mac,     6);
@@ -2633,7 +2633,7 @@ int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac
     h80211[23] = '\x00';
 
     // ARP part
-    uchar *arp_header = "\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01";
+    uchar arp_header[] = "\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01";
     memcpy(h80211+24, arp_header, 16);
     memcpy(h80211+40, src_mac,     6);
     memcpy(h80211+46, src_ip,      4);
@@ -2713,8 +2713,8 @@ int do_attack_fragment()
 {
     uchar packet[4096];
     uchar prga[4096];
-    uchar strbuf[256];
-    uchar *snap_header = "\xAA\xAA\x03\x00\x00\x00\x08";
+    char strbuf[256];
+    uchar snap_header[] = "\xAA\xAA\x03\x00\x00\x00\x08";
     uchar iv[4];
     uchar ack[14] = "\xd4";
     struct tm *lt;
