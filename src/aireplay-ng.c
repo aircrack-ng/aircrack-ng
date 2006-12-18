@@ -637,7 +637,7 @@ int fake_ska_auth_1( void )
 
         if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000 && !got_one)
         {
-            printf ("Not answering...\n\n");
+            printf ("Not answering...(Step1)\n\n");
             return -1;
         }
     }
@@ -657,6 +657,7 @@ int fake_ska_auth_2(uchar *ph80211, int caplen, uchar *prga, uchar *iv)
     int ret=0;
     uchar ack[14] = 	"\xd4";
     memset(ack+1, 0, 13);
+    uchar packet[4096];
 
     //Increasing SEQ number
     ph80211[26]++;
@@ -687,19 +688,18 @@ int fake_ska_auth_2(uchar *ph80211, int caplen, uchar *prga, uchar *iv)
     //Waiting for successful authentication
     while (1)
     {
-	caplen = read_packet(ph80211, 4096);
-
-	if ((ph80211[0] == (unsigned char)'\xb0') && (caplen < 60) && ph80211[26] == 4) break;
+        caplen = read_packet(packet, 4096);
+        if (packet[0] == 0xb0 && (caplen < 60) && packet[26] == 4) break;
 
         gettimeofday(&tv2, NULL);
         if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000)
         {
-            printf ("\nNot answering...\n\n");
+            printf ("\nNot answering...(Step2)\n\n");
             return -1;
-	}
+        }
     }
 
-    if (!memcmp(ph80211+24, "\x01\x00\x04\x00\x00\x00", 6))
+    if (!memcmp(packet+24, "\x01\x00\x04\x00\x00\x00", 6))
     {
         printf ("Code 0 - Authentication SUCCESSFUL :)\n");
         ret = 0;
@@ -726,6 +726,7 @@ int fake_asso()
                         "\x00\x00\x00\x00\x00\x00\xd0\x01\x15\x00\x0a\x00\x00";
 
     uchar rates[16] =   "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C";
+    uchar packet[4096];
 
     uchar *capa;	//Capability Field from beacon
 
@@ -738,6 +739,8 @@ int fake_asso()
     memcpy(assoc+4 ,opt.r_bssid,6);
     memcpy(assoc+10,opt.r_smac, 6);
     memcpy(assoc+16,opt.r_bssid,6);
+
+    memcpy(ack+4, opt.r_bssid, 6);
 
     //Getting ESSID length
     slen = strlen(opt.r_essid);
@@ -762,9 +765,9 @@ int fake_asso()
     gettimeofday(&tv2, NULL);
     while (1)
     {
-        caplen = read_packet(tmpbuf, 4096);
+        caplen = read_packet(packet, 4096);
 
-        if (tmpbuf[0] == '\x10') break;
+        if (packet[0] == 0x10) break;
 
         gettimeofday(&tv2, NULL);
         if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000)
@@ -774,7 +777,7 @@ int fake_asso()
         }
     }
 
-    if (!memcmp(tmpbuf+26, "\x00\x00", 2))
+    if (!memcmp(packet+26, "\x00\x00", 2))
     {
         printf ("Code 0 - Association SUCCESSFUL :)\n\n");
     }
@@ -2572,7 +2575,7 @@ int do_attack_chopchop( void )
 int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac, uchar *src_ip, uchar *dst_ip, int size)
 {
     // 802.11 part
-    uchar header80211[] = "\x08\x41\x95\x00";
+    uchar *header80211 = (unsigned char*)"\x08\x41\x95\x00";
     memcpy(h80211,    header80211, 4);
     memcpy(h80211+4,  bssid,       6);
     memcpy(h80211+10, src_mac,     6);
@@ -2581,7 +2584,7 @@ int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac
     h80211[23] = '\x00';
 
     // ARP part
-    uchar arp_header[] = "\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01";
+    uchar *arp_header = (unsigned char*)"\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01";
     memcpy(h80211+24, arp_header, 16);
     memcpy(h80211+40, src_mac,     6);
     memcpy(h80211+46, src_ip,      4);
@@ -2660,8 +2663,9 @@ void save_prga(char *filename, uchar *iv, uchar *prga, int prgalen)
 int do_attack_fragment()
 {
     uchar packet[4096];
+    uchar packet2[4096];
     uchar prga[4096];
-    uchar snap_header[] = "\xAA\xAA\x03\x00\x00\x00\x08";
+    uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08";
     uchar iv[4];
     uchar ack[14] = "\xd4";
 
@@ -2673,6 +2677,7 @@ int do_attack_fragment()
 
     int done     = 0;
     int caplen   = 0;
+    int caplen2  = 0;
     int arplen   = 0;
     int round    = 0;
     int prga_len = 0;
@@ -2779,6 +2784,8 @@ int do_attack_fragment()
                 break;
         }
 
+        memcpy( packet2, packet, caplen );
+        caplen2 = caplen;
         printf("Data packet found!\n");
 
         prga_len = 7;
@@ -2788,6 +2795,8 @@ int do_attack_fragment()
         while(again == RETRY)  //sending 7byte fragments
         {
             again = 0;
+            memcpy( packet, packet2, caplen2 );
+            caplen = caplen2;
             memcpy(prga, packet+28, prga_len);
             memcpy(iv, packet+24, 4);
 
@@ -2813,7 +2822,7 @@ int do_attack_fragment()
             {
                 caplen = read_packet(packet, 4096);
 
-                if (packet[0] == '\x08') //Is data frame
+                if (packet[0] == 0x08) //Is data frame
                 {
                     if (packet[1] & 2)  //Is a FromDS packet
                     {
