@@ -157,6 +157,8 @@ int getip( char *s, unsigned char *ip , unsigned short *port)
         s++;
     }
 
+    if(i != 4) return 1;
+
     if( ( s = strchr( s, ':' ) ) && i == 4 )
     {
         s++;
