@@ -682,7 +682,7 @@ int forge_custom()
 
 void print_usage(void)
 {
-    printf(usage, getVersion("Packetforge-ng", _MAJ, _MIN, _SUB_MIN, _BETA) );
+    printf(usage, getVersion("Packetforge-ng", _MAJ, _MIN, _SUB_MIN, _DEVEL) );
 }
 
 int main(int argc, char* argv[])

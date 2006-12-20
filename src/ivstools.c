@@ -35,7 +35,7 @@ void usage(int what)
        printf("\n  %s - (C) 2006 Thomas d\'Otreppe\n"
               "  Original work: Christophe Devine\n"
               "  http://www.aircrack-ng.org\n"
-              "\n   usage: ", getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _BETA));
+              "\n   usage: ", getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _DEVEL));
        if (what == 0 || what == 1)
           printf( "ivstools --convert <pcap file> <ivs output file>\n"
                   "        Extract ivs from a pcap file\n");

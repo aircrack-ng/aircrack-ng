@@ -735,7 +735,7 @@ int main( int argc, char *argv[] )
     if( argc - optind != 1 )
     {
     usage:
-        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _BETA)  );
+        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _DEVEL)  );
         return( 1 );
     }
 

@@ -2771,7 +2771,7 @@ int main( int argc, char *argv[] )
 
 	ret = FAILURE;
 
-	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _BETA);
+	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _DEVEL);
 
 	memset( &opt, 0, sizeof( opt ) );
 

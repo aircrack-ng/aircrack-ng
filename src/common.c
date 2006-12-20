@@ -24,19 +24,19 @@ int is_ndiswrapper(const char * iface, const char * path)
 }
 
 /* Return the version number */
-char * getVersion(char * progname, int maj, int min, int submin, int betavers)
+char * getVersion(char * progname, int maj, int min, int submin, int develvers)
 {
 	char * temp;
 	temp = (char *) calloc(1,strlen(progname)+50);
 	char * provis = calloc(1,20);
 	sprintf(temp, "%s %d.%d", progname, maj, min);
-	if (submin>0) {
+	if (submin > 0) {
 		sprintf(provis,".%d",submin);
 		strcat(temp,provis);
 		memset(provis,0,20);
 	}
-	if (betavers>0) {
-		sprintf(provis," beta%d",betavers);
+	if (develvers > 0) {
+		sprintf(provis," dev%d",develvers);
 		strcat(temp,provis);
 	}
 	free(provis);
@@ -67,6 +67,7 @@ char * searchInside(const char * dir, const char * filename)
 		memset(curfile, 0, lentot);
 		sprintf(curfile, "%s/%s", dir, ep->d_name);
 
+		//Checking if it's the good file
 		if ((int)strlen( ep->d_name) == len && !strcmp(ep->d_name, filename))
 		{
 			(void)closedir(dp);

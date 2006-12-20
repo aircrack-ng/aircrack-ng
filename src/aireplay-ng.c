@@ -3537,7 +3537,7 @@ int main( int argc, char *argv[] )
     if( argc - optind < 1 || argc - optind > 2 )
     {
     usage:
-        printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _BETA)  );
+        printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _DEVEL)  );
         return( 1 );
     }
 
