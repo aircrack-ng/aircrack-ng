@@ -41,7 +41,7 @@ makeivs: test/makeivs.c
 strip: $(BINFILES) $(TESTFILES)
 	strip $(BINFILES) $(TESTFILES)
 
-install:
+install: $(BINFILES) $(TESTFILES)
 	install -d $(destdir)$(bindir)
 	install -m 755 $(BINFILES) $(destdir)$(bindir)
 	install -d $(destdir)$(sbindir)
