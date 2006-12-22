@@ -1,3 +1,23 @@
+Version 0.7 (changes from aircrack-ng 0.7) - Released ?? December 2006:
+* Makefiles: improved + added makefiles for other OS
+* aireplay-ng: Added fragmentation attack
+* aireplay-ng: Added shared key authentication
+* airmon-ng: Now detect the shell when installing
+* airmon-ng: Added support for rtl8187
+* aircrack-ng: Added WEP dictionnary attack
+* aircrack-ng: works with 802.11e QoS packets
+* airodump-ng: Added MAC filtering
+* airodump-ng: now use the flaw in shared-key authentication 
+	       to generate a xor file containing the prga recovered from a shared-key authentication
+* airodump-ng: more information about encryption on the AP
+* airodump-ng: receive quality indicator
+* airodump-ng: The way ESSID is given in the CSV file is more clear
+* packetforge-ng: set the TTL value in the ip header
+* packetforge-ng: close open file handles
+* Special handling of spanning tree packets
+* Added rtl8187 patch for injection
+* Other bug fixes
+
 Version 0.6.2 (changes from aircrack-ng 0.6.1) - Released 1 October 2006:
 * aireplay-ng: Applied patch to inject packets with an ipw2200
 * aircrack-ng: Fixed: show_wpa_stats() 1 byte array overflow
