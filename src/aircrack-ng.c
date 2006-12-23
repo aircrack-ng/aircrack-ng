@@ -864,8 +864,11 @@ void read_thread( void *arg )
 		ap_cur->crypt = 3;		 /* set WPA */
 
 		if( st_cur == NULL )
+		{
+			pthread_mutex_unlock( &mx_apl );
 			continue;
-
+		}
+		
 		/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 		if( ( h80211[z + 6] & 0x08 ) != 0 &&
@@ -875,7 +878,7 @@ void read_thread( void *arg )
 		{
 			memcpy( st_cur->wpa.anonce, &h80211[z + 17], 32 );
 
-								 /* authenticator nonce set */
+			/* authenticator nonce set */
 			st_cur->wpa.state = 1;
 		}
 
