@@ -16,7 +16,7 @@ datadir         = $(prefix)/share
 docdir          = $(datadir)/doc/aircrack-ng
 
 BINFILES        = aircrack-ng airdecap-ng packetforge-ng ivstools kstats
-SBINFILES       = aireplay-ng airodump-ng
+SBINFILES       = aireplay-ng airodump-ng airtun-ng
 SCRIPTS         = airmon-ng
 TESTFILES       = makeivs
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt aircrack-ng-opt-prof prof/*
@@ -24,7 +24,7 @@ DOCFILES        = ChangeLog INSTALL README LICENSE AUTHORS VERSION
 
 default:all
 
-all: aircrack-ng airdecap-ng packetforge-ng aireplay-ng airodump-ng ivstools kstats makeivs airmon-ng
+all: aircrack-ng airdecap-ng packetforge-ng aireplay-ng airodump-ng airtun-ng ivstools kstats makeivs airmon-ng
 
 aircrack-ng-opt: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt -lpthread
@@ -50,6 +50,9 @@ aireplay-ng: src/aireplay-ng.c src/common.c src/crc.c
 
 airodump-ng: src/airodump-ng.c src/common.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) src/airodump-ng.c src/common.c -o airodump-ng
+
+airtun-ng: src/airtun-ng.c src/common.c src/crc.c src/crypto.c
+	$(CC) $(CFLAGS) $(OPTFLAGS) src/airtun-ng.c src/common.c src/crc.c src/crypto.c -o airtun-ng
 
 ivstools: src/ivstools.c src/common.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) src/ivstools.c src/common.c -o ivstools
@@ -80,6 +83,7 @@ install: $(BINFILES) $(SBINFILES) $(TESTFILES) $(SCRIPTS)
 uninstall:
 	-rm -f $(destdir)$(bindir)/aircrack-ng
 	-rm -f $(destdir)$(bindir)/airodump-ng
+	-rm -f $(destdir)$(bindir)/airtun-ng
 	-rm -f $(destdir)$(bindir)/airdecap-ng
 	-rm -f $(destdir)$(bindir)/arpforge
 	-rm -f $(destdir)$(bindir)/packetforge-ng
@@ -91,6 +95,7 @@ uninstall:
 	-rm -f $(destdir)$(bindir)/kstats
 	-rm -f $(destdir)$(bindir)/ivstools-ng
 	-rm -f $(destdir)$(sbindir)/airodump-ng
+	-rm -f $(destdir)$(sbindir)/airtun-ng
 	-rm -f $(destdir)$(sbindir)/aireplay-ng
 	-rm -f $(destdir)$(sbindir)/airmon.sh
 	-rm -f $(destdir)$(sbindir)/airmon-ng
