@@ -84,7 +84,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 char usage[] =
 
 "\n"
-"  usage: airtun <options> <replay interface>\n"
+"  usage: airtun-ng <options> <replay interface>\n"
 "\n"
 "      -x nbpps  : maximum number of packets per second\n"
 "      -a bssid  : set Access Point MAC address\n"
