@@ -106,6 +106,7 @@ uninstall:
 	-rm -f $(destdir)$(mandir)/airmon.sh.1
 	-rm -f $(destdir)$(mandir)/airmon-ng.1
 	-rm -f $(destdir)$(mandir)/airodump-ng.1
+	-rm -f $(destdir)$(mandir)/airtun-ng.1
 	-rm -f $(destdir)$(mandir)/arpforge.1
 	-rm -f $(destdir)$(mandir)/mergeivs.1
 	-rm -f $(destdir)$(mandir)/pcap2ivs.1
@@ -115,6 +116,7 @@ uninstall:
 	-rm -f $(destdir)/usr/man/man1/aireplay-ng.1
 	-rm -f $(destdir)/usr/man/man1/airmon.sh.1
 	-rm -f $(destdir)/usr/man/man1/airodump-ng.1
+	-rm -f $(destdir)/usr/man/man1/airtun-ng.1
 	-rm -f $(destdir)/usr/man/man1/arpforge.1
 	-rm -f $(destdir)/usr/man/man1/mergeivs.1
 	-rm -f $(destdir)/usr/man/man1/pcap2ivs.1
