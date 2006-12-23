@@ -82,7 +82,9 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 
 char usage[] =
-
+"\n"
+"  %s - (C) 2006 Martin Beck\n"
+"  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: airtun-ng <options> <replay interface>\n"
 "\n"
@@ -895,7 +897,7 @@ int main( int argc, char *argv[] )
     if( argc - optind < 1 || argc - optind > 2 )
     {
     usage:
-        printf( usage, getVersion("AirTun", _MAJ, _MIN, _SUB_MIN, _DEVEL)  );
+        printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _DEVEL)  );
         return( 1 );
     }
 
