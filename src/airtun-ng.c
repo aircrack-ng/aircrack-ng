@@ -45,7 +45,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
-#include <getopt.h>
 
 #include <linux/if.h>
 #include <linux/if_tun.h>
