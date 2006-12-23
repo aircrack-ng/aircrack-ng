@@ -98,7 +98,7 @@ do
  if [ x"`iwpriv $iface 2>/dev/null | grep sw_reset`" != "x" ]
  then
     MODINFO=`modinfo ipw2200 | awk '/^version/ {print $2}'`
-    if { echo "$MODINFO" | grep -E '^1\.0\.(0|1|2|3)$|^1\.[1-9]' ; }
+    if { echo "$MODINFO" | grep -E '^1\.0\.(0|1|2|3)$' ; }
     then
     	echo "Monitor mode not supported, please upgrade"
     else
@@ -114,7 +114,7 @@ do
 	    stopStdIface $iface
 	fi
 
-    	if { echo "$MODINFO" | grep -E '^1\.0\.(5|7|8|11)$|^1\.[1-9]' ; }
+    	if { echo "$MODINFO" | grep -E '^1\.0\.(5|7|8|11)$' ; }
 	then
 		echo -e -n " (Warning: bad module version, you should upgrade)"
 	fi
