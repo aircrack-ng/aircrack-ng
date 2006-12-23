@@ -2,17 +2,14 @@
 IFACE=""
 KISMET=/etc/kismet/kismet.conf
 CH=$3; [ x$3 = "x" ] && CH=10
+IFACE_FOUND="false"
 
+usage() {
+	echo -e "usage: `basename $0` <start|stop> <interface> [channel]\n"
+	exit
+}
 
-which iwpriv > /dev/null 2> /dev/null || 
-  { echo Wireless tools not found ; exit ; }
-
-
-echo -e "\nusage: `basename $0` <start|stop> <interface> [channel]\n"
-echo -e "Interface\tChipset\t\tDriver\n"
-
-
-fstartStdIface() {
+startStdIface() {
 	iwconfig $1 mode monitor 2> /dev/null >/dev/null
 	iwconfig $1 channel $2 2> /dev/null >/dev/null
 	iwconfig $1 key off 2> /dev/null >/dev/null
@@ -28,6 +25,23 @@ stopStdIface() {
 	echo -n " (monitor mode disabled)"
 }
 
+which iwpriv > /dev/null 2> /dev/null || 
+  { echo Wireless tools not found ; exit ; }
+
+echo -e "\n"
+
+if [ x$1 != "xstart" ] && [ x$1 != "xstop" ]
+then
+	usage
+fi
+
+if [ x$2 = "x" ]
+then
+	usage		
+fi
+
+echo -e "Interface\tChipset\t\tDriver\n"
+
 
 for iface in `ifconfig -a 2>/dev/null | egrep HWaddr | cut -b 1-7`
 do
@@ -37,12 +51,15 @@ do
     echo -e -n "$iface\t\tAtheros\t\tmadwifi-ng"       
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
-    	
         IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor`
         cp $KISMET~ $KISMET 2>/dev/null &&
-        echo "source=madwifing_g,$iface,Atheros" >>$KISMET
+        echo "source=madwifi_g,$iface,Atheros" >>$KISMET
         iwconfig $IFACE channel $CH
         #echo -n " (monitor mode enabled)"
+    fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+    then
+            echo "$iface does not support 'stop', do it on ath interface"
     fi
     echo
     continue
