@@ -1,5 +1,6 @@
 Version 0.7 (changes from aircrack-ng 0.7) - Released ?? December 2006:
 * Makefiles: improved + added makefiles for other OS
+* airtun-ng: creates a tuntap interface, through which ordinary IP frames can be injected
 * aireplay-ng: Added fragmentation attack
 * aireplay-ng: Added shared key authentication
 * airmon-ng: Now detect the shell when installing
