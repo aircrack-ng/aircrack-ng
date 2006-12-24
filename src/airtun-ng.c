@@ -411,7 +411,6 @@ void print_packet ( uchar h80211[], int caplen )
 	printf("\n");
 }
 
-
 #define IEEE80211_LLC_SNAP      \
     "\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"  \
     "\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32\xAA\xAA\x03\x00\x00\x00\x08\x00"
@@ -582,6 +581,11 @@ int packet_recv(uchar* packet, int length)
         default: memcpy( bssid, packet +  4, 6 ); break;
     }
 
+    if(length < z+8)
+    {
+        return 1;
+    }
+
     if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
     {
         if( (packet[z] != packet[z + 1] || packet[z + 2] != 0x03) && opt.crypt == CRYPT_WEP )
@@ -595,7 +599,10 @@ int packet_recv(uchar* packet, int length)
 
                 if (decrypt_wep( packet + z + 4, length - z - 4,
                                  K, 3 + opt.weplen ) == 0 )
+                {
+                    printf("ICV check failed!\n");
                     return 1;
+                }
 
                 /* WEP data packet was successfully decrypted, *
                  * remove the WEP IV & ICV and write the data  */
