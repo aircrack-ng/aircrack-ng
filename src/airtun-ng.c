@@ -291,6 +291,11 @@ int read_prga(unsigned char **dest, char *file)
     if(file == NULL) return( 1 );
     if(*dest == NULL) *dest = (unsigned char*) malloc(1501);
 
+    if( memcmp( file+(strlen(file)-4), ".xor", 4 ) != 0 )
+    {
+        printf("Is this really a PRGA file: %s?\n", file);
+    }
+
     f = fopen(file, "r");
 
     if(f == NULL)
@@ -309,6 +314,11 @@ int read_prga(unsigned char **dest, char *file)
     {
         fprintf( stderr, "fread failed\n" );
         return( 1 );
+    }
+
+    if( (*dest)[3] > 0x03 )
+    {
+        printf("Are you really sure that this is a valid keystream? Because the index is out of range (0-3): %02X\n", (*dest)[3] );
     }
 
     opt.prgalen = size;
@@ -823,6 +833,11 @@ int main( int argc, char *argv[] )
                     printf( "PRGA file already specified.\n" );
                     return( 1 );
                 }
+                if( opt.crypt != CRYPT_NONE )
+                {
+                    printf( "Encryption key already specified.\n" );
+                    return( 1 );
+                }
                 if( read_prga(&(opt.prga), optarg) != 0 )
                 {
                     return( 1 );
@@ -847,6 +862,11 @@ int main( int argc, char *argv[] )
 
             case 'w' :
 
+                if( opt.prga != NULL )
+                {
+                    printf( "PRGA file already specified.\n" );
+                    return( 1 );
+                }
                 if( opt.crypt != CRYPT_NONE )
                 {
                     printf( "Encryption key already specified.\n" );

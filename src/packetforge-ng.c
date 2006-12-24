@@ -553,6 +553,11 @@ int read_prga(unsigned char **dest, char *file)
     if(file == NULL) return( 1 );
     if(*dest == NULL) *dest = (unsigned char*) malloc(1501);
 
+    if( memcmp( file+(strlen(file)-4), ".xor", 4 ) != 0 )
+    {
+        printf("Is this really a PRGA file: %s?\n", file);
+    }
+
     f = fopen(file, "rb");
 
     if(f == NULL)
@@ -572,6 +577,11 @@ int read_prga(unsigned char **dest, char *file)
         fprintf( stderr, "fread failed\n" );
         fclose( f );
         return( 1 );
+    }
+
+    if( (*dest)[3] > 0x03 )
+    {
+        printf("Are you really sure that this is a valid keystream? Because the index is out of range (0-3): %02X\n", (*dest)[3] );
     }
 
     opt.prgalen = size;
@@ -963,6 +973,7 @@ int main(int argc, char* argv[])
         printf("Error writing pcap file %s.\n", opt.cap_out);
         return 1;
     }
+    else printf( "Wrote packet to: %s\n", opt.cap_out );
 
     return 0;
 }
