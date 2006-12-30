@@ -3784,6 +3784,9 @@ int main( int argc, char *argv[] )
         }
     }
 
+    if(dev.is_madwifi)
+        printf("Madwifi: %d  Madwifi-ng: %d\n", dev.is_madwifi, dev.is_madwifing);
+
     switch( opt.a_mode )
     {
         case 0 : return( do_attack_deauth()      );
