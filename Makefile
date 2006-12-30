@@ -66,10 +66,6 @@ makeivs: test/makeivs.c
 strip: $(BINFILES) $(SBINFILES) $(TESTFILES)
 	strip $(BINFILES) $(SBINFILES) $(TESTFILES)
 
-airmon-ng: 
-	chmod +x makeAirmonNG.sh
-	./makeAirmonNG.sh
-
 install: $(BINFILES) $(SBINFILES) $(TESTFILES) $(SCRIPTS)
 	install -d $(destdir)$(bindir)
 	install -m 755 $(BINFILES) $(destdir)$(bindir)
