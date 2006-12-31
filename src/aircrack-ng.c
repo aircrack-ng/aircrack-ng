@@ -296,9 +296,11 @@ char usage[] =
 "      -y         : experimental single bruteforce mode\n"
 "      -s         : show ASCII version of the key\n"
 "\n"
-"  WPA-PSK cracking options:\n"
+"  WEP and WPA-PSK cracking options:\n"
 "\n"
-"      -w <words> : path to a dictionary file\n"
+"      -w <words> : path to a dictionary file (multiple\n"
+"                    dictionnaries can be specified.\n"
+"                    See manpage for more information)\n"
 /*"      -r <table> : path to a WPA PMK table\n" */
 "\n";
 
