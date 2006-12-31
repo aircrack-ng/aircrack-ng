@@ -3203,6 +3203,7 @@ char athXraw[] = "athXraw";
 int main( int argc, char *argv[] )
 {
     int n;
+    FILE * f;
     /* check the arguments */
 
     memset( &opt, 0, sizeof( opt ) );
@@ -3674,34 +3675,59 @@ int main( int argc, char *argv[] )
     if( strlen( argv[optind] ) == 4 &&
         memcmp( argv[optind], "ath", 3 ) == 0 )
     {
-    	dev.is_madwifi=1;
+        dev.is_madwifi = 1;
         memset( strbuf, 0, sizeof( strbuf ) );
-        snprintf( strbuf,  sizeof( strbuf ) - 1,
-                  "sysctl -w dev.%s.rawdev=1 >/dev/null 2>/dev/null",
-                  argv[optind] );
-
-        if( system( strbuf ) == 0 )
+        
+        snprintf(strbuf, sizeof( strbuf ) -1,
+                  "/proc/sys/net/%s/%%parent", argv[optind]);
+        
+        f = fopen(strbuf, "r");
+        
+        if (f != NULL)
         {
-
-            athXraw[3] = argv[optind][3];
-
+            // It is madwifi-ng
+            dev.is_madwifing = 1;
+            fclose( f );
+            
+            /* should we force prism2 header? */
+            /*
+            sprintf((char *) buffer, "/proc/sys/net/%s/dev_type", iface);
+            f = fopen( (char *) buffer,"w");
+            if (f != NULL) {
+                fprintf(f, "802\n");
+                fclose(f);
+            }
+            */
+            /* Force prism2 header on madwifi-ng */
+        }
+        else
+        {
+            // Madwifi-old
             memset( strbuf, 0, sizeof( strbuf ) );
             snprintf( strbuf,  sizeof( strbuf ) - 1,
-                      "ifconfig %s up", athXraw );
-            system( strbuf );
+                      "sysctl -w dev.%s.rawdev=1 >/dev/null 2>/dev/null",
+                      argv[optind] );
+
+            if( system( strbuf ) == 0 )
+            {
+
+                athXraw[3] = argv[optind][3];
+
+                memset( strbuf, 0, sizeof( strbuf ) );
+                snprintf( strbuf,  sizeof( strbuf ) - 1,
+                          "ifconfig %s up", athXraw );
+                system( strbuf );
 
 #if 0 /* some people reported problems when prismheader is enabled */
-            memset( strbuf, 0, sizeof( strbuf ) );
-            snprintf( strbuf,  sizeof( strbuf ) - 1,
-                     "sysctl -w dev.%s.rawdev_type=1 >/dev/null 2>/dev/null",
-                     argv[optind] );
-            system( strbuf );
+                memset( strbuf, 0, sizeof( strbuf ) );
+                snprintf( strbuf,  sizeof( strbuf ) - 1,
+                         "sysctl -w dev.%s.rawdev_type=1 >/dev/null 2>/dev/null",
+                         argv[optind] );
+                system( strbuf );
 #endif
 
-            argv[optind] = athXraw;
-        } else {
-        	// It is madwifi-ng
-        	dev.is_madwifing=1;
+                argv[optind] = athXraw;
+            }
         }
     }
 

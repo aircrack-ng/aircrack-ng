@@ -2676,7 +2676,8 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 {
     int pid=0, n=0;
     uchar *buffer;
-    FILE               *check_madwifing;
+    FILE *check_madwifing;
+    FILE *f;
 
     /* reserve the buffer space */
 
@@ -2758,15 +2759,16 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
     snprintf( (char*) buffer, strlen( iface ) + 23,
         "/proc/sys/net/%s/%%parent", iface );
     check_madwifing = fopen( (char*) buffer,"r");
+    
     if (check_madwifing != NULL) {
         fclose(check_madwifing);
         G.is_madwifing[cardnum] = 1;
         memset(buffer,0, 65536);
+        
         sprintf((char *) buffer, "/proc/sys/net/%s/dev_type", iface);
-        FILE * f = fopen( (char *) buffer,"w");
+        f = fopen( (char *) buffer,"w");
         if (f != NULL) {
-            char * madwifiPrism2 = "802\n";
-            fprintf(f, madwifiPrism2);
+            fprintf(f, "802\n");
             fclose(f);
         }
         /* Force prism2 header on madwifi-ng */
