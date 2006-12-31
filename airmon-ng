@@ -32,14 +32,17 @@ which iwpriv > /dev/null 2> /dev/null ||
 
 echo && echo
 
-if [ x$1 != "xstart" ] && [ x$1 != "xstop" ] && [ $# -ne "0" ]
+if [ $# -ne "0" ]
 then
-	usage
-fi
+	if [ x$1 != "xstart" ] && [ x$1 != "xstop" ]
+	then
+		usage
+	fi
 
-if [ x$2 = "x" ] && [ $# -ne "0" ]
-then
-	usage		
+	if [ x$2 = "x" ]
+	then
+		usage		
+	fi
 fi
 
 printf "Interface\tChipset\t\tDriver\n" && echo
@@ -57,7 +60,6 @@ do
         cp $KISMET~ $KISMET 2>/dev/null &&
         echo "source=madwifi_g,$iface,Atheros" >>$KISMET
         iwconfig $IFACE channel $CH
-        #printf " (monitor mode enabled)"
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
     then
