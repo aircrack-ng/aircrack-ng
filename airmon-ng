@@ -1,5 +1,6 @@
 #!/bin/sh
 
+USERID=""
 IFACE=""
 KISMET=/etc/kismet/kismet.conf
 CH=$3; [ x$3 = "x" ] && CH=10
@@ -26,6 +27,21 @@ stopStdIface() {
 	ifconfig $1 down 2> /dev/null >/dev/null
 	printf " (monitor mode disabled)"
 }
+
+if [ x"`which id 2> /dev/null`" != "x" ]
+then
+	USERID="`id -u 2> /dev/null`"
+fi
+
+if [ x$USERID = "x" -a x$UID != "x" ]
+then
+	USERID=$UID
+fi
+
+if [ x$USERID != "x" -a x$USERID != "x0" ]
+then
+	echo Run as root ; exit ;
+fi
 
 which iwpriv > /dev/null 2> /dev/null || 
   { echo Wireless tools not found ; exit ; }
@@ -98,7 +114,7 @@ do
  fi
 
 
- if [ `iwpriv $iface 2>/dev/null | grep -v $iface | md5sum | awk '{print $1}'` == "2310629be8b9051238cde37520d97755" ]
+ if [ `iwpriv $iface 2>/dev/null | grep -v $iface | md5sum | awk '{print $1}'` = "2310629be8b9051238cde37520d97755" ]
  then
     printf "$iface\t\tCentrino b\tipw2100"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
