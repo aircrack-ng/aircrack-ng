@@ -3672,8 +3672,8 @@ int main( int argc, char *argv[] )
 
     /* check if newer athXraw interface available */
 
-    if( strlen( argv[optind] ) == 4 &&
-        memcmp( argv[optind], "ath", 3 ) == 0 )
+    if( ( strlen( argv[optind] ) == 4 || strlen( argv[optind] ) == 5 )
+    	&& memcmp( argv[optind], "ath", 3 ) == 0 )
     {
         dev.is_madwifi = 1;
         memset( strbuf, 0, sizeof( strbuf ) );
