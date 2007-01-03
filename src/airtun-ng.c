@@ -85,7 +85,8 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 char usage[] =
 "\n"
-"  %s - (C) 2006 Martin Beck\n"
+"  %s - (C) 2006 Thomas d'Otreppe\n"
+"  Original work: Christophe Devine and Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: airtun-ng <options> <replay interface>\n"
