@@ -19,6 +19,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef linux
+	#error Airodump-ng only compiles with Linux
+#endif
+
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
