@@ -24,7 +24,7 @@ int is_ndiswrapper(const char * iface, const char * path)
 }
 
 /* Return the version number */
-char * getVersion(char * progname, int maj, int min, int submin, int develvers)
+char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
 {
 	char * temp;
 	temp = (char *) calloc(1,strlen(progname)+50);
@@ -36,7 +36,7 @@ char * getVersion(char * progname, int maj, int min, int submin, int develvers)
 		memset(provis,0,20);
 	}
 	if (develvers > 0) {
-		sprintf(provis," dev%d",develvers);
+		sprintf(provis," r%d",develvers);
 		strcat(temp,provis);
 	}
 	free(provis);

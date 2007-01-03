@@ -73,7 +73,7 @@ extern int shammx_data( uchar ctx[40], uchar data[128], uchar buf[640] )
 __attribute__((regparm(3)));
 #endif
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int betavers);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 
 
@@ -2776,7 +2776,7 @@ int main( int argc, char *argv[] )
 
 	ret = FAILURE;
 
-	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _DEVEL);
+	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION);
 
 	memset( &opt, 0, sizeof( opt ) );
 

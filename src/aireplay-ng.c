@@ -89,7 +89,7 @@
 #define RATES           \
     "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int betavers);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern int is_ndiswrapper(const char * iface, const char * path);
 extern char * searchInside(const char * dir, const char * filename);
 extern char * wiToolsPath(const char * tool);
@@ -3542,7 +3542,7 @@ int main( int argc, char *argv[] )
     if( argc - optind < 1 || argc - optind > 2 )
     {
     usage:
-        printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _DEVEL)  );
+        printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
         return( 1 );
     }
 

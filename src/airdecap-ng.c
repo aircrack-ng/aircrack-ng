@@ -33,7 +33,7 @@
 #define CRYPT_WEP  1
 #define CRYPT_WPA  2
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int betavers);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern int calc_crc_buf( unsigned char *buf, int len );
 
@@ -735,7 +735,7 @@ int main( int argc, char *argv[] )
     if( argc - optind != 1 )
     {
     usage:
-        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _DEVEL)  );
+        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
         return( 1 );
     }
 

@@ -98,7 +98,7 @@
 
 #define	MAX(a,b)	((a)>(b)?(a):(b))
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int betavers);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern int is_ndiswrapper(const char * iface, const char * path);
 extern char * wiToolsPath(const char * tool);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
@@ -3012,7 +3012,7 @@ int main( int argc, char *argv[] )
     if( argc < 2 )
     {
         usage:
-        printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _DEVEL)  );
+        printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
         return( 1 );
     }
 
