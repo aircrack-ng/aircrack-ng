@@ -35,8 +35,8 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
 		strcat(temp,provis);
 		memset(provis,0,20);
 	}
-	if (develvers > 0) {
-		sprintf(provis," r%d",develvers);
+	if (svnrev > 0) {
+		sprintf(provis," r%d",svnrev);
 		strcat(temp,provis);
 	}
 	free(provis);
