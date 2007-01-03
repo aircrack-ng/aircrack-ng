@@ -27,6 +27,7 @@
 
 #include <netpacket/packet.h>
 #include <linux/if_ether.h>
+#include <linux/if.h>
 #include <linux/wireless.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -3214,7 +3215,7 @@ int main( int argc, char *argv[] )
 
     for(i=0; i<cards; i++)
     {
-	fd_raw[i] = socket( PF_PACKET, SOCK_RAW, htons( ETH_P_ALL ) );
+	    fd_raw[i] = socket( PF_PACKET, SOCK_RAW, htons( ETH_P_ALL ) );
 
         if( fd_raw[i] < 0 )
         {
@@ -3223,8 +3224,8 @@ int main( int argc, char *argv[] )
                 fprintf( stderr, "This program requires root privileges.\n" );
             return( 1 );
         }
-	if( fd_raw[i] > fdh)
-		fdh=fd_raw[i];
+	    if( fd_raw[i] > fdh)
+		    fdh=fd_raw[i];
     }
 
     setuid( getuid() );
@@ -3368,10 +3369,10 @@ int main( int argc, char *argv[] )
         /* capture one packet */
 
         FD_ZERO( &rfds );
-	for(i=0; i<cards; i++)
-	{
+		for(i=0; i<cards; i++)
+	    {
             FD_SET( fd_raw[i], &rfds );
-	}
+	    }
 
         tv0.tv_sec  = 0;
         tv0.tv_usec = REFRESH_RATE;
