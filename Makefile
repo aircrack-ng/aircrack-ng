@@ -23,7 +23,7 @@ SBINFILES       = aireplay-ng airodump-ng airtun-ng
 SCRIPTS         = airmon-ng
 TESTFILES       = makeivs
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt aircrack-ng-opt-prof prof/*
-DOCFILES        = ChangeLog INSTALL README LICENSE AUTHORS VERSION
+DOCFILES        = ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 
 default:all
 

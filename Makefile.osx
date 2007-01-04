@@ -16,7 +16,7 @@ docdir          = $(datadir)/doc/aircrack-ng
 BINFILES        = aircrack-ng airdecap-ng packetforge-ng ivstools kstats
 SCRIPTS         = airmon-ng
 TESTFILES       = makeivs
-DOCFILES        = ChangeLog INSTALL README LICENSE AUTHORS VERSION
+DOCFILES        = ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 
 
 default: all
