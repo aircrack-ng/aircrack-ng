@@ -1,6 +1,6 @@
 CC              = gcc
 CFLAGS          ?= -g -W -Wall -O3
-OPTFLAGS        = -D_FILE_OFFSET_BITS=64 -D_REVISION="`cat .svn/entries | grep revision | sed 's/.*revision=\"\(.*\)\".*/\1/'`"
+OPTFLAGS        = -D_FILE_OFFSET_BITS=64 -D_REVISION=`cat .svn/entries | grep revision | sed 's/.*revision=\"\(.*\)\".*/\1/'`
 
 destdir         = 
 prefix          = /usr/local

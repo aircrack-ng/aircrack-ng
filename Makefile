@@ -1,10 +1,10 @@
 CC              = gcc
 CFLAGS          ?= -g -W -Wall -O3
-OPTFLAGS        = -D_FILE_OFFSET_BITS=64 -D_REVISION="`cat .svn/entries | grep revision | sed 's/.*revision=\"\(.*\)\".*/\1/'`"
+OPTFLAGS        = -D_FILE_OFFSET_BITS=64 -D_REVISION=`cat .svn/entries | grep revision | sed 's/.*revision=\"\(.*\)\".*/\1/'`
 
 iCC             = /opt/intel/cc/9.0/bin/icc
 iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro
-iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64 -D_REVISION="`cat .svn/entries | grep revision | sed 's/.*revision=\"\(.*\)\".*/\1/'`"
+iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64 -D_REVISION=`cat .svn/entries | grep revision | sed 's/.*revision=\"\(.*\)\".*/\1/'`
 PROF_DIR	= $(PWD)/prof
 
 destdir         = 
