@@ -1,6 +1,9 @@
+REVISION        = $(shell test -d .svn && LANG=C svn info | grep -i 'revision' | sed 's/[^0-9]//g' || echo "0")
+REVFLAGS        = -D_REVISION=$(REVISION)
+
 CC              = gcc
 CFLAGS          ?= -g -W -Wall -O3
-OPTFLAGS        = -D_FILE_OFFSET_BITS=64 -D_REVISION=`cat .svn/entries | grep revision | sed 's/.*revision=\"\(.*\)\".*/\1/'`
+OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 
 destdir         = 
 prefix          = /usr/local
@@ -21,22 +24,22 @@ default: all
 all: aircrack-ng airdecap-ng packetforge-ng ivstools kstats makeivs
 
 aircrack-ng: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng -lpthread
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng -lpthread
 
 airdecap-ng: src/airdecap-ng.c src/crypto.c src/common.c src/crc.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/airdecap-ng.c src/crypto.c src/common.c src/crc.c -o airdecap-ng
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airdecap-ng.c src/crypto.c src/common.c src/crc.c -o airdecap-ng
 
 packetforge-ng: src/packetforge-ng.c src/common.c src/crc.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/packetforge-ng.c src/common.c src/crc.c -o packetforge-ng
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/packetforge-ng.c src/common.c src/crc.c -o packetforge-ng
 
 ivstools: src/ivstools.c src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/ivstools.c src/common.c -o ivstools
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/ivstools.c src/common.c -o ivstools
 
 kstats: src/kstats.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/kstats.c  -o kstats
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/kstats.c  -o kstats
 
 makeivs: test/makeivs.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) test/makeivs.c -o makeivs
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) test/makeivs.c -o makeivs
 
 strip: $(BINFILES) $(TESTFILES)
 	strip $(BINFILES) $(TESTFILES)

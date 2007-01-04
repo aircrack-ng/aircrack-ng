@@ -1,4 +1,5 @@
-REVISION	=	$(shell test -d .svn && LANG=C svn info | grep -i 'revision' | sed 's/[^0-9]//g' || echo "0")
+REVISION	= $(shell test -d .svn && LANG=C svn info | grep -i 'revision' | sed 's/[^0-9]//g' || echo "0")
+REVFLAGS	= -D_REVISION=$(REVISION)
 
 CC              = gcc
 CFLAGS          ?= -g -W -Wall -O3
@@ -8,8 +9,6 @@ iCC             = /opt/intel/cc/9.0/bin/icc
 iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro
 iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
-
-REVFLAGS	= -D_REVISION=$(REVISION)
 
 destdir         = 
 prefix          = /usr/local
