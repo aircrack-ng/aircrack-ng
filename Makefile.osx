@@ -1,4 +1,4 @@
-REVISION        = $(shell test -d .svn && LANG=C svn info | grep -i 'revision' | sed 's/[^0-9]//g' || echo "0")
+REVISION	= $(shell sh ./evalrev)
 REVFLAGS        = -D_REVISION=$(REVISION)
 
 CC              = gcc
