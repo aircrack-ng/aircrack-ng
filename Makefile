@@ -1,11 +1,15 @@
+REVISION	=	$(shell test -d .svn && LANG=C svn info | grep -i 'revision' | sed 's/[^0-9]//g' || echo "0")
+
 CC              = gcc
 CFLAGS          ?= -g -W -Wall -O3
-OPTFLAGS        = -D_FILE_OFFSET_BITS=64 -D_REVISION=`cat .svn/entries | grep revision | sed 's/.*revision=\"\(.*\)\".*/\1/'`
+OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 
 iCC             = /opt/intel/cc/9.0/bin/icc
 iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro
-iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64 -D_REVISION=`cat .svn/entries | grep revision | sed 's/.*revision=\"\(.*\)\".*/\1/'`
+iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
+
+REVFLAGS	= -D_REVISION=$(REVISION)
 
 destdir         = 
 prefix          = /usr/local
@@ -27,41 +31,41 @@ default:all
 all: aircrack-ng airdecap-ng packetforge-ng aireplay-ng airodump-ng airtun-ng ivstools kstats makeivs
 
 aircrack-ng-opt: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt -lpthread
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt -lpthread
 
 aircrack-ng-opt-prof_gen: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
 	mkdir -p prof
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) -prof_genx -DDO_PGO_DUMP -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt-prof_gen -lpthread
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_genx -DDO_PGO_DUMP -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt-prof_gen -lpthread
 
 aircrack-ng-opt-prof_use: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) -prof_use -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt-prof -lpthread
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_use -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt-prof -lpthread
 
 aircrack-ng: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng -lpthread
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng -lpthread
 
 airdecap-ng: src/airdecap-ng.c src/crypto.c src/common.c src/crc.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/airdecap-ng.c src/crypto.c src/common.c src/crc.c -o airdecap-ng
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airdecap-ng.c src/crypto.c src/common.c src/crc.c -o airdecap-ng
 
 packetforge-ng: src/packetforge-ng.c src/common.c src/crc.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/packetforge-ng.c src/common.c src/crc.c -o packetforge-ng
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/packetforge-ng.c src/common.c src/crc.c -o packetforge-ng
 
 aireplay-ng: src/aireplay-ng.c src/common.c src/crc.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/aireplay-ng.c src/common.c src/crc.c -o aireplay-ng
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aireplay-ng.c src/common.c src/crc.c -o aireplay-ng
 
 airodump-ng: src/airodump-ng.c src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/airodump-ng.c src/common.c -o airodump-ng
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airodump-ng.c src/common.c -o airodump-ng
 
 airtun-ng: src/airtun-ng.c src/common.c src/crc.c src/crypto.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/airtun-ng.c src/common.c src/crc.c src/crypto.c -o airtun-ng
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airtun-ng.c src/common.c src/crc.c src/crypto.c -o airtun-ng
 
 ivstools: src/ivstools.c src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/ivstools.c src/common.c -o ivstools
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/ivstools.c src/common.c -o ivstools
 
 kstats: src/kstats.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) src/kstats.c  -o kstats
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/kstats.c  -o kstats
 
 makeivs: test/makeivs.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) test/makeivs.c -o makeivs
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) test/makeivs.c -o makeivs
 
 strip: $(BINFILES) $(SBINFILES) $(TESTFILES)
 	strip $(BINFILES) $(SBINFILES) $(TESTFILES)
