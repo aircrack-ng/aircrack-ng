@@ -6,7 +6,12 @@ then
 	exit ;
 fi
 
-REVISION="`svn info 2> /dev/null | grep -i revision | sed 's/[^0-9]*//g'`"
+REVISION="`svnversion | sed 's/[^0-9]*//g'`"
+
+if [ x$REVISION = "x" ]
+then
+	REVISION="`svn info 2> /dev/null | grep -i revision | sed 's/[^0-9]*//g'`"
+fi
 
 if [ x$REVISION = "x" -a -e ".svn/entries" ]
 then
