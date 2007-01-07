@@ -2169,7 +2169,7 @@ int dump_write_csv( void )
 
             for(j=0; j<st_cur->ssid_length[i]; j++)
             {
-                snprintf( ssid_list + n + 1, sizeof( ssid_list ) - n - 2,
+                snprintf( ssid_list + n + 1 + j, sizeof( ssid_list ) - n - 2 - j,
                           "%c", st_cur->probes[i][j]);
             }
 
