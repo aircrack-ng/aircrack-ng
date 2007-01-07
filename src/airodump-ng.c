@@ -2056,7 +2056,7 @@ int dump_write_csv( void )
 
         fprintf( G.f_txt, ",");
 
-        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( stderr, "       ");
+        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( G.f_txt, "       ");
         else
         {
             if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_txt, " CCMP");
@@ -2069,7 +2069,7 @@ int dump_write_csv( void )
 
         fprintf( G.f_txt, ",");
 
-        if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) fprintf( stderr, "   ");
+        if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) fprintf( G.f_txt, "   ");
         else
         {
             if( ap_cur->security & AUTH_MGT   ) fprintf( G.f_txt, " MGT");
