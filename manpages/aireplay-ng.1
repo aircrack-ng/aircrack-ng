@@ -79,6 +79,18 @@ ARP Replay attack : inject FromDS pakets (see below).
 .TP
 .I -g <rbsize>
 Set ring buffer size (rbsize must be higher or equal to 1 ).
+.TP
+.I -k <IP>
+Set destination IP in fragments.
+.TP
+.I -l <IP>
+Set source IP in fragments.
+.TP
+.I -o <npackets>
+Set the number of packets for every authentication and association attempt.
+.TP
+.I -q <seconds>
+Set the time between keep-alive packets in fake authentication mode.
 .PP
 .TP
 .B Source options:
