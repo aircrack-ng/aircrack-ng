@@ -858,6 +858,7 @@ int do_attack_fake_auth( void )
     int mi_b, mi_s, mi_d;
     int x_send;
     int ret;
+    int kas;
 
     unsigned char ackbuf[14];
 
@@ -885,7 +886,7 @@ int do_attack_fake_auth( void )
 
     state = 0;
     x_send = 4;
-    if(opt.npackets > 1) x_send = opt.npackets;
+    if(opt.npackets > 0) x_send = opt.npackets;
     tt = time( NULL );
     tr = time( NULL );
 
@@ -1019,7 +1020,10 @@ int do_attack_fake_auth( void )
                     memcpy( h80211 + 10, opt.r_smac,  6 );
                     memcpy( h80211 + 16, opt.r_bssid, 6 );
 
-                    for( i = 0; i < 32; i++ )
+                    if( opt.npackets > 0 ) kas = opt.npackets;
+                    else kas = 32;
+
+                    for( i = 0; i < kas; i++ )
                         if( send_packet( h80211, 24 ) < 0 )
                             return( 1 );
                 }
@@ -1122,7 +1126,8 @@ int do_attack_fake_auth( void )
                         if(ret == 0)
                         {
                             i=0;
-                            sleep(opt.a_delay);
+                            if(opt.a_delay > 0 ) sleep(opt.a_delay);
+                            else return(0);
                         }
                         else
                         {
@@ -1169,7 +1174,8 @@ int do_attack_fake_auth( void )
                             if(ret == 0)
                             {
                                 i=0;
-                                sleep(opt.a_delay);
+                                if(opt.a_delay > 0)sleep(opt.a_delay);
+                                else return(0);
                             }
                             else
                             {
@@ -2815,7 +2821,7 @@ int do_attack_fragment()
                             }
                         }
 
-                        if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+/*                        if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
                         {
                             if (caplen < 90) //Is short enough
                             {
@@ -2824,7 +2830,7 @@ int do_attack_fragment()
                                 gotit = 1;
                                 isrelay = 0;
                             }
-                        }
+                        } */
                     }
                 }
                 gettimeofday( &tv2, NULL );
@@ -3058,6 +3064,7 @@ int do_attack_fragment()
                   lt->tm_hour, lt->tm_min, lt->tm_sec );
         save_prga(strbuf, iv, prga, length+24);
 
+        printf( "Saving keystream in %s\n", strbuf );
         printf("Now you can build a packet with packetforge-ng out of that %d bytes keystream\n", length);
 
         done=1;
