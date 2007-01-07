@@ -134,6 +134,8 @@ char usage[] =
 "      -g value  : change ring buffer size (default: 8)\n"
 "      -k IP     : set destination IP in fragments\n"
 "      -l IP     : set source IP in fragments\n"
+"      -o npckts : number of packets per burst (-1)\n"
+"      -q sec    : seconds between keep-alives (-1)\n"
 /*
 "\n"
 "  WIDS evasion options:\n"
@@ -190,6 +192,9 @@ struct options
     int ringbuffer;
     int ghost;
     int prgalen;
+
+    int delay;
+    int npackets;
 }
 opt;
 
@@ -198,6 +203,9 @@ struct devices
     int fd_in,  arptype_in;
     int fd_out, arptype_out;
     int fd_rtc;
+
+    uchar mac_in[6];
+    uchar mac_out[6];
 
     int is_wlanng;
     int is_hostap;
@@ -877,6 +885,7 @@ int do_attack_fake_auth( void )
 
     state = 0;
     x_send = 4;
+    if(opt.npackets > 1) x_send = opt.npackets;
     tt = time( NULL );
     tr = time( NULL );
 
@@ -915,7 +924,7 @@ int do_attack_fake_auth( void )
 
                 if( time( NULL ) - tt >= 2 )
                 {
-                    if( x_send < 256 )
+                    if( x_send < 256 && (opt.npackets == -1) )
                         x_send *= 2;
                     else
                     {
@@ -941,7 +950,7 @@ int do_attack_fake_auth( void )
             case 2:
 
                 state = 3;
-                x_send *= 2;
+                if(opt.npackets == -1) x_send *= 2;
                 tt = time( NULL );
 
                 /* attempt to associate */
@@ -979,7 +988,7 @@ int do_attack_fake_auth( void )
 
                 if( time( NULL ) - tt >= 5 )
                 {
-                    if( x_send < 256 )
+                    if( x_send < 256 && (opt.npackets == -1) )
                         x_send *= 4;
 
                     state = 0;
@@ -994,12 +1003,12 @@ int do_attack_fake_auth( void )
 
                 if( time( NULL ) - tt >= opt.a_delay )
                 {
-                    x_send = 4;
+                    if(opt.npackets == -1) x_send = 4;
                     state = 0;
                     break;
                 }
 
-                if( time( NULL ) - tr >= 15 )
+                if( time( NULL ) - tr >= opt.delay )
                 {
                     tr = time( NULL );
 
@@ -1065,7 +1074,8 @@ int do_attack_fake_auth( void )
             if( h80211[0] == 0xC0 && state == 4 )
             {
                 PCT; printf( "Got a deauthentication packet!\n" );
-                x_send = 4; state = 0;
+                if(opt.npackets == -1) x_send = 4;
+                state = 0;
                 sleep( 3 );
                 continue;
             }
@@ -1075,7 +1085,8 @@ int do_attack_fake_auth( void )
             if( h80211[0] == 0xA0 && state == 4 )
             {
                 PCT; printf( "Got a disassociation packet!\n" );
-                x_send = 4; state = 0;
+                if(opt.npackets == -1) x_send = 4;
+                state = 0;
                 sleep( 3 );
                 continue;
             }
@@ -1177,7 +1188,7 @@ int do_attack_fake_auth( void )
                     }
 
                     PCT; printf( "Authentication failed (code %d)\n", n );
-                    x_send = 4;
+                    if(opt.npackets == -1) x_send = 4;
                     sleep( 3 );
                     continue;
                 }
@@ -2006,6 +2017,8 @@ int do_attack_chopchop( void )
     struct pcap_file_header pfh_out;
     struct pcap_pkthdr pkh;
 
+    srand( time( NULL ) );
+
     if( capture_ask_packet( &caplen ) != 0 )
         return( 1 );
 
@@ -2610,6 +2623,8 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
     uchar frag[30+fragsize];
     int pack_size;
 
+    packet[23] = (rand() % 0xFF);
+
     for (t=0; t+=fragsize;)
     {
 
@@ -2636,7 +2651,7 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
         {
             frag[22] += 1;
         }
-        frag[23] = 0;
+//        frag[23] = 0;
 
     //Calculate packet lenght
         pack_size = 28 + fragsize;
@@ -2671,7 +2686,7 @@ int do_attack_fragment()
     uchar packet[4096];
     uchar packet2[4096];
     uchar prga[4096];
-    uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08";
+    uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
     uchar iv[4];
     uchar ack[14] = "\xd4";
     uchar dest[6];
@@ -2680,7 +2695,6 @@ int do_attack_fragment()
 
     struct tm *lt;
     struct timeval tv, tv2;
-    struct pcap_pkthdr pkh;
 
     int done     = 0;
     int caplen   = 0;
@@ -2691,7 +2705,6 @@ int do_attack_fragment()
     int isrelay  = 0;
     int gotit    = 0;
     int again    = 0;
-    int n        = 0;
     int length   = 0;
 
 
@@ -2728,71 +2741,11 @@ int do_attack_fragment()
     while(!done)  //
     {
         round = 0;
-        while(1)  //waiting for data packet
-        {
-            if(opt.s_file == NULL)
-            {
-                caplen = read_packet(packet, 4096);
-            }
-            else
-            {
 
-                n = sizeof( pkh );
+        if( capture_ask_packet( &caplen ) != 0 )
+            return -1;
 
-                if( fread( &pkh, n, 1, dev.f_cap_in ) != 1 )
-                {
-                    printf( "\r\33[KEnd of file.\n" );
-                    opt.s_file = NULL;
-                    continue;
-                }
-
-                if( dev.pfh_in.magic == TCPDUMP_CIGAM )
-                    SWAP32( pkh.caplen );
-
-                tv.tv_sec  = pkh.tv_sec;
-                tv.tv_usec = pkh.tv_usec;
-
-                n = caplen = pkh.caplen;
-
-                if( n <= 0 || n > (int) sizeof( h80211 ) )
-                {
-                    printf( "\r\33[KInvalid packet length %d.\n", n );
-                    opt.s_file = NULL;
-                    continue;
-                }
-
-                if( fread( h80211, n, 1, dev.f_cap_in ) != 1 )
-                {
-                    printf( "\r\33[KEnd of file.\n" );
-                    opt.s_file = NULL;
-                    continue;
-                }
-
-                if( dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER )
-                {
-                    if( h80211[7] == 0x40 )
-                        n = 64;
-                    else
-                        n = *(int *)( h80211 + 4 );
-
-                    if( n < 8 || n >= (int) caplen )
-                        continue;
-
-                    memcpy( tmpbuf, h80211, caplen );
-                    caplen -= n;
-                    memcpy( h80211, tmpbuf + n, caplen );
-                }
-
-                memcpy( packet, h80211, caplen );
-            }
-
-            if (packet[0] == '\x08' && 
-                memcmp(packet+10, opt.f_bssid, 6) == 0 &&
-                (packet[1] & 64) == 64 )
-                break;
-        }
-
-        memcpy( packet2, packet, caplen );
+        memcpy( packet2, h80211, caplen );
         caplen2 = caplen;
         printf("Data packet found!\n");
 
@@ -2809,8 +2762,12 @@ int do_attack_fragment()
             packet2[28] = ((packet2[28] ^ 0x42) ^ 0xAA);
             packet2[29] = ((packet2[29] ^ 0x42) ^ 0xAA);
         }
+        else if( caplen2 == 68 || caplen2 == 86 )
+        {
+            packet2[35] = packet2[35] ^ 0x06;
+        }
 
-        prga_len = 7;
+        prga_len = 8;
 
         again = RETRY;
 
@@ -2833,7 +2790,7 @@ int do_attack_fragment()
             }
 
             printf("Sending fragmented packet\n");
-            send_fragments(h80211, arplen, iv, prga, 3);
+            send_fragments(h80211, arplen, iv, prga, prga_len-4);
             //Plus an ACK
             send_packet(ack, 10);
 
@@ -3134,7 +3091,7 @@ int opensysfs( char *iface, int fd) {
 
 /* interface initialization routine */
 
-int openraw( char *iface, int fd, int *arptype )
+int openraw( char *iface, int fd, int *arptype, uchar* mac )
 {
     struct ifreq ifr;
     struct packet_mreq mr;
@@ -3214,6 +3171,8 @@ int openraw( char *iface, int fd, int *arptype )
         return( 1 );
     }
 
+    memcpy( mac, (unsigned char*)ifr.ifr_hwaddr.sa_data, 6);
+
     return( 0 );
 }
 
@@ -3234,7 +3193,8 @@ int main( int argc, char *argv[] )
     opt.f_iswep   = -1; opt.ringbuffer  =  8;
 
     opt.a_mode    = -1; opt.r_fctrl     = -1;
-    opt.ghost     =  0;
+    opt.ghost     =  0; opt.npackets    = -1;
+    opt.delay     = 15;
 
     while( 1 )
     {
@@ -3251,7 +3211,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:0:1:2345",
+                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3365,6 +3325,26 @@ int main( int argc, char *argv[] )
                 if( opt.r_nbpps < 1 || opt.r_nbpps > 1024 )
                 {
                     printf( "Invalid number of packets per second.\n" );
+                    return( 1 );
+                }
+                break;
+
+            case 'o' :
+
+                sscanf( optarg, "%d", &opt.npackets );
+                if( opt.npackets < 1 || opt.npackets > 512 )
+                {
+                    printf( "Invalid number of packets per burst.\n" );
+                    return( 1 );
+                }
+                break;
+
+            case 'q' :
+
+                sscanf( optarg, "%d", &opt.delay );
+                if( opt.delay < 1 || opt.delay > 600 )
+                {
+                    printf( "Invalid number of seconds.\n" );
                     return( 1 );
                 }
                 break;
@@ -3766,7 +3746,7 @@ int main( int argc, char *argv[] )
 
     dev.is_madwifi = ( memcmp( argv[optind], "ath", 3 ) == 0 );
 
-    if( openraw( argv[optind], dev.fd_out, &dev.arptype_out ) != 0 )
+    if( openraw( argv[optind], dev.fd_out, &dev.arptype_out, dev.mac_out ) != 0 )
         return( 1 );
 
     /* open the packet source */
@@ -3775,13 +3755,14 @@ int main( int argc, char *argv[] )
     {
         dev.is_madwifi = ( memcmp( opt.s_face, "ath", 3 ) == 0 );
 
-        if( openraw( opt.s_face, dev.fd_in, &dev.arptype_in ) != 0 )
+        if( openraw( opt.s_face, dev.fd_in, &dev.arptype_in, dev.mac_in ) != 0 )
             return( 1 );
     }
     else
     {
         dev.fd_in = dev.fd_out;
         dev.arptype_in = dev.arptype_out;
+        memcpy( dev.mac_in, dev.mac_out, 6);
     }
 
 	if( sysfs_inject && (opt.a_mode==0 || opt.a_mode==1) )
@@ -3827,6 +3808,16 @@ int main( int argc, char *argv[] )
                              "capture.\n" );
             return( 1 );
         }
+    }
+
+    if( memcmp( opt.r_smac, dev.mac_out, 6) != 0 && memcmp( opt.r_smac, NULL_MAC, 6 ) != 0)
+    {
+        if( dev.is_madwifi && opt.a_mode == 5 ) printf("For --fragment to work on madwifi[-ng], set the interface MAC according to (-h)!\n");
+        fprintf( stderr, "The interface MAC (%02X:%02X:%02X:%02X:%02X:%02X)"
+                 " doesn't match the specified MAC (-h).\n"
+                 "\tifconfig %s hw ether %02X:%02X:%02X:%02X:%02X:%02X\n",
+                 dev.mac_out[0], dev.mac_out[1], dev.mac_out[2], dev.mac_out[3], dev.mac_out[4], dev.mac_out[5],
+                 argv[optind], opt.r_smac[0], opt.r_smac[1], opt.r_smac[2], opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
     }
 
     if(dev.is_madwifi)
