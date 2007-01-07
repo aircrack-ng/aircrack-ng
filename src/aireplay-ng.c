@@ -136,6 +136,7 @@ char usage[] =
 "      -l IP     : set source IP in fragments\n"
 "      -o npckts : number of packets per burst (-1)\n"
 "      -q sec    : seconds between keep-alives (-1)\n"
+"      -y prga   : keystream for shared key auth\n"
 /*
 "\n"
 "  WIDS evasion options:\n"
