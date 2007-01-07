@@ -3823,9 +3823,6 @@ int main( int argc, char *argv[] )
                  argv[optind], opt.r_smac[0], opt.r_smac[1], opt.r_smac[2], opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
     }
 
-    if(dev.is_madwifi)
-        printf("Madwifi: %d  Madwifi-ng: %d\n", dev.is_madwifi, dev.is_madwifing);
-
     switch( opt.a_mode )
     {
         case 0 : return( do_attack_deauth()      );
