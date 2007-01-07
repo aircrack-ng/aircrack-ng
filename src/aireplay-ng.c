@@ -2762,12 +2762,8 @@ int do_attack_fragment()
             packet2[28] = ((packet2[28] ^ 0x42) ^ 0xAA);
             packet2[29] = ((packet2[29] ^ 0x42) ^ 0xAA);
         }
-        else if( caplen2 == 68 || caplen2 == 86 )
-        {
-            packet2[35] = packet2[35] ^ 0x06;
-        }
 
-        prga_len = 8;
+        prga_len = 7;
 
         again = RETRY;
 
