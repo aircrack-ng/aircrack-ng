@@ -586,17 +586,17 @@ int packet_recv(uchar* packet, int length)
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
 
+    if(length < z+8)
+    {
+        return 1;
+    }
+
     switch( packet[1] & 3 )
     {
         case  0: memcpy( bssid, packet + 16, 6 ); break;
         case  1: memcpy( bssid, packet +  4, 6 ); break;
         case  2: memcpy( bssid, packet + 10, 6 ); break;
         default: memcpy( bssid, packet +  4, 6 ); break;
-    }
-
-    if(length < z+8)
-    {
-        return 1;
     }
 
     if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
@@ -647,12 +647,18 @@ int packet_recv(uchar* packet, int length)
 
         memcpy( h80211+12, packet+z+6, 2);  //copy ether type
 
+        if( length <= z+8 )
+            return 1;
+
         memcpy( h80211+14, packet+z+8, length-z-8);
         length = length -z-8+14;
 
         write(dev.fd_tap, h80211, length);
     }
-    else return 1;
+    else
+    {
+        return 1;
+    }
 
     return 0;
 }
