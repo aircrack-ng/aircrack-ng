@@ -2759,7 +2759,7 @@ int do_attack_fragment()
 
     if( memcmp( opt.r_sip, NULL_MAC, 4 ) == 0 )
     {
-        memset( opt.r_dip, '\xFF', 4);
+        memset( opt.r_sip, '\xFF', 4);
     }
 
     if( memcmp( opt.r_dip, NULL_MAC, 4 ) == 0 )
