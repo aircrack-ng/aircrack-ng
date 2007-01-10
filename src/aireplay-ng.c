@@ -3215,6 +3215,8 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
         return( 1 );
     }
 
+    memcpy( mac, (unsigned char*)ifr.ifr_hwaddr.sa_data, 6);
+
     if( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL )
@@ -3251,8 +3253,6 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
         perror( "setsockopt(PACKET_MR_PROMISC) failed" );
         return( 1 );
     }
-
-    memcpy( mac, (unsigned char*)ifr.ifr_hwaddr.sa_data, 6);
 
     return( 0 );
 }
