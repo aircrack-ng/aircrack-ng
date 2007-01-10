@@ -2852,6 +2852,23 @@ int do_attack_fragment()
                         } */
                     }
                 }
+
+                /* check if we got an deauthentication packet */
+
+                if( packet[0] == 0xC0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
+                {
+                    printf( "Got a deauthentication packet!\n" );
+                    sleep( 5 );
+                }
+
+                /* check if we got an disassociation packet */
+
+                if( packet[0] == 0xA0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
+                {
+                    printf( "Got a disassociation packet!\n" );
+                    sleep( 5 );
+                }
+
                 gettimeofday( &tv2, NULL );
                 if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (500*1000) && !gotit) //wait 500ms for an answer
                 {
@@ -2907,13 +2924,13 @@ int do_attack_fragment()
             xor_keystream(prga, h80211+24, 36);
         }
 
+        memcpy(iv, packet+24, 4);
         round = 0;
         again = RETRY;
         while(again == RETRY)
         {
             again = 0;
 
-            memcpy(iv, packet+24, 4);
             printf("Trying to get 408 bytes of a keystream\n");
 
             make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 408);
@@ -2955,6 +2972,23 @@ int do_attack_fragment()
                         }
                     }
                 }
+
+                /* check if we got an deauthentication packet */
+
+                if( packet[0] == 0xC0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
+                {
+                    printf( "Got a deauthentication packet!\n" );
+                    sleep( 5 );
+                }
+
+                /* check if we got an disassociation packet */
+
+                if( packet[0] == 0xA0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
+                {
+                    printf( "Got a disassociation packet!\n" );
+                    sleep( 5 );
+                }
+
                 gettimeofday( &tv2, NULL );
                 if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (500*1000) && !gotit) //wait 500ms for an answer
                 {
@@ -2996,7 +3030,6 @@ int do_attack_fragment()
         {
             again = 0;
 
-            memcpy(iv, packet+24, 4);
             printf("Trying to get 1500 bytes of a keystream\n");
 
             make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 1500);
@@ -3038,6 +3071,23 @@ int do_attack_fragment()
                         }
                     }
                 }
+
+                /* check if we got an deauthentication packet */
+
+                if( packet[0] == 0xC0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
+                {
+                    printf( "Got a deauthentication packet!\n" );
+                    sleep( 5 );
+                }
+
+                /* check if we got an disassociation packet */
+
+                if( packet[0] == 0xA0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
+                {
+                    printf( "Got a disassociation packet!\n" );
+                    sleep( 5 );
+                }
+
                 gettimeofday( &tv2, NULL );
                 if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (500*1000) && !gotit) //wait 500ms for an answer
                 {
