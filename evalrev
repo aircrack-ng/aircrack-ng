@@ -2,11 +2,11 @@
 
 if [ ! -d ".svn/" ]
 then
-	echo -n "0"
+	echo "0"
 	exit ;
 fi
 
-REVISION="`svnversion | sed 's/[^0-9]*//g'`"
+REVISION="`svnversion 2> /dev/null | sed 's/[^0-9]*//g'`"
 
 if [ x$REVISION = "x" ]
 then
@@ -23,4 +23,4 @@ then
 	REVISION="-1"
 fi
 
-echo -n $REVISION
+echo $REVISION
