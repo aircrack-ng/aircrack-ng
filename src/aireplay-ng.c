@@ -69,6 +69,7 @@
 
 #define NEW_IV  1
 #define RETRY   2
+#define ABORT   3
 
 #define DEAUTH_REQ      \
     "\xC0\x00\x3A\x01\xCC\xCC\xCC\xCC\xCC\xCC\xBB\xBB\xBB\xBB\xBB\xBB" \
@@ -2721,7 +2722,6 @@ int do_attack_fragment()
     uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
     uchar iv[4];
     uchar ack[14] = "\xd4";
-    uchar dest[6];
 
     char strbuf[256];
 
@@ -2752,15 +2752,14 @@ int do_attack_fragment()
         return( 1 );
     }
 
-    if( memcmp( opt.r_sip, NULL_MAC, 4 ) == 0 )
-    {
-        printf( "Please specify a source IP (-l).\n" );
-        return( 1 );
-    }
-
     if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
     {
         memset( opt.r_dmac, '\xFF', 6);
+    }
+
+    if( memcmp( opt.r_sip, NULL_MAC, 4 ) == 0 )
+    {
+        memset( opt.r_dip, '\xFF', 4);
     }
 
     if( memcmp( opt.r_dip, NULL_MAC, 4 ) == 0 )
@@ -2823,9 +2822,9 @@ int do_attack_fragment()
             {
                 caplen = read_packet(packet, 4096);
 
-                if (packet[0] == 0x08) //Is data frame
+                if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
-                    if (packet[1] & 2)  //Is a FromDS packet
+                    if ( (packet[1] & 2) && (packet[27] <= 0x03) )  //Is a FromDS packet with valid IV
                     {
                         if (! memcmp(opt.r_dmac, packet+4, 6)) //To our MAC
                         {
@@ -2937,9 +2936,9 @@ int do_attack_fragment()
             {
                 caplen = read_packet(packet, 4096);
 
-                if (packet[0] == '\x08') //Is data frame
+                if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
-                    if (packet[1] & 2)  //Is a FromDS packet
+                    if ( (packet[1] & 2) && (packet[27] <= 3) )  //Is a FromDS packet with valid IV
                     {
                         if (! memcmp(opt.r_dmac, packet+4, 6)) //To our MAC
                         {
@@ -3020,9 +3019,9 @@ int do_attack_fragment()
             {
                 caplen = read_packet(packet, 4096);
 
-                if (packet[0] == '\x08') //Is data frame
+                if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
-                    if (packet[1] & 2)  //Is a FromDS packet
+                    if ( (packet[1] & 2) && (packet[27] <= 3) )  //Is a FromDS packet with valid IV
                     {
                         if (! memcmp(opt.r_dmac, packet+4, 6)) //To our MAC
                         {
@@ -3047,15 +3046,24 @@ int do_attack_fragment()
                     again = RETRY;
                     if (round > 10)
                     {
-                        printf("Still nothing, quitting with 408 bytes.\n");
-                        again = NEW_IV;
+                        printf("Still nothing, quitting with 408 bytes? [y/n] \n");
+                        fflush( stdout );
+                        scanf( "%s", tmpbuf );
+                        printf( "\n" );
+
+                        if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
+                            again = ABORT;
+                        else
+                            again = NEW_IV;
                     }
                     break;
                 }
             }
         }
 
-        if(again == NEW_IV) length = 408;
+        if(again == NEW_IV) continue;
+
+        if(again == ABORT) length = 408;
         else length = 1500;
 
         make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, length);
