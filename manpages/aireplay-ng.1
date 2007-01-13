@@ -124,29 +124,35 @@ Decrypt/chopchop WEP packet.
 .TP
 .I -5, --fragment
 Generates a valid keystream.
-.SH Pro/Cons Chopchop/Fragmentation:
+.SH FRAGMENTATION VERSUS CHOPCHOP
+.PP
+.PP
 .B Fragmentation:
-.br
+.TP
+.PP
 .I Pros
 .br
 - Can obtain the full packet length of 1500 bits XOR. This means you can subsequently pretty well create any size of packet.
 .br
 - May work where chopchop does not
-.br
+.TP
+.PP
 .I Cons
 .br
 - Need more information to launch it - IE IP address info. Quite often this can be guessed (by default 255.255.255.255)
 .br
 - Setup to execute the attack is more subject to the device drivers. For example, Atheros does not generate the correct packets unless the wireless card is set to the mac address you are spoofing.
-.br
+.PP
 .B Chopchop
-.br
+.TP
+.PP
 .I Pro
 .br
 - May work where frag does not work.
 .br
 - You don't need to know any IP information.
-.br
+.TP
+.PP
 .I Cons
 .br
 - Cannot be used against every access point.
