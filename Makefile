@@ -128,4 +128,5 @@ doc:
 clean:
 	-rm -f $(SBINFILES) $(BINFILES) $(TESTFILES) $(OPTFILES)
 
+distclean: clean
 
