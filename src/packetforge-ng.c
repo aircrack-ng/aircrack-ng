@@ -728,8 +728,6 @@ int main(int argc, char* argv[])
 
     while( 1 )
     {
-        option_index = 0;
-
         static struct option long_options[] = {
             {"arp",      0, 0, '0'},
             {"udp",      0, 0, '1'},
@@ -738,7 +736,9 @@ int main(int argc, char* argv[])
             {0,          0, 0,  0 }
         };
 
-        int option = getopt_long( argc, argv,
+        int option;
+	option_index = 0;
+	option = getopt_long( argc, argv,
                         "p:a:c:h:jok:l:j:r:y:0129:w:et:",
                         long_options, &option_index );
 

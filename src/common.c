@@ -27,8 +27,8 @@ int is_ndiswrapper(const char * iface, const char * path)
 char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
 {
 	char * temp;
-	temp = (char *) calloc(1,strlen(progname)+50);
 	char * provis = calloc(1,20);
+	temp = (char *) calloc(1,strlen(progname)+50);
 	sprintf(temp, "%s %d.%d", progname, maj, min);
 	if (submin > 0) {
 		sprintf(provis,".%d",submin);
