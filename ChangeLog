@@ -1,4 +1,4 @@
-Version 0.7 (changes from aircrack-ng 0.6.2) - Released ?? January 2007:
+Version 0.7 (changes from aircrack-ng 0.6.2) - Released 20 January 2007:
 * Makefiles: Improved + added makefiles for other OS
 * Makefiles: Fixed make install on Windows and MacOS
 * airtun-ng: Creates a tuntap interface, through which ordinary IP frames can be injected
