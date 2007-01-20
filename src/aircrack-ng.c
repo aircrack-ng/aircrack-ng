@@ -2783,6 +2783,9 @@ int main( int argc, char *argv[] )
 	#ifdef _SC_NPROCESSORS_ONLN
 
 	max_cpu   = sysconf(_SC_NPROCESSORS_ONLN);
+	/* Fails on some archs */
+	if ( max_cpu < 1 )
+		max_cpu = 1;
 	opt.nbcpu = max_cpu;
 
 	#else
