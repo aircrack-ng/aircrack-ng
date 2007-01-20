@@ -22,5 +22,5 @@ if [ x$REVISION = "x" ]
 then
 	REVISION="-1"
 fi
-
+ 
 echo $REVISION
