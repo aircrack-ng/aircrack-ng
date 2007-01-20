@@ -1,0 +1,129 @@
+diff -ur ../madwifi-cvs-20051025/Makefile.inc ./Makefile.inc
+--- ../madwifi-cvs-20051025/Makefile.inc	2005-10-18 06:27:01.000000000 +0200
++++ ./Makefile.inc	2005-10-25 15:13:24.000000000 +0200
+@@ -191,7 +191,7 @@
+ #
+ #ATH_RATE=$(shell find ath_rate/ -maxdepth 1 ! -name CVS ! -name ath_rate/ -type d)
+ ifeq ($(ATH_RATE),)
+-ATH_RATE=ath_rate/sample
++ATH_RATE=ath_rate/onoe
+ endif
+ 
+ INCS=	-include ${obj}/${DEPTH}/include/compat.h -I${obj}/${DEPTH}/include
+Only in .: Makefile.inc.orig
+diff -ur ../madwifi-cvs-20051025/ath/if_ath.c ./ath/if_ath.c
+--- ../madwifi-cvs-20051025/ath/if_ath.c	2005-10-19 06:27:51.000000000 +0200
++++ ./ath/if_ath.c	2005-10-25 15:13:24.000000000 +0200
+@@ -1436,7 +1436,7 @@
+ 	rt = sc->sc_currates;
+ 	KASSERT(rt != NULL, ("no rate table, mode %u", sc->sc_curmode));
+ 	flags = HAL_TXDESC_INTREQ | HAL_TXDESC_CLRDMASK;
+-	try0 = ATH_TXMAXTRY;
++	try0 = (ic->ic_opmode == IEEE80211_M_MONITOR) ? 1 : ATH_TXMAXTRY;
+ 	dot11Rate = 0;
+ 	ctsrate = 0;
+ 	ctsduration = 0;
+@@ -1501,6 +1501,13 @@
+ 		}
+ 	}
+ 
++	if (dot11Rate == 0 && ic->ic_opmode == IEEE80211_M_MONITOR) {
++		int index = sc->sc_rixmap[ic->inject_rate / 500];
++		if (index >= 0 && index < rt->rateCount) {
++			txrate = rt->info[index].rateCode;
++		}
++	}
++
+ 	wh = (struct ieee80211_frame *) skb->data;
+ 	pktlen = skb->len + IEEE80211_CRC_LEN;
+ 	hdrlen = sizeof(struct ieee80211_frame);
+Only in ./ath: if_ath.c.orig
+diff -ur ../madwifi-cvs-20051025/ath/if_ath_pci.c ./ath/if_ath_pci.c
+--- ../madwifi-cvs-20051025/ath/if_ath_pci.c	2005-07-11 15:23:53.000000000 +0200
++++ ./ath/if_ath_pci.c	2005-10-25 15:15:18.000000000 +0200
+@@ -100,12 +100,16 @@
+ 	{ 0xa727, 0x0013, PCI_ANY_ID, PCI_ANY_ID },	/* 3com */
+ 	{ 0x10b7, 0x0013, PCI_ANY_ID, PCI_ANY_ID },	/* 3com 3CRDAG675 */
+ 	{ 0x168c, 0x1014, PCI_ANY_ID, PCI_ANY_ID },	/* IBM minipci 5212 */
++	{ 0x168c, 0x101a, PCI_ANY_ID, PCI_ANY_ID },	/* some Griffin-Lite */
+ 	{ 0x168c, 0x0015, PCI_ANY_ID, PCI_ANY_ID },
+ 	{ 0x168c, 0x0016, PCI_ANY_ID, PCI_ANY_ID },
+ 	{ 0x168c, 0x0017, PCI_ANY_ID, PCI_ANY_ID },
+ 	{ 0x168c, 0x0018, PCI_ANY_ID, PCI_ANY_ID },
+ 	{ 0x168c, 0x0019, PCI_ANY_ID, PCI_ANY_ID },
+ 	{ 0x168c, 0x001a, PCI_ANY_ID, PCI_ANY_ID },
++	{ 0x168c, 0x001b, PCI_ANY_ID, PCI_ANY_ID },
++	{ 0x168c, 0x001c, PCI_ANY_ID, PCI_ANY_ID },	/* PCI Express 5424 */
++	{ 0x168c, 0x001d, PCI_ANY_ID, PCI_ANY_ID },	/* PCI Express ???  */
+ 	{ 0 }
+ };
+ 
+diff -ur ../madwifi-cvs-20051025/net80211/ieee80211_crypto.c ./net80211/ieee80211_crypto.c
+--- ../madwifi-cvs-20051025/net80211/ieee80211_crypto.c	2005-07-12 13:53:38.000000000 +0200
++++ ./net80211/ieee80211_crypto.c	2005-10-25 15:13:24.000000000 +0200
+@@ -299,6 +299,10 @@
+ 
+ 	oflags = key->wk_flags;
+ 	flags &= IEEE80211_KEY_COMMON;
++
++	if (cipher == IEEE80211_CIPHER_WEP)
++		flags |= IEEE80211_KEY_SWCRYPT;
++
+ 	/*
+ 	 * If the hardware does not support the cipher then
+ 	 * fallback to a host-based implementation.
+diff -ur ../madwifi-cvs-20051025/net80211/ieee80211_var.h ./net80211/ieee80211_var.h
+--- ../madwifi-cvs-20051025/net80211/ieee80211_var.h	2005-10-18 06:27:01.000000000 +0200
++++ ./net80211/ieee80211_var.h	2005-10-25 15:13:24.000000000 +0200
+@@ -212,6 +212,8 @@
+ 	struct net_device	*ic_wdsdev[IEEE80211_WDS_MAXNODES];
+ 	/* only wds traffic is allowed */
+ 	int			ic_wdsonly;
++
++	int inject_rate;	/* injection rate in Monitor mode */
+ };
+ 
+ #define	IEEE80211_ADDR_EQ(a1,a2)	(memcmp(a1,a2,IEEE80211_ADDR_LEN) == 0)
+Only in ./net80211: ieee80211_var.h.orig
+diff -ur ../madwifi-cvs-20051025/net80211/ieee80211_wireless.c ./net80211/ieee80211_wireless.c
+--- ../madwifi-cvs-20051025/net80211/ieee80211_wireless.c	2005-10-18 06:27:01.000000000 +0200
++++ ./net80211/ieee80211_wireless.c	2005-10-25 15:13:24.000000000 +0200
+@@ -476,6 +476,18 @@
+ 	struct ifreq ifr;
+ 	int rate;
+ 
++	if (ic->ic_opmode == IEEE80211_M_MONITOR) {
++		rate = rrq->value / 1000;
++		if (rate !=  1000 && rate !=  2000 && rate !=  5500 &&
++		    rate != 11000 && rate !=  6000 && rate !=  9000 &&
++		    rate != 12000 && rate != 18000 && rate != 24000 &&
++		    rate != 36000 && rate != 48000 && rate != 54000 )
++		    return -EINVAL;
++		printk(KERN_DEBUG "setting xmit rate to %d\n", rate);
++		ic->inject_rate = rate;
++		return 0;
++	}
++
+ 	if (!ic->ic_media.ifm_cur)
+ 		return -EINVAL;
+ 	memset(&ifr, 0, sizeof(ifr));
+@@ -502,6 +514,11 @@
+ 	struct ifmediareq imr;
+ 	int rate;
+ 
++	if (ic->ic_opmode == IEEE80211_M_MONITOR) {
++		rrq->value = ic->inject_rate * 1000;
++		return 0;
++	}
++
+ 	memset(&imr, 0, sizeof(imr));
+ 	(*ic->ic_media.ifm_status)(ic->ic_dev, &imr);
+ 
+@@ -942,6 +959,7 @@
+ #if WIRELESS_EXT >= 15
+ 	case IW_MODE_MONITOR:
+ 		ifr.ifr_media |= IFM_IEEE80211_MONITOR;
++		ic->inject_rate = 5500; /* default = 5.5M CCK */
+ 		break;
+ #endif
+ 	default:
