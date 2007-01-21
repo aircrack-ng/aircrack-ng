@@ -1,4 +1,5 @@
 Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
+* Added airoscript (from daouid)
 * Added hostap kernel 2.6.18 patch
 * Updated madwifi-ng patch.
 * Hardcode CPUs number to 1 if detection fails
