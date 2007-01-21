@@ -1,0 +1,53 @@
+Changelog for 2.0.7 BETA1 (21/01/2007)
+-changed capture from IVs to full date (ivs to cap)
+-updated script for new implementation of fragmentation attack
+-other minor modifications and tweaks
+
+Changelog for PRE-1.8.2-BETA1 (30/11/2006)
+-fixed all commands leading to : "head: Binary: invalid number of lines" (MAJOR THX TO ANDREA)
+-fixed all commands where SSID was truncated (MAJOR THX TO PILOTSNIPES)
+
+Changelog for 1.8.1 (03/11/2006)
+-bug fix release
+-fixed some problem in the SSID detection function (MAJOR THX TO andreahaku)
+-cleaned a few more typos and bugs
+-documentation completed a bit
+
+Changelog for 1.8 (17/10/2006)
+-dropped support for aircrack-ng 0.6.1 and older
+-will only work with patched version of aircrack-ng 0.6.2 (patches can be found in the forum under the programming section)
+-specifique channels hopping (for example channel 1,6,11 or 1-3,5-7,9,11)
+-Access point filtering during attack (airodump will only list attacked Access point)
+-new SSID detection, works with ALL ssid (supports all character and spacing possible)
+-new Access point selection menu that list all AP with encryption type (eliminates the WEP? problem)
+-option 2) now get you directly to a full list of AP
+-chopchop attack and fragmentation attack implement
+-WPA dictionnary attack implemented
+-changed menu 3,4,5 based on detection of AP encryption
+-added option to jump to associated client list from ap selection
+-color change support for xterm
+-Windows size and placement fully changeable from variables settings
+-changed filenames from SSID to MAC because of possible issues if weird SSID (to eliminate security menace (if SSID is something like "rm -rf /*" etc...)
+-added option an option to run "1) scan 2) select 3) attack" one after the other
+-added some comments in the script to help users
+-added greetings message (can be disabled setting WELCOME="1" to "0")
+
+Changelog for 1.7RC7 (24/09/2006)
+-added some resilience to the configure function now works properly with hidden ssid's and rausb devices 
+
+Changelog for 1.7RC6 (19/09/2006)
+-Code cleanup
+-added deauth command to solointeractiveattack function
+-changed base variables (fudge factor & inject rate)
+
+Changelog for 1.7RC5 (14/09/2006)
+-Fixed minor cosmetic issue caused by carriage return char when ssid is missing (15/9/06)
+-Fixed the weird character match issue!! edit at will!!!
+-added an abitrary variable ($acv) to the aircrackversioncheck function which can be used in future to keep the script backwards compatible (had to guess at what version 0.6.0 of aircrack-ng displays when run on it's own? and version 0.5.so might not work??)
+-used new variable in crack function to check version and run correct crack command for the aricrack version installed fixing the bug on the B|T forum.
+
+Changelog for 1.7RC4 (13/09/2006)
+-corrected minor speellling issues ;o) 
+-added aircrack-ng version detection function currently all it does is display aircrack version in the menu function (should be useful when new functionality is added to aircrack to allow backwards compatibility)
+-added solointeractiveattack function (designed to run just the airreplay interactive attack function only for use with an attack that has stalled i.e. data has stopped increasing, the user can try this for another injection thread! (might not actually work?? needs more testing does spawn and seems to work!)
+-added option to manually add ssid if a blank ssid is detected (this has some problems when certain editors are used as this is not strictly blank but a non printable character recommend kwrite on Back|track to edit script)
