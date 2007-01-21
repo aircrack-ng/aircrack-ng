@@ -32,6 +32,7 @@
 
 #include <netpacket/packet.h>
 #include <linux/if_ether.h>
+#include <linux/if.h>
 #include <linux/wireless.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -48,7 +49,6 @@
 #include <errno.h>
 #include <time.h>
 
-#include <linux/if.h>
 #include <linux/if_tun.h>
 
 #include "version.h"
