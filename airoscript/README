@@ -18,7 +18,7 @@ are available, such as: chopchop, fragmentation attack, fakeauth, deauth,
 dictionnary attacks and WPA cracking.
 
 REQUIREMENTS:
-aircrack-ng version 0.6.2
+aircrack-ng version 0.7
 IMPORTANT: sources must be patched using these patch:
 http://tinyshell.be/aircrackng/forum/index.php?topic=653.0 
 before compiling aircrack-ng

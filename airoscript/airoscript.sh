@@ -39,7 +39,7 @@ AIRCRACK="aircrack-ng"
 ARPFORGE="packetforge-ng"
 #The path where the data is stored (FOLDER MUST EXIST !)
 DUMP_PATH="/tmp"
-# Path to your wordlist file (for WPA dictionnary attack, maybe for WEP in next release to)
+# Path to your wordlist file (for WPA and WEP dictionnary attack)
 WORDLIST="/tmp/english.txt"
 #The Mac address used to associate with AP during fakeauth			
 FAKE_MAC="00:01:02:03:04:05"
