@@ -1,9 +1,12 @@
 Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
+* aircrack-ng: Hardcode CPUs number to 1 if detection fails
+* airtun-ng: Fix compilation of under FC6 (missing "linux/if.h" include).
 * Added airoscript (from daouid)
+* Updated spec file by David Bolt to be able to build RPM packages on FC, Mandriva and Suse distro
+* Added WEP authentication example capture
 * Added hostap kernel 2.6.18 patch
+* Updated rtl8187 patch.
 * Updated madwifi-ng patch.
-* Hardcode CPUs number to 1 if detection fails
-* Fix compilation of airtun-ng.c under FC6 (missing "linux/if.h" include).
 
 Version 0.7 (changes from aircrack-ng 0.6.2) - Released 20 January 2007:
 * Makefiles: Improved + added makefiles for other OS
