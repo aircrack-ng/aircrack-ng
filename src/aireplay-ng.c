@@ -3675,6 +3675,11 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
+	if ( opt.f_tods == 1 && opt.f_fromds == 1 )
+	{
+		printf( "FromDS and ToDS bit are set: packet has to come from the AP and go to the AP\n" );
+	}
+	
     dev.fd_rtc = -1;
 
     /* open the RTC device if necessary */
