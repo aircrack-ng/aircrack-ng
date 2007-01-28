@@ -1,14 +1,110 @@
-Summary:	Reliable 802.11 (wireless) sniffer and WEP/WPA-PSK key cracker
-Name:		aircrack-ng
-Version:	0.7
-Release:	1
-License:	GPL
-Group:		Productivity/Networking/Other
-URL:		http://www.aircrack-ng.org
-Source:		http://freshmeat.net/redir/aircrack-ng/63481/url_tgz/%{name}-%{version}.tar.gz
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
-Packager:	David Bolt <davjam@davjam.org>
+%define	_rel	1
+
+# these bits are constant across distributions
+#
+Name:           aircrack-ng
+Version:        0.7
+Summary:        Reliable 802.11 (wireless) sniffer and WEP/WPA-PSK key cracker
+License:        GPL
+Source:         http://freshmeat.net/redir/aircrack-ng/63481/url_tgz/%{name}-%{version}.tar.gz
+URL:            http://www.aircrack-ng.org/
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+Packager:       David Bolt <davjam@davjam.org>
 Requires:	glibc >= 2
+
+
+# define the package groups. If they all followed the LSB these would be the same, but they aren't :(
+#
+%define	suse_group	Productivity/Networking/Other
+%define	mandriva_group	Productivity/Networking/Other
+%define	fedora_group	Productivity/Networking/Other
+
+
+
+# just in case we're not building on a (open)SUSE, Mandriva or Fedora system.
+#
+%define	rel	%{_rel}
+
+
+# figure out which distribution we're being built on. choices so far are (open)SUSE, Mandriva and Fedora Core.
+#
+%define _suse   	%(if [ -f /etc/SuSE-release ]; then echo 1; else echo 0; fi)
+%define	_mandriva	%(if [ -f /etc/mandriva-release ]; then echo 1; else echo 0; fi)
+%define	_fedora		%(if [ -f /etc/fedora-release ]; then echo 1; else echo 0; fi)
+
+# interesting facts: Mandriva includes /etc/redhat-release, as does Fedora.
+# This means any builds for redhat are going to need to parse /etc/redhat-release
+# to make sure they're being built on a redhat system
+
+%if %{_suse}
+ %define	_mandriva	0
+ %define	_fedora		0
+%endif
+
+%if %{_mandriva}
+ %define	_fedora		0
+%endif
+
+
+# now for some distribution-specific modifications.
+#
+# these include making a distro-specific release number
+#
+
+# building on a (open)SUSE Linux system so make a release identifier for the (open)SUSE version
+#
+%if %_suse
+ %define	_suse_version	%(grep VERSION /etc/SuSE-release|cut -f3 -d" ")
+ %define	_suse_vernum	%(echo "%{_suse_version}"|tr -d '.')
+ %define	rel		%{_rel}.suse%{_suse_vernum}
+ %define	_distribution	SUSE Linux %{_suse_version}
+ %define	group		%{suse_group}
+
+# distro name change for SUSE >= 10.2 to openSUSE
+#
+ %if %suse_version >= 1020
+
+  %define	_distribution	openSUSE %{_suse_version}
+
+ %endif
+
+# not defined by SUSE/Novell but useful to have
+#
+ %define	_icondir	%{_datadir}/pixmaps/
+
+%endif
+
+# building on a Mandriva/Mandrake Linux system so use the standard Mandriva release string
+#
+# this is experimental and untested as yet, but should work.
+#
+%if %{_mandriva}
+ %define	_mandriva_version	%(cat /etc/mandriva-release|cut -f4 -d" ")
+ %define	_distribution		Mandriva %{_mandriva_version}
+ %define	rel			%{_rel}.mdv
+ %define	group			%{mandriva_group}
+
+%endif
+
+
+# building on a Fedora Core Linux system. not sure if there's a release string, but create one anyway
+#
+# this is experimental and untested as yet, but should work.
+#
+%if %{_fedora}
+ %define	_fedora_version		%(cat /etc/fedora-release|cut -f4 -d" ")
+ %define	_distribution		Fedora Core %{_fedora_version}
+ %define	rel			%{_rel}.fc%{_fedora_version}
+ %define	group			%{fedora_group}
+%endif
+
+
+# while these few are (relatively) distro-specific
+#
+Group:          %{group}
+Release:        %{rel}
+%{?_distribution:Distribution:%{_distribution}}
+
 
 %description
 aircrack-ng is a set of tools for auditing wireless networks. It's an
@@ -22,51 +118,24 @@ etc.).
 %setup -q
 
 %build
-%{__make}
+%{__make} %{?jobs:-j%jobs}
 
 %install
-rm -rf %{buildroot}
-mkdir -p %{buildroot}%{_bindir}
-for BINARY in aircrack-ng airdecap-ng arpforge-ng ivstools
-do
- install -m 755 "$BINARY" %{buildroot}%{_bindir}
-done
+%makeinstall destdir=%{buildroot} prefix=%{_prefix} mandir=%{_mandir}/man1
 
-mkdir -p %{buildroot}%{_sbindir}
-for BINARY in aireplay-ng airodump-ng airmon-ng
-do
- install -m 755 "$BINARY" %{buildroot}%{_sbindir}
-done
+cd %{buildroot}
+find . -type d | sed '1,2d;s,^\.,\%attr(-\,root\,root) \%dir ,' > %{_builddir}/file.list.%{name}
+find . -type f | sed 's,^\.,\%attr(-\,root\,root) ,' | grep -v /man/ >> %{_builddir}/file.list.%{name}
+find . -type l | sed 's,^\.,\%attr(-\,root\,root) ,' >> %{_builddir}/file.list.%{name}
 
-mkdir -p %{buildroot}%{_mandir}/man1
-cd manpages
-for BINARY in aircrack-ng airdecap-ng aireplay-ng airodump-ng arpforge-ng airmon-ng ivstools
-do
- install -m 644 "$BINARY.1" %{buildroot}%{_mandir}/man1
-done
-
-%clean
-rm -rf %{buildroot}
-
-%files
-%defattr(-, root, root, 0755)
-%{_sbindir}/aireplay-ng
-%{_sbindir}/airodump-ng
-%{_sbindir}/airmon-ng
-%{_bindir}/aircrack-ng
-%{_bindir}/airdecap-ng
-%{_bindir}/arpforge-ng
-%{_bindir}/ivstools
-%doc ChangeLog INSTALL README LICENSE AUTHORS VERSION
+%files -f %{_builddir}/file.list.%{name}
+%doc ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 %doc test
 %doc patches
-%{_mandir}/man1/aircrack-ng.*
-%{_mandir}/man1/airdecap-ng.*
-%{_mandir}/man1/aireplay-ng.*
-%{_mandir}/man1/airodump-ng.*
-%{_mandir}/man1/arpforge-ng.*
-%{_mandir}/man1/airmon-ng.*
-%{_mandir}/man1/ivstools.*
+%{_mandir}/man1/*
+
+%clean
+%__rm -rf "%{buildroot}"
 
 %changelog
 * Mon Jun 26 2006 David Bolt <davjam@davjam.org> aircrack-ng-0.6
@@ -75,4 +144,3 @@ rm -rf %{buildroot}
 - Patched source to build properly on SUSE 10.1 (GCC 4.1.2)
 * Thu Mar 30 2006 David Bolt <davjam@davjam.org>
 - First package built for SUSE
-
