@@ -59,6 +59,7 @@ uninstall:
 	-rm -f $(destdir)$(bindir)/packetforge-ng
 	-rm -f $(destdir)$(bindir)/airmon.sh
 	-rm -f $(destdir)$(bindir)/mergeivs
+	-rm -f $(destdir)$(bindir)/makeivs
 	-rm -f $(destdir)$(bindir)/pcap2ivs
 	-rm -f $(destdir)$(bindir)/ivstools
 	-rm -f $(destdir)$(bindir)/kstats
@@ -81,7 +82,10 @@ uninstall:
 	-rm -f $(destdir)/usr/man/man1/arpforge.1
 	-rm -f $(destdir)/usr/man/man1/mergeivs.1
 	-rm -f $(destdir)/usr/man/man1/pcap2ivs.1
-	
+	-rm -f $(destdir)/usr/man/man1/kstats.1
+	-rm -f $(destdir)/usr/man/man1/makeivs.1
+	-rm -f $(destdir)/usr/man/man1/packetforge-ng.1
+
 doc:
 	install -d $(destdir)$(docdir)
 	install -m 644 $(DOCFILES) $(destdir)$(docdir)

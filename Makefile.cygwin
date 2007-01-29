@@ -50,6 +50,7 @@ uninstall:
 	-rm -f $(destdir)$(bindir)/pcap2ivs.exe
 	-rm -f $(destdir)$(bindir)/ivstools.exe
 	-rm -f $(destdir)$(bindir)/kstats.exe
+	-rm -f $(destdir)$(bindir)/makeivs.exe
 	
 
 clean:
