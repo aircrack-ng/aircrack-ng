@@ -2063,7 +2063,7 @@ int do_attack_chopchop( void )
     int data_start, data_end;
     int guess, is_deauth_mode;
     int nb_bad_pkt;
-    
+
     unsigned char b1 = 0xAA;
     unsigned char b2 = 0xAA;
 
@@ -3649,6 +3649,12 @@ int main( int argc, char *argv[] )
         }
     }
 
+	/*
+	optind value can be wrong (off-by-one) at the end of the argument scanning loop
+	in case a numeric value has to be read. The following line is a dirty patch:
+	*/
+	if (strlen(argv[optind]) <=2) optind++;
+
     if( argc - optind < 1 || argc - optind > 2 )
     {
     usage:
@@ -3679,7 +3685,7 @@ int main( int argc, char *argv[] )
 	{
 		printf( "FromDS and ToDS bit are set: packet has to come from the AP and go to the AP\n" );
 	}
-	
+
     dev.fd_rtc = -1;
 
     /* open the RTC device if necessary */
@@ -3796,18 +3802,18 @@ int main( int argc, char *argv[] )
     {
         dev.is_madwifi = 1;
         memset( strbuf, 0, sizeof( strbuf ) );
-        
+
         snprintf(strbuf, sizeof( strbuf ) -1,
                   "/proc/sys/net/%s/%%parent", argv[optind]);
-        
+
         f = fopen(strbuf, "r");
-        
+
         if (f != NULL)
         {
             // It is madwifi-ng
             dev.is_madwifing = 1;
             fclose( f );
-            
+
             /* should we force prism2 header? */
             /*
             sprintf((char *) buffer, "/proc/sys/net/%s/dev_type", iface);
