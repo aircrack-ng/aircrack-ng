@@ -225,7 +225,8 @@ struct globals
     int usegpsd;            /* do we use GPSd?      */
     int * channels;
     int singlechan;         /* channel hopping set 1*/
-    int chswitch;	    /* switching method */
+    int chswitch;	    /* switching method     */
+    int f_encrypt;          /* encryption filter    */
 
     int is_wlanng[MAX_CARDS];          /* set if wlan-ng       */
     int is_orinoco[MAX_CARDS];         /* set if orinoco       */
@@ -399,6 +400,8 @@ char usage[] =
 "      --write    <prefix> : Dump file prefix\n"
 "      -w                  : same as --write \n"
 "      --beacons           : Record all beacons in dump file\n"
+"  Filter options:\n"
+"      --encrypt   <suite> : Filter APs by cypher suite\n"
 "      --netmask <netmask> : Filter APs by mask\n"
 "      --bssid     <bssid> : Filter APs by BSSID\n"
 "\n"
@@ -1322,6 +1325,8 @@ write_packet:
         }
     }
 
+    if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0)) return(1);
+
     if( G.f_cap != NULL )
     {
         pkh.caplen = pkh.len = caplen;
@@ -1812,6 +1817,12 @@ void dump_print( int ws_row, int ws_col, int if_num )
             continue;
         }
 
+        if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
+        {
+            ap_cur = ap_cur->prev;
+            continue;
+        }
+
         nlines++;
 
         if( nlines >= (ws_row-1) )
@@ -1918,6 +1929,12 @@ void dump_print( int ws_row, int ws_col, int if_num )
             continue;
         }
 
+        if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
+        {
+            ap_cur = ap_cur->prev;
+            continue;
+        }
+
         if( nlines >= (ws_row-1) )
             return;
 
@@ -2013,6 +2030,12 @@ int dump_write_csv( void )
         if( memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) == 0 )
         {
             ap_cur = ap_cur->next;
+            continue;
+        }
+
+        if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
+        {
+            ap_cur = ap_cur->prev;
             continue;
         }
 
@@ -2915,6 +2938,33 @@ int get_if_num(const char* cardstr)
     return if_count;
 }
 
+int set_encryption_filter(const char* input)
+{
+    if(input == NULL) return 1;
+
+    if(strlen(input) < 3) return 1;
+
+    if(strcasecmp(input, "opn") == 0)
+        G.f_encrypt |= STD_OPN;
+
+    if(strcasecmp(input, "wep") == 0)
+        G.f_encrypt |= STD_WEP;
+
+    if(strcasecmp(input, "wpa") == 0)
+    {
+        G.f_encrypt |= STD_WPA;
+        G.f_encrypt |= STD_WPA2;
+    }
+
+    if(strcasecmp(input, "wpa1") == 0)
+        G.f_encrypt |= STD_WPA;
+
+    if(strcasecmp(input, "wpa2") == 0)
+        G.f_encrypt |= STD_WPA2;
+
+    return 0;
+}
+
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
@@ -2978,6 +3028,7 @@ int main( int argc, char *argv[] )
     G.sk_len       =  0;
     G.sk_start     =  0;
     G.prefix       =  NULL;
+    G.f_encrypt    =  0;
     memset(G.sharedkey, '\x00', 512*3);
 
     gettimeofday( &tv0, NULL );
@@ -3031,11 +3082,12 @@ int main( int argc, char *argv[] )
             {"gpsd",    0, 0, 'g'},
             {"ivs",     0, 0, 'i'},
             {"write",   1, 0, 'w'},
+            {"encrypt", 1, 0, 't'},
             {0,         0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "b:c:egiw:s",
+                        "b:c:egiw:st:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3178,6 +3230,9 @@ int main( int argc, char *argv[] )
                     printf("Notice: invalid bssid\n");
                     return( 1 );
                 }
+                break;
+            case 't':
+                set_encryption_filter(optarg);
                 break;
 
             default : goto usage;
