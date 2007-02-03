@@ -406,11 +406,11 @@ char usage[] =
 "  You can make it capture on other/specific channel(s) by using:\n"
 "      --channel <channels>: Capture on specific channels\n"
 "      --band <abg>        : Band on which airodump-ng should hop\n"
-"      --cswitch  <method> : Set channel switching method \n"
-"                    0     : FIFO (default) \n"
-"                    1     : Round Robin \n"
-"                    2     : Hop on last \n"
-"      -s                  : same as --chswitch \n"
+"      --cswitch  <method> : Set channel switching method\n"
+"                    0     : FIFO (default)\n"
+"                    1     : Round Robin\n"
+"                    2     : Hop on last\n"
+"      -s                  : same as --cswitch\n"
 "\n";
 
 int is_filtered_netmask(uchar *bssid)
@@ -1261,7 +1261,7 @@ skip_probe:
                         memcpy( iv_info + 1, &h80211[z    ], 3 );
                         memcpy( iv_info + 4, &h80211[z + 4], 2 );
                         n =  6;
-                        
+
                         /* Special handling for spanning-tree packets */
                         if( memcmp( h80211 +  4, SPANTREE_ADDR, 6 ) == 0 ||
                             memcmp( h80211 + 16, SPANTREE_ADDR, 6 ) == 0 )
@@ -1277,7 +1277,7 @@ skip_probe:
                         memcpy( iv_info + 6 , &h80211[z    ], 3 );
                         memcpy( iv_info + 9 , &h80211[z + 4], 2 );
                         n = 11;
-                        
+
                         /* Special handling for spanning-tree packets */
                         if( memcmp( h80211 +  4, SPANTREE_ADDR, 6 ) == 0 ||
                             memcmp( h80211 + 16, SPANTREE_ADDR, 6 ) == 0 )
@@ -2583,7 +2583,7 @@ int getchannels(const char *optarg)
     {
 	//range defined?
 	if(strchr(token, '-') != NULL)
-	{ 
+	{
 	    //only 1 '-' ?
 	    if(strchr(token, '-') == strrchr(token, '-'))
 	    {
@@ -2621,7 +2621,7 @@ int getchannels(const char *optarg)
 		    free(optchan);
 		    return -1;
 		}
-		
+
 	    }
 	    else
 	    {
@@ -2650,7 +2650,7 @@ int getchannels(const char *optarg)
 			tmp_channels[chan_max-chan_remain]=chan_cur;
 			chan_remain--;
 		}
-		
+
 	    }
 	    else
 	    {
@@ -2702,7 +2702,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
     }
 
     /* Exit if ndiswrapper : check iwpriv ndis_reset */
-    
+
     if ( is_ndiswrapper(iface, G.iwpriv) ) {
     	printf("Ndiswrapper doesn't support monitor mode.\n");
     	return (1);
@@ -2764,12 +2764,12 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
     snprintf( (char*) buffer, strlen( iface ) + 23,
         "/proc/sys/net/%s/%%parent", iface );
     check_madwifing = fopen( (char*) buffer,"r");
-    
+
     if (check_madwifing != NULL) {
         fclose(check_madwifing);
         G.is_madwifing[cardnum] = 1;
         memset(buffer,0, 65536);
-        
+
         sprintf((char *) buffer, "/proc/sys/net/%s/dev_type", iface);
         f = fopen( (char *) buffer,"w");
         if (f != NULL) {
@@ -2782,7 +2782,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 
     /* make sure the interface is up */
 
-    ifr->ifr_flags = IFF_UP | IFF_BROADCAST | IFF_RUNNING;        
+    ifr->ifr_flags = IFF_UP | IFF_BROADCAST | IFF_RUNNING;
 
     if( ioctl( *fd_raw, SIOCSIFFLAGS, ifr ) < 0 )
     {
@@ -2942,7 +2942,7 @@ int main( int argc, char *argv[] )
     /*
     struct sockaddr_in provis_addr;
     */
-    
+
     fd_set             rfds;
 
     /* initialize a bunch of variables */
@@ -3245,7 +3245,7 @@ int main( int argc, char *argv[] )
     /* initialize cards */
     cards = init_cards(argv[argc-1], iface, ifr, mr, sll, fd_raw, arptype);
 
-    if(cards <= 0) 
+    if(cards <= 0)
 	return( 1 );
 
     chan_count = getchancount(0);
