@@ -106,6 +106,12 @@ extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac
 const unsigned char llcnull[4] = {0, 0, 0, 0};
 char *f_ext[4] = { "txt", "gps", "cap", "ivs" };
 
+static uchar ZERO[32] =
+"\x00\x00\x00\x00\x00\x00\x00\x00"
+"\x00\x00\x00\x00\x00\x00\x00\x00"
+"\x00\x00\x00\x00\x00\x00\x00\x00"
+"\x00\x00\x00\x00\x00\x00\x00\x00";
+
 int abg_chans [] =
 {
     1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12,
@@ -173,6 +179,7 @@ struct AP_info
     struct timeval ftimer;    /* time of restart             */
 
     char *key;		      /* if wep-key found by dict */
+    int wpa_state;           /* wpa handshake state       */
 };
 
 /* linked list of detected clients */
@@ -251,6 +258,8 @@ struct globals
     char * iwpriv;
     char * wlanctlng;
     char * wl;
+
+    unsigned char wpa_bssid[6];   /* the wpa handshake bssid   */
 }
 G;
 
@@ -838,6 +847,15 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
 
     ap_cur->nb_pkt++;
 
+    /* find wpa handshake */
+    if( h80211[0] == 0x10 )
+    {
+        /* reset the WPA handshake state */
+
+        if( ap_cur != NULL && ap_cur->wpa_state != 0xFF )
+            ap_cur->wpa_state = 0;
+        printf("initial auth %d\n", ap_cur->wpa_state);
+    }
 
     /* locate the station MAC in the 802.11 header */
 
@@ -1308,6 +1326,59 @@ skip_probe:
         }
     }
 
+    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+
+    if( z + 26 > caplen )
+        goto write_packet;
+
+    z += 6;     //skip LLC header
+
+    /* check ethertype == EAPOL */
+    if( h80211[z] == 0x88 && h80211[z + 1] == 0x8E )
+    {
+        z += 2;     //skip ethertype
+
+        /* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
+
+        if( ( h80211[z + 6] & 0x08 ) != 0 &&
+            ( h80211[z + 6] & 0x40 ) == 0 &&
+            ( h80211[z + 6] & 0x80 ) != 0 &&
+            ( h80211[z + 5] & 0x01 ) == 0 )
+        {
+            ap_cur->wpa_state = 1;
+        }
+
+        /* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
+
+        if( ( h80211[z + 6] & 0x08 ) != 0 &&
+            ( h80211[z + 6] & 0x40 ) == 0 &&
+            ( h80211[z + 6] & 0x80 ) == 0 &&
+            ( h80211[z + 5] & 0x01 ) != 0 )
+        {
+            if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
+            {
+                    ap_cur->wpa_state |= 2;
+            }
+        }
+
+        /* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
+
+        if( ( h80211[z + 6] & 0x08 ) != 0 &&
+            ( h80211[z + 6] & 0x40 ) != 0 &&
+            ( h80211[z + 6] & 0x80 ) != 0 &&
+            ( h80211[z + 5] & 0x01 ) != 0 )
+        {
+            if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
+            {
+                    ap_cur->wpa_state |= 4;
+            }
+            ap_cur->wpa_state |= 8;
+            if( ap_cur->wpa_state == 15)
+                    memcpy( G.wpa_bssid, ap_cur->bssid, 6 );
+        }
+    }
+
+
 write_packet:
 
     if( h80211[0] == 0x80 && G.one_beacon){
@@ -1770,6 +1841,16 @@ void dump_print( int ws_row, int ws_col, int if_num )
     }
 
     strncat(strbuf, buffer, (512-strlen(strbuf)));
+
+    if(memcmp(G.wpa_bssid, NULL_MAC, 6) !=0 )
+    {
+        snprintf( buffer, sizeof( buffer ) - 1,
+              "][ WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
+              G.wpa_bssid[0], G.wpa_bssid[1], G.wpa_bssid[2],
+              G.wpa_bssid[3], G.wpa_bssid[4], G.wpa_bssid[5]);
+
+        strncat(strbuf, buffer, (512-strlen(strbuf)));
+    }
 
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
@@ -3051,6 +3132,7 @@ int main( int argc, char *argv[] )
 
     memset(G.f_bssid, '\x00', 6);
     memset(G.f_netmask, '\x00', 6);
+    memset(G.wpa_bssid, '\x00', 6);
 
 
     #ifdef linux
