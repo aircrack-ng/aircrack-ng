@@ -1,7 +1,7 @@
 /*
  *  802.11 ARP-request WEP packet forgery
  *
- *  Copyright (C) 2006 Thomas d'Otreppe
+ *  Copyright (C) 2006,2007 Thomas d'Otreppe
  *  Copyright (C) 2004,2005  Christophe Devine (arpforge)
  *
  *  UDP, ICMP and custom packet forging developped by Martin Beck
@@ -539,9 +539,9 @@ int write_cap_packet(unsigned char* packet, int length)
         fclose( f );
         return( 1 );
     }
-	
+
     fclose( f );
-	
+
     return 0;
 }
 
@@ -626,7 +626,7 @@ int forge_udp()
 
     if( set_dip(h80211, 48)  != 0 ) return 1;
     if( set_sip(h80211, 44)  != 0 ) return 1;
-    if( opt.ttl != -1 ) 
+    if( opt.ttl != -1 )
         if( set_ip_ttl(h80211) != 0 ) return 1;
 
     /* set udp length */
@@ -658,7 +658,7 @@ int forge_icmp()
 
     if( set_dip(h80211, 48)  != 0 ) return 1;
     if( set_sip(h80211, 44)  != 0 ) return 1;
-    if( opt.ttl != -1 ) 
+    if( opt.ttl != -1 )
         if( set_ip_ttl(h80211) != 0 ) return 1;
 
     /* generate + set ip checksum */
@@ -959,7 +959,7 @@ int main(int argc, char* argv[])
 
     if(opt.encrypt)
     {
-        if( create_wep_packet(h80211, &(opt.pktlen)) != 0 ) 
+        if( create_wep_packet(h80211, &(opt.pktlen)) != 0 )
         	return 1;
     }
     else

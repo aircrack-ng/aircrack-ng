@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2006 Thomas d'Otreppe
+ *  Copyright (C) 2006,2007 Thomas d'Otreppe
  *  Copyright (C) 2004,2005 Christophe Devine
  *
  *  Advanced WEP attacks developed by KoreK
@@ -818,7 +818,7 @@ void read_thread( void *arg )
 
 			memcpy( buffer    , h80211 + z    , 3 );
 			memcpy( buffer + 3, h80211 + z + 4, 2 );
-			
+
             /* Special handling for spanning-tree packets */
             if ( memcmp( h80211 +  4, SPANTREE, 6 ) == 0 ||
                 memcmp( h80211 + 16, SPANTREE, 6 ) == 0 )
@@ -870,7 +870,7 @@ void read_thread( void *arg )
 			pthread_mutex_unlock( &mx_apl );
 			continue;
 		}
-		
+
 		/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 		if( ( h80211[z + 6] & 0x08 ) != 0 &&
@@ -2286,7 +2286,7 @@ int next_dict(int nb)
 				opt.nbdict++;
 				continue;
 			}
-		
+
 			opt.no_stdin = 1;
 		}
 		else
@@ -2297,9 +2297,9 @@ int next_dict(int nb)
 				opt.nbdict++;
 				continue;
 			}
-		
+
 			fseek(opt.dict, 0L, SEEK_END);
-		
+
 			if ( ftell( opt.dict ) <= 0L )
 			{
 				fclose( opt.dict );
@@ -2308,7 +2308,7 @@ int next_dict(int nb)
 				opt.nbdict++;
 				continue;
 			}
-		
+
 			rewind( opt.dict );
 		}
 		break;
@@ -2582,7 +2582,7 @@ int next_key( char **key, int keysize )
 			{
 				if( opt.l33t )
 					printf( "\33[32;22m" );
-		
+
 //				printf( "\nPassphrase not in dictionnary \"%s\" \n", opt.dicts[opt.nbdict] );
 				if(next_dict(opt.nbdict+1) != 0)
 				{
@@ -2635,7 +2635,7 @@ int next_key( char **key, int keysize )
 			{
 				if( opt.l33t )
 					printf( "\33[32;22m" );
-		
+
 //				printf( "\nPassphrase not in dictionnary \"%s\" \n", opt.dicts[opt.nbdict] );
 				if(next_dict(opt.nbdict+1) != 0)
 				{
@@ -3296,9 +3296,9 @@ int main( int argc, char *argv[] )
 			for( i = 0; i < opt.nbcpu; i++ )
 			{
 				/* start one thread per cpu */
-	
+
 				pthread_t tid;
-	
+
 				if (opt.amode<=1 && opt.nbcpu>1 && opt.do_brute && opt.do_mt_brute)
 				{
 					if (pthread_create( &tid, NULL, (void *) inner_bruteforcer_thread,
@@ -3308,7 +3308,7 @@ int main( int argc, char *argv[] )
 						goto exit_main;
 					}
 				}
-	
+
 				if( pthread_create( &tid, NULL, (void *) crack_wep_thread,
 					(void *) (long) i ) != 0 )
 				{
@@ -3316,12 +3316,12 @@ int main( int argc, char *argv[] )
 					goto exit_main;
 				}
 			}
-	
+
 			if( ! opt.do_testy )
 			{
 				do   { ret = do_wep_crack1( 0 ); }
 				while( ret == RESTART );
-	
+
 				if( ret == FAILURE )
 				{
 					printf( "   Attack failed. Possible reasons:\n\n"
@@ -3343,11 +3343,11 @@ int main( int argc, char *argv[] )
 				{
 					do   { ret = do_wep_crack2( i ); }
 					while( ret == RESTART );
-	
+
 					if( ret == SUCCESS )
 						break;
 				}
-	
+
 				if( ret == FAILURE )
 				{
 					printf( "   Attack failed. Possible reasons:\n\n"

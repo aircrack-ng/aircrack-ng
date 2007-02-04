@@ -1,6 +1,8 @@
 Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
 * aircrack-ng: Hardcode CPUs number to 1 if detection fails
 * airtun-ng: Fix compilation under FC6 (missing "linux/if.h" include).
+* airodump-ng: Added WPA handshake detection
+* airodump-ng: Added encryption filtering
 * Added airoscript (from daouid)
 * Makefiles: Fixed: make uninstall did not remove all files
 * Updated spec file by David Bolt to be able to build RPM packages on FC, Mandriva and Suse distro

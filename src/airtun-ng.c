@@ -2,7 +2,7 @@
  *  802.11 WEP network connection tunneling
  *  based on aireplay-ng
  *
- *  Copyright (C) 2006 Martin Beck
+ *  Copyright (C) 2006,2007 Martin Beck
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

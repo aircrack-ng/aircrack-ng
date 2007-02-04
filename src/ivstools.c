@@ -1,7 +1,7 @@
 /*
  *  IVS Tools - Convert or merge ivs
  *
- *  Copyright (C) 2006 Thomas d'Otreppe
+ *  Copyright (C) 2006,2007 Thomas d'Otreppe
  *  Copyright (C) 2004,2005  Christophe Devine (pcap2ivs and mergeivs)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -290,7 +290,7 @@ int main( int argc, char *argv[] )
         {
             fwrite( "\xFF", 1, 1, f_out );
         }
-        
+
         /* Special handling for spanning-tree packets */
         if( memcmp( h80211 +  4, SPANTREE_ADDR, 6 ) == 0 ||
             memcmp( h80211 + 16, SPANTREE_ADDR, 6 ) == 0 )
@@ -298,7 +298,7 @@ int main( int argc, char *argv[] )
             h80211[z + 4] = (h80211[z + 4] ^ 0x42) ^ 0xAA;
             h80211[z + 5] = (h80211[z + 5] ^ 0x42) ^ 0xAA;
         }
-        
+
         fwrite( h80211 + z    , 1, 3, f_out );
         fwrite( h80211 + z + 4, 1, 2, f_out );
         ++nbivs;

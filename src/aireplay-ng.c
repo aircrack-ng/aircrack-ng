@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP replay & injection attacks
  *
- *  Copyright (C) 2006 Thomas d'Otreppe
+ *  Copyright (C) 2006,2007 Thomas d'Otreppe
  *  Copyright (C) 2004,2005 Christophe Devine
  *
  *  WEP decryption attack (chopchop) developped by KoreK
