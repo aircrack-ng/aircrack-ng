@@ -2116,7 +2116,7 @@ int dump_write_csv( void )
 
         if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
         {
-            ap_cur = ap_cur->prev;
+            ap_cur = ap_cur->next;
             continue;
         }
 
