@@ -129,10 +129,10 @@ echo You typed $Host_SSID
 set -- ${Host_SSID}
 clear
 }
-# This is the function to select Target from a list	
-function Parseforap {
+# This is the function to select Target from a list
 ## MAJOR CREDITS TO: Befa , MY MASTER, I have an ALTAR dedicated to him in my living room  
-## And HIRTE for making all those great patch and fixing the SSID issue
+## And HIRTE for making all those great patch and fixing the SSID issue	
+function Parseforap {
 ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
 head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
 clear
@@ -152,6 +152,7 @@ while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV L
     achannel[$i]=$CHANNEL
     amac[$i]=$MAC
     aprivacy[$i]=$PRIVACY
+    aspeed[$i]=$SPEED
    fi
 done < $DUMP_PATH/dump-02.txt
 echo ""
@@ -163,7 +164,9 @@ ssid=${assid[$choice]}
 channel=${achannel[$choice]}
 mac=${amac[$choice]}
 privacy=${aprivacy[$choice]}
+speed=${aspeed[$choice]}
 Host_IDL=$idlength
+Host_SPEED=$speed
 Host_ENC=$privacy
 Host_MAC=$mac
 Host_CHAN=$channel
@@ -171,7 +174,31 @@ acouper=${#ssid}
 fin=$(($acouper-idlength))
 Host_SSID=${ssid:1:fin}
 }
-
+# This is a simple function to ask what type of AP you are looking for
+function choosetype {
+while true; do
+  clear
+  echo "What type off access point are you looking for?"
+  echo ""
+  echo "Select encryption type to filter"
+  echo ""
+  echo "1) OPN"
+  echo "2) WEP"
+  echo "3) WPA"
+  echo "4) WPA1"
+  echo "5) WPA2"
+  read yn
+  echo ""
+  case $yn in
+    1 ) ENCRYPT="OPN" ; break ;;
+    2 ) ENCRYPT="WEP" ; break ;;
+    3 ) ENCRYPT="WPA" ; break ;;
+    4 ) ENCRYPT="WPA1" ; break ;;
+    5 ) ENCRYPT="WPA2" ; break ;;
+    * ) echo "unknown response. Try again" ;;
+  esac
+done 
+}
 
 # This is a simple function to ask what type of scan you want to run
 function choosescan {
@@ -439,6 +466,7 @@ function target {
 		echo "Access Point Channel  ==> "$Host_CHAN
 		echo "Selected client       ==> "$Client_MAC
 		echo "Access Point Security ==> "$Host_ENC
+		echo "Access Point Speed    ==> "$Host_SPEED
 }  
 # interface configuration using found key (tweaks by CurioCT) 	
 function configure {
@@ -514,14 +542,11 @@ if [ $Host_ENC = "WEP" ]
 function witchattack {
 if [ $Host_ENC = "WEP" ]
   		then
-		echo "Will launch aircrack-ng searching for WEP KEY"
 		attackwep
 		elif [ $Host_ENC = "WPA" ]
 		then
-		echo "Will launch aircrack-ng searching for WPA KEY"
 		wpahandshake
 		else
-		echo "unknown encryption type"
 		attackopn
 		fi			
 }
@@ -554,7 +579,7 @@ xterm $HOLD $TOPRIGHT -title "Aircracking: $Host_SSID" -hold -e $AIRCRACK -a 2 -
 function Scan {
 	clear
 	rm -rf $DUMP_PATH/dump*
-	xterm $HOLD -title "Scanning for targets" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump $WIFI
+	xterm $HOLD -title "Scanning for targets" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT $WIFI
 }
 # This scan for targets on a specific channel
 function Scanchan {
@@ -564,7 +589,7 @@ echo You typed: $channel_number
 set -- ${channel_number}
 	clear
 	rm -rf $DUMP_PATH/dump*
-	xterm $HOLD -title "Scanning for targets on channel $channel_number" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --channel "$channel_number" $WIFI
+	xterm $HOLD -title "Scanning for targets on channel $channel_number" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --channel "$channel_number" --encrypt $ENCRYPT $WIFI
 }
 function capture {
 	clear
@@ -690,6 +715,7 @@ fi
 	menu	
 select choix in $CHOICES; do					
 	if [ "$choix" = "1" ]; then
+	choosetype
 	choosescan
 	clear
 	menu
@@ -713,6 +739,8 @@ select choix in $CHOICES; do
 	menu
 	fi					
 	elif [ "$choix" = "3" ]; then
+	iwconfig $WIFI rate $Host_SPEED"M"
+	echo "iwconfig $WIFI rate $Host_SPEED"M""
 	witchattack	
 	clear
 	echo "Attack starting with variables set to :"
