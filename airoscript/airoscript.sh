@@ -24,11 +24,11 @@ DEBUG="0"
 #If you dont set this, airoscript will ask you for interface to use
 WIFI=""
 #This is the rate per second at wich packets will be injected
-INJECTRATE="1024"
+INJECTRATE="512"
 #How many times the deauth attack is run
 DEAUTHTIME="4"
 #Time between re-association with target AP
-AUTHDELAY="45"
+AUTHDELAY="60"
 #Fudge factor setting
 FUDGEFACTOR="2"
 #Path to binaries                                     
@@ -40,7 +40,7 @@ ARPFORGE="packetforge-ng"
 #The path where the data is stored (FOLDER MUST EXIST !)
 DUMP_PATH="/tmp"
 # Path to your wordlist file (for WPA and WEP dictionnary attack)
-WORDLIST="/tmp/english.txt"
+WORDLIST="/tmp/wordlist.txt"
 #The Mac address used to associate with AP during fakeauth			
 FAKE_MAC="00:01:02:03:04:05"
 # IP of the access to be used for CHOPCHOP and Fragmentation attack
@@ -293,12 +293,13 @@ while true; do
   echo "2) Fake association => Interactive"
   echo "3) Using a client   => Automatic"
   echo "4) Using a client   => Interactive"
-  echo "5) Fragmentation attack"
+  echo "5) Fragmentation attack - Fragmentation part"
   echo "6) Chopchop attack"
   echo "7) Chopchop attack using a client"
   echo "8) Solo interactive attack (attempt to jump start stalled injections)"
   echo "9) Chopchop attack injection part of the attack"
   echo "10) Chopchop attack using a client injection part of the attack"
+  echo "11) Fragmentation attack - Injection part"
   read yn
   echo ""
   case $yn in
@@ -312,6 +313,7 @@ while true; do
     8 ) solointeractiveattack ; break ;;
     9 ) chopchopend ; break ;;
    10 ) chopchopclientend ; break ;;
+   11 ) fragmentationattackend ; break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
@@ -571,7 +573,7 @@ function crack   {
 function wpahandshake {
 	clear
 	rm -rf $DUMP_PATH/$Host_MAC*
-	xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN $WIFI & deauthclient
+	xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN $WIFI & menufonction
 }
 function wpacrack {
 xterm $HOLD $TOPRIGHT -title "Aircracking: $Host_SSID" -hold -e $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST
@@ -606,7 +608,7 @@ function deauthfake {
 	xterm $HOLD $TOPRIGHT -bg "#000000" -fg "#99CCFF" -title "Kicking $FAKE_MAC from: $Host_SSID" -e $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $WIFI
 }
 function fakeauth {
-xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth $AUTHDELAY -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
+xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth $AUTHDELAY -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
 }
 # This is a set of command to manually kick all clients from selected AP to discover them
 function clientdetect {
@@ -614,23 +616,23 @@ function clientdetect {
 }
 # attack against client when a previous attack has stalled
 function solointeractiveattack {
-	xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -d FF:FF:FF:FF:FF:FF -x $INJECTRATE & deauthclient
+	xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -d FF:FF:FF:FF:FF:FF -x $INJECTRATE & menufonction
 }
 # fake attack function	
 function attack {
-	capture & xterm $HOLD -title "Injection: Host: $Host_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -h $FAKE_MAC  -x $INJECTRATE & fakeauth & deauthfake
+	capture & xterm $HOLD -title "Injection: Host: $Host_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -h $FAKE_MAC  -x $INJECTRATE & fakeauth & menufonction
 }
 # client type attack function
 function attackclient {
-	capture & xterm $HOLD -title "Injection: Host : $Host_MAC CLient : $Client_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -h $Client_MAC -x $INJECTRATE & deauthclient
+	capture & xterm $HOLD -title "Injection: Host : $Host_MAC CLient : $Client_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -h $Client_MAC -x $INJECTRATE & menufonction
 }
 # interactive attack with client
 function interactiveattack {
-	capture & xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -d FF:FF:FF:FF:FF:FF -x $INJECTRATE -t 1 -f 0 -m 68 -n 68  & deauthclient
+	capture & xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -d FF:FF:FF:FF:FF:FF -x $INJECTRATE -t 1 -f 0 -m 68 -n 68  & menufonction
 }
 # interactive attack with fake mac
 function fakeinteractiveattack {
-	capture & xterm $HOLD -title "Interactive Packet Sel on Host: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -d FF:FF:FF:FF:FF:FF -x $INJECTRATE -t 1 -f 0 -m 68 -n 68  & fakeauth & deauthfake
+	capture & xterm $HOLD -title "Interactive Packet Sel on Host: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -d FF:FF:FF:FF:FF:FF -x $INJECTRATE -t 1 -f 0 -m 68 -n 68  & fakeauth & menufonction
 }
 
 # Unstable allround function
@@ -651,7 +653,7 @@ rm -rf $DUMP_PATH/$Host_MAC*
 function chopchopattackclient {
 	clear
 rm -rf $DUMP_PATH/$Host_MAC*
-	capture &  xterm $HOLD -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -h $Client_MAC $WIFI & deauthclient
+	capture &  xterm $HOLD -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -h $Client_MAC $WIFI & menufonction
 }
 function chopchopend {
 rm -rf $DUMP_PATH/chopchop_$Host_MAC*
@@ -666,15 +668,18 @@ rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 
 function fragmentationattack {
 rm -rf $DUMP_PATH/fragment-*.xor
+rm -rf $DUMP_PATH/frag_*.xor
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
-# iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
-deauthclient & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture 
+iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
+xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  menufonction
+}
 
+function fragmentationattackend {
 $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
-
 capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting forged packet on $Host_SSID" -e $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -x $INJECTRATE $WIFI & menufonction
 }
+
 function menufonction {
 xterm $HOLD $TOPRIGHT -title "Fake function to jump to menu" -e echo "Aircrack-ng is a great tool, Mister_X ASPj HIRTE are GODS"
 }
@@ -739,6 +744,7 @@ select choix in $CHOICES; do
 	menu
 	fi					
 	elif [ "$choix" = "3" ]; then
+	$AIRMON start $WIFI $Host_CHAN
 	iwconfig $WIFI rate $Host_SPEED"M"
 	echo "iwconfig $WIFI rate $Host_SPEED"M""
 	witchattack	
@@ -755,9 +761,11 @@ select choix in $CHOICES; do
 	witchconfigure
 	menu	
 	elif [ "$choix" = "6" ]; then
+	$AIRMON start $WIFI $Host_CHAN	
 	echo launching fake auth commands
 	fakeauth & menu	
 	elif [ "$choix" = "7" ]; then
+	$AIRMON start $WIFI $Host_CHAN	
 	choosedeauth
 	menu
 	elif [ "$choix" = "8" ]; then
@@ -768,6 +776,7 @@ select choix in $CHOICES; do
 	monitor_interface
 	menu
 	elif [ "$choix" = "11" ]; then
+	$AIRMON start $WIFI $Host_CHAN
 	airomatic
 	menu
 	elif [ "$choix" = "10" ]; then
