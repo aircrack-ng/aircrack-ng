@@ -670,7 +670,7 @@ int update_dataps()
 
 int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
 {
-    int i, n, z, seq, msd;
+    int i, n, z, seq, msd, offset;
     int type, length, numuni=0, numauth=0;
     struct pcap_pkthdr pkh;
     struct timeval tv;
@@ -1083,30 +1083,40 @@ skip_probe:
             type = p[0];
             length = p[1];
 
-            if( (type == 0xDD && length >= 22 && (memcmp(p+2, "\x00\x50\xF2\x01\x01\x00", 6) == 0)) || (type == 0x30) )
+            if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x01\x01\x00", 6) == 0)) || (type == 0x30) )
             {
-                ap_cur->security &= ~(STD_WEP|ENC_WEP);
+                ap_cur->security &= ~(STD_WEP|ENC_WEP|STD_WPA);
+
+                offset = 0;
 
                 if(type == 0xDD)
                 {
                     //WPA defined in vendor specific tag -> WPA1 support
                     ap_cur->security |= STD_WPA;
-
-                    numuni  = p[12] + (p[13]<<8);
-                    numauth = p[14 + 4*numuni] + (p[15 + 4*numuni]<<8);
-
-                    p = p+14;        //point at first unicast cipher
+                    offset = 4;
                 }
 
                 if(type == 0x30)
                 {
                     ap_cur->security |= STD_WPA2;
-
-                    numuni  = p[8] + (p[9]<<8);
-                    numauth = p[10 + 4*numuni] + (p[11 + 4*numuni]<<8);
-
-                    p += 10;
+                    offset = 0;
                 }
+
+//                printf("sec, length: %d, %d\n", ap_cur->security, length);
+
+                if(length < (18+offset))
+                {
+                    p += length+2;
+                    continue;
+                }
+
+                numuni  = p[8+offset] + (p[9+offset]<<8);
+                numauth = p[(10+offset) + 4*numuni] + (p[(11+offset) + 4*numuni]<<8);
+
+                p += (10+offset);
+
+//                printf("numuni: %d\n", numuni);
+//                printf("numauth: %d\n", numauth);
 
                 for(i=0; i<numuni; i++)
                 {
