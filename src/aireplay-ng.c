@@ -3649,18 +3649,18 @@ int main( int argc, char *argv[] )
         }
     }
 
-	/*
-	optind value can be wrong (off-by-one) at the end of the argument scanning loop
-	in case a numeric value has to be read. The following line is a dirty patch:
-	*/
-	if (strlen(argv[optind]) <=2) optind++;
-
     if( argc - optind < 1 || argc - optind > 2 )
     {
     usage:
         printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
         return( 1 );
     }
+
+    /*
+    optind value can be wrong (off-by-one) at the end of the argument scanning loop
+    in case a numeric value has to be read. The following line is a dirty patch:
+    */
+    if (strlen(argv[optind]) <=2) optind++;
 
     if( opt.a_mode == -1 )
     {
@@ -3681,10 +3681,10 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
-	if ( opt.f_tods == 1 && opt.f_fromds == 1 )
-	{
-		printf( "FromDS and ToDS bit are set: packet has to come from the AP and go to the AP\n" );
-	}
+    if ( opt.f_tods == 1 && opt.f_fromds == 1 )
+    {
+        printf( "FromDS and ToDS bit are set: packet has to come from the AP and go to the AP\n" );
+    }
 
     dev.fd_rtc = -1;
 
