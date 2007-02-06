@@ -20,7 +20,7 @@
  */
 
 #ifndef linux
-	#error Airodump-ng only compiles with Linux
+    #warning Airodump-ng could fail on this OS
 #endif
 
 #include <sys/socket.h>
@@ -29,10 +29,19 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#include <netpacket/packet.h>
-#include <linux/if_ether.h>
-#include <linux/if.h>
-#include <linux/wireless.h>
+#ifdef linux
+    #include <netpacket/packet.h>
+    #include <linux/if_ether.h>
+    #include <linux/if.h>
+    #include <linux/wireless.h>
+#endif
+
+#ifdef __FreeBSD__
+    #include <net/bpf.h>
+    #include <net/if.h>
+    #include <netinet/in.h>
+#endif
+
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
@@ -42,7 +51,12 @@
 #include <errno.h>
 #include <time.h>
 #include <getopt.h>
-#include <wait.h>
+#include <fcntl.h>
+
+
+#ifdef linux
+    #include <wait.h>
+#endif
 
 #ifdef linux
     int linux_acpi;
@@ -2423,6 +2437,7 @@ void sighandler( int signum)
     }
 }
 
+#ifdef linux
 int disable_wep_key( char *interface, int fd_raw )
 {
     struct iwreq wrq;
@@ -2433,7 +2448,9 @@ int disable_wep_key( char *interface, int fd_raw )
 
     return( ioctl( fd_raw, SIOCSIWENCODE, &wrq ) != 0 );
 }
+#endif
 
+#ifdef linux
 int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 {
     char s[32];
@@ -2495,7 +2512,9 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 
     return( 0 );
 }
+#endif
 
+#ifdef linux
 int set_monitor( char *interface, int fd_raw, int cardnum )
 {
 	char s[32];
@@ -2562,6 +2581,7 @@ int set_monitor( char *interface, int fd_raw, int cardnum )
 
     return( 0 );
 }
+#endif
 
 int getchancount(int valid)
 {
@@ -2578,6 +2598,7 @@ int getchancount(int valid)
     return i;
 }
 
+#ifdef linux
 void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count )
 {
 
@@ -2657,6 +2678,7 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
 
     exit( 0 );
 }
+#endif
 
 int invalid_channel(int chan)
 {
@@ -2791,6 +2813,7 @@ int getchannels(const char *optarg)
     return 0;
 }
 
+#ifdef linux
 int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct sockaddr_ll *sll, int *fd_raw, int *arptype, int cardnum)
 {
     int pid=0, n=0;
@@ -2992,7 +3015,9 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 
     return( 0 );
 }
+#endif
 
+#ifdef linux
 int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct packet_mreq mr[], struct sockaddr_ll sll[], int fd_raw[], int arptype[])
 {
     char *buffer;
@@ -3011,6 +3036,7 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct pa
 
     return if_count;
 }
+#endif
 
 int get_if_num(const char* cardstr)
 {
@@ -3065,14 +3091,20 @@ int main( int argc, char *argv[] )
     int valid_channel, chanoption;
     int freq [2];
     time_t tt1, tt2, tt3, start_time;
+#ifdef __FreeBSD_
+    int j;
+    char buf[64];
+#endif
 
     unsigned char      *buffer;
     unsigned char      *h80211;
     char               *iface[MAX_CARDS];
 
     struct ifreq       ifr[MAX_CARDS];
+#ifdef linux
     struct packet_mreq mr[MAX_CARDS];
     struct sockaddr_ll sll[MAX_CARDS];
+#endif
     struct timeval     tv0;
     struct timeval     tv1;
     struct timeval     tv2;
@@ -3364,9 +3396,10 @@ int main( int argc, char *argv[] )
 
     /* create the raw socket and drop privileges */
 
+#ifdef linux
     for(i=0; i<cards; i++)
     {
-	    fd_raw[i] = socket( PF_PACKET, SOCK_RAW, htons( ETH_P_ALL ) );
+        fd_raw[i] = socket( PF_PACKET, SOCK_RAW, htons( ETH_P_ALL ) );
 
         if( fd_raw[i] < 0 )
         {
@@ -3375,9 +3408,36 @@ int main( int argc, char *argv[] )
                 fprintf( stderr, "This program requires root privileges.\n" );
             return( 1 );
         }
-	    if( fd_raw[i] > fdh)
-		    fdh=fd_raw[i];
+            if( fd_raw[i] > fdh)
+                fdh=fd_raw[i];
     }
+#endif
+
+#ifdef __FreeBSD__
+    for(i=0; i<cards; i++)
+    {
+        for(j = 0;j < 10; j++) {
+            sprintf(buf, "/dev/bpf%d", j);
+
+             fd_raw[i]= open(buf, O_RDWR);
+
+            if(fd_raw[i] < 0) {
+                if(errno != EBUSY) {
+                    perror("can't open /dev/bpf");
+                    exit(1);
+                }
+                continue;
+            }
+            else
+                break;
+        }
+
+        if(fd_raw[i] < 0) {
+            perror("can't open /dev/bpf");
+            exit(1);
+        }
+    }
+#endif
 
     setuid( getuid() );
 
@@ -3389,8 +3449,12 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
+#ifdef linux
     /* initialize cards */
     cards = init_cards(argv[argc-1], iface, ifr, mr, sll, fd_raw, arptype);
+#else
+    cards = 1;
+#endif
 
     if(cards <= 0)
 	return( 1 );
@@ -3409,7 +3473,9 @@ int main( int argc, char *argv[] )
 
         if( ! fork() )
         {
+#ifdef linux
             channel_hopper( iface, fd_raw, cards, chan_count );
+#endif
             exit( 1 );
         }
     }
@@ -3417,7 +3483,9 @@ int main( int argc, char *argv[] )
     {
 	for(i=0; i<cards; i++)
 	{
+#ifdef linux
             set_channel( iface[i], fd_raw[i], G.channel[0], i );
+#endif
 	    G.channel[i] = G.channel[0];
 	}
         G.singlechan = 1;

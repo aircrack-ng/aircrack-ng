@@ -22,20 +22,31 @@
  */
 
 #ifndef linux
-	#error Aireplay-ng only compiles with Linux
+    #warning Aireplay-ng could fail on this OS
 #endif
 
-#include <linux/rtc.h>
+#ifdef linux
+    #include <linux/rtc.h>
+#endif
+
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#include <netpacket/packet.h>
-#include <linux/if_ether.h>
-#include <linux/if.h>
-#include <linux/wireless.h>
+#ifdef linux
+    #include <netpacket/packet.h>
+    #include <linux/if_ether.h>
+    #include <linux/if.h>
+    #include <linux/wireless.h>
+#endif
+
+#ifdef __FreeBSD__
+    #include <net/bpf.h>
+    #include <net/if.h>
+#endif
+
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -48,9 +59,9 @@
 #include <getopt.h>
 
 #include <fcntl.h>
-#include <errno.h>
-#include <time.h>
-#include <getopt.h>
+//#include <errno.h>
+//#include <time.h>
+//#include <getopt.h>
 
 #include "version.h"
 #include "pcap.h"
@@ -3205,7 +3216,7 @@ int opensysfs( char *iface, int fd) {
 }
 
 /* interface initialization routine */
-
+#ifdef linux
 int openraw( char *iface, int fd, int *arptype, uchar* mac )
 {
     struct ifreq ifr;
@@ -3290,13 +3301,68 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
 
     return( 0 );
 }
+#endif
+
+#ifdef __FreeBSD__
+int openraw(char *name, int fd, int *arptype, uchar* mac) {
+    int i;
+//    int fd = -1;
+    struct ifreq ifr;
+
+/*    for(i = 0;i < 10; i++) {
+        sprintf(buf, "/dev/bpf%d", i);
+
+        fd = open(buf, O_RDWR);
+
+        if(fd < 0) {
+            if(errno != EBUSY) {
+                perror("can't open /dev/bpf");
+                return(1);
+            }
+            continue;
+        }
+        else
+            break;
+    }
+
+    if(fd < 0) {
+        perror("can't open /dev/bpf");
+        return(1);
+    }
+*/
+    strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name)-1);
+    ifr.ifr_name[sizeof(ifr.ifr_name)-1] = 0;
+
+    if(ioctl(fd, BIOCSETIF, &ifr) < 0) {
+        perror("ioctl(BIOCSETIF)");
+        return(1);
+    }
+
+    i = 1;
+    if(ioctl(fd, BIOCIMMEDIATE, &i) < 0) {
+        perror("ioctl(BIOCIMMEDIATE)");
+        return(1);
+    }
+
+    memcpy( mac, (unsigned char*)ifr.ifr_addr.sa_data, 6);
+    *arptype = ifr.ifr_addr.sa_family;
+
+    return 0;
+}
+#endif
 
 char athXraw[] = "athXraw";
 
 int main( int argc, char *argv[] )
 {
     int n;
+#ifdef __FreeBSD__
+    int i;
+    char buf[64];
+#endif
+#ifdef linux
     FILE * f;
+#endif
     /* check the arguments */
 
     memset( &opt, 0, sizeof( opt ) );
@@ -3691,6 +3757,7 @@ int main( int argc, char *argv[] )
     /* open the RTC device if necessary */
 
 #ifdef __i386__
+#ifdef linux
     if( opt.a_mode > 1 )
     {
         if( ( dev.fd_rtc = open( "/dev/rtc", O_RDONLY ) ) < 0 )
@@ -3720,9 +3787,11 @@ int main( int argc, char *argv[] )
         }
     }
 #endif
+#endif
 
     /* create the RAW sockets */
 
+#ifdef linux
     if( ( dev.fd_in = socket( PF_PACKET, SOCK_RAW,
                               htons( ETH_P_ALL ) ) ) < 0 )
     {
@@ -3855,6 +3924,31 @@ int main( int argc, char *argv[] )
             }
         }
     }
+#endif
+
+#ifdef __FreeBSD__
+    for(i = 0;i < 10; i++) {
+        sprintf(buf, "/dev/bpf%d", i);
+
+        dev.fd_in = open(buf, O_RDWR);
+
+        if(dev.fd_in < 0) {
+            if(errno != EBUSY) {
+                perror("can't open /dev/bpf");
+                exit(1);
+            }
+            continue;
+        }
+        else
+            break;
+    }
+
+    if(dev.fd_in < 0) {
+        perror("can't open /dev/bpf");
+        exit(1);
+    }
+    dev.fd_out = dev.fd_in;
+#endif
 
     /* drop privileges */
 

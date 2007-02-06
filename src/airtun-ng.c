@@ -20,20 +20,31 @@
  */
 
 #ifndef linux
-	#error Airtun-ng only compiles with Linux
+    #warning Airtun-ng could fail on this OS
 #endif
 
-#include <linux/rtc.h>
+#ifdef linux
+    #include <linux/rtc.h>
+#endif
+
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#include <netpacket/packet.h>
-#include <linux/if_ether.h>
-#include <linux/if.h>
-#include <linux/wireless.h>
+#ifdef linux
+    #include <netpacket/packet.h>
+    #include <linux/if_ether.h>
+    #include <linux/if.h>
+    #include <linux/wireless.h>
+#endif
+
+#ifdef __FreeBSD__
+    #include <net/bpf.h>
+    #include <net/if.h>
+#endif
+
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -46,10 +57,16 @@
 #include <getopt.h>
 
 #include <fcntl.h>
-#include <errno.h>
-#include <time.h>
+//#include <errno.h>
+//#include <time.h>
 
-#include <linux/if_tun.h>
+#ifdef linux
+    #include <linux/if_tun.h>
+#endif
+
+#ifdef __FreeBSD__
+    #include <net/if_tun.h>
+#endif
 
 #include "version.h"
 #include "pcap.h"
@@ -683,7 +700,7 @@ int opensysfs( char *iface, int fd) {
 }
 
 /* interface initialization routine */
-
+#ifdef linux
 int openraw( char *iface, int fd, int *arptype )
 {
     struct ifreq ifr;
@@ -766,6 +783,54 @@ int openraw( char *iface, int fd, int *arptype )
 
     return( 0 );
 }
+#endif
+
+#ifdef __FreeBSD__
+int openraw(char *name, int fd, int *arptype) {
+    int i;
+//    int fd = -1;
+    struct ifreq ifr;
+
+/*    for(i = 0;i < 10; i++) {
+        sprintf(buf, "/dev/bpf%d", i);
+
+        fd = open(buf, O_RDWR);
+
+        if(fd < 0) {
+            if(errno != EBUSY) {
+                perror("can't open /dev/bpf");
+                return(1);
+            }
+            continue;
+        }
+        else
+            break;
+    }
+
+    if(fd < 0) {
+        perror("can't open /dev/bpf");
+        return(1);
+    }
+*/
+    strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name)-1);
+    ifr.ifr_name[sizeof(ifr.ifr_name)-1] = 0;
+
+    if(ioctl(fd, BIOCSETIF, &ifr) < 0) {
+        perror("ioctl(BIOCSETIF)");
+        return(1);
+    }
+
+    i = 1;
+    if(ioctl(fd, BIOCIMMEDIATE, &i) < 0) {
+        perror("ioctl(BIOCIMMEDIATE)");
+        return(1);
+    }
+
+    *arptype = ifr.ifr_addr.sa_family;
+
+    return 0;
+}
+#endif
 
 char athXraw[] = "athXraw";
 
@@ -954,6 +1019,7 @@ int main( int argc, char *argv[] )
     /* open the RTC device if necessary */
 
 #ifdef __i386__
+#ifdef linux
     if( 1 )
     {
         if( ( dev.fd_rtc = open( "/dev/rtc", O_RDONLY ) ) < 0 )
@@ -983,9 +1049,11 @@ int main( int argc, char *argv[] )
         }
     }
 #endif
+#endif
 
     /* create the RAW sockets */
 
+#ifdef linux
     if( ( dev.fd_in = socket( PF_PACKET, SOCK_RAW,
                               htons( ETH_P_ALL ) ) ) < 0 )
     {
@@ -1093,6 +1161,31 @@ int main( int argc, char *argv[] )
         	dev.is_madwifing=1;
         }
     }
+#endif
+
+#ifdef __FreeBSD__
+    for(i = 0;i < 10; i++) {
+        sprintf(buf, "/dev/bpf%d", i);
+
+        dev.fd_in = open(buf, O_RDWR);
+
+        if(dev.fd_in < 0) {
+            if(errno != EBUSY) {
+                perror("can't open /dev/bpf");
+                exit(1);
+            }
+            continue;
+        }
+        else
+            break;
+    }
+
+    if(dev.fd_in < 0) {
+        perror("can't open /dev/bpf");
+        exit(1);
+    }
+    dev.fd_out = dev.fd_in;
+#endif
 
     /* drop privileges */
 
@@ -1135,14 +1228,26 @@ int main( int argc, char *argv[] )
         return -1;
     }
     memset( &if_request, 0, sizeof( if_request ) );
+#ifdef linux
     if_request.ifr_flags = IFF_TAP | IFF_NO_PI;
+#endif
     strncpy( if_request.ifr_name, "at%d", IFNAMSIZ );
+#ifdef linux
     if( ioctl( dev.fd_tap, TUNSETIFF, (void *)&if_request ) < 0 )
     {
         printf( "error creating tap interface: %s\n", strerror( errno ) );
         close( dev.fd_tap );
         return -1;
     }
+#endif
+#ifdef __FreeBSD__
+    if( ioctl( dev.fd_tap, SIOCGIFFLAGS, (void *)&if_request ) < 0 )
+    {
+        printf( "error creating tap interface: %s\n", strerror( errno ) );
+        close( dev.fd_tap );
+        return -1;
+    }
+#endif
     printf( "created tap interface %s\n", if_request.ifr_name );
 
     if(opt.prgalen <= 0 && opt.crypt == CRYPT_NONE)
