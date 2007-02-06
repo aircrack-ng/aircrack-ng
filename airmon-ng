@@ -386,6 +386,7 @@ do
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
          echo "source=acx100,$iface,TI" >>$KISMET
+         iwpriv $iface monitor 2 $CH 2> /dev/null >/dev/null
          startStdIface $iface $CH
      fi
      if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
