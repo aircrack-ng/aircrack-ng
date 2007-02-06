@@ -1088,7 +1088,7 @@ skip_probe:
 
     /* packet parsing: Beacon */
 
-    if( h80211[0] == 0x80 )
+    if( h80211[0] == 0x80 && caplen > 38)
     {
         p=h80211+36;         //ignore hdr + fixed params
 
@@ -1097,7 +1097,7 @@ skip_probe:
             type = p[0];
             length = p[1];
 
-            if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x01\x01\x00", 6) == 0)) || (type == 0x30) )
+            if( (type == 0xDD && (length >= 18) && (memcmp(p+2, "\x00\x50\xF2\x01\x01\x00", 6) == 0)) || (type == 0x30) )
             {
                 ap_cur->security &= ~(STD_WEP|ENC_WEP|STD_WPA);
 
@@ -1196,7 +1196,7 @@ skip_probe:
 
     /* packet parsing: Association Request */
 
-    if( h80211[0] == 0x00 )
+    if( h80211[0] == 0x00 && caplen > 28 )
     {
         p = h80211 + 28;
 
