@@ -761,11 +761,9 @@ select choix in $CHOICES; do
 	witchconfigure
 	menu	
 	elif [ "$choix" = "6" ]; then
-	$AIRMON start $WIFI $Host_CHAN	
 	echo launching fake auth commands
 	fakeauth & menu	
-	elif [ "$choix" = "7" ]; then
-	$AIRMON start $WIFI $Host_CHAN	
+	elif [ "$choix" = "7" ]; then	
 	choosedeauth
 	menu
 	elif [ "$choix" = "8" ]; then
