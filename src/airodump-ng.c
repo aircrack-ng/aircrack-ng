@@ -868,7 +868,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
 
         if( ap_cur != NULL && ap_cur->wpa_state != 0xFF )
             ap_cur->wpa_state = 0;
-        printf("initial auth %d\n", ap_cur->wpa_state);
+//        printf("initial auth %d\n", ap_cur->wpa_state);
     }
 
     /* locate the station MAC in the 802.11 header */
@@ -1348,58 +1348,62 @@ skip_probe:
         {
             ap_cur->nb_data++;
         }
-    }
 
-    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+        z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
 
-    if( z + 26 > caplen )
-        goto write_packet;
+        if( z + 26 > caplen )
+            goto write_packet;
 
-    z += 6;     //skip LLC header
+        z += 6;     //skip LLC header
 
-    /* check ethertype == EAPOL */
-    if( h80211[z] == 0x88 && h80211[z + 1] == 0x8E )
-    {
-        z += 2;     //skip ethertype
-
-        /* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
-
-        if( ( h80211[z + 6] & 0x08 ) != 0 &&
-            ( h80211[z + 6] & 0x40 ) == 0 &&
-            ( h80211[z + 6] & 0x80 ) != 0 &&
-            ( h80211[z + 5] & 0x01 ) == 0 )
+        /* check ethertype == EAPOL */
+        if( h80211[z] == 0x88 && h80211[z + 1] == 0x8E && (h80211[1] & 0x40) != 0x40 )
         {
-            ap_cur->wpa_state = 1;
-        }
+            z += 2;     //skip ethertype
 
-        /* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
+            /* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
-        if( ( h80211[z + 6] & 0x08 ) != 0 &&
-            ( h80211[z + 6] & 0x40 ) == 0 &&
-            ( h80211[z + 6] & 0x80 ) == 0 &&
-            ( h80211[z + 5] & 0x01 ) != 0 )
-        {
-            if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
+            if( ( h80211[z + 6] & 0x08 ) != 0 &&
+                ( h80211[z + 6] & 0x40 ) == 0 &&
+                ( h80211[z + 6] & 0x80 ) != 0 &&
+                ( h80211[z + 5] & 0x01 ) == 0 )
             {
-                    ap_cur->wpa_state |= 2;
+                ap_cur->wpa_state = 1;
+            }
+
+            /* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
+
+            if( z+17+32 > caplen )
+                goto write_packet;
+
+            if( ( h80211[z + 6] & 0x08 ) != 0 &&
+                ( h80211[z + 6] & 0x40 ) == 0 &&
+                ( h80211[z + 6] & 0x80 ) == 0 &&
+                ( h80211[z + 5] & 0x01 ) != 0 )
+            {
+                if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
+                {
+                        ap_cur->wpa_state |= 2;
+                }
+            }
+
+            /* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
+
+            if( ( h80211[z + 6] & 0x08 ) != 0 &&
+                ( h80211[z + 6] & 0x40 ) != 0 &&
+                ( h80211[z + 6] & 0x80 ) != 0 &&
+                ( h80211[z + 5] & 0x01 ) != 0 )
+            {
+                if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
+                {
+                        ap_cur->wpa_state |= 4;
+                }
+                ap_cur->wpa_state |= 8;
+                if( ap_cur->wpa_state == 15)
+                        memcpy( G.wpa_bssid, ap_cur->bssid, 6 );
             }
         }
 
-        /* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
-
-        if( ( h80211[z + 6] & 0x08 ) != 0 &&
-            ( h80211[z + 6] & 0x40 ) != 0 &&
-            ( h80211[z + 6] & 0x80 ) != 0 &&
-            ( h80211[z + 5] & 0x01 ) != 0 )
-        {
-            if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
-            {
-                    ap_cur->wpa_state |= 4;
-            }
-            ap_cur->wpa_state |= 8;
-            if( ap_cur->wpa_state == 15)
-                    memcpy( G.wpa_bssid, ap_cur->bssid, 6 );
-        }
     }
 
 
