@@ -1734,10 +1734,10 @@ int do_attack_arp_resend( void )
     struct pcap_pkthdr pkh;
     struct ARP_req * arp;
 
-	if ( opt.ringbuffer )
-		arp = (struct ARP_req*) malloc( opt.ringbuffer * sizeof( struct ARP_req ) );
-	else
-		arp = (struct ARP_req*) malloc( sizeof( struct ARP_req ) );
+    if ( opt.ringbuffer )
+        arp = (struct ARP_req*) malloc( opt.ringbuffer * sizeof( struct ARP_req ) );
+    else
+        arp = (struct ARP_req*) malloc( sizeof( struct ARP_req ) );
 
     /* capture only WEP data to broadcast address */
 
@@ -3630,11 +3630,11 @@ int main( int argc, char *argv[] )
                 opt.s_file = optarg;
                 break;
 
-			case 'z' :
+            case 'z' :
 
-				opt.ghost = 1;
+                opt.ghost = 1;
 
-				break;
+                break;
 
             case '0' :
 
