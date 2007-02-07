@@ -269,6 +269,7 @@ void sighandler( int signum )
 
 int send_packet( void *buf, size_t count )
 {
+    unsigned char maddr[6];
     int ret;
 
     if( dev.is_wlanng && count >= 24 )
@@ -306,8 +307,6 @@ int send_packet( void *buf, size_t count )
     if( ( dev.is_wlanng || dev.is_hostap ) &&
         ( ((uchar *) buf)[1] & 3 ) == 2 )
     {
-        unsigned char maddr[6];
-
         /* Prism2 firmware swaps the dmac and smac in FromDS packets */
 
         memcpy( maddr, buf + 4, 6 );

@@ -1097,7 +1097,7 @@ skip_probe:
             type = p[0];
             length = p[1];
 
-            if( (type == 0xDD && (length >= 18) && (memcmp(p+2, "\x00\x50\xF2\x01\x01\x00", 6) == 0)) || (type == 0x30) )
+            if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x01\x01\x00", 6) == 0)) || (type == 0x30) )
             {
                 ap_cur->security &= ~(STD_WEP|ENC_WEP|STD_WPA);
 
@@ -1257,6 +1257,7 @@ skip_probe:
         }
 //        else
 //            ap_cur->encryption = 2 + ( ( h80211[z + 3] & 0x20 ) >> 5 );
+
 
         if(ap_cur->security == 0)
         {
@@ -1424,7 +1425,13 @@ write_packet:
         }
     }
 
-    if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0)) return(1);
+    if(ap_cur != NULL)
+    {
+        if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
+        {
+            return(1);
+        }
+    }
 
     if( G.f_cap != NULL )
     {
@@ -1838,7 +1845,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
      *  and current time
      */
 
-    memset( strbuf, ' ', ws_col - 1 );
+    memset( strbuf, '\0', 512 );
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
@@ -1869,6 +1876,8 @@ void dump_print( int ws_row, int ws_col, int if_num )
     }
 
     strncat(strbuf, buffer, (512-strlen(strbuf)));
+
+    memset( buffer, '\0', 512 );
 
     if(memcmp(G.wpa_bssid, NULL_MAC, 6) !=0 )
     {
