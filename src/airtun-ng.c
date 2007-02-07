@@ -108,12 +108,18 @@ char usage[] =
 "\n"
 "  usage: airtun-ng <options> <replay interface>\n"
 "\n"
-"      -x nbpps  : maximum number of packets per second\n"
-"      -a bssid  : set Access Point MAC address\n"
-"      -i iface  : capture packets from this interface\n"
-"      -y file   : read PRGA from this file\n"
-"      -w wepkey : use this WEP-KEY to encrypt packets\n"
-"      -t tods   : send frames to AP (1) or to client (0)\n"
+"      -x nbpps         : maximum number of packets per second\n"
+"      -a bssid         : set Access Point MAC address\n"
+"      -i iface         : capture packets from this interface\n"
+"      -y file          : read PRGA from this file\n"
+"      -w wepkey        : use this WEP-KEY to encrypt packets\n"
+"      -t tods          : send frames to AP (1) or to client (0)\n"
+//"      -r file          : read frames out of pcap file\n"
+"\n"
+"  Repeater options:\n"
+"      --repeat         : activates repeat mode\n"
+"      --bssid <mac>    : BSSID to repeat\n"
+"      --netmask <mask> : netmask for BSSID filter\n"
 "\n";
 
 struct options
@@ -121,6 +127,9 @@ struct options
     unsigned char r_bssid[6];
     unsigned char r_dmac[6];
     unsigned char r_smac[6];
+
+    unsigned char f_bssid[6];
+    unsigned char f_netmask[6];
 
     char *s_face;
     uchar *prga;
@@ -131,6 +140,8 @@ struct options
 
     uchar wepkey[64];
     int weplen, crypt;
+
+    int repeat;
 }
 opt;
 
@@ -177,6 +188,26 @@ void sighandler( int signum )
 
     if( signum == SIGALRM )
         alarmed++;
+}
+
+int is_filtered_netmask(uchar *bssid)
+{
+    uchar mac1[6];
+    uchar mac2[6];
+    int i;
+
+    for(i=0; i<6; i++)
+    {
+        mac1[i] = bssid[i]     & opt.f_netmask[i];
+        mac2[i] = opt.f_bssid[i] & opt.f_netmask[i];
+    }
+
+    if( memcmp(mac1, mac2, 6) != 0 )
+    {
+        return( 1 );
+    }
+
+    return 0;
 }
 
 /* wlanng-aware frame sending routing */
@@ -231,11 +262,24 @@ int send_packet( void *buf, size_t count )
 
     ret = write( dev.fd_out, buf, count );
 
+    if( ( dev.is_wlanng || dev.is_hostap ) &&
+        ( ((uchar *) buf)[1] & 3 ) == 2 )
+    {
+        unsigned char maddr[6];
+
+        /* Prism2 firmware swaps the dmac and smac in FromDS packets */
+
+        memcpy( maddr, buf + 4, 6 );
+        memcpy( buf + 4, buf + 16, 6 );
+        memcpy( buf + 16, maddr, 6 );
+    }
+
     if( ret < 0 )
     {
         if( errno == EAGAIN || errno == EWOULDBLOCK ||
             errno == ENOBUFS )
         {
+            perror("again");
             usleep( 10000 );
             return( 0 );
         }
@@ -252,6 +296,7 @@ int send_packet( void *buf, size_t count )
 
 int read_packet( void *buf, size_t count )
 {
+    unsigned char bssid[6];
     int caplen, n = 0;
 
     if( ( caplen = read( dev.fd_in, tmpbuf, count ) ) < 0 )
@@ -294,6 +339,31 @@ int read_packet( void *buf, size_t count )
     caplen -= n;
 
     memcpy( buf, tmpbuf + n, caplen );
+
+    if( opt.repeat )
+    {
+        if( memcmp(opt.f_bssid, NULL_MAC, 6) != 0 )
+        {
+            switch( tmpbuf[1+n] & 3 )
+            {
+                case  0: memcpy( bssid, tmpbuf + n + 16, 6 ); break;
+                case  1: memcpy( bssid, tmpbuf + n +  4, 6 ); break;
+                case  2: memcpy( bssid, tmpbuf + n + 10, 6 ); break;
+                default: memcpy( bssid, tmpbuf + n +  4, 6 ); break;
+            }
+            if( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 )
+            {
+                if(is_filtered_netmask(bssid)) return( caplen );
+            }
+            else
+            {
+                if( memcmp(opt.f_bssid, bssid, 6) != 0 ) return( caplen );
+            }
+        }
+        send_packet(buf, caplen);
+        printf(" packet repeated! %lu\n", nb_pkt_sent);
+        fflush(stdout);
+    }
 
     return( caplen );
 }
@@ -375,8 +445,6 @@ int xor_keystream(uchar *ph80211, uchar *keystream, int len)
 
     return 0;
 }
-
-// ### ### BEGIN OWN CODE ### ###
 
 void print_packet ( uchar h80211[], int caplen )
 {
@@ -680,8 +748,6 @@ int packet_recv(uchar* packet, int length)
     return 0;
 }
 
-// ### ### END OWN CODE ### ###
-
 int sysfs_inject=0;
 int opensysfs( char *iface, int fd) {
     int fd2;
@@ -857,11 +923,14 @@ int main( int argc, char *argv[] )
         int option_index = 0;
 
         static struct option long_options[] = {
-            {0,             0, 0,  0 }
+            {"netmask", 1, 0, 'm'},
+            {"bssid",   1, 0, 'd'},
+            {"repeat",  0, 0, 'f'},
+            {0,         0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "x:a:h:i:r:y:t:w:",
+                        "x:a:h:i:r:y:t:w:m:d:f",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -989,7 +1058,33 @@ int main( int argc, char *argv[] )
                 opt.weplen = i;
 
                 break;
-
+            case 'm':
+                if ( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 )
+                {
+                    printf("Notice: netmask already given\n");
+                    break;
+                }
+                if(getmac(optarg, 1, opt.f_netmask) != 0)
+                {
+                    printf("Notice: invalid netmask\n");
+                    return( 1 );
+                }
+                break;
+            case 'd':
+                if ( memcmp(opt.f_bssid, NULL_MAC, 6) != 0 )
+                {
+                    printf("Notice: bssid already given\n");
+                    break;
+                }
+                if(getmac(optarg, 1, opt.f_bssid) != 0)
+                {
+                    printf("Notice: invalid bssid\n");
+                    return( 1 );
+                }
+                break;
+            case 'f':
+                opt.repeat = 1;
+                break;
 
             default : goto usage;
         }
@@ -999,6 +1094,12 @@ int main( int argc, char *argv[] )
     {
     usage:
         printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+        return( 1 );
+    }
+
+    if( ( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 ) && ( memcmp(opt.f_bssid, NULL_MAC, 6) == 0 ) )
+    {
+        printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
         return( 1 );
     }
 
