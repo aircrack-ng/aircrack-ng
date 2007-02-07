@@ -108,7 +108,7 @@ char usage[] =
 "\n"
 "  usage: airtun-ng <options> <replay interface>\n"
 "\n"
-"      -x nbpps         : maximum number of packets per second\n"
+"      -x nbpps         : number of packets per second (default: 100)\n"
 "      -a bssid         : set Access Point MAC address\n"
 "      -i iface         : capture packets from this interface\n"
 "      -y file          : read PRGA from this file\n"
@@ -132,6 +132,7 @@ struct options
     unsigned char f_netmask[6];
 
     char *s_face;
+    char *s_file;
     uchar *prga;
 
     int r_nbpps;
@@ -361,13 +362,59 @@ int read_packet( void *buf, size_t count )
             }
         }
         send_packet(buf, caplen);
-        printf(" packet repeated! %lu\n", nb_pkt_sent);
-        fflush(stdout);
     }
 
     return( caplen );
 }
 
+
+int msleep( int msec )
+{
+    struct timeval tv, tv2;
+    float f, ticks;
+    int n;
+
+    if(msec == 0) msec = 1;
+
+    ticks = 0;
+
+    while( 1 )
+    {
+        /* wait for the next timer interrupt, or sleep */
+
+        if( dev.fd_rtc >= 0 )
+        {
+            if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
+            {
+                perror( "read(/dev/rtc) failed" );
+                return( 1 );
+            }
+
+            ticks++;
+        }
+        else
+        {
+            /* we can't trust usleep, since it depends on the HZ */
+
+            gettimeofday( &tv,  NULL );
+            usleep( 1024 );
+            gettimeofday( &tv2, NULL );
+
+            f = 1000000 * (float) ( tv2.tv_sec  - tv.tv_sec  )
+                        + (float) ( tv2.tv_usec - tv.tv_usec );
+
+            ticks += f / 1024;
+        }
+
+        if( ( ticks / 1024 * 1000 ) < msec )
+            continue;
+
+        /* threshold reached */
+        break;
+    }
+
+    return 0;
+}
 
 #define PCT { struct tm *lt; time_t tc = time( NULL ); \
               lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
@@ -904,16 +951,19 @@ int main( int argc, char *argv[] )
 {
     int ret_val, len, i, n;
     struct ifreq if_request;
+    struct pcap_pkthdr pkh;
     fd_set read_fds;
     unsigned char buffer[4096];
+    unsigned char bssid[6];
     char *s, buf[128];
+    int caplen;
 
     /* check the arguments */
 
     memset( &opt, 0, sizeof( opt ) );
     memset( &dev, 0, sizeof( dev ) );
 
-    opt.r_nbpps = 200;
+    opt.r_nbpps = 100;
     opt.tods    = 0;
 
     srand( time( NULL ) );
@@ -989,7 +1039,7 @@ int main( int argc, char *argv[] )
 
             case 'i' :
 
-                if( opt.s_face != NULL )
+                if( opt.s_face != NULL || opt.s_file )
                 {
                     printf( "Packet source already specified.\n" );
                     return( 1 );
@@ -1084,6 +1134,15 @@ int main( int argc, char *argv[] )
                 break;
             case 'f':
                 opt.repeat = 1;
+                break;
+            case 'r' :
+
+                if( opt.s_face != NULL || opt.s_file )
+                {
+                    printf( "Packet source already specified.\n" );
+                    return( 1 );
+                }
+                opt.s_file = optarg;
                 break;
 
             default : goto usage;
@@ -1322,6 +1381,44 @@ int main( int argc, char *argv[] )
         dev.arptype_in = dev.arptype_out;
     }
 
+    if( opt.s_file != NULL )
+    {
+        if( ! ( dev.f_cap_in = fopen( opt.s_file, "rb" ) ) )
+        {
+            perror( "open failed" );
+            return( 1 );
+        }
+
+        n = sizeof( struct pcap_file_header );
+
+        if( fread( &dev.pfh_in, 1, n, dev.f_cap_in ) != (size_t) n )
+        {
+            perror( "fread(pcap file header) failed" );
+            return( 1 );
+        }
+
+        if( dev.pfh_in.magic != TCPDUMP_MAGIC &&
+            dev.pfh_in.magic != TCPDUMP_CIGAM )
+        {
+            fprintf( stderr, "\"%s\" isn't a pcap file (expected "
+                             "TCPDUMP_MAGIC).\n", opt.s_file );
+            return( 1 );
+        }
+
+        if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+            SWAP32(dev.pfh_in.linktype);
+
+        if( dev.pfh_in.linktype != LINKTYPE_IEEE802_11 &&
+            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER )
+        {
+            fprintf( stderr, "Wrong linktype from pcap file header "
+                             "(expected LINKTYPE_IEEE802_11) -\n"
+                             "this doesn't look like a regular 802.11 "
+                             "capture.\n" );
+            return( 1 );
+        }
+    }
+
     dev.fd_tap = open( "/dev/net/tun", O_RDWR );
     if( dev.fd_tap < 0 )
     {
@@ -1375,6 +1472,80 @@ int main( int argc, char *argv[] )
 
     for( ; ; )
     {
+        if(opt.s_file != NULL)
+        {
+            n = sizeof( pkh );
+
+            if( fread( &pkh, n, 1, dev.f_cap_in ) != 1 )
+            {
+                printf("Finished reading input file %s.\n", opt.s_file);
+                opt.s_file = NULL;
+                continue;
+            }
+
+            if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+                SWAP32( pkh.caplen );
+
+            n = caplen = pkh.caplen;
+
+            if( n <= 0 || n > (int) sizeof( h80211 ) )
+            {
+                printf("Finished reading input file %s.\n", opt.s_file);
+                opt.s_file = NULL;
+                continue;
+            }
+
+            if( fread( h80211, n, 1, dev.f_cap_in ) != 1 )
+            {
+                printf("Finished reading input file %s.\n", opt.s_file);
+                opt.s_file = NULL;
+                continue;
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER )
+            {
+                if( h80211[7] == 0x40 )
+                    n = 64;
+                else
+                    n = *(int *)( h80211 + 4 );
+
+                if( n < 8 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+
+            if( opt.repeat )
+            {
+                if( memcmp(opt.f_bssid, NULL_MAC, 6) != 0 )
+                {
+                    switch( h80211[1] & 3 )
+                    {
+                        case  0: memcpy( bssid, h80211 + 16, 6 ); break;
+                        case  1: memcpy( bssid, h80211 +  4, 6 ); break;
+                        case  2: memcpy( bssid, h80211 + 10, 6 ); break;
+                        default: memcpy( bssid, h80211 +  4, 6 ); break;
+                    }
+                    if( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 )
+                    {
+                        if(is_filtered_netmask(bssid)) continue;
+                    }
+                    else
+                    {
+                        if( memcmp(opt.f_bssid, bssid, 6) != 0 ) continue;
+                    }
+                }
+                send_packet(h80211, caplen);
+            }
+
+
+            packet_recv( h80211, caplen);
+            msleep( 1000/opt.r_nbpps );
+            continue;
+        }
+
         FD_ZERO( &read_fds );
         FD_SET( dev.fd_in, &read_fds );
         FD_SET( dev.fd_tap, &read_fds );
