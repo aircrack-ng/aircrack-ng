@@ -349,6 +349,8 @@ int check_shared_key(unsigned char *h80211, int caplen)
 
     memcpy(text, G.sharedkey[0]+24, textlen);
 
+    /* increment sequence number from 2 to 3 */
+    text[2] = text[2]+1;
 
     crc = 0xFFFFFFFF;
 
@@ -362,9 +364,6 @@ int check_shared_key(unsigned char *h80211, int caplen)
     text[textlen+1]   = (crc >>  8) & 0xFF;
     text[textlen+2]   = (crc >> 16) & 0xFF;
     text[textlen+3]   = (crc >> 24) & 0xFF;
-
-    /* increment sequence number from 2 to 3 */
-    text[2] = text[2]+1;
 
     /* cleartext XOR cypher */
     for(n=0; n<(textlen+4); n++)
@@ -1943,7 +1942,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
         nlines++;
 
-        if( nlines >= (ws_row-1) )
+        if( nlines > (ws_row-1) )
             return;
 
         fprintf( stderr, " %02X:%02X:%02X:%02X:%02X:%02X",
@@ -2069,7 +2068,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
             nlines++;
 
-            if( ws_row != 0 && nlines > ws_row )
+            if( ws_row != 0 && nlines >= ws_row )
                 return;
 
             if( ! memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) )
