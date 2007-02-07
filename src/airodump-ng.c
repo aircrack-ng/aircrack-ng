@@ -707,11 +707,11 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
     if( ( h80211[0] & 0x0C ) == 0x04 )
         goto write_packet;
 
-	/* if it's a LLC null packet, just forget it (may change in the future) */
+    /* if it's a LLC null packet, just forget it (may change in the future) */
 
-	if ( caplen > 28)
-		if ( memcmp(h80211 + 24, llcnull, 4) == 0)
-			return ( 0 );
+    if ( caplen > 28)
+        if ( memcmp(h80211 + 24, llcnull, 4) == 0)
+            return ( 0 );
 
     /* grab the sequence number */
     seq = ((h80211[22]>>4)+(h80211[23]<<4));
@@ -1608,20 +1608,20 @@ int getBatteryState()
     if (linux_apm == 1)
     {
         if ((apm = fopen("/proc/apm", "r")) != NULL ) {
-        	if ( fgets(buf, 128,apm) != NULL ) {
-				int charging, ac;
-				fclose(apm);
+            if ( fgets(buf, 128,apm) != NULL ) {
+                int charging, ac;
+                fclose(apm);
 
-				sscanf(buf, "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n", &ac,
-					&charging, &flag, &batteryTime, units);
+                sscanf(buf, "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n", &ac,
+                        &charging, &flag, &batteryTime, units);
 
-				if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1 && batteryTime != -1) {
-					if (!strncmp(units, "min", 32))
-						batteryTime *= 60;
-				}
-				else return 0;
-				linux_acpi = 0;
-				return batteryTime;
+                if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1 && batteryTime != -1) {
+                    if (!strncmp(units, "min", 32))
+                        batteryTime *= 60;
+                }
+                else return 0;
+                linux_acpi = 0;
+                return batteryTime;
             }
         }
         linux_apm = 0;
@@ -1696,12 +1696,12 @@ int getBatteryState()
                 continue;
             while (fgets(buf, 128, acpi)) {
                 if (strncmp(buf, "present:", 8 ) == 0) {
-				/* No information for this battery */
+                                /* No information for this battery */
                     if (strstr(buf, "no" ))
                         continue;
                 }
                 else if (strncmp(buf, "charging state:", 15) == 0) {
-				/* the space makes it different than discharging */
+                                /* the space makes it different than discharging */
                     if (strstr(buf, " charging" )) {
                         fclose( acpi );
                         return 0;
@@ -1751,44 +1751,44 @@ int getBatteryState()
 
 char * getStringTimeFromSec(double seconds)
 {
-	int hour[3];
-	char * ret;
+    int hour[3];
+    char * ret;
     char * HourTime;
     char * MinTime;
 
-	if (seconds <0)
-		return NULL;
+    if (seconds <0)
+        return NULL;
 
-	ret = (char *) calloc(1,256);
+    ret = (char *) calloc(1,256);
 
     HourTime = (char *) calloc (1,128);
     MinTime  = (char *) calloc (1,128);
 
-	hour[0]  = (int) (seconds);
-	hour[1]  = hour[0] / 60;
+    hour[0]  = (int) (seconds);
+    hour[1]  = hour[0] / 60;
     hour[2]  = hour[1] / 60;
-	hour[0] %= 60 ;
-	hour[1] %= 60 ;
+    hour[0] %= 60 ;
+    hour[1] %= 60 ;
 
-	if (hour[2] != 0 )
-		sprintf(HourTime,"%d %s", hour[2], ( hour[2] == 1 ) ? "hour" : "hours");
-	if (hour[1] != 0 )
-		sprintf(MinTime,"%d %s", hour[1], ( hour[1] == 1 ) ? "min" : "mins");
+    if (hour[2] != 0 )
+        sprintf(HourTime,"%d %s", hour[2], ( hour[2] == 1 ) ? "hour" : "hours");
+    if (hour[1] != 0 )
+        sprintf(MinTime,"%d %s", hour[1], ( hour[1] == 1 ) ? "min" : "mins");
 
     if ( hour[2] != 0 && hour[1] != 0 )
         sprintf(ret, "%s %s", HourTime, MinTime);
     else
     {
-    	if (hour[2] == 0 && hour[1] == 0)
-    		sprintf(ret, "%d s", hour[0] );
+        if (hour[2] == 0 && hour[1] == 0)
+            sprintf(ret, "%d s", hour[0] );
         else
-        	sprintf(ret, "%s", (hour[2] == 0) ? MinTime : HourTime );
-	}
+            sprintf(ret, "%s", (hour[2] == 0) ? MinTime : HourTime );
+    }
 
     free(MinTime);
     free(HourTime);
 
-	return ret;
+    return ret;
 
 }
 
@@ -1796,7 +1796,7 @@ char * getBatteryString(void)
 {
     int batt_time;
     char * ret;
-	char * batt_string;
+    char * batt_string;
 
     batt_time = getBatteryState();
 
@@ -1806,13 +1806,13 @@ char * getBatteryString(void)
         return ret;
     }
 
-	batt_string = getStringTimeFromSec( (double) batt_time );
+    batt_string = getStringTimeFromSec( (double) batt_time );
 
-	ret = (char *) calloc( 1, 256 );
+    ret = (char *) calloc( 1, 256 );
 
-	sprintf( ret,"][ BAT: %s ]", batt_string );
+    sprintf( ret,"][ BAT: %s ]", batt_string );
 
-	free( batt_string);
+    free( batt_string);
 
     return ret;
 }
@@ -2530,67 +2530,67 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 #ifdef linux
 int set_monitor( char *interface, int fd_raw, int cardnum )
 {
-	char s[32];
+    char s[32];
     int pid, status, channel;
     struct iwreq wrq;
 
-	channel = (G.channel[0] == 0 ) ? 10 : G.channel[0];
+    channel = (G.channel[0] == 0 ) ? 10 : G.channel[0];
 
-	if( strcmp(interface,"prism0") == 0 )
-	{
-		if( ( pid = fork() ) == 0 )
-		{
-			close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-			execl( G.wl, "wl", "monitor", "1", NULL);
-			exit( 1 );
-		}
-		waitpid( pid, &status, 0 );
-		if( WIFEXITED(status) )
-			return( WEXITSTATUS(status) );
-		return( 1 );
-	}
-	else if (strncmp(interface, "rtap", 4) == 0 )
-	{
-		return 0;
-	}
-	else
-	{
-		if( G.is_wlanng[cardnum] )
-		{
-			snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
-			if( ( pid = fork() ) == 0 )
-			{
-				close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-				execl( G.wlanctlng, "wlanctl-ng", interface,
-						"lnxreq_wlansniff", "enable=true",
-						"prismheader=true", "wlanheader=false",
-						"stripfcs=true", "keepwepflags=true",
-						s, NULL );
-				exit( 1 );
-			}
+    if( strcmp(interface,"prism0") == 0 )
+    {
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execl( G.wl, "wl", "monitor", "1", NULL);
+            exit( 1 );
+        }
+        waitpid( pid, &status, 0 );
+        if( WIFEXITED(status) )
+            return( WEXITSTATUS(status) );
+        return( 1 );
+    }
+    else if (strncmp(interface, "rtap", 4) == 0 )
+    {
+        return 0;
+    }
+    else
+    {
+        if( G.is_wlanng[cardnum] )
+        {
+            snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
+            if( ( pid = fork() ) == 0 )
+            {
+                close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+                execl( G.wlanctlng, "wlanctl-ng", interface,
+                        "lnxreq_wlansniff", "enable=true",
+                        "prismheader=true", "wlanheader=false",
+                        "stripfcs=true", "keepwepflags=true",
+                        s, NULL );
+                exit( 1 );
+            }
 
-			waitpid( pid, &status, 0 );
+            waitpid( pid, &status, 0 );
 
-			if( WIFEXITED(status) )
-				return( WEXITSTATUS(status) );
-			return( 1 );
-		}
+            if( WIFEXITED(status) )
+                return( WEXITSTATUS(status) );
+            return( 1 );
+        }
 
-		memset( &wrq, 0, sizeof( struct iwreq ) );
-		strncpy( wrq.ifr_name, interface, IFNAMSIZ );
-		wrq.u.mode = IW_MODE_MONITOR;
+        memset( &wrq, 0, sizeof( struct iwreq ) );
+        strncpy( wrq.ifr_name, interface, IFNAMSIZ );
+        wrq.u.mode = IW_MODE_MONITOR;
 
-		if( ioctl( fd_raw, SIOCSIWMODE, &wrq ) < 0 )
-		{
-			perror( "ioctl(SIOCSIWMODE) failed" );
-			return( 1 );
-		}
+        if( ioctl( fd_raw, SIOCSIWMODE, &wrq ) < 0 )
+        {
+            perror( "ioctl(SIOCSIWMODE) failed" );
+            return( 1 );
+        }
 
-	}
+    }
 
-	/* Check later if it's really usefull to set channel here */
+    /* Check later if it's really usefull to set channel here */
 
-	set_channel( interface, fd_raw, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum], cardnum);
+    set_channel( interface, fd_raw, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum], cardnum);
 
     return( 0 );
 }
@@ -2699,8 +2699,8 @@ int invalid_channel(int chan)
 
     do
     {
-	if (chan == abg_chans[i] && chan != 0 )
-	    return 0;
+        if (chan == abg_chans[i] && chan != 0 )
+            return 0;
     } while (abg_chans[++i]);
     return 1;
 }
@@ -2730,91 +2730,91 @@ int getchannels(const char *optarg)
     //split string in tokens, separated by ','
     while( (token = strsep(&optchan,",")) != NULL)
     {
-	//range defined?
-	if(strchr(token, '-') != NULL)
-	{
-	    //only 1 '-' ?
-	    if(strchr(token, '-') == strrchr(token, '-'))
-	    {
-		//are there any illegal characters?
-		for(i=0; i<strlen(token); i++)
-		{
-		    if( (token[i] < '0') && (token[i] > '9') && (token[i] != '-'))
-		    {
-			free(tmp_channels);
-			free(optchan);
-			return -1;
-		    }
-		}
+        //range defined?
+        if(strchr(token, '-') != NULL)
+        {
+            //only 1 '-' ?
+            if(strchr(token, '-') == strrchr(token, '-'))
+            {
+                //are there any illegal characters?
+                for(i=0; i<strlen(token); i++)
+                {
+                    if( (token[i] < '0') && (token[i] > '9') && (token[i] != '-'))
+                    {
+                        free(tmp_channels);
+                        free(optchan);
+                        return -1;
+                    }
+                }
 
-		if( sscanf(token, "%d-%d", &chan_first, &chan_last) != EOF )
-		{
-		    if(chan_first > chan_last)
-		    {
-			free(tmp_channels);
-			free(optchan);
-			return -1;
-		    }
-		    for(i=chan_first; i<=chan_last; i++)
-		    {
-			if( (! invalid_channel(i)) && (chan_remain > 0) )
-			{
-				tmp_channels[chan_max-chan_remain]=i;
-				chan_remain--;
-			}
-		    }
-		}
-		else
-		{
-		    free(tmp_channels);
-		    free(optchan);
-		    return -1;
-		}
+                if( sscanf(token, "%d-%d", &chan_first, &chan_last) != EOF )
+                {
+                    if(chan_first > chan_last)
+                    {
+                        free(tmp_channels);
+                        free(optchan);
+                        return -1;
+                    }
+                    for(i=chan_first; i<=chan_last; i++)
+                    {
+                        if( (! invalid_channel(i)) && (chan_remain > 0) )
+                        {
+                                tmp_channels[chan_max-chan_remain]=i;
+                                chan_remain--;
+                        }
+                    }
+                }
+                else
+                {
+                    free(tmp_channels);
+                    free(optchan);
+                    return -1;
+                }
 
-	    }
-	    else
-	    {
-		free(tmp_channels);
-		free(optchan);
-		return -1;
-	    }
-	}
-	else
-	{
-	    //are there any illegal characters?
-	    for(i=0; i<strlen(token); i++)
-	    {
-		if( (token[i] < '0') && (token[i] > '9') )
-		{
-		    free(tmp_channels);
-		    free(optchan);
-		    return -1;
-		}
-	    }
+            }
+            else
+            {
+                free(tmp_channels);
+                free(optchan);
+                return -1;
+            }
+        }
+        else
+        {
+            //are there any illegal characters?
+            for(i=0; i<strlen(token); i++)
+            {
+                if( (token[i] < '0') && (token[i] > '9') )
+                {
+                    free(tmp_channels);
+                    free(optchan);
+                    return -1;
+                }
+            }
 
-	    if( sscanf(token, "%d", &chan_cur) != EOF)
-	    {
-		if( (! invalid_channel(chan_cur)) && (chan_remain > 0) )
-		{
-			tmp_channels[chan_max-chan_remain]=chan_cur;
-			chan_remain--;
-		}
+            if( sscanf(token, "%d", &chan_cur) != EOF)
+            {
+                if( (! invalid_channel(chan_cur)) && (chan_remain > 0) )
+                {
+                        tmp_channels[chan_max-chan_remain]=chan_cur;
+                        chan_remain--;
+                }
 
-	    }
-	    else
-	    {
-		free(tmp_channels);
-		free(optchan);
-		return -1;
-	    }
-	}
+            }
+            else
+            {
+                free(tmp_channels);
+                free(optchan);
+                return -1;
+            }
+        }
     }
 
     G.own_channels = (int*) malloc(sizeof(int)*(chan_max - chan_remain + 1));
 
     for(i=0; i<(chan_max - chan_remain); i++)
     {
-	G.own_channels[i]=tmp_channels[i];
+        G.own_channels[i]=tmp_channels[i];
     }
 
     G.own_channels[i]=0;
@@ -2854,8 +2854,8 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
     /* Exit if ndiswrapper : check iwpriv ndis_reset */
 
     if ( is_ndiswrapper(iface, G.iwpriv) ) {
-    	printf("Ndiswrapper doesn't support monitor mode.\n");
-    	return (1);
+        printf("Ndiswrapper doesn't support monitor mode.\n");
+        return (1);
     }
 
     if( strcmp(iface,"prism0") == 0 )
@@ -3042,9 +3042,9 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct pa
 
     while( ((iface[if_count]=strsep(&buffer, ",")) != NULL) && (if_count < MAX_CARDS) )
     {
-	if(setup_card(iface[if_count], &(ifr[if_count]), &(mr[if_count]), &(sll[if_count]), &(fd_raw[if_count]), &(arptype[if_count]), if_count) != 0)
-		return -1;
-	if_count++;
+        if(setup_card(iface[if_count], &(ifr[if_count]), &(mr[if_count]), &(sll[if_count]), &(fd_raw[if_count]), &(arptype[if_count]), if_count) != 0)
+            return -1;
+        if_count++;
     }
 
     return if_count;
@@ -3062,7 +3062,7 @@ int get_if_num(const char* cardstr)
 
     while( (strsep(&buffer, ",") != NULL) && (if_count < MAX_CARDS) )
     {
-	if_count++;
+        if_count++;
     }
 
     return if_count;
@@ -3155,9 +3155,9 @@ int main( int argc, char *argv[] )
     G.singlechan  =  0;
     G.dump_prefix    =  NULL;
     G.record_data  =  0;
-	G.f_cap        =  NULL;
-	G.f_ivs        =  NULL;
-	G.f_txt        =  NULL;
+    G.f_cap        =  NULL;
+    G.f_ivs        =  NULL;
+    G.f_txt        =  NULL;
     G.f_gps        =  NULL;
     G.keyout = NULL;
     G.f_xor        =  NULL;
@@ -3180,9 +3180,9 @@ int main( int argc, char *argv[] )
 
     for(i=0; i<MAX_CARDS; i++)
     {
-	arptype[i]=0;
-	fd_raw[i]=-1;
-	G.channel[i]=0;
+        arptype[i]=0;
+        fd_raw[i]=-1;
+        G.channel[i]=0;
     }
 
     memset(G.f_bssid, '\x00', 6);
@@ -3224,7 +3224,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:c:egiw:st:",
+                        "b:c:egiw:st:m:d:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3235,21 +3235,21 @@ int main( int argc, char *argv[] )
 
                 break;
 
-			case 'e':
-				G.one_beacon = 0;
-				break;
+            case 'e':
+                G.one_beacon = 0;
+                break;
 
             case 'c' :
 
-				if (G.channel[0] > 0 || chanoption == 1) {
-					if (chanoption == 1)
-						printf( "Notice: Channel range already given\n" );
-					else
-						printf( "Notice: Channel already given (%d)\n", G.channel[0]);
-					break;
-				}
+                if (G.channel[0] > 0 || chanoption == 1) {
+                    if (chanoption == 1)
+                        printf( "Notice: Channel range already given\n" );
+                    else
+                        printf( "Notice: Channel already given (%d)\n", G.channel[0]);
+                    break;
+                }
 
-		G.channel[0] = getchannels(optarg);
+                G.channel[0] = getchannels(optarg);
 
                 if ( G.channel[0] < 0 )
                     goto usage;
@@ -3268,42 +3268,42 @@ int main( int argc, char *argv[] )
                     	chanoption = 1;
                 }
                 else */
-		if( G.channel[0] == 0 )
-		{
-		    G.channels = G.own_channels;
-//		    chanoption = 1;
-		    break;
-		}
-		G.channels = bg_chans;
-		break;
+                if( G.channel[0] == 0 )
+                {
+                    G.channels = G.own_channels;
+//                  chanoption = 1;
+                    break;
+                }
+                G.channels = bg_chans;
+                break;
 
             case 'b' :
 
-				if (chanoption == 1 && option != 'c') {
-					printf( "Notice: Channel range already given\n" );
-					break;
-				}
-				freq[0] = freq[1] = 0;
+                if (chanoption == 1 && option != 'c') {
+                    printf( "Notice: Channel range already given\n" );
+                    break;
+                }
+                freq[0] = freq[1] = 0;
 
-				for (i = 0; i < (int)strlen(optarg); i++) {
-					if ( optarg[i] == 'a' )
-						freq[1] = 1;
-					else if ( optarg[i] == 'b' || optarg[i] == 'g')
-						freq[0] = 1;
-					else {
-						printf( "Error: invalid band (%c)\n", optarg[i] );
-						exit ( 1 );
-					}
-				}
+                for (i = 0; i < (int)strlen(optarg); i++) {
+                    if ( optarg[i] == 'a' )
+                        freq[1] = 1;
+                    else if ( optarg[i] == 'b' || optarg[i] == 'g')
+                        freq[0] = 1;
+                    else {
+                        printf( "Error: invalid band (%c)\n", optarg[i] );
+                        exit ( 1 );
+                    }
+                }
 
-				if (freq[1] + freq[0] == 2 )
-					G.channels = abg_chans;
-				else {
-					if ( freq[1] == 1 )
-						G.channels = a_chans;
-					else
-						G.channels = bg_chans;
-				}
+                if (freq[1] + freq[0] == 2 )
+                    G.channels = abg_chans;
+                else {
+                    if ( freq[1] == 1 )
+                        G.channels = a_chans;
+                    else
+                        G.channels = bg_chans;
+                }
 
                 break;
 
