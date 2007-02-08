@@ -24,11 +24,12 @@ DEBUG="0"
 #If you dont set this, airoscript will ask you for interface to use
 WIFI=""
 #This is the rate per second at wich packets will be injected
-INJECTRATE="512"
+INJECTRATE="300"
 #How many times the deauth attack is run
-DEAUTHTIME="4"
+DEAUTHTIME="5"
 #Time between re-association with target AP
-AUTHDELAY="60"
+AUTHDELAY="30"
+KEEPALIVE="50"
 #Fudge factor setting
 FUDGEFACTOR="2"
 #Path to binaries                                     
@@ -195,6 +196,26 @@ while true; do
     3 ) ENCRYPT="WPA" ; break ;;
     4 ) ENCRYPT="WPA1" ; break ;;
     5 ) ENCRYPT="WPA2" ; break ;;
+    * ) echo "unknown response. Try again" ;;
+  esac
+done 
+}
+
+# This is a simple function to ask what type of AP you are looking for
+function choosefake {
+while true; do
+  clear
+  echo "What type off fakeauth do you want to try?"
+  echo ""
+  echo "1) Conservative"
+  echo "2) Standard"
+  echo "3) Aggressive"
+  read yn
+  echo ""
+  case $yn in
+    1 ) fakeauth1 ; break ;;
+    2 ) fakeauth2 ; break ;;
+    3 ) fakeauth3 ; break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
@@ -608,7 +629,16 @@ function deauthfake {
 	xterm $HOLD $TOPRIGHT -bg "#000000" -fg "#99CCFF" -title "Kicking $FAKE_MAC from: $Host_SSID" -e $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $WIFI
 }
 function fakeauth {
-xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth $AUTHDELAY -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
+xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
+}
+function fakeauth1 {
+xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth 6000 -o 1 -q 10 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
+}
+function fakeauth2 {
+xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth 0 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
+}
+function fakeauth3 {
+xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth 5 -o 10 -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
 }
 # This is a set of command to manually kick all clients from selected AP to discover them
 function clientdetect {
@@ -616,7 +646,7 @@ function clientdetect {
 }
 # attack against client when a previous attack has stalled
 function solointeractiveattack {
-	xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -d FF:FF:FF:FF:FF:FF -x $INJECTRATE & menufonction
+	xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -p 0841 -c FF:FF:FF:FF:FF:FF -x $INJECTRATE & menufonction
 }
 # fake attack function	
 function attack {
@@ -628,11 +658,11 @@ function attackclient {
 }
 # interactive attack with client
 function interactiveattack {
-	capture & xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -d FF:FF:FF:FF:FF:FF -x $INJECTRATE -t 1 -f 0 -m 68 -n 68  & menufonction
+	capture & xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -x $INJECTRATE & menufonction
 }
 # interactive attack with fake mac
 function fakeinteractiveattack {
-	capture & xterm $HOLD -title "Interactive Packet Sel on Host: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -d FF:FF:FF:FF:FF:FF -x $INJECTRATE -t 1 -f 0 -m 68 -n 68  & fakeauth & menufonction
+	capture & xterm $HOLD -title "Interactive Packet Sel on Host: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -x $INJECTRATE & fakeauth & menufonction
 }
 
 # Unstable allround function
@@ -667,8 +697,8 @@ rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 }
 
 function fragmentationattack {
-rm -rf $DUMP_PATH/fragment-*.xor
-rm -rf $DUMP_PATH/frag_*.xor
+rm -rf fragment-*
+rm -rf $DUMP_PATH/frag_*
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
 iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
@@ -762,7 +792,7 @@ select choix in $CHOICES; do
 	menu	
 	elif [ "$choix" = "6" ]; then
 	echo launching fake auth commands
-	fakeauth & menu	
+	choosefake && menu	
 	elif [ "$choix" = "7" ]; then	
 	choosedeauth
 	menu
