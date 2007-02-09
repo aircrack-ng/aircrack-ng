@@ -1409,10 +1409,13 @@ skip_probe:
 
 write_packet:
 
-    if( h80211[0] == 0x80 && G.one_beacon){
-        if( !ap_cur->beacon_logged )
-            ap_cur->beacon_logged = 1;
-        else return ( 0 );
+    if(ap_cur != NULL)
+    {
+        if( h80211[0] == 0x80 && G.one_beacon){
+            if( !ap_cur->beacon_logged )
+                ap_cur->beacon_logged = 1;
+            else return ( 0 );
+        }
     }
 
     if(G.record_data)
