@@ -90,7 +90,7 @@ sleep 1s
 
 for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
 do
- if [ x"`iwpriv $iface 2>/dev/null | grep force_reset`" != "x" ]
+ if [ x"`iwpriv $iface 2>/dev/null | grep get_rid`" != "x" ]
  then
     printf "$iface\t\tHermesI\t\torinoco"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
@@ -114,7 +114,7 @@ do
  fi
 
 
- if [ `iwpriv $iface 2>/dev/null | grep -v $iface | md5sum | awk '{print $1}'` = "2310629be8b9051238cde37520d97755" ]
+ if [ x"`iwpriv $iface 2>/dev/null | grep set_crc_check`" != "x" ]
  then
     printf "$iface\t\tCentrino b\tipw2100"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
@@ -160,7 +160,7 @@ do
      continue
  fi
 
- if [ x"`iwpriv $iface 2>/dev/null | grep set_preamble`" != "x" ]
+ if [ x"`iwpriv $iface 2>/dev/null | grep set_preamble | grep -v set_crc_check`" != "x" ]
   then
         printf "$iface\t\tCentrino b/g\tipw3945"
         if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
@@ -218,7 +218,7 @@ do
  fi
 
 
- if [ x"`iwpriv $iface 2>/dev/null | grep extrates`" != "x" ]
+ if [ x"`iwpriv $iface 2>/dev/null | grep getPolicy`" != "x" ]
  then
      printf "$iface\t\tPrismGT\t\tprism54"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
@@ -422,6 +422,16 @@ do
      continue
  fi
 
+ if [ x"`iwpriv $iface 2>/dev/null | grep get_bperiod`" != "x" ]
+ then
+     printf "$iface\t\tNokia 770\t\tUnknown"
+     if [ x$1 = "xstart" ] || [ x$1 = "xstop" ]
+     then
+     	printf " (Enable/disable monitor mode not yet supported)"
+     fi
+     echo
+     continue
+ fi
 
  if [ x"`iwpriv $iface 2>/dev/null | grep ndis_reset`" != "x" ]
  then
