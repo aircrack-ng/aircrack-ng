@@ -5,9 +5,6 @@ http://daouid.googlepages.com/
 
 Airoscript OFFICIAL HOMEPAGE
 http://airoscript.aircrack-ng.org/
-
-Airoscript googlepages.com mirror
-http://airoscript.googlepages.com/
 -------------------------------------------------------------------------------
 
 ABOUT:
@@ -34,9 +31,7 @@ DEBUG="0"
 # Your interface: wlan0, ath0 etc... (if not set airoscript will ask for one
 at every launch of it)
 WIFI=""
-# Path to afrag bin (for fragmentation attack, optional)
-AFRAG="/wifi/afrag"
-#	The path where the data is stored (FOLDER MUST EXIST !)
+# The path where the data is stored (FOLDER MUST EXIST !)
 DUMP_PATH="/wifi"
 
 First you need to enable execution of the script by doing:
