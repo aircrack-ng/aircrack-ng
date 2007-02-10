@@ -3,6 +3,13 @@ Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
 * airtun-ng: Fix compilation under FC6 (missing "linux/if.h" include).
 * airodump-ng: Added WPA handshake detection
 * airodump-ng: Added encryption filtering
+* airodump-ng: Fixed a SIGSEGV
+* airodump-ng: WPA handshake detection
+* airmon-ng: Updated some device detection + added Nokia 770
+* airmon-ng: Fixed: ACX driver monitor mode startup
+* airtun-ng: Added pcap support to replay saved wlan sessions
+* airtun-ng: Added repeater mode, bssid and netmask filter
+* airodump-ng, aireplay-ng, airtun-ng: Initial FreeBSD support
 * Added airoscript (from daouid)
 * Makefiles: Fixed: make uninstall did not remove all files
 * Updated spec file by David Bolt to be able to build RPM packages on FC, Mandriva and Suse distro
