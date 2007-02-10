@@ -187,10 +187,17 @@ do
 		wlanconfig $iface destroy
 		printf " (VAP destroyed)"
 	fi
-	if [ $iface = "$IFACE" ]  &&  [ x$1 = "xstart" ]
-	then
-		printf " (monitor mode enabled)"
+	if [ x$1 = "xstart" ]
+		if [ $iface = "$IFACE" ]
+		then
+			printf " (monitor mode enabled)"
+		fi
+		if [ x$2 = x$iface ]
+		then
+			printf " (VAP cannot be put in monitor mode)
+		fi
 	fi
+	
 	echo ""
         continue
      	
