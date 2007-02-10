@@ -3721,12 +3721,6 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
-    /*
-    optind value can be wrong (off-by-one) at the end of the argument scanning loop
-    in case a numeric value has to be read. The following line is a dirty patch:
-    */
-    if (strlen(argv[optind]) <=2) optind++;
-
     if( opt.a_mode == -1 )
     {
         printf( "Please specify an attack mode.\n" );
