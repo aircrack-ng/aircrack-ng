@@ -124,6 +124,7 @@ struct options
 								 /* the wepkey           */
 
 	int l33t;					 /* no comment           */
+	int stdin_dict;
 }
 
 opt;
@@ -2269,7 +2270,7 @@ int next_dict(int nb)
 {
 	if(opt.dict != NULL)
 	{
-		fclose(opt.dict);
+		if(!opt.stdin_dict) fclose(opt.dict);
 		opt.dict = NULL;
 	}
 	opt.nbdict = nb;
@@ -2280,7 +2281,9 @@ int next_dict(int nb)
 	{
 		if( strcmp( opt.dicts[opt.nbdict], "-" ) == 0 )
 		{
-			if( ( opt.dict = fdopen( 0, "r" ) ) == NULL )
+			opt.stdin_dict = 1;
+
+			if( ( opt.dict = fdopen( fileno(stdin) , "r" ) ) == NULL )
 			{
 				perror( "fopen(dictionary) failed" );
 				opt.nbdict++;
@@ -2291,6 +2294,7 @@ int next_dict(int nb)
 		}
 		else
 		{
+			opt.stdin_dict = 0;
 			if( ( opt.dict = fopen( opt.dicts[opt.nbdict], "r" ) ) == NULL )
 			{
 				perror( "fopen(dictionary) failed" );
