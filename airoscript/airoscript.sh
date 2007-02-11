@@ -183,19 +183,21 @@ while true; do
   echo ""
   echo "Select encryption type to filter"
   echo ""
-  echo "1) OPN"
-  echo "2) WEP"
-  echo "3) WPA"
-  echo "4) WPA1"
-  echo "5) WPA2"
+  echo "1) No filter"
+  echo "2) OPN"
+  echo "3) WEP"
+  echo "4) WPA"
+  echo "5) WPA1"
+  echo "6) WPA2"
   read yn
   echo ""
   case $yn in
-    1 ) ENCRYPT="OPN" ; break ;;
-    2 ) ENCRYPT="WEP" ; break ;;
-    3 ) ENCRYPT="WPA" ; break ;;
-    4 ) ENCRYPT="WPA1" ; break ;;
-    5 ) ENCRYPT="WPA2" ; break ;;
+    1 ) ENCRYPT="" ; break ;;
+    2 ) ENCRYPT="OPN" ; break ;;
+    3 ) ENCRYPT="WEP" ; break ;;
+    4 ) ENCRYPT="WPA" ; break ;;
+    5 ) ENCRYPT="WPA1" ; break ;;
+    6 ) ENCRYPT="WPA2" ; break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
