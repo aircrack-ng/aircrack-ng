@@ -459,9 +459,9 @@ HOST=`cat $DUMP_PATH/$Host_MAC-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| 
 function cleanup {
 	killall -9 aireplay-ng airodump-ng > /dev/null &
 	ifconfig $WIFI down
-	cardctl eject
+	pccardctl eject
 	sleep 2
-	cardctl insert
+	pccardctl insert
 	ifconfig $WIFI up
 	$AIRMON start $WIFI $Host_CHAN
 	iwconfig $WIFI
