@@ -407,7 +407,7 @@ do
 
  if [ x"`iwpriv $iface 2>/dev/null | grep write_sprom`" != "x" ]
  then
-     printf "$iface\t\tBroadcom\t\tbcm43xx"
+     printf "$iface\t\tBroadcom\tbcm43xx"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
