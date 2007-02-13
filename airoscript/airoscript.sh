@@ -18,6 +18,8 @@
 #                                                                                           
 # Notes:  Important  ===>>>  Set variable DEBUG to 1 to enable debugging of errors  <<<===
 #
+CARDCTL="pccardctl"
+#CardCtl executable (on 2.4 kernels, it is cardctl)
 WELCOME="0"
 DEBUG="0"
 #This is the interface you want to use to perform the attack
@@ -459,9 +461,9 @@ HOST=`cat $DUMP_PATH/$Host_MAC-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| 
 function cleanup {
 	killall -9 aireplay-ng airodump-ng > /dev/null &
 	ifconfig $WIFI down
-	pccardctl eject
+	$CARDCTL eject
 	sleep 2
-	pccardctl insert
+	$CARDCTL insert
 	ifconfig $WIFI up
 	$AIRMON start $WIFI $Host_CHAN
 	iwconfig $WIFI
