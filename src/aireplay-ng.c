@@ -903,6 +903,8 @@ int do_attack_fake_auth( void )
     int tries;
     int abort;
 
+    uchar capa[2];
+
     unsigned char ackbuf[14];
 
     if( opt.r_essid[0] == '\0' )
@@ -934,6 +936,8 @@ int do_attack_fake_auth( void )
     if(opt.npackets > 0) x_send = opt.npackets;
     tt = time( NULL );
     tr = time( NULL );
+
+    wait_for_beacon(opt.r_bssid, capa);
 
     while( 1 )
     {
@@ -1035,6 +1039,8 @@ int do_attack_fake_auth( void )
 
                 memcpy( h80211 + 30, opt.r_essid,  n );
                 memcpy( h80211 + 30 + n, RATES, 16 );
+                memcpy( h80211 + 24, capa, 2);
+
 
                 PCT; printf( "Sending Association Request\n" );
 
