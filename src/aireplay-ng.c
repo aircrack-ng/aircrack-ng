@@ -3179,9 +3179,12 @@ int do_attack_fragment()
             memset(h80211+24, '\x00', length+8);
         }
 
-        memcpy(iv, packet+24, 4);
-        memcpy(prga, packet+28, length);
-        xor_keystream(prga, h80211+24, length);
+        if(again != ABORT)
+        {
+            memcpy(iv, packet+24, 4);
+            memcpy(prga, packet+28, length);
+            xor_keystream(prga, h80211+24, length);
+        }
 
 
         lt = localtime(&tv.tv_sec);
