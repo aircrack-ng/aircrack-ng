@@ -268,6 +268,7 @@ struct globals
     int * own_channels;	    /* custom channel list  */
 
     int record_data;		/* do we record data?   */
+    int asso_client;        /* only show associated clients */
 
     char * iwpriv;
     char * wlanctlng;
@@ -422,10 +423,12 @@ char usage[] =
 "      --write    <prefix> : Dump file prefix\n"
 "      -w                  : same as --write \n"
 "      --beacons           : Record all beacons in dump file\n"
+"\n"
 "  Filter options:\n"
 "      --encrypt   <suite> : Filter APs by cypher suite\n"
 "      --netmask <netmask> : Filter APs by mask\n"
 "      --bssid     <bssid> : Filter APs by BSSID\n"
+"      -a                  : Filter unassociated clients\n"
 "\n"
 "  By default, airodump-ng hop on 2.4Ghz channels.\n"
 "  You can make it capture on other/specific channel(s) by using:\n"
@@ -2069,6 +2072,12 @@ void dump_print( int ws_row, int ws_col, int if_num )
                 continue;
             }
 
+            if( ! memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) && G.asso_client )
+            {
+                st_cur = st_cur->prev;
+                continue;
+            }
+
             nlines++;
 
             if( ws_row != 0 && nlines >= ws_row )
@@ -3167,6 +3176,7 @@ int main( int argc, char *argv[] )
     G.sk_start     =  0;
     G.prefix       =  NULL;
     G.f_encrypt    =  0;
+    G.asso_client  =  0;
     memset(G.sharedkey, '\x00', 512*3);
 
     gettimeofday( &tv0, NULL );
@@ -3226,7 +3236,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:c:egiw:st:m:d:",
+                        "b:c:egiw:st:m:d:a",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3239,6 +3249,10 @@ int main( int argc, char *argv[] )
 
             case 'e':
                 G.one_beacon = 0;
+                break;
+
+            case 'a':
+                G.asso_client = 1;
                 break;
 
             case 'c' :
