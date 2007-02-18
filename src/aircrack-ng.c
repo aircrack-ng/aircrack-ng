@@ -125,6 +125,8 @@ struct options
 
 	int l33t;					 /* no comment           */
 	int stdin_dict;
+
+	int probability;			/* %of correct answers */
 }
 
 opt;
@@ -1384,9 +1386,11 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 			( x1 != 0x42 || x2 != 0x42 ) )
 			bad++;
 
-		if( bad > 2 )
+		if( bad > ((tests*opt.probability)/100) )
 			return( FAILURE );
 	}
+
+	opt.probability = (((tests-bad)*100)/tests);
 
 	nb_ascii = 0;
 
@@ -1435,6 +1439,7 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 	if( opt.l33t )
 		printf( "\33[32;22m" );
 
+	printf( "\n\tProbability: %d%%\n", opt.probability );
 	printf( "\n" );
 
 	return( SUCCESS );
@@ -2811,6 +2816,7 @@ int main( int argc, char *argv[] )
 	opt.do_brute    = 1;
 	opt.do_mt_brute = 1;
 	opt.showASCII   = 0;
+	opt.probability = 51;
 
 	while( 1 )
 	{
