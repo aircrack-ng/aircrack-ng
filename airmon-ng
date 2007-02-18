@@ -194,7 +194,7 @@ do
 		fi
 		if [ x$2 = x$iface ]
 		then
-			printf " (VAP cannot be put in monitor mode)
+			printf " (VAP cannot be put in monitor mode)"
 		fi
 	fi
 	
