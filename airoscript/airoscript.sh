@@ -682,7 +682,7 @@ function airomatic {
 choosescan
 Parseforap
 choosetarget
-attacktype
+witchattack
 #sleep 60
 #crack & configure	 
 }
