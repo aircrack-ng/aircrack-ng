@@ -1,6 +1,6 @@
 diff -Naur rtl8187_orig/beta-8187/ieee80211.h rtl8187_txpower/beta-8187/ieee80211.h
 --- rtl8187_orig/beta-8187/ieee80211.h	2006-06-06 04:58:02.000000000 +0200
-+++ rtl8187_txpower/beta-8187/ieee80211.h	2007-02-19 16:44:50.889407136 +0100
++++ rtl8187_txpower/beta-8187/ieee80211.h	2007-02-19 20:48:21.289801702 +0100
 @@ -156,6 +156,23 @@
  	struct list_head list;
  };
@@ -27,7 +27,7 @@ diff -Naur rtl8187_orig/beta-8187/ieee80211.h rtl8187_txpower/beta-8187/ieee8021
  	u16 duration_id;
 diff -Naur rtl8187_orig/beta-8187/r8180_hw.h rtl8187_txpower/beta-8187/r8180_hw.h
 --- rtl8187_orig/beta-8187/r8180_hw.h	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_hw.h	2007-02-19 16:44:50.939407891 +0100
++++ rtl8187_txpower/beta-8187/r8180_hw.h	2007-02-19 20:48:21.359802758 +0100
 @@ -646,6 +646,7 @@
  #define FFER_INTR    ((1<<15))
  #define FFER_GWAKE   ((1<< 4))
@@ -39,7 +39,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_hw.h rtl8187_txpower/beta-8187/r8180_hw.
  #endif
 diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.h rtl8187_txpower/beta-8187/r8180_rtl8225.h
 --- rtl8187_orig/beta-8187/r8180_rtl8225.h	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_rtl8225.h	2007-02-19 16:44:50.989408645 +0100
++++ rtl8187_txpower/beta-8187/r8180_rtl8225.h	2007-02-19 20:48:21.549805624 +0100
 @@ -44,3 +44,5 @@
  extern u32 rtl8225_chan[];
  
@@ -48,7 +48,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.h rtl8187_txpower/beta-8187/r818
 +void rtl8225z2_SetTXPowerLevel(struct net_device *dev, short ch);
 diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225z2.c rtl8187_txpower/beta-8187/r8180_rtl8225z2.c
 --- rtl8187_orig/beta-8187/r8180_rtl8225z2.c	2006-06-06 04:58:02.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_rtl8225z2.c	2007-02-19 16:44:47.309353132 +0100
++++ rtl8187_txpower/beta-8187/r8180_rtl8225z2.c	2007-02-19 20:48:24.709853292 +0100
 @@ -418,7 +418,10 @@
  	
  	/* CCK power setting */
@@ -62,7 +62,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225z2.c rtl8187_txpower/beta-8187/r8
  	
 diff -Naur rtl8187_orig/beta-8187/r8180_wx.c rtl8187_txpower/beta-8187/r8180_wx.c
 --- rtl8187_orig/beta-8187/r8180_wx.c	2006-06-06 04:58:02.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_wx.c	2007-02-19 16:44:47.369354037 +0100
++++ rtl8187_txpower/beta-8187/r8180_wx.c	2007-02-19 20:48:24.709853292 +0100
 @@ -21,6 +21,7 @@
  
  #include "r8187.h"
@@ -148,7 +148,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_wx.c rtl8187_txpower/beta-8187/r8180_wx.
          r8180_wx_set_enc,         /* SIOCSIWENCODE */
 diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_core.c
 --- rtl8187_orig/beta-8187/r8187_core.c	2006-06-22 07:43:30.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8187_core.c	2007-02-19 16:44:47.399354490 +0100
++++ rtl8187_txpower/beta-8187/r8187_core.c	2007-02-19 20:48:24.769854197 +0100
 @@ -57,6 +57,7 @@
  #undef DEBUG_IRQ_TASKLET
  #undef DEBUG_TX_ALLOC
@@ -391,7 +391,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  	if (dev_alloc_name(dev, ifname) < 0){
 diff -Naur rtl8187_orig/beta-8187/r8187.h rtl8187_txpower/beta-8187/r8187.h
 --- rtl8187_orig/beta-8187/r8187.h	2006-06-06 08:48:10.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8187.h	2007-02-19 16:44:51.119410606 +0100
++++ rtl8187_txpower/beta-8187/r8187.h	2007-02-19 20:48:21.629806831 +0100
 @@ -26,7 +26,6 @@
  
  #include <linux/module.h>
@@ -422,7 +422,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187.h rtl8187_txpower/beta-8187/r8187.h
  	/*short scanpending;
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.c rtl8187_txpower/ieee80211/ieee80211_crypt.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt.c	2006-06-06 04:57:56.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt.c	2007-02-19 16:44:35.769179051 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt.c	2007-02-19 20:48:08.249604993 +0100
 @@ -11,7 +11,6 @@
   *
   */
@@ -444,7 +444,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.c rtl8187_txpower/ieee80211/ie
  MODULE_AUTHOR("Jouni Malinen");
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c	2007-02-19 16:44:35.769179051 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c	2007-02-19 20:48:08.259605144 +0100
 @@ -9,7 +9,6 @@
   * more details.
   */
@@ -477,7 +477,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c rtl8187_txpower/ieee802
  MODULE_DESCRIPTION("Host AP crypt: CCMP");
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c	2007-02-19 16:44:35.909181163 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c	2007-02-19 20:48:08.419607558 +0100
 @@ -9,7 +9,6 @@
   * more details.
   */
@@ -547,7 +547,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c rtl8187_txpower/ieee802
  static void michael_mic_hdr(struct sk_buff *skb, u8 *hdr)
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_wep.c rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt_wep.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c	2007-02-19 16:44:35.979182219 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c	2007-02-19 20:48:08.459608161 +0100
 @@ -9,7 +9,6 @@
   * more details.
   */
@@ -582,7 +582,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_wep.c rtl8187_txpower/ieee8021
  MODULE_LICENSE("GPL");
 diff -Naur rtl8187_orig/ieee80211/ieee80211.h rtl8187_txpower/ieee80211/ieee80211.h
 --- rtl8187_orig/ieee80211/ieee80211.h	2006-06-06 04:57:56.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211.h	2007-02-19 16:44:31.489114487 +0100
++++ rtl8187_txpower/ieee80211/ieee80211.h	2007-02-19 20:48:11.639656131 +0100
 @@ -156,6 +156,22 @@
  	struct list_head list;
  };
@@ -606,7 +606,25 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211.h rtl8187_txpower/ieee80211/ieee8021
  struct ieee80211_hdr {
  	u16 frame_ctl;
  	u16 duration_id;
-@@ -1337,7 +1353,11 @@
+@@ -1015,10 +1031,16 @@
+ 	struct timer_list beacon_timer;
+ 	
+ 	struct work_struct associate_complete_wq;
++
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++	struct delayed_work associate_retry_wq;
++	struct delayed_work softmac_scan_wq;
++#else
+ 	struct work_struct associate_retry_wq;
++	struct work_struct softmac_scan_wq;
++#endif
+ 	struct work_struct start_ibss_wq;
+ 	struct work_struct associate_procedure_wq;
+-	struct work_struct softmac_scan_wq;
+ 	struct work_struct wx_sync_scan_wq;
+ 	
+ 	struct workqueue_struct *wq;
+@@ -1337,7 +1359,11 @@
  extern int ieee80211_wx_get_freq(struct ieee80211_device *ieee, struct iw_request_info *a,
  			     union iwreq_data *wrqu, char *b);
  
@@ -620,7 +638,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211.h rtl8187_txpower/ieee80211/ieee8021
  			       struct iw_request_info *info, 
 diff -Naur rtl8187_orig/ieee80211/ieee80211_module.c rtl8187_txpower/ieee80211/ieee80211_module.c
 --- rtl8187_orig/ieee80211/ieee80211_module.c	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_module.c	2007-02-19 16:44:36.039183124 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_module.c	2007-02-19 20:48:08.489608614 +0100
 @@ -31,7 +31,6 @@
  *******************************************************************************/
  
@@ -642,7 +660,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_module.c rtl8187_txpower/ieee80211/i
  MODULE_DESCRIPTION("802.11 data/management/control stack");
 diff -Naur rtl8187_orig/ieee80211/ieee80211_rx.c rtl8187_txpower/ieee80211/ieee80211_rx.c
 --- rtl8187_orig/ieee80211/ieee80211_rx.c	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_rx.c	2007-02-19 16:44:36.129184482 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_rx.c	2007-02-19 20:48:08.529609217 +0100
 @@ -22,7 +22,6 @@
   
  
@@ -740,15 +758,16 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_rx.c rtl8187_txpower/ieee80211/ieee8
  	memset(skb->cb, 0, sizeof(skb->cb));
 diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/ieee80211_softmac.c
 --- rtl8187_orig/ieee80211/ieee80211_softmac.c	2006-06-19 03:27:33.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_softmac.c	2007-02-19 16:44:36.179185236 +0100
-@@ -384,11 +384,16 @@
++++ rtl8187_txpower/ieee80211/ieee80211_softmac.c	2007-02-19 20:48:08.529609217 +0100
+@@ -384,11 +384,17 @@
  }
  #endif
  
 +# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
 +void ieee80211_softmac_scan_wq(struct work_struct *work)
 +{
-+	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, softmac_scan_wq);
++	struct delayed_work *dwork = container_of(work, struct delayed_work, work);
++	struct ieee80211_device *ieee = container_of(dwork, struct ieee80211_device, softmac_scan_wq);
 +#else
  void ieee80211_softmac_scan_wq(struct ieee80211_device *ieee)
 -{	
@@ -761,7 +780,16 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
  	
  	do{
  		ieee->current_network.channel = 
-@@ -964,8 +969,14 @@
+@@ -505,7 +511,7 @@
+ 		if (ieee->scanning == 0){
+ 			ieee->scanning = 1;
+ 			//ieee80211_softmac_scan(ieee);
+-			queue_work(ieee->wq, &ieee->softmac_scan_wq);
++			queue_delayed_work(ieee->wq, &ieee->softmac_scan_wq, 0);
+ 		}
+ 	}else
+ 		ieee->start_scan(ieee->dev);
+@@ -964,8 +970,14 @@
  	}	
  }
  
@@ -776,7 +804,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
  	printk(KERN_INFO "Associated successfully\n");
  	if(ieee80211_is_54g(ieee->current_network) && 
  		(ieee->modulation & IEEE80211_OFDM_MODULATION)){
-@@ -995,8 +1006,14 @@
+@@ -995,8 +1007,14 @@
  	queue_work(ieee->wq, &ieee->associate_complete_wq);
  }
  
@@ -791,7 +819,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
  	ieee->sync_scan_hurryup = 1;
  	down(&ieee->wx_sem);
  	
-@@ -1467,12 +1484,13 @@
+@@ -1467,12 +1485,13 @@
  			u16 stype)
  {
  	struct ieee80211_hdr_3addr *header;
@@ -806,7 +834,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
  	if(!ieee->proto_started)
  		return 0;
  	
-@@ -1814,8 +1832,15 @@
+@@ -1814,8 +1833,15 @@
  		netif_carrier_on(ieee->dev);
  	}
  }
@@ -822,7 +850,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
  	
  	/* iwconfig mode ad-hoc will schedule this and return
  	 * on the other hand this will block further iwconfig SET
-@@ -1960,8 +1985,15 @@
+@@ -1960,8 +1986,16 @@
  	notify_wx_assoc_event(ieee);
  	
  }
@@ -830,7 +858,8 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
 +# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
 +void ieee80211_associate_retry_wq(struct work_struct *work)
 +{
-+	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, associate_retry_wq);
++	struct delayed_work *dwork = container_of(work, struct delayed_work, work);
++	struct ieee80211_device *ieee = container_of(dwork, struct ieee80211_device, associate_retry_wq);
 +#else
  void ieee80211_associate_retry_wq(struct ieee80211_device *ieee)
  {
@@ -838,7 +867,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
  	unsigned long flags;
  	
  	down(&ieee->wx_sem);
-@@ -2165,12 +2197,21 @@
+@@ -2165,12 +2199,21 @@
  	ieee->wq = create_workqueue(DRV_NAME);
  #endif
  	
@@ -851,10 +880,10 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
  	INIT_WORK(&ieee->wx_sync_scan_wq,(void(*)(void*)) ieee80211_wx_sync_scan_wq,ieee);
 +#else 
 +	INIT_WORK(&ieee->start_ibss_wq,(void(*)(void*)) ieee80211_start_ibss_wq);
-+	INIT_WORK(&ieee->associate_retry_wq,(void(*)(void*)) ieee80211_associate_retry_wq);
++	INIT_DELAYED_WORK(&ieee->associate_retry_wq,(void(*)(void*)) ieee80211_associate_retry_wq);
 +	INIT_WORK(&ieee->associate_complete_wq,(void(*)(void*)) ieee80211_associate_complete_wq);
 +	INIT_WORK(&ieee->associate_procedure_wq,(void(*)(void*)) ieee80211_associate_procedure_wq);
-+	INIT_WORK(&ieee->softmac_scan_wq,(void(*)(void*)) ieee80211_softmac_scan_wq);
++	INIT_DELAYED_WORK(&ieee->softmac_scan_wq,(void(*)(void*)) ieee80211_softmac_scan_wq);
 +	INIT_WORK(&ieee->wx_sync_scan_wq,(void(*)(void*)) ieee80211_wx_sync_scan_wq);
 +#endif 
  	
@@ -862,7 +891,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
  	sema_init(&ieee->scan_sem, 1);
 diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c
 --- rtl8187_orig/ieee80211/ieee80211_softmac_wx.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c	2007-02-19 16:44:36.229185990 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c	2007-02-19 20:48:08.609610424 +0100
 @@ -134,14 +134,14 @@
  	u8 zero[] = {0,0,0,0,0,0};
  	unsigned long flags;
@@ -907,7 +936,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee802
  	chan = ieee->current_network.channel;
 diff -Naur rtl8187_orig/ieee80211/ieee80211_tx.c rtl8187_txpower/ieee80211/ieee80211_tx.c
 --- rtl8187_orig/ieee80211/ieee80211_tx.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_tx.c	2007-02-19 16:44:36.229185990 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_tx.c	2007-02-19 20:48:08.609610424 +0100
 @@ -32,7 +32,6 @@
  ******************************************************************************/
  
@@ -939,24 +968,24 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_tx.c rtl8187_txpower/ieee80211/ieee8
  			goto success;
 diff -Naur rtl8187_orig/makedrv rtl8187_txpower/makedrv
 --- rtl8187_orig/makedrv	2006-09-05 07:21:10.000000000 +0200
-+++ rtl8187_txpower/makedrv	2007-02-19 16:48:42.812905650 +0100
++++ rtl8187_txpower/makedrv	2007-02-19 20:47:51.179347492 +0100
 @@ -5,6 +5,7 @@
  cd ieee80211
  make clean
  make
-+ln -s Module.symvers ../beta-8187/
++ln -s Module.symvers beta-8187/
  cd ../beta-8187
  make clean
  make
 diff -Naur rtl8187_orig/makedrvbk rtl8187_txpower/makedrvbk
 --- rtl8187_orig/makedrvbk	2006-09-05 07:21:10.000000000 +0200
-+++ rtl8187_txpower/makedrvbk	2007-02-19 16:44:16.168883385 +0100
++++ rtl8187_txpower/makedrvbk	2007-02-19 20:47:56.639429856 +0100
 @@ -6,6 +6,8 @@
  cd -
  cd beta-8187/
  make clean
-+rm beta-8187/Module*.symvers
-+ln -s ../ieee80211/Module.symvers Module.symvers
++rm Modules.symvers
++ln -s ../ieee80211/Modules.symvers Modules.symvers
  make
  cd -
  
