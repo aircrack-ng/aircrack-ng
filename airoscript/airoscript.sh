@@ -3,7 +3,7 @@
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes and darkAudax
-# Date:	        17.02.2007
+# Date:	        20.02.2007
 # Version:	SVN 2.0.7 TESTING RELEASE FOR AIRCRACK-NG 0.7
 # 
 # Dependencies: aircrack-ng,xterm,grep,awk,drivers capable of injection
@@ -103,10 +103,8 @@ function debug {
 			echo "Debug Mode On"
 			echo " "
 			HOLD="-hold"
-		clear
 	else
 		HOLD=""
-		clear 
 	fi
 }
 # This is another great contribution from CurioCT that allows you to manually enter SSID if none is set
@@ -487,20 +485,20 @@ function cleanup {
 }
 # menu listing command	
 function menu {
-		echo ""
-		echo "1.  Scan      ==> Launch a Scan to find targets"
-		echo "2.  Select    ==> Select desired target: Host and Client"
-		echo "3.  Attack    ==> Launch attack"
-		echo "4.  Crack     ==> Starts searching for key with aircrack"
-		echo "5.  Configure ==> Configure PC to connect using key found and DHCP"
-		echo "6.  Associate ==> Try to associate to AP using a FAKE MAC"
-		echo "7.  Deauth    ==> Disconnect desired station(s) from target"
-		echo "8.  Reset     ==> Kills all airo-threads and reset card(pcmcia socket)"
-		echo "9.  Monitor   ==> Enable monitor mode using airmon-ng"
-		echo "10. Quit  "
-		echo "11. AUTO      ==> step 1,2,3 linked"
-		echo ""
-		echo ""			
+                echo "#######################################"
+                echo "### What do you want to do?         ###"
+		echo "### 1) Scan    - Scan for target    ###"
+		echo "### 2) Select  - Select target      ###"
+		echo "### 3) Attack  - Attack target      ###"
+		echo "### 4) Crack   - Get target key     ###"
+		echo "### 5) Config  - Connect to target  ###"
+		echo "### 6) Fakeauth- Auth with target   ###"
+		echo "### 7) Deauth  - Deauth from target ###"
+		echo "### 8) Reset   - Reset interface    ###"
+		echo "### 9) Monitor - Airmon-ng device   ###"
+		echo "###10) Quit    - Quits airoscript   ###"
+		echo "###11) Airomatic- step 1,2,3 linked ###"
+		echo "###12) ChangeMac- Change your MAC   ###"			
 }
 # target listing	
 function target {
@@ -588,6 +586,189 @@ if [ $Host_ENC = "WEP" ]
 		else
 		attackopn
 		fi			
+}
+function wichchangemac {
+while true; do
+
+  echo ""
+  echo "1) Change MAC to FAKEMAC "
+  echo "2) Change MAC to CLIENTMAC "
+  echo "3) Manual Mac input "
+  read yn
+  echo ""
+  case $yn in
+    1 ) fakemacchanger ; break ;;
+    2 ) macchanger ; break ;;
+    3 ) macinput ; break ;;
+    * ) echo "unknown response. Try again" ;;
+  esac
+done 
+}
+function macinput {
+echo -n "OK, now type in your client MAC: "
+read MANUAL_MAC
+echo You typed: $MANUAL_MAC
+set -- ${MANUAL_MAC}
+manualmacchanger
+}
+function fakemacchanger {
+if [ $WIFI = "rausb0" ]
+  		then
+		fakechangemacrausb
+		elif [ $WIFI = "wlan0" ]
+		then
+		fakechangemacwlan
+		elif [ $WIFI = "ath0" ]
+		then
+		fakechangemacath
+		else
+		echo "Unknow way to change mac"
+		fi			
+}
+function fakechangemacrausb {
+echo "ifconfig $WIFI down"
+ifconfig $WIFI down
+echo "ifconfig $WIFI mode managed"
+iwconfig $WIFI mode managed
+sleep 2
+echo "ifconfig $WIFI hw ether $FAKE_MAC"
+ifconfig $WIFI hw ether $FAKE_MAC
+echo "ifconfig $WIFI up"
+ifconfig $WIFI up
+echo "ifconfig $WIFI mode monitor"
+iwconfig $WIFI mode monitor			
+}
+function fakechangemacwlan {
+echo "ifconfig $WIFI down"
+ifconfig $WIFI down
+echo "ifconfig $WIFI mode managed"
+iwconfig $WIFI mode managed
+sleep 2
+echo "ifconfig $WIFI hw ether $FAKE_MAC"
+ifconfig $WIFI hw ether $FAKE_MAC
+echo "ifconfig $WIFI up"
+ifconfig $WIFI up
+echo "ifconfig $WIFI mode monitor"
+iwconfig $WIFI mode monitor		
+}
+function fakechangemacath {
+echo "ifconfig $WIFI down"
+ifconfig $WIFI down
+echo "ifconfig $WIFI mode managed"
+iwconfig $WIFI mode managed
+sleep 2
+echo "ifconfig $WIFI hw ether $FAKE_MAC"
+ifconfig $WIFI hw ether $FAKE_MAC
+echo "ifconfig $WIFI up"
+ifconfig $WIFI up
+echo "ifconfig $WIFI mode monitor"
+iwconfig $WIFI mode monitor			
+}
+function macchanger {
+if [ $WIFI = "rausb0" ]
+  		then
+		changemacrausb
+		elif [ $WIFI = "wlan0" ]
+		then
+		changemacwlan
+		elif [ $WIFI = "ath0" ]
+		then
+		changemacath
+		else
+		echo "Unknow way to change mac"
+		fi			
+}
+function changemacrausb {
+echo "ifconfig $WIFI down"
+ifconfig $WIFI down
+echo "ifconfig $WIFI mode managed"
+iwconfig $WIFI mode managed
+sleep 2
+echo "ifconfig $WIFI hw ether $Client_MAC"
+ifconfig $WIFI hw ether $Client_MAC
+echo "ifconfig $WIFI up"
+ifconfig $WIFI up
+echo "ifconfig $WIFI mode monitor"
+iwconfig $WIFI mode monitor			
+}
+function changemacwlan {
+echo "ifconfig $WIFI down"
+ifconfig $WIFI down
+echo "ifconfig $WIFI mode managed"
+iwconfig $WIFI mode managed
+sleep 2
+echo "ifconfig $WIFI hw ether $Client_MAC"
+ifconfig $WIFI hw ether $Client_MAC
+echo "ifconfig $WIFI up"
+ifconfig $WIFI up
+echo "ifconfig $WIFI mode monitor"
+iwconfig $WIFI mode monitor			
+}
+function changemacath {
+echo "ifconfig $WIFI down"
+ifconfig $WIFI down
+echo "ifconfig $WIFI mode managed"
+iwconfig $WIFI mode managed
+sleep 2
+echo "ifconfig $WIFI hw ether $Client_MAC"
+ifconfig $WIFI hw ether $Client_MAC
+echo "ifconfig $WIFI up"
+ifconfig $WIFI up
+echo "ifconfig $WIFI mode monitor"
+iwconfig $WIFI mode monitor			
+}
+function manualmacchanger {
+if [ $WIFI = "rausb0" ]
+  		then
+		manualchangemacrausb
+		elif [ $WIFI = "wlan0" ]
+		then
+		manualchangemacwlan
+		elif [ $WIFI = "ath0" ]
+		then
+		manualchangemacath
+		else
+		echo "Unknow way to change mac"
+		fi			
+}
+function manualchangemacrausb {
+echo "ifconfig $WIFI down"
+ifconfig $WIFI down
+echo "ifconfig $WIFI mode managed"
+iwconfig $WIFI mode managed
+sleep 2
+echo "ifconfig $WIFI hw ether $MANUAL_MAC"
+ifconfig $WIFI hw ether $MANUAL_MAC
+echo "ifconfig $WIFI up"
+ifconfig $WIFI up
+echo "ifconfig $WIFI mode monitor"
+iwconfig $WIFI mode monitor			
+}
+function manualchangemacwlan {
+echo "ifconfig $WIFI down"
+ifconfig $WIFI down
+echo "ifconfig $WIFI mode managed"
+iwconfig $WIFI mode managed
+sleep 2
+echo "ifconfig $WIFI hw ether $MANUAL_MAC"
+ifconfig $WIFI hw ether $MANUAL_MAC
+echo "ifconfig $WIFI up"
+ifconfig $WIFI up
+echo "ifconfig $WIFI mode monitor"
+iwconfig $WIFI mode monitor				
+}
+function manualchangemacath {
+echo "ifconfig $WIFI down"
+ifconfig $WIFI down
+echo "ifconfig $WIFI mode managed"
+iwconfig $WIFI mode managed
+sleep 2
+echo "ifconfig $WIFI hw ether $MANUAL_MAC"
+ifconfig $WIFI hw ether $MANUAL_MAC
+echo "ifconfig $WIFI up"
+ifconfig $WIFI up
+echo "ifconfig $WIFI mode monitor"
+iwconfig $WIFI mode monitor				
 }
 function witchconfigure {
 if [ $Host_ENC = "WEP" ]
@@ -839,6 +1020,9 @@ select choix in $CHOICES; do
 	elif [ "$choix" = "11" ]; then
 	$AIRMON start $WIFI $Host_CHAN
 	airomatic
+	menu
+	elif [ "$choix" = "12" ]; then
+	wichchangemac
 	menu
 	elif [ "$choix" = "10" ]; then
 	echo Script terminated
