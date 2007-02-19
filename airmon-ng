@@ -188,6 +188,7 @@ do
 		printf " (VAP destroyed)"
 	fi
 	if [ x$1 = "xstart" ]
+	then
 		if [ $iface = "$IFACE" ]
 		then
 			printf " (monitor mode enabled)"
