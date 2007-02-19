@@ -1,6 +1,6 @@
 diff -Naur rtl8187_orig/beta-8187/ieee80211.h rtl8187_txpower/beta-8187/ieee80211.h
 --- rtl8187_orig/beta-8187/ieee80211.h	2006-06-06 04:58:02.000000000 +0200
-+++ rtl8187_txpower/beta-8187/ieee80211.h	2007-02-17 13:42:56.967245565 +0100
++++ rtl8187_txpower/beta-8187/ieee80211.h	2007-02-19 16:44:50.889407136 +0100
 @@ -156,6 +156,23 @@
  	struct list_head list;
  };
@@ -27,7 +27,7 @@ diff -Naur rtl8187_orig/beta-8187/ieee80211.h rtl8187_txpower/beta-8187/ieee8021
  	u16 duration_id;
 diff -Naur rtl8187_orig/beta-8187/r8180_hw.h rtl8187_txpower/beta-8187/r8180_hw.h
 --- rtl8187_orig/beta-8187/r8180_hw.h	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_hw.h	2007-02-17 13:42:57.047246772 +0100
++++ rtl8187_txpower/beta-8187/r8180_hw.h	2007-02-19 16:44:50.939407891 +0100
 @@ -646,6 +646,7 @@
  #define FFER_INTR    ((1<<15))
  #define FFER_GWAKE   ((1<< 4))
@@ -39,7 +39,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_hw.h rtl8187_txpower/beta-8187/r8180_hw.
  #endif
 diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.h rtl8187_txpower/beta-8187/r8180_rtl8225.h
 --- rtl8187_orig/beta-8187/r8180_rtl8225.h	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_rtl8225.h	2007-02-17 13:42:57.127247979 +0100
++++ rtl8187_txpower/beta-8187/r8180_rtl8225.h	2007-02-19 16:44:50.989408645 +0100
 @@ -44,3 +44,5 @@
  extern u32 rtl8225_chan[];
  
@@ -48,7 +48,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.h rtl8187_txpower/beta-8187/r818
 +void rtl8225z2_SetTXPowerLevel(struct net_device *dev, short ch);
 diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225z2.c rtl8187_txpower/beta-8187/r8180_rtl8225z2.c
 --- rtl8187_orig/beta-8187/r8180_rtl8225z2.c	2006-06-06 04:58:02.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_rtl8225z2.c	2007-02-17 13:42:53.757197143 +0100
++++ rtl8187_txpower/beta-8187/r8180_rtl8225z2.c	2007-02-19 16:44:47.309353132 +0100
 @@ -418,7 +418,10 @@
  	
  	/* CCK power setting */
@@ -62,7 +62,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225z2.c rtl8187_txpower/beta-8187/r8
  	
 diff -Naur rtl8187_orig/beta-8187/r8180_wx.c rtl8187_txpower/beta-8187/r8180_wx.c
 --- rtl8187_orig/beta-8187/r8180_wx.c	2006-06-06 04:58:02.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_wx.c	2007-02-17 13:42:53.787197595 +0100
++++ rtl8187_txpower/beta-8187/r8180_wx.c	2007-02-19 16:44:47.369354037 +0100
 @@ -21,6 +21,7 @@
  
  #include "r8187.h"
@@ -148,7 +148,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_wx.c rtl8187_txpower/beta-8187/r8180_wx.
          r8180_wx_set_enc,         /* SIOCSIWENCODE */
 diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_core.c
 --- rtl8187_orig/beta-8187/r8187_core.c	2006-06-22 07:43:30.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8187_core.c	2007-02-17 13:42:53.827198198 +0100
++++ rtl8187_txpower/beta-8187/r8187_core.c	2007-02-19 16:44:47.399354490 +0100
 @@ -57,6 +57,7 @@
  #undef DEBUG_IRQ_TASKLET
  #undef DEBUG_TX_ALLOC
@@ -176,7 +176,20 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  void write_nic_byte_E(struct net_device *dev, int indx, u8 data)
  {
  	
-@@ -407,13 +411,14 @@
+@@ -271,7 +275,12 @@
+ //void set_nic_txring(struct net_device *dev);
+ static struct net_device_stats *rtl8180_stats(struct net_device *dev);
+ void rtl8180_commit(struct net_device *dev);
++
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void rtl8180_restart(struct work_struct *work);
++#else
+ void rtl8180_restart(struct net_device *dev);
++#endif
+ 
+ /****************************************************************************
+    -----------------------------PROCFS STUFF-------------------------
+@@ -407,13 +416,14 @@
  	return len;
  }		
  
@@ -192,7 +205,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  
  void rtl8180_proc_module_init(void)
  {	
-@@ -561,7 +566,20 @@
+@@ -561,7 +571,20 @@
  {
  	int i;
  	for(i=0; i<63; i++)
@@ -214,7 +227,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  }
  
  /* this is only for debug */
-@@ -575,9 +593,9 @@
+@@ -575,9 +598,9 @@
  	
  	for(n=0;n<=max;)
  	{
@@ -226,7 +239,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  	}
  	printk("\n");
  }
-@@ -1112,7 +1130,10 @@
+@@ -1112,7 +1135,10 @@
  	struct ieee80211_hdr *h = (struct ieee80211_hdr  *) skb->data;
  
  	if (le16_to_cpu(h->frame_ctl) & IEEE80211_FCTL_MOREFRAGS)
@@ -238,7 +251,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  //	DMESG("%x %x", h->frame_ctl, h->seq_ctl);
  	/*
  	* This function doesn't require lock because we make
-@@ -1557,10 +1578,10 @@
+@@ -1557,10 +1583,10 @@
  	struct r8180_priv *priv = ieee80211_priv(dev);
  	int i, j;
  	u16 word;
@@ -252,7 +265,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  	
  	//FIXME: these constants are placed in a bad pleace.
  
-@@ -1580,6 +1601,13 @@
+@@ -1580,6 +1606,13 @@
  		return -1;
  	}
  	ch=channels;
@@ -266,19 +279,19 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  	 // set channels 1..14 allowed in given locale
  	for (i=1; i<=14; i++) {
  		(priv->ieee80211->channel_map)[i] = (u8)(ch & 0x01);
-@@ -1622,7 +1650,11 @@
+@@ -1622,7 +1655,11 @@
  	priv->ieee80211->mode = IEEE_G;
  	priv->promisc = (dev->flags & IFF_PROMISC) ? 1:0;
  	spin_lock_init(&priv->tx_lock);
 +#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
  	INIT_WORK(&priv->reset_wq,(void(*)(void*)) rtl8180_restart,dev);
 +#else
-+	INIT_WORK(&priv->reset_wq,(void(*)(void*)) rtl8180_restart);
++	INIT_WORK(&priv->reset_wq, rtl8180_restart);
 +#endif
  	sema_init(&priv->wx_sem,1);
  	tasklet_init(&priv->irq_rx_tasklet,
  		     (void(*)(unsigned long))rtl8180_irq_rx_tasklet,
-@@ -1716,6 +1748,12 @@
+@@ -1716,6 +1753,12 @@
  	priv->enable_gpio0 = 0;
  
  	
@@ -291,7 +304,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  	/* commented out just because we already do
  	   this when resetting the card
  	   andrea 20050924
-@@ -1807,6 +1845,12 @@
+@@ -1807,6 +1850,12 @@
  	
  		
  	priv->rf_chip = 0xff & eprom_read(dev,EPROM_RFCHIPID);
@@ -304,7 +317,25 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  	
  	word = eprom_read(dev,EPROM_TXPW_BASE);
  	priv->cck_txpwr_base = word & 0xf;
-@@ -2291,13 +2335,17 @@
+@@ -2239,10 +2288,16 @@
+ 	_rtl8180_up(dev);
+ }
+ 
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void rtl8180_restart(struct work_struct *work)
++{
++	struct r8180_priv *priv = container_of(work, struct r8180_priv, reset_wq);
++	struct net_device *dev = priv->dev;
++#else
+ void rtl8180_restart(struct net_device *dev)
+ {
+ 	struct r8180_priv *priv = ieee80211_priv(dev);
+-
++#endif
+ 	down(&priv->wx_sem);
+ 	
+ 	rtl8180_commit(dev);
+@@ -2291,13 +2346,17 @@
  /* based on ipw2200 driver */
  int rtl8180_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
  {
@@ -326,7 +357,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  	switch (cmd) {
  	    case RTL_IOCTL_WPA_SUPPLICANT:
  		ret = ieee80211_wpa_supplicant_ioctl(priv->ieee80211, &wrq->u.data);
-@@ -2346,7 +2394,8 @@
+@@ -2346,7 +2405,8 @@
  		
  		if( flen <= rx_urb->actual_length){
  		
@@ -336,7 +367,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  			stats.noise = desc[1] &0xff;
  			stats.rate = desc[0] >> 20 & 0xf;
  			stats.mac_time[0] = desc[2];
-@@ -2368,6 +2417,8 @@
+@@ -2368,6 +2428,8 @@
  		//	priv->rxskb = skb;
  		//	priv->tempstats = &stats;
  
@@ -345,7 +376,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  			if(!ieee80211_rx(priv->ieee80211, 
  				skb, &stats))
  			dev_kfree_skb_any(skb);
-@@ -2418,7 +2469,12 @@
+@@ -2418,7 +2480,12 @@
  	dev->do_ioctl = rtl8180_ioctl;
  	dev->set_multicast_list = r8180_set_multicast;
  	dev->set_mac_address = r8180_set_mac_adr;
@@ -360,7 +391,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  	if (dev_alloc_name(dev, ifname) < 0){
 diff -Naur rtl8187_orig/beta-8187/r8187.h rtl8187_txpower/beta-8187/r8187.h
 --- rtl8187_orig/beta-8187/r8187.h	2006-06-06 08:48:10.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8187.h	2007-02-17 13:42:57.197249035 +0100
++++ rtl8187_txpower/beta-8187/r8187.h	2007-02-19 16:44:51.119410606 +0100
 @@ -26,7 +26,6 @@
  
  #include <linux/module.h>
@@ -389,38 +420,9 @@ diff -Naur rtl8187_orig/beta-8187/r8187.h rtl8187_txpower/beta-8187/r8187.h
  	
  //	struct timer_list scan_timer;
  	/*short scanpending;
-diff -Naur rtl8187_orig/beta-8187/r8187.mod.c rtl8187_txpower/beta-8187/r8187.mod.c
---- rtl8187_orig/beta-8187/r8187.mod.c	1970-01-01 01:00:00.000000000 +0100
-+++ rtl8187_txpower/beta-8187/r8187.mod.c	2007-02-17 13:42:53.827198198 +0100
-@@ -0,0 +1,25 @@
-+#include <linux/module.h>
-+#include <linux/vermagic.h>
-+#include <linux/compiler.h>
-+
-+MODULE_INFO(vermagic, VERMAGIC_STRING);
-+
-+struct module __this_module
-+__attribute__((section(".gnu.linkonce.this_module"))) = {
-+ .name = KBUILD_MODNAME,
-+ .init = init_module,
-+#ifdef CONFIG_MODULE_UNLOAD
-+ .exit = cleanup_module,
-+#endif
-+};
-+
-+static const char __module_depends[]
-+__attribute_used__
-+__attribute__((section(".modinfo"))) =
-+"depends=ieee80211-rtl";
-+
-+MODULE_ALIAS("usb:v0BDAp8187d*dc*dsc*dp*ic*isc*ip*");
-+MODULE_ALIAS("usb:v0846p6100d*dc*dsc*dp*ic*isc*ip*");
-+MODULE_ALIAS("usb:v0846p6A00d*dc*dsc*dp*ic*isc*ip*");
-+
-+MODULE_INFO(srcversion, "B76939EB1EA6331677B0BFF");
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.c rtl8187_txpower/ieee80211/ieee80211_crypt.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt.c	2006-06-06 04:57:56.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt.c	2007-02-17 13:43:15.707528258 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt.c	2007-02-19 16:44:35.769179051 +0100
 @@ -11,7 +11,6 @@
   *
   */
@@ -442,7 +444,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.c rtl8187_txpower/ieee80211/ie
  MODULE_AUTHOR("Jouni Malinen");
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c	2007-02-17 13:43:15.707528258 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c	2007-02-19 16:44:35.769179051 +0100
 @@ -9,7 +9,6 @@
   * more details.
   */
@@ -473,57 +475,9 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c rtl8187_txpower/ieee802
  
  MODULE_AUTHOR("Jouni Malinen");
  MODULE_DESCRIPTION("Host AP crypt: CCMP");
-diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_ccmp-rtl.mod.c rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp-rtl.mod.c
---- rtl8187_orig/ieee80211/ieee80211_crypt_ccmp-rtl.mod.c	1970-01-01 01:00:00.000000000 +0100
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp-rtl.mod.c	2007-02-17 13:43:15.737528711 +0100
-@@ -0,0 +1,20 @@
-+#include <linux/module.h>
-+#include <linux/vermagic.h>
-+#include <linux/compiler.h>
-+
-+MODULE_INFO(vermagic, VERMAGIC_STRING);
-+
-+struct module __this_module
-+__attribute__((section(".gnu.linkonce.this_module"))) = {
-+ .name = KBUILD_MODNAME,
-+ .init = init_module,
-+#ifdef CONFIG_MODULE_UNLOAD
-+ .exit = cleanup_module,
-+#endif
-+};
-+
-+static const char __module_depends[]
-+__attribute_used__
-+__attribute__((section(".modinfo"))) =
-+"depends=ieee80211_crypt";
-+
-diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt-rtl.mod.c rtl8187_txpower/ieee80211/ieee80211_crypt-rtl.mod.c
---- rtl8187_orig/ieee80211/ieee80211_crypt-rtl.mod.c	1970-01-01 01:00:00.000000000 +0100
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt-rtl.mod.c	2007-02-17 13:43:15.747528862 +0100
-@@ -0,0 +1,20 @@
-+#include <linux/module.h>
-+#include <linux/vermagic.h>
-+#include <linux/compiler.h>
-+
-+MODULE_INFO(vermagic, VERMAGIC_STRING);
-+
-+struct module __this_module
-+__attribute__((section(".gnu.linkonce.this_module"))) = {
-+ .name = KBUILD_MODNAME,
-+ .init = init_module,
-+#ifdef CONFIG_MODULE_UNLOAD
-+ .exit = cleanup_module,
-+#endif
-+};
-+
-+static const char __module_depends[]
-+__attribute_used__
-+__attribute__((section(".modinfo"))) =
-+"depends=";
-+
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c	2007-02-17 13:43:15.797529616 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c	2007-02-19 16:44:35.909181163 +0100
 @@ -9,7 +9,6 @@
   * more details.
   */
@@ -591,33 +545,9 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c rtl8187_txpower/ieee802
  }
  
  static void michael_mic_hdr(struct sk_buff *skb, u8 *hdr)
-diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_tkip-rtl.mod.c rtl8187_txpower/ieee80211/ieee80211_crypt_tkip-rtl.mod.c
---- rtl8187_orig/ieee80211/ieee80211_crypt_tkip-rtl.mod.c	1970-01-01 01:00:00.000000000 +0100
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_tkip-rtl.mod.c	2007-02-17 13:43:15.827530068 +0100
-@@ -0,0 +1,20 @@
-+#include <linux/module.h>
-+#include <linux/vermagic.h>
-+#include <linux/compiler.h>
-+
-+MODULE_INFO(vermagic, VERMAGIC_STRING);
-+
-+struct module __this_module
-+__attribute__((section(".gnu.linkonce.this_module"))) = {
-+ .name = KBUILD_MODNAME,
-+ .init = init_module,
-+#ifdef CONFIG_MODULE_UNLOAD
-+ .exit = cleanup_module,
-+#endif
-+};
-+
-+static const char __module_depends[]
-+__attribute_used__
-+__attribute__((section(".modinfo"))) =
-+"depends=ieee80211_crypt";
-+
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_wep.c rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt_wep.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c	2007-02-17 13:43:15.837530219 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c	2007-02-19 16:44:35.979182219 +0100
 @@ -9,7 +9,6 @@
   * more details.
   */
@@ -650,33 +580,9 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_wep.c rtl8187_txpower/ieee8021
  MODULE_AUTHOR("Jouni Malinen");
  MODULE_DESCRIPTION("Host AP crypt: WEP");
  MODULE_LICENSE("GPL");
-diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_wep-rtl.mod.c rtl8187_txpower/ieee80211/ieee80211_crypt_wep-rtl.mod.c
---- rtl8187_orig/ieee80211/ieee80211_crypt_wep-rtl.mod.c	1970-01-01 01:00:00.000000000 +0100
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_wep-rtl.mod.c	2007-02-17 13:43:15.877530823 +0100
-@@ -0,0 +1,20 @@
-+#include <linux/module.h>
-+#include <linux/vermagic.h>
-+#include <linux/compiler.h>
-+
-+MODULE_INFO(vermagic, VERMAGIC_STRING);
-+
-+struct module __this_module
-+__attribute__((section(".gnu.linkonce.this_module"))) = {
-+ .name = KBUILD_MODNAME,
-+ .init = init_module,
-+#ifdef CONFIG_MODULE_UNLOAD
-+ .exit = cleanup_module,
-+#endif
-+};
-+
-+static const char __module_depends[]
-+__attribute_used__
-+__attribute__((section(".modinfo"))) =
-+"depends=ieee80211_crypt";
-+
 diff -Naur rtl8187_orig/ieee80211/ieee80211.h rtl8187_txpower/ieee80211/ieee80211.h
 --- rtl8187_orig/ieee80211/ieee80211.h	2006-06-06 04:57:56.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211.h	2007-02-17 13:43:11.897470784 +0100
++++ rtl8187_txpower/ieee80211/ieee80211.h	2007-02-19 16:44:31.489114487 +0100
 @@ -156,6 +156,22 @@
  	struct list_head list;
  };
@@ -700,9 +606,21 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211.h rtl8187_txpower/ieee80211/ieee8021
  struct ieee80211_hdr {
  	u16 frame_ctl;
  	u16 duration_id;
+@@ -1337,7 +1353,11 @@
+ extern int ieee80211_wx_get_freq(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++extern void ieee80211_wx_sync_scan_wq(struct work_struct *work);
++#else
+ extern void ieee80211_wx_sync_scan_wq(struct ieee80211_device *ieee);
++#endif
+ 
+ extern int ieee80211_wx_set_rawtx(struct ieee80211_device *ieee, 
+ 			       struct iw_request_info *info, 
 diff -Naur rtl8187_orig/ieee80211/ieee80211_module.c rtl8187_txpower/ieee80211/ieee80211_module.c
 --- rtl8187_orig/ieee80211/ieee80211_module.c	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_module.c	2007-02-17 13:43:15.907531275 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_module.c	2007-02-19 16:44:36.039183124 +0100
 @@ -31,7 +31,6 @@
  *******************************************************************************/
  
@@ -722,29 +640,9 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_module.c rtl8187_txpower/ieee80211/i
  #include "ieee80211.h"
  
  MODULE_DESCRIPTION("802.11 data/management/control stack");
-diff -Naur rtl8187_orig/ieee80211/ieee80211-rtl.mod.c rtl8187_txpower/ieee80211/ieee80211-rtl.mod.c
---- rtl8187_orig/ieee80211/ieee80211-rtl.mod.c	1970-01-01 01:00:00.000000000 +0100
-+++ rtl8187_txpower/ieee80211/ieee80211-rtl.mod.c	2007-02-17 13:43:15.937531728 +0100
-@@ -0,0 +1,16 @@
-+#include <linux/module.h>
-+#include <linux/vermagic.h>
-+#include <linux/compiler.h>
-+
-+MODULE_INFO(vermagic, VERMAGIC_STRING);
-+
-+struct module __this_module
-+__attribute__((section(".gnu.linkonce.this_module"))) = {
-+ .name = KBUILD_MODNAME,
-+};
-+
-+static const char __module_depends[]
-+__attribute_used__
-+__attribute__((section(".modinfo"))) =
-+"depends=ieee80211_crypt";
-+
 diff -Naur rtl8187_orig/ieee80211/ieee80211_rx.c rtl8187_txpower/ieee80211/ieee80211_rx.c
 --- rtl8187_orig/ieee80211/ieee80211_rx.c	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_rx.c	2007-02-17 13:43:15.947531879 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_rx.c	2007-02-19 16:44:36.129184482 +0100
 @@ -22,7 +22,6 @@
   
  
@@ -842,19 +740,58 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_rx.c rtl8187_txpower/ieee80211/ieee8
  	memset(skb->cb, 0, sizeof(skb->cb));
 diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/ieee80211_softmac.c
 --- rtl8187_orig/ieee80211/ieee80211_softmac.c	2006-06-19 03:27:33.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_softmac.c	2007-02-17 13:43:15.987532482 +0100
-@@ -386,9 +386,8 @@
++++ rtl8187_txpower/ieee80211/ieee80211_softmac.c	2007-02-19 16:44:36.179185236 +0100
+@@ -384,11 +384,16 @@
+ }
+ #endif
  
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_softmac_scan_wq(struct work_struct *work)
++{
++	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, softmac_scan_wq);
++#else
  void ieee80211_softmac_scan_wq(struct ieee80211_device *ieee)
- {	
+-{	
 -	down(&ieee->scan_sem);
 -	
++{
++#endif
  	short watchdog = 0;
 +	down(&ieee->scan_sem);
  	
  	do{
  		ieee->current_network.channel = 
-@@ -1467,12 +1466,13 @@
+@@ -964,8 +969,14 @@
+ 	}	
+ }
+ 
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_associate_complete_wq(struct work_struct *work)
++{
++	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, associate_complete_wq);
++#else
+ void ieee80211_associate_complete_wq(struct ieee80211_device *ieee)
+ {
++#endif
+ 	printk(KERN_INFO "Associated successfully\n");
+ 	if(ieee80211_is_54g(ieee->current_network) && 
+ 		(ieee->modulation & IEEE80211_OFDM_MODULATION)){
+@@ -995,8 +1006,14 @@
+ 	queue_work(ieee->wq, &ieee->associate_complete_wq);
+ }
+ 
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_associate_procedure_wq(struct work_struct *work)
++{
++	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, associate_procedure_wq);
++#else
+ void ieee80211_associate_procedure_wq(struct ieee80211_device *ieee)
+ {
++#endif
+ 	ieee->sync_scan_hurryup = 1;
+ 	down(&ieee->wx_sem);
+ 	
+@@ -1467,12 +1484,13 @@
  			u16 stype)
  {
  	struct ieee80211_hdr_3addr *header;
@@ -869,7 +806,39 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
  	if(!ieee->proto_started)
  		return 0;
  	
-@@ -2165,12 +2165,21 @@
+@@ -1814,8 +1832,15 @@
+ 		netif_carrier_on(ieee->dev);
+ 	}
+ }
++
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_start_ibss_wq(struct work_struct *work)
++{
++	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, start_ibss_wq);
++#else
+ void ieee80211_start_ibss_wq(struct ieee80211_device *ieee)
+ {
++#endif
+ 	
+ 	/* iwconfig mode ad-hoc will schedule this and return
+ 	 * on the other hand this will block further iwconfig SET
+@@ -1960,8 +1985,15 @@
+ 	notify_wx_assoc_event(ieee);
+ 	
+ }
++
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_associate_retry_wq(struct work_struct *work)
++{
++	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, associate_retry_wq);
++#else
+ void ieee80211_associate_retry_wq(struct ieee80211_device *ieee)
+ {
++#endif
+ 	unsigned long flags;
+ 	
+ 	down(&ieee->wx_sem);
+@@ -2165,12 +2197,21 @@
  	ieee->wq = create_workqueue(DRV_NAME);
  #endif
  	
@@ -893,7 +862,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
  	sema_init(&ieee->scan_sem, 1);
 diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c
 --- rtl8187_orig/ieee80211/ieee80211_softmac_wx.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c	2007-02-17 13:43:16.057533538 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c	2007-02-19 16:44:36.229185990 +0100
 @@ -134,14 +134,14 @@
  	u8 zero[] = {0,0,0,0,0,0};
  	unsigned long flags;
@@ -921,9 +890,24 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee802
  	}else{
  		ieee->dev->type = ARPHRD_ETHER;
  	}
+@@ -264,8 +263,14 @@
+ 	return 0;
+ }
+ 
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_wx_sync_scan_wq(struct work_struct *work)
++{
++	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, wx_sync_scan_wq);
++#else
+ void ieee80211_wx_sync_scan_wq(struct ieee80211_device *ieee)
+ {
++#endif
+ 	short chan;
+ 
+ 	chan = ieee->current_network.channel;
 diff -Naur rtl8187_orig/ieee80211/ieee80211_tx.c rtl8187_txpower/ieee80211/ieee80211_tx.c
 --- rtl8187_orig/ieee80211/ieee80211_tx.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_tx.c	2007-02-17 13:43:16.057533538 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_tx.c	2007-02-19 16:44:36.229185990 +0100
 @@ -32,7 +32,6 @@
  ******************************************************************************/
  
@@ -955,27 +939,24 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_tx.c rtl8187_txpower/ieee80211/ieee8
  			goto success;
 diff -Naur rtl8187_orig/makedrv rtl8187_txpower/makedrv
 --- rtl8187_orig/makedrv	2006-09-05 07:21:10.000000000 +0200
-+++ rtl8187_txpower/makedrv	2007-02-17 13:42:37.616953671 +0100
++++ rtl8187_txpower/makedrv	2007-02-19 16:48:42.812905650 +0100
 @@ -5,6 +5,7 @@
  cd ieee80211
  make clean
  make
-+cp Module.symvers beta-8187/
++ln -s Module.symvers ../beta-8187/
  cd ../beta-8187
  make clean
  make
 diff -Naur rtl8187_orig/makedrvbk rtl8187_txpower/makedrvbk
 --- rtl8187_orig/makedrvbk	2006-09-05 07:21:10.000000000 +0200
-+++ rtl8187_txpower/makedrvbk	2007-02-17 13:42:41.357010089 +0100
-@@ -1,9 +1,11 @@
- #!/bin/bash
- 
- cd ieee80211/
-+rm Module.symvers
- make clean
- make
++++ rtl8187_txpower/makedrvbk	2007-02-19 16:44:16.168883385 +0100
+@@ -6,6 +6,8 @@
  cd -
-+cp ieee80211/Module.symvers beta-8187/
  cd beta-8187/
  make clean
++rm beta-8187/Module*.symvers
++ln -s ../ieee80211/Module.symvers Module.symvers
  make
+ cd -
+ 
