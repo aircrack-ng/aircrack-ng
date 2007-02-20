@@ -48,12 +48,26 @@ DUMP_PATH="/tmp"
 WORDLIST="/tmp/wordlist.txt"
 #The Mac address used to associate with AP during fakeauth			
 FAKE_MAC="00:01:02:03:04:05"
-# IP of the access to be used for CHOPCHOP and Fragmentation attack
-Host_IP="192.168.1.1"
+# IP of the AP and clients to be used for CHOPCHOP and Fragmentation attack
+
+# Host_IP and Client_IP used for arp generation from xor file (frag and chopchop)
+
+#Host_IP="192.168.1.1"
+#Client_IP="192.168.1.37"
+#Host_IP="192.168.0.1"
+#Client_IP="192.168.0.37"
+Host_IP="255.255.255.255"
+Client_IP="255.255.255.255"
+
+# Fragmentation IP
+
+#FRAG_HOST_IP="192.168.1.1"
+#FRAG_CLIENT_IP="192.168.1.37"
+#FRAG_HOST_IP="192.168.0.1"
+#FRAG_CLIENT_IP="192.168.0.37"
 FRAG_HOST_IP="255.255.255.255"
-# same for client 
-Client_IP="192.168.1.37"
 FRAG_CLIENT_IP="255.255.255.255"
+
 # leave this alone (if you edit this, it will screw up the menu)
 CHOICES="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
 #This is the window size and layout settings
@@ -705,7 +719,7 @@ if [ $WIFI = "rausb0" ]
   		then
 		changemacrausb
 		elif [ $WIFI = "wlan0" ]
-		then
+		then 
 		changemacwlan
 		elif [ $WIFI = "ath0" ]
 		then
@@ -960,7 +974,7 @@ capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting 
 
 function pskarp {
 rm -rf $DUMP_PATH/arp_*.cap
-	$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k 255.255.255.255 -l 255.255.255.255 -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
+	$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
 	capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending forged ARP to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap $WIFI & menufonction
 }
 
