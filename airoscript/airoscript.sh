@@ -100,8 +100,9 @@ function debug {
 	clear
 	if [ $DEBUG = 1 ]
 		then
-			echo "Debug Mode On"
-			echo " "
+  echo "#######################################"
+  echo "###      Debug Mode On              ###"
+  echo " "
 			HOLD="-hold"
 	else
 		HOLD=""
@@ -111,13 +112,12 @@ function debug {
 function blankssid {
 while true; do
   clear
-  echo ""
-  echo "A blank SSID has been detected, would you like to manually enter an SSID?"
-  echo ""
-  echo "1) Yes "
-  echo "2) No "
+  echo "#######################################"
+  echo "###       Blank SSID detected       ###"
+  echo "###    Do you want to in put one    ###"
+  echo "###    1) Yes                       ###"
+  echo "###    2) No                        ###"
   read yn
-  echo ""
   case $yn in
     1 ) Host_ssidinput ; break ;;
     2 ) Host_SSID="" ; break ;;
@@ -127,9 +127,9 @@ done
 }
 # This is the input part of previous function
 function Host_ssidinput {
-echo -n "OK, now type in the ESSID ==> "
+  echo "#######################################"
+  echo "###       Please enter SSID         ###"
 read Host_SSID
-echo You typed $Host_SSID
 set -- ${Host_SSID}
 clear
 }
@@ -210,13 +210,15 @@ done
 function choosefake {
 while true; do
   clear
-  echo "What type off fakeauth do you want to try?"
-  echo ""
-  echo "1) Conservative"
-  echo "2) Standard"
-  echo "3) Progressive"
+  echo "#######################################"
+  echo "###   Select fakeauth method        ###"
+  echo "###                                 ###"
+  echo "###   1) Conservative               ###"
+  echo "###   2) Standard                   ###"
+  echo "###   3) Progressive                ###"
+  echo "###                                 ###"
+  echo "#######################################"
   read yn
-  echo ""
   case $yn in
     1 ) fakeauth1 ; break ;;
     2 ) fakeauth2 ; break ;;
@@ -250,22 +252,23 @@ done
 function choosetarget {
 while true; do
   clear
-  echo ""
-  echo "Do you want to select a client now ?"
-  echo ""
-  echo "1) Yes "
-  echo "2) No "
-  echo "3) Try to detect associated client"
-  echo "4) Correct a bad SSID"
-  echo "5) Jump to associated client list"
+  echo "#######################################"
+  echo "### Do you want to select a client? ###"
+  echo "###                                 ###"
+  echo "###   1) Yes, only associated       ###"
+  echo "###   2) No i dont want to          ###"
+  echo "###   3) Try to detect some         ###"
+  echo "###   4) Yes show me the clients    ###"
+  echo "###   5) Correct the SSID first     ###"
+  echo "###                                 ###"
+  echo "#######################################"
   read yn
-  echo ""
   case $yn in
-    1 ) askclientsel ; break ;;
+    1 ) listsel2  ; break ;;
     2 ) break ;;
     3 ) clientdetect && clientfound ; break ;;
-    4 ) Host_ssidinput && choosetarget ; break ;;
-    5 ) listsel2 ; break ;;
+    4 ) askclientsel ; break ;;
+    5 ) Host_ssidinput && choosetarget ; break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
@@ -274,13 +277,14 @@ done
 function clientfound {
 while true; do
   clear
-  echo ""
-  echo "Did you find desired client?"
-  echo ""
-  echo "1) Yes "
-  echo "2) No "
+  echo "#######################################"
+  echo "###  Did you find desired client?   ###"
+  echo "###                                 ###"
+  echo "###   1) Yes, someone associated    ###" 
+  echo "###   2) No, no clients showed up   ###"
+  echo "###                                 ###"
+  echo "#######################################"
   read yn
-  echo ""
   case $yn in
     1 ) listsel3 ; break ;;
     2 ) break ;;
@@ -292,14 +296,15 @@ done
 function choosedeauth {
 while true; do
   clear
-  echo ""
-  echo "What kind of deauth do you want to do ?"
-  echo ""
-  echo "1) Everybody "
-  echo "2) Myself "
-  echo "3) Selected Client"
+  echo "#######################################"
+  echo "###   Who do you want to deauth ?   ###"
+  echo "###                                 ###"
+  echo "###   1) Everybody                  ###"
+  echo "###   2) Myself (the Fake MAC)      ###"
+  echo "###   3) Selected client            ###"
+  echo "###                                 ###"
+  echo "#######################################"
   read yn
-  echo ""
   case $yn in
     1 ) deauthall ; break ;;
     2 ) deauthfake ; break ;;
@@ -314,23 +319,23 @@ while true; do
   clear
   echo "#######################################"
   echo "### Attacks not using a client      ###"
-  echo "1)  Fake association => Automatic   ###"
-  echo "2)  Fake association => Interactive ###"
-  echo "3)  Fragmentation attack            ###"
-  echo "4)  Chopchop attack                 ###"
+  echo "### 1)  Fake auth => Automatic      ###"
+  echo "### 2)  Fake auth => Interactive    ###"
+  echo "### 3)  Fragmentation attack        ###"
+  echo "### 4)  Chopchop attack             ###"
   echo "#######################################"
   echo "### Attacks using a client          ###"
-  echo "5)  Using a client   => Automatic   ###"
-  echo "6)  Using a client   => Interactive ###"
-  echo "7)  Fragmentation attack            ###"
-  echo "8)  Chopchop attack                 ###"
+  echo "### 5)  ARP replay => Automatic     ###"
+  echo "### 6)  ARP replay => Interactive   ###"
+  echo "### 7)  Fragmentation attack        ###"
+  echo "### 8)  Chopchop attack             ###"
   echo "#######################################"
   echo "### Injection if xor file generated ###" 
-  echo "9)  Chopchop injection              ###"
-  echo "10) Chopchop injection with client  ###"
-  echo "11) Fragment injection              ###"
-  echo "12) Fragment injection with client  ###"
-  echo "13) ARP gen&inject from xor (PSK)   ###"
+  echo "### 9)  Chopchop injection          ###"
+  echo "### 10) Chopchop injection client   ###"
+  echo "### 11) Fragment injection          ###"
+  echo "### 12) Fragment injection client   ###"
+  echo "### 13) ARP inject from xor (PSK)   ###"
   read yn
   echo ""
   case $yn in
@@ -358,17 +363,19 @@ done
 function attackopn {
 while true; do
   clear
-  echo "OPEN ATTACK MODE"
-  echo ""
-  echo "Which attack would you like to perform?"
-  echo ""
-  echo "1) Deauth           => Everybody"
-  echo "2) Deauth           => Client"
+  echo "#######################################"
+  echo "###   Who do you want to deauth     ###"
+  echo "###                                 ###"
+  echo "###   1) Everybody                  ###"
+  echo "###   2) Myself (the Fake MAC)      ###"
+  echo "###   3) Selected client            ###"
+  echo "###                                 ###"
+  echo "#######################################"
   read yn
-  echo ""
   case $yn in
     1 ) deauthall ; break ;;
-    2 ) deauthclient ; break ;;
+    2 ) deauthfake ; break ;;
+    3 ) deauthclient ; break ;; 
     * ) echo "unknown response. Try again" ;;
   esac
 done 
@@ -377,12 +384,14 @@ done
 function askclientsel {
 while true; do
   clear
-  echo ""
-  echo "Do you want to select the client from a list or enter MAC address manually ?"
-  echo ""
-  echo "1) Detected clients "
-  echo "2) Manual Input "
-  echo "3) Jump to associated client list "
+  echo "#######################################"
+  echo "###      Select next step           ###"
+  echo "###                                 ###"
+  echo "###   1) Detected clients           ###"
+  echo "###   2) Manual Input               ###"
+  echo "###   3) Associated client list     ###"
+  echo "###                                 ###"
+  echo "#######################################"
   read yn
   echo ""
   case $yn in
@@ -395,20 +404,31 @@ done
 }
 # manual client input
 function clientinput {
-echo -n "OK, now type in your client MAC: "
+  echo "#######################################"
+  echo "###                                 ###"
+  echo "###   Type in client mac now        ###"
+  echo "###                                 ###"
+  echo "#######################################"
+#echo -n "OK, now type in your client MAC: "
 read Client_MAC
-echo You typed: $Client_MAC
+  echo "#######################################"
+  echo "###                                 ###"
+  echo "###   You typed: $Client_MAC  ###"
+  echo "###                                 ###"
+  echo "#######################################"
 set -- ${Client_MAC}
 }
 # associated client or all clients ?
 function asklistsel {
 while true; do
   clear
-  echo ""
-  echo "Do you want to select the client from full list or associated clients only ?"
-  echo ""
-  echo "1) Only associated clients (Client connected to this SSID : $Host_SSID)"
-  echo "2) Full list (All MAC detected, even Host are listed)"
+  echo "#######################################"
+  echo "###      Select next step           ###"
+  echo "###                                 ###"
+  echo "###   1) Clients of $Host_SSID      ###"
+  echo "###   2) Full list (all MACs)       ###"
+  echo "###                                 ###"
+  echo "#######################################"
 if [ "$Host_SSID" = $'\r' ]
   		then
 Host_SSID="No SSID has been detected!"
@@ -426,8 +446,11 @@ done
 function listsel1 {
 HOST=`cat $DUMP_PATH/dump-01.txt | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`
 	clear
-	echo "Select wich client you want to use for ARP replay"
-	echo ""
+  echo "#######################################"
+  echo "###                                 ###"
+  echo "###       Select client now         ###"
+  echo "###                                 ###"
+  echo "#######################################"
 	select CLIENT in $HOST;
 		do
 		export Client_MAC=` echo $CLIENT | awk '{
@@ -440,10 +463,13 @@ HOST=`cat $DUMP_PATH/dump-01.txt | grep -a "0.:..:..:..:.." | awk '{ print $1 }'
 function listsel2 {
 HOST=`cat $DUMP_PATH/dump-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
 	clear
-	echo "Select which client you want to use for ARP replay"
-	echo ""
-	echo "The client(s) listed bellow is(are) connected to ==> "$Host_SSID
-	echo ""
+  echo "#######################################"
+  echo "###                                 ###"
+  echo "###       Select client now         ###"
+  echo "###  These clients are connected to ###
+  echo "###          $Host_SSID             ###"
+  echo "###                                 ###"
+  echo "#######################################"
 	select CLIENT in $HOST;
 		do
 		export Client_MAC=` echo $CLIENT | awk '{
@@ -456,10 +482,13 @@ HOST=`cat $DUMP_PATH/dump-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep 
 function listsel3 {
 HOST=`cat $DUMP_PATH/$Host_MAC-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
 	clear
-	echo "Select which client you want to use for ARP replay"
-	echo ""
-	echo "The client(s) listed bellow is(are) connected to ==> "$Host_SSID
-	echo ""
+  echo "#######################################"
+  echo "###                                 ###"
+  echo "###       Select client now         ###"
+  echo "###  These clients are connected to ###
+  echo "###          $Host_SSID             ###"
+  echo "###                                 ###"
+  echo "#######################################"
 	select CLIENT in $HOST;
 		do
 		export Client_MAC=` echo $CLIENT | awk '{
@@ -485,30 +514,34 @@ function cleanup {
 }
 # menu listing command	
 function menu {
-                echo "#######################################"
-                echo "### What do you want to do?         ###"
-		echo "### 1) Scan    - Scan for target    ###"
-		echo "### 2) Select  - Select target      ###"
-		echo "### 3) Attack  - Attack target      ###"
-		echo "### 4) Crack   - Get target key     ###"
-		echo "### 5) Config  - Connect to target  ###"
-		echo "### 6) Fakeauth- Auth with target   ###"
-		echo "### 7) Deauth  - Deauth from target ###"
-		echo "### 8) Reset   - Reset interface    ###"
-		echo "### 9) Monitor - Airmon-ng device   ###"
-		echo "###10) Quit    - Quits airoscript   ###"
-		echo "###11) Airomatic- step 1,2,3 linked ###"
-		echo "###12) ChangeMac- Change your MAC   ###"			
+  echo "#######################################"
+  echo "### What do you want to do?         ###"
+  echo "### 1) Scan    - Scan for target    ###"
+  echo "### 2) Select  - Select target      ###"
+  echo "### 3) Attack  - Attack target      ###"
+  echo "### 4) Crack   - Get target key     ###"
+  echo "### 5) Config  - Connect to target  ###"
+  echo "### 6) Fakeauth- Auth with target   ###"
+  echo "### 7) Deauth  - Deauth from target ###"
+  echo "### 8) Reset   - Reset interface    ###"
+  echo "### 9) Monitor - Airmon-ng device   ###"
+  echo "###10) Quit    - Quits airoscript   ###"
+  echo "###11) Airomatic- step 1,2,3 linked ###"
+  echo "###12) ChangeMac- Change your MAC   ###"			
 }
 # target listing	
 function target {
 		clear
-		echo "Access Point SSID     ==> "$Host_SSID
-		echo "Access Point MAC      ==> "$Host_MAC
-		echo "Access Point Channel  ==> "$Host_CHAN
-		echo "Selected client       ==> "$Client_MAC
-		echo "Access Point Security ==> "$Host_ENC
-		echo "Access Point Speed    ==> "$Host_SPEED
+  echo "#######################################"
+  echo "###                                 ###"
+  echo "###   AP SSID   = $Host_SSID"
+  echo "###   AP MAC    = $Host_MAC"
+  echo "###   AP Chan   =$Host_CHAN"
+  echo "###   ClientMAC = $Client_MAC"
+  echo "###   AP Encrypt= $Host_ENC             ###"
+  echo "###   AP Speed  =$Host_SPEED               ###"
+  echo "###                                 ###"
+  echo "#######################################"
 }  
 # interface configuration using found key (tweaks by CurioCT) 	
 function configure {
@@ -590,12 +623,15 @@ if [ $Host_ENC = "WEP" ]
 function wichchangemac {
 while true; do
 
-  echo ""
-  echo "1) Change MAC to FAKEMAC "
-  echo "2) Change MAC to CLIENTMAC "
-  echo "3) Manual Mac input "
+  echo "#######################################"
+  echo "###      Select next step           ###"
+  echo "###                                 ###"
+  echo "###   1) Change MAC to FAKEMAC      ###"
+  echo "###   2) Change MAC to CLIENTMAC    ###"
+  echo "###   3) Manual Mac input           ###"
+  echo "###                                 ###"
+  echo "#######################################"
   read yn
-  echo ""
   case $yn in
     1 ) fakemacchanger ; break ;;
     2 ) macchanger ; break ;;
@@ -799,10 +835,12 @@ function Scan {
 # This scan for targets on a specific channel
 function Scanchan {
   echo "#######################################"
-  echo "### Input channel number            ###"
-  echo "### It can be a single number  6    ###"
-  echo "### A range                   1-5   ###"
-  echo "### Multiple channels 1,1,2,5-7,11  ###"
+  echo "###    Input channel number         ###"
+  echo "###                                 ###"
+  echo "###  A single number   6            ###"
+  echo "###  A range           1-5          ###"
+  echo "###  Multiple channels 1,1,2,5-7,11 ###"
+  echo "###                                 ###"
   echo "#######################################"
 #echo -n "On which channel would you like to scan ? ==> "
 read channel_number
@@ -876,7 +914,7 @@ witchattack
 function chopchopattack {
 	clear
 rm -rf $DUMP_PATH/$Host_MAC*
-	capture &  fakeauth &  xterm $HOLD -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -b $Host_MAC $WIFI 
+	capture &  fakeauth &  xterm $HOLD -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -b $Host_MAC $WIFI & menufonction
 }
 function chopchopattackclient {
 	clear
