@@ -1,0 +1,13 @@
+Documentation can be found on www.aircrack-ng.org
+See also manpages.
+
+Madwifi-ng known bugs:
+When changing rate while you are capturing packet makes airodump stall
+  Solution: restart airodump-ng or change rate before starting it
+
+You can use airodump-ng on OpenWrt devices. You'll have to use specify
+prism0 as interface. Airodump-ng will automatically create it.
+Rq: Aireplay doesn't work on such devices since the driver doesn't support injection
+    (except those with an Atheros card)
+    
+
