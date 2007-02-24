@@ -48,7 +48,6 @@ struct pcap_file_header
 //    int tv_usec;    
 //};
 
-
 struct pcap_pkthdr
 {
     int tv_sec;

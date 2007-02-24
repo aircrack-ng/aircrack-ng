@@ -21,8 +21,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef linux
-    #define SYS_NETBSD 1
+#if defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)
     #define HAVE_RADIOTAP  1
     #define HAVE_PCAP_NONBLOCK 1
 #endif
@@ -44,7 +43,7 @@
     #include <linux/wireless.h>
 #endif
 
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
     #include <net/bpf.h>
     #include <net/if.h>
     #include "pcapbsd.c"
@@ -339,10 +338,14 @@ int send_packet( void *buf, size_t count )
 }
 #endif
 
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
 int send_packet( void *buf, size_t count )
 {
+//    memcmp(buf+64, buf, count);
+//    memset(buf, 0, 64);
+
     if(!pcap_inject(pd, buf, count))
+//    if(!pcap_sendpacket(pd, buf, count+64))
     {
 	perror( "write failed" );
 	return -1;
@@ -404,18 +407,22 @@ int read_packet( void *buf, size_t count )
 }
 #endif
 
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
 int read_packet( void *buf, size_t count )
 {
     int caplen;
-    caplen = PcapFetchPacket();
+    caplen = pcap_read_packet(count);
     if(caplen < 0)
     {
         perror( "read failed" );
 	return -1;
     }
-    
     memcpy(buf, callback_data, MAX_PACKET_LEN);
+    if(caplen > 0)
+    {
+	caplen = callback_header.caplen-64;
+	memcpy( h80211, callback_data+64, caplen );
+    }    
     return caplen;
 }
 #endif
@@ -446,8 +453,9 @@ void read_sleep( int usec )
         if( FD_ISSET( dev.fd_in, &rfds ) )
             caplen = read_packet( h80211, sizeof( h80211 ) );
 #endif
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
-	caplen = read_packet( h80211, sizeof( h80211 ) );
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+	memset( h80211, 0, sizeof( h80211) );
+	caplen = read_packet( h80211, 1);
 #endif
         gettimeofday(&tv2, NULL);
     }
@@ -644,7 +652,15 @@ void wait_for_beacon(uchar *bssid, uchar *capa)
 
     while (1) {
 	len = 0;
+#ifdef linux
 	while (len < 22) len = read_packet(pkt_sniff, 4096);
+#endif
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+	while (len < 22) {
+	    memset(pkt_sniff, 0, sizeof(pkt_sniff));
+	    len = read_packet(pkt_sniff, 1);
+	}
+#endif
 	if (! memcmp(pkt_sniff, "\x80", 1)) {
 	    if (! memcmp(bssid, pkt_sniff+10, 6)) break;
 	}
@@ -861,8 +877,13 @@ int fake_asso()
     gettimeofday(&tv2, NULL);
     while (1)
     {
+#ifdef linux
         caplen = read_packet(packet, 4096);
-
+#endif
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+	memset(packet, 0, sizeof(packet));
+	caplen = read_packet(packet, 1);
+#endif
         if (packet[0] == 0x10) break;
 
         gettimeofday(&tv2, NULL);
@@ -1159,9 +1180,13 @@ int do_attack_fake_auth( void )
 
         if( ! FD_ISSET( dev.fd_in, &rfds ) )
             continue;
-#endif
-        caplen = read_packet( h80211, sizeof( h80211 ) );
 
+        caplen = read_packet( h80211, sizeof( h80211 ) );
+#endif
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+	memset(h80211, 0, sizeof(h80211));
+	caplen = read_packet(h80211, 1);
+#endif
         if( caplen  < 0 ) return( 1 );
         if( caplen == 0 ) continue;
 
@@ -1420,7 +1445,13 @@ int capture_ask_packet( int *caplen )
                 continue;
 #endif
             gettimeofday( &tv, NULL );
+#ifdef linux
 	    *caplen = read_packet( h80211, sizeof( h80211 ) );
+#endif
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+	    memset( h80211, 0, sizeof( h80211) );
+	    *caplen = read_packet( h80211, 1);
+#endif
             if( *caplen  < 0 ) return( 1 );
             if( *caplen == 0 ) continue;
         }
@@ -1441,7 +1472,7 @@ int capture_ask_packet( int *caplen )
             tv.tv_sec  = pkh.tv_sec;
             tv.tv_usec = pkh.tv_usec;
 #endif
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
             tv.tv_sec  = pkh.ts.tv_sec;
             tv.tv_usec = pkh.ts.tv_usec;
 #endif
@@ -1478,7 +1509,6 @@ int capture_ask_packet( int *caplen )
         }
 
         nb_pkt_read++;
-//perror("*");
 
         if( filter_packet( h80211, *caplen ) != 0 )
             continue;
@@ -1612,7 +1642,7 @@ int capture_ask_packet( int *caplen )
     pkh.tv_sec  = tv.tv_sec;
     pkh.tv_usec = tv.tv_usec;
 #endif
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
     pkh.ts.tv_sec  = tv.tv_sec;
     pkh.ts.tv_usec = tv.tv_usec;
 #endif
@@ -1932,9 +1962,13 @@ int do_attack_arp_resend( void )
         if( opt.s_file == NULL )
         {
             gettimeofday( &tv, NULL );
-
+#ifdef linux
             caplen = read_packet( h80211, sizeof( h80211 ) );
-
+#endif
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+	    memset(h80211, 0, sizeof(h80211));
+	    caplen = read_packet(h80211, 1);
+#endif
             if( caplen  < 0 ) return( 1 );
             if( caplen == 0 ) continue;
         }
@@ -1955,7 +1989,7 @@ int do_attack_arp_resend( void )
             tv.tv_sec  = pkh.tv_sec;
             tv.tv_usec = pkh.tv_usec;
 #endif
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
             tv.tv_sec  = pkh.ts.tv_sec;
             tv.tv_usec = pkh.ts.tv_usec;
 #endif
@@ -2101,7 +2135,7 @@ add_arp:
                 pkh.tv_sec  = tv.tv_sec;
                 pkh.tv_usec = tv.tv_usec;
 #endif
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
                 pkh.ts.tv_sec  = tv.tv_sec;
                 pkh.ts.tv_usec = tv.tv_usec;
 #endif
@@ -2482,8 +2516,13 @@ int do_attack_chopchop( void )
 
         /* watch for a response from the AP */
 
+#ifdef linux
         n = read_packet( h80211, sizeof( h80211 ) );
-
+#endif
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+	memset( h80211, 0, sizeof( h80211) );
+	n = read_packet( h80211, 1);
+#endif
         if( n  < 0 ) return( 1 );
         if( n == 0 ) continue;
 
@@ -2650,7 +2689,7 @@ int do_attack_chopchop( void )
     pkh.tv_sec  = tv.tv_sec;
     pkh.tv_usec = tv.tv_usec;
 #endif
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
     pkh.ts.tv_sec  = tv.tv_sec;
     pkh.ts.tv_usec = tv.tv_usec;
 #endif
@@ -2930,11 +2969,15 @@ int do_attack_fragment()
 
             gettimeofday( &tv, NULL );
 
-
             while (!gotit)  //waiting for relayed packet
             {
+#ifdef linux
                 caplen = read_packet(packet, 4096);
-
+#endif
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+	memset(packet, 0, sizeof(packet));
+	caplen = read_packet(packet, 1);
+#endif
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
                     if ( (packet[1] & 2) && (packet[27] <= 0x03) )  //Is a FromDS packet with valid IV
@@ -3065,8 +3108,13 @@ int do_attack_fragment()
             gotit=0;
             while (!gotit)  //waiting for relayed packet
             {
+#ifdef linux
                 caplen = read_packet(packet, 4096);
-
+#endif
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+	memset(packet, 0, sizeof(packet));
+	caplen = read_packet(packet, 1);
+#endif
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
                     if ( (packet[1] & 2) && (packet[27] <= 3) )  //Is a FromDS packet with valid IV
@@ -3164,8 +3212,13 @@ int do_attack_fragment()
             gotit=0;
             while (!gotit)  //waiting for relayed packet
             {
+#ifdef linux
                 caplen = read_packet(packet, 4096);
-
+#endif
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+		memset(packet, 0, sizeof(packet));
+		caplen = read_packet(packet, 1);
+#endif
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
                     if ( (packet[1] & 2) && (packet[27] <= 3) )  //Is a FromDS packet with valid IV
@@ -3373,13 +3426,19 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
 }
 #endif
 
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
-int openraw(char *iface, int fd, int *arptype, uchar* mac) {
-    if(!OpenSource(iface)) return 1;
-    if(!PcapDatalinkType()) return 1;
-    if(!monitor_bsd(11)) return 1;
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+int openraw(char *iface, int fd, int *arptype, uchar *mac) {
+    if(!open_source(iface)) return 1;
+    if(!pcap_datalink_type()) return 1;
+    if(!monitor_bsd()) return 1;
 
     *arptype = ARPHRD_IEEE80211_FULL;
+    mac[0] = 0x01;	// :)
+    mac[1] = 0x02;
+    mac[2] = 0x03;
+    mac[3] = 0x04;
+    mac[4] = 0x05;
+    mac[5] = 0x06;
 
     return 0;
 }
@@ -3392,10 +3451,6 @@ char athXraw[] = "athXraw";
 int main( int argc, char *argv[] )
 {
     int n;
-//#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
-//    int i;
-//    char buf[64];
-//#endif
 #ifdef linux
     FILE * f;
 #endif
@@ -3956,8 +4011,8 @@ int main( int argc, char *argv[] )
     }
 #endif
 
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
-    dev.fd_in = s;
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) ||  defined(__FreeBSD__)))
+    dev.fd_in = ps;
     dev.fd_out = dev.fd_in;
 #endif
 
@@ -4006,7 +4061,7 @@ int main( int argc, char *argv[] )
 
 #endif
 
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) ||  defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
     if( opt.r_nbpps == 0 )
     {
             opt.r_nbpps = 500;
@@ -4055,12 +4110,20 @@ int main( int argc, char *argv[] )
 
     if( memcmp( opt.r_smac, dev.mac_out, 6) != 0 && memcmp( opt.r_smac, NULL_MAC, 6 ) != 0)
     {
+#ifdef linux
         if( dev.is_madwifi && opt.a_mode == 5 ) printf("For --fragment to work on madwifi[-ng], set the interface MAC according to (-h)!\n");
         fprintf( stderr, "The interface MAC (%02X:%02X:%02X:%02X:%02X:%02X)"
                  " doesn't match the specified MAC (-h).\n"
                  "\tifconfig %s hw ether %02X:%02X:%02X:%02X:%02X:%02X\n",
                  dev.mac_out[0], dev.mac_out[1], dev.mac_out[2], dev.mac_out[3], dev.mac_out[4], dev.mac_out[5],
                  argv[optind], opt.r_smac[0], opt.r_smac[1], opt.r_smac[2], opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
+#endif
+
+        fprintf( stderr, "MAC (%02X:%02X:%02X:%02X:%02X:%02X)"
+                 " %s : %02X:%02X:%02X:%02X:%02X:%02X\n",
+                 dev.mac_out[0], dev.mac_out[1], dev.mac_out[2], dev.mac_out[3], dev.mac_out[4], dev.mac_out[5],
+                 argv[optind], opt.r_smac[0], opt.r_smac[1], opt.r_smac[2], opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
+
     }
 
     switch( opt.a_mode )

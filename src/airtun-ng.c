@@ -19,10 +19,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define __FreeBSD__
-
-#ifndef linux
-    #warning Airtun-ng could fail on this OS
+#if defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)
+    #define HAVE_RADIOTAP  1
+    #define HAVE_PCAP_NONBLOCK 1
 #endif
 
 #ifdef linux
@@ -42,7 +41,7 @@
     #include <linux/wireless.h>
 #endif
 
-#ifdef __FreeBSD__
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
     #include <net/bpf.h>
     #include <net/if.h>
 #endif
@@ -66,7 +65,7 @@
     #include <linux/if_tun.h>
 #endif
 
-#ifdef __FreeBSD__
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
     #include <net/if_tun.h>
 #endif
 
@@ -900,7 +899,7 @@ int openraw( char *iface, int fd, int *arptype )
 }
 #endif
 
-#ifdef __FreeBSD__
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
 int openraw(char *name, int fd, int *arptype) {
     int i;
 //    int fd = -1;
@@ -1325,7 +1324,7 @@ int main( int argc, char *argv[] )
     }
 #endif
 
-#ifdef __FreeBSD__
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
     for(i = 0;i < 10; i++) {
         sprintf(buf, "/dev/bpf%d", i);
 
@@ -1440,7 +1439,7 @@ int main( int argc, char *argv[] )
         return -1;
     }
 #endif
-#ifdef __FreeBSD__
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
     if( ioctl( dev.fd_tap, SIOCGIFFLAGS, (void *)&if_request ) < 0 )
     {
         printf( "error creating tap interface: %s\n", strerror( errno ) );

@@ -19,8 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef linux
-    #define SYS_NETBSD 1
+#if defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)
     #define HAVE_RADIOTAP  1
     #define HAVE_PCAP_NONBLOCK 1
 #endif
@@ -38,7 +37,7 @@
     #include <linux/wireless.h>
 #endif
 
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) || defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
     #include <net/bpf.h>
     #include <net/if.h>
     #include <netinet/in.h>
@@ -1448,7 +1447,7 @@ write_packet:
         pkh.tv_sec  =   tv.tv_sec;
         pkh.tv_usec = ( tv.tv_usec & ~0x1ff ) + power + 64;
 #endif
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) || defined(SYS_FREEBSD)))
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
         pkh.ts.tv_sec  =   tv.tv_sec;
         pkh.ts.tv_usec = ( tv.tv_usec & ~0x1ff ) + power + 64;
 #endif
@@ -3118,10 +3117,6 @@ int main( int argc, char *argv[] )
     int valid_channel, chanoption;
     int freq [2];
     time_t tt1, tt2, tt3, start_time;
-//#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD)) || defined(SYS_FREEBSD))
-//    int j;
-//    char buf[64];
-//#endif
 
     unsigned char      *buffer;
     unsigned char      *h80211;
@@ -3409,9 +3404,9 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
     
+#ifdef linux
     /* Check iwpriv existence */
 
-#ifdef linux
 	G.iwpriv = wiToolsPath("iwpriv");
     if (! G.iwpriv )
     {
@@ -3441,45 +3436,11 @@ int main( int argc, char *argv[] )
     }
 #endif
 
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) || defined(SYS_FREEBSD)))
-/*
-    for(i=0; i<cards; i++)
-    {
-        for(j = 0;j < 10; j++) {
-            sprintf(buf, "/dev/bpf%d", j);
-	    
-            fd_raw[i]= open(buf, O_RDWR);
-
-            if(fd_raw[i] < 0) {
-                if(errno != EBUSY) {
-                    perror("can't open /dev/bpf");
-                    exit(1);
-                }
-                continue;
-            }
-            else
-                break;
-        }
-
-        if(fd_raw[i] < 0) {
-            perror("can't open /dev/bpf");
-            exit(1);
-        }
-    }
-*/
-
-    if(!OpenSource(argc[argv-1])) return -1;
-    if(!PcapDatalinkType()) return -1;
-    if(!monitor_bsd(11)) return -1;
-
-//    for(i=0; i < 10000000 ; i++)
-//    PcapFetchPacket();
-//    fprintf(stderr, "%s", errstr);
-//    unmonitor_bsd("ral0\0", 6, errstr);
-//    chancontrol_bsd("ral0\0", 10, errstr);
-//    PcapCloseSource();
-//    return(1);
-
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
+    if(!open_source(argc[argv-1])) return -1;
+    if(!pcap_datalink_type()) return -1;
+    if(!monitor_bsd()) return -1;
+//    pcap_setdirection(pd, PCAP_D_INOUT);
 #endif
 
     setuid( getuid() );
@@ -3516,9 +3477,7 @@ int main( int argc, char *argv[] )
 
         if( ! fork() )
         {
-//#ifdef linux
             channel_hopper( iface, fd_raw, cards, chan_count );
-//#endif
             exit( 1 );
         }
     }
@@ -3639,10 +3598,10 @@ int main( int argc, char *argv[] )
 	    }
 #endif
 
-#if (defined(HAVE_RADIOTAP) && (defined(SYS_NETBSD) || defined(SYS_OPENBSD) || defined(SYS_FREEBSD)))
-	if(PcapFetchPacket() > 0) caplen = callback_header.caplen; else caplen = 0;
-	memset( buffer, 0, 4096 );
-	memcpy( buffer, callback_data, 4096 );
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
+	if(pcap_read_packet(1) > 0) caplen = callback_header.caplen; //else caplen = 0;
+	memset( buffer, 0, MAX_PACKET_LEN );
+	memcpy( buffer, callback_data, MAX_PACKET_LEN );
 	arptype[0] = ARPHRD_IEEE80211_FULL;
 #endif
         tv0.tv_sec  = 0;
@@ -3752,9 +3711,13 @@ int main( int argc, char *argv[] )
                     }
 
                     n = *(unsigned short *)( buffer + 2 );
-
+#if (defined(HAVE_RADIOTAP) && (defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)))
+		    power = buffer[23];
+#endif
+#ifdef linux
                     if( *(int *)( buffer + 4 ) == 0x0000082E )
                         power = buffer[14];     /* ipw2200 1.0.7 */
+#endif
 
                     if( n <= 0 || n >= caplen )
                         continue;
