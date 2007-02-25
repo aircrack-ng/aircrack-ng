@@ -280,11 +280,15 @@ G;
 
 int check_shared_key(unsigned char *h80211, int caplen)
 {
-    int m_bmac = 16, m_smac = 10, m_dmac = 4, n, textlen;
+    int m_bmac, m_smac, m_dmac, n, textlen;
     char ofn[1024];
     char text[256];
     char prga[512];
     unsigned int long crc;
+
+	m_bmac = 16;
+	m_smac = 10;
+	m_dmac = 4;
 
     if( time(NULL) - G.sk_start > 5)
     {

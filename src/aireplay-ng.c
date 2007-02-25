@@ -709,10 +709,12 @@ int fake_ska_auth_1( void )
 int fake_ska_auth_2(uchar *ph80211, int caplen, uchar *prga, uchar *iv)
 {
     struct timeval tv, tv2;
-    int ret=0;
-    uchar ack[14] = 	"\xd4";
-    memset(ack+1, 0, 13);
+    int ret;
     uchar packet[4096];
+    uchar ack[14] = "\xd4";
+
+    ret = 0;
+    memset(ack+1, 0, 13);
 
     //Increasing SEQ number
     ph80211[26]++;
@@ -772,18 +774,21 @@ int fake_ska_auth_2(uchar *ph80211, int caplen, uchar *prga, uchar *iv)
 int fake_asso()
 {
     struct timeval tv, tv2;
-    int caplen = 0;
-    int slen;
-    uchar ack[14] = 	"\xd4";
-    memset(ack+1, 0, 13);
+    int caplen, slen, assoclen;
+
+    uchar packet[4096];
+
+    uchar *capa;	//Capability Field from beacon
 
     uchar assoc[4096] = "\x00\x00\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
                         "\x00\x00\x00\x00\x00\x00\xd0\x01\x15\x00\x0a\x00\x00";
 
     uchar rates[16] =   "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C";
-    uchar packet[4096];
 
-    uchar *capa;	//Capability Field from beacon
+    uchar ack[14] = 	"\xd4";
+
+    memset(ack+1, 0, 13);
+	caplen = 0;
 
     printf("Part2: Association\n");
 
@@ -808,7 +813,7 @@ int fake_asso()
     memcpy(assoc+30+slen, rates, 16);
 
     //Calculating total packet size
-    int assoclen = 30 + slen + 16;
+    assoclen = 30 + slen + 16;
 
     wait_for_beacon(opt.r_bssid, capa);
     memcpy(assoc+24, capa, 2);
@@ -827,7 +832,7 @@ int fake_asso()
         gettimeofday(&tv2, NULL);
         if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000)
         {
-            printf ("\nNot answering...(Step3)\n\n");
+            printf ("\nNot answering...(Step 3)\n\n");
             return -1;
         }
     }
@@ -849,10 +854,10 @@ int fake_ska(uchar* prga)
 {
     uchar *iv;
 
-    int caplen=0;
-    int prgalen;
-    int ret=-1;
-    int i=0;
+    int caplen, prgalen, ret, i;
+
+	caplen = i = 0;
+	ret = -1;
 
     while(caplen <= 0)
     {
@@ -2671,8 +2676,10 @@ int do_attack_chopchop( void )
 
 int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac, uchar *src_ip, uchar *dst_ip, int size)
 {
+	uchar *arp_header = (unsigned char*)"\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01";
+	uchar *header80211 = (unsigned char*)"\x08\x41\x95\x00";
+
     // 802.11 part
-    uchar *header80211 = (unsigned char*)"\x08\x41\x95\x00";
     memcpy(h80211,    header80211, 4);
     memcpy(h80211+4,  bssid,       6);
     memcpy(h80211+10, src_mac,     6);
@@ -2681,7 +2688,6 @@ int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac
     h80211[23] = '\x00';
 
     // ARP part
-    uchar *arp_header = (unsigned char*)"\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01";
     memcpy(h80211+24, arp_header, 16);
     memcpy(h80211+40, src_mac,     6);
     memcpy(h80211+46, src_ip,      4);
@@ -2697,9 +2703,11 @@ int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac
 void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, int fragsize)
 {
     int t, u;
-    int data_size = packet_len - 24;
+    int data_size;
     uchar frag[30+fragsize];
     int pack_size;
+
+    data_size = packet_len - 24;
 
     packet[23] = (rand() % 0xFF);
 
@@ -2764,8 +2772,8 @@ int do_attack_fragment()
     uchar packet[4096];
     uchar packet2[4096];
     uchar prga[4096];
-    uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
     uchar iv[4];
+
 //    uchar ack[14] = "\xd4";
 
     char strbuf[256];
@@ -2773,17 +2781,21 @@ int do_attack_fragment()
     struct tm *lt;
     struct timeval tv, tv2;
 
-    int done     = 0;
-    int caplen   = 0;
-    int caplen2  = 0;
-    int arplen   = 0;
-    int round    = 0;
-    int prga_len = 0;
-    int isrelay  = 0;
-    int gotit    = 0;
-    int again    = 0;
-    int length   = 0;
+    int done;
+    int caplen;
+    int caplen2;
+    int arplen;
+    int round;
+    int prga_len;
+    int isrelay;
+    int gotit;
+    int again;
+    int length;
 
+	uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
+
+	done = caplen = caplen2 = arplen = round = 0;
+	prga_len = isrelay = gotit = again = length = 0;
 
     if( memcmp( opt.f_bssid, NULL_MAC, 6 ) == 0 )
     {
