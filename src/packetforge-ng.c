@@ -51,6 +51,9 @@
     "\x45\x00\x00\x1C\x00\x00\x40\x00\x40\x01\x00\x00\xC3\xBE\x8E\x74"  \
     "\xC1\x16\x02\x01\x08\x00\x83\xDC\x74\x22\x00\x01"
 
+#define NULL_PACKET      \
+    "\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"  \
+    "\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32"
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
@@ -78,6 +81,7 @@ char usage[] =
 "      -l <ip[:port]> : set Source      IP [Port]\n"
 "      -t ttl         : set Time To Live\n"
 "      -w <file>      : write packet to this pcap file\n"
+"      -s <size>      : specify size of null packet\n"
 "\n"
 "  Source options:\n"
 "\n"
@@ -89,6 +93,7 @@ char usage[] =
 "      --arp          : forge an ARP packet    (-0)\n"
 "      --udp          : forge an UDP packet    (-1)\n"
 "      --icmp         : forge an ICMP packet   (-2)\n"
+"      --null         : build a null packet    (-3)\n"
 "      --custom       : build a custom packet  (-9)\n"
 "\n";
 
@@ -109,6 +114,7 @@ struct options
     int pktlen;
     int prgalen;
     int ttl;
+    int size;
 
     unsigned short sport;
     unsigned short dport;
@@ -668,6 +674,28 @@ int forge_icmp()
     return 0;
 }
 
+int forge_null()
+{
+    opt.pktlen = opt.size;
+    memcpy(h80211, NULL_PACKET, 24);
+    memset(h80211+24, '\0', (opt.pktlen - 24));
+
+    if(memcmp(opt.dmac, NULL_MAC, 6) == 0)
+    {
+        memcpy( opt.dmac, "\xFF\xFF\xFF\xFF\xFF\xFF", 6 );
+    }
+
+    if( set_tofromds(h80211) != 0 ) return 1;
+    if( set_bssid(h80211)    != 0 ) return 1;
+    if( set_smac(h80211)     != 0 ) return 1;
+    if( set_dmac(h80211)     != 0 ) return 1;
+
+    if( opt.pktlen > 26 )
+        h80211[26]=0x03;
+
+    return 0;
+}
+
 int forge_custom()
 {
     if(read_raw_packet(h80211, opt.raw_file, opt.pktlen) != 0) return 1;
@@ -726,12 +754,15 @@ int main(int argc, char* argv[])
     opt.fromds  =  0;
     opt.encrypt =  1;
 
+    opt.size    = 30;
+
     while( 1 )
     {
         static struct option long_options[] = {
             {"arp",      0, 0, '0'},
             {"udp",      0, 0, '1'},
             {"icmp",     0, 0, '2'},
+            {"null",     0, 0, '3'},
             {"custom",   1, 0, '9'},
             {0,          0, 0,  0 }
         };
@@ -739,7 +770,7 @@ int main(int argc, char* argv[])
         int option;
 	option_index = 0;
 	option = getopt_long( argc, argv,
-                        "p:a:c:h:jok:l:j:r:y:0129:w:et:",
+                        "p:a:c:h:jok:l:j:r:y:01239:w:et:s:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -866,6 +897,17 @@ int main(int argc, char* argv[])
                 }
                 break;
 
+            case 's' :
+
+                sscanf( optarg, "%i", &arg );
+                if( arg < 26 || arg > 1520 )
+                {
+                    printf( "Invalid packet size.\n" );
+                    return( 1 );
+                }
+                opt.size = arg;
+                break;
+
             case '0' :
 
                 if( opt.mode != -1 )
@@ -895,6 +937,16 @@ int main(int argc, char* argv[])
                     return( 1 );
                 }
                 opt.mode = 2;
+                break;
+
+            case '3' :
+
+                if( opt.mode != -1 )
+                {
+                    printf( "Mode already specified.\n" );
+                    return( 1 );
+                }
+                opt.mode = 3;
                 break;
 
             case '9' :
@@ -945,6 +997,15 @@ int main(int argc, char* argv[])
 					return 1;
 				}
 				break;
+
+        case 3:
+                if( forge_null() != 0 )
+				{
+					printf("Error building a NULL packet.\n");
+					return 1;
+				}
+				break;
+
 		case 9:
 		        if( forge_custom() != 0 )
 		        {
