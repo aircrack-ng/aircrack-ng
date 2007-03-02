@@ -2885,7 +2885,7 @@ int do_attack_fragment()
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
-                    if ( (packet[1] & 2) && (packet[27] <= 0x03) )  //Is a FromDS packet with valid IV
+                    if ( (packet[1] & 2) )  //Is a FromDS packet
                     {
                         if (! memcmp(opt.r_dmac, packet+4, 6)) //To our MAC
                         {
@@ -3017,7 +3017,7 @@ int do_attack_fragment()
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
-                    if ( (packet[1] & 2) && (packet[27] <= 3) )  //Is a FromDS packet with valid IV
+                    if ( (packet[1] & 2) )  //Is a FromDS packet with valid IV
                     {
                         if (! memcmp(opt.r_dmac, packet+4, 6)) //To our MAC
                         {
@@ -3116,7 +3116,7 @@ int do_attack_fragment()
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
-                    if ( (packet[1] & 2) && (packet[27] <= 3) )  //Is a FromDS packet with valid IV
+                    if ( (packet[1] & 2) )  //Is a FromDS packet with valid IV
                     {
                         if (! memcmp(opt.r_dmac, packet+4, 6)) //To our MAC
                         {
