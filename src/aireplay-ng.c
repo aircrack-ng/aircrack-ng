@@ -59,9 +59,7 @@
 #include <getopt.h>
 
 #include <fcntl.h>
-//#include <errno.h>
-//#include <time.h>
-//#include <getopt.h>
+#include <ctype.h>
 
 #include "version.h"
 #include "pcap.h"
@@ -3375,7 +3373,7 @@ char athXraw[] = "athXraw";
 
 int main( int argc, char *argv[] )
 {
-    int n;
+    int n, i;
 #ifdef __FreeBSD__
     int i;
     char buf[64];
@@ -3666,10 +3664,16 @@ int main( int argc, char *argv[] )
                 }
                 opt.a_mode = 0;
 
+				for (i=0; optarg[i] != 0; i++)
+				{
+					if (isdigit(optarg[i]) == 0)
+						break;
+				}
+
                 sscanf( optarg, "%d", &opt.a_count );
-                if( opt.a_count < 0 )
+                if( opt.a_count < 0 || optarg[i] != 0)
                 {
-                    printf( "Invalid deauthentication count.\n" );
+                    printf( "Invalid deauthentication count or missing value.\n" );
                     return( 1 );
                 }
                 break;
@@ -3683,10 +3687,16 @@ int main( int argc, char *argv[] )
                 }
                 opt.a_mode = 1;
 
+				for (i=0; optarg[i] != 0; i++)
+				{
+					if (isdigit(optarg[i]) == 0)
+						break;
+				}
+
                 sscanf( optarg, "%d", &opt.a_delay );
-                if( opt.a_delay < 0 )
+                if( opt.a_delay < 0 || optarg[i] != 0)
                 {
-                    printf( "Invalid reauthentication delay.\n" );
+                    printf( "Invalid reauthentication delay or missing value.\n" );
                     return( 1 );
                 }
                 break;
