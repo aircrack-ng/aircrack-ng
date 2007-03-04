@@ -1,6 +1,6 @@
 diff -Naur rtl8187_orig/beta-8187/ieee80211.h rtl8187_txpower/beta-8187/ieee80211.h
 --- rtl8187_orig/beta-8187/ieee80211.h	2006-06-06 04:58:02.000000000 +0200
-+++ rtl8187_txpower/beta-8187/ieee80211.h	2007-02-26 03:05:07.691423532 +0100
++++ rtl8187_txpower/beta-8187/ieee80211.h	2007-03-05 00:31:41.255175682 +0100
 @@ -156,6 +156,22 @@
  	struct list_head list;
  };
@@ -307,7 +307,7 @@ diff -Naur rtl8187_orig/beta-8187/ieee80211.h rtl8187_txpower/beta-8187/ieee8021
  	}
 diff -Naur rtl8187_orig/beta-8187/r8180_93cx6.c rtl8187_txpower/beta-8187/r8180_93cx6.c
 --- rtl8187_orig/beta-8187/r8180_93cx6.c	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_93cx6.c	2007-02-26 03:05:03.241356403 +0100
++++ rtl8187_txpower/beta-8187/r8180_93cx6.c	2007-03-05 00:31:37.815123790 +0100
 @@ -87,7 +87,7 @@
  
  u32 eprom_read(struct net_device *dev, u32 addr)
@@ -319,7 +319,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_93cx6.c rtl8187_txpower/beta-8187/r8180_
  	int i;
 diff -Naur rtl8187_orig/beta-8187/r8180_hw.h rtl8187_txpower/beta-8187/r8180_hw.h
 --- rtl8187_orig/beta-8187/r8180_hw.h	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_hw.h	2007-02-26 03:05:07.761424588 +0100
++++ rtl8187_txpower/beta-8187/r8180_hw.h	2007-03-05 00:31:41.295176286 +0100
 @@ -646,6 +646,7 @@
  #define FFER_INTR    ((1<<15))
  #define FFER_GWAKE   ((1<< 4))
@@ -331,7 +331,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_hw.h rtl8187_txpower/beta-8187/r8180_hw.
  #endif
 diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.c rtl8187_txpower/beta-8187/r8180_rtl8225.c
 --- rtl8187_orig/beta-8187/r8180_rtl8225.c	2006-06-06 04:58:02.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_rtl8225.c	2007-02-26 03:05:03.311357459 +0100
++++ rtl8187_txpower/beta-8187/r8180_rtl8225.c	2007-03-05 00:31:37.935125600 +0100
 @@ -173,7 +173,7 @@
  
  void rtl8225_set_gain(struct net_device *dev, short gain)
@@ -400,7 +400,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.c rtl8187_txpower/beta-8187/r818
  	u16 brsr;
 diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.h rtl8187_txpower/beta-8187/r8180_rtl8225.h
 --- rtl8187_orig/beta-8187/r8180_rtl8225.h	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_rtl8225.h	2007-02-26 03:05:07.811425342 +0100
++++ rtl8187_txpower/beta-8187/r8180_rtl8225.h	2007-03-05 00:31:41.435178397 +0100
 @@ -44,3 +44,5 @@
  extern u32 rtl8225_chan[];
  
@@ -409,7 +409,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.h rtl8187_txpower/beta-8187/r818
 +void rtl8225z2_SetTXPowerLevel(struct net_device *dev, short ch);
 diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225z2.c rtl8187_txpower/beta-8187/r8180_rtl8225z2.c
 --- rtl8187_orig/beta-8187/r8180_rtl8225z2.c	2006-06-06 04:58:02.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_rtl8225z2.c	2007-02-26 03:05:03.371358364 +0100
++++ rtl8187_txpower/beta-8187/r8180_rtl8225z2.c	2007-03-05 00:31:38.025126958 +0100
 @@ -129,7 +129,7 @@
  void rtl8225z2_set_gain(struct net_device *dev, short gain)
  {
@@ -498,7 +498,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225z2.c rtl8187_txpower/beta-8187/r8
  	{
 diff -Naur rtl8187_orig/beta-8187/r8180_wx.c rtl8187_txpower/beta-8187/r8180_wx.c
 --- rtl8187_orig/beta-8187/r8180_wx.c	2006-06-06 04:58:02.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8180_wx.c	2007-02-26 03:05:03.371358364 +0100
++++ rtl8187_txpower/beta-8187/r8180_wx.c	2007-03-05 00:31:38.045127259 +0100
 @@ -21,6 +21,7 @@
  
  #include "r8187.h"
@@ -914,7 +914,7 @@ diff -Naur rtl8187_orig/beta-8187/r8180_wx.c rtl8187_txpower/beta-8187/r8180_wx.
  }
 diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_core.c
 --- rtl8187_orig/beta-8187/r8187_core.c	2006-06-22 07:43:30.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8187_core.c	2007-02-26 03:05:03.381358515 +0100
++++ rtl8187_txpower/beta-8187/r8187_core.c	2007-03-05 00:31:38.115128315 +0100
 @@ -57,6 +57,7 @@
  #undef DEBUG_IRQ_TASKLET
  #undef DEBUG_TX_ALLOC
@@ -1435,6 +1435,15 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
  //		priv->ieee80211->state == IEEE80211_LINKED){
  	basic_rate = ieeerate2rtlrate(240);
  	min_rr_rate = ieeerate2rtlrate(60);
+@@ -1532,7 +1558,7 @@
+ 		word |= (1<<i);
+ 
+ 	write_nic_word(dev, BRSR, word);
+-	//DMESG("RR:%x BRSR: %x", read_nic_byte(dev,RESP_RATE), read_nic_word(dev,BRSR));
++	DMESG("RR:%x BRSR: %x", read_nic_byte(dev,RESP_RATE), read_nic_word(dev,BRSR));
+ }
+ 
+ 
 @@ -1540,7 +1566,7 @@
  {
  //	int i;
@@ -1821,7 +1830,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_c
 +module_exit(rtl8187_usb_module_exit_rtl7);
 diff -Naur rtl8187_orig/beta-8187/r8187.h rtl8187_txpower/beta-8187/r8187.h
 --- rtl8187_orig/beta-8187/r8187.h	2006-06-06 08:48:10.000000000 +0200
-+++ rtl8187_txpower/beta-8187/r8187.h	2007-02-26 03:05:07.891426549 +0100
++++ rtl8187_txpower/beta-8187/r8187.h	2007-03-05 00:31:41.535179906 +0100
 @@ -26,7 +26,6 @@
  
  #include <linux/module.h>
@@ -1852,7 +1861,7 @@ diff -Naur rtl8187_orig/beta-8187/r8187.h rtl8187_txpower/beta-8187/r8187.h
  	/*short scanpending;
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.c rtl8187_txpower/ieee80211/ieee80211_crypt.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt.c	2006-06-06 04:57:56.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt.c	2007-02-26 03:05:15.811546022 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt.c	2007-03-05 00:31:52.275341919 +0100
 @@ -11,7 +11,6 @@
   *
   */
@@ -2003,7 +2012,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.c rtl8187_txpower/ieee80211/ie
 +module_exit(ieee80211_crypto_deinit_rtl7);
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c	2007-02-26 03:05:15.821546173 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c	2007-03-05 00:31:52.295342221 +0100
 @@ -9,7 +9,6 @@
   * more details.
   */
@@ -2246,7 +2255,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c rtl8187_txpower/ieee802
 +module_exit(ieee80211_crypto_ccmp_exit_rtl7);
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.h rtl8187_txpower/ieee80211/ieee80211_crypt.h
 --- rtl8187_orig/ieee80211/ieee80211_crypt.h	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt.h	2007-02-26 03:05:12.091489906 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt.h	2007-03-05 00:31:49.235296061 +0100
 @@ -75,12 +75,12 @@
  	atomic_t refcnt;
  };
@@ -2268,7 +2277,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.h rtl8187_txpower/ieee80211/ie
  #endif
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c	2007-02-26 03:05:15.841546474 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c	2007-03-05 00:31:52.355343126 +0100
 @@ -9,7 +9,6 @@
   * more details.
   */
@@ -2582,7 +2591,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c rtl8187_txpower/ieee802
 +module_exit(ieee80211_crypto_tkip_exit_rtl7);
 diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_wep.c rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c
 --- rtl8187_orig/ieee80211/ieee80211_crypt_wep.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c	2007-02-26 03:05:15.881547078 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c	2007-03-05 00:31:52.395343729 +0100
 @@ -9,7 +9,6 @@
   * more details.
   */
@@ -2729,7 +2738,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_wep.c rtl8187_txpower/ieee8021
 +module_exit(ieee80211_crypto_wep_exit_rtl7);
 diff -Naur rtl8187_orig/ieee80211/ieee80211.h rtl8187_txpower/ieee80211/ieee80211.h
 --- rtl8187_orig/ieee80211/ieee80211.h	2006-06-06 04:57:56.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211.h	2007-02-26 03:05:12.121490358 +0100
++++ rtl8187_txpower/ieee80211/ieee80211.h	2007-03-05 00:31:49.235296061 +0100
 @@ -156,6 +156,22 @@
  	struct list_head list;
  };
@@ -3036,7 +3045,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211.h rtl8187_txpower/ieee80211/ieee8021
  	}
 diff -Naur rtl8187_orig/ieee80211/ieee80211_module.c rtl8187_txpower/ieee80211/ieee80211_module.c
 --- rtl8187_orig/ieee80211/ieee80211_module.c	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_module.c	2007-02-26 03:05:15.911547530 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_module.c	2007-03-05 00:31:52.435344332 +0100
 @@ -31,7 +31,6 @@
  *******************************************************************************/
  
@@ -3211,7 +3220,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_module.c rtl8187_txpower/ieee80211/i
 +EXPORT_SYMBOL(free_ieee80211_rtl7);
 diff -Naur rtl8187_orig/ieee80211/ieee80211_rx.c rtl8187_txpower/ieee80211/ieee80211_rx.c
 --- rtl8187_orig/ieee80211/ieee80211_rx.c	2006-06-06 04:58:00.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_rx.c	2007-02-26 03:05:15.941547983 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_rx.c	2007-03-05 00:31:52.485345087 +0100
 @@ -22,7 +22,6 @@
   
  
@@ -3734,7 +3743,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_rx.c rtl8187_txpower/ieee80211/ieee8
 +EXPORT_SYMBOL(ieee80211_rx_rtl7);
 diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/ieee80211_softmac.c
 --- rtl8187_orig/ieee80211/ieee80211_softmac.c	2006-06-19 03:27:33.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_softmac.c	2007-02-26 03:05:15.981548586 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_softmac.c	2007-03-05 00:31:52.525345690 +0100
 @@ -20,12 +20,12 @@
  #include <linux/delay.h>
  #include <linux/version.h>
@@ -5389,7 +5398,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/
 +//EXPORT_SYMBOL(ieee80211_sta_ps_send_null_frame_rtl7);
 diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c
 --- rtl8187_orig/ieee80211/ieee80211_softmac_wx.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c	2007-02-26 03:05:16.011549039 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c	2007-03-05 00:31:52.575346444 +0100
 @@ -18,7 +18,7 @@
  
  /* FIXME: add A freqs */
@@ -5614,7 +5623,19 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee802
  	
  	/* this is just to be sure that the GET wx callback
  	 * has consisten infos. not needed otherwise
-@@ -371,13 +376,13 @@
+@@ -356,7 +361,11 @@
+ 	spin_lock_irqsave(&ieee->lock, flags);
+ 	
+ 	if (wrqu->essid.flags && wrqu->essid.length) {
++#if WIRELESS_EXT > 20
++		len = min((int)wrqu->essid.length, IW_ESSID_MAX_SIZE);
++#else
+ 		len = ((wrqu->essid.length-1) < IW_ESSID_MAX_SIZE) ? (wrqu->essid.length-1) : IW_ESSID_MAX_SIZE;
++#endif
+ 		
+ 		strncpy(ieee->current_network.ssid, extra, len);
+ 		ieee->current_network.ssid_len = len;
+@@ -371,13 +380,13 @@
  	spin_unlock_irqrestore(&ieee->lock, flags);
  	
  	if (proto_started)
@@ -5630,7 +5651,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee802
  			     union iwreq_data *wrqu, char *b)
  {
  
-@@ -385,7 +390,7 @@
+@@ -385,7 +394,7 @@
  	return 0;
  }
  
@@ -5639,7 +5660,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee802
  			       struct iw_request_info *info, 
  			       union iwreq_data *wrqu, char *extra)
  {
-@@ -422,7 +427,7 @@
+@@ -422,7 +431,7 @@
  	return 0;
  }
   
@@ -5648,7 +5669,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee802
  			     struct iw_request_info *info, 
  			     union iwreq_data *wrqu, char *extra)
  {
-@@ -446,7 +451,7 @@
+@@ -446,7 +455,7 @@
  
  
  /* this is mostly stolen from hostap */
@@ -5657,7 +5678,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee802
  				 struct iw_request_info *info,
  				 union iwreq_data *wrqu, char *extra)
  {
-@@ -509,7 +514,7 @@
+@@ -509,7 +518,7 @@
  }
  
  /* this is stolen from hostap */
@@ -5666,7 +5687,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee802
  				 struct iw_request_info *info,
  				 union iwreq_data *wrqu, char *extra)
  {
-@@ -547,19 +552,19 @@
+@@ -547,19 +556,19 @@
  
  }
  
@@ -5704,7 +5725,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee802
 +EXPORT_SYMBOL(ieee80211_wlan_frequencies_rtl7);
 diff -Naur rtl8187_orig/ieee80211/ieee80211_tx.c rtl8187_txpower/ieee80211/ieee80211_tx.c
 --- rtl8187_orig/ieee80211/ieee80211_tx.c	2006-06-06 04:57:54.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_tx.c	2007-02-26 03:05:16.011549039 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_tx.c	2007-03-05 00:31:52.575346444 +0100
 @@ -32,7 +32,6 @@
  ******************************************************************************/
  
@@ -5838,7 +5859,7 @@ diff -Naur rtl8187_orig/ieee80211/ieee80211_tx.c rtl8187_txpower/ieee80211/ieee8
 +EXPORT_SYMBOL(ieee80211_txb_free_rtl7);
 diff -Naur rtl8187_orig/ieee80211/ieee80211_wx.c rtl8187_txpower/ieee80211/ieee80211_wx.c
 --- rtl8187_orig/ieee80211/ieee80211_wx.c	2006-06-06 04:57:56.000000000 +0200
-+++ rtl8187_txpower/ieee80211/ieee80211_wx.c	2007-02-26 03:05:16.071549944 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_wx.c	2007-03-05 00:31:52.635347349 +0100
 @@ -40,7 +40,7 @@
  };
  
