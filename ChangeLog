@@ -1,6 +1,6 @@
 Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
 * aircrack-ng: Fixed stdin dictionary usage
-* aircrack-ng: Hardcode CPUs number to 1 if detection fails
+* aircrack-ng: Hardcode CPUs number to 1 in case detection fails
 * aircrack-ng: Fixed too low trashvalue
 * aireplay-ng: Fixed 384 bytes keystream output
 * aireplay-ng: Fixed IV index bug
@@ -11,7 +11,8 @@ Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
 * airodump-ng: Fixed a SIGSEGV
 * airodump-ng: Added WPA handshake detection
 * airodump-ng: Added non associated stations filter
-* airmon-ng: Updated some device detection + added Nokia 770
+* airmon-ng: Updated some device detection
+* airmon-ng: Added Nokia 770 and PrismGT softmac
 * airmon-ng: Fixed ACX driver monitor mode startup
 * airmon-ng: Fixed syntax error
 * airtun-ng: Added pcap support to replay saved wlan sessions

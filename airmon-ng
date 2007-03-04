@@ -5,6 +5,7 @@ IFACE=""
 KISMET=/etc/kismet/kismet.conf
 CH=$3; [ x$3 = "x" ] && CH=10
 IFACE_FOUND="false"
+MADWIFI=0
 
 usage() {
 	printf "usage: `basename $0` <start|stop> <interface> [channel]\n"
@@ -68,6 +69,7 @@ for iface in `ifconfig -a 2>/dev/null | egrep HWaddr | cut -b 1-7`
 do
  if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
  then
+    $MADWIFI=1
     ifconfig $iface up
     printf "$iface\t\tAtheros\t\tmadwifi-ng"       
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
@@ -86,7 +88,10 @@ do
  fi
 done
 
-sleep 1s
+if [ $MADWIFI -eq 1 ]
+then
+	sleep 1s
+fi
 
 for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
 do
@@ -434,12 +439,28 @@ do
      continue
  fi
 
+ if [ x"`iwpriv $iface 2>/dev/null | grep set_announcedpkt`" != "x" ]
+ then
+    printf "$iface\t\tPrismGT\t\tislsm"
+    if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+    then
+         startStdIface $iface $CH
+    fi
+    echo
+    continue
+    
+ fi
+
  if [ x"`iwpriv $iface 2>/dev/null | grep ndis_reset`" != "x" ]
  then
      printf "$iface\t\tUnknown\t\tndiswrapper"
      if [ x$2 = x$iface ]
      then
          echo " (MONITOR MODE NOT SUPPORTED)"
+     fi
+     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+         stopStdIface $iface
      fi
      echo
      continue
