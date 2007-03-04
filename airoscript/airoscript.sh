@@ -3,8 +3,8 @@
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes and darkAudax
-# Date:	        21.02.2007
-# Version:	SVN TESTING RELEASE FOR AIRCRACK-NG SVN (needs S
+# Date:	        03.03.2007
+# Version:	SVN TESTING RELEASE FOR AIRCRACK-NG SVN (needs SVN version of aircrack as of today)
 # 
 # Dependencies: aircrack-ng,xterm,grep,awk,drivers capable of injection
 #
@@ -42,12 +42,13 @@ AIRODUMP="airodump-ng"
 AIREPLAY="aireplay-ng"	
 AIRCRACK="aircrack-ng"
 ARPFORGE="packetforge-ng"
+username=`whoami`
 #The path where the data is stored (FOLDER MUST EXIST !)
-DUMP_PATH="/tmp"
+DUMP_PATH="/home/"$username""
 # Path to your wordlist file (for WPA and WEP dictionnary attack)
-WORDLIST="/tmp/wordlist.txt"
+WORDLIST="/home/"$username"/wordlist.txt"
 #The Mac address used to associate with AP during fakeauth			
-FAKE_MAC="00:01:02:03:04:05"
+FAKE_MAC="00:06:25:02:FF:D8"
 # IP of the AP and clients to be used for CHOPCHOP and Fragmentation attack
 
 # Host_IP and Client_IP used for arp generation from xor file (frag and chopchop)
