@@ -69,7 +69,7 @@ for iface in `ifconfig -a 2>/dev/null | egrep HWaddr | cut -b 1-7`
 do
  if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
  then
-    $MADWIFI=1
+    MADWIFI=1
     ifconfig $iface up
     printf "$iface\t\tAtheros\t\tmadwifi-ng"       
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
