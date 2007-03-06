@@ -86,6 +86,29 @@ static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00";
 
+#define N_ATTACKS 17
+
+enum KoreK_attacks
+{
+	A_u15,						 /* semi-stable  15%             */
+	A_s13,						 /* stable       13%             */
+	A_u13_1,					 /* unstable     13%             */
+	A_u13_2,					 /* unstable ?   13%             */
+	A_u13_3,					 /* unstable ?   13%             */
+	A_s5_1,						 /* standard      5% (~FMS)      */
+	A_s5_2,						 /* other stable  5%             */
+	A_s5_3,						 /* other stable  5%             */
+	A_u5_1,						 /* unstable      5% no good ?   */
+	A_u5_2,						 /* unstable      5%             */
+	A_u5_3,						 /* unstable      5% no good     */
+	A_u5_4,						 /* unstable      5%             */
+	A_s3,						 /* stable        3%             */
+	A_4_s13,					 /* stable       13% on q = 4    */
+	A_4_u5_1,					 /* unstable      5% on q = 4    */
+	A_4_u5_2,					 /* unstable      5% on q = 4    */
+	A_neg						 /* helps reject false positives */
+};
+
 struct options
 {
 	int amode;					 /* attack mode          */
@@ -127,6 +150,8 @@ struct options
 	int stdin_dict;
 
 	int probability;			/* %of correct answers */
+	int votes[N_ATTACKS];			/* votes for korek attacks */
+	int brutebytes[64];			/* bytes to bruteforce */
 }
 
 opt;
@@ -208,29 +233,6 @@ int bf_nkeys[256];
 uchar bf_wepkey[64];
 int wepkey_crack_success = 0;
 
-#define N_ATTACKS 17
-
-enum KoreK_attacks
-{
-	A_u15,						 /* semi-stable  15%             */
-	A_s13,						 /* stable       13%             */
-	A_u13_1,					 /* unstable     13%             */
-	A_u13_2,					 /* unstable ?   13%             */
-	A_u13_3,					 /* unstable ?   13%             */
-	A_s5_1,						 /* standard      5% (~FMS)      */
-	A_s5_2,						 /* other stable  5%             */
-	A_s5_3,						 /* other stable  5%             */
-	A_u5_1,						 /* unstable      5% no good ?   */
-	A_u5_2,						 /* unstable      5%             */
-	A_u5_3,						 /* unstable      5% no good     */
-	A_u5_4,						 /* unstable      5%             */
-	A_s3,						 /* stable        3%             */
-	A_4_s13,					 /* stable       13% on q = 4    */
-	A_4_u5_1,					 /* unstable      5% on q = 4    */
-	A_4_u5_2,					 /* unstable      5% on q = 4    */
-	A_neg						 /* helps reject false positives */
-};
-
 typedef struct
 {
 	int off1;
@@ -286,7 +288,7 @@ char usage[] =
 "      -c         : search alpha-numeric characters only\n"
 "      -t         : search binary coded decimal chr only\n"
 "      -h         : search the numeric key for Fritz!BOX\n"
-"      -d <mask>  : debug - specify mask of the key (A1:XX:CF)\n"
+"      -d <mask>  : debug - specify mask of the key (A1:XX:CF:YY)\n"
 "      -m <maddr> : MAC address to filter usable packets\n"
 "      -n <nbits> : WEP key length :  64/128/152/256/512\n"
 "      -i <index> : WEP key index (1 to 4), default: any\n"
@@ -1356,6 +1358,9 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 
 	tests = 32;
 
+//	printf("keylen: %d\n", keylen);
+//	printf("%02X:%02X:%02X:%02X:%02X\n", wepkey[0],wepkey[1],wepkey[2],wepkey[3],wepkey[4]);
+
 	if(opt.dict) tests = (wep.nb_ivs-5)/5;
 
 	if(tests < 4)  tests=4;
@@ -1465,6 +1470,8 @@ int calc_poll( int B )
 	int i, n, cid, *vi;
 	int votes[N_ATTACKS][256];
 
+	memset(&opt.votes, '\0', sizeof(opt.votes));
+
 	/* send the current keybyte # to each thread */
 
 	for( cid = 0; cid < opt.nbcpu; cid++ )
@@ -1500,7 +1507,10 @@ int calc_poll( int B )
 
 		for( n = 0, vi = (int *) votes; n < N_ATTACKS; n++ )
 			for( i = 0; i < 256; i++, vi++ )
+			{
 				wep.poll[B][i].val += *vi * K_COEFF[n];
+				if(K_COEFF[n]) opt.votes[n] += *vi;
+			}
 	}
 
 	/* set votes to the max if the keybyte is user-defined */
@@ -1619,7 +1629,7 @@ int update_ivbuf( void )
 
 int do_wep_crack1( int B )
 {
-	int i, j, tsel;
+	int i, j, l, m, tsel;
 	static int k = 0;
 
 	get_ivs:
@@ -1707,22 +1717,70 @@ int do_wep_crack1( int B )
 			/* opt.keylen = 13; */
 		}
 
-		if( B + opt.do_brute + 1 == opt.keylen && opt.do_brute )
+		
+
+		if( B + 1 == opt.keylen && opt.do_brute )
 		{
 			/* as noted by Simon Marechal, it's more efficient
 			 * to just bruteforce the last two keybytes. */
 
 			if (opt.nbcpu==1 || opt.do_mt_brute==0)
 			{
-				if (opt.do_brute==2)
+
+				if (opt.do_brute==4)
+				{
+					for( l = 0; l < 256; l++)
+					{
+						wep.key[opt.brutebytes[0]] = l;
+
+						for( m = 0; m < 256; m++ )
+						{
+							wep.key[opt.brutebytes[1]] = m;
+
+							for( i = 0; i < 256; i++ )
+							{
+								wep.key[opt.brutebytes[2]] = i;
+		
+								for( j = 0; j < 256; j++ )
+								{
+									wep.key[opt.brutebytes[3]] = j;
+		
+									if (check_wep_key( wep.key, B + 1, 0 ) == SUCCESS)
+										return SUCCESS;
+								}
+							}
+						}
+					}
+				}
+				else if (opt.do_brute==3)
+				{
+					for( m = 0; m < 256; m++ )
+					{
+						wep.key[opt.brutebytes[0]] = m;
+
+						for( i = 0; i < 256; i++ )
+						{
+							wep.key[opt.brutebytes[1]] = i;
+
+							for( j = 0; j < 256; j++ )
+							{
+								wep.key[opt.brutebytes[2]] = j;
+	
+								if (check_wep_key( wep.key, B + 1, 0 ) == SUCCESS)
+									return SUCCESS;
+							}
+						}
+					}
+				}
+				else if (opt.do_brute==2)
 				{
 					for( i = 0; i < 256; i++ )
 					{
-						wep.key[B + 1] = i;
+						wep.key[opt.brutebytes[0]] = i;
 
 						for( j = 0; j < 256; j++ )
 						{
-							wep.key[B + 2] = j;
+							wep.key[opt.brutebytes[1]] = j;
 
 							if (check_wep_key( wep.key, B + 1, 0 ) == SUCCESS)
 								return SUCCESS;
@@ -1733,7 +1791,7 @@ int do_wep_crack1( int B )
 				{
 					for( i = 0; i < 256; i++ )
 					{
-						wep.key[B + 1] = i;
+						wep.key[opt.brutebytes[0]] = i;
 
 						if (check_wep_key( wep.key, B + 1, 0 ) == SUCCESS)
 							return SUCCESS;
@@ -1879,7 +1937,7 @@ int do_wep_crack2( int B )
 
 int inner_bruteforcer_thread(void *arg)
 {
-	int i, j;
+	int i, j, k, l;
 	size_t nthread = (size_t)arg;
 	uchar wepkey[64];
 
@@ -1899,15 +1957,60 @@ int inner_bruteforcer_thread(void *arg)
 		bf_nkeys[nthread]--;
 
 	/* now we test the 256*256 keys... if we succeed we'll save it and exit the thread */
-	if (opt.do_brute==2)
+	if (opt.do_brute==4)
+	{
+		for( l = 0; l < 256; l++ )
+		{
+			wepkey[opt.brutebytes[0]] = l;
+
+			for( k = 0; k < 256; k++ )
+			{
+				wepkey[opt.brutebytes[1]] = k;
+	
+				for( i = 0; i < 256; i++ )
+				{
+					wepkey[opt.brutebytes[2]] = i;
+		
+					for( j = 0; j < 256; j++ )
+					{
+						wepkey[opt.brutebytes[3]] = j;
+		
+						if( check_wep_key( wepkey, opt.keylen - 2, 0 ) == SUCCESS )
+							return(SUCCESS);
+					}
+				}
+			}
+		}
+	}
+	else if (opt.do_brute==3)
+	{
+		for( k = 0; k < 256; k++ )
+		{
+			wepkey[opt.brutebytes[0]] = k;
+
+			for( i = 0; i < 256; i++ )
+			{
+				wepkey[opt.brutebytes[1]] = i;
+	
+				for( j = 0; j < 256; j++ )
+				{
+					wepkey[opt.brutebytes[2]] = j;
+	
+					if( check_wep_key( wepkey, opt.keylen - 2, 0 ) == SUCCESS )
+						return(SUCCESS);
+				}
+			}
+		}
+	}
+	else if (opt.do_brute==2)
 	{
 		for( i = 0; i < 256; i++ )
 		{
-			wepkey[opt.keylen - 2] = i;
+			wepkey[opt.brutebytes[0]] = i;
 
 			for( j = 0; j < 256; j++ )
 			{
-				wepkey[opt.keylen - 1] = j;
+				wepkey[opt.brutebytes[1]] = j;
 
 				if( check_wep_key( wepkey, opt.keylen - 2, 0 ) == SUCCESS )
 					return(SUCCESS);
@@ -1918,7 +2021,7 @@ int inner_bruteforcer_thread(void *arg)
 	{
 		for( j = 0; j < 256; j++ )
 		{
-			wepkey[opt.keylen - 1] = j;
+			wepkey[opt.brutebytes[0]] = j;
 
 			if( check_wep_key( wepkey, opt.keylen - 2, 0 ) == SUCCESS )
 				return(SUCCESS);
@@ -2779,7 +2882,7 @@ int crack_wep_dict()
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option;
+	int i, n, ret, max_cpu, option, j;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 
@@ -2802,7 +2905,7 @@ int main( int argc, char *argv[] )
 	max_cpu   = 255;
 	opt.nbcpu =   1;
 	#endif
-
+	j=0;
 	/* check the arguments */
 
 	if( argc < 2 )
@@ -2906,6 +3009,8 @@ int main( int argc, char *argv[] )
 				{
 					if (s[i] == 'x')
 						s[i] = 'X';
+					if (s[i] == 'y')
+						s[i] = 'Y';
 					if ( s[i] == '-' ||  s[i] == ':' || s[i] == ' ')
 						i++;
 					else
@@ -2916,10 +3021,13 @@ int main( int argc, char *argv[] )
 				buf[1] = s[1];
 				buf[2] = '\0';
 				i = 0;
-				while( ( sscanf( buf, "%x", &n ) == 1 ) || ( buf[0] == 'X' && buf[1] == 'X' ) )
+				j = 0;
+				while( ( sscanf( buf, "%x", &n ) == 1 ) || ( buf[0] == 'X' && buf[1] == 'X' ) || ( buf[0] == 'Y' && buf[1] == 'Y' ))
 				{
 					if ( buf[0] == 'X' && buf[1] == 'X' ) {
 						opt.debug_row[i++] = 0 ;
+					} else if ( buf[0] == 'Y' && buf[1] == 'Y' ) {
+						opt.brutebytes[j++] = i++;
 					} else {
 						if ( n < 0 || n > 255 )
 						{
@@ -3004,7 +3112,7 @@ int main( int argc, char *argv[] )
 				if (optarg)
 				{
 					if (sscanf(optarg, "%d", &opt.do_brute)!=1
-						|| opt.do_brute<0 || opt.do_brute>2)
+						|| opt.do_brute<0 || opt.do_brute>4)
 					{
 						printf("Invalid option -x%s\n", optarg);
 						return FAILURE;
@@ -3282,6 +3390,19 @@ int main( int argc, char *argv[] )
 		if( opt.keylen == 0 )
 			opt.keylen = 13;
 
+		if(j + opt.do_brute > 4)
+		{
+			printf( "Specified more then 4 bytes to bruteforce!" );
+			goto exit_main;
+		}
+	
+		for( i=0; i<opt.do_brute; i++)
+		{
+			opt.brutebytes[j+i] = opt.keylen -1 -i;
+		}
+	
+		opt.do_brute += j;
+	
 		if( opt.ffact == 0 )
 		{
 			if( ! opt.do_testy )
