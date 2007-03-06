@@ -76,6 +76,8 @@
 #define ETH_P_80211_RAW 25
 #endif
 
+#define RTC_RESOLUTION  4096
+
 #define NEW_IV  1
 #define RETRY   2
 #define ABORT   3
@@ -1691,27 +1693,27 @@ read_packets:
             /* we can't trust usleep, since it depends on the HZ */
 
             gettimeofday( &tv,  NULL );
-            usleep( 1024 );
+            usleep( 1000000/RTC_RESOLUTION );
             gettimeofday( &tv2, NULL );
 
             f = 1000000 * (float) ( tv2.tv_sec  - tv.tv_sec  )
                         + (float) ( tv2.tv_usec - tv.tv_usec );
 
-            ticks[0] += f / 1024;
-            ticks[1] += f / 1024;
-            ticks[2] += f / 1024;
+            ticks[0] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[1] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[2] += f / ( 1000000/RTC_RESOLUTION );
         }
 
         /* update the status line */
 
-        if( ticks[1] > 128 )
+        if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
-            printf( "\rSent %ld packets...\33[K\r", nb_pkt_sent );
+            printf( "\rSent %ld packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
             fflush( stdout );
         }
 
-        if( ( ticks[2] * opt.r_nbpps ) / 1024 < 1 )
+        if( ( ticks[2] * opt.r_nbpps ) / RTC_RESOLUTION < 1 )
             continue;
 
         /* threshold reached */
@@ -1846,27 +1848,27 @@ int do_attack_arp_resend( void )
         else
         {
             gettimeofday( &tv,  NULL );
-            usleep( 976 );
+            usleep( 1000000/RTC_RESOLUTION );
             gettimeofday( &tv2, NULL );
 
             f = 1000000 * (float) ( tv2.tv_sec  - tv.tv_sec  )
                         + (float) ( tv2.tv_usec - tv.tv_usec );
 
-            ticks[0] += f / 976;
-            ticks[1] += f / 976;
-            ticks[2] += f / 976;
+            ticks[0] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[1] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[2] += f / ( 1000000/RTC_RESOLUTION );
         }
 
-        if( ticks[1] > 128 )
+        if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
             printf( "\rRead %ld packets (got %ld ARP requests), "
-                    "sent %ld packets...\r",
-                    nb_pkt_read, nb_arp_tot, nb_pkt_sent );
+                    "sent %ld packets...(%d pps)\r",
+                    nb_pkt_read, nb_arp_tot, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
             fflush( stdout );
         }
 
-        if( ( ticks[2] * opt.r_nbpps ) / 1024 >= 1 )
+        if( ( ticks[2] * opt.r_nbpps ) / RTC_RESOLUTION >= 1 )
         {
             /* threshold reach, send one frame */
 
@@ -2295,7 +2297,7 @@ int do_attack_chopchop( void )
 
         /* update the status line */
 
-        if( ticks[1] > 128 )
+        if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
             printf( "\rSent %3ld packets, current guess: %02X...\33[K",
@@ -2377,7 +2379,7 @@ int do_attack_chopchop( void )
             break;
         }
 
-        if( ( ticks[2] * opt.r_nbpps ) / 1024 >= 1 )
+        if( ( ticks[2] * opt.r_nbpps ) / RTC_RESOLUTION >= 1 )
         {
             /* send one modified frame */
 
@@ -3790,7 +3792,8 @@ int main( int argc, char *argv[] )
         }
         else
         {
-            if( ioctl( dev.fd_rtc, RTC_IRQP_SET, 1024 ) < 0 )
+//            if( ioctl( dev.fd_rtc, RTC_IRQP_SET, 1024 ) < 0 )
+            if( ioctl( dev.fd_rtc, RTC_IRQP_SET, RTC_RESOLUTION ) < 0 )
             {
                 perror( "ioctl(RTC_IRQP_SET) failed" );
                 printf(
