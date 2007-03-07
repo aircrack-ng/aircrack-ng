@@ -19,7 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef linux
+#if !(defined(linux) || defined(freebsd))
     #warning Airodump-ng could fail on this OS
 #endif
 
@@ -29,18 +29,24 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#ifdef linux
+#if defined(linux)
     #include <netpacket/packet.h>
     #include <linux/if_ether.h>
     #include <linux/if.h>
     #include <linux/wireless.h>
-#endif
+#endif /* linux */
 
-#ifdef __FreeBSD__
+#if defined(freebsd)
+    #include <sys/sysctl.h>
     #include <net/bpf.h>
     #include <net/if.h>
+    #include <net/if_media.h>
     #include <netinet/in.h>
-#endif
+    #include <netinet/if_ether.h>
+    #include <net80211/ieee80211.h>
+    #include <net80211/ieee80211_ioctl.h>
+    #include <net80211/ieee80211_radiotap.h>
+#endif /* freebsd */
 
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -54,11 +60,11 @@
 #include <fcntl.h>
 
 
-#ifdef linux
+#if defined(linux)
     #include <wait.h>
 #endif
 
-#ifdef linux
+#if defined(linux)
     int linux_acpi;
     int linux_apm;
     #include <dirent.h>
@@ -1607,7 +1613,7 @@ void dump_sort_power( void )
 
 int getBatteryState()
 {
-#ifdef linux
+#if defined(linux)
     char buf[128];
     int batteryTime = 0;
     FILE *apm;
@@ -1736,6 +1742,24 @@ int getBatteryState()
             closedir(batteries);
     }
     return batteryTime;
+#elif defined(freebsd) 
+    int value; 
+    size_t len; 
+
+    len = 1; 
+    value = 0; 
+    sysctlbyname("hw.acpi.acline", &value, &len, NULL, 0); 
+    if (value == 0) 
+    { 
+        sysctlbyname("hw.acpi.battery.time", &value, &len, NULL, 0); 
+        value = value * 60; 
+    } 
+    else 
+    { 
+        value = 0; 
+    } 
+
+    return( value ); 
 #elif defined(_BSD_SOURCE)
     struct apm_power_info api;
     int apmfd;
@@ -2465,7 +2489,7 @@ void sighandler( int signum)
     }
 }
 
-#ifdef linux
+#if defined(linux)
 int disable_wep_key( char *interface, int fd_raw )
 {
     struct iwreq wrq;
@@ -2476,9 +2500,9 @@ int disable_wep_key( char *interface, int fd_raw )
 
     return( ioctl( fd_raw, SIOCSIWENCODE, &wrq ) != 0 );
 }
-#endif
+#endif /* linux */
 
-#ifdef linux
+#if defined(linux)
 int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 {
     char s[32];
@@ -2540,9 +2564,43 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 
     return( 0 );
 }
-#endif
+#endif /* linux */
 
-#ifdef linux
+#if defined(freebsd) 
+int set_channel( char *interface, int channel )
+{
+    int s;
+
+    if ( ( s = socket( PF_INET, SOCK_DGRAM, 0 ) ) == -1 )
+    {
+        perror( "socket() failed" );
+        return( 1 );
+    }
+
+    strncpy( ifr.i_name, interface, IFNAMSIZ - 1 );
+    ifr.i_type = IEEE80211_IOC_CHANNEL;
+
+    if ( ioctl( s, SIOCG80211, &ifr ) == -1 )
+    {
+        perror( "ioctl(SIOCG80211) failed" );
+        return( 1 );
+    }
+
+    ifr.i_val = channel;
+
+    if ( ioctl( s, SIOCS80211, &ifr ) == -1 )
+    {
+        perror( "ioctl(SIOCS80211) failed" );
+        return( 1 );
+    }
+
+    close( s );
+
+    return( 0 );
+}
+ #endif /* freebsd */ 
+
+#if defined(linux)
 int set_monitor( char *interface, int fd_raw, int cardnum )
 {
     char s[32];
@@ -2609,7 +2667,100 @@ int set_monitor( char *interface, int fd_raw, int cardnum )
 
     return( 0 );
 }
-#endif
+#endif /* linux */
+
+#if defined(freebsd)
+int set_monitor( char *interface, int cardnum )
+{
+    int s, i, *mw;
+    struct ifreq ifr;
+    struct ifmediareq ifmr;
+
+    if( ( s = socket( PF_INET, SOCK_RAW, 0 ) ) == -1 )
+    {
+        perror( "socket() failed" );
+        return( 1 );
+    }
+
+    memset( &ifr, 0, sizeof( ifr ) );
+    strncpy( ifr.ifr_name, interface, IFNAMSIZ - 1 );
+
+    if( ioctl( s, SIOCGIFFLAGS, &ifr ) == -1 )
+    {
+        perror( "ioctl(SIOCGIFFLAGS) failed" );
+        return( 1 );
+    }
+
+    i = ( ifr.ifr_flags & 0xffff ) | ( ifr.ifr_flagshigh << 16 );
+    if( !( i & IFF_UP ) )
+    {
+        i |= IFF_UP;
+
+        ifr.ifr_flags = i & 0xffff;
+        ifr.ifr_flagshigh = i >> 16;
+
+        if ( ioctl( s, SIOCSIFFLAGS, &ifr ) == -1 )
+        {
+            perror( "ioctl(SIOCSIFFLAGS) failed" );
+            return( 1 );
+        }
+    }
+
+    memset( &ifmr, 0, sizeof( ifmr ) );
+    strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
+
+    if( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1)
+    {
+        perror( "ioctl(SIOCGIFMEDIA) failed" );
+        return( 1 );
+    }
+
+    if( ifmr.ifm_count == 0 )
+    {
+        perror( "ioctl(SIOCGIFMEDIA), no media words" );
+        return( 1 );
+    }
+
+    mw = calloc( (size_t) ifmr.ifm_count, sizeof( int ) );
+    if( mw == NULL )
+    {
+        perror( "calloc()" );
+        return( 1 );
+    }
+
+    ifmr.ifm_ulist = mw;
+    strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
+    if ( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1 )
+    {
+        perror( "ioctl(SIOCGIFMEDIA)" );
+        return( 1 );
+    }
+
+    for( i = 0; i < ifmr.ifm_count; i++ )
+    {
+        if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
+                i =  ifmr.ifm_count  + 1;
+    }
+
+    if( i == ( ifmr.ifm_count  + 1 ) )
+    {
+        return( 1 );
+    }
+
+    ifr.ifr_media = ifmr.ifm_current | IFM_IEEE80211_MONITOR;
+    if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
+    {
+        perror( "ioctl(SIOCSIFMEDIA) failed" );
+        return( 1 );
+    }
+
+    close(s);
+
+    set_channel( interface, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum] );
+
+    return( 0 );
+}
+#endif /* freebsd */
 
 int getchancount(int valid)
 {
@@ -2626,7 +2777,7 @@ int getchancount(int valid)
     return i;
 }
 
-#ifdef linux
+#if defined(linux)
 void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count )
 {
 
@@ -2706,7 +2857,91 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
 
     exit( 0 );
 }
-#endif
+#endif /* linux */
+
+#if defined(freebsd)
+void channel_hopper( char *interface[], int if_num, int chan_count )
+{
+    int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
+
+    while( getppid() != 1 )
+    {
+        for( j = 0; j < if_num; j++ )
+        {
+            again = 1;
+
+            ch_idx = chi % chan_count;
+
+            card = cai % if_num;
+
+            ++chi;
+            ++cai;
+
+            if( G.chswitch == 2 && !first )
+            {
+                j = if_num - 1;
+                card = if_num - 1;
+
+                if( getchancount(1) > if_num )
+                {
+                    while( again )
+                {
+                        again = 0;
+                        for( k = 0; k < ( if_num - 1 ); k++ )
+                        {
+                            if( G.channels[ch_idx] == G.channel[k] )
+                            {
+                                again = 1;
+                                ch_idx = chi % chan_count;
+                                chi++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if( G.channels[ch_idx] == -1 )
+            {
+                 j--;
+                 cai--;
+                 continue;
+            }
+
+            ch = G.channels[ch_idx];
+
+            if( set_channel( interface[card], ch ) == 0 )
+            {
+                G.channel[card] = ch;
+                write( G.cd_pipe[1], &card, sizeof(int) );
+                write( G.ch_pipe[1], &ch, sizeof( int ) );
+                kill( getppid(), SIGUSR1 );
+                usleep(1000);
+            }
+            else
+            {
+                G.channels[ch_idx] = -1;      /* remove invalid channel */
+                j--;
+                cai--;
+                continue;
+            }
+        }
+
+        if(G.chswitch == 0)
+        {
+            chi=chi-(if_num - 1);
+        }
+
+        if(first)
+        {
+            first = 0;
+        }
+
+        usleep( (350000) );
+    }
+
+    exit( 0 );
+}
+#endif /* freebsd */
 
 int invalid_channel(int chan)
 {
@@ -2841,7 +3076,7 @@ int getchannels(const char *optarg)
     return 0;
 }
 
-#ifdef linux
+#if defined(linux)
 int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct sockaddr_ll *sll, int *fd_raw, int *arptype, int cardnum)
 {
     int pid=0, n=0;
@@ -3043,9 +3278,64 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 
     return( 0 );
 }
-#endif
+#endif /* linux */
 
-#ifdef linux
+#if defined(freebsd)
+int setup_card(char *iface, struct ifreq *ifr, int *fd_raw, int cardnum)
+{
+    unsigned int i;
+
+    /* bind interface iface to the bpf */
+    memset( ifr, 0, sizeof(ifr) );
+    strncpy( ifr->ifr_name, iface, IFNAMSIZ - 1 );
+
+    if( ioctl( *fd_raw, BIOCSETIF, ifr ) == -1 )
+    {
+        perror( "ioctl(BIOCSETIF) failed" );
+        return( 1 );
+    }
+
+    /* set a meaningful datalink type */
+    i = DLT_IEEE802_11_RADIO;
+    if( ioctl( *fd_raw, BIOCSDLT, &i ) == -1 )
+    {
+        perror( "ioctl(BIOCSDLT) failed" );
+        return( 1 );
+    }
+
+    /* set immediate mode (doesn't wait for buffer fillup) */
+    i = 1;
+    if( ioctl( *fd_raw, BIOCIMMEDIATE, &i ) == -1 )
+    {
+        perror( "ioctl(BIOCIMMEDIATE) failed" );
+        return( 1 );
+    }
+
+    /* set bpf's promiscuous mode */
+    if( ioctl( *fd_raw, BIOCPROMISC, NULL) == -1 )
+    {
+        perror( "ioctl(BIOCPROMISC) failed" );
+        return( 1 );
+    }
+
+    /* lock bpf for further messing */
+    if( ioctl( *fd_raw, BIOCLOCK, NULL ) == -1 )
+    {
+        perror( "ioctl(BIOCLOCK) failed" );
+        return( 1 );
+    }
+
+    /* set monitor mode in interface iface */
+    if( set_monitor( iface, cardnum ) == 1 )
+    {
+        return( 1 );
+    }
+
+        return( 0 );
+}
+#endif /* freebsd */
+
+#if defined(linux)
 int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct packet_mreq mr[], struct sockaddr_ll sll[], int fd_raw[], int arptype[])
 {
     char *buffer;
@@ -3065,6 +3355,27 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct pa
     return if_count;
 }
 #endif
+
+#if defined(freebsd)
+int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], int fd_raw[])
+{
+    char *buffer;
+    int if_count=0;
+
+    buffer = (char*) malloc( sizeof(char) * 1025 );
+    strncpy( buffer, cardstr, 1025 );
+    buffer[1024] = '\0';
+
+    while( ((iface[if_count]=strsep(&buffer, ",")) != NULL) && (if_count < MAX_CARDS) )
+    {
+        if(setup_card(iface[if_count], &(ifr[if_count]), &(fd_raw[if_count]), if_count) != 0)
+            return -1;
+        if_count++;
+    }
+
+    return if_count;
+}
+#endif /* freebsd */
 
 int get_if_num(const char* cardstr)
 {
@@ -3119,20 +3430,26 @@ int main( int argc, char *argv[] )
     int valid_channel, chanoption;
     int freq [2];
     time_t tt1, tt2, tt3, start_time;
-#ifdef __FreeBSD_
+
+#if defined(freebsd)
     int j;
-    char buf[64];
-#endif
+    char *bnbuf; 
+    unsigned int buf, buflen; 
+    struct bpf_hdr *bpfp; 
+    struct ieee80211_radiotap_header *rtp; 
+#endif /* freebsd */ 
 
     unsigned char      *buffer;
     unsigned char      *h80211;
     char               *iface[MAX_CARDS];
 
     struct ifreq       ifr[MAX_CARDS];
-#ifdef linux
+
+#if defined(linux)
     struct packet_mreq mr[MAX_CARDS];
     struct sockaddr_ll sll[MAX_CARDS];
-#endif
+#endif /* linux */
+
     struct timeval     tv0;
     struct timeval     tv1;
     struct timeval     tv2;
@@ -3185,7 +3502,7 @@ int main( int argc, char *argv[] )
 
     gettimeofday( &tv0, NULL );
 
-    lt = localtime( &tv0.tv_sec );
+    lt = localtime( (time_t *) &tv0.tv_sec );
 
     G.keyout = (char*) malloc(512);
     memset( G.keyout, 0, 512 );
@@ -3206,10 +3523,10 @@ int main( int argc, char *argv[] )
     memset(G.wpa_bssid, '\x00', 6);
 
 
-    #ifdef linux
+    #if defined(linux)
         linux_acpi =  1;
         linux_apm  =  1;
-    #endif
+    #endif /* linux */
 
     /* check the arguments */
 
@@ -3252,10 +3569,12 @@ int main( int argc, char *argv[] )
                 break;
 
             case 'e':
+
                 G.one_beacon = 0;
                 break;
 
             case 'a':
+
                 G.asso_client = 1;
                 break;
 
@@ -3345,16 +3664,18 @@ int main( int argc, char *argv[] )
                 break;
 
             case 'w':
-            	if (G.dump_prefix != NULL) {
-            		printf( "Notice: dump prefix already given\n" );
-            		break;
-            	}
+
+                if (G.dump_prefix != NULL) {
+                    printf( "Notice: dump prefix already given\n" );
+                    break;
+                }
                 /* Write prefix */
                 G.dump_prefix   = optarg;
                 G.record_data = 1;
                 break;
 
             case 's':
+
                 if (atoi(optarg) > 2) {
                     goto usage;
                 }
@@ -3364,7 +3685,9 @@ int main( int argc, char *argv[] )
                 }
                 G.chswitch = atoi(optarg);
                 break;
+
             case 'm':
+
                 if ( memcmp(G.f_netmask, NULL_MAC, 6) != 0 )
                 {
                     printf("Notice: netmask already given\n");
@@ -3376,7 +3699,9 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
                 break;
+
             case 'd':
+
                 if ( memcmp(G.f_bssid, NULL_MAC, 6) != 0 )
                 {
                     printf("Notice: bssid already given\n");
@@ -3388,13 +3713,15 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
                 break;
+
             case 't':
+
                 set_encryption_filter(optarg);
                 break;
 
             default : goto usage;
         }
-    }while ( 1 );
+    } while ( 1 );
 
     if( ( memcmp(G.f_netmask, NULL_MAC, 6) != 0 ) && ( memcmp(G.f_bssid, NULL_MAC, 6) == 0 ) )
     {
@@ -3429,7 +3756,7 @@ int main( int argc, char *argv[] )
 
     /* create the raw socket and drop privileges */
 
-#ifdef linux
+#if defined(linux)
     for(i=0; i<cards; i++)
     {
         fd_raw[i] = socket( PF_PACKET, SOCK_RAW, htons( ETH_P_ALL ) );
@@ -3444,33 +3771,59 @@ int main( int argc, char *argv[] )
             if( fd_raw[i] > fdh)
                 fdh=fd_raw[i];
     }
-#endif
+#endif /*linux*/
 
-#ifdef __FreeBSD__
-    for(i=0; i<cards; i++)
+#if defined(freebsd)
+    for( i = 0; i < cards; i++ )
     {
-        for(j = 0;j < 10; j++) {
-            sprintf(buf, "/dev/bpf%d", j);
+        for( j = 0; j < 256; j++ )
+        {
+            if( asprintf( &bnbuf, "/dev/bpf%d", j ) <= 0 )
+            {
+               perror("asprintf() failed");
+                exit(1);
+            }
 
-             fd_raw[i]= open(buf, O_RDWR);
+            fd_raw[i] = open( bnbuf, O_RDWR );
 
-            if(fd_raw[i] < 0) {
-                if(errno != EBUSY) {
-                    perror("can't open /dev/bpf");
-                    exit(1);
+            if( fd_raw[i] < 0 )
+            {
+                if( errno != EBUSY )
+                {
+                        perror("can't open /dev/bpf");
+                        exit(1);
                 }
                 continue;
             }
-            else
-                break;
+
+            free( bnbuf );
+            break;
         }
 
-        if(fd_raw[i] < 0) {
+        if( fd_raw[i] < 0 )
+        {
             perror("can't open /dev/bpf");
             exit(1);
         }
+        if( fd_raw[i] > fdh )
+                fdh = fd_raw[i];
+        for( buflen = 0, buf = 65536 ; buf > 1024 ; i -= 512 )
+        {
+            ioctl( fd_raw[i], BIOCSBLEN, &buf );
+
+            if (buf > 0) {
+    /* fprintf(stderr, "bpf accomodated a %d bytes buffer\n", i); */
+                buflen = buf;
+                break;
+            }
+        }
+        if( buflen <= 0 )
+        {
+            perror( "cannot allocate bpf buffer space" );
+            exit(1);
+        }
     }
-#endif
+#endif /* freebsd */
 
     setuid( getuid() );
 
@@ -3482,15 +3835,15 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
-#ifdef linux
+#if defined(linux)
     /* initialize cards */
     cards = init_cards(argv[argc-1], iface, ifr, mr, sll, fd_raw, arptype);
-#else
-    cards = 1;
+#elif defined(freebsd) 
+    cards = init_cards(argv[argc-1], iface, ifr, fd_raw); 
 #endif
 
     if(cards <= 0)
-	return( 1 );
+        return( 1 );
 
     chan_count = getchancount(0);
 
@@ -3506,9 +3859,14 @@ int main( int argc, char *argv[] )
 
         if( ! fork() )
         {
-#ifdef linux
+#if defined(linux)
             channel_hopper( iface, fd_raw, cards, chan_count );
-#endif
+#endif /* linux */
+
+#if defined(freebsd)
+            channel_hopper( iface, cards, chan_count );
+#endif /* freebsd */
+
             exit( 1 );
         }
     }
@@ -3516,19 +3874,24 @@ int main( int argc, char *argv[] )
     {
 	for(i=0; i<cards; i++)
 	{
-#ifdef linux
+#if defined(linux)
             set_channel( iface[i], fd_raw[i], G.channel[0], i );
 #endif
-	    G.channel[i] = G.channel[0];
-	}
+
+#if defined(freebsd)
+            set_channel( iface[i], G.channel[0] );
+#endif /* freebsd */
+
+            G.channel[i] = G.channel[0];
+        }
         G.singlechan = 1;
     }
 
     /* open or create the output files */
 
     if (G.record_data)
-    	if( dump_initialize( G.dump_prefix, ivs_only ) )
-    	    return( 1 );
+        if( dump_initialize( G.dump_prefix, ivs_only ) )
+            return( 1 );
 
     signal( SIGINT,   sighandler );
     signal( SIGSEGV,  sighandler );
@@ -3556,16 +3919,16 @@ int main( int argc, char *argv[] )
 
     fprintf( stderr, "\33[?25l\33[2J\n" );
 
-	start_time = time( NULL );
+    start_time = time( NULL );
     tt1        = time( NULL );
     tt2        = time( NULL );
     tt3        = time( NULL );
     gettimeofday( &tv3, NULL );
 
-	G.batt     = getBatteryString();
+    G.batt     = getBatteryString();
 
-	G.elapsed_time = (char *) calloc( 1, 4 );
-	strcpy(G.elapsed_time,"0 s");
+    G.elapsed_time = (char *) calloc( 1, 4 );
+    strcpy(G.elapsed_time,"0 s");
 
     while( 1 )
     {
@@ -3589,16 +3952,16 @@ int main( int argc, char *argv[] )
         if( time( NULL ) - tt2 > 3 )
         {
             /* update the battery state */
-			free(G.batt);
+            free(G.batt);
 
-            tt2 			= time( NULL );
-            G.batt 			= getBatteryString();
+            tt2     = time( NULL );
+            G.batt  = getBatteryString();
 
             /* update elapsed time */
 
-			free(G.elapsed_time);
-    		G.elapsed_time = getStringTimeFromSec(
-    			difftime(tt2, start_time) );
+            free(G.elapsed_time);
+            G.elapsed_time = getStringTimeFromSec(
+                difftime(tt2, start_time) );
 
 
             /* flush the output files */
@@ -3621,10 +3984,10 @@ int main( int argc, char *argv[] )
         /* capture one packet */
 
         FD_ZERO( &rfds );
-		for(i=0; i<cards; i++)
-	    {
+        for(i=0; i<cards; i++)
+        {
             FD_SET( fd_raw[i], &rfds );
-	    }
+        }
 
         tv0.tv_sec  = 0;
         tv0.tv_usec = REFRESH_RATE;
@@ -3669,12 +4032,14 @@ int main( int argc, char *argv[] )
             continue;
         }
 
-	fd_is_set = 0;
+        fd_is_set = 0;
 
-	for(i=0; i<cards; i++)
-	{
+        for(i=0; i<cards; i++)
+        {
             if( FD_ISSET( fd_raw[i], &rfds ) )
-	    {
+            {
+
+#if defined(linux)
                 memset( buffer, 0, 4096 );
 
                 if( ( caplen = read( fd_raw[i], buffer, 65535 ) ) < 0 )
@@ -3682,7 +4047,19 @@ int main( int argc, char *argv[] )
                     perror( "read failed" );
                     return( 1 );
                 }
+#endif /* linux */
 
+#if defined(freebsd)
+                memset( buffer, 0, buflen );
+
+                if( ( caplen = read(  fd_raw[i], buffer, buflen ) ) < 0 )
+                {
+                    perror( "read failed" );
+                    return( 1 );
+                }
+#endif /* freebsd */
+
+#if defined(linux)
                 /* if device is an atheros, remove the FCS */
 
                 if( ! memcmp( iface[i], "ath", 3 ) && (! G.is_madwifing[i]) )
@@ -3740,20 +4117,39 @@ int main( int argc, char *argv[] )
                     h80211 += n;
                     caplen -= n;
                 }
+#endif /* linux */
+
+#if defined(freebsd)
+                h80211 = buffer;
+
+                bpfp = (struct bpf_hdr *)buffer;
+                rtp = (struct ieee80211_radiotap_header *)(buffer + bpfp->bh_hdrlen);
+
+                power = buffer[bpfp->bh_hdrlen + 15];
+
+                n = bpfp->bh_hdrlen + rtp->it_len;
+
+                if( n <= 0 || n >= caplen )
+                    continue;
+
+                    h80211 += n;
+                    caplen -= n;
+                }
+#endif /* freebsd */
 
                 dump_add_packet( h80211, caplen, power, i );
-	    }
-	}
+            }
+        }
     }
 
     if (G.record_data) {
-    	dump_write_csv();
+        dump_write_csv();
 
-    	if( G.f_txt != NULL ) fclose( G.f_txt );
-    	if( G.f_gps != NULL ) fclose( G.f_gps );
-    	if( G.f_cap != NULL ) fclose( G.f_cap );
-    	if( G.f_ivs != NULL ) fclose( G.f_ivs );
-	}
+        if( G.f_txt != NULL ) fclose( G.f_txt );
+        if( G.f_gps != NULL ) fclose( G.f_gps );
+        if( G.f_cap != NULL ) fclose( G.f_cap );
+        if( G.f_ivs != NULL ) fclose( G.f_ivs );
+        }
 
     if( ! G.save_gps )
     {
