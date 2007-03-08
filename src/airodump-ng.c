@@ -19,7 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#if !(defined(linux) || defined(freebsd))
+#if !(defined(linux) || defined(__FreeBSD__))
     #warning Airodump-ng could fail on this OS
 #endif
 
@@ -30,23 +30,23 @@
 #include <sys/time.h>
 
 #if defined(linux)
-    #include <netpacket/packet.h>
-    #include <linux/if_ether.h>
-    #include <linux/if.h>
-    #include <linux/wireless.h>
+	#include <netpacket/packet.h>
+	#include <linux/if_ether.h>
+	#include <linux/if.h>
+	#include <linux/wireless.h>
 #endif /* linux */
 
-#if defined(freebsd)
-    #include <sys/sysctl.h>
-    #include <net/bpf.h>
-    #include <net/if.h>
-    #include <net/if_media.h>
-    #include <netinet/in.h>
-    #include <netinet/if_ether.h>
-    #include <net80211/ieee80211.h>
-    #include <net80211/ieee80211_ioctl.h>
-    #include <net80211/ieee80211_radiotap.h>
-#endif /* freebsd */
+#if defined(__FreeBSD__)
+	#include <sys/sysctl.h>
+	#include <net/bpf.h>
+	#include <net/if.h>
+	#include <net/if_media.h>
+	#include <netinet/in.h>
+	#include <netinet/if_ether.h>
+	#include <net80211/ieee80211.h>
+	#include <net80211/ieee80211_ioctl.h>
+	#include <net80211/ieee80211_radiotap.h>
+#endif /* __FreeBSD__ */
 
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -59,21 +59,21 @@
 #include <getopt.h>
 #include <fcntl.h>
 
+#if defined(linux)
+	#include <wait.h>
+#endif /* linux */
 
 #if defined(linux)
-    #include <wait.h>
-#endif
-
-#if defined(linux)
-    int linux_acpi;
-    int linux_apm;
-    #include <dirent.h>
-#endif
+	int linux_acpi;
+	int linux_apm;
+	#include <dirent.h>
+#endif /* linux */
 
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.c"
 #include "crctable.h"
+
 
 /* some constants */
 
@@ -279,6 +279,10 @@ struct globals
     char * iwpriv;
     char * wlanctlng;
     char * wl;
+
+#if defined(__FreeBSD__)
+	int s_ioctl;
+#endif
 
     unsigned char wpa_bssid[6];   /* the wpa handshake bssid   */
 }
@@ -1742,24 +1746,25 @@ int getBatteryState()
             closedir(batteries);
     }
     return batteryTime;
-#elif defined(freebsd) 
-    int value; 
-    size_t len; 
+#elif defined(__FreeBSD__)
+    int value;
+    size_t len;
 
-    len = 1; 
-    value = 0; 
-    sysctlbyname("hw.acpi.acline", &value, &len, NULL, 0); 
-    if (value == 0) 
-    { 
-        sysctlbyname("hw.acpi.battery.time", &value, &len, NULL, 0); 
-        value = value * 60; 
-    } 
-    else 
-    { 
-        value = 0; 
-    } 
+	len = 1;
 
-    return( value ); 
+	value = 0;
+	sysctlbyname("hw.acpi.acline", &value, &len, NULL, 0);
+	if (value == 0)
+	{
+		sysctlbyname("hw.acpi.battery.time", &value, &len, NULL, 0);
+		value = value * 60;
+	}
+	else
+	{
+		value = 0;
+	}
+
+	return( value );
 #elif defined(_BSD_SOURCE)
     struct apm_power_info api;
     int apmfd;
@@ -2566,39 +2571,47 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 }
 #endif /* linux */
 
-#if defined(freebsd) 
+#if defined(__FreeBSD__)
+/*
+	this function, as a few others, presents a slightly
+	reduced set of parameters, because we don't need some
+	of them, for example the card number or references
+	to linux-only structs needed to make hardware behave.
+*/
 int set_channel( char *interface, int channel )
 {
-    int s;
+	struct ieee80211req ifr;
 
-    if ( ( s = socket( PF_INET, SOCK_DGRAM, 0 ) ) == -1 )
-    {
-        perror( "socket() failed" );
-        return( 1 );
-    }
+	if (G.s_ioctl == -1)
+	{
+		if ( ( G.s_ioctl = socket( PF_INET, SOCK_DGRAM, 0 ) ) == -1 )
+		{
+			perror( "socket() failed" );
+			return( 1 );
+		}
+	}
 
-    strncpy( ifr.i_name, interface, IFNAMSIZ - 1 );
-    ifr.i_type = IEEE80211_IOC_CHANNEL;
+	strncpy( ifr.i_name, interface, IFNAMSIZ - 1 );
+	ifr.i_type = IEEE80211_IOC_CHANNEL;
 
-    if ( ioctl( s, SIOCG80211, &ifr ) == -1 )
-    {
-        perror( "ioctl(SIOCG80211) failed" );
-        return( 1 );
-    }
+	if ( ioctl( G.s_ioctl, SIOCG80211, &ifr ) == -1 )
+	{
+		perror( "ioctl(SIOCG80211) failed" );
+		return( 1 );
+	}
 
-    ifr.i_val = channel;
+	ifr.i_val = channel;
 
-    if ( ioctl( s, SIOCS80211, &ifr ) == -1 )
-    {
-        perror( "ioctl(SIOCS80211) failed" );
-        return( 1 );
-    }
+	if ( ioctl( G.s_ioctl, SIOCS80211, &ifr ) == -1 )
+	{
+		perror( "ioctl(SIOCS80211) failed" );
+		return( 1 );
+	}
 
-    close( s );
 
-    return( 0 );
+	return( 0 );
 }
- #endif /* freebsd */ 
+#endif /* __FreeBSD__ */
 
 #if defined(linux)
 int set_monitor( char *interface, int fd_raw, int cardnum )
@@ -2669,98 +2682,104 @@ int set_monitor( char *interface, int fd_raw, int cardnum )
 }
 #endif /* linux */
 
-#if defined(freebsd)
+#if defined(__FreeBSD__)
+/*
+	this function, as a few others, presents a slightly
+	reduced set of parameters, because we don't need some
+	of them, for example the card number or references
+	to linux-only structs needed to make hardware behave.
+*/
 int set_monitor( char *interface, int cardnum )
 {
-    int s, i, *mw;
-    struct ifreq ifr;
-    struct ifmediareq ifmr;
+	int s, i, *mw;
+	struct ifreq ifr;
+	struct ifmediareq ifmr;
 
-    if( ( s = socket( PF_INET, SOCK_RAW, 0 ) ) == -1 )
+	if( ( s = socket( PF_INET, SOCK_RAW, 0 ) ) == -1 )
     {
         perror( "socket() failed" );
         return( 1 );
     }
 
-    memset( &ifr, 0, sizeof( ifr ) );
-    strncpy( ifr.ifr_name, interface, IFNAMSIZ - 1 );
+	memset( &ifr, 0, sizeof( ifr ) );
+	strncpy( ifr.ifr_name, interface, IFNAMSIZ - 1 );
 
-    if( ioctl( s, SIOCGIFFLAGS, &ifr ) == -1 )
-    {
-        perror( "ioctl(SIOCGIFFLAGS) failed" );
-        return( 1 );
-    }
+	if( ioctl( s, SIOCGIFFLAGS, &ifr ) == -1 )
+	{
+		perror( "ioctl(SIOCGIFFLAGS) failed" );
+		return( 1 );
+	}
 
-    i = ( ifr.ifr_flags & 0xffff ) | ( ifr.ifr_flagshigh << 16 );
-    if( !( i & IFF_UP ) )
-    {
-        i |= IFF_UP;
+	i = ( ifr.ifr_flags & 0xffff ) | ( ifr.ifr_flagshigh << 16 );
+	if( !( i & IFF_UP ) )
+	{
+		i |= IFF_UP;
 
-        ifr.ifr_flags = i & 0xffff;
-        ifr.ifr_flagshigh = i >> 16;
+		ifr.ifr_flags = i & 0xffff;
+		ifr.ifr_flagshigh = i >> 16;
 
-        if ( ioctl( s, SIOCSIFFLAGS, &ifr ) == -1 )
-        {
-            perror( "ioctl(SIOCSIFFLAGS) failed" );
-            return( 1 );
-        }
-    }
+		if ( ioctl( s, SIOCSIFFLAGS, &ifr ) == -1 )
+		{
+			perror( "ioctl(SIOCSIFFLAGS) failed" );
+			return( 1 );
+		}
+	}
 
-    memset( &ifmr, 0, sizeof( ifmr ) );
-    strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
+	memset( &ifmr, 0, sizeof( ifmr ) );
+	strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
 
-    if( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1)
-    {
-        perror( "ioctl(SIOCGIFMEDIA) failed" );
-        return( 1 );
-    }
+	if( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1)
+	{
+		perror( "ioctl(SIOCGIFMEDIA) failed" );
+		return( 1 );
+	}
 
-    if( ifmr.ifm_count == 0 )
-    {
-        perror( "ioctl(SIOCGIFMEDIA), no media words" );
-        return( 1 );
-    }
+	if( ifmr.ifm_count == 0 )
+	{
+		perror( "ioctl(SIOCGIFMEDIA), no media words" );
+		return( 1 );
+	}
 
-    mw = calloc( (size_t) ifmr.ifm_count, sizeof( int ) );
-    if( mw == NULL )
-    {
-        perror( "calloc()" );
-        return( 1 );
-    }
+	mw = calloc( (size_t) ifmr.ifm_count, sizeof( int ) );
+	if( mw == NULL )
+	{
+		perror( "calloc()" );
+		return( 1 );
+	}	
 
     ifmr.ifm_ulist = mw;
     strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
     if ( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1 )
-    {
-        perror( "ioctl(SIOCGIFMEDIA)" );
-        return( 1 );
-    }
+	{
+		perror( "ioctl(SIOCGIFMEDIA)" );
+		return( 1 );
+	}
 
-    for( i = 0; i < ifmr.ifm_count; i++ )
-    {
-        if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
-                i =  ifmr.ifm_count  + 1;
-    }
+	for( i = 0; i < ifmr.ifm_count; i++ )
+	{
+		if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
+			i =  ifmr.ifm_count  + 1;
+	}
 
-    if( i == ( ifmr.ifm_count  + 1 ) )
-    {
-        return( 1 );
-    }
+	if( i == ( ifmr.ifm_count  + 1 ) )
+	{
+		return( 1 );
+	}
 
-    ifr.ifr_media = ifmr.ifm_current | IFM_IEEE80211_MONITOR;
-    if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
-    {
-        perror( "ioctl(SIOCSIFMEDIA) failed" );
-        return( 1 );
-    }
+	ifr.ifr_media = ifmr.ifm_current | IFM_IEEE80211_MONITOR;
+	if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
+	{
+		perror( "ioctl(SIOCSIFMEDIA) failed" );
+		return( 1 );
+	}
 
-    close(s);
+	close(s);	
+    
+	set_channel( interface, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum] );
 
-    set_channel( interface, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum] );
-
-    return( 0 );
+	return( 0 );
 }
-#endif /* freebsd */
+#endif /* __FreeBSD__ */
 
 int getchancount(int valid)
 {
@@ -2859,9 +2878,16 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
 }
 #endif /* linux */
 
-#if defined(freebsd)
+#if defined(__FreeBSD__)
+/*
+	this function, as a few others, presents a slightly
+	reduced set of parameters, because we don't need some
+	of them, for example the card number or references
+	to linux-only structs needed to make hardware behave.
+*/
 void channel_hopper( char *interface[], int if_num, int chan_count )
 {
+
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
 
     while( getppid() != 1 )
@@ -2885,7 +2911,7 @@ void channel_hopper( char *interface[], int if_num, int chan_count )
                 if( getchancount(1) > if_num )
                 {
                     while( again )
-                {
+                    {
                         again = 0;
                         for( k = 0; k < ( if_num - 1 ); k++ )
                         {
@@ -2902,9 +2928,9 @@ void channel_hopper( char *interface[], int if_num, int chan_count )
 
             if( G.channels[ch_idx] == -1 )
             {
-                 j--;
-                 cai--;
-                 continue;
+                j--;
+                cai--;
+                continue;
             }
 
             ch = G.channels[ch_idx];
@@ -2941,7 +2967,8 @@ void channel_hopper( char *interface[], int if_num, int chan_count )
 
     exit( 0 );
 }
-#endif /* freebsd */
+#endif /* __FreeBSD__ */
+
 
 int invalid_channel(int chan)
 {
@@ -3280,60 +3307,66 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 }
 #endif /* linux */
 
-#if defined(freebsd)
+#if defined(__FreeBSD__)
+/*
+	this function, as a few others, presents a slightly
+	reduced set of parameters, because we don't need some
+	of them, for example the card number or references
+	to linux-only structs needed to make hardware behave.
+*/
 int setup_card(char *iface, struct ifreq *ifr, int *fd_raw, int cardnum)
 {
-    unsigned int i;
+	unsigned int i;
 
-    /* bind interface iface to the bpf */
-    memset( ifr, 0, sizeof(ifr) );
-    strncpy( ifr->ifr_name, iface, IFNAMSIZ - 1 );
+	/* bind interface iface to the bpf */
+	memset( ifr, 0, sizeof(ifr) );
+	strncpy( ifr->ifr_name, iface, IFNAMSIZ - 1 );
 
-    if( ioctl( *fd_raw, BIOCSETIF, ifr ) == -1 )
+	if( ioctl( *fd_raw, BIOCSETIF, ifr ) == -1 )
     {
         perror( "ioctl(BIOCSETIF) failed" );
         return( 1 );
     }
 
-    /* set a meaningful datalink type */
-    i = DLT_IEEE802_11_RADIO;
-    if( ioctl( *fd_raw, BIOCSDLT, &i ) == -1 )
+	/* set a meaningful datalink type */
+	i = DLT_IEEE802_11_RADIO;
+	if( ioctl( *fd_raw, BIOCSDLT, &i ) == -1 )
     {
         perror( "ioctl(BIOCSDLT) failed" );
         return( 1 );
     }
 
-    /* set immediate mode (doesn't wait for buffer fillup) */
-    i = 1;
-    if( ioctl( *fd_raw, BIOCIMMEDIATE, &i ) == -1 )
+	/* set immediate mode (doesn't wait for buffer fillup) */
+	i = 1;
+	if( ioctl( *fd_raw, BIOCIMMEDIATE, &i ) == -1 )
     {
         perror( "ioctl(BIOCIMMEDIATE) failed" );
         return( 1 );
     }
 
-    /* set bpf's promiscuous mode */
-    if( ioctl( *fd_raw, BIOCPROMISC, NULL) == -1 )
+	/* set bpf's promiscuous mode */	
+	if( ioctl( *fd_raw, BIOCPROMISC, NULL) == -1 )
     {
         perror( "ioctl(BIOCPROMISC) failed" );
         return( 1 );
     }
 
-    /* lock bpf for further messing */
-    if( ioctl( *fd_raw, BIOCLOCK, NULL ) == -1 )
+	/* lock bpf for further messing */
+	if( ioctl( *fd_raw, BIOCLOCK, NULL ) == -1 )
     {
         perror( "ioctl(BIOCLOCK) failed" );
         return( 1 );
     }
 
-    /* set monitor mode in interface iface */
-    if( set_monitor( iface, cardnum ) == 1 )
+	/* set monitor mode in interface iface */
+	if( set_monitor( iface, cardnum ) == 1 )
     {
         return( 1 );
     }
 
-        return( 0 );
+	return( 0 );
 }
-#endif /* freebsd */
+#endif /* __FreeBSD__ */
 
 #if defined(linux)
 int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct packet_mreq mr[], struct sockaddr_ll sll[], int fd_raw[], int arptype[])
@@ -3354,9 +3387,15 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct pa
 
     return if_count;
 }
-#endif
+#endif /* linux */
 
-#if defined(freebsd)
+#if defined(__FreeBSD__)
+/*
+	this function, as a few others, presents a slightly
+	reduced set of parameters, because we don't need some
+	of them, for example the card number or references
+	to linux-only structs needed to make hardware behave.
+*/
 int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], int fd_raw[])
 {
     char *buffer;
@@ -3375,7 +3414,8 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], int fd_ra
 
     return if_count;
 }
-#endif /* freebsd */
+#endif /* __FreeBSD__ */
+
 
 int get_if_num(const char* cardstr)
 {
@@ -3421,6 +3461,7 @@ int set_encryption_filter(const char* input)
     return 0;
 }
 
+
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
@@ -3431,13 +3472,18 @@ int main( int argc, char *argv[] )
     int freq [2];
     time_t tt1, tt2, tt3, start_time;
 
-#if defined(freebsd)
+#if defined(__FreeBSD__)
+	/*
+		later we'll need to do some BPF tricks and pointer 
+		mechanics
+	*/
     int j;
-    char *bnbuf; 
-    unsigned int buf, buflen; 
-    struct bpf_hdr *bpfp; 
-    struct ieee80211_radiotap_header *rtp; 
-#endif /* freebsd */ 
+    char *bnbuf;
+	unsigned int buf, buflen;
+	struct bpf_hdr *bpfp;
+	struct ieee80211_radiotap_header *rtp;
+
+#endif /* __FreeBSD__ */
 
     unsigned char      *buffer;
     unsigned char      *h80211;
@@ -3500,9 +3546,19 @@ int main( int argc, char *argv[] )
     G.asso_client  =  0;
     memset(G.sharedkey, '\x00', 512*3);
 
+#if defined(__FreeBSD__)
+	G.s_ioctl = -1;
+#endif
+
+
     gettimeofday( &tv0, NULL );
 
+#if defined(__FreeBSD__)
+	/* cast to accomodate a warning on FreeBSD 6-stable */
     lt = localtime( (time_t *) &tv0.tv_sec );
+#else
+	lt = localtime( &tv0.tv_sec );
+#endif
 
     G.keyout = (char*) malloc(512);
     memset( G.keyout, 0, 512 );
@@ -3569,12 +3625,10 @@ int main( int argc, char *argv[] )
                 break;
 
             case 'e':
-
                 G.one_beacon = 0;
                 break;
 
             case 'a':
-
                 G.asso_client = 1;
                 break;
 
@@ -3665,10 +3719,10 @@ int main( int argc, char *argv[] )
 
             case 'w':
 
-                if (G.dump_prefix != NULL) {
-                    printf( "Notice: dump prefix already given\n" );
-                    break;
-                }
+            	if (G.dump_prefix != NULL) {
+            		printf( "Notice: dump prefix already given\n" );
+            		break;
+            	}
                 /* Write prefix */
                 G.dump_prefix   = optarg;
                 G.record_data = 1;
@@ -3742,6 +3796,7 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
+#if defined(linux)
     /* Check iwpriv existence */
 
 	G.iwpriv = wiToolsPath("iwpriv");
@@ -3751,6 +3806,7 @@ int main( int argc, char *argv[] )
         fprintf(stderr, "Can't find wireless tools, exiting.\n");
         return (1);
     }
+#endif /* linux */
 
     cards = get_if_num(argv[argc-1]);
 
@@ -3771,59 +3827,6 @@ int main( int argc, char *argv[] )
             if( fd_raw[i] > fdh)
                 fdh=fd_raw[i];
     }
-#endif /*linux*/
-
-#if defined(freebsd)
-    for( i = 0; i < cards; i++ )
-    {
-        for( j = 0; j < 256; j++ )
-        {
-            if( asprintf( &bnbuf, "/dev/bpf%d", j ) <= 0 )
-            {
-               perror("asprintf() failed");
-                exit(1);
-            }
-
-            fd_raw[i] = open( bnbuf, O_RDWR );
-
-            if( fd_raw[i] < 0 )
-            {
-                if( errno != EBUSY )
-                {
-                        perror("can't open /dev/bpf");
-                        exit(1);
-                }
-                continue;
-            }
-
-            free( bnbuf );
-            break;
-        }
-
-        if( fd_raw[i] < 0 )
-        {
-            perror("can't open /dev/bpf");
-            exit(1);
-        }
-        if( fd_raw[i] > fdh )
-                fdh = fd_raw[i];
-        for( buflen = 0, buf = 65536 ; buf > 1024 ; i -= 512 )
-        {
-            ioctl( fd_raw[i], BIOCSBLEN, &buf );
-
-            if (buf > 0) {
-    /* fprintf(stderr, "bpf accomodated a %d bytes buffer\n", i); */
-                buflen = buf;
-                break;
-            }
-        }
-        if( buflen <= 0 )
-        {
-            perror( "cannot allocate bpf buffer space" );
-            exit(1);
-        }
-    }
-#endif /* freebsd */
 
     setuid( getuid() );
 
@@ -3835,15 +3838,93 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
-#if defined(linux)
+#endif /* linux */
+
+#if defined(__FreeBSD__)
+	/* 
+		since under FreeBSD the socktype PF_PACKET is not available
+		we have to read our frames from a BPF, with a few consequences
+		you'll find later
+	*/
+    for( i = 0; i < cards; i++ )
+    {
+        for( j = 0; j < 256; j++ )
+		{
+			if( asprintf( &bnbuf, "/dev/bpf%d", j ) <= 0 )
+			{
+				perror("asprintf() failed");
+				exit(1);
+			}
+
+			fd_raw[i] = open( bnbuf, O_RDWR );
+
+			if( fd_raw[i] < 0 )
+			{
+				if( errno != EBUSY )
+				{
+					perror("can't open /dev/bpf");
+					exit(1);
+				}
+				continue;
+			}
+			
+			free( bnbuf );
+			break;
+        }
+
+        if( fd_raw[i] < 0 )
+		{
+            perror("can't open /dev/bpf");
+            exit(1);
+        }
+
+		if( fd_raw[i] > fdh )
+			fdh = fd_raw[i];
+
+		/*
+			the BPF buffer size must be the same we pass to the
+			read syscall. this limitation/feature was introduced
+			for performance reasons.
+			we try to get our BPF to accomodate the largest useful
+			buffer size *it* wants.
+		*/
+		for( buflen = 0, buf = 65536 ; buf > 1024 ; i -= 512 )
+		{
+			ioctl( fd_raw[i], BIOCSBLEN, &buf );
+
+			if (buf > 0) {
+				buflen = buf;
+				break;
+			}
+		}
+
+		/* this is a real problem */
+		if( buflen <= 0 )
+		{
+			perror( "cannot allocate bpf buffer space" );
+			exit(1);
+		}
+
+    }
+
+    if( ( buffer = (unsigned char *) malloc( buflen ) ) == NULL )
+    {
+        perror( "malloc failed" );
+        return( 1 );
+    }
+
+#endif /* __FreeBSD__ */
+
     /* initialize cards */
+
+#if defined(linux)
     cards = init_cards(argv[argc-1], iface, ifr, mr, sll, fd_raw, arptype);
-#elif defined(freebsd) 
-    cards = init_cards(argv[argc-1], iface, ifr, fd_raw); 
+#elif defined(__FreeBSD__)
+    cards = init_cards(argv[argc-1], iface, ifr, fd_raw);
 #endif
 
     if(cards <= 0)
-        return( 1 );
+	return( 1 );
 
     chan_count = getchancount(0);
 
@@ -3852,7 +3933,7 @@ int main( int argc, char *argv[] )
 
     if( G.channel[0] == 0 )
     {
-        pipe( G.ch_pipe );
+		pipe( G.ch_pipe );
         pipe( G.cd_pipe );
 
         signal( SIGUSR1, sighandler );
@@ -3863,35 +3944,36 @@ int main( int argc, char *argv[] )
             channel_hopper( iface, fd_raw, cards, chan_count );
 #endif /* linux */
 
-#if defined(freebsd)
+#if defined(__FreeBSD__)
             channel_hopper( iface, cards, chan_count );
-#endif /* freebsd */
+#endif /* __FreeBSD__ */
 
             exit( 1 );
         }
     }
     else
     {
-	for(i=0; i<cards; i++)
-	{
+		for( i=0; i<cards; i++ )
+		{
+
 #if defined(linux)
             set_channel( iface[i], fd_raw[i], G.channel[0], i );
-#endif
+#endif /* linux */
 
-#if defined(freebsd)
+#if defined(__FreeBSD__)
             set_channel( iface[i], G.channel[0] );
-#endif /* freebsd */
+#endif /* __FreeBSD__ */
 
-            G.channel[i] = G.channel[0];
-        }
+			G.channel[i] = G.channel[0];
+		}
         G.singlechan = 1;
     }
 
     /* open or create the output files */
 
     if (G.record_data)
-        if( dump_initialize( G.dump_prefix, ivs_only ) )
-            return( 1 );
+    	if( dump_initialize( G.dump_prefix, ivs_only ) )
+    	    return( 1 );
 
     signal( SIGINT,   sighandler );
     signal( SIGSEGV,  sighandler );
@@ -3919,16 +4001,16 @@ int main( int argc, char *argv[] )
 
     fprintf( stderr, "\33[?25l\33[2J\n" );
 
-    start_time = time( NULL );
+	start_time = time( NULL );
     tt1        = time( NULL );
     tt2        = time( NULL );
     tt3        = time( NULL );
     gettimeofday( &tv3, NULL );
 
-    G.batt     = getBatteryString();
+	G.batt     = getBatteryString();
 
-    G.elapsed_time = (char *) calloc( 1, 4 );
-    strcpy(G.elapsed_time,"0 s");
+	G.elapsed_time = (char *) calloc( 1, 4 );
+	strcpy(G.elapsed_time,"0 s");
 
     while( 1 )
     {
@@ -3952,16 +4034,16 @@ int main( int argc, char *argv[] )
         if( time( NULL ) - tt2 > 3 )
         {
             /* update the battery state */
-            free(G.batt);
+			free(G.batt);
 
-            tt2     = time( NULL );
-            G.batt  = getBatteryString();
+            tt2 			= time( NULL );
+            G.batt 			= getBatteryString();
 
             /* update elapsed time */
 
-            free(G.elapsed_time);
-            G.elapsed_time = getStringTimeFromSec(
-                difftime(tt2, start_time) );
+			free(G.elapsed_time);
+    		G.elapsed_time = getStringTimeFromSec(
+    			difftime(tt2, start_time) );
 
 
             /* flush the output files */
@@ -3984,10 +4066,10 @@ int main( int argc, char *argv[] )
         /* capture one packet */
 
         FD_ZERO( &rfds );
-        for(i=0; i<cards; i++)
-        {
+		for(i=0; i<cards; i++)
+	    {
             FD_SET( fd_raw[i], &rfds );
-        }
+	    }
 
         tv0.tv_sec  = 0;
         tv0.tv_usec = REFRESH_RATE;
@@ -4032,12 +4114,12 @@ int main( int argc, char *argv[] )
             continue;
         }
 
-        fd_is_set = 0;
+	fd_is_set = 0;
 
-        for(i=0; i<cards; i++)
-        {
-            if( FD_ISSET( fd_raw[i], &rfds ) )
-            {
+	for(i=0; i<cards; i++)
+	{
+		if( FD_ISSET( fd_raw[i], &rfds ) )
+	    {
 
 #if defined(linux)
                 memset( buffer, 0, 4096 );
@@ -4049,15 +4131,16 @@ int main( int argc, char *argv[] )
                 }
 #endif /* linux */
 
-#if defined(freebsd)
+#if defined(__FreeBSD__)
                 memset( buffer, 0, buflen );
 
+				/* buffer size have to be as big as BPF buffer */
                 if( ( caplen = read(  fd_raw[i], buffer, buflen ) ) < 0 )
                 {
                     perror( "read failed" );
                     return( 1 );
                 }
-#endif /* freebsd */
+#endif /* __FreeBSD__ */
 
 #if defined(linux)
                 /* if device is an atheros, remove the FCS */
@@ -4110,46 +4193,63 @@ int main( int argc, char *argv[] )
 
                     if( *(int *)( buffer + 4 ) == 0x0000082E )
                         power = buffer[14];     /* ipw2200 1.0.7 */
+                }
+#endif /* linux */
+
+#if defined(__FreeBSD__)
+					/*
+						radiotap under FreeBSD is well defined and decently
+						supported from any driver that actually can support
+						monitor mode, so we need no trick on pointer mechs
+						for different drivers
+					*/
+                	h80211 = buffer;
+
+					/*
+						since we're reading from a BPF with a datalink type
+						of IEEE802_11_RADIO, our readed frame will start with
+						a variable size BPF header (struct bpf_hdr) and a 
+						variable size radiotap header.
+						we need to know their lenght to pass a clean 802.11
+						frame to dump_add_packet()
+					*/
+					bpfp = (struct bpf_hdr *)buffer;
+					rtp = (struct ieee80211_radiotap_header *)(buffer + bpfp->bh_hdrlen);
+					/*	XXX
+						radiotap data extraction stuff is missing, here we're
+						relying on the fact that ath is the only driver that
+						effectively uses variable lenght radiotap data, so
+						we take the 16 byte of it and hope it is the power
+					*/
+					power = buffer[bpfp->bh_hdrlen + 15];
+
+					/*
+						n is the offset of the real frame from the beginning
+						of the capture (bpf header lenght + radiotap header
+						lenght)
+					*/
+					n = bpfp->bh_hdrlen + rtp->it_len; 
 
                     if( n <= 0 || n >= caplen )
                         continue;
 
                     h80211 += n;
                     caplen -= n;
-                }
-#endif /* linux */
-
-#if defined(freebsd)
-                h80211 = buffer;
-
-                bpfp = (struct bpf_hdr *)buffer;
-                rtp = (struct ieee80211_radiotap_header *)(buffer + bpfp->bh_hdrlen);
-
-                power = buffer[bpfp->bh_hdrlen + 15];
-
-                n = bpfp->bh_hdrlen + rtp->it_len;
-
-                if( n <= 0 || n >= caplen )
-                    continue;
-
-                    h80211 += n;
-                    caplen -= n;
-                }
-#endif /* freebsd */
+#endif /* __FreeBSD__ */
 
                 dump_add_packet( h80211, caplen, power, i );
-            }
-        }
+			}
+		}
     }
 
     if (G.record_data) {
-        dump_write_csv();
+    	dump_write_csv();
 
-        if( G.f_txt != NULL ) fclose( G.f_txt );
-        if( G.f_gps != NULL ) fclose( G.f_gps );
-        if( G.f_cap != NULL ) fclose( G.f_cap );
-        if( G.f_ivs != NULL ) fclose( G.f_ivs );
-        }
+    	if( G.f_txt != NULL ) fclose( G.f_txt );
+    	if( G.f_gps != NULL ) fclose( G.f_gps );
+    	if( G.f_cap != NULL ) fclose( G.f_cap );
+    	if( G.f_ivs != NULL ) fclose( G.f_ivs );
+	}
 
     if( ! G.save_gps )
     {
