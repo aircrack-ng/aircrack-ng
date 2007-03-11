@@ -27,7 +27,9 @@ DOCFILES        = ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 
 default:all
 
-all: aircrack-ng airdecap-ng packetforge-ng aireplay-ng airodump-ng airtun-ng ivstools kstats makeivs
+userland: $(BINFILES) $(TESTFILES)
+
+all: userland $(SBINFILES)
 
 aircrack-ng-opt: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt -lpthread
@@ -69,15 +71,18 @@ makeivs: test/makeivs.c
 strip: $(BINFILES) $(SBINFILES) $(TESTFILES)
 	strip $(BINFILES) $(SBINFILES) $(TESTFILES)
 
-install: $(BINFILES) $(SBINFILES) $(TESTFILES) $(SCRIPTS)
+install_userland: userland
 	install -d $(destdir)$(bindir)
 	install -m 755 $(BINFILES) $(destdir)$(bindir)
 	install -m 755 $(TESTFILES) $(destdir)$(bindir)
+	install -d $(destdir)$(mandir)
+	install -m 644 ./manpages/* $(destdir)$(mandir)
+
+
+install: install_userland $(SBINFILES) $(SCRIPTS)
 	install -d $(destdir)$(sbindir)
 	install -m 755 $(SBINFILES) $(destdir)$(sbindir)
 	install -m 755 $(SCRIPTS) $(destdir)$(sbindir)
-	install -d $(destdir)$(mandir)
-	install -m 644 ./manpages/* $(destdir)$(mandir)
 
 uninstall:
 	-rm -f $(destdir)$(bindir)/aircrack-ng
