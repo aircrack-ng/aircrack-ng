@@ -59,6 +59,7 @@
 #include <getopt.h>
 #include <fcntl.h>
 
+
 #if defined(linux)
 	#include <wait.h>
 #endif /* linux */
@@ -73,7 +74,6 @@
 #include "pcap.h"
 #include "uniqueiv.c"
 #include "crctable.h"
-
 
 /* some constants */
 
@@ -1751,7 +1751,6 @@ int getBatteryState()
     size_t len;
 
 	len = 1;
-
 	value = 0;
 	sysctlbyname("hw.acpi.acline", &value, &len, NULL, 0);
 	if (value == 0)
@@ -2887,7 +2886,6 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
 */
 void channel_hopper( char *interface[], int if_num, int chan_count )
 {
-
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
 
     while( getppid() != 1 )
@@ -2968,7 +2966,6 @@ void channel_hopper( char *interface[], int if_num, int chan_count )
     exit( 0 );
 }
 #endif /* __FreeBSD__ */
-
 
 int invalid_channel(int chan)
 {
@@ -3416,7 +3413,6 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], int fd_ra
 }
 #endif /* __FreeBSD__ */
 
-
 int get_if_num(const char* cardstr)
 {
     char *buffer;
@@ -3461,7 +3457,6 @@ int set_encryption_filter(const char* input)
     return 0;
 }
 
-
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
@@ -3473,16 +3468,12 @@ int main( int argc, char *argv[] )
     time_t tt1, tt2, tt3, start_time;
 
 #if defined(__FreeBSD__)
-	/*
-		later we'll need to do some BPF tricks and pointer 
-		mechanics
-	*/
-    int j;
+	int j, k;
     char *bnbuf;
 	unsigned int buf, buflen;
 	struct bpf_hdr *bpfp;
 	struct ieee80211_radiotap_header *rtp;
-
+	unsigned char *r;
 #endif /* __FreeBSD__ */
 
     unsigned char      *buffer;
@@ -3550,7 +3541,6 @@ int main( int argc, char *argv[] )
 	G.s_ioctl = -1;
 #endif
 
-
     gettimeofday( &tv0, NULL );
 
 #if defined(__FreeBSD__)
@@ -3613,7 +3603,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:c:egiw:st:m:d:a",
+                        "b:c:egiw:s:t:m:d:a",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3625,10 +3615,12 @@ int main( int argc, char *argv[] )
                 break;
 
             case 'e':
+
                 G.one_beacon = 0;
                 break;
 
             case 'a':
+
                 G.asso_client = 1;
                 break;
 
@@ -3837,14 +3829,13 @@ int main( int argc, char *argv[] )
         perror( "malloc failed" );
         return( 1 );
     }
-
 #endif /* linux */
 
 #if defined(__FreeBSD__)
 	/* 
 		since under FreeBSD the socktype PF_PACKET is not available
 		we have to read our frames from a BPF, with a few consequences
-		you'll find later
+		you'll find later on
 	*/
     for( i = 0; i < cards; i++ )
     {
@@ -3888,7 +3879,7 @@ int main( int argc, char *argv[] )
 			we try to get our BPF to accomodate the largest useful
 			buffer size *it* wants.
 		*/
-		for( buflen = 0, buf = 65536 ; buf > 1024 ; i -= 512 )
+		for( buflen = 0, buf = 65536 ; buf > 4096 ; i -= 512 )
 		{
 			ioctl( fd_raw[i], BIOCSBLEN, &buf );
 
@@ -3907,24 +3898,24 @@ int main( int argc, char *argv[] )
 
     }
 
+    setuid( getuid() );
+
     if( ( buffer = (unsigned char *) malloc( buflen ) ) == NULL )
     {
         perror( "malloc failed" );
         return( 1 );
     }
-
 #endif /* __FreeBSD__ */
 
-    /* initialize cards */
-
 #if defined(linux)
+    /* initialize cards */
     cards = init_cards(argv[argc-1], iface, ifr, mr, sll, fd_raw, arptype);
 #elif defined(__FreeBSD__)
     cards = init_cards(argv[argc-1], iface, ifr, fd_raw);
 #endif
 
     if(cards <= 0)
-	return( 1 );
+		return( 1 );
 
     chan_count = getchancount(0);
 
@@ -3940,13 +3931,12 @@ int main( int argc, char *argv[] )
 
         if( ! fork() )
         {
+
 #if defined(linux)
             channel_hopper( iface, fd_raw, cards, chan_count );
-#endif /* linux */
-
-#if defined(__FreeBSD__)
+#elif defined(__FreeBSD__)
             channel_hopper( iface, cards, chan_count );
-#endif /* __FreeBSD__ */
+#endif
 
             exit( 1 );
         }
@@ -3958,11 +3948,9 @@ int main( int argc, char *argv[] )
 
 #if defined(linux)
             set_channel( iface[i], fd_raw[i], G.channel[0], i );
-#endif /* linux */
-
-#if defined(__FreeBSD__)
+#elif defined(__FreeBSD__)
             set_channel( iface[i], G.channel[0] );
-#endif /* __FreeBSD__ */
+#endif
 
 			G.channel[i] = G.channel[0];
 		}
@@ -4193,6 +4181,12 @@ int main( int argc, char *argv[] )
 
                     if( *(int *)( buffer + 4 ) == 0x0000082E )
                         power = buffer[14];     /* ipw2200 1.0.7 */
+
+                    if( n <= 0 || n >= caplen )
+                        continue;
+
+                    h80211 += n;
+                    caplen -= n;
                 }
 #endif /* linux */
 
@@ -4215,13 +4209,123 @@ int main( int argc, char *argv[] )
 					*/
 					bpfp = (struct bpf_hdr *)buffer;
 					rtp = (struct ieee80211_radiotap_header *)(buffer + bpfp->bh_hdrlen);
-					/*	XXX
-						radiotap data extraction stuff is missing, here we're
-						relying on the fact that ath is the only driver that
-						effectively uses variable lenght radiotap data, so
-						we take the 16 byte of it and hope it is the power
+
+					/*
+						radiotap header parsing stuff
+						we walk thru every possible field of the base set of
+						radiotap informations, looking for what we need,
+						specifically the flags mask and the power levels
 					*/
-					power = buffer[bpfp->bh_hdrlen + 15];
+
+					/* position our pointer to the end of it_present field */
+					r = (unsigned char *)&rtp->it_present;
+					r += sizeof(u_int32_t);
+
+					for( k = 0; k <= 13 ; k++ )
+					{
+						if( rtp->it_present & ( 1 << k ) )
+						{
+							switch( k )
+							{
+							  case IEEE80211_RADIOTAP_TSFT:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof(u_int64_t);
+								break;
+
+							  case IEEE80211_RADIOTAP_FLAGS:
+
+								if( *r & IEEE80211_RADIOTAP_F_FCS )
+								{
+									/*
+										this frame has 4 FCS bytes at
+										his end, and we need to avoid them
+									*/
+									caplen -= 4; 
+								}
+								r += sizeof( u_int8_t ); /* and go on.. */
+								break;
+
+							  case IEEE80211_RADIOTAP_RATE:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof( u_int8_t );
+								break;
+
+							  case IEEE80211_RADIOTAP_CHANNEL:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof( u_int16_t ) * 2;
+								break;
+
+							  case IEEE80211_RADIOTAP_FHSS:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof(u_int16_t);
+								break;
+
+							  case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
+
+								/* we could like this field... mhmhm! */
+								/* XXXX dumb memcpy below! change! change! XXXX */
+								memcpy( &power, r, sizeof( int8_t ) );
+								break;
+
+							  case IEEE80211_RADIOTAP_DBM_ANTNOISE:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof( int8_t );
+								break;
+
+							  case IEEE80211_RADIOTAP_LOCK_QUALITY:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof( u_int16_t );
+								break;
+
+							  case IEEE80211_RADIOTAP_TX_ATTENUATION:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof( u_int16_t );
+								break;
+
+							  case IEEE80211_RADIOTAP_DB_TX_ATTENUATION:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof( u_int16_t );
+								break;
+
+							  case IEEE80211_RADIOTAP_DBM_TX_POWER:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof( int8_t );
+								break;
+
+							  case IEEE80211_RADIOTAP_ANTENNA:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof( u_int8_t );
+								break;
+
+							  case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
+
+								/* we could like this field... mhmhm! */
+								/* XXXX dumb memcpy below! change! change! XXXX */
+								memcpy( &power, r, sizeof( u_int8_t ) );
+								
+								break;
+			
+							  case IEEE80211_RADIOTAP_DB_ANTNOISE:
+
+								/* we have no use for this, let's skip over */
+								r += sizeof(u_int8_t);
+								break;
+
+							  default:
+								break;
+							}
+						}
+					}
 
 					/*
 						n is the offset of the real frame from the beginning
