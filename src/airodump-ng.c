@@ -2800,9 +2800,13 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
 {
 
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
+    int round=0, nfirst=0, quick=1, stime=100000, tries=0;
+
+    nfirst = chan_count / if_num + 1;
 
     while( getppid() != 1 )
     {
+        tries=0;
         for(j=0; j<if_num; j++)
         {
             again=1;
@@ -2813,6 +2817,11 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
 
             ++chi;
             ++cai;
+
+            if(tries>chan_count)
+            {
+                exit( 0 );
+            }
 
             if( G.chswitch == 2 && !first)
             {
@@ -2838,6 +2847,7 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
 
             if( G.channels[ch_idx] == -1 )
             {
+                tries++;
                 j--;
                 cai--;
                 continue;
@@ -2856,9 +2866,12 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
             }
             else
             {
-                G.channels[ch_idx] = -1;      /* remove invalid channel */
-                j--;
-                cai--;
+                if( strncmp( interface[card], "rtap", 4) )
+                {
+                    G.channels[ch_idx] = -1;      /* remove invalid channel */
+                    j--;
+                    cai--;
+                }
                 continue;
             }
         }
@@ -2870,7 +2883,16 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
         {
             first = 0;
         }
-        usleep( (350000) );
+
+        if( round > nfirst*3 && quick )
+        {
+            quick = 0;
+            stime = 350000;
+        }
+
+        usleep( stime );
+
+        if(quick) round++;
     }
 
     exit( 0 );
