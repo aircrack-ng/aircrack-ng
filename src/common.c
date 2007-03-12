@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <ctype.h>
 
+#if defined(linux)
 //Check if the driver is ndiswrapper */
 int is_ndiswrapper(const char * iface, const char * path)
 {
@@ -44,6 +45,7 @@ int is_ndiswrapper(const char * iface, const char * path)
 	waitpid( pid, &n, 0 );
 	return ( ( WIFEXITED(n) && WEXITSTATUS(n) == 0 ));
 }
+#endif /* linux */
 
 /* Return the version number */
 char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
@@ -117,6 +119,7 @@ char * searchInside(const char * dir, const char * filename)
 	return NULL;
 }
 
+#if defined(linux)
 /* Search a wireless tool and return its path */
 char * wiToolsPath(const char * tool)
 {
@@ -143,6 +146,7 @@ char * wiToolsPath(const char * tool)
 
 	return NULL;
 }
+#endif
 
 //Return the mac address bytes (or null if it's not a mac address)
 int getmac(char * macAddress, int strict, unsigned char * mac)

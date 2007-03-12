@@ -2690,7 +2690,7 @@ int set_monitor( char *interface, int fd_raw, int cardnum )
 */
 int set_monitor( char *interface, int cardnum )
 {
-	int s, i, *mw;
+	int s, i, *mw, ahd;
 	struct ifreq ifr;
 	struct ifmediareq ifmr;
 
@@ -2707,21 +2707,6 @@ int set_monitor( char *interface, int cardnum )
 	{
 		perror( "ioctl(SIOCGIFFLAGS) failed" );
 		return( 1 );
-	}
-
-	i = ( ifr.ifr_flags & 0xffff ) | ( ifr.ifr_flagshigh << 16 );
-	if( !( i & IFF_UP ) )
-	{
-		i |= IFF_UP;
-
-		ifr.ifr_flags = i & 0xffff;
-		ifr.ifr_flagshigh = i >> 16;
-
-		if ( ioctl( s, SIOCSIFFLAGS, &ifr ) == -1 )
-		{
-			perror( "ioctl(SIOCSIFFLAGS) failed" );
-			return( 1 );
-		}
 	}
 
 	memset( &ifmr, 0, sizeof( ifmr ) );
@@ -2765,16 +2750,102 @@ int set_monitor( char *interface, int cardnum )
 		return( 1 );
 	}
 
-	ifr.ifr_media = ifmr.ifm_current | IFM_IEEE80211_MONITOR;
+	/*
+		A few interfaces on FreeBSD have a specific operating
+		mode called adhoc demo, which is an adhoc mode that
+		sends no beacons. The pratical effect of such a mode
+		is that's possible to monitor *and* write raw frames
+		down the pipe without messing with things we don't
+		know about ;)
+		here we try first to use the adhoc demo mode and then
+		fallback to monitor if it's not available.
+		why?
+		because aireplay while opening the raw bpf stuff will
+		don't mess with the interface... smooooth operations.
+	*/
+
+	/* check if interface supports adhoc + flag0 */
+	ahd = 0;
+	for( i = 0; i < ifmr.ifm_count && ahd == 0; i++ )
+	{
+		if( ifmr.ifm_ulist[i] & IFM_IEEE80211_ADHOC )
+		{
+			if( ifmr.ifm_ulist[i] & IFM_FLAG0 )
+			{
+				ahd = 1;
+				break;
+			}
+		}
+	}
+
+	if( ahd == 0 )	
+	{
+		/* no. fallback to monitor mode */
+		for( i = 0; i < ifmr.ifm_count; i++ )
+		{
+			if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
+			{
+				i = ifmr.ifm_count + 1;
+				break;
+			}
+		}
+	
+		if( i != ( ifmr.ifm_count + 1 ) )
+		{
+			/* holy shit, neither monitor mode! */
+			fprintf(stderr,
+				"interface %s is missing monitor mode\n",
+				interface);
+			return( 1 );
+		}
+	}
+
+	memset( &ifr, 0, sizeof( ifr ) );
+	strncpy( ifr.ifr_name, interface, IFNAMSIZ - 1 );
+
+	ifr.ifr_media = IFM_IEEE80211 | IFM_AUTO;
+	if (ahd == 0)
+		ifr.ifr_media |= IFM_IEEE80211_MONITOR;
+	else
+		ifr.ifr_media |= IFM_IEEE80211_ADHOC | IFM_FLAG0;
+
 	if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
 	{
 		perror( "ioctl(SIOCSIFMEDIA) failed" );
 		return( 1 );
 	}
 
+	if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
+	{
+		perror( "ioctl(SIOCGIFMEDIA) failed" );
+		return( 1 );
+	}
+
+	if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
+	{
+		perror( "ioctl(SIOCSIFMEDIA) failed" );
+		return( 1 );
+	}
+
+	i = ( ifr.ifr_flags & 0xffff ) | ( ifr.ifr_flagshigh << 16 );
+	if( !( i & IFF_UP ) )
+	{
+		i |= IFF_UP;
+
+		ifr.ifr_flags = i & 0xffff;
+		ifr.ifr_flagshigh = i >> 16;
+
+		if ( ioctl( s, SIOCSIFFLAGS, &ifr ) == -1 )
+		{
+			perror( "ioctl(SIOCSIFFLAGS) failed" );
+			return( 1 );
+		}
+	}
+
 	close(s);	
-    
+
 	set_channel( interface, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum] );
+    
 
 	return( 0 );
 }
@@ -3865,8 +3936,8 @@ int main( int argc, char *argv[] )
 		{
 			if( asprintf( &bnbuf, "/dev/bpf%d", j ) <= 0 )
 			{
-				perror("asprintf() failed");
-				exit(1);
+				perror( "asprintf() failed" );
+				exit( 1 );
 			}
 
 			fd_raw[i] = open( bnbuf, O_RDWR );
@@ -3875,8 +3946,8 @@ int main( int argc, char *argv[] )
 			{
 				if( errno != EBUSY )
 				{
-					perror("can't open /dev/bpf");
-					exit(1);
+					perror( "can't open /dev/bpf" );
+					exit( 1 );
 				}
 				continue;
 			}
@@ -3887,8 +3958,8 @@ int main( int argc, char *argv[] )
 
         if( fd_raw[i] < 0 )
 		{
-            perror("can't open /dev/bpf");
-            exit(1);
+            perror( "can't open /dev/bpf" );
+            exit( 1);
         }
 
 		if( fd_raw[i] > fdh )
@@ -4236,7 +4307,7 @@ int main( int argc, char *argv[] )
 						radiotap header parsing stuff
 						we walk thru every possible field of the base set of
 						radiotap informations, looking for what we need,
-						specifically the flags mask and the power levels
+						specifically the flags map and the power levels
 					*/
 
 					/* position our pointer to the end of it_present field */
@@ -4289,7 +4360,6 @@ int main( int argc, char *argv[] )
 							  case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
 
 								/* we could like this field... mhmhm! */
-								/* XXXX dumb memcpy below! change! change! XXXX */
 								memcpy( &power, r, sizeof( int8_t ) );
 								break;
 
@@ -4332,8 +4402,7 @@ int main( int argc, char *argv[] )
 							  case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
 
 								/* we could like this field... mhmhm! */
-								/* XXXX dumb memcpy below! change! change! XXXX */
-								memcpy( &power, r, sizeof( u_int8_t ) );
+								power = (int) *r;
 								
 								break;
 			
