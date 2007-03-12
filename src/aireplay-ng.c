@@ -4279,7 +4279,7 @@ int main( int argc, char *argv[] )
 
         if( openraw( opt.s_face, dev.fd_in, &dev.arptype_in, dev.mac_in ) != 0 )
             return( 1 );
-#elsif defined(__FreeBSD__)
+#elif defined(__FreeBSD__)
     if( openraw( opt.s_face, &dev.fd_in, 0 ) != 0 )
         return( 1 );
 #endif
