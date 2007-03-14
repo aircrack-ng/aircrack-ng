@@ -6,11 +6,13 @@ Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
 * aireplay-ng: Fixed IV index bug
 * aireplay-ng: Better error messages for -0 and -1
 * airtun-ng: Fix compilation under FC6 (missing "linux/if.h" include).
+* airodump-ng: Works on BSD.
 * airodump-ng: Added WPA handshake detection
 * airodump-ng: Added encryption filtering
 * airodump-ng: Fixed a SIGSEGV
 * airodump-ng: Added WPA handshake detection
 * airodump-ng: Added non associated stations filter
+* airmon-ng: Added support for at76c503a, rt61 and rt73
 * airmon-ng: Updated some device detection
 * airmon-ng: Added Nokia 770 and PrismGT softmac
 * airmon-ng: Fixed ACX driver monitor mode startup

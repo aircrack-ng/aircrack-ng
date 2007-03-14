@@ -451,6 +451,41 @@ do
     
  fi
 
+ if [ x"`iwpriv $iface 2>/dev/null | grep get_RaAP_Cfg`" != "x" ]
+ then
+    if [ x"`iwconfig $iface | grep ESSID | awk -F\  '{ print $2}' | grep -i rt61`" != "x" ]
+    then
+    	printf "$iface\t\tRalink b/g\trt61"
+    fi
+    
+    if [ x"`iwconfig $iface | grep ESSID | awk -F\  '{ print $2}' | grep -i rt73`" != "x" ]
+    then
+        printf "$iface\t\tRalink USB\trt73"
+    fi
+    
+    if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+    then
+         startStdIface $iface $CH
+         iwpriv $iface rfmontx 1
+    fi
+    echo
+    continue
+    
+ fi
+ 
+ 
+ if [ x"`iwpriv $iface 2>/dev/null | grep set_announcedpkt`" != "x" ]
+  then
+     printf "$iface\t\tAtmel\t\tat76c503a"
+     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+     then
+          startStdIface $iface $CH
+     fi
+     echo
+     continue
+     
+ fi
+
  if [ x"`iwpriv $iface 2>/dev/null | grep ndis_reset`" != "x" ]
  then
      printf "$iface\t\tUnknown\t\tndiswrapper"
