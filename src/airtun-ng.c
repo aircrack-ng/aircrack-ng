@@ -19,7 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef linux
+#if !(defined(linux) || defined(__FreeBSD__))
     #warning Airtun-ng could fail on this OS
 #endif
 
@@ -33,17 +33,26 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#ifdef linux
+#if defined(linux)
     #include <netpacket/packet.h>
     #include <linux/if_ether.h>
     #include <linux/if.h>
     #include <linux/wireless.h>
-#endif
+#endif /* linux */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
+    #include <sys/param.h>
+    #include <sys/sysctl.h>
+    #include <sys/uio.h>
     #include <net/bpf.h>
     #include <net/if.h>
-#endif
+    #include <net/if_media.h>
+    #include <netinet/in.h>
+    #include <netinet/if_ether.h>
+    #include <net80211/ieee80211.h>
+    #include <net80211/ieee80211_freebsd.h>
+    #include <net80211/ieee80211_radiotap.h>
+#endif /* __FreeBSD__ */
 
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -60,11 +69,11 @@
 //#include <errno.h>
 //#include <time.h>
 
-#ifdef linux
+#if defined(linux)
     #include <linux/if_tun.h>
 #endif
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
     #include <net/if_tun.h>
 #endif
 
@@ -86,15 +95,20 @@
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
 
+#if defined(linux)
 #define MAX(x,y) ( (x)>(y) ? (x) : (y) )
+#endif
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
-extern int is_ndiswrapper(const char * iface, const char * path);
 extern char * searchInside(const char * dir, const char * filename);
-extern char * wiToolsPath(const char * tool);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern int add_crc32(unsigned char* data, int length);
+
+#if defined(linux)
+extern int is_ndiswrapper(const char * iface, const char * path);
+extern char * wiToolsPath(const char * tool);
+#endif /* linux */
 
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
@@ -812,8 +826,9 @@ int opensysfs( char *iface, int fd) {
     return 0;
 }
 
+#if defined(linux)
 /* interface initialization routine */
-#ifdef linux
+
 int openraw( char *iface, int fd, int *arptype )
 {
     struct ifreq ifr;
@@ -896,9 +911,9 @@ int openraw( char *iface, int fd, int *arptype )
 
     return( 0 );
 }
-#endif
+#endif /* linux */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 int openraw(char *name, int fd, int *arptype) {
     int i;
 //    int fd = -1;
@@ -943,7 +958,7 @@ int openraw(char *name, int fd, int *arptype) {
 
     return 0;
 }
-#endif
+#endif /* __FreeBSD__ */
 
 char athXraw[] = "athXraw";
 
@@ -1178,8 +1193,8 @@ int main( int argc, char *argv[] )
 
     /* open the RTC device if necessary */
 
-#ifdef __i386__
-#ifdef linux
+#if defined(__i386__)
+#if defined(linux)
     if( 1 )
     {
         if( ( dev.fd_rtc = open( "/dev/rtc", O_RDONLY ) ) < 0 )
@@ -1208,12 +1223,12 @@ int main( int argc, char *argv[] )
             }
         }
     }
-#endif
-#endif
+#endif /* linux */
+#endif /* __i386__ */
 
     /* create the RAW sockets */
 
-#ifdef linux
+#if defined(linux)
     if( ( dev.fd_in = socket( PF_PACKET, SOCK_RAW,
                               htons( ETH_P_ALL ) ) ) < 0 )
     {
@@ -1321,9 +1336,9 @@ int main( int argc, char *argv[] )
         	dev.is_madwifing=1;
         }
     }
-#endif
+#endif /* linux */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
     for(i = 0;i < 10; i++) {
         sprintf(buf, "/dev/bpf%d", i);
 
@@ -1345,7 +1360,7 @@ int main( int argc, char *argv[] )
         exit(1);
     }
     dev.fd_out = dev.fd_in;
-#endif
+#endif /* __FreeBSD__ */
 
     /* drop privileges */
 
@@ -1426,26 +1441,26 @@ int main( int argc, char *argv[] )
         return -1;
     }
     memset( &if_request, 0, sizeof( if_request ) );
-#ifdef linux
+#if defined(linux)
     if_request.ifr_flags = IFF_TAP | IFF_NO_PI;
 #endif
     strncpy( if_request.ifr_name, "at%d", IFNAMSIZ );
-#ifdef linux
+#if defined(linux)
     if( ioctl( dev.fd_tap, TUNSETIFF, (void *)&if_request ) < 0 )
     {
         printf( "error creating tap interface: %s\n", strerror( errno ) );
         close( dev.fd_tap );
         return -1;
     }
-#endif
-#ifdef __FreeBSD__
+#endif /* linux */
+#if defined(__FreeBSD__)
     if( ioctl( dev.fd_tap, SIOCGIFFLAGS, (void *)&if_request ) < 0 )
     {
         printf( "error creating tap interface: %s\n", strerror( errno ) );
         close( dev.fd_tap );
         return -1;
     }
-#endif
+#endif /* __FreeBSD__ */
     printf( "created tap interface %s\n", if_request.ifr_name );
 
     if(opt.prgalen <= 0 && opt.crypt == CRYPT_NONE)

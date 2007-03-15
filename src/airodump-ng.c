@@ -30,22 +30,22 @@
 #include <sys/time.h>
 
 #if defined(linux)
-	#include <netpacket/packet.h>
-	#include <linux/if_ether.h>
-	#include <linux/if.h>
-	#include <linux/wireless.h>
+    #include <netpacket/packet.h>
+    #include <linux/if_ether.h>
+    #include <linux/if.h>
+    #include <linux/wireless.h>
 #endif /* linux */
 
 #if defined(__FreeBSD__)
-	#include <sys/sysctl.h>
-	#include <net/bpf.h>
-	#include <net/if.h>
-	#include <net/if_media.h>
-	#include <netinet/in.h>
-	#include <netinet/if_ether.h>
-	#include <net80211/ieee80211.h>
-	#include <net80211/ieee80211_ioctl.h>
-	#include <net80211/ieee80211_radiotap.h>
+    #include <sys/sysctl.h>
+    #include <net/bpf.h>
+    #include <net/if.h>
+    #include <net/if_media.h>
+    #include <netinet/in.h>
+    #include <netinet/if_ether.h>
+    #include <net80211/ieee80211.h>
+    #include <net80211/ieee80211_ioctl.h>
+    #include <net80211/ieee80211_radiotap.h>
 #endif /* __FreeBSD__ */
 
 #include <arpa/inet.h>
@@ -61,13 +61,13 @@
 
 
 #if defined(linux)
-	#include <wait.h>
+    #include <wait.h>
 #endif /* linux */
 
 #if defined(linux)
-	int linux_acpi;
-	int linux_apm;
-	#include <dirent.h>
+    int linux_acpi;
+    int linux_apm;
+    #include <dirent.h>
 #endif /* linux */
 
 #include "version.h"
@@ -119,9 +119,11 @@
 #define	MAX(a,b)	((a)>(b)?(a):(b))
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
+#if defined(linux)
 extern int is_ndiswrapper(const char * iface, const char * path);
 extern char * wiToolsPath(const char * tool);
-extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
+#endif /* linux */
 
 const unsigned char llcnull[4] = {0, 0, 0, 0};
 char *f_ext[4] = { "txt", "gps", "cap", "ivs" };
@@ -281,7 +283,7 @@ struct globals
     char * wl;
 
 #if defined(__FreeBSD__)
-	int s_ioctl;
+    int s_ioctl;
 #endif
 
     unsigned char wpa_bssid[6];   /* the wpa handshake bssid   */
@@ -296,9 +298,9 @@ int check_shared_key(unsigned char *h80211, int caplen)
     char prga[512];
     unsigned int long crc;
 
-	m_bmac = 16;
-	m_smac = 10;
-	m_dmac = 4;
+    m_bmac = 16;
+    m_smac = 10;
+    m_dmac = 4;
 
     if( time(NULL) - G.sk_start > 5)
     {
@@ -553,11 +555,11 @@ int dump_initialize( char *prefix, int ivs_only )
     char ofn[1024];
 
 
-	/* If you only want to see what happening, send all data to /dev/null */
+    /* If you only want to see what happening, send all data to /dev/null */
 
-	if ( prefix == NULL) {
-		return( 0 );
-	}
+    if ( prefix == NULL) {
+	    return( 0 );
+    }
 
     /* check not to overflow the ofn buffer */
 
@@ -1750,20 +1752,20 @@ int getBatteryState()
     int value;
     size_t len;
 
-	len = 1;
-	value = 0;
-	sysctlbyname("hw.acpi.acline", &value, &len, NULL, 0);
-	if (value == 0)
-	{
-		sysctlbyname("hw.acpi.battery.time", &value, &len, NULL, 0);
-		value = value * 60;
-	}
-	else
-	{
-		value = 0;
-	}
+    len = 1;
+    value = 0;
+    sysctlbyname("hw.acpi.acline", &value, &len, NULL, 0);
+    if (value == 0)
+    {
+	    sysctlbyname("hw.acpi.battery.time", &value, &len, NULL, 0);
+	    value = value * 60;
+    }
+    else
+    {
+	    value = 0;
+    }
 
-	return( value );
+    return( value );
 #elif defined(_BSD_SOURCE)
     struct apm_power_info api;
     int apmfd;
@@ -2572,43 +2574,42 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 
 #if defined(__FreeBSD__)
 /*
-	this function, as a few others, presents a slightly
-	reduced set of parameters, because we don't need some
-	of them, for example the card number or references
-	to linux-only structs needed to make hardware behave.
+    this function, as a few others, presents a slightly
+    reduced set of parameters, because we don't need some
+    of them, for example the card number or references
+    to linux-only structs needed to make hardware behave.
 */
 int set_channel( char *interface, int channel )
 {
-	struct ieee80211req ifr;
+    struct ieee80211req ifr;
 
-	if (G.s_ioctl == -1)
+    if (G.s_ioctl == -1)
+    {
+	if ( ( G.s_ioctl = socket( PF_INET, SOCK_DGRAM, 0 ) ) == -1 )
 	{
-		if ( ( G.s_ioctl = socket( PF_INET, SOCK_DGRAM, 0 ) ) == -1 )
-		{
-			perror( "socket() failed" );
-			return( 1 );
-		}
+	    perror( "socket() failed" );
+	    return( 1 );
 	}
+    }
 
-	strncpy( ifr.i_name, interface, IFNAMSIZ - 1 );
-	ifr.i_type = IEEE80211_IOC_CHANNEL;
+    strncpy( ifr.i_name, interface, IFNAMSIZ - 1 );
+    ifr.i_type = IEEE80211_IOC_CHANNEL;
 
-	if ( ioctl( G.s_ioctl, SIOCG80211, &ifr ) == -1 )
-	{
-		perror( "ioctl(SIOCG80211) failed" );
-		return( 1 );
-	}
+    if ( ioctl( G.s_ioctl, SIOCG80211, &ifr ) == -1 )
+    {
+	perror( "ioctl(SIOCG80211) failed" );
+	return( 1 );
+    }
 
-	ifr.i_val = channel;
+    ifr.i_val = channel;
 
-	if ( ioctl( G.s_ioctl, SIOCS80211, &ifr ) == -1 )
-	{
-		perror( "ioctl(SIOCS80211) failed" );
-		return( 1 );
-	}
+    if ( ioctl( G.s_ioctl, SIOCS80211, &ifr ) == -1 )
+    {
+	perror( "ioctl(SIOCS80211) failed" );
+	return( 1 );
+    }
 
-
-	return( 0 );
+    return( 0 );
 }
 #endif /* __FreeBSD__ */
 
@@ -2683,171 +2684,172 @@ int set_monitor( char *interface, int fd_raw, int cardnum )
 
 #if defined(__FreeBSD__)
 /*
-	this function, as a few others, presents a slightly
-	reduced set of parameters, because we don't need some
-	of them, for example the card number or references
-	to linux-only structs needed to make hardware behave.
+    this function, as a few others, presents a slightly
+    reduced set of parameters, because we don't need some
+    of them, for example the card number or references
+    to linux-only structs needed to make hardware behave.
 */
 int set_monitor( char *interface, int cardnum )
 {
-	int s, i, *mw, ahd;
-	struct ifreq ifr;
-	struct ifmediareq ifmr;
+    int s, i, *mw, ahd;
+    struct ifreq ifr;
+    struct ifmediareq ifmr;
 
-	if( ( s = socket( PF_INET, SOCK_RAW, 0 ) ) == -1 )
+    if( ( s = socket( PF_INET, SOCK_RAW, 0 ) ) == -1 )
     {
-        perror( "socket() failed" );
-        return( 1 );
+	perror( "socket() failed" );
+	return( 1 );
     }
 
-	memset( &ifr, 0, sizeof( ifr ) );
-	strncpy( ifr.ifr_name, interface, IFNAMSIZ - 1 );
+    memset( &ifr, 0, sizeof( ifr ) );
+    strncpy( ifr.ifr_name, interface, IFNAMSIZ - 1 );
 
-	if( ioctl( s, SIOCGIFFLAGS, &ifr ) == -1 )
-	{
-		perror( "ioctl(SIOCGIFFLAGS) failed" );
-		return( 1 );
-	}
+    if( ioctl( s, SIOCGIFFLAGS, &ifr ) == -1 )
+    {
+	perror( "ioctl(SIOCGIFFLAGS) failed" );
+	return( 1 );
+    }
 
-	memset( &ifmr, 0, sizeof( ifmr ) );
-	strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
+    memset( &ifmr, 0, sizeof( ifmr ) );
+    strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
 
-	if( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1)
-	{
-		perror( "ioctl(SIOCGIFMEDIA) failed" );
-		return( 1 );
-	}
+    if( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1)
+    {
+	perror( "ioctl(SIOCGIFMEDIA) failed" );
+	return( 1 );
+    }
 
-	if( ifmr.ifm_count == 0 )
-	{
-		perror( "ioctl(SIOCGIFMEDIA), no media words" );
-		return( 1 );
-	}
+    if( ifmr.ifm_count == 0 )
+    {
+	perror( "ioctl(SIOCGIFMEDIA), no media words" );
+	return( 1 );
+    }
 
-	mw = calloc( (size_t) ifmr.ifm_count, sizeof( int ) );
-	if( mw == NULL )
-	{
-		perror( "calloc()" );
-		return( 1 );
-	}	
+    mw = calloc( (size_t) ifmr.ifm_count, sizeof( int ) );
+    if( mw == NULL )
+    {
+	perror( "calloc()" );
+	return( 1 );
+    }	
 
     ifmr.ifm_ulist = mw;
     strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
     if ( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1 )
-	{
-		perror( "ioctl(SIOCGIFMEDIA)" );
-		return( 1 );
-	}
+    {
+	perror( "ioctl(SIOCGIFMEDIA)" );
+	return( 1 );
+    }
 
+    for( i = 0; i < ifmr.ifm_count; i++ )
+    {
+	if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
+	{
+	    i =  ifmr.ifm_count  + 1;
+	}
+    }
+
+    if( i == ( ifmr.ifm_count  + 1 ) )
+    {
+	return( 1 );
+    }
+
+    /*
+	A few interfaces on FreeBSD have a specific operating
+	mode called adhoc demo, which is an adhoc mode that
+	sends no beacons. The pratical effect of such a mode
+	is that's possible to monitor *and* write raw frames
+	down the pipe without messing with things we don't
+	know about ;)
+	here we try first to use the adhoc demo mode and then
+	fallback to monitor if it's not available.
+	why?
+	because aireplay while opening the raw bpf stuff will
+	don't mess with the interface... smooooth operations.
+    */
+
+    /* check if interface supports adhoc + flag0 */
+    ahd = 0;
+    for( i = 0; i < ifmr.ifm_count && ahd == 0; i++ )
+	{
+	    if( ifmr.ifm_ulist[i] & IFM_IEEE80211_ADHOC )
+	    {
+		if( ifmr.ifm_ulist[i] & IFM_FLAG0 )
+	    {
+		ahd = 1;
+		break;
+	    }
+	}
+    }
+
+    if( ahd == 0 )
+    {
+	/* no. fallback to monitor mode */
 	for( i = 0; i < ifmr.ifm_count; i++ )
 	{
-		if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
-			i =  ifmr.ifm_count  + 1;
+	    if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
+	    {
+		i = ifmr.ifm_count + 1;
+		break;
+	    }
 	}
 
-	if( i == ( ifmr.ifm_count  + 1 ) )
+	if( i != ( ifmr.ifm_count + 1 ) )
 	{
-		return( 1 );
+	    /* crap, neither monitor mode! */
+	    fprintf(stderr,
+		"interface %s is missing monitor mode\n",
+		interface);
+	    return( 1 );
 	}
+    }
 
-	/*
-		A few interfaces on FreeBSD have a specific operating
-		mode called adhoc demo, which is an adhoc mode that
-		sends no beacons. The pratical effect of such a mode
-		is that's possible to monitor *and* write raw frames
-		down the pipe without messing with things we don't
-		know about ;)
-		here we try first to use the adhoc demo mode and then
-		fallback to monitor if it's not available.
-		why?
-		because aireplay while opening the raw bpf stuff will
-		don't mess with the interface... smooooth operations.
-	*/
+    memset( &ifr, 0, sizeof( ifr ) );
+    strncpy( ifr.ifr_name, interface, IFNAMSIZ - 1 );
 
-	/* check if interface supports adhoc + flag0 */
-	ahd = 0;
-	for( i = 0; i < ifmr.ifm_count && ahd == 0; i++ )
+    ifr.ifr_media = IFM_IEEE80211 | IFM_AUTO;
+    if (ahd == 0)
+	ifr.ifr_media |= IFM_IEEE80211_MONITOR;
+    else
+	ifr.ifr_media |= IFM_IEEE80211_ADHOC | IFM_FLAG0;
+
+    if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
+    {
+	perror( "ioctl(SIOCSIFMEDIA) failed" );
+	return( 1 );
+    }
+
+    if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
+    {
+	perror( "ioctl(SIOCGIFMEDIA) failed" );
+	return( 1 );
+    }
+
+    if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
+    {
+	perror( "ioctl(SIOCSIFMEDIA) failed" );
+	return( 1 );
+    }
+
+    i = ( ifr.ifr_flags & 0xffff ) | ( ifr.ifr_flagshigh << 16 );
+    if( !( i & IFF_UP ) )
+    {
+	i |= IFF_UP;
+
+	ifr.ifr_flags = i & 0xffff;
+	ifr.ifr_flagshigh = i >> 16;
+
+	if ( ioctl( s, SIOCSIFFLAGS, &ifr ) == -1 )
 	{
-		if( ifmr.ifm_ulist[i] & IFM_IEEE80211_ADHOC )
-		{
-			if( ifmr.ifm_ulist[i] & IFM_FLAG0 )
-			{
-				ahd = 1;
-				break;
-			}
-		}
+	    perror( "ioctl(SIOCSIFFLAGS) failed" );
+	    return( 1 );
 	}
+    }
 
-	if( ahd == 0 )	
-	{
-		/* no. fallback to monitor mode */
-		for( i = 0; i < ifmr.ifm_count; i++ )
-		{
-			if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
-			{
-				i = ifmr.ifm_count + 1;
-				break;
-			}
-		}
-	
-		if( i != ( ifmr.ifm_count + 1 ) )
-		{
-			/* holy shit, neither monitor mode! */
-			fprintf(stderr,
-				"interface %s is missing monitor mode\n",
-				interface);
-			return( 1 );
-		}
-	}
+    close(s);	
 
-	memset( &ifr, 0, sizeof( ifr ) );
-	strncpy( ifr.ifr_name, interface, IFNAMSIZ - 1 );
+    set_channel( interface, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum] );
 
-	ifr.ifr_media = IFM_IEEE80211 | IFM_AUTO;
-	if (ahd == 0)
-		ifr.ifr_media |= IFM_IEEE80211_MONITOR;
-	else
-		ifr.ifr_media |= IFM_IEEE80211_ADHOC | IFM_FLAG0;
-
-	if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
-	{
-		perror( "ioctl(SIOCSIFMEDIA) failed" );
-		return( 1 );
-	}
-
-	if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
-	{
-		perror( "ioctl(SIOCGIFMEDIA) failed" );
-		return( 1 );
-	}
-
-	if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
-	{
-		perror( "ioctl(SIOCSIFMEDIA) failed" );
-		return( 1 );
-	}
-
-	i = ( ifr.ifr_flags & 0xffff ) | ( ifr.ifr_flagshigh << 16 );
-	if( !( i & IFF_UP ) )
-	{
-		i |= IFF_UP;
-
-		ifr.ifr_flags = i & 0xffff;
-		ifr.ifr_flagshigh = i >> 16;
-
-		if ( ioctl( s, SIOCSIFFLAGS, &ifr ) == -1 )
-		{
-			perror( "ioctl(SIOCSIFFLAGS) failed" );
-			return( 1 );
-		}
-	}
-
-	close(s);	
-
-	set_channel( interface, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum] );
-    
-
-	return( 0 );
+    return( 0 );
 }
 #endif /* __FreeBSD__ */
 
@@ -2972,10 +2974,10 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
 
 #if defined(__FreeBSD__)
 /*
-	this function, as a few others, presents a slightly
-	reduced set of parameters, because we don't need some
-	of them, for example the card number or references
-	to linux-only structs needed to make hardware behave.
+    this function, as a few others, presents a slightly
+    reduced set of parameters, because we don't need some
+    of them, for example the card number or references
+    to linux-only structs needed to make hardware behave.
 */
 void channel_hopper( char *interface[], int if_num, int chan_count )
 {
@@ -3399,62 +3401,62 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 
 #if defined(__FreeBSD__)
 /*
-	this function, as a few others, presents a slightly
-	reduced set of parameters, because we don't need some
-	of them, for example the card number or references
-	to linux-only structs needed to make hardware behave.
+    this function, as a few others, presents a slightly
+    reduced set of parameters, because we don't need some
+    of them, for example the card number or references
+    to linux-only structs needed to make hardware behave.
 */
 int setup_card(char *iface, struct ifreq *ifr, int *fd_raw, int cardnum)
 {
-	unsigned int i;
+    unsigned int i;
 
-	/* bind interface iface to the bpf */
-	memset( ifr, 0, sizeof(ifr) );
-	strncpy( ifr->ifr_name, iface, IFNAMSIZ - 1 );
+    /* bind interface iface to the bpf */
+    memset( ifr, 0, sizeof(ifr) );
+    strncpy( ifr->ifr_name, iface, IFNAMSIZ - 1 );
 
-	if( ioctl( *fd_raw, BIOCSETIF, ifr ) == -1 )
+    if( ioctl( *fd_raw, BIOCSETIF, ifr ) == -1 )
     {
-        perror( "ioctl(BIOCSETIF) failed" );
-        return( 1 );
+	perror( "ioctl(BIOCSETIF) failed" );
+	return( 1 );
     }
 
-	/* set a meaningful datalink type */
-	i = DLT_IEEE802_11_RADIO;
-	if( ioctl( *fd_raw, BIOCSDLT, &i ) == -1 )
+    /* set a meaningful datalink type */
+    i = DLT_IEEE802_11_RADIO;
+    if( ioctl( *fd_raw, BIOCSDLT, &i ) == -1 )
     {
-        perror( "ioctl(BIOCSDLT) failed" );
-        return( 1 );
+	perror( "ioctl(BIOCSDLT) failed" );
+	return( 1 );
     }
 
-	/* set immediate mode (doesn't wait for buffer fillup) */
-	i = 1;
-	if( ioctl( *fd_raw, BIOCIMMEDIATE, &i ) == -1 )
+    /* set immediate mode (doesn't wait for buffer fillup) */
+    i = 1;
+    if( ioctl( *fd_raw, BIOCIMMEDIATE, &i ) == -1 )
     {
-        perror( "ioctl(BIOCIMMEDIATE) failed" );
-        return( 1 );
+	perror( "ioctl(BIOCIMMEDIATE) failed" );
+	return( 1 );
     }
 
-	/* set bpf's promiscuous mode */	
-	if( ioctl( *fd_raw, BIOCPROMISC, NULL) == -1 )
+    /* set bpf's promiscuous mode */	
+    if( ioctl( *fd_raw, BIOCPROMISC, NULL) == -1 )
     {
-        perror( "ioctl(BIOCPROMISC) failed" );
-        return( 1 );
+	perror( "ioctl(BIOCPROMISC) failed" );
+	return( 1 );
     }
 
-	/* lock bpf for further messing */
-	if( ioctl( *fd_raw, BIOCLOCK, NULL ) == -1 )
+    /* lock bpf for further messing */
+    if( ioctl( *fd_raw, BIOCLOCK, NULL ) == -1 )
     {
-        perror( "ioctl(BIOCLOCK) failed" );
-        return( 1 );
+	perror( "ioctl(BIOCLOCK) failed" );
+	return( 1 );
     }
 
-	/* set monitor mode in interface iface */
-	if( set_monitor( iface, cardnum ) == 1 )
+    /* set monitor mode in interface iface */
+    if( set_monitor( iface, cardnum ) == 1 )
     {
-        return( 1 );
+	return( 1 );
     }
 
-	return( 0 );
+    return( 0 );
 }
 #endif /* __FreeBSD__ */
 
@@ -3481,10 +3483,10 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct pa
 
 #if defined(__FreeBSD__)
 /*
-	this function, as a few others, presents a slightly
-	reduced set of parameters, because we don't need some
-	of them, for example the card number or references
-	to linux-only structs needed to make hardware behave.
+    this function, as a few others, presents a slightly
+    reduced set of parameters, because we don't need some
+    of them, for example the card number or references
+    to linux-only structs needed to make hardware behave.
 */
 int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], int fd_raw[])
 {
@@ -3561,12 +3563,13 @@ int main( int argc, char *argv[] )
     time_t tt1, tt2, tt3, start_time;
 
 #if defined(__FreeBSD__)
-	int j, k;
+    int j, k;
     char *bnbuf;
-	unsigned int buf, buflen;
-	struct bpf_hdr *bpfp;
-	struct ieee80211_radiotap_header *rtp;
-	unsigned char *r;
+    unsigned int buf;
+    struct bpf_hdr *bpfp;
+    struct ieee80211_radiotap_header *rtp;
+    unsigned char *r;
+    size_t buflen = 0;
 #endif /* __FreeBSD__ */
 
     unsigned char      *buffer;
@@ -3631,16 +3634,16 @@ int main( int argc, char *argv[] )
     memset(G.sharedkey, '\x00', 512*3);
 
 #if defined(__FreeBSD__)
-	G.s_ioctl = -1;
+    G.s_ioctl = -1;
 #endif
 
     gettimeofday( &tv0, NULL );
 
 #if defined(__FreeBSD__)
-	/* cast to accomodate a warning on FreeBSD 6-stable */
+    /* cast to accomodate a warning on FreeBSD 6-stable */
     lt = localtime( (time_t *) &tv0.tv_sec );
 #else
-	lt = localtime( &tv0.tv_sec );
+    lt = localtime( &tv0.tv_sec );
 #endif
 
     G.keyout = (char*) malloc(512);
@@ -3925,69 +3928,68 @@ int main( int argc, char *argv[] )
 #endif /* linux */
 
 #if defined(__FreeBSD__)
-	/* 
-		since under FreeBSD the socktype PF_PACKET is not available
-		we have to read our frames from a BPF, with a few consequences
-		you'll find later on
-	*/
+    /* 
+	since under FreeBSD the socktype PF_PACKET is not available
+	we have to read our frames from a BPF, with a few consequences
+	you'll find later on
+    */
     for( i = 0; i < cards; i++ )
     {
-        for( j = 0; j < 256; j++ )
+	for( j = 0; j < 256; j++ )
+	{
+	    if( asprintf( &bnbuf, "/dev/bpf%d", j ) <= 0 )
+	    {
+		perror( "asprintf() failed" );
+		exit( 1 );
+	    }
+
+	    fd_raw[i] = open( bnbuf, O_RDWR );
+
+	    if( fd_raw[i] < 0 )
+	    {
+		if( errno != EBUSY )
 		{
-			if( asprintf( &bnbuf, "/dev/bpf%d", j ) <= 0 )
-			{
-				perror( "asprintf() failed" );
-				exit( 1 );
-			}
+		    perror( "can't open /dev/bpf" );
+		    exit( 1 );
+		}
+		continue;
+	    }
 
-			fd_raw[i] = open( bnbuf, O_RDWR );
-
-			if( fd_raw[i] < 0 )
-			{
-				if( errno != EBUSY )
-				{
-					perror( "can't open /dev/bpf" );
-					exit( 1 );
-				}
-				continue;
-			}
-			
-			free( bnbuf );
-			break;
+	    free( bnbuf );
+	    break;
         }
 
-        if( fd_raw[i] < 0 )
-		{
-            perror( "can't open /dev/bpf" );
-            exit( 1);
-        }
+	if( fd_raw[i] < 0 )
+	{
+	    perror( "can't open /dev/bpf" );
+	    exit( 1);
+	}
 
-		if( fd_raw[i] > fdh )
-			fdh = fd_raw[i];
+	if( fd_raw[i] > fdh )
+	    fdh = fd_raw[i];
 
-		/*
-			the BPF buffer size must be the same we pass to the
-			read syscall. this limitation/feature was introduced
-			for performance reasons.
-			we try to get our BPF to accomodate the largest useful
-			buffer size *it* wants.
-		*/
-		for( buflen = 0, buf = 65536 ; buf > 4096 ; i -= 512 )
-		{
-			ioctl( fd_raw[i], BIOCSBLEN, &buf );
+	/*
+	    the BPF buffer size must be the same we pass to the
+	    read syscall.  we try to get our BPF to accomodate the
+            largest useful buffer size *it* wants.
+	*/
+	for( buf = 65536 ; buf > 4096 ; buf -= 512 )
+	{
+	    ioctl( fd_raw[i], BIOCSBLEN, &buf );
 
-			if (buf > 0) {
-				buflen = buf;
-				break;
-			}
-		}
+	    if( buf > 0 )
+	    {
+		buflen = buf;
+		break;
+	    }
+	}
 
-		/* this is a real problem */
-		if( buflen <= 0 )
-		{
-			perror( "cannot allocate bpf buffer space" );
-			exit(1);
-		}
+	/* this is a real problem */
+	if( buflen <= 0 )
+	{
+	    perror( "cannot allocate bpf buffer space" );
+	    exit(1);
+	}
 
     }
 
@@ -4000,15 +4002,15 @@ int main( int argc, char *argv[] )
     }
 #endif /* __FreeBSD__ */
 
-#if defined(linux)
     /* initialize cards */
+#if defined(linux)
     cards = init_cards(argv[argc-1], iface, ifr, mr, sll, fd_raw, arptype);
 #elif defined(__FreeBSD__)
     cards = init_cards(argv[argc-1], iface, ifr, fd_raw);
 #endif
 
     if(cards <= 0)
-		return( 1 );
+	return( 1 );
 
     chan_count = getchancount(0);
 
@@ -4017,36 +4019,33 @@ int main( int argc, char *argv[] )
 
     if( G.channel[0] == 0 )
     {
-		pipe( G.ch_pipe );
-        pipe( G.cd_pipe );
+	pipe( G.ch_pipe );
+	pipe( G.cd_pipe );
 
-        signal( SIGUSR1, sighandler );
+	signal( SIGUSR1, sighandler );
 
-        if( ! fork() )
-        {
-
+	if( ! fork() )
+	{
 #if defined(linux)
             channel_hopper( iface, fd_raw, cards, chan_count );
 #elif defined(__FreeBSD__)
             channel_hopper( iface, cards, chan_count );
 #endif
-
             exit( 1 );
         }
     }
     else
     {
-		for( i=0; i<cards; i++ )
-		{
-
+	for( i=0; i<cards; i++ )
+	{
 #if defined(linux)
             set_channel( iface[i], fd_raw[i], G.channel[0], i );
 #elif defined(__FreeBSD__)
             set_channel( iface[i], G.channel[0] );
 #endif
 
-			G.channel[i] = G.channel[0];
-		}
+	    G.channel[i] = G.channel[0];
+	}
         G.singlechan = 1;
     }
 
@@ -4082,16 +4081,16 @@ int main( int argc, char *argv[] )
 
     fprintf( stderr, "\33[?25l\33[2J\n" );
 
-	start_time = time( NULL );
+    start_time = time( NULL );
     tt1        = time( NULL );
     tt2        = time( NULL );
     tt3        = time( NULL );
     gettimeofday( &tv3, NULL );
 
-	G.batt     = getBatteryString();
+    G.batt     = getBatteryString();
 
-	G.elapsed_time = (char *) calloc( 1, 4 );
-	strcpy(G.elapsed_time,"0 s");
+    G.elapsed_time = (char *) calloc( 1, 4 );
+    strcpy(G.elapsed_time,"0 s");
 
     while( 1 )
     {
@@ -4147,10 +4146,10 @@ int main( int argc, char *argv[] )
         /* capture one packet */
 
         FD_ZERO( &rfds );
-		for(i=0; i<cards; i++)
-	    {
+	for(i=0; i<cards; i++)
+	{
             FD_SET( fd_raw[i], &rfds );
-	    }
+	}
 
         tv0.tv_sec  = 0;
         tv0.tv_usec = REFRESH_RATE;
@@ -4215,7 +4214,7 @@ int main( int argc, char *argv[] )
 #if defined(__FreeBSD__)
                 memset( buffer, 0, buflen );
 
-				/* buffer size have to be as big as BPF buffer */
+		/* buffer size have to be as big as BPF buffer */
                 if( ( caplen = read(  fd_raw[i], buffer, buflen ) ) < 0 )
                 {
                     perror( "read failed" );
@@ -4284,152 +4283,151 @@ int main( int argc, char *argv[] )
 #endif /* linux */
 
 #if defined(__FreeBSD__)
-					/*
-						radiotap under FreeBSD is well defined and decently
-						supported from any driver that actually can support
-						monitor mode, so we need no trick on pointer mechs
-						for different drivers
-					*/
-                	h80211 = buffer;
+		/*
+		    radiotap under FreeBSD is well defined and decently
+		    supported from any driver that actually can support
+		    monitor mode, so we need no trick on pointer mechs
+		    for different drivers
+		*/
+		h80211 = buffer;
 
-					/*
-						since we're reading from a BPF with a datalink type
-						of IEEE802_11_RADIO, our readed frame will start with
-						a variable size BPF header (struct bpf_hdr) and a 
-						variable size radiotap header.
-						we need to know their lenght to pass a clean 802.11
-						frame to dump_add_packet()
-					*/
-					bpfp = (struct bpf_hdr *)buffer;
-					rtp = (struct ieee80211_radiotap_header *)(buffer + bpfp->bh_hdrlen);
+		/*
+		    since we're reading from a BPF with a datalink type
+		    of IEEE802_11_RADIO, our readed frame will start with
+		    a variable size BPF header (struct bpf_hdr) and a 
+		    variable size radiotap header.
+		    we need to know their lenght to pass a clean 802.11
+		    frame to dump_add_packet()
+		*/
+		bpfp = (struct bpf_hdr *)buffer;
+		rtp = (struct ieee80211_radiotap_header *)(buffer + bpfp->bh_hdrlen);
 
-					/*
-						radiotap header parsing stuff
-						we walk thru every possible field of the base set of
-						radiotap informations, looking for what we need,
-						specifically the flags map and the power levels
-					*/
+		/*
+		    radiotap header parsing stuff
+		    we walk thru every possible field of the base set of
+		    radiotap informations, looking for what we need,
+		    specifically the flags map and the power levels
+		*/
 
-					/* position our pointer to the end of it_present field */
-					r = (unsigned char *)&rtp->it_present;
-					r += sizeof(u_int32_t);
+		/* position our pointer to the end of it_present field */
+		r = (unsigned char *)&rtp->it_present;
+		r += sizeof(u_int32_t);
 
-					for( k = 0; k <= 13 ; k++ )
-					{
-						if( rtp->it_present & ( 1 << k ) )
-						{
-							switch( k )
-							{
-							  case IEEE80211_RADIOTAP_TSFT:
+		for( k = 0; k <= 13 ; k++ )
+		{
+		    if( rtp->it_present & ( 1 << k ) )
+		    {
+			switch( k )
+			{
+			  case IEEE80211_RADIOTAP_TSFT:
 
-								/* we have no use for this, let's skip over */
-								r += sizeof(u_int64_t);
-								break;
+			    /* we have no use for this, let's skip over */
+			    r += sizeof(u_int64_t);
+			    break;
 
-							  case IEEE80211_RADIOTAP_FLAGS:
+			  case IEEE80211_RADIOTAP_FLAGS:
 
-								if( *r & IEEE80211_RADIOTAP_F_FCS )
-								{
-									/*
-										this frame has 4 FCS bytes at
-										his end, and we need to avoid them
-									*/
-									caplen -= 4; 
-								}
-								r += sizeof( u_int8_t ); /* and go on.. */
-								break;
+			    if( *r & IEEE80211_RADIOTAP_F_FCS )
+			    {
+				/*
+				    this frame has 4 FCS bytes at
+				    his end, and we need to avoid them
+				*/
+				caplen -= 4; 
+			    }
+			    r += sizeof( u_int8_t ); /* and go on.. */
+			    break;
 
-							  case IEEE80211_RADIOTAP_RATE:
+			  case IEEE80211_RADIOTAP_RATE:
 
-								/* we have no use for this, let's skip over */
-								r += sizeof( u_int8_t );
-								break;
+			    /* we have no use for this, let's skip over */
+			    r += sizeof( u_int8_t );
+			    break;
 
-							  case IEEE80211_RADIOTAP_CHANNEL:
+			  case IEEE80211_RADIOTAP_CHANNEL:
 
-								/* we have no use for this, let's skip over */
-								r += sizeof( u_int16_t ) * 2;
-								break;
+			    /* we have no use for this, let's skip over */
+			    r += sizeof( u_int16_t ) * 2;
+			    break;
 
-							  case IEEE80211_RADIOTAP_FHSS:
+			  case IEEE80211_RADIOTAP_FHSS:
 
-								/* we have no use for this, let's skip over */
-								r += sizeof(u_int16_t);
-								break;
+			    /* we have no use for this, let's skip over */
+			    r += sizeof(u_int16_t);
+			    break;
 
-							  case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
+			  case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
 
-								/* we could like this field... mhmhm! */
-								memcpy( &power, r, sizeof( int8_t ) );
-								break;
+			    /* we could like this field... mhmhm! */
+			    memcpy( &power, r, sizeof( int8_t ) );
+			    break;
 
-							  case IEEE80211_RADIOTAP_DBM_ANTNOISE:
+			  case IEEE80211_RADIOTAP_DBM_ANTNOISE:
 
-								/* we have no use for this, let's skip over */
-								r += sizeof( int8_t );
-								break;
+			    /* we have no use for this, let's skip over */
+			    r += sizeof( int8_t );
+			    break;
 
-							  case IEEE80211_RADIOTAP_LOCK_QUALITY:
+			  case IEEE80211_RADIOTAP_LOCK_QUALITY:
 
-								/* we have no use for this, let's skip over */
-								r += sizeof( u_int16_t );
-								break;
+			    /* we have no use for this, let's skip over */
+			    r += sizeof( u_int16_t );
+			    break;
 
-							  case IEEE80211_RADIOTAP_TX_ATTENUATION:
+			  case IEEE80211_RADIOTAP_TX_ATTENUATION:
 
-								/* we have no use for this, let's skip over */
-								r += sizeof( u_int16_t );
-								break;
+			    /* we have no use for this, let's skip over */
+			    r += sizeof( u_int16_t );
+			    break;
 
-							  case IEEE80211_RADIOTAP_DB_TX_ATTENUATION:
+			  case IEEE80211_RADIOTAP_DB_TX_ATTENUATION:
 
-								/* we have no use for this, let's skip over */
-								r += sizeof( u_int16_t );
-								break;
+			    /* we have no use for this, let's skip over */
+			    r += sizeof( u_int16_t );
+			    break;
 
-							  case IEEE80211_RADIOTAP_DBM_TX_POWER:
+			  case IEEE80211_RADIOTAP_DBM_TX_POWER:
 
-								/* we have no use for this, let's skip over */
-								r += sizeof( int8_t );
-								break;
+			    /* we have no use for this, let's skip over */
+			    r += sizeof( int8_t );
+			    break;
 
-							  case IEEE80211_RADIOTAP_ANTENNA:
+			  case IEEE80211_RADIOTAP_ANTENNA:
 
-								/* we have no use for this, let's skip over */
-								r += sizeof( u_int8_t );
-								break;
+			    /* we have no use for this, let's skip over */
+			    r += sizeof( u_int8_t );
+			    break;
 
-							  case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
+			  case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
 
-								/* we could like this field... mhmhm! */
-								power = (int) *r;
-								
-								break;
-			
-							  case IEEE80211_RADIOTAP_DB_ANTNOISE:
+			    /* we could like this field... mhmhm! */
+			    power = (int) *r;
+			    break;
 
-								/* we have no use for this, let's skip over */
-								r += sizeof(u_int8_t);
-								break;
+			  case IEEE80211_RADIOTAP_DB_ANTNOISE:
 
-							  default:
-								break;
-							}
-						}
-					}
+			    /* we have no use for this, let's skip over */
+			    r += sizeof(u_int8_t);
+			    break;
 
-					/*
-						n is the offset of the real frame from the beginning
-						of the capture (bpf header lenght + radiotap header
-						lenght)
-					*/
-					n = bpfp->bh_hdrlen + rtp->it_len; 
+			  default:
+			    break;
+		    }
+		}
+	    }
 
-                    if( n <= 0 || n >= caplen )
-                        continue;
+	    /*
+		n is the offset of the real frame from the beginning
+		of the capture (bpf header lenght + radiotap header
+		lenght)
+	    */
+	    n = bpfp->bh_hdrlen + rtp->it_len; 
 
-                    h80211 += n;
-                    caplen -= n;
+	    if( n <= 0 || n >= caplen )
+		continue;
+
+	    h80211 += n;
+	    caplen -= n;
 #endif /* __FreeBSD__ */
 
                 dump_add_packet( h80211, caplen, power, i );

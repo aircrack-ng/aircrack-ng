@@ -43,17 +43,18 @@
 #endif /* linux */
 
 #if defined(__FreeBSD__)
-	#include <sys/param.h>
+    #include <sys/param.h>
     #include <sys/sysctl.h>
-	#include <sys/uio.h>
+    #include <sys/uio.h>
     #include <net/bpf.h>
     #include <net/if.h>
     #include <net/if_media.h>
     #include <netinet/in.h>
     #include <netinet/if_ether.h>
     #include <net80211/ieee80211.h>
-	#include <net80211/ieee80211_freebsd.h>
-#endif /* FreeBSD */
+    #include <net80211/ieee80211_freebsd.h>
+    #include <net80211/ieee80211_radiotap.h>
+#endif /* __FreeBSD__ */
 
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -110,14 +111,16 @@
     "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
-extern int is_ndiswrapper(const char * iface, const char * path);
 extern char * searchInside(const char * dir, const char * filename);
-extern char * wiToolsPath(const char * tool);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
-
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
+
+#if defined(linux)
+extern int is_ndiswrapper(const char * iface, const char * path);
+extern char * wiToolsPath(const char * tool);
+#endif /* linux */
 
 
 char usage[] =
@@ -224,6 +227,10 @@ struct devices
     int fd_in,  arptype_in;
     int fd_out, arptype_out;
     int fd_rtc;
+
+#if defined(__FreeBSD__)
+    size_t buf_in, buf_out;
+#endif
 
     uchar mac_in[6];
     uchar mac_out[6];
@@ -343,27 +350,44 @@ int send_packet( void *buf, size_t count )
 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if (defined(__FreeBSD__) && __FreeBSD_version < 700000)
 /*
-	for writing to a bpf we have to append our frame
-	to some bpf's own data. writev() seems better
-	suited, to me.
+    FreeBSD 6 at this time does not support injection
+    this is a placeholder to keep compilation smooth even
+    on it
 */
 int send_packet( void *buf, size_t count )
 {
-	struct ieee80211_bpf_params bp;
-	struct iovec frame[2];
-	int ret;
+    buf = buf;
+    count = count;
 
-	memset( &bp, 0, sizeof( bp ) );
+    nb_pkt_sent++;
+    return( 0 );
+}
+#endif /* __FreeBSD__ && __FreeBSD_version < 700000 */
 
-	frame[0].iov_base = &bp;
-	frame[0].iov_len = bp.ibp_len;
+#if (defined(__FreeBSD__) && __FreeBSD_version >= 700000)
+/*
+    for writing to a bpf we have to append our frame
+    to some bpf's own data. writev() seems better
+    suited, to me.
+*/
+int send_packet( void *buf, size_t count )
+{
+    struct ieee80211_bpf_params bp;
+    struct iovec frame[2];
+    int ret;
 
-	frame[1].iov_base = buf; 
-	frame[1].iov_len = count; 
+    memset( &bp, 0, sizeof( bp ) );
 
-	ret = writev( dev.fd_out, frame, 2 );
+    bp.ibp_len = sizeof( bp );
+    frame[0].iov_base = &bp;
+    frame[0].iov_len = bp.ibp_len;
+
+    frame[1].iov_base = buf; 
+    frame[1].iov_len = count;
+
+    ret = writev( dev.fd_out, frame, 2 );
 
     if( ret < 0 )
     {
@@ -374,15 +398,16 @@ int send_packet( void *buf, size_t count )
             return( 0 );
         }
 
-        perror( "write failed" );
+        perror( "writev failed" );
         return( -1 );
     }
 
     nb_pkt_sent++;
     return( 0 );
 }
-#endif
+#endif /* __FreeBSD__ && __FreeBSD_version >= 700000 */
 
+#if defined(linux)
 /* madwifi-aware frame reading routing */
 
 int read_packet( void *buf, size_t count )
@@ -432,6 +457,64 @@ int read_packet( void *buf, size_t count )
 
     return( caplen );
 }
+#endif /* linux */
+
+#if defined(__FreeBSD__)
+/*
+    read a packet, purge bpf and radiotap stuff and
+    put it in buf
+*/
+int read_packet( void *buf, size_t count )
+{
+    int caplen;
+    u_char *temp, *r;
+    struct bpf_hdr *hbpf;
+    struct ieee80211_radiotap_header *hrt;
+
+    if( ( temp = calloc( 1, dev.buf_in ) ) == NULL )
+    {
+        perror( "calloc() failed" );
+        return( -1 );
+    }
+	
+    if( ( caplen = read( dev.fd_in, temp, dev.buf_in ) ) < 0 )
+    {
+        if( errno == EAGAIN )
+            return( 0 );
+
+        perror( "read failed" );
+        return( -1 );
+    }
+
+    hbpf = ( struct bpf_hdr * )temp;
+    hrt  = ( struct ieee80211_radiotap_header * )(temp + hbpf->bh_hdrlen);
+
+    caplen -= hbpf->bh_hdrlen + hrt->it_len;
+
+    /* we're looking for FCS bytes, to kill 'em */
+    r = (unsigned char *)&hrt->it_present + sizeof(u_int32_t);
+    if( hrt->it_present & ( 1 << IEEE80211_RADIOTAP_TSFT ) )
+	r += sizeof(u_int64_t);
+
+    if( hrt->it_present & ( 1 << IEEE80211_RADIOTAP_FLAGS ) )
+    {
+	if( *r & IEEE80211_RADIOTAP_F_FCS )
+        {
+            /* there! shoot them! */
+            caplen -= 4;
+        }
+    }
+
+    memset( buf, 0, sizeof( buf ) );
+
+    r = ( u_char * )( temp + hbpf->bh_hdrlen + hrt->it_len );
+    memcpy( buf, r, count );
+
+    free( temp );
+
+    return( caplen );
+}
+#endif /* __FreeBSD__ */
 
 void read_sleep( int usec )
 {
@@ -1050,6 +1133,7 @@ int do_attack_fake_auth( void )
                         }
                     }
 
+#if defined(linux)
                     if( abort )
                     {
                         printf(
@@ -1066,6 +1150,20 @@ int do_attack_fake_auth( void )
     "      the transmit rate (iwconfig <iface> rate 1M).\n\n" );
                         return( 1 );
                     }
+#elif defined(__FreeBSD__)
+                    if( abort )
+                    {
+                        printf(
+    "\nAttack was unsuccessful. Possible reasons:\n\n"
+    "    * Perhaps MAC address filtering is enabled.\n"
+    "    * Check that the BSSID (-a option) is correct.\n"
+    "    * Try to change the number of packets (-o option).\n"
+    "    * This attack sometimes fails against some APs.\n"
+    "    * The card is not on the same channel as the AP.\n"
+    "    * You're too far from the AP. Get closer.\n" );
+                        return( 1 );
+                    }
+#endif
 
                     state = 0;
                 }
@@ -1601,7 +1699,7 @@ int capture_ask_packet( int *caplen )
 #if defined(linux)
     lt = localtime( &tv.tv_sec );
 #else
-	/* makes many BSDs happy */
+    /* makes many BSDs happy */
     lt = localtime( (const time_t *) &tv.tv_sec );
 #endif
 
@@ -1870,13 +1968,14 @@ int do_attack_arp_resend( void )
 
     printf( "You should also start airodump-ng to capture replies.\n" );
 
+#if defined(linux)
     /* avoid blocking on reading the socket */
-
     if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
     {
         perror( "fcntl(O_NONBLOCK) failed" );
         return( 1 );
     }
+#endif
 
     memset( ticks, 0, sizeof( ticks ) );
 
@@ -2304,12 +2403,17 @@ int do_attack_chopchop( void )
             printf( "\n\n"
 "The chopchop attack appears to have failed. Possible reasons:\n"
 "\n"
+#if defined(linux)
 "    * You're trying to inject with an unsupported chipset (Centrino?).\n"
 "    * The driver source wasn't properly patched for injection support.\n"
 "    * You are too far from the AP. Get closer or reduce the send rate.\n"
 "    * Target is 802.11g only but you are using a Prism2 or RTL8180.\n"
 "    * The wireless interface isn't setup on the correct channel.\n" );
-
+#elif defined(__FreeBSD__)
+"    * You are too far from the AP. Get closer.\n"
+"    * Target is 802.11g only but you are using 802.11b hardware.\n"
+"    * The wireless interface isn't setup on the correct channel.\n" );
+#endif
             if( is_deauth_mode )
                 printf(
 "    * The AP isn't vulnerable when operating in non-authenticated mode.\n"
@@ -3271,10 +3375,10 @@ int do_attack_fragment()
         }
 
 #if defined(linux)
-		lt = localtime( &tv.tv_sec );
+        lt = localtime( &tv.tv_sec );
 #else
-		/* makes many BSDs happy */
-		lt = localtime( (const time_t *) &tv.tv_sec );
+        /* makes many BSDs happy */
+        lt = localtime( (const time_t *) &tv.tv_sec );
 #endif
         memset( strbuf, 0, sizeof( strbuf ) );
         snprintf( strbuf,  sizeof( strbuf ) - 1,
@@ -3311,8 +3415,9 @@ int opensysfs( char *iface, int fd) {
     return 0;
 }
 
-/* interface initialization routine */
 #if defined(linux)
+/* interface initialization routine */
+
 int openraw( char *iface, int fd, int *arptype, uchar* mac )
 {
     struct ifreq ifr;
@@ -3400,252 +3505,262 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
 #endif /* linux */
 
 #if defined(__FreeBSD__)
-int openraw(char *name, int *fd, int inout)
+/* interface initialization routine */
+
+int openraw( char *name, int *fd, int *buf, int inout )
 {
-	int i, s, *mw;
-	char *buf;
-	struct ifreq ifr;
-	struct ifmediareq ifmr;
+    int i, s, *mw;
+    char *bpfname;
+    struct ifreq ifr;
+    struct ifmediareq ifmr;
 
-
-	if( ( s = socket( PF_INET, SOCK_RAW, 0 ) ) == -1 )
+    if( ( s = socket( PF_INET, SOCK_RAW, 0 ) ) == -1 )
     {
         perror( "socket() failed" );
         return( 1 );
     }
 
-	/* let's get media words */
-	memset( &ifmr, 0, sizeof( ifmr ) );
-	strncpy( ifmr.ifm_name, name, IFNAMSIZ - 1 );
+    /* let's get media words */
+    memset( &ifmr, 0, sizeof( ifmr ) );
+    strncpy( ifmr.ifm_name, name, IFNAMSIZ - 1 );
 
-	if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1)
-	{
-		perror( "ioctl(SIOCGIFMEDIA) failed" );
-		return( 1 );
-	}
+    if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1)
+    {
+        perror( "ioctl(SIOCGIFMEDIA) failed" );
+        return( 1 );
+    }
 
-	if( ifmr.ifm_count == 0 )
-	{
-		perror( "ioctl(SIOCGIFMEDIA) failed, no media words" );
-		return( 1 );
-	}
+    if( ifmr.ifm_count == 0 )
+    {
+        perror( "ioctl(SIOCGIFMEDIA) failed, no media words" );
+        return( 1 );
+    }
 
-	mw = calloc( (size_t) ifmr.ifm_count, sizeof( int ) );
-	if( mw == NULL )
-	{
-		perror( "calloc() failed" );
-		return( 1 );
-	}
+    mw = calloc( (size_t) ifmr.ifm_count, sizeof( int ) );
+    if( mw == NULL )
+    {
+        perror( "calloc() failed" );
+        return( 1 );
+    }
 
-	ifmr.ifm_ulist = mw;
-	strncpy( ifmr.ifm_name, name, IFNAMSIZ - 1 );
-	if ( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
-	{
-		perror( "ioctl(SIOCGIFMEDIA) failed" );
-		return( 1 );
-	}
+    ifmr.ifm_ulist = mw;
+    strncpy( ifmr.ifm_name, name, IFNAMSIZ - 1 );
+    if ( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
+    {
+        perror( "ioctl(SIOCGIFMEDIA) failed" );
+        return( 1 );
+    }
 
-	/*
-		It's important to know if we want spit frames thru
-		this interface or not, for the two ops are required
-		different media types
-	*/
-	if( inout == 0 )
-	{
-		/* check if interface supports monitor */
-		for( i = 0; i < ifmr.ifm_count; i++ )
-		{
-			if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
-			{
-				i = ifmr.ifm_count + 1;
-				break;
-			}
-		}
-	}
-	else
-	{
-		/* check if interface supports adhoc + flag0 */
-		for( i = 0; i < ifmr.ifm_count; i++ )
-		{
-			if( ifmr.ifm_ulist[i] & IFM_IEEE80211_ADHOC )
-			{
-				if( ifmr.ifm_ulist[i] & IFM_FLAG0 )
-				{
-					i = ifmr.ifm_count + 1;
-					break;
-				}
-			}
-		}
-	}
+    /*
+        It's important to know if we want spit frames thru
+        this interface or not, for the two ops are required
+        different media types
+    */
+    if( inout == 0 )
+    {
+        /* check if interface supports monitor */
+        for( i = 0; i < ifmr.ifm_count; i++ )
+        {
+            if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
+            {
+                i = ifmr.ifm_count + 1;
+                break;
+            }
+        }
+    }
+    else
+    {
+        /* check if interface supports adhoc + flag0 */
+        for( i = 0; i < ifmr.ifm_count; i++ )
+        {
+            if( ifmr.ifm_ulist[i] & IFM_IEEE80211_ADHOC )
+            {
+                if( ifmr.ifm_ulist[i] & IFM_FLAG0 )
+                {
+                    i = ifmr.ifm_count + 1;
+                    break;
+                }
+            }
+        }
+    }
 
-	if( i != ( ifmr.ifm_count + 1 ) )
-	{
-			return( 1 );
-	}
+    if( i != ( ifmr.ifm_count + 1 ) )
+    {
+        return( 1 );
+    }
 
-	memset( &ifr, 0, sizeof( ifr ) );
-	strncpy( ifr.ifr_name, name, IFNAMSIZ - 1 );
+    memset( &ifr, 0, sizeof( ifr ) );
+    strncpy( ifr.ifr_name, name, IFNAMSIZ - 1 );
 
-	if( ( ifmr.ifm_current & IFM_IEEE80211_MONITOR ) != 0 )
-	{
-		if( inout != 0 )
-		{
-			/* we need to switch to the new state */
-			ifr.ifr_media = ifmr.ifm_current - IFM_IEEE80211_MONITOR;
+    if( ( ifmr.ifm_current & IFM_IEEE80211_MONITOR ) != 0 )
+    {
+        if( inout != 0 )
+        {
+            /* we need to switch to the new state */
+            ifr.ifr_media = ifmr.ifm_current - IFM_IEEE80211_MONITOR;
 
-			if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
-			{
-				perror( "ioctl(SIOCSIFMEDIA) failed" );
-				return( 1 );
-			}
+            if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
+            {
+                perror( "ioctl(SIOCSIFMEDIA) failed" );
+                return( 1 );
+            }
 
-			if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
-			{
-				perror( "ioctl(SIOCGIFMEDIA) failed" );
-				return( 1 );
-			}
+            if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
+            {
+                perror( "ioctl(SIOCGIFMEDIA) failed" );
+                return( 1 );
+            }
 
-			ifr.ifr_media = ifmr.ifm_current | IFM_IEEE80211_ADHOC;
-			ifr.ifr_media |=  IFM_FLAG0;
+            ifr.ifr_media = ifmr.ifm_current | IFM_IEEE80211_ADHOC;
+            ifr.ifr_media |=  IFM_FLAG0;
 
-			if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
-			{
-				perror( "ioctl(SIOCSIFMEDIA) failed (injection support?)" );
-				return( 1 );
-			}
-	
-			/* we should be done */	
-			return( 0 );	
-		}
-	}
-	else if( ( ( ifmr.ifm_current & IFM_IEEE80211_ADHOC ) != 0 ) &&
-			( ifmr.ifm_current & IFM_FLAG0 ) != 0 )
-	{
-		if( inout == 0 )
-		{
-			/* we need to switch to the new state */
-			ifr.ifr_media = ifmr.ifm_current - IFM_IEEE80211_ADHOC;
-			ifr.ifr_media = ifr.ifr_media - IFM_FLAG0;
+            if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
+            {
+                perror( "ioctl(SIOCSIFMEDIA) failed (injection support?)" );
+                return( 1 );
+            }
 
-			if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
-			{
-				perror( "ioctl(SIOCSIFMEDIA) failed" );
-				return( 1 );
-			}
+            /* we should be done */	
+            return( 0 );	
+        }
+    }
+    else if( ( ( ifmr.ifm_current & IFM_IEEE80211_ADHOC ) != 0 ) &&
+             ( ifmr.ifm_current & IFM_FLAG0 ) != 0 )
+    {
+        if( inout == 0 )
+        {
+            /* we need to switch to the new state */
+            ifr.ifr_media = ifmr.ifm_current - IFM_IEEE80211_ADHOC;
+            ifr.ifr_media = ifr.ifr_media - IFM_FLAG0;
 
-			if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
-			{
-				perror( "ioctl(SIOCGIFMEDIA) failed" );
-				return( 1 );
-			}
+            if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
+            {
+                perror( "ioctl(SIOCSIFMEDIA) failed" );
+                return( 1 );
+            }
 
-			ifr.ifr_media = ifmr.ifm_current | IFM_IEEE80211_MONITOR;
+            if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
+            {
+                perror( "ioctl(SIOCGIFMEDIA) failed" );
+                return( 1 );
+            }
 
-			if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
-			{
-				perror( "ioctl(SIOCSIFMEDIA) failed" );
-				return( 1 );
-			}
-	
-			/* we should be done */	
-			return( 0 );
-		}
-	}
-	else
-	{
-		ifr.ifr_media = IFM_IEEE80211 | IFM_AUTO;
-		if (inout == 0)
-			ifr.ifr_media |= IFM_IEEE80211_MONITOR;
-		else
-			ifr.ifr_media |= IFM_IEEE80211_ADHOC | IFM_FLAG0;
+            ifr.ifr_media = ifmr.ifm_current | IFM_IEEE80211_MONITOR;
 
-		if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
-		{
-			if (inout == 0)
-				perror( "ioctl(SIOCSIFMEDIA) failed" );
-			else
-				perror( "ioctl(SIOCSIFMEDIA) failed (injection support?)" );
+            if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
+            {
+                perror( "ioctl(SIOCSIFMEDIA) failed" );
+                return( 1 );
+            }
 
-			return( 1 );
-		}
+            /* we should be done */	
+            return( 0 );
+        }
+    }
+    else
+    {
+        ifr.ifr_media = IFM_IEEE80211 | IFM_AUTO;
+        if (inout == 0)
+            ifr.ifr_media |= IFM_IEEE80211_MONITOR;
+        else
+            ifr.ifr_media |= IFM_IEEE80211_ADHOC | IFM_FLAG0;
 
-		if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
-		{
-			perror( "ioctl(SIOCGIFMEDIA) failed" );
-			return( 1 );
-		}
+        if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
+        {
+            if (inout == 0)
+                perror( "ioctl(SIOCSIFMEDIA) failed" );
+            else
+                perror( "ioctl(SIOCSIFMEDIA) failed (injection support?)" );
 
-		return( 0 );	
+            return( 1 );
+        }
 
-	}
+        if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
+        {
+            perror( "ioctl(SIOCGIFMEDIA) failed" );
+            return( 1 );
+        }
 
-	close( s );
+        return( 0 );	
 
-	for( i = 0; i < 256; i++ )
-	{
-		if( asprintf( &buf, "/dev/bpf%d", i ) <= 0 )
-		{
-			perror("asprintf() failed");
-			exit(1);
-		}
+    }
 
-		*fd = open( buf, O_RDWR );
+    close( s );
 
-		if( *fd < 0 )
-		{
-			if( errno != EBUSY )
-			{
-				perror("can't open /dev/bpf");
-				exit(1);
-			}
-			continue;
-		}
+    for( i = 0; i < 256; i++ )
+    {
+        if( asprintf( &bpfname, "/dev/bpf%d", i ) <= 0 )
+        {
+            perror( "asprintf() failed" );
+            exit(1);
+        }
 
-		free( buf );
-		break;
-	}
+        *fd = open( bpfname, O_RDWR );
 
-	if( *fd < 0 )
-	{
-		perror("can't open /dev/bpf");
-		return( 1 );
-	}
+        if( *fd < 0 )
+        {
+            if( errno != EBUSY )
+            {
+                perror( "can't open bpf" );
+                exit( 1 );
+            }
+            continue;
+        }
 
-	/* bind interface iface to the bpf */
-	memset( &ifr, 0, sizeof(ifr) );
-	strncpy( ifr.ifr_name, name, IFNAMSIZ - 1 );
+        free( bpfname );
+        break;
+    }
 
-	if( ioctl( *fd, BIOCSETIF, &ifr ) == -1 )
+    if( *fd < 0 )
+    {
+        perror( "can't open bpf" );
+        return( 1 );
+    }
+
+    /* bind interface iface to the bpf */
+    memset( &ifr, 0, sizeof(ifr) );
+    strncpy( ifr.ifr_name, name, IFNAMSIZ - 1 );
+
+    if( ioctl( *fd, BIOCSETIF, &ifr ) == -1 )
     {
         perror( "ioctl(BIOCSETIF) failed" );
         return( 1 );
     }
 
-	/* set a meaningful datalink type */
-	i = DLT_IEEE802_11;
-	if( ioctl( *fd, BIOCSDLT, &i ) == -1 )
+    /* set a meaningful datalink type */
+    i = DLT_IEEE802_11_RADIO;
+    if( ioctl( *fd, BIOCSDLT, &i ) == -1 )
     {
         perror( "ioctl(BIOCSDLT) failed" );
         return( 1 );
     }
 
-	/* set immediate mode (doesn't wait for buffer fillup) */
-	i = 1;
-	if( ioctl( *fd, BIOCIMMEDIATE, &i ) == -1 )
+    /* set immediate mode (doesn't wait for buffer fillup) */
+    i = 1;
+    if( ioctl( *fd, BIOCIMMEDIATE, &i ) == -1 )
     {
         perror( "ioctl(BIOCIMMEDIATE) failed" );
         return( 1 );
     }
 
-	/* set bpf's promiscuous mode */	
-	if( ioctl( *fd, BIOCPROMISC, NULL) == -1 )
+    /* set bpf's promiscuous mode */	
+    if( ioctl( *fd, BIOCPROMISC, NULL) == -1 )
     {
         perror( "ioctl(BIOCPROMISC) failed" );
         return( 1 );
     }
 
-	/* lock bpf for further messing */
-	if( ioctl( *fd, BIOCLOCK, NULL ) == -1 )
+    *buf = sizeof(tmpbuf);
+    ioctl( *fd, BIOCSBLEN, buf );
+    if( *buf != sizeof(tmpbuf) )
+    {
+        perror( "ioctl(BIOCSBLEN) failed" );
+        return( 1 );
+    }
+
+
+    /* lock bpf for further messing */
+    if( ioctl( *fd, BIOCLOCK, NULL ) == -1 )
     {
         perror( "ioctl(BIOCLOCK) failed" );
         return( 1 );
@@ -3680,15 +3795,16 @@ int main( int argc, char *argv[] )
     opt.delay     = 15;
 
 #if defined(__FreeBSD__)
-	/*
-		check what is our FreeBSD version. Injection works
-		only on 7-CURRENT so abort if it's lower.
-	*/
-	if( __FreeBSD_version < 700000 )
-	{
-		fprintf( stderr, "Aireplay-ng does not work on FreeBSD 6.\n" );
-		exit( 1 );
-	}
+    /*
+        check what is our FreeBSD version. injection works
+        only on 7-CURRENT so abort if it's a lower version.
+    */
+    if( __FreeBSD_version < 700000 )
+    {
+        fprintf( stderr, "Aireplay-ng does not work on this "
+            "release of FreeBSD.\n" );
+        exit( 1 );
+    }
 #endif
 
     while( 1 )
@@ -4260,29 +4376,28 @@ int main( int argc, char *argv[] )
     }
 
     /* open the replay interface */
+
 #if defined(linux)
     dev.is_madwifi = ( memcmp( argv[optind], "ath", 3 ) == 0 );
 
     if( openraw( argv[optind], dev.fd_out, &dev.arptype_out, dev.mac_out ) != 0 )
         return( 1 );
+
 #elif defined(__FreeBSD__)
-    if( openraw( argv[optind], &dev.fd_out, 1 ) != 0 )
+
+    if( openraw( argv[optind], &dev.fd_out, &dev.buf_out, 1 ) != 0 )
         return( 1 );
 #endif
 
     /* open the packet source */
+#if defined(linux)
 
     if( opt.s_face != NULL )
     {
-#if defined(linux)
         dev.is_madwifi = ( memcmp( opt.s_face, "ath", 3 ) == 0 );
 
         if( openraw( opt.s_face, dev.fd_in, &dev.arptype_in, dev.mac_in ) != 0 )
             return( 1 );
-#elif defined(__FreeBSD__)
-    if( openraw( opt.s_face, &dev.fd_in, 0 ) != 0 )
-        return( 1 );
-#endif
     }
     else
     {
@@ -4291,13 +4406,28 @@ int main( int argc, char *argv[] )
         memcpy( dev.mac_in, dev.mac_out, 6);
     }
 
-#if defined(linux)
-	if( sysfs_inject && (opt.a_mode==0 || opt.a_mode==1) )
+    if( sysfs_inject && (opt.a_mode==0 || opt.a_mode==1) )
     {
-           printf( "IPW2200-sysfs does not support non-data injection, so attack %d is not supported\n",
-           			opt.a_mode);
-           return( 1 );
+        printf( "IPW2200-sysfs does not support non-data injection, so attack %d is not supported\n",
+                opt.a_mode);
+        return( 1 );
     }
+
+#elif defined(__FreeBSD__)
+
+    if( opt.s_face != NULL )
+    {
+        if( openraw( opt.s_face, &dev.fd_in, &dev.buf_in, 0 ) != 0 )
+            return( 1 );
+    }
+    else
+    {
+        dev.fd_in = dev.fd_out;
+        dev.buf_in = dev.buf_out;
+        dev.arptype_in = dev.arptype_out;
+        memcpy( dev.mac_in, dev.mac_out, 6);
+    }
+
 #endif
 
     if( opt.s_file != NULL )
@@ -4338,6 +4468,7 @@ int main( int argc, char *argv[] )
         }
     }
 
+#if defined(linux)
     if( memcmp( opt.r_smac, dev.mac_out, 6) != 0 && memcmp( opt.r_smac, NULL_MAC, 6 ) != 0)
     {
         if( dev.is_madwifi && opt.a_mode == 5 ) printf("For --fragment to work on madwifi[-ng], set the interface MAC according to (-h)!\n");
@@ -4347,7 +4478,7 @@ int main( int argc, char *argv[] )
                  dev.mac_out[0], dev.mac_out[1], dev.mac_out[2], dev.mac_out[3], dev.mac_out[4], dev.mac_out[5],
                  argv[optind], opt.r_smac[0], opt.r_smac[1], opt.r_smac[2], opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
     }
-
+#endif /* linux */
     switch( opt.a_mode )
     {
         case 0 : return( do_attack_deauth()      );
