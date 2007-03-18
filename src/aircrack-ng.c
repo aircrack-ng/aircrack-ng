@@ -1386,9 +1386,12 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 		i = 2; j = ( j + S[i] ) & 0xFF; SWAP(S[i], S[j]);
 		x2 = wep.ivbuf[xv + 4] ^ S[(S[i] + S[j]) & 0xFF];
 
+//		printf("x1: %02X  x2: %02X\n", x1, x2);
+
 		if( ( x1 != 0xAA || x2 != 0xAA ) &&
 			( x1 != 0xE0 || x2 != 0xE0 ) &&
-			( x1 != 0x42 || x2 != 0x42 ) )
+			( x1 != 0x42 || x2 != 0x42 ) &&
+			( x1 != 0x02 || x2 != 0xAA ) )					//llc sub layer management
 			bad++;
 
 		if( bad > ((tests*opt.probability)/100) )
