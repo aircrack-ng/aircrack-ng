@@ -374,6 +374,24 @@ do
  fi
 
 
+ if [ x"`iwpriv $iface 2>/dev/null | grep get_regdomain`" != "x" ]
+ then
+     printf "$iface\t\tZyDAS\t\tzd1211rw"
+     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+     then
+         cp $KISMET~ $KISMET 2>/dev/null &&
+         echo "source=wlanng_legacy,$iface,ZyDAS" >>$KISMET
+         startStdIface $iface $CH
+     fi
+     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+         stopStdIface $iface
+     fi
+     echo
+     continue
+ fi
+
+
  if [ x"`iwpriv $iface 2>/dev/null | grep dbg_flag`" != "x" ]
  then
      printf "$iface\t\tZyDAS\t\tzd1211"
