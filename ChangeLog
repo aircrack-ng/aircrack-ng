@@ -1,10 +1,12 @@
 Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
+* aireplay-ng: Works on FreeBSD-CURRENT
 * aircrack-ng: Fixed stdin dictionary usage
 * aircrack-ng: Hardcode CPUs number to 1 in case detection fails
 * aircrack-ng: Fixed too low trashvalue
 * aireplay-ng: Fixed 384 bytes keystream output
 * aireplay-ng: Fixed IV index bug
 * aireplay-ng: Better error messages for -0 and -1
+* airtun-ng: Works on FreeBSD
 * airtun-ng: Fix compilation under FC6 (missing "linux/if.h" include).
 * airodump-ng: Works on BSD.
 * airodump-ng: Added WPA handshake detection
@@ -12,6 +14,7 @@ Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
 * airodump-ng: Fixed a SIGSEGV
 * airodump-ng: Added WPA handshake detection
 * airodump-ng: Added non associated stations filter
+* airmon-ng: Added support for zd1211rw driver
 * airmon-ng: Added support for at76c503a, rt61 and rt73
 * airmon-ng: Updated some device detection
 * airmon-ng: Added Nokia 770 and PrismGT softmac
@@ -29,6 +32,7 @@ Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
 * Updated rtl8187 patch.
 * Updated madwifi-ng patch.
 * Fixed gcc 2.95 compilation
+* Fixed compilation on MacIntel
 
 Version 0.7 (changes from aircrack-ng 0.6.2) - Released 20 January 2007:
 * Makefiles: Improved + added makefiles for other OS

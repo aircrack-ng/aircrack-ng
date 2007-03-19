@@ -17,7 +17,7 @@
 .globl _shammx_data;
 
 .data
-.align(16)
+.align(4)
 const_init_a:
 .long 0x67452301
 .long 0x67452301
