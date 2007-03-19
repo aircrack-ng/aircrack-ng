@@ -134,6 +134,8 @@ char usage[] =
 "      --repeat         : activates repeat mode\n"
 "      --bssid <mac>    : BSSID to repeat\n"
 "      --netmask <mask> : netmask for BSSID filter\n"
+"\n"
+"      --help           : Displays this usage screen\n"
 "\n";
 
 struct options
@@ -964,7 +966,7 @@ char athXraw[] = "athXraw";
 
 int main( int argc, char *argv[] )
 {
-    int ret_val, len, i, n;
+    int ret_val, len, i, n, ret;
     struct ifreq if_request;
     struct pcap_pkthdr pkh;
     fd_set read_fds;
@@ -991,11 +993,12 @@ int main( int argc, char *argv[] )
             {"netmask", 1, 0, 'm'},
             {"bssid",   1, 0, 'd'},
             {"repeat",  0, 0, 'f'},
+            {"help",  0, 0, 'H'},
             {0,         0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "x:a:h:i:r:y:t:w:m:d:f",
+                        "x:a:h:i:r:y:t:w:m:d:fH",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -1006,12 +1009,23 @@ int main( int argc, char *argv[] )
 
                 break;
 
+            case ':' :
+
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+                return( 1 );
+
+            case '?' :
+
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+                return( 1 );
+
             case 'x' :
 
-                sscanf( optarg, "%d", &opt.r_nbpps );
-                if( opt.r_nbpps < 1 || opt.r_nbpps > 1024 )
+                ret = sscanf( optarg, "%d", &opt.r_nbpps );
+                if( opt.r_nbpps < 1 || opt.r_nbpps > 1024 || ret != 1 )
                 {
-                    printf( "Invalid number of packets per second.\n" );
+                    printf( "Invalid number of packets per second. [1-1024]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -1021,6 +1035,7 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.r_bssid ) != 0 )
                 {
                     printf( "Invalid AP MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -1030,6 +1045,7 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.r_smac ) != 0 )
                 {
                     printf( "Invalid source MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -1039,15 +1055,18 @@ int main( int argc, char *argv[] )
                 if( opt.prga != NULL )
                 {
                     printf( "PRGA file already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 if( opt.crypt != CRYPT_NONE )
                 {
                     printf( "Encryption key already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 if( read_prga(&(opt.prga), optarg) != 0 )
                 {
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -1057,6 +1076,7 @@ int main( int argc, char *argv[] )
                 if( opt.s_face != NULL || opt.s_file )
                 {
                     printf( "Packet source already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.s_face = optarg;
@@ -1073,11 +1093,13 @@ int main( int argc, char *argv[] )
                 if( opt.prga != NULL )
                 {
                     printf( "PRGA file already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 if( opt.crypt != CRYPT_NONE )
                 {
                     printf( "Encryption key already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -1095,6 +1117,7 @@ int main( int argc, char *argv[] )
                     if( n < 0 || n > 255 )
                     {
                         printf( "Invalid WEP key.\n" );
+			    		printf("\"%s --help\" for help.\n", argv[0]);
                         return( 1 );
                     }
 
@@ -1117,6 +1140,7 @@ int main( int argc, char *argv[] )
                 if( i != 5 && i != 13 && i != 16 && i != 29 && i != 61 )
                 {
                     printf( "Invalid WEP key length.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -1127,11 +1151,13 @@ int main( int argc, char *argv[] )
                 if ( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 )
                 {
                     printf("Notice: netmask already given\n");
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     break;
                 }
                 if(getmac(optarg, 1, opt.f_netmask) != 0)
                 {
                     printf("Notice: invalid netmask\n");
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -1139,11 +1165,13 @@ int main( int argc, char *argv[] )
                 if ( memcmp(opt.f_bssid, NULL_MAC, 6) != 0 )
                 {
                     printf("Notice: bssid already given\n");
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     break;
                 }
                 if(getmac(optarg, 1, opt.f_bssid) != 0)
                 {
                     printf("Notice: invalid bssid\n");
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -1155,25 +1183,43 @@ int main( int argc, char *argv[] )
                 if( opt.s_face != NULL || opt.s_file )
                 {
                     printf( "Packet source already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.s_file = optarg;
                 break;
+                
+            case 'H' : 
+            
+            	printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+            	return( 1 );
 
             default : goto usage;
         }
     }
 
-    if( argc - optind < 1 || argc - optind > 2 )
+    if( argc - optind != 1 )
     {
-    usage:
-        printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+    	if(argc == 1)
+    	{
+usage:
+	        printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+        }
+	    if( argc - optind == 0)
+	    {
+	    	printf("No replay interface specified.\n");
+	    }
+	    if(argc > 1)
+	    {
+    		printf("\"%s --help\" for help.\n", argv[0]);
+	    }
         return( 1 );
     }
 
     if( ( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 ) && ( memcmp(opt.f_bssid, NULL_MAC, 6) == 0 ) )
     {
         printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
+   		printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
 
@@ -1188,6 +1234,7 @@ int main( int argc, char *argv[] )
     if( memcmp( opt.r_bssid, NULL_MAC, 6) == 0 )
     {
         printf( "Please specify a BSSID (-a).\n" );
+   		printf("\"%s --help\" for help.\n", argv[0]);
         return 1;
     }
 
@@ -1438,6 +1485,7 @@ int main( int argc, char *argv[] )
     if( dev.fd_tap < 0 )
     {
         printf( "error opening tap device: %s\n", strerror( errno ) );
+        printf( "try \"modprobe tun\"\n");
         return -1;
     }
     memset( &if_request, 0, sizeof( if_request ) );

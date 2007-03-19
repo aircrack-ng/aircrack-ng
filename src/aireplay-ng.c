@@ -180,6 +180,8 @@ char usage[] =
 "      --arpreplay         : standard ARP-request replay (-3)\n"
 "      --chopchop          : decrypt/chopchop WEP packet (-4)\n"
 "      --fragment          : generates valid keystream   (-5)\n"
+"\n"
+"      --help              : Displays this usage screen\n"
 "\n";
 
 struct options
@@ -734,12 +736,16 @@ void wait_for_beacon(uchar *bssid, uchar *capa)
     int len = 0;
     uchar pkt_sniff[4096];
 
+	PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
+				bssid[0],bssid[1],bssid[2],bssid[3],bssid[4],bssid[5]);
+
     while (1) {
-	len = 0;
-	while (len < 22) len = read_packet(pkt_sniff, 4096);
-	if (! memcmp(pkt_sniff, "\x80", 1)) {
-	    if (! memcmp(bssid, pkt_sniff+10, 6)) break;
-	}
+		len = 0;
+		while (len < 22) len = read_packet(pkt_sniff, 4096);
+		if (! memcmp(pkt_sniff, "\x80", 1))
+		{
+		    if (! memcmp(bssid, pkt_sniff+10, 6)) break;
+		}
     }
 
     memcpy(capa, pkt_sniff+34, 2);
@@ -798,7 +804,7 @@ int fake_ska_auth_1( void )
     send_packet(ska_auth1, 30);
     send_packet(ack, 14);
 
-    printf("Part1: Authentication\n");
+    PCT; printf("Part1: Authentication\n");
 
     gettimeofday(&tv, NULL);
     gettimeofday(&tv2, NULL);
@@ -825,14 +831,14 @@ int fake_ska_auth_1( void )
 
         if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000 && !got_one)
         {
-            printf ("Not answering...(Step1)\n\n");
+            PCT; printf ("Not answering...(Step1)\n\n");
             return -1;
         }
     }
 
     if (sniff[28] == '\x0d')
     {
-        printf ("\nAP does not support Shared Key Authentication!\n");
+        PCT; printf ("\nAP does not support Shared Key Authentication!\n");
         return -1;
     }
 
@@ -884,19 +890,19 @@ int fake_ska_auth_2(uchar *ph80211, int caplen, uchar *prga, uchar *iv)
         gettimeofday(&tv2, NULL);
         if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000)
         {
-            printf ("\nNot answering...(Step2)\n\n");
+            PCT; printf ("\nNot answering...(Step2)\n\n");
             return -1;
         }
     }
 
     if (!memcmp(packet+24, "\x01\x00\x04\x00\x00\x00", 6))
     {
-        printf ("Code 0 - Authentication SUCCESSFUL :)\n");
+        PCT; printf ("Code 0 - Authentication SUCCESSFUL :)\n");
         ret = 0;
     }
     else
     {
-        printf ("\nAuthentication failed!\n\n");
+        PCT; printf ("\nAuthentication failed!\n\n");
         ret = -1;
     }
 
@@ -923,7 +929,7 @@ int fake_asso()
     memset(ack+1, 0, 13);
 	caplen = 0;
 
-    printf("Part2: Association\n");
+    PCT; printf("Part2: Association\n");
 
 
     capa = (uchar *) malloc(2);
@@ -965,18 +971,18 @@ int fake_asso()
         gettimeofday(&tv2, NULL);
         if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000)
         {
-            printf ("\nNot answering...(Step 3)\n\n");
+            PCT; printf ("\nNot answering...(Step 3)\n\n");
             return -1;
         }
     }
 
     if (!memcmp(packet+26, "\x00\x00", 2))
     {
-        printf ("Code 0 - Association SUCCESSFUL :)\n\n");
+        PCT; printf ("Code 0 - Association SUCCESSFUL :)\n\n");
     }
     else
     {
-        printf ("\nAssociation failed!\n\n");
+        PCT; printf ("\nAssociation failed!\n\n");
         return -1;
     }
 
@@ -995,7 +1001,10 @@ int fake_ska(uchar* prga)
     while(caplen <= 0)
     {
         caplen = fake_ska_auth_1();
-        if(caplen <=0) printf("Retrying 1. auth sequence!\n");
+        if(caplen <=0)
+        {
+        	PCT; printf("Retrying 1. auth sequence!\n");
+        }
         if(i>50) return -1;
         i++;
     }
@@ -1019,7 +1028,10 @@ int fake_ska(uchar* prga)
     while(ret < 0)
     {
         ret = fake_asso();
-        if(ret < 0) printf("Retrying association sequence!\n");
+        if(ret < 0)
+        {
+        	PCT; printf("Retrying association sequence!\n");
+        }
         if(i>50) return -1;
         i++;
     }
@@ -1359,7 +1371,7 @@ int do_attack_fake_auth( void )
                             i++;
                             if(i>10)
                             {
-                                printf("Authentication failed!\n");
+                                PCT; printf("Authentication failed!\n");
                                 return 1;
                             }
                         }
@@ -1407,7 +1419,7 @@ int do_attack_fake_auth( void )
                                 i++;
                                 if(i>10)
                                 {
-                                    printf("Authentication failed!\n");
+                                    PCT; printf("Authentication failed!\n");
                                     return 1;
                                 }
                             }
@@ -1424,7 +1436,7 @@ int do_attack_fake_auth( void )
                     continue;
                 }
 
-                printf( "Authentication successful\n" );
+                PCT; printf( "Authentication successful\n" );
 
                 state = 2;      /* auth. done */
             }
@@ -1469,7 +1481,7 @@ int do_attack_fake_auth( void )
                     continue;
                 }
 
-                printf( "Association successful :-)\n" );
+                PCT; printf( "Association successful :-)\n" );
 
                 tt = time( NULL );
                 tr = time( NULL );
@@ -1491,6 +1503,7 @@ int capture_ask_packet( int *caplen )
     fd_set rfds;
     long nb_pkt_read;
     int i, j, n, mi_b, mi_s, mi_d;
+    int ret;
 
     FILE *f_cap_out;
     struct pcap_file_header pfh_out;
@@ -1681,7 +1694,8 @@ int capture_ask_packet( int *caplen )
 
         printf( "\n\nUse this packet ? " );
         fflush( stdout );
-        scanf( "%s", tmpbuf );
+        ret=0;
+        while(!ret) ret = scanf( "%s", tmpbuf );
         printf( "\n" );
 
         if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
@@ -2967,6 +2981,7 @@ int do_attack_fragment()
     int gotit;
     int again;
     int length;
+    int ret;
 
 	uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
 
@@ -3001,7 +3016,7 @@ int do_attack_fragment()
         memset( opt.r_dip, '\xFF', 4);
     }
 
-    printf ("Waiting for a data packet...\n");
+    PCT; printf ("Waiting for a data packet...\n");
 
     while(!done)  //
     {
@@ -3012,7 +3027,7 @@ int do_attack_fragment()
 
         memcpy( packet2, h80211, caplen );
         caplen2 = caplen;
-        printf("Data packet found!\n");
+        PCT; printf("Data packet found!\n");
 
         if ( memcmp( packet2 +  4, SPANTREE, 6 ) == 0 ||
              memcmp( packet2 + 16, SPANTREE, 6 ) == 0 )
@@ -3042,12 +3057,12 @@ int do_attack_fragment()
 
             if ((round % 2) == 1)
             {
-                printf("Trying a LLC NULL packet\n");
+                PCT; printf("Trying a LLC NULL packet\n");
                 memset(h80211+24, '\x00', 39);
                 arplen=63;
             }
 
-            printf("Sending fragmented packet\n");
+            PCT; printf("Sending fragmented packet\n");
             send_fragments(h80211, arplen, iv, prga, prga_len-4);
 //            //Plus an ACK
 //            send_packet(ack, 10);
@@ -3070,7 +3085,7 @@ int do_attack_fragment()
                                 if (caplen < 90)  //Is short enough
                                 {
                                     //This is our relayed packet!
-                                    printf("Got RELAYED packet!!\n");
+                                    PCT; printf("Got RELAYED packet!!\n");
                                     gotit = 1;
                                     isrelay = 1;
                                 }
@@ -3094,7 +3109,7 @@ int do_attack_fragment()
 
                 if( packet[0] == 0xC0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
-                    printf( "Got a deauthentication packet!\n" );
+                    PCT; printf( "Got a deauthentication packet!\n" );
                     read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
@@ -3102,19 +3117,19 @@ int do_attack_fragment()
 
                 if( packet[0] == 0xA0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
-                    printf( "Got a disassociation packet!\n" );
+                    PCT; printf( "Got a disassociation packet!\n" );
                     read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
                 gettimeofday( &tv2, NULL );
                 if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
                 {
-                    printf("No answer, repeating...\n");
+                    PCT; printf("No answer, repeating...\n");
                     round++;
                     again = RETRY;
                     if (round > 10)
                     {
-                        printf("Still nothing, trying another packet...\n");
+                        PCT; printf("Still nothing, trying another packet...\n");
                         again = NEW_IV;
                     }
                     break;
@@ -3128,12 +3143,12 @@ int do_attack_fragment()
         if (caplen == 68)
         {
             //Thats the ARP packet!
-            printf("Thats our ARP packet!\n");
+            PCT; printf("Thats our ARP packet!\n");
         }
         if (caplen == 71)
         {
             //Thats the LLC NULL packet!
-            printf("Thats our LLC Null packet!\n");
+            PCT; printf("Thats our LLC Null packet!\n");
             memset(h80211+24, '\x00', 39);
         }
 
@@ -3168,14 +3183,14 @@ int do_attack_fragment()
         {
             again = 0;
 
-            printf("Trying to get 384 bytes of a keystream\n");
+            PCT; printf("Trying to get 384 bytes of a keystream\n");
 
             arplen=408;
 
             make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, arplen);
             if ((round % 2) == 1)
             {
-                printf("Trying a LLC NULL packet\n");
+                PCT; printf("Trying a LLC NULL packet\n");
                 memset(h80211+24, '\x00', arplen+8);
                 arplen+=32;
             }
@@ -3202,7 +3217,7 @@ int do_attack_fragment()
                                 if (caplen > 400 && caplen < 500)  //Is short enough
                                 {
                                     //This is our relayed packet!
-                                    printf("Got RELAYED packet!!\n");
+                                    PCT; printf("Got RELAYED packet!!\n");
                                     gotit = 1;
                                     isrelay = 1;
                                 }
@@ -3215,7 +3230,7 @@ int do_attack_fragment()
 
                 if( packet[0] == 0xC0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
-                    printf( "Got a deauthentication packet!\n" );
+                    PCT; printf( "Got a deauthentication packet!\n" );
                     read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
@@ -3223,19 +3238,19 @@ int do_attack_fragment()
 
                 if( packet[0] == 0xA0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
-                    printf( "Got a disassociation packet!\n" );
+                    PCT; printf( "Got a disassociation packet!\n" );
                     read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
                 gettimeofday( &tv2, NULL );
                 if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
                 {
-                    printf("No answer, repeating...\n");
+                    PCT; printf("No answer, repeating...\n");
                     round++;
                     again = RETRY;
                     if (round > 10)
                     {
-                        printf("Still nothing, trying another packet...\n");
+                        PCT; printf("Still nothing, trying another packet...\n");
                         again = NEW_IV;
                     }
                     break;
@@ -3249,12 +3264,12 @@ int do_attack_fragment()
         if (caplen == 416)
         {
             //Thats the ARP packet!
-            printf("Thats our ARP packet!\n");
+            PCT; printf("Thats our ARP packet!\n");
         }
         if (caplen == 448)
         {
             //Thats the LLC NULL packet!
-            printf("Thats our LLC Null packet!\n");
+            PCT; printf("Thats our LLC Null packet!\n");
             memset(h80211+24, '\x00', 416);
         }
 
@@ -3268,13 +3283,13 @@ int do_attack_fragment()
         {
             again = 0;
 
-            printf("Trying to get 1500 bytes of a keystream\n");
+            PCT; printf("Trying to get 1500 bytes of a keystream\n");
 
             make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 1500);
             arplen=1500;
             if ((round % 2) == 1)
             {
-                printf("Trying a LLC NULL packet\n");
+                PCT; printf("Trying a LLC NULL packet\n");
                 memset(h80211+24, '\x00', 1508);
                 arplen+=32;
             }
@@ -3301,7 +3316,7 @@ int do_attack_fragment()
                                 if (caplen > 1496)  //Is short enough
                                 {
                                     //This is our relayed packet!
-                                    printf("Got RELAYED packet!!\n");
+                                    PCT; printf("Got RELAYED packet!!\n");
                                     gotit = 1;
                                     isrelay = 1;
                                 }
@@ -3314,7 +3329,7 @@ int do_attack_fragment()
 
                 if( packet[0] == 0xC0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
-                    printf( "Got a deauthentication packet!\n" );
+                    PCT; printf( "Got a deauthentication packet!\n" );
                     read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
@@ -3322,21 +3337,23 @@ int do_attack_fragment()
 
                 if( packet[0] == 0xA0 && memcmp( packet+4, opt.r_smac, 6) == 0 )
                 {
-                    printf( "Got a disassociation packet!\n" );
+                    PCT; printf( "Got a disassociation packet!\n" );
                     read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
                 }
 
                 gettimeofday( &tv2, NULL );
                 if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
                 {
-                    printf("No answer, repeating...\n");
+                    PCT; printf("No answer, repeating...\n");
                     round++;
                     again = RETRY;
                     if (round > 10)
                     {
                         printf("Still nothing, quitting with 384 bytes? [y/n] \n");
                         fflush( stdout );
-                        scanf( "%s", tmpbuf );
+                        ret=0;
+                        while(!ret) ret = scanf( "%s", tmpbuf );
+                        
                         printf( "\n" );
 
                         if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
@@ -3358,12 +3375,12 @@ int do_attack_fragment()
         if (caplen == length+8+24)
         {
             //Thats the ARP packet!
-            printf("Thats our ARP packet!\n");
+            PCT; printf("Thats our ARP packet!\n");
         }
         if (caplen == length+40)
         {
             //Thats the LLC NULL packet!
-            printf("Thats our LLC Null packet!\n");
+            PCT; printf("Thats our LLC Null packet!\n");
             memset(h80211+24, '\x00', length+8);
         }
 
@@ -3431,6 +3448,7 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
 
     if( ioctl( fd, SIOCGIFINDEX, &ifr ) < 0 )
     {
+    	printf("Interface %s: \n", iface);
         perror( "ioctl(SIOCGIFINDEX) failed" );
         return( 1 );
     }
@@ -3449,6 +3467,7 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
     if( bind( fd, (struct sockaddr *) &sll,
               sizeof( sll ) ) < 0 )
     {
+    	printf("Interface %s: \n", iface);
         perror( "bind(ETH_P_ALL) failed" );
         return( 1 );
     }
@@ -3457,6 +3476,7 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
 
     if( ioctl( fd, SIOCGIFHWADDR, &ifr ) < 0 )
     {
+    	printf("Interface %s: \n", iface);
         perror( "ioctl(SIOCGIFHWADDR) failed" );
         return( 1 );
     }
@@ -3774,7 +3794,7 @@ char athXraw[] = "athXraw";
 
 int main( int argc, char *argv[] )
 {
-    int n, i;
+    int n, i, ret;
 
 #if defined(linux)
     FILE * f;
@@ -3818,11 +3838,12 @@ int main( int argc, char *argv[] )
             {"arpreplay",   0, 0, '3'},
             {"chopchop",    0, 0, '4'},
             {"fragment",    0, 0, '5'},
+            {"help",    0, 0, 'H'},
             {0,             0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345",
+                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345H",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3833,11 +3854,22 @@ int main( int argc, char *argv[] )
 
                 break;
 
+            case ':' :
+
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+				return( 1 );
+
+            case '?' :
+
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+				return( 1 );
+
             case 'b' :
 
                 if( getmac( optarg, 1 ,opt.f_bssid ) != 0 )
                 {
                     printf( "Invalid BSSID (AP MAC address).\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3847,6 +3879,7 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.f_dmac ) != 0 )
                 {
                     printf( "Invalid destination MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3856,116 +3889,129 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.f_smac ) != 0 )
                 {
                     printf( "Invalid source MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'm' :
 
-                sscanf( optarg, "%d", &opt.f_minlen );
-                if( opt.f_minlen < 0 )
+                ret = sscanf( optarg, "%d", &opt.f_minlen );
+                if( opt.f_minlen < 0 || ret != 1 )
                 {
-                    printf( "Invalid minimum length filter.\n" );
+                    printf( "Invalid minimum length filter. [>=0]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'n' :
 
-                sscanf( optarg, "%d", &opt.f_maxlen );
-                if( opt.f_maxlen < 0 )
+                ret = sscanf( optarg, "%d", &opt.f_maxlen );
+                if( opt.f_maxlen < 0 || ret != 1 )
                 {
-                    printf( "Invalid maximum length filter.\n" );
+                    printf( "Invalid maximum length filter. [>=0]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'u' :
 
-                sscanf( optarg, "%d", &opt.f_type );
-                if( opt.f_type < 0 || opt.f_type > 3 )
+                ret = sscanf( optarg, "%d", &opt.f_type );
+                if( opt.f_type < 0 || opt.f_type > 3 || ret != 1 )
                 {
-                    printf( "Invalid type filter.\n" );
+                    printf( "Invalid type filter. [0-3]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'v' :
 
-                sscanf( optarg, "%d", &opt.f_subtype );
-                if( opt.f_subtype < 0 || opt.f_subtype > 15 )
+                ret = sscanf( optarg, "%d", &opt.f_subtype );
+                if( opt.f_subtype < 0 || opt.f_subtype > 15 || ret != 1 )
                 {
-                    printf( "Invalid subtype filter.\n" );
+                    printf( "Invalid subtype filter. [0-15]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 't' :
 
-                sscanf( optarg, "%d", &opt.f_tods );
-                if( opt.f_tods != 0 && opt.f_tods != 1 )
+                ret = sscanf( optarg, "%d", &opt.f_tods );
+                if(( opt.f_tods != 0 && opt.f_tods != 1 ) || ret != 1 )
                 {
-                    printf( "Invalid tods filter.\n" );
+                    printf( "Invalid tods filter. [0,1]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'f' :
 
-                sscanf( optarg, "%d", &opt.f_fromds );
-                if( opt.f_fromds != 0 && opt.f_fromds != 1 )
+                ret = sscanf( optarg, "%d", &opt.f_fromds );
+                if(( opt.f_fromds != 0 && opt.f_fromds != 1 ) || ret != 1 )
                 {
-                    printf( "Invalid fromds filter.\n" );
+                    printf( "Invalid fromds filter. [0,1]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'w' :
 
-                sscanf( optarg, "%d", &opt.f_iswep );
-                if( opt.f_iswep != 0 && opt.f_iswep != 1 )
+                ret = sscanf( optarg, "%d", &opt.f_iswep );
+                if(( opt.f_iswep != 0 && opt.f_iswep != 1 ) || ret != 1 )
                 {
-                    printf( "Invalid wep filter.\n" );
+                    printf( "Invalid wep filter. [0,1]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'x' :
 
-                sscanf( optarg, "%d", &opt.r_nbpps );
-                if( opt.r_nbpps < 1 || opt.r_nbpps > 1024 )
+                ret = sscanf( optarg, "%d", &opt.r_nbpps );
+                if( opt.r_nbpps < 1 || opt.r_nbpps > 1024 || ret != 1 )
                 {
-                    printf( "Invalid number of packets per second.\n" );
+                    printf( "Invalid number of packets per second. [1-1024]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'o' :
 
-                sscanf( optarg, "%d", &opt.npackets );
-                if( opt.npackets < 1 || opt.npackets > 512 )
+                ret = sscanf( optarg, "%d", &opt.npackets );
+                if( opt.npackets < 1 || opt.npackets > 512 || ret != 1 )
                 {
-                    printf( "Invalid number of packets per burst.\n" );
+                    printf( "Invalid number of packets per burst. [1-512]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'q' :
 
-                sscanf( optarg, "%d", &opt.delay );
-                if( opt.delay < 1 || opt.delay > 600 )
+                ret = sscanf( optarg, "%d", &opt.delay );
+                if( opt.delay < 1 || opt.delay > 600 || ret != 1 )
                 {
-                    printf( "Invalid number of seconds.\n" );
+                    printf( "Invalid number of seconds. [1-600]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'p' :
 
-                sscanf( optarg, "%x", &opt.r_fctrl );
-                if( opt.r_fctrl < 0 || opt.r_fctrl > 65355 )
+                ret = sscanf( optarg, "%x", &opt.r_fctrl );
+//                if( opt.r_fctrl < 0 || opt.r_fctrl > 65355 )
+                if( opt.r_fctrl < 0 || opt.r_fctrl > 65535 || ret != 1 )
                 {
-                    printf( "Invalid frame control word.\n" );
+                    printf( "Invalid frame control word. [0-65535]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3975,6 +4021,7 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.r_bssid ) != 0 )
                 {
                     printf( "Invalid AP MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3984,16 +4031,18 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.r_dmac ) != 0 )
                 {
                     printf( "Invalid destination MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'g' :
 
-                if( sscanf( optarg, "%d", &opt.ringbuffer ) != 1 ||
-                    opt.ringbuffer < 1 )
+				ret = sscanf( optarg, "%d", &opt.ringbuffer );
+                if( opt.ringbuffer < 1 || ret != 1 )
                 {
-                    printf( "Invalid replay ring buffer size.\n");
+                    printf( "Invalid replay ring buffer size. [>=1]\n");
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4003,6 +4052,7 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.r_smac ) != 0 )
                 {
                     printf( "Invalid source MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4033,6 +4083,7 @@ int main( int argc, char *argv[] )
                 if( opt.prga != NULL )
                 {
                     printf( "PRGA file already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 if( read_prga(&(opt.prga), optarg) != 0 )
@@ -4046,6 +4097,7 @@ int main( int argc, char *argv[] )
                 if( opt.s_face != NULL || opt.s_file )
                 {
                     printf( "Packet source already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.s_face = optarg;
@@ -4056,6 +4108,7 @@ int main( int argc, char *argv[] )
                 if( opt.s_face != NULL || opt.s_file )
                 {
                     printf( "Packet source already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.s_file = optarg;
@@ -4072,6 +4125,7 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 0;
@@ -4082,10 +4136,11 @@ int main( int argc, char *argv[] )
 						break;
 				}
 
-                sscanf( optarg, "%d", &opt.a_count );
-                if( opt.a_count < 0 || optarg[i] != 0)
+                ret = sscanf( optarg, "%d", &opt.a_count );
+                if( opt.a_count < 0 || optarg[i] != 0 || ret != 1)
                 {
-                    printf( "Invalid deauthentication count or missing value.\n" );
+                    printf( "Invalid deauthentication count or missing value. [>=0]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4095,6 +4150,7 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 1;
@@ -4105,10 +4161,14 @@ int main( int argc, char *argv[] )
 						break;
 				}
 
-                sscanf( optarg, "%d", &opt.a_delay );
-                if( opt.a_delay < 0 || optarg[i] != 0)
+                ret = sscanf( optarg, "%d", &opt.a_delay );
+                
+                printf("a_delay: %d, optarg[i]: %d, ret: %d\n", opt.a_delay, optarg[i], ret);
+                
+                if( opt.a_delay < 0 || optarg[i] != 0 || ret != 1)
                 {
-                    printf( "Invalid reauthentication delay or missing value.\n" );
+                    printf( "Invalid reauthentication delay or missing value. [>=0]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4118,6 +4178,7 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 2;
@@ -4128,6 +4189,7 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 3;
@@ -4138,6 +4200,7 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 4;
@@ -4148,25 +4211,43 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 5;
                 break;
+                
+            case 'H' : 
+            
+            	printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+            	return( 1 );
 
             default : goto usage;
         }
     }
-
-    if( argc - optind < 1 || argc - optind > 2 )
+    
+    if( argc - optind != 1 )
     {
-    usage:
-        printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+    	if(argc == 1)
+    	{
+usage:
+	        printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+        }
+	    if( argc - optind == 0)
+	    {
+	    	printf("No replay interface specified.\n");
+	    }
+	    if(argc > 1)
+	    {
+    		printf("\"%s --help\" for help.\n", argv[0]);
+	    }
         return( 1 );
     }
 
     if( opt.a_mode == -1 )
     {
         printf( "Please specify an attack mode.\n" );
+   		printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
 
@@ -4174,6 +4255,7 @@ int main( int argc, char *argv[] )
     {
         printf( "Invalid length filter (%d > %d).\n",
                 opt.f_minlen, opt.f_maxlen );
+  		printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
 

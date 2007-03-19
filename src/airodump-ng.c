@@ -455,6 +455,8 @@ char usage[] =
 "                    1     : Round Robin\n"
 "                    2     : Hop on last\n"
 "      -s                  : same as --cswitch\n"
+"\n"
+"      --help              : Displays this usage screen\n"
 "\n";
 
 int is_filtered_netmask(uchar *bssid)
@@ -1625,6 +1627,7 @@ int getBatteryState()
     FILE *apm;
     int flag;
     char units[32];
+    int ret;
 
     if (linux_apm == 1)
     {
@@ -1633,8 +1636,10 @@ int getBatteryState()
                 int charging, ac;
                 fclose(apm);
 
-                sscanf(buf, "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n", &ac,
-                        &charging, &flag, &batteryTime, units);
+                ret = sscanf(buf, "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n", &ac,
+                        				&charging, &flag, &batteryTime, units);
+
+				if(!ret) return 0;
 
                 if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1 && batteryTime != -1) {
                     if (!strncmp(units, "min", 32))
@@ -2380,6 +2385,7 @@ void gps_tracker( void )
     int gpsd_sock;
     char line[256], *p;
     struct sockaddr_in gpsd_addr;
+    int ret;
 
     /* attempt to connect to localhost, port 2947 */
 
@@ -2425,16 +2431,16 @@ void gps_tracker( void )
         if( line[7] == '?' )
             continue;
 
-        sscanf( line + 7, "%f %f", &G.gps_loc[0], &G.gps_loc[1] );
+        ret = sscanf( line + 7, "%f %f", &G.gps_loc[0], &G.gps_loc[1] );
 
         if( ( p = strstr( line, "V=" ) ) == NULL ) continue;
-        sscanf( p + 2, "%f", &G.gps_loc[2] ); /* speed */
+        ret = sscanf( p + 2, "%f", &G.gps_loc[2] ); /* speed */
 
         if( ( p = strstr( line, "T=" ) ) == NULL ) continue;
-        sscanf( p + 2, "%f", &G.gps_loc[3] ); /* heading */
+        ret = sscanf( p + 2, "%f", &G.gps_loc[3] ); /* heading */
 
         if( ( p = strstr( line, "A=" ) ) == NULL ) continue;
-        sscanf( p + 2, "%f", &G.gps_loc[4] ); /* altitude */
+        ret = sscanf( p + 2, "%f", &G.gps_loc[4] ); /* altitude */
 
         if (G.record_data)
         	fputs( line, G.f_gps );
@@ -3672,13 +3678,6 @@ int main( int argc, char *argv[] )
 
     /* check the arguments */
 
-    if( argc < 2 )
-    {
-        usage:
-        printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
-        return( 1 );
-    }
-
     do
     {
         int option_index = 0;
@@ -3695,11 +3694,12 @@ int main( int argc, char *argv[] )
             {"ivs",     0, 0, 'i'},
             {"write",   1, 0, 'w'},
             {"encrypt", 1, 0, 't'},
+            {"help",    0, 0, 'H'},
             {0,         0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:m:d:a",
+                        "b:c:egiw:s:t:m:d:aH",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3709,6 +3709,16 @@ int main( int argc, char *argv[] )
             case 0 :
 
                 break;
+                
+            case ':':
+            
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+            	return( 1 );
+
+            case '?':
+            
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+            	return( 1 );
 
             case 'e':
 
@@ -3773,6 +3783,7 @@ int main( int argc, char *argv[] )
                         freq[0] = 1;
                     else {
                         printf( "Error: invalid band (%c)\n", optarg[i] );
+			    		printf("\"%s --help\" for help.\n", argv[0]);
                         exit ( 1 );
                     }
                 }
@@ -3838,6 +3849,7 @@ int main( int argc, char *argv[] )
                 if(getmac(optarg, 1, G.f_netmask) != 0)
                 {
                     printf("Notice: invalid netmask\n");
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3852,6 +3864,8 @@ int main( int argc, char *argv[] )
                 if(getmac(optarg, 1, G.f_bssid) != 0)
                 {
                     printf("Notice: invalid bssid\n");
+		    		printf("\"%s --help\" for help.\n", argv[0]);
+
                     return( 1 );
                 }
                 break;
@@ -3861,18 +3875,44 @@ int main( int argc, char *argv[] )
                 set_encryption_filter(optarg);
                 break;
 
+            case 'H':
+            
+  	            printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+  	            return( 1 );
+
             default : goto usage;
         }
     } while ( 1 );
 
+    if( argc - optind != 1 )
+    {
+        if(argc == 1)
+        {
+usage:        	printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+
+        	printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+        }
+	    if( argc - optind == 0)
+	    {
+	    	printf("No interface specified.\n");
+	    }
+	    if(argc > 1)
+	    {
+    		printf("\"%s --help\" for help.\n", argv[0]);
+	    }
+        return( 1 );
+    }
+
     if( ( memcmp(G.f_netmask, NULL_MAC, 6) != 0 ) && ( memcmp(G.f_bssid, NULL_MAC, 6) == 0 ) )
     {
         printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
+   		printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
 
     if ( ivs_only && !G.record_data ) {
         printf( "Missing dump prefix (-w)\n" );
+   		printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
 

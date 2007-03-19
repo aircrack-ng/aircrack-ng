@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <getopt.h>
 
 #include "version.h"
 #include "crypto.h"
@@ -124,6 +125,8 @@ char usage[] =
 "      -e <essid> : target network SSID\n"
 "      -p <pass>  : target network WPA passphrase\n"
 "      -w <key>   : target network WEP key in hex\n"
+"\n"
+"      --help     : Displays this usage screen\n"
 "\n";
 
 
@@ -560,12 +563,32 @@ int main( int argc, char *argv[] )
 
     while( 1 )
     {
-        int option = getopt( argc, argv, "lb:k:e:p:w:" );
+        int option_index = 0;
+
+        static struct option long_options[] = {
+            {"bssid",   1, 0, 'b'},
+            {"debug",   1, 0, 'd'},
+            {"help",    0, 0, 'H'},
+            {0,         0, 0,  0 }
+        };
+
+        int option = getopt_long( argc, argv, "lb:k:e:p:w:H",
+                        long_options, &option_index );
 
         if( option < 0 ) break;
 
         switch( option )
         {
+        	case ':' :
+        	
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+        		return( 1 );
+        		
+        	case '?' :
+        	
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+        		return( 1 );
+        		
             case 'l' :
 
                 opt.no_convert = 1;
@@ -581,6 +604,7 @@ int main( int argc, char *argv[] )
                     if( n < 0 || n > 255 )
                     {
                         printf( "Invalid BSSID (not a MAC).\n" );
+			    		printf("\"%s --help\" for help.\n", argv[0]);
                         return( 1 );
                     }
 
@@ -597,6 +621,7 @@ int main( int argc, char *argv[] )
                 if( i != 6 )
                 {
                     printf( "Invalid BSSID (not a MAC).\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -607,6 +632,7 @@ int main( int argc, char *argv[] )
                 if( opt.crypt != CRYPT_NONE )
                 {
                     printf( "Encryption key already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -624,6 +650,7 @@ int main( int argc, char *argv[] )
                     if( n < 0 || n > 255 )
                     {
                         printf( "Invalid WPA PMK.\n" );
+			    		printf("\"%s --help\" for help.\n", argv[0]);
                         return( 1 );
                     }
 
@@ -646,6 +673,7 @@ int main( int argc, char *argv[] )
                 if( i != 32 )
                 {
                     printf( "Invalid WPA PMK.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -656,6 +684,7 @@ int main( int argc, char *argv[] )
 				if ( opt.essid[0])
 				{
 					printf( "ESSID already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
 				}
 
@@ -668,6 +697,7 @@ int main( int argc, char *argv[] )
                 if( opt.crypt != CRYPT_NONE )
                 {
                     printf( "Encryption key already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -682,6 +712,7 @@ int main( int argc, char *argv[] )
                 if( opt.crypt != CRYPT_NONE )
                 {
                     printf( "Encryption key already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -699,6 +730,7 @@ int main( int argc, char *argv[] )
                     if( n < 0 || n > 255 )
                     {
                         printf( "Invalid WEP key.\n" );
+			    		printf("\"%s --help\" for help.\n", argv[0]);
                         return( 1 );
                     }
 
@@ -720,13 +752,19 @@ int main( int argc, char *argv[] )
 
                 if( i != 5 && i != 13 && i != 16 && i != 29 && i != 61 )
                 {
-                    printf( "Invalid WEP key length.\n" );
+                    printf( "Invalid WEP key length. [5,13,16,29,61]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
                 opt.weplen = i;
 
                 break;
+                
+            case 'H' :
+            
+            	printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+            	return( 1 );
 
             default : goto usage;
         }
@@ -734,8 +772,19 @@ int main( int argc, char *argv[] )
 
     if( argc - optind != 1 )
     {
-    usage:
-        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+    	if(argc == 1)
+    	{
+usage:
+	        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+	    }
+		if( argc - optind == 0)
+	    {
+	    	printf("No file to decrypt specified.\n");
+	    }
+	    if(argc > 1)
+	    {
+    		printf("\"%s --help\" for help.\n", argv[0]);
+	    }
         return( 1 );
     }
 
@@ -748,6 +797,7 @@ int main( int argc, char *argv[] )
             if( opt.essid[0] == '\0' )
             {
                 printf( "You must also specify the ESSID (-e).\n" );
+	    		printf("\"%s --help\" for help.\n", argv[0]);
                 return( 1 );
             }
 

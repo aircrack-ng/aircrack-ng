@@ -38,6 +38,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
+#include <getopt.h>
 
 #include "version.h"
 #include "crypto.h"
@@ -307,6 +308,8 @@ char usage[] =
 "                    dictionnaries can be specified.\n"
 "                    See manpage for more information)\n"
 /*"      -r <table> : path to a WPA PMK table\n" */
+"\n"
+"      --help     : Displays this usage screen\n"
 "\n";
 
 char * progname;
@@ -1386,7 +1389,7 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 		i = 2; j = ( j + S[i] ) & 0xFF; SWAP(S[i], S[j]);
 		x2 = wep.ivbuf[xv + 4] ^ S[(S[i] + S[j]) & 0xFF];
 
-//		printf("x1: %02X  x2: %02X\n", x1, x2);
+//		printf("xv: %li x1: %02X  x2: %02X\n", (xv/5), x1, x2);
 
 		if( ( x1 != 0xAA || x2 != 0xAA ) &&
 			( x1 != 0xE0 || x2 != 0xE0 ) &&
@@ -2885,7 +2888,7 @@ int crack_wep_dict()
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option, j;
+	int i, n, ret, max_cpu, option, j, ret1;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 
@@ -2894,6 +2897,8 @@ int main( int argc, char *argv[] )
 	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION);
 
 	memset( &opt, 0, sizeof( opt ) );
+
+	srand( time( NULL ) );
 
 	#ifdef _SC_NPROCESSORS_ONLN
 
@@ -2911,14 +2916,6 @@ int main( int argc, char *argv[] )
 	j=0;
 	/* check the arguments */
 
-	if( argc < 2 )
-	{
-		usage:
-		printf (usage, progname,
-			( max_cpu == 1 ) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n" );
-		return( ret );
-	}
-
 	opt.do_brute    = 1;
 	opt.do_mt_brute = 1;
 	opt.showASCII   = 0;
@@ -2927,18 +2924,40 @@ int main( int argc, char *argv[] )
 	while( 1 )
 	{
 
+        int option_index = 0;
+
+        static struct option long_options[] = {
+            {"bssid",   1, 0, 'b'},
+            {"debug",   1, 0, 'd'},
+            {"help",    0, 0, 'H'},
+            {0,         0, 0,  0 }
+        };
+
 		if ( max_cpu == 1 )
-			option = getopt( argc, argv, "a:e:b:qcthd:m:n:i:f:k:x::ysw:0" );
+			option = getopt_long( argc, argv, "a:e:b:qcthd:m:n:i:f:k:x::ysw:0H",
+                        long_options, &option_index );
 		else
-			option = getopt( argc, argv, "a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0" );
+			option = getopt_long( argc, argv, "a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0H",
+                        long_options, &option_index );
 
 		if( option < 0 ) break;
 
 		switch( option )
 		{
+		
+			case ':' :
+			
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+				return( 1 );			
+				
+			case '?' :
+			
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+				return( 1 );			
+				
 			case 'a' :
 
-				sscanf( optarg, "%d", &opt.amode );
+				ret1 = sscanf( optarg, "%d", &opt.amode );
 
 				if ( strcasecmp( optarg, "wep" ) == 0 )
 					opt.amode = 1;
@@ -2948,7 +2967,8 @@ int main( int argc, char *argv[] )
 
 				if( opt.amode != 1 && opt.amode != 2 )
 				{
-					printf( "Invalid attack mode.\n" );
+					printf( "Invalid attack mode. [1,2] or [wep,wpa]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -2966,6 +2986,7 @@ int main( int argc, char *argv[] )
 				if (getmac(optarg, 1, opt.bssid) != 0)
 				{
 						printf( "Invalid BSSID (not a MAC).\n" );
+			    		printf("\"%s --help\" for help.\n", argv[0]);
 						return( FAILURE );
 				}
 
@@ -2976,7 +2997,8 @@ int main( int argc, char *argv[] )
 				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 ||
 					opt.nbcpu < 1 || opt.nbcpu > max_cpu )
 				{
-					printf( "Invalid number of processes.\n" );
+					printf( "Invalid number of processes. [1-%d]\n", max_cpu );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3035,6 +3057,7 @@ int main( int argc, char *argv[] )
 						if ( n < 0 || n > 255 )
 						{
 							printf( "Invalid debug key.\n" );
+				    		printf("\"%s --help\" for help.\n", argv[0]);
 							return( FAILURE );
 						}
 						opt.debug[i] = n ;
@@ -3053,6 +3076,7 @@ int main( int argc, char *argv[] )
 				if ( getmac(optarg, 1, opt.maddr) != 0)
 				{
 					printf( "Invalid MAC address filter.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3065,7 +3089,8 @@ int main( int argc, char *argv[] )
 					opt.keylen != 152 && opt.keylen != 256 &&
 					opt.keylen != 512 ) )
 				{
-					printf( "Invalid WEP key length.\n" );
+					printf( "Invalid WEP key length. [64,128,152,256,512]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3078,7 +3103,8 @@ int main( int argc, char *argv[] )
 				if( sscanf( optarg, "%d", &opt.index ) != 1 ||
 					opt.index < 1 || opt.index > 4 )
 				{
-					printf( "Invalid WEP key index.\n" );
+					printf( "Invalid WEP key index. [1-4]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3089,7 +3115,8 @@ int main( int argc, char *argv[] )
 				if( sscanf( optarg, "%f", &opt.ffact ) != 1 ||
 					opt.ffact < 1 || opt.ffact > 32 )
 				{
-					printf( "Invalid fudge factor.\n" );
+					printf( "Invalid fudge factor. [1-32]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3100,7 +3127,8 @@ int main( int argc, char *argv[] )
 				if( sscanf( optarg, "%d", &opt.korek ) != 1 ||
 					opt.korek < 1 || opt.korek > N_ATTACKS )
 				{
-					printf( "Invalid KoreK attack strategy.\n" );
+					printf( "Invalid KoreK attack strategy. [1-%d]\n", N_ATTACKS );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3117,7 +3145,8 @@ int main( int argc, char *argv[] )
 					if (sscanf(optarg, "%d", &opt.do_brute)!=1
 						|| opt.do_brute<0 || opt.do_brute>4)
 					{
-						printf("Invalid option -x%s\n", optarg);
+						printf("Invalid option -x%s. [0-4]\n", optarg);
+			    		printf("\"%s --help\" for help.\n", argv[0]);
 						return FAILURE;
 					}
 				}
@@ -3140,6 +3169,7 @@ int main( int argc, char *argv[] )
 
 			case 'w' :
 				if(set_dicts(optarg) != 0)
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 				    return FAILURE;
 				break;
 
@@ -3147,13 +3177,35 @@ int main( int argc, char *argv[] )
 
 				opt.l33t = 1;
 				break;
+				
+			case 'H' :
+			
+				printf (usage, progname,
+					( max_cpu == 1 ) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n" );
+				return( 1 );
 
 			default : goto usage;
 		}
 	}
 
-	if( ! ( argc - optind ) )
-		goto usage;
+	if( argc - optind < 1 )
+	{
+		if(argc == 1)
+		{
+usage:
+			printf (usage, progname,
+				( max_cpu == 1 ) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n" );
+		}
+		if( argc - optind == 0)
+	    {
+	    	printf("No file to crack specified.\n");
+	    }
+	    if(argc > 1)
+	    {
+    		printf("\"%s --help\" for help.\n", argv[0]);
+	    }
+		return( ret );
+	}
 
 	if( opt.amode == 2 && opt.dict == NULL )
 	{
@@ -3283,7 +3335,8 @@ int main( int argc, char *argv[] )
 			{
 				printf( "Index number of target network ? " );
 				fflush( stdout );
-				scanf( "%127s", buf );
+				ret1 = 0;
+				while(!ret1) ret1 = scanf( "%127s", buf );
 
 				if( ( n = atoi( buf ) ) < 1 )
 					continue;
