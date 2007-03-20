@@ -3169,8 +3169,10 @@ int main( int argc, char *argv[] )
 
 			case 'w' :
 				if(set_dicts(optarg) != 0)
+				{
 		    		printf("\"%s --help\" for help.\n", argv[0]);
 				    return FAILURE;
+				}
 				break;
 
 			case '0' :
