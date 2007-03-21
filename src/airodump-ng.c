@@ -260,6 +260,7 @@ struct globals
     int is_wlanng[MAX_CARDS];          /* set if wlan-ng       */
     int is_orinoco[MAX_CARDS];         /* set if orinoco       */
     int is_madwifing[MAX_CARDS];       /* set if madwifi-ng    */
+    int is_zd1211rw[MAX_CARDS];       /* set if zd1211rw    */
     int do_exit;            /* interrupt flag       */
     struct winsize ws;      /* console window size  */
 
@@ -279,6 +280,7 @@ struct globals
     int asso_client;        /* only show associated clients */
 
     char * iwpriv;
+    char * iwconfig;
     char * wlanctlng;
     char * wl;
 
@@ -2557,6 +2559,22 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 
         waitpid( pid, &status, 0 );
     }
+    
+    if( G.is_zd1211rw[cardnum] )
+    {
+        snprintf( s,  sizeof( s ) - 1, "%d", channel );
+
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execlp( G.iwconfig, "iwconfig", interface,
+                    "channel", s, NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &status, 0 );
+        return 0;
+    }
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, interface, IFNAMSIZ );
@@ -3282,6 +3300,23 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
             G.is_orinoco[cardnum] = 1;
     }
 
+    /* test if zd1211rw */
+
+    if( memcmp( iface, "eth", 3 ) == 0 )
+    {
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execlp( "iwpriv", "iwpriv", iface, "get_regdomain", NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &n, 0 );
+
+        if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
+            G.is_zd1211rw[cardnum] = 1;
+    }
+
     /* Check if madwifi-ng */
 
     G.is_madwifing[cardnum] = 0;
@@ -3928,8 +3963,9 @@ usage:        	printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _R
     /* Check iwpriv existence */
 
 	G.iwpriv = wiToolsPath("iwpriv");
+	G.iwconfig = wiToolsPath("iwconfig");
 
-    if (! G.iwpriv )
+    if (! (G.iwpriv && G.iwconfig) )
     {
         fprintf(stderr, "Can't find wireless tools, exiting.\n");
         return (1);
