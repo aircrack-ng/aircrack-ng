@@ -1,4 +1,4 @@
-REVISION	= $(shell sh ./evalrev)
+REVISION	= `./evalrev`
 REVFLAGS	= -D_REVISION=$(REVISION)
 
 CC              = gcc
