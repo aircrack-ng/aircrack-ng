@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <time.h>
 #include <getopt.h>
 #include "version.h"
 #include "pcap.h"
@@ -95,6 +96,8 @@ char usage[] =
 "      --icmp         : forge an ICMP packet   (-2)\n"
 "      --null         : build a null packet    (-3)\n"
 "      --custom       : build a custom packet  (-9)\n"
+"\n"
+"      --help         : Displays this usage screen\n"
 "\n";
 
 struct options
@@ -124,7 +127,194 @@ struct options
     char encrypt;
 } opt;
 
+struct devices
+{
+    int fd_in,  arptype_in;
+    int fd_out, arptype_out;
+    int fd_rtc;
+
+    FILE *f_cap_in;
+
+    struct pcap_file_header pfh_in;
+}
+dev;
+
 unsigned char h80211[2048];
+unsigned char tmpbuf[2048];
+
+int capture_ask_packet( int *caplen )
+{
+    time_t tr;
+    struct timeval tv;
+
+    long nb_pkt_read;
+    int i, j, n, mi_b, mi_s, mi_d;
+    int ret;
+
+    struct pcap_pkthdr pkh;
+
+    tr = time( NULL );
+
+    nb_pkt_read = 0;
+
+    if(opt.raw_file == NULL)
+    {
+        printf("Please specify an input file (-r).\n");
+        return 1;
+    }
+
+    while( 1 )
+    {
+        if( time( NULL ) - tr > 0 )
+        {
+            tr = time( NULL );
+            printf( "\rRead %ld packets...\r", nb_pkt_read );
+            fflush( stdout );
+        }
+
+        /* there are no hidden backdoors in this source code */
+
+        n = sizeof( pkh );
+
+        if( fread( &pkh, n, 1, dev.f_cap_in ) != 1 )
+        {
+            printf( "\r\33[KEnd of file.\n" );
+            return( 1 );
+        }
+
+        if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+            SWAP32( pkh.caplen );
+
+        tv.tv_sec  = pkh.tv_sec;
+        tv.tv_usec = pkh.tv_usec;
+
+        n = *caplen = pkh.caplen;
+
+        if( n <= 0 || n > (int) sizeof( h80211 ) )
+        {
+            printf( "\r\33[KInvalid packet length %d.\n", n );
+            return( 1 );
+        }
+
+        if( fread( h80211, n, 1, dev.f_cap_in ) != 1 )
+        {
+            printf( "\r\33[KEnd of file.\n" );
+            return( 1 );
+        }
+
+        if( dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER )
+        {
+            if( h80211[7] == 0x40 )
+                n = 64;
+            else
+                n = *(int *)( h80211 + 4 );
+
+            if( n < 8 || n >= (int) *caplen )
+                continue;
+
+            memcpy( tmpbuf, h80211, *caplen );
+            *caplen -= n;
+            memcpy( h80211, tmpbuf + n, *caplen );
+        }
+    
+        nb_pkt_read++;
+
+        switch( h80211[1] & 3 )
+        {
+            case  0: mi_b = 16; mi_s = 10; mi_d =  4; break;
+            case  1: mi_b =  4; mi_s = 10; mi_d = 16; break;
+            case  2: mi_b = 10; mi_s = 16; mi_d =  4; break;
+            default: mi_b =  4; mi_d = 16; mi_s = 24; break;
+        }
+
+        printf( "\n\n        Size: %d, FromDS: %d, ToDS: %d",
+                *caplen, ( h80211[1] & 2 ) >> 1, ( h80211[1] & 1 ) );
+
+        if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
+        {
+            if( ( h80211[27] & 0x20 ) == 0 )
+                printf( " (WEP)" );
+            else
+                printf( " (WPA)" );
+        }
+
+        printf( "\n\n" );
+
+        printf( "             BSSID  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
+                h80211[mi_b    ], h80211[mi_b + 1],
+                h80211[mi_b + 2], h80211[mi_b + 3],
+                h80211[mi_b + 4], h80211[mi_b + 5] );
+
+        printf( "         Dest. MAC  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
+                h80211[mi_d    ], h80211[mi_d + 1],
+                h80211[mi_d + 2], h80211[mi_d + 3],
+                h80211[mi_d + 4], h80211[mi_d + 5] );
+
+        printf( "        Source MAC  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
+                h80211[mi_s    ], h80211[mi_s + 1],
+                h80211[mi_s + 2], h80211[mi_s + 3],
+                h80211[mi_s + 4], h80211[mi_s + 5] );
+
+        /* print a hex dump of the packet */
+
+        for( i = 0; i < *caplen; i++ )
+        {
+            if( ( i & 15 ) == 0 )
+            {
+                if( i == 224 )
+                {
+                    printf( "\n        --- CUT ---" );
+                    break;
+                }
+
+                printf( "\n        0x%04x:  ", i );
+            }
+
+            printf( "%02x", h80211[i] );
+
+            if( ( i & 1 ) != 0 )
+                printf( " " );
+
+            if( i == *caplen - 1 && ( ( i + 1 ) & 15 ) != 0 )
+            {
+                for( j = ( ( i + 1 ) & 15 ); j < 16; j++ )
+                {
+                    printf( "  " );
+                    if( ( j & 1 ) != 0 )
+                        printf( " " );
+                }
+
+                printf( " " );
+
+                for( j = 16 - ( ( i + 1 ) & 15 ); j < 16; j++ )
+                    printf( "%c", ( h80211[i - 15 + j] <  32 ||
+                                    h80211[i - 15 + j] > 126 )
+                                  ? '.' : h80211[i - 15 + j] );
+            }
+
+            if( i > 0 && ( ( i + 1 ) & 15 ) == 0 )
+            {
+                printf( " " );
+
+                for( j = 0; j < 16; j++ )
+                    printf( "%c", ( h80211[i - 15 + j] <  32 ||
+                                    h80211[i - 15 + j] > 127 )
+                                  ? '.' : h80211[i - 15 + j] );
+            }
+        }
+
+        printf( "\n\nUse this packet ? " );
+        fflush( stdout );
+        ret=0;
+        while(!ret) ret = scanf( "%s", tmpbuf );
+        printf( "\n" );
+
+        if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
+            break;
+    }
+
+    return( 0 );
+}
 
 int packet_dump(unsigned char* packet, int length)
 {
@@ -698,7 +888,8 @@ int forge_null()
 
 int forge_custom()
 {
-    if(read_raw_packet(h80211, opt.raw_file, opt.pktlen) != 0) return 1;
+    if(capture_ask_packet( &opt.pktlen ) != 0) return 1;
+//    if(read_raw_packet(h80211, opt.raw_file, opt.pktlen) != 0) return 1;
 
     if( set_tofromds(h80211) != 0 ) return 1;
 
@@ -727,7 +918,9 @@ int main(int argc, char* argv[])
 {
     int arg;
     int option_index;
-
+    int ret;
+    int n;
+    
     memset( &opt, 0, sizeof( opt ) );
 
     /* initialise global options */
@@ -763,14 +956,15 @@ int main(int argc, char* argv[])
             {"udp",      0, 0, '1'},
             {"icmp",     0, 0, '2'},
             {"null",     0, 0, '3'},
-            {"custom",   1, 0, '9'},
+            {"custom",   0, 0, '9'},
+            {"help",     0, 0, 'H'},
             {0,          0, 0,  0 }
         };
 
         int option;
 	option_index = 0;
 	option = getopt_long( argc, argv,
-                        "p:a:c:h:jok:l:j:r:y:01239:w:et:s:",
+                        "p:a:c:h:jok:l:j:r:y:01239w:et:s:H",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -780,12 +974,21 @@ int main(int argc, char* argv[])
             case 0 :
                 break;
 
+            case ':' :
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+                return( 1 );
+
+            case '?' :
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+                return( 1 );
+
             case 'p' :
 
-                sscanf( optarg, "%x", &arg );
-                if( arg < 0 || arg > 65355 )
+                ret = sscanf( optarg, "%x", &arg );
+                if( arg < 0 || arg > 65535 || ret != 1)
                 {
-                    printf( "Invalid frame control word.\n" );
+                    printf( "Invalid frame control word. [0-65535]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.fctrl[0]=((arg>>8)&0xFF);
@@ -794,10 +997,11 @@ int main(int argc, char* argv[])
 
             case 't' :
 
-                sscanf( optarg, "%i", &arg );
-                if( arg < 0 || arg > 255 )
+                ret = sscanf( optarg, "%i", &arg );
+                if( arg < 0 || arg > 255 || ret != 1)
                 {
-                    printf( "Invalid time to live.\n" );
+                    printf( "Invalid time to live. [0-255]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.ttl = arg;
@@ -808,6 +1012,7 @@ int main(int argc, char* argv[])
                 if( getmac( optarg, 1, opt.bssid ) != 0 )
                 {
                     printf( "Invalid AP MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -817,6 +1022,7 @@ int main(int argc, char* argv[])
                 if( getmac( optarg, 1, opt.dmac ) != 0 )
                 {
                     printf( "Invalid destination MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -826,6 +1032,7 @@ int main(int argc, char* argv[])
                 if( getmac( optarg, 1, opt.smac ) != 0 )
                 {
                     printf( "Invalid source MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -850,6 +1057,7 @@ int main(int argc, char* argv[])
                 if( opt.raw_file != NULL )
                 {
                     printf( "Packet source already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.raw_file = optarg;
@@ -860,10 +1068,12 @@ int main(int argc, char* argv[])
                 if( opt.prga != NULL )
                 {
                     printf( "PRGA file already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 if( read_prga(&(opt.prga), optarg) != 0 )
                 {
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -873,6 +1083,7 @@ int main(int argc, char* argv[])
                 if( opt.cap_out != NULL )
                 {
                     printf( "Output file already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.cap_out = optarg;
@@ -884,6 +1095,7 @@ int main(int argc, char* argv[])
                 if( getip(optarg, opt.dip, &(opt.dport)) != 0 )
                 {
                     printf( "Invalid destination IP address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return 1;
                 }
                 break;
@@ -893,16 +1105,18 @@ int main(int argc, char* argv[])
                 if( getip(optarg, opt.sip, &(opt.sport)) != 0 )
                 {
                     printf( "Invalid source IP address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return 1;
                 }
                 break;
 
             case 's' :
 
-                sscanf( optarg, "%i", &arg );
-                if( arg < 26 || arg > 1520 )
+                ret = sscanf( optarg, "%i", &arg );
+                if( arg < 26 || arg > 1520 || ret != 1)
                 {
-                    printf( "Invalid packet size.\n" );
+                    printf( "Invalid packet size. [26-1520]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.size = arg;
@@ -913,6 +1127,7 @@ int main(int argc, char* argv[])
                 if( opt.mode != -1 )
                 {
                     printf( "Mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.mode = 0;
@@ -924,6 +1139,7 @@ int main(int argc, char* argv[])
                 if( opt.mode != -1 )
                 {
                     printf( "Mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.mode = 1;
@@ -934,6 +1150,7 @@ int main(int argc, char* argv[])
                 if( opt.mode != -1 )
                 {
                     printf( "Mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.mode = 2;
@@ -944,6 +1161,7 @@ int main(int argc, char* argv[])
                 if( opt.mode != -1 )
                 {
                     printf( "Mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.mode = 3;
@@ -954,25 +1172,67 @@ int main(int argc, char* argv[])
                 if( opt.mode != -1 )
                 {
                     printf( "Mode already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
-                }
-
-                opt.pktlen = atoi(optarg);
-                if(opt.pktlen < 24 || opt.pktlen > 2048)
-                {
-                    printf( "Invalid packet length.\n" );
-                    return 1;
                 }
                 opt.mode = 9;
                 break;
 
-            default :
+			case 'H' :
+			
+				print_usage();
+				return( 1 );
 
-                if(opt.mode != -1)break;
-                print_usage();
-                return 1;
+            default : break;
+
         }
     }
+
+  	if(argc == 1)
+  	{
+  		print_usage();
+        printf("Please specify a mode.\n");
+   		return( 1 );
+   	}
+   	
+    if( opt.raw_file != NULL )
+    {
+        if( ! ( dev.f_cap_in = fopen( opt.raw_file, "rb" ) ) )
+        {
+            perror( "open failed" );
+            return( 1 );
+        }
+
+        n = sizeof( struct pcap_file_header );
+
+        if( fread( &dev.pfh_in, 1, n, dev.f_cap_in ) != (size_t) n )
+        {
+            perror( "fread(pcap file header) failed" );
+            return( 1 );
+        }
+
+        if( dev.pfh_in.magic != TCPDUMP_MAGIC &&
+            dev.pfh_in.magic != TCPDUMP_CIGAM )
+        {
+            fprintf( stderr, "\"%s\" isn't a pcap file (expected "
+                             "TCPDUMP_MAGIC).\n", opt.raw_file );
+            return( 1 );
+        }
+
+        if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+            SWAP32(dev.pfh_in.linktype);
+
+        if( dev.pfh_in.linktype != LINKTYPE_IEEE802_11 &&
+            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER )
+        {
+            fprintf( stderr, "Wrong linktype from pcap file header "
+                             "(expected LINKTYPE_IEEE802_11) -\n"
+                             "this doesn't look like a regular 802.11 "
+                             "capture.\n" );
+            return( 1 );
+        }
+    }
+
 
 	switch (opt.mode)
 	{
@@ -1012,6 +1272,7 @@ int main(int argc, char* argv[])
 		            printf("Error building a custom packet.\n");
 		            return 1;
         		}
+        		break;
 		default:
 		        print_usage();
 		        printf("Please specify a mode.\n");
