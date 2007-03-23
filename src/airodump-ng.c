@@ -3923,9 +3923,8 @@ int main( int argc, char *argv[] )
     {
         if(argc == 1)
         {
-usage:        	printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
-
-        	printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+usage:
+            printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
         }
 	    if( argc - optind == 0)
 	    {
