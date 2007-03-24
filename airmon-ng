@@ -77,7 +77,9 @@ do
         IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor`
         cp $KISMET~ $KISMET 2>/dev/null &&
         echo "source=madwifi_g,$iface,Atheros" >>$KISMET
+        ifconfig $iface up
         iwconfig $IFACE channel $CH
+        ifconfig $IFACE up
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
     then
