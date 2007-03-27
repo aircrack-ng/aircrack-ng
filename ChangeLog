@@ -14,6 +14,8 @@ Version 0.8 (changes from aircrack-ng 0.7) - Released ?? March 2007:
 * airodump-ng: Fixed a SIGSEGV
 * airodump-ng: Added WPA handshake detection
 * airodump-ng: Added non associated stations filter
+* airodump-ng: Added support for zd1211rw
+* airodump-ng: Fixed 100% cpu utilisation
 * airmon-ng: Added support for zd1211rw driver
 * airmon-ng: Added support for at76c503a, rt61 and rt73
 * airmon-ng: Updated some device detection
@@ -23,6 +25,7 @@ Version 0.8 (changes from aircrack-ng 0.7) - Released ?? March 2007:
 * airtun-ng: Added pcap support to replay saved wlan sessions
 * airtun-ng: Added repeater mode, bssid and netmask filter
 * packetforge-ng: Added null packet support
+* packetforge-ng: Added packet selection for -9
 * airodump-ng, aireplay-ng, airtun-ng: Initial FreeBSD support
 * Added airoscript (from daouid)
 * Makefiles: Fixed: make uninstall did not remove all files
