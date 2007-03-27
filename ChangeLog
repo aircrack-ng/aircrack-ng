@@ -1,4 +1,4 @@
-Version 0.7.1 (changes from aircrack-ng 0.7) - Released ?? ????? 2007:
+Version 0.8 (changes from aircrack-ng 0.7) - Released ?? March 2007:
 * aireplay-ng: Works on FreeBSD-CURRENT
 * aircrack-ng: Fixed stdin dictionary usage
 * aircrack-ng: Hardcode CPUs number to 1 in case detection fails
