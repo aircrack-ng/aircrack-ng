@@ -268,6 +268,8 @@ struct globals
 
     int one_beacon;         /* Record only 1 beacon?*/
 
+    int isunique;           /* Is our IV unique?    */
+
     unsigned char sharedkey[3][512]; /* array for 3 packets with a size of \
                                up to 512Byte */
     time_t sk_start;
@@ -665,11 +667,14 @@ int dump_initialize( char *prefix, int ivs_only )
             return( 1 );
         }
 
-        if( fwrite( IVSONLY_MAGIC, 1, 4, G.f_ivs ) != (size_t) 4 )
+		if(G.isunique)
         {
-            perror( "fwrite(IVs file header) failed" );
-            return( 1 );
-        }
+			if( fwrite( IVSONLY_MAGIC, 1, 4, G.f_ivs ) != (size_t) 4 )
+			{
+				perror( "fwrite(IVs file header) failed" );
+				return( 1 );
+			}
+		}
     }
 
     return( 0 );
@@ -1315,7 +1320,7 @@ skip_probe:
         {
             /* WEP: check if we've already seen this IV */
 
-            if( ! uniqueiv_check( ap_cur->uiv_root, &h80211[z] ) )
+            if( (G.isunique = (! uniqueiv_check( ap_cur->uiv_root, &h80211[z] ) ) ) )
             {
                 /* first time seen IVs */
 
@@ -2559,7 +2564,7 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 
         waitpid( pid, &status, 0 );
     }
-    
+
     if( G.is_zd1211rw[cardnum] )
     {
         snprintf( s,  sizeof( s ) - 1, "%d", channel );
@@ -2754,7 +2759,7 @@ int set_monitor( char *interface, int cardnum )
     {
 	perror( "calloc()" );
 	return( 1 );
-    }	
+    }
 
     ifmr.ifm_ulist = mw;
     strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
@@ -2869,7 +2874,7 @@ int set_monitor( char *interface, int cardnum )
 	}
     }
 
-    close(s);	
+    close(s);
 
     set_channel( interface, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum] );
 
@@ -3477,7 +3482,7 @@ int setup_card(char *iface, struct ifreq *ifr, int *fd_raw, int cardnum)
 	return( 1 );
     }
 
-    /* set bpf's promiscuous mode */	
+    /* set bpf's promiscuous mode */
     if( ioctl( *fd_raw, BIOCPROMISC, NULL) == -1 )
     {
 	perror( "ioctl(BIOCPROMISC) failed" );
@@ -3744,14 +3749,14 @@ int main( int argc, char *argv[] )
             case 0 :
 
                 break;
-                
+
             case ':':
-            
+
 	    		printf("\"%s --help\" for help.\n", argv[0]);
             	return( 1 );
 
             case '?':
-            
+
 	    		printf("\"%s --help\" for help.\n", argv[0]);
             	return( 1 );
 
@@ -3911,7 +3916,7 @@ int main( int argc, char *argv[] )
                 break;
 
             case 'H':
-            
+
   	            printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
   	            return( 1 );
 
@@ -4003,7 +4008,7 @@ usage:
 #endif /* linux */
 
 #if defined(__FreeBSD__)
-    /* 
+    /*
 	since under FreeBSD the socktype PF_PACKET is not available
 	we have to read our frames from a BPF, with a few consequences
 	you'll find later on
@@ -4369,7 +4374,7 @@ usage:
 		/*
 		    since we're reading from a BPF with a datalink type
 		    of IEEE802_11_RADIO, our readed frame will start with
-		    a variable size BPF header (struct bpf_hdr) and a 
+		    a variable size BPF header (struct bpf_hdr) and a
 		    variable size radiotap header.
 		    we need to know their lenght to pass a clean 802.11
 		    frame to dump_add_packet()
@@ -4408,7 +4413,7 @@ usage:
 				    this frame has 4 FCS bytes at
 				    his end, and we need to avoid them
 				*/
-				caplen -= 4; 
+				caplen -= 4;
 			    }
 			    r += sizeof( u_int8_t ); /* and go on.. */
 			    break;
@@ -4496,7 +4501,7 @@ usage:
 		of the capture (bpf header lenght + radiotap header
 		lenght)
 	    */
-	    n = bpfp->bh_hdrlen + rtp->it_len; 
+	    n = bpfp->bh_hdrlen + rtp->it_len;
 
 	    if( n <= 0 || n >= caplen )
 		continue;
