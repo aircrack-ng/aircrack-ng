@@ -60,6 +60,9 @@
 #define ASCII_VOTE_STRENGTH_T 150
 #define ASCII_DISREGARD_STRENGTH 1
 
+#define TEST_MIN_IVS	4
+#define TEST_MAX_IVS	32
+
 #define SWAP(x,y) { uchar tmp = x; x = y; y = tmp; }
 
 #ifdef __i386__
@@ -1364,10 +1367,10 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 //	printf("keylen: %d\n", keylen);
 //	printf("%02X:%02X:%02X:%02X:%02X\n", wepkey[0],wepkey[1],wepkey[2],wepkey[3],wepkey[4]);
 
-	if(opt.dict) tests = (wep.nb_ivs-5)/5;
+	if(opt.dict) tests = wep.nb_ivs;
 
-	if(tests < 4)  tests=4;
-	if(tests > 32) tests=32;
+	if(tests < TEST_MIN_IVS) tests=TEST_MIN_IVS;
+	if(tests > TEST_MAX_IVS) tests=TEST_MAX_IVS;
 
 	for( n = 0; n < tests; n++ )
 	{
@@ -2841,9 +2844,9 @@ int crack_wep_dict()
 
 	update_ivbuf();
 
-	if(wep.nb_ivs < 25)
+	if(wep.nb_ivs < TEST_MIN_IVS)
 	{
-		printf( "\ncapture 25 IVs\n" );
+		printf( "\nYou need to capture at least %d IVs!\n", TEST_MIN_IVS );
 		return( FAILURE );
 	}
 
