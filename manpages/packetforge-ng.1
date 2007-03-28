@@ -12,6 +12,9 @@ is a tool designed to forge ARP-request, UDP, ICMP or custom packets.
 .SH OPTIONS
 .PP
 .TP
+.I -H, --help
+Shows the help screen.
+.TP
 .I -p <fctrl>
 Set frame control word (hex)
 .TP
@@ -39,11 +42,11 @@ Set source IP (and port)
 .I -l <ip:[port]>
 Set destination IP (and port)
 .TP
-.I -w <file
+.I -w <file>
 Write packet to this pcap file
 .TP
 .I -r <file>
-Read packet from this raw file
+Read packet from this pcap file
 .TP
 .I -y <file>
 Read PRGA from this file
@@ -51,17 +54,23 @@ Read PRGA from this file
 .I -t <ttl>
 Set Time To Live in IP-Header
 .TP
-.I --arp
+.I -s <size>
+Set size of the generated null packet.
+.TP
+.I -0, --arp
 Forge an ARP packet
 .TP
-.I --udp
+.I -1, --udp
 Forge an UDP packet
 .TP
-.I --icmp
+.I -2, --icmp
 Forge an ICMP packet
 .TP
-.I --custom
-Build a custom packet
+.I -3, --null
+Forge a llc null packet
+.TP
+.I -9, --custom
+Build a custom packet, requires -r to read an unencrypted frame out of a pcap file.
 .SH EXAMPLE
 .B packetforge-ng
 -y test.xor -a 00:09:5b:12:40:cc -h 00:10:2a:cb:30:14 -k 192.168.1.100 -l 192.168.1.1 -w arp-request.cap

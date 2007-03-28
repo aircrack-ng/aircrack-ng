@@ -13,26 +13,46 @@ is a packet capture tool for aircrack-ng. It allows dumping packets directly fro
 .SH OPTIONS
 .PP
 .TP
+.I -H, --help
+Shows the help screen.
+.TP
 .I -i, --ivs
 It only saves IVs (only useful for cracking). If this option is specified, you have to give a dump prefix (--write option)
 .TP
 .I -g, --gpsd
 Indicate that airodump-ng should try to use GPSd to get coordinates.
 .TP
-.I -w, --write <prefix>
+.I -w <prefix>, --write <prefix>
 Is the dump file prefix to use. If this option is not given, it will only show data on the screen.
 .TP
-.I --beacons
+.I -e, --beacons
 It will record all beacons into the cap file (by default it only records one).
 .TP
-.I --update <secs>
+.I -u <secs>, --update <secs>
 Delay <secs> seconds delay between display updates (default: 1 second). Useful for slow CPU.
 .TP
-.I -c, --channel <channel>
-Indicate the channel to listen to. By default airodump-ng hop on all 2.4Ghz channels.
+.I -c <channel>[,<channel>[,...]], --channel <channel>[,<channel>[,...]]
+Indicate the channel(s) to listen to. By default airodump-ng hop on all 2.4Ghz channels.
 .TP
-.I -b, --band <abg>
+.I -b <abg>, --band <abg>
 Indicate the band on which airodump-ng should hop. It can be a combination of 'a', 'b' and 'g' ('b' and 'g' uses 2.4Ghz and 'a' uses 5Ghz)
+.TP
+.I -s <method>, --cswitch <method>
+Defines the way airodump-ng sets the channels when using more than one card. Valid values: 0, 1 or 2.
+.PP
+.B Filter options:
+.TP
+.I -t <OPN|WEP|WPA|WPA1|WPA2>, --encrypt <OPN|WEP|WPA|WPA1|WPA2>
+It will only show networks, matching the given encryption. May be specified more than once: '-t OPN -t WPA2'
+.TP
+.I -d <bssid>, --bssid <bssid>
+It will only show networks, matching the given bssid.
+.TP
+.I -m <mask>, --netmask <mask>
+It will only show networks, matching the given bssid ^ netmask combination. Need --bssid to be specified.
+.TP
+.I -a
+It will only show associated clients.
 .SH EXAMPLES
 .B airodump-ng
 \-\-band bg ath0

@@ -19,6 +19,9 @@ supports single-NIC injection/monitor.
 This feature needs driver patching.
 .br
 .SH OPTIONS
+.TP
+.I -H, --help
+Shows the help screen.
 .PP
 .TP
 .B Filter options:
@@ -132,7 +135,7 @@ Generates a valid keystream.
 .PP
 .I Pros
 .br
-- Can obtain the full packet length of 1500 bits XOR. This means you can subsequently pretty well create any size of packet.
+- Can obtain the full packet length of 1500 bytes XOR. This means you can subsequently pretty well create any size of packet.
 .br
 - May work where chopchop does not
 .br
@@ -140,8 +143,6 @@ Generates a valid keystream.
 .TP
 .PP
 .I Cons
-.br
-- Need more information to launch it - ie IP address info. Quite often this can be guessed (by default 255.255.255.255)
 .br
 - Setup to execute the attack is more subject to the device drivers. For example, Atheros does not generate the correct packets unless the wireless card is set to the mac address you are spoofing.
 .br
@@ -153,8 +154,6 @@ Generates a valid keystream.
 .I Pro
 .br
 - May work where frag does not work.
-.br
-- You do not need to know any IP information.
 .TP
 .PP
 .I Cons
