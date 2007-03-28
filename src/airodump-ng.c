@@ -84,7 +84,7 @@
 #define ARPHRD_IEEE80211_PRISM  802
 #define ARPHRD_IEEE80211_FULL   803
 
-#define REFRESH_RATE 100000  /* delay in us between updates */
+#define REFRESH_RATE 100000  /* default delay in us between updates */
 
 #define NULL_MAC       "\x00\x00\x00\x00\x00\x00"
 #define BROADCAST_ADDR "\xFF\xFF\xFF\xFF\xFF\xFF"
@@ -256,6 +256,7 @@ struct globals
     int singlechan;         /* channel hopping set 1*/
     int chswitch;	    /* switching method     */
     int f_encrypt;          /* encryption filter    */
+    int update_s;	    /* update delay in sec  */
 
     int is_wlanng[MAX_CARDS];          /* set if wlan-ng       */
     int is_orinoco[MAX_CARDS];         /* set if orinoco       */
@@ -443,6 +444,7 @@ char usage[] =
 "      --write    <prefix> : Dump file prefix\n"
 "      -w                  : same as --write \n"
 "      --beacons           : Record all beacons in dump file\n"
+"      --update     <secs> : Display update delay in seconds\n"
 "\n"
 "  Filter options:\n"
 "      --encrypt   <suite> : Filter APs by cypher suite\n"
@@ -3677,6 +3679,7 @@ int main( int argc, char *argv[] )
     G.prefix       =  NULL;
     G.f_encrypt    =  0;
     G.asso_client  =  0;
+    G.update_s     =  0;
     memset(G.sharedkey, '\x00', 512*3);
 
 #if defined(__FreeBSD__)
@@ -3734,12 +3737,13 @@ int main( int argc, char *argv[] )
             {"ivs",     0, 0, 'i'},
             {"write",   1, 0, 'w'},
             {"encrypt", 1, 0, 't'},
+            {"update",  1, 0, 'u'},
             {"help",    0, 0, 'H'},
             {0,         0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:m:d:aH",
+                        "b:c:egiw:s:t:u:m:d:aH",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3877,6 +3881,11 @@ int main( int argc, char *argv[] )
                     break;
                 }
                 G.chswitch = atoi(optarg);
+                break;
+
+            case 'u':
+
+                G.update_s = atoi(optarg);
                 break;
 
             case 'm':
@@ -4226,19 +4235,27 @@ usage:
         /* capture one packet */
 
         FD_ZERO( &rfds );
-	for(i=0; i<cards; i++)
-	{
+        for(i=0; i<cards; i++)
+        {
             FD_SET( fd_raw[i], &rfds );
-	}
+        }
 
-        tv0.tv_sec  = 0;
-        tv0.tv_usec = REFRESH_RATE;
+        tv0.tv_sec  = G.update_s;
+        tv0.tv_usec = (G.update_s == 0) ? REFRESH_RATE : 0;
 
         gettimeofday( &tv1, NULL );
 
         if( select( fdh + 1, &rfds, NULL, NULL, &tv0 ) < 0 )
         {
-            if( errno == EINTR ) continue;
+            if( errno == EINTR )
+            {
+                gettimeofday( &tv2, NULL );
+
+                time_slept += 1000000 * ( tv2.tv_sec  - tv1.tv_sec  )
+                                      + ( tv2.tv_usec - tv1.tv_usec );
+
+                continue;
+            }
             perror( "select failed" );
             return( 1 );
         }
@@ -4248,7 +4265,7 @@ usage:
         time_slept += 1000000 * ( tv2.tv_sec  - tv1.tv_sec  )
                               + ( tv2.tv_usec - tv1.tv_usec );
 
-        if( time_slept > REFRESH_RATE )
+        if( time_slept > REFRESH_RATE && time_slept > G.update_s * 1000000)
         {
             time_slept = 0;
 
@@ -4274,12 +4291,12 @@ usage:
             continue;
         }
 
-	fd_is_set = 0;
+        fd_is_set = 0;
 
-	for(i=0; i<cards; i++)
-	{
-		if( FD_ISSET( fd_raw[i], &rfds ) )
-	    {
+        for(i=0; i<cards; i++)
+        {
+            if( FD_ISSET( fd_raw[i], &rfds ) )
+            {
 
 #if defined(linux)
                 memset( buffer, 0, 4096 );
