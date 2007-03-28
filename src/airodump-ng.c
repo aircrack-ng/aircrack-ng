@@ -3886,6 +3886,11 @@ int main( int argc, char *argv[] )
             case 'u':
 
                 G.update_s = atoi(optarg);
+
+                /* If failed to parse or value <= 0, use default, 100ms */
+                if (G.update_s <= 0)
+                	G.update_s = REFRESH_RATE;
+
                 break;
 
             case 'm':
