@@ -2565,6 +2565,7 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
         }
 
         waitpid( pid, &status, 0 );
+        return 0;
     }
 
     if( G.is_zd1211rw[cardnum] )
