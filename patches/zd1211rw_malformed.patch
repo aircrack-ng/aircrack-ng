@@ -1,0 +1,12 @@
+--- linux-source-2.6.17/drivers/net/wireless/zd1211rw/zd_mac.c	2006-10-01 18:42:47.000000000 +0200
++++ linux-source-2.6.17/drivers/net/wireless/zd1211rw/zd_mac.c	2007-03-30 11:48:09.000000000 +0200
+@@ -834,7 +834,8 @@
+ 	const struct rx_status *status;
+ 
+ 	*pstatus = status = zd_tail(buffer, length, sizeof(struct rx_status));
+-	if (status->frame_status & ZD_RX_ERROR) {
++	if (status->frame_status & ZD_RX_ERROR
++		|| status->frame_status & ~0x21) {
+ 		/* FIXME: update? */
+ 		return -EINVAL;
+ 	}
