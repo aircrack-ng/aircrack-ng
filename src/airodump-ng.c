@@ -669,13 +669,10 @@ int dump_initialize( char *prefix, int ivs_only )
             return( 1 );
         }
 
-		if(G.isunique)
-        {
-			if( fwrite( IVSONLY_MAGIC, 1, 4, G.f_ivs ) != (size_t) 4 )
-			{
-				perror( "fwrite(IVs file header) failed" );
-				return( 1 );
-			}
+		if( fwrite( IVSONLY_MAGIC, 1, 4, G.f_ivs ) != (size_t) 4 )
+		{
+			perror( "fwrite(IVs file header) failed" );
+			return( 1 );
 		}
     }
 
