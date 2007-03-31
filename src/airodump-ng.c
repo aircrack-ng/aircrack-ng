@@ -269,8 +269,6 @@ struct globals
 
     int one_beacon;         /* Record only 1 beacon?*/
 
-    int isunique;           /* Is our IV unique?    */
-
     unsigned char sharedkey[3][512]; /* array for 3 packets with a size of \
                                up to 512Byte */
     time_t sk_start;
@@ -1319,7 +1317,7 @@ skip_probe:
         {
             /* WEP: check if we've already seen this IV */
 
-            if( (G.isunique = (! uniqueiv_check( ap_cur->uiv_root, &h80211[z] ) ) ) )
+            if( ! uniqueiv_check( ap_cur->uiv_root, &h80211[z] ) )
             {
                 /* first time seen IVs */
 
