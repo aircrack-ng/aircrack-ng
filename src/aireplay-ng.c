@@ -3856,20 +3856,20 @@ int main( int argc, char *argv[] )
 
             case ':' :
 
-	    		printf("\"%s --help\" for help.\n", argv[0]);
-				return( 1 );
+                printf("\"%s --help\" for help.\n", argv[0]);
+                return( 1 );
 
             case '?' :
 
-	    		printf("\"%s --help\" for help.\n", argv[0]);
-				return( 1 );
+                printf("\"%s --help\" for help.\n", argv[0]);
+                return( 1 );
 
             case 'b' :
 
                 if( getmac( optarg, 1 ,opt.f_bssid ) != 0 )
                 {
                     printf( "Invalid BSSID (AP MAC address).\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3879,7 +3879,7 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.f_dmac ) != 0 )
                 {
                     printf( "Invalid destination MAC address.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3889,7 +3889,7 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.f_smac ) != 0 )
                 {
                     printf( "Invalid source MAC address.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3900,7 +3900,7 @@ int main( int argc, char *argv[] )
                 if( opt.f_minlen < 0 || ret != 1 )
                 {
                     printf( "Invalid minimum length filter. [>=0]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3911,7 +3911,7 @@ int main( int argc, char *argv[] )
                 if( opt.f_maxlen < 0 || ret != 1 )
                 {
                     printf( "Invalid maximum length filter. [>=0]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3922,7 +3922,7 @@ int main( int argc, char *argv[] )
                 if( opt.f_type < 0 || opt.f_type > 3 || ret != 1 )
                 {
                     printf( "Invalid type filter. [0-3]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3933,7 +3933,7 @@ int main( int argc, char *argv[] )
                 if( opt.f_subtype < 0 || opt.f_subtype > 15 || ret != 1 )
                 {
                     printf( "Invalid subtype filter. [0-15]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3944,7 +3944,7 @@ int main( int argc, char *argv[] )
                 if(( opt.f_tods != 0 && opt.f_tods != 1 ) || ret != 1 )
                 {
                     printf( "Invalid tods filter. [0,1]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3955,7 +3955,7 @@ int main( int argc, char *argv[] )
                 if(( opt.f_fromds != 0 && opt.f_fromds != 1 ) || ret != 1 )
                 {
                     printf( "Invalid fromds filter. [0,1]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3966,7 +3966,7 @@ int main( int argc, char *argv[] )
                 if(( opt.f_iswep != 0 && opt.f_iswep != 1 ) || ret != 1 )
                 {
                     printf( "Invalid wep filter. [0,1]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3977,7 +3977,7 @@ int main( int argc, char *argv[] )
                 if( opt.r_nbpps < 1 || opt.r_nbpps > 1024 || ret != 1 )
                 {
                     printf( "Invalid number of packets per second. [1-1024]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3988,7 +3988,7 @@ int main( int argc, char *argv[] )
                 if( opt.npackets < 1 || opt.npackets > 512 || ret != 1 )
                 {
                     printf( "Invalid number of packets per burst. [1-512]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3999,7 +3999,7 @@ int main( int argc, char *argv[] )
                 if( opt.delay < 1 || opt.delay > 600 || ret != 1 )
                 {
                     printf( "Invalid number of seconds. [1-600]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4007,11 +4007,10 @@ int main( int argc, char *argv[] )
             case 'p' :
 
                 ret = sscanf( optarg, "%x", &opt.r_fctrl );
-//                if( opt.r_fctrl < 0 || opt.r_fctrl > 65355 )
                 if( opt.r_fctrl < 0 || opt.r_fctrl > 65535 || ret != 1 )
                 {
                     printf( "Invalid frame control word. [0-65535]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4021,7 +4020,7 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.r_bssid ) != 0 )
                 {
                     printf( "Invalid AP MAC address.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4031,18 +4030,18 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.r_dmac ) != 0 )
                 {
                     printf( "Invalid destination MAC address.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
 
             case 'g' :
 
-				ret = sscanf( optarg, "%d", &opt.ringbuffer );
+                ret = sscanf( optarg, "%d", &opt.ringbuffer );
                 if( opt.ringbuffer < 1 || ret != 1 )
                 {
                     printf( "Invalid replay ring buffer size. [>=1]\n");
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4052,7 +4051,7 @@ int main( int argc, char *argv[] )
                 if( getmac( optarg, 1, opt.r_smac ) != 0 )
                 {
                     printf( "Invalid source MAC address.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4083,7 +4082,7 @@ int main( int argc, char *argv[] )
                 if( opt.prga != NULL )
                 {
                     printf( "PRGA file already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 if( read_prga(&(opt.prga), optarg) != 0 )
@@ -4097,7 +4096,7 @@ int main( int argc, char *argv[] )
                 if( opt.s_face != NULL || opt.s_file )
                 {
                     printf( "Packet source already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.s_face = optarg;
@@ -4108,7 +4107,7 @@ int main( int argc, char *argv[] )
                 if( opt.s_face != NULL || opt.s_file )
                 {
                     printf( "Packet source already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.s_file = optarg;
@@ -4125,22 +4124,22 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 0;
 
-				for (i=0; optarg[i] != 0; i++)
-				{
-					if (isdigit(optarg[i]) == 0)
-						break;
-				}
+                for (i=0; optarg[i] != 0; i++)
+                {
+                    if (isdigit(optarg[i]) == 0)
+                        break;
+                }
 
                 ret = sscanf( optarg, "%d", &opt.a_count );
                 if( opt.a_count < 0 || optarg[i] != 0 || ret != 1)
                 {
                     printf( "Invalid deauthentication count or missing value. [>=0]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4150,25 +4149,22 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 1;
 
-				for (i=0; optarg[i] != 0; i++)
-				{
-					if (isdigit(optarg[i]) == 0)
-						break;
-				}
+                for (i=0; optarg[i] != 0; i++)
+                {
+                    if (isdigit(optarg[i]) == 0)
+                        break;
+                }
 
                 ret = sscanf( optarg, "%d", &opt.a_delay );
-                
-                printf("a_delay: %d, optarg[i]: %d, ret: %d\n", opt.a_delay, optarg[i], ret);
-                
                 if( opt.a_delay < 0 || optarg[i] != 0 || ret != 1)
                 {
                     printf( "Invalid reauthentication delay or missing value. [>=0]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -4178,7 +4174,7 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 2;
@@ -4189,7 +4185,7 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 3;
@@ -4200,7 +4196,7 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 4;
@@ -4211,16 +4207,16 @@ int main( int argc, char *argv[] )
                 if( opt.a_mode != -1 )
                 {
                     printf( "Attack mode already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.a_mode = 5;
                 break;
-                
+
             case 'H' : 
-            
-            	printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
-            	return( 1 );
+
+                printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+                return( 1 );
 
             default : goto usage;
         }
