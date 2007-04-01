@@ -991,7 +991,7 @@ usage:
 
         /* check the BSSID */
 
-        switch( h80211[0] & 3 )
+        switch( h80211[1] & 3 )
         {
             case  0: memcpy( bssid, h80211 + 16, 6 ); break;
             case  1: memcpy( bssid, h80211 +  4, 6 ); break;
