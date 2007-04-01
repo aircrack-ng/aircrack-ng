@@ -294,7 +294,7 @@ int send_packet( void *buf, size_t count )
     {
         /* for some reason, wlan-ng requires a special header */
 
-        if( ( ((unsigned char *) buf)[0] & 3 ) != 3 )
+        if( ( ((unsigned char *) buf)[1] & 3 ) != 3 )
         {
             memcpy( tmpbuf, buf, 24 );
             memset( tmpbuf + 24, 0, 22 );

@@ -365,7 +365,7 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
     uchar PN[6], AAD[32];
     aes_context aes_ctx;
 
-    is_a4 = ( h80211[0] & 3 ) == 3;
+    is_a4 = ( h80211[1] & 3 ) == 3;
 
     z = 24 + 6 * is_a4;
 
