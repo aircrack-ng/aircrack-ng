@@ -4369,8 +4369,17 @@ usage:
 
                     n = *(unsigned short *)( buffer + 2 );
 
+                    /* ipw2200 1.0.7 */
                     if( *(int *)( buffer + 4 ) == 0x0000082E )
-                        power = buffer[14];     /* ipw2200 1.0.7 */
+                        power = buffer[14];
+
+                    /* ipw2200 1.2.0 */
+                    if( *(int *)( buffer + 4 ) == 0x0000086F )
+                        power = buffer[15];
+
+                    /* zd1211rw-patched */
+                    if(G.is_zd1211rw[i] && *(int *)( buffer + 4 ) == 0x0000006E )
+                        power = buffer[14];
 
                     if( n <= 0 || n >= caplen )
                         continue;
