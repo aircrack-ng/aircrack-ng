@@ -4363,8 +4363,9 @@ usage:
                 {
                     if( buffer[0] != 0 )
                     {
-                        fprintf( stderr, "Wrong radiotap header version.\n" );
-                        return( 1 );
+//                        fprintf( stderr, "Wrong radiotap header version.\n" );
+//                        return( 1 );
+                        continue;
                     }
 
                     n = *(unsigned short *)( buffer + 2 );

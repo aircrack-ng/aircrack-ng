@@ -1371,7 +1371,7 @@ int do_attack_fake_auth( void )
                             i++;
                             if(i>10)
                             {
-                                PCT; printf("Authentication failed!\n");
+                                printf("Authentication failed!\n");
                                 return 1;
                             }
                         }
@@ -1419,7 +1419,7 @@ int do_attack_fake_auth( void )
                                 i++;
                                 if(i>10)
                                 {
-                                    PCT; printf("Authentication failed!\n");
+                                    printf("Authentication failed!\n");
                                     return 1;
                                 }
                             }
@@ -1430,13 +1430,13 @@ int do_attack_fake_auth( void )
                         break;
                     }
 
-                    PCT; printf( "Authentication failed (code %d)\n", n );
+                    printf( "Authentication failed (code %d)\n", n );
                     if(opt.npackets == -1) x_send = 4;
                     sleep( 3 );
                     continue;
                 }
 
-                PCT; printf( "Authentication successful\n" );
+                printf( "Authentication successful\n" );
 
                 state = 2;      /* auth. done */
             }
@@ -1481,7 +1481,7 @@ int do_attack_fake_auth( void )
                     continue;
                 }
 
-                PCT; printf( "Association successful :-)\n" );
+                printf( "Association successful :-)\n" );
 
                 tt = time( NULL );
                 tr = time( NULL );
