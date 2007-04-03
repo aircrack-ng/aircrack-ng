@@ -300,8 +300,8 @@ char usage[] =
 "      -k <korek> : disable one attack method  (1 to 17)\n"
 "      -x or -x0  : disable last keybytes bruteforce\n"
 "      -x1        : enable last keybyte bruteforcing (default)\n"
-"      -x2        : enable last two keybytes bruteforcing\n"
-"      -X         : disable bruteforce multithreading (SMP only)\n"
+"      -x2        : enable last two keybytes bruteforcing"
+"%s"
 "      -y         : experimental single bruteforce mode\n"
 "      -s         : show ASCII version of the key\n"
 "\n"
@@ -1726,7 +1726,7 @@ int do_wep_crack1( int B )
 			/* opt.keylen = 13; */
 		}
 
-		
+
 
 		if( B + 1 == opt.keylen && opt.do_brute )
 		{
@@ -1749,11 +1749,11 @@ int do_wep_crack1( int B )
 							for( i = 0; i < 256; i++ )
 							{
 								wep.key[opt.brutebytes[2]] = i;
-		
+
 								for( j = 0; j < 256; j++ )
 								{
 									wep.key[opt.brutebytes[3]] = j;
-		
+
 									if (check_wep_key( wep.key, B + 1, 0 ) == SUCCESS)
 										return SUCCESS;
 								}
@@ -1774,7 +1774,7 @@ int do_wep_crack1( int B )
 							for( j = 0; j < 256; j++ )
 							{
 								wep.key[opt.brutebytes[2]] = j;
-	
+
 								if (check_wep_key( wep.key, B + 1, 0 ) == SUCCESS)
 									return SUCCESS;
 							}
@@ -1975,15 +1975,15 @@ int inner_bruteforcer_thread(void *arg)
 			for( k = 0; k < 256; k++ )
 			{
 				wepkey[opt.brutebytes[1]] = k;
-	
+
 				for( i = 0; i < 256; i++ )
 				{
 					wepkey[opt.brutebytes[2]] = i;
-		
+
 					for( j = 0; j < 256; j++ )
 					{
 						wepkey[opt.brutebytes[3]] = j;
-		
+
 						if( check_wep_key( wepkey, opt.keylen - 2, 0 ) == SUCCESS )
 							return(SUCCESS);
 					}
@@ -2000,11 +2000,11 @@ int inner_bruteforcer_thread(void *arg)
 			for( i = 0; i < 256; i++ )
 			{
 				wepkey[opt.brutebytes[1]] = i;
-	
+
 				for( j = 0; j < 256; j++ )
 				{
 					wepkey[opt.brutebytes[2]] = j;
-	
+
 					if( check_wep_key( wepkey, opt.keylen - 2, 0 ) == SUCCESS )
 						return(SUCCESS);
 				}
@@ -2891,11 +2891,12 @@ int crack_wep_dict()
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option, j, ret1;
+	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 
 	ret = FAILURE;
+	cpudetectfailed = 0;
 
 	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION);
 
@@ -2907,12 +2908,14 @@ int main( int argc, char *argv[] )
 
 	max_cpu   = sysconf(_SC_NPROCESSORS_ONLN);
 	/* Fails on some archs */
-	if ( max_cpu < 1 )
+	cpudetectfailed = ( max_cpu < 1 );
+	if (cpudetectfailed)
 		max_cpu = 1;
 	opt.nbcpu = max_cpu;
 
 	#else
 
+	cpudetectfailed = 1;
 	max_cpu   = 255;
 	opt.nbcpu =   1;
 	#endif
@@ -2947,17 +2950,17 @@ int main( int argc, char *argv[] )
 
 		switch( option )
 		{
-		
+
 			case ':' :
-			
+
 	    		printf("\"%s --help\" for help.\n", argv[0]);
-				return( 1 );			
-				
+				return( 1 );
+
 			case '?' :
-			
+
 	    		printf("\"%s --help\" for help.\n", argv[0]);
-				return( 1 );			
-				
+				return( 1 );
+
 			case 'a' :
 
 				ret1 = sscanf( optarg, "%d", &opt.amode );
@@ -3182,9 +3185,9 @@ int main( int argc, char *argv[] )
 
 				opt.l33t = 1;
 				break;
-				
+
 			case 'H' :
-			
+
 				printf (usage, progname,
 					( max_cpu == 1 ) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n" );
 				return( 1 );
@@ -3199,7 +3202,8 @@ int main( int argc, char *argv[] )
 		{
 usage:
 			printf (usage, progname,
-				( max_cpu == 1 ) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n" );
+				( max_cpu == 1 && cpudetectfailed == 0) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n",
+				( max_cpu == 1 && cpudetectfailed == 0) ? "\n" : "\n      -X         : disable bruteforce multithreading (SMP only)\n");
 		}
 		if( argc - optind == 0)
 	    {
@@ -3456,14 +3460,14 @@ usage:
 			printf( "Specified more then 4 bytes to bruteforce!" );
 			goto exit_main;
 		}
-	
+
 		for( i=0; i<opt.do_brute; i++)
 		{
 			opt.brutebytes[j+i] = opt.keylen -1 -i;
 		}
-	
+
 		opt.do_brute += j;
-	
+
 		if( opt.ffact == 0 )
 		{
 			if( ! opt.do_testy )
