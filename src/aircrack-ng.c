@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <time.h>
 #include <getopt.h>
+#include <ctype.h>
 
 #include "version.h"
 #include "crypto.h"
@@ -2118,6 +2119,7 @@ int crack_wpa_thread( void *arg )
 	char  essid[36];
 	char  key1[128], key2[128];
 	uchar pmk1[128], pmk2[128];
+        int len1, len2;
 
 	#ifdef __i386__
 
@@ -2161,6 +2163,13 @@ int crack_wpa_thread( void *arg )
 		key1[127] = '\0';
 		key2[127] = '\0';
 
+                len1 = strlen( key1 );
+                len2 = strlen( key1 );
+                if(len1 > 64 ) len1 = 64;
+                if(len2 > 64 ) len2 = 64;
+
+                if(len1 < 8) len1 = 8;
+                if(len2 < 8) len2 = 8;
 		#ifdef __i386__
 
 		/* MMX available, so compute two PMKs in a single row */
@@ -2168,11 +2177,11 @@ int crack_wpa_thread( void *arg )
 		memset( k_ipad, 0, sizeof( k_ipad ) );
 		memset( k_opad, 0, sizeof( k_opad ) );
 
-		memcpy( k_ipad, key1, strlen( key1 ) );
-		memcpy( k_opad, key1, strlen( key1 ) );
+		memcpy( k_ipad, key1, len1 );
+		memcpy( k_opad, key1, len1 );
 
-		memcpy( k_ipad + 64, key2, strlen( key2 ) );
-		memcpy( k_opad + 64, key2, strlen( key2 ) );
+		memcpy( k_ipad + 64, key2, len2 );
+		memcpy( k_opad + 64, key2, len2 );
 
 		u = (uint *) ( k_ipad      );
 		v = (uint *) ( k_ipad + 64 );
@@ -2212,10 +2221,10 @@ int crack_wpa_thread( void *arg )
 
 		essid[slen - 1] = '\1';
 
-		hmac_sha1( (uchar *) key1, strlen( key1 ),
+		hmac_sha1( (uchar *) key1, len1,
 			(uchar *) essid, slen,  pmk1 );
 
-		hmac_sha1( (uchar *) key2, strlen( key2 ),
+		hmac_sha1( (uchar *) key2, len2,
 			(uchar *) essid, slen,  pmk2 );
 
 		u = (uint *) pmk1;
@@ -2253,10 +2262,10 @@ int crack_wpa_thread( void *arg )
 
 		essid[slen - 1] = '\2';
 
-		hmac_sha1( (uchar *) key1, strlen( key1 ),
+		hmac_sha1( (uchar *) key1, len1,
 			(uchar *) essid, slen,  pmk1 + 20 );
 
-		hmac_sha1( (uchar *) key2, strlen( key2 ),
+		hmac_sha1( (uchar *) key2, len2,
 			(uchar *) essid, slen,  pmk2 + 20 );
 
 		u = (uint *) ( pmk1 + 20 );
@@ -2312,7 +2321,7 @@ int crack_wpa_thread( void *arg )
 
 /* display the current wpa key info, matrix-like */
 
-void show_wpa_stats( char *key, uchar pmk[32], uchar ptk[64],
+void show_wpa_stats( char *key, int keylen, uchar pmk[32], uchar ptk[64],
 uchar mic[16], int force )
 {
 	float delta;
@@ -2346,8 +2355,7 @@ uchar mic[16], int force )
 		nb_tried, (float) nb_kprev / delta );
 
 	memset( tmpbuf, ' ', sizeof( tmpbuf ) );
-	memcpy( tmpbuf, key, strlen( key ) > 27 ? 27 :
-	strlen( key ) );
+	memcpy( tmpbuf, key, keylen > 27 ? 27 : keylen );
 	tmpbuf[27] = '\0';
 
 	if( opt.l33t ) printf( "\33[37;1m" );
@@ -2443,7 +2451,7 @@ int next_dict(int nb)
 
 int do_wpa_crack( struct AP_info *ap )
 {
-	int i, cid;
+	int i, j, cid, len1, len2;
 	char key1[128], key2[128];
 
 	uchar pke[100];
@@ -2538,10 +2546,16 @@ int do_wpa_crack( struct AP_info *ap )
 				}
 
 				i = strlen( key1 );
+                                if( i < 8 ) continue;
+                                if( i > 64 ) i = 64;
 
 				if( key1[i - 1] == '\n' ) key1[--i] = '\0';
 				if( key1[i - 1] == '\r' ) key1[--i] = '\0';
+				if( key1[i - 1] == '\n' ) key1[--i] = '\0';
+				if( key1[i - 1] == '\r' ) key1[--i] = '\0';
 
+                                for(j=0; j<i; j++)
+                                    if(!isascii(key1[j]) || key1[j] < 32) i=0;
 			}
 			while( i < 8 );
 
@@ -2561,9 +2575,16 @@ int do_wpa_crack( struct AP_info *ap )
 
 				i = strlen( key2 );
 
+                                if( i < 8 ) continue;
+                                if( i > 64 ) i = 64;
+
 				if( key2[i - 1] == '\n' ) key2[--i] = '\0';
 				if( key2[i - 1] == '\r' ) key2[--i] = '\0';
+				if( key2[i - 1] == '\n' ) key1[--i] = '\0';
+				if( key2[i - 1] == '\r' ) key1[--i] = '\0';
 
+                                for(j=0; j<i; j++)
+                                    if(!isascii(key2[j]) || key2[j] < 32 ) i=0;
 			}
 			while( i < 8 );
 
@@ -2589,6 +2610,15 @@ int do_wpa_crack( struct AP_info *ap )
 				perror( "read pmk failed" );
 				return( FAILURE );
 			}
+
+			len1 = strlen( key1 );
+			len2 = strlen( key2 );
+
+                        if( len1 < 8 ) len1=8;
+                        if( len1 > 64 ) len1 = 64;
+
+                        if( len2 < 8 ) len2=8;
+                        if( len2 > 64 ) len2 = 64;
 
 			/* compute the pairwise transient key and the frame MIC */
 
@@ -2626,13 +2656,13 @@ int do_wpa_crack( struct AP_info *ap )
 					return( SUCCESS );
 				}
 
-				show_wpa_stats( key2, pmk2, ptk2, mic2, 1 );
+				show_wpa_stats( key2, len1, pmk2, ptk2, mic2, 1 );
 
 				if( opt.l33t )
 					printf( "\33[31;1m" );
 
 				printf( "\33[8;%dH\33[2KKEY FOUND! [ %s ]\33[11B\n",
-					( 80 - 15 - (int) strlen( key2 ) ) / 2, key2 );
+					( 80 - 15 - (int) len1 ) / 2, key2 );
 
 				if( opt.l33t )
 					printf( "\33[32;22m" );
@@ -2644,7 +2674,7 @@ int do_wpa_crack( struct AP_info *ap )
 			nb_kprev += 2;
 
 			if( ! opt.is_quiet )
-				show_wpa_stats( key1, pmk1, ptk1, mic1, 0 );
+				show_wpa_stats( key1, len1, pmk1, ptk1, mic1, 0 );
 		}
 	}
 
