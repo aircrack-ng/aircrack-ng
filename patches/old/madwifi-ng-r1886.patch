@@ -1,0 +1,24 @@
+diff -ur madwifi-r1886/ath/if_ath.c madwifi-r1886-patched/ath/if_ath.c
+--- madwifi-r1886/ath/if_ath.c	2007-01-07 21:22:55.312500000 +0100
++++ madwifi-r1886-patched/ath/if_ath.c	2007-01-07 21:17:09.875000000 +0100
+@@ -2289,6 +2289,7 @@
+ ath_tx_startraw(struct net_device *dev, struct ath_buf *bf, struct sk_buff *skb) 
+ {
+ 	struct ath_softc *sc = dev->priv;
++	struct ieee80211com *ic = &sc->sc_ic;
+ 	struct ath_hal *ah = sc->sc_ah;
+ 	struct ieee80211_phy_params *ph = (struct ieee80211_phy_params *) (skb->cb + sizeof(struct ieee80211_cb));
+ 	const HAL_RATE_TABLE *rt;
+@@ -2305,7 +2306,11 @@
+ 	struct ieee80211_frame *wh; 
+ 	
+ 	wh = (struct ieee80211_frame *) skb->data;
+-	try0 = ph->try0;
++	try0 = (ic->ic_opmode == IEEE80211_M_MONITOR) ? 1 : ph->try0;
++	/*
++	 * The retry value has to be patched to 1 when injecting,
++	 * otherwise the sequence number will be overwritten
++	 */
+ 	rt = sc->sc_currates;
+ 	txrate = dot11_to_ratecode(sc, rt, ph->rate0);
+ 	power = ph->power > 60 ? 60 : ph->power;

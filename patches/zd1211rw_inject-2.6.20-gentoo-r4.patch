@@ -1,0 +1,116 @@
+diff -ur linux-2.6.20-gentoo-r4/drivers/net/wireless/zd1211rw/zd_mac.c linux-2.6.20-gentoo-r4-inject/drivers/net/wireless/zd1211rw/zd_mac.c
+--- linux-2.6.20-gentoo-r4/drivers/net/wireless/zd1211rw/zd_mac.c	2007-04-03 00:53:39.000000000 -0400
++++ linux-2.6.20-gentoo-r4-inject/drivers/net/wireless/zd1211rw/zd_mac.c	2007-04-03 00:50:05.000000000 -0400
+@@ -202,7 +202,16 @@
+ 		goto disable_rx;
+ 
+ 	housekeeping_enable(mac);
++
++	netif_carrier_on(netdev);
++
+ 	ieee80211softmac_start(netdev);
++
++        if(!netif_queue_stopped(netdev))
++                netif_start_queue(netdev);
++        else
++                netif_wake_queue(netdev);
++ 
+ 	return 0;
+ disable_rx:
+ 	zd_chip_disable_rx(chip);
+@@ -929,6 +938,8 @@
+ 	u8  rt_rate;
+ 	u16 rt_channel;
+ 	u16 rt_chbitmask;
++        u8  rt_antsignal;
++        u8  rt_antnoise;
+ } __attribute__((packed));
+ 
+ static void fill_rt_header(void *buffer, struct zd_mac *mac,
+@@ -942,7 +953,9 @@
+ 	hdr->rt_hdr.it_len = cpu_to_le16(sizeof(struct zd_rt_hdr));
+ 	hdr->rt_hdr.it_present = cpu_to_le32((1 << IEEE80211_RADIOTAP_FLAGS) |
+ 		                 (1 << IEEE80211_RADIOTAP_CHANNEL) |
+-				 (1 << IEEE80211_RADIOTAP_RATE));
++                                 (1 << IEEE80211_RADIOTAP_RATE) |
++                                 (1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL) |
++                                 (1 << IEEE80211_RADIOTAP_DBM_ANTNOISE));
+ 
+ 	hdr->rt_flags = 0;
+ 	if (status->decryption_type & (ZD_RX_WEP64|ZD_RX_WEP128|ZD_RX_WEP256))
+@@ -956,6 +969,12 @@
+ 	hdr->rt_chbitmask = cpu_to_le16(IEEE80211_CHAN_2GHZ |
+ 		((status->frame_status & ZD_RX_FRAME_MODULATION_MASK) ==
+ 		ZD_RX_OFDM ? IEEE80211_CHAN_OFDM : IEEE80211_CHAN_CCK));
++
++        hdr->rt_antsignal = status->signal_strength;
++        if(status->frame_status & ZD_RX_OFDM)
++                hdr->rt_antnoise = status->signal_strength - status->signal_quality_ofdm;
++        else
++                hdr->rt_antnoise = status->signal_strength - status->signal_quality_cck;
+ }
+ 
+ /* Returns 1 if the data packet is for us and 0 otherwise. */
+@@ -1062,7 +1081,8 @@
+ 	const struct rx_status *status;
+ 
+ 	*pstatus = status = zd_tail(buffer, length, sizeof(struct rx_status));
+-	if (status->frame_status & ZD_RX_ERROR) {
++        if (status->frame_status & ZD_RX_ERROR
++                || status->frame_status & ~0x21) {
+ 		/* FIXME: update? */
+ 		return -EINVAL;
+ 	}
+Only in linux-2.6.20-gentoo-r4-inject/include: config
+diff -ur linux-2.6.20-gentoo-r4/net/ieee80211/ieee80211_tx.c linux-2.6.20-gentoo-r4-inject/net/ieee80211/ieee80211_tx.c
+--- linux-2.6.20-gentoo-r4/net/ieee80211/ieee80211_tx.c	2007-04-03 00:53:44.000000000 -0400
++++ linux-2.6.20-gentoo-r4-inject/net/ieee80211/ieee80211_tx.c	2007-04-03 00:45:52.000000000 -0400
+@@ -291,6 +291,24 @@
+ 		goto success;
+ 	}
+ 
++        if(ieee->iw_mode == IW_MODE_MONITOR)
++        {
++                txb = ieee80211_alloc_txb(1, skb->len,
++                                        ieee->tx_headroom, GFP_ATOMIC);
++                if (unlikely(!txb)) {
++                        printk(KERN_WARNING "%s: Could not allocate TXB\n",
++                        ieee->dev->name);
++                        goto failed;
++                }
++ 
++                txb->encrypted = 0;
++                txb->payload_size = skb->len;
++                memcpy(skb_put(txb->fragments[0],skb->len), skb->data, skb->len);
++ 
++                goto success;
++        }
++
++
+ 	ether_type = ntohs(((struct ethhdr *)skb->data)->h_proto);
+ 
+ 	crypt = ieee->crypt[ieee->tx_keyidx];
+Only in linux-2.6.20-gentoo-r4-inject/scripts/basic: .docproc.cmd
+Only in linux-2.6.20-gentoo-r4-inject/scripts/basic: .fixdep.cmd
+Only in linux-2.6.20-gentoo-r4-inject/scripts/basic: docproc
+Only in linux-2.6.20-gentoo-r4-inject/scripts/basic: fixdep
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: .conf.o.cmd
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: .kconfig_load.o.cmd
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: .kxgettext.o.cmd
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: .qconf.cmd
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: .qconf.o.cmd
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: .tmp_qtcheck
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: .zconf.tab.o.cmd
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: conf
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: conf.o
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: kconfig_load.o
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: kxgettext.o
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: lex.zconf.c
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: lkc_defs.h
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: mconf
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: qconf
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: qconf.moc
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: qconf.o
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: zconf.hash.c
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: zconf.tab.c
+Only in linux-2.6.20-gentoo-r4-inject/scripts/kconfig: zconf.tab.o

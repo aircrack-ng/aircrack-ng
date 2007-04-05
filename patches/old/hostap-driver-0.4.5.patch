@@ -1,0 +1,374 @@
+diff -ur ../hostap-driver-0.4.5/driver/etc/hostap_cs.conf ./driver/etc/hostap_cs.conf
+--- ../hostap-driver-0.4.5/driver/etc/hostap_cs.conf	2005-05-23 18:01:03.000000000 +0200
++++ ./driver/etc/hostap_cs.conf	2005-11-21 13:49:16.000000000 +0100
+@@ -102,17 +102,17 @@
+ 
+ card "Level-One WPC-0100"
+    version "Digital Data Communications", "WPC-0100", "Version 00.00"
+-   manfid 0x0156, 0x0002
++#   manfid 0x0156, 0x0002
+    bind "hostap_cs"
+ 
+ card "Belkin 802.11b WLAN PCMCIA"
+    version "Belkin", "11Mbps Wireless Notebook Network Adapter", "Version 01.02"
+-   manfid 0x0156, 0x0002
++#   manfid 0x0156, 0x0002
+    bind "hostap_cs"
+ 
+ card "Senao SL-2011CD/SL-2011CDPLUS"
+    version "INTERSIL", "HFA384x/IEEE", "Version 01.02"
+-   manfid 0x0156, 0x0002
++#   manfid 0x0156, 0x0002
+    bind "hostap_cs"
+ 
+ card "Fulbond Airbond XI-300B"
+diff -ur ../hostap-driver-0.4.5/driver/modules/hostap_80211_tx.c ./driver/modules/hostap_80211_tx.c
+--- ../hostap-driver-0.4.5/driver/modules/hostap_80211_tx.c	2005-08-06 19:55:14.000000000 +0200
++++ ./driver/modules/hostap_80211_tx.c	2005-11-21 13:49:16.000000000 +0100
+@@ -51,6 +51,9 @@
+ 	int to_assoc_ap = 0;
+ 	struct hostap_skb_tx_data *meta;
+ 
++	if (local->iw_mode == IW_MODE_MONITOR)
++		goto xmit;
++
+ 	if (skb->len < ETH_HLEN) {
+ 		printk(KERN_DEBUG "%s: hostap_data_start_xmit: short skb "
+ 		       "(len=%d)\n", dev->name, skb->len);
+@@ -216,6 +219,7 @@
+ 		memcpy(skb_put(skb, ETH_ALEN), &hdr.addr4, ETH_ALEN);
+ 	}
+ 
++xmit:
+ 	iface->stats.tx_packets++;
+ 	iface->stats.tx_bytes += skb->len;
+ 
+@@ -377,8 +381,6 @@
+ 	}
+ 
+ 	if (skb->len < 24) {
+-		printk(KERN_DEBUG "%s: hostap_master_start_xmit: short skb "
+-		       "(len=%d)\n", dev->name, skb->len);
+ 		ret = 0;
+ 		iface->stats.tx_dropped++;
+ 		goto fail;
+diff -ur ../hostap-driver-0.4.5/driver/modules/hostap.c ./driver/modules/hostap.c
+--- ../hostap-driver-0.4.5/driver/modules/hostap.c	2005-08-06 19:47:10.000000000 +0200
++++ ./driver/modules/hostap.c	2005-11-21 13:49:16.000000000 +0100
+@@ -407,7 +407,7 @@
+ 	if (local->iw_mode == IW_MODE_REPEAT)
+ 		return HFA384X_PORTTYPE_WDS;
+ 	if (local->iw_mode == IW_MODE_MONITOR)
+-		return HFA384X_PORTTYPE_PSEUDO_IBSS;
++		return 5; /*HFA384X_PORTTYPE_PSEUDO_IBSS;*/
+ 	return HFA384X_PORTTYPE_HOSTAP;
+ }
+ 
+diff -ur ../hostap-driver-0.4.5/driver/modules/hostap_config.h ./driver/modules/hostap_config.h
+--- ../hostap-driver-0.4.5/driver/modules/hostap_config.h	2005-09-26 03:42:30.000000000 +0200
++++ ./driver/modules/hostap_config.h	2005-11-21 13:49:16.000000000 +0100
+@@ -59,7 +59,7 @@
+  * In addition, please note that it is possible to kill your card with
+  * non-volatile download if you are using incorrect image. This feature has not
+  * been fully tested, so please be careful with it. */
+-/* #define PRISM2_NON_VOLATILE_DOWNLOAD */
++#define PRISM2_NON_VOLATILE_DOWNLOAD
+ #endif /* PRISM2_DOWNLOAD_SUPPORT */
+ 
+ /* Include wireless extensions sub-ioctl support even if wireless extensions
+diff -ur ../hostap-driver-0.4.5/driver/modules/hostap_cs.c ./driver/modules/hostap_cs.c
+--- ../hostap-driver-0.4.5/driver/modules/hostap_cs.c	2005-09-18 05:51:09.000000000 +0200
++++ ./driver/modules/hostap_cs.c	2005-11-21 16:23:02.000000000 +0100
+@@ -929,51 +929,97 @@
+ #if LINUX_VERSION_CODE > KERNEL_VERSION(2,5,67)
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,13))
+ static struct pcmcia_device_id hostap_cs_ids[] = {
+-	PCMCIA_DEVICE_MANF_CARD(0x000b, 0x7100),
+-	PCMCIA_DEVICE_MANF_CARD(0x000b, 0x7300),
+-	PCMCIA_DEVICE_MANF_CARD(0x0101, 0x0777),
+-	PCMCIA_DEVICE_MANF_CARD(0x0126, 0x8000),
+-	PCMCIA_DEVICE_MANF_CARD(0x0138, 0x0002),
+-	PCMCIA_DEVICE_MANF_CARD(0x0156, 0x0002),
+-	PCMCIA_DEVICE_MANF_CARD(0x0250, 0x0002),
+-	PCMCIA_DEVICE_MANF_CARD(0x0274, 0x1612),
+-	PCMCIA_DEVICE_MANF_CARD(0x0274, 0x1613),
+-	PCMCIA_DEVICE_MANF_CARD(0x028a, 0x0002),
+-	PCMCIA_DEVICE_MANF_CARD(0x02aa, 0x0002),
+-	PCMCIA_DEVICE_MANF_CARD(0x02d2, 0x0001),
+-	PCMCIA_DEVICE_MANF_CARD(0x50c2, 0x0001),
+-	PCMCIA_DEVICE_MANF_CARD(0x50c2, 0x7300),
+-	PCMCIA_DEVICE_MANF_CARD(0xc00f, 0x0000),
+-	PCMCIA_DEVICE_MANF_CARD(0xd601, 0x0002),
+-	PCMCIA_DEVICE_MANF_CARD(0xd601, 0x0005),
+-	PCMCIA_DEVICE_MANF_CARD(0xd601, 0x0010),
+-	PCMCIA_MFC_DEVICE_PROD_ID12(0, "SanDisk", "ConnectPlus",
+-				    0x7a954bd9, 0x74be00c6),
+-	PCMCIA_DEVICE_PROD_ID1234(
+-		"Intersil", "PRISM 2_5 PCMCIA ADAPTER",	"ISL37300P",
+-		"Eval-RevA",
+-		0x4b801a17, 0x6345a0bf, 0xc9049a39, 0xc23adc0e),
+-	PCMCIA_DEVICE_PROD_ID123(
+-		"Addtron", "AWP-100 Wireless PCMCIA", "Version 01.02",
+-		0xe6ec52ce, 0x08649af2, 0x4b74baa0),
+-	PCMCIA_DEVICE_PROD_ID123(
+-		"D", "Link DWL-650 11Mbps WLAN Card", "Version 01.02",
+-		0x71b18589, 0xb6f1b0ab, 0x4b74baa0),
+-	PCMCIA_DEVICE_PROD_ID123(
+-		"Instant Wireless ", " Network PC CARD", "Version 01.02",
+-		0x11d901af, 0x6e9bd926, 0x4b74baa0),
+-	PCMCIA_DEVICE_PROD_ID123(
+-		"SMC", "SMC2632W", "Version 01.02",
+-		0xc4f8b18b, 0x474a1f2a, 0x4b74baa0),
+-	PCMCIA_DEVICE_PROD_ID12("Compaq", "WL200_11Mbps_Wireless_PCI_Card",
+-				0x54f7c49c, 0x15a75e5b),
+-	PCMCIA_DEVICE_PROD_ID12("INTERSIL", "HFA384x/IEEE",
+-				0x74c5e40d, 0xdb472a18),
+-	PCMCIA_DEVICE_PROD_ID12("Linksys", "Wireless CompactFlash Card",
+-				0x0733cc81, 0x0c52f395),
+-	PCMCIA_DEVICE_PROD_ID12(
+-		"ZoomAir 11Mbps High", "Rate wireless Networking",
+-		0x273fe3db, 0x32a1eaee),
++	PCMCIA_DEVICE_MANF_CARD(0x000b, 0x7100), // SonicWALL Long Range Wireless Card
++	PCMCIA_DEVICE_MANF_CARD(0x000b, 0x7110), // D-Link DWL-650 rev P 802.11b WLAN card
++	PCMCIA_DEVICE_MANF_CARD(0x000b, 0x7300), // Sohoware NCP110, Philips 802.11b
++//	PCMCIA_DEVICE_MANF_CARD(0x0089, 0x0001), // Intel PRO/Wireless 2011 (Symbol24)
++	PCMCIA_DEVICE_MANF_CARD(0x0089, 0x0002), // AnyPoint(TM) Wireless II PC Card
++	PCMCIA_DEVICE_MANF_CARD(0x0101, 0x0777), // 3Com AirConnect PCI 777A
++	PCMCIA_DEVICE_MANF_CARD(0x0126, 0x8000), // PROXIM RangeLAN-DS/LAN PC CARD
++	PCMCIA_DEVICE_MANF_CARD(0x0138, 0x0002), // Compaq WL100 11 Mbps Wireless Adapter
++//	PCMCIA_DEVICE_MANF_CARD(0x0156, 0x0002), // Mostly Lucent Orinoco (HermesI), but also some Prism2 :(
++//	PCMCIA_DEVICE_MANF_CARD(0x016b, 0x0001), // Ericsson WLAN Card C11 (Symbol24)
++//	PCMCIA_DEVICE_MANF_CARD(0x01eb, 0x080a), // Nortel eMobility 802.11 Wireless Adapter (Symbol24)
++	PCMCIA_DEVICE_MANF_CARD(0x01ff, 0x0008), // Intermec MobileLAN 11Mbps 802.11b WLAN Card
++	PCMCIA_DEVICE_MANF_CARD(0x0250, 0x0002), // Samsung SWL2000-N 11Mb/s WLAN Card
++//	PCMCIA_DEVICE_MANF_CARD(0x0261, 0x0002), // AirWay 802.11 Adapter (HermesI)
++//	PCMCIA_DEVICE_MANF_CARD(0x0268, 0x0001), // ARtem Onair (HermesI)
++//	PCMCIA_DEVICE_MANF_CARD(0x026c, 0x0001), // Symbol Technologies LA4111 (Symbol24)
++	PCMCIA_DEVICE_MANF_CARD(0x026f, 0x0305), // Buffalo WLI-PCM-S11
++	PCMCIA_DEVICE_MANF_CARD(0x0274, 0x1612), // Linksys WPC11 Version 2.5
++	PCMCIA_DEVICE_MANF_CARD(0x0274, 0x1613), // Linksys WPC11 Version 3
++	PCMCIA_DEVICE_MANF_CARD(0x028a, 0x0002), // Compaq HNW-100 11 Mbps Wireless Adapter
++	PCMCIA_DEVICE_MANF_CARD(0x028a, 0x0673), // Linksys WCF12 11Mbps 802.11b WLAN Card (Prism 3)
++	PCMCIA_DEVICE_MANF_CARD(0x02aa, 0x0002), // ASUS SpaceLink WL-100
++	PCMCIA_DEVICE_MANF_CARD(0x02ac, 0x0002), // SpeedStream SS1021 Wireless Adapter
++	PCMCIA_DEVICE_MANF_CARD(0x02ac, 0x3021), // SpeedStream SS1021 Wireless Adapter (newer)
++	PCMCIA_DEVICE_MANF_CARD(0x02d2, 0x0001), // Microsoft Wireless Notebook Adapter MN-520
++	PCMCIA_DEVICE_MANF_CARD(0x14ea, 0xb001), // PLANEX RoadLannerWave GW-NS11H
++	PCMCIA_DEVICE_MANF_CARD(0x1668, 0x0101), // ActionTec 802CI2/HCW01170-01
++	PCMCIA_DEVICE_MANF_CARD(0x50c2, 0x0001), // Airvast ?
++	PCMCIA_DEVICE_MANF_CARD(0x50c2, 0x7300), // Airvast WN-100
++	PCMCIA_DEVICE_MANF_CARD(0x9005, 0x0021), // Adaptec Ultra Wireless ANW-8030
++	PCMCIA_DEVICE_MANF_CARD(0xc001, 0x0008), // CONTEC FLEXSCAN/FX-DDS110-PCC
++	PCMCIA_DEVICE_MANF_CARD(0xc00f, 0x0000), // Corega KK Wireless LAN PCC-11
++	PCMCIA_DEVICE_MANF_CARD(0xc250, 0x0002), // Conceptronic CON11Cpro, EMTAC A2424i
++	PCMCIA_DEVICE_MANF_CARD(0xd601, 0x0002), // Safeway 802.11b, ZCOMAX AirRunner/XI-300
++	PCMCIA_DEVICE_MANF_CARD(0xd601, 0x0005), // D-Link DCF660, ZCOMAX XI-325HP 200mw
++	PCMCIA_DEVICE_MANF_CARD(0xd601, 0x0010), // SMC2532W-B V2
++
++	PCMCIA_MFC_DEVICE_PROD_ID12(0, "SanDisk", "ConnectPlus", 0x7a954bd9, 0x74be00c6),
++	PCMCIA_DEVICE_PROD_ID12(" ", "IEEE 802.11 Wireless LAN/PC Card", 0x3b6e20c8, 0xefccafe9),
++//	PCMCIA_DEVICE_PROD_ID12("3Com", "3CRWE737A AirConnect Wireless LAN PC Card", 0x41240e5b, 0x56010af3), // Symbol24
++	PCMCIA_DEVICE_PROD_ID12("ACTIONTEC", "PRISM Wireless LAN PC Card", 0x393089da, 0xa71e69d5),
++	PCMCIA_DEVICE_PROD_ID123("Addtron", "AWP-100 Wireless PCMCIA", "Version 01.02", 0xe6ec52ce, 0x08649af2, 0x4b74baa0),
++	PCMCIA_DEVICE_PROD_ID123("AIRVAST", "IEEE 802.11b Wireless PCMCIA Card", "HFA3863", 0xea569531, 0x4bcb9645, 0x355cb092),
++	PCMCIA_DEVICE_PROD_ID12("Allied Telesyn", "AT-WCL452 Wireless PCMCIA Radio", 0x5cd01705, 0x4271660f),
++	PCMCIA_DEVICE_PROD_ID12("ASUS", "802_11b_PC_CARD_25", 0x78fc06ee, 0xdb9aa842),
++	PCMCIA_DEVICE_PROD_ID12("ASUS", "802_11B_CF_CARD_25", 0x78fc06ee, 0x45a50c1e),
++//	PCMCIA_DEVICE_PROD_ID12("Avaya Communication", "Avaya Wireless PC Card", 0xd8a43b78, 0x0d341169), // HermesI
++	PCMCIA_DEVICE_PROD_ID12("BENQ", "AWL100 PCMCIA ADAPTER", 0x35dadc74, 0x01f7fedb),
++//	PCMCIA_DEVICE_PROD_ID12("BUFFALO", "WLI-PCM-L11G", 0x2decece3, 0xf57ca4b3), // HermesI
++	PCMCIA_DEVICE_PROD_ID12("BUFFALO", "WLI-CF-S11G", 0x2decece3, 0x82067c18),
++//	PCMCIA_DEVICE_PROD_ID12("Cabletron", "RoamAbout 802.11 DS", 0x32d445f5, 0xedeffd90), // HermesI
++	PCMCIA_DEVICE_PROD_ID12("Compaq", "WL200_11Mbps_Wireless_PCI_Card", 0x54f7c49c, 0x15a75e5b),
++	PCMCIA_DEVICE_PROD_ID123("corega", "WL PCCL-11", "ISL37300P", 0x0a21501a, 0x59868926, 0xc9049a39),
++	PCMCIA_DEVICE_PROD_ID12("corega K.K.", "Wireless LAN PCC-11", 0x5261440f, 0xa6405584),
++	PCMCIA_DEVICE_PROD_ID12("corega K.K.", "Wireless LAN PCCA-11", 0x5261440f, 0xdf6115f9),
++	PCMCIA_DEVICE_PROD_ID12("D", "Link DRC-650 11Mbps WLAN Card", 0x71b18589, 0xf144e3ac),
++	PCMCIA_DEVICE_PROD_ID123("D", "Link DWL-650 11Mbps WLAN Card", "Version 01.02", 0x71b18589, 0xb6f1b0ab, 0x4b74baa0),
++//	PCMCIA_DEVICE_PROD_ID12("D-Link Corporation", "D-Link DWL-650H 11Mbps WLAN Adapter", 0xef544d24, 0xcd8ea916), // Symbol24
++	PCMCIA_DEVICE_PROD_ID12("Digital Data Communications", "WPC-0100", 0xfdd73470, 0xe0b6f146),
++//	PCMCIA_DEVICE_PROD_ID12("ELSA", "AirLancer MC-11", 0x4507a33a, 0xef54f0e3), // HermesI
++	PCMCIA_DEVICE_PROD_ID12("HyperLink", "Wireless PC Card 11Mbps", 0x56cc3f1a, 0x0bcf220c),
++	PCMCIA_DEVICE_PROD_ID123("Instant Wireless ", " Network PC CARD", "Version 01.02", 0x11d901af, 0x6e9bd926, 0x4b74baa0),
++//	PCMCIA_DEVICE_PROD_ID12("Intel", "PRO/Wireless 2011 LAN PC Card", 0x816cc815, 0x07f58077), // HermesI
++	PCMCIA_DEVICE_PROD_ID12("INTERSIL", "HFA384x/IEEE", 0x74c5e40d, 0xdb472a18),
++	PCMCIA_DEVICE_PROD_ID12("INTERSIL", "I-GATE 11M PC Card / PC Card plus", 0x74c5e40d, 0x8304ff77),
++	PCMCIA_DEVICE_PROD_ID1234("Intersil", "PRISM 2_5 PCMCIA ADAPTER", "ISL37300P", "Eval-RevA", 0x4b801a17, 0x6345a0bf, 0xc9049a39, 0xc23adc0e),
++	PCMCIA_DEVICE_PROD_ID123("Intersil", "PRISM Freedom PCMCIA Adapter", "ISL37100P", 0x4b801a17, 0xf222ec2d, 0x630d52b2),
++	PCMCIA_DEVICE_PROD_ID12("INTERSIL", "HFA384x/IEEE", 0x74c5e40d, 0xdb472a18),
++	PCMCIA_DEVICE_PROD_ID12("LeArtery", "SYNCBYAIR 11Mbps Wireless LAN PC Card", 0x7e3b326a, 0x49893e92),
++	PCMCIA_DEVICE_PROD_ID12("Linksys", "Wireless CompactFlash Card", 0x0733cc81, 0x0c52f395),
++//	PCMCIA_DEVICE_PROD_ID12("Lucent Technologies", "WaveLAN/IEEE", 0x23eb9949, 0xc562e72a), // HermesI
++//	PCMCIA_DEVICE_PROD_ID12("MELCO", "WLI-PCM-L11", 0x481e0094, 0x7360e410), // HermesI
++//	PCMCIA_DEVICE_PROD_ID12("MELCO", "WLI-PCM-L11G", 0x481e0094, 0xf57ca4b3), // HermesI
++	PCMCIA_DEVICE_PROD_ID12("Microsoft", "Wireless Notebook Adapter MN-520", 0x5961bf85, 0x6eec8c01),
++//	PCMCIA_DEVICE_PROD_ID12("NCR", "WaveLAN/IEEE", 0x24358cd4, 0xc562e72a), // HermesI
++	PCMCIA_DEVICE_PROD_ID12("NETGEAR MA401 Wireless PC", "Card", 0xa37434e9, 0x9762e8f1),
++	PCMCIA_DEVICE_PROD_ID12("NETGEAR MA401RA Wireless PC", "Card", 0x0306467f, 0x9762e8f1),
++//	PCMCIA_DEVICE_PROD_ID12("Nortel Networks", "emobility 802.11 Wireless LAN PC Card", 0x2d617ea0, 0x88cd5767), // Symbol24
++	PCMCIA_DEVICE_PROD_ID12("OEM", "PRISM2 IEEE 802.11 PC-Card", 0xfea54c90, 0x48f2bdd6),
++	PCMCIA_DEVICE_PROD_ID12("OTC", "Wireless AirEZY 2411-PCC WLAN Card", 0x4ac44287, 0x235a6bed),
++	PCMCIA_DEVICE_PROD_ID123("PCMCIA", "11M WLAN Card v2.5", "ISL37300P", 0x281f1c5d, 0x6e440487, 0xc9049a39),
++	PCMCIA_DEVICE_PROD_ID12("PLANEX", "GeoWave/GW-CF110", 0x209f40ab, 0xd9715264),
++	PCMCIA_DEVICE_PROD_ID12("PLANEX", "GeoWave/GW-NS110", 0x209f40ab, 0x46263178),
++	PCMCIA_DEVICE_PROD_ID12("PROXIM", "LAN PC CARD HARMONY 80211B", 0xc6536a5e, 0x090c3cd9),
++	PCMCIA_DEVICE_PROD_ID12("PROXIM", "LAN PCI CARD HARMONY 80211B", 0xc6536a5e, 0x9f494e26),
++	PCMCIA_DEVICE_PROD_ID12("SAMSUNG", "11Mbps WLAN Card", 0x43d74cb4, 0x579bd91b),
++//	PCMCIA_DEVICE_PROD_ID1("Symbol Technologies", 0x3f02b4d6), // Symbol24
++//	PCMCIA_DEVICE_PROD_ID12("Symbol Technologies", "LA4111 Spectrum24 Wireless LAN PC Card", 0x3f02b4d6, 0x3663cb0e), // Symbol24
++	PCMCIA_DEVICE_PROD_ID123("SMC", "SMC2632W", "Version 01.02", 0xc4f8b18b, 0x474a1f2a, 0x4b74baa0),
++	PCMCIA_DEVICE_PROD_ID123("The Linksys Group, Inc.", "Instant Wireless Network PC Card", "ISL37300P", 0xa5f472c2, 0x590eb502, 0xc9049a39),
++	PCMCIA_DEVICE_PROD_ID12("ZoomAir 11Mbps High", "Rate wireless Networking", 0x273fe3db, 0x32a1eaee),
+ 	PCMCIA_DEVICE_NULL
+ };
+ MODULE_DEVICE_TABLE(pcmcia, hostap_cs_ids);
+diff -ur ../hostap-driver-0.4.5/driver/modules/hostap_hw.c ./driver/modules/hostap_hw.c
+--- ../hostap-driver-0.4.5/driver/modules/hostap_hw.c	2005-08-20 18:32:34.000000000 +0200
++++ ./driver/modules/hostap_hw.c	2005-11-21 13:49:16.000000000 +0100
+@@ -1005,6 +1005,35 @@
+ 	return fid;
+ }
+ 
++static int prism2_monitor_enable(struct net_device *dev)
++{
++	if (hostap_set_word(dev, HFA384X_RID_CNFPORTTYPE, 5)) {
++		printk(KERN_DEBUG "Port type setting for monitor mode "
++			"failed\n");
++		return -EOPNOTSUPP;
++	}
++
++	if (hfa384x_cmd(dev, HFA384X_CMDCODE_TEST | (0x0a << 8),
++			     0, NULL, NULL)) {
++		printk(KERN_DEBUG "Could not enter testmode 0x0a\n");
++		return -EOPNOTSUPP;
++	}
++
++	if (hostap_set_word(dev, HFA384X_RID_CNFWEPFLAGS,
++			    HFA384X_WEPFLAGS_PRIVACYINVOKED |
++			    HFA384X_WEPFLAGS_HOSTENCRYPT |
++			    HFA384X_WEPFLAGS_HOSTDECRYPT)) {
++		printk(KERN_DEBUG "WEP flags setting failed\n");
++		return -EOPNOTSUPP;
++	}
++
++	if (hostap_set_word(dev, HFA384X_RID_PROMISCUOUSMODE, 1)) {
++		printk(KERN_DEBUG "Could not set promiscuous mode\n");
++		return -EOPNOTSUPP;
++	}
++
++	return 0;
++}
+ 
+ static int prism2_reset_port(struct net_device *dev)
+ {
+@@ -1028,6 +1057,10 @@
+ 			       "port\n", dev->name);
+ 	}
+ 
++	if (local->iw_mode == IW_MODE_MONITOR)
++		/* force mode 0x0a after port 0 reset */
++		return prism2_monitor_enable(dev);
++
+ 	/* It looks like at least some STA firmware versions reset
+ 	 * fragmentation threshold back to 2346 after enable command. Restore
+ 	 * the configured value, if it differs from this default. */
+@@ -1444,6 +1477,10 @@
+ 		return 1;
+ 	}
+ 
++	if (local->iw_mode == IW_MODE_MONITOR)
++		/* force mode 0x0a after port 0 reset */
++		prism2_monitor_enable(dev);
++
+ 	local->hw_ready = 1;
+ 	local->hw_reset_tries = 0;
+ 	local->hw_resetting = 0;
+@@ -3260,6 +3297,7 @@
+ 	local->func->hw_config = prism2_hw_config;
+ 	local->func->hw_reset = prism2_hw_reset;
+ 	local->func->hw_shutdown = prism2_hw_shutdown;
++	local->func->monitor_enable = prism2_monitor_enable;
+ 	local->func->reset_port = prism2_reset_port;
+ 	local->func->schedule_reset = prism2_schedule_reset;
+ #ifdef PRISM2_DOWNLOAD_SUPPORT
+diff -ur ../hostap-driver-0.4.5/driver/modules/hostap_ioctl.c ./driver/modules/hostap_ioctl.c
+--- ../hostap-driver-0.4.5/driver/modules/hostap_ioctl.c	2005-09-19 03:51:47.000000000 +0200
++++ ./driver/modules/hostap_ioctl.c	2005-11-21 13:49:16.000000000 +0100
+@@ -1068,33 +1068,7 @@
+ 
+ 	printk(KERN_DEBUG "Enabling monitor mode\n");
+ 	hostap_monitor_set_type(local);
+-
+-	if (hostap_set_word(dev, HFA384X_RID_CNFPORTTYPE,
+-			    HFA384X_PORTTYPE_PSEUDO_IBSS)) {
+-		printk(KERN_DEBUG "Port type setting for monitor mode "
+-		       "failed\n");
+-		return -EOPNOTSUPP;
+-	}
+-
+-	/* Host decrypt is needed to get the IV and ICV fields;
+-	 * however, monitor mode seems to remove WEP flag from frame
+-	 * control field */
+-	if (hostap_set_word(dev, HFA384X_RID_CNFWEPFLAGS,
+-			    HFA384X_WEPFLAGS_HOSTENCRYPT |
+-			    HFA384X_WEPFLAGS_HOSTDECRYPT)) {
+-		printk(KERN_DEBUG "WEP flags setting failed\n");
+-		return -EOPNOTSUPP;
+-	}
+-
+-	if (local->func->reset_port(dev) ||
+-	    local->func->cmd(dev, HFA384X_CMDCODE_TEST |
+-			     (HFA384X_TEST_MONITOR << 8),
+-			     0, NULL, NULL)) {
+-		printk(KERN_DEBUG "Setting monitor mode failed\n");
+-		return -EOPNOTSUPP;
+-	}
+-
+-	return 0;
++	return local->func->reset_port(dev);
+ }
+ 
+ 
+@@ -1160,7 +1134,7 @@
+ 	local->iw_mode = *mode;
+ 
+ 	if (local->iw_mode == IW_MODE_MONITOR)
+-		hostap_monitor_mode_enable(local);
++		return hostap_monitor_mode_enable(local);
+ 	else if (local->iw_mode == IW_MODE_MASTER && !local->host_encrypt &&
+ 		 !local->fw_encrypt_ok) {
+ 		printk(KERN_DEBUG "%s: defaulting to host-based encryption as "
+diff -ur ../hostap-driver-0.4.5/driver/modules/hostap_pci.c ./driver/modules/hostap_pci.c
+--- ../hostap-driver-0.4.5/driver/modules/hostap_pci.c	2005-09-17 23:05:08.000000000 +0200
++++ ./driver/modules/hostap_pci.c	2005-11-21 13:56:48.000000000 +0100
+@@ -48,6 +48,8 @@
+ 	{ 0x1260, 0x3873, PCI_ANY_ID, PCI_ANY_ID },
+ 	/* Samsung MagicLAN SWL-2210P */
+ 	{ 0x167d, 0xa000, PCI_ANY_ID, PCI_ANY_ID },
++	/* NETGEAR MA311 */
++	{ 0x1385, 0x3872, PCI_ANY_ID, PCI_ANY_ID },
+ 	{ 0 }
+ };
+ 
+diff -ur ../hostap-driver-0.4.5/driver/modules/hostap_plx.c ./driver/modules/hostap_plx.c
+--- ../hostap-driver-0.4.5/driver/modules/hostap_plx.c	2005-09-17 23:05:08.000000000 +0200
++++ ./driver/modules/hostap_plx.c	2005-11-21 16:24:11.000000000 +0100
+@@ -98,6 +98,7 @@
+ 	{ 0xc250, 0x0002 } /* EMTAC A2424i */,
+ 	{ 0xd601, 0x0002 } /* Z-Com XI300 */,
+ 	{ 0xd601, 0x0005 } /* Zcomax XI-325H 200mW */,
++	{ 0xd601, 0x0010 } /* Zcomax XI-325H 100mW */,
+ 	{ 0, 0}
+ };
+ 
+diff -ur ../hostap-driver-0.4.5/driver/modules/hostap_wlan.h ./driver/modules/hostap_wlan.h
+--- ../hostap-driver-0.4.5/driver/modules/hostap_wlan.h	2005-08-06 19:55:14.000000000 +0200
++++ ./driver/modules/hostap_wlan.h	2005-11-21 13:49:16.000000000 +0100
+@@ -591,6 +591,7 @@
+ 	int (*hw_config)(struct net_device *dev, int initial);
+ 	void (*hw_reset)(struct net_device *dev);
+ 	void (*hw_shutdown)(struct net_device *dev, int no_disable);
++	int (*monitor_enable)(struct net_device *dev);
+ 	int (*reset_port)(struct net_device *dev);
+ 	void (*schedule_reset)(local_info_t *local);
+ 	int (*download)(local_info_t *local,
