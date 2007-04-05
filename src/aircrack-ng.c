@@ -2580,8 +2580,8 @@ int do_wpa_crack( struct AP_info *ap )
 
 				if( key2[i - 1] == '\n' ) key2[--i] = '\0';
 				if( key2[i - 1] == '\r' ) key2[--i] = '\0';
-				if( key2[i - 1] == '\n' ) key1[--i] = '\0';
-				if( key2[i - 1] == '\r' ) key1[--i] = '\0';
+				if( key2[i - 1] == '\n' ) key2[--i] = '\0';
+				if( key2[i - 1] == '\r' ) key2[--i] = '\0';
 
                                 for(j=0; j<i; j++)
                                     if(!isascii(key2[j]) || key2[j] < 32 ) i=0;
