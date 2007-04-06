@@ -146,8 +146,7 @@ static int fbsd_write(struct wif *wi, unsigned char *h80211, int len,
 {
         struct iovec iov[2];
 	struct priv_fbsd *pf = wi_priv(wi);
-	int rc;
-	
+
 	/* XXX make use of ti */
 	if (ti) {}
 
@@ -157,20 +156,7 @@ static int fbsd_write(struct wif *wi, unsigned char *h80211, int len,
         iov[1].iov_base = h80211;
         iov[1].iov_len = len;
 
-	while (1) {
-		rc = writev(pf->pf_fd, iov, 2);
-		if (rc != -1)
-			return rc;
-		
-		switch (errno) {
-			case ENOBUFS:
-				usleep(1000); /* XXX */
-				break;
-			
-			default:
-				return rc;
-		}
-	}
+	return writev(pf->pf_fd, iov, 2);
 }
 
 static int fbsd_set_channel(struct wif *wi, int chan)

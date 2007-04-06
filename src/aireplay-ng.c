@@ -254,6 +254,13 @@ int send_packet(void *buf, size_t count)
 {
 	struct wif *wi = _wi_out; /* XXX globals suck */
 	if (wi_write(wi, buf, count, NULL) == -1) {
+		switch (errno) {
+		case EAGAIN:
+		case ENOBUFS:
+			usleep(10000);
+			return 0; /* XXX not sure I like this... -sorbo */
+		}
+
 		perror("wi_write()");
 		return -1;
 	}
@@ -269,6 +276,11 @@ int read_packet(void *buf, size_t count)
 
 	rc = wi_read(wi, buf, count, NULL);
 	if (rc == -1) {
+		switch (errno) {
+		case EAGAIN:
+			return 0;
+		}
+
 		perror("wi_read()");
 		return -1;
 	}
