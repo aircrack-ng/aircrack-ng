@@ -61,21 +61,24 @@ static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
 	totlen = &pf->pf_totlen;
 	assert(*totlen);
         
+        /* bpf hdr */
         bpfh = (struct bpf_hdr*) (*data);
         assert(bpfh->bh_caplen == bpfh->bh_datalen); /* XXX */
- 
-        /* bpf hdr */
         *totlen -= bpfh->bh_hdrlen;
         
         /* check if more packets */
-        if ((int)bpfh->bh_caplen < *totlen)
-                *data = (char*)bpfh + BPF_WORDALIGN(bpfh->bh_hdrlen
-                                                    + bpfh->bh_caplen);
-        else if ((int)bpfh->bh_caplen > *totlen)        
+        if ((int)bpfh->bh_caplen < *totlen) {
+		int tot = bpfh->bh_hdrlen + bpfh->bh_caplen;
+		int offset = BPF_WORDALIGN(tot);
+
+                *data = (char*)bpfh + offset;
+		*totlen -= offset - tot; /* take into account align bytes */
+	} else if ((int)bpfh->bh_caplen > *totlen)        
 		abort();
  
         *plen = bpfh->bh_caplen;
 	*totlen -= bpfh->bh_caplen;
+	assert(*totlen >= 0);
         
         /* radiotap */
         rth = (struct ieee80211_radiotap_header*)
@@ -91,6 +94,7 @@ static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
         } else
                 rflags = 0;
         *plen -= rth->it_len;
+	assert(*plen > 0);
 
         /* 802.11 CRC */
         if (pf->pf_nocrc || (rflags & IEEE80211_RADIOTAP_F_FCS)) {
@@ -118,8 +122,10 @@ static int fbsd_read(struct wif *wi, unsigned char *h80211, int len,
 	/* need to read more */
 	if (pf->pf_totlen == 0) {
 		pf->pf_totlen = read(pf->pf_fd, pf->pf_buf, sizeof(pf->pf_buf));
-		if (pf->pf_totlen == -1)
+		if (pf->pf_totlen == -1) {
+			pf->pf_totlen = 0;
 			return -1;
+		}
 		pf->pf_next = pf->pf_buf;
 	}
 
@@ -127,6 +133,7 @@ static int fbsd_read(struct wif *wi, unsigned char *h80211, int len,
 	wh = get_80211(pf, &plen, ri);
 	if (plen > len)
 		plen = len;
+	assert(plen > 0);
 	memcpy(h80211, wh, plen);
 
 	return plen;
@@ -137,6 +144,7 @@ static int fbsd_write(struct wif *wi, unsigned char *h80211, int len,
 {
         struct iovec iov[2];
 	struct priv_fbsd *pf = wi_priv(wi);
+	int rc;
 	
 	/* XXX make use of ti */
 	if (ti) {}
@@ -147,7 +155,20 @@ static int fbsd_write(struct wif *wi, unsigned char *h80211, int len,
         iov[1].iov_base = h80211;
         iov[1].iov_len = len;
 
-        return writev(pf->pf_fd, iov, 2);
+	while (1) {
+		rc = writev(pf->pf_fd, iov, 2);
+		if (rc != -1)
+			return rc;
+		
+		switch (errno) {
+			case ENOBUFS:
+				usleep(1000); /* XXX */
+				break;
+			
+			default:
+				return rc;
+		}
+	}
 }
 
 static int fbsd_set_channel(struct wif *wi, int chan)
@@ -331,7 +352,7 @@ struct wif *wi_open(char *iface)
 
 int get_battery_state(void)
 {
-#if defined(__FreeBSDX__)
+#if defined(__FreeBSD__)
     int value;
     size_t len;
        
