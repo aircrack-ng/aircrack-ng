@@ -54,4 +54,10 @@ extern void *wi_priv(struct wif *wi);
 /* Client code can use this to determine the battery state.  One per OS. */
 extern int get_battery_state(void);
 
+/* Client code can create a tap interface */
+/* XXX trivial interface for now.  Perhaps in future we can do something like
+ * wif so that client code can change MAC addr of tap, IP addr, and so on.
+ */
+extern int create_tap(void);
+
 #endif /* __AIRCRACK_NG_OSEDEP_H__ */

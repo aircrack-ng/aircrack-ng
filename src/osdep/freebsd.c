@@ -393,3 +393,23 @@ int get_battery_state(void)
     return 0;
 #endif
 }
+
+int create_tap(void)
+{
+	int fd;
+	struct ifreq if_request;
+
+	fd = open( "/dev/tap", O_RDWR);
+	if (fd == -1)
+		return -1;
+	
+	memset(&if_request, 0, sizeof(if_request));
+	strncpy(if_request.ifr_name, "at%d", IFNAMSIZ);
+	if_request.ifr_name[IFNAMSIZ-1] = 0;
+	if(ioctl(fd, SIOCGIFFLAGS, &if_request ) == -1) {
+		close(fd);
+		return -1;
+	}
+
+	return fd;
+}
