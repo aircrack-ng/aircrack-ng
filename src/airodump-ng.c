@@ -19,35 +19,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#if !(defined(linux) || defined(__FreeBSD__))
-    #warning Airodump-ng could fail on this OS
-#endif
-
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#if defined(linux)
-    #include <netpacket/packet.h>
-    #include <linux/if_ether.h>
-    #include <linux/if.h>
-    #include <linux/wireless.h>
-#endif /* linux */
-
-#if defined(__FreeBSD__)
-    #include <sys/sysctl.h>
-    #include <net/bpf.h>
-    #include <net/if.h>
-    #include <net/if_media.h>
-    #include <netinet/in.h>
-    #include <netinet/if_ether.h>
-    #include <net80211/ieee80211.h>
-    #include <net80211/ieee80211_ioctl.h>
-    #include <net80211/ieee80211_radiotap.h>
-#endif /* __FreeBSD__ */
-
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
@@ -60,20 +38,14 @@
 #include <fcntl.h>
 
 
-#if defined(linux)
-    #include <wait.h>
-#endif /* linux */
-
-#if defined(linux)
-    int linux_acpi;
-    int linux_apm;
-    #include <dirent.h>
-#endif /* linux */
+#include <sys/wait.h>
 
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.c"
 #include "crctable.h"
+
+#include "osdep/osdep.h"
 
 /* some constants */
 
@@ -120,10 +92,6 @@
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
-#if defined(linux)
-extern int is_ndiswrapper(const char * iface, const char * path);
-extern char * wiToolsPath(const char * tool);
-#endif /* linux */
 
 const unsigned char llcnull[4] = {0, 0, 0, 0};
 char *f_ext[4] = { "txt", "gps", "cap", "ivs" };
@@ -284,10 +252,6 @@ struct globals
     char * iwconfig;
     char * wlanctlng;
     char * wl;
-
-#if defined(__FreeBSD__)
-    int s_ioctl;
-#endif
 
     unsigned char wpa_bssid[6];   /* the wpa handshake bssid   */
 }
@@ -1625,176 +1589,7 @@ void dump_sort_power( void )
 
 int getBatteryState()
 {
-#if defined(linux)
-    char buf[128];
-    int batteryTime = 0;
-    FILE *apm;
-    int flag;
-    char units[32];
-    int ret;
-
-    if (linux_apm == 1)
-    {
-        if ((apm = fopen("/proc/apm", "r")) != NULL ) {
-            if ( fgets(buf, 128,apm) != NULL ) {
-                int charging, ac;
-                fclose(apm);
-
-                ret = sscanf(buf, "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n", &ac,
-                        				&charging, &flag, &batteryTime, units);
-
-				if(!ret) return 0;
-
-                if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1 && batteryTime != -1) {
-                    if (!strncmp(units, "min", 32))
-                        batteryTime *= 60;
-                }
-                else return 0;
-                linux_acpi = 0;
-                return batteryTime;
-            }
-        }
-        linux_apm = 0;
-    }
-    if (linux_acpi && !linux_apm)
-    {
-        DIR *batteries, *ac_adapters;
-        struct dirent *this_battery, *this_adapter;
-        FILE *acpi, *info;
-        char battery_state[128];
-        char battery_info[128];
-        int rate = 1, remain = 0, current = 0;
-        static int total_remain = 0, total_cap = 0;
-        int batno = 0;
-        static int info_timer = 0;
-        int batt_full_capacity[3];
-        linux_apm=0;
-        linux_acpi=1;
-        ac_adapters = opendir("/proc/acpi/ac_adapter");
-        if ( ac_adapters == NULL )
-            return 0;
-
-        while (ac_adapters != NULL && ((this_adapter = readdir(ac_adapters)) != NULL)) {
-            if (this_adapter->d_name[0] == '.')
-                continue;
-            /* safe overloaded use of battery_state path var */
-            snprintf(battery_state, sizeof(battery_state),
-                "/proc/acpi/ac_adapter/%s/state", this_adapter->d_name);
-            if ((acpi = fopen(battery_state, "r")) == NULL)
-                continue;
-            if (acpi != NULL) {
-                while(fgets(buf, 128, acpi)) {
-                    if (strstr(buf, "on-line") != NULL) {
-                        fclose(acpi);
-                        if (ac_adapters != NULL)
-                            closedir(ac_adapters);
-                        return 0;
-                    }
-                }
-                fclose(acpi);
-            }
-        }
-
-        if (ac_adapters != NULL)
-            closedir(ac_adapters);
-
-        batteries = opendir("/proc/acpi/battery");
-
-        if (batteries == NULL) {
-            closedir(batteries);
-            return 0;
-        }
-
-        while (batteries != NULL && ((this_battery = readdir(batteries)) != NULL)) {
-            if (this_battery->d_name[0] == '.')
-                continue;
-
-            snprintf(battery_info, sizeof(battery_info), "/proc/acpi/battery/%s/info", this_battery->d_name);
-            info = fopen(battery_info, "r");
-            batt_full_capacity[batno] = 0;
-            if ( info != NULL ) {
-                while (fgets(buf, sizeof(buf), info) != NULL)
-                    if (sscanf(buf, "last full capacity:      %d mWh", &batt_full_capacity[batno]) == 1)
-                        continue;
-                fclose(info);
-            }
-
-
-            snprintf(battery_state, sizeof(battery_state),
-                "/proc/acpi/battery/%s/state", this_battery->d_name);
-            if ((acpi = fopen(battery_state, "r")) == NULL)
-                continue;
-            while (fgets(buf, 128, acpi)) {
-                if (strncmp(buf, "present:", 8 ) == 0) {
-                                /* No information for this battery */
-                    if (strstr(buf, "no" ))
-                        continue;
-                }
-                else if (strncmp(buf, "charging state:", 15) == 0) {
-                                /* the space makes it different than discharging */
-                    if (strstr(buf, " charging" )) {
-                        fclose( acpi );
-                        return 0;
-                    }
-                }
-                else if (strncmp(buf, "present rate:", 13) == 0)
-                    rate = atoi(buf + 25);
-                else if (strncmp(buf, "remaining capacity:", 19) == 0) {
-                    remain = atoi(buf + 25);
-                    total_remain += remain;
-                }
-                else if (strncmp(buf, "present voltage:", 17) == 0)
-                    current = atoi(buf + 25);
-            }
-            total_cap += batt_full_capacity[batno];
-            fclose(acpi);
-            batteryTime += (int) (( ((float)remain) /rate ) * 3600);
-            batno++;
-        }
-        info_timer++;
-
-        if (batteries != NULL)
-            closedir(batteries);
-    }
-    return batteryTime;
-#elif defined(__FreeBSD__)
-    int value;
-    size_t len;
-
-    len = 1;
-    value = 0;
-    sysctlbyname("hw.acpi.acline", &value, &len, NULL, 0);
-    if (value == 0)
-    {
-	    sysctlbyname("hw.acpi.battery.time", &value, &len, NULL, 0);
-	    value = value * 60;
-    }
-    else
-    {
-	    value = 0;
-    }
-
-    return( value );
-#elif defined(_BSD_SOURCE)
-    struct apm_power_info api;
-    int apmfd;
-    if ((apmfd = open("/dev/apm", O_RDONLY)) < 0)
-        return 0;
-    if (ioctl(apmfd, APM_IOC_GETPOWER, &api) < 0) {
-        close(apmfd);
-        return 0;
-    }
-    close(apmfd);
-    if (api.battery_state == APM_BATT_UNKNOWN ||
-        api.battery_state == APM_BATTERY_ABSENT ||
-        api.battery_state == APM_BATT_CHARGING ||
-    api.ac_state == APM_AC_ON) {
-        return 0;
-    }
-    return ((int)(api.minutes_left))*60;
-#else
-    return 0;
-#endif
+	return get_battery_state();
 }
 
 char * getStringTimeFromSec(double seconds)
@@ -2505,381 +2300,6 @@ void sighandler( int signum)
     }
 }
 
-#if defined(linux)
-int disable_wep_key( char *interface, int fd_raw )
-{
-    struct iwreq wrq;
-
-    memset( &wrq, 0, sizeof( struct iwreq ) );
-    strncpy( wrq.ifr_name, interface, IFNAMSIZ );
-    wrq.u.data.flags = IW_ENCODE_DISABLED | IW_ENCODE_NOKEY;
-
-    return( ioctl( fd_raw, SIOCSIWENCODE, &wrq ) != 0 );
-}
-#endif /* linux */
-
-#if defined(linux)
-int set_channel( char *interface, int fd_raw, int channel, int cardnum )
-{
-    char s[32];
-    int pid, status;
-    struct iwreq wrq;
-
-    memset( s, 0, sizeof( s ) );
-
-    if( G.is_wlanng[cardnum] )
-    {
-        snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
-
-        if( ( pid = fork() ) == 0 )
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execl( G.wlanctlng, "wlanctl-ng", interface,
-                    "lnxreq_wlansniff", s, NULL );
-            exit( 1 );
-        }
-
-        waitpid( pid, &status, 0 );
-
-        if( WIFEXITED(status) )
-            return( WEXITSTATUS(status) );
-        else
-            return( 1 );
-    }
-
-    if( G.is_orinoco[cardnum] )
-    {
-        snprintf( s,  sizeof( s ) - 1, "%d", channel );
-
-        if( ( pid = fork() ) == 0 )
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execlp( G.iwpriv, "iwpriv", interface,
-                    "monitor", "1", s, NULL );
-            exit( 1 );
-        }
-
-        waitpid( pid, &status, 0 );
-        return 0;
-    }
-
-    if( G.is_zd1211rw[cardnum] )
-    {
-        snprintf( s,  sizeof( s ) - 1, "%d", channel );
-
-        if( ( pid = fork() ) == 0 )
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execlp( G.iwconfig, "iwconfig", interface,
-                    "channel", s, NULL );
-            exit( 1 );
-        }
-
-        waitpid( pid, &status, 0 );
-        return 0;
-    }
-
-    memset( &wrq, 0, sizeof( struct iwreq ) );
-    strncpy( wrq.ifr_name, interface, IFNAMSIZ );
-    wrq.u.freq.m = (double) channel;
-    wrq.u.freq.e = (double) 0;
-
-    if( ioctl( fd_raw, SIOCSIWFREQ, &wrq ) < 0 )
-    {
-        usleep( 10000 ); /* madwifi needs a second chance */
-
-        if( ioctl( fd_raw, SIOCSIWFREQ, &wrq ) < 0 )
-        {
-/*          perror( "ioctl(SIOCSIWFREQ) failed" ); */
-            return( 1 );
-        }
-    }
-
-    return( 0 );
-}
-#endif /* linux */
-
-#if defined(__FreeBSD__)
-/*
-    this function, as a few others, presents a slightly
-    reduced set of parameters, because we don't need some
-    of them, for example the card number or references
-    to linux-only structs needed to make hardware behave.
-*/
-int set_channel( char *interface, int channel )
-{
-    struct ieee80211req ifr;
-
-    if (G.s_ioctl == -1)
-    {
-	if ( ( G.s_ioctl = socket( PF_INET, SOCK_DGRAM, 0 ) ) == -1 )
-	{
-	    perror( "socket() failed" );
-	    return( 1 );
-	}
-    }
-
-    strncpy( ifr.i_name, interface, IFNAMSIZ - 1 );
-    ifr.i_type = IEEE80211_IOC_CHANNEL;
-
-    if ( ioctl( G.s_ioctl, SIOCG80211, &ifr ) == -1 )
-    {
-	perror( "ioctl(SIOCG80211) failed" );
-	return( 1 );
-    }
-
-    ifr.i_val = channel;
-
-    if ( ioctl( G.s_ioctl, SIOCS80211, &ifr ) == -1 )
-    {
-	perror( "ioctl(SIOCS80211) failed" );
-	return( 1 );
-    }
-
-    return( 0 );
-}
-#endif /* __FreeBSD__ */
-
-#if defined(linux)
-int set_monitor( char *interface, int fd_raw, int cardnum )
-{
-    char s[32];
-    int pid, status, channel;
-    struct iwreq wrq;
-
-    channel = (G.channel[0] == 0 ) ? 10 : G.channel[0];
-
-    if( strcmp(interface,"prism0") == 0 )
-    {
-        if( ( pid = fork() ) == 0 )
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execl( G.wl, "wl", "monitor", "1", NULL);
-            exit( 1 );
-        }
-        waitpid( pid, &status, 0 );
-        if( WIFEXITED(status) )
-            return( WEXITSTATUS(status) );
-        return( 1 );
-    }
-    else if (strncmp(interface, "rtap", 4) == 0 )
-    {
-        return 0;
-    }
-    else
-    {
-        if( G.is_wlanng[cardnum] )
-        {
-            snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
-            if( ( pid = fork() ) == 0 )
-            {
-                close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-                execl( G.wlanctlng, "wlanctl-ng", interface,
-                        "lnxreq_wlansniff", "enable=true",
-                        "prismheader=true", "wlanheader=false",
-                        "stripfcs=true", "keepwepflags=true",
-                        s, NULL );
-                exit( 1 );
-            }
-
-            waitpid( pid, &status, 0 );
-
-            if( WIFEXITED(status) )
-                return( WEXITSTATUS(status) );
-            return( 1 );
-        }
-
-        memset( &wrq, 0, sizeof( struct iwreq ) );
-        strncpy( wrq.ifr_name, interface, IFNAMSIZ );
-        wrq.u.mode = IW_MODE_MONITOR;
-
-        if( ioctl( fd_raw, SIOCSIWMODE, &wrq ) < 0 )
-        {
-            perror( "ioctl(SIOCSIWMODE) failed" );
-            return( 1 );
-        }
-
-    }
-
-    /* Check later if it's really usefull to set channel here */
-
-    set_channel( interface, fd_raw, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum], cardnum);
-
-    return( 0 );
-}
-#endif /* linux */
-
-#if defined(__FreeBSD__)
-/*
-    this function, as a few others, presents a slightly
-    reduced set of parameters, because we don't need some
-    of them, for example the card number or references
-    to linux-only structs needed to make hardware behave.
-*/
-int set_monitor( char *interface, int cardnum )
-{
-    int s, i, *mw, ahd;
-    struct ifreq ifr;
-    struct ifmediareq ifmr;
-
-    if( ( s = socket( PF_INET, SOCK_RAW, 0 ) ) == -1 )
-    {
-	perror( "socket() failed" );
-	return( 1 );
-    }
-
-    memset( &ifr, 0, sizeof( ifr ) );
-    strncpy( ifr.ifr_name, interface, IFNAMSIZ - 1 );
-
-    if( ioctl( s, SIOCGIFFLAGS, &ifr ) == -1 )
-    {
-	perror( "ioctl(SIOCGIFFLAGS) failed" );
-	return( 1 );
-    }
-
-    memset( &ifmr, 0, sizeof( ifmr ) );
-    strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
-
-    if( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1)
-    {
-	perror( "ioctl(SIOCGIFMEDIA) failed" );
-	return( 1 );
-    }
-
-    if( ifmr.ifm_count == 0 )
-    {
-	perror( "ioctl(SIOCGIFMEDIA), no media words" );
-	return( 1 );
-    }
-
-    mw = calloc( (size_t) ifmr.ifm_count, sizeof( int ) );
-    if( mw == NULL )
-    {
-	perror( "calloc()" );
-	return( 1 );
-    }
-
-    ifmr.ifm_ulist = mw;
-    strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
-    if ( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1 )
-    {
-	perror( "ioctl(SIOCGIFMEDIA)" );
-	return( 1 );
-    }
-
-    for( i = 0; i < ifmr.ifm_count; i++ )
-    {
-	if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
-	{
-	    i =  ifmr.ifm_count  + 1;
-	}
-    }
-
-    if( i == ( ifmr.ifm_count  + 1 ) )
-    {
-	return( 1 );
-    }
-
-    /*
-	A few interfaces on FreeBSD have a specific operating
-	mode called adhoc demo, which is an adhoc mode that
-	sends no beacons. The pratical effect of such a mode
-	is that's possible to monitor *and* write raw frames
-	down the pipe without messing with things we don't
-	know about ;)
-	here we try first to use the adhoc demo mode and then
-	fallback to monitor if it's not available.
-	why?
-	because aireplay while opening the raw bpf stuff will
-	don't mess with the interface... smooooth operations.
-    */
-
-    /* check if interface supports adhoc + flag0 */
-    ahd = 0;
-    for( i = 0; i < ifmr.ifm_count && ahd == 0; i++ )
-	{
-	    if( ifmr.ifm_ulist[i] & IFM_IEEE80211_ADHOC )
-	    {
-		if( ifmr.ifm_ulist[i] & IFM_FLAG0 )
-	    {
-		ahd = 1;
-		break;
-	    }
-	}
-    }
-
-    if( ahd == 0 )
-    {
-	/* no. fallback to monitor mode */
-	for( i = 0; i < ifmr.ifm_count; i++ )
-	{
-	    if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
-	    {
-		i = ifmr.ifm_count + 1;
-		break;
-	    }
-	}
-
-	if( i != ( ifmr.ifm_count + 1 ) )
-	{
-	    /* crap, neither monitor mode! */
-	    fprintf(stderr,
-		"interface %s is missing monitor mode\n",
-		interface);
-	    return( 1 );
-	}
-    }
-
-    memset( &ifr, 0, sizeof( ifr ) );
-    strncpy( ifr.ifr_name, interface, IFNAMSIZ - 1 );
-
-    ifr.ifr_media = IFM_IEEE80211 | IFM_AUTO;
-    if (ahd == 0)
-	ifr.ifr_media |= IFM_IEEE80211_MONITOR;
-    else
-	ifr.ifr_media |= IFM_IEEE80211_ADHOC | IFM_FLAG0;
-
-    if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
-    {
-	perror( "ioctl(SIOCSIFMEDIA) failed" );
-	return( 1 );
-    }
-
-    if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
-    {
-	perror( "ioctl(SIOCGIFMEDIA) failed" );
-	return( 1 );
-    }
-
-    if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
-    {
-	perror( "ioctl(SIOCSIFMEDIA) failed" );
-	return( 1 );
-    }
-
-    i = ( ifr.ifr_flags & 0xffff ) | ( ifr.ifr_flagshigh << 16 );
-    if( !( i & IFF_UP ) )
-    {
-	i |= IFF_UP;
-
-	ifr.ifr_flags = i & 0xffff;
-	ifr.ifr_flagshigh = i >> 16;
-
-	if ( ioctl( s, SIOCSIFFLAGS, &ifr ) == -1 )
-	{
-	    perror( "ioctl(SIOCSIFFLAGS) failed" );
-	    return( 1 );
-	}
-    }
-
-    close(s);
-
-    set_channel( interface, (G.channel[cardnum] == 0 ) ? 10 : G.channel[cardnum] );
-
-    return( 0 );
-}
-#endif /* __FreeBSD__ */
-
 int getchancount(int valid)
 {
     int i=0, chan_count=0;
@@ -2895,118 +2315,7 @@ int getchancount(int valid)
     return i;
 }
 
-#if defined(linux)
-void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count )
-{
-
-    int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
-    int round=0, nfirst=0, quick=1, stime=100000, tries=0;
-
-    nfirst = chan_count / if_num + 1;
-
-    while( getppid() != 1 )
-    {
-        tries=0;
-        for(j=0; j<if_num; j++)
-        {
-            again=1;
-
-            ch_idx = chi % chan_count;
-
-            card = cai % if_num;
-
-            ++chi;
-            ++cai;
-
-            if(tries>chan_count)
-            {
-                exit( 0 );
-            }
-
-            if( G.chswitch == 2 && !first)
-            {
-                j=(if_num - 1);
-                card = if_num-1;
-                if( getchancount(1) > if_num )
-                {
-                    while( again )
-                    {
-                        again=0;
-                        for(k=0; k<(if_num-1); k++)
-                        {
-                            if(G.channels[ch_idx] == G.channel[k])
-                            {
-                                again = 1;
-                                ch_idx = chi % chan_count;
-                                chi++;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if( G.channels[ch_idx] == -1 )
-            {
-                tries++;
-                j--;
-                cai--;
-                continue;
-            }
-
-            ch = G.channels[ch_idx];
-
-
-            if( set_channel( interface[card], fd_raw[card], ch, card ) == 0 )
-            {
-                G.channel[card] = ch;
-                write( G.cd_pipe[1], &card, sizeof(int) );
-                write( G.ch_pipe[1], &ch, sizeof( int ) );
-                kill( getppid(), SIGUSR1 );
-                usleep(1000);
-            }
-            else
-            {
-                if( strncmp( interface[card], "rtap", 4) )
-                {
-                    G.channels[ch_idx] = -1;      /* remove invalid channel */
-                    j--;
-                    cai--;
-                }
-                continue;
-            }
-        }
-        if(G.chswitch == 0)
-        {
-            chi=chi-(if_num - 1);
-        }
-        if(first)
-        {
-            first = 0;
-        }
-
-        if( round > nfirst*3 && quick )
-        {
-            quick = 0;
-            stime = 350000;
-        }
-
-        usleep( stime );
-
-        if(quick) round++;
-    }
-
-    exit( 0 );
-}
-#endif /* linux */
-
-#if defined(__FreeBSD__)
-/*
-    this function, as a few others, presents a slightly
-    reduced set of parameters, because we don't need some
-    of them, for example the card number or references
-    to linux-only structs needed to make hardware behave.
-*/
-void channel_hopper( char *interface[], int if_num, int chan_count )
+void channel_hopper(struct wif *wi[], int if_num, int chan_count )
 {
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
 
@@ -3055,7 +2364,7 @@ void channel_hopper( char *interface[], int if_num, int chan_count )
 
             ch = G.channels[ch_idx];
 
-            if( set_channel( interface[card], ch ) == 0 )
+            if(wi_set_channel(wi[card], ch ) == 0 )
             {
                 G.channel[card] = ch;
                 write( G.cd_pipe[1], &card, sizeof(int) );
@@ -3087,7 +2396,6 @@ void channel_hopper( char *interface[], int if_num, int chan_count )
 
     exit( 0 );
 }
-#endif /* __FreeBSD__ */
 
 int invalid_channel(int chan)
 {
@@ -3222,317 +2530,19 @@ int getchannels(const char *optarg)
     return 0;
 }
 
-#if defined(linux)
-int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct sockaddr_ll *sll, int *fd_raw, int *arptype, int cardnum)
+int setup_card(char *iface, struct wif **wis)
 {
-    int pid=0, n=0;
-    uchar *buffer;
-    FILE *check_madwifing;
-    FILE *f;
+	struct wif *wi;
 
-    /* reserve the buffer space */
+	wi = wi_open(iface);
+	if (!wi)
+		return -1;
+	*wis = wi;
 
-    if( ( buffer = (unsigned char *) malloc( 65536 ) ) == NULL )
-    {
-        perror( "malloc failed" );
-        return( 1 );
-    }
-
-    memset( ifr, 0, sizeof( *ifr ) );
-    strncpy( ifr->ifr_name, iface, sizeof( ifr->ifr_name ) - 1 );
-
-    if( ioctl( *fd_raw, SIOCGIFINDEX, ifr ) < 0 )
-    {
-        fprintf( stderr, "%s is not a network interface.\n", iface );
-        return( 1 );
-    }
-
-    /* Exit if ndiswrapper : check iwpriv ndis_reset */
-
-    if ( is_ndiswrapper(iface, G.iwpriv) ) {
-        printf("Ndiswrapper doesn't support monitor mode.\n");
-        return (1);
-    }
-
-    if( strcmp(iface,"prism0") == 0 )
-        G.wl = wiToolsPath("wl");
-
-    memset( sll, 0, sizeof( *sll ) );
-    sll->sll_family   = AF_PACKET;
-    sll->sll_ifindex  = ifr->ifr_ifindex;
-    sll->sll_protocol = htons( ETH_P_ALL );
-
-    if( memcmp( iface, "wlan", 4 ) == 0 )
-    {
-        if( ( pid = fork() ) == 0 )     /* wlan-ng brain damage */
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execlp( "wlanctl-ng", "wlanctl-ng", iface,
-                    "lnxreq_ifstate", "ifstate=enable", NULL );
-            exit( 1 );
-        }
-
-        waitpid( pid, &n, 0 );
-
-        if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
-            G.is_wlanng[cardnum] = 1;
-
-        if( ! fork() )                  /* hostap card reset */
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execlp( "iwpriv", "iwpriv", iface, "reset", "1", NULL );
-            exit( 1 );
-        }
-        wait( NULL );
-    }
-
-    /* test if orinoco */
-
-    if( memcmp( iface, "eth", 3 ) == 0 )
-    {
-        if( ( pid = fork() ) == 0 )
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execlp( "iwpriv", "iwpriv", iface, "get_port3", NULL );
-            exit( 1 );
-        }
-
-        waitpid( pid, &n, 0 );
-
-        if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
-            G.is_orinoco[cardnum] = 1;
-    }
-
-    /* test if zd1211rw */
-
-    if( memcmp( iface, "eth", 3 ) == 0 )
-    {
-        if( ( pid = fork() ) == 0 )
-        {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execlp( "iwpriv", "iwpriv", iface, "get_regdomain", NULL );
-            exit( 1 );
-        }
-
-        waitpid( pid, &n, 0 );
-
-        if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
-            G.is_zd1211rw[cardnum] = 1;
-    }
-
-    /* Check if madwifi-ng */
-
-    G.is_madwifing[cardnum] = 0;
-    memset( buffer,0, 65536 );
-    snprintf( (char*) buffer, strlen( iface ) + 23,
-        "/proc/sys/net/%s/%%parent", iface );
-    check_madwifing = fopen( (char*) buffer,"r");
-
-    if (check_madwifing != NULL) {
-        fclose(check_madwifing);
-        G.is_madwifing[cardnum] = 1;
-        memset(buffer,0, 65536);
-
-        sprintf((char *) buffer, "/proc/sys/net/%s/dev_type", iface);
-        f = fopen( (char *) buffer,"w");
-        if (f != NULL) {
-            fprintf(f, "802\n");
-            fclose(f);
-        }
-        /* Force prism2 header on madwifi-ng */
-    }
-    memset(buffer,0, 65536);
-
-    /* make sure the interface is up */
-
-    ifr->ifr_flags = IFF_UP | IFF_BROADCAST | IFF_RUNNING;
-
-    if( ioctl( *fd_raw, SIOCSIFFLAGS, ifr ) < 0 )
-    {
-        perror( "ioctl(SIOCSIFFLAGS) failed" );
-        return( 1 );
-    }
-
-    if (set_monitor( iface, *fd_raw, cardnum ))
-    {
-        printf("Error setting monitor mode on %s\n",iface);
-        return( 1 );
-    }
-
-    /* bind the raw socket to the interface */
-
-    if( bind( *fd_raw, (struct sockaddr *) sll,
-              sizeof( *sll ) ) < 0 )
-    {
-        perror( "bind(ETH_P_ALL) failed" );
-        return( 1 );
-    }
-
-    /* couple of iwprivs to enable the prism header */
-
-    if( ! fork() )  /* hostap */
-    {
-        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-        execlp( "iwpriv", "iwpriv", iface, "monitor_type", "1", NULL );
-        exit( 1 );
-    }
-    wait( NULL );
-
-    if( ! fork() )  /* r8180 */
-    {
-        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-        execlp( "iwpriv", "iwpriv", iface, "prismhdr", "1", NULL );
-        exit( 1 );
-    }
-    wait( NULL );
-
-    if( ! fork() )  /* prism54 */
-    {
-        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-        execlp( "iwpriv", "iwpriv", iface, "set_prismhdr", "1", NULL );
-        exit( 1 );
-    }
-    wait( NULL );
-
-    /* make sure the WEP key is off */
-
-    if ( strncmp( iface, "rtap", 4) )
-        disable_wep_key( iface, *fd_raw );
-
-    /* lookup the hardware type */
-
-    if( ioctl( *fd_raw, SIOCGIFHWADDR, ifr ) < 0 )
-    {
-        perror( "ioctl(SIOCGIFHWADDR) failed" );
-        return( 1 );
-    }
-
-    *arptype = ifr->ifr_hwaddr.sa_family;
-
-    if( *arptype != ARPHRD_IEEE80211 &&
-        *arptype != ARPHRD_IEEE80211_PRISM &&
-        *arptype != ARPHRD_IEEE80211_FULL )
-    {
-        if( *arptype == 1 )
-            fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
-        else
-            fprintf( stderr, "\nUnsupported hardware link type %4d ",
-                     *arptype );
-
-        fprintf( stderr, "- expected ARPHRD_IEEE80211\nor ARPHRD_IEEE8021"
-                         "1_PRISM instead.  Make sure RFMON is enabled:\n"
-                         "run 'ifconfig %s up; iwconfig %s mode Monitor "
-                         "channel <#>'\n\n", iface, iface );
-        return( 1 );
-    }
-
-    /* enable promiscuous mode */
-
-    memset( mr, 0, sizeof( *mr ) );
-    mr->mr_ifindex = sll->sll_ifindex;
-    mr->mr_type    = PACKET_MR_PROMISC;
-
-    if( setsockopt( *fd_raw, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
-                    mr, sizeof( *mr ) ) < 0 )
-    {
-        perror( "setsockopt(PACKET_MR_PROMISC) failed" );
-        return( 1 );
-    }
-
-    return( 0 );
+	return 0;
 }
-#endif /* linux */
 
-#if defined(__FreeBSD__)
-/*
-    this function, as a few others, presents a slightly
-    reduced set of parameters, because we don't need some
-    of them, for example the card number or references
-    to linux-only structs needed to make hardware behave.
-*/
-int setup_card(char *iface, struct ifreq *ifr, int *fd_raw, int cardnum)
-{
-    unsigned int i;
-
-    /* bind interface iface to the bpf */
-    memset( ifr, 0, sizeof(ifr) );
-    strncpy( ifr->ifr_name, iface, IFNAMSIZ - 1 );
-
-    if( ioctl( *fd_raw, BIOCSETIF, ifr ) == -1 )
-    {
-	perror( "ioctl(BIOCSETIF) failed" );
-	return( 1 );
-    }
-
-    /* set a meaningful datalink type */
-    i = DLT_IEEE802_11_RADIO;
-    if( ioctl( *fd_raw, BIOCSDLT, &i ) == -1 )
-    {
-	perror( "ioctl(BIOCSDLT) failed" );
-	return( 1 );
-    }
-
-    /* set immediate mode (doesn't wait for buffer fillup) */
-    i = 1;
-    if( ioctl( *fd_raw, BIOCIMMEDIATE, &i ) == -1 )
-    {
-	perror( "ioctl(BIOCIMMEDIATE) failed" );
-	return( 1 );
-    }
-
-    /* set bpf's promiscuous mode */
-    if( ioctl( *fd_raw, BIOCPROMISC, NULL) == -1 )
-    {
-	perror( "ioctl(BIOCPROMISC) failed" );
-	return( 1 );
-    }
-
-    /* lock bpf for further messing */
-    if( ioctl( *fd_raw, BIOCLOCK, NULL ) == -1 )
-    {
-	perror( "ioctl(BIOCLOCK) failed" );
-	return( 1 );
-    }
-
-    /* set monitor mode in interface iface */
-    if( set_monitor( iface, cardnum ) == 1 )
-    {
-	return( 1 );
-    }
-
-    return( 0 );
-}
-#endif /* __FreeBSD__ */
-
-#if defined(linux)
-int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct packet_mreq mr[], struct sockaddr_ll sll[], int fd_raw[], int arptype[])
-{
-    char *buffer;
-    int if_count=0;
-
-    buffer = (char*) malloc(sizeof(char)*1025);
-    strncpy(buffer, cardstr, 1025);
-    buffer[1024] = '\0';
-
-    while( ((iface[if_count]=strsep(&buffer, ",")) != NULL) && (if_count < MAX_CARDS) )
-    {
-        if(setup_card(iface[if_count], &(ifr[if_count]), &(mr[if_count]), &(sll[if_count]), &(fd_raw[if_count]), &(arptype[if_count]), if_count) != 0)
-            return -1;
-        if_count++;
-    }
-
-    return if_count;
-}
-#endif /* linux */
-
-#if defined(__FreeBSD__)
-/*
-    this function, as a few others, presents a slightly
-    reduced set of parameters, because we don't need some
-    of them, for example the card number or references
-    to linux-only structs needed to make hardware behave.
-*/
-int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], int fd_raw[])
+int init_cards(const char* cardstr, char *iface[], struct wif **wi)
 {
     char *buffer;
     int if_count=0;
@@ -3543,14 +2553,13 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], int fd_ra
 
     while( ((iface[if_count]=strsep(&buffer, ",")) != NULL) && (if_count < MAX_CARDS) )
     {
-        if(setup_card(iface[if_count], &(ifr[if_count]), &(fd_raw[if_count]), if_count) != 0)
+        if(setup_card(iface[if_count], &(wi[if_count])) != 0)
             return -1;
         if_count++;
     }
 
     return if_count;
 }
-#endif /* __FreeBSD__ */
 
 int get_if_num(const char* cardstr)
 {
@@ -3599,34 +2608,19 @@ int set_encryption_filter(const char* input)
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
-    int n, caplen, i, cards, fdh, fd_is_set, chan_count;
+    int caplen, i, cards, fdh, fd_is_set, chan_count;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
     int ivs_only, power;
     int valid_channel, chanoption;
     int freq [2];
     time_t tt1, tt2, tt3, start_time;
 
-#if defined(__FreeBSD__)
-    int j, k;
-    char *bnbuf;
-    unsigned int buf;
-    struct bpf_hdr *bpfp;
-    struct ieee80211_radiotap_header *rtp;
-    unsigned char *r;
-    size_t buflen = 0;
-#endif /* __FreeBSD__ */
-
-    unsigned char      *buffer;
+    struct wif	       *wi[MAX_CARDS];
+    struct rx_info     ri;
+    unsigned char      buffer[4096];
     unsigned char      *h80211;
     char               *iface[MAX_CARDS];
-
-    struct ifreq       ifr[MAX_CARDS];
-
-#if defined(linux)
-    struct packet_mreq mr[MAX_CARDS];
-    struct sockaddr_ll sll[MAX_CARDS];
-#endif /* linux */
-
+    
     struct timeval     tv0;
     struct timeval     tv1;
     struct timeval     tv2;
@@ -3678,18 +2672,9 @@ int main( int argc, char *argv[] )
     G.update_s     =  0;
     memset(G.sharedkey, '\x00', 512*3);
 
-#if defined(__FreeBSD__)
-    G.s_ioctl = -1;
-#endif
-
     gettimeofday( &tv0, NULL );
 
-#if defined(__FreeBSD__)
-    /* cast to accomodate a warning on FreeBSD 6-stable */
     lt = localtime( (time_t *) &tv0.tv_sec );
-#else
-    lt = localtime( &tv0.tv_sec );
-#endif
 
     G.keyout = (char*) malloc(512);
     memset( G.keyout, 0, 512 );
@@ -3709,11 +2694,6 @@ int main( int argc, char *argv[] )
     memset(G.f_netmask, '\x00', 6);
     memset(G.wpa_bssid, '\x00', 6);
 
-
-    #if defined(linux)
-        linux_acpi =  1;
-        linux_apm  =  1;
-    #endif /* linux */
 
     /* check the arguments */
 
@@ -3973,134 +2953,19 @@ usage:
         return( 1 );
     }
 
-#if defined(linux)
-    /* Check iwpriv existence */
-
-	G.iwpriv = wiToolsPath("iwpriv");
-	G.iwconfig = wiToolsPath("iwconfig");
-
-    if (! (G.iwpriv && G.iwconfig) )
-    {
-        fprintf(stderr, "Can't find wireless tools, exiting.\n");
-        return (1);
-    }
-#endif /* linux */
-
-    cards = get_if_num(argv[argc-1]);
-
-    /* create the raw socket and drop privileges */
-
-#if defined(linux)
-    for(i=0; i<cards; i++)
-    {
-        fd_raw[i] = socket( PF_PACKET, SOCK_RAW, htons( ETH_P_ALL ) );
-
-        if( fd_raw[i] < 0 )
-        {
-            perror( "socket(PF_PACKET) failed" );
-            if( getuid() != 0 )
-                fprintf( stderr, "This program requires root privileges.\n" );
-            return( 1 );
-        }
-            if( fd_raw[i] > fdh)
-                fdh=fd_raw[i];
-    }
-
-    setuid( getuid() );
-
-    /* reserve the buffer space */
-
-    if( ( buffer = (unsigned char *) malloc( 65536 ) ) == NULL )
-    {
-        perror( "malloc failed" );
-        return( 1 );
-    }
-#endif /* linux */
-
-#if defined(__FreeBSD__)
-    /*
-	since under FreeBSD the socktype PF_PACKET is not available
-	we have to read our frames from a BPF, with a few consequences
-	you'll find later on
-    */
-    for( i = 0; i < cards; i++ )
-    {
-	for( j = 0; j < 256; j++ )
-	{
-	    if( asprintf( &bnbuf, "/dev/bpf%d", j ) <= 0 )
-	    {
-		perror( "asprintf() failed" );
-		exit( 1 );
-	    }
-
-	    fd_raw[i] = open( bnbuf, O_RDWR );
-
-	    if( fd_raw[i] < 0 )
-	    {
-		if( errno != EBUSY )
-		{
-		    perror( "can't open /dev/bpf" );
-		    exit( 1 );
-		}
-		continue;
-	    }
-
-	    free( bnbuf );
-	    break;
-        }
-
-	if( fd_raw[i] < 0 )
-	{
-	    perror( "can't open /dev/bpf" );
-	    exit( 1);
-	}
-
-	if( fd_raw[i] > fdh )
-	    fdh = fd_raw[i];
-
-	/*
-	    the BPF buffer size must be the same we pass to the
-	    read syscall.  we try to get our BPF to accomodate the
-            largest useful buffer size *it* wants.
-	*/
-	for( buf = 65536 ; buf > 4096 ; buf -= 512 )
-	{
-	    ioctl( fd_raw[i], BIOCSBLEN, &buf );
-
-	    if( buf > 0 )
-	    {
-		buflen = buf;
-		break;
-	    }
-	}
-
-	/* this is a real problem */
-	if( buflen <= 0 )
-	{
-	    perror( "cannot allocate bpf buffer space" );
-	    exit(1);
-	}
-
-    }
-
-    setuid( getuid() );
-
-    if( ( buffer = (unsigned char *) malloc( buflen ) ) == NULL )
-    {
-        perror( "malloc failed" );
-        return( 1 );
-    }
-#endif /* __FreeBSD__ */
-
     /* initialize cards */
-#if defined(linux)
-    cards = init_cards(argv[argc-1], iface, ifr, mr, sll, fd_raw, arptype);
-#elif defined(__FreeBSD__)
-    cards = init_cards(argv[argc-1], iface, ifr, fd_raw);
-#endif
+    cards = init_cards(argv[argc-1], iface, wi);
 
     if(cards <= 0)
 	return( 1 );
+
+    setuid( getuid() );
+
+    for (i = 0; i < cards; i++) {
+    	fd_raw[i] = wi_fd(wi[i]);
+	if (fd_raw[i] > fdh)
+	    fdh = fd_raw[i];
+    }
 
     chan_count = getchancount(0);
 
@@ -4116,11 +2981,7 @@ usage:
 
 	if( ! fork() )
 	{
-#if defined(linux)
-            channel_hopper( iface, fd_raw, cards, chan_count );
-#elif defined(__FreeBSD__)
-            channel_hopper( iface, cards, chan_count );
-#endif
+	    channel_hopper(wi, cards, chan_count);
             exit( 1 );
         }
     }
@@ -4128,12 +2989,7 @@ usage:
     {
 	for( i=0; i<cards; i++ )
 	{
-#if defined(linux)
-            set_channel( iface[i], fd_raw[i], G.channel[0], i );
-#elif defined(__FreeBSD__)
-            set_channel( iface[i], G.channel[0] );
-#endif
-
+	    wi_set_channel(wi[i], G.channel[0]);
 	    G.channel[i] = G.channel[0];
 	}
         G.singlechan = 1;
@@ -4299,248 +3155,17 @@ usage:
             if( FD_ISSET( fd_raw[i], &rfds ) )
             {
 
-#if defined(linux)
-                memset( buffer, 0, 4096 );
-
-                if( ( caplen = read( fd_raw[i], buffer, 65535 ) ) < 0 )
-                {
-                    perror( "read failed" );
-                    return( 1 );
-                }
-#endif /* linux */
-
-#if defined(__FreeBSD__)
-                memset( buffer, 0, buflen );
-
-		/* buffer size have to be as big as BPF buffer */
-                if( ( caplen = read(  fd_raw[i], buffer, buflen ) ) < 0 )
-                {
-                    perror( "read failed" );
-                    return( 1 );
-                }
-#endif /* __FreeBSD__ */
-
-#if defined(linux)
-                /* if device is an atheros, remove the FCS */
-
-                if( ! memcmp( iface[i], "ath", 3 ) && (! G.is_madwifing[i]) )
-                    caplen -= 4;
-
-                /* prism (wlan-ng) header parsing */
-
-                h80211 = buffer;
-
-                if( arptype[i] == ARPHRD_IEEE80211_PRISM )
-                {
-                    if( buffer[7] == 0x40 )
-                    {
-                        /* prism54 uses a different format */
-
-                        power = buffer[0x33];
-
-                        n = 0x40;
-                    }
-                    else
-                    {
-                        power = *(int *)( buffer + 0x5C );
-
-                        if( ! memcmp( iface[i], "ath", 3 ) )
-                            power -= *(int *)( buffer + 0x68 );
-
-                        n = *(int *)( buffer + 4 );
-                    }
-
-                    if( n <= 0 || n >= caplen )
-                        continue;
-
-                    h80211 += n;
-                    caplen -= n;
-                }
-
-                /* radiotap header parsing */
-
-                if( arptype[i] == ARPHRD_IEEE80211_FULL )
-                {
-                    if( buffer[0] != 0 )
-                    {
-//                        fprintf( stderr, "Wrong radiotap header version.\n" );
-//                        return( 1 );
-                        continue;
-                    }
-
-                    n = *(unsigned short *)( buffer + 2 );
-
-                    /* ipw2200 1.0.7 */
-                    if( *(int *)( buffer + 4 ) == 0x0000082E )
-                        power = buffer[14];
-
-                    /* ipw2200 1.2.0 */
-                    if( *(int *)( buffer + 4 ) == 0x0000086F )
-                        power = buffer[15];
-
-                    /* zd1211rw-patched */
-                    if(G.is_zd1211rw[i] && *(int *)( buffer + 4 ) == 0x0000006E )
-                        power = buffer[14];
-
-                    if( n <= 0 || n >= caplen )
-                        continue;
-
-                    h80211 += n;
-                    caplen -= n;
-                }
-#endif /* linux */
-
-#if defined(__FreeBSD__)
-		/*
-		    radiotap under FreeBSD is well defined and decently
-		    supported from any driver that actually can support
-		    monitor mode, so we need no trick on pointer mechs
-		    for different drivers
-		*/
+                memset(buffer, 0, sizeof(buffer));
 		h80211 = buffer;
-
-		/*
-		    since we're reading from a BPF with a datalink type
-		    of IEEE802_11_RADIO, our readed frame will start with
-		    a variable size BPF header (struct bpf_hdr) and a
-		    variable size radiotap header.
-		    we need to know their lenght to pass a clean 802.11
-		    frame to dump_add_packet()
-		*/
-		bpfp = (struct bpf_hdr *)buffer;
-		rtp = (struct ieee80211_radiotap_header *)(buffer + bpfp->bh_hdrlen);
-
-		/*
-		    radiotap header parsing stuff
-		    we walk thru every possible field of the base set of
-		    radiotap informations, looking for what we need,
-		    specifically the flags map and the power levels
-		*/
-
-		/* position our pointer to the end of it_present field */
-		r = (unsigned char *)&rtp->it_present;
-		r += sizeof(u_int32_t);
-
-		for( k = 0; k <= 13 ; k++ )
-		{
-		    if( rtp->it_present & ( 1 << k ) )
-		    {
-			switch( k )
-			{
-			  case IEEE80211_RADIOTAP_TSFT:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof(u_int64_t);
-			    break;
-
-			  case IEEE80211_RADIOTAP_FLAGS:
-
-			    if( *r & IEEE80211_RADIOTAP_F_FCS )
-			    {
-				/*
-				    this frame has 4 FCS bytes at
-				    his end, and we need to avoid them
-				*/
-				caplen -= 4;
-			    }
-			    r += sizeof( u_int8_t ); /* and go on.. */
-			    break;
-
-			  case IEEE80211_RADIOTAP_RATE:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof( u_int8_t );
-			    break;
-
-			  case IEEE80211_RADIOTAP_CHANNEL:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof( u_int16_t ) * 2;
-			    break;
-
-			  case IEEE80211_RADIOTAP_FHSS:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof(u_int16_t);
-			    break;
-
-			  case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
-
-			    /* we could like this field... mhmhm! */
-			    memcpy( &power, r, sizeof( int8_t ) );
-			    break;
-
-			  case IEEE80211_RADIOTAP_DBM_ANTNOISE:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof( int8_t );
-			    break;
-
-			  case IEEE80211_RADIOTAP_LOCK_QUALITY:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof( u_int16_t );
-			    break;
-
-			  case IEEE80211_RADIOTAP_TX_ATTENUATION:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof( u_int16_t );
-			    break;
-
-			  case IEEE80211_RADIOTAP_DB_TX_ATTENUATION:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof( u_int16_t );
-			    break;
-
-			  case IEEE80211_RADIOTAP_DBM_TX_POWER:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof( int8_t );
-			    break;
-
-			  case IEEE80211_RADIOTAP_ANTENNA:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof( u_int8_t );
-			    break;
-
-			  case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
-
-			    /* we could like this field... mhmhm! */
-			    power = (int) *r;
-			    break;
-
-			  case IEEE80211_RADIOTAP_DB_ANTNOISE:
-
-			    /* we have no use for this, let's skip over */
-			    r += sizeof(u_int8_t);
-			    break;
-
-			  default:
-			    break;
-		    }
+		if ((caplen = wi_read(wi[i], h80211, sizeof(buffer), &ri)) == -1) {
+		    perror( "read failed" );
+		    return 1;
 		}
-	    }
-
-	    /*
-		n is the offset of the real frame from the beginning
-		of the capture (bpf header lenght + radiotap header
-		lenght)
-	    */
-	    n = bpfp->bh_hdrlen + rtp->it_len;
-
-	    if( n <= 0 || n >= caplen )
-		continue;
-
-	    h80211 += n;
-	    caplen -= n;
-#endif /* __FreeBSD__ */
+		power = ri.ri_power;
 
                 dump_add_packet( h80211, caplen, power, i );
-			}
-		}
+	     }
+	}
     }
 
     if (G.record_data) {

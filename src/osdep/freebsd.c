@@ -119,6 +119,8 @@ static int fbsd_read(struct wif *wi, unsigned char *h80211, int len,
 	unsigned char *wh;
 	int plen;
 
+	assert(len > 0);
+
 	/* need to read more */
 	if (pf->pf_totlen == 0) {
 		pf->pf_totlen = read(pf->pf_fd, pf->pf_buf, sizeof(pf->pf_buf));
