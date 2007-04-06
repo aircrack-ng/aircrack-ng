@@ -1,0 +1,794 @@
+/*
+ *  OS dependent APIs for Linux  
+ *
+ *  Copyright (C) 2006,2007 Thomas d'Otreppe
+ *  Copyright (C) 2004,2005 Christophe Devine
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <netpacket/packet.h>
+#include <linux/if_ether.h>
+#include <linux/if.h>
+#include <linux/wireless.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <dirent.h>
+
+#include "osdep.h"
+#include "pcap.h"
+
+/* 
+ * XXX need to have a different read/write/open function for each Linux driver.
+ */
+
+struct priv_linux {
+    int fd_in,  arptype_in;
+    int fd_out, arptype_out;
+    int fd_rtc;
+
+    uchar mac_in[6];
+    uchar mac_out[6];
+
+    int is_wlanng;
+    int is_hostap;
+    int is_madwifi;
+    int is_madwifing;
+    int is_bcm43xx;
+    int is_orinoco;
+    int is_zd1211rw;
+
+    FILE *f_cap_in;
+
+    struct pcap_file_header pfh_in;
+
+    int sysfs_inject;
+    char * wlanctlng; /* XXX never set */
+    char *iwpriv;
+    char *iwconfig;
+    char *interface;
+};
+
+#ifndef ETH_P_80211_RAW
+#define ETH_P_80211_RAW 25
+#endif
+
+#define ARPHRD_IEEE80211        801
+#define ARPHRD_IEEE80211_PRISM  802
+#define ARPHRD_IEEE80211_FULL   803
+
+#ifndef NULL_MAC
+#define NULL_MAC        "\x00\x00\x00\x00\x00\x00"
+#endif
+
+extern int is_ndiswrapper(const char * iface, const char * path);
+extern char * wiToolsPath(const char * tool);
+
+static int linux_read(struct wif *wi, unsigned char *buf, int count,
+		      struct rx_info *ri)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    unsigned char tmpbuf[4096];
+
+    int caplen, n = 0;
+
+    if( ( caplen = read( dev->fd_in, tmpbuf, count ) ) < 0 )
+    {   
+        if( errno == EAGAIN )
+            return( 0 );
+
+        perror( "read failed" );
+        return( -1 );
+    }
+    
+    if( dev->is_madwifi && !(dev->is_madwifing) )
+        caplen -= 4;    /* remove the FCS */
+
+    memset( buf, 0, sizeof( buf ) );
+
+    if( dev->arptype_in == ARPHRD_IEEE80211_PRISM )
+    {
+        /* skip the prism header */
+
+        if( tmpbuf[7] == 0x40 )
+            n = 64;
+        else
+            n = *(int *)( tmpbuf + 4 );
+
+        if( n < 8 || n >= caplen )
+            return( 0 );
+    }
+
+    if( dev->arptype_in == ARPHRD_IEEE80211_FULL )
+    {
+        /* skip the radiotap header */
+
+        n = *(unsigned short *)( tmpbuf + 2 );
+
+        if( n <= 0 || n >= caplen )
+            return( 0 );
+    }
+
+    caplen -= n;
+
+    memcpy( buf, tmpbuf + n, caplen );
+
+    /* XXX */
+    if (ri)
+    	memset(ri, 0, sizeof(*ri));
+
+    return( caplen );
+}
+
+static int linux_write(struct wif *wi, unsigned char *buf, int count,
+		       struct tx_info *ti)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    unsigned char maddr[6];
+    int ret;
+    unsigned char tmpbuf[4096];
+
+    /* XXX honor ti */
+    if (ti) {}
+
+    if( dev->is_wlanng && count >= 24 )
+    {   
+        /* for some reason, wlan-ng requires a special header */
+
+        if( ( ((unsigned char *) buf)[1] & 3 ) != 3 )
+        {   
+            memcpy( tmpbuf, buf, 24 );
+            memset( tmpbuf + 24, 0, 22 );
+            
+            tmpbuf[30] = ( count - 24 ) & 0xFF;
+            tmpbuf[31] = ( count - 24 ) >> 8;
+            
+            memcpy( tmpbuf + 46, buf + 24, count - 24 );
+            
+            count += 22;
+        }
+        else
+        {   
+            memcpy( tmpbuf, buf, 30 );
+            memset( tmpbuf + 30, 0, 16 );
+            
+            tmpbuf[30] = ( count - 30 ) & 0xFF;
+            tmpbuf[31] = ( count - 30 ) >> 8;
+            
+            memcpy( tmpbuf + 46, buf + 30, count - 30 );
+            
+            count += 16;
+        }
+        
+        buf = tmpbuf;
+    }
+    
+    if( ( dev->is_wlanng || dev->is_hostap ) &&
+        ( ((uchar *) buf)[1] & 3 ) == 2 )
+    {   
+        /* Prism2 firmware swaps the dmac and smac in FromDS packets */
+
+        memcpy( maddr, buf + 4, 6 );
+        memcpy( buf + 4, buf + 16, 6 );
+        memcpy( buf + 16, maddr, 6 );
+    }
+    
+    ret = write( dev->fd_out, buf, count );
+
+    if( ret < 0 )
+    {   
+        if( errno == EAGAIN || errno == EWOULDBLOCK ||
+            errno == ENOBUFS )
+        {   
+            usleep( 10000 );
+            return( 0 );
+        }
+        
+        perror( "write failed" );
+        return( -1 );
+    }
+    
+    return( 0 );
+}
+
+static int linux_set_channel(struct wif *wi, int channel)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    char s[32];
+    int pid, status;
+    struct iwreq wrq;
+    
+    memset( s, 0, sizeof( s ) );
+    
+    if( dev->is_wlanng)
+    {
+        snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
+        
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execl( dev->wlanctlng, "wlanctl-ng", dev->interface,
+                    "lnxreq_wlansniff", s, NULL );
+            exit( 1 );
+        }   
+        
+        waitpid( pid, &status, 0 );
+        
+        if( WIFEXITED(status) )
+            return( WEXITSTATUS(status) );
+        else
+            return( 1 );
+    }       
+    
+    if( dev->is_orinoco)
+    {   
+        snprintf( s,  sizeof( s ) - 1, "%d", channel );
+
+        if( ( pid = fork() ) == 0 )
+        {   
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execlp( dev->iwpriv, "iwpriv", dev->interface,
+                    "monitor", "1", s, NULL );
+            exit( 1 );
+        }
+        
+        waitpid( pid, &status, 0 );
+        return 0;
+    }
+    
+    if( dev->is_zd1211rw)
+    {   
+        snprintf( s,  sizeof( s ) - 1, "%d", channel );
+
+        if( ( pid = fork() ) == 0 )
+        {   
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execlp(dev->iwconfig, "iwconfig", dev->interface,
+                    "channel", s, NULL );
+            exit( 1 );
+        }
+        
+        waitpid( pid, &status, 0 );
+        return 0;
+    }
+    
+    memset( &wrq, 0, sizeof( struct iwreq ) );
+    strncpy( wrq.ifr_name, dev->interface, IFNAMSIZ );
+    wrq.u.freq.m = (double) channel;
+    wrq.u.freq.e = (double) 0;
+
+    if( ioctl( dev->fd_in, SIOCSIWFREQ, &wrq ) < 0 )
+    {
+        usleep( 10000 ); /* madwifi needs a second chance */
+
+        if( ioctl( dev->fd_in, SIOCSIWFREQ, &wrq ) < 0 )
+        {
+/*          perror( "ioctl(SIOCSIWFREQ) failed" ); */
+            return( 1 );
+        }
+    }
+
+    return( 0 );
+}
+
+static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
+    int fd2;
+    char buf[256];
+
+    snprintf(buf, 256, "/sys/class/net/%s/device/inject", iface);
+    fd2 = open(buf, O_WRONLY);
+    if (fd2 == -1)
+        return -1;
+    
+    dup2(fd2, fd);
+    close(fd2);
+        
+    dev->sysfs_inject=1;
+    return 0; 
+}             
+
+static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
+		   uchar *mac)
+{
+    struct ifreq ifr;
+    struct packet_mreq mr;
+    struct sockaddr_ll sll;
+
+    /* find the interface index */
+
+    memset( &ifr, 0, sizeof( ifr ) );
+    strncpy( ifr.ifr_name, iface, sizeof( ifr.ifr_name ) - 1 );
+
+    if( ioctl( fd, SIOCGIFINDEX, &ifr ) < 0 )
+    {          
+        printf("Interface %s: \n", iface);
+        perror( "ioctl(SIOCGIFINDEX) failed" );
+        return( 1 );
+    }
+               
+    /* bind the raw socket to the interface */
+               
+    memset( &sll, 0, sizeof( sll ) );
+    sll.sll_family   = AF_PACKET;
+    sll.sll_ifindex  = ifr.ifr_ifindex;
+
+    if( dev->is_wlanng )
+        sll.sll_protocol = htons( ETH_P_80211_RAW );
+    else
+        sll.sll_protocol = htons( ETH_P_ALL );
+
+    if( bind( fd, (struct sockaddr *) &sll,
+              sizeof( sll ) ) < 0 )
+    {   
+        printf("Interface %s: \n", iface);
+        perror( "bind(ETH_P_ALL) failed" );
+        return( 1 );
+    }
+    
+    /* lookup the hardware type */
+
+    if( ioctl( fd, SIOCGIFHWADDR, &ifr ) < 0 )
+    {   
+        printf("Interface %s: \n", iface);
+        perror( "ioctl(SIOCGIFHWADDR) failed" );
+        return( 1 );
+    }
+    
+    memcpy( mac, (unsigned char*)ifr.ifr_hwaddr.sa_data, 6);
+
+    if( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
+        ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
+        ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL )
+    {           
+                /* try sysfs instead (ipw2200) */
+                if (opensysfs(dev, iface, fd) == 0)
+            return 0;
+
+        if( ifr.ifr_hwaddr.sa_family == 1 )
+            fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
+        else
+            fprintf( stderr, "\nUnsupported hardware link type %4d ",
+                     ifr.ifr_hwaddr.sa_family );
+
+        fprintf( stderr, "- expected ARPHRD_IEEE80211\nor ARPHRD_IEEE8021"
+                         "1_PRISM instead.  Make sure RFMON is enabled:\n"
+                         "run 'ifconfig %s up; iwconfig %s mode Monitor "
+                         "channel <#>'\nSysfs injection support was not "
+                         "found either.\n\n", iface, iface );
+        return( 1 );
+    }
+    
+    *arptype = ifr.ifr_hwaddr.sa_family;
+
+    /* enable promiscuous mode */
+
+    memset( &mr, 0, sizeof( mr ) );
+    mr.mr_ifindex = sll.sll_ifindex;
+    mr.mr_type    = PACKET_MR_PROMISC;
+
+    if( setsockopt( fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
+                    &mr, sizeof( mr ) ) < 0 )
+    {   
+        perror( "setsockopt(PACKET_MR_PROMISC) failed" );
+        return( 1 );
+    }
+
+    return( 0 );
+}
+
+static int do_linux_open(struct wif *wi, char *iface)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    char *iwpriv;
+    char strbuf[512];
+    FILE *f;
+    char athXraw[] = "athXraw";
+    pid_t pid;
+    int n;
+
+    dev->interface = strdup(iface);
+
+    /* open raw socks */
+    if( ( dev->fd_in = socket( PF_PACKET, SOCK_RAW,
+                              htons( ETH_P_ALL ) ) ) < 0 )
+    {
+        perror( "socket(PF_PACKET) failed" );
+        if( getuid() != 0 )
+            fprintf( stderr, "This program requires root privileges.\n" );
+        return( 1 );
+    }
+
+        /* Check iwpriv existence */
+
+        iwpriv = wiToolsPath("iwpriv");
+	dev->iwpriv = iwpriv;
+	dev->iwconfig = wiToolsPath("iwconfig");
+
+    if (! iwpriv )
+        {       
+                fprintf(stderr, "Can't find wireless tools, exiting.\n");
+		goto close_in;
+        }
+        
+        /* Exit if ndiswrapper : check iwpriv ndis_reset */
+       
+        if ( is_ndiswrapper(iface, iwpriv ) )
+        {
+                fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
+                goto close_in;
+        }
+
+    if( ( dev->fd_out = socket( PF_PACKET, SOCK_RAW,
+                               htons( ETH_P_ALL ) ) ) < 0 )
+    {
+        perror( "socket(PF_PACKET) failed" );
+        goto close_in;
+    }
+    /* figure out device type */
+
+    /* check if wlan-ng or hostap or r8180 */
+    if( strlen(iface) == 5 &&
+        memcmp(iface, "wlan", 4 ) == 0 )
+    {   
+        memset( strbuf, 0, sizeof( strbuf ) );
+        snprintf( strbuf,  sizeof( strbuf ) - 1,
+                  "wlancfg show %s 2>/dev/null | "
+                  "grep p2CnfWEPFlags >/dev/null",
+                  iface);
+
+        if( system( strbuf ) == 0 )
+            dev->is_wlanng = 1;
+
+        memset( strbuf, 0, sizeof( strbuf ) );
+        snprintf( strbuf,  sizeof( strbuf ) - 1,
+                  "iwpriv %s 2>/dev/null | "
+                  "grep antsel_rx >/dev/null",
+                  iface);
+
+        if( system( strbuf ) == 0 )
+            dev->is_hostap = 1;
+    }
+
+    /* enable injection on ralink */
+
+    if( strcmp( iface, "ra0" ) == 0 ||
+        strcmp( iface, "ra1" ) == 0 ||
+        strcmp( iface, "rausb0" ) == 0 ||
+        strcmp( iface, "rausb1" ) == 0 )
+    {   
+        memset( strbuf, 0, sizeof( strbuf ) );
+        snprintf( strbuf,  sizeof( strbuf ) - 1,
+                  "iwpriv %s rfmontx 1 >/dev/null 2>/dev/null",
+                  iface );
+        system( strbuf );
+    }
+
+    /* check if newer athXraw interface available */
+                           
+    if( ( strlen( iface ) == 4 || strlen( iface ) == 5 )
+        && memcmp( iface, "ath", 3 ) == 0 )
+    {
+        dev->is_madwifi = 1;
+        memset( strbuf, 0, sizeof( strbuf ) );
+
+        snprintf(strbuf, sizeof( strbuf ) -1,
+                  "/proc/sys/net/%s/%%parent", iface);
+
+        f = fopen(strbuf, "r");
+
+        if (f != NULL)
+        {
+            // It is madwifi-ng
+            dev->is_madwifing = 1;
+            fclose( f );
+
+            /* should we force prism2 header? */
+            /*
+            sprintf((char *) buffer, "/proc/sys/net/%s/dev_type", iface);
+            f = fopen( (char *) buffer,"w");
+            if (f != NULL) {
+                fprintf(f, "802\n");
+                fclose(f);
+            }
+            */
+            /* Force prism2 header on madwifi-ng */
+        }
+        else
+        {
+            // Madwifi-old
+            memset( strbuf, 0, sizeof( strbuf ) );
+            snprintf( strbuf,  sizeof( strbuf ) - 1,
+                      "sysctl -w dev.%s.rawdev=1 >/dev/null 2>/dev/null",
+                      iface );
+
+            if( system( strbuf ) == 0 )
+            {
+
+                athXraw[3] = iface[3];
+
+                memset( strbuf, 0, sizeof( strbuf ) );
+                snprintf( strbuf,  sizeof( strbuf ) - 1,
+                          "ifconfig %s up", athXraw );
+                system( strbuf );
+
+#if 0 /* some people reported problems when prismheader is enabled */
+                memset( strbuf, 0, sizeof( strbuf ) );
+                snprintf( strbuf,  sizeof( strbuf ) - 1,
+                         "sysctl -w dev.%s.rawdev_type=1 >/dev/null 2>/dev/null",
+                         iface );
+                system( strbuf );
+#endif
+
+                iface = athXraw;
+            }
+        }
+    }
+
+    /* open the replay interface */
+    dev->is_madwifi = ( memcmp(iface, "ath", 3 ) == 0 );
+
+    /* test if orinoco */
+
+    if( memcmp( iface, "eth", 3 ) == 0 )
+    {         
+        if( ( pid = fork() ) == 0 )
+        {     
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execlp( "iwpriv", "iwpriv", iface, "get_port3", NULL );
+            exit( 1 );
+        }
+              
+        waitpid( pid, &n, 0 );
+              
+        if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
+            dev->is_orinoco = 1;
+    }
+
+    /* test if zd1211rw */
+
+    if( memcmp( iface, "eth", 3 ) == 0 )
+    {   
+        if( ( pid = fork() ) == 0 )
+        {   
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execlp( "iwpriv", "iwpriv", iface, "get_regdomain", NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &n, 0 );
+
+        if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
+            dev->is_zd1211rw = 1;
+    }
+
+    if (openraw(dev, iface, dev->fd_out, &dev->arptype_out, dev->mac_out)
+	!= 0) {
+	goto close_out;
+    }
+
+    dev->fd_in = dev->fd_out;
+    dev->arptype_in = dev->arptype_out;
+    memcpy( dev->mac_in, dev->mac_out, 6);
+
+    return 0;
+close_in:
+    close(dev->fd_in);
+    return 1;
+close_out:
+    close(dev->fd_out);
+    goto close_in;
+}
+
+static void do_free(struct wif *wi)
+{
+	struct priv_linux *pl = wi_priv(wi);
+
+	if (pl->interface)
+		free(pl->interface);
+	free(pl);
+	free(wi);
+}
+
+static void linux_close(struct wif *wi)
+{
+	struct priv_linux *pl = wi_priv(wi);
+
+	if (pl->fd_in)
+		close(pl->fd_in);
+	if (pl->fd_out)
+		close(pl->fd_out);
+
+	do_free(wi);
+}
+
+static int linux_fd(struct wif *wi)
+{
+	struct priv_linux *pl = wi_priv(wi);
+
+	return pl->fd_in;
+}
+
+static struct wif *linux_open(char *iface)
+{
+	struct wif *wi;
+	struct priv_linux *pl;
+
+	wi = wi_alloc(sizeof(*pl));
+	if (!wi)
+		return NULL;
+        wi->wi_read             = linux_read;
+        wi->wi_write            = linux_write;
+        wi->wi_set_channel      = linux_set_channel;
+        wi->wi_close            = linux_close;
+	wi->wi_fd		= linux_fd;
+
+	if (do_linux_open(wi, iface)) {
+		do_free(wi);
+		return NULL;
+	}
+
+	return wi;
+}
+
+struct wif *wi_open(char *iface)
+{
+	return linux_open(iface);
+}
+
+int get_battery_state(void)
+{
+    char buf[128];
+    int batteryTime = 0;
+    FILE *apm;
+    int flag;
+    char units[32];
+    int ret;
+    static int linux_apm = 1;
+    static int linux_acpi = 1;
+
+    if (linux_apm == 1)
+    {   
+        if ((apm = fopen("/proc/apm", "r")) != NULL ) {
+            if ( fgets(buf, 128,apm) != NULL ) {
+                int charging, ac;
+                fclose(apm);
+
+                ret = sscanf(buf, "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n", &ac,
+                                                        &charging, &flag, &batteryTime, units);
+
+                                if(!ret) return 0;
+
+                if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1 && batteryTime != -1) {
+                    if (!strncmp(units, "min", 32))
+                        batteryTime *= 60;
+                }
+                else return 0;
+                linux_acpi = 0;
+                return batteryTime;
+            }
+        }
+        linux_apm = 0;
+    }
+    if (linux_acpi && !linux_apm)
+    {
+        DIR *batteries, *ac_adapters;
+        struct dirent *this_battery, *this_adapter;
+        FILE *acpi, *info;
+        char battery_state[128];
+        char battery_info[128];
+        int rate = 1, remain = 0, current = 0;
+        static int total_remain = 0, total_cap = 0;
+        int batno = 0;
+        static int info_timer = 0;
+        int batt_full_capacity[3];
+        linux_apm=0;
+        linux_acpi=1;
+        ac_adapters = opendir("/proc/acpi/ac_adapter");
+        if ( ac_adapters == NULL )
+            return 0;
+
+        while (ac_adapters != NULL && ((this_adapter = readdir(ac_adapters)) != NULL)) {
+            if (this_adapter->d_name[0] == '.')
+                continue;
+            /* safe overloaded use of battery_state path var */
+            snprintf(battery_state, sizeof(battery_state),
+                "/proc/acpi/ac_adapter/%s/state", this_adapter->d_name);
+            if ((acpi = fopen(battery_state, "r")) == NULL)
+                continue;
+            if (acpi != NULL) {
+                while(fgets(buf, 128, acpi)) {
+                    if (strstr(buf, "on-line") != NULL) {
+                        fclose(acpi);
+                        if (ac_adapters != NULL)
+                            closedir(ac_adapters);
+                        return 0;
+                    }
+                }
+                fclose(acpi);
+            }
+        }
+        if (ac_adapters != NULL)
+            closedir(ac_adapters);
+
+        batteries = opendir("/proc/acpi/battery");
+
+        if (batteries == NULL) {
+            closedir(batteries);
+            return 0;
+        }
+
+        while (batteries != NULL && ((this_battery = readdir(batteries)) != NULL)) {
+            if (this_battery->d_name[0] == '.')
+                continue;
+
+            snprintf(battery_info, sizeof(battery_info), "/proc/acpi/battery/%s/info", this_battery->d_name);
+            info = fopen(battery_info, "r");
+            batt_full_capacity[batno] = 0;
+            if ( info != NULL ) {
+                while (fgets(buf, sizeof(buf), info) != NULL)
+                    if (sscanf(buf, "last full capacity:      %d mWh", &batt_full_capacity[batno]) == 1)
+                        continue;
+                fclose(info);
+            }
+
+
+            snprintf(battery_state, sizeof(battery_state),
+                "/proc/acpi/battery/%s/state", this_battery->d_name);
+            if ((acpi = fopen(battery_state, "r")) == NULL)
+                continue;
+            while (fgets(buf, 128, acpi)) {
+                if (strncmp(buf, "present:", 8 ) == 0) {
+                                /* No information for this battery */
+                    if (strstr(buf, "no" ))
+                        continue;
+                }
+                else if (strncmp(buf, "charging state:", 15) == 0) {
+                                /* the space makes it different than discharging */
+                    if (strstr(buf, " charging" )) {
+                        fclose( acpi );
+                        return 0;
+                    }
+                }
+                else if (strncmp(buf, "present rate:", 13) == 0)
+                    rate = atoi(buf + 25);
+                else if (strncmp(buf, "remaining capacity:", 19) == 0) {
+                    remain = atoi(buf + 25);
+                    total_remain += remain;
+                }
+                else if (strncmp(buf, "present voltage:", 17) == 0)
+                    current = atoi(buf + 25);
+            }
+            total_cap += batt_full_capacity[batno];
+            fclose(acpi);
+            batteryTime += (int) (( ((float)remain) /rate ) * 3600);
+            batno++;
+        }
+        info_timer++;
+
+        if (batteries != NULL)
+            closedir(batteries);
+    }
+    return batteryTime;
+}
