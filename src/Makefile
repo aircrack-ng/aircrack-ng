@@ -11,8 +11,11 @@ SBINFILES       = aireplay-ng airodump-ng airtun-ng
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
-SRC_AC		= aircrack-ng.c crypto.c sha1-mmx.S common.c
-OBJS_AC		= aircrack-ng.o crypto.o sha1-mmx.o common.o
+SRC_PTW		= aircrack-ptw-lib.c
+SRC_AC		= aircrack-ng.c crypto.c sha1-mmx.S common.c $(SRC_PTW)
+OBJS_PTW	= aircrack-ptw-lib.o
+OBJS_AC		= aircrack-ng.o crypto.o sha1-mmx.o common.o $(OBJS_PTW)
+
 OBJS_AD		= airdecap-ng.o crypto.o common.o crc.o
 OBJS_PF		= packetforge-ng.o common.o crc.o
 OBJS_AR		= aireplay-ng.o common.o crc.o
