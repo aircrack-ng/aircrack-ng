@@ -2,6 +2,7 @@
  *  802.11 WEP network connection tunneling
  *  based on aireplay-ng
  *
+ *  Copyright (C) 2006,2007 Thomas d'Otreppe
  *  Copyright (C) 2006,2007 Martin Beck
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -82,7 +83,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 char usage[] =
 "\n"
-"  %s - (C) 2006 Thomas d'Otreppe\n"
+"  %s - (C) 2006,2007 Thomas d'Otreppe\n"
 "  Original work: Christophe Devine and Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -194,22 +195,22 @@ int is_filtered_netmask(uchar *bssid)
 }
 
 int send_packet(void *buf, size_t count)
-{       
+{
         struct wif *wi = _wi_out; /* XXX globals suck */
         if (wi_write(wi, buf, count, NULL) == -1) {
                 perror("wi_write()");
                 return -1;
         }
-        
+
         nb_pkt_sent++;
         return 0;
 }
-    
+
 int read_packet(void *buf, size_t count)
-{       
+{
         struct wif *wi = _wi_in; /* XXX */
         int rc;
-        
+
         rc = wi_read(wi, buf, count, NULL);
         if (rc == -1) {
                 perror("wi_read()");
@@ -869,9 +870,9 @@ int main( int argc, char *argv[] )
                 }
                 opt.s_file = optarg;
                 break;
-                
-            case 'H' : 
-            
+
+            case 'H' :
+
             	printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
             	return( 1 );
 
@@ -962,14 +963,14 @@ usage:
 
     /* open the packet source */
     if( opt.s_face != NULL )
-    {   
+    {
         _wi_in = wi_open(opt.s_face);
         if (!_wi_in)
             return 1;
         dev.fd_in = wi_fd(_wi_in);
     }
     else
-    {   
+    {
         _wi_in = _wi_out;
         dev.fd_in = dev.fd_out;
     }

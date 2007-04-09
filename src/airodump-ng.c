@@ -2,7 +2,7 @@
  *  pcap-compatible 802.11 packet sniffer
  *
  *  Copyright (C) 2006,2007 Thomas d'Otreppe
- *  Copyright (C) 2004,2005  Christophe Devine
+ *  Copyright (C) 2004,2005 Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -394,7 +394,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
 char usage[] =
 
 "\n"
-"  %s - (C) 2006 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -2620,7 +2620,7 @@ int main( int argc, char *argv[] )
     unsigned char      buffer[4096];
     unsigned char      *h80211;
     char               *iface[MAX_CARDS];
-    
+
     struct timeval     tv0;
     struct timeval     tv1;
     struct timeval     tv2;

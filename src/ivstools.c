@@ -32,7 +32,7 @@ extern char * getVersion(char * progname, int maj, int min, int submin, int svnr
 
 void usage(int what)
 {
-       printf("\n  %s - (C) 2006 Thomas d\'Otreppe\n"
+       printf("\n  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
               "  Original work: Christophe Devine\n"
               "  http://www.aircrack-ng.org\n"
               "\n   usage: ", getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION));

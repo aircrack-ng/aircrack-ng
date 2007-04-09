@@ -96,7 +96,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 char usage[] =
 
 "\n"
-"  %s - (C) 2006 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -3078,7 +3078,7 @@ int do_attack_fragment()
                         fflush( stdout );
                         ret=0;
                         while(!ret) ret = scanf( "%s", tmpbuf );
-                        
+
                         printf( "\n" );
 
                         if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
@@ -3117,7 +3117,7 @@ int do_attack_fragment()
         }
 
         lt = localtime( (const time_t *) &tv.tv_sec );
-        
+
         memset( strbuf, 0, sizeof( strbuf ) );
         snprintf( strbuf,  sizeof( strbuf ) - 1,
                   "fragment-%02d%02d-%02d%02d%02d.xor",
@@ -3555,7 +3555,7 @@ int main( int argc, char *argv[] )
                 opt.a_mode = 5;
                 break;
 
-            case 'H' : 
+            case 'H' :
 
                 printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
                 return( 1 );
@@ -3563,7 +3563,7 @@ int main( int argc, char *argv[] )
             default : goto usage;
         }
     }
-    
+
     if( argc - optind != 1 )
     {
     	if(argc == 1)

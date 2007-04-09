@@ -113,7 +113,7 @@ const short Sbox[2][256]=
 char usage[] =
 
 "\n"
-"  %s - (C) 2006 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -580,15 +580,15 @@ int main( int argc, char *argv[] )
         switch( option )
         {
         	case ':' :
-        	
+
 	    		printf("\"%s --help\" for help.\n", argv[0]);
         		return( 1 );
-        		
+
         	case '?' :
-        	
+
 	    		printf("\"%s --help\" for help.\n", argv[0]);
         		return( 1 );
-        		
+
             case 'l' :
 
                 opt.no_convert = 1;
@@ -760,9 +760,9 @@ int main( int argc, char *argv[] )
                 opt.weplen = i;
 
                 break;
-                
+
             case 'H' :
-            
+
             	printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
             	return( 1 );
 

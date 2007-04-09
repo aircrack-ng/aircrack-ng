@@ -285,7 +285,7 @@ const uchar R[256] =
 
 char usage[] =
 "\n"
-"  %s - (C) 2006 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -402,11 +402,11 @@ int atomic_read( read_buf *rb, int fd, int len, void *buf )
 }
 
 static int is_arp(void *wh, int len)
-{       
+{
         int arpsize = 8 + 8 + 10*2;
 
 	/* XXX check if broadcast to increase probability of correctness in some
-	 * cases? 
+	 * cases?
 	 */
 	if (wh) {}
 
@@ -417,39 +417,39 @@ static int is_arp(void *wh, int len)
 }
 
 static void *get_da(unsigned char *wh)
-{        
-        if (wh[1] & IEEE80211_FC1_DIR_FROMDS) 
+{
+        if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
                 return wh + 4;
-        else    
+        else
                 return wh + 4 + 6*2;
 }
 
 static void *get_sa(unsigned char *wh)
-{       
+{
         if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
                 return wh + 4 + 6*2;
-        else    
+        else
                 return wh + 4 + 6;
 }
 
 static int known_clear(void *clear, unsigned char *wh, int len)
-{       
+{
         unsigned char *ptr = clear;
 
         /* IP */
         if (!is_arp(wh, len)) {
                 unsigned short iplen = htons(len - 8);
-    
+
 //                printf("Assuming IP %d\n", len);
-                
+
                 len = sizeof(S_LLC_SNAP_IP) - 1;
                 memcpy(ptr, S_LLC_SNAP_IP, len);
                 ptr += len;
-#if 1                  
+#if 1
                 len = 2;
                 memcpy(ptr, "\x45\x00", len);
                 ptr += len;
-                
+
                 memcpy(ptr, &iplen, len);
                 ptr += len;
 #endif
@@ -943,7 +943,7 @@ void read_thread( void *arg )
 					goto unlock_mx_apl;
 				for (i = 0; i < 16; i++)
 					clear[i] ^= body[4+i];
-				
+
 				if (PTW_addsession(ap_cur->ptw, body, clear))
 					ap_cur->nb_ivs++;
 
