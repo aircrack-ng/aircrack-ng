@@ -67,6 +67,8 @@
 #define TEST_MIN_IVS	4
 #define TEST_MAX_IVS	32
 
+#define PTW_TRY_STEP    5000
+
 #define SWAP(x,y) { uchar tmp = x; x = y; y = tmp; }
 
 #ifdef __i386__
@@ -167,6 +169,8 @@ struct options
 	int probability;			/* %of correct answers */
 	int votes[N_ATTACKS];			/* votes for korek attacks */
 	int brutebytes[64];			/* bytes to bruteforce */
+
+        int next_ptw_try;
 }
 
 opt;
@@ -3103,6 +3107,7 @@ int main( int argc, char *argv[] )
 	opt.do_mt_brute = 1;
 	opt.showASCII   = 0;
 	opt.probability = 51;
+        opt.next_ptw_try= 0;
 
 	while( 1 )
 	{
@@ -3666,10 +3671,21 @@ usage:
 
 		if (opt.do_ptw)
                 {
+                    printf("Attack will be restarted every %d captured ivs.\n", PTW_TRY_STEP);
+                    opt.next_ptw_try = ap_cur->nb_ivs - (ap_cur->nb_ivs % PTW_TRY_STEP);
                     do
                     {
-                        printf("Starting ptw attack with %ld ivs.\n", ap_cur->nb_ivs);
-			ret = crack_wep_ptw(ap_cur);
+                        if(ap_cur->nb_ivs >= opt.next_ptw_try)
+                        {
+                            printf("Starting ptw attack with %ld ivs.\n", ap_cur->nb_ivs);
+                            ret = crack_wep_ptw(ap_cur);
+                            if(ret)
+                            {
+                                opt.next_ptw_try += PTW_TRY_STEP;
+                            }
+                        }
+                        if(ret)
+                            usleep(10000);
                     }while(ret != 0);
                 }
 		else if(opt.dict != NULL)
