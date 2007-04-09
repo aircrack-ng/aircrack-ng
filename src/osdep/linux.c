@@ -66,10 +66,11 @@ struct priv_linux {
     struct pcap_file_header pfh_in;
 
     int sysfs_inject;
-    char * wlanctlng; /* XXX never set */
+    char *wlanctlng; /* XXX never set */
     char *iwpriv;
     char *iwconfig;
     char *interface;
+    char *wl;
 };
 
 #ifndef ETH_P_80211_RAW
@@ -302,13 +303,75 @@ static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
     fd2 = open(buf, O_WRONLY);
     if (fd2 == -1)
         return -1;
-    
+
     dup2(fd2, fd);
     close(fd2);
-        
+
     dev->sysfs_inject=1;
-    return 0; 
-}             
+    return 0;
+}
+
+int set_monitor( struct priv_linux *dev, char *iface, int fd )
+{
+    int pid, status;
+    struct iwreq wrq;
+
+    if( strcmp(iface,"prism0") == 0 )
+    {
+        dev->wl = wiToolsPath("wl");
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execl( dev->wl, "wl", "monitor", "1", NULL);
+            exit( 1 );
+        }
+        waitpid( pid, &status, 0 );
+        if( WIFEXITED(status) )
+            return( WEXITSTATUS(status) );
+        return( 1 );
+    }
+    else if (strncmp(iface, "rtap", 4) == 0 )
+    {
+        return 0;
+    }
+    else
+    {
+        if( dev->is_wlanng )
+        {
+//            snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
+            if( ( pid = fork() ) == 0 )
+            {
+                close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+                execl( dev->wlanctlng, "wlanctl-ng", iface,
+                        "lnxreq_wlansniff", "enable=true",
+                        "prismheader=true", "wlanheader=false",
+                        "stripfcs=true", "keepwepflags=true",
+                        "6", NULL );
+                exit( 1 );
+            }
+
+            waitpid( pid, &status, 0 );
+
+            if( WIFEXITED(status) )
+                return( WEXITSTATUS(status) );
+            return( 1 );
+        }
+
+        memset( &wrq, 0, sizeof( struct iwreq ) );
+        strncpy( wrq.ifr_name, iface, IFNAMSIZ );
+        wrq.u.mode = IW_MODE_MONITOR;
+
+        if( ioctl( fd, SIOCSIWMODE, &wrq ) < 0 )
+        {
+            perror( "ioctl(SIOCSIWMODE) failed" );
+            return( 1 );
+        }
+
+    }
+
+    return( 0 );
+}
+
 
 static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
 		   uchar *mac)
@@ -323,14 +386,14 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     strncpy( ifr.ifr_name, iface, sizeof( ifr.ifr_name ) - 1 );
 
     if( ioctl( fd, SIOCGIFINDEX, &ifr ) < 0 )
-    {          
+    {
         printf("Interface %s: \n", iface);
         perror( "ioctl(SIOCGIFINDEX) failed" );
         return( 1 );
     }
-               
+
     /* bind the raw socket to the interface */
-               
+
     memset( &sll, 0, sizeof( sll ) );
     sll.sll_family   = AF_PACKET;
     sll.sll_ifindex  = ifr.ifr_ifindex;
@@ -342,27 +405,56 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
 
     if( bind( fd, (struct sockaddr *) &sll,
               sizeof( sll ) ) < 0 )
-    {   
+    {
         printf("Interface %s: \n", iface);
         perror( "bind(ETH_P_ALL) failed" );
         return( 1 );
     }
-    
+
     /* lookup the hardware type */
 
     if( ioctl( fd, SIOCGIFHWADDR, &ifr ) < 0 )
-    {   
+    {
         printf("Interface %s: \n", iface);
         perror( "ioctl(SIOCGIFHWADDR) failed" );
         return( 1 );
     }
-    
+
+    if( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
+        ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
+        ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL )
+    {
+        if (set_monitor( dev, iface, fd ))
+        {
+            printf("Error setting monitor mode on %s\n",iface);
+            return( 1 );
+        }
+    }
+
+    /* Bring interface up*/
+    ifr.ifr_flags = IFF_UP | IFF_BROADCAST | IFF_RUNNING;
+
+    if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
+    {
+        perror( "ioctl(SIOCSIFFLAGS) failed" );
+        return( 1 );
+    }
+
+    /* lookup the hardware type */
+
+    if( ioctl( fd, SIOCGIFHWADDR, &ifr ) < 0 )
+    {
+        printf("Interface %s: \n", iface);
+        perror( "ioctl(SIOCGIFHWADDR) failed" );
+        return( 1 );
+    }
+
     memcpy( mac, (unsigned char*)ifr.ifr_hwaddr.sa_data, 6);
 
     if( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL )
-    {           
+    {
                 /* try sysfs instead (ipw2200) */
                 if (opensysfs(dev, iface, fd) == 0)
             return 0;
@@ -380,7 +472,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
                          "found either.\n\n", iface, iface );
         return( 1 );
     }
-    
+
     *arptype = ifr.ifr_hwaddr.sa_family;
 
     /* enable promiscuous mode */
@@ -391,7 +483,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
 
     if( setsockopt( fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
                     &mr, sizeof( mr ) ) < 0 )
-    {   
+    {
         perror( "setsockopt(PACKET_MR_PROMISC) failed" );
         return( 1 );
     }

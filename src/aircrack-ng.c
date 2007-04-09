@@ -3665,7 +3665,13 @@ usage:
 		memset( &wep, 0, sizeof( wep ) );
 
 		if (opt.do_ptw)
+                {
+                    do
+                    {
+                        printf("Starting ptw attack with %ld ivs.\n", ap_cur->nb_ivs);
 			ret = crack_wep_ptw(ap_cur);
+                    }while(ret != 0);
+                }
 		else if(opt.dict != NULL)
 		{
 			ret = crack_wep_dict();
