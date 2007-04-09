@@ -21,7 +21,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#if !(defined(linux) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(__FreeBSD__) || defined( __FreeBSD_kernel__))
     #warning Aireplay-ng could fail on this OS
 #endif
 
@@ -42,7 +42,7 @@
     #include <linux/wireless.h>
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     #include <sys/param.h>
     #include <sys/sysctl.h>
     #include <sys/uio.h>
@@ -230,7 +230,7 @@ struct devices
     int fd_out, arptype_out;
     int fd_rtc;
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     size_t buf_in, buf_out;
 #endif
 
@@ -352,7 +352,7 @@ int send_packet( void *buf, size_t count )
 }
 #endif /* linux */
 
-#if (defined(__FreeBSD__) && __FreeBSD_version < 700000)
+#if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || (defined(__FreeBSD_kernel__) && __FreeBSD_kernel_version < 700000)
 /*
     FreeBSD 6 at this time does not support injection
     this is a placeholder to keep compilation smooth even
@@ -368,7 +368,7 @@ int send_packet( void *buf, size_t count )
 }
 #endif /* __FreeBSD__ && __FreeBSD_version < 700000 */
 
-#if (defined(__FreeBSD__) && __FreeBSD_version >= 700000)
+#if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || (defined(__FreeBSD_kernel__) && __FreeBSD_kernel_version < 700000)
 /*
     for writing to a bpf we have to append our frame
     to some bpf's own data. writev() seems better
@@ -461,7 +461,7 @@ int read_packet( void *buf, size_t count )
 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 /*
     read a packet, purge bpf and radiotap stuff and
     put it in buf
@@ -1162,7 +1162,7 @@ int do_attack_fake_auth( void )
     "      the transmit rate (iwconfig <iface> rate 1M).\n\n" );
                         return( 1 );
                     }
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
                     if( abort )
                     {
                         printf(
@@ -2423,7 +2423,7 @@ int do_attack_chopchop( void )
 "    * You are too far from the AP. Get closer or reduce the send rate.\n"
 "    * Target is 802.11g only but you are using a Prism2 or RTL8180.\n"
 "    * The wireless interface isn't setup on the correct channel.\n" );
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 "    * You are too far from the AP. Get closer.\n"
 "    * Target is 802.11g only but you are using 802.11b hardware.\n"
 "    * The wireless interface isn't setup on the correct channel.\n" );
@@ -2854,7 +2854,7 @@ int do_attack_chopchop( void )
             time( NULL ) - tt,
             (float) ( pkh.caplen - 6 - z ) /
             (float) ( time( NULL ) - tt  ) );
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
     printf( "\nCompleted in %lds (%0.2f bytes/s)\n\n",
             (long) time( NULL ) - tt,
             (float) ( pkh.caplen - 6 - z ) /
@@ -3524,7 +3524,7 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 /* interface initialization routine */
 
 int openraw( char *name, int *fd, int *buf, int inout )
@@ -3814,17 +3814,14 @@ int main( int argc, char *argv[] )
     opt.ghost     =  0; opt.npackets    = -1;
     opt.delay     = 15;
 
-#if defined(__FreeBSD__)
+#if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || (defined(__FreeBSD_kernel__) && __FreeBSD_kernel_version < 700000)
     /*
         check what is our FreeBSD version. injection works
         only on 7-CURRENT so abort if it's a lower version.
     */
-    if( __FreeBSD_version < 700000 )
-    {
-        fprintf( stderr, "Aireplay-ng does not work on this "
-            "release of FreeBSD.\n" );
-        exit( 1 );
-    }
+    fprintf( stderr, "Aireplay-ng does not work on this "
+        "release of FreeBSD.\n" );
+    exit( 1 );
 #endif
 
     while( 1 )
@@ -4461,7 +4458,7 @@ usage:
     if( openraw( argv[optind], dev.fd_out, &dev.arptype_out, dev.mac_out ) != 0 )
         return( 1 );
 
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 
     if( openraw( argv[optind], &dev.fd_out, &dev.buf_out, 1 ) != 0 )
         return( 1 );
@@ -4491,7 +4488,7 @@ usage:
         return( 1 );
     }
 
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 
     if( opt.s_face != NULL )
     {

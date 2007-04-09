@@ -19,7 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#if !(defined(linux) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(__FreeBSD__) || defined( __FreeBSD_kernel__))
     #warning Airodump-ng could fail on this OS
 #endif
 
@@ -36,7 +36,7 @@
     #include <linux/wireless.h>
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     #include <sys/sysctl.h>
     #include <net/bpf.h>
     #include <net/if.h>
@@ -285,7 +285,7 @@ struct globals
     char * wlanctlng;
     char * wl;
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     int s_ioctl;
 #endif
 
@@ -1757,7 +1757,7 @@ int getBatteryState()
             closedir(batteries);
     }
     return batteryTime;
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     int value;
     size_t len;
 
@@ -2599,7 +2599,7 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
 /*
     this function, as a few others, presents a slightly
     reduced set of parameters, because we don't need some
@@ -2709,7 +2709,7 @@ int set_monitor( char *interface, int fd_raw, int cardnum )
 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
 /*
     this function, as a few others, presents a slightly
     reduced set of parameters, because we don't need some
@@ -2999,7 +2999,7 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
 /*
     this function, as a few others, presents a slightly
     reduced set of parameters, because we don't need some
@@ -3443,7 +3443,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
 /*
     this function, as a few others, presents a slightly
     reduced set of parameters, because we don't need some
@@ -3525,7 +3525,7 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct pa
 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
 /*
     this function, as a few others, presents a slightly
     reduced set of parameters, because we don't need some
@@ -3606,7 +3606,7 @@ int main( int argc, char *argv[] )
     int freq [2];
     time_t tt1, tt2, tt3, start_time;
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     int j, k;
     char *bnbuf;
     unsigned int buf;
@@ -3678,13 +3678,13 @@ int main( int argc, char *argv[] )
     G.update_s     =  0;
     memset(G.sharedkey, '\x00', 512*3);
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     G.s_ioctl = -1;
 #endif
 
     gettimeofday( &tv0, NULL );
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     /* cast to accomodate a warning on FreeBSD 6-stable */
     lt = localtime( (time_t *) &tv0.tv_sec );
 #else
@@ -4017,7 +4017,7 @@ usage:
     }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     /*
 	since under FreeBSD the socktype PF_PACKET is not available
 	we have to read our frames from a BPF, with a few consequences
@@ -4095,7 +4095,7 @@ usage:
     /* initialize cards */
 #if defined(linux)
     cards = init_cards(argv[argc-1], iface, ifr, mr, sll, fd_raw, arptype);
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     cards = init_cards(argv[argc-1], iface, ifr, fd_raw);
 #endif
 
@@ -4118,7 +4118,7 @@ usage:
 	{
 #if defined(linux)
             channel_hopper( iface, fd_raw, cards, chan_count );
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
             channel_hopper( iface, cards, chan_count );
 #endif
             exit( 1 );
@@ -4130,7 +4130,7 @@ usage:
 	{
 #if defined(linux)
             set_channel( iface[i], fd_raw[i], G.channel[0], i );
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
             set_channel( iface[i], G.channel[0] );
 #endif
 
@@ -4309,7 +4309,7 @@ usage:
                 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
                 memset( buffer, 0, buflen );
 
 		/* buffer size have to be as big as BPF buffer */
@@ -4390,7 +4390,7 @@ usage:
                 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
 		/*
 		    radiotap under FreeBSD is well defined and decently
 		    supported from any driver that actually can support

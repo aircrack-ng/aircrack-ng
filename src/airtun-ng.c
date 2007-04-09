@@ -19,7 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#if !(defined(linux) || defined(__FreeBSD__))
+#if !(defined(linux) || defined(__FreeBSD__) || defined(__FreeBSD_kernel__))
     #warning Airtun-ng could fail on this OS
 #endif
 
@@ -40,7 +40,7 @@
     #include <linux/wireless.h>
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     #include <sys/param.h>
     #include <sys/sysctl.h>
     #include <sys/uio.h>
@@ -73,7 +73,7 @@
     #include <linux/if_tun.h>
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     #include <net/if_tun.h>
 #endif
 
@@ -915,7 +915,7 @@ int openraw( char *iface, int fd, int *arptype )
 }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
 int openraw(char *name, int fd, int *arptype) {
     int i;
 //    int fd = -1;
@@ -1385,7 +1385,7 @@ usage:
     }
 #endif /* linux */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     for(i = 0;i < 10; i++) {
         sprintf(buf, "/dev/bpf%d", i);
 
@@ -1501,7 +1501,7 @@ usage:
         return -1;
     }
 #endif /* linux */
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     if( ioctl( dev.fd_tap, SIOCGIFFLAGS, (void *)&if_request ) < 0 )
     {
         printf( "error creating tap interface: %s\n", strerror( errno ) );
