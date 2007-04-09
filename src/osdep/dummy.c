@@ -12,6 +12,8 @@
 
 struct wif *wi_open(char *iface)
 {
+	if (iface) {} /* XXX unused parameter */
+
 	errno = EOPNOTSUPP;
 	return NULL;
 }

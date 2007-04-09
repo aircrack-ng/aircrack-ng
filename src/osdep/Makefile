@@ -1,10 +1,12 @@
 ROOT	= ../..
 include $(ROOT)/common.mak
 
-LIB=libosdep.so
+LIB=libosdep.a
 CFLAGS	+= -fPIC -I..
 OBJS=osdep.o
 OS= `uname -s`
+AR=ar
+RANLIB=ranlib
 
 OBJS_FBSD=freebsd.o
 OBJS_LINUX=linux.o
@@ -15,26 +17,26 @@ all:
 	@$(MAKE) .os.$(OS)
 
 .os.dummy: $(OBJS) $(OBJS_DUMMY)
-	$(CC) $(CFLAGS) -shared -o $(LIB) $(OBJS) $(OBJS_DUMMY)
+	$(AR) cru $(LIB) $(OBJS) $(OBJS_DUMMY)
+	$(RANLIB) $(LIB)
 	touch $(@)
 
 .os.FreeBSD: $(OBJS) $(OBJS_FBSD)
-	$(CC) $(CFLAGS) -shared -o $(LIB) $(OBJS) $(OBJS_FBSD)
+	$(AR) cru $(LIB) $(OBJS) $(OBJS_FBSD)
+	$(RANLIB) $(LIB)
 	touch $(@)
 
 .os.Linux: $(OBJS) $(OBJS_LINUX)
-	$(CC) $(CFLAGS) -shared -o $(LIB) $(OBJS) $(OBJS_LINUX)
+	$(AR) cru $(LIB) $(OBJS) $(OBJS_LINUX)
+	$(RANLIB) $(LIB)
 	touch $(@)
 
 .os.%: .os.dummy
 	touch $(@)
 
 install: all
-	install -d $(libdir)
-	install -m 755 $(LIB) $(libdir)
 
 uninstall:
-	-rm -f $(libdir)/$(LIB)
 
 clean:
 	rm -f $(LIB) *.o .os.*
