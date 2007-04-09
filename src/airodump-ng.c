@@ -29,6 +29,10 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
+#ifndef TIOCGWINSZ
+	#include <sys/termios.h>
+#endif
+
 #if defined(linux)
     #include <netpacket/packet.h>
     #include <linux/if_ether.h>
