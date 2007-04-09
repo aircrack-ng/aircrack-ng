@@ -8,17 +8,25 @@ OS= `uname -s`
 
 OBJS_FBSD=freebsd.o
 OBJS_LINUX=linux.o
+OBJS_DUMMY=dummy.o
 
 all:
 	@echo Building for $(OS)
-	@$(MAKE) .$(OS)
+	@$(MAKE) .os.$(OS)
 
-.FreeBSD: $(OBJS) $(OBJS_FBSD)
+.os.dummy: $(OBJS) $(OBJS_DUMMY)
+	$(CC) $(CFLAGS) -shared -o $(LIB) $(OBJS) $(OBJS_DUMMY)
+	touch $(@)
+
+.os.FreeBSD: $(OBJS) $(OBJS_FBSD)
 	$(CC) $(CFLAGS) -shared -o $(LIB) $(OBJS) $(OBJS_FBSD)
 	touch $(@)
 
-.Linux: $(OBJS) $(OBJS_LINUX)
+.os.Linux: $(OBJS) $(OBJS_LINUX)
 	$(CC) $(CFLAGS) -shared -o $(LIB) $(OBJS) $(OBJS_LINUX)
+	touch $(@)
+
+.os.%: .os.dummy
 	touch $(@)
 
 install: all
@@ -29,4 +37,4 @@ uninstall:
 	-rm -f $(libdir)/$(LIB)
 
 clean:
-	rm -f $(LIB) *.o .Linux .FreeBSD
+	rm -f $(LIB) *.o .os.*
