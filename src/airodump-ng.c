@@ -25,6 +25,10 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
+#ifndef TIOCGWINSZ
+	#include <sys/termios.h>
+#endif
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
