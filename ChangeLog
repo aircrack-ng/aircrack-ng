@@ -9,7 +9,6 @@ Version 0.8 (changes from aircrack-ng 0.7) - Released ?? March 2007:
 * airtun-ng: Works on FreeBSD
 * airtun-ng: Fix compilation under FC6 (missing "linux/if.h" include).
 * airodump-ng: Works on BSD.
-* airodump-ng: Added WPA handshake detection
 * airodump-ng: Added encryption filtering
 * airodump-ng: Fixed a SIGSEGV
 * airodump-ng: Added WPA handshake detection
