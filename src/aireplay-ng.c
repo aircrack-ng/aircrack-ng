@@ -368,7 +368,7 @@ int send_packet( void *buf, size_t count )
 }
 #endif /* __FreeBSD__ && __FreeBSD_version < 700000 */
 
-#if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || (defined(__FreeBSD_kernel__) && __FreeBSD_kernel_version < 700000)
+#if (defined(__FreeBSD__) && __FreeBSD_version >= 700000) || (defined(__FreeBSD_kernel__) && __FreeBSD_kernel_version >= 700000)
 /*
     for writing to a bpf we have to append our frame
     to some bpf's own data. writev() seems better
