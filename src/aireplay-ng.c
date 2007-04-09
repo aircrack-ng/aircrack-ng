@@ -126,7 +126,7 @@ extern char * wiToolsPath(const char * tool);
 char usage[] =
 
 "\n"
-"  %s - (C) 2006 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -386,7 +386,7 @@ int send_packet( void *buf, size_t count )
     frame[0].iov_base = &bp;
     frame[0].iov_len = bp.ibp_len;
 
-    frame[1].iov_base = buf; 
+    frame[1].iov_base = buf;
     frame[1].iov_len = count;
 
     ret = writev( dev.fd_out, frame, 2 );
@@ -478,7 +478,7 @@ int read_packet( void *buf, size_t count )
         perror( "calloc() failed" );
         return( -1 );
     }
-	
+
     if( ( caplen = read( dev.fd_in, temp, dev.buf_in ) ) < 0 )
     {
         if( errno == EAGAIN )
@@ -2859,7 +2859,7 @@ int do_attack_chopchop( void )
             (long) time( NULL ) - tt,
             (float) ( pkh.caplen - 6 - z ) /
             (float) ( time( NULL ) - tt  ) );
-#endif 
+#endif
 
     return( 0 );
 }
@@ -3353,7 +3353,7 @@ int do_attack_fragment()
                         fflush( stdout );
                         ret=0;
                         while(!ret) ret = scanf( "%s", tmpbuf );
-                        
+
                         printf( "\n" );
 
                         if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
@@ -3640,8 +3640,8 @@ int openraw( char *name, int *fd, int *buf, int inout )
                 return( 1 );
             }
 
-            /* we should be done */	
-            return( 0 );	
+            /* we should be done */
+            return( 0 );
         }
     }
     else if( ( ( ifmr.ifm_current & IFM_IEEE80211_ADHOC ) != 0 ) &&
@@ -3673,7 +3673,7 @@ int openraw( char *name, int *fd, int *buf, int inout )
                 return( 1 );
             }
 
-            /* we should be done */	
+            /* we should be done */
             return( 0 );
         }
     }
@@ -3701,7 +3701,7 @@ int openraw( char *name, int *fd, int *buf, int inout )
             return( 1 );
         }
 
-        return( 0 );	
+        return( 0 );
 
     }
 
@@ -3763,7 +3763,7 @@ int openraw( char *name, int *fd, int *buf, int inout )
         return( 1 );
     }
 
-    /* set bpf's promiscuous mode */	
+    /* set bpf's promiscuous mode */
     if( ioctl( *fd, BIOCPROMISC, NULL) == -1 )
     {
         perror( "ioctl(BIOCPROMISC) failed" );
@@ -4210,7 +4210,7 @@ int main( int argc, char *argv[] )
                 opt.a_mode = 5;
                 break;
 
-            case 'H' : 
+            case 'H' :
 
                 printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
                 return( 1 );
@@ -4218,7 +4218,7 @@ int main( int argc, char *argv[] )
             default : goto usage;
         }
     }
-    
+
     if( argc - optind != 1 )
     {
     	if(argc == 1)

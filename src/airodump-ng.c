@@ -430,7 +430,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
 char usage[] =
 
 "\n"
-"  %s - (C) 2006 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"

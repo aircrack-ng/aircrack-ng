@@ -63,7 +63,7 @@ extern int add_crc32(unsigned char* data, int length);
 
 char usage[] =
 "\n"
-"  %s - (C) 2006 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine and Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -216,7 +216,7 @@ int capture_ask_packet( int *caplen )
             *caplen -= n;
             memcpy( h80211, tmpbuf + n, *caplen );
         }
-    
+
         nb_pkt_read++;
 
         switch( h80211[1] & 3 )
@@ -920,7 +920,7 @@ int main(int argc, char* argv[])
     int option_index;
     int ret;
     int n;
-    
+
     memset( &opt, 0, sizeof( opt ) );
 
     /* initialise global options */
@@ -1179,7 +1179,7 @@ int main(int argc, char* argv[])
                 break;
 
 			case 'H' :
-			
+
 				print_usage();
 				return( 1 );
 
@@ -1194,7 +1194,7 @@ int main(int argc, char* argv[])
         printf("Please specify a mode.\n");
    		return( 1 );
    	}
-   	
+
     if( opt.raw_file != NULL )
     {
         if( ! ( dev.f_cap_in = fopen( opt.raw_file, "rb" ) ) )
