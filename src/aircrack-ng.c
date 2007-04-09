@@ -450,11 +450,23 @@ static int known_clear(void *clear, unsigned char *wh, int len)
                 memcpy(ptr, S_LLC_SNAP_IP, len);
                 ptr += len;
 #if 1
+                //version=4; header_length=20; services=0
                 len = 2;
                 memcpy(ptr, "\x45\x00", len);
                 ptr += len;
 
+                //ip total length
                 memcpy(ptr, &iplen, len);
+                ptr += len;
+
+                //ID=0
+                len=2;
+                memcpy(ptr, "\x00\x00", len);
+                ptr += len;
+
+                //ip flags=don't fragment
+                len=2;
+                memcpy(ptr, "\x40\x00", len);
                 ptr += len;
 #endif
                 len = ptr - ((unsigned char*)clear);
@@ -3056,9 +3068,9 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 {
 	int len = 0;
 
-	if(PTW_computeKey(ap_cur->ptw, wep.key, 13, KEYLIMIT) == 1)
+	if(PTW_computeKey(ap_cur->ptw, wep.key, 13, (KEYLIMIT*opt.ffact)) == 1)
 		len = 13;
-	else if(PTW_computeKey(ap_cur->ptw, wep.key, 5, KEYLIMIT/10) == 1)
+	else if(PTW_computeKey(ap_cur->ptw, wep.key, 5, (KEYLIMIT*opt.ffact)/10) == 1)
 		len = 5;
 
 	if (!len)
@@ -3656,15 +3668,19 @@ usage:
 
 		if( opt.ffact == 0 )
 		{
-			if( ! opt.do_testy )
-			{
-				if( opt.keylen == 5 )
-					opt.ffact = 5;
+                        if( opt.do_ptw ) opt.ffact = 2;
+                        else
+                        {
+                            if( ! opt.do_testy )
+                            {
+                                if( opt.keylen == 5 )
+                                    opt.ffact = 5;
 				else
-					opt.ffact = 2;
-			}
-			else
-				opt.ffact = 30;
+                                    opt.ffact = 2;
+                            }
+                            else
+                                opt.ffact = 30;
+                        }
 		}
 
 		memset( &wep, 0, sizeof( wep ) );
@@ -3681,6 +3697,7 @@ usage:
                             ret = crack_wep_ptw(ap_cur);
                             if(ret)
                             {
+                                printf("Failed...\n");
                                 opt.next_ptw_try += PTW_TRY_STEP;
                             }
                         }
