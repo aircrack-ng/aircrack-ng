@@ -459,6 +459,12 @@ static int known_clear(void *clear, unsigned char *wh, int len)
                 memcpy(ptr, &iplen, len);
                 ptr += len;
 
+#if 0
+		/* XXX IP ID is not always 0.  Can't use IP packets for PTW,
+		 * unless they are our own.  Can we use them for 40-bit keys
+		 * though [only 3+5 bytes of keystream needed]?  Or for
+		 * calculating only the first 9 bytes of the key?  -sorbo.
+		 */
                 //ID=0
                 len=2;
                 memcpy(ptr, "\x00\x00", len);
@@ -468,6 +474,7 @@ static int known_clear(void *clear, unsigned char *wh, int len)
                 len=2;
                 memcpy(ptr, "\x40\x00", len);
                 ptr += len;
+#endif
 #endif
                 len = ptr - ((unsigned char*)clear);
                 return len;
