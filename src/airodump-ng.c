@@ -1001,7 +1001,6 @@ skip_station:
             {
 //                n = ( p[1] > 32 ) ? 32 : p[1];
                 n = p[1];
-                n &= 0xFF;
 
                 for( i = 0; i < n; i++ )
                     if( p[2 + i] > 0 && p[2 + i] < ' ' )
@@ -1061,7 +1060,6 @@ skip_probe:
 
 //                n = ( p[1] > 32 ) ? 32 : p[1];
                 n = p[1];
-                n &= 0xFF;
 
                 memset( ap_cur->essid, 0, 256 );
                 memcpy( ap_cur->essid, p + 2, n );
