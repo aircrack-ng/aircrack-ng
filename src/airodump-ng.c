@@ -269,7 +269,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
     char prga[512];
     unsigned int long crc;
 
-    if((unsigned)caplen > sizeof(G.sharedkey[0]))) return 1;
+    if((unsigned)caplen > sizeof(G.sharedkey[0])) return 1;
 
     m_bmac = 16;
     m_smac = 10;
