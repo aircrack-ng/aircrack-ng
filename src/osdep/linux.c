@@ -96,28 +96,48 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
     int caplen, n = 0;
 
+    if((unsigned)count > sizeof(tmpbuf))
+        return( -1 );
+
     if( ( caplen = read( dev->fd_in, tmpbuf, count ) ) < 0 )
-    {   
+    {
         if( errno == EAGAIN )
             return( 0 );
 
         perror( "read failed" );
         return( -1 );
     }
-    
+
     if( dev->is_madwifi && !(dev->is_madwifing) )
         caplen -= 4;    /* remove the FCS */
 
     memset( buf, 0, sizeof( buf ) );
 
+    /* XXX */
+    if (ri)
+    	memset(ri, 0, sizeof(*ri));
+
     if( dev->arptype_in == ARPHRD_IEEE80211_PRISM )
     {
         /* skip the prism header */
-
         if( tmpbuf[7] == 0x40 )
-            n = 64;
+        {
+            /* prism54 uses a different format */
+
+            ri->ri_power = tmpbuf[0x33];
+
+            n = 0x40;
+        }
         else
+        {
+            ri->ri_power = *(int *)( tmpbuf + 0x5C );
+
+//            if( ! memcmp( iface[i], "ath", 3 ) )
+            if( dev->is_madwifi )
+                ri->ri_power -= *(int *)( tmpbuf + 0x68 );
+
             n = *(int *)( tmpbuf + 4 );
+        }
 
         if( n < 8 || n >= caplen )
             return( 0 );
@@ -129,6 +149,18 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
         n = *(unsigned short *)( tmpbuf + 2 );
 
+        /* ipw2200 1.0.7 */
+        if( *(int *)( tmpbuf + 4 ) == 0x0000082E )
+            ri->ri_power = tmpbuf[14];
+
+        /* ipw2200 1.2.0 */
+        if( *(int *)( tmpbuf + 4 ) == 0x0000086F )
+            ri->ri_power = tmpbuf[15];
+
+        /* zd1211rw-patched */
+        if(dev->is_zd1211rw && *(int *)( tmpbuf + 4 ) == 0x0000006E )
+            ri->ri_power = tmpbuf[14];
+
         if( n <= 0 || n >= caplen )
             return( 0 );
     }
@@ -136,10 +168,6 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
     caplen -= n;
 
     memcpy( buf, tmpbuf + n, caplen );
-
-    /* XXX */
-    if (ri)
-    	memset(ri, 0, sizeof(*ri));
 
     return( caplen );
 }
@@ -151,6 +179,8 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     unsigned char maddr[6];
     int ret;
     unsigned char tmpbuf[4096];
+
+    if((unsigned) count > sizeof(tmpbuf)-22) return -1;
 
     /* XXX honor ti */
     if (ti) {}
@@ -432,7 +462,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     }
 
     /* Bring interface up*/
-    ifr.ifr_flags = IFF_UP | IFF_BROADCAST | IFF_RUNNING;
+    ifr.ifr_flags |= IFF_UP | IFF_BROADCAST | IFF_RUNNING;
 
     if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
     {
@@ -450,6 +480,8 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     }
 
     memcpy( mac, (unsigned char*)ifr.ifr_hwaddr.sa_data, 6);
+
+    *arptype = ifr.ifr_hwaddr.sa_family;
 
     if( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
@@ -472,8 +504,6 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
                          "found either.\n\n", iface, iface );
         return( 1 );
     }
-
-    *arptype = ifr.ifr_hwaddr.sa_family;
 
     /* enable promiscuous mode */
 

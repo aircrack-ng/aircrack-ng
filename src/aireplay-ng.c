@@ -511,7 +511,7 @@ void wait_for_beacon(uchar *bssid, uchar *capa)
 
     while (1) {
 		len = 0;
-		while (len < 22) len = read_packet(pkt_sniff, 4096);
+		while (len < 22) len = read_packet(pkt_sniff, sizeof(pkt_sniff));
 		if (! memcmp(pkt_sniff, "\x80", 1))
 		{
 		    if (! memcmp(bssid, pkt_sniff+10, 6)) break;
@@ -582,7 +582,8 @@ int fake_ska_auth_1( void )
     //Waiting for response packet containing the challenge
     while (1)
     {
-        caplen = read_packet(sniff, 4096);
+        caplen = read_packet(sniff, sizeof(sniff));
+        if((unsigned)caplen > sizeof(h80211)) continue;
         if (sniff[0] == '\xb0' && sniff[26] == 2)
         {
             got_one = 1;
@@ -622,6 +623,8 @@ int fake_ska_auth_2(uchar *ph80211, int caplen, uchar *prga, uchar *iv)
     uchar packet[4096];
     uchar ack[14] = "\xd4";
 
+    if((unsigned) caplen > sizeof(ska_auth3)) return -1;
+
     ret = 0;
     memset(ack+1, 0, 13);
 
@@ -654,7 +657,7 @@ int fake_ska_auth_2(uchar *ph80211, int caplen, uchar *prga, uchar *iv)
     //Waiting for successful authentication
     while (1)
     {
-        caplen = read_packet(packet, 4096);
+        caplen = read_packet(packet, sizeof(packet));
         if (packet[0] == 0xb0 && (caplen < 60) && packet[26] == 4) break;
 
         gettimeofday(&tv2, NULL);
@@ -713,6 +716,7 @@ int fake_asso()
 
     //Getting ESSID length
     slen = strlen(opt.r_essid);
+    if((unsigned)(slen+46) > sizeof(assoc)) return -1;
 
     //Set tag length
     assoc[29] = (uchar) slen;
@@ -734,7 +738,7 @@ int fake_asso()
     gettimeofday(&tv2, NULL);
     while (1)
     {
-        caplen = read_packet(packet, 4096);
+        caplen = read_packet(packet, sizeof(packet));
 
         if (packet[0] == 0x10) break;
 
@@ -768,10 +772,10 @@ int fake_ska(uchar* prga)
 	caplen = i = 0;
 	ret = -1;
 
-    while(caplen <= 0)
+    while(caplen <= 0 || (unsigned)caplen > sizeof(tmpbuf) )
     {
         caplen = fake_ska_auth_1();
-        if(caplen <=0)
+        if(caplen <=0 || (unsigned)caplen > sizeof(tmpbuf) )
         {
         	PCT; printf("Retrying 1. auth sequence!\n");
         }
@@ -1328,7 +1332,7 @@ int capture_ask_packet( int *caplen )
 
             n = *caplen = pkh.caplen;
 
-            if( n <= 0 || n > (int) sizeof( h80211 ) )
+            if( n <= 0 || n > (int) sizeof( h80211 ) || n > (int) sizeof( tmpbuf ) )
             {
                 printf( "\r\33[KInvalid packet length %d.\n", n );
                 return( 1 );
@@ -1830,7 +1834,7 @@ int do_attack_arp_resend( void )
 
             n = caplen = pkh.caplen;
 
-            if( n <= 0 || n > (int) sizeof( h80211 ) )
+            if( n <= 0 || n > (int) sizeof( h80211 ) || n > (int) sizeof( tmpbuf ) )
             {
                 printf( "\r\33[KInvalid packet length %d.\n", n );
                 opt.s_file = NULL;
@@ -1940,11 +1944,13 @@ add_arp:
             if( i < nb_arp )
                 continue;
 
+            if( caplen > 128)
+                continue;
             /* add the ARP request in the ring buffer */
 
             nb_arp_tot++;
 
-			/* Ring buffer size: by default: 8 ) */
+            /* Ring buffer size: by default: 8 ) */
 
             if( nb_arp >= opt.ringbuffer && opt.ringbuffer > 0)
             {
@@ -2019,6 +2025,9 @@ int do_attack_chopchop( void )
     srand( time( NULL ) );
 
     if( capture_ask_packet( &caplen ) != 0 )
+        return( 1 );
+
+    if( (unsigned)caplen > sizeof(srcbuf) || (unsigned)caplen > sizeof(h80211) )
         return( 1 );
 
     /* Special handling for spanning-tree packets */
@@ -2619,7 +2628,7 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
 {
     int t, u;
     int data_size;
-    uchar frag[30+fragsize];
+    uchar frag[32+fragsize];
     int pack_size;
 
     data_size = packet_len - 24;
@@ -2750,6 +2759,9 @@ int do_attack_fragment()
         if( capture_ask_packet( &caplen ) != 0 )
             return -1;
 
+        if((unsigned)caplen > sizeof(packet) || (unsigned)caplen > sizeof(packet2))
+            continue;
+
         memcpy( packet2, h80211, caplen );
         caplen2 = caplen;
         PCT; printf("Data packet found!\n");
@@ -2797,7 +2809,7 @@ int do_attack_fragment()
 
             while (!gotit)  //waiting for relayed packet
             {
-                caplen = read_packet(packet, 4096);
+                caplen = read_packet(packet, sizeof(packet));
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -2929,7 +2941,7 @@ int do_attack_fragment()
             gotit=0;
             while (!gotit)  //waiting for relayed packet
             {
-                caplen = read_packet(packet, 4096);
+                caplen = read_packet(packet, sizeof(packet));
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -3028,7 +3040,7 @@ int do_attack_fragment()
             gotit=0;
             while (!gotit)  //waiting for relayed packet
             {
-                caplen = read_packet(packet, 4096);
+                caplen = read_packet(packet, sizeof(packet));
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
