@@ -123,18 +123,21 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
         if( tmpbuf[7] == 0x40 )
         {
             /* prism54 uses a different format */
-
-            ri->ri_power = tmpbuf[0x33];
+            if(ri)
+                ri->ri_power = tmpbuf[0x33];
 
             n = 0x40;
         }
         else
         {
-            ri->ri_power = *(int *)( tmpbuf + 0x5C );
+            if(ri)
+            {
+                ri->ri_power = *(int *)( tmpbuf + 0x5C );
 
-//            if( ! memcmp( iface[i], "ath", 3 ) )
-            if( dev->is_madwifi )
-                ri->ri_power -= *(int *)( tmpbuf + 0x68 );
+//                if( ! memcmp( iface[i], "ath", 3 ) )
+                if( dev->is_madwifi )
+                    ri->ri_power -= *(int *)( tmpbuf + 0x68 );
+            }
 
             n = *(int *)( tmpbuf + 4 );
         }
@@ -145,21 +148,26 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
     if( dev->arptype_in == ARPHRD_IEEE80211_FULL )
     {
+        if( tmpbuf[0] != 0 )
+            return 0;
         /* skip the radiotap header */
 
         n = *(unsigned short *)( tmpbuf + 2 );
 
-        /* ipw2200 1.0.7 */
-        if( *(int *)( tmpbuf + 4 ) == 0x0000082E )
-            ri->ri_power = tmpbuf[14];
+        if(ri)
+        {
+            /* ipw2200 1.0.7 */
+            if( *(int *)( tmpbuf + 4 ) == 0x0000082E )
+                ri->ri_power = tmpbuf[14];
 
-        /* ipw2200 1.2.0 */
-        if( *(int *)( tmpbuf + 4 ) == 0x0000086F )
-            ri->ri_power = tmpbuf[15];
+            /* ipw2200 1.2.0 */
+            if( *(int *)( tmpbuf + 4 ) == 0x0000086F )
+                ri->ri_power = tmpbuf[15];
 
-        /* zd1211rw-patched */
-        if(dev->is_zd1211rw && *(int *)( tmpbuf + 4 ) == 0x0000006E )
-            ri->ri_power = tmpbuf[14];
+            /* zd1211rw-patched */
+            if(dev->is_zd1211rw && *(int *)( tmpbuf + 4 ) == 0x0000006E )
+                ri->ri_power = tmpbuf[14];
+        }
 
         if( n <= 0 || n >= caplen )
             return( 0 );

@@ -506,16 +506,17 @@ void wait_for_beacon(uchar *bssid, uchar *capa)
     int len = 0;
     uchar pkt_sniff[4096];
 
-	PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
-				bssid[0],bssid[1],bssid[2],bssid[3],bssid[4],bssid[5]);
+    PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
+                bssid[0],bssid[1],bssid[2],bssid[3],bssid[4],bssid[5]);
 
-    while (1) {
-		len = 0;
-		while (len < 22) len = read_packet(pkt_sniff, sizeof(pkt_sniff));
-		if (! memcmp(pkt_sniff, "\x80", 1))
-		{
-		    if (! memcmp(bssid, pkt_sniff+10, 6)) break;
-		}
+    while (1)
+    {
+        len = 0;
+        while (len < 22) len = read_packet(pkt_sniff, sizeof(pkt_sniff));
+        if (! memcmp(pkt_sniff, "\x80", 1))
+        {
+            if (! memcmp(bssid, pkt_sniff+10, 6)) break;
+        }
     }
 
     memcpy(capa, pkt_sniff+34, 2);
