@@ -86,6 +86,10 @@
 #define RATES           \
     "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 
+#define PROBE_REQ       \
+    "\x40\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"  \
+    "\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
+
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern char * searchInside(const char * dir, const char * filename);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
@@ -150,9 +154,11 @@ char usage[] =
 "      --arpreplay         : standard ARP-request replay (-3)\n"
 "      --chopchop          : decrypt/chopchop WEP packet (-4)\n"
 "      --fragment          : generates valid keystream   (-5)\n"
+"      --test              : tests injection and quality (-9)\n"
 "\n"
 "      --help              : Displays this usage screen\n"
 "\n";
+
 
 struct options
 {
@@ -222,6 +228,16 @@ struct ARP_req
     unsigned char *buf;
     int len;
 };
+
+struct APt
+{
+    unsigned char set;
+    unsigned char found;
+    unsigned char len;
+    unsigned char essid[255];
+};
+
+struct APt ap[20];
 
 unsigned long nb_pkt_sent;
 unsigned char h80211[4096];
@@ -3184,6 +3200,194 @@ int do_attack_fragment()
     return( 0 );
 }
 
+int grab_essid(uchar* packet, int len)
+{
+    int i=0, pos=0, tagtype=0, taglen=0;
+
+    taglen = 22;    //initial value to get the fixed tags parsing started
+    taglen+= 12;    //skip fixed tags in frames
+    do
+    {
+        pos    += taglen + 2;
+        tagtype = packet[pos];
+        taglen  = packet[pos+1];
+    } while(tagtype != 0 && pos < len-2);
+
+    if(tagtype != 0) return -1;
+    if(taglen < 3) return -1;
+    if(taglen > 250) taglen = 250;
+
+    for(i=0; i<20; i++)
+    {
+        if(taglen == ap[i].len)
+        {
+            if( memcmp(packet+pos+2, ap[i].essid, taglen) == 0 )    //got it already
+            {
+                if(packet[0] == 0x50) ap[i].found++;
+                break;
+            }
+        }
+        if(ap[i].set == 0)
+        {
+            ap[i].set = 1;
+            ap[i].len = taglen;
+            memcpy(ap[i].essid, packet+pos+2, taglen);
+            ap[i].essid[taglen] = '\0';
+            if(packet[0] == 0x50) ap[i].found++;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int do_attack_test()
+{
+    uchar packet[4096];
+    struct timeval tv, tv2;
+    int len=0, i=0, j=0, gotit=0, answers=0, caplen=0, found=0;
+
+    srand( time( NULL ) );
+
+    memset(ap, '\0', 20*sizeof(struct APt));
+
+    PCT; printf("Trying broadcast probe requests...\n");
+
+    memcpy(h80211, PROBE_REQ, 24);
+
+    len = 24;
+
+    h80211[24] = 0x00;      //ESSID Tag Number
+    h80211[25] = 0x00;      //ESSID Tag Length
+
+    len += 2;
+
+    memcpy(h80211+len, RATES, 16);
+
+    len += 16;
+
+    for(i=0; i<3; i++)
+    {
+        /*
+            random source so we can identify our packets
+        */
+        opt.r_smac[0] = 0x00;
+        opt.r_smac[1] = rand() & 0xFF;
+        opt.r_smac[2] = rand() & 0xFF;
+        opt.r_smac[3] = rand() & 0xFF;
+        opt.r_smac[4] = rand() & 0xFF;
+        opt.r_smac[5] = rand() & 0xFF;
+
+        memcpy(h80211+10, opt.r_smac, 6);
+
+        send_packet(h80211, len);
+
+        gettimeofday( &tv, NULL );
+
+        gotit=0;
+        while (!gotit)  //waiting for relayed packet
+        {
+            caplen = read_packet(packet, sizeof(packet));
+
+            if (packet[0] == 0x50 ) //Is probe response
+            {
+                if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                {
+                    if(grab_essid(packet, caplen) == 0)
+                    {
+                        answers++;
+                        found++;
+                    }
+                }
+            }
+
+            if (packet[0] == 0x80 ) //Is beacon frame
+            {
+                if(grab_essid(packet, caplen) == 0)
+                    found++;
+            }
+
+            gettimeofday( &tv2, NULL );
+            if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000) && !gotit) //wait 300ms for an answer
+            {
+                break;
+            }
+        }
+    }
+    if(answers > 0)
+    {
+        PCT; printf("Injection is working!\n");
+    }
+    else
+    {
+        PCT; printf("No Answer...\n");
+    }
+
+    PCT; printf("Found %d APs\n", found);
+    for(i=0; i<found; i++)
+    {
+        printf("%s ", ap[i].essid);
+
+        ap[i].found=0;
+        
+        memcpy(h80211, PROBE_REQ, 24);
+    
+        len = 24;
+    
+        h80211[24] = 0x00;      //ESSID Tag Number
+        h80211[25] = ap[i].len; //ESSID Tag Length
+        memcpy(h80211+len+2, ap[i].essid, ap[i].len);
+    
+        len += ap[i].len+2;
+    
+        memcpy(h80211+len, RATES, 16);
+    
+        len += 16;
+    
+        for(j=0; j<20; j++)
+        {
+            /*
+                random source so we can identify our packets
+            */
+            opt.r_smac[0] = 0x00;
+            opt.r_smac[1] = rand() & 0xFF;
+            opt.r_smac[2] = rand() & 0xFF;
+            opt.r_smac[3] = rand() & 0xFF;
+            opt.r_smac[4] = rand() & 0xFF;
+            opt.r_smac[5] = rand() & 0xFF;
+    
+            memcpy(h80211+10, opt.r_smac, 6);
+    
+            send_packet(h80211, len);
+    
+            gettimeofday( &tv, NULL );
+    
+            gotit=0;
+            while (!gotit)  //waiting for relayed packet
+            {
+                caplen = read_packet(packet, sizeof(packet));
+    
+                if (packet[0] == 0x50 ) //Is probe response
+                {
+                    if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                    {
+                        ap[i].found++;
+                        break;
+                    }
+                }
+    
+                gettimeofday( &tv2, NULL );
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000) && !gotit) //wait 300ms for an answer
+                {
+                    break;
+                }
+            }
+        }
+        printf(" %d%%\n", ((ap[i].found*100)/20));
+    }
+
+    return 0;
+}
+
 int main( int argc, char *argv[] )
 {
     int n, i, ret;
@@ -3229,12 +3433,13 @@ int main( int argc, char *argv[] )
             {"arpreplay",   0, 0, '3'},
             {"chopchop",    0, 0, '4'},
             {"fragment",    0, 0, '5'},
+            {"test",        0, 0, '9'},
             {"help",    0, 0, 'H'},
             {0,             0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345H",
+                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:23459H",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3604,6 +3809,17 @@ int main( int argc, char *argv[] )
                 opt.a_mode = 5;
                 break;
 
+            case '9' :
+
+                if( opt.a_mode != -1 )
+                {
+                    printf( "Attack mode already specified.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+                opt.a_mode = 9;
+                break;
+
             case 'H' :
 
                 printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
@@ -3792,6 +4008,7 @@ usage:
         case 3 : return( do_attack_arp_resend()  );
         case 4 : return( do_attack_chopchop()    );
         case 5 : return( do_attack_fragment()    );
+        case 9 : return( do_attack_test()        );
         default: break;
     }
 
