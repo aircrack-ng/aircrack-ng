@@ -728,6 +728,7 @@ int packet_xmit(uchar* packet, int length)
 
 int packet_recv(uchar* packet, int length)
 {
+	int unused;
     uchar K[64];
     uchar bssid[6];
 
@@ -802,7 +803,7 @@ int packet_recv(uchar* packet, int length)
         memcpy( h80211+14, packet+z+8, length-z-8);
         length = length -z-8+14;
 
-        write(dev.fd_tap, h80211, length);
+        unused = write(dev.fd_tap, h80211, length);
     }
     else
     {
@@ -967,7 +968,7 @@ char athXraw[] = "athXraw";
 
 int main( int argc, char *argv[] )
 {
-    int ret_val, len, i, n, ret;
+    int ret_val, len, i, n, ret, unused;
     struct ifreq if_request;
     struct pcap_pkthdr pkh;
     fd_set read_fds;
@@ -1346,7 +1347,7 @@ usage:
         snprintf( strbuf,  sizeof( strbuf ) - 1,
                   "iwpriv %s rfmontx 1 >/dev/null 2>/dev/null",
                   argv[optind] );
-        system( strbuf );
+        unused = system( strbuf );
     }
 
     /* check if newer athXraw interface available */
@@ -1368,7 +1369,7 @@ usage:
             memset( strbuf, 0, sizeof( strbuf ) );
             snprintf( strbuf,  sizeof( strbuf ) - 1,
                       "ifconfig %s up", athXraw );
-            system( strbuf );
+            unused = system( strbuf );
 
 #if 0 /* some people reported problems when prismheader is enabled */
             memset( strbuf, 0, sizeof( strbuf ) );

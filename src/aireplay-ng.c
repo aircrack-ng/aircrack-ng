@@ -2997,10 +2997,11 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
 
 void save_prga(char *filename, uchar *iv, uchar *prga, int prgalen)
 {
+	int unused;
     FILE *xorfile;
     xorfile = fopen(filename, "wb");
-    fwrite (iv, 1, 4, xorfile);
-    fwrite (prga, 1, prgalen, xorfile);
+    unused = fwrite (iv, 1, 4, xorfile);
+    unused = fwrite (prga, 1, prgalen, xorfile);
     fclose (xorfile);
 }
 
@@ -3844,7 +3845,7 @@ char athXraw[] = "athXraw";
 
 int main( int argc, char *argv[] )
 {
-    int n, i, ret;
+    int n, i, ret, unused;
 
 #if defined(linux)
     FILE * f;
@@ -4423,7 +4424,7 @@ usage:
         snprintf( strbuf,  sizeof( strbuf ) - 1,
                   "iwpriv %s rfmontx 1 >/dev/null 2>/dev/null",
                   argv[optind] );
-        system( strbuf );
+        unused = system( strbuf );
     }
 
     /* check if newer athXraw interface available */
@@ -4472,7 +4473,7 @@ usage:
                 memset( strbuf, 0, sizeof( strbuf ) );
                 snprintf( strbuf,  sizeof( strbuf ) - 1,
                           "ifconfig %s up", athXraw );
-                system( strbuf );
+                unused = system( strbuf );
 
 #if 0 /* some people reported problems when prismheader is enabled */
                 memset( strbuf, 0, sizeof( strbuf ) );

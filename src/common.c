@@ -34,10 +34,10 @@
 //Check if the driver is ndiswrapper */
 int is_ndiswrapper(const char * iface, const char * path)
 {
-	int n,pid;
+	int n, pid, unused;
 	if ((pid=fork())==0)
 	{
-		close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+		close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
 		execl(path, "iwpriv",iface, "ndis_reset", NULL);
 		exit( 1 );
 	}

@@ -2921,7 +2921,7 @@ int crack_wep_dict()
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed;
+	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, unused;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 
@@ -3451,12 +3451,12 @@ usage:
 
 	for( i = 0; i < opt.nbcpu; i++ )
 	{
-		pipe( mc_pipe[i] );
-		pipe( cm_pipe[i] );
+		unused = pipe( mc_pipe[i] );
+		unused = pipe( cm_pipe[i] );
 
 		if (opt.amode<=1 && opt.nbcpu>1 && opt.do_brute && opt.do_mt_brute)
 		{
-			pipe(bf_pipe[i]);
+			unused = pipe(bf_pipe[i]);
 			bf_nkeys[i] = 0;
 		}
 	}

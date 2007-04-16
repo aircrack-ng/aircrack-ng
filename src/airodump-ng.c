@@ -2394,7 +2394,7 @@ int dump_write_csv( void )
 
 void gps_tracker( void )
 {
-    int gpsd_sock;
+    int gpsd_sock, unused;
     char line[256], *p;
     struct sockaddr_in gpsd_addr;
     int ret;
@@ -2459,25 +2459,27 @@ void gps_tracker( void )
 
         G.save_gps = 1;
 
-        write( G.gc_pipe[1], G.gps_loc, sizeof( float ) * 5 );
+        unused = write( G.gc_pipe[1], G.gps_loc, sizeof( float ) * 5 );
         kill( getppid(), SIGUSR2 );
     }
 }
 
 void sighandler( int signum)
 {
-    int card=0;
+    int card, unused;
+
+	card = 0;
 
     signal( signum, sighandler );
 
     if( signum == SIGUSR1 )
     {
-	read( G.cd_pipe[0], &card, sizeof(int) );
-        read( G.ch_pipe[0], &(G.channel[card]), sizeof( int ) );
+		unused = read( G.cd_pipe[0], &card, sizeof(int) );
+        unused = read( G.ch_pipe[0], &(G.channel[card]), sizeof( int ) );
     }
 
     if( signum == SIGUSR2 )
-        read( G.gc_pipe[0], &G.gps_loc, sizeof( float ) * 5 );
+        unused = read( G.gc_pipe[0], &G.gps_loc, sizeof( float ) * 5 );
 
     if( signum == SIGINT || signum == SIGTERM )
     {
@@ -2530,7 +2532,7 @@ int disable_wep_key( char *interface, int fd_raw )
 int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 {
     char s[32];
-    int pid, status;
+    int pid, status, unused;
     struct iwreq wrq;
 
     memset( s, 0, sizeof( s ) );
@@ -2541,7 +2543,7 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 
         if( ( pid = fork() ) == 0 )
         {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
             execl( G.wlanctlng, "wlanctl-ng", interface,
                     "lnxreq_wlansniff", s, NULL );
             exit( 1 );
@@ -2561,7 +2563,7 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 
         if( ( pid = fork() ) == 0 )
         {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
             execlp( G.iwpriv, "iwpriv", interface,
                     "monitor", "1", s, NULL );
             exit( 1 );
@@ -2577,7 +2579,7 @@ int set_channel( char *interface, int fd_raw, int channel, int cardnum )
 
         if( ( pid = fork() ) == 0 )
         {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
             execlp( G.iwconfig, "iwconfig", interface,
                     "channel", s, NULL );
             exit( 1 );
@@ -2652,7 +2654,7 @@ int set_channel( char *interface, int channel )
 int set_monitor( char *interface, int fd_raw, int cardnum )
 {
     char s[32];
-    int pid, status, channel;
+    int pid, status, channel, unused;
     struct iwreq wrq;
 
     channel = (G.channel[0] == 0 ) ? 10 : G.channel[0];
@@ -2661,7 +2663,7 @@ int set_monitor( char *interface, int fd_raw, int cardnum )
     {
         if( ( pid = fork() ) == 0 )
         {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
             execl( G.wl, "wl", "monitor", "1", NULL);
             exit( 1 );
         }
@@ -2681,7 +2683,7 @@ int set_monitor( char *interface, int fd_raw, int cardnum )
             snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
             if( ( pid = fork() ) == 0 )
             {
-                close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+                close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
                 execl( G.wlanctlng, "wlanctl-ng", interface,
                         "lnxreq_wlansniff", "enable=true",
                         "prismheader=true", "wlanheader=false",
@@ -2908,7 +2910,7 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
 {
 
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
-    int round=0, nfirst=0, quick=1, stime=100000, tries=0;
+    int round=0, nfirst=0, quick=1, stime=100000, tries=0, unused;
 
     nfirst = chan_count / if_num + 1;
 
@@ -2967,8 +2969,8 @@ void channel_hopper( char *interface[], int fd_raw[], int if_num, int chan_count
             if( set_channel( interface[card], fd_raw[card], ch, card ) == 0 )
             {
                 G.channel[card] = ch;
-                write( G.cd_pipe[1], &card, sizeof(int) );
-                write( G.ch_pipe[1], &ch, sizeof( int ) );
+                unused = write( G.cd_pipe[1], &card, sizeof(int) );
+                unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
                 kill( getppid(), SIGUSR1 );
                 usleep(1000);
             }
@@ -3233,7 +3235,7 @@ int getchannels(const char *optarg)
 #if defined(linux)
 int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct sockaddr_ll *sll, int *fd_raw, int *arptype, int cardnum)
 {
-    int pid=0, n=0;
+    int pid=0, n=0, unused;
     uchar *buffer;
     FILE *check_madwifing;
     FILE *f;
@@ -3274,7 +3276,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
     {
         if( ( pid = fork() ) == 0 )     /* wlan-ng brain damage */
         {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
             execlp( "wlanctl-ng", "wlanctl-ng", iface,
                     "lnxreq_ifstate", "ifstate=enable", NULL );
             exit( 1 );
@@ -3287,7 +3289,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 
         if( ! fork() )                  /* hostap card reset */
         {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
             execlp( "iwpriv", "iwpriv", iface, "reset", "1", NULL );
             exit( 1 );
         }
@@ -3300,7 +3302,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
     {
         if( ( pid = fork() ) == 0 )
         {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
             execlp( "iwpriv", "iwpriv", iface, "get_port3", NULL );
             exit( 1 );
         }
@@ -3317,7 +3319,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
     {
         if( ( pid = fork() ) == 0 )
         {
-            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
             execlp( "iwpriv", "iwpriv", iface, "get_regdomain", NULL );
             exit( 1 );
         }
@@ -3380,7 +3382,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 
     if( ! fork() )  /* hostap */
     {
-        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+        close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
         execlp( "iwpriv", "iwpriv", iface, "monitor_type", "1", NULL );
         exit( 1 );
     }
@@ -3388,7 +3390,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 
     if( ! fork() )  /* r8180 */
     {
-        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+        close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
         execlp( "iwpriv", "iwpriv", iface, "prismhdr", "1", NULL );
         exit( 1 );
     }
@@ -3396,7 +3398,7 @@ int setup_card(char *iface, struct ifreq *ifr, struct packet_mreq *mr, struct so
 
     if( ! fork() )  /* prism54 */
     {
-        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+        close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
         execlp( "iwpriv", "iwpriv", iface, "set_prismhdr", "1", NULL );
         exit( 1 );
     }
@@ -3606,7 +3608,7 @@ int set_encryption_filter(const char* input)
 
 int main( int argc, char *argv[] )
 {
-    long time_slept, cycle_time;
+    long time_slept, cycle_time, unused;
     int n, caplen, i, cards, fdh, fd_is_set, chan_count;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
     int ivs_only, power;
@@ -4117,13 +4119,13 @@ usage:
 
     if( G.channel[0] == 0 )
     {
-	pipe( G.ch_pipe );
-	pipe( G.cd_pipe );
+		unused = pipe( G.ch_pipe );
+		unused = pipe( G.cd_pipe );
 
-	signal( SIGUSR1, sighandler );
+		signal( SIGUSR1, sighandler );
 
-	if( ! fork() )
-	{
+		if( ! fork() )
+		{
 #if defined(linux)
             channel_hopper( iface, fd_raw, cards, chan_count );
 #elif defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
@@ -4134,16 +4136,16 @@ usage:
     }
     else
     {
-	for( i=0; i<cards; i++ )
-	{
+		for( i=0; i<cards; i++ )
+		{
 #if defined(linux)
             set_channel( iface[i], fd_raw[i], G.channel[0], i );
 #elif defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
             set_channel( iface[i], G.channel[0] );
 #endif
 
-	    G.channel[i] = G.channel[0];
-	}
+	    	G.channel[i] = G.channel[0];
+		}
         G.singlechan = 1;
     }
 
@@ -4164,7 +4166,7 @@ usage:
 
     if (G.usegpsd)
     {
-        pipe( G.gc_pipe );
+        unused = pipe( G.gc_pipe );
         signal( SIGUSR2, sighandler );
 
         if( ! fork() )

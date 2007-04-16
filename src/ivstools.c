@@ -48,7 +48,7 @@ void usage(int what)
 
 int merge( int argc, char *argv[] )
 {
-    int i, n;
+    int i, n, unused;
     unsigned long nbw;
     unsigned char buffer[1024];
     FILE *f_in, *f_out;
@@ -92,12 +92,12 @@ int merge( int argc, char *argv[] )
         }
 
         if( i == 2 )
-            fwrite( buffer, 1, 4, f_out );
+            unused = fwrite( buffer, 1, 4, f_out );
 
         while( ( n = fread( buffer, 1, 1024, f_in ) ) > 0 )
         {
             nbw += n;
-            fwrite( buffer, 1, n, f_out );
+            unused = fwrite( buffer, 1, n, f_out );
             printf( "%ld bytes written\r", nbw );
         }
 
@@ -115,7 +115,7 @@ int merge( int argc, char *argv[] )
 int main( int argc, char *argv[] )
 {
     time_t tt;
-    int n, z;
+    int n, z, unused;
     FILE *f_in, *f_out;
     unsigned long nbr;
     unsigned long nbivs;
@@ -191,7 +191,7 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
-    fwrite( IVSONLY_MAGIC, 1, 4, f_out );
+    unused = fwrite( IVSONLY_MAGIC, 1, 4, f_out );
 
     nbr = 0;
     tt = time( NULL ) - 1;
@@ -283,12 +283,12 @@ int main( int argc, char *argv[] )
 
         if( memcmp( bssid_cur, bssid_prv, 6 ) != 0 )
         {
-            fwrite( bssid_cur, 1, 6, f_out );
+            unused = fwrite( bssid_cur, 1, 6, f_out );
             memcpy( bssid_prv, bssid_cur, 6 );
         }
         else
         {
-            fwrite( "\xFF", 1, 1, f_out );
+            unused = fwrite( "\xFF", 1, 1, f_out );
         }
 
         /* Special handling for spanning-tree packets */
@@ -299,8 +299,8 @@ int main( int argc, char *argv[] )
             h80211[z + 5] = (h80211[z + 5] ^ 0x42) ^ 0xAA;
         }
 
-        fwrite( h80211 + z    , 1, 3, f_out );
-        fwrite( h80211 + z + 4, 1, 2, f_out );
+        unused = fwrite( h80211 + z    , 1, 3, f_out );
+        unused = fwrite( h80211 + z + 4, 1, 2, f_out );
         ++nbivs;
     }
     fclose( f_in );
