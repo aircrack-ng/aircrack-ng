@@ -1468,7 +1468,7 @@ write_packet:
         }
     }
 
-    if( G.f_cap != NULL )
+    if( G.f_cap != NULL && caplen >= 10)
     {
         pkh.caplen = pkh.len = caplen;
 

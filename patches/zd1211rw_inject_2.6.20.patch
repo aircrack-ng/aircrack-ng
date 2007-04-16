@@ -1,6 +1,6 @@
 diff -Naur linux-2.6.20.4-orig/drivers/net/wireless/zd1211rw/zd_mac.c linux-2.6.20.4-rawtx/drivers/net/wireless/zd1211rw/zd_mac.c
 --- linux-2.6.20.4-orig/drivers/net/wireless/zd1211rw/zd_mac.c	2007-03-23 20:52:51.000000000 +0100
-+++ linux-2.6.20.4-rawtx/drivers/net/wireless/zd1211rw/zd_mac.c	2007-04-09 22:55:10.000000000 +0200
++++ linux-2.6.20.4-rawtx/drivers/net/wireless/zd1211rw/zd_mac.c	2007-04-16 01:53:58.000000000 +0200
 @@ -202,7 +202,13 @@
  		goto disable_rx;
  
@@ -15,7 +15,27 @@ diff -Naur linux-2.6.20.4-orig/drivers/net/wireless/zd1211rw/zd_mac.c linux-2.6.
  	return 0;
  disable_rx:
  	zd_chip_disable_rx(chip);
-@@ -903,6 +909,7 @@
+@@ -835,6 +841,7 @@
+ 	                struct ieee80211_txb *txb,
+ 			int frag_num)
+ {
++	struct ieee80211_device *ieee = zd_mac_to_ieee80211(mac);
+ 	int r;
+ 	struct sk_buff *skb = txb->fragments[frag_num];
+ 	struct ieee80211_hdr_4addr *hdr =
+@@ -858,7 +865,10 @@
+ 
+ 	cs->tx_length = cpu_to_le16(frag_len);
+ 
+-	cs_set_control(mac, cs, hdr);
++	if(ieee->iw_mode == IW_MODE_MONITOR)
++		cs->control = ZD_CS_MULTICAST;
++	else
++		cs_set_control(mac, cs, hdr);
+ 
+ 	packet_length = frag_len + sizeof(struct zd_ctrlset) + 10;
+ 	ZD_ASSERT(packet_length <= 0xffff);
+@@ -903,6 +913,7 @@
  
  static int zd_mac_tx(struct zd_mac *mac, struct ieee80211_txb *txb, int pri)
  {
@@ -23,7 +43,7 @@ diff -Naur linux-2.6.20.4-orig/drivers/net/wireless/zd1211rw/zd_mac.c linux-2.6.
  	int i, r;
  
  	for (i = 0; i < txb->nr_frags; i++) {
-@@ -911,7 +918,10 @@
+@@ -911,7 +922,10 @@
  		r = fill_ctrlset(mac, txb, i);
  		if (r)
  			return r;
@@ -35,7 +55,7 @@ diff -Naur linux-2.6.20.4-orig/drivers/net/wireless/zd1211rw/zd_mac.c linux-2.6.
  		if (r)
  			return r;
  	}
-@@ -929,6 +939,8 @@
+@@ -929,6 +943,8 @@
  	u8  rt_rate;
  	u16 rt_channel;
  	u16 rt_chbitmask;
@@ -44,7 +64,7 @@ diff -Naur linux-2.6.20.4-orig/drivers/net/wireless/zd1211rw/zd_mac.c linux-2.6.
  } __attribute__((packed));
  
  static void fill_rt_header(void *buffer, struct zd_mac *mac,
-@@ -942,7 +954,9 @@
+@@ -942,7 +958,9 @@
  	hdr->rt_hdr.it_len = cpu_to_le16(sizeof(struct zd_rt_hdr));
  	hdr->rt_hdr.it_present = cpu_to_le32((1 << IEEE80211_RADIOTAP_FLAGS) |
  		                 (1 << IEEE80211_RADIOTAP_CHANNEL) |
@@ -55,7 +75,7 @@ diff -Naur linux-2.6.20.4-orig/drivers/net/wireless/zd1211rw/zd_mac.c linux-2.6.
  
  	hdr->rt_flags = 0;
  	if (status->decryption_type & (ZD_RX_WEP64|ZD_RX_WEP128|ZD_RX_WEP256))
-@@ -956,6 +970,9 @@
+@@ -956,6 +974,9 @@
  	hdr->rt_chbitmask = cpu_to_le16(IEEE80211_CHAN_2GHZ |
  		((status->frame_status & ZD_RX_FRAME_MODULATION_MASK) ==
  		ZD_RX_OFDM ? IEEE80211_CHAN_OFDM : IEEE80211_CHAN_CCK));
@@ -65,7 +85,7 @@ diff -Naur linux-2.6.20.4-orig/drivers/net/wireless/zd1211rw/zd_mac.c linux-2.6.
  }
  
  /* Returns 1 if the data packet is for us and 0 otherwise. */
-@@ -1062,7 +1079,8 @@
+@@ -1062,7 +1083,8 @@
  	const struct rx_status *status;
  
  	*pstatus = status = zd_tail(buffer, length, sizeof(struct rx_status));
