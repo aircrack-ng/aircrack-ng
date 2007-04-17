@@ -3216,6 +3216,13 @@ int grab_essid(uchar* packet, int len)
     if(tagtype != 0) return -1;
     if(taglen < 3) return -1;
     if(taglen > 250) taglen = 250;
+    if(pos+2+taglen > len) return -1;
+
+    for(i=0; i<taglen; i++)
+    {
+        if(packet[pos+2+i] < 32 || packet[pos+2+i] > 127)
+            return -1;
+    }
 
     for(i=0; i<20; i++)
     {
@@ -3265,6 +3272,7 @@ int do_attack_test()
 
     len += 16;
 
+    gotit=0;
     for(i=0; i<3; i++)
     {
         /*
@@ -3283,8 +3291,7 @@ int do_attack_test()
 
         gettimeofday( &tv, NULL );
 
-        gotit=0;
-        while (!gotit)  //waiting for relayed packet
+        while (1)  //waiting for relayed packet
         {
             caplen = read_packet(packet, sizeof(packet));
 
@@ -3294,7 +3301,12 @@ int do_attack_test()
                 {
                     if(grab_essid(packet, caplen) == 0)
                     {
-                        answers++;
+                        if(!gotit)
+                        {
+                            PCT; printf("Injection is working!\n");
+                            gotit=1;
+                            answers++;
+                        }
                         found++;
                     }
                 }
@@ -3303,21 +3315,19 @@ int do_attack_test()
             if (packet[0] == 0x80 ) //Is beacon frame
             {
                 if(grab_essid(packet, caplen) == 0)
+                {
                     found++;
+                }
             }
 
             gettimeofday( &tv2, NULL );
-            if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000) && !gotit) //wait 300ms for an answer
+            if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
             {
                 break;
             }
         }
     }
-    if(answers > 0)
-    {
-        PCT; printf("Injection is working!\n");
-    }
-    else
+    if(answers == 0)
     {
         PCT; printf("No Answer...\n");
     }
@@ -3325,7 +3335,7 @@ int do_attack_test()
     PCT; printf("Found %d APs\n", found);
     for(i=0; i<found; i++)
     {
-        printf("%s ", ap[i].essid);
+        printf("%s\n", ap[i].essid);
 
         ap[i].found=0;
         
@@ -3361,8 +3371,7 @@ int do_attack_test()
     
             gettimeofday( &tv, NULL );
     
-            gotit=0;
-            while (!gotit)  //waiting for relayed packet
+            while (1)  //waiting for relayed packet
             {
                 caplen = read_packet(packet, sizeof(packet));
     
@@ -3370,19 +3379,24 @@ int do_attack_test()
                 {
                     if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
                     {
+                        if(!gotit)
+                        {
+                            PCT; printf("Injection is working!\n");
+                            gotit=1;
+                        }
                         ap[i].found++;
                         break;
                     }
                 }
     
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000) && !gotit) //wait 300ms for an answer
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
                 {
                     break;
                 }
             }
         }
-        printf(" %d%%\n", ((ap[i].found*100)/20));
+        printf("%d/%d: %d%%\n", ap[i].found, 20, ((ap[i].found*100)/20));
     }
 
     return 0;
