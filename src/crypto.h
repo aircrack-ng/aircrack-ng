@@ -15,6 +15,12 @@
 #include <openssl/rc4.h>
 #include <openssl/aes.h>
 
+/* Used for own RC4 implementation */
+struct rc4_state
+{
+    int x, y, m[256];
+};
+
 void calc_pmk( char *key, char *essid, unsigned char pmk[40] );
 int decrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen );
 int encrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen );

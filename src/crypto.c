@@ -58,13 +58,15 @@
 
 /* RC4 encryption/ WEP decryption check */
 
+/*  SSL decryption */
+
 int encrypt_wep( uchar *data, int len, uchar *key, int keylen )
 {
     RC4_KEY S;
 
     RC4_set_key( &S, keylen, key );
     RC4( &S, len, data, data );
-    
+
     return ( 0 );
 
 }
@@ -75,6 +77,77 @@ int decrypt_wep( uchar *data, int len, uchar *key, int keylen )
     return( check_crc_buf( data, len - 4 ) );
 
 }
+
+
+/* An implementation of the ARC4 algorithm */
+
+void rc4_setup( struct rc4_state *s, unsigned char *key,  int length )
+{
+    int i, j, k, *m, a;
+
+    s->x = 0;
+    s->y = 0;
+	m = s->m;
+
+    for( i = 0; i < 256; i++ )
+    {
+        m[i] = i;
+    }
+
+    j = k = 0;
+
+    for(i=0 ; i < 256; i++ )
+    {
+        a = m[i];
+        j = (unsigned char) ( j + a + key[k] );
+        m[i] = m[j]; m[j] = a;
+        if( ++k >= length ) k = 0;
+    }
+}
+
+void rc4_crypt( struct rc4_state *s, unsigned char *data, int length )
+{
+    int i, x, y, *m, a, b;
+
+    x = s->x;
+    y = s->y;
+    m = s->m;
+
+    for( i = 0; i < length; i++ )
+    {
+        x = (unsigned char) ( x + 1 ); a = m[x];
+        y = (unsigned char) ( y + a );
+        m[x] = b = m[y];
+        m[y] = a;
+        data[i] ^= m[(unsigned char) ( a + b )];
+    }
+
+    s->x = x;
+    s->y = y;
+}
+
+/* WEP (barebone RC4) en-/decryption routines */
+/*
+int encrypt_wep( uchar *data, int len, uchar *key, int keylen )
+{
+    struct rc4_state S;
+
+    rc4_setup( &S, key, keylen );
+    rc4_crypt( &S, data, len );
+
+    return( 0 );
+}
+
+int decrypt_wep( uchar *data, int len, uchar *key, int keylen )
+{
+    struct rc4_state S;
+
+    rc4_setup( &S, key, keylen );
+    rc4_crypt( &S, data, len );
+
+    return( check_crc_buf( data, len - 4 ) );
+}
+*/
 
 /* derive the PMK from the passphrase and the essid */
 
