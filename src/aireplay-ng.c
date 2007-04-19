@@ -3313,7 +3313,7 @@ int do_attack_test()
         if(j != k)
         {
             gotit=1;
-            PCT; printf("Your specified interfaces aren't on the same channel!\n");
+            PCT; printf("Your specified interfaces aren't on the same channel (%d vs. %d)!\n", j, k);
         }
     }
 
@@ -3480,7 +3480,7 @@ int do_attack_test()
         /* Attacks */
         for(i=0; i<5; i++)
         {
-            gotit=0;
+            k=0;
             /* random macs */
             opt.f_smac[0] = 0x00;
             opt.f_smac[1] = rand() & 0xFF;
@@ -3593,7 +3593,7 @@ int do_attack_test()
                 opt.f_minlen = opt.f_maxlen = 24+4+7;
             }
 
-            for(j=0; (j<5 && !gotit); j++) //try it 5 times
+            for(j=0; (j<5 && !k); j++) //try it 5 times
             {
                 send_packet( h80211, opt.f_minlen );
 
@@ -3603,11 +3603,16 @@ int do_attack_test()
                     caplen = read_packet(packet, sizeof(packet));
                     if ( filter_packet(packet, caplen) == 0 ) //got same length and same type
                     {
+                        if(!answers)
+                        {
+                            answers++;
+                        }
+
                         if(i == 0) //attack -0
                         {
                             if( h80211[0] == packet[0] )
                             {
-                                gotit=1;
+                                k=1;
                                 break;
                             }
                         }
@@ -3615,7 +3620,7 @@ int do_attack_test()
                         {
                             if( h80211[0] == packet[0] )
                             {
-                                gotit=1;
+                                k=1;
                                 break;
                             }
                         }
@@ -3623,7 +3628,7 @@ int do_attack_test()
                         {
                             if( h80211[0] == packet[0] && memcmp(h80211+24, packet+24, caplen-24) == 0 )
                             {
-                                gotit=1;
+                                k=1;
                                 break;
                             }
                         }
@@ -3631,7 +3636,7 @@ int do_attack_test()
                         {
                             if( h80211[0] == packet[0] && memcmp(h80211+24, packet+24, caplen-24) == 0 )
                             {
-                                gotit=1;
+                                k=1;
                                 break;
                             }
                         }
@@ -3639,13 +3644,9 @@ int do_attack_test()
                         {
                             if( h80211[0] == packet[0] && memcmp(h80211+24, packet+24, caplen-24) == 0 )
                             {
-                                printf("data equal!\n");
-                                printf("fragmentation: %d\n", (packet[1] & 0x04));
-                                printf("frag/seq (orig) : %02X %02X\n", h80211[22], h80211[23]);
-                                printf("frag/seq (capt) : %02X %02X\n", packet[22], packet[23]);
                                 if( (packet[1] & 0x04) && memcmp( h80211+22, packet+22, 2 ) == 0 )
                                 {
-                                    gotit=1;
+                                    k=1;
                                     break;
                                 }
                             }
@@ -3659,9 +3660,9 @@ int do_attack_test()
                     }
                 }
             }
-            if(gotit)
+            if(k)
             {
-                gotit=0;
+                k=0;
                 if(i==0) //attack -0
                 {
                     PCT; printf("Attack -0:        OK\n");
@@ -3706,6 +3707,12 @@ int do_attack_test()
                     PCT; printf("Attack -5:        Failed\n");
                 }
             }
+        }
+
+        if(!gotit && answers)
+        {
+            PCT; printf("Injection is working!\n");
+            gotit=1;
         }
     }
     return 0;
