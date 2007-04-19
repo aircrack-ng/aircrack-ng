@@ -1,4 +1,4 @@
-/*- 
+/*-
  * Copyright (c) 2007, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
  *
  * All OS dependent crap should go here.
@@ -26,6 +26,8 @@ struct wif {
         int     (*wi_write)(struct wif *wi, unsigned char *h80211, int len,
                             struct tx_info *ti);
         int     (*wi_set_channel)(struct wif *wi, int chan);
+        int     (*wi_get_channel)(struct wif *wi, int *chan);
+        int     (*wi_update_channel)(struct wif *wi);
 	void	(*wi_close)(struct wif *wi);
 	int	(*wi_fd)(struct wif *wi);
         void    *wi_priv;
@@ -41,6 +43,8 @@ extern int wi_read(struct wif *wi, unsigned char *h80211, int len,
 extern int wi_write(struct wif *wi, unsigned char *h80211, int len,
 		    struct tx_info *ti);
 extern int wi_set_channel(struct wif *wi, int chan);
+extern int wi_get_channel(struct wif *wi, int *chan);
+extern int wi_update_channel(struct wif *wi);
 extern void wi_close(struct wif *wi);
 /* This will return the FD used for reading.  This is required for using select
  * on it.

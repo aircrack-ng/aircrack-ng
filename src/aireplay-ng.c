@@ -304,6 +304,14 @@ int read_packet(void *buf, size_t count)
 	return rc;
 }
 
+int get_chan(struct wif *wi)
+{
+    int chan;
+
+    wi_get_channel(wi, &chan);
+    return chan;
+}
+
 void read_sleep( int usec )
 {
     struct timeval tv, tv2, tv3;
@@ -339,7 +347,6 @@ int filter_packet( unsigned char *h80211, int caplen )
     int z, mi_b, mi_s, mi_d;
 
     /* check length */
-
     if( caplen < opt.f_minlen ||
         caplen > opt.f_maxlen ) return( 1 );
 
@@ -786,15 +793,15 @@ int fake_ska(uchar* prga)
 
     int caplen, prgalen, ret, i;
 
-	caplen = i = 0;
-	ret = -1;
+    caplen = i = 0;
+    ret = -1;
 
     while(caplen <= 0 || (unsigned)caplen > sizeof(tmpbuf) )
     {
         caplen = fake_ska_auth_1();
         if(caplen <=0 || (unsigned)caplen > sizeof(tmpbuf) )
         {
-        	PCT; printf("Retrying 1. auth sequence!\n");
+            PCT; printf("Retrying 1. auth sequence!\n");
         }
         if(i>50) return -1;
         i++;
@@ -3221,16 +3228,19 @@ int grab_essid(uchar* packet, int len)
     for(i=0; i<taglen; i++)
     {
         if(packet[pos+2+i] < 32 || packet[pos+2+i] > 127)
+        {
             return -1;
+        }
     }
 
     for(i=0; i<20; i++)
     {
-        if(taglen == ap[i].len)
+        if( ap[i].set && taglen == ap[i].len)
         {
             if( memcmp(packet+pos+2, ap[i].essid, taglen) == 0 )    //got it already
             {
-                if(packet[0] == 0x50) ap[i].found++;
+                if(packet[0] == 0x50 && !ap[i].found)
+                    ap[i].found++;
                 break;
             }
         }
@@ -3251,12 +3261,63 @@ int do_attack_test()
 {
     uchar packet[4096];
     struct timeval tv, tv2;
-    int len=0, i=0, j=0, gotit=0, answers=0, caplen=0, found=0;
+    int len=0, i=0, j=0, k=0;
+    int gotit=0, answers=0, found=0;
+    int caplen=0, essidlen=0;
 
     srand( time( NULL ) );
 
     memset(ap, '\0', 20*sizeof(struct APt));
 
+    essidlen = strlen(opt.r_essid);
+    if( essidlen > 250) essidlen = 250;
+
+    if( essidlen > 0 )
+    {
+        ap[0].set = 1;
+        ap[0].len = essidlen;
+        memcpy(ap[0].essid, opt.r_essid, essidlen);
+        ap[0].essid[essidlen] = '\0';
+        found++;
+    }
+
+    wi_update_channel(_wi_out);
+    j=get_chan(_wi_out);
+    for( i=0; i<10; i++)
+    {
+        usleep(100000);
+        wi_update_channel(_wi_out);
+        if(j != get_chan(_wi_out))
+        {
+            PCT; printf("Your replay interface is channel hopping!\n");
+            gotit=1;
+            break;
+        }
+    }
+
+    if( opt.s_face != NULL )
+    {
+        wi_update_channel(_wi_in);
+        k=get_chan(_wi_in);
+        for( i=0; i<10; i++)
+        {
+            usleep(100000);
+            wi_update_channel(_wi_in);
+            if(k != get_chan(_wi_in))
+            {
+                gotit=1;
+                PCT; printf("Your capture interface is channel hopping!\n");
+                break;
+            }
+        }
+        if(j != k)
+        {
+            gotit=1;
+            PCT; printf("Your specified interfaces aren't on the same channel!\n");
+        }
+    }
+
+    if(gotit) printf("\n");
     PCT; printf("Trying broadcast probe requests...\n");
 
     memcpy(h80211, PROBE_REQ, 24);
@@ -3273,6 +3334,7 @@ int do_attack_test()
     len += 16;
 
     gotit=0;
+    answers=0;
     for(i=0; i<3; i++)
     {
         /*
@@ -3301,13 +3363,13 @@ int do_attack_test()
                 {
                     if(grab_essid(packet, caplen) == 0)
                     {
-                        if(!gotit)
-                        {
-                            PCT; printf("Injection is working!\n");
-                            gotit=1;
-                            answers++;
-                        }
                         found++;
+                    }
+                    if(!answers)
+                    {
+                        PCT; printf("Injection is working!\n");
+                        gotit=1;
+                        answers++;
                     }
                 }
             }
@@ -3333,26 +3395,29 @@ int do_attack_test()
     }
 
     PCT; printf("Found %d APs\n", found);
+
+    printf("\n");
+    PCT; printf("Trying directed probe requests...\n");
     for(i=0; i<found; i++)
     {
-        printf("%s\n", ap[i].essid);
+        PCT; printf("%s\n", ap[i].essid);
 
         ap[i].found=0;
-        
+
         memcpy(h80211, PROBE_REQ, 24);
-    
+
         len = 24;
-    
+
         h80211[24] = 0x00;      //ESSID Tag Number
         h80211[25] = ap[i].len; //ESSID Tag Length
         memcpy(h80211+len+2, ap[i].essid, ap[i].len);
-    
+
         len += ap[i].len+2;
-    
+
         memcpy(h80211+len, RATES, 16);
-    
+
         len += 16;
-    
+
         for(j=0; j<20; j++)
         {
             /*
@@ -3364,41 +3429,285 @@ int do_attack_test()
             opt.r_smac[3] = rand() & 0xFF;
             opt.r_smac[4] = rand() & 0xFF;
             opt.r_smac[5] = rand() & 0xFF;
-    
+
             memcpy(h80211+10, opt.r_smac, 6);
-    
+
             send_packet(h80211, len);
-    
+
             gettimeofday( &tv, NULL );
-    
+
+            printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
+            fflush(stdout);
             while (1)  //waiting for relayed packet
             {
                 caplen = read_packet(packet, sizeof(packet));
-    
+
                 if (packet[0] == 0x50 ) //Is probe response
                 {
                     if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
                     {
-                        if(!gotit)
+                        if(!answers)
                         {
-                            PCT; printf("Injection is working!\n");
-                            gotit=1;
+                            answers++;
                         }
                         ap[i].found++;
                         break;
                     }
                 }
-    
+
                 gettimeofday( &tv2, NULL );
                 if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
                 {
                     break;
                 }
             }
+            printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
+            fflush(stdout);
         }
-        printf("%d/%d: %d%%\n", ap[i].found, 20, ((ap[i].found*100)/20));
+        PCT; printf("%d/%d: %d%%\n", ap[i].found, 20, ((ap[i].found*100)/20));
+        if(!gotit && answers)
+        {
+            PCT; printf("Injection is working!\n");
+            gotit=1;
+        }
     }
 
+    if( opt.s_face != NULL )
+    {
+        printf("\n");
+        PCT; printf("Trying card-to-card injection...\n");
+
+        /* Attacks */
+        for(i=0; i<5; i++)
+        {
+            gotit=0;
+            /* random macs */
+            opt.f_smac[0] = 0x00;
+            opt.f_smac[1] = rand() & 0xFF;
+            opt.f_smac[2] = rand() & 0xFF;
+            opt.f_smac[3] = rand() & 0xFF;
+            opt.f_smac[4] = rand() & 0xFF;
+            opt.f_smac[5] = rand() & 0xFF;
+
+            opt.f_dmac[0] = 0x00;
+            opt.f_dmac[1] = rand() & 0xFF;
+            opt.f_dmac[2] = rand() & 0xFF;
+            opt.f_dmac[3] = rand() & 0xFF;
+            opt.f_dmac[4] = rand() & 0xFF;
+            opt.f_dmac[5] = rand() & 0xFF;
+
+            opt.f_bssid[0] = 0x00;
+            opt.f_bssid[1] = rand() & 0xFF;
+            opt.f_bssid[2] = rand() & 0xFF;
+            opt.f_bssid[3] = rand() & 0xFF;
+            opt.f_bssid[4] = rand() & 0xFF;
+            opt.f_bssid[5] = rand() & 0xFF;
+
+            if(i==0) //attack -0
+            {
+                memcpy( h80211, DEAUTH_REQ, 26 );
+                memcpy( h80211 + 16, opt.f_bssid, 6 );
+                memcpy( h80211 +  4, opt.f_dmac,  6 );
+                memcpy( h80211 + 10, opt.f_smac, 6 );
+
+                opt.f_iswep = 0;
+                opt.f_tods = 0; opt.f_fromds = 0;
+                opt.f_minlen = opt.f_maxlen = 26;
+            }
+            else if(i==1) //attack -1 (open)
+            {
+                memcpy( h80211, AUTH_REQ, 30 );
+                memcpy( h80211 +  4, opt.f_dmac, 6 );
+                memcpy( h80211 + 10, opt.f_smac , 6 );
+                memcpy( h80211 + 16, opt.f_bssid, 6 );
+
+                opt.f_iswep = 0;
+                opt.f_tods = 0; opt.f_fromds = 0;
+                opt.f_minlen = opt.f_maxlen = 30;
+            }
+            else if(i==2) //attack -1 (psk)
+            {
+                memcpy( h80211, ska_auth3, 24);
+                memcpy( h80211 +  4, opt.f_dmac, 6);
+                memcpy( h80211 + 10, opt.f_smac,  6);
+                memcpy( h80211 + 16, opt.f_bssid, 6);
+
+                //iv+idx
+                h80211[24] = 0x86;
+                h80211[25] = 0xD8;
+                h80211[26] = 0x2E;
+                h80211[27] = 0x00;
+
+                //random crap (as encrypted data)
+                for(j=0; j<132; j++)
+                    h80211[28+j] = rand() & 0xFF;
+
+                opt.f_iswep = 1;
+                opt.f_tods = 0; opt.f_fromds = 0;
+                opt.f_minlen = opt.f_maxlen = 24+4+132;
+            }
+            else if(i==3) //attack -3
+            {
+                memcpy( h80211, NULL_DATA, 24);
+                memcpy( h80211 +  4, opt.f_bssid, 6);
+                memcpy( h80211 + 10, opt.f_smac,  6);
+                memcpy( h80211 + 16, opt.f_dmac, 6);
+
+                //iv+idx
+                h80211[24] = 0x86;
+                h80211[25] = 0xD8;
+                h80211[26] = 0x2E;
+                h80211[27] = 0x00;
+
+                //random crap (as encrypted data)
+                for(j=0; j<132; j++)
+                    h80211[28+j] = rand() & 0xFF;
+
+                opt.f_iswep = -1;
+                opt.f_tods = 1; opt.f_fromds = 0;
+                opt.f_minlen = opt.f_maxlen = 24+4+132;
+            }
+            else if(i==4) //attack -5
+            {
+                memcpy( h80211, NULL_DATA, 24);
+                memcpy( h80211 +  4, opt.f_bssid, 6);
+                memcpy( h80211 + 10, opt.f_smac,  6);
+                memcpy( h80211 + 16, opt.f_dmac, 6);
+
+                h80211[1] |= 0x04;
+                h80211[22] = 0x0A;
+                h80211[23] = 0x00;
+
+                //iv+idx
+                h80211[24] = 0x86;
+                h80211[25] = 0xD8;
+                h80211[26] = 0x2E;
+                h80211[27] = 0x00;
+
+                //random crap (as encrypted data)
+                for(j=0; j<7; j++)
+                    h80211[28+j] = rand() & 0xFF;
+
+                opt.f_iswep = -1;
+                opt.f_tods = 1; opt.f_fromds = 0;
+                opt.f_minlen = opt.f_maxlen = 24+4+7;
+            }
+
+            for(j=0; (j<5 && !gotit); j++) //try it 5 times
+            {
+                send_packet( h80211, opt.f_minlen );
+
+                gettimeofday( &tv, NULL );
+                while (1)  //waiting for relayed packet
+                {
+                    caplen = read_packet(packet, sizeof(packet));
+                    if ( filter_packet(packet, caplen) == 0 ) //got same length and same type
+                    {
+                        if(i == 0) //attack -0
+                        {
+                            if( h80211[0] == packet[0] )
+                            {
+                                gotit=1;
+                                break;
+                            }
+                        }
+                        else if(i==1) //attack -1 (open)
+                        {
+                            if( h80211[0] == packet[0] )
+                            {
+                                gotit=1;
+                                break;
+                            }
+                        }
+                        else if(i==2) //attack -1 (psk)
+                        {
+                            if( h80211[0] == packet[0] && memcmp(h80211+24, packet+24, caplen-24) == 0 )
+                            {
+                                gotit=1;
+                                break;
+                            }
+                        }
+                        else if(i==3) //attack -3
+                        {
+                            if( h80211[0] == packet[0] && memcmp(h80211+24, packet+24, caplen-24) == 0 )
+                            {
+                                gotit=1;
+                                break;
+                            }
+                        }
+                        else if(i==4) //attack -5
+                        {
+                            if( h80211[0] == packet[0] && memcmp(h80211+24, packet+24, caplen-24) == 0 )
+                            {
+                                printf("data equal!\n");
+                                printf("fragmentation: %d\n", (packet[1] & 0x04));
+                                printf("frag/seq (orig) : %02X %02X\n", h80211[22], h80211[23]);
+                                printf("frag/seq (capt) : %02X %02X\n", packet[22], packet[23]);
+                                if( (packet[1] & 0x04) && memcmp( h80211+22, packet+22, 2 ) == 0 )
+                                {
+                                    gotit=1;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    gettimeofday( &tv2, NULL );
+                    if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
+                    {
+                        break;
+                    }
+                }
+            }
+            if(gotit)
+            {
+                gotit=0;
+                if(i==0) //attack -0
+                {
+                    PCT; printf("Attack -0:        OK\n");
+                }
+                else if(i==1) //attack -1 (open)
+                {
+                    PCT; printf("Attack -1 (open): OK\n");
+                }
+                else if(i==2) //attack -1 (psk)
+                {
+                    PCT; printf("Attack -1 (psk):  OK\n");
+                }
+                else if(i==3) //attack -3
+                {
+                    PCT; printf("Attack -2/-3/-4:  OK\n");
+                }
+                else if(i==4) //attack -5
+                {
+                    PCT; printf("Attack -5:        OK\n");
+                }
+            }
+            else
+            {
+                if(i==0) //attack -0
+                {
+                    PCT; printf("Attack -0:        Failed\n");
+                }
+                else if(i==1) //attack -1 (open)
+                {
+                    PCT; printf("Attack -1 (open): Failed\n");
+                }
+                else if(i==2) //attack -1 (psk)
+                {
+                    PCT; printf("Attack -1 (psk):  Failed\n");
+                }
+                else if(i==3) //attack -3
+                {
+                    PCT; printf("Attack -2/-3/-4:  Failed\n");
+                }
+                else if(i==4) //attack -5
+                {
+                    PCT; printf("Attack -5:        Failed\n");
+                }
+            }
+        }
+    }
     return 0;
 }
 

@@ -1,4 +1,4 @@
-/*- 
+/*-
  * Copyright (c) 2007, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
  *
  * OS dependent API for FreeBSD.
@@ -43,6 +43,7 @@ struct priv_fbsd {
 	/* setchan */
 	int				pf_s;
 	struct ieee80211req		pf_ireq;
+        int                             pf_chan;
 };
 
 static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
@@ -60,12 +61,12 @@ static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
 	data = &pf->pf_next;
 	totlen = &pf->pf_totlen;
 	assert(*totlen);
-        
+
         /* bpf hdr */
         bpfh = (struct bpf_hdr*) (*data);
         assert(bpfh->bh_caplen == bpfh->bh_datalen); /* XXX */
         *totlen -= bpfh->bh_hdrlen;
-        
+
         /* check if more packets */
         if ((int)bpfh->bh_caplen < *totlen) {
 		int tot = bpfh->bh_hdrlen + bpfh->bh_caplen;
@@ -73,13 +74,13 @@ static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
 
                 *data = (char*)bpfh + offset;
 		*totlen -= offset - tot; /* take into account align bytes */
-	} else if ((int)bpfh->bh_caplen > *totlen)        
+	} else if ((int)bpfh->bh_caplen > *totlen)
 		abort();
- 
+
         *plen = bpfh->bh_caplen;
 	*totlen -= bpfh->bh_caplen;
 	assert(*totlen >= 0);
-        
+
         /* radiotap */
         rth = (struct ieee80211_radiotap_header*)
               ((char*)bpfh + bpfh->bh_hdrlen);
@@ -112,6 +113,15 @@ static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
 #undef BIT
 }
 
+static int fbsd_update_channel(struct wif *wi)
+{
+	struct priv_fbsd *pf = wi_priv(wi);
+
+	if( ioctl(pf->pf_s, SIOCG80211, &pf->pf_ireq) != 0 ) return -1;
+	pf->pf_chan = pf->pf_ireq.i_val;
+	return 0;
+}
+
 static int fbsd_read(struct wif *wi, unsigned char *h80211, int len,
 		     struct rx_info *ri)
 {
@@ -137,6 +147,8 @@ static int fbsd_read(struct wif *wi, unsigned char *h80211, int len,
 		plen = len;
 	assert(plen > 0);
 	memcpy(h80211, wh, plen);
+
+	fbsd_update_channel(wi);
 
 	return plen;
 }
@@ -164,7 +176,19 @@ static int fbsd_set_channel(struct wif *wi, int chan)
 	struct priv_fbsd *pf = wi_priv(wi);
 
 	pf->pf_ireq.i_val = chan;
-	return ioctl(pf->pf_s, SIOCS80211, &pf->pf_ireq);
+	if( ioctl(pf->pf_s, SIOCS80211, &pf->pf_ireq) != 0 )
+            return -1;
+
+	pf->pf_chan = chan;
+	return 0;
+}
+
+static int fbsd_get_channel(struct wif *wi, int *chan)
+{
+	struct priv_fbsd *pf = wi_priv(wi);
+
+	*chan = pf->pf_chan;
+	return 0;
 }
 
 static void do_free(struct wif *wi)
@@ -196,7 +220,7 @@ static int do_fbsd_open(struct wif *wi, char *iface)
         struct ifmediareq ifmr;
         int *mwords;
 	struct priv_fbsd *pf = wi_priv(wi);
-	
+
 	/* basic sanity check */
 	if (strlen(iface) >= sizeof(ifr.ifr_name))
 		return -1;
@@ -221,7 +245,7 @@ static int do_fbsd_open(struct wif *wi, char *iface)
         ifr.ifr_flagshigh = flags >> 16;
         if (ioctl(s, SIOCSIFFLAGS, &ifr) == -1)
 		goto close_sock;
-        
+
 	/* monitor mode */
         memset(&ifmr, 0, sizeof(ifmr));
         strcpy(ifmr.ifm_name, iface);
@@ -266,7 +290,7 @@ static int do_fbsd_open(struct wif *wi, char *iface)
 
         if(fd < 0)
 		goto close_sock;
- 
+
 	strcpy(ifr.ifr_name, iface);
 
         if(ioctl(fd, BIOCSETIF, &ifr) < 0)
@@ -301,7 +325,7 @@ static struct wif *fbsd_open(char *iface)
 	struct wif *wi;
 	struct priv_fbsd *pf;
 	int fd;
-	
+
 	/* setup wi struct */
 	wi = wi_alloc(sizeof(*pf));
 	if (!wi)
@@ -309,6 +333,8 @@ static struct wif *fbsd_open(char *iface)
 	wi->wi_read		= fbsd_read;
 	wi->wi_write		= fbsd_write;
 	wi->wi_set_channel	= fbsd_set_channel;
+	wi->wi_get_channel	= fbsd_get_channel;
+	wi->wi_update_channel	= fbsd_update_channel;
 	wi->wi_close		= fbsd_close;
 	wi->wi_fd		= fbsd_fd;
 
@@ -343,20 +369,20 @@ int get_battery_state(void)
 #if defined(__FreeBSD__)
     int value;
     size_t len;
-       
+
     len = 1;
     value = 0;
     sysctlbyname("hw.acpi.acline", &value, &len, NULL, 0);
     if (value == 0)
-    {  
+    {
             sysctlbyname("hw.acpi.battery.time", &value, &len, NULL, 0);
             value = value * 60;
-    }  
+    }
     else
-    {  
+    {
             value = 0;
-    }  
-       
+    }
+
     return( value );
 #elif defined(_BSD_SOURCE)
     struct apm_power_info api;
@@ -366,14 +392,14 @@ int get_battery_state(void)
     if (ioctl(apmfd, APM_IOC_GETPOWER, &api) < 0) {
         close(apmfd);
         return 0;
-    }  
+    }
     close(apmfd);
     if (api.battery_state == APM_BATT_UNKNOWN ||
         api.battery_state == APM_BATTERY_ABSENT ||
         api.battery_state == APM_BATT_CHARGING ||
     api.ac_state == APM_AC_ON) {
         return 0;
-    }  
+    }
     return ((int)(api.minutes_left))*60;
 #else
     return 0;
@@ -388,7 +414,7 @@ int create_tap(void)
 	fd = open( "/dev/tap", O_RDWR);
 	if (fd == -1)
 		return -1;
-	
+
 	memset(&if_request, 0, sizeof(if_request));
 	strncpy(if_request.ifr_name, "at%d", IFNAMSIZ);
 	if_request.ifr_name[IFNAMSIZ-1] = 0;

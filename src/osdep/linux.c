@@ -1,5 +1,5 @@
 /*
- *  OS dependent APIs for Linux  
+ *  OS dependent APIs for Linux
  *
  *  Copyright (C) 2006,2007 Thomas d'Otreppe
  *  Copyright (C) 2004,2005 Christophe Devine
@@ -41,7 +41,7 @@
 #include "osdep.h"
 #include "pcap.h"
 
-/* 
+/*
  * XXX need to have a different read/write/open function for each Linux driver.
  */
 
@@ -66,6 +66,7 @@ struct priv_linux {
     struct pcap_file_header pfh_in;
 
     int sysfs_inject;
+    int channel;
     char *wlanctlng; /* XXX never set */
     char *iwpriv;
     char *iwconfig;
@@ -87,6 +88,27 @@ struct priv_linux {
 
 extern int is_ndiswrapper(const char * iface, const char * path);
 extern char * wiToolsPath(const char * tool);
+
+static int linux_update_channel(struct wif *wi)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    struct iwreq wrq;
+
+    memset( &wrq, 0, sizeof( struct iwreq ) );
+    strncpy( wrq.ifr_name, dev->interface, IFNAMSIZ );
+
+    if( ioctl( dev->fd_in, SIOCGIWFREQ, &wrq ) < 0 )
+    {
+        return( 1 );
+    }
+
+    if(wrq.u.freq.m > 1000)
+        dev->channel = ((wrq.u.freq.m - 241200000)/500000)+1;
+    else
+        dev->channel = wrq.u.freq.m;
+
+    return( 0 );
+}
 
 static int linux_read(struct wif *wi, unsigned char *buf, int count,
 		      struct rx_info *ri)
@@ -177,6 +199,8 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
     memcpy( buf, tmpbuf + n, caplen );
 
+    linux_update_channel(wi);
+
     return( caplen );
 }
 
@@ -194,62 +218,62 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     if (ti) {}
 
     if( dev->is_wlanng && count >= 24 )
-    {   
+    {
         /* for some reason, wlan-ng requires a special header */
 
         if( ( ((unsigned char *) buf)[1] & 3 ) != 3 )
-        {   
+        {
             memcpy( tmpbuf, buf, 24 );
             memset( tmpbuf + 24, 0, 22 );
-            
+
             tmpbuf[30] = ( count - 24 ) & 0xFF;
             tmpbuf[31] = ( count - 24 ) >> 8;
-            
+
             memcpy( tmpbuf + 46, buf + 24, count - 24 );
-            
+
             count += 22;
         }
         else
-        {   
+        {
             memcpy( tmpbuf, buf, 30 );
             memset( tmpbuf + 30, 0, 16 );
-            
+
             tmpbuf[30] = ( count - 30 ) & 0xFF;
             tmpbuf[31] = ( count - 30 ) >> 8;
-            
+
             memcpy( tmpbuf + 46, buf + 30, count - 30 );
-            
+
             count += 16;
         }
-        
+
         buf = tmpbuf;
     }
-    
+
     if( ( dev->is_wlanng || dev->is_hostap ) &&
         ( ((uchar *) buf)[1] & 3 ) == 2 )
-    {   
+    {
         /* Prism2 firmware swaps the dmac and smac in FromDS packets */
 
         memcpy( maddr, buf + 4, 6 );
         memcpy( buf + 4, buf + 16, 6 );
         memcpy( buf + 16, maddr, 6 );
     }
-    
+
     ret = write( dev->fd_out, buf, count );
 
     if( ret < 0 )
-    {   
+    {
         if( errno == EAGAIN || errno == EWOULDBLOCK ||
             errno == ENOBUFS )
-        {   
+        {
             usleep( 10000 );
             return( 0 );
         }
-        
+
         perror( "write failed" );
         return( -1 );
     }
-    
+
     return( 0 );
 }
 
@@ -259,61 +283,66 @@ static int linux_set_channel(struct wif *wi, int channel)
     char s[32];
     int pid, status;
     struct iwreq wrq;
-    
+
     memset( s, 0, sizeof( s ) );
-    
+
     if( dev->is_wlanng)
     {
         snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
-        
+
         if( ( pid = fork() ) == 0 )
         {
             close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
             execl( dev->wlanctlng, "wlanctl-ng", dev->interface,
                     "lnxreq_wlansniff", s, NULL );
             exit( 1 );
-        }   
-        
+        }
+
         waitpid( pid, &status, 0 );
-        
+
         if( WIFEXITED(status) )
+        {
+            dev->channel=channel;
             return( WEXITSTATUS(status) );
+        }
         else
             return( 1 );
-    }       
-    
+    }
+
     if( dev->is_orinoco)
-    {   
+    {
         snprintf( s,  sizeof( s ) - 1, "%d", channel );
 
         if( ( pid = fork() ) == 0 )
-        {   
+        {
             close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
             execlp( dev->iwpriv, "iwpriv", dev->interface,
                     "monitor", "1", s, NULL );
             exit( 1 );
         }
-        
+
         waitpid( pid, &status, 0 );
+        dev->channel = channel;
         return 0;
     }
-    
+
     if( dev->is_zd1211rw)
-    {   
+    {
         snprintf( s,  sizeof( s ) - 1, "%d", channel );
 
         if( ( pid = fork() ) == 0 )
-        {   
+        {
             close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
             execlp(dev->iwconfig, "iwconfig", dev->interface,
                     "channel", s, NULL );
             exit( 1 );
         }
-        
+
         waitpid( pid, &status, 0 );
+        dev->channel = channel;
         return 0;
     }
-    
+
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, dev->interface, IFNAMSIZ );
     wrq.u.freq.m = (double) channel;
@@ -330,7 +359,17 @@ static int linux_set_channel(struct wif *wi, int channel)
         }
     }
 
+    dev->channel = channel;
+
     return( 0 );
+}
+
+static int linux_get_channel(struct wif *wi, int *channel)
+{
+    struct priv_linux *dev = wi_priv(wi);
+
+    *channel = dev->channel;
+    return 0;
 }
 
 static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
@@ -558,13 +597,13 @@ static int do_linux_open(struct wif *wi, char *iface)
 	dev->iwconfig = wiToolsPath("iwconfig");
 
     if (! iwpriv )
-        {       
+        {
                 fprintf(stderr, "Can't find wireless tools, exiting.\n");
 		goto close_in;
         }
-        
+
         /* Exit if ndiswrapper : check iwpriv ndis_reset */
-       
+
         if ( is_ndiswrapper(iface, iwpriv ) )
         {
                 fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
@@ -582,7 +621,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     /* check if wlan-ng or hostap or r8180 */
     if( strlen(iface) == 5 &&
         memcmp(iface, "wlan", 4 ) == 0 )
-    {   
+    {
         memset( strbuf, 0, sizeof( strbuf ) );
         snprintf( strbuf,  sizeof( strbuf ) - 1,
                   "wlancfg show %s 2>/dev/null | "
@@ -608,7 +647,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         strcmp( iface, "ra1" ) == 0 ||
         strcmp( iface, "rausb0" ) == 0 ||
         strcmp( iface, "rausb1" ) == 0 )
-    {   
+    {
         memset( strbuf, 0, sizeof( strbuf ) );
         snprintf( strbuf,  sizeof( strbuf ) - 1,
                   "iwpriv %s rfmontx 1 >/dev/null 2>/dev/null",
@@ -617,7 +656,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     }
 
     /* check if newer athXraw interface available */
-                           
+
     if( ( strlen( iface ) == 4 || strlen( iface ) == 5 )
         && memcmp( iface, "ath", 3 ) == 0 )
     {
@@ -683,16 +722,16 @@ static int do_linux_open(struct wif *wi, char *iface)
     /* test if orinoco */
 
     if( memcmp( iface, "eth", 3 ) == 0 )
-    {         
+    {
         if( ( pid = fork() ) == 0 )
-        {     
+        {
             close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
             execlp( "iwpriv", "iwpriv", iface, "get_port3", NULL );
             exit( 1 );
         }
-              
+
         waitpid( pid, &n, 0 );
-              
+
         if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
             dev->is_orinoco = 1;
     }
@@ -700,9 +739,9 @@ static int do_linux_open(struct wif *wi, char *iface)
     /* test if zd1211rw */
 
     if( memcmp( iface, "eth", 3 ) == 0 )
-    {   
+    {
         if( ( pid = fork() ) == 0 )
-        {   
+        {
             close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
             execlp( "iwpriv", "iwpriv", iface, "get_regdomain", NULL );
             exit( 1 );
@@ -772,6 +811,8 @@ static struct wif *linux_open(char *iface)
         wi->wi_read             = linux_read;
         wi->wi_write            = linux_write;
         wi->wi_set_channel      = linux_set_channel;
+        wi->wi_get_channel      = linux_get_channel;
+        wi->wi_update_channel   = linux_update_channel;
         wi->wi_close            = linux_close;
 	wi->wi_fd		= linux_fd;
 
@@ -800,7 +841,7 @@ int get_battery_state(void)
     static int linux_acpi = 1;
 
     if (linux_apm == 1)
-    {   
+    {
         if ((apm = fopen("/proc/apm", "r")) != NULL ) {
             if ( fgets(buf, 128,apm) != NULL ) {
                 int charging, ac;
@@ -931,17 +972,17 @@ int create_tap(void)
 
     fd_tap = open( "/dev/net/tun", O_RDWR );
     if(fd_tap < 0 )
-    {   
+    {
         printf( "error opening tap device: %s\n", strerror( errno ) );
         printf( "try \"modprobe tun\"\n");
         return -1;
-    }                                                                                                
+    }
 
     memset( &if_request, 0, sizeof( if_request ) );
     if_request.ifr_flags = IFF_TAP | IFF_NO_PI;
     strncpy( if_request.ifr_name, "at%d", IFNAMSIZ );
     if( ioctl( fd_tap, TUNSETIFF, (void *)&if_request ) < 0 )
-    {   
+    {
         printf( "error creating tap interface: %s\n", strerror( errno ) );
         close( fd_tap );
         return -1;
