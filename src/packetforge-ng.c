@@ -29,6 +29,7 @@
 #include <getopt.h>
 #include "version.h"
 #include "pcap.h"
+#include "crypto.h"
 
 #define NULL_MAC        "\x00\x00\x00\x00\x00\x00"
 #define BROADCAST       "\xFF\xFF\xFF\xFF\xFF\xFF"

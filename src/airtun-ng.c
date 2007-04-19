@@ -482,26 +482,6 @@ int create_wep_packet(unsigned char* packet, int *length)
     return 0;
 }
 
-int decrypt_wep( uchar *data, int len, uchar *key, int keylen )
-{
-    struct rc4_state S;
-
-    rc4_setup( &S, key, keylen );
-    rc4_crypt( &S, data, len );
-
-    return( check_crc_buf( data, len - 4 ) );
-}
-
-int encrypt_wep( uchar *data, int len, uchar *key, int keylen )
-{
-    struct rc4_state S;
-
-    rc4_setup( &S, key, keylen );
-    rc4_crypt( &S, data, len );
-
-    return( 0 );
-}
-
 int packet_xmit(uchar* packet, int length)
 {
     uchar K[64];

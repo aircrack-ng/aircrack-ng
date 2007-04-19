@@ -12,15 +12,15 @@ OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
 SRC_PTW		= aircrack-ptw-lib.c
-SRC_AC		= aircrack-ng.c crypto.c sha1-mmx.S common.c $(SRC_PTW)
+SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
 OBJS_PTW	= aircrack-ptw-lib.o
-OBJS_AC		= aircrack-ng.o crypto.o sha1-mmx.o common.o $(OBJS_PTW)
+OBJS_AC		= aircrack-ng.o crypto.o common.o $(OBJS_PTW)
 
-OBJS_AD		= airdecap-ng.o crypto.o common.o crc.o
-OBJS_PF		= packetforge-ng.o common.o crc.o
-OBJS_AR		= aireplay-ng.o common.o crc.o
+OBJS_AD		= airdecap-ng.o crypto.o common.o
+OBJS_PF		= packetforge-ng.o common.o crypto.o
+OBJS_AR		= aireplay-ng.o common.o crypto.o
 OBJS_ADU	= airodump-ng.o common.o
-OBJS_AT		= airtun-ng.o common.o crc.o crypto.o
+OBJS_AT		= airtun-ng.o common.o crypto.o
 OBJS_IV		= ivstools.o common.o
 
 OSD		= osdep
@@ -50,24 +50,24 @@ aircrack-ng-opt-prof_use: $(SRC_AC)
 	-prof_dir$(PROF_DIR) $(SRC_AC) -o aircrack-ng-opt-prof -lpthread
 
 aircrack-ng: $(OBJS_AC)
-	$(CC) $(CFLAGS) $(OBJS_AC) -o $(@) -lpthread
+	$(CC) $(CFLAGS) $(OBJS_AC) -o $(@) -lpthread -lssl
 
 airdecap-ng: $(OBJS_AD)
-	$(CC) $(CFLAGS) $(OBJS_AD) -o $(@)
+	$(CC) $(CFLAGS) $(OBJS_AD) -o $(@) -lssl
 
 packetforge-ng: $(OBJS_PF)
-	$(CC) $(CFLAGS) $(OBJS_PF) -o $(@)
+	$(CC) $(CFLAGS) $(OBJS_PF) -o $(@) -lssl
 
 aireplay-ng: $(OBJS_AR) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS)
+	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) -lssl
 
 airodump-ng: $(OBJS_ADU) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS)
 
 airtun-ng: $(OBJS_AT) $(LIBSOSD)
-	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS)
+	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) -lssl
 
-ivstools: $(OBJS_IV) 
+ivstools: $(OBJS_IV)
 	$(CC) $(CFLAGS) $(OBJS_IV) -o $(@)
 
 kstats: kstats.o

@@ -35,8 +35,6 @@
 #define CRYPT_WPA  2
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
-extern int check_crc_buf( unsigned char *buf, int len );
-extern int calc_crc_buf( unsigned char *buf, int len );
 
 const short Sbox[2][256]=
 {
@@ -130,76 +128,6 @@ char usage[] =
 "\n";
 
 
-/* derive the PMK from the passphrase and the essid */
-
-void calc_pmk( char *key, char *essid, uchar pmk[40] )
-{
-    int i, j, slen;
-    uchar buffer[65];
-    sha1_context ctx_ipad;
-    sha1_context ctx_opad;
-    sha1_context sha1_ctx;
-
-    slen = strlen( essid ) + 4;
-
-    /* setup the inner and outer contexts */
-
-    memset( buffer, 0, sizeof( buffer ) );
-    strncpy( (char *) buffer, key, sizeof( buffer ) - 1 );
-
-    for( i = 0; i < 64; i++ )
-        buffer[i] ^= 0x36;
-
-    sha1_starts( &ctx_ipad );
-    sha1_update( &ctx_ipad, buffer, 64 );
-
-    for( i = 0; i < 64; i++ )
-        buffer[i] ^= 0x6A;
-
-    sha1_starts( &ctx_opad );
-    sha1_update( &ctx_opad, buffer, 64 );
-
-    /* iterate HMAC-SHA1 over itself 8192 times */
-
-    essid[slen - 1] = '\1';
-    hmac_sha1( (uchar *) key, strlen( key ),
-               (uchar *) essid, slen, pmk );
-    memcpy( buffer, pmk, 20 );
-
-    for( i = 1; i < 4096; i++ )
-    {
-        memcpy( &sha1_ctx, &ctx_ipad, sizeof( sha1_ctx ) );
-        sha1_update( &sha1_ctx, buffer, 20 );
-        sha1_finish( &sha1_ctx, buffer );
-
-        memcpy( &sha1_ctx, &ctx_opad, sizeof( sha1_ctx ) );
-        sha1_update( &sha1_ctx, buffer, 20 );
-        sha1_finish( &sha1_ctx, buffer );
-
-        for( j = 0; j < 20; j++ )
-            pmk[j] ^= buffer[j];
-    }
-
-    essid[slen - 1] = '\2';
-    hmac_sha1( (uchar *) key, strlen( key ),
-               (uchar *) essid, slen, pmk + 20 );
-    memcpy( buffer, pmk + 20, 20 );
-
-    for( i = 1; i < 4096; i++ )
-    {
-        memcpy( &sha1_ctx, &ctx_ipad, sizeof( sha1_ctx ) );
-        sha1_update( &sha1_ctx, buffer, 20 );
-        sha1_finish( &sha1_ctx, buffer );
-
-        memcpy( &sha1_ctx, &ctx_opad, sizeof( sha1_ctx ) );
-        sha1_update( &sha1_ctx, buffer, 20 );
-        sha1_finish( &sha1_ctx, buffer );
-
-        for( j = 0; j < 20; j++ )
-            pmk[j + 20] ^= buffer[j];
-    }
-}
-
 struct ST_info
 {
     struct ST_info *next;       /* next supplicant              */
@@ -251,30 +179,17 @@ int calc_ptk( struct ST_info *wpa, uchar pmk[32] )
     for( i = 0; i < 4; i++ )
     {
         pke[99] = i;
-        hmac_sha1( pmk, 32, pke, 100, wpa->ptk + i * 20 );
+        HMAC(EVP_sha1(), pmk, 32, pke, 100, wpa->ptk + i * 20, NULL );
     }
 
     /* check the EAPOL frame MIC */
 
     if( ( wpa->keyver & 0x07 ) == 1 )
-        hmac_md5(  wpa->ptk, 16, wpa->eapol, wpa->eapol_size, mic );
+        HMAC(EVP_md5(), wpa->ptk, 16, wpa->eapol, wpa->eapol_size, mic, NULL );
     else
-        hmac_sha1( wpa->ptk, 16, wpa->eapol, wpa->eapol_size, mic );
+        HMAC(EVP_sha1(), wpa->ptk, 16, wpa->eapol, wpa->eapol_size, mic, NULL );
 
     return( memcmp( mic, wpa->keymic, 16 ) == 0 );
-}
-
-
-/* WEP (barebone RC4) decryption routine */
-
-int decrypt_wep( uchar *data, int len, uchar *key, int keylen )
-{
-    struct rc4_state S;
-
-    rc4_setup( &S, key, keylen );
-    rc4_crypt( &S, data, len );
-
-    return( check_crc_buf( data, len - 4 ) );
 }
 
 /* TKIP (RC4 + key mixing) decryption routine */
@@ -363,7 +278,7 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
     int data_len, last, offset;
     uchar B0[16], B[16], MIC[16];
     uchar PN[6], AAD[32];
-    aes_context aes_ctx;
+    AES_KEY aes_ctx;
 
     is_a4 = ( h80211[1] & 3 ) == 3;
 
@@ -395,16 +310,16 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
     if( is_a4 )
         memcpy( AAD + 24, h80211 + 24, 6 );
 
-    aes_set_key( &aes_ctx, TK1, 128 );
-    aes_encrypt( &aes_ctx, B0, MIC );
+    AES_set_encrypt_key( TK1, 128, &aes_ctx );
+    AES_encrypt( B0, MIC, &aes_ctx );
     XOR( MIC, AAD, 16 );
-    aes_encrypt( &aes_ctx, MIC, MIC );
+    AES_encrypt( MIC, MIC, &aes_ctx );
     XOR( MIC, AAD + 16, 16 );
-    aes_encrypt( &aes_ctx, MIC, MIC );
+    AES_encrypt( MIC, MIC, &aes_ctx );
 
     B0[0] &= 0x07;
     B0[14] = B0[15] = 0;
-    aes_encrypt( &aes_ctx, B0, B );
+    AES_encrypt( B0, B, &aes_ctx );
     XOR( h80211 + caplen - 8, B, 8 );
 
     blocks = ( data_len + 16 - 1 ) / 16;
@@ -418,10 +333,10 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
         B0[14] = ( i >> 8 ) & 0xFF;
         B0[15] =   i & 0xFF;
 
-        aes_encrypt( &aes_ctx, B0, B );
+        AES_encrypt( B0, B, &aes_ctx );
         XOR( h80211 + offset, B, n );
         XOR( MIC, h80211 + offset, n );
-        aes_encrypt( &aes_ctx, MIC, MIC );
+        AES_encrypt( MIC, MIC, &aes_ctx );
 
         offset += n;
     }

@@ -71,18 +71,6 @@
 
 #define SWAP(x,y) { uchar tmp = x; x = y; y = tmp; }
 
-#ifdef __i386__
-
-extern int shammx_init( uchar ctx[40] )
-__attribute__((regparm(1)));
-
-extern int shammx_ends( uchar ctx[40], uchar digests[40] )
-__attribute__((regparm(2)));
-
-extern int shammx_data( uchar ctx[40], uchar data[128], uchar buf[640] )
-__attribute__((regparm(3)));
-#endif
-
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 
@@ -2194,76 +2182,6 @@ int inner_bruteforcer_thread(void *arg)
 
 }
 
-/* derive the PMK from the passphrase and the essid */
-
-void calc_pmk( char *key, char *essid, uchar pmk[40] )
-{
-	int i, j, slen;
-	uchar buffer[65];
-	sha1_context ctx_ipad;
-	sha1_context ctx_opad;
-	sha1_context sha1_ctx;
-
-	slen = strlen( essid ) + 4;
-
-	/* setup the inner and outer contexts */
-
-	memset( buffer, 0, sizeof( buffer ) );
-	strncpy( (char *) buffer, key, sizeof( buffer ) - 1 );
-
-	for( i = 0; i < 64; i++ )
-		buffer[i] ^= 0x36;
-
-	sha1_starts( &ctx_ipad );
-	sha1_update( &ctx_ipad, buffer, 64 );
-
-	for( i = 0; i < 64; i++ )
-		buffer[i] ^= 0x6A;
-
-	sha1_starts( &ctx_opad );
-	sha1_update( &ctx_opad, buffer, 64 );
-
-	/* iterate HMAC-SHA1 over itself 8192 times */
-
-	essid[slen - 1] = '\1';
-	hmac_sha1( (uchar *) key, strlen( key ),
-		(uchar *) essid, slen, pmk );
-	memcpy( buffer, pmk, 20 );
-
-	for( i = 1; i < 4096; i++ )
-	{
-		memcpy( &sha1_ctx, &ctx_ipad, sizeof( sha1_ctx ) );
-		sha1_update( &sha1_ctx, buffer, 20 );
-		sha1_finish( &sha1_ctx, buffer );
-
-		memcpy( &sha1_ctx, &ctx_opad, sizeof( sha1_ctx ) );
-		sha1_update( &sha1_ctx, buffer, 20 );
-		sha1_finish( &sha1_ctx, buffer );
-
-		for( j = 0; j < 20; j++ )
-			pmk[j] ^= buffer[j];
-	}
-
-	essid[slen - 1] = '\2';
-	hmac_sha1( (uchar *) key, strlen( key ),
-		(uchar *) essid, slen, pmk + 20 );
-	memcpy( buffer, pmk + 20, 20 );
-
-	for( i = 1; i < 4096; i++ )
-	{
-		memcpy( &sha1_ctx, &ctx_ipad, sizeof( sha1_ctx ) );
-		sha1_update( &sha1_ctx, buffer, 20 );
-		sha1_finish( &sha1_ctx, buffer );
-
-		memcpy( &sha1_ctx, &ctx_opad, sizeof( sha1_ctx ) );
-		sha1_update( &sha1_ctx, buffer, 20 );
-		sha1_finish( &sha1_ctx, buffer );
-
-		for( j = 0; j < 20; j++ )
-			pmk[j + 20] ^= buffer[j];
-	}
-}
-
 /* each thread computes two pairwise master keys at a time */
 
 int crack_wpa_thread( void *arg )
@@ -2272,15 +2190,6 @@ int crack_wpa_thread( void *arg )
 	char  key1[128], key2[128];
 	uchar pmk1[128], pmk2[128];
         int len1, len2;
-
-	#ifdef __i386__
-
-	uchar k_ipad[128], ctx_ipad[40];
-	uchar k_opad[128], ctx_opad[40];
-	uchar buffer[128], sha1_ctx[40];
-	uchar wrkbuf[640];
-	uint i, *u, *v, *w;
-	#endif
 
 	int slen, cid = (long) arg;
 
@@ -2322,140 +2231,9 @@ int crack_wpa_thread( void *arg )
 
                 if(len1 < 8) len1 = 8;
                 if(len2 < 8) len2 = 8;
-		#ifdef __i386__
-
-		/* MMX available, so compute two PMKs in a single row */
-
-		memset( k_ipad, 0, sizeof( k_ipad ) );
-		memset( k_opad, 0, sizeof( k_opad ) );
-
-		memcpy( k_ipad, key1, len1 );
-		memcpy( k_opad, key1, len1 );
-
-		memcpy( k_ipad + 64, key2, len2 );
-		memcpy( k_opad + 64, key2, len2 );
-
-		u = (uint *) ( k_ipad      );
-		v = (uint *) ( k_ipad + 64 );
-		w = (uint *) buffer;
-
-		for( i = 0; i < 16; i++ )
-		{
-			/* interleave the data */
-
-			*w++ = *u++ ^ 0x36363636;
-			*w++ = *v++ ^ 0x36363636;
-		}
-
-		shammx_init( ctx_ipad );
-		shammx_data( ctx_ipad, buffer, wrkbuf );
-
-		u = (uint *) ( k_opad      );
-		v = (uint *) ( k_opad + 64 );
-		w = (uint *) buffer;
-
-		for( i = 0; i < 16; i++ )
-		{
-			*w++ = *u++ ^ 0x5C5C5C5C;
-			*w++ = *v++ ^ 0x5C5C5C5C;
-		}
-
-		shammx_init( ctx_opad );
-		shammx_data( ctx_opad, buffer, wrkbuf );
-
-		memset( buffer, 0, sizeof( buffer ) );
-
-		/* use the buffer, luke */
-
-		buffer[ 40] = buffer[ 44] = 0x80;
-		buffer[122] = buffer[126] = 0x02;
-		buffer[123] = buffer[127] = 0xA0;
-
-		essid[slen - 1] = '\1';
-
-		hmac_sha1( (uchar *) key1, len1,
-			(uchar *) essid, slen,  pmk1 );
-
-		hmac_sha1( (uchar *) key2, len2,
-			(uchar *) essid, slen,  pmk2 );
-
-		u = (uint *) pmk1;
-		v = (uint *) pmk2;
-		w = (uint *) buffer;
-
-		*w++ = *u++; *w++ = *v++;
-		*w++ = *u++; *w++ = *v++;
-		*w++ = *u++; *w++ = *v++;
-		*w++ = *u++; *w++ = *v++;
-		*w++ = *u++; *w++ = *v++;
-
-		for( i = 1; i < 4096; i++ )
-		{
-			memcpy( sha1_ctx, ctx_ipad, 40 );
-			shammx_data( sha1_ctx, buffer, wrkbuf );
-			shammx_ends( sha1_ctx, buffer );
-
-			memcpy( sha1_ctx, ctx_opad, 40 );
-			shammx_data( sha1_ctx, buffer, wrkbuf );
-			shammx_ends( sha1_ctx, buffer );
-
-			u = (uint *) pmk1;
-			v = (uint *) pmk2;
-			w = (uint *) buffer;
-
-			/* de-interleave the digests */
-
-			*u++ ^= *w++; *v++ ^= *w++;
-			*u++ ^= *w++; *v++ ^= *w++;
-			*u++ ^= *w++; *v++ ^= *w++;
-			*u++ ^= *w++; *v++ ^= *w++;
-			*u++ ^= *w++; *v++ ^= *w++;
-		}
-
-		essid[slen - 1] = '\2';
-
-		hmac_sha1( (uchar *) key1, len1,
-			(uchar *) essid, slen,  pmk1 + 20 );
-
-		hmac_sha1( (uchar *) key2, len2,
-			(uchar *) essid, slen,  pmk2 + 20 );
-
-		u = (uint *) ( pmk1 + 20 );
-		v = (uint *) ( pmk2 + 20 );
-		w = (uint *) buffer;
-
-		*w++ = *u++; *w++ = *v++;
-		*w++ = *u++; *w++ = *v++;
-		*w++ = *u++; *w++ = *v++;
-		*w++ = *u++; *w++ = *v++;
-		*w++ = *u++; *w++ = *v++;
-
-		for( i = 1; i < 4096; i++ )
-		{
-			memcpy( sha1_ctx, ctx_ipad, 40 );
-			shammx_data( sha1_ctx, buffer, wrkbuf );
-			shammx_ends( sha1_ctx, buffer );
-
-			memcpy( sha1_ctx, ctx_opad, 40 );
-			shammx_data( sha1_ctx, buffer, wrkbuf );
-			shammx_ends( sha1_ctx, buffer );
-
-			u = (uint *) ( pmk1 + 20 );
-			v = (uint *) ( pmk2 + 20 );
-			w = (uint *) buffer;
-
-			*u++ ^= *w++; *v++ ^= *w++;
-			*u++ ^= *w++; *v++ ^= *w++;
-			*u++ ^= *w++; *v++ ^= *w++;
-		}
-
-		#else
-
-		/* not x86, use the generic SHA-1 C code */
 
 		calc_pmk( key1, essid, pmk1 );
 		calc_pmk( key2, essid, pmk2 );
-		#endif
 
 		/* send the passphrase & master keys */
 
@@ -2777,19 +2555,19 @@ int do_wpa_crack( struct AP_info *ap )
 			for( i = 0; i < 4; i++ )
 			{
 				pke[99] = i;
-				hmac_sha1( pmk1, 32, pke, 100, ptk1 + i * 20 );
-				hmac_sha1( pmk2, 32, pke, 100, ptk2 + i * 20 );
+				HMAC(EVP_sha1(), pmk1, 32, pke, 100, ptk1 + i * 20, NULL);
+				HMAC(EVP_sha1(), pmk2, 32, pke, 100, ptk2 + i * 20, NULL);
 			}
 
 			if( ap->wpa.keyver == 1 )
 			{
-				hmac_md5( ptk1, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic1 );
-				hmac_md5( ptk2, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic2 );
+				HMAC(EVP_md5(), ptk1, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic1, NULL);
+				HMAC(EVP_md5(), ptk2, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic2, NULL);
 			}
 			else
 			{
-				hmac_sha1( ptk1, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic1 );
-				hmac_sha1( ptk2, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic2 );
+				HMAC(EVP_sha1(), ptk1, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic1, NULL);
+				HMAC(EVP_sha1(), ptk2, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic2, NULL);
 			}
 
 			if( memcmp( mic1, ap->wpa.keymic, 16 ) == 0 )

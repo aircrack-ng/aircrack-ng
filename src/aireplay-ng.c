@@ -48,6 +48,7 @@
 #include "version.h"
 #include "pcap.h"
 #include "osdep/osdep.h"
+#include "crypto.h"
 
 #define NULL_MAC        "\x00\x00\x00\x00\x00\x00"
 #define BROADCAST       "\xFF\xFF\xFF\xFF\xFF\xFF"
