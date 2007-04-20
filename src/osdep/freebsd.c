@@ -26,6 +26,7 @@
 #include <assert.h>
 
 #include "osdep.h"
+#include "network.h"
 
 struct priv_fbsd {
 	/* iface */
@@ -234,8 +235,6 @@ static int do_fbsd_open(struct wif *wi, char *iface)
         if (ioctl(s, SIOCGIFFLAGS, &ifr) == -1)
 		goto close_sock;
 
-        memcpy( wi->mac, (unsigned char*)ifr.ifr_hwaddr.sa_data, 6);
-
         flags = (ifr.ifr_flags & 0xffff) | (ifr.ifr_flagshigh << 16);
         flags |= IFF_UP | IFF_PPROMISC;
         memset(&ifr, 0, sizeof(ifr));
@@ -359,13 +358,12 @@ static struct wif *fbsd_open(char *iface)
 
 struct wif *wi_open(char *iface)
 {
-        struct wif *wi;
+	struct wif *wi;
 
-        wi = fbsd_open(iface);
-        wi->interface = (char*) malloc(strlen(iface)+1);
-        strcpy(wi->interface, iface);
+	if ((wi = net_open(iface)))
+		return wi;
 
-        return wi;
+	return fbsd_open(iface);
 }
 
 int get_battery_state(void)

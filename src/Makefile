@@ -25,7 +25,7 @@ OBJS_IV		= ivstools.o common.o
 
 OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD)
-LIBOSD		= $(OSD)/lib$(OSD).so
+LIBOSD		= $(OSD)/lib$(OSD).a
 
 all: osd userland $(SBINFILES)
 

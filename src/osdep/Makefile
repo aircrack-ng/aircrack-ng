@@ -8,7 +8,8 @@ OS= `uname -s`
 AR=ar
 RANLIB=ranlib
 
-OBJS_FBSD=freebsd.o
+OBJS_NET=network.o
+OBJS_FBSD=$(OBJS) $(OBJS_NET) freebsd.o
 OBJS_LINUX=linux.o
 OBJS_DUMMY=dummy.o
 
@@ -21,8 +22,8 @@ all:
 	$(RANLIB) $(LIB)
 	touch $(@)
 
-.os.FreeBSD: $(OBJS) $(OBJS_FBSD)
-	$(AR) cru $(LIB) $(OBJS) $(OBJS_FBSD)
+.os.FreeBSD: $(OBJS_FBSD)
+	$(AR) cru $(LIB) $(OBJS_FBSD)
 	$(RANLIB) $(LIB)
 	touch $(@)
 
