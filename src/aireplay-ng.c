@@ -4417,11 +4417,13 @@ usage:
         return( 1 );
     }
 
+	#ifndef __CYGWIN__
     if( geteuid() != 0 )
     {
         printf( "This program requires root privileges.\n" );
         return( 1 );
     }
+    #endif
 
     if ( opt.f_tods == 1 && opt.f_fromds == 1 )
     {
