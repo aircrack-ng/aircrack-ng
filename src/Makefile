@@ -28,6 +28,8 @@ OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD)
 LIBOSD		= $(OSD)/lib$(OSD).a
 
+LIBSSL		= -lssl -lcrypto
+
 all: osd userland $(SBINFILES)
 
 userland: $(BINFILES)
@@ -51,16 +53,16 @@ aircrack-ng-opt-prof_use: $(SRC_AC)
 	-prof_dir$(PROF_DIR) $(SRC_AC) -o aircrack-ng-opt-prof -lpthread
 
 aircrack-ng: $(OBJS_AC)
-	$(CC) $(CFLAGS) $(OBJS_AC) -o $(@) -lpthread -lssl
+	$(CC) $(CFLAGS) $(OBJS_AC) -o $(@) -lpthread $(LIBSSL)
 
 airdecap-ng: $(OBJS_AD)
-	$(CC) $(CFLAGS) $(OBJS_AD) -o $(@) -lssl
+	$(CC) $(CFLAGS) $(OBJS_AD) -o $(@) $(LIBSSL)
 
 packetforge-ng: $(OBJS_PF)
-	$(CC) $(CFLAGS) $(OBJS_PF) -o $(@) -lssl
+	$(CC) $(CFLAGS) $(OBJS_PF) -o $(@) $(LIBSSL)
 
 aireplay-ng: $(OBJS_AR) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) -lssl
+	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL)
 
 airodump-ng: $(OBJS_ADU) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS)
@@ -69,7 +71,7 @@ airserv-ng: $(OBJS_AS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AS) -o $(@) $(LIBS)
 
 airtun-ng: $(OBJS_AT) $(LIBSOSD)
-	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) -lssl
+	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL)
 
 ivstools: $(OBJS_IV)
 	$(CC) $(CFLAGS) $(OBJS_IV) -o $(@)

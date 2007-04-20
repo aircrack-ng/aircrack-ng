@@ -818,12 +818,6 @@ static struct wif *linux_open(char *iface)
 
 struct wif *wi_open_osdep(char *iface)
 {
-        struct wif *wi;
-
-	/* XXX move up a layer? */
-	if ((wi = net_open(iface)))
-		return wi;
-
         return linux_open(iface);
 }
 

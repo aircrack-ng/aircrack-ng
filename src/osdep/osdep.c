@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+
 #include "osdep.h"
+#include "network.h"
 
 int wi_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 {
@@ -89,7 +91,10 @@ struct wif *wi_open(char *iface)
 {
 	struct wif *wi;
 
-	/* XXX can try network open here */
+	/* XXX assume for now that all OSes have UNIX sockets */
+	wi = net_open(iface);
+	if (wi)
+		return wi;
 
 	wi = wi_open_osdep(iface);
 	if (!wi)

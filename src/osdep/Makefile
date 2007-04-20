@@ -4,14 +4,11 @@ include $(ROOT)/common.mak
 LIB=libosdep.a
 CFLAGS	+= -fPIC -I..
 OBJS=osdep.o
-OS= `uname -s`
-AR=ar
-RANLIB=ranlib
 
 OBJS_NET=network.o
 OBJS_FBSD=$(OBJS) $(OBJS_NET) freebsd.o
 OBJS_LINUX=$(OBJS) $(OBJS_NET) linux.o
-OBJS_DUMMY=dummy.o
+OBJS_DUMMY=dummy.o $(OBJS_NET)
 
 all:
 	@echo Building for $(OS)

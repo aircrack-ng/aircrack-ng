@@ -10,7 +10,7 @@
 
 #include "osdep.h"
 
-struct wif *wi_open(char *iface)
+struct wif *wi_open_osdep(char *iface)
 {
 	if (iface) {} /* XXX unused parameter */
 
