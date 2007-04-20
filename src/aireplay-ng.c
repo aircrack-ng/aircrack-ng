@@ -241,6 +241,7 @@ struct APt
     unsigned char found;
     unsigned char len;
     unsigned char essid[255];
+    unsigned char bssid[6];
 };
 
 struct APt ap[20];
@@ -295,17 +296,30 @@ int read_packet(void *buf, size_t count)
 {
 	struct wif *wi = _wi_in; /* XXX */
 	int rc;
+        struct timeval tv0;
+        fd_set rfds;
 
-	rc = wi_read(wi, buf, count, NULL);
-	if (rc == -1) {
-		switch (errno) {
-		case EAGAIN:
-			return 0;
-		}
+        FD_ZERO( &rfds );
+        FD_SET( wi_fd(wi), &rfds );
 
-		perror("wi_read()");
-		return -1;
-	}
+        tv0.tv_sec  = 0;
+        tv0.tv_usec = 100000;
+
+        if( select( wi_fd(wi) + 1, &rfds, NULL, NULL, &tv0 ) <= 0 )
+        {
+            return( 1 );
+        }
+
+        rc = wi_read(wi, buf, count, NULL);
+        if (rc == -1) {
+            switch (errno) {
+            case EAGAIN:
+                    return 0;
+            }
+
+            perror("wi_read()");
+            return -1;
+        }
 
 	return rc;
 }
@@ -3408,7 +3422,9 @@ int do_attack_fragment()
 int grab_essid(uchar* packet, int len)
 {
     int i=0, pos=0, tagtype=0, taglen=0;
+    uchar bssid[6];
 
+    memcpy(bssid, packet+16, 6);
     taglen = 22;    //initial value to get the fixed tags parsing started
     taglen+= 12;    //skip fixed tags in frames
     do
@@ -3435,7 +3451,7 @@ int grab_essid(uchar* packet, int len)
     {
         if( ap[i].set && taglen == ap[i].len)
         {
-            if( memcmp(packet+pos+2, ap[i].essid, taglen) == 0 )    //got it already
+            if( memcmp(bssid, ap[i].bssid, 6) == 0 )    //got it already
             {
                 if(packet[0] == 0x50 && !ap[i].found)
                     ap[i].found++;
@@ -3448,6 +3464,7 @@ int grab_essid(uchar* packet, int len)
             ap[i].len = taglen;
             memcpy(ap[i].essid, packet+pos+2, taglen);
             ap[i].essid[taglen] = '\0';
+            memcpy(ap[i].bssid, bssid, 6);
             if(packet[0] == 0x50) ap[i].found++;
             return 0;
         }
@@ -3463,6 +3480,24 @@ int do_attack_test()
     int gotit=0, answers=0, found=0;
     int caplen=0, essidlen=0;
 
+    if(memcmp(opt.r_bssid, NULL_MAC, 6))
+    {
+        if( strlen(opt.r_essid) == 0)
+        {
+            printf( "Please specify an ESSID (-e).\n" );
+            return( 1 );
+        }
+    }
+
+    if(!memcmp(opt.r_bssid, NULL_MAC, 6))
+    {
+        if(strlen(opt.r_essid) > 0)
+        {
+            printf( "Please specify a BSSID (-a).\n" );
+            return( 1 );
+        }
+    }
+
     srand( time( NULL ) );
 
     memset(ap, '\0', 20*sizeof(struct APt));
@@ -3476,6 +3511,7 @@ int do_attack_test()
         ap[0].len = essidlen;
         memcpy(ap[0].essid, opt.r_essid, essidlen);
         ap[0].essid[essidlen] = '\0';
+        memcpy(ap[0].bssid, opt.r_bssid, 6);
         found++;
     }
 
@@ -3585,7 +3621,8 @@ int do_attack_test()
     PCT; printf("Trying directed probe requests...\n");
     for(i=0; i<found; i++)
     {
-        PCT; printf("%s\n", ap[i].essid);
+        PCT; printf("%02X:%02X:%02X:%02X:%02X:%02X - %s\n", ap[i].bssid[0], ap[i].bssid[1],
+                    ap[i].bssid[2], ap[i].bssid[3], ap[i].bssid[4], ap[i].bssid[5], ap[i].essid);
 
         ap[i].found=0;
 
@@ -3631,12 +3668,15 @@ int do_attack_test()
                 {
                     if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
                     {
-                        if(!answers)
+                        if(! memcmp(ap[i].bssid, packet+16, 6)) //From the mentioned AP
                         {
-                            answers++;
+                            if(!answers)
+                            {
+                                answers++;
+                            }
+                            ap[i].found++;
+                            break;
                         }
-                        ap[i].found++;
-                        break;
                     }
                 }
 

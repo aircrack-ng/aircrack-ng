@@ -47,7 +47,6 @@ static void usage(char *p)
 		"-d\t<dev>\twifi device to serve\n"
 		"-c\t<chan>\tchan to start on\n"
 		"-v\t<level>\tdebug level\n"
-		"-h\t0day exploit\n"
 		, p);
 	exit(1);
 }
