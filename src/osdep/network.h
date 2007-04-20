@@ -14,6 +14,7 @@ enum {
 	NET_SET_CHAN,
 	NET_WRITE,
 	NET_PACKET,
+	NET_MAC,
 };
 
 struct net_hdr {

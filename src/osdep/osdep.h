@@ -22,25 +22,23 @@ struct rx_info {
  * This structure represents a single interface.  It should be created with
  * wi_open and destroyed with wi_close.
  */
+#define MAX_IFACE_NAME	64
 struct wif {
         int     (*wi_read)(struct wif *wi, unsigned char *h80211, int len,
                            struct rx_info *ri);
         int     (*wi_write)(struct wif *wi, unsigned char *h80211, int len,
                             struct tx_info *ti);
         int     (*wi_set_channel)(struct wif *wi, int chan);
-        int     (*wi_update_channel)(struct wif *wi);
+        int     (*wi_get_channel)(struct wif *wi);
 	void	(*wi_close)(struct wif *wi);
 	int	(*wi_fd)(struct wif *wi);
-        void    *wi_priv;
-        int     channel;
-        char    *interface;
-        unsigned char mac[6];
+	int	(*wi_get_mac)(struct wif *wi, unsigned char *mac);
+
+        void	*wi_priv;
+        char	wi_interface[MAX_IFACE_NAME];
 };
 
 /* Routines to be used by client code */
-/* wi_open should determine the type of card and setup the wif structure
- * appropriately.  There is one per OS.
- */
 extern struct wif *wi_open(char *iface);
 extern int wi_read(struct wif *wi, unsigned char *h80211, int len,
 		   struct rx_info *ri);
@@ -50,7 +48,12 @@ extern int wi_set_channel(struct wif *wi, int chan);
 extern int wi_get_channel(struct wif *wi);
 extern void wi_close(struct wif *wi);
 extern char *wi_get_ifname(struct wif *wi);
-extern unsigned char *wi_get_mac(struct wif *wi);
+extern int wi_get_mac(struct wif *wi, unsigned char *mac);
+
+/* wi_open_osdep should determine the type of card and setup the wif structure
+ * appropriately.  There is one per OS.  Called by wi_open.
+ */
+extern struct wif *wi_open_osdep(char *iface);
 
 /* This will return the FD used for reading.  This is required for using select
  * on it.

@@ -31,13 +31,13 @@ int wi_set_channel(struct wif *wi, int chan)
 
 int wi_get_channel(struct wif *wi)
 {
-        wi->wi_update_channel(wi);
-        return wi->channel;
+	assert(wi->wi_set_channel);
+        return wi->wi_get_channel(wi);
 }
 
 char *wi_get_ifname(struct wif *wi)
 {
-        return wi->interface;
+        return wi->wi_interface;
 }
 
 void wi_close(struct wif *wi)
@@ -79,7 +79,24 @@ void *wi_priv(struct wif *wi)
 	return wi->wi_priv;
 }
 
-unsigned char *wi_get_mac(struct wif *wi)
+int wi_get_mac(struct wif *wi, unsigned char *mac)
 {
-        return wi->mac;
+	assert(wi->wi_get_mac);
+	return wi->wi_get_mac(wi, mac);
+}
+
+struct wif *wi_open(char *iface)
+{
+	struct wif *wi;
+
+	/* XXX can try network open here */
+
+	wi = wi_open_osdep(iface);
+	if (!wi)
+		return NULL;
+	
+	strncpy(wi->wi_interface, iface, sizeof(wi->wi_interface)-1);
+	wi->wi_interface[sizeof(wi->wi_interface)-1] = 0;
+
+	return wi;
 }

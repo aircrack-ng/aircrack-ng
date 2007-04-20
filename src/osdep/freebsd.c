@@ -15,6 +15,7 @@
 #include <net/if.h>
 #include <net/if_media.h>
 #include <sys/ioctl.h>
+#include <net/if_dl.h>
 #include <net80211/ieee80211_ioctl.h>
 #include <net80211/ieee80211_radiotap.h>
 #include <net80211/ieee80211_freebsd.h>
@@ -24,6 +25,7 @@
 #include <string.h>
 #include <sys/uio.h>
 #include <assert.h>
+#include <ifaddrs.h>
 
 #include "osdep.h"
 #include "network.h"
@@ -107,20 +109,22 @@ static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
         ptr = (char*)rth + rth->it_len;
 
 	/* write control info */
-	if (ri)
-		memset(ri, 0, sizeof(*ri)); /* XXX */
+	if (ri) {
+		memset(ri, 0, sizeof(*ri));
+		/* XXX get channel from radiotap */
+	}
 
         return ptr;
 #undef BIT
 }
 
-static int fbsd_update_channel(struct wif *wi)
+static int fbsd_get_channel(struct wif *wi)
 {
 	struct priv_fbsd *pf = wi_priv(wi);
 
 	if( ioctl(pf->pf_s, SIOCG80211, &pf->pf_ireq) != 0 ) return -1;
-	wi->channel = pf->pf_ireq.i_val;
-	return 0;
+
+	return pf->pf_ireq.i_val;
 }
 
 static int fbsd_read(struct wif *wi, unsigned char *h80211, int len,
@@ -149,9 +153,8 @@ static int fbsd_read(struct wif *wi, unsigned char *h80211, int len,
 	assert(plen > 0);
 	memcpy(h80211, wh, plen);
 
-	fbsd_update_channel(wi);
-        if(ri)
-            ri->ri_channel = wi->channel;
+        if(!ri->ri_channel)
+            ri->ri_channel = wi_get_channel(wi);
 
 	return plen;
 }
@@ -188,9 +191,6 @@ static int fbsd_set_channel(struct wif *wi, int chan)
 
 static void do_free(struct wif *wi)
 {
-	if(wi->interface)
-		free(wi->interface);
-
 	assert(wi->wi_priv);
 	free(wi->wi_priv);
 	wi->wi_priv = 0;
@@ -318,6 +318,34 @@ static int fbsd_fd(struct wif *wi)
 	return pf->pf_fd;
 }
 
+static int fbsd_get_mac(struct wif *wi, unsigned char *mac)
+{
+	struct ifaddrs *ifa, *p;
+	char *name = wi_get_ifname(wi);
+	int rc = -1;
+	 struct sockaddr_dl* sdp;
+
+	if (getifaddrs(&ifa) == -1)
+		return -1;
+
+	p = ifa;
+	while (p) {
+		if (p->ifa_addr->sa_family == AF_LINK &&
+		    strcmp(name, p->ifa_name) == 0) {
+
+		    	sdp = (struct sockaddr_dl*) p->ifa_addr;
+			memcpy(mac, sdp->sdl_data + sdp->sdl_nlen, 6);
+			rc = 0;
+			break;
+		}
+
+		p = p->ifa_next;
+	}
+	freeifaddrs(ifa);
+
+	return rc;
+}
+
 static struct wif *fbsd_open(char *iface)
 {
 	struct wif *wi;
@@ -331,9 +359,10 @@ static struct wif *fbsd_open(char *iface)
 	wi->wi_read		= fbsd_read;
 	wi->wi_write		= fbsd_write;
 	wi->wi_set_channel	= fbsd_set_channel;
-	wi->wi_update_channel	= fbsd_update_channel;
+	wi->wi_get_channel	= fbsd_get_channel;
 	wi->wi_close		= fbsd_close;
 	wi->wi_fd		= fbsd_fd;
+	wi->wi_get_mac		= fbsd_get_mac;
 
 	/* setup iface */
 	fd = do_fbsd_open(wi, iface);
@@ -356,13 +385,14 @@ static struct wif *fbsd_open(char *iface)
 	return wi;
 }
 
-struct wif *wi_open(char *iface)
+struct wif *wi_open_osdep(char *iface)
 {
 	struct wif *wi;
 
+	/* XXX move this to wi_open */
 	if ((wi = net_open(iface)))
 		return wi;
-
+	
 	return fbsd_open(iface);
 }
 

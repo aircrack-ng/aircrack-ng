@@ -5,13 +5,14 @@
  *
  */
 
-#include <sys/endian.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <assert.h>
 
 #include "osdep.h"
@@ -24,7 +25,6 @@ struct priv_net {
 static int net_send(struct priv_net *pn, int command, void *arg, int len)
 {
 	struct net_hdr nh;
-	int rc;
 
 	memset(&nh, 0, sizeof(nh));
 	nh.nh_type	= command;
@@ -61,7 +61,6 @@ static int net_get(struct priv_net *pn, void *arg, int *len)
 {
 	struct net_hdr nh;
 	int plen;
-	int rc = 0;
 
 	if (read_exact(pn, &nh, sizeof(nh)) == -1)
 		return -1;
@@ -82,7 +81,7 @@ static int net_cmd(struct priv_net *pn, int command, void *arg, int alen)
 	int len;
 	int cmd;
 
-	if (!net_send(pn, command, arg, len))
+	if (!net_send(pn, command, arg, alen))
 		return -1;
 
 	len = sizeof(rc);
@@ -99,7 +98,6 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 		    struct rx_info *ri)
 {
 	struct priv_net *pn = wi_priv(wi);
-	unsigned char *wh;
 	unsigned char buf[2048];
 	int cmd;
 	int sz = sizeof(*ri);
@@ -115,9 +113,29 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 	memcpy(ri, buf, sz);
 	l -= sz;
 	assert(l > 0);
+	if (l > len)
+		l = len;
 	memcpy(h80211, &buf[sz], l);
 
 	return cmd;
+}
+
+static int net_get_mac(struct wif *wi, unsigned char *mac)
+{
+	struct priv_net *pn = wi_priv(wi);
+	unsigned char buf[6];
+	int cmd;
+	int sz = sizeof(buf);
+	
+	cmd = net_get(pn, buf, &sz);
+	if (cmd == NET_RC)
+		return ntohl(*((uint32_t*)buf));
+	assert(cmd == NET_MAC);
+	assert(sz == sizeof(buf));
+
+	memcpy(mac, buf, 6);
+
+	return 0;
 }
 
 static int net_write(struct wif *wi, unsigned char *h80211, int len,
@@ -147,7 +165,6 @@ static int net_set_channel(struct wif *wi, int chan)
 static int net_get_channel(struct wif *wi)
 {
 	struct priv_net *pn = wi_priv(wi);
-	int c;
 
 	return net_cmd(pn, NET_GET_CHAN, NULL, 0);
 }
@@ -199,11 +216,12 @@ out:
 
 static int handshake(int s)
 {
+	if (s) {} /* XXX unused */
 	/* XXX do a handshake */
 	return 0;
 }
 
-static int do_net_open(struct wif *wi, char *iface)
+static int do_net_open(char *iface)
 {
 	int s, port;
 	char ip[16];
@@ -254,12 +272,13 @@ struct wif *net_open(char *iface)
 	wi->wi_read		= net_read;
 	wi->wi_write		= net_write;
 	wi->wi_set_channel	= net_set_channel;
-	wi->wi_update_channel	= net_get_channel;
+	wi->wi_get_channel	= net_get_channel;
 	wi->wi_close		= net_close;
 	wi->wi_fd		= net_fd;
+	wi->wi_get_mac		= net_get_mac;
 
 	/* setup iface */
-	s = do_net_open(wi, iface);
+	s = do_net_open(iface);
 	if (s == -1) {
 		do_net_free(wi);
 		return NULL;

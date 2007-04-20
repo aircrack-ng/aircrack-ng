@@ -4449,8 +4449,8 @@ usage:
         dev.arptype_in = dev.arptype_out;
     }
 
-    memcpy(dev.mac_in, wi_get_mac(_wi_in), 6);
-    memcpy(dev.mac_out, wi_get_mac(_wi_out), 6);
+    wi_get_mac(_wi_in, dev.mac_in);
+    wi_get_mac(_wi_out, dev.mac_out);
     /* drop privileges */
 
     setuid( getuid() );

@@ -10,7 +10,7 @@ RANLIB=ranlib
 
 OBJS_NET=network.o
 OBJS_FBSD=$(OBJS) $(OBJS_NET) freebsd.o
-OBJS_LINUX=linux.o
+OBJS_LINUX=$(OBJS) $(OBJS_NET) linux.o
 OBJS_DUMMY=dummy.o
 
 all:
@@ -27,8 +27,8 @@ all:
 	$(RANLIB) $(LIB)
 	touch $(@)
 
-.os.Linux: $(OBJS) $(OBJS_LINUX)
-	$(AR) cru $(LIB) $(OBJS) $(OBJS_LINUX)
+.os.Linux: $(OBJS_LINUX)
+	$(AR) cru $(LIB) $(OBJS_LINUX)
 	$(RANLIB) $(LIB)
 	touch $(@)
 
