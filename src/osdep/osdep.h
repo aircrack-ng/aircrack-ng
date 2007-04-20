@@ -14,6 +14,8 @@ struct tx_info {
 
 struct rx_info {
         int     ri_power;
+        int     ri_noise;
+        int     ri_channel;
 };
 
 /* Normal code should not access this directly.  Only osdep.
@@ -26,11 +28,13 @@ struct wif {
         int     (*wi_write)(struct wif *wi, unsigned char *h80211, int len,
                             struct tx_info *ti);
         int     (*wi_set_channel)(struct wif *wi, int chan);
-        int     (*wi_get_channel)(struct wif *wi, int *chan);
         int     (*wi_update_channel)(struct wif *wi);
 	void	(*wi_close)(struct wif *wi);
 	int	(*wi_fd)(struct wif *wi);
         void    *wi_priv;
+        int     channel;
+        char    *interface;
+        unsigned char mac[6];
 };
 
 /* Routines to be used by client code */
@@ -43,9 +47,11 @@ extern int wi_read(struct wif *wi, unsigned char *h80211, int len,
 extern int wi_write(struct wif *wi, unsigned char *h80211, int len,
 		    struct tx_info *ti);
 extern int wi_set_channel(struct wif *wi, int chan);
-extern int wi_get_channel(struct wif *wi, int *chan);
-extern int wi_update_channel(struct wif *wi);
+extern int wi_get_channel(struct wif *wi);
 extern void wi_close(struct wif *wi);
+extern char *wi_get_ifname(struct wif *wi);
+extern unsigned char *wi_get_mac(struct wif *wi);
+
 /* This will return the FD used for reading.  This is required for using select
  * on it.
  */

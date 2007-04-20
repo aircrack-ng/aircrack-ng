@@ -118,7 +118,7 @@ static int fbsd_update_channel(struct wif *wi)
 	struct priv_fbsd *pf = wi_priv(wi);
 
 	if( ioctl(pf->pf_s, SIOCG80211, &pf->pf_ireq) != 0 ) return -1;
-	pf->pf_chan = pf->pf_ireq.i_val;
+	wi->channel = pf->pf_ireq.i_val;
 	return 0;
 }
 
@@ -149,6 +149,8 @@ static int fbsd_read(struct wif *wi, unsigned char *h80211, int len,
 	memcpy(h80211, wh, plen);
 
 	fbsd_update_channel(wi);
+        if(ri)
+            ri->ri_channel = wi->channel;
 
 	return plen;
 }
@@ -183,16 +185,11 @@ static int fbsd_set_channel(struct wif *wi, int chan)
 	return 0;
 }
 
-static int fbsd_get_channel(struct wif *wi, int *chan)
-{
-	struct priv_fbsd *pf = wi_priv(wi);
-
-	*chan = pf->pf_chan;
-	return 0;
-}
-
 static void do_free(struct wif *wi)
 {
+	if(wi->interface)
+		free(wi->interface);
+
 	assert(wi->wi_priv);
 	free(wi->wi_priv);
 	wi->wi_priv = 0;
@@ -236,6 +233,8 @@ static int do_fbsd_open(struct wif *wi, char *iface)
         strcpy(ifr.ifr_name, iface);
         if (ioctl(s, SIOCGIFFLAGS, &ifr) == -1)
 		goto close_sock;
+
+        memcpy( wi->mac, (unsigned char*)ifr.ifr_hwaddr.sa_data, 6);
 
         flags = (ifr.ifr_flags & 0xffff) | (ifr.ifr_flagshigh << 16);
         flags |= IFF_UP | IFF_PPROMISC;
@@ -333,7 +332,6 @@ static struct wif *fbsd_open(char *iface)
 	wi->wi_read		= fbsd_read;
 	wi->wi_write		= fbsd_write;
 	wi->wi_set_channel	= fbsd_set_channel;
-	wi->wi_get_channel	= fbsd_get_channel;
 	wi->wi_update_channel	= fbsd_update_channel;
 	wi->wi_close		= fbsd_close;
 	wi->wi_fd		= fbsd_fd;
@@ -361,7 +359,13 @@ static struct wif *fbsd_open(char *iface)
 
 struct wif *wi_open(char *iface)
 {
-	return fbsd_open(iface);
+        struct wif *wi;
+
+        wi = fbsd_open(iface);
+        wi->interface = (char*) malloc(strlen(iface)+1);
+        strcpy(wi->interface, iface);
+
+        return wi;
 }
 
 int get_battery_state(void)

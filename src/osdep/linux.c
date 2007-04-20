@@ -50,9 +50,6 @@ struct priv_linux {
     int fd_out, arptype_out;
     int fd_rtc;
 
-    uchar mac_in[6];
-    uchar mac_out[6];
-
     int is_wlanng;
     int is_hostap;
     int is_madwifi;
@@ -70,7 +67,6 @@ struct priv_linux {
     char *wlanctlng; /* XXX never set */
     char *iwpriv;
     char *iwconfig;
-    char *interface;
     char *wl;
 };
 
@@ -95,7 +91,7 @@ static int linux_update_channel(struct wif *wi)
     struct iwreq wrq;
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
-    strncpy( wrq.ifr_name, dev->interface, IFNAMSIZ );
+    strncpy( wrq.ifr_name, wi->interface, IFNAMSIZ );
 
     if( ioctl( dev->fd_in, SIOCGIWFREQ, &wrq ) < 0 )
     {
@@ -103,9 +99,9 @@ static int linux_update_channel(struct wif *wi)
     }
 
     if(wrq.u.freq.m > 1000)
-        dev->channel = ((wrq.u.freq.m - 241200000)/500000)+1;
+        wi->channel = ((wrq.u.freq.m - 241200000)/500000)+1;
     else
-        dev->channel = wrq.u.freq.m;
+        wi->channel = wrq.u.freq.m;
 
     return( 0 );
 }
@@ -200,6 +196,8 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
     memcpy( buf, tmpbuf + n, caplen );
 
     linux_update_channel(wi);
+    if(ri)
+        ri->ri_channel = wi->channel;
 
     return( caplen );
 }
@@ -293,7 +291,7 @@ static int linux_set_channel(struct wif *wi, int channel)
         if( ( pid = fork() ) == 0 )
         {
             close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execl( dev->wlanctlng, "wlanctl-ng", dev->interface,
+            execl( dev->wlanctlng, "wlanctl-ng", wi->interface,
                     "lnxreq_wlansniff", s, NULL );
             exit( 1 );
         }
@@ -316,7 +314,7 @@ static int linux_set_channel(struct wif *wi, int channel)
         if( ( pid = fork() ) == 0 )
         {
             close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execlp( dev->iwpriv, "iwpriv", dev->interface,
+            execlp( dev->iwpriv, "iwpriv", wi->interface,
                     "monitor", "1", s, NULL );
             exit( 1 );
         }
@@ -333,7 +331,7 @@ static int linux_set_channel(struct wif *wi, int channel)
         if( ( pid = fork() ) == 0 )
         {
             close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-            execlp(dev->iwconfig, "iwconfig", dev->interface,
+            execlp(dev->iwconfig, "iwconfig", wi->interface,
                     "channel", s, NULL );
             exit( 1 );
         }
@@ -344,7 +342,7 @@ static int linux_set_channel(struct wif *wi, int channel)
     }
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
-    strncpy( wrq.ifr_name, dev->interface, IFNAMSIZ );
+    strncpy( wrq.ifr_name, wi->interface, IFNAMSIZ );
     wrq.u.freq.m = (double) channel;
     wrq.u.freq.e = (double) 0;
 
@@ -362,14 +360,6 @@ static int linux_set_channel(struct wif *wi, int channel)
     dev->channel = channel;
 
     return( 0 );
-}
-
-static int linux_get_channel(struct wif *wi, int *channel)
-{
-    struct priv_linux *dev = wi_priv(wi);
-
-    *channel = dev->channel;
-    return 0;
 }
 
 static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
@@ -578,7 +568,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     pid_t pid;
     int n;
 
-    dev->interface = strdup(iface);
+    wi->interface = strdup(iface);
 
     /* open raw socks */
     if( ( dev->fd_in = socket( PF_PACKET, SOCK_RAW,
@@ -753,14 +743,13 @@ static int do_linux_open(struct wif *wi, char *iface)
             dev->is_zd1211rw = 1;
     }
 
-    if (openraw(dev, iface, dev->fd_out, &dev->arptype_out, dev->mac_out)
+    if (openraw(dev, iface, dev->fd_out, &dev->arptype_out, wi->mac)
 	!= 0) {
 	goto close_out;
     }
 
     dev->fd_in = dev->fd_out;
     dev->arptype_in = dev->arptype_out;
-    memcpy( dev->mac_in, dev->mac_out, 6);
 
     return 0;
 close_in:
@@ -775,8 +764,8 @@ static void do_free(struct wif *wi)
 {
 	struct priv_linux *pl = wi_priv(wi);
 
-	if (pl->interface)
-		free(pl->interface);
+	if (wi->interface)
+		free(wi->interface);
 	free(pl);
 	free(wi);
 }
@@ -811,7 +800,6 @@ static struct wif *linux_open(char *iface)
         wi->wi_read             = linux_read;
         wi->wi_write            = linux_write;
         wi->wi_set_channel      = linux_set_channel;
-        wi->wi_get_channel      = linux_get_channel;
         wi->wi_update_channel   = linux_update_channel;
         wi->wi_close            = linux_close;
 	wi->wi_fd		= linux_fd;
@@ -826,7 +814,13 @@ static struct wif *linux_open(char *iface)
 
 struct wif *wi_open(char *iface)
 {
-	return linux_open(iface);
+        struct wif *wi;
+
+        wi = linux_open(iface);
+        wi->interface = (char*) malloc(strlen(iface)+1);
+        strcpy(wi->interface, iface);
+
+        return wi;
 }
 
 int get_battery_state(void)

@@ -29,16 +29,15 @@ int wi_set_channel(struct wif *wi, int chan)
         return wi->wi_set_channel(wi, chan);
 }
 
-int wi_get_channel(struct wif *wi, int *chan)
+int wi_get_channel(struct wif *wi)
 {
-        assert(wi->wi_get_channel);
-        return wi->wi_get_channel(wi, chan);
+        wi->wi_update_channel(wi);
+        return wi->channel;
 }
 
-int wi_update_channel(struct wif *wi)
+char *wi_get_ifname(struct wif *wi)
 {
-        assert(wi->wi_update_channel);
-        return wi->wi_update_channel(wi);
+        return wi->interface;
 }
 
 void wi_close(struct wif *wi)
@@ -78,4 +77,9 @@ struct wif *wi_alloc(int sz)
 void *wi_priv(struct wif *wi)
 {
 	return wi->wi_priv;
+}
+
+unsigned char *wi_get_mac(struct wif *wi)
+{
+        return wi->mac;
 }

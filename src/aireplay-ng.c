@@ -91,6 +91,11 @@
     "\x40\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"  \
     "\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
 
+#define PCT { struct tm *lt; time_t tc = time( NULL ); \
+              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
+              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
+
+
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern char * searchInside(const char * dir, const char * filename);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
@@ -305,14 +310,6 @@ int read_packet(void *buf, size_t count)
 	return rc;
 }
 
-int get_chan(struct wif *wi)
-{
-    int chan;
-
-    wi_get_channel(wi, &chan);
-    return chan;
-}
-
 void read_sleep( int usec )
 {
     struct timeval tv, tv2, tv3;
@@ -402,20 +399,130 @@ int filter_packet( unsigned char *h80211, int caplen )
     return( 0 );
 }
 
+int wait_for_beacon(uchar *bssid, uchar *capa)
+{
+    int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
+    uchar pkt_sniff[4096];
+    struct timeval tv,tv2;
 
-#define PCT { struct tm *lt; time_t tc = time( NULL ); \
-              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
-              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
+    gettimeofday(&tv, NULL);
+    while (1)
+    {
+        len = 0;
+        while (len < 22)
+        {
+            len = read_packet(pkt_sniff, sizeof(pkt_sniff));
+
+            gettimeofday(&tv2, NULL);
+            if(((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000) //wait 500 msec for beacon frame
+            {
+                return -1;
+            }
+        }
+        if (! memcmp(pkt_sniff, "\x80", 1))
+        {
+            if (! memcmp(bssid, pkt_sniff+10, 6))
+            {
+                taglen = 22;    //initial value to get the fixed tags parsing started
+                taglen+= 12;    //skip fixed tags in frames
+                do
+                {
+                    pos    += taglen + 2;
+                    tagtype = pkt_sniff[pos];
+                    taglen  = pkt_sniff[pos+1];
+                } while(tagtype != 3 && pos < len-2);
+
+                if(tagtype != 3) return -1;
+                if(taglen != 1) return -1;
+                if(pos+2+taglen > len) return -1;
+
+                chan = pkt_sniff[pos+2];
+                break;
+            }
+        }
+    }
+
+    if(capa) memcpy(capa, pkt_sniff+34, 2);
+
+    return chan;
+}
+
+/**
+    checks if the interface is hopping. if bssid != NULL its looking for a beacon frame
+*/
+int attack_check(uchar* bssid, struct wif *wi)
+{
+    int i, j;
+    int ap_chan=0, iface_chan=0;
+
+    j=wi_get_channel(wi);
+    for( i=0; i<10; i++)
+    {
+        usleep(100000);
+        if(j != wi_get_channel(wi))
+        {
+            PCT; printf("Your interface %s is channel hopping!\n", wi_get_ifname(wi));
+            return -1;
+        }
+    }
+
+    iface_chan = j;
+
+    if(bssid != NULL)
+    {
+        ap_chan = wait_for_beacon(bssid, NULL);
+        if(ap_chan < 0)
+        {
+            PCT; printf("No such BSSID available.\n");
+            return -1;
+        }
+        if(ap_chan != iface_chan)
+        {
+            PCT; printf("%s is on channel %d, but the AP uses channel %d\n", wi_get_ifname(wi), iface_chan, ap_chan);
+            return -1;
+        }
+    }
+
+    return 0;
+}
 
 int do_attack_deauth( void )
 {
-    int i, n;
+    int i, n, gotit;
 
     if( memcmp( opt.r_bssid, NULL_MAC, 6 ) == 0 )
     {
         printf( "Please specify a BSSID (-a).\n" );
         return( 1 );
     }
+
+    PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
+                opt.r_bssid[0],opt.r_bssid[1],opt.r_bssid[2],opt.r_bssid[3],opt.r_bssid[4],opt.r_bssid[5]);
+
+    if( opt.s_face != NULL )
+    {
+        if(!attack_check(opt.r_bssid, _wi_out) && !attack_check(NULL, _wi_in))
+        {
+            if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
+            {
+                PCT; printf("Your specified interfaces aren't on the same channel:\n");
+                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
+                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
+                gotit = 1;
+            }
+        }
+        else
+            gotit = 1;
+    }
+    else
+    {
+        if(attack_check(opt.r_bssid, _wi_out) != 0)
+        {
+            gotit=1;
+        }
+    }
+//    if(gotit) return -1;
+    gotit=0;
 
     if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
         printf( "NB: this attack is more effective when targeting\n"
@@ -523,28 +630,6 @@ int read_prga(unsigned char **dest, char *file)
 
     fclose(f);
     return( 0 );
-}
-
-void wait_for_beacon(uchar *bssid, uchar *capa)
-{
-    int len = 0;
-    uchar pkt_sniff[4096];
-
-    PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
-                bssid[0],bssid[1],bssid[2],bssid[3],bssid[4],bssid[5]);
-
-    while (1)
-    {
-        len = 0;
-        while (len < 22) len = read_packet(pkt_sniff, sizeof(pkt_sniff));
-        if (! memcmp(pkt_sniff, "\x80", 1))
-        {
-            if (! memcmp(bssid, pkt_sniff+10, 6)) break;
-        }
-    }
-
-    memcpy(capa, pkt_sniff+34, 2);
-
 }
 
 void add_icv(uchar *input, int len, int offset)
@@ -851,6 +936,7 @@ int do_attack_fake_auth( void )
     int kas;
     int tries;
     int abort;
+    int gotit;
 
     uchar capa[2];
 
@@ -873,6 +959,34 @@ int do_attack_fake_auth( void )
         printf( "Please specify a source MAC (-h).\n" );
         return( 1 );
     }
+
+    PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
+                opt.r_bssid[0],opt.r_bssid[1],opt.r_bssid[2],opt.r_bssid[3],opt.r_bssid[4],opt.r_bssid[5]);
+
+    if( opt.s_face != NULL )
+    {
+        if(!attack_check(opt.r_bssid, _wi_out) && !attack_check(NULL, _wi_in))
+        {
+            if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
+            {
+                PCT; printf("Your specified interfaces aren't on the same channel:\n");
+                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
+                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
+                gotit = 1;
+            }
+        }
+        else
+            gotit = 1;
+    }
+    else
+    {
+        if(attack_check(opt.r_bssid, _wi_out) != 0)
+        {
+            gotit=1;
+        }
+    }
+//    if(gotit) return -1;
+    gotit=0;
 
     memcpy( ackbuf, "\xD4\x00\x00\x00", 4 );
     memcpy( ackbuf +  4, opt.r_bssid, 6 );
@@ -1713,6 +1827,7 @@ int do_attack_arp_resend( void )
     int arp_off1, arp_off2;
     int i, n, caplen, nb_arp;
     long nb_pkt_read, nb_arp_tot;
+    int gotit;
 
     time_t tc;
     float f, ticks[3];
@@ -1749,6 +1864,34 @@ int do_attack_arp_resend( void )
         printf( "Please specify a source MAC (-h).\n" );
         return( 1 );
     }
+
+    PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
+                opt.f_bssid[0],opt.f_bssid[1],opt.f_bssid[2],opt.f_bssid[3],opt.f_bssid[4],opt.f_bssid[5]);
+
+    if( opt.s_face != NULL )
+    {
+        if(!attack_check(opt.f_bssid, _wi_out) && !attack_check(NULL, _wi_in))
+        {
+            if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
+            {
+                PCT; printf("Your specified interfaces aren't on the same channel:\n");
+                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
+                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
+                gotit = 1;
+            }
+        }
+        else
+            gotit = 1;
+    }
+    else
+    {
+        if(attack_check(opt.f_bssid, _wi_out) != 0)
+        {
+            gotit=1;
+        }
+    }
+//    if(gotit) return -1;
+    gotit=0;
 
     /* create and write the output pcap header */
 
@@ -2067,6 +2210,7 @@ int do_attack_chopchop( void )
     int data_start, data_end;
     int guess, is_deauth_mode;
     int nb_bad_pkt;
+    int gotit;
 
     unsigned char b1 = 0xAA;
     unsigned char b2 = 0xAA;
@@ -2139,6 +2283,34 @@ int do_attack_chopchop( void )
         case  2: memcpy( chopped + 4, h80211 + 10, 6 ); break;
         default: memcpy( chopped + 4, h80211 +  4, 6 ); break;
     }
+
+    PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
+                chopped[4],chopped[5],chopped[6],chopped[7],chopped[8],chopped[9]);
+
+    if( opt.s_face != NULL )
+    {
+        if(!attack_check(chopped+4, _wi_out) && !attack_check(NULL, _wi_in))
+        {
+            if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
+            {
+                PCT; printf("Your specified interfaces aren't on the same channel:\n");
+                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
+                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
+                gotit = 1;
+            }
+        }
+        else
+            gotit = 1;
+    }
+    else
+    {
+        if(attack_check(chopped+4, _wi_out) != 0)
+        {
+            gotit=1;
+        }
+    }
+//    if(gotit) return -1;
+    gotit=0;
 
     /* copy the WEP IV */
 
@@ -2795,6 +2967,31 @@ int do_attack_fragment()
         return( 1 );
     }
 
+    if( opt.s_face != NULL )
+    {
+        if(!attack_check(opt.f_bssid, _wi_out) && !attack_check(NULL, _wi_in))
+        {
+            if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
+            {
+                PCT; printf("Your specified interfaces aren't on the same channel:\n");
+                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
+                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
+                gotit = 1;
+            }
+        }
+        else
+            gotit = 1;
+    }
+    else
+    {
+        if(attack_check(opt.f_bssid, _wi_out) != 0)
+        {
+            gotit=1;
+        }
+    }
+//    if(gotit) return -1;
+    gotit=0;
+
     if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
     {
         memset( opt.r_dmac, '\xFF', 6);
@@ -3282,43 +3479,30 @@ int do_attack_test()
         found++;
     }
 
-    wi_update_channel(_wi_out);
-    j=get_chan(_wi_out);
-    for( i=0; i<10; i++)
-    {
-        usleep(100000);
-        wi_update_channel(_wi_out);
-        if(j != get_chan(_wi_out))
-        {
-            PCT; printf("Your replay interface is channel hopping!\n");
-            gotit=1;
-            break;
-        }
-    }
-
     if( opt.s_face != NULL )
     {
-        wi_update_channel(_wi_in);
-        k=get_chan(_wi_in);
-        for( i=0; i<10; i++)
+        if(!attack_check(NULL, _wi_out) && !attack_check(NULL, _wi_in))
         {
-            usleep(100000);
-            wi_update_channel(_wi_in);
-            if(k != get_chan(_wi_in))
+            if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
             {
-                gotit=1;
-                PCT; printf("Your capture interface is channel hopping!\n");
-                break;
+                PCT; printf("Your specified interfaces aren't on the same channel:\n");
+                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
+                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
+                gotit = 1;
             }
         }
-        if(j != k)
+        else
+            gotit = 1;
+    }
+    else
+    {
+        if(attack_check(NULL, _wi_out) != 0)
         {
-            gotit=1;
-            PCT; printf("Your specified interfaces aren't on the same channel (%d vs. %d)!\n", j, k);
+            gotit=0;
         }
     }
-
     if(gotit) printf("\n");
+
     PCT; printf("Trying broadcast probe requests...\n");
 
     memcpy(h80211, PROBE_REQ, 24);
@@ -4263,9 +4447,10 @@ usage:
 
 	/* XXX */
         dev.arptype_in = dev.arptype_out;
-        memcpy( dev.mac_in, dev.mac_out, 6);
     }
 
+    memcpy(dev.mac_in, wi_get_mac(_wi_in), 6);
+    memcpy(dev.mac_out, wi_get_mac(_wi_out), 6);
     /* drop privileges */
 
     setuid( getuid() );
@@ -4318,18 +4503,15 @@ usage:
         }
     }
 
-/* XXX */
-#if 0
     if( memcmp( opt.r_smac, dev.mac_out, 6) != 0 && memcmp( opt.r_smac, NULL_MAC, 6 ) != 0)
     {
-        if( dev.is_madwifi && opt.a_mode == 5 ) printf("For --fragment to work on madwifi[-ng], set the interface MAC according to (-h)!\n");
+//        if( dev.is_madwifi && opt.a_mode == 5 ) printf("For --fragment to work on madwifi[-ng], set the interface MAC according to (-h)!\n");
         fprintf( stderr, "The interface MAC (%02X:%02X:%02X:%02X:%02X:%02X)"
                  " doesn't match the specified MAC (-h).\n"
                  "\tifconfig %s hw ether %02X:%02X:%02X:%02X:%02X:%02X\n",
                  dev.mac_out[0], dev.mac_out[1], dev.mac_out[2], dev.mac_out[3], dev.mac_out[4], dev.mac_out[5],
                  argv[optind], opt.r_smac[0], opt.r_smac[1], opt.r_smac[2], opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
     }
-#endif /* linux */
 
     switch( opt.a_mode )
     {
