@@ -42,7 +42,7 @@ static struct sstate *get_ss()
 
 static void usage(char *p)
 {
-	printf(	"Usage: %p <opts>\n"
+	printf(	"Usage: %s <opts>\n"
 		"-p\t<port>\tTCP port to listen on\n"
 		"-d\t<dev>\twifi device to serve\n"
 		"-c\t<chan>\tchan to start on\n"
@@ -55,7 +55,7 @@ static void usage(char *p)
 static void debug(struct sstate *ss, struct client *c, int l, char *fmt, ...)
 {
 	va_list ap;
-	
+
 	if (ss->ss_level < l)
 		return;
 
@@ -86,7 +86,7 @@ static void client_add(struct sstate *ss, int s, struct sockaddr_in *s_in)
 	if (!(c = malloc(sizeof(*c))))
 		err(1, "malloc()");
 	memset(c, 0, sizeof(*c));
-	
+
 	c->c_s = s;
 	strcpy(c->c_ip, inet_ntoa(s_in->sin_addr));
 	printf("Connect from %s\n", c->c_ip);
@@ -326,7 +326,7 @@ static void handle_card(struct sstate *ss)
 	int rd;
 	struct rx_info *ri = (struct rx_info*) buf;
 	struct client *c;
-	
+
 	rd = card_read(ss, ri+1, sizeof(buf) - sizeof(*ri), ri);
 
 	c = ss->ss_clients.c_next;
@@ -362,7 +362,7 @@ static void serv(struct sstate *ss, char *dev, int port, int chan)
 			FD_SET(c->c_s, &fds);
 			if (c->c_s > max)
 				max = c->c_s;
-			
+
 			c = c->c_next;
 		}
 
@@ -380,14 +380,14 @@ static void serv(struct sstate *ss, char *dev, int port, int chan)
 			struct client *next = c->c_next;
 			if (FD_ISSET(c->c_s, &fds))
 				handle_client(ss, c);
-			
+
 			c = next;
 		}
-		
+
 		/* handle server */
 		if (FD_ISSET(ss->ss_s, &fds))
 			handle_server(ss);
-		
+
 		if (FD_ISSET(card_fd, &fds))
 			handle_card(ss);
 	}
@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
 	int ch;
 	int chan = 1;
 	struct sstate *ss = get_ss();
-	
+
 	memset(ss, 0, sizeof(*ss));
 	ss->ss_clients.c_next = ss->ss_clients.c_prev = &ss->ss_clients;
 
@@ -418,6 +418,10 @@ int main(int argc, char *argv[])
 			ss->ss_level = atoi(optarg);
 			break;
 
+		case 'c':
+			chan = atoi(optarg);
+			break;
+
 		case 'h':
 		default:
 			usage(argv[0]);
@@ -425,7 +429,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!device)
+	if (!device || chan <= 0)
 		usage(argv[0]);
 
 	serv(ss, device, port, chan);
