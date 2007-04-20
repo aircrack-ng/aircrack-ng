@@ -7,7 +7,7 @@ iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng airdecap-ng packetforge-ng ivstools kstats
-SBINFILES       = aireplay-ng airodump-ng airtun-ng
+SBINFILES       = aireplay-ng airodump-ng airserv-ng airtun-ng
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
@@ -22,6 +22,7 @@ OBJS_AR		= aireplay-ng.o common.o crypto.o
 OBJS_ADU	= airodump-ng.o common.o
 OBJS_AT		= airtun-ng.o common.o crypto.o
 OBJS_IV		= ivstools.o common.o
+OBJS_AS		= airserv-ng.o common.o
 
 OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD)
@@ -63,6 +64,9 @@ aireplay-ng: $(OBJS_AR) $(LIBOSD)
 
 airodump-ng: $(OBJS_ADU) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS)
+
+airserv-ng: $(OBJS_AS) $(LIBOSD)
+	$(CC) $(CFLAGS) $(OBJS_AS) -o $(@) $(LIBS)
 
 airtun-ng: $(OBJS_AT) $(LIBSOSD)
 	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) -lssl

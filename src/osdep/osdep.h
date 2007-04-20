@@ -8,6 +8,8 @@
 #ifndef __AIRCRACK_NG_OSEDEP_H__
 #define __AIRCRACK_NG_OSEDEP_H__
 
+#include "packed.h"
+
 /* Empty for now.  Could contain antenna, power, rate, etc. */
 struct tx_info {
 };
@@ -16,7 +18,7 @@ struct rx_info {
         int     ri_power;
         int     ri_noise;
         int     ri_channel;
-};
+} __packed;
 
 /* Normal code should not access this directly.  Only osdep.
  * This structure represents a single interface.  It should be created with
