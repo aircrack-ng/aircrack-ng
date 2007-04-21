@@ -8,6 +8,7 @@
 #ifndef __AIRCRACK_NG_OSDEP_NETWORK_H__
 #define __AIRCRACK_NG_OSDEP_NETWORK_H__
 
+#include <inttypes.h>
 #include <sys/types.h>
 
 #include "packed.h"
