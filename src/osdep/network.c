@@ -51,7 +51,7 @@ int net_send(int s, int command, void *arg, int len)
 
 	if (send(s, arg, len, 0) != len)
 		return -1;
-	
+
 	return 0;
 }
 
@@ -106,7 +106,7 @@ static void queue_add(struct queue *head, struct queue *q)
 
 	q->q_prev = pos;
 	q->q_next = pos->q_next;
-	q->q_next->q_prev = q; 
+	q->q_next->q_prev = q;
 	pos->q_next = q;
 }
 
@@ -167,7 +167,7 @@ static int net_get_nopacket(struct priv_net *pn, void *arg, int *len)
 		if (c != NET_PACKET)
 			break;
 
-		net_enque(pn, buf, l);	
+		net_enque(pn, buf, l);
 	}
 
 	assert(l <= *len);
@@ -203,7 +203,7 @@ static int queue_get(struct priv_net *pn, void *buf, int len)
 
 	if (q == head)
 		return 0;
-	
+
 	assert(q->q_len <= len);
 	memcpy(buf, q->q_buf, q->q_len);
 
@@ -228,7 +228,7 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 		/* try reading form net */
 		l = sizeof(buf);
 		cmd = net_get(pn->pn_s, buf, &l);
-		
+
 		if (cmd == -1)
 			return -1;
 		if (cmd == NET_RC)
@@ -267,7 +267,7 @@ static int net_get_mac(struct wif *wi, unsigned char *mac)
 	assert(sz == sizeof(buf));
 
 	memcpy(mac, buf, 6);
-	
+
 	return 0;
 }
 
@@ -328,11 +328,11 @@ static int get_ip_port(char *iface, char *ip)
 	char *ptr;
 	int port = -1;
 	struct in_addr addr;
-	
+
 	host = strdup(iface);
 	if (!host)
 		return -1;
-	
+
 	ptr = strchr(host, ':');
 	if (!ptr)
 		goto out;
@@ -367,7 +367,7 @@ static int do_net_open(char *iface)
 	port = get_ip_port(iface, ip);
 	if (port == -1)
 		return -1;
-	
+
 	s_in.sin_family = PF_INET;
 	s_in.sin_port = htons(port);
 	if (!inet_aton(ip, &s_in.sin_addr))
@@ -376,15 +376,25 @@ static int do_net_open(char *iface)
 	if ((s = socket(s_in.sin_family, SOCK_STREAM, IPPROTO_TCP)) == -1)
 		return -1;
 
+	printf("Connecting to %s port %d...\n", ip, port);
+
 	if (connect(s, (struct sockaddr*) &s_in, sizeof(s_in)) == -1) {
 		close(s);
+
+		printf("Failed to connect");
+
 		return -1;
 	}
 
 	if (handshake(s) == -1) {
 		close(s);
+
+		printf("Failed to connect - handshake failed");
+
 		return -1;
 	}
+
+	printf("Connection successful");
 
 	return s;
 }
@@ -420,12 +430,12 @@ struct wif *net_open(char *iface)
 		do_net_free(wi);
 		return NULL;
 	}
-	
+
 	/* setup private state */
 	pn = wi_priv(wi);
 	pn->pn_s = s;
 	pn->pn_queue.q_next = pn->pn_queue.q_prev = &pn->pn_queue;
-	pn->pn_queue_free.q_next = pn->pn_queue_free.q_prev 
+	pn->pn_queue_free.q_next = pn->pn_queue_free.q_prev
 					= &pn->pn_queue_free;
 
 	return wi;
