@@ -4,6 +4,9 @@ include		$(ROOT)/common.mak
 SCRIPTS         = airmon-ng
 DOCFILES        = ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 
+
+default: all
+
 all:
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test $(@)
@@ -30,6 +33,10 @@ uninstall:
 	-rm -f $(mandir)/makeivs.1
 	-rm -f $(mandir)/packetforge-ng.1
 	-rm -fr $(docdir)
+
+strip: 
+	$(MAKE) -C src $(@)
+	$(MAKE) -C test $(@)
 
 doc:
 	install -d $(docdir)
