@@ -2969,8 +2969,6 @@ usage:
     if(cards <= 0)
 	return( 1 );
 
-    setuid( getuid() );
-
     for (i = 0; i < cards; i++) {
     	fd_raw[i] = wi_fd(wi[i]);
 	if (fd_raw[i] > fdh)
@@ -2991,6 +2989,26 @@ usage:
 
 	if( ! fork() )
 	{
+	    /* reopen cards.  This way parent & child don't share resources for
+	     * accessing the card (e.g. file descriptors) which may cause
+	     * problems.  -sorbo
+	     */
+	    for (i = 0; i < cards; i++) {
+	    	char ifnam[64];
+
+		strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam)-1);
+		ifnam[sizeof(ifnam)-1] = 0;
+
+	    	wi_close(wi[i]);
+		wi[i] = wi_open(ifnam);
+		if (!wi[i]) {
+			printf("Can't reopen %s\n", ifnam);
+			exit(1);
+		}
+	    }
+    	    
+	    setuid( getuid() );
+
 	    channel_hopper(wi, cards, chan_count);
             exit( 1 );
         }
@@ -3004,6 +3022,8 @@ usage:
 	}
         G.singlechan = 1;
     }
+    
+    setuid( getuid() );
 
     /* open or create the output files */
 

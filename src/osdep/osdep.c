@@ -93,10 +93,8 @@ struct wif *wi_open(char *iface)
 
 	/* XXX assume for now that all OSes have UNIX sockets */
 	wi = net_open(iface);
-	if (wi)
-		return wi;
-
-	wi = wi_open_osdep(iface);
+	if (!wi)
+		wi = wi_open_osdep(iface);
 	if (!wi)
 		return NULL;
 	
