@@ -152,7 +152,7 @@ static int fbsd_read(struct wif *wi, unsigned char *h80211, int len,
 	assert(plen > 0);
 	memcpy(h80211, wh, plen);
 
-        if(!ri->ri_channel)
+        if(ri && !ri->ri_channel)
             ri->ri_channel = wi_get_channel(wi);
 
 	return plen;
@@ -163,6 +163,7 @@ static int fbsd_write(struct wif *wi, unsigned char *h80211, int len,
 {
         struct iovec iov[2];
 	struct priv_fbsd *pf = wi_priv(wi);
+	int rc;
 
 	/* XXX make use of ti */
 	if (ti) {}
@@ -173,7 +174,13 @@ static int fbsd_write(struct wif *wi, unsigned char *h80211, int len,
         iov[1].iov_base = h80211;
         iov[1].iov_len = len;
 
-	return writev(pf->pf_fd, iov, 2);
+	rc = writev(pf->pf_fd, iov, 2);
+	if (rc == -1)
+		return rc;
+	if (rc < (int) iov[0].iov_len)
+		return 0;
+
+	return rc - iov[0].iov_len;
 }
 
 static int fbsd_set_channel(struct wif *wi, int chan)
