@@ -101,7 +101,7 @@ static int linux_get_channel(struct wif *wi)
 
     if(wrq.u.freq.m > 1000)
         return ((wrq.u.freq.m - 241200000)/500000)+1;
-    
+
     return wrq.u.freq.m;
 }
 
@@ -468,14 +468,6 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     else
         sll.sll_protocol = htons( ETH_P_ALL );
 
-    if( bind( fd, (struct sockaddr *) &sll,
-              sizeof( sll ) ) < 0 )
-    {
-        printf("Interface %s: \n", iface);
-        perror( "bind(ETH_P_ALL) failed" );
-        return( 1 );
-    }
-
     /* lookup the hardware type */
 
     if( ioctl( fd, SIOCGIFHWADDR, &ifr ) < 0 )
@@ -483,6 +475,19 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
         printf("Interface %s: \n", iface);
         perror( "ioctl(SIOCGIFHWADDR) failed" );
         return( 1 );
+    }
+
+    /* Is interface st to up, broadcast & running ? */
+    if((ifr.ifr_flags | IFF_UP | IFF_BROADCAST | IFF_RUNNING) != ifr.ifr_flags)
+    {
+        /* Bring interface up*/
+        ifr.ifr_flags |= IFF_UP | IFF_BROADCAST | IFF_RUNNING;
+
+        if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
+        {
+            perror( "ioctl(SIOCSIFFLAGS) failed" );
+            return( 1 );
+        }
     }
 
     if( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
@@ -496,12 +501,11 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
         }
     }
 
-    /* Bring interface up*/
-    ifr.ifr_flags |= IFF_UP | IFF_BROADCAST | IFF_RUNNING;
-
-    if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
+    if( bind( fd, (struct sockaddr *) &sll,
+              sizeof( sll ) ) < 0 )
     {
-        perror( "ioctl(SIOCSIFFLAGS) failed" );
+        printf("Interface %s: \n", iface);
+        perror( "bind(ETH_P_ALL) failed" );
         return( 1 );
     }
 
@@ -578,23 +582,23 @@ static int do_linux_open(struct wif *wi, char *iface)
 
         /* Check iwpriv existence */
 
-        iwpriv = wiToolsPath("iwpriv");
-	dev->iwpriv = iwpriv;
-	dev->iwconfig = wiToolsPath("iwconfig");
+    iwpriv = wiToolsPath("iwpriv");
+    dev->iwpriv = iwpriv;
+    dev->iwconfig = wiToolsPath("iwconfig");
 
     if (! iwpriv )
-        {
-                fprintf(stderr, "Can't find wireless tools, exiting.\n");
-		goto close_in;
-        }
+    {
+        fprintf(stderr, "Can't find wireless tools, exiting.\n");
+        goto close_in;
+    }
 
-        /* Exit if ndiswrapper : check iwpriv ndis_reset */
+    /* Exit if ndiswrapper : check iwpriv ndis_reset */
 
-        if ( is_ndiswrapper(iface, iwpriv ) )
-        {
-                fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
-                goto close_in;
-        }
+    if ( is_ndiswrapper(iface, iwpriv ) )
+    {
+            fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
+            goto close_in;
+    }
 
     if( ( dev->fd_out = socket( PF_PACKET, SOCK_RAW,
                                htons( ETH_P_ALL ) ) ) < 0 )
