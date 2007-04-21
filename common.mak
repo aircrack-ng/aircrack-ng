@@ -1,6 +1,14 @@
 TOOL_PREFIX	=
 OS		= `uname -s`
 
+ifeq ($(OS), cygwin)
+EXE		= .exe
+PIC		=
+else
+EXE		=
+PIC		= -fPIC
+endif
+
 CC		= $(TOOL_PREFIX)gcc
 RANLIB		= $(TOOL_PREFIX)ranlib
 AR		= $(TOOL_PREFIX)ar

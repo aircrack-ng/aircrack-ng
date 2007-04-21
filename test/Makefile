@@ -2,7 +2,7 @@ ROOT		= ..
 include $(ROOT)/common.mak
 
 OBJS		= makeivs.o
-BIN		= makeivs
+BIN		= makeivs$(EXE)
 
 all: $(BIN)
 

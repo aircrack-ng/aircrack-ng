@@ -61,7 +61,7 @@ int net_read_exact(int s, void *arg, int len)
 	int rc;
 
 	while (len) {
-		rc = recv(s, p, len, 0);
+		rc = read(s, p, len);
 		if (rc <= 0)
 			return -1;
 		p += rc;

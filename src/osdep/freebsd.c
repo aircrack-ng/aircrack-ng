@@ -28,7 +28,6 @@
 #include <ifaddrs.h>
 
 #include "osdep.h"
-#include "network.h"
 
 struct priv_fbsd {
 	/* iface */

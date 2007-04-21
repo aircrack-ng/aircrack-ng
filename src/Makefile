@@ -6,8 +6,10 @@ iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro
 iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
-BINFILES        = aircrack-ng airdecap-ng packetforge-ng ivstools kstats
-SBINFILES       = aireplay-ng airodump-ng airserv-ng airtun-ng
+BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
+		  ivstools$(EXE) kstats$(EXE)
+SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
+		  airtun-ng$(EXE)
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
@@ -52,31 +54,31 @@ aircrack-ng-opt-prof_use: $(SRC_AC)
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_use \
 	-prof_dir$(PROF_DIR) $(SRC_AC) -o aircrack-ng-opt-prof -lpthread
 
-aircrack-ng: $(OBJS_AC)
+aircrack-ng$(EXE): $(OBJS_AC)
 	$(CC) $(CFLAGS) $(OBJS_AC) -o $(@) -lpthread $(LIBSSL)
 
-airdecap-ng: $(OBJS_AD)
+airdecap-ng$(EXE): $(OBJS_AD)
 	$(CC) $(CFLAGS) $(OBJS_AD) -o $(@) $(LIBSSL)
 
-packetforge-ng: $(OBJS_PF)
+packetforge-ng$(EXE): $(OBJS_PF)
 	$(CC) $(CFLAGS) $(OBJS_PF) -o $(@) $(LIBSSL)
 
-aireplay-ng: $(OBJS_AR) $(LIBOSD)
+aireplay-ng$(EXE): $(OBJS_AR) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL)
 
-airodump-ng: $(OBJS_ADU) $(LIBOSD)
+airodump-ng$(EXE): $(OBJS_ADU) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS)
 
-airserv-ng: $(OBJS_AS) $(LIBOSD)
+airserv-ng$(EXE): $(OBJS_AS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AS) -o $(@) $(LIBS)
 
-airtun-ng: $(OBJS_AT) $(LIBSOSD)
+airtun-ng$(EXE): $(OBJS_AT) $(LIBSOSD)
 	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL)
 
-ivstools: $(OBJS_IV)
+ivstools$(EXE): $(OBJS_IV)
 	$(CC) $(CFLAGS) $(OBJS_IV) -o $(@)
 
-kstats: kstats.o
+kstats$(EXE): kstats.o
 	$(CC) $(CFLAGS) kstats.o -o $(@)
 
 strip: $(BINFILES) $(SBINFILES)
@@ -97,11 +99,12 @@ install: all
 
 uninstall:
 	$(MAKE) -C $(OSD) uninstall
-	-rm -f $(bindir)/aircrack-ng
-	-rm -f $(bindir)/airdecap-ng
-	-rm -f $(bindir)/packetforge-ng
-	-rm -f $(bindir)/ivstools
-	-rm -f $(bindir)/kstats
-	-rm -f $(sbindir)/airodump-ng
-	-rm -f $(sbindir)/airtun-ng
-	-rm -f $(sbindir)/aireplay-ng
+	-rm -f $(bindir)/aircrack-ng$(EXE)
+	-rm -f $(bindir)/airdecap-ng$(EXE)
+	-rm -f $(bindir)/packetforge-ng$(EXE)
+	-rm -f $(bindir)/ivstools$(EXE)
+	-rm -f $(bindir)/kstats$(EXE)
+	-rm -f $(sbindir)/airodump-ng$(EXE)
+	-rm -f $(sbindir)/airserv-ng$(EXE)
+	-rm -f $(sbindir)/airtun-ng$(EXE)
+	-rm -f $(sbindir)/aireplay-ng$(EXE)

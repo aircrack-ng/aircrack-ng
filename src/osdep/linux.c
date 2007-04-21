@@ -39,7 +39,6 @@
 #include <dirent.h>
 
 #include "osdep.h"
-#include "network.h"
 #include "pcap.h"
 
 /*

@@ -296,7 +296,7 @@ static void handle_server(struct sstate *ss)
 {
 	int dude;
 	struct sockaddr_in s_in;
-	unsigned int len;
+	socklen_t len;
 
 	len = sizeof(s_in);
 	if ((dude = accept(ss->ss_s, (struct sockaddr*) &s_in, &len)) == -1)
