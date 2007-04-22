@@ -23,6 +23,7 @@
 #define CYGWIN_DLL_INJECT	"cygwin_inject"
 #define CYGWIN_DLL_SNIFF	"cygwin_sniff"
 #define CYGWIN_DLL_GET_MAC	"cygwin_get_mac"
+#define CYGWIN_DLL_CLOSE	"cygwin_close"
 
 struct priv_cygwin {
 	pthread_t	pc_reader;
@@ -30,12 +31,14 @@ struct priv_cygwin {
 	int		pc_pipe[2]; /* reader -> parent */
 	int		pc_channel;
 	struct wif	*pc_wi;
+	int		pc_did_init;
 
 	int		(*pc_init)(char *param);
 	int		(*pc_set_chan)(int chan);
 	int		(*pc_inject)(void *buf, int len, struct tx_info *ti);
 	int		(*pc_sniff)(void *buf, int len, struct rx_info *ri);
 	int		(*pc_get_mac)(void *mac);
+	void		(*pc_close)(void);
 };
 
 static int do_cygwin_open(struct wif *wi, char *iface)
@@ -61,17 +64,19 @@ static int do_cygwin_open(struct wif *wi, char *iface)
 	priv->pc_init		= dlsym(lib, CYGWIN_DLL_INIT);
 	priv->pc_set_chan	= dlsym(lib, CYGWIN_DLL_SET_CHAN);
 	priv->pc_get_mac	= dlsym(lib, CYGWIN_DLL_GET_MAC);
+	priv->pc_close		= dlsym(lib, CYGWIN_DLL_CLOSE);
 	/* XXX drugs are bad for you.  -sorbo */
 	priv->pc_inject		= dlsym(lib, CYGWIN_DLL_INJECT);
 	priv->pc_sniff		= dlsym(lib, CYGWIN_DLL_SNIFF);
 
         if (!(priv->pc_init && priv->pc_set_chan && priv->pc_get_mac
-	      && priv->pc_inject && priv->pc_sniff))
+	      && priv->pc_inject && priv->pc_sniff && priv->pc_close))
 		goto err;
 
 	/* init lib */
         if ((rc = priv->pc_init(parm)))
 		goto err;
+	priv->pc_did_init = 1;
 
 	/* set initial chan */
         if ((rc = wi_set_channel(wi, 1)))
@@ -196,6 +201,9 @@ static void do_free(struct wif *wi)
 		close(pc->pc_pipe[0]);
 		close(pc->pc_pipe[1]);
 	}
+
+	if (pc->pc_did_init)
+		pc->pc_close();
 
 	assert(wi->wi_priv);
 	free(wi->wi_priv);
