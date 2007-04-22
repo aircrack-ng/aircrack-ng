@@ -22,6 +22,7 @@
 #define CYGWIN_DLL_SET_CHAN	"cygwin_set_chan"
 #define CYGWIN_DLL_INJECT	"cygwin_inject"
 #define CYGWIN_DLL_SNIFF	"cygwin_sniff"
+#define CYGWIN_DLL_GET_MAC	"cygwin_get_mac"
 
 struct priv_cygwin {
 	pthread_t	pc_reader;
@@ -34,6 +35,7 @@ struct priv_cygwin {
 	int		(*pc_set_chan)(int chan);
 	int		(*pc_inject)(void *buf, int len, struct tx_info *ti);
 	int		(*pc_sniff)(void *buf, int len, struct rx_info *ri);
+	int		(*pc_get_mac)(void *mac);
 };
 
 static int do_cygwin_open(struct wif *wi, char *iface)
@@ -58,11 +60,12 @@ static int do_cygwin_open(struct wif *wi, char *iface)
 
 	priv->pc_init		= dlsym(lib, CYGWIN_DLL_INIT);
 	priv->pc_set_chan	= dlsym(lib, CYGWIN_DLL_SET_CHAN);
+	priv->pc_get_mac	= dlsym(lib, CYGWIN_DLL_GET_MAC);
 	/* XXX drugs are bad for you.  -sorbo */
 	priv->pc_inject		= dlsym(lib, CYGWIN_DLL_INJECT);
 	priv->pc_sniff		= dlsym(lib, CYGWIN_DLL_SNIFF);
 
-        if (!(priv->pc_init && priv->pc_set_chan
+        if (!(priv->pc_init && priv->pc_set_chan && priv->pc_get_mac
 	      && priv->pc_inject && priv->pc_sniff))
 		goto err;
 
@@ -73,7 +76,7 @@ static int do_cygwin_open(struct wif *wi, char *iface)
 	/* set initial chan */
         if ((rc = wi_set_channel(wi, 1)))
 		goto err;
-	
+
 	rc = 0;
 err:
 	free(file);
@@ -218,10 +221,9 @@ static int cygwin_fd(struct wif *wi)
 
 static int cygwin_get_mac(struct wif *wi, unsigned char *mac)
 {
-	if (wi || mac) {} /* XXX warning */
+	struct priv_cygwin *pc = wi_priv(wi);
 
-	/* XXX use winapi */
-	return -1;
+	return pc->pc_get_mac(mac);
 }
 
 static void *cygwin_reader(void *arg)
@@ -281,10 +283,9 @@ static struct wif *cygwin_open(char *iface)
 	priv = wi_priv(wi);
 	priv->pc_wi = wi;
 	
+	/* setup reader */
 	if (pipe(priv->pc_pipe) == -1)
 		goto err;
-
-	/* launch reader */
 	priv->pc_running = 2;
 	if (pthread_create(&priv->pc_reader, NULL, cygwin_reader, priv))
 		goto err;
