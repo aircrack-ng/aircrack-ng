@@ -242,6 +242,7 @@ struct APt
     unsigned char len;
     unsigned char essid[255];
     unsigned char bssid[6];
+    unsigned char chan;
 };
 
 struct APt ap[20];
@@ -296,19 +297,6 @@ int read_packet(void *buf, size_t count)
 {
 	struct wif *wi = _wi_in; /* XXX */
 	int rc;
-        struct timeval tv0;
-        fd_set rfds;
-
-        FD_ZERO( &rfds );
-        FD_SET( wi_fd(wi), &rfds );
-
-        tv0.tv_sec  = 0;
-        tv0.tv_usec = 100000;
-
-        if( select( wi_fd(wi) + 1, &rfds, NULL, NULL, &tv0 ) <= 0 )
-        {
-            return( 1 );
-        }
 
         rc = wi_read(wi, buf, count, NULL);
         if (rc == -1) {
@@ -1947,14 +1935,12 @@ int do_attack_arp_resend( void )
 
     printf( "You should also start airodump-ng to capture replies.\n" );
 
-#if defined(linux)
     /* avoid blocking on reading the socket */
     if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
     {
         perror( "fcntl(O_NONBLOCK) failed" );
         return( 1 );
     }
-#endif
 
     memset( ticks, 0, sizeof( ticks ) );
 
@@ -3421,10 +3407,27 @@ int do_attack_fragment()
 
 int grab_essid(uchar* packet, int len)
 {
-    int i=0, pos=0, tagtype=0, taglen=0;
+    int i=0, pos=0, tagtype=0, taglen=0, chan=0;
     uchar bssid[6];
 
     memcpy(bssid, packet+16, 6);
+    taglen = 22;    //initial value to get the fixed tags parsing started
+    taglen+= 12;    //skip fixed tags in frames
+    do
+    {
+        pos    += taglen + 2;
+        tagtype = packet[pos];
+        taglen  = packet[pos+1];
+    } while(tagtype != 3 && pos < len-2);
+
+    if(tagtype != 3) return -1;
+    if(taglen != 1) return -1;
+    if(pos+2+taglen > len) return -1;
+
+    chan = packet[pos+2];
+
+    pos=0;
+
     taglen = 22;    //initial value to get the fixed tags parsing started
     taglen+= 12;    //skip fixed tags in frames
     do
@@ -3465,6 +3468,7 @@ int grab_essid(uchar* packet, int len)
             memcpy(ap[i].essid, packet+pos+2, taglen);
             ap[i].essid[taglen] = '\0';
             memcpy(ap[i].bssid, bssid, 6);
+            ap[i].chan = chan;
             if(packet[0] == 0x50) ap[i].found++;
             return 0;
         }
@@ -3498,6 +3502,13 @@ int do_attack_test()
         }
     }
 
+    /* avoid blocking on reading the socket */
+    if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
+    {
+        perror( "fcntl(O_NONBLOCK) failed" );
+        return( 1 );
+    }
+
     srand( time( NULL ) );
 
     memset(ap, '\0', 20*sizeof(struct APt));
@@ -3522,9 +3533,14 @@ int do_attack_test()
             if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
             {
                 PCT; printf("Your specified interfaces aren't on the same channel:\n");
-                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
+                PCT; printf("%s channel: %d vs. %s channel: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
                             wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
                 gotit = 1;
+            }
+            else
+            {
+                PCT; printf("%s channel: %d, %s channel: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
+                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
             }
         }
         else
@@ -3536,6 +3552,7 @@ int do_attack_test()
         {
             gotit=0;
         }
+        PCT; printf("%s channel: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out));
     }
     if(gotit) printf("\n");
 
@@ -3621,8 +3638,8 @@ int do_attack_test()
     PCT; printf("Trying directed probe requests...\n");
     for(i=0; i<found; i++)
     {
-        PCT; printf("%02X:%02X:%02X:%02X:%02X:%02X - %s\n", ap[i].bssid[0], ap[i].bssid[1],
-                    ap[i].bssid[2], ap[i].bssid[3], ap[i].bssid[4], ap[i].bssid[5], ap[i].essid);
+        PCT; printf("%02X:%02X:%02X:%02X:%02X:%02X - channel: %d - \'%s\'\n", ap[i].bssid[0], ap[i].bssid[1],
+                    ap[i].bssid[2], ap[i].bssid[3], ap[i].bssid[4], ap[i].bssid[5], ap[i].chan, ap[i].essid);
 
         ap[i].found=0;
 
