@@ -3407,7 +3407,7 @@ int do_attack_fragment()
 
 int grab_essid(uchar* packet, int len)
 {
-    int i=0, pos=0, tagtype=0, taglen=0, chan=0;
+    int i=0, j=0, pos=0, tagtype=0, taglen=0, chan=0;
     uchar bssid[6];
 
     memcpy(bssid, packet+16, 6);
@@ -3438,31 +3438,33 @@ int grab_essid(uchar* packet, int len)
     } while(tagtype != 0 && pos < len-2);
 
     if(tagtype != 0) return -1;
-    if(taglen < 3) return -1;
     if(taglen > 250) taglen = 250;
     if(pos+2+taglen > len) return -1;
 
-    for(i=0; i<taglen; i++)
-    {
-        if(packet[pos+2+i] < 32 || packet[pos+2+i] > 127)
-        {
-            return -1;
-        }
-    }
-
     for(i=0; i<20; i++)
     {
-        if( ap[i].set && taglen == ap[i].len)
+        if( ap[i].set)
         {
             if( memcmp(bssid, ap[i].bssid, 6) == 0 )    //got it already
             {
                 if(packet[0] == 0x50 && !ap[i].found)
+                {
                     ap[i].found++;
+                }
+                if(ap[i].chan == 0) ap[i].chan=chan;
                 break;
             }
         }
         if(ap[i].set == 0)
         {
+            for(j=0; j<taglen; j++)
+            {
+                if(packet[pos+2+j] < 32 || packet[pos+2+j] > 127)
+                {
+                    return -1;
+                }
+            }
+
             ap[i].set = 1;
             ap[i].len = taglen;
             memcpy(ap[i].essid, packet+pos+2, taglen);
@@ -3519,6 +3521,7 @@ int do_attack_test()
     if( essidlen > 0 )
     {
         ap[0].set = 1;
+        ap[0].found = 0;
         ap[0].len = essidlen;
         memcpy(ap[0].essid, opt.r_essid, essidlen);
         ap[0].essid[essidlen] = '\0';
