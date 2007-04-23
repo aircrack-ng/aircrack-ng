@@ -68,6 +68,7 @@ struct priv_linux {
     char *iwpriv;
     char *iwconfig;
     char *wl;
+    char *main_if;
     unsigned char pl_mac[6];
 };
 
@@ -92,7 +93,11 @@ static int linux_get_channel(struct wif *wi)
     struct iwreq wrq;
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
-    strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+
+    if(dev->main_if)
+        strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
+    else
+        strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
 
     if( ioctl( dev->fd_in, SIOCGIWFREQ, &wrq ) < 0 )
     {
@@ -595,6 +600,10 @@ static int do_linux_open(struct wif *wi, char *iface)
     char athXraw[] = "athXraw";
     pid_t pid;
     int n;
+    DIR *net_ifaces;
+    struct dirent *this_iface;
+    FILE *acpi;
+    char r_file[128], buf[128];
 
     /* open raw socks */
     if( ( dev->fd_in = socket( PF_PACKET, SOCK_RAW,
@@ -769,6 +778,44 @@ static int do_linux_open(struct wif *wi, char *iface)
             dev->is_zd1211rw = 1;
     }
 
+    /* test if rtap interface and try to find real interface */
+    if( memcmp( iface, "rtap", 4) == 0 )
+    {
+        net_ifaces = opendir("/sys/class/net");
+        if ( net_ifaces != NULL )
+        {
+            while (net_ifaces != NULL && ((this_iface = readdir(net_ifaces)) != NULL))
+            {
+                if (this_iface->d_name[0] == '.')
+                    continue;
+
+                snprintf(r_file, sizeof(r_file),
+                    "/sys/class/net/%s/device/rtap_iface", this_iface->d_name);
+                if ((acpi = fopen(r_file, "r")) == NULL)
+                    continue;
+                if (acpi != NULL)
+                {
+                    fgets(buf, 128, acpi);
+                    if (strncmp(buf, iface, 5) == 0)
+                    {
+                        fclose(acpi);
+                        if (net_ifaces != NULL)
+                        {
+                            closedir(net_ifaces);
+                            net_ifaces = NULL;
+                        }
+                        dev->main_if = (char*) malloc(strlen(this_iface->d_name)+1);
+                        strcpy(dev->main_if, this_iface->d_name);
+                        break;
+                    }
+                    fclose(acpi);
+                }
+            }
+            if (net_ifaces != NULL)
+                closedir(net_ifaces);
+        }
+    }
+
     if (openraw(dev, iface, dev->fd_out, &dev->arptype_out, dev->pl_mac) != 0) {
 	goto close_out;
     }
@@ -789,6 +836,8 @@ static void do_free(struct wif *wi)
 {
 	struct priv_linux *pl = wi_priv(wi);
 
+	if(pl->main_if)
+            free(pl->main_if);
 	free(pl);
 	free(wi);
 }
