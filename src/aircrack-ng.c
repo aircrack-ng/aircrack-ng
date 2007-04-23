@@ -1529,7 +1529,7 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 	if( opt.l33t )
 		printf( "\33[32;22m" );
 
-	printf( "\n\tProbability: %d%%\n", opt.probability );
+	printf( "\n\tDecrypted correctly: %d%%\n", opt.probability );
 	printf( "\n" );
 }
 
