@@ -85,7 +85,7 @@
 #define ETH_P_80211_RAW 25
 #endif
 
-#define RTC_RESOLUTION  4096
+#define RTC_RESOLUTION  1024
 
 #define NEW_IV  1
 #define RETRY   2
