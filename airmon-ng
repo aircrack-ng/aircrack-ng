@@ -314,7 +314,7 @@ do
  fi
 
 
- if [ x"`iwpriv $iface 2>/dev/null | grep wpapsk`" != "x" ] && [ x"`iwpriv $iface 2>/dev/null | grep rfmontx`" = "x" ]
+ if [ x"`iwpriv $iface 2>/dev/null | grep wpapsk`" != "x" ] && [ x"`iwpriv $iface 2>/dev/null | grep get_RaAP_Cfg`" = "x" ]
  then
      printf "$iface\t\tRalink USB\trt2570"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
