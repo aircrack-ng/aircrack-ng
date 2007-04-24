@@ -44,7 +44,7 @@ then
 	echo Run as root ; exit ;
 fi
 
-which iwpriv > /dev/null 2> /dev/null || 
+which iwpriv > /dev/null 2> /dev/null ||
   { echo Wireless tools not found ; exit ; }
 
 echo && echo
@@ -58,7 +58,7 @@ then
 
 	if [ x$2 = "x" ]
 	then
-		usage		
+		usage
 	fi
 fi
 
@@ -71,7 +71,7 @@ do
  then
     MADWIFI=1
     ifconfig $iface up
-    printf "$iface\t\tAtheros\t\tmadwifi-ng"       
+    printf "$iface\t\tAtheros\t\tmadwifi-ng"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
         IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor`
@@ -205,10 +205,10 @@ do
 			printf " (VAP cannot be put in monitor mode)"
 		fi
 	fi
-	
+
 	echo ""
         continue
-     	
+
      fi
      printf "$iface\t\tAtheros\t\tmadwifi"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
@@ -314,7 +314,7 @@ do
  fi
 
 
- if [ x"`iwpriv $iface 2>/dev/null | grep wpapsk`" != "x" ]
+ if [ x"`iwpriv $iface 2>/dev/null | grep wpapsk`" != "x" ] && [ x"`iwpriv $iface 2>/dev/null | grep rfmontx`" = "x" ]
  then
      printf "$iface\t\tRalink USB\trt2570"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
@@ -323,7 +323,10 @@ do
          echo "source=rt2500,$iface,Ralink_g" >>$KISMET
          iwconfig $iface mode ad-hoc 2> /dev/null >/dev/null
          startStdIface $iface $CH
-         iwpriv $iface forceprismheader 1
+         if [ x"`iwpriv $iface 2>/dev/null | grep forceprismheader`" != "x" ]
+         then
+             iwpriv $iface forceprismheader 1
+         fi
      fi
      if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
      then
@@ -342,7 +345,10 @@ do
          cp $KISMET~ $KISMET 2>/dev/null &&
          echo "source=rt8180,$iface,Realtek" >>$KISMET
          iwconfig $iface mode Monitor channel $CH
-         iwpriv $iface prismhdr 1 &>/dev/null
+         if [ x"`iwpriv $iface 2>/dev/null | grep prismhdr`" != "x" ]
+         then
+            iwpriv $iface prismhdr 1 &>/dev/null
+         fi
          ifconfig $iface up
          printf " (monitor mode enabled)"
      fi
@@ -363,7 +369,10 @@ do
          cp $KISMET~ $KISMET 2>/dev/null &&
          echo "source=rt8180,$iface,Realtek" >>$KISMET
          iwconfig $iface mode Monitor channel $CH
-         iwpriv $iface rawtx 1 &>/dev/null
+         if [ x"`iwpriv $iface 2>/dev/null | grep rawtx`" != "x" ]
+         then
+             iwpriv $iface rawtx 1 &>/dev/null
+         fi
          ifconfig $iface up
          printf " (monitor mode enabled)"
      fi
@@ -468,7 +477,7 @@ do
     fi
     echo
     continue
-    
+
  fi
 
  if [ x"`iwpriv $iface 2>/dev/null | grep get_RaAP_Cfg`" != "x" ]
@@ -477,12 +486,12 @@ do
     then
     	printf "$iface\t\tRalink b/g\trt61"
     fi
-    
+
     if [ x"`iwconfig $iface | grep ESSID | awk -F\  '{ print $2}' | grep -i rt73`" != "x" ]
     then
         printf "$iface\t\tRalink USB\trt73"
     fi
-    
+
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
          startStdIface $iface $CH
@@ -490,10 +499,10 @@ do
     fi
     echo
     continue
-    
+
  fi
- 
- 
+
+
  if [ x"`iwpriv $iface 2>/dev/null | grep set_announcedpkt`" != "x" ]
   then
      printf "$iface\t\tAtmel\t\tat76c503a"
@@ -503,7 +512,7 @@ do
      fi
      echo
      continue
-     
+
  fi
 
  if [ x"`iwpriv $iface 2>/dev/null | grep ndis_reset`" != "x" ]
