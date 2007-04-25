@@ -1,0 +1,169 @@
+diff -Naur linux-source-2.6.17-orig/drivers/net/wireless/zd1211rw/zd_mac.c linux-source-2.6.17-rawtx/drivers/net/wireless/zd1211rw/zd_mac.c
+--- linux-source-2.6.17-orig/drivers/net/wireless/zd1211rw/zd_mac.c	2006-10-01 18:42:47.000000000 +0200
++++ linux-source-2.6.17-rawtx/drivers/net/wireless/zd1211rw/zd_mac.c	2007-04-16 01:32:09.000000000 +0200
+@@ -180,7 +180,16 @@
+ 	if (r < 0)
+ 		goto disable_rx;
+ 
++	netif_carrier_on(netdev);
++
+ 	ieee80211softmac_start(netdev);
++
++	if(!netif_queue_stopped(netdev))
++		netif_start_queue(netdev);
++	else
++		netif_wake_queue(netdev);
++
++
+ 	return 0;
+ disable_rx:
+ 	zd_chip_disable_rx(chip);
+@@ -622,6 +631,7 @@
+ 	                struct ieee80211_txb *txb,
+ 			int frag_num)
+ {
++	struct ieee80211_device *ieee = zd_mac_to_ieee80211(mac);
+ 	int r;
+ 	struct sk_buff *skb = txb->fragments[frag_num];
+ 	struct ieee80211_hdr_4addr *hdr =
+@@ -645,7 +655,10 @@
+ 
+ 	cs->tx_length = cpu_to_le16(frag_len);
+ 
+-	cs_set_control(mac, cs, hdr);
++	if(ieee->iw_mode == IW_MODE_MONITOR)
++		cs->control = ZD_CS_MULTICAST;
++	else
++		cs_set_control(mac, cs, hdr);
+ 
+ 	packet_length = frag_len + sizeof(struct zd_ctrlset) + 10;
+ 	ZD_ASSERT(packet_length <= 0xffff);
+@@ -690,6 +703,7 @@
+ 
+ static int zd_mac_tx(struct zd_mac *mac, struct ieee80211_txb *txb, int pri)
+ {
++	struct ieee80211_device *ieee = zd_mac_to_ieee80211(mac);
+ 	int i, r;
+ 
+ 	for (i = 0; i < txb->nr_frags; i++) {
+@@ -698,7 +712,10 @@
+ 		r = fill_ctrlset(mac, txb, i);
+ 		if (r)
+ 			return r;
+-		r = zd_usb_tx(&mac->chip.usb, skb->data, skb->len);
++		if(ieee->iw_mode == IW_MODE_MONITOR)
++			r = zd_usb_tx_inject(&mac->chip.usb, skb->data, skb->len);
++		else
++			r = zd_usb_tx(&mac->chip.usb, skb->data, skb->len);
+ 		if (r)
+ 			return r;
+ 	}
+@@ -716,6 +733,8 @@
+ 	u8  rt_rate;
+ 	u16 rt_channel;
+ 	u16 rt_chbitmask;
++	u8  rt_antsignal;
++	u8  rt_antnoise;
+ } __attribute__((packed));
+ 
+ static void fill_rt_header(void *buffer, struct zd_mac *mac,
+@@ -729,7 +748,9 @@
+ 	hdr->rt_hdr.it_len = cpu_to_le16(sizeof(struct zd_rt_hdr));
+ 	hdr->rt_hdr.it_present = cpu_to_le32((1 << IEEE80211_RADIOTAP_FLAGS) |
+ 		                 (1 << IEEE80211_RADIOTAP_CHANNEL) |
+-				 (1 << IEEE80211_RADIOTAP_RATE));
++				 (1 << IEEE80211_RADIOTAP_RATE) |
++		                 (1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL) |
++		                 (1 << IEEE80211_RADIOTAP_DBM_ANTNOISE));
+ 
+ 	hdr->rt_flags = 0;
+ 	if (status->decryption_type & (ZD_RX_WEP64|ZD_RX_WEP128|ZD_RX_WEP256))
+@@ -743,6 +764,9 @@
+ 	hdr->rt_chbitmask = cpu_to_le16(IEEE80211_CHAN_2GHZ |
+ 		((status->frame_status & ZD_RX_FRAME_MODULATION_MASK) ==
+ 		ZD_RX_OFDM ? IEEE80211_CHAN_OFDM : IEEE80211_CHAN_CCK));
++
++	hdr->rt_antsignal = status->signal_strength;
++	hdr->rt_antnoise = stats->noise;
+ }
+ 
+ /* Returns 1 if the data packet is for us and 0 otherwise. */
+@@ -834,7 +858,8 @@
+ 	const struct rx_status *status;
+ 
+ 	*pstatus = status = zd_tail(buffer, length, sizeof(struct rx_status));
+-	if (status->frame_status & ZD_RX_ERROR) {
++	if (status->frame_status & ZD_RX_ERROR
++		|| status->frame_status & ~0x21) {
+ 		/* FIXME: update? */
+ 		return -EINVAL;
+ 	}
+diff -Naur linux-source-2.6.17-orig/drivers/net/wireless/zd1211rw/zd_usb.c linux-source-2.6.17-rawtx/drivers/net/wireless/zd1211rw/zd_usb.c
+--- linux-source-2.6.17-orig/drivers/net/wireless/zd1211rw/zd_usb.c	2006-10-04 05:35:08.000000000 +0200
++++ linux-source-2.6.17-rawtx/drivers/net/wireless/zd1211rw/zd_usb.c	2007-04-09 16:07:16.000000000 +0200
+@@ -42,6 +42,7 @@
+ 	/* ZD1211B */
+ 	{ USB_DEVICE(0x0ace, 0x1215), .driver_info = DEVICE_ZD1211B },
+ 	{ USB_DEVICE(0x157e, 0x300d), .driver_info = DEVICE_ZD1211B },
++	{ USB_DEVICE(0x083a, 0x4505), .driver_info = DEVICE_ZD1211B },
+ 	{}
+ };
+ 
+@@ -805,6 +806,46 @@
+ 	return r;
+ }
+ 
++/* Puts the frame on the USB endpoint. It doesn't wait for
++ * completion. The frame must contain the control set.
++ */
++int zd_usb_tx_inject(struct zd_usb *usb, const u8 *frame, unsigned int length)
++{
++	int r;
++	struct usb_device *udev = zd_usb_to_usbdev(usb);
++	struct urb *urb;
++	void *buffer;
++
++	urb = usb_alloc_urb(0, GFP_ATOMIC);
++	if (!urb) {
++		r = -ENOMEM;
++		goto out;
++	}
++
++	buffer = usb_buffer_alloc(zd_usb_to_usbdev(usb), length, GFP_ATOMIC,
++		                  &urb->transfer_dma);
++	if (!buffer) {
++		r = -ENOMEM;
++		goto error_free_urb;
++	}
++	memcpy(buffer, frame, length);
++
++	usb_fill_bulk_urb(urb, udev, usb_sndbulkpipe(udev, EP_DATA_OUT),
++		          buffer, length, tx_urb_complete, NULL);
++
++	r = usb_submit_urb(urb, GFP_ATOMIC);
++	if (r)
++		goto error;
++	return 0;
++error:
++	usb_buffer_free(zd_usb_to_usbdev(usb), length, buffer,
++		        urb->transfer_dma);
++error_free_urb:
++	usb_free_urb(urb);
++out:
++	return r;
++}
++
+ static inline void init_usb_interrupt(struct zd_usb *usb)
+ {
+ 	struct zd_usb_interrupt *intr = &usb->intr;
+diff -Naur linux-source-2.6.17-orig/drivers/net/wireless/zd1211rw/zd_usb.h linux-source-2.6.17-rawtx/drivers/net/wireless/zd1211rw/zd_usb.h
+--- linux-source-2.6.17-orig/drivers/net/wireless/zd1211rw/zd_usb.h	2006-10-01 18:42:47.000000000 +0200
++++ linux-source-2.6.17-rawtx/drivers/net/wireless/zd1211rw/zd_usb.h	2007-04-09 16:07:21.000000000 +0200
+@@ -222,6 +222,7 @@
+ void zd_usb_disable_rx(struct zd_usb *usb);
+ 
+ int zd_usb_tx(struct zd_usb *usb, const u8 *frame, unsigned int length);
++int zd_usb_tx_inject(struct zd_usb *usb, const u8 *frame, unsigned int length);
+ 
+ int zd_usb_ioread16v(struct zd_usb *usb, u16 *values,
+ 	         const zd_addr_t *addresses, unsigned int count);

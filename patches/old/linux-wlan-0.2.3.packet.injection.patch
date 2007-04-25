@@ -1,0 +1,303 @@
+diff -ur linux-wlan-ng-0.2.3/src/p80211/p80211netdev.c linux-wlan-ng-0.2.3-patched/src/p80211/p80211netdev.c
+--- linux-wlan-ng-0.2.3/src/p80211/p80211netdev.c	2005-10-31 14:54:59.000000000 -0500
++++ linux-wlan-ng-0.2.3-patched/src/p80211/p80211netdev.c	2006-03-16 16:33:03.000000000 -0500
+@@ -511,7 +511,7 @@
+ 		 * and return success .
+ 		 * TODO: we need a saner way to handle this 
+ 		 */
+-		if(skb->protocol != ETH_P_80211_RAW) {
++		if(skb->protocol != htons(ETH_P_80211_RAW)) {
+ 			p80211netdev_start_queue(wlandev);
+ 			WLAN_LOG_NOTICE(
+ 				"Tx attempt prior to association, frame dropped.\n");
+@@ -523,7 +523,7 @@
+ 	}
+ 		
+ 	/* Check for raw transmits */
+-	if(skb->protocol == ETH_P_80211_RAW) {
++	if(skb->protocol == htons(ETH_P_80211_RAW)) {
+ 		if (!capable(CAP_NET_ADMIN)) {
+ 			result = 1;
+ 			goto failed;
+@@ -950,8 +950,9 @@
+ 		dev->set_mac_address =	p80211knetdev_set_mac_address;
+ #endif
+ #ifdef HAVE_TX_TIMEOUT
+-		dev->tx_timeout      =  &p80211knetdev_tx_timeout;
+-		dev->watchdog_timeo  =  (wlan_watchdog * HZ) / 1000;
++// korek: still not implemented
++//		dev->tx_timeout      =  &p80211knetdev_tx_timeout;
++//		dev->watchdog_timeo  =  (wlan_watchdog * HZ) / 1000;
+ #endif		
+ 		netif_carrier_off(dev);
+ 	}
+diff -ur linux-wlan-ng-0.2.3/src/prism2/driver/hfa384x.c linux-wlan-ng-0.2.3-patched/src/prism2/driver/hfa384x.c
+--- linux-wlan-ng-0.2.3/src/prism2/driver/hfa384x.c	2005-07-20 11:07:16.000000000 -0400
++++ linux-wlan-ng-0.2.3-patched/src/prism2/driver/hfa384x.c	2006-03-17 11:03:09.000000000 -0500
+@@ -1871,8 +1871,16 @@
+ 
+ 	DBFENTER;
+ 
+-	cmd.cmd = HFA384x_CMD_CMDCODE_SET(HFA384x_CMDCODE_MONITOR) |
+-		HFA384x_CMD_AINFO_SET(enable);
++//	cmd.cmd = HFA384x_CMD_CMDCODE_SET(HFA384x_CMDCODE_MONITOR) |
++//		HFA384x_CMD_AINFO_SET(enable);
++       if (enable == HFA384x_MONITOR_ENABLE) {
++               // KoreK: get into test mode 0x0a
++               cmd.cmd = HFA384x_CMD_CMDCODE_SET(HFA384x_CMDCODE_MONITOR) |
++                       HFA384x_CMD_AINFO_SET(0x0a);
++       } else {
++               cmd.cmd = HFA384x_CMD_CMDCODE_SET(HFA384x_CMDCODE_MONITOR) |
++                       HFA384x_CMD_AINFO_SET(enable);
++       }
+ 	cmd.parm0 = 0;
+ 	cmd.parm1 = 0;
+ 	cmd.parm2 = 0;
+@@ -3112,12 +3120,34 @@
+ #endif
+ 
+ 	/* if we're using host WEP, increase size by IV+ICV */
+-	if (p80211_wep->data) {
+-		txdesc.data_len = host2hfa384x_16(skb->len+8);
+-		//		txdesc.tx_control |= HFA384x_TX_NOENCRYPT_SET(1);
+-	} else {
+-		txdesc.data_len =  host2hfa384x_16(skb->len);
+-	}
++//	if (p80211_wep->data) {
++//		txdesc.data_len = host2hfa384x_16(skb->len+8);
++//		//		txdesc.tx_control |= HFA384x_TX_NOENCRYPT_SET(1);
++//	} else {
++//		txdesc.data_len =  host2hfa384x_16(skb->len);
++//	}
++
++       if (skb->protocol != htons(ETH_P_80211_RAW)) {
++               /* if we're using host WEP, increase size by IV+ICV */
++               if (p80211_wep->data) {
++                       txdesc.data_len = host2hfa384x_16(skb->len+8);
++                       // txdesc.tx_control |= HFA384x_TX_NOENCRYPT_SET(1);
++               } else {
++                       txdesc.data_len =  host2hfa384x_16(skb->len);
++               } 
++        } else {
++               /* KoreK: raw injection (monitor mode): pull the rest of
++                  the header and ssanity check on txdesc.data_len */
++               memcpy(&(txdesc.data_len), skb->data, 16);
++               skb_pull(skb,16);
++               if (txdesc.data_len != host2hfa384x_16(skb->len)) {
++                       printk(KERN_DEBUG "mismatch frame_len, drop frame\n");
++                       return 0;
++               }
++
++               txdesc.tx_control |= HFA384x_TX_RETRYSTRAT_SET(1);
++        }
++
+ 
+ 	txdesc.tx_control = host2hfa384x_16(txdesc.tx_control);
+ 	/* copy the header over to the txdesc */
+@@ -3140,7 +3170,9 @@
+ 	spin_lock(&hw->cmdlock);
+ 
+ 	/* Copy descriptor+payload to FID */
+-        if (p80211_wep->data) { 
++	
++//        if (p80211_wep->data) {
++        if (p80211_wep->data && (skb->protocol != htons(ETH_P_80211_RAW))) { 
+ 		result = hfa384x_copy_to_bap4(hw, HFA384x_BAP_PROC, fid, 0,
+ 					      &txdesc, sizeof(txdesc),
+ 					      p80211_wep->iv, sizeof(p80211_wep->iv),
+@@ -3586,6 +3618,17 @@
+ 	{
+ 	case 0:
+ 
++               /* KoreK: this testmode uses macport 0 */
++               if ((wlandev->netdev->type == ARPHRD_IEEE80211) ||
++                   (wlandev->netdev->type == ARPHRD_IEEE80211_PRISM)) {
++                       if ( ! HFA384x_RXSTATUS_ISFCSERR(rxdesc.status) ) {
++                               hfa384x_int_rxmonitor( wlandev, rxfid, &rxdesc);
++                       } else {
++                               WLAN_LOG_DEBUG(3,"Received monitor frame: FCSerr set\n");
++                       }
++                       goto done;
++               }
++
+ 		fc = ieee2host16(rxdesc.frame_control);
+ 
+ 		/* If exclude and we receive an unencrypted, drop it */
+diff -ur linux-wlan-ng-0.2.3/src/prism2/driver/hfa384x_usb.c linux-wlan-ng-0.2.3-patched/src/prism2/driver/hfa384x_usb.c
+--- linux-wlan-ng-0.2.3/src/prism2/driver/hfa384x_usb.c	2005-10-31 14:52:36.000000000 -0500
++++ linux-wlan-ng-0.2.3-patched/src/prism2/driver/hfa384x_usb.c	2006-03-18 15:38:19.000000000 -0500
+@@ -1398,8 +1398,16 @@
+ 
+ 	DBFENTER;
+ 
+-	cmd.cmd = HFA384x_CMD_CMDCODE_SET(HFA384x_CMDCODE_MONITOR) |
+-		HFA384x_CMD_AINFO_SET(enable);
++//	cmd.cmd = HFA384x_CMD_CMDCODE_SET(HFA384x_CMDCODE_MONITOR) |
++//		HFA384x_CMD_AINFO_SET(enable);
++       if (enable == HFA384x_MONITOR_ENABLE) {
++               // KoreK: get into test mode 0x0a
++               cmd.cmd = HFA384x_CMD_CMDCODE_SET(HFA384x_CMDCODE_MONITOR) |
++                       HFA384x_CMD_AINFO_SET(0x0a);
++       } else {
++               cmd.cmd = HFA384x_CMD_CMDCODE_SET(HFA384x_CMDCODE_MONITOR) |
++                       HFA384x_CMD_AINFO_SET(enable);
++       }
+ 	cmd.parm0 = 0;
+ 	cmd.parm1 = 0;
+ 	cmd.parm2 = 0;
+@@ -3412,37 +3420,71 @@
+ 		HFA384x_TX_MACPORT_SET(0) | HFA384x_TX_STRUCTYPE_SET(1) |
+ 		HFA384x_TX_TXEX_SET(0) | HFA384x_TX_TXOK_SET(0);	
+ #endif
+-	hw->txbuff.txfrm.desc.tx_control = 
+-		host2hfa384x_16(hw->txbuff.txfrm.desc.tx_control);
+-
+-	/* copy the header over to the txdesc */
+-	memcpy(&(hw->txbuff.txfrm.desc.frame_control), p80211_hdr, sizeof(p80211_hdr_t));
++//	hw->txbuff.txfrm.desc.tx_control = 
++//		host2hfa384x_16(hw->txbuff.txfrm.desc.tx_control);
+ 
+-	/* if we're using host WEP, increase size by IV+ICV */
+-	if (p80211_wep->data) {
+-		hw->txbuff.txfrm.desc.data_len = host2hfa384x_16(skb->len+8);
+-		// hw->txbuff.txfrm.desc.tx_control |= HFA384x_TX_NOENCRYPT_SET(1);
+-		usbpktlen+=8;
+-	} else {
+-		hw->txbuff.txfrm.desc.data_len = host2hfa384x_16(skb->len);
++//	/* copy the header over to the txdesc */
++//	memcpy(&(hw->txbuff.txfrm.desc.frame_control), p80211_hdr, sizeof(p80211_hdr_t));
++       if (skb->protocol != htons(ETH_P_80211_RAW)) {
++               hw->txbuff.txfrm.desc.tx_control =
++                       host2hfa384x_16(hw->txbuff.txfrm.desc.tx_control);
++
++               /* copy the header over to the txdesc */
++               memcpy(&(hw->txbuff.txfrm.desc.frame_control), p80211_hdr,
++                       sizeof(p80211_hdr_t));
++
++               /* if we're using host WEP, increase size by IV+ICV */
++               if (p80211_wep->data) {
++                       hw->txbuff.txfrm.desc.data_len = host2hfa384x_16(skb->len+8);
++                       // hw->txbuff.txfrm.desc.tx_control |= HFA384x_TX_NOENCRYPT_SET(1);
++                       usbpktlen+=8;
++               } else {
++                       hw->txbuff.txfrm.desc.data_len = host2hfa384x_16(skb->len);
++               }
++       } else  {
++               /* KoreK: raw injection (monitor mode): pull the rest of
++                  the header and ssanity check on txdesc.data_len */
++               memcpy(&(hw->txbuff.txfrm.desc.data_len), skb->data, 16);
++               skb_pull(skb,16);
++               if (hw->txbuff.txfrm.desc.data_len != host2hfa384x_16(skb->len)) {
++                       printk(KERN_DEBUG "mismatch frame_len, drop frame\n");
++                       return 0;
++               }
++//	/* if we're using host WEP, increase size by IV+ICV */
++//	if (p80211_wep->data) {
++//		hw->txbuff.txfrm.desc.data_len = host2hfa384x_16(skb->len+8);
++//		// hw->txbuff.txfrm.desc.tx_control |= HFA384x_TX_NOENCRYPT_SET(1);
++//		usbpktlen+=8;
++//	} else {
++//		hw->txbuff.txfrm.desc.data_len = host2hfa384x_16(skb->len);
++               hw->txbuff.txfrm.desc.tx_control |= HFA384x_TX_RETRYSTRAT_SET(1);
++               hw->txbuff.txfrm.desc.tx_control  =
++                       host2hfa384x_16(hw->txbuff.txfrm.desc.tx_control);
++
++               /* copy the header over to the txdesc */
++               memcpy(&(hw->txbuff.txfrm.desc.frame_control), p80211_hdr,
++                       sizeof(p80211_hdr_t));
+ 	}
+ 
+ 	usbpktlen += skb->len;
+ 
+ 	/* copy over the WEP IV if we are using host WEP */
+ 	ptr = hw->txbuff.txfrm.data;
+-	if (p80211_wep->data) {
++//	if (p80211_wep->data) {
++       if (p80211_wep->data && skb->protocol != htons(ETH_P_80211_RAW)) {
+ 		memcpy(ptr, p80211_wep->iv, sizeof(p80211_wep->iv));
+ 		ptr+= sizeof(p80211_wep->iv);
+ 		memcpy(ptr, p80211_wep->data, skb->len);
+ 	} else {
+ 		memcpy(ptr, skb->data, skb->len);
+ 	}
++
+ 	/* copy over the packet data */
+ 	ptr+= skb->len;
+ 
+ 	/* copy over the WEP ICV if we are using host WEP */
+-	if (p80211_wep->data) {
++//	if (p80211_wep->data) {
++       if (p80211_wep->data && skb->protocol != htons(ETH_P_80211_RAW)) {
+ 		memcpy(ptr, p80211_wep->icv, sizeof(p80211_wep->icv));
+ 	}
+ 
+@@ -4203,6 +4245,17 @@
+ 	switch( HFA384x_RXSTATUS_MACPORT_GET(usbin->rxfrm.desc.status) )
+ 	{
+ 	case 0:
++               /* KoreK: this testmode uses macport 0 */
++               if ((wlandev->netdev->type == ARPHRD_IEEE80211) ||
++                   (wlandev->netdev->type == ARPHRD_IEEE80211_PRISM)) {
++                       if ( ! HFA384x_RXSTATUS_ISFCSERR(usbin->rxfrm.desc.status) ) {
++                               hfa384x_int_rxmonitor(wlandev, &usbin->rxfrm);
++                       } else {
++                               WLAN_LOG_DEBUG(3,"Received monitor frame: FCSerr set\n");
++                       }
++                       goto done;
++               }
++
+ 		fc = ieee2host16(usbin->rxfrm.desc.frame_control);
+ 
+ 		/* If exclude and we receive an unencrypted, drop it */
+diff -ur linux-wlan-ng-0.2.3/src/prism2/driver/prism2mgmt.c linux-wlan-ng-0.2.3-patched/src/prism2/driver/prism2mgmt.c
+--- linux-wlan-ng-0.2.3/src/prism2/driver/prism2mgmt.c	2005-06-22 10:16:55.000000000 -0400
++++ linux-wlan-ng-0.2.3-patched/src/prism2/driver/prism2mgmt.c	2006-03-18 15:21:03.000000000 -0500
+@@ -2860,9 +2860,12 @@
+ 		}
+ 
+ 		/* Now if we're already sniffing, we can skip the rest */
+-		if (wlandev->netdev->type != ARPHRD_ETHER) {		
++//		if (wlandev->netdev->type != ARPHRD_ETHER) {		
++               if ((wlandev->netdev->type != ARPHRD_IEEE80211) &&
++                   (wlandev->netdev->type != ARPHRD_IEEE80211_PRISM)) {
+ 			/* Set the port type to pIbss */
+-			word = HFA384x_PORTTYPE_PSUEDOIBSS;
++//			word = HFA384x_PORTTYPE_PSUEDOIBSS;
++                       word = 5; // HFA384x_PORTTYPE_PSUEDOIBSS;
+ 			result = hfa384x_drvr_setconfig16(hw, 
+ 							  HFA384x_RID_CNFPORTTYPE, word);
+ 			if ( result ) {
+@@ -2874,6 +2877,8 @@
+ 			}
+ 			if ((msg->keepwepflags.status == P80211ENUM_msgitem_status_data_ok) && (msg->keepwepflags.data != P80211ENUM_truth_true)) {
+ 				/* Set the wepflags for no decryption */
++                               /* doesn't work - done from the CLI */
++                               /* Fix? KoreK */
+ 				word = HFA384x_WEPFLAGS_DISABLE_TXCRYPT | 
+ 					HFA384x_WEPFLAGS_DISABLE_RXCRYPT;
+ 				result = hfa384x_drvr_setconfig16(hw, HFA384x_RID_CNFWEPFLAGS, word);
+@@ -2919,7 +2924,9 @@
+ 			goto failed;
+ 		}
+ 
+-		if (wlandev->netdev->type == ARPHRD_ETHER) {
++//		if (wlandev->netdev->type == ARPHRD_ETHER) {
++               if ((wlandev->netdev->type != ARPHRD_IEEE80211) &&
++                   (wlandev->netdev->type != ARPHRD_IEEE80211_PRISM)) {
+ 			WLAN_LOG_INFO("monitor mode enabled\n");
+ 		}
+ 
+diff -ur linux-wlan-ng-0.2.3/src/prism2/driver/prism2sta.c linux-wlan-ng-0.2.3-patched/src/prism2/driver/prism2sta.c
+--- linux-wlan-ng-0.2.3/src/prism2/driver/prism2sta.c	2005-10-07 17:32:44.000000000 -0400
++++ linux-wlan-ng-0.2.3-patched/src/prism2/driver/prism2sta.c	2006-03-18 15:15:00.000000000 -0500
+@@ -410,7 +410,9 @@
+ 	DBFENTER;
+ 
+ 	/* If necessary, set the 802.11 WEP bit */
+-	if ((wlandev->hostwep & (HOSTWEP_PRIVACYINVOKED | HOSTWEP_ENCRYPT)) == HOSTWEP_PRIVACYINVOKED) {
++//	if ((wlandev->hostwep & (HOSTWEP_PRIVACYINVOKED | HOSTWEP_ENCRYPT)) == HOSTWEP_PRIVACYINVOKED) {
++       if (((wlandev->hostwep & (HOSTWEP_PRIVACYINVOKED | HOSTWEP_ENCRYPT)) == HOSTWEP_PRIVACYINVOKED)
++           && (skb->protocol != htons(ETH_P_80211_RAW))) {
+ 		p80211_hdr->a3.fc |= host2ieee16(WLAN_SET_FC_ISWEP(1));
+ 	}
+ 
