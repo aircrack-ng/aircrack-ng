@@ -1454,8 +1454,7 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 	if( opt.l33t )
 		printf( "\33[32;22m" );
 
-	printf( "\n\tProbability: %d%%\n", opt.probability );
-	printf( "\n" );
+	printf( "\n\nProbability: %d%%\n\n", opt.probability );
 
 	return( SUCCESS );
 }

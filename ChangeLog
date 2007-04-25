@@ -1,4 +1,4 @@
-Version 0.8 (changes from aircrack-ng 0.7) - Released ?? March 2007:
+Version 0.8 (changes from aircrack-ng 0.7) - Released 25 April 2007:
 * aireplay-ng: Works on FreeBSD-CURRENT
 * aircrack-ng: Fixed stdin dictionary usage
 * aircrack-ng: Hardcode CPUs number to 1 in case detection fails
@@ -8,7 +8,7 @@ Version 0.8 (changes from aircrack-ng 0.7) - Released ?? March 2007:
 * aireplay-ng: Better error messages for -0 and -1
 * airtun-ng: Works on FreeBSD
 * airtun-ng: Fix compilation under FC6 (missing "linux/if.h" include).
-* airodump-ng: Works on BSD.
+* airodump-ng: Works on FreeBSD.
 * airodump-ng: Added encryption filtering
 * airodump-ng: Fixed a SIGSEGV
 * airodump-ng: Added WPA handshake detection
@@ -21,18 +21,19 @@ Version 0.8 (changes from aircrack-ng 0.7) - Released ?? March 2007:
 * airmon-ng: Added Nokia 770 and PrismGT softmac
 * airmon-ng: Fixed ACX driver monitor mode startup
 * airmon-ng: Fixed syntax error
+* airtun-ng: Works on FreeBSD
 * airtun-ng: Added pcap support to replay saved wlan sessions
 * airtun-ng: Added repeater mode, bssid and netmask filter
 * packetforge-ng: Added null packet support
 * packetforge-ng: Added packet selection for -9
-* airodump-ng, aireplay-ng, airtun-ng: Initial FreeBSD support
+* Patches: Added hostap kernel 2.6.18 patch
+* Patches: Updated rtl8187 patch.
+* Patches: Updated madwifi-ng patch.
+* Patches: Added injection patch for zd1211 (does not work for all devices).
 * Added airoscript (from daouid)
 * Makefiles: Fixed: make uninstall did not remove all files
 * Updated spec file by David Bolt to be able to build RPM packages on FC, Mandriva and Suse distro
 * Added WEP authentication example capture
-* Added hostap kernel 2.6.18 patch
-* Updated rtl8187 patch.
-* Updated madwifi-ng patch.
 * Fixed gcc 2.95 compilation
 * Fixed compilation on MacIntel
 
