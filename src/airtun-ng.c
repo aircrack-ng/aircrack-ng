@@ -129,7 +129,7 @@ char usage[] =
 "      -y file          : read PRGA from this file\n"
 "      -w wepkey        : use this WEP-KEY to encrypt packets\n"
 "      -t tods          : send frames to AP (1) or to client (0)\n"
-//"      -r file          : read frames out of pcap file\n"
+"      -r file          : read frames out of pcap file\n"
 "\n"
 "  Repeater options:\n"
 "      --repeat         : activates repeat mode\n"
