@@ -14,10 +14,11 @@ Compilation:
  make
 
 REM:
- * You can find a WPA handshake capture and a dictionnary in "test" directory
+ * You can find a several WPA handshake and other capture files
+   as well as a dictionnary in "test" directory
  * If you have trouble compiling and you get align errors with sha1-mmx.S
    (src/sha1-mmx.S:20:Alignment too large: 15. assumed.), remove line 20
-   (it contains ".align(16)" ) then recompile
+   (it contains ".align(4)" ) then recompile
 
 You can strip debug informations from executables before
 installing them with:
