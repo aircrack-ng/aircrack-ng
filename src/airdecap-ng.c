@@ -34,6 +34,18 @@
 #define CRYPT_WEP  1
 #define CRYPT_WPA  2
 
+
+#define	IEEE80211_FC0_SUBTYPE_MASK              0xf0
+#define	IEEE80211_FC0_SUBTYPE_SHIFT             4
+
+/* for TYPE_DATA (bit combination) */
+#define	IEEE80211_FC0_SUBTYPE_QOS               0x80
+#define	IEEE80211_FC0_SUBTYPE_QOS_NULL          0xc0
+
+#define GET_SUBTYPE(fc) \
+    ( ( (fc) & IEEE80211_FC0_SUBTYPE_MASK ) >> IEEE80211_FC0_SUBTYPE_SHIFT ) \
+        << IEEE80211_FC0_SUBTYPE_SHIFT
+
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern int calc_crc_buf( unsigned char *buf, int len );
@@ -302,6 +314,9 @@ int decrypt_tkip( uchar *h80211, int caplen, uchar TK1[16] )
     uchar K[16];
 
     z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS ) {
+        z += 2;
+    }
 
     IV16 = MK16( h80211[z], h80211[z + 2] );
 
@@ -465,6 +480,7 @@ int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, uchar *h80211 )
 {
     int n;
     uchar arphdr[12];
+    int qosh_offset = 0;
 
     if( opt.no_convert )
     {
@@ -502,21 +518,26 @@ int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, uchar *h80211 )
                 break;
         }
 
+        /* check QoS header */
+        if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS ) {
+            qosh_offset += 2;
+        }
+
         /* remove the 802.11 + LLC header */
 
         if( ( h80211[1] & 3 ) != 3 )
         {
-            pkh->len    -= 24 + 6;
-            pkh->caplen -= 24 + 6;
+            pkh->len    -= 24 + qosh_offset + 6;
+            pkh->caplen -= 24 + qosh_offset + 6;
 
-            memcpy( buffer + 12, h80211 + 30, pkh->caplen );
+            memcpy( buffer + 12, h80211 + 30 + qosh_offset, pkh->caplen );
         }
         else
         {
-            pkh->len    -= 30 + 6;
-            pkh->caplen -= 30 + 6;
+            pkh->len    -= 30 + qosh_offset + 6;
+            pkh->caplen -= 30 + qosh_offset + 6;
 
-            memcpy( buffer + 12, h80211 + 36, pkh->caplen );
+            memcpy( buffer + 12, h80211 + 36 + qosh_offset, pkh->caplen );
         }
 
         memcpy( buffer, arphdr, 12 );
@@ -994,6 +1015,10 @@ usage:
         if( z + 16 > (int) pkh.caplen )
             continue;
 
+        /* check QoS header */
+        if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS ) {
+            z += 2;
+        }
         /* check the BSSID */
 
         switch( h80211[1] & 3 )
