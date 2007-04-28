@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Aircrack-ng")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Aircrack-ng GUI")]
+[assembly: AssemblyDescription("Aircrack-ng GUI")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Freedom")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Aircrack-ng")]
-[assembly: AssemblyCopyright("Copyright © Freedom 2006")]
+[assembly: AssemblyCopyright("Copyright © Thomas d'Otreppe 2006, 2007")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.0.1")]
+[assembly: AssemblyFileVersion("1.0.0.1")]
