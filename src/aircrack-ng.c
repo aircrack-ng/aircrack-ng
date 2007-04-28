@@ -747,12 +747,15 @@ void read_thread( void *arg )
 
 			ap_cur->crypt = -1;
 
-			ap_cur->ptw = PTW_newattackstate();
-			if (!ap_cur->ptw) {
-				perror("PTW_newattackstate()");
-				free(ap_cur);
-				ap_cur = NULL;
-				break;
+			if (opt.do_ptw == 1)
+			{
+				ap_cur->ptw = PTW_newattackstate();
+				if (!ap_cur->ptw) {
+					perror("PTW_newattackstate()");
+					free(ap_cur);
+					ap_cur = NULL;
+					break;
+				}
 			}
 		}
 
