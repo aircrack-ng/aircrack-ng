@@ -1842,7 +1842,13 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
         if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) fprintf( stderr, "   ");
         else if( ap_cur->security & AUTH_MGT   ) fprintf( stderr, "MGT");
-        else if( ap_cur->security & AUTH_PSK   ) fprintf( stderr, "PSK");
+        else if( ap_cur->security & AUTH_PSK   )
+		{
+			if( ap_cur->security & STD_WEP )
+				fprintf( stderr, "SKA");
+			else
+				fprintf( stderr, "PSK");
+		}
         else if( ap_cur->security & AUTH_OPN   ) fprintf( stderr, "OPN");
 
         if( ws_col > (columns_ap - 4) )
@@ -3006,7 +3012,7 @@ usage:
 			exit(1);
 		}
 	    }
-    	    
+
 	    setuid( getuid() );
 
 	    channel_hopper(wi, cards, chan_count);
@@ -3022,7 +3028,7 @@ usage:
 	}
         G.singlechan = 1;
     }
-    
+
     setuid( getuid() );
 
     /* open or create the output files */
