@@ -1,7 +1,15 @@
-Version 0.9 (changes from aircrack-ng 0.8) - Released ?? April 2007:
-* aircrack-ng: Added ptw attack
+Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? ????:
 * airodump-ng: Fixed frame length < 10bytes bug
+* airserv-ng: server for rx/tx
 * Added library rx/tx support
+
+Version 0.9 (changes from aircrack-ng 0.8) - Released ?? May 2007:
+* airtun-ng: Fixed: an option wasn't shown in usage screen.
+* airodump-ng: Fixed version numbering.
+* airdecap-ng: Airdecap-ng can now decrypt IEEE802.11 header with 802.11e header.
+* GUI: Updated aircrack-ng tab and added an about tab.
+* patches: updated zd1211rw patch for kernel 2.6.21
+* Added bcm43xx injection patch for kernel 2.6.20
 
 Version 0.8 (changes from aircrack-ng 0.7) - Released 25 April 2007:
 * aireplay-ng: Works on FreeBSD-CURRENT
