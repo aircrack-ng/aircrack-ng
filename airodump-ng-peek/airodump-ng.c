@@ -28,6 +28,7 @@
 #include "console.h"
 #include "timeval.h"
 #include "pcap.h"
+#include "version.h"
 
 #include "uniqueiv.c"
 
@@ -1098,13 +1099,17 @@ int main( int argc, char *argv[] )
     int caplen, chan_index;
     int ws_row, ws_col;
     time_t tt;
+	char * icon_string;
+	
+	icon_string = (char *)malloc(16 + strlen(VERSION) + 1);
+	sprintf( icon_string, " airodump-ng %s   ", VERSION );
 
-    set_console_icon( " airodump-ng 0.8   " );
+    set_console_icon( icon_string );
     set_console_size( 45, 90 );
 
     printf( "\n\n\n\t\t\t" );
     set_text_color( BLUE_WHITE );
-    printf( "airodump-ng 0.6.2 - (C) 2006 Thomas d'Otreppe\n");
+    printf( "airodump-ng %s - (C) 2006 Thomas d'Otreppe\n", VERSION);
     printf( "\t\t\t                    Original work: Christophe Devine" );
     set_text_color( TEXTATTR );
     printf( "\n\n\n\n  usage: airodump-ng <nic index> <nic type> "
@@ -1191,8 +1196,9 @@ int main( int argc, char *argv[] )
 
             set_channel( arg.channels[chan_index] );
 
-            sprintf( buffer, " Channel : %02d - airodump-ng 0.8 ",
-                       arg.channels[chan_index] );
+            sprintf( buffer, " Channel : %02d - airodump-ng %s ",
+                       arg.channels[chan_index],
+					   VERSION);
 
             SetConsoleTitle( buffer );
 
