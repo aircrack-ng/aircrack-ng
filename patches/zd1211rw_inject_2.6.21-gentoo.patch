@@ -1,0 +1,160 @@
+diff -ur linux-2.6.21-gentoo-orig/drivers/net/wireless/zd1211rw/zd_mac.c linux-2.6.21-gentoo-rawtx/drivers/net/wireless/zd1211rw/zd_mac.c
+--- linux-2.6.21-gentoo-orig/drivers/net/wireless/zd1211rw/zd_mac.c	2007-04-27 17:23:31.000000000 -0400
++++ linux-2.6.21-gentoo-rawtx/drivers/net/wireless/zd1211rw/zd_mac.c	2007-04-27 18:32:21.000000000 -0400
+@@ -201,7 +201,13 @@
+ 		goto disable_rx;
+ 
+ 	housekeeping_enable(mac);
+-	ieee80211softmac_start(netdev);
++        netif_carrier_on(netdev);
++        ieee80211softmac_start(netdev);
++        if(!netif_queue_stopped(netdev))
++                netif_start_queue(netdev);
++        else
++                netif_wake_queue(netdev);
++
+ 	return 0;
+ disable_rx:
+ 	zd_chip_disable_rx(chip);
+@@ -834,6 +840,7 @@
+ 	                struct ieee80211_txb *txb,
+ 			int frag_num)
+ {
++        struct ieee80211_device *ieee = zd_mac_to_ieee80211(mac);
+ 	int r;
+ 	struct sk_buff *skb = txb->fragments[frag_num];
+ 	struct ieee80211_hdr_4addr *hdr =
+@@ -857,7 +864,10 @@
+ 
+ 	cs->tx_length = cpu_to_le16(frag_len);
+ 
+-	cs_set_control(mac, cs, hdr);
++        if(ieee->iw_mode == IW_MODE_MONITOR)
++                cs->control = ZD_CS_MULTICAST;
++        else
++                cs_set_control(mac, cs, hdr);
+ 
+ 	packet_length = frag_len + sizeof(struct zd_ctrlset) + 10;
+ 	ZD_ASSERT(packet_length <= 0xffff);
+@@ -913,7 +923,11 @@
+ 			ieee->stats.tx_dropped++;
+ 			return r;
+ 		}
+-		r = zd_usb_tx(&mac->chip.usb, skb->data, skb->len);
++
++                if(ieee->iw_mode == IW_MODE_MONITOR)
++                        r = zd_usb_tx_inject(&mac->chip.usb, skb->data, skb->len);
++                else
++                        r = zd_usb_tx(&mac->chip.usb, skb->data, skb->len);
+ 		if (r) {
+ 			ieee->stats.tx_dropped++;
+ 			return r;
+@@ -933,6 +947,8 @@
+ 	u8  rt_rate;
+ 	u16 rt_channel;
+ 	u16 rt_chbitmask;
++        u8  rt_antsignal;
++        u8  rt_antnoise;
+ } __attribute__((packed));
+ 
+ static void fill_rt_header(void *buffer, struct zd_mac *mac,
+@@ -946,7 +962,9 @@
+ 	hdr->rt_hdr.it_len = cpu_to_le16(sizeof(struct zd_rt_hdr));
+ 	hdr->rt_hdr.it_present = cpu_to_le32((1 << IEEE80211_RADIOTAP_FLAGS) |
+ 		                 (1 << IEEE80211_RADIOTAP_CHANNEL) |
+-				 (1 << IEEE80211_RADIOTAP_RATE));
++                                 (1 << IEEE80211_RADIOTAP_RATE) |
++                                 (1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL) |
++                                 (1 << IEEE80211_RADIOTAP_DBM_ANTNOISE));
+ 
+ 	hdr->rt_flags = 0;
+ 	if (status->decryption_type & (ZD_RX_WEP64|ZD_RX_WEP128|ZD_RX_WEP256))
+@@ -960,6 +978,9 @@
+ 	hdr->rt_chbitmask = cpu_to_le16(IEEE80211_CHAN_2GHZ |
+ 		((status->frame_status & ZD_RX_FRAME_MODULATION_MASK) ==
+ 		ZD_RX_OFDM ? IEEE80211_CHAN_OFDM : IEEE80211_CHAN_CCK));
++
++        hdr->rt_antsignal = status->signal_strength;
++        hdr->rt_antnoise = stats->noise;
+ }
+ 
+ /* Returns 1 if the data packet is for us and 0 otherwise. */
+@@ -1066,7 +1087,8 @@
+ 	const struct rx_status *status;
+ 
+ 	*pstatus = status = zd_tail(buffer, length, sizeof(struct rx_status));
+-	if (status->frame_status & ZD_RX_ERROR) {
++        if (status->frame_status & ZD_RX_ERROR
++                || status->frame_status & ~0x21) {
+ 		struct ieee80211_device *ieee = zd_mac_to_ieee80211(mac);
+ 		ieee->stats.rx_errors++;
+ 		if (status->frame_status & ZD_RX_TIMEOUT_ERROR)
+diff -ur linux-2.6.21-gentoo-orig/drivers/net/wireless/zd1211rw/zd_usb.c linux-2.6.21-gentoo-rawtx/drivers/net/wireless/zd1211rw/zd_usb.c
+--- linux-2.6.21-gentoo-orig/drivers/net/wireless/zd1211rw/zd_usb.c	2007-04-27 17:23:31.000000000 -0400
++++ linux-2.6.21-gentoo-rawtx/drivers/net/wireless/zd1211rw/zd_usb.c	2007-04-27 17:59:07.000000000 -0400
+@@ -63,6 +63,7 @@
+ 	{ USB_DEVICE(0x13b1, 0x0024), .driver_info = DEVICE_ZD1211B },
+ 	{ USB_DEVICE(0x0586, 0x340f), .driver_info = DEVICE_ZD1211B },
+ 	{ USB_DEVICE(0x0baf, 0x0121), .driver_info = DEVICE_ZD1211B },
++        { USB_DEVICE(0x083a, 0x4505), .driver_info = DEVICE_ZD1211B },
+ 	/* "Driverless" devices that need ejecting */
+ 	{ USB_DEVICE(0x0ace, 0x2011), .driver_info = DEVICE_INSTALLER },
+ 	{}
+@@ -773,6 +774,46 @@
+ 	return r;
+ }
+ 
++/* Puts the frame on the USB endpoint. It doesn't wait for
++ * completion. The frame must contain the control set.
++ */
++int zd_usb_tx_inject(struct zd_usb *usb, const u8 *frame, unsigned int length)
++{
++       int r;
++       struct usb_device *udev = zd_usb_to_usbdev(usb);
++       struct urb *urb;
++       void *buffer;
++
++       urb = usb_alloc_urb(0, GFP_ATOMIC);
++       if (!urb) {
++               r = -ENOMEM;
++               goto out;
++       }
++
++       buffer = usb_buffer_alloc(zd_usb_to_usbdev(usb), length, GFP_ATOMIC,
++                                 &urb->transfer_dma);
++       if (!buffer) {
++               r = -ENOMEM;
++               goto error_free_urb;
++       }
++       memcpy(buffer, frame, length);
++
++       usb_fill_bulk_urb(urb, udev, usb_sndbulkpipe(udev, EP_DATA_OUT),
++                         buffer, length, tx_urb_complete, NULL);
++
++       r = usb_submit_urb(urb, GFP_ATOMIC);
++       if (r)
++               goto error;
++       return 0;
++error:
++       usb_buffer_free(zd_usb_to_usbdev(usb), length, buffer,
++                       urb->transfer_dma);
++error_free_urb:
++       usb_free_urb(urb);
++out:
++       return r;
++}
++
+ static inline void init_usb_interrupt(struct zd_usb *usb)
+ {
+ 	struct zd_usb_interrupt *intr = &usb->intr;
+diff -ur linux-2.6.21-gentoo-orig/drivers/net/wireless/zd1211rw/zd_usb.h linux-2.6.21-gentoo-rawtx/drivers/net/wireless/zd1211rw/zd_usb.h
+--- linux-2.6.21-gentoo-orig/drivers/net/wireless/zd1211rw/zd_usb.h	2007-04-27 17:23:31.000000000 -0400
++++ linux-2.6.21-gentoo-rawtx/drivers/net/wireless/zd1211rw/zd_usb.h	2007-04-27 18:01:02.000000000 -0400
+@@ -221,6 +221,7 @@
+ void zd_usb_disable_rx(struct zd_usb *usb);
+ 
+ int zd_usb_tx(struct zd_usb *usb, const u8 *frame, unsigned int length);
++int zd_usb_tx_inject(struct zd_usb *usb, const u8 *frame, unsigned int length);
+ 
+ int zd_usb_ioread16v(struct zd_usb *usb, u16 *values,
+ 	         const zd_addr_t *addresses, unsigned int count);
