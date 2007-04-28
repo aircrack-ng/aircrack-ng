@@ -1,3 +1,10 @@
+Version 0.9 (changes from aircrack-ng 0.8) - Released ?? May 2007:
+* airtun-ng: Fixed: an option wasn't shown in usage screen.
+* airodump-ng: Fixed version numbering.
+* airdecap-ng: Airdecap-ng can now decrypt IEEE802.11 header with 802.11e header.
+* GUI: Updated aircrack-ng tab and added an about tab.
+* patches: updated zd1211rw patch for kernel 2.6.21
+
 Version 0.8 (changes from aircrack-ng 0.7) - Released 25 April 2007:
 * aireplay-ng: Works on FreeBSD-CURRENT
 * aircrack-ng: Fixed stdin dictionary usage
