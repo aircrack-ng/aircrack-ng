@@ -1034,29 +1034,3 @@ int get_battery_state(void)
     }
     return batteryTime;
 }
-
-int create_tap(void)
-{
-    int fd_tap;
-    struct ifreq if_request;
-
-    fd_tap = open( "/dev/net/tun", O_RDWR );
-    if(fd_tap < 0 )
-    {
-        printf( "error opening tap device: %s\n", strerror( errno ) );
-        printf( "try \"modprobe tun\"\n");
-        return -1;
-    }
-
-    memset( &if_request, 0, sizeof( if_request ) );
-    if_request.ifr_flags = IFF_TAP | IFF_NO_PI;
-    strncpy( if_request.ifr_name, "at%d", IFNAMSIZ );
-    if( ioctl( fd_tap, TUNSETIFF, (void *)&if_request ) < 0 )
-    {
-        printf( "error creating tap interface: %s\n", strerror( errno ) );
-        close( fd_tap );
-        return -1;
-    }
-
-    return fd_tap;
-}
