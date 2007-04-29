@@ -28,6 +28,9 @@ OBJS_AS		= airserv-ng.o common.o
 
 OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD)
+ifeq ($(OS), cygwin)
+LIBS		+= -liphlpapi -lsetupapi -luuid
+endif
 LIBOSD		= $(OSD)/lib$(OSD).a
 
 LIBSSL		= -lssl -lcrypto
@@ -72,7 +75,7 @@ airodump-ng$(EXE): $(OBJS_ADU) $(LIBOSD)
 airserv-ng$(EXE): $(OBJS_AS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AS) -o $(@) $(LIBS)
 
-airtun-ng$(EXE): $(OBJS_AT) $(LIBSOSD)
+airtun-ng$(EXE): $(OBJS_AT) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL)
 
 ivstools$(EXE): $(OBJS_IV)

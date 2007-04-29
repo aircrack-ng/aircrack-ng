@@ -87,6 +87,12 @@ int wi_get_mac(struct wif *wi, unsigned char *mac)
 	return wi->wi_get_mac(wi, mac);
 }
 
+int wi_set_mac(struct wif *wi, unsigned char *mac)
+{
+	assert(wi->wi_set_mac);
+	return wi->wi_set_mac(wi, mac);
+}
+
 struct wif *wi_open(char *iface)
 {
 	struct wif *wi;
@@ -102,4 +108,80 @@ struct wif *wi_open(char *iface)
 	wi->wi_interface[sizeof(wi->wi_interface)-1] = 0;
 
 	return wi;
+}
+
+/* tap stuff */
+char *ti_name(struct tif *ti)
+{
+	assert(ti->ti_name);
+	return ti->ti_name(ti);
+}
+
+int ti_set_mtu(struct tif *ti, int mtu)
+{
+	assert(ti->ti_set_mtu);
+	return ti->ti_set_mtu(ti, mtu);
+}
+
+void ti_close(struct tif *ti)
+{
+	assert(ti->ti_close);
+	ti->ti_close(ti);
+}
+
+int ti_fd(struct tif *ti)
+{
+	assert(ti->ti_fd);
+	return ti->ti_fd(ti);
+}
+
+int ti_read(struct tif *ti, void *buf, int len)
+{
+	assert(ti->ti_read);
+	return ti->ti_read(ti, buf, len);
+}
+
+int ti_write(struct tif *ti, void *buf, int len)
+{
+	assert(ti->ti_write);
+	return ti->ti_write(ti, buf, len);
+}
+
+int ti_set_mac(struct tif *ti, unsigned char *mac)
+{
+	assert(ti->ti_set_mac);
+	return ti->ti_set_mac(ti, mac);
+}
+
+int ti_set_ip(struct tif *ti, struct in_addr *ip)
+{
+	assert(ti->ti_set_ip);
+	return ti->ti_set_ip(ti, ip);
+}
+
+struct tif *ti_alloc(int sz)
+{
+        struct tif *ti;
+	void *priv;
+
+        /* Allocate tif & private state */
+        ti = malloc(sizeof(*ti));
+        if (!ti)
+                return NULL;
+        memset(ti, 0, sizeof(*ti));
+
+        priv = malloc(sz);
+        if (!priv) {
+                free(ti);
+                return NULL;
+        }
+        memset(priv, 0, sz);
+        ti->ti_priv = priv;
+
+	return ti;
+}
+
+void *ti_priv(struct tif *ti)
+{
+	return ti->ti_priv;
 }

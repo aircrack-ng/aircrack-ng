@@ -8,6 +8,8 @@
 #ifndef __AIRCRACK_NG_OSEDEP_H__
 #define __AIRCRACK_NG_OSEDEP_H__
 
+#include <netinet/in.h>
+
 #include "packed.h"
 
 /* Empty for now.  Could contain antenna, power, rate, etc. */
@@ -35,6 +37,7 @@ struct wif {
 	void	(*wi_close)(struct wif *wi);
 	int	(*wi_fd)(struct wif *wi);
 	int	(*wi_get_mac)(struct wif *wi, unsigned char *mac);
+	int	(*wi_set_mac)(struct wif *wi, unsigned char *mac);
 
         void	*wi_priv;
         char	wi_interface[MAX_IFACE_NAME];
@@ -51,6 +54,7 @@ extern int wi_get_channel(struct wif *wi);
 extern void wi_close(struct wif *wi);
 extern char *wi_get_ifname(struct wif *wi);
 extern int wi_get_mac(struct wif *wi, unsigned char *mac);
+extern int wi_set_mac(struct wif *wi, unsigned char *mac);
 
 /* wi_open_osdep should determine the type of card and setup the wif structure
  * appropriately.  There is one per OS.  Called by wi_open.
@@ -70,9 +74,36 @@ extern void *wi_priv(struct wif *wi);
 extern int get_battery_state(void);
 
 /* Client code can create a tap interface */
-/* XXX trivial interface for now.  Perhaps in future we can do something like
- * wif so that client code can change MAC addr of tap, IP addr, and so on.
+/* XXX we can unify the tap & wi stuff in the future, but for now, lets keep
+ * them seperate until we learn something.
  */
-extern int create_tap(void);
+struct tif {
+	int	(*ti_read)(struct tif *ti, void *buf, int len);
+	int	(*ti_write)(struct tif *ti, void *buf, int len);
+	int	(*ti_fd)(struct tif *ti);
+	char	*(*ti_name)(struct tif *ti);
+	int	(*ti_set_mtu)(struct tif *ti, int mtu);
+	int	(*ti_set_ip)(struct tif *ti, struct in_addr *ip);
+	int	(*ti_set_mac)(struct tif *ti, unsigned char *mac);
+	void	(*ti_close)(struct tif *ti);
+
+	void	*ti_priv;
+};
+/* one per OS */
+extern struct tif *ti_open(char *iface);
+
+/* osdep routines */
+extern struct tif *ti_alloc(int sz);
+extern void *ti_priv(struct tif *ti);
+
+/* client routines */
+extern char *ti_name(struct tif *ti);
+extern int ti_set_mtu(struct tif *ti, int mtu);
+extern void ti_close(struct tif *ti);
+extern int ti_fd(struct tif *ti);
+extern int ti_read(struct tif *ti, void *buf, int len);
+extern int ti_write(struct tif *ti, void *buf, int len);
+extern int ti_set_mac(struct tif *ti, unsigned char *mac);
+extern int ti_set_ip(struct tif *ti, struct in_addr *ip);
 
 #endif /* __AIRCRACK_NG_OSEDEP_H__ */

@@ -7,10 +7,10 @@ CFLAGS		+= $(PIC) -I..
 OBJS_NET	= network.o
 OBJS		= osdep.o $(OBJS_NET)
 
-OBJS_FBSD	= $(OBJS) freebsd.o
-OBJS_LINUX	= $(OBJS) linux.o
+OBJS_FBSD	= $(OBJS) freebsd.o freebsd_tap.o
+OBJS_LINUX	= $(OBJS) linux.o linux_tap.o
 OBJS_DUMMY	= $(OBJS) dummy.o
-OBJS_CYGWIN	= $(OBJS) cygwin.o
+OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o
 
 all:
 	@echo Building for $(OS)

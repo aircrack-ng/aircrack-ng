@@ -23,6 +23,7 @@
 #define CYGWIN_DLL_INJECT	"cygwin_inject"
 #define CYGWIN_DLL_SNIFF	"cygwin_sniff"
 #define CYGWIN_DLL_GET_MAC	"cygwin_get_mac"
+#define CYGWIN_DLL_SET_MAC	"cygwin_set_mac"
 #define CYGWIN_DLL_CLOSE	"cygwin_close"
 
 struct priv_cygwin {
@@ -38,6 +39,7 @@ struct priv_cygwin {
 	int		(*pc_inject)(void *buf, int len, struct tx_info *ti);
 	int		(*pc_sniff)(void *buf, int len, struct rx_info *ri);
 	int		(*pc_get_mac)(void *mac);
+	int		(*pc_set_mac)(void *mac);
 	void		(*pc_close)(void);
 };
 
@@ -64,6 +66,7 @@ static int do_cygwin_open(struct wif *wi, char *iface)
 	priv->pc_init		= dlsym(lib, CYGWIN_DLL_INIT);
 	priv->pc_set_chan	= dlsym(lib, CYGWIN_DLL_SET_CHAN);
 	priv->pc_get_mac	= dlsym(lib, CYGWIN_DLL_GET_MAC);
+	priv->pc_set_mac	= dlsym(lib, CYGWIN_DLL_SET_MAC);
 	priv->pc_close		= dlsym(lib, CYGWIN_DLL_CLOSE);
 	/* XXX drugs are bad for you.  -sorbo */
 	priv->pc_inject		= dlsym(lib, CYGWIN_DLL_INJECT);
@@ -135,6 +138,34 @@ static int cygwin_get_channel(struct wif *wi)
 	return pc->pc_channel;
 }
 
+int cygwin_read_reader(int fd, int plen, void *dst, int len)
+{
+	/* packet */
+	if (len > plen)
+		len = plen;
+	if (net_read_exact(fd, dst, len) == -1)
+		return -1;
+	plen -= len;
+
+	/* consume packet */
+	while (plen) {
+		char lame[1024];
+		int rd = sizeof(lame);
+
+		if (rd > plen)
+			rd = plen;
+
+		if (net_read_exact(fd, lame, rd) == -1)
+			return -1;
+		
+		plen -= rd;
+
+		assert(plen >= 0);
+	}
+
+	return len;
+}
+
 static int cygwin_read(struct wif *wi, unsigned char *h80211, int len,
 		       struct rx_info *ri)
 {
@@ -158,30 +189,7 @@ static int cygwin_read(struct wif *wi, unsigned char *h80211, int len,
 	plen -= sizeof(*ri);
 	assert(plen > 0);
 
-	/* packet */
-	if (len > plen)
-		len = plen;
-	if (net_read_exact(pc->pc_pipe[0], h80211, len) == -1)
-		return -1;
-	plen -= len;
-
-	/* consume packet */
-	while (plen) {
-		char lame[1024];
-		int rd = sizeof(lame);
-
-		if (rd > plen)
-			rd = plen;
-
-		if (net_read_exact(pc->pc_pipe[0], lame, rd) == -1)
-			return -1;
-		
-		plen -= rd;
-
-		assert(plen >= 0);
-	}
-
-	return len;
+	return cygwin_read_reader(pc->pc_pipe[0], plen, h80211, len);
 }
 
 static void do_free(struct wif *wi)
@@ -234,6 +242,13 @@ static int cygwin_get_mac(struct wif *wi, unsigned char *mac)
 	return pc->pc_get_mac(mac);
 }
 
+static int cygwin_set_mac(struct wif *wi, unsigned char *mac)
+{
+	struct priv_cygwin *pc = wi_priv(wi);
+
+	return pc->pc_set_mac(mac);
+}
+
 static void *cygwin_reader(void *arg)
 {
 	struct priv_cygwin *priv = arg;
@@ -282,6 +297,7 @@ static struct wif *cygwin_open(char *iface)
 	wi->wi_close		= cygwin_close;
 	wi->wi_fd		= cygwin_fd;
 	wi->wi_get_mac		= cygwin_get_mac;
+	wi->wi_set_mac		= cygwin_set_mac;
 
 	/* setup iface */
 	if (do_cygwin_open(wi, iface) == -1)
@@ -314,11 +330,5 @@ struct wif *wi_open_osdep(char *iface)
 int get_battery_state(void)
 {
 	/* XXX use winapi */
-	return -1;
-}
-
-int create_tap(void)
-{
-	/* XXX use win tap */
 	return -1;
 }

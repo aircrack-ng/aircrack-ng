@@ -1,7 +1,7 @@
 /*-
  * Copyright (c) 2007, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
  *
- * OS dependent API for FreeBSD.
+ * OS dependent API for FreeBSD.  WiFi card routines.
  *
  */
 
@@ -44,6 +44,7 @@ struct priv_fbsd {
 
 	/* setchan */
 	int				pf_s;
+	struct ifreq			pf_ifr;
 	struct ieee80211req		pf_ireq;
         int                             pf_chan;
 };
@@ -121,7 +122,7 @@ static int fbsd_get_channel(struct wif *wi)
 {
 	struct priv_fbsd *pf = wi_priv(wi);
 
-	if( ioctl(pf->pf_s, SIOCG80211, &pf->pf_ireq) != 0 ) return -1;
+	if(ioctl(pf->pf_s, SIOCG80211, &pf->pf_ireq) != 0) return -1;
 
 	return pf->pf_ireq.i_val;
 }
@@ -278,6 +279,9 @@ static int do_fbsd_open(struct wif *wi, char *iface)
 	strcpy(pf->pf_ireq.i_name, iface);
 	pf->pf_ireq.i_type = IEEE80211_IOC_CHANNEL;
 
+	/* same for ifreq [mac addr] */
+	strcpy(pf->pf_ifr.ifr_name, iface);
+
         /* open bpf */
         for(i = 0; i < 256; i++) {
                 sprintf(buf, "/dev/bpf%d", i);
@@ -329,7 +333,7 @@ static int fbsd_get_mac(struct wif *wi, unsigned char *mac)
 	struct ifaddrs *ifa, *p;
 	char *name = wi_get_ifname(wi);
 	int rc = -1;
-	 struct sockaddr_dl* sdp;
+	struct sockaddr_dl* sdp;
 
 	if (getifaddrs(&ifa) == -1)
 		return -1;
@@ -352,6 +356,18 @@ static int fbsd_get_mac(struct wif *wi, unsigned char *mac)
 	return rc;
 }
 
+static int fbsd_set_mac(struct wif *wi, unsigned char *mac)
+{
+	struct priv_fbsd *priv = wi_priv(wi);
+	struct ifreq *ifr = &priv->pf_ifr;
+	
+	ifr->ifr_addr.sa_family = AF_LINK;
+	ifr->ifr_addr.sa_len = 6;
+	memcpy(ifr->ifr_addr.sa_data, mac, 6);
+	
+	return ioctl(priv->pf_s, SIOCSIFLLADDR, ifr);
+}
+
 static struct wif *fbsd_open(char *iface)
 {
 	struct wif *wi;
@@ -369,6 +385,7 @@ static struct wif *fbsd_open(char *iface)
 	wi->wi_close		= fbsd_close;
 	wi->wi_fd		= fbsd_fd;
 	wi->wi_get_mac		= fbsd_get_mac;
+	wi->wi_set_mac		= fbsd_set_mac;
 
 	/* setup iface */
 	fd = do_fbsd_open(wi, iface);
@@ -436,24 +453,4 @@ int get_battery_state(void)
 #else
     return 0;
 #endif
-}
-
-int create_tap(void)
-{
-	int fd;
-	struct ifreq if_request;
-
-	fd = open( "/dev/tap", O_RDWR);
-	if (fd == -1)
-		return -1;
-
-	memset(&if_request, 0, sizeof(if_request));
-	strncpy(if_request.ifr_name, "at%d", IFNAMSIZ);
-	if_request.ifr_name[IFNAMSIZ-1] = 0;
-	if(ioctl(fd, SIOCGIFFLAGS, &if_request ) == -1) {
-		close(fd);
-		return -1;
-	}
-
-	return fd;
 }

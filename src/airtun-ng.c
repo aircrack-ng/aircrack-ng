@@ -134,7 +134,7 @@ struct devices
     int fd_in,  arptype_in;
     int fd_out, arptype_out;
     int fd_rtc;
-    int fd_tap;
+    struct tif *dv_ti;
 
     int is_wlanng;
     int is_hostap;
@@ -617,7 +617,7 @@ int packet_recv(uchar* packet, int length)
         memcpy( h80211+14, packet+z+8, length-z-8);
         length = length -z-8+14;
 
-        write(dev.fd_tap, h80211, length);
+	ti_write(dev.dv_ti, h80211, length);
     }
     else
     {
@@ -1006,8 +1006,8 @@ usage:
         }
     }
 
-    dev.fd_tap = create_tap();
-    if( dev.fd_tap < 0 )
+    dev.dv_ti = ti_open(NULL);
+    if(!dev.dv_ti)
     {
         printf( "error opening tap device: %s\n", strerror( errno ) );
         return -1;
@@ -1114,15 +1114,15 @@ usage:
 
         FD_ZERO( &read_fds );
         FD_SET( dev.fd_in, &read_fds );
-        FD_SET( dev.fd_tap, &read_fds );
-        ret_val = select( MAX(dev.fd_tap, dev.fd_in) + 1, &read_fds, NULL, NULL, NULL );
+        FD_SET(ti_fd(dev.dv_ti), &read_fds );
+        ret_val = select( MAX(ti_fd(dev.dv_ti), dev.fd_in) + 1, &read_fds, NULL, NULL, NULL );
         if( ret_val < 0 )
             break;
         if( ret_val > 0 )
         {
-            if( FD_ISSET( dev.fd_tap, &read_fds ) )
+            if( FD_ISSET(ti_fd(dev.dv_ti), &read_fds ) )
             {
-                len = read( dev.fd_tap, buffer, sizeof( buffer ) );
+                len = ti_read(dev.dv_ti, buffer, sizeof( buffer ) );
                 if( len > 0  )
                 {
                     packet_xmit(buffer, len);
@@ -1139,7 +1139,7 @@ usage:
         } //if( ret_val > 0 )
     } //for( ; ; )
 
-    close( dev.fd_tap );
+    ti_close( dev.dv_ti );
 
 
     /* that's all, folks */
