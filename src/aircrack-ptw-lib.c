@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2007, Erik Tews, Andrei Pychkine and Ralf-Philipp Weinmann.
  *
  */
@@ -6,12 +6,12 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "pcap.h"
 #include "aircrack-ptw-lib.h"
-
+#include "aircrack-ng.h"
 
 #define n PTW_n
 #define CONTROLSESSIONS PTW_CONTROLSESSIONS
-#define KEYHSBYTES PTW_KEYHSBYTES
 #define KSBYTES PTW_KSBYTES
 #define IVBYTES PTW_IVBYTES
 #define TESTBYTES 6
@@ -256,12 +256,18 @@ static void getdrv(PTW_tableentry orgtable[][n], int keylen, double * normal, do
         }
 }
 
+int tried, max_tries;
+int depth[KEYHSBYTES];
+PTW_tableentry keytable[KEYHSBYTES][n];
 /*
  * Guess a single keybyte
  */
 static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint8_t fixvalue, int * searchborders, uint8_t * key, int keylen, PTW_attackstate * state, uint8_t sum, int * strongbytes) {
 	int i;
 	uint8_t tmp;
+
+	show_wep_stats( keylen -1, 0, keytable, searchborders, depth, tried, max_tries );
+	tried++;
 	if (keybyte == keylen) {
 		return correct(state, key, keylen);
 	} else if (strongbytes[keybyte] == 1) {
@@ -281,7 +287,9 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
 		return doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, fixvalue, strongbytes);
 	} else {
 		for (i = 0; i < searchborders[keybyte]; i++) {
+			depth[keybyte] = i;
 			key[keybyte] = sortedtable[keybyte][i].b - sum;
+			keytable[keybyte][i].b = key[keybyte];
 			if (doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, sortedtable[keybyte][i].b, strongbytes) == 1) {
 				return 1;
 			}
@@ -300,6 +308,8 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	int fixat;
 	int fixvalue;
 
+	memcpy(keytable, table, sizeof(PTW_tableentry) * n * keylen);
+
 	for (i = 0; i < keylen; i++) {
 		if (strongbytes[i] == 1) {
 			choices[i] = i;
@@ -311,10 +321,12 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	prod = 0;
 	fixat = -1;
 	fixvalue = 0;
+	max_tries = keylimit;
 
 	while(prod < keylimit) {
 		if (doRound(table, 0, fixat, fixvalue, choices, key, keylen, state, 0, strongbytes) == 1) {
 			// printf("hit with %d choices\n", prod);
+			show_wep_stats( keylen -1, 1, keytable, choices, depth, prod, keylimit );
 			return 1;
 		}
 		choices[sh2[i].keybyte]++;
@@ -325,14 +337,17 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 		for (j = 0; j < keylen; j++) {
 			prod *= choices[j];
 		}
+		tried = prod;
 		do {
 			i++;
 		} while (strongbytes[sh2[i].keybyte] == 1);
 
+		show_wep_stats( keylen -1, 0, keytable, choices, depth, prod, keylimit );
+
 	}
+	show_wep_stats( keylen -1, 1, keytable, choices, depth, prod, keylimit );
 	return 0;
 }
-		
 
 /*
  * Guess which key bytes could be strong and start actual computation of the key
@@ -368,7 +383,7 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 		exit(-1);
 	}
 
-	
+
 	for (i = 0; i < keylen; i++) {
 		for (j = 1; j < n; j++) {
 			sh[i][j-1].distance = table[i][0].votes - table[i][j].votes;
