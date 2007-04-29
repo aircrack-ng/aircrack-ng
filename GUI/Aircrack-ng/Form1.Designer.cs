@@ -88,10 +88,10 @@ namespace Aircrack_ng
             this.tWZCook = new System.Windows.Forms.TabPage();
             this.btLaunchWzcook = new System.Windows.Forms.Button();
             this.tAboutBox = new System.Windows.Forms.TabPage();
-            this.lblAboutText = new System.Windows.Forms.Label();
-            this.label9 = new System.Windows.Forms.Label();
-            this.lblChangelog = new System.Windows.Forms.Label();
+            this.rtbChangelog = new System.Windows.Forms.RichTextBox();
             this.lblCopyright = new System.Windows.Forms.Label();
+            this.label9 = new System.Windows.Forms.Label();
+            this.lblAboutText = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tAircrackng.SuspendLayout();
             this.pWordlist.SuspendLayout();
@@ -146,7 +146,7 @@ namespace Aircrack_ng
             // cbUseWordlist
             // 
             this.cbUseWordlist.AutoSize = true;
-            this.cbUseWordlist.Location = new System.Drawing.Point(362, 42);
+            this.cbUseWordlist.Location = new System.Drawing.Point(324, 42);
             this.cbUseWordlist.Name = "cbUseWordlist";
             this.cbUseWordlist.Size = new System.Drawing.Size(83, 17);
             this.cbUseWordlist.TabIndex = 16;
@@ -196,7 +196,7 @@ namespace Aircrack_ng
             this.pWEPKeySize.Controls.Add(this.label2);
             this.pWEPKeySize.Controls.Add(this.cbKeySize);
             this.pWEPKeySize.Controls.Add(this.label4);
-            this.pWEPKeySize.Location = new System.Drawing.Point(188, 32);
+            this.pWEPKeySize.Location = new System.Drawing.Point(150, 32);
             this.pWEPKeySize.Name = "pWEPKeySize";
             this.pWEPKeySize.Size = new System.Drawing.Size(155, 34);
             this.pWEPKeySize.TabIndex = 14;
@@ -250,9 +250,9 @@ namespace Aircrack_ng
             this.label8.AutoSize = true;
             this.label8.Location = new System.Drawing.Point(6, 41);
             this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(74, 13);
+            this.label8.Size = new System.Drawing.Size(57, 13);
             this.label8.TabIndex = 13;
-            this.label8.Text = "Network Type";
+            this.label8.Text = "Encryption";
             // 
             // pAdvancedOptions
             // 
@@ -519,7 +519,7 @@ namespace Aircrack_ng
             // rbWPA
             // 
             this.rbWPA.AutoSize = true;
-            this.rbWPA.Location = new System.Drawing.Point(110, 64);
+            this.rbWPA.Location = new System.Drawing.Point(72, 64);
             this.rbWPA.Name = "rbWPA";
             this.rbWPA.Size = new System.Drawing.Size(50, 17);
             this.rbWPA.TabIndex = 11;
@@ -538,7 +538,7 @@ namespace Aircrack_ng
             // 
             this.rbWEP.AutoSize = true;
             this.rbWEP.Checked = true;
-            this.rbWEP.Location = new System.Drawing.Point(110, 41);
+            this.rbWEP.Location = new System.Drawing.Point(72, 41);
             this.rbWEP.Name = "rbWEP";
             this.rbWEP.Size = new System.Drawing.Size(50, 17);
             this.rbWEP.TabIndex = 10;
@@ -692,7 +692,7 @@ namespace Aircrack_ng
             // 
             // btLaunchAirdecap
             // 
-            this.btLaunchAirdecap.Location = new System.Drawing.Point(506, 410);
+            this.btLaunchAirdecap.Location = new System.Drawing.Point(506, 369);
             this.btLaunchAirdecap.Name = "btLaunchAirdecap";
             this.btLaunchAirdecap.Size = new System.Drawing.Size(75, 23);
             this.btLaunchAirdecap.TabIndex = 7;
@@ -766,8 +766,8 @@ namespace Aircrack_ng
             // 
             // tAboutBox
             // 
+            this.tAboutBox.Controls.Add(this.rtbChangelog);
             this.tAboutBox.Controls.Add(this.lblCopyright);
-            this.tAboutBox.Controls.Add(this.lblChangelog);
             this.tAboutBox.Controls.Add(this.label9);
             this.tAboutBox.Controls.Add(this.lblAboutText);
             this.tAboutBox.Location = new System.Drawing.Point(4, 22);
@@ -777,15 +777,22 @@ namespace Aircrack_ng
             this.tAboutBox.Text = "About";
             this.tAboutBox.UseVisualStyleBackColor = true;
             // 
-            // lblAboutText
+            // rtbChangelog
             // 
-            this.lblAboutText.AutoSize = true;
-            this.lblAboutText.Font = new System.Drawing.Font("Microsoft Sans Serif", 15F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel, ((byte)(0)));
-            this.lblAboutText.Location = new System.Drawing.Point(245, 18);
-            this.lblAboutText.Name = "lblAboutText";
-            this.lblAboutText.Size = new System.Drawing.Size(82, 18);
-            this.lblAboutText.TabIndex = 0;
-            this.lblAboutText.Text = "aboutText";
+            this.rtbChangelog.Location = new System.Drawing.Point(37, 85);
+            this.rtbChangelog.Name = "rtbChangelog";
+            this.rtbChangelog.Size = new System.Drawing.Size(517, 265);
+            this.rtbChangelog.TabIndex = 4;
+            this.rtbChangelog.Text = "";
+            // 
+            // lblCopyright
+            // 
+            this.lblCopyright.AutoSize = true;
+            this.lblCopyright.Location = new System.Drawing.Point(67, 365);
+            this.lblCopyright.Name = "lblCopyright";
+            this.lblCopyright.Size = new System.Drawing.Size(41, 13);
+            this.lblCopyright.TabIndex = 3;
+            this.lblCopyright.Text = "label11";
             // 
             // label9
             // 
@@ -796,23 +803,15 @@ namespace Aircrack_ng
             this.label9.TabIndex = 1;
             this.label9.Text = "Changelog";
             // 
-            // lblChangelog
+            // lblAboutText
             // 
-            this.lblChangelog.AutoSize = true;
-            this.lblChangelog.Location = new System.Drawing.Point(42, 85);
-            this.lblChangelog.Name = "lblChangelog";
-            this.lblChangelog.Size = new System.Drawing.Size(41, 13);
-            this.lblChangelog.TabIndex = 2;
-            this.lblChangelog.Text = "label11";
-            // 
-            // lblCopyright
-            // 
-            this.lblCopyright.AutoSize = true;
-            this.lblCopyright.Location = new System.Drawing.Point(67, 365);
-            this.lblCopyright.Name = "lblCopyright";
-            this.lblCopyright.Size = new System.Drawing.Size(41, 13);
-            this.lblCopyright.TabIndex = 3;
-            this.lblCopyright.Text = "label11";
+            this.lblAboutText.AutoSize = true;
+            this.lblAboutText.Font = new System.Drawing.Font("Microsoft Sans Serif", 15F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel, ((byte)(0)));
+            this.lblAboutText.Location = new System.Drawing.Point(245, 18);
+            this.lblAboutText.Name = "lblAboutText";
+            this.lblAboutText.Size = new System.Drawing.Size(82, 18);
+            this.lblAboutText.TabIndex = 0;
+            this.lblAboutText.Text = "aboutText";
             // 
             // Faircrack
             // 
@@ -914,8 +913,8 @@ namespace Aircrack_ng
         private System.Windows.Forms.TabPage tAboutBox;
         private System.Windows.Forms.Label lblAboutText;
         private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.Label lblChangelog;
         private System.Windows.Forms.Label lblCopyright;
+        private System.Windows.Forms.RichTextBox rtbChangelog;
     }
 }
 

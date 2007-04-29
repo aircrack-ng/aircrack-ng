@@ -81,6 +81,7 @@ namespace Aircrack_ng
             }
             Console.WriteLine("Windir: {0}", Windir);
             cmd_exe = this.Windir + "\\System32\\cmd.exe";
+            // End windows directory
 
             this.rbWEP_CheckedChanged(null, null);
 
@@ -88,13 +89,16 @@ namespace Aircrack_ng
             this.lblAboutText.Text = "Aircrack-ng GUI v" + Assembly.GetCallingAssembly().GetName().Version.ToString();
             this.lblAboutText.Left = (this.tAboutBox.Width - this.lblAboutText.Width) / 2;
 
-            this.lblChangelog.Text =
-                  "v1.0.0.1\n"
+            this.rtbChangelog.Text =
+                  "v1.0.0.2\n"
+                + "    - Fixed wordlist selection\n"
+                + "\n"
+                + "v1.0.0.1\n"
                 + "    - Added About box\n"
                 + "    - Modified Aircrack-ng tab\n"
                 + "\n"
                 + "v1.0\n"
-                + "    First version\n";
+                + "    - First version\n";
 
             this.lblCopyright.Text =
                 "Copyright © 2006, 2007 Thomas d'Otreppe";
@@ -112,8 +116,9 @@ namespace Aircrack_ng
         /// <param name="FilterIndex"></param>
         /// <param name="multipleFiles"></param>
         /// <returns></returns>
-        private string FileDialog(string Filter, int FilterIndex, bool multipleFiles)
+        private string FileDialog(string Filter, int FilterIndex, bool multipleFiles, string separator)
         {
+            string fileseparator = separator;
             string filenames = "";
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Filter = Filter;
@@ -124,11 +129,15 @@ namespace Aircrack_ng
             ofd.DereferenceLinks = true;
             ofd.CheckPathExists = true;
             ofd.CheckFileExists = true;
+
+            if (string.IsNullOrEmpty(fileseparator))
+                fileseparator = " ";
+
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 foreach (string filename in ofd.FileNames)
                 {
-                    filenames += " ";
+                    filenames += fileseparator;
                     if (filename.Contains(" "))
                         filenames += "\"" + filename + "\"";
                     else
@@ -147,7 +156,8 @@ namespace Aircrack_ng
         {
             string captureFileExtensions =
                 "Capture files (*.cap, *.ivs, *.dump)|*.cap;*.ivs;*.dump|All files (*.*)|*.*";
-            this.tbFilenames.Text += " " + this.FileDialog(captureFileExtensions, 0, true).Trim();
+            this.tbFilenames.Text += " " + this.FileDialog(captureFileExtensions, 0, true, null).Trim();
+            this.tbFilenames.Text = this.tbFilenames.Text.Trim();
         }
 
         private void ShowHideEssidBssid(object sender, EventArgs e)
@@ -340,12 +350,6 @@ namespace Aircrack_ng
             }
         }
 
-        private void tbFilenames_DragDrop(object sender, DragEventArgs e)
-        {
-            //Console.WriteLine("DragEventArgs: {0} - sender: {1}", e.ToString(), sender.ToString());
-            //Console.WriteLine("DragEventAgrs.Data.GetData(): {0}", e.Data.GetData("String").ToString());
-        }
-
         private void cbSingleBrute_CheckedChanged(object sender, EventArgs e)
         {
             bool enable = !this.cbSingleBrute.Checked;
@@ -356,8 +360,9 @@ namespace Aircrack_ng
 
         private void btOpenDico_Click(object sender, EventArgs e)
         {
-            this.tbWPADico.Text =
-                this.FileDialog("Wordlist|*.*", 0, true).Trim();
+            this.tbWPADico.Text += "," + this.FileDialog("Wordlist|*.*", 0, true, ",").Trim();
+
+            this.tbWPADico.Text = this.tbWPADico.Text.Trim(',');
         }
 
         private void cbPMKDecap_CheckedChanged(object sender, EventArgs e)
@@ -455,8 +460,8 @@ namespace Aircrack_ng
         {
             string captureFileExtensions =
                 "Capture files (*.cap, *.dump)|*.cap;*.dump|All files (*.*)|*.*";
-            this.tbFilenames.Text = " " + this.FileDialog(captureFileExtensions, 0, false).Trim();
-
+            this.tbFilenames.Text = " " + this.FileDialog(captureFileExtensions, 0, false, null).Trim();
+            this.tbFilenames.Text = this.tbFilenames.Text.Trim();
         }
 
         private void rbWEP_CheckedChanged(object sender, EventArgs e)
