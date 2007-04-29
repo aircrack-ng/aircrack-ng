@@ -29,6 +29,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <netinet/in.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
@@ -40,11 +41,13 @@
 #include <time.h>
 #include <getopt.h>
 #include <ctype.h>
+#include <err.h>
 
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
 #include "uniqueiv.c"
+#include "aircrack-ptw-lib.h"
 
 #define SUCCESS  0
 #define FAILURE  1
@@ -63,6 +66,8 @@
 
 #define TEST_MIN_IVS	4
 #define TEST_MAX_IVS	32
+
+#define PTW_TRY_STEP    5000
 
 #define SWAP(x,y) { uchar tmp = x; x = y; y = tmp; }
 
@@ -90,6 +95,12 @@ static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00";
+
+#define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
+#define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
+#define S_LLC_SNAP_IP   (S_LLC_SNAP "\x08\x00")
+#define IEEE80211_FC1_DIR_FROMDS                0x02    /* AP ->STA */
+#define KEYLIMIT 1000000
 
 #define N_ATTACKS 17
 
@@ -141,6 +152,7 @@ struct options
 	int do_mt_brute;			 /* bruteforce last 2 KB
 									multithreaded for SMP*/
 	int do_testy;				 /* experimental attack  */
+        int do_ptw;                              /* PTW WEP attack */
 
 	char *dicts[MAX_DICTS];			 /* dictionary files     */
 	FILE *dict;				 /* dictionary file      */
@@ -157,6 +169,7 @@ struct options
 	int probability;			/* %of correct answers */
 	int votes[N_ATTACKS];			/* votes for korek attacks */
 	int brutebytes[64];			/* bytes to bruteforce */
+        int next_ptw_try;
 }
 
 opt;
@@ -205,6 +218,7 @@ struct AP_info
 	int target;					 /* flag set if AP is a target   */
 	struct ST_info *st_1st;		 /* linked list of stations      */
 	struct WPA_hdsk wpa;		 /* valid WPA handshake data     */
+        PTW_attackstate *ptw;
 };
 
 struct ST_info
@@ -304,6 +318,7 @@ char usage[] =
 "      -x2        : enable last two keybytes bruteforcing"
 "%s"
 "      -y         : experimental single bruteforce mode\n"
+"      -z         : PTW attack\n"
 "      -s         : show ASCII version of the key\n"
 "\n"
 "  WEP and WPA-PSK cracking options:\n"
@@ -387,6 +402,109 @@ int atomic_read( read_buf *rb, int fd, int len, void *buf )
 	}
 
 	return( 0 );
+}
+
+static int is_arp(void *wh, int len)
+{
+        int arpsize = 8 + 8 + 10*2;
+
+	/* XXX check if broadcast to increase probability of correctness in some
+	 * cases?
+	 */
+	if (wh) {}
+
+        if (len == arpsize || len == 54)
+                return 1;
+
+        return 0;
+}
+
+static void *get_da(unsigned char *wh)
+{
+        if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
+                return wh + 4;
+        else
+                return wh + 4 + 6*2;
+}
+
+static void *get_sa(unsigned char *wh)
+{
+        if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
+                return wh + 4 + 6*2;
+        else
+                return wh + 4 + 6;
+}
+
+static int known_clear(void *clear, unsigned char *wh, int len)
+{
+        unsigned char *ptr = clear;
+
+        /* IP */
+        if (!is_arp(wh, len)) {
+                unsigned short iplen = htons(len - 8);
+
+//                printf("Assuming IP %d\n", len);
+
+                len = sizeof(S_LLC_SNAP_IP) - 1;
+                memcpy(ptr, S_LLC_SNAP_IP, len);
+                ptr += len;
+#if 1
+                //version=4; header_length=20; services=0
+                len = 2;
+                memcpy(ptr, "\x45\x00", len);
+                ptr += len;
+
+                //ip total length
+                memcpy(ptr, &iplen, len);
+                ptr += len;
+
+#if 0
+		/* XXX IP ID is not always 0.  Can't use IP packets for PTW,
+		 * unless they are our own.  Can we use them for 40-bit keys
+		 * though [only 3+5 bytes of keystream needed]?  Or for
+		 * calculating only the first 9 bytes of the key?  -sorbo.
+		 */
+                //ID=0
+                len=2;
+                memcpy(ptr, "\x00\x00", len);
+                ptr += len;
+
+                //ip flags=don't fragment
+                len=2;
+                memcpy(ptr, "\x40\x00", len);
+                ptr += len;
+#endif
+#endif
+                len = ptr - ((unsigned char*)clear);
+                return len;
+        }
+//        printf("Assuming ARP %d\n", len);
+
+        /* arp */
+        len = sizeof(S_LLC_SNAP_ARP) - 1;
+        memcpy(ptr, S_LLC_SNAP_ARP, len);
+        ptr += len;
+
+        /* arp hdr */
+        len = 6;
+        memcpy(ptr, "\x00\x01\x08\x00\x06\x04", len);
+        ptr += len;
+
+        /* type of arp */
+        len = 2;
+        if (memcmp(get_da(wh), "\xff\xff\xff\xff\xff\xff", 6) == 0)
+                memcpy(ptr, "\x00\x01", len);
+        else
+                memcpy(ptr, "\x00\x02", len);
+        ptr += len;
+
+        /* src mac */
+        len = 6;
+        memcpy(ptr, get_sa(wh), len);
+        ptr += len;
+
+        len = ptr - ((unsigned char*)clear);
+        return len;
 }
 
 void read_thread( void *arg )
@@ -473,7 +591,8 @@ void read_thread( void *arg )
 				"802.11 (wireless) capture.\n" );
 			goto read_fail;
 		}
-	}
+	} else if (opt.do_ptw)
+		errx(1, "Can't do PTW with IV files for now\n"); /* XXX */
 
 	/* avoid blocking on reading the file */
 
@@ -638,6 +757,17 @@ void read_thread( void *arg )
 			memcpy( ap_cur->bssid, bssid, 6 );
 
 			ap_cur->crypt = -1;
+
+			if (opt.do_ptw == 1)
+			{
+				ap_cur->ptw = PTW_newattackstate();
+				if (!ap_cur->ptw) {
+					perror("PTW_newattackstate()");
+					free(ap_cur);
+					ap_cur = NULL;
+					break;
+				}
+			}
 		}
 
 		if( fmt == FORMAT_IVS )
@@ -825,6 +955,25 @@ void read_thread( void *arg )
 			if( opt.index != 0 &&
 				( h80211[z + 3] >> 6 ) != opt.index - 1 )
 				goto unlock_mx_apl;
+
+			if (opt.do_ptw) {
+				unsigned char *body = h80211 + 24;
+				int dlen = pkh.caplen - (body-h80211) - 4 -4;
+				unsigned char clear[2048];
+				int clearsize, i;
+
+				/* calculate keystream */
+				clearsize = known_clear(clear, h80211, dlen);
+				if (clearsize < 16)
+					goto unlock_mx_apl;
+				for (i = 0; i < 16; i++)
+					clear[i] ^= body[4+i];
+
+				if (PTW_addsession(ap_cur->ptw, body, clear))
+					ap_cur->nb_ivs++;
+
+				goto unlock_mx_apl;
+			}
 
 			/* save the IV & first two output bytes */
 
@@ -1343,6 +1492,61 @@ void show_wep_stats( int B, int force )
 	printf( "\n" );
 }
 
+static void key_found(unsigned char *wepkey, int keylen, int B)
+{
+	int nb_ascii = 0;
+	int i, n;
+
+	for( i = 0; i < keylen; i++ )
+		if( wepkey[i] == 0 ||
+		( wepkey[i] >= 32 && wepkey[i] < 127 ) )
+			nb_ascii++;
+
+	wepkey_crack_success = 1;
+	memcpy(bf_wepkey, wepkey, keylen);
+
+	if( opt.is_quiet )
+		printf( "KEY FOUND! [ " );
+	else
+	{
+		if (B != -1)
+			show_wep_stats( B - 1, 1 );
+
+		if( opt.l33t )
+			printf( "\33[31;1m" );
+
+		n = ( 80 - 14 - keylen * 3 ) / 2;
+
+		if( 100 * nb_ascii > 75 * keylen )
+			n -= ( keylen + 4 ) / 2;
+
+		if( n <= 0 ) n = 0;
+
+		printf( "\33[K\33[%dCKEY FOUND! [ ", n );
+	}
+
+	for( i = 0; i < keylen - 1; i++ )
+		printf( "%02X:", wepkey[i] );
+	printf( "%02X ] ",   wepkey[i] );
+
+	if( 100 * nb_ascii > 75 * opt.keylen )
+	{
+		printf( "(ASCII: " );
+
+		for( i = 0; i < opt.keylen; i++ )
+			printf( "%c", ( ( wepkey[i] >  31 && wepkey[i] < 127 ) ||
+				wepkey[i] > 160 ) ? wepkey[i] : '.' );
+
+		printf( " )" );
+	}
+
+	if( opt.l33t )
+		printf( "\33[32;22m" );
+
+	printf( "\n\tDecrypted correctly: %d%%\n", opt.probability );
+	printf( "\n" );
+}
+
 /* test if the current WEP key is valid */
 
 int check_wep_key( uchar *wepkey, int B, int keylen )
@@ -1350,7 +1554,6 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 	uchar x1, x2;
 	unsigned long xv;
 	int i, j, n, bad, tests;
-	int nb_ascii;
 
 	uchar K[64];
 	uchar S[256];
@@ -1407,54 +1610,7 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 
 	opt.probability = (((tests-bad)*100)/tests);
 
-	nb_ascii = 0;
-
-	for( i = 0; i < keylen; i++ )
-		if( wepkey[i] == 0 ||
-		( wepkey[i] >= 32 && wepkey[i] < 127 ) )
-			nb_ascii++;
-
-	wepkey_crack_success = 1;
-	memcpy(bf_wepkey, wepkey, keylen);
-
-	if( opt.is_quiet )
-		printf( "KEY FOUND! [ " );
-	else
-	{
-		show_wep_stats( B - 1, 1 );
-
-		if( opt.l33t )
-			printf( "\33[31;1m" );
-
-		n = ( 80 - 14 - keylen * 3 ) / 2;
-
-		if( 100 * nb_ascii > 75 * keylen )
-			n -= ( keylen + 4 ) / 2;
-
-		if( n <= 0 ) n = 0;
-
-		printf( "\33[K\33[%dCKEY FOUND! [ ", n );
-	}
-
-	for( i = 0; i < keylen - 1; i++ )
-		printf( "%02X:", wepkey[i] );
-	printf( "%02X ] ",   wepkey[i] );
-
-	if( 100 * nb_ascii > 75 * opt.keylen )
-	{
-		printf( "(ASCII: " );
-
-		for( i = 0; i < opt.keylen; i++ )
-			printf( "%c", ( ( wepkey[i] >  31 && wepkey[i] < 127 ) ||
-				wepkey[i] > 160 ) ? wepkey[i] : '.' );
-
-		printf( " )" );
-	}
-
-	if( opt.l33t )
-		printf( "\33[32;22m" );
-
-	printf( "\n\nProbability: %d%%\n\n", opt.probability );
+	key_found(wepkey, keylen, B);
 
 	return( SUCCESS );
 }
@@ -2918,6 +3074,24 @@ int crack_wep_dict()
 	}
 }
 
+static int crack_wep_ptw(struct AP_info *ap_cur)
+{
+	int len = 0;
+
+	if(PTW_computeKey(ap_cur->ptw, wep.key, 13, (KEYLIMIT*opt.ffact)) == 1)
+		len = 13;
+	else if(PTW_computeKey(ap_cur->ptw, wep.key, 5, (KEYLIMIT*opt.ffact)/10) == 1)
+		len = 5;
+
+	if (!len)
+		return FAILURE;
+
+	opt.probability = 100;
+	key_found(wep.key, len, -1);
+
+	return SUCCESS;
+}
+
 int main( int argc, char *argv[] )
 {
 	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, unused;
@@ -2955,6 +3129,7 @@ int main( int argc, char *argv[] )
 	opt.do_mt_brute = 1;
 	opt.showASCII   = 0;
 	opt.probability = 51;
+        opt.next_ptw_try= 0;
 
 	while( 1 )
 	{
@@ -2969,10 +3144,10 @@ int main( int argc, char *argv[] )
         };
 
 		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "a:e:b:qcthd:m:n:i:f:k:x::ysw:0H",
+			option = getopt_long( argc, argv, "a:e:b:qcthd:m:n:i:f:k:x::ysw:0Hz",
                         long_options, &option_index );
 		else
-			option = getopt_long( argc, argv, "a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0H",
+			option = getopt_long( argc, argv, "a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0Hz",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -3196,6 +3371,10 @@ int main( int argc, char *argv[] )
 			case 'y' :
 
 				opt.do_testy = 1;
+				break;
+
+			case 'z' :
+				opt.do_ptw = 1;
 				break;
 
 			case 's' :
@@ -3499,22 +3678,46 @@ usage:
 
 		if( opt.ffact == 0 )
 		{
-			if( ! opt.do_testy )
-			{
-				if( opt.keylen == 5 )
-					opt.ffact = 5;
-				else
-					opt.ffact = 2;
-			}
-			else
-				opt.ffact = 30;
-		}
+                        if( opt.do_ptw ) opt.ffact = 2;
+                        else
+                        {
+                            if( ! opt.do_testy )
+                            {
+                                if( opt.keylen == 5 )
+                                    opt.ffact = 5;
+                                else
+                                    opt.ffact = 2;
+                            }
+                            else
+                                opt.ffact = 30;
+                        }
+                }
 
 		memset( &wep, 0, sizeof( wep ) );
 
-		if(opt.dict != NULL)
+		if (opt.do_ptw)
+                {
+                    printf("Attack will be restarted every %d captured ivs.\n", PTW_TRY_STEP);
+                    opt.next_ptw_try = ap_cur->nb_ivs - (ap_cur->nb_ivs % PTW_TRY_STEP);
+                    do
+                    {
+                        if(ap_cur->nb_ivs >= opt.next_ptw_try)
+                        {
+                            printf("Starting ptw attack with %ld ivs.\n", ap_cur->nb_ivs);
+                            ret = crack_wep_ptw(ap_cur);
+                            if(ret)
+                            {
+                                printf("Failed...\n");
+                                opt.next_ptw_try += PTW_TRY_STEP;
+                            }
+                        }
+                        if(ret)
+                            usleep(10000);
+                    }while(ret != 0);
+                }
+		else if(opt.dict != NULL)
 		{
-			crack_wep_dict();
+			ret = crack_wep_dict();
 		}
 		else
 		{

@@ -10,7 +10,7 @@ iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro
 iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
-destdir         = 
+destdir         =
 prefix          = /usr/local
 bindir          = $(prefix)/bin
 sbindir         = $(prefix)/sbin
@@ -31,18 +31,18 @@ userland: $(BINFILES) $(TESTFILES)
 
 all: userland $(SBINFILES)
 
-aircrack-ng-opt: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt -lpthread
+aircrack-ng-opt: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c -o aircrack-ng-opt -lpthread
 
-aircrack-ng-opt-prof_gen: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
+aircrack-ng-opt-prof_gen: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c
 	mkdir -p prof
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_genx -DDO_PGO_DUMP -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt-prof_gen -lpthread
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_genx -DDO_PGO_DUMP -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c -o aircrack-ng-opt-prof_gen -lpthread
 
-aircrack-ng-opt-prof_use: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_use -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt-prof -lpthread
+aircrack-ng-opt-prof_use: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_use -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c -o aircrack-ng-opt-prof -lpthread
 
-aircrack-ng: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng -lpthread
+aircrack-ng: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c -o aircrack-ng -lpthread
 
 airdecap-ng: src/airdecap-ng.c src/crypto.c src/common.c src/crc.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airdecap-ng.c src/crypto.c src/common.c src/crc.c -o airdecap-ng
@@ -128,11 +128,11 @@ uninstall:
 	-rm -f $(destdir)/usr/man/man1/arpforge.1
 	-rm -f $(destdir)/usr/man/man1/mergeivs.1
 	-rm -f $(destdir)/usr/man/man1/pcap2ivs.1
-	
+
 doc:
 	install -d $(destdir)$(docdir)
 	install -m 644 $(DOCFILES) $(destdir)$(docdir)
-	
+
 
 clean:
 	-rm -f $(SBINFILES) $(BINFILES) $(TESTFILES) $(OPTFILES)
