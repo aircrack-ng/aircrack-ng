@@ -16,8 +16,8 @@ default: all
 
 all: aircrack-ng airdecap-ng packetforge-ng ivstools kstats makeivs
 
-aircrack-ng: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng -lpthread
+aircrack-ng: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c -o aircrack-ng -lpthread
 
 airdecap-ng: src/airdecap-ng.c src/crypto.c src/common.c src/crc.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airdecap-ng.c src/crypto.c src/common.c src/crc.c -o airdecap-ng
