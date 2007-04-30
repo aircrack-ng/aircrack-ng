@@ -67,6 +67,7 @@ long long int nb_tried;			 /* total # of keys tried        */
 /* IPC global data */
 
 struct AP_info *ap_1st;			 /* first item in linked list    */
+pthread_mutex_t mx_ivb;			 /* lock access to ivbuf array   */
 pthread_mutex_t mx_apl;			 /* lock write access to ap LL   */
 pthread_mutex_t mx_eof;			 /* lock write access to nb_eof  */
 pthread_cond_t  cv_eof;			 /* read EOF condition variable  */
@@ -1040,6 +1041,9 @@ int crack_wep_thread( void *arg )
 
 		for( xv = min; xv < max; xv += 5 )
 		{
+
+			pthread_mutex_lock( &mx_ivb );
+
 			memcpy( K, &wep.ivbuf[xv], 3 );
 			memcpy( S,  R, 256 );
 			memcpy( Si, R, 256 );
@@ -1055,6 +1059,10 @@ int crack_wep_thread( void *arg )
 
 			o1 = wep.ivbuf[xv + 3] ^ 0xAA; io1 = Si[o1]; S1 = S[1];
 			o2 = wep.ivbuf[xv + 4] ^ 0xAA; io2 = Si[o2]; S2 = S[2];
+
+			pthread_mutex_unlock( &mx_ivb );
+
+
 			Sq = S[q]; dq = Sq + jj[q - 1];
 
 			if( S2 == 0 )
@@ -1436,6 +1444,8 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 		/* xv = 5 * ( rand() % wep.nb_ivs ); */
 		xv = 5 * n;
 
+		pthread_mutex_lock( &mx_ivb );
+
 		memcpy( K, &wep.ivbuf[xv], 3 );
 		memcpy( S, R, 256 );
 
@@ -1450,6 +1460,8 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 
 		i = 2; j = ( j + S[i] ) & 0xFF; SWAP(S[i], S[j]);
 		x2 = wep.ivbuf[xv + 4] ^ S[(S[i] + S[j]) & 0xFF];
+
+		pthread_mutex_unlock( &mx_ivb );
 
 //		printf("xv: %li x1: %02X  x2: %02X\n", (xv/5), x1, x2);
 
@@ -1602,6 +1614,8 @@ int update_ivbuf( void )
 		( opt.keylen ==  5 && wep.nb_ivs_now - wep.nb_ivs > 20000 ) ||
 		( opt.keylen >= 13 && wep.nb_ivs_now - wep.nb_ivs > 40000 ) )
 	{
+		pthread_mutex_lock( &mx_ivb );
+
 		/* one buffer to rule them all */
 
 		if( wep.ivbuf != NULL )
@@ -1623,6 +1637,7 @@ int update_ivbuf( void )
 				if( ( wep.ivbuf = realloc( wep.ivbuf,
 					( wep.nb_ivs + n ) * 5 ) ) == NULL )
 				{
+					pthread_mutex_unlock( &mx_ivb );
 					perror( "realloc failed" );
 					kill( 0, SIGTERM );
 					_exit( FAILURE );
@@ -1635,6 +1650,8 @@ int update_ivbuf( void )
 
 			ap_cur = ap_cur->next;
 		}
+
+		pthread_mutex_unlock( &mx_ivb );
 
 		return( RESTART );
 	}
@@ -3303,6 +3320,7 @@ usage:
 
 	pthread_mutex_init( &mx_apl, NULL );
 	pthread_mutex_init( &mx_eof, NULL );
+	pthread_mutex_init( &mx_ivb, NULL );
 	pthread_cond_init(  &cv_eof, NULL );
 
 	ap_1st = NULL;
