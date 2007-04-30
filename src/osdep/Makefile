@@ -9,7 +9,7 @@ OBJS		= osdep.o $(OBJS_NET)
 
 OBJS_FBSD	= $(OBJS) freebsd.o freebsd_tap.o
 OBJS_LINUX	= $(OBJS) linux.o linux_tap.o
-OBJS_DUMMY	= $(OBJS) dummy.o
+OBJS_DUMMY	= $(OBJS) dummy.o dummy_tap.o
 OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o
 
 all:
@@ -34,6 +34,9 @@ all:
 .os.cygwin: $(OBJS_CYGWIN)
 	$(AR) cru $(LIB) $(OBJS_CYGWIN)
 	$(RANLIB) $(LIB)
+	touch $(@)
+
+.os.CYGWIN_NT-5.1: .os.cygwin
 	touch $(@)
 
 .os.%: .os.dummy
