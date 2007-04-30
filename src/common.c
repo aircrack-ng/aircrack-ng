@@ -30,23 +30,6 @@
 #include <unistd.h>
 #include <ctype.h>
 
-#if defined(linux)
-//Check if the driver is ndiswrapper */
-int is_ndiswrapper(const char * iface, const char * path)
-{
-	int n,pid;
-	if ((pid=fork())==0)
-	{
-		close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-		execl(path, "iwpriv",iface, "ndis_reset", NULL);
-		exit( 1 );
-	}
-
-	waitpid( pid, &n, 0 );
-	return ( ( WIFEXITED(n) && WEXITSTATUS(n) == 0 ));
-}
-#endif /* linux */
-
 /* Return the version number */
 char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
 {
@@ -67,86 +50,6 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
 	temp = realloc(temp, strlen(temp)+1);
 	return temp;
 }
-
-/* Search a file recursively */
-
-char * searchInside(const char * dir, const char * filename)
-{
-	char * ret;
-	char * curfile;
-	struct stat sb;
-	int len, lentot;
-	DIR *dp;
-	struct dirent *ep;
-
-	len = strlen(filename);
-	lentot = strlen(dir) + 256 + 2;
-	curfile = (char *)calloc(1, lentot);
-	dp = opendir(dir);
-	if (dp == NULL)
-		return NULL;
-	while ((ep = readdir(dp)) != NULL)
-	{
-
-		memset(curfile, 0, lentot);
-		sprintf(curfile, "%s/%s", dir, ep->d_name);
-
-		//Checking if it's the good file
-		if ((int)strlen( ep->d_name) == len && !strcmp(ep->d_name, filename))
-		{
-			(void)closedir(dp);
-			return curfile;
-		}
-		lstat(curfile, &sb);
-
-		//If it's a directory and not a link, try to go inside to search
-		if (S_ISDIR(sb.st_mode) && !S_ISLNK(sb.st_mode))
-		{
-			//Check if the directory isn't "." or ".."
-			if (strcmp(".", ep->d_name) && strcmp("..", ep->d_name))
-			{
-				//Recursive call
-				ret = searchInside(curfile, filename);
-				if (ret != NULL)
-				{
-					(void)closedir(dp);
-					return ret;
-				}
-			}
-		}
-	}
-	(void)closedir(dp);
-	return NULL;
-}
-
-#if defined(linux)
-/* Search a wireless tool and return its path */
-char * wiToolsPath(const char * tool)
-{
-	char * path;
-	int i, nbelems;
-	static const char * paths [] = {
-		"/sbin",
-		"/usr/sbin",
-		"/usr/local/sbin",
-		"/bin",
-		"/usr/bin",
-		"/usr/local/bin",
-		"/tmp"
-	};
-
-	nbelems = sizeof(paths) / sizeof(char *);
-
-	for (i = 0; i < nbelems; i++)
-	{
-		path = searchInside(paths[i], tool);
-		if (path != NULL)
-			return path;
-	}
-
-	return NULL;
-}
-#endif
 
 //Return the mac address bytes (or null if it's not a mac address)
 int getmac(char * macAddress, int strict, unsigned char * mac)
