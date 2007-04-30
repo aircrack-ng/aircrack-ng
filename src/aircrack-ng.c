@@ -1041,7 +1041,6 @@ int crack_wep_thread( void *arg )
 
 		for( xv = min; xv < max; xv += 5 )
 		{
-
 			pthread_mutex_lock( &mx_ivb );
 
 			memcpy( K, &wep.ivbuf[xv], 3 );
@@ -1756,7 +1755,7 @@ int do_wep_crack1( int B )
 
 
 
-		if( B + 1 == opt.keylen && opt.do_brute )
+		if( B + opt.do_brute + 1 == opt.keylen && opt.do_brute )
 		{
 			/* as noted by Simon Marechal, it's more efficient
 			 * to just bruteforce the last two keybytes. */
