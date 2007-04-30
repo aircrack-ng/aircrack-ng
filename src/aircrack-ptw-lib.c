@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2007, Erik Tews, Andrei Pychkine and Ralf-Philipp Weinmann.
  *
  */
@@ -332,7 +332,7 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	}
 	return 0;
 }
-		
+
 
 /*
  * Guess which key bytes could be strong and start actual computation of the key
@@ -345,16 +345,18 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	int simple, onestrong, twostrong;
 	int i,j;
 
-	onestrong = (testlimit/10)*2;
-	twostrong = (testlimit/10)*1;
-	simple = testlimit - onestrong - twostrong;
-
+	sorthelper (* sh)[n-1] = NULL;
 	PTW_tableentry (*table)[n] = alloca(sizeof(PTW_tableentry) * n * keylen);
+
 	if (table == NULL) {
 		printf("could not allocate memory\n");
 		exit(-1);
 	}
 	memcpy(table, state->table, sizeof(PTW_tableentry) * n * keylen);
+
+	onestrong = (testlimit/10)*2;
+	twostrong = (testlimit/10)*1;
+	simple = testlimit - onestrong - twostrong;
 
 	// now, sort the table
 	for (i = 0; i < keylen; i++) {
@@ -362,13 +364,13 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 		strongbytes[i] = 0;
         }
 
-	sorthelper (* sh)[n-1] = alloca(sizeof(sorthelper) * (n-1) * keylen);
+	sh = alloca(sizeof(sorthelper) * (n-1) * keylen);
 	if (sh == NULL) {
 		printf("could not allocate memory\n");
 		exit(-1);
 	}
 
-	
+
 	for (i = 0; i < keylen; i++) {
 		for (j = 1; j < n; j++) {
 			sh[i][j-1].distance = table[i][0].votes - table[i][j].votes;
