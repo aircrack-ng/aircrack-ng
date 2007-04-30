@@ -3635,7 +3635,7 @@ int do_attack_test()
         PCT; printf("No Answer...\n");
     }
 
-    PCT; printf("Found %d APs\n", found);
+    PCT; printf("Found %d AP%c\n", found, ((found == 1) ? ' ' : 's' ) );
 
     printf("\n");
     PCT; printf("Trying directed probe requests...\n");
