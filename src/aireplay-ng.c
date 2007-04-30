@@ -4009,7 +4009,7 @@ int main( int argc, char *argv[] )
             {"chopchop",    0, 0, '4'},
             {"fragment",    0, 0, '5'},
             {"test",        0, 0, '9'},
-            {"help",    0, 0, 'H'},
+            {"help",        0, 0, 'H'},
             {0,             0, 0,  0 }
         };
 
