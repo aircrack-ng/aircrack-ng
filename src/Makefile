@@ -1,6 +1,8 @@
 ROOT		= ..
 include $(ROOT)/common.mak
 
+CFLAGS		+= -Iinclude
+
 iCC             = /opt/intel/cc/9.0/bin/icc
 iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro
 iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
@@ -9,7 +11,7 @@ PROF_DIR	= $(PWD)/prof
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
 		  ivstools$(EXE) kstats$(EXE)
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE)
+		  airtun-ng$(EXE) wesside-ng$(EXE)
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
@@ -25,6 +27,7 @@ OBJS_ADU	= airodump-ng.o common.o
 OBJS_AT		= airtun-ng.o common.o crypto.o
 OBJS_IV		= ivstools.o common.o
 OBJS_AS		= airserv-ng.o common.o
+OBJS_WS		= wesside-ng.o common.o $(OBJS_PTW)
 
 OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD)
@@ -83,6 +86,9 @@ ivstools$(EXE): $(OBJS_IV)
 
 kstats$(EXE): kstats.o
 	$(CC) $(CFLAGS) kstats.o -o $(@)
+
+wesside-ng$(EXE): $(OBJS_WS) $(LIBOSD)
+	$(CC) $(CFLAGS) $(OBJS_WS) -o $(@) $(LIBS) $(LIBSSL) -lz
 
 strip: $(BINFILES) $(SBINFILES)
 	strip $(BINFILES) $(SBINFILES)
