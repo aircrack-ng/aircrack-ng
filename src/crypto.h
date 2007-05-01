@@ -9,6 +9,11 @@
 #define uint32 unsigned long int
 #endif
 
+#define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
+#define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
+#define S_LLC_SNAP_IP   (S_LLC_SNAP "\x08\x00")
+#define IEEE80211_FC1_DIR_FROMDS                0x02    /* AP ->STA */
+
 typedef struct
 {
     uint32 total[2];
@@ -57,4 +62,5 @@ int  aes_set_key( aes_context *ctx, uint8 *key, int nbits );
 void aes_encrypt( aes_context *ctx, uint8 input[16], uint8 output[16] );
 void aes_decrypt( aes_context *ctx, uint8 input[16], uint8 output[16] );
 
+int known_clear(void *clear, unsigned char *wh, int len);
 #endif /* crypto.h */

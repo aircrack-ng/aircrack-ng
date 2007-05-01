@@ -53,8 +53,8 @@ packetforge-ng: src/packetforge-ng.c src/common.c src/crc.c
 aireplay-ng: src/aireplay-ng.c src/common.c src/crc.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aireplay-ng.c src/common.c src/crc.c -o aireplay-ng
 
-airodump-ng: src/airodump-ng.c src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airodump-ng.c src/common.c -o airodump-ng
+airodump-ng: src/airodump-ng.c src/common.c src/crypto.c
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airodump-ng.c src/common.c src/crypto.c -o airodump-ng
 
 airtun-ng: src/airtun-ng.c src/common.c src/crc.c src/crypto.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airtun-ng.c src/common.c src/crc.c src/crypto.c -o airtun-ng

@@ -232,109 +232,6 @@ int atomic_read( read_buf *rb, int fd, int len, void *buf )
 	return( 0 );
 }
 
-static int is_arp(void *wh, int len)
-{
-        int arpsize = 8 + 8 + 10*2;
-
-	/* XXX check if broadcast to increase probability of correctness in some
-	 * cases?
-	 */
-	if (wh) {}
-
-        if (len == arpsize || len == 54)
-                return 1;
-
-        return 0;
-}
-
-static void *get_da(unsigned char *wh)
-{
-        if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
-                return wh + 4;
-        else
-                return wh + 4 + 6*2;
-}
-
-static void *get_sa(unsigned char *wh)
-{
-        if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
-                return wh + 4 + 6*2;
-        else
-                return wh + 4 + 6;
-}
-
-static int known_clear(void *clear, unsigned char *wh, int len)
-{
-        unsigned char *ptr = clear;
-
-        /* IP */
-        if (!is_arp(wh, len)) {
-                unsigned short iplen = htons(len - 8);
-
-//                printf("Assuming IP %d\n", len);
-
-                len = sizeof(S_LLC_SNAP_IP) - 1;
-                memcpy(ptr, S_LLC_SNAP_IP, len);
-                ptr += len;
-#if 1
-                //version=4; header_length=20; services=0
-                len = 2;
-                memcpy(ptr, "\x45\x00", len);
-                ptr += len;
-
-                //ip total length
-                memcpy(ptr, &iplen, len);
-                ptr += len;
-
-#if 0
-		/* XXX IP ID is not always 0.  Can't use IP packets for PTW,
-		 * unless they are our own.  Can we use them for 40-bit keys
-		 * though [only 3+5 bytes of keystream needed]?  Or for
-		 * calculating only the first 9 bytes of the key?  -sorbo.
-		 */
-                //ID=0
-                len=2;
-                memcpy(ptr, "\x00\x00", len);
-                ptr += len;
-
-                //ip flags=don't fragment
-                len=2;
-                memcpy(ptr, "\x40\x00", len);
-                ptr += len;
-#endif
-#endif
-                len = ptr - ((unsigned char*)clear);
-                return len;
-        }
-//        printf("Assuming ARP %d\n", len);
-
-        /* arp */
-        len = sizeof(S_LLC_SNAP_ARP) - 1;
-        memcpy(ptr, S_LLC_SNAP_ARP, len);
-        ptr += len;
-
-        /* arp hdr */
-        len = 6;
-        memcpy(ptr, "\x00\x01\x08\x00\x06\x04", len);
-        ptr += len;
-
-        /* type of arp */
-        len = 2;
-        if (memcmp(get_da(wh), "\xff\xff\xff\xff\xff\xff", 6) == 0)
-                memcpy(ptr, "\x00\x01", len);
-        else
-                memcpy(ptr, "\x00\x02", len);
-        ptr += len;
-
-        /* src mac */
-        len = 6;
-        memcpy(ptr, get_sa(wh), len);
-        ptr += len;
-
-        len = ptr - ((unsigned char*)clear);
-        return len;
-}
-
 void read_thread( void *arg )
 {
 	int fd, n, z, fmt;
@@ -347,6 +244,7 @@ void read_thread( void *arg )
 	uchar *h80211;
 	uchar *p;
 
+	struct ivs2_pkthdr ivs2;
 	struct pcap_pkthdr pkh;
 	struct pcap_file_header pfh;
 	struct AP_info *ap_prv, *ap_cur;
@@ -386,7 +284,8 @@ void read_thread( void *arg )
 
 	fmt = FORMAT_IVS;
 
-	if( memcmp( &pfh, IVSONLY_MAGIC, 4 ) != 0 )
+	if( memcmp( &pfh, IVSONLY_MAGIC, 4 ) != 0 &&
+		memcmp( &pfh, IVS2_MAGIC, 4 ) != 0)
 	{
 		fmt = FORMAT_CAP;
 
@@ -419,8 +318,11 @@ void read_thread( void *arg )
 				"802.11 (wireless) capture.\n" );
 			goto read_fail;
 		}
+	} else if (memcmp( &pfh, IVS2_MAGIC, 4 ) == 0)
+	{
+		fmt = FORMAT_IVS2;
 	} else if (opt.do_ptw)
-		errx(1, "Can't do PTW with IV files for now\n"); /* XXX */
+		errx(1, "Can't do PTW with old IV files, recapture without --ivs or use airodump-ng >= 0.9\n"); /* XXX */
 
 	/* avoid blocking on reading the file */
 
@@ -450,6 +352,21 @@ void read_thread( void *arg )
 			}
 
 			while( ! atomic_read( &rb, fd, 5, buffer ) )
+				eof_wait( &eof_notified );
+		}
+		else if( fmt == FORMAT_IVS2 )
+		{
+			while( ! atomic_read( &rb, fd, sizeof( struct ivs2_pkthdr ), &ivs2 ) )
+				eof_wait( &eof_notified );
+
+			if(ivs2.flags & IVS2_BSSID)
+			{
+				while( ! atomic_read( &rb, fd, 6, bssid ) )
+					eof_wait( &eof_notified );
+				ivs2.len -= 6;
+			}
+
+			while( ! atomic_read( &rb, fd, ivs2.len, buffer ) )
 				eof_wait( &eof_notified );
 		}
 		else
@@ -634,6 +551,75 @@ void read_thread( void *arg )
 				ap_cur->nb_ivs++;
 			}
 
+			goto unlock_mx_apl;
+		}
+
+		if( fmt == FORMAT_IVS2 )
+		{
+			if(ivs2.flags & IVS2_ESSID)
+			{
+				memcpy( ap_cur->essid, buffer, ivs2.len);
+			}
+			else if(ivs2.flags & IVS2_XOR)
+			{
+				ap_cur->crypt = 2;
+
+				if (opt.do_ptw) {
+					int clearsize;
+
+					clearsize = ivs2.len;
+
+					if (clearsize < 16)
+						goto unlock_mx_apl;
+
+					if (PTW_addsession(ap_cur->ptw, buffer, buffer+4))
+						ap_cur->nb_ivs++;
+
+					goto unlock_mx_apl;
+				}
+
+				buffer[3] = buffer[4];
+				buffer[4] = buffer[5];
+				buffer[3] ^= 0xAA;
+				buffer[4] ^= 0xAA;
+				/* check for uniqueness first */
+
+				if( ap_cur->nb_ivs == 0 )
+					ap_cur->uiv_root = uniqueiv_init();
+
+				if( uniqueiv_check( ap_cur->uiv_root, buffer ) == 0 )
+				{
+					/* add the IV & first two encrypted bytes */
+
+					n = ap_cur->nb_ivs * 5;
+
+					if( n + 5 > ap_cur->ivbuf_size )
+					{
+						/* enlarge the IVs buffer */
+
+						ap_cur->ivbuf_size += 131072;
+						ap_cur->ivbuf = (uchar *) realloc(
+							ap_cur->ivbuf, ap_cur->ivbuf_size );
+
+						if( ap_cur->ivbuf == NULL )
+						{
+							perror( "realloc failed" );
+							break;
+						}
+					}
+
+
+					memcpy( ap_cur->ivbuf + n, buffer, 5 );
+					uniqueiv_mark( ap_cur->uiv_root, buffer );
+					ap_cur->nb_ivs++;
+				}
+			}
+			else if(ivs2.flags & IVS2_WPA)
+			{
+				ap_cur->crypt = 3;
+				memcpy( &ap_cur->wpa, buffer,
+					sizeof( struct WPA_hdsk ) );
+			}
 			goto unlock_mx_apl;
 		}
 
