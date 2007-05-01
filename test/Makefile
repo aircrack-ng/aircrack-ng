@@ -12,6 +12,9 @@ $(BIN): $(OBJS)
 clean:
 	-rm -f $(BIN) $(OBJS)
 
+strip:
+	strip $(BIN)
+
 distclean: clean
 
 install: all
