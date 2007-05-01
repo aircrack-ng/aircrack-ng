@@ -1,6 +1,7 @@
 /*
  *  Windows XP WEP key recovery program
  *
+ *  Copyright (C) 2006,2007  Thomas d'Otreppe
  *  Copyright (C) 2004,2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -21,7 +22,7 @@
 #include <windows.h>
 #include <stdio.h>
 
-#include "console.h" 
+#include "console.h"
 
 int prompt_exit( int retval )
 {
@@ -203,15 +204,18 @@ void WINAPI ServiceMain( DWORD dwArgc, LPTSTR *lpszArgv )
 int main( int argc, char *argv[] )
 {
     FILE *f_in;
-    int userlen;
+    int userlen, silent;
     char buffer[512];
     SC_HANDLE sc1, sc2;
+
 
     SERVICE_TABLE_ENTRY ste[2] =
     {
         { ServiceName, ServiceMain },
         { NULL, NULL }
     };
+
+	silent = 0;
 
     userlen = sizeof( buffer );
 
@@ -223,18 +227,26 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
-    set_console_icon( " WZCOOK - WEP/WPA-PMK Key Recovery Service from " \
-                      "XP's Wireless Zero Configuration utility " );
+	if (argc == 2)
+	{
+		silent = (strncmp(argv[1], "--silent", 8) == 0);
+	}
 
-    set_console_size( 50, 102 );
+	if (silent == 0)
+	{
+		set_console_icon( " WZCOOK - WEP/WPA-PMK Key Recovery Service from " \
+						  "XP's Wireless Zero Configuration utility " );
 
+		set_console_size( 50, 102 );
+	}
     if( sc1 = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS ) )
     {
         if( sc2 = OpenService( sc1, ServiceName, SERVICE_ALL_ACCESS ) )
         {
             DeleteService( sc2 );
 
-            MessageBox( NULL, "WZCOOK service has been deleted",
+			if (silent == 0)
+				MessageBox( NULL, "WZCOOK service has been deleted",
                         "Information", MB_OK | MB_ICONINFORMATION );
         }
         else
@@ -255,14 +267,16 @@ int main( int argc, char *argv[] )
                 }
                 else
                 {
-                    MessageBox( NULL, "Could not create WZCOOK service",
+					if (silent == 0)
+						MessageBox( NULL, "Could not create WZCOOK service",
                                 "Fatal error", MB_OK | MB_ICONERROR );
                     exit( 1 );
                 }
             }
             else
             {
-                MessageBox( NULL, "Could not open WZCOOK service",
+				if (argc == 1)
+					MessageBox( NULL, "Could not open WZCOOK service",
                             "Fatal error", MB_OK | MB_ICONERROR );
                 exit( 1 );
             }
@@ -270,7 +284,8 @@ int main( int argc, char *argv[] )
     }
     else
     {
-        MessageBox( NULL, "Could not open service manager,\n" \
+		if (silent == 0)
+			MessageBox( NULL, "Could not open service manager,\n" \
                     "maybe you're not an administrator ?",
                     "Fatal error", MB_OK | MB_ICONERROR );
         exit( 1 );
@@ -281,21 +296,25 @@ int main( int argc, char *argv[] )
 
     if( ( f_in = fopen( filename, "r" ) ) == NULL )
     {
-        MessageBox( NULL, "Could not read c:\\wepkeys.txt, the " \
+		if (silent == 0)
+			MessageBox( NULL, "Could not read c:\\wepkeys.txt, the " \
                     "WZCOOK service probably failed unexpectedly",
                     "Fatal error", MB_OK | MB_ICONERROR );
         exit( 1 );
     }
 
-    while( fgets( buffer, sizeof( buffer ) - 1, f_in ) )
-    {
-        printf( "%s", buffer );
-        Sleep( 500 );
-    }
-
+	if (silent == 0)
+	{
+		while( fgets( buffer, sizeof( buffer ) - 1, f_in ) )
+		{
+			printf( "%s", buffer );
+			Sleep( 500 );
+		}
+	}
     fclose( f_in );
 
-    prompt_exit( 0 );
+	if (silent == 0)
+		prompt_exit( 0 );
 
     return( 0 );
 }
