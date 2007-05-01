@@ -1122,8 +1122,6 @@ skip_probe:
 
                 if( G.f_ivs != NULL && !ap_cur->essid_stored )
                 {
-			//TODO:REMOVE
-//			printf("writing essid!\n");
                     memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
                     ivs2.flags |= IVS2_ESSID;
                     ivs2.len += ap_cur->ssid_length;

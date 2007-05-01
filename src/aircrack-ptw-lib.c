@@ -479,4 +479,3 @@ void PTW_freeattackstate(PTW_attackstate * state) {
 	free(state);
 	return;
 }
-
