@@ -252,6 +252,8 @@ struct devices
     FILE *f_cap_in;
 
     struct pcap_file_header pfh_in;
+
+    int nofcs;
 }
 dev;
 
@@ -290,6 +292,9 @@ int ctrl_c, alarmed;
 
 char * iwpriv;
 
+#define PCT { struct tm *lt; time_t tc = time( NULL ); \
+              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
+              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
 
 void sighandler( int signum )
 {
@@ -301,12 +306,53 @@ void sighandler( int signum )
 }
 
 #if defined(linux)
+
+int open_sysnofcs() {
+    char location[130];
+    char * newline;
+
+    /* look for the location of inject_nofcs */
+    FILE * search_inject = popen("find /sys/devices -name *inject_nofcs", "r");
+    if(fgets(location, sizeof location, search_inject)) {
+        /* replace the newline on the end by \0 */
+        newline = strrchr(location, '\n');
+        if (newline) *newline = '\0';
+
+        /* try to open the file we found */
+        dev.nofcs = open(location, O_WRONLY | O_CREAT);
+        if (dev.nofcs < 0) {
+            printf("Opening file '%s': ", location);
+            perror("couldn't open file");
+        }
+    }else {
+        printf("Couldn't find the location of inject_nofcs. Is your bcm34xx driver patched?\n");
+    }
+    pclose(search_inject);
+
+    return (dev.nofcs > -1);
+}
+
+void close_sysnofcs() {
+	close(dev.nofcs);
+}
+
+int adjust_pps() {
+    if (opt.r_nbpps > 3) {
+        opt.r_nbpps = opt.r_nbpps - (opt.r_nbpps / 4);
+        PCT; printf("Packets per second adjusted to %d\n", opt.r_nbpps);
+        usleep(2000000);
+    } else {
+        opt.r_nbpps = 0;
+    }	
+    return opt.r_nbpps;
+}
+
 /* wlanng-aware frame sending routing */
 
 int send_packet( void *buf, size_t count )
 {
     unsigned char maddr[6];
-    int ret;
+    int ret, fp;
 
     if((unsigned) count > sizeof(tmpbuf)-22) return -1;
 
@@ -352,21 +398,22 @@ int send_packet( void *buf, size_t count )
         memcpy( buf + 16, maddr, 6 );
     }
 
-    ret = write( dev.fd_out, buf, count );
+    fp = (dev.is_bcm43xx) ? dev.nofcs : dev.fd_out;
 
-    if( ret < 0 )
+    while((ret = write(fp, buf, count)) < 0 )
     {
         if( errno == EAGAIN || errno == EWOULDBLOCK ||
-            errno == ENOBUFS )
+            errno == ENOBUFS || errno == ENOMEM)
         {
-            usleep( 10000 );
-            return( 0 );
+            if (!adjust_pps()) {
+                perror( "write failed" );
+                return( -1 );
+            }
+        } else {
+            perror( "write failed" );
+            return( -1 );
         }
-
-        perror( "write failed" );
-        return( -1 );
     }
-
     nb_pkt_sent++;
     return( 0 );
 }
@@ -627,11 +674,6 @@ int filter_packet( unsigned char *h80211, int caplen )
 
     return( 0 );
 }
-
-
-#define PCT { struct tm *lt; time_t tc = time( NULL ); \
-              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
-              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
 
 int do_attack_deauth( void )
 {
@@ -4948,6 +4990,16 @@ usage:
         return( 1 );
     }
 
+    /* check for a bcm43xx */
+    memset( strbuf, 0, sizeof( strbuf ) );
+    snprintf( strbuf,  sizeof( strbuf ) - 1,
+        "iwconfig %s 2>/dev/null | "
+        "grep \"Broadcom 43\" > /dev/null",
+        argv[optind] );
+
+    if( system( strbuf ) == 0 )
+        dev.is_bcm43xx = 1;
+
     /* check if wlan-ng or hostap or r8180 */
 
     if( strlen( argv[optind] ) == 5 &&
@@ -5187,6 +5239,9 @@ usage:
                  dev.mac_out[0], dev.mac_out[1], dev.mac_out[2], dev.mac_out[3], dev.mac_out[4], dev.mac_out[5],
                  argv[optind], opt.r_smac[0], opt.r_smac[1], opt.r_smac[2], opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
     }
+
+    if (dev.is_bcm43xx && !open_sysnofcs())
+        return -1;
 #endif /* linux */
     switch( opt.a_mode )
     {
@@ -5199,6 +5254,11 @@ usage:
         case 9 : return( do_attack_test()        );
         default: break;
     }
+
+#if defined(linux)
+    if (dev.is_bcm43xx)
+        close_sysnofcs();
+#endif /* linux */
 
     /* that's all, folks */
 
