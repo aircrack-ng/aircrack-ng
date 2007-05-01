@@ -70,6 +70,8 @@
 #include <fcntl.h>
 #include <ctype.h>
 
+#include <sys/utsname.h>
+
 #include "version.h"
 #include "pcap.h"
 
@@ -4389,7 +4391,8 @@ char athXraw[] = "athXraw";
 
 int main( int argc, char *argv[] )
 {
-    int n, i, ret, unused;
+    int n, i, ret, unused, kver;
+    struct utsname checklinuxversion;
 
 #if defined(linux)
     FILE * f;
@@ -4968,6 +4971,30 @@ usage:
         if( system( strbuf ) == 0 )
             dev.is_hostap = 1;
     }
+
+	/* Abort program if it is a wlanng device and linux kernel > 2.6.11 */
+	if (dev.is_wlanng)
+	{
+		if (uname( & checklinuxversion ) >= 0)
+		{
+			/* uname succeeded */
+			if (strncmp(checklinuxversion.release, "2.6.", 4) == 0
+				&& strncasecmp(checklinuxversion.sysname, "linux", 5) == 0)
+			{
+				/* Linux kernel 2.6 */
+				kver = atoi(checklinuxversion.release + 4);
+
+				if (kver > 11)
+				{
+					/* That's a kernel > 2.6.11 */
+					fprintf(stderr, "Error: kernel > 2.6.11 does not");
+					fprintf(stderr, " support injection with wlanng driver\n");
+					return (1);
+				}
+			}
+
+		}
+	}
 
     /* enable injection on ralink */
 
