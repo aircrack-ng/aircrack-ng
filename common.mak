@@ -1,5 +1,5 @@
 TOOL_PREFIX	=
-OS		= `uname -s`
+OS		= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g')
 
 ifeq ($(OS), cygwin)
 EXE		= .exe

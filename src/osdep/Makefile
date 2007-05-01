@@ -36,10 +36,8 @@ all:
 	$(RANLIB) $(LIB)
 	touch $(@)
 
-.os.CYGWIN_NT-5.1: .os.cygwin
-	touch $(@)
-
 .os.%: .os.dummy
+	@echo "Your platform is unsupported"
 	touch $(@)
 
 install: all
