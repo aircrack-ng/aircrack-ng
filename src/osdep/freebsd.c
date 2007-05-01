@@ -49,14 +49,140 @@ struct priv_fbsd {
         int                             pf_chan;
 };
 
+/* from ifconfig */
+static __inline int
+mapgsm(u_int freq, u_int flags)
+{       
+        freq *= 10;
+        if (flags & IEEE80211_CHAN_QUARTER)
+                freq += 5;
+        else if (flags & IEEE80211_CHAN_HALF)
+                freq += 10;
+        else    
+                freq += 20;
+        /* NB: there is no 907/20 wide but leave room */
+        return (freq - 906*10) / 5;
+}
+
+static __inline int
+mappsb(u_int freq)
+{
+        return 37 + ((freq * 10) + ((freq % 5) == 2 ? 5 : 0) - 49400) / 5;
+}
+
+/*
+ * Convert MHz frequency to IEEE channel number.
+ */
+static u_int
+ieee80211_mhz2ieee(u_int freq, u_int flags)
+{       
+        if ((flags & IEEE80211_CHAN_GSM) || (907 <= freq && freq <= 922))
+                return mapgsm(freq, flags);
+        if (freq == 2484)
+                return 14;
+        if (freq < 2484)
+                return (freq - 2407) / 5;
+        if (freq < 5000) {
+                if (flags & (IEEE80211_CHAN_HALF|IEEE80211_CHAN_QUARTER))
+                        return mappsb(freq);
+                else if (freq > 4900)
+                        return (freq - 4000) / 5;
+                else    
+                        return 15 + ((freq - 2512) / 20);
+        }
+        return (freq - 5000) / 5;
+}
+/* end of ifconfig */
+
+static void get_radiotap_info(struct priv_fbsd *pf,
+			      struct ieee80211_radiotap_header *rth, int *plen,
+			      struct rx_info *ri)
+{
+        uint32_t present;
+	uint8_t rflags = 0;
+	int i;
+	unsigned char *body = (unsigned char*) (rth+1);
+	int dbm_power = 0, db_power = 0;
+
+	/* reset control info */
+	if (ri)
+		memset(ri, 0, sizeof(*ri));
+       
+       	/* get info */
+	present = le32toh(rth->it_present);
+	for (i = IEEE80211_RADIOTAP_TSFT; i <= IEEE80211_RADIOTAP_EXT; i++) {
+		if (!(present & (1 << i)))
+			continue;
+
+		switch (i) {
+		case IEEE80211_RADIOTAP_TSFT:
+			body += sizeof(uint64_t);
+			break;
+
+		case IEEE80211_RADIOTAP_FLAGS:
+			rflags = *((uint8_t*)body);
+			/* fall through */
+		case IEEE80211_RADIOTAP_RATE:
+			body += sizeof(uint8_t);
+			break;
+		
+		case IEEE80211_RADIOTAP_CHANNEL:
+			if (ri) {
+				uint16_t *p = (uint16_t*) body;
+				int c = ieee80211_mhz2ieee(*p, *(p+1));
+
+				ri->ri_channel = c;
+			}
+			body += sizeof(uint16_t)*2;
+			break;
+
+		case IEEE80211_RADIOTAP_FHSS:
+			body += sizeof(uint16_t);
+			break;
+
+		case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
+			dbm_power = *body++;
+			break;
+
+		case IEEE80211_RADIOTAP_DBM_ANTNOISE:
+			dbm_power -= *body++;
+			break;
+
+		case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
+			db_power = *body++;
+			break;
+
+		case IEEE80211_RADIOTAP_DB_ANTNOISE:
+			db_power -= *body++;
+			break;
+
+		default:
+			i = IEEE80211_RADIOTAP_EXT+1;
+			break;
+		}
+	}
+
+	/* set power */
+	if (ri) {
+		if (dbm_power)
+			ri->ri_power = dbm_power;
+		else
+			ri->ri_power = db_power;
+	}
+
+        /* XXX cache; drivers won't change this per-packet */
+        /* check if FCS/CRC is included in packet */
+        if (pf->pf_nocrc || (rflags & IEEE80211_RADIOTAP_F_FCS)) {
+                *plen -= IEEE80211_CRC_LEN;
+                pf->pf_nocrc = 1;
+        }
+}
+
 static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
 				struct rx_info *ri)
 {
-#define BIT(n)  (1<<(n))
         struct bpf_hdr *bpfh;
         struct ieee80211_radiotap_header *rth;
-        uint32_t present;
-        uint8_t rflags;
         void *ptr;
         unsigned char **data;
 	int *totlen;
@@ -87,35 +213,14 @@ static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
         /* radiotap */
         rth = (struct ieee80211_radiotap_header*)
               ((char*)bpfh + bpfh->bh_hdrlen);
-        /* XXX cache; drivers won't change this per-packet */
-        /* check if FCS/CRC is included in packet */
-        present = le32toh(rth->it_present);
-        if (present & BIT(IEEE80211_RADIOTAP_FLAGS)) {
-                if (present & BIT(IEEE80211_RADIOTAP_TSFT))
-                        rflags = ((const uint8_t *)rth)[8];
-                else
-                        rflags = ((const uint8_t *)rth)[0];
-        } else
-                rflags = 0;
+	get_radiotap_info(pf, rth, plen, ri);
         *plen -= rth->it_len;
 	assert(*plen > 0);
-
-        /* 802.11 CRC */
-        if (pf->pf_nocrc || (rflags & IEEE80211_RADIOTAP_F_FCS)) {
-                *plen -= IEEE80211_CRC_LEN;
-                pf->pf_nocrc = 1;
-        }
-
-        ptr = (char*)rth + rth->it_len;
-
-	/* write control info */
-	if (ri) {
-		memset(ri, 0, sizeof(*ri));
-		/* XXX get channel from radiotap */
-	}
+       
+       	/* data */
+	ptr = (char*)rth + rth->it_len;
 
         return ptr;
-#undef BIT
 }
 
 static int fbsd_get_channel(struct wif *wi)
