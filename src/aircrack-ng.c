@@ -2887,12 +2887,13 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed;
+	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, showhelp;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 
 	ret = FAILURE;
 	cpudetectfailed = 0;
+	showhelp = 0;
 
 	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION);
 
@@ -3189,9 +3190,9 @@ int main( int argc, char *argv[] )
 
 			case 'H' :
 
-				printf (usage, progname,
-					( max_cpu == 1 ) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n" );
-				return( 1 );
+				showhelp = 1;
+				goto usage;
+				break;
 
 			default : goto usage;
 		}
@@ -3205,6 +3206,8 @@ usage:
 			printf (usage, progname,
 				( max_cpu == 1 && cpudetectfailed == 0) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n",
 				( max_cpu == 1 && cpudetectfailed == 0) ? "\n" : "\n      -X         : disable bruteforce multithreading (SMP only)\n");
+			if (showhelp == 1)
+				exit(0);
 		}
 		if( argc - optind == 0)
 	    {
