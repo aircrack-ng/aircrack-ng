@@ -48,171 +48,13 @@
 #include "pcap.h"
 #include "uniqueiv.c"
 #include "aircrack-ptw-lib.h"
-
-#define SUCCESS  0
-#define FAILURE  1
-#define RESTART  2
-
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
-
-#define MAX_DICTS 128
-
-#define ASCII_LOW_T 0x21
-#define ASCII_HIGH_T 0x7E
-#define ASCII_VOTE_STRENGTH_T 150
-#define ASCII_DISREGARD_STRENGTH 1
-
-#define TEST_MIN_IVS	4
-#define TEST_MAX_IVS	32
-
-#define PTW_TRY_STEP    5000
-
-#define SWAP(x,y) { uchar tmp = x; x = y; y = tmp; }
-
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
-extern int getmac(char * macAddress, int strict, unsigned char * mac);
-
-
-#define BROADCAST "\xFF\xFF\xFF\xFF\xFF\xFF"
-#define SPANTREE  "\x01\x80\xC2\x00\x00\x00"
+#include "aircrack-ng.h"
 
 static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00";
-
-#define KEYLIMIT 1000000
-
-#define N_ATTACKS 17
-
-enum KoreK_attacks
-{
-	A_u15,						 /* semi-stable  15%             */
-	A_s13,						 /* stable       13%             */
-	A_u13_1,					 /* unstable     13%             */
-	A_u13_2,					 /* unstable ?   13%             */
-	A_u13_3,					 /* unstable ?   13%             */
-	A_s5_1,						 /* standard      5% (~FMS)      */
-	A_s5_2,						 /* other stable  5%             */
-	A_s5_3,						 /* other stable  5%             */
-	A_u5_1,						 /* unstable      5% no good ?   */
-	A_u5_2,						 /* unstable      5%             */
-	A_u5_3,						 /* unstable      5% no good     */
-	A_u5_4,						 /* unstable      5%             */
-	A_s3,						 /* stable        3%             */
-	A_4_s13,					 /* stable       13% on q = 4    */
-	A_4_u5_1,					 /* unstable      5% on q = 4    */
-	A_4_u5_2,					 /* unstable      5% on q = 4    */
-	A_neg						 /* helps reject false positives */
-};
-
-struct options
-{
-	int amode;					 /* attack mode          */
-	int essid_set;				 /* essid set flag       */
-	int bssid_set;				 /* bssid set flag       */
-	char essid[33];				 /* target ESSID         */
-	uchar bssid[6];				 /* target BSSID         */
-	int nbcpu;					 /* # of cracker threads
-									(= # of CPU)         */
-	int is_quiet;				 /* quiet mode flag      */
-
-	uchar debug[64];			 /* user-defined WEP key */
-	int debug_row[64] ;          /* user-defined Row WEP key */
-	uchar maddr[6];				 /* MAC address filter   */
-	int keylen;					 /* WEP key length       */
-	int index;					 /* WEP key index        */
-	float ffact;				 /* bruteforce factor    */
-	int korek;					 /* attack strategy      */
-
-	int is_fritz;				 /* use numeric keyspace */
-	int is_alnum;				 /* alphanum keyspace    */
-	int is_bcdonly;				 /* binary coded decimal */
-
-	int do_brute;				 /* bruteforce last 2 KB */
-	int do_mt_brute;			 /* bruteforce last 2 KB
-									multithreaded for SMP*/
-	int do_testy;				 /* experimental attack  */
-	int do_ptw;				 /* PTW wep attack	 */
-
-	char *dicts[MAX_DICTS];			 /* dictionary files     */
-	FILE *dict;				 /* dictionary file      */
-	int nbdict;				 /* current dict number  */
-	int no_stdin;				 /* if dict == stdin     */
-	int hexdict[MAX_DICTS];			 /* if dict in hex       */
-
-	int showASCII;				 /* Show ASCII version of*/
-								 /* the wepkey           */
-
-	int l33t;					 /* no comment           */
-	int stdin_dict;
-
-	int probability;			/* %of correct answers */
-	int votes[N_ATTACKS];			/* votes for korek attacks */
-	int brutebytes[64];			/* bytes to bruteforce */
-
-        int next_ptw_try;
-}
-
-opt;
-
-typedef struct { int idx, val; }
-vote;
-
-struct WEP_data
-{
-	uchar key[64];				 /* the current chosen WEP key   */
-	uchar *ivbuf;				 /* buffer holding all the IVs   */
-	int nb_aps;					 /* number of targeted APs       */
-	long nb_ivs;				 /* # of unique IVs in buffer    */
-	long nb_ivs_now;			 /* # of unique IVs available    */
-	int fudge[64];				 /* bruteforce level (1 to 256)  */
-	int depth[64];				 /* how deep we are in the fudge */
-	vote poll[64][256];			 /* KoreK cryptanalysis results  */
-}
-
-wep;
-
-struct WPA_hdsk
-{
-	uchar stmac[6];				 /* supplicant MAC               */
-	uchar snonce[32];			 /* supplicant nonce             */
-	uchar anonce[32];			 /* authenticator nonce          */
-	uchar keymic[16];			 /* eapol frame MIC              */
-	uchar eapol[256];			 /* eapol frame contents         */
-	int eapol_size;				 /* eapol frame size             */
-	int keyver;					 /* key version (TKIP / AES)     */
-	int state;					 /* handshake completion         */
-};
-
-struct AP_info
-{
-	struct AP_info *next;		 /* next AP in linked list       */
-	uchar bssid[6];				 /* access point MAC address     */
-	char essid[33];				 /* access point identifier      */
-	uchar lanip[4];				 /* IP address if unencrypted    */
-	uchar *ivbuf;				 /* table holding WEP IV data    */
-	uchar **uiv_root;			 /* IV uniqueness root struct    */
-	long ivbuf_size;			 /* IV buffer allocated size     */
-	long nb_ivs;				 /* total number of unique IVs   */
-	int crypt;					 /* encryption algorithm         */
-	int eapol;					 /* set if EAPOL is present      */
-	int target;					 /* flag set if AP is a target   */
-	struct ST_info *st_1st;		 /* linked list of stations      */
-	struct WPA_hdsk wpa;		 /* valid WPA handshake data     */
-	PTW_attackstate *ptw;
-};
-
-struct ST_info
-{
-	struct AP_info *ap;			 /* parent AP                    */
-	struct ST_info *next;		 /* next supplicant              */
-	struct WPA_hdsk wpa;		 /* WPA handshake data           */
-	unsigned char stmac[6];		 /* client MAC address           */
-};
 
 /* stats global data */
 
@@ -402,6 +244,7 @@ void read_thread( void *arg )
 	uchar *h80211;
 	uchar *p;
 
+	struct ivs2_pkthdr ivs2;
 	struct pcap_pkthdr pkh;
 	struct pcap_file_header pfh;
 	struct AP_info *ap_prv, *ap_cur;
@@ -509,6 +352,21 @@ void read_thread( void *arg )
 			}
 
 			while( ! atomic_read( &rb, fd, 5, buffer ) )
+				eof_wait( &eof_notified );
+		}
+		else if( fmt == FORMAT_IVS2 )
+		{
+			while( ! atomic_read( &rb, fd, sizeof( struct ivs2_pkthdr ), &ivs2 ) )
+				eof_wait( &eof_notified );
+
+			if(ivs2.flags & IVS2_BSSID)
+			{
+				while( ! atomic_read( &rb, fd, 6, bssid ) )
+					eof_wait( &eof_notified );
+				ivs2.len -= 6;
+			}
+
+			while( ! atomic_read( &rb, fd, ivs2.len, buffer ) )
 				eof_wait( &eof_notified );
 		}
 		else
@@ -693,6 +551,75 @@ void read_thread( void *arg )
 				ap_cur->nb_ivs++;
 			}
 
+			goto unlock_mx_apl;
+		}
+
+		if( fmt == FORMAT_IVS2 )
+		{
+			if(ivs2.flags & IVS2_ESSID)
+			{
+				memcpy( ap_cur->essid, buffer, ivs2.len);
+			}
+			else if(ivs2.flags & IVS2_XOR)
+			{
+				ap_cur->crypt = 2;
+
+				if (opt.do_ptw) {
+					int clearsize;
+
+					clearsize = ivs2.len;
+
+					if (clearsize < 16)
+						goto unlock_mx_apl;
+
+					if (PTW_addsession(ap_cur->ptw, buffer, buffer+4))
+						ap_cur->nb_ivs++;
+
+					goto unlock_mx_apl;
+				}
+
+				buffer[3] = buffer[4];
+				buffer[4] = buffer[5];
+				buffer[3] ^= 0xAA;
+				buffer[4] ^= 0xAA;
+				/* check for uniqueness first */
+
+				if( ap_cur->nb_ivs == 0 )
+					ap_cur->uiv_root = uniqueiv_init();
+
+				if( uniqueiv_check( ap_cur->uiv_root, buffer ) == 0 )
+				{
+					/* add the IV & first two encrypted bytes */
+
+					n = ap_cur->nb_ivs * 5;
+
+					if( n + 5 > ap_cur->ivbuf_size )
+					{
+						/* enlarge the IVs buffer */
+
+						ap_cur->ivbuf_size += 131072;
+						ap_cur->ivbuf = (uchar *) realloc(
+							ap_cur->ivbuf, ap_cur->ivbuf_size );
+
+						if( ap_cur->ivbuf == NULL )
+						{
+							perror( "realloc failed" );
+							break;
+						}
+					}
+
+
+					memcpy( ap_cur->ivbuf + n, buffer, 5 );
+					uniqueiv_mark( ap_cur->uiv_root, buffer );
+					ap_cur->nb_ivs++;
+				}
+			}
+			else if(ivs2.flags & IVS2_WPA)
+			{
+				ap_cur->crypt = 3;
+				memcpy( &ap_cur->wpa, buffer,
+					sizeof( struct WPA_hdsk ) );
+			}
 			goto unlock_mx_apl;
 		}
 
@@ -1285,7 +1212,7 @@ int crack_wep_thread( void *arg )
 
 /* display the current votes */
 
-void show_wep_stats( int B, int force )
+void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit )
 {
 	float delta;
 	struct winsize ws;
@@ -1328,8 +1255,12 @@ void show_wep_stats( int B, int force )
 	if( opt.l33t )
 		printf( "\33[33;1m" );
 
-	printf( "\33[5;%dH[%02d:%02d:%02d] Tested %lld keys (got %ld IVs)\33[K",
-		(ws.ws_col - 44) / 2, et_h, et_m, et_s, nb_tried, wep.nb_ivs_now );
+	if(table)
+		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %d/%d keys (got %ld IVs)\33[K",
+			(ws.ws_col - 44) / 2, et_h, et_m, et_s, prod, keylimit, opt.ap->nb_ivs );
+	else
+		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %lld keys (got %ld IVs)\33[K",
+			(ws.ws_col - 44) / 2, et_h, et_m, et_s, nb_tried, wep.nb_ivs_now );
 
 	if( opt.l33t )
 		printf( "\33[32;22m" );
@@ -1340,37 +1271,61 @@ void show_wep_stats( int B, int force )
 	{
 		int j, k = ( ws.ws_col - 20 ) / 9;
 
-		if( opt.l33t )
-			printf( "   %2d  \33[1m%3d\33[22m/%3d   ",
-				i, wep.depth[i], wep.fudge[i] );
+		if(!table)
+		{
+			if( opt.l33t )
+				printf( "   %2d  \33[1m%3d\33[22m/%3d   ",
+					i, wep.depth[i], wep.fudge[i] );
+			else
+				printf( "   %2d  %3d/%3d   ",
+					i, wep.depth[i], wep.fudge[i] );
+		}
 		else
 			printf( "   %2d  %3d/%3d   ",
-				i, wep.depth[i], wep.fudge[i] );
+				i, depth[i], choices[i] );
 
-		for( j = wep.depth[i]; j < k + wep.depth[i]; j++ )
+		if(table)
 		{
-			if( j >= 256 ) break;
+			for( j = depth[i]; j < k + depth[i]; j++ )
+			{
+				if( j >= 256 ) break;
 
-			if( wep.poll[i][j].val == 32767 )
-			{
-				if( opt.l33t )
-					printf( "\33[1m%02X\33[22m(+inf) ",
-						wep.poll[i][j].idx );
-				else
-					printf( "%02X(+inf) ", wep.poll[i][j].idx );
-			}
-			else
-			{
 				if( opt.l33t )
 					printf( "\33[1m%02X\33[22m(%4d) ",
-						wep.poll[i][j].idx,
-						wep.poll[i][j].val );
+						table[i][j].b,
+						table[i][j].votes );
 				else
-					printf( "%02X(%4d) ",  wep.poll[i][j].idx,
-						wep.poll[i][j].val );
+					printf( "%02X(%4d) ",  table[i][j].b,
+						table[i][j].votes );
 			}
 		}
-		if (opt.showASCII)
+		else
+		{
+			for( j = wep.depth[i]; j < k + wep.depth[i]; j++ )
+			{
+				if( j >= 256 ) break;
+
+				if( wep.poll[i][j].val == 32767 )
+				{
+					if( opt.l33t )
+						printf( "\33[1m%02X\33[22m(+inf) ",
+							wep.poll[i][j].idx );
+					else
+						printf( "%02X(+inf) ", wep.poll[i][j].idx );
+				}
+				else
+				{
+					if( opt.l33t )
+						printf( "\33[1m%02X\33[22m(%4d) ",
+							wep.poll[i][j].idx,
+							wep.poll[i][j].val );
+					else
+						printf( "%02X(%4d) ",  wep.poll[i][j].idx,
+							wep.poll[i][j].val );
+				}
+			}
+		}
+		if (opt.showASCII && !table)
 			if(wep.poll[i][wep.depth[i]].idx>=ASCII_LOW_T && wep.poll[i][wep.depth[i]].idx<=ASCII_HIGH_T)
 				if(wep.poll[i][wep.depth[i]].val>=ASCII_VOTE_STRENGTH_T || ASCII_DISREGARD_STRENGTH )
 					printf( "  %c",wep.poll[i][wep.depth[i]].idx );
@@ -1402,7 +1357,7 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 	else
 	{
 		if (B != -1)
-			show_wep_stats( B - 1, 1 );
+			show_wep_stats( B - 1, 1, NULL, NULL, NULL, 0, 0 );
 
 		if( opt.l33t )
 			printf( "\33[31;1m" );
@@ -1733,7 +1688,7 @@ int do_wep_crack1( int B )
 	if( B == opt.keylen )
 	{
 		if( ! opt.is_quiet )
-			show_wep_stats( B - 1, 0 );
+			show_wep_stats( B - 1, 0, NULL, NULL, NULL, 0, 0 );
 
 		return( check_wep_key( wep.key, B, 0 ) );
 	}
@@ -1764,7 +1719,7 @@ int do_wep_crack1( int B )
 		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
 
 		if( ! opt.is_quiet )
-			show_wep_stats( B, 0 );
+			show_wep_stats( B, 0, NULL, NULL, NULL, 0, 0 );
 
 		if( B == 4 && opt.keylen == 13 )
 		{
@@ -1947,7 +1902,7 @@ int do_wep_crack2( int B )
 		wep.depth[i] = 0;
 
 		if( ! opt.is_quiet )
-			show_wep_stats( i, 0 );
+			show_wep_stats( i, 0, NULL, NULL, NULL, 0, 0 );
 	}
 
 	for( wep.fudge[B] = 1; wep.fudge[B] < 256; wep.fudge[B]++ )
@@ -1967,7 +1922,7 @@ int do_wep_crack2( int B )
 		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
 
 		if( ! opt.is_quiet )
-			show_wep_stats( B, 0 );
+			show_wep_stats( B, 0, NULL, NULL, NULL, 0, 0 );
 
 		for( i = B + 1; i < opt.keylen - 2; i++ )
 		{
@@ -1980,7 +1935,7 @@ int do_wep_crack2( int B )
 			wep.depth[i] = 0;
 
 			if( ! opt.is_quiet )
-				show_wep_stats( i, 0 );
+				show_wep_stats( i, 0, NULL, NULL, NULL, 0, 0 );
 		}
 
 		for( i = 0; i < 256; i++ )
@@ -2749,7 +2704,7 @@ int crack_wep_dict()
 			gettimeofday( &t_now, NULL );
 			if( (t_now.tv_sec - t_last.tv_sec) > 0)
 			{
-				show_wep_stats(opt.keylen - 1, 1);
+				show_wep_stats(opt.keylen - 1, 1, NULL, NULL, NULL, 0, 0);
 				gettimeofday( &t_last, NULL);
 			}
 		}
@@ -2767,6 +2722,8 @@ int crack_wep_dict()
 static int crack_wep_ptw(struct AP_info *ap_cur)
 {
 	int len = 0;
+
+        opt.ap = ap_cur;
 
 	if(PTW_computeKey(ap_cur->ptw, wep.key, 13, (KEYLIMIT*opt.ffact)) == 1)
 		len = 13;

@@ -23,7 +23,7 @@ OBJS_AC		= aircrack-ng.o crypto.o common.o $(OBJS_PTW)
 OBJS_AD		= airdecap-ng.o crypto.o common.o
 OBJS_PF		= packetforge-ng.o common.o crypto.o
 OBJS_AR		= aireplay-ng.o common.o crypto.o
-OBJS_ADU	= airodump-ng.o common.o
+OBJS_ADU	= airodump-ng.o common.o crypto.o
 OBJS_AT		= airtun-ng.o common.o crypto.o
 OBJS_IV		= ivstools.o common.o
 OBJS_AS		= airserv-ng.o common.o
@@ -73,7 +73,7 @@ aireplay-ng$(EXE): $(OBJS_AR) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL)
 
 airodump-ng$(EXE): $(OBJS_ADU) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS)
+	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL)
 
 airserv-ng$(EXE): $(OBJS_AS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AS) -o $(@) $(LIBS)
