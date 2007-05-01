@@ -11,6 +11,9 @@ bindir          = $(prefix)/bin
 
 BINFILES        = aircrack-ng.exe airdecap-ng.exe packetforge-ng.exe ivstools.exe kstats.exe makeivs.exe
 
+ZIPFILE		= aircrack-ng-win.zip
+REVFILE		= r$(REVISION)
+CYGWINDLL	= cygwin1.dll
 
 default: all
 
@@ -52,6 +55,14 @@ uninstall:
 	-rm -f $(destdir)$(bindir)/kstats.exe
 	-rm -f $(destdir)$(bindir)/makeivs.exe
 	
+zip: all
+	-rm -f /$(CYGWINDLL)
+	-rm -f $(ZIPFILE)
+	cp /bin/$(CYGWINDLL) /
+	touch $(REVFILE)
+	zip -9 -D $(ZIPFILE) /$(CYGWINDLL) $(REVFILE) $(BINFILES)
+	-rm -f $(REVFILE)
+	-rm -f /$(CYGWINDLL)
 
 clean:
 	-rm -f $(BINFILES) $(TESTFILES)
