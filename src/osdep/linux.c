@@ -365,7 +365,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
         return( -1 );
     }
 
-    return( 0 );
+    return( ret );
 }
 
 static int linux_set_channel(struct wif *wi, int channel)
