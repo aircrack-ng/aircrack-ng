@@ -31,18 +31,18 @@ userland: $(BINFILES) $(TESTFILES)
 
 all: userland $(SBINFILES)
 
-aircrack-ng-opt: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c -o aircrack-ng-opt -lpthread
+aircrack-ng-opt: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/uniqueiv.c src/aircrack-ptw-lib.c
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c src/uniqueiv.c -o aircrack-ng-opt -lpthread
 
-aircrack-ng-opt-prof_gen: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c
+aircrack-ng-opt-prof_gen: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c src/uniqueiv.c
 	mkdir -p prof
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_genx -DDO_PGO_DUMP -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c -o aircrack-ng-opt-prof_gen -lpthread
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_genx -DDO_PGO_DUMP -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c src/uniqueiv.c -o aircrack-ng-opt-prof_gen -lpthread
 
-aircrack-ng-opt-prof_use: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_use -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c -o aircrack-ng-opt-prof -lpthread
+aircrack-ng-opt-prof_use: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c src/uniqueiv.c
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_use -prof_dir$(PROF_DIR) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c src/uniqueiv.c -o aircrack-ng-opt-prof -lpthread
 
-aircrack-ng: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c -o aircrack-ng -lpthread
+aircrack-ng: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c src/uniqueiv.c
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/aircrack-ptw-lib.c src/uniqueiv.c -o aircrack-ng -lpthread
 
 airdecap-ng: src/airdecap-ng.c src/crypto.c src/common.c src/crc.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airdecap-ng.c src/crypto.c src/common.c src/crc.c -o airdecap-ng
@@ -53,14 +53,14 @@ packetforge-ng: src/packetforge-ng.c src/common.c src/crc.c
 aireplay-ng: src/aireplay-ng.c src/common.c src/crc.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aireplay-ng.c src/common.c src/crc.c -o aireplay-ng
 
-airodump-ng: src/airodump-ng.c src/common.c src/crypto.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airodump-ng.c src/common.c src/crypto.c -o airodump-ng
+airodump-ng: src/airodump-ng.c src/common.c src/crypto.c src/uniqueiv.c
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airodump-ng.c src/common.c src/crypto.c src/uniqueiv.c -o airodump-ng
 
 airtun-ng: src/airtun-ng.c src/common.c src/crc.c src/crypto.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airtun-ng.c src/common.c src/crc.c src/crypto.c -o airtun-ng
 
-ivstools: src/ivstools.c src/common.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/ivstools.c src/common.c -o ivstools
+ivstools: src/ivstools.c src/common.c src/uniqueiv.c
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/ivstools.c src/common.c src/uniqueiv.c src/crypto.c -o ivstools
 
 kstats: src/kstats.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/kstats.c  -o kstats

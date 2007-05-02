@@ -77,7 +77,7 @@
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
-#include "uniqueiv.c"
+#include "uniqueiv.h"
 #include "crctable.h"
 
 /* some constants */
@@ -1306,6 +1306,49 @@ skip_probe:
 
                 memset( ap_cur->essid, 0, 33 );
                 memcpy( ap_cur->essid, p + 2, n );
+
+                if( G.f_ivs != NULL && !ap_cur->essid_stored )
+                {
+                    memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
+                    ivs2.flags |= IVS2_ESSID;
+                    ivs2.len += ap_cur->ssid_length;
+
+                    if( memcmp( G.prev_bssid, ap_cur->bssid, 6 ) != 0 )
+                    {
+                        ivs2.flags |= IVS2_BSSID;
+                        ivs2.len += 6;
+                        memcpy( G.prev_bssid, ap_cur->bssid,  6 );
+                    }
+
+                    /* write header */
+                    if( fwrite( &ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs )
+                        != (size_t) sizeof(struct ivs2_pkthdr) )
+                    {
+                        perror( "fwrite(IV header) failed" );
+                        return( 1 );
+                    }
+
+                    /* write BSSID */
+                    if(ivs2.flags & IVS2_BSSID)
+                    {
+                        if( fwrite( ap_cur->bssid, 1, 6, G.f_ivs )
+                            != (size_t) 6 )
+                        {
+                            perror( "fwrite(IV bssid) failed" );
+                            return( 1 );
+                        }
+                    }
+
+                    /* write essid */
+                    if( fwrite( ap_cur->essid, 1, ap_cur->ssid_length, G.f_ivs )
+                        != (size_t) ap_cur->ssid_length )
+                    {
+                        perror( "fwrite(IV essid) failed" );
+                        return( 1 );
+                    }
+
+                    ap_cur->essid_stored = 1;
+                }
 
                 for( i = 0; i < n; i++ )
                     if( ap_cur->essid[i] < 32 ||
