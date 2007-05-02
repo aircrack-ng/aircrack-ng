@@ -87,7 +87,7 @@ struct priv_linux {
 
 //Check if the driver is ndiswrapper */
 static int is_ndiswrapper(const char * iface, const char * path)
-{       
+{
         int n,pid;
         if ((pid=fork())==0)
         {
@@ -132,14 +132,14 @@ static char * searchInside(const char * dir, const char * filename)
 
                 //If it's a directory and not a link, try to go inside to search
                 if (S_ISDIR(sb.st_mode) && !S_ISLNK(sb.st_mode))
-                {       
+                {
                         //Check if the directory isn't "." or ".."
                         if (strcmp(".", ep->d_name) && strcmp("..", ep->d_name))
-                        {       
+                        {
                                 //Recursive call
                                 ret = searchInside(curfile, filename);
                                 if (ret != NULL)
-                                {       
+                                {
                                         (void)closedir(dp);
                                         return ret;
                                 }
@@ -152,7 +152,7 @@ static char * searchInside(const char * dir, const char * filename)
 
 /* Search a wireless tool and return its path */
 static char * wiToolsPath(const char * tool)
-{       
+{
         char * path;
         int i, nbelems;
         static const char * paths [] = {
@@ -954,10 +954,82 @@ static int linux_fd(struct wif *wi)
 static int linux_get_mac(struct wif *wi, unsigned char *mac)
 {
 	struct priv_linux *pl = wi_priv(wi);
+	struct ifreq ifr;
+	int fd;
+
+	fd = wi_fd(wi);
+	/* find the interface index */
+
+	memset( &ifr, 0, sizeof( ifr ) );
+	strncpy( ifr.ifr_name, wi_get_ifname(wi), sizeof( ifr.ifr_name ) - 1 );
+
+	if( ioctl( fd, SIOCGIFINDEX, &ifr ) < 0 )
+	{
+		printf("Interface %s: \n", wi_get_ifname(wi));
+		perror( "ioctl(SIOCGIFINDEX) failed" );
+		return( 1 );
+	}
+
+
+	if( ioctl( fd, SIOCGIFHWADDR, &ifr ) < 0 )
+	{
+		printf("Interface %s: \n", wi_get_ifname(wi));
+		perror( "ioctl(SIOCGIFHWADDR) failed" );
+		return( 1 );
+	}
+
+	memcpy( pl->pl_mac, (unsigned char*)ifr.ifr_hwaddr.sa_data, 6);
 
 	/* XXX */
 	memcpy(mac, pl->pl_mac, 6);
 	return 0;
+}
+
+static int linux_set_mac(struct wif *wi, unsigned char *mac)
+{
+	struct priv_linux *pl = wi_priv(wi);
+	struct ifreq ifr;
+	int fd, ret;
+
+	fd = wi_fd(wi);
+	/* find the interface index */
+
+	memset( &ifr, 0, sizeof( ifr ) );
+	strncpy( ifr.ifr_name, wi_get_ifname(wi), sizeof( ifr.ifr_name ) - 1 );
+
+	if( ioctl( fd, SIOCGIFINDEX, &ifr ) < 0 )
+	{
+		printf("Interface %s: \n", wi_get_ifname(wi));
+		perror( "ioctl(SIOCGIFINDEX) failed" );
+		return( 1 );
+	}
+
+// 	ifr.ifr_hwaddr.sa_family = LINKTYPE_ETHERNET;
+//	ifr.ifr_hwaddr.sa_len = 6;
+	memcpy(ifr.ifr_hwaddr.sa_data, mac, 6);
+	memcpy(pl->pl_mac, mac, 6);
+
+        //if down
+//         ifr.ifr_flags &= ~IFF_UP;
+//
+//         if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
+//         {
+//             perror( "ioctl(SIOCSIFFLAGS) failed" );
+//             return( 1 );
+//         }
+
+        //set mac
+	ret = ioctl(wi_fd(wi), SIOCSIFHWADDR, ifr);
+
+        //if up
+//         ifr.ifr_flags |= IFF_UP | IFF_BROADCAST | IFF_RUNNING;
+//
+//         if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
+//         {
+//             perror( "ioctl(SIOCSIFFLAGS) failed" );
+//             return( 1 );
+//         }
+        return ret;
 }
 
 static struct wif *linux_open(char *iface)
@@ -975,6 +1047,7 @@ static struct wif *linux_open(char *iface)
         wi->wi_close            = linux_close;
 	wi->wi_fd		= linux_fd;
 	wi->wi_get_mac		= linux_get_mac;
+	wi->wi_set_mac		= linux_set_mac;
 
 	if (do_linux_open(wi, iface)) {
 		do_free(wi);
