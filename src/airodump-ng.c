@@ -204,10 +204,8 @@ struct AP_info
     struct timeval ftimer;    /* time of restart             */
 
     char *key;		      /* if wep-key found by dict  */
-    int wpa_state;            /* wpa handshake state       */
     int wpa_stored;           /* wpa stored in ivs file?   */
     int essid_stored;         /* essid stored in ivs file? */
-    int got_essid;            /* essid known?              */
 };
 
 struct WPA_hdsk
@@ -861,7 +859,6 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
         ap_cur->ssid_length  = 0;
         ap_cur->wpa_stored   = 0;
         ap_cur->essid_stored = 0;
-        ap_cur->got_essid    = 0;
     }
 
     /* update the last time seen */
@@ -918,8 +915,8 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
     {
         /* reset the WPA handshake state */
 
-        if( ap_cur != NULL && ap_cur->wpa_state != 0xFF )
-            ap_cur->wpa_state = 0;
+        if( st_cur != NULL && st_cur->wpa.state != 0xFF )
+            st_cur->wpa.state = 0;
 //        printf("initial auth %d\n", ap_cur->wpa_state);
     }
 
@@ -1487,17 +1484,7 @@ skip_probe:
                 ( h80211[z + 5] & 0x01 ) == 0 )
             {
                 memcpy( st_cur->wpa.anonce, &h80211[z + 17], 32 );
-                ap_cur->wpa_state = 1;
-
-                //TODO:REMOVE
-/*                printf("anonce:\n");
-                for(i=0; i++; i<32)
-                {
-                    if(i>0 && i%4 == 0) printf(" ");
-                    if(i>0 && i%16 == 0) printf("\n");
-                    printf("%02X ", st_cur->wpa.anonce[i]);
-                }
-                printf("\n");*/
+                st_cur->wpa.state = 1;
             }
 
 
@@ -1514,17 +1501,7 @@ skip_probe:
                 if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
                 {
                     memcpy( st_cur->wpa.snonce, &h80211[z + 17], 32 );
-                    ap_cur->wpa_state |= 2;
-
-                    //TODO:REMOVE
-/*                    printf("snonce:\n");
-                    for(i=0; i++; i<32)
-                    {
-                        if(i>0 && i%4 == 0) printf(" ");
-                        if(i>0 && i%16 == 0) printf("\n");
-                        printf("%02X ", st_cur->wpa.snonce[i]);
-                    }
-                    printf("\n");*/
+                    st_cur->wpa.state |= 2;
                 }
             }
 
@@ -1538,7 +1515,7 @@ skip_probe:
                 if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
                 {
                         memcpy( st_cur->wpa.anonce, &h80211[z + 17], 32 );
-                        ap_cur->wpa_state |= 4;
+                        st_cur->wpa.state |= 4;
                 }
                 st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                                          +   h80211[z + 3] + 4;
@@ -1546,22 +1523,13 @@ skip_probe:
                 memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
                 memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
                 memset( st_cur->wpa.eapol + 81, 0, 16 );
-                ap_cur->wpa_state |= 8;
+                st_cur->wpa.state |= 8;
+                st_cur->wpa.keyver = h80211[z + 6] & 7;
 
-                //TODO:REMOVE
-//                 printf("anonce:\n");
-//                 for(i=0; i++; i<32)
-//                 {
-//                     if(i>0 && i%4 == 0) printf(" ");
-//                     if(i>0 && i%16 == 0) printf("\n");
-//                     printf("%02X ", st_cur->wpa.anonce[i]);
-//                 }
-//                 printf("\n");
-
-                if( ap_cur->wpa_state == 15)
+                if( st_cur->wpa.state == 15)
                 {
+                    memcpy( st_cur->wpa.stmac, st_cur->stmac, 6 );
                     memcpy( G.wpa_bssid, ap_cur->bssid, 6 );
-                    st_cur->wpa.state = 15;
 
                     if( G.f_ivs != NULL )
                     {
