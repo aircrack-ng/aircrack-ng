@@ -2047,7 +2047,7 @@ static void init_defaults(struct wstate *ws)
 	ws->ws_state = FIND_VICTIM;
 	ws->ws_max_chan = 11;
 	memcpy(ws->ws_mymac, "\x00\x00\xde\xfa\xce\x0d", 6);
-	ws->ws_have_mac = 1; /* XXX */
+	ws->ws_have_mac = 0;
 	strcpy(ws->ws_myip, "192.168.0.123");
 	ws->ws_ack_timeout = 100*1000;
 	ws->ws_min_prga = 128;
