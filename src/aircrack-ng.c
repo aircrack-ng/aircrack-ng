@@ -46,7 +46,7 @@
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
-#include "uniqueiv.c"
+#include "uniqueiv.h"
 #include "aircrack-ptw-lib.h"
 #include "aircrack-ng.h"
 

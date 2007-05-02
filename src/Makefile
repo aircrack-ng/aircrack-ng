@@ -18,14 +18,14 @@ OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 SRC_PTW		= aircrack-ptw-lib.c
 SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
 OBJS_PTW	= aircrack-ptw-lib.o
-OBJS_AC		= aircrack-ng.o crypto.o common.o $(OBJS_PTW)
+OBJS_AC		= aircrack-ng.o crypto.o common.o uniqueiv.o $(OBJS_PTW)
 
 OBJS_AD		= airdecap-ng.o crypto.o common.o
 OBJS_PF		= packetforge-ng.o common.o crypto.o
 OBJS_AR		= aireplay-ng.o common.o crypto.o
-OBJS_ADU	= airodump-ng.o common.o crypto.o
+OBJS_ADU	= airodump-ng.o common.o crypto.o uniqueiv.o
 OBJS_AT		= airtun-ng.o common.o crypto.o
-OBJS_IV		= ivstools.o common.o
+OBJS_IV		= ivstools.o common.o crypto.o uniqueiv.o
 OBJS_AS		= airserv-ng.o common.o
 OBJS_WS		= wesside-ng.o common.o $(OBJS_PTW)
 
@@ -82,7 +82,7 @@ airtun-ng$(EXE): $(OBJS_AT) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL)
 
 ivstools$(EXE): $(OBJS_IV)
-	$(CC) $(CFLAGS) $(OBJS_IV) -o $(@)
+	$(CC) $(CFLAGS) $(OBJS_IV) -o $(@) $(LIBSSL)
 
 kstats$(EXE): kstats.o
 	$(CC) $(CFLAGS) kstats.o -o $(@)
