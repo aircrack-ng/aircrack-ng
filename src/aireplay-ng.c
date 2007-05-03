@@ -89,6 +89,9 @@
 
 #define RTC_RESOLUTION  1024
 
+#define REQUESTS    30
+#define MAX_APS     20
+
 #define NEW_IV  1
 #define RETRY   2
 #define ABORT   3
@@ -271,9 +274,10 @@ struct APt
     unsigned char essid[255];
     unsigned char bssid[6];
     unsigned char chan;
+    unsigned int  ping[REQUESTS];
 };
 
-struct APt ap[20];
+struct APt ap[MAX_APS];
 
 unsigned long nb_pkt_sent;
 unsigned char h80211[4096];
@@ -343,7 +347,7 @@ int adjust_pps() {
         usleep(2000000);
     } else {
         opt.r_nbpps = 0;
-    }	
+    }
     return opt.r_nbpps;
 }
 
@@ -3977,10 +3981,11 @@ int grab_essid(uchar* packet, int len)
 int do_attack_test()
 {
     uchar packet[4096];
-    struct timeval tv, tv2;
+    struct timeval tv, tv2, tv3;
     int len=0, i=0, j=0, k=0;
     int gotit=0, answers=0, found=0;
     int caplen=0, essidlen=0;
+    unsigned int min, avg, max;
 
     if(memcmp(opt.r_bssid, NULL_MAC, 6))
     {
@@ -4111,6 +4116,9 @@ int do_attack_test()
                     ap[i].bssid[2], ap[i].bssid[3], ap[i].bssid[4], ap[i].bssid[5], ap[i].chan, ap[i].essid);
 
         ap[i].found=0;
+        min = INT_MAX;
+        max = 0;
+        avg = 0;
 
         memcpy(h80211, PROBE_REQ, 24);
 
@@ -4126,7 +4134,7 @@ int do_attack_test()
 
         len += 16;
 
-        for(j=0; j<20; j++)
+        for(j=0; j<REQUESTS; j++)
         {
             /*
                 random source so we can identify our packets
@@ -4156,6 +4164,8 @@ int do_attack_test()
                     {
                         if(! memcmp(ap[i].bssid, packet+16, 6)) //From the mentioned AP
                         {
+                            gettimeofday( &tv3, NULL);
+                            ap[i].ping[j] = ((tv3.tv_sec*1000000 - tv.tv_sec*1000000) + (tv3.tv_usec - tv.tv_usec));
                             if(!answers)
                             {
                                 answers++;
@@ -4175,7 +4185,21 @@ int do_attack_test()
             printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
             fflush(stdout);
         }
-        PCT; printf("%d/%d: %d%%\n", ap[i].found, 20, ((ap[i].found*100)/20));
+        for(j=0; j<REQUESTS; j++)
+        {
+            if(ap[i].ping[j] > 0)
+            {
+                if(ap[i].ping[j] > max) max = ap[i].ping[j];
+                if(ap[i].ping[j] < min) min = ap[i].ping[j];
+                avg += ap[i].ping[j];
+            }
+        }
+        if(ap[i].found > 0)
+        {
+            avg /= ap[i].found;
+            PCT; printf("Ping (min/avg/max): %.3fms/%.3fms/%.3fms\n", (min/1000.0), (avg/1000.0), (max/1000.0));
+        }
+        PCT; printf("%d/%d: %d%%\n\n", ap[i].found, REQUESTS, ((ap[i].found*100)/REQUESTS));
         if(!gotit && answers)
         {
             PCT; printf("Injection is working!\n");
@@ -4304,7 +4328,7 @@ int do_attack_test()
                 opt.f_minlen = opt.f_maxlen = 24+4+7;
             }
 
-            for(j=0; (j<5 && !k); j++) //try it 5 times
+            for(j=0; (j<(REQUESTS/4) && !k); j++) //try it 5 times
             {
                 send_packet( h80211, opt.f_minlen );
 
