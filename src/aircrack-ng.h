@@ -1,6 +1,3 @@
-#ifndef _AIRCRACK_NG_H
-#define _AIRCRACK_NG_H
-
 #include <stdint.h>
 
 #define SUCCESS  0
@@ -182,5 +179,3 @@ struct ST_info
 };
 
 void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit );
-
-#endif /* _AIRCRACK_NG_H */

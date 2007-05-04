@@ -3,12 +3,10 @@
 
 #define FORMAT_CAP      1
 #define FORMAT_IVS      2
-#define FORMAT_IVS2     3
 
 #define TCPDUMP_MAGIC           0xA1B2C3D4
 #define TCPDUMP_CIGAM           0xD4C3B2A1
 #define IVSONLY_MAGIC           "\xBF\xCA\x84\xD4"
-#define IVS2_MAGIC              "\xAE\x78\xD1\xFF"
 
 #define PCAP_VERSION_MAJOR      2
 #define PCAP_VERSION_MINOR      4
@@ -29,11 +27,6 @@
           ( ( x <<  8 ) & 0x00FF0000 ) | \
           ( ( x << 24 ) & 0xFF000000 ) );
 
-#define IVS2_BSSID	0x01
-#define IVS2_ESSID	0x02
-#define IVS2_WPA	0x04
-#define IVS2_XOR	0x08
-
 struct pcap_file_header
 {
     uint magic;
@@ -51,12 +44,6 @@ struct pcap_pkthdr
     int tv_usec;
     uint caplen;
     uint len;
-};
-
-struct ivs2_pkthdr
-{
-    unsigned short flags;
-    unsigned short len;
 };
 
 #endif /* common.h */

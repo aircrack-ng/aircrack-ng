@@ -267,6 +267,7 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
 	uint8_t tmp;
 
 	show_wep_stats( keylen -1, 0, keytable, searchborders, depth, tried, max_tries );
+	tried++;
 	if (keybyte == keylen) {
 		return correct(state, key, keylen);
 	} else if (strongbytes[keybyte] == 1) {
@@ -479,3 +480,4 @@ void PTW_freeattackstate(PTW_attackstate * state) {
 	free(state);
 	return;
 }
+

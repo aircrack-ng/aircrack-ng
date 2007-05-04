@@ -19,7 +19,6 @@
  */
 
 #include <string.h>
-#include <arpa/inet.h>
 
 #include "crypto.h"
 
@@ -142,7 +141,7 @@ void md5_process( md5_context *ctx, uint8 data[64] )
     P( B, C, D, A, 12, 20, 0x8D2A4C8A );
 
 #undef F
-
+    
 #define F(x,y,z) (x ^ y ^ z)
 
     P( A, B, C, D,  5,  4, 0xFFFA3942 );
@@ -604,7 +603,7 @@ void rc4_setup( struct rc4_state *s, unsigned char *key,  int length )
 }
 
 void rc4_crypt( struct rc4_state *s, unsigned char *data, int length )
-{
+{ 
     int i, x, y, *m, a, b;
 
     x = s->x;
@@ -629,10 +628,10 @@ void rc4_crypt( struct rc4_state *s, unsigned char *data, int length )
 /* forward S-box & tables */
 
 uint32 FSb[256];
-uint32 FT0[256];
-uint32 FT1[256];
-uint32 FT2[256];
-uint32 FT3[256];
+uint32 FT0[256]; 
+uint32 FT1[256]; 
+uint32 FT2[256]; 
+uint32 FT3[256]; 
 
 /* reverse S-box & tables */
 
@@ -1069,107 +1068,4 @@ void aes_decrypt( aes_context *ctx, uint8 input[16], uint8 output[16] )
     PUT_UINT32_BE( X1, output,  4 );
     PUT_UINT32_BE( X2, output,  8 );
     PUT_UINT32_BE( X3, output, 12 );
-}
-
-void *get_da(unsigned char *wh)
-{
-        if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
-                return wh + 4;
-        else
-                return wh + 4 + 6*2;
-}
-
-void *get_sa(unsigned char *wh)
-{
-        if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
-                return wh + 4 + 6*2;
-        else
-                return wh + 4 + 6;
-}
-
-int is_arp(void *wh, int len)
-{
-        int arpsize = 8 + 8 + 10*2;
-
-	/* XXX check if broadcast to increase probability of correctness in some
-	 * cases?
-	 */
-	if (wh) {}
-
-        if (len == arpsize || len == 54)
-                return 1;
-
-        return 0;
-}
-
-int known_clear(void *clear, unsigned char *wh, int len)
-{
-        unsigned char *ptr = clear;
-
-        /* IP */
-        if (!is_arp(wh, len)) {
-                unsigned short iplen = htons(len - 8);
-
-//                printf("Assuming IP %d\n", len);
-
-                len = sizeof(S_LLC_SNAP_IP) - 1;
-                memcpy(ptr, S_LLC_SNAP_IP, len);
-                ptr += len;
-#if 1
-                //version=4; header_length=20; services=0
-                len = 2;
-                memcpy(ptr, "\x45\x00", len);
-                ptr += len;
-
-                //ip total length
-                memcpy(ptr, &iplen, len);
-                ptr += len;
-
-#if 0
-		/* XXX IP ID is not always 0.  Can't use IP packets for PTW,
-		 * unless they are our own.  Can we use them for 40-bit keys
-		 * though [only 3+5 bytes of keystream needed]?  Or for
-		 * calculating only the first 9 bytes of the key?  -sorbo.
-		 */
-                //ID=0
-                len=2;
-                memcpy(ptr, "\x00\x00", len);
-                ptr += len;
-
-                //ip flags=don't fragment
-                len=2;
-                memcpy(ptr, "\x40\x00", len);
-                ptr += len;
-#endif
-#endif
-                len = ptr - ((unsigned char*)clear);
-                return len;
-        }
-//        printf("Assuming ARP %d\n", len);
-
-        /* arp */
-        len = sizeof(S_LLC_SNAP_ARP) - 1;
-        memcpy(ptr, S_LLC_SNAP_ARP, len);
-        ptr += len;
-
-        /* arp hdr */
-        len = 6;
-        memcpy(ptr, "\x00\x01\x08\x00\x06\x04", len);
-        ptr += len;
-
-        /* type of arp */
-        len = 2;
-        if (memcmp(get_da(wh), "\xff\xff\xff\xff\xff\xff", 6) == 0)
-                memcpy(ptr, "\x00\x01", len);
-        else
-                memcpy(ptr, "\x00\x02", len);
-        ptr += len;
-
-        /* src mac */
-        len = 6;
-        memcpy(ptr, get_sa(wh), len);
-        ptr += len;
-
-        len = ptr - ((unsigned char*)clear);
-        return len;
 }

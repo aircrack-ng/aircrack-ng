@@ -75,12 +75,14 @@
 #endif /* linux */
 
 #include "version.h"
-#include "crypto.h"
 #include "pcap.h"
-#include "uniqueiv.h"
+#include "uniqueiv.c"
 #include "crctable.h"
 
 /* some constants */
+
+#define FORMAT_CAP 1
+#define FORMAT_IVS 2
 
 #define ARPHRD_IEEE80211        801
 #define ARPHRD_IEEE80211_PRISM  802
@@ -122,7 +124,6 @@
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
-//extern int known_clear(void *clear, unsigned char *wh, int len);
 #if defined(linux)
 extern int is_ndiswrapper(const char * iface, const char * path);
 extern char * wiToolsPath(const char * tool);
@@ -203,21 +204,8 @@ struct AP_info
     struct timeval ftimel;    /* time of last frame          */
     struct timeval ftimer;    /* time of restart             */
 
-    char *key;		      /* if wep-key found by dict  */
-    int wpa_stored;           /* wpa stored in ivs file?   */
-    int essid_stored;         /* essid stored in ivs file? */
-};
-
-struct WPA_hdsk
-{
-	uchar stmac[6];				 /* supplicant MAC               */
-	uchar snonce[32];			 /* supplicant nonce             */
-	uchar anonce[32];			 /* authenticator nonce          */
-	uchar keymic[16];			 /* eapol frame MIC              */
-	uchar eapol[256];			 /* eapol frame contents         */
-	int eapol_size;				 /* eapol frame size             */
-	int keyver;					 /* key version (TKIP / AES)     */
-	int state;					 /* handshake completion         */
+    char *key;		      /* if wep-key found by dict */
+    int wpa_state;           /* wpa handshake state       */
 };
 
 /* linked list of detected clients */
@@ -237,7 +225,6 @@ struct ST_info
     struct timeval ftimer;   /* time of restart           */
     int missed;              /* number of missed packets  */
     unsigned int lastseq;    /* last seen sequnce number  */
-    struct WPA_hdsk wpa;     /* WPA handshake data        */
 };
 
 /* bunch of global stuff */
@@ -688,11 +675,11 @@ int dump_initialize( char *prefix, int ivs_only )
             return( 1 );
         }
 
-        if( fwrite( IVS2_MAGIC, 1, 4, G.f_ivs ) != (size_t) 4 )
-        {
-            perror( "fwrite(IVs file header) failed" );
-            return( 1 );
-        }
+		if( fwrite( IVSONLY_MAGIC, 1, 4, G.f_ivs ) != (size_t) 4 )
+		{
+			perror( "fwrite(IVs file header) failed" );
+			return( 1 );
+		}
     }
 
     return( 0 );
@@ -729,15 +716,13 @@ int update_dataps()
 
 int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
 {
-    int i, n, z, seq, msd, offset, dlen;
+    int i, n, z, seq, msd, offset;
     int type, length, numuni=0, numauth=0;
     struct pcap_pkthdr pkh;
     struct timeval tv;
-    struct ivs2_pkthdr ivs2;
     unsigned char *p, c;
     unsigned char bssid[6];
     unsigned char stmac[6];
-    unsigned char clear[2048];
 
     struct AP_info *ap_cur = NULL;
     struct ST_info *st_cur = NULL;
@@ -856,9 +841,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
         gettimeofday( &(ap_cur->ftimel), NULL);
         gettimeofday( &(ap_cur->ftimer), NULL);
 
-        ap_cur->ssid_length  = 0;
-        ap_cur->wpa_stored   = 0;
-        ap_cur->essid_stored = 0;
+        ap_cur->ssid_length = 0;
     }
 
     /* update the last time seen */
@@ -915,8 +898,8 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
     {
         /* reset the WPA handshake state */
 
-        if( st_cur != NULL && st_cur->wpa.state != 0xFF )
-            st_cur->wpa.state = 0;
+        if( ap_cur != NULL && ap_cur->wpa_state != 0xFF )
+            ap_cur->wpa_state = 0;
 //        printf("initial auth %d\n", ap_cur->wpa_state);
     }
 
@@ -1117,49 +1100,6 @@ skip_probe:
                 memset( ap_cur->essid, 0, 256 );
                 memcpy( ap_cur->essid, p + 2, n );
 
-                if( G.f_ivs != NULL && !ap_cur->essid_stored )
-                {
-                    memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
-                    ivs2.flags |= IVS2_ESSID;
-                    ivs2.len += ap_cur->ssid_length;
-
-                    if( memcmp( G.prev_bssid, ap_cur->bssid, 6 ) != 0 )
-                    {
-                        ivs2.flags |= IVS2_BSSID;
-                        ivs2.len += 6;
-                        memcpy( G.prev_bssid, ap_cur->bssid,  6 );
-                    }
-
-                    /* write header */
-                    if( fwrite( &ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs )
-                        != (size_t) sizeof(struct ivs2_pkthdr) )
-                    {
-                        perror( "fwrite(IV header) failed" );
-                        return( 1 );
-                    }
-
-                    /* write BSSID */
-                    if(ivs2.flags & IVS2_BSSID)
-                    {
-                        if( fwrite( ap_cur->bssid, 1, 6, G.f_ivs )
-                            != (size_t) 6 )
-                        {
-                            perror( "fwrite(IV bssid) failed" );
-                            return( 1 );
-                        }
-                    }
-
-                    /* write essid */
-                    if( fwrite( ap_cur->essid, 1, ap_cur->ssid_length, G.f_ivs )
-                        != (size_t) ap_cur->ssid_length )
-                    {
-                        perror( "fwrite(IV essid) failed" );
-                        return( 1 );
-                    }
-
-                    ap_cur->essid_stored = 1;
-                }
-
                 for( i = 0; i < n; i++ )
                     if( ( ap_cur->essid[i] >   0 && ap_cur->essid[i] <  32 ) ||
                         ( ap_cur->essid[i] > 126 && ap_cur->essid[i] < 160 ) )
@@ -1307,49 +1247,6 @@ skip_probe:
                 memset( ap_cur->essid, 0, 33 );
                 memcpy( ap_cur->essid, p + 2, n );
 
-                if( G.f_ivs != NULL && !ap_cur->essid_stored )
-                {
-                    memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
-                    ivs2.flags |= IVS2_ESSID;
-                    ivs2.len += ap_cur->ssid_length;
-
-                    if( memcmp( G.prev_bssid, ap_cur->bssid, 6 ) != 0 )
-                    {
-                        ivs2.flags |= IVS2_BSSID;
-                        ivs2.len += 6;
-                        memcpy( G.prev_bssid, ap_cur->bssid,  6 );
-                    }
-
-                    /* write header */
-                    if( fwrite( &ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs )
-                        != (size_t) sizeof(struct ivs2_pkthdr) )
-                    {
-                        perror( "fwrite(IV header) failed" );
-                        return( 1 );
-                    }
-
-                    /* write BSSID */
-                    if(ivs2.flags & IVS2_BSSID)
-                    {
-                        if( fwrite( ap_cur->bssid, 1, 6, G.f_ivs )
-                            != (size_t) 6 )
-                        {
-                            perror( "fwrite(IV bssid) failed" );
-                            return( 1 );
-                        }
-                    }
-
-                    /* write essid */
-                    if( fwrite( ap_cur->essid, 1, ap_cur->ssid_length, G.f_ivs )
-                        != (size_t) ap_cur->ssid_length )
-                    {
-                        perror( "fwrite(IV essid) failed" );
-                        return( 1 );
-                    }
-
-                    ap_cur->essid_stored = 1;
-                }
-
                 for( i = 0; i < n; i++ )
                     if( ap_cur->essid[i] < 32 ||
                       ( ap_cur->essid[i] > 126 && ap_cur->essid[i] < 160 ) )
@@ -1434,56 +1331,43 @@ skip_probe:
 
                 if( G.f_ivs != NULL )
                 {
-                    memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
-                    ivs2.flags = 0;
-                    ivs2.len = 0;
+                    unsigned char iv_info[64];
 
-                    ivs2.flags |= IVS2_XOR;
-                    dlen = caplen -24 -4 -4; //original data len
-                    if(dlen > 2048) dlen = 2048;
-                    //get cleartext + len + 4(iv+idx)
-                    ivs2.len += known_clear(clear, h80211, dlen) + 4;
-                    /* encrypt data */
-                    for(n=0; n<(ivs2.len-4); n++)
+                    if( memcmp( G.prev_bssid, ap_cur->bssid, 6 ) == 0 )
                     {
-                        clear[n] = (clear[n] ^ h80211[z+4+n]) & 0xFF;
-                    }
-                    //clear is now the keystream
+                        iv_info[0] = 0xFF;
+                        memcpy( iv_info + 1, &h80211[z    ], 3 );
+                        memcpy( iv_info + 4, &h80211[z + 4], 2 );
+                        n =  6;
 
-                    if( memcmp( G.prev_bssid, ap_cur->bssid, 6 ) != 0 )
-                    {
-                        ivs2.flags |= IVS2_BSSID;
-                        ivs2.len += 6;
-                        memcpy( G.prev_bssid, ap_cur->bssid,  6 );
-                    }
-
-                    if( fwrite( &ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs )
-                        != (size_t) sizeof(struct ivs2_pkthdr) )
-                    {
-                        perror( "fwrite(IV header) failed" );
-                        return( 1 );
-                    }
-
-                    if( ivs2.flags & IVS2_BSSID )
-                    {
-                        if( fwrite( ap_cur->bssid, 1, 6, G.f_ivs ) != (size_t) 6 )
+                        /* Special handling for spanning-tree packets */
+                        if( memcmp( h80211 +  4, SPANTREE_ADDR, 6 ) == 0 ||
+                            memcmp( h80211 + 16, SPANTREE_ADDR, 6 ) == 0 )
                         {
-                            perror( "fwrite(IV bssid) failed" );
-                            return( 1 );
+                            iv_info[ 4] = (iv_info[ 4] ^ 0x42) ^ 0xAA;
+                            iv_info[ 5] = (iv_info[ 5] ^ 0x42) ^ 0xAA;
                         }
-                        ivs2.len -= 6;
+                    }
+                    else
+                    {
+                        memcpy( G.prev_bssid, ap_cur->bssid,  6 );
+                        memcpy( iv_info     , ap_cur->bssid,  6 );
+                        memcpy( iv_info + 6 , &h80211[z    ], 3 );
+                        memcpy( iv_info + 9 , &h80211[z + 4], 2 );
+                        n = 11;
+
+                        /* Special handling for spanning-tree packets */
+                        if( memcmp( h80211 +  4, SPANTREE_ADDR, 6 ) == 0 ||
+                            memcmp( h80211 + 16, SPANTREE_ADDR, 6 ) == 0 )
+                        {
+                            iv_info[ 9] = (iv_info[ 9] ^ 0x42) ^ 0xAA;
+                            iv_info[10] = (iv_info[10] ^ 0x42) ^ 0xAA;
+                        }
                     }
 
-                    if( fwrite( h80211+z, 1, 4, G.f_ivs ) != (size_t) 4 )
+                    if( fwrite( iv_info, 1, n, G.f_ivs ) != (size_t) n )
                     {
-                        perror( "fwrite(IV iv+idx) failed" );
-                        return( 1 );
-                    }
-                    ivs2.len -= 4;
-
-                    if( fwrite( clear, 1, ivs2.len, G.f_ivs ) != (size_t) ivs2.len )
-                    {
-                        perror( "fwrite(IV keystream) failed" );
+                        perror( "fwrite(IV info) failed" );
                         return( 1 );
                     }
                 }
@@ -1492,12 +1376,6 @@ skip_probe:
 
                 ap_cur->nb_data++;
             }
-        }
-        else if( (ap_cur->security & (STD_WPA|STD_WPA2) ) && !ap_cur->wpa_stored )
-        {
-
-            ap_cur->wpa_stored = 1;
-            ap_cur->nb_data++;
         }
         else
         {
@@ -1516,9 +1394,6 @@ skip_probe:
         {
             z += 2;     //skip ethertype
 
-            if( st_cur == NULL )
-                goto write_packet;
-
             /* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
             if( ( h80211[z + 6] & 0x08 ) != 0 &&
@@ -1526,10 +1401,8 @@ skip_probe:
                 ( h80211[z + 6] & 0x80 ) != 0 &&
                 ( h80211[z + 5] & 0x01 ) == 0 )
             {
-                memcpy( st_cur->wpa.anonce, &h80211[z + 17], 32 );
-                st_cur->wpa.state = 1;
+                ap_cur->wpa_state = 1;
             }
-
 
             /* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
@@ -1543,8 +1416,7 @@ skip_probe:
             {
                 if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
                 {
-                    memcpy( st_cur->wpa.snonce, &h80211[z + 17], 32 );
-                    st_cur->wpa.state |= 2;
+                        ap_cur->wpa_state |= 2;
                 }
             }
 
@@ -1557,65 +1429,14 @@ skip_probe:
             {
                 if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
                 {
-                        memcpy( st_cur->wpa.anonce, &h80211[z + 17], 32 );
-                        st_cur->wpa.state |= 4;
+                        ap_cur->wpa_state |= 4;
                 }
-                st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
-                                         +   h80211[z + 3] + 4;
-
-                memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
-                memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
-                memset( st_cur->wpa.eapol + 81, 0, 16 );
-                st_cur->wpa.state |= 8;
-                st_cur->wpa.keyver = h80211[z + 6] & 7;
-
-                if( st_cur->wpa.state == 15)
-                {
-                    memcpy( st_cur->wpa.stmac, st_cur->stmac, 6 );
-                    memcpy( G.wpa_bssid, ap_cur->bssid, 6 );
-
-                    if( G.f_ivs != NULL )
-                    {
-                        memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
-                        ivs2.flags = 0;
-                        ivs2.len = 0;
-
-                        ivs2.len= sizeof(struct WPA_hdsk);
-                        ivs2.flags |= IVS2_WPA;
-
-                        if( memcmp( G.prev_bssid, ap_cur->bssid, 6 ) != 0 )
-                        {
-                                ivs2.flags |= IVS2_BSSID;
-                                ivs2.len += 6;
-                                memcpy( G.prev_bssid, ap_cur->bssid,  6 );
-                        }
-
-                        if( fwrite( &ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs )
-                                != (size_t) sizeof(struct ivs2_pkthdr) )
-                        {
-                                perror( "fwrite(IV header) failed" );
-                                return( 1 );
-                        }
-
-                        if( ivs2.flags & IVS2_BSSID )
-                        {
-                                if( fwrite( ap_cur->bssid, 1, 6, G.f_ivs ) != (size_t) 6 )
-                                {
-                                perror( "fwrite(IV bssid) failed" );
-                                return( 1 );
-                                }
-                                ivs2.len -= 6;
-                        }
-
-                        if( fwrite( &(st_cur->wpa), 1, sizeof(struct WPA_hdsk), G.f_ivs ) != (size_t) sizeof(struct WPA_hdsk) )
-                        {
-                                perror( "fwrite(IV wpa_hdsk) failed" );
-                                return( 1 );
-                        }
-                    }
-                }
+                ap_cur->wpa_state |= 8;
+                if( ap_cur->wpa_state == 15)
+                        memcpy( G.wpa_bssid, ap_cur->bssid, 6 );
             }
         }
+
     }
 
 

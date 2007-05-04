@@ -8,7 +8,17 @@
  */
 
 #include <stdlib.h>
-#include "uniqueiv.h"
+
+#define IV_NOTHERE  0
+#define IV_PRESENT  1
+
+/* select byte within which desired bit is located */
+
+#define BITWISE_OFFT(x)         (x >> 3)
+
+/* mask to extract desired bit */
+
+#define BITWISE_MASK(x)         (1 << (x & 7))
 
 /* allocate root structure */
 
@@ -17,10 +27,10 @@ unsigned char **uniqueiv_init( void )
     int i;
 
     /* allocate root bucket (level 0) as vector of pointers */
-
+    
     unsigned char **uiv_root = (unsigned char **)
         malloc( 256 * sizeof( unsigned char * ) );
-
+    
     if( uiv_root == NULL )
         return( NULL );
 
@@ -96,7 +106,7 @@ int uniqueiv_mark( unsigned char **uiv_root, unsigned char IV[3] )
     /* place single bit into level 2 bucket */
 
     uiv_lvl2[BITWISE_OFFT( IV[0] )] |= BITWISE_MASK( IV[0] );
-
+        
     return( 0 );
 }
 
@@ -106,7 +116,7 @@ int uniqueiv_check( unsigned char **uiv_root, unsigned char IV[3] )
 {
     unsigned char **uiv_lvl1;
     unsigned char  *uiv_lvl2;
-
+        
     if( uiv_root == NULL )
         return( IV_NOTHERE );
 
@@ -144,7 +154,7 @@ void uniqueiv_wipe( unsigned char **uiv_root )
     int i, j;
     unsigned char **uiv_lvl1;
     unsigned char  *uiv_lvl2;
-
+        
     if( uiv_root == NULL )
         return;
 
