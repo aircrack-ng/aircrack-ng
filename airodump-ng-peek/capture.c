@@ -100,17 +100,30 @@ void installed_peek_drivers( void )
 {
 	int result;
 	FILE * f;
+
 	const char * file = "peek.sys";
 	if ( file_exist(file, 0) != 0)
 	{
-		result = MessageBox(NULL, "Do you have installed peek drivers for your card?",
-								"Airodump-ng", MB_YESNO | MB_ICONQUESTION);
-		if (result == IDNO)
+		// Show messagebox
+		result = MessageBox(NULL, 
+						"Do you want the peek (from wildpackets) drivers installed?\n"
+						"Clicking on \"No\" assume you have it installed.\n"
+						"Clicking on \"Yes\" will open a browser on the driver download page.",
+						"Airodump-ng", MB_YESNO | MB_ICONQUESTION);
+
+		// Click on Yes
+		if (result == IDYES)
 		{
-			MessageBox(NULL, "Please install peek drivers for your card.\nExiting",
-						"Airodump-ng", MB_OK | MB_ICONINFORMATION);
+			// Open a browser on wildpacket web page
+			ShellExecute(NULL, "open", "http://www.wildpackets.com/support/downloads/drivers",
+                NULL, NULL, SW_SHOWNORMAL);
+
 			exit(-1);
 		}
+		
+		// Else, click on "No" -> Drivers are supposed to be installed.
+
+		// Create a file so that the user isn't prompted anymore
 		f = fopen(file,"w");
 		if (f != NULL)
 			fclose(f);
