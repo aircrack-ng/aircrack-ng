@@ -1,8 +1,15 @@
 Version 0.9 (changes from aircrack-ng 0.8) - Released ?? May 2007:
+* aireplay-ng: Added new 'attack' to test if injection is working
 * airtun-ng: Fixed: an option wasn't shown in usage screen.
-* airodump-ng: Fixed version numbering.
+* airodump-ng (win): Fixed version numbering.
+* airodump-ng (win): Changed first time messagebox
 * airdecap-ng: Airdecap-ng can now decrypt IEEE802.11 header with 802.11e header.
-* GUI: Updated aircrack-ng tab and added an about tab.
+* aircrack-ng: Fixed: --help make aircrack-ng crash
+* aircrack-ng: Added PTW attack (option: -z). It require full capture.
+* airdecap-ng: now decrypt IEEE802.11 header with 802.11e header
+* wzcook: now can work in silent mode (option: --silent)
+* Makefile: added make zip (cygwin only)
+* GUI (win): Updated aircrack-ng tab and added an about tab.
 * patches: updated zd1211rw patch for kernel 2.6.21
 * Added bcm43xx injection patch for kernel 2.6.20
 
