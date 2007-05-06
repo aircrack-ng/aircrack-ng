@@ -364,7 +364,7 @@ int send_packet( void *buf, size_t count )
     if( (count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0xFF) == 0)
     {
         pkt[22] = (nb_pkt_sent & 0x0000000F) << 4;
-        pkt[23] = (nb_pkt_sent & 0x00000FF0);
+        pkt[23] = (nb_pkt_sent & 0x00000FF0) >> 4;
     }
 
     if( dev.is_wlanng && count >= 24 )
@@ -4115,8 +4115,11 @@ int do_attack_test()
 
     PCT; printf("Found %d AP%c\n", found, ((found == 1) ? ' ' : 's' ) );
 
-    printf("\n");
-    PCT; printf("Trying directed probe requests...\n");
+    if(found > 0)
+    {
+        printf("\n");
+        PCT; printf("Trying directed probe requests...\n");
+    }
     for(i=0; i<found; i++)
     {
         PCT; printf("%02X:%02X:%02X:%02X:%02X:%02X - channel: %d - \'%s\'\n", ap[i].bssid[0], ap[i].bssid[1],
