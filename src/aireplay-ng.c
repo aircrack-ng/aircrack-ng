@@ -45,6 +45,8 @@
 #include <fcntl.h>
 #include <ctype.h>
 
+#include <limits.h>
+
 #include "version.h"
 #include "pcap.h"
 #include "osdep/osdep.h"
