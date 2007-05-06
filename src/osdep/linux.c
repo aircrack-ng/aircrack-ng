@@ -815,14 +815,14 @@ static int do_linux_open(struct wif *wi, char *iface)
             fclose( f );
 
             /* should we force prism2 header? */
-            /*
-            sprintf((char *) buffer, "/proc/sys/net/%s/dev_type", iface);
-            f = fopen( (char *) buffer,"w");
+
+            sprintf((char *) strbuf, "/proc/sys/net/%s/dev_type", iface);
+            f = fopen( (char *) strbuf,"w");
             if (f != NULL) {
                 fprintf(f, "802\n");
                 fclose(f);
             }
-            */
+
             /* Force prism2 header on madwifi-ng */
         }
         else
