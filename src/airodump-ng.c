@@ -2628,11 +2628,11 @@ int set_channel( char *interface, int channel )
 
     if (G.s_ioctl == -1)
     {
-	if ( ( G.s_ioctl = socket( PF_INET, SOCK_DGRAM, 0 ) ) == -1 )
-	{
-	    perror( "socket() failed" );
-	    return( 1 );
-	}
+		if ( ( G.s_ioctl = socket( PF_INET, SOCK_DGRAM, 0 ) ) == -1 )
+		{
+			perror( "socket() failed" );
+			return( 1 );
+		}
     }
 
     strncpy( ifr.i_name, interface, IFNAMSIZ - 1 );
@@ -2640,16 +2640,16 @@ int set_channel( char *interface, int channel )
 
     if ( ioctl( G.s_ioctl, SIOCG80211, &ifr ) == -1 )
     {
-	perror( "ioctl(SIOCG80211) failed" );
-	return( 1 );
+		perror( "ioctl(SIOCG80211) failed" );
+		return( 1 );
     }
 
     ifr.i_val = channel;
 
     if ( ioctl( G.s_ioctl, SIOCS80211, &ifr ) == -1 )
     {
-	perror( "ioctl(SIOCS80211) failed" );
-	return( 1 );
+		perror( "ioctl(SIOCS80211) failed" );
+		return( 1 );
     }
 
     return( 0 );
@@ -2740,8 +2740,8 @@ int set_monitor( char *interface, int cardnum )
 
     if( ( s = socket( PF_INET, SOCK_RAW, 0 ) ) == -1 )
     {
-	perror( "socket() failed" );
-	return( 1 );
+		perror( "socket() failed" );
+		return( 1 );
     }
 
     memset( &ifr, 0, sizeof( ifr ) );
@@ -2749,8 +2749,8 @@ int set_monitor( char *interface, int cardnum )
 
     if( ioctl( s, SIOCGIFFLAGS, &ifr ) == -1 )
     {
-	perror( "ioctl(SIOCGIFFLAGS) failed" );
-	return( 1 );
+		perror( "ioctl(SIOCGIFFLAGS) failed" );
+		return( 1 );
     }
 
     memset( &ifmr, 0, sizeof( ifmr ) );
@@ -2758,42 +2758,42 @@ int set_monitor( char *interface, int cardnum )
 
     if( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1)
     {
-	perror( "ioctl(SIOCGIFMEDIA) failed" );
-	return( 1 );
+		perror( "ioctl(SIOCGIFMEDIA) failed" );
+		return( 1 );
     }
 
     if( ifmr.ifm_count == 0 )
     {
-	perror( "ioctl(SIOCGIFMEDIA), no media words" );
-	return( 1 );
+		perror( "ioctl(SIOCGIFMEDIA), no media words" );
+		return( 1 );
     }
 
     mw = calloc( (size_t) ifmr.ifm_count, sizeof( int ) );
     if( mw == NULL )
     {
-	perror( "calloc()" );
-	return( 1 );
+		perror( "calloc()" );
+		return( 1 );
     }
 
     ifmr.ifm_ulist = mw;
     strncpy( ifmr.ifm_name, interface, IFNAMSIZ - 1 );
     if ( ioctl(s, SIOCGIFMEDIA, &ifmr ) == -1 )
     {
-	perror( "ioctl(SIOCGIFMEDIA)" );
-	return( 1 );
+		perror( "ioctl(SIOCGIFMEDIA)" );
+		return( 1 );
     }
 
     for( i = 0; i < ifmr.ifm_count; i++ )
     {
-	if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
-	{
-	    i =  ifmr.ifm_count  + 1;
-	}
+		if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
+		{
+			i =  ifmr.ifm_count  + 1;
+		}
     }
 
     if( i == ( ifmr.ifm_count  + 1 ) )
     {
-	return( 1 );
+		return( 1 );
     }
 
     /*
@@ -2816,34 +2816,34 @@ int set_monitor( char *interface, int cardnum )
 	{
 	    if( ifmr.ifm_ulist[i] & IFM_IEEE80211_ADHOC )
 	    {
-		if( ifmr.ifm_ulist[i] & IFM_FLAG0 )
-	    {
-		ahd = 1;
-		break;
-	    }
-	}
+			if( ifmr.ifm_ulist[i] & IFM_FLAG0 )
+			{
+				ahd = 1;
+				break;
+			}
+		}
     }
 
     if( ahd == 0 )
     {
-	/* no. fallback to monitor mode */
-	for( i = 0; i < ifmr.ifm_count; i++ )
-	{
-	    if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
-	    {
-		i = ifmr.ifm_count + 1;
-		break;
-	    }
-	}
+		/* no. fallback to monitor mode */
+		for( i = 0; i < ifmr.ifm_count; i++ )
+		{
+			if( ifmr.ifm_ulist[i] & IFM_IEEE80211_MONITOR )
+			{
+				i = ifmr.ifm_count + 1;
+				break;
+			}
+		}
 
-	if( i != ( ifmr.ifm_count + 1 ) )
-	{
-	    /* crap, neither monitor mode! */
-	    fprintf(stderr,
-		"interface %s is missing monitor mode\n",
-		interface);
-	    return( 1 );
-	}
+		if( i != ( ifmr.ifm_count + 1 ) )
+		{
+			/* crap, neither monitor mode! */
+			fprintf(stderr,
+			"interface %s is missing monitor mode\n",
+			interface);
+			return( 1 );
+		}
     }
 
     memset( &ifr, 0, sizeof( ifr ) );
@@ -2851,41 +2851,41 @@ int set_monitor( char *interface, int cardnum )
 
     ifr.ifr_media = IFM_IEEE80211 | IFM_AUTO;
     if (ahd == 0)
-	ifr.ifr_media |= IFM_IEEE80211_MONITOR;
+		ifr.ifr_media |= IFM_IEEE80211_MONITOR;
     else
-	ifr.ifr_media |= IFM_IEEE80211_ADHOC | IFM_FLAG0;
+		ifr.ifr_media |= IFM_IEEE80211_ADHOC | IFM_FLAG0;
 
     if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
     {
-	perror( "ioctl(SIOCSIFMEDIA) failed" );
-	return( 1 );
+		perror( "ioctl(SIOCSIFMEDIA) failed" );
+		return( 1 );
     }
 
     if( ioctl( s, SIOCGIFMEDIA, &ifmr ) == -1 )
     {
-	perror( "ioctl(SIOCGIFMEDIA) failed" );
-	return( 1 );
+		perror( "ioctl(SIOCGIFMEDIA) failed" );
+		return( 1 );
     }
 
     if( ioctl( s, SIOCSIFMEDIA, &ifr ) == -1 )
     {
-	perror( "ioctl(SIOCSIFMEDIA) failed" );
-	return( 1 );
+		perror( "ioctl(SIOCSIFMEDIA) failed" );
+		return( 1 );
     }
 
     i = ( ifr.ifr_flags & 0xffff ) | ( ifr.ifr_flagshigh << 16 );
     if( !( i & IFF_UP ) )
     {
-	i |= IFF_UP;
+		i |= IFF_UP;
 
-	ifr.ifr_flags = i & 0xffff;
-	ifr.ifr_flagshigh = i >> 16;
+		ifr.ifr_flags = i & 0xffff;
+		ifr.ifr_flagshigh = i >> 16;
 
-	if ( ioctl( s, SIOCSIFFLAGS, &ifr ) == -1 )
-	{
-	    perror( "ioctl(SIOCSIFFLAGS) failed" );
-	    return( 1 );
-	}
+		if ( ioctl( s, SIOCSIFFLAGS, &ifr ) == -1 )
+		{
+			perror( "ioctl(SIOCSIFFLAGS) failed" );
+			return( 1 );
+		}
     }
 
     close(s);
