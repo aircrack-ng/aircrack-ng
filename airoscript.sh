@@ -3,8 +3,9 @@
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes and darkAudax
-# Date:	        03.03.2007
-# Version:	SVN TESTING RELEASE FOR AIRCRACK-NG SVN (needs SVN version of aircrack as of today)
+# Date:	        06.05.2007
+# Version:	SVN TESTING RELEASE FOR AIRCRACK-NG SVN 
+#		(needs SVN rev399 and up, needs also sarkozy has a president)
 # 
 # Dependencies: aircrack-ng,xterm,grep,awk,drivers capable of injection
 #
@@ -28,7 +29,7 @@ DEBUG="0"
 #If you dont set this, airoscript will ask you for interface to use
 WIFI=""
 #This is the rate per second at wich packets will be injected
-INJECTRATE="350"
+INJECTRATE="256"
 #How many times the deauth attack is run
 DEAUTHTIME="5"
 #Time between re-association with target AP
@@ -42,11 +43,10 @@ AIRODUMP="airodump-ng"
 AIREPLAY="aireplay-ng"	
 AIRCRACK="aircrack-ng"
 ARPFORGE="packetforge-ng"
-username=`whoami`
 #The path where the data is stored (FOLDER MUST EXIST !)
-DUMP_PATH="/home/"$username""
+DUMP_PATH="/tmp/"
 # Path to your wordlist file (for WPA and WEP dictionnary attack)
-WORDLIST="/home/"$username"/wordlist.txt"
+WORDLIST="/tmp/wordlist.txt"
 #The Mac address used to associate with AP during fakeauth			
 FAKE_MAC="00:06:25:02:FF:D8"
 # IP of the AP and clients to be used for CHOPCHOP and Fragmentation attack
@@ -541,7 +541,7 @@ function menu {
   echo "### 8) Reset   - Reset interface    ###"
   echo "### 9) Monitor - Airmon-ng device   ###"
   echo "###10) Quit    - Quits airoscript   ###"
-  echo "###11) Airomatic- step 1,2,3 linked ###"
+  echo "###11) Test    - Test injection     ###"
   echo "###12) ChangeMac- Change your MAC   ###"			
 }
 # target listing	
@@ -560,7 +560,7 @@ function target {
 }  
 # interface configuration using found key (tweaks by CurioCT) 	
 function configure {
-		$AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -0 $DUMP_PATH/$Host_MAC-01.cap &> $DUMP_PATH/$Host_MAC.key
+		$AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -s -0 -z $DUMP_PATH/$Host_MAC-01.cap &> $DUMP_PATH/$Host_MAC.key
 		KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
 		echo "Using this key $KEY to connect to: $Host_SSID"
 		echo ""
@@ -831,7 +831,7 @@ if [ $Host_ENC = "WEP" ]
 }
 # aircrack command 
 function crack   {
-	xterm $HOLD $TOPRIGHT -title "Aircracking: $Host_SSID" -hold -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+	xterm $HOLD $TOPRIGHT -title "Aircracking: $Host_SSID" -hold -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -0 -z -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
 }
 # WPA attack function
 function wpahandshake {
@@ -845,6 +845,7 @@ xterm $HOLD $TOPRIGHT -title "Aircracking: $Host_SSID" -hold -e $AIRCRACK -a 2 -
 function Scan {
 	clear
 	rm -rf $DUMP_PATH/dump*
+#	$AIRMON start $WIFI
 	xterm $HOLD -title "Scanning for targets" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $WIFI
 }
 # This scan for targets on a specific channel
@@ -863,6 +864,7 @@ echo You typed: $channel_number
 set -- ${channel_number}
 	clear
 	rm -rf $DUMP_PATH/dump*
+#	$AIRMON start $WIFI $channel_number
 	xterm $HOLD -title "Scanning for targets on channel $channel_number" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --channel "$channel_number" --encrypt $ENCRYPT -a $WIFI
 }
 function capture {
@@ -918,12 +920,7 @@ function fakeinteractiveattack {
 
 # Unstable allround function
 function airomatic {
-choosescan
-Parseforap
-choosetarget
-witchattack
-#sleep 60
-#crack & configure	 
+	 xterm $HOLD -title "Testing Injection" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --test & menufonction
 }
 # Experimental features
 function chopchopattack {
@@ -952,7 +949,7 @@ rm -rf fragment-*
 rm -rf $DUMP_PATH/frag_*
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
-iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
+#iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
 xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture & fakeauth &  menufonction
 }
 function fragnoclientend {
@@ -964,7 +961,7 @@ rm -rf fragment-*
 rm -rf $DUMP_PATH/frag_*
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
-iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
+#iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
 xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  menufonction
 }
 
@@ -1044,7 +1041,7 @@ select choix in $CHOICES; do
 	menu
 	fi					
 	elif [ "$choix" = "3" ]; then
-	$AIRMON start $WIFI $Host_CHAN
+#	$AIRMON start $WIFI $Host_CHAN
 	iwconfig $WIFI rate $Host_SPEED"M"
 	echo "iwconfig $WIFI rate $Host_SPEED"M""
 	witchattack	
