@@ -37,10 +37,10 @@ kstats: src/kstats.c
 makeivs: test/makeivs.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) test/makeivs.c -o makeivs
 
-strip: $(BINFILES) $(TESTFILES)
+strip: all
 	strip $(BINFILES) $(TESTFILES)
 
-install: $(BINFILES) $(TESTFILES)
+install: all
 	install -d $(destdir)$(bindir)
 	install -m 755 $(BINFILES) $(destdir)$(bindir)
 
