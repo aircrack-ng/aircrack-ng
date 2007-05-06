@@ -38,6 +38,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <dirent.h>
+#include <sys/utsname.h>
 
 #include "osdep.h"
 #include "pcap.h"
@@ -681,8 +682,14 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     return( 0 );
 }
 
+/*
+ * Open the interface and set mode monitor
+ * Return 1 on failure and 0 on success
+ */
 static int do_linux_open(struct wif *wi, char *iface)
 {
+	int kver;
+	struct utsname checklinuxversion;
     struct priv_linux *dev = wi_priv(wi);
     char *iwpriv;
     char strbuf[512];
@@ -721,8 +728,8 @@ static int do_linux_open(struct wif *wi, char *iface)
 
     if ( is_ndiswrapper(iface, iwpriv ) )
     {
-            fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
-            goto close_in;
+		fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
+		goto close_in;
     }
 
     if( ( dev->fd_out = socket( PF_PACKET, SOCK_RAW,
@@ -744,7 +751,25 @@ static int do_linux_open(struct wif *wi, char *iface)
                   iface);
 
         if( system( strbuf ) == 0 )
+        {
+			if (uname( & checklinuxversion ) >= 0)
+			{
+				/* uname succeeded */
+				if (strncmp(checklinuxversion.release, "2.6.", 4) == 0
+					&& strncasecmp(checklinuxversion.sysname, "linux", 5) == 0)
+				{
+					/* Linux kernel 2.6 */
+					kver = atoi(checklinuxversion.release + 4);
+
+					if (kver > 11)
+					{
+						/* That's a kernel > 2.6.11, cannot inject */
+						goto close_out;
+					}
+				}
+			}
             dev->is_wlanng = 1;
+		}
 
         memset( strbuf, 0, sizeof( strbuf ) );
         snprintf( strbuf,  sizeof( strbuf ) - 1,
@@ -907,7 +932,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     }
 
     if (openraw(dev, iface, dev->fd_out, &dev->arptype_out, dev->pl_mac) != 0) {
-	goto close_out;
+		goto close_out;
     }
 
     dev->fd_in = dev->fd_out;
