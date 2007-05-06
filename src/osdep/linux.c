@@ -72,6 +72,7 @@ struct priv_linux {
     char *wl;
     char *main_if;
     unsigned char pl_mac[6];
+    int inject_wlanng;
 };
 
 #ifndef ETH_P_80211_RAW
@@ -311,34 +312,44 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
 
     if( dev->is_wlanng && count >= 24 )
     {
-        /* for some reason, wlan-ng requires a special header */
+		/* Wlan-ng isn't able to inject on kernel > 2.6.11 */
+		if( dev->inject_wlanng == 0 )
+		{
+			perror( "write failed" );
+			return( -1 );
+		}
 
-        if( ( ((unsigned char *) buf)[1] & 3 ) != 3 )
-        {
-            memcpy( tmpbuf, buf, 24 );
-            memset( tmpbuf + 24, 0, 22 );
+		if (count >= 24)
+		{
+			/* for some reason, wlan-ng requires a special header */
 
-            tmpbuf[30] = ( count - 24 ) & 0xFF;
-            tmpbuf[31] = ( count - 24 ) >> 8;
+			if( ( ((unsigned char *) buf)[1] & 3 ) != 3 )
+			{
+				memcpy( tmpbuf, buf, 24 );
+				memset( tmpbuf + 24, 0, 22 );
 
-            memcpy( tmpbuf + 46, buf + 24, count - 24 );
+				tmpbuf[30] = ( count - 24 ) & 0xFF;
+				tmpbuf[31] = ( count - 24 ) >> 8;
 
-            count += 22;
-        }
-        else
-        {
-            memcpy( tmpbuf, buf, 30 );
-            memset( tmpbuf + 30, 0, 16 );
+				memcpy( tmpbuf + 46, buf + 24, count - 24 );
 
-            tmpbuf[30] = ( count - 30 ) & 0xFF;
-            tmpbuf[31] = ( count - 30 ) >> 8;
+				count += 22;
+			}
+			else
+			{
+				memcpy( tmpbuf, buf, 30 );
+				memset( tmpbuf + 30, 0, 16 );
 
-            memcpy( tmpbuf + 46, buf + 30, count - 30 );
+				tmpbuf[30] = ( count - 30 ) & 0xFF;
+				tmpbuf[31] = ( count - 30 ) >> 8;
 
-            count += 16;
-        }
+				memcpy( tmpbuf + 46, buf + 30, count - 30 );
 
-        buf = tmpbuf;
+				count += 16;
+			}
+
+			buf = tmpbuf;
+		}
     }
 
     if( ( dev->is_wlanng || dev->is_hostap ) &&
@@ -702,6 +713,8 @@ static int do_linux_open(struct wif *wi, char *iface)
     FILE *acpi;
     char r_file[128], buf[128];
 
+    dev->inject_wlanng = 1;
+
     /* open raw socks */
     if( ( dev->fd_in = socket( PF_PACKET, SOCK_RAW,
                               htons( ETH_P_ALL ) ) ) < 0 )
@@ -764,7 +777,7 @@ static int do_linux_open(struct wif *wi, char *iface)
 					if (kver > 11)
 					{
 						/* That's a kernel > 2.6.11, cannot inject */
-						goto close_out;
+						dev->inject_wlanng = 0;
 					}
 				}
 			}
