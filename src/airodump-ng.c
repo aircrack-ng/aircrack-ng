@@ -2799,11 +2799,15 @@ int set_encryption_filter(const char* input)
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
-    int caplen, i, cards, fdh, fd_is_set, chan_count;
+    int caplen, i, j, cards, fdh, fd_is_set, chan_count;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
-    int ivs_only, power;
+    int ivs_only, power, found;
     int valid_channel, chanoption;
     int freq [2];
+    int num_opts = 0;
+    int option = 0;
+    int option_index = 0;
+
     time_t tt1, tt2, tt3, start_time;
 
     struct wif	       *wi[MAX_CARDS];
@@ -2887,29 +2891,64 @@ int main( int argc, char *argv[] )
 
 
     /* check the arguments */
+    static struct option long_options[] = {
+        {"band",    1, 0, 'b'},
+        {"beacon",  0, 0, 'e'},
+        {"beacons", 0, 0, 'e'},
+        {"cswitch", 1, 0, 's'},
+        {"netmask", 1, 0, 'm'},
+        {"bssid",   1, 0, 'd'},
+        {"channel", 1, 0, 'c'},
+        {"gpsd",    0, 0, 'g'},
+        {"ivs",     0, 0, 'i'},
+        {"write",   1, 0, 'w'},
+        {"encrypt", 1, 0, 't'},
+        {"update",  1, 0, 'u'},
+        {"help",    0, 0, 'H'},
+        {0,         0, 0,  0 }
+    };
+
+    for(i=0; long_options[i].name != NULL; i++);
+    num_opts = i;
+
+    for(i=0; i<argc; i++) //go through all arguments
+    {
+        found = 0;
+        if(strlen(argv[i]) >= 3)
+        {
+            if(argv[i][0] == '-' && argv[i][1] != '-')
+            {
+                //we got a single dash followed by at least 2 chars
+                //lets check that against our long options to find errors
+                for(j=0; j<num_opts;j++)
+                {
+                    if( strcmp(argv[i]+1, long_options[j].name) == 0 )
+                    {
+                        //found long option after single dash
+                        found = 1;
+                        if(i>1 && strcmp(argv[i-1], "-") == 0)
+                        {
+                            //separated dashes?
+                            printf("Notice: You specified \"%s %s\". Did you mean \"%s%s\" instead?\n", argv[i-1], argv[i], argv[i-1], argv[i]);
+                        }
+                        else
+                        {
+                            //forgot second dash?
+                            printf("Notice: You specified \"%s\". Did you mean \"-%s\" instead?\n", argv[i], argv[i]);
+                        }
+                        break;
+                    }
+                }
+                if(found) break;
+            }
+        }
+    }
 
     do
     {
-        int option_index = 0;
+        option_index = 0;
 
-        static struct option long_options[] = {
-            {"band",    1, 0, 'b'},
-            {"beacon",  0, 0, 'e'},
-            {"beacons", 0, 0, 'e'},
-            {"cswitch", 1, 0, 's'},
-            {"netmask", 1, 0, 'm'},
-            {"bssid",   1, 0, 'd'},
-            {"channel", 1, 0, 'c'},
-            {"gpsd",    0, 0, 'g'},
-            {"ivs",     0, 0, 'i'},
-            {"write",   1, 0, 'w'},
-            {"encrypt", 1, 0, 't'},
-            {"update",  1, 0, 'u'},
-            {"help",    0, 0, 'H'},
-            {0,         0, 0,  0 }
-        };
-
-        int option = getopt_long( argc, argv,
+        option = getopt_long( argc, argv,
                         "b:c:egiw:s:t:u:m:d:aH",
                         long_options, &option_index );
 
