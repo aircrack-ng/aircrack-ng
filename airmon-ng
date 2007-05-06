@@ -97,7 +97,7 @@ fi
 
 for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
 do
- if [ x"`iwpriv $iface 2>/dev/null | grep get_rid`" != "x" ]
+ if [ x"`iwpriv $iface 2>/dev/null | grep get_rid`" != "x" ] || [ x"`iwpriv $iface 2>/dev/null | grep dump_recs`" != "x" ]
  then
     printf "$iface\t\tHermesI\t\torinoco"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
