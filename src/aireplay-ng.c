@@ -357,8 +357,15 @@ int send_packet( void *buf, size_t count )
 {
     unsigned char maddr[6];
     int ret, fp;
+    unsigned char *pkt = (unsigned char*) buf;
 
     if((unsigned) count > sizeof(tmpbuf)-22) return -1;
+
+    if( (count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0xFF) == 0)
+    {
+        pkt[22] = (nb_pkt_sent & 0x0000000F) << 4;
+        pkt[23] = (nb_pkt_sent & 0x00000FF0);
+    }
 
     if( dev.is_wlanng && count >= 24 )
     {
