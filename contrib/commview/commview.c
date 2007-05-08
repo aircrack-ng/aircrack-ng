@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <wchar.h>
 
 #include <windows.h>
 #include <iphlpapi.h>
@@ -54,6 +56,7 @@ struct cstate {
 	char		(__cdecl *cs_CC)(int Channel);
 	char		(__cdecl *cs_S1)(int Channel);
 	int		(__cdecl *cs_S5)(unsigned char *Buffer, int Length);
+	int		(__cdecl *cs_GN)(wchar_t *);
 	int		(*cs_SC)(int band);
 } _cs;
 
@@ -127,23 +130,32 @@ static int init_lib(struct cstate *cs)
         cs->cs_S5 = dlsym(ca2k_dll, "S5");
 	// Finalize
 	cs->cs_F2 = dlsym(ca2k_dll, "F2");
+	// Get Adapter Name 
+	cs->cs_GN = dlsym(ca2k_dll, "GN");
 
         if (!(cs->cs_F1 && cs->cs_T1 && cs->cs_CC && cs->cs_S1 && cs->cs_S5
-	      && cs->cs_F2))
+	      && cs->cs_F2 && cs->cs_GN))
 		return print_error("Can't find syms");
 
 	return do_init_lib(cs);
 }
 
-static int is_us(PIP_ADAPTER_INFO p)
+static int get_name(struct cstate *cs, char *name)
 {
-	print_debug("is_us: desc: %s\n", p->Description);
+	wchar_t wname[1024];
+	unsigned int i;
+
+	if (!(cs->cs_GN(wname) & 1))
+		return print_error("GN()");
 
 	/* XXX */
-	if (strstr(p->Description, "CommView"))
-		return 1;
-	else if (strstr(p->Description, "Atheros"))
-		return 1;
+	for (i = 0; i < (sizeof(wname)/sizeof(wchar_t)); i++) {
+		if (wname[i] == 0)
+			break;
+
+		*name++ = (char) ((unsigned char) wname[i]);
+	}
+	*name = 0;
 
 	return 0;
 }
@@ -153,14 +165,23 @@ static int get_guid(struct cstate *cs, char *param)
 	IP_ADAPTER_INFO ai[16];
 	DWORD len = sizeof(ai);
 	PIP_ADAPTER_INFO p;
+	char name[1024];
+
+	if (get_name(cs, name) == -1)
+		return print_error("get_name()");
+
+	print_debug("Name: %s", name);
 
 	if (GetAdaptersInfo(ai, &len) != ERROR_SUCCESS)
 		return print_error("GetAdaptersInfo()");
 
 	p = ai;
 	while (p) {
-		print_debug("get_guid: name: %s", p->AdapterName);
-		if ((param && strcmp(p->AdapterName, param) == 0) || is_us(p)) {
+		print_debug("get_guid: name: %s desc: %s",
+			    p->AdapterName, p->Description);
+
+		if ((param && strcmp(p->AdapterName, param) == 0)
+		    || strstr(p->Description, name)) {
 			snprintf(cs->cs_guid, sizeof(cs->cs_guid)-1, "%s",
 				 p->AdapterName);
 			return 0;
