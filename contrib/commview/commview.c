@@ -61,19 +61,31 @@ static struct cstate *get_cs(void)
 	return &_cs;
 }
 
+static int print_error(char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vprintf(fmt, ap);
+	va_end(ap);
+	printf("\n");
+
+	return -1;
+}
+
 static int do_init_lib(struct cstate *cs)
 {
 	/* init */
         if (!cs->cs_F1(BUFSIZE))
-		return -1;
+		return print_error("F1");
        
        	/* start monitor */
         if (!cs->cs_S1(cs->cs_chan))
-		return -1;
+		return print_error("S1");
 
 	/* change chan */
 	if (!cs->cs_CC(cs->cs_chan))
-		return -1;
+		return print_error("CC");
 
 	return 0;
 }
@@ -85,7 +97,7 @@ static int init_lib(struct cstate *cs)
 
 	ca2k_dll = dlopen(lib, RTLD_LAZY);
 	if (!ca2k_dll)
-		return -1;
+		return print_error("dlopen(%s)", lib);
 	cs->cs_lib = ca2k_dll;
 
         // Initialise
@@ -103,7 +115,7 @@ static int init_lib(struct cstate *cs)
 
         if (!(cs->cs_F1 && cs->cs_T1 && cs->cs_CC && cs->cs_S1 && cs->cs_S5
 	      && cs->cs_F2))
-		return -1;
+		return print_error("Can't find syms");
 
 	return do_init_lib(cs);
 }
@@ -121,7 +133,7 @@ static int get_guid(struct cstate *cs, char *param)
 	PIP_ADAPTER_INFO p;
 
 	if (GetAdaptersInfo(ai, &len) != ERROR_SUCCESS)
-		return -1;
+		return print_error("GetAdaptersInfo()");
 
 	p = ai;
 	while (p) {
@@ -134,7 +146,7 @@ static int get_guid(struct cstate *cs, char *param)
 		p = p->Next;
 	}
 
-	return -1;
+	return print_error("Adapter not found");
 }
 
 static int open_key(struct cstate *cs, char *name)
@@ -146,7 +158,7 @@ static int open_key(struct cstate *cs, char *name)
 	snprintf(key, sizeof(key)-1, "%s\\%s", ADAPTER_KEY, name);
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, key, 0, KEY_ALL_ACCESS,
 			 &cs->cs_key) != ERROR_SUCCESS)
-		return -1;
+		return print_error("RegOpenKeyEx()");
 
 	/* check if its our guid */
 	if ((RegQueryValueEx(cs->cs_key, "NetCfgInstanceId", NULL, &dt,
@@ -171,7 +183,7 @@ static int open_conf(struct cstate *cs)
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, ADAPTER_KEY, 0, KEY_READ, &ak47)
 	    != ERROR_SUCCESS)
-		return -1;
+		return print_error("RegOpenKeyEx()");
 
 	for (i = 0;; i++) {
 		len = sizeof(name);
@@ -198,7 +210,7 @@ int cygwin_init(char *param)
 	cs->cs_chan = 1;
 
 	if (pthread_mutex_init(&cs->cs_mtx, NULL))
-		return -1;
+		return print_error("pthread_mutex_init()");
 
 	/* assume it's ifname */
 	if (param && strncmp(param, "eth", 3) == 0) {
@@ -209,18 +221,18 @@ int cygwin_init(char *param)
 		cs->cs_ioctls = socket(PF_INET, SOCK_DGRAM, 0);
 		if (cs->cs_ioctls == -1) {
 			cs->cs_ioctls = 0;
-			return -1;
+			return print_error("socket()");
 		}
 	}
 	
 	if (init_lib(cs) == -1)
-		return -1;
+		return print_error("init_lib()");
 
 	if (get_guid(cs, param) == -1)
-		return -1;
+		return print_error("get_guid()");
 
 	if (open_conf(cs) == -1)
-		return -1;
+		return print_error("open_conf()");
 
 	return 0;
 }
