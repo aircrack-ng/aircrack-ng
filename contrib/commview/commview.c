@@ -46,6 +46,7 @@ struct cstate {
 	volatile int	cs_restarting;
 	void		*cs_lib;
 	pthread_mutex_t	cs_mtx;
+	int		cs_debug;
 
 	char		(__cdecl *cs_F1)(int Code);
 	char		(__cdecl *cs_F2)(void);
@@ -71,6 +72,20 @@ static int print_error(char *fmt, ...)
 	printf("\n");
 
 	return -1;
+}
+
+static void print_debug(char *fmt, ...)
+{
+	struct cstate *cs = get_cs();
+	va_list ap;
+
+	if (!cs->cs_debug)
+		return;
+
+	va_start(ap, fmt);
+	vprintf(fmt, ap);
+	va_end(ap);
+	printf("\n");
 }
 
 static int do_init_lib(struct cstate *cs)
@@ -122,8 +137,15 @@ static int init_lib(struct cstate *cs)
 
 static int is_us(PIP_ADAPTER_INFO p)
 {
+	print_debug("is_us: desc: %s\n", p->Description);
+
 	/* XXX */
-	return strstr(p->Description, "CommView") != NULL;
+	if (strstr(p->Description, "CommView"))
+		return 1;
+	else if (strstr(p->Description, "Atheros"))
+		return 1;
+
+	return 0;
 }
 
 static int get_guid(struct cstate *cs, char *param)
@@ -137,6 +159,7 @@ static int get_guid(struct cstate *cs, char *param)
 
 	p = ai;
 	while (p) {
+		print_debug("get_guid: name: %s", p->AdapterName);
 		if ((param && strcmp(p->AdapterName, param) == 0) || is_us(p)) {
 			snprintf(cs->cs_guid, sizeof(cs->cs_guid)-1, "%s",
 				 p->AdapterName);
@@ -202,6 +225,29 @@ static int open_conf(struct cstate *cs)
 	return rc;
 }
 
+static int check_param(struct cstate *cs, char **p)
+{
+	char *param = *p;
+
+	/* assume it's ifname */
+	if (strncmp(param, "eth", 3) == 0) {
+		snprintf(cs->cs_param, sizeof(cs->cs_param), "%s", param);
+		snprintf(cs->cs_ifreq.ifr_name,
+			 sizeof(cs->cs_ifreq.ifr_name), "%s", cs->cs_param);
+		
+		cs->cs_ioctls = socket(PF_INET, SOCK_DGRAM, 0);
+		if (cs->cs_ioctls == -1) {
+			cs->cs_ioctls = 0;
+			return print_error("socket()");
+		}
+	} else if(strcmp(param, "debug") == 0) {
+		cs->cs_debug = 1;
+		*p = NULL;
+	}
+
+	return 0;
+}
+
 int cygwin_init(char *param)
 {
 	struct cstate *cs = get_cs();
@@ -212,19 +258,11 @@ int cygwin_init(char *param)
 	if (pthread_mutex_init(&cs->cs_mtx, NULL))
 		return print_error("pthread_mutex_init()");
 
-	/* assume it's ifname */
-	if (param && strncmp(param, "eth", 3) == 0) {
-		snprintf(cs->cs_param, sizeof(cs->cs_param), "%s", param);
-		snprintf(cs->cs_ifreq.ifr_name,
-			 sizeof(cs->cs_ifreq.ifr_name), "%s", cs->cs_param);
-		
-		cs->cs_ioctls = socket(PF_INET, SOCK_DGRAM, 0);
-		if (cs->cs_ioctls == -1) {
-			cs->cs_ioctls = 0;
-			return print_error("socket()");
-		}
+	if (param) {
+		if (check_param(cs, &param))
+			return -1;
 	}
-	
+
 	if (init_lib(cs) == -1)
 		return print_error("init_lib()");
 
