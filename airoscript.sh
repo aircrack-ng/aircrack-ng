@@ -3,9 +3,9 @@
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes and darkAudax
-# Date:	        06.05.2007
+# Date:	        10.05.2007
 # Version:	SVN TESTING RELEASE FOR AIRCRACK-NG SVN 
-#		(needs SVN rev399 and up, needs also sarkozy has a president)
+#		(needs SVN rev399 and up)
 # 
 # Dependencies: aircrack-ng,xterm,grep,awk,drivers capable of injection
 #
@@ -679,7 +679,7 @@ if [ $WIFI = "rausb0" ]
 function fakechangemacrausb {
 echo "ifconfig $WIFI down"
 ifconfig $WIFI down
-echo "ifconfig $WIFI mode managed"
+echo "iwconfig $WIFI mode managed"
 iwconfig $WIFI mode managed
 sleep 2
 echo "ifconfig $WIFI hw ether $FAKE_MAC"
@@ -692,7 +692,7 @@ iwconfig $WIFI mode monitor
 function fakechangemacwlan {
 echo "ifconfig $WIFI down"
 ifconfig $WIFI down
-echo "ifconfig $WIFI mode managed"
+echo "iwconfig $WIFI mode managed"
 iwconfig $WIFI mode managed
 sleep 2
 echo "ifconfig $WIFI hw ether $FAKE_MAC"
@@ -705,7 +705,7 @@ iwconfig $WIFI mode monitor
 function fakechangemacath {
 echo "ifconfig $WIFI down"
 ifconfig $WIFI down
-echo "ifconfig $WIFI mode managed"
+echo "iwconfig $WIFI mode managed"
 iwconfig $WIFI mode managed
 sleep 2
 echo "ifconfig $WIFI hw ether $FAKE_MAC"
@@ -732,7 +732,7 @@ if [ $WIFI = "rausb0" ]
 function changemacrausb {
 echo "ifconfig $WIFI down"
 ifconfig $WIFI down
-echo "ifconfig $WIFI mode managed"
+echo "iwconfig $WIFI mode managed"
 iwconfig $WIFI mode managed
 sleep 2
 echo "ifconfig $WIFI hw ether $Client_MAC"
@@ -745,7 +745,7 @@ iwconfig $WIFI mode monitor
 function changemacwlan {
 echo "ifconfig $WIFI down"
 ifconfig $WIFI down
-echo "ifconfig $WIFI mode managed"
+echo "iwconfig $WIFI mode managed"
 iwconfig $WIFI mode managed
 sleep 2
 echo "ifconfig $WIFI hw ether $Client_MAC"
@@ -758,7 +758,7 @@ iwconfig $WIFI mode monitor
 function changemacath {
 echo "ifconfig $WIFI down"
 ifconfig $WIFI down
-echo "ifconfig $WIFI mode managed"
+echo "iwconfig $WIFI mode managed"
 iwconfig $WIFI mode managed
 sleep 2
 echo "ifconfig $WIFI hw ether $Client_MAC"
@@ -785,7 +785,7 @@ if [ $WIFI = "rausb0" ]
 function manualchangemacrausb {
 echo "ifconfig $WIFI down"
 ifconfig $WIFI down
-echo "ifconfig $WIFI mode managed"
+echo "iwconfig $WIFI mode managed"
 iwconfig $WIFI mode managed
 sleep 2
 echo "ifconfig $WIFI hw ether $MANUAL_MAC"
@@ -798,7 +798,7 @@ iwconfig $WIFI mode monitor
 function manualchangemacwlan {
 echo "ifconfig $WIFI down"
 ifconfig $WIFI down
-echo "ifconfig $WIFI mode managed"
+echo "iwconfig $WIFI mode managed"
 iwconfig $WIFI mode managed
 sleep 2
 echo "ifconfig $WIFI hw ether $MANUAL_MAC"
@@ -811,7 +811,7 @@ iwconfig $WIFI mode monitor
 function manualchangemacath {
 echo "ifconfig $WIFI down"
 ifconfig $WIFI down
-echo "ifconfig $WIFI mode managed"
+echo "iwconfig $WIFI mode managed"
 iwconfig $WIFI mode managed
 sleep 2
 echo "ifconfig $WIFI hw ether $MANUAL_MAC"
@@ -936,12 +936,12 @@ rm -rf $DUMP_PATH/$Host_MAC*
 function chopchopend {
 rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 	$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor	
-	capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending chopchop to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap $WIFI
+	capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending chopchop to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap $WIFI & menufonction
 }
 function chopchopclientend {
 rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 	$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor
-	capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending chopchop to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap $WIFI
+	capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending chopchop to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap $WIFI & menufonction
 }
 
 function fragnoclient {
