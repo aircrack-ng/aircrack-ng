@@ -166,6 +166,7 @@ static int get_guid(struct cstate *cs, char *param)
 	DWORD len = sizeof(ai);
 	PIP_ADAPTER_INFO p;
 	char name[1024];
+	int found;
 
 	if (get_name(cs, name) == -1)
 		return print_error("get_name()");
@@ -180,8 +181,23 @@ static int get_guid(struct cstate *cs, char *param)
 		print_debug("get_guid: name: %s desc: %s",
 			    p->AdapterName, p->Description);
 
-		if ((param && strcmp(p->AdapterName, param) == 0)
-		    || strstr(p->Description, name)) {
+		found = (param && strcmp(p->AdapterName, param) == 0)
+			|| strstr(p->Description, name);
+
+		/* XXX */
+		if (cs->cs_debug) {
+			char yea[512];
+
+			printf("Does this look like your card? [y/n]\n");
+			yea[0] = 0;
+			fgets(yea, sizeof(yea), stdin);
+			if (yea[0] == 'y')
+				found = 1;
+			else
+				found = 0;
+		}
+		
+		if (found) {
 			snprintf(cs->cs_guid, sizeof(cs->cs_guid)-1, "%s",
 				 p->AdapterName);
 			return 0;
