@@ -189,6 +189,7 @@ char usage[] =
 "      --arpreplay         : standard ARP-request replay (-3)\n"
 "      --chopchop          : decrypt/chopchop WEP packet (-4)\n"
 "      --fragment          : generates valid keystream   (-5)\n"
+"      --test			   : tests injection and quality (-9)\n"
 "\n"
 "      --help              : Displays this usage screen\n"
 "\n";
