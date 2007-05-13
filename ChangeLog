@@ -1,4 +1,4 @@
-Version 0.9 (changes from aircrack-ng 0.8) - Released ?? May 2007:
+Version 0.9 (changes from aircrack-ng 0.8) - Released 13 May 2007:
 * aireplay-ng: Added new 'attack': injection test (--test)
 * aireplay-ng: disallow injection with wlanng & kernel > 2.6.11
 * airtun-ng: Fixed: an option wasn't shown in usage screen.
