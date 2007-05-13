@@ -1,8 +1,17 @@
+=== Directories ===
+
+
+manpages: contains aircrack-ng manpages
+patches: contains linux driver patches
+packages: contains file to create distro packages.
+src: contains the aircrack-ng suite sources
+test: contains several different WPA handshake and other capture files
+      as well as a dictionnary
+
 === Compilating ===
 
-If you're not compiling aircrack-ng on Linux, first, you have
- to delete Makefile
- * FreeBSD : use Makefile
+If you're not compiling aircrack-ng on Linux or FreeBSD, first, you have
+ to delete the original Makefile then:
  * cygwin  : rename Makefile.cygwin to Makefile
  * MacOSX  : rename Makefile.osx to Makefile
  * windows : use windows package unless you don't need airodump/wzcook
@@ -10,28 +19,19 @@ If you're not compiling aircrack-ng on Linux, first, you have
  * NetBSD : rename Makefile.NetBSD to Makefile
  * On another OS: That's untested, but you have to rename Makefile.other to Makefile
 
-Compilation:
- make
-
-REM:
- * You can find a several WPA handshake and other capture files
-   as well as a dictionnary in "test" directory
- * If you have trouble compiling and you get align errors with sha1-mmx.S
-   (src/sha1-mmx.S:20:Alignment too large: 15. assumed.), remove line 20
-   (it contains ".align(4)" ) then recompile
-
-You can strip debug informations from executables before
-installing them with:
- make strip
+	Compilation:
+	  make
 
 
-Installing:
- make install
+	Installing:
+	  make install
 
 
-Uninstall:
- make uninstall
+	Uninstall:
+	  make uninstall
 
+
+Optionnaly, you can strip debugging symbols by running 'make strip' before 'make install'
 
 === Using precompiled binaries ===
 
@@ -42,9 +42,9 @@ Windows:
  * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data)
    See "Drivers" page on the wiki: http://www.aircrack-ng.org/doku.php?id=drivers and 
    Wild packet driver page: http://www.wildpackets.com/support/downloads/drivers
- * Download cygwin1.dll, msvcr70.dll, peek.dll and peek5.sys that you can find on the wiki
-   download page ("more downloads..." link) and put them in the directory you extracted the
-   executable files.
+ * If you use airodump-ng, peek.dll and peek5.sys files are needed (they have to be put in the same directory
+   as airodump-ng). You can either download them (there are links on our wiki) or let airodump-ng download
+   them itself the first time you run it.
  * aircrack-ng suite is command line tools. So, you have to open a commandline
    (Start menu -> Run... -> cmd.exe) then use them
  * Run the executables without any parameters to have help

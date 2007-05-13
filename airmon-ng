@@ -44,7 +44,7 @@ then
 	echo Run it as root ; exit ;
 fi
 
-which iwpriv > /dev/null 2> /dev/null ||
+iwpriv > /dev/null 2> /dev/null ||
   { echo Wireless tools not found ; exit ; }
 
 echo && echo
