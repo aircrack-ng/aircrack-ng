@@ -1,0 +1,13 @@
+           |-handy-ruler------------------------------------------------------|
+aircrack-ng: Aircrack-ng
+aircrack-ng: 
+aircrack-ng: aircrack-ng is a set of tools for auditing wireless networks.
+aircrack-ng: It's an enhanced/reborn version of aircrack.
+aircrack-ng: It consists of airodump-ng (an 802.11 packet capture program),
+aircrack-ng: aireplay-ng (an 802.11 packet injection program),
+aircrack-ng: aircrack-ng (static WEP and WPA-PSK cracking), airdecap-ng
+aircrack-ng: (decrypts WEP/WPA capture files), and some tools to handle
+aircrack-ng: capture files (merge, convert, etc.).
+aircrack-ng: 
+aircrack-ng: 
+aircrack-ng: 
