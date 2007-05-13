@@ -1,5 +1,6 @@
 Version 0.9 (changes from aircrack-ng 0.8) - Released ?? May 2007:
-* aireplay-ng: Added new 'attack' to test if injection is working
+* aireplay-ng: Added new 'attack': injection test (--test)
+* aireplay-ng: disallow injection with wlanng & kernel > 2.6.11
 * airtun-ng: Fixed: an option wasn't shown in usage screen.
 * airodump-ng (win): Fixed version numbering.
 * airodump-ng (win): Changed first time messagebox
@@ -7,11 +8,14 @@ Version 0.9 (changes from aircrack-ng 0.8) - Released ?? May 2007:
 * aircrack-ng: Fixed: --help make aircrack-ng crash
 * aircrack-ng: Added PTW attack (option: -z). It require full capture.
 * airdecap-ng: now decrypt IEEE802.11 header with 802.11e header
-* wzcook: now can work in silent mode (option: --silent)
-* Makefile: added make zip (cygwin only)
-* GUI (win): Updated aircrack-ng tab and added an about tab.
+* airmon-ng: Fixed orinoco card detection
 * patches: updated zd1211rw patch for kernel 2.6.21
-* Added bcm43xx injection patch for kernel 2.6.20
+* patches: Added bcm43xx injection patch for kernel 2.6.20
+* patches: updated rtl8187 patch (for new driver version).
+* wzcook (win): now can work in silent mode (option: --silent)
+* Makefile: added make zip (cygwin only)
+* Makefile: fixed direct call to 'make install' or 'make strip' instead of 'make'
+* GUI (win): Updated aircrack-ng tab and added an about tab.
 
 Version 0.8 (changes from aircrack-ng 0.7) - Released 25 April 2007:
 * aireplay-ng: Works on FreeBSD-CURRENT
