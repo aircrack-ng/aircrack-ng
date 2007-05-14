@@ -4,7 +4,6 @@ Version 0.9 (changes from aircrack-ng 0.8) - Released 13 May 2007:
 * airtun-ng: Fixed: an option wasn't shown in usage screen.
 * airodump-ng (win): Fixed version numbering.
 * airodump-ng (win): Changed first time messagebox
-* airdecap-ng: Airdecap-ng can now decrypt IEEE802.11 header with 802.11e header.
 * aircrack-ng: Fixed: --help make aircrack-ng crash
 * aircrack-ng: Added PTW attack (option: -z). It require full capture.
 * airdecap-ng: now decrypt IEEE802.11 header with 802.11e header
