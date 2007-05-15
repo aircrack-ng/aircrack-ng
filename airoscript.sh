@@ -3,7 +3,7 @@
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes and darkAudax
-# Date:	        14.05.2007
+# Date:	        15.05.2007
 # Version:	SVN TESTING RELEASE FOR AIRCRACK-NG SVN 
 #		(needs SVN rev 400 and up)
 # 
@@ -29,7 +29,7 @@ DEBUG="0"
 #If you dont set this, airoscript will ask you for interface to use
 WIFI=""
 #This is the rate per second at wich packets will be injected
-INJECTRATE="256"
+INJECTRATE="330"
 #How many times the deauth attack is run
 DEAUTHTIME="5"
 #Time between re-association with target AP
@@ -44,9 +44,9 @@ AIREPLAY="aireplay-ng"
 AIRCRACK="aircrack-ng"
 ARPFORGE="packetforge-ng"
 #The path where the data is stored (FOLDER MUST EXIST !)
-DUMP_PATH="/tmp"
+DUMP_PATH="/wifi"
 # Path to your wordlist file (for WPA and WEP dictionnary attack)
-WORDLIST="/tmp/wordlist.txt"
+WORDLIST="/wifi/wordlist.txt"
 #The Mac address used to associate with AP during fakeauth			
 FAKE_MAC="00:06:25:02:FF:D8"
 # IP of the AP and clients to be used for CHOPCHOP and Fragmentation attack
@@ -1012,6 +1012,7 @@ fi
 #
 #
 	clear
+        mkdir /wifi
 	greetings
 	setinterface
 	debug
