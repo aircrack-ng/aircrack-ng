@@ -43,6 +43,8 @@
 #include "osdep.h"
 #include "pcap.h"
 
+#define uchar unsigned char
+
 /*
  * XXX need to have a different read/write/open function for each Linux driver.
  */
