@@ -2477,7 +2477,7 @@ int next_dict(int nb)
 
 int do_wpa_crack( struct AP_info *ap )
 {
-	int i, j, cid, len1, len2;
+	int i, j, cid, len1, len2, num_cpus;
 	char key1[128], key2[128];
 
 	uchar pke[100];
@@ -2487,9 +2487,11 @@ int do_wpa_crack( struct AP_info *ap )
 
         i=0;
 
+	num_cpus = opt.nbcpu;
+
 	/* send the ESSID to each thread */
 
-	for( cid = 0; cid < opt.nbcpu; cid++ )
+	for( cid = 0; cid < num_cpus; cid++ )
 	{
 		if( safe_write( mc_pipe[cid][1], (void *) ap->essid, 32 ) != 32 )
 		{
@@ -2541,9 +2543,9 @@ int do_wpa_crack( struct AP_info *ap )
 		printf("\33[2;34H%s",progname);
 	}
 
-	while( 1 )
+	while( num_cpus > 0 )
 	{
-		for( cid = 0; cid < opt.nbcpu; cid++ )
+		for( cid = 0; cid < num_cpus; cid++ )
 		{
 			/* read a couple of keys (skip those < 8 chars) */
 
@@ -2560,10 +2562,13 @@ int do_wpa_crack( struct AP_info *ap )
 					if( opt.l33t )
 						printf( "\33[32;22m" );
 
-					printf( "\nPassphrase not in dictionnary %s \n", opt.dicts[opt.nbdict] );
+					/* printf( "\nPassphrase not in dictionnary %s \n", opt.dicts[opt.nbdict] );*/
 					if(next_dict(opt.nbdict+1) != 0)
 					{
-						return( FAILURE );
+						/* no more words, but we still have to collect results from words sent to previous cpus */
+						num_cpus = cid;
+						goto collect_and_test;
+						/* return( FAILURE ); */
 					}
 					else
 					{
@@ -2624,7 +2629,9 @@ int do_wpa_crack( struct AP_info *ap )
 			}
 		}
 
-		for( cid = 0; cid < opt.nbcpu; cid++ )
+collect_and_test:
+
+		for( cid = 0; cid < num_cpus; cid++ )
 		{
 			/* collect and test the master keys */
 
@@ -2704,6 +2711,7 @@ int do_wpa_crack( struct AP_info *ap )
 		}
 	}
 
+	printf( "\nPassphrase not in dictionnary \n" );
 	return( FAILURE );
 }
 
