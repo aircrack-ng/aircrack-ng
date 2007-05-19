@@ -3993,7 +3993,12 @@ usage:
     /* Check iwpriv existence */
 
 	G.iwpriv = wiToolsPath("iwpriv");
+
+	/* Check iwpriv existence */
 	G.iwconfig = wiToolsPath("iwconfig");
+
+	/* Try to find wlanctl-ng in case that's a wlan-ng driver */
+    G.wlanctlng = wiToolsPath("wlanctl-ng");
 
     if (! (G.iwpriv && G.iwconfig) )
     {

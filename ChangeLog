@@ -1,3 +1,6 @@
+Version 0.9.1 (changes from aircrack-ng 0.9) - Released ?? ??? 2007:
+* airodump-ng: wlan-ng driver now works again.
+
 Version 0.9 (changes from aircrack-ng 0.8) - Released 13 May 2007:
 * aireplay-ng: Added new 'attack': injection test (--test)
 * aireplay-ng: disallow injection with wlanng & kernel > 2.6.11
