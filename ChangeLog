@@ -1,5 +1,7 @@
 Version 0.9.1 (changes from aircrack-ng 0.9) - Released ?? ??? 2007:
 * airodump-ng: wlan-ng driver now works again.
+* airodump-ng: Fixed IP address when writing to CSV file
+* aircrack-ng: Fixed WPA cracking on SMP computers
 
 Version 0.9 (changes from aircrack-ng 0.8) - Released 13 May 2007:
 * aireplay-ng: Added new 'attack': injection test (--test)

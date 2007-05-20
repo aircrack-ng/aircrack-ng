@@ -2293,7 +2293,7 @@ int dump_write_csv( void )
 
         fprintf( G.f_txt, "%3d.%3d.%3d.%3d, ",
                  ap_cur->lanip[0], ap_cur->lanip[1],
-                 ap_cur->lanip[2], ap_cur->lanip[2] );
+                 ap_cur->lanip[2], ap_cur->lanip[3] );
 
         fprintf( G.f_txt, "%3d, ", ap_cur->ssid_length);
 
