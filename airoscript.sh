@@ -983,6 +983,16 @@ rm -rf $DUMP_PATH/arp_*.cap
 function menufonction {
 xterm $HOLD $TOPRIGHT -title "Fake function to jump to menu" -e echo "Aircrack-ng is a great tool, Mister_X ASPj HIRTE are GODS"
 }
+
+function checkdir {
+if [[ -d $DUMP_PATH ]]
+then 
+echo "folder exist"
+else
+echo "output folder does not exist"
+        mkdir $DUMP_PATH
+fi
+}
 function greetings {
 if [ $WELCOME = 1 ]
 	then
@@ -1014,7 +1024,7 @@ fi
 #
 #
 	clear
-        mkdir /wifi
+	checkdir
 	greetings
 	setinterface
 	debug
