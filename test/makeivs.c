@@ -23,6 +23,7 @@ int main( int argc, char *argv[] )
     unsigned char S[256];
     unsigned char buffer[64], *s;
     struct ivs2_pkthdr ivs2;
+    unsigned long long size;
 
     if( argc != 5 )
     {
@@ -88,6 +89,20 @@ int main( int argc, char *argv[] )
     }
 
     keylen = i+3;
+
+    size = (long long)strlen(IVS2_MAGIC) + (long long)count *
+           (long long)sizeof(struct ivs2_pkthdr) + (long long)count * (long long)length;
+
+    printf("Creating %d IVs with %d bytes of keystream each.\n", count, length);
+    printf("Estimated filesize: ");
+    if(size > 1024*1024*1024)   //over 1 GB
+        printf("%.2f GB\n", ((double)size/(1024.0*1024.0*1024.0)));
+    else if (size > 1024*1024)  //over 1 MB
+        printf("%.2f MB\n", ((double)size/(1024.0*1024.0)));
+    else if (size > 1024)       //over 1 KB
+        printf("%.2f KB\n", ((double)size/1024.0));
+    else                        //under 1 KB
+        printf("%.2f Byte\n", (double)size);
 
     if( ( f_ivs_out = fopen( argv[1], "wb+" ) ) == NULL )
     {
