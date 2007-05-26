@@ -3,7 +3,7 @@
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes and darkAudax
-# Date:	        15.05.2007
+# Date:	        26.05.2007
 # Version:	SVN TESTING RELEASE FOR AIRCRACK-NG SVN 
 #		(needs SVN rev 400 and up)
 # 
@@ -33,8 +33,8 @@ INJECTRATE="330"
 #How many times the deauth attack is run
 DEAUTHTIME="5"
 #Time between re-association with target AP
-AUTHDELAY="30"
-KEEPALIVE="50"
+AUTHDELAY="80"
+KEEPALIVE="30"
 #Fudge factor setting
 FUDGEFACTOR="2"
 #Path to binaries                                     
@@ -94,7 +94,7 @@ IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
 }
 # this sets wifi interface if not hard coded in the script
 function setinterface {
-INTERFACES=`iwconfig | grep WLAN | awk '{ print $1 }'| grep -v lo | grep -v inet*`
+INTERFACES=`iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
 	clear
 	if [ $WIFI =  ]
 		then
