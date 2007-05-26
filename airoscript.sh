@@ -986,10 +986,9 @@ xterm $HOLD $TOPRIGHT -title "Fake function to jump to menu" -e echo "Aircrack-n
 
 function checkdir {
 if [[ -d $DUMP_PATH ]]
-then 
-echo "folder exist"
+then
 else
-echo "output folder does not exist"
+echo "output folder does not exist, i will create it now"
         mkdir $DUMP_PATH
 fi
 }
@@ -1004,17 +1003,11 @@ echo ""
 echo "Before you continue make sure you have set proper settings"
 echo "Open this script in a text editor and configure variables"
 echo ""
-echo "First you need to make sure you have a working folder for Airoscript"
-echo "Airoscript needs a real folder to work into"
-echo ""
 echo "Than you could set your interface and check binaries path"
 echo "If you encounter errors please set the variable DEBUG to 1"
 echo "This will allow you to see errors messages in xterm"
-echo ""
-echo "This message will disappear in a few seconds"
-sleep 15
+sleep 10
 	else
-		echo "no welcome msg for you" 
 fi
 }
 
