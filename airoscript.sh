@@ -987,6 +987,7 @@ xterm $HOLD $TOPRIGHT -title "Fake function to jump to menu" -e echo "Aircrack-n
 function checkdir {
 if [[ -d $DUMP_PATH ]]
 then
+clear
 else
 echo "output folder does not exist, i will create it now"
         mkdir $DUMP_PATH
@@ -1008,6 +1009,7 @@ echo "If you encounter errors please set the variable DEBUG to 1"
 echo "This will allow you to see errors messages in xterm"
 sleep 10
 	else
+clear
 fi
 }
 
