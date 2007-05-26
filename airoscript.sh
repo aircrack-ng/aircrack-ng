@@ -94,7 +94,9 @@ IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
 }
 # this sets wifi interface if not hard coded in the script
 function setinterface {
-INTERFACES=`iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
+#INTERFACES=`iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
+#INTERFACES=`iwconfig|egrep "^[a-Z]+[0-9]+" |awk '{print $1}'`
+ INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'`
 	clear
 	if [ $WIFI =  ]
 		then
