@@ -2509,6 +2509,7 @@ int getchancount(int valid)
 void channel_hopper(struct wif *wi[], int if_num, int chan_count )
 {
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
+    int dropped=0;
 
     while( getppid() != 1 )
     {
@@ -2550,8 +2551,20 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
             {
                 j--;
                 cai--;
+                dropped++;
+                if(dropped >= chan_count)
+                {
+                    ch = wi_get_channel(wi[card]);
+                    G.channel[card] = ch;
+                    write( G.cd_pipe[1], &card, sizeof(int) );
+                    write( G.ch_pipe[1], &ch, sizeof( int ) );
+                    kill( getppid(), SIGUSR1 );
+                    usleep(1000);
+                }
                 continue;
             }
+
+            dropped = 0;
 
             ch = G.channels[ch_idx];
 
