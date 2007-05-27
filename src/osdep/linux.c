@@ -714,6 +714,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     struct dirent *this_iface;
     FILE *acpi;
     char r_file[128], buf[128];
+    struct ifreq ifr;
 
     dev->inject_wlanng = 1;
 
@@ -911,6 +912,17 @@ static int do_linux_open(struct wif *wi, char *iface)
     /* test if rtap interface and try to find real interface */
     if( memcmp( iface, "rtap", 4) == 0 )
     {
+        memset( &ifr, 0, sizeof( ifr ) );
+        strncpy( ifr.ifr_name, iface, sizeof( ifr.ifr_name ) - 1 );
+
+        n = 0;
+
+        if( ioctl( dev->fd_out, SIOCGIFINDEX, &ifr ) < 0 )
+        {
+            //create rtap interface
+            n = 1;
+        }
+
         net_ifaces = opendir("/sys/class/net");
         if ( net_ifaces != NULL )
         {
@@ -925,18 +937,50 @@ static int do_linux_open(struct wif *wi, char *iface)
                     continue;
                 if (acpi != NULL)
                 {
+                    memset(buf, 0, 128);
                     fgets(buf, 128, acpi);
-                    if (strncmp(buf, iface, 5) == 0)
+                    if(n==0) //interface exists
                     {
-                        fclose(acpi);
-                        if (net_ifaces != NULL)
+                        if (strncmp(buf, iface, 5) == 0)
                         {
-                            closedir(net_ifaces);
-                            net_ifaces = NULL;
+                            fclose(acpi);
+                            if (net_ifaces != NULL)
+                            {
+                                closedir(net_ifaces);
+                                net_ifaces = NULL;
+                            }
+                            dev->main_if = (char*) malloc(strlen(this_iface->d_name)+1);
+                            strcpy(dev->main_if, this_iface->d_name);
+                            break;
                         }
-                        dev->main_if = (char*) malloc(strlen(this_iface->d_name)+1);
-                        strcpy(dev->main_if, this_iface->d_name);
-                        break;
+                    }
+                    else //need to create interface
+                    {
+                        if (strncmp(buf, "-1", 2) == 0)
+                        {
+                            //repoen for writing
+                            fclose(acpi);
+                            if ((acpi = fopen(r_file, "w")) == NULL)
+                                continue;
+                            fputs("1", acpi);
+                            //reopen for reading
+                            fclose(acpi);
+                            if ((acpi = fopen(r_file, "r")) == NULL)
+                                continue;
+                            fgets(buf, 128, acpi);
+                            if (strncmp(buf, iface, 5) == 0)
+                            {
+                                if (net_ifaces != NULL)
+                                {
+                                    closedir(net_ifaces);
+                                    net_ifaces = NULL;
+                                }
+                                dev->main_if = (char*) malloc(strlen(this_iface->d_name)+1);
+                                strcpy(dev->main_if, this_iface->d_name);
+                                fclose(acpi);
+                                break;
+                            }
+                        }
                     }
                     fclose(acpi);
                 }
