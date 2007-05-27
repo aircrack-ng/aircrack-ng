@@ -16,9 +16,16 @@
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <signal.h>
 
 #include "osdep/osdep.h"
 #include "osdep/network.h"
+
+void sighandler( int signum )
+{
+    if( signum == SIGPIPE )
+        printf("broken pipe!\n");
+}
 
 struct client {
 	int		c_s;
@@ -427,6 +434,8 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
+
+        signal(SIGPIPE, sighandler);
 
 	if (!device || chan <= 0)
 		usage(argv[0]);

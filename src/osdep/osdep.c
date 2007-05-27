@@ -33,7 +33,7 @@ int wi_set_channel(struct wif *wi, int chan)
 
 int wi_get_channel(struct wif *wi)
 {
-	assert(wi->wi_set_channel);
+	assert(wi->wi_get_channel);
         return wi->wi_get_channel(wi);
 }
 
@@ -103,7 +103,7 @@ struct wif *wi_open(char *iface)
 		wi = wi_open_osdep(iface);
 	if (!wi)
 		return NULL;
-	
+
 	strncpy(wi->wi_interface, iface, sizeof(wi->wi_interface)-1);
 	wi->wi_interface[sizeof(wi->wi_interface)-1] = 0;
 

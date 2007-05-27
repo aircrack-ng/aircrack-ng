@@ -37,20 +37,38 @@ struct priv_net {
 
 int net_send(int s, int command, void *arg, int len)
 {
+        struct timeval tv;
 	struct net_hdr nh;
+        fd_set fds;
+
+        FD_ZERO(&fds);
+        FD_SET(s, &fds);
+
+        tv.tv_sec=0;
+        tv.tv_usec=10;
 
 	memset(&nh, 0, sizeof(nh));
 	nh.nh_type	= command;
 	nh.nh_len	= htonl(len);
 
+        if( select(s+1, NULL, &fds, NULL, &tv) != 1)
+            return -1;
 	if (send(s, &nh, sizeof(nh), 0) != sizeof(nh))
-		return -1;
+            return -1;
 
 	if (len == 0)
-		return 0;
+            return 0;
 
+        FD_ZERO(&fds);
+        FD_SET(s, &fds);
+
+        tv.tv_sec=0;
+        tv.tv_usec=10;
+
+        if( select(s+1, NULL, &fds, NULL, &tv) != 1)
+            return -1;
 	if (send(s, arg, len, 0) != len)
-		return -1;
+            return -1;
 
 	return 0;
 }
@@ -59,8 +77,16 @@ int net_read_exact(int s, void *arg, int len)
 {
 	unsigned char *p = arg;
 	int rc;
+        struct timeval tv;
+        fd_set fds;
 
 	while (len) {
+            FD_ZERO(&fds);
+            FD_SET(s, &fds);
+
+            tv.tv_sec=0;
+            tv.tv_usec=10;
+
 		rc = read(s, p, len);
 		if (rc <= 0)
 			return -1;
@@ -79,7 +105,9 @@ int net_get(int s, void *arg, int *len)
 	int plen;
 
 	if (net_read_exact(s, &nh, sizeof(nh)) == -1)
+        {
 		return -1;
+        }
 
 	plen = ntohl(nh.nh_len);
 	if (!(plen <= *len))
@@ -89,7 +117,9 @@ int net_get(int s, void *arg, int *len)
 
 	*len = plen;
 	if ((*len) && (net_read_exact(s, arg, *len) == -1))
-		return -1;
+        {
+            return -1;
+        }
 
 	return nh.nh_type;
 }
@@ -164,10 +194,11 @@ static int net_get_nopacket(struct priv_net *pn, void *arg, int *len)
 		l = sizeof(buf);
 		c = net_get(pn->pn_s, buf, &l);
 
-		if (c != NET_PACKET)
+		if (c != NET_PACKET && c > 0)
 			break;
 
-		net_enque(pn, buf, l);
+                if(c > 0)
+                    net_enque(pn, buf, l);
 	}
 
 	assert(l <= *len);
@@ -184,12 +215,16 @@ static int net_cmd(struct priv_net *pn, int command, void *arg, int alen)
 	int cmd;
 
 	if (net_send(pn->pn_s, command, arg, alen) == -1)
+        {
 		return -1;
+        }
 
 	len = sizeof(rc);
 	cmd = net_get_nopacket(pn, &rc, &len);
 	if (cmd == -1)
+        {
 		return -1;
+        }
 	assert(cmd == NET_RC);
 	assert(len == sizeof(rc));
 
@@ -381,7 +416,7 @@ static int do_net_open(char *iface)
 	if (connect(s, (struct sockaddr*) &s_in, sizeof(s_in)) == -1) {
 		close(s);
 
-		printf("Failed to connect");
+		printf("Failed to connect\n");
 
 		return -1;
 	}
@@ -389,12 +424,12 @@ static int do_net_open(char *iface)
 	if (handshake(s) == -1) {
 		close(s);
 
-		printf("Failed to connect - handshake failed");
+		printf("Failed to connect - handshake failed\n");
 
 		return -1;
 	}
 
-	printf("Connection successful");
+	printf("Connection successful\n");
 
 	return s;
 }

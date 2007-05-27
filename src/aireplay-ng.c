@@ -47,6 +47,10 @@
 
 #include <limits.h>
 
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+
 #include "version.h"
 #include "pcap.h"
 #include "osdep/osdep.h"
@@ -194,6 +198,12 @@ struct options
     char r_essid[33];
     int r_fromdsinj;
 
+    char ip_out[15];
+    char ip_in[15];
+    int port_out;
+    int port_in;
+
+    char *iface_out;
     char *s_face;
     char *s_file;
     uchar *prga;
@@ -1971,11 +1981,14 @@ int do_attack_arp_resend( void )
 
     printf( "You should also start airodump-ng to capture replies.\n" );
 
-    /* avoid blocking on reading the socket */
-    if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
+    if(opt.port_in <= 0)
     {
-        perror( "fcntl(O_NONBLOCK) failed" );
-        return( 1 );
+        /* avoid blocking on reading the socket */
+        if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
+        {
+            perror( "fcntl(O_NONBLOCK) failed" );
+            return( 1 );
+        }
     }
 
     memset( ticks, 0, sizeof( ticks ) );
@@ -2425,10 +2438,13 @@ int do_attack_chopchop( void )
 
     signal( SIGALRM, sighandler );
 
-    if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
+    if(opt.port_in <= 0)
     {
-        perror( "fcntl(O_NONBLOCK) failed" );
-        return( 1 );
+        if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
+        {
+            perror( "fcntl(O_NONBLOCK) failed" );
+            return( 1 );
+        }
     }
 
     while( data_end > data_start )
@@ -3514,6 +3530,262 @@ int grab_essid(uchar* packet, int len)
     return -1;
 }
 
+static int get_ip_port(char *iface, char *ip)
+{
+	char *host;
+	char *ptr;
+	int port = -1;
+	struct in_addr addr;
+
+	host = strdup(iface);
+	if (!host)
+		return -1;
+
+	ptr = strchr(host, ':');
+	if (!ptr)
+		goto out;
+
+	*ptr++ = 0;
+
+	if (!inet_aton(host, &addr))
+		goto out; /* XXX resolve hostname */
+
+	if(strlen(host) > 15)
+        {
+            port = -1;
+            goto out;
+        }
+	strcpy(ip, host);
+	port = atoi(ptr);
+        if(port <= 0) port = -1;
+
+out:
+	free(host);
+	return port;
+}
+
+void dump_packet(unsigned char* packet, int len)
+{
+    int i=0;
+
+    for(i=0; i<len; i++)
+    {
+        if(i>0 && i%4 == 0)printf(" ");
+        if(i>0 && i%16 == 0)printf("\n");
+        printf("%02X ", packet[i]);
+    }
+    printf("\n\n");
+}
+
+struct net_hdr {
+	uint8_t		nh_type;
+	uint32_t	nh_len;
+	uint8_t		nh_data[0];
+} __packed;
+
+int tcp_test(const char* ip_str, const short port)
+{
+    int sock, i;
+    struct sockaddr_in s_in;
+    int packetsize = 1024;
+    unsigned char packet[packetsize];
+    struct timeval tv, tv2, tv3;
+    int caplen = 0;
+    int times[REQUESTS];
+    int min, avg, max;
+    struct net_hdr nh;
+
+    tv3.tv_sec=0;
+    tv3.tv_usec=1;
+
+    s_in.sin_family = PF_INET;
+    s_in.sin_port = htons(port);
+    if (!inet_aton(ip_str, &s_in.sin_addr))
+            return -1;
+
+    if ((sock = socket(s_in.sin_family, SOCK_STREAM, IPPROTO_TCP)) == -1)
+            return -1;
+
+    /* avoid blocking on reading the socket */
+    if( fcntl( sock, F_SETFL, O_NONBLOCK ) < 0 )
+    {
+        perror( "fcntl(O_NONBLOCK) failed" );
+        return( 1 );
+    }
+
+    gettimeofday( &tv, NULL );
+
+    while (1)  //waiting for relayed packet
+    {
+        if (connect(sock, (struct sockaddr*) &s_in, sizeof(s_in)) == -1)
+        {
+            if(errno != EINPROGRESS && errno != EALREADY)
+            {
+                perror("connect");
+                close(sock);
+
+                printf("Failed to connect\n");
+
+                return -1;
+            }
+        }
+        else
+        {
+            gettimeofday( &tv2, NULL );
+            break;
+        }
+
+        gettimeofday( &tv2, NULL );
+        //wait 3000ms for a successful connect
+        if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (3000*1000))
+        {
+            printf("Connection timed out\n");
+            close(sock);
+            return(-1);
+        }
+        usleep(1);
+    }
+
+    PCT; printf("TCP connection successful\n");
+
+    //trying to identify airserv-ng
+    memset(&nh, 0, sizeof(nh));
+//     command: GET_CHAN
+    nh.nh_type	= 2;
+    nh.nh_len	= htonl(0);
+
+    if (send(sock, &nh, sizeof(nh), 0) != sizeof(nh))
+    {
+        perror("send");
+        return -1;
+    }
+
+    gettimeofday( &tv, NULL );
+    i=0;
+
+    while (1)  //waiting for GET_CHAN answer
+    {
+        caplen = read(sock, packet, packetsize);
+
+        if(caplen == -1)
+        {
+            if( errno != EAGAIN )
+            {
+                perror("read");
+                return -1;
+            }
+        }
+
+        if(caplen > 0)
+        {
+            if(i==0)
+            {
+                if((unsigned)caplen == sizeof(nh))
+                {
+                    i=1;
+                    memcpy(&nh, packet, caplen);
+                }
+            }
+            else if(i==1)
+            {
+                if((unsigned)caplen == ntohl(nh.nh_len))
+                {
+                    i=2;
+                    break;
+                }
+                else i= 0;
+            }
+        }
+
+        gettimeofday( &tv2, NULL );
+        //wait 1000ms for an answer
+        if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1000*1000))
+        {
+            break;
+        }
+        if(caplen == -1)
+            usleep(1);
+    }
+
+    if(i==2)
+    {
+        PCT; printf("airserv-ng found\n");
+    }
+    else
+    {
+        PCT; printf("airserv-ng NOT found\n");
+    }
+
+    close(sock);
+
+    for(i=0; i<REQUESTS; i++)
+    {
+        if ((sock = socket(s_in.sin_family, SOCK_STREAM, IPPROTO_TCP)) == -1)
+                return -1;
+
+        /* avoid blocking on reading the socket */
+        if( fcntl( sock, F_SETFL, O_NONBLOCK ) < 0 )
+        {
+            perror( "fcntl(O_NONBLOCK) failed" );
+            return( 1 );
+        }
+
+        usleep(1000);
+
+        gettimeofday( &tv, NULL );
+
+        while (1)  //waiting for relayed packet
+        {
+            if (connect(sock, (struct sockaddr*) &s_in, sizeof(s_in)) == -1)
+            {
+                if(errno != EINPROGRESS && errno != EALREADY)
+                {
+                    perror("connect");
+                    close(sock);
+
+                    printf("Failed to connect\n");
+
+                    return -1;
+                }
+            }
+            else
+            {
+                gettimeofday( &tv2, NULL );
+                break;
+            }
+
+            gettimeofday( &tv2, NULL );
+            //wait 1000ms for a successful connect
+            if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1000*1000))
+            {
+                break;
+            }
+            //simple "high-precision" usleep
+            select(1, NULL, NULL, NULL, &tv3);
+        }
+        times[i] = ((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec));
+        printf( "\r%d/%d\r", i, REQUESTS);
+        fflush(stdout);
+        close(sock);
+    }
+
+    min = INT_MAX;
+    avg = 0;
+    max = 0;
+
+    for(i=0; i<REQUESTS; i++)
+    {
+        if(times[i] < min) min = times[i];
+        if(times[i] > max) max = times[i];
+        avg += times[i];
+    }
+    avg /= REQUESTS;
+
+    PCT; printf("ping %s:%d (min/avg/max): %.3fms/%.3fms/%.3fms\n", ip_str, port, min/1000.0, avg/1000.0, max/1000.0);
+
+    return 0;
+}
+
 int do_attack_test()
 {
     uchar packet[4096];
@@ -3522,6 +3794,7 @@ int do_attack_test()
     int gotit=0, answers=0, found=0;
     int caplen=0, essidlen=0;
     unsigned int min, avg, max;
+    int ret=0;
 
     if(memcmp(opt.r_bssid, NULL_MAC, 6))
     {
@@ -3541,11 +3814,70 @@ int do_attack_test()
         }
     }
 
-    /* avoid blocking on reading the socket */
-    if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
+    if(opt.port_out > 0)
     {
-        perror( "fcntl(O_NONBLOCK) failed" );
-        return( 1 );
+        PCT; printf("Testing connection to injection device %s\n", opt.iface_out);
+        ret = tcp_test(opt.ip_out, opt.port_out);
+        if(ret != 0)
+        {
+            return( 1 );
+        }
+        printf("\n");
+
+        /* open the replay interface */
+        _wi_out = wi_open(opt.iface_out);
+        if (!_wi_out)
+            return 1;
+        printf("\n");
+        dev.fd_out = wi_fd(_wi_out);
+        wi_get_mac(_wi_out, dev.mac_out);
+        if(opt.s_face == NULL)
+        {
+            _wi_in = _wi_out;
+            dev.fd_in = dev.fd_out;
+
+            /* XXX */
+            dev.arptype_in = dev.arptype_out;
+            wi_get_mac(_wi_in, dev.mac_in);
+        }
+    }
+
+    if(opt.s_face && opt.port_in > 0)
+    {
+        PCT; printf("Testing connection to capture device %s\n", opt.s_face);
+        ret = tcp_test(opt.ip_in, opt.port_in);
+        if(ret != 0)
+        {
+            return( 1 );
+        }
+        printf("\n");
+
+        /* open the packet source */
+        _wi_in = wi_open(opt.s_face);
+        if (!_wi_in)
+            return 1;
+        dev.fd_in = wi_fd(_wi_in);
+        wi_get_mac(_wi_in, dev.mac_in);
+        printf("\n");
+    }
+    else if(opt.s_face && opt.port_in <= 0)
+    {
+        _wi_in = wi_open(opt.s_face);
+        if (!_wi_in)
+            return 1;
+        dev.fd_in = wi_fd(_wi_in);
+        wi_get_mac(_wi_in, dev.mac_in);
+        printf("\n");
+    }
+
+    if(opt.port_in <= 0)
+    {
+        /* avoid blocking on reading the socket */
+        if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
+        {
+            perror( "fcntl(O_NONBLOCK) failed" );
+            return( 1 );
+        }
     }
 
     srand( time( NULL ) );
@@ -4331,6 +4663,7 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
                 opt.s_face = optarg;
+                opt.port_in = get_ip_port(opt.s_face, opt.ip_in);
                 break;
 
             case 'r' :
@@ -4548,33 +4881,45 @@ usage:
 #endif /* linux */
 #endif /* i386 */
 
-    /* open the replay interface */
-    _wi_out = wi_open(argv[optind]);
-    if (!_wi_out)
-    	return 1;
-    dev.fd_out = wi_fd(_wi_out);
+    opt.iface_out = argv[optind];
+    opt.port_out = get_ip_port(opt.iface_out, opt.ip_out);
 
-    /* open the packet source */
-    if( opt.s_face != NULL )
-    {
-    	_wi_in = wi_open(opt.s_face);
-	if (!_wi_in)
-	    return 1;
-	dev.fd_in = wi_fd(_wi_in);
-    }
-    else
-    {
-        _wi_in = _wi_out;
-        dev.fd_in = dev.fd_out;
+    //don't open interface(s) when using test mode and airserv
+   if( ! (opt.a_mode == 9 && opt.port_out >= 0 ) )
+   {
+        /* open the replay interface */
+        _wi_out = wi_open(opt.iface_out);
+        if (!_wi_out)
+            return 1;
+        dev.fd_out = wi_fd(_wi_out);
 
-	/* XXX */
-        dev.arptype_in = dev.arptype_out;
-    }
+        /* open the packet source */
+        if( opt.s_face != NULL )
+        {
+            //don't open interface(s) when using test mode and airserv
+            if( ! (opt.a_mode == 9 && opt.port_in >= 0 ) )
+            {
+                _wi_in = wi_open(opt.s_face);
+                if (!_wi_in)
+                    return 1;
+                dev.fd_in = wi_fd(_wi_in);
+                wi_get_mac(_wi_in, dev.mac_in);
+            }
+        }
+        else
+        {
+            _wi_in = _wi_out;
+            dev.fd_in = dev.fd_out;
 
-    wi_get_mac(_wi_in, dev.mac_in);
-    wi_get_mac(_wi_out, dev.mac_out);
+            /* XXX */
+            dev.arptype_in = dev.arptype_out;
+            wi_get_mac(_wi_in, dev.mac_in);
+        }
+
+        wi_get_mac(_wi_out, dev.mac_out);
+   }
+
     /* drop privileges */
-
     setuid( getuid() );
 
     /* XXX */
@@ -4636,7 +4981,7 @@ usage:
                  " doesn't match the specified MAC (-h).\n"
                  "\tifconfig %s hw ether %02X:%02X:%02X:%02X:%02X:%02X\n",
                  dev.mac_out[0], dev.mac_out[1], dev.mac_out[2], dev.mac_out[3], dev.mac_out[4], dev.mac_out[5],
-                 argv[optind], opt.r_smac[0], opt.r_smac[1], opt.r_smac[2], opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
+                 opt.iface_out, opt.r_smac[0], opt.r_smac[1], opt.r_smac[2], opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
     }
 
     switch( opt.a_mode )
