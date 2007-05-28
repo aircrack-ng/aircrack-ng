@@ -121,6 +121,9 @@ struct options
 	int brutebytes[64];			/* bytes to bruteforce */
         int next_ptw_try;
 
+	char *bssidmerge;
+	char *firstbssid;
+
 	struct AP_info *ap;
 }
 

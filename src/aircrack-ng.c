@@ -178,6 +178,108 @@ void eof_wait( int *eof_notified )
 	usleep( 100000 );
 }
 
+int checkbssids(char *bssidlist)
+{
+	int first = 1;
+	int i = 0;
+	char *list, *tmp;
+
+	if(bssidlist == NULL) return -1;
+
+#define VALID_CHAR(x)	( ((toupper(x)) == 'X') || \
+			  ((toupper(x)) >= 'A' && (toupper(x)) <= 'F') || \
+			  ( (x) >= '0' && (x) <= '9') )
+
+#define VALID_SEP(arg)	( ((arg) == '_') || ((arg) == '-') || ((arg) == ':') )
+	list = strdup(bssidlist);
+	do
+	{
+		tmp = strsep(&list, ",");
+
+		if(strlen(tmp) != 17) return -1;
+
+		//first byte
+		if(!VALID_CHAR(tmp[ 0]))	return -1;
+		if(!VALID_CHAR(tmp[ 1]))	return -1;
+		if(!VALID_SEP( tmp[ 2]))	return -1;
+		//second byte
+		if(!VALID_CHAR(tmp[ 3]))	return -1;
+		if(!VALID_CHAR(tmp[ 4]))	return -1;
+		if(!VALID_SEP( tmp[ 5]))	return -1;
+		//third byte
+		if(!VALID_CHAR(tmp[ 6]))	return -1;
+		if(!VALID_CHAR(tmp[ 7]))	return -1;
+		if(!VALID_SEP( tmp[ 8]))	return -1;
+		//fourth byte
+		if(!VALID_CHAR(tmp[ 9]))	return -1;
+		if(!VALID_CHAR(tmp[10]))	return -1;
+		if(!VALID_SEP( tmp[11]))	return -1;
+		//fifth byte
+		if(!VALID_CHAR(tmp[12]))	return -1;
+		if(!VALID_CHAR(tmp[13]))	return -1;
+		if(!VALID_SEP( tmp[14]))	return -1;
+		//sixth byte
+		if(!VALID_CHAR(tmp[15]))	return -1;
+		if(!VALID_CHAR(tmp[16]))	return -1;
+
+		if(first)
+		{
+			for(i=0; i<17; i++)
+			{
+				if(toupper(tmp[i]) == 'X') tmp[i] = '0';
+			}
+			opt.firstbssid = tmp;
+			first = 0;
+		}
+
+	}while(list);
+
+	return 0;
+}
+
+int mergebssids(char* bssidlist, unsigned char* bssid)
+{
+	int i=0, next=0;
+	char *list, *tmp;
+	char mac[20];
+
+	memset(mac, 0, 20);
+	snprintf(mac, 18, "%02X:%02X:%02X:%02X:%02X:%02X",
+		bssid[0], bssid[1], bssid[2],
+		bssid[3], bssid[4], bssid[5]);
+
+#define	IGNORE_CHAR(x)	(toupper(x) == 'X' || VALID_SEP(x))
+
+	list = strdup(bssidlist);
+	do
+	{
+		tmp = strsep(&list, ",");
+		next = 0;
+
+		for(i=0; i<17; i++)
+		{
+			if(IGNORE_CHAR(tmp[i])) continue;
+			if(toupper(tmp[i]) != toupper(mac[i]))
+			{
+				next = 1;
+				break;
+			}
+		}
+		if(!next)
+		{
+			//TODO:REMOVE
+// 			printf("yo, got cha!\n");
+			return 0;
+		}
+	}while(list);
+
+#undef VALID_CHAR
+#undef VALID_SEP
+#undef IGNORE_CHAR
+
+	return -1;
+}
+
 /* fread isn't atomic, sadly */
 
 int atomic_read( read_buf *rb, int fd, int len, void *buf )
@@ -451,6 +553,9 @@ void read_thread( void *arg )
 				default: memcpy( bssid, h80211 +  4, 6 ); break;
 			}
 		}
+
+		if(opt.bssidmerge)
+			if(mergebssids(opt.bssidmerge, bssid) == 0) getmac(opt.firstbssid, 1, bssid);
 
 		if( memcmp( bssid, BROADCAST, 6 ) == 0 )
 			/* probe request or such - skip the packet */
@@ -2795,15 +2900,16 @@ int main( int argc, char *argv[] )
         static struct option long_options[] = {
             {"bssid",   1, 0, 'b'},
             {"debug",   1, 0, 'd'},
+            {"combine", 0, 0, 'C'},
             {"help",    0, 0, 'H'},
             {0,         0, 0,  0 }
         };
 
 		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "a:e:b:qcthd:m:n:i:f:k:x::ysw:0Hz",
+			option = getopt_long( argc, argv, "a:e:b:qcthd:m:n:i:f:k:x::ysw:0HzC:",
                         long_options, &option_index );
 		else
-			option = getopt_long( argc, argv, "a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0Hz",
+			option = getopt_long( argc, argv, "a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HzC:",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -3040,8 +3146,8 @@ int main( int argc, char *argv[] )
 			case 'w' :
 				if(set_dicts(optarg) != 0)
 				{
-		    		printf("\"%s --help\" for help.\n", argv[0]);
-				    return FAILURE;
+		    			printf("\"%s --help\" for help.\n", argv[0]);
+					return FAILURE;
 				}
 				break;
 
@@ -3054,6 +3160,16 @@ int main( int argc, char *argv[] )
 
 				showhelp = 1;
 				goto usage;
+				break;
+
+			case 'C' :
+
+				opt.bssidmerge = optarg;
+				if(checkbssids(opt.bssidmerge))
+				{
+					printf("Invalid bssids (-C).\n\"%s --help\" for help.\n", argv[0]);
+					return FAILURE;
+				}
 				break;
 
 			default : goto usage;

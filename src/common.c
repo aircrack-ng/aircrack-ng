@@ -82,7 +82,7 @@ int getmac(char * macAddress, int strict, unsigned char * mac)
 		mac[nbElem] = n;
 		i+=2;
 		nbElem++;
-		if (macAddress[i] == ':' || macAddress[i] == '-')
+		if (macAddress[i] == ':' || macAddress[i] == '-'  || macAddress[i] == '_')
 			i++;
 	}
 
