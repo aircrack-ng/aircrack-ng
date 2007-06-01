@@ -2536,16 +2536,15 @@ int do_attack_chopchop( void )
             printf( "\n\n"
 "The chopchop attack appears to have failed. Possible reasons:\n"
 "\n"
+"    * Target is 802.11g only but you are using a 802.11b adapter.\n"
+"    * The wireless interface isn't setup on the correct channel.\n"
 #if defined(linux)
 "    * You're trying to inject with an unsupported chipset (Centrino?).\n"
 "    * The driver source wasn't properly patched for injection support.\n"
 "    * You are too far from the AP. Get closer or reduce the send rate.\n"
-"    * Target is 802.11g only but you are using a Prism2 or RTL8180.\n"
 "    * The wireless interface isn't setup on the correct channel.\n" );
 #elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
-"    * You are too far from the AP. Get closer.\n"
-"    * Target is 802.11g only but you are using 802.11b hardware.\n"
-"    * The wireless interface isn't setup on the correct channel.\n" );
+"    * You are too far from the AP. Get closer.\n" );
 #endif
             if( is_deauth_mode )
                 printf(
