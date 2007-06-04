@@ -983,6 +983,7 @@ int do_attack_fake_auth( void )
     int tries;
     int abort;
     int gotit;
+    char essid[512];
 
     uchar capa[2];
 
@@ -1005,7 +1006,7 @@ int do_attack_fake_auth( void )
 
     if( opt.s_face != NULL )
     {
-        if(!attack_check(opt.r_bssid, opt.r_essid, _wi_out) && !attack_check(NULL, NULL, _wi_in))
+        if(!attack_check(opt.r_bssid, essid, _wi_out) && !attack_check(NULL, NULL, _wi_in))
         {
             if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
             {
@@ -1020,13 +1021,16 @@ int do_attack_fake_auth( void )
     }
     else
     {
-        if(attack_check(opt.r_bssid, opt.r_essid, _wi_out) != 0)
+        if(attack_check(opt.r_bssid, essid, _wi_out) != 0)
         {
             gotit=1;
         }
     }
 //    if(gotit) return -1;
     gotit=0;
+
+    if( essid[0] != '\0' )
+        memcpy(opt.r_essid, essid, sizeof(opt.r_essid));
 
     if( opt.r_essid[0] == '\0' )
     {
@@ -1862,8 +1866,17 @@ read_packets:
 
         ticks[2] = 0;
 
+        if( nb_pkt_sent == 0 )
+            ticks[0] = 0;
+
         if( send_packet( h80211, caplen ) < 0 )
             return( 1 );
+
+        if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent  )
+        {
+            if( send_packet( h80211, caplen ) < 0 )
+                return( 1 );
+        }
     }
 
     return( 0 );
@@ -2049,9 +2062,19 @@ int do_attack_arp_resend( void )
 
             if( nb_arp > 0 )
             {
+                if( nb_pkt_sent == 0 )
+                    ticks[0] = 0;
+
                 if( send_packet( arp[arp_off1].buf,
                                  arp[arp_off1].len ) < 0 )
                     return( 1 );
+
+                if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent  )
+                {
+                    if( send_packet( arp[arp_off1].buf,
+                                    arp[arp_off1].len ) < 0 )
+                        return( 1 );
+                }
 
                 if( ++arp_off1 >= nb_arp )
                     arp_off1 = 0;
@@ -3592,7 +3615,7 @@ int tcp_test(const char* ip_str, const short port)
     struct timeval tv, tv2, tv3;
     int caplen = 0;
     int times[REQUESTS];
-    int min, avg, max;
+    int min, avg, max, len;
     struct net_hdr nh;
 
     tv3.tv_sec=0;
@@ -3665,7 +3688,7 @@ int tcp_test(const char* ip_str, const short port)
 
     while (1)  //waiting for GET_CHAN answer
     {
-        caplen = read(sock, packet, packetsize);
+        caplen = read(sock, &nh, sizeof(nh));
 
         if(caplen == -1)
         {
@@ -3676,24 +3699,26 @@ int tcp_test(const char* ip_str, const short port)
             }
         }
 
-        if(caplen > 0)
+        if( (unsigned)caplen == sizeof(nh))
         {
-            if(i==0)
+            len = ntohl(nh.nh_len);
+            if( nh.nh_type == 1 && i==0 )
             {
-                if((unsigned)caplen == sizeof(nh))
-                {
-                    i=1;
-                    memcpy(&nh, packet, caplen);
-                }
-            }
-            else if(i==1)
-            {
-                if((unsigned)caplen == ntohl(nh.nh_len))
+                i=1;
+                caplen = read(sock, packet, len);
+                if(caplen == len)
                 {
                     i=2;
                     break;
                 }
-                else i= 0;
+                else
+                {
+                    i=0;
+                }
+            }
+            else
+            {
+                caplen = read(sock, packet, len);
             }
         }
 
@@ -4291,7 +4316,7 @@ int do_attack_test()
                     }
 
                     gettimeofday( &tv2, NULL );
-                    if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
+                    if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1000*1000)) //wait 1s for an answer
                     {
                         break;
                     }
