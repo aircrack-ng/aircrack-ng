@@ -174,8 +174,6 @@ struct AP_info
     struct timeval ftimer;    /* time of restart             */
 
     char *key;		      /* if wep-key found by dict */
-//     int wpa_state;           /* wpa handshake state       */
-    int wpa_stored;           /* wpa stored in ivs file?   */
     int essid_stored;         /* essid stored in ivs file? */
 };
 
@@ -274,6 +272,7 @@ struct globals
     char * wl;
 
     unsigned char wpa_bssid[6];   /* the wpa handshake bssid   */
+    char message[512];
 }
 G;
 
@@ -409,6 +408,10 @@ int check_shared_key(unsigned char *h80211, int caplen)
         fclose(G.f_xor);
         G.f_xor = NULL;
     }
+
+    snprintf(G.message, sizeof(G.message), "][ %dbytes keystream: %02X:%02X:%02X:%02X:%02X:%02X ",
+                textlen+4, *(G.sharedkey[0]+m_bmac), *(G.sharedkey[0]+m_bmac+1), *(G.sharedkey[0]+m_bmac+2),
+              *(G.sharedkey[0]+m_bmac+3), *(G.sharedkey[0]+m_bmac+4), *(G.sharedkey[0]+m_bmac+5));
 
     memset(G.sharedkey, '\x00', 512*3);
     /* ok, keystream saved */
@@ -824,7 +827,6 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
         gettimeofday( &(ap_cur->ftimer), NULL);
 
         ap_cur->ssid_length = 0;
-        ap_cur->wpa_stored   = 0;
         ap_cur->essid_stored = 0;
     }
 
@@ -1535,6 +1537,12 @@ skip_probe:
                 {
                     memcpy( st_cur->wpa.stmac, st_cur->stmac, 6 );
                     memcpy( G.wpa_bssid, ap_cur->bssid, 6 );
+                    memset(G.message, '\x00', sizeof(G.message));
+                    snprintf( G.message, sizeof( G.message ) - 1,
+                        "][ WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
+                        G.wpa_bssid[0], G.wpa_bssid[1], G.wpa_bssid[2],
+                        G.wpa_bssid[3], G.wpa_bssid[4], G.wpa_bssid[5]);
+
 
                     if( G.f_ivs != NULL )
                     {
@@ -1849,7 +1857,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 {
     time_t tt;
     struct tm *lt;
-    int nlines, i, n;
+    int nlines, i, n, len;
     char strbuf[512];
     char buffer[512];
     char ssid_list[512];
@@ -1907,15 +1915,13 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
     memset( buffer, '\0', 512 );
 
-    if(memcmp(G.wpa_bssid, NULL_MAC, 6) !=0 )
+    if(strlen(G.message) > 0)
     {
-        snprintf( buffer, sizeof( buffer ) - 1,
-              "][ WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
-              G.wpa_bssid[0], G.wpa_bssid[1], G.wpa_bssid[2],
-              G.wpa_bssid[3], G.wpa_bssid[4], G.wpa_bssid[5]);
-
-        strncat(strbuf, buffer, (512-strlen(strbuf)));
+        strncat(strbuf, G.message, (512-strlen(strbuf)));
     }
+
+    //add traling spaces to overwrite previous messages
+    strncat(strbuf, "                                        ", (512-strlen(strbuf)));
 
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
@@ -1974,14 +1980,18 @@ void dump_print( int ws_row, int ws_col, int if_num )
         if( nlines > (ws_row-1) )
             return;
 
-        fprintf( stderr, " %02X:%02X:%02X:%02X:%02X:%02X",
+        memset(strbuf, '\0', sizeof(strbuf));
+
+        sprintf( strbuf, " %02X:%02X:%02X:%02X:%02X:%02X",
                 ap_cur->bssid[0], ap_cur->bssid[1],
                 ap_cur->bssid[2], ap_cur->bssid[3],
                 ap_cur->bssid[4], ap_cur->bssid[5] );
 
+        len = strlen(strbuf);
+
         if(G.singlechan)
         {
-            fprintf( stderr, "  %3d %3d %8ld %8ld %4d",
+            sprintf( strbuf+len, "  %3d %3d %8ld %8ld %4d",
                      ap_cur->avg_power,
                      ap_cur->rx_quality,
                      ap_cur->nb_bcn,
@@ -1990,43 +2000,57 @@ void dump_print( int ws_row, int ws_col, int if_num )
         }
         else
         {
-            fprintf( stderr, "  %3d %8ld %8ld %4d",
+            sprintf( strbuf+len, "  %3d %8ld %8ld %4d",
                      ap_cur->avg_power,
                      ap_cur->nb_bcn,
                      ap_cur->nb_data,
                      ap_cur->nb_dataps );
         }
 
-        fprintf( stderr, " %3d %3d%c ",
+        len = strlen(strbuf);
+
+        sprintf( strbuf+len, " %3d %3d%c ",
                  ap_cur->channel, ap_cur->max_speed,
                  ( ap_cur->preamble ) ? '.' : ' ' );
 
-        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) fprintf( stderr, "    " );
-        else if( ap_cur->security & STD_WPA2 ) fprintf( stderr, "WPA2" );
-        else if( ap_cur->security & STD_WPA  ) fprintf( stderr, "WPA " );
-        else if( ap_cur->security & STD_WEP  ) fprintf( stderr, "WEP " );
-        else if( ap_cur->security & STD_OPN  ) fprintf( stderr, "OPN " );
+        len = strlen(strbuf);
 
-        fprintf( stderr, " ");
+        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) sprintf( strbuf+len, "    " );
+        else if( ap_cur->security & STD_WPA2 ) sprintf( strbuf+len, "WPA2" );
+        else if( ap_cur->security & STD_WPA  ) sprintf( strbuf+len, "WPA " );
+        else if( ap_cur->security & STD_WEP  ) sprintf( strbuf+len, "WEP " );
+        else if( ap_cur->security & STD_OPN  ) sprintf( strbuf+len, "OPN " );
 
-        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( stderr, "       ");
-        else if( ap_cur->security & ENC_CCMP   ) fprintf( stderr, "CCMP   ");
-        else if( ap_cur->security & ENC_WRAP   ) fprintf( stderr, "WRAP   ");
-        else if( ap_cur->security & ENC_TKIP   ) fprintf( stderr, "TKIP   ");
-        else if( ap_cur->security & ENC_WEP104 ) fprintf( stderr, "WEP104 ");
-        else if( ap_cur->security & ENC_WEP40  ) fprintf( stderr, "WEP40  ");
-        else if( ap_cur->security & ENC_WEP    ) fprintf( stderr, "WEP    ");
+        strcat( strbuf, " ");
 
-        if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) fprintf( stderr, "   ");
-        else if( ap_cur->security & AUTH_MGT   ) fprintf( stderr, "MGT");
+        len = strlen(strbuf);
+
+        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) sprintf( strbuf+len, "       ");
+        else if( ap_cur->security & ENC_CCMP   ) sprintf( strbuf+len, "CCMP   ");
+        else if( ap_cur->security & ENC_WRAP   ) sprintf( strbuf+len, "WRAP   ");
+        else if( ap_cur->security & ENC_TKIP   ) sprintf( strbuf+len, "TKIP   ");
+        else if( ap_cur->security & ENC_WEP104 ) sprintf( strbuf+len, "WEP104 ");
+        else if( ap_cur->security & ENC_WEP40  ) sprintf( strbuf+len, "WEP40  ");
+        else if( ap_cur->security & ENC_WEP    ) sprintf( strbuf+len, "WEP    ");
+
+        len = strlen(strbuf);
+
+        if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) sprintf( strbuf+len, "   ");
+        else if( ap_cur->security & AUTH_MGT   ) sprintf( strbuf+len, "MGT");
         else if( ap_cur->security & AUTH_PSK   )
 		{
 			if( ap_cur->security & STD_WEP )
-				fprintf( stderr, "SKA");
+				sprintf( strbuf+len, "SKA");
 			else
-				fprintf( stderr, "PSK");
+				sprintf( strbuf+len, "PSK");
 		}
-        else if( ap_cur->security & AUTH_OPN   ) fprintf( stderr, "OPN");
+        else if( ap_cur->security & AUTH_OPN   ) sprintf( strbuf+len, "OPN");
+
+        len = strlen(strbuf);
+
+        strbuf[ws_col-1] = '\0';
+
+        fprintf(stderr, strbuf);
 
         if( ws_col > (columns_ap - 4) )
         {
@@ -2809,6 +2833,54 @@ int set_encryption_filter(const char* input)
     return 0;
 }
 
+int check_monitor(struct wif *wi[], int *fd_raw, int *fdh, int cards)
+{
+    int i, monitor;
+    char ifname[64];
+
+    for(i=0; i<cards; i++)
+    {
+        monitor = wi_get_monitor(wi[i]);
+        if(monitor != 0)
+        {
+            memset(G.message, '\x00', sizeof(G.message));
+            snprintf(G.message, sizeof(G.message), "][ %s reset to monitor mode", wi_get_ifname(wi[i]));
+            //reopen in monitor mode
+
+            strncpy(ifname, wi_get_ifname(wi[i]), sizeof(ifname)-1);
+            ifname[sizeof(ifname)-1] = 0;
+
+            wi_close(wi[i]);
+            wi[i] = wi_open(ifname);
+            if (!wi[i]) {
+                printf("Can't reopen %s\n", ifname);
+                exit(1);
+            }
+
+            fd_raw[i] = wi_fd(wi[i]);
+            if (fd_raw[i] > *fdh)
+                *fdh = fd_raw[i];
+        }
+    }
+    return 0;
+}
+
+int check_channel(struct wif *wi[], int cards)
+{
+    int i, chan;
+    for(i=0; i<cards; i++)
+    {
+        chan = wi_get_channel(wi[i]);
+        if(G.channel[i] != chan)
+        {
+            memset(G.message, '\x00', sizeof(G.message));
+            snprintf(G.message, sizeof(G.message), "][ fixed channel %s: %d ", wi_get_ifname(wi[i]), chan);
+            wi_set_channel(wi[i], G.channel[i]);
+        }
+    }
+    return 0;
+}
+
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
@@ -2820,6 +2892,7 @@ int main( int argc, char *argv[] )
     int num_opts = 0;
     int option = 0;
     int option_index = 0;
+    char ifnam[64];
 
     time_t tt1, tt2, tt3, start_time;
 
@@ -2879,6 +2952,7 @@ int main( int argc, char *argv[] )
     G.asso_client  =  0;
     G.update_s     =  0;
     memset(G.sharedkey, '\x00', 512*3);
+    memset(G.message, '\x00', sizeof(G.message));
 
     gettimeofday( &tv0, NULL );
 
@@ -3229,8 +3303,6 @@ usage:
 	     * problems.  -sorbo
 	     */
 	    for (i = 0; i < cards; i++) {
-	    	char ifnam[64];
-
 		strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam)-1);
 		ifnam[sizeof(ifnam)-1] = 0;
 
@@ -3352,6 +3424,11 @@ usage:
         {
             gettimeofday( &tv3, NULL );
             update_rx_quality( );
+            check_monitor(wi, fd_raw, &fdh, cards);
+            if(G.singlechan)
+            {
+                check_channel(wi, cards);
+            }
         }
 
         /* capture one packet */
@@ -3423,8 +3500,27 @@ usage:
                 memset(buffer, 0, sizeof(buffer));
 		h80211 = buffer;
 		if ((caplen = wi_read(wi[i], h80211, sizeof(buffer), &ri)) == -1) {
-		    perror( "read failed" );
-		    return 1;
+                    memset(G.message, '\x00', sizeof(G.message));
+                    snprintf(G.message, sizeof(G.message), "][ interface %s down ", wi_get_ifname(wi[i]));
+
+                    //reopen in monitor mode
+
+                    strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam)-1);
+                    ifnam[sizeof(ifnam)-1] = 0;
+
+                    wi_close(wi[i]);
+                    wi[i] = wi_open(ifnam);
+                    if (!wi[i]) {
+                        printf("Can't reopen %s\n", ifnam);
+                        exit(1);
+                    }
+
+                    fd_raw[i] = wi_fd(wi[i]);
+                    if (fd_raw[i] > fdh)
+                        fdh = fd_raw[i];
+
+                    break;
+// 		    return 1;
 		}
 		power = ri.ri_power;
 
