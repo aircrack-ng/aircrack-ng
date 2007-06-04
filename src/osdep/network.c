@@ -40,6 +40,14 @@ int net_send(int s, int command, void *arg, int len)
         struct timeval tv;
 	struct net_hdr nh;
         fd_set fds;
+	char* buffer;
+
+	buffer = (char*) malloc(sizeof(nh) + len);
+	if(buffer == NULL)
+	{
+		perror("malloc");
+		return -1;
+	}
 
         FD_ZERO(&fds);
         FD_SET(s, &fds);
@@ -51,24 +59,22 @@ int net_send(int s, int command, void *arg, int len)
 	nh.nh_type	= command;
 	nh.nh_len	= htonl(len);
 
-        if( select(s+1, NULL, &fds, NULL, &tv) != 1)
-            return -1;
-	if (send(s, &nh, sizeof(nh), 0) != sizeof(nh))
-            return -1;
-
-	if (len == 0)
-            return 0;
-
-        FD_ZERO(&fds);
-        FD_SET(s, &fds);
-
-        tv.tv_sec=0;
-        tv.tv_usec=10;
+	memcpy(buffer, &nh, sizeof(nh));
+	if(len != 0)
+		memcpy(buffer + sizeof(nh), arg, len);
 
         if( select(s+1, NULL, &fds, NULL, &tv) != 1)
-            return -1;
-	if (send(s, arg, len, 0) != len)
-            return -1;
+	{
+		free(buffer);
+        	return -1;
+	}
+	if (send(s, buffer, sizeof(nh)+len, 0) != (signed)(sizeof(nh)+len))
+	{
+		free(buffer);
+        	return -1;
+	}
+
+	free(buffer);
 
 	return 0;
 }

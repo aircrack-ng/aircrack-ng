@@ -52,13 +52,13 @@ struct priv_fbsd {
 /* from ifconfig */
 static __inline int
 mapgsm(u_int freq, u_int flags)
-{       
+{
         freq *= 10;
         if (flags & IEEE80211_CHAN_QUARTER)
                 freq += 5;
         else if (flags & IEEE80211_CHAN_HALF)
                 freq += 10;
-        else    
+        else
                 freq += 20;
         /* NB: there is no 907/20 wide but leave room */
         return (freq - 906*10) / 5;
@@ -75,7 +75,7 @@ mappsb(u_int freq)
  */
 static u_int
 ieee80211_mhz2ieee(u_int freq, u_int flags)
-{       
+{
         if ((flags & IEEE80211_CHAN_GSM) || (907 <= freq && freq <= 922))
                 return mapgsm(freq, flags);
         if (freq == 2484)
@@ -87,7 +87,7 @@ ieee80211_mhz2ieee(u_int freq, u_int flags)
                         return mappsb(freq);
                 else if (freq > 4900)
                         return (freq - 4000) / 5;
-                else    
+                else
                         return 15 + ((freq - 2512) / 20);
         }
         return (freq - 5000) / 5;
@@ -107,7 +107,7 @@ static void get_radiotap_info(struct priv_fbsd *pf,
 	/* reset control info */
 	if (ri)
 		memset(ri, 0, sizeof(*ri));
-       
+
        	/* get info */
 	present = le32toh(rth->it_present);
 	for (i = IEEE80211_RADIOTAP_TSFT; i <= IEEE80211_RADIOTAP_EXT; i++) {
@@ -125,7 +125,7 @@ static void get_radiotap_info(struct priv_fbsd *pf,
 		case IEEE80211_RADIOTAP_RATE:
 			body += sizeof(uint8_t);
 			break;
-		
+
 		case IEEE80211_RADIOTAP_CHANNEL:
 			if (ri) {
 				uint16_t *p = (uint16_t*) body;
@@ -216,7 +216,7 @@ static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
 	get_radiotap_info(pf, rth, plen, ri);
         *plen -= rth->it_len;
 	assert(*plen > 0);
-       
+
        	/* data */
 	ptr = (char*)rth + rth->it_len;
 
@@ -461,15 +461,21 @@ static int fbsd_get_mac(struct wif *wi, unsigned char *mac)
 	return rc;
 }
 
+static int fbsd_get_monitor(struct wif *wi)
+{
+    /* XXX */
+    return 0;
+}
+
 static int fbsd_set_mac(struct wif *wi, unsigned char *mac)
 {
 	struct priv_fbsd *priv = wi_priv(wi);
 	struct ifreq *ifr = &priv->pf_ifr;
-	
+
 	ifr->ifr_addr.sa_family = AF_LINK;
 	ifr->ifr_addr.sa_len = 6;
 	memcpy(ifr->ifr_addr.sa_data, mac, 6);
-	
+
 	return ioctl(priv->pf_s, SIOCSIFLLADDR, ifr);
 }
 
@@ -491,6 +497,7 @@ static struct wif *fbsd_open(char *iface)
 	wi->wi_fd		= fbsd_fd;
 	wi->wi_get_mac		= fbsd_get_mac;
 	wi->wi_set_mac		= fbsd_set_mac;
+        wi->wi_get_monitor      = fbsd_get_monitor;
 
 	/* setup iface */
 	fd = do_fbsd_open(wi, iface);

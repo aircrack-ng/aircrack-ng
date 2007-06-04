@@ -38,6 +38,7 @@ struct wif {
 	int	(*wi_fd)(struct wif *wi);
 	int	(*wi_get_mac)(struct wif *wi, unsigned char *mac);
 	int	(*wi_set_mac)(struct wif *wi, unsigned char *mac);
+        int     (*wi_get_monitor)(struct wif *wi);
 
         void	*wi_priv;
         char	wi_interface[MAX_IFACE_NAME];
@@ -55,6 +56,7 @@ extern void wi_close(struct wif *wi);
 extern char *wi_get_ifname(struct wif *wi);
 extern int wi_get_mac(struct wif *wi, unsigned char *mac);
 extern int wi_set_mac(struct wif *wi, unsigned char *mac);
+extern int wi_get_monitor(struct wif *wi);
 
 /* wi_open_osdep should determine the type of card and setup the wif structure
  * appropriately.  There is one per OS.  Called by wi_open.

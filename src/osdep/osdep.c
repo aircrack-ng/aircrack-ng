@@ -37,6 +37,12 @@ int wi_get_channel(struct wif *wi)
         return wi->wi_get_channel(wi);
 }
 
+int wi_get_monitor(struct wif *wi)
+{
+        assert(wi->wi_get_monitor);
+        return wi->wi_get_monitor(wi);
+}
+
 char *wi_get_ifname(struct wif *wi)
 {
         return wi->wi_interface;

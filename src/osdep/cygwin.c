@@ -157,7 +157,7 @@ int cygwin_read_reader(int fd, int plen, void *dst, int len)
 
 		if (net_read_exact(fd, lame, rd) == -1)
 			return -1;
-		
+
 		plen -= rd;
 
 		assert(plen >= 0);
@@ -200,7 +200,7 @@ static void do_free(struct wif *wi)
 	/* wait for reader */
 	if (pc->pc_running == 1) {
 		pc->pc_running = 0;
-		
+
 		while ((pc->pc_running != -1) && tries--)
 			sleep(1);
 	}
@@ -247,6 +247,11 @@ static int cygwin_set_mac(struct wif *wi, unsigned char *mac)
 	struct priv_cygwin *pc = wi_priv(wi);
 
 	return pc->pc_set_mac(mac);
+}
+
+static int cygwin_get_monitor(struct wif *wi)
+{
+    return 0;
 }
 
 static void *cygwin_reader(void *arg)
@@ -298,6 +303,7 @@ static struct wif *cygwin_open(char *iface)
 	wi->wi_fd		= cygwin_fd;
 	wi->wi_get_mac		= cygwin_get_mac;
 	wi->wi_set_mac		= cygwin_set_mac;
+        wi->wi_get_monitor      = cygwin_get_monitor;
 
 	/* setup iface */
 	if (do_cygwin_open(wi, iface) == -1)
@@ -306,7 +312,7 @@ static struct wif *cygwin_open(char *iface)
 	/* setup private state */
 	priv = wi_priv(wi);
 	priv->pc_wi = wi;
-	
+
 	/* setup reader */
 	if (pipe(priv->pc_pipe) == -1)
 		goto err;

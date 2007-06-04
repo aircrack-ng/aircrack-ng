@@ -198,9 +198,10 @@ static int linux_get_channel(struct wif *wi)
         return( -1 );
     }
 
-    if(wrq.u.freq.m > 1000)
+    if(wrq.u.freq.m > 100000000)
         return ((wrq.u.freq.m - 241200000)/500000)+1;
-
+    else if(wrq.u.freq.m > 1000000)
+        return ((wrq.u.freq.m - 2412000)/5000)+1;
     return wrq.u.freq.m;
 }
 
@@ -485,6 +486,54 @@ static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
     return 0;
 }
 
+int linux_get_monitor(struct wif *wi)
+{
+    struct ifreq ifr;
+    struct iwreq wrq;
+
+    /* find the interface index */
+
+    memset( &ifr, 0, sizeof( ifr ) );
+    strncpy( ifr.ifr_name, wi_get_ifname(wi), sizeof( ifr.ifr_name ) - 1 );
+
+//     if( ioctl( fd, SIOCGIFINDEX, &ifr ) < 0 )
+//     {
+//         printf("Interface %s: \n", iface);
+//         perror( "ioctl(SIOCGIFINDEX) failed" );
+//         return( 1 );
+//     }
+
+    /* lookup the hardware type */
+
+    if( ioctl( wi_fd(wi), SIOCGIFHWADDR, &ifr ) < 0 )
+    {
+        printf("Interface %s: \n", wi_get_ifname(wi));
+        perror( "ioctl(SIOCGIFHWADDR) failed" );
+        return( 1 );
+    }
+
+    /* lookup iw mode */
+    memset( &wrq, 0, sizeof( struct iwreq ) );
+    strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+
+    if( ioctl( wi_fd(wi), SIOCGIWMODE, &wrq ) < 0 )
+    {
+        /* most probably not supported (ie for rtap ipw interface) *
+         * so just assume its correctly set...                     */
+        wrq.u.mode = IW_MODE_MONITOR;
+    }
+
+    if( ( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
+          ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
+          ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL) ||
+        ( wrq.u.mode != IW_MODE_MONITOR ) )
+    {
+        return( 1 );
+    }
+
+    return( 0 );
+}
+
 int set_monitor( struct priv_linux *dev, char *iface, int fd )
 {
     int pid, status;
@@ -577,6 +626,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
 		   uchar *mac)
 {
     struct ifreq ifr;
+    struct iwreq wrq;
     struct packet_mreq mr;
     struct sockaddr_ll sll;
 
@@ -610,9 +660,21 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
         return( 1 );
     }
 
-    if( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
-        ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
-        ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL)
+    /* lookup iw mode */
+    memset( &wrq, 0, sizeof( struct iwreq ) );
+    strncpy( wrq.ifr_name, iface, IFNAMSIZ );
+
+    if( ioctl( fd, SIOCGIWMODE, &wrq ) < 0 )
+    {
+        /* most probably not supported (ie for rtap ipw interface) *
+         * so just assume its correctly set...                     */
+        wrq.u.mode = IW_MODE_MONITOR;
+    }
+
+    if( ( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
+          ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
+          ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL) ||
+        ( wrq.u.mode != IW_MODE_MONITOR) )
     {
         if (set_monitor( dev, iface, fd ))
         {
@@ -1132,6 +1194,7 @@ static struct wif *linux_open(char *iface)
 	wi->wi_fd		= linux_fd;
 	wi->wi_get_mac		= linux_get_mac;
 	wi->wi_set_mac		= linux_set_mac;
+        wi->wi_get_monitor      = linux_get_monitor;
 
 	if (do_linux_open(wi, iface)) {
 		do_free(wi);
