@@ -1,13 +1,18 @@
 Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? ????:
 * airodump-ng: Fixed frame length < 10bytes bug
 * airserv-ng: server for rx/tx
+* aireplay-ng: Added TCP connection to --test
+* Auto-creation of rtap interface if it doesn't exist (ipw2200)
+* Using OpenSSL instead of build-in crypto
 * Added library rx/tx support
 
 Version 0.9.1 (changes from aircrack-ng 0.9) - Released ?? ??? 2007:
 * airodump-ng: wlan-ng driver now works again.
 * airodump-ng: Fixed IP address when writing to CSV file
 * aircrack-ng: Fixed WPA cracking on SMP computers
+* airmon-ng: Fixed madwifi-ng wifiX detection (due to translation in ifconfig)
 * patches: Added ACX injection patch
+* patches: Updated rtl8187 patch for 2.6.21
 
 Version 0.9 (changes from aircrack-ng 0.8) - Released 13 May 2007:
 * aireplay-ng: Added new 'attack': injection test (--test)
