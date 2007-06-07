@@ -1,0 +1,535 @@
+#!/bin/bash
+
+USERID=""
+
+#run as root?
+
+if [ x"`which id 2> /dev/null`" != "x" ]
+then
+	USERID="`id -u 2> /dev/null`"
+fi
+
+if [ x$USERID = "x" -a x$UID != "x" ]
+then
+	USERID=$UID
+fi
+
+if [ x$USERID != "x" -a x$USERID != "x0" ]
+then
+	echo Run it as root ; exit ;
+fi
+
+#getting commands
+IWCONFIG=`which iwconfig 2>/dev/null`
+MODPROBE=`which modprobe 2>/dev/null`
+RMMOD=`which rmmod 2>/dev/null`
+PATCH=`which patch 2>/dev/null`
+WGET=`which wget 2>/dev/null`
+MAKE=`which make 2>/dev/null`
+GCC=`which gcc 2>/dev/null`
+TAR=`which tar 2>/dev/null`
+
+#global variables
+KVER=`uname -r`
+KMAJOR=`echo $KVER | sed 's/^\([0-9]\)\..*$/\1/'`
+KMINOR=`echo $KVER | sed 's/^[0-9]\.\([0-9]\)\..*$/\1/'`
+KPATCH=`echo $KVER | sed 's/^[0-9]\.[0-9]\.\([0-9]*\).*$/\1/'`
+
+D_DIR="/usr/src/drivers"
+
+YES=1
+NO=0
+ERROR=-1
+
+
+#drivers
+#DCOUNT = Number of known drivers
+#DNAME[x] = Driver name to be displayed
+#DMODULE[x] = Main module name to recognise installed/loaded status (complete name without trailing ".ko")
+#DCONFIG[x] = Configure variable in kernel config file
+#DMODULES[x] = All modules used by the driver (complete name without trailing ".ko")
+#DINSTALL[x] = Function to d/l, patch and install the driver
+#
+
+DCOUNT=17
+
+DNAME[0]="ACX100/111"
+DMODULE[0]="acx"
+DCONFIG[0]=""
+DMODULES[0]="acx"
+DINSTALL[0]="install_acx"
+
+DNAME[1]="Broadcom 4300"
+DMODULE[1]="bcm43xx"
+DCONFIG[1]="CONFIG_BCM43XX="
+DMODULES[1]="bcm43xx"
+DINSTALL[1]="install_bcm43xx"
+
+DNAME[2]="HostAP"
+DMODULE[2]="hostap"
+DCONFIG[2]="CONFIG_HOSTAP="
+DMODULES[2]="hostap_pci hostap_plx hostap_plc hostap"
+DINSTALL[2]="install_hostap"
+
+DNAME[3]="Intel Pro Wireless 2100 B"
+DMODULE[3]="ipw2100"
+DCONFIG[3]="CONFIG_IPW2100="
+DMODULES[3]="ipw2100"
+DINSTALL[3]="install_ipw2100"
+
+DNAME[4]="Intel Pro Wireless 2200 B/G"
+DMODULE[4]="ipw2200"
+DCONFIG[4]="CONFIG_IPW2200="
+DMODULES[4]="ipw2100"
+DINSTALL[4]="install_ipw2100"
+
+DNAME[5]="Intel Pro Wireless 3945 A/B/G"
+DMODULE[5]="ipw3945"
+DCONFIG[5]=""
+DMODULES[5]="ipw3945"
+DINSTALL[5]="install_ipw2100"
+
+DNAME[6]="Madwifi[-ng]"
+DMODULE[6]="ath_pci"
+DCONFIG[6]=""
+DMODULES[6]="wlan_wep ath_rate_sample ath_rate_onoe ath_pci wlan ath_hal ath_rate_amrr"
+DINSTALL[6]="install_madwifi_ng"
+
+DNAME[7]="Prism54"
+DMODULE[7]="prism54"
+DCONFIG[7]="CONFIG_PRISM54="
+DMODULES[7]="prism54"
+DINSTALL[7]="install_prism54"
+
+DNAME[8]="Realtek rtl8180"
+DMODULE[8]="r818x"
+DCONFIG[8]=""
+DMODULES[8]="r818x"
+DINSTALL[8]="install_rtl818x"
+
+DNAME[9]="Realtek rtl8187"
+DMODULE[9]="r8187"
+DCONFIG[9]=""
+DMODULES[9]="r8187"
+DINSTALL[9]="install_rtl8187"
+
+DNAME[10]="Ralink rt2500"
+DMODULE[10]="rt2500"
+DCONFIG[10]=""
+DMODULES[10]="rt2500"
+DINSTALL[10]="install_rt2500"
+
+DNAME[11]="Ralink rt2570"
+DMODULE[11]="rt2570"
+DCONFIG[11]=""
+DMODULES[11]="rt2570"
+DINSTALL[11]="install_rt2570"
+
+DNAME[12]="Ralink rt61"
+DMODULE[12]="rt61"
+DCONFIG[12]=""
+DMODULES[12]="rt61"
+DINSTALL[12]="install_rt61"
+
+DNAME[13]="Ralink rt73"
+DMODULE[13]="rt73"
+DCONFIG[13]=""
+DMODULES[13]="rt73"
+DINSTALL[13]="install_rt73"
+
+DNAME[14]="WLAN-NG"
+DMODULE[14]="prism2_cs"
+DCONFIG[14]=""
+DMODULES[14]="prism2_pci prism2_usb prism2_plx prism2_cs p80211"
+DINSTALL[14]="install_wlanng"
+
+DNAME[15]="ZyDAS 1211"
+DMODULE[15]="zd1211"
+DCONFIG[15]=""
+DMODULES[15]="zd1211"
+DINSTALL[15]="install_zd1211"
+
+DNAME[16]="ZyDAS 1211rw"
+DMODULE[16]="zd1211rw"
+DCONFIG[16]="CONFIG_ZD1211RW="
+DMODULES[16]="zd1211rw"
+DINSTALL[16]="install_zd1211rw"
+#END drivers
+
+#install scripts
+install_acx() {
+    mkdir -p "$D_DIR/acx"
+    cd "$D_DIR/acx"
+
+    rmmod acx 2>/dev/null
+    wget http://www.cmartin.tk/acx/acx-20070101.tar.bz2
+    tar -xjf acx-20070101.tar.bz2
+    cd acx-20070101
+    wget http://patches.aircrack-ng.org/acx-20070101.patch
+    patch -Np1 -i acx-20070101.patch
+    make -C /lib/modules/`uname -r`/build/ M=`pwd` modules
+#TODO:INSTALL
+#    make -C /lib/modules/`uname -r`/build/ M=`pwd` modules_install
+
+    return $YES
+}
+#END install scripts
+
+isInstalled() {
+    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+    if [ x"`$MODPROBE -l | grep ${DMODULE[$1]}"\.ko"`" != x ]
+    then
+        return $YES
+    else
+        return $NO
+    fi
+}
+
+isLoaded() {
+    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+    if [ x"`lsmod | grep ${DMODULE[$1]}" "`" != x ]
+    then
+        return $YES
+    else
+        return $NO
+    fi
+}
+
+isInKernel() {
+    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+    if [ x${DCONFIG[$1]} != x ]
+    then
+        if [ x"`grep ${DCONFIG[$1]}"y" "/lib/modules/"$KVER"/build/.config"`" != x ]
+        then
+            return $YES
+        else
+            return $NO
+        fi
+    else
+        return $NO
+    fi
+}
+
+listInstalledDrivers() {
+    echo "Found following drivers installed:"
+    i=0
+    while [ $i -lt $DCOUNT ]
+    do
+        isInstalled $i
+        if [ $? -eq $YES ]
+        then
+            echo $i. ${DNAME[$i]}
+        fi
+        i=$(($i+1))
+    done
+
+}
+
+listLoadedDrivers() {
+    echo "Found following drivers loaded (as module):"
+    i=0
+    while [ $i -lt $DCOUNT ]
+    do
+        isLoaded $i
+        if [ $? -eq $YES ]
+        then
+            echo $i. ${DNAME[$i]}
+        fi
+        i=$(($i+1))
+    done
+}
+
+listKernelDrivers() {
+    echo "Found following drivers in the Kernel:"
+    i=0
+    while [ $i -lt $DCOUNT ]
+    do
+        isInKernel $i
+        if [ $? -eq $YES ]
+        then
+            echo $i. ${DNAME[$i]}
+        fi
+        i=$(($i+1))
+    done
+}
+
+listSupportedDrivers() {
+    echo "Following drivers are supported:"
+    i=0
+    while [ $i -lt $DCOUNT ]
+    do
+        echo $i. ${DNAME[$i]}
+        i=$(($i+1))
+    done
+}
+
+unloadDriver() {
+    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+    isLoaded $1
+    if [ $? -eq $NO ]
+    then
+        echo "Driver isn't loaded."
+        return $NO
+    fi
+
+    last=200
+    current=0
+
+    for i in ${DMODULES[$1]}
+    do
+        if [ x"`lsmod | grep $i" "`" != x ]
+        then
+            current=$(($current+1))
+        fi
+    done
+
+    while [ $current -lt $last -a $current -gt 0 ]
+    do
+        last=$current
+        current=0
+        for i in ${DMODULES[$1]}
+        do
+            rmmod $i 2>/dev/null
+            if [ x"`lsmod | grep $i" "`" != x ]
+            then
+                current=$(($current+1))
+            fi
+        done
+    done
+
+    if [ $current -eq 0 ]
+    then
+        return $YES
+    else
+        return $NO
+    fi
+}
+
+loadDriver() {
+    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+    isLoaded $1
+    if [ $? -eq $YES ]
+    then
+        echo "Driver is already loaded."
+        return $NO
+    fi
+
+    for i in ${DMODULES[$1]}
+    do
+        $MODPROBE $i
+    done
+
+    for i in ${DMODULES[$1]}
+    do
+        if [ x"`lsmod | grep $i" "`" == x ]
+        then
+            return $NO
+        fi
+    done
+
+    return $YES
+}
+
+installDriver() {
+#check if argument is out of range
+    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+#check if atleast kernel headers are installed
+    if [ ! -f "/lib/modules/$KVER/build/.config" ]
+    then
+        echo "Kernel headers missing!"
+        return $ERROR
+    fi
+
+#check if GCC is in path
+    if [ x$GCC == x ]
+    then
+        echo "GCC not installed!"
+        return $ERROR
+    fi
+
+#check if gcc version matches the kernel gcc version
+    ret=`cat /proc/version | grep "`gcc --version | head -n 1 | sed 's/^[^ ]* [^ ]* \([2-4]..*\)$/\1/'`"`
+
+    if [ x"$ret" == x ]
+    then
+        echo "Your current GCC version doesn't match the version your kernel was compiled with."
+        echo "The build modules Will most probably not load into the running kernel."
+    fi
+
+#run the custom installscript
+    ${DINSTALL[$1]}
+}
+
+removeDriver() {
+#check if argument is out of range
+    if [ "$1" -lt 0 -o "$1" -ge "$DCOUNT" ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+#check if its in-kernel
+    isInKernel $1
+    if [ $? -eq $YES ]
+    then
+        echo "Cannot remove drivers build into the kernel!"
+        exit
+    fi
+
+#check if its installed
+    isInstalled $1
+    if [ $? -eq $NO ]
+    then
+        echo "This driver isn't installed and thus cannot be removed."
+        exit
+    fi
+
+    echo "Starting to remove \"${DNAME[$1]}\" driver"
+
+#check if its loaded and unload befor trying to remove
+    isLoaded $1
+    if [ $? -eq $YES ]
+    then
+        unloadDriver $1
+        if [ $? -eq $NO -o $? -eq $ERROR ]
+        then
+            echo "Couldn't unload the driver."
+        fi
+    fi
+
+#loop through the modules, find and rm them
+    for i in ${DMODULES[$1]}
+    do
+        rm -i "`$MODPROBE -l | grep $i\.ko`"
+    done
+}
+
+usage() {
+    printf "Found kernel: $KMAJOR.$KMINOR.$KPATCH\n"
+    printf "usage: `basename $0` <command> [drivernumber]\n"
+    printf "\tvalid commands:\n"
+    printf "\t\tsupported\t- lists all supported drivers\n"
+    printf "\t\tkernel\t\t- lists all in-kernel drivers\n"
+    printf "\t\tinstalled\t- lists all installed drivers\n"
+    printf "\t\tloaded\t\t- lists all loaded drivers\n"
+    printf "\t\t----------------------------------------------\n"
+    printf "\t\tload <drivernum>\t- loads a driver\n"
+    printf "\t\tunload <drivernum>\t- unloads a driver\n"
+    printf "\t\tinstall <drivernum>\t- installs a driver\n"
+    printf "\t\tremove <drivernum>\t- removes a driver\n"
+    echo
+    exit
+}
+
+#checking main argument(s)
+if [ x"$1" == x ]
+then
+    usage
+fi
+
+if [ x"$1" == "xsupported" ]
+then
+    listSupportedDrivers
+    exit
+fi
+
+if [ x"$1" == "xinstalled" ]
+then
+    listInstalledDrivers
+    exit
+fi
+
+if [ x"$1" == "xloaded" ]
+then
+    listLoadedDrivers
+    exit
+fi
+
+if [ x"$1" == "xkernel" ]
+then
+    listKernelDrivers
+    exit
+fi
+
+if [ x"$1" == "xremove" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "You need to specify a drivernumber."
+        exit
+    fi
+    removeDriver $2
+    if [ $? -eq $YES ]
+    then
+        echo "Removed driver \"${DNAME[$2]}\" successfully"
+    else
+        echo "Failed to remove the driver."
+    fi
+    exit
+fi
+
+if [ x"$1" == "xload" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "You need to specify a drivernumber."
+        exit
+    fi
+    loadDriver $2
+    if [ $? -eq $YES ]
+    then
+        echo "Loaded driver \"${DNAME[$2]}\" successfully"
+    else
+        echo "Failed to load the driver."
+    fi
+    exit
+fi
+
+if [ x"$1" == "xunload" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "You need to specify a drivernumber."
+        exit
+    fi
+    unloadDriver $2
+    if [ $? -eq $YES ]
+    then
+        echo "Unloaded driver \"${DNAME[$2]}\" successfully"
+    else
+        echo "Failed to unload the driver."
+    fi
+    exit
+fi
+
+usage
