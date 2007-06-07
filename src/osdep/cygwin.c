@@ -251,7 +251,9 @@ static int cygwin_set_mac(struct wif *wi, unsigned char *mac)
 
 static int cygwin_get_monitor(struct wif *wi)
 {
-    return 0;
+	if (wi) {} /* XXX unused */
+
+	return 0;
 }
 
 static void *cygwin_reader(void *arg)

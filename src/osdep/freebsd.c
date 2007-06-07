@@ -463,8 +463,10 @@ static int fbsd_get_mac(struct wif *wi, unsigned char *mac)
 
 static int fbsd_get_monitor(struct wif *wi)
 {
-    /* XXX */
-    return 0;
+	if (wi) {} /* XXX unused */
+
+	/* XXX */
+	return 0;
 }
 
 static int fbsd_set_mac(struct wif *wi, unsigned char *mac)
