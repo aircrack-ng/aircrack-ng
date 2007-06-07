@@ -1,5 +1,9 @@
+ifndef TOOL_PREFIX
 TOOL_PREFIX	=
+endif
+ifndef OS
 OS		= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g')
+endif
 
 ifeq ($(OS), cygwin)
 EXE		= .exe
