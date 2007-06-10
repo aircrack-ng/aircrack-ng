@@ -1,7 +1,7 @@
 ROOT		= .
 include		$(ROOT)/common.mak
 
-SCRIPTS         = airmon-ng
+SCRIPTS         = airmon-ng airdriver-ng
 DOCFILES        = ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 
 
@@ -34,7 +34,7 @@ uninstall:
 	-rm -f $(mandir)/packetforge-ng.1
 	-rm -fr $(docdir)
 
-strip: 
+strip:
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test $(@)
 

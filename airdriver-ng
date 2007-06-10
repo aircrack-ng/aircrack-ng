@@ -20,10 +20,13 @@ then
 fi
 
 #getting commands
+LSPCMCIA=`which lspcmcia 2>/dev/null`
 IWCONFIG=`which iwconfig 2>/dev/null`
 MODPROBE=`which modprobe 2>/dev/null`
 RMMOD=`which rmmod 2>/dev/null`
 PATCH=`which patch 2>/dev/null`
+LSPCI=`which lspci 2>/dev/null`
+LSUSB=`which lsusb 2>/dev/null`
 WGET=`which wget 2>/dev/null`
 MAKE=`which make 2>/dev/null`
 GCC=`which gcc 2>/dev/null`
@@ -49,7 +52,8 @@ ERROR=-1
 #DCONFIG[x] = Configure variable in kernel config file
 #DMODULES[x] = All modules used by the driver (complete name without trailing ".ko")
 #DINSTALL[x] = Function to d/l, patch and install the driver
-#
+#DSITE[x] = Website with more information about the driver
+#DETECT_X[x] = string to grep for while detecting devices: lsusb -v, lspci and lspcmcia -v
 
 DCOUNT=17
 
@@ -58,118 +62,223 @@ DMODULE[0]="acx"
 DCONFIG[0]=""
 DMODULES[0]="acx"
 DINSTALL[0]="install_acx"
+DSITE[0]="http://www.aircrack-ng.org/doku.php?id=acx"
+DETECT_USB[0]=""
+DETECT_PCI[0]="ACX"
+DETECT_CS[0]="ACX"
 
 DNAME[1]="Broadcom 4300"
 DMODULE[1]="bcm43xx"
 DCONFIG[1]="CONFIG_BCM43XX="
 DMODULES[1]="bcm43xx"
 DINSTALL[1]="install_bcm43xx"
+DSITE[1]="http://www.aircrack-ng.org/doku.php?id=broadcom"
+DETECT_USB[1]=""
+DETECT_PCI[1]="BCM43"
+DETECT_CS[1]="BCM43"
 
 DNAME[2]="HostAP"
 DMODULE[2]="hostap"
 DCONFIG[2]="CONFIG_HOSTAP="
 DMODULES[2]="hostap_pci hostap_plx hostap_plc hostap"
 DINSTALL[2]="install_hostap"
+DSITE[2]="http://www.aircrack-ng.org/doku.php?id=hostap"
+DETECT_USB[2]="prism2"
+DETECT_PCI[2]="Intersil\|Prism"
+DETECT_CS[2]="Wireless LAN"
 
 DNAME[3]="Intel Pro Wireless 2100 B"
 DMODULE[3]="ipw2100"
 DCONFIG[3]="CONFIG_IPW2100="
 DMODULES[3]="ipw2100"
 DINSTALL[3]="install_ipw2100"
+DSITE[3]=""
+DETECT_USB[3]=""
+DETECT_PCI[3]="2100"
+DETECT_CS[3]=""
 
 DNAME[4]="Intel Pro Wireless 2200 B/G"
 DMODULE[4]="ipw2200"
 DCONFIG[4]="CONFIG_IPW2200="
-DMODULES[4]="ipw2100"
-DINSTALL[4]="install_ipw2100"
+DMODULES[4]="ipw2200"
+DINSTALL[4]="install_ipw2200"
+DSITE[4]="http://www.aircrack-ng.org/doku.php?id=ipw2200"
+DETECT_USB[4]=""
+DETECT_PCI[4]="2200BG"
+DETECT_CS[4]=""
 
 DNAME[5]="Intel Pro Wireless 3945 A/B/G"
 DMODULE[5]="ipw3945"
 DCONFIG[5]=""
 DMODULES[5]="ipw3945"
-DINSTALL[5]="install_ipw2100"
+DINSTALL[5]="install_ipw3945"
+DSITE[5]="http://www.aircrack-ng.org/doku.php?id=ipw3945"
+DETECT_USB[5]=""
+DETECT_PCI[5]="3945"
+DETECT_CS[5]=""
 
 DNAME[6]="Madwifi[-ng]"
 DMODULE[6]="ath_pci"
 DCONFIG[6]=""
 DMODULES[6]="wlan_wep ath_rate_sample ath_rate_onoe ath_pci wlan ath_hal ath_rate_amrr"
 DINSTALL[6]="install_madwifi_ng"
+DSITE[6]="http://www.aircrack-ng.org/doku.php?id=madwifi-ng"
+DETECT_USB[6]=""
+DETECT_PCI[6]="Atheros"
+DETECT_CS[6]="-i atheros"
 
 DNAME[7]="Prism54"
 DMODULE[7]="prism54"
 DCONFIG[7]="CONFIG_PRISM54="
 DMODULES[7]="prism54"
 DINSTALL[7]="install_prism54"
+DSITE[7]="http://www.aircrack-ng.org/doku.php?id=prism54"
+DETECT_USB[7]=""
+DETECT_PCI[7]="Prism Javelin\|Prism Xbow\|Prism GT\|Prism Duette"
+DETECT_CS[7]=""
 
 DNAME[8]="Realtek rtl8180"
 DMODULE[8]="r818x"
 DCONFIG[8]=""
 DMODULES[8]="r818x"
 DINSTALL[8]="install_rtl818x"
+DSITE[8]="http://www.aircrack-ng.org/doku.php?id=r8180-sa2400"
+DETECT_USB[8]=""
+DETECT_PCI[8]=""
+DETECT_CS[8]=""
 
 DNAME[9]="Realtek rtl8187"
 DMODULE[9]="r8187"
 DCONFIG[9]=""
 DMODULES[9]="r8187"
 DINSTALL[9]="install_rtl8187"
+DSITE[9]="http://www.aircrack-ng.org/doku.php?id=r8187"
+DETECT_USB[9]="RTL8187"
+DETECT_PCI[9]=""
+DETECT_CS[9]=""
 
 DNAME[10]="Ralink rt2500"
 DMODULE[10]="rt2500"
 DCONFIG[10]=""
 DMODULES[10]="rt2500"
 DINSTALL[10]="install_rt2500"
+DSITE[10]="http://www.aircrack-ng.org/doku.php?id=rt2500"
+DETECT_USB[10]=""
+DETECT_PCI[10]=""
+DETECT_CS[10]=""
 
 DNAME[11]="Ralink rt2570"
 DMODULE[11]="rt2570"
 DCONFIG[11]=""
 DMODULES[11]="rt2570"
 DINSTALL[11]="install_rt2570"
+DSITE[11]="http://www.aircrack-ng.org/doku.php?id=rt2570"
+DETECT_USB[11]="G122 802.11g rev. B1"
+DETECT_PCI[11]=""
+DETECT_CS[11]=""
 
 DNAME[12]="Ralink rt61"
 DMODULE[12]="rt61"
 DCONFIG[12]=""
 DMODULES[12]="rt61"
 DINSTALL[12]="install_rt61"
+DSITE[12]="http://www.aircrack-ng.org/doku.php?id=rt61"
+DETECT_USB[12]=""
+DETECT_PCI[12]=""
+DETECT_CS[12]=""
 
 DNAME[13]="Ralink rt73"
 DMODULE[13]="rt73"
 DCONFIG[13]=""
 DMODULES[13]="rt73"
 DINSTALL[13]="install_rt73"
+DSITE[13]="http://www.aircrack-ng.org/doku.php?id=rt73"
+DETECT_USB[13]=""
+DETECT_PCI[13]=""
+DETECT_CS[13]=""
 
 DNAME[14]="WLAN-NG"
 DMODULE[14]="prism2_cs"
 DCONFIG[14]=""
 DMODULES[14]="prism2_pci prism2_usb prism2_plx prism2_cs p80211"
 DINSTALL[14]="install_wlanng"
+DSITE[14]="http://www.aircrack-ng.org/doku.php?id=wlan-ng"
+DETECT_USB[14]=""
+DETECT_PCI[14]=""
+DETECT_CS[14]=""
 
 DNAME[15]="ZyDAS 1211"
 DMODULE[15]="zd1211"
 DCONFIG[15]=""
 DMODULES[15]="zd1211"
 DINSTALL[15]="install_zd1211"
+DSITE[15]=""
+DETECT_USB[15]=""
+DETECT_PCI[15]=""
+DETECT_CS[15]=""
 
 DNAME[16]="ZyDAS 1211rw"
 DMODULE[16]="zd1211rw"
 DCONFIG[16]="CONFIG_ZD1211RW="
 DMODULES[16]="zd1211rw"
 DINSTALL[16]="install_zd1211rw"
+DSITE[16]="http://www.aircrack-ng.org/doku.php?id=zd1211rw"
+DETECT_USB[16]=""
+DETECT_PCI[16]=""
+DETECT_CS[16]=""
 #END drivers
 
 #install scripts
+#you're already in the correct dir
+#old modules are unloaded
+# 5 steps: get the source, get the patch, patch, compile, install
 install_acx() {
-    mkdir -p "$D_DIR/acx"
-    cd "$D_DIR/acx"
-
-    rmmod acx 2>/dev/null
-    wget http://www.cmartin.tk/acx/acx-20070101.tar.bz2
+#1 - get then correct source
+    if [ ! -f acx-20070101.tar.bz2 ]
+    then
+        wget http://www.cmartin.tk/acx/acx-20070101.tar.bz2
+    fi
     tar -xjf acx-20070101.tar.bz2
+
+#2 - get the correct patch
+    if [ ! -f acx-20070101.patch ]
+    then
+        wget http://patches.aircrack-ng.org/acx-20070101.patch
+    fi
+
+#3 - patch it
     cd acx-20070101
-    wget http://patches.aircrack-ng.org/acx-20070101.patch
-    patch -Np1 -i acx-20070101.patch
+
+    if [ x"`patch --dry-run -s -Np1 -i ../acx-20070101.patch | grep "FAILED"`" != x ]
+    then
+        patch --dry-run -s -Np1 -i ../acx-20070101.patch
+        echo "Patching failed."
+        return $NO
+    fi
+
+    if [ x"`patch --dry-run -s -Np1 -i ../acx-20070101.patch | grep "Reversed"`" != x ]
+    then
+        patch --dry-run -s -Np1 -i ../acx-20070101.patch
+        echo "Patching failed. Already patched?"
+        return $NO
+    fi
+
+    patch -Np1 -i ../acx-20070101.patch
+
+#4 - compile it
     make -C /lib/modules/`uname -r`/build/ M=`pwd` modules
+    if [ $? != "0" ]
+    then
+        return $NO
+    fi
+
 #TODO:INSTALL
-#    make -C /lib/modules/`uname -r`/build/ M=`pwd` modules_install
+    mkdir -p /lib/modules/$KVER/kernel/drivers/net/wireless/acx/
+    cp acx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/acx/
+    if [ $? != "0" ]
+    then
+        return $NO
+    fi
 
     return $YES
 }
@@ -332,6 +441,20 @@ loadDriver() {
         return $ERROR
     fi
 
+    isInKernel $1
+    if [ $? -eq $YES ]
+    then
+        echo "Cannot load an in-kernel driver."
+        return $NO
+    fi
+
+    isInstalled $1
+    if [ $? -eq $NO ]
+    then
+        echo "Driver is not installed."
+        return $NO
+    fi
+
     isLoaded $1
     if [ $? -eq $YES ]
     then
@@ -341,16 +464,14 @@ loadDriver() {
 
     for i in ${DMODULES[$1]}
     do
-        $MODPROBE $i
+        $MODPROBE $i 2>/dev/null
     done
 
-    for i in ${DMODULES[$1]}
-    do
-        if [ x"`lsmod | grep $i" "`" == x ]
-        then
-            return $NO
-        fi
-    done
+    isLoaded $1
+    if [ $? -eq $NO ]
+    then
+        return $NO
+    fi
 
     return $YES
 }
@@ -371,14 +492,15 @@ installDriver() {
     fi
 
 #check if GCC is in path
-    if [ x$GCC == x ]
+    if [ x"$GCC" == x ]
     then
         echo "GCC not installed!"
         return $ERROR
     fi
 
 #check if gcc version matches the kernel gcc version
-    ret=`cat /proc/version | grep "`gcc --version | head -n 1 | sed 's/^[^ ]* [^ ]* \([2-4]..*\)$/\1/'`"`
+    gccvers="`gcc --version | head -n 1 | sed 's/^[^ ]* [^ ]* \([2-4]..*\)$/\1/'`"
+    ret="`cat /proc/version | grep "$gccvers"`"
 
     if [ x"$ret" == x ]
     then
@@ -386,8 +508,27 @@ installDriver() {
         echo "The build modules Will most probably not load into the running kernel."
     fi
 
+#unload driver
+    unloadDriver $1
+
+#cd into driver build directory
+    mkdir -p "$D_DIR/${MODULE[$1]}"
+    if [ ! -d "$D_DIR/${MODULE[$1]}" ]
+    then
+        echo "Directory \"$D_DIR/${MODULE[$1]}\" not available."
+        return $ERROR
+    fi
+
+    cd "$D_DIR/${MODULE[$1]}"
+
 #run the custom installscript
     ${DINSTALL[$1]}
+
+    ret=$?
+
+    depmod -ae
+
+    return $ret
 }
 
 removeDriver() {
@@ -432,6 +573,114 @@ removeDriver() {
     do
         rm -i "`$MODPROBE -l | grep $i\.ko`"
     done
+
+    depmod -ae
+
+    return $YES
+}
+
+detectAdapters() {
+    echo
+#usb
+    if [ x"$LSUSB" != x ]
+    then
+        i=0
+        while [ $i -lt $DCOUNT ]
+        do
+            if [ x"${DETECT_USB[$i]}" != x ]
+            then
+                if [ x"`$LSUSB -vvv | grep "${DETECT_USB[$i]}"`" != x ]
+                then
+                    echo "Found \"${DNAME[$i]}\" device: (${DMODULE[$i]})"
+                    echo "`$LSUSB -vvv | grep "${DETECT_USB[$i]}"`"
+                    echo
+                fi
+            fi
+            i=$(($i+1))
+        done
+    fi
+
+#pci
+    if [ x"$LSPCI" != x ]
+    then
+        i=0
+        while [ $i -lt $DCOUNT ]
+        do
+            if [ x"${DETECT_PCI[$i]}" != x ]
+            then
+                if [ x"`$LSPCI | grep "${DETECT_PCI[$i]}"`" != x ]
+                then
+                    echo "Found \"${DNAME[$i]}\" device: (${DMODULE[$i]})"
+                    echo "`$LSPCI -vvv | grep ${DETECT_PCI[$i]}`"
+                    echo
+                fi
+            fi
+            i=$(($i+1))
+        done
+    fi
+
+#pcmcia
+    if [ x"$LSPCMCIA" != x ]
+    then
+        i=0
+        while [ $i -lt $DCOUNT ]
+        do
+            if [ x"${DETECT_CS[$i]}" != x ]
+            then
+                if [ x"`$LSPCMCIA -vvv | grep "${DETECT_CS[$i]}"`" != x ]
+                then
+                    echo "Found \"${DNAME[$i]}\" device: (${DMODULE[$i]})"
+                    echo "`$LSPCMCIA -vvv | grep "${DETECT_CS[$i]}"`"
+                    echo
+                fi
+            fi
+            i=$(($i+1))
+        done
+    fi
+
+#generic
+    GENERIC="wireless\|80211\|80211\.11\|wifi"
+    if [ x"`$LSUSB -vvv | grep -i "$GENERIC"`" != x ]
+    then
+        echo "USB devices (generic detection):"
+        echo "`$LSUSB -vvv | grep -i "$GENERIC"`"
+    fi
+
+    if [ x"`$LSPCI | grep -i "$GENERIC"`" != x ]
+    then
+        echo "PCI devices (generic detection):"
+        echo "`$LSPCI | grep -i "$GENERIC"`"
+    fi
+
+    if [ x"`$LSPCMCIA -vvv | grep -i "$GENERIC"`" != x ]
+    then
+        echo "PCMCIA devices (generic detection):"
+        echo "`$LSPCMCIA -vvv | grep -i "$GENERIC"`"
+    fi
+
+    return $YES
+}
+
+name2num() {
+    if [ x"$1" == x ]
+    then
+        return $ERROR
+    fi
+
+    i=0
+    while [ $i -lt "$DCOUNT" ]
+    do
+        for j in ${DMODULES[$i]}
+        do
+            if [ x"`echo "$1 " | grep -i "$j "`" != x ]
+            then
+                return $i
+            fi
+        done
+        i=$(($i+1))
+    done
+
+    return $NO
 }
 
 usage() {
@@ -442,11 +691,14 @@ usage() {
     printf "\t\tkernel\t\t- lists all in-kernel drivers\n"
     printf "\t\tinstalled\t- lists all installed drivers\n"
     printf "\t\tloaded\t\t- lists all loaded drivers\n"
-    printf "\t\t----------------------------------------------\n"
+    printf "\t\t-----------------------------------------------\n"
     printf "\t\tload <drivernum>\t- loads a driver\n"
     printf "\t\tunload <drivernum>\t- unloads a driver\n"
     printf "\t\tinstall <drivernum>\t- installs a driver\n"
     printf "\t\tremove <drivernum>\t- removes a driver\n"
+    printf "\t\t-----------------------------------------------\n"
+    printf "\t\tdetails <drivernum>\t- prints driver details\n"
+    printf "\t\tdetect\t\t- detects wireless cards\n"
     echo
     exit
 }
@@ -481,6 +733,12 @@ then
     exit
 fi
 
+if [ x"$1" == "xdetect" ]
+then
+    detectAdapters
+    exit
+fi
+
 if [ x"$1" == "xremove" ]
 then
     if [ x$2 == "x" ]
@@ -488,12 +746,73 @@ then
         echo "You need to specify a drivernumber."
         exit
     fi
-    removeDriver $2
+
+    name2num $2
+    num=$?
+    if [ $num -lt 0 ]
+    then
+        echo "Invalid driver!"
+        exit
+    fi
+
+    if [ $num -le 0 ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid driver!"
+            exit
+        fi
+    fi
+
+    echo "Driver \"${DNAME[$num]}\" specified for removing."
+
+    removeDriver $num
     if [ $? -eq $YES ]
     then
-        echo "Removed driver \"${DNAME[$2]}\" successfully"
+        echo "Removed driver \"${DNAME[$num]}\" successfully"
     else
         echo "Failed to remove the driver."
+    fi
+    exit
+fi
+
+if [ x"$1" == "xinstall" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "You need to specify a drivernumber."
+        exit
+    fi
+
+    name2num $2
+    num=$?
+    if [ $num -lt 0 ]
+    then
+        echo "Invalid driver!"
+        exit
+    fi
+
+    if [ $num -le 0 ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid driver!"
+            exit
+        fi
+    fi
+
+    echo "Driver \"${DNAME[$num]}\" specified for installation."
+
+    installDriver $num
+    if [ $? -eq $YES ]
+    then
+        echo "Installed driver \"${DNAME[$num]}\" successfully"
+    else
+        echo "Failed to install the driver."
     fi
     exit
 fi
@@ -505,10 +824,32 @@ then
         echo "You need to specify a drivernumber."
         exit
     fi
-    loadDriver $2
+
+    name2num $2
+    num=$?
+    if [ $num -lt 0 ]
+    then
+        echo "Invalid driver!"
+        exit
+    fi
+
+    if [ $num -le 0 ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid driver!"
+            exit
+        fi
+    fi
+
+    echo "Driver \"${DNAME[$num]}\" specified for loading."
+
+    loadDriver $num
     if [ $? -eq $YES ]
     then
-        echo "Loaded driver \"${DNAME[$2]}\" successfully"
+        echo "Loaded driver \"${DNAME[$num]}\" successfully"
     else
         echo "Failed to load the driver."
     fi
@@ -522,12 +863,119 @@ then
         echo "You need to specify a drivernumber."
         exit
     fi
-    unloadDriver $2
+
+    name2num $2
+    num=$?
+    if [ $num -lt 0 ]
+    then
+        echo "Invalid driver!"
+        exit
+    fi
+
+    if [ $num -le 0 ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid driver!"
+            exit
+        fi
+    fi
+
+    echo "Driver \"${DNAME[$num]}\" specified for unloading."
+
+    unloadDriver $num
     if [ $? -eq $YES ]
     then
-        echo "Unloaded driver \"${DNAME[$2]}\" successfully"
+        echo "Unloaded driver \"${DNAME[$num]}\" successfully"
     else
         echo "Failed to unload the driver."
+    fi
+    exit
+fi
+
+if [ x"$1" == "xdetails" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "You need to specify a driver."
+        exit
+    fi
+
+    name2num $2
+    num=$?
+    if [ $num -lt 0 ]
+    then
+        echo "Invalid driver!"
+        exit
+    fi
+
+    if [ $num -le 0 ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid driver!"
+            exit
+        fi
+    fi
+
+    echo "Driver details for: \"${DNAME[$num]}\""
+    echo
+
+    printf "Compiled into kernel:\t"
+    isInKernel $num
+    if [ $? -eq $YES ]
+    then
+        echo "YES"
+    else
+        echo "No"
+    fi
+
+    printf "Installed:\t\t"
+    isInstalled $num
+    if [ $? -eq $YES ]
+    then
+        echo "YES"
+    else
+        echo "No"
+    fi
+
+    printf "Loaded:\t\t\t"
+    isLoaded $num
+    if [ $? -eq $YES ]
+    then
+        echo "YES"
+    else
+        echo "No"
+    fi
+
+    echo
+    echo "Modules:"
+
+    for i in ${DMODULES[$num]}
+    do
+        echo -n "$i "
+    done
+    echo
+    echo
+
+    echo "Files:"
+    for i in ${DMODULES[$num]}
+    do
+        $MODPROBE -l | grep $i\.ko
+    done
+    echo
+
+    modinfo ${DMODULE[$num]} | grep "^ver\|^depends"
+
+    echo
+    if [ x${DSITE[$num]} != x ]
+    then
+        echo "More infos on:"
+        echo ${DSITE[$num]}
     fi
     exit
 fi
