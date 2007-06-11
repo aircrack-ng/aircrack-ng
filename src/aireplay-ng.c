@@ -1030,8 +1030,11 @@ int do_attack_fake_auth( void )
 //    if(gotit) return -1;
     gotit=0;
 
-    if( essid[0] != '\0' )
+    if( essid[0] != '\0' && opt.r_essid[0] == '\0')
+    {
         memcpy(opt.r_essid, essid, sizeof(opt.r_essid));
+        opt.r_essid[sizeof(opt.r_essid)-1] = '\0';
+    }
 
     if( opt.r_essid[0] == '\0' )
     {
@@ -4648,7 +4651,7 @@ int main( int argc, char *argv[] )
             case 'e' :
 
                 memset(  opt.r_essid, 0, sizeof( opt.r_essid ) );
-                strncpy( opt.r_essid, optarg, sizeof( opt.r_essid ) - 1 );
+                strncpy( opt.r_essid, optarg, sizeof( opt.r_essid )  - 1 );
                 break;
 
             case 'j' :
