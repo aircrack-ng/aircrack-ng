@@ -39,10 +39,11 @@ KMINOR=`echo $KVER | sed 's/^[0-9]\.\([0-9]\)\..*$/\1/'`
 KPATCH=`echo $KVER | sed 's/^[0-9]\.[0-9]\.\([0-9]*\).*$/\1/'`
 
 D_DIR="/usr/src/drivers"
+LOGFILE="/var/log/airdriver"
 
 YES=1
 NO=0
-ERROR=-1
+ERROR=255
 
 
 #drivers
@@ -61,7 +62,20 @@ DNAME[0]="ACX100/111"
 DMODULE[0]="acx"
 DCONFIG[0]=""
 DMODULES[0]="acx"
-DINSTALL[0]="install_acx"
+DI_INIT[0]=""
+DI_DRIVERFILE[0]="acx-20070101.tar.bz2"
+DI_DRIVERPATH1[0]="http://www.cmartin.tk/acx/acx-20070101.tar.bz2"
+DI_DRIVERPATH2[0]=""
+DI_DRIVEREXDIR[0]=""
+DI_DRIVERDIR[0]="acx-20070101"
+DI_PATCHFILE[0]="acx-20070101.patch"
+DI_PATCHPATH1[0]="http://patches.aircrack-ng.org/acx-20070101.patch"
+DI_PATCHPATH2[0]="http://patches.aircrack-ng.org/old/acx-20070101.patch"
+DI_PATCHARG[0]="-p1"
+DI_PRECOMP[0]=""
+DI_COMPILE[0]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[0]} modules"
+DI_INSTALL1[0]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/acx/""
+DI_INSTALL2[0]="cp acx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/acx/"
 DSITE[0]="http://www.aircrack-ng.org/doku.php?id=acx"
 DETECT_USB[0]=""
 DETECT_PCI[0]="ACX"
@@ -71,7 +85,20 @@ DNAME[1]="Broadcom 4300"
 DMODULE[1]="bcm43xx"
 DCONFIG[1]="CONFIG_BCM43XX="
 DMODULES[1]="bcm43xx"
-DINSTALL[1]="install_bcm43xx"
+DI_INIT[1]=""
+DI_DRIVERFILE[1]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVERPATH1[1]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVERPATH2[1]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVEREXDIR[1]="linux-$KMAJOR.$KMINOR.$KPATCH/drivers/net/wireless/bcm43xx"
+DI_DRIVERDIR[1]="bcm43xx"
+DI_PATCHFILE[1]="bcm43xx-injection-linux-2.6.20.patch"
+DI_PATCHPATH1[1]="http://trac.aircrack-ng.org/attachment/ticket/183/bcm43xx-injection-linux-2.6.20.patch?format=raw"
+DI_PATCHPATH2[1]=""
+DI_PATCHARG[1]="-p5"
+DI_PRECOMP[1]=""
+DI_COMPILE[1]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[1]} modules"
+DI_INSTALL1[1]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/bcm43xx/""
+DI_INSTALL2[1]="cp bcm43xx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/bcm43xx/"
 DSITE[1]="http://www.aircrack-ng.org/doku.php?id=broadcom"
 DETECT_USB[1]=""
 DETECT_PCI[1]="BCM43"
@@ -80,8 +107,21 @@ DETECT_CS[1]="BCM43"
 DNAME[2]="HostAP"
 DMODULE[2]="hostap"
 DCONFIG[2]="CONFIG_HOSTAP="
-DMODULES[2]="hostap_pci hostap_plx hostap_plc hostap"
-DINSTALL[2]="install_hostap"
+DMODULES[2]="hostap_pci hostap_plx hostap_cs hostap"
+DI_INIT[2]="install_hostap"
+DI_DRIVERFILE[2]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVERPATH1[2]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVERPATH2[2]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVEREXDIR[2]="linux-$KMAJOR.$KMINOR.$KPATCH/drivers/net/wireless/hostap"
+DI_DRIVERDIR[2]="hostap"
+DI_PATCHFILE[2]="hostap-kernel-$KMAJOR.$KMINOR.$KPATCH.patch"
+DI_PATCHPATH1[2]="http://patches.aircrack-ng.org/hostap-kernel-$KMAJOR.$KMINOR.$KPATCH.patch"
+DI_PATCHPATH2[2]="http://patches.aircrack-ng.org/old/hostap-kernel-$KMAJOR.$KMINOR.$KPATCH.patch"
+DI_PATCHARG[2]="-p5"
+DI_PRECOMP[2]=""
+DI_COMPILE[2]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[2]} modules"
+DI_INSTALL1[2]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/hostap/""
+DI_INSTALL2[2]="cp *.ko /lib/modules/$KVER/kernel/drivers/net/wireless/hostap/"
 DSITE[2]="http://www.aircrack-ng.org/doku.php?id=hostap"
 DETECT_USB[2]="prism2"
 DETECT_PCI[2]="Intersil\|Prism"
@@ -91,7 +131,20 @@ DNAME[3]="Intel Pro Wireless 2100 B"
 DMODULE[3]="ipw2100"
 DCONFIG[3]="CONFIG_IPW2100="
 DMODULES[3]="ipw2100"
-DINSTALL[3]="install_ipw2100"
+DI_INIT[3]=""
+DI_DRIVERFILE[3]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVERPATH1[3]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVERPATH2[3]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVEREXDIR[3]="linux-$KMAJOR.$KMINOR.$KPATCH/drivers/net/wireless"
+DI_DRIVERDIR[3]="ipw2100"
+DI_PATCHFILE[3]=""
+DI_PATCHPATH1[3]=""
+DI_PATCHPATH2[3]=""
+DI_PATCHARG[3]=""
+DI_PRECOMP[3]="ipw2100_precomp"
+DI_COMPILE[3]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[3]} modules"
+DI_INSTALL1[3]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2100/""
+DI_INSTALL2[3]="cp ipw2100.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2100/"
 DSITE[3]=""
 DETECT_USB[3]=""
 DETECT_PCI[3]="2100"
@@ -101,7 +154,20 @@ DNAME[4]="Intel Pro Wireless 2200 B/G"
 DMODULE[4]="ipw2200"
 DCONFIG[4]="CONFIG_IPW2200="
 DMODULES[4]="ipw2200"
-DINSTALL[4]="install_ipw2200"
+DI_INIT[4]="install_ipw2200"
+DI_DRIVERFILE[4]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVERPATH1[4]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVERPATH2[4]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVEREXDIR[4]="linux-$KMAJOR.$KMINOR.$KPATCH/drivers/net/wireless"
+DI_DRIVERDIR[4]="ipw2200"
+DI_PATCHFILE[4]="ipw2200-1.1.4-inject.patch"
+DI_PATCHPATH1[4]="http://patches.aircrack-ng.org/ipw2200-1.1.4-inject.patch"
+DI_PATCHPATH2[4]="http://patches.aircrack-ng.org/old/ipw2200-1.1.4-inject.patch"
+DI_PATCHARG[4]="-p1 -f"
+DI_PRECOMP[4]="ipw2200_precomp"
+DI_COMPILE[4]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[4]} modules"
+DI_INSTALL1[4]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/""
+DI_INSTALL2[4]="cp ipw2200.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/"
 DSITE[4]="http://www.aircrack-ng.org/doku.php?id=ipw2200"
 DETECT_USB[4]=""
 DETECT_PCI[4]="2200BG"
@@ -111,7 +177,20 @@ DNAME[5]="Intel Pro Wireless 3945 A/B/G"
 DMODULE[5]="ipw3945"
 DCONFIG[5]=""
 DMODULES[5]="ipw3945"
-DINSTALL[5]="install_ipw3945"
+DI_INIT[5]=""
+DI_DRIVERFILE[5]=""
+DI_DRIVERPATH1[5]=""
+DI_DRIVERPATH2[5]=""
+DI_DRIVEREXDIR[5]=""
+DI_DRIVERDIR[5]=""
+DI_PATCHFILE[5]=""
+DI_PATCHPATH1[5]=""
+DI_PATCHPATH2[5]=""
+DI_PATCHARG[5]=""
+DI_PRECOMP[5]=""
+DI_COMPILE[5]=""
+DI_INSTALL1[5]=""
+DI_INSTALL2[5]=""
 DSITE[5]="http://www.aircrack-ng.org/doku.php?id=ipw3945"
 DETECT_USB[5]=""
 DETECT_PCI[5]="3945"
@@ -120,8 +199,21 @@ DETECT_CS[5]=""
 DNAME[6]="Madwifi[-ng]"
 DMODULE[6]="ath_pci"
 DCONFIG[6]=""
-DMODULES[6]="wlan_wep ath_rate_sample ath_rate_onoe ath_pci wlan ath_hal ath_rate_amrr"
-DINSTALL[6]="install_madwifi_ng"
+DMODULES[6]="wlan_wep ath_rate_sample ath_rate_onoe ath_pci ath_hal ath_rate_amrr ath_rate_minstrel wlan_xauth wlan_tkip wlan_ccmp wlan_acl wlan wlan_scan_ap wlan_scan_sta"
+DI_INIT[6]=""
+DI_DRIVERFILE[6]="madwifi-ng-r2438-20070613.tar.gz"
+DI_DRIVERPATH1[6]="http://snapshots.madwifi.org/madwifi-ng/madwifi-ng-r2438-20070613.tar.gz"
+DI_DRIVERPATH2[6]=""
+DI_DRIVEREXDIR[6]=""
+DI_DRIVERDIR[6]="madwifi-ng-r2438-20070613"
+DI_PATCHFILE[6]="madwifi-ng-r2277.patch"
+DI_PATCHPATH1[6]="http://patches.aircrack-ng.org/madwifi-ng-r2277.patch"
+DI_PATCHPATH2[6]="http://patches.aircrack-ng.org/old/madwifi-ng-r2277.patch"
+DI_PATCHARG[6]="-p1"
+DI_PRECOMP[6]="export KERNELRELEASE=$KVER"
+DI_COMPILE[6]="make"
+DI_INSTALL1[6]="madwifi_install"
+DI_INSTALL2[6]=""
 DSITE[6]="http://www.aircrack-ng.org/doku.php?id=madwifi-ng"
 DETECT_USB[6]=""
 DETECT_PCI[6]="Atheros"
@@ -228,53 +320,254 @@ DETECT_PCI[16]=""
 DETECT_CS[16]=""
 #END drivers
 
-#install scripts
+#init install scripts
+install_hostap() {
+    if [ $KMINOR -eq 6 -a $KPATCH -lt 16 ]
+    then
+        #use external driver 0.4.7
+        DI_DRIVERFILE[$1]="hostap-driver-0.4.9.tar.gz"
+        DI_DRIVERPATH1[2]="http://hostap.epitest.fi/releases/hostap-driver-0.4.9.tar.gz"
+        DI_DRIVERPATH2[2]=""
+        DI_DRIVEREXDIR[2]=""
+        DI_DRIVERDIR[2]="hostap-driver-0.4.9"
+        DI_PATCHFILE[2]="hostap-driver-0.4.9.patch"
+        DI_PATCHPATH1[2]="http://patches.aircrack-ng.org/hostap-driver-0.4.9.patch"
+        DI_PATCHPATH2[2]="http://patches.aircrack-ng.org/old/hostap-driver-0.4.9.patch"
+        DI_PATCHARG[2]="-p1"
+        DI_COMPILE[2]="make"
+        DI_INSTALL1[2]="make install"
+    fi
+
+    if [ $KMINOR -eq 6 -a $KPATCH -gt 18 ]
+    then
+        DI_PATCHFILE[2]="hostap-kernel-2.6.18.patch"
+        DI_PATCHPATH1[2]="http://patches.aircrack-ng.org/hostap-kernel-2.6.18.patch"
+        DI_PATCHPATH2[2]="http://patches.aircrack-ng.org/old/hostap-kernel-2.6.18.patch"
+    fi
+}
+
+install_ipw2200() {
+    if [ $KMINOR -eq 6 -a $KPATCH -lt 15 ]
+    then
+        DI_DRIVERFILE[$1]="ipw2200-1.1.4.tgz"
+        DI_DRIVERPATH1[$1]="http://prdownloads.sourceforge.net/ipw2200/ipw2200-1.1.4.tgz?download"
+        DI_DRIVERPATH2[$1]="http://prdownloads.sourceforge.net/ipw2200/ipw2200-1.1.4.tgz?download"
+        DI_DRIVEREXDIR[$1]=""
+        DI_DRIVERDIR[$1]="ipw2200-1.1.4"
+        DI_PRECOMP[$1]=""
+        DI_COMPILE[$1]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[2]} modules"
+        DI_INSTALL1[$1]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/""
+        DI_INSTALL2[$1]="cp ipw2200.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/"
+    fi
+}
+
+madwifi_install() {
+    echo i | make install
+}
+
+ipw2100_precomp() {
+    echo 'obj-$(CONFIG_IPW2100) += ipw2100.o' > Makefile
+}
+
+ipw2200_precomp() {
+    echo 'obj-$(CONFIG_IPW2200) += ipw2200.o' > Makefile
+}
+#end
+
+#install script doing the dirty work
 #you're already in the correct dir
 #old modules are unloaded
 # 5 steps: get the source, get the patch, patch, compile, install
-install_acx() {
-#1 - get then correct source
-    if [ ! -f acx-20070101.tar.bz2 ]
+install_action() {
+#write some info into log file
+    echo "`date`" >> "$LOGFILE" 2>&1
+    echo "Installing \"${DNAME[$1]}\" on $KVER." >> "$LOGFILE" 2>&1
+#0 - check if all needed variables are set
+    if [ x"${DI_DRIVERFILE[$1]}" == x ]
     then
-        wget http://www.cmartin.tk/acx/acx-20070101.tar.bz2
+        echo "DI_DRIVERFILE[$1] isn't set!"
+        return $ERROR
     fi
-    tar -xjf acx-20070101.tar.bz2
+
+    if [ x"${DI_DRIVERPATH1[$1]}" == x ]
+    then
+        echo "DI_DRIVERPATH1[$1] isn't set, you need at least one driver source!"
+        return $ERROR
+    fi
+
+    if [ x"${DI_DRIVERDIR[$1]}" == x ]
+    then
+        echo "DI_DRIVERDIR[$1] isn't set!"
+        return $ERROR
+    fi
+
+    if [ x"${DI_COMPILE[$1]}" == x ]
+    then
+        echo "DI_COMPILE[$1] isn't set!"
+        return $ERROR
+    fi
+
+    if [ x"${DI_INSTALL1[$1]}" == x ]
+    then
+        echo "DI_INSTALL[$1] isn't set!"
+        return $ERROR
+    fi
+
+#1 - get then correct source
+    echo "1. Getting the source..."
+    if [ ! -f "${DI_DRIVERFILE[$1]}" ]
+    then
+        wget -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH1[$1]}" >> "$LOGFILE" 2>&1
+        if [ "$?" != "0" ]
+        then
+            rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
+        fi
+    fi
+
+    if [ ! -f "${DI_DRIVERFILE[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
+    then
+        wget -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
+        if [ "$?" != "0" ]
+        then
+            rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
+        fi
+    fi
+
+    if [ ! -f "${DI_DRIVERFILE[$1]}" ]
+    then
+        cp "`locate "${DI_DRIVERFILE[$1]}" | grep "${DI_DRIVERFILE[$1]}$" | head -n 1`" ./ >> "$LOGFILE" 2>&1
+        if [ "$?" != "0" ]
+        then
+            rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
+        fi
+    fi
+
+    if [ ! -f "${DI_DRIVERFILE[$1]}" ]
+    then
+        echo "Couldn't find the correct driver file: ${DI_DRIVERFILE[$1]}"
+        return $NO
+    fi
+
+    echo "2. Extracting the source..."
+    if [ -d "${DI_DRIVERDIR[$1]}" ]
+    then
+        #be carefull!!
+        rm -rf "${DI_DRIVERDIR[$1]}"
+    fi
+
+    if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.gz$"`" != x -o x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tgz$"`" != x ]
+    then
+        tar xzf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
+    fi
+
+    if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.bz2$"`" != x ]
+    then
+        tar xjf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
+    fi
+
+    if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".zip$"`" != x ]
+    then
+        unzip "${DI_DRIVERFILE[$1]}" >> "$LOGFILE" 2>&1
+    fi
+
+    if [ $? != "0" ]
+    then
+        echo "Unable to \"extract ${DI_DRIVERFILE[$1]}\""
+        return $NO
+    fi
+
+    if [ x"${DI_DRIVEREXDIR[$1]}" != x ]
+    then
+        mv "${DI_DRIVEREXDIR[$1]}" "${DI_DRIVERDIR[$1]}"
+    fi
 
 #2 - get the correct patch
-    if [ ! -f acx-20070101.patch ]
+    if [ x"${DI_PATCHFILE[$1]}" != x ]
     then
-        wget http://patches.aircrack-ng.org/acx-20070101.patch
+        echo "3. Getting the patch..."
+        if [ ! -f "${DI_PATCHFILE[$1]}" ]
+        then
+            wget -O "${DI_PATCHFILE[$1]}" "${DI_PATCHPATH1[$1]}" >> "$LOGFILE" 2>&1
+            if [ "$?" != "0" ]
+            then
+                rm "${DI_PATCHFILE[$1]}" 2>/dev/null
+            fi
+        fi
+
+        if [ ! -f "${DI_PATCHFILE[$1]}" -a x"${DI_PATCHPATH2[$1]}" != x ]
+        then
+            wget -O "${DI_PATCHFILE[$1]}" "${DI_PATCHPATH2[$1]}" >> "$LOGFILE" 2>&1
+            if [ "$?" != "0" ]
+            then
+                rm "${DI_PATCHFILE[$1]}" 2>/dev/null
+            fi
+        fi
+
+        if [ ! -f "${DI_PATCHFILE[$1]}" ]
+        then
+            cp "`locate "${DI_PATCHFILE[$1]}" | grep "${DI_PATCHFILE[$1]}$" | head -n 1`" ./ >> "$LOGFILE" 2>&1
+            if [ "$?" != "0" ]
+            then
+                rm "${DI_PATCHFILE[$1]}" 2>/dev/null
+            fi
+        fi
+
+        if [ ! -f "${DI_PATCHFILE[$1]}" ]
+        then
+            echo "Couldn't find the correct patch: ${DI_PATCHFILE[$1]}"
+            return $NO
+        fi
+
+    #3 - patch it
+        echo "4. Patching the source..."
+        if [ ! -d "${DI_DRIVERDIR[$1]}" ]
+        then
+            echo "Directory \"${DI_DRIVERDIR[$1]}\" doesn't exist."
+            return $NO
+        fi
+        cd "${DI_DRIVERDIR[$1]}"
+
+        if [ x"`$PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "../${DI_PATCHFILE[$1]}" | grep "FAILED"`" != x ]
+        then
+            $PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "../${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+            echo "Patching failed for some hunks."
+        fi
+
+        if [ x"`$PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "../${DI_PATCHFILE[$1]}" | grep "Reversed"`" != x ]
+        then
+            $PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "../${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+            echo "Already patched?"
+        fi
+
+        $PATCH -N ${DI_PATCHARG[$1]} -i "../${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+    else
+        echo "3./4. Not patching..."
+        cd "${DI_DRIVERDIR[$1]}"
     fi
-
-#3 - patch it
-    cd acx-20070101
-
-    if [ x"`patch --dry-run -s -Np1 -i ../acx-20070101.patch | grep "FAILED"`" != x ]
-    then
-        patch --dry-run -s -Np1 -i ../acx-20070101.patch
-        echo "Patching failed."
-        return $NO
-    fi
-
-    if [ x"`patch --dry-run -s -Np1 -i ../acx-20070101.patch | grep "Reversed"`" != x ]
-    then
-        patch --dry-run -s -Np1 -i ../acx-20070101.patch
-        echo "Patching failed. Already patched?"
-        return $NO
-    fi
-
-    patch -Np1 -i ../acx-20070101.patch
 
 #4 - compile it
-    make -C /lib/modules/`uname -r`/build/ M=`pwd` modules
+    if [ x"${DI_PRECOMP[$1]}" != x ]
+    then
+        ${DI_PRECOMP[$1]} >> "$LOGFILE" 2>&1
+    fi
+
+    echo "5. Compiling the driver..."
+    PWD=`pwd`
+
+    ${DI_COMPILE[$1]} >> "$LOGFILE" 2>&1
     if [ $? != "0" ]
     then
         return $NO
     fi
 
 #TODO:INSTALL
-    mkdir -p /lib/modules/$KVER/kernel/drivers/net/wireless/acx/
-    cp acx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/acx/
+    echo "6. Installing the driver..."
+    ${DI_INSTALL1[$1]} >> "$LOGFILE" 2>&1
+    if [ x"${DI_INSTALL2[$1]}" != x ]
+    then
+        ${DI_INSTALL2[$1]}
+    fi
+
     if [ $? != "0" ]
     then
         return $NO
@@ -508,9 +801,6 @@ installDriver() {
         echo "The build modules Will most probably not load into the running kernel."
     fi
 
-#unload driver
-    unloadDriver $1
-
 #cd into driver build directory
     mkdir -p "$D_DIR/${MODULE[$1]}"
     if [ ! -d "$D_DIR/${MODULE[$1]}" ]
@@ -522,10 +812,16 @@ installDriver() {
     cd "$D_DIR/${MODULE[$1]}"
 
 #run the custom installscript
-    ${DINSTALL[$1]}
+    if [ x"${DI_INIT[$1]}" != x ]
+    then
+        ${DI_INIT[$1]} $1
+    fi
+
+    install_action $1
 
     ret=$?
 
+    echo "Running \"depmod -ae\"..."
     depmod -ae
 
     return $ret
@@ -571,9 +867,13 @@ removeDriver() {
 #loop through the modules, find and rm them
     for i in ${DMODULES[$1]}
     do
-        rm -i "`$MODPROBE -l | grep $i\.ko`"
+        if [ -f "`$MODPROBE -l | grep $i\.ko`" ]
+        then
+            rm -i "`$MODPROBE -l | grep $i\.ko`"
+        fi
     done
 
+    echo "Running \"depmod -ae\"..."
     depmod -ae
 
     return $YES
@@ -680,7 +980,7 @@ name2num() {
         i=$(($i+1))
     done
 
-    return $NO
+    return $ERROR
 }
 
 usage() {
@@ -749,13 +1049,8 @@ then
 
     name2num $2
     num=$?
-    if [ $num -lt 0 ]
-    then
-        echo "Invalid driver!"
-        exit
-    fi
 
-    if [ $num -le 0 ]
+    if [ $num -eq $ERROR ]
     then
         if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
         then
@@ -788,13 +1083,8 @@ then
 
     name2num $2
     num=$?
-    if [ $num -lt 0 ]
-    then
-        echo "Invalid driver!"
-        exit
-    fi
 
-    if [ $num -le 0 ]
+    if [ $num -eq $ERROR ]
     then
         if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
         then
@@ -813,6 +1103,7 @@ then
         echo "Installed driver \"${DNAME[$num]}\" successfully"
     else
         echo "Failed to install the driver."
+        echo "Look through \"$LOGFILE\" for errors."
     fi
     exit
 fi
@@ -827,13 +1118,8 @@ then
 
     name2num $2
     num=$?
-    if [ $num -lt 0 ]
-    then
-        echo "Invalid driver!"
-        exit
-    fi
 
-    if [ $num -le 0 ]
+    if [ $num -eq $ERROR ]
     then
         if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
         then
@@ -866,13 +1152,8 @@ then
 
     name2num $2
     num=$?
-    if [ $num -lt 0 ]
-    then
-        echo "Invalid driver!"
-        exit
-    fi
 
-    if [ $num -le 0 ]
+    if [ $num -eq $ERROR ]
     then
         if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
         then
@@ -905,13 +1186,8 @@ then
 
     name2num $2
     num=$?
-    if [ $num -lt 0 ]
-    then
-        echo "Invalid driver!"
-        exit
-    fi
 
-    if [ $num -le 0 ]
+    if [ $num -eq $ERROR ]
     then
         if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
         then
