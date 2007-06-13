@@ -33,7 +33,10 @@ GCC=`which gcc 2>/dev/null`
 TAR=`which tar 2>/dev/null`
 
 #global variables
-KVER=`uname -r`
+if [ x"$KVER" == x ]
+then
+    KVER=`uname -r`
+fi
 KMAJOR=`echo $KVER | sed 's/^\([0-9]\)\..*$/\1/'`
 KMINOR=`echo $KVER | sed 's/^[0-9]\.\([0-9]\)\..*$/\1/'`
 KPATCH=`echo $KVER | sed 's/^[0-9]\.[0-9]\.\([0-9]*\).*$/\1/'`
@@ -68,6 +71,7 @@ DI_DRIVERPATH1[0]="http://www.cmartin.tk/acx/acx-20070101.tar.bz2"
 DI_DRIVERPATH2[0]=""
 DI_DRIVEREXDIR[0]=""
 DI_DRIVERDIR[0]="acx-20070101"
+DI_PREPATCH[0]=""
 DI_PATCHFILE[0]="acx-20070101.patch"
 DI_PATCHPATH1[0]="http://patches.aircrack-ng.org/acx-20070101.patch"
 DI_PATCHPATH2[0]="http://patches.aircrack-ng.org/old/acx-20070101.patch"
@@ -91,6 +95,7 @@ DI_DRIVERPATH1[1]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMI
 DI_DRIVERPATH2[1]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVEREXDIR[1]="linux-$KMAJOR.$KMINOR.$KPATCH/drivers/net/wireless/bcm43xx"
 DI_DRIVERDIR[1]="bcm43xx"
+DI_PREPATCH[1]=""
 DI_PATCHFILE[1]="bcm43xx-injection-linux-2.6.20.patch"
 DI_PATCHPATH1[1]="http://trac.aircrack-ng.org/attachment/ticket/183/bcm43xx-injection-linux-2.6.20.patch?format=raw"
 DI_PATCHPATH2[1]=""
@@ -114,6 +119,7 @@ DI_DRIVERPATH1[2]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMI
 DI_DRIVERPATH2[2]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVEREXDIR[2]="linux-$KMAJOR.$KMINOR.$KPATCH/drivers/net/wireless/hostap"
 DI_DRIVERDIR[2]="hostap"
+DI_PREPATCH[2]=""
 DI_PATCHFILE[2]="hostap-kernel-$KMAJOR.$KMINOR.$KPATCH.patch"
 DI_PATCHPATH1[2]="http://patches.aircrack-ng.org/hostap-kernel-$KMAJOR.$KMINOR.$KPATCH.patch"
 DI_PATCHPATH2[2]="http://patches.aircrack-ng.org/old/hostap-kernel-$KMAJOR.$KMINOR.$KPATCH.patch"
@@ -137,6 +143,7 @@ DI_DRIVERPATH1[3]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMI
 DI_DRIVERPATH2[3]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVEREXDIR[3]="linux-$KMAJOR.$KMINOR.$KPATCH/drivers/net/wireless"
 DI_DRIVERDIR[3]="ipw2100"
+DI_PREPATCH[3]=""
 DI_PATCHFILE[3]=""
 DI_PATCHPATH1[3]=""
 DI_PATCHPATH2[3]=""
@@ -160,6 +167,7 @@ DI_DRIVERPATH1[4]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMI
 DI_DRIVERPATH2[4]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVEREXDIR[4]="linux-$KMAJOR.$KMINOR.$KPATCH/drivers/net/wireless"
 DI_DRIVERDIR[4]="ipw2200"
+DI_PREPATCH[4]=""
 DI_PATCHFILE[4]="ipw2200-1.1.4-inject.patch"
 DI_PATCHPATH1[4]="http://patches.aircrack-ng.org/ipw2200-1.1.4-inject.patch"
 DI_PATCHPATH2[4]="http://patches.aircrack-ng.org/old/ipw2200-1.1.4-inject.patch"
@@ -183,6 +191,7 @@ DI_DRIVERPATH1[5]=""
 DI_DRIVERPATH2[5]=""
 DI_DRIVEREXDIR[5]=""
 DI_DRIVERDIR[5]=""
+DI_PREPATCH[5]=""
 DI_PATCHFILE[5]=""
 DI_PATCHPATH1[5]=""
 DI_PATCHPATH2[5]=""
@@ -206,6 +215,7 @@ DI_DRIVERPATH1[6]="http://snapshots.madwifi.org/madwifi-ng/madwifi-ng-r2438-2007
 DI_DRIVERPATH2[6]=""
 DI_DRIVEREXDIR[6]=""
 DI_DRIVERDIR[6]="madwifi-ng-r2438-20070613"
+DI_PREPATCH[6]=""
 DI_PATCHFILE[6]="madwifi-ng-r2277.patch"
 DI_PATCHPATH1[6]="http://patches.aircrack-ng.org/madwifi-ng-r2277.patch"
 DI_PATCHPATH2[6]="http://patches.aircrack-ng.org/old/madwifi-ng-r2277.patch"
@@ -223,7 +233,21 @@ DNAME[7]="Prism54"
 DMODULE[7]="prism54"
 DCONFIG[7]="CONFIG_PRISM54="
 DMODULES[7]="prism54"
-DINSTALL[7]="install_prism54"
+DI_INIT[7]=""
+DI_DRIVERFILE[7]="prism54_r531.tar.gz"
+DI_DRIVERPATH1[7]="http://svnweb.tuxfamily.org/dl.php?repname=prism54+%28prism54%29&path=%2Ftrunk%2F&rev=531&isdir=1"
+DI_DRIVERPATH2[7]=""
+DI_DRIVEREXDIR[7]=""
+DI_DRIVERDIR[7]="trunk"
+DI_PREPATCH[7]=""
+DI_PATCHFILE[7]="prism54-svn-20050724.patch"
+DI_PATCHPATH1[7]="http://patches.aircrack-ng.org/prism54-svn-20050724.patch"
+DI_PATCHPATH2[7]="http://patches.aircrack-ng.org/old/prism54-svn-20050724.patch"
+DI_PATCHARG[7]="-p1"
+DI_PRECOMP[7]=""
+DI_COMPILE[7]="make modules"
+DI_INSTALL1[7]="make install"
+DI_INSTALL2[7]=""
 DSITE[7]="http://www.aircrack-ng.org/doku.php?id=prism54"
 DETECT_USB[7]=""
 DETECT_PCI[7]="Prism Javelin\|Prism Xbow\|Prism GT\|Prism Duette"
@@ -233,7 +257,21 @@ DNAME[8]="Realtek rtl8180"
 DMODULE[8]="r818x"
 DCONFIG[8]=""
 DMODULES[8]="r818x"
-DINSTALL[8]="install_rtl818x"
+DI_INIT[8]=""
+DI_DRIVERFILE[8]="rtl8180-0.21.tar.gz"
+DI_DRIVERPATH1[8]="http://ovh.dl.sourceforge.net/sourceforge/rtl8180-sa2400/rtl8180-0.21.tar.gz"
+DI_DRIVERPATH2[8]=""
+DI_DRIVEREXDIR[8]=""
+DI_DRIVERDIR[8]="rtl8180-0.21"
+DI_PREPATCH[8]=""
+DI_PATCHFILE[8]="rtl8180-0.21v2.patch"
+DI_PATCHPATH1[8]="http://patches.aircrack-ng.org/rtl8180-0.21v2.patch"
+DI_PATCHPATH2[8]="http://patches.aircrack-ng.org/old/rtl8180-0.21v2.patch"
+DI_PATCHARG[8]="-p1"
+DI_PRECOMP[8]=""
+DI_COMPILE[8]="make"
+DI_INSTALL1[8]="make install"
+DI_INSTALL2[8]=""
 DSITE[8]="http://www.aircrack-ng.org/doku.php?id=r8180-sa2400"
 DETECT_USB[8]=""
 DETECT_PCI[8]=""
@@ -243,7 +281,21 @@ DNAME[9]="Realtek rtl8187"
 DMODULE[9]="r8187"
 DCONFIG[9]=""
 DMODULES[9]="r8187"
-DINSTALL[9]="install_rtl8187"
+DI_INIT[9]=""
+DI_DRIVERFILE[9]="rtl8187_linux_26.1010.zip"
+DI_DRIVERPATH1[9]="ftp://220.228.150.22/cn/wlan/rtl8187_linux_26.1010.zip"
+DI_DRIVERPATH2[9]="ftp://61.56.86.122/cn/wlan/rtl8187_linux_26.1010.zip"
+DI_DRIVEREXDIR[9]=""
+DI_DRIVERDIR[9]="rtl8187_linux_26.1010.0622.2006"
+DI_PREPATCH[9]="rtl8187_prepatch"
+DI_PATCHFILE[9]="rtl8187_2.6.21.patch"
+DI_PATCHPATH1[9]="http://patches.aircrack-ng.org/rtl8187_2.6.21.patch"
+DI_PATCHPATH2[9]="http://patches.aircrack-ng.org/old/rtl8187_2.6.21.patch"
+DI_PATCHARG[9]="-p1"
+DI_PRECOMP[9]=""
+DI_COMPILE[9]="make"
+DI_INSTALL1[9]="make install"
+DI_INSTALL2[9]=""
 DSITE[9]="http://www.aircrack-ng.org/doku.php?id=r8187"
 DETECT_USB[9]="RTL8187"
 DETECT_PCI[9]=""
@@ -253,7 +305,21 @@ DNAME[10]="Ralink rt2500"
 DMODULE[10]="rt2500"
 DCONFIG[10]=""
 DMODULES[10]="rt2500"
-DINSTALL[10]="install_rt2500"
+DI_INIT[10]=""
+DI_DRIVERFILE[10]="rt2500-1.1.0-b4.tar.gz"
+DI_DRIVERPATH1[10]="http://prdownloads.sourceforge.net/rt2400/rt2500-1.1.0-b4.tar.gz?download"
+DI_DRIVERPATH2[10]="http://prdownloads.sourceforge.net/rt2400/rt2500-1.1.0-b4.tar.gz?download"
+DI_DRIVEREXDIR[10]=""
+DI_DRIVERDIR[10]="rt2500-1.1.0-b4/Module"
+DI_PREPATCH[10]=""
+DI_PATCHFILE[10]=""
+DI_PATCHPATH1[10]=""
+DI_PATCHPATH2[10]=""
+DI_PATCHARG[10]=""
+DI_PRECOMP[10]=""
+DI_COMPILE[10]="make"
+DI_INSTALL1[10]="make install"
+DI_INSTALL2[10]=""
 DSITE[10]="http://www.aircrack-ng.org/doku.php?id=rt2500"
 DETECT_USB[10]=""
 DETECT_PCI[10]=""
@@ -263,7 +329,21 @@ DNAME[11]="Ralink rt2570"
 DMODULE[11]="rt2570"
 DCONFIG[11]=""
 DMODULES[11]="rt2570"
-DINSTALL[11]="install_rt2570"
+DI_INIT[11]=""
+DI_DRIVERFILE[11]="rt2570-k2wrlz-1.6.0.tar.bz2"
+DI_DRIVERPATH1[11]="http://homepages.tu-darmstadt.de/~p_larbig/wlan/rt2570-k2wrlz-1.6.0.tar.bz2"
+DI_DRIVERPATH2[11]=""
+DI_DRIVEREXDIR[11]=""
+DI_DRIVERDIR[11]="rt2570-k2wrlz-1.6.0/Module"
+DI_PREPATCH[11]=""
+DI_PATCHFILE[11]=""
+DI_PATCHPATH1[11]=""
+DI_PATCHPATH2[11]=""
+DI_PATCHARG[11]=""
+DI_PRECOMP[11]=""
+DI_COMPILE[11]="make"
+DI_INSTALL1[11]="make install"
+DI_INSTALL2[11]=""
 DSITE[11]="http://www.aircrack-ng.org/doku.php?id=rt2570"
 DETECT_USB[11]="G122 802.11g rev. B1"
 DETECT_PCI[11]=""
@@ -273,7 +353,21 @@ DNAME[12]="Ralink rt61"
 DMODULE[12]="rt61"
 DCONFIG[12]=""
 DMODULES[12]="rt61"
-DINSTALL[12]="install_rt61"
+DI_INIT[12]=""
+DI_DRIVERFILE[12]="rt61-1.1.0-b2.tar.gz"
+DI_DRIVERPATH1[12]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz?download"
+DI_DRIVERPATH2[12]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz?download"
+DI_DRIVEREXDIR[12]=""
+DI_DRIVERDIR[12]="rt61-1.1.0-b2/Module"
+DI_PREPATCH[12]=""
+DI_PATCHFILE[12]=""
+DI_PATCHPATH1[12]=""
+DI_PATCHPATH2[12]=""
+DI_PATCHARG[12]=""
+DI_PRECOMP[12]=""
+DI_COMPILE[12]="make"
+DI_INSTALL1[12]="make install"
+DI_INSTALL2[12]=""
 DSITE[12]="http://www.aircrack-ng.org/doku.php?id=rt61"
 DETECT_USB[12]=""
 DETECT_PCI[12]=""
@@ -283,17 +377,45 @@ DNAME[13]="Ralink rt73"
 DMODULE[13]="rt73"
 DCONFIG[13]=""
 DMODULES[13]="rt73"
-DINSTALL[13]="install_rt73"
+DI_INIT[13]=""
+DI_DRIVERFILE[13]="rt73-k2wrlz-1.0.0.tar.bz2"
+DI_DRIVERPATH1[13]="http://homepages.tu-darmstadt.de/~p_larbig/wlan/rt73-k2wrlz-1.0.0.tar.bz2"
+DI_DRIVERPATH2[13]=""
+DI_DRIVEREXDIR[13]=""
+DI_DRIVERDIR[13]="rt73-k2wrlz-1.0.0/Module"
+DI_PREPATCH[13]=""
+DI_PATCHFILE[13]=""
+DI_PATCHPATH1[13]=""
+DI_PATCHPATH2[13]=""
+DI_PATCHARG[13]=""
+DI_PRECOMP[13]=""
+DI_COMPILE[13]="make"
+DI_INSTALL1[13]="make install"
+DI_INSTALL2[13]=""
 DSITE[13]="http://www.aircrack-ng.org/doku.php?id=rt73"
 DETECT_USB[13]=""
 DETECT_PCI[13]=""
 DETECT_CS[13]=""
 
 DNAME[14]="WLAN-NG"
-DMODULE[14]="prism2_cs"
+DMODULE[14]="prism2_pci"
 DCONFIG[14]=""
 DMODULES[14]="prism2_pci prism2_usb prism2_plx prism2_cs p80211"
-DINSTALL[14]="install_wlanng"
+DI_INIT[14]=""
+DI_DRIVERFILE[14]="linux-wlan-ng-0.2.8.tar.bz2"
+DI_DRIVERPATH1[14]="ftp://ftp.linux-wlan.org/pub/linux-wlan-ng/linux-wlan-ng-0.2.8.tar.bz2"
+DI_DRIVERPATH2[14]=""
+DI_DRIVEREXDIR[14]=""
+DI_DRIVERDIR[14]="linux-wlan-ng-0.2.8"
+DI_PREPATCH[14]=""
+DI_PATCHFILE[14]="linux-wlan-ng-0.2.8.patch"
+DI_PATCHPATH1[14]="http://patches.aircrack-ng.org/linux-wlan-ng-0.2.8.patch"
+DI_PATCHPATH2[14]="http://patches.aircrack-ng.org/old/linux-wlan-ng-0.2.8.patch"
+DI_PATCHARG[14]="-p1"
+DI_PRECOMP[14]=""
+DI_COMPILE[14]="make auto_config"
+DI_INSTALL1[14]="make install"
+DI_INSTALL2[14]=""
 DSITE[14]="http://www.aircrack-ng.org/doku.php?id=wlan-ng"
 DETECT_USB[14]=""
 DETECT_PCI[14]=""
@@ -303,7 +425,21 @@ DNAME[15]="ZyDAS 1211"
 DMODULE[15]="zd1211"
 DCONFIG[15]=""
 DMODULES[15]="zd1211"
-DINSTALL[15]="install_zd1211"
+DI_INIT[15]=""
+DI_DRIVERFILE[15]=""
+DI_DRIVERPATH1[15]=""
+DI_DRIVERPATH2[15]=""
+DI_DRIVEREXDIR[15]=""
+DI_DRIVERDIR[15]=""
+DI_PREPATCH[15]=""
+DI_PATCHFILE[15]=""
+DI_PATCHPATH1[15]=""
+DI_PATCHPATH2[15]=""
+DI_PATCHARG[15]=""
+DI_PRECOMP[15]=""
+DI_COMPILE[15]=""
+DI_INSTALL1[15]=""
+DI_INSTALL2[15]=""
 DSITE[15]=""
 DETECT_USB[15]=""
 DETECT_PCI[15]=""
@@ -313,7 +449,21 @@ DNAME[16]="ZyDAS 1211rw"
 DMODULE[16]="zd1211rw"
 DCONFIG[16]="CONFIG_ZD1211RW="
 DMODULES[16]="zd1211rw"
-DINSTALL[16]="install_zd1211rw"
+DI_INIT[16]="install_zd1211rw"
+DI_DRIVERFILE[16]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVERPATH1[16]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVERPATH2[16]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+DI_DRIVEREXDIR[16]="linux-$KMAJOR.$KMINOR.$KPATCH/drivers/net/wireless/zd1211rw"
+DI_DRIVERDIR[16]="zd1211rw"
+DI_PREPATCH[16]=""
+DI_PATCHFILE[16]="zd1211rw_inject_2.6.17.patch"
+DI_PATCHPATH1[16]="http://patches.aircrack-ng.org/zd1211rw_inject_2.6.17.patch"
+DI_PATCHPATH2[16]="http://patches.aircrack-ng.org/old/zd1211rw_inject_2.6.17.patch"
+DI_PATCHARG[16]="-p1"
+DI_PRECOMP[16]=""
+DI_COMPILE[16]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[16]} modules"
+DI_INSTALL1[16]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/zd1211rw/""
+DI_INSTALL2[16]="cp zd1211rw.ko /lib/modules/$KVER/kernel/drivers/net/wireless/zd1211rw/"
 DSITE[16]="http://www.aircrack-ng.org/doku.php?id=zd1211rw"
 DETECT_USB[16]=""
 DETECT_PCI[16]=""
@@ -361,6 +511,23 @@ install_ipw2200() {
     fi
 }
 
+install_zd1211rw() {
+    if [ $KMINOR -eq 6 -a $KPATCH -eq 20 ]
+    then
+        DI_PATCHFILE[$1]="zd1211rw_inject_2.6.20.patch"
+        DI_PATCHPATH1[$1]="http://patches.aircrack-ng.org/zd1211rw_inject_2.6.20.patch"
+        DI_PATCHPATH2[$1]="http://patches.aircrack-ng.org/old/zd1211rw_inject_2.6.20.patch"
+    fi
+
+    if [ $KMINOR -eq 6 -a $KPATCH -ge 21 ]
+    then
+        DI_PATCHFILE[$1]="zd1211rw_inject_2.6.21-gentoo.patch"
+        DI_PATCHPATH1[$1]="http://patches.aircrack-ng.org/zd1211rw_inject_2.6.21-gentoo.patch"
+        DI_PATCHPATH2[$1]="http://patches.aircrack-ng.org/old/zd1211rw_inject_2.6.21-gentoo.patch"
+    fi
+
+}
+
 madwifi_install() {
     echo i | make install
 }
@@ -371,6 +538,11 @@ ipw2100_precomp() {
 
 ipw2200_precomp() {
     echo 'obj-$(CONFIG_IPW2200) += ipw2200.o' > Makefile
+}
+
+rtl8187_prepatch() {
+    tar xzf stack.tar.gz
+    tar xzf drv.tar.gz
 }
 #end
 
@@ -481,7 +653,20 @@ install_action() {
         mv "${DI_DRIVEREXDIR[$1]}" "${DI_DRIVERDIR[$1]}"
     fi
 
+    if [ ! -d "${DI_DRIVERDIR[$1]}" ]
+    then
+        echo "Directory \"${DI_DRIVERDIR[$1]}\" doesn't exist."
+        return $NO
+    fi
+
+    cd "${DI_DRIVERDIR[$1]}"
+
 #2 - get the correct patch
+    if [ x"${DI_PREPATCH[$1]}" != x ]
+    then
+        ${DI_PREPATCH[$1]} >> "$LOGFILE" 2>&1
+    fi
+
     if [ x"${DI_PATCHFILE[$1]}" != x ]
     then
         echo "3. Getting the patch..."
@@ -520,29 +705,22 @@ install_action() {
 
     #3 - patch it
         echo "4. Patching the source..."
-        if [ ! -d "${DI_DRIVERDIR[$1]}" ]
-        then
-            echo "Directory \"${DI_DRIVERDIR[$1]}\" doesn't exist."
-            return $NO
-        fi
-        cd "${DI_DRIVERDIR[$1]}"
 
-        if [ x"`$PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "../${DI_PATCHFILE[$1]}" | grep "FAILED"`" != x ]
+        if [ x"`$PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" | grep "FAILED"`" != x ]
         then
-            $PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "../${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+            $PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
             echo "Patching failed for some hunks."
         fi
 
-        if [ x"`$PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "../${DI_PATCHFILE[$1]}" | grep "Reversed"`" != x ]
+        if [ x"`$PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" | grep "Reversed"`" != x ]
         then
-            $PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "../${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+            $PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
             echo "Already patched?"
         fi
 
-        $PATCH -N ${DI_PATCHARG[$1]} -i "../${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+        $PATCH -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
     else
         echo "3./4. Not patching..."
-        cd "${DI_DRIVERDIR[$1]}"
     fi
 
 #4 - compile it
