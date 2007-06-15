@@ -266,9 +266,11 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
 	int i;
 	uint8_t tmp;
 
-        show_wep_stats( keylen -1, 0, keytable, searchborders, depth, tried, max_tries );
-        if (keybyte == keylen) {
-		return correct(state, key, keylen);
+	if(!opt.is_quiet)
+		show_wep_stats( keylen -1, 0, keytable, searchborders, depth, tried, max_tries );
+
+	if (keybyte == keylen) {
+	return correct(state, key, keylen);
 	} else if (strongbytes[keybyte] == 1) {
 		// printf("assuming byte %d to be strong\n", keybyte);
 		tmp = 3 + keybyte;
@@ -325,8 +327,9 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	while(prod < keylimit) {
 		if (doRound(table, 0, fixat, fixvalue, choices, key, keylen, state, 0, strongbytes) == 1) {
 			// printf("hit with %d choices\n", prod);
-                    show_wep_stats( keylen -1, 1, keytable, choices, depth, prod, keylimit );
-                    return 1;
+			if(!opt.is_quiet)
+				show_wep_stats( keylen -1, 1, keytable, choices, depth, prod, keylimit );
+			return 1;
 		}
 		choices[sh2[i].keybyte]++;
 		fixat = sh2[i].keybyte;
@@ -341,11 +344,13 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 			i++;
 		} while (strongbytes[sh2[i].keybyte] == 1);
 
-                show_wep_stats( keylen -1, 0, keytable, choices, depth, prod, keylimit );
+		if(!opt.is_quiet)
+			show_wep_stats( keylen -1, 0, keytable, choices, depth, prod, keylimit );
 
 	}
+	if(!opt.is_quiet)
         show_wep_stats( keylen -1, 1, keytable, choices, depth, prod, keylimit );
-        return 0;
+    return 0;
 }
 
 
