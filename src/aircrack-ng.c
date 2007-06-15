@@ -3583,27 +3583,27 @@ usage:
 		memset( &wep, 0, sizeof( wep ) );
 
 		if (opt.do_ptw)
-                {
-                    if(opt.is_quiet)
-                        printf("Attack will be restarted every %d captured ivs.\n", PTW_TRY_STEP);
-                    opt.next_ptw_try = ap_cur->nb_ivs - (ap_cur->nb_ivs % PTW_TRY_STEP);
-                    do
-                    {
-                        if(ap_cur->nb_ivs >= opt.next_ptw_try)
-                        {
-                            if(opt.is_quiet)
-                                printf("Starting ptw attack with %ld ivs.\n", ap_cur->nb_ivs);
-                            ret = crack_wep_ptw(ap_cur);
-                            if(ret)
-                            {
-                                opt.next_ptw_try += PTW_TRY_STEP;
-				printf("Failed. Next try with %d IVs.\n", opt.next_ptw_try);
-                            }
-                        }
-                        if(ret)
-                            usleep(10000);
-                    }while(ret != 0);
-                }
+		{
+			if(!opt.is_quiet)
+				printf("Attack will be restarted every %d captured ivs.\n", PTW_TRY_STEP);
+			opt.next_ptw_try = ap_cur->nb_ivs - (ap_cur->nb_ivs % PTW_TRY_STEP);
+			do
+			{
+				if(ap_cur->nb_ivs >= opt.next_ptw_try)
+				{
+					if(!opt.is_quiet)
+						printf("Starting PTW attack with %ld ivs.\n", ap_cur->nb_ivs);
+					ret = crack_wep_ptw(ap_cur);
+					if(ret)
+					{
+						opt.next_ptw_try += PTW_TRY_STEP;
+						printf("Failed. Next try with %d IVs.\n", opt.next_ptw_try);
+					}
+				}
+				if(ret)
+					usleep(10000);
+			}while(ret != 0);
+		}
 		else if(opt.dict != NULL)
 		{
 			ret = crack_wep_dict();
