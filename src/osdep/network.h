@@ -21,6 +21,7 @@ enum {
 	NET_PACKET,		/* 5 */
 	NET_GET_MAC,
 	NET_MAC,
+	NET_GET_MONITOR,
 };
 
 struct net_hdr {

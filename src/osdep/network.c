@@ -347,6 +347,11 @@ static int net_get_channel(struct wif *wi)
 	return net_cmd(pn, NET_GET_CHAN, NULL, 0);
 }
 
+static int net_get_monitor(struct wif *wi)
+{
+	return net_cmd(wi_priv(wi), NET_GET_MONITOR, NULL, 0);
+}
+
 static void do_net_free(struct wif *wi)
 {
 	assert(wi->wi_priv);
@@ -464,6 +469,7 @@ struct wif *net_open(char *iface)
 	wi->wi_close		= net_close;
 	wi->wi_fd		= net_fd;
 	wi->wi_get_mac		= net_get_mac;
+	wi->wi_get_monitor	= net_get_monitor;
 
 	/* setup iface */
 	s = do_net_open(iface);

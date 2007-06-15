@@ -134,6 +134,11 @@ static int card_get_chan(struct sstate *ss)
 	return wi_get_channel(ss->ss_wi);
 }
 
+static int card_get_monitor(struct sstate *ss)
+{
+	return wi_get_monitor(ss->ss_wi);
+}
+
 static int card_read(struct sstate *ss, void *buf, int len, struct rx_info *ri)
 {
 	int rc;
@@ -245,6 +250,16 @@ static void handle_get_chan(struct sstate *ss, struct client *c)
 	net_send_kill(ss, c, NET_RC, &chan, sizeof(chan));
 }
 
+static void handle_get_monitor(struct sstate *ss, struct client *c)
+{
+	int rc = card_get_monitor(ss);
+	uint32_t x;
+
+	x = htonl(rc);
+
+	net_send_kill(ss, c, NET_RC, &x, sizeof(x));
+}
+
 static void handle_write(struct sstate *ss, struct client *c,
 			 void *buf, int len)
 {
@@ -286,6 +301,10 @@ static void handle_client(struct sstate *ss, struct client *c)
 
 	case NET_GET_CHAN:
 		handle_get_chan(ss, c);
+		break;
+
+	case NET_GET_MONITOR:
+		handle_get_monitor(ss, c);
 		break;
 
 	case NET_WRITE:
