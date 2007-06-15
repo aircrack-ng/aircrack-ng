@@ -17,7 +17,7 @@ struct ivs2_pkthdr
 
 int main( int argc, char *argv[] )
 {
-    int i, j, k, n, count, length, keylen, zero=0;
+    int i, j, k, n, count=100000, length=16, keylen, zero=0, startiv=0, iv=0;
     FILE *f_ivs_out;
     unsigned char K[16];
     unsigned char S[256];
@@ -25,16 +25,23 @@ int main( int argc, char *argv[] )
     struct ivs2_pkthdr ivs2;
     unsigned long long size;
 
-    if( argc != 5 )
+    i = 0;
+
+    if(  argc < 3 || argc > 6 )
     {
-        printf( "usage: %s <ivs file> <wep key> <count> <length>\n", argv[0]);
-        printf( "example: %s test.ivs ABCDEF01234567890123456789 50000 16\n", argv[0] );
+        printf( "usage: %s <ivs file> <wep key> [<count> [<length> [<startiv>]]]\n", argv[0]);
+        printf( "example: %s test.ivs ABCDEF01234567890123456789 50000 16 0\n", argv[0] );
         return( 1 );
     }
 
-    i = 0;
-    count = atoi(argv[3]);
-    length = atoi(argv[4]);
+    if( argc >= 4 )
+        count = atoi(argv[3]);
+
+    if( argc >= 5 )
+        length = atoi(argv[4]);
+
+    if( argc >= 6 )
+        startiv = atoi(argv[5]);
 
     if(count < 0 || count > 0xFFFFFF)
     {
@@ -42,7 +49,7 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
     if(count == 0)
-        count = 0x0FFFFF; //default 1mio ivs
+        count = 100000; //default 100.000 ivs
 
     if(length < 0 || length > 0xFFFF)
     {
@@ -132,11 +139,12 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
-    for( n = 0x000000; n < count; n++ )
+    for( n = 0; n < count; n++ )
     {
-        K[2] = ( n >> 16 ) & 0xFF;
-        K[1] = ( n >>  8 ) & 0xFF;
-        K[0] = ( n       ) & 0xFF;
+        iv = (n + startiv) & 0xFFFFFF;
+        K[2] = ( iv >> 16 ) & 0xFF;
+        K[1] = ( iv >>  8 ) & 0xFF;
+        K[0] = ( iv       ) & 0xFF;
 
         for( i = 0; i < 256; i++ )
             S[i] = i;
