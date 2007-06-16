@@ -502,11 +502,15 @@ static void send_assoc(struct wstate *ws)
 
 	// rates
         *body++ = IEEE80211_ELEMID_RATES;
-        *body++ = 4;
+        *body++ = 8;
         *body++ = 2 | 0x80;
         *body++ = 4 | 0x80;
-        *body++ = 11;
-        *body++ = 22;
+        *body++ = 11 | 0x80;
+        *body++ = 22 | 0x80;
+	*body++ = 12 | 0x80;
+	*body++ = 24 | 0x80;
+	*body++ = 48 | 0x80;
+	*body++ = 72;
 
         /* x-rates */
         *body++ = IEEE80211_ELEMID_XRATES;
