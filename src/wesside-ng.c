@@ -501,15 +501,22 @@ static void send_assoc(struct wstate *ws)
 	body += ssidlen;
 
 	// rates
-	*body++ = 1;
-	*body++ = 4;
-	*body++ = 2;
-	*body++ = 4;
-	*body++ = 11;
-	*body++ = 22;
+        *body++ = IEEE80211_ELEMID_RATES;
+        *body++ = 4;
+        *body++ = 2 | 0x80;
+        *body++ = 4 | 0x80;
+        *body++ = 11;
+        *body++ = 22;
 
-	send_frame(ws, buf, sizeof(*wh) + 2 + 2 + 2 +
-			    strlen(ws->ws_ssid) + 2 + 4);
+        /* x-rates */
+        *body++ = IEEE80211_ELEMID_XRATES;
+        *body++ = 4;
+        *body++ = 48;
+        *body++ = 72;
+        *body++ = 96;
+        *body++ = 108;
+
+	send_frame(ws, buf, (unsigned long)body - (unsigned long)buf);
 }
 
 static void wepify(struct wstate *ws, unsigned char* body, int dlen)
@@ -799,7 +806,7 @@ static void proc_mgt(struct wstate *ws, int stype, unsigned char *body)
 			ws->ws_state = SPOOF_MAC;
 			return;
 		} else {
-			time_print("got assoc %x\n", *sc);
+			time_print("got assoc %d\n", *sc);
 			exit(1);
 		}
 
