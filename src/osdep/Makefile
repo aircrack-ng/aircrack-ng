@@ -13,8 +13,8 @@ OBJS_DUMMY	= $(OBJS) dummy.o dummy_tap.o
 OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o
 
 all:
-	@echo Building for $(OS)
-	@$(MAKE) .os.$(OS)
+	@echo Building for $(OSNAME)
+	@$(MAKE) .os.$(OSNAME)
 
 .os.dummy: $(OBJS_DUMMY)
 	$(AR) cru $(LIB) $(OBJS_DUMMY)

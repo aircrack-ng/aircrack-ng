@@ -1,11 +1,11 @@
 ifndef TOOL_PREFIX
 TOOL_PREFIX	=
 endif
-ifndef OS
-OS		= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g')
+ifndef OSNAME
+OSNAME		= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g')
 endif
 
-ifeq ($(OS), cygwin)
+ifeq ($(OSNAME), cygwin)
 EXE		= .exe
 PIC		=
 else

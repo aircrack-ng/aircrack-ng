@@ -31,7 +31,7 @@ OBJS_WS		= wesside-ng.o common.o $(OBJS_PTW)
 
 OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD)
-ifeq ($(OS), cygwin)
+ifeq ($(OSNAME), cygwin)
 LIBS		+= -liphlpapi -lsetupapi -luuid
 endif
 LIBOSD		= $(OSD)/lib$(OSD).a
