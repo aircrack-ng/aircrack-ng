@@ -152,14 +152,17 @@ int decrypt_wep( uchar *data, int len, uchar *key, int keylen )
 
 /* derive the PMK from the passphrase and the essid */
 
-void calc_pmk( char *key, char *essid, uchar pmk[40] )
+void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 {
 	int i, j, slen;
 	uchar buffer[65];
+	uchar essid[33+4];
 	SHA_CTX ctx_ipad;
 	SHA_CTX ctx_opad;
 	SHA_CTX sha1_ctx;
 
+	memset(essid, 0, sizeof(essid));
+	memcpy(essid, essid_pre, strlen(essid_pre));
 	slen = strlen( essid ) + 4;
 
 	/* setup the inner and outer contexts */
