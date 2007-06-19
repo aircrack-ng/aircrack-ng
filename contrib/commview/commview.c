@@ -1,5 +1,3 @@
-/* wrapper for commview drivers by sorbo [2007] */
-
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <string.h>
