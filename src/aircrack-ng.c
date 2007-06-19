@@ -2068,16 +2068,20 @@ int inner_bruteforcer_thread(void *arg)
 
 }
 
+#ifndef __i386__
 /* derive the PMK from the passphrase and the essid */
 
-void calc_pmk( char *key, char *essid, uchar pmk[40] )
+void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 {
 	int i, j, slen;
 	uchar buffer[65];
+	uchar essid[33+4];
 	sha1_context ctx_ipad;
 	sha1_context ctx_opad;
 	sha1_context sha1_ctx;
 
+	memset(essid, 0, sizeof(essid));
+	memcpy(essid, essid_pre, strlen(essid_pre));
 	slen = strlen( essid ) + 4;
 
 	/* setup the inner and outer contexts */
@@ -2137,7 +2141,7 @@ void calc_pmk( char *key, char *essid, uchar pmk[40] )
 			pmk[j + 20] ^= buffer[j];
 	}
 }
-
+#endif
 /* each thread computes two pairwise master keys at a time */
 
 int crack_wpa_thread( void *arg )
