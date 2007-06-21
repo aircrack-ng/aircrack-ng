@@ -31,6 +31,7 @@ WGET=`which wget 2>/dev/null`
 MAKE=`which make 2>/dev/null`
 GCC=`which gcc 2>/dev/null`
 TAR=`which tar 2>/dev/null`
+UNZIP=`which unzip 2>/dev/null`
 
 #global variables
 if [ x"$KVER" == x ]
@@ -77,7 +78,7 @@ DI_PATCHPATH1[0]="http://patches.aircrack-ng.org/acx-20070101.patch"
 DI_PATCHPATH2[0]="http://patches.aircrack-ng.org/old/acx-20070101.patch"
 DI_PATCHARG[0]="-p1"
 DI_PRECOMP[0]=""
-DI_COMPILE[0]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[0]} modules"
+DI_COMPILE[0]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[0]} modules"
 DI_INSTALL1[0]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/acx/""
 DI_INSTALL2[0]="cp acx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/acx/"
 DSITE[0]="http://www.aircrack-ng.org/doku.php?id=acx"
@@ -101,7 +102,7 @@ DI_PATCHPATH1[1]="http://trac.aircrack-ng.org/attachment/ticket/183/bcm43xx-inje
 DI_PATCHPATH2[1]=""
 DI_PATCHARG[1]="-p5"
 DI_PRECOMP[1]=""
-DI_COMPILE[1]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[1]} modules"
+DI_COMPILE[1]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[1]} modules"
 DI_INSTALL1[1]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/bcm43xx/""
 DI_INSTALL2[1]="cp bcm43xx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/bcm43xx/"
 DSITE[1]="http://www.aircrack-ng.org/doku.php?id=broadcom"
@@ -125,7 +126,7 @@ DI_PATCHPATH1[2]="http://patches.aircrack-ng.org/hostap-kernel-$KMAJOR.$KMINOR.$
 DI_PATCHPATH2[2]="http://patches.aircrack-ng.org/old/hostap-kernel-$KMAJOR.$KMINOR.$KPATCH.patch"
 DI_PATCHARG[2]="-p5"
 DI_PRECOMP[2]=""
-DI_COMPILE[2]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[2]} modules"
+DI_COMPILE[2]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[2]} modules"
 DI_INSTALL1[2]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/hostap/""
 DI_INSTALL2[2]="cp *.ko /lib/modules/$KVER/kernel/drivers/net/wireless/hostap/"
 DSITE[2]="http://www.aircrack-ng.org/doku.php?id=hostap"
@@ -149,7 +150,7 @@ DI_PATCHPATH1[3]=""
 DI_PATCHPATH2[3]=""
 DI_PATCHARG[3]=""
 DI_PRECOMP[3]="ipw2100_precomp"
-DI_COMPILE[3]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[3]} modules"
+DI_COMPILE[3]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[3]} modules"
 DI_INSTALL1[3]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2100/""
 DI_INSTALL2[3]="cp ipw2100.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2100/"
 DSITE[3]=""
@@ -173,7 +174,7 @@ DI_PATCHPATH1[4]="http://patches.aircrack-ng.org/ipw2200-1.1.4-inject.patch"
 DI_PATCHPATH2[4]="http://patches.aircrack-ng.org/old/ipw2200-1.1.4-inject.patch"
 DI_PATCHARG[4]="-p1 -f"
 DI_PRECOMP[4]="ipw2200_precomp"
-DI_COMPILE[4]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[4]} modules"
+DI_COMPILE[4]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[4]} modules"
 DI_INSTALL1[4]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/""
 DI_INSTALL2[4]="cp ipw2200.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/"
 DSITE[4]="http://www.aircrack-ng.org/doku.php?id=ipw2200"
@@ -221,7 +222,7 @@ DI_PATCHPATH1[6]="http://patches.aircrack-ng.org/madwifi-ng-r2277.patch"
 DI_PATCHPATH2[6]="http://patches.aircrack-ng.org/old/madwifi-ng-r2277.patch"
 DI_PATCHARG[6]="-p1"
 DI_PRECOMP[6]="export KERNELRELEASE=$KVER"
-DI_COMPILE[6]="make"
+DI_COMPILE[6]="$MAKE"
 DI_INSTALL1[6]="madwifi_install"
 DI_INSTALL2[6]=""
 DSITE[6]="http://www.aircrack-ng.org/doku.php?id=madwifi-ng"
@@ -245,8 +246,8 @@ DI_PATCHPATH1[7]="http://patches.aircrack-ng.org/prism54-svn-20050724.patch"
 DI_PATCHPATH2[7]="http://patches.aircrack-ng.org/old/prism54-svn-20050724.patch"
 DI_PATCHARG[7]="-p1"
 DI_PRECOMP[7]=""
-DI_COMPILE[7]="make modules"
-DI_INSTALL1[7]="make install"
+DI_COMPILE[7]="$MAKE modules"
+DI_INSTALL1[7]="$MAKE install"
 DI_INSTALL2[7]=""
 DSITE[7]="http://www.aircrack-ng.org/doku.php?id=prism54"
 DETECT_USB[7]=""
@@ -269,8 +270,8 @@ DI_PATCHPATH1[8]="http://patches.aircrack-ng.org/rtl8180-0.21v2.patch"
 DI_PATCHPATH2[8]="http://patches.aircrack-ng.org/old/rtl8180-0.21v2.patch"
 DI_PATCHARG[8]="-p1"
 DI_PRECOMP[8]=""
-DI_COMPILE[8]="make"
-DI_INSTALL1[8]="make install"
+DI_COMPILE[8]="$MAKE"
+DI_INSTALL1[8]="$MAKE install"
 DI_INSTALL2[8]=""
 DSITE[8]="http://www.aircrack-ng.org/doku.php?id=r8180-sa2400"
 DETECT_USB[8]=""
@@ -293,8 +294,8 @@ DI_PATCHPATH1[9]="http://patches.aircrack-ng.org/rtl8187_2.6.21.patch"
 DI_PATCHPATH2[9]="http://patches.aircrack-ng.org/old/rtl8187_2.6.21.patch"
 DI_PATCHARG[9]="-p1"
 DI_PRECOMP[9]=""
-DI_COMPILE[9]="make"
-DI_INSTALL1[9]="make install"
+DI_COMPILE[9]="$MAKE"
+DI_INSTALL1[9]="$MAKE install"
 DI_INSTALL2[9]=""
 DSITE[9]="http://www.aircrack-ng.org/doku.php?id=r8187"
 DETECT_USB[9]="RTL8187"
@@ -317,8 +318,8 @@ DI_PATCHPATH1[10]=""
 DI_PATCHPATH2[10]=""
 DI_PATCHARG[10]=""
 DI_PRECOMP[10]=""
-DI_COMPILE[10]="make"
-DI_INSTALL1[10]="make install"
+DI_COMPILE[10]="$MAKE"
+DI_INSTALL1[10]="$MAKE install"
 DI_INSTALL2[10]=""
 DSITE[10]="http://www.aircrack-ng.org/doku.php?id=rt2500"
 DETECT_USB[10]=""
@@ -341,8 +342,8 @@ DI_PATCHPATH1[11]=""
 DI_PATCHPATH2[11]=""
 DI_PATCHARG[11]=""
 DI_PRECOMP[11]=""
-DI_COMPILE[11]="make"
-DI_INSTALL1[11]="make install"
+DI_COMPILE[11]="$MAKE"
+DI_INSTALL1[11]="$MAKE install"
 DI_INSTALL2[11]=""
 DSITE[11]="http://www.aircrack-ng.org/doku.php?id=rt2570"
 DETECT_USB[11]="G122 802.11g rev. B1"
@@ -365,8 +366,8 @@ DI_PATCHPATH1[12]=""
 DI_PATCHPATH2[12]=""
 DI_PATCHARG[12]=""
 DI_PRECOMP[12]=""
-DI_COMPILE[12]="make"
-DI_INSTALL1[12]="make install"
+DI_COMPILE[12]="$MAKE"
+DI_INSTALL1[12]="$MAKE install"
 DI_INSTALL2[12]=""
 DSITE[12]="http://www.aircrack-ng.org/doku.php?id=rt61"
 DETECT_USB[12]=""
@@ -389,8 +390,8 @@ DI_PATCHPATH1[13]=""
 DI_PATCHPATH2[13]=""
 DI_PATCHARG[13]=""
 DI_PRECOMP[13]=""
-DI_COMPILE[13]="make"
-DI_INSTALL1[13]="make install"
+DI_COMPILE[13]="$MAKE"
+DI_INSTALL1[13]="$MAKE install"
 DI_INSTALL2[13]=""
 DSITE[13]="http://www.aircrack-ng.org/doku.php?id=rt73"
 DETECT_USB[13]=""
@@ -413,8 +414,8 @@ DI_PATCHPATH1[14]="http://patches.aircrack-ng.org/linux-wlan-ng-0.2.8.patch"
 DI_PATCHPATH2[14]="http://patches.aircrack-ng.org/old/linux-wlan-ng-0.2.8.patch"
 DI_PATCHARG[14]="-p1"
 DI_PRECOMP[14]=""
-DI_COMPILE[14]="make auto_config"
-DI_INSTALL1[14]="make install"
+DI_COMPILE[14]="$MAKE auto_config"
+DI_INSTALL1[14]="$MAKE install"
 DI_INSTALL2[14]=""
 DSITE[14]="http://www.aircrack-ng.org/doku.php?id=wlan-ng"
 DETECT_USB[14]=""
@@ -461,7 +462,7 @@ DI_PATCHPATH1[16]="http://patches.aircrack-ng.org/zd1211rw_inject_2.6.17.patch"
 DI_PATCHPATH2[16]="http://patches.aircrack-ng.org/old/zd1211rw_inject_2.6.17.patch"
 DI_PATCHARG[16]="-p1"
 DI_PRECOMP[16]=""
-DI_COMPILE[16]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[16]} modules"
+DI_COMPILE[16]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[16]} modules"
 DI_INSTALL1[16]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/zd1211rw/""
 DI_INSTALL2[16]="cp zd1211rw.ko /lib/modules/$KVER/kernel/drivers/net/wireless/zd1211rw/"
 DSITE[16]="http://www.aircrack-ng.org/doku.php?id=zd1211rw"
@@ -484,8 +485,8 @@ install_hostap() {
         DI_PATCHPATH1[2]="http://patches.aircrack-ng.org/hostap-driver-0.4.9.patch"
         DI_PATCHPATH2[2]="http://patches.aircrack-ng.org/old/hostap-driver-0.4.9.patch"
         DI_PATCHARG[2]="-p1"
-        DI_COMPILE[2]="make"
-        DI_INSTALL1[2]="make install"
+        DI_COMPILE[2]="$MAKE"
+        DI_INSTALL1[2]="$MAKE install"
     fi
 
     if [ $KMINOR -eq 6 -a $KPATCH -gt 18 ]
@@ -505,7 +506,7 @@ install_ipw2200() {
         DI_DRIVEREXDIR[$1]=""
         DI_DRIVERDIR[$1]="ipw2200-1.1.4"
         DI_PRECOMP[$1]=""
-        DI_COMPILE[$1]="make -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[2]} modules"
+        DI_COMPILE[$1]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[2]} modules"
         DI_INSTALL1[$1]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/""
         DI_INSTALL2[$1]="cp ipw2200.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/"
     fi
@@ -529,7 +530,7 @@ install_zd1211rw() {
 }
 
 madwifi_install() {
-    echo i | make install
+    echo i | $MAKE install
 }
 
 ipw2100_precomp() {
@@ -541,8 +542,8 @@ ipw2200_precomp() {
 }
 
 rtl8187_prepatch() {
-    tar xzf stack.tar.gz
-    tar xzf drv.tar.gz
+    $TAR xzf stack.tar.gz
+    $TAR xzf drv.tar.gz
 }
 #end
 
@@ -589,7 +590,7 @@ install_action() {
     echo "1. Getting the source..."
     if [ ! -f "${DI_DRIVERFILE[$1]}" ]
     then
-        wget -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH1[$1]}" >> "$LOGFILE" 2>&1
+        $WGET -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH1[$1]}" >> "$LOGFILE" 2>&1
         if [ "$?" != "0" ]
         then
             rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
@@ -598,7 +599,7 @@ install_action() {
 
     if [ ! -f "${DI_DRIVERFILE[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
     then
-        wget -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
+        $WGET -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
         if [ "$?" != "0" ]
         then
             rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
@@ -629,17 +630,17 @@ install_action() {
 
     if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.gz$"`" != x -o x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tgz$"`" != x ]
     then
-        tar xzf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
+        $TAR xzf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
     fi
 
     if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.bz2$"`" != x ]
     then
-        tar xjf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
+        $TAR xjf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
     fi
 
     if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".zip$"`" != x ]
     then
-        unzip "${DI_DRIVERFILE[$1]}" >> "$LOGFILE" 2>&1
+        $UNZIP "${DI_DRIVERFILE[$1]}" >> "$LOGFILE" 2>&1
     fi
 
     if [ $? != "0" ]
@@ -672,7 +673,7 @@ install_action() {
         echo "3. Getting the patch..."
         if [ ! -f "${DI_PATCHFILE[$1]}" ]
         then
-            wget -O "${DI_PATCHFILE[$1]}" "${DI_PATCHPATH1[$1]}" >> "$LOGFILE" 2>&1
+            $WGET -O "${DI_PATCHFILE[$1]}" "${DI_PATCHPATH1[$1]}" >> "$LOGFILE" 2>&1
             if [ "$?" != "0" ]
             then
                 rm "${DI_PATCHFILE[$1]}" 2>/dev/null
@@ -681,7 +682,7 @@ install_action() {
 
         if [ ! -f "${DI_PATCHFILE[$1]}" -a x"${DI_PATCHPATH2[$1]}" != x ]
         then
-            wget -O "${DI_PATCHFILE[$1]}" "${DI_PATCHPATH2[$1]}" >> "$LOGFILE" 2>&1
+            $WGET -O "${DI_PATCHFILE[$1]}" "${DI_PATCHPATH2[$1]}" >> "$LOGFILE" 2>&1
             if [ "$?" != "0" ]
             then
                 rm "${DI_PATCHFILE[$1]}" 2>/dev/null
@@ -970,7 +971,7 @@ installDriver() {
     fi
 
 #check if gcc version matches the kernel gcc version
-    gccvers="`gcc --version | head -n 1 | sed 's/^[^ ]* [^ ]* \([2-4]..*\)$/\1/'`"
+    gccvers="`$GCC --version | head -n 1 | sed 's/^[^ ]* [^ ]* \([2-4]..*\)$/\1/'`"
     ret="`cat /proc/version | grep "$gccvers"`"
 
     if [ x"$ret" == x ]
