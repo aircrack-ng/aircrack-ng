@@ -156,7 +156,7 @@ void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 {
 	int i, j, slen;
 	uchar buffer[65];
-	uchar essid[33+4];
+	char essid[33+4];
 	SHA_CTX ctx_ipad;
 	SHA_CTX ctx_opad;
 	SHA_CTX sha1_ctx;

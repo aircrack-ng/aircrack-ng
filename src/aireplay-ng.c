@@ -105,6 +105,18 @@
               lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
               lt->tm_hour, lt->tm_min, lt->tm_sec ); }
 
+#define RATE_1M 1000000
+#define RATE_2M 2000000
+#define RATE_5_5M 5500000
+#define RATE_11M 11000000
+
+#define RATE_6M 6000000
+#define RATE_12M 12000000
+#define RATE_24M 24000000
+#define RATE_48M 48000000
+#define RATE_54M 54000000
+
+int rates[]={RATE_1M, RATE_2M, RATE_5_5M, RATE_11M, RATE_6M, RATE_12M, RATE_24M, RATE_48M, RATE_54M};
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern char * searchInside(const char * dir, const char * filename);
@@ -3957,6 +3969,8 @@ int do_attack_test()
     }
     if(gotit) printf("\n");
 
+    wi_set_rate(_wi_out, RATE_1M);
+
     PCT; printf("Trying broadcast probe requests...\n");
 
     memcpy(h80211, PROBE_REQ, 24);
@@ -4040,6 +4054,7 @@ int do_attack_test()
         printf("\n");
         PCT; printf("Trying directed probe requests...\n");
     }
+
     for(i=0; i<found; i++)
     {
         PCT; printf("%02X:%02X:%02X:%02X:%02X:%02X - channel: %d - \'%s\'\n", ap[i].bssid[0], ap[i].bssid[1],
@@ -4137,6 +4152,103 @@ int do_attack_test()
             gotit=1;
         }
     }
+
+    if(found > 0)
+    {
+        printf("\n");
+        PCT; printf("Trying directed probe requests for all bitrates...\n");
+    }
+
+    for(i=0; i<found; i++)
+    {
+        if(ap[i].found <= 0)
+            continue;
+        PCT; printf("%02X:%02X:%02X:%02X:%02X:%02X - channel: %d - \'%s\'\n", ap[i].bssid[0], ap[i].bssid[1],
+                    ap[i].bssid[2], ap[i].bssid[3], ap[i].bssid[4], ap[i].bssid[5], ap[i].chan, ap[i].essid);
+
+        min = INT_MAX;
+        max = 0;
+        avg = 0;
+
+        memcpy(h80211, PROBE_REQ, 24);
+
+        len = 24;
+
+        h80211[24] = 0x00;      //ESSID Tag Number
+        h80211[25] = ap[i].len; //ESSID Tag Length
+        memcpy(h80211+len+2, ap[i].essid, ap[i].len);
+
+        len += ap[i].len+2;
+
+        memcpy(h80211+len, RATES, 16);
+
+        len += 16;
+
+        for(k=0; k<9; k++)
+        {
+            ap[i].found=0;
+            wi_set_rate(_wi_out, rates[k]);
+            for(j=0; j<REQUESTS; j++)
+            {
+                /*
+                    random source so we can identify our packets
+                */
+                opt.r_smac[0] = 0x00;
+                opt.r_smac[1] = rand() & 0xFF;
+                opt.r_smac[2] = rand() & 0xFF;
+                opt.r_smac[3] = rand() & 0xFF;
+                opt.r_smac[4] = rand() & 0xFF;
+                opt.r_smac[5] = rand() & 0xFF;
+
+                memcpy(h80211+10, opt.r_smac, 6);
+
+                send_packet(h80211, len);
+
+                gettimeofday( &tv, NULL );
+
+                printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
+                fflush(stdout);
+                while (1)  //waiting for relayed packet
+                {
+                    caplen = read_packet(packet, sizeof(packet));
+
+                    if (packet[0] == 0x50 ) //Is probe response
+                    {
+                        if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                        {
+                            if(! memcmp(ap[i].bssid, packet+16, 6)) //From the mentioned AP
+                            {
+                                if(!answers)
+                                {
+                                    answers++;
+                                }
+                                ap[i].found++;
+                                break;
+                            }
+                        }
+                    }
+
+                    gettimeofday( &tv2, NULL );
+                    if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
+                    {
+                        break;
+                    }
+                }
+                printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
+                fflush(stdout);
+            }
+            PCT; printf("Probing at %.1f Mbps:\t%d/%d: %d%%\n", wi_get_rate(_wi_out)/1000000.0,
+                        ap[i].found, REQUESTS, ((ap[i].found*100)/REQUESTS));
+        }
+
+        if(!gotit && answers)
+        {
+            PCT; printf("Injection is working!\n\n");
+            gotit=1;
+        }
+    }
+
+    wi_set_rate(_wi_out, RATE_1M);
 
     if( opt.s_face != NULL )
     {

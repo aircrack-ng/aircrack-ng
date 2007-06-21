@@ -469,6 +469,22 @@ static int fbsd_get_monitor(struct wif *wi)
 	return 0;
 }
 
+static int fbsd_get_rate(struct wif *wi)
+{
+	if (wi) {} /* XXX unused */
+
+	/* XXX */
+	return 1000000;
+}
+
+static int fbsd_set_rate(struct wif *wi, int rate)
+{
+	if (wi) {} /* XXX unused */
+
+	/* XXX */
+	return 0;
+}
+
 static int fbsd_set_mac(struct wif *wi, unsigned char *mac)
 {
 	struct priv_fbsd *priv = wi_priv(wi);
@@ -499,6 +515,8 @@ static struct wif *fbsd_open(char *iface)
 	wi->wi_fd		= fbsd_fd;
 	wi->wi_get_mac		= fbsd_get_mac;
 	wi->wi_set_mac		= fbsd_set_mac;
+	wi->wi_get_rate		= fbsd_get_rate;
+	wi->wi_set_rate		= fbsd_set_rate;
         wi->wi_get_monitor      = fbsd_get_monitor;
 
 	/* setup iface */

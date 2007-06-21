@@ -38,6 +38,8 @@ struct wif {
 	int	(*wi_fd)(struct wif *wi);
 	int	(*wi_get_mac)(struct wif *wi, unsigned char *mac);
 	int	(*wi_set_mac)(struct wif *wi, unsigned char *mac);
+	int	(*wi_set_rate)(struct wif *wi, int rate);
+	int	(*wi_get_rate)(struct wif *wi);
         int     (*wi_get_monitor)(struct wif *wi);
 
         void	*wi_priv;
@@ -56,6 +58,8 @@ extern void wi_close(struct wif *wi);
 extern char *wi_get_ifname(struct wif *wi);
 extern int wi_get_mac(struct wif *wi, unsigned char *mac);
 extern int wi_set_mac(struct wif *wi, unsigned char *mac);
+extern int wi_get_rate(struct wif *wi);
+extern int wi_set_rate(struct wif *wi, int rate);
 extern int wi_get_monitor(struct wif *wi);
 
 /* wi_open_osdep should determine the type of card and setup the wif structure

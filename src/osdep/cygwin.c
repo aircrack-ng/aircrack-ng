@@ -256,6 +256,20 @@ static int cygwin_get_monitor(struct wif *wi)
 	return 0;
 }
 
+static int cygwin_get_rate(struct wif *wi)
+{
+	if (wi) {} /* XXX unused */
+
+	return 1000000;
+}
+
+static int cygwin_set_rate(struct wif *wi, int rate)
+{
+	if (wi) {} /* XXX unused */
+
+	return 0;
+}
+
 static void *cygwin_reader(void *arg)
 {
 	struct priv_cygwin *priv = arg;
@@ -305,6 +319,8 @@ static struct wif *cygwin_open(char *iface)
 	wi->wi_fd		= cygwin_fd;
 	wi->wi_get_mac		= cygwin_get_mac;
 	wi->wi_set_mac		= cygwin_set_mac;
+	wi->wi_get_rate		= cygwin_get_rate;
+	wi->wi_set_rate		= cygwin_set_rate;
         wi->wi_get_monitor      = cygwin_get_monitor;
 
 	/* setup iface */

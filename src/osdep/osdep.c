@@ -99,6 +99,18 @@ int wi_set_mac(struct wif *wi, unsigned char *mac)
 	return wi->wi_set_mac(wi, mac);
 }
 
+int wi_get_rate(struct wif *wi)
+{
+	assert(wi->wi_get_rate);
+	return wi->wi_get_rate(wi);
+}
+
+int wi_set_rate(struct wif *wi, int rate)
+{
+	assert(wi->wi_set_rate);
+	return wi->wi_set_rate(wi, rate);
+}
+
 struct wif *wi_open(char *iface)
 {
 	struct wif *wi;

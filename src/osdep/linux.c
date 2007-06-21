@@ -205,6 +205,47 @@ static int linux_get_channel(struct wif *wi)
     return wrq.u.freq.m;
 }
 
+static int linux_set_rate(struct wif *wi, int rate)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    struct iwreq wrq;
+
+    memset( &wrq, 0, sizeof( struct iwreq ) );
+
+    if(dev->main_if)
+        strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
+    else
+        strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+
+    wrq.u.bitrate.value = rate;
+    if( ioctl( dev->fd_in, SIOCSIWRATE, &wrq ) < 0 )
+    {
+        return( -1 );
+    }
+
+    return 0;
+}
+
+static int linux_get_rate(struct wif *wi)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    struct iwreq wrq;
+
+    memset( &wrq, 0, sizeof( struct iwreq ) );
+
+    if(dev->main_if)
+        strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
+    else
+        strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+
+    if( ioctl( dev->fd_in, SIOCGIWRATE, &wrq ) < 0 )
+    {
+        return( -1 );
+    }
+
+    return wrq.u.bitrate.value;
+}
+
 static int linux_read(struct wif *wi, unsigned char *buf, int count,
 		      struct rx_info *ri)
 {
@@ -1195,6 +1236,8 @@ static struct wif *linux_open(char *iface)
 	wi->wi_get_mac		= linux_get_mac;
 	wi->wi_set_mac		= linux_set_mac;
         wi->wi_get_monitor      = linux_get_monitor;
+	wi->wi_get_rate		= linux_get_rate;
+	wi->wi_set_rate		= linux_set_rate;
 
 	if (do_linux_open(wi, iface)) {
 		do_free(wi);
