@@ -29,6 +29,36 @@ stopStdIface() {
 	printf " (monitor mode disabled)"
 }
 
+getModule() {
+    if [ -f "/sys/class/net/$1/device/driver/module/srcversion" ]
+    then
+        srcver1=`cat "/sys/class/net/$1/device/driver/module/srcversion"`
+        for j in `lsmod | awk '{print $1}' | grep -v "^Module$"`
+        do
+            srcver2="`modinfo $j | grep srcversion | awk '{print $2}'`"
+            if [ $srcver1 = "$srcver2" ]
+            then
+                MODULE=$j
+                break
+            fi
+        done
+    else
+        MODULE=""
+    fi
+#    return 0
+}
+
+getDriver() {
+   if [ -e "/sys/class/net/$1/device/driver" ]
+   then
+       DRIVER="`ls -l "/sys/class/net/$1/device/driver" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/'`"
+       BUS="`ls -l /sys/class/net/$1/device/driver | sed 's/^.*\/\([a-zA-Z0-9_-]*\)\/.*\/.*$/\1/'`"
+   else
+       DRIVER=""
+       BUS=""
+   fi
+}
+
 if [ x"`which id 2> /dev/null`" != "x" ]
 then
 	USERID="`id -u 2> /dev/null`"
@@ -97,6 +127,9 @@ fi
 
 for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
 do
+ getModule $iface
+ getDriver $iface
+
  if [ x"`iwpriv $iface 2>/dev/null | grep get_rid`" != "x" ] || [ x"`iwpriv $iface 2>/dev/null | grep dump_recs`" != "x" ]
  then
     printf "$iface\t\tHermesI\t\torinoco"
