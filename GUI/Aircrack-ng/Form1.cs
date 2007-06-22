@@ -39,9 +39,16 @@ namespace Aircrack_ng
         private string Windir;
         private string cmd_exe;
 
+        private const String debugFile = "debug.log";
+        private StreamWriter debugStream = null;
+
         public Faircrack()
         {
             InitializeComponent();
+
+            // Initialize logging
+            this.initLog();
+
             this.ShowHideEssidBssid(this.cbBssid, null);
             this.ShowHideEssidBssid(this.cbEssid, null);
 
@@ -79,7 +86,7 @@ namespace Aircrack_ng
                     this.Windir = @"C:\Windows";
                 }
             }
-            Console.WriteLine("Windir: {0}", Windir);
+            this.writeLog("Windir: " + Windir);
             cmd_exe = this.Windir + "\\System32\\cmd.exe";
             // End windows directory
 
@@ -90,7 +97,11 @@ namespace Aircrack_ng
             this.lblAboutText.Left = (this.tAboutBox.Width - this.lblAboutText.Width) / 2;
 
             this.rtbChangelog.Text =
-                  "v1.0.0.2\n"
+                  "v1.0.0.3\n"
+                + "    - Added logging to debug.log\n"
+                + "    - Added PTW option\n"
+                + "\n"
+                + "v1.0.0.2\n"
                 + "    - Fixed wordlist selection\n"
                 + "\n"
                 + "v1.0.0.1\n"
@@ -107,6 +118,39 @@ namespace Aircrack_ng
             //End about box
 
             Application.DoEvents();
+        }
+
+        /// <summary>
+        /// Initialize logging
+        /// </summary>
+        private void initLog()
+        {
+            // Make sure it doesn't crash
+            try
+            {
+                debugStream = new StreamWriter(debugFile, true);
+                this.writeLog("Application starting");
+            }
+            catch { }
+
+        }
+
+        /// <summary>
+        /// Write to log file
+        /// </summary>
+        /// <param name="text"></param>
+        private void writeLog(string text)
+        {
+            // Make sure it doesn't crash
+            try
+            {
+                this.debugStream.WriteLine("{0} - {1}", DateTime.Now.ToString(), text);
+                this.debugStream.Flush();
+            }
+            catch
+            {
+                
+            }
         }
 
         /// <summary>
@@ -192,7 +236,7 @@ namespace Aircrack_ng
         private void cbAdvancedOptions_CheckedChanged(object sender, EventArgs e)
         {
             this.pAdvancedOptions.Visible =
-                this.cbAdvancedOptions.Checked;
+                this.cbAdvancedOptions.Checked && !this.cbPTW.Checked;
         }
 
         private string setOptions(bool isChecked, string option, string arg)
@@ -218,11 +262,19 @@ namespace Aircrack_ng
                 // Force WEP Mode
                 options += " -a 1";
 
-                //Key size
-                options += " -n " + this.cbKeySize.Text;
+                if (this.cbPTW.Checked)
+                {
+                    // use PTW
+                    options += " -z";
+                }
+                else
+                {
+                    //Key size
+                    options += " -n " + this.cbKeySize.Text;
 
-                // Force showing ascii
-                options += " -s";
+                    // Force showing ascii
+                    options += " -s";
+                }
             }
             else
             {
@@ -232,7 +284,7 @@ namespace Aircrack_ng
             
 
             // Do we have to use a dictionnary?
-            if (this.rbWPA.Checked || (this.rbWEP.Checked && this.cbUseWordlist.Checked))
+            if (this.rbWPA.Checked || (this.rbWEP.Checked && this.cbUseWordlist.Checked && !this.cbPTW.Checked))
             {
                 if (checkFileExist(this.tbWPADico.Text,
                         "Please specify a wordlist and/or\n"
@@ -244,7 +296,7 @@ namespace Aircrack_ng
             }
 
             // Advanced options
-            if (this.cbAdvancedOptions.Checked)
+            if (this.cbAdvancedOptions.Checked && !this.cbPTW.Checked)
             {
 
                 // BSSID
@@ -305,7 +357,7 @@ namespace Aircrack_ng
             path = this.currentDir + "\\aircrack-ng.exe";
             launch = "\"" + path + "\" " + options + " " + this.tbFilenames.Text;
             
-            Console.WriteLine("Launch command: {0}", launch);
+            this.writeLog("Launch command: " + launch);
 
                 // " " + type + " file does not exist",
             if (checkFileExist(path, "Aircrack-ng executable"))
@@ -316,14 +368,23 @@ namespace Aircrack_ng
                 }
                 catch
                 {
+                    this.writeLog("Failed to start Aircrack-ng process");
                     MessageBox.Show("Failed to start Aircrack-ng", this.Text);
                 }
             }
         }
 
+        /// <summary>
+        /// Checking if a file exist
+        /// </summary>
+        /// <param name="path">Path to the file</param>
+        /// <param name="message">Message to show</param>
+        /// <returns></returns>
         private bool checkFileExist(string path, string message)
         {
             bool ret = false;
+
+            // Checking if file exist
             if (string.IsNullOrEmpty(path) == false)
                 ret = File.Exists(path);
 
@@ -332,6 +393,9 @@ namespace Aircrack_ng
                 string completeMsg = "Failed to start Aircrack-ng.";
                 if (string.IsNullOrEmpty(message) == false)
                     completeMsg += "\n" + message;
+
+                // Write it to log file
+                this.writeLog("File <" + path + "> does not exist");
 
                 MessageBox.Show(completeMsg, this.Text);
             }
@@ -346,6 +410,7 @@ namespace Aircrack_ng
             }
             catch
             {
+                this.writeLog("Failed to start Airodump-ng");
                 MessageBox.Show("Failed to start Airodump-ng", this.Text);
             }
         }
@@ -388,6 +453,8 @@ namespace Aircrack_ng
 
             if (string.IsNullOrEmpty(this.tbDecapFile.Text))
             {
+                // No capture file given
+                this.writeLog("Aircrack-ng - Missing capture file(s) to crack");
                 MessageBox.Show("Give at least one capture file to crack", this.Text);
                 return;
             }
@@ -428,7 +495,7 @@ namespace Aircrack_ng
             path = this.currentDir + "\\airdecap-ng.exe";
             launch = "\"" + path + "\" " + options.Trim() + " " + this.tbFilenames.Text;
 
-            Console.WriteLine("Launch command: {0}", launch);
+            this.writeLog("Launch command: " + launch);
 
             try
             {
@@ -466,24 +533,45 @@ namespace Aircrack_ng
 
         private void rbWEP_CheckedChanged(object sender, EventArgs e)
         {
-            this.pWEPstdOption.Visible = this.rbWEP.Checked && !this.cbUseWordlist.Checked;
+            this.pWEPstdOption.Visible = this.rbWEP.Checked && !this.cbUseWordlist.Checked && !this.cbPTW.Checked;
             if (this.rbWEP.Checked)
             {
-                this.pWordlist.Visible = this.cbUseWordlist.Checked;
+                this.cbPTW.Visible = true;
+                this.pWordlist.Visible = this.cbUseWordlist.Checked && !this.cbPTW.Checked;
             }
             else
             {
+                this.cbPTW.Visible = false;
                 this.pWordlist.Visible = true;
             }
 
-            this.pWEPKeySize.Visible = this.rbWEP.Checked;
-            this.cbUseWordlist.Visible = this.rbWEP.Checked;
+            this.pWEPKeySize.Visible = this.rbWEP.Checked && !this.cbPTW.Checked;
+            this.cbUseWordlist.Visible = this.rbWEP.Checked && !this.cbPTW.Checked;
         }
 
         private void cbUseWordlist_CheckedChanged(object sender, EventArgs e)
         {
             this.pWordlist.Visible = this.cbUseWordlist.Checked;
             this.pWEPstdOption.Visible = !this.cbUseWordlist.Checked;
+            this.cbPTW.Enabled = !this.cbUseWordlist.Checked;
+        }
+
+        private void cbPTW_CheckedChanged(object sender, EventArgs e)
+        {
+            this.cbUseWordlist.Enabled = !this.cbPTW.Checked;
+            this.pWEPKeySize.Enabled = !this.cbPTW.Checked;
+            this.cbAdvancedOptions.Enabled = !this.cbPTW.Checked;
+            this.pAdvancedOptions.Visible = !this.cbPTW.Checked;
+            this.cbUseWordlist_CheckedChanged(null, null);
+            this.rbWEP_CheckedChanged(null, null);
+            this.cbAdvancedOptions_CheckedChanged(null, null);
+
+        }
+
+        private void Faircrack_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            this.writeLog("Application closing");
+            this.debugStream.Close();
         }
 
     }

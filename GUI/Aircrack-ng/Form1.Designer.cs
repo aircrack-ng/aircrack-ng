@@ -30,6 +30,7 @@ namespace Aircrack_ng
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tAircrackng = new System.Windows.Forms.TabPage();
+            this.cbPTW = new System.Windows.Forms.CheckBox();
             this.cbUseWordlist = new System.Windows.Forms.CheckBox();
             this.pWordlist = new System.Windows.Forms.Panel();
             this.label6 = new System.Windows.Forms.Label();
@@ -123,6 +124,7 @@ namespace Aircrack_ng
             // 
             // tAircrackng
             // 
+            this.tAircrackng.Controls.Add(this.cbPTW);
             this.tAircrackng.Controls.Add(this.cbUseWordlist);
             this.tAircrackng.Controls.Add(this.pWordlist);
             this.tAircrackng.Controls.Add(this.pWEPKeySize);
@@ -142,6 +144,17 @@ namespace Aircrack_ng
             this.tAircrackng.TabIndex = 0;
             this.tAircrackng.Text = "Aircrack-ng";
             this.tAircrackng.UseVisualStyleBackColor = true;
+            // 
+            // cbPTW
+            // 
+            this.cbPTW.AutoSize = true;
+            this.cbPTW.Location = new System.Drawing.Point(424, 42);
+            this.cbPTW.Name = "cbPTW";
+            this.cbPTW.Size = new System.Drawing.Size(106, 17);
+            this.cbPTW.TabIndex = 17;
+            this.cbPTW.Text = "Use PTW attack";
+            this.cbPTW.UseVisualStyleBackColor = true;
+            this.cbPTW.CheckedChanged += new System.EventHandler(this.cbPTW_CheckedChanged);
             // 
             // cbUseWordlist
             // 
@@ -822,6 +835,7 @@ namespace Aircrack_ng
             this.MaximizeBox = false;
             this.Name = "Faircrack";
             this.Text = "Aircrack-ng GUI";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Faircrack_FormClosing);
             this.tabControl1.ResumeLayout(false);
             this.tAircrackng.ResumeLayout(false);
             this.tAircrackng.PerformLayout();
@@ -915,6 +929,7 @@ namespace Aircrack_ng
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.Label lblCopyright;
         private System.Windows.Forms.RichTextBox rtbChangelog;
+        private System.Windows.Forms.CheckBox cbPTW;
     }
 }
 
