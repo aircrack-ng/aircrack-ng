@@ -86,7 +86,9 @@ namespace Aircrack_ng
                     this.Windir = @"C:\Windows";
                 }
             }
+            // Log windows directory
             this.writeLog("Windir: " + Windir);
+
             cmd_exe = this.Windir + "\\System32\\cmd.exe";
             // End windows directory
 
@@ -96,8 +98,15 @@ namespace Aircrack_ng
             this.lblAboutText.Text = "Aircrack-ng GUI v" + Assembly.GetCallingAssembly().GetName().Version.ToString();
             this.lblAboutText.Left = (this.tAboutBox.Width - this.lblAboutText.Width) / 2;
 
+            // Log version
+            this.writeLog(this.lblAboutText.Text);
+
+            // Add changelog
             this.rtbChangelog.Text =
-                  "v1.0.0.3\n"
+                  "v1.0.0.4\n"
+                + "    - Fixed cracking with a wordlist\n"
+                + "\n"
+                + "v1.0.0.3\n"
                 + "    - Added logging to debug.log\n"
                 + "    - Added PTW option\n"
                 + "\n"
@@ -111,6 +120,7 @@ namespace Aircrack_ng
                 + "v1.0\n"
                 + "    - First version\n";
 
+            // ... and copyright
             this.lblCopyright.Text =
                 "Copyright © 2006, 2007 Thomas d'Otreppe";
 
@@ -147,10 +157,7 @@ namespace Aircrack_ng
                 this.debugStream.WriteLine("{0} - {1}", DateTime.Now.ToString(), text);
                 this.debugStream.Flush();
             }
-            catch
-            {
-                
-            }
+            catch { }
         }
 
         /// <summary>
@@ -292,7 +299,7 @@ namespace Aircrack_ng
                 {
                     return;
                 }
-                options += "-w \"" + this.tbWPADico.Text + "\"";
+                options += " -w \"" + this.tbWPADico.Text + "\"";
             }
 
             // Advanced options
