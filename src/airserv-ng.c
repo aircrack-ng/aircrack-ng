@@ -134,6 +134,16 @@ static int card_get_chan(struct sstate *ss)
 	return wi_get_channel(ss->ss_wi);
 }
 
+static int card_set_rate(struct sstate *ss, int rate)
+{
+	return wi_set_rate(ss->ss_wi, rate);
+}
+
+static int card_get_rate(struct sstate *ss)
+{
+	return wi_get_rate(ss->ss_wi);
+}
+
 static int card_get_monitor(struct sstate *ss)
 {
 	return wi_get_monitor(ss->ss_wi);
@@ -226,6 +236,27 @@ static void handle_set_chan(struct sstate *ss, struct client *c,
 	net_send_kill(ss, c, NET_RC, &rc, sizeof(rc));
 }
 
+static void handle_set_rate(struct sstate *ss, struct client *c,
+			    unsigned char *buf, int len)
+{
+	uint32_t rate;
+	uint32_t rc;
+
+	if (len != sizeof(rate)) {
+		client_kill(ss, c);
+		return;
+	}
+
+	rate = *((uint32_t*)buf);
+	rate = ntohl(rate);
+
+	debug(ss, c, 2, "Got setrate %d\n", rate);
+	rc = card_set_rate(ss, rate);
+
+	rc = htonl(rc);
+	net_send_kill(ss, c, NET_RC, &rc, sizeof(rc));
+}
+
 static void handle_get_mac(struct sstate *ss, struct client *c)
 {
 	unsigned char mac[6];
@@ -248,6 +279,16 @@ static void handle_get_chan(struct sstate *ss, struct client *c)
 	chan = htonl(rc);
 
 	net_send_kill(ss, c, NET_RC, &chan, sizeof(chan));
+}
+
+static void handle_get_rate(struct sstate *ss, struct client *c)
+{
+	int rc = card_get_rate(ss);
+	uint32_t rate;
+
+	rate = htonl(rc);
+
+	net_send_kill(ss, c, NET_RC, &rate, sizeof(rate));
 }
 
 static void handle_get_monitor(struct sstate *ss, struct client *c)
@@ -295,12 +336,20 @@ static void handle_client(struct sstate *ss, struct client *c)
 		handle_set_chan(ss, c, buf, len);
 		break;
 
+	case NET_SET_RATE:
+		handle_set_rate(ss, c, buf, len);
+		break;
+
 	case NET_GET_MAC:
 		handle_get_mac(ss, c);
 		break;
 
 	case NET_GET_CHAN:
 		handle_get_chan(ss, c);
+		break;
+
+	case NET_GET_RATE:
+		handle_get_rate(ss, c);
 		break;
 
 	case NET_GET_MONITOR:

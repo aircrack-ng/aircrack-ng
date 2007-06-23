@@ -22,6 +22,8 @@ enum {
 	NET_GET_MAC,
 	NET_MAC,
 	NET_GET_MONITOR,
+	NET_GET_RATE,
+	NET_SET_RATE,
 };
 
 struct net_hdr {

@@ -347,6 +347,20 @@ static int net_get_channel(struct wif *wi)
 	return net_cmd(pn, NET_GET_CHAN, NULL, 0);
 }
 
+static int net_set_rate(struct wif *wi, int rate)
+{
+	uint32_t c = htonl(rate);
+
+	return net_cmd(wi_priv(wi), NET_SET_RATE, &c, sizeof(c));
+}
+
+static int net_get_rate(struct wif *wi)
+{
+	struct priv_net *pn = wi_priv(wi);
+
+	return net_cmd(pn, NET_GET_RATE, NULL, 0);
+}
+
 static int net_get_monitor(struct wif *wi)
 {
 	return net_cmd(wi_priv(wi), NET_GET_MONITOR, NULL, 0);
@@ -466,6 +480,8 @@ struct wif *net_open(char *iface)
 	wi->wi_write		= net_write;
 	wi->wi_set_channel	= net_set_channel;
 	wi->wi_get_channel	= net_get_channel;
+        wi->wi_set_rate    	= net_set_rate;
+	wi->wi_get_rate    	= net_get_rate;
 	wi->wi_close		= net_close;
 	wi->wi_fd		= net_fd;
 	wi->wi_get_mac		= net_get_mac;

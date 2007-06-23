@@ -1001,6 +1001,7 @@ int do_attack_fake_auth( void )
     uchar capa[2];
 
     unsigned char ackbuf[14];
+    unsigned char ctsbuf[10];
 
     if( memcmp( opt.r_bssid, NULL_MAC, 6 ) == 0 )
     {
@@ -1057,6 +1058,9 @@ int do_attack_fake_auth( void )
     memcpy( ackbuf, "\xD4\x00\x00\x00", 4 );
     memcpy( ackbuf +  4, opt.r_bssid, 6 );
     memset( ackbuf + 10, 0, 4 );
+
+    memcpy( ctsbuf, "\xC4\x00\x94\x02", 4 );
+    memcpy( ctsbuf +  4, opt.r_bssid, 6 );
 
     tries = 0;
     abort = 0;
@@ -4126,6 +4130,7 @@ int do_attack_test()
                 {
                     break;
                 }
+                usleep(1);
             }
             printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
             fflush(stdout);
@@ -4155,7 +4160,6 @@ int do_attack_test()
 
     if(found > 0)
     {
-        printf("\n");
         PCT; printf("Trying directed probe requests for all bitrates...\n");
     }
 
@@ -4163,6 +4167,7 @@ int do_attack_test()
     {
         if(ap[i].found <= 0)
             continue;
+        printf("\n");
         PCT; printf("%02X:%02X:%02X:%02X:%02X:%02X - channel: %d - \'%s\'\n", ap[i].bssid[0], ap[i].bssid[1],
                     ap[i].bssid[2], ap[i].bssid[3], ap[i].bssid[4], ap[i].bssid[5], ap[i].chan, ap[i].essid);
 
@@ -4233,6 +4238,7 @@ int do_attack_test()
                     {
                         break;
                     }
+                    usleep(1);
                 }
                 printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
                 fflush(stdout);
@@ -4436,6 +4442,7 @@ int do_attack_test()
                     {
                         break;
                     }
+                    usleep(1);
                 }
             }
             if(k)
