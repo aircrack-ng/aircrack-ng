@@ -13,13 +13,13 @@
 #define PTW_CONTROLSESSIONS 10
 
 // The maximum possible length of the main key, 13 is the maximum for a 104 bit key
-#define PTW_KEYHSBYTES 13
+#define PTW_KEYHSBYTES 29
 
 // How long the IV is, 3 is the default value for WEP
 #define PTW_IVBYTES 3
 
 // How many bytes of a keystream we collect, 16 are needed for a 104 bit key
-#define PTW_KSBYTES 16
+#define PTW_KSBYTES 32
 
 // The MAGIC VALUE!!
 #define PTW_n 256
@@ -38,6 +38,8 @@ typedef struct {
         uint8_t iv[PTW_IVBYTES];
 	// The keystream used in this session
         uint8_t keystream[PTW_KSBYTES];
+	// Weight for this session
+	int weight;
 } PTW_session;
 
 // The state of an attack
@@ -53,9 +55,12 @@ typedef struct {
         PTW_session sessions[PTW_CONTROLSESSIONS];
 	// The table with votes for the keybytesums
         PTW_tableentry table[PTW_KEYHSBYTES][PTW_n];
+	// Sessions for the original klein attack
+	PTW_session * allsessions;
+	int allsessions_size;
 } PTW_attackstate;
 
 PTW_attackstate * PTW_newattackstate();
 void PTW_freeattackstate(PTW_attackstate *);
-int PTW_addsession(PTW_attackstate *, uint8_t *, uint8_t *);
-int PTW_computeKey(PTW_attackstate *, uint8_t *, int, int);
+int PTW_addsession(PTW_attackstate *, uint8_t *, uint8_t *, int *, int);
+int PTW_computeKey(PTW_attackstate *, uint8_t *, int, int, int *);

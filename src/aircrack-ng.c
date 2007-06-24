@@ -95,6 +95,9 @@ int K_COEFF[N_ATTACKS] =
 	15, 13, 12, 12, 12, 5, 5, 5, 3, 4, 3, 4, 3, 13, 4, 4, -20
 };
 
+int PTW_DEFAULTWEIGHT[1] = { 256 };
+int PTW_DEFAULTBF[PTW_KEYHSBYTES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
 const uchar R[256] =
 {
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
@@ -677,7 +680,7 @@ void read_thread( void *arg )
 					if (clearsize < 16)
 						goto unlock_mx_apl;
 
-					if (PTW_addsession(ap_cur->ptw, buffer, buffer+4))
+					if (PTW_addsession(ap_cur->ptw, buffer, buffer+4, PTW_DEFAULTWEIGHT, 1))
 						ap_cur->nb_ivs++;
 
 					goto unlock_mx_apl;
@@ -879,18 +882,40 @@ void read_thread( void *arg )
 				unsigned char *body = h80211 + 24;
 				int dlen = pkh.caplen - (body-h80211) - 4 -4;
 				unsigned char clear[2048];
-				int clearsize, i;
+				int clearsize, i, weight[1];
 
 				/* calculate keystream */
-				clearsize = known_clear(clear, h80211, dlen);
-				if (clearsize < 16)
+				i = known_clear(clear, &clearsize, h80211, dlen);
+				if (clearsize < (opt.keylen+3))
 					goto unlock_mx_apl;
-				for (i = 0; i < 16; i++)
-					clear[i] ^= body[4+i];
+                                if( i == TYPE_IP )
+                                {
+                                    clear[14] = 0x40; //ip flags: don't fragment
+                                    weight[0] = 220;
+                                    for (i = 0; i < 16; i++)
+                                            clear[i] ^= body[4+i];
 
-				if (PTW_addsession(ap_cur->ptw, body, clear))
-					ap_cur->nb_ivs++;
+                                    if (PTW_addsession(ap_cur->ptw, body, clear, weight, 1))
+                                            ap_cur->nb_ivs++;
 
+                                    i = known_clear(clear, &clearsize, h80211, dlen);
+
+                                    clear[14] = 0x00; //ip flags: nothing set
+                                    weight[0] = 36;
+                                    for (i = 0; i < 16; i++)
+                                            clear[i] ^= body[4+i];
+
+                                    if (PTW_addsession(ap_cur->ptw, body, clear, weight, 1))
+                                            ap_cur->nb_ivs++;
+                                }
+                                else
+                                {
+                                    for (i = 0; i < 16; i++)
+                                            clear[i] ^= body[4+i];
+
+                                    if (PTW_addsession(ap_cur->ptw, body, clear, PTW_DEFAULTWEIGHT, 1))
+                                            ap_cur->nb_ivs++;
+                                }
 				goto unlock_mx_apl;
 			}
 
@@ -1374,7 +1399,7 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 
 	for( i = 0; i <= B; i++ )
 	{
-		int j, k = ( ws.ws_col - 20 ) / 9;
+		int j, k = ( ws.ws_col - 20 ) / 11;
 
 		if(!table)
 		{
@@ -2835,14 +2860,23 @@ int crack_wep_dict()
 static int crack_wep_ptw(struct AP_info *ap_cur)
 {
 	int len = 0;
-
         opt.ap = ap_cur;
 
-	if(PTW_computeKey(ap_cur->ptw, wep.key, 13, (KEYLIMIT*opt.ffact)) == 1)
-		len = 13;
-	else if(PTW_computeKey(ap_cur->ptw, wep.key, 5, (KEYLIMIT*opt.ffact)/10) == 1)
-		len = 5;
+        PTW_DEFAULTBF[12]=1;
+        PTW_DEFAULTBF[13]=1;
 
+        if(opt.keylen != 13)
+        {
+            if(PTW_computeKey(ap_cur->ptw, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
+                len = opt.keylen;
+        }
+        else
+        {
+            if(PTW_computeKey(ap_cur->ptw, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
+                len = 13;
+            else if(PTW_computeKey(ap_cur->ptw, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF) == 1)
+                len = 5;
+        }
 	if (!len)
 		return FAILURE;
 

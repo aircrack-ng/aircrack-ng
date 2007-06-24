@@ -39,6 +39,7 @@
 #include "ethernet.h"
 #include "if_arp.h"
 #include "if_llc.h"
+#include "crypto.h"
 
 #define FIND_VICTIM		0
 #define FOUND_VICTIM		1
@@ -138,6 +139,12 @@ struct wstate {
 } _wstate;
 
 #define KEYHSBYTES PTW_KEYHSBYTES
+
+int PTW_DEFAULTWEIGHT[1] = { 256 };
+int PTW_DEFAULTBF[PTW_KEYHSBYTES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+
+
 struct timeval t_begin;			 /* time at start of attack      */
 struct timeval t_stats;			 /* time since last update       */
 
@@ -978,103 +985,43 @@ static void log_wep(struct wstate *ws, struct ieee80211_frame* wh, int len)
 	ws->ws_packets++;
 }
 
-static int is_arp(struct ieee80211_frame *wh, int len)
-{
-        int arpsize = 8 + sizeof(struct arphdr) + 10*2;
-
-	if (wh) {} /* XXX unused */
-
-        if (len == arpsize || len == 54)
-                return 1;
-
-        return 0;
-}
-
-static void *get_sa(struct ieee80211_frame *wh)
-{
-        if (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
-                return wh->i_addr3;
-        else
-                return wh->i_addr2;
-}
-
-static void *get_da(struct ieee80211_frame *wh)
-{
-        if (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
-                return wh->i_addr1;
-        else
-                return wh->i_addr3;
-}
-
-static int known_clear(void *clear, struct ieee80211_frame *wh, int len)
-{
-        unsigned char *ptr = clear;
-
-        /* IP */
-        if (!is_arp(wh, len)) {
-                unsigned short iplen = htons(len - 8);
-
-//                printf("Assuming IP %d\n", len);
-
-                len = sizeof(S_LLC_SNAP_IP) - 1;
-                memcpy(ptr, S_LLC_SNAP_IP, len);
-                ptr += len;
-#if 1
-                len = 2;
-                memcpy(ptr, "\x45\x00", len);
-                ptr += len;
-
-                memcpy(ptr, &iplen, len);
-                ptr += len;
-#endif
-                len = ptr - ((unsigned char*)clear);
-                return len;
-        }
-//        printf("Assuming ARP %d\n", len);
-
-        /* arp */
-        len = sizeof(S_LLC_SNAP_ARP) - 1;
-        memcpy(ptr, S_LLC_SNAP_ARP, len);
-        ptr += len;
-
-        /* arp hdr */
-        len = 6;
-        memcpy(ptr, "\x00\x01\x08\x00\x06\x04", len);
-        ptr += len;
-
-        /* type of arp */
-        len = 2;
-        if (memcmp(get_da(wh), "\xff\xff\xff\xff\xff\xff", 6) == 0)
-                memcpy(ptr, "\x00\x01", len);
-        else
-                memcpy(ptr, "\x00\x02", len);
-        ptr += len;
-
-        /* src mac */
-        len = 6;
-        memcpy(ptr, get_sa(wh), len);
-        ptr += len;
-
-        len = ptr - ((unsigned char*)clear);
-        return len;
-}
-
 static void add_keystream(struct wstate *ws, struct ieee80211_frame* wh, int rd)
 {
 	unsigned char clear[1024];
 	int dlen = rd - sizeof(struct ieee80211_frame) - 4 - 4;
 	int clearsize;
 	unsigned char *body = (unsigned char*) (wh+1);
-	int i;
+	int i, weight[1];
 
-	clearsize = known_clear(clear, wh, dlen);
+	i = known_clear(clear, &clearsize, (void*) wh, dlen);
 	if (clearsize < 16)
 		return;
 
-	for (i = 0; i < 16; i++)
-		clear[i] ^= body[4+i];
+        if( i == TYPE_IP )
+        {
+            clear[14] = 0x40; //ip flags: don't fragment
+            weight[0] = 220;
+            for (i = 0; i < 16; i++)
+                    clear[i] ^= body[4+i];
 
-	PTW_addsession(ws->ws_ptw, body, clear);
+            PTW_addsession(ws->ws_ptw, body, clear, weight, 1);
+
+            i = known_clear(clear, &clearsize, (void*) wh, dlen);
+
+            clear[14] = 0x00; //ip flags: nothing set
+            weight[0] = 36;
+            for (i = 0; i < 16; i++)
+                    clear[i] ^= body[4+i];
+
+            PTW_addsession(ws->ws_ptw, body, clear, weight, 1);
+        }
+        else
+        {
+            for (i = 0; i < 16; i++)
+                    clear[i] ^= body[4+i];
+
+            PTW_addsession(ws->ws_ptw, body, clear, PTW_DEFAULTWEIGHT, 1);
+        }
 }
 
 static void got_ip(struct wstate *ws)
@@ -1201,7 +1148,7 @@ static void got_wep(struct wstate *ws, struct ieee80211_frame* wh, int rd)
 		return;
 	}
 
-	clearsize = known_clear(clear, wh, dlen);
+	known_clear(clear, &clearsize, (void*) wh, dlen);
 	time_print("Datalen %d Known clear %d\n", dlen, clearsize);
 
 	set_prga(ws, body, &body[4], clear, clearsize);
@@ -1633,11 +1580,11 @@ static int do_crack(struct wstate *ws)
 {
 	unsigned char key[PTW_KEYHSBYTES];
 
-	if(PTW_computeKey(ws->ws_ptw, key, 13, KEYLIMIT) == 1) {
+	if(PTW_computeKey(ws->ws_ptw, key, 13, KEYLIMIT, PTW_DEFAULTBF) == 1) {
 		save_key(key, 13);
 		return 1;
 	}
-	if(PTW_computeKey(ws->ws_ptw, key, 5, KEYLIMIT/10) == 1) {
+	if(PTW_computeKey(ws->ws_ptw, key, 5, KEYLIMIT/10, PTW_DEFAULTBF) == 1) {
 		save_key(key, 5);
 		return 1;
 	}

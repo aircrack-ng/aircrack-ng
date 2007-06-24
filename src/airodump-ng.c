@@ -699,7 +699,7 @@ int update_dataps()
 
 int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
 {
-    int i, n, z, seq, msd, dlen, offset;
+    int i, n, z, seq, msd, dlen, offset, clen;
     int type, length, numuni=0, numauth=0;
     struct pcap_pkthdr pkh;
     struct timeval tv;
@@ -1411,7 +1411,8 @@ skip_probe:
                     dlen = caplen -24 -4 -4; //original data len
                     if(dlen > 2048) dlen = 2048;
                     //get cleartext + len + 4(iv+idx)
-                    ivs2.len += known_clear(clear, h80211, dlen) + 4;
+                    known_clear(clear, &clen, h80211, dlen);
+                    ivs2.len += clen + 4;
                     /* encrypt data */
                     for(n=0; n<(ivs2.len-4); n++)
                     {

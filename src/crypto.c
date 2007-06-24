@@ -297,7 +297,7 @@ int is_arp(void *wh, int len)
         return 0;
 }
 
-int known_clear(void *clear, unsigned char *wh, int len)
+int known_clear(void *clear, int *clen, unsigned char *wh, int len)
 {
         unsigned char *ptr = clear;
 
@@ -320,11 +320,9 @@ int known_clear(void *clear, unsigned char *wh, int len)
                 memcpy(ptr, &iplen, len);
                 ptr += len;
 
-#if 0
-		/* XXX IP ID is not always 0.  Can't use IP packets for PTW,
-		 * unless they are our own.  Can we use them for 40-bit keys
-		 * though [only 3+5 bytes of keystream needed]?  Or for
-		 * calculating only the first 9 bytes of the key?  -sorbo.
+#if 1
+		/* setting IP ID 0 is ok, as we
+                 * bruteforce it later
 		 */
                 //ID=0
                 len=2;
@@ -338,7 +336,8 @@ int known_clear(void *clear, unsigned char *wh, int len)
 #endif
 #endif
                 len = ptr - ((unsigned char*)clear);
-                return len;
+                *clen = len;
+                return TYPE_IP;
         }
 //        printf("Assuming ARP %d\n", len);
 
@@ -366,5 +365,6 @@ int known_clear(void *clear, unsigned char *wh, int len)
         ptr += len;
 
         len = ptr - ((unsigned char*)clear);
-        return len;
+        *clen = len;
+        return TYPE_ARP;
 }

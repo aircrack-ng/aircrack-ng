@@ -27,7 +27,7 @@ OBJS_ADU	= airodump-ng.o common.o crypto.o uniqueiv.o
 OBJS_AT		= airtun-ng.o common.o crypto.o
 OBJS_IV		= ivstools.o common.o crypto.o uniqueiv.o
 OBJS_AS		= airserv-ng.o common.o
-OBJS_WS		= wesside-ng.o common.o $(OBJS_PTW)
+OBJS_WS		= wesside-ng.o crypto.c common.o $(OBJS_PTW)
 
 OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD)

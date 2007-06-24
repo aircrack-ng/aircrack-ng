@@ -20,6 +20,9 @@
 #define S_LLC_SNAP_IP   (S_LLC_SNAP "\x08\x00")
 #define IEEE80211_FC1_DIR_FROMDS                0x02    /* AP ->STA */
 
+#define TYPE_ARP    0
+#define TYPE_IP     1
+
 /* Used for own RC4 implementation */
 struct rc4_state
 {
@@ -32,5 +35,5 @@ int encrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen );
 int check_crc_buf( unsigned char *buf, int len );
 int calc_crc_buf( unsigned char *buf, int len );
 
-int known_clear(void *clear, unsigned char *wh, int len);
+int known_clear(void *clear, int *clen, unsigned char *wh, int len);
 #endif /* crypto.h */

@@ -188,7 +188,7 @@ int merge( int argc, char *argv[] )
 
 int dump_add_packet( unsigned char *h80211, int caplen)
 {
-    int i, n, z, seq, dlen;
+    int i, n, z, seq, dlen, clen;
     struct ivs2_pkthdr ivs2;
     unsigned char *p;
     unsigned char bssid[6];
@@ -540,7 +540,8 @@ skip_station:
                         dlen = caplen -24 -4 -4; //original data len
                         if(dlen > 2048) dlen = 2048;
                     //get cleartext + len + 4(iv+idx)
-                        ivs2.len += known_clear(clear, h80211, dlen) + 4;
+                        known_clear(clear, &clen, h80211, dlen);
+                        ivs2.len += clen + 4;
                         /* encrypt data */
                         for(n=0; n<(ivs2.len-4); n++)
                         {
