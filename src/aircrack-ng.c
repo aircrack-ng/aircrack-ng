@@ -890,31 +890,10 @@ void read_thread( void *arg )
 				if (clearsize < (opt.keylen+3))
 					goto unlock_mx_apl;
 
-                                if(ap_cur->nb_ivs == 24513)
-                                {
-                                    printf("k: %d; clearsize: %d\n", k, clearsize);
-                                    printf("clear 1st cleartext:\n");
-                                    printf("%02X %02X %02x %02X   %02X %02X %02X %02X\n", clear[0], clear[1],clear[2],clear[3],clear[4],clear[5],clear[6],clear[7]);
-                                    printf("%02X %02X %02x %02X   %02X %02X %02X %02X\n", clear[8], clear[9],clear[10],clear[11],clear[12],clear[13],clear[14],clear[15]);
-                                    printf("clear 2nd cleartext:\n");
-                                    printf("%02X %02X %02x %02X   %02X %02X %02X %02X\n", clear[0+32], clear[1+32],clear[2+32],clear[3+32],clear[4+32],clear[5+32],clear[6+32],clear[7+32]);
-                                    printf("%02X %02X %02x %02X   %02X %02X %02X %02X\n", clear[8+32], clear[9+32],clear[10+32],clear[11+32],clear[12+32],clear[13+32],clear[14+32],clear[15+32]);
-                                }
-
                                 for (j=0; j<k; j++)
                                 {
                                     for (i = 0; i < clearsize; i++)
                                             clear[i+(32*j)] ^= body[4+i];
-                                }
-
-                                if(ap_cur->nb_ivs == 24513)
-                                {
-                                    printf("clear 1st keystream:\n");
-                                    printf("%02X %02X %02x %02X   %02X %02X %02X %02X\n", clear[0], clear[1],clear[2],clear[3],clear[4],clear[5],clear[6],clear[7]);
-                                    printf("%02X %02X %02x %02X   %02X %02X %02X %02X\n", clear[8], clear[9],clear[10],clear[11],clear[12],clear[13],clear[14],clear[15]);
-                                    printf("clear 2nd keystream:\n");
-                                    printf("%02X %02X %02x %02X   %02X %02X %02X %02X\n", clear[0+32], clear[1+32],clear[2+32],clear[3+32],clear[4+32],clear[5+32],clear[6+32],clear[7+32]);
-                                    printf("%02X %02X %02x %02X   %02X %02X %02X %02X\n", clear[8+32], clear[9+32],clear[10+32],clear[11+32],clear[12+32],clear[13+32],clear[14+32],clear[15+32]);
                                 }
 
                                 if (PTW_addsession(ap_cur->ptw, body, clear, weight, k))

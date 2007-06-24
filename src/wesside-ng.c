@@ -1000,7 +1000,7 @@ static void add_keystream(struct wstate *ws, struct ieee80211_frame* wh, int rd)
         for (j=0; j<k; j++)
         {
             for (i = 0; i < clearsize; i++)
-                    clear[i+(clearsize*j)] ^= body[4+i];
+                    clear[i+(32*j)] ^= body[4+i];
         }
         PTW_addsession(ws->ws_ptw, body, clear, weight, k);
 }

@@ -519,9 +519,7 @@ int PTW_addsession(PTW_attackstate * state, uint8_t * iv, uint8_t * keystream, i
 			memcpy(state->allsessions[state->packets_collected-1].keystream, &keystream[KSBYTES*j], KSBYTES);
 			state->allsessions[state->packets_collected-1].weight = weight[j];
 		}
-                // We will only use sessions we know exactly as controlsessions
-//                 if ((state->sessions_collected < CONTROLSESSIONS) && (total == 1)) {
-                if ((state->sessions_collected < CONTROLSESSIONS) && (total == 1)) {
+                if ((state->sessions_collected < CONTROLSESSIONS)) {
                         memcpy(state->sessions[state->sessions_collected].iv, iv, IVBYTES);
                         memcpy(state->sessions[state->sessions_collected].keystream, keystream, KSBYTES);
                         state->sessions_collected++;
