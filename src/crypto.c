@@ -297,9 +297,10 @@ int is_arp(void *wh, int len)
         return 0;
 }
 
-int known_clear(void *clear, int *clen, unsigned char *wh, int len)
+int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 {
         unsigned char *ptr = clear;
+        int num;
 
         /* IP */
         if (!is_arp(wh, len)) {
@@ -337,7 +338,15 @@ int known_clear(void *clear, int *clen, unsigned char *wh, int len)
 #endif
                 len = ptr - ((unsigned char*)clear);
                 *clen = len;
-                return TYPE_IP;
+
+                memcpy(clear+32, clear, len);
+                memcpy(clear+32+14, "\x00\x00", 2);
+
+                num=2;
+                weight[0] = 220;
+                weight[1] = 36;
+
+                return num;
         }
 //        printf("Assuming ARP %d\n", len);
 
@@ -366,5 +375,6 @@ int known_clear(void *clear, int *clen, unsigned char *wh, int len)
 
         len = ptr - ((unsigned char*)clear);
         *clen = len;
-        return TYPE_ARP;
+        weight[0] = 256;
+        return 1;
 }

@@ -708,6 +708,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
     unsigned char bssid[6];
     unsigned char stmac[6];
     unsigned char clear[2048];
+    int weight[16];
 
     struct AP_info *ap_cur = NULL;
     struct ST_info *st_cur = NULL;
@@ -1411,7 +1412,7 @@ skip_probe:
                     dlen = caplen -24 -4 -4; //original data len
                     if(dlen > 2048) dlen = 2048;
                     //get cleartext + len + 4(iv+idx)
-                    known_clear(clear, &clen, h80211, dlen);
+                    known_clear(clear, &clen, weight, h80211, dlen);
                     ivs2.len += clen + 4;
                     /* encrypt data */
                     for(n=0; n<(ivs2.len-4); n++)

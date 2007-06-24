@@ -991,37 +991,18 @@ static void add_keystream(struct wstate *ws, struct ieee80211_frame* wh, int rd)
 	int dlen = rd - sizeof(struct ieee80211_frame) - 4 - 4;
 	int clearsize;
 	unsigned char *body = (unsigned char*) (wh+1);
-	int i, weight[1];
+	int i, weight[16], k, j;
 
-	i = known_clear(clear, &clearsize, (void*) wh, dlen);
+	k = known_clear(clear, &clearsize, weight, (void*) wh, dlen);
 	if (clearsize < 16)
 		return;
 
-        if( i == TYPE_IP )
+        for (j=0; j<k; j++)
         {
-            clear[14] = 0x40; //ip flags: don't fragment
-            weight[0] = 220;
-            for (i = 0; i < 16; i++)
-                    clear[i] ^= body[4+i];
-
-            PTW_addsession(ws->ws_ptw, body, clear, weight, 1);
-
-            i = known_clear(clear, &clearsize, (void*) wh, dlen);
-
-            clear[14] = 0x00; //ip flags: nothing set
-            weight[0] = 36;
-            for (i = 0; i < 16; i++)
-                    clear[i] ^= body[4+i];
-
-            PTW_addsession(ws->ws_ptw, body, clear, weight, 1);
+            for (i = 0; i < clearsize; i++)
+                    clear[i+(clearsize*j)] ^= body[4+i];
         }
-        else
-        {
-            for (i = 0; i < 16; i++)
-                    clear[i] ^= body[4+i];
-
-            PTW_addsession(ws->ws_ptw, body, clear, PTW_DEFAULTWEIGHT, 1);
-        }
+        PTW_addsession(ws->ws_ptw, body, clear, weight, k);
 }
 
 static void got_ip(struct wstate *ws)
@@ -1112,6 +1093,7 @@ static void got_wep(struct wstate *ws, struct ieee80211_frame* wh, int rd)
 	unsigned char clear[1024];
 	int clearsize;
 	unsigned char *body;
+        int weight[16];
 
 	bodylen = rd - sizeof(struct ieee80211_frame);
 
@@ -1148,7 +1130,7 @@ static void got_wep(struct wstate *ws, struct ieee80211_frame* wh, int rd)
 		return;
 	}
 
-	known_clear(clear, &clearsize, (void*) wh, dlen);
+	known_clear(clear, &clearsize, weight, (void*) wh, dlen);
 	time_print("Datalen %d Known clear %d\n", dlen, clearsize);
 
 	set_prga(ws, body, &body[4], clear, clearsize);

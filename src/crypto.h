@@ -35,5 +35,5 @@ int encrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen );
 int check_crc_buf( unsigned char *buf, int len );
 int calc_crc_buf( unsigned char *buf, int len );
 
-int known_clear(void *clear, int *clen, unsigned char *wh, int len);
+int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len);
 #endif /* crypto.h */
