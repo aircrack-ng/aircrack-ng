@@ -132,6 +132,7 @@ char usage[] =
 "      -b <bssid> : target selection: access point's MAC"
 "%s"
 "      -q         : enable quiet mode (no status output)\n"
+"      -C <macs>  : merges all those APs into a virtual one\n"
 "\n"
 "  Static WEP cracking options:\n"
 "\n"
