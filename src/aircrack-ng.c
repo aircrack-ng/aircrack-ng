@@ -2852,8 +2852,9 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 	int len = 0;
         opt.ap = ap_cur;
 
-        PTW_DEFAULTBF[12]=1;
-        PTW_DEFAULTBF[13]=1;
+        PTW_DEFAULTBF[10]=1;
+        PTW_DEFAULTBF[11]=1;
+//        PTW_DEFAULTBF[12]=1;
 
         if(opt.keylen != 13)
         {
