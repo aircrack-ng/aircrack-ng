@@ -297,13 +297,63 @@ int is_arp(void *wh, int len)
         return 0;
 }
 
+int is_spantree(void *wh)
+{
+        if ( memcmp( wh +  4, SPANTREE, 6 ) == 0 ||
+             memcmp( wh + 16, SPANTREE, 6 ) == 0 )
+            return 1;
+
+        return 0;
+}
+
 int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 {
         unsigned char *ptr = clear;
         int num;
 
-        /* IP */
-        if (!is_arp(wh, len)) {
+        if(is_arp(wh, len)) /*arp*/
+        {
+            len = sizeof(S_LLC_SNAP_ARP) - 1;
+            memcpy(ptr, S_LLC_SNAP_ARP, len);
+            ptr += len;
+
+            /* arp hdr */
+            len = 6;
+            memcpy(ptr, "\x00\x01\x08\x00\x06\x04", len);
+            ptr += len;
+
+            /* type of arp */
+            len = 2;
+            if (memcmp(get_da(wh), "\xff\xff\xff\xff\xff\xff", 6) == 0)
+                    memcpy(ptr, "\x00\x01", len);
+            else
+                    memcpy(ptr, "\x00\x02", len);
+            ptr += len;
+
+            /* src mac */
+            len = 6;
+            memcpy(ptr, get_sa(wh), len);
+            ptr += len;
+
+            len = ptr - ((unsigned char*)clear);
+            *clen = len;
+            weight[0] = 256;
+            return 1;
+
+        }
+        else if(is_spantree(wh)) /*spantree*/
+        {
+            len = sizeof(S_LLC_SNAP_SPANTREE) - 1;
+            memcpy(ptr, S_LLC_SNAP_SPANTREE, len);
+            ptr += len;
+
+            len = ptr - ((unsigned char*)clear);
+            *clen = len;
+            weight[0] = 256;
+            return 1;
+        }
+        else /* IP */
+        {
                 unsigned short iplen = htons(len - 8);
 
 //                printf("Assuming IP %d\n", len);
@@ -340,7 +390,7 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
                 *clen = len;
 
                 memcpy(clear+32, clear, len);
-                memcpy(clear+32+14, "\x00\x00", 2);
+                memcpy(clear+32+14, "\x00\x00", 2); //ip flags=none
 
                 num=2;
                 weight[0] = 220;
@@ -348,33 +398,6 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 
                 return num;
         }
-//        printf("Assuming ARP %d\n", len);
-
-        /* arp */
-        len = sizeof(S_LLC_SNAP_ARP) - 1;
-        memcpy(ptr, S_LLC_SNAP_ARP, len);
-        ptr += len;
-
-        /* arp hdr */
-        len = 6;
-        memcpy(ptr, "\x00\x01\x08\x00\x06\x04", len);
-        ptr += len;
-
-        /* type of arp */
-        len = 2;
-        if (memcmp(get_da(wh), "\xff\xff\xff\xff\xff\xff", 6) == 0)
-                memcpy(ptr, "\x00\x01", len);
-        else
-                memcpy(ptr, "\x00\x02", len);
-        ptr += len;
-
-        /* src mac */
-        len = 6;
-        memcpy(ptr, get_sa(wh), len);
-        ptr += len;
-
-        len = ptr - ((unsigned char*)clear);
-        *clen = len;
-        weight[0] = 256;
+        *clen=0;
         return 1;
 }

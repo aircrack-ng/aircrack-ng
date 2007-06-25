@@ -3228,6 +3228,9 @@ usage:
 		goto exit_main;
 	}
 
+        if( opt.keylen == 0 )
+                opt.keylen = 13;
+
 	/* start one thread per input file */
 
 	signal( SIGINT,  sighandler );

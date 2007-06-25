@@ -18,10 +18,13 @@
 #define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
 #define S_LLC_SNAP_IP   (S_LLC_SNAP "\x08\x00")
+#define S_LLC_SNAP_SPANTREE   "\x42\x42\x03\x00\x00\x00\x00\x00"
 #define IEEE80211_FC1_DIR_FROMDS                0x02    /* AP ->STA */
 
 #define TYPE_ARP    0
 #define TYPE_IP     1
+
+#define SPANTREE  "\x01\x80\xC2\x00\x00\x00"
 
 /* Used for own RC4 implementation */
 struct rc4_state
