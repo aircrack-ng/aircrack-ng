@@ -1,0 +1,27 @@
+diff -Naur linux-source-2.6.17-orig/net/ieee80211/ieee80211_tx.c linux-source-2.6.17-rawtx/net/ieee80211/ieee80211_tx.c
+--- linux-source-2.6.17-orig/net/ieee80211/ieee80211_tx.c	2006-10-13 14:18:10.000000000 +0200
++++ linux-source-2.6.17-rawtx/net/ieee80211/ieee80211_tx.c	2007-04-09 17:07:45.000000000 +0200
+@@ -291,6 +291,23 @@
+ 		goto success;
+ 	}
+ 
++	if(ieee->iw_mode == IW_MODE_MONITOR)
++	{
++		txb = ieee80211_alloc_txb(1, skb->len,
++					ieee->tx_headroom, GFP_ATOMIC);
++		if (unlikely(!txb)) {
++			printk(KERN_WARNING "%s: Could not allocate TXB\n",
++			ieee->dev->name);
++			goto failed;
++		}
++
++		txb->encrypted = 0;
++		txb->payload_size = skb->len;
++		memcpy(skb_put(txb->fragments[0],skb->len), skb->data, skb->len);
++
++		goto success;
++	}
++
+ 	ether_type = ntohs(((struct ethhdr *)skb->data)->h_proto);
+ 
+ 	crypt = ieee->crypt[ieee->tx_keyidx];

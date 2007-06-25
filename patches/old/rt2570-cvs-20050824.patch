@@ -1,0 +1,138 @@
+diff -ur ../rt2570-cvs-20050824/Module/mlme.c ./Module/mlme.c
+--- ../rt2570-cvs-20050824/Module/mlme.c	2005-08-17 11:00:39.000000000 +0200
++++ ./Module/mlme.c	2005-08-24 11:53:01.000000000 +0200
+@@ -1690,7 +1690,7 @@
+ 			}
+ 			else
+ 			{
+-				pAd->PortCfg.TxRate = min((INT)(pAd->PortCfg.MaxTxRate), RATE_11);
++				pAd->PortCfg.TxRate = min((INT)(pAd->PortCfg.MaxTxRate), RATE_5_5);
+ 			}
+ 		}
+     }
+diff -ur ../rt2570-cvs-20050824/Module/rtusb_bulk.c ./Module/rtusb_bulk.c
+--- ../rt2570-cvs-20050824/Module/rtusb_bulk.c	2005-07-19 10:20:46.000000000 +0200
++++ ./Module/rtusb_bulk.c	2005-08-24 15:40:14.000000000 +0200
+@@ -107,7 +107,8 @@
+ 		NdisReleaseSpinLock(&pAdapter->BulkOutLock);
+ 		return;
+ 	}
+-	else if (pAdapter->MediaState == NdisMediaStateDisconnected)
++	else if (pAdapter->MediaState == NdisMediaStateDisconnected &&
++		 pAdapter->PortCfg.BssType != BSS_MONITOR)
+ 	{
+ 		//
+ 		// Since there is no connection, so we need to empty the Tx Bulk out Ring.
+diff -ur ../rt2570-cvs-20050824/Module/rtusb_data.c ./Module/rtusb_data.c
+--- ../rt2570-cvs-20050824/Module/rtusb_data.c	2005-08-17 11:00:39.000000000 +0200
++++ ./Module/rtusb_data.c	2005-08-24 15:37:06.000000000 +0200
+@@ -84,7 +84,8 @@
+ 		return 0;
+ 	}
+ 	// Drop packets if no associations
+-	else if (!INFRA_ON(pAdapter) && !ADHOC_ON(pAdapter))
++	else if (!INFRA_ON(pAdapter) && !ADHOC_ON(pAdapter) &&
++		 pAdapter->PortCfg.BssType != BSS_MONITOR)
+ 	{
+ 		RTUSBFreeSkbBuffer(skb);
+ 		return 0;
+@@ -141,6 +142,14 @@
+ 	Priority = 0;
+ 	AccessCategory = 0;
+ 	
++	if (skb && pAdapter->PortCfg.BssType == BSS_MONITOR)
++	{
++		NdisAcquireSpinLock(&pAdapter->SendTxWaitQueueLock);
++		skb_queue_tail(&pAdapter->SendTxWaitQueue, skb);
++		NdisReleaseSpinLock(&pAdapter->SendTxWaitQueueLock);
++		return (NDIS_STATUS_SUCCESS);
++	}
++
+ 	if (skb)
+ 	{
+ 		Priority = skb->priority;
+@@ -806,6 +815,36 @@
+ 		DBGPRINT(RT_DEBUG_ERROR, "Error, Null skb data buffer!!!\n");
+ 		return (NDIS_STATUS_FAILURE);
+ 	}
++
++	if (pAdapter->PortCfg.BssType == BSS_MONITOR)
++	{
++		pTxContext  = &pAdapter->TxContext[pAdapter->NextTxIndex];
++		pTxContext->InUse   = TRUE;
++		pTxContext->LastOne = TRUE;
++		
++		pAdapter->NextTxIndex++;
++		if (pAdapter->NextTxIndex >= TX_RING_SIZE)
++			pAdapter->NextTxIndex = 0;
++
++		pTxD  = &(pTxContext->TransferBuffer->TxDesc);
++		memset(pTxD, 0, sizeof(TXD_STRUC));
++		pDest = pTxContext->TransferBuffer->WirelessPacket;
++
++		memcpy( pDest, skb->data, skb->len );
++
++		RTUSBWriteTxDescriptor(pTxD, FALSE, 0, FALSE, FALSE, TRUE, IFS_BACKOFF, skb->len, FALSE, 0, CW_MIN_IN_BITS, CW_MAX_IN_BITS, skb->len + 4, pAdapter->PortCfg.TxRate, 4, pAdapter->PortCfg.TxPreambleInUsed);
++
++		TransferBufferLength = skb->len + sizeof(TXD_STRUC);
++		if ((TransferBufferLength % 2) == 1)
++			TransferBufferLength++;
++
++		pTxContext->BulkOutSize = TransferBufferLength;
++		atomic_inc(&pAdapter->TxCount);
++		RTUSB_SET_BULK_FLAG(pAdapter, fRTUSB_BULK_OUT_DATA_FRAG);
++		RTUSBFreeSkbBuffer(skb);
++		return (NDIS_STATUS_SUCCESS);
++	}
++
+ 	if (NdisBufferLength < 14)
+ 	{
+ 		DBGPRINT_RAW(RT_DEBUG_ERROR, "RTUSBHardEncrypt --> Ndis Packet buffer error !!!\n");
+diff -ur ../rt2570-cvs-20050824/Module/rtusb_info.c ./Module/rtusb_info.c
+--- ../rt2570-cvs-20050824/Module/rtusb_info.c	2005-08-17 11:00:39.000000000 +0200
++++ ./Module/rtusb_info.c	2005-08-24 12:11:05.000000000 +0200
+@@ -200,6 +200,12 @@
+ 	pAdapter->PortCfg.IbssConfig.Channel = chan;
+ 	DBGPRINT(RT_DEBUG_ERROR, "<==SIOCSIWFREQ[cmd=0x%x] (Channel=%d)\n", SIOCSIWFREQ, pAdapter->PortCfg.IbssConfig.Channel);
+ 
++	if (pAdapter->PortCfg.BssType == BSS_MONITOR)
++	{
++		pAdapter->PortCfg.Channel = pAdapter->PortCfg.IbssConfig.Channel;
++		AsicSwitchChannel(pAdapter, pAdapter->PortCfg.Channel);
++		AsicLockChannel(pAdapter, pAdapter->PortCfg.Channel);
++	}
+ 
+ 	return 0;
+ }
+@@ -288,10 +294,15 @@
+ 		   __u32 *mode, char *extra)
+ {
+ 	PRT2570ADAPTER pAdapter = (PRT2570ADAPTER) dev->priv;
+-	if (ADHOC_ON(pAdapter))
+-		*mode = IW_MODE_ADHOC;
++	if (pAdapter->PortCfg.BssType == BSS_MONITOR)
++		*mode = IW_MODE_MONITOR;
+ 	else
+-		*mode = IW_MODE_INFRA;
++	{
++		if (ADHOC_ON(pAdapter))
++			*mode = IW_MODE_ADHOC;
++		else
++			*mode = IW_MODE_INFRA;
++	}
+ 	DBGPRINT(RT_DEBUG_TEMP,"--->rtusb_ioctl_giwmode\n");		
+ 	return 0;
+ }
+diff -ur ../rt2570-cvs-20050824/Module/sync.c ./Module/sync.c
+--- ../rt2570-cvs-20050824/Module/sync.c	2005-07-27 17:54:29.000000000 +0200
++++ ./Module/sync.c	2005-08-24 14:31:58.000000000 +0200
+@@ -203,6 +203,9 @@
+ 	UCHAR          Ssid[MAX_LEN_OF_SSID], SsidLen, ScanType, BssType;
+ 	ULONG          Now;
+ 
++	if (pAd->PortCfg.BssType == BSS_MONITOR)
++		return;
++
+ 	DBGPRINT(RT_DEBUG_INFO, "SYNC - MlmeScanReqAction\n");
+ #if 0
+ 	// Check the total scan tries for one single OID command
