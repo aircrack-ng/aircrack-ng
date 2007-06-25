@@ -885,6 +885,12 @@ void read_thread( void *arg )
 				int clearsize, i, j, k;
                                 int weight[16];
 
+                                if((h80211[1] & 0x03) == 0x03) //30byte header
+                                {
+                                    body += 6;
+                                    dlen -=6;
+                                }
+
 				/* calculate keystream */
 				k = known_clear(clear, &clearsize, weight, h80211, dlen);
 				if (clearsize < (opt.keylen+3))

@@ -24,6 +24,7 @@
 #define TYPE_ARP    0
 #define TYPE_IP     1
 
+#define BROADCAST "\xFF\xFF\xFF\xFF\xFF\xFF"
 #define SPANTREE  "\x01\x80\xC2\x00\x00\x00"
 
 /* Used for own RC4 implementation */
