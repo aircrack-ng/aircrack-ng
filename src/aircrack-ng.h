@@ -184,6 +184,6 @@ struct ST_info
 	unsigned char stmac[6];		 /* client MAC address           */
 };
 
-void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit );
+void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod );
 
 #endif /* _AIRCRACK_NG_H */

@@ -1332,7 +1332,7 @@ int crack_wep_thread( void *arg )
 
 /* display the current votes */
 
-void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit )
+void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod )
 {
 	float delta;
 	struct winsize ws;
@@ -1376,8 +1376,8 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 		printf( "\33[33;1m" );
 
 	if(table)
-		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %d/%d keys (got %ld IVs)\33[K",
-			(ws.ws_col - 44) / 2, et_h, et_m, et_s, prod, keylimit, opt.ap->nb_ivs );
+		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %d keys (got %ld IVs)\33[K",
+			(ws.ws_col - 44) / 2, et_h, et_m, et_s, prod, opt.ap->nb_ivs );
 	else
 		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %lld keys (got %ld IVs)\33[K",
 			(ws.ws_col - 44) / 2, et_h, et_m, et_s, nb_tried, wep.nb_ivs_now );
@@ -1477,7 +1477,7 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 	else
 	{
 		if (B != -1)
-			show_wep_stats( B - 1, 1, NULL, NULL, NULL, 0, 0 );
+			show_wep_stats( B - 1, 1, NULL, NULL, NULL, 0 );
 
 		if( opt.l33t )
 			printf( "\33[31;1m" );
@@ -1808,7 +1808,7 @@ int do_wep_crack1( int B )
 	if( B == opt.keylen )
 	{
 		if( ! opt.is_quiet )
-			show_wep_stats( B - 1, 0, NULL, NULL, NULL, 0, 0 );
+			show_wep_stats( B - 1, 0, NULL, NULL, NULL, 0 );
 
 		return( check_wep_key( wep.key, B, 0 ) );
 	}
@@ -1839,7 +1839,7 @@ int do_wep_crack1( int B )
 		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
 
 		if( ! opt.is_quiet )
-			show_wep_stats( B, 0, NULL, NULL, NULL, 0, 0 );
+			show_wep_stats( B, 0, NULL, NULL, NULL, 0 );
 
 		if( B == 4 && opt.keylen == 13 )
 		{
@@ -2022,7 +2022,7 @@ int do_wep_crack2( int B )
 		wep.depth[i] = 0;
 
 		if( ! opt.is_quiet )
-			show_wep_stats( i, 0, NULL, NULL, NULL, 0, 0 );
+			show_wep_stats( i, 0, NULL, NULL, NULL, 0 );
 	}
 
 	for( wep.fudge[B] = 1; wep.fudge[B] < 256; wep.fudge[B]++ )
@@ -2042,7 +2042,7 @@ int do_wep_crack2( int B )
 		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
 
 		if( ! opt.is_quiet )
-			show_wep_stats( B, 0, NULL, NULL, NULL, 0, 0 );
+			show_wep_stats( B, 0, NULL, NULL, NULL, 0 );
 
 		for( i = B + 1; i < opt.keylen - 2; i++ )
 		{
@@ -2055,7 +2055,7 @@ int do_wep_crack2( int B )
 			wep.depth[i] = 0;
 
 			if( ! opt.is_quiet )
-				show_wep_stats( i, 0, NULL, NULL, NULL, 0, 0 );
+				show_wep_stats( i, 0, NULL, NULL, NULL, 0 );
 		}
 
 		for( i = 0; i < 256; i++ )
@@ -2832,7 +2832,7 @@ int crack_wep_dict()
 			gettimeofday( &t_now, NULL );
 			if( (t_now.tv_sec - t_last.tv_sec) > 0)
 			{
-				show_wep_stats(opt.keylen - 1, 1, NULL, NULL, NULL, 0, 0);
+				show_wep_stats(opt.keylen - 1, 1, NULL, NULL, NULL, 0);
 				gettimeofday( &t_last, NULL);
 			}
 		}

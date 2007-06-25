@@ -83,6 +83,10 @@ static const double eval[] = {
 0.00495094196451801,
 0.0048983441590402};
 
+int tried, max_tries;
+int depth[KEYHSBYTES];
+PTW_tableentry keytable[KEYHSBYTES][n];
+
 // For sorting
 static int compare(const void * ina, const void * inb) {
         PTW_tableentry * a = (PTW_tableentry * )ina;
@@ -205,6 +209,8 @@ static int correct(PTW_attackstate * state, uint8_t * key, int keylen) {
 		return 0;
 	}
 
+        tried++;
+
         for (i = 0; i < state->sessions_collected; i++) {
                 memcpy(&keybuf[IVBYTES], key, keylen);
                 memcpy(keybuf, state->sessions[i].iv, IVBYTES);
@@ -262,9 +268,6 @@ static void getdrv(PTW_tableentry orgtable[][n], int keylen, double * normal, do
         }
 }
 
-int tried, max_tries;
-int depth[KEYHSBYTES];
-PTW_tableentry keytable[KEYHSBYTES][n];
 /*
  * Guess a single keybyte
  */
@@ -273,7 +276,7 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
 	uint8_t tmp;
 
 	if(!opt.is_quiet)
-		show_wep_stats( keylen -1, 0, keytable, searchborders, depth, tried, max_tries );
+		show_wep_stats( keylen -1, 0, keytable, searchborders, depth, tried );
 
 	if (keybyte == keylen) {
 		return correct(state, key, keylen);
@@ -302,9 +305,12 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
 		return 0;
 	} else {
 		for (i = 0; i < searchborders[keybyte]; i++) {
-                    depth[keybyte] = i;
                     key[keybyte] = sortedtable[keybyte][i].b - sum;
-                    keytable[keybyte][i].b = key[keybyte];
+                    if(!opt.is_quiet)
+                    {
+                        depth[keybyte] = i;
+                        keytable[keybyte][i].b = key[keybyte];
+                    }
                     if (doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, sortedtable[keybyte][i].b, strongbytes, bf)) {
 				return 1;
 			}
@@ -323,7 +329,8 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	int fixat;
 	int fixvalue;
 
-        memcpy(keytable, table, sizeof(PTW_tableentry) * n * keylen);
+        if(!opt.is_quiet)
+            memcpy(keytable, table, sizeof(PTW_tableentry) * n * keylen);
 
 	for (i = 0; i < keylen; i++) {
 		if (strongbytes[i] == 1) {
@@ -342,7 +349,7 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 		if (doRound(table, 0, fixat, fixvalue, choices, key, keylen, state, 0, strongbytes, bf) == 1) {
 			// printf("hit with %d choices\n", prod);
 			if(!opt.is_quiet)
-				show_wep_stats( keylen -1, 1, keytable, choices, depth, prod, keylimit );
+				show_wep_stats( keylen -1, 1, keytable, choices, depth, tried );
 			return 1;
 		}
 		while((strongbytes[sh2[i].keybyte] == 1) || (bf[sh2[i].keybyte] == 1) ) {
@@ -359,7 +366,7 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 				prod *= n;
 			}
 		}
-                tried = prod;
+
                 /*
 		do {
 			i++;
@@ -368,11 +375,11 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 		i++;
 
 		if(!opt.is_quiet)
-			show_wep_stats( keylen -1, 0, keytable, choices, depth, prod, keylimit );
+			show_wep_stats( keylen -1, 0, keytable, choices, depth, tried );
 
 	}
 	if(!opt.is_quiet)
-        show_wep_stats( keylen -1, 1, keytable, choices, depth, prod, keylimit );
+            show_wep_stats( keylen -1, 1, keytable, choices, depth, tried );
     return 0;
 }
 
@@ -389,6 +396,8 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	int i,j;
 	uint8_t fullkeybuf[PTW_KSBYTES];
 	uint8_t guessbuf[PTW_KSBYTES];
+
+        tried=0;
 
 	sorthelper (* sh)[n-1] = NULL;
 	PTW_tableentry (*table)[n] = alloca(sizeof(PTW_tableentry) * n * keylen);
