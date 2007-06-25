@@ -1,6 +1,7 @@
-Version 0.9.1 (changes from aircrack-ng 0.9) - Released ?? ??? 2007:
+Version 0.9.1 (changes from aircrack-ng 0.9) - Released 25 june 2007:
 * airodump-ng: wlan-ng driver now works again.
 * airodump-ng: Fixed IP address when writing to CSV file
+* airodump-ng: Fixed debian bug #417388: it doesn't restore terminal after error
 * aircrack-ng: Fixed WPA cracking on SMP computers
 * aircrack-ng: Fixed bug in calc_pmk() function causes wrong PMK to be computed
 * airmon-ng: Fixed madwifi-ng wifiX detection (due to translation in ifconfig)
