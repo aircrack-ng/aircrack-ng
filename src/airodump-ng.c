@@ -3458,6 +3458,11 @@ usage:
                 continue;
             }
             perror( "select failed" );
+
+            /* Restore terminal */
+			fprintf( stderr, "\33[?25h" );
+    		fflush( stdout );
+
             return( 1 );
         }
 
@@ -3514,6 +3519,11 @@ usage:
                     wi[i] = wi_open(ifnam);
                     if (!wi[i]) {
                         printf("Can't reopen %s\n", ifnam);
+
+                        /* Restore terminal */
+						fprintf( stderr, "\33[?25h" );
+						fflush( stdout );
+
                         exit(1);
                     }
 
