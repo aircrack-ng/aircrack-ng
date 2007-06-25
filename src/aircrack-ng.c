@@ -790,6 +790,12 @@ void read_thread( void *arg )
 				unsigned char clear[2048];
 				int clearsize, i;
 
+                                if((h80211[1] & 0x03) == 0x03) //30byte header
+                                {
+                                    body += 6;
+                                    dlen -=6;
+                                }
+
 				/* calculate keystream */
 				clearsize = known_clear(clear, h80211, dlen);
 				if (clearsize < 16)
