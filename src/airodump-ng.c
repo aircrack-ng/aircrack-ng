@@ -4279,6 +4279,11 @@ usage:
                 continue;
             }
             perror( "select failed" );
+
+            /* Restore terminal */
+            fprintf( stderr, "\33[?25h" );
+    		fflush( stdout );
+
             return( 1 );
         }
 
@@ -4326,6 +4331,10 @@ usage:
                 if( ( caplen = read( fd_raw[i], buffer, 65535 ) ) < 0 )
                 {
                     perror( "read failed" );
+                    /* Restore terminal */
+                    fprintf( stderr, "\33[?25h" );
+    				fflush( stdout );
+
                     return( 1 );
                 }
 #endif /* linux */
@@ -4337,6 +4346,10 @@ usage:
                 if( ( caplen = read(  fd_raw[i], buffer, buflen ) ) < 0 )
                 {
                     perror( "read failed" );
+					/* Restore terminal */
+                    fprintf( stderr, "\33[?25h" );
+    				fflush( stdout );
+
                     return( 1 );
                 }
 #endif /* __FreeBSD__ */
