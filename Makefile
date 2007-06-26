@@ -11,6 +11,13 @@ all:
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test $(@)
 
+aircrack-ng-opt-prof_gen: all
+	mkdir -p prof
+	$(MAKE) -C src $(@)
+
+aircrack-ng-opt-prof_use:
+	$(MAKE) -C src $(@)
+
 install:
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test $(@)

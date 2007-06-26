@@ -49,16 +49,16 @@ $(LIBOSD):
 	$(MAKE) -C $(OSD)
 
 aircrack-ng-opt: $(SRC_AC)
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) $(SRC_AC)
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) $(SRC_AC) $(LIBSSL) uniqueiv.o -o aircrack-ng-opt -lpthread
 
 aircrack-ng-opt-prof_gen: $(SRC_AC)
 	mkdir -p prof
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_genx -DDO_PGO_DUMP \
-	-prof_dir$(PROF_DIR) $(SRC_AC) -o aircrack-ng-opt-prof_gen -lpthread
+	-prof_dir$(PROF_DIR) $(SRC_AC) $(LIBSSL) uniqueiv.o -o aircrack-ng-opt-prof_gen -lpthread
 
 aircrack-ng-opt-prof_use: $(SRC_AC)
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_use \
-	-prof_dir$(PROF_DIR) $(SRC_AC) -o aircrack-ng-opt-prof -lpthread
+	-prof_dir$(PROF_DIR) $(SRC_AC) $(LIBSSL) uniqueiv.o -o aircrack-ng-opt-prof -lpthread
 
 aircrack-ng$(EXE): $(OBJS_AC)
 	$(CC) $(CFLAGS) $(OBJS_AC) -o $(@) -lpthread $(LIBSSL)
