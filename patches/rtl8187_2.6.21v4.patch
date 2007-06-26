@@ -11938,14 +11938,14 @@ diff -Naur rtl8187_orig/symvers rtl8187_rawtx/symvers
 +cd ..
 diff -Naur rtl8187_orig/wlan0rmv rtl8187_rawtx/wlan0rmv
 --- rtl8187_orig/wlan0rmv	2007-03-13 23:45:09.000000000 +0100
-+++ rtl8187_rawtx/wlan0rmv	2007-06-21 23:43:25.000000000 +0200
++++ rtl8187_rawtx/wlan0rmv	2007-06-26 16:32:43.000000000 +0200
 @@ -1,5 +1,9 @@
  #!/bin/bash
  
 -rmmod r8180
 -rmmod ieee80211_r8180
 -rmmod ieee80211_crypt_r8180
-+rmmor rtl8187 2>/dev/null
++rmmod rtl8187 2>/dev/null
 +rmmod r8187 2>/dev/null
 +rmmod ieee80211_rtl 2>/dev/null
 +rmmod ieee80211_crypt_ccmp_rtl 2>/dev/null
