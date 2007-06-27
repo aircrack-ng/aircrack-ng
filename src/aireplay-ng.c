@@ -309,6 +309,71 @@ void sighandler( int signum )
         alarmed++;
 }
 
+int reset_ifaces()
+{
+    //close interfaces
+    if(_wi_in != _wi_out)
+    {
+        if(_wi_in)
+        {
+            wi_close(_wi_in);
+            _wi_in = NULL;
+        }
+        if(_wi_out)
+        {
+            wi_close(_wi_out);
+            _wi_out = NULL;
+        }
+    }
+    else
+    {
+        if(_wi_out)
+        {
+            wi_close(_wi_out);
+            _wi_out = NULL;
+            _wi_in = NULL;
+        }
+    }
+
+    /* open the replay interface */
+    _wi_out = wi_open(opt.iface_out);
+    if (!_wi_out)
+        return 1;
+    dev.fd_out = wi_fd(_wi_out);
+
+    /* open the packet source */
+    if( opt.s_face != NULL )
+    {
+        _wi_in = wi_open(opt.s_face);
+        if (!_wi_in)
+            return 1;
+        dev.fd_in = wi_fd(_wi_in);
+        wi_get_mac(_wi_in, dev.mac_in);
+    }
+    else
+    {
+        _wi_in = _wi_out;
+        dev.fd_in = dev.fd_out;
+
+        /* XXX */
+        dev.arptype_in = dev.arptype_out;
+        wi_get_mac(_wi_in, dev.mac_in);
+    }
+
+    wi_get_mac(_wi_out, dev.mac_out);
+
+    return 0;
+}
+
+int set_bitrate(struct wif *wi, int rate)
+{
+    if( wi_set_rate(wi, rate) )
+        return 1;
+    if( reset_ifaces() )
+        return 1;
+    return 0;
+}
+
 int send_packet(void *buf, size_t count)
 {
 	struct wif *wi = _wi_out; /* XXX globals suck */
@@ -3848,6 +3913,7 @@ int do_attack_test()
     int ret=0;
     float avg2;
     struct rx_info ri;
+    int atime=100;  //time in ms to wait for answer packet (needs to be higher for airserv)
 
     if(memcmp(opt.r_bssid, NULL_MAC, 6))
     {
@@ -3981,7 +4047,8 @@ int do_attack_test()
     }
     if(gotit) printf("\n");
 
-    wi_set_rate(_wi_out, RATE_1M);
+    if(set_bitrate(_wi_out, RATE_1M))
+        printf("Error setting bitrate to %.1f\n", RATE_1M/100000.0);
 
     PCT; printf("Trying broadcast probe requests...\n");
 
@@ -4137,7 +4204,7 @@ int do_attack_test()
                 }
 
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (100*1000)) //wait 300ms for an answer
                 {
                     break;
                 }
@@ -4205,7 +4272,12 @@ int do_attack_test()
         for(k=0; k<RATE_NUM; k++)
         {
             ap[i].found=0;
-            wi_set_rate(_wi_out, bitrates[k]);
+            if(set_bitrate(_wi_out, bitrates[k]))
+            {
+                printf("Error setting bitrate to %.1f\n", bitrates[k]/100000.0);
+                continue;
+            }
+
 
             avg2 = 0;
             memset(ap[i].pwr, 0, REQUESTS*sizeof(unsigned int));
@@ -4253,7 +4325,7 @@ int do_attack_test()
                     }
 
                     gettimeofday( &tv2, NULL );
-                    if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
+                    if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (100*1000)) //wait 300ms for an answer
                     {
                         break;
                     }
@@ -4277,7 +4349,9 @@ int do_attack_test()
         }
     }
 
-    wi_set_rate(_wi_out, RATE_1M);
+    if(set_bitrate(_wi_out, RATE_1M))
+        printf("Error setting bitrate to %.1f\n", RATE_1M/100000.0);
+
 
     if( opt.s_face != NULL )
     {
@@ -5056,8 +5130,8 @@ usage:
     opt.port_out = get_ip_port(opt.iface_out, opt.ip_out);
 
     //don't open interface(s) when using test mode and airserv
-   if( ! (opt.a_mode == 9 && opt.port_out >= 0 ) )
-   {
+    if( ! (opt.a_mode == 9 && opt.port_out >= 0 ) )
+    {
         /* open the replay interface */
         _wi_out = wi_open(opt.iface_out);
         if (!_wi_out)
@@ -5088,7 +5162,7 @@ usage:
         }
 
         wi_get_mac(_wi_out, dev.mac_out);
-   }
+    }
 
     /* drop privileges */
     setuid( getuid() );
