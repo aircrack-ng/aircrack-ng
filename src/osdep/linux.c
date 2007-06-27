@@ -208,6 +208,7 @@ static int linux_get_channel(struct wif *wi)
 static int linux_set_rate(struct wif *wi, int rate)
 {
     struct priv_linux *dev = wi_priv(wi);
+    struct ifreq ifr;
     struct iwreq wrq;
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
@@ -222,6 +223,32 @@ static int linux_set_rate(struct wif *wi, int rate)
     {
         return( -1 );
     }
+
+    /* find the interface index */
+
+    /* Is madwifi-ng? */
+    if( dev->is_madwifing )
+    {
+        memset( &ifr, 0, sizeof( ifr ) );
+        strncpy( ifr.ifr_name, wi_get_ifname(wi), sizeof( ifr.ifr_name ) - 1 );
+
+        if( ioctl( dev->fd_in, SIOCGIFINDEX, &ifr ) < 0 )
+        {
+            printf("Interface %s: \n", wi_get_ifname(wi));
+            perror( "ioctl(SIOCGIFINDEX) failed" );
+            return( 1 );
+        }
+
+        /* Bring interface down*/
+        ifr.ifr_flags = 0;
+
+        if( ioctl( dev->fd_in, SIOCSIFFLAGS, &ifr ) < 0 )
+        {
+            perror( "ioctl(SIOCSIFFLAGS) failed" );
+            return( 1 );
+        }
+    }
+
 
     return 0;
 }
