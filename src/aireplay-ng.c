@@ -105,18 +105,23 @@
               lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
               lt->tm_hour, lt->tm_min, lt->tm_sec ); }
 
+#define RATE_NUM 12
+
 #define RATE_1M 1000000
 #define RATE_2M 2000000
 #define RATE_5_5M 5500000
 #define RATE_11M 11000000
 
 #define RATE_6M 6000000
+#define RATE_9M 9000000
 #define RATE_12M 12000000
+#define RATE_18M 18000000
 #define RATE_24M 24000000
+#define RATE_36M 36000000
 #define RATE_48M 48000000
 #define RATE_54M 54000000
 
-int rates[]={RATE_1M, RATE_2M, RATE_5_5M, RATE_11M, RATE_6M, RATE_12M, RATE_24M, RATE_48M, RATE_54M};
+int bitrates[RATE_NUM]={RATE_1M, RATE_2M, RATE_5_5M, RATE_11M, RATE_6M, RATE_9M, RATE_12M, RATE_18M, RATE_24M, RATE_36M, RATE_48M, RATE_54M};
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern char * searchInside(const char * dir, const char * filename);
@@ -272,6 +277,7 @@ struct APt
     unsigned char bssid[6];
     unsigned char chan;
     unsigned int  ping[REQUESTS];
+    unsigned int  pwr[REQUESTS];
 };
 
 struct APt ap[MAX_APS];
@@ -330,12 +336,12 @@ int send_packet(void *buf, size_t count)
 	return 0;
 }
 
-int read_packet(void *buf, size_t count)
+int read_packet(void *buf, size_t count, struct rx_info *ri)
 {
 	struct wif *wi = _wi_in; /* XXX */
 	int rc;
 
-        rc = wi_read(wi, buf, count, NULL);
+        rc = wi_read(wi, buf, count, ri);
         if (rc == -1) {
             switch (errno) {
             case EAGAIN:
@@ -372,7 +378,7 @@ void read_sleep( int usec )
         }
 
         if( FD_ISSET( dev.fd_in, &rfds ) )
-            caplen = read_packet( h80211, sizeof( h80211 ) );
+            caplen = read_packet( h80211, sizeof( h80211 ), NULL );
 
         gettimeofday(&tv2, NULL);
     }
@@ -450,7 +456,7 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
         len = 0;
         while (len < 22)
         {
-            len = read_packet(pkt_sniff, sizeof(pkt_sniff));
+            len = read_packet(pkt_sniff, sizeof(pkt_sniff), NULL);
 
             gettimeofday(&tv2, NULL);
             if(((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000) //wait 500 msec for beacon frame
@@ -751,7 +757,7 @@ int fake_ska_auth_1( void )
     //Waiting for response packet containing the challenge
     while (1)
     {
-        caplen = read_packet(sniff, sizeof(sniff));
+        caplen = read_packet(sniff, sizeof(sniff), NULL);
         if((unsigned)caplen > sizeof(h80211)) continue;
         if (sniff[0] == '\xb0' && sniff[26] == 2)
         {
@@ -826,7 +832,7 @@ int fake_ska_auth_2(uchar *ph80211, int caplen, uchar *prga, uchar *iv)
     //Waiting for successful authentication
     while (1)
     {
-        caplen = read_packet(packet, sizeof(packet));
+        caplen = read_packet(packet, sizeof(packet), NULL);
         if (packet[0] == 0xb0 && (caplen < 60) && packet[26] == 4) break;
 
         gettimeofday(&tv2, NULL);
@@ -907,7 +913,7 @@ int fake_asso()
     gettimeofday(&tv2, NULL);
     while (1)
     {
-        caplen = read_packet(packet, sizeof(packet));
+        caplen = read_packet(packet, sizeof(packet), NULL);
 
         if (packet[0] == 0x10) break;
 
@@ -1290,7 +1296,7 @@ int do_attack_fake_auth( void )
         if( ! FD_ISSET( dev.fd_in, &rfds ) )
             continue;
 
-        caplen = read_packet( h80211, sizeof( h80211 ) );
+        caplen = read_packet( h80211, sizeof( h80211 ), NULL );
 
         if( caplen  < 0 ) return( 1 );
         if( caplen == 0 ) continue;
@@ -1554,7 +1560,7 @@ int capture_ask_packet( int *caplen )
 
             gettimeofday( &tv, NULL );
 
-            *caplen = read_packet( h80211, sizeof( h80211 ) );
+            *caplen = read_packet( h80211, sizeof( h80211 ), NULL );
 
             if( *caplen  < 0 ) return( 1 );
             if( *caplen == 0 ) continue;
@@ -2107,7 +2113,7 @@ int do_attack_arp_resend( void )
         {
             gettimeofday( &tv, NULL );
 
-            caplen = read_packet( h80211, sizeof( h80211 ) );
+            caplen = read_packet( h80211, sizeof( h80211 ), NULL );
 
             if( caplen  < 0 ) return( 1 );
             if( caplen == 0 ) continue;
@@ -2681,7 +2687,7 @@ int do_attack_chopchop( void )
 
         /* watch for a response from the AP */
 
-        n = read_packet( h80211, sizeof( h80211 ) );
+        n = read_packet( h80211, sizeof( h80211 ), NULL );
 
         if( n  < 0 ) return( 1 );
         if( n == 0 ) continue;
@@ -3162,7 +3168,7 @@ int do_attack_fragment()
 
             while (!gotit)  //waiting for relayed packet
             {
-                caplen = read_packet(packet, sizeof(packet));
+                caplen = read_packet(packet, sizeof(packet), NULL);
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -3294,7 +3300,7 @@ int do_attack_fragment()
             gotit=0;
             while (!gotit)  //waiting for relayed packet
             {
-                caplen = read_packet(packet, sizeof(packet));
+                caplen = read_packet(packet, sizeof(packet), NULL);
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -3393,7 +3399,7 @@ int do_attack_fragment()
             gotit=0;
             while (!gotit)  //waiting for relayed packet
             {
-                caplen = read_packet(packet, sizeof(packet));
+                caplen = read_packet(packet, sizeof(packet), NULL);
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -3840,6 +3846,8 @@ int do_attack_test()
     int caplen=0, essidlen=0;
     unsigned int min, avg, max;
     int ret=0;
+    float avg2;
+    struct rx_info ri;
 
     if(memcmp(opt.r_bssid, NULL_MAC, 6))
     {
@@ -4012,7 +4020,7 @@ int do_attack_test()
 
         while (1)  //waiting for relayed packet
         {
-            caplen = read_packet(packet, sizeof(packet));
+            caplen = read_packet(packet, sizeof(packet), &ri);
 
             if (packet[0] == 0x50 ) //Is probe response
             {
@@ -4068,6 +4076,7 @@ int do_attack_test()
         min = INT_MAX;
         max = 0;
         avg = 0;
+        avg2 = 0;
 
         memcpy(h80211, PROBE_REQ, 24);
 
@@ -4101,11 +4110,11 @@ int do_attack_test()
 
             gettimeofday( &tv, NULL );
 
-            printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
+            printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
             fflush(stdout);
             while (1)  //waiting for relayed packet
             {
-                caplen = read_packet(packet, sizeof(packet));
+                caplen = read_packet(packet, sizeof(packet), &ri);
 
                 if (packet[0] == 0x50 ) //Is probe response
                 {
@@ -4120,6 +4129,8 @@ int do_attack_test()
                                 answers++;
                             }
                             ap[i].found++;
+                            if(ri.ri_power > 0)
+                                ap[i].pwr[j] = ri.ri_power;
                             break;
                         }
                     }
@@ -4132,7 +4143,7 @@ int do_attack_test()
                 }
                 usleep(1);
             }
-            printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
+            printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
             fflush(stdout);
         }
         for(j=0; j<REQUESTS; j++)
@@ -4142,14 +4153,16 @@ int do_attack_test()
                 if(ap[i].ping[j] > max) max = ap[i].ping[j];
                 if(ap[i].ping[j] < min) min = ap[i].ping[j];
                 avg += ap[i].ping[j];
+                avg2 += ap[i].pwr[j];
             }
         }
         if(ap[i].found > 0)
         {
             avg /= ap[i].found;
-            PCT; printf("Ping (min/avg/max): %.3fms/%.3fms/%.3fms\n", (min/1000.0), (avg/1000.0), (max/1000.0));
+            avg2 /= ap[i].found;
+            PCT; printf("Ping (min/avg/max): %.3fms/%.3fms/%.3fms Power: %.2f\n", (min/1000.0), (avg/1000.0), (max/1000.0), avg2);
         }
-        PCT; printf("%d/%d: %d%%\n\n", ap[i].found, REQUESTS, ((ap[i].found*100)/REQUESTS));
+        PCT; printf("%2d/%2d: %3d%%\n\n", ap[i].found, REQUESTS, ((ap[i].found*100)/REQUESTS));
 
         if(!gotit && answers)
         {
@@ -4189,10 +4202,14 @@ int do_attack_test()
 
         len += 16;
 
-        for(k=0; k<9; k++)
+        for(k=0; k<RATE_NUM; k++)
         {
             ap[i].found=0;
-            wi_set_rate(_wi_out, rates[k]);
+            wi_set_rate(_wi_out, bitrates[k]);
+
+            avg2 = 0;
+            memset(ap[i].pwr, 0, REQUESTS*sizeof(unsigned int));
+
             for(j=0; j<REQUESTS; j++)
             {
                 /*
@@ -4211,11 +4228,11 @@ int do_attack_test()
 
                 gettimeofday( &tv, NULL );
 
-                printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
+                printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
                 fflush(stdout);
                 while (1)  //waiting for relayed packet
                 {
-                    caplen = read_packet(packet, sizeof(packet));
+                    caplen = read_packet(packet, sizeof(packet), &ri);
 
                     if (packet[0] == 0x50 ) //Is probe response
                     {
@@ -4228,6 +4245,8 @@ int do_attack_test()
                                     answers++;
                                 }
                                 ap[i].found++;
+                                if(ri.ri_power > 0)
+                                    ap[i].pwr[j] = ri.ri_power;
                                 break;
                             }
                         }
@@ -4240,10 +4259,14 @@ int do_attack_test()
                     }
                     usleep(1);
                 }
-                printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
+                printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
                 fflush(stdout);
             }
-            PCT; printf("Probing at %.1f Mbps:\t%d/%d: %d%%\n", wi_get_rate(_wi_out)/1000000.0,
+            for(j=0; j<REQUESTS; j++)
+                avg2 += ap[i].pwr[j];
+            if(ap[i].found > 0)
+                avg2 /= ap[i].found;
+            PCT; printf("Probing at %2.1f Mbps:\t%2d/%2d: %3d%%\n", wi_get_rate(_wi_out)/1000000.0,
                         ap[i].found, REQUESTS, ((ap[i].found*100)/REQUESTS));
         }
 
@@ -4384,7 +4407,7 @@ int do_attack_test()
                 gettimeofday( &tv, NULL );
                 while (1)  //waiting for relayed packet
                 {
-                    caplen = read_packet(packet, sizeof(packet));
+                    caplen = read_packet(packet, sizeof(packet), &ri);
                     if ( filter_packet(packet, caplen) == 0 ) //got same length and same type
                     {
                         if(!answers)
