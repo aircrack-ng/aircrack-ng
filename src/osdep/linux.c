@@ -572,6 +572,7 @@ static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
 
 int linux_get_monitor(struct wif *wi)
 {
+    struct priv_linux *dev = wi_priv(wi);
     struct ifreq ifr;
     struct iwreq wrq;
 
@@ -610,7 +611,7 @@ int linux_get_monitor(struct wif *wi)
     if( ( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
           ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
           ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL) ||
-        ( wrq.u.mode != IW_MODE_MONITOR ) )
+        ( wrq.u.mode != IW_MODE_MONITOR && !dev->is_orinoco) )
     {
         return( 1 );
     }
@@ -760,7 +761,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
           ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL) ||
         ( wrq.u.mode != IW_MODE_MONITOR) )
     {
-        if (set_monitor( dev, iface, fd ))
+        if (set_monitor( dev, iface, fd ) && !dev->is_orinoco)
         {
             printf("Error setting monitor mode on %s\n",iface);
             return( 1 );
@@ -779,7 +780,6 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
             return( 1 );
         }
     }
-
     /* bind the raw socket to the interface */
 
     if( bind( fd, (struct sockaddr *) &sll,

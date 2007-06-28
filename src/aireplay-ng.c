@@ -371,6 +371,11 @@ int set_bitrate(struct wif *wi, int rate)
         return 1;
     if( reset_ifaces() )
         return 1;
+    if( wi_get_rate(wi) != rate )
+    {
+        printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
+        return 1;
+    }
     return 0;
 }
 
@@ -4049,8 +4054,7 @@ int do_attack_test()
     }
     if(gotit) printf("\n");
 
-    if(set_bitrate(_wi_out, RATE_1M))
-        printf("Error setting bitrate to %.1f\n", RATE_1M/100000.0);
+    set_bitrate(_wi_out, RATE_1M);
 
     PCT; printf("Trying broadcast probe requests...\n");
 
@@ -4117,7 +4121,7 @@ int do_attack_test()
             }
 
             gettimeofday( &tv2, NULL );
-            if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (atime*1000)) //wait 'atime'ms for an answer
+            if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (3*atime*1000)) //wait 'atime'ms for an answer
             {
                 break;
             }
@@ -4275,10 +4279,7 @@ int do_attack_test()
         {
             ap[i].found=0;
             if(set_bitrate(_wi_out, bitrates[k]))
-            {
-                printf("Error setting bitrate to %.1f\n", bitrates[k]/100000.0);
                 continue;
-            }
 
 
             avg2 = 0;
@@ -4351,9 +4352,7 @@ int do_attack_test()
         }
     }
 
-    if(set_bitrate(_wi_out, RATE_1M))
-        printf("Error setting bitrate to %.1f\n", RATE_1M/100000.0);
-
+    set_bitrate(_wi_out, RATE_1M);
 
     if( opt.s_face != NULL )
     {
