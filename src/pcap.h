@@ -29,10 +29,18 @@
           ( ( x <<  8 ) & 0x00FF0000 ) | \
           ( ( x << 24 ) & 0xFF000000 ) );
 
+//BSSID const. length of 6 bytes; can be together with all the other types
 #define IVS2_BSSID	0x01
+//ESSID var. length; alone, or with BSSID
 #define IVS2_ESSID	0x02
+//wpa structure, const. length; alone, or with BSSID
 #define IVS2_WPA	0x04
+//IV+IDX+KEYSTREAM, var. length; alone or with BSSID
 #define IVS2_XOR	0x08
+//[IV+IDX][i][l][XOR_1]..[XOR_i][weight]
+//holds i possible keystreams for the same IV with a length of l for each keystream (l max 32)
+//and an array "int weight[16]" at the end
+#define IVS2_PTW        0x10
 
 struct pcap_file_header
 {

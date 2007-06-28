@@ -699,7 +699,7 @@ int update_dataps()
 
 int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
 {
-    int i, n, z, seq, msd, dlen, offset, clen;
+    int i, n, z, seq, msd, dlen, offset, clen, o;
     int type, length, numuni=0, numauth=0;
     struct pcap_pkthdr pkh;
     struct timeval tv;
@@ -709,6 +709,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
     unsigned char stmac[6];
     unsigned char clear[2048];
     int weight[16];
+    int num_xor=0;
 
     struct AP_info *ap_cur = NULL;
     struct ST_info *st_cur = NULL;
@@ -1408,18 +1409,41 @@ skip_probe:
                     ivs2.flags = 0;
                     ivs2.len = 0;
 
-                    ivs2.flags |= IVS2_XOR;
                     dlen = caplen -24 -4 -4; //original data len
                     if(dlen > 2048) dlen = 2048;
                     //get cleartext + len + 4(iv+idx)
-                    known_clear(clear, &clen, weight, h80211, dlen);
-                    ivs2.len += clen + 4;
-                    /* encrypt data */
-                    for(n=0; n<(ivs2.len-4); n++)
+                    num_xor = known_clear(clear, &clen, weight, h80211, dlen);
+                    if(num_xor == 1)
                     {
-                        clear[n] = (clear[n] ^ h80211[z+4+n]) & 0xFF;
+                        ivs2.flags |= IVS2_XOR;
+                        ivs2.len += clen + 4;
+                        /* reveal keystream (plain^encrypted) */
+                        for(n=0; n<(ivs2.len-4); n++)
+                        {
+                            clear[n] = (clear[n] ^ h80211[z+4+n]) & 0xFF;
+                        }
+                        //clear is now the keystream
                     }
-                    //clear is now the keystream
+                    else
+                    {
+                        //do it again to get it 2 bytes higher
+                        num_xor = known_clear(clear+2, &clen, weight, h80211, dlen);
+                        ivs2.flags |= IVS2_PTW;
+                        //len = 4(iv+idx) + 1(num of keystreams) + 1(len per keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
+                        ivs2.len += 4 + 1 + 1 + 32*num_xor + 16*sizeof(int);
+                        clear[0] = num_xor;
+                        clear[1] = clen;
+                        /* reveal keystream (plain^encrypted) */
+                        for(o=0; o<num_xor; o++)
+                        {
+                            for(n=0; n<(ivs2.len-4); n++)
+                            {
+                                clear[2+n+o*32] = (clear[2+n+o*32] ^ h80211[z+4+n]) & 0xFF;
+                            }
+                        }
+                        memcpy(clear+4 + 1 + 1 + 32*num_xor, weight, 16*sizeof(int));
+                        //clear is now the keystream
+                    }
 
                     if( memcmp( G.prev_bssid, ap_cur->bssid, 6 ) != 0 )
                     {

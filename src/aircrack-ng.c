@@ -349,6 +349,7 @@ void read_thread( void *arg )
 	uchar *buffer;
 	uchar *h80211;
 	uchar *p;
+	int weight[16];
 
 	struct ivs2_pkthdr ivs2;
 	struct pcap_pkthdr pkh;
@@ -678,7 +679,7 @@ void read_thread( void *arg )
 
 					clearsize = ivs2.len;
 
-					if (clearsize < 16)
+					if (clearsize < opt.keylen+3)
 						goto unlock_mx_apl;
 
 					if (PTW_addsession(ap_cur->ptw, buffer, buffer+4, PTW_DEFAULTWEIGHT, 1))
@@ -689,6 +690,65 @@ void read_thread( void *arg )
 
 				buffer[3] = buffer[4];
 				buffer[4] = buffer[5];
+				buffer[3] ^= 0xAA;
+				buffer[4] ^= 0xAA;
+				/* check for uniqueness first */
+
+				if( ap_cur->nb_ivs == 0 )
+					ap_cur->uiv_root = uniqueiv_init();
+
+				if( uniqueiv_check( ap_cur->uiv_root, buffer ) == 0 )
+				{
+					/* add the IV & first two encrypted bytes */
+
+					n = ap_cur->nb_ivs * 5;
+
+					if( n + 5 > ap_cur->ivbuf_size )
+					{
+						/* enlarge the IVs buffer */
+
+						ap_cur->ivbuf_size += 131072;
+						ap_cur->ivbuf = (uchar *) realloc(
+							ap_cur->ivbuf, ap_cur->ivbuf_size );
+
+						if( ap_cur->ivbuf == NULL )
+						{
+							perror( "realloc failed" );
+							break;
+						}
+					}
+
+
+					memcpy( ap_cur->ivbuf + n, buffer, 5 );
+					uniqueiv_mark( ap_cur->uiv_root, buffer );
+					ap_cur->nb_ivs++;
+				}
+			}
+			else if(ivs2.flags & IVS2_PTW)
+			{
+				ap_cur->crypt = 2;
+
+				if (opt.do_ptw) {
+					int clearsize;
+
+					clearsize = ivs2.len;
+
+					if (buffer[5] < opt.keylen)
+						goto unlock_mx_apl;
+					if( clearsize < (6 + buffer[4]*32 + 16*(signed)sizeof(int)) )
+						goto unlock_mx_apl;
+
+					memcpy(weight, buffer+clearsize-15*sizeof(int), 16*sizeof(int));
+// 					printf("weight 1: %d, weight 2: %d\n", weight[0], weight[1]);
+
+					if (PTW_addsession(ap_cur->ptw, buffer, buffer+6, weight, buffer[4]))
+						ap_cur->nb_ivs++;
+
+					goto unlock_mx_apl;
+				}
+
+				buffer[3] = buffer[6];
+				buffer[4] = buffer[7];
 				buffer[3] ^= 0xAA;
 				buffer[4] ^= 0xAA;
 				/* check for uniqueness first */
