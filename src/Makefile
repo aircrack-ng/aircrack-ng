@@ -36,7 +36,7 @@ LIBS		+= -liphlpapi -lsetupapi -luuid
 endif
 LIBOSD		= $(OSD)/lib$(OSD).a
 
-LIBSSL		= -lssl -lcrypto
+LIBSSL		= -lssl -lcrypto $(LDFLAGS)
 
 all: osd userland $(SBINFILES)
 
