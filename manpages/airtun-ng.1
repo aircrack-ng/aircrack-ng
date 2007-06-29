@@ -41,7 +41,7 @@ This is the WEP key to en-/decrypt all traffic going through the tunnel.
 Defines the ToDS and FromDS bit in the ieee802.11 header. For tods=1, the ToDS bit is set to 1 and FromDS to 0, while tods=0 sets them the other way around.
 .TP
 .I -m <netmask>, --netmask <netmask>
-Filters networks based on bssid ^ netmask combination. Needs -d, used in replay mode. 
+Filters networks based on bssid ^ netmask combination. Needs \-d, used in replay mode.
 .TP
 .I -d <BSSID>, --bssid <BSSID>
 Filters networks based on the <BSSID>. Used in replay mode.
@@ -50,7 +50,7 @@ Filters networks based on the <BSSID>. Used in replay mode.
 Enables replay mode. All read frames, filtered by bssid and netmask (if specified), will be replayed.
 .SH EXAMPLES
 .B airtun-ng
--a 00:14:22:56:F3:4E -t 0 -y keystream.xor wlan0
+-a 00:14:22:56:F3:4E \-t 0 \-y keystream.xor wlan0
 .PP
 .SH SEE ALSO
 .br

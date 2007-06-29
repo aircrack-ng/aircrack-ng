@@ -70,10 +70,10 @@ Forge an ICMP packet
 Forge a llc null packet
 .TP
 .I -9, --custom
-Build a custom packet, requires -r to read an unencrypted frame out of a pcap file.
+Build a custom packet, requires \-r to read an unencrypted frame out of a pcap file.
 .SH EXAMPLE
 .B packetforge-ng
--y test.xor -a 00:09:5b:12:40:cc -h 00:10:2a:cb:30:14 -k 192.168.1.100 -l 192.168.1.1 -w arp-request.cap
+\-y test.xor \-a 00:09:5b:12:40:cc \-h 00:10:2a:cb:30:14 \-k 192.168.1.100 \-l 192.168.1.1 \-w arp-request.cap
 .SH AUTHOR
 This manual page was written by Thomas d'Otreppe.
 Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation

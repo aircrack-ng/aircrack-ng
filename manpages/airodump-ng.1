@@ -17,7 +17,7 @@ is a packet capture tool for aircrack-ng. It allows dumping packets directly fro
 Shows the help screen.
 .TP
 .I -i, --ivs
-It only saves IVs (only useful for cracking). If this option is specified, you have to give a dump prefix (--write option)
+It only saves IVs (only useful for cracking). If this option is specified, you have to give a dump prefix (\-\-write option)
 .TP
 .I -g, --gpsd
 Indicate that airodump-ng should try to use GPSd to get coordinates.
@@ -43,13 +43,13 @@ Defines the way airodump-ng sets the channels when using more than one card. Val
 .B Filter options:
 .TP
 .I -t <OPN|WEP|WPA|WPA1|WPA2>, --encrypt <OPN|WEP|WPA|WPA1|WPA2>
-It will only show networks, matching the given encryption. May be specified more than once: '-t OPN -t WPA2'
+It will only show networks, matching the given encryption. May be specified more than once: '\-t OPN \-t WPA2'
 .TP
 .I -d <bssid>, --bssid <bssid>
 It will only show networks, matching the given bssid.
 .TP
 .I -m <mask>, --netmask <mask>
-It will only show networks, matching the given bssid ^ netmask combination. Need --bssid to be specified.
+It will only show networks, matching the given bssid ^ netmask combination. Need \-\-bssid to be specified.
 .TP
 .I -a
 It will only show associated clients.
