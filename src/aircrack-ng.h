@@ -27,6 +27,8 @@
 
 #define KEYHSBYTES PTW_KEYHSBYTES
 
+#define MAX_THREADS 128
+
 #ifdef __i386__
 
 extern int shammx_init( uchar ctx[40] )
