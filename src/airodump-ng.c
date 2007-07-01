@@ -647,9 +647,12 @@ int dump_initialize( char *prefix, int ivs_only )
             return( 1 );
         }
     } else {
+        struct ivs2_filehdr fivs2;
 
-        snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.ivs",
-                  prefix, G.f_index );
+        fivs2.version = IVS2_VERSION;
+
+        snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.%s",
+                  prefix, G.f_index, IVS2_EXTENSION );
 
         if( ( G.f_ivs = fopen( ofn, "wb+" ) ) == NULL )
         {
@@ -658,11 +661,17 @@ int dump_initialize( char *prefix, int ivs_only )
             return( 1 );
         }
 
-		if( fwrite( IVS2_MAGIC, 1, 4, G.f_ivs ) != (size_t) 4 )
-		{
-			perror( "fwrite(IVs file header) failed" );
-			return( 1 );
-		}
+        if( fwrite( IVS2_MAGIC, 1, 4, G.f_ivs ) != (size_t) 4 )
+        {
+            perror( "fwrite(IVs file MAGIC) failed" );
+            return( 1 );
+        }
+
+        if( fwrite( &fivs2, 1, sizeof(struct ivs2_filehdr), G.f_ivs ) != (size_t) sizeof(struct ivs2_filehdr) )
+        {
+            perror( "fwrite(IVs file header) failed" );
+            return( 1 );
+        }
     }
 
     return( 0 );

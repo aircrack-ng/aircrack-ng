@@ -4,15 +4,24 @@
 
 #define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
 #define IVS2_MAGIC "\xAE\x78\xD1\xFF"
+#define IVS2_EXTENSION		"ivs"
+#define IVS2_VERSION             1
+
 #define IVS2_BSSID	0x01
 #define IVS2_ESSID	0x02
 #define IVS2_WPA	0x04
 #define IVS2_XOR	0x08
+#define IVS2_PTW        0x10
 
 struct ivs2_pkthdr
 {
     unsigned short flags;
     unsigned short len;
+};
+
+struct ivs2_filehdr
+{
+    unsigned short version;
 };
 
 int main( int argc, char *argv[] )
@@ -23,6 +32,7 @@ int main( int argc, char *argv[] )
     unsigned char S[256];
     unsigned char buffer[64], *s;
     struct ivs2_pkthdr ivs2;
+    struct ivs2_filehdr fivs2;
     unsigned long long size;
 
     i = 0;
@@ -97,7 +107,7 @@ int main( int argc, char *argv[] )
 
     keylen = i+3;
 
-    size = (long long)strlen(IVS2_MAGIC) + (long long)count *
+    size = (long long)strlen(IVS2_MAGIC) + (long long)sizeof(struct ivs2_filehdr) + (long long)count *
            (long long)sizeof(struct ivs2_pkthdr) + (long long)count * (long long)length;
 
     printf("Creating %d IVs with %d bytes of keystream each.\n", count, length);
@@ -119,6 +129,17 @@ int main( int argc, char *argv[] )
 
     fprintf( f_ivs_out, IVS2_MAGIC );
 
+    memset(&fivs2, '\x00', sizeof(struct ivs2_filehdr));
+    fivs2.version = IVS2_VERSION;
+
+    /* write file header */
+    if( fwrite( &fivs2, 1, sizeof(struct ivs2_filehdr), f_ivs_out )
+        != (size_t) sizeof(struct ivs2_filehdr) )
+    {
+        perror( "fwrite(IV file header) failed" );
+        return( 1 );
+    }
+
     memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
     ivs2.flags |= IVS2_BSSID;
     ivs2.len += 6;
@@ -132,12 +153,13 @@ int main( int argc, char *argv[] )
     }
 
     /* write BSSID */
-    if( fwrite( "\x01\x02\03\x04\x05\x06", 1, 6, f_ivs_out )
+    if( fwrite( "\x01\x02\x03\x04\x05\x06", 1, 6, f_ivs_out )
         != (size_t) 6 )
     {
         perror( "fwrite(IV bssid) failed" );
         return( 1 );
     }
+    printf("Using fake BSSID 01:02:03:04:05:06\n");
 
     for( n = 0; n < count; n++ )
     {

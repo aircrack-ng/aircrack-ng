@@ -121,6 +121,8 @@ int merge( int argc, char *argv[] )
     unsigned long nbw;
     unsigned char buffer[1024];
     FILE *f_in, *f_out;
+    struct ivs2_filehdr fivs2;
+    struct ivs2_pkthdr ivs2;
 
     if( argc < 5 )
     {
@@ -162,12 +164,27 @@ int merge( int argc, char *argv[] )
 
         if( memcmp( buffer, IVS2_MAGIC, 4 ) != 0 )
         {
-            printf( "%s is not an .ivs file\n", argv[i] );
+            printf( "%s is not an .%s file\n", argv[i], IVS2_EXTENSION );
+            return( 1 );
+        }
+
+        if( fread( &fivs2, 1, sizeof(struct ivs2_filehdr), f_in ) != (size_t) sizeof(struct ivs2_filehdr) )
+        {
+            perror( "fread file header failed" );
+            return( 1 );
+        }
+
+        if( fivs2.version > IVS2_VERSION )
+        {
+            printf( "Error, wrong %s version: %d. Supported up to version %d.\n", IVS2_EXTENSION, fivs2.version, IVS2_VERSION );
             return( 1 );
         }
 
         if( i == 2 )
+        {
             unused = fwrite( buffer, 1, 4, f_out );
+            unused = fwrite( &ivs2, 1, sizeof(struct ivs2_filehdr), f_out );
+        }
 
         while( ( n = fread( buffer, 1, 1024, f_in ) ) > 0 )
         {

@@ -352,6 +352,7 @@ void read_thread( void *arg )
 	int weight[16];
 
 	struct ivs2_pkthdr ivs2;
+	struct ivs2_filehdr fivs2;
 	struct pcap_pkthdr pkh;
 	struct pcap_file_header pfh;
 	struct AP_info *ap_prv, *ap_cur;
@@ -428,8 +429,19 @@ void read_thread( void *arg )
 	} else if (memcmp( &pfh, IVS2_MAGIC, 4 ) == 0)
 	{
 		fmt = FORMAT_IVS2;
+
+		if( ! atomic_read( &rb, fd, sizeof(struct ivs2_filehdr), (uchar *) &fivs2 ) )
+		{
+			perror( "read(file header) failed" );
+			goto read_fail;
+		}
+		if(fivs2.version > IVS2_VERSION)
+		{
+			printf( "Error, wrong %s version: %d. Supported up to version %d.\n", IVS2_EXTENSION, fivs2.version, IVS2_VERSION );
+			goto read_fail;
+		}
 	} else if (opt.do_ptw)
-		errx(1, "Can't do PTW with old IV files, recapture without --ivs or use airodump-ng >= 0.9\n"); /* XXX */
+		errx(1, "Can't do PTW with old IVS files, recapture without --ivs or use airodump-ng >= 1.0\n"); /* XXX */
 
 	/* avoid blocking on reading the file */
 
@@ -3170,9 +3182,9 @@ int main( int argc, char *argv[] )
 			case 'f' :
 
 				if( sscanf( optarg, "%f", &opt.ffact ) != 1 ||
-					opt.ffact < 1 || opt.ffact > 32 )
+					opt.ffact < 1 )
 				{
-					printf( "Invalid fudge factor. [1-32]\n" );
+					printf( "Invalid fudge factor. [>=1]\n" );
 		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}

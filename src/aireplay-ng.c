@@ -3762,7 +3762,7 @@ int tcp_test(const char* ip_str, const short port)
             close(sock);
             return(-1);
         }
-        usleep(1);
+        usleep(10);
     }
 
     PCT; printf("TCP connection successful\n");
@@ -3825,7 +3825,7 @@ int tcp_test(const char* ip_str, const short port)
             break;
         }
         if(caplen == -1)
-            usleep(1);
+            usleep(10);
     }
 
     if(i==2)
@@ -4214,7 +4214,7 @@ int do_attack_test()
                 {
                     break;
                 }
-                usleep(1);
+                usleep(10);
             }
             printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
             fflush(stdout);
@@ -4332,7 +4332,7 @@ int do_attack_test()
                     {
                         break;
                     }
-                    usleep(1);
+                    usleep(10);
                 }
                 printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
                 fflush(stdout);
@@ -4540,7 +4540,7 @@ int do_attack_test()
                     {
                         break;
                     }
-                    usleep(1);
+                    usleep(10);
                 }
             }
             if(k)

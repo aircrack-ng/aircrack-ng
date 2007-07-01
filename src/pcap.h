@@ -9,6 +9,8 @@
 #define TCPDUMP_CIGAM           0xD4C3B2A1
 #define IVSONLY_MAGIC           "\xBF\xCA\x84\xD4"
 #define IVS2_MAGIC              "\xAE\x78\xD1\xFF"
+#define IVS2_EXTENSION		"ivs"
+#define IVS2_VERSION             1
 
 #define PCAP_VERSION_MAJOR      2
 #define PCAP_VERSION_MINOR      4
@@ -59,6 +61,11 @@ struct pcap_pkthdr
     int tv_usec;
     uint caplen;
     uint len;
+};
+
+struct ivs2_filehdr
+{
+    unsigned short version;
 };
 
 struct ivs2_pkthdr
