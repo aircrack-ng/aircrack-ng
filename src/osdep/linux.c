@@ -237,6 +237,8 @@ static int linux_set_rate(struct wif *wi, int rate)
             return( 1 );
         }
 
+        usleep(100000);
+
         snprintf( s,  sizeof( s ) - 1, "%.1fM", (rate/1000000.0) );
 
         if( ( pid = fork() ) == 0 )
