@@ -7,6 +7,8 @@ CH=$3; [ x$3 = "x" ] && CH=10
 IFACE_FOUND="false"
 MADWIFI=0
 
+PROCESSES="wpa_action\|wpa_suppicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager"
+
 usage() {
 	printf "usage: `basename $0` <start|stop> <interface> [channel]\n"
 	echo
@@ -59,6 +61,40 @@ getDriver() {
    fi
 }
 
+scanProcesses() {
+    match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
+    if [ $match -gt 0 ]
+    then
+        echo && echo
+        echo "Found $match processes that could cause trouble:"
+        echo "PID\tName"
+    else
+        return
+    fi
+
+    i=1
+    while [ $i -le $match ]
+    do
+        pid=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}'`
+        pname=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}'`
+        printf "$pid\t$pname\n"
+        i=$(($i+1))
+    done
+}
+
+checkProcessesIface() {
+    if [ x"$1" = x ]
+    then
+        return
+    fi
+
+    for i in `ps auxw | grep $1 | grep -v grep | awk '{print $2}'`
+    do
+        pname=`ps -o comm= -p $i`
+        echo "Process with PID $i ($pname) is running on interface $1"
+    done
+}
+
 if [ x"`which id 2> /dev/null`" != "x" ]
 then
 	USERID="`id -u 2> /dev/null`"
@@ -77,6 +113,7 @@ fi
 iwpriv > /dev/null 2> /dev/null ||
   { echo Wireless tools not found ; exit ; }
 
+scanProcesses
 echo && echo
 
 if [ $# -ne "0" ]
@@ -129,6 +166,7 @@ for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 |
 do
  getModule $iface
  getDriver $iface
+ checkProcessesIface $iface
 
  if [ x"`iwpriv $iface 2>/dev/null | grep get_rid`" != "x" ] || [ x"`iwpriv $iface 2>/dev/null | grep dump_recs`" != "x" ]
  then
