@@ -4326,7 +4326,7 @@ usage:
 			opt.next_ptw_try = ap_cur->nb_ivs_vague - (ap_cur->nb_ivs_vague % PTW_TRY_STEP);
 			do
 			{
-				if(ap_cur->nb_ivs >= opt.next_ptw_try)
+				if(ap_cur->nb_ivs_vague >= opt.next_ptw_try)
 				{
 					if(!opt.is_quiet)
 						printf("Starting PTW attack with %ld ivs.\n", ap_cur->nb_ivs_vague);
