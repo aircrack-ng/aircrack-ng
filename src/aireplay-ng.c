@@ -121,7 +121,7 @@
 #define RATE_48M 48000000
 #define RATE_54M 54000000
 
-int bitrates[RATE_NUM]={RATE_1M, RATE_2M, RATE_5_5M, RATE_11M, RATE_6M, RATE_9M, RATE_12M, RATE_18M, RATE_24M, RATE_36M, RATE_48M, RATE_54M};
+int bitrates[RATE_NUM]={RATE_1M, RATE_2M, RATE_5_5M, RATE_6M, RATE_9M, RATE_11M, RATE_12M, RATE_18M, RATE_24M, RATE_36M, RATE_48M, RATE_54M};
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern char * searchInside(const char * dir, const char * filename);
@@ -160,6 +160,7 @@ char usage[] =
 "      -c dmac   : set Destination  MAC address\n"
 "      -h smac   : set Source       MAC address\n"
 "      -g value  : change ring buffer size (default: 8)\n"
+"      -F        : choose first matching packet\n"
 "\n"
 "      Fakeauth attack options:\n"
 "\n"
@@ -176,6 +177,10 @@ char usage[] =
 "\n"
 "      -k IP     : set destination IP in fragments\n"
 "      -l IP     : set source IP in fragments\n"
+"\n"
+"      Test attack options:\n"
+"\n"
+"      -B        : activates the bitrate test\n"
 "\n"
 /*
 "  WIDS evasion options:\n"
@@ -245,6 +250,9 @@ struct options
 
     int delay;
     int npackets;
+
+    int fast;
+    int bittest;
 }
 opt;
 
@@ -398,7 +406,7 @@ int set_bitrate(struct wif *wi, int rate)
         {
             if( i>0 )
             {
-                if(bitrates[i-1] >= rate)
+                if(bitrates[i-1] >= newrate)
                 {
                     printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
                     return 1;
@@ -406,7 +414,7 @@ int set_bitrate(struct wif *wi, int rate)
             }
             if( i<RATE_NUM-1 )
             {
-                if(bitrates[i+1] <= rate)
+                if(bitrates[i+1] <= newrate)
                 {
                     printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
                     return 1;
@@ -1728,6 +1736,9 @@ int capture_ask_packet( int *caplen )
 
         if( filter_packet( h80211, *caplen ) != 0 )
             continue;
+
+        if(opt.fast)
+            break;
 
         switch( h80211[1] & 3 )
         {
@@ -4095,7 +4106,8 @@ int do_attack_test()
     }
     if(gotit) printf("\n");
 
-    set_bitrate(_wi_out, RATE_1M);
+    if(opt.bittest)
+        set_bitrate(_wi_out, RATE_1M);
 
     PCT; printf("Trying broadcast probe requests...\n");
 
@@ -4147,6 +4159,7 @@ int do_attack_test()
                     if(!answers)
                     {
                         PCT; printf("Injection is working!\n");
+                        if(opt.fast) return 0;
                         gotit=1;
                         answers++;
                     }
@@ -4240,6 +4253,11 @@ int do_attack_test()
                             ap[i].ping[j] = ((tv3.tv_sec*1000000 - tv.tv_sec*1000000) + (tv3.tv_usec - tv.tv_usec));
                             if(!answers)
                             {
+                                if(opt.fast)
+                                {
+                                    PCT; printf("Injection is working!\n\n");
+                                    return 0;
+                                }
                                 answers++;
                             }
                             ap[i].found++;
@@ -4285,115 +4303,119 @@ int do_attack_test()
         }
     }
 
-    if(found > 0)
+    if(opt.bittest)
     {
-        PCT; printf("Trying directed probe requests for all bitrates...\n");
-    }
-
-    for(i=0; i<found; i++)
-    {
-        if(ap[i].found <= 0)
-            continue;
-        printf("\n");
-        PCT; printf("%02X:%02X:%02X:%02X:%02X:%02X - channel: %d - \'%s\'\n", ap[i].bssid[0], ap[i].bssid[1],
-                    ap[i].bssid[2], ap[i].bssid[3], ap[i].bssid[4], ap[i].bssid[5], ap[i].chan, ap[i].essid);
-
-        min = INT_MAX;
-        max = 0;
-        avg = 0;
-
-        memcpy(h80211, PROBE_REQ, 24);
-
-        len = 24;
-
-        h80211[24] = 0x00;      //ESSID Tag Number
-        h80211[25] = ap[i].len; //ESSID Tag Length
-        memcpy(h80211+len+2, ap[i].essid, ap[i].len);
-
-        len += ap[i].len+2;
-
-        memcpy(h80211+len, RATES, 16);
-
-        len += 16;
-
-        for(k=0; k<RATE_NUM; k++)
+        if(found > 0)
         {
-            ap[i].found=0;
-            if(set_bitrate(_wi_out, bitrates[k]))
+            PCT; printf("Trying directed probe requests for all bitrates...\n");
+        }
+
+        for(i=0; i<found; i++)
+        {
+            if(ap[i].found <= 0)
                 continue;
+            printf("\n");
+            PCT; printf("%02X:%02X:%02X:%02X:%02X:%02X - channel: %d - \'%s\'\n", ap[i].bssid[0], ap[i].bssid[1],
+                        ap[i].bssid[2], ap[i].bssid[3], ap[i].bssid[4], ap[i].bssid[5], ap[i].chan, ap[i].essid);
 
+            min = INT_MAX;
+            max = 0;
+            avg = 0;
 
-            avg2 = 0;
-            memset(ap[i].pwr, 0, REQUESTS*sizeof(unsigned int));
+            memcpy(h80211, PROBE_REQ, 24);
 
-            for(j=0; j<REQUESTS; j++)
+            len = 24;
+
+            h80211[24] = 0x00;      //ESSID Tag Number
+            h80211[25] = ap[i].len; //ESSID Tag Length
+            memcpy(h80211+len+2, ap[i].essid, ap[i].len);
+
+            len += ap[i].len+2;
+
+            memcpy(h80211+len, RATES, 16);
+
+            len += 16;
+
+            for(k=0; k<RATE_NUM; k++)
             {
-                /*
-                    random source so we can identify our packets
-                */
-                opt.r_smac[0] = 0x00;
-                opt.r_smac[1] = rand() & 0xFF;
-                opt.r_smac[2] = rand() & 0xFF;
-                opt.r_smac[3] = rand() & 0xFF;
-                opt.r_smac[4] = rand() & 0xFF;
-                opt.r_smac[5] = rand() & 0xFF;
+                ap[i].found=0;
+                if(set_bitrate(_wi_out, bitrates[k]))
+                    continue;
 
-                memcpy(h80211+10, opt.r_smac, 6);
 
-                send_packet(h80211, len);
+                avg2 = 0;
+                memset(ap[i].pwr, 0, REQUESTS*sizeof(unsigned int));
 
-                gettimeofday( &tv, NULL );
-
-                printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
-                fflush(stdout);
-                while (1)  //waiting for relayed packet
+                for(j=0; j<REQUESTS; j++)
                 {
-                    caplen = read_packet(packet, sizeof(packet), &ri);
+                    /*
+                        random source so we can identify our packets
+                    */
+                    opt.r_smac[0] = 0x00;
+                    opt.r_smac[1] = rand() & 0xFF;
+                    opt.r_smac[2] = rand() & 0xFF;
+                    opt.r_smac[3] = rand() & 0xFF;
+                    opt.r_smac[4] = rand() & 0xFF;
+                    opt.r_smac[5] = rand() & 0xFF;
 
-                    if (packet[0] == 0x50 ) //Is probe response
+                    memcpy(h80211+10, opt.r_smac, 6);
+
+                    send_packet(h80211, len);
+
+                    gettimeofday( &tv, NULL );
+
+                    printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
+                    fflush(stdout);
+                    while (1)  //waiting for relayed packet
                     {
-                        if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                        caplen = read_packet(packet, sizeof(packet), &ri);
+
+                        if (packet[0] == 0x50 ) //Is probe response
                         {
-                            if(! memcmp(ap[i].bssid, packet+16, 6)) //From the mentioned AP
+                            if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
                             {
-                                if(!answers)
+                                if(! memcmp(ap[i].bssid, packet+16, 6)) //From the mentioned AP
                                 {
-                                    answers++;
+                                    if(!answers)
+                                    {
+                                        answers++;
+                                    }
+                                    ap[i].found++;
+                                    if(ri.ri_power > 0)
+                                        ap[i].pwr[j] = ri.ri_power;
+                                    break;
                                 }
-                                ap[i].found++;
-                                if(ri.ri_power > 0)
-                                    ap[i].pwr[j] = ri.ri_power;
-                                break;
                             }
                         }
-                    }
 
-                    gettimeofday( &tv2, NULL );
-                    if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (100*1000)) //wait 300ms for an answer
-                    {
-                        break;
+                        gettimeofday( &tv2, NULL );
+                        if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (100*1000)) //wait 300ms for an answer
+                        {
+                            break;
+                        }
+                        usleep(10);
                     }
-                    usleep(10);
+                    printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
+                    fflush(stdout);
                 }
-                printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
-                fflush(stdout);
+                for(j=0; j<REQUESTS; j++)
+                    avg2 += ap[i].pwr[j];
+                if(ap[i].found > 0)
+                    avg2 /= ap[i].found;
+                PCT; printf("Probing at %2.1f Mbps:\t%2d/%2d: %3d%%\n", wi_get_rate(_wi_out)/1000000.0,
+                            ap[i].found, REQUESTS, ((ap[i].found*100)/REQUESTS));
             }
-            for(j=0; j<REQUESTS; j++)
-                avg2 += ap[i].pwr[j];
-            if(ap[i].found > 0)
-                avg2 /= ap[i].found;
-            PCT; printf("Probing at %2.1f Mbps:\t%2d/%2d: %3d%%\n", wi_get_rate(_wi_out)/1000000.0,
-                        ap[i].found, REQUESTS, ((ap[i].found*100)/REQUESTS));
-        }
 
-        if(!gotit && answers)
-        {
-            PCT; printf("Injection is working!\n\n");
-            gotit=1;
+            if(!gotit && answers)
+            {
+                PCT; printf("Injection is working!\n\n");
+                if(opt.fast) return 0;
+                gotit=1;
+            }
         }
     }
-
-    set_bitrate(_wi_out, RATE_1M);
+    if(opt.bittest)
+        set_bitrate(_wi_out, RATE_1M);
 
     if( opt.s_face != NULL )
     {
@@ -4636,6 +4658,7 @@ int do_attack_test()
         if(!gotit && answers)
         {
             PCT; printf("Injection is working!\n");
+            if(opt.fast) return 0;
             gotit=1;
         }
     }
@@ -4658,7 +4681,8 @@ int main( int argc, char *argv[] )
 
     opt.a_mode    = -1; opt.r_fctrl     = -1;
     opt.ghost     =  0; opt.npackets    = -1;
-    opt.delay     = 15;
+    opt.delay     = 15; opt.bittest     =  0;
+    opt.fast      =  0;
 
 /* XXX */
 #if 0
@@ -4689,11 +4713,13 @@ int main( int argc, char *argv[] )
             {"fragment",    0, 0, '5'},
             {"test",        0, 0, '9'},
             {"help",        0, 0, 'H'},
+            {"fast",        0, 0, 'F'},
+            {"bittest",     0, 0, 'B'},
             {0,             0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:23459H",
+                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:23459HFB",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -5073,6 +5099,16 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
                 opt.a_mode = 9;
+                break;
+
+            case 'F' :
+
+                opt.fast = 1;
+                break;
+
+            case 'B' :
+
+                opt.bittest = 1;
                 break;
 
             case 'H' :
