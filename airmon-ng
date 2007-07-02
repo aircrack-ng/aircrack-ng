@@ -66,7 +66,10 @@ scanProcesses() {
     if [ $match -gt 0 ]
     then
         echo && echo
-        echo "Found $match processes that could cause trouble:"
+        echo "Found $match processes that could cause trouble."
+        echo "If airodump-ng, aireplay-ng or airtun-ng stops working after"
+        echo "a short period of time, you may want to kill (some of) them!"
+        echo
         echo "PID\tName"
     else
         return
