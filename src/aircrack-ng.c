@@ -630,8 +630,15 @@ void read_thread( void *arg )
 
 			if (opt.do_ptw == 1)
 			{
-				ap_cur->ptw = PTW_newattackstate();
-				if (!ap_cur->ptw) {
+				ap_cur->ptw_clean = PTW_newattackstate();
+				if (!ap_cur->ptw_clean) {
+					perror("PTW_newattackstate()");
+					free(ap_cur);
+					ap_cur = NULL;
+					break;
+				}
+				ap_cur->ptw_vague = PTW_newattackstate();
+				if (!ap_cur->ptw_vague) {
 					perror("PTW_newattackstate()");
 					free(ap_cur);
 					ap_cur = NULL;
@@ -697,8 +704,11 @@ void read_thread( void *arg )
 					if (clearsize < opt.keylen+3)
 						goto unlock_mx_apl;
 
-					if (PTW_addsession(ap_cur->ptw, buffer, buffer+4, PTW_DEFAULTWEIGHT, 1))
-						ap_cur->nb_ivs++;
+					if (PTW_addsession(ap_cur->ptw_clean, buffer, buffer+4, PTW_DEFAULTWEIGHT, 1))
+						ap_cur->nb_ivs_clean++;
+
+					if (PTW_addsession(ap_cur->ptw_vague, buffer, buffer+4, PTW_DEFAULTWEIGHT, 1))
+						ap_cur->nb_ivs_vague++;
 
 					goto unlock_mx_apl;
 				}
@@ -756,8 +766,8 @@ void read_thread( void *arg )
 					memcpy(weight, buffer+clearsize-15*sizeof(int), 16*sizeof(int));
 // 					printf("weight 1: %d, weight 2: %d\n", weight[0], weight[1]);
 
-					if (PTW_addsession(ap_cur->ptw, buffer, buffer+6, weight, buffer[4]))
-						ap_cur->nb_ivs++;
+					if (PTW_addsession(ap_cur->ptw_vague, buffer, buffer+6, weight, buffer[4]))
+						ap_cur->nb_ivs_vague++;
 
 					goto unlock_mx_apl;
 				}
@@ -978,8 +988,14 @@ void read_thread( void *arg )
                                             clear[i+(32*j)] ^= body[4+i];
                                 }
 
-                                if (PTW_addsession(ap_cur->ptw, body, clear, weight, k))
-                                        ap_cur->nb_ivs++;
+                                if(k==1)
+                                {
+                                    if (PTW_addsession(ap_cur->ptw_clean, body, clear, weight, k))
+                                            ap_cur->nb_ivs_clean++;
+                                }
+
+                                if (PTW_addsession(ap_cur->ptw_vague, body, clear, weight, k))
+                                        ap_cur->nb_ivs_vague++;
 
 				goto unlock_mx_apl;
 			}
@@ -3583,32 +3599,55 @@ int crack_wep_dict()
 
 static int crack_wep_ptw(struct AP_info *ap_cur)
 {
-	int len = 0;
-        opt.ap = ap_cur;
+    int len = 0;
+    opt.ap = ap_cur;
 
+    if(ap_cur->nb_ivs_clean > 99)
+    {
+        ap_cur->nb_ivs = ap_cur->nb_ivs_clean;
+        //first try without bruteforcing, using only "clean" keystreams
+        if(opt.keylen != 13)
+        {
+            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
+                len = opt.keylen;
+        }
+        else
+        {
+            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
+                len = 13;
+            else if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF) == 1)
+                len = 5;
+        }
+    }
+    if(!len)
+    {
+        ap_cur->nb_ivs = ap_cur->nb_ivs_vague;
+        //in case its not found, try bruteforcing the id field and include "vague" keystreams
         PTW_DEFAULTBF[10]=1;
         PTW_DEFAULTBF[11]=1;
 //        PTW_DEFAULTBF[12]=1;
 
         if(opt.keylen != 13)
         {
-            if(PTW_computeKey(ap_cur->ptw, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
+            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
                 len = opt.keylen;
         }
         else
         {
-            if(PTW_computeKey(ap_cur->ptw, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
+            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
                 len = 13;
-            else if(PTW_computeKey(ap_cur->ptw, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF) == 1)
+            else if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF) == 1)
                 len = 5;
         }
-	if (!len)
-		return FAILURE;
+    }
 
-	opt.probability = 100;
-	key_found(wep.key, len, -1);
+    if (!len)
+            return FAILURE;
 
-	return SUCCESS;
+    opt.probability = 100;
+    key_found(wep.key, len, -1);
+
+    return SUCCESS;
 }
 
 int main( int argc, char *argv[] )
@@ -4008,7 +4047,11 @@ usage:
 		usleep( 131071 );
 		id++;
 		if(id >= MAX_THREADS)
+		{
+			if(! opt.is_quiet)
+				printf("Only using the first %d files, ignoring the rest.\n", MAX_THREADS);
 			break;
+		}
 	}
 	while( ++optind < argc );
 
@@ -4137,6 +4180,8 @@ usage:
 			break;
 	}
 	while( ++optind < argc );
+
+	nb_pkt=0;
 
 	/* wait until each thread reaches EOF */
 
@@ -4278,13 +4323,13 @@ usage:
 		{
 			if(!opt.is_quiet)
 				printf("Attack will be restarted every %d captured ivs.\n", PTW_TRY_STEP);
-			opt.next_ptw_try = ap_cur->nb_ivs - (ap_cur->nb_ivs % PTW_TRY_STEP);
+			opt.next_ptw_try = ap_cur->nb_ivs_vague - (ap_cur->nb_ivs_vague % PTW_TRY_STEP);
 			do
 			{
 				if(ap_cur->nb_ivs >= opt.next_ptw_try)
 				{
 					if(!opt.is_quiet)
-						printf("Starting PTW attack with %ld ivs.\n", ap_cur->nb_ivs);
+						printf("Starting PTW attack with %ld ivs.\n", ap_cur->nb_ivs_vague);
 					ret = crack_wep_ptw(ap_cur);
 					if(ret)
 					{

@@ -170,12 +170,15 @@ struct AP_info
 	uchar **uiv_root;			 /* IV uniqueness root struct    */
 	long ivbuf_size;			 /* IV buffer allocated size     */
 	long nb_ivs;				 /* total number of unique IVs   */
+	long nb_ivs_clean;			 /* total number of unique IVs   */
+	long nb_ivs_vague;				 /* total number of unique IVs   */
 	int crypt;					 /* encryption algorithm         */
 	int eapol;					 /* set if EAPOL is present      */
 	int target;					 /* flag set if AP is a target   */
 	struct ST_info *st_1st;		 /* linked list of stations      */
 	struct WPA_hdsk wpa;		 /* valid WPA handshake data     */
-        PTW_attackstate *ptw;
+        PTW_attackstate *ptw_clean;
+        PTW_attackstate *ptw_vague;
 };
 
 struct ST_info
