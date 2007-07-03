@@ -28,7 +28,7 @@ int main( int argc, char *argv[] )
 {
     int i, j, k, n, count=100000, length=16, keylen, zero=0, startiv=0, iv=0;
     FILE *f_ivs_out;
-    unsigned char K[16];
+    unsigned char K[32];
     unsigned char S[256];
     unsigned char buffer[64], *s;
     struct ivs2_pkthdr ivs2;
