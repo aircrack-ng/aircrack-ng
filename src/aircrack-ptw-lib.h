@@ -1,7 +1,10 @@
-/* 
+/*
  * Copyright (c) 2007, Erik Tews, Andrei Pychkine and Ralf-Philipp Weinmann.
  *
  */
+
+#ifndef _AIRCRACK_PTW_H_
+#define _AIRCRACK_PTW_H_
 
 #include <stdint.h>
 
@@ -59,3 +62,5 @@ PTW_attackstate * PTW_newattackstate();
 void PTW_freeattackstate(PTW_attackstate *);
 int PTW_addsession(PTW_attackstate *, uint8_t *, uint8_t *);
 int PTW_computeKey(PTW_attackstate *, uint8_t *, int, int);
+
+#endif
