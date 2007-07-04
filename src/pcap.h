@@ -32,17 +32,24 @@
           ( ( x << 24 ) & 0xFF000000 ) );
 
 //BSSID const. length of 6 bytes; can be together with all the other types
-#define IVS2_BSSID	0x01
+#define IVS2_BSSID	0x0001
+
 //ESSID var. length; alone, or with BSSID
-#define IVS2_ESSID	0x02
+#define IVS2_ESSID	0x0002
+
 //wpa structure, const. length; alone, or with BSSID
-#define IVS2_WPA	0x04
+#define IVS2_WPA	0x0004
+
 //IV+IDX+KEYSTREAM, var. length; alone or with BSSID
-#define IVS2_XOR	0x08
-//[IV+IDX][i][l][XOR_1]..[XOR_i][weight]
-//holds i possible keystreams for the same IV with a length of l for each keystream (l max 32)
-//and an array "int weight[16]" at the end
-#define IVS2_PTW        0x10
+#define IVS2_XOR	0x0008
+
+/* [IV+IDX][i][l][XOR_1]..[XOR_i][weight]                                                        *
+ * holds i possible keystreams for the same IV with a length of l for each keystream (l max 32)  *
+ * and an array "int weight[16]" at the end                                                      */
+#define IVS2_PTW        0x0010
+
+//unencrypted packet
+#define IVS2_CLR        0x0020
 
 struct pcap_file_header
 {
@@ -70,8 +77,8 @@ struct ivs2_filehdr
 
 struct ivs2_pkthdr
 {
-    unsigned short flags;
-    unsigned short len;
+    unsigned short  flags;
+    unsigned short  len;
 };
 
 #endif /* common.h */
