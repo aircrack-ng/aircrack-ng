@@ -32,6 +32,15 @@ MAKE=`which make 2>/dev/null`
 GCC=`which gcc 2>/dev/null`
 TAR=`which tar 2>/dev/null`
 UNZIP=`which unzip 2>/dev/null`
+SVN=`which svn 2>/dev/null`
+CVS=`which svn 2>/dev/null`
+GIT=`which svn 2>/dev/null`
+CARDCTL=`which pccardctl 2>/dev/null`
+
+if [ x"$CARDCTL" == x ]
+then
+    CARDCTL=`which cardctl 2>/dev/null`
+fi
 
 #global variables
 if [ x"$KVER" == x ]
@@ -49,6 +58,26 @@ YES=1
 NO=0
 ERROR=255
 
+#stacks
+SNAME[0]="IEEE80211"
+SMODULE[0]="ieee80211"
+SMODULES[0]="ieee80211 ieee80211_crypt ieee80211_crypt_wep ieee80211_crypt_tkip ieee80211_crypt_ccmp"
+SSITE[0]="http://ieee80211.sourceforge.net/"
+
+SNAME[1]="IEEE80211 Softmac"
+SMODULE[1]="ieee80211softmac"
+SMODULES[1]="ieee80211softmac"
+SSITE[1]="http://softmac.sipsolutions.net/"
+
+SNAME[2]="mac80211"
+SMODULE[2]="mac80211"
+SMODULES[2]="mac80211 rc80211_simple cfg80211 nl80211 rc80211_lowest"
+SSITE[2]="http://intellinuxwireless.org/?p=mac80211"
+
+SNAME[3]="custom"
+SMODULE[3]=""
+SMODULES[3]=""
+SSITE[3]=""
 
 #drivers
 #DCOUNT = Number of known drivers
@@ -60,13 +89,15 @@ ERROR=255
 #DSITE[x] = Website with more information about the driver
 #DETECT_X[x] = string to grep for while detecting devices: lsusb -v, lspci and lspcmcia -v
 
-DCOUNT=17
+DCOUNT=20
 
 DNAME[0]="ACX100/111"
+DSTACK[0]="0"
 DMODULE[0]="acx"
 DCONFIG[0]=""
 DMODULES[0]="acx"
 DI_INIT[0]=""
+DI_DRIVERGET[0]="wget"
 DI_DRIVERFILE[0]="acx-20070101.tar.bz2"
 DI_DRIVERPATH1[0]="http://www.cmartin.tk/acx/acx-20070101.tar.bz2"
 DI_DRIVERPATH2[0]=""
@@ -87,10 +118,12 @@ DETECT_PCI[0]="ACX"
 DETECT_CS[0]="ACX"
 
 DNAME[1]="Broadcom 4300"
+DSTACK[1]="0"
 DMODULE[1]="bcm43xx"
 DCONFIG[1]="CONFIG_BCM43XX="
 DMODULES[1]="bcm43xx"
 DI_INIT[1]=""
+DI_DRIVERGET[1]="wget"
 DI_DRIVERFILE[1]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVERPATH1[1]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVERPATH2[1]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
@@ -111,10 +144,12 @@ DETECT_PCI[1]="BCM43"
 DETECT_CS[1]="BCM43"
 
 DNAME[2]="HostAP"
+DSTACK[2]="0"
 DMODULE[2]="hostap"
 DCONFIG[2]="CONFIG_HOSTAP="
 DMODULES[2]="hostap_pci hostap_plx hostap_cs hostap"
 DI_INIT[2]="install_hostap"
+DI_DRIVERGET[2]="wget"
 DI_DRIVERFILE[2]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVERPATH1[2]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVERPATH2[2]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
@@ -135,10 +170,12 @@ DETECT_PCI[2]="Intersil\|Prism"
 DETECT_CS[2]="Wireless LAN"
 
 DNAME[3]="Intel Pro Wireless 2100 B"
+DSTACK[3]="0"
 DMODULE[3]="ipw2100"
 DCONFIG[3]="CONFIG_IPW2100="
 DMODULES[3]="ipw2100"
 DI_INIT[3]=""
+DI_DRIVERGET[3]="wget"
 DI_DRIVERFILE[3]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVERPATH1[3]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVERPATH2[3]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
@@ -159,10 +196,12 @@ DETECT_PCI[3]="2100"
 DETECT_CS[3]=""
 
 DNAME[4]="Intel Pro Wireless 2200 B/G"
+DSTACK[4]="0"
 DMODULE[4]="ipw2200"
 DCONFIG[4]="CONFIG_IPW2200="
 DMODULES[4]="ipw2200"
 DI_INIT[4]="install_ipw2200"
+DI_DRIVERGET[4]="wget"
 DI_DRIVERFILE[4]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVERPATH1[4]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVERPATH2[4]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
@@ -183,10 +222,12 @@ DETECT_PCI[4]="2200BG"
 DETECT_CS[4]=""
 
 DNAME[5]="Intel Pro Wireless 3945 A/B/G"
+DSTACK[5]="0"
 DMODULE[5]="ipw3945"
 DCONFIG[5]=""
 DMODULES[5]="ipw3945"
 DI_INIT[5]=""
+DI_DRIVERGET[5]="wget"
 DI_DRIVERFILE[5]=""
 DI_DRIVERPATH1[5]=""
 DI_DRIVERPATH2[5]=""
@@ -207,10 +248,12 @@ DETECT_PCI[5]="3945"
 DETECT_CS[5]=""
 
 DNAME[6]="Madwifi[-ng]"
+DSTACK[6]="0"
 DMODULE[6]="ath_pci"
 DCONFIG[6]=""
 DMODULES[6]="wlan_wep ath_rate_sample ath_rate_onoe ath_pci ath_hal ath_rate_amrr ath_rate_minstrel wlan_xauth wlan_tkip wlan_ccmp wlan_acl wlan wlan_scan_ap wlan_scan_sta"
 DI_INIT[6]=""
+DI_DRIVERGET[6]="wget"
 DI_DRIVERFILE[6]="madwifi-ng-r2438-20070613.tar.gz"
 DI_DRIVERPATH1[6]="http://snapshots.madwifi.org/madwifi-ng/madwifi-ng-r2438-20070613.tar.gz"
 DI_DRIVERPATH2[6]=""
@@ -228,13 +271,15 @@ DI_INSTALL2[6]=""
 DSITE[6]="http://www.aircrack-ng.org/doku.php?id=madwifi-ng"
 DETECT_USB[6]=""
 DETECT_PCI[6]="Atheros"
-DETECT_CS[6]="-i atheros"
+DETECT_CS[6]="atheros\|Atheros"
 
 DNAME[7]="Prism54"
+DSTACK[7]="0"
 DMODULE[7]="prism54"
 DCONFIG[7]="CONFIG_PRISM54="
 DMODULES[7]="prism54"
 DI_INIT[7]=""
+DI_DRIVERGET[7]="wget"
 DI_DRIVERFILE[7]="prism54_r531.tar.gz"
 DI_DRIVERPATH1[7]="http://svnweb.tuxfamily.org/dl.php?repname=prism54+%28prism54%29&path=%2Ftrunk%2F&rev=531&isdir=1"
 DI_DRIVERPATH2[7]=""
@@ -255,10 +300,12 @@ DETECT_PCI[7]="Prism Javelin\|Prism Xbow\|Prism GT\|Prism Duette"
 DETECT_CS[7]=""
 
 DNAME[8]="Realtek rtl8180"
+DSTACK[8]="3"
 DMODULE[8]="r818x"
 DCONFIG[8]=""
 DMODULES[8]="r818x"
 DI_INIT[8]=""
+DI_DRIVERGET[8]="wget"
 DI_DRIVERFILE[8]="rtl8180-0.21.tar.gz"
 DI_DRIVERPATH1[8]="http://ovh.dl.sourceforge.net/sourceforge/rtl8180-sa2400/rtl8180-0.21.tar.gz"
 DI_DRIVERPATH2[8]=""
@@ -279,10 +326,12 @@ DETECT_PCI[8]=""
 DETECT_CS[8]=""
 
 DNAME[9]="Realtek rtl8187"
+DSTACK[9]="3"
 DMODULE[9]="r8187"
 DCONFIG[9]=""
 DMODULES[9]="r8187"
 DI_INIT[9]=""
+DI_DRIVERGET[9]="wget"
 DI_DRIVERFILE[9]="rtl8187_linux_26.1010.zip"
 DI_DRIVERPATH1[9]="ftp://220.228.150.22/cn/wlan/rtl8187_linux_26.1010.zip"
 DI_DRIVERPATH2[9]="ftp://61.56.86.122/cn/wlan/rtl8187_linux_26.1010.zip"
@@ -303,10 +352,12 @@ DETECT_PCI[9]=""
 DETECT_CS[9]=""
 
 DNAME[10]="Ralink rt2500"
+DSTACK[10]="1"
 DMODULE[10]="rt2500"
 DCONFIG[10]=""
 DMODULES[10]="rt2500"
 DI_INIT[10]=""
+DI_DRIVERGET[10]="wget"
 DI_DRIVERFILE[10]="rt2500-1.1.0-b4.tar.gz"
 DI_DRIVERPATH1[10]="http://prdownloads.sourceforge.net/rt2400/rt2500-1.1.0-b4.tar.gz?download"
 DI_DRIVERPATH2[10]="http://prdownloads.sourceforge.net/rt2400/rt2500-1.1.0-b4.tar.gz?download"
@@ -327,10 +378,12 @@ DETECT_PCI[10]=""
 DETECT_CS[10]=""
 
 DNAME[11]="Ralink rt2570"
+DSTACK[11]="1"
 DMODULE[11]="rt2570"
 DCONFIG[11]=""
 DMODULES[11]="rt2570"
 DI_INIT[11]=""
+DI_DRIVERGET[11]="wget"
 DI_DRIVERFILE[11]="rt2570-k2wrlz-1.6.0.tar.bz2"
 DI_DRIVERPATH1[11]="http://homepages.tu-darmstadt.de/~p_larbig/wlan/rt2570-k2wrlz-1.6.0.tar.bz2"
 DI_DRIVERPATH2[11]=""
@@ -351,10 +404,12 @@ DETECT_PCI[11]=""
 DETECT_CS[11]=""
 
 DNAME[12]="Ralink rt61"
+DSTACK[12]="1"
 DMODULE[12]="rt61"
 DCONFIG[12]=""
 DMODULES[12]="rt61"
 DI_INIT[12]=""
+DI_DRIVERGET[12]="wget"
 DI_DRIVERFILE[12]="rt61-1.1.0-b2.tar.gz"
 DI_DRIVERPATH1[12]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz?download"
 DI_DRIVERPATH2[12]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz?download"
@@ -375,10 +430,12 @@ DETECT_PCI[12]=""
 DETECT_CS[12]=""
 
 DNAME[13]="Ralink rt73"
+DSTACK[13]="1"
 DMODULE[13]="rt73"
 DCONFIG[13]=""
 DMODULES[13]="rt73"
 DI_INIT[13]=""
+DI_DRIVERGET[13]="wget"
 DI_DRIVERFILE[13]="rt73-k2wrlz-1.0.0.tar.bz2"
 DI_DRIVERPATH1[13]="http://homepages.tu-darmstadt.de/~p_larbig/wlan/rt73-k2wrlz-1.0.0.tar.bz2"
 DI_DRIVERPATH2[13]=""
@@ -399,10 +456,12 @@ DETECT_PCI[13]=""
 DETECT_CS[13]=""
 
 DNAME[14]="WLAN-NG"
+DSTACK[14]="0"
 DMODULE[14]="prism2_pci"
 DCONFIG[14]=""
 DMODULES[14]="prism2_pci prism2_usb prism2_plx prism2_cs p80211"
 DI_INIT[14]=""
+DI_DRIVERGET[14]="wget"
 DI_DRIVERFILE[14]="linux-wlan-ng-0.2.8.tar.bz2"
 DI_DRIVERPATH1[14]="ftp://ftp.linux-wlan.org/pub/linux-wlan-ng/linux-wlan-ng-0.2.8.tar.bz2"
 DI_DRIVERPATH2[14]=""
@@ -423,10 +482,12 @@ DETECT_PCI[14]=""
 DETECT_CS[14]=""
 
 DNAME[15]="ZyDAS 1211"
+DSTACK[15]="1"
 DMODULE[15]="zd1211"
 DCONFIG[15]=""
 DMODULES[15]="zd1211"
 DI_INIT[15]=""
+DI_DRIVERGET[15]="wget"
 DI_DRIVERFILE[15]=""
 DI_DRIVERPATH1[15]=""
 DI_DRIVERPATH2[15]=""
@@ -447,10 +508,12 @@ DETECT_PCI[15]=""
 DETECT_CS[15]=""
 
 DNAME[16]="ZyDAS 1211rw"
+DSTACK[16]="1"
 DMODULE[16]="zd1211rw"
 DCONFIG[16]="CONFIG_ZD1211RW="
 DMODULES[16]="zd1211rw"
 DI_INIT[16]="install_zd1211rw"
+DI_DRIVERGET[16]="wget"
 DI_DRIVERFILE[16]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVERPATH1[16]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
 DI_DRIVERPATH2[16]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
@@ -469,6 +532,89 @@ DSITE[16]="http://www.aircrack-ng.org/doku.php?id=zd1211rw"
 DETECT_USB[16]=""
 DETECT_PCI[16]=""
 DETECT_CS[16]=""
+
+#end ieee80211[softmac]
+#--------------------------8<---------------------------------8<-----------------------------8<-------------------------
+#start mac80211
+
+DNAME[17]="Intel Pro Wireless 3945 A/B/G"
+DSTACK[17]="2"
+DMODULE[17]="iwlwifi"
+DCONFIG[17]=""
+DMODULES[17]="iwlwifi"
+DI_INIT[17]=""
+DI_DRIVERGET[17]="git"
+DI_DRIVERFILE[17]=""
+DI_DRIVERPATH1[17]=""
+DI_DRIVERPATH2[17]=""
+DI_DRIVEREXDIR[17]=""
+DI_DRIVERDIR[17]=""
+DI_PREPATCH[17]=""
+DI_PATCHFILE[17]=""
+DI_PATCHPATH1[17]=""
+DI_PATCHPATH2[17]=""
+DI_PATCHARG[17]=""
+DI_PRECOMP[17]=""
+DI_COMPILE[17]=""
+DI_INSTALL1[17]=""
+DI_INSTALL2[17]=""
+DSITE[17]="http://www.aircrack-ng.org/doku.php?id=ipw3945"
+DETECT_USB[17]=""
+DETECT_PCI[17]="3945"
+DETECT_CS[17]=""
+
+DNAME[18]="Intel Pro Wireless 3945 A/B/G - raw mode"
+DSTACK[18]="2"
+DMODULE[18]="ipwraw"
+DCONFIG[18]=""
+DMODULES[18]="iwlwifi"
+DI_INIT[18]=""
+DI_DRIVERGET[18]="wget"
+DI_DRIVERFILE[18]="ipwraw-ng-1.0.0-21062007.tar.bz2"
+DI_DRIVERPATH1[18]="http://homepages.tu-darmstadt.de/~p_larbig/wlan/ipwraw-ng-1.0.0-21062007.tar.bz2"
+DI_DRIVERPATH2[18]=""
+DI_DRIVEREXDIR[18]=""
+DI_DRIVERDIR[18]="ipwraw-ng"
+DI_PREPATCH[18]=""
+DI_PATCHFILE[18]=""
+DI_PATCHPATH1[18]=""
+DI_PATCHPATH2[18]=""
+DI_PATCHARG[18]=""
+DI_PRECOMP[18]=""
+DI_COMPILE[18]="make"
+DI_INSTALL1[18]="make install"
+DI_INSTALL2[18]=""
+DSITE[18]="homepages.tu-darmstadt.de/~p_larbig/wlan/"
+DETECT_USB[18]=""
+DETECT_PCI[18]="3945"
+DETECT_CS[18]=""
+
+DNAME[19]="NDIS Wrapper"
+DSTACK[19]="3"
+DMODULE[19]="ndiswrapper"
+DCONFIG[19]=""
+DMODULES[19]="ndiswrapper"
+DI_INIT[19]=""
+DI_DRIVERGET[19]="wget"
+DI_DRIVERFILE[19]="ndiswrapper-1.47.tar.gz"
+DI_DRIVERPATH1[19]="http://downloads.sourceforge.net/ndiswrapper/ndiswrapper-1.47.tar.gz?modtime=1181699252&big_mirror=0"
+DI_DRIVERPATH2[19]="http://downloads.sourceforge.net/ndiswrapper/ndiswrapper-1.47.tar.gz?modtime=1181699252&big_mirror=0"
+DI_DRIVEREXDIR[19]=""
+DI_DRIVERDIR[19]="ndiswrapper-1.47"
+DI_PREPATCH[19]=""
+DI_PATCHFILE[19]=""
+DI_PATCHPATH1[19]=""
+DI_PATCHPATH2[19]=""
+DI_PATCHARG[19]=""
+DI_PRECOMP[19]=""
+DI_COMPILE[19]="make"
+DI_INSTALL1[19]="make install"
+DI_INSTALL2[19]=""
+DSITE[19]="http://ndiswrapper.sourceforge.net"
+DETECT_USB[19]=""
+DETECT_PCI[19]=""
+DETECT_CS[19]=""
+
 #END drivers
 
 #init install scripts
@@ -586,67 +732,85 @@ install_action() {
         return $ERROR
     fi
 
+    if [ x"${DI_DRIVERGET[$1]}" == x ]
+    then
+        echo "DI_INSTALL[$1] isn't set!"
+        return $ERROR
+    fi
+
 #1 - get then correct source
     echo "1. Getting the source..."
-    if [ ! -f "${DI_DRIVERFILE[$1]}" ]
+    if [ "${DI_DRIVERGET[$1]}" = "wget"  ]
     then
-        $WGET -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH1[$1]}" >> "$LOGFILE" 2>&1
-        if [ "$?" != "0" ]
+        if [ ! -f "${DI_DRIVERFILE[$1]}" ]
         then
-            rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
+            $WGET -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH1[$1]}" >> "$LOGFILE" 2>&1
+            if [ "$?" != "0" ]
+            then
+                rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
+            fi
+        fi
+
+        if [ ! -f "${DI_DRIVERFILE[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
+        then
+            $WGET -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
+            if [ "$?" != "0" ]
+            then
+                rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
+            fi
+        fi
+
+        if [ ! -f "${DI_DRIVERFILE[$1]}" ]
+        then
+            cp "`locate "${DI_DRIVERFILE[$1]}" | grep "${DI_DRIVERFILE[$1]}$" | head -n 1`" ./ >> "$LOGFILE" 2>&1
+            if [ "$?" != "0" ]
+            then
+                rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
+            fi
+        fi
+
+        if [ ! -f "${DI_DRIVERFILE[$1]}" ]
+        then
+            echo "Couldn't find the correct driver file: ${DI_DRIVERFILE[$1]}"
+            return $NO
+        fi
+
+        echo "2. Extracting the source..."
+        if [ -d "${DI_DRIVERDIR[$1]}" ]
+        then
+            #be carefull!!
+            rm -rf "${DI_DRIVERDIR[$1]}"
+        fi
+
+        if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.gz$"`" != x -o x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tgz$"`" != x ]
+        then
+            $TAR xzf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
+        fi
+
+        if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.bz2$"`" != x ]
+        then
+            $TAR xjf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
+        fi
+
+        if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".zip$"`" != x ]
+        then
+            $UNZIP "${DI_DRIVERFILE[$1]}" >> "$LOGFILE" 2>&1
+        fi
+
+        if [ $? != "0" ]
+        then
+            echo "Unable to \"extract ${DI_DRIVERFILE[$1]}\""
+            return $NO
         fi
     fi
 
-    if [ ! -f "${DI_DRIVERFILE[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
+    if [ "${DI_DRIVERGET[$1]}" = "wget"  ]
     then
-        $WGET -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
-        if [ "$?" != "0" ]
+        if [ -d "${DI_DRIVERDIR[$1]}" ]
         then
-            rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
+            #be carefull!!
+            rm -rf "${DI_DRIVERDIR[$1]}"
         fi
-    fi
-
-    if [ ! -f "${DI_DRIVERFILE[$1]}" ]
-    then
-        cp "`locate "${DI_DRIVERFILE[$1]}" | grep "${DI_DRIVERFILE[$1]}$" | head -n 1`" ./ >> "$LOGFILE" 2>&1
-        if [ "$?" != "0" ]
-        then
-            rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
-        fi
-    fi
-
-    if [ ! -f "${DI_DRIVERFILE[$1]}" ]
-    then
-        echo "Couldn't find the correct driver file: ${DI_DRIVERFILE[$1]}"
-        return $NO
-    fi
-
-    echo "2. Extracting the source..."
-    if [ -d "${DI_DRIVERDIR[$1]}" ]
-    then
-        #be carefull!!
-        rm -rf "${DI_DRIVERDIR[$1]}"
-    fi
-
-    if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.gz$"`" != x -o x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tgz$"`" != x ]
-    then
-        $TAR xzf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
-    fi
-
-    if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.bz2$"`" != x ]
-    then
-        $TAR xjf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
-    fi
-
-    if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".zip$"`" != x ]
-    then
-        $UNZIP "${DI_DRIVERFILE[$1]}" >> "$LOGFILE" 2>&1
-    fi
-
-    if [ $? != "0" ]
-    then
-        echo "Unable to \"extract ${DI_DRIVERFILE[$1]}\""
-        return $NO
     fi
 
     if [ x"${DI_DRIVEREXDIR[$1]}" != x ]
@@ -1058,6 +1222,82 @@ removeDriver() {
     return $YES
 }
 
+checkusb() {
+    if [ x"$LSUSB" != x ]
+    then
+        usbnum=`$LSUSB | wc -l`
+        i=1
+        if [ x"`$LSUSB -vvv | grep -i "$1"`" != x ]
+        then
+            while [ $i -le $usbnum ]
+            do
+                bus=`$LSUSB | head -n $i | tail -n 1 | awk '{print $2}' | sed 's/^0*//'`
+                dev=`$LSUSB | head -n $i | tail -n 1 | awk '{print $4}' | sed 's/^0*//' | sed 's/:$//'`
+
+                if [ x"$bus" == x ]
+                then
+                    bus=0
+                fi
+                if [ x"$dev" == x ]
+                then
+                    dev=0
+                fi
+
+                if [ x"`$LSUSB -s "$bus:$dev" -v | grep -i "$1"`" != x ]
+                then
+                    echo `$LSUSB -s "$bus:$dev"`
+                fi
+                i=$(($i+1))
+            done
+        fi
+    fi
+}
+
+checkpci() {
+    if [ x"$LSPCI" != x ]
+    then
+        pcinum=`$LSPCI | wc -l`
+        i=1
+        if [ x"`$LSPCI | grep -i "$1"`" != x ]
+        then
+            while [ $i -le $pcinum ]
+            do
+                if [ x"`$LSPCI | head -n $i | tail -n 1 | grep -i "$1"`" != x ]
+                then
+                    echo `$LSPCI | head -n $i | tail -n 1`
+                fi
+                i=$(($i+1))
+            done
+        fi
+    fi
+}
+
+checkpcmcia() {
+    if [ x"$LSPCMCIA" != x -a x"$CARDCTL" != x ]
+    then
+        pcmcianum=10
+        i=0
+        if [ x"`$LSPCMCIA -v | grep -i "$1"`" != x ]
+        then
+            while [ $i -le $pcmcianum ]
+            do
+                manfid=`$CARDCTL ident $i | grep "manfid" | sed 's/^.*: //'`
+
+                if [ x"$manfid" == x ]
+                then
+                    manfid="0x0000, 0x0000"
+                fi
+
+                if [ x"`$CARDCTL ident $i | grep -i "$1"`" != x ]
+                then
+                    echo "ID:"$manfid "`$CARDCTL ident $i | head -n 1 | sed 's/^.*: //'`"
+                fi
+                i=$(($i+1))
+            done
+        fi
+    fi
+}
+
 detectAdapters() {
     echo
 #usb
@@ -1071,7 +1311,7 @@ detectAdapters() {
                 if [ x"`$LSUSB -vvv | grep "${DETECT_USB[$i]}"`" != x ]
                 then
                     echo "Found \"${DNAME[$i]}\" device: (${DMODULE[$i]})"
-                    echo "`$LSUSB -vvv | grep "${DETECT_USB[$i]}"`"
+                    checkusb "${DETECT_USB[$i]}"
                     echo
                 fi
             fi
@@ -1090,7 +1330,7 @@ detectAdapters() {
                 if [ x"`$LSPCI | grep "${DETECT_PCI[$i]}"`" != x ]
                 then
                     echo "Found \"${DNAME[$i]}\" device: (${DMODULE[$i]})"
-                    echo "`$LSPCI -vvv | grep ${DETECT_PCI[$i]}`"
+                    checkpci "${DETECT_PCI[$i]}"
                     echo
                 fi
             fi
@@ -1109,7 +1349,7 @@ detectAdapters() {
                 if [ x"`$LSPCMCIA -vvv | grep "${DETECT_CS[$i]}"`" != x ]
                 then
                     echo "Found \"${DNAME[$i]}\" device: (${DMODULE[$i]})"
-                    echo "`$LSPCMCIA -vvv | grep "${DETECT_CS[$i]}"`"
+                    checkpcmcia "${DETECT_CS[$i]}"
                     echo
                 fi
             fi
@@ -1118,23 +1358,36 @@ detectAdapters() {
     fi
 
 #generic
-    GENERIC="wireless\|80211\|80211\.11\|wifi"
-    if [ x"`$LSUSB -vvv | grep -i "$GENERIC"`" != x ]
+    GENERIC="wireless\|80211\|80211\.11\|wifi\|wlan"
+
+    #usb
+    if [ x"$LSUSB" != x ]
     then
-        echo "USB devices (generic detection):"
-        echo "`$LSUSB -vvv | grep -i "$GENERIC"`"
+        if [ x"`$LSUSB -vvv | grep -i "$GENERIC"`" != x ]
+        then
+            echo && echo "USB devices (generic detection):"
+            checkusb "$GENERIC"
+        fi
     fi
 
-    if [ x"`$LSPCI | grep -i "$GENERIC"`" != x ]
+    #pci
+    if [ x"$LSPCI" != x ]
     then
-        echo "PCI devices (generic detection):"
-        echo "`$LSPCI | grep -i "$GENERIC"`"
+        if [ x"`$LSPCI | grep -i "$GENERIC"`" != x ]
+        then
+            echo && echo "PCI devices (generic detection):"
+            checkpci "$GENERIC"
+        fi
     fi
 
-    if [ x"`$LSPCMCIA -vvv | grep -i "$GENERIC"`" != x ]
+    #pcmcia
+    if [ x"$LSPCMCIA" != x -a x"$CARDCTL" != x ]
     then
-        echo "PCMCIA devices (generic detection):"
-        echo "`$LSPCMCIA -vvv | grep -i "$GENERIC"`"
+        if [ x"`$LSPCMCIA -v | grep -i "$GENERIC"`" != x ]
+        then
+            echo && echo "PCMCIA devices (generic detection):"
+            checkpcmcia "$GENERIC"
+        fi
     fi
 
     return $YES
