@@ -1222,12 +1222,28 @@ listKernelDrivers() {
     done
 }
 
+listSupportedStacks() {
+    echo "Following stacks are supported:"
+    i=0
+    while [ $i -lt $SCOUNT ]
+    do
+        if [ x"${SMODULE[$i]}" != x ]
+        then
+            printf "$i. ${SNAME[$i]}\n"
+        fi
+        i=$(($i+1))
+    done
+}
+
 listSupportedDrivers() {
     echo "Following drivers are supported:"
     i=0
     while [ $i -lt $DCOUNT ]
     do
+        if [ x"${DMODULE[$i]}" != x ]
+        then
             printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+        fi
         i=$(($i+1))
     done
 }
