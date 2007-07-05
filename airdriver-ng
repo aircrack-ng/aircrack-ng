@@ -1255,7 +1255,7 @@ unloadDriver() {
         return $ERROR
     fi
 
-    isLoaded $1
+    isLoaded $1 "D"
     if [ $? -eq $NO ]
     then
         echo "Driver isn't loaded."
@@ -1302,21 +1302,21 @@ loadDriver() {
         return $ERROR
     fi
 
-    isInKernel $1
+    isInKernel $1 "D"
     if [ $? -eq $YES ]
     then
         echo "Cannot load an in-kernel driver."
         return $NO
     fi
 
-    isInstalled $1
+    isInstalled $1 "D"
     if [ $? -eq $NO ]
     then
         echo "Driver is not installed."
         return $NO
     fi
 
-    isLoaded $1
+    isLoaded $1 "D"
     if [ $? -eq $YES ]
     then
         echo "Driver is already loaded."
@@ -1328,7 +1328,7 @@ loadDriver() {
         $MODPROBE $i 2>/dev/null
     done
 
-    isLoaded $1
+    isLoaded $1 "D"
     if [ $? -eq $NO ]
     then
         return $NO
@@ -1404,7 +1404,7 @@ removeDriver() {
     fi
 
 #check if its in-kernel
-    isInKernel $1
+    isInKernel $1 "D"
     if [ $? -eq $YES ]
     then
         echo "Cannot remove drivers build into the kernel!"
@@ -1412,7 +1412,7 @@ removeDriver() {
     fi
 
 #check if its installed
-    isInstalled $1
+    isInstalled $1 "D"
     if [ $? -eq $NO ]
     then
         echo "This driver isn't installed and thus cannot be removed."
@@ -1422,7 +1422,7 @@ removeDriver() {
     echo "Starting to remove \"${DNAME[$1]}\" driver"
 
 #check if its loaded and unload befor trying to remove
-    isLoaded $1
+    isLoaded $1 "D"
     if [ $? -eq $YES ]
     then
         unloadDriver $1
@@ -1864,7 +1864,7 @@ then
     echo
 
     printf "Compiled into kernel:\t"
-    isInKernel $num
+    isInKernel $num "D"
     if [ $? -eq $YES ]
     then
         echo "YES"
@@ -1873,7 +1873,7 @@ then
     fi
 
     printf "Installed:\t\t"
-    isInstalled $num
+    isInstalled $num "D"
     if [ $? -eq $YES ]
     then
         echo "YES"
@@ -1882,7 +1882,7 @@ then
     fi
 
     printf "Loaded:\t\t\t"
-    isLoaded $num
+    isLoaded $num "D"
     if [ $? -eq $YES ]
     then
         echo "YES"
