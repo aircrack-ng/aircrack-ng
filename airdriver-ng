@@ -59,22 +59,28 @@ NO=0
 ERROR=255
 
 #stacks
+SCOUNT=4
+
 SNAME[0]="IEEE80211"
+SCONFIG[0]="CONFIG_IEEE80211="
 SMODULE[0]="ieee80211"
 SMODULES[0]="ieee80211 ieee80211_crypt ieee80211_crypt_wep ieee80211_crypt_tkip ieee80211_crypt_ccmp"
 SSITE[0]="http://ieee80211.sourceforge.net/"
 
 SNAME[1]="IEEE80211 Softmac"
+SCONFIG[0]="CONFIG_IEEE80211_SOFTMAC="
 SMODULE[1]="ieee80211softmac"
 SMODULES[1]="ieee80211softmac"
 SSITE[1]="http://softmac.sipsolutions.net/"
 
 SNAME[2]="mac80211"
+SCONFIG[2]="CONFIG_MAC80211="
 SMODULE[2]="mac80211"
 SMODULES[2]="mac80211 rc80211_simple cfg80211 nl80211 rc80211_lowest"
 SSITE[2]="http://intellinuxwireless.org/?p=mac80211"
 
 SNAME[3]="custom"
+SCONFIG[3]=""
 SMODULE[3]=""
 SMODULES[3]=""
 SSITE[3]=""
@@ -740,8 +746,11 @@ install_action() {
 
 #1 - get then correct source
     echo "1. Getting the source..."
+
+    #get it with wget
     if [ "${DI_DRIVERGET[$1]}" = "wget"  ]
     then
+        #is compressed source available? no - wget it
         if [ ! -f "${DI_DRIVERFILE[$1]}" ]
         then
             $WGET -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH1[$1]}" >> "$LOGFILE" 2>&1
@@ -751,6 +760,7 @@ install_action() {
             fi
         fi
 
+        #is compressed source available? no - wget it from mirror
         if [ ! -f "${DI_DRIVERFILE[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
         then
             $WGET -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
@@ -760,6 +770,7 @@ install_action() {
             fi
         fi
 
+        #is compressed source available? no - try to locate it
         if [ ! -f "${DI_DRIVERFILE[$1]}" ]
         then
             cp "`locate "${DI_DRIVERFILE[$1]}" | grep "${DI_DRIVERFILE[$1]}$" | head -n 1`" ./ >> "$LOGFILE" 2>&1
@@ -769,6 +780,7 @@ install_action() {
             fi
         fi
 
+        #is compressed source available? no - abort install
         if [ ! -f "${DI_DRIVERFILE[$1]}" ]
         then
             echo "Couldn't find the correct driver file: ${DI_DRIVERFILE[$1]}"
@@ -778,25 +790,29 @@ install_action() {
         echo "2. Extracting the source..."
         if [ -d "${DI_DRIVERDIR[$1]}" ]
         then
-            #be carefull!!
+            #be carefull!! (deleting old source)
             rm -rf "${DI_DRIVERDIR[$1]}"
         fi
 
+        #is tar gzip?
         if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.gz$"`" != x -o x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tgz$"`" != x ]
         then
             $TAR xzf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
         fi
 
+        #is tar bzip2?
         if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.bz2$"`" != x ]
         then
             $TAR xjf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
         fi
 
+        #is zip?
         if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".zip$"`" != x ]
         then
             $UNZIP "${DI_DRIVERFILE[$1]}" >> "$LOGFILE" 2>&1
         fi
 
+        #error? abort...
         if [ $? != "0" ]
         then
             echo "Unable to \"extract ${DI_DRIVERFILE[$1]}\""
@@ -804,20 +820,57 @@ install_action() {
         fi
     fi
 
-    if [ "${DI_DRIVERGET[$1]}" = "wget"  ]
+    #use svn
+    if [ "${DI_DRIVERGET[$1]}" = "svn"  ]
     then
         if [ -d "${DI_DRIVERDIR[$1]}" ]
         then
-            #be carefull!!
+            #be carefull!! (deleting old source)
             rm -rf "${DI_DRIVERDIR[$1]}"
+        fi
+
+        #if dir is missing (it should be) - check it out
+        if [ ! -d "${DI_DRIVERDIR[$1]}" ]
+        then
+            svn co "${DI_DRIVERPATH1[$1]}" "${DI_DRIVERDIR[$1]}"
+        fi
+
+        #still missing? - use mirror/second source in case there is one
+        if [ ! -d "${DI_DRIVERDIR[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
+        then
+            svn co "${DI_DRIVERPATH2[$1]}" "${DI_DRIVERDIR[$1]}"
         fi
     fi
 
-    if [ x"${DI_DRIVEREXDIR[$1]}" != x ]
+    #use git
+    if [ "${DI_DRIVERGET[$1]}" = "git"  ]
+    then
+        if [ -d "${DI_DRIVERDIR[$1]}" ]
+        then
+            #be carefull!! (deleting old source)
+            rm -rf "${DI_DRIVERDIR[$1]}"
+        fi
+
+        #if dir is missing (it should be) - check it out
+        if [ ! -d "${DI_DRIVERDIR[$1]}" ]
+        then
+            git clone "${DI_DRIVERPATH1[$1]}"
+        fi
+
+        #still missing? - use mirror/second source in case there is one
+        if [ ! -d "${DI_DRIVERDIR[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
+        then
+            git clone "${DI_DRIVERPATH2[$1]}"
+        fi
+    fi
+
+    #extracted dir differs from expected one? rename it
+    if [ x"${DI_DRIVEREXDIR[$1]}" != x -a x"${DI_DRIVEREXDIR[$1]}" != x"${DI_DRIVERDIR[$1]}" ]
     then
         mv "${DI_DRIVEREXDIR[$1]}" "${DI_DRIVERDIR[$1]}"
     fi
 
+    #driver dir not available? abort...
     if [ ! -d "${DI_DRIVERDIR[$1]}" ]
     then
         echo "Directory \"${DI_DRIVERDIR[$1]}\" doesn't exist."
@@ -921,53 +974,181 @@ install_action() {
 #END install scripts
 
 isInstalled() {
-    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+    #_D_river or _S_tack? neither? abort
+    if [ x"$2" != "xD" -a x"$2" != "xS" ]
     then
-        echo "Invalid driver number!"
+        echo "Invalid subset [D/S]!"
         return $ERROR
     fi
 
-    if [ x"`$MODPROBE -l | grep ${DMODULE[$1]}"\.ko"`" != x ]
+    if [ x"$2" == "xD" ]
     then
-        return $YES
-    else
-        return $NO
-    fi
-}
+        if [ $1 -lt 0 -o $1 -ge ${DCOUNT} ]
+        then
+            echo "Invalid driver number!"
+            return $ERROR
+        fi
 
-isLoaded() {
-    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
-    then
-        echo "Invalid driver number!"
-        return $ERROR
-    fi
+        #no module specified, thus return $NO
+        if [ x"${DMODULE[$1]}" == x ]
+        then
+            return $NO
+        fi
 
-    if [ x"`lsmod | grep ${DMODULE[$1]}" "`" != x ]
-    then
-        return $YES
-    else
-        return $NO
-    fi
-}
-
-isInKernel() {
-    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
-    then
-        echo "Invalid driver number!"
-        return $ERROR
-    fi
-
-    if [ x${DCONFIG[$1]} != x ]
-    then
-        if [ x"`grep ${DCONFIG[$1]}"y" "/lib/modules/"$KVER"/build/.config"`" != x ]
+        if [ x"`$MODPROBE -l | grep ${DMODULE[$1]}"\.ko"`" != x ]
         then
             return $YES
         else
             return $NO
         fi
-    else
-        return $NO
     fi
+
+    if [ x"$2" == "xS" ]
+    then
+        if [ $1 -lt 0 -o $1 -ge ${SCOUNT} ]
+        then
+            echo "Invalid stack number!"
+            return $ERROR
+        fi
+
+        #no module specified, thus return $NO
+        if [ x"${SMODULE[$1]}" == x ]
+        then
+            return $NO
+        fi
+
+        if [ x"`$MODPROBE -l | grep ${SMODULE[$1]}"\.ko"`" != x ]
+        then
+            return $YES
+        else
+            return $NO
+        fi
+    fi
+
+    return $ERROR
+}
+
+isLoaded() {
+    #_D_river or _S_tack? neither? abort
+    if [ x"$2" != "xD" -a x"$2" != "xS" ]
+    then
+        echo "Invalid subset [D/S]!"
+        return $ERROR
+    fi
+
+    if [ x"$2" == "xD" ]
+    then
+        if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+        then
+            echo "Invalid driver number!"
+            return $ERROR
+        fi
+
+        #no module specified, thus return $NO
+        if [ x"${DMODULE[$1]}" == x ]
+        then
+            return $NO
+        fi
+
+        if [ x"`lsmod | grep ${DMODULE[$1]}" "`" != x ]
+        then
+            return $YES
+        else
+            return $NO
+        fi
+    fi
+
+    if [ x"$2" == "xS" ]
+    then
+        if [ $1 -lt 0 -o $1 -ge $SCOUNT ]
+        then
+            echo "Invalid stack number!"
+            return $ERROR
+        fi
+
+        #no module specified, thus return $NO
+        if [ x"${SMODULE[$1]}" == x ]
+        then
+            return $NO
+        fi
+
+        if [ x"`lsmod | grep ${SMODULE[$1]}" "`" != x ]
+        then
+            return $YES
+        else
+            return $NO
+        fi
+    fi
+
+    return $ERROR
+}
+
+isInKernel() {
+    #_D_river or _S_tack? neither? abort
+    if [ x"$2" != "xD" -a x"$2" != "xS" ]
+    then
+        echo "Invalid subset [D/S]!"
+        return $ERROR
+    fi
+
+    if [ x"$2" == "xD" ]
+    then
+        if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+        then
+            echo "Invalid driver number!"
+            return $ERROR
+        fi
+
+        if [ x${DCONFIG[$1]} != x ]
+        then
+            if [ x"`grep ${DCONFIG[$1]}"y" "/lib/modules/"$KVER"/build/.config"`" != x ]
+            then
+                return $YES
+            else
+                return $NO
+            fi
+        else
+            return $NO
+        fi
+    fi
+
+    if [ x"$2" == "xS" ]
+    then
+        if [ $1 -lt 0 -o $1 -ge $SCOUNT ]
+        then
+            echo "Invalid stack number!"
+            return $ERROR
+        fi
+
+        if [ x${SCONFIG[$1]} != x ]
+        then
+            if [ x"`grep ${SCONFIG[$1]}"y" "/lib/modules/"$KVER"/build/.config"`" != x ]
+            then
+                return $YES
+            else
+                return $NO
+            fi
+        else
+            return $NO
+        fi
+    fi
+
+    return $ERROR
+}
+
+listInstalledStacks() {
+    echo "Found following stacks installed:"
+    i=0
+    while [ $i -lt $SCOUNT ]
+    do
+        isInstalled $i "S"
+        if [ $? -eq $YES ]
+        then
+            printf "$i. ${SNAME[$i]}\n"
+        fi
+        i=$(($i+1))
+    done
+
 }
 
 listInstalledDrivers() {
@@ -975,14 +1156,28 @@ listInstalledDrivers() {
     i=0
     while [ $i -lt $DCOUNT ]
     do
-        isInstalled $i
+        isInstalled $i "D"
         if [ $? -eq $YES ]
         then
-            echo $i. ${DNAME[$i]}
+            printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
         fi
         i=$(($i+1))
     done
 
+}
+
+listLoadedStacks() {
+    echo "Found following stacks loaded (as module):"
+    i=0
+    while [ $i -lt $SCOUNT ]
+    do
+        isLoaded $i "S"
+        if [ $? -eq $YES ]
+        then
+            printf "$i. ${SNAME[$i]}\n"
+        fi
+        i=$(($i+1))
+    done
 }
 
 listLoadedDrivers() {
@@ -990,10 +1185,24 @@ listLoadedDrivers() {
     i=0
     while [ $i -lt $DCOUNT ]
     do
-        isLoaded $i
+        isLoaded $i "D"
         if [ $? -eq $YES ]
         then
-            echo $i. ${DNAME[$i]}
+            printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+        fi
+        i=$(($i+1))
+    done
+}
+
+listKernelStacks() {
+    echo "Found following stacks in the Kernel:"
+    i=0
+    while [ $i -lt $SCOUNT ]
+    do
+        isInKernel $i "S"
+        if [ $? -eq $YES ]
+        then
+            printf "$i. ${SNAME[$i]}\n"
         fi
         i=$(($i+1))
     done
@@ -1004,10 +1213,10 @@ listKernelDrivers() {
     i=0
     while [ $i -lt $DCOUNT ]
     do
-        isInKernel $i
+        isInKernel $i "D"
         if [ $? -eq $YES ]
         then
-            echo $i. ${DNAME[$i]}
+            printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
         fi
         i=$(($i+1))
     done
@@ -1018,7 +1227,7 @@ listSupportedDrivers() {
     i=0
     while [ $i -lt $DCOUNT ]
     do
-        echo $i. ${DNAME[$i]}
+            printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
         i=$(($i+1))
     done
 }
@@ -1444,24 +1653,28 @@ fi
 
 if [ x"$1" == "xsupported" ]
 then
+    listSupportedStacks
     listSupportedDrivers
     exit
 fi
 
 if [ x"$1" == "xinstalled" ]
 then
+    listInstalledStacks
     listInstalledDrivers
     exit
 fi
 
 if [ x"$1" == "xloaded" ]
 then
+    listLoadedStacks
     listLoadedDrivers
     exit
 fi
 
 if [ x"$1" == "xkernel" ]
 then
+    listKernelStacks
     listKernelDrivers
     exit
 fi
