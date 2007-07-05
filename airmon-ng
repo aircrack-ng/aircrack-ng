@@ -91,7 +91,7 @@ checkProcessesIface() {
         return
     fi
 
-    for i in `ps auxw | grep $1 | grep -v grep | awk '{print $2}'`
+    for i in `ps auxw | grep $1 | grep -v "grep" | grep -v "airmon-ng" | awk '{print $2}'`
     do
         pname=`ps -o comm= -p $i`
         echo "Process with PID $i ($pname) is running on interface $1"
