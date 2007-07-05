@@ -116,7 +116,6 @@ fi
 iwpriv > /dev/null 2> /dev/null ||
   { echo Wireless tools not found ; exit ; }
 
-scanProcesses
 echo && echo
 
 if [ $# -ne "0" ]
@@ -169,7 +168,6 @@ for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 |
 do
  getModule $iface
  getDriver $iface
- checkProcessesIface $iface
 
  if [ x"`iwpriv $iface 2>/dev/null | grep get_rid`" != "x" ] || [ x"`iwpriv $iface 2>/dev/null | grep dump_recs`" != "x" ]
  then
@@ -610,5 +608,12 @@ printf "$iface\t\tUnknown\t\tUnknown (MONITOR MODE NOT SUPPORTED)" && echo
 
 done
 
+scanProcesses
+for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
+do
+ getModule $iface
+ getDriver $iface
+ checkProcessesIface $iface
+done
 
 echo
