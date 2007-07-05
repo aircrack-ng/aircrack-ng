@@ -1,7 +1,7 @@
 ROOT		= ..
 include $(ROOT)/common.mak
 
-CFLAGS		+= -Iinclude
+CFLAGS		+= -Iinclude -DHAVE_SQLITE
 
 iCC             = /opt/intel/cc/9.0/bin/icc
 iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro
@@ -9,7 +9,7 @@ iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
-		  ivstools$(EXE) kstats$(EXE)
+		  ivstools$(EXE) kstats$(EXE) airolib-ng$(EXE)
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
 		  airtun-ng$(EXE) wesside-ng$(EXE)
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
@@ -28,6 +28,7 @@ OBJS_AT		= airtun-ng.o common.o crypto.o
 OBJS_IV		= ivstools.o common.o crypto.o uniqueiv.o
 OBJS_AS		= airserv-ng.o common.o
 OBJS_WS		= wesside-ng.o crypto.c common.o $(OBJS_PTW)
+OBJS_AL		= airolib-ng.o crypto.c
 
 OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD)
@@ -37,6 +38,7 @@ endif
 LIBOSD		= $(OSD)/lib$(OSD).a
 
 LIBSSL		= -lssl -lcrypto $(LDFLAGS)
+LIBSQL		=  -lsqlite3
 
 all: osd userland $(SBINFILES)
 
@@ -49,19 +51,19 @@ $(LIBOSD):
 	$(MAKE) -C $(OSD)
 
 aircrack-ng-opt: $(SRC_AC)
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) $(SRC_AC) $(LIBSSL) uniqueiv.o -o aircrack-ng-opt -lpthread
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) $(SRC_AC) $(LIBSSL) uniqueiv.o -o aircrack-ng-opt -lpthread -DHAVE_SQLITE $(LIBSQL)
 
 aircrack-ng-opt-prof_gen: $(SRC_AC)
 	mkdir -p prof
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_genx -DDO_PGO_DUMP \
-	-prof_dir$(PROF_DIR) $(SRC_AC) $(LIBSSL) uniqueiv.o -o aircrack-ng-opt-prof_gen -lpthread
+	-prof_dir$(PROF_DIR) $(SRC_AC) $(LIBSSL) uniqueiv.o -o aircrack-ng-opt-prof_gen -lpthread -DHAVE_SQLITE $(LIBSQL)
 
 aircrack-ng-opt-prof_use: $(SRC_AC)
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_use \
-	-prof_dir$(PROF_DIR) $(SRC_AC) $(LIBSSL) uniqueiv.o -o aircrack-ng-opt-prof -lpthread
+	-prof_dir$(PROF_DIR) $(SRC_AC) $(LIBSSL) uniqueiv.o -o aircrack-ng-opt-prof -lpthread -DHAVE_SQLITE $(LIBSQL)
 
 aircrack-ng$(EXE): $(OBJS_AC)
-	$(CC) $(CFLAGS) $(OBJS_AC) -o $(@) -lpthread $(LIBSSL)
+	$(CC) $(CFLAGS) $(OBJS_AC) -o $(@) -lpthread $(LIBSSL) -DHAVE_SQLITE $(LIBSQL)
 
 airdecap-ng$(EXE): $(OBJS_AD)
 	$(CC) $(CFLAGS) $(OBJS_AD) -o $(@) $(LIBSSL)
@@ -89,6 +91,9 @@ kstats$(EXE): kstats.o
 
 wesside-ng$(EXE): $(OBJS_WS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_WS) -o $(@) $(LIBS) $(LIBSSL) -lz
+
+airolib-ng$(EXE): $(OBJS_AL)
+	$(CC) $(CFLAGS) $(OBJS_AL) -o $(@) $(LIBSSL) -DHAVE_REGEXP $(LIBSQL)
 
 strip: $(BINFILES) $(SBINFILES)
 	strip $(BINFILES) $(SBINFILES)

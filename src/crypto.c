@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include "crypto.h"
 #include "crctable.h"
+#include "aircrack-ng.h"
 
 #define uchar  unsigned char
 
@@ -219,6 +220,59 @@ void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 		for( j = 0; j < 20; j++ )
 			pmk[j + 20] ^= buffer[j];
 	}
+}
+
+
+void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80], unsigned char mic[20]) {
+	uchar pke[100];
+	HMAC_CTX ctx;
+
+	memcpy( pke, "Pairwise key expansion", 23 );
+
+	if( memcmp( ap->wpa.stmac, ap->bssid, 6 ) < 0 )
+	{
+		memcpy( pke + 23, ap->wpa.stmac, 6 );
+		memcpy( pke + 29, ap->bssid, 6 );
+	}
+	else
+	{
+		memcpy( pke + 23, ap->bssid, 6 );
+		memcpy( pke + 29, ap->wpa.stmac, 6 );
+	}
+
+	if( memcmp( ap->wpa.snonce, ap->wpa.anonce, 32 ) < 0 )
+	{
+		memcpy( pke + 35, ap->wpa.snonce, 32 );
+		memcpy( pke + 67, ap->wpa.anonce, 32 );
+	}
+	else
+	{
+		memcpy( pke + 35, ap->wpa.anonce, 32 );
+		memcpy( pke + 67, ap->wpa.snonce, 32 );
+	}
+
+	int i;
+	HMAC_CTX_init(&ctx);
+	HMAC_Init_ex(&ctx, pmk, 32, EVP_sha1(), NULL);
+	for(i = 0; i < 4; i++ )
+	{
+		pke[99] = i;
+		//HMAC(EVP_sha1(), values[0], 32, pke, 100, ptk + i * 20, NULL);
+		HMAC_Init_ex(&ctx, 0, 0, 0, 0);
+		HMAC_Update(&ctx, pke, 100);
+		HMAC_Final(&ctx, ptk + i*20, NULL);
+	}
+	HMAC_CTX_cleanup(&ctx);
+
+	if( ap->wpa.keyver == 1 )
+	{
+		HMAC(EVP_md5(), ptk, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic, NULL);
+	}
+	else
+	{
+		HMAC(EVP_sha1(), ptk, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic, NULL);
+	}
+
 }
 
 unsigned long calc_crc( unsigned char * buf, int len)

@@ -47,8 +47,12 @@
 #include "crypto.h"
 #include "pcap.h"
 #include "uniqueiv.h"
-#include "aircrack-ptw-lib.h"
 #include "aircrack-ng.h"
+
+#ifdef HAVE_SQLITE
+#include <sqlite3.h>
+sqlite3 *db;
+#endif
 
 static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -158,7 +162,9 @@ char usage[] =
 "      -w <words> : path to a dictionary file (multiple\n"
 "                    dictionnaries can be specified.\n"
 "                    See manpage for more information)\n"
-/*"      -r <table> : path to a WPA PMK table\n" */
+#ifdef HAVE_SQLITE
+"      -r <database> : path to airolib database to use in favour of a wordlist\n"
+#endif
 "\n"
 "      --help     : Displays this usage screen\n"
 "\n";
@@ -3118,7 +3124,50 @@ int next_dict(int nb)
 
 	return( 0 );
 }
+#ifdef HAVE_SQLITE
+int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
+	struct AP_info *ap = (struct AP_info*)arg;
 
+	unsigned char ptk[80];
+	unsigned char mic[20];
+
+	if(ccount) {} //XXX
+	if(columnnames) {} //XXX
+
+	calc_mic(ap, values[0], &ptk, &mic);
+
+	if( memcmp( mic, ap->wpa.keymic, 16 ) == 0 )
+	{
+		if( opt.is_quiet )
+		{
+			printf( "KEY FOUND! [ %s ]\n", values[1] );
+			return 1;
+		}
+
+		show_wpa_stats( values[1], strlen(values[1]), (unsigned char*)(values[0]), ptk, mic, 1 );
+
+		if( opt.l33t )
+			printf( "\33[31;1m" );
+
+		printf( "\33[8;%dH\33[2KKEY FOUND! [ %s ]\33[11B\n",
+				( 80 - 15 - (int) strlen(values[1])) / 2, values[1] );
+
+		if( opt.l33t )
+			printf( "\33[32;22m" );
+
+		// abort the query
+		return 1;
+	}
+
+	nb_tried++;
+	nb_kprev++;
+
+	if( ! opt.is_quiet )
+		show_wpa_stats( values[1], strlen(values[1]), (unsigned char*)(values[0]), ptk, mic, 0 );
+
+	return 0;
+}
+#endif
 int do_wpa_crack( struct AP_info *ap )
 {
 	int i, j, cid, len1, len2, num_cpus;
@@ -3658,6 +3707,14 @@ int main( int argc, char *argv[] )
 	int old=0, id=0;
 	pthread_t tid[MAX_THREADS];
 
+	int rc;
+	char *zErrMsg = 0;
+	char looper[4] = {'|','/','-','\\'};
+	int looperc = 0;
+	int waited = 0;
+	char *sqlformat = "SELECT pmk.PMK, passwd.passwd FROM pmk INNER JOIN passwd ON passwd.passwd_id = pmk.passwd_id INNER JOIN essid ON essid.essid_id = pmk.essid_id WHERE essid.essid = '%q'";
+	char *sql;
+
 	ret = FAILURE;
 	cpudetectfailed = 0;
 	showhelp = 0;
@@ -3706,10 +3763,10 @@ int main( int argc, char *argv[] )
         };
 
 		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "a:e:b:qcthd:m:n:i:f:k:x::ysw:0HzC:",
+			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HzC:",
                         long_options, &option_index );
 		else
-			option = getopt_long( argc, argv, "a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HzC:",
+			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HzC:",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -3950,7 +4007,15 @@ int main( int argc, char *argv[] )
 					return FAILURE;
 				}
 				break;
-
+#ifdef HAVE_SQLITE
+			case 'r' :
+				if(sqlite3_open(optarg, &db)) {
+					fprintf(stderr, "Database error: %s\n", sqlite3_errmsg(db));
+					sqlite3_close(db);
+					return FAILURE;
+				}
+				break;
+#endif
 			case '0' :
 
 				opt.l33t = 1;
@@ -4424,8 +4489,12 @@ usage:
 	{
 		crack_wpa:
 
+#ifdef HAVE_SQLITE
+		if (opt.dict == NULL && db == NULL) goto nodict;
+#else
 		if ( opt.dict == NULL )
 			goto nodict;
+#endif
 
 		ap_cur = ap_1st;
 
@@ -4454,25 +4523,63 @@ usage:
 			memset(  ap_cur->essid, 0, sizeof( ap_cur->essid ) );
 			strncpy( ap_cur->essid, opt.essid, sizeof( ap_cur->essid ) - 1 );
 		}
-
-		for( i = 0; i < opt.nbcpu; i++ )
-		{
-			/* start one thread per cpu */
-
-			pthread_t tid;
-
-			if( pthread_create( &tid, NULL, (void *) crack_wpa_thread,
-				(void *) (long) i ) != 0 )
+#ifdef HAVE_SQLITE
+		if (db == NULL) {
+#endif
+			for( i = 0; i < opt.nbcpu; i++ )
 			{
-				perror( "pthread_create failed" );
-				goto exit_main;
-			}
-		}
+				/* start one thread per cpu */
 
+				pthread_t tid;
+
+				if( pthread_create( &tid, NULL, (void *) crack_wpa_thread,
+					(void *) (long) i ) != 0 )
+				{
+					perror( "pthread_create failed" );
+					goto exit_main;
+				}
+			}
 		ret = do_wpa_crack( ap_cur );
+#ifdef HAVE_SQLITE
+		} else {
+			if( ! opt.is_quiet ) {
+				if( opt.l33t )
+					printf( "\33[37;40m" );
+					printf( "\33[2J" );
+				if( opt.l33t )
+					printf( "\33[34;1m" );
+			printf("\33[2;34H%s",progname);
+			}
+			sql = sqlite3_mprintf(sqlformat,ap_cur->essid);
+			while (1) {
+				rc = sqlite3_exec(db,sql,sql_wpacallback,ap_cur,&zErrMsg);
+				if (rc == SQLITE_LOCKED || rc == SQLITE_BUSY) {
+					fprintf(stdout,"Database is locked or busy. Waiting %is ... %1c    \r",++waited, looper[looperc]);
+					fflush(stdout);
+					looperc = (looperc+1) % sizeof(looper);
+					sleep(1);
+				} else {
+					if (rc != SQLITE_OK && rc != SQLITE_ABORT ) {
+						fprintf(stderr, "SQL error: %s\n", zErrMsg);
+						sqlite3_free(zErrMsg);
+					}
+					if (waited != 0) printf("\n\n");
+					break;
+				}
+			}
+			sqlite3_free(sql);
+
+		}
+	#endif
 	}
 
 	exit_main:
+
+#ifdef HAVE_SQLITE
+	if (db != NULL) {
+		sqlite3_close(db);
+	}
+#endif
 
 	#if ((defined(__INTEL_COMPILER) || defined(__ICC)) && defined(DO_PGO_DUMP))
 	_PGOPTI_Prof_Dump();
