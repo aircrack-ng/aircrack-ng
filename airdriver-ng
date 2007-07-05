@@ -1226,13 +1226,13 @@ checkusb() {
     if [ x"$LSUSB" != x ]
     then
         usbnum=`$LSUSB | wc -l`
-        i=1
+        j=1
         if [ x"`$LSUSB -vvv | grep -i "$1"`" != x ]
         then
-            while [ $i -le $usbnum ]
+            while [ $j -le $usbnum ]
             do
-                bus=`$LSUSB | head -n $i | tail -n 1 | awk '{print $2}' | sed 's/^0*//'`
-                dev=`$LSUSB | head -n $i | tail -n 1 | awk '{print $4}' | sed 's/^0*//' | sed 's/:$//'`
+                bus=`$LSUSB | head -n $j | tail -n 1 | awk '{print $2}' | sed 's/^0*//'`
+                dev=`$LSUSB | head -n $j | tail -n 1 | awk '{print $4}' | sed 's/^0*//' | sed 's/:$//'`
 
                 if [ x"$bus" == x ]
                 then
@@ -1247,7 +1247,7 @@ checkusb() {
                 then
                     echo `$LSUSB -s "$bus:$dev"`
                 fi
-                i=$(($i+1))
+                j=$(($j+1))
             done
         fi
     fi
@@ -1257,16 +1257,16 @@ checkpci() {
     if [ x"$LSPCI" != x ]
     then
         pcinum=`$LSPCI | wc -l`
-        i=1
+        j=1
         if [ x"`$LSPCI | grep -i "$1"`" != x ]
         then
-            while [ $i -le $pcinum ]
+            while [ $j -le $pcinum ]
             do
-                if [ x"`$LSPCI | head -n $i | tail -n 1 | grep -i "$1"`" != x ]
+                if [ x"`$LSPCI | head -n $j | tail -n 1 | grep -i "$1"`" != x ]
                 then
-                    echo `$LSPCI | head -n $i | tail -n 1`
+                    echo `$LSPCI | head -n $j | tail -n 1`
                 fi
-                i=$(($i+1))
+                j=$(($j+1))
             done
         fi
     fi
@@ -1276,23 +1276,23 @@ checkpcmcia() {
     if [ x"$LSPCMCIA" != x -a x"$CARDCTL" != x ]
     then
         pcmcianum=10
-        i=0
+        j=0
         if [ x"`$LSPCMCIA -v | grep -i "$1"`" != x ]
         then
-            while [ $i -le $pcmcianum ]
+            while [ $j -le $pcmcianum ]
             do
-                manfid=`$CARDCTL ident $i | grep "manfid" | sed 's/^.*: //'`
+                manfid=`$CARDCTL ident $j | grep "manfid" | sed 's/^.*: //'`
 
                 if [ x"$manfid" == x ]
                 then
                     manfid="0x0000, 0x0000"
                 fi
 
-                if [ x"`$CARDCTL ident $i | grep -i "$1"`" != x ]
+                if [ x"`$CARDCTL ident $j | grep -i "$1"`" != x ]
                 then
-                    echo "ID:"$manfid "`$CARDCTL ident $i | head -n 1 | sed 's/^.*: //'`"
+                    echo "ID:"$manfid "`$CARDCTL ident $j | head -n 1 | sed 's/^.*: //'`"
                 fi
-                i=$(($i+1))
+                j=$(($j+1))
             done
         fi
     fi
@@ -1390,6 +1390,7 @@ detectAdapters() {
         fi
     fi
 
+    echo
     return $YES
 }
 
