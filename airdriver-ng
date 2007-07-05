@@ -9,7 +9,7 @@ then
 	USERID="`id -u 2> /dev/null`"
 fi
 
-if [ x$USERID = "x" -a x$UID != "x" ]
+if [ x$USERID == "x" -a x$UID != "x" ]
 then
 	USERID=$UID
 fi
@@ -33,8 +33,8 @@ GCC=`which gcc 2>/dev/null`
 TAR=`which tar 2>/dev/null`
 UNZIP=`which unzip 2>/dev/null`
 SVN=`which svn 2>/dev/null`
-CVS=`which svn 2>/dev/null`
-GIT=`which svn 2>/dev/null`
+CVS=`which cvs 2>/dev/null`
+GIT=`which git 2>/dev/null`
 CARDCTL=`which pccardctl 2>/dev/null`
 
 if [ x"$CARDCTL" == x ]
@@ -53,6 +53,8 @@ KPATCH=`echo $KVER | sed 's/^[0-9]\.[0-9]\.\([0-9]*\).*$/\1/'`
 
 D_DIR="/usr/src/drivers"
 LOGFILE="/var/log/airdriver"
+
+NO_DRIVER_ERROR='You need to specify a driver number obtained from "airdriver-ng installed" or "airdriver-ng loaded"'
 
 YES=1
 NO=0
@@ -539,10 +541,6 @@ DETECT_USB[16]=""
 DETECT_PCI[16]=""
 DETECT_CS[16]=""
 
-#end ieee80211[softmac]
-#--------------------------8<---------------------------------8<-----------------------------8<-------------------------
-#start mac80211
-
 DNAME[17]="Intel Pro Wireless 3945 A/B/G"
 DSTACK[17]="2"
 DMODULE[17]="iwlwifi"
@@ -573,7 +571,7 @@ DNAME[18]="Intel Pro Wireless 3945 A/B/G - raw mode"
 DSTACK[18]="2"
 DMODULE[18]="ipwraw"
 DCONFIG[18]=""
-DMODULES[18]="iwlwifi"
+DMODULES[18]="ipwraw"
 DI_INIT[18]=""
 DI_DRIVERGET[18]="wget"
 DI_DRIVERFILE[18]="ipwraw-ng-1.0.0-21062007.tar.bz2"
@@ -744,11 +742,30 @@ install_action() {
         return $ERROR
     fi
 
+    if [ "${DI_DRIVERGET[$1]}" == "wget" -a x"$WGET" == x ]
+    then
+        echo "You need to install \"wget\" prior to installing ${DNAME[$1]}"
+    fi
+
+    if [ "${DI_DRIVERGET[$1]}" == "svn" -a x"$SVN" == x ]
+    then
+        echo "You need to install \"subversion\" prior to installing ${DNAME[$1]}"
+    fi
+
+    if [ "${DI_DRIVERGET[$1]}" == "cvs" -a x"$CVS" == x ]
+    then
+        echo "You need to install \"cvs\" prior to installing ${DNAME[$1]}"
+    fi
+
+    if [ "${DI_DRIVERGET[$1]}" == "git" -a x"$GIT" == x ]
+    then
+        echo "You need to install \"git\" prior to installing ${DNAME[$1]}"
+    fi
 #1 - get then correct source
     echo "1. Getting the source..."
 
     #get it with wget
-    if [ "${DI_DRIVERGET[$1]}" = "wget"  ]
+    if [ "${DI_DRIVERGET[$1]}" == "wget"  ]
     then
         #is compressed source available? no - wget it
         if [ ! -f "${DI_DRIVERFILE[$1]}" ]
@@ -821,7 +838,7 @@ install_action() {
     fi
 
     #use svn
-    if [ "${DI_DRIVERGET[$1]}" = "svn"  ]
+    if [ "${DI_DRIVERGET[$1]}" == "svn"  ]
     then
         if [ -d "${DI_DRIVERDIR[$1]}" ]
         then
@@ -832,18 +849,18 @@ install_action() {
         #if dir is missing (it should be) - check it out
         if [ ! -d "${DI_DRIVERDIR[$1]}" ]
         then
-            svn co "${DI_DRIVERPATH1[$1]}" "${DI_DRIVERDIR[$1]}"
+            $SVN co "${DI_DRIVERPATH1[$1]}" "${DI_DRIVERDIR[$1]}"
         fi
 
         #still missing? - use mirror/second source in case there is one
         if [ ! -d "${DI_DRIVERDIR[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
         then
-            svn co "${DI_DRIVERPATH2[$1]}" "${DI_DRIVERDIR[$1]}"
+            $SVN co "${DI_DRIVERPATH2[$1]}" "${DI_DRIVERDIR[$1]}"
         fi
     fi
 
     #use git
-    if [ "${DI_DRIVERGET[$1]}" = "git"  ]
+    if [ "${DI_DRIVERGET[$1]}" == "git"  ]
     then
         if [ -d "${DI_DRIVERDIR[$1]}" ]
         then
@@ -854,13 +871,13 @@ install_action() {
         #if dir is missing (it should be) - check it out
         if [ ! -d "${DI_DRIVERDIR[$1]}" ]
         then
-            git clone "${DI_DRIVERPATH1[$1]}"
+            $GIT clone "${DI_DRIVERPATH1[$1]}"
         fi
 
         #still missing? - use mirror/second source in case there is one
         if [ ! -d "${DI_DRIVERDIR[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
         then
-            git clone "${DI_DRIVERPATH2[$1]}"
+            $GIT clone "${DI_DRIVERPATH2[$1]}"
         fi
     fi
 
@@ -1705,7 +1722,7 @@ if [ x"$1" == "xremove" ]
 then
     if [ x$2 == "x" ]
     then
-        echo "You need to specify a drivernumber."
+        echo "$NO_DRIVER_ERROR"
         exit
     fi
 
@@ -1739,7 +1756,7 @@ if [ x"$1" == "xinstall" ]
 then
     if [ x$2 == "x" ]
     then
-        echo "You need to specify a drivernumber."
+        echo "$NO_DRIVER_ERROR"
         exit
     fi
 
@@ -1760,13 +1777,29 @@ then
     echo "Driver \"${DNAME[$num]}\" specified for installation."
 
     installDriver $num
-    if [ $? -eq $YES ]
+
+    ret=$?
+
+    if [ $ret -eq $YES ]
     then
         echo "Installed driver \"${DNAME[$num]}\" successfully"
     else
         echo "Failed to install the driver."
         echo "Look through \"$LOGFILE\" for errors."
     fi
+
+    if [ $ret == $YES ]
+    then
+        unloadDriver $num >/dev/null 2>/dev/null
+        loadDriver $num
+        if [ $? -eq $YES ]
+        then
+            echo "Loaded driver \"${DNAME[$num]}\" successfully"
+        else
+            echo "Failed to load the driver."
+        fi
+    fi
+
     exit
 fi
 
@@ -1774,7 +1807,7 @@ if [ x"$1" == "xload" ]
 then
     if [ x$2 == "x" ]
     then
-        echo "You need to specify a drivernumber."
+        echo "$NO_DRIVER_ERROR"
         exit
     fi
 
@@ -1808,7 +1841,7 @@ if [ x"$1" == "xunload" ]
 then
     if [ x$2 == "x" ]
     then
-        echo "You need to specify a drivernumber."
+        echo "$NO_DRIVER_ERROR"
         exit
     fi
 
@@ -1842,7 +1875,7 @@ if [ x"$1" == "xdetails" ]
 then
     if [ x$2 == "x" ]
     then
-        echo "You need to specify a driver."
+        echo "$NO_DRIVER_ERROR"
         exit
     fi
 
@@ -1903,7 +1936,9 @@ then
     echo "Files:"
     for i in ${DMODULES[$num]}
     do
-        $MODPROBE -l | grep $i\.ko
+        mfile="`$MODPROBE -l | grep $i\.ko`"
+        mtime="`ls -l $mfile | awk '{print $6" "$7}'`"
+        echo $mfile $mtime
     done
     echo
 
@@ -1912,7 +1947,7 @@ then
     echo
     if [ x${DSITE[$num]} != x ]
     then
-        echo "More infos on:"
+        echo "For more information see:"
         echo ${DSITE[$num]}
     fi
     exit
