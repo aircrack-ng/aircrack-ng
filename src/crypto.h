@@ -33,11 +33,15 @@ struct rc4_state
     int x, y, m[256];
 };
 
+struct AP_info;
+
 void calc_pmk( char *key, char *essid, unsigned char pmk[40] );
 int decrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen );
 int encrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen );
 int check_crc_buf( unsigned char *buf, int len );
 int calc_crc_buf( unsigned char *buf, int len );
-
+void calc_mic(struct AP_info *ap, unsigned char *pmk, unsigned char *ptk,
+	      unsigned char *mic);
 int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len);
+
 #endif /* crypto.h */

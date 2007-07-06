@@ -479,7 +479,7 @@ static int fbsd_get_rate(struct wif *wi)
 
 static int fbsd_set_rate(struct wif *wi, int rate)
 {
-	if (wi) {} /* XXX unused */
+	if (wi || rate) {} /* XXX unused */
 
 	/* XXX */
 	return 0;

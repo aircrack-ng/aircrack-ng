@@ -20,9 +20,10 @@ AR		= $(TOOL_PREFIX)ar
 REVISION	= `$(ROOT)/evalrev`
 REVFLAGS	= -D_REVISION=$(REVISION)
 
+INC		= -I/usr/local/include
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
-CFLAGS          ?= -g -W -Wall -O3
-CFLAGS          += $(OPTFLAGS) $(REVFLAGS)
+CFLAGS          ?= -g -W -Wall -Werror -O3
+CFLAGS          += $(OPTFLAGS) $(REVFLAGS) $(INC)
 
 prefix          = /usr/local
 bindir          = $(prefix)/bin

@@ -2,6 +2,7 @@
 #define _AIRCRACK_NG_H
 
 #include <stdint.h>
+#include <stdio.h>
 #include "aircrack-ptw-lib.h"
 
 #define SUCCESS  0
