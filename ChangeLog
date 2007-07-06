@@ -1,5 +1,6 @@
 Version 0.9.2 (changes from aircrack-ng 0.9.1) - Released ?? ??? 2007:
 * airodump-ng: Fixed: Wrong information printed in CSV file (PSK for WEP with Shared key instead of SKA).
+* airdecap-ng: Fixed bug in calc_pmk() function causes wrong PMK to be computed
 
 Version 0.9.1 (changes from aircrack-ng 0.9) - Released 25 june 2007:
 * airodump-ng: wlan-ng driver now works again.

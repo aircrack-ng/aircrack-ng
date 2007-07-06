@@ -149,15 +149,18 @@ char usage[] =
 
 /* derive the PMK from the passphrase and the essid */
 
-void calc_pmk( char *key, char *essid, uchar pmk[40] )
+void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 {
     int i, j, slen;
     uchar buffer[65];
+    uchar essid[33+4];
     sha1_context ctx_ipad;
     sha1_context ctx_opad;
     sha1_context sha1_ctx;
 
-    slen = strlen( essid ) + 4;
+    memset(essid,0,sizeof(essid));
+    memcpy(essid,essid_pre,strlen(essid_pre));
+    slen = strlen(essid)+4;
 
     /* setup the inner and outer contexts */
 
