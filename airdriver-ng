@@ -811,16 +811,31 @@ install_action() {
             rm -rf "${DI_DRIVERDIR[$1]}"
         fi
 
-        #is tar gzip?
-        if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.gz$"`" != x -o x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tgz$"`" != x ]
+        if [ x"${DI_DRIVEREXDIR[$1]}" != x ]
         then
-            $TAR xzf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
-        fi
+            #is tar gzip?
+            if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.gz$"`" != x -o x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tgz$"`" != x ]
+            then
+                $TAR xzf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
+            fi
 
-        #is tar bzip2?
-        if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.bz2$"`" != x ]
-        then
-            $TAR xjf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
+            #is tar bzip2?
+            if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.bz2$"`" != x ]
+            then
+                $TAR xjf "${DI_DRIVERFILE[$1]}" "${DI_DRIVEREXDIR[$1]}" >> "$LOGFILE" 2>&1
+            fi
+        else
+            #is tar gzip?
+            if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.gz$"`" != x -o x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tgz$"`" != x ]
+            then
+                $TAR xzf "${DI_DRIVERFILE[$1]}" >> "$LOGFILE" 2>&1
+            fi
+
+            #is tar bzip2?
+            if [ x"`echo "${DI_DRIVERFILE[$1]}" | grep ".tar.bz2$"`" != x ]
+            then
+                $TAR xjf "${DI_DRIVERFILE[$1]}" >> "$LOGFILE" 2>&1
+            fi
         fi
 
         #is zip?
