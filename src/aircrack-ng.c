@@ -3134,7 +3134,7 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 	if(ccount) {} //XXX
 	if(columnnames) {} //XXX
 
-	calc_mic(ap, values[0], ptk, mic);
+	calc_mic(ap, (unsigned char*) values[0], ptk, mic);
 
 	if( memcmp( mic, ap->wpa.keymic, 16 ) == 0 )
 	{
