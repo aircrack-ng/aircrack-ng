@@ -116,6 +116,7 @@ uninstall:
 	-rm -f $(bindir)/aircrack-ng$(EXE)
 	-rm -f $(bindir)/airdecap-ng$(EXE)
 	-rm -f $(bindir)/packetforge-ng$(EXE)
+	-rm -f $(bindir)/airolib-ng$(EXE)
 	-rm -f $(bindir)/ivstools$(EXE)
 	-rm -f $(bindir)/kstats$(EXE)
 	-rm -f $(sbindir)/airodump-ng$(EXE)
