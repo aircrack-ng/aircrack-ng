@@ -1,24 +1,27 @@
+=== Requirements ===
+
+ * OpenSSL development package
+ * SQLite development package >= 3.3.17 (3.4.X version or better is recommended)
+ * For cygwin, it requires w32api package
+
 === Compilating ===
 
-Compilation:
- make
+ * Compilation:
+    make
+
+ * Strip debugging symbols:
+    make strip
+
+ * Installing:
+    make install
+
+ * Uninstall:
+    make uninstall
+
 
 REM:
  * You can find a several WPA handshake and other capture files
    as well as a dictionnary in "test" directory
-
-You can strip debug informations from executables before
-installing them with:
- make strip
-
-
-Installing:
- make install
-
-
-Uninstall:
- make uninstall
-
 
 === Using precompiled binaries ===
 

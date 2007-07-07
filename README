@@ -1,6 +1,11 @@
 Documentation, tutorials, ... can be found on www.aircrack-ng.org
 See also manpages and the forum.
 
+Installing
+----------
+
+This version now require more libraries than 0.X versions to be compiled. 
+See INSTALLING file for more information
 
 OpenWrt Devices
 ---------------
