@@ -1,7 +1,7 @@
 ROOT		= .
 include		$(ROOT)/common.mak
 
-SCRIPTS         = airmon-ng airdriver-ng
+SCRIPTS         = airmon-ng airdriver-ng patchchk
 DOCFILES        = ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 
 
