@@ -167,6 +167,17 @@ do
      continue
  fi
 
+ if [ x"`iwpriv $iface 2>/dev/null | grep set_backscan`" != "x" ]
+ then
+     printf "$iface\t\tNokia 770\t\tcx3110x"
+     if [ x$1 = "xstart" ] || [ x$1 = "xstop" ]
+     then
+     	printf " (Enable/disable monitor mode not yet supported)"
+     fi
+     echo
+     continue
+ fi
+
  if [ x"`iwpriv $iface 2>/dev/null | grep set_preamble | grep -v set_crc_check`" != "x" ]
   then
         printf "$iface\t\tCentrino b/g\tipw3945"
@@ -452,17 +463,6 @@ do
      if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
      then
          stopStdIface $iface
-     fi
-     echo
-     continue
- fi
-
- if [ x"`iwpriv $iface 2>/dev/null | grep get_bperiod`" != "x" ]
- then
-     printf "$iface\t\tNokia 770\t\tUnknown"
-     if [ x$1 = "xstart" ] || [ x$1 = "xstop" ]
-     then
-     	printf " (Enable/disable monitor mode not yet supported)"
      fi
      echo
      continue
