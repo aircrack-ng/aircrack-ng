@@ -7,8 +7,6 @@ CH=$3; [ x$3 = "x" ] && CH=10
 IFACE_FOUND="false"
 MADWIFI=0
 
-PROCESSES="wpa_action\|wpa_suppicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager"
-
 usage() {
 	printf "usage: `basename $0` <start|stop> <interface> [channel]\n"
 	echo
@@ -29,73 +27,6 @@ stopStdIface() {
 	iwconfig $1 mode Managed 2> /dev/null >/dev/null
 	ifconfig $1 down 2> /dev/null >/dev/null
 	printf " (monitor mode disabled)"
-}
-
-getModule() {
-    if [ -f "/sys/class/net/$1/device/driver/module/srcversion" ]
-    then
-        srcver1=`cat "/sys/class/net/$1/device/driver/module/srcversion"`
-        for j in `lsmod | awk '{print $1}' | grep -v "^Module$"`
-        do
-            srcver2="`modinfo $j | grep srcversion | awk '{print $2}'`"
-            if [ $srcver1 = "$srcver2" ]
-            then
-                MODULE=$j
-                break
-            fi
-        done
-    else
-        MODULE=""
-    fi
-#    return 0
-}
-
-getDriver() {
-   if [ -e "/sys/class/net/$1/device/driver" ]
-   then
-       DRIVER="`ls -l "/sys/class/net/$1/device/driver" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/'`"
-       BUS="`ls -l /sys/class/net/$1/device/driver | sed 's/^.*\/\([a-zA-Z0-9_-]*\)\/.*\/.*$/\1/'`"
-   else
-       DRIVER=""
-       BUS=""
-   fi
-}
-
-scanProcesses() {
-    match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
-    if [ $match -gt 0 ]
-    then
-        echo && echo
-        echo "Found $match processes that could cause trouble."
-        echo "If airodump-ng, aireplay-ng or airtun-ng stops working after"
-        echo "a short period of time, you may want to kill (some of) them!"
-        echo
-        echo "PID\tName"
-    else
-        return
-    fi
-
-    i=1
-    while [ $i -le $match ]
-    do
-        pid=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}'`
-        pname=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}'`
-        printf "$pid\t$pname\n"
-        i=$(($i+1))
-    done
-}
-
-checkProcessesIface() {
-    if [ x"$1" = x ]
-    then
-        return
-    fi
-
-    for i in `ps auxw | grep $1 | grep -v "grep" | grep -v "airmon-ng" | awk '{print $2}'`
-    do
-        pname=`ps -o comm= -p $i`
-        echo "Process with PID $i ($pname) is running on interface $1"
-    done
 }
 
 if [ x"`which id 2> /dev/null`" != "x" ]
@@ -166,9 +97,6 @@ fi
 
 for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
 do
- getModule $iface
- getDriver $iface
-
  if [ x"`iwpriv $iface 2>/dev/null | grep get_rid`" != "x" ] || [ x"`iwpriv $iface 2>/dev/null | grep dump_recs`" != "x" ]
  then
     printf "$iface\t\tHermesI\t\torinoco"
@@ -234,6 +162,17 @@ do
 	then
 		printf " (Warning: bad module version, you should upgrade)"
 	fi
+     fi
+     echo
+     continue
+ fi
+
+ if [ x"`iwpriv $iface 2>/dev/null | grep set_backscan`" != "x" ]
+ then
+     printf "$iface\t\tNokia 770\t\tcx3110x"
+     if [ x$1 = "xstart" ] || [ x$1 = "xstop" ]
+     then
+     	printf " (Enable/disable monitor mode not yet supported)"
      fi
      echo
      continue
@@ -529,17 +468,6 @@ do
      continue
  fi
 
- if [ x"`iwpriv $iface 2>/dev/null | grep get_bperiod`" != "x" ]
- then
-     printf "$iface\t\tNokia 770\t\tUnknown"
-     if [ x$1 = "xstart" ] || [ x$1 = "xstop" ]
-     then
-     	printf " (Enable/disable monitor mode not yet supported)"
-     fi
-     echo
-     continue
- fi
-
  if [ x"`iwpriv $iface 2>/dev/null | grep set_announcedpkt`" != "x" ]
  then
     printf "$iface\t\tPrismGT\t\tislsm"
@@ -608,12 +536,5 @@ printf "$iface\t\tUnknown\t\tUnknown (MONITOR MODE NOT SUPPORTED)" && echo
 
 done
 
-scanProcesses
-for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
-do
- getModule $iface
- getDriver $iface
- checkProcessesIface $iface
-done
 
 echo
