@@ -4,7 +4,12 @@ PATCH=`which patch 2>/dev/null`
 FGREP1="^--- "
 FGREP2="^+++ "
 PREDIR="`pwd`"
-WHOLEPATCH="`pwd`/$1"
+if [ x"`echo "$1" | grep "^/"`" = x ]
+then
+    WHOLEPATCH="`pwd`/$1"
+else
+    WHOLEPATCH="$1"
+fi
 
 if [ ! -f $WHOLEPATCH ]
 then
