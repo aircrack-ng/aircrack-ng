@@ -271,33 +271,37 @@ static void getdrv(PTW_tableentry orgtable[][n], int keylen, double * normal, do
 /*
  * Guess a single keybyte
  */
-static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint8_t fixvalue, int * searchborders, uint8_t * key, int keylen, PTW_attackstate * state, uint8_t sum, int * strongbytes, int * bf) {
+static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint8_t fixvalue, int * searchborders, uint8_t * key, int keylen, PTW_attackstate * state, uint8_t sum, int * strongbytes, int * bf, int validchars[][n]) {
 	int i;
 	uint8_t tmp;
 
 	if(!opt.is_quiet)
 		show_wep_stats( keylen -1, 0, keytable, searchborders, depth, tried );
-
+	if (keybyte > 0) {
+		if (!validchars[keybyte-1][key[keybyte-1]]) {
+			return 0;
+		}
+	}
 	if (keybyte == keylen) {
 		return correct(state, key, keylen);
 	} else if (bf[keybyte] == 1) {
 		for (i = 0; i < n; i++) {
 			key[keybyte] = i;
-			if (doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, sum+i%256, strongbytes, bf)) {
+			if (doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, sum+i%n, strongbytes, bf, validchars)) {
 				return 1;
 			}
 		}
 		return 0;
         } else if (keybyte == fixat) {
                 key[keybyte] = fixvalue-sum;
-                return doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, fixvalue, strongbytes, bf);
+                return doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, fixvalue, strongbytes, bf, validchars);
 	} else if (strongbytes[keybyte] == 1) {
 		// printf("assuming byte %d to be strong\n", keybyte);
 		tmp = 3 + keybyte;
 		for (i = keybyte-1; i >= 1; i--) {
 			tmp += 3 + key[i] + i;
-			key[keybyte] = 256-tmp;
-			if(doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, (256-tmp+sum)%256, strongbytes, bf) == 1) {
+			key[keybyte] = n-tmp;
+			if(doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, (n-tmp+sum)%n, strongbytes, bf, validchars) == 1) {
 				printf("hit with strongbyte for keybyte %d\n", keybyte);
 				return 1;
 			}
@@ -311,7 +315,7 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
                         depth[keybyte] = i;
                         keytable[keybyte][i].b = key[keybyte];
                     }
-                    if (doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, sortedtable[keybyte][i].b, strongbytes, bf)) {
+                    if (doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, sortedtable[keybyte][i].b, strongbytes, bf, validchars)) {
 				return 1;
 			}
 		}
@@ -322,7 +326,7 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
 /*
  * Do the actual computation of the key
  */
-static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW_tableentry table[][n], sorthelper * sh2, int * strongbytes, int keylimit, int * bf) {
+static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW_tableentry table[][n], sorthelper * sh2, int * strongbytes, int keylimit, int * bf, int validchars[][n]) {
 	int i,j;
 	int choices[KEYHSBYTES];
 	int prod;
@@ -345,8 +349,8 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	fixvalue = 0;
         max_tries = keylimit;
 
-	while(prod < keylimit) {
-		if (doRound(table, 0, fixat, fixvalue, choices, key, keylen, state, 0, strongbytes, bf) == 1) {
+	while(tried < keylimit) {
+		if (doRound(table, 0, fixat, fixvalue, choices, key, keylen, state, 0, strongbytes, bf, validchars) == 1) {
 			// printf("hit with %d choices\n", prod);
 			if(!opt.is_quiet)
 				show_wep_stats( keylen -1, 1, keytable, choices, depth, tried );
@@ -387,7 +391,7 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 /*
  * Guess which key bytes could be strong and start actual computation of the key
  */
-int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int testlimit, int * bf) {
+int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int testlimit, int * bf, int validchars[][n]) {
 	int strongbytes[KEYHSBYTES];
 	double normal[KEYHSBYTES];
 	double ausreisser[KEYHSBYTES];
@@ -420,8 +424,12 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 			table[i][guessbuf[0]].votes += state->allsessions[j].weight;
 		}
 		qsort(&table[i][0], n, sizeof(PTW_tableentry), &compare);
+		j = 0;
+		while(!validchars[i][table[i][j].b]) {
+			j++;
+		}
 		// printf("guessing i = %d, b = %d\n", i, table[0][0].b);
-		fullkeybuf[i+3] = table[i][0].b;
+		fullkeybuf[i+3] = table[i][j].b;
 	}
 	if (correct(state, &fullkeybuf[3], keylen)) {
 		memcpy(keybuf, &fullkeybuf[3], keylen * sizeof(uint8_t));
@@ -459,7 +467,7 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	qsort(sh, (n-1)*keylen, sizeof(sorthelper), &comparesorthelper);
 
 
-	if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, simple, bf)) {
+	if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, simple, bf, validchars)) {
 		return 1;
 	}
 
@@ -476,7 +484,7 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 		i++;
 	}
 	strongbytes[helper[i].keybyte] = 1;
-	if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, onestrong, bf)) {
+	if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, onestrong, bf, validchars)) {
 		return 1;
 	}
 
@@ -486,7 +494,7 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 		i++;
 	}
 	strongbytes[helper[i].keybyte] = 1;
-	if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, twostrong, bf)) {
+	if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, twostrong, bf, validchars)) {
 		return 1;
 	}
 

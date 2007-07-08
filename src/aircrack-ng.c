@@ -3650,6 +3650,40 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 {
     int len = 0;
     opt.ap = ap_cur;
+    int (* all)[256];
+    int i,j;
+
+    all = malloc(256*32*sizeof(int));
+    if (all == NULL) {
+    	return FAILURE;
+    }
+
+    //initial setup (complete keyspace)
+    for (i = 0; i < 32; i++) {
+        for (j = 0; j < 256; j++) {
+            all[i][j] = 1;
+        }
+    }
+
+    //initial setup (complete keyspace)
+    for (i = 0; i < 32; i++) {
+        for (j = 0; j < 256; j++) {
+            if( (opt.is_alnum && (j<32 || j>=128) ) ||
+                (opt.is_fritz && (j<48 || j>=58)) ||
+                (opt.is_bcdonly && ( j > 0x99 || ( j & 0x0F ) > 0x09 )) )
+                all[i][j] = 0;
+        }
+    }
+
+    //if debug is specified, force a specific value.
+    for (i=0; i<32; i++) {
+        for (j = 0; j < 256; j++) {
+            if(opt.debug_row[i] == 1 && opt.debug[i] != j)
+                all[i][j] = 0;
+            else if(opt.debug_row[i] == 1 && opt.debug[i] == j)
+                all[i][j] = 1;
+        }
+    }
 
     if(ap_cur->nb_ivs_clean > 99)
     {
@@ -3657,14 +3691,14 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
         //first try without bruteforcing, using only "clean" keystreams
         if(opt.keylen != 13)
         {
-            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
+            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all) == 1)
                 len = opt.keylen;
         }
         else
         {
-            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
+            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all) == 1)
                 len = 13;
-            else if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF) == 1)
+            else if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all) == 1)
                 len = 5;
         }
     }
@@ -3678,14 +3712,14 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
         if(opt.keylen != 13)
         {
-            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
+            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all) == 1)
                 len = opt.keylen;
         }
         else
         {
-            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF) == 1)
+            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all) == 1)
                 len = 13;
-            else if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF) == 1)
+            else if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all) == 1)
                 len = 5;
         }
     }

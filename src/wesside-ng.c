@@ -1561,12 +1561,27 @@ static void save_key(unsigned char *key, int len)
 static int do_crack(struct wstate *ws)
 {
 	unsigned char key[PTW_KEYHSBYTES];
+        int (* all)[256];
+        int i,j;
 
-	if(PTW_computeKey(ws->ws_ptw, key, 13, KEYLIMIT, PTW_DEFAULTBF) == 1) {
+        all = malloc(256*32*sizeof(int));
+        if (all == NULL) {
+            return 1;
+        }
+
+        //initial setup (complete keyspace)
+        for (i = 0; i < 32; i++) {
+            for (j = 0; j < 256; j++) {
+                all[i][j] = 1;
+            }
+        }
+
+
+	if(PTW_computeKey(ws->ws_ptw, key, 13, KEYLIMIT, PTW_DEFAULTBF, all) == 1) {
 		save_key(key, 13);
 		return 1;
 	}
-	if(PTW_computeKey(ws->ws_ptw, key, 5, KEYLIMIT/10, PTW_DEFAULTBF) == 1) {
+	if(PTW_computeKey(ws->ws_ptw, key, 5, KEYLIMIT/10, PTW_DEFAULTBF, all) == 1) {
 		save_key(key, 5);
 		return 1;
 	}
