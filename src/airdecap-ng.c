@@ -551,7 +551,7 @@ int main( int argc, char *argv[] )
 
                     opt.bssid[i] = n;
 
-                    if( ++i > 6 ) break;
+                    if( ++i >= 6 ) break;
 
                     if( ! ( s = strchr( s, ':' ) ) )
                         break;
