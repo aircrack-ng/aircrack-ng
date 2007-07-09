@@ -4257,7 +4257,6 @@ usage:
 		opt.bssid_set = 1;
 	}
 
-	ap_1st = NULL;
 	optind = old;
 	id=0;
 
