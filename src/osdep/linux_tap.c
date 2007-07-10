@@ -38,21 +38,23 @@ static int ti_do_open_linux(struct tif *ti, char *name)
 
     fd_tap = open( name ? name : "/dev/net/tun", O_RDWR );
     if(fd_tap < 0 )
-    {   
+    {
         printf( "error opening tap device: %s\n", strerror( errno ) );
         printf( "try \"modprobe tun\"\n");
         return -1;
     }
-    
+
     memset( &if_request, 0, sizeof( if_request ) );
     if_request.ifr_flags = IFF_TAP | IFF_NO_PI;
     strncpy( if_request.ifr_name, "at%d", IFNAMSIZ );
     if( ioctl( fd_tap, TUNSETIFF, (void *)&if_request ) < 0 )
-    {   
+    {
         printf( "error creating tap interface: %s\n", strerror( errno ) );
         close( fd_tap );
         return -1;
     }
+
+    strncpy( priv->tl_name, if_request.ifr_name, MAX_IFACE_NAME );
 
     /* XXX stick correct ifname */
 
@@ -68,7 +70,7 @@ static int ti_do_open_linux(struct tif *ti, char *name)
 static void ti_do_free(struct tif *ti)
 {
 	struct tip_fbsd *priv = ti_priv(ti);
-	
+
 	free(priv);
 	free(ti);
 }

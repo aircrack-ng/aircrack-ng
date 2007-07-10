@@ -1012,7 +1012,7 @@ usage:
         printf( "error opening tap device: %s\n", strerror( errno ) );
         return -1;
     }
-    printf( "created tap interface\n");
+    printf( "created tap interface %s\n", ti_name(dev.dv_ti));
 
     if(opt.prgalen <= 0 && opt.crypt == CRYPT_NONE)
     {
