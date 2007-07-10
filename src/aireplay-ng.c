@@ -5147,9 +5147,9 @@ usage:
         return( 1 );
     }
 
-    if( opt.f_minlen > opt.f_maxlen )
+    if( (opt.f_minlen > 0 && opt.f_maxlen > 0) && opt.f_minlen > opt.f_maxlen )
     {
-        printf( "Invalid length filter (%d > %d).\n",
+        printf( "Invalid length filter (min(-m):%d > max(-n):%d).\n",
                 opt.f_minlen, opt.f_maxlen );
   		printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
