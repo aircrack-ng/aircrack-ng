@@ -356,8 +356,12 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 				show_wep_stats( keylen -1, 1, keytable, choices, depth, tried );
 			return 1;
 		}
-		while((strongbytes[sh2[i].keybyte] == 1) || (bf[sh2[i].keybyte] == 1) ) {
+		while( (i < keylen * (n-1)) && ((strongbytes[sh2[i].keybyte] == 1) || (bf[sh2[i].keybyte] == 1) ) ) {
 			i++;
+		}
+		if(i >= (keylen * (n-1)))
+		{
+			break;
 		}
 		choices[sh2[i].keybyte]++;
 		fixat = sh2[i].keybyte;
