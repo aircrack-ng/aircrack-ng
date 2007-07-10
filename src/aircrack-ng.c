@@ -1455,6 +1455,8 @@ void check_thread( void *arg )
 			if(ivs2.flags & IVS2_ESSID)
 			{
 				memcpy( ap_cur->essid, buffer, ivs2.len);
+				if(opt.essid_set && ! strcmp( opt.essid, ap_cur->essid ) )
+					memcpy( opt.bssid, ap_cur->bssid, 6 );
 			}
 			else if(ivs2.flags & IVS2_XOR)
 			{
@@ -1587,6 +1589,8 @@ void check_thread( void *arg )
 
 					memset( ap_cur->essid, 0, 33 );
 					memcpy( ap_cur->essid, p + 2, n );
+					if(opt.essid_set && ! strcmp( opt.essid, ap_cur->essid ) )
+						memcpy( opt.bssid, ap_cur->bssid, 6 );
 				}
 
 				p += 2 + p[1];
@@ -1610,6 +1614,8 @@ void check_thread( void *arg )
 
 					memset( ap_cur->essid, 0, 33 );
 					memcpy( ap_cur->essid, p + 2, n );
+					if(opt.essid_set && ! strcmp( opt.essid, ap_cur->essid ) )
+						memcpy( opt.bssid, ap_cur->bssid, 6 );
 				}
 
 				p += 2 + p[1];
@@ -4257,6 +4263,7 @@ usage:
 		opt.bssid_set = 1;
 	}
 
+	ap_1st = NULL;
 	optind = old;
 	id=0;
 
