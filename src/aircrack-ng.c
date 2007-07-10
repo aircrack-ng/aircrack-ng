@@ -3671,7 +3671,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
         }
     }
 
-    //initial setup (complete keyspace)
+    //setting restricted keyspace
     for (i = 0; i < 32; i++) {
         for (j = 0; j < 256; j++) {
             if( (opt.is_alnum && (j<32 || j>=128) ) ||

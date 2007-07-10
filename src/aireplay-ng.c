@@ -229,6 +229,7 @@ struct options
     unsigned char r_sip[4];
     char r_essid[33];
     int r_fromdsinj;
+    char r_smac_set;
 
     char ip_out[15];
     char ip_in[15];
@@ -2571,7 +2572,7 @@ int do_attack_chopchop( void )
 
     /* if the replay source mac is unspecified, forge one */
 
-    if( memcmp( opt.r_smac, NULL_MAC, 6 ) == 0 )
+    if( opt.r_smac_set == 0 )
     {
         is_deauth_mode = 1;
 
@@ -4682,7 +4683,7 @@ int main( int argc, char *argv[] )
     opt.a_mode    = -1; opt.r_fctrl     = -1;
     opt.ghost     =  0; opt.npackets    = -1;
     opt.delay     = 15; opt.bittest     =  0;
-    opt.fast      =  0;
+    opt.fast      =  0; opt.r_smac_set  =  0;
 
 /* XXX */
 #if 0
@@ -4930,6 +4931,7 @@ int main( int argc, char *argv[] )
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
+                opt.r_smac_set=1;
                 break;
 
             case 'e' :
