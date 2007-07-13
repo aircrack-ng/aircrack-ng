@@ -55,7 +55,8 @@ static int ti_do_open_linux(struct tif *ti, char *name)
     }
 
     strncpy( priv->tl_name, if_request.ifr_name, MAX_IFACE_NAME );
-    strncpy(ti->tl_ifr.ifr_name, priv->tl_name, sizeof(ti->tl_ifr.ifr_name)-1);
+    strncpy(priv->tl_ifr.ifr_name, priv->tl_name,
+    	    sizeof(priv->tl_ifr.ifr_name) - 1);
 
     if ((priv->tl_ioctls = socket(PF_INET, SOCK_DGRAM, 0)) == -1) {
         priv->tl_ioctls = 0;
