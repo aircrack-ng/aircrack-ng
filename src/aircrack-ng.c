@@ -4173,135 +4173,138 @@ usage:
 	n = argc - optind;
 	id = 0;
 
-	do
+	if( !opt.bssid_set )
 	{
-		if( strcmp( argv[optind], "-" ) == 0 )
-			opt.no_stdin = 1;
-
-		if( pthread_create( &(tid[id]), NULL, (void *) check_thread,
-			(void *) argv[optind] ) != 0 )
+		do
 		{
-			perror( "pthread_create failed" );
+			if( strcmp( argv[optind], "-" ) == 0 )
+				opt.no_stdin = 1;
+
+			if( pthread_create( &(tid[id]), NULL, (void *) check_thread,
+				(void *) argv[optind] ) != 0 )
+			{
+				perror( "pthread_create failed" );
+				goto exit_main;
+			}
+
+			usleep( 131071 );
+			id++;
+			if(id >= MAX_THREADS)
+			{
+				if(! opt.is_quiet)
+					printf("Only using the first %d files, ignoring the rest.\n", MAX_THREADS);
+				break;
+			}
+		}
+		while( ++optind < argc );
+
+		/* wait until each thread reaches EOF */
+
+		if( ! opt.is_quiet )
+		{
+			printf( "Reading packets, please wait...\r" );
+			fflush( stdout );
+		}
+
+		for(i=0; i<id; i++)
+			pthread_join( tid[i], NULL);
+
+		if( ! opt.is_quiet && ! opt.no_stdin )
+			printf( "\33[KRead %ld packets.\n\n", nb_pkt );
+
+		#ifndef DO_PGO_DUMP
+		signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
+		#endif
+
+		if( ap_1st == NULL )
+		{
+			printf( "No networks found, exiting.\n" );
 			goto exit_main;
 		}
 
-		usleep( 131071 );
-		id++;
-		if(id >= MAX_THREADS)
+		if( ! opt.essid_set && ! opt.bssid_set )
 		{
-			if(! opt.is_quiet)
-				printf("Only using the first %d files, ignoring the rest.\n", MAX_THREADS);
-			break;
-		}
-	}
-	while( ++optind < argc );
+			/* ask the user which network is to be cracked */
 
-	/* wait until each thread reaches EOF */
+			printf( "   #  BSSID%14sESSID%21sEncryption\n\n", "", "" );
 
-	if( ! opt.is_quiet )
-	{
-		printf( "Reading packets, please wait...\r" );
-		fflush( stdout );
-	}
+			i = 1;
 
-	for(i=0; i<id; i++)
-		pthread_join( tid[i], NULL);
-
-	if( ! opt.is_quiet && ! opt.no_stdin )
-		printf( "\33[KRead %ld packets.\n\n", nb_pkt );
-
-	#ifndef DO_PGO_DUMP
-	signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
-	#endif
-
-	if( ap_1st == NULL )
-	{
-		printf( "No networks found, exiting.\n" );
-		goto exit_main;
-	}
-
-	if( ! opt.essid_set && ! opt.bssid_set )
-	{
-		/* ask the user which network is to be cracked */
-
-		printf( "   #  BSSID%14sESSID%21sEncryption\n\n", "", "" );
-
-		i = 1;
-
-		ap_cur = ap_1st;
-
-		while( ap_cur != NULL )
-		{
-			printf( "%4d  %02X:%02X:%02X:%02X:%02X:%02X  %-24s  ",
-				i, ap_cur->bssid[0], ap_cur->bssid[1],
-				ap_cur->bssid[2], ap_cur->bssid[3],
-				ap_cur->bssid[4], ap_cur->bssid[5],
-				ap_cur->essid );
-
-			if( ap_cur->eapol )
-				printf( "EAPOL+" );
-
-			switch( ap_cur->crypt )
-			{
-				case  0: printf( "None (%d.%d.%d.%d)\n",
-					ap_cur->lanip[0], ap_cur->lanip[1],
-					ap_cur->lanip[2], ap_cur->lanip[3] );
-				break;
-
-				case  1: printf( "No data - WEP or WPA\n" );
-				break;
-
-				case  2: printf( "WEP (%ld IVs)\n",
-					ap_cur->nb_ivs );
-				break;
-
-				case  3: printf( "WPA (%d handshake)\n",
-					ap_cur->wpa.state == 15 );
-				break;
-
-				default: printf( "Unknown\n" );
-				break;
-			}
-
-			i++; ap_cur = ap_cur->next;
-		}
-
-		printf( "\n" );
-
-		if( ap_1st->next != NULL )
-		{
-			do
-			{
-				printf( "Index number of target network ? " );
-				fflush( stdout );
-				ret1 = 0;
-				while(!ret1) ret1 = scanf( "%127s", buf );
-
-				if( ( z = atoi( buf ) ) < 1 )
-					continue;
-
-				i = 1; ap_cur = ap_1st;
-				while( ap_cur != NULL && i < z )
-					{ i++; ap_cur = ap_cur->next; }
-			}
-			while( n < 0 || ap_cur == NULL );
-		}
-		else
-		{
-			printf( "Choosing first network as target.\n" );
-			sleep( 2 );
 			ap_cur = ap_1st;
+
+			while( ap_cur != NULL )
+			{
+				printf( "%4d  %02X:%02X:%02X:%02X:%02X:%02X  %-24s  ",
+					i, ap_cur->bssid[0], ap_cur->bssid[1],
+					ap_cur->bssid[2], ap_cur->bssid[3],
+					ap_cur->bssid[4], ap_cur->bssid[5],
+					ap_cur->essid );
+
+				if( ap_cur->eapol )
+					printf( "EAPOL+" );
+
+				switch( ap_cur->crypt )
+				{
+					case  0: printf( "None (%d.%d.%d.%d)\n",
+						ap_cur->lanip[0], ap_cur->lanip[1],
+						ap_cur->lanip[2], ap_cur->lanip[3] );
+					break;
+
+					case  1: printf( "No data - WEP or WPA\n" );
+					break;
+
+					case  2: printf( "WEP (%ld IVs)\n",
+						ap_cur->nb_ivs );
+					break;
+
+					case  3: printf( "WPA (%d handshake)\n",
+						ap_cur->wpa.state == 15 );
+					break;
+
+					default: printf( "Unknown\n" );
+					break;
+				}
+
+				i++; ap_cur = ap_cur->next;
+			}
+
+			printf( "\n" );
+
+			if( ap_1st->next != NULL )
+			{
+				do
+				{
+					printf( "Index number of target network ? " );
+					fflush( stdout );
+					ret1 = 0;
+					while(!ret1) ret1 = scanf( "%127s", buf );
+
+					if( ( z = atoi( buf ) ) < 1 )
+						continue;
+
+					i = 1; ap_cur = ap_1st;
+					while( ap_cur != NULL && i < z )
+						{ i++; ap_cur = ap_cur->next; }
+				}
+				while( n < 0 || ap_cur == NULL );
+			}
+			else
+			{
+				printf( "Choosing first network as target.\n" );
+				sleep( 2 );
+				ap_cur = ap_1st;
+			}
+
+			printf( "\n" );
+
+			memcpy( opt.bssid, ap_cur->bssid,  6 );
+			opt.bssid_set = 1;
 		}
 
-		printf( "\n" );
-
-		memcpy( opt.bssid, ap_cur->bssid,  6 );
-		opt.bssid_set = 1;
+		ap_1st = NULL;
+		optind = old;
+		id=0;
 	}
-
-	ap_1st = NULL;
-	optind = old;
-	id=0;
 
 	do
 	{
