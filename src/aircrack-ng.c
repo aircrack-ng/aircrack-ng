@@ -154,8 +154,9 @@ char usage[] =
 "      -x2        : enable last two keybytes bruteforcing"
 "%s"
 "      -y         : experimental single bruteforce mode\n"
-"      -z         : PTW attack\n"
+"      -K         : korek attacks (pre-ptw)\n"
 "      -s         : show ASCII version of the key\n"
+"      -M <num>   : maximum number of ivs to use\n"
 "\n"
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
@@ -365,6 +366,7 @@ void read_thread( void *arg )
 	struct ST_info *st_prv, *st_cur;
 
 	memset( &rb, 0, sizeof( rb ) );
+	ap_cur = NULL;
 
 	if( ( buffer = (uchar *) malloc( 65536 ) ) == NULL )
 	{
@@ -1136,6 +1138,17 @@ void read_thread( void *arg )
 		unlock_mx_apl:
 
 		pthread_mutex_unlock( &mx_apl );
+
+		if( ap_cur != NULL )
+		{
+			if( ( ap_cur->nb_ivs >= opt.max_ivs) ||
+			    ( ap_cur->nb_ivs_clean >= opt.max_ivs ) ||
+			    ( ap_cur->nb_ivs_vague >= opt.max_ivs ) )
+			{
+				eof_wait( &eof_notified );
+				return;
+			}
+		}
 	}
 
 	read_fail:
@@ -1164,6 +1177,7 @@ void check_thread( void *arg )
 	struct ST_info *st_prv, *st_cur;
 
 	memset( &rb, 0, sizeof( rb ) );
+	ap_cur = NULL;
 
 	if( ( buffer = (uchar *) malloc( 65536 ) ) == NULL )
 	{
@@ -1802,6 +1816,11 @@ void check_thread( void *arg )
 		unlock_mx_apl:
 
 		pthread_mutex_unlock( &mx_apl );
+
+		if( ap_cur != NULL )
+			if( ap_cur->nb_ivs >= opt.max_ivs )
+				return;
+
 	}
 
 	read_fail:
@@ -3788,6 +3807,8 @@ int main( int argc, char *argv[] )
 	opt.showASCII   = 0;
 	opt.probability = 51;
         opt.next_ptw_try= 0;
+	opt.do_ptw = 1;
+	opt.max_ivs = INT_MAX;
 
 	while( 1 )
 	{
@@ -3803,10 +3824,10 @@ int main( int argc, char *argv[] )
         };
 
 		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HzC:",
+			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:",
                         long_options, &option_index );
 		else
-			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HzC:",
+			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -3816,12 +3837,12 @@ int main( int argc, char *argv[] )
 
 			case ':' :
 
-	    		printf("\"%s --help\" for help.\n", argv[0]);
+				printf("\"%s --help\" for help.\n", argv[0]);
 				return( 1 );
 
 			case '?' :
 
-	    		printf("\"%s --help\" for help.\n", argv[0]);
+				printf("\"%s --help\" for help.\n", argv[0]);
 				return( 1 );
 
 			case 'a' :
@@ -3837,7 +3858,7 @@ int main( int argc, char *argv[] )
 				if( opt.amode != 1 && opt.amode != 2 )
 				{
 					printf( "Invalid attack mode. [1,2] or [wep,wpa]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+					printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3855,7 +3876,7 @@ int main( int argc, char *argv[] )
 				if (getmac(optarg, 1, opt.bssid) != 0)
 				{
 						printf( "Invalid BSSID (not a MAC).\n" );
-			    		printf("\"%s --help\" for help.\n", argv[0]);
+						printf("\"%s --help\" for help.\n", argv[0]);
 						return( FAILURE );
 				}
 
@@ -3867,7 +3888,7 @@ int main( int argc, char *argv[] )
 					opt.nbcpu < 1 || opt.nbcpu > max_cpu )
 				{
 					printf( "Invalid number of processes. [1-%d]\n", max_cpu );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+					printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3926,7 +3947,7 @@ int main( int argc, char *argv[] )
 						if ( n < 0 || n > 255 )
 						{
 							printf( "Invalid debug key.\n" );
-				    		printf("\"%s --help\" for help.\n", argv[0]);
+							printf("\"%s --help\" for help.\n", argv[0]);
 							return( FAILURE );
 						}
 						opt.debug[i] = n ;
@@ -3945,7 +3966,7 @@ int main( int argc, char *argv[] )
 				if ( getmac(optarg, 1, opt.maddr) != 0)
 				{
 					printf( "Invalid MAC address filter.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+					printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3959,7 +3980,7 @@ int main( int argc, char *argv[] )
 					opt.keylen != 512 ) )
 				{
 					printf( "Invalid WEP key length. [64,128,152,256,512]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+					printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3973,7 +3994,7 @@ int main( int argc, char *argv[] )
 					opt.index < 1 || opt.index > 4 )
 				{
 					printf( "Invalid WEP key index. [1-4]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+					printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3985,7 +4006,7 @@ int main( int argc, char *argv[] )
 					opt.ffact < 1 )
 				{
 					printf( "Invalid fudge factor. [>=1]\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+					printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -3997,7 +4018,20 @@ int main( int argc, char *argv[] )
 					opt.korek < 1 || opt.korek > N_ATTACKS )
 				{
 					printf( "Invalid KoreK attack strategy. [1-%d]\n", N_ATTACKS );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+					printf("\"%s --help\" for help.\n", argv[0]);
+					return( FAILURE );
+				}
+
+				K_COEFF[(opt.korek) - 1] = 0;
+
+				break;
+
+			case 'M' :
+
+				if( sscanf( optarg, "%d", &opt.max_ivs) != 1 || opt.max_ivs < 1)
+				{
+					printf( "Invalid number of max. ivs [>1]\n");
+					printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -4015,7 +4049,7 @@ int main( int argc, char *argv[] )
 						|| opt.do_brute<0 || opt.do_brute>4)
 					{
 						printf("Invalid option -x%s. [0-4]\n", optarg);
-			    		printf("\"%s --help\" for help.\n", argv[0]);
+						printf("\"%s --help\" for help.\n", argv[0]);
 						return FAILURE;
 					}
 				}
@@ -4032,8 +4066,8 @@ int main( int argc, char *argv[] )
 				opt.do_testy = 1;
 				break;
 
-			case 'z' :
-				opt.do_ptw = 1;
+			case 'K' :
+				opt.do_ptw = 0;
 				break;
 
 			case 's' :
@@ -4043,7 +4077,7 @@ int main( int argc, char *argv[] )
 			case 'w' :
 				if(set_dicts(optarg) != 0)
 				{
-		    			printf("\"%s --help\" for help.\n", argv[0]);
+					printf("\"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
 				}
 				break;

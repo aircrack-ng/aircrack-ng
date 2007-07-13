@@ -139,6 +139,8 @@ struct options
 	int brutebytes[64];			/* bytes to bruteforce */
         int next_ptw_try;
 
+	int max_ivs;
+
 	char *bssidmerge;
 	char *firstbssid;
 
