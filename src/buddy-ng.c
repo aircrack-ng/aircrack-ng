@@ -5,6 +5,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/param.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <err.h>
@@ -16,6 +17,7 @@
 #include <netinet/ip.h>
 #include <netinet/udp.h>
 #include <assert.h>
+#include <grp.h>
 
 #include "easside.h"
 
@@ -216,7 +218,8 @@ int main(int argc, char *argv[])
 	while (1) {
 		len = sizeof(dude_sin);
 		printf("Waiting for connexion\n");
-		dude = accept(s, (struct sockaddr*) &dude_sin, &len);
+		dude = accept(s, (struct sockaddr*) &dude_sin,
+			      (socklen_t*) &len);
 		if (dude == -1)
 			err(1, "accept()");
 		
