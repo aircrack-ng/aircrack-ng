@@ -42,6 +42,8 @@
 #include <getopt.h>
 #include <ctype.h>
 #include <err.h>
+#include <math.h>
+#include <limits.h>
 
 #include "version.h"
 #include "crypto.h"
