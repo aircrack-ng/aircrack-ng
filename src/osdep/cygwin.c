@@ -265,7 +265,7 @@ static int cygwin_get_rate(struct wif *wi)
 
 static int cygwin_set_rate(struct wif *wi, int rate)
 {
-	if (wi) {} /* XXX unused */
+	if (wi || rate) {} /* XXX unused */
 
 	return 0;
 }
