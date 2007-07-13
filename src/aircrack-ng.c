@@ -3762,7 +3762,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, showhelp;
+	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, showhelp, z;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 	int old=0, id=0;
@@ -4277,11 +4277,11 @@ usage:
 				ret1 = 0;
 				while(!ret1) ret1 = scanf( "%127s", buf );
 
-				if( ( n = atoi( buf ) ) < 1 )
+				if( ( z = atoi( buf ) ) < 1 )
 					continue;
 
 				i = 1; ap_cur = ap_1st;
-				while( ap_cur != NULL && i < n )
+				while( ap_cur != NULL && i < z )
 					{ i++; ap_cur = ap_cur->next; }
 			}
 			while( n < 0 || ap_cur == NULL );
