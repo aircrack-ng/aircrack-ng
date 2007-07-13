@@ -9,9 +9,9 @@ iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
-		  ivstools$(EXE) kstats$(EXE) airolib-ng$(EXE)
+		  ivstools$(EXE) kstats$(EXE) airolib-ng$(EXE) buddy-ng$(EXE)
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE) wesside-ng$(EXE)
+		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE)
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
@@ -29,6 +29,8 @@ OBJS_IV		= ivstools.o common.o crypto.o uniqueiv.o
 OBJS_AS		= airserv-ng.o common.o
 OBJS_WS		= wesside-ng.o crypto.c common.o $(OBJS_PTW)
 OBJS_AL		= airolib-ng.o crypto.c
+OBJS_ES		= easside-ng.o
+OBJS_BUDDY	= buddy-ng.o
 
 OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD)
@@ -92,6 +94,12 @@ kstats$(EXE): kstats.o
 wesside-ng$(EXE): $(OBJS_WS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_WS) -o $(@) $(LIBS) $(LIBSSL) -lz
 
+easside-ng$(EXE): $(OBJS_ES) $(LIBOSD)
+	$(CC) $(CFLAGS) $(OBJS_ES) -o $(@) $(LIBS) -lz
+
+buddy-ng$(EXE): $(OBJS_BUDDY)
+	$(CC) $(CFLAGS) $(OBJS_BUDDY) -o $(@)
+
 airolib-ng$(EXE): $(OBJS_AL)
 	$(CC) $(CFLAGS) $(OBJS_AL) -o $(@) $(LIBSSL) -DHAVE_REGEXP $(LIBSQL)
 
@@ -119,7 +127,10 @@ uninstall:
 	-rm -f $(bindir)/airolib-ng$(EXE)
 	-rm -f $(bindir)/ivstools$(EXE)
 	-rm -f $(bindir)/kstats$(EXE)
+	-rm -f $(bindir)/buddy-ng$(EXE)
 	-rm -f $(sbindir)/airodump-ng$(EXE)
 	-rm -f $(sbindir)/airserv-ng$(EXE)
 	-rm -f $(sbindir)/airtun-ng$(EXE)
 	-rm -f $(sbindir)/aireplay-ng$(EXE)
+	-rm -f $(sbindir)/wesside-ng$(EXE)
+	-rm -f $(sbindir)/easside-ng$(EXE)
