@@ -102,6 +102,7 @@ struct east_state {
 	unsigned char	es_clear[S_MTU+4];
 	struct rpacket	*es_rqueue;
 	struct owned	*es_owned;
+	int		es_chanlock;
 
 	/* state */
 	unsigned char	es_apmac[6];
@@ -380,7 +381,9 @@ void sighand(int sig)
 
 void set_chan(struct east_state *es)
 {
-	if (wi_set_channel(es->es_wi, es->es_apchan) == -1)	
+	int chan = es->es_chanlock ? es->es_chanlock : es->es_apchan;
+
+	if (wi_set_channel(es->es_wi, chan) == -1)	
 		err(1, "wi_set_channel");
 }
 
@@ -462,7 +465,9 @@ void read_beacon(struct east_state *es, struct ieee80211_frame *wh, int len)
 			mac2str(str, es->es_apmac);
 			printf("\nSSID %s Chan %d Mac %s\n",
 			       es->es_apssid, es->es_apchan, str);
-			set_chan(es);
+
+			if (!es->es_chanlock)
+				set_chan(es);
 			return;
 		}
 
@@ -1550,11 +1555,15 @@ void send_assoc(struct east_state *es, struct timeval *tv)
 
 	/* rates */
 	*ptr++ = IEEE80211_ELEMID_RATES;
-	*ptr++ = 4;
-        *ptr++ = 2 | 0x80;
-        *ptr++ = 4 | 0x80;
-        *ptr++ = 11;
-        *ptr++ = 22;
+	*ptr++ = 8;
+	*ptr++ = 2  | 0x80;
+	*ptr++ = 4  | 0x80;
+	*ptr++ = 11 | 0x80;
+	*ptr++ = 22 | 0x80;
+	*ptr++ = 12 | 0x80;
+	*ptr++ = 24 | 0x80;
+	*ptr++ = 48 | 0x80;
+	*ptr++ = 72;
 
 	/* x-rates */
 	*ptr++ = IEEE80211_ELEMID_XRATES;
@@ -2305,7 +2314,8 @@ void own(struct east_state *es)
 
 		switch (es->es_state) {
 		case S_SEARCHING:
-			chan_hop(es, &tv);
+			if (!es->es_chanlock)
+				chan_hop(es, &tv);
 			break;
 
 		case S_SENDAUTH:
@@ -2353,6 +2363,7 @@ void usage(char *p)
 		"-r\t\trtr ip\n"
 		"-s\t\tbuddy ip\n"
 		"-f\t\tinterface\n"
+		"-c\t\tchan lock\n"
 		, p);
 }
 
@@ -2387,8 +2398,12 @@ int main(int argc, char *argv[])
 
 	init_defaults(es);
 
-	while ((ch = getopt(argc, argv, "hv:m:i:r:s:f:n")) != -1) {
+	while ((ch = getopt(argc, argv, "hv:m:i:r:s:f:nc:")) != -1) {
 		switch (ch) {
+		case 'c':
+			es->es_chanlock = atoi(optarg);
+			break;
+
 		case 'f':
 			strncpy(es->es_ifname, optarg, sizeof(es->es_ifname)-1);
 			es->es_ifname[sizeof(es->es_ifname)-1] = 0;
@@ -2451,6 +2466,8 @@ int main(int argc, char *argv[])
 	open_wifi(es);
 	open_tap(es);
 	set_mac(es);
+	if (es->es_chanlock)
+		set_chan(es);
 
 	if (signal(SIGINT, sighand) == SIG_ERR)
 		err(1, "signal(SIGINT)");
