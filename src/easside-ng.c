@@ -203,7 +203,7 @@ void init_defaults(struct east_state *es)
 	memset(es, 0, sizeof(*es));
 
 	memcpy(es->es_mymac, "\x00\x00\xde\xfa\xce\x0d", 6);
-	es->es_setmac = 1;
+	es->es_setmac = 0;
 	strcpy(es->es_ifname, "specify_interface");
 
 	es->es_state = S_SEARCHING;
