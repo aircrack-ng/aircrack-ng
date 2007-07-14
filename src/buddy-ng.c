@@ -170,6 +170,16 @@ void drop_privs()
 		err(1, "setuid()");
 }
 
+void usage(char *name)
+{
+	printf("Usage: %s <opts>\n"
+		"-h\t\thelp\n"
+		"-p\t\tdon't drop privs\n",
+		name);
+
+	exit(1);
+}
+
 int main(int argc, char *argv[])
 {
 	int s;
@@ -179,8 +189,22 @@ int main(int argc, char *argv[])
 	struct sockaddr_in dude_sin;
 	int len;
 	int udp;
+	int ch;
+	int drop = 1;
 
-	if (argc || argv) {} /* XXX unused */
+	while ((ch = getopt(argc, argv, "ph")) != -1) {
+		switch (ch) {
+		case 'p':
+			drop = 0;
+			break;
+
+		default:
+		case 'h':
+			usage(argv[0]);
+			break;
+
+		}
+	}
 
 	memset(&s_in, 0, sizeof(s_in));
 	s_in.sin_family = PF_INET;
@@ -197,7 +221,8 @@ int main(int argc, char *argv[])
 	if (s == -1)
 		err(1, "socket(TCP)");
 
-	drop_privs();
+	if (drop)
+		drop_privs();
 
 	memset(&s_in, 0, sizeof(s_in));
 	s_in.sin_family = PF_INET;
