@@ -1783,6 +1783,11 @@ void decrypt_ip(struct east_state *es, struct timeval *tv)
 
 void find_ip(struct east_state *es, struct timeval *tv)
 {
+	if (es->es_rtrip.s_addr && es->es_myip.s_addr) {
+		set_tap_ip(es);
+		es->es_astate = AS_FIND_RTR_MAC;
+	}
+
 	if (es->es_have_arp)
 		decrypt_arp(es, tv);
 	else if (es->es_have_packet)
@@ -2285,10 +2290,6 @@ void own(struct east_state *es)
 		es->es_astate = AS_PRGA_EXPAND;
 	if (es->es_prgalen == sizeof(es->es_prga))
 		es->es_astate = AS_FIND_IP;
-	if (es->es_rtrip.s_addr && es->es_myip.s_addr) {
-		set_tap_ip(es);
-		es->es_astate = AS_FIND_RTR_MAC;
-	}
 
 	for (;;) {
 		FD_ZERO(&rfds);
