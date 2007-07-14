@@ -3768,6 +3768,7 @@ int main( int argc, char *argv[] )
 	int old=0, id=0;
 	pthread_t tid[MAX_THREADS];
 
+#ifdef HAVE_SQLITE
 	int rc;
 	char *zErrMsg = 0;
 	char looper[4] = {'|','/','-','\\'};
@@ -3775,6 +3776,7 @@ int main( int argc, char *argv[] )
 	int waited = 0;
 	char *sqlformat = "SELECT pmk.PMK, passwd.passwd FROM pmk INNER JOIN passwd ON passwd.passwd_id = pmk.passwd_id INNER JOIN essid ON essid.essid_id = pmk.essid_id WHERE essid.essid = '%q'";
 	char *sql;
+#endif
 
 	ret = FAILURE;
 	cpudetectfailed = 0;

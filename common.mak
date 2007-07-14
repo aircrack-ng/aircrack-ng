@@ -8,9 +8,19 @@ endif
 ifeq ($(OSNAME), cygwin)
 EXE		= .exe
 PIC		=
+SQLITE		= false
 else
 EXE		=
 PIC		= -fPIC
+ifndef SQLITE
+SQLITE		= true
+endif
+endif
+
+ifeq ($(SQLITE), true)
+COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
+else
+COMMON_CFLAGS	=
 endif
 
 CC		= $(TOOL_PREFIX)gcc
@@ -20,10 +30,9 @@ AR		= $(TOOL_PREFIX)ar
 REVISION	= `$(ROOT)/evalrev`
 REVFLAGS	= -D_REVISION=$(REVISION)
 
-INC		= -I/usr/local/include
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 CFLAGS          ?= -g -W -Wall -Werror -O3
-CFLAGS          += $(OPTFLAGS) $(REVFLAGS) $(INC)
+CFLAGS          += $(OPTFLAGS) $(REVFLAGS) $(COMMON_CFLAGS)
 
 prefix          = /usr/local
 bindir          = $(prefix)/bin
