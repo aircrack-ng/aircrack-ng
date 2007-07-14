@@ -14,6 +14,7 @@
 #include <linux/if_ether.h>
 #include <netinet/in.h>
 #include <linux/if_tun.h>
+#include <net/if_arp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -105,6 +106,7 @@ static int ti_set_mac_linux(struct tif *ti, unsigned char *mac)
 	struct tip_linux *priv = ti_priv(ti);
 
         memcpy(priv->tl_ifr.ifr_hwaddr.sa_data, mac, 6);
+	priv->tl_ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 
 	return ioctl(priv->tl_ioctls, SIOCSIFHWADDR, &priv->tl_ifr);
 }
