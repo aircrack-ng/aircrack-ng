@@ -1786,6 +1786,8 @@ void find_ip(struct east_state *es, struct timeval *tv)
 	if (es->es_rtrip.s_addr && es->es_myip.s_addr) {
 		set_tap_ip(es);
 		es->es_astate = AS_FIND_RTR_MAC;
+
+		return;
 	}
 
 	if (es->es_have_arp)
