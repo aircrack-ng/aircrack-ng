@@ -102,9 +102,11 @@ static int ti_set_mtu_linux(struct tif *ti, int mtu)
 
 static int ti_set_mac_linux(struct tif *ti, unsigned char *mac)
 {
-	if (ti || mac) {} /* XXX */
+	struct tip_linux *priv = ti_priv(ti);
 
-	return -1;
+        memcpy(priv->tl_ifr.ifr_hwaddr.sa_data, mac, 6);
+
+	return ioctl(priv->tl_ioctls, SIOCSIFHWADDR, &priv->tl_ifr);
 }
 
 static int ti_set_ip_linux(struct tif *ti, struct in_addr *ip)
