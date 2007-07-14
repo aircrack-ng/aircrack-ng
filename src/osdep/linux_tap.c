@@ -113,9 +113,14 @@ static int ti_set_mac_linux(struct tif *ti, unsigned char *mac)
 
 static int ti_set_ip_linux(struct tif *ti, struct in_addr *ip)
 {
-	if (ti || ip) {} /* XXX */
+        struct tip_linux *priv = ti_priv(ti);
+        struct sockaddr_in *s_in;
 
-	return -1;
+        s_in = (struct sockaddr_in*) &priv->tl_ifr.ifr_addr;
+        s_in->sin_family = AF_INET;
+        s_in->sin_addr = *ip;
+
+        return ioctl(priv->tl_ioctls, SIOCSIFADDR, &priv->tl_ifr);
 }
 
 static int ti_fd_linux(struct tif *ti)
