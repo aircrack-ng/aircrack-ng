@@ -2432,6 +2432,7 @@ int do_attack_chopchop( void )
     int guess, is_deauth_mode;
     int nb_bad_pkt;
     int gotit;
+    int tried_header_rec=0;
 
     unsigned char b1 = 0xAA;
     unsigned char b2 = 0xAA;
@@ -2955,8 +2956,15 @@ int do_attack_chopchop( void )
     for( i = z + 4; i < (int) caplen; i++ )
         h80211[i - 4] = h80211[i] ^ chopped[i];
 
-    if( ! check_crc_buf( h80211 + z, caplen - z - 8 ) )
-        printf( "\nWarning: ICV checksum verification FAILED!\n" );
+    if( ! check_crc_buf( h80211 + z, caplen - z - 8 ) ) {
+        if (!tried_header_rec) {
+            printf( "\nWarning: ICV checksum verification FAILED! Trying workaround.\n" );
+            tried_header_rec=1;
+            goto header_rec;
+        } else {
+            printf( "\nWorkaround couldn't fix ICV checksum.\nPacket is most likely invalid/useless\nTry another one.\n" );
+        }
+    }
 
     caplen -= 4 + 4; /* remove the WEP IV & CRC (ICV) */
 
