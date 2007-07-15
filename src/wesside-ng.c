@@ -1554,7 +1554,7 @@ static void save_key(unsigned char *key, int len)
 	if (rd == -1)
 		err(1, "write()");
 	if (rd != (int) strlen(k))
-		errx(1, "write %d/%u\n", rd, strlen(k));
+		errx(1, "write %d/%d\n", rd, (int) strlen(k));
 	close(fd);
 }
 
