@@ -37,7 +37,7 @@ OBJS_ES		= easside-ng.o
 OBJS_BUDDY	= buddy-ng.o
 
 OSD		= osdep
-LIBS		= -L$(OSD) -l$(OSD)
+LIBS		= -L$(OSD) -l$(OSD) $(LDFLAGS)
 ifeq ($(OSNAME), cygwin)
 LIBS		+= -liphlpapi -lsetupapi -luuid
 endif
