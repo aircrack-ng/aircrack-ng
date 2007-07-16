@@ -1648,6 +1648,7 @@ void expand_prga(struct east_state *es, struct timeval *tv)
 		/* don't need as many frags; start over */
 		if (dlen <= 0) {
 			es->es_expand_num = -1;
+			es->es_expand_len = sizeof(es->es_prga);
 			return;
 		}
 
