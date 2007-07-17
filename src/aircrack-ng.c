@@ -3767,6 +3767,7 @@ int main( int argc, char *argv[] )
 	struct AP_info *ap_cur;
 	int old=0, id=0;
 	pthread_t tid[MAX_THREADS];
+	char essid[33];
 
 #ifdef HAVE_SQLITE
 	int rc;
@@ -4236,11 +4237,19 @@ usage:
 
 			while( ap_cur != NULL )
 			{
+				memset( essid, 0, sizeof(essid));
+				memcpy( essid, ap_cur->essid, 32);
+				for(j=0;j<32;j++)
+				{
+					if( (essid[j] > 0 && essid[j] < 32) || (essid[j] > 126) )
+						essid[j]='?';
+				}
+
 				printf( "%4d  %02X:%02X:%02X:%02X:%02X:%02X  %-24s  ",
 					i, ap_cur->bssid[0], ap_cur->bssid[1],
 					ap_cur->bssid[2], ap_cur->bssid[3],
 					ap_cur->bssid[4], ap_cur->bssid[5],
-					ap_cur->essid );
+					essid );
 
 				if( ap_cur->eapol )
 					printf( "EAPOL+" );
