@@ -670,7 +670,7 @@ DI_PREPATCH[$i]=""
 DI_PATCHFILE[$i]="zd1211rw_inject_2.6.17.patch"
 DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/zd1211rw_inject_2.6.17.patch"
 DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/zd1211rw_inject_2.6.17.patch"
-DI_PATCHARG[$i]="-p1"
+DI_PATCHARG[$i]="-p5"
 DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/zd1211rw/""
@@ -1975,6 +1975,28 @@ name2num() {
     return $ERROR
 }
 
+name2num_stack() {
+    if [ x"$1" == x ]
+    then
+        return $ERROR
+    fi
+
+    i=0
+    while [ $i -lt "$SCOUNT" ]
+    do
+        for j in ${SMODULES[$i]}
+        do
+            if [ x"`echo "$1 " | grep -i "$j "`" != x ]
+            then
+                return $i
+            fi
+        done
+        i=$(($i+1))
+    done
+
+    return $ERROR
+}
+
 usage() {
     printf "Found kernel: $KMAJOR.$KMINOR.$KPATCH\n"
     printf "usage: `basename $0` <command> [drivernumber]\n"
@@ -2078,7 +2100,8 @@ then
         exit
     fi
 
-    num=$ERROR
+    name2num_stack $2
+    num=$?
 
     if [ $num -eq $ERROR ]
     then
@@ -2162,7 +2185,8 @@ then
         exit
     fi
 
-    num=$ERROR
+    name2num_stack $2
+    num=$?
 
     if [ $num -eq $ERROR ]
     then
