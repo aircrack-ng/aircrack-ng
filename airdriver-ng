@@ -157,7 +157,7 @@ SI_PATCHARG[$i]="-p3"
 SI_PRECOMP[$i]=""
 SI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${SI_DRIVERDIR[$i]} modules"
 SI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/net/ieee80211/""
-SI_INSTALL2[$i]="cp *.ko /lib/modules/$KVER/kernel/net/ieee80211/"
+SI_INSTALL2[$i]="cp -f *.ko /lib/modules/$KVER/kernel/net/ieee80211/"
 SSITE[$i]="http://ieee80211.sourceforge.net/"
 
 i=$(($i+1))
@@ -215,7 +215,7 @@ DI_PATCHARG[$i]="-p1"
 DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/acx/""
-DI_INSTALL2[$i]="cp acx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/acx/"
+DI_INSTALL2[$i]="cp -f acx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/acx/"
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=acx"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="ACX"
@@ -242,7 +242,7 @@ DI_PATCHARG[$i]="-p5"
 DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/bcm43xx/""
-DI_INSTALL2[$i]="cp bcm43xx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/bcm43xx/"
+DI_INSTALL2[$i]="cp -f bcm43xx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/bcm43xx/"
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=broadcom"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="BCM43"
@@ -269,7 +269,7 @@ DI_PATCHARG[$i]="-p5"
 DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/hostap/""
-DI_INSTALL2[$i]="cp *.ko /lib/modules/$KVER/kernel/drivers/net/wireless/hostap/"
+DI_INSTALL2[$i]="cp -f *.ko /lib/modules/$KVER/kernel/drivers/net/wireless/hostap/"
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=hostap"
 DETECT_USB[$i]="prism2"
 DETECT_PCI[$i]="Intersil\|Prism"
@@ -296,7 +296,7 @@ DI_PATCHARG[$i]=""
 DI_PRECOMP[$i]="ipw2100_precomp"
 DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2100/""
-DI_INSTALL2[$i]="cp ipw2100.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2100/"
+DI_INSTALL2[$i]="cp -f ipw2100.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2100/"
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="2100"
@@ -323,7 +323,7 @@ DI_PATCHARG[$i]="-p1 -f"
 DI_PRECOMP[$i]="ipw2200_precomp"
 DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/""
-DI_INSTALL2[$i]="cp ipw2200.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/"
+DI_INSTALL2[$i]="cp -f ipw2200.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/"
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=ipw2200"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="2200BG"
@@ -674,7 +674,7 @@ DI_PATCHARG[$i]="-p1"
 DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/zd1211rw/""
-DI_INSTALL2[$i]="cp zd1211rw.ko /lib/modules/$KVER/kernel/drivers/net/wireless/zd1211rw/"
+DI_INSTALL2[$i]="cp -f zd1211rw.ko /lib/modules/$KVER/kernel/drivers/net/wireless/zd1211rw/"
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=zd1211rw"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -828,7 +828,7 @@ install_ipw2200() {
         DI_PRECOMP[$1]=""
         DI_COMPILE[$1]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[2]} modules"
         DI_INSTALL1[$1]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/""
-        DI_INSTALL2[$1]="cp ipw2200.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/"
+        DI_INSTALL2[$1]="cp -f ipw2200.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/"
     fi
 }
 
@@ -1757,6 +1757,31 @@ removeDriver() {
     return $YES
 }
 
+removeStack() {
+#check if argument is out of range
+    if [ "$1" -lt 0 -o "$1" -ge "$SCOUNT" ]
+    then
+        echo "Invalid stack number!"
+        return $ERROR
+    fi
+
+    echo "Starting to remove \"${SNAME[$1]}\" driver"
+
+#loop through the modules, find and rm them
+    for i in ${SMODULES[$1]}
+    do
+        if [ -f "`$MODPROBE -l | grep $i\.ko`" ]
+        then
+            rm -i "`$MODPROBE -l | grep $i\.ko`"
+        fi
+    done
+
+    echo "Running \"depmod -ae\"..."
+    depmod -ae
+
+    return $YES
+}
+
 checkusb() {
     if [ x"$LSUSB" != x ]
     then
@@ -2042,6 +2067,39 @@ then
         echo "Removed driver \"${DNAME[$num]}\" successfully"
     else
         echo "Failed to remove the driver."
+    fi
+    exit
+fi
+
+if [ x"$1" == "xremove_stack" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "$NO_STACK_ERROR"
+        exit
+    fi
+
+    num=$ERROR
+
+    if [ $num -eq $ERROR ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $SCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid stack!"
+            exit
+        fi
+    fi
+
+    echo "Stack \"${SNAME[$num]}\" specified for removing."
+
+    removeStack $num
+    if [ $? -eq $YES ]
+    then
+        echo "Removed stack \"${SNAME[$num]}\" successfully"
+    else
+        echo "Failed to remove the stack."
     fi
     exit
 fi
