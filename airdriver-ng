@@ -833,6 +833,14 @@ install_ipw2200() {
 }
 
 install_zd1211rw() {
+    if [ $KMINOR -eq 6 -a $KPATCH -lt 18 ]
+    then
+        DI_DRIVERFILE[$i]="linux-2.6.18.tar.bz2"
+        DI_DRIVERPATH1[$i]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-2.6.18.tar.bz2"
+        DI_DRIVERPATH2[$i]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-2.6.18.tar.bz2"
+        DI_DRIVEREXDIR[$i]="linux-2.6.18/drivers/net/wireless/zd1211rw"
+    fi
+
     if [ $KMINOR -eq 6 -a $KPATCH -eq 20 ]
     then
         DI_PATCHFILE[$1]="zd1211rw_inject_2.6.20.patch"
@@ -1157,19 +1165,25 @@ install_action() {
     #3 - patch it
         echo "4. Patching the source..."
 
-        if [ x"`$PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" | grep "FAILED"`" != x ]
+        if [ x"`$PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" | grep "^No file"`" != x ]
         then
-            $PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+            $PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+            echo "Patching failed for files (Couldn't be found)."
+        fi
+
+        if [ x"`$PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" | grep "FAILED"`" != x ]
+        then
+            $PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
             echo "Patching failed for some hunks."
         fi
 
-        if [ x"`$PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" | grep "Reversed"`" != x ]
+        if [ x"`$PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" | grep "Reversed"`" != x ]
         then
-            $PATCH --dry-run -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+            $PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
             echo "Already patched?"
         fi
 
-        $PATCH -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+        $PATCH -N -f ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
     else
         echo "3./4. Not patching..."
     fi
