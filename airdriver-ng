@@ -50,13 +50,15 @@ fi
 KMAJOR=`echo $KVER | sed 's/^\([0-9]\)\..*$/\1/'`
 KMINOR=`echo $KVER | sed 's/^[0-9]\.\([0-9]\)\..*$/\1/'`
 KPATCH=`echo $KVER | sed 's/^[0-9]\.[0-9]\.\([0-9]*\).*$/\1/'`
+KSRC="/lib/modules/$KVER/build"
+KMOD="/lib/modules/$KVER"
 KUTS=""
 
-if [ -f "/lib/modules/$KVER/build/include/linux/utsrelease.h" ]
+if [ -f "$KSRC/include/linux/utsrelease.h" ]
 then
-    KUTS=`grep UTS_RELEASE /lib/modules/$KVER/build/include/linux/utsrelease.h 2>/dev/null | head -n 1 | cut -d " " -f3 | sed 's/"//g'`
+    KUTS=`grep UTS_RELEASE $KSRC/include/linux/utsrelease.h 2>/dev/null | head -n 1 | cut -d " " -f3 | sed 's/"//g'`
 else
-    KUTS=`grep UTS_RELEASE /lib/modules/$KVER/build/include/linux/version.h 2>/dev/null | head -n 1 | cut -d " " -f3 | sed 's/"//g'`
+    KUTS=`grep UTS_RELEASE $KSRC/include/linux/version.h 2>/dev/null | head -n 1 | cut -d " " -f3 | sed 's/"//g'`
 fi
 
 if [ x"$KUTS" != x ]
@@ -66,7 +68,14 @@ then
         echo "-------"
         echo "Your linked kernel source doesn't match your current running version."
         echo "\"$KUTS\" vs. \"$KVER\""
-        echo "You will most probably run into problems when installing drivers."
+        printf "You "
+        if [ -d "/lib/modules/$KUTS" ]
+        then
+            printf "will probably"
+        else
+            printf "may"
+        fi
+        printf " run into problems when installing drivers.\n"
         echo "-------"
     fi
 fi
@@ -145,7 +154,7 @@ SMODULES[$i]="ieee80211 ieee80211_crypt ieee80211_crypt_wep ieee80211_crypt_tkip
 SI_INIT[$i]=""
 SI_DRIVERGET[$i]="cp"
 SI_DRIVERFILE[$i]="ieee80211_tx.c"
-SI_DRIVERPATH1[$i]="/lib/modules/$KVER/build/net/ieee80211"
+SI_DRIVERPATH1[$i]="$KSRC/net/ieee80211"
 SI_DRIVERPATH2[$i]="/usr/src/linux/net/ieee80211"
 SI_DRIVEREXDIR[$i]=""
 SI_DRIVERDIR[$i]="ieee80211"
@@ -155,9 +164,9 @@ SI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/ieee80211_inject.patch"
 SI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/ieee80211_inject.patch"
 SI_PATCHARG[$i]="-p3"
 SI_PRECOMP[$i]=""
-SI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${SI_DRIVERDIR[$i]} modules"
-SI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/net/ieee80211/""
-SI_INSTALL2[$i]="cp -f *.ko /lib/modules/$KVER/kernel/net/ieee80211/"
+SI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${SI_DRIVERDIR[$i]} modules"
+SI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/net/ieee80211/""
+SI_INSTALL2[$i]="cp -f *.ko "$KMOD/kernel/net/ieee80211/""
 SSITE[$i]="http://ieee80211.sourceforge.net/"
 
 i=$(($i+1))
@@ -213,9 +222,9 @@ DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/acx-20070101.patch"
 DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/acx-20070101.patch"
 DI_PATCHARG[$i]="-p1"
 DI_PRECOMP[$i]=""
-DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
-DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/acx/""
-DI_INSTALL2[$i]="cp -f acx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/acx/"
+DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
+DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/acx/""
+DI_INSTALL2[$i]="cp -f acx.ko "$KMOD/kernel/drivers/net/wireless/acx/""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=acx"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="ACX"
@@ -240,9 +249,9 @@ DI_PATCHPATH1[$i]="http://trac.aircrack-ng.org/attachment/ticket/183/bcm43xx-inj
 DI_PATCHPATH2[$i]=""
 DI_PATCHARG[$i]="-p5"
 DI_PRECOMP[$i]=""
-DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
-DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/bcm43xx/""
-DI_INSTALL2[$i]="cp -f bcm43xx.ko /lib/modules/$KVER/kernel/drivers/net/wireless/bcm43xx/"
+DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
+DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/bcm43xx/""
+DI_INSTALL2[$i]="cp -f bcm43xx.ko $KMOD/kernel/drivers/net/wireless/bcm43xx/"
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=broadcom"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="BCM43"
@@ -267,9 +276,9 @@ DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/hostap-kernel-$KMAJOR.$KMINOR.
 DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/hostap-kernel-$KMAJOR.$KMINOR.$KPATCH.patch"
 DI_PATCHARG[$i]="-p5"
 DI_PRECOMP[$i]=""
-DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
-DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/hostap/""
-DI_INSTALL2[$i]="cp -f *.ko /lib/modules/$KVER/kernel/drivers/net/wireless/hostap/"
+DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
+DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/hostap/""
+DI_INSTALL2[$i]="cp -f *.ko $KMOD/kernel/drivers/net/wireless/hostap/"
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=hostap"
 DETECT_USB[$i]="prism2"
 DETECT_PCI[$i]="Intersil\|Prism"
@@ -294,9 +303,9 @@ DI_PATCHPATH1[$i]=""
 DI_PATCHPATH2[$i]=""
 DI_PATCHARG[$i]=""
 DI_PRECOMP[$i]="ipw2100_precomp"
-DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
-DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2100/""
-DI_INSTALL2[$i]="cp -f ipw2100.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2100/"
+DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
+DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/ipw2100/""
+DI_INSTALL2[$i]="cp -f ipw2100.ko $KMOD/kernel/drivers/net/wireless/ipw2100/"
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="2100"
@@ -321,9 +330,9 @@ DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/ipw2200-1.1.4-inject.patch"
 DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/ipw2200-1.1.4-inject.patch"
 DI_PATCHARG[$i]="-p1 -f"
 DI_PRECOMP[$i]="ipw2200_precomp"
-DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
-DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/""
-DI_INSTALL2[$i]="cp -f ipw2200.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/"
+DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
+DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/ipw2200/""
+DI_INSTALL2[$i]="cp -f ipw2200.ko $KMOD/kernel/drivers/net/wireless/ipw2200/"
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=ipw2200"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="2200BG"
@@ -672,9 +681,9 @@ DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/zd1211rw_inject_2.6.17.patch"
 DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/zd1211rw_inject_2.6.17.patch"
 DI_PATCHARG[$i]="-p5"
 DI_PRECOMP[$i]=""
-DI_COMPILE[$i]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
-DI_INSTALL1[$i]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/zd1211rw/""
-DI_INSTALL2[$i]="cp -f zd1211rw.ko /lib/modules/$KVER/kernel/drivers/net/wireless/zd1211rw/"
+DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
+DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/zd1211rw/""
+DI_INSTALL2[$i]="cp -f zd1211rw.ko $KMOD/kernel/drivers/net/wireless/zd1211rw/"
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=zd1211rw"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -742,8 +751,8 @@ DCONFIG[$i]=""
 DMODULES[$i]="ipwraw"
 DI_INIT[$i]=""
 DI_DRIVERGET[$i]="wget"
-DI_DRIVERFILE[$i]="ipwraw-ng-1.0.0-21062007.tar.bz2"
-DI_DRIVERPATH1[$i]="http://homepages.tu-darmstadt.de/~p_larbig/wlan/ipwraw-ng-1.0.0-21062007.tar.bz2"
+DI_DRIVERFILE[$i]="ipwraw-ng-2.0.0-10072007.tar.bz2"
+DI_DRIVERPATH1[$i]="http://www.tu-darmstadt.de/~p_larbig/wlan/ipwraw-ng-2.0.0-10072007.tar.bz2"
 DI_DRIVERPATH2[$i]=""
 DI_DRIVEREXDIR[$i]=""
 DI_DRIVERDIR[$i]="ipwraw-ng"
@@ -755,8 +764,8 @@ DI_PATCHARG[$i]=""
 DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="make"
 DI_INSTALL1[$i]="make install"
-DI_INSTALL2[$i]=""
-DSITE[$i]="homepages.tu-darmstadt.de/~p_larbig/wlan/"
+DI_INSTALL2[$i]="make install_ucode"
+DSITE[$i]="www.tu-darmstadt.de/~p_larbig/wlan/"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="3945"
 DETECT_CS[$i]=""
@@ -826,9 +835,9 @@ install_ipw2200() {
         DI_DRIVEREXDIR[$1]=""
         DI_DRIVERDIR[$1]="ipw2200-1.1.4"
         DI_PRECOMP[$1]=""
-        DI_COMPILE[$1]="$MAKE -C /lib/modules/$KVER/build/ M=$D_DIR/${DI_DRIVERDIR[2]} modules"
-        DI_INSTALL1[$1]="mkdir -p "/lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/""
-        DI_INSTALL2[$1]="cp -f ipw2200.ko /lib/modules/$KVER/kernel/drivers/net/wireless/ipw2200/"
+        DI_COMPILE[$1]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[2]} modules"
+        DI_INSTALL1[$1]="mkdir -p "$KMOD/kernel/drivers/net/wireless/ipw2200/""
+        DI_INSTALL2[$1]="cp -f ipw2200.ko $KMOD/kernel/drivers/net/wireless/ipw2200/"
     fi
 }
 
@@ -985,7 +994,7 @@ install_action() {
             then
                 echo "${DI_DRIVERPATH2[$1]}"
             fi
-            echo "Get the file by hand, put it in \"$D_DIR/${MODULE[$1]}\""
+            echo "Get the file by hand, put it in \"$D_DIR/\""
             echo "and restart this installation."
             return $NO
         fi
@@ -994,7 +1003,7 @@ install_action() {
         if [ -d "${DI_DRIVERDIR[$1]}" ]
         then
             #be carefull!! (deleting old source)
-            rm -rf "${DI_DRIVERDIR[$1]}"
+            rm -rf "${DI_DRIVERDIR[$1]}" >> "$LOGFILE" 2>&1
         fi
 
         if [ x"${DI_DRIVEREXDIR[$1]}" != x ]
@@ -1044,20 +1053,21 @@ install_action() {
         if [ -d "${DI_DRIVERDIR[$1]}" ]
         then
             #be carefull!! (deleting old source)
-            rm -rf "${DI_DRIVERDIR[$1]}"
+            rm -rf "${DI_DRIVERDIR[$1]}" >> "$LOGFILE" 2>&1
         fi
 
         #if dir is missing (it should be) - check it out
         if [ ! -d "${DI_DRIVERDIR[$1]}" ]
         then
-            $SVN co "${DI_DRIVERPATH1[$1]}" "${DI_DRIVERDIR[$1]}"
+            $SVN co "${DI_DRIVERPATH1[$1]}" "${DI_DRIVERDIR[$1]}" >> "$LOGFILE" 2>&1
         fi
 
         #still missing? - use mirror/second source in case there is one
         if [ ! -d "${DI_DRIVERDIR[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
         then
-            $SVN co "${DI_DRIVERPATH2[$1]}" "${DI_DRIVERDIR[$1]}"
+            $SVN co "${DI_DRIVERPATH2[$1]}" "${DI_DRIVERDIR[$1]}" >> "$LOGFILE" 2>&1
         fi
+        echo "2. No extraction needed."
     fi
 
     #use git
@@ -1066,20 +1076,21 @@ install_action() {
         if [ -d "${DI_DRIVERDIR[$1]}" ]
         then
             #be carefull!! (deleting old source)
-            rm -rf "${DI_DRIVERDIR[$1]}"
+            rm -rf "${DI_DRIVERDIR[$1]}" >> "$LOGFILE" 2>&1
         fi
 
         #if dir is missing (it should be) - check it out
         if [ ! -d "${DI_DRIVERDIR[$1]}" ]
         then
-            $GIT clone "${DI_DRIVERPATH1[$1]}"
+            $GIT clone "${DI_DRIVERPATH1[$1]}" >> "$LOGFILE" 2>&1
         fi
 
         #still missing? - use mirror/second source in case there is one
         if [ ! -d "${DI_DRIVERDIR[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
         then
-            $GIT clone "${DI_DRIVERPATH2[$1]}"
+            $GIT clone "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
         fi
+        echo "2. No extraction needed."
     fi
 
     #use cp
@@ -1088,20 +1099,21 @@ install_action() {
         if [ -d "${DI_DRIVERDIR[$1]}" ]
         then
             #be carefull!! (deleting old source)
-            rm -rf "${DI_DRIVERDIR[$1]}"
+            rm -rf "${DI_DRIVERDIR[$1]}" >> "$LOGFILE" 2>&1
         fi
 
         #if dir is missing (it should be) - check it out
         if [ ! -d "${DI_DRIVERDIR[$1]}" -a -d "${DI_DRIVERPATH1[$1]}" ]
         then
-            cp -rf "${DI_DRIVERPATH1[$1]}" ./ >/dev/null 2>/dev/null
+            cp -rf "${DI_DRIVERPATH1[$1]}" ./ >> "$LOGFILE" 2>&1
         fi
 
         #still missing? - use mirror/second source in case there is one
         if [ ! -d "${DI_DRIVERDIR[$1]}" -a -d "${DI_DRIVERPATH2[$1]}" ]
         then
-            cp -rf "${DI_DRIVERPATH2[$1]}" ./ >/dev/null 2>/dev/null
+            cp -rf "${DI_DRIVERPATH2[$1]}" ./ >> "$LOGFILE" 2>&1
         fi
+        echo "2. No extraction needed."
     fi
 
     #extracted dir differs from expected one? rename it
@@ -1194,7 +1206,7 @@ install_action() {
         ${DI_PRECOMP[$1]} >> "$LOGFILE" 2>&1
     fi
 
-    echo "5. Compiling the driver..."
+    echo "5. Compiling the source..."
     PWD=`pwd`
 
     ${DI_COMPILE[$1]} >> "$LOGFILE" 2>&1
@@ -1204,7 +1216,7 @@ install_action() {
     fi
 
 #TODO:INSTALL
-    echo "6. Installing the driver..."
+    echo "6. Installing the modules..."
     ${DI_INSTALL1[$1]} >> "$LOGFILE" 2>&1
     if [ x"${DI_INSTALL2[$1]}" != x ]
     then
@@ -1593,7 +1605,7 @@ installDriver() {
     fi
 
 #check if atleast kernel headers are installed
-    if [ ! -f "/lib/modules/$KVER/build/.config" ]
+    if [ ! -f "$KSRC/.config" ]
     then
         echo "Kernel headers missing!"
         return $ERROR
@@ -1613,7 +1625,7 @@ installDriver() {
     if [ x"$ret" == x ]
     then
         echo "Your current GCC version doesn't match the version your kernel was compiled with."
-        echo "The build modules will most probably not load into the running kernel."
+        echo "The build modules will probably not load into the running kernel."
     fi
 
 #cd into driver build directory
@@ -1651,10 +1663,29 @@ installStack() {
     fi
 
 #check if atleast kernel headers are installed
-    if [ ! -f "/lib/modules/$KVER/build/.config" ]
+    if [ ! -f "$KSRC/.config" ]
     then
         echo "Kernel headers missing!"
         return $ERROR
+    fi
+
+#check if kernel source is installed
+    missing=0
+    #check for default files README COPYING CREDITS (i hope every kernel source includes them all)
+    if [ ! -f "$KSRC/README" -o ! -f "$KSRC/COPYING" -o ! -f "$KSRC/CREDITS" ]
+    then
+        missing=1
+        echo "Kernel source missing!"
+#        return $ERROR
+    fi
+
+    #2nd check (in case README COPYING and CREDITS is included in kernel headers)
+    #searches for .c files in "net" subdir
+    if [ $missing = 0 -a x"`find $KSRC/net/ -name *\.c | head -n 1`" = x ]
+    then
+        missing=1
+        echo "Kernel source missing!"
+#        return $ERROR
     fi
 
 #check if GCC is in path
@@ -1671,7 +1702,7 @@ installStack() {
     if [ x"$ret" == x ]
     then
         echo "Your current GCC version doesn't match the version your kernel was compiled with."
-        echo "The build modules will most probably not load into the running kernel."
+        echo "The build modules will probably not load into the running kernel."
     fi
 
 #cd into driver build directory
@@ -2222,6 +2253,7 @@ then
     if [ $ret -eq $YES ]
     then
         echo "Installed stack \"${SNAME[$num]}\" successfully"
+        echo "You need to reload the complete stack, or just reboot."
     else
         echo "Failed to install the stack."
         echo "Look through \"$LOGFILE\" for errors."
