@@ -261,7 +261,7 @@ DETECT_CS[$i]=""
 
 i=$(($i+1))
 DNAME[$i]="ADMtek 8211"
-DSTACK[$i]="0"
+DSTACK[$i]="2"
 DMODINFO[$i]="^depends: *mac80211"
 DMODULE[$i]="adm8211"
 DCONFIG[$i]="CONFIG_ADM8211="
