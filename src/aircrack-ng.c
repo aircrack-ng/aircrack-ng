@@ -3762,7 +3762,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, showhelp, z;
+	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, showhelp, z, zz;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 	int old=0, id=0;
@@ -4239,10 +4239,10 @@ usage:
 			{
 				memset( essid, 0, sizeof(essid));
 				memcpy( essid, ap_cur->essid, 32);
-				for(j=0;j<32;j++)
+				for(zz=0;zz<32;zz++)
 				{
-					if( (essid[j] > 0 && essid[j] < 32) || (essid[j] > 126) )
-						essid[j]='?';
+					if( (essid[zz] > 0 && essid[zz] < 32) || (essid[zz] > 126) )
+						essid[zz]='?';
 				}
 
 				printf( "%4d  %02X:%02X:%02X:%02X:%02X:%02X  %-24s  ",
