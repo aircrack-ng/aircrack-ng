@@ -13,7 +13,8 @@
 
 // How many sessions do we use to check if a guessed key is correct
 // 10 seems to be a reasonable choice
-#define PTW_CONTROLSESSIONS 10
+// Its now the number of sessions for selecting 10 at a random position
+#define PTW_CONTROLSESSIONS 10000
 
 // The maximum possible length of the main key, 13 is the maximum for a 104 bit key
 #define PTW_KEYHSBYTES 29

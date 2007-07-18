@@ -201,6 +201,7 @@ static void guesskeybytes(int ivlen, uint8_t * iv, uint8_t * keystream, uint8_t 
 static int correct(PTW_attackstate * state, uint8_t * key, int keylen) {
 	int i;
         int j;
+        int k;
         uint8_t keybuf[PTW_KSBYTES];
         rc4state rc4state;
 
@@ -211,7 +212,8 @@ static int correct(PTW_attackstate * state, uint8_t * key, int keylen) {
 
         tried++;
 
-        for (i = 0; i < state->sessions_collected; i++) {
+        k = rand()%(state->sessions_collected-10);
+        for ( i=k; i < k+10; i++) {
                 memcpy(&keybuf[IVBYTES], key, keylen);
                 memcpy(keybuf, state->sessions[i].iv, IVBYTES);
                 rc4init(keybuf, keylen+IVBYTES, &rc4state);
