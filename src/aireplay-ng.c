@@ -371,7 +371,7 @@ int send_packet( void *buf, size_t count )
 
     if((unsigned) count > sizeof(tmpbuf)-22) return -1;
 
-    if( (count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0xFF) == 0)
+    if( (count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0x0F) == 0)
     {
         pkt[22] = (nb_pkt_sent & 0x0000000F) << 4;
         pkt[23] = (nb_pkt_sent & 0x00000FF0) >> 4;
@@ -3068,7 +3068,7 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
 
     //Send
         send_packet(frag, pack_size);
-        if (t<data_size)usleep(10);
+        if (t<data_size)usleep(100);
 
         if (t>=data_size) break;
     }
