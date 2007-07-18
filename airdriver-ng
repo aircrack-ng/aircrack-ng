@@ -513,7 +513,7 @@ DETECT_CS[$i]=""
 
 i=$(($i+1))
 DNAME[$i]="Intel Pro Wireless 3945 A/B/G - raw mode"
-DSTACK[$i]="3"
+DSTACK[$i]=""
 DMODINFO[$i]=""
 DMODULE[$i]="ipwraw"
 DCONFIG[$i]=""
@@ -708,7 +708,63 @@ DETECT_PCI[$i]="Prism Javelin\|Prism Xbow\|Prism GT\|Prism Duette"
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt2400 (legacy - rt2x00)"
+DNAME[$i]="Ralink rt2400 (legacy)"
+DSTACK[$i]=""
+DMODINFO[$i]=""
+DMODULE[$i]="rt2400"
+DCONFIG[$i]="CONFIG_RT2400="
+DMODULES[$i]="rt2400"
+DI_INIT[$i]="rm -rf source/"
+DI_DRIVERGET[$i]="cvs"
+DI_DRIVERFILE[$i]=""
+DI_DRIVERPATH1[$i]="-d:pserver:anonymous@rt2400.cvs.sourceforge.net:/cvsroot/rt2400"
+DI_DRIVERPATH2[$i]="source/rt2400"
+DI_DRIVEREXDIR[$i]=""
+DI_DRIVERDIR[$i]="source/rt2400/Module"
+DI_PREPATCH[$i]=""
+DI_PATCHFILE[$i]=""
+DI_PATCHPATH1[$i]=""
+DI_PATCHPATH2[$i]=""
+DI_PATCHARG[$i]=""
+DI_PRECOMP[$i]=""
+DI_COMPILE[$i]="$MAKE"
+DI_INSTALL1[$i]="$MAKE install"
+DI_INSTALL2[$i]=""
+DSITE[$i]=""
+DETECT_USB[$i]=""
+DETECT_PCI[$i]="RT2400"
+DETECT_CS[$i]=""
+
+i=$(($i+1))
+DNAME[$i]="Ralink rt2400 (rt2x00)"
+DSTACK[$i]="0"
+DMODINFO[$i]="^depends:.*80211"
+DMODULE[$i]="rt2400pci"
+DCONFIG[$i]="CONFIG_RT2400PCI="
+DMODULES[$i]="rt2400pci"
+DI_INIT[$i]=""
+DI_DRIVERGET[$i]=""
+DI_DRIVERFILE[$i]=""
+DI_DRIVERPATH1[$i]=""
+DI_DRIVERPATH2[$i]=""
+DI_DRIVEREXDIR[$i]=""
+DI_DRIVERDIR[$i]=""
+DI_PREPATCH[$i]=""
+DI_PATCHFILE[$i]=""
+DI_PATCHPATH1[$i]=""
+DI_PATCHPATH2[$i]=""
+DI_PATCHARG[$i]=""
+DI_PRECOMP[$i]=""
+DI_COMPILE[$i]=""
+DI_INSTALL1[$i]=""
+DI_INSTALL2[$i]=""
+DSITE[$i]=""
+DETECT_USB[$i]=""
+DETECT_PCI[$i]="RT2400"
+DETECT_CS[$i]=""
+
+i=$(($i+1))
+DNAME[$i]="Ralink rt2400 (rt2x00)"
 DSTACK[$i]="2"
 DMODINFO[$i]="^depends:.*rt2x00lib"
 DMODULE[$i]="rt2400pci"
@@ -736,47 +792,19 @@ DETECT_PCI[$i]="RT2400"
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt2400 (legacy - rt2x00)"
-DSTACK[$i]="1"
-DMODINFO[$i]="^depends:.*80211"
-DMODULE[$i]="rt2400pci"
-DCONFIG[$i]="CONFIG_RT2400PCI="
-DMODULES[$i]="rt2400pci"
-DI_INIT[$i]=""
-DI_DRIVERGET[$i]=""
-DI_DRIVERFILE[$i]=""
-DI_DRIVERPATH1[$i]=""
-DI_DRIVERPATH2[$i]=""
-DI_DRIVEREXDIR[$i]=""
-DI_DRIVERDIR[$i]=""
-DI_PREPATCH[$i]=""
-DI_PATCHFILE[$i]=""
-DI_PATCHPATH1[$i]=""
-DI_PATCHPATH2[$i]=""
-DI_PATCHARG[$i]=""
-DI_PRECOMP[$i]=""
-DI_COMPILE[$i]=""
-DI_INSTALL1[$i]=""
-DI_INSTALL2[$i]=""
-DSITE[$i]=""
-DETECT_USB[$i]=""
-DETECT_PCI[$i]="RT2400"
-DETECT_CS[$i]=""
-
-i=$(($i+1))
-DNAME[$i]="Ralink rt2500"
-DSTACK[$i]="1"
+DNAME[$i]="Ralink rt2500 (legacy)"
+DSTACK[$i]=""
 DMODINFO[$i]=""
 DMODULE[$i]="rt2500"
 DCONFIG[$i]=""
 DMODULES[$i]="rt2500"
-DI_INIT[$i]=""
-DI_DRIVERGET[$i]="wget"
-DI_DRIVERFILE[$i]="rt2500-1.1.0-b4.tar.gz"
-DI_DRIVERPATH1[$i]="http://prdownloads.sourceforge.net/rt2400/rt2500-1.1.0-b4.tar.gz?download"
-DI_DRIVERPATH2[$i]="http://prdownloads.sourceforge.net/rt2400/rt2500-1.1.0-b4.tar.gz?download"
+DI_INIT[$i]="rm -rf source/"
+DI_DRIVERGET[$i]="cvs"
+DI_DRIVERFILE[$i]=""
+DI_DRIVERPATH1[$i]="-d:pserver:anonymous@rt2400.cvs.sourceforge.net:/cvsroot/rt2400"
+DI_DRIVERPATH2[$i]="source/rt2500"
 DI_DRIVEREXDIR[$i]=""
-DI_DRIVERDIR[$i]="rt2500-1.1.0-b4/Module"
+DI_DRIVERDIR[$i]="source/rt2500/Module"
 DI_PREPATCH[$i]=""
 DI_PATCHFILE[$i]=""
 DI_PATCHPATH1[$i]=""
@@ -792,8 +820,8 @@ DETECT_PCI[$i]="RT2500"
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt2500 (legacy - rt2x00)"
-DSTACK[$i]="1"
+DNAME[$i]="Ralink rt2500 (rt2x00)"
+DSTACK[$i]="0"
 DMODINFO[$i]="^depends:.*80211"
 DMODULE[$i]="rt2500pci"
 DCONFIG[$i]="CONFIG_RT2500PCI="
@@ -820,7 +848,7 @@ DETECT_PCI[$i]="RT2500"
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt2500"
+DNAME[$i]="Ralink rt2500 (rt2x00)"
 DSTACK[$i]="2"
 DMODINFO[$i]="^depends:.*rt2x00lib"
 DMODULE[$i]="rt2500pci"
@@ -848,13 +876,13 @@ DETECT_PCI[$i]="RT2500"
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt2570"
-DSTACK[$i]="1"
+DNAME[$i]="Ralink rt2570 (legacy)"
+DSTACK[$i]=""
 DMODINFO[$i]=""
 DMODULE[$i]="rt2570"
 DCONFIG[$i]=""
 DMODULES[$i]="rt2570"
-DI_INIT[$i]=""
+DI_INIT[$i]="rm -rf rt2570-k2wrlz-1.6.0/"
 DI_DRIVERGET[$i]="wget"
 DI_DRIVERFILE[$i]="rt2570-k2wrlz-1.6.0.tar.bz2"
 DI_DRIVERPATH1[$i]="http://homepages.tu-darmstadt.de/~p_larbig/wlan/rt2570-k2wrlz-1.6.0.tar.bz2"
@@ -876,7 +904,35 @@ DETECT_PCI[$i]=""
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt2570 (legacy - rt2x00)"
+DNAME[$i]="Ralink rt2570 (rt2x00)"
+DSTACK[$i]="0"
+DMODINFO[$i]="^depends:.*80211"
+DMODULE[$i]="rt2500usb"
+DCONFIG[$i]="CONFIG_RT2500USB="
+DMODULES[$i]="rt2500usb"
+DI_INIT[$i]=""
+DI_DRIVERGET[$i]=""
+DI_DRIVERFILE[$i]=""
+DI_DRIVERPATH1[$i]=""
+DI_DRIVERPATH2[$i]=""
+DI_DRIVEREXDIR[$i]=""
+DI_DRIVERDIR[$i]=""
+DI_PREPATCH[$i]=""
+DI_PATCHFILE[$i]=""
+DI_PATCHPATH1[$i]=""
+DI_PATCHPATH2[$i]=""
+DI_PATCHARG[$i]=""
+DI_PRECOMP[$i]=""
+DI_COMPILE[$i]=""
+DI_INSTALL1[$i]=""
+DI_INSTALL2[$i]=""
+DSITE[$i]=""
+DETECT_USB[$i]=""
+DETECT_PCI[$i]="RT2500"
+DETECT_CS[$i]=""
+
+i=$(($i+1))
+DNAME[$i]="Ralink rt2570 (rt2x00)"
 DSTACK[$i]="2"
 DMODINFO[$i]="^depends:.*rt2x00lib"
 DMODULE[$i]="rt2500usb"
@@ -904,19 +960,19 @@ DETECT_PCI[$i]="RT2500"
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt61"
-DSTACK[$i]="1"
+DNAME[$i]="Ralink rt61 (legacy)"
+DSTACK[$i]=""
 DMODINFO[$i]=""
 DMODULE[$i]="rt61"
 DCONFIG[$i]=""
 DMODULES[$i]="rt61"
-DI_INIT[$i]=""
-DI_DRIVERGET[$i]="wget"
-DI_DRIVERFILE[$i]="rt61-1.1.0-b2.tar.gz"
-DI_DRIVERPATH1[$i]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz?download"
-DI_DRIVERPATH2[$i]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz?download"
+DI_INIT[$i]="rm -rf source/"
+DI_DRIVERGET[$i]="cvs"
+DI_DRIVERFILE[$i]=""
+DI_DRIVERPATH1[$i]="-d:pserver:anonymous@rt2400.cvs.sourceforge.net:/cvsroot/rt2400"
+DI_DRIVERPATH2[$i]="source/rt61"
 DI_DRIVEREXDIR[$i]=""
-DI_DRIVERDIR[$i]="rt61-1.1.0-b2/Module"
+DI_DRIVERDIR[$i]="source/rt61/Module"
 DI_PREPATCH[$i]=""
 DI_PATCHFILE[$i]=""
 DI_PATCHPATH1[$i]=""
@@ -932,8 +988,8 @@ DETECT_PCI[$i]="RT61\|RT2600\|RT2561"
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt61 (legacy - rt2x00)"
-DSTACK[$i]="1"
+DNAME[$i]="Ralink rt61 (rt2x00)"
+DSTACK[$i]="0"
 DMODINFO[$i]="^depends:.*80211"
 DMODULE[$i]="rt61pci"
 DCONFIG[$i]="CONFIG_RT61PCI="
@@ -960,7 +1016,7 @@ DETECT_PCI[$i]="RT61\|RT2600\|RT2561"
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt61 (legacy - rt2x00)"
+DNAME[$i]="Ralink rt61 (rt2x00)"
 DSTACK[$i]="2"
 DMODINFO[$i]="^depends:.*rt2x00lib"
 DMODULE[$i]="rt61pci"
@@ -988,13 +1044,13 @@ DETECT_PCI[$i]="RT61\|RT2600\|RT2561"
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt73"
-DSTACK[$i]="1"
+DNAME[$i]="Ralink rt73 (legacy)"
+DSTACK[$i]=""
 DMODINFO[$i]=""
 DMODULE[$i]="rt73"
 DCONFIG[$i]=""
 DMODULES[$i]="rt73"
-DI_INIT[$i]=""
+DI_INIT[$i]="rm -rf rt73-k2wrlz-1.0.0/"
 DI_DRIVERGET[$i]="wget"
 DI_DRIVERFILE[$i]="rt73-k2wrlz-1.0.0.tar.bz2"
 DI_DRIVERPATH1[$i]="http://homepages.tu-darmstadt.de/~p_larbig/wlan/rt73-k2wrlz-1.0.0.tar.bz2"
@@ -1016,8 +1072,8 @@ DETECT_PCI[$i]=""
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt73 (legacy - rt2x00)"
-DSTACK[$i]="1"
+DNAME[$i]="Ralink rt73 (rt2x00)"
+DSTACK[$i]="0"
 DMODINFO[$i]="^depends:.*80211"
 DMODULE[$i]="rt73usb"
 DCONFIG[$i]=""
@@ -1044,7 +1100,7 @@ DETECT_PCI[$i]=""
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Ralink rt73 (legacy - 2x00)"
+DNAME[$i]="Ralink rt73 (rt2x00)"
 DSTACK[$i]="2"
 DMODINFO[$i]="^depends:.*rt2x00lib"
 DMODULE[$i]="rt73usb"
@@ -1325,7 +1381,7 @@ DETECT_CS[$i]=""
 
 i=$(($i+1))
 DNAME[$i]="NDIS Wrapper"
-DSTACK[$i]="3"
+DSTACK[$i]=""
 DMODINFO[$i]=""
 DMODULE[$i]="ndiswrapper"
 DCONFIG[$i]=""
@@ -1447,7 +1503,7 @@ install_action() {
     echo "`date`" >> "$LOGFILE" 2>&1
     echo "Installing \"${DNAME[$1]}\" on $KVER." >> "$LOGFILE" 2>&1
 #0 - check if all needed variables are set
-    if [ x"${DI_DRIVERFILE[$1]}" == x ]
+    if [ x"${DI_DRIVERFILE[$1]}" == x -a x"${DI_DRIVERGET[$1]}" == "wget" ]
     then
         echo "DI_DRIVERFILE[$1] isn't set!"
         return $ERROR
@@ -1620,6 +1676,23 @@ install_action() {
         if [ ! -d "${DI_DRIVERDIR[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
         then
             $SVN co "${DI_DRIVERPATH2[$1]}" "${DI_DRIVERDIR[$1]}" >> "$LOGFILE" 2>&1
+        fi
+        echo "2. No extraction needed."
+    fi
+
+    #use cvs
+    if [ "${DI_DRIVERGET[$1]}" == "cvs"  ]
+    then
+        if [ -d "${DI_DRIVERDIR[$1]}" ]
+        then
+            #be carefull!! (deleting old source)
+            rm -rf "${DI_DRIVERDIR[$1]}" >> "$LOGFILE" 2>&1
+        fi
+
+        #if dir is missing (it should be) - check it out
+        if [ ! -d "${DI_DRIVERDIR[$1]}" ]
+        then
+            $CVS -z3 "${DI_DRIVERPATH1[$1]}"  co -P "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
         fi
         echo "2. No extraction needed."
     fi
@@ -1993,7 +2066,12 @@ listInstalledDrivers() {
         isInstalled $i "D"
         if [ $? -eq $YES ]
         then
-            printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+            if [ x"${DSTACK[$i]}" != x ]
+            then
+                printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+            else
+                printf "$i. ${DNAME[$i]}\n"
+            fi
         fi
         i=$(($i+1))
     done
@@ -2022,7 +2100,12 @@ listLoadedDrivers() {
         isLoaded $i "D"
         if [ $? -eq $YES ]
         then
-            printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+            if [ x"${DSTACK[$i]}" != x ]
+            then
+                printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+            else
+                printf "$i. ${DNAME[$i]}\n"
+            fi
         fi
         i=$(($i+1))
     done
@@ -2050,7 +2133,12 @@ listKernelDrivers() {
         isInKernel $i "D"
         if [ $? -eq $YES ]
         then
-            printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+            if [ x"${DSTACK[$i]}" != x ]
+            then
+                printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+            else
+                printf "$i. ${DNAME[$i]}\n"
+            fi
         fi
         i=$(($i+1))
     done
@@ -2076,7 +2164,12 @@ listSupportedDrivers() {
     do
         if [ x"${DMODULE[$i]}" != x ]
         then
-            printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+            if [ x"${DSTACK[$i]}" != x ]
+            then
+                printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+            else
+                printf "$i. ${DNAME[$i]}\n"
+            fi
         fi
         i=$(($i+1))
     done
