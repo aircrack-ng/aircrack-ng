@@ -434,7 +434,7 @@ int send_packet(void *buf, size_t count)
 	struct wif *wi = _wi_out; /* XXX globals suck */
 	unsigned char *pkt = (unsigned char*) buf;
 
-	if( (count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0xFF) == 0)
+	if( (count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0x0F) == 0)
 	{
 		pkt[22] = (nb_pkt_sent & 0x0000000F) << 4;
 		pkt[23] = (nb_pkt_sent & 0x00000FF0) >> 4;
@@ -620,6 +620,7 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
                     if(taglen <= 1) return -1;
                     if(pos+2+taglen > len) return -1;
 
+                    memset(essid, 0, 33);
                     memcpy(essid, pkt_sniff+pos+2, taglen);
                 }
                 break;
@@ -3140,7 +3141,7 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
 
     //Send
         send_packet(frag, pack_size);
-        if (t<data_size)usleep(10);
+        if (t<data_size)usleep(100);
 
         if (t>=data_size) break;
     }
