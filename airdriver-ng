@@ -928,7 +928,7 @@ DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
-DETECT_PCI[$i]="RT2500"
+DETECT_PCI[$i]=""
 DETECT_CS[$i]=""
 
 i=$(($i+1))
@@ -956,7 +956,7 @@ DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
-DETECT_PCI[$i]="RT2500"
+DETECT_PCI[$i]=""
 DETECT_CS[$i]=""
 
 i=$(($i+1))
@@ -2721,8 +2721,11 @@ usage() {
     printf "\t\t-----------------------------------------------------\n"
     printf "\t\tload <drivernum>\t- loads a driver\n"
     printf "\t\tunload <drivernum>\t- unloads a driver\n"
+    printf "\t\treload <drivernum>\t- reloads a driver\n"
     printf "\t\tinstall <drivernum>\t- installs a driver\n"
     printf "\t\tremove <drivernum>\t- removes a driver\n"
+    printf "\t\t-----------------------------------------------------\n"
+    printf "\t\tremove_stack <num>\t- removes a stack \n"
     printf "\t\tinstall_stack <num>\t- installes a stack \n"
     printf "\t\t-----------------------------------------------------\n"
     printf "\t\tdetails <drivernum>\t- prints driver details\n"
@@ -2995,6 +2998,56 @@ then
     else
         echo "Failed to unload the driver."
     fi
+    exit
+fi
+
+if [ x"$1" == "xreload" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "$NO_DRIVER_ERROR"
+        exit
+    fi
+
+    name2num $2
+    num=$?
+
+    if [ $num -eq $ERROR ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid driver!"
+            exit
+        fi
+    fi
+
+    echo "Driver \"${DNAME[$num]}\" specified for reloading."
+
+    unloadDriver $num
+    if [ $? -ne $YES ]
+    then
+        echo "Failed to unload the driver."
+        exit
+    fi
+
+    isLoaded $num "D"
+    if [ $? -eq $YES ]
+    then
+        echo "Failed to unload the driver."
+        exit
+    fi
+
+    loadDriver $num
+    if [ $? -ne $YES ]
+    then
+        echo "Failed to reload the driver."
+        exit
+    else
+        echo "Reloaded driver \"${DNAME[$num]}\" successfully"
+    fi
+
     exit
 fi
 
