@@ -3531,6 +3531,7 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct pa
 {
     char *buffer;
     int if_count=0;
+    int i=0, again=0;
 
     buffer = (char*) malloc(sizeof(char)*1025);
     strncpy(buffer, cardstr, 1025);
@@ -3538,6 +3539,13 @@ int init_cards(const char* cardstr, char *iface[], struct ifreq ifr[], struct pa
 
     while( ((iface[if_count]=strsep(&buffer, ",")) != NULL) && (if_count < MAX_CARDS) )
     {
+        again=0;
+        for(i=0; i<if_count; i++)
+        {
+            if(strcmp(iface[i], iface[if_count]) == 0)
+            again=1;
+        }
+        if(again) continue;
         if(setup_card(iface[if_count], &(ifr[if_count]), &(mr[if_count]), &(sll[if_count]), &(fd_raw[if_count]), &(arptype[if_count]), if_count) != 0)
             return -1;
         if_count++;
