@@ -397,7 +397,7 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 /*
  * Guess which key bytes could be strong and start actual computation of the key
  */
-int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int testlimit, int * bf, int validchars[][n]) {
+int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int testlimit, int * bf, int validchars[][n], int attacks) {
 	int strongbytes[KEYHSBYTES];
 	double normal[KEYHSBYTES];
 	double ausreisser[KEYHSBYTES];
@@ -417,93 +417,98 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 		exit(-1);
 	}
 
-	// Try the original klein attack first
-	for (i = 0; i < keylen; i++) {
-		bzero(&table[i][0], sizeof(PTW_tableentry) * n);
-		for (j = 0; j < n; j++) {
-			table[i][j].b = j;
+	if(!(attacks & NO_KLEIN))
+	{
+		// Try the original klein attack first
+		for (i = 0; i < keylen; i++) {
+			bzero(&table[i][0], sizeof(PTW_tableentry) * n);
+			for (j = 0; j < n; j++) {
+				table[i][j].b = j;
+			}
+			for (j = 0; j < state->packets_collected; j++) {
+				// fullkeybuf[0] = state->allsessions[j].iv[0];
+				memcpy(fullkeybuf, state->allsessions[j].iv, 3 * sizeof(uint8_t));
+				guesskeybytes(i+3, fullkeybuf, state->allsessions[j].keystream, guessbuf, 1);
+				table[i][guessbuf[0]].votes += state->allsessions[j].weight;
+			}
+			qsort(&table[i][0], n, sizeof(PTW_tableentry), &compare);
+			j = 0;
+			while(!validchars[i][table[i][j].b]) {
+				j++;
+			}
+			// printf("guessing i = %d, b = %d\n", i, table[0][0].b);
+			fullkeybuf[i+3] = table[i][j].b;
 		}
-		for (j = 0; j < state->packets_collected; j++) {
-			// fullkeybuf[0] = state->allsessions[j].iv[0];
-			memcpy(fullkeybuf, state->allsessions[j].iv, 3 * sizeof(uint8_t));
-			guesskeybytes(i+3, fullkeybuf, state->allsessions[j].keystream, guessbuf, 1);
-			table[i][guessbuf[0]].votes += state->allsessions[j].weight;
-		}
-		qsort(&table[i][0], n, sizeof(PTW_tableentry), &compare);
-		j = 0;
-		while(!validchars[i][table[i][j].b]) {
-			j++;
-		}
-		// printf("guessing i = %d, b = %d\n", i, table[0][0].b);
-		fullkeybuf[i+3] = table[i][j].b;
-	}
-	if (correct(state, &fullkeybuf[3], keylen)) {
-		memcpy(keybuf, &fullkeybuf[3], keylen * sizeof(uint8_t));
-		// printf("hit without correction\n");
-		return 1;
-	}
-
-
-	memcpy(table, state->table, sizeof(PTW_tableentry) * n * keylen);
-
-	onestrong = (testlimit/10)*2;
-	twostrong = (testlimit/10)*1;
-	simple = testlimit - onestrong - twostrong;
-
-	// now, sort the table
-	for (i = 0; i < keylen; i++) {
-                qsort(&table[i][0], n, sizeof(PTW_tableentry), &compare);
-		strongbytes[i] = 0;
-        }
-
-	sh = alloca(sizeof(sorthelper) * (n-1) * keylen);
-	if (sh == NULL) {
-		printf("could not allocate memory\n");
-		exit(-1);
-	}
-
-
-	for (i = 0; i < keylen; i++) {
-		for (j = 1; j < n; j++) {
-			sh[i][j-1].distance = table[i][0].votes - table[i][j].votes;
-			sh[i][j-1].value = table[i][j].b;
-			sh[i][j-1].keybyte = i;
+		if (correct(state, &fullkeybuf[3], keylen)) {
+			memcpy(keybuf, &fullkeybuf[3], keylen * sizeof(uint8_t));
+			// printf("hit without correction\n");
+			return 1;
 		}
 	}
-	qsort(sh, (n-1)*keylen, sizeof(sorthelper), &comparesorthelper);
 
 
-	if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, simple, bf, validchars)) {
-		return 1;
-	}
+	if(!(attacks & NO_PTW))
+	{
+		memcpy(table, state->table, sizeof(PTW_tableentry) * n * keylen);
 
-	// Now one strong byte
-	getdrv(state->table, keylen, normal, ausreisser);
-	for (i = 0; i < keylen-1; i++) {
-		helper[i].keybyte = i+1;
-		helper[i].difference = normal[i+1] - ausreisser[i+1];
-	}
-	qsort(helper, keylen-1, sizeof(doublesorthelper), &comparedoublesorthelper);
-	// do not use bf-bytes as strongbytes
-	i = 0;
-	while(bf[helper[i].keybyte] == 1) {
+		onestrong = (testlimit/10)*2;
+		twostrong = (testlimit/10)*1;
+		simple = testlimit - onestrong - twostrong;
+
+		// now, sort the table
+		for (i = 0; i < keylen; i++) {
+			qsort(&table[i][0], n, sizeof(PTW_tableentry), &compare);
+			strongbytes[i] = 0;
+		}
+
+		sh = alloca(sizeof(sorthelper) * (n-1) * keylen);
+		if (sh == NULL) {
+			printf("could not allocate memory\n");
+			exit(-1);
+		}
+
+
+		for (i = 0; i < keylen; i++) {
+			for (j = 1; j < n; j++) {
+				sh[i][j-1].distance = table[i][0].votes - table[i][j].votes;
+				sh[i][j-1].value = table[i][j].b;
+				sh[i][j-1].keybyte = i;
+			}
+		}
+		qsort(sh, (n-1)*keylen, sizeof(sorthelper), &comparesorthelper);
+
+
+		if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, simple, bf, validchars)) {
+			return 1;
+		}
+
+		// Now one strong byte
+		getdrv(state->table, keylen, normal, ausreisser);
+		for (i = 0; i < keylen-1; i++) {
+			helper[i].keybyte = i+1;
+			helper[i].difference = normal[i+1] - ausreisser[i+1];
+		}
+		qsort(helper, keylen-1, sizeof(doublesorthelper), &comparedoublesorthelper);
+		// do not use bf-bytes as strongbytes
+		i = 0;
+		while(bf[helper[i].keybyte] == 1) {
+			i++;
+		}
+		strongbytes[helper[i].keybyte] = 1;
+		if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, onestrong, bf, validchars)) {
+			return 1;
+		}
+
+		// two strong bytes
 		i++;
+		while(bf[helper[i].keybyte] == 1) {
+			i++;
+		}
+		strongbytes[helper[i].keybyte] = 1;
+		if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, twostrong, bf, validchars)) {
+			return 1;
+		}
 	}
-	strongbytes[helper[i].keybyte] = 1;
-	if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, onestrong, bf, validchars)) {
-		return 1;
-	}
-
-	// two strong bytes
-	i++;
-	while(bf[helper[i].keybyte] == 1) {
-		i++;
-	}
-	strongbytes[helper[i].keybyte] = 1;
-	if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, twostrong, bf, validchars)) {
-		return 1;
-	}
-
 	return 0;
 }
 

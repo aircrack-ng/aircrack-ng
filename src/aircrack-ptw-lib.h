@@ -28,6 +28,10 @@
 // The MAGIC VALUE!!
 #define PTW_n 256
 
+// distinguish klein and ptw
+#define NO_KLEIN 0x01
+#define NO_PTW   0x02
+
 // We use this to keep track of the outputs of A_i
 typedef struct {
 	// How often the value b appeard as an output of A_i
@@ -67,6 +71,6 @@ typedef struct {
 PTW_attackstate * PTW_newattackstate();
 void PTW_freeattackstate(PTW_attackstate *);
 int PTW_addsession(PTW_attackstate *, uint8_t *, uint8_t *, int *, int);
-int PTW_computeKey(PTW_attackstate *, uint8_t *, int, int, int *, int [][PTW_n]);
+int PTW_computeKey(PTW_attackstate *, uint8_t *, int, int, int *, int [][PTW_n], int attacks);
 
 #endif

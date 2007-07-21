@@ -147,6 +147,7 @@ struct options
 	struct AP_info *ap;
 
 	int wep_decloak;
+	int ptw_attack;
 }
 
 opt;

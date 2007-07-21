@@ -160,6 +160,7 @@ char usage[] =
 "      -s         : show ASCII version of the key\n"
 "      -M <num>   : maximum number of ivs to use\n"
 "      -D         : wep decloak mode\n"
+"      -P <num>   : ptw debug: 1 disable klein, 2 ptw\n"
 "\n"
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
@@ -3765,14 +3766,14 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
         //first try without bruteforcing, using only "clean" keystreams
         if(opt.keylen != 13)
         {
-            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all) == 1)
+            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = opt.keylen;
         }
         else
         {
-            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all) == 1)
+            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 13;
-            else if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all) == 1)
+            else if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
         }
     }
@@ -3786,14 +3787,14 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
         if(opt.keylen != 13)
         {
-            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all) == 1)
+            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = opt.keylen;
         }
         else
         {
-            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all) == 1)
+            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 13;
-            else if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all) == 1)
+            else if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
         }
     }
@@ -3873,14 +3874,15 @@ int main( int argc, char *argv[] )
             {"combine",    0, 0, 'C'},
             {"help",       0, 0, 'H'},
             {"wep-decloak",0, 0, 'D'},
+            {"ptw-debug"  ,0, 0, 'P'},
             {0,            0, 0,  0 }
         };
 
 		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:D",
+			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:DP:",
                         long_options, &option_index );
 		else
-			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:D",
+			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -4094,6 +4096,17 @@ int main( int argc, char *argv[] )
 				}
 
 				K_COEFF[(opt.korek) - 1] = 0;
+
+				break;
+
+			case 'P' :
+
+				if( sscanf( optarg, "%d", &opt.ptw_attack) != 1 || opt.ptw_attack < 0 || opt.ptw_attack > 2)
+				{
+					printf( "Invalid number for ptw debug [0-2]\n");
+					printf("\"%s --help\" for help.\n", argv[0]);
+					return( FAILURE );
+				}
 
 				break;
 
