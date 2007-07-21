@@ -544,7 +544,7 @@ int filter_packet( unsigned char *h80211, int caplen )
         case  0: mi_b = 16; mi_s = 10; mi_d =  4; break;
         case  1: mi_b =  4; mi_s = 10; mi_d = 16; break;
         case  2: mi_b = 10; mi_s = 16; mi_d =  4; break;
-        default: mi_b =  4; mi_d = 16; mi_s = 24; break;
+        default: mi_b = 10; mi_d = 16; mi_s = 24; break;
     }
 
     if( memcmp( opt.f_bssid, NULL_MAC, 6 ) != 0 )
@@ -1430,7 +1430,7 @@ int do_attack_fake_auth( void )
             case  0: mi_b = 16; mi_s = 10; mi_d =  4; break;
             case  1: mi_b =  4; mi_s = 10; mi_d = 16; break;
             case  2: mi_b = 10; mi_s = 16; mi_d =  4; break;
-            default: mi_b =  4; mi_d = 16; mi_s = 24; break;
+            default: mi_b = 10; mi_d = 16; mi_s = 24; break;
         }
 
         /* check if the dest. MAC is ours and source == AP */
@@ -1633,7 +1633,7 @@ int capture_ask_packet( int *caplen )
 
     fd_set rfds;
     long nb_pkt_read;
-    int i, j, n, mi_b, mi_s, mi_d;
+    int i, j, n, mi_b=0, mi_s=0, mi_d=0, mi_t=0, mi_r=0, is_wds=0, key_index_offset;
     int ret;
 
     FILE *f_cap_out;
@@ -1744,10 +1744,10 @@ int capture_ask_packet( int *caplen )
 
         switch( h80211[1] & 3 )
         {
-            case  0: mi_b = 16; mi_s = 10; mi_d =  4; break;
-            case  1: mi_b =  4; mi_s = 10; mi_d = 16; break;
-            case  2: mi_b = 10; mi_s = 16; mi_d =  4; break;
-            default: mi_b =  4; mi_d = 16; mi_s = 24; break;
+            case  0: mi_b = 16; mi_s = 10; mi_d =  4; is_wds = 0; break;
+            case  1: mi_b =  4; mi_s = 10; mi_d = 16; is_wds = 0; break;
+            case  2: mi_b = 10; mi_s = 16; mi_d =  4; is_wds = 0; break;
+            case  3: mi_t = 10; mi_r =  4; mi_d = 16; mi_s = 24; is_wds = 1; break;  // WDS packet
         }
 
         printf( "\n\n        Size: %d, FromDS: %d, ToDS: %d",
@@ -1755,7 +1755,10 @@ int capture_ask_packet( int *caplen )
 
         if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
         {
-            if( ( h80211[27] & 0x20 ) == 0 )
+            if (is_wds) key_index_offset = 33; // WDS packets have an additional MAC, so the key index is at byte 33
+                else key_index_offset = 27;
+
+            if( ( h80211[key_index_offset] & 0x20 ) == 0 )
                 printf( " (WEP)" );
             else
                 printf( " (WPA)" );
@@ -1763,17 +1766,29 @@ int capture_ask_packet( int *caplen )
 
         printf( "\n\n" );
 
-        printf( "             BSSID  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
-                h80211[mi_b    ], h80211[mi_b + 1],
-                h80211[mi_b + 2], h80211[mi_b + 3],
-                h80211[mi_b + 4], h80211[mi_b + 5] );
+        if (is_wds) {
+            printf( "        Transmitter  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
+                    h80211[mi_t    ], h80211[mi_t + 1],
+                    h80211[mi_t + 2], h80211[mi_t + 3],
+                    h80211[mi_t + 4], h80211[mi_t + 5] );
 
-        printf( "         Dest. MAC  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
+            printf( "           Receiver  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
+                    h80211[mi_r    ], h80211[mi_r + 1],
+                    h80211[mi_r + 2], h80211[mi_r + 3],
+                    h80211[mi_r + 4], h80211[mi_r + 5] );
+        } else {
+            printf( "              BSSID  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
+                    h80211[mi_b    ], h80211[mi_b + 1],
+                    h80211[mi_b + 2], h80211[mi_b + 3],
+                    h80211[mi_b + 4], h80211[mi_b + 5] );
+        }
+
+        printf( "          Dest. MAC  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
                 h80211[mi_d    ], h80211[mi_d + 1],
                 h80211[mi_d + 2], h80211[mi_d + 3],
                 h80211[mi_d + 4], h80211[mi_d + 5] );
 
-        printf( "        Source MAC  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
+        printf( "         Source MAC  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
                 h80211[mi_s    ], h80211[mi_s + 1],
                 h80211[mi_s + 2], h80211[mi_s + 3],
                 h80211[mi_s + 4], h80211[mi_s + 5] );
@@ -1917,7 +1932,7 @@ read_packets:
         case  0: mi_b = 16; mi_s = 10; mi_d =  4; break;
         case  1: mi_b =  4; mi_s = 10; mi_d = 16; break;
         case  2: mi_b = 10; mi_s = 16; mi_d =  4; break;
-        default: mi_b =  4; mi_d = 16; mi_s = 24; break;
+        default: mi_b = 10; mi_d = 16; mi_s = 24; break;
     }
 
     if( memcmp( opt.r_bssid, NULL_MAC, 6 ) == 0 )
@@ -1945,7 +1960,7 @@ read_packets:
             case  0: mi_b = 16; mi_s = 10; mi_d =  4; break;
             case  1: mi_b =  4; mi_s = 10; mi_d = 16; break;
             case  2: mi_b = 10; mi_s = 16; mi_d =  4; break;
-            default: mi_b =  4; mi_d = 16; mi_s = 24; break;
+            default: mi_b = 10; mi_d = 16; mi_s = 24; break;
         }
     }
 
@@ -2504,7 +2519,7 @@ int do_attack_chopchop( void )
         case  0: memcpy( chopped + 4, h80211 + 16, 6 ); break;
         case  1: memcpy( chopped + 4, h80211 +  4, 6 ); break;
         case  2: memcpy( chopped + 4, h80211 + 10, 6 ); break;
-        default: memcpy( chopped + 4, h80211 +  4, 6 ); break;
+        default: memcpy( chopped + 4, h80211 + 10, 6 ); break;
     }
 
     PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",

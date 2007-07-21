@@ -239,7 +239,7 @@ int dump_add_packet( unsigned char *h80211, int caplen)
         case  0: memcpy( bssid, h80211 + 16, 6 ); break;
         case  1: memcpy( bssid, h80211 +  4, 6 ); break;
         case  2: memcpy( bssid, h80211 + 10, 6 ); break;
-        default: memcpy( bssid, h80211 +  4, 6 ); break;
+        default: memcpy( bssid, h80211 + 10, 6 ); break;
     }
 
     /* update our chained list of access points */

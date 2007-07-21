@@ -232,7 +232,7 @@ int capture_ask_packet( int *caplen )
             case  0: mi_b = 16; mi_s = 10; mi_d =  4; break;
             case  1: mi_b =  4; mi_s = 10; mi_d = 16; break;
             case  2: mi_b = 10; mi_s = 16; mi_d =  4; break;
-            default: mi_b =  4; mi_d = 16; mi_s = 24; break;
+            default: mi_b = 10; mi_d = 16; mi_s = 24; break;
         }
 
         printf( "\n\n        Size: %d, FromDS: %d, ToDS: %d",
@@ -450,7 +450,7 @@ int set_bssid(unsigned char* packet)
         case  0: mi_b = 16; break;
         case  1: mi_b =  4; break;
         case  2: mi_b = 10; break;
-        default: mi_b =  4; break;
+        default: mi_b = 10; break;
     }
 
     /* write bssid mac */

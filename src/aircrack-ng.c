@@ -574,10 +574,10 @@ void read_thread( void *arg )
 
 			switch( h80211[1] & 3 )
 			{
-				case  0: memcpy( bssid, h80211 + 16, 6 ); break;
-				case  1: memcpy( bssid, h80211 +  4, 6 ); break;
-				case  2: memcpy( bssid, h80211 + 10, 6 ); break;
-				default: memcpy( bssid, h80211 +  4, 6 ); break;
+				case  0: memcpy( bssid, h80211 + 16, 6 ); break;  //Adhoc
+				case  1: memcpy( bssid, h80211 +  4, 6 ); break;  //ToDS
+				case  2: memcpy( bssid, h80211 + 10, 6 ); break;  //FromDS
+				case  3: memcpy( bssid, h80211 + 10, 6 ); break;  //WDS -> Transmitter taken as BSSID
 			}
 		}
 
@@ -1385,10 +1385,10 @@ void check_thread( void *arg )
 
 			switch( h80211[1] & 3 )
 			{
-				case  0: memcpy( bssid, h80211 + 16, 6 ); break;
-				case  1: memcpy( bssid, h80211 +  4, 6 ); break;
-				case  2: memcpy( bssid, h80211 + 10, 6 ); break;
-				default: memcpy( bssid, h80211 +  4, 6 ); break;
+				case  0: memcpy( bssid, h80211 + 16, 6 ); break;  //Adhoc
+				case  1: memcpy( bssid, h80211 +  4, 6 ); break;  //ToDS
+				case  2: memcpy( bssid, h80211 + 10, 6 ); break;  //FromDS
+				case  3: memcpy( bssid, h80211 + 10, 6 ); break;  //WDS -> Transmitter taken as BSSID
 			}
 		}
 

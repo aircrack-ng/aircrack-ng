@@ -348,15 +348,19 @@ int xor_keystream(uchar *ph80211, uchar *keystream, int len)
 void print_packet ( uchar h80211[], int caplen )
 {
 	int i,j;
+	int key_index_offset=0;
 
 	printf( "        Size: %d, FromDS: %d, ToDS: %d",
 		caplen, ( h80211[1] & 2 ) >> 1, ( h80211[1] & 1 ) );
 
 	if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
 	{
-	if( ( h80211[27] & 0x20 ) == 0 )
+	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC adress
+		else key_index_offset = 27;
+
+	    if( ( h80211[key_index_offset] & 0x20 ) == 0 )
 		printf( " (WEP)" );
-	else
+	    else
 		printf( " (WPA)" );
 	}
 
@@ -560,7 +564,7 @@ int packet_recv(uchar* packet, int length)
         case  0: memcpy( bssid, packet + 16, 6 ); break;
         case  1: memcpy( bssid, packet +  4, 6 ); break;
         case  2: memcpy( bssid, packet + 10, 6 ); break;
-        default: memcpy( bssid, packet +  4, 6 ); break;
+        default: memcpy( bssid, packet + 10, 6 ); break;
     }
 
     if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
@@ -1092,7 +1096,7 @@ usage:
                         case  0: memcpy( bssid, h80211 + 16, 6 ); break;
                         case  1: memcpy( bssid, h80211 +  4, 6 ); break;
                         case  2: memcpy( bssid, h80211 + 10, 6 ); break;
-                        default: memcpy( bssid, h80211 +  4, 6 ); break;
+                        default: memcpy( bssid, h80211 + 10, 6 ); break;
                     }
                     if( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 )
                     {
