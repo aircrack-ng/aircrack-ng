@@ -145,6 +145,8 @@ struct options
 	char *firstbssid;
 
 	struct AP_info *ap;
+
+	int wep_decloak;
 }
 
 opt;

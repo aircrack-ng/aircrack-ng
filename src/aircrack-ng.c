@@ -159,6 +159,7 @@ char usage[] =
 "      -K         : korek attacks (pre-ptw)\n"
 "      -s         : show ASCII version of the key\n"
 "      -M <num>   : maximum number of ivs to use\n"
+"      -D         : wep decloak mode\n"
 "\n"
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
@@ -354,6 +355,7 @@ void read_thread( void *arg )
 	read_buf rb;
 
 	uchar bssid[6];
+	uchar dest[6];
 	uchar stmac[6];
 	uchar *buffer;
 	uchar *h80211;
@@ -436,23 +438,31 @@ void read_thread( void *arg )
 				"802.11 (wireless) capture.\n" );
 			goto read_fail;
 		}
-	} else if (memcmp( &pfh, IVS2_MAGIC, 4 ) == 0)
+	}
+	else
 	{
-		fmt = FORMAT_IVS2;
-
-		if( ! atomic_read( &rb, fd, sizeof(struct ivs2_filehdr), (uchar *) &fivs2 ) )
+		if( opt.wep_decloak )
 		{
-			perror( "read(file header) failed" );
-			goto read_fail;
+			errx(1, "Can't use decloak wep mode with ivs\n"); /* XXX */
 		}
-		if(fivs2.version > IVS2_VERSION)
-		{
-			printf( "Error, wrong %s version: %d. Supported up to version %d.\n", IVS2_EXTENSION, fivs2.version, IVS2_VERSION );
-			goto read_fail;
-		}
-	} else if (opt.do_ptw)
-		errx(1, "Can't do PTW with old IVS files, recapture without --ivs or use airodump-ng >= 1.0\n"); /* XXX */
 
+		if (memcmp( &pfh, IVS2_MAGIC, 4 ) == 0)
+		{
+			fmt = FORMAT_IVS2;
+
+			if( ! atomic_read( &rb, fd, sizeof(struct ivs2_filehdr), (uchar *) &fivs2 ) )
+			{
+				perror( "read(file header) failed" );
+				goto read_fail;
+			}
+			if(fivs2.version > IVS2_VERSION)
+			{
+				printf( "Error, wrong %s version: %d. Supported up to version %d.\n", IVS2_EXTENSION, fivs2.version, IVS2_VERSION );
+				goto read_fail;
+			}
+		} else if (opt.do_ptw)
+			errx(1, "Can't do PTW with old IVS files, recapture without --ivs or use airodump-ng >= 1.0\n"); /* XXX */
+	}
 	/* avoid blocking on reading the file */
 
 	if( fcntl( fd, F_SETFL, O_NONBLOCK ) < 0 )
@@ -578,6 +588,21 @@ void read_thread( void *arg )
 				case  1: memcpy( bssid, h80211 +  4, 6 ); break;  //ToDS
 				case  2: memcpy( bssid, h80211 + 10, 6 ); break;  //FromDS
 				case  3: memcpy( bssid, h80211 + 10, 6 ); break;  //WDS -> Transmitter taken as BSSID
+			}
+
+			switch( h80211[1] & 3 )
+			{
+				case  0: memcpy( dest, h80211 +  4, 6 ); break;  //Adhoc
+				case  1: memcpy( dest, h80211 + 16, 6 ); break;  //ToDS
+				case  2: memcpy( dest, h80211 +  4, 6 ); break;  //FromDS
+				case  3: memcpy( dest, h80211 + 16, 6 ); break;  //WDS -> Transmitter taken as BSSID
+			}
+
+			//skip corrupted keystreams in wep decloak mode
+			if(opt.wep_decloak)
+			{
+				if(dest[0] == 0x01)
+					goto unlock_mx_apl;
 			}
 		}
 
@@ -1165,6 +1190,7 @@ void check_thread( void *arg )
 	read_buf rb;
 
 	uchar bssid[6];
+	uchar dest[6];
 	uchar stmac[6];
 	uchar *buffer;
 	uchar *h80211;
@@ -1247,23 +1273,29 @@ void check_thread( void *arg )
 				"802.11 (wireless) capture.\n" );
 			goto read_fail;
 		}
-	} else if (memcmp( &pfh, IVS2_MAGIC, 4 ) == 0)
+	} else
 	{
-		fmt = FORMAT_IVS2;
-
-		if( ! atomic_read( &rb, fd, sizeof(struct ivs2_filehdr), (uchar *) &fivs2 ) )
+		if( opt.wep_decloak )
 		{
-			perror( "read(file header) failed" );
-			goto read_fail;
+			errx(1, "Can't use decloak wep mode with ivs\n"); /* XXX */
 		}
-		if(fivs2.version > IVS2_VERSION)
+		if (memcmp( &pfh, IVS2_MAGIC, 4 ) == 0)
 		{
-			printf( "Error, wrong %s version: %d. Supported up to version %d.\n", IVS2_EXTENSION, fivs2.version, IVS2_VERSION );
-			goto read_fail;
-		}
-	} else if (opt.do_ptw)
-		errx(1, "Can't do PTW with old IVS files, recapture without --ivs or use airodump-ng >= 1.0\n"); /* XXX */
+			fmt = FORMAT_IVS2;
 
+			if( ! atomic_read( &rb, fd, sizeof(struct ivs2_filehdr), (uchar *) &fivs2 ) )
+			{
+				perror( "read(file header) failed" );
+				goto read_fail;
+			}
+			if(fivs2.version > IVS2_VERSION)
+			{
+				printf( "Error, wrong %s version: %d. Supported up to version %d.\n", IVS2_EXTENSION, fivs2.version, IVS2_VERSION );
+				goto read_fail;
+			}
+		} else if (opt.do_ptw)
+			errx(1, "Can't do PTW with old IVS files, recapture without --ivs or use airodump-ng >= 1.0\n"); /* XXX */
+	}
 	/* avoid blocking on reading the file */
 
 	if( fcntl( fd, F_SETFL, O_NONBLOCK ) < 0 )
@@ -1389,6 +1421,21 @@ void check_thread( void *arg )
 				case  1: memcpy( bssid, h80211 +  4, 6 ); break;  //ToDS
 				case  2: memcpy( bssid, h80211 + 10, 6 ); break;  //FromDS
 				case  3: memcpy( bssid, h80211 + 10, 6 ); break;  //WDS -> Transmitter taken as BSSID
+			}
+
+			switch( h80211[1] & 3 )
+			{
+				case  0: memcpy( dest, h80211 +  4, 6 ); break;  //Adhoc
+				case  1: memcpy( dest, h80211 + 16, 6 ); break;  //ToDS
+				case  2: memcpy( dest, h80211 +  4, 6 ); break;  //FromDS
+				case  3: memcpy( dest, h80211 + 16, 6 ); break;  //WDS -> Transmitter taken as BSSID
+			}
+
+			//skip corrupted keystreams in wep decloak mode
+			if(opt.wep_decloak)
+			{
+				if(dest[0] == 0x01)
+					goto unlock_mx_apl;
 			}
 		}
 
@@ -3821,18 +3868,19 @@ int main( int argc, char *argv[] )
         int option_index = 0;
 
         static struct option long_options[] = {
-            {"bssid",   1, 0, 'b'},
-            {"debug",   1, 0, 'd'},
-            {"combine", 0, 0, 'C'},
-            {"help",    0, 0, 'H'},
-            {0,         0, 0,  0 }
+            {"bssid",      1, 0, 'b'},
+            {"debug",      1, 0, 'd'},
+            {"combine",    0, 0, 'C'},
+            {"help",       0, 0, 'H'},
+            {"wep-decloak",0, 0, 'D'},
+            {0,            0, 0,  0 }
         };
 
 		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:",
+			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:D",
                         long_options, &option_index );
 		else
-			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:",
+			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:D",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -3908,6 +3956,11 @@ int main( int argc, char *argv[] )
 			case 'c' :
 
 				opt.is_alnum = 1;
+				break;
+
+			case 'D' :
+
+				opt.wep_decloak = 1;
 				break;
 
 			case 'h' :
