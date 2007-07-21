@@ -9,7 +9,7 @@ iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
-		  ivstools$(EXE) kstats$(EXE) buddy-ng$(EXE)
+		  ivstools$(EXE) kstats$(EXE) buddy-ng$(EXE) makeivs-ng$(EXE)
 ifeq ($(SQLITE), true)
 BINFILES	+= airolib-ng$(EXE)
 endif
@@ -35,6 +35,8 @@ OBJS_WS		= wesside-ng.o crypto.c common.o $(OBJS_PTW)
 OBJS_AL		= airolib-ng.o crypto.c
 OBJS_ES		= easside-ng.o
 OBJS_BUDDY	= buddy-ng.o
+OBJS_MI		= makeivs-ng.o common.o uniqueiv.o
+
 
 OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD) $(LDFLAGS)
@@ -110,6 +112,9 @@ easside-ng$(EXE): $(OBJS_ES) $(LIBOSD)
 
 buddy-ng$(EXE): $(OBJS_BUDDY)
 	$(CC) $(CFLAGS) $(OBJS_BUDDY) -o $(@)
+
+makeivs-ng$(EXE): $(OBJS_MI)
+	$(CC) $(CFLAGS) $(OBJS_MI) -o $(@)
 
 airolib-ng$(EXE): $(OBJS_AL)
 	$(CC) $(CFLAGS) $(OBJS_AL) -o $(@) $(LIBSSL) -DHAVE_REGEXP $(LIBSQL)
