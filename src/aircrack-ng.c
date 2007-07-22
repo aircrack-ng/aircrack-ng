@@ -4422,6 +4422,10 @@ usage:
 	if( ! opt.is_quiet && ! opt.no_stdin )
 		printf( "\33[KRead %ld packets.\n\n", nb_pkt );
 
+	#ifndef DO_PGO_DUMP
+	signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
+	#endif
+
 	/* mark the targeted access point(s) */
 
 	ap_cur = ap_1st;
