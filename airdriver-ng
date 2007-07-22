@@ -2784,7 +2784,7 @@ usage() {
     printf "\t\tremove <drivernum>\t- removes a driver\n"
     printf "\t\t-----------------------------------------------------\n"
     printf "\t\tremove_stack <num>\t- removes a stack \n"
-    printf "\t\tinstall_stack <num>\t- installes a stack \n"
+    printf "\t\tinstall_stack <num>\t- installs a stack \n"
     printf "\t\t-----------------------------------------------------\n"
     printf "\t\tdetails <drivernum>\t- prints driver details\n"
     printf "\t\tdetect\t\t\t- detects wireless cards\n"
