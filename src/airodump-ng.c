@@ -92,6 +92,9 @@
 
 #define	MAX(a,b)	((a)>(b)?(a):(b))
 
+//milliseconds to store last packets
+#define BUFFER_TIME 3000
+
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 
@@ -127,6 +130,15 @@ int a_chans   [] =
     112, 116, 120, 124, 128, 132, 136, 140, 149,
     153, 157, 161, 184, 188, 192, 196, 200, 204,
     208, 212, 216,0
+};
+
+/* linked list of received packets for the last few seconds */
+struct pkt_buf
+{
+    struct pkt_buf  *next;      /* next packet in list */
+    unsigned char   *packet;    /* packet */
+    unsigned short  length;     /* packet length */
+    struct timeval  ctime;      /* capture time */
 };
 
 /* linked list of detected access points */
@@ -175,6 +187,10 @@ struct AP_info
 
     char *key;		      /* if wep-key found by dict */
     int essid_stored;         /* essid stored in ivs file? */
+
+    char decloak_detect;      /* run decloak detection? */
+    struct pkt_buf *packets;  /* list of captured packets (last few seconds) */
+    char is_decloak;          /* detected decloak */
 };
 
 struct WPA_hdsk
@@ -273,6 +289,7 @@ struct globals
 
     unsigned char wpa_bssid[6];   /* the wpa handshake bssid   */
     char message[512];
+    char decloak;
 }
 G;
 
@@ -706,6 +723,96 @@ int update_dataps()
     return(0);
 }
 
+int list_tail_free(struct pkt_buf **list)
+{
+    if(list == NULL) return 1;
+
+    if(*list != NULL)
+    {
+        //free stalls the process, causing 100% cou utilization
+//         free(*list);
+        *list=NULL;
+    }
+
+    return 0;
+}
+
+int list_add_packet(struct pkt_buf **list, int length, unsigned char* packet)
+{
+    struct pkt_buf *next = *list;
+
+    if(length <= 0) return 1;
+    if(packet == NULL) return 1;
+    if(list == NULL) return 1;
+
+    *list = (struct pkt_buf*) malloc(sizeof(struct pkt_buf));
+    if( *list == NULL ) return 1;
+    (*list)->packet = (unsigned char*) malloc(length);
+    if( (*list)->packet == NULL ) return 1;
+
+    memcpy((*list)->packet,  packet, length);
+    (*list)->next = next;
+    (*list)->length = length;
+    gettimeofday( &((*list)->ctime), NULL);
+
+    return 0;
+}
+
+int list_check_decloak(struct pkt_buf **list, int length, unsigned char* packet)
+{
+    struct pkt_buf *next = *list;
+    struct timeval tv1;
+    int timediff;
+    int i, correct;
+
+    if( packet == NULL) return 1;
+    if( list == NULL ) return 1;
+    if( length <= 0) return 1;
+
+    gettimeofday(&tv1, NULL);
+
+    while(next != NULL)
+    {
+        timediff = (((tv1.tv_sec - (next->ctime.tv_sec)) * 1000000) + (tv1.tv_usec - (next->ctime.tv_usec))) / 1000;
+        if( timediff > BUFFER_TIME )
+        {
+            list_tail_free(&next);
+            break;
+        }
+        if( (next->length + 4) == length)
+        {
+            correct = 1;
+            // check for 4 bytes added after the end
+            for(i=28;i<length-28;i++)   //check everything (in the old packet) after the IV (including crc32 at the end)
+            {
+                if(next->packet[i] != packet[i])
+                {
+                    correct = 0;
+                    break;
+                }
+            }
+            if(!correct)
+            {
+                correct = 1;
+                // check for 4 bytes added at the beginning
+                for(i=28;i<length-28;i++)   //check everything (in the old packet) after the IV (including crc32 at the end)
+                {
+                    if(next->packet[i] != packet[4+i])
+                    {
+                        correct = 0;
+                        break;
+                    }
+                }
+            }
+            if(correct == 1)
+                    return 0;   //found decloaking!
+        }
+        next = next->next;
+    }
+
+    return 1; //didn't find decloak
+}
+
 int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
 {
     int i, n, z, seq, msd, dlen, offset, clen, o;
@@ -839,6 +946,10 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
 
         ap_cur->ssid_length = 0;
         ap_cur->essid_stored = 0;
+
+        ap_cur->decloak_detect=G.decloak;
+        ap_cur->is_decloak = 0;
+        ap_cur->packets = NULL;
     }
 
     /* update the last time seen */
@@ -1352,6 +1463,25 @@ skip_probe:
         /* check the SNAP header to see if data is encrypted */
 
         z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+
+        if(z==24)
+        {
+            if(list_check_decloak(&(ap_cur->packets), caplen, h80211) != 0)
+            {
+                list_add_packet(&(ap_cur->packets), caplen, h80211);
+            }
+            else
+            {
+                ap_cur->is_decloak = 1;
+                ap_cur->decloak_detect = 0;
+                list_tail_free(&(ap_cur->packets));
+                memset(G.message, '\x00', sizeof(G.message));
+                    snprintf( G.message, sizeof( G.message ) - 1,
+                        "][ Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
+                        ap_cur->bssid[0], ap_cur->bssid[1], ap_cur->bssid[2],
+                        ap_cur->bssid[3], ap_cur->bssid[4], ap_cur->bssid[5]);
+            }
+        }
 
         if( z + 26 > caplen )
             goto write_packet;
@@ -3000,6 +3130,7 @@ int main( int argc, char *argv[] )
     G.f_encrypt    =  0;
     G.asso_client  =  0;
     G.update_s     =  0;
+    G.decloak      =  1;
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
 
@@ -3028,20 +3159,21 @@ int main( int argc, char *argv[] )
 
     /* check the arguments */
     static struct option long_options[] = {
-        {"band",    1, 0, 'b'},
-        {"beacon",  0, 0, 'e'},
-        {"beacons", 0, 0, 'e'},
-        {"cswitch", 1, 0, 's'},
-        {"netmask", 1, 0, 'm'},
-        {"bssid",   1, 0, 'd'},
-        {"channel", 1, 0, 'c'},
-        {"gpsd",    0, 0, 'g'},
-        {"ivs",     0, 0, 'i'},
-        {"write",   1, 0, 'w'},
-        {"encrypt", 1, 0, 't'},
-        {"update",  1, 0, 'u'},
-        {"help",    0, 0, 'H'},
-        {0,         0, 0,  0 }
+        {"band",     1, 0, 'b'},
+        {"beacon",   0, 0, 'e'},
+        {"beacons",  0, 0, 'e'},
+        {"cswitch",  1, 0, 's'},
+        {"netmask",  1, 0, 'm'},
+        {"bssid",    1, 0, 'd'},
+        {"channel",  1, 0, 'c'},
+        {"gpsd",     0, 0, 'g'},
+        {"ivs",      0, 0, 'i'},
+        {"write",    1, 0, 'w'},
+        {"encrypt",  1, 0, 't'},
+        {"update",   1, 0, 'u'},
+        {"help",     0, 0, 'H'},
+        {"nodecloak",0, 0, 'D'},
+        {0,          0, 0,  0 }
     };
 
     for(i=0; long_options[i].name != NULL; i++);
@@ -3085,7 +3217,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aH",
+                        "b:c:egiw:s:t:u:m:d:aHD",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3098,13 +3230,13 @@ int main( int argc, char *argv[] )
 
             case ':':
 
-	    		printf("\"%s --help\" for help.\n", argv[0]);
-            	return( 1 );
+                printf("\"%s --help\" for help.\n", argv[0]);
+                return( 1 );
 
             case '?':
 
-	    		printf("\"%s --help\" for help.\n", argv[0]);
-            	return( 1 );
+                printf("\"%s --help\" for help.\n", argv[0]);
+                return( 1 );
 
             case 'e':
 
@@ -3114,6 +3246,11 @@ int main( int argc, char *argv[] )
             case 'a':
 
                 G.asso_client = 1;
+                break;
+
+            case 'D':
+
+                G.decloak = 0;
                 break;
 
             case 'c' :
@@ -3169,7 +3306,7 @@ int main( int argc, char *argv[] )
                         freq[0] = 1;
                     else {
                         printf( "Error: invalid band (%c)\n", optarg[i] );
-			    		printf("\"%s --help\" for help.\n", argv[0]);
+                        printf("\"%s --help\" for help.\n", argv[0]);
                         exit ( 1 );
                     }
                 }
@@ -3204,10 +3341,10 @@ int main( int argc, char *argv[] )
 
             case 'w':
 
-            	if (G.dump_prefix != NULL) {
-            		printf( "Notice: dump prefix already given\n" );
-            		break;
-            	}
+                if (G.dump_prefix != NULL) {
+                    printf( "Notice: dump prefix already given\n" );
+                    break;
+                }
                 /* Write prefix */
                 G.dump_prefix   = optarg;
                 G.record_data = 1;
@@ -3245,7 +3382,7 @@ int main( int argc, char *argv[] )
                 if(getmac(optarg, 1, G.f_netmask) != 0)
                 {
                     printf("Notice: invalid netmask\n");
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 break;
@@ -3260,7 +3397,7 @@ int main( int argc, char *argv[] )
                 if(getmac(optarg, 1, G.f_bssid) != 0)
                 {
                     printf("Notice: invalid bssid\n");
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
 
                     return( 1 );
                 }
@@ -3287,14 +3424,14 @@ int main( int argc, char *argv[] )
 usage:
             printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
         }
-	    if( argc - optind == 0)
-	    {
-	    	printf("No interface specified.\n");
-	    }
-	    if(argc > 1)
-	    {
-    		printf("\"%s --help\" for help.\n", argv[0]);
-	    }
+        if( argc - optind == 0)
+        {
+            printf("No interface specified.\n");
+        }
+        if(argc > 1)
+        {
+            printf("\"%s --help\" for help.\n", argv[0]);
+        }
         return( 1 );
     }
 
@@ -3446,16 +3583,16 @@ usage:
         if( time( NULL ) - tt2 > 3 )
         {
             /* update the battery state */
-			free(G.batt);
+            free(G.batt);
 
-            tt2 			= time( NULL );
-            G.batt 			= getBatteryString();
+            tt2 = time( NULL );
+            G.batt = getBatteryString();
 
             /* update elapsed time */
 
-			free(G.elapsed_time);
-    		G.elapsed_time = getStringTimeFromSec(
-    			difftime(tt2, start_time) );
+            free(G.elapsed_time);
+            G.elapsed_time = getStringTimeFromSec(
+            difftime(tt2, start_time) );
 
 
             /* flush the output files */
@@ -3507,8 +3644,8 @@ usage:
             perror( "select failed" );
 
             /* Restore terminal */
-			fprintf( stderr, "\33[?25h" );
-    		fflush( stdout );
+            fprintf( stderr, "\33[?25h" );
+            fflush( stdout );
 
             return( 1 );
         }
@@ -3552,8 +3689,8 @@ usage:
             {
 
                 memset(buffer, 0, sizeof(buffer));
-		h80211 = buffer;
-		if ((caplen = wi_read(wi[i], h80211, sizeof(buffer), &ri)) == -1) {
+                h80211 = buffer;
+                if ((caplen = wi_read(wi[i], h80211, sizeof(buffer), &ri)) == -1) {
                     memset(G.message, '\x00', sizeof(G.message));
                     snprintf(G.message, sizeof(G.message), "][ interface %s down ", wi_get_ifname(wi[i]));
 
@@ -3568,8 +3705,8 @@ usage:
                         printf("Can't reopen %s\n", ifnam);
 
                         /* Restore terminal */
-						fprintf( stderr, "\33[?25h" );
-						fflush( stdout );
+                        fprintf( stderr, "\33[?25h" );
+                        fflush( stdout );
 
                         exit(1);
                     }
@@ -3579,9 +3716,9 @@ usage:
                         fdh = fd_raw[i];
 
                     break;
-// 		    return 1;
-		}
-		power = ri.ri_power;
+//                     return 1;
+                }
+                power = ri.ri_power;
 
                 dump_add_packet( h80211, caplen, power, i );
 	     }
@@ -3589,13 +3726,13 @@ usage:
     }
 
     if (G.record_data) {
-    	dump_write_csv();
+        dump_write_csv();
 
-    	if( G.f_txt != NULL ) fclose( G.f_txt );
-    	if( G.f_gps != NULL ) fclose( G.f_gps );
-    	if( G.f_cap != NULL ) fclose( G.f_cap );
-    	if( G.f_ivs != NULL ) fclose( G.f_ivs );
-	}
+        if( G.f_txt != NULL ) fclose( G.f_txt );
+        if( G.f_gps != NULL ) fclose( G.f_gps );
+        if( G.f_cap != NULL ) fclose( G.f_cap );
+        if( G.f_ivs != NULL ) fclose( G.f_ivs );
+    }
 
     if( ! G.save_gps )
     {
