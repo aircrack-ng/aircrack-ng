@@ -602,21 +602,21 @@ DMODINFO[$i]=""
 DMODULE[$i]="hermes"
 DCONFIG[$i]="CONFIG_HERMES="
 DMODULES[$i]="hermes orinoco orinoco_nortel orinoco_pci orinoco_plx orinoco_tmd orinoco_cs spectrum_cs"
-DI_INIT[$i]=""
-DI_DRIVERGET[$i]=""
-DI_DRIVERFILE[$i]=""
-DI_DRIVERPATH1[$i]=""
+DI_INIT[$i]="install_hermes $i"
+DI_DRIVERGET[$i]="wget"
+DI_DRIVERFILE[$i]="orinoco-0.13e-SN-14.tar.bz2"
+DI_DRIVERPATH1[$i]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-14.tar.bz2"
 DI_DRIVERPATH2[$i]=""
 DI_DRIVEREXDIR[$i]=""
-DI_DRIVERDIR[$i]=""
+DI_DRIVERDIR[$i]="orinoco-0.13e-SN-14"
 DI_PREPATCH[$i]=""
 DI_PATCHFILE[$i]=""
 DI_PATCHPATH1[$i]=""
 DI_PATCHPATH2[$i]=""
 DI_PATCHARG[$i]=""
 DI_PRECOMP[$i]=""
-DI_COMPILE[$i]=""
-DI_INSTALL1[$i]=""
+DI_COMPILE[$i]="$MAKE"
+DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
@@ -1415,24 +1415,82 @@ install_hostap() {
     if [ $KMINOR -eq 6 -a $KPATCH -lt 16 ]
     then
         #use external driver 0.4.7
-        DI_DRIVERFILE[$i]="hostap-driver-0.4.9.tar.gz"
-        DI_DRIVERPATH1[$i]="http://hostap.epitest.fi/releases/hostap-driver-0.4.9.tar.gz"
-        DI_DRIVERPATH2[$i]=""
-        DI_DRIVEREXDIR[$i]=""
-        DI_DRIVERDIR[$i]="hostap-driver-0.4.9"
-        DI_PATCHFILE[$i]="hostap-driver-0.4.9.patch"
-        DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/hostap-driver-0.4.9.patch"
-        DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/hostap-driver-0.4.9.patch"
-        DI_PATCHARG[$i]="-p1"
-        DI_COMPILE[$i]="$MAKE"
-        DI_INSTALL1[$i]="$MAKE install"
+        DI_DRIVERFILE[$1]="hostap-driver-0.4.9.tar.gz"
+        DI_DRIVERPATH1[$1]="http://hostap.epitest.fi/releases/hostap-driver-0.4.9.tar.gz"
+        DI_DRIVERPATH2[$1]=""
+        DI_DRIVEREXDIR[$1]=""
+        DI_DRIVERDIR[$1]="hostap-driver-0.4.9"
+        DI_PATCHFILE[$1]="hostap-driver-0.4.9.patch"
+        DI_PATCHPATH1[$1]="http://patches.aircrack-ng.org/hostap-driver-0.4.9.patch"
+        DI_PATCHPATH2[$1]="http://patches.aircrack-ng.org/old/hostap-driver-0.4.9.patch"
+        DI_PATCHARG[$1]="-p1"
+        DI_COMPILE[$1]="$MAKE"
+        DI_INSTALL1[$1]="$MAKE install"
     fi
 
     if [ $KMINOR -eq 6 -a $KPATCH -gt 18 ]
     then
-        DI_PATCHFILE[$i]="hostap-kernel-2.6.18.patch"
-        DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/hostap-kernel-2.6.18.patch"
-        DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/hostap-kernel-2.6.18.patch"
+        DI_PATCHFILE[$1]="hostap-kernel-2.6.18.patch"
+        DI_PATCHPATH1[$1]="http://patches.aircrack-ng.org/hostap-kernel-2.6.18.patch"
+        DI_PATCHPATH2[$1]="http://patches.aircrack-ng.org/old/hostap-kernel-2.6.18.patch"
+    fi
+}
+
+install_hermes() {
+    if [ $KMINOR -eq 4 ]
+    then
+        DI_DRIVERFILE[$1]="orinoco-0.13e-SN-3.tar.bz2"
+        DI_DRIVERPATH1[$1]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-3.tar.bz2"
+        DI_DRIVERPATH2[$1]=""
+        DI_DRIVERDIR[$1]="orinoco-0.13e-SN-3"
+    fi
+
+    if [ $KMINOR -eq 6 -a $KPATCH -le 7 ]
+    then
+        DI_DRIVERFILE[$1]="orinoco-0.13e-SN-5.tar.bz2"
+        DI_DRIVERPATH1[$1]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-5.tar.bz2"
+        DI_DRIVERPATH2[$1]=""
+        DI_DRIVERDIR[$1]="orinoco-0.13e-SN-5"
+    fi
+
+    if [ $KMINOR -eq 6 -a $KPATCH -ge 8 -a $KPATCH -le 10 ]
+    then
+        DI_DRIVERFILE[$1]="orinoco-0.13e-SN-7.tar.bz2"
+        DI_DRIVERPATH1[$1]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-7.tar.bz2"
+        DI_DRIVERPATH2[$1]=""
+        DI_DRIVERDIR[$1]="orinoco-0.13e-SN-7"
+    fi
+
+    if [ $KMINOR -eq 6 -a $KPATCH -ge 11 -a $KPATCH -le 12 ]
+    then
+        DI_DRIVERFILE[$1]="orinoco-0.13e-SN-8.tar.bz2"
+        DI_DRIVERPATH1[$1]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-8.tar.bz2"
+        DI_DRIVERPATH2[$1]=""
+        DI_DRIVERDIR[$1]="orinoco-0.13e-SN-8"
+    fi
+
+    if [ $KMINOR -eq 6 -a $KPATCH -ge 13 -a $KPATCH -le 14 ]
+    then
+        DI_DRIVERFILE[$1]="orinoco-0.13e-SN-9.tar.bz2"
+        DI_DRIVERPATH1[$1]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-9.tar.bz2"
+        DI_DRIVERPATH2[$1]=""
+        DI_DRIVERDIR[$1]="orinoco-0.13e-SN-9"
+    fi
+
+    if [ $KMINOR -eq 6 -a $KPATCH -ge 18 -a $KPATCH -le 19 ]
+    then
+        DI_DRIVERFILE[$i]="orinoco-0.13e-SN-15.tar.bz2"
+        DI_DRIVERPATH1[$i]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-15.tar.bz2"
+        DI_DRIVERPATH2[$i]=""
+        DI_DRIVERDIR[$i]="orinoco-0.13e-SN-15"
+    fi
+
+    if [ $KMINOR -eq 6 -a $KPATCH -ge 20 -a $KPATCH -le 25 ]
+    then
+        DI_DRIVERFILE[$i]="orinoco-0.13e-SN-16.tar.bz2"
+        DI_DRIVERPATH1[$i]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-16.tar.bz2"
+        DI_DRIVERPATH2[$i]=""
+        DI_DRIVERDIR[$i]="orinoco-0.13e-SN-16"
     fi
 }
 
@@ -1454,10 +1512,10 @@ install_ipw2200() {
 install_zd1211rw() {
     if [ $KMINOR -eq 6 -a $KPATCH -lt 18 ]
     then
-        DI_DRIVERFILE[$i]="linux-2.6.18.tar.bz2"
-        DI_DRIVERPATH1[$i]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-2.6.18.tar.bz2"
-        DI_DRIVERPATH2[$i]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-2.6.18.tar.bz2"
-        DI_DRIVEREXDIR[$i]="linux-2.6.18/drivers/net/wireless/zd1211rw"
+        DI_DRIVERFILE[$1]="linux-2.6.18.tar.bz2"
+        DI_DRIVERPATH1[$1]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-2.6.18.tar.bz2"
+        DI_DRIVERPATH2[$1]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-2.6.18.tar.bz2"
+        DI_DRIVEREXDIR[$1]="linux-2.6.18/drivers/net/wireless/zd1211rw"
     fi
 
     if [ $KMINOR -eq 6 -a $KPATCH -eq 20 ]

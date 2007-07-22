@@ -667,6 +667,24 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
             return( 1 );
         }
 
+        if( dev->is_orinoco)
+        {
+            if( ( pid = fork() ) == 0 )
+            {
+                close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+                execlp( dev->iwpriv, "iwpriv", iface,
+                        "monitor", "1", "1", NULL );
+                exit( 1 );
+            }
+
+            waitpid( pid, &status, 0 );
+
+            if( WIFEXITED(status) )
+                return( WEXITSTATUS(status) );
+
+            return 1;
+        }
+
         memset( &wrq, 0, sizeof( struct iwreq ) );
         strncpy( wrq.ifr_name, iface, IFNAMSIZ );
         wrq.u.mode = IW_MODE_MONITOR;
