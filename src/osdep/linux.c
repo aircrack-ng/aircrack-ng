@@ -61,6 +61,7 @@ struct priv_linux {
     int is_bcm43xx;
     int is_orinoco;
     int is_zd1211rw;
+    int is_acx;
 
     FILE *f_cap_in;
 
@@ -92,66 +93,66 @@ struct priv_linux {
 //Check if the driver is ndiswrapper */
 static int is_ndiswrapper(const char * iface, const char * path)
 {
-        int n,pid;
-        if ((pid=fork())==0)
-        {
-                close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
-                execl(path, "iwpriv",iface, "ndis_reset", NULL);
-                exit( 1 );
-        }
+    int n,pid;
+    if ((pid=fork())==0)
+    {
+        close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+        execl(path, "iwpriv",iface, "ndis_reset", NULL);
+        exit( 1 );
+    }
 
-        waitpid( pid, &n, 0 );
-        return ( ( WIFEXITED(n) && WEXITSTATUS(n) == 0 ));
+    waitpid( pid, &n, 0 );
+    return ( ( WIFEXITED(n) && WEXITSTATUS(n) == 0 ));
 }
 
 /* Search a file recursively */
 static char * searchInside(const char * dir, const char * filename)
 {
-        char * ret;
-        char * curfile;
-        struct stat sb;
-        int len, lentot;
-        DIR *dp;
-        struct dirent *ep;
+    char * ret;
+    char * curfile;
+    struct stat sb;
+    int len, lentot;
+    DIR *dp;
+    struct dirent *ep;
 
-        len = strlen(filename);
-        lentot = strlen(dir) + 256 + 2;
-        curfile = (char *)calloc(1, lentot);
-        dp = opendir(dir);
-        if (dp == NULL)
-                return NULL;
-        while ((ep = readdir(dp)) != NULL)
+    len = strlen(filename);
+    lentot = strlen(dir) + 256 + 2;
+    curfile = (char *)calloc(1, lentot);
+    dp = opendir(dir);
+    if (dp == NULL)
+            return NULL;
+    while ((ep = readdir(dp)) != NULL)
+    {
+
+        memset(curfile, 0, lentot);
+        sprintf(curfile, "%s/%s", dir, ep->d_name);
+
+        //Checking if it's the good file
+        if ((int)strlen( ep->d_name) == len && !strcmp(ep->d_name, filename))
         {
-
-                memset(curfile, 0, lentot);
-                sprintf(curfile, "%s/%s", dir, ep->d_name);
-
-                //Checking if it's the good file
-                if ((int)strlen( ep->d_name) == len && !strcmp(ep->d_name, filename))
-                {
-                        (void)closedir(dp);
-                        return curfile;
-                }
-                lstat(curfile, &sb);
-
-                //If it's a directory and not a link, try to go inside to search
-                if (S_ISDIR(sb.st_mode) && !S_ISLNK(sb.st_mode))
-                {
-                        //Check if the directory isn't "." or ".."
-                        if (strcmp(".", ep->d_name) && strcmp("..", ep->d_name))
-                        {
-                                //Recursive call
-                                ret = searchInside(curfile, filename);
-                                if (ret != NULL)
-                                {
-                                        (void)closedir(dp);
-                                        return ret;
-                                }
-                        }
-                }
+            (void)closedir(dp);
+            return curfile;
         }
-        (void)closedir(dp);
-        return NULL;
+        lstat(curfile, &sb);
+
+        //If it's a directory and not a link, try to go inside to search
+        if (S_ISDIR(sb.st_mode) && !S_ISLNK(sb.st_mode))
+        {
+            //Check if the directory isn't "." or ".."
+            if (strcmp(".", ep->d_name) && strcmp("..", ep->d_name))
+            {
+                //Recursive call
+                ret = searchInside(curfile, filename);
+                if (ret != NULL)
+                {
+                    (void)closedir(dp);
+                    return ret;
+                }
+            }
+        }
+    }
+    (void)closedir(dp);
+    return NULL;
 }
 
 /* Search a wireless tool and return its path */
@@ -387,7 +388,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 }
 
 static int linux_write(struct wif *wi, unsigned char *buf, int count,
-		       struct tx_info *ti)
+                        struct tx_info *ti)
 {
     struct priv_linux *dev = wi_priv(wi);
     unsigned char maddr[6];
@@ -401,44 +402,44 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
 
     if( dev->is_wlanng && count >= 24 )
     {
-		/* Wlan-ng isn't able to inject on kernel > 2.6.11 */
-		if( dev->inject_wlanng == 0 )
-		{
-			perror( "write failed" );
-			return( -1 );
-		}
+        /* Wlan-ng isn't able to inject on kernel > 2.6.11 */
+        if( dev->inject_wlanng == 0 )
+        {
+                perror( "write failed" );
+                return( -1 );
+        }
 
-		if (count >= 24)
-		{
-			/* for some reason, wlan-ng requires a special header */
+        if (count >= 24)
+        {
+            /* for some reason, wlan-ng requires a special header */
 
-			if( ( ((unsigned char *) buf)[1] & 3 ) != 3 )
-			{
-				memcpy( tmpbuf, buf, 24 );
-				memset( tmpbuf + 24, 0, 22 );
+            if( ( ((unsigned char *) buf)[1] & 3 ) != 3 )
+            {
+                memcpy( tmpbuf, buf, 24 );
+                memset( tmpbuf + 24, 0, 22 );
 
-				tmpbuf[30] = ( count - 24 ) & 0xFF;
-				tmpbuf[31] = ( count - 24 ) >> 8;
+                tmpbuf[30] = ( count - 24 ) & 0xFF;
+                tmpbuf[31] = ( count - 24 ) >> 8;
 
-				memcpy( tmpbuf + 46, buf + 24, count - 24 );
+                memcpy( tmpbuf + 46, buf + 24, count - 24 );
 
-				count += 22;
-			}
-			else
-			{
-				memcpy( tmpbuf, buf, 30 );
-				memset( tmpbuf + 30, 0, 16 );
+                count += 22;
+            }
+            else
+            {
+                memcpy( tmpbuf, buf, 30 );
+                memset( tmpbuf + 30, 0, 16 );
 
-				tmpbuf[30] = ( count - 30 ) & 0xFF;
-				tmpbuf[31] = ( count - 30 ) >> 8;
+                tmpbuf[30] = ( count - 30 ) & 0xFF;
+                tmpbuf[31] = ( count - 30 ) >> 8;
 
-				memcpy( tmpbuf + 46, buf + 30, count - 30 );
+                memcpy( tmpbuf + 46, buf + 30, count - 30 );
 
-				count += 16;
-			}
+                count += 16;
+            }
 
-			buf = tmpbuf;
-		}
+            buf = tmpbuf;
+        }
     }
 
     if( ( dev->is_wlanng || dev->is_hostap ) &&
@@ -685,6 +686,24 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
             return 1;
         }
 
+        if( dev->is_acx)
+        {
+            if( ( pid = fork() ) == 0 )
+            {
+                close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+                execlp( dev->iwpriv, "iwpriv", iface,
+                        "monitor", "2", "1", NULL );
+                exit( 1 );
+            }
+
+            waitpid( pid, &status, 0 );
+
+            if( WIFEXITED(status) )
+                return( WEXITSTATUS(status) );
+
+            return 1;
+        }
+
         memset( &wrq, 0, sizeof( struct iwreq ) );
         strncpy( wrq.ifr_name, iface, IFNAMSIZ );
         wrq.u.mode = IW_MODE_MONITOR;
@@ -867,8 +886,8 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
  */
 static int do_linux_open(struct wif *wi, char *iface)
 {
-	int kver;
-	struct utsname checklinuxversion;
+    int kver;
+    struct utsname checklinuxversion;
     struct priv_linux *dev = wi_priv(wi);
     char *iwpriv;
     char strbuf[512];
@@ -910,8 +929,8 @@ static int do_linux_open(struct wif *wi, char *iface)
 
     if ( is_ndiswrapper(iface, iwpriv ) )
     {
-		fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
-		goto close_in;
+        fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
+        goto close_in;
     }
 
     if( ( dev->fd_out = socket( PF_PACKET, SOCK_RAW,
@@ -934,24 +953,24 @@ static int do_linux_open(struct wif *wi, char *iface)
 
         if( system( strbuf ) == 0 )
         {
-			if (uname( & checklinuxversion ) >= 0)
-			{
-				/* uname succeeded */
-				if (strncmp(checklinuxversion.release, "2.6.", 4) == 0
-					&& strncasecmp(checklinuxversion.sysname, "linux", 5) == 0)
-				{
-					/* Linux kernel 2.6 */
-					kver = atoi(checklinuxversion.release + 4);
+            if (uname( & checklinuxversion ) >= 0)
+            {
+                /* uname succeeded */
+                if (strncmp(checklinuxversion.release, "2.6.", 4) == 0
+                    && strncasecmp(checklinuxversion.sysname, "linux", 5) == 0)
+                {
+                    /* Linux kernel 2.6 */
+                    kver = atoi(checklinuxversion.release + 4);
 
-					if (kver > 11)
-					{
-						/* That's a kernel > 2.6.11, cannot inject */
-						dev->inject_wlanng = 0;
-					}
-				}
-			}
+                    if (kver > 11)
+                    {
+                        /* That's a kernel > 2.6.11, cannot inject */
+                        dev->inject_wlanng = 0;
+                    }
+                }
+            }
             dev->is_wlanng = 1;
-		}
+        }
 
         memset( strbuf, 0, sizeof( strbuf ) );
         snprintf( strbuf,  sizeof( strbuf ) - 1,
@@ -961,6 +980,15 @@ static int do_linux_open(struct wif *wi, char *iface)
 
         if( system( strbuf ) == 0 )
             dev->is_hostap = 1;
+
+        memset( strbuf, 0, sizeof( strbuf ) );
+        snprintf( strbuf,  sizeof( strbuf ) - 1,
+                    "iwpriv %s 2>/dev/null | "
+                    "grep  GetAcx111Info  >/dev/null",
+                    iface);
+
+        if( system( strbuf ) == 0 )
+            dev->is_acx = 1;
     }
 
     /* enable injection on ralink */
