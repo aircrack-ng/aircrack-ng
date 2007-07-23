@@ -1181,6 +1181,8 @@ void read_thread( void *arg )
 
 	read_fail:
 
+	free(buffer);
+
 	kill( 0, SIGTERM );
 	_exit( FAILURE );
 }
@@ -1869,11 +1871,13 @@ void check_thread( void *arg )
 
 		if( ap_cur != NULL )
 			if( ap_cur->nb_ivs >= opt.max_ivs )
-				return;
+				break;
 
 	}
 
 	read_fail:
+
+	free(buffer);
 
 	return;
 }
@@ -1986,7 +1990,9 @@ int crack_wep_thread( void *arg )
 
 			for( i = j = 0; i < q; i++ )
 			{
-				jj[i] = j = ( j + S[i] + K[i % (3 + opt.keylen)] ) & 0xFF;
+//				i can never be 3+opt.keylen or exceed it, as i runs from 0 to q and q is defined as 3+B (with B the keybyte to attack)
+// 				jj[i] = j = ( j + S[i] + K[i % (3 + opt.keylen)] ) & 0xFF;
+				jj[i] = j = ( j + S[i] + K[i] ) & 0xFF;
 				SWAP( S[i], S[j] );
 			}
 
@@ -3830,6 +3836,10 @@ int main( int argc, char *argv[] )
 	ret = FAILURE;
 	cpudetectfailed = 0;
 	showhelp = 0;
+
+
+	// Start a new process group, we are perhaps going to call kill(0, ...) later
+	setsid();
 
 	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION);
 
