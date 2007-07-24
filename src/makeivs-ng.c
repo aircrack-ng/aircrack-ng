@@ -318,14 +318,18 @@ usage:
         return( 1 );
     }
 
-    fprintf( f_ivs_out, IVS2_MAGIC );
+    if( fwrite( IVS2_MAGIC, 1, 4, f_ivs_out ) != (size_t) 4 )
+    {
+        perror( "fwrite(IVs file MAGIC) failed" );
+        return( 1 );
+    }
 
     memset(&fivs2, '\x00', sizeof(struct ivs2_filehdr));
     fivs2.version = IVS2_VERSION;
 
     /* write file header */
-    if( fwrite( &fivs2, 1, sizeof(struct ivs2_filehdr), f_ivs_out )
-        != (size_t) sizeof(struct ivs2_filehdr) )
+    if( fwrite( &fivs2, sizeof(struct ivs2_filehdr), 1, f_ivs_out )
+        != (size_t) 1 )
     {
         perror( "fwrite(IV file header) failed" );
         return( 1 );

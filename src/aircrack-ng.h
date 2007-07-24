@@ -31,6 +31,8 @@
 
 #define MAX_THREADS 128
 
+#define CLOSE_IT	100000
+
 #define GENPMKMAGIC 0x43575041
 struct hashdb_head {
 	uint32_t magic;

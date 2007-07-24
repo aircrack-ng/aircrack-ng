@@ -85,6 +85,9 @@ int bf_pipe[256][2];			 /* bruteforcer 'queue' pipe	*/
 int bf_nkeys[256];
 uchar bf_wepkey[64];
 int wepkey_crack_success = 0;
+int close_aircrack = 0;
+int id=0;
+pthread_t tid[MAX_THREADS];
 
 typedef struct
 {
@@ -175,6 +178,59 @@ char usage[] =
 "\n";
 
 char * progname;
+int intr_read = 0;
+
+void clean_exit(int ret)
+{
+	int i=0;
+
+	close_aircrack = 1;
+
+	usleep( 1000000 );
+
+	for(i=0; i<id; i++)
+	{
+		if(pthread_join(tid[i], NULL) != 0)
+		{
+			printf("Can't join thread %d\n", i);
+			i--;
+		}
+	}
+
+	_exit(ret);
+}
+
+void sighandler( int signum )
+{
+	#if ((defined(__INTEL_COMPILER) || defined(__ICC)) && defined(DO_PGO_DUMP))
+	_PGOPTI_Prof_Dump();
+	#endif
+	signal( signum, sighandler );
+
+	if( signum == SIGQUIT )
+		clean_exit( SUCCESS );
+// 		_exit( SUCCESS );
+
+	if( signum == SIGTERM )
+		clean_exit( FAILURE );
+// 		_exit( FAILURE );
+
+	if( signum == SIGINT )
+	{
+	#if ((defined(__INTEL_COMPILER) || defined(__ICC)) && defined(DO_PGO_DUMP))
+		clean_exit( FAILURE );
+//		_exit( FAILURE );
+	#else
+		if(intr_read > 0)
+			clean_exit( FAILURE );
+		else
+			intr_read++;
+	#endif
+	}
+
+	if( signum == SIGWINCH )
+		printf( "\33[2J\n" );
+}
 
 void eof_wait( int *eof_notified )
 {
@@ -301,6 +357,9 @@ int atomic_read( read_buf *rb, int fd, int len, void *buf )
 {
 	int n;
 
+	if( close_aircrack )
+		return( CLOSE_IT );
+
 	if( rb->buf1 == NULL )
 	{
 		rb->buf1 = malloc( 65536 );
@@ -354,6 +413,7 @@ void read_thread( void *arg )
 	int fd, n, z, fmt;
 	int eof_notified = 0;
 	read_buf rb;
+// 	int ret=0;
 
 	uchar bssid[6];
 	uchar dest[6];
@@ -369,6 +429,8 @@ void read_thread( void *arg )
 	struct pcap_file_header pfh;
 	struct AP_info *ap_prv, *ap_cur;
 	struct ST_info *st_prv, *st_cur;
+
+	signal( SIGINT, sighandler);
 
 	memset( &rb, 0, sizeof( rb ) );
 	ap_cur = NULL;
@@ -474,12 +536,18 @@ void read_thread( void *arg )
 
 	while( 1 )
 	{
+		if( close_aircrack )
+			break;
+
 		if( fmt == FORMAT_IVS )
 		{
 			/* read one IV */
 
 			while( ! atomic_read( &rb, fd, 1, buffer ) )
 				eof_wait( &eof_notified );
+
+			if( close_aircrack )
+				break;
 
 			if( buffer[0] != 0xFF )
 			{
@@ -489,30 +557,42 @@ void read_thread( void *arg )
 
 				while( ! atomic_read( &rb, fd, 5, bssid + 1 ) )
 					eof_wait( &eof_notified );
+				if( close_aircrack )
+					break;
 			}
 
 			while( ! atomic_read( &rb, fd, 5, buffer ) )
 				eof_wait( &eof_notified );
+			if( close_aircrack )
+				break;
 		}
 		else if( fmt == FORMAT_IVS2 )
 		{
 			while( ! atomic_read( &rb, fd, sizeof( struct ivs2_pkthdr ), &ivs2 ) )
 				eof_wait( &eof_notified );
+			if( close_aircrack )
+				break;
 
 			if(ivs2.flags & IVS2_BSSID)
 			{
 				while( ! atomic_read( &rb, fd, 6, bssid ) )
 					eof_wait( &eof_notified );
+				if( close_aircrack )
+					break;
 				ivs2.len -= 6;
 			}
 
 			while( ! atomic_read( &rb, fd, ivs2.len, buffer ) )
 				eof_wait( &eof_notified );
+			if( close_aircrack )
+				break;
 		}
 		else
 		{
 			while( ! atomic_read( &rb, fd, sizeof( pkh ), &pkh ) )
 				eof_wait( &eof_notified );
+			if( close_aircrack )
+				break;
 
 			if( pfh.magic == TCPDUMP_CIGAM )
 				SWAP32( pkh.caplen );
@@ -527,6 +607,8 @@ void read_thread( void *arg )
 
 			while( ! atomic_read( &rb, fd, pkh.caplen, buffer ) )
 				eof_wait( &eof_notified );
+			if( close_aircrack )
+				break;
 
 			h80211 = buffer;
 
@@ -1013,6 +1095,9 @@ void read_thread( void *arg )
                                     dlen -=6;
                                 }
 
+				bzero(weight, sizeof(weight));
+				bzero(clear, sizeof(clear));
+
 				/* calculate keystream */
 				k = known_clear(clear, &clearsize, weight, h80211, dlen);
 				if (clearsize < (opt.keylen+3))
@@ -1181,8 +1266,17 @@ void read_thread( void *arg )
 
 	read_fail:
 
-	free(buffer);
+	if(rb.buf1 != NULL)
+		free(rb.buf1);
+	if(rb.buf2 != NULL)
+		free(rb.buf2);
+	if(buffer != NULL)
+		free(buffer);
 
+	if(close_aircrack)
+		return;
+
+	//everything is going down
 	kill( 0, SIGTERM );
 	_exit( FAILURE );
 }
@@ -1191,6 +1285,7 @@ void check_thread( void *arg )
 {
 	int fd, n, z, fmt;
 	read_buf rb;
+// 	int ret=0;
 
 	uchar bssid[6];
 	uchar dest[6];
@@ -1877,7 +1972,12 @@ void check_thread( void *arg )
 
 	read_fail:
 
-	free(buffer);
+	if(rb.buf1 != NULL)
+		free(rb.buf1);
+	if(rb.buf2 != NULL)
+		free(rb.buf2);
+	if(buffer != NULL)
+		free(buffer);
 
 	return;
 }
@@ -2162,6 +2262,8 @@ int crack_wep_thread( void *arg )
 			kill( 0, SIGTERM );
 			_exit( FAILURE );
 		}
+		if( close_aircrack )
+			break;
 	}
 
 	return( 0 );
@@ -2917,8 +3019,12 @@ int inner_bruteforcer_thread(void *arg)
 	int i, j, k, l;
 	size_t nthread = (size_t)arg;
 	uchar wepkey[64];
+	int ret=0;
 
 	inner_bruteforcer_thread_start:
+
+	if( close_aircrack )
+		return(ret);
 
 	if (wepkey_crack_success)
 		return(SUCCESS);
@@ -3017,6 +3123,7 @@ int crack_wpa_thread( void *arg )
 	char  key1[128], key2[128];
 	uchar pmk1[128], pmk2[128];
         int len1, len2;
+	int ret=0;
 
 	int slen, cid = (long) arg;
 
@@ -3073,6 +3180,8 @@ int crack_wpa_thread( void *arg )
 			kill( 0, SIGTERM );
 			_exit( FAILURE );
 		}
+		if(close_aircrack)
+			pthread_exit(&ret);
 	}
 }
 
@@ -3489,32 +3598,6 @@ collect_and_test:
 	return( FAILURE );
 }
 
-int intr_read = 0;
-
-void sighandler( int signum )
-{
-	#if ((defined(__INTEL_COMPILER) || defined(__ICC)) && defined(DO_PGO_DUMP))
-	_PGOPTI_Prof_Dump();
-	#endif
-	signal( signum, sighandler );
-
-	if( signum == SIGQUIT )
-		_exit( SUCCESS );
-
-	if( signum == SIGTERM )
-		_exit( FAILURE );
-
-	if( signum == SIGINT )
-	#if ((defined(__INTEL_COMPILER) || defined(__ICC)) && defined(DO_PGO_DUMP))
-		_exit( FAILURE );
-	#else
-	intr_read++;
-	#endif
-
-	if( signum == SIGWINCH )
-		printf( "\33[2J\n" );
-}
-
 int next_key( char **key, int keysize )
 {
 	char *tmp, *tmp2;
@@ -3819,8 +3902,7 @@ int main( int argc, char *argv[] )
 	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, showhelp, z, zz;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
-	int old=0, id=0;
-	pthread_t tid[MAX_THREADS];
+	int old=0;
 	char essid[33];
 
 #ifdef HAVE_SQLITE
@@ -4285,15 +4367,16 @@ usage:
 			fflush( stdout );
 		}
 
+// 		#ifndef DO_PGO_DUMP
+// 		signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
+// 		#endif
+		intr_read=1;
+
 		for(i=0; i<id; i++)
 			pthread_join( tid[i], NULL);
 
 		if( ! opt.is_quiet && ! opt.no_stdin )
 			printf( "\33[KRead %ld packets.\n\n", nb_pkt );
-
-		#ifndef DO_PGO_DUMP
-		signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
-		#endif
 
 		if( ap_1st == NULL )
 		{
@@ -4393,6 +4476,8 @@ usage:
 		id=0;
 	}
 
+	signal( SIGINT, sighandler );
+
 	do
 	{
 		if( strcmp( argv[optind], "-" ) == 0 )
@@ -4403,6 +4488,10 @@ usage:
 		{
 			perror( "pthread_create failed" );
 			goto exit_main;
+		}
+		else
+		{
+			printf("Created thread for id %d.\n", id);
 		}
 
 		usleep( 131071 );
@@ -4424,17 +4513,23 @@ usage:
 		fflush( stdout );
 	}
 
+	//set it to 0, so you can abort start cracking right away...
+	intr_read=0;
+
 	while( nb_eof < n && ! intr_read )
 		pthread_cond_wait( &cv_eof, &mx_eof );
+
+	//set it to 1, so a SIGINT will terminate the process
+	intr_read=1;
 
 	pthread_mutex_unlock( &mx_eof );
 
 	if( ! opt.is_quiet && ! opt.no_stdin )
 		printf( "\33[KRead %ld packets.\n\n", nb_pkt );
 
-	#ifndef DO_PGO_DUMP
-	signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
-	#endif
+// 	#ifndef DO_PGO_DUMP
+// 	signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
+// 	#endif
 
 	/* mark the targeted access point(s) */
 
@@ -4586,24 +4681,24 @@ usage:
 			{
 				/* start one thread per cpu */
 
-				pthread_t tid;
-
 				if (opt.amode<=1 && opt.nbcpu>1 && opt.do_brute && opt.do_mt_brute)
 				{
-					if (pthread_create( &tid, NULL, (void *) inner_bruteforcer_thread,
+					if (pthread_create( &(tid[id]), NULL, (void *) inner_bruteforcer_thread,
 						(void *) (long) i ) != 0)
 					{
 						perror( "pthread_create failed" );
 						goto exit_main;
 					}
+					id++;
 				}
 
-				if( pthread_create( &tid, NULL, (void *) crack_wep_thread,
+				if( pthread_create( &(tid[id]), NULL, (void *) crack_wep_thread,
 					(void *) (long) i ) != 0 )
 				{
 					perror( "pthread_create failed" );
 					goto exit_main;
 				}
+				id++;
 			}
 
 			if( ! opt.do_testy )
@@ -4700,14 +4795,13 @@ usage:
 			{
 				/* start one thread per cpu */
 
-				pthread_t tid;
-
-				if( pthread_create( &tid, NULL, (void *) crack_wpa_thread,
+				if( pthread_create( &(tid[id]), NULL, (void *) crack_wpa_thread,
 					(void *) (long) i ) != 0 )
 				{
 					perror( "pthread_create failed" );
 					goto exit_main;
 				}
+				id++;
 			}
 		ret = do_wpa_crack( ap_cur );
 #ifdef HAVE_SQLITE
@@ -4759,8 +4853,9 @@ usage:
 
 	fflush( stdout );
 
-	if( ret == SUCCESS ) kill( 0, SIGQUIT );
-	if( ret == FAILURE ) kill( 0, SIGTERM );
+// 	if( ret == SUCCESS ) kill( 0, SIGQUIT );
+// 	if( ret == FAILURE ) kill( 0, SIGTERM );
+	clean_exit(ret);
 
 	_exit( ret );
 }

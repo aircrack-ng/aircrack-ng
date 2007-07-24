@@ -16,7 +16,7 @@ char usage[] =
 "\n"
 "  usage: ivsanalyze-ng [options]\n"
 "\n"
-"  Action options:\n"
+"  Common options:\n"
 "      -f <file>  : Read this file\n"
 "\n"
 "  Action options:\n"
@@ -28,18 +28,24 @@ char usage[] =
 int main( int argc, char *argv[] )
 {
     FILE *f_in;
-    int show_ivs=0, ret=0;
+
+    int show_ivs=0;
+
     int is_ivs2=0, is_ivs=0;
-//     unsigned char cur_bssid[6];
-//     unsigned char packet[4096];
+
+    unsigned char cur_bssid[6];
     unsigned char *pbyte;
     int option, option_index;
     char *filename=NULL;
     unsigned char buf[2048];
+    int action=0;
+
+    struct ivs2_filehdr fivs2;
+    struct ivs2_pkthdr  ivs2;
 
     /* check the arguments */
     static struct option long_options[] = {
-        {"ivs",      1, 0, 'i'},
+        {"showivs",  1, 0, 'i'},
         {"file",     1, 0, 'f'},
         {"help",     0, 0, 'H'},
         {0,          0, 0,  0 }
@@ -103,26 +109,35 @@ usage:
         return( 1 );
     }
 
-    ret = fread( buf, 1, sizeof(IVS2_MAGIC), f_in );
+    if( fread( buf, sizeof(IVS2_MAGIC), 1, f_in ) != 1) return 1;
 
-    if( memcmp(buf, IVS2_MAGIC, sizeof(IVS2_MAGIC)) == 0 )
+    if( memcmp(buf, IVS2_MAGIC, 4) == 0 )
     {
         is_ivs2=1;
+        if( fread(&fivs2, sizeof(struct ivs2_filehdr), 1, f_in) != 1) return 1;
+
+        if(fivs2.version > IVS2_VERSION)
+        {
+            printf( "Error, wrong %s version: %d. Supported up to version %d.\n", IVS2_EXTENSION, fivs2.version, IVS2_VERSION );
+            return 1;
+        }
     }
 
-    if( memcmp(buf, IVSONLY_MAGIC, sizeof(IVSONLY_MAGIC)) == 0 )
+    if( memcmp(buf, IVSONLY_MAGIC, 4) == 0 )
     {
         is_ivs=1;
     }
 
-    if( is_ivs == 0)
+    if( is_ivs == 0 && is_ivs2 == 0)
     {
         printf("No supported file specified\n");
         printf("\"%s --help\" for help.\n", argv[0]);
         exit(1);
     }
 
-    if( show_ivs == 0 )
+    action = show_ivs+0;
+
+    if( action == 0 )
     {
         printf("No action specified\n");
         printf("\"%s --help\" for help.\n", argv[0]);
@@ -134,15 +149,21 @@ usage:
         //get the "packet"
         if(is_ivs)
         {
-            fread(buf, 1, 1, f_in);
+            if(fread(buf, 1, 1, f_in) != 1) break;
             if(buf[0] == 0xff)
             {
-                fread(buf+1, 1, 5, f_in);
+                if(fread(buf+1, 5, 1, f_in) != 1) break;
             }
             else
             {
-                fread(buf+1, 1, 10, f_in);
+                if(fread(buf+1, 10, 1, f_in) != 1) break;
             }
+        }
+
+        if(is_ivs2)
+        {
+            if(fread(&ivs2, sizeof(struct ivs2_pkthdr), 1, f_in) != 1) break;
+            if(fread(buf, 1, ivs2.len, f_in) != 1) break;
         }
 
         //make use of it
@@ -150,15 +171,36 @@ usage:
         {
             pbyte=buf+1;
             if(buf[0] != 0xFF)
-                pbyte += 5;
+                pbyte = buf+6;
 
             if(show_ivs)
             {
                 printf("%02X:%02X:%02X\n", pbyte[0], pbyte[1], pbyte[2]);
             }
         }
+
+        if(is_ivs2)
+        {
+            if(ivs2.flags & IVS2_BSSID)
+            {
+                memcpy(cur_bssid, buf, 6);
+                ivs2.len -= 6;
+                ivs2.flags &= ~IVS2_BSSID;
+            }
+
+            pbyte = buf;
+
+            if(show_ivs)
+            {
+                if(ivs2.flags & IVS2_XOR)
+                {
+                    printf("%02X:%02X:%02X\n", pbyte[0], pbyte[1], pbyte[2]);
+                }
+            }
+        }
     }
 
+    printf("done.\n");
     fclose( f_in );
     return( 0 );
 }
