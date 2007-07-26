@@ -80,6 +80,8 @@ then
     fi
 fi
 
+OWN_NAME=$0
+
 D_DIR="/usr/src/drivers"
 LOGFILE="/var/log/airdriver"
 
@@ -89,6 +91,8 @@ NO_STACK_ERROR='You need to specify a stack number obtained from "airdriver-ng s
 YES=1
 NO=0
 ERROR=255
+
+NO_INSTALL=$NO
 
 #distribution definition - for future enhancements - not used right now
 i=0
@@ -1900,6 +1904,11 @@ install_action() {
         return $NO
     fi
 
+    if [ $NO_INSTALL = $YES ]
+    then
+        return $YES
+    fi
+
 #TODO:INSTALL
     echo "6. Installing the modules..."
     ${DI_INSTALL1[$1]} >> "$LOGFILE" 2>&1
@@ -1973,6 +1982,100 @@ isInstalled() {
         fi
 
         if [ x"`$MODPROBE -l | grep ${SMODULE[$1]}"\.ko"`" != x ]
+        then
+            return $YES
+        else
+            return $NO
+        fi
+    fi
+
+    return $ERROR
+}
+
+isCompiled() {
+    #_D_river or _S_tack? neither? abort
+    if [ x"$2" != "xD" -a x"$2" != "xS" ]
+    then
+        echo "Invalid subset [D/S]!"
+        return $ERROR
+    fi
+
+    if [ x"$2" == "xD" ]
+    then
+        if [ $1 -lt 0 -o $1 -ge ${DCOUNT} ]
+        then
+            echo "Invalid driver number!"
+            return $ERROR
+        fi
+
+        #no module specified, thus return $NO
+        if [ x"${DMODULE[$1]}" == x ]
+        then
+            return $NO
+        fi
+
+        if [ ! -d "$D_DIR/" ]
+        then
+            return $ERROR
+        fi
+
+        cd "$D_DIR/"
+
+        if [ ! -d "${DI_DRIVERDIR[$1]}" ]
+        then
+            return $ERROR
+        fi
+
+        cd "${DI_DRIVERDIR[$1]}/"
+
+        if [ x"`find -name ${DMODULE[$1]}".ko"`" != x ]
+        then
+            if [ x"${DMODINFO[$1]}" != x ]
+            then
+                modfile="`find -name ${DMODULE[$1]}".ko"`"
+                if [ x"`modinfo "$modfile" | grep "${DMODINFO[$1]}"`" != x ]
+                then
+                    return $YES
+                else
+                    return $NO
+                fi
+            else
+                return $YES
+            fi
+        else
+            return $NO
+        fi
+    fi
+
+    if [ x"$2" == "xS" ]
+    then
+        if [ $1 -lt 0 -o $1 -ge ${SCOUNT} ]
+        then
+            echo "Invalid stack number!"
+            return $ERROR
+        fi
+
+        #no module specified, thus return $NO
+        if [ x"${SMODULE[$1]}" == x ]
+        then
+            return $NO
+        fi
+
+        if [ ! -d "$D_DIR/" ]
+        then
+            return $ERROR
+        fi
+
+        cd "$D_DIR/"
+
+        if [ ! -d "${SI_DRIVERDIR[$1]}" ]
+        then
+            return $ERROR
+        fi
+
+        cd "${SI_DRIVERDIR[$1]}/"
+
+        if [ x"`find -name ${SMODULE[$1]}".ko"`" != x ]
         then
             return $YES
         else
@@ -2113,7 +2216,6 @@ listInstalledStacks() {
         fi
         i=$(($i+1))
     done
-
 }
 
 listInstalledDrivers() {
@@ -2133,7 +2235,6 @@ listInstalledDrivers() {
         fi
         i=$(($i+1))
     done
-
 }
 
 listLoadedStacks() {
@@ -2273,6 +2374,86 @@ unloadDriver() {
     done
 
     if [ $current -eq 0 ]
+    then
+        return $YES
+    else
+        return $NO
+    fi
+}
+
+insertDriver() {
+    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+    isInKernel $1 "D"
+    if [ $? -eq $YES ]
+    then
+        echo "Cannot insert an in-kernel driver."
+        return $NO
+    fi
+
+    isCompiled $1 "D"
+    if [ $? -eq $NO ]
+    then
+        echo "Driver isn't compiled."
+        return $NO
+    fi
+
+    isLoaded $1 "D"
+    if [ $? -eq $YES ]
+    then
+        unloadDriver $1
+        if [ $? -ne $YES ]
+        then
+            echo "Can't unload current driver."
+            echo "You need to remove it from memory."
+            echo
+            return $NO
+        fi
+    fi
+
+    last=-1
+    current=0
+    modnum=0
+
+    cd "$D_DIR/${DI_DRIVERDIR[$1]}/"
+
+    for i in ${DMODULES[$1]}
+    do
+        if [ x"`find -name $i".ko"`" != x ]
+        then
+            INSMOD[$modnum]="`find -name $i".ko"`"
+            CHECKMOD[$modnum]="$i"
+            modnum=$(($modnum+1))
+        fi
+    done
+
+    if [ $modnum -eq 0 ]
+    then
+        echo "Driver isn't compiled."
+        return $NO
+    fi
+
+    while [ $current -gt $last ]
+    do
+        last=$current
+        current=0
+        i=0
+        while [ $i -lt $modnum ]
+        do
+            insmod ${INSMOD[$i]} 2>/dev/null
+            if [ x"`lsmod | grep "${checkmod[$i]}"`" != x ]
+            then
+                current=$(($current+1))
+            fi
+            i=$(($i+1))
+        done
+    done
+
+    if [ $current -eq $modnum ]
     then
         return $YES
     else
@@ -2777,14 +2958,18 @@ usage() {
     printf "\t\tinstalled\t\t- lists all installed drivers\n"
     printf "\t\tloaded\t\t\t- lists all loaded drivers\n"
     printf "\t\t-----------------------------------------------------\n"
+    printf "\t\tinsert <drivernum>\t- inserts a driver\n"
     printf "\t\tload <drivernum>\t- loads a driver\n"
     printf "\t\tunload <drivernum>\t- unloads a driver\n"
     printf "\t\treload <drivernum>\t- reloads a driver\n"
+    printf "\t\t-----------------------------------------------------\n"
+    printf "\t\tcompile <drivernum>\t- compiles a driver\n"
     printf "\t\tinstall <drivernum>\t- installs a driver\n"
     printf "\t\tremove <drivernum>\t- removes a driver\n"
     printf "\t\t-----------------------------------------------------\n"
-    printf "\t\tremove_stack <num>\t- removes a stack \n"
+    printf "\t\tcompile_stack <num>\t- compiles a stack \n"
     printf "\t\tinstall_stack <num>\t- installs a stack \n"
+    printf "\t\tremove_stack <num>\t- removes a stack \n"
     printf "\t\t-----------------------------------------------------\n"
     printf "\t\tdetails <drivernum>\t- prints driver details\n"
     printf "\t\tdetect\t\t\t- detects wireless cards\n"
@@ -2924,6 +3109,7 @@ then
 
     echo "Driver \"${DNAME[$num]}\" specified for installation."
 
+    NO_INSTALL=$NO
     installDriver $num
 
     ret=$?
@@ -2945,6 +3131,58 @@ then
             echo "Loaded driver \"${DNAME[$num]}\" successfully"
         else
             echo "Failed to load the driver."
+        fi
+    fi
+
+    exit
+fi
+
+if [ x"$1" == "xcompile" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "$NO_DRIVER_ERROR"
+        exit
+    fi
+
+    name2num $2
+    num=$?
+
+    if [ $num -eq $ERROR ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid driver!"
+            exit
+        fi
+    fi
+
+    echo "Driver \"${DNAME[$num]}\" specified for compilation."
+
+    NO_INSTALL=$YES
+    installDriver $num
+
+    ret=$?
+
+    if [ $ret -eq $YES ]
+    then
+        echo "Compiled driver \"${DNAME[$num]}\" successfully"
+    else
+        echo "Failed to compile the driver."
+        echo "Look through \"$LOGFILE\" for errors."
+    fi
+
+    if [ $ret == $YES ]
+    then
+        unloadDriver $num >/dev/null 2>/dev/null
+        insertDriver $num
+        if [ $? -eq $YES ]
+        then
+            echo "Inserted driver \"${DNAME[$num]}\" successfully"
+        else
+            echo "Failed to insert the driver."
         fi
     fi
 
@@ -2975,6 +3213,7 @@ then
 
     echo "Stack \"${SNAME[$num]}\" specified for installation."
 
+    NO_INSTALL=$NO
     installStack $num
 
     ret=$?
@@ -2985,6 +3224,47 @@ then
         echo "You need to reload the complete stack, or just reboot."
     else
         echo "Failed to install the stack."
+        echo "Look through \"$LOGFILE\" for errors."
+    fi
+
+    exit
+fi
+
+if [ x"$1" == "xcompile_stack" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "$NO_STACK_ERROR"
+        exit
+    fi
+
+    name2num_stack $2
+    num=$?
+
+    if [ $num -eq $ERROR ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $SCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid stack!"
+            exit
+        fi
+    fi
+
+    echo "Stack \"${SNAME[$num]}\" specified for compilation."
+
+    NO_INSTALL=$YES
+    installStack $num
+
+    ret=$?
+
+    if [ $ret -eq $YES ]
+    then
+        echo "Compiled stack \"${SNAME[$num]}\" successfully"
+        echo "You need to insert the Stack manually"
+    else
+        echo "Failed to compile the stack."
         echo "Look through \"$LOGFILE\" for errors."
     fi
 
@@ -3021,6 +3301,40 @@ then
         echo "Loaded driver \"${DNAME[$num]}\" successfully"
     else
         echo "Failed to load the driver."
+    fi
+    exit
+fi
+
+if [ x"$1" == "xinsert" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "$NO_DRIVER_ERROR"
+        exit
+    fi
+
+    name2num $2
+    num=$?
+
+    if [ $num -eq $ERROR ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid driver!"
+            exit
+        fi
+    fi
+
+    echo "Driver \"${DNAME[$num]}\" specified for inserting."
+
+    insertDriver $num
+    if [ $? -eq $YES ]
+    then
+        echo "Inserted driver \"${DNAME[$num]}\" successfully"
+    else
+        echo "Failed to insert the driver."
     fi
     exit
 fi
