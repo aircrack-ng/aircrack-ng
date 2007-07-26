@@ -2,9 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "version.h"
 #include "pcap.h"
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 
@@ -27,7 +35,7 @@ char usage[] =
 
 int main( int argc, char *argv[] )
 {
-    FILE *f_in;
+    int f_in;
 
     int show_ivs=0;
 
@@ -103,18 +111,18 @@ usage:
         return( 1 );
     }
 
-    if( ( f_in = fopen( filename, "r" ) ) == NULL )
+    if( ( f_in = open( (char *) filename, O_RDONLY | O_BINARY ) ) == 0 )
     {
-        perror( "fopen" );
+        perror( "open" );
         return( 1 );
     }
 
-    if( fread( buf, sizeof(IVS2_MAGIC), 1, f_in ) != 1) return 1;
+    if( read( f_in, buf, sizeof(IVS2_MAGIC) ) != sizeof(IVS2_MAGIC)) return 1;
 
     if( memcmp(buf, IVS2_MAGIC, 4) == 0 )
     {
         is_ivs2=1;
-        if( fread(&fivs2, sizeof(struct ivs2_filehdr), 1, f_in) != 1) return 1;
+        if( read( f_in, &fivs2, sizeof(struct ivs2_filehdr)) != sizeof(struct ivs2_filehdr)) return 1;
 
         if(fivs2.version > IVS2_VERSION)
         {
@@ -149,21 +157,21 @@ usage:
         //get the "packet"
         if(is_ivs)
         {
-            if(fread(buf, 1, 1, f_in) != 1) break;
+            if(read(f_in, buf, 1) != 1) break;
             if(buf[0] == 0xff)
             {
-                if(fread(buf+1, 5, 1, f_in) != 1) break;
+                if(read(f_in, buf+1, 5) != 5) break;
             }
             else
             {
-                if(fread(buf+1, 10, 1, f_in) != 1) break;
+                if(read(f_in, buf+1, 10) != 10) break;
             }
         }
 
         if(is_ivs2)
         {
-            if(fread(&ivs2, sizeof(struct ivs2_pkthdr), 1, f_in) != 1) break;
-            if(fread(buf, 1, ivs2.len, f_in) != 1) break;
+            if(read(f_in, &ivs2, sizeof(struct ivs2_pkthdr)) != sizeof(struct ivs2_pkthdr)) break;
+            if(read(f_in, buf, ivs2.len) != ivs2.len) break;
         }
 
         //make use of it
@@ -201,7 +209,7 @@ usage:
     }
 
     printf("done.\n");
-    fclose( f_in );
+    close( f_in );
     return( 0 );
 }
 

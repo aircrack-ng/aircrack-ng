@@ -180,21 +180,76 @@ char usage[] =
 char * progname;
 int intr_read = 0;
 
+int safe_write( int fd, void *buf, size_t len );
+
 void clean_exit(int ret)
 {
+	struct AP_info *ap_cur;
+	struct AP_info *ap_prv;
+	struct AP_info *ap_next;
 	int i=0;
 
+	if(ret && !opt.is_quiet)
+	{
+		printf("\nQuitting aircrack-ng...\n");
+		fflush(stdout);
+	}
 	close_aircrack = 1;
 
-	usleep( 1000000 );
+	for( i = 0; i < opt.nbcpu; i++ )
+	{
+            safe_write( mc_pipe[i][1], (void *) "EXIT", 5 );
+        }
 
 	for(i=0; i<id; i++)
 	{
 		if(pthread_join(tid[i], NULL) != 0)
 		{
 			printf("Can't join thread %d\n", i);
-			i--;
 		}
+	}
+
+	if(wep.ivbuf != NULL)
+		free(wep.ivbuf);
+
+	ap_prv = NULL;
+	ap_cur = ap_1st;
+
+	while( ap_cur != NULL )
+	{
+		if( ap_cur->ivbuf != NULL )
+			free(ap_cur->ivbuf);
+
+		uniqueiv_wipe( ap_cur->uiv_root );
+
+		if( ap_cur->ptw_clean != NULL )
+		{
+			if( ap_cur->ptw_clean->allsessions != NULL )
+				free(ap_cur->ptw_clean->allsessions);
+			free(ap_cur->ptw_clean);
+		}
+
+		if( ap_cur->ptw_vague != NULL )
+		{
+			if( ap_cur->ptw_vague->allsessions != NULL )
+				free(ap_cur->ptw_vague->allsessions);
+			free(ap_cur->ptw_vague);
+		}
+
+		ap_prv = ap_cur;
+		ap_cur = ap_cur->next;
+	}
+
+	ap_cur = ap_prv;
+
+	while( ap_cur != NULL )
+	{
+		ap_next = ap_cur->next;
+
+		if( ap_cur != NULL )
+			free(ap_cur);
+
+		ap_cur = ap_next;
 	}
 
 	_exit(ret);
@@ -221,10 +276,10 @@ void sighandler( int signum )
 		clean_exit( FAILURE );
 //		_exit( FAILURE );
 	#else
-		if(intr_read > 0)
+/*		if(intr_read > 0)*/
 			clean_exit( FAILURE );
-		else
-			intr_read++;
+/*		else
+			intr_read++;*/
 	#endif
 	}
 
@@ -338,8 +393,6 @@ int mergebssids(char* bssidlist, unsigned char* bssid)
 		}
 		if(!next)
 		{
-			//TODO:REMOVE
-// 			printf("yo, got cha!\n");
 			return 0;
 		}
 	}while(list);
@@ -434,6 +487,8 @@ void read_thread( void *arg )
 
 	memset( &rb, 0, sizeof( rb ) );
 	ap_cur = NULL;
+
+	bzero(&pfh, sizeof(struct pcap_file_header));
 
 	if( ( buffer = (uchar *) malloc( 65536 ) ) == NULL )
 	{
@@ -2011,8 +2066,9 @@ int safe_read( int fd, void *buf, size_t len )
 	while( sum < len )
 	{
 		if( ! ( n = read( fd, (void *) off, len - sum ) ) )
+                {
 			return( 0 );
-
+                }
 		if( n < 0 && errno == EINTR ) continue;
 		if( n < 0 ) return( n );
 
@@ -2069,6 +2125,8 @@ int crack_wep_thread( void *arg )
 			kill( 0, SIGTERM );
 			_exit( FAILURE );
 		}
+		if( close_aircrack )
+			break;
 
 		min = 5 * ( ( (     cid ) * wep.nb_ivs ) / opt.nbcpu );
 		max = 5 * ( ( ( 1 + cid ) * wep.nb_ivs ) / opt.nbcpu );
@@ -2103,7 +2161,6 @@ int crack_wep_thread( void *arg )
 			o2 = wep.ivbuf[xv + 4] ^ 0xAA; io2 = Si[o2]; S2 = S[2];
 
 			pthread_mutex_unlock( &mx_ivb );
-
 			Sq = S[q]; dq = Sq + jj[q - 1];
 
 			if( S2 == 0 )
@@ -2251,8 +2308,11 @@ int crack_wep_thread( void *arg )
 					Kq = io2 - dq; votes[A_u5_4][Kq]++;
 				}
 			}
+			if( close_aircrack )
+				break;
 		}
-
+		if( close_aircrack )
+			break;
 		/* END: KoreK attacks */
 
 		if( safe_write( cm_pipe[cid][1], votes,
@@ -2262,8 +2322,6 @@ int crack_wep_thread( void *arg )
 			kill( 0, SIGTERM );
 			_exit( FAILURE );
 		}
-		if( close_aircrack )
-			break;
 	}
 
 	return( 0 );
@@ -4375,6 +4433,8 @@ usage:
 		for(i=0; i<id; i++)
 			pthread_join( tid[i], NULL);
 
+		id=0;
+
 		if( ! opt.is_quiet && ! opt.no_stdin )
 			printf( "\33[KRead %ld packets.\n\n", nb_pkt );
 
@@ -4456,7 +4516,7 @@ usage:
 					while( ap_cur != NULL && i < z )
 						{ i++; ap_cur = ap_cur->next; }
 				}
-				while( n < 0 || ap_cur == NULL );
+				while( z < 0 || ap_cur == NULL );
 			}
 			else
 			{
@@ -4489,13 +4549,9 @@ usage:
 			perror( "pthread_create failed" );
 			goto exit_main;
 		}
-		else
-		{
-			printf("Created thread for id %d.\n", id);
-		}
 
-		usleep( 131071 );
 		id++;
+		usleep( 131071 );
 		if(id >= MAX_THREADS)
 			break;
 	}
@@ -4505,6 +4561,8 @@ usage:
 
 	/* wait until each thread reaches EOF */
 
+	nb_eof=0;
+	intr_read=1;
 	pthread_mutex_lock( &mx_eof );
 
 	if( ! opt.is_quiet )
@@ -4513,14 +4571,8 @@ usage:
 		fflush( stdout );
 	}
 
-	//set it to 0, so you can abort start cracking right away...
-	intr_read=0;
-
 	while( nb_eof < n && ! intr_read )
 		pthread_cond_wait( &cv_eof, &mx_eof );
-
-	//set it to 1, so a SIGINT will terminate the process
-	intr_read=1;
 
 	pthread_mutex_unlock( &mx_eof );
 

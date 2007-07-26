@@ -15,5 +15,5 @@
 unsigned char **uniqueiv_init( void );
 int uniqueiv_mark( unsigned char **uiv_root, unsigned char IV[3] );
 int uniqueiv_check( unsigned char **uiv_root, unsigned char IV[3] );
-
+void uniqueiv_wipe( unsigned char **uiv_root );
 #endif
