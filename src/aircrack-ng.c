@@ -4536,6 +4536,7 @@ usage:
 		id=0;
 	}
 
+	nb_eof=0;
 	signal( SIGINT, sighandler );
 
 	do
@@ -4561,8 +4562,7 @@ usage:
 
 	/* wait until each thread reaches EOF */
 
-	nb_eof=0;
-	intr_read=1;
+	intr_read=0;
 	pthread_mutex_lock( &mx_eof );
 
 	if( ! opt.is_quiet )
@@ -4576,8 +4576,9 @@ usage:
 
 	pthread_mutex_unlock( &mx_eof );
 
-	if( ! opt.is_quiet && ! opt.no_stdin )
-		printf( "\33[KRead %ld packets.\n\n", nb_pkt );
+	intr_read=1;
+// 	if( ! opt.is_quiet && ! opt.no_stdin )
+// 		printf( "\33[KRead %ld packets.\n\n", nb_pkt );
 
 // 	#ifndef DO_PGO_DUMP
 // 	signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
