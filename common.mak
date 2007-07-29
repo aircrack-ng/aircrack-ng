@@ -4,6 +4,9 @@ endif
 ifndef OSNAME
 OSNAME		= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g')
 endif
+ifndef SQLITE
+SQLITE		= false
+endif
 
 ifeq ($(OSNAME), cygwin)
 EXE		= .exe
