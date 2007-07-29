@@ -1165,7 +1165,7 @@ DSTACK[$i]="3"
 DMODINFO[$i]=""
 DMODULE[$i]="r8187"
 DCONFIG[$i]=""
-DMODULES[$i]="r8187"
+DMODULES[$i]="r8187 ieee80211-rtl ieee80211_crypt-rtl ieee80211_crypt_wep-rtl ieee80211_crypt_tkip-rtl ieee80211_crypt_ccmp-rtl"
 DI_INIT[$i]=""
 DI_DRIVERGET[$i]="wget"
 DI_DRIVERFILE[$i]="rtl8187_linux_26.1010.zip"
@@ -1173,10 +1173,10 @@ DI_DRIVERPATH1[$i]="ftp://220.228.150.22/cn/wlan/rtl8187_linux_26.1010.zip"
 DI_DRIVERPATH2[$i]="ftp://61.56.86.122/cn/wlan/rtl8187_linux_26.1010.zip"
 DI_DRIVEREXDIR[$i]=""
 DI_DRIVERDIR[$i]="rtl8187_linux_26.1010.0622.2006"
-DI_PREPATCH[$i]="rtl8187_prepatch"
-DI_PATCHFILE[$i]="rtl8187_2.6.21.patch"
-DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/rtl8187_2.6.21v5.patch"
-DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/rtl8187_2.6.21v5.patch"
+DI_PREPATCH[$i]="rtl8187_prepatch $i"
+DI_PATCHFILE[$i]="rtl8187_2.6.22.patch"
+DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/rtl8187_2.6.22.patch"
+DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/rtl8187_2.6.22.patch"
 DI_PATCHARG[$i]="-p1"
 DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE"
@@ -1818,14 +1818,7 @@ install_action() {
         return $NO
     fi
 
-    cd "${DI_DRIVERDIR[$1]}"
-
 #2 - get the correct patch
-    if [ x"${DI_PREPATCH[$1]}" != x ]
-    then
-        ${DI_PREPATCH[$1]} >> "$LOGFILE" 2>&1
-    fi
-
     if [ x"${DI_PATCHFILE[$1]}" != x ]
     then
         echo "3. Getting the patch..."
@@ -1863,6 +1856,16 @@ install_action() {
             return $NO
         fi
 
+        cp "${DI_PATCHFILE[$1]}" "${DI_DRIVERDIR[$1]}"  >> "$LOGFILE" 2>&1
+
+        cd "${DI_DRIVERDIR[$1]}"
+
+    #prepatching
+        if [ x"${DI_PREPATCH[$1]}" != x ]
+        then
+            ${DI_PREPATCH[$1]} >> "$LOGFILE" 2>&1
+        fi
+
     #3 - patch it
         echo "4. Patching the source..."
 
@@ -1886,6 +1889,7 @@ install_action() {
 
         $PATCH -N -f ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
     else
+        cd "${DI_DRIVERDIR[$1]}"
         echo "3./4. Not patching..."
     fi
 
@@ -2353,6 +2357,7 @@ unloadDriver() {
 
     for i in ${DMODULES[$1]}
     do
+        i="`echo "$i" | sed 's/-/_/'`"
         if [ x"`lsmod | grep $i" "`" != x ]
         then
             current=$(($current+1))
@@ -2365,6 +2370,7 @@ unloadDriver() {
         current=0
         for i in ${DMODULES[$1]}
         do
+            i="`echo "$i" | sed 's/-/_/'`"
             rmmod $i 2>/dev/null
             if [ x"`lsmod | grep $i" "`" != x ]
             then
@@ -2445,7 +2451,8 @@ insertDriver() {
         while [ $i -lt $modnum ]
         do
             insmod ${INSMOD[$i]} 2>/dev/null
-            if [ x"`lsmod | grep "${checkmod[$i]}"`" != x ]
+            j="`echo ${CHECKMOD[$i]} | sed 's/-/_/'`"
+            if [ x"`lsmod | grep "$j"`" != x ]
             then
                 current=$(($current+1))
             fi
@@ -2491,6 +2498,7 @@ loadDriver() {
 
     for i in ${DMODULES[$1]}
     do
+        i="`echo "$i" | sed 's/-/_/'`"
         $MODPROBE $i 2>/dev/null
     done
 
@@ -3480,6 +3488,7 @@ then
 
     for i in ${DMODULES[$num]}
     do
+        i="`echo "$i" | sed 's/-/_/'`"
         echo -n "$i "
     done
     echo
