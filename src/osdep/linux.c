@@ -45,6 +45,33 @@
 
 #define uchar unsigned char
 
+typedef enum {
+        DT_NULL = 0,
+        DT_WLANNG,
+        DT_HOSTAP,
+        DT_MADWIFI,
+        DT_MADWIFING,
+        DT_BCM43XX,
+        DT_ORINOCO,
+        DT_ZD1211RW,
+        DT_ACX,
+        DT_MAC80211_RT
+
+} DRIVER_TYPE;
+
+static const char * szaDriverTypes[] = {
+        [DT_NULL] = "Unknown",
+        [DT_WLANNG] = "Wlan-NG",
+        [DT_HOSTAP] = "HostAP",
+        [DT_MADWIFI] = "Madwifi",
+        [DT_MADWIFING] = "Madwifi-NG",
+        [DT_BCM43XX] = "BCM43xx",
+        [DT_ORINOCO] = "Orinoco",
+        [DT_ZD1211RW] = "ZD1211RW",
+        [DT_ACX] = "ACX",
+        [DT_MAC80211_RT] = "Mac80211-Radiotap"
+};
+
 /*
  * XXX need to have a different read/write/open function for each Linux driver.
  */
@@ -54,14 +81,7 @@ struct priv_linux {
     int fd_out, arptype_out;
     int fd_rtc;
 
-    int is_wlanng;
-    int is_hostap;
-    int is_madwifi;
-    int is_madwifing;
-    int is_bcm43xx;
-    int is_orinoco;
-    int is_zd1211rw;
-    int is_acx;
+    DRIVER_TYPE drivertype; /* inited to DT_UNKNOWN on allocation by wi_alloc */
 
     FILE *f_cap_in;
 
@@ -69,9 +89,12 @@ struct priv_linux {
 
     int sysfs_inject;
     int channel;
+    int rate;
+    int tx_power;
     char *wlanctlng; /* XXX never set */
     char *iwpriv;
     char *iwconfig;
+    char *ifconfig;
     char *wl;
     char *main_if;
     unsigned char pl_mac[6];
@@ -203,6 +226,8 @@ static int linux_get_channel(struct wif *wi)
         return ((wrq.u.freq.m - 241200000)/500000)+1;
     else if(wrq.u.freq.m > 1000000)
         return ((wrq.u.freq.m - 2412000)/5000)+1;
+    else if(wrq.u.freq.m < 10000)
+        return ((wrq.u.freq.m - 2412)/5)+1;
     return wrq.u.freq.m;
 }
 
@@ -216,9 +241,8 @@ static int linux_set_rate(struct wif *wi, int rate)
 
     memset(s, 0, sizeof(s));
 
-    /* Is madwifi-ng? */
-    if( dev->is_madwifing )
-    {
+    switch(dev->drivertype) {
+    case DT_MADWIFING:
         memset( &ifr, 0, sizeof( ifr ) );
         strncpy( ifr.ifr_name, wi_get_ifname(wi), sizeof( ifr.ifr_name ) - 1 );
 
@@ -253,6 +277,17 @@ static int linux_set_rate(struct wif *wi, int rate)
         waitpid( pid, &status, 0 );
 
         return 0;
+        break;
+
+    case DT_MAC80211_RT:
+
+        dev->rate = (rate/500000);
+        return 0;
+        break;
+
+    default:
+        break;
+
     }
 
     /* ELSE */
@@ -278,6 +313,9 @@ static int linux_get_rate(struct wif *wi)
     struct iwreq wrq;
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
+
+    if( dev->drivertype == DT_MAC80211_RT )
+        return (dev->rate*500000);
 
     if(dev->main_if)
         strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
@@ -312,8 +350,14 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
         return( -1 );
     }
 
-    if( dev->is_madwifi && !(dev->is_madwifing) )
+    switch (dev->drivertype) {
+    case DT_MADWIFI:
+    case DT_MADWIFING:
         caplen -= 4;    /* remove the FCS */
+        break;
+    default:
+        break;
+    }
 
     memset( buf, 0, sizeof( buf ) );
 
@@ -339,7 +383,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                 ri->ri_power = *(int *)( tmpbuf + 0x5C );
 
 //                if( ! memcmp( iface[i], "ath", 3 ) )
-                if( dev->is_madwifi )
+                if( dev->drivertype == DT_MADWIFI )
                     ri->ri_power -= *(int *)( tmpbuf + 0x68 );
             }
 
@@ -352,26 +396,57 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
     if( dev->arptype_in == ARPHRD_IEEE80211_FULL )
     {
-        if( tmpbuf[0] != 0 )
-            return 0;
-        /* skip the radiotap header */
+        struct ieee80211_radiotap_iterator iterator;
+        struct ieee80211_radiotap_header *rthdr;
 
-        n = *(unsigned short *)( tmpbuf + 2 );
+        rthdr = (struct ieee80211_radiotap_header *) tmpbuf;
 
-        if(ri)
-        {
-            /* ipw2200 1.0.7 */
-            if( *(int *)( tmpbuf + 4 ) == 0x0000082E )
-                ri->ri_power = tmpbuf[14];
+        /* go through the radiotap arguments we have been given
+         * by the driver
+         */
 
-            /* ipw2200 1.2.0 */
-            if( *(int *)( tmpbuf + 4 ) == 0x0000086F )
-                ri->ri_power = tmpbuf[15];
+        while (ieee80211_radiotap_iterator_next(&iterator) >= 0) {
 
-            /* zd1211rw-patched */
-            if(dev->is_zd1211rw && *(int *)( tmpbuf + 4 ) == 0x0000006E )
-                ri->ri_power = tmpbuf[14];
+            switch (iterator.this_arg_index) {
+
+            case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
+                ri->ri_power = *iterator.this_arg;
+                break;
+
+            case IEEE80211_RADIOTAP_DBM_ANTNOISE:
+                ri->ri_noise = *iterator.this_arg;
+                break;
+
+            case IEEE80211_RADIOTAP_ANTENNA:
+                ri->ri_antenna = *iterator.this_arg;
+                break;
+
+            case IEEE80211_RADIOTAP_CHANNEL:
+                ri->ri_channel = *iterator.this_arg;
+                break;
+
+            case IEEE80211_RADIOTAP_RATE:
+                ri->ri_rate = *iterator.this_arg;
+                break;
+
+            case IEEE80211_RADIOTAP_FLAGS:
+                /* is the CRC visible at the end?
+                 * remove
+                 */
+                if ( *iterator.this_arg &
+                    IEEE80211_RADIOTAP_F_FCS )
+                    caplen -= 4;
+
+                if ( *iterator.this_arg &
+                    IEEE80211_RADIOTAP_F_RX_BADFCS )
+                    return( 0 );
+
+                break;
+
+            }
         }
+
+        n=rthdr->it_len;
 
         if( n <= 0 || n >= caplen )
             return( 0 );
@@ -394,14 +469,34 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     unsigned char maddr[6];
     int ret;
     unsigned char tmpbuf[4096];
+    unsigned char rate;
 
     if((unsigned) count > sizeof(tmpbuf)-22) return -1;
 
     /* XXX honor ti */
     if (ti) {}
 
-    if( dev->is_wlanng && count >= 24 )
-    {
+    rate = dev->rate;
+
+    unsigned char u8aRadiotap[] = {
+        0x00, 0x00, // <-- radiotap version
+        0x09, 0x00, // <- radiotap header length
+        0x04, 0x00, 0x00, 0x00, // <-- bitmap
+        rate, // <-- rate forced to 1Mbps
+    };
+
+    switch (dev->drivertype) {
+
+    case DT_MAC80211_RT:
+        memcpy(tmpbuf, u8aRadiotap, sizeof (u8aRadiotap) );
+        memcpy(tmpbuf + sizeof (u8aRadiotap), buf, count);
+        count += sizeof (u8aRadiotap);
+
+        buf = tmpbuf;
+
+        break;
+
+    case DT_WLANNG:
         /* Wlan-ng isn't able to inject on kernel > 2.6.11 */
         if( dev->inject_wlanng == 0 )
         {
@@ -440,16 +535,19 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
 
             buf = tmpbuf;
         }
-    }
+        /* fall thru */
+    case DT_HOSTAP:
+        if( ( ((uchar *) buf)[1] & 3 ) == 2 )
+        {
+            /* Prism2 firmware swaps the dmac and smac in FromDS packets */
 
-    if( ( dev->is_wlanng || dev->is_hostap ) &&
-        ( ((uchar *) buf)[1] & 3 ) == 2 )
-    {
-        /* Prism2 firmware swaps the dmac and smac in FromDS packets */
-
-        memcpy( maddr, buf + 4, 6 );
-        memcpy( buf + 4, buf + 16, 6 );
-        memcpy( buf + 16, maddr, 6 );
+            memcpy( maddr, buf + 4, 6 );
+            memcpy( buf + 4, buf + 16, 6 );
+            memcpy( buf + 16, maddr, 6 );
+        }
+        break;
+    default:
+        break;
     }
 
     ret = write( dev->fd_out, buf, count );
@@ -479,8 +577,8 @@ static int linux_set_channel(struct wif *wi, int channel)
 
     memset( s, 0, sizeof( s ) );
 
-    if( dev->is_wlanng)
-    {
+    switch (dev->drivertype) {
+    case DT_WLANNG:
         snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
 
         if( ( pid = fork() ) == 0 )
@@ -500,10 +598,9 @@ static int linux_set_channel(struct wif *wi, int channel)
         }
         else
             return( 1 );
-    }
+        break;
 
-    if( dev->is_orinoco)
-    {
+    case DT_ORINOCO:
         snprintf( s,  sizeof( s ) - 1, "%d", channel );
 
         if( ( pid = fork() ) == 0 )
@@ -517,10 +614,9 @@ static int linux_set_channel(struct wif *wi, int channel)
         waitpid( pid, &status, 0 );
         dev->channel = channel;
         return 0;
-    }
+        break;  //yeah ;)
 
-    if( dev->is_zd1211rw)
-    {
+    case DT_ZD1211RW:
         snprintf( s,  sizeof( s ) - 1, "%d", channel );
 
         if( ( pid = fork() ) == 0 )
@@ -534,6 +630,10 @@ static int linux_set_channel(struct wif *wi, int channel)
         waitpid( pid, &status, 0 );
         dev->channel = channel;
         return 0;
+        break; //yeah ;)
+
+    default:
+        break;
     }
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
@@ -614,7 +714,7 @@ int linux_get_monitor(struct wif *wi)
     if( ( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
           ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
           ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL) ||
-        ( wrq.u.mode != IW_MODE_MONITOR && !dev->is_orinoco) )
+        ( wrq.u.mode != IW_MODE_MONITOR && (dev->drivertype != DT_ORINOCO)) )
     {
         return( 1 );
     }
@@ -647,8 +747,8 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
     }
     else
     {
-        if( dev->is_wlanng )
-        {
+        switch(dev->drivertype) {
+        case DT_WLANNG:
 //            snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
             if( ( pid = fork() ) == 0 )
             {
@@ -666,10 +766,9 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
             if( WIFEXITED(status) )
                 return( WEXITSTATUS(status) );
             return( 1 );
-        }
+            break;
 
-        if( dev->is_orinoco)
-        {
+        case DT_ORINOCO:
             if( ( pid = fork() ) == 0 )
             {
                 close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
@@ -684,10 +783,9 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
                 return( WEXITSTATUS(status) );
 
             return 1;
-        }
+            break;
 
-        if( dev->is_acx)
-        {
+        case DT_ACX:
             if( ( pid = fork() ) == 0 )
             {
                 close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
@@ -702,6 +800,10 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
                 return( WEXITSTATUS(status) );
 
             return 1;
+            break;
+
+        default:
+            break;
         }
 
         memset( &wrq, 0, sizeof( struct iwreq ) );
@@ -770,10 +872,13 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     sll.sll_family   = AF_PACKET;
     sll.sll_ifindex  = ifr.ifr_ifindex;
 
-    if( dev->is_wlanng )
+    switch(dev->drivertype) {
+    case DT_WLANNG:
         sll.sll_protocol = htons( ETH_P_80211_RAW );
-    else
+    default:
         sll.sll_protocol = htons( ETH_P_ALL );
+        break;
+    }
 
     /* lookup the hardware type */
 
@@ -800,7 +905,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
           ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL) ||
         ( wrq.u.mode != IW_MODE_MONITOR) )
     {
-        if (set_monitor( dev, iface, fd ) && !dev->is_orinoco)
+        if (set_monitor( dev, iface, fd ) && !dev->drivertype == DT_ORINOCO )
         {
             printf("Error setting monitor mode on %s\n",iface);
             return( 1 );
@@ -918,6 +1023,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     iwpriv = wiToolsPath("iwpriv");
     dev->iwpriv = iwpriv;
     dev->iwconfig = wiToolsPath("iwconfig");
+    dev->ifconfig = wiToolsPath("ifconfig");
 
     if (! iwpriv )
     {
@@ -940,6 +1046,18 @@ static int do_linux_open(struct wif *wi, char *iface)
         goto close_in;
     }
     /* figure out device type */
+
+    /* mac80211 radiotap injection
+     * detected based on interface called mon...
+     * since mac80211 allows multiple virtual interfaces
+     *
+     * note though that the virtual interfaces are ultimately using a
+     * single physical radio: that means for example they must all
+     * operate on the same channel
+     */
+
+    if (strncmp(iface, "mon", 3) == 0)
+        dev->drivertype = DT_MAC80211_RT;
 
     /* check if wlan-ng or hostap or r8180 */
     if( strlen(iface) == 5 &&
@@ -969,7 +1087,7 @@ static int do_linux_open(struct wif *wi, char *iface)
                     }
                 }
             }
-            dev->is_wlanng = 1;
+            dev->drivertype = DT_WLANNG;
         }
 
         memset( strbuf, 0, sizeof( strbuf ) );
@@ -979,7 +1097,7 @@ static int do_linux_open(struct wif *wi, char *iface)
                   iface);
 
         if( system( strbuf ) == 0 )
-            dev->is_hostap = 1;
+            dev->drivertype=DT_HOSTAP;
 
         memset( strbuf, 0, sizeof( strbuf ) );
         snprintf( strbuf,  sizeof( strbuf ) - 1,
@@ -988,7 +1106,7 @@ static int do_linux_open(struct wif *wi, char *iface)
                     iface);
 
         if( system( strbuf ) == 0 )
-            dev->is_acx = 1;
+            dev->drivertype=DT_ACX;
     }
 
     /* enable injection on ralink */
@@ -1010,7 +1128,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     if( ( strlen( iface ) == 4 || strlen( iface ) == 5 )
         && memcmp( iface, "ath", 3 ) == 0 )
     {
-        dev->is_madwifi = 1;
+        dev->drivertype = DT_MADWIFI;
         memset( strbuf, 0, sizeof( strbuf ) );
 
         snprintf(strbuf, sizeof( strbuf ) -1,
@@ -1021,7 +1139,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         if (f != NULL)
         {
             // It is madwifi-ng
-            dev->is_madwifing = 1;
+            dev->drivertype=DT_MADWIFING;
             fclose( f );
 
             /* should we force prism2 header? */
@@ -1067,7 +1185,10 @@ static int do_linux_open(struct wif *wi, char *iface)
     }
 
     /* open the replay interface */
-    dev->is_madwifi = ( memcmp(iface, "ath", 3 ) == 0 );
+    if ( memcmp(iface, "ath", 3 ) == 0 )
+    {
+        dev->drivertype = DT_MADWIFI;
+    }
 
     /* test if orinoco */
 
@@ -1083,7 +1204,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         waitpid( pid, &n, 0 );
 
         if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
-            dev->is_orinoco = 1;
+            dev->drivertype=DT_ORINOCO;
     }
 
     /* test if zd1211rw */
@@ -1100,7 +1221,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         waitpid( pid, &n, 0 );
 
         if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
-            dev->is_zd1211rw = 1;
+            dev->drivertype=DT_ZD1211RW;
     }
 
     /* test if rtap interface and try to find real interface */
@@ -1184,6 +1305,9 @@ static int do_linux_open(struct wif *wi, char *iface)
         }
     }
 
+    fprintf(stderr, "Interface %s -> driver: %s\n", iface,
+        szaDriverTypes[dev->drivertype]);
+
     if (openraw(dev, iface, dev->fd_out, &dev->arptype_out, dev->pl_mac) != 0) {
 		goto close_out;
     }
@@ -1192,12 +1316,11 @@ static int do_linux_open(struct wif *wi, char *iface)
     dev->arptype_in = dev->arptype_out;
 
     return 0;
+close_out:
+    close(dev->fd_out);
 close_in:
     close(dev->fd_in);
     return 1;
-close_out:
-    close(dev->fd_out);
-    goto close_in;
 }
 
 static void do_free(struct wif *wi)
@@ -1275,38 +1398,39 @@ static int linux_set_mac(struct wif *wi, unsigned char *mac)
 	memset( &ifr, 0, sizeof( ifr ) );
 	strncpy( ifr.ifr_name, wi_get_ifname(wi), sizeof( ifr.ifr_name ) - 1 );
 
-	if( ioctl( fd, SIOCGIFINDEX, &ifr ) < 0 )
+	if( ioctl( fd, SIOCGIFHWADDR, &ifr ) < 0 )
 	{
 		printf("Interface %s: \n", wi_get_ifname(wi));
-		perror( "ioctl(SIOCGIFINDEX) failed" );
+		perror( "ioctl(SIOCGIFHWADDR) failed" );
 		return( 1 );
 	}
 
-// 	ifr.ifr_hwaddr.sa_family = LINKTYPE_ETHERNET;
-//	ifr.ifr_hwaddr.sa_len = 6;
+//         if down
+        ifr.ifr_flags &= ~(IFF_UP | IFF_BROADCAST | IFF_RUNNING);
+
+        if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
+        {
+            perror( "ioctl(SIOCSIFFLAGS) failed" );
+            return( 1 );
+        }
+
+// 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+// 	ifr.ifr_hwaddr.sa_len = 6;
 	memcpy(ifr.ifr_hwaddr.sa_data, mac, 6);
 	memcpy(pl->pl_mac, mac, 6);
 
-        //if down
-//         ifr.ifr_flags &= ~IFF_UP;
-//
-//         if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
-//         {
-//             perror( "ioctl(SIOCSIFFLAGS) failed" );
-//             return( 1 );
-//         }
-
         //set mac
-	ret = ioctl(wi_fd(wi), SIOCSIFHWADDR, ifr);
+        ret = ioctl(fd, SIOCSIFHWADDR, ifr);
 
         //if up
-//         ifr.ifr_flags |= IFF_UP | IFF_BROADCAST | IFF_RUNNING;
-//
-//         if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
-//         {
-//             perror( "ioctl(SIOCSIFFLAGS) failed" );
-//             return( 1 );
-//         }
+        ifr.ifr_flags |= IFF_UP | IFF_BROADCAST | IFF_RUNNING;
+
+        if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
+        {
+            perror( "ioctl(SIOCSIFFLAGS) failed" );
+            return( 1 );
+        }
+
         return ret;
 }
 

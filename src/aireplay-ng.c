@@ -390,8 +390,8 @@ int set_bitrate(struct wif *wi, int rate)
     if( wi_set_rate(wi, rate) )
         return 1;
 
-    if( reset_ifaces() )
-        return 1;
+//    if( reset_ifaces() )
+//        return 1;
 
     newrate = wi_get_rate(wi);
     for(i=0; i<RATE_NUM; i++)
