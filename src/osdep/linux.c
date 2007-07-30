@@ -337,6 +337,8 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
     unsigned char tmpbuf[4096];
 
     int caplen, n = 0;
+    char got_signal=0;
+    char got_noise=0;
 
     if((unsigned)count > sizeof(tmpbuf))
         return( -1 );
@@ -401,6 +403,9 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
         rthdr = (struct ieee80211_radiotap_header *) tmpbuf;
 
+        if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen) < 0)
+            return (0);
+
         /* go through the radiotap arguments we have been given
          * by the driver
          */
@@ -411,10 +416,22 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
             case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
                 ri->ri_power = *iterator.this_arg;
+                got_signal=1;
+                break;
+
+            case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
+                if(!got_signal)
+                    ri->ri_power = *iterator.this_arg;
                 break;
 
             case IEEE80211_RADIOTAP_DBM_ANTNOISE:
                 ri->ri_noise = *iterator.this_arg;
+                got_noise=1;
+                break;
+
+            case IEEE80211_RADIOTAP_DB_ANTNOISE:
+                if(!got_noise)
+                    ri->ri_noise = *iterator.this_arg;
                 break;
 
             case IEEE80211_RADIOTAP_ANTENNA:
@@ -426,7 +443,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                 break;
 
             case IEEE80211_RADIOTAP_RATE:
-                ri->ri_rate = *iterator.this_arg;
+                ri->ri_rate = (*iterator.this_arg) * 500000;
                 break;
 
             case IEEE80211_RADIOTAP_FLAGS:
