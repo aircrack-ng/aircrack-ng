@@ -240,7 +240,7 @@ void clean_exit(int ret)
 		ap_cur = ap_cur->next;
 	}
 
-	ap_cur = ap_prv;
+	ap_cur = ap_1st;
 
 	while( ap_cur != NULL )
 	{

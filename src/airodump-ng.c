@@ -727,14 +727,31 @@ int update_dataps()
 
 int list_tail_free(struct pkt_buf **list)
 {
+    struct pkt_buf **pkts;
+    struct pkt_buf *next;
+
     if(list == NULL) return 1;
 
-    if(*list != NULL)
+    pkts = list;
+
+    while(*pkts != NULL)
     {
-        //free stalls the process, causing 100% cou utilization
-//         free(*list);
-        *list=NULL;
+        next = (*pkts)->next;
+        if( (*pkts)->packet )
+        {
+            free( (*pkts)->packet);
+            (*pkts)->packet=NULL;
+        }
+
+        if(*pkts)
+        {
+            free(*pkts);
+            *pkts = NULL;
+        }
+        *pkts = next;
     }
+
+    *list=NULL;
 
     return 0;
 }
@@ -769,17 +786,28 @@ int list_check_decloak(struct pkt_buf **list, int length, unsigned char* packet)
 
     if( packet == NULL) return 1;
     if( list == NULL ) return 1;
+    if( *list == NULL ) return 1;
     if( length <= 0) return 1;
 
     gettimeofday(&tv1, NULL);
 
+    timediff = (((tv1.tv_sec - ((*list)->ctime.tv_sec)) * 1000000) + (tv1.tv_usec - ((*list)->ctime.tv_usec))) / 1000;
+    if( timediff > BUFFER_TIME )
+    {
+        list_tail_free(list);
+        next=NULL;
+    }
+
     while(next != NULL)
     {
-        timediff = (((tv1.tv_sec - (next->ctime.tv_sec)) * 1000000) + (tv1.tv_usec - (next->ctime.tv_usec))) / 1000;
-        if( timediff > BUFFER_TIME )
+        if(next->next != NULL)
         {
-            list_tail_free(&next);
-            break;
+            timediff = (((tv1.tv_sec - (next->next->ctime.tv_sec)) * 1000000) + (tv1.tv_usec - (next->next->ctime.tv_usec))) / 1000;
+            if( timediff > BUFFER_TIME )
+            {
+                list_tail_free(&(next->next));
+                break;
+            }
         }
         if( (next->length + 4) == length)
         {
@@ -1284,6 +1312,8 @@ skip_probe:
         {
             type = p[0];
             length = p[1];
+            if(p+2+length > h80211 + caplen)
+                break;
 
             if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x01\x01\x00", 6) == 0)) || (type == 0x30) )
             {
@@ -1312,13 +1342,29 @@ skip_probe:
                     continue;
                 }
 
+                if( p+9+offset > h80211+caplen )
+                    break;
                 numuni  = p[8+offset] + (p[9+offset]<<8);
+
+                if( p+ (11+offset) + 4*numuni > h80211+caplen)
+                    break;
                 numauth = p[(10+offset) + 4*numuni] + (p[(11+offset) + 4*numuni]<<8);
 
                 p += (10+offset);
 
 //                printf("numuni: %d\n", numuni);
 //                printf("numauth: %d\n", numauth);
+
+                if(type != 0x30)
+                {
+                    if( p + (2+4*numuni) + (2+4*numauth) > h80211+caplen)
+                        break;
+                }
+                else
+                {
+                    if( p + (2+4*numuni) + (2+4*numauth) + 2 > h80211+caplen)
+                        break;
+                }
 
                 for(i=0; i<numuni; i++)
                 {
@@ -1471,7 +1517,7 @@ skip_probe:
         }
 
         //update bitrate to station
-        if( ( h80211[1] & 3 ) == 2 )
+        if( (st_cur != NULL) && ( h80211[1] & 3 ) == 2 )
             st_cur->rate_to = ri->ri_rate;
 
         /* check the SNAP header to see if data is encrypted */
@@ -2829,7 +2875,7 @@ int invalid_channel(int chan)
 int getchannels(const char *optarg)
 {
     unsigned int i=0,chan_cur=0,chan_first=0,chan_last=0,chan_max=128,chan_remain=0;
-    char *optchan = NULL;
+    char *optchan = NULL, *optc;
     char *token = NULL;
     int *tmp_channels;
 
@@ -2840,7 +2886,7 @@ int getchannels(const char *optarg)
     chan_remain=chan_max;
 
     //create a writable string
-    optchan = (char*) malloc(strlen(optarg)+1);
+    optc = optchan = (char*) malloc(strlen(optarg)+1);
     strncpy(optchan, optarg, strlen(optarg));
     optchan[strlen(optarg)]='\0';
 
@@ -2861,7 +2907,7 @@ int getchannels(const char *optarg)
                     if( (token[i] < '0') && (token[i] > '9') && (token[i] != '-'))
                     {
                         free(tmp_channels);
-                        free(optchan);
+                        free(optc);
                         return -1;
                     }
                 }
@@ -2871,7 +2917,7 @@ int getchannels(const char *optarg)
                     if(chan_first > chan_last)
                     {
                         free(tmp_channels);
-                        free(optchan);
+                        free(optc);
                         return -1;
                     }
                     for(i=chan_first; i<=chan_last; i++)
@@ -2886,7 +2932,7 @@ int getchannels(const char *optarg)
                 else
                 {
                     free(tmp_channels);
-                    free(optchan);
+                    free(optc);
                     return -1;
                 }
 
@@ -2894,7 +2940,7 @@ int getchannels(const char *optarg)
             else
             {
                 free(tmp_channels);
-                free(optchan);
+                free(optc);
                 return -1;
             }
         }
@@ -2906,7 +2952,7 @@ int getchannels(const char *optarg)
                 if( (token[i] < '0') && (token[i] > '9') )
                 {
                     free(tmp_channels);
-                    free(optchan);
+                    free(optc);
                     return -1;
                 }
             }
@@ -2923,7 +2969,7 @@ int getchannels(const char *optarg)
             else
             {
                 free(tmp_channels);
-                free(optchan);
+                free(optc);
                 return -1;
             }
         }
@@ -2939,7 +2985,7 @@ int getchannels(const char *optarg)
     G.own_channels[i]=0;
 
     free(tmp_channels);
-    free(optchan);
+    free(optc);
     if(i==1) return G.own_channels[0];
     if(i==0) return -1;
     return 0;
@@ -2960,10 +3006,11 @@ int setup_card(char *iface, struct wif **wis)
 int init_cards(const char* cardstr, char *iface[], struct wif **wi)
 {
     char *buffer;
+    char *buf;
     int if_count=0;
     int i=0, again=0;
 
-    buffer = (char*) malloc( sizeof(char) * 1025 );
+    buf = buffer = (char*) malloc( sizeof(char) * 1025 );
     strncpy( buffer, cardstr, 1025 );
     buffer[1024] = '\0';
 
@@ -2977,10 +3024,14 @@ int init_cards(const char* cardstr, char *iface[], struct wif **wi)
         }
         if(again) continue;
         if(setup_card(iface[if_count], &(wi[if_count])) != 0)
+        {
+            free(buf);
             return -1;
+        }
         if_count++;
     }
 
+    free(buf);
     return if_count;
 }
 
@@ -3088,6 +3139,9 @@ int main( int argc, char *argv[] )
     int option = 0;
     int option_index = 0;
     char ifnam[64];
+
+    struct AP_info *ap_cur, *ap_prv, *ap_next;
+    struct ST_info *st_cur, *st_next;
 
     time_t tt1, tt2, tt3, start_time;
 
@@ -3600,6 +3654,7 @@ usage:
         {
             /* update the battery state */
             free(G.batt);
+            G.batt = NULL;
 
             tt2 = time( NULL );
             G.batt = getBatteryString();
@@ -3607,6 +3662,7 @@ usage:
             /* update elapsed time */
 
             free(G.elapsed_time);
+            G.elapsed_time=NULL;
             G.elapsed_time = getStringTimeFromSec(
             difftime(tt2, start_time) );
 
@@ -3741,6 +3797,27 @@ usage:
 	}
     }
 
+    if(G.batt)
+        free(G.batt);
+
+    if(G.elapsed_time)
+        free(G.elapsed_time);
+
+    if(G.own_channels)
+        free(G.own_channels);
+
+    if(G.prefix)
+        free(G.prefix);
+
+    if(G.f_cap_name)
+        free(G.f_cap_name);
+
+    if(G.keyout)
+        free(G.keyout);
+
+    for(i=0; i<cards; i++)
+        wi_close(wi[i]);
+
     if (G.record_data) {
         dump_write_csv();
 
@@ -3754,6 +3831,41 @@ usage:
     {
         sprintf( (char *) buffer, "%s-%02d.gps", argv[2], G.f_index );
         unlink(  (char *) buffer );
+    }
+
+    ap_prv = NULL;
+    ap_cur = G.ap_1st;
+
+    while( ap_cur != NULL )
+    {
+        uniqueiv_wipe( ap_cur->uiv_root );
+
+        list_tail_free(&(ap_cur->packets));
+
+        ap_prv = ap_cur;
+        ap_cur = ap_cur->next;
+    }
+
+    ap_cur = G.ap_1st;
+
+    while( ap_cur != NULL )
+    {
+        ap_next = ap_cur->next;
+
+        if( ap_cur != NULL )
+            free(ap_cur);
+
+        ap_cur = ap_next;
+    }
+
+    st_cur = G.st_1st;
+    st_next= NULL;
+
+    while(st_cur != NULL)
+    {
+        st_next = st_cur->next;
+        free(st_cur);
+        st_cur = st_next;
     }
 
     fprintf( stderr, "\33[?25h" );

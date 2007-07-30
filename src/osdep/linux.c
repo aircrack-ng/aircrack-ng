@@ -1105,6 +1105,7 @@ static int do_linux_open(struct wif *wi, char *iface)
                 }
             }
             dev->drivertype = DT_WLANNG;
+            dev->wlanctlng = wiToolsPath("wlanctl-ng");
         }
 
         memset( strbuf, 0, sizeof( strbuf ) );
@@ -1344,8 +1345,24 @@ static void do_free(struct wif *wi)
 {
 	struct priv_linux *pl = wi_priv(wi);
 
+        if(pl->wlanctlng)
+            free(pl->wlanctlng);
+
+        if(pl->iwpriv)
+            free(pl->iwpriv);
+
+        if(pl->iwconfig)
+            free(pl->iwconfig);
+
+        if(pl->ifconfig)
+            free(pl->ifconfig);
+
+        if(pl->wl)
+            free(pl->wl);
+
 	if(pl->main_if)
             free(pl->main_if);
+
 	free(pl);
 	free(wi);
 }
