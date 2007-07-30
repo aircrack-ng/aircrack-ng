@@ -219,6 +219,8 @@ struct ST_info
     char probes[NB_PRB][256];/* probed ESSIDs ring buffer */
     int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
     int power;               /* last signal power         */
+    int rate_to;             /* last bitrate to station   */
+    int rate_from;           /* last bitrate from station */
     struct timeval ftimer;   /* time of restart           */
     int missed;              /* number of missed packets  */
     unsigned int lastseq;    /* last seen sequnce number  */
@@ -813,7 +815,7 @@ int list_check_decloak(struct pkt_buf **list, int length, unsigned char* packet)
     return 1; //didn't find decloak
 }
 
-int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
+int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int cardnum )
 {
     int i, n, z, seq, msd, dlen, offset, clen, o;
     int type, length, numuni=0, numauth=0;
@@ -965,7 +967,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
         ( ( h80211[1] & 3 ) == 2 ) )
     {
         ap_cur->power_index = ( ap_cur->power_index + 1 ) % NB_PWR;
-        ap_cur->power_lvl[ap_cur->power_index] = power;
+        ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
 
         ap_cur->avg_power = 0;
 
@@ -1082,6 +1084,8 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
         st_cur->tlast = time( NULL );
 
         st_cur->power = -1;
+        st_cur->rate_to = -1;
+        st_cur->rate_from = -1;
 
         st_cur->probe_index = -1;
         st_cur->missed  = 0;
@@ -1114,7 +1118,8 @@ int dump_add_packet( unsigned char *h80211, int caplen, int power, int cardnum )
             memcmp( h80211 + 10, bssid, 6 ) != 0 ) ||
         ( ( h80211[1] & 3 ) == 1 ) )
     {
-        st_cur->power = power;
+        st_cur->power = ri->ri_power;
+        st_cur->rate_from = ri->ri_rate;
 
         if(st_cur->lastseq != 0)
         {
@@ -1458,7 +1463,16 @@ skip_probe:
         /* update the channel if we didn't get any beacon */
 
         if( ap_cur->channel == -1 )
-            ap_cur->channel = G.channel[cardnum];
+        {
+            if(ri->ri_channel > 0 && ri->ri_channel < 167)
+                ap_cur->channel = ri->ri_channel;
+            else
+                ap_cur->channel = G.channel[cardnum];
+        }
+
+        //update bitrate to station
+        if( ( h80211[1] & 3 ) == 2 )
+            st_cur->rate_to = ri->ri_rate;
 
         /* check the SNAP header to see if data is encrypted */
 
@@ -1789,7 +1803,7 @@ write_packet:
         gettimeofday( &tv, NULL );
 
         pkh.tv_sec  =   tv.tv_sec;
-        pkh.tv_usec = ( tv.tv_usec & ~0x1ff ) + power + 64;
+        pkh.tv_usec = ( tv.tv_usec & ~0x1ff ) + ri->ri_power + 64;
 
         n = sizeof( pkh );
 
@@ -2029,7 +2043,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
     int columns_ap = 83;
-    int columns_sta = 65;
+    int columns_sta = 72;
 
     if(!G.singlechan) columns_ap -= 4; //no RXQ in scan mode
 
@@ -2251,7 +2265,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     fprintf( stderr, "%s\n", strbuf );
 
     memcpy( strbuf, " BSSID              STATION "
-            "           PWR  Lost  Packets  Probes", columns_sta );
+            "           PWR   Rate  Lost  Packets  Probes", columns_sta );
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
@@ -2314,9 +2328,11 @@ void dump_print( int ws_row, int ws_col, int if_num )
                     st_cur->stmac[2], st_cur->stmac[3],
                     st_cur->stmac[4], st_cur->stmac[5] );
 
-            fprintf( stderr, "  %3d", st_cur->power  );
-            fprintf( stderr, "  %4d", st_cur->missed );
-            fprintf( stderr, " %8ld", st_cur->nb_pkt );
+            fprintf( stderr, "  %3d", st_cur->power    );
+            fprintf( stderr, "  %2d", st_cur->rate_to/1000000  );
+            fprintf( stderr,  "-%2d", st_cur->rate_from/1000000);
+            fprintf( stderr, "  %4d", st_cur->missed   );
+            fprintf( stderr, " %8ld", st_cur->nb_pkt   );
 
             if( ws_col > (columns_sta - 6) )
             {
@@ -3720,7 +3736,7 @@ usage:
                 }
                 power = ri.ri_power;
 
-                dump_add_packet( h80211, caplen, power, i );
+                dump_add_packet( h80211, caplen, &ri, i );
 	     }
 	}
     }
