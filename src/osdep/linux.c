@@ -383,6 +383,8 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
             if(ri)
             {
                 ri->ri_power = *(int *)( tmpbuf + 0x5C );
+                ri->ri_noise = *(int *)( tmpbuf + 0x5C + 12 );
+                ri->ri_rate = (*(int *)( tmpbuf + 0x5C + 24 ))*500000;
 
 //                if( ! memcmp( iface[i], "ath", 3 ) )
                 if( dev->drivertype == DT_MADWIFI )
