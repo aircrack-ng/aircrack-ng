@@ -226,7 +226,7 @@ static int linux_get_channel(struct wif *wi)
         return ((wrq.u.freq.m - 241200000)/500000)+1;
     else if(wrq.u.freq.m > 1000000)
         return ((wrq.u.freq.m - 2412000)/5000)+1;
-    else if(wrq.u.freq.m < 10000)
+    else if(wrq.u.freq.m > 1000)
         return ((wrq.u.freq.m - 2412)/5)+1;
     return wrq.u.freq.m;
 }
