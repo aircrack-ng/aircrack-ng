@@ -77,7 +77,7 @@ int ieee80211_radiotap_iterator_init(
 			 * stated radiotap header length
 			 */
 
-			if ((((int)iterator->arg) - ((int)iterator->rtheader)) >
+			if ((((void*)iterator->arg) - ((void*)iterator->rtheader)) >
 			    iterator->max_length)
 				return (-EINVAL);
 
@@ -180,12 +180,12 @@ int ieee80211_radiotap_iterator_next(
 		 * kind of boundary.
 		 */
 
-		if ((((int)iterator->arg)-((int)iterator->rtheader)) &
+		if ((((void*)iterator->arg)-((void*)iterator->rtheader)) &
 		    ((rt_sizes[iterator->arg_index] >> 4) - 1))
 			iterator->arg_index +=
 				(rt_sizes[iterator->arg_index] >> 4) -
-				((((int)iterator->arg) -
-				((int)iterator->rtheader)) &
+				((((void*)iterator->arg) -
+				((void*)iterator->rtheader)) &
 				((rt_sizes[iterator->arg_index] >> 4) - 1));
 
 		/*
@@ -208,7 +208,7 @@ int ieee80211_radiotap_iterator_next(
 		 * max_length on the last arg, never exceeding it.
 		 */
 
-		if ((((int)iterator->arg) - ((int)iterator->rtheader)) >
+		if ((((void*)iterator->arg) - ((void*)iterator->rtheader)) >
 		    iterator->max_length)
 			return (-EINVAL);
 

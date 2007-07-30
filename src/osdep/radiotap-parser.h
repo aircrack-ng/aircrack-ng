@@ -33,7 +33,10 @@ typedef u16 __le16;
 #define	le32_to_cpu(x) \
 ((((x)&0xff)<<24)|(((x)&0xff00)<<8)|(((x)&0xff0000)>>8)|(((x)&0xff000000)>>24))
 #endif
+
+#ifndef unlikely
 #define	unlikely(x) (x)
+#endif
 
 #include "ieee80211_radiotap.h"
 
