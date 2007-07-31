@@ -24,14 +24,16 @@
 
 /* Empty for now.  Could contain antenna, power, rate, etc. */
 struct tx_info {
+        unsigned int     ti_rate;
 };
 
 struct rx_info {
-        int     ri_power;
-        int     ri_noise;
-        int     ri_channel;
-        int     ri_rate;
-        int     ri_antenna;
+        u_int64_t        ri_mactime;
+        unsigned int     ri_power;
+        unsigned int     ri_noise;
+        unsigned int     ri_channel;
+        unsigned int     ri_rate;
+        unsigned int     ri_antenna;
 } __packed;
 
 /* Normal code should not access this directly.  Only osdep.

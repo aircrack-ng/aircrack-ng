@@ -1134,6 +1134,10 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) != 0 )
         st_cur->base = ap_cur;
 
+    //update bitrate to station
+    if( (st_cur != NULL) && ( h80211[1] & 3 ) == 2 )
+        st_cur->rate_to = ri->ri_rate;
+
     /* update the last time seen */
 
     st_cur->tlast = time( NULL );
@@ -1515,10 +1519,6 @@ skip_probe:
             else
                 ap_cur->channel = G.channel[cardnum];
         }
-
-        //update bitrate to station
-        if( (st_cur != NULL) && ( h80211[1] & 3 ) == 2 )
-            st_cur->rate_to = ri->ri_rate;
 
         /* check the SNAP header to see if data is encrypted */
 
@@ -3132,7 +3132,7 @@ int main( int argc, char *argv[] )
     long time_slept, cycle_time;
     int caplen, i, j, cards, fdh, fd_is_set, chan_count;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
-    int ivs_only, power, found;
+    int ivs_only, found;
     int valid_channel, chanoption;
     int freq [2];
     int num_opts = 0;
@@ -3170,9 +3170,6 @@ int main( int argc, char *argv[] )
 
     ivs_only       =  0;
     chanoption     =  0;
-    power          = -1;
-//    fd_raw         = -1;
-//    arptype        =  0;
     cards	   =  0;
     fdh		   =  0;
     fd_is_set	   =  0;
@@ -3183,7 +3180,6 @@ int main( int argc, char *argv[] )
     valid_channel  =  0;
     G.usegpsd      =  0;
     G.channels     =  bg_chans;
-//    G.channel      =  0;
     G.one_beacon   =  1;
     G.singlechan  =  0;
     G.dump_prefix    =  NULL;
@@ -3790,7 +3786,6 @@ usage:
                     break;
 //                     return 1;
                 }
-                power = ri.ri_power;
 
                 dump_add_packet( h80211, caplen, &ri, i );
 	     }

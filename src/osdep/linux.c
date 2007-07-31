@@ -374,7 +374,11 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
         {
             /* prism54 uses a different format */
             if(ri)
+            {
                 ri->ri_power = tmpbuf[0x33];
+                ri->ri_noise = *(unsigned int *)( tmpbuf + 0x33 + 12 );
+                ri->ri_rate = (*(unsigned int *)( tmpbuf + 0x33 + 24 ))*500000;
+            }
 
             n = 0x40;
         }
@@ -382,9 +386,11 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
         {
             if(ri)
             {
-                ri->ri_power = *(int *)( tmpbuf + 0x5C );
-                ri->ri_noise = *(int *)( tmpbuf + 0x5C + 12 );
-                ri->ri_rate = (*(int *)( tmpbuf + 0x5C + 24 ))*500000;
+                ri->ri_mactime = *(u_int64_t*)( tmpbuf + 0x5C - 48 );
+                ri->ri_channel = *(unsigned int *)( tmpbuf + 0x5C - 36 );
+                ri->ri_power = *(unsigned int *)( tmpbuf + 0x5C );
+                ri->ri_noise = *(unsigned int *)( tmpbuf + 0x5C + 12 );
+                ri->ri_rate = (*(unsigned int *)( tmpbuf + 0x5C + 24 ))*500000;
 
 //                if( ! memcmp( iface[i], "ath", 3 ) )
                 if( dev->drivertype == DT_MADWIFI )
@@ -415,6 +421,10 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
         while (ieee80211_radiotap_iterator_next(&iterator) >= 0) {
 
             switch (iterator.this_arg_index) {
+
+            case IEEE80211_RADIOTAP_TSFT:
+                ri->ri_mactime = *iterator.this_arg;
+                break;
 
             case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
                 ri->ri_power = *iterator.this_arg;
