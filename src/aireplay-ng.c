@@ -4221,6 +4221,16 @@ int do_attack_test()
 
     for(i=0; i<found; i++)
     {
+        if(wi_get_channel(_wi_out) != ap[i].chan)
+        {
+            wi_set_channel(_wi_out, ap[i].chan);
+        }
+
+        if(wi_get_channel(_wi_in) != ap[i].chan)
+        {
+            wi_set_channel(_wi_in, ap[i].chan);
+        }
+
         PCT; printf("%02X:%02X:%02X:%02X:%02X:%02X - channel: %d - \'%s\'\n", ap[i].bssid[0], ap[i].bssid[1],
                     ap[i].bssid[2], ap[i].bssid[3], ap[i].bssid[4], ap[i].bssid[5], ap[i].chan, ap[i].essid);
 
