@@ -38,7 +38,6 @@
 #ifndef IEEE80211RADIOTAP_H
 #define IEEE80211RADIOTAP_H
 
-#include <linux/if_ether.h>
 #include <linux/kernel.h>
 
 /* Radiotap header version (from official NetBSD feed) */
