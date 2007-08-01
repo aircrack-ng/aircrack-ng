@@ -82,7 +82,7 @@ struct owned {
 
 struct east_state {
 	/* conf & params */
-	char		es_ifname[16];
+	char		es_ifname[256];
 	unsigned char	es_mymac[6];
 	int		es_setmac;
 	int		es_iponly;
