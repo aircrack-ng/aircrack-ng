@@ -6,11 +6,12 @@ KISMET=/etc/kismet/kismet.conf
 CH=$3; [ x$3 = "x" ] && CH=10
 IFACE_FOUND="false"
 MADWIFI=0
+MAC80211=0
 
 PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager\|avahi-autoipd"
 
 usage() {
-	printf "usage: `basename $0` <start|stop> <interface> [channel]\n"
+	printf "usage: `basename $0` <start|stop|check> <interface> [channel]\n"
 	echo
 	exit
 }
@@ -98,6 +99,119 @@ checkProcessesIface() {
     done
 }
 
+getStack() {
+    if [ x"$1" = x ]
+    then
+        return
+    fi
+
+    if [ -d /sys/class/net/$1/phy80211/ ]
+    then
+        MAC80211=1
+    else
+        MAC80211=0
+    fi
+}
+
+#you need to run getDriver $iface prior to getChipset
+getChipset() {
+    if [ x"$1" = x ]
+    then
+        return
+    fi
+
+    if [ x$DRIVER = "xzd1211rw" -o x$DRIVER = "xzd1211rw_mac80211" ]
+    then
+        CHIPSET="Zydas 1211"
+    fi
+
+    if [ x$DRIVER = "xhostap" ]
+    then
+        CHIPSET="Prism 2/2.5/3"
+    fi
+
+    if [ x$DRIVER = "xr8187" -o x$DRIVER = "xrtl8187" ]
+    then
+        CHIPSET="Realtek 8187L"
+    fi
+
+    if [ x$DRIVER = "xrt2570" -o x$DRIVER = "xrt2500usb" ]
+    then
+        CHIPSET="Ralink 2570 USB"
+    fi
+
+    if [ x$DRIVER = "xrt2500" -o x$DRIVER = "xrt2500pci" ]
+    then
+        CHIPSET="Ralink 2500 PCI"
+    fi
+
+    if [ x$DRIVER = "xrt61" -o x$DRIVER = "xrt61pci" ]
+    then
+        CHIPSET="Ralink 2561 PCI"
+    fi
+
+    if [ x$DRIVER = "xrt73" -o x$DRIVER = "xrt73usb" ]
+    then
+        CHIPSET="Ralink 2573 USB"
+    fi
+
+    if [ x$DRIVER = "xipw2100" ]
+    then
+        CHIPSET="Intel 2100 b"
+    fi
+
+    if [ x$DRIVER = "xipw2200" ]
+    then
+        CHIPSET="Intel 2200 b/g"
+    fi
+
+    if [ x$DRIVER = "xipw3945" ]
+    then
+        CHIPSET="Intel 3945 a/b/g"
+    fi
+
+    if [ x$DRIVER = "xipw4965" ]
+    then
+        CHIPSET="Intel 4945 a/b/g/n"
+    fi
+
+    if [ x$DRIVER = "xath_pci" ]
+    then
+        CHIPSET="Atheros"
+    fi
+
+    if [ x$DRIVER = "xorinoco" ]
+    then
+        CHIPSET="Hermes/Prism"
+    fi
+}
+
+getPhy() {
+    PHYDEV=""
+    if [ x"$1" = x ]
+    then
+        return
+    fi
+
+    if [ x$MAC80211 = "x" ]
+    then
+        return
+    fi
+
+    PHYDEV="`ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/'`"
+}
+
+getNewMon() {
+    i=0
+
+    while [ -d /sys/class/net/mon$i/ ]
+    do
+        i=$(($i+1))
+    done
+
+    MONDEV="mon$i"
+}
+
 if [ x"`which id 2> /dev/null`" != "x" ]
 then
 	USERID="`id -u 2> /dev/null`"
@@ -115,6 +229,18 @@ fi
 
 iwpriv > /dev/null 2> /dev/null ||
   { echo Wireless tools not found ; exit ; }
+
+if [ x"$1" = xcheck ]
+then
+    scanProcesses
+    for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
+    do
+#         getModule $iface
+#         getDriver $iface
+        checkProcessesIface $iface
+    done
+    exit
+fi
 
 echo && echo
 
@@ -166,8 +292,40 @@ fi
 
 for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
 do
- getModule $iface
- getDriver $iface
+ getModule  $iface
+ getDriver  $iface
+ getStack   $iface
+ getChipset $DRIVER
+
+ if [ x$MAC80211 = "x1" ]
+ then
+    getPhy $iface
+    getNewMon
+    printf "$iface\t\t$CHIPSET\t$DRIVER - [$PHYDEV]"
+    if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+    then
+        echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
+        sleep 0.1
+        iwconfig $MONDEV mode Monitor &>/dev/null
+        ifconfig $MONDEV up
+        printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+    fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+    then
+        z="`echo $iface | cut -b -3`"
+        if [ x$z = "xmon" ]
+        then
+            echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+            printf " (removed)"
+        else
+            ifconfig $iface down
+            iwconfig $iface mode managed
+            printf "\n\t\t\t\t(monitor mode disabled)"
+        fi
+    fi
+    echo
+    continue
+ fi
 
  if [ x"`iwpriv $iface 2>/dev/null | grep get_rid`" != "x" ] || [ x"`iwpriv $iface 2>/dev/null | grep dump_recs`" != "x" ]
  then
@@ -606,14 +764,6 @@ do
 printf "$iface\t\tUnknown\t\tUnknown (MONITOR MODE NOT SUPPORTED)" && echo
 
 
-done
-
-scanProcesses
-for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
-do
- getModule $iface
- getDriver $iface
- checkProcessesIface $iface
 done
 
 echo
