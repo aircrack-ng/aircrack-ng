@@ -9,18 +9,9 @@
 #define __AIRCRACK_NG_OSEDEP_H__
 
 #include <netinet/in.h>
+#include <stdint.h>
 
 #include "packed.h"
-#include "radiotap-parser.h"
-	/* radiotap-parser defines types like u8 that
-	 * ieee80211_radiotap.h needs
-	 *
-	 * we use our local copy of ieee80211_radiotap.h
-	 *
-	 * - since we can't support extensions we don't understand
-	 * - since linux does not include it in userspace headers
-	 */
-#include "ieee80211_radiotap.h"
 
 /* Empty for now.  Could contain antenna, power, rate, etc. */
 struct tx_info {
@@ -28,7 +19,7 @@ struct tx_info {
 };
 
 struct rx_info {
-        u_int64_t        ri_mactime;
+        uint64_t         ri_mactime;
         unsigned int     ri_power;
         unsigned int     ri_noise;
         unsigned int     ri_channel;
