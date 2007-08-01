@@ -3514,16 +3514,6 @@ usage:
         return( 1 );
     }
 
-    /* Check if we have root privileges */
-
-	#ifndef __CYGWIN__
-    if( geteuid() != 0 )
-    {
-        printf( "This program requires root privileges.\n" );
-        return( 1 );
-    }
-    #endif
-
     /* initialize cards */
     cards = init_cards(argv[argc-1], iface, wi);
 

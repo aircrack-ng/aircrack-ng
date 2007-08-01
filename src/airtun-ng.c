@@ -889,12 +889,6 @@ usage:
         return( 1 );
     }
 
-    if( geteuid() != 0 )
-    {
-        printf( "This program requires root privileges.\n" );
-        return( 1 );
-    }
-
     dev.fd_rtc = -1;
 
     if( memcmp( opt.r_bssid, NULL_MAC, 6) == 0 )
