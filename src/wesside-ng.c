@@ -168,6 +168,8 @@ float chrono( struct timeval *start, int reset )
 
 void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit )
 {
+    return;
+
     float delta;
     struct winsize ws;
     int i, et_h, et_m, et_s;
