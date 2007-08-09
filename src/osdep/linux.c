@@ -65,7 +65,8 @@ typedef enum {
         DT_ORINOCO,
         DT_ZD1211RW,
         DT_ACX,
-        DT_MAC80211_RT
+        DT_MAC80211_RT,
+        DT_AT76USB
 
 } DRIVER_TYPE;
 
@@ -79,7 +80,8 @@ static const char * szaDriverTypes[] = {
         [DT_ORINOCO] = "Orinoco",
         [DT_ZD1211RW] = "ZD1211RW",
         [DT_ACX] = "ACX",
-        [DT_MAC80211_RT] = "Mac80211-Radiotap"
+        [DT_MAC80211_RT] = "Mac80211-Radiotap",
+        [DT_AT76USB] = "Atmel 76_usb"
 };
 
 /*
@@ -364,8 +366,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
     switch (dev->drivertype) {
     case DT_MADWIFI:
-    case DT_MADWIFING:
-        caplen -= 4;    /* remove the FCS */
+        caplen -= 4;    /* remove the FCS for madwifi-old! only (not -ng)*/
         break;
     default:
         break;
@@ -428,12 +429,12 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
          * by the driver
          */
 
-        while (ieee80211_radiotap_iterator_next(&iterator) >= 0) {
+        while (ri && (ieee80211_radiotap_iterator_next(&iterator) >= 0)) {
 
             switch (iterator.this_arg_index) {
 
             case IEEE80211_RADIOTAP_TSFT:
-                ri->ri_mactime = *iterator.this_arg;
+                ri->ri_mactime = *((uint64_t*)iterator.this_arg);
                 break;
 
             case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
@@ -855,6 +856,10 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
             return( 1 );
         }
 
+        if(dev->drivertype == DT_AT76USB)
+        {
+            sleep(3);
+        }
     }
 
     /* couple of iwprivs to enable the prism header */
@@ -1245,6 +1250,15 @@ static int do_linux_open(struct wif *wi, char *iface)
 
         if( WIFEXITED(n) && WEXITSTATUS(n) == 0 )
             dev->drivertype=DT_ORINOCO;
+
+        memset( strbuf, 0, sizeof( strbuf ) );
+        snprintf( strbuf,  sizeof( strbuf ) - 1,
+                  "iwpriv %s 2>/dev/null | "
+                  "grep get_scan_times >/dev/null",
+                  iface);
+
+        if( system( strbuf ) == 0 )
+            dev->drivertype=DT_AT76USB;
     }
 
     /* test if zd1211rw */
