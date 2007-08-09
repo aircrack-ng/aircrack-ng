@@ -210,7 +210,10 @@ void clean_exit(int ret)
 	}
 
 	if(wep.ivbuf != NULL)
+	{
 		free(wep.ivbuf);
+		wep.ivbuf = NULL;
+	}
 
 	ap_prv = NULL;
 	ap_cur = ap_1st;
@@ -218,22 +221,33 @@ void clean_exit(int ret)
 	while( ap_cur != NULL )
 	{
 		if( ap_cur->ivbuf != NULL )
+		{
 			free(ap_cur->ivbuf);
+			ap_cur->ivbuf = NULL;
+		}
 
 		uniqueiv_wipe( ap_cur->uiv_root );
 
 		if( ap_cur->ptw_clean != NULL )
 		{
 			if( ap_cur->ptw_clean->allsessions != NULL )
+			{
 				free(ap_cur->ptw_clean->allsessions);
+				ap_cur->ptw_clean->allsessions=NULL;
+			}
 			free(ap_cur->ptw_clean);
+			ap_cur->ptw_clean = NULL;
 		}
 
 		if( ap_cur->ptw_vague != NULL )
 		{
 			if( ap_cur->ptw_vague->allsessions != NULL )
+			{
 				free(ap_cur->ptw_vague->allsessions);
+				ap_cur->ptw_vague->allsessions = NULL;
+			}
 			free(ap_cur->ptw_vague);
+			ap_cur->ptw_vague = NULL;
 		}
 
 		ap_prv = ap_cur;
@@ -1322,11 +1336,20 @@ void read_thread( void *arg )
 	read_fail:
 
 	if(rb.buf1 != NULL)
+	{
 		free(rb.buf1);
+		rb.buf1=NULL;
+	}
 	if(rb.buf2 != NULL)
+	{
 		free(rb.buf2);
+		rb.buf2=NULL;
+	}
 	if(buffer != NULL)
+	{
 		free(buffer);
+		buffer=NULL;
+	}
 
 	if(close_aircrack)
 		return;
@@ -2028,11 +2051,20 @@ void check_thread( void *arg )
 	read_fail:
 
 	if(rb.buf1 != NULL)
+	{
 		free(rb.buf1);
+		rb.buf1 = NULL;
+	}
 	if(rb.buf2 != NULL)
+	{
 		free(rb.buf2);
+		rb.buf2 = NULL;
+	}
 	if(buffer != NULL)
+	{
 		free(buffer);
+		buffer = NULL;
+	}
 
 	return;
 }
@@ -3673,6 +3705,7 @@ int next_key( char **key, int keysize )
 		{
 			printf( "\nPassphrase not in dictionnary \n" );
 			free(tmp);
+			tmp = NULL;
 			return( FAILURE );
 		}
 
@@ -3687,6 +3720,7 @@ int next_key( char **key, int keysize )
 				if(next_dict(opt.nbdict+1) != 0)
 				{
 					free(tmp);
+					tmp = NULL;
 					return( FAILURE );
 				}
 				else
@@ -3740,6 +3774,7 @@ int next_key( char **key, int keysize )
 				if(next_dict(opt.nbdict+1) != 0)
 				{
 					free(tmp);
+					tmp = NULL;
 					return( FAILURE );
 				}
 				else
@@ -3762,6 +3797,7 @@ int next_key( char **key, int keysize )
 	}
 
 	free(tmp);
+	tmp = NULL;
 
 	return( SUCCESS );
 }
