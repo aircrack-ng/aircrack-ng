@@ -44,7 +44,11 @@ int ieee80211_radiotap_iterator_init(
 	struct ieee80211_radiotap_header * radiotap_header,
 	int max_length)
 {
+	if(iterator == NULL)
+		return (-EINVAL);
 
+	if(radiotap_header == NULL)
+		return (-EINVAL);
 	/* Linux only supports version 0 radiotap format */
 
 	if (radiotap_header->it_version)
