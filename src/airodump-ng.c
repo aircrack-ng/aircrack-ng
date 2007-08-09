@@ -391,7 +391,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
     text[textlen+2]   = (crc >> 16) & 0xFF;
     text[textlen+3]   = (crc >> 24) & 0xFF;
 
-    /* cleartext XOR cypher */
+    /* cleartext XOR cipher */
     for(n=0; n<(textlen+4); n++)
     {
         prga[4+n] = (text[n] ^ G.sharedkey[1][28+n]) & 0xFF;
@@ -455,7 +455,7 @@ char usage[] =
 "      --update     <secs> : Display update delay in seconds\n"
 "\n"
 "  Filter options:\n"
-"      --encrypt   <suite> : Filter APs by cypher suite\n"
+"      --encrypt   <suite> : Filter APs by cipher suite\n"
 "      --netmask <netmask> : Filter APs by mask\n"
 "      --bssid     <bssid> : Filter APs by BSSID\n"
 "      -a                  : Filter unassociated clients\n"
