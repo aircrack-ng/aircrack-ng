@@ -1229,12 +1229,6 @@ static int do_linux_open(struct wif *wi, char *iface)
         }
     }
 
-    /* open the replay interface */
-    if ( memcmp(iface, "ath", 3 ) == 0 )
-    {
-        dev->drivertype = DT_MADWIFI;
-    }
-
     /* test if orinoco */
 
     if( memcmp( iface, "eth", 3 ) == 0 )
