@@ -1511,18 +1511,18 @@ install_hermes() {
 
     if [ $KMINOR -eq 6 -a $KPATCH -ge 18 -a $KPATCH -le 19 ]
     then
-        DI_DRIVERFILE[$i]="orinoco-0.13e-SN-15.tar.bz2"
-        DI_DRIVERPATH1[$i]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-15.tar.bz2"
-        DI_DRIVERPATH2[$i]=""
-        DI_DRIVERDIR[$i]="orinoco-0.13e-SN-15"
+        DI_DRIVERFILE[$1]="orinoco-0.13e-SN-15.tar.bz2"
+        DI_DRIVERPATH1[$1]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-15.tar.bz2"
+        DI_DRIVERPATH2[$1]=""
+        DI_DRIVERDIR[$1]="orinoco-0.13e-SN-15"
     fi
 
     if [ $KMINOR -eq 6 -a $KPATCH -ge 20 -a $KPATCH -le 25 ]
     then
-        DI_DRIVERFILE[$i]="orinoco-0.13e-SN-16.tar.bz2"
-        DI_DRIVERPATH1[$i]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-16.tar.bz2"
-        DI_DRIVERPATH2[$i]=""
-        DI_DRIVERDIR[$i]="orinoco-0.13e-SN-16"
+        DI_DRIVERFILE[$1]="orinoco-0.13e-SN-16.tar.bz2"
+        DI_DRIVERPATH1[$1]="http://www.projectiwear.org/~plasmahh/orinoco-0.13e-SN-16.tar.bz2"
+        DI_DRIVERPATH2[$1]=""
+        DI_DRIVERDIR[$1]="orinoco-0.13e-SN-16"
     fi
 }
 
