@@ -8,6 +8,8 @@
 
  * Compilation:
     make
+    # If you want to use airolib-ng and co,
+    # issue 'make SQLITE=true' instead of 'make'
 
  * Strip debugging symbols:
     make strip
