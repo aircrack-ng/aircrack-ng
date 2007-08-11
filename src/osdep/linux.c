@@ -1100,7 +1100,11 @@ static int do_linux_open(struct wif *wi, char *iface)
      * operate on the same channel
      */
 
-    if (strncmp(iface, "mon", 3) == 0)
+    memset(strbuf, 0, sizeof(strbuf));
+    snprintf(strbuf, sizeof(strbuf) - 1,
+            "ls /sys/class/net/%s/phy80211/subsystem &> /dev/null", iface);
+
+    if (system(strbuf) == 0)
         dev->drivertype = DT_MAC80211_RT;
 
     /* check if wlan-ng or hostap or r8180 */
