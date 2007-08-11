@@ -298,6 +298,17 @@ struct globals
     int maxnumaps;            /* maximum nubers of APs on the list */
     int maxaps;               /* number of all APs found */
     int berlin;               /* number of seconds it takes in berlin to fill the whole screen with APs*/
+    /* 
+     * The name for this option may look quite strange, here is the story behind it:
+     * During the CCC2007, 10 august 2007, we (hirte, Mister_X) went to visit Berlin
+     * and couldn't resist to turn on airodump-ng to see how much access point we can
+     * get during the trip from Finowfurt to Berlin. When we were in Berlin, the number
+     * of AP increase really fast, so fast that it couldn't fit in a screen, even rotated;
+     * the list was really huge (we have a picture of that). The 2 minutes timeout
+     * (if the last packet seen is higher than 2 minutes, the AP isn't shown anymore)
+     * wasn't enough, so we decided to create a new option to change that timeout.
+     * We implemented this option in the highest tower (TV Tower) of Berlin, eating an ice.
+     */
 }
 G;
 
