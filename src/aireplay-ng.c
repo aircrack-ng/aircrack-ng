@@ -57,10 +57,6 @@
 #include "osdep/osdep.h"
 #include "crypto.h"
 
-#define NULL_MAC        "\x00\x00\x00\x00\x00\x00"
-#define BROADCAST       "\xFF\xFF\xFF\xFF\xFF\xFF"
-#define SPANTREE        "\x01\x80\xC2\x00\x00\x00"
-
 #define ARPHRD_IEEE80211        801
 #define ARPHRD_IEEE80211_PRISM  802
 #define ARPHRD_IEEE80211_FULL   803
@@ -125,6 +121,7 @@ int bitrates[RATE_NUM]={RATE_1M, RATE_2M, RATE_5_5M, RATE_6M, RATE_9M, RATE_11M,
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern char * searchInside(const char * dir, const char * filename);
+extern int maccmp(unsigned char *mac1, unsigned char *mac2);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern const unsigned long int crc_tbl[256];
@@ -263,8 +260,8 @@ struct devices
     int fd_out, arptype_out;
     int fd_rtc;
 
-    uchar mac_in[6];
-    uchar mac_out[6];
+    unsigned char mac_in[6];
+    unsigned char mac_out[6];
 
     int is_wlanng;
     int is_hostap;
@@ -5322,10 +5319,10 @@ usage:
     }
 
     //if there is no -h given, use default hardware mac
-    if( memcmp( opt.r_smac, NULL_MAC, 6 ) == 0 )
+    if( maccmp( opt.r_smac, NULL_MAC) == 0 )
         memcpy( opt.r_smac, dev.mac_out, 6);
 
-    if( memcmp( opt.r_smac, dev.mac_out, 6) != 0 && memcmp( opt.r_smac, NULL_MAC, 6 ) != 0)
+    if( maccmp( opt.r_smac, dev.mac_out) != 0 && maccmp( opt.r_smac, NULL_MAC) != 0)
     {
 //        if( dev.is_madwifi && opt.a_mode == 5 ) printf("For --fragment to work on madwifi[-ng], set the interface MAC according to (-h)!\n");
         fprintf( stderr, "The interface MAC (%02X:%02X:%02X:%02X:%02X:%02X)"

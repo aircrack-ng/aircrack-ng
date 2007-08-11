@@ -24,8 +24,9 @@
 #define TYPE_ARP    0
 #define TYPE_IP     1
 
-#define BROADCAST "\xFF\xFF\xFF\xFF\xFF\xFF"
-#define SPANTREE  "\x01\x80\xC2\x00\x00\x00"
+#define NULL_MAC  (uchar*)"\x00\x00\x00\x00\x00\x00"
+#define BROADCAST (uchar*)"\xFF\xFF\xFF\xFF\xFF\xFF"
+#define SPANTREE  (uchar*)"\x01\x80\xC2\x00\x00\x00"
 
 /* Used for own RC4 implementation */
 struct rc4_state
