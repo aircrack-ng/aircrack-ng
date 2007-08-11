@@ -53,9 +53,6 @@
 
 static struct wif *_wi_in, *_wi_out;
 
-#define NULL_MAC        "\x00\x00\x00\x00\x00\x00"
-#define BROADCAST       "\xFF\xFF\xFF\xFF\xFF\xFF"
-
 #define ARPHRD_IEEE80211        801
 #define ARPHRD_IEEE80211_PRISM  802
 #define ARPHRD_IEEE80211_FULL   803

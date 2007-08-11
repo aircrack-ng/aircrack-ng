@@ -28,10 +28,6 @@
 #include "pcap.h"
 #include "uniqueiv.h"
 
-#define NULL_MAC       "\x00\x00\x00\x00\x00\x00"
-#define BROADCAST_ADDR "\xFF\xFF\xFF\xFF\xFF\xFF"
-#define SPANTREE_ADDR  "\x01\x80\xC2\x00\x00\x00"
-
 #define FAILURE -1
 #define IVS     1
 #define WPA     2
@@ -368,7 +364,7 @@ int dump_add_packet( unsigned char *h80211, int caplen)
     }
 
     if( st_cur->base == NULL ||
-        memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) != 0 )
+        memcmp( ap_cur->bssid, BROADCAST, 6 ) != 0 )
         st_cur->base = ap_cur;
 
 skip_station:

@@ -62,10 +62,6 @@ __attribute__((regparm(3)));
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 
-
-#define BROADCAST "\xFF\xFF\xFF\xFF\xFF\xFF"
-#define SPANTREE  "\x01\x80\xC2\x00\x00\x00"
-
 #define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
 #define S_LLC_SNAP_IP   (S_LLC_SNAP "\x08\x00")

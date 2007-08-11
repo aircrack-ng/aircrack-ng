@@ -60,16 +60,10 @@
 
 #define REFRESH_RATE 100000  /* default delay in us between updates */
 
-#define NULL_MAC       "\x00\x00\x00\x00\x00\x00"
-#define BROADCAST_ADDR "\xFF\xFF\xFF\xFF\xFF\xFF"
-#define SPANTREE_ADDR  "\x01\x80\xC2\x00\x00\x00"
-
 #define NB_PWR  5       /* size of signal power ring buffer */
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
 
 #define MAX_CARDS 8	/* maximum number of cards to capture from */
-
-#define NULL_MAC "\x00\x00\x00\x00\x00\x00"
 
 #define	STD_OPN		0x0001
 #define	STD_WEP		0x0002
@@ -1148,7 +1142,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
     }
 
     if( st_cur->base == NULL ||
-        memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) != 0 )
+        memcmp( ap_cur->bssid, BROADCAST, 6 ) != 0 )
         st_cur->base = ap_cur;
 
     //update bitrate to station
@@ -2128,7 +2122,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
         {
             G.maxaps++;
             if( ap_cur->nb_pkt < 2 || time( NULL ) - ap_cur->tlast > G.berlin ||
-                memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) == 0 )
+                memcmp( ap_cur->bssid, BROADCAST, 6 ) == 0 )
             {
                 ap_cur = ap_cur->prev;
                 continue;
@@ -2239,7 +2233,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
          * always skip if bssid == broadcast */
 
         if( ap_cur->nb_pkt < 2 || time( NULL ) - ap_cur->tlast > G.berlin ||
-            memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) == 0 )
+            memcmp( ap_cur->bssid, BROADCAST, 6 ) == 0 )
         {
             ap_cur = ap_cur->prev;
             continue;
@@ -2401,7 +2395,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
                 continue;
             }
 
-            if( ! memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) && G.asso_client )
+            if( ! memcmp( ap_cur->bssid, BROADCAST, 6 ) && G.asso_client )
             {
                 st_cur = st_cur->prev;
                 continue;
@@ -2412,7 +2406,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
             if( ws_row != 0 && nlines >= ws_row )
                 return;
 
-            if( ! memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) )
+            if( ! memcmp( ap_cur->bssid, BROADCAST, 6 ) )
                 fprintf( stderr, " (not associated) " );
             else
                 fprintf( stderr, " %02X:%02X:%02X:%02X:%02X:%02X",
@@ -2487,7 +2481,7 @@ int dump_write_csv( void )
 
     while( ap_cur != NULL )
     {
-        if( memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) == 0 )
+        if( memcmp( ap_cur->bssid, BROADCAST, 6 ) == 0 )
         {
             ap_cur = ap_cur->next;
             continue;
@@ -2638,7 +2632,7 @@ int dump_write_csv( void )
                  st_cur->power,
                  st_cur->nb_pkt );
 
-        if( ! memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) )
+        if( ! memcmp( ap_cur->bssid, BROADCAST, 6 ) )
             fprintf( G.f_txt, "(not associated) ," );
         else
             fprintf( G.f_txt, "%02X:%02X:%02X:%02X:%02X:%02X,",
