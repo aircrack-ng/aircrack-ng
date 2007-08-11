@@ -292,6 +292,12 @@ struct globals
     unsigned char wpa_bssid[6];   /* the wpa handshake bssid   */
     char message[512];
     char decloak;
+
+    char is_berlin;           /* is the switch --berlin set? */
+    int numaps;               /* number of APs on the current list */
+    int maxnumaps;            /* maximum nubers of APs on the list */
+    int maxaps;               /* number of all APs found */
+    int berlin;               /* number of seconds it takes in berlin to fill the whole screen with APs*/
 }
 G;
 
@@ -2101,6 +2107,31 @@ void dump_print( int ws_row, int ws_col, int if_num )
     tt = time( NULL );
     lt = localtime( &tt );
 
+    if(G.is_berlin)
+    {
+        G.maxaps = 0;
+        G.numaps = 0;
+        ap_cur = G.ap_end;
+
+        while( ap_cur != NULL )
+        {
+            G.maxaps++;
+            if( ap_cur->nb_pkt < 2 || time( NULL ) - ap_cur->tlast > G.berlin ||
+                memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) == 0 )
+            {
+                ap_cur = ap_cur->prev;
+                continue;
+            }
+            G.numaps++;
+            ap_cur = ap_cur->prev;
+        }
+
+        if(G.numaps > G.maxnumaps)
+            G.maxnumaps = G.numaps;
+
+        G.maxaps--;
+    }
+
     /*
      *  display the channel, battery, position (if we are connected to GPSd)
      *  and current time
@@ -2137,7 +2168,16 @@ void dump_print( int ws_row, int ws_col, int if_num )
     }
 
     strncat(strbuf, buffer, (512-strlen(strbuf)));
+    memset( buffer, '\0', 512 );
 
+    if(G.is_berlin)
+    {
+        snprintf( buffer, sizeof( buffer ) - 1,
+              " ][%3d/%3d/%4d ",
+              G.numaps, G.maxnumaps, G.maxaps);
+    }
+
+    strncat(strbuf, buffer, (512-strlen(strbuf)));
     memset( buffer, '\0', 512 );
 
     if(strlen(G.message) > 0)
@@ -2187,7 +2227,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
         /* skip APs with only one packet, or those older than 2 min.
          * always skip if bssid == broadcast */
 
-        if( ap_cur->nb_pkt < 2 || time( NULL ) - ap_cur->tlast > 120 ||
+        if( ap_cur->nb_pkt < 2 || time( NULL ) - ap_cur->tlast > G.berlin ||
             memcmp( ap_cur->bssid, BROADCAST_ADDR, 6 ) == 0 )
         {
             ap_cur = ap_cur->prev;
@@ -2324,7 +2364,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     while( ap_cur != NULL )
     {
         if( ap_cur->nb_pkt < 2 ||
-            time( NULL ) - ap_cur->tlast > 120 )
+            time( NULL ) - ap_cur->tlast > G.berlin )
         {
             ap_cur = ap_cur->prev;
             continue;
@@ -2344,7 +2384,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
         while( st_cur != NULL )
         {
             if( st_cur->base != ap_cur ||
-                time( NULL ) - st_cur->tlast > 120 )
+                time( NULL ) - st_cur->tlast > G.berlin )
             {
                 st_cur = st_cur->prev;
                 continue;
@@ -3197,6 +3237,11 @@ int main( int argc, char *argv[] )
     G.asso_client  =  0;
     G.update_s     =  0;
     G.decloak      =  1;
+    G.is_berlin    =  0;
+    G.numaps       =  0;
+    G.maxnumaps    =  0;
+    G.berlin       =  120;
+
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
 
@@ -3237,6 +3282,7 @@ int main( int argc, char *argv[] )
         {"write",    1, 0, 'w'},
         {"encrypt",  1, 0, 't'},
         {"update",   1, 0, 'u'},
+        {"berlin",   1, 0, 'B'},
         {"help",     0, 0, 'H'},
         {"nodecloak",0, 0, 'D'},
         {0,          0, 0,  0 }
@@ -3283,7 +3329,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHD",
+                        "b:c:egiw:s:t:u:m:d:aHDB:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3335,23 +3381,10 @@ int main( int argc, char *argv[] )
                     goto usage;
 
                 chanoption = 1;
-/*                if (G.channel[0] != 0)
-                {
-                    n=0;
-                    do {
-                        if (G.channel == abg_chans[n])
-                            break;
-                    } while (abg_chans[++n]);
-                    if (G.channel != abg_chans[n])
-                        goto usage;
-                    else
-                    	chanoption = 1;
-                }
-                else */
+
                 if( G.channel[0] == 0 )
                 {
                     G.channels = G.own_channels;
-//                  chanoption = 1;
                     break;
                 }
                 G.channels = bg_chans;
@@ -3435,6 +3468,16 @@ int main( int argc, char *argv[] )
                 /* If failed to parse or value <= 0, use default, 100ms */
                 if (G.update_s <= 0)
                 	G.update_s = REFRESH_RATE;
+
+                break;
+
+            case 'B':
+
+                G.is_berlin = 1;
+                G.berlin    = atoi(optarg);
+
+                if (G.berlin <= 0)
+                	G.berlin = 120;
 
                 break;
 

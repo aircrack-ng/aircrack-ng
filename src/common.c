@@ -51,6 +51,22 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
 	return temp;
 }
 
+//compares two MACs
+int maccmp(unsigned char *mac1, unsigned char *mac2)
+{
+    int i=0;
+
+    if(mac1 == NULL || mac2 == NULL)
+        return -1;
+
+    for(i=0; i<6; i++)
+    {
+        if( toupper(mac1[i]) != toupper(mac2[i]) )
+            return -1;
+    }
+    return 0;
+}
+
 //Return the mac address bytes (or null if it's not a mac address)
 int getmac(char * macAddress, int strict, unsigned char * mac)
 {
