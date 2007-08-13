@@ -522,7 +522,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
         0x00, 0x00, // <-- radiotap version
         0x09, 0x00, // <- radiotap header length
         0x04, 0x00, 0x00, 0x00, // <-- bitmap
-        rate, // <-- rate forced to 1Mbps
+        rate, // <-- rate
     };
 
     switch (dev->drivertype) {
@@ -1051,6 +1051,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     struct ifreq ifr;
 
     dev->inject_wlanng = 1;
+    dev->rate = 2; /* default to 1Mbps if nothing is set */
 
     /* open raw socks */
     if( ( dev->fd_in = socket( PF_PACKET, SOCK_RAW,
