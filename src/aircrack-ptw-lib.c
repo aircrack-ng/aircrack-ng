@@ -117,12 +117,17 @@ static int comparedoublesorthelper(const void * ina, const void * inb) {
 // RC4 key setup
 static void rc4init ( uint8_t * key, int keylen, rc4state * state) {
 	int i;
-	int j;
+	unsigned char j;
 	uint8_t tmp;
 	memcpy(state->s, &rc4initial, n);
 	j = 0;
 	for (i = 0; i < n; i++) {
-		j = (j + state->s[i] + key[i % keylen]) % n;
+                /*  this should be:
+                    j = (j + state->s[i] + key[i % keylen]) % n;
+                    but as "j" is declared as unsigned char and n equals 256,
+                    we can "optimize" it
+                */
+		j = (j + state->s[i] + key[i % keylen]);
 		tmp = state->s[i];
 		state->s[i] = state->s[j];
 		state->s[j] = tmp;
