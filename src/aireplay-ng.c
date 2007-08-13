@@ -90,6 +90,9 @@
     "\x48\x01\x3A\x01\xBB\xBB\xBB\xBB\xBB\xBB\xCC\xCC\xCC\xCC\xCC\xCC"  \
     "\xBB\xBB\xBB\xBB\xBB\xBB\xE0\x1B"
 
+#define RTS             \
+    "\xB4\x00\x4E\x04\xBB\xBB\xBB\xBB\xBB\xBB\xCC\xCC\xCC\xCC\xCC\xCC"
+
 #define RATES           \
     "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 
@@ -3993,6 +3996,7 @@ int do_attack_test()
     float avg2;
     struct rx_info ri;
     int atime=100;  //time in ms to wait for answer packet (needs to be higher for airserv)
+    unsigned char nulldata[1024];
 
     if(memcmp(opt.r_bssid, NULL_MAC, 6))
     {
@@ -4263,10 +4267,38 @@ int do_attack_test()
             opt.r_smac[4] = rand() & 0xFF;
             opt.r_smac[5] = rand() & 0xFF;
 
+            //build/send probe request
             memcpy(h80211+10, opt.r_smac, 6);
 
             send_packet(h80211, len);
+            usleep(10);
 
+            //build/send request-to-send
+            memcpy(nulldata, RTS, 16);
+            memcpy(nulldata+4, ap[i].bssid, 6);
+            memcpy(nulldata+10, opt.r_smac, 6);
+
+            send_packet(nulldata, 16);
+            usleep(10);
+
+            //build/send null data packet
+            memcpy(nulldata, NULL_DATA, 24);
+            memcpy(nulldata+4, ap[i].bssid, 6);
+            memcpy(nulldata+10, opt.r_smac, 6);
+            memcpy(nulldata+16, ap[i].bssid, 6);
+
+            send_packet(nulldata, 24);
+            usleep(10);
+
+            //build/send auth request packet
+            memcpy(nulldata, AUTH_REQ, 30);
+            memcpy(nulldata+4, ap[i].bssid, 6);
+            memcpy(nulldata+10, opt.r_smac, 6);
+            memcpy(nulldata+16, ap[i].bssid, 6);
+
+            send_packet(nulldata, 30);
+
+            //continue
             gettimeofday( &tv, NULL );
 
             printf( "\r%2d/%2d: %3d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
@@ -4280,6 +4312,75 @@ int do_attack_test()
                     if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
                     {
                         if(! memcmp(ap[i].bssid, packet+16, 6)) //From the mentioned AP
+                        {
+                            gettimeofday( &tv3, NULL);
+                            ap[i].ping[j] = ((tv3.tv_sec*1000000 - tv.tv_sec*1000000) + (tv3.tv_usec - tv.tv_usec));
+                            if(!answers)
+                            {
+                                if(opt.fast)
+                                {
+                                    PCT; printf("Injection is working!\n\n");
+                                    return 0;
+                                }
+                                answers++;
+                            }
+                            ap[i].found++;
+                            if(ri.ri_power > 0)
+                                ap[i].pwr[j] = ri.ri_power;
+                            break;
+                        }
+                    }
+                }
+
+                if (packet[0] == 0xC4 ) //Is clear-to-send
+                {
+                    if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                    {
+                        gettimeofday( &tv3, NULL);
+                        ap[i].ping[j] = ((tv3.tv_sec*1000000 - tv.tv_sec*1000000) + (tv3.tv_usec - tv.tv_usec));
+                        if(!answers)
+                        {
+                            if(opt.fast)
+                            {
+                                PCT; printf("Injection is working!\n\n");
+                                return 0;
+                            }
+                            answers++;
+                        }
+                        ap[i].found++;
+                        if(ri.ri_power > 0)
+                            ap[i].pwr[j] = ri.ri_power;
+                        break;
+                    }
+                }
+
+                if (packet[0] == 0xD4 ) //Is ack
+                {
+                    if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                    {
+                        gettimeofday( &tv3, NULL);
+                        ap[i].ping[j] = ((tv3.tv_sec*1000000 - tv.tv_sec*1000000) + (tv3.tv_usec - tv.tv_usec));
+                        if(!answers)
+                        {
+                            if(opt.fast)
+                            {
+                                PCT; printf("Injection is working!\n\n");
+                                return 0;
+                            }
+                            answers++;
+                        }
+                        ap[i].found++;
+                        if(ri.ri_power > 0)
+                            ap[i].pwr[j] = ri.ri_power;
+                        break;
+                    }
+                }
+
+                if (packet[0] == 0xB0 ) //Is auth response
+                {
+                    if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                    {
+                        if (! memcmp(packet+10, packet+16, 6)) //From BSS ID
                         {
                             gettimeofday( &tv3, NULL);
                             ap[i].ping[j] = ((tv3.tv_sec*1000000 - tv.tv_sec*1000000) + (tv3.tv_usec - tv.tv_usec));
