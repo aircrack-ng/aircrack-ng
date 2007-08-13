@@ -1103,7 +1103,7 @@ static int do_linux_open(struct wif *wi, char *iface)
 
     memset(strbuf, 0, sizeof(strbuf));
     snprintf(strbuf, sizeof(strbuf) - 1,
-            "ls /sys/class/net/%s/phy80211/subsystem &> /dev/null", iface);
+            "ls /sys/class/net/%s/phy80211/subsystem >/dev/null 2>/dev/null &", iface);
 
     if (system(strbuf) == 0)
         dev->drivertype = DT_MAC80211_RT;
@@ -1358,6 +1358,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         }
     }
 
+    if(0)
     fprintf(stderr, "Interface %s -> driver: %s\n", iface,
         szaDriverTypes[dev->drivertype]);
 
