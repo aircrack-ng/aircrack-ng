@@ -160,7 +160,7 @@ void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 
     memset(essid,0,sizeof(essid));
     memcpy(essid,essid_pre,strlen(essid_pre));
-    slen = strlen(essid)+4;
+    slen = (int)strlen(essid)+4;
 
     /* setup the inner and outer contexts */
 

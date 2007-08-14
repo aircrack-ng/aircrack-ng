@@ -4966,19 +4966,24 @@ usage:
 #if defined(linux)
     if( opt.a_mode > 1 )
     {
-        if( ( dev.fd_rtc = open( "/dev/rtc", O_RDONLY ) ) < 0 )
+        if( ( dev.fd_rtc = open( "/dev/rtc0", O_RDONLY ) ) < 0 )
         {
-            perror( "open(/dev/rtc) failed" );
+            dev.fd_rtc = 0;
         }
-        else
+
+        if( (dev.fd_rtc == 0) && ( ( dev.fd_rtc = open( "/dev/rtc", O_RDONLY ) ) < 0 ) )
         {
-//            if( ioctl( dev.fd_rtc, RTC_IRQP_SET, 1024 ) < 0 )
+            dev.fd_rtc = 0;
+        }
+
+        if(dev.fd_rtc > 0)
+        {
             if( ioctl( dev.fd_rtc, RTC_IRQP_SET, RTC_RESOLUTION ) < 0 )
             {
                 perror( "ioctl(RTC_IRQP_SET) failed" );
                 printf(
-"Make sure enhanced rtc device support is enabled in the kernel (module\n"
-"rtc, not genrtc) - also try 'echo 1024 >/proc/sys/dev/rtc/max-user-freq'.\n" );
+    "Make sure enhanced rtc device support is enabled in the kernel (module\n"
+    "rtc, not genrtc) - also try 'echo 1024 >/proc/sys/dev/rtc/max-user-freq'.\n" );
                 close( dev.fd_rtc );
                 dev.fd_rtc = -1;
             }
@@ -4992,6 +4997,11 @@ usage:
                 }
             }
         }
+        else
+        {
+            perror( "open(/dev/rtc) failed" );
+        }
+
     }
 #endif /* linux */
 #endif /* i386 */
