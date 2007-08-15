@@ -4065,10 +4065,10 @@ int main( int argc, char *argv[] )
         };
 
 		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:DP:",
+			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:DP:z",
                         long_options, &option_index );
 		else
-			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:",
+			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:z",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -4366,6 +4366,10 @@ int main( int argc, char *argv[] )
 					printf("Invalid bssids (-C).\n\"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
 				}
+				break;
+
+			case 'z' :
+				/* only for backwards compatibility - ptw used by default */
 				break;
 
 			default : goto usage;
