@@ -4555,6 +4555,12 @@ int do_attack_test()
         printf("\n");
         PCT; printf("Trying card-to-card injection...\n");
 
+        /* sync both cards to the same channel, or the test will fail */
+        if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
+        {
+            wi_set_channel(_wi_out, wi_get_channel(_wi_in));
+        }
+
         /* Attacks */
         for(i=0; i<5; i++)
         {
