@@ -406,6 +406,8 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 //                if( ! memcmp( iface[i], "ath", 3 ) )
                 if( dev->drivertype == DT_MADWIFI )
                     ri->ri_power -= *(int *)( tmpbuf + 0x68 );
+                if( dev->drivertype == DT_MADWIFING )
+                    ri->ri_power -= *(int *)( tmpbuf + 0x68 );
             }
 
             n = *(int *)( tmpbuf + 4 );
@@ -1103,7 +1105,7 @@ static int do_linux_open(struct wif *wi, char *iface)
 
     memset(strbuf, 0, sizeof(strbuf));
     snprintf(strbuf, sizeof(strbuf) - 1,
-            "ls /sys/class/net/%s/phy80211/subsystem >/dev/null 2>/dev/null &", iface);
+            "ls /sys/class/net/%s/phy80211/subsystem >/dev/null 2>/dev/null", iface);
 
     if (system(strbuf) == 0)
         dev->drivertype = DT_MAC80211_RT;
@@ -1363,7 +1365,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         szaDriverTypes[dev->drivertype]);
 
     if (openraw(dev, iface, dev->fd_out, &dev->arptype_out, dev->pl_mac) != 0) {
-		goto close_out;
+        goto close_out;
     }
 
     dev->fd_in = dev->fd_out;
