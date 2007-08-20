@@ -292,7 +292,7 @@ struct globals
     int maxnumaps;            /* maximum nubers of APs on the list */
     int maxaps;               /* number of all APs found */
     int berlin;               /* number of seconds it takes in berlin to fill the whole screen with APs*/
-    /* 
+    /*
      * The name for this option may look quite strange, here is the story behind it:
      * During the CCC2007, 10 august 2007, we (hirte, Mister_X) went to visit Berlin
      * and couldn't resist to turn on airodump-ng to see how much access point we can
@@ -1372,12 +1372,12 @@ skip_probe:
 
                 if(type != 0x30)
                 {
-                    if( p + (2+4*numuni) + (2+4*numauth) > h80211+caplen)
+                    if( p + (4*numuni) + (2+4*numauth) > h80211+caplen)
                         break;
                 }
                 else
                 {
-                    if( p + (2+4*numuni) + (2+4*numauth) + 2 > h80211+caplen)
+                    if( p + (4*numuni) + (2+4*numauth) + 2 > h80211+caplen)
                         break;
                 }
 
