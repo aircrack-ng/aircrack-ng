@@ -52,6 +52,7 @@
 #include "ieee80211_radiotap.h"
 #include "osdep.h"
 #include "pcap.h"
+#include "crctable_osdep.h"
 
 #define uchar unsigned char
 
@@ -124,6 +125,30 @@ struct priv_linux {
 #ifndef NULL_MAC
 #define NULL_MAC        "\x00\x00\x00\x00\x00\x00"
 #endif
+
+unsigned long calc_crc_osdep( unsigned char * buf, int len)
+{
+    unsigned long crc = 0xFFFFFFFF;
+
+    for( ; len > 0; len--, buf++ )
+        crc = crc_tbl_osdep[(crc ^ *buf) & 0xFF] ^ ( crc >> 8 );
+
+    return( ~crc );
+}
+
+/* CRC checksum verification routine */
+
+int check_crc_buf_osdep( unsigned char *buf, int len )
+{
+    unsigned long crc;
+
+    crc = calc_crc_osdep(buf, len);
+    buf+=len;
+    return( ( ( crc       ) & 0xFF ) == buf[0] &&
+            ( ( crc >>  8 ) & 0xFF ) == buf[1] &&
+            ( ( crc >> 16 ) & 0xFF ) == buf[2] &&
+            ( ( crc >> 24 ) & 0xFF ) == buf[3] );
+}
 
 //Check if the driver is ndiswrapper */
 static int is_ndiswrapper(const char * iface, const char * path)
@@ -351,6 +376,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
     int caplen, n = 0;
     char got_signal=0;
     char got_noise=0;
+    int fcs_removed=0;
 
     if((unsigned)count > sizeof(tmpbuf))
         return( -1 );
@@ -477,7 +503,10 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                  */
                 if ( *iterator.this_arg &
                     IEEE80211_RADIOTAP_F_FCS )
+                {
+                    fcs_removed = 1;
                     caplen -= 4;
+                }
 
                 if ( *iterator.this_arg &
                     IEEE80211_RADIOTAP_F_RX_BADFCS )
@@ -495,6 +524,12 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
     }
 
     caplen -= n;
+
+    //detect fcs at the end, even if the flag wasn't set and remove it
+    if( fcs_removed == 0 && check_crc_buf_osdep( tmpbuf+n, caplen - 4 ) == 1 )
+    {
+        caplen -= 4;
+    }
 
     memcpy( buf, tmpbuf + n, caplen );
 
