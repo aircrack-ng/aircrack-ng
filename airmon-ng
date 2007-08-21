@@ -235,7 +235,7 @@ iwpriv > /dev/null 2> /dev/null ||
 if [ x"$1" = xcheck ]
 then
     scanProcesses
-    for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11)' | cut -b 1-7 | grep -v wifi`
+    for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | cut -b 1-7 | grep -v wifi`
     do
 #         getModule $iface
 #         getDriver $iface
@@ -549,7 +549,7 @@ do
  fi
 
 
- if [ x$DRIVER = "xrt61" ] || [ x"`iwpriv $iface 2>/dev/null | grep get_RaAP_Cfg`" != "x" ]
+ if [ x$SYSFS = "x" ] && [ x"`iwpriv $iface 2>/dev/null | grep get_RaAP_Cfg`" != "x" ]
  then
     if [ x"`iwconfig $iface | grep ESSID | awk -F\  '{ print $2}' | grep -i rt61`" != "x" ]
     then
@@ -560,6 +560,21 @@ do
     then
         printf "$iface\t\tRalink USB\trt73"
     fi
+
+    if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+    then
+         startStdIface $iface $CH
+         iwpriv $iface rfmontx 1
+    fi
+    echo
+    continue
+
+ fi
+
+
+ if [ x$DRIVER = "xrt61" ]
+ then
+    printf "$iface\t\tRalink b/g\trt61"
 
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
