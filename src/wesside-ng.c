@@ -601,7 +601,7 @@ static int get_victim_ssid(struct wstate *ws, struct ieee80211_frame* wh,
 	// beacon header
 	x = 8 + 2 + 2;
 	if (len <= x) {
-		time_print("Warning short.asdfasdf\n");
+		time_print("Warning short.\n");
 		return 0;
 	}
 
