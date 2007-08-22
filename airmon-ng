@@ -235,7 +235,7 @@ iwpriv > /dev/null 2> /dev/null ||
 if [ x"$1" = xcheck ]
 then
     scanProcesses
-    for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | cut -b 1-7 | grep -v wifi`
+    for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
     do
 #         getModule $iface
 #         getDriver $iface
@@ -268,7 +268,7 @@ fi
 printf "Interface\tChipset\t\tDriver\n" && echo
 
 
-for iface in `ifconfig -a 2>/dev/null | egrep UNSPEC | cut -b 1-7`
+for iface in `ifconfig -a 2>/dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
 do
  if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
  then
@@ -298,7 +298,7 @@ then
 	sleep 1s
 fi
 
-for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | cut -b 1-7 | grep -v wifi`
+for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
 do
  getModule  $iface
  getDriver  $iface
