@@ -5,6 +5,7 @@ Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
 * airodump-ng: Added out-of-monitor-mode, channel hop and interface down detection
 * airodump-ng: Fixed debian bug #417388: airodump-ng doesn't restore terminal after error
 * airodump-ng: Fixed opening the same interface more than once
+* airodump-ng: Fixed PWR values for some drivers
 * aircrack-ng: Added BSSID merge option
 * aircrack-ng: Added passive ptw attack (using also IP packets for cracking)
 * aircrack-ng: Made ptw attack default, for korek attack use -K
@@ -14,7 +15,7 @@ Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
 * aircrack-ng: Added --wep-decloak mode
 * aircrack-ng: Added --ptw-debug to allow klein or ptw disabling
 * aircrack-ng: PTW: Starts a new process group
-* aircrack-ng: Increased PTW key checking by 20%
+* aircrack-ng: Increased PTW key checking speed by 20%
 * airdecap-ng: Fixed bug in calc_pmk() function causes wrong PMK to be computed
 * aireplay-ng: Added usage of RTS/CTS, auth and ACK to --test (more stable and faster).
 * aireplay-ng: Added TCP connection test to --test
@@ -30,6 +31,8 @@ Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
 * airmon-ng: Added driver detection through sysfs
 * airmon-ng: Added mac80211 support
 * airmon-ng: Added networkmanager detection - airmon-ng check
+* airmon-ng: Fixed interface name detection
+* airmon-ng: Fixed Ralink rt73 detection
 * makeivs-ng: Added parameters to set length, number and first IV of generated IVs
 * makeivs-ng: Added possibility to generate IVs sequentially or randomly
 * makeivs-ng: Added parameters to set percentage of false and dupe frames
