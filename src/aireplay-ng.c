@@ -326,7 +326,7 @@ int open_sysnofcs() {
     char * newline;
 
     /* look for the location of inject_nofcs */
-    FILE * search_inject = popen("find /sys/devices -name \\*inject_nofcs", "r");
+    FILE * search_inject = popen("find /sys/devices -name inject_nofcs", "r");
     if(fgets(location, sizeof location, search_inject)) {
         /* replace the newline on the end by \0 */
         newline = strrchr(location, '\n');
