@@ -326,14 +326,14 @@ int open_sysnofcs() {
     char * newline;
 
     /* look for the location of inject_nofcs */
-    FILE * search_inject = popen("find /sys/devices -name *inject_nofcs", "r");
+    FILE * search_inject = popen("find /sys/devices -name \\*inject_nofcs", "r");
     if(fgets(location, sizeof location, search_inject)) {
         /* replace the newline on the end by \0 */
         newline = strrchr(location, '\n');
         if (newline) *newline = '\0';
 
         /* try to open the file we found */
-        dev.nofcs = open(location, O_WRONLY | O_CREAT);
+        dev.nofcs = open(location, O_WRONLY);
         if (dev.nofcs < 0) {
             printf("Opening file '%s': ", location);
             perror("couldn't open file");
