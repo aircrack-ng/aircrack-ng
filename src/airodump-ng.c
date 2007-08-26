@@ -3184,6 +3184,7 @@ int main( int argc, char *argv[] )
     int option = 0;
     int option_index = 0;
     char ifnam[64];
+    int wi_read_failed=0;
 
     struct AP_info *ap_cur, *ap_prv, *ap_next;
     struct ST_info *st_cur, *st_next;
@@ -3797,6 +3798,12 @@ usage:
                 memset(buffer, 0, sizeof(buffer));
                 h80211 = buffer;
                 if ((caplen = wi_read(wi[i], h80211, sizeof(buffer), &ri)) == -1) {
+                    wi_read_failed++;
+                    if(wi_read_failed > 1)
+                    {
+                        G.do_exit = 1;
+                        break;
+                    }
                     memset(G.message, '\x00', sizeof(G.message));
                     snprintf(G.message, sizeof(G.message), "][ interface %s down ", wi_get_ifname(wi[i]));
 
@@ -3825,6 +3832,7 @@ usage:
 //                     return 1;
                 }
 
+                wi_read_failed = 0;
                 dump_add_packet( h80211, caplen, &ri, i );
 	     }
 	}

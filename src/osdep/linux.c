@@ -67,7 +67,8 @@ typedef enum {
         DT_ZD1211RW,
         DT_ACX,
         DT_MAC80211_RT,
-        DT_AT76USB
+        DT_AT76USB,
+        DT_IPW2200
 
 } DRIVER_TYPE;
 
@@ -82,7 +83,8 @@ static const char * szaDriverTypes[] = {
         [DT_ZD1211RW] = "ZD1211RW",
         [DT_ACX] = "ACX",
         [DT_MAC80211_RT] = "Mac80211-Radiotap",
-        [DT_AT76USB] = "Atmel 76_usb"
+        [DT_AT76USB] = "Atmel 76_usb",
+        [DT_IPW2200] = "ipw2200"
 };
 
 /*
@@ -377,6 +379,12 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
     char got_signal=0;
     char got_noise=0;
     int fcs_removed=0;
+
+    if(dev->drivertype == DT_IPW2200)
+    {
+        printf("Don't use the \"%s\" interface for listening, but \"rtapX\"\n", wi_get_ifname(wi));
+        return( -1 );
+    }
 
     if((unsigned)count > sizeof(tmpbuf))
         return( -1 );
@@ -738,8 +746,15 @@ static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
     int fd2;
     char buf[256];
 
+    /* ipw2200 injection */
     snprintf(buf, 256, "/sys/class/net/%s/device/inject", iface);
     fd2 = open(buf, O_WRONLY);
+
+    /* bcm43xx injection */
+    if (fd2 == -1)
+    snprintf(buf, 256, "/sys/class/net/%s/device/inject_nofcs", iface);
+    fd2 = open(buf, O_WRONLY);
+
     if (fd2 == -1)
         return -1;
 
@@ -954,6 +969,9 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     sll.sll_ifindex  = ifr.ifr_ifindex;
 
     switch(dev->drivertype) {
+    case DT_IPW2200:
+    case DT_BCM43XX:
+        return opensysfs(dev, iface, fd);
     case DT_WLANNG:
         sll.sll_protocol = htons( ETH_P_80211_RAW );
     default:
@@ -1032,10 +1050,6 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL )
     {
-                /* try sysfs instead (ipw2200) */
-                if (opensysfs(dev, iface, fd) == 0)
-            return 0;
-
         if( ifr.ifr_hwaddr.sa_family == 1 )
             fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
         else
@@ -1138,12 +1152,29 @@ static int do_linux_open(struct wif *wi, char *iface)
      * operate on the same channel
      */
 
+    /* mac80211 stack detection */
     memset(strbuf, 0, sizeof(strbuf));
     snprintf(strbuf, sizeof(strbuf) - 1,
             "ls /sys/class/net/%s/phy80211/subsystem >/dev/null 2>/dev/null", iface);
 
     if (system(strbuf) == 0)
         dev->drivertype = DT_MAC80211_RT;
+
+    /* IPW2200 detection */
+    memset(strbuf, 0, sizeof(strbuf));
+    snprintf(strbuf, sizeof(strbuf) - 1,
+            "ls /sys/class/net/%s/device/inject >/dev/null 2>/dev/null", iface);
+
+    if (system(strbuf) == 0)
+        dev->drivertype = DT_IPW2200;
+
+    /* BCM43XX detection */
+    memset(strbuf, 0, sizeof(strbuf));
+    snprintf(strbuf, sizeof(strbuf) - 1,
+            "ls /sys/class/net/%s/device/inject_nofcs >/dev/null 2>/dev/null", iface);
+
+    if (system(strbuf) == 0)
+        dev->drivertype = DT_BCM43XX;
 
     /* check if wlan-ng or hostap or r8180 */
     if( strlen(iface) == 5 &&
@@ -1468,6 +1499,13 @@ static int linux_get_mac(struct wif *wi, unsigned char *mac)
 	fd = wi_fd(wi);
 	/* find the interface index */
 
+	/* ipw2200 got a file opened as fd  */
+	if(pl->drivertype == DT_IPW2200)
+	{
+		memcpy(mac, pl->pl_mac, 6);
+		return 0;
+	}
+
 	memset( &ifr, 0, sizeof( ifr ) );
 	strncpy( ifr.ifr_name, wi_get_ifname(wi), sizeof( ifr.ifr_name ) - 1 );
 
@@ -1477,7 +1515,6 @@ static int linux_get_mac(struct wif *wi, unsigned char *mac)
 		perror( "ioctl(SIOCGIFINDEX) failed" );
 		return( 1 );
 	}
-
 
 	if( ioctl( fd, SIOCGIFHWADDR, &ifr ) < 0 )
 	{
