@@ -439,7 +439,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
         G.f_xor = NULL;
     }
 
-    snprintf(G.message, sizeof(G.message), "][ %dbytes keystream: %02X:%02X:%02X:%02X:%02X:%02X ",
+    snprintf(G.message, sizeof(G.message), "][ %d bytes keystream: %02X:%02X:%02X:%02X:%02X:%02X ",
                 textlen+4, *(G.sharedkey[0]+m_bmac), *(G.sharedkey[0]+m_bmac+1), *(G.sharedkey[0]+m_bmac+2),
               *(G.sharedkey[0]+m_bmac+3), *(G.sharedkey[0]+m_bmac+4), *(G.sharedkey[0]+m_bmac+5));
 
