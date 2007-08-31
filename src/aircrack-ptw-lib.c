@@ -356,7 +356,7 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	fixvalue = 0;
         max_tries = keylimit;
 
-	while(tried < keylimit) {
+	while(prod < keylimit) {
 		if (doRound(table, 0, fixat, fixvalue, choices, key, keylen, state, 0, strongbytes, bf, validchars) == 1) {
 			// printf("hit with %d choices\n", prod);
 			if(!opt.is_quiet)
