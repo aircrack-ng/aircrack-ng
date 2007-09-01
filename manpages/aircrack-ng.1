@@ -31,6 +31,9 @@ Set this option to the number of CPUs to use (only available on SMP systems). By
 .TP
 .I -q
 If set, no status information is displayed.
+.TP
+.I -C <macs>
+Merges all those APs MAC (separated by a comma) into a virtual one.
 .PP
 .TP
 .B Static WEP cracking options:
@@ -81,7 +84,16 @@ Shows ASCII version of the key at the right of the screen
 This is an experimental single brute-force attack which should only be used when the standard attack mode fails with more than one million IVs.
 .TP
 .I -z  
-Uses PTW (Andrei Pyshkin, Erik Tews and Ralf-Philipp Weinmann) attack.
+Uses PTW (Andrei Pyshkin, Erik Tews and Ralf-Philipp Weinmann) attack (default attack).
+.TP
+.I -P <num>
+PTW debug: 1 Disable klein, 2 PTW.
+.TP
+.I -K
+Use KoreK attacks instead of PTW.
+.TP
+.I -D
+WEP decloak mode.
 .PP
 .TP
 .B WPA-PSK cracking options:
