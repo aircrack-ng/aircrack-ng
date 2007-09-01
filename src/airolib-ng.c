@@ -334,7 +334,7 @@ void batch_process(sqlite3* db) {
 	sql_exec(db,"DROP TABLE temp.buffer;");
 }
 
-// Verify an ESSID. Returns true if ESSID is valid.
+// Verify an ESSID. Returns 1 if ESSID is invalid.
 //TODO More things to verify? Invalid chars?
 int verify_essid(char* essid) {
 	return essid == NULL || strlen(essid) > 32;
