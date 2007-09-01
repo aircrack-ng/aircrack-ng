@@ -84,6 +84,9 @@
 #define	QLT_TIME	5
 #define	QLT_COUNT	25
 
+#ifdef MAX
+#undef MAX
+#endif
 #define	MAX(a,b)	((a)>(b)?(a):(b))
 
 //milliseconds to store last packets

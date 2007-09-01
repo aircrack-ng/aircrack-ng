@@ -161,7 +161,7 @@ void printf_time(char *fmt, ...)
 		err(1, "localtime()");
 
 	printf("[%.2d:%.2d:%.2d.%.6lu] ",
-	       tm->tm_hour, tm->tm_min, tm->tm_sec, now.tv_usec);
+	       tm->tm_hour, tm->tm_min, tm->tm_sec, (long unsigned int)now.tv_usec);
 
 	va_start(ap, fmt);
 	vprintf(fmt, ap);
@@ -178,16 +178,16 @@ void hexdump(void *x, int len)
 }
 
 void mac2str(char *str, unsigned char* m)
-{       
+{
         sprintf(str, "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
                 m[0], m[1], m[2], m[3], m[4], m[5]);
 }
 
 int str2mac(unsigned char *mac, char *str)
-{       
+{
         unsigned int macf[6];
         int i;
-        
+
         if (sscanf(str, "%x:%x:%x:%x:%x:%x",
                    &macf[0], &macf[1], &macf[2],
                    &macf[3], &macf[4], &macf[5]) != 6)
@@ -270,7 +270,7 @@ void reset(struct east_state *es)
 
 	/* start over */
 	es->es_state = S_SEARCHING;
-	printf_time("Restarting");	
+	printf_time("Restarting");
 }
 
 /********** RIPPED
@@ -279,16 +279,16 @@ unsigned short in_cksum (unsigned short *ptr, int nbytes) {
   register long sum;
   u_short oddbyte;
   register u_short answer;
-         
-  sum = 0;     
+
+  sum = 0;
   while (nbytes > 1)
-    {          
+    {
       sum += *ptr++;
       nbytes -= 2;
     }
-               
+
   if (nbytes == 1)
-    {          
+    {
       oddbyte = 0;
       *((u_char *) & oddbyte) = *(u_char *) ptr;
       sum += oddbyte;
@@ -309,7 +309,7 @@ void open_wifi(struct east_state *es)
 	wi = wi_open(es->es_ifname);
 	if (!wi)
 		err(1, "wi_open()");
-	
+
 	assert(es->es_wi == NULL);
 	es->es_wi = wi;
 }
@@ -331,7 +331,7 @@ void open_tap(struct east_state *es) {
 	printf("Setting tap MTU\n");
 	if (ti_set_mtu(ti, S_MTU - 50) == -1)
 		err(1, "ti_set_mtu()");
-       
+
 	es->es_ti = ti;
 }
 
@@ -383,7 +383,7 @@ void set_chan(struct east_state *es)
 {
 	int chan = es->es_chanlock ? es->es_chanlock : es->es_apchan;
 
-	if (wi_set_channel(es->es_wi, chan) == -1)	
+	if (wi_set_channel(es->es_wi, chan) == -1)
 		err(1, "wi_set_channel");
 }
 
@@ -404,7 +404,7 @@ void read_beacon(struct east_state *es, struct ieee80211_frame *wh, int len)
 	if (len < 0) {
 		printf("Short beacon %d\n", len);
 		return;
-	}	
+	}
 
 	if (es->es_state != S_SEARCHING)
 		return;
@@ -449,7 +449,7 @@ void read_beacon(struct east_state *es, struct ieee80211_frame *wh, int len)
 					got_ssid = 1;
 			}
 			break;
-		
+
 		case IEEE80211_ELEMID_DSPARMS:
 			if (!got_channel)
 				got_channel = b[2];
@@ -541,7 +541,7 @@ void read_deauth(struct east_state *es, struct ieee80211_frame *wh, int len)
 
 	if (!for_me_and_from_ap(es, wh))
 		return;
-	
+
 	if (is_dup(es, wh))
 		return;
 
@@ -557,7 +557,7 @@ void read_disassoc(struct east_state *es, struct ieee80211_frame *wh, int len)
 
 	if (!for_me_and_from_ap(es, wh))
 		return;
-	
+
 	if (is_dup(es, wh))
 		return;
 
@@ -616,7 +616,7 @@ void read_mgt(struct east_state *es, struct ieee80211_frame *wh, int len)
 	case IEEE80211_FC0_SUBTYPE_DEAUTH:
 		read_deauth(es, wh, len);
 		break;
-	
+
 	case IEEE80211_FC0_SUBTYPE_DISASSOC:
 		read_disassoc(es, wh, len);
 		break;
@@ -665,7 +665,7 @@ void read_ctl(struct east_state *es, struct ieee80211_frame *wh, int len)
 
 int our_network(struct east_state *es, struct ieee80211_frame *wh)
 {
-	void *bssid = (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS) ? 
+	void *bssid = (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS) ?
 			wh->i_addr2 : wh->i_addr1;
 
 	return memcmp(es->es_apmac, bssid, sizeof(es->es_apmac)) == 0;
@@ -699,7 +699,7 @@ void save_prga(struct east_state *es)
 	fd = open(S_PRGA_LOG, O_WRONLY | O_CREAT, 0644);
 	if (fd == -1)
 		err(1, "save_prga: open()");
-	
+
 	rc = write(fd, es->es_iv, 3);
 	if (rc != 3) {
 		printf("save_prga: can't write IV\n");
@@ -781,7 +781,7 @@ int known_clear(void *clear, struct ieee80211_frame *wh, int len)
 	len = 2;
 	if (memcmp(get_da(wh), "\xff\xff\xff\xff\xff\xff", 6) == 0)
 		memcpy(ptr, "\x00\x01", len);
-	else	
+	else
 		memcpy(ptr, "\x00\x02", len);
 	ptr += len;
 
@@ -799,7 +799,7 @@ void base_prga(struct east_state *es, struct ieee80211_frame *wh, int len)
 	unsigned char ct[1024];
 	unsigned char *data = (unsigned char*) (wh+1);
 	int prgalen;
-	
+
 	memcpy(es->es_iv, data, 3);
 	data += 4;
 	len -= 4 + 4; /* IV & CRC */
@@ -809,7 +809,7 @@ void base_prga(struct east_state *es, struct ieee80211_frame *wh, int len)
 	}
 
 	prgalen = known_clear(ct, wh, len);
-	
+
 	xor(es->es_prga, ct, data, prgalen);
 	es->es_prgalen = prgalen;
 
@@ -833,7 +833,7 @@ void check_expand(struct east_state *es, struct ieee80211_frame *wh, int len)
 
 	if (!(wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS))
 		return;
-	
+
 	if (memcmp(es->es_apmac, wh->i_addr2, 6) != 0)
 		return;
 
@@ -898,7 +898,7 @@ int check_decrypt(struct east_state *es, struct ieee80211_frame *wh, int len)
 
 	es->es_prga_d[es->es_prga_dlen] = wh->i_addr1[5];
 #if 0
-	printf("\nPrga byte %d is %.2X\n", 
+	printf("\nPrga byte %d is %.2X\n",
 	       es->es_prga_dlen, es->es_prga_d[es->es_prga_dlen]);
 #endif
 	es->es_prga_dlen++;
@@ -985,7 +985,7 @@ void check_decrypt_ip(struct east_state *es, struct ieee80211_frame *wh,
 
 	if (!check_decrypt(es, wh, len))
 		return;
-	
+
 	if (es->es_prga_dlen == (off_id+2)) {
 #if 0
 		unsigned char *c = data + off_id + 2;
@@ -1017,11 +1017,11 @@ void check_decrypt_ip(struct east_state *es, struct ieee80211_frame *wh,
 			str = "unknown";
 			break;
 		}
-		
+
 		printf("\nGot proto %s\n", str);
 	} else if (es->es_prga_dlen == (off_check+2)) {
 		printf("\nGot checksum [could use to help bforce addr]\n");
-	} else if ((es->es_prga_dlen >= off_s_addr) && 
+	} else if ((es->es_prga_dlen >= off_s_addr) &&
 		   (es->es_prga_dlen <= (off_s_addr+4))) {
 		unsigned char ip[4];
 		int iplen;
@@ -1038,7 +1038,7 @@ void check_decrypt_ip(struct east_state *es, struct ieee80211_frame *wh,
 
 		if (es->es_have_src && iplen == 3)
 			found_net_addr(es, ip);
-	} else if ((es->es_prga_dlen >= off_d_addr) && 
+	} else if ((es->es_prga_dlen >= off_d_addr) &&
 		   (es->es_prga_dlen <= (off_d_addr+4))) {
 		unsigned char dip[4];
 		struct in_addr sip;
@@ -1183,7 +1183,7 @@ void remove_packet(struct east_state *es, int id)
 	struct rpacket *rp = es->es_rqueue;
 	struct rpacket **prevn;
 	struct rpacket *p;
-	
+
 	assert(rp);
 	prevn = &es->es_rqueue;
 
@@ -1194,7 +1194,7 @@ void remove_packet(struct east_state *es, int id)
 			*prevn = rp->rp_next;
 			break;
 		}
-		
+
 		prevn = &rp->rp_next;
 		rp = rp->rp_next;
 	}
@@ -1235,7 +1235,7 @@ int queue_len(struct east_state *es)
 		len++;
 		slot = slot->rp_next;
 	}
-	
+
 	return len;
 }
 
@@ -1272,7 +1272,7 @@ void check_redirect(struct east_state *es, struct ieee80211_frame *wh, int len)
 
 void read_data(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
-	if ((wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) != 
+	if ((wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) !=
 	     IEEE80211_FC0_SUBTYPE_DATA)
 		return;
 
@@ -1365,11 +1365,11 @@ void read_wifi(struct east_state *es)
 	case IEEE80211_FC0_TYPE_MGT:
 		read_mgt(es, wh, len);
 		break;
-	
+
 	case IEEE80211_FC0_TYPE_CTL:
 		read_ctl(es, wh, len);
 		break;
-	
+
 	case IEEE80211_FC0_TYPE_DATA:
 		read_data(es, wh, len);
 		break;
@@ -1436,7 +1436,7 @@ unsigned short fnseq(unsigned short fn, unsigned short seq) {
         unsigned short r = 0;
 
 	assert(fn < 16);
-        
+
         r = fn;
         r |=  ( (seq % 4096) << IEEE80211_SEQ_SEQ_SHIFT);
         return r;
@@ -1464,7 +1464,7 @@ void fill_basic(struct east_state *es, struct ieee80211_frame *wh)
 void send_frame(struct east_state *es, void *buf, int len)
 {
         int rc;
-        
+
         rc = wi_write(es->es_wi, buf, len, NULL);
         if(rc == -1)
 		err(1, "wi_write()");
@@ -1507,7 +1507,7 @@ void send_auth(struct east_state *es, struct timeval *tv)
 		return;
 
 	memset(buf, 0, sizeof(buf));
-	
+
 	es->es_txseq++;
 	fill_basic(es, wh);
 	wh->i_fc[0] |= IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_AUTH;
@@ -1529,12 +1529,12 @@ void send_assoc(struct east_state *es, struct timeval *tv)
 	unsigned short *sp;
 	int len;
 	unsigned char *ptr;
-	
+
 	if (too_early(tv, es->es_txto_mgt, &es->es_txlast))
 		return;
 
 	memset(buf, 0, sizeof(buf));
-	
+
 	es->es_txseq++;
 	fill_basic(es, wh);
 	wh->i_fc[0] |= IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_ASSOC_REQ;
@@ -1601,7 +1601,7 @@ void expand_prga(struct east_state *es, struct timeval *tv)
 		es->es_expand_num = 0;
 		es->es_txseq++;
 		es->es_clearp = es->es_clear;
-	}		
+	}
 
 	early = too_early(tv, es->es_txto_expand, &es->es_txlast);
 
@@ -1644,7 +1644,7 @@ void expand_prga(struct east_state *es, struct timeval *tv)
 	if ((int) sizeof(es->es_prga) < es->es_expand_len) {
 		es->es_expand_len -= dlen;
 		dlen = sizeof(es->es_prga) - totlen - 4;
-		
+
 		/* don't need as many frags; start over */
 		if (dlen <= 0) {
 			es->es_expand_num = -1;
@@ -1656,7 +1656,7 @@ void expand_prga(struct east_state *es, struct timeval *tv)
 		wh->i_fc[1] &= ~IEEE80211_FC1_MORE_FRAG;
 	}
 
-	assert((es->es_clearp >= es->es_clear) && ((es->es_clearp + dlen) 
+	assert((es->es_clearp >= es->es_clear) && ((es->es_clearp + dlen)
 	       < &es->es_clear[sizeof(es->es_clear)]));
 	memcpy(data, es->es_clearp, dlen);
 	es->es_clearpnext = es->es_clearp + dlen;
@@ -1667,7 +1667,7 @@ void expand_prga(struct east_state *es, struct timeval *tv)
 	/* send frag */
 	if ((es->es_expand_num+1) == es->es_expand_factor)
 		wh->i_fc[1] &= ~IEEE80211_FC1_MORE_FRAG;
-			
+
 	*sp = fnseq(es->es_expand_num, es->es_txseq);
 	printf("Sending %d byte fragment %d:%d\r",
 	       dlen, es->es_txseq, es->es_expand_num);
@@ -2172,7 +2172,7 @@ void buddy_packet(struct east_state *es)
 
 		if (gettimeofday(&now, NULL) == -1)
 			err(1, "gettimeofday()");
-	
+
 		rtt = msec_diff(&now, &es->es_rtt);
 		es->es_rtt_id = 0;
 		printf(" rtt %dms", rtt);
@@ -2185,7 +2185,7 @@ void buddy_packet(struct east_state *es)
 		}
 		if (es->es_srtt == 0)
 			es->es_srtt = 1;
-	
+
 		es->es_txto_redirect = es->es_srtt << 1;
 		if (es->es_txto_redirect < S_MIN_RTO)
 			es->es_txto_redirect = S_MIN_RTO;
@@ -2220,7 +2220,7 @@ void read_buddy(struct east_state *es)
 	rc = recv(es->es_buddys, &cmd, sizeof(cmd), 0);
 	if (rc != sizeof(cmd))
 		err(1, "read_buddy: can't get cmd\n");
-	
+
 	cmd = ntohs(cmd);
 
 	switch (cmd) {
@@ -2249,7 +2249,7 @@ void read_tap(struct east_state *es)
 	struct timeval old;
 
 	memset(buf, 0, sizeof(buf));
-	
+
 	dlen = ti_read(es->es_ti, data-2, S_MTU+14);
 	if (dlen == -1)
 		err(1, "ti_read()");
@@ -2419,7 +2419,7 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 			break;
-		
+
 		case 'm':
 			if (str2mac(es->es_mymac, optarg) == -1) {
 				printf("Can't parse my mac\n");
@@ -2441,7 +2441,7 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 			break;
-		
+
 		case 's':
 			if (!inet_aton(optarg, &es->es_srvip)) {
 				printf("Can't parse srv ip\n");
