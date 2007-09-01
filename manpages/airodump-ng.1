@@ -31,6 +31,15 @@ It will record all beacons into the cap file (by default it only records one).
 .I -u <secs>, --update <secs>
 Delay <secs> seconds delay between display updates (default: 1 second). Useful for slow CPU.
 .TP
+.I --showack
+Prints ACK/CTS/RTS statistics. Helps in debugging and general injection optimization. It is indication if you inject, inject too fast, reach the AP, the frames are valid encrypted frames. Allows to detect "hidden" stations, which are too far away to capture high bitrate frames, as ACK frames are sent at 1Mbps.
+.TP
+.I -h
+Hides known stations for --showack.
+.TP
+.I --berlin <secs>
+Time before removing the AP/client from the screen when no more packets are received (Default: 120 seconds). See airodump-ng source for more details about this option ;).
+.TP
 .I -c <channel>[,<channel>[,...]], --channel <channel>[,<channel>[,...]]
 Indicate the channel(s) to listen to. By default airodump-ng hop on all 2.4Ghz channels.
 .TP
