@@ -221,12 +221,31 @@ struct ST_info
     struct WPA_hdsk wpa;     /* WPA handshake data        */
 };
 
+/* linked list of detected macs through ack, cts or rts frames */
+
+struct NA_info
+{
+    struct NA_info *prev;    /* the prev client in list   */
+    struct NA_info *next;    /* the next client in list   */
+    time_t tinit, tlast;     /* first and last time seen  */
+    unsigned char namac[6];  /* the stations MAC address  */
+    int power;               /* last signal power         */
+    int channel;             /* captured on channel       */
+    int ack;                 /* number of ACK frames      */
+    int ack_old;             /* old number of ACK frames  */
+    int ackps;               /* number of ACK frames/s    */
+    int cts;                 /* number of CTS frames      */
+    int rts_r;               /* number of RTS frames (rx) */
+    int rts_t;               /* number of RTS frames (tx) */
+    struct timeval tv;       /* time for ack per second   */
+};
 /* bunch of global stuff */
 
 struct globals
 {
     struct AP_info *ap_1st, *ap_end;
     struct ST_info *st_1st, *st_end;
+    struct NA_info *na_1st, *na_end;
 
     unsigned char prev_bssid[6];
     unsigned char f_bssid[6];
@@ -303,6 +322,9 @@ struct globals
      * wasn't enough, so we decided to create a new option to change that timeout.
      * We implemented this option in the highest tower (TV Tower) of Berlin, eating an ice.
      */
+
+    int show_ack;
+    int hide_known;
 }
 G;
 
@@ -464,6 +486,8 @@ char usage[] =
 "      -w                  : same as --write \n"
 "      --beacons           : Record all beacons in dump file\n"
 "      --update     <secs> : Display update delay in seconds\n"
+"      --showack           : Prints ack/cts/rts statistics\n"
+"      -h                  : Hides known stations for --showack\n"
 "\n"
 "  Filter options:\n"
 "      --encrypt   <suite> : Filter APs by cipher suite\n"
@@ -711,6 +735,7 @@ int update_dataps()
 {
     struct timeval tv;
     struct AP_info *ap_cur;
+    struct NA_info *na_cur;
     int sec, usec, diff, ps;
     float pause;
 
@@ -732,6 +757,24 @@ int update_dataps()
             gettimeofday(&(ap_cur->tv), NULL);
         }
         ap_cur = ap_cur->prev;
+    }
+
+    na_cur = G.na_1st;
+
+    while( na_cur != NULL )
+    {
+        sec = (tv.tv_sec - na_cur->tv.tv_sec);
+        usec = (tv.tv_usec - na_cur->tv.tv_usec);
+        pause = (((float)(sec*1000000.0f + usec))/(1000000.0f));
+        if( pause > 2.0f )
+        {
+            diff = na_cur->ack - na_cur->ack_old;
+            ps = (int)(((float)diff)/pause);
+            na_cur->ackps = ps;
+            na_cur->ack_old = na_cur->ack;
+            gettimeofday(&(na_cur->tv), NULL);
+        }
+        na_cur = na_cur->next;
     }
     return(0);
 }
@@ -854,6 +897,45 @@ int list_check_decloak(struct pkt_buf **list, int length, unsigned char* packet)
     return 1; //didn't find decloak
 }
 
+int remove_namac(unsigned char* mac)
+{
+    struct NA_info *na_cur = NULL;
+    struct NA_info *na_prv = NULL;
+
+    if(mac == NULL)
+        return( -1 );
+
+    na_cur = G.na_1st;
+    na_prv = NULL;
+
+    while( na_cur != NULL )
+    {
+        if( ! memcmp( na_cur->namac, mac, 6 ) )
+            break;
+
+        na_prv = na_cur;
+        na_cur = na_cur->next;
+    }
+
+    /* if it's known, remove it */
+    if( na_cur != NULL )
+    {
+        /* first in linked list */
+        if(na_cur == G.na_1st)
+        {
+            G.na_1st = na_cur->next;
+        }
+        else
+        {
+            na_prv->next = na_cur->next;
+        }
+        free(na_cur);
+        na_cur=NULL;
+    }
+
+    return( 0 );
+}
+
 int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int cardnum )
 {
     int i, n, z, seq, msd, dlen, offset, clen, o;
@@ -864,14 +946,17 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
     unsigned char *p, c;
     unsigned char bssid[6];
     unsigned char stmac[6];
+    unsigned char namac[6];
     unsigned char clear[2048];
     int weight[16];
     int num_xor=0;
 
     struct AP_info *ap_cur = NULL;
     struct ST_info *st_cur = NULL;
+    struct NA_info *na_cur = NULL;
     struct AP_info *ap_prv = NULL;
     struct ST_info *st_prv = NULL;
+    struct NA_info *na_prv = NULL;
 
     /* skip packets smaller than a 802.11 header */
 
@@ -938,6 +1023,9 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
             perror( "malloc failed" );
             return( 1 );
         }
+
+        /* if mac is listed as unknown, remove it */
+        remove_namac(bssid);
 
         memset( ap_cur, 0, sizeof( struct AP_info ) );
 
@@ -1107,6 +1195,9 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
             perror( "malloc failed" );
             return( 1 );
         }
+
+        /* if mac is listed as unknown, remove it */
+        remove_namac(stmac);
 
         memset( st_cur, 0, sizeof( struct ST_info ) );
 
@@ -1853,6 +1944,142 @@ write_packet:
         }
     }
 
+    /* this changes the local ap_cur, st_cur and na_cur variables and should be the last check befor the actual write */
+    if(caplen < 24 && caplen >= 10)
+    {
+        /* RTS || CTS || ACK */
+        if(h80211[0] == 0xB4 || h80211[0] == 0xC4 || h80211[0] == 0xD4)
+        {
+            p=h80211+4;
+            while(p <= h80211+16 && p<=h80211+caplen)
+            {
+                memcpy(namac, p, 6);
+
+                if(memcmp(namac, NULL_MAC, 6) == 0)
+                {
+                    p+=6;
+                    continue;
+                }
+
+                if(G.hide_known)
+                {
+                    /* check AP list */
+                    ap_cur = G.ap_1st;
+                    ap_prv = NULL;
+
+                    while( ap_cur != NULL )
+                    {
+                        if( ! memcmp( ap_cur->bssid, namac, 6 ) )
+                            break;
+
+                        ap_prv = ap_cur;
+                        ap_cur = ap_cur->next;
+                    }
+
+                    /* if it's an AP, try next mac */
+
+                    if( ap_cur != NULL )
+                    {
+                        p+=6;
+                        continue;
+                    }
+
+                    /* check ST list */
+                    st_cur = G.st_1st;
+                    st_prv = NULL;
+
+                    while( st_cur != NULL )
+                    {
+                        if( ! memcmp( st_cur->stmac, namac, 6 ) )
+                            break;
+
+                        st_prv = st_cur;
+                        st_cur = st_cur->next;
+                    }
+
+                    /* if it's a client, try next mac */
+
+                    if( st_cur != NULL )
+                    {
+                        p+=6;
+                        continue;
+                    }
+                }
+
+                /* not found in either AP list or ST list, look through NA list */
+                na_cur = G.na_1st;
+                na_prv = NULL;
+
+                while( na_cur != NULL )
+                {
+                    if( ! memcmp( na_cur->namac, namac, 6 ) )
+                        break;
+
+                    na_prv = na_cur;
+                    na_cur = na_cur->next;
+                }
+
+                /* update our chained list of unknown stations */
+                /* if it's a new mac, add it */
+
+                if( na_cur == NULL )
+                {
+                    if( ! ( na_cur = (struct NA_info *) malloc(
+                                    sizeof( struct NA_info ) ) ) )
+                    {
+                        perror( "malloc failed" );
+                        return( 1 );
+                    }
+
+                    memset( na_cur, 0, sizeof( struct NA_info ) );
+
+                    if( G.na_1st == NULL )
+                        G.na_1st = na_cur;
+                    else
+                        na_prv->next  = na_cur;
+
+                    memcpy( na_cur->namac, namac, 6 );
+
+                    na_cur->prev = na_prv;
+
+                    gettimeofday(&(na_cur->tv), NULL);
+                    na_cur->tinit = time( NULL );
+                    na_cur->tlast = time( NULL );
+
+                    na_cur->power   = -1;
+                    na_cur->channel = -1;
+                    na_cur->ack     = 0;
+                    na_cur->ack_old = 0;
+                    na_cur->ackps   = 0;
+                    na_cur->cts     = 0;
+                    na_cur->rts_r   = 0;
+                    na_cur->rts_t   = 0;
+                }
+
+                /* update the last time seen & power*/
+
+                na_cur->tlast = time( NULL );
+                na_cur->power = ri->ri_power;
+                na_cur->channel = ri->ri_channel;
+
+                if(h80211[0] == 0xB4 && p == h80211+4)
+                    na_cur->rts_r++;
+
+                if(h80211[0] == 0xB4 && p == h80211+10)
+                    na_cur->rts_t++;
+
+                if(h80211[0] == 0xC4)
+                    na_cur->cts++;
+
+                if(h80211[0] == 0xD4)
+                    na_cur->ack++;
+
+                /*grab next mac (for rts frames)*/
+                p+=6;
+            }
+        }
+    }
+
     if( G.f_cap != NULL && caplen >= 10)
     {
         pkh.caplen = pkh.len = caplen;
@@ -2099,8 +2326,10 @@ void dump_print( int ws_row, int ws_col, int if_num )
     char ssid_list[512];
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
+    struct NA_info *na_cur;
     int columns_ap = 83;
     int columns_sta = 72;
+    int columns_na = 60;
 
     if(!G.singlechan) columns_ap -= 4; //no RXQ in scan mode
 
@@ -2457,6 +2686,65 @@ void dump_print( int ws_row, int ws_col, int if_num )
         }
 
         ap_cur = ap_cur->prev;
+    }
+
+    if(G.show_ack)
+    {
+        /* print some informations about each unknown station */
+
+        nlines += 3;
+
+        if( nlines >= (ws_row-1) )
+            return;
+
+        memset( strbuf, ' ', ws_col - 1 );
+        strbuf[ws_col - 1] = '\0';
+        fprintf( stderr, "%s\n", strbuf );
+
+        memcpy( strbuf, " MAC       "
+                "         CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX", columns_na );
+        strbuf[ws_col - 1] = '\0';
+        fprintf( stderr, "%s\n", strbuf );
+
+        memset( strbuf, ' ', ws_col - 1 );
+        strbuf[ws_col - 1] = '\0';
+        fprintf( stderr, "%s\n", strbuf );
+
+        na_cur = G.na_1st;
+
+        while( na_cur != NULL )
+        {
+            if( time( NULL ) - na_cur->tlast > 120 )
+            {
+                na_cur = na_cur->next;
+                continue;
+            }
+
+            if( nlines >= (ws_row-1) )
+                return;
+
+            nlines++;
+
+            if( ws_row != 0 && nlines >= ws_row )
+                return;
+
+            fprintf( stderr, " %02X:%02X:%02X:%02X:%02X:%02X",
+                    na_cur->namac[0], na_cur->namac[1],
+                    na_cur->namac[2], na_cur->namac[3],
+                    na_cur->namac[4], na_cur->namac[5] );
+
+            fprintf( stderr, "  %2d", na_cur->channel  );
+            fprintf( stderr, " %3d", na_cur->power  );
+            fprintf( stderr, " %6d", na_cur->ack );
+            fprintf( stderr, "  %4d", na_cur->ackps );
+            fprintf( stderr, " %6d", na_cur->cts );
+            fprintf( stderr, " %6d", na_cur->rts_r );
+            fprintf( stderr, " %6d", na_cur->rts_t );
+
+            fprintf( stderr, "\n" );
+
+            na_cur = na_cur->next;
+        }
     }
 }
 
@@ -3188,6 +3476,7 @@ int main( int argc, char *argv[] )
 
     struct AP_info *ap_cur, *ap_prv, *ap_next;
     struct ST_info *st_cur, *st_next;
+    struct NA_info *na_cur, *na_next;
 
     time_t tt1, tt2, tt3, start_time;
 
@@ -3227,14 +3516,14 @@ int main( int argc, char *argv[] )
     G.usegpsd      =  0;
     G.channels     =  bg_chans;
     G.one_beacon   =  1;
-    G.singlechan  =  0;
-    G.dump_prefix    =  NULL;
+    G.singlechan   =  0;
+    G.dump_prefix  =  NULL;
     G.record_data  =  0;
     G.f_cap        =  NULL;
     G.f_ivs        =  NULL;
     G.f_txt        =  NULL;
     G.f_gps        =  NULL;
-    G.keyout = NULL;
+    G.keyout       =  NULL;
     G.f_xor        =  NULL;
     G.sk_len       =  0;
     G.sk_start     =  0;
@@ -3247,6 +3536,8 @@ int main( int argc, char *argv[] )
     G.numaps       =  0;
     G.maxnumaps    =  0;
     G.berlin       =  120;
+    G.show_ack     =  0;
+    G.hide_known   =  0;
 
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
@@ -3291,6 +3582,7 @@ int main( int argc, char *argv[] )
         {"berlin",   1, 0, 'B'},
         {"help",     0, 0, 'H'},
         {"nodecloak",0, 0, 'D'},
+        {"showack",  0, 0, 'A'},
         {0,          0, 0,  0 }
     };
 
@@ -3325,7 +3617,11 @@ int main( int argc, char *argv[] )
                         break;
                     }
                 }
-                if(found) break;
+                if(found)
+                {
+                    sleep(3);
+                    break;
+                }
             }
         }
     }
@@ -3335,7 +3631,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ah",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3364,6 +3660,16 @@ int main( int argc, char *argv[] )
             case 'a':
 
                 G.asso_client = 1;
+                break;
+
+            case 'A':
+
+                G.show_ack = 1;
+                break;
+
+            case 'h':
+
+                G.hide_known = 1;
                 break;
 
             case 'D':
@@ -3907,6 +4213,16 @@ usage:
         st_next = st_cur->next;
         free(st_cur);
         st_cur = st_next;
+    }
+
+    na_cur = G.na_1st;
+    na_next= NULL;
+
+    while(na_cur != NULL)
+    {
+        na_next = na_cur->next;
+        free(na_cur);
+        na_cur = na_next;
     }
 
     fprintf( stderr, "\33[?25h" );
