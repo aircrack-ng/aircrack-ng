@@ -2359,7 +2359,7 @@ void own(struct east_state *es)
 
 void usage(char *p)
 {
-	printf(	"%s <arg> [v0]\n"
+	printf(	"%s <args>\n"
 		"-h\t\thelp\n"
 		"-v\t\tAP mac\n"
 		"-m\t\tmy mac\n"
