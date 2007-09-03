@@ -1672,7 +1672,7 @@ skip_probe:
 //            ap_cur->encryption = 2 + ( ( h80211[z + 3] & 0x20 ) >> 5 );
 
 
-        if(ap_cur->security == 0)
+        if(ap_cur->security == 0 || (ap_cur->security & STD_WEP) )
         {
             if( (h80211[1] & 0x40) != 0x40 )
             {
@@ -1687,12 +1687,13 @@ skip_probe:
                 else
                 {
                     ap_cur->security |= STD_WEP;
-                    if(h80211[z+3] >= 0x01 && h80211[z+3] <= 0x03)
+                    if( (h80211[z+3] & 0xC0) != 0x00)
                     {
                         ap_cur->security |= ENC_WEP40;
                     }
                     else
                     {
+                        ap_cur->security &= ~ENC_WEP40;
                         ap_cur->security |= ENC_WEP;
                     }
                 }
