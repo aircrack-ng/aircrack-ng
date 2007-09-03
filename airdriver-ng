@@ -156,7 +156,7 @@ SCONFIG[$i]="CONFIG_IEEE80211="
 SCONFIGS[$i]="CONFIG_IEEE80211=m CONFIG_IEEE80211_CRYPT_WEP=m CONFIG_IEEE80211_CRYPT_CCMP=m CONFIG_IEEE80211_CRYPT_TKIP=m"
 SMODULE[$i]="ieee80211"
 SMODULES[$i]="ieee80211 ieee80211_crypt ieee80211_crypt_wep ieee80211_crypt_tkip ieee80211_crypt_ccmp"
-SI_INIT[$i]=""
+SI_INIT[$i]="install_ieee80211 $i"
 SI_DRIVERGET[$i]="cp"
 SI_DRIVERFILE[$i]="ieee80211_tx.c"
 SI_DRIVERPATH1[$i]="$KSRC/net/ieee80211"
@@ -1635,6 +1635,49 @@ rtl8187_prepatch() {
     $TAR xzf stack.tar.gz
     $TAR xzf drv.tar.gz
 }
+
+install_ieee80211() {
+    if [ $2 -eq 1 ]
+    then
+        #check if kernel source is in /usr/src/linux instead
+        missing=0
+        #check for default files README COPYING CREDITS (i hope every kernel source includes them all)
+        if [ ! -f "/usr/src/linux/README" -o ! -f "/usr/src/linux/COPYING" -o ! -f "/usr/src/linux/CREDITS" ]
+        then
+            missing=1
+        #   echo "Kernel source missing!"
+#            return $ERROR
+        fi
+
+        #2nd check (in case README COPYING and CREDITS is included in kernel headers)
+        #searches for .c files in "net" subdir
+        if [ $missing = 0 -a x"`find /usr/src/linux/net/ -name *\.c | head -n 1`" = x ]
+        then
+            missing=1
+        #   echo "Kernel source missing!"
+#            return $ERROR
+        fi
+
+        if [ $missing = 0 ]
+        then
+            SI_DRIVERPATH1[$1]=$SI_DRIVERPATH2[$1]
+        else
+            echo
+            echo "Your kernel source is neither in \"$KSRC\" nor in \"/usr/src/linux\"."
+            echo "Trying with vanilla source. (May fail on heavily patched distributions.)"
+            echo "If it fails install your proper kernel source and rerun this script."
+            echo
+            sleep 3
+
+            SI_DRIVERGET[$1]="wget"
+            SI_DRIVERFILE[$1]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+            SI_DRIVERPATH1[$1]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+            SI_DRIVERPATH2[$1]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+            SI_DRIVEREXDIR[$1]="linux-$KMAJOR.$KMINOR.$KPATCH/net/ieee80211"
+            SI_DRIVERDIR[$1]="ieee80211"
+        fi
+    fi
+}
 #end
 
 #install script doing the dirty work
@@ -2680,7 +2723,7 @@ installStack() {
     if [ ! -f "$KSRC/README" -o ! -f "$KSRC/COPYING" -o ! -f "$KSRC/CREDITS" ]
     then
         missing=1
-        echo "Kernel source missing!"
+#        echo "Kernel source missing!"
 #        return $ERROR
     fi
 
@@ -2689,7 +2732,7 @@ installStack() {
     if [ $missing = 0 -a x"`find $KSRC/net/ -name *\.c | head -n 1`" = x ]
     then
         missing=1
-        echo "Kernel source missing!"
+#        echo "Kernel source missing!"
 #        return $ERROR
     fi
 
@@ -2723,12 +2766,12 @@ installStack() {
 #run the custom installscript
     if [ x"${SI_INIT[$1]}" != x ]
     then
-        ${SI_INIT[$1]} $1
+        ${SI_INIT[$1]} $missing
     fi
 
 #map stack install to driver install, so we can use the install_action functionality
     DCONFIGS[999]=${SCONFIGS[$1]}
-    DI_INIT[999]=${SI_INIT[$1]}
+#    DI_INIT[999]=${SI_INIT[$1]}
     DI_DRIVERGET[999]=${SI_DRIVERGET[$1]}
     DI_DRIVERFILE[999]=${SI_DRIVERFILE[$1]}
     DI_DRIVERPATH1[999]=${SI_DRIVERPATH1[$1]}
