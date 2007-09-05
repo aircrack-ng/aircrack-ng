@@ -3954,7 +3954,10 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
         }
         else
         {
-            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+            /* try 1000 40bit keys first, to find the key "instantly" and you don't need to wait for 104bit to fail */
+            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 5, 1000, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+                len = 5;
+            else if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 13;
             else if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
@@ -3975,7 +3978,10 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
         }
         else
         {
-            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+            /* try 1000 40bit keys first, to find the key "instantly" and you don't need to wait for 104bit to fail */
+            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 5, 1000, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+                len = 5;
+            else if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 13;
             else if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
@@ -4561,7 +4567,7 @@ usage:
 			else
 			{
 				printf( "Choosing first network as target.\n" );
-				sleep( 2 );
+// 				sleep( 2 );
 				ap_cur = ap_1st;
 			}
 
