@@ -615,10 +615,16 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
                 } while(tagtype != 0 && pos < len-2);
 
                 if(tagtype != 0) return -1;
-                if(taglen <= 1) return -1;
+                if(taglen <= 1) break;
                 if(pos+2+taglen > len) return -1;
 
                 if(taglen > 32)taglen = 32;
+
+                if((pkt_sniff+pos+2)[0] < 32 && memcmp(bssid, pkt_sniff+10, 6) == 0)
+                {
+                    printf("yo!\n");
+                    break;
+                }
 
                 /* if bssid is given, copy essid */
                 if(bssid != NULL && memcmp(bssid, pkt_sniff+10, 6) == 0)
