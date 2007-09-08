@@ -1397,11 +1397,11 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 		printf( "%02X:", wepkey[i] );
 	printf( "%02X ] ",   wepkey[i] );
 
-	if( 100 * nb_ascii > 75 * opt.keylen )
+	if( 100 * nb_ascii > 75 * keylen )
 	{
 		printf( "(ASCII: " );
 
-		for( i = 0; i < opt.keylen; i++ )
+		for( i = 0; i < keylen; i++ )
 			printf( "%c", ( ( wepkey[i] >  31 && wepkey[i] < 127 ) ||
 				wepkey[i] > 160 ) ? wepkey[i] : '.' );
 
