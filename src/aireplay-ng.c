@@ -596,9 +596,9 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
                 taglen  = pkt_sniff[pos+1];
             } while(tagtype != 3 && pos < len-2);
 
-            if(tagtype != 3) return -1;
-            if(taglen != 1) return -1;
-            if(pos+2+taglen > len) return -1;
+            if(tagtype != 3) continue;
+            if(taglen != 1) continue;
+            if(pos+2+taglen > len) continue;
 
             chan = pkt_sniff[pos+2];
 
@@ -614,20 +614,23 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
                     taglen  = pkt_sniff[pos+1];
                 } while(tagtype != 0 && pos < len-2);
 
-                if(tagtype != 0) return -1;
-                if(taglen <= 1) break;
-                if(pos+2+taglen > len) return -1;
+                if(tagtype != 0) continue;
+                if(taglen <= 1)
+                {
+                    if (memcmp(bssid, pkt_sniff+10, 6) == 0) break;
+                    else continue;
+                }
+                if(pos+2+taglen > len) continue;
 
                 if(taglen > 32)taglen = 32;
 
                 if((pkt_sniff+pos+2)[0] < 32 && memcmp(bssid, pkt_sniff+10, 6) == 0)
                 {
-                    printf("yo!\n");
                     break;
                 }
 
                 /* if bssid is given, copy essid */
-                if(bssid != NULL && memcmp(bssid, pkt_sniff+10, 6) == 0)
+                if(bssid != NULL && memcmp(bssid, pkt_sniff+10, 6) == 0 && strlen(essid) == 0)
                 {
                     memset(essid, 0, 33);
                     memcpy(essid, pkt_sniff+pos+2, taglen);
@@ -638,6 +641,7 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
                 if(bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0 && strncasecmp(essid, (char*)pkt_sniff+pos+2, taglen) == 0)
                 {
                     memcpy(bssid, pkt_sniff+10, 6);
+                    printf("Found BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\" to given ESSID \"%s\".\n", bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5], essid);
                     break;
                 }
             }
