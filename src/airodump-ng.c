@@ -59,6 +59,7 @@
 #define ARPHRD_IEEE80211_FULL   803
 
 #define REFRESH_RATE 100000  /* default delay in us between updates */
+#define DEFAULT_HOPFREQ 350  /* default delay in ms between channel hopping */
 
 #define NB_PWR  5       /* size of signal power ring buffer */
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
@@ -328,6 +329,8 @@ struct globals
 
     int show_ack;
     int hide_known;
+
+    int hopfreq;
 }
 G;
 
@@ -491,6 +494,7 @@ char usage[] =
 "      --update     <secs> : Display update delay in seconds\n"
 "      --showack           : Prints ack/cts/rts statistics\n"
 "      -h                  : Hides known stations for --showack\n"
+"      -f          <msecs> : Time in ms between hopping channels\n"
 "      --berlin     <secs> : Time before removing the AP/client\n"
 "                            from the screen when no more packets\n"
 "                            are received (Default: 120 seconds).\n"
@@ -3192,7 +3196,7 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
             first = 0;
         }
 
-        usleep( (350000) );
+        usleep( (G.hopfreq*1000) );
     }
 
     exit( 0 );
@@ -3545,6 +3549,7 @@ int main( int argc, char *argv[] )
     G.berlin       =  120;
     G.show_ack     =  0;
     G.hide_known   =  0;
+    G.hopfreq      =  350;
 
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
@@ -3638,7 +3643,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ah",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3787,6 +3792,16 @@ int main( int argc, char *argv[] )
                 /* If failed to parse or value <= 0, use default, 100ms */
                 if (G.update_s <= 0)
                 	G.update_s = REFRESH_RATE;
+
+                break;
+
+            case 'f':
+
+                G.hopfreq = atoi(optarg);
+
+                /* If failed to parse or value <= 0, use default, 100ms */
+                if (G.hopfreq <= 0)
+                	G.hopfreq = REFRESH_RATE;
 
                 break;
 
