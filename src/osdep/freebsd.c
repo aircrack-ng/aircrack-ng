@@ -201,7 +201,7 @@ static unsigned char *get_80211(struct priv_fbsd *pf, int *plen,
 		int tot = bpfh->bh_hdrlen + bpfh->bh_caplen;
 		int offset = BPF_WORDALIGN(tot);
 
-                *data = (char*)bpfh + offset;
+                *data = (unsigned char*)bpfh + offset;
 		*totlen -= offset - tot; /* take into account align bytes */
 	} else if ((int)bpfh->bh_caplen > *totlen)
 		abort();
