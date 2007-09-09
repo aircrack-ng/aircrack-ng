@@ -569,6 +569,7 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
     int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
     uchar pkt_sniff[4096];
     struct timeval tv,tv2;
+    char essid2[33];
 
     gettimeofday(&tv, NULL);
     while (1)
@@ -649,12 +650,14 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
                 /* if essid and bssid are given, check both */
                 if(bssid != NULL && memcmp(bssid, pkt_sniff+10, 6) == 0 && strlen(essid) > 0)
                 {
-                    if(strncasecmp(essid, (char*)pkt_sniff+pos+2, taglen) == 0 && strlen(essid) == (unsigned)taglen)
+                    memset(essid2, 0, 33);
+                    memcpy(essid2, pkt_sniff+pos+2, taglen);
+                    if(strncasecmp(essid, essid2, taglen) == 0 && strlen(essid) == (unsigned)taglen)
                         break;
                     else
                     {
                         printf("For the given BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\", there is an ESSID mismatch!\n", bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
-                        printf("Found ESSID \"%s\" vs. specified ESSID \"%s\"\n", (char*)pkt_sniff+pos+2, essid);
+                        printf("Found ESSID \"%s\" vs. specified ESSID \"%s\"\n", essid2, essid);
                         printf("Using the given one, double check it to be sure its correct!\n");
                         break;
                     }
