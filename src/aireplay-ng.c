@@ -5125,7 +5125,7 @@ int main( int argc, char *argv[] )
 
                 for (i=0; optarg[i] != 0; i++)
                 {
-                    if (isdigit(optarg[i]) == 0)
+                    if (isdigit((int)optarg[i]) == 0)
                         break;
                 }
 
@@ -5150,7 +5150,7 @@ int main( int argc, char *argv[] )
 
                 for (i=0; optarg[i] != 0; i++)
                 {
-                    if (isdigit(optarg[i]) == 0)
+                    if (isdigit((int)optarg[i]) == 0)
                         break;
                 }
 

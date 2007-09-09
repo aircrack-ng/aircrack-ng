@@ -37,9 +37,17 @@
 #include "ethernet.h"
 
 /* XXX assuming little endian platform */
+#ifndef htole16
 #define htole16(n)	n
+#endif
+
+#ifndef htole32
 #define htole32(n)	n
+#endif
+
+#ifndef le16toh
 #define le16toh(n)	n
+#endif
 
 #define S_MTU		1500
 #define S_MCAST		"\x01\x00\x5e\x01\x00"

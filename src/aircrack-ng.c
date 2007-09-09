@@ -326,8 +326,8 @@ int checkbssids(char *bssidlist)
 
 	if(bssidlist == NULL) return -1;
 
-#define VALID_CHAR(x)	( ((toupper(x)) == 'X') || \
-			  ((toupper(x)) >= 'A' && (toupper(x)) <= 'F') || \
+#define VALID_CHAR(x)	( ((toupper((int)x)) == 'X') || \
+			  ((toupper((int)x)) >= 'A' && (toupper((int)x)) <= 'F') || \
 			  ( (x) >= '0' && (x) <= '9') )
 
 #define VALID_SEP(arg)	( ((arg) == '_') || ((arg) == '-') || ((arg) == ':') )
@@ -366,7 +366,7 @@ int checkbssids(char *bssidlist)
 		{
 			for(i=0; i<17; i++)
 			{
-				if(toupper(tmp[i]) == 'X') tmp[i] = '0';
+				if(toupper((int)tmp[i]) == 'X') tmp[i] = '0';
 			}
 			opt.firstbssid = tmp;
 			first = 0;
@@ -388,7 +388,7 @@ int mergebssids(char* bssidlist, unsigned char* bssid)
 		bssid[0], bssid[1], bssid[2],
 		bssid[3], bssid[4], bssid[5]);
 
-#define	IGNORE_CHAR(x)	(toupper(x) == 'X' || VALID_SEP(x))
+#define	IGNORE_CHAR(x)	(toupper((int)x) == 'X' || VALID_SEP(x))
 
 	list = strdup(bssidlist);
 	do
@@ -399,7 +399,7 @@ int mergebssids(char* bssidlist, unsigned char* bssid)
 		for(i=0; i<17; i++)
 		{
 			if(IGNORE_CHAR(tmp[i])) continue;
-			if(toupper(tmp[i]) != toupper(mac[i]))
+			if(toupper((int)tmp[i]) != toupper((int)mac[i]))
 			{
 				next = 1;
 				break;

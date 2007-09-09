@@ -65,8 +65,13 @@
 #define KEYLIMIT 1000000
 
 /* XXX assuming little endian */
+#ifndef le16toh
 #define le16toh(n) (n)
+#endif
+
+#ifndef htole16
 #define htole16(n) (n)
+#endif
 
 struct frag_state {
 	struct ieee80211_frame	fs_wh;

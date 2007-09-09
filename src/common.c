@@ -93,7 +93,7 @@ int getmac(char * macAddress, int strict, unsigned char * mac)
 			&& strlen(byte) == 2)
 			return 1;
 
-		if (!(isdigit(byte[1]) || (toupper(byte[1])>='A' && toupper(byte[1])<='F')))
+		if (!(isdigit((int)byte[1]) || (toupper((int)byte[1])>='A' && toupper((int)byte[1])<='F')))
 			return 1;
 		mac[nbElem] = n;
 		i+=2;

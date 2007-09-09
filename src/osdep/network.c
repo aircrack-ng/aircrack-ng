@@ -14,6 +14,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <assert.h>
+#include <sys/select.h>
 
 #include "osdep.h"
 #include "network.h"
