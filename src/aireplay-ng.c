@@ -1324,7 +1324,7 @@ int do_attack_fake_auth( void )
 
                 /* attempt to associate */
 
-                memcpy( h80211, ASSOC_REQ, 30 );
+                memcpy( h80211, ASSOC_REQ, 28 );
                 memcpy( h80211 +  4, opt.r_bssid, 6 );
                 memcpy( h80211 + 10, opt.r_smac , 6 );
                 memcpy( h80211 + 16, opt.r_bssid, 6 );

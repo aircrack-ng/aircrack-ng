@@ -6,18 +6,25 @@ Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
 * airodump-ng: Fixed debian bug #417388: airodump-ng doesn't restore terminal after error
 * airodump-ng: Fixed opening the same interface more than once
 * airodump-ng: Fixed PWR values for some drivers
+* airodump-ng: Fixed airodump sanity check (resulted in showing WPA networks without CIPHER & AUTH)
+* airodump-ng: Added "-f" to set the time in ms between hopping channels
+* airodump-ng: Added partial 40bit WEP detection
+* airodump-ng: Added "--showack" to print statistics about ack/cts and rts frames
+* airodump-ng: Added "-h" to hide the known stations in ack statistics
 * aircrack-ng: Added BSSID merge option
 * aircrack-ng: Added passive ptw attack (using also IP packets for cracking)
 * aircrack-ng: Made ptw attack default, for korek attack use -K
 * aircrack-ng: Fixed huge memory usage with ptw attack on hundreds of APs
 * aircrack-ng: Added -M paramteter for specifying maximum number of IVs to be read
-* aircrack-ng: Changed ptw testpackets from first to random
+* aircrack-ng: Changed ptw testpackets from first to random (fixes invalidation of found keys)
 * aircrack-ng: Added --wep-decloak mode
 * aircrack-ng: Added --ptw-debug to allow klein or ptw disabling
 * aircrack-ng: PTW: Starts a new process group
 * aircrack-ng: Increased PTW key checking speed by 20%
+* aircrack-ng: Try 1000 40bit keys befor starting 104bit cracking, to get the key "instantly" without waiting for 104 bit to fail
+* aircrack-ng: Fixed not shown ascii keys, when found key was shorter than expected
 * airdecap-ng: Fixed bug in calc_pmk() function causes wrong PMK to be computed
-* aireplay-ng: Added usage of RTS/CTS, auth and ACK to --test (more stable and faster).
+* aireplay-ng: Added usage of RTS/CTS, auth and ACK to --test (more stable and faster)
 * aireplay-ng: Added TCP connection test to --test
 * aireplay-ng: Changed injection rate to be more stable
 * aireplay-ng: Made essid argument optional - sniffs the essid if its broadcasted
@@ -27,18 +34,24 @@ Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
 * aireplay-ng: Added --fast switch to use first available packet without interaction
 * aireplay-ng: chopchop now tries header recreation workaround if icv check failed
 * aireplay-ng: Fixed seq field for fragment attack
+* aireplay-ng: Now works with rtc_cmos
 * aireplay-ng: Added automatic channel changing in --test to AP channel
+* aireplay-ng: Added channel synchonisation for --test between cards
+* aireplay-ng: Added possibility to limit injection test to one AP "-a" or "-e"
+* aireplay-ng: Added BSSID/ESSID detection, so it can be enough to specify one option
 * airmon-ng: Added driver detection through sysfs
 * airmon-ng: Added mac80211 support
 * airmon-ng: Added networkmanager detection - airmon-ng check
 * airmon-ng: Fixed interface name detection
 * airmon-ng: Fixed Ralink rt73 detection
+* airmon-ng: Using real interface name instead of first 7 bytes
 * makeivs-ng: Added parameters to set length, number and first IV of generated IVs
 * makeivs-ng: Added possibility to generate IVs sequentially or randomly
 * makeivs-ng: Added parameters to set percentage of false and dupe frames
 * makeivs-ng: Added 256bit wep support
 * packetforge-ng: Added support for generating more than on packet
 * patches: updated rtl8187 patch for 2.6.22
+* patches: updated zd1211rw patch for 2.6.22
 * New IVS format for storing all relevant data
 * Auto-creation of rtap interface if it doesn't exist (ipw2200)
 * Better acx, rtl8180, orinoco and madwifi-ng detection
@@ -52,7 +65,9 @@ Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
 * Added airserv-ng - server for rx/tx on another system
 * Added airolib-ng for using hash tables to crack wpa/wpa2 psk (supports cowpatty rainbow tables)
 * Fixed compilation of optimized binaries with icc
+* Fixed compilation on FreeBSD, NetBSD and MacOSX
 * Better WDS handling and display
+* Added detection and removal of trailing fcs checksum
 * Fixed several memory leaks
 * Fixed being root when connecting to airserv-ng
 
