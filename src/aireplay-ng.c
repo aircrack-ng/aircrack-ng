@@ -639,11 +639,25 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
                 }
 
                 /* if essid is given, copy bssid */
-                if(bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0 && strncasecmp(essid, (char*)pkt_sniff+pos+2, taglen) == 0 && strlen(essid) == taglen)
+                if(bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0 && strncasecmp(essid, (char*)pkt_sniff+pos+2, taglen) == 0 && strlen(essid) == (unsigned)taglen)
                 {
                     memcpy(bssid, pkt_sniff+10, 6);
                     printf("Found BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\" to given ESSID \"%s\".\n", bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5], essid);
                     break;
+                }
+
+                /* if essid and bssid are given, check both */
+                if(bssid != NULL && memcmp(bssid, pkt_sniff+10, 6) == 0 && strlen(essid) > 0)
+                {
+                    if(strncasecmp(essid, (char*)pkt_sniff+pos+2, taglen) == 0 && strlen(essid) == (unsigned)taglen)
+                        break;
+                    else
+                    {
+                        printf("For the given BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\", there is an ESSID mismatch!\n", bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
+                        printf("Found ESSID \"%s\" vs. specified ESSID \"%s\"\n", (char*)pkt_sniff+pos+2, essid);
+                        printf("Using the given one, double check it to be sure its correct!\n");
+                        break;
+                    }
                 }
             }
         }
