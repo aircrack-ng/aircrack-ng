@@ -674,7 +674,7 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
 /**
     checks if the interface is hopping. if bssid != NULL its looking for a beacon frame
 */
-int attack_check(uchar* bssid, char* essid, struct wif *wi)
+int attack_check(uchar* bssid, char* essid, uchar* capa, struct wif *wi)
 {
     int i, j;
     int ap_chan=0, iface_chan=0;
@@ -694,7 +694,7 @@ int attack_check(uchar* bssid, char* essid, struct wif *wi)
 
     if(bssid != NULL)
     {
-        ap_chan = wait_for_beacon(bssid, NULL, essid);
+        ap_chan = wait_for_beacon(bssid, capa, essid);
         if(ap_chan < 0)
         {
             PCT; printf("No such BSSID available.\n");
@@ -725,7 +725,7 @@ int do_attack_deauth( void )
 
     if( opt.s_face != NULL )
     {
-        if(!attack_check(opt.r_bssid, NULL, _wi_out) && !attack_check(NULL, NULL, _wi_in))
+        if(!attack_check(opt.r_bssid, NULL, NULL, _wi_out) && !attack_check(NULL, NULL, NULL, _wi_in))
         {
             if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
             {
@@ -740,7 +740,7 @@ int do_attack_deauth( void )
     }
     else
     {
-        if(attack_check(opt.r_bssid, NULL, _wi_out) != 0)
+        if(attack_check(opt.r_bssid, NULL, NULL, _wi_out) != 0)
         {
             gotit=1;
         }
@@ -1186,7 +1186,7 @@ int do_attack_fake_auth( void )
         return( 1 );
     }
 
-    if( attack_check(opt.r_bssid, opt.r_essid, _wi_in) != 0)
+    if( attack_check(opt.r_bssid, opt.r_essid, capa, _wi_in) != 0)
     {
         if(memcmp(opt.r_bssid, NULL_MAC, 6))
         {
@@ -1220,8 +1220,6 @@ int do_attack_fake_auth( void )
     if(opt.npackets > 0) x_send = opt.npackets;
     tt = time( NULL );
     tr = time( NULL );
-
-    wait_for_beacon(opt.r_bssid, capa, NULL);
 
     while( 1 )
     {
@@ -2120,7 +2118,7 @@ int do_attack_arp_resend( void )
 
     if( opt.s_face != NULL )
     {
-        if(!attack_check(opt.f_bssid, NULL, _wi_out) && !attack_check(NULL, NULL, _wi_in))
+        if(!attack_check(opt.f_bssid, NULL, NULL, _wi_out) && !attack_check(NULL, NULL, NULL, _wi_in))
         {
             if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
             {
@@ -2135,7 +2133,7 @@ int do_attack_arp_resend( void )
     }
     else
     {
-        if(attack_check(opt.f_bssid, NULL, _wi_out) != 0)
+        if(attack_check(opt.f_bssid, NULL, NULL, _wi_out) != 0)
         {
             gotit=1;
         }
@@ -2551,7 +2549,7 @@ int do_attack_chopchop( void )
 
     if( opt.s_face != NULL )
     {
-        if(!attack_check(chopped+4, NULL, _wi_out) && !attack_check(NULL, NULL, _wi_in))
+        if(!attack_check(chopped+4, NULL, NULL, _wi_out) && !attack_check(NULL, NULL, NULL, _wi_in))
         {
             if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
             {
@@ -2566,7 +2564,7 @@ int do_attack_chopchop( void )
     }
     else
     {
-        if(attack_check(chopped+4, NULL, _wi_out) != 0)
+        if(attack_check(chopped+4, NULL, NULL, _wi_out) != 0)
         {
             gotit=1;
         }
@@ -3241,7 +3239,7 @@ int do_attack_fragment()
 
     if( opt.s_face != NULL )
     {
-        if(!attack_check(opt.f_bssid, NULL, _wi_out) && !attack_check(NULL, NULL, _wi_in))
+        if(!attack_check(opt.f_bssid, NULL, NULL, _wi_out) && !attack_check(NULL, NULL, NULL, _wi_in))
         {
             if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
             {
@@ -3256,7 +3254,7 @@ int do_attack_fragment()
     }
     else
     {
-        if(attack_check(opt.f_bssid, NULL, _wi_out) != 0)
+        if(attack_check(opt.f_bssid, NULL, NULL, _wi_out) != 0)
         {
             gotit=1;
         }
@@ -4092,7 +4090,7 @@ int do_attack_test()
 
     if( (memcmp(opt.r_bssid, NULL_MAC, 6)) || (strlen(opt.r_essid) > 0))
     {
-        if( attack_check(opt.r_bssid, opt.r_essid, _wi_in) != 0)
+        if( attack_check(opt.r_bssid, opt.r_essid, NULL, _wi_in) != 0)
         {
             if(memcmp(opt.r_bssid, NULL_MAC, 6))
             {
