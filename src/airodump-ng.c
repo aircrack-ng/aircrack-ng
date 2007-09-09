@@ -241,6 +241,7 @@ struct NA_info
     int cts;                 /* number of CTS frames      */
     int rts_r;               /* number of RTS frames (rx) */
     int rts_t;               /* number of RTS frames (tx) */
+    int other;               /* number of other frames    */
     struct timeval tv;       /* time for ack per second   */
 };
 /* bunch of global stuff */
@@ -1956,10 +1957,13 @@ write_packet:
     }
 
     /* this changes the local ap_cur, st_cur and na_cur variables and should be the last check befor the actual write */
-    if(caplen < 24 && caplen >= 10)
+    if(caplen < 24 && caplen >= 10 && h80211[0])
     {
-        /* RTS || CTS || ACK */
-        if(h80211[0] == 0xB4 || h80211[0] == 0xC4 || h80211[0] == 0xD4)
+        /* RTS || CTS || ACK || CF-END || CF-END&CF-ACK*/
+        //(h80211[0] == 0xB4 || h80211[0] == 0xC4 || h80211[0] == 0xD4 || h80211[0] == 0xE4 || h80211[0] == 0xF4)
+
+        /* use general control frame detection, as the structure is always the same: mac(s) starting at [4] */
+        if(h80211[0] & 0x04)
         {
             p=h80211+4;
             while(p <= h80211+16 && p<=h80211+caplen)
@@ -1967,6 +1971,12 @@ write_packet:
                 memcpy(namac, p, 6);
 
                 if(memcmp(namac, NULL_MAC, 6) == 0)
+                {
+                    p+=6;
+                    continue;
+                }
+
+                if(memcmp(namac, BROADCAST, 6) == 0)
                 {
                     p+=6;
                     continue;
@@ -2073,17 +2083,27 @@ write_packet:
                 na_cur->power = ri->ri_power;
                 na_cur->channel = ri->ri_channel;
 
-                if(h80211[0] == 0xB4 && p == h80211+4)
-                    na_cur->rts_r++;
+                switch(h80211[0] & 0xF0)
+                {
+                    case 0xB0:
+                        if(p == h80211+4)
+                            na_cur->rts_r++;
+                        if(p == h80211+10)
+                            na_cur->rts_t++;
+                        break;
 
-                if(h80211[0] == 0xB4 && p == h80211+10)
-                    na_cur->rts_t++;
+                    case 0xC0:
+                        na_cur->cts++;
+                        break;
 
-                if(h80211[0] == 0xC4)
-                    na_cur->cts++;
+                    case 0xD0:
+                        na_cur->ack++;
+                        break;
 
-                if(h80211[0] == 0xD4)
-                    na_cur->ack++;
+                    default:
+                        na_cur->other++;
+                        break;
+                }
 
                 /*grab next mac (for rts frames)*/
                 p+=6;
@@ -2340,7 +2360,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     struct NA_info *na_cur;
     int columns_ap = 83;
     int columns_sta = 72;
-    int columns_na = 60;
+    int columns_na = 68;
 
     if(!G.singlechan) columns_ap -= 4; //no RXQ in scan mode
 
@@ -2713,7 +2733,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
         fprintf( stderr, "%s\n", strbuf );
 
         memcpy( strbuf, " MAC       "
-                "         CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX", columns_na );
+                "         CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER", columns_na );
         strbuf[ws_col - 1] = '\0';
         fprintf( stderr, "%s\n", strbuf );
 
@@ -2751,6 +2771,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
             fprintf( stderr, " %6d", na_cur->cts );
             fprintf( stderr, " %6d", na_cur->rts_r );
             fprintf( stderr, " %6d", na_cur->rts_t );
+            fprintf( stderr, " %6d", na_cur->other );
 
             fprintf( stderr, "\n" );
 
