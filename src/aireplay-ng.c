@@ -583,6 +583,7 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
             {
                 return -1;
             }
+            if(len <= 0) usleep(1);
         }
         if (! memcmp(pkt_sniff, "\x80", 1))
         {
@@ -638,7 +639,7 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
                 }
 
                 /* if essid is given, copy bssid */
-                if(bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0 && strncasecmp(essid, (char*)pkt_sniff+pos+2, taglen) == 0)
+                if(bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0 && strncasecmp(essid, (char*)pkt_sniff+pos+2, taglen) == 0 && strlen(essid) == taglen)
                 {
                     memcpy(bssid, pkt_sniff+10, 6);
                     printf("Found BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\" to given ESSID \"%s\".\n", bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5], essid);
