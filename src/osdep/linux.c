@@ -970,10 +970,13 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
 
     switch(dev->drivertype) {
     case DT_IPW2200:
-    case DT_BCM43XX:
         return opensysfs(dev, iface, fd);
+    case DT_BCM43XX:
+        opensysfs(dev, iface, dev->fd_in);
+        break;
     case DT_WLANNG:
         sll.sll_protocol = htons( ETH_P_80211_RAW );
+        break;
     default:
         sll.sll_protocol = htons( ETH_P_ALL );
         break;
@@ -1434,7 +1437,19 @@ static int do_linux_open(struct wif *wi, char *iface)
         goto close_out;
     }
 
-    dev->fd_in = dev->fd_out;
+    /* don't use the same file descriptor for in and out on bcm43xx,
+       as you read from the interface, but write into a file in /sys/...
+     */
+    if(!(dev->drivertype == DT_BCM43XX))
+        dev->fd_in = dev->fd_out;
+    else
+    {
+        /* if bcm43xx, swap both fds */
+        n=dev->fd_out;
+        dev->fd_out=dev->fd_in;
+        dev->fd_in=n;
+    }
+
     dev->arptype_in = dev->arptype_out;
 
     return 0;
