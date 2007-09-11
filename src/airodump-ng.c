@@ -108,6 +108,8 @@ static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00";
 
+int read_pkts=0;
+
 int abg_chans [] =
 {
     1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12,
@@ -332,6 +334,10 @@ struct globals
     int hide_known;
 
     int hopfreq;
+
+    char*   s_file;         /* source file to read packets */
+    FILE *f_cap_in;
+    struct pcap_file_header pfh_in;
 }
 G;
 
@@ -499,6 +505,7 @@ char usage[] =
 "      --berlin     <secs> : Time before removing the AP/client\n"
 "                            from the screen when no more packets\n"
 "                            are received (Default: 120 seconds).\n"
+"      -r           <file> : Read packets from that file\n"
 "\n"
 "  Filter options:\n"
 "      --encrypt   <suite> : Filter APs by cipher suite\n"
@@ -3495,7 +3502,7 @@ int check_channel(struct wif *wi[], int cards)
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
-    int caplen, i, j, cards, fdh, fd_is_set, chan_count;
+    int caplen=0, i, j, cards, fdh, fd_is_set, chan_count;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
     int ivs_only, found;
     int valid_channel, chanoption;
@@ -3505,15 +3512,19 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     char ifnam[64];
     int wi_read_failed=0;
+    int n = 0;
 
     struct AP_info *ap_cur, *ap_prv, *ap_next;
     struct ST_info *st_cur, *st_next;
     struct NA_info *na_cur, *na_next;
 
+    struct pcap_pkthdr pkh;
+
     time_t tt1, tt2, tt3, start_time;
 
     struct wif	       *wi[MAX_CARDS];
     struct rx_info     ri;
+    unsigned char      tmpbuf[4096];
     unsigned char      buffer[4096];
     unsigned char      *h80211;
     char               *iface[MAX_CARDS];
@@ -3571,9 +3582,12 @@ int main( int argc, char *argv[] )
     G.show_ack     =  0;
     G.hide_known   =  0;
     G.hopfreq      =  350;
+    G.s_file       =  NULL;
+    G.f_cap_in     =  NULL;
 
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
+    memset(&G.pfh_in, '\x00', sizeof(struct pcap_file_header));
 
     gettimeofday( &tv0, NULL );
 
@@ -3664,7 +3678,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3792,6 +3806,17 @@ int main( int argc, char *argv[] )
                 /* Write prefix */
                 G.dump_prefix   = optarg;
                 G.record_data = 1;
+                break;
+
+            case 'r' :
+
+                if( G.s_file )
+                {
+                    printf( "Packet source already specified.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+                G.s_file = optarg;
                 break;
 
             case 's':
@@ -3972,6 +3997,45 @@ usage:
 
     setuid( getuid() );
 
+    /* check if there is an input file */
+    if( G.s_file != NULL )
+    {
+        if( ! ( G.f_cap_in = fopen( G.s_file, "rb" ) ) )
+        {
+            perror( "open failed" );
+            return( 1 );
+        }
+
+        n = sizeof( struct pcap_file_header );
+
+        if( fread( &G.pfh_in, 1, n, G.f_cap_in ) != (size_t) n )
+        {
+            perror( "fread(pcap file header) failed" );
+            return( 1 );
+        }
+
+        if( G.pfh_in.magic != TCPDUMP_MAGIC &&
+            G.pfh_in.magic != TCPDUMP_CIGAM )
+        {
+            fprintf( stderr, "\"%s\" isn't a pcap file (expected "
+                             "TCPDUMP_MAGIC).\n", G.s_file );
+            return( 1 );
+        }
+
+        if( G.pfh_in.magic == TCPDUMP_CIGAM )
+            SWAP32(G.pfh_in.linktype);
+
+        if( G.pfh_in.linktype != LINKTYPE_IEEE802_11 &&
+            G.pfh_in.linktype != LINKTYPE_PRISM_HEADER )
+        {
+            fprintf( stderr, "Wrong linktype from pcap file header "
+                             "(expected LINKTYPE_IEEE802_11) -\n"
+                             "this doesn't look like a regular 802.11 "
+                             "capture.\n" );
+            return( 1 );
+        }
+    }
+
     /* open or create the output files */
 
     if (G.record_data)
@@ -4073,37 +4137,97 @@ usage:
             }
         }
 
-        /* capture one packet */
-
-        FD_ZERO( &rfds );
-        for(i=0; i<cards; i++)
+        if(G.s_file != NULL)
         {
-            FD_SET( fd_raw[i], &rfds );
-        }
+            /* Read one packet */
+            n = sizeof( pkh );
 
-        tv0.tv_sec  = G.update_s;
-        tv0.tv_usec = (G.update_s == 0) ? REFRESH_RATE : 0;
-
-        gettimeofday( &tv1, NULL );
-
-        if( select( fdh + 1, &rfds, NULL, NULL, &tv0 ) < 0 )
-        {
-            if( errno == EINTR )
+            if( fread( &pkh, n, 1, G.f_cap_in ) != 1 )
             {
-                gettimeofday( &tv2, NULL );
-
-                time_slept += 1000000 * ( tv2.tv_sec  - tv1.tv_sec  )
-                                      + ( tv2.tv_usec - tv1.tv_usec );
-
+                memset(G.message, '\x00', sizeof(G.message));
+                snprintf(G.message, sizeof(G.message), "][ Finished reading input file %s.\n", G.s_file);
+                G.s_file = NULL;
                 continue;
             }
-            perror( "select failed" );
 
-            /* Restore terminal */
-            fprintf( stderr, "\33[?25h" );
-            fflush( stdout );
+            if( G.pfh_in.magic == TCPDUMP_CIGAM )
+                SWAP32( pkh.caplen );
 
-            return( 1 );
+            n = caplen = pkh.caplen;
+
+            memset(buffer, 0, sizeof(buffer));
+            h80211 = buffer;
+
+            if( n <= 0 || n > (int) sizeof( buffer ) )
+            {
+                memset(G.message, '\x00', sizeof(G.message));
+                snprintf(G.message, sizeof(G.message), "][ Finished reading input file %s.\n", G.s_file);
+                G.s_file = NULL;
+                continue;
+            }
+
+            if( fread( h80211, n, 1, G.f_cap_in ) != 1 )
+            {
+                memset(G.message, '\x00', sizeof(G.message));
+                snprintf(G.message, sizeof(G.message), "][ Finished reading input file %s.\n", G.s_file);
+                G.s_file = NULL;
+                continue;
+            }
+
+            if( G.pfh_in.linktype == LINKTYPE_PRISM_HEADER )
+            {
+                if( h80211[7] == 0x40 )
+                    n = 64;
+                else
+                    n = *(int *)( h80211 + 4 );
+
+                if( n < 8 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+
+            read_pkts++;
+
+            if(read_pkts%10 == 0)
+                usleep(1);
+        }
+        else
+        {
+            /* capture one packet */
+
+            FD_ZERO( &rfds );
+            for(i=0; i<cards; i++)
+            {
+                FD_SET( fd_raw[i], &rfds );
+            }
+
+            tv0.tv_sec  = G.update_s;
+            tv0.tv_usec = (G.update_s == 0) ? REFRESH_RATE : 0;
+
+            gettimeofday( &tv1, NULL );
+
+            if( select( fdh + 1, &rfds, NULL, NULL, &tv0 ) < 0 )
+            {
+                if( errno == EINTR )
+                {
+                    gettimeofday( &tv2, NULL );
+
+                    time_slept += 1000000 * ( tv2.tv_sec  - tv1.tv_sec  )
+                                        + ( tv2.tv_usec - tv1.tv_usec );
+
+                    continue;
+                }
+                perror( "select failed" );
+
+                /* Restore terminal */
+                fprintf( stderr, "\33[?25h" );
+                fflush( stdout );
+
+                return( 1 );
+            }
         }
 
         gettimeofday( &tv2, NULL );
@@ -4137,54 +4261,63 @@ usage:
             continue;
         }
 
-        fd_is_set = 0;
-
-        for(i=0; i<cards; i++)
+        if(G.s_file == NULL)
         {
-            if( FD_ISSET( fd_raw[i], &rfds ) )
+            fd_is_set = 0;
+
+            for(i=0; i<cards; i++)
             {
+                if( FD_ISSET( fd_raw[i], &rfds ) )
+                {
 
-                memset(buffer, 0, sizeof(buffer));
-                h80211 = buffer;
-                if ((caplen = wi_read(wi[i], h80211, sizeof(buffer), &ri)) == -1) {
-                    wi_read_failed++;
-                    if(wi_read_failed > 1)
-                    {
-                        G.do_exit = 1;
+                    memset(buffer, 0, sizeof(buffer));
+                    h80211 = buffer;
+                    if ((caplen = wi_read(wi[i], h80211, sizeof(buffer), &ri)) == -1) {
+                        wi_read_failed++;
+                        if(wi_read_failed > 1)
+                        {
+                            G.do_exit = 1;
+                            break;
+                        }
+                        memset(G.message, '\x00', sizeof(G.message));
+                        snprintf(G.message, sizeof(G.message), "][ interface %s down ", wi_get_ifname(wi[i]));
+
+                        //reopen in monitor mode
+
+                        strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam)-1);
+                        ifnam[sizeof(ifnam)-1] = 0;
+
+                        wi_close(wi[i]);
+                        wi[i] = wi_open(ifnam);
+                        if (!wi[i]) {
+                            printf("Can't reopen %s\n", ifnam);
+
+                            /* Restore terminal */
+                            fprintf( stderr, "\33[?25h" );
+                            fflush( stdout );
+
+                            exit(1);
+                        }
+
+                        fd_raw[i] = wi_fd(wi[i]);
+                        if (fd_raw[i] > fdh)
+                            fdh = fd_raw[i];
+
                         break;
-                    }
-                    memset(G.message, '\x00', sizeof(G.message));
-                    snprintf(G.message, sizeof(G.message), "][ interface %s down ", wi_get_ifname(wi[i]));
-
-                    //reopen in monitor mode
-
-                    strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam)-1);
-                    ifnam[sizeof(ifnam)-1] = 0;
-
-                    wi_close(wi[i]);
-                    wi[i] = wi_open(ifnam);
-                    if (!wi[i]) {
-                        printf("Can't reopen %s\n", ifnam);
-
-                        /* Restore terminal */
-                        fprintf( stderr, "\33[?25h" );
-                        fflush( stdout );
-
-                        exit(1);
+//                         return 1;
                     }
 
-                    fd_raw[i] = wi_fd(wi[i]);
-                    if (fd_raw[i] > fdh)
-                        fdh = fd_raw[i];
+                    read_pkts++;
 
-                    break;
-//                     return 1;
+                    wi_read_failed = 0;
+                    dump_add_packet( h80211, caplen, &ri, i );
                 }
-
-                wi_read_failed = 0;
-                dump_add_packet( h80211, caplen, &ri, i );
-	     }
-	}
+            }
+        }
+        else
+        {
+            dump_add_packet( h80211, caplen, &ri, i );
+        }
     }
 
     if(G.batt)
