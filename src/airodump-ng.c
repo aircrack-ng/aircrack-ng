@@ -336,6 +336,7 @@ struct globals
     int hopfreq;
 
     char*   s_file;         /* source file to read packets */
+    char*   s_iface;        /* source interface to read from */
     FILE *f_cap_in;
     struct pcap_file_header pfh_in;
 }
@@ -3583,6 +3584,7 @@ int main( int argc, char *argv[] )
     G.hide_known   =  0;
     G.hopfreq      =  350;
     G.s_file       =  NULL;
+    G.s_iface      =  NULL;
     G.f_cap_in     =  NULL;
 
     memset(G.sharedkey, '\x00', 512*3);
@@ -3906,7 +3908,7 @@ int main( int argc, char *argv[] )
         }
     } while ( 1 );
 
-    if( argc - optind != 1 )
+    if( argc - optind != 1 && G.s_file == NULL)
     {
         if(argc == 1)
         {
@@ -3924,75 +3926,81 @@ usage:
         return( 1 );
     }
 
+    if( argc - optind == 1 )
+        G.s_iface = argv[argc-1];
+
     if( ( memcmp(G.f_netmask, NULL_MAC, 6) != 0 ) && ( memcmp(G.f_bssid, NULL_MAC, 6) == 0 ) )
     {
         printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
-   		printf("\"%s --help\" for help.\n", argv[0]);
+        printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
 
     if ( ivs_only && !G.record_data ) {
         printf( "Missing dump prefix (-w)\n" );
-   		printf("\"%s --help\" for help.\n", argv[0]);
+        printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
 
-    /* initialize cards */
-    cards = init_cards(argv[argc-1], iface, wi);
-
-    if(cards <= 0)
-	return( 1 );
-
-    for (i = 0; i < cards; i++) {
-    	fd_raw[i] = wi_fd(wi[i]);
-	if (fd_raw[i] > fdh)
-	    fdh = fd_raw[i];
-    }
-
-    chan_count = getchancount(0);
-
-    /* find the interface index */
-    /* start a child to hop between channels */
-
-    if( G.channel[0] == 0 )
+    if(G.s_iface != NULL)
     {
-	pipe( G.ch_pipe );
-	pipe( G.cd_pipe );
+        /* initialize cards */
+        cards = init_cards(G.s_iface, iface, wi);
 
-	signal( SIGUSR1, sighandler );
+        if(cards <= 0)
+            return( 1 );
 
-	if( ! fork() )
-	{
-	    /* reopen cards.  This way parent & child don't share resources for
-	     * accessing the card (e.g. file descriptors) which may cause
-	     * problems.  -sorbo
-	     */
-	    for (i = 0; i < cards; i++) {
-		strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam)-1);
-		ifnam[sizeof(ifnam)-1] = 0;
-
-	    	wi_close(wi[i]);
-		wi[i] = wi_open(ifnam);
-		if (!wi[i]) {
-			printf("Can't reopen %s\n", ifnam);
-			exit(1);
-		}
-	    }
-
-	    setuid( getuid() );
-
-	    channel_hopper(wi, cards, chan_count);
-            exit( 1 );
+        for (i = 0; i < cards; i++) {
+            fd_raw[i] = wi_fd(wi[i]);
+            if (fd_raw[i] > fdh)
+                fdh = fd_raw[i];
         }
-    }
-    else
-    {
-	for( i=0; i<cards; i++ )
-	{
-	    wi_set_channel(wi[i], G.channel[0]);
-	    G.channel[i] = G.channel[0];
-	}
-        G.singlechan = 1;
+
+        chan_count = getchancount(0);
+
+        /* find the interface index */
+        /* start a child to hop between channels */
+
+        if( G.channel[0] == 0 )
+        {
+            pipe( G.ch_pipe );
+            pipe( G.cd_pipe );
+
+            signal( SIGUSR1, sighandler );
+
+            if( ! fork() )
+            {
+                /* reopen cards.  This way parent & child don't share resources for
+                * accessing the card (e.g. file descriptors) which may cause
+                * problems.  -sorbo
+                */
+                for (i = 0; i < cards; i++) {
+                    strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam)-1);
+                    ifnam[sizeof(ifnam)-1] = 0;
+
+                    wi_close(wi[i]);
+                    wi[i] = wi_open(ifnam);
+                    if (!wi[i]) {
+                            printf("Can't reopen %s\n", ifnam);
+                            exit(1);
+                    }
+                }
+
+                setuid( getuid() );
+
+                channel_hopper(wi, cards, chan_count);
+                exit( 1 );
+            }
+        }
+        else
+        {
+            for( i=0; i<cards; i++ )
+            {
+                wi_set_channel(wi[i], G.channel[0]);
+                G.channel[i] = G.channel[0];
+            }
+            G.singlechan = 1;
+        }
     }
 
     setuid( getuid() );
@@ -4130,10 +4138,13 @@ usage:
         {
             gettimeofday( &tv3, NULL );
             update_rx_quality( );
-            check_monitor(wi, fd_raw, &fdh, cards);
-            if(G.singlechan)
+            if(G.s_iface != NULL)
             {
-                check_channel(wi, cards);
+                check_monitor(wi, fd_raw, &fdh, cards);
+                if(G.singlechan)
+                {
+                    check_channel(wi, cards);
+                }
             }
         }
 
@@ -4194,7 +4205,7 @@ usage:
             if(read_pkts%10 == 0)
                 usleep(1);
         }
-        else
+        else if(G.s_iface != NULL)
         {
             /* capture one packet */
 
@@ -4261,7 +4272,7 @@ usage:
             continue;
         }
 
-        if(G.s_file == NULL)
+        if(G.s_file == NULL && G.s_iface != NULL)
         {
             fd_is_set = 0;
 
@@ -4318,6 +4329,9 @@ usage:
         {
             dump_add_packet( h80211, caplen, &ri, i );
         }
+
+        if(G.s_iface == NULL && G.s_file == NULL)
+            usleep(1);
     }
 
     if(G.batt)
