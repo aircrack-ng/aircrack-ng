@@ -3547,6 +3547,7 @@ int main( int argc, char *argv[] )
 
     memset( &G, 0, sizeof( G ) );
 
+    h80211         =  NULL;
     ivs_only       =  0;
     chanoption     =  0;
     cards	   =  0;
