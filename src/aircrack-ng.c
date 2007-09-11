@@ -81,13 +81,15 @@ int  nb_eof = 0;				 /* # of threads who reached eof */
 long nb_pkt = 0;				 /* # of packets read so far     */
 int mc_pipe[256][2];			 /* master->child control pipe   */
 int cm_pipe[256][2];			 /* child->master results pipe   */
-int bf_pipe[256][2];			 /* bruteforcer 'queue' pipe	*/
+int bf_pipe[256][2];			 /* bruteforcer 'queue' pipe	 */
 int bf_nkeys[256];
 uchar bf_wepkey[64];
 int wepkey_crack_success = 0;
 int close_aircrack = 0;
 int id=0;
 pthread_t tid[MAX_THREADS];
+
+
 
 typedef struct
 {
@@ -164,6 +166,7 @@ char usage[] =
 "      -M <num>   : maximum number of IVs to use\n"
 "      -D         : WEP decloak mode\n"
 "      -P <num>   : PTW debug: 1 disable Klein, 2 PTW\n"
+"      -V         : Visual inspection (--visual-inspection)\n"
 "\n"
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
@@ -2798,8 +2801,11 @@ int update_ivbuf( void )
 
 int do_wep_crack1( int B )
 {
-	int i, j, l, m, tsel;
+	int i, j, l, m, tsel, charread, newval, askchange;
 	static int k = 0;
+	char user_guess[4];
+
+	askchange = 1;
 
 	get_ivs:
 
@@ -2867,8 +2873,44 @@ int do_wep_crack1( int B )
 
 		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
 
-		if( ! opt.is_quiet )
+		if (opt.visual_inspection == 1)
+		{
+			show_wep_stats( B, 1, NULL, NULL, NULL, 0 );
+
+			// Offer the user to change keybyte used
+			printf("\n\n");
+			printf("Guessed keybyte %d: %.2X\n", B, wep.key[B]);
+
+			while(1)
+			{
+				// Inputting user value until it hits enter or give a valid value
+				printf("Enter the new value to use (or hit 'Enter' key to keep current value): ");
+				memset(user_guess, 0, 4);
+
+				charread = readLine(user_guess, 3);
+
+				// Break if enter was hit
+				if (user_guess[0] == 0 || charread == 0)
+					break;
+
+				// Convert value
+				newval = hexToInt(user_guess, charread);
+
+				// Make sure conversion was OK
+				if (newval != -1)
+				{
+					// Next modif, update displayed information
+					wep.key[B] = newval;
+					printf("Using %.2X for keybyte %d\n", wep.key[B], B);
+					sleep(1);
+					break;
+				}
+			}
+		}
+		else if( ! opt.is_quiet )
+		{
 			show_wep_stats( B, 0, NULL, NULL, NULL, 0 );
+		}
 
 		if( B == 4 && opt.keylen == 13 )
 		{
@@ -3999,7 +4041,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, showhelp, z, zz;
+	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, showhelp, z, zz, forceptw;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 	int old=0;
@@ -4018,7 +4060,6 @@ int main( int argc, char *argv[] )
 	ret = FAILURE;
 	cpudetectfailed = 0;
 	showhelp = 0;
-
 
 	// Start a new process group, we are perhaps going to call kill(0, ...) later
 	setsid();
@@ -4054,6 +4095,8 @@ int main( int argc, char *argv[] )
         opt.next_ptw_try= 0;
 	opt.do_ptw = 1;
 	opt.max_ivs = INT_MAX;
+	opt.visual_inspection = 0;
+	forceptw = 0;
 
 	while( 1 )
 	{
@@ -4061,20 +4104,21 @@ int main( int argc, char *argv[] )
         int option_index = 0;
 
         static struct option long_options[] = {
-            {"bssid",      1, 0, 'b'},
-            {"debug",      1, 0, 'd'},
-            {"combine",    0, 0, 'C'},
-            {"help",       0, 0, 'H'},
-            {"wep-decloak",0, 0, 'D'},
-            {"ptw-debug"  ,0, 0, 'P'},
-            {0,            0, 0,  0 }
+            {"bssid",             1, 0, 'b'},
+            {"debug",             1, 0, 'd'},
+            {"combine",           0, 0, 'C'},
+            {"help",              0, 0, 'H'},
+            {"wep-decloak",       0, 0, 'D'},
+            {"ptw-debug",         0, 0, 'P'},
+            {"visual-inspection", 0, 0, 'V'},
+            {0,                   0, 0,  0 }
         };
 
 		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:DP:z",
+			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:DP:zV",
                         long_options, &option_index );
 		else
-			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:z",
+			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -4091,6 +4135,18 @@ int main( int argc, char *argv[] )
 
 				printf("\"%s --help\" for help.\n", argv[0]);
 				return( 1 );
+
+			case 'V' :
+				if (forceptw)
+				{
+					printf("Visual inspection can only be used with KoreK\n");
+					printf("Use \"%s --help\" for help.\n", argv[0]);
+					return FAILURE;
+				}
+
+				opt.visual_inspection = 1;
+				opt.do_ptw = 0;
+				break;
 
 			case 'a' :
 
@@ -4376,6 +4432,15 @@ int main( int argc, char *argv[] )
 
 			case 'z' :
 				/* only for backwards compatibility - ptw used by default */
+				if (opt.visual_inspection)
+				{
+					printf("Visual inspection can only be used with KoreK\n");
+					printf("Use \"%s --help\" for help.\n", argv[0]);
+					return FAILURE;
+				}
+
+				forceptw = 1;
+
 				break;
 
 			default : goto usage;

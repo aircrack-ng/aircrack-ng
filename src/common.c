@@ -113,7 +113,7 @@ int getmac(char * macAddress, int strict, unsigned char * mac)
 }
 
 /* Return -1 if it's not an hex value and return its value when it's a hex value */
-int hextToInt(unsigned char c)
+int hexCharToInt(unsigned char c)
 {
 	static int table_created = 0;
 	static int table[256];
@@ -237,13 +237,15 @@ int hexToInt(char s[], int len)
 
 	while (i < len)
 	{
-		convert = hextToInt((unsigned char)s[i]);
+		convert = hexCharToInt((unsigned char)s[i]);
 
 		// If conversion failed, return -1
 		if (convert == -1)
 			return -1;
 
 		value = (value * HEX_BASE) + convert;
+
+		++i;
 	}
 
 

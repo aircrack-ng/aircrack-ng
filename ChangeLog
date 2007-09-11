@@ -23,6 +23,7 @@ Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
 * aircrack-ng: Increased PTW key checking speed by 20%
 * aircrack-ng: Try 1000 40bit keys befor starting 104bit cracking, to get the key "instantly" without waiting for 104 bit to fail
 * aircrack-ng: Fixed not shown ascii keys, when found key was shorter than expected
+* aircrack-ng: Added visual inspection of the different keybytes (--visual-inspection).
 * airdecap-ng: Fixed bug in calc_pmk() function causes wrong PMK to be computed
 * aireplay-ng: Added usage of RTS/CTS, auth and ACK to --test (more stable and faster)
 * aireplay-ng: Added TCP connection test to --test
