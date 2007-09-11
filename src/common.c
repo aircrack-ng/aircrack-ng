@@ -30,6 +30,9 @@
 #include <unistd.h>
 #include <ctype.h>
 
+#define isHex(c) (hexToInt(c) != -1)
+#define HEX_BASE 16
+
 /* Return the version number */
 char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
 {
@@ -107,4 +110,142 @@ int getmac(char * macAddress, int strict, unsigned char * mac)
 		return 1;
 
 	return 0;
+}
+
+/* Return -1 if it's not an hex value and return its value when it's a hex value */
+int hextToInt(unsigned char c)
+{
+	static int table_created = 0;
+	static int table[256];
+
+	int i;
+
+	if (table_created == 0)
+	{
+		/*
+		 * It may seem a bit long to calculate the table
+		 * but character position depend on the charset used
+		 * Example: EBCDIC
+		 * but it's only done once and then conversion will be really fast
+		 */
+		for (i=0; i < 256; i++)
+		{
+
+			switch ((unsigned char)i)
+			{
+				case '0':
+					table[i] = 0;
+					break;
+				case '1':
+					table[i] = 1;
+					break;
+				case '2':
+					table[i] = 2;
+					break;
+				case '3':
+					table[i] = 3;
+					break;
+				case '4':
+					table[i] = 4;
+					break;
+				case '5':
+					table[i] = 5;
+					break;
+				case '6':
+					table[i] = 6;
+					break;
+				case '7':
+					table[i] = 7;
+					break;
+				case '8':
+					table[i] = 8;
+					break;
+				case '9':
+					table[i] = 9;
+					break;
+				case 'A':
+				case 'a':
+					table[i] = 10;
+					break;
+				case 'B':
+				case 'b':
+					table[i] = 11;
+					break;
+				case 'C':
+				case 'c':
+					table[i] = 12;
+					break;
+				case 'D':
+				case 'd':
+					table[i] = 13;
+					break;
+				case 'E':
+				case 'e':
+					table[i] = 14;
+					break;
+				case 'F':
+				case 'f':
+					table[i] = 15;
+					break;
+				default:
+					table[i] = -1;
+			}
+		}
+
+		table_created = 1;
+	}
+
+	return table[c];
+}
+
+// Read a line of characters inputted by the user
+int readLine(char line[], int maxlength)
+{
+        int i = -1;
+
+        do
+        {
+        	// Read char
+        	line[++i] = getchar();
+        }
+	while (line[i] != '\n'
+       		&& line[i] != EOF
+        	&& i + 1 < maxlength);
+	// Stop at 'Enter' key pressed or EOF or max number of char read
+
+	// Return current size
+        return i;
+}
+
+int hexToInt(char s[], int len)
+{
+	int i = 0;
+	int convert = -1;
+	int value = 0;
+
+	// Remove leading 0 (and also the second char that can be x or X)
+
+	while (i < len)
+	{
+		if (s[i] != '0' || (i == 1 && toupper((int)s[i]) != 'X'))
+			break;
+
+		++i;
+	}
+
+	// Convert to hex
+
+	while (i < len)
+	{
+		convert = hextToInt((unsigned char)s[i]);
+
+		// If conversion failed, return -1
+		if (convert == -1)
+			return -1;
+
+		value = (value * HEX_BASE) + convert;
+	}
+
+
+	return value;
 }
