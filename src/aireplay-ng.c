@@ -672,25 +672,13 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
 }
 
 /**
-    checks if the interface is hopping. if bssid != NULL its looking for a beacon frame
+    if bssid != NULL its looking for a beacon frame
 */
 int attack_check(uchar* bssid, char* essid, uchar* capa, struct wif *wi)
 {
-    int i, j;
     int ap_chan=0, iface_chan=0;
 
-    j=wi_get_channel(wi);
-    for( i=0; i<10; i++)
-    {
-        usleep(100000);
-        if(j != wi_get_channel(wi))
-        {
-            PCT; printf("Your interface %s is channel hopping!\n", wi_get_ifname(wi));
-            return -1;
-        }
-    }
-
-    iface_chan = j;
+    iface_chan = wi_get_channel(wi);
 
     if(bssid != NULL)
     {
@@ -710,43 +698,60 @@ int attack_check(uchar* bssid, char* essid, uchar* capa, struct wif *wi)
     return 0;
 }
 
-int do_attack_deauth( void )
+int getnet( uchar* capa, int filter)
 {
-    int i, n, gotit;
+    unsigned char *bssid;
 
-    if( memcmp( opt.r_bssid, NULL_MAC, 6 ) == 0 )
+    if(filter)
+        bssid = opt.f_bssid;
+    else
+        bssid = opt.r_bssid;
+
+
+    if( memcmp(bssid, NULL_MAC, 6) )
     {
-        printf( "Please specify a BSSID (-a).\n" );
-        return( 1 );
+        PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
+                    bssid[0],bssid[1],bssid[2],bssid[3],bssid[4],bssid[5]);
     }
-
-    PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
-                opt.r_bssid[0],opt.r_bssid[1],opt.r_bssid[2],opt.r_bssid[3],opt.r_bssid[4],opt.r_bssid[5]);
-
-    if( opt.s_face != NULL )
+    else if(strlen(opt.r_essid) > 0)
     {
-        if(!attack_check(opt.r_bssid, NULL, NULL, _wi_out) && !attack_check(NULL, NULL, NULL, _wi_in))
-        {
-            if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
-            {
-                PCT; printf("Your specified interfaces aren't on the same channel:\n");
-                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
-                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
-                gotit = 1;
-            }
-        }
-        else
-            gotit = 1;
+        PCT; printf("Waiting for beacon frame (ESSID: %s)\n", opt.r_essid);
     }
     else
     {
-        if(attack_check(opt.r_bssid, NULL, NULL, _wi_out) != 0)
-        {
-            gotit=1;
-        }
+        PCT; printf("Please specify at least a BSSID (-a) or an ESSID (-e)\n");
+        return( 1 );
     }
-//    if(gotit) return -1;
-    gotit=0;
+
+    if( attack_check(bssid, opt.r_essid, capa, _wi_in) != 0)
+    {
+        if(memcmp(bssid, NULL_MAC, 6))
+        {
+            if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
+            {
+                printf( "Please specify an ESSID (-e).\n" );
+            }
+        }
+
+        if(!memcmp(bssid, NULL_MAC, 6))
+        {
+            if(strlen(opt.r_essid) > 0)
+            {
+                printf( "Please specify a BSSID (-a).\n" );
+            }
+        }
+        return( 1 );
+    }
+
+    return 0;
+}
+
+int do_attack_deauth( void )
+{
+    int i, n;
+
+    if(getnet(NULL, 0) != 0)
+        return 1;
 
     if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
         printf( "NB: this attack is more effective when targeting\n"
@@ -1171,39 +1176,13 @@ int do_attack_fake_auth( void )
         return( 1 );
     }
 
-    if( memcmp(opt.r_bssid, NULL_MAC, 6) )
-    {
-        PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
-                    opt.r_bssid[0],opt.r_bssid[1],opt.r_bssid[2],opt.r_bssid[3],opt.r_bssid[4],opt.r_bssid[5]);
-    }
-    else if(strlen(opt.r_essid) > 0)
-    {
-        PCT; printf("Waiting for beacon frame (ESSID: %s)\n", opt.r_essid);
-    }
-    else
-    {
-        PCT; printf("Please specify at least a BSSID (-a) or an ESSID (-e)\n");
-        return( 1 );
-    }
+    if(getnet(capa, 0) != 0)
+        return 1;
 
-    if( attack_check(opt.r_bssid, opt.r_essid, capa, _wi_in) != 0)
+    if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
     {
-        if(memcmp(opt.r_bssid, NULL_MAC, 6))
-        {
-            if( strlen(opt.r_essid) == 0)
-            {
-                printf( "Please specify an ESSID (-e).\n" );
-            }
-        }
-
-        if(!memcmp(opt.r_bssid, NULL_MAC, 6))
-        {
-            if(strlen(opt.r_essid) > 0)
-            {
-                printf( "Please specify a BSSID (-a).\n" );
-            }
-        }
-        return( 1 );
+        printf( "Please specify an ESSID (-e).\n" );
+        return 1;
     }
 
     memcpy( ackbuf, "\xD4\x00\x00\x00", 4 );
@@ -2075,7 +2054,6 @@ int do_attack_arp_resend( void )
     int arp_off1, arp_off2;
     int i, n, caplen, nb_arp;
     long nb_pkt_read, nb_arp_tot;
-    int gotit;
 
     time_t tc;
     float f, ticks[3];
@@ -2101,45 +2079,14 @@ int do_attack_arp_resend( void )
 
     memset( opt.f_dmac, 0xFF, 6 );
 
-    if( memcmp( opt.f_bssid, NULL_MAC, 6 ) == 0 )
-    {
-        printf( "Please specify a BSSID (-b).\n" );
-        return( 1 );
-    }
-
     if( memcmp( opt.r_smac, NULL_MAC, 6 ) == 0 )
     {
         printf( "Please specify a source MAC (-h).\n" );
         return( 1 );
     }
 
-    PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
-                opt.f_bssid[0],opt.f_bssid[1],opt.f_bssid[2],opt.f_bssid[3],opt.f_bssid[4],opt.f_bssid[5]);
-
-    if( opt.s_face != NULL )
-    {
-        if(!attack_check(opt.f_bssid, NULL, NULL, _wi_out) && !attack_check(NULL, NULL, NULL, _wi_in))
-        {
-            if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
-            {
-                PCT; printf("Your specified interfaces aren't on the same channel:\n");
-                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
-                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
-                gotit = 1;
-            }
-        }
-        else
-            gotit = 1;
-    }
-    else
-    {
-        if(attack_check(opt.f_bssid, NULL, NULL, _wi_out) != 0)
-        {
-            gotit=1;
-        }
-    }
-//    if(gotit) return -1;
-    gotit=0;
+    if(getnet(NULL, 1) != 0)
+        return 1;
 
     /* create and write the output pcap header */
 
@@ -2469,7 +2416,6 @@ int do_attack_chopchop( void )
     int data_start, data_end;
     int guess, is_deauth_mode;
     int nb_bad_pkt;
-    int gotit;
     int tried_header_rec=0;
 
     unsigned char b1 = 0xAA;
@@ -2543,34 +2489,6 @@ int do_attack_chopchop( void )
         case  2: memcpy( chopped + 4, h80211 + 10, 6 ); break;
         default: memcpy( chopped + 4, h80211 + 10, 6 ); break;
     }
-
-    PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
-                chopped[4],chopped[5],chopped[6],chopped[7],chopped[8],chopped[9]);
-
-    if( opt.s_face != NULL )
-    {
-        if(!attack_check(chopped+4, NULL, NULL, _wi_out) && !attack_check(NULL, NULL, NULL, _wi_in))
-        {
-            if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
-            {
-                PCT; printf("Your specified interfaces aren't on the same channel:\n");
-                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
-                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
-                gotit = 1;
-            }
-        }
-        else
-            gotit = 1;
-    }
-    else
-    {
-        if(attack_check(chopped+4, NULL, NULL, _wi_out) != 0)
-        {
-            gotit=1;
-        }
-    }
-//    if(gotit) return -1;
-    gotit=0;
 
     /* copy the WEP IV */
 
@@ -3215,21 +3133,15 @@ int do_attack_fragment()
     int round;
     int prga_len;
     int isrelay;
-    int gotit;
     int again;
     int length;
     int ret;
+    int gotit;
 
-	uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
+    uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
 
-	done = caplen = caplen2 = arplen = round = 0;
-	prga_len = isrelay = gotit = again = length = 0;
-
-    if( memcmp( opt.f_bssid, NULL_MAC, 6 ) == 0 )
-    {
-        printf( "Please specify a BSSID (-b).\n" );
-        return( 1 );
-    }
+    done = caplen = caplen2 = arplen = round = 0;
+    prga_len = isrelay = gotit = again = length = 0;
 
     if( memcmp( opt.r_smac, NULL_MAC, 6 ) == 0 )
     {
@@ -3237,30 +3149,8 @@ int do_attack_fragment()
         return( 1 );
     }
 
-    if( opt.s_face != NULL )
-    {
-        if(!attack_check(opt.f_bssid, NULL, NULL, _wi_out) && !attack_check(NULL, NULL, NULL, _wi_in))
-        {
-            if(wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
-            {
-                PCT; printf("Your specified interfaces aren't on the same channel:\n");
-                PCT; printf("%s: %d vs. %s: %d\n", wi_get_ifname(_wi_out), wi_get_channel(_wi_out),
-                            wi_get_ifname(_wi_in), wi_get_channel(_wi_in));
-                gotit = 1;
-            }
-        }
-        else
-            gotit = 1;
-    }
-    else
-    {
-        if(attack_check(opt.f_bssid, NULL, NULL, _wi_out) != 0)
-        {
-            gotit=1;
-        }
-    }
-//    if(gotit) return -1;
-    gotit=0;
+    if(getnet(NULL, 1) != 0)
+        return 1;
 
     if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
     {
@@ -3356,17 +3246,6 @@ int do_attack_fragment()
                                 }
                             }
                         }
-
-/*                        if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
-                        {
-                            if (caplen < 90) //Is short enough
-                            {
-                                //This is an answer to our packet!
-                                printf("Got ANSWER packet!!\n");
-                                gotit = 1;
-                                isrelay = 0;
-                            }
-                        } */
                     }
                 }
 
@@ -3765,7 +3644,7 @@ static int get_ip_port(char *iface, char *ip)
 
 	*ptr++ = 0;
 
-	if (!inet_aton(host, &addr))
+	if (!inet_aton(host, (struct in_addr *)&addr))
 		goto out; /* XXX resolve hostname */
 
 	if(strlen(host) > 15)
@@ -4088,28 +3967,8 @@ int do_attack_test()
         }
     }
 
-    if( (memcmp(opt.r_bssid, NULL_MAC, 6)) || (strlen(opt.r_essid) > 0))
-    {
-        if( attack_check(opt.r_bssid, opt.r_essid, NULL, _wi_in) != 0)
-        {
-            if(memcmp(opt.r_bssid, NULL_MAC, 6))
-            {
-                if( strlen(opt.r_essid) == 0)
-                {
-                    printf( "Please specify an ESSID (-e).\n" );
-                }
-            }
-
-            if(!memcmp(opt.r_bssid, NULL_MAC, 6))
-            {
-                if(strlen(opt.r_essid) > 0)
-                {
-                    printf( "Please specify a BSSID (-a).\n" );
-                }
-            }
-            return( 1 );
-        }
-    }
+    if(getnet(NULL, 1) != 0)
+        return 1;
 
     srand( time( NULL ) );
 
