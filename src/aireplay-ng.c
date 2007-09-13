@@ -165,7 +165,7 @@ char usage[] =
 "      Fakeauth attack options:\n"
 "\n"
 "      -e essid  : set target AP SSID\n"
-"      -o npckts : number of packets per burst\n"
+"      -o npckts : number of packets per burst (0=auto, default: 1)\n"
 "      -q sec    : seconds between keep-alives\n"
 "      -y prga   : keystream for shared key auth\n"
 "\n"
@@ -1195,8 +1195,10 @@ int do_attack_fake_auth( void )
     tries = 0;
     abort = 0;
     state = 0;
-    x_send = 4;
-    if(opt.npackets > 0) x_send = opt.npackets;
+    x_send=opt.npackets;
+    if(opt.npackets == 0)
+        x_send=4;
+
     tt = time( NULL );
     tr = time( NULL );
 
@@ -4678,6 +4680,7 @@ int main( int argc, char *argv[] )
     opt.ghost     =  0; opt.npackets    = -1;
     opt.delay     = 15; opt.bittest     =  0;
     opt.fast      =  0; opt.r_smac_set  =  0;
+    opt.npackets  =  1;
 
 /* XXX */
 #if 0
@@ -4856,9 +4859,9 @@ int main( int argc, char *argv[] )
             case 'o' :
 
                 ret = sscanf( optarg, "%d", &opt.npackets );
-                if( opt.npackets < 1 || opt.npackets > 512 || ret != 1 )
+                if( opt.npackets < 0 || opt.npackets > 512 || ret != 1 )
                 {
-                    printf( "Invalid number of packets per burst. [1-512]\n" );
+                    printf( "Invalid number of packets per burst. [0-512]\n" );
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
