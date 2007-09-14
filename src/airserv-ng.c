@@ -94,7 +94,7 @@ static void client_add(struct sstate *ss, int s, struct sockaddr_in *s_in)
 	memset(c, 0, sizeof(*c));
 
 	c->c_s = s;
-	strcpy(c->c_ip, inet_ntoa(s_in->sin_addr));
+	strncpy(c->c_ip, inet_ntoa(s_in->sin_addr), sizeof(c->c_ip)-1);
 	printf("Connect from %s\n", c->c_ip);
 
 	c->c_prev = &ss->ss_clients;

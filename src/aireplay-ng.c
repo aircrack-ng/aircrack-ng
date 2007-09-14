@@ -25,12 +25,13 @@
     #include <linux/rtc.h>
 #endif
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
 
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -47,7 +48,6 @@
 
 #include <limits.h>
 
-#include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -231,8 +231,8 @@ struct options
     int r_fromdsinj;
     char r_smac_set;
 
-    char ip_out[15];
-    char ip_in[15];
+    char ip_out[16];    //16 for 15 chars + \x00
+    char ip_in[16];
     int port_out;
     int port_in;
 
@@ -3629,7 +3629,7 @@ int grab_essid(uchar* packet, int len)
     return -1;
 }
 
-static int get_ip_port(char *iface, char *ip)
+static int get_ip_port(char *iface, char *ip, const int ip_size)
 {
 	char *host;
 	char *ptr;
@@ -3654,7 +3654,7 @@ static int get_ip_port(char *iface, char *ip)
             port = -1;
             goto out;
         }
-	strcpy(ip, host);
+	strncpy(ip, host, ip_size);
 	port = atoi(ptr);
         if(port <= 0) port = -1;
 
@@ -4975,7 +4975,7 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
                 opt.s_face = optarg;
-                opt.port_in = get_ip_port(opt.s_face, opt.ip_in);
+                opt.port_in = get_ip_port(opt.s_face, opt.ip_in, sizeof(opt.ip_in)-1);
                 break;
 
             case 'r' :
@@ -5206,7 +5206,7 @@ usage:
 #endif /* i386 */
 
     opt.iface_out = argv[optind];
-    opt.port_out = get_ip_port(opt.iface_out, opt.ip_out);
+    opt.port_out = get_ip_port(opt.iface_out, opt.ip_out, sizeof(opt.ip_out)-1);
 
     //don't open interface(s) when using test mode and airserv
     if( ! (opt.a_mode == 9 && opt.port_out >= 0 ) )

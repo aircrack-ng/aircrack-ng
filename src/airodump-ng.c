@@ -19,9 +19,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
 
@@ -2309,18 +2309,18 @@ char * getStringTimeFromSec(double seconds)
     hour[1] %= 60 ;
 
     if (hour[2] != 0 )
-        sprintf(HourTime,"%d %s", hour[2], ( hour[2] == 1 ) ? "hour" : "hours");
+        snprintf(HourTime, 128, "%d %s", hour[2], ( hour[2] == 1 ) ? "hour" : "hours");
     if (hour[1] != 0 )
-        sprintf(MinTime,"%d %s", hour[1], ( hour[1] == 1 ) ? "min" : "mins");
+        snprintf(MinTime, 128, "%d %s", hour[1], ( hour[1] == 1 ) ? "min" : "mins");
 
     if ( hour[2] != 0 && hour[1] != 0 )
-        sprintf(ret, "%s %s", HourTime, MinTime);
+        snprintf(ret, 256, "%s %s", HourTime, MinTime);
     else
     {
         if (hour[2] == 0 && hour[1] == 0)
-            sprintf(ret, "%d s", hour[0] );
+            snprintf(ret, 256, "%d s", hour[0] );
         else
-            sprintf(ret, "%s", (hour[2] == 0) ? MinTime : HourTime );
+            snprintf(ret, 256, "%s", (hour[2] == 0) ? MinTime : HourTime );
     }
 
     free(MinTime);
@@ -2348,7 +2348,7 @@ char * getBatteryString(void)
 
     ret = (char *) calloc( 1, 256 );
 
-    sprintf( ret,"][ BAT: %s ]", batt_string );
+    snprintf( ret, 256, "][ BAT: %s ]", batt_string );
 
     free( batt_string);
 
@@ -2410,19 +2410,19 @@ void dump_print( int ws_row, int ws_col, int if_num )
      *  and current time
      */
 
-    memset( strbuf, '\0', 512 );
+    memset( strbuf, '\0', sizeof(strbuf) );
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
     snprintf(strbuf, sizeof(strbuf)-1, " CH %2d", G.channel[0]);
     for(i=1; i<if_num; i++)
     {
-        memset( buffer, '\0', 512 );
-        snprintf(buffer, 512 , ",%2d", G.channel[i]);
-        strncat(strbuf, buffer, (512-strlen(strbuf)));
+        memset( buffer, '\0', sizeof(buffer) );
+        snprintf(buffer, sizeof(buffer) , ",%2d", G.channel[i]);
+        strncat(strbuf, buffer, (sizeof(strbuf)-strlen(strbuf)));
     }
 
-    memset( buffer, '\0', 512 );
+    memset( buffer, '\0', sizeof(buffer) );
 
     if (G.gps_loc[0]) {
         snprintf( buffer, sizeof( buffer ) - 1,
@@ -2520,7 +2520,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
         memset(strbuf, '\0', sizeof(strbuf));
 
-        sprintf( strbuf, " %02X:%02X:%02X:%02X:%02X:%02X",
+        snprintf( strbuf, sizeof(strbuf), " %02X:%02X:%02X:%02X:%02X:%02X",
                 ap_cur->bssid[0], ap_cur->bssid[1],
                 ap_cur->bssid[2], ap_cur->bssid[3],
                 ap_cur->bssid[4], ap_cur->bssid[5] );
@@ -2529,7 +2529,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
         if(G.singlechan)
         {
-            sprintf( strbuf+len, "  %3d %3d %8ld %8ld %4d",
+            snprintf( strbuf+len, sizeof(strbuf)-len, "  %3d %3d %8ld %8ld %4d",
                      ap_cur->avg_power,
                      ap_cur->rx_quality,
                      ap_cur->nb_bcn,
@@ -2538,7 +2538,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
         }
         else
         {
-            sprintf( strbuf+len, "  %3d %8ld %8ld %4d",
+            snprintf( strbuf+len, sizeof(strbuf)-len, "  %3d %8ld %8ld %4d",
                      ap_cur->avg_power,
                      ap_cur->nb_bcn,
                      ap_cur->nb_data,
@@ -2547,42 +2547,42 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
         len = strlen(strbuf);
 
-        sprintf( strbuf+len, " %3d %3d%c ",
+        snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %3d%c ",
                  ap_cur->channel, ap_cur->max_speed,
                  ( ap_cur->preamble ) ? '.' : ' ' );
 
         len = strlen(strbuf);
 
-        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) sprintf( strbuf+len, "    " );
-        else if( ap_cur->security & STD_WPA2 ) sprintf( strbuf+len, "WPA2" );
-        else if( ap_cur->security & STD_WPA  ) sprintf( strbuf+len, "WPA " );
-        else if( ap_cur->security & STD_WEP  ) sprintf( strbuf+len, "WEP " );
-        else if( ap_cur->security & STD_OPN  ) sprintf( strbuf+len, "OPN " );
+        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) snprintf( strbuf+len, sizeof(strbuf)-len, "    " );
+        else if( ap_cur->security & STD_WPA2 ) snprintf( strbuf+len, sizeof(strbuf)-len, "WPA2" );
+        else if( ap_cur->security & STD_WPA  ) snprintf( strbuf+len, sizeof(strbuf)-len, "WPA " );
+        else if( ap_cur->security & STD_WEP  ) snprintf( strbuf+len, sizeof(strbuf)-len, "WEP " );
+        else if( ap_cur->security & STD_OPN  ) snprintf( strbuf+len, sizeof(strbuf)-len, "OPN " );
 
-        strcat( strbuf, " ");
-
-        len = strlen(strbuf);
-
-        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) sprintf( strbuf+len, "       ");
-        else if( ap_cur->security & ENC_CCMP   ) sprintf( strbuf+len, "CCMP   ");
-        else if( ap_cur->security & ENC_WRAP   ) sprintf( strbuf+len, "WRAP   ");
-        else if( ap_cur->security & ENC_TKIP   ) sprintf( strbuf+len, "TKIP   ");
-        else if( ap_cur->security & ENC_WEP104 ) sprintf( strbuf+len, "WEP104 ");
-        else if( ap_cur->security & ENC_WEP40  ) sprintf( strbuf+len, "WEP40  ");
-        else if( ap_cur->security & ENC_WEP    ) sprintf( strbuf+len, "WEP    ");
+        strncat( strbuf, " ", sizeof(strbuf)-1);
 
         len = strlen(strbuf);
 
-        if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) sprintf( strbuf+len, "   ");
-        else if( ap_cur->security & AUTH_MGT   ) sprintf( strbuf+len, "MGT");
+        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) snprintf( strbuf+len, sizeof(strbuf)-len, "       ");
+        else if( ap_cur->security & ENC_CCMP   ) snprintf( strbuf+len, sizeof(strbuf)-len, "CCMP   ");
+        else if( ap_cur->security & ENC_WRAP   ) snprintf( strbuf+len, sizeof(strbuf)-len, "WRAP   ");
+        else if( ap_cur->security & ENC_TKIP   ) snprintf( strbuf+len, sizeof(strbuf)-len, "TKIP   ");
+        else if( ap_cur->security & ENC_WEP104 ) snprintf( strbuf+len, sizeof(strbuf)-len, "WEP104 ");
+        else if( ap_cur->security & ENC_WEP40  ) snprintf( strbuf+len, sizeof(strbuf)-len, "WEP40  ");
+        else if( ap_cur->security & ENC_WEP    ) snprintf( strbuf+len, sizeof(strbuf)-len, "WEP    ");
+
+        len = strlen(strbuf);
+
+        if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) snprintf( strbuf+len, sizeof(strbuf)-len, "   ");
+        else if( ap_cur->security & AUTH_MGT   ) snprintf( strbuf+len, sizeof(strbuf)-len, "MGT");
         else if( ap_cur->security & AUTH_PSK   )
 		{
 			if( ap_cur->security & STD_WEP )
-				sprintf( strbuf+len, "SKA");
+				snprintf( strbuf+len, sizeof(strbuf)-len, "SKA");
 			else
-				sprintf( strbuf+len, "PSK");
+				snprintf( strbuf+len, sizeof(strbuf)-len, "PSK");
 		}
-        else if( ap_cur->security & AUTH_OPN   ) sprintf( strbuf+len, "OPN");
+        else if( ap_cur->security & AUTH_OPN   ) snprintf( strbuf+len, sizeof(strbuf)-len, "OPN");
 
         len = strlen(strbuf);
 
@@ -4086,7 +4086,7 @@ usage:
     G.batt     = getBatteryString();
 
     G.elapsed_time = (char *) calloc( 1, 4 );
-    strcpy(G.elapsed_time,"0 s");
+    strncpy(G.elapsed_time, "0 s", 4-1);
 
     while( 1 )
     {
@@ -4367,7 +4367,7 @@ usage:
 
     if( ! G.save_gps )
     {
-        sprintf( (char *) buffer, "%s-%02d.gps", argv[2], G.f_index );
+        snprintf( (char *) buffer, 4096, "%s-%02d.gps", argv[2], G.f_index );
         unlink(  (char *) buffer );
     }
 

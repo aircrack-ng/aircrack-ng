@@ -39,15 +39,15 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
 	char * temp;
 	char * provis = calloc(1,20);
 	temp = (char *) calloc(1,strlen(progname)+50);
-	sprintf(temp, "%s %d.%d", progname, maj, min);
+	snprintf(temp, strlen(progname)+50, "%s %d.%d", progname, maj, min);
 	if (submin > 0) {
-		sprintf(provis,".%d",submin);
-		strcat(temp,provis);
+		snprintf(provis, 20,".%d",submin);
+		strncat(temp,provis, strlen(progname)+50-strlen(temp));
 		memset(provis,0,20);
 	}
 	if (svnrev > 0) {
-		sprintf(provis," r%d",svnrev);
-		strcat(temp,provis);
+		snprintf(provis, 20," r%d",svnrev);
+		strncat(temp,provis, strlen(progname)+50-strlen(temp));
 	}
 	free(provis);
 	temp = realloc(temp, strlen(temp)+1);

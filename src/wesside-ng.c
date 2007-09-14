@@ -379,7 +379,7 @@ static char* mac2str(unsigned char* mac)
 {
 	static char ret[6*3];
 
-	sprintf(ret, "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
+	snprintf(ret, (6*3), "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
 		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
 	return ret;
@@ -1030,10 +1030,10 @@ static void got_ip(struct wstate *ws)
 	}
 
 	memset(ws->ws_netip, 0, 16);
-	strcpy(ws->ws_netip, inet_ntoa(*in));
+	strncpy(ws->ws_netip, inet_ntoa(*in), 16-1);
 
 	time_print("Got IP=(%s)\n", ws->ws_netip);
-	strcpy(ws->ws_myip, ws->ws_netip);
+	strncpy(ws->ws_myip, ws->ws_netip, sizeof(ws->ws_myip)-1);
 
 	ptr = strchr(ws->ws_myip, '.');
 	assert(ptr);
@@ -1041,7 +1041,7 @@ static void got_ip(struct wstate *ws)
 	assert(ptr);
 	ptr = strchr(ptr+1, '.');
 	assert(ptr);
-	strcpy(ptr+1,"123");
+	strncpy(ptr+1,"123", 3);
 
 	time_print("My IP=(%s)\n", ws->ws_myip);
 
@@ -1546,10 +1546,10 @@ static void save_key(unsigned char *key, int len)
 
 	k[0] = 0;
 	while (len--) {
-		sprintf(tmp, "%.2X", *key++);
-		strcat(k, tmp);
+		snprintf(tmp, 3, "%.2X", *key++);
+		strncat(k, tmp, 2);
 		if (len)
-			strcat(k, ":");
+			strncat(k, ":", 1);
 	}
 
 	fd = open(KEY_FILE, O_WRONLY | O_CREAT | 0644);
@@ -2011,7 +2011,7 @@ static void init_defaults(struct wstate *ws)
 	ws->ws_max_chan = 11;
 	memcpy(ws->ws_mymac, "\x00\x00\xde\xfa\xce\x0d", 6);
 	ws->ws_have_mac = 0;
-	strcpy(ws->ws_myip, "192.168.0.123");
+	strncpy(ws->ws_myip, "192.168.0.123", sizeof(ws->ws_myip)-1);
 	ws->ws_ack_timeout = 100*1000;
 	ws->ws_min_prga = 128;
 	ws->ws_wep_thresh = ws->ws_thresh_incr = 10000;

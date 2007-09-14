@@ -185,9 +185,9 @@ void hexdump(void *x, int len)
 	printf("\n");
 }
 
-void mac2str(char *str, unsigned char* m)
+void mac2str(char *str, unsigned char* m, int macsize)
 {
-        sprintf(str, "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
+        snprintf(str, macsize, "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
                 m[0], m[1], m[2], m[3], m[4], m[5]);
 }
 
@@ -213,7 +213,7 @@ void init_defaults(struct east_state *es)
 
 	memcpy(es->es_mymac, "\x00\x00\xde\xfa\xce\x0d", 6);
 	es->es_setmac = 0;
-	strcpy(es->es_ifname, "specify_interface");
+	strncpy(es->es_ifname, "specify_interface", sizeof(es->es_ifname)-1);
 
 	es->es_state = S_SEARCHING;
 	es->es_hopfreq = 100; /* ms */
@@ -271,7 +271,7 @@ void reset(struct east_state *es)
 	f = fopen(S_OWN_LOG, "a");
 	if (!f)
 		err(1, "fopen()");
-	mac2str(mac, es->es_apmac);
+	mac2str(mac, es->es_apmac, sizeof(mac));
 	fprintf(f, "%s %d %s %s\n", mac, es->es_apchan, es->es_apssid,
 		inet_ntoa(es->es_pubip));
 	fclose(f);
@@ -351,7 +351,7 @@ void set_mac(struct east_state *es)
 
 		if (wi_get_mac(es->es_wi, es->es_mymac) == -1)
 			err(1, "wi_get_mac()");
-		mac2str(mac, es->es_mymac);
+		mac2str(mac, es->es_mymac, sizeof(mac));
 		printf("MAC is %s\n", mac);
 
 	} else if (wi_set_mac(es->es_wi, es->es_mymac) == -1)
@@ -470,7 +470,7 @@ void read_beacon(struct east_state *es, struct ieee80211_frame *wh, int len)
 			memcpy(es->es_apmac, wh->i_addr3, sizeof(es->es_apmac));
 			es->es_apchan = got_channel;
 			es->es_state = S_SENDAUTH;
-			mac2str(str, es->es_apmac);
+			mac2str(str, es->es_apmac, sizeof(str));
 			printf("\nSSID %s Chan %d Mac %s\n",
 			       es->es_apssid, es->es_apchan, str);
 
@@ -1122,7 +1122,7 @@ void check_rtr_mac(struct east_state *es, struct ieee80211_frame *wh, int len)
 
 	sa = get_sa(wh);
 	memcpy(es->es_rtrmac, sa, 6);
-	mac2str(str, es->es_rtrmac);
+	mac2str(str, es->es_rtrmac, sizeof(str));
 	printf("Rtr MAC %s\n", str);
 
 	setup_internet(es);
@@ -1261,8 +1261,8 @@ void redirect_enque(struct east_state *es, struct ieee80211_frame *wh, int len)
 	es->es_rpacket_id++;
 	slot->rp_id = es->es_rpacket_id;
 
-	mac2str(s, get_sa(wh));
-	mac2str(d, get_da(wh));
+	mac2str(s, get_sa(wh), sizeof(s));
+	mac2str(d, get_da(wh), sizeof(d));
 	printf_time("Enqueued packet id %d %s->%s %d [qlen %d]\n",
 	       	    slot->rp_id, s, d, len - sizeof(*wh) - 4- 4, queue_len(es));
 }
@@ -1558,7 +1558,7 @@ void send_assoc(struct east_state *es, struct timeval *tv)
 	*ptr++ = IEEE80211_ELEMID_SSID;
 	len = strlen(es->es_apssid);
 	*ptr++ = len;
-	strcpy((char*)ptr, es->es_apssid);
+	strncpy((char*)ptr, es->es_apssid, 32);
 	ptr += len;
 
 	/* rates */
@@ -1916,7 +1916,7 @@ void check_inet(struct east_state *es, struct timeval *tv)
 	/* data */
 	data = (unsigned char*) (uh+1);
 
-	strcpy((char*)data, "sorbo");
+	strncpy((char*)data, "sorbo", 5);
 	seq = (unsigned short*) (data+5);
 	*seq = htons(++es->es_rpacket_id);
 	data += S_HELLO_LEN;
