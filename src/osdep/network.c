@@ -383,7 +383,7 @@ static void net_close(struct wif *wi)
 	do_net_free(wi);
 }
 
-static int get_ip_port(char *iface, char *ip)
+static int get_ip_port(char *iface, char *ip, const int ipsize)
 {
 	char *host;
 	char *ptr;
@@ -404,7 +404,7 @@ static int get_ip_port(char *iface, char *ip)
 		goto out; /* XXX resolve hostname */
 
 	assert(strlen(host) <= 15);
-	strcpy(ip, host);
+	strncpy(ip, host, ipsize);
 	port = atoi(ptr);
 
 out:
@@ -425,7 +425,7 @@ static int do_net_open(char *iface)
 	char ip[16];
 	struct sockaddr_in s_in;
 
-	port = get_ip_port(iface, ip);
+	port = get_ip_port(iface, ip, sizeof(ip)-1);
 	if (port == -1)
 		return -1;
 
