@@ -94,6 +94,7 @@ static const char * szaDriverTypes[] = {
 struct priv_linux {
     int fd_in,  arptype_in;
     int fd_out, arptype_out;
+    int fd_main;
     int fd_rtc;
 
     DRIVER_TYPE drivertype; /* inited to DT_UNKNOWN on allocation by wi_alloc */
@@ -248,6 +249,7 @@ static int linux_get_channel(struct wif *wi)
 {
     struct priv_linux *dev = wi_priv(wi);
     struct iwreq wrq;
+    int fd;
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
 
@@ -256,10 +258,13 @@ static int linux_get_channel(struct wif *wi)
     else
         strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
 
-    if( ioctl( dev->fd_in, SIOCGIWFREQ, &wrq ) < 0 )
-    {
+
+    fd = dev->fd_in;
+    if(dev->drivertype == DT_IPW2200)
+        fd = dev->fd_main;
+
+    if( ioctl( fd, SIOCGIWFREQ, &wrq ) < 0 )
         return( -1 );
-    }
 
     if(wrq.u.freq.m > 100000000)
         return ((wrq.u.freq.m - 241200000)/500000)+1;
@@ -380,11 +385,11 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
     char got_noise=0;
     int fcs_removed=0;
 
-    if(dev->drivertype == DT_IPW2200)
-    {
-        printf("Don't use the \"%s\" interface for listening, but \"rtapX\"\n", wi_get_ifname(wi));
-        return( -1 );
-    }
+//     if(dev->drivertype == DT_IPW2200)
+//     {
+//         printf("Don't use the \"%s\" interface for listening, but \"rtapX\"\n", wi_get_ifname(wi));
+//         return( -1 );
+//     }
 
     if((unsigned)count > sizeof(tmpbuf))
         return( -1 );
@@ -773,6 +778,9 @@ int linux_get_monitor(struct wif *wi)
 
     /* find the interface index */
 
+    if(dev->drivertype == DT_IPW2200)
+        return( 0 );
+
     memset( &ifr, 0, sizeof( ifr ) );
     strncpy( ifr.ifr_name, wi_get_ifname(wi), sizeof( ifr.ifr_name ) - 1 );
 
@@ -948,9 +956,12 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
 		   uchar *mac)
 {
     struct ifreq ifr;
+    struct ifreq ifr2;
     struct iwreq wrq;
+    struct iwreq wrq2;
     struct packet_mreq mr;
     struct sockaddr_ll sll;
+    struct sockaddr_ll sll2;
 
     /* find the interface index */
 
@@ -970,7 +981,51 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
 
     switch(dev->drivertype) {
     case DT_IPW2200:
-        return opensysfs(dev, iface, fd);
+        /* find the interface index */
+
+        memset( &ifr2, 0, sizeof( ifr ) );
+        strncpy( ifr2.ifr_name, dev->main_if, sizeof( ifr2.ifr_name ) - 1 );
+
+        if( ioctl( dev->fd_main, SIOCGIFINDEX, &ifr2 ) < 0 )
+        {
+            printf("Interface %s: \n", dev->main_if);
+            perror( "ioctl(SIOCGIFINDEX) failed" );
+            return( 1 );
+        }
+
+        /* set iw mode to managed on main interface */
+        memset( &wrq2, 0, sizeof( struct iwreq ) );
+        strncpy( wrq2.ifr_name, dev->main_if, IFNAMSIZ );
+
+        if( ioctl( dev->fd_main, SIOCGIWMODE, &wrq2 ) < 0 )
+        {
+            perror("SIOCGIWMODE");
+            return 1;
+        }
+        wrq2.u.mode = IW_MODE_INFRA;
+        if( ioctl( dev->fd_main, SIOCSIWMODE, &wrq2 ) < 0 )
+        {
+            perror("SIOCSIWMODE");
+            return 1;
+        }
+
+        /* bind the raw socket to the interface */
+
+        memset( &sll2, 0, sizeof( sll2 ) );
+        sll2.sll_family   = AF_PACKET;
+        sll2.sll_ifindex  = ifr2.ifr_ifindex;
+        sll2.sll_protocol = htons( ETH_P_ALL );
+
+        if( bind( dev->fd_main, (struct sockaddr *) &sll2,
+                sizeof( sll2 ) ) < 0 )
+        {
+            printf("Interface %s: \n", dev->main_if);
+            perror( "bind(ETH_P_ALL) failed" );
+            return( 1 );
+        }
+
+        opensysfs(dev, dev->main_if, dev->fd_in);
+        break;
     case DT_BCM43XX:
         opensysfs(dev, iface, dev->fd_in);
         break;
@@ -1109,6 +1164,15 @@ static int do_linux_open(struct wif *wi, char *iface)
 
     /* open raw socks */
     if( ( dev->fd_in = socket( PF_PACKET, SOCK_RAW,
+                              htons( ETH_P_ALL ) ) ) < 0 )
+    {
+        perror( "socket(PF_PACKET) failed" );
+        if( getuid() != 0 )
+            fprintf( stderr, "This program requires root privileges.\n" );
+        return( 1 );
+    }
+
+    if( ( dev->fd_main = socket( PF_PACKET, SOCK_RAW,
                               htons( ETH_P_ALL ) ) ) < 0 )
     {
         perror( "socket(PF_PACKET) failed" );
@@ -1348,8 +1412,45 @@ static int do_linux_open(struct wif *wi, char *iface)
             dev->drivertype=DT_ZD1211RW;
     }
 
+    if( dev->drivertype == DT_IPW2200 )
+    {
+        snprintf(r_file, sizeof(r_file),
+            "/sys/class/net/%s/device/rtap_iface", iface);
+        if ((acpi = fopen(r_file, "r")) == NULL)
+            goto close_out;
+        memset(buf, 0, 128);
+        fgets(buf, 128, acpi);
+        buf[127]='\x00';
+        //rtap iface doesn't exist
+        if(strncmp(buf, "-1", 2) == 0)
+        {
+            //repoen for writing
+            fclose(acpi);
+            if ((acpi = fopen(r_file, "w")) == NULL)
+                goto close_out;
+            fputs("1", acpi);
+            //reopen for reading
+            fclose(acpi);
+            if ((acpi = fopen(r_file, "r")) == NULL)
+                goto close_out;
+            fgets(buf, 128, acpi);
+        }
+        fclose(acpi);
+
+        //use name in buf as new iface and set original iface as main iface
+        dev->main_if = (char*) malloc(strlen(iface)+1);
+        bzero(dev->main_if, strlen(iface)+1);
+        strncpy(dev->main_if, iface, strlen(iface));
+
+        iface=(char*)malloc(strlen(buf)+1);
+        bzero(iface, strlen(buf)+1);
+        strncpy(iface, buf, strlen(buf));
+
+        printf("done...\n");
+    }
+
     /* test if rtap interface and try to find real interface */
-    if( memcmp( iface, "rtap", 4) == 0 )
+    if( memcmp( iface, "rtap", 4) == 0 && dev->main_if == NULL)
     {
         memset( &ifr, 0, sizeof( ifr ) );
         strncpy( ifr.ifr_name, iface, sizeof( ifr.ifr_name ) - 1 );
@@ -1376,6 +1477,8 @@ static int do_linux_open(struct wif *wi, char *iface)
                     continue;
                 if (acpi != NULL)
                 {
+                    dev->drivertype = DT_IPW2200;
+
                     memset(buf, 0, 128);
                     fgets(buf, 128, acpi);
                     if(n==0) //interface exists
@@ -1429,7 +1532,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         }
     }
 
-    if(0)
+//     if(0)
     fprintf(stderr, "Interface %s -> driver: %s\n", iface,
         szaDriverTypes[dev->drivertype]);
 
@@ -1440,11 +1543,11 @@ static int do_linux_open(struct wif *wi, char *iface)
     /* don't use the same file descriptor for in and out on bcm43xx,
        as you read from the interface, but write into a file in /sys/...
      */
-    if(!(dev->drivertype == DT_BCM43XX))
+    if(!(dev->drivertype == DT_BCM43XX) && !(dev->drivertype == DT_IPW2200))
         dev->fd_in = dev->fd_out;
     else
     {
-        /* if bcm43xx, swap both fds */
+        /* if bcm43xx or ipw2200, swap both fds */
         n=dev->fd_out;
         dev->fd_out=dev->fd_in;
         dev->fd_in=n;
