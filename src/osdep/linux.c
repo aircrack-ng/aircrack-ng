@@ -385,12 +385,6 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
     char got_noise=0;
     int fcs_removed=0;
 
-//     if(dev->drivertype == DT_IPW2200)
-//     {
-//         printf("Don't use the \"%s\" interface for listening, but \"rtapX\"\n", wi_get_ifname(wi));
-//         return( -1 );
-//     }
-
     if((unsigned)count > sizeof(tmpbuf))
         return( -1 );
 
@@ -1445,8 +1439,6 @@ static int do_linux_open(struct wif *wi, char *iface)
         iface=(char*)malloc(strlen(buf)+1);
         bzero(iface, strlen(buf)+1);
         strncpy(iface, buf, strlen(buf));
-
-        printf("done...\n");
     }
 
     /* test if rtap interface and try to find real interface */
@@ -1532,7 +1524,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         }
     }
 
-//     if(0)
+    if(0)
     fprintf(stderr, "Interface %s -> driver: %s\n", iface,
         szaDriverTypes[dev->drivertype]);
 
