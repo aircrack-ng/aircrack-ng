@@ -166,7 +166,6 @@ char usage[] =
 "      -M <num>   : maximum number of IVs to use\n"
 "      -D         : WEP decloak mode\n"
 "      -P <num>   : PTW debug: 1 disable Klein, 2 PTW\n"
-"      -V         : Visual inspection (--visual-inspection)\n"
 "\n"
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
@@ -2794,6 +2793,45 @@ int update_ivbuf( void )
 	return( SUCCESS );
 }
 
+/* 
+ * It will remove votes for a specific keybyte (and remove from the requested current value) 
+ * Return 0 on success, another value on failure
+ */
+int remove_votes(int keybyte, unsigned char value)
+{
+	int i;
+	int found = 0;
+	for (i=0; i < 256; i++)
+	{
+		if (wep.poll[keybyte][i].idx == (int)value)
+		{
+			found = 1;
+			//wep.poll[keybyte][i].val = 0;
+			// Update wep.key
+		}
+		if (found)
+		{
+			// Put the value at the end with NO votes
+			if (i== 255)
+			{
+				wep.poll[keybyte][i].idx = (int)value;
+				wep.poll[keybyte][i].val = 0;
+			}
+			else
+			{
+				wep.poll[keybyte][i].idx = wep.poll[keybyte][i + 1].idx;
+				wep.poll[keybyte][i].val = wep.poll[keybyte][i + 1].val;
+				if (i == 0)
+				{
+					// Also update wep key if it's the first value to remove
+					wep.key[keybyte] = wep.poll[keybyte][i].idx;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 /* standard attack mode: */
 /* this routine gathers and sorts the votes, then recurses until it *
  * reaches B == keylen. It also stops when the current keybyte vote *
@@ -2801,7 +2839,9 @@ int update_ivbuf( void )
 
 int do_wep_crack1( int B )
 {
-	int i, j, l, m, tsel, charread, newval, askchange;
+	int i, j, l, m, tsel, charread, askchange;
+	int remove_keybyte_nr, remove_keybyte_value;
+	//int a,b;
 	static int k = 0;
 	char user_guess[4];
 
@@ -2872,42 +2912,8 @@ int do_wep_crack1( int B )
 		}
 
 		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
-
-		if (opt.visual_inspection == 1)
-		{
-			show_wep_stats( B, 1, NULL, NULL, NULL, 0 );
-
-			// Offer the user to change keybyte used
-			printf("\n\n");
-			printf("Guessed keybyte %d: %.2X\n", B, wep.key[B]);
-
-			while(1)
-			{
-				// Inputting user value until it hits enter or give a valid value
-				printf("Enter the new value to use (or hit 'Enter' key to keep current value): ");
-				memset(user_guess, 0, 4);
-
-				charread = readLine(user_guess, 3);
-
-				// Break if enter was hit
-				if (user_guess[0] == 0 || charread == 0)
-					break;
-
-				// Convert value
-				newval = hexToInt(user_guess, charread);
-
-				// Make sure conversion was OK
-				if (newval != -1)
-				{
-					// Next modif, update displayed information
-					wep.key[B] = newval;
-					printf("Using %.2X for keybyte %d\n", wep.key[B], B);
-					sleep(1);
-					break;
-				}
-			}
-		}
-		else if( ! opt.is_quiet )
+		
+		if( ! opt.is_quiet )
 		{
 			show_wep_stats( B, 0, NULL, NULL, NULL, 0 );
 		}
@@ -2935,6 +2941,58 @@ int do_wep_crack1( int B )
 			/* as noted by Simon Marechal, it's more efficient
 			 * to just bruteforce the last two keybytes. */
 
+			/*
+				Ask for removing votes here
+				1. Input keybyte. Use enter when it's done => Bruteforce will start
+				2. Input value to remove votes from: 00 -> FF or Enter to cancel remove
+				3. Remove votes
+				4. Redraw
+				5. Go back to 1
+			*/
+			if (opt.visual_inspection == 1)	
+			{
+				while(1)
+				{
+					// Show the current stat
+					show_wep_stats( B, 1, NULL, NULL, NULL, 0 );
+			
+					// Inputting user value until it hits enter or give a valid value
+					printf("On which keybyte do you want to remove votes (Hit Enter when done)? ");
+					memset(user_guess, 0, 4);
+	
+					charread = readLine(user_guess, 3);
+	
+					// Break if 'Enter' key was hit
+					if (user_guess[0] == 0 || charread == 0)
+						break;
+
+					// If it's not a number, reask
+					// Check if inputted value is correct (from 0 to and inferior to opt.keylen)
+					remove_keybyte_nr = atoi(user_guess);
+					if (isdigit(user_guess[0]) == 0 || remove_keybyte_nr < 0 || remove_keybyte_nr >= opt.keylen)
+						continue;
+
+
+					// It's a number for sure and the number is correct
+					// Now ask which value should be removed
+					printf("From which keybyte value do you want to remove the votes (Hit Enter to cancel)? ");
+					memset(user_guess, 0, 4);
+					charread = readLine(user_guess, 3);
+
+					// Break if enter was hit
+					if (user_guess[0] == 0 || charread == 0)
+						continue;
+
+					remove_keybyte_value = hexToInt(user_guess, charread);
+					
+					// Check if inputted value is correct (hexa). Value range: 00 - FF
+					if (remove_keybyte_value < 0 || remove_keybyte_value > 255)
+						continue;
+					
+					// If correct, remove and redraw
+					remove_votes(remove_keybyte_nr, (unsigned char)remove_keybyte_value);
+				}
+			}
 			if (opt.nbcpu==1 || opt.do_mt_brute==0)
 			{
 
