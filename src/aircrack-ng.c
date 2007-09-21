@@ -396,6 +396,9 @@ int mergebssids(char* bssidlist, unsigned char* bssid)
 	do
 	{
 		tmp = strsep(&list, ",");
+		if (tmp == NULL)
+			break;
+
 		next = 0;
 
 		for(i=0; i<17; i++)
