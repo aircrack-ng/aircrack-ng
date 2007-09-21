@@ -698,7 +698,7 @@ int attack_check(uchar* bssid, char* essid, uchar* capa, struct wif *wi)
     return 0;
 }
 
-int getnet( uchar* capa, int filter)
+int getnet( uchar* capa, int filter, int force)
 {
     unsigned char *bssid;
 
@@ -717,11 +717,21 @@ int getnet( uchar* capa, int filter)
     {
         PCT; printf("Waiting for beacon frame (ESSID: %s)\n", opt.r_essid);
     }
-    else
+    else if(force)
     {
-        PCT; printf("Please specify at least a BSSID (-a) or an ESSID (-e)\n");
+        PCT;
+        if(filter)
+        {
+            printf("Please specify at least a BSSID (-b) or an ESSID (-e)\n");
+        }
+        else
+        {
+            printf("Please specify at least a BSSID (-a) or an ESSID (-e)\n");
+        }
         return( 1 );
     }
+    else
+        return 0;
 
     if( attack_check(bssid, opt.r_essid, capa, _wi_in) != 0)
     {
@@ -750,7 +760,7 @@ int do_attack_deauth( void )
 {
     int i, n;
 
-    if(getnet(NULL, 0) != 0)
+    if(getnet(NULL, 0, 1) != 0)
         return 1;
 
     if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
@@ -1165,6 +1175,7 @@ int do_attack_fake_auth( void )
     int kas;
     int tries;
     int abort;
+    int gotack = 0;
     uchar capa[2];
 
     unsigned char ackbuf[14];
@@ -1176,7 +1187,7 @@ int do_attack_fake_auth( void )
         return( 1 );
     }
 
-    if(getnet(capa, 0) != 0)
+    if(getnet(capa, 0, 1) != 0)
         return 1;
 
     if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
@@ -1218,7 +1229,9 @@ int do_attack_fake_auth( void )
                 memcpy( h80211 + 10, opt.r_smac , 6 );
                 memcpy( h80211 + 16, opt.r_bssid, 6 );
 
-                PCT; printf( "Sending Authentication Request\n" );
+                PCT; printf( "Sending Authentication Request" );
+                fflush( stdout );
+                gotack=0;
 
                 for( i = 0; i < x_send; i++ )
                 {
@@ -1292,6 +1305,7 @@ int do_attack_fake_auth( void )
                     }
 
                     state = 0;
+                    printf("\n");
                 }
 
                 break;
@@ -1321,7 +1335,9 @@ int do_attack_fake_auth( void )
                 memcpy( h80211 + 24, capa, 2);
 
 
-                PCT; printf( "Sending Association Request\n" );
+                PCT; printf( "Sending Association Request" );
+                fflush( stdout );
+                gotack=0;
 
                 for( i = 0; i < x_send; i++ )
                 {
@@ -1362,6 +1378,7 @@ int do_attack_fake_auth( void )
                         x_send *= 4;
 
                     state = 0;
+                    printf("\n");
                 }
 
                 break;
@@ -1381,8 +1398,10 @@ int do_attack_fake_auth( void )
                 if( time( NULL ) - tr >= opt.delay )
                 {
                     tr = time( NULL );
-
-                    PCT; printf( "Sending keep-alive packet\n" );
+                    printf("\n");
+                    PCT; printf( "Sending keep-alive packet" );
+                    fflush( stdout );
+                    gotack=0;
 
                     memcpy( h80211, NULL_DATA, 24 );
                     memcpy( h80211 +  4, opt.r_bssid, 6 );
@@ -1425,6 +1444,16 @@ int do_attack_fake_auth( void )
         if( caplen  < 0 ) return( 1 );
         if( caplen == 0 ) continue;
 
+        if( caplen == 10 && h80211[0] == 0xD4 && !gotack)
+        {
+            if( memcmp(h80211+4, opt.r_smac, 6) == 0 )
+            {
+                gotack++;
+                printf(" [ACK]");
+                fflush( stdout );
+            }
+        }
+
         if( caplen < 24 )
             continue;
 
@@ -1446,6 +1475,7 @@ int do_attack_fake_auth( void )
 
             if( h80211[0] == 0xC0 && state == 4 )
             {
+                printf("\n");
                 PCT; printf( "Got a deauthentication packet!\n" );
                 if(opt.npackets == -1) x_send = 4;
                 state = 0;
@@ -1457,6 +1487,7 @@ int do_attack_fake_auth( void )
 
             if( h80211[0] == 0xA0 && state == 4 )
             {
+                printf("\n");
                 PCT; printf( "Got a disassociation packet!\n" );
                 if(opt.npackets == -1) x_send = 4;
                 state = 0;
@@ -1468,6 +1499,7 @@ int do_attack_fake_auth( void )
 
             if( h80211[0] == 0xB0 && state == 1 )
             {
+                printf("\n");
                 state = 0; PCT;
 
                 if( caplen < 30 )
@@ -1579,6 +1611,7 @@ int do_attack_fake_auth( void )
 
             if( h80211[0] == 0x10 && state == 3 )
             {
+                printf("\n");
                 state = 0; PCT;
 
                 if( caplen < 30 )
@@ -1615,7 +1648,8 @@ int do_attack_fake_auth( void )
                     continue;
                 }
 
-                printf( "Association successful :-)\n" );
+                printf( "Association successful :-)" );
+                fflush( stdout );
 
                 tt = time( NULL );
                 tr = time( NULL );
@@ -2087,7 +2121,7 @@ int do_attack_arp_resend( void )
         return( 1 );
     }
 
-    if(getnet(NULL, 1) != 0)
+    if(getnet(NULL, 1, 1) != 0)
         return 1;
 
     /* create and write the output pcap header */
@@ -3151,7 +3185,7 @@ int do_attack_fragment()
         return( 1 );
     }
 
-    if(getnet(NULL, 1) != 0)
+    if(getnet(NULL, 1, 1) != 0)
         return 1;
 
     if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
@@ -3969,7 +4003,7 @@ int do_attack_test()
         }
     }
 
-    if(getnet(NULL, 1) != 0)
+    if(getnet(NULL, 0, 0) != 0)
         return 1;
 
     srand( time( NULL ) );
