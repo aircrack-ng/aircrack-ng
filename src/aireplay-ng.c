@@ -3932,12 +3932,12 @@ int do_attack_test()
     int ret=0;
     float avg2;
     struct rx_info ri;
-    int atime=100;  //time in ms to wait for answer packet (needs to be higher for airserv)
+    int atime=200;  //time in ms to wait for answer packet (needs to be higher for airserv)
     unsigned char nulldata[1024];
 
     if(opt.port_out > 0)
     {
-        atime += 100;
+        atime += 200;
         PCT; printf("Testing connection to injection device %s\n", opt.iface_out);
         ret = tcp_test(opt.ip_out, opt.port_out);
         if(ret != 0)
@@ -3966,7 +3966,7 @@ int do_attack_test()
 
     if(opt.s_face && opt.port_in > 0)
     {
-        atime += 100;
+        atime += 200;
         PCT; printf("Testing connection to capture device %s\n", opt.s_face);
         ret = tcp_test(opt.ip_in, opt.port_in);
         if(ret != 0)
