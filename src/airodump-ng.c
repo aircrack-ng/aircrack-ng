@@ -566,8 +566,10 @@ void update_rx_quality( )
         time_diff = 1000000 * (cur_time.tv_sec  - ap_cur->ftimer.tv_sec )
                             + (cur_time.tv_usec - ap_cur->ftimer.tv_usec);
 
-        if(ap_cur->fcapt >= QLT_COUNT || time_diff > (QLT_TIME * 1000000) )
+        /* update every `QLT_TIME`seconds if the rate is low, or every 500ms otherwise */
+        if( (ap_cur->fcapt >= QLT_COUNT && time_diff > 500000 ) || time_diff > (QLT_TIME * 1000000) )
         {
+            /* at least one frame captured */
             if(ap_cur->fcapt > 1)
             {
                 capt_time =   ( 1000000 * (ap_cur->ftimel.tv_sec  - ap_cur->ftimef.tv_sec )    //time between first and last captured frame
@@ -587,11 +589,13 @@ void update_rx_quality( )
 
                 ap_cur->rx_quality = ((float)((float)ap_cur->fcapt / ((float)ap_cur->fcapt + (float)ap_cur->fmiss)) * 100.0);
             }
-            else ap_cur->rx_quality = 0;
+            else ap_cur->rx_quality = 0; /* no packets -> zero quality */
 
+            /* normalize, in case the seq numbers are not iterating */
             if(ap_cur->rx_quality > 100) ap_cur->rx_quality = 100;
             if(ap_cur->rx_quality < 0  ) ap_cur->rx_quality =   0;
 
+            /* reset variables */
             ap_cur->fcapt = 0;
             ap_cur->fmiss = 0;
             gettimeofday( &(ap_cur->ftimer) ,NULL);
@@ -1141,11 +1145,13 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         ap_cur->fcapt++;
         gettimeofday( &(ap_cur->ftimel), NULL);
 
-        if(ap_cur->fcapt >= QLT_COUNT) update_rx_quality();
+//         if(ap_cur->fcapt >= QLT_COUNT) update_rx_quality();
     }
 
     if( h80211[0] == 0x80 )
+    {
         ap_cur->nb_bcn++;
+    }
 
     ap_cur->nb_pkt++;
 
@@ -2576,12 +2582,12 @@ void dump_print( int ws_row, int ws_col, int if_num )
         if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) snprintf( strbuf+len, sizeof(strbuf)-len, "   ");
         else if( ap_cur->security & AUTH_MGT   ) snprintf( strbuf+len, sizeof(strbuf)-len, "MGT");
         else if( ap_cur->security & AUTH_PSK   )
-		{
-			if( ap_cur->security & STD_WEP )
-				snprintf( strbuf+len, sizeof(strbuf)-len, "SKA");
-			else
-				snprintf( strbuf+len, sizeof(strbuf)-len, "PSK");
-		}
+        {
+            if( ap_cur->security & STD_WEP )
+                snprintf( strbuf+len, sizeof(strbuf)-len, "SKA");
+            else
+                snprintf( strbuf+len, sizeof(strbuf)-len, "PSK");
+        }
         else if( ap_cur->security & AUTH_OPN   ) snprintf( strbuf+len, sizeof(strbuf)-len, "OPN");
 
         len = strlen(strbuf);
@@ -4241,6 +4247,8 @@ usage:
                 return( 1 );
             }
         }
+        else
+            usleep(1);
 
         gettimeofday( &tv2, NULL );
 
@@ -4326,13 +4334,10 @@ usage:
                 }
             }
         }
-        else
+        else if (G.s_file != NULL)
         {
             dump_add_packet( h80211, caplen, &ri, i );
         }
-
-        if(G.s_iface == NULL && G.s_file == NULL)
-            usleep(1);
     }
 
     if(G.batt)
