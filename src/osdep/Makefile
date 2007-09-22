@@ -7,12 +7,14 @@ CFLAGS		+= $(PIC) -I..
 OBJS_NET	= network.o
 OBJS		= osdep.o $(OBJS_NET)
 
+OBJS_OBSD	= $(OBJS) openbsd.o openbsd_tap.o
 OBJS_FBSD	= $(OBJS) freebsd.o freebsd_tap.o
 OBJS_LINUX	= $(OBJS) linux.o linux_tap.o radiotap-parser.o
 OBJS_DUMMY	= $(OBJS) dummy.o dummy_tap.o
 OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o
 
 all:
+	@echo ranlib: $(RANLIB)
 	@echo Building for $(OSNAME)
 	@$(MAKE) .os.$(OSNAME)
 
@@ -23,6 +25,11 @@ all:
 
 .os.FreeBSD: $(OBJS_FBSD)
 	$(AR) cru $(LIB) $(OBJS_FBSD)
+	$(RANLIB) $(LIB)
+	touch $(@)
+
+.os.OpenBSD: $(OBJS_OBSD)
+	$(AR) cru $(LIB) $(OBJS_OBSD)
 	$(RANLIB) $(LIB)
 	touch $(@)
 
