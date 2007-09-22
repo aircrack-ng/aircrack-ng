@@ -2796,8 +2796,8 @@ int update_ivbuf( void )
 	return( SUCCESS );
 }
 
-/* 
- * It will remove votes for a specific keybyte (and remove from the requested current value) 
+/*
+ * It will remove votes for a specific keybyte (and remove from the requested current value)
  * Return 0 on success, another value on failure
  */
 int remove_votes(int keybyte, unsigned char value)
@@ -2915,7 +2915,7 @@ int do_wep_crack1( int B )
 		}
 
 		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
-		
+
 		if( ! opt.is_quiet )
 		{
 			show_wep_stats( B, 0, NULL, NULL, NULL, 0 );
@@ -2952,19 +2952,19 @@ int do_wep_crack1( int B )
 				4. Redraw
 				5. Go back to 1
 			*/
-			if (opt.visual_inspection == 1)	
+			if (opt.visual_inspection == 1)
 			{
 				while(1)
 				{
 					// Show the current stat
 					show_wep_stats( B, 1, NULL, NULL, NULL, 0 );
-			
+
 					// Inputting user value until it hits enter or give a valid value
 					printf("On which keybyte do you want to remove votes (Hit Enter when done)? ");
 					memset(user_guess, 0, 4);
-	
+
 					charread = readLine(user_guess, 3);
-	
+
 					// Break if 'Enter' key was hit
 					if (user_guess[0] == 0 || charread == 0)
 						break;
@@ -2972,7 +2972,7 @@ int do_wep_crack1( int B )
 					// If it's not a number, reask
 					// Check if inputted value is correct (from 0 to and inferior to opt.keylen)
 					remove_keybyte_nr = atoi(user_guess);
-					if (isdigit(user_guess[0]) == 0 || remove_keybyte_nr < 0 || remove_keybyte_nr >= opt.keylen)
+					if (isdigit((int)user_guess[0]) == 0 || remove_keybyte_nr < 0 || remove_keybyte_nr >= opt.keylen)
 						continue;
 
 
@@ -2987,11 +2987,11 @@ int do_wep_crack1( int B )
 						continue;
 
 					remove_keybyte_value = hexToInt(user_guess, charread);
-					
+
 					// Check if inputted value is correct (hexa). Value range: 00 - FF
 					if (remove_keybyte_value < 0 || remove_keybyte_value > 255)
 						continue;
-					
+
 					// If correct, remove and redraw
 					remove_votes(remove_keybyte_nr, (unsigned char)remove_keybyte_value);
 				}
