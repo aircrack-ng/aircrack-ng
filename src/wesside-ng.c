@@ -40,6 +40,7 @@
 #include "if_arp.h"
 #include "if_llc.h"
 #include "crypto.h"
+#include "version.h"
 
 #define FIND_VICTIM		0
 #define FOUND_VICTIM		1
@@ -72,6 +73,8 @@
 #ifndef htole16
 #define htole16(n) (n)
 #endif
+
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 
 struct frag_state {
 	struct ieee80211_frame	fs_wh;
@@ -1971,17 +1974,28 @@ static void start(struct wstate *ws, char *dev)
 
 static void usage(char* pname)
 {
-	printf("Usage: %s <opts>\n", pname);
-	printf("-h\t\tthis lame message\n");
-	printf("-i\t\t<iface>\n");
-	printf("-m\t\t<my ip>\n");
-	printf("-n\t\t<net ip>\n");
-	printf("-a\t\t<mymac>\n");
-	printf("-c\t\tdo not crack\n");
-	printf("-p\t\t<min prga>\n");
-	printf("-v\t\t<victim mac>\n");
-	printf("-t\t\t<crack thresh>\n");
-	printf("-f\t\t<max chan>\n");
+	if (pname) {}
+
+	printf("\n"
+		"  %s - (C) 2007 Andrea Bittau\n"
+		"  http://www.aircrack-ng.org\n"
+		"\n"
+		"  Usage: wesside-ng <options>\n"
+		"\n"
+		"  Options:\n"
+		"\n"
+		"       -h                : This help screen\n"
+		"       -i        <iface> : Interface to use (mandatory)\n"
+		"       -m        <my ip> : My IP address\n"
+		"       -n       <net ip> : Network IP address\n"
+		"       -a        <mymac> : Source MAC Address\n"
+		"       -c                : Do not crack the key\n"
+		"       -p     <min prga> : Min PRGA\n"
+		"       -v   <victim mac> : Victim BSSID\n"
+		"       -t <crack thresh> : Cracking threshold\n"
+		"       -f     <max chan> : Highest scanned chan (default: 11)\n"
+		"\n",
+		getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION));
 
 	exit(0);
 }

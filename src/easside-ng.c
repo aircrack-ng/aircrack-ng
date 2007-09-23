@@ -35,6 +35,7 @@
 #include "easside.h"
 #include "if_arp.h"
 #include "ethernet.h"
+#include "version.h"
 
 /* XXX assuming little endian platform */
 #ifndef htole16
@@ -57,6 +58,8 @@
 #define S_PRGA_LOG	"prga.log"
 #define S_OWN_LOG	"own.log"
 #define S_MIN_RTO	10
+
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 
 enum {
 	S_SEARCHING = 0,
@@ -2367,16 +2370,26 @@ void own(struct east_state *es)
 
 void usage(char *p)
 {
-	printf(	"%s <args>\n"
-		"-h\t\thelp\n"
-		"-v\t\tAP mac\n"
-		"-m\t\tmy mac\n"
-		"-i\t\tmy ip\n"
-		"-r\t\trtr ip\n"
-		"-s\t\tbuddy ip\n"
-		"-f\t\tinterface\n"
-		"-c\t\tchan lock\n"
-		, p);
+	if (p) {}
+
+	printf("\n"
+		"  %s - (C) 2007 Andrea Bittau\n"
+		"  http://www.aircrack-ng.org\n"
+		"\n"
+		"  Usage: easside-ng <options>\n"
+		"\n"
+		"  Options:\n"
+		"\n"
+		"       -h                : This help screen\n"
+		"       -v   <victim mac> : Victim BSSID\n"
+		"       -m      <src mac> : Source MAC address\n"
+		"       -i           <ip> : Source IP address\n"
+		"       -r    <router ip> : Router IP address\n"
+		"       -s     <buddy ip> : Buddy-ng IP address (mandatory)\n"
+		"       -f        <iface> : Interface to use (mandatory)\n"
+		"       -c      <channel> : Lock card to this channel\n"
+		"\n",
+		getVersion("Easside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION));
 }
 
 void load_prga(struct east_state *es)
