@@ -20,6 +20,9 @@ PROC3 PeekStopCapture;
 PROC3 PeekCloseAdapter;
 PROC4 PeekRequest;
 
+
+#define PEEK_INSTALLED_KEY "SOFTWARE\\Airodump-ng"
+
 unsigned char * download(const char * url, const int buffsize)
 {
     HINTERNET a,b;
@@ -96,13 +99,51 @@ int downloadFile(const char * filename, const char * url, int size)
 	return 0;
 }
 
+int regkeyExist( void )
+{
+	HKEY key;
+	int keyExist = 0;
+
+	if( RegOpenKey( HKEY_LOCAL_MACHINE, PEEK_INSTALLED_KEY,
+                    &key ) == ERROR_SUCCESS )
+	{
+		// Close key
+		RegCloseKey(key);
+		
+		keyExist = 1;
+	}
+
+	return keyExist;
+}
+
+int regkeyCreate( void )
+{
+	HKEY key;
+	int success = 0;
+
+	// Create key 
+	if (RegCreateKey( HKEY_LOCAL_MACHINE, 
+		PEEK_INSTALLED_KEY, &key ) != ERROR_SUCCESS)
+	{
+		perror("RegCreateKey()");
+	}
+	else
+	{
+		success = 1;
+
+		// Close key
+		RegCloseKey(key);
+	}
+
+	return success;
+}
+
 void installed_peek_drivers( void )
 {
 	int result;
-	FILE * f;
 
-	const char * file = "peek.sys";
-	if ( file_exist(file, 0) != 0)
+	// Check if user already installed the driver
+	if (regkeyExist() == 0)
 	{
 		// Show messagebox
 		result = MessageBox(NULL, 
@@ -123,10 +164,8 @@ void installed_peek_drivers( void )
 		
 		// Else, click on "No" -> Drivers are supposed to be installed.
 
-		// Create a file so that the user isn't prompted anymore
-		f = fopen(file,"w");
-		if (f != NULL)
-			fclose(f);
+		// Create a registry key so that the user isn't prompted anymore
+		regkeyCreate();
 	}
 }
 
