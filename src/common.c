@@ -70,48 +70,6 @@ int maccmp(unsigned char *mac1, unsigned char *mac2)
     return 0;
 }
 
-//Return the mac address bytes (or null if it's not a mac address)
-int getmac(char * macAddress, int strict, unsigned char * mac)
-{
-	char byte[3];
-	int i, nbElem, n;
-
-	if (macAddress == NULL)
-		return 1;
-
-	/* Minimum length */
-	if ((int)strlen(macAddress) < 12)
-		return 1;
-
-	memset(mac, 0, 6);
-	byte[2] = 0;
-	i = nbElem = 0;
-
-	while (macAddress[i] != 0)
-	{
-		byte[0] = macAddress[i];
-		byte[1] = macAddress[i+1];
-
-		if (sscanf( byte, "%x", &n ) != 1
-			&& strlen(byte) == 2)
-			return 1;
-
-		if (!(isdigit((int)byte[1]) || (toupper((int)byte[1])>='A' && toupper((int)byte[1])<='F')))
-			return 1;
-		mac[nbElem] = n;
-		i+=2;
-		nbElem++;
-		if (macAddress[i] == ':' || macAddress[i] == '-'  || macAddress[i] == '_')
-			i++;
-	}
-
-	if ((strict && nbElem != 6)
-		|| (!strict && nbElem > 6))
-		return 1;
-
-	return 0;
-}
-
 /* Return -1 if it's not an hex value and return its value when it's a hex value */
 int hexCharToInt(unsigned char c)
 {
@@ -196,6 +154,52 @@ int hexCharToInt(unsigned char c)
 	}
 
 	return table[c];
+}
+
+//Return the mac address bytes (or null if it's not a mac address)
+int getmac(char * macAddress, int strict, unsigned char * mac)
+{
+	char byte[3];
+	int i, nbElem, n;
+
+	if (macAddress == NULL)
+		return 1;
+
+	/* Minimum length */
+	if ((int)strlen(macAddress) < 12)
+		return 1;
+
+	memset(mac, 0, 6);
+	byte[2] = 0;
+	i = nbElem = 0;
+
+	while (macAddress[i] != 0)
+	{
+		byte[0] = macAddress[i];
+		byte[1] = macAddress[i+1];
+
+		if (sscanf( byte, "%x", &n ) != 1
+			&& strlen(byte) == 2)
+			return 1;
+
+		//if (!(isdigit((int)byte[1]) || (toupper((int)byte[1])>='A' && toupper((int)byte[1])<='F')))
+		if (hexCharToInt(byte[1]) < 0)
+			return 1;
+
+		mac[nbElem] = n;
+
+		i+=2;
+		nbElem++;
+
+		if (macAddress[i] == ':' || macAddress[i] == '-'  || macAddress[i] == '_')
+			i++;
+	}
+
+	if ((strict && nbElem != 6)
+		|| (!strict && nbElem > 6))
+		return 1;
+
+	return 0;
 }
 
 // Read a line of characters inputted by the user

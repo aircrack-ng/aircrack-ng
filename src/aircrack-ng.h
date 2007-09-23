@@ -63,6 +63,7 @@ extern char * getVersion(char * progname, int maj, int min, int submin, int svnr
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern int readLine(char line[], int maxlength);
 extern int hexToInt(char s[], int len);
+extern int hexCharToInt(unsigned char c);
 
 
 #define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
@@ -143,7 +144,8 @@ struct options
 	int max_ivs;
 
 	char *bssidmerge;
-	char *firstbssid;
+	unsigned char *firstbssid;
+	struct mergeBSSID * bssid_list_1st;
 
 	struct AP_info *ap;
 
@@ -213,6 +215,15 @@ struct ST_info
 	struct ST_info *next;		 /* next supplicant              */
 	struct WPA_hdsk wpa;		 /* WPA handshake data           */
 	unsigned char stmac[6];		 /* client MAC address           */
+};
+
+struct mergeBSSID
+{
+	unsigned char bssid [6];     /* BSSID */
+	char unused[2];				 /* Alignment */
+	int convert;				 /* Does this BSSID has to       */
+								 /* be converted                 */
+	struct mergeBSSID * next;
 };
 
 void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod );

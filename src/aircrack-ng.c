@@ -325,12 +325,12 @@ int checkbssids(char *bssidlist)
 	int first = 1;
 	int i = 0;
 	char *list, *tmp;
+	int nbBSSID = 0;
 
 	if(bssidlist == NULL) return -1;
 
-#define VALID_CHAR(x)	( ((toupper((int)x)) == 'X') || \
-			  ((toupper((int)x)) >= 'A' && (toupper((int)x)) <= 'F') || \
-			  ( (x) >= '0' && (x) <= '9') )
+#define IS_X(x) ((x) == 'X' || (x) == 'x')
+#define VALID_CHAR(x)   ((IS_X(x)) || hexCharToInt(x) > -1)
 
 #define VALID_SEP(arg)	( ((arg) == '_') || ((arg) == '-') || ((arg) == ':') )
 	list = strdup(bssidlist);
@@ -338,89 +338,171 @@ int checkbssids(char *bssidlist)
 	{
 		tmp = strsep(&list, ",");
 
+		if (tmp == NULL)
+			break;
+
+		++nbBSSID;
+
 		if(strlen(tmp) != 17) return -1;
 
 		//first byte
-		if(!VALID_CHAR(tmp[ 0]))	return -1;
-		if(!VALID_CHAR(tmp[ 1]))	return -1;
-		if(!VALID_SEP( tmp[ 2]))	return -1;
+		if(!VALID_CHAR(tmp[ 0])) return -1;
+		if(!VALID_CHAR(tmp[ 1])) return -1;
+		if(!VALID_SEP( tmp[ 2])) return -1;
+
 		//second byte
-		if(!VALID_CHAR(tmp[ 3]))	return -1;
-		if(!VALID_CHAR(tmp[ 4]))	return -1;
-		if(!VALID_SEP( tmp[ 5]))	return -1;
+		if(!VALID_CHAR(tmp[ 3])) return -1;
+		if(!VALID_CHAR(tmp[ 4])) return -1;
+		if(!VALID_SEP( tmp[ 5])) return -1;
+
 		//third byte
-		if(!VALID_CHAR(tmp[ 6]))	return -1;
-		if(!VALID_CHAR(tmp[ 7]))	return -1;
-		if(!VALID_SEP( tmp[ 8]))	return -1;
+		if(!VALID_CHAR(tmp[ 6])) return -1;
+		if(!VALID_CHAR(tmp[ 7])) return -1;
+		if(!VALID_SEP( tmp[ 8])) return -1;
+
 		//fourth byte
-		if(!VALID_CHAR(tmp[ 9]))	return -1;
-		if(!VALID_CHAR(tmp[10]))	return -1;
-		if(!VALID_SEP( tmp[11]))	return -1;
+		if(!VALID_CHAR(tmp[ 9])) return -1;
+		if(!VALID_CHAR(tmp[10])) return -1;
+		if(!VALID_SEP( tmp[11])) return -1;
+
 		//fifth byte
-		if(!VALID_CHAR(tmp[12]))	return -1;
-		if(!VALID_CHAR(tmp[13]))	return -1;
-		if(!VALID_SEP( tmp[14]))	return -1;
+		if(!VALID_CHAR(tmp[12])) return -1;
+		if(!VALID_CHAR(tmp[13])) return -1;
+		if(!VALID_SEP( tmp[14])) return -1;
+
 		//sixth byte
-		if(!VALID_CHAR(tmp[15]))	return -1;
-		if(!VALID_CHAR(tmp[16]))	return -1;
+		if(!VALID_CHAR(tmp[15])) return -1;
+		if(!VALID_CHAR(tmp[16])) return -1;
+
 
 		if(first)
 		{
-			for(i=0; i<17; i++)
-			{
-				if(toupper((int)tmp[i]) == 'X') tmp[i] = '0';
-			}
-			opt.firstbssid = tmp;
+			for(i=0; i< 17; i++)
+				if( IS_X(tmp[i])) return -1;
+
+			opt.firstbssid = (unsigned char *) malloc(sizeof(unsigned char));
+			getmac(tmp, 1, opt.firstbssid);
 			first = 0;
 		}
 
-	}while(list);
+	} while(list);
 
-	return 0;
+	// Success
+	return nbBSSID;
 }
 
-int mergebssids(char* bssidlist, unsigned char* bssid)
+int mergebssids(char * bssidlist, unsigned char * bssid)
 {
-	int i=0, next=0;
-	char *list, *tmp;
-	char mac[20];
+	struct mergeBSSID * list_prev;
+	struct mergeBSSID * list_cur;
+	char * mac;
+	char * list;
+	char * tmp;
+	int next, i, found;
 
-	memset(mac, 0, 20);
+
+	// Do not convert if equal to first bssid
+	if (memcmp(opt.firstbssid, bssid, 6) == 0)
+		return 1;
+
+	list_prev = NULL;
+	list_cur = opt.bssid_list_1st;
+
+	while (list_cur != NULL)
+	{
+			if (memcmp(list_cur->bssid, bssid, 6) == 0)
+			{
+				if (list_cur->convert)
+					memcpy(bssid, opt.firstbssid, 6);
+
+				return list_cur->convert;
+			}
+
+			list_prev = list_cur;
+			list_cur = list_cur->next;
+	}
+
+	// Not found, check if it has to be converted
+	mac = (char *) malloc(18);
+
+	if (!mac)
+	{
+		perror( "malloc failed" );
+		return -1;
+	}
+
 	snprintf(mac, 18, "%02X:%02X:%02X:%02X:%02X:%02X",
 		bssid[0], bssid[1], bssid[2],
 		bssid[3], bssid[4], bssid[5]);
-
-#define	IGNORE_CHAR(x)	(toupper((int)x) == 'X' || VALID_SEP(x))
+	mac[17] = 0;
 
 	list = strdup(bssidlist);
+
+	// skip first element (because it doesn't have to be converted
+	// It already have the good value
+	tmp = strsep(&list, ",");
+
+	next = found = 0;
+
 	do
 	{
 		tmp = strsep(&list, ",");
 		if (tmp == NULL)
 			break;
 
-		next = 0;
+		// Length already checked, no need to check it again
 
-		for(i=0; i<17; i++)
+		for( i = 0; i < 17; ++i)
 		{
-			if(IGNORE_CHAR(tmp[i])) continue;
-			if(toupper((int)tmp[i]) != toupper((int)mac[i]))
+			if((IS_X(tmp[i]) || VALID_SEP(tmp[i]))) continue;
+
+			if(toupper((int)tmp[i]) != (int)mac[i])
 			{
+				// Not found
 				next = 1;
 				break;
 			}
 		}
-		if(!next)
+
+		if(next == 0)
 		{
-			return 0;
+			found = 1;
+			break;
 		}
-	}while(list);
+	}
+	while (list);
+
+	// Free memory
+	free(mac);
+	free(list);
+
+	// Add the result to the list
+	list_cur = (struct mergeBSSID *) malloc(sizeof(struct mergeBSSID));
+
+	if (!list_cur)
+	{
+			perror( "malloc failed" );
+			return -1;
+	}
+
+	list_cur->convert = found;
+	list_cur->next = NULL;
+	memcpy(list_cur->bssid, bssid, 6);
+
+	if (opt.bssid_list_1st == NULL)
+		opt.bssid_list_1st = list_cur;
+	else
+		list_prev->next = list_cur;
+
+	// Do not forget to convert if it was successful
+	if (list_cur->convert)
+		memcpy(bssid, opt.firstbssid, 6);
 
 #undef VALID_CHAR
 #undef VALID_SEP
-#undef IGNORE_CHAR
+#undef IS_X
 
-	return -1;
+	return list_cur->convert;
 }
 
 /* fread isn't atomic, sadly */
@@ -764,7 +846,7 @@ void read_thread( void *arg )
 		}
 
 		if(opt.bssidmerge)
-			if(mergebssids(opt.bssidmerge, bssid) == 0) getmac(opt.firstbssid, 1, bssid);
+			mergebssids(opt.bssidmerge, bssid);
 
 		if( memcmp( bssid, BROADCAST, 6 ) == 0 )
 			/* probe request or such - skip the packet */
@@ -1621,7 +1703,7 @@ void check_thread( void *arg )
 		}
 
 		if(opt.bssidmerge)
-			if(mergebssids(opt.bssidmerge, bssid) == 0) getmac(opt.firstbssid, 1, bssid);
+			mergebssids(opt.bssidmerge, bssid);
 
 		if( memcmp( bssid, BROADCAST, 6 ) == 0 )
 			/* probe request or such - skip the packet */
@@ -4102,7 +4184,8 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, showhelp, z, zz, forceptw;
+	int i, n, ret, max_cpu, option, j, ret1, nbMergeBSSID;
+	int cpudetectfailed, showhelp, z, zz, forceptw;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 	int old=0;
@@ -4157,6 +4240,10 @@ int main( int argc, char *argv[] )
 	opt.do_ptw = 1;
 	opt.max_ivs = INT_MAX;
 	opt.visual_inspection = 0;
+	opt.firstbssid = NULL;
+	opt.bssid_list_1st = NULL;
+	opt.bssidmerge = NULL;
+
 	forceptw = 0;
 
 	while( 1 )
@@ -4482,13 +4569,20 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'C' :
+				nbMergeBSSID = checkbssids(optarg);
 
-				opt.bssidmerge = optarg;
-				if(checkbssids(opt.bssidmerge))
+				if(nbMergeBSSID < 1)
 				{
 					printf("Invalid bssids (-C).\n\"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
 				}
+
+				// Useless to merge BSSID if only one element
+				if (nbMergeBSSID == 1)
+					printf("Merging BSSID disabled, only one BSSID specified\n");
+				else
+					opt.bssidmerge = optarg;
+
 				break;
 
 			case 'z' :
