@@ -34,7 +34,7 @@ OBJS_AS		= airserv-ng.o common.o
 OBJS_WS		= wesside-ng.o crypto.c common.o $(OBJS_PTW)
 OBJS_AL		= airolib-ng.o crypto.c common.o
 OBJS_ES		= easside-ng.o common.o
-OBJS_BUDDY	= buddy-ng.o
+OBJS_BUDDY	= buddy-ng.o common.o
 OBJS_MI		= makeivs-ng.o common.o uniqueiv.o
 
 
