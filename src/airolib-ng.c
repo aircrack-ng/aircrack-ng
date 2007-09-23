@@ -31,23 +31,35 @@
 #ifdef HAVE_REGEXP
 #include <regex.h>
 #endif
+#include "version.h"
+
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 
 void print_help() {
-	printf("Usage: airolib <database> <operation> [options]\n\n");
-
 	printf("\n"
-			"init \tCreate a new database file and it's table layout.\n"
-			"stats \tOutput some information about the database.\n"
-			"sql {sql} \tExecute sql-statement.\n"
-			"clean [all] \tPerform steps to clean the database from old junk. The option 'all' will also reduce filesize if possible and run an integrity check.\n"
-			"batch \tStart batch-processing all combinations of ESSIDs and passwords.\n"
-			"verify [all]\tVerify a set of randomly chosen PMKs. If the option 'all' is given, all(!) PMKs in the database are verified and the incorrect ones are deleted.\n"
-			"export cowpatty {essid} {file} \tExport to a cowpatty file.\n"
-			"import cowpatty {file} \tImport a cowpatty file.\n"
-			"import ascii {essid|passwd} {file} \tImport a flatfile as a list of either ESSIDs or passwords.\n");
-	printf("\n");
-
-		//TODO someone add real help here
+		"  %s - (C) 2007 ebfe\n"
+		"  http://www.aircrack-ng.org\n"
+		"\n"
+		"Usage: airolib-ng <database> <operation> [options]\n"
+		"\n"
+		"Operations:\n"
+		"\n"
+		"      init         : Create a new database file and its table layout.\n"
+		"      stats        : Output information about the database.\n"
+		"      sql <sql>    : Execute specified SQL statement.\n"
+		"      clean [all]  : Clean the database from old junk. 'all' will also \n"
+		"                     reduce filesize if possible and run an integrity check.\n"
+		"      batch        : Start batch-processing all combinations of ESSIDs and passwords.\n"
+		"      verify [all] : Verify a set of randomly chosen PMKs.\n"
+		"                     If 'all' is given, all invalid PMK will be deleted.\n"
+		"      import ascii [essid|passwd] <file> :\n"
+		"                     Import a flatfile as a list of ESSIDs or passwords.\n"
+		"      import cowpatty <file>             :\n"
+		"                     Import a cowpatty file.\n"
+		"      export cowpatty <essid> <file>     :\n"
+		"                     Export to a cowpatty file.\n"
+		"\n", 
+		getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION));
 }
 
 void sql_error(sqlite3* db) {
