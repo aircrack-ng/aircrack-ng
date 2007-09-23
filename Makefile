@@ -29,16 +29,21 @@ uninstall:
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test $(@)
 	-rm -f $(sbindir)/airmon-ng
+	-rm -f $(sbindir)/airdriver-ng
+	-rm -f $(sbindir)/patchchk
 	-rm -f $(mandir)/aircrack-ng.1
 	-rm -f $(mandir)/airdecap-ng.1
 	-rm -f $(mandir)/aireplay-ng.1
 	-rm -f $(mandir)/airmon-ng.1
 	-rm -f $(mandir)/airodump-ng.1
+	-rm -f $(mandir)/airolib-ng.1
 	-rm -f $(mandir)/airtun-ng.1
+	-rm -f $(mandir)/easside-ng.1
 	-rm -f $(mandir)/ivstools.1
 	-rm -f $(mandir)/kstats.1
 	-rm -f $(mandir)/makeivs.1
 	-rm -f $(mandir)/packetforge-ng.1
+	-rm -f $(mandir)/wesside-ng.1
 	-rm -fr $(docdir)
 
 strip:
@@ -47,7 +52,7 @@ strip:
 
 doc:
 	install -d $(docdir)
-	install -m 644 $(DOCFILES) $(destdir)$(docdir)
+	install -m 644 $(DOCFILES) $(docdir)
 
 clean:
 	$(MAKE) -C src $(@)
