@@ -20,6 +20,9 @@
 #include <grp.h>
 
 #include "easside.h"
+#include "version.h"
+
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 
 unsigned char ids[8192];
 unsigned short last_id;
@@ -89,8 +92,8 @@ int handle(int s, unsigned char* data, int len, struct sockaddr_in *s_in)
 	assert(plen <= (int) sizeof(buf));
 	if (send(s, buf, plen, 0) != plen)
 		return 1;
-		
-	return 0;	    
+
+	return 0;
 }
 
 void handle_dude(int dude, int udp)
@@ -139,7 +142,7 @@ void handle_dude(int dude, int udp)
 
 		if (FD_ISSET(dude, &rfds))
 			break;
-		
+
 		if (!FD_ISSET(udp, &rfds))
 			continue;
 
@@ -162,7 +165,7 @@ void drop_privs()
 
 	if (setgroups(0, NULL) == -1)
 		err(1, "setgroups()");
-	
+
 	if (setgid(69) == -1)
 		err(1, "setgid()");
 
@@ -172,10 +175,20 @@ void drop_privs()
 
 void usage(char *name)
 {
-	printf("Usage: %s <opts>\n"
-		"-h\t\thelp\n"
-		"-p\t\tdon't drop privs\n",
-		name);
+	if (name) {}
+
+	printf("\n"
+		"  %s - (C) 2007 Andrea Bittau\n"
+		"  http://www.aircrack-ng.org\n"
+		"\n"
+		"  Usage: buddy-ng <options>\n"
+		"\n"
+		"  Options:\n"
+		"\n"
+		"       -h        : This help screen\n"
+		"       -p        : Don't drop privileges\n"
+		"\n",
+		getVersion("Buddy-ng", _MAJ, _MIN, _SUB_MIN, _REVISION));
 
 	exit(1);
 }
@@ -239,7 +252,7 @@ int main(int argc, char *argv[])
 	if (listen(s, 5) == -1)
 		err(1, "listen()");
 
-	
+
 	while (1) {
 		len = sizeof(dude_sin);
 		printf("Waiting for connexion\n");
@@ -247,7 +260,7 @@ int main(int argc, char *argv[])
 			      (socklen_t*) &len);
 		if (dude == -1)
 			err(1, "accept()");
-		
+
 		printf("Got connection from %s\n",
 		       inet_ntoa(dude_sin.sin_addr));
 		handle_dude(dude, udp);
