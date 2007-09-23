@@ -173,7 +173,8 @@ char usage[] =
 "                    dictionnaries can be specified.\n"
 "                    See manpage for more information)\n"
 #ifdef HAVE_SQLITE
-"      -r <database> : path to airolib database to use in favour of a wordlist\n"
+"      -r <DB>    : path to airolib-ng database\n"
+"                   (Cannot be used with -w)\n"
 #endif
 "\n"
 "      --help     : Displays this usage screen\n"
