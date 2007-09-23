@@ -42,6 +42,27 @@ namespace Aircrack_ng
         private const String debugFile = "debug.log";
         private StreamWriter debugStream = null;
 
+        private string Changelog =
+                  "v1.0.0.5\n"
+                + "    - Allow choosing WEP key size when using PTW\n"
+                + "\n"
+                + "v1.0.0.4\n"
+                + "    - Fixed cracking with a wordlist\n"
+                + "\n"
+                + "v1.0.0.3\n"
+                + "    - Added logging to debug.log\n"
+                + "    - Added PTW option\n"
+                + "\n"
+                + "v1.0.0.2\n"
+                + "    - Fixed wordlist selection\n"
+                + "\n"
+                + "v1.0.0.1\n"
+                + "    - Added About box\n"
+                + "    - Modified Aircrack-ng tab\n"
+                + "\n"
+                + "v1.0\n"
+                + "    - First version\n";
+
         public Faircrack()
         {
             InitializeComponent();
@@ -102,23 +123,7 @@ namespace Aircrack_ng
             this.writeLog(this.lblAboutText.Text);
 
             // Add changelog
-            this.rtbChangelog.Text =
-                  "v1.0.0.4\n"
-                + "    - Fixed cracking with a wordlist\n"
-                + "\n"
-                + "v1.0.0.3\n"
-                + "    - Added logging to debug.log\n"
-                + "    - Added PTW option\n"
-                + "\n"
-                + "v1.0.0.2\n"
-                + "    - Fixed wordlist selection\n"
-                + "\n"
-                + "v1.0.0.1\n"
-                + "    - Added About box\n"
-                + "    - Modified Aircrack-ng tab\n"
-                + "\n"
-                + "v1.0\n"
-                + "    - First version\n";
+            this.rtbChangelog.Text = this.Changelog;
 
             // ... and copyright
             this.lblCopyright.Text =
@@ -552,7 +557,7 @@ namespace Aircrack_ng
                 this.pWordlist.Visible = true;
             }
 
-            this.pWEPKeySize.Visible = this.rbWEP.Checked && !this.cbPTW.Checked;
+            this.pWEPKeySize.Visible = this.rbWEP.Checked;
             this.cbUseWordlist.Visible = this.rbWEP.Checked && !this.cbPTW.Checked;
         }
 
@@ -566,7 +571,6 @@ namespace Aircrack_ng
         private void cbPTW_CheckedChanged(object sender, EventArgs e)
         {
             this.cbUseWordlist.Enabled = !this.cbPTW.Checked;
-            this.pWEPKeySize.Enabled = !this.cbPTW.Checked;
             this.cbAdvancedOptions.Enabled = !this.cbPTW.Checked;
             this.pAdvancedOptions.Visible = !this.cbPTW.Checked;
             this.cbUseWordlist_CheckedChanged(null, null);
