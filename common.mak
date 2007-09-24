@@ -30,6 +30,14 @@ ifeq ($(sqlite), true)
 COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
 endif
 
+ifeq ($(SQLITE), TRUE)
+COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
+endif
+
+ifeq ($(sqlite), TRUE)
+COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
+endif
+
 CC		= $(TOOL_PREFIX)gcc
 RANLIB		= $(TOOL_PREFIX)ranlib
 AR		= $(TOOL_PREFIX)ar
