@@ -11,6 +11,7 @@ Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
 * airodump-ng: Added partial 40bit WEP detection
 * airodump-ng: Added "--showack" to print statistics about ack/cts and rts frames
 * airodump-ng: Added "-h" to hide the known stations in ack statistics
+* airodump-ng: Added "-r" to read packets from a pcap file
 * aircrack-ng: Added BSSID merge option
 * aircrack-ng: Added passive ptw attack (using also IP packets for cracking)
 * aircrack-ng: Made ptw attack default, for korek attack use -K
@@ -66,11 +67,12 @@ Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
 * Added airserv-ng - server for rx/tx on another system
 * Added airolib-ng for using hash tables to crack wpa/wpa2 psk (supports cowpatty rainbow tables)
 * Fixed compilation of optimized binaries with icc
-* Fixed compilation on FreeBSD, NetBSD and MacOSX
+* Fixed compilation on FreeBSD, NetBSD, OpenBSD and MacOSX
 * Better WDS handling and display
 * Added detection and removal of trailing fcs checksum
 * Fixed several memory leaks
 * Fixed being root when connecting to airserv-ng
+* Added OpenBSD sniffing support
 
 Version 0.9.2 (changes from aircrack-ng 0.9.1) - Released ?? ??? 2007:
 * aireplay-ng: Now works with rtc_cmos

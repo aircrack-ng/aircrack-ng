@@ -8,13 +8,13 @@ OBJS_NET	= network.o
 OBJS		= osdep.o $(OBJS_NET)
 
 OBJS_OBSD	= $(OBJS) openbsd.o openbsd_tap.o
+OBJS_NBSD	= $(OBJS) netbsd.o netbsd_tap.o
 OBJS_FBSD	= $(OBJS) freebsd.o freebsd_tap.o
 OBJS_LINUX	= $(OBJS) linux.o linux_tap.o radiotap-parser.o
 OBJS_DUMMY	= $(OBJS) dummy.o dummy_tap.o
 OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o
 
 all:
-	@echo ranlib: $(RANLIB)
 	@echo Building for $(OSNAME)
 	@$(MAKE) .os.$(OSNAME)
 
@@ -30,6 +30,11 @@ all:
 
 .os.OpenBSD: $(OBJS_OBSD)
 	$(AR) cru $(LIB) $(OBJS_OBSD)
+	$(RANLIB) $(LIB)
+	touch $(@)
+
+.os.NetBSD: $(OBJS_NBSD)
+	$(AR) cru $(LIB) $(OBJS_NBSD)
 	$(RANLIB) $(LIB)
 	touch $(@)
 
