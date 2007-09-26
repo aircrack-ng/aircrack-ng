@@ -887,8 +887,6 @@ usage:
         return( 1 );
     }
 
-    dev.fd_rtc = -1;
-
     if( memcmp( opt.r_bssid, NULL_MAC, 6) == 0 )
     {
         printf( "Please specify a BSSID (-a).\n" );
@@ -896,17 +894,25 @@ usage:
         return 1;
     }
 
+    dev.fd_rtc = -1;
+
     /* open the RTC device if necessary */
 
 #if defined(__i386__)
 #if defined(linux)
     if( 1 )
     {
-        if( ( dev.fd_rtc = open( "/dev/rtc", O_RDONLY ) ) < 0 )
+        if( ( dev.fd_rtc = open( "/dev/rtc0", O_RDONLY ) ) < 0 )
         {
-            perror( "open(/dev/rtc) failed" );
+            dev.fd_rtc = 0;
         }
-        else
+
+        if( (dev.fd_rtc == 0) && ( dev.fd_rtc = open( "/dev/rtc", O_RDONLY ) ) < 0 )
+        {
+            dev.fd_rtc = 0;
+        }
+
+        if( dev.fd_rtc > 0 )
         {
             if( ioctl( dev.fd_rtc, RTC_IRQP_SET, 1024 ) < 0 )
             {
