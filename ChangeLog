@@ -41,12 +41,6 @@ Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
 * aireplay-ng: Added channel synchonisation for --test between cards
 * aireplay-ng: Added possibility to limit injection test to one AP "-a" or "-e"
 * aireplay-ng: Added BSSID/ESSID detection, so it can be enough to specify one option
-* airmon-ng: Added driver detection through sysfs
-* airmon-ng: Added mac80211 support
-* airmon-ng: Added networkmanager detection - airmon-ng check
-* airmon-ng: Fixed interface name detection
-* airmon-ng: Fixed Ralink rt73 detection
-* airmon-ng: Using real interface name instead of first 7 bytes
 * makeivs-ng: Added parameters to set length, number and first IV of generated IVs
 * makeivs-ng: Added possibility to generate IVs sequentially or randomly
 * makeivs-ng: Added parameters to set percentage of false and dupe frames
