@@ -4,6 +4,10 @@ Version 0.9.2 (changes from aircrack-ng 0.9.1) - Released ?? ??? 2007:
 * airodump-ng: Fixed: Wrong information printed in CSV file (PSK for WEP with Shared key instead of SKA).
 * airdecap-ng: Fixed bug in calc_pmk() function causes wrong PMK to be computed
 * airmon-ng: Fixed detection of N770 wireless interface
+* airmon-ng: Fixed Ralink rt73 detection
+* airmon-ng: Added driver detection through sysfs
+* airmon-ng: Added mac80211 support
+* airmon-ng: Added networkmanager detection - airmon-ng check
 * manpages: updated airodump-ng manpage
 * Makefiles: Fixed OpenBSD makefile.
 
