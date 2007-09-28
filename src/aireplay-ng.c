@@ -1386,7 +1386,10 @@ int do_attack_fake_auth( void )
             case 4:
 
                 if( opt.a_delay == 0 )
+                {
+                    printf("\n");
                     return( 0 );
+                }
 
                 if( time( NULL ) - tt >= opt.a_delay )
                 {
