@@ -49,12 +49,23 @@ static struct sstate *get_ss()
 
 static void usage(char *p)
 {
-	printf(	"Usage: %s <opts>\n"
-		"-p\t<port>\tTCP port to listen on\n"
-		"-d\t<dev>\twifi device to serve\n"
-		"-c\t<chan>\tchan to start on\n"
-		"-v\t<level>\tdebug level\n"
-		, p);
+	if (p) {}
+
+	printf("\n"
+		"  %s - (C) 2007 Andrea Bittau\n"
+		"  http://www.aircrack-ng.org\n"
+		"\n"
+		"  Usage: airserv-ng <options>\n"
+		"\n"
+		"  Options:\n"
+		"\n"
+		"       -h         : This help screen\n"
+		"       -p  <port> : TCP port to listen on (default:666)\n"
+		"       -d <iface> : Wifi interface to use\n"
+		"       -c  <chan> : Channel to use\n"
+		"       -v <level> : Debug level (1 to 3; default: 1)\n"
+		"\n",
+		getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION));
 	exit(1);
 }
 
