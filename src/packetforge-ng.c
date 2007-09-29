@@ -1,10 +1,9 @@
 /*
  *  802.11 ARP-request WEP packet forgery
+ *  UDP, ICMP and custom packet forging developped by Martin Beck
  *
  *  Copyright (C) 2006,2007 Thomas d'Otreppe
  *  Copyright (C) 2004,2005  Christophe Devine (arpforge)
- *
- *  UDP, ICMP and custom packet forging developped by Martin Beck
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

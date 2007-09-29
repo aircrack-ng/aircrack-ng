@@ -1,5 +1,4 @@
 /*
- *  airolib-ng
  *  A tool to compute and manage PBKDF2 values as used in WPA-PSK and WPA2-PSK
  *
  *  Copyright (C) 2007 ebfe
@@ -58,7 +57,7 @@ void print_help() {
 		"                      Import a cowpatty file.\n"
 		"       export cowpatty <essid> <file>     :\n"
 		"                      Export to a cowpatty file.\n"
-		"\n", 
+		"\n",
 		getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION));
 }
 

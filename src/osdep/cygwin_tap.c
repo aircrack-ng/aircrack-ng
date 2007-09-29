@@ -1,10 +1,22 @@
-/*-
- * Copyright (c) 2007, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
- *
- * OS dependent API for cygwin.  TAP routines (OpenVPN TAP-WIN32).
- * Much of the code is derived from OpenVPN.
- *
- */
+  /*
+   *  Copyright (c) 2007, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
+   *
+   *  OS dependent API for cygwin. TAP routines
+   *
+   *  This program is free software; you can redistribute it and/or modify
+   *  it under the terms of the GNU General Public License as published by
+   *  the Free Software Foundation; either version 2 of the License, or
+   *  (at your option) any later version.
+   *
+   *  This program is distributed in the hope that it will be useful,
+   *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+   *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   *  GNU General Public License for more details.
+   *
+   *  You should have received a copy of the GNU General Public License
+   *  along with this program; if not, write to the Free Software
+   *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -45,7 +57,7 @@ static int stop_reader(struct tip_cygwin *priv)
 		priv->tc_running = 0;
 		while ((priv->tc_running != -1) && tries--)
 			sleep(1);
-		
+
 		if (tries <= 0)
 			return -1;
 	}
@@ -121,7 +133,7 @@ static int ti_read_reg(struct tip_cygwin *priv, char *key, char *res, int len)
 	if (RegQueryValueEx(priv->tc_key, key, NULL, &dt,
 	    (unsigned char*) res, &l) != ERROR_SUCCESS)
 		return -1;
-	    
+
 	if (dt != REG_SZ)
 		return -1;
 
@@ -143,11 +155,11 @@ static int ti_get_devs_component(struct tip_cygwin *priv, char *name)
 
 	if (ti_read_reg(priv, "ComponentId", key, sizeof(key)) == -1)
 		goto out;
-	
+
 	/* make sure component id matches */
 	if (strcmp(key, TAP_COMPONENT_ID) != 0)
 		goto out;
-	
+
 	/* get guid */
 	if (ti_read_reg(priv, "NetCfgInstanceId", key, sizeof(key)) == -1)
 		goto out;
@@ -173,7 +185,7 @@ static int ti_do_open_cygwin(struct tip_cygwin *priv)
 
 	/* open network driver key */
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, ADAPTER_KEY, 0, KEY_READ, &ak47)
-	    != ERROR_SUCCESS)	
+	    != ERROR_SUCCESS)
 		return -1;
 
 	/* find tap */
@@ -181,7 +193,7 @@ static int ti_do_open_cygwin(struct tip_cygwin *priv)
 		len = sizeof(name);
 		if (RegEnumKeyEx(ak47, i, name, &len, NULL, NULL, NULL, NULL)
 		    != ERROR_SUCCESS)
-			break;	
+			break;
 
 		rc = ti_get_devs_component(priv, name);
 		if (rc)
@@ -324,7 +336,7 @@ static int ti_reset(struct tip_cygwin *priv)
 		rc = ti_do_reset(&hdi, &did);
 		if (rc)
 			break;
-		
+
 		rc = ti_restart(priv);
 		break;
 	}
@@ -376,7 +388,7 @@ static int ti_set_mac_cygwin(struct tif *ti, unsigned char *mac)
 			return -1;
 		strcat(str, tmp);
 	}
-	
+
 	/* check if changed */
 	if (ti_read_reg(priv, key, strold, sizeof(strold)) != -1) {
 		if (strcmp(str, strold) == 0)
@@ -412,7 +424,7 @@ static int ti_set_ip_cygwin(struct tif *ti, struct in_addr *ip)
 			p = p->Next;
 			continue;
 		}
-	
+
 		/* delete ips */
 		ips = &p->IpAddressList;
 		while (ips) {
@@ -496,7 +508,7 @@ static int ti_do_io_lock(struct tip_cygwin *priv, void *buf, int len,
 
 	if (pthread_mutex_lock(&priv->tc_mtx))
 		return -1;
-	
+
 	rc = ti_do_io(priv, buf, len, o, wr);
 
 	if (pthread_mutex_unlock(&priv->tc_mtx))
@@ -547,7 +559,7 @@ static void *ti_reader(void *arg)
 		/* write it's length */
 		if (write(priv->tc_pipe[1], &len, sizeof(len)) != sizeof(len))
 			break;
-	
+
 		/* write payload */
 		if (write(priv->tc_pipe[1], buf, len) != len)
 			break;
@@ -590,7 +602,7 @@ static struct tif *ti_open_cygwin(char *iface)
 
 	if (pthread_mutex_init(&priv->tc_mtx, NULL))
 		goto err;
-	
+
 	/* launch reader */
 	if (start_reader(priv))
 		goto err;
