@@ -20,6 +20,9 @@
 
 #include "osdep/osdep.h"
 #include "osdep/network.h"
+#include "version.h"
+
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 
 void sighandler( int signum )
 {
