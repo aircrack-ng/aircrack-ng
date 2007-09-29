@@ -2388,6 +2388,7 @@ void usage(char *p)
 		"       -s     <buddy ip> : Buddy-ng IP address (mandatory)\n"
 		"       -f        <iface> : Interface to use (mandatory)\n"
 		"       -c      <channel> : Lock card to this channel\n"
+		"       -n                : Determine Internet IP only\n"
 		"\n",
 		getVersion("Easside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION));
 }
