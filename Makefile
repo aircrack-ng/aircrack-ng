@@ -33,15 +33,17 @@ uninstall:
 	-rm -f $(sbindir)/patchchk
 	-rm -f $(mandir)/aircrack-ng.1
 	-rm -f $(mandir)/airdecap-ng.1
+	-rm -f $(mandir)/airdriver-ng.1
 	-rm -f $(mandir)/aireplay-ng.1
 	-rm -f $(mandir)/airmon-ng.1
 	-rm -f $(mandir)/airodump-ng.1
 	-rm -f $(mandir)/airolib-ng.1
+	-rm -f $(mandir)/airsev-ng.1
 	-rm -f $(mandir)/airtun-ng.1
+	-rm -f $(mandir)/buddy-ng.1
 	-rm -f $(mandir)/easside-ng.1
 	-rm -f $(mandir)/ivstools.1
 	-rm -f $(mandir)/kstats.1
-	-rm -f $(mandir)/makeivs.1
 	-rm -f $(mandir)/makeivs-ng.1
 	-rm -f $(mandir)/packetforge-ng.1
 	-rm -f $(mandir)/wesside-ng.1
