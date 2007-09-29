@@ -42,6 +42,7 @@ uninstall:
 	-rm -f $(mandir)/ivstools.1
 	-rm -f $(mandir)/kstats.1
 	-rm -f $(mandir)/makeivs.1
+	-rm -f $(mandir)/makeivs-ng.1
 	-rm -f $(mandir)/packetforge-ng.1
 	-rm -f $(mandir)/wesside-ng.1
 	-rm -fr $(docdir)
