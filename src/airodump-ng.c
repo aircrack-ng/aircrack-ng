@@ -3002,7 +3002,6 @@ int dump_write_csv( void )
 
     fprintf( G.f_txt, "\r\n" );
     fflush( G.f_txt );
-    sync();
     return 0;
 }
 
