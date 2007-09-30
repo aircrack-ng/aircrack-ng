@@ -319,7 +319,7 @@ void batch_process(sqlite3* db) {
 					rowcount += rc;
 					gettimeofday(&curtime,NULL);
 					int timediff = curtime.tv_sec - starttime.tv_sec;
-					fprintf(stdout,"\rComputed %i PMK in %i seconds (%i PMK/s, %i in buffer). ",rowcount,timediff, timediff > 0 ? rowcount / timediff : 0, query_int(db,"SELECT COUNT(*) FROM workbench;"));
+					fprintf(stdout,"\rComputed %i PMK in %i seconds (%i PMK/s, %i in buffer). ",rowcount,timediff, timediff > 0 ? rowcount / timediff : rowcount, query_int(db,"SELECT COUNT(*) FROM workbench;"));
 					fflush(stdout);
 				}
 			} while (rc > 0);
@@ -331,6 +331,7 @@ void batch_process(sqlite3* db) {
 		cur_essid = query_int(db,"SELECT essid.essid_id FROM essid LEFT JOIN pmk USING (essid_id) WHERE VERIFY_ESSID(essid.essid) == 0 GROUP BY essid.essid_id HAVING COUNT(pmk.essid_id) < (SELECT COUNT(*) FROM passwd) ORDER BY essid.prio,COUNT(pmk.essid_id),RANDOM() LIMIT 1;");
 		if (cur_essid == 0) {
 			printf("All ESSID processed.\n\n");
+			sqlite3_close(db);
 			exit(0);
 			/*
 			printf("No free ESSID found. Will try determining new ESSID in 5 minutes...\n");
@@ -763,6 +764,7 @@ int main(int argc, char **argv){
 #endif
 
 		sqlite3_close(db);
+		printf("Database <%s> sucessfully created\n", argv[1]);
 		return 0;
 	}
 
@@ -809,8 +811,6 @@ int main(int argc, char **argv){
 	}
 #endif
 
-
-	printf(argv[2]);
 	if (strcmp(argv[2],"stats")==0) {
 		if (argv[3] == NULL) {
 			show_stats(db,0);
