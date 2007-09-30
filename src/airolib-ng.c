@@ -331,6 +331,7 @@ void batch_process(sqlite3* db) {
 		cur_essid = query_int(db,"SELECT essid.essid_id FROM essid LEFT JOIN pmk USING (essid_id) WHERE VERIFY_ESSID(essid.essid) == 0 GROUP BY essid.essid_id HAVING COUNT(pmk.essid_id) < (SELECT COUNT(*) FROM passwd) ORDER BY essid.prio,COUNT(pmk.essid_id),RANDOM() LIMIT 1;");
 		if (cur_essid == 0) {
 			printf("All ESSID processed.\n\n");
+			exit(0);
 			/*
 			printf("No free ESSID found. Will try determining new ESSID in 5 minutes...\n");
 			sleep(60*5);
