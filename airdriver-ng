@@ -520,7 +520,7 @@ DETECT_PCI[$i]="2100"
 DETECT_CS[$i]=""
 
 i=$(($i+1))
-DNAME[$i]="Intel Pro Wireless 2200 B/G"
+DNAME[$i]="Intel Pro Wireless 2200 (B/G)/2915 (A/B/G)"
 DSTACK[$i]="0"
 DMODINFO[$i]=""
 DMODULE[$i]="ipw2200"
