@@ -330,6 +330,8 @@ void batch_process(sqlite3* db) {
 
 		cur_essid = query_int(db,"SELECT essid.essid_id FROM essid LEFT JOIN pmk USING (essid_id) WHERE VERIFY_ESSID(essid.essid) == 0 GROUP BY essid.essid_id HAVING COUNT(pmk.essid_id) < (SELECT COUNT(*) FROM passwd) ORDER BY essid.prio,COUNT(pmk.essid_id),RANDOM() LIMIT 1;");
 		if (cur_essid == 0) {
+			printf("All ESSID processed.\n\n");
+			/*
 			printf("No free ESSID found. Will try determining new ESSID in 5 minutes...\n");
 			sleep(60*5);
 			// slower, yet certain. should never be any better than the above, unless users fumble with the db.
@@ -338,6 +340,7 @@ void batch_process(sqlite3* db) {
 				printf("No free ESSID found. Sleeping 25 additional minutes...\n");
 				sleep(60*25);
 			}
+			*/
 		}
 	}
 
@@ -348,7 +351,7 @@ void batch_process(sqlite3* db) {
 // Verify an ESSID. Returns 1 if ESSID is invalid.
 //TODO More things to verify? Invalid chars?
 int verify_essid(char* essid) {
-	return essid == NULL || strlen(essid) > 32;
+	return essid == NULL || strlen(essid) < 1 || strlen(essid) > 32;
 }
 
 // sql function which checks a given ESSID
@@ -644,7 +647,6 @@ int import_ascii(sqlite3* db, char* mode, char* filename) {
 			}
 		} else {
 			ignored++;
-			//fprintf(stdout,"Invalid line \"%s\" will not be imported.\n",buffer);
 		}
 		if (imported % 1000 == 0) {
 			fprintf(stdout,"%i lines read, %i invalid lines ignored.\r",imported,ignored);
