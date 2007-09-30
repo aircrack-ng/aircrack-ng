@@ -191,6 +191,14 @@ struct AP_info
     char decloak_detect;      /* run decloak detection? */
     struct pkt_buf *packets;  /* list of captured packets (last few seconds) */
     char is_decloak;          /* detected decloak */
+
+	// This feature eats 48Mb per AP
+	int EAP_detected;
+    unsigned char *data_root; /* first 2 bytes of data if */
+    						  /* WEP network; used for    */
+    						  /* detecting WEP cloak	  */
+    						  /* + one byte to indicate   */
+    						  /* (in)existence of the IV  */
 };
 
 struct WPA_hdsk
@@ -339,6 +347,7 @@ struct globals
     char*   s_iface;        /* source interface to read from */
     FILE *f_cap_in;
     struct pcap_file_header pfh_in;
+    int detect_anomaly;     /* Detect WIPS protecting WEP in action */
 }
 G;
 
@@ -1102,6 +1111,8 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         ap_cur->decloak_detect=G.decloak;
         ap_cur->is_decloak = 0;
         ap_cur->packets = NULL;
+        ap_cur->data_root = NULL;
+        ap_cur->EAP_detected = 0;
     }
 
     /* update the last time seen */
@@ -1465,8 +1476,6 @@ skip_probe:
                     offset = 0;
                 }
 
-//                printf("sec, length: %d, %d\n", ap_cur->security, length);
-
                 if(length < (18+offset))
                 {
                     p += length+2;
@@ -1482,9 +1491,6 @@ skip_probe:
                 numauth = p[(10+offset) + 4*numuni] + (p[(11+offset) + 4*numuni]<<8);
 
                 p += (10+offset);
-
-//                printf("numuni: %d\n", numuni);
-//                printf("numauth: %d\n", numauth);
 
                 if(type != 0x30)
                 {
@@ -1814,6 +1820,29 @@ skip_probe:
 
                 ap_cur->nb_data++;
             }
+
+            // Record all data linked to IV to detect WEP Cloaking
+            if( G.f_ivs == NULL && G.detect_anomaly)
+            {
+				// Only allocate this when seeing WEP AP
+				if (ap_cur->data_root == NULL)
+					ap_cur->data_root = data_init();
+
+				// Only works with full capture, not IV-only captures
+				if (data_check(ap_cur->data_root, &h80211[z], &h80211[z + 4])
+					== CLOAKING && ap_cur->EAP_detected == 0)
+				{
+
+					//If no EAP/EAP was detected, indicate WEP cloaking
+                    memset(G.message, '\x00', sizeof(G.message));
+                    snprintf( G.message, sizeof( G.message ) - 1,
+                        "][ WEP Cloaking: %02X:%02X:%02X:%02X:%02X:%02X ",
+                        ap_cur->bssid[0], ap_cur->bssid[1], ap_cur->bssid[2],
+                        ap_cur->bssid[3], ap_cur->bssid[4], ap_cur->bssid[5]);
+
+				}
+			}
+
         }
         else
         {
@@ -1830,6 +1859,8 @@ skip_probe:
         /* check ethertype == EAPOL */
         if( h80211[z] == 0x88 && h80211[z + 1] == 0x8E && (h80211[1] & 0x40) != 0x40 )
         {
+			ap_cur->EAP_detected = 1;
+
             z += 2;     //skip ethertype
 
             if( st_cur == NULL )
@@ -3592,6 +3623,7 @@ int main( int argc, char *argv[] )
     G.s_file       =  NULL;
     G.s_iface      =  NULL;
     G.f_cap_in     =  NULL;
+    G.detect_anomaly = 0;
 
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
@@ -3638,6 +3670,7 @@ int main( int argc, char *argv[] )
         {"help",     0, 0, 'H'},
         {"nodecloak",0, 0, 'D'},
         {"showack",  0, 0, 'A'},
+        {"detect-anomaly", 0, 0, 'E'},
         {0,          0, 0,  0 }
     };
 
@@ -3686,7 +3719,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:E",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3706,6 +3739,10 @@ int main( int argc, char *argv[] )
 
                 printf("\"%s --help\" for help.\n", argv[0]);
                 return( 1 );
+
+			case 'E':
+				G.detect_anomaly = 1;
+				break;
 
             case 'e':
 
@@ -4380,9 +4417,13 @@ usage:
 
     while( ap_cur != NULL )
     {
+		// Clean content of ap_cur list (first element: G.ap_1st)
         uniqueiv_wipe( ap_cur->uiv_root );
 
         list_tail_free(&(ap_cur->packets));
+
+		if (G.detect_anomaly)
+        	data_wipe(ap_cur->data_root);
 
         ap_prv = ap_cur;
         ap_cur = ap_cur->next;
@@ -4392,6 +4433,7 @@ usage:
 
     while( ap_cur != NULL )
     {
+		// Freeing AP List
         ap_next = ap_cur->next;
 
         if( ap_cur != NULL )

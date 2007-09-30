@@ -172,3 +172,64 @@ void uniqueiv_wipe( unsigned char **uiv_root )
 
     return;
 }
+
+
+unsigned char *data_init( void )
+{
+	// It could eat up to (256*256*256) * 3 bytes = 48Mb :/
+	unsigned char * IVs = (unsigned char *) calloc(256*256*256 * 3, sizeof(unsigned char));
+	return IVs;
+}
+
+/* Checking WEP packet:
+ * The 2 first bytes of 2 different data packets having the same IV (for the same AP)
+ * should be exactly the same due to the fact that unencrypted, they are always the same:
+ * AA AA
+ */
+
+int data_check(unsigned char *data_root, unsigned char IV[3], unsigned char data[2])
+{
+	int IV_position, cloaking;
+
+	// Init vars
+	cloaking = NO_CLOAKING;
+
+	// Make sure it is allocated
+	if (data_root != NULL)
+	{
+		// Try to find IV
+		IV_position = (((IV[0] * 256) + IV[1]) * 256) + IV[2];
+		IV_position *= 3;
+
+		// Check if existing
+		if ( *(data_root + IV_position) == 0)
+		{
+			// Not existing
+			*(data_root + IV_position) = 1;
+
+			// Add it
+			*(data_root + IV_position + 1) = data[0];
+			*(data_root + IV_position + 2) = data[1];
+
+		}
+		else
+		{
+			// Good, we found it, so check it now
+			if ( *(data_root + IV_position + 1) != data[0] ||
+				*(data_root + IV_position + 2) != data[1])
+			{
+				cloaking = CLOAKING;
+			}
+		}
+
+	}
+	// else, cannot detect since it is not started
+
+	return cloaking;
+}
+
+void data_wipe(unsigned char * data)
+{
+	if (data)
+		free(data);
+}
