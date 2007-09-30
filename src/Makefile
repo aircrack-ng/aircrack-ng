@@ -14,6 +14,18 @@ ifeq ($(SQLITE), true)
 BINFILES	+= airolib-ng$(EXE)
 endif
 
+ifeq ($(sqlite), true)
+BINFILES        += airolib-ng$(EXE)
+endif
+
+ifeq ($(SQLITE), TRUE)
+BINFILES        += airolib-ng$(EXE)
+endif
+
+ifeq ($(sqlite), TRUE)
+BINFILES        += airolib-ng$(EXE)
+endif
+
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
 		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE)
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
@@ -46,11 +58,23 @@ endif
 LIBOSD		= $(OSD)/lib$(OSD).a
 
 LIBSSL		= -lssl -lcrypto $(LDFLAGS)
+LIBSQL		= 
 ifeq ($(SQLITE), true)
 LIBSQL		= -L/usr/local/lib -lsqlite3
-else
-LIBSQL		=
 endif
+
+ifeq ($(sqlite), true)
+LIBSQL          = -L/usr/local/lib -lsqlite3
+endif
+
+ifeq ($(SQLITE), TRUE)
+LIBSQL          = -L/usr/local/lib -lsqlite3
+endif
+
+ifeq ($(sqlite), TRUE)
+LIBSQL          = -L/usr/local/lib -lsqlite3
+endif
+
 
 all: osd userland $(SBINFILES)
 
