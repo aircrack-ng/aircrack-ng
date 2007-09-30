@@ -148,7 +148,7 @@ strip: $(BINFILES) $(SBINFILES)
 
 clean:
 	$(MAKE) -C $(OSD) clean
-	-rm -f $(SBINFILES) $(BINFILES) $(OPTFILES) *.o
+	-rm -f $(SBINFILES) $(BINFILES) $(OPTFILES) airolib-ng$(EXE) *.o
 
 distclean: clean
 
