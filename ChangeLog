@@ -1,4 +1,4 @@
-Version 1.0 (changes from aircrack-ng 0.9) - Released ?? ???? 2007:
+Version 1.0-beta1 (changes from aircrack-ng 0.9.2) - Released 01 October 2007:
 * airodump-ng: Added --berlin option (see code for more information).
 * airodump-ng: Fixed 100% cpu utilization while channelhopping on rtap interface
 * airodump-ng: Fixed frame length < 10bytes bug
