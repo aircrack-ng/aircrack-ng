@@ -12,19 +12,43 @@ typedef int (*PROC4)(HANDLE,void *,void *);
 
 PAirpcapHandle airpcap_ad;
 pcap_t *winpcap_ad;
+int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power);
+
+#define PPH_PH_VERSION		((u_int8_t)0x00)
+#define	PPI_FIELD_TYPE_802_11_COMMON		((u_int16_t)0x02)
 
 #pragma pack(push)
-
 #pragma pack(1)
-typedef struct _ieee80211_radiotap_header 
-{
-	u_int8_t it_version;
-	u_int8_t it_pad;
-	u_int16_t it_len;
-	u_int32_t it_present;
-}
-ieee80211_radiotap_header;
 
+typedef struct _PPI_PACKET_HEADER
+{
+	u_int8_t	PphVersion;
+	u_int8_t	PphFlags;
+	u_int16_t	PphLength;
+	u_int32_t	PphDlt;
+}
+PPI_PACKET_HEADER, *PPPI_PACKET_HEADER;
+
+typedef struct _PPI_FIELD_HEADER
+{
+	u_int16_t PfhType;
+	u_int16_t PfhLength;
+}
+PPI_FIELD_HEADER, *PPPI_FIELD_HEADER;
+
+typedef struct _PPI_FIELD_802_11_COMMON
+{
+	u_int64_t	TsfTimer;
+	u_int16_t	Flags;
+	u_int16_t	Rate;
+	u_int16_t	ChannelFrequency;
+	u_int16_t	ChannelFlags;
+	u_int8_t	FhssHopset;
+	u_int8_t	FhssPattern;
+	int8_t		DbmAntSignal;
+	int8_t		DbmAntNoise;
+}
+PPI_FIELD_802_11_COMMON, *PPPI_FIELD_802_11_COMMON;
 #pragma pack(pop)
 
 
@@ -109,7 +133,7 @@ int open_adapter( int card_index )
 		return ( 1 );
 	}
 
-	if( !AirpcapSetLinkType( airpcap_ad, AIRPCAP_LT_802_11_PLUS_RADIO ) )
+	if( !AirpcapSetLinkType( airpcap_ad, AIRPCAP_LT_802_11_PLUS_PPI ) )
 	{
 		fprintf( stderr, "Error setting the link layer: %s\n", AirpcapGetLastError( airpcap_ad ) );
 		pcap_close( winpcap_ad );
@@ -138,7 +162,8 @@ int GetNextPacket( char **payload, int *caplen, char *power)
 	struct pcap_pkthdr *header;
 	const u_char *pkt_data;
 	int res;
-	ieee80211_radiotap_header *rt;
+	int hdrlen; 
+	int ppipower;
 
 	res = pcap_next_ex( winpcap_ad, &header, &pkt_data );
 	
@@ -158,16 +183,16 @@ int GetNextPacket( char **payload, int *caplen, char *power)
 		return( 1 );
 	}
 
-	rt = (ieee80211_radiotap_header*)pkt_data;
+	ppi_decode(( char * )pkt_data, header->caplen, &hdrlen, &ppipower);
 
-	*payload = ( char * )pkt_data + rt->it_len;
-	*caplen = header->caplen - rt->it_len;
+	*payload = ( char * )pkt_data + hdrlen;
+	*caplen = header->caplen - hdrlen;
 	if( header->caplen > 14 )
 	{
 		// Yes this is a hack. 
 		// But it's based on the assumption that radiotap header from AirPcap will be stable, which is
 		// going to be true at least for the part before the power information.
-		*power = pkt_data[14];
+		*power = ppipower;
 	}
 
 	return( 0 );
@@ -180,4 +205,85 @@ int start_monitor( void *callback )
 
 void stop_monitor( void )
 {
+}
+
+int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
+{
+	PPPI_PACKET_HEADER pPpiPacketHeader;
+	PPPI_FIELD_HEADER	pFieldHeader;
+	ULONG position = 0;
+
+	// Sanity checks
+	if (caplen < sizeof(*pPpiPacketHeader)) 
+	{
+		// Packet smaller than the PPI fixed header
+		return( 1 );
+	}
+
+	pPpiPacketHeader = (PPPI_PACKET_HEADER)p;
+
+	*hdrlen = pPpiPacketHeader->PphLength;
+
+	if(caplen < *hdrlen) 
+	{
+		// Packet smaller than the PPI fixed header
+		return( 1 );
+	}
+
+	position = sizeof(*pPpiPacketHeader);
+
+	if (pPpiPacketHeader->PphVersion != PPH_PH_VERSION)
+	{
+		fprintf( stderr, "Unknown PPI packet header version (%u)\n", pPpiPacketHeader->PphVersion);
+		return( 1 );
+	}
+
+	do
+	{
+		//
+		// now we suppose to have an 802.11-Common header
+		//
+		if (*hdrlen < sizeof(*pFieldHeader) + position)
+		{
+			break;
+		}
+
+		pFieldHeader = (PPPI_FIELD_HEADER)(p + position);
+		position += sizeof(*pFieldHeader);
+
+		switch(pFieldHeader->PfhType)
+		{
+		case PPI_FIELD_TYPE_802_11_COMMON:
+			if (pFieldHeader->PfhLength != sizeof(PPI_FIELD_802_11_COMMON) || caplen - position < sizeof(PPI_FIELD_802_11_COMMON))
+			{
+				//
+				// the header is bogus, just skip it
+				//
+				fprintf( stderr, "Bogus 802.11-Common Field. Skipping it.\n");
+			}
+			else
+			{
+				PPPI_FIELD_802_11_COMMON pField = (PPPI_FIELD_802_11_COMMON)(p + position);
+
+				if (pField->DbmAntSignal != -128)
+				{
+					*power = (int)pField->DbmAntSignal;
+				}
+				else
+				{
+					*power = 0;
+				}
+			}
+			break;
+
+		default:
+			// we do not know this field. Just print type and length and skip
+			break;
+		}
+		
+		position += pFieldHeader->PfhLength;
+	}
+	while(TRUE);
+
+	return( 0 );
 }
