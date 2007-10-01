@@ -691,7 +691,7 @@ static int linux_set_channel(struct wif *wi, int channel)
         {
             close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
             execlp( dev->iwpriv, "iwpriv", wi_get_ifname(wi),
-                    "monitor", "2", s, NULL );
+                    "monitor", "1", s, NULL );
             exit( 1 );
         }
 
@@ -867,7 +867,7 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
             {
                 close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
                 execlp( dev->iwpriv, "iwpriv", iface,
-                        "monitor", "2", "1", NULL );
+                        "monitor", "1", "1", NULL );
                 exit( 1 );
             }
 
