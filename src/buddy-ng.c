@@ -31,6 +31,7 @@
 #include <netinet/udp.h>
 #include <assert.h>
 #include <grp.h>
+#include <sys/utsname.h>
 
 #include "easside.h"
 #include "version.h"
@@ -186,10 +187,8 @@ void drop_privs()
 		err(1, "setuid()");
 }
 
-void usage(char *name)
+void usage()
 {
-	if (name) {}
-
 	printf("\n"
 		"  %s - (C) 2007 Andrea Bittau\n"
 		"  http://www.aircrack-ng.org\n"
@@ -208,15 +207,12 @@ void usage(char *name)
 
 int main(int argc, char *argv[])
 {
-	int s;
-	int port = S_DEFAULT_PORT;
+	struct utsname utsName;
 	struct sockaddr_in s_in;
-	int dude;
 	struct sockaddr_in dude_sin;
-	int len;
-	int udp;
-	int ch;
-	int drop = 1;
+	int len, udp, ch, dude, s;
+	int port = S_DEFAULT_PORT;
+	int drop;
 
 	while ((ch = getopt(argc, argv, "ph")) != -1) {
 		switch (ch) {
@@ -226,7 +222,7 @@ int main(int argc, char *argv[])
 
 		default:
 		case 'h':
-			usage(argv[0]);
+			usage();
 			break;
 
 		}
@@ -246,6 +242,14 @@ int main(int argc, char *argv[])
 	s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (s == -1)
 		err(1, "socket(TCP)");
+
+	drop = 1;
+
+	// Do not drop privileges on Windows (doing it fails).
+	if (uname(&utsName) == 0)
+	{
+		drop = strncasecmp(utsName.sysname, "cygwin", 6);
+	}
 
 	if (drop)
 		drop_privs();
