@@ -1244,6 +1244,7 @@ int do_attack_fake_auth( void )
                 memcpy( h80211 + 10, opt.r_smac , 6 );
                 memcpy( h80211 + 16, opt.r_bssid, 6 );
 
+                printf("\n");
                 PCT; printf( "Sending Authentication Request" );
                 fflush( stdout );
                 gotack=0;
@@ -1348,7 +1349,6 @@ int do_attack_fake_auth( void )
                 memcpy( h80211 + 30, opt.r_essid,  n );
                 memcpy( h80211 + 30 + n, RATES, 16 );
                 memcpy( h80211 + 24, capa, 2);
-
 
                 PCT; printf( "Sending Association Request" );
                 fflush( stdout );
