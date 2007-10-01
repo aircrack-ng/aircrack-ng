@@ -1,0 +1,311 @@
+diff -Naur rtl8180-0.21_orig/ieee80211_crypt.c rtl8180-0.21_patched/ieee80211_crypt.c
+--- rtl8180-0.21_orig/ieee80211_crypt.c	2004-11-27 20:33:23.000000000 +0100
++++ rtl8180-0.21_patched/ieee80211_crypt.c	2007-02-18 17:35:03.000000000 +0100
+@@ -11,8 +11,10 @@
+  *
+  */
+ #ifndef CONFIG_IEEE80211_NOWEP
+-#include <linux/config.h>
+ #include <linux/version.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
+ #include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/slab.h>
+diff -Naur rtl8180-0.21_orig/ieee80211_crypt_wep.c rtl8180-0.21_patched/ieee80211_crypt_wep.c
+--- rtl8180-0.21_orig/ieee80211_crypt_wep.c	2005-04-12 14:25:42.000000000 +0200
++++ rtl8180-0.21_patched/ieee80211_crypt_wep.c	2007-02-18 17:35:03.000000000 +0100
+@@ -9,8 +9,10 @@
+  * more details.
+  */
+ #ifndef CONFIG_IEEE80211_NOWEP
+-#include <linux/config.h>
+ #include <linux/version.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
+ #include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/slab.h>
+@@ -28,7 +30,11 @@
+ #endif	
+ 
+ #include <linux/crypto.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
+ #include <asm/scatterlist.h>
++#else
++#include <linux/scatterlist.h>
++#endif
+ #include <linux/crc32.h>
+ 
+ #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,5,47))
+diff -Naur rtl8180-0.21_orig/ieee80211_module.c rtl8180-0.21_patched/ieee80211_module.c
+--- rtl8180-0.21_orig/ieee80211_module.c	2005-04-15 00:29:23.000000000 +0200
++++ rtl8180-0.21_patched/ieee80211_module.c	2007-02-18 17:35:03.000000000 +0100
+@@ -37,8 +37,11 @@
+   
+ *******************************************************************************/
+ #include <linux/init.h>
++#include <linux/version.h>
+ #include <linux/compiler.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
+ #include <linux/config.h>
++#endif
+ #include <linux/errno.h>
+ #include <linux/if_arp.h>
+ #include <linux/in6.h>
+@@ -53,7 +56,6 @@
+ #include <linux/slab.h>
+ #include <linux/tcp.h>
+ #include <linux/types.h>
+-#include <linux/version.h>
+ #include <linux/wireless.h>
+ #include <linux/etherdevice.h>
+ #include <asm/uaccess.h>
+diff -Naur rtl8180-0.21_orig/ieee80211_rx.c rtl8180-0.21_patched/ieee80211_rx.c
+--- rtl8180-0.21_orig/ieee80211_rx.c	2005-04-12 14:13:18.000000000 +0200
++++ rtl8180-0.21_patched/ieee80211_rx.c	2007-02-18 17:35:03.000000000 +0100
+@@ -16,8 +16,11 @@
+  * more details.
+  */
+ 
++#include <linux/version.h>
+ #include <linux/compiler.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
+ #include <linux/config.h>
++#endif
+ #include <linux/errno.h>
+ #include <linux/if_arp.h>
+ #include <linux/in6.h>
+@@ -32,7 +35,6 @@
+ #include <linux/slab.h>
+ #include <linux/tcp.h>
+ #include <linux/types.h>
+-#include <linux/version.h>
+ #include <linux/wireless.h>
+ #include <linux/etherdevice.h>
+ #include <asm/uaccess.h>
+diff -Naur rtl8180-0.21_orig/ieee80211_tx.c rtl8180-0.21_patched/ieee80211_tx.c
+--- rtl8180-0.21_orig/ieee80211_tx.c	2005-04-12 23:02:17.000000000 +0200
++++ rtl8180-0.21_patched/ieee80211_tx.c	2007-02-18 17:35:03.000000000 +0100
+@@ -31,7 +31,10 @@
+ 
+ ******************************************************************************/
+ #include <linux/compiler.h>
++#include <linux/version.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
+ #include <linux/config.h>
++#endif
+ #include <linux/errno.h>
+ #include <linux/if_arp.h>
+ #include <linux/in6.h>
+@@ -46,7 +49,6 @@
+ #include <linux/slab.h>
+ #include <linux/tcp.h>
+ #include <linux/types.h>
+-#include <linux/version.h>
+ #include <linux/wireless.h>
+ #include <linux/etherdevice.h>
+ #include <asm/uaccess.h>
+@@ -577,6 +579,14 @@
+ 	
+ 	spin_lock_irqsave(&ieee->lock,flags);
+ 	
++	if (ieee->iw_mode == IW_MODE_MONITOR) {
++		ieee->func->hard_data_xmit(ieee->dev,skb,0);
++		dev_kfree_skb_any(skb);
++		ieee->stats.tx_packets++;
++		ieee->dev->trans_start = jiffies;
++		goto exit;
++	}
++	
+ 	if(ieee->queue_stop){
+ 		IEEE80211DMESG("EE: IEEE hard_start_xmit invoked when kernel queue should be stopped");
+ 		netif_stop_queue(ieee->dev);
+diff -Naur rtl8180-0.21_orig/ieee80211_wx.c rtl8180-0.21_patched/ieee80211_wx.c
+--- rtl8180-0.21_orig/ieee80211_wx.c	2005-04-10 19:54:20.000000000 +0200
++++ rtl8180-0.21_patched/ieee80211_wx.c	2007-02-18 17:35:03.000000000 +0100
+@@ -34,6 +34,9 @@
+ ******************************************************************************/
+ #include <linux/wireless.h>
+ #include <linux/version.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+ #include <linux/kmod.h> /* request_module */
+ #include <linux/kernel.h>
+diff -Naur rtl8180-0.21_orig/Makefile rtl8180-0.21_patched/Makefile
+--- rtl8180-0.21_orig/Makefile	2005-02-27 19:48:47.000000000 +0100
++++ rtl8180-0.21_patched/Makefile	2007-02-18 17:34:21.000000000 +0100
+@@ -59,7 +59,7 @@
+ 	make -C $(KSRC) SUBDIRS=$(PWD) modules
+ 
+ 2.6:
+-	$(MAKE) -C $(KSRC) SUBDIRS=$(PWD) MODVERDIR=$(PWD) modules
++	$(MAKE) -C $(KSRC) SUBDIRS=$(PWD) modules
+ 
+ clean:
+ 	rm -f *.mod.c *.mod *.o .*.cmd *.ko .*.flags
+diff -Naur rtl8180-0.21_orig/Makefile26 rtl8180-0.21_patched/Makefile26
+--- rtl8180-0.21_orig/Makefile26	2005-02-27 19:48:48.000000000 +0100
++++ rtl8180-0.21_patched/Makefile26	2007-02-18 17:34:21.000000000 +0100
+@@ -26,7 +26,7 @@
+ 	rm -f *.mod.c *.mod *.o .*.cmd *.ko 
+ 	rm -rf $(PWD)/tmp
+ modules:
+-	$(MAKE) -C $(KSRC) SUBDIRS=$(PWD) MODVERDIR=$(PWD) modules
++	$(MAKE) -C $(KSRC) SUBDIRS=$(PWD) modules
+ 
+ MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless
+ MOD_ALGDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/alg
+diff -Naur rtl8180-0.21_orig/r8180_core.c rtl8180-0.21_patched/r8180_core.c
+--- rtl8180-0.21_orig/r8180_core.c	2005-04-12 14:39:56.000000000 +0200
++++ rtl8180-0.21_patched/r8180_core.c	2007-02-18 17:35:03.000000000 +0100
+@@ -121,6 +121,7 @@
+ MODULE_AUTHOR("Andrea Merello <andreamrl@tiscali.it>");
+ MODULE_DESCRIPTION("Linux driver for Realtek RTL8180 WiFi cards");
+ 
++#if 0
+ MODULE_PARM(ifname,"s");
+ MODULE_PARM_DESC(devname," Net interface name, wlan%d=default");
+ 
+@@ -132,7 +133,7 @@
+ 
+ MODULE_PARM(channels,"i");
+ MODULE_PARM_DESC(channels," Channel bitmask for specific locales. NYI");
+-
++#endif
+ 
+ static int __devinit rtl8180_pci_probe(struct pci_dev *pdev, 
+ 				       const struct pci_device_id *id);
+@@ -452,13 +453,14 @@
+ }		
+ 
+ 
+-
++#if WIRELESS_EXT < 17
+ static struct iw_statistics *r8180_get_wireless_stats(struct net_device *dev)
+ {
+        struct r8180_priv *priv = dev->priv;
+ 
+        return &priv->wstats;
+ }
++#endif
+ 
+ void rtl8180_proc_module_init(void)
+ {	
+@@ -2204,11 +2206,12 @@
+ void rtl8180_hard_data_xmit(struct net_device *dev,struct sk_buff *skb,short morefrag)
+ {
+ 	struct r8180_priv *priv = (struct r8180_priv *)dev->priv;
+-	int mode;
++	int mode, priority = LOW_PRIORITY;
+ 	//unsigned long flags;
+ 	
+ 	mode = priv->ieee80211->iw_mode;
+-	
++	if( mode == IW_MODE_MONITOR )
++		priority = HI_PRIORITY;
+ 	
+ 	/*
+ 	* This function doesn't require lock because we make
+@@ -2220,13 +2223,13 @@
+ 	//spin_lock_irqsave(&priv->tx_lock,flags);	
+ 			
+ 	
+-	if (!check_nic_enought_desc(dev, LOW_PRIORITY)){
++	if (!check_nic_enought_desc(dev, priority)){
+ 		DMESG("Error: no descriptor left by previous TX (avail %d) ",
+-			get_curr_tx_free_desc(dev, LOW_PRIORITY));
++			get_curr_tx_free_desc(dev, priority));
+ 		ieee80211_r8180_stop_queue(priv->ieee80211);
+ 	}
+-	rtl8180_tx(dev, (u32*)skb->data, skb->len, LOW_PRIORITY, morefrag,0);
+-	if (!check_nic_enought_desc(dev, LOW_PRIORITY))
++	rtl8180_tx(dev, (u32*)skb->data, skb->len, priority, morefrag,0);
++	if (!check_nic_enought_desc(dev, priority))
+ 		ieee80211_r8180_stop_queue(priv->ieee80211);
+ 		
+ 	//spin_unlock_irqrestore(&priv->tx_lock,flags);	
+@@ -2634,7 +2637,11 @@
+ 	spin_lock_init(&priv->tx_lock);
+ 	sema_init(&priv->wx_sem,1);
+ 	priv->workqueue = create_workqueue(DRV_NAME);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+ 	INIT_WORK(&priv->IBSS_work,(void(*)(void*)) rtl8180_IBSS_create_wq,dev);
++#else
++	INIT_WORK(&priv->IBSS_work,(void(*)(void*)) rtl8180_IBSS_create_wq);
++#endif
+ 	
+ 	tasklet_init(&priv->irq_rx_tasklet,
+ 		     (void(*)(unsigned long)) rtl8180_irq_rx_tasklet,
+@@ -3411,10 +3418,18 @@
+ 	if (priv->ieee80211->iw_mode == IW_MODE_ADHOC) 
+ 		rtl8180_IBSS_create(dev);
+ 		
+-/*	if (priv->ieee80211->iw_mode == IW_MODE_MONITOR){ 
++	if (priv->ieee80211->iw_mode == IW_MODE_MONITOR) {
++		priv->retry_rts = 0;
++		priv->retry_data = 0;
++		rtl8180_tx_enable(dev);
++
+ 		netif_carrier_on(dev);
++		if(netif_queue_stopped(dev))
++			netif_wake_queue(dev);
++		else
++			netif_start_queue(dev);
+ 	}
+-*/
++
+ 	if (priv->ieee80211->iw_mode == IW_MODE_INFRA) {
+ 		
+ 	//	rtl8180_tx_enable(dev);
+@@ -3608,8 +3623,7 @@
+ 	pio_flags = (unsigned long)pci_resource_flags (pdev, 0);
+ 	
+ 	if (!(pio_flags & IORESOURCE_IO)) {
+-		DMESG("%s: region #0 not a PIO resource, aborting", 
+-		      pdev->slot_name);
++		DMESG("r8180: region #0 not a PIO resource, aborting");
+ 		goto fail;
+ 	}
+ 	
+@@ -3629,8 +3643,7 @@
+ 	pmem_flags = pci_resource_flags (pdev, 1);
+ 	
+ 	if (!(pmem_flags & IORESOURCE_MEM)) {
+-		DMESG("%s: region #1 not a MMIO resource, aborting", 
+-		      pdev->slot_name);
++		DMESG("r8180: region #1 not a MMIO resource, aborting");
+ 		goto fail;
+ 	}
+ 	
+@@ -3664,7 +3677,12 @@
+ 	dev->do_ioctl = do_ioctl;
+ 	dev->set_multicast_list = r8180_set_multicast;
+ 	dev->set_mac_address = r8180_set_mac_adr;
++#if WIRELESS_EXT >= 12
++#if WIRELESS_EXT < 17
+ 	dev->get_wireless_stats = r8180_get_wireless_stats;
++#endif
++	dev->wireless_handlers = (struct iw_handler_def *) &r8180_wx_handlers_def;
++#endif
+ 	dev->type=ARPHRD_ETHER;
+ 	
+ 	if (dev_alloc_name(dev, ifname) < 0){
+diff -Naur rtl8180-0.21_orig/r8180.h rtl8180-0.21_patched/r8180.h
+--- rtl8180-0.21_orig/r8180.h	2005-04-11 18:36:26.000000000 +0200
++++ rtl8180-0.21_patched/r8180.h	2007-02-18 17:35:09.000000000 +0100
+@@ -25,7 +25,10 @@
+ 
+ #include <linux/module.h>
+ #include <linux/kernel.h>
++#include <linux/version.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
+ #include <linux/config.h>
++#endif
+ #include <linux/init.h>
+ #include <linux/ioport.h>
+ #include <linux/sched.h>
