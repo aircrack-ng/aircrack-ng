@@ -2110,7 +2110,7 @@ int do_attack_arp_resend( void )
     int nb_bad_pkt;
     int arp_off1, arp_off2;
     int i, n, caplen, nb_arp;
-    long nb_pkt_read, nb_arp_tot;
+    long nb_pkt_read, nb_arp_tot, nb_ack_pkt;
 
     time_t tc;
     float f, ticks[3];
@@ -2201,6 +2201,7 @@ int do_attack_arp_resend( void )
 
     nb_pkt_read = 0;
     nb_bad_pkt  = 0;
+    nb_ack_pkt  = 0;
     nb_arp      = 0;
     nb_arp_tot  = 0;
     arp_off1    = 0;
@@ -2239,9 +2240,9 @@ int do_attack_arp_resend( void )
         if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
-            printf( "\rRead %ld packets (got %ld ARP requests), "
+            printf( "\rRead %ld packets (got %ld ARP requests and %ld ACKs), "
                     "sent %ld packets...(%d pps)\r",
-                    nb_pkt_read, nb_arp_tot, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
+                    nb_pkt_read, nb_arp_tot, nb_ack_pkt, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
             fflush( stdout );
         }
 
@@ -2347,6 +2348,12 @@ int do_attack_arp_resend( void )
                 tc = time( NULL );
                 nb_bad_pkt = 0;
             }
+        }
+
+        if( h80211[0] == 0xD4 &&
+            ! memcmp( h80211 + 4, opt.r_smac, 6 ) )
+        {
+            nb_ack_pkt++;
         }
 
         /* check if it's a potential ARP request */
