@@ -46,7 +46,7 @@
 #endif
 #include "version.h"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
 
 void print_help() {
 	printf("\n"
@@ -72,7 +72,7 @@ void print_help() {
 		"       export cowpatty <essid> <file>     :\n"
 		"                      Export to a cowpatty file.\n"
 		"\n",
-		getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION));
+		getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
 }
 
 void sql_error(sqlite3* db) {

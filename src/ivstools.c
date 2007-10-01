@@ -47,7 +47,7 @@
 #define WPA     2
 #define ESSID   3
 
-        /* linked list of detected access points */
+/* linked list of detected access points */
 
 struct AP_info
 {
@@ -107,14 +107,14 @@ static uchar ZERO[32] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00";
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
 
 void usage(int what)
 {
     printf("\n  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
             "  Original work: Christophe Devine\n"
             "  http://www.aircrack-ng.org\n"
-            "\n   usage: ", getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION));
+            "\n   usage: ", getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
     if (what == 0 || what == 1)
         printf( "ivstools --convert <pcap file> <ivs output file>\n"
                 "        Extract ivs from a pcap file\n");

@@ -67,7 +67,7 @@
     "\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"  \
     "\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern int add_crc32(unsigned char* data, int length);
 
@@ -1063,7 +1063,7 @@ int forge_custom()
 
 void print_usage(void)
 {
-    printf(usage, getVersion("Packetforge-ng", _MAJ, _MIN, _SUB_MIN, _REVISION) );
+    printf(usage, getVersion("Packetforge-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA) );
 }
 
 int main(int argc, char* argv[])

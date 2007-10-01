@@ -57,8 +57,6 @@
 #include <getopt.h>
 
 #include <fcntl.h>
-//#include <errno.h>
-//#include <time.h>
 
 #include "version.h"
 #include "pcap.h"
@@ -83,7 +81,7 @@ static struct wif *_wi_in, *_wi_out;
 #define MAX(x,y) ( (x)>(y) ? (x) : (y) )
 #endif
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
 extern char * searchInside(const char * dir, const char * filename);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
@@ -869,7 +867,7 @@ int main( int argc, char *argv[] )
 
             case 'H' :
 
-            	printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+            	printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
             	return( 1 );
 
             default : goto usage;
@@ -881,7 +879,7 @@ int main( int argc, char *argv[] )
     	if(argc == 1)
     	{
 usage:
-	        printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+	        printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
         }
 	    if( argc - optind == 0)
 	    {

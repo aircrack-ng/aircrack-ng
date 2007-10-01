@@ -59,7 +59,7 @@
     ( ( (fc) & IEEE80211_FC0_SUBTYPE_MASK ) >> IEEE80211_FC0_SUBTYPE_SHIFT ) \
         << IEEE80211_FC0_SUBTYPE_SHIFT
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern int calc_crc_buf( unsigned char *buf, int len );
 
@@ -717,7 +717,7 @@ int main( int argc, char *argv[] )
 
             case 'H' :
 
-            	printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+            	printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
             	return( 1 );
 
             default : goto usage;
@@ -729,7 +729,7 @@ int main( int argc, char *argv[] )
     	if(argc == 1)
     	{
 usage:
-	        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+	        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
 	    }
 		if( argc - optind == 0)
 	    {

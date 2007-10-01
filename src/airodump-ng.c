@@ -107,7 +107,7 @@
 //milliseconds to store last packets
 #define BUFFER_TIME 3000
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 
 const unsigned char llcnull[4] = {0, 0, 0, 0};
@@ -3958,7 +3958,7 @@ int main( int argc, char *argv[] )
 
             case 'H':
 
-  	            printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+  	            printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
   	            return( 1 );
 
             default : goto usage;
@@ -3970,7 +3970,7 @@ int main( int argc, char *argv[] )
         if(argc == 1)
         {
 usage:
-            printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+            printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
         }
         if( argc - optind == 0)
         {

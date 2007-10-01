@@ -98,7 +98,7 @@
 #define htole16(n) (n)
 #endif
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
 
 struct frag_state {
 	struct ieee80211_frame	fs_wh;
@@ -2019,7 +2019,7 @@ static void usage(char* pname)
 		"       -t  <threshold> : Cracking threshold\n"
 		"       -f   <max chan> : Highest scanned chan (default: 11)\n"
 		"\n",
-		getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION));
+		getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
 
 	exit(0);
 }
