@@ -215,14 +215,14 @@ void clean_exit(int ret)
 
 	for( i = 0; i < opt.nbcpu; i++ )
 	{
-            safe_write( mc_pipe[i][1], (void *) "EXIT", 5 );
+            safe_write( mc_pipe[i][1], (void *) "\r", 2 );
         }
 
 	for(i=0; i<id; i++)
 	{
 		if(pthread_join(tid[i], NULL) != 0)
 		{
-			printf("Can't join thread %d\n", i);
+// 			printf("Can't join thread %d\n", i);
 		}
 	}
 
@@ -1584,6 +1584,9 @@ void check_thread( void *arg )
 
 	while( 1 )
 	{
+		if(close_aircrack)
+			break;
+
 		if( fmt == FORMAT_IVS )
 		{
 			/* read one IV */
