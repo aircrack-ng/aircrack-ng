@@ -1,4 +1,4 @@
-Documentation, tutorials, ... can be found on www.aircrack-ng.org
+Documentation, tutorials, ... can be found on http://www.aircrack-ng.org
 See also manpages and the forum.
 
 Installing
@@ -32,6 +32,12 @@ Solution: Restart airodump-ng or change rate before starting it
 Problem: After some time it stops capturing packets and you're really sure no network manager are running at all.
 Solution: That's a known bug in the driver, it may happen at any time
           (I saw that at 5 minutes for someone and at 50 for someone else, it can even be more).
+
+Problem: When creating a new VAP airodump-ng takes up to 10-15 seconds to see the first packet
+Solution: It's the behaviour of madwifi-ng, don't worry.
+
+Problem: Wesside-ng doesn't work
+Solution: There's a bug in madwifi-ng subversion (in trunk), try using latest stable release (0.9.3.2).
 
 
 Sample files

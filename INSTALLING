@@ -36,10 +36,6 @@ Linux/BSD:
 Windows:
  * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data)
    See "Drivers" page on the wiki: http://www.aircrack-ng.org/doku.php?id=drivers and 
-   Wild packet driver page: http://www.wildpackets.com/support/downloads/drivers
- * Download cygwin1.dll, msvcr70.dll, peek.dll and peek5.sys that you can find on the wiki
-   download page ("more downloads..." link) and put them in the directory you extracted the
-   executable files.
  * aircrack-ng suite is command line tools. So, you have to open a commandline
    (Start menu -> Run... -> cmd.exe) then use them
  * Run the executables without any parameters to have help
