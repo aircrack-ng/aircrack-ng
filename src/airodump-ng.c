@@ -1567,15 +1567,20 @@ skip_probe:
         }
     }
 
-    /* packet parsing: Authentication Request */
+    /* packet parsing: Authentication Response */
 
-    if( h80211[0] == 0xB0 )
+    if( h80211[0] == 0xB0 && caplen >= 30)
     {
         if( ap_cur->security & STD_WEP )
         {
-            ap_cur->security &= ~(AUTH_OPN | AUTH_PSK | AUTH_MGT);
-            if(h80211[24] == 0x00) ap_cur->security |= AUTH_OPN;
-            if(h80211[24] == 0x01) ap_cur->security |= AUTH_PSK;
+            //successful step 2 or 4 (coming from the AP)
+            if(memcmp(h80211+28, "\x00\x00", 2) == 0 &&
+                (h80211[26] == 0x02 || h80211[26] == 0x04))
+            {
+                ap_cur->security &= ~(AUTH_OPN | AUTH_PSK | AUTH_MGT);
+                if(h80211[24] == 0x00) ap_cur->security |= AUTH_OPN;
+                if(h80211[24] == 0x01) ap_cur->security |= AUTH_PSK;
+            }
         }
     }
 
