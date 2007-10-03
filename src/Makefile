@@ -58,7 +58,7 @@ endif
 LIBOSD		= $(OSD)/lib$(OSD).a
 
 LIBSSL		= -lssl -lcrypto $(LDFLAGS)
-LIBSQL		= 
+LIBSQL		=
 ifeq ($(SQLITE), true)
 LIBSQL		= -L/usr/local/lib -lsqlite3
 endif
@@ -154,23 +154,23 @@ distclean: clean
 
 install: all
 	$(MAKE) -C $(OSD) install
-	install -d $(bindir)
-	install -m 755 $(BINFILES) $(bindir)
-	install -d $(sbindir)
-	install -m 755 $(SBINFILES) $(sbindir)
+	install -d $(DESTDIR)$(bindir)
+	install -m 755 $(BINFILES) $(DESTDIR)$(bindir)
+	install -d $(DESTDIR)$(sbindir)
+	install -m 755 $(SBINFILES) $(DESTDIR)$(sbindir)
 
 uninstall:
 	$(MAKE) -C $(OSD) uninstall
-	-rm -f $(bindir)/aircrack-ng$(EXE)
-	-rm -f $(bindir)/airdecap-ng$(EXE)
-	-rm -f $(bindir)/packetforge-ng$(EXE)
-	-rm -f $(bindir)/airolib-ng$(EXE)
-	-rm -f $(bindir)/ivstools$(EXE)
-	-rm -f $(bindir)/kstats$(EXE)
-	-rm -f $(bindir)/buddy-ng$(EXE)
-	-rm -f $(sbindir)/airodump-ng$(EXE)
-	-rm -f $(sbindir)/airserv-ng$(EXE)
-	-rm -f $(sbindir)/airtun-ng$(EXE)
-	-rm -f $(sbindir)/aireplay-ng$(EXE)
-	-rm -f $(sbindir)/wesside-ng$(EXE)
-	-rm -f $(sbindir)/easside-ng$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/aircrack-ng$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/airdecap-ng$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/packetforge-ng$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/airolib-ng$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/ivstools$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/kstats$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/buddy-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/airodump-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/airserv-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/airtun-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/aireplay-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/wesside-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/easside-ng$(EXE)

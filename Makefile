@@ -21,41 +21,41 @@ aircrack-ng-opt-prof_use:
 install:
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test $(@)
-	install -m 755 $(SCRIPTS) $(sbindir)
-	install -d $(mandir)
-	install -m 644 ./manpages/* $(mandir)
+	install -m 755 $(SCRIPTS) $(DESTDIR)$(sbindir)
+	install -d $(DESTDIR)$(mandir)
+	install -m 644 ./manpages/* $(DESTDIR)$(mandir)
 
 uninstall:
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test $(@)
-	-rm -f $(sbindir)/airmon-ng
-	-rm -f $(sbindir)/airdriver-ng
-	-rm -f $(sbindir)/patchchk
-	-rm -f $(mandir)/aircrack-ng.1
-	-rm -f $(mandir)/airdecap-ng.1
-	-rm -f $(mandir)/airdriver-ng.1
-	-rm -f $(mandir)/aireplay-ng.1
-	-rm -f $(mandir)/airmon-ng.1
-	-rm -f $(mandir)/airodump-ng.1
-	-rm -f $(mandir)/airolib-ng.1
-	-rm -f $(mandir)/airsev-ng.1
-	-rm -f $(mandir)/airtun-ng.1
-	-rm -f $(mandir)/buddy-ng.1
-	-rm -f $(mandir)/easside-ng.1
-	-rm -f $(mandir)/ivstools.1
-	-rm -f $(mandir)/kstats.1
-	-rm -f $(mandir)/makeivs-ng.1
-	-rm -f $(mandir)/packetforge-ng.1
-	-rm -f $(mandir)/wesside-ng.1
-	-rm -fr $(docdir)
+	-rm -f $(DESTDIR)$(sbindir)/airmon-ng
+	-rm -f $(DESTDIR)$(sbindir)/airdriver-ng
+	-rm -f $(DESTDIR)$(sbindir)/patchchk
+	-rm -f $(DESTDIR)$(mandir)/aircrack-ng.1
+	-rm -f $(DESTDIR)$(mandir)/airdecap-ng.1
+	-rm -f $(DESTDIR)$(mandir)/airdriver-ng.1
+	-rm -f $(DESTDIR)$(mandir)/aireplay-ng.1
+	-rm -f $(DESTDIR)$(mandir)/airmon-ng.1
+	-rm -f $(DESTDIR)$(mandir)/airodump-ng.1
+	-rm -f $(DESTDIR)$(mandir)/airolib-ng.1
+	-rm -f $(DESTDIR)$(mandir)/airsev-ng.1
+	-rm -f $(DESTDIR)$(mandir)/airtun-ng.1
+	-rm -f $(DESTDIR)$(mandir)/buddy-ng.1
+	-rm -f $(DESTDIR)$(mandir)/easside-ng.1
+	-rm -f $(DESTDIR)$(mandir)/ivstools.1
+	-rm -f $(DESTDIR)$(mandir)/kstats.1
+	-rm -f $(DESTDIR)$(mandir)/makeivs-ng.1
+	-rm -f $(DESTDIR)$(mandir)/packetforge-ng.1
+	-rm -f $(DESTDIR)$(mandir)/wesside-ng.1
+	-rm -fr $(DESTDIR)$(docdir)
 
 strip:
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test $(@)
 
 doc:
-	install -d $(docdir)
-	install -m 644 $(DOCFILES) $(docdir)
+	install -d $(DESTDIR)$(docdir)
+	install -m 644 $(DOCFILES) $(DESTDIR)$(docdir)
 
 clean:
 	$(MAKE) -C src $(@)
