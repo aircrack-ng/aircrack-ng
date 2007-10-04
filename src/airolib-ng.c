@@ -39,6 +39,10 @@
 #include <string.h>
 #include <sqlite3.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "aircrack-ng.h"
 #include "crypto.h"
 #ifdef HAVE_REGEXP
@@ -57,7 +61,6 @@ void print_help() {
 		"\n"
 		"  Operations:\n"
 		"\n"
-		"       init         : Create a new database file and its table layout.\n"
 		"       stats        : Output information about the database.\n"
 		"       sql <sql>    : Execute specified SQL statement.\n"
 		"       clean [all]  : Clean the database from old junk. 'all' will also \n"
@@ -725,8 +728,54 @@ void sqlite_regexp(sqlite3_context* context, int argc, sqlite3_value** values) {
 }
 #endif
 
+int initDataBase(const char * filename, sqlite3 * db)
+{
+	int rc = sqlite3_open(filename, &db);
+	if (rc) {
+		sql_error(db);
+		sqlite3_close(db);
+		return 1;
+	}
+
+	sql_exec(db, "create table essid (essid_id integer primary key autoincrement, essid text, prio integer default 64);");
+	sql_exec(db, "create table passwd (passwd_id integer primary key autoincrement, passwd text);");
+	sql_exec(db, "create table pmk (pmk_id integer primary key autoincrement, passwd_id int, essid_id int, pmk blob);");
+	sql_exec(db, "create table workbench (wb_id integer primary key autoincrement, essid_id integer, passwd_id integer, lockid integer default 0);");
+	sql_exec(db, "create index lock_lockid on workbench (lockid);");
+	sql_exec(db, "create index pmk_pw on pmk (passwd_id);");
+	sql_exec(db, "create unique index essid_u on essid (essid);");
+	sql_exec(db, "create unique index passwd_u on passwd (passwd);");
+	sql_exec(db, "create unique index ep_u on pmk (essid_id,passwd_id);");
+	sql_exec(db, "create unique index wb_u on workbench (essid_id,passwd_id);");
+	sql_exec(db, "CREATE TRIGGER delete_essid DELETE ON essid BEGIN DELETE FROM pmk WHERE pmk.essid_id = OLD.essid_id; DELETE FROM workbench WHERE workbench.essid_id = OLD.essid_id; END;");
+	sql_exec(db, "CREATE TRIGGER delete_passwd DELETE ON passwd BEGIN DELETE FROM pmk WHERE pmk.passwd_id = OLD.passwd_id; DELETE FROM workbench WHERE workbench.passwd_id = OLD.passwd_id; END;");
+
+
+#ifdef SQL_DEBUG
+	sql_exec(db, "begin;");
+	sql_exec(db, "insert into essid (essid,prio) values ('e',random())");
+	sql_exec(db, "insert into passwd (passwd) values ('p')");
+	sql_exec(db, "insert into essid (essid,prio) select essid||'a',random() from essid;");
+	sql_exec(db, "insert into essid (essid,prio) select essid||'b',random() from essid;");
+	sql_exec(db, "insert into essid (essid,prio) select essid||'c',random() from essid;");
+	sql_exec(db, "insert into essid (essid,prio) select essid||'d',random() from essid;");
+	sql_exec(db, "insert into passwd (passwd) select passwd||'a' from passwd;");
+	sql_exec(db, "insert into passwd (passwd) select passwd||'b' from passwd;");
+	sql_exec(db, "insert into passwd (passwd) select passwd||'c' from passwd;");
+	sql_exec(db, "insert into passwd (passwd) select passwd||'d' from passwd;");
+	sql_exec(db, "insert into passwd (passwd) select passwd||'e' from passwd;");
+	sql_exec(db, "insert into pmk (essid_id,passwd_id) select essid_id,passwd_id from essid,passwd limit 1000000;");
+	sql_exec(db,"commit;");
+#endif
+
+	sqlite3_close(db);
+	printf("Database <%s> sucessfully created\n", filename);
+	return 0;
+}
+
 int main(int argc, char **argv){
 	sqlite3 *db;
+	struct stat dbfile;	
 	int rc;
 
 	if( argc < 3 ){
@@ -738,56 +787,30 @@ int main(int argc, char **argv){
 	// implement options like '-e essid' to limit operations to a certain essid where possible
 	// implement import of other airolib-db files.
 
-	if (strcmp(argv[2],"init")==0) {
-		rc = sqlite3_open(argv[1], &db);
-		if (rc) {
-			sql_error(db);
-			sqlite3_close(db);
-			return 1;
-		}
 
-		sql_exec(db, "create table essid (essid_id integer primary key autoincrement, essid text, prio integer default 64);");
-		sql_exec(db, "create table passwd (passwd_id integer primary key autoincrement, passwd text);");
-		sql_exec(db, "create table pmk (pmk_id integer primary key autoincrement, passwd_id int, essid_id int, pmk blob);");
-		sql_exec(db, "create table workbench (wb_id integer primary key autoincrement, essid_id integer, passwd_id integer, lockid integer default 0);");
-		sql_exec(db, "create index lock_lockid on workbench (lockid);");
-		sql_exec(db, "create index pmk_pw on pmk (passwd_id);");
-		sql_exec(db, "create unique index essid_u on essid (essid);");
-		sql_exec(db, "create unique index passwd_u on passwd (passwd);");
-		sql_exec(db, "create unique index ep_u on pmk (essid_id,passwd_id);");
-		sql_exec(db, "create unique index wb_u on workbench (essid_id,passwd_id);");
-		sql_exec(db, "CREATE TRIGGER delete_essid DELETE ON essid BEGIN DELETE FROM pmk WHERE pmk.essid_id = OLD.essid_id; DELETE FROM workbench WHERE workbench.essid_id = OLD.essid_id; END;");
-		sql_exec(db, "CREATE TRIGGER delete_passwd DELETE ON passwd BEGIN DELETE FROM pmk WHERE pmk.passwd_id = OLD.passwd_id; DELETE FROM workbench WHERE workbench.passwd_id = OLD.passwd_id; END;");
-
-
-#ifdef SQL_DEBUG
-		sql_exec(db, "begin;");
-		sql_exec(db, "insert into essid (essid,prio) values ('e',random())");
-		sql_exec(db, "insert into passwd (passwd) values ('p')");
-		sql_exec(db, "insert into essid (essid,prio) select essid||'a',random() from essid;");
-		sql_exec(db, "insert into essid (essid,prio) select essid||'b',random() from essid;");
-		sql_exec(db, "insert into essid (essid,prio) select essid||'c',random() from essid;");
-		sql_exec(db, "insert into essid (essid,prio) select essid||'d',random() from essid;");
-		sql_exec(db, "insert into passwd (passwd) select passwd||'a' from passwd;");
-		sql_exec(db, "insert into passwd (passwd) select passwd||'b' from passwd;");
-		sql_exec(db, "insert into passwd (passwd) select passwd||'c' from passwd;");
-		sql_exec(db, "insert into passwd (passwd) select passwd||'d' from passwd;");
-		sql_exec(db, "insert into passwd (passwd) select passwd||'e' from passwd;");
-		sql_exec(db, "insert into pmk (essid_id,passwd_id) select essid_id,passwd_id from essid,passwd limit 1000000;");
-		sql_exec(db,"commit;");
-#endif
-
-		sqlite3_close(db);
-		printf("Database <%s> sucessfully created\n", argv[1]);
-		return 0;
-	}
-
-	//check once for all if we are allowed to operate on the file, then try to open a handle on it
+	// Check if DB exist. If it does not, initialize it
 	if (access(argv[1], R_OK | W_OK)) {
-		print_help();
-		fprintf(stderr, "Database file '%s' not found or not allowed to read/write. Use the 'init' operation to create a new database file and populate it with the basic table layout.\n",argv[1]);
-		return 1;
+		printf("Database does not already exist, creating it...\n");	
+		if (initDataBase(argv[1], db))
+		{
+			printf("Error initializing databse, exiting...\n");
+			return 1;
+		}	
 	}
+	else
+	{
+		if (stat(argv[1], &dbfile))
+		{
+			perror("stat()");
+			return 1;
+		}	
+		if ((S_ISREG(dbfile.st_mode) && !S_ISDIR(dbfile.st_mode)) == 0)
+		{
+			printf("\"%s\" does not appear to be a file.\n", argv[1]);
+			return 1;
+		}	
+	}
+
 	rc = sqlite3_open(argv[1], &db);
 	if(rc) {
 		sql_error(db);
@@ -826,26 +849,24 @@ int main(int argc, char **argv){
 #endif
 
 	if (strcmp(argv[2],"stats")==0) {
-		if (argv[3] == NULL) {
+		if (argv[3] == NULL)
 			show_stats(db,0);
-		} else {
+		else
 			show_stats(db,1);
-		}
 	} else if (strcmp(argv[2],"sql")==0) {
 		if (argv[3] != NULL) {
 			sql_stdout(db,argv[3],0);
 		} else {
 			print_help();
-			printf("Give me something to do.\n");
+			printf("No SQL order given.\n");
 		}
 	} else if (strcmp(argv[2],"batch")==0) {
 		batch_process(db);
 	} else if (strcmp(argv[2],"clean")==0) {
-		if (argc > 3 && strcmp(argv[3],"all")==0) {
+		if (argc > 3 && strcmp(argv[3],"all")==0)
 			vacuum(db,1);
-		} else {
+		else
 			vacuum(db,0);
-		}
 	} else if (strcmp(argv[2],"import")==0) {
 		if (argc < 5) {
 			print_help();
@@ -879,14 +900,12 @@ int main(int argc, char **argv){
 			printf("Invalid export format specified.\n");
 		}
 	} else if (strcmp(argv[2],"verify")==0) {
-		if (argc > 3 && strcmp(argv[3],"all")==0) {
+		if (argc > 3 && strcmp(argv[3],"all")==0)
 			verify(db,1);
-		} else {
+		else
 			verify(db,0);
-		}
 	} else {
 		print_help();
-		printf("what?\n");
 	}
 
 	sqlite3_close(db);
