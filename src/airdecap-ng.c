@@ -382,6 +382,7 @@ struct decap_stats
 {
     unsigned long nb_read;      /* # of packets read       */
     unsigned long nb_wep;       /* # of WEP data packets   */
+    unsigned long nb_bad;       /* # of bad data packets   */
     unsigned long nb_wpa;       /* # of WPA data packets   */
     unsigned long nb_plain;     /* # of plaintext packets  */
     unsigned long nb_unwep;     /* # of decrypted WEP pkt  */
@@ -398,10 +399,12 @@ struct options
     uchar pmk[40];
     uchar wepkey[64];
     int weplen, crypt;
+    int store_bad;
 }
 opt;
 
 uchar buffer[65536];
+uchar buffer2[65536];
 
 /* this routine handles to 802.11 to Ethernet translation */
 
@@ -499,7 +502,7 @@ int main( int argc, char *argv[] )
     time_t tt;
     uint magic;
     char *s, buf[128];
-    FILE *f_in, *f_out;
+    FILE *f_in, *f_out, *f_bad=NULL;
     unsigned long crc;
     int i = 0, n, z, linktype;
     uchar ZERO[32], *h80211;
@@ -803,25 +806,39 @@ usage:
     if( n > 4 && ( n + 5 < (int) sizeof( buffer ) ) &&
         argv[optind][n - 4] == '.' )
     {
-        memcpy( buffer, argv[optind], n - 4 );
-        memcpy( buffer + n - 4, "-dec", 4 );
-        memcpy( buffer + n, argv[optind] + n - 4, 5 );
+        memcpy( buffer , argv[optind], n - 4 );
+        memcpy( buffer2, argv[optind], n - 4 );
+        memcpy( buffer  + n - 4, "-dec", 4 );
+        memcpy( buffer2 + n - 4, "-bad", 4 );
+        memcpy( buffer  + n, argv[optind] + n - 4, 5 );
+        memcpy( buffer2 + n, argv[optind] + n - 4, 5 );
     }
     else
     {
         if( n > 5 && ( n + 6 < (int) sizeof( buffer ) ) &&
             argv[optind][n - 5] == '.' )
         {
-            memcpy( buffer, argv[optind], n - 5 );
-            memcpy( buffer + n - 5, "-dec", 4 );
-            memcpy( buffer + n - 1, argv[optind] + n - 5, 6 );
+            memcpy( buffer , argv[optind], n - 5 );
+            memcpy( buffer2, argv[optind], n - 5 );
+            memcpy( buffer  + n - 5, "-dec", 4 );
+            memcpy( buffer2 + n - 5, "-bad", 4 );
+            memcpy( buffer  + n - 1, argv[optind] + n - 5, 6 );
+            memcpy( buffer2 + n - 1, argv[optind] + n - 5, 6 );
         }
         else
         {
-            memset( buffer, 0, sizeof( buffer ) );
-            snprintf( (char *) buffer, sizeof( buffer ) - 1,
+            memset( buffer , 0, sizeof( buffer ) );
+            memset( buffer2, 0, sizeof( buffer ) );
+            snprintf( (char *) buffer , sizeof( buffer ) - 1,
                       "%s-dec", argv[optind] );
+            snprintf( (char *) buffer2, sizeof( buffer ) - 1,
+                      "%s-bad", argv[optind] );
         }
+    }
+
+    if( opt.crypt == CRYPT_WEP && opt.no_convert == 1 )
+    {
+        opt.store_bad=1;
     }
 
     if( ( f_out = fopen( (char *) buffer, "wb+" ) ) == NULL )
@@ -829,6 +846,16 @@ usage:
         perror( "fopen failed" );
         printf( "Could not create \"%s\".\n", buffer );
         return( 1 );
+    }
+
+    if(opt.store_bad)
+    {
+        if( ( f_bad = fopen( (char *) buffer2, "wb+" ) ) == NULL )
+        {
+            perror( "fopen failed" );
+            printf( "Could not create \"%s\".\n", buffer2 );
+            return( 1 );
+        }
     }
 
     pfh.magic           = TCPDUMP_MAGIC;
@@ -847,6 +874,15 @@ usage:
     {
         perror( "fwrite(pcap file header) failed" );
         return( 1 );
+    }
+
+    if(opt.store_bad)
+    {
+        if( fwrite( &pfh, 1, n, f_bad ) != (size_t) n )
+        {
+            perror( "fwrite(pcap file header) failed" );
+            return( 1 );
+        }
     }
 
     /* loop reading and deciphering the packets */
@@ -1044,9 +1080,21 @@ usage:
                 memcpy( K, h80211 + z, 3 );
                 memcpy( K + 3, opt.wepkey, opt.weplen );
 
+                if(opt.store_bad)
+                    memcpy(buffer2, h80211, pkh.caplen);
+
                 if( decrypt_wep( h80211 + z + 4, pkh.caplen - z - 4,
                                  K, 3 + opt.weplen ) == 0 )
+                {
+                    if(opt.store_bad)
+                    {
+                        stats.nb_bad++;
+                        memcpy(h80211, buffer2, pkh.caplen);
+                        if( write_packet( f_bad, &pkh, h80211 ) != 0 )
+                            break;
+                    }
                     continue;
+                }
 
                 /* WEP data packet was successfully decrypted, *
                  * remove the WEP IV & ICV and write the data  */
@@ -1193,6 +1241,8 @@ usage:
 
     fclose( f_in  );
     fclose( f_out );
+    if(opt.store_bad)
+        fclose( f_bad );
 
     /* write some statistics */
 
@@ -1201,9 +1251,10 @@ usage:
                  "Total number of WPA data packets  % 8ld\n"
                  "Number of plaintext data packets  % 8ld\n"
                  "Number of decrypted WEP  packets  % 8ld\n"
+                 "Number of corrupted WEP  packets  % 8ld\n"
                  "Number of decrypted WPA  packets  % 8ld\n",
             stats.nb_read, stats.nb_wep, stats.nb_wpa,
-            stats.nb_plain, stats.nb_unwep, stats.nb_unwpa );
+            stats.nb_plain, stats.nb_unwep, stats.nb_bad, stats.nb_unwpa );
 
     return( 0 );
 }
