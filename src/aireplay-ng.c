@@ -21,10 +21,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#if !(defined(linux) || defined(__FreeBSD__) || defined( __FreeBSD_kernel__))
+#if !(defined(linux) || defined(__FreeBSD__) || defined( __FreeBSD_kernel__) || defined( WIN32))
     #warning Aireplay-ng could fail on this OS
 #endif
 
+#ifndef WIN32
 #if defined(linux)
     #include <linux/rtc.h>
 #endif
@@ -58,6 +59,18 @@
 
 #include <arpa/inet.h>
 #include <unistd.h>
+#else
+#include <Windows.h>
+#include <sys/types.h>
+#include <limits.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <airpcap.h>
+#define usleep(us) Sleep(us / 1000)
+#define sleep(us) Sleep(us * 1000)
+LARGE_INTEGER pc_freq;
+#endif /* WIN32 */
+
 #include <dirent.h>
 #include <signal.h>
 #include <string.h>
@@ -252,6 +265,9 @@ struct devices
 #if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
     size_t buf_in, buf_out;
 #endif
+#ifdef WIN32
+    pcap_t *winpcap_adapter;
+#endif
 
     uchar mac_in[6];
     uchar mac_out[6];
@@ -261,6 +277,7 @@ struct devices
     int is_madwifi;
     int is_madwifing;
     int is_bcm43xx;
+    int is_airpcap;
 
     FILE *f_cap_in;
 
@@ -497,6 +514,20 @@ int send_packet( void *buf, size_t count )
 }
 #endif /* __FreeBSD__ && __FreeBSD_version >= 700000 */
 
+#if defined(WIN32)
+int send_packet( void *buf, size_t count )
+{
+    if(pcap_sendpacket(dev.winpcap_adapter, buf, count) != 0)
+    {
+        printf("Error sending the packet: %s\n", pcap_geterr(dev.winpcap_adapter));
+    }
+
+	nb_pkt_sent++;
+
+    return( 0 );
+}
+#endif /* WIN32 */
+
 #if defined(linux)
 /* madwifi-aware frame reading routing */
 
@@ -605,6 +636,37 @@ int read_packet( void *buf, size_t count )
     return( caplen );
 }
 #endif /* __FreeBSD__ */
+
+#if defined(WIN32)
+int read_packet( void *buf, size_t count )
+{
+	struct pcap_pkthdr *header;
+	const u_char *pkt_data;
+	int res;
+
+	while( 1 )
+	{
+		res = pcap_next_ex( dev.winpcap_adapter, &header, &pkt_data );
+
+		if( res == 0 )
+		{
+			// timeout elapsed
+			continue;
+		}
+
+		if( res < 0 )
+		{
+			// error
+			fprintf( stderr, "Error reading the packets: %s\n", pcap_geterr( dev.winpcap_adapter ) );
+			return ( 0 );
+		}
+
+		// Good reception
+		memcpy( buf, pkt_data, header->caplen );
+		return( header->caplen );
+	}
+}
+#endif /* WIN32 */
 
 void read_sleep( int usec )
 {
@@ -1129,9 +1191,11 @@ int fake_ska(uchar* prga)
 int do_attack_fake_auth( void )
 {
     time_t tt, tr;
+#ifndef WIN32
     struct timeval tv;
 
     fd_set rfds;
+#endif
     int i, n, state, caplen;
     int mi_b, mi_s, mi_d;
     int x_send;
@@ -1394,7 +1458,7 @@ int do_attack_fake_auth( void )
         }
 
         /* read one frame */
-
+#ifndef WIN32
         FD_ZERO( &rfds );
         FD_SET( dev.fd_in, &rfds );
 
@@ -1410,7 +1474,7 @@ int do_attack_fake_auth( void )
 
         if( ! FD_ISSET( dev.fd_in, &rfds ) )
             continue;
-
+#endif
         caplen = read_packet( h80211, sizeof( h80211 ) );
 
         if( caplen  < 0 ) return( 1 );
@@ -1623,7 +1687,9 @@ int capture_ask_packet( int *caplen )
     struct timeval tv;
     struct tm *lt;
 
+#ifndef WIN32
     fd_set rfds;
+#endif
     long nb_pkt_read;
     int i, j, n, mi_b, mi_s, mi_d;
     int ret;
@@ -1655,6 +1721,7 @@ int capture_ask_packet( int *caplen )
 
         if( opt.s_file == NULL )
         {
+#ifndef WIN32
             FD_ZERO( &rfds );
             FD_SET( dev.fd_in, &rfds );
 
@@ -1672,7 +1739,7 @@ int capture_ask_packet( int *caplen )
                 continue;
 
             gettimeofday( &tv, NULL );
-
+#endif /* WIN32 */
             *caplen = read_packet( h80211, sizeof( h80211 ) );
 
             if( *caplen  < 0 ) return( 1 );
@@ -1966,6 +2033,7 @@ read_packets:
 
         /* wait for the next timer interrupt, or sleep */
 
+#ifndef WIN32
         if( dev.fd_rtc >= 0 )
         {
             if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
@@ -2012,6 +2080,45 @@ read_packets:
 
         if( send_packet( h80211, caplen ) < 0 )
             return( 1 );
+#else
+		{
+			LARGE_INTEGER ts, ts2;
+
+			QueryPerformanceCounter(&ts);
+			
+			while(1)
+			{
+				usleep(100);
+				QueryPerformanceCounter(&ts2);
+				if((ts2.QuadPart  - ts.QuadPart) * opt.r_nbpps >= pc_freq.QuadPart)
+				{
+					break;
+				}
+			}
+
+			f = (float) ( ( ts2.QuadPart  - ts.QuadPart ) * 1000000 / pc_freq.QuadPart);
+
+			ticks[0] += f / ( 1000000/RTC_RESOLUTION );
+			ticks[1] += f / ( 1000000/RTC_RESOLUTION );
+			ticks[2] += f / ( 1000000/RTC_RESOLUTION );
+
+			if( ticks[1] > (RTC_RESOLUTION/10) )
+			{
+				ticks[1] = 0;
+				printf( "\rSent %ld packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
+				fflush( stdout );
+			}
+
+			/* threshold reached */
+
+			ticks[2] = 0;
+
+			if( send_packet( h80211, caplen ) < 0 )
+				return( 1 );
+
+		}
+
+#endif /* WIN32 */
     }
 
     return( 0 );
@@ -2129,6 +2236,7 @@ int do_attack_arp_resend( void )
     {
         /* sleep until the next clock tick */
 
+#ifndef WIN32
         if( dev.fd_rtc >= 0 )
         {
             if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
@@ -2154,6 +2262,30 @@ int do_attack_arp_resend( void )
             ticks[1] += f / ( 1000000/RTC_RESOLUTION );
             ticks[2] += f / ( 1000000/RTC_RESOLUTION );
         }
+#else
+		{
+			LARGE_INTEGER ts, ts2;
+
+			QueryPerformanceCounter(&ts);
+			
+			while(1)
+			{
+				usleep(100);
+				QueryPerformanceCounter(&ts2);
+				if((ts2.QuadPart  - ts.QuadPart) * opt.r_nbpps >= pc_freq.QuadPart)
+				{
+					break;
+				}
+			}
+
+			f = (float) ( ( ts2.QuadPart  - ts.QuadPart ) * 1000000 / pc_freq.QuadPart);
+
+			ticks[0] += f / ( 1000000/RTC_RESOLUTION );
+			ticks[1] += f / ( 1000000/RTC_RESOLUTION );
+			ticks[2] += f / ( 1000000/RTC_RESOLUTION );
+		}
+
+#endif /* WIN32 */
 
         if( ticks[1] > (RTC_RESOLUTION/10) )
         {
@@ -2552,7 +2684,7 @@ int do_attack_chopchop( void )
 "    * The driver source wasn't properly patched for injection support.\n"
 "    * You are too far from the AP. Get closer or reduce the send rate.\n"
 "    * The wireless interface isn't setup on the correct channel.\n" );
-#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(WIN32)
 "    * You are too far from the AP. Get closer.\n" );
 #endif
             if( is_deauth_mode )
@@ -3921,6 +4053,72 @@ int openraw( char *name, int *fd, int *buf, int inout )
 }
 #endif /* __FreeBSD__ */
 
+#if defined(WIN32)
+int openraw( char *iface, int fd, int *arptype, uchar* mac )
+{
+    char errbuf[PCAP_ERRBUF_SIZE];
+    PAirpcapHandle airpcap_handle;
+	
+    /* AirPcap uses radiotap as a readio header */
+    *arptype = ARPHRD_IEEE80211_FULL;
+	
+    /* Open the adapter with WinPcap */
+    if((dev.winpcap_adapter = pcap_open_live(iface,
+        65536,
+        1,
+        1000,
+        errbuf)) == NULL)
+    {
+        fprintf( stderr, "Error opening adapter %s with winpcap (%s)\n", iface, errbuf);
+        return( 1 );
+    }
+
+    /* Get the airpcap handle so we can change wireless-specific settings */
+    airpcap_handle = pcap_get_airpcap_handle(dev.winpcap_adapter);
+
+    if(airpcap_handle == NULL)
+    {
+        fprintf( stderr, "This adapter doesn't have wireless extensions. Quitting\n");
+        pcap_close( dev.winpcap_adapter );
+        return( 1 );
+    }
+
+    /* Tell the adapter that the packets we'll send and receive don't include the FCS */
+    if(!AirpcapSetFcsPresence(airpcap_handle, FALSE))
+    {
+        fprintf( stderr, "Error setting the Fcs presence: %s\n", AirpcapGetLastError(airpcap_handle));
+        pcap_close( dev.winpcap_adapter );
+        return( 1 );
+    }
+
+    /* Set the link layer to bare 802.11 */
+    if(!AirpcapSetLinkType(airpcap_handle, AIRPCAP_LT_802_11))
+    {
+        fprintf( stderr, "Error setting the link layer: %s\n", AirpcapGetLastError(airpcap_handle));
+        pcap_close( dev.winpcap_adapter );
+        return( 1 );
+    }
+
+    /* Accept correct frames only */
+	if( !AirpcapSetFcsValidation(airpcap_handle, AIRPCAP_VT_ACCEPT_CORRECT_FRAMES) )
+	{
+        fprintf( stderr, "Error setting the link layer: %s\n", AirpcapGetLastError(airpcap_handle));
+        pcap_close( dev.winpcap_adapter );
+        return( 1 );
+	}
+	
+    /* Set a low mintocopy for better responsiveness */
+    if(!AirpcapSetMinToCopy(airpcap_handle, 1))
+    {
+        fprintf( stderr, "Error setting the link layer: %s\n", AirpcapGetLastError(airpcap_handle));
+        pcap_close( dev.winpcap_adapter );
+        return( 1 );
+    }
+
+    return( 0 );
+}
+#endif /* WIN32 */
+
 int grab_essid(uchar* packet, int len)
 {
     int i=0, j=0, pos=0, tagtype=0, taglen=0, chan=0;
@@ -4483,7 +4681,11 @@ int main( int argc, char *argv[] )
     FILE * f;
 #endif
 
-    /* check the arguments */
+#if defined WIN32
+	QueryPerformanceFrequency(&pc_freq);
+#endif
+
+	/* check the arguments */
 
     memset( &opt, 0, sizeof( opt ) );
     memset( &dev, 0, sizeof( dev ) );
@@ -4947,11 +5149,13 @@ usage:
         return( 1 );
     }
 
+#ifndef WIN32
     if( geteuid() != 0 )
     {
         printf( "This program requires root privileges.\n" );
         return( 1 );
     }
+#endif
 
     if ( opt.f_tods == 1 && opt.f_fromds == 1 )
     {
@@ -5201,6 +5405,17 @@ usage:
 
     if( openraw( argv[optind], &dev.fd_out, &dev.buf_out, 1 ) != 0 )
         return( 1 );
+#endif
+
+#ifdef WIN32
+    dev.fd_out = 0;
+    dev.fd_in = 0;
+	dev.is_airpcap = 1;
+
+	if( openraw( argv[optind], dev.fd_out, &dev.arptype_in, 0 ) != 0 )
+	{
+		return( 1 );
+	}
 #endif
 
     /* open the packet source */

@@ -28,6 +28,10 @@
 
 #include "version.h"
 #include "crypto.h"
+#ifdef WIN32
+#include <Windows.h>
+#include <airpcap.h>
+#endif
 #include "pcap.h"
 
 #define CRYPT_NONE 0

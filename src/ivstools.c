@@ -24,6 +24,10 @@
 #include <time.h>
 
 #include "version.h"
+#ifdef WIN32
+#include <Windows.h>
+#include <airpcap.h>
+#endif
 #include "pcap.h"
 
 #define SPANTREE_ADDR  "\x01\x80\xC2\x00\x00\x00"

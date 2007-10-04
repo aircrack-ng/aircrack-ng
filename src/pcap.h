@@ -4,6 +4,8 @@
 #define FORMAT_CAP      1
 #define FORMAT_IVS      2
 
+#define PCAP_ERRBUF_SIZE 256
+
 #define TCPDUMP_MAGIC           0xA1B2C3D4
 #define TCPDUMP_CIGAM           0xD4C3B2A1
 #define IVSONLY_MAGIC           "\xBF\xCA\x84\xD4"
@@ -45,5 +47,14 @@ struct pcap_pkthdr
     uint caplen;
     uint len;
 };
+
+typedef struct pcap pcap_t;
+
+pcap_t	*pcap_open_live(const char *, int, int, int, char *);
+void	pcap_close(pcap_t *);
+PAirpcapHandle pcap_get_airpcap_handle(pcap_t *p);
+int	pcap_sendpacket(pcap_t *, const u_char *, int);
+char	*pcap_geterr(pcap_t *);
+int 	pcap_next_ex(pcap_t *, struct pcap_pkthdr **, const u_char **);
 
 #endif /* common.h */

@@ -28,6 +28,10 @@
 #include <time.h>
 #include <getopt.h>
 #include "version.h"
+#ifdef WIN32
+#include <Windows.h>
+#include <airpcap.h>
+#endif
 #include "pcap.h"
 
 #define NULL_MAC        "\x00\x00\x00\x00\x00\x00"

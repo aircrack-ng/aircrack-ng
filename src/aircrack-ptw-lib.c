@@ -6,6 +6,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef WIN32
+#include <Windows.h>
+#include <airpcap.h>
+#endif
 #include "pcap.h"
 #include "aircrack-ptw-lib.h"
 #include "aircrack-ng.h"
