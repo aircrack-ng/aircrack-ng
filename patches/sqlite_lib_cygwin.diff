@@ -1,0 +1,11 @@
+--- Makefile	2007-10-04 22:56:07.671875000 +0200
++++ Makefile.cygwin	2007-10-04 22:54:07.468750000 +0200
+@@ -681,7 +681,7 @@
+ 	mkdir -p doc
+ 	mv $(DOC) doc
+ 
+-install:	sqlite3$(TEXE) libsqlite3.la sqlite3.h ${HAVE_TCL:1=tcl_install}
++install:	libsqlite3.la sqlite3.h 
+ 	$(INSTALL) -d $(DESTDIR)$(libdir)
+ 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
+ 	$(INSTALL) -d $(DESTDIR)$(exec_prefix)/bin

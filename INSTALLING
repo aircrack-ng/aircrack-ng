@@ -1,9 +1,12 @@
 === Requirements ===
 
  * OpenSSL development package
- * SQLite development package >= 3.3.17 (3.4.X version or better is recommended)
-   if you want to use airolib-ng
- * For cygwin, it requires w32api package
+ * If you want to use airolib-ng and '-r' option on aircrack-ng, 
+   - SQLite development package >= 3.3.17 (3.4.X version or better is recommended)
+   - autoconf 2.50
+   - libtool
+ * For cygwin, it also requires w32api package
+ 
 
 === Compilating ===
 
@@ -11,6 +14,8 @@
     make
     # If you want to use airolib-ng and co,
     # issue 'make SQLITE=true' instead of 'make'
+    # On cygwin, you have to install sqlite manually, 
+    # see next point for instructions on how to install it.
 
  * Strip debugging symbols:
     make strip
@@ -27,6 +32,17 @@
 REM:
  * You can find a several WPA handshake and other capture files
    as well as a dictionnary in "test/" directory
+
+=== Compiling sqlite on cygwin ===
+
+  wget http://www.sqlite.org/sqlite-3.4.2.tar.gz
+  tar -zxf sqlite-3.4.2.tar.gz
+  cd sqlite-3.4.2
+  ./configure --disable-tcl
+  wget http://patches.aircrack-ng.org/sqlite_lib_cygwin.diff
+  patch -i sqlite_lib_cygwin.diff
+  make
+  make install
 
 === Using precompiled binaries ===
 
