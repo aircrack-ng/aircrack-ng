@@ -50,11 +50,12 @@ struct pcap_pkthdr
 
 typedef struct pcap pcap_t;
 
+#ifdef WIN32
 pcap_t	*pcap_open_live(const char *, int, int, int, char *);
 void	pcap_close(pcap_t *);
 PAirpcapHandle pcap_get_airpcap_handle(pcap_t *p);
 int	pcap_sendpacket(pcap_t *, const u_char *, int);
 char	*pcap_geterr(pcap_t *);
 int 	pcap_next_ex(pcap_t *, struct pcap_pkthdr **, const u_char **);
-
+#endif /* WIN32 */
 #endif /* common.h */
