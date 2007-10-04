@@ -2104,11 +2104,11 @@ isInstalled() {
             return $NO
         fi
 
-        if [ x"`$MODPROBE -l | grep ${DMODULE[$1]}"\.ko"`" != x ]
+        if [ x"`$MODPROBE -l | grep "\/"${DMODULE[$1]}"\.ko"`" != x ]
         then
             if [ x"${DMODINFO[$1]}" != x ]
             then
-                modfile="`$MODPROBE -l | grep ${DMODULE[$1]}"\.ko"`"
+                modfile="`$MODPROBE -l | grep "\/"${DMODULE[$1]}"\.ko"`"
                 if [ x"`modinfo "$modfile" | grep "${DMODINFO[$1]}"`" != x ]
                 then
                     return $YES
@@ -2137,7 +2137,7 @@ isInstalled() {
             return $NO
         fi
 
-        if [ x"`$MODPROBE -l | grep ${SMODULE[$1]}"\.ko"`" != x ]
+        if [ x"`$MODPROBE -l | grep "\/"${SMODULE[$1]}"\.ko"`" != x ]
         then
             return $YES
         else
@@ -2857,9 +2857,9 @@ removeDriver() {
 #loop through the modules, find and rm them
     for i in ${DMODULES[$1]}
     do
-        if [ -f "`$MODPROBE -l | grep $i\.ko`" ]
+        if [ -f "`$MODPROBE -l | grep \/$i\.ko`" ]
         then
-            rm -i "`$MODPROBE -l | grep $i\.ko`"
+            rm -i "`$MODPROBE -l | grep \/$i\.ko`"
         fi
     done
 
@@ -2882,9 +2882,9 @@ removeStack() {
 #loop through the modules, find and rm them
     for i in ${SMODULES[$1]}
     do
-        if [ -f "`$MODPROBE -l | grep $i\.ko`" ]
+        if [ -f "`$MODPROBE -l | grep \/$i\.ko`" ]
         then
-            rm -i "`$MODPROBE -l | grep $i\.ko`"
+            rm -i "`$MODPROBE -l | grep \/$i\.ko`"
         fi
     done
 
@@ -3650,9 +3650,12 @@ then
     echo "Files:"
     for i in ${DMODULES[$num]}
     do
-        mfile="`$MODPROBE -l | grep $i\.ko`"
-        mtime="`ls -l $mfile | awk '{print $6" "$7}'`"
-        echo $mfile $mtime
+        mfile="`$MODPROBE -l | grep \/$i\.ko`"
+        if [ x"$mfile" != x ]
+        then
+            mtime="`ls -l $mfile | awk '{print $6" "$7}'`"
+            echo $mfile $mtime
+        fi
     done
     echo
 
