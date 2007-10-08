@@ -2323,7 +2323,7 @@ isInKernel() {
             return $ERROR
         fi
 
-        if [ x${DCONFIG[$1]} != x ]
+        if [ 'x${DCONFIG[$1]}' != x ]
         then
             if [ x"`grep ${DCONFIG[$1]}"y" "/lib/modules/"$KVER"/build/.config"`" != x ]
             then
