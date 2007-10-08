@@ -594,7 +594,7 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
             len = read_packet(pkt_sniff, sizeof(pkt_sniff), NULL);
 
             gettimeofday(&tv2, NULL);
-            if(((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 500*1000) //wait 500 msec for beacon frame
+            if(((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 10000*1000) //wait 10sec for beacon frame
             {
                 return -1;
             }
