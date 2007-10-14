@@ -183,9 +183,9 @@ SI_DRIVERPATH2[$i]="/usr/src/linux/net/ieee80211"
 SI_DRIVEREXDIR[$i]=""
 SI_DRIVERDIR[$i]="ieee80211"
 SI_PREPATCH[$i]=""
-SI_PATCHFILE[$i]="ieee80211_inject.patch"
-SI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/ieee80211_inject.patch"
-SI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/ieee80211_inject.patch"
+SI_PATCHFILE[$i]="ieee80211_inject-2.6.22.patch"
+SI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/ieee80211_inject-2.6.22.patch"
+SI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/ieee80211_inject-2.6.22.patch"
 SI_PATCHARG[$i]="-p3"
 SI_PRECOMP[$i]=""
 SI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${SI_DRIVERDIR[$i]} modules"
@@ -757,7 +757,7 @@ DSTACK[$i]="2"
 DMODINFO[$i]=""
 DMODULE[$i]="prism54common"
 DCONFIG[$i]="CONFIG_P54_COMMON="
-DCONFIG[$i]="CONFIG_P54_COMMON=m CONFIG_P54_USB=m CONFIG_P54_PCI=m"
+DCONFIGS[$i]="CONFIG_P54_COMMON=m CONFIG_P54_USB=m CONFIG_P54_PCI=m"
 DMODULES[$i]="prism54common prism54pci prism54usb"
 DI_INIT[$i]=""
 DI_DRIVERGET[$i]=""
@@ -1696,6 +1696,14 @@ install_ieee80211() {
             SI_DRIVERDIR[$1]="ieee80211"
         fi
     fi
+
+    #use old patch for kernel < 2.6.22
+    if [ $KMINOR -eq 6 -a $KPATCH -lt 22 ]
+    then
+        SI_PATCHFILE[$1]="ieee80211_inject.patch"
+        SI_PATCHPATH1[$1]="http://patches.aircrack-ng.org/ieee80211_inject.patch"
+        SI_PATCHPATH2[$1]="http://patches.aircrack-ng.org/old/ieee80211_inject.patch"
+    fi
 }
 #end
 
@@ -2323,7 +2331,7 @@ isInKernel() {
             return $ERROR
         fi
 
-        if [ 'x${DCONFIG[$1]}' != x ]
+        if [ "x${DCONFIG[$1]}" != x ]
         then
             if [ x"`grep ${DCONFIG[$1]}"y" "/lib/modules/"$KVER"/build/.config"`" != x ]
             then
