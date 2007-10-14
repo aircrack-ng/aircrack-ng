@@ -653,9 +653,11 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
                     break;
                 }
 
-                /* if essid is given, copy bssid */
+                /* if essid is given, copy bssid AND essid, so we can handle case insensitive arguments */
                 if(bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0 && strncasecmp(essid, (char*)pkt_sniff+pos+2, taglen) == 0 && strlen(essid) == (unsigned)taglen)
                 {
+                    memset(essid, 0, 33);
+                    memcpy(essid, pkt_sniff+pos+2, taglen);
                     memcpy(bssid, pkt_sniff+10, 6);
                     printf("Found BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\" to given ESSID \"%s\".\n", bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5], essid);
                     break;
@@ -765,6 +767,17 @@ int getnet( uchar* capa, int filter, int force)
             }
         }
         return( 1 );
+    }
+
+    return 0;
+}
+
+int xor_keystream(uchar *ph80211, uchar *keystream, int len)
+{
+    int i=0;
+
+    for (i=0; i<len; i++) {
+        ph80211[i] = ph80211[i] ^ keystream[i];
     }
 
     return 0;
@@ -1107,17 +1120,6 @@ void add_icv(uchar *input, int len, int offset)
     input[len+3] = (crc >> 24) & 0xFF;
 
     return;
-}
-
-int xor_keystream(uchar *ph80211, uchar *keystream, int len)
-{
-    int i=0;
-
-    for (i=0; i<len; i++) {
-        ph80211[i] = ph80211[i] ^ keystream[i];
-    }
-
-    return 0;
 }
 
 void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, int fragsize, int ska)
