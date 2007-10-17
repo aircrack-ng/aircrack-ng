@@ -3,6 +3,7 @@ Version 1.0-beta2 (changes from aircrack-ng 1.0-beta1) - Released ?? ??? ????:
 * airdriver-ng: Fixed module detection.
 * airdecap-ng: Save packets with ICV error in a separate file.
 * airolib-ng: Automatically create a database if it does not exist. "init" option is not necessary anymore.
+* airdriver-ng: Updated r8187 driver download location.
 * Added instructions to compile airolib-ng and using '-r' option in aircrack-ng for cygwin.
 * Makefile: supports DESTDIR or destdir parameter.
 
