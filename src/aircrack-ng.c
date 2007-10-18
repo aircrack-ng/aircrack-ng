@@ -410,11 +410,11 @@ int mergebssids(char * bssidlist, unsigned char * bssid)
 {
 	struct mergeBSSID * list_prev;
 	struct mergeBSSID * list_cur;
-	char * mac;
-	char * list;
-	char * tmp;
+	char * mac = NULL;
+	char * list = NULL;
+	char * tmp = NULL;
+	char * tmp2 = NULL;
 	int next, i, found;
-
 
 	// Do not convert if equal to first bssid
 	if (memcmp(opt.firstbssid, bssid, 6) == 0)
@@ -425,16 +425,16 @@ int mergebssids(char * bssidlist, unsigned char * bssid)
 
 	while (list_cur != NULL)
 	{
-			if (memcmp(list_cur->bssid, bssid, 6) == 0)
-			{
-				if (list_cur->convert)
-					memcpy(bssid, opt.firstbssid, 6);
+		if (memcmp(list_cur->bssid, bssid, 6) == 0)
+		{
+			if (list_cur->convert)
+				memcpy(bssid, opt.firstbssid, 6);
 
-				return list_cur->convert;
-			}
+			return list_cur->convert;
+		}
 
-			list_prev = list_cur;
-			list_cur = list_cur->next;
+		list_prev = list_cur;
+		list_cur = list_cur->next;
 	}
 
 	// Not found, check if it has to be converted
@@ -451,16 +451,17 @@ int mergebssids(char * bssidlist, unsigned char * bssid)
 		bssid[3], bssid[4], bssid[5]);
 	mac[17] = 0;
 
-	list = strdup(bssidlist);
+	tmp2 = list = strdup(bssidlist);
 
 	// skip first element (because it doesn't have to be converted
-	// It already have the good value
+	// It already has the good value
 	tmp = strsep(&list, ",");
 
 	next = found = 0;
 
 	do
 	{
+		next=0;
 		tmp = strsep(&list, ",");
 		if (tmp == NULL)
 			break;
@@ -488,8 +489,10 @@ int mergebssids(char * bssidlist, unsigned char * bssid)
 	while (list);
 
 	// Free memory
-	free(mac);
-	free(list);
+	if(mac != NULL)
+		free(mac);
+	if(tmp2 != NULL)
+		free(tmp2);
 
 	// Add the result to the list
 	list_cur = (struct mergeBSSID *) malloc(sizeof(struct mergeBSSID));
