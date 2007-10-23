@@ -13,7 +13,11 @@
 
 #include "packed.h"
 
-/* Empty for now.  Could contain antenna, power, rate, etc. */
+/* For all structures, when adding new fields, always append them to the end.
+ * This way legacy binary code does not need to be recompiled.  This is
+ * particularly useful for DLLs.  -sorbo
+ */
+
 struct tx_info {
         unsigned int     ti_rate;
 };

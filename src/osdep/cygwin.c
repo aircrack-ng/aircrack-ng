@@ -119,7 +119,7 @@ static int cygwin_read_packet(struct priv_cygwin *priv, void *buf, int len,
 {
 	int rd;
 
-	memset(ri, 0, sizeof(ri));
+	memset(ri, 0, sizeof(*ri));
 
 	rd = priv->pc_sniff(buf, len, ri);
 	if (rd == -1)
