@@ -66,7 +66,7 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <airpcap.h>
-#define usleep(us) Sleep(us / 1000)
+#define usleep(us) Sleep((us > 1000)? us / 1000: 1)
 #define sleep(us) Sleep(us * 1000)
 LARGE_INTEGER pc_freq;
 #endif /* WIN32 */
