@@ -26,49 +26,49 @@
 #endif
 
 #ifndef WIN32
-#if defined(linux)
-    #include <linux/rtc.h>
-#endif
+	#if defined(linux)
+		#include <linux/rtc.h>
+	#endif
 
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/time.h>
+	#include <sys/socket.h>
+	#include <sys/ioctl.h>
+	#include <sys/types.h>
+	#include <sys/wait.h>
+	#include <sys/time.h>
 
-#if defined(linux)
-    #include <netpacket/packet.h>
-    #include <linux/if_ether.h>
-    #include <linux/if.h>
-    #include <linux/wireless.h>
-#endif /* linux */
+	#if defined(linux)
+		#include <netpacket/packet.h>
+		#include <linux/if_ether.h>
+		#include <linux/if.h>
+		#include <linux/wireless.h>
+	#endif /* linux */
 
-#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
-    #include <sys/param.h>
-    #include <sys/sysctl.h>
-    #include <sys/uio.h>
-    #include <net/bpf.h>
-    #include <net/if.h>
-    #include <net/if_media.h>
-    #include <netinet/in.h>
-    #include <netinet/if_ether.h>
-    #include <net80211/ieee80211.h>
-    #include <net80211/ieee80211_freebsd.h>
-    #include <net80211/ieee80211_radiotap.h>
-#endif /* __FreeBSD__ */
+	#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
+		#include <sys/param.h>
+		#include <sys/sysctl.h>
+		#include <sys/uio.h>
+		#include <net/bpf.h>
+		#include <net/if.h>
+		#include <net/if_media.h>
+		#include <netinet/in.h>
+		#include <netinet/if_ether.h>
+		#include <net80211/ieee80211.h>
+		#include <net80211/ieee80211_freebsd.h>
+		#include <net80211/ieee80211_radiotap.h>
+	#endif /* __FreeBSD__ */
 
-#include <arpa/inet.h>
-#include <unistd.h>
+	#include <arpa/inet.h>
+	#include <unistd.h>
 #else
-#include <Windows.h>
-#include <sys/types.h>
-#include <limits.h>
-#include <sys/wait.h>
-#include <sys/time.h>
-#include <airpcap.h>
-#define usleep(us) Sleep((us > 1000)? us / 1000: 1)
-#define sleep(us) Sleep(us * 1000)
-LARGE_INTEGER pc_freq;
+	#include <Windows.h>
+	#include <sys/types.h>
+	#include <limits.h>
+	#include <sys/wait.h>
+	#include <sys/time.h>
+	#include <airpcap.h>
+	#define usleep(us) Sleep((us > 1000)? us / 1000: (us > 0) ? 1 : 0)
+	#define sleep(us) Sleep(us * 1000)
+	LARGE_INTEGER pc_freq;
 #endif /* WIN32 */
 
 #include <dirent.h>
@@ -2085,7 +2085,7 @@ read_packets:
 			LARGE_INTEGER ts, ts2;
 
 			QueryPerformanceCounter(&ts);
-			
+
 			while(1)
 			{
 				usleep(100);
@@ -2267,7 +2267,7 @@ int do_attack_arp_resend( void )
 			LARGE_INTEGER ts, ts2;
 
 			QueryPerformanceCounter(&ts);
-			
+
 			while(1)
 			{
 				usleep(100);
@@ -4058,10 +4058,10 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
 {
     char errbuf[PCAP_ERRBUF_SIZE];
     PAirpcapHandle airpcap_handle;
-	
+
     /* AirPcap uses radiotap as a readio header */
     *arptype = ARPHRD_IEEE80211_FULL;
-	
+
     /* Open the adapter with WinPcap */
     if((dev.winpcap_adapter = pcap_open_live(iface,
         65536,
@@ -4106,7 +4106,7 @@ int openraw( char *iface, int fd, int *arptype, uchar* mac )
         pcap_close( dev.winpcap_adapter );
         return( 1 );
 	}
-	
+
     /* Set a low mintocopy for better responsiveness */
     if(!AirpcapSetMinToCopy(airpcap_handle, 1))
     {
