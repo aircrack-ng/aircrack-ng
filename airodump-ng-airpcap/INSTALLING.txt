@@ -1,0 +1,4 @@
+1. Copy 'developper' directory (found on the Airpcap CD) at the same level of 'airodump-ng-airpcap' directory
+2. Open Visual Studio C++ 6
+3. Select 'File' then 'Open Workspace...' and open 'airodump-ng-airpcap.dsw'
+4. To compile it, open 'Build' then 'Rebuild All'

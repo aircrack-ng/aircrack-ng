@@ -66,7 +66,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "../../AirPcap_Devpack/AirPcap_Devpack/include" /I "../../AirPcap_Devpack/WinPcap_Devpack/include" /D "HAVE_AIRPCAP" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "WPCAP" /D "HAVE_REMOTE" /YX /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "../developers/AirPcap_Devpack/include" /I "../developers/WinPcap_Devpack/include" /D "HAVE_AIRPCAP" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "WPCAP" /D "HAVE_REMOTE" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x40c /d "_DEBUG"
 # ADD RSC /l 0x40c /d "_DEBUG"
 BSC32=bscmake.exe
@@ -74,7 +74,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 wpcap.lib airpcap.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wininet.lib /nologo /subsystem:console /debug /machine:I386 /out:"Debug/airodump-ng.exe" /pdbtype:sept /libpath:"../../AirPcap_Devpack/AirPcap_Devpack/lib" /libpath:"../../AirPcap_Devpack/WinPcap_Devpack/lib"
+# ADD LINK32 wpcap.lib airpcap.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wininet.lib /nologo /subsystem:console /debug /machine:I386 /out:"Debug/airodump-ng.exe" /pdbtype:sept /libpath:"../developers/AirPcap_Devpack/lib" /libpath:"../developers/WinPcap_Devpack/lib"
+# SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 

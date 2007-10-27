@@ -5,11 +5,6 @@
 
 #include "capture.h"
 
-typedef HANDLE (*PROC1)(LPSTR);
-typedef HANDLE (*PROC2)(HANDLE,void *,int,int,void *);
-typedef int (*PROC3)(HANDLE);
-typedef int (*PROC4)(HANDLE,void *,void *);
-
 PAirpcapHandle airpcap_ad;
 pcap_t *winpcap_ad;
 int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power);
@@ -110,11 +105,11 @@ int open_adapter( int card_index )
 	for( tmpdev = alldevs, i = 0; i < card_index - 1; tmpdev = tmpdev->next, i++ );
 
 	if( ( winpcap_ad = pcap_open_live( tmpdev->Name,
-		65536,										
-													
-		1,											
-		100,										
-		ebuf										
+		65536,
+
+		1,
+		100,
+		ebuf
 		) ) == NULL )
 	{
 		fprintf( stderr, "Error opening adapter with winpcap (%s)\n", ebuf );
@@ -162,11 +157,11 @@ int GetNextPacket( char **payload, int *caplen, char *power)
 	struct pcap_pkthdr *header;
 	const u_char *pkt_data;
 	int res;
-	int hdrlen; 
+	int hdrlen;
 	int ppipower;
 
 	res = pcap_next_ex( winpcap_ad, &header, &pkt_data );
-	
+
 	if( res < 0 )
 	{
 		// error
@@ -189,7 +184,7 @@ int GetNextPacket( char **payload, int *caplen, char *power)
 	*caplen = header->caplen - hdrlen;
 	if( header->caplen > 14 )
 	{
-		// Yes this is a hack. 
+		// Yes this is a hack.
 		// But it's based on the assumption that radiotap header from AirPcap will be stable, which is
 		// going to be true at least for the part before the power information.
 		*power = ppipower;
@@ -214,7 +209,7 @@ int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 	ULONG position = 0;
 
 	// Sanity checks
-	if (caplen < sizeof(*pPpiPacketHeader)) 
+	if (caplen < sizeof(*pPpiPacketHeader))
 	{
 		// Packet smaller than the PPI fixed header
 		return( 1 );
@@ -224,7 +219,7 @@ int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 
 	*hdrlen = pPpiPacketHeader->PphLength;
 
-	if(caplen < *hdrlen) 
+	if(caplen < *hdrlen)
 	{
 		// Packet smaller than the PPI fixed header
 		return( 1 );
@@ -280,7 +275,7 @@ int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 			// we do not know this field. Just print type and length and skip
 			break;
 		}
-		
+
 		position += pFieldHeader->PfhLength;
 	}
 	while(TRUE);
