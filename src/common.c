@@ -194,7 +194,6 @@ int getmac(char * macAddress, int strict, unsigned char * mac)
 			&& strlen(byte) == 2)
 			return 1;
 
-		//if (!(isdigit((int)byte[1]) || (toupper((int)byte[1])>='A' && toupper((int)byte[1])<='F')))
 		if (hexCharToInt(byte[1]) < 0)
 			return 1;
 
@@ -217,20 +216,23 @@ int getmac(char * macAddress, int strict, unsigned char * mac)
 // Read a line of characters inputted by the user
 int readLine(char line[], int maxlength)
 {
-        int i = -1;
+	int i = -1;
 
-        do
-        {
-        	// Read char
-        	line[++i] = getchar();
-        }
-	while (line[i] != '\n'
-       		&& line[i] != EOF
-        	&& i + 1 < maxlength);
+	do
+	{
+		// Read char
+		line[++i] = getchar();
+
+		if (line[i] == '\n')
+			break;
+		if (line[i] == EOF)
+			break;
+	}
+	while (i + 1 < maxlength);
 	// Stop at 'Enter' key pressed or EOF or max number of char read
 
 	// Return current size
-        return i;
+    return i;
 }
 
 int hexToInt(char s[], int len)
