@@ -215,7 +215,7 @@ void clean_exit(int ret)
 
 	for( i = 0; i < opt.nbcpu; i++ )
 	{
-            safe_write( mc_pipe[i][1], (void *) "\r", 2 );
+            safe_write( mc_pipe[i][1], (void *) "EXIT\r", 5 );
         }
 
 	for(i=0; i<id; i++)
