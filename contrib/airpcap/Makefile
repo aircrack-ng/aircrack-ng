@@ -1,11 +1,12 @@
 ROOT    = ../..
 include $(ROOT)/common.mak
 
-CFLAGS = -g -I../../../developers/Airpcap_Devpack/include -I../../../developers/WinPcap_Devpack/include
-LIBS = -L ../../../developers/Airpcap_Devpack/lib -lairpcap -L ../../../developers/WinPcap_Devpack/lib -lwpcap
+CFLAGS = -g -I$(ROOT)/../developers/Airpcap_Devpack/include -I$(ROOT)/src/osdep
+#LIBS = -L $(ROOT)/../developers/Airpcap_Devpack/lib -lairpcap -L $(ROOT)/src/osdep -losdep
+LIBS = -L $(ROOT)/../developers/Airpcap_Devpack/lib -lairpcap
 
 
-CFLAGS	+= $(PIC) -I$(ROOT)/src/osdep
+CFLAGS	+= $(PIC) 
 OBJS	= airpcap.o
 DLL	= airpcap.dll
 

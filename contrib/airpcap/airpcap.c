@@ -4,28 +4,21 @@
 #include <windows.h>
 
 #include <airpcap.h>
-//#include "../../src/pcap.h"
-//#include <pcap.h>
-//#include "../../../developers/WinPcap_Devpack/include/pcap.h"
 
 #include "osdep.h"
 #include "tap-win32/common.h"
 
-const char * DEFAULT_ADAPT_NAME = "\\\\.\\airpcap00";
-const char * DEVICE_HEADER = "\\\\.\\";
+static const char * DEFAULT_ADAPT_NAME = "\\\\.\\airpcap00";
+static const char * DEVICE_HEADER = "\\\\.\\";
 
 
-// New
-pcap_t *winpcap_adapter;
-PAirpcapHandle airpcap_handle;
-// End new
-/*
+//pcap_t *winpcap_adapter;
+static PAirpcapHandle airpcap_handle;
+
+
 // Use PPI later
 #define PPH_PH_VERSION		((u_int8_t)0x00)
 #define	PPI_FIELD_TYPE_802_11_COMMON		((u_int16_t)0x02)
-
-//#pragma pack(push)
-//#pragma pack(1)
 
 typedef struct _PPI_PACKET_HEADER
 {
@@ -56,10 +49,10 @@ typedef struct _PPI_FIELD_802_11_COMMON
 	int8_t		DbmAntNoise;
 }
 PPI_FIELD_802_11_COMMON, *PPPI_FIELD_802_11_COMMON;
-//#pragma pack(pop)
 
 
-int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
+
+static int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 {
 	PPPI_PACKET_HEADER pPpiPacketHeader;
 	PPPI_FIELD_HEADER	pFieldHeader;
@@ -92,9 +85,7 @@ int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 
 	do
 	{
-		//
 		// now we suppose to have an 802.11-Common header
-		//
 		if (*hdrlen < sizeof(*pFieldHeader) + position)
 		{
 			break;
@@ -105,32 +96,30 @@ int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 
 		switch(pFieldHeader->PfhType)
 		{
-		case PPI_FIELD_TYPE_802_11_COMMON:
-			if (pFieldHeader->PfhLength != sizeof(PPI_FIELD_802_11_COMMON) || caplen - position < sizeof(PPI_FIELD_802_11_COMMON))
-			{
-				//
-				// the header is bogus, just skip it
-				//
-				fprintf( stderr, "Bogus 802.11-Common Field. Skipping it.\n");
-			}
-			else
-			{
-				PPPI_FIELD_802_11_COMMON pField = (PPPI_FIELD_802_11_COMMON)(p + position);
-
-				if (pField->DbmAntSignal != -128)
+			case PPI_FIELD_TYPE_802_11_COMMON:
+				if (pFieldHeader->PfhLength != sizeof(PPI_FIELD_802_11_COMMON) || caplen - position < sizeof(PPI_FIELD_802_11_COMMON))
 				{
-					*power = (int)pField->DbmAntSignal;
+					// the header is bogus, just skip it
+					fprintf( stderr, "Bogus 802.11-Common Field. Skipping it.\n");
 				}
 				else
 				{
-					*power = 0;
-				}
-			}
-			break;
+					PPPI_FIELD_802_11_COMMON pField = (PPPI_FIELD_802_11_COMMON)(p + position);
 
-		default:
-			// we do not know this field. Just print type and length and skip
-			break;
+					if (pField->DbmAntSignal != -128)
+					{
+						*power = (int)pField->DbmAntSignal;
+					}
+					else
+					{
+						*power = 0;
+					}
+				}
+				break;
+
+			default:
+				// we do not know this field. Just print type and length and skip
+				break;
 		}
 
 		position += pFieldHeader->PfhLength;
@@ -139,18 +128,19 @@ int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 
 	return( 0 );
 }
-*/
+
 
 int cygwin_set_mac(unsigned char *mac)
 {
-   if (*mac) {}
-   return 0;
+   	if (*mac) {}
+   	return 0;
 }
 
 void cygwin_close(void)
 {
-	// Do not remove monitor mode in case another application forget to set it
-	// (by default, when plugged in, the adapter is set in monitor mode)
+	// By default, when plugged in, the adapter is set in monitor mode;
+	// Application may assume it's already in monitor mode and forget to set it
+	// So, do not remove monitor mode.
 	if (airpcap_handle != NULL)
 	{
 		AirpcapClose(airpcap_handle);
@@ -165,45 +155,33 @@ int cygwin_get_mac(unsigned char *mac)
 	return 0;
 }
 
+// Use PPI headers to obtain the different information for ri
+// Use AirpcapConvertFrequencyToChannel() to get channel
+// Add an option to give frequency instead of channel
 int cygwin_sniff(void *buf, int len, struct rx_info *ri)
 {
-	struct pcap_pkthdr *header;
-	const u_char *pkt_data;
-	int res;
+	UINT BytesReceived = 0;
 
-	while( 1 )
-	{
-		res = pcap_next_ex( winpcap_adapter, &header, &pkt_data );
+	// Wait for the next packet
+	// Maybe add an event packets to read
+	// WaitForSingleObject(ReadEvent, INFINITE);
 
-		if( res == 0 )
-		{
-			// timeout elapsed
-			continue;
-		}
+	// Read a packet
+	if(AirpcapRead(airpcap_handle, buf, len, &BytesReceived))
+		return (int)BytesReceived;
 
-		if( res < 0 )
-		{
-			// error
-			return -1;
-		}
-
-		// Good reception
-		memcpy( buf, pkt_data, header->caplen );
-		return( header->caplen );
-	}
+	return -1;
 }
-
-
 
 int cygwin_inject(void *buf, int len, struct tx_info *ti)
 {
-	if(pcap_sendpacket(winpcap_adapter, buf, len) != 0)
+	if (AirpcapWrite (airpcap_handle, buf, len) != 1)
 		return -1;
 
 	return len;
 }
 
-int printErrorCloseAndReturn(const char * err, int retValue)
+static int printErrorCloseAndReturn(const char * err, int retValue)
 {
 	if (err && airpcap_handle)
 	{
@@ -216,8 +194,7 @@ int printErrorCloseAndReturn(const char * err, int retValue)
 		}
 	}
 
-	if (airpcap_handle)
-		pcap_close( winpcap_adapter );
+	cygwin_close();
 
     return retValue;
 }
@@ -225,7 +202,7 @@ int printErrorCloseAndReturn(const char * err, int retValue)
 int cygwin_init(char *param)
 {
 	char * iface;
-    char errbuf[65535];
+    char errbuf[AIRPCAP_ERRBUF_SIZE ];
 
 	iface = (char *)calloc(1, strlen(param) + strlen(DEVICE_HEADER) +1);
 	strcpy (iface, DEFAULT_ADAPT_NAME);
@@ -253,61 +230,30 @@ int cygwin_init(char *param)
 		}
 	}
 
-    /* Open the adapter with WinPcap */
-    if((winpcap_adapter = pcap_open_live(iface,
-        65536,
-        1,
-        1000,
-        errbuf)) == NULL)
-    {
-        fprintf( stderr, "Error opening adapter %s with winpcap (%s)\n", iface, errbuf);
-        return( -1 );
-    }
-
-    free(iface);
-
-    /* Get the airpcap handle so we can change wireless-specific settings */
-    airpcap_handle = pcap_get_airpcap_handle(winpcap_adapter);
+    airpcap_handle = AirpcapOpen(iface, errbuf);
 
     if(airpcap_handle == NULL)
     {
         fprintf( stderr, "This adapter doesn't have wireless extensions. Quitting\n");
-        pcap_close( winpcap_adapter );
+        //pcap_close( winpcap_adapter );
         return( -1 );
     }
 
     /* Tell the adapter that the packets we'll send and receive don't include the FCS */
     if(!AirpcapSetFcsPresence(airpcap_handle, FALSE))
-    {
-		return printErrorCloseAndReturn("Error setting FCS presence: %s\n"
-										airpcap_handle,
-										-1);
-    }
+		return printErrorCloseAndReturn("Error setting FCS presence: %s\n", -1);
 
     /* Set the link layer to bare 802.11 */
     if(!AirpcapSetLinkType(airpcap_handle, AIRPCAP_LT_802_11))
-    {
-		return printErrorCloseAndReturn("Error setting the link type: %s\n"
-										airpcap_handle,
-										-1);
-    }
+		return printErrorCloseAndReturn("Error setting the link type: %s\n", -1);
 
     /* Accept correct frames only */
 	if( !AirpcapSetFcsValidation(airpcap_handle, AIRPCAP_VT_ACCEPT_CORRECT_FRAMES) )
-	{
-		return printErrorCloseAndReturn("Error setting FCS validation: %s\n"
-										airpcap_handle,
-										-1);
-	}
+		return printErrorCloseAndReturn("Error setting FCS validation: %s\n", -1);
 
     /* Set a low mintocopy for better responsiveness */
     if(!AirpcapSetMinToCopy(airpcap_handle, 1))
-    {
-		return printErrorCloseAndReturn("Error setting MinToCopy: %s\n"
-										airpcap_handle,
-										-1);
-    }
-
+		return printErrorCloseAndReturn("Error setting MinToCopy: %s\n", -1);
 
 	return 0;
 }
