@@ -386,6 +386,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
         G.sk_start = time(NULL);
     }
 
+    /* is auth packet */
     if( (h80211[1] & 0x40) != 0x40 )
     {
         /* not encrypted */
@@ -1675,6 +1676,9 @@ skip_probe:
         /* check the SNAP header to see if data is encrypted */
 
         z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+        
+        /* Check if 802.11e (QoS) */
+        if( (h80211[0] & 0x80) == 0x80) z+=2;
 
         if(z==24)
         {
@@ -1761,7 +1765,8 @@ skip_probe:
                     ivs2.flags = 0;
                     ivs2.len = 0;
 
-                    dlen = caplen -24 -4 -4; //original data len
+                    /* datalen = caplen - (header+iv+ivs) */
+                    dlen = caplen -z -4 -4; //original data len
                     if(dlen > 2048) dlen = 2048;
                     //get cleartext + len + 4(iv+idx)
                     num_xor = known_clear(clear, &clen, weight, h80211, dlen);
@@ -1869,6 +1874,9 @@ skip_probe:
         }
 
         z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+
+        /* Check if 802.11e (QoS) */
+        if( (h80211[0] & 0x80) == 0x80) z+=2;
 
         if( z + 26 > caplen )
             goto write_packet;
