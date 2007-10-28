@@ -5378,7 +5378,7 @@ usage:
     if( maccmp( opt.r_smac, NULL_MAC) == 0 )
     {
         memcpy( opt.r_smac, dev.mac_out, 6);
-        if(opt.a_mode != 4 && opt.a_mode != 9)
+        if(opt.a_mode != 0 && opt.a_mode != 4 && opt.a_mode != 9)
         {
             printf("No source MAC (-h) specified. Using the device MAC (%02X:%02X:%02X:%02X:%02X:%02X)\n",
                     dev.mac_out[0], dev.mac_out[1], dev.mac_out[2], dev.mac_out[3], dev.mac_out[4], dev.mac_out[5]);
