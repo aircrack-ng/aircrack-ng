@@ -726,12 +726,12 @@ int getnet( uchar* capa, int filter, int force)
 
     if( memcmp(bssid, NULL_MAC, 6) )
     {
-        PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
-                    bssid[0],bssid[1],bssid[2],bssid[3],bssid[4],bssid[5]);
+        PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X) on channel %d\n",
+                    bssid[0],bssid[1],bssid[2],bssid[3],bssid[4],bssid[5],wi_get_channel(_wi_in));
     }
     else if(strlen(opt.r_essid) > 0)
     {
-        PCT; printf("Waiting for beacon frame (ESSID: %s)\n", opt.r_essid);
+        PCT; printf("Waiting for beacon frame (ESSID: %s) on channel %d\n", opt.r_essid,wi_get_channel(_wi_in));
     }
     else if(force)
     {
