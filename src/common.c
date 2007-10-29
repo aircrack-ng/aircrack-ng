@@ -225,7 +225,11 @@ int readLine(char line[], int maxlength)
 
 		if (line[i] == '\n')
 			break;
-		if (line[i] == EOF)
+		if (line[i] == '\r')
+			break;
+		if (line[i] == '\0')
+			break;
+		if (line[i] == -1)
 			break;
 	}
 	while (i + 1 < maxlength);
