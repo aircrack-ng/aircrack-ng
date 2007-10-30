@@ -7,12 +7,14 @@ CFLAGS		+= $(PIC) -I..
 OBJS_NET	= network.o
 OBJS		= osdep.o $(OBJS_NET)
 
+AIRPCAP_DIR	= airpcap
+
 OBJS_OBSD	= $(OBJS) openbsd.o openbsd_tap.o
 OBJS_NBSD	= $(OBJS) netbsd.o netbsd_tap.o
 OBJS_FBSD	= $(OBJS) freebsd.o freebsd_tap.o
 OBJS_LINUX	= $(OBJS) linux.o linux_tap.o radiotap-parser.o
 OBJS_DUMMY	= $(OBJS) dummy.o dummy_tap.o
-OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o
+OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o $(AIRPCAP_DIR)/airpcap.o
 
 all:
 	@echo Building for $(OSNAME)
@@ -43,10 +45,13 @@ all:
 	$(RANLIB) $(LIB)
 	touch $(@)
 
-.os.cygwin: $(OBJS_CYGWIN)
+.os.cygwin: airpcap $(OBJS_CYGWIN) 
 	$(AR) cru $(LIB) $(OBJS_CYGWIN)
 	$(RANLIB) $(LIB)
 	touch $(@)
+
+airpcap:
+	$(MAKE) -C $(AIRPCAP_DIR)
 
 .os.%: .os.dummy
 	@echo "Your platform is unsupported"

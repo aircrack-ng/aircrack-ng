@@ -26,10 +26,16 @@
 #include <dlfcn.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "osdep.h"
 #include "network.h"
 
+#ifdef COMPILE_AIRPCAP
+	#include "airpcap/airpcap.h"
+#endif
+
+// DLL function that have to be exported
 #define CYGWIN_DLL_INIT		"cygwin_init"
 #define CYGWIN_DLL_SET_CHAN	"cygwin_set_chan"
 #define CYGWIN_DLL_INJECT	"cygwin_inject"
@@ -38,6 +44,8 @@
 #define CYGWIN_DLL_SET_MAC	"cygwin_set_mac"
 #define CYGWIN_DLL_CLOSE	"cygwin_close"
 
+#define DLL_EXTENSION ".dll"
+
 struct priv_cygwin {
 	pthread_t	pc_reader;
 	volatile int	pc_running;
@@ -45,6 +53,9 @@ struct priv_cygwin {
 	int		pc_channel;
 	struct wif	*pc_wi;
 	int		pc_did_init;
+
+	int		isAirpcap;
+	int		useDll;
 
 	int		(*pc_init)(char *param);
 	int		(*pc_set_chan)(int chan);
@@ -55,51 +66,141 @@ struct priv_cygwin {
 	void		(*pc_close)(void);
 };
 
+char *stristr(const char *String, const char *Pattern)
+{
+      char *pptr, *sptr, *start;
+      uint  slen, plen;
+
+      for (start = (char *)String,
+           pptr  = (char *)Pattern,
+           slen  = strlen(String),
+           plen  = strlen(Pattern);
+
+           /* while string length not shorter than pattern length */
+
+           slen >= plen;
+
+           start++, slen--)
+      {
+            /* find start of pattern in string */
+            while (toupper(*start) != toupper(*Pattern))
+            {
+                  start++;
+                  slen--;
+
+                  /* if pattern longer than string */
+
+                  if (slen < plen)
+                        return(NULL);
+            }
+
+            sptr = start;
+            pptr = (char *)Pattern;
+
+            while (toupper(*sptr) == toupper(*pptr))
+            {
+                  sptr++;
+                  pptr++;
+
+                  /* if end of pattern then pattern was found */
+
+                  if ('\0' == *pptr)
+                        return (start);
+            }
+      }
+      return(NULL);
+}
+
 static int do_cygwin_open(struct wif *wi, char *iface)
 {
 	struct priv_cygwin *priv = wi_priv(wi);
 	void *lib;
-	char *file = strdup(iface);
+	char *file;
 	char *parm;
 	int rc = -1;
+	int tempret = 0;
 
-	if (!file)
+	if (!iface)
+		return -1;
+	if (strlen(iface) == 0)
 		return -1;
 
-	parm = strchr(file, '|');
-	if (parm)
-		*parm++ = 0;
+	priv->useDll = 0;
 
-	/* load lib */
-	lib = dlopen(file, RTLD_LAZY);
-	if (!lib)
-		goto err;
+	if (stristr(iface, DLL_EXTENSION))
+		priv->useDll = 1;
 
-	priv->pc_init		= dlsym(lib, CYGWIN_DLL_INIT);
-	priv->pc_set_chan	= dlsym(lib, CYGWIN_DLL_SET_CHAN);
-	priv->pc_get_mac	= dlsym(lib, CYGWIN_DLL_GET_MAC);
-	priv->pc_set_mac	= dlsym(lib, CYGWIN_DLL_SET_MAC);
-	priv->pc_close		= dlsym(lib, CYGWIN_DLL_CLOSE);
-	/* XXX drugs are bad for you.  -sorbo */
-	priv->pc_inject		= dlsym(lib, CYGWIN_DLL_INJECT);
-	priv->pc_sniff		= dlsym(lib, CYGWIN_DLL_SNIFF);
+	if (priv->useDll)
+	{
+		file = strdup(iface);
+		if (!file)
+			return -1;
 
-        if (!(priv->pc_init && priv->pc_set_chan && priv->pc_get_mac
-	      && priv->pc_inject && priv->pc_sniff && priv->pc_close))
-		goto err;
+		parm = strchr(file, '|');
+		if (parm)
+			*parm++ = 0;
 
-	/* init lib */
-        if ((rc = priv->pc_init(parm)))
-		goto err;
-	priv->pc_did_init = 1;
+		/* load lib */
+		lib = dlopen(file, RTLD_LAZY);
+		if (!lib)
+			goto errdll;
 
-	/* set initial chan */
-        if ((rc = wi_set_channel(wi, 1)))
-		goto err;
+		priv->pc_init		= dlsym(lib, CYGWIN_DLL_INIT);
+		priv->pc_set_chan	= dlsym(lib, CYGWIN_DLL_SET_CHAN);
+		priv->pc_get_mac	= dlsym(lib, CYGWIN_DLL_GET_MAC);
+		priv->pc_set_mac	= dlsym(lib, CYGWIN_DLL_SET_MAC);
+		priv->pc_close		= dlsym(lib, CYGWIN_DLL_CLOSE);
+		priv->pc_inject		= dlsym(lib, CYGWIN_DLL_INJECT);
+		priv->pc_sniff		= dlsym(lib, CYGWIN_DLL_SNIFF);
 
-	rc = 0;
-err:
-	free(file);
+		if (!(priv->pc_init && priv->pc_set_chan && priv->pc_get_mac
+			  && priv->pc_inject && priv->pc_sniff && priv->pc_close))
+			goto errdll;
+
+		/* init lib */
+		if ((rc = priv->pc_init(parm)))
+			goto errdll;
+		priv->pc_did_init = 1;
+
+		rc = 0;
+
+errdll:
+		free(file);
+	}
+	else
+	{
+		#ifdef COMPILE_AIRPCAP
+			priv->isAirpcap = isAirpcapDevice();
+			if (priv->isAirpcap)
+			{
+				priv->pc_init		= airpcap_init;
+				priv->pc_set_chan	= airpcap_set_chan;
+				priv->pc_get_mac	= airpcap_get_mac;
+				priv->pc_set_mac	= airpcap_set_mac;
+				priv->pc_close		= airpcap_close;
+				priv->pc_inject		= airpcap_inject;
+				priv->pc_sniff		= airpcap_sniff;
+
+				rc = 0;
+			}
+
+		#endif
+
+	}
+
+	// Show an error message if the adapter is not supported
+	if (rc == 0)
+	{
+		/* set initial chan */
+		tempret = wi_set_channel(wi, 1);
+		if (tempret)
+			rc = tempret;
+	}
+	else
+	{
+		fprintf(stderr, "Adapter <%s> not supported\n", iface);
+	}
+
 	return rc;
 }
 

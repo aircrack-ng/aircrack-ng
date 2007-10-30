@@ -9,7 +9,6 @@ default: all
 
 all:
 	$(MAKE) -C src $(@)
-	$(MAKE) -C test $(@)
 
 aircrack-ng-opt-prof_gen: all
 	mkdir -p prof
@@ -20,14 +19,12 @@ aircrack-ng-opt-prof_use:
 
 install:
 	$(MAKE) -C src $(@)
-	$(MAKE) -C test $(@)
 	install -m 755 $(SCRIPTS) $(DESTDIR)$(sbindir)
 	install -d $(DESTDIR)$(mandir)
 	install -m 644 ./manpages/* $(DESTDIR)$(mandir)
 
 uninstall:
 	$(MAKE) -C src $(@)
-	$(MAKE) -C test $(@)
 	-rm -f $(DESTDIR)$(sbindir)/airmon-ng
 	-rm -f $(DESTDIR)$(sbindir)/airdriver-ng
 	-rm -f $(DESTDIR)$(sbindir)/patchchk
@@ -51,7 +48,6 @@ uninstall:
 
 strip:
 	$(MAKE) -C src $(@)
-	$(MAKE) -C test $(@)
 
 doc:
 	install -d $(DESTDIR)$(docdir)
@@ -59,7 +55,6 @@ doc:
 
 clean:
 	$(MAKE) -C src $(@)
-	$(MAKE) -C test $(@)
 
 distclean: clean
 
