@@ -1,20 +1,21 @@
 ROOT	= ../..
 include $(ROOT)/common.mak
 
-LIB		= libosdep.a
-CFLAGS		+= $(PIC) -I..
+LIB		= libosdep.a 
+CFLAGS		+= $(PIC) -I.. $(LIBPCAP)
 
 OBJS_NET	= network.o
 OBJS		= osdep.o $(OBJS_NET)
 
-AIRPCAP_DIR	= airpcap
+#AIRPCAP_DIR	= airpcap
+OBJS_APCAP	= airpcap.o
 
 OBJS_OBSD	= $(OBJS) openbsd.o openbsd_tap.o
 OBJS_NBSD	= $(OBJS) netbsd.o netbsd_tap.o
 OBJS_FBSD	= $(OBJS) freebsd.o freebsd_tap.o
 OBJS_LINUX	= $(OBJS) linux.o linux_tap.o radiotap-parser.o
 OBJS_DUMMY	= $(OBJS) dummy.o dummy_tap.o
-OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o $(AIRPCAP_DIR)/airpcap.o
+OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o $(OBJS_APCAP)
 
 all:
 	@echo Building for $(OSNAME)
@@ -45,13 +46,10 @@ all:
 	$(RANLIB) $(LIB)
 	touch $(@)
 
-.os.cygwin: airpcap $(OBJS_CYGWIN) 
+.os.cygwin: $(OBJS_CYGWIN) 
 	$(AR) cru $(LIB) $(OBJS_CYGWIN)
-	$(RANLIB) $(LIB)
+	$(RANLIB) $(LIB) 
 	touch $(@)
-
-airpcap:
-	$(MAKE) -C $(AIRPCAP_DIR)
 
 .os.%: .os.dummy
 	@echo "Your platform is unsupported"

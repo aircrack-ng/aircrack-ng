@@ -1,10 +1,12 @@
 ROOT		= ..
+LIBPCAP		=
 include $(ROOT)/common.mak
+
 
 CFLAGS		+= -Iinclude
 
 iCC             = /opt/intel/cc/9.0/bin/icc
-iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro $(COMMON_CFLAGS)
+iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro $(COMMON_CFLAGS) $(LIBPCAP)
 iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
@@ -25,6 +27,8 @@ endif
 ifeq ($(sqlite), TRUE)
 BINFILES        += airolib-ng$(EXE)
 endif
+
+LIBPCAP		=
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
 		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE)
@@ -51,7 +55,7 @@ OBJS_MI		= makeivs-ng.o common.o uniqueiv.o
 
 
 OSD		= osdep
-LIBS		= -L$(OSD) -l$(OSD) $(LDFLAGS)
+LIBS		= -L$(OSD) -l$(OSD) $(LIBPCAP) $(LDFLAGS)
 ifeq ($(OSNAME), cygwin)
 LIBS		+= -liphlpapi -lsetupapi -luuid
 endif
@@ -111,16 +115,16 @@ packetforge-ng$(EXE): $(OBJS_PF)
 	$(CC) $(CFLAGS) $(OBJS_PF) -o $(@) $(LIBSSL)
 
 aireplay-ng$(EXE): $(OBJS_AR) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL)
+	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL) $(LIBPCAP)
 
 airodump-ng$(EXE): $(OBJS_ADU) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL)
+	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL) $(LIBPCAP)
 
 airserv-ng$(EXE): $(OBJS_AS) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AS) -o $(@) $(LIBS)
+	$(CC) $(CFLAGS) $(OBJS_AS) -o $(@) $(LIBS) $(LIBPCAP)
 
 airtun-ng$(EXE): $(OBJS_AT) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL)
+	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL) $(LIBPCAP)
 
 ivstools$(EXE): $(OBJS_IV)
 	$(CC) $(CFLAGS) $(OBJS_IV) -o $(@) $(LIBSSL)
@@ -129,10 +133,10 @@ kstats$(EXE): kstats.o
 	$(CC) $(CFLAGS) kstats.o -o $(@)
 
 wesside-ng$(EXE): $(OBJS_WS) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_WS) -o $(@) $(LIBS) $(LIBSSL) -lz
+	$(CC) $(CFLAGS) $(OBJS_WS) -o $(@) $(LIBS) $(LIBSSL) -lz $(LIBPCAP)
 
 easside-ng$(EXE): $(OBJS_ES) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_ES) -o $(@) $(LIBS) -lz
+	$(CC) $(CFLAGS) $(OBJS_ES) -o $(@) $(LIBS) -lz $(LIBPCAP)
 
 buddy-ng$(EXE): $(OBJS_BUDDY)
 	$(CC) $(CFLAGS) $(OBJS_BUDDY) -o $(@)

@@ -1,28 +1,76 @@
-#ifdef COMPILE_AIRPCAP
+#ifdef HAVE_AIRPCAP
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <windows.h>
+#include <airpcap.h>
+
+#include "osdep.h"
+
+//------------------ PPI ---------------------
+#define PPH_PH_VERSION		((u_int8_t)0x00)
+#define	PPI_FIELD_TYPE_802_11_COMMON		((u_int16_t)0x02)
+
+typedef struct _PPI_PACKET_HEADER
+{
+	u_int8_t	PphVersion;
+	u_int8_t	PphFlags;
+	u_int16_t	PphLength;
+	u_int32_t	PphDlt;
+}
+PPI_PACKET_HEADER, *PPPI_PACKET_HEADER;
+
+typedef struct _PPI_FIELD_HEADER
+{
+	u_int16_t PfhType;
+	u_int16_t PfhLength;
+}
+PPI_FIELD_HEADER, *PPPI_FIELD_HEADER;
+
+typedef struct _PPI_FIELD_802_11_COMMON
+{
+	u_int64_t	TsfTimer;
+	u_int16_t	Flags;
+	u_int16_t	Rate;
+	u_int16_t	ChannelFrequency;
+	u_int16_t	ChannelFlags;
+	u_int8_t	FhssHopset;
+	u_int8_t	FhssPattern;
+	int8_t		DbmAntSignal;
+	int8_t		DbmAntNoise;
+}
+PPI_FIELD_802_11_COMMON, *PPPI_FIELD_802_11_COMMON;
+
+
+#define DEVICE_HEADER "\\\\.\\"
+#define DEVICE_COMMON_PART "airpcap"
+
+PAirpcapHandle airpcap_handle;
+
 
 int isAirpcapDevice(const char * iface)
 {
+
 	// Make a deeper check:
 	// * search for "airpcap" string
 	// * if found, and position of string is not 0,
 	//   check if it is the special char for the device (\\.\)
 	// * check if it contains 2 figures at the end (value: 00->99)
-	return (int)strstr(iface, DEVICE_COMMON_PART);
+	if (strstr(iface, DEVICE_COMMON_PART))
+		return 1;
+
+	return 0;
 }
 
-static int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
+int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 {
 	PPPI_PACKET_HEADER pPpiPacketHeader;
 	PPPI_FIELD_HEADER	pFieldHeader;
 	ULONG position = 0;
 
 	// Sanity checks
-	if (caplen < sizeof(*pPpiPacketHeader))
+	if (caplen < (int)sizeof(*pPpiPacketHeader))
 	{
 		// Packet smaller than the PPI fixed header
 		return( 1 );
@@ -49,7 +97,7 @@ static int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 	do
 	{
 		// now we suppose to have an 802.11-Common header
-		if (*hdrlen < sizeof(*pFieldHeader) + position)
+		if (*hdrlen < (int)(sizeof(*pFieldHeader) + position))
 		{
 			break;
 		}
@@ -93,9 +141,9 @@ static int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 }
 
 
-int airpcap_set_mac(unsigned char *mac)
+int airpcap_set_mac(void *mac)
 {
-   	if (*mac) {}
+   	if (mac) {}
    	return 0;
 }
 
@@ -110,10 +158,10 @@ void airpcap_close(void)
 	}
 }
 
-int airpcap_get_mac(unsigned char *mac)
+int airpcap_get_mac(void *mac)
 {
    // Don't use the function from Airpcap
-	if (*mac) {}
+	if (mac) {}
 
 	return 0;
 }
@@ -125,6 +173,7 @@ int airpcap_sniff(void *buf, int len, struct rx_info *ri)
 {
 	UINT BytesReceived = 0;
 
+	if (ri) {}
 	// Wait for the next packet
 	// Maybe add an event packets to read
 	// WaitForSingleObject(ReadEvent, INFINITE);
@@ -138,13 +187,14 @@ int airpcap_sniff(void *buf, int len, struct rx_info *ri)
 
 int airpcap_inject(void *buf, int len, struct tx_info *ti)
 {
+	if (ti) {}
 	if (AirpcapWrite (airpcap_handle, buf, len) != 1)
 		return -1;
 
 	return len;
 }
 
-static int printErrorCloseAndReturn(const char * err, int retValue)
+int printErrorCloseAndReturn(const char * err, int retValue)
 {
 	if (err && airpcap_handle)
 	{
@@ -157,7 +207,7 @@ static int printErrorCloseAndReturn(const char * err, int retValue)
 		}
 	}
 
-	cygwin_close();
+	airpcap_close();
 
     return retValue;
 }
@@ -167,17 +217,13 @@ int airpcap_init(char *param)
 	char * iface;
     char errbuf[AIRPCAP_ERRBUF_SIZE ];
 
-	iface = (char *)calloc(1, strlen(param) + strlen(DEVICE_HEADER) +1);
-	strcpy (iface, DEFAULT_ADAPT_NAME);
+	iface = (char *)calloc(1, strlen(param) + 100);
 
 	if (param)
 	{
 		// if it's empty, use the default adapter
 		if (strlen(param) > 0)
 		{
-			// Make sure the adapter name contains the '\\.\' at its begining
-			memset(iface, 0, strlen(param) + strlen(DEVICE_HEADER) +1);
-
 			if (strstr(param, DEVICE_HEADER) == NULL)
 			{
 				// Not found, add it

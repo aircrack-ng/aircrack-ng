@@ -31,8 +31,8 @@
 #include "osdep.h"
 #include "network.h"
 
-#ifdef COMPILE_AIRPCAP
-	#include "airpcap/airpcap.h"
+#ifdef HAVE_AIRPCAP
+	#include "airpcap.h"
 #endif
 
 // DLL function that have to be exported
@@ -169,8 +169,8 @@ errdll:
 	}
 	else
 	{
-		#ifdef COMPILE_AIRPCAP
-			priv->isAirpcap = isAirpcapDevice();
+		#ifdef HAVE_AIRPCAP
+			priv->isAirpcap = isAirpcapDevice(iface);
 			if (priv->isAirpcap)
 			{
 				priv->pc_init		= airpcap_init;
