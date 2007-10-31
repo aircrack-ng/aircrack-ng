@@ -206,6 +206,9 @@ void clean_exit(int ret)
 	struct AP_info *ap_next;
 	int i=0;
 
+	char tmpbuf[128];
+	bzero(tmpbuf, 128);
+
 	if(ret && !opt.is_quiet)
 	{
 		printf("\nQuitting aircrack-ng...\n");
@@ -216,6 +219,7 @@ void clean_exit(int ret)
 	for( i = 0; i < opt.nbcpu; i++ )
 	{
             safe_write( mc_pipe[i][1], (void *) "EXIT\r", 5 );
+            safe_write( bf_pipe[i][1], (void *) tmpbuf, 64 );
         }
 
 	for(i=0; i<id; i++)
@@ -2672,8 +2676,9 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 
 	tests = 32;
 
-//	printf("keylen: %d\n", keylen);
-//	printf("%02X:%02X:%02X:%02X:%02X\n", wepkey[0],wepkey[1],wepkey[2],wepkey[3],wepkey[4]);
+// 	printf("keylen: %d\n", keylen);
+// 	if(keylen==13)
+// 		printf("%02X:%02X:%02X:%02X:%02X\n", wepkey[8],wepkey[9],wepkey[10],wepkey[11],wepkey[12]);
 
 	if(opt.dict) tests = wep.nb_ivs;
 
@@ -3220,6 +3225,19 @@ int do_wep_crack1( int B )
 		}
 	}
 
+	//if we are going to fail on the root byte, check again if there are still threads bruting, if so wait and check again.
+	if(B==0)
+	{
+		for(i=0; i<opt.nbcpu; i++)
+		{
+			while(bf_nkeys[i]>0 && !wepkey_crack_success) usleep(1);
+		}
+		if (wepkey_crack_success)
+		{
+			memcpy(wep.key, bf_wepkey, opt.keylen);
+			return(SUCCESS);
+		}
+	}
 	return( FAILURE );
 }
 
@@ -3312,12 +3330,14 @@ int do_wep_crack2( int B )
 
 int inner_bruteforcer_thread(void *arg)
 {
-	int i, j, k, l;
+	int i, j, k, l, reduce=0;
 	size_t nthread = (size_t)arg;
 	uchar wepkey[64];
 	int ret=0;
 
 	inner_bruteforcer_thread_start:
+
+	reduce=0;
 
 	if( close_aircrack )
 		return(ret);
@@ -3333,8 +3353,10 @@ int inner_bruteforcer_thread(void *arg)
 		_exit( FAILURE );
 	}
 	else
-		bf_nkeys[nthread]--;
+		reduce=1;
 
+	if( close_aircrack )
+		return(ret);
 	/* now we test the 256*256 keys... if we succeed we'll save it and exit the thread */
 	if (opt.do_brute==4)
 	{
@@ -3406,6 +3428,9 @@ int inner_bruteforcer_thread(void *arg)
 				return(SUCCESS);
 		}
 	}
+
+	if(reduce)
+		bf_nkeys[nthread]--;
 
 	goto inner_bruteforcer_thread_start;
 
