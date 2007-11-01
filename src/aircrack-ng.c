@@ -2259,9 +2259,15 @@ int crack_wep_thread( void *arg )
 
 	int i, j, B, cid = (long) arg;
 	int votes[N_ATTACKS][256];
+	//first: first S-Box Setup; first2:first round with new key; oldB: old B value
+	int first=1, first2=1, oldB=0, oldq=0;
 
+	memcpy( S,  R, 256 );
+	memcpy( Si, R, 256 );
 	while( 1 )
 	{
+		if(!first) oldB=B;
+
 		if( safe_read( mc_pipe[cid][0], (void *) &B,
 			sizeof( int ) ) != sizeof( int ) )
 		{
@@ -2271,6 +2277,8 @@ int crack_wep_thread( void *arg )
 		}
 		if( close_aircrack )
 			break;
+
+		first2=1;
 
 		min = 5 * ( ( (     cid ) * wep.nb_ivs ) / opt.nbcpu );
 		max = 5 * ( ( ( 1 + cid ) * wep.nb_ivs ) / opt.nbcpu );
@@ -2287,8 +2295,17 @@ int crack_wep_thread( void *arg )
 			pthread_mutex_lock( &mx_ivb );
 
 			memcpy( K, &wep.ivbuf[xv], 3 );
-			memcpy( S,  R, 256 );
-			memcpy( Si, R, 256 );
+
+			if(!first)
+			{
+				for(i=0; i<oldq; i++)
+				{
+					S[i] = i;
+					S[jj[i]] = jj[i];
+					Si[i] = i;
+					Si[jj[i]] = jj[i];
+				}
+			}
 
 			for( i = j = 0; i < q; i++ )
 			{
@@ -2303,6 +2320,15 @@ int crack_wep_thread( void *arg )
 
 			o1 = wep.ivbuf[xv + 3] ^ 0xAA; io1 = Si[o1]; S1 = S[1];
 			o2 = wep.ivbuf[xv + 4] ^ 0xAA; io2 = Si[o2]; S2 = S[2];
+
+			if(first)
+				first=0;
+			if(first2)
+			{
+				oldB=B;
+				oldq = 3+oldB;
+				first2=0;
+			}
 
 			pthread_mutex_unlock( &mx_ivb );
 			Sq = S[q]; dq = Sq + jj[q - 1];
