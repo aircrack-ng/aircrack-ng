@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <windows.h>
 #include <airpcap.h>
 
@@ -43,7 +44,7 @@ typedef struct _PPI_FIELD_802_11_COMMON
 PPI_FIELD_802_11_COMMON, *PPPI_FIELD_802_11_COMMON;
 
 
-#define DEVICE_HEADER "\\\\.\\"
+#define DEVICE_PREFIX "\\\\.\\"
 #define DEVICE_COMMON_PART "airpcap"
 
 PAirpcapHandle airpcap_handle;
@@ -51,16 +52,30 @@ PAirpcapHandle airpcap_handle;
 
 int isAirpcapDevice(const char * iface)
 {
+	char * pos;
+	int len;
 
-	// Make a deeper check:
-	// * search for "airpcap" string
-	// * if found, and position of string is not 0,
-	//   check if it is the special char for the device (\\.\)
-	// * check if it contains 2 figures at the end (value: 00->99)
-	if (strstr(iface, DEVICE_COMMON_PART))
-		return 1;
+	pos = strstr(iface, DEVICE_COMMON_PART);
 
-	return 0;
+	// Check if it contains "airpcap"
+	if (! pos)
+		return 0;
+
+	if (pos != iface)
+	{
+		// Check if it begins with '\\.\'
+		if (strstr(iface, AIRPCAP_DEVICE_NAME_PREFIX) != iface)
+			return 0;
+	}
+
+	len = strlen(iface);
+
+	// Checking that it contains 2 figures at the end.
+	// No need to check for length, it was already done by the first check
+	if (! (isdigit(iface[len - 1])) || !(isdigit(iface[len - 2])))
+		return 0;
+
+	return 1;
 }
 
 int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
@@ -214,6 +229,8 @@ int printErrorCloseAndReturn(const char * err, int retValue)
 
 int airpcap_init(char *param)
 {
+	// Later: if several interfaces are given, aggregate them.
+
 	char * iface;
     char errbuf[AIRPCAP_ERRBUF_SIZE ];
 
@@ -224,11 +241,11 @@ int airpcap_init(char *param)
 		// if it's empty, use the default adapter
 		if (strlen(param) > 0)
 		{
-			if (strstr(param, DEVICE_HEADER) == NULL)
+			if (strstr(param, DEVICE_PREFIX) == NULL)
 			{
 				// Not found, add it
 
-				strcpy(iface, DEVICE_HEADER);
+				strcpy(iface, DEVICE_PREFIX);
 				strcat(iface, param);
 			}
 			else

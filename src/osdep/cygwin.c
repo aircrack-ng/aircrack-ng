@@ -170,11 +170,13 @@ errdll:
 	else
 	{
 		#ifdef HAVE_AIRPCAP
-			puts("Checking if airpcap device");
+			// Check if it's an Airpcap device
 			priv->isAirpcap = isAirpcapDevice(iface);
+
+
 			if (priv->isAirpcap)
 			{
-				puts("it's an airpcap device");
+				// Get functions
 				priv->pc_init		= airpcap_init;
 				priv->pc_set_chan	= airpcap_set_chan;
 				priv->pc_get_mac	= airpcap_get_mac;
@@ -183,7 +185,6 @@ errdll:
 				priv->pc_inject		= airpcap_inject;
 				priv->pc_sniff		= airpcap_sniff;
 
-				puts("Successful");
 				rc = 0;
 			}
 
@@ -191,10 +192,19 @@ errdll:
 
 	}
 
-	// Show an error message if the adapter is not supported
 	if (rc == 0)
 	{
-		puts("Setting channel");
+		// Don't forget to initialize
+		if (! priv->useDll)
+		{
+			rc = priv->pc_init(iface);
+
+			if (rc == 0)
+				priv->pc_did_init = 1;
+			else
+				fprintf(stderr,"Error initializing <%s>\n", iface);
+		}
+
 		/* set initial chan */
 		tempret = wi_set_channel(wi, 1);
 		if (tempret)
@@ -202,10 +212,9 @@ errdll:
 	}
 	else
 	{
+		// Show an error message if the adapter is not supported
 		fprintf(stderr, "Adapter <%s> not supported\n", iface);
 	}
-
-	printf("rc: %d\n", rc);
 
 	return rc;
 }
