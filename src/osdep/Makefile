@@ -2,7 +2,7 @@ ROOT	= ../..
 include $(ROOT)/common.mak
 
 LIB		= libosdep.a 
-CFLAGS		+= $(PIC) -I.. $(LIBPCAP)
+CFLAGS		+= $(PIC) -I.. $(LIBAIRPCAP)
 
 OBJS_NET	= network.o
 OBJS		= osdep.o $(OBJS_NET)
@@ -47,7 +47,8 @@ all:
 	touch $(@)
 
 .os.cygwin: $(OBJS_CYGWIN) 
-	$(AR) cru $(LIB) $(OBJS_CYGWIN)
+	$(AR) x $(ROOT)/../developers/Airpcap_Devpack/lib/libairpcap.a
+	$(AR) cru $(LIB) *.o
 	$(RANLIB) $(LIB) 
 	touch $(@)
 

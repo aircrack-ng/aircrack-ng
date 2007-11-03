@@ -6,6 +6,7 @@
    - autoconf 2.50
    - libtool
  * For cygwin, it also requires w32api package
+ * If you want to use Airpcap, the 'developer' directory from the CD is required.
  
 
 === Compilating ===
@@ -16,6 +17,11 @@
     # issue 'make SQLITE=true' instead of 'make'
     # On cygwin, you have to install sqlite manually, 
     # see next point for instructions on how to install it.
+    
+    # If you want Airpcap support (cygwin only), append
+    # 'airpcap=true' to make. Requirement: Copy 'developers'
+    # directory from Airpcap CD one level below this
+    # INSTALLING file
 
  * Strip debugging symbols:
     make strip
@@ -24,6 +30,10 @@
     make install
     # If you want to use airolib-ng and co,
     # issue 'make SQLITE=true install' instead of 'make install'
+    
+    # Airpcap installation doesn't require any special parameter
+    # since it's built-in (sqlite require an additional file to be
+    # installed).
 
  * Uninstall:
     make uninstall

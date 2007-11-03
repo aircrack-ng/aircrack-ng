@@ -8,8 +8,8 @@ ifndef SQLITE
 SQLITE		= false
 endif
 
-ifndef LIBPCAP
-LIBPCAP		=
+ifndef LIBAIRPCAP
+LIBAIRPCAP	=
 endif
 
 ifeq ($(OSNAME), cygwin)
@@ -43,19 +43,19 @@ COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
 endif
 
 ifeq ($(AIRPCAP), true)
-CFLAGS		+= -DHAVE_AIRPCAP -L $(ROOT)/../developers/Airpcap_Devpack/lib -lairpcap -I$(ROOT)/../developers/Airpcap_Devpack/include
+LIBAIRPCAP	= -DHAVE_AIRPCAP -L$(ROOT)/../developers/Airpcap_Devpack/lib -lairpcap -I$(ROOT)/../developers/Airpcap_Devpack/include
 endif
 
 ifeq ($(airpcap), true)
-CFLAGS		+= -DHAVE_AIRPCAP -L $(ROOT)/../developers/Airpcap_Devpack/lib -lairpcap -I$(ROOT)/../developers/Airpcap_Devpack/include
+LIBAIRPCAP	= -DHAVE_AIRPCAP -L$(ROOT)/../developers/Airpcap_Devpack/lib -lairpcap -I$(ROOT)/../developers/Airpcap_Devpack/include
 endif
 
 ifeq ($(AIRPCAP), TRUE)
-CFLAGS		+= -DHAVE_AIRPCAP -L $(ROOT)/../developers/Airpcap_Devpack/lib -lairpcap -I$(ROOT)/../developers/Airpcap_Devpack/include
+LIBAIRPCAP	= -DHAVE_AIRPCAP -L$(ROOT)/../developers/Airpcap_Devpack/lib -lairpcap -I$(ROOT)/../developers/Airpcap_Devpack/include
 endif
 
 ifeq ($(airpcap), TRUE)
-CFLAGS		+= -DHAVE_AIRPCAP -L $(ROOT)/../developers/Airpcap_Devpack/lib -lairpcap -I$(ROOT)/../developers/Airpcap_Devpack/include
+LIBAIRPCAP	= -DHAVE_AIRPCAP -L$(ROOT)/../developers/Airpcap_Devpack/lib -lairpcap -I$(ROOT)/../developers/Airpcap_Devpack/include
 endif
 
 CC		= $(TOOL_PREFIX)gcc

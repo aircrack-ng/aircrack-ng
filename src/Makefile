@@ -6,7 +6,7 @@ include $(ROOT)/common.mak
 CFLAGS		+= -Iinclude
 
 iCC             = /opt/intel/cc/9.0/bin/icc
-iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro $(COMMON_CFLAGS) $(LIBPCAP)
+iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro $(COMMON_CFLAGS)
 iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
@@ -115,16 +115,16 @@ packetforge-ng$(EXE): $(OBJS_PF)
 	$(CC) $(CFLAGS) $(OBJS_PF) -o $(@) $(LIBSSL)
 
 aireplay-ng$(EXE): $(OBJS_AR) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL) $(LIBPCAP)
+	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL)
 
 airodump-ng$(EXE): $(OBJS_ADU) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL) $(LIBPCAP)
+	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL)
 
 airserv-ng$(EXE): $(OBJS_AS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AS) -o $(@) $(LIBS) $(LIBPCAP)
 
 airtun-ng$(EXE): $(OBJS_AT) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL) $(LIBPCAP)
+	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL)
 
 ivstools$(EXE): $(OBJS_IV)
 	$(CC) $(CFLAGS) $(OBJS_IV) -o $(@) $(LIBSSL)
@@ -133,10 +133,10 @@ kstats$(EXE): kstats.o
 	$(CC) $(CFLAGS) kstats.o -o $(@)
 
 wesside-ng$(EXE): $(OBJS_WS) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_WS) -o $(@) $(LIBS) $(LIBSSL) -lz $(LIBPCAP)
+	$(CC) $(CFLAGS) $(OBJS_WS) -o $(@) $(LIBS) $(LIBSSL) -lz
 
 easside-ng$(EXE): $(OBJS_ES) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_ES) -o $(@) $(LIBS) -lz $(LIBPCAP)
+	$(CC) $(CFLAGS) $(OBJS_ES) -o $(@) $(LIBS) -lz
 
 buddy-ng$(EXE): $(OBJS_BUDDY)
 	$(CC) $(CFLAGS) $(OBJS_BUDDY) -o $(@)
