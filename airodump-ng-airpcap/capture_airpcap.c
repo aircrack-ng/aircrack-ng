@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pcap.h>
 #include <airpcap.h>
+#include <windows.h>
 
 #include "capture.h"
 
@@ -77,7 +78,7 @@ int set_channel( int channel )
 {
 	if(!AirpcapSetDeviceChannel(airpcap_ad, channel))
 	{
-		fprintf( stderr, "Error setting the channel: %s\n", AirpcapGetLastError(airpcap_ad));
+		fprintf( stderr, "Error setting channel %d: %s\n", channel, AirpcapGetLastError(airpcap_ad));
 		return( 1 );
 	}
 
