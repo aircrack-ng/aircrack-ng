@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <windows.h>
 
 #include "osdep.h"
 #include "network.h"
@@ -481,6 +482,15 @@ struct wif *wi_open_osdep(char *iface)
 
 int get_battery_state(void)
 {
-	/* XXX use winapi */
-	return -1;
+	SYSTEM_POWER_STATUS powerStatus;
+	int batteryTime = 0;
+
+	if (GetSystemPowerStatus(&powerStatus) == TRUE)
+	{
+
+		if (powerStatus.ACLineStatus == 0)
+			batteryTime = (int)powerStatus.BatteryLifeTime;
+
+	}
+	return batteryTime;
 }
