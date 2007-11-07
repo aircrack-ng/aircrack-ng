@@ -429,7 +429,7 @@ int set_bitrate(struct wif *wi, int rate)
             {
                 if(bitrates[i-1] >= newrate)
                 {
-                    printf("1Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
+                    printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
                     return 1;
                 }
             }
@@ -437,13 +437,13 @@ int set_bitrate(struct wif *wi, int rate)
             {
                 if(bitrates[i+1] <= newrate)
                 {
-                    printf("2Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
+                    printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
                     return 1;
                 }
             }
             return 0;
         }
-        printf("3Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
+        printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
         return 1;
     }
     return 0;
