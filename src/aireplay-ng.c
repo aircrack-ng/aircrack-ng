@@ -407,6 +407,12 @@ int set_bitrate(struct wif *wi, int rate)
 //    if( reset_ifaces() )
 //        return 1;
 
+    //Workaround for buggy drivers (rt73) that do not accept 5.5M, but 5M instead
+    if (rate == 5500000 && wi_get_rate(wi) != 5500000) {
+	if( wi_set_rate(wi, 5000000) )
+	    return 1;
+    }
+
     newrate = wi_get_rate(wi);
     for(i=0; i<RATE_NUM; i++)
     {
@@ -423,7 +429,7 @@ int set_bitrate(struct wif *wi, int rate)
             {
                 if(bitrates[i-1] >= newrate)
                 {
-                    printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
+                    printf("1Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
                     return 1;
                 }
             }
@@ -431,13 +437,13 @@ int set_bitrate(struct wif *wi, int rate)
             {
                 if(bitrates[i+1] <= newrate)
                 {
-                    printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
+                    printf("2Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
                     return 1;
                 }
             }
             return 0;
         }
-        printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
+        printf("3Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
         return 1;
     }
     return 0;
