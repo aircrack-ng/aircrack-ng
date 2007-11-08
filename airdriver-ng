@@ -199,6 +199,22 @@ SCONFIG[$i]="CONFIG_IEEE80211_SOFTMAC="
 SCONFIGS[$i]="CONFIG_IEEE80211_SOFTMAC=m"
 SMODULE[$i]="ieee80211softmac"
 SMODULES[$i]="ieee80211softmac"
+SI_INIT[$i]="install_softmac $i"
+SI_DRIVERGET[$i]="cp"
+SI_DRIVERFILE[$i]="ieee80211softmac_wx.c"
+SI_DRIVERPATH1[$i]="$KSRC/net/ieee80211/softmac"
+SI_DRIVERPATH2[$i]="/usr/src/linux/net/ieee80211/softmac"
+SI_DRIVEREXDIR[$i]=""
+SI_DRIVERDIR[$i]="softmac"
+SI_PREPATCH[$i]=""
+SI_PATCHFILE[$i]=""
+SI_PATCHPATH1[$i]=""
+SI_PATCHPATH2[$i]=""
+SI_PATCHARG[$i]=""
+SI_PRECOMP[$i]=""
+SI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${SI_DRIVERDIR[$i]} modules"
+SI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/net/ieee80211/softmac/""
+SI_INSTALL2[$i]="cp -f *.ko "$KMOD/kernel/net/ieee80211/softmac/""
 SSITE[$i]="http://softmac.sipsolutions.net/"
 
 i=$(($i+1))
@@ -1670,7 +1686,7 @@ install_ieee80211() {
 
         #2nd check (in case README COPYING and CREDITS is included in kernel headers)
         #searches for .c files in "net" subdir
-        if [ $missing = 0 -a x"`find /usr/src/linux/net/ -name *\.c | head -n 1`" = x ]
+        if [ $missing = 0 -a x"`find "/usr/src/linux/net/" -name "*\.c" | head -n 1`" = x ]
         then
             missing=1
         #   echo "Kernel source missing!"
@@ -1703,6 +1719,49 @@ install_ieee80211() {
         SI_PATCHFILE[$1]="ieee80211_inject.patch"
         SI_PATCHPATH1[$1]="http://patches.aircrack-ng.org/ieee80211_inject.patch"
         SI_PATCHPATH2[$1]="http://patches.aircrack-ng.org/old/ieee80211_inject.patch"
+    fi
+}
+
+install_softmac() {
+    if [ $2 -eq 1 ]
+    then
+        #check if kernel source is in /usr/src/linux instead
+        missing=0
+        #check for default files README COPYING CREDITS (i hope every kernel source includes them all)
+        if [ ! -f "/usr/src/linux/README" -o ! -f "/usr/src/linux/COPYING" -o ! -f "/usr/src/linux/CREDITS" ]
+        then
+            missing=1
+        #   echo "Kernel source missing!"
+#            return $ERROR
+        fi
+
+        #2nd check (in case README COPYING and CREDITS is included in kernel headers)
+        #searches for .c files in "net" subdir
+        if [ $missing = 0 -a x"`find "/usr/src/linux/net/" -name "*\.c" | head -n 1`" = x ]
+        then
+            missing=1
+        #   echo "Kernel source missing!"
+#            return $ERROR
+        fi
+
+        if [ $missing = 0 ]
+        then
+            SI_DRIVERPATH1[$1]=$SI_DRIVERPATH2[$1]
+        else
+            echo
+            echo "Your kernel source is neither in \"$KSRC\" nor in \"/usr/src/linux\"."
+            echo "Trying with vanilla source. (May fail on heavily patched distributions.)"
+            echo "If it fails install your proper kernel source and rerun this script."
+            echo
+            sleep 3
+
+            SI_DRIVERGET[$1]="wget"
+            SI_DRIVERFILE[$1]="linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+            SI_DRIVERPATH1[$1]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+            SI_DRIVERPATH2[$1]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$KMAJOR.$KMINOR.$KPATCH.tar.bz2"
+            SI_DRIVEREXDIR[$1]="linux-$KMAJOR.$KMINOR.$KPATCH/net/ieee80211"
+            SI_DRIVERDIR[$1]="ieee80211"
+        fi
     fi
 }
 #end
@@ -2756,7 +2815,8 @@ installStack() {
 
     #2nd check (in case README COPYING and CREDITS is included in kernel headers)
     #searches for .c files in "net" subdir
-    if [ $missing = 0 -a x"`find $KSRC/net/ -name *\.c | head -n 1`" = x ]
+
+    if [ $missing = 0 -a x"`find "$KSRC/net/" -name "*\.c" | head -n 1`" = x ]
     then
         missing=1
 #        echo "Kernel source missing!"
