@@ -103,7 +103,31 @@ int close_aircrack = 0;
 int id=0;
 pthread_t tid[MAX_THREADS];
 
+#define	GOT_IV	0x00000001
+#define	USE_IV	0x00000002
+#define K01_IV	0x00000010
+#define K02_IV	0x00000020
+#define K03_IV	0x00000040
+#define K04_IV	0x00000080
+#define K05_IV	0x00000100
+#define K06_IV	0x00000200
+#define K07_IV	0x00000400
+#define K08_IV	0x00000800
+#define K09_IV	0x00001000
+#define K10_IV	0x00002000
+#define K11_IV	0x00004000
+#define K12_IV	0x00008000
+#define K13_IV	0x00010000
+#define K14_IV	0x00020000
+#define K15_IV	0x00040000
+#define K16_IV	0x00080000
+#define K17_IV	0x00100000
 
+typedef struct
+{
+	unsigned int used;
+}used_iv;
+used_iv* all_ivs;
 
 typedef struct
 {
@@ -205,6 +229,7 @@ void clean_exit(int ret)
 	struct AP_info *ap_prv;
 	struct AP_info *ap_next;
 	int i=0;
+// 	int j=0, k=0, attack=0;
 
 	char tmpbuf[128];
 	bzero(tmpbuf, 128);
@@ -286,6 +311,23 @@ void clean_exit(int ret)
 
 		ap_cur = ap_next;
 	}
+
+// 	attack = A_s5_1;
+// 	printf("Please wait for evaluation...\n");
+// 	for(i=0; i<(256*256*256); i++)
+// 	{
+// 		if((all_ivs[i].used & GOT_IV) && !(all_ivs[i].used & USE_IV))
+// 			j++;
+//
+// 		if((all_ivs[i].used & GOT_IV) && (all_ivs[i].used & (1<<(attack+4)) ) )
+// 		{
+// 			printf("IV %02X:%02X:%02X used for %d\n", (i/(256*256)), ((i&0xFFFF)/(256)), (i&0xFF), attack);
+// 			k++;
+// 		}
+// 	}
+//
+// 	printf("%d unused IVs\n", j);
+// 	printf("%d used IVs for %d\n", k, attack);
 
 	_exit(ret);
 }
@@ -1043,6 +1085,7 @@ void read_thread( void *arg )
 					memcpy( ap_cur->ivbuf + n, buffer, 5 );
 					uniqueiv_mark( ap_cur->uiv_root, buffer );
 					ap_cur->nb_ivs++;
+// 					all_ivs[256*256*buffer[0] + 256*buffer[1] + buffer[2]].used |= GOT_IV;
 				}
 			}
 			else if(ivs2.flags & IVS2_PTW)
@@ -2292,20 +2335,20 @@ int crack_wep_thread( void *arg )
 
 		for( xv = min; xv < max; xv += 5 )
 		{
-			pthread_mutex_lock( &mx_ivb );
-
-			memcpy( K, &wep.ivbuf[xv], 3 );
-
 			if(!first)
 			{
 				for(i=0; i<oldq; i++)
 				{
-					S[i] = i;
-					S[jj[i]] = jj[i];
-					Si[i] = i;
-					Si[jj[i]] = jj[i];
+					S[i] = Si[i] = i;
+					S[jj[i]] = Si[jj[i]] = jj[i];
+// 					Si[i] = i;
+// 					Si[jj[i]] = jj[i];
 				}
 			}
+
+			pthread_mutex_lock( &mx_ivb );
+
+			memcpy( K, &wep.ivbuf[xv], 3 );
 
 			for( i = j = 0; i < q; i++ )
 			{
@@ -2320,6 +2363,7 @@ int crack_wep_thread( void *arg )
 
 			o1 = wep.ivbuf[xv + 3] ^ 0xAA; io1 = Si[o1]; S1 = S[1];
 			o2 = wep.ivbuf[xv + 4] ^ 0xAA; io2 = Si[o2]; S2 = S[2];
+			pthread_mutex_unlock( &mx_ivb );
 
 			if(first)
 				first=0;
@@ -2330,7 +2374,6 @@ int crack_wep_thread( void *arg )
 				first2=0;
 			}
 
-			pthread_mutex_unlock( &mx_ivb );
 			Sq = S[q]; dq = Sq + jj[q - 1];
 
 			if( S2 == 0 )
@@ -2339,10 +2382,16 @@ int crack_wep_thread( void *arg )
 				{
 					Kq = 1 - dq; votes[A_neg][Kq]++;
 					Kq = 2 - dq; votes[A_neg][Kq]++;
+					//to signal general usage
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+					//to know which attack used this iv
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_neg);
 				}
 				else if( o2 == 0 )
 				{
 					Kq = 2 - dq; votes[A_neg][Kq]++;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_neg);
 				}
 			}
 			else
@@ -2350,6 +2399,8 @@ int crack_wep_thread( void *arg )
 				if( ( o2 == 0 ) && ( Sq == 0 ) )
 				{
 					Kq = 2 - dq; votes[A_u15][Kq]++;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_u15);
 				}
 			}
 
@@ -2357,12 +2408,16 @@ int crack_wep_thread( void *arg )
 			{
 				Kq = 1 - dq; votes[A_neg][Kq]++;
 				Kq = 2 - dq; votes[A_neg][Kq]++;
+// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_neg);
 			}
 
 			if( ( S1 == 0 ) && ( S[0] == 1 ) && ( o1 == 1 ) )
 			{
 				Kq = 0 - dq; votes[A_neg][Kq]++;
 				Kq = 1 - dq; votes[A_neg][Kq]++;
+// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_neg);
 			}
 
 			if( S1 == q )
@@ -2370,10 +2425,14 @@ int crack_wep_thread( void *arg )
 				if( o1 == q )
 				{
 					Kq = Si[0] - dq; votes[A_s13][Kq]++;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_s13);
 				}
 				else if( ( ( 1 - q - o1 ) & 0xFF ) == 0 )
 				{
 					Kq = io1 - dq; votes[A_u13_1][Kq]++;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_u13_1);
 				}
 				else if( io1 < q )
 				{
@@ -2382,6 +2441,8 @@ int crack_wep_thread( void *arg )
 					if( jq != 1 )
 					{
 						Kq = jq - dq; votes[A_u5_1][Kq]++;
+// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_u5_1);
 					}
 				}
 			}
@@ -2389,6 +2450,8 @@ int crack_wep_thread( void *arg )
 			if( ( io1 == 2 ) && ( S[q] == 1 ) )
 			{
 				Kq = 1 - dq; votes[A_u5_2][Kq]++;
+// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_u5_2);
 			}
 
 			if( S[q] == q )
@@ -2396,15 +2459,21 @@ int crack_wep_thread( void *arg )
 				if( ( S1 == 0 ) && ( o1 == q ) )
 				{
 					Kq = 1 - dq; votes[A_u13_2][Kq]++;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_u13_2);
 				}
 				else if( ( ( ( 1 - q - S1 ) & 0xFF ) == 0 ) && ( o1 == S1 ) )
 				{
 					Kq = 1 - dq; votes[A_u13_3][Kq]++;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_u13_3);
 				}
 				else if( ( S1 >= ( ( -q ) & 0xFF ) )
 					&& ( ( ( q + S1 - io1 ) & 0xFF ) == 0 ) )
 				{
 					Kq = 1 - dq; votes[A_u5_3][Kq]++;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_u5_3);
 				}
 			}
 
@@ -2412,6 +2481,8 @@ int crack_wep_thread( void *arg )
 				( io1 != 1 ) && ( io1 != S[S1] ) )
 			{
 				Kq = io1 - dq; votes[A_s5_1][Kq]++;
+// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_s5_1);
 			}
 
 			if( ( S1 > q ) && ( ( ( S2 + S1 - q ) & 0xFF ) == 0 ) )
@@ -2423,6 +2494,8 @@ int crack_wep_thread( void *arg )
 					if( ( jq != 1 ) && ( jq != 2 ) )
 					{
 						Kq = jq - dq; votes[A_s5_2][Kq]++;
+// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_s5_2);
 					}
 				}
 				else if( o2 == ( ( 2 - S2 ) & 0xFF ) )
@@ -2432,6 +2505,8 @@ int crack_wep_thread( void *arg )
 					if( ( jq != 1 ) && ( jq != 2 ) )
 					{
 						Kq = jq - dq; votes[A_s5_3][Kq]++;
+// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_s5_3);
 					}
 				}
 			}
@@ -2448,6 +2523,8 @@ int crack_wep_thread( void *arg )
 						&& ( io2 != J2 ) )
 					{
 						Kq = io2 - dq; votes[A_s3][Kq]++;
+// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_s3);
 					}
 				}
 			}
@@ -2459,16 +2536,22 @@ int crack_wep_thread( void *arg )
 					if( o2 == 0 )
 					{
 						Kq = Si[0] - dq; votes[A_4_s13][Kq]++;
+// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_4_s13);
 					}
 					else
 					{
 						if( ( jj[1] == 2 ) && ( io2 == 0 ) )
 						{
 							Kq = Si[254] - dq; votes[A_4_u5_1][Kq]++;
+// 							all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 							all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_4_u5_1);
 						}
 						if( ( jj[1] == 2 ) && ( io2 == 2 ) )
 						{
 							Kq = Si[255] - dq; votes[A_4_u5_2][Kq]++;
+// 							all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 							all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_4_u5_2);
 						}
 					}
 				}
@@ -2476,6 +2559,8 @@ int crack_wep_thread( void *arg )
 					( io2 != 1 ) && ( io2 != 4 ) )
 				{
 					Kq = io2 - dq; votes[A_u5_4][Kq]++;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= USE_IV;
+// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 << (4+A_u5_4);
 				}
 			}
 			if( close_aircrack )
@@ -4315,6 +4400,10 @@ int main( int argc, char *argv[] )
 	opt.firstbssid = NULL;
 	opt.bssid_list_1st = NULL;
 	opt.bssidmerge = NULL;
+	opt.oneshot = 0;
+
+	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
+	bzero(all_ivs, (256*256*256)*sizeof(used_iv));
 
 	forceptw = 0;
 
@@ -4331,14 +4420,15 @@ int main( int argc, char *argv[] )
             {"wep-decloak",       0, 0, 'D'},
             {"ptw-debug",         0, 0, 'P'},
             {"visual-inspection", 0, 0, 'V'},
+            {"oneshot",           0, 0, '1'},
             {0,                   0, 0,  0 }
         };
 
 		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:DP:zV",
+			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:DP:zV1",
                         long_options, &option_index );
 		else
-			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV",
+			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -4441,6 +4531,11 @@ int main( int argc, char *argv[] )
 			case 't' :
 
 				opt.is_bcdonly = 1;
+				break;
+
+			case '1' :
+
+				opt.oneshot = 1;
 				break;
 
 			case 'd' :
@@ -5052,6 +5147,16 @@ usage:
 					if(!opt.is_quiet)
 						printf("Starting PTW attack with %ld ivs.\n", ap_cur->nb_ivs_vague);
 					ret = crack_wep_ptw(ap_cur);
+
+					if( opt.oneshot == 1 && ret == FAILURE )
+					{
+						printf( "   Attack failed. Possible reasons:\n\n"
+							"     * Out of luck: you must capture more IVs. Usually, 104-bit WEP\n"
+							"       can be cracked with about 80.000 IVs, sometimes more.\n\n"
+							"     * Try to raise the fudge factor (-f).\n");
+						ret=0;
+					}
+
 					if(ret)
 					{
 						opt.next_ptw_try += PTW_TRY_STEP;

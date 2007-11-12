@@ -155,6 +155,8 @@ struct options
 	int visual_inspection;       /* Enabling/disabling visual    */
                                  /* inspection of the different  */
                                  /* keybytes                     */
+
+	int oneshot;
 }
 
 opt;
