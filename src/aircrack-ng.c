@@ -2591,14 +2591,14 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 	int i, et_h, et_m, et_s;
 	static int is_cleared = 0;
 
+	if( (chrono( &t_stats, 0 ) < 1.51 || wepkey_crack_success) && force == 0 )
+		return;
+
 	if( ioctl( 0, TIOCGWINSZ, &ws ) < 0 )
 	{
 		ws.ws_row = 25;
 		ws.ws_col = 80;
 	}
-
-	if( (chrono( &t_stats, 0 ) < 1.51 || wepkey_crack_success) && force == 0 )
-		return;
 
 	chrono( &t_stats, 1 );
 
