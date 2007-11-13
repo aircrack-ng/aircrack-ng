@@ -296,7 +296,7 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
 	int i;
 	uint8_t tmp;
 
-	if(!opt.is_quiet)
+	if(!opt.is_quiet && keybyte < 4)
 		show_wep_stats( keylen -1, 0, keytable, searchborders, depth, tried );
 	if (keybyte > 0) {
 		if (!validchars[keybyte-1][key[keybyte-1]]) {
