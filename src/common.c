@@ -216,20 +216,24 @@ int getmac(char * macAddress, int strict, unsigned char * mac)
 // Read a line of characters inputted by the user
 int readLine(char line[], int maxlength)
 {
+	int c;
 	int i = -1;
 
 	do
 	{
 		// Read char
-		line[++i] = getchar();
+		c = getchar();
+
+		if (c == EOF)
+			c = '\0';
+
+		line[++i] = (char)c;
 
 		if (line[i] == '\n')
 			break;
 		if (line[i] == '\r')
 			break;
 		if (line[i] == '\0')
-			break;
-		if (line[i] == -1)
 			break;
 	}
 	while (i + 1 < maxlength);
