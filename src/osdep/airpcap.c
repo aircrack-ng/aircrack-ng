@@ -49,7 +49,11 @@ PPI_FIELD_802_11_COMMON, *PPPI_FIELD_802_11_COMMON;
 
 PAirpcapHandle airpcap_handle;
 
-
+/**
+ * Check if the device is an Airpcap device
+ * @param iface Interface name
+ * @return 1 if it is an Airpcap device, 0 if not
+ */
 int isAirpcapDevice(const char * iface)
 {
 	char * pos;
@@ -78,6 +82,14 @@ int isAirpcapDevice(const char * iface)
 	return 1;
 }
 
+/**
+ * Parse information from a PPI packet (will be used later).
+ * @param p packet
+ * @param caplen Length of the packet
+ * @param hdrlen Length of the header
+ * @param power pointer that will contains the power of the packet
+ * @return 0 if successful decoding, 1 if it failed to decode
+ */
 int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 {
 	PPPI_PACKET_HEADER pPpiPacketHeader;
@@ -155,13 +167,20 @@ int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 	return( 0 );
 }
 
-
+/**
+ * Set MAC Address of the device
+ * @param mac MAC Address
+ * @return 0 (successful)
+ */
 int airpcap_set_mac(void *mac)
 {
    	if (mac) {}
    	return 0;
 }
 
+/**
+ * Close device
+ */
 void airpcap_close(void)
 {
 	// By default, when plugged in, the adapter is set in monitor mode;
@@ -173,6 +192,11 @@ void airpcap_close(void)
 	}
 }
 
+/**
+ * Get MAC Address of the device (not yet implemented)
+ * @param mac It will contain the mac address
+ * @return 0 (successful)
+ */
 int airpcap_get_mac(void *mac)
 {
    // Don't use the function from Airpcap
@@ -181,11 +205,18 @@ int airpcap_get_mac(void *mac)
 	return 0;
 }
 
-// Use PPI headers to obtain the different information for ri
-// Use AirpcapConvertFrequencyToChannel() to get channel
-// Add an option to give frequency instead of channel
+/**
+ * Capture one packet
+ * @param buf Buffer for the packet
+ * @param len Length of the buffer
+ * @param ri Receive information
+ * @return -1 if failure or the number of bytes received
+ */
 int airpcap_sniff(void *buf, int len, struct rx_info *ri)
 {
+	// Use PPI headers to obtain the different information for ri
+	// Use AirpcapConvertFrequencyToChannel() to get channel
+	// Add an option to give frequency instead of channel
 	UINT BytesReceived = 0;
 
 	if (ri) {}
@@ -200,6 +231,13 @@ int airpcap_sniff(void *buf, int len, struct rx_info *ri)
 	return -1;
 }
 
+/**
+ * Inject one packet
+ * @param buf Buffer for the packet
+ * @param len Length of the buffer
+ * @param ti Transmit information
+ * @return -1 if failure or the number of bytes sent
+ */
 int airpcap_inject(void *buf, int len, struct tx_info *ti)
 {
 	if (ti) {}
@@ -209,6 +247,12 @@ int airpcap_inject(void *buf, int len, struct tx_info *ti)
 	return len;
 }
 
+/**
+ * Print the error message
+ * @param err Contains the error message and a %s in order to show the Airpcap error
+ * @param retValue Value returned by the function
+ * @return retValue
+ */
 int printErrorCloseAndReturn(const char * err, int retValue)
 {
 	if (err && airpcap_handle)
@@ -227,6 +271,11 @@ int printErrorCloseAndReturn(const char * err, int retValue)
     return retValue;
 }
 
+/**
+ * Initialize the device
+ * @param param Parameters for the initialization
+ * @return 0 if successful, -1 in case of failure
+ */
 int airpcap_init(char *param)
 {
 	// Later: if several interfaces are given, aggregate them.
@@ -284,6 +333,11 @@ int airpcap_init(char *param)
 	return 0;
 }
 
+/**
+ * Set device channel
+ * @param chan Channel
+ * @return 0 if successful, -1 if it failed
+ */
 int airpcap_set_chan(int chan)
 {
 	// Make sure a valid channel is given

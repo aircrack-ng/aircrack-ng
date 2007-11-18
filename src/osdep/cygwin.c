@@ -67,6 +67,12 @@ struct priv_cygwin {
 	void		(*pc_close)(void);
 };
 
+/**
+ * strstr() function case insensitive
+ * @param String C string to be scanned
+ * @param Pattern C string containing the sequence of characters to match
+ * @return Pointer to the first occurrence of Pattern in String, or a null pointer if there Pattern is not part of String.
+ */
 char *stristr(const char *String, const char *Pattern)
 {
       char *pptr, *sptr, *start;
@@ -112,6 +118,14 @@ char *stristr(const char *String, const char *Pattern)
       return(NULL);
 }
 
+/**
+ * Get the different functions for to interact with the device:
+ * - setting monitor mode
+ * - changing channel
+ * - capturing data
+ * - injecting packets
+ * @param iface The interface name
+ */
 static int do_cygwin_open(struct wif *wi, char *iface)
 {
 	struct priv_cygwin *priv = wi_priv(wi);
@@ -220,6 +234,11 @@ errdll:
 	return rc;
 }
 
+/**
+ * Change channel
+ * @param chan Channel
+ * @return 0 if successful, -1 if it failed
+ */
 static int cygwin_set_channel(struct wif *wi, int chan)
 {
 	struct priv_cygwin *priv = wi_priv(wi);
@@ -231,6 +250,13 @@ static int cygwin_set_channel(struct wif *wi, int chan)
 	return 0;
 }
 
+/**
+ * Capture a packet
+ * @param buf Buffer for the packet (has to be already allocated)
+ * @param len Length of the buffer
+ * @param ri Receive information structure
+ * @return -1 in case of failure or the number of bytes received
+ */
 static int cygwin_read_packet(struct priv_cygwin *priv, void *buf, int len,
 			      struct rx_info *ri)
 {
@@ -248,6 +274,13 @@ static int cygwin_read_packet(struct priv_cygwin *priv, void *buf, int len,
 	return rd;
 }
 
+/**
+ * Send a packet
+ * @param h80211 The packet itself
+ * @param len Length of the packet
+ * @param ti Transmit information
+ * @return -1 if failure or the number of bytes sent
+ */
 static int cygwin_write(struct wif *wi, unsigned char *h80211, int len,
 			struct tx_info *ti)
 {
@@ -260,6 +293,10 @@ static int cygwin_write(struct wif *wi, unsigned char *h80211, int len,
 	return rc;
 }
 
+/**
+ * Get device channel
+ * @return channel
+ */
 static int cygwin_get_channel(struct wif *wi)
 {
 	struct priv_cygwin *pc = wi_priv(wi);
@@ -321,6 +358,9 @@ static int cygwin_read(struct wif *wi, unsigned char *h80211, int len,
 	return cygwin_read_reader(pc->pc_pipe[0], plen, h80211, len);
 }
 
+/**
+ * Free allocated data
+ */
 static void do_free(struct wif *wi)
 {
 	struct priv_cygwin *pc = wi_priv(wi);
@@ -349,11 +389,17 @@ static void do_free(struct wif *wi)
 	free(wi);
 }
 
+/**
+ * Close the device and free data
+ */
 static void cygwin_close(struct wif *wi)
 {
 	do_free(wi);
 }
 
+/**
+ * Get the file descriptor for the device
+ */
 static int cygwin_fd(struct wif *wi)
 {
 	struct priv_cygwin *pc = wi_priv(wi);
@@ -364,13 +410,22 @@ static int cygwin_fd(struct wif *wi)
 	return pc->pc_pipe[0];
 }
 
+/**
+ * Get MAC Address of the device
+ * @param mac It will contain the mac address
+ * @return 0 if successful
+ */
 static int cygwin_get_mac(struct wif *wi, unsigned char *mac)
 {
 	struct priv_cygwin *pc = wi_priv(wi);
 
 	return pc->pc_get_mac(mac);
 }
-
+/**
+ * Set MAC Address of the device
+ * @param mac MAC Address
+ * @return 0 if successful
+ */
 static int cygwin_set_mac(struct wif *wi, unsigned char *mac)
 {
 	struct priv_cygwin *pc = wi_priv(wi);
@@ -392,6 +447,11 @@ static int cygwin_get_rate(struct wif *wi)
 	return 1000000;
 }
 
+/**
+ * Set (injection) rate of the device
+ * @param rate Rate to be used
+ * @return 0 (successful)
+ */
 static int cygwin_set_rate(struct wif *wi, int rate)
 {
 	if (wi || rate) {} /* XXX unused */
@@ -480,6 +540,10 @@ struct wif *wi_open_osdep(char *iface)
 	return cygwin_open(iface);
 }
 
+/**
+ * Return remaining battery time in seconds.
+ * @return Battery time in seconds or 0 if no battery (or connected to power)
+ */
 int get_battery_state(void)
 {
 	SYSTEM_POWER_STATUS powerStatus;
