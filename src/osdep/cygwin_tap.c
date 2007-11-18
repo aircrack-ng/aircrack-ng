@@ -49,6 +49,10 @@ struct tip_cygwin {
 	char		tc_guid[256];
 };
 
+/**
+ * Stop the reader thread (if it is running)
+ * @return 0 if stopped or -1 if it failed to stop it
+ */
 static int stop_reader(struct tip_cygwin *priv)
 {
 	if (priv->tc_running == 1) {
@@ -65,6 +69,10 @@ static int stop_reader(struct tip_cygwin *priv)
 	return 0;
 }
 
+/**
+ * Start reader thread
+ * @return -1 if failed to start thread or 0 if it is successful
+ */
 static int start_reader(struct tip_cygwin *priv)
 {
 	priv->tc_running = 2;
@@ -76,6 +84,9 @@ static int start_reader(struct tip_cygwin *priv)
 	return 0;
 }
 
+/**
+ * Change status (enable/disable) of the device
+ */
 static int ti_media_status(struct tip_cygwin *priv, int on)
 {
 	ULONG s = on;
@@ -88,6 +99,9 @@ static int ti_media_status(struct tip_cygwin *priv, int on)
 	return 0;
 }
 
+/**
+ * Try opening device
+ */
 static int ti_try_open(struct tip_cygwin *priv, char *guid)
 {
 	int any = priv->tc_guid[0] == 0;
@@ -126,6 +140,11 @@ static int ti_try_open(struct tip_cygwin *priv, char *guid)
 	return 1;
 }
 
+/**
+ * Read registry value
+ * @param key Registry key
+ * @return 0 if successful, -1 if it failed
+ */
 static int ti_read_reg(struct tip_cygwin *priv, char *key, char *res, int len)
 {
 	DWORD dt, l = len;
@@ -284,6 +303,10 @@ static int ti_reset_state(HDEVINFO *hdi, SP_DEVINFO_DATA *did, DWORD state)
 	return 0;
 }
 
+/**
+ * Reset the device
+ * @return 0 if successful, -1 if it failed
+ */
 static int ti_do_reset(HDEVINFO *hdi, SP_DEVINFO_DATA *did)
 {
 	int rc;
@@ -371,6 +394,11 @@ static int ti_set_mtu_cygwin(struct tif *ti, int mtu)
 	return 0;
 }
 
+/**
+ * Set device MAC address
+ * @param mac New MAC address
+ * @return -1 if it failed, 0 on success
+ */
 static int ti_set_mac_cygwin(struct tif *ti, unsigned char *mac)
 {
 	struct tip_cygwin *priv = ti_priv(ti);
@@ -406,6 +434,11 @@ static int ti_set_mac_cygwin(struct tif *ti, unsigned char *mac)
 	return 0;
 }
 
+/**
+ * Set device IP address
+ * @param ip New IP address
+ * @return -1 if it failed, 0 on success
+ */
 static int ti_set_ip_cygwin(struct tif *ti, struct in_addr *ip)
 {
 	struct tip_cygwin *priv = ti_priv(ti);
