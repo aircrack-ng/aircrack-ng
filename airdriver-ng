@@ -104,8 +104,28 @@ OWN_NAME=$0
 D_DIR="/usr/src/drivers"
 LOGFILE="/var/log/airdriver"
 
+#firmware preparation
+#possible paths, ordered by importance
+FIRMPATHS="/lib/firmware /usr/lib/firmware /lib/hotplug/firmware /usr/local/lib/firmware /usr/firmware"
+
+for i in $FIRMPATHS
+do
+    if [ -d "$i" ]
+    then
+        FIRMPATH="$i"
+    fi
+done
+
+if [ x"$FIRMPATH" == x ]
+then
+    FIRMPATH="/lib/firmware"
+    mkdir -p "$FIRMPATH"
+fi
+#done preparing firmware directory
+
 NO_DRIVER_ERROR='You need to specify a driver number obtained from "airdriver-ng installed" or "airdriver-ng loaded"'
 NO_STACK_ERROR='You need to specify a stack number obtained from "airdriver-ng supported"'
+NO_FIRMWARE_ERROR='You need to specify a driver number obtained from "airdriver-ng supported"'
 
 YES=1
 NO=0
@@ -257,7 +277,7 @@ DI_INIT[$i]=""
 DI_DRIVERGET[$i]="wget"
 DI_DRIVERFILE[$i]="acx-20070101.tar.bz2"
 DI_DRIVERPATH1[$i]="http://www.cmartin.tk/acx/acx-20070101.tar.bz2"
-DI_DRIVERPATH2[$i]=""
+DI_DRIVERPATH2[$i]="http://www.hauke-m.de/fileadmin/acx/acx-20070101.tar.bz2"
 DI_DRIVEREXDIR[$i]=""
 DI_DRIVERDIR[$i]="acx-20070101"
 DI_PREPATCH[$i]=""
@@ -269,6 +289,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/acx/""
 DI_INSTALL2[$i]="cp -f acx.ko "$KMOD/kernel/drivers/net/wireless/acx/""
+DF_FIRMFILES[$i]="tiacx100 tiacx100r11 tiacx100usb tiacx111c17 tiacx100r0D tiacx100r15 tiacx111c16 tiacx111c19"
+DF_FIRMFILE[$i]="fw.tar.bz2"
+DF_FIRMPATH1[$i]="http://www.hauke-m.de/fileadmin/acx/fw.tar.bz2"
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]="fw"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=acx"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="ACX"
@@ -298,6 +324,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -327,6 +359,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -356,6 +394,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="atmel_at76c502_3com.bin atmel_at76c503-rfmd.bin atmel_at76c502_3com-wpa.bin atmel_at76c504_2958-wpa.bin atmel_at76c502.bin atmel_at76c504a_2958-wpa.bin atmel_at76c502d.bin atmel_at76c504.bin atmel_at76c502d-wpa.bin atmel_at76c504c-wpa.bin atmel_at76c502e.bin atmel_at76c505a-rfmd2958.bin atmel_at76c502e-wpa.bin atmel_at76c505-rfmd2958.bin atmel_at76c502-wpa.bin atmel_at76c505-rfmd.bin atmel_at76c503-i3861.bin atmel_at76c506.bin atmel_at76c503-i3863.bin atmel_at76c506-wpa.bin atmel_at76c503-rfmd-0.90.2-140.bin atmel_at76c503-rfmd-acc.bin"
+DF_FIRMFILE[$i]="at76c503afw-0.1.tar.gz"
+DF_FIRMPATH1[$i]="http://downloads.sourceforge.net/at76c503a/at76c503afw-0.1.tar.gz"
+DF_FIRMPATH2[$i]="http://downloads.sourceforge.net/at76c503a/at76c503afw-0.1.tar.gz"
+DF_FIRMDIR[$i]="at76_usb-firmware-0.1"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -385,6 +429,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="make"
 DI_INSTALL1[$i]="make install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="atmel_at76c502_3com.bin atmel_at76c503-rfmd.bin atmel_at76c502_3com-wpa.bin atmel_at76c504_2958-wpa.bin atmel_at76c502.bin atmel_at76c504a_2958-wpa.bin atmel_at76c502d.bin atmel_at76c504.bin atmel_at76c502d-wpa.bin atmel_at76c504c-wpa.bin atmel_at76c502e.bin atmel_at76c505a-rfmd2958.bin atmel_at76c502e-wpa.bin atmel_at76c505-rfmd2958.bin atmel_at76c502-wpa.bin atmel_at76c505-rfmd.bin atmel_at76c503-i3861.bin atmel_at76c506.bin atmel_at76c503-i3863.bin atmel_at76c506-wpa.bin atmel_at76c503-rfmd-0.90.2-140.bin atmel_at76c503-rfmd-acc.bin"
+DF_FIRMFILE[$i]="at76c503afw-0.1.tar.gz"
+DF_FIRMPATH1[$i]="http://downloads.sourceforge.net/at76c503a/at76c503afw-0.1.tar.gz"
+DF_FIRMPATH2[$i]="http://downloads.sourceforge.net/at76c503a/at76c503afw-0.1.tar.gz"
+DF_FIRMDIR[$i]="at76_usb-firmware-0.1"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -414,6 +464,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/bcm43xx/""
 DI_INSTALL2[$i]="cp -f bcm43xx.ko $KMOD/kernel/drivers/net/wireless/bcm43xx/"
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=broadcom"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="BCM43"
@@ -443,6 +499,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="BCM43"
@@ -472,6 +534,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -501,6 +569,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/hostap/""
 DI_INSTALL2[$i]="cp -f *.ko $KMOD/kernel/drivers/net/wireless/hostap/"
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=hostap"
 DETECT_USB[$i]="prism2"
 DETECT_PCI[$i]="Intersil\|Prism"
@@ -530,6 +604,12 @@ DI_PRECOMP[$i]="ipw2100_precomp"
 DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/ipw2100/""
 DI_INSTALL2[$i]="cp -f ipw2100.ko $KMOD/kernel/drivers/net/wireless/ipw2100/"
+DF_FIRMFILES[$i]="ipw2100-1.3.fw ipw2100-1.3-i.fw ipw2100-1.3-p.fw"
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="2100"
@@ -559,6 +639,12 @@ DI_PRECOMP[$i]="ipw2200_precomp"
 DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/ipw2200/""
 DI_INSTALL2[$i]="cp -f ipw2200.ko $KMOD/kernel/drivers/net/wireless/ipw2200/"
+DF_FIRMFILES[$i]="ipw2200-ibss.fw ipw2200-bss.fw ipw2200-sniffer.fw"
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=ipw2200"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="2200BG"
@@ -588,6 +674,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="ipw3945.ucode"
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=ipw3945"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="3945"
@@ -617,6 +709,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="make"
 DI_INSTALL1[$i]="make install"
 DI_INSTALL2[$i]="make install_ucode"
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="www.tu-darmstadt.de/~p_larbig/wlan/"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="3945"
@@ -646,6 +744,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=ipw3945"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="3945"
@@ -675,6 +779,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="4965"
@@ -704,6 +814,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE"
 DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -733,6 +849,12 @@ DI_PRECOMP[$i]="export KERNELRELEASE=$KVER"
 DI_COMPILE[$i]="$MAKE"
 DI_INSTALL1[$i]="madwifi_install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=madwifi-ng"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="Atheros"
@@ -762,6 +884,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE modules"
 DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="gw3887 isl3886_usb"
+DF_FIRMFILE[$i]="p54u_firmwares.tar.bz2"
+DF_FIRMPATH1[$i]="http://prism54.org/firmware/p54u_firmwares.tar.bz2"
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]="boot/firmware"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=prism54"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="Prism Javelin\|Prism Xbow\|Prism GT\|Prism Duette"
@@ -791,6 +919,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="gw3887 isl3886_usb"
+DF_FIRMFILE[$i]="p54u_firmwares.tar.bz2"
+DF_FIRMPATH1[$i]="http://prism54.org/firmware/p54u_firmwares.tar.bz2"
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]="boot/firmware"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="Prism Javelin\|Prism Xbow\|Prism GT\|Prism Duette"
@@ -820,6 +954,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE"
 DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="RT2400"
@@ -849,6 +989,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="RT2400"
@@ -878,6 +1024,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="RT2400"
@@ -907,6 +1059,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE"
 DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=rt2500"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="RT2500"
@@ -936,6 +1094,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="RT2500"
@@ -965,6 +1129,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="RT2500"
@@ -994,6 +1164,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE"
 DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=rt2570"
 DETECT_USB[$i]="G122 802.11g rev. B1"
 DETECT_PCI[$i]=""
@@ -1023,6 +1199,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1052,6 +1234,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1081,6 +1269,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE"
 DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="rt2561.bin rt2561s.bin rt2661.bin rt61sta.dat"
+DF_FIRMFILE[$i]="rt61-1.1.0-b2.tar.gz"
+DF_FIRMPATH1[$i]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz"
+DF_FIRMPATH2[$i]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz"
+DF_FIRMDIR[$i]="rt61-1.1.0-b2"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=rt61"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="RT61\|RT2600\|RT2561"
@@ -1110,6 +1304,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="rt2561.bin rt2561s.bin rt2661.bin rt61sta.dat"
+DF_FIRMFILE[$i]="rt61-1.1.0-b2.tar.gz"
+DF_FIRMPATH1[$i]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz"
+DF_FIRMPATH2[$i]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz"
+DF_FIRMDIR[$i]="rt61-1.1.0-b2"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="RT61\|RT2600\|RT2561"
@@ -1139,6 +1339,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="rt2561.bin rt2561s.bin rt2661.bin rt61sta.dat"
+DF_FIRMFILE[$i]="rt61-1.1.0-b2.tar.gz"
+DF_FIRMPATH1[$i]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz"
+DF_FIRMPATH2[$i]="http://prdownloads.sourceforge.net/rt2400/rt61-1.1.0-b2.tar.gz"
+DF_FIRMDIR[$i]="rt61-1.1.0-b2"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]="RT61\|RT2600\|RT2561"
@@ -1168,6 +1374,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE"
 DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="rt73.bin rt73sta.dat"
+DF_FIRMFILE[$i]="RT73_Linux_STA_Drv1.0.4.0.tar.gz"
+DF_FIRMPATH1[$i]="http://www.ralinktech.com.tw/data/RT73_Linux_STA_Drv1.0.4.0.tar.gz"
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]="RT73_Linux_STA_Drv1.0.4.0"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=rt73"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1197,6 +1409,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="rt73.bin rt73sta.dat"
+DF_FIRMFILE[$i]="RT73_Linux_STA_Drv1.0.4.0.tar.gz"
+DF_FIRMPATH1[$i]="http://www.ralinktech.com.tw/data/RT73_Linux_STA_Drv1.0.4.0.tar.gz"
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]="RT73_Linux_STA_Drv1.0.4.0"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1226,6 +1444,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="rt73.bin rt73sta.dat"
+DF_FIRMFILE[$i]="RT73_Linux_STA_Drv1.0.4.0.tar.gz"
+DF_FIRMPATH1[$i]="http://www.ralinktech.com.tw/data/RT73_Linux_STA_Drv1.0.4.0.tar.gz"
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]="RT73_Linux_STA_Drv1.0.4.0"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1255,6 +1479,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE"
 DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=r8180-sa2400"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1284,6 +1514,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE"
 DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=r8187"
 DETECT_USB[$i]="RTL8187"
 DETECT_PCI[$i]=""
@@ -1313,6 +1549,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]="RTL8187"
 DETECT_PCI[$i]=""
@@ -1342,6 +1584,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE auto_config"
 DI_INSTALL1[$i]="$MAKE install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=wlan-ng"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1371,6 +1619,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1400,6 +1654,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="zd1201.fw zd1201-ap.fw"
+DF_FIRMFILE[$i]="zd1201-0.14-fw.tar.gz"
+DF_FIRMPATH1[$i]="http://downloads.sourceforge.net/linux-lc100020/zd1201-0.14-fw.tar.gz"
+DF_FIRMPATH2[$i]="http://downloads.sourceforge.net/linux-lc100020/zd1201-0.14-fw.tar.gz"
+DF_FIRMDIR[$i]="zd1201-0.14-fw"
+DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1429,6 +1689,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]="zd1211b_ub zd1211b_uphm zd1211b_ur zd1211_uph zd1211_uphr zd1211b_uph zd1211b_uphr zd1211_ub zd1211_uphm zd1211_ur"
+DF_FIRMFILE[$i]="zd1211-firmware-1.4.tar.bz2"
+DF_FIRMPATH1[$i]="http://downloads.sourceforge.net/zd1211/zd1211-firmware-1.4.tar.bz2"
+DF_FIRMPATH2[$i]="http://downloads.sourceforge.net/zd1211/zd1211-firmware-1.4.tar.bz2"
+DF_FIRMDIR[$i]="zd1211-firmware"
+DF_INSTALLDIR[$i]="zd1211"
 DSITE[$i]=""
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1458,6 +1724,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/zd1211rw/""
 DI_INSTALL2[$i]="cp -f zd1211rw.ko $KMOD/kernel/drivers/net/wireless/zd1211rw/"
+DF_FIRMFILES[$i]="zd1211b_ub zd1211b_uphm zd1211b_ur zd1211_uph zd1211_uphr zd1211b_uph zd1211b_uphr zd1211_ub zd1211_uphm zd1211_ur"
+DF_FIRMFILE[$i]="zd1211-firmware-1.4.tar.bz2"
+DF_FIRMPATH1[$i]="http://downloads.sourceforge.net/zd1211/zd1211-firmware-1.4.tar.bz2"
+DF_FIRMPATH2[$i]="http://downloads.sourceforge.net/zd1211/zd1211-firmware-1.4.tar.bz2"
+DF_FIRMDIR[$i]="zd1211-firmware"
+DF_INSTALLDIR[$i]="zd1211"
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=zd1211rw"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1487,6 +1759,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]=""
 DI_INSTALL1[$i]=""
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://www.aircrack-ng.org/doku.php?id=zd1211rw"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1516,6 +1794,12 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="make"
 DI_INSTALL1[$i]="make install"
 DI_INSTALL2[$i]=""
+DF_FIRMFILES[$i]=""
+DF_FIRMFILE[$i]=""
+DF_FIRMPATH1[$i]=""
+DF_FIRMPATH2[$i]=""
+DF_FIRMDIR[$i]=""
+DF_INSTALLDIR[$i]=""
 DSITE[$i]="http://ndiswrapper.sourceforge.net"
 DETECT_USB[$i]=""
 DETECT_PCI[$i]=""
@@ -1831,7 +2115,7 @@ install_action() {
         echo "You need to install \"git\" prior to installing ${DNAME[$1]}"
     fi
 #1 - get then correct source
-    echo "1. Getting the source..."
+    printf "1. Getting the source..."
 
     #get it with wget
     if [ "${DI_DRIVERGET[$1]}" == "wget"  ]
@@ -1839,7 +2123,7 @@ install_action() {
         #is compressed source available? no - wget it
         if [ ! -f "${DI_DRIVERFILE[$1]}" ]
         then
-            $WGET -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH1[$1]}" >> "$LOGFILE" 2>&1
+            $WGET --progress=dot:mega -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH1[$1]}" >> "$LOGFILE" 2>&1
             if [ "$?" != "0" ]
             then
                 rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
@@ -1849,7 +2133,7 @@ install_action() {
         #is compressed source available? no - wget it from mirror
         if [ ! -f "${DI_DRIVERFILE[$1]}" -a x"${DI_DRIVERPATH2[$1]}" != x ]
         then
-            $WGET -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
+            $WGET --progress=dot:mega -O "${DI_DRIVERFILE[$1]}" "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
             if [ "$?" != "0" ]
             then
                 rm "${DI_DRIVERFILE[$1]}" 2>/dev/null
@@ -1879,9 +2163,11 @@ install_action() {
             echo "Get the file by hand, put it in \"$D_DIR/\""
             echo "and restart this installation."
             return $NO
+        else
+            printf "OK\n";
         fi
 
-        echo "2. Extracting the source..."
+        printf "2. Extracting the source..."
         if [ -d "${DI_DRIVERDIR[$1]}" ]
         then
             #be carefull!! (deleting old source)
@@ -1926,6 +2212,8 @@ install_action() {
         then
             echo "Unable to \"extract ${DI_DRIVERFILE[$1]}\""
             return $NO
+        else
+            printf "OK\n";
         fi
     fi
 
@@ -1949,6 +2237,9 @@ install_action() {
         then
             $SVN co "${DI_DRIVERPATH2[$1]}" "${DI_DRIVERDIR[$1]}" >> "$LOGFILE" 2>&1
         fi
+
+        printf "OK\n";
+
         echo "2. No extraction needed."
     fi
 
@@ -1966,6 +2257,7 @@ install_action() {
         then
             $CVS -z3 "${DI_DRIVERPATH1[$1]}"  co -P "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
         fi
+        printf "OK\n";
         echo "2. No extraction needed."
     fi
 
@@ -1989,6 +2281,7 @@ install_action() {
         then
             $GIT clone "${DI_DRIVERPATH2[$1]}" >> "$LOGFILE" 2>&1
         fi
+        printf "OK\n";
         echo "2. No extraction needed."
     fi
 
@@ -2012,6 +2305,7 @@ install_action() {
         then
             cp -rf "${DI_DRIVERPATH2[$1]}" ./ >> "$LOGFILE" 2>&1
         fi
+        printf "OK\n";
         echo "2. No extraction needed."
     fi
 
@@ -2031,10 +2325,10 @@ install_action() {
 #2 - get the correct patch
     if [ x"${DI_PATCHFILE[$1]}" != x ]
     then
-        echo "3. Getting the patch..."
+        printf "3. Getting the patch..."
         if [ ! -f "${DI_PATCHFILE[$1]}" ]
         then
-            $WGET -O "${DI_PATCHFILE[$1]}" "${DI_PATCHPATH1[$1]}" >> "$LOGFILE" 2>&1
+            $WGET --progress=dot:mega -O "${DI_PATCHFILE[$1]}" "${DI_PATCHPATH1[$1]}" >> "$LOGFILE" 2>&1
             if [ "$?" != "0" ]
             then
                 rm "${DI_PATCHFILE[$1]}" 2>/dev/null
@@ -2043,7 +2337,7 @@ install_action() {
 
         if [ ! -f "${DI_PATCHFILE[$1]}" -a x"${DI_PATCHPATH2[$1]}" != x ]
         then
-            $WGET -O "${DI_PATCHFILE[$1]}" "${DI_PATCHPATH2[$1]}" >> "$LOGFILE" 2>&1
+            $WGET --progress=dot:mega -O "${DI_PATCHFILE[$1]}" "${DI_PATCHPATH2[$1]}" >> "$LOGFILE" 2>&1
             if [ "$?" != "0" ]
             then
                 rm "${DI_PATCHFILE[$1]}" 2>/dev/null
@@ -2062,8 +2356,9 @@ install_action() {
         if [ ! -f "${DI_PATCHFILE[$1]}" ]
         then
             echo "Couldn't find the correct patch: ${DI_PATCHFILE[$1]}"
-            echo "in "
             return $NO
+        else
+            printf "OK\n";
         fi
 
         cp "${DI_PATCHFILE[$1]}" "${DI_DRIVERDIR[$1]}"  >> "$LOGFILE" 2>&1
@@ -2077,30 +2372,38 @@ install_action() {
         fi
 
     #3 - patch it
-        echo "4. Patching the source..."
+        confused=0
+        printf "4. Patching the source..."
 
         if [ x"`$PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" | grep "^No file"`" != x ]
         then
             $PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
             echo "Patching failed for files (Couldn't be found)."
+            confused=1
         fi
 
         if [ x"`$PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" | grep "FAILED"`" != x ]
         then
             $PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
             echo "Patching failed for some hunks."
+            confused=1
         fi
 
         if [ x"`$PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" | grep "Reversed"`" != x ]
         then
             $PATCH --dry-run -f -s -N ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
             echo "Already patched?"
+            confused=1
         fi
 
         $PATCH -N -f ${DI_PATCHARG[$1]} -i "${DI_PATCHFILE[$1]}" >> "$LOGFILE" 2>&1
+        if [ x"$confused" == "x0" ]
+        then
+            printf "OK\n";
+        fi
     else
         cd "${DI_DRIVERDIR[$1]}"
-        echo "3./4. Not patching..."
+        echo "3./4. Not patching."
     fi
 
 #4 - compile it
@@ -2118,13 +2421,15 @@ install_action() {
         done
     fi
 
-    echo "5. Compiling the source..."
+    printf "5. Compiling the source..."
     PWD=`pwd`
 
     ${DI_COMPILE[$1]} >> "$LOGFILE" 2>&1
     if [ $? != "0" ]
     then
         return $NO
+    else
+        printf "OK\n"
     fi
 
     if [ $NO_INSTALL = $YES ]
@@ -2132,8 +2437,8 @@ install_action() {
         return $YES
     fi
 
-#TODO:INSTALL
-    echo "6. Installing the modules..."
+#5 - install it
+    printf "6. Installing the modules..."
     ${DI_INSTALL1[$1]} >> "$LOGFILE" 2>&1
     if [ x"${DI_INSTALL2[$1]}" != x ]
     then
@@ -2143,11 +2448,164 @@ install_action() {
     if [ $? != "0" ]
     then
         return $NO
+    else
+        printf "OK\n"
+    fi
+
+#6 - check/install firmware
+    printf "7. Checking firmware..."
+    if [ x"${DF_FIRMFILES[$1]}" != x -a x"${DF_FIRMPATH1[$1]}" != x ]
+    then
+        firmware_action $1
+        if [ $? == "$NO" ]
+        then
+            return $NO
+        else
+            printf "OK\n"
+        fi
+    else
+        printf "OK\n"
     fi
 
     return $YES
 }
 #END install scripts
+
+firmware_action() {
+    needs_install=0
+
+    #change back to driver directory
+    cd "$D_DIR"
+
+    if [ x"${DF_FIRMFILES[$1]}" != x -a x"${DF_FIRMPATH1[$1]}" != x ]
+    then
+        for ffp in ${DF_FIRMFILES[$1]}
+        do
+            if [ x"`find "$FIRMPATH" -name "$ffp"`" == x ]
+            then
+                needs_install=1
+            fi
+        done
+        if [ x"$needs_install" == "x0" ]
+        then
+            return $YES
+        fi
+        #firmware appears to be missing, install it into $FIRMPATH
+
+        #download it if its not available
+        #is compressed firmware available? no - wget it
+        if [ ! -f "${DF_FIRMFILE[$1]}" ]
+        then
+            $WGET --progress=dot:mega -O "${DF_FIRMFILE[$1]}" "${DF_FIRMPATH1[$1]}" >> "$LOGFILE" 2>&1
+            if [ "$?" != "0" ]
+            then
+                rm "${DF_FIRMFILE[$1]}" 2>/dev/null
+            fi
+        fi
+
+        #is compressed firmware available? no - wget it from mirror
+        if [ ! -f "${DF_FIRMFILE[$1]}" -a x"${DF_FIRMPATH2[$1]}" != x ]
+        then
+            $WGET --progress=dot:mega -O "${DF_FIRMFILE[$1]}" "${DF_FIRMPATH2[$1]}" >> "$LOGFILE" 2>&1
+            if [ "$?" != "0" ]
+            then
+                rm "${DF_FIRMFILE[$1]}" 2>/dev/null
+            fi
+        fi
+
+        #is compressed firmware available? no - try to locate it
+        if [ ! -f "${DF_FIRMFILE[$1]}" ]
+        then
+            cp "`locate "${DF_FIRMFILE[$1]}" | grep "${DF_FIRMFILE[$1]}$" | head -n 1`" ./ >> "$LOGFILE" 2>&1
+            if [ "$?" != "0" ]
+            then
+                rm "${DF_FIRMFILE[$1]}" 2>/dev/null
+            fi
+        fi
+
+        #is compressed firmware available? no - abort install
+        if [ ! -f "${DF_FIRMFILE[$1]}" ]
+        then
+            echo "Couldn't find the correct firmware file: ${DF_FIRMFILE[$1]}"
+            echo "The specified source seems to be down:"
+            echo "${DF_FIRMPATH1[$1]}"
+            if [ x"${DF_FIRMPATH2[$1]}" != x ]
+            then
+                echo "${DF_FIRMPATH2[$1]}"
+            fi
+            echo "Get the file by hand, put it in \"$D_DIR/\""
+            echo "and restart this installation."
+            return $NO
+        fi
+
+        if [ -d "${DF_FIRMDIR[$1]}" ]
+        then
+            #be carefull!! (deleting old firmware)
+            rm -rf "${DF_FIRMDIR[$1]}" >> "$LOGFILE" 2>&1
+        fi
+
+        #is tar gzip?
+        if [ x"`echo "${DF_FIRMFILE[$1]}" | grep ".tar.gz$"`" != x -o x"`echo "${DF_FIRMFILE[$1]}" | grep ".tgz$"`" != x ]
+        then
+            $TAR xzf "${DF_FIRMFILE[$1]}" >> "$LOGFILE" 2>&1
+        fi
+
+        #is tar bzip2?
+        if [ x"`echo "${DF_FIRMFILE[$1]}" | grep ".tar.bz2$"`" != x ]
+        then
+            $TAR xjf "${DF_FIRMFILE[$1]}" >> "$LOGFILE" 2>&1
+        fi
+
+        #is zip?
+        if [ x"`echo "${DF_FIRMFILE[$1]}" | grep ".zip$"`" != x ]
+        then
+            $UNZIP "${DF_FIRMFILE[$1]}" >> "$LOGFILE" 2>&1
+        fi
+
+        #error? abort...
+        if [ $? != "0" ]
+        then
+            echo "Unable to extract \"${DF_FIRMFILE[$1]}\"" >> "$LOGFILE"
+            return $NO
+        fi
+
+        #extracted firmware, change dir
+        cd "${DF_FIRMDIR[$1]}"
+
+        if [ ! -d "$FIRMPATH/${DF_INSTALLDIR[$1]}" ]
+        then
+            mkdir -p "$FIRMPATH/${DF_INSTALLDIR[$1]}" >> "$LOGFILE" 2>&1
+        fi
+
+        #check if there are files available
+        if [ x"`ls 2>/dev/null`" == x ]
+        then
+            echo "No firmware found in downloaded archive."
+            return $NO
+        fi
+
+        for iffp in ${DF_FIRMFILES[$1]}
+        do
+            firmfilepath="`find -name "$iffp"`"
+            if [ x"$firmfilepath" != x ]
+            then
+                cp "$firmfilepath" "$FIRMPATH/${DF_INSTALLDIR[$1]}" >> "$LOGFILE" 2>&1
+            fi
+        done
+
+        #error? abort...
+        if [ $? != "0" ]
+        then
+            echo "Unable to install firmware."
+            return $NO
+        fi
+    else
+        echo "No firmware information available."
+        return $ERROR
+    fi
+
+    return $YES
+}
 
 isInstalled() {
     #_D_river or _S_tack? neither? abort
@@ -2210,6 +2668,38 @@ isInstalled() {
         else
             return $NO
         fi
+    fi
+
+    return $ERROR
+}
+
+isInstalledFirmware() {
+    isInstalled=1
+    if [ $1 -lt 0 -o $1 -ge ${DCOUNT} ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+    #no module specified, thus return $NO
+    if [ x"${DF_FIRMFILES[$1]}" == x ]
+    then
+        return $ERROR
+    fi
+
+    for iiffp in ${DF_FIRMFILES[$1]}
+    do
+        if [ x"`find "$FIRMPATH" -name "$iiffp"`" == x ]
+        then
+            isInstalled=0
+        fi
+    done
+
+    if [ x"$isInstalled" == "x1" ]
+    then
+        return $YES
+    else
+        return $NO
     fi
 
     return $ERROR
@@ -2448,6 +2938,26 @@ listInstalledDrivers() {
     do
         isInstalled $i "D"
         if [ $? -eq $YES ]
+        then
+            if [ x"${DSTACK[$i]}" != x ]
+            then
+                printf "$i. ${DNAME[$i]} - ${SNAME[${DSTACK[$i]}]}\n"
+            else
+                printf "$i. ${DNAME[$i]}\n"
+            fi
+        fi
+        i=$(($i+1))
+    done
+}
+
+listInstalledFirmware() {
+    echo "Found following firmwares installed:"
+    i=0
+    while [ $i -lt $DCOUNT ]
+    do
+        isInstalledFirmware $i
+        ret=$?
+        if [ $ret -eq $YES ]
         then
             if [ x"${DSTACK[$i]}" != x ]
             then
@@ -2788,6 +3298,28 @@ installDriver() {
     return $ret
 }
 
+installFirmware() {
+#check if argument is out of range
+    if [ $1 -lt 0 -o $1 -ge $DCOUNT ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+#cd into driver build directory
+    mkdir -p "$D_DIR/"
+    if [ ! -d "$D_DIR/" ]
+    then
+        echo "Directory \"$D_DIR/\" not available."
+        return $ERROR
+    fi
+
+    firmware_action $1
+
+    ret=$?
+    return $ret
+}
+
 installStack() {
 #check if argument is out of range
     if [ $1 -lt 0 -o $1 -ge $SCOUNT ]
@@ -2933,6 +3465,45 @@ removeDriver() {
 
     echo "Running \"depmod -ae\"..."
     depmod -ae
+
+    return $YES
+}
+
+removeFirmware() {
+#check if argument is out of range
+    if [ "$1" -lt 0 -o "$1" -ge "$DCOUNT" ]
+    then
+        echo "Invalid driver number!"
+        return $ERROR
+    fi
+
+#check if its installed
+    isInstalledFirmware $1
+    if [ $? -eq $NO ]
+    then
+        echo "This firmware isn't installed and thus cannot be removed."
+        exit
+    fi
+
+    echo "Starting to remove \"${DNAME[$1]}\" firmware"
+
+#loop through the modules, find and rm them
+    for i in ${DF_FIRMFILES[$1]}
+    do
+        oldnumfiles=999
+        numfiles="`find "$FIRMPATH" -name "$i" 2>/dev/null | wc -l`"
+        while [ "$numfiles" -gt 0 -a "$numfiles" -lt "$oldnumfiles" ]
+        do
+            fileone="`find "$FIRMPATH" -name "$i" 2>/dev/null | head -n 1`"
+            rm -i "$fileone"
+
+            oldnumfiles=$numfiles
+            if [ ! -f "$fileone" ]
+            then
+                numfiles="`find "$FIRMPATH" -name "$i" 2>/dev/null | wc -l`"
+            fi
+        done
+    done
 
     return $YES
 }
@@ -3196,9 +3767,12 @@ usage() {
     printf "\t\tinstall <drivernum>\t- installs a driver\n"
     printf "\t\tremove <drivernum>\t- removes a driver\n"
     printf "\t\t-----------------------------------------------------\n"
-    printf "\t\tcompile_stack <num>\t- compiles a stack \n"
-    printf "\t\tinstall_stack <num>\t- installs a stack \n"
-    printf "\t\tremove_stack <num>\t- removes a stack \n"
+    printf "\t\tcompile_stack <stacknum>\t- compiles a stack \n"
+    printf "\t\tinstall_stack <stacknum>\t- installs a stack \n"
+    printf "\t\tremove_stack <stacknum>\t- removes a stack \n"
+    printf "\t\t-----------------------------------------------------\n"
+    printf "\t\tinstall_firmware <drivernum>\t- installs the firmware \n"
+    printf "\t\tremove_firmware <drivernum>\t- removes the firmware \n"
     printf "\t\t-----------------------------------------------------\n"
     printf "\t\tdetails <drivernum>\t- prints driver details\n"
     printf "\t\tdetect\t\t\t- detects wireless cards\n"
@@ -3215,6 +3789,7 @@ fi
 if [ x"$1" == "xsupported" ]
 then
     listSupportedStacks
+    echo ""
     listSupportedDrivers
     exit
 fi
@@ -3222,13 +3797,17 @@ fi
 if [ x"$1" == "xinstalled" ]
 then
     listInstalledStacks
+    echo ""
     listInstalledDrivers
+    echo ""
+    listInstalledFirmware
     exit
 fi
 
 if [ x"$1" == "xloaded" ]
 then
     listLoadedStacks
+    echo ""
     listLoadedDrivers
     exit
 fi
@@ -3236,6 +3815,7 @@ fi
 if [ x"$1" == "xkernel" ]
 then
     listKernelStacks
+    echo ""
     listKernelDrivers
     exit
 fi
@@ -3310,6 +3890,40 @@ then
         echo "Removed stack \"${SNAME[$num]}\" successfully"
     else
         echo "Failed to remove the stack."
+    fi
+    exit
+fi
+
+if [ x"$1" == "xremove_firmware" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "$NO_FIRMWARE_ERROR"
+        exit
+    fi
+
+    name2num $2
+    num=$?
+
+    if [ $num -eq $ERROR ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid driver!"
+            exit
+        fi
+    fi
+
+    echo "Firmware \"${DNAME[$num]}\" specified for removing."
+
+    removeFirmware $num
+    if [ $? -eq $YES ]
+    then
+        echo "Removed firmware \"${DNAME[$num]}\" successfully"
+    else
+        echo "Failed to remove the firmware."
     fi
     exit
 fi
@@ -3453,6 +4067,42 @@ then
         echo "You need to reload the complete stack, or just reboot."
     else
         echo "Failed to install the stack."
+        echo "Look through \"$LOGFILE\" for errors."
+    fi
+
+    exit
+fi
+
+if [ x"$1" == "xinstall_firmware" ]
+then
+    if [ x$2 == "x" ]
+    then
+        echo "$NO_FIRMWARE_ERROR"
+        exit
+    fi
+
+    name2num $2
+    num=$?
+
+    if [ $num -eq $ERROR ]
+    then
+        if [ $2 -ge 0 -a $2 -lt $DCOUNT ] 2>/dev/null
+        then
+            num=$2
+        else
+            echo "Invalid driver!"
+            exit
+        fi
+    fi
+
+    echo "Firmware \"${DNAME[$num]}\" specified for installation."
+
+    installFirmware $num
+    if [ $? -eq $YES ]
+    then
+        echo "Installed firmware \"${DNAME[$num]}\" successfully"
+    else
+        echo "Failed to install the firmware."
         echo "Look through \"$LOGFILE\" for errors."
     fi
 
@@ -3704,9 +4354,26 @@ then
         echo "No"
     fi
 
+    printf "Firmware installed:\t"
+    isInstalledFirmware $num
+    ret=$?
+    if [ $ret -eq $YES ]
+    then
+        echo "YES"
+    else
+        if [ $ret -eq $NO ]
+        then
+            echo "No"
+        else
+            echo "N/A"
+        fi
+    fi
+
     echo
     echo "Modules:"
 
+    echo
+    echo "Modules:"
     for i in ${DMODULES[$num]}
     do
         i="`echo "$i" | sed 's/-/_/'`"
@@ -3727,7 +4394,7 @@ then
     done
     echo
 
-    modinfo ${DMODULE[$num]} | grep "^ver\|^depends"
+    modinfo ${DMODULE[$num]} 2>/dev/null | grep "^ver\|^depends"
 
     echo
     if [ x${DSITE[$num]} != x ]
