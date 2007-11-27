@@ -19,6 +19,7 @@
 #define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
 #define S_LLC_SNAP_IP   (S_LLC_SNAP "\x08\x00")
 #define S_LLC_SNAP_SPANTREE   "\x42\x42\x03\x00\x00\x00\x00\x00"
+#define S_LLC_SNAP_CDP  "\xAA\xAA\x03\x00\x00\x0C\x20"
 #define IEEE80211_FC1_DIR_FROMDS                0x02    /* AP ->STA */
 
 #define TYPE_ARP    0
@@ -27,6 +28,7 @@
 #define NULL_MAC  (uchar*)"\x00\x00\x00\x00\x00\x00"
 #define BROADCAST (uchar*)"\xFF\xFF\xFF\xFF\xFF\xFF"
 #define SPANTREE  (uchar*)"\x01\x80\xC2\x00\x00\x00"
+#define CDP_VTP   (uchar*)"\x01\x00\x0C\xCC\xCC\xCC"
 
 /* Used for own RC4 implementation */
 struct rc4_state

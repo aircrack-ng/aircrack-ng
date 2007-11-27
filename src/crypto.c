@@ -359,6 +359,15 @@ int is_spantree(void *wh)
         return 0;
 }
 
+int is_cdp_vtp(void *wh)
+{
+        if ( memcmp( wh +  4, CDP_VTP, 6 ) == 0 ||
+             memcmp( wh + 16, CDP_VTP, 6 ) == 0 )
+            return 1;
+
+        return 0;
+}
+
 int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 {
         unsigned char *ptr = clear;
@@ -398,6 +407,17 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
         {
             len = sizeof(S_LLC_SNAP_SPANTREE) - 1;
             memcpy(ptr, S_LLC_SNAP_SPANTREE, len);
+            ptr += len;
+
+            len = ptr - ((unsigned char*)clear);
+            *clen = len;
+            weight[0] = 256;
+            return 1;
+        }
+        else if(is_cdp_vtp(wh)) /*spantree*/
+        {
+            len = sizeof(S_LLC_SNAP_CDP) - 1;
+            memcpy(ptr, S_LLC_SNAP_CDP, len);
             ptr += len;
 
             len = ptr - ((unsigned char*)clear);
