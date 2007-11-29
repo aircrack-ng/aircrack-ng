@@ -45,9 +45,9 @@ REM:
 
 === Compiling sqlite on cygwin ===
 
-  wget http://www.sqlite.org/sqlite-3.5.2.tar.gz
-  tar -zxf sqlite-3.5.2.tar.gz
-  cd sqlite-3.5.2
+  wget http://www.sqlite.org/sqlite-3.5.3.tar.gz
+  tar -zxf sqlite-3.5.3.tar.gz
+  cd sqlite-3.5.3
   ./configure --disable-tcl
   wget http://patches.aircrack-ng.org/sqlite-3.5.1-lib_cygwin.diff
   patch -i sqlite-3.5.1-lib_cygwin.diff
