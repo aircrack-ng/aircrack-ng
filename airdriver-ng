@@ -69,7 +69,7 @@ fi
 KMAJOR=`echo $KVER | sed 's/^\([0-9]\)\..*$/\1/'`
 KMINOR=`echo $KVER | sed 's/^[0-9]\.\([0-9]\)\..*$/\1/'`
 KPATCH=`echo $KVER | sed 's/^[0-9]\.[0-9]\.\([0-9]*\).*$/\1/'`
-KSUBPT=`echo $KVER | sed 's/^[0-9]\.[0-9]\.[0-9]*\.\([0-9]*\).*$/\1/'`
+KSUBPT=`echo $KVER | sed -n 's/^[0-9]\.[0-9]\.[0-9]*\.\([0-9]*\).*$/\1/p'`
 KSRC="/lib/modules/$KVER/build"
 KMOD="/lib/modules/$KVER"
 KUTS=""
