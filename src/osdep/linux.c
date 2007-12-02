@@ -540,6 +540,19 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
     memcpy( buf, tmpbuf + n, caplen );
 
+    // madwifi 0.9.3.3 truncates acks
+    if ((dev->drivertype == DT_MADWIFING)
+        && (buf[0] == 0xd4)) {
+
+	unsigned char mac[6];
+
+	wi_get_mac(wi, mac);
+	if ((caplen == 8) && (memcmp(&buf[4], mac, 4) == 0)) {
+		memcpy(&buf[4], mac, 6);
+		caplen += 2;
+	}
+    }
+
     if(ri)
         ri->ri_channel = wi_get_channel(wi);
 
