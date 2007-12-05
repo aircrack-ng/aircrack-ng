@@ -139,6 +139,7 @@ NO=0
 ERROR=255
 
 NO_INSTALL=$NO
+NO_FIRMWARE=$NO
 
 #distribution definition - for future enhancements - not used right now
 i=0
@@ -234,10 +235,10 @@ SI_DRIVERPATH2[$i]="/usr/src/linux/net/ieee80211/softmac"
 SI_DRIVEREXDIR[$i]=""
 SI_DRIVERDIR[$i]="softmac"
 SI_PREPATCH[$i]=""
-SI_PATCHFILE[$i]=""
-SI_PATCHPATH1[$i]=""
-SI_PATCHPATH2[$i]=""
-SI_PATCHARG[$i]=""
+SI_PATCHFILE[$i]="ieee80211_softmac_adjust_bitrate.patch"
+SI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/ieee80211_softmac_adjust_bitrate.patch"
+SI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/ieee80211_softmac_adjust_bitrate.patch"
+SI_PATCHARG[$i]="-p4"
 SI_PRECOMP[$i]=""
 SI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${SI_DRIVERDIR[$i]} modules"
 SI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/net/ieee80211/softmac/""
@@ -296,7 +297,7 @@ DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
 DI_INSTALL1[$i]="mkdir -p "$KMOD/kernel/drivers/net/wireless/acx/""
 DI_INSTALL2[$i]="cp -f acx.ko "$KMOD/kernel/drivers/net/wireless/acx/""
-DF_FIRMFILES[$i]="tiacx100 tiacx100r11 tiacx100usb tiacx111c17 tiacx100r0D tiacx100r15 tiacx111c16 tiacx111c19"
+DF_FIRMFILES[$i]="tiacx100 tiacx100r11 tiacx111c17 tiacx100r0D tiacx100r15 tiacx111c16 tiacx111c19"
 DF_FIRMFILE[$i]="fw.tar.bz2"
 DF_FIRMPATH1[$i]="http://www.hauke-m.de/fileadmin/acx/fw.tar.bz2"
 DF_FIRMPATH2[$i]=""
@@ -842,16 +843,16 @@ DCONFIGS[$i]=""
 DMODULES[$i]="wlan_wep ath_rate_sample ath_rate_onoe ath_pci ath_hal ath_rate_amrr ath_rate_minstrel wlan_xauth wlan_tkip wlan_ccmp wlan_acl wlan wlan_scan_ap wlan_scan_sta"
 DI_INIT[$i]=""
 DI_DRIVERGET[$i]="wget"
-DI_DRIVERFILE[$i]="madwifi-ng-r2992-20071130.tar.gz"
-DI_DRIVERPATH1[$i]="http://snapshots.madwifi.org/madwifi-ng/madwifi-ng-r2992-20071130.tar.gz"
+DI_DRIVERFILE[$i]="madwifi-ng-r2834-20071106.tar.gz"
+DI_DRIVERPATH1[$i]="http://snapshots.madwifi.org/madwifi-ng/madwifi-ng-r2834-20071106.tar.gz"
 DI_DRIVERPATH2[$i]=""
 DI_DRIVEREXDIR[$i]=""
-DI_DRIVERDIR[$i]="madwifi-ng-r2992-20071130"
+DI_DRIVERDIR[$i]="madwifi-ng-r2834-20071106"
 DI_PREPATCH[$i]=""
-DI_PATCHFILE[$i]=""
-DI_PATCHPATH1[$i]=""
-DI_PATCHPATH2[$i]=""
-DI_PATCHARG[$i]=""
+DI_PATCHFILE[$i]="madwifi-ng-r2277.patch"
+DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/madwifi-ng-r2277.patch"
+DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/madwifi-ng-r2277.patch"
+DI_PATCHARG[$i]="-p1"
 DI_PRECOMP[$i]="export KERNELRELEASE=$KVER"
 DI_COMPILE[$i]="$MAKE"
 DI_INSTALL1[$i]="madwifi_install"
@@ -1723,9 +1724,9 @@ DI_DRIVERPATH2[$i]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$VANILLA
 DI_DRIVEREXDIR[$i]="linux-$VANILLA/drivers/net/wireless/zd1211rw"
 DI_DRIVERDIR[$i]="zd1211rw"
 DI_PREPATCH[$i]=""
-DI_PATCHFILE[$i]="zd1211rw_inject_2.6.17.patch"
-DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/zd1211rw_inject_2.6.17.patch"
-DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/zd1211rw_inject_2.6.17.patch"
+DI_PATCHFILE[$i]="zd1211rw_inject_2.6.23.patch"
+DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/zd1211rw_inject_2.6.23.patch"
+DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/zd1211rw_inject_2.6.23.patch"
 DI_PATCHARG[$i]="-p5"
 DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
@@ -1963,6 +1964,14 @@ rtl8187_prepatch() {
 }
 
 install_ieee80211() {
+    #use old patch for kernel < 2.6.22
+    if [ $KMINOR -eq 6 -a $KPATCH -lt 22 ]
+    then
+        SI_PATCHFILE[$1]="ieee80211_inject.patch"
+        SI_PATCHPATH1[$1]="http://patches.aircrack-ng.org/ieee80211_inject.patch"
+        SI_PATCHPATH2[$1]="http://patches.aircrack-ng.org/old/ieee80211_inject.patch"
+    fi
+
     if [ $2 -eq 1 ]
     then
         #check if kernel source is in /usr/src/linux instead
@@ -2003,17 +2012,18 @@ install_ieee80211() {
             SI_DRIVERDIR[$1]="ieee80211"
         fi
     fi
-
-    #use old patch for kernel < 2.6.22
-    if [ $KMINOR -eq 6 -a $KPATCH -lt 22 ]
-    then
-        SI_PATCHFILE[$1]="ieee80211_inject.patch"
-        SI_PATCHPATH1[$1]="http://patches.aircrack-ng.org/ieee80211_inject.patch"
-        SI_PATCHPATH2[$1]="http://patches.aircrack-ng.org/old/ieee80211_inject.patch"
-    fi
 }
 
 install_softmac() {
+    #use no patch for kernel < 2.6.19
+    if [ $KMINOR -eq 6 -a $KPATCH -lt 19 ]
+    then
+        SI_PATCHFILE[$1]=""
+        SI_PATCHPATH1[$1]=""
+        SI_PATCHPATH2[$1]=""
+        SI_PATCHARG[$1]=""
+    fi
+
     if [ $2 -eq 1 ]
     then
         #check if kernel source is in /usr/src/linux instead
@@ -2459,6 +2469,11 @@ install_action() {
         printf "OK\n"
     fi
 
+    if [ $NO_FIRMWARE = $YES ]
+    then
+        return $YES
+    fi
+
 #6 - check/install firmware
     printf "7. Checking firmware..."
     if [ x"${DF_FIRMFILES[$1]}" != x -a x"${DF_FIRMPATH1[$1]}" != x ]
@@ -2593,7 +2608,7 @@ firmware_action() {
 
         for iffp in ${DF_FIRMFILES[$1]}
         do
-            firmfilepath="`find -name "$iffp"`"
+            firmfilepath="`find -name "$iffp" | tail -n 1`"
             if [ x"$firmfilepath" != x ]
             then
                 cp "$firmfilepath" "$FIRMPATH/${DF_INSTALLDIR[$1]}" >> "$LOGFILE" 2>&1
@@ -3960,6 +3975,7 @@ then
     echo "Driver \"${DNAME[$num]}\" specified for installation."
 
     NO_INSTALL=$NO
+    NO_FIRMWARE=$NO
     installDriver $num
 
     ret=$?
@@ -4012,6 +4028,7 @@ then
     echo "Driver \"${DNAME[$num]}\" specified for compilation."
 
     NO_INSTALL=$YES
+    NO_FIRMWARE=$NO
     installDriver $num
 
     ret=$?
@@ -4064,6 +4081,7 @@ then
     echo "Stack \"${SNAME[$num]}\" specified for installation."
 
     NO_INSTALL=$NO
+    NO_FIRMWARE=$YES
     installStack $num
 
     ret=$?
@@ -4141,6 +4159,7 @@ then
     echo "Stack \"${SNAME[$num]}\" specified for compilation."
 
     NO_INSTALL=$YES
+    NO_FIRMWARE=$YES
     installStack $num
 
     ret=$?
