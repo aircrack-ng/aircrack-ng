@@ -270,6 +270,28 @@ printf "Interface\tChipset\t\tDriver\n" && echo
 
 for iface in `ifconfig -a 2>/dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
 do
+
+ if [ x"`iwpriv $iface 2>/dev/null | grep ipwraw-ng`" != "x" ]
+ then
+        printf "$iface\t\tCentrino a/b/g\tipwraw-ng"
+        if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+        then
+                cp $KISMET~ $KISMET 2>/dev/null &&
+                echo "source=ipw3945,$iface,Centrino_abg" >>$KISMET
+                startStdIface $iface $CH
+                iwconfig $iface rate 1M 2> /dev/null >/dev/null
+                iwconfig $iface txpower 16 2> /dev/null >/dev/null
+        fi
+        if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+        then
+                stopStdIface $iface
+                iwconfig $iface txpower 15 2> /dev/null >/dev/null
+                iwconfig $iface rate 54M 2> /dev/null >/dev/null
+        fi
+        echo
+        continue
+ fi
+
  if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
  then
     MADWIFI=1

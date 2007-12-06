@@ -9,6 +9,7 @@ Version 0.9.2 (changes from aircrack-ng 0.9.1) - Released ?? ??? 2007:
 * airmon-ng: Added driver detection through sysfs
 * airmon-ng: Added mac80211 support
 * airmon-ng: Added networkmanager detection - airmon-ng check
+* airmon-ng: Added detection of ipwraw-ng driver
 * manpages: updated airodump-ng manpage
 * manpages: Fixes for whatis
 * Makefiles: Fixed OpenBSD makefile.
