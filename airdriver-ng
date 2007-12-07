@@ -2060,8 +2060,8 @@ install_softmac() {
             SI_DRIVERFILE[$1]="linux-$VANILLA.tar.bz2"
             SI_DRIVERPATH1[$1]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$VANILLA.tar.bz2"
             SI_DRIVERPATH2[$1]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$VANILLA.tar.bz2"
-            SI_DRIVEREXDIR[$1]="linux-$VANILLA/net/ieee80211"
-            SI_DRIVERDIR[$1]="ieee80211"
+            SI_DRIVEREXDIR[$1]="linux-$VANILLA/net/ieee80211/softmac"
+            SI_DRIVERDIR[$1]="softmac"
         fi
     fi
 }
