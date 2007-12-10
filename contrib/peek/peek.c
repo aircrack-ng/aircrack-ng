@@ -38,6 +38,8 @@ struct pstate
 	int    (*ps_peek_request)(HANDLE, void*, void*);
 	int    (*ps_peek_stop_capture)(HANDLE);
 	int    (*ps_peek_close_adapter)(HANDLE);
+	int    (*ps_peek_packet_send)(HANDLE, void*, int, int*, LPOVERLAPPED,
+				      int);
 	HANDLE (*ps_peek_create_capture_context)(HANDLE, void*, int,
 						 int, void*);
 } _pstate;
@@ -62,6 +64,7 @@ static int init_lib(struct pstate *ps)
 	ps->ps_peek_request	  = dlsym(lib, "PeekRequest");
 	ps->ps_peek_stop_capture  = dlsym(lib, "PeekStopCapture");
 	ps->ps_peek_close_adapter = dlsym(lib, "PeekCloseAdapter");
+	ps->ps_peek_packet_send	  = dlsym(lib, "PeekPacketSend");
 	ps->ps_peek_create_capture_context = 
 		dlsym(lib, "PeekCreateCaptureContext");
 
@@ -70,6 +73,7 @@ static int init_lib(struct pstate *ps)
 		&& ps->ps_peek_request
 		&& ps->ps_peek_stop_capture
 		&& ps->ps_peek_close_adapter
+		&& ps->ps_peek_packet_send
 		&& ps->ps_peek_create_capture_context
 	      ))
 		return -1;
@@ -204,10 +208,23 @@ int CYGWIN_DLL_SET_CHAN (int chan)
 	return set_chan(ps, chan) ? -1 : 0;
 }
 
-int CYGWIN_DLL_INJECT (void* UNUSED(buf), int UNUSED(len),
+int CYGWIN_DLL_INJECT (void* buf, int len,
 		       struct tx_info* UNUSED(ti))
 {
-	return -1;
+	struct pstate *ps = get_ps();
+	int rc;
+	int wrote = 0;
+	OVERLAPPED iodata;
+
+	memset(&iodata, 0, sizeof(iodata));
+	iodata.hEvent = CreateEvent(0, 0, 0, 0);
+
+	rc = ps->ps_peek_packet_send(ps->ps_adapter, buf, len, &wrote,
+				     &iodata, 0);
+	if (rc)
+		return rc;
+
+	return len;
 }
 
 int CYGWIN_DLL_SNIFF (void *buf, int len, struct rx_info* UNUSED(ri))
