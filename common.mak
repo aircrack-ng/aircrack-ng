@@ -42,11 +42,11 @@ ifeq ($(sqlite), TRUE)
 COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
 endif
 
-ifeq ($(AIRPCAP), true)
-LIBAIRPCAP	= -DHAVE_AIRPCAP -I$(ROOT)/../developers/Airpcap_Devpack/include
+ifeq ($(airpcap), true)
+AIRPCAP		= true
 endif
 
-ifeq ($(airpcap), true)
+ifeq ($(AIRPCAP), true)
 LIBAIRPCAP	= -DHAVE_AIRPCAP -I$(ROOT)/../developers/Airpcap_Devpack/include
 endif
 
