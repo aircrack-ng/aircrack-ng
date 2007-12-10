@@ -15,7 +15,14 @@ OBJS_NBSD	= $(OBJS) netbsd.o netbsd_tap.o
 OBJS_FBSD	= $(OBJS) freebsd.o freebsd_tap.o
 OBJS_LINUX	= $(OBJS) linux.o linux_tap.o radiotap-parser.o
 OBJS_DUMMY	= $(OBJS) dummy.o dummy_tap.o
-OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o $(OBJS_APCAP)
+OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o
+
+# XXX make it a DLL, without polluting cygwin.c
+DOPCAP		=
+ifeq ($(AIRPCAP), true)
+OBJS_CYGWIN    += $(OBJS_APCAP)
+DOPCAP		= $(AR) x $(ROOT)/../developers/Airpcap_Devpack/lib/libairpcap.a
+endif
 
 all:
 	@echo Building for $(OSNAME)
@@ -47,7 +54,7 @@ all:
 	touch $(@)
 
 .os.cygwin: $(OBJS_CYGWIN) 
-	$(AR) x $(ROOT)/../developers/Airpcap_Devpack/lib/libairpcap.a
+	$(DOPCAP)
 	$(AR) cru $(LIB) *.o
 	$(RANLIB) $(LIB) 
 	touch $(@)
