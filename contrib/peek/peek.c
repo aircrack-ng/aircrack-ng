@@ -59,7 +59,7 @@ static int init_lib(struct pstate *ps)
 
 	ps->ps_lib = lib;
 
-	ps->ps_peek_open_adapter  = dlsym(lib, "PeekOpenAdapterA");
+	ps->ps_peek_open_adapter  = dlsym(lib, "PeekOpenAdapter");
 	ps->ps_peek_start_capture = dlsym(lib, "PeekStartCapture");
 	ps->ps_peek_request	  = dlsym(lib, "PeekRequest");
 	ps->ps_peek_stop_capture  = dlsym(lib, "PeekStopCapture");
