@@ -31,19 +31,14 @@
 
 #include "osdep.h"
 #include "network.h"
+#include "cygwin.h"
 
 #ifdef HAVE_AIRPCAP
 	#include "airpcap.h"
 #endif
 
-// DLL function that have to be exported
-#define CYGWIN_DLL_INIT		"cygwin_init"
-#define CYGWIN_DLL_SET_CHAN	"cygwin_set_chan"
-#define CYGWIN_DLL_INJECT	"cygwin_inject"
-#define CYGWIN_DLL_SNIFF	"cygwin_sniff"
-#define CYGWIN_DLL_GET_MAC	"cygwin_get_mac"
-#define CYGWIN_DLL_SET_MAC	"cygwin_set_mac"
-#define CYGWIN_DLL_CLOSE	"cygwin_close"
+#define xstr(s) str(s) 
+#define str(s) #s 
 
 #define DLL_EXTENSION ".dll"
 
@@ -160,13 +155,13 @@ static int do_cygwin_open(struct wif *wi, char *iface)
 		if (!lib)
 			goto errdll;
 
-		priv->pc_init		= dlsym(lib, CYGWIN_DLL_INIT);
-		priv->pc_set_chan	= dlsym(lib, CYGWIN_DLL_SET_CHAN);
-		priv->pc_get_mac	= dlsym(lib, CYGWIN_DLL_GET_MAC);
-		priv->pc_set_mac	= dlsym(lib, CYGWIN_DLL_SET_MAC);
-		priv->pc_close		= dlsym(lib, CYGWIN_DLL_CLOSE);
-		priv->pc_inject		= dlsym(lib, CYGWIN_DLL_INJECT);
-		priv->pc_sniff		= dlsym(lib, CYGWIN_DLL_SNIFF);
+		priv->pc_init		= dlsym(lib, xstr(CYGWIN_DLL_INIT));
+		priv->pc_set_chan	= dlsym(lib, xstr(CYGWIN_DLL_SET_CHAN));
+		priv->pc_get_mac	= dlsym(lib, xstr(CYGWIN_DLL_GET_MAC));
+		priv->pc_set_mac	= dlsym(lib, xstr(CYGWIN_DLL_SET_MAC));
+		priv->pc_close		= dlsym(lib, xstr(CYGWIN_DLL_CLOSE));
+		priv->pc_inject		= dlsym(lib, xstr(CYGWIN_DLL_INJECT));
+		priv->pc_sniff		= dlsym(lib, xstr(CYGWIN_DLL_SNIFF));
 
 		if (!(priv->pc_init && priv->pc_set_chan && priv->pc_get_mac
 			  && priv->pc_inject && priv->pc_sniff && priv->pc_close))
