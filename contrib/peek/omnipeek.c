@@ -33,6 +33,7 @@ struct pstate
 	unsigned char	ps_data[4096];
 	int		ps_len;
 
+	int    (*ps_peek_initialize_library)(void);
 	HANDLE (*ps_peek_open_adapter)(LPSTR);
 	int    (*ps_peek_start_capture)(HANDLE);
 	int    (*ps_peek_request)(HANDLE, void*, void*);
@@ -67,6 +68,8 @@ static int init_lib(struct pstate *ps)
 	ps->ps_peek_packet_send	  = dlsym(lib, "PeekPacketSend");
 	ps->ps_peek_create_capture_context = 
 		dlsym(lib, "PeekCreateCaptureContext");
+	ps->ps_peek_initialize_library =
+		dlsym(lib, "PeekInitializeLibrary");
 
 	if (!(ps->ps_peek_open_adapter
 	    	&& ps->ps_peek_start_capture
@@ -75,6 +78,7 @@ static int init_lib(struct pstate *ps)
 		&& ps->ps_peek_close_adapter
 		&& ps->ps_peek_packet_send
 		&& ps->ps_peek_create_capture_context
+		&& ps->ps_peek_initialize_library
 	      ))
 		return -1;
 
@@ -160,6 +164,9 @@ static int WINAPI callback(unsigned char *data, int len, int UNUSED(caplen),
 static int init_card(struct pstate *ps, char *dev)
 {
 	int rc;
+
+	if (ps->ps_peek_initialize_library() == 0)
+		return -1;
 
 	ps->ps_adapter = ps->ps_peek_open_adapter(dev);
 	if (ps->ps_adapter == INVALID_HANDLE_VALUE)
