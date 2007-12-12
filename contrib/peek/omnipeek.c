@@ -163,12 +163,33 @@ static int WINAPI callback(unsigned char *data, int len, int UNUSED(caplen),
 
 static int init_card(struct pstate *ps, char *dev)
 {
-	int rc;
+	int rc, len;
+	char *unicode, *p;
 
 	if (ps->ps_peek_initialize_library() == 0)
 		return -1;
 
-	ps->ps_adapter = ps->ps_peek_open_adapter(dev);
+	/* convert dev to unicode - i'm sure there's a standard function, but
+	 * aingottime.
+	 * Format: \Device\{GUID}
+	 */
+	if (!dev)
+		return -1;
+
+	len = strlen(dev);
+	unicode = p = malloc((len+1)*2);
+	if (!unicode)
+		return -1;
+
+	for (rc = 0; rc < len; rc++) {
+		*p++ = dev[rc];
+		*p++ = 0;
+	}
+	*p++ = 0;
+	*p++ = 0;
+
+	ps->ps_adapter = ps->ps_peek_open_adapter(unicode);
+	free(unicode);
 	if (ps->ps_adapter == INVALID_HANDLE_VALUE)
 		return -1;
 
