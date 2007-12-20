@@ -1,6 +1,7 @@
 /*
  *  pcap-compatible 802.11 packet sniffer (Win32 version)
  *
+ *  Copyright (C) 2006-2007  Thomas d'Otreppe
  *  Copyright (C) 2004,2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -38,6 +39,8 @@
 #define REFRESH_TIMEOUT 200000
 
 #define BROADCAST_ADDR "\xFF\xFF\xFF\xFF\xFF\xFF"
+
+#define PEEK_INSTALLED_KEY "SOFTWARE\\Airodump-ng"
 
 /* linked list of detected access points */
 
@@ -1092,6 +1095,121 @@ int WINAPI sighandler( int signum )
     return( TRUE );
 }
 
+
+int file_exist( const char * filename, int size )
+{
+	FILE * f;
+	long filesize = 0;
+	f = fopen(filename, "rb");
+	if (f == NULL)
+		return 1;
+	if (size < 0)
+		return 1;
+	fseek(f, 0, SEEK_END);
+	filesize = ftell(f);
+	fclose(f);
+	if ((int)filesize == size)
+		return 0;
+	else
+		return 1;
+}
+
+int regkeyExist( void )
+{
+	HKEY key;
+	int keyExist = 0;
+
+	if( RegOpenKey( HKEY_LOCAL_MACHINE, PEEK_INSTALLED_KEY,
+                    &key ) == ERROR_SUCCESS )
+	{
+		// Close key
+		RegCloseKey(key);
+
+		keyExist = 1;
+	}
+
+	return keyExist;
+}
+
+int regkeyCreate( void )
+{
+	HKEY key;
+	int success = 0;
+
+	// Create key
+	if (RegCreateKey( HKEY_LOCAL_MACHINE,
+		PEEK_INSTALLED_KEY, &key ) != ERROR_SUCCESS)
+	{
+		perror("RegCreateKey()");
+	}
+	else
+	{
+		success = 1;
+
+		// Close key
+		RegCloseKey(key);
+	}
+
+	return success;
+}
+
+void openMBoxAndBrowserThenExit(const char * MBoxText, const char * url)
+{
+	int result;
+
+	if (MBoxText != NULL && url != NULL)
+	{
+		// Show messagebox
+		result = MessageBox(NULL, MBoxText, "Airodump-ng", MB_YESNO | MB_ICONQUESTION);
+
+		// Click on Yes
+		if (result == IDYES)
+		{
+			// Open a browser on wildpacket web page
+			ShellExecute(NULL, "open", url, NULL, NULL, SW_SHOWNORMAL);
+
+			exit(-1);
+		}
+	}
+}
+
+// Make sure the user has the needed files and driver to make airodump-ng working.
+void askForDriverAndFiles()
+{
+	// Check if driver is installed
+	if (regkeyExist() == 0)
+	{
+		openMBoxAndBrowserThenExit(
+			"Do you need to download peek (from wildpackets)?\n"
+			"Clicking on \"No\" assume you have it installed.\n"
+			"Clicking on \"Yes\" will open a browser on the driver download page.",
+			"http://www.wildpackets.com/support/downloads/drivers");
+
+		// Else, click on "No" -> Drivers are supposed to be installed.
+
+		// Create a registry key so that the user isn't prompted anymore
+		regkeyCreate();
+	}
+
+	// Check for peek files (existing and their size)
+	if (file_exist("Peek.dll", 24064)
+		|| file_exist("Peek5.sys", 13184) )
+	{
+		openMBoxAndBrowserThenExit(
+				"Peek.dll and Peek5.sys are not found or their size is not correct.\n"
+				"Do you want to download now peek files (Peek.dll and Peek5.sys) ?\n"
+				"\n"
+				"Clicking on Yes will open your browser on a download page (Peek.zip)\n"
+				"\n"
+				"Note: Airodump-ng will exit when this popup is closed; it cannot work\n"
+				"without these files",
+				"http://www.tuto-fr.com/tutoriaux/crack-wep/fichiers/wlan/en-index.php");
+
+		// Exit in case they are not found.
+		exit(-1);
+	}
+}
+
 int main( int argc, char *argv[] )
 {
     unsigned char *h80211;
@@ -1109,24 +1227,23 @@ int main( int argc, char *argv[] )
 
     printf( "\n\n\n\t\t\t" );
     set_text_color( BLUE_WHITE );
-    printf( "airodump-ng %s - (C) 2006 Thomas d'Otreppe\n", VERSION);
+    printf( "airodump-ng %s - (C) 2006-2007 Thomas d'Otreppe\n", VERSION);
     printf( "\t\t\t                    Original work: Christophe Devine" );
     set_text_color( TEXTATTR );
     printf( "\n\n\n\n  usage: airodump-ng <nic index> <nic type> "
             "<channel(s)> <output prefix> [ivs only flag]\n\n\n" );
 
+	askForDriverAndFiles();
+
+    if( load_peek() != 0 )
+        prompt_exit( 1 );
+
     if( argc < 5 || argc > 6 )
     {
-        if( load_peek() != 0 )
-            prompt_exit( 1 );
-
         ask_parameters();
     }
     else
     {
-        if( load_peek() != 0 )
-            prompt_exit( 1 );
-
         arg.card_index = atoi( argv[1] );
 
         if( open_adapter( arg.card_index ) != 0 )
