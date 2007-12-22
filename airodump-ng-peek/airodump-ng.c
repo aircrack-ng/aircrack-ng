@@ -960,29 +960,76 @@ int prompt_exit( int retval )
     exit( retval );
 }
 
-int bg_chans[] = { 1, 5, 10, 2, 6, 11, 3, 7, 12, 4, 8, 13, 9, 0 };
+int abg_chans [] =
+{
+    1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12,
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
+    112, 116, 120, 124, 128, 132, 136, 140, 149,
+    153, 157, 161, 184, 188, 192, 196, 200,0
+};
+
+int bg_chans  [] =
+{
+    1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, 0
+};
+
+int a_chans   [] =
+{
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
+    112, 116, 120, 124, 128, 132, 136, 140, 149,
+    153, 157, 161, 184, 188, 192, 196, 200, 0
+};
 
 int parse_channels( char *s )
 {
-    int i = 0, j, n;
+    int i, j, n, k, exist;
+
+	for (i = 0; i < 29; i++)
+		arg.channels[i] = 0;
+
+	i = 0;
 
     while( sscanf( s, "%d", &n ) == 1 )
     {
         if( n == 0 )
         {
+			// Hop in 2.4Ghz channels
             for( j = 0; j < 14; j++ )
                 arg.channels[j] = bg_chans[j];
 
             return( 0 );
         }
 
-        if( n < 1 || n > 14 )
-            return( 1 );
+		if (n == -1)
+		{
+			// Hop in 5Ghz channels
+			for (j = 0; j < 28; j++)
+				arg.channels[j] = a_chans[j];
 
-        arg.channels[i] = n; i++;
-        arg.channels[i] = 0;
+			return 0;
+		}
 
-        if( i == 14 ) break;
+		// Search on abg chans if the channel exist
+		k = exist = 0;
+		while (abg_chans[k] != 0)
+		{
+			if (n == abg_chans[k])
+			{
+				exist = 1;
+				break;
+			}
+			++k;
+		}
+
+		// Invalid channel;
+		if (!exist)
+			return 1;
+		
+
+        arg.channels[i] = n;
+        arg.channels[++i] = 0;
+
+        if( i == 28 ) break;
 
         while( isdigit( *s ) != 0 )
             s++;
@@ -1001,7 +1048,7 @@ int parse_channels( char *s )
 
 void ask_parameters( void )
 {
-    int nbcards;
+    int nbcards, i;
     char strbuf[512];
 
     nbcards = show_cards();
@@ -1035,7 +1082,23 @@ ask_arg2:
 
 ask_arg3:
 
-    printf( "\n  Channel(s): 1 to 14, 0 = all  -> " );
+    printf( "\n  Channel(s): 0 = hop on 2.4Ghz channels, -1 = hop on 5Ghz channel,");
+	for (i = 0; abg_chans[i] != 0; i++)
+	{
+		switch (i)
+		{
+			case 0:
+			case 16:
+			case 28:
+			case 39:
+				printf("\n              ");
+		}
+		printf("%d", abg_chans[i]);
+		if (abg_chans[i + 1] != 0)
+			printf(", ");
+	}
+
+	printf (" -> " );
     scanf( "%s", strbuf );
     if( parse_channels( strbuf ) != 0 )
         goto ask_arg3;
