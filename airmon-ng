@@ -64,7 +64,7 @@ getDriver() {
 
 scanProcesses() {
     match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
-    if [ $match -gt 0 ]
+    if [ $match -gt 0 -a x"$1" != xkill ]
     then
         echo && echo
         echo "Found $match processes that could cause trouble."
@@ -73,7 +73,15 @@ scanProcesses() {
         echo
         echo "PID\tName"
     else
-        return
+        if [ x"$1" != xkill ]
+        then
+            return
+        fi
+    fi
+
+    if [ $match -gt 0 -a x"$1" = xkill ]
+    then
+        echo "Killing all those processes..."
     fi
 
     i=1
@@ -81,7 +89,12 @@ scanProcesses() {
     do
         pid=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}'`
         pname=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}'`
-        printf "$pid\t$pname\n"
+        if [ x"$1" != xkill ]
+        then
+            printf "$pid\t$pname\n"
+        else
+            kill $pid
+        fi
         i=$(($i+1))
     done
 }
@@ -241,6 +254,12 @@ then
 #         getDriver $iface
         checkProcessesIface $iface
     done
+
+    if [ x"$2" = xkill ]
+    then
+        scanProcesses "$2"
+    fi
+
     exit
 fi
 
