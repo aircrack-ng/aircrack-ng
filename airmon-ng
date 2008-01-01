@@ -403,7 +403,7 @@ do
 
  if [ x$DRIVER = "xipw2200" ] || [ x"`iwpriv $iface 2>/dev/null | grep sw_reset`" != "x" ]
  then
-    MODINFO=`modinfo ipw2200 | awk '/^version/ {print $2}'`
+    MODINFO=`modinfo ipw2200 2>/dev/null | awk '/^version/ {print $2}'`
     if { echo "$MODINFO" | grep -E '^1\.0\.(0|1|2|3)$' ; }
     then
     	echo "Monitor mode not supported, please upgrade"
@@ -781,6 +781,7 @@ do
      if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
      then
          stopStdIface $iface
+         ifconfig $iface up
      fi
      echo
      continue
