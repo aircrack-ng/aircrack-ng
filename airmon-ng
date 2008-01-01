@@ -800,6 +800,7 @@ do
      if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
      then
          stopStdIface $iface
+         ifconfig $iface up
      fi
      echo
      continue
