@@ -1385,7 +1385,8 @@ skip_probe:
             if( p + 2 + p[1] > h80211 + caplen )
                 break;
 
-            if( p[0] == 0x00 ) ap_cur->ssid_length = p[1];
+            //only update the essid length if the new length is > the old one
+            if( p[0] == 0x00 && (ap_cur->ssid_length < p[1]) ) ap_cur->ssid_length = p[1];
 
             if( p[0] == 0x00 && p[1] > 0 && p[2] != '\0' &&
                 ( p[1] > 1 || p[2] != ' ' ) )
@@ -1676,7 +1677,7 @@ skip_probe:
         /* check the SNAP header to see if data is encrypted */
 
         z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
-        
+
         /* Check if 802.11e (QoS) */
         if( (h80211[0] & 0x80) == 0x80) z+=2;
 
