@@ -607,6 +607,10 @@ do
          startStdIface $iface $CH
          iwpriv $iface rfmontx 1
     fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+     	stopStdIface $iface
+    fi
     echo
     continue
 
@@ -622,6 +626,10 @@ do
          startStdIface $iface $CH
          iwpriv $iface rfmontx 1
     fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+     	stopStdIface $iface
+    fi    
     echo
     continue
 
@@ -637,6 +645,10 @@ do
          startStdIface $iface $CH
          iwpriv $iface rfmontx 1
     fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+     	stopStdIface $iface
+    fi    
     echo
     continue
 
@@ -814,6 +826,10 @@ do
     then
          startStdIface $iface $CH
     fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+     	stopStdIface $iface
+    fi    
     echo
     continue
 
@@ -827,6 +843,10 @@ do
      then
           startStdIface $iface $CH
      fi
+     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+      then
+      	 stopStdIface $iface
+     fi     
      echo
      continue
 
