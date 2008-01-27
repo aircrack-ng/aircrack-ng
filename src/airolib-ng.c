@@ -42,6 +42,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <getopt.h>
+
 
 #include "aircrack-ng.h"
 #include "crypto.h"
@@ -50,9 +52,13 @@
 #endif
 #include "version.h"
 
+#define IMPORT_ESSID "essid"
+#define IMPORT_PASSWD "passwd"
+#define IMPORT_COWPATTY "cowpatty"
+
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
 
-void print_help() {
+void print_help(const char * msg) {
 	printf("\n"
 		"  %s - (C) 2007 ebfe\n"
 		"  http://www.aircrack-ng.org\n"
@@ -61,21 +67,29 @@ void print_help() {
 		"\n"
 		"  Operations:\n"
 		"\n"
-		"       stats        : Output information about the database.\n"
-		"       sql <sql>    : Execute specified SQL statement.\n"
-		"       clean [all]  : Clean the database from old junk. 'all' will also \n"
-		"                      reduce filesize if possible and run an integrity check.\n"
-		"       batch        : Start batch-processing all combinations of ESSIDs and passwords.\n"
-		"       verify [all] : Verify a set of randomly chosen PMKs.\n"
-		"                      If 'all' is given, all invalid PMK will be deleted.\n"
-		"       import ascii [essid|passwd] <file> :\n"
-		"                      Import a flatfile as a list of ESSIDs or passwords.\n"
-		"       import cowpatty <file>             :\n"
-		"                      Import a cowpatty file.\n"
-		"       export cowpatty <essid> <file>     :\n"
-		"                      Export to a cowpatty file.\n"
+		"       --stats        : Output information about the database.\n"
+		"       --sql <sql>    : Execute specified SQL statement.\n"
+		"       --clean [all]  : Clean the database from old junk. 'all' will also \n"
+		"                        reduce filesize if possible and run an integrity check.\n"
+		"       --batch        : Start batch-processing all combinations of ESSIDs\n"
+		"                        and passwords.\n"
+		"       --verify [all] : Verify a set of randomly chosen PMKs.\n"
+		"                        If 'all' is given, all invalid PMK will be deleted.\n"
+		"\n"
+		"       --import [essid|passwd] <file>   :\n"
+		"                        Import a text file as a list of ESSIDs or passwords.\n"
+		"       --import cowpatty <file>         :\n"
+		"                        Import a cowpatty file.\n"
+		"\n"
+		"       --export cowpatty <essid> <file> :\n"
+		"                        Export to a cowpatty file.\n"
 		"\n",
 		getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
+
+	if (msg && strlen(msg) > 0) {
+		printf("%s", msg);
+		puts("");
+	}
 }
 
 void sql_error(sqlite3* db) {
@@ -615,7 +629,7 @@ int import_cowpatty(sqlite3* db, char* filename) {
 	return 1;
 }
 
-int import_ascii(sqlite3* db, char* mode, char* filename) {
+int import_ascii(sqlite3* db, const char* mode, const char* filename) {
 	FILE *f = NULL;
 	sqlite3_stmt *stmt;
 	char buffer[63+1];
@@ -623,12 +637,12 @@ int import_ascii(sqlite3* db, char* mode, char* filename) {
 	int ignored=0;
 	int imode=0;
 
-	if (strcmp(mode,"essid") == 0) {
+	if (stricmp(mode,IMPORT_ESSID) == 0) {
 		 imode = 0;
-	} else if (strcmp(mode,"passwd") == 0) {
+	} else if (stricmp(mode,IMPORT_PASSWD) == 0) {
 		imode = 1;
 	} else {
-		printf("Specify either 'essid' or 'passwd' as import mode. Thank you.\n");
+		printf("Specify either 'essid' or 'passwd' as import mode.\n");
 		return 0;
 	}
 
@@ -647,7 +661,7 @@ int import_ascii(sqlite3* db, char* mode, char* filename) {
 	sqlite3_free(sql);
 
 	sql_exec(db, "BEGIN;");
-	printf("Reading...\n");
+	printf("Reading file...\n");
 	while (fgets(buffer, sizeof(buffer), f) != 0) {
 		int i = strlen(buffer);
 		if (buffer[i-1] == '\n') buffer[--i] = '\0';
@@ -728,186 +742,285 @@ void sqlite_regexp(sqlite3_context* context, int argc, sqlite3_value** values) {
 }
 #endif
 
-int initDataBase(const char * filename, sqlite3 * db)
+int initDataBase(const char * filename, sqlite3 ** db)
 {
-	int rc = sqlite3_open(filename, &db);
-	if (rc) {
-		sql_error(db);
-		sqlite3_close(db);
-		return 1;
+	//int rc = sqlite3_open_v2(filename, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+	int rc = sqlite3_open(filename, &(*db));
+
+	if (rc != SQLITE_OK) {
+		sql_error(*db);
+		sqlite3_close(*db);
+
+		// May be usefull later
+		return rc;
 	}
 
-	sql_exec(db, "create table essid (essid_id integer primary key autoincrement, essid text, prio integer default 64);");
-	sql_exec(db, "create table passwd (passwd_id integer primary key autoincrement, passwd text);");
-	sql_exec(db, "create table pmk (pmk_id integer primary key autoincrement, passwd_id int, essid_id int, pmk blob);");
-	sql_exec(db, "create table workbench (wb_id integer primary key autoincrement, essid_id integer, passwd_id integer, lockid integer default 0);");
-	sql_exec(db, "create index lock_lockid on workbench (lockid);");
-	sql_exec(db, "create index pmk_pw on pmk (passwd_id);");
-	sql_exec(db, "create unique index essid_u on essid (essid);");
-	sql_exec(db, "create unique index passwd_u on passwd (passwd);");
-	sql_exec(db, "create unique index ep_u on pmk (essid_id,passwd_id);");
-	sql_exec(db, "create unique index wb_u on workbench (essid_id,passwd_id);");
-	sql_exec(db, "CREATE TRIGGER delete_essid DELETE ON essid BEGIN DELETE FROM pmk WHERE pmk.essid_id = OLD.essid_id; DELETE FROM workbench WHERE workbench.essid_id = OLD.essid_id; END;");
-	sql_exec(db, "CREATE TRIGGER delete_passwd DELETE ON passwd BEGIN DELETE FROM pmk WHERE pmk.passwd_id = OLD.passwd_id; DELETE FROM workbench WHERE workbench.passwd_id = OLD.passwd_id; END;");
+	sql_exec(*db, "create table essid (essid_id integer primary key autoincrement, essid text, prio integer default 64);");
+	sql_exec(*db, "create table passwd (passwd_id integer primary key autoincrement, passwd text);");
+	sql_exec(*db, "create table pmk (pmk_id integer primary key autoincrement, passwd_id int, essid_id int, pmk blob);");
+	sql_exec(*db, "create table workbench (wb_id integer primary key autoincrement, essid_id integer, passwd_id integer, lockid integer default 0);");
+	sql_exec(*db, "create index lock_lockid on workbench (lockid);");
+	sql_exec(*db, "create index pmk_pw on pmk (passwd_id);");
+	sql_exec(*db, "create unique index essid_u on essid (essid);");
+	sql_exec(*db, "create unique index passwd_u on passwd (passwd);");
+	sql_exec(*db, "create unique index ep_u on pmk (essid_id,passwd_id);");
+	sql_exec(*db, "create unique index wb_u on workbench (essid_id,passwd_id);");
+	sql_exec(*db, "CREATE TRIGGER delete_essid DELETE ON essid BEGIN DELETE FROM pmk WHERE pmk.essid_id = OLD.essid_id; DELETE FROM workbench WHERE workbench.essid_id = OLD.essid_id; END;");
+	sql_exec(*db, "CREATE TRIGGER delete_passwd DELETE ON passwd BEGIN DELETE FROM pmk WHERE pmk.passwd_id = OLD.passwd_id; DELETE FROM workbench WHERE workbench.passwd_id = OLD.passwd_id; END;");
 
 
 #ifdef SQL_DEBUG
-	sql_exec(db, "begin;");
-	sql_exec(db, "insert into essid (essid,prio) values ('e',random())");
-	sql_exec(db, "insert into passwd (passwd) values ('p')");
-	sql_exec(db, "insert into essid (essid,prio) select essid||'a',random() from essid;");
-	sql_exec(db, "insert into essid (essid,prio) select essid||'b',random() from essid;");
-	sql_exec(db, "insert into essid (essid,prio) select essid||'c',random() from essid;");
-	sql_exec(db, "insert into essid (essid,prio) select essid||'d',random() from essid;");
-	sql_exec(db, "insert into passwd (passwd) select passwd||'a' from passwd;");
-	sql_exec(db, "insert into passwd (passwd) select passwd||'b' from passwd;");
-	sql_exec(db, "insert into passwd (passwd) select passwd||'c' from passwd;");
-	sql_exec(db, "insert into passwd (passwd) select passwd||'d' from passwd;");
-	sql_exec(db, "insert into passwd (passwd) select passwd||'e' from passwd;");
-	sql_exec(db, "insert into pmk (essid_id,passwd_id) select essid_id,passwd_id from essid,passwd limit 1000000;");
-	sql_exec(db,"commit;");
+	sql_exec(*db, "begin;");
+	sql_exec(*db, "insert into essid (essid,prio) values ('e',random())");
+	sql_exec(*db, "insert into passwd (passwd) values ('p')");
+	sql_exec(*db, "insert into essid (essid,prio) select essid||'a',random() from essid;");
+	sql_exec(*db, "insert into essid (essid,prio) select essid||'b',random() from essid;");
+	sql_exec(*db, "insert into essid (essid,prio) select essid||'c',random() from essid;");
+	sql_exec(*db, "insert into essid (essid,prio) select essid||'d',random() from essid;");
+	sql_exec(*db, "insert into passwd (passwd) select passwd||'a' from passwd;");
+	sql_exec(*db, "insert into passwd (passwd) select passwd||'b' from passwd;");
+	sql_exec(*db, "insert into passwd (passwd) select passwd||'c' from passwd;");
+	sql_exec(*db, "insert into passwd (passwd) select passwd||'d' from passwd;");
+	sql_exec(*db, "insert into passwd (passwd) select passwd||'e' from passwd;");
+	sql_exec(*db, "insert into pmk (essid_id,passwd_id) select essid_id,passwd_id from essid,passwd limit 1000000;");
+	sql_exec(*db,"commit;");
 #endif
 
-	sqlite3_close(db);
+	sqlite3_close(*db);
 	printf("Database <%s> sucessfully created\n", filename);
 	return 0;
 }
 
-int main(int argc, char **argv){
-	sqlite3 *db;
-	struct stat dbfile;	
+int check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
+{
+	struct stat dbfile;
 	int rc;
-
-	if( argc < 3 ){
-		print_help();
-		return 1;
-	}
-
-	//TODO someone implement gnu getopts
-	// implement options like '-e essid' to limit operations to a certain essid where possible
-	// implement import of other airolib-db files.
-
+	int accessflags = R_OK | W_OK;
+	if (readonly)
+		accessflags = R_OK;
 
 	// Check if DB exist. If it does not, initialize it
-	if (access(argv[1], R_OK | W_OK)) {
-		printf("Database does not already exist, creating it...\n");	
-		if (initDataBase(argv[1], db))
+	if (access(filename, accessflags)) {
+		printf("Database <%s> does not already exist, ", filename);
+		if (can_create)
 		{
-			printf("Error initializing databse, exiting...\n");
+			printf("creating it...\n");
+
+			rc = initDataBase(filename, db);
+
+			if (rc)
+			{
+				printf("Error initializing database (return code: %d), exiting...\n", rc);
+				return 1;
+			}
+		}
+		else
+		{
+			printf("exiting ...\n");
 			return 1;
-		}	
+		}
 	}
 	else
 	{
-		if (stat(argv[1], &dbfile))
+		if (stat(filename, &dbfile))
 		{
 			perror("stat()");
 			return 1;
-		}	
+		}
 		if ((S_ISREG(dbfile.st_mode) && !S_ISDIR(dbfile.st_mode)) == 0)
 		{
-			printf("\"%s\" does not appear to be a file.\n", argv[1]);
+			printf("\"%s\" does not appear to be a file.\n", filename);
 			return 1;
-		}	
+		}
 	}
 
-	rc = sqlite3_open(argv[1], &db);
+	rc = sqlite3_open(filename, &(*db));
 	if(rc) {
-		sql_error(db);
-		sqlite3_close(db);
+		sql_error(*db);
+		sqlite3_close(*db);
 		return 1;
 	}
 
-	// TODO Time for a little sanity check? Table definitions, index? I don't care
+	// TODO: Sanity check: Table definitions, index
 
-	// register new functions to be used in sql statements
-	if (sqlite3_create_function(db, "PMK", 2, SQLITE_ANY, 0, &sql_calcpmk,0,0) != SQLITE_OK) {
+	// register new functions to be used in SQL statements
+	if (sqlite3_create_function(*db, "PMK", 2, SQLITE_ANY, 0, &sql_calcpmk,0,0) != SQLITE_OK) {
 		printf("Failed creating PMK function.\n");
-		sql_error(db);
-		sqlite3_close(db);
+		sql_error(*db);
+		sqlite3_close(*db);
 		return 1;
 	}
-	if (sqlite3_create_function(db, "VERIFY_ESSID", 1, SQLITE_ANY, 0, &sql_verify_essid,0,0) != SQLITE_OK) {
+	if (sqlite3_create_function(*db, "VERIFY_ESSID", 1, SQLITE_ANY, 0, &sql_verify_essid,0,0) != SQLITE_OK) {
 		printf("Failed creating VERIFY_ESSID function.\n");
-		sql_error(db);
-		sqlite3_close(db);
+		sql_error(*db);
+		sqlite3_close(*db);
 		return 1;
 	}
-	if (sqlite3_create_function(db, "VERIFY_PASSWD", 1, SQLITE_ANY, 0, &sql_verify_passwd,0,0) != SQLITE_OK) {
+	if (sqlite3_create_function(*db, "VERIFY_PASSWD", 1, SQLITE_ANY, 0, &sql_verify_passwd,0,0) != SQLITE_OK) {
 		printf("Failed creating VERIFY_PASSWD function.\n");
-		sql_error(db);
-		sqlite3_close(db);
+		sql_error(*db);
+		sqlite3_close(*db);
 		return 1;
 	}
 #ifdef HAVE_REGEXP
-	if (sqlite3_create_function(db, "regexp", 2, SQLITE_ANY,0, &sqlite_regexp,0,0) != SQLITE_OK) {
+	if (sqlite3_create_function(*db, "regexp", 2, SQLITE_ANY,0, &sqlite_regexp,0,0) != SQLITE_OK) {
 		printf("Failed creating regexp() handler.\n");
-		sql_error(db);
-		sqlite3_close(db);
+		sql_error(*db);
+		sqlite3_close(*db);
 		return 1;
 	}
 #endif
 
-	if (strcmp(argv[2],"stats")==0) {
-		if (argv[3] == NULL)
-			show_stats(db,0);
-		else
-			show_stats(db,1);
-	} else if (strcmp(argv[2],"sql")==0) {
-		if (argv[3] != NULL) {
-			sql_stdout(db,argv[3],0);
-		} else {
-			print_help();
-			printf("No SQL order given.\n");
-		}
-	} else if (strcmp(argv[2],"batch")==0) {
-		batch_process(db);
-	} else if (strcmp(argv[2],"clean")==0) {
-		if (argc > 3 && strcmp(argv[3],"all")==0)
-			vacuum(db,1);
-		else
-			vacuum(db,0);
-	} else if (strcmp(argv[2],"import")==0) {
-		if (argc < 5) {
-			print_help();
-			printf("You must specifiy at least an import format and a file.\n");
-		} else if (strcmp(argv[3],"cowpatty")==0) {
-			import_cowpatty(db,argv[4]);
-		} else if (strcmp(argv[3],"ascii")==0) {
-			if (argc < 6) {
-				print_help();
-				printf("Specify ESSID/passwd and a file.\n");
-			} else {
-				import_ascii(db,argv[4],argv[5]);
-			}
-		} else {
-			print_help();
-			printf("Invalid import format specified.\n");
-		}
-	} else if (strcmp(argv[2],"export")==0) {
-		if (argc < 4) {
-			print_help();
-			printf("You must specify an export format.\n");
-		} else if (strcmp(argv[3],"cowpatty")==0) {
-			if (argc < 6) {
-				print_help();
-				printf("You must specify essid and output file.\n");
-			} else {
-				export_cowpatty(db,argv[4],argv[5]);
-			}
-		} else {
-			print_help();
-			printf("Invalid export format specified.\n");
-		}
-	} else if (strcmp(argv[2],"verify")==0) {
-		if (argc > 3 && strcmp(argv[3],"all")==0)
-			verify(db,1);
-		else
-			verify(db,0);
-	} else {
-		print_help();
+	return 0;
+}
+
+int main(int argc, char **argv) {
+	sqlite3 *db;
+	int option_index, option;
+
+	if( argc < 3 ){
+		print_help(NULL);
+		return 1;
 	}
 
-	sqlite3_close(db);
+	db = NULL;
+
+	option_index = 0;
+
+	static struct option long_options[] = {
+		{"batch",       0, 0, 'b'},
+		{"clean",       2, 0, 'c'},
+		{"export",      2, 0, 'e'},
+		{"h",           0, 0, 'h'},
+		{"help",        0, 0, 'h'},
+		{"import",      2, 0, 'i'},
+		{"sql",         1, 0, 's'},
+		{"stats",       2, 0, 't'},
+		{"statistics",  2, 0, 't'},
+		{"verify",      2, 0, 'v'},
+		{"vacuum",      2, 0, 'c'},
+		// TODO: implement options like '-e essid' to limit
+		//       operations to a certain essid where possible
+		{"essid",       1, 0, 'd'},
+		{0,             0, 0,  0 }
+	};
+
+	option = getopt_long( argc, argv, "bc:d:e:hi:s:t:v:", long_options, &option_index );
+
+	if( option > 0 )
+	{
+		switch (option)
+		{
+			case 'b':
+				// Batch
+				if ( check_for_db(&db, argv[1], 0, 1) ) {
+					return 1;
+				}
+				batch_process(db);
+
+				break;
+
+			case 'c':
+				// Clean
+				if ( check_for_db(&db, argv[1], 0, 0) ) {
+					return 1;
+				}
+				vacuum(db, (argc > 3 && stricmp(argv[3],"all") == 0) ? 1 : 0);
+
+				break;
+
+			case 'e':
+				// Export
+				if ( check_for_db(&db, argv[1], 0, 0) ) {
+					return 1;
+				}
+
+				if (argc < 4) {
+					print_help("You must specify an export format.");
+				} else if (strcmp(argv[3],"cowpatty")==0) {
+					if (argc < 6) {
+						print_help("You must specify essid and output file.");
+					} else {
+						export_cowpatty(db,argv[4],argv[5]);
+					}
+				} else {
+					print_help("Invalid export format specified.");
+				}
+
+				break;
+
+			case ':' :
+			case '?' :
+			case 'h':
+				// Show help
+				print_help(NULL);
+
+				break;
+
+			case 'i':
+				// Import
+
+				if ( check_for_db(&db, argv[1], 1, 0) ) {
+					return 1;
+				}
+
+				if (argc < 5) {
+					print_help("You must specifiy an import format and a file.");
+				} else if (stricmp(argv[3],IMPORT_COWPATTY)==0) {
+					import_cowpatty(db,argv[4]);
+				} else if (stricmp(argv[3],IMPORT_ESSID)==0) {
+					import_ascii(db,IMPORT_ESSID,argv[4]);
+				} else if (stricmp(argv[3],IMPORT_PASSWD)==0 || stricmp(argv[3],"password")==0) {
+					printf("3");
+					import_ascii(db,IMPORT_PASSWD, argv[4]);
+				} else {
+					print_help("Invalid import format specified.");
+				}
+				break;
+			case 's':
+				// SQL
+
+				// We don't know if the SQL order is changing the file or not
+				if ( check_for_db(&db, argv[1], 0, 0) ) {
+					return 1;
+				}
+
+
+				sql_stdout(db, argv[3], 0);
+
+				break;
+
+			case 't':
+				// Stats
+				if ( check_for_db(&db, argv[1], 0, 1) ) {
+					return 1;
+				}
+
+				show_stats(db, (argv[3] == NULL) ? 0 : 1);
+
+				break;
+
+			case 'v':
+				// Verify
+				if ( check_for_db(&db, argv[1], 0, (argc > 3 && stricmp(argv[3],"all")==0) ? 0 : 1) ) {
+					return 1;
+				}
+
+				verify(db, (argc > 3 && stricmp(argv[3],"all")==0) ? 1 : 0);
+				break;
+
+			default:
+				print_help("Invalid option");
+				break;
+		}
+	}
+	else
+	{
+		print_help(NULL);
+	}
+
+	if (db)
+		sqlite3_close(db);
+
 	return 0;
 }
