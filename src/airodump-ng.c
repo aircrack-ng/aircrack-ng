@@ -1584,6 +1584,7 @@ skip_probe:
                 if(h80211[24] == 0x01) ap_cur->security |= AUTH_PSK;
             }
         }
+        st_cur->wpa.state = 0;
     }
 
     /* packet parsing: Association Request */
@@ -1658,6 +1659,7 @@ skip_probe:
 
             p += 2 + p[1];
         }
+        st_cur->wpa.state = 0;
     }
 
     /* packet parsing: some data */
@@ -1934,7 +1936,7 @@ skip_probe:
                 if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
                 {
                     memcpy( st_cur->wpa.anonce, &h80211[z + 17], 32 );
-                    st_cur->wpa.state |= 4;
+                    st_cur->wpa.state |= 1;
                 }
                 st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                         +   h80211[z + 3] + 4;
@@ -1942,58 +1944,59 @@ skip_probe:
                 memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
                 memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
                 memset( st_cur->wpa.eapol + 81, 0, 16 );
-                st_cur->wpa.state |= 8;
+                st_cur->wpa.state |= 4;
                 st_cur->wpa.keyver = h80211[z + 6] & 7;
 
-                if( st_cur->wpa.state == 15)
+            }
+
+            if( st_cur->wpa.state == 7)
+            {
+                memcpy( st_cur->wpa.stmac, st_cur->stmac, 6 );
+                memcpy( G.wpa_bssid, ap_cur->bssid, 6 );
+                memset(G.message, '\x00', sizeof(G.message));
+                snprintf( G.message, sizeof( G.message ) - 1,
+                    "][ WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
+                    G.wpa_bssid[0], G.wpa_bssid[1], G.wpa_bssid[2],
+                    G.wpa_bssid[3], G.wpa_bssid[4], G.wpa_bssid[5]);
+
+
+                if( G.f_ivs != NULL )
                 {
-                    memcpy( st_cur->wpa.stmac, st_cur->stmac, 6 );
-                    memcpy( G.wpa_bssid, ap_cur->bssid, 6 );
-                    memset(G.message, '\x00', sizeof(G.message));
-                    snprintf( G.message, sizeof( G.message ) - 1,
-                        "][ WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
-                        G.wpa_bssid[0], G.wpa_bssid[1], G.wpa_bssid[2],
-                        G.wpa_bssid[3], G.wpa_bssid[4], G.wpa_bssid[5]);
+                    memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
+                    ivs2.flags = 0;
+                    ivs2.len = 0;
 
+                    ivs2.len= sizeof(struct WPA_hdsk);
+                    ivs2.flags |= IVS2_WPA;
 
-                    if( G.f_ivs != NULL )
+                    if( memcmp( G.prev_bssid, ap_cur->bssid, 6 ) != 0 )
                     {
-                        memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
-                        ivs2.flags = 0;
-                        ivs2.len = 0;
+                        ivs2.flags |= IVS2_BSSID;
+                        ivs2.len += 6;
+                        memcpy( G.prev_bssid, ap_cur->bssid,  6 );
+                    }
 
-                        ivs2.len= sizeof(struct WPA_hdsk);
-                        ivs2.flags |= IVS2_WPA;
+                    if( fwrite( &ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs )
+                        != (size_t) sizeof(struct ivs2_pkthdr) )
+                    {
+                        perror( "fwrite(IV header) failed" );
+                        return( 1 );
+                    }
 
-                        if( memcmp( G.prev_bssid, ap_cur->bssid, 6 ) != 0 )
+                    if( ivs2.flags & IVS2_BSSID )
+                    {
+                        if( fwrite( ap_cur->bssid, 1, 6, G.f_ivs ) != (size_t) 6 )
                         {
-                            ivs2.flags |= IVS2_BSSID;
-                            ivs2.len += 6;
-                            memcpy( G.prev_bssid, ap_cur->bssid,  6 );
-                        }
-
-                        if( fwrite( &ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs )
-                            != (size_t) sizeof(struct ivs2_pkthdr) )
-                        {
-                            perror( "fwrite(IV header) failed" );
+                            perror( "fwrite(IV bssid) failed" );
                             return( 1 );
                         }
+                        ivs2.len -= 6;
+                    }
 
-                        if( ivs2.flags & IVS2_BSSID )
-                        {
-                            if( fwrite( ap_cur->bssid, 1, 6, G.f_ivs ) != (size_t) 6 )
-                            {
-                                perror( "fwrite(IV bssid) failed" );
-                                return( 1 );
-                            }
-                            ivs2.len -= 6;
-                        }
-
-                        if( fwrite( &(st_cur->wpa), 1, sizeof(struct WPA_hdsk), G.f_ivs ) != (size_t) sizeof(struct WPA_hdsk) )
-                        {
-                            perror( "fwrite(IV wpa_hdsk) failed" );
-                            return( 1 );
-                        }
+                    if( fwrite( &(st_cur->wpa), 1, sizeof(struct WPA_hdsk), G.f_ivs ) != (size_t) sizeof(struct WPA_hdsk) )
+                    {
+                        perror( "fwrite(IV wpa_hdsk) failed" );
+                        return( 1 );
                     }
                 }
             }

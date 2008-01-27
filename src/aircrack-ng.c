@@ -2014,6 +2014,11 @@ void check_thread( void *arg )
 
 				p += 2 + p[1];
 			}
+
+			/* reset the WPA handshake state */
+
+			if( st_cur != NULL )
+				st_cur->wpa.state = 0;
 		}
 
 		/* packet parsing: Association Response */
@@ -2164,7 +2169,7 @@ void check_thread( void *arg )
 				memcpy( st_cur->wpa.anonce, &h80211[z + 17], 32 );
 
 								 /* authenticator nonce set */
-				st_cur->wpa.state |= 4;
+				st_cur->wpa.state |= 1;
 			}
 
 			/* copy the MIC & eapol frame */
@@ -2177,14 +2182,14 @@ void check_thread( void *arg )
 			memset( st_cur->wpa.eapol + 81, 0, 16 );
 
 								 /* eapol frame & keymic set */
-			st_cur->wpa.state |= 8;
+			st_cur->wpa.state |= 4;
 
 			/* copy the key descriptor version */
 
 			st_cur->wpa.keyver = h80211[z + 6] & 7;
 		}
 
-		if( st_cur->wpa.state == 15 )
+		if( st_cur->wpa.state == 7 )
 		{
 			/* got one valid handshake */
 
