@@ -1232,7 +1232,7 @@ int do_attack_deauth( void )
                 if(i == 0)
                 {
                     PCT; printf( "Sending 64 directed DeAuth. STMAC:"
-                                " [%02X:%02X:%02X:%02X:%02X:%02X] [%3d/%3d ACKs]\r",
+                                " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
                                 opt.r_dmac[0],  opt.r_dmac[1],
                                 opt.r_dmac[2],  opt.r_dmac[3],
                                 opt.r_dmac[4],  opt.r_dmac[5],
@@ -1288,7 +1288,7 @@ int do_attack_deauth( void )
                             sacks++;
                         }
                         PCT; printf( "Sending 64 directed DeAuth. STMAC:"
-                                    " [%02X:%02X:%02X:%02X:%02X:%02X] [%3d/%3d ACKs]\r",
+                                    " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
                                     opt.r_dmac[0],  opt.r_dmac[1],
                                     opt.r_dmac[2],  opt.r_dmac[3],
                                     opt.r_dmac[4],  opt.r_dmac[5],
