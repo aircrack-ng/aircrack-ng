@@ -47,14 +47,14 @@ AIRPCAP		= true
 endif
 
 ifeq ($(AIRPCAP), true)
-LIBAIRPCAP	= -DHAVE_AIRPCAP -I$(ROOT)/../developers/Airpcap_Devpack/include
+LIBAIRPCAP	= -DHAVE_AIRPCAP -I$(AC_ROOT)/../developers/Airpcap_Devpack/include
 endif
 
 CC		= $(TOOL_PREFIX)gcc
 RANLIB		= $(TOOL_PREFIX)ranlib
 AR		= $(TOOL_PREFIX)ar
 
-REVISION	= `$(ROOT)/evalrev`
+REVISION	= `$(AC_ROOT)/evalrev`
 REVFLAGS	= -D_REVISION=$(REVISION)
 
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64

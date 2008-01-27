@@ -1,6 +1,6 @@
-ROOT		= ..
+AC_ROOT		= ..
 LIBPCAP		=
-include $(ROOT)/common.mak
+include $(AC_ROOT)/common.mak
 
 
 CFLAGS		+= -Iinclude

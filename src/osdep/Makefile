@@ -1,5 +1,5 @@
-ROOT	= ../..
-include $(ROOT)/common.mak
+AC_ROOT	= ../..
+include $(AC_ROOT)/common.mak
 
 LIB		= libosdep.a 
 CFLAGS		+= $(PIC) -I.. $(LIBAIRPCAP)
@@ -21,7 +21,7 @@ OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o
 DOPCAP		=
 ifeq ($(AIRPCAP), true)
 OBJS_CYGWIN    += $(OBJS_APCAP)
-DOPCAP		= $(AR) x $(ROOT)/../developers/Airpcap_Devpack/lib/libairpcap.a
+DOPCAP		= $(AR) x $(AC_ROOT)/../developers/Airpcap_Devpack/lib/libairpcap.a
 endif
 
 all:
