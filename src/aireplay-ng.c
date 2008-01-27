@@ -1198,6 +1198,9 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
 int do_attack_deauth( void )
 {
     int i, n;
+    int aacks, sacks, caplen;
+    struct timeval tv;
+    fd_set rfds;
 
     if(getnet(NULL, 0, 1) != 0)
         return 1;
@@ -1219,17 +1222,23 @@ int do_attack_deauth( void )
         {
             /* deauthenticate the target */
 
-            PCT; printf( "Sending DeAuth to station   -- STMAC:"
-                         " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
-                         opt.r_dmac[0],  opt.r_dmac[1],
-                         opt.r_dmac[2],  opt.r_dmac[3],
-                         opt.r_dmac[4],  opt.r_dmac[5] );
-
             memcpy( h80211, DEAUTH_REQ, 26 );
             memcpy( h80211 + 16, opt.r_bssid, 6 );
 
+            aacks = 0;
+            sacks = 0;
             for( i = 0; i < 64; i++ )
             {
+                if(i == 0)
+                {
+                    PCT; printf( "Sending 64 directed DeAuth. STMAC:"
+                                " [%02X:%02X:%02X:%02X:%02X:%02X] [%3d/%3d ACKs]\r",
+                                opt.r_dmac[0],  opt.r_dmac[1],
+                                opt.r_dmac[2],  opt.r_dmac[3],
+                                opt.r_dmac[4],  opt.r_dmac[5],
+                                sacks, aacks );
+                }
+
                 memcpy( h80211 +  4, opt.r_dmac,  6 );
                 memcpy( h80211 + 10, opt.r_bssid, 6 );
 
@@ -1245,7 +1254,49 @@ int do_attack_deauth( void )
                     return( 1 );
 
                 usleep( 2000 );
+
+                while( 1 )
+                {
+                    FD_ZERO( &rfds );
+                    FD_SET( dev.fd_in, &rfds );
+
+                    tv.tv_sec  = 0;
+                    tv.tv_usec = 1000;
+
+                    if( select( dev.fd_in + 1, &rfds, NULL, NULL, &tv ) < 0 )
+                    {
+                        if( errno == EINTR ) continue;
+                        perror( "select failed" );
+                        return( 1 );
+                    }
+
+                    if( ! FD_ISSET( dev.fd_in, &rfds ) )
+                        break;
+
+                    caplen = read_packet( h80211, sizeof( h80211 ), NULL );
+
+                    if(caplen <= 0 ) break;
+                    if(caplen != 10) continue;
+                    if( h80211[0] == 0xD4)
+                    {
+                        if( memcmp(h80211+4, opt.r_dmac, 6) == 0 )
+                        {
+                            aacks++;
+                        }
+                        if( memcmp(h80211+4, opt.r_bssid, 6) == 0 )
+                        {
+                            sacks++;
+                        }
+                        PCT; printf( "Sending 64 directed DeAuth. STMAC:"
+                                    " [%02X:%02X:%02X:%02X:%02X:%02X] [%3d/%3d ACKs]\r",
+                                    opt.r_dmac[0],  opt.r_dmac[1],
+                                    opt.r_dmac[2],  opt.r_dmac[3],
+                                    opt.r_dmac[4],  opt.r_dmac[5],
+                                    sacks, aacks );
+                    }
+                }
             }
+            printf("\n");
         }
         else
         {
