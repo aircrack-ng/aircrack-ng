@@ -637,9 +637,9 @@ int import_ascii(sqlite3* db, const char* mode, const char* filename) {
 	int ignored=0;
 	int imode=0;
 
-	if (stricmp(mode,IMPORT_ESSID) == 0) {
+	if (strcasecmp(mode,IMPORT_ESSID) == 0) {
 		 imode = 0;
-	} else if (stricmp(mode,IMPORT_PASSWD) == 0) {
+	} else if (strcasecmp(mode,IMPORT_PASSWD) == 0) {
 		imode = 1;
 	} else {
 		printf("Specify either 'essid' or 'passwd' as import mode.\n");
@@ -925,7 +925,7 @@ int main(int argc, char **argv) {
 				if ( check_for_db(&db, argv[1], 0, 0) ) {
 					return 1;
 				}
-				vacuum(db, (argc > 3 && stricmp(argv[3],"all") == 0) ? 1 : 0);
+				vacuum(db, (argc > 3 && strcasecmp(argv[3],"all") == 0) ? 1 : 0);
 
 				break;
 
@@ -966,11 +966,11 @@ int main(int argc, char **argv) {
 
 				if (argc < 5) {
 					print_help("You must specifiy an import format and a file.");
-				} else if (stricmp(argv[3],IMPORT_COWPATTY)==0) {
+				} else if (strcasecmp(argv[3],IMPORT_COWPATTY)==0) {
 					import_cowpatty(db,argv[4]);
-				} else if (stricmp(argv[3],IMPORT_ESSID)==0) {
+				} else if (strcasecmp(argv[3],IMPORT_ESSID)==0) {
 					import_ascii(db,IMPORT_ESSID,argv[4]);
-				} else if (stricmp(argv[3],IMPORT_PASSWD)==0 || stricmp(argv[3],"password")==0) {
+				} else if (strcasecmp(argv[3],IMPORT_PASSWD)==0 || strcasecmp(argv[3],"password")==0) {
 					printf("3");
 					import_ascii(db,IMPORT_PASSWD, argv[4]);
 				} else {
@@ -1002,11 +1002,11 @@ int main(int argc, char **argv) {
 
 			case 'v':
 				// Verify
-				if ( check_for_db(&db, argv[1], 0, (argc > 3 && stricmp(argv[3],"all")==0) ? 0 : 1) ) {
+				if ( check_for_db(&db, argv[1], 0, (argc > 3 && strcasecmp(argv[3],"all")==0) ? 0 : 1) ) {
 					return 1;
 				}
 
-				verify(db, (argc > 3 && stricmp(argv[3],"all")==0) ? 1 : 0);
+				verify(db, (argc > 3 && strcasecmp(argv[3],"all")==0) ? 1 : 0);
 				break;
 
 			default:
