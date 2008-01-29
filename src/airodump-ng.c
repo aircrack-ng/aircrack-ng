@@ -1584,7 +1584,6 @@ skip_probe:
                 if(h80211[24] == 0x01) ap_cur->security |= AUTH_PSK;
             }
         }
-        st_cur->wpa.state = 0;
     }
 
     /* packet parsing: Association Request */
