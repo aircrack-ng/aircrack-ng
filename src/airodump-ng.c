@@ -1658,7 +1658,8 @@ skip_probe:
 
             p += 2 + p[1];
         }
-        st_cur->wpa.state = 0;
+        if(st_cur != NULL)
+            st_cur->wpa.state = 0;
     }
 
     /* packet parsing: some data */
