@@ -395,12 +395,8 @@ while true; do
   echo "### 8)  Chopchop attack             ###"
   echo "#######################################"
   echo "### Injection if xor file generated ###" 
-  echo "### 9)  Chopchop injection          ###"
-  echo "### 10) Chopchop injection client   ###"
-  echo "### 11) Fragment injection          ###"
-  echo "### 12) Fragment injection client   ###"
-  echo "### 13) ARP inject from xor (PSK)   ###"
-  echo "### 14) Return to main menu         ###"
+  echo "### 9) ARP inject from xor (PSK)    ###"
+  echo "### 10) Return to main menu         ###"
   read yn
   echo ""
   case $yn in
@@ -412,12 +408,8 @@ while true; do
     6 ) interactiveattack ; break ;;
     7 ) fragmentationattack ; break ;;
     8 ) chopchopattackclient ; break ;;
-    9 ) chopchopend ; break ;;
-   10 ) chopchopclientend ; break ;;
-   11 ) fragnoclientend ; break ;;
-   12 ) fragmentationattackend ; break ;;
-   13 ) pskarp ; break ;;
-   14 ) break ;;
+    9 ) pskarp ; break ;;
+   10 ) break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
@@ -879,20 +871,17 @@ xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -f
 function clientdetect {
 capture & deauthall & menufonction
 }
-function solointeractiveattack {
-xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -b $Host_MAC -p 0841 -c FF:FF:FF:FF:FF:FF -x $INJECTRATE & menufonction
-}
 function attack {
-capture & xterm $HOLD -title "Injection: Host: $Host_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86  -x $INJECTRATE & fakeauth3 & menufonction
+capture & xterm $HOLD -title "Injection: Host: $Host_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE & fakeauth3 & menufonction
 }
 function attackclient {
-capture & xterm $HOLD -title "Injection: Host : $Host_MAC CLient : $Client_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86 -x $INJECTRATE & menufonction
+capture & xterm $HOLD -title "Injection: Host : $Host_MAC CLient : $Client_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE & menufonction
 }
 function interactiveattack {
-capture & xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -x $INJECTRATE & menufonction
+capture & xterm $HOLD -title "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC $Client_MAC -x $INJECTRATE & menufonction
 }
 function fakeinteractiveattack {
-capture & xterm $HOLD -title "Interactive Packet Sel on Host: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -x $INJECTRATE & fakeauth3 & menufonction
+capture & xterm $HOLD -title "Interactive Packet Sel on Host: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE & fakeauth3 & menufonction
 }
 function chopchopattack {
 clear
@@ -950,14 +939,14 @@ capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending fo
 function injectmenu {
 while true; do
   echo "#######################################"
-  echo "###  Select task to perform         ###"
+  echo "###  If previous step went fine     ###"
+  echo "###  Select next, otherwise hit5    ###"
   echo "###                                 ###"
   echo "###   1) Frag injection             ###"
   echo "###   2) Frag with client injection ###"
   echo "###   3) Chochop injection          ###"
   echo "###   4) Chopchop with client inj.  ###"
-  echo "###   5) ARP inject from xor (PSK)  ###"
-  echo "###   7) Return to main menu        ###"
+  echo "###   5) Return to main menu        ###"
   echo "###                                 ###"
   echo "#######################################"
   read yn
@@ -967,8 +956,7 @@ while true; do
     2 ) fragmentationattackend ; break ;;
     3 ) chopchopend ; break ;; 
     4 ) chopchopclientend ; break ;;
-    5 ) pskarp ; break ;;
-    7 ) break ;;
+    5 ) break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
