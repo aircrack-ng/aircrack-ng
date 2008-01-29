@@ -8,7 +8,7 @@ IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
 
-PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon"
+PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon|wlassistant"
 
 usage() {
 	printf "usage: `basename $0` <start|stop|check> <interface> [channel]\n"
