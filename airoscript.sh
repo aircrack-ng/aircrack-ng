@@ -96,6 +96,7 @@ function menu {
   echo "### 7) Deauth  - Deauth from target ###"
   echo "### 8) Others  - Various utilities  ###"
   echo "### 9) Monitor - Set Monitor mode   ###"
+  echo "### 10)Inject  - Jump to inj. menu  ###"
   echo ""			
 }
 
@@ -610,7 +611,7 @@ function wpaconfigure {
 		ping www.google.com
 }
 function witchcrack {
-if [ "$Host_ENC" = "WEP" ]
+if [ $Host_ENC = "WEP" ]
   		then
 		crack
 		else
@@ -1012,18 +1013,21 @@ while true; do
 done 
 }
 function wesside {
+iwconfig $WIFI rate 1M
 rm -rf prga.log
 rm -rf wep.cap
 rm -rf key.log
 xterm $HOLD $TOPLEFTBIG -title "Wesside-ng attack" -bg "#000000" -fg "#1DFF00" -e wesside-ng -i $WIFI & choosewesside
 }
 function wessidetarget {
+iwconfig $WIFI rate 1M
 rm -rf prga.log
 rm -rf wep.cap
 rm -rf key.log
 xterm $HOLD $TOPLEFTBIG -title "Wesside-ng attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e wesside-ng -v $Host_MAC -i $WIFI & choosewesside
 }
 function wessidenewtarget {
+iwconfig $WIFI rate 1M
 rm -rf prga.log
 rm -rf wep.cap
 rm -rf key.log
@@ -1095,7 +1099,7 @@ function mdkpain {
 xterm $HOLD $TOPLEFTBIG -title "MDK attack" -bg "#000000" -fg "#1DFF00" -e mdk3 $WIFI d & choosemdk
 }
 function mdktargetedpain {
-xterm $HOLD $TOPLEFTBIG -title "MDK attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e mdk3 $WIFI p -b a -c $Host_CHAN -t $Host_MAC & choosemdk
+xterm -hold $TOPLEFTBIG -title "MDK attack on AP: $Host_SSID" -bg "#000000" -fg "#1DFF00" -e mdk3 $WIFI p -b a -c $Host_CHAN -t $Host_MAC & choosemdk
 }
 function mdknewtarget {
 ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
@@ -1236,6 +1240,9 @@ select choix in $CHOICES; do
 	menu
 	elif [ "$choix" = "9" ]; then
 	monitor_interface
+	menu
+	elif [ "$choix" = "10" ]; then
+	injectmenu
 	menu
 	else
 	clear
