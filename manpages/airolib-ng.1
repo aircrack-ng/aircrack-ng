@@ -14,31 +14,28 @@ is a tool designed to manage and create WPA/WPA pre-computed tables to be used w
 It is name of the database file. Optionally specify the full path.
 .SH OPERATION
 .TP
-.I init
-Create a new database file and its table layout.
-.TP
-.I stats
+.I --stats
 Output information about the database.
 .TP
-.I sql <sql>
+.I --sql <sql>
 Execute specified SQL statement.
 .TP
-.I clean [all]
+.I --clean [all]
 Clean the database from old junk. When specifying 'all', it will also reduce filesize if possible and run an integrity check.
 .TP
-.I batch
+.I --batch
 Start batch-processing all combinations of ESSIDs and passwords.
 .TP
-.I verify [all]
+.I --verify [all]
 Verify a set of randomly chosen PMKs. If 'all' is given, all invalid PMK in the database will be deleted.
 .TP
-.I import ascii [essid|passwd] <file>
+.I --import [essid|passwd] <file>
 Import a flat file as a list of ESSIDs or passwords.
 .TP
 .I import cowpatty <file>
 Import a coWPAtty file.
 .TP
-.I export cowpatty <essid> <file>
+.I --export cowpatty <essid> <file>
 Export to a cowpatty file.
 .SH AUTHOR
 This manual page was written by Thomas d'Otreppe.
