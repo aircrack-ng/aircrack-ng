@@ -557,7 +557,7 @@ function target {
 }  
 # interface configuration using found key (tweaks by CurioCT) 	
 function configure {
-		$AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -s -0 -z $DUMP_PATH/$Host_MAC-01.cap &> $DUMP_PATH/$Host_MAC.key
+		$AIRCRACK -a 1 -b $Host_MAC -s -0 -z $DUMP_PATH/$Host_MAC-01.cap &> $DUMP_PATH/$Host_MAC.key 
 		KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
 		echo "Using this key $KEY to connect to: $Host_SSID"
 		echo ""
@@ -770,7 +770,7 @@ ifconfig $WIFI up
 iwconfig $WIFI mode monitor				
 }
 function witchconfigure {
-if [ "$Host_ENC" = "WEP" ]
+if [ $Host_ENC = "WEP" ]
   		then
 		configure
 		else
@@ -778,10 +778,10 @@ if [ "$Host_ENC" = "WEP" ]
 		fi			
 }
 function crackptw   {
-xterm $HOLD -title "Aircracking-PTW: $Host_SSID" $TOPRIGHT -e $AIRCRACK -z -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+xterm -hold -title "Aircracking-PTW: $Host_SSID" $TOPRIGHT -e $AIRCRACK -z -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
 }
 function crackstd   {
-xterm $HOLD -title "Aircracking: $Host_SSID" $TOPRIGHT -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+xterm -hold -title "Aircracking: $Host_SSID" $TOPRIGHT -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
 }
 function crackman {
 echo -n "type fudge factor"
@@ -792,7 +792,7 @@ echo -n "type encryption size 64,128 etc..."
 read ENC_SIZE
 echo You typed: $ENC_SIZE
 set -- ${ENC_SIZE}
-xterm $HOLD -title "Manual cracking: $Host_SSID" $TOPRIGHT -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGE_FACTOR -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+xterm -hold -title "Manual cracking: $Host_SSID" $TOPRIGHT -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGE_FACTOR -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
 }
 function crack {
 while true; do
@@ -819,7 +819,7 @@ rm -rf $DUMP_PATH/$Host_MAC*
 xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $WIFI & menufonction
 }
 function wpacrack {
-xterm $HOLD $TOPRIGHT -title "Aircracking: $Host_SSID" -e $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction
+xterm -hold $TOPRIGHT -title "Aircracking: $Host_SSID" -e $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction
 }
 function Scan {
 clear
