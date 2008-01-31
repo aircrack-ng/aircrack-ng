@@ -102,30 +102,61 @@ function menu {
 
 # starts monitor mode on selected interface		
 function monitor_interface {
-IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
 if [ "$TYPE" = "RalinkUSB" ]
 then
-iwpriv $WIFI rfmontx 1
-iwpriv $WIFI forceprism 1
+IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
+iwconfig $WIFI mode monitor
 echo $IS_MONITOR
 
 elif [ "$TYPE" = "Ralinkb/g" ]
 then
+IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
 iwpriv $WIFI rfmontx 1
 iwpriv $WIFI forceprism 1
 echo $IS_MONITOR
 
 elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 then
+IS_MONITOR=`$AIRMON start wifi0 |grep monitor`
 $AIRMON stop ath0
 $AIRMON stop ath1
 $AIRMON stop ath2
-$AIRMON start wifi0
+echo $IS_MONITOR
 else
+IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
 echo "running standard monitor mode command"
 echo $IS_MONITOR
 fi 
 }
+
+function monitor_interface2 {
+if [ "$TYPE" = "RalinkUSB" ]
+then
+IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+iwconfig $WIFI mode monitor channel $Host_CHAN
+echo $IS_MONITOR
+
+elif [ "$TYPE" = "Ralinkb/g" ]
+then
+IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+iwpriv $WIFI rfmontx 1
+iwpriv $WIFI forceprism 1
+echo $IS_MONITOR
+
+elif [ "$TYPE" = "Atherosmadwifi-ng" ]
+then
+IS_MONITOR=`$AIRMON start wifi0 $Host_CHAN |grep monitor`
+$AIRMON stop ath0
+$AIRMON stop ath1
+$AIRMON stop ath2
+echo $IS_MONITOR
+else
+IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+echo "running standard monitor mode command"
+echo $IS_MONITOR
+fi 
+}
+
 # this sets wifi interface if not hard coded in the script
 function setinterface {
 #INTERFACES=`iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
@@ -621,9 +652,11 @@ if [ $Host_ENC = "WEP" ]
 function witchattack {
 if [ $Host_ENC = "WEP" ]
   		then
+		monitor_interface2
 		attackwep
 		elif [ $Host_ENC = "WPA" ]
 		then
+		monitor_interface2
 		wpahandshake
 		else
 		attackopn
@@ -870,6 +903,7 @@ function fakeauth3 {
 xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth 5 -o 10 -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI & menufonction
 }
 function clientdetect {
+iwconfig $WIFI channel $Host_CHAN
 capture & deauthall & menufonction
 }
 function attack {
