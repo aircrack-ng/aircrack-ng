@@ -95,8 +95,7 @@ function menu {
   echo "### 6) Fakeauth- Auth with target   ###"
   echo "### 7) Deauth  - Deauth from target ###"
   echo "### 8) Others  - Various utilities  ###"
-  echo "### 9) Monitor - Set Monitor mode   ###"
-  echo "### 10)Inject  - Jump to inj. menu  ###"
+  echo "### 9) Inject  - Jump to inj. menu  ###"
   echo ""			
 }
 
@@ -1007,7 +1006,8 @@ while true; do
   echo "###   4) Change MAC of interface    ###"
   echo "###   5) Mdk3                       ###"
   echo "###   6) Wesside-ng                 ###"
-  echo "###   7) Return to main menu        ###"
+  echo "###   7) Enable monitor mode        ###"
+  echo "###   8) Return to main menu        ###"
   echo "###                                 ###"
   echo "#######################################"
   read yn
@@ -1019,7 +1019,8 @@ while true; do
     4 ) wichchangemac ; break ;;
     5 ) choosemdk ; break ;;
     6 ) choosewesside ; break ;;
-    7 ) break ;;
+    7 ) monitor_interface ; break ;;
+    8 ) break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
@@ -1273,9 +1274,6 @@ select choix in $CHOICES; do
 	optionmenu
 	menu
 	elif [ "$choix" = "9" ]; then
-	monitor_interface
-	menu
-	elif [ "$choix" = "10" ]; then
 	injectmenu
 	menu
 	else
