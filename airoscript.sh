@@ -128,6 +128,30 @@ echo $IS_MONITOR
 fi 
 }
 
+
+function airmoncheck {
+if [ "$TYPE" = "RalinkUSB" ]
+then
+$AIRMON check $WIFI
+echo ""
+
+elif [ "$TYPE" = "Ralinkb/g" ]
+then
+$AIRMON check $WIFI
+echo ""
+
+elif [ "$TYPE" = "Atherosmadwifi-ng" ]
+then
+$AIRMON check wifi0
+echo ""
+
+else
+$AIRMON check $WIFI
+echo ""
+fi 
+}
+
+
 function monitor_interface2 {
 if [ "$TYPE" = "RalinkUSB" ]
 then
@@ -1007,7 +1031,8 @@ while true; do
   echo "###   5) Mdk3                       ###"
   echo "###   6) Wesside-ng                 ###"
   echo "###   7) Enable monitor mode        ###"
-  echo "###   8) Return to main menu        ###"
+  echo "###   8) Checks with airmon-ng      ###"
+  echo "###   9) Return to main menu        ###"
   echo "###                                 ###"
   echo "#######################################"
   read yn
@@ -1020,7 +1045,8 @@ while true; do
     5 ) choosemdk ; break ;;
     6 ) choosewesside ; break ;;
     7 ) monitor_interface ; break ;;
-    8 ) break ;;
+    8 ) airmoncheck ; break ;;
+    9 ) break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
