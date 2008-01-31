@@ -1,3 +1,27 @@
+Changelog for 2.0.9
+-fixed client and clientless attacks chopchop and frag packet injection not generating IVs because -h MAC was not set
+-force frag, chopchop and aircrack-ng xterms to stay on screen after successfull command so you can see results
+-cleaned the code some more
+-cleaning functions needs more tweaks
+-atheros users need to use options 9 (monitor mode) before other commands to create-destroys correct VAPS
+-fixed "unary operator expected" msg (harmless bug) (not fully fixed because of "" generating errors in logic tests)
+-tweaked 2 steps attacks (frag, chopchop) to go to menu to inject after successfull first step
+-added option to jump to injection menu (added this to the main menu)
+-fixed AP encryption detection for cracking step (bug was introduced by "")
+-lowered adapter speed to 1M for wesside-ng attacks
+-added -hold to mdk attack to allow users to see results before the windows closes
+
+Changelog for 2.0.8 (27/01/2008)
+-added wesside-ng airoscript style usage
+-added interface type detection
+-tweaked menu
+-first attempt at making airoscript work with different adapters (add more card support)(BIG THX TO GREEN-FREQ!!!)
+-atheros device are now supported
+-added mdk3
+-added back to main menu options
+-fixed chopchop attack (BIG THX TO GREEN-FREQ!!!)
+-tweaked FAKE_MAC function for atheros
+
 Changelog for 2.0.7 BETA1 (21/01/2007)
 -changed capture from IVs to full date (ivs to cap)
 -updated script for new implementation of fragmentation attack
