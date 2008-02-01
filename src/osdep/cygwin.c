@@ -1,5 +1,5 @@
   /*
-   *  Copyright (c) 2007, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
+   *  Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
    *
    *  OS dependent API for cygwin. It relies on an external
    *  DLL to do the actual wifi stuff
@@ -37,8 +37,8 @@
 	#include "airpcap.h"
 #endif
 
-#define xstr(s) str(s) 
-#define str(s) #s 
+#define xstr(s) str(s)
+#define str(s) #s
 
 #define DLL_EXTENSION ".dll"
 

@@ -1,8 +1,8 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2006,2007 Thomas d'Otreppe
- *  Copyright (C) 2004,2005 Christophe Devine
+ *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  Advanced WEP attacks developed by KoreK
  *  WPA-PSK  attack code developed by Joshua Wright
@@ -168,7 +168,7 @@ const uchar R[256] =
 
 char usage[] =
 "\n"
-"  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007,2008 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"

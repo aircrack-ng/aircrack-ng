@@ -1,8 +1,8 @@
 /*
  *  802.11 WEP replay & injection attacks
  *
- *  Copyright (C) 2006,2007 Thomas d'Otreppe
- *  Copyright (C) 2004,2005 Christophe Devine
+ *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  WEP decryption attack (chopchop) developped by KoreK
  *
@@ -147,7 +147,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 char usage[] =
 
 "\n"
-"  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007,2008 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
