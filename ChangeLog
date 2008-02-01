@@ -1,8 +1,11 @@
-Version 1.0-beta2 (changes from aircrack-ng 1.0-beta1) - Released ?? ??? ????:
+Version 1.0-beta2 (changes from aircrack-ng 1.0-beta1) - Released 01 Feb 2008:
 * aircrack-ng: Cracking WPA now does only require 2 packets (instead of 4).
 * airodump-ng: Fixed (WEP) open system and shared key system detection.
 * airodump-ng (win): Battery status is now displayed.
 * airdriver-ng: Fixed module detection.
+* airdriver-ng: Updated drivers.
+* airdriver-ng: Added firmware support.
+* airdriver-ng: Added softmac installation.
 * airdecap-ng: Save packets with ICV error in a separate file.
 * airolib-ng: Automatically create a database if it does not exist. "init" option is not necessary anymore.
 * airolib-ng: Now uses getopts for options.
@@ -10,13 +13,13 @@ Version 1.0-beta2 (changes from aircrack-ng 1.0-beta1) - Released ?? ??? ????:
 * airdriver-ng: Fixed softmac installation
 * airmon-ng: Added detection of ipwraw-ng driver.
 * airmon-ng: When stopping an interface, it is in managed mode
-* Added instructions to compile airolib-ng and using '-r' option in aircrack-ng for cygwin.
-* Fixed compilation of aircrack-ng with some gcc versions
 * Makefile: supports DESTDIR or destdir parameter.
 * Makefile: renamed ROOT (used by gentoo for other stuff) variable by AC_ROOT.
 * manpages: Fixes for whatis
 * patches: updated cygwin sqlite patch
 * patches: updated rtl8187 patch
+* Added instructions to compile airolib-ng and using '-r' option in aircrack-ng for cygwin.
+* Fixed compilation of aircrack-ng with some gcc versions
 
 Version 1.0-beta1 (changes from aircrack-ng 0.9.2) - Released 01 October 2007:
 * airodump-ng: Added --berlin option (see code for more information).
