@@ -1,0 +1,46 @@
+diff -Naur linux-2.6.21.1_orig/net/ieee80211/softmac/ieee80211softmac_module.c linux-2.6.21.1_rawtx/net/ieee80211/softmac/ieee80211softmac_module.c
+--- linux-2.6.21.1_orig/net/ieee80211/softmac/ieee80211softmac_module.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1_rawtx/net/ieee80211/softmac/ieee80211softmac_module.c	2007-12-03 23:38:51.000000000 +0100
+@@ -238,18 +238,34 @@
+ 	struct ieee80211softmac_txrates *txrates = &mac->txrates;
+ 	u32 change = 0;
+ 
+-	change |= IEEE80211SOFTMAC_TXRATECHG_DEFAULT;
+-	txrates->default_rate = ieee80211softmac_highest_supported_rate(mac, &mac->bssinfo.supported_rates, 0);
++	if (mac->ieee->iw_mode == IW_MODE_MONITOR)
++	{
++		change |= IEEE80211SOFTMAC_TXRATECHG_DEFAULT;
++		txrates->default_rate = mac->txrates.user_rate;
+ 
+-	change |= IEEE80211SOFTMAC_TXRATECHG_DEFAULT_FBACK;
+-	txrates->default_fallback = lower_rate(mac, txrates->default_rate);
++		change |= IEEE80211SOFTMAC_TXRATECHG_DEFAULT_FBACK;
++		txrates->default_fallback = mac->txrates.user_rate;
+ 
+-	change |= IEEE80211SOFTMAC_TXRATECHG_MCAST;
+-	txrates->mcast_rate = ieee80211softmac_highest_supported_rate(mac, &mac->bssinfo.supported_rates, 1);
++		change |= IEEE80211SOFTMAC_TXRATECHG_MCAST;
++		txrates->mcast_rate = mac->txrates.user_rate;
+ 
+-	if (mac->txrates_change)
+-		mac->txrates_change(mac->dev, change);
++		if (mac->txrates_change)
++			mac->txrates_change(mac->dev, change);
++	}
++	else
++	{
++		change |= IEEE80211SOFTMAC_TXRATECHG_DEFAULT;
++		txrates->default_rate = ieee80211softmac_highest_supported_rate(mac, &mac->bssinfo.supported_rates, 0);
++
++		change |= IEEE80211SOFTMAC_TXRATECHG_DEFAULT_FBACK;
++		txrates->default_fallback = lower_rate(mac, txrates->default_rate);
+ 
++		change |= IEEE80211SOFTMAC_TXRATECHG_MCAST;
++		txrates->mcast_rate = ieee80211softmac_highest_supported_rate(mac, &mac->bssinfo.supported_rates, 1);
++
++		if (mac->txrates_change)
++			mac->txrates_change(mac->dev, change);
++	}
+ }
+ 
+ void ieee80211softmac_init_bss(struct ieee80211softmac_device *mac)

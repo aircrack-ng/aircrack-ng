@@ -1,0 +1,67 @@
+=== Requirements ===
+
+ * OpenSSL development package
+ * If you want to use airolib-ng and '-r' option on aircrack-ng, 
+   - SQLite development package >= 3.3.17 (3.4.X version or better is recommended)
+   - autoconf 2.50
+   - libtool
+ * For cygwin, it also requires w32api package
+ * If you want to use Airpcap, the 'developer' directory from the CD is required.
+ 
+
+=== Compilating ===
+
+ * Compilation:
+    make
+    # If you want to use airolib-ng and co,
+    # issue 'make SQLITE=true' instead of 'make'
+    # On cygwin, you have to install sqlite manually, 
+    # see next point for instructions on how to install it.
+    
+    # If you want Airpcap support (cygwin only), append
+    # 'airpcap=true' to make. Requirement: Copy 'developers'
+    # directory from Airpcap CD one level below this
+    # INSTALLING file
+
+ * Strip debugging symbols:
+    make strip
+
+ * Installing:
+    make install
+    # If you want to use airolib-ng and co,
+    # issue 'make SQLITE=true install' instead of 'make install'
+    
+    # Airpcap installation doesn't require any special parameter
+    # since it's built-in (sqlite require an additional file to be
+    # installed).
+
+ * Uninstall:
+    make uninstall
+
+
+REM:
+ * You can find a several WPA handshake and other capture files
+   as well as a dictionnary in "test/" directory
+
+=== Compiling sqlite on cygwin ===
+
+  wget http://www.sqlite.org/sqlite-3.5.5.tar.gz
+  tar -zxf sqlite-3.5.5.tar.gz
+  cd sqlite-3.5.5
+  ./configure --disable-tcl
+  wget http://patches.aircrack-ng.org/sqlite-3.5.4-lib_cygwin.diff
+  patch -i sqlite-3.5.4-lib_cygwin.diff
+  make
+  make install
+
+=== Using precompiled binaries ===
+
+Linux/BSD:
+ * Use your package manager to download aircrack-ng
+ 
+Windows:
+ * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data)
+   See "Drivers" page on the wiki: http://www.aircrack-ng.org/doku.php?id=drivers and 
+ * aircrack-ng suite is command line tools. So, you have to open a commandline
+   (Start menu -> Run... -> cmd.exe) then use them
+ * Run the executables without any parameters to have help
