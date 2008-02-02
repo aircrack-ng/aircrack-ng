@@ -1451,7 +1451,10 @@ skip_probe:
             /* get the maximum speed in Mb and the AP's channel */
 
             if( p[0] == 0x01 || p[0] == 0x32 )
-                ap_cur->max_speed = ( p[1 + p[1]] & 0x7F ) / 2;
+            {
+                if(ap_cur->max_speed < ( p[1 + p[1]] & 0x7F ) / 2)
+                    ap_cur->max_speed = ( p[1 + p[1]] & 0x7F ) / 2;
+            }
 
             if( p[0] == 0x03 )
                 ap_cur->channel = p[2];
