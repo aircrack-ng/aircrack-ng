@@ -43,7 +43,10 @@ namespace Aircrack_ng
         private StreamWriter debugStream = null;
 
         private string Changelog =
-                  "v1.0.0.5\n"
+                  "v1.0.0.6\n"
+                + "    - Fixed \"Choose\" button (airdecap-ng)\n"
+                + "\n"
+                + "v1.0.0.5\n"
                 + "    - Allow choosing WEP key size when using PTW\n"
                 + "\n"
                 + "v1.0.0.4\n"
@@ -127,7 +130,7 @@ namespace Aircrack_ng
 
             // ... and copyright
             this.lblCopyright.Text =
-                "Copyright © 2006, 2007 Thomas d'Otreppe";
+                "Copyright © 2006, 2007, 2008 Thomas d'Otreppe";
 
             this.lblCopyright.Left = (this.tAboutBox.Width - this.lblCopyright.Width) / 2;
             //End about box
@@ -539,8 +542,8 @@ namespace Aircrack_ng
         {
             string captureFileExtensions =
                 "Capture files (*.cap, *.dump)|*.cap;*.dump|All files (*.*)|*.*";
-            this.tbFilenames.Text = " " + this.FileDialog(captureFileExtensions, 0, false, null).Trim();
-            this.tbFilenames.Text = this.tbFilenames.Text.Trim();
+
+            this.tbDecapFile.Text = this.FileDialog(captureFileExtensions, 0, false, null).Trim();
         }
 
         private void rbWEP_CheckedChanged(object sender, EventArgs e)
