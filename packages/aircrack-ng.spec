@@ -3,7 +3,7 @@
 # these bits are constant across distributions
 #
 Name:           aircrack-ng
-Version:        0.9.1
+Version:        0.9.2
 Summary:        Reliable 802.11 (wireless) sniffer and WEP/WPA-PSK key cracker
 License:        GPL
 Source:         http://freshmeat.net/redir/aircrack-ng/63481/url_tgz/%{name}-%{version}.tar.gz

@@ -33,6 +33,10 @@ If you're not compiling aircrack-ng on Linux or FreeBSD, first, you have
 
 Optionnaly, you can strip debugging symbols by running 'make strip' before 'make install'
 
+=== Compiling with airpcap support ===
+
+See README_AIRCAP.TXT
+
 === Using precompiled binaries ===
 
 Linux/BSD:

@@ -1,6 +1,11 @@
 Documentation, tutorials, ... can be found on www.aircrack-ng.org
 See also manpages and the forum.
 
+Airpcap
+-------
+
+Latest driver (3.2.1) is required. See README_AIRCAP.TXT for more information.
+
 
 OpenWrt Devices
 ---------------

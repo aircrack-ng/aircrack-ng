@@ -2,14 +2,14 @@ REVISION	= $(shell sh ./evalrev)
 REVFLAGS        = -D_REVISION=$(REVISION)
 
 CC              = gcc
-CFLAGS          ?= -g -W -Wall -O3
+CFLAGS          ?= -g -W -Wall -O3 -IAirPcap_Devpack/AirPcap_Devpack/include -IAirPcap_Devpack/WinPcap_Devpack/Include -LAirPcap_Devpack/AirPcap_Devpack/lib -LAirPcap_Devpack/WinPcap_Devpack/Lib -DWIN32
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 
 destdir         = 
 prefix          = /usr/local
 bindir          = $(prefix)/bin
 
-BINFILES        = aircrack-ng.exe airdecap-ng.exe packetforge-ng.exe ivstools.exe kstats.exe makeivs.exe
+BINFILES        = aircrack-ng.exe airdecap-ng.exe packetforge-ng.exe ivstools.exe kstats.exe makeivs.exe aireplay-ng.exe
 
 ZIPFILE		= aircrack-ng-win.zip
 REVFILE		= r$(REVISION)
@@ -24,6 +24,9 @@ aircrack-ng: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/airc
 
 airdecap-ng: src/airdecap-ng.c src/crypto.c src/common.c src/crc.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/airdecap-ng.c src/crypto.c src/common.c src/crc.c -o airdecap-ng
+
+aireplay-ng: src/aireplay-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/crc.c
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/aireplay-ng.c src/crypto.c src/sha1-mmx.S src/common.c src/crc.c -o aireplay-ng -lpthread -lwpcap -lairpcap
 	
 packetforge-ng: src/packetforge-ng.c src/common.c src/crc.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(REVFLAGS) src/packetforge-ng.c src/common.c src/crc.c -o packetforge-ng
@@ -47,6 +50,7 @@ install: all
 uninstall:
 	-rm -f $(destdir)$(bindir)/aircrack-ng.exe
 	-rm -f $(destdir)$(bindir)/airdecap-ng.exe
+	rm -f $(destdir)$(bindir)/aireplay-ng.exe
 	-rm -f $(destdir)$(bindir)/arpforge.exe
 	-rm -f $(destdir)$(bindir)/packetforge-ng.exe
 	-rm -f $(destdir)$(bindir)/mergeivs.exe
