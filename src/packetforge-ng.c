@@ -1,7 +1,7 @@
 /*
  *  802.11 ARP-request WEP packet forgery
  *
- *  Copyright (C) 2006,2007 Thomas d'Otreppe
+ *  Copyright (C) 2006,2007,2008 Thomas d'Otreppe
  *  Copyright (C) 2004,2005  Christophe Devine (arpforge)
  *
  *  UDP, ICMP and custom packet forging developped by Martin Beck
@@ -67,7 +67,7 @@ extern int add_crc32(unsigned char* data, int length);
 
 char usage[] =
 "\n"
-"  %s - (C) 2006,2007 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007,2008 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine and Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
