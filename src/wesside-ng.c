@@ -139,6 +139,7 @@ struct wstate {
 	struct timeval		ws_last_wcount;
 	struct wif		*ws_wi;
 	unsigned int		ws_last_wep_count;
+	int			ws_ignore_ack;
 
 	/* tx_state */
 	int			ws_waiting_ack;
@@ -437,6 +438,11 @@ static void send_frame(struct wstate *ws, unsigned char* buf, int len)
 	// retransmit!
 	if (len == -1) {
 		ws->ws_retries++;
+
+		if (ws->ws_ignore_ack && ws->ws_retries >= ws->ws_ignore_ack) {
+			ws->ws_waiting_ack = 0;
+			return;
+		}
 
 		if (ws->ws_retries > 10) {
 			time_print("ERROR Max retransmists for (%d bytes):\n",
@@ -2018,6 +2024,7 @@ static void usage(char* pname)
 		"       -v <victim mac> : Victim BSSID\n"
 		"       -t  <threshold> : Cracking threshold\n"
 		"       -f   <max chan> : Highest scanned chan (default: 11)\n"
+		"       -k      <txnum> : Ignore acks and tx txnum times\n"
 		"\n",
 		getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
 
@@ -2071,8 +2078,12 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((ch = getopt(argc, argv, "hi:m:a:n:cp:v:t:f:")) != -1) {
+	while ((ch = getopt(argc, argv, "hi:m:a:n:cp:v:t:f:k:")) != -1) {
 		switch (ch) {
+			case 'k':
+				ws->ws_ignore_ack = atoi(optarg);
+				break;
+
 			case 'a':
 				str2mac(ws->ws_mymac, optarg);
 				ws->ws_have_mac = 1;
