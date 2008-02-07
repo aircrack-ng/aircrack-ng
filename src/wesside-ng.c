@@ -1133,7 +1133,6 @@ static void got_wep(struct wstate *ws, struct ieee80211_frame* wh, int rd)
 	unsigned char clear[1024];
 	int clearsize;
 	unsigned char *body;
-        int weight[16];
 
 	bodylen = rd - sizeof(struct ieee80211_frame);
 
@@ -1170,7 +1169,7 @@ static void got_wep(struct wstate *ws, struct ieee80211_frame* wh, int rd)
 		return;
 	}
 
-	known_clear(clear, &clearsize, weight, (void*) wh, dlen);
+	known_clear(clear, &clearsize, NULL, (void*) wh, dlen);
 	time_print("Datalen %d Known clear %d\n", dlen, clearsize);
 
 	set_prga(ws, body, &body[4], clear, clearsize);

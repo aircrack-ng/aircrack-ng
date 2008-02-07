@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <arpa/inet.h>
+#include <assert.h>
 #include "crypto.h"
 #include "crctable.h"
 #include "aircrack-ng.h"
@@ -368,6 +369,9 @@ int is_cdp_vtp(void *wh)
         return 0;
 }
 
+/* weight is used for guesswork in PTW.  Can be null if known_clear is not for
+ * PTW, but just for getting known clear-text.
+ */
 int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 {
         unsigned char *ptr = clear;
@@ -399,7 +403,8 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 
             len = ptr - ((unsigned char*)clear);
             *clen = len;
-            weight[0] = 256;
+	    if (weight)
+                weight[0] = 256;
             return 1;
 
         }
@@ -411,7 +416,8 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 
             len = ptr - ((unsigned char*)clear);
             *clen = len;
-            weight[0] = 256;
+	    if (weight)
+                weight[0] = 256;
             return 1;
         }
         else if(is_cdp_vtp(wh)) /*spantree*/
@@ -422,7 +428,8 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 
             len = ptr - ((unsigned char*)clear);
             *clen = len;
-            weight[0] = 256;
+	    if (weight)
+                weight[0] = 256;
             return 1;
         }
         else /* IP */
@@ -444,6 +451,11 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
                 memcpy(ptr, &iplen, len);
                 ptr += len;
 
+		/* no guesswork */
+		if (!weight) {
+			*clen = ptr - ((unsigned char*)clear);
+			return 1;
+		}
 #if 1
 		/* setting IP ID 0 is ok, as we
                  * bruteforce it later
@@ -466,6 +478,7 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
                 memcpy(clear+32+14, "\x00\x00", 2); //ip flags=none
 
                 num=2;
+		assert(weight);
                 weight[0] = 220;
                 weight[1] = 36;
 
