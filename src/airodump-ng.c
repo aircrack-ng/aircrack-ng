@@ -58,6 +58,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <errno.h>
 #include <time.h>
 #include <getopt.h>
@@ -296,6 +297,30 @@ struct globals
     unsigned char wpa_bssid[6];   /* the wpa handshake bssid   */
 }
 G;
+
+/* Convert a 16-bit little-endian value to CPU endianness. */
+uint16_t le16_to_cpu(uint16_t le16)
+{
+    uint16_t ret;
+
+    ret =  (uint16_t)(((uint8_t *)&le16)[0]);
+    ret |= (uint16_t)(((uint8_t *)&le16)[1]) << 8;
+
+    return ret;
+}
+
+/* Convert a 32-bit little-endian value to CPU endianness. */
+uint32_t le32_to_cpu(uint32_t le32)
+{
+    uint32_t ret;
+
+    ret =  (uint32_t)(((uint8_t *)&le32)[0]);
+    ret |= (uint32_t)(((uint8_t *)&le32)[1]) << 8;
+    ret |= (uint32_t)(((uint8_t *)&le32)[2]) << 16;
+    ret |= (uint32_t)(((uint8_t *)&le32)[3]) << 24;
+
+    return ret;
+}
 
 int check_shared_key(unsigned char *h80211, int caplen)
 {
@@ -4416,18 +4441,19 @@ usage:
                         continue;
                     }
 
-                    n = *(unsigned short *)( buffer + 2 );
+                    n = le16_to_cpu(*(uint16_t *)( buffer + 2 ));
 
                     /* ipw2200 1.0.7 */
-                    if( *(int *)( buffer + 4 ) == 0x0000082E )
+                    if( le32_to_cpu(*(uint32_t *)( buffer + 4 )) == 0x0000082E )
                         power = buffer[14];
 
                     /* ipw2200 1.2.0 */
-                    if( *(int *)( buffer + 4 ) == 0x0000086F )
+                    if( le32_to_cpu(*(uint32_t *)( buffer + 4 )) == 0x0000086F )
                         power = buffer[15];
 
                     /* zd1211rw-patched */
-                    if(G.is_zd1211rw[i] && *(int *)( buffer + 4 ) == 0x0000006E )
+                    if(G.is_zd1211rw[i] &&
+                       le32_to_cpu(*(uint32_t *)( buffer + 4 )) == 0x0000006E )
                         power = buffer[14];
 
                     if( n <= 0 || n >= caplen )
@@ -4471,7 +4497,7 @@ usage:
 
 		for( k = 0; k <= 13 ; k++ )
 		{
-		    if( rtp->it_present & ( 1 << k ) )
+		    if( le32_to_cpu(rtp->it_present) & ( 1 << k ) )
 		    {
 			switch( k )
 			{
@@ -4577,7 +4603,7 @@ usage:
 		of the capture (bpf header lenght + radiotap header
 		lenght)
 	    */
-	    n = bpfp->bh_hdrlen + rtp->it_len;
+	    n = bpfp->bh_hdrlen + le16_to_cpu(rtp->it_len);
 
 	    if( n <= 0 || n >= caplen )
 		continue;
