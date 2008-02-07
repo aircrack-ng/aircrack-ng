@@ -480,7 +480,9 @@ static void send_frame(struct wstate *ws, unsigned char* buf, int len)
 
 	inject(ws->ws_wi, lame, len);
 
-	ws->ws_waiting_ack = 1;
+	if (ws->ws_ignore_ack != 1)
+		ws->ws_waiting_ack = 1;
+
 	ws->ws_psent++;
 	if (gettimeofday(&ws->ws_tsent, NULL) == -1) {
 		perror("gettimeofday()");
