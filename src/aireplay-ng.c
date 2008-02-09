@@ -347,6 +347,19 @@ uint16_t le16_to_cpu(uint16_t le16)
     return ret;
 }
 
+/* Convert a 32-bit little-endian value to CPU endianness. */
+uint32_t le32_to_cpu(uint32_t le32)
+{
+    uint32_t ret;
+
+    ret =  (uint32_t)(((uint8_t *)&le32)[0]);
+    ret |= (uint32_t)(((uint8_t *)&le32)[1]) << 8;
+    ret |= (uint32_t)(((uint8_t *)&le32)[2]) << 16;
+    ret |= (uint32_t)(((uint8_t *)&le32)[3]) << 24;
+
+    return ret;
+}
+
 void sighandler( int signum )
 {
     if( signum == SIGINT )
@@ -571,7 +584,7 @@ int send_packet( void *buf, size_t count )
 
 int read_packet( void *buf, size_t count )
 {
-    int caplen, n = 0;
+    int caplen, n = 0, fcs_is_removed = 0;
 
     if( ( caplen = read( dev.fd_in, tmpbuf, count ) ) < 0 )
     {
@@ -583,7 +596,10 @@ int read_packet( void *buf, size_t count )
     }
 
     if( dev.is_madwifi && !(dev.is_madwifing) )
+    {
         caplen -= 4;    /* remove the FCS */
+        fcs_is_removed = 1;
+    }
 
     memset( buf, 0, sizeof( buf ) );
 
@@ -606,8 +622,29 @@ int read_packet( void *buf, size_t count )
 
         n = le16_to_cpu( *(uint16_t *)( tmpbuf + 2 ) );
 
-        if( n <= 0 || n >= caplen )
+        if( n < 8 || n >= caplen )
             return( 0 );
+
+        if( !fcs_is_removed )
+        {
+            int flags_offset = 1 + 1 + 2 + 4;
+            /* Remove the FCS, if we have one. */
+            if( tmpbuf[4] & 0x02 /* Have the FLAGS field */ )
+            {
+                if( tmpbuf[4] & 0x01 /* Have the TSFT field */ )
+                    flags_offset += 8; /* skip it */
+                if( flags_offset >= caplen )
+                {
+                    fprintf(stderr, "RX radiotap format error.\n");
+                    return( -1 );
+                }
+                if( tmpbuf[flags_offset] & 0x10 /* have FCS flag */ )
+                {
+                    caplen -= 4;    /* remove the FCS */
+                    fcs_is_removed = 1;
+                }
+            }
+        }
     }
 
     caplen -= n;
@@ -648,14 +685,14 @@ int read_packet( void *buf, size_t count )
     hbpf = ( struct bpf_hdr * )temp;
     hrt  = ( struct ieee80211_radiotap_header * )(temp + hbpf->bh_hdrlen);
 
-    caplen -= hbpf->bh_hdrlen + hrt->it_len;
+    caplen -= hbpf->bh_hdrlen + le16_to_cpu(hrt->it_len);
 
     /* we're looking for FCS bytes, to kill 'em */
     r = (unsigned char *)&hrt->it_present + sizeof(u_int32_t);
-    if( hrt->it_present & ( 1 << IEEE80211_RADIOTAP_TSFT ) )
+    if( le32_to_cpu(hrt->it_present) & ( 1 << IEEE80211_RADIOTAP_TSFT ) )
 	r += sizeof(u_int64_t);
 
-    if( hrt->it_present & ( 1 << IEEE80211_RADIOTAP_FLAGS ) )
+    if( le32_to_cpu(hrt->it_present) & ( 1 << IEEE80211_RADIOTAP_FLAGS ) )
     {
 	if( *r & IEEE80211_RADIOTAP_F_FCS )
         {
@@ -666,7 +703,7 @@ int read_packet( void *buf, size_t count )
 
     memset( buf, 0, sizeof( buf ) );
 
-    r = ( u_char * )( temp + hbpf->bh_hdrlen + hrt->it_len );
+    r = ( u_char * )( temp + hbpf->bh_hdrlen + le16_to_cpu(hrt->it_len) );
     memcpy( buf, r, count );
 
     free( temp );
