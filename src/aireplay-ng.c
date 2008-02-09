@@ -76,6 +76,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <errno.h>
 #include <time.h>
 #include <getopt.h>
@@ -175,6 +176,8 @@ char usage[] =
 "      -c dmac   : set Destination  MAC address\n"
 "      -h smac   : set Source       MAC address\n"
 "      -g value  : change ring buffer size (default: 8)\n"
+"      -R txrate : Packet transmission rate in Mbit/s (default: 1MBit/s)\n"
+"                  TX-rate is supported on MAC80211 only.\n"
 "\n"
 "      Fakeauth attack options:\n"
 "\n"
@@ -239,6 +242,10 @@ struct options
     char r_essid[33];
     int r_fromdsinj;
 
+    /* The TX rate for transmitting the injected packet.
+     * In 500kbps units. */
+    unsigned int tx_rate;
+
     char *s_face;
     char *s_file;
     uchar *prga;
@@ -278,6 +285,7 @@ struct devices
     int is_madwifing;
     int is_bcm43xx;
     int is_airpcap;
+    int is_mac80211; /* Interface is using Linux MAC80211 stack */
 
     FILE *f_cap_in;
 
@@ -326,6 +334,18 @@ char * iwpriv;
 #define PCT { struct tm *lt; time_t tc = time( NULL ); \
               lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
               lt->tm_hour, lt->tm_min, lt->tm_sec ); }
+
+
+/* Convert a 16-bit little-endian value to CPU endianness. */
+uint16_t le16_to_cpu(uint16_t le16)
+{
+    uint16_t ret;
+
+    ret =  (uint16_t)(((uint8_t *)&le16)[0]);
+    ret |= (uint16_t)(((uint8_t *)&le16)[1]) << 8;
+
+    return ret;
+}
 
 void sighandler( int signum )
 {
@@ -434,6 +454,24 @@ int send_packet( void *buf, size_t count )
         memcpy( maddr, buf + 4, 6 );
         memcpy( buf + 4, buf + 16, 6 );
         memcpy( buf + 16, maddr, 6 );
+    }
+
+    if( dev.is_mac80211 )
+    {
+        /* Add a radiotap header. */
+        if((unsigned) count > sizeof(tmpbuf)-9) return -1;
+        tmpbuf[0] = 0; /* Radiotap version 0 */
+        tmpbuf[1] = 0; /* Padding */
+        tmpbuf[2] = 9; /* Length (low) */
+        tmpbuf[3] = 0; /* Length (high) */
+        tmpbuf[4] = 0x04; /* TX rate present */
+        tmpbuf[5] = 0x00;
+        tmpbuf[6] = 0x00;
+        tmpbuf[7] = 0x00;
+        tmpbuf[8] = opt.tx_rate; /* TX rate in 500kbps units */
+        memcpy(tmpbuf + 9, buf, count);
+        buf = tmpbuf;
+        count += 9;
     }
 
     fp = (dev.is_bcm43xx) ? dev.nofcs : dev.fd_out;
@@ -566,7 +604,7 @@ int read_packet( void *buf, size_t count )
     {
         /* skip the radiotap header */
 
-        n = *(unsigned short *)( tmpbuf + 2 );
+        n = le16_to_cpu( *(uint16_t *)( tmpbuf + 2 ) );
 
         if( n <= 0 || n >= caplen )
             return( 0 );
@@ -4698,6 +4736,7 @@ int main( int argc, char *argv[] )
     opt.a_mode    = -1; opt.r_fctrl     = -1;
     opt.ghost     =  0; opt.npackets    = -1;
     opt.delay     = 15;
+    opt.tx_rate   = 2; /* 1mbit/s */
 
 #if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || (defined(__FreeBSD_kernel__) && __FreeBSD_kernel_version < 700000)
     /*
@@ -4726,7 +4765,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:23459H",
+                        "b:d:s:m:n:u:v:t:f:g:R:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:23459H",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -4926,6 +4965,24 @@ int main( int argc, char *argv[] )
                     printf( "Invalid replay ring buffer size. [>=1]\n");
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
+                }
+                break;
+
+            case 'R' :
+
+                if ( strcmp( optarg, "5.5" ) == 0 )
+                    opt.tx_rate = 11;
+                else
+                {
+                    ret = sscanf( optarg, "%u", &opt.tx_rate );
+                    if ( ret != 1 )
+                    {
+                        printf( "Invalid TX rate.\n" );
+                        printf("\"%s --help\" for help.\n", argv[0]);
+                        return( 1 );
+                    }
+                    /* Convert to 500kbps units */
+                    opt.tx_rate *= 2;
                 }
                 break;
 
@@ -5247,15 +5304,27 @@ usage:
         return( 1 );
     }
 
-    /* check for a bcm43xx */
+    /* check for the MAC80211 Linux wireless stack */
     memset( strbuf, 0, sizeof( strbuf ) );
-    snprintf( strbuf,  sizeof( strbuf ) - 1,
-        "iwconfig %s 2>/dev/null | "
-        "grep \"Broadcom 43\" > /dev/null",
-        argv[optind] );
-
+    snprintf( strbuf, sizeof( strbuf ) - 1,
+             "ls /sys/class/net/%s/phy80211/subsystem >/dev/null 2>/dev/null",
+             argv[optind] );
     if( system( strbuf ) == 0 )
-        dev.is_bcm43xx = 1;
+    {
+        dev.is_mac80211 = 1;
+    }
+    else
+    {
+        /* check for a bcm43xx */
+        memset( strbuf, 0, sizeof( strbuf ) );
+        snprintf( strbuf,  sizeof( strbuf ) - 1,
+            "iwconfig %s 2>/dev/null | "
+            "grep \"Broadcom 43\" > /dev/null",
+            argv[optind] );
+        if( system( strbuf ) == 0 )
+            dev.is_bcm43xx = 1;
+    }
+
 
     /* check if wlan-ng or hostap or r8180 */
 
