@@ -31,12 +31,23 @@ Solution: Restart airodump-ng or change rate before starting it
 
 Problem: After some time it stops capturing packets and you're really sure no network manager are running at all.
 Solution: That's a known bug in the driver, it may happen at any time
-          (I saw that at 5 minutes for someone and at 50 for someone else, it can even be more).
+          (the time before it fails can vary a lot: from 5 minutes to 50 or even more).
+
+Problem: When creating a new VAP airodump-ng takes up to 10-15 seconds to see the first packet
+Solution: It's the behaviour of madwifi-ng, don't worry.
 
 
 Sample files
 ------------
 
+wep.open.system.authentication.cap:
+    It show a connexion (authentication then association) to a WEP network (open authentication).
+
+wep.shared.key.authentication.cap:
+    It shows a connexion (authentication then association to a WEP network (shared authentication).
+    The difference with open authentication is that the client has to encrypt a challenge text
+    and send it back (encrypted) to the AP to prove it has the right key.
+    
 wpa.cap:
     This is a sample file with a WPA handshake. It is located in the test/ directory of the install files. 
     The passphrase is 'biscotte'. Use the password file (password.lst) which is in the same directory.
