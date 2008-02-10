@@ -31,19 +31,16 @@ Solution: Restart airodump-ng or change rate before starting it
 
 Problem: After some time it stops capturing packets and you're really sure no network manager are running at all.
 Solution: That's a known bug in the driver, it may happen at any time
-          (I saw that at 5 minutes for someone and at 50 for someone else, it can even be more).
+          (the time before it fails can vary a lot: from 5 minutes to 50 or even more).
 
 Problem: When creating a new VAP airodump-ng takes up to 10-15 seconds to see the first packet
 Solution: It's the behaviour of madwifi-ng, don't worry.
-
-Problem: Wesside-ng doesn't work
-Solution: There's a bug in madwifi-ng subversion (in trunk), try using latest stable release (0.9.3.2).
 
 Orinoco bugs
 ------------
 
 Problem: BSSID is not reported correctly or is 00:00:00:00:00:00 or signal is not reported correctly.
-Solution: These are known bugs and we'll work on it for 1.0 beta2
+Solution: These are known bugs and we'll work on it.
 
 Airolib-ng bugs:
 ----------------
@@ -53,6 +50,14 @@ special characters like 'ç', 'é', 'è', 'à', ... (directories containing spaces a
 
 Sample files
 ------------
+
+wep.open.system.authentication.cap:
+    It show a connexion (authentication then association) to a WEP network (open authentication).
+
+wep.shared.key.authentication.cap:
+    It shows a connexion (authentication then association to a WEP network (shared authentication).
+    The difference with open authentication is that the client has to encrypt a challenge text
+    and send it back (encrypted) to the AP to prove it has the right key.
 
 wpa.cap:
     This is a sample file with a WPA handshake. It is located in the test/ directory of the install files. 
