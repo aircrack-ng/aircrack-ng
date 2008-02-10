@@ -3410,7 +3410,25 @@ int do_attack_fragment()
 
             while (!gotit)  //waiting for relayed packet
             {
+                gettimeofday( &tv2, NULL );
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000)) //wait 500ms for an answer
+                {
+                    PCT; printf("No answer, repeating...\n");
+                    round++;
+                    again = RETRY;
+                    if (round > 10)
+                    {
+                        PCT; printf("Still nothing, trying another packet...\n");
+                        again = NEW_IV;
+                    }
+                    break;
+                }
+
                 caplen = read_packet(packet, sizeof(packet));
+                if (caplen == 0)
+                    continue;
+                if (caplen < 0)
+                    return( 1 );
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -3457,20 +3475,6 @@ int do_attack_fragment()
                 {
                     PCT; printf( "Got a disassociation packet!\n" );
                     read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
-                }
-
-                gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
-                {
-                    PCT; printf("No answer, repeating...\n");
-                    round++;
-                    again = RETRY;
-                    if (round > 10)
-                    {
-                        PCT; printf("Still nothing, trying another packet...\n");
-                        again = NEW_IV;
-                    }
-                    break;
                 }
             }
         }
@@ -3542,7 +3546,25 @@ int do_attack_fragment()
             gotit=0;
             while (!gotit)  //waiting for relayed packet
             {
+                gettimeofday( &tv2, NULL );
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000)) //wait 500ms for an answer
+                {
+                    PCT; printf("No answer, repeating...\n");
+                    round++;
+                    again = RETRY;
+                    if (round > 10)
+                    {
+                        PCT; printf("Still nothing, trying another packet...\n");
+                        again = NEW_IV;
+                    }
+                    break;
+                }
+
                 caplen = read_packet(packet, sizeof(packet));
+                if (caplen == 0)
+                    continue;
+                if (caplen < 0)
+                    return( 1 );
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -3578,20 +3600,6 @@ int do_attack_fragment()
                 {
                     PCT; printf( "Got a disassociation packet!\n" );
                     read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
-                }
-
-                gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
-                {
-                    PCT; printf("No answer, repeating...\n");
-                    round++;
-                    again = RETRY;
-                    if (round > 10)
-                    {
-                        PCT; printf("Still nothing, trying another packet...\n");
-                        again = NEW_IV;
-                    }
-                    break;
                 }
             }
         }
@@ -3641,7 +3649,34 @@ int do_attack_fragment()
             gotit=0;
             while (!gotit)  //waiting for relayed packet
             {
+                gettimeofday( &tv2, NULL );
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000)) //wait 500ms for an answer
+                {
+                    PCT; printf("No answer, repeating...\n");
+                    round++;
+                    again = RETRY;
+                    if (round > 10)
+                    {
+                        printf("Still nothing, quitting with 384 bytes? [y/n] \n");
+                        fflush( stdout );
+                        ret=0;
+                        while(!ret) ret = scanf( "%s", tmpbuf );
+
+                        printf( "\n" );
+
+                        if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
+                            again = ABORT;
+                        else
+                            again = NEW_IV;
+                    }
+                    break;
+                }
+
                 caplen = read_packet(packet, sizeof(packet));
+                if (caplen == 0)
+                    continue;
+                if (caplen < 0)
+                    return( 1 );
 
                 if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
@@ -3677,29 +3712,6 @@ int do_attack_fragment()
                 {
                     PCT; printf( "Got a disassociation packet!\n" );
                     read_sleep( 5*1000000 ); //sleep 5 seconds and ignore all frames in this period
-                }
-
-                gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 500ms for an answer
-                {
-                    PCT; printf("No answer, repeating...\n");
-                    round++;
-                    again = RETRY;
-                    if (round > 10)
-                    {
-                        printf("Still nothing, quitting with 384 bytes? [y/n] \n");
-                        fflush( stdout );
-                        ret=0;
-                        while(!ret) ret = scanf( "%s", tmpbuf );
-
-                        printf( "\n" );
-
-                        if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
-                            again = ABORT;
-                        else
-                            again = NEW_IV;
-                    }
-                    break;
                 }
             }
         }
@@ -4356,7 +4368,17 @@ int do_attack_test()
 
         while (1)  //waiting for relayed packet
         {
+            gettimeofday( &tv2, NULL );
+            if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
+            {
+                break;
+            }
+
             caplen = read_packet(packet, sizeof(packet));
+            if (caplen == 0)
+                continue;
+            if (caplen < 0)
+                return( 1 );
 
             if (packet[0] == 0x50 ) //Is probe response
             {
@@ -4381,12 +4403,6 @@ int do_attack_test()
                 {
                     found++;
                 }
-            }
-
-            gettimeofday( &tv2, NULL );
-            if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
-            {
-                break;
             }
         }
     }
@@ -4448,7 +4464,17 @@ int do_attack_test()
             fflush(stdout);
             while (1)  //waiting for relayed packet
             {
+                gettimeofday( &tv2, NULL );
+                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
+                {
+                    break;
+                }
+
                 caplen = read_packet(packet, sizeof(packet));
+                if (caplen == 0)
+                    continue;
+                if (caplen < 0)
+                    return( 1 );
 
                 if (packet[0] == 0x50 ) //Is probe response
                 {
@@ -4466,12 +4492,6 @@ int do_attack_test()
                             break;
                         }
                     }
-                }
-
-                gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (300*1000)) //wait 300ms for an answer
-                {
-                    break;
                 }
             }
             printf( "\r%d/%d: %d%%\r", ap[i].found, j+1, ((ap[i].found*100)/(j+1)));
