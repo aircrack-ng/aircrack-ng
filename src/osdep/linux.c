@@ -250,6 +250,7 @@ static int linux_get_channel(struct wif *wi)
     struct priv_linux *dev = wi_priv(wi);
     struct iwreq wrq;
     int fd;
+    int chan=0;
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
 
@@ -267,12 +268,16 @@ static int linux_get_channel(struct wif *wi)
         return( -1 );
 
     if(wrq.u.freq.m > 100000000)
-        return ((wrq.u.freq.m - 241200000)/500000)+1;
+        chan = ((wrq.u.freq.m - 241200000)/500000)+1;
     else if(wrq.u.freq.m > 1000000)
-        return ((wrq.u.freq.m - 2412000)/5000)+1;
+        chan = ((wrq.u.freq.m - 2412000)/5000)+1;
     else if(wrq.u.freq.m > 1000)
-        return ((wrq.u.freq.m - 2412)/5)+1;
-    return wrq.u.freq.m;
+        chan = ((wrq.u.freq.m - 2412)/5)+1;
+    else chan = wrq.u.freq.m;
+
+    if(chan == 15) chan = 14;
+
+    return chan;
 }
 
 static int linux_set_rate(struct wif *wi, int rate)
