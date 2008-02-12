@@ -238,7 +238,7 @@ static int obsd_read(struct wif *wi, unsigned char *h80211, int len,
 	assert(len > 0);
 
 	/* need to read more */
-	if (po->po_totlen == 0) {
+	while (po->po_totlen == 0) {
 		po->po_totlen = read(po->po_fd, po->po_buf, sizeof(po->po_buf));
 		if (po->po_totlen == -1) {
 			po->po_totlen = 0;
