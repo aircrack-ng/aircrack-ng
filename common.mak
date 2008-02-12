@@ -54,7 +54,7 @@ CC		= $(TOOL_PREFIX)gcc
 RANLIB		= $(TOOL_PREFIX)ranlib
 AR		= $(TOOL_PREFIX)ar
 
-REVISION	= `$(AC_ROOT)/evalrev`
+REVISION	= $(shell $(AC_ROOT)/evalrev)
 REVFLAGS	= -D_REVISION=$(REVISION)
 
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
