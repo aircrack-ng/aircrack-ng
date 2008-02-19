@@ -28,6 +28,7 @@
 #ifndef WIN32
 	#if defined(linux)
 		#include <linux/rtc.h>
+		#include <limits.h>
 	#endif
 
 	#include <sys/socket.h>
