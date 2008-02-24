@@ -1,3 +1,8 @@
+Version 0.9.3 (changes from aircrack-ng 0.9.2) - Released 24 February 2008:
+* Fix endianness issues in airodump-ng, aireplay-ng.
+* Several small bug fixes.
+* Updated rtl8187 patch.
+
 Version 0.9.2 (changes from aircrack-ng 0.9.1) - Released 05 February 2008:
 * aireplay-ng: Now works with rtc_cmos
 * aireplay-ng: Fixed compilation on Fedora Rawhide
