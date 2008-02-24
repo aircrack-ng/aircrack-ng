@@ -1,0 +1,71 @@
+.TH AIRTUN-NG 1 "February 2008" "Version 0.9.3"
+
+.SH NAME
+airtun-ng - a virtual tunnel interface creator for aircrack-ng
+.SH SYNOPSIS
+.B airtun-ng
+[options] <interface name>
+.SH DESCRIPTION
+.BI airtun-ng
+creates a virtual tunnel interface (atX) for sending arbitrary IP packets by using raw ieee802.11 packet injection.
+.SH OPTIONS
+.PP
+.TP
+.I -H, --help
+Shows the help screen.
+.TP
+.I -x <pps>
+Sets maximum number of packets per second.
+.TP
+.I -a <BSSID>
+Specifies the BSSID for the iee802.11 header.
+.TP
+.I -h <SMAC>
+Specifies the source MAC for the iee802.11 header.
+.TP
+.I -i <iface>
+Sets the capture interface.
+.TP
+.I -r <file>
+Specifies a file to read 802.11 frames.
+.TP
+.I -y <PRGA-file>
+Is the name of the file, which provides the keystream for WEP encoding. (No receiving, just transmitting of IP packets.)
+.TP
+.I -w <WEP-key>
+This is the WEP key to en-/decrypt all traffic going through the tunnel.
+.TP
+.I -t <tods>
+Defines the ToDS and FromDS bit in the ieee802.11 header. For tods=1, the ToDS bit is set to 1 and FromDS to 0, while tods=0 sets them the other way around.
+.TP
+.I -m <netmask>, --netmask <netmask>
+Filters networks based on bssid ^ netmask combination. Needs \-d, used in replay mode.
+.TP
+.I -d <BSSID>, --bssid <BSSID>
+Filters networks based on the <BSSID>. Used in replay mode.
+.TP
+.I -f, --repeat
+Enables replay mode. All read frames, filtered by bssid and netmask (if specified), will be replayed.
+.SH EXAMPLES
+.B airtun-ng
+-a 00:14:22:56:F3:4E \-t 0 \-y keystream.xor wlan0
+.PP
+.SH SEE ALSO
+.br
+.B airmon-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs(1)

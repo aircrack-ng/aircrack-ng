@@ -1,0 +1,50 @@
+diff -Naur acx_orig/common.c acx_rawtx/common.c
+--- acx_orig/common.c	2007-01-10 22:15:27.000000000 +0100
++++ acx_rawtx/common.c	2007-05-20 12:58:55.000000000 +0200
+@@ -3180,6 +3180,14 @@
+ 		goto end;
+ 	}
+ 
++	if(unlikely(skb->len < 24)) {
++		/* silently drop the packet, since fw won't send it */
++		txresult = OK;
++		/* ...but indicate an error nevertheless */
++		adev->stats.tx_errors++;
++		goto end;
++	}
++
+ 	tx = acx_l_alloc_tx(adev);
+ 	if (unlikely(!tx)) {
+ 		printk_ratelimited("%s: start_xmit: txdesc ring is full, "
+diff -Naur acx_orig/pci.c acx_rawtx/pci.c
+--- acx_orig/pci.c	2007-01-10 13:27:16.000000000 +0100
++++ acx_rawtx/pci.c	2007-05-20 12:58:55.000000000 +0200
+@@ -1992,7 +1992,12 @@
+ 		acx_set_status(adev, ACX_STATUS_1_SCANNING); break;
+ 	case ACX_MODE_3_AP:
+ 	case ACX_MODE_MONITOR:
+-		acx_set_status(adev, ACX_STATUS_4_ASSOCIATED); break;
++		acx_set_status(adev, ACX_STATUS_4_ASSOCIATED);
++		adev->msdu_lifetime = 0;/* no lifetime at all */
++		adev->short_retry = 0; /* no retries for (short) non-RTS packets */
++		adev->long_retry = 0; /* no retries for long (RTS) packets */
++
++		break;
+ 	}
+ 
+ 	acx_s_start(adev);
+@@ -3387,12 +3392,14 @@
+ 		break;
+ 	}
+ 	adev->stats.tx_errors++;
++#if 0
+ 	if (adev->stats.tx_errors <= 20)
+ 		printk("%s: tx error 0x%02X, buf %02u! (%s)\n",
+ 				adev->ndev->name, error, finger, err);
+ 	else
+ 		printk("%s: tx error 0x%02X, buf %02u!\n",
+ 				adev->ndev->name, error, finger);
++#endif
+ }
+ 
+ 

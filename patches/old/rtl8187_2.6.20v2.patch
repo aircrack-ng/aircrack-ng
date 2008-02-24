@@ -1,0 +1,5964 @@
+diff -Naur rtl8187_orig/beta-8187/ieee80211.h rtl8187_txpower/beta-8187/ieee80211.h
+--- rtl8187_orig/beta-8187/ieee80211.h	2006-06-06 04:58:02.000000000 +0200
++++ rtl8187_txpower/beta-8187/ieee80211.h	2007-03-05 00:31:41.255175682 +0100
+@@ -156,6 +156,22 @@
+ 	struct list_head list;
+ };
+ 
++#define LWNG_CAP_DID_BASE   (4 | (1 << 6)) /* section 4, group 1 */
++/* ARPHRD_IEEE80211_PRISM uses a bloated version of Prism2 RX frame header
++ * (from linux-wlan-ng) */
++struct linux_wlan_ng_val {
++	u32 did;
++	u16 status, len;
++	u32 data;
++} __attribute__ ((packed));
++
++struct linux_wlan_ng_prism_hdr {
++	u32 msgcode, msglen;
++	char devname[16];
++	struct linux_wlan_ng_val hosttime, mactime, channel, rssi, sq, signal,
++		noise, rate, istx, frmlen;
++} __attribute__ ((packed));
++
+ struct ieee80211_hdr {
+ 	u16 frame_ctl;
+ 	u16 duration_id;
+@@ -840,14 +856,14 @@
+ 
+ 
+ #if (LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,11))
+-extern inline int is_multicast_ether_addr(const u8 *addr)
++extern inline int is_multicast_ether_addr_rtl7(const u8 *addr)
+ {
+         return ((addr[0] != 0xff) && (0x01 & addr[0]));
+ }
+ #endif
+ 
+ #if (LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,13))
+-extern inline int is_broadcast_ether_addr(const u8 *addr)
++extern inline int is_broadcast_ether_addr_rtl7(const u8 *addr)
+ {
+ 	return ((addr[0] == 0xff) && (addr[1] == 0xff) && (addr[2] == 0xff) &&   \
+ 		(addr[3] == 0xff) && (addr[4] == 0xff) && (addr[5] == 0xff));
+@@ -1015,10 +1031,16 @@
+ 	struct timer_list beacon_timer;
+ 	
+ 	struct work_struct associate_complete_wq;
++
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++	struct delayed_work associate_retry_wq;
++	struct delayed_work softmac_scan_wq;
++#else
+ 	struct work_struct associate_retry_wq;
++	struct work_struct softmac_scan_wq;
++#endif
+ 	struct work_struct start_ibss_wq;
+ 	struct work_struct associate_procedure_wq;
+-	struct work_struct softmac_scan_wq;
+ 	struct work_struct wx_sync_scan_wq;
+ 	
+ 	struct workqueue_struct *wq;
+@@ -1154,12 +1176,12 @@
+ 
+ 
+ 
+-extern inline void *ieee80211_priv(struct net_device *dev)
++extern inline void *ieee80211_priv_rtl7(struct net_device *dev)
+ {
+ 	return ((struct ieee80211_device *)netdev_priv(dev))->priv;
+ }
+ 
+-extern inline int ieee80211_is_empty_essid(const char *essid, int essid_len)
++extern inline int ieee80211_is_empty_essid_rtl7(const char *essid, int essid_len)
+ {
+ 	/* Single white space is for Linksys APs */
+ 	if (essid_len == 1 && essid[0] == ' ')
+@@ -1175,7 +1197,7 @@
+ 	return 1;
+ }
+ 
+-extern inline int ieee80211_is_valid_mode(struct ieee80211_device *ieee, int mode)
++extern inline int ieee80211_is_valid_mode_rtl7(struct ieee80211_device *ieee, int mode)
+ {
+ 	/*
+ 	 * It is possible for both access points and our device to support
+@@ -1201,7 +1223,7 @@
+ 	return 0;
+ }
+ 
+-extern inline int ieee80211_get_hdrlen(u16 fc)
++extern inline int ieee80211_get_hdrlen_rtl7(u16 fc)
+ {
+ 	int hdrlen = 24;
+ 
+@@ -1229,140 +1251,144 @@
+ 
+ 
+ /* ieee80211.c */
+-extern void free_ieee80211(struct net_device *dev);
+-extern struct net_device *alloc_ieee80211(int sizeof_priv);
++extern void free_ieee80211_rtl7(struct net_device *dev);
++extern struct net_device *alloc_ieee80211_rtl7(int sizeof_priv);
+ 
+-extern int ieee80211_set_encryption(struct ieee80211_device *ieee);
++extern int ieee80211_set_encryption_rtl7(struct ieee80211_device *ieee);
+ 
+ /* ieee80211_tx.c */
+ 
+-extern int ieee80211_encrypt_fragment(
++extern int ieee80211_encrypt_fragment_rtl7(
+ 	struct ieee80211_device *ieee,
+ 	struct sk_buff *frag,
+ 	int hdr_len);
+ 	
+-extern int ieee80211_xmit(struct sk_buff *skb,
++extern int ieee80211_xmit_rtl7(struct sk_buff *skb,
+ 			  struct net_device *dev);
+-extern void ieee80211_txb_free(struct ieee80211_txb *);
++extern void ieee80211_txb_free_rtl7(struct ieee80211_txb *);
+ 
+ 
+ /* ieee80211_rx.c */
+-extern int ieee80211_rx(struct ieee80211_device *ieee, struct sk_buff *skb,
++extern int ieee80211_rx_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb,
+ 			struct ieee80211_rx_stats *rx_stats);
+-extern void ieee80211_rx_mgt(struct ieee80211_device *ieee,
++extern void ieee80211_rx_mgt_rtl7(struct ieee80211_device *ieee,
+ 			     struct ieee80211_hdr *header,
+ 			     struct ieee80211_rx_stats *stats);
+ 
+ /* ieee80211_wx.c */
+-extern int ieee80211_wx_get_scan(struct ieee80211_device *ieee,
++extern int ieee80211_wx_get_scan_rtl7(struct ieee80211_device *ieee,
+ 				 struct iw_request_info *info,
+ 				 union iwreq_data *wrqu, char *key);
+-extern int ieee80211_wx_set_encode(struct ieee80211_device *ieee,
++extern int ieee80211_wx_set_encode_rtl7(struct ieee80211_device *ieee,
+ 				   struct iw_request_info *info,
+ 				   union iwreq_data *wrqu, char *key);
+-extern int ieee80211_wx_get_encode(struct ieee80211_device *ieee,
++extern int ieee80211_wx_get_encode_rtl7(struct ieee80211_device *ieee,
+ 				   struct iw_request_info *info,
+ 				   union iwreq_data *wrqu, char *key);
+ /* ieee80211_softmac.c */
+-extern short ieee80211_is_54g(struct ieee80211_network net);
+-extern short ieee80211_is_shortslot(struct ieee80211_network net);
+-extern int ieee80211_rx_frame_softmac(struct ieee80211_device *ieee, struct sk_buff *skb,
++extern short ieee80211_is_54g_rtl7(struct ieee80211_network net);
++extern short ieee80211_is_shortslot_rtl7(struct ieee80211_network net);
++extern int ieee80211_rx_frame_softmac_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb,
+ 			struct ieee80211_rx_stats *rx_stats, u16 type,
+ 			u16 stype);
+-extern void ieee80211_softmac_new_net(struct ieee80211_device *ieee, struct ieee80211_network *net);
++extern void ieee80211_softmac_new_net_rtl7(struct ieee80211_device *ieee, struct ieee80211_network *net);
+ 
+-extern void ieee80211_softmac_xmit(struct ieee80211_txb *txb, struct ieee80211_device *ieee);
+-extern void ieee80211_softmac_check_all_nets(struct ieee80211_device *ieee);
+-extern void ieee80211_start_bss(struct ieee80211_device *ieee);
+-extern void ieee80211_start_master_bss(struct ieee80211_device *ieee);
+-extern void ieee80211_start_ibss(struct ieee80211_device *ieee);
+-extern void ieee80211_softmac_init(struct ieee80211_device *ieee);
+-extern void ieee80211_softmac_free(struct ieee80211_device *ieee);
+-extern void ieee80211_associate_abort(struct ieee80211_device *ieee);
+-extern void ieee80211_disassociate(struct ieee80211_device *ieee);
+-extern void ieee80211_stop_scan(struct ieee80211_device *ieee);
+-extern void ieee80211_start_scan_syncro(struct ieee80211_device *ieee);
+-extern void ieee80211_check_all_nets(struct ieee80211_device *ieee);
+-extern void ieee80211_start_protocol(struct ieee80211_device *ieee);
+-extern void ieee80211_stop_protocol(struct ieee80211_device *ieee);
+-extern void ieee80211_softmac_start_protocol(struct ieee80211_device *ieee);
+-extern void ieee80211_softmac_stop_protocol(struct ieee80211_device *ieee);
+-extern void ieee80211_reset_queue(struct ieee80211_device *ieee);
+-extern void ieee80211_wake_queue(struct ieee80211_device *ieee);
+-extern void ieee80211_stop_queue(struct ieee80211_device *ieee);
+-extern struct sk_buff *ieee80211_get_beacon(struct ieee80211_device *ieee);
+-extern void ieee80211_start_send_beacons(struct ieee80211_device *ieee);
+-extern void ieee80211_stop_send_beacons(struct ieee80211_device *ieee);
+-extern int ieee80211_wpa_supplicant_ioctl(struct ieee80211_device *ieee, struct iw_point *p);
+-extern void notify_wx_assoc_event(struct ieee80211_device *ieee);
+-extern void ieee80211_ps_tx_ack(struct ieee80211_device *ieee, short success);
++extern void ieee80211_softmac_xmit_rtl7(struct ieee80211_txb *txb, struct ieee80211_device *ieee);
++extern void ieee80211_softmac_check_all_nets_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_bss_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_master_bss_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_ibss_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_softmac_init_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_softmac_free_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_associate_abort_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_disassociate_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_stop_scan_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_scan_syncro_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_check_all_nets_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_protocol_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_stop_protocol_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_softmac_start_protocol_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_softmac_stop_protocol_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_reset_queue_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_wake_queue_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_stop_queue_rtl7(struct ieee80211_device *ieee);
++extern struct sk_buff *ieee80211_get_beacon_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_send_beacons_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_stop_send_beacons_rtl7(struct ieee80211_device *ieee);
++extern int ieee80211_wpa_supplicant_ioctl_rtl7(struct ieee80211_device *ieee, struct iw_point *p);
++extern void notify_wx_assoc_event_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_ps_tx_ack_rtl7(struct ieee80211_device *ieee, short success);
+ 
+ /* ieee80211_softmac_wx.c */
+ 
+-extern int ieee80211_wx_get_wap(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_get_wap_rtl7(struct ieee80211_device *ieee, 
+ 			    struct iw_request_info *info, 
+ 			    union iwreq_data *wrqu, char *ext);
+ 			    
+-extern int ieee80211_wx_set_wap(struct ieee80211_device *ieee,
++extern int ieee80211_wx_set_wap_rtl7(struct ieee80211_device *ieee,
+ 			 struct iw_request_info *info,
+ 			 union iwreq_data *awrq,
+ 			 char *extra);
+ 			 
+-extern int ieee80211_wx_get_essid(struct ieee80211_device *ieee, struct iw_request_info *a,union iwreq_data *wrqu,char *b);
++extern int ieee80211_wx_get_essid_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,union iwreq_data *wrqu,char *b);
+ 
+-extern int ieee80211_wx_set_rate(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_set_rate_rtl7(struct ieee80211_device *ieee, 
+ 			     struct iw_request_info *info,
+ 			     union iwreq_data *wrqu, char *extra);
+ 			     
+-extern int ieee80211_wx_get_rate(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_get_rate_rtl7(struct ieee80211_device *ieee, 
+ 			     struct iw_request_info *info, 
+ 			     union iwreq_data *wrqu, char *extra);
+ 			     
+-extern int ieee80211_wx_set_mode(struct ieee80211_device *ieee, struct iw_request_info *a,
++extern int ieee80211_wx_set_mode_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 			     
+-extern int ieee80211_wx_set_scan(struct ieee80211_device *ieee, struct iw_request_info *a,
++extern int ieee80211_wx_set_scan_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 			     
+-extern int ieee80211_wx_set_essid(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_set_essid_rtl7(struct ieee80211_device *ieee, 
+ 			      struct iw_request_info *a,
+ 			      union iwreq_data *wrqu, char *extra);
+ 			      
+-extern int ieee80211_wx_get_mode(struct ieee80211_device *ieee, struct iw_request_info *a,
++extern int ieee80211_wx_get_mode_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 
+-extern int ieee80211_wx_set_freq(struct ieee80211_device *ieee, struct iw_request_info *a,
++extern int ieee80211_wx_set_freq_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 
+-extern int ieee80211_wx_get_freq(struct ieee80211_device *ieee, struct iw_request_info *a,
++extern int ieee80211_wx_get_freq_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 
+-extern void ieee80211_wx_sync_scan_wq(struct ieee80211_device *ieee);
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++extern void ieee80211_wx_sync_scan_wq_rtl7(struct work_struct *work);
++#else
++extern void ieee80211_wx_sync_scan_wq_rtl7(struct ieee80211_device *ieee);
++#endif
+ 
+-extern int ieee80211_wx_set_rawtx(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_set_rawtx_rtl7(struct ieee80211_device *ieee, 
+ 			       struct iw_request_info *info, 
+ 			       union iwreq_data *wrqu, char *extra);
+ 			       
+-extern int ieee80211_wx_get_name(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_get_name_rtl7(struct ieee80211_device *ieee, 
+ 			     struct iw_request_info *info, 
+ 			     union iwreq_data *wrqu, char *extra);
+ 
+-extern int ieee80211_wx_set_power(struct ieee80211_device *ieee,
++extern int ieee80211_wx_set_power_rtl7(struct ieee80211_device *ieee,
+ 				 struct iw_request_info *info,
+ 				 union iwreq_data *wrqu, char *extra);
+ 
+-extern int ieee80211_wx_get_power(struct ieee80211_device *ieee,
++extern int ieee80211_wx_get_power_rtl7(struct ieee80211_device *ieee,
+ 				 struct iw_request_info *info,
+ 				 union iwreq_data *wrqu, char *extra);
+ 				 			     
+-extern const long ieee80211_wlan_frequencies[];
++extern const long ieee80211_wlan_frequencies_rtl7[];
+ 
+-extern inline void ieee80211_increment_scans(struct ieee80211_device *ieee)
++extern inline void ieee80211_increment_scans_rtl7(struct ieee80211_device *ieee)
+ {
+ 	ieee->scans++;
+ }
+ 
+-extern inline int ieee80211_get_scans(struct ieee80211_device *ieee)
++extern inline int ieee80211_get_scans_rtl7(struct ieee80211_device *ieee)
+ {
+ 	return ieee->scans;
+ }
+@@ -1372,7 +1398,7 @@
+ 	const char *s = essid;
+ 	char *d = escaped;
+ 
+-	if (ieee80211_is_empty_essid(essid, essid_len)) {
++	if (ieee80211_is_empty_essid_rtl7(essid, essid_len)) {
+ 		memcpy(escaped, "<hidden>", sizeof("<hidden>"));
+ 		return escaped;
+ 	}
+diff -Naur rtl8187_orig/beta-8187/r8180_93cx6.c rtl8187_txpower/beta-8187/r8180_93cx6.c
+--- rtl8187_orig/beta-8187/r8180_93cx6.c	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8180_93cx6.c	2007-03-05 00:31:37.815123790 +0100
+@@ -87,7 +87,7 @@
+ 
+ u32 eprom_read(struct net_device *dev, u32 addr)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	short read_cmd[]={1,1,0};
+ 	short addr_str[8];
+ 	int i;
+diff -Naur rtl8187_orig/beta-8187/r8180_hw.h rtl8187_txpower/beta-8187/r8180_hw.h
+--- rtl8187_orig/beta-8187/r8180_hw.h	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8180_hw.h	2007-03-05 00:31:41.295176286 +0100
+@@ -646,6 +646,7 @@
+ #define FFER_INTR    ((1<<15))
+ #define FFER_GWAKE   ((1<< 4))
+ 
+-
++#define MAX_TX_POWER	27
++#define MIN_TX_POWER	20
+ 
+ #endif
+diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.c rtl8187_txpower/beta-8187/r8180_rtl8225.c
+--- rtl8187_orig/beta-8187/r8180_rtl8225.c	2006-06-06 04:58:02.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8180_rtl8225.c	2007-03-05 00:31:37.935125600 +0100
+@@ -173,7 +173,7 @@
+ 
+ void rtl8225_set_gain(struct net_device *dev, short gain)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	rtl8180_set_anaparam(dev, RTL8225_ANAPARAM_ON);
+ 	
+@@ -208,7 +208,7 @@
+ {
+ #ifdef USE_8051_3WIRE
+ 
+-        struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++        struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+         struct usb_device *udev = priv->udev;
+         //u8 bit;
+         u16                             wReg80, wReg82, wReg84;
+@@ -255,7 +255,7 @@
+ 	u16 out,select;
+ 	u8 bit;
+ 	u32 bangdata = (data << 4) | (adr & 0xf);
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	out = read_nic_word(dev, RFPinsOutput) & 0xfff3;
+ 		
+@@ -349,7 +349,7 @@
+ 
+ void rtl8225_SetTXPowerLevel(struct net_device *dev, short ch)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	int GainIdx;
+ 	int GainSetting;
+@@ -454,9 +454,9 @@
+ 
+ void rtl8225_rf_set_chan(struct net_device *dev, short ch)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	short gset = (priv->ieee80211->state == IEEE80211_LINKED &&
+-		ieee80211_is_54g(priv->ieee80211->current_network)) ||
++		ieee80211_is_54g_rtl7(priv->ieee80211->current_network)) ||
+ 		priv->ieee80211->iw_mode == IW_MODE_MONITOR;
+ 	
+ 	rtl8225_SetTXPowerLevel(dev, ch);
+@@ -474,7 +474,7 @@
+ 		write_nic_byte(dev,DIFS,0x24); //DIFS: 36 
+ 	
+ 	if(priv->ieee80211->state == IEEE80211_LINKED &&
+-		ieee80211_is_shortslot(priv->ieee80211->current_network))
++		ieee80211_is_shortslot_rtl7(priv->ieee80211->current_network))
+ 		write_nic_byte(dev,SLOT,0x9); //SLOT: 9
+ 		
+ 	else
+@@ -546,7 +546,7 @@
+ 
+ void rtl8225_rf_init(struct net_device *dev) 
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int i;
+ 	short channel = 1;
+ 	u16 brsr;
+diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.h rtl8187_txpower/beta-8187/r8180_rtl8225.h
+--- rtl8187_orig/beta-8187/r8180_rtl8225.h	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8180_rtl8225.h	2007-03-05 00:31:41.435178397 +0100
+@@ -44,3 +44,5 @@
+ extern u32 rtl8225_chan[];
+ 
+ #endif
++
++void rtl8225z2_SetTXPowerLevel(struct net_device *dev, short ch);
+diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225z2.c rtl8187_txpower/beta-8187/r8180_rtl8225z2.c
+--- rtl8187_orig/beta-8187/r8180_rtl8225z2.c	2006-06-06 04:58:02.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8180_rtl8225z2.c	2007-03-05 00:31:38.025126958 +0100
+@@ -129,7 +129,7 @@
+ void rtl8225z2_set_gain(struct net_device *dev, short gain)
+ {
+ 	u8* rtl8225_gain;
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	u8 mode = priv->ieee80211->mode;
+ 	
+@@ -153,7 +153,7 @@
+ 
+ void rtl8225_set_gain(struct net_device *dev, short gain)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	rtl8180_set_anaparam(dev, RTL8225_ANAPARAM_ON);
+ 	
+@@ -280,7 +280,7 @@
+ 	u16 out,select;
+ 	u8 bit;
+ 	u32 bangdata = (data << 4) | (adr & 0xf);
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	out = read_nic_word(dev, RFPinsOutput) & 0xfff3;
+ 		
+@@ -396,7 +396,7 @@
+ #endif
+ void rtl8225z2_SetTXPowerLevel(struct net_device *dev, short ch)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ //	int GainIdx;
+ //	int GainSetting;
+@@ -418,7 +418,10 @@
+ 	
+ 	/* CCK power setting */
+ 	if(cck_power_level > max_cck_power_level)
++	{
+ 		cck_power_level = max_cck_power_level;
++		priv->chtxpwr[ch] = max_cck_power_level;
++	}
+ 	
+ 	cck_power_level += priv->cck_txpwr_base;
+ 	
+@@ -489,9 +492,9 @@
+ 
+ void rtl8225z2_rf_set_chan(struct net_device *dev, short ch)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	short gset = (priv->ieee80211->state == IEEE80211_LINKED &&
+-		ieee80211_is_54g(priv->ieee80211->current_network)) ||
++		ieee80211_is_54g_rtl7(priv->ieee80211->current_network)) ||
+ 		priv->ieee80211->iw_mode == IW_MODE_MONITOR;
+ 	
+ 	rtl8225z2_SetTXPowerLevel(dev, ch);
+@@ -509,7 +512,7 @@
+ 		write_nic_byte(dev,DIFS,0x24); //DIFS: 36 
+ 	
+ 	if(priv->ieee80211->state == IEEE80211_LINKED &&
+-		ieee80211_is_shortslot(priv->ieee80211->current_network))
++		ieee80211_is_shortslot_rtl7(priv->ieee80211->current_network))
+ 		write_nic_byte(dev,SLOT,0x9); //SLOT: 9
+ 		
+ 	else
+@@ -581,7 +584,7 @@
+ #endif
+ void rtl8225z2_rf_init(struct net_device *dev) 
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int i;
+ 	short channel = 1;
+ 	u16	brsr;
+@@ -958,7 +961,7 @@
+ 
+ void rtl8225z2_rf_set_mode(struct net_device *dev) 
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	if(priv->ieee80211->mode == IEEE_A)
+ 	{
+diff -Naur rtl8187_orig/beta-8187/r8180_wx.c rtl8187_txpower/beta-8187/r8180_wx.c
+--- rtl8187_orig/beta-8187/r8180_wx.c	2006-06-06 04:58:02.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8180_wx.c	2007-03-05 00:31:38.045127259 +0100
+@@ -21,6 +21,7 @@
+ 
+ #include "r8187.h"
+ #include "r8180_hw.h"
++#include "r8180_rtl8225.h"
+ 
+ 
+ #define RATE_COUNT 4
+@@ -32,9 +33,9 @@
+ 			     struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+-	return ieee80211_wx_get_freq(priv->ieee80211,a,wrqu,b);
++	return ieee80211_wx_get_freq_rtl7(priv->ieee80211,a,wrqu,b);
+ }
+ 
+ 
+@@ -46,7 +47,7 @@
+ 	int *parms = (int *)b;
+ 	int bi = parms[0];
+ 	
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	down(&priv->wx_sem);
+ 	DMESG("setting beacon interval to %x",bi);
+@@ -62,7 +63,7 @@
+ static int r8180_wx_set_forceassociate(struct net_device *dev, struct iw_request_info *aa,
+ 			  union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv=ieee80211_priv(dev);	
++	struct r8180_priv *priv=ieee80211_priv_rtl7(dev);	
+ 	int *parms = (int *)extra;
+ 	
+ 	priv->ieee80211->force_associate = (parms[0] > 0);
+@@ -75,9 +76,9 @@
+ static int r8180_wx_get_mode(struct net_device *dev, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b)
+ {
+-	struct r8180_priv *priv=ieee80211_priv(dev);	
++	struct r8180_priv *priv=ieee80211_priv_rtl7(dev);	
+ 
+-	return ieee80211_wx_get_mode(priv->ieee80211,a,wrqu,b);
++	return ieee80211_wx_get_mode_rtl7(priv->ieee80211,a,wrqu,b);
+ }
+ 
+ 
+@@ -86,8 +87,8 @@
+ 			     struct iw_request_info *info, 
+ 			     union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
+-	return ieee80211_wx_get_rate(priv->ieee80211,info,wrqu,extra);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
++	return ieee80211_wx_get_rate_rtl7(priv->ieee80211,info,wrqu,extra);
+ }
+ 
+ 
+@@ -97,27 +98,83 @@
+ 			     union iwreq_data *wrqu, char *extra)
+ {
+ 	int ret;
+-	struct r8180_priv *priv = ieee80211_priv(dev);	
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);	
+ 	
+ 	down(&priv->wx_sem);
++	ret = ieee80211_wx_set_rate_rtl7(priv->ieee80211,info,wrqu,extra);
++	
++	up(&priv->wx_sem);
++	
++	return ret;
++}
++
++static int r8180_wx_get_txpow(struct net_device *dev,
++			      struct iw_request_info *info,
++			      union iwreq_data *wrqu, char *extra)
++{
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
++	down(&priv->wx_sem);
++	wrqu->power.value = priv->chtxpwr_ofdm[1] + MIN_TX_POWER;
++	wrqu->power.fixed = 1;
++	wrqu->power.flags = IW_TXPOW_DBM;
++	wrqu->power.disabled = 0;
++	up(&priv->wx_sem);
+ 
+-	ret = ieee80211_wx_set_rate(priv->ieee80211,info,wrqu,extra);
++	return 0;
++}
++
++#if 0
++static int r8180_wx_set_txpow(struct net_device *dev, 
++			      struct iw_request_info *info, 
++			      union iwreq_data *wrqu, char *extra)
++{
++	int ret = 0, i = 0;
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);	
+ 	
++	down(&priv->wx_sem);
++
++	if (wrqu->power.flags != IW_TXPOW_DBM)
++	{
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if(wrqu->power.value > MAX_TX_POWER)
++	{
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if(wrqu->power.value < MIN_TX_POWER)
++	{
++		ret = -EINVAL;
++		goto out;
++	}
++
++	for(i=1;i<=14;i++)
++	{
++		priv->chtxpwr[i] = wrqu->power.value + 1 - MIN_TX_POWER;
++		priv->chtxpwr_ofdm[i] = wrqu->power.value - MIN_TX_POWER;
++	}
++	rtl8225z2_SetTXPowerLevel(dev, 1);
++
++	out:
+ 	up(&priv->wx_sem);
+ 	
+ 	return ret;
+ }
++#endif
+ 
+ static int r8180_wx_set_rawtx(struct net_device *dev, 
+ 			       struct iw_request_info *info, 
+ 			       union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int ret;
+ 	
+ 	down(&priv->wx_sem);
+ 	
+-	ret = ieee80211_wx_set_rawtx(priv->ieee80211, info, wrqu, extra);
++	ret = ieee80211_wx_set_rawtx_rtl7(priv->ieee80211, info, wrqu, extra);
+ 	
+ 	up(&priv->wx_sem);
+ 	
+@@ -129,7 +186,7 @@
+ 			       struct iw_request_info *info, 
+ 			       union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int *parms = (int *)extra;
+ 	int enable = (parms[0] > 0);
+ 	short prev = priv->crcmon;
+@@ -157,12 +214,12 @@
+ static int r8180_wx_set_mode(struct net_device *dev, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int ret;
+ 	
+ 	down(&priv->wx_sem);
+ 	
+-	ret = ieee80211_wx_set_mode(priv->ieee80211,a,wrqu,b);
++	ret = ieee80211_wx_set_mode_rtl7(priv->ieee80211,a,wrqu,b);
+ 	
+ 	rtl8187_set_rxconf(dev);
+ 	
+@@ -176,7 +233,7 @@
+ 				union iwreq_data *wrqu, char *extra)
+ {
+ 	struct iw_range *range = (struct iw_range *)extra;
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	u16 val;
+ 	int i;
+ 
+@@ -247,7 +304,7 @@
+ 		// Include only legal frequencies for some countries
+ 		if ((priv->challow)[i+1]) {
+ 		        range->freq[val].i = i + 1;
+-			range->freq[val].m = ieee80211_wlan_frequencies[i] * 100000;
++			range->freq[val].m = ieee80211_wlan_frequencies_rtl7[i] * 100000;
+ 			range->freq[val].e = 1;
+ 			val++;
+ 		} else {
+@@ -267,14 +324,14 @@
+ static int r8180_wx_set_scan(struct net_device *dev, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int ret;
+ 	
+ 	if(!priv->up) return -1;
+ 	
+ 	down(&priv->wx_sem);
+ 	
+-	ret = ieee80211_wx_set_scan(priv->ieee80211,a,wrqu,b);
++	ret = ieee80211_wx_set_scan_rtl7(priv->ieee80211,a,wrqu,b);
+ 	
+ 	up(&priv->wx_sem);
+ 	return ret;
+@@ -286,13 +343,13 @@
+ {
+ 
+ 	int ret;
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	if(!priv->up) return -1;
+ 			
+ 	down(&priv->wx_sem);
+ 
+-	ret = ieee80211_wx_get_scan(priv->ieee80211,a,wrqu,b);
++	ret = ieee80211_wx_get_scan_rtl7(priv->ieee80211,a,wrqu,b);
+ 		
+ 	up(&priv->wx_sem);
+ 	
+@@ -304,13 +361,13 @@
+ 			      struct iw_request_info *a,
+ 			      union iwreq_data *wrqu, char *b)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	int ret;
+ 	
+ 	down(&priv->wx_sem);
+ 	
+-	ret = ieee80211_wx_set_essid(priv->ieee80211,a,wrqu,b);
++	ret = ieee80211_wx_set_essid_rtl7(priv->ieee80211,a,wrqu,b);
+ 	
+ 	up(&priv->wx_sem);
+ 	return ret;
+@@ -322,11 +379,11 @@
+ 			      union iwreq_data *wrqu, char *b)
+ {
+ 	int ret;
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	down(&priv->wx_sem);
+ 	
+-	ret = ieee80211_wx_get_essid(priv->ieee80211, a, wrqu, b);
++	ret = ieee80211_wx_get_essid_rtl7(priv->ieee80211, a, wrqu, b);
+ 
+ 	up(&priv->wx_sem);
+ 	
+@@ -338,11 +395,11 @@
+ 			     union iwreq_data *wrqu, char *b)
+ {
+ 	int ret;
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	down(&priv->wx_sem);
+ 	
+-	ret = ieee80211_wx_set_freq(priv->ieee80211, a, wrqu, b);
++	ret = ieee80211_wx_set_freq_rtl7(priv->ieee80211, a, wrqu, b);
+ 	
+ 	up(&priv->wx_sem);
+ 	return ret;
+@@ -352,8 +409,8 @@
+ 			     struct iw_request_info *info, 
+ 			     union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
+-	return ieee80211_wx_get_name(priv->ieee80211, info, wrqu, extra);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
++	return ieee80211_wx_get_name_rtl7(priv->ieee80211, info, wrqu, extra);
+ }
+ 
+ 
+@@ -361,7 +418,7 @@
+ 			     struct iw_request_info *info, 
+ 			     union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 
+ 	if (wrqu->frag.disabled)
+ 		priv->ieee80211->fts = DEFAULT_FRAG_THRESHOLD;
+@@ -381,7 +438,7 @@
+ 			     struct iw_request_info *info, 
+ 			     union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 
+ 	wrqu->frag.value = priv->ieee80211->fts;
+ 	wrqu->frag.fixed = 0;	/* no auto select */
+@@ -397,11 +454,11 @@
+ 			 char *extra)
+ {
+ 	int ret;
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	down(&priv->wx_sem);
+ 	
+-	ret = ieee80211_wx_set_wap(priv->ieee80211,info,awrq,extra);
++	ret = ieee80211_wx_set_wap_rtl7(priv->ieee80211,info,awrq,extra);
+ 	
+ 	up(&priv->wx_sem);
+ 	return ret;
+@@ -413,9 +470,9 @@
+ 			    struct iw_request_info *info, 
+ 			    union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+-	return ieee80211_wx_get_wap(priv->ieee80211,info,wrqu,extra);
++	return ieee80211_wx_get_wap_rtl7(priv->ieee80211,info,wrqu,extra);
+ }
+ 
+ 
+@@ -423,22 +480,22 @@
+ 			    struct iw_request_info *info, 
+ 			    union iwreq_data *wrqu, char *key)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+-	return ieee80211_wx_get_encode(priv->ieee80211, info, wrqu, key);
++	return ieee80211_wx_get_encode_rtl7(priv->ieee80211, info, wrqu, key);
+ }
+ 
+ static int r8180_wx_set_enc(struct net_device *dev, 
+ 			    struct iw_request_info *info, 
+ 			    union iwreq_data *wrqu, char *key)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int ret;
+ 	
+ 	down(&priv->wx_sem);
+ 	
+ 		DMESG("Setting SW wep key");
+-		ret = ieee80211_wx_set_encode(priv->ieee80211,info,wrqu,key);
++		ret = ieee80211_wx_set_encode_rtl7(priv->ieee80211,info,wrqu,key);
+ 			
+ 	up(&priv->wx_sem);
+ 	return ret;
+@@ -448,7 +505,7 @@
+ static int r8180_wx_set_scan_type(struct net_device *dev, struct iw_request_info *aa, union
+  iwreq_data *wrqu, char *p){
+   
+- 	struct r8180_priv *priv = ieee80211_priv(dev);
++ 	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int *parms=(int*)p;
+ 	int mode=parms[0];
+ 	
+@@ -463,7 +520,7 @@
+ 				struct iw_request_info *info, 
+ 				union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int err = 0;
+ 	
+ 	down(&priv->wx_sem);
+@@ -516,7 +573,7 @@
+ 				struct iw_request_info *info, 
+ 				union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 
+ 	wrqu->retry.disabled = 0; /* can't be disabled */
+@@ -542,7 +599,7 @@
+ 				struct iw_request_info *info, 
+ 				union iwreq_data *wrqu, char *extra)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	if(priv->rf_set_sens == NULL) 
+ 		return -1; /* we have not this support for this radio */
+ 	wrqu->sens.value = priv->sens;
+@@ -555,7 +612,7 @@
+ 				union iwreq_data *wrqu, char *extra)
+ {
+ 	
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	short err = 0;
+ 	down(&priv->wx_sem);
+@@ -624,7 +681,7 @@
+         r8180_wx_set_frag,        /* SIOCSIWFRAG */
+         r8180_wx_get_frag,        /* SIOCGIWFRAG */
+         dummy,                    /* SIOCSIWTXPOW */
+-        dummy,                    /* SIOCGIWTXPOW */
++        r8180_wx_get_txpow,       /* SIOCGIWTXPOW */
+         r8180_wx_set_retry,       /* SIOCSIWRETRY */
+         r8180_wx_get_retry,       /* SIOCGIWRETRY */
+         r8180_wx_set_enc,         /* SIOCSIWENCODE */
+@@ -666,7 +723,7 @@
+ #if WIRELESS_EXT >= 17	
+ static struct iw_statistics *r8180_get_wireless_stats(struct net_device *dev)
+ {
+-       struct r8180_priv *priv = ieee80211_priv(dev);
++       struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 
+        return &priv->wstats;
+ }
+diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_core.c
+--- rtl8187_orig/beta-8187/r8187_core.c	2006-06-22 07:43:30.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8187_core.c	2007-03-05 00:31:38.115128315 +0100
+@@ -57,6 +57,7 @@
+ #undef DEBUG_IRQ_TASKLET
+ #undef DEBUG_TX_ALLOC
+ #undef DEBUG_TX_DESC
++#undef DEBUG_TX_POWER
+ 
+ //#define CONFIG_RTL8180_IO_MAP
+ 
+@@ -98,6 +99,10 @@
+ #endif
+ static int channels = 0x3fff;
+ 
++#define DEBUG_EPROM
++#define DEBUG_REGISTERS
++#define DEBUG_TX_POWER
++
+ MODULE_LICENSE("GPL");
+ MODULE_VERSION("V 1.1");
+ MODULE_DEVICE_TABLE(usb, rtl8187_usb_id_tbl);
+@@ -158,11 +163,10 @@
+ #endif
+ };
+ 
+-
+ void write_nic_byte_E(struct net_device *dev, int indx, u8 data)
+ {
+ 	
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	struct usb_device *udev = priv->udev;
+ 	
+ 	usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
+@@ -174,7 +178,7 @@
+ void write_nic_byte(struct net_device *dev, int indx, u8 data)
+ {
+ 	
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	struct usb_device *udev = priv->udev;
+ 	
+ 	usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
+@@ -186,7 +190,7 @@
+ void write_nic_word(struct net_device *dev, int indx, u16 data)
+ {
+ 	
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	struct usb_device *udev = priv->udev;
+ 	
+ 	usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
+@@ -198,7 +202,7 @@
+ void write_nic_dword(struct net_device *dev, int indx, u32 data)
+ {
+ 	
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	struct usb_device *udev = priv->udev;
+ 	
+ 	usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
+@@ -211,7 +215,7 @@
+ u8 read_nic_byte(struct net_device *dev, int indx)
+ {
+ 	u8 data;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	struct usb_device *udev = priv->udev;
+ 	
+ 	usb_control_msg(udev, usb_rcvctrlpipe(udev, 0),
+@@ -223,7 +227,7 @@
+ u8 read_nic_byte_E(struct net_device *dev, int indx)
+ {
+ 	u8 data;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	struct usb_device *udev = priv->udev;
+ 	
+ 	usb_control_msg(udev, usb_rcvctrlpipe(udev, 0),
+@@ -236,7 +240,7 @@
+ u16 read_nic_word(struct net_device *dev, int indx)
+ {
+ 	u16 data;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	struct usb_device *udev = priv->udev;
+ 	
+ 	usb_control_msg(udev, usb_rcvctrlpipe(udev, 0),
+@@ -249,7 +253,7 @@
+ u32 read_nic_dword(struct net_device *dev, int indx)
+ {
+ 	u32 data;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	struct usb_device *udev = priv->udev;
+ 	
+ 	usb_control_msg(udev, usb_rcvctrlpipe(udev, 0),
+@@ -271,7 +275,12 @@
+ //void set_nic_txring(struct net_device *dev);
+ static struct net_device_stats *rtl8180_stats(struct net_device *dev);
+ void rtl8180_commit(struct net_device *dev);
++
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void rtl8180_restart(struct work_struct *work);
++#else
+ void rtl8180_restart(struct net_device *dev);
++#endif
+ 
+ /****************************************************************************
+    -----------------------------PROCFS STUFF-------------------------
+@@ -284,7 +293,7 @@
+ 			  int *eof, void *data)
+ {
+ 	struct net_device *dev = data;
+-//	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++//	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	
+ 	int len = 0;
+ 	int i,n;
+@@ -319,7 +328,7 @@
+ 			  int *eof, void *data)
+ {
+ 	struct net_device *dev = data;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	
+ 	int len = 0;
+ 	
+@@ -339,7 +348,7 @@
+ 			  int *eof, void *data)
+ {
+ 	struct net_device *dev = data;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	
+ 	int len = 0;
+ 	
+@@ -391,7 +400,7 @@
+ 			  int *eof, void *data)
+ {
+ 	struct net_device *dev = data;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	
+ 	int len = 0;
+ 	
+@@ -407,13 +416,14 @@
+ 	return len;
+ }		
+ 
+-
++#if WIRELESS_EXT < 17
+ static struct iw_statistics *r8180_get_wireless_stats(struct net_device *dev)
+ {
+-       struct r8180_priv *priv = ieee80211_priv(dev);
++       struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 
+        return &priv->wstats;
+ }
++#endif
+ 
+ void rtl8180_proc_module_init(void)
+ {	
+@@ -430,7 +440,7 @@
+ 
+ void rtl8180_proc_remove_one(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	if (priv->dir_dev) {
+ 	//	remove_proc_entry("stats-hw", priv->dir_dev);
+ 		remove_proc_entry("stats-tx", priv->dir_dev);
+@@ -447,7 +457,7 @@
+ void rtl8180_proc_init_one(struct net_device *dev)
+ {
+ 	struct proc_dir_entry *e;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	priv->dir_dev = create_proc_entry(dev->name, 
+ 					  S_IFDIR | S_IRUGO | S_IXUGO, 
+ 					  rtl8180_proc);
+@@ -539,7 +549,7 @@
+ 
+ short check_nic_enought_desc(struct net_device *dev, priority_t priority)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	int used = atomic_read((priority == NORM_PRIORITY) ? 
+ 		&priv->tx_np_pending : &priv->tx_lp_pending);
+@@ -549,7 +559,7 @@
+ 
+ void tx_timeout(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	//rtl8180_commit(dev);
+ 	schedule_work(&priv->reset_wq);
+ 	//DMESG("TXTIMEOUT");
+@@ -561,7 +571,20 @@
+ {
+ 	int i;
+ 	for(i=0; i<63; i++)
+-		DMESG("EEPROM addr %x : %x", i, eprom_read(dev,i));
++		DMESG("EEPROM addr %02X : %04X", i, eprom_read(dev,i));
++}
++
++/* this is only for debug */
++void dump_tx_power(struct net_device *dev)
++{
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
++	int i;
++	DMESG("CCK TX-Power (b-mode):");
++	for(i=1; i<=14; i++)
++		DMESG("Channel %d: %d", i, priv->chtxpwr[i]);
++	DMESG("OFDM TX-Power (g-mode):");
++	for(i=1; i<=14; i++)
++		DMESG("Channel %d: %d", i, priv->chtxpwr_ofdm[i]);
+ }
+ 
+ /* this is only for debug */
+@@ -575,9 +598,9 @@
+ 	
+ 	for(n=0;n<=max;)
+ 	{
+-		printk( "\nD: %2x> ", n);
++		printk( "\nD: %02X> ", n);
+ 		for(i=0;i<16 && n<=max;i++,n++)
+-			printk("%2x ",read_nic_byte(dev,n));
++			printk("%02X ",read_nic_byte(dev,n));
+ 	}
+ 	printk("\n");
+ }
+@@ -589,7 +612,7 @@
+ 
+ void rtl8180_irq_enable(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);	
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);	
+ 	//priv->irq_enabled = 1;
+ /*
+ 	write_nic_word(dev,INTA_MASK,INTA_RXOK | INTA_RXDESCERR | INTA_RXOVERFLOW |\ 
+@@ -603,7 +626,7 @@
+ 
+ void rtl8180_irq_disable(struct net_device *dev)
+ {
+-//	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);	
++//	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);	
+ 
+ 	write_nic_word(dev,INTA_MASK,0);
+ 	force_pci_posting(dev);
+@@ -625,7 +648,7 @@
+ 
+ void rtl8180_update_msr(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	u8 msr;
+ 	
+ 	msr  = read_nic_byte(dev, MSR);
+@@ -653,7 +676,7 @@
+ 
+ void rtl8180_set_chan(struct net_device *dev,short ch)
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	u32 tx;
+ 	priv->chan=ch;
+ 	#if 0
+@@ -670,20 +693,20 @@
+ 	tx = read_nic_dword(dev,TX_CONF);
+ 	tx &= ~TX_LOOPBACK_MASK;
+ 
+-#ifndef LOOP_TEST	
++#ifndef LOOP_TEST
+ 	write_nic_dword(dev,TX_CONF, tx |( TX_LOOPBACK_MAC<<TX_LOOPBACK_SHIFT));
+-
+ 	priv->rf_set_chan(dev,priv->chan);
+ 	mdelay(10);
+-	write_nic_dword(dev,TX_CONF,tx | (TX_LOOPBACK_NONE<<TX_LOOPBACK_SHIFT));
++ 	write_nic_dword(dev,TX_CONF,tx | (TX_LOOPBACK_NONE<<TX_LOOPBACK_SHIFT));
+ #endif
+ }
++
+ void rtl8187_rx_isr(struct urb *rx_urb, struct pt_regs *regs);
+ 
+ 
+ void rtl8187_rx_urbsubmit(struct net_device *dev, struct urb* rx_urb)
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	int err;
+ 	
+ //	u8 *rx;
+@@ -710,7 +733,7 @@
+ void rtl8187_rx_initiate(struct net_device *dev)
+ {
+ 	int i;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	
+ 	if(!priv->rx_urb)
+ 		DMESGE("Cannot intiate RX urb mechanism");
+@@ -721,7 +744,7 @@
+ 
+ void rtl8187_set_rxconf(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	u32 rxconf;
+ 	
+ 	rxconf=read_nic_dword(dev,RX_CONF);
+@@ -810,7 +833,7 @@
+ 	u8 cmd;
+ 	u8 byte;
+ 	u32 txconf;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	
+ 	byte = read_nic_byte(dev,CW_CONF);
+ 	byte &= ~(1<<CW_CONF_PERPACKET_CW_SHIFT);
+@@ -889,7 +912,7 @@
+ #if 0
+ void rtl8180_beacon_tx_enable(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	priv->dma_poll_mask &=~(1<<TX_DMA_STOP_BEACON_SHIFT);
+ 	rtl8180_set_mode(dev,EPROM_CMD_CONFIG);
+ 	write_nic_byte(dev,TX_DMA_POLLING,priv->dma_poll_mask);	
+@@ -900,7 +923,7 @@
+ void rtl8180_
+ _disable(struct net_device *dev) 
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	priv->dma_poll_mask |= (1<<TX_DMA_STOP_BEACON_SHIFT);
+ 	rtl8180_set_mode(dev,EPROM_CMD_CONFIG);
+ 	write_nic_byte(dev,TX_DMA_POLLING,priv->dma_poll_mask);
+@@ -914,7 +937,7 @@
+ {
+ 	u8 cmd;
+ 	int i;
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	cmd=read_nic_byte(dev,CMD);
+ 	write_nic_byte(dev, CMD, cmd &~ \
+@@ -939,7 +962,7 @@
+ 	#if 0
+ 	int i;
+ 	u32 *tmp;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	
+ 	priv->txbeaconring = (u32*)pci_alloc_consistent(priv->pdev,
+ 					  sizeof(u32)*8*count, 
+@@ -1051,7 +1074,7 @@
+ void rtl8187_rx_isr(struct urb *rx_urb, struct pt_regs *regs)
+ {
+ 	struct net_device *dev = (struct net_device*)rx_urb->context;
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 
+ 	priv->rxurb_task = rx_urb;
+ //	DMESGW("David: Rx tasklet start!");
+@@ -1062,7 +1085,7 @@
+ #if 0
+ void rtl8180_tx_queues_stop(struct net_device *dev)
+ {
+-	//struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	//struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	u8 dma_poll_mask = (1<<TX_DMA_STOP_LOWPRIORITY_SHIFT);
+ 	dma_poll_mask |= (1<<TX_DMA_STOP_HIPRIORITY_SHIFT);
+ 	dma_poll_mask |= (1<<TX_DMA_STOP_NORMPRIORITY_SHIFT);
+@@ -1078,7 +1101,7 @@
+ {
+ 	//FIXME !!
+ 	#if 0
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	priv->dma_poll_mask |= (1<<TX_DMA_STOP_LOWPRIORITY_SHIFT);
+ 	rtl8180_set_mode(dev,EPROM_CMD_CONFIG);
+ 	write_nic_byte(dev,TX_DMA_POLLING,priv->dma_poll_mask);
+@@ -1091,7 +1114,7 @@
+ {
+ 	// FIXME !!
+ 	#if 0
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	priv->dma_poll_mask &= ~(1<<TX_DMA_STOP_LOWPRIORITY_SHIFT);
+ 	rtl8180_set_mode(dev,EPROM_CMD_CONFIG);
+ 	write_nic_byte(dev,TX_DMA_POLLING,priv->dma_poll_mask);
+@@ -1105,14 +1128,17 @@
+  */
+ void rtl8180_hard_data_xmit(struct sk_buff *skb, struct net_device *dev, int rate)
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	
+ 	short morefrag = 0;	
+ 	unsigned long flags;
+ 	struct ieee80211_hdr *h = (struct ieee80211_hdr  *) skb->data;
+ 
+ 	if (le16_to_cpu(h->frame_ctl) & IEEE80211_FCTL_MOREFRAGS)
+-		morefrag = 1;
++	{
++		if(priv->ieee80211->iw_mode != IW_MODE_MONITOR || priv->ieee80211->raw_tx != 1)
++			morefrag = 1;
++	}
+ //	DMESG("%x %x", h->frame_ctl, h->seq_ctl);
+ 	/*
+ 	* This function doesn't require lock because we make
+@@ -1126,7 +1152,7 @@
+ 	//DMESG("TX");
+ 	if (!check_nic_enought_desc(dev, LOW_PRIORITY)){
+ 		DMESG("Error: no TX slot ");
+-		ieee80211_stop_queue(priv->ieee80211);
++		ieee80211_stop_queue_rtl7(priv->ieee80211);
+ 	}
+ 	
+ 	rtl8180_tx(dev, (u32*)skb->data, skb->len, LOW_PRIORITY, morefrag,
+@@ -1135,7 +1161,7 @@
+ 	priv->stats.txdatapkt++;
+ 	
+ 	if (!check_nic_enought_desc(dev, LOW_PRIORITY))
+-		ieee80211_stop_queue(priv->ieee80211);
++		ieee80211_stop_queue_rtl7(priv->ieee80211);
+ 		
+ 	spin_unlock_irqrestore(&priv->tx_lock,flags);	
+ 			
+@@ -1148,7 +1174,7 @@
+  */
+ int rtl8180_hard_start_xmit(struct sk_buff *skb,struct net_device *dev)
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	int ret;
+ 	unsigned long flags;
+ 	
+@@ -1228,7 +1254,7 @@
+ void rtl8187_lptx_isr(struct urb *tx_urb, struct pt_regs *regs)
+ {
+ 	struct net_device *dev = (struct net_device*)tx_urb->context;
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	if(tx_urb->status == 0)
+ 		priv->stats.txlpokint++;
+ 	else
+@@ -1259,7 +1285,7 @@
+ void rtl8187_net_update(struct net_device *dev)
+ {
+ 
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	struct ieee80211_network *net;
+ 	net = & priv->ieee80211->current_network;
+ 	
+@@ -1283,13 +1309,13 @@
+ void rtl8187_beacon_tx(struct net_device *dev)
+ {
+ 
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	struct sk_buff *skb;
+ 	int i = 0;
+ 	
+ 	rtl8187_net_update(dev);
+ 	
+-	skb = ieee80211_get_beacon(priv->ieee80211);
++	skb = ieee80211_get_beacon_rtl7(priv->ieee80211);
+ 	
+ 	
+ 	if(!skb){ 
+@@ -1327,7 +1353,7 @@
+ void rtl8187_nptx_isr(struct urb *tx_urb, struct pt_regs *regs)
+ {
+ 	struct net_device *dev = (struct net_device*)tx_urb->context;
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	if(tx_urb->status == 0)
+ 		priv->stats.txnpokint++;
+ 	else
+@@ -1353,7 +1379,7 @@
+ 	int status;
+ 	struct urb *tx_urb;
+ 	int urb_len;	
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ //	int rate = ieeerate2rtlrate(priv->ieee80211->rate);
+ 
+ 	pend = atomic_read((priority == NORM_PRIORITY)? &priv->tx_np_pending : &priv->tx_lp_pending);
+@@ -1445,7 +1471,7 @@
+ 
+ short rtl8187_usb_initendpoints(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int i;
+ 	
+ 	priv->rx_urb = (struct urb**) kmalloc (sizeof(struct urb*) * MAX_RX_URB, GFP_KERNEL);
+@@ -1483,7 +1509,7 @@
+ 
+ void rtl8187_usb_deleteendpoints(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int i;
+ 	
+ 	if(priv->rx_urb){
+@@ -1506,9 +1532,9 @@
+ 	u16 word;
+ 	int basic_rate,min_rr_rate,max_rr_rate;
+ 	
+-//	struct r8180_priv *priv = ieee80211_priv(dev);
++//	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+-	//if (ieee80211_is_54g(priv->ieee80211->current_network) && 
++	//if (ieee80211_is_54g_rtl7(priv->ieee80211->current_network) && 
+ //		priv->ieee80211->state == IEEE80211_LINKED){
+ 	basic_rate = ieeerate2rtlrate(240);
+ 	min_rr_rate = ieeerate2rtlrate(60);
+@@ -1532,7 +1558,7 @@
+ 		word |= (1<<i);
+ 
+ 	write_nic_word(dev, BRSR, word);
+-	//DMESG("RR:%x BRSR: %x", read_nic_byte(dev,RESP_RATE), read_nic_word(dev,BRSR));
++	DMESG("RR:%x BRSR: %x", read_nic_byte(dev,RESP_RATE), read_nic_word(dev,BRSR));
+ }
+ 
+ 
+@@ -1540,7 +1566,7 @@
+ {
+ //	int i;
+ 	
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	//write_nic_word(dev, BintrItv, net->beacon_interval);
+ 	rtl8187_net_update(dev);
+ 	/*update timing params*/
+@@ -1554,13 +1580,13 @@
+ short rtl8180_init(struct net_device *dev)
+ {
+ 		
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int i, j;
+ 	u16 word;
+-	int ch;
++	int ch, chans;
+ 	//u16 version;
+-	//u8 hw_version;
+-	//u8 config3;
++	u8 hw_version;
++	u8 config3;
+ 	
+ 	//FIXME: these constants are placed in a bad pleace.
+ 
+@@ -1580,6 +1606,13 @@
+ 		return -1;
+ 	}
+ 	ch=channels;
++	chans=0;
++	for (i=1; i<=14; i++) {
++		if( (u8)(ch & 0x01) ) chans++;
++		ch >>= 1;
++	}
++	DMESG("Enabling %d channels.", chans);
++	ch=channels;
+ 	 // set channels 1..14 allowed in given locale
+ 	for (i=1; i<=14; i++) {
+ 		(priv->ieee80211->channel_map)[i] = (u8)(ch & 0x01);
+@@ -1588,6 +1621,8 @@
+ 	//memcpy(priv->stats,0,sizeof(struct Stats));
+ 	
+ 	//priv->irq_enabled=0;
++
++	priv->dev = dev;
+ 	
+ //	priv->stats.rxdmafail=0;
+ 	priv->stats.txrdu=0;
+@@ -1622,7 +1657,11 @@
+ 	priv->ieee80211->mode = IEEE_G;
+ 	priv->promisc = (dev->flags & IFF_PROMISC) ? 1:0;
+ 	spin_lock_init(&priv->tx_lock);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
+ 	INIT_WORK(&priv->reset_wq,(void(*)(void*)) rtl8180_restart,dev);
++#else
++	INIT_WORK(&priv->reset_wq, rtl8180_restart);
++#endif
+ 	sema_init(&priv->wx_sem,1);
+ 	tasklet_init(&priv->irq_rx_tasklet,
+ 		     (void(*)(unsigned long))rtl8180_irq_rx_tasklet,
+@@ -1716,6 +1755,12 @@
+ 	priv->enable_gpio0 = 0;
+ 
+ 	
++	hw_version =( read_nic_dword(dev, TCR) & TCR_HWVERID_MASK)>>TCR_HWVERID_SHIFT;
++	config3 = read_nic_byte(dev, CONFIG3);
++
++	DMESG("MAC chip version: %02X", hw_version);
++	DMESG("Card type: %02X", config3);
++
+ 	/* commented out just because we already do
+ 	   this when resetting the card
+ 	   andrea 20050924
+@@ -1807,6 +1852,12 @@
+ 	
+ 		
+ 	priv->rf_chip = 0xff & eprom_read(dev,EPROM_RFCHIPID);
++
++#ifdef DEBUG_TX_POWER
++	dump_tx_power(dev);
++#endif
++
++	DMESG("RF Chip ID: %02X", priv->rf_chip);
+ 	
+ 	word = eprom_read(dev,EPROM_TXPW_BASE);
+ 	priv->cck_txpwr_base = word & 0xf;
+@@ -1988,7 +2039,7 @@
+ 
+ void rtl8180_adapter_start(struct net_device *dev)
+ {
+-        struct r8180_priv *priv = ieee80211_priv(dev);
++        struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	//u32 anaparam;
+ 	//u8 config3;
+ 	
+@@ -2077,7 +2128,7 @@
+ void rtl8180_start_tx_beacon(struct net_device *dev)
+ {
+ 	int i;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	u16 word;	
+ 	DMESG("Enabling beacon TX");
+ 	//write_nic_byte(dev, 0x42,0xe6);// TCR
+@@ -2135,7 +2186,7 @@
+ ***************************************************************************/
+ static struct net_device_stats *rtl8180_stats(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	
+ 	return &priv->ieee80211->stats;
+ }
+@@ -2143,36 +2194,32 @@
+ 
+ int _rtl8180_up(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 
+ 	priv->up=1;
+ 	
+-	//DMESG("Bringing up iface");
++// 	DMESG("Bringing up iface");
+ 
+ 	rtl8180_adapter_start(dev);
+-	
+ 	rtl8180_rx_enable(dev);
+-
+ 	rtl8180_tx_enable(dev);
+-	
+-	ieee80211_softmac_start_protocol(priv->ieee80211);
+-	
+-	ieee80211_reset_queue(priv->ieee80211);
++	ieee80211_softmac_start_protocol_rtl7(priv->ieee80211);
++	ieee80211_reset_queue_rtl7(priv->ieee80211);
+ 	if(!netif_queue_stopped(dev))
+ 		netif_start_queue(dev);
+ 	else
+ 		netif_wake_queue(dev);
+-		
+ 	return 0;
+ }
+ 
+ 
+ int rtl8180_open(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int ret;
+ 	
+ 	down(&priv->wx_sem);
++
+ 	ret = rtl8180_up(dev);
+ 	up(&priv->wx_sem);
+ 	return ret;
+@@ -2182,7 +2229,7 @@
+ 
+ int rtl8180_up(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 
+ 	if (priv->up == 1) return -1;
+ 	
+@@ -2192,7 +2239,7 @@
+ 
+ int rtl8180_close(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	int ret;
+ 	
+ 	down(&priv->wx_sem);
+@@ -2207,7 +2254,7 @@
+ 
+ int rtl8180_down(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 
+ 	if (priv->up == 0) return -1;
+ 	
+@@ -2220,7 +2267,7 @@
+ 	rtl8180_rtx_disable(dev);
+ 	rtl8180_irq_disable(dev);
+ 
+-	ieee80211_softmac_stop_protocol(priv->ieee80211);
++	ieee80211_softmac_stop_protocol_rtl7(priv->ieee80211);
+ 		
+ 	return 0;
+ }
+@@ -2228,23 +2275,28 @@
+ 
+ void rtl8180_commit(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 
+ 	if (priv->up == 0) return ;
+ 	
+-	ieee80211_softmac_stop_protocol(priv->ieee80211);
++	ieee80211_softmac_stop_protocol_rtl7(priv->ieee80211);
+ 	
+ 	rtl8180_irq_disable(dev);
+ 	rtl8180_rtx_disable(dev);
+ 	_rtl8180_up(dev);
+ }
+ 
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void rtl8180_restart(struct work_struct *work)
++{
++	struct r8180_priv *priv = container_of(work, struct r8180_priv, reset_wq);
++	struct net_device *dev = priv->dev;
++#else
+ void rtl8180_restart(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
+-
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
++#endif
+ 	down(&priv->wx_sem);
+-	
+ 	rtl8180_commit(dev);
+ 	
+ 	up(&priv->wx_sem);
+@@ -2252,7 +2304,7 @@
+ 
+ static void r8180_set_multicast(struct net_device *dev)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	short promisc;
+ 
+ 	//down(&priv->wx_sem);
+@@ -2273,7 +2325,7 @@
+ 
+ int r8180_set_mac_adr(struct net_device *dev, void *mac)
+ {
+-	struct r8180_priv *priv = ieee80211_priv(dev);
++	struct r8180_priv *priv = ieee80211_priv_rtl7(dev);
+ 	struct sockaddr *addr = mac;
+ 	
+ 	down(&priv->wx_sem);
+@@ -2291,8 +2343,9 @@
+ /* based on ipw2200 driver */
+ int rtl8180_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	
++
+ 	down(&priv->wx_sem);
+ 	
+ 	struct iwreq *wrq = (struct iwreq *)rq;
+@@ -2300,7 +2353,7 @@
+ 	int ret=-1;
+ 	switch (cmd) {
+ 	    case RTL_IOCTL_WPA_SUPPLICANT:
+-		ret = ieee80211_wpa_supplicant_ioctl(priv->ieee80211, &wrq->u.data);
++		ret = ieee80211_wpa_supplicant_ioctl_rtl7(priv->ieee80211, &wrq->u.data);
+ 		break;
+ 
+ 	    default:
+@@ -2346,7 +2399,8 @@
+ 		
+ 		if( flen <= rx_urb->actual_length){
+ 		
+-			stats.signal = (desc[1] & 0x7f00)>>8;
++//			stats.signal = (desc[1] & 0x7f00)>>8;
++			stats.signal = (desc[1] & 0xff00)>>8;
+ 			stats.noise = desc[1] &0xff;
+ 			stats.rate = desc[0] >> 20 & 0xf;
+ 			stats.mac_time[0] = desc[2];
+@@ -2368,7 +2422,9 @@
+ 		//	priv->rxskb = skb;
+ 		//	priv->tempstats = &stats;
+ 
+-			if(!ieee80211_rx(priv->ieee80211, 
++
++			stats.signal -= stats.noise;
++			if(!ieee80211_rx_rtl7(priv->ieee80211, 
+ 				skb, &stats))
+ 			dev_kfree_skb_any(skb);
+ 			}
+@@ -2398,14 +2454,14 @@
+ 
+ //printk("===> rtl8187_usb_probe()\n");	
+ 	
+-	dev = alloc_ieee80211(sizeof(struct r8180_priv));
++	dev = alloc_ieee80211_rtl7(sizeof(struct r8180_priv));
+ 	
+ 	SET_MODULE_OWNER(dev);
+ 	usb_set_intfdata(intf, dev);	
+ 	
+ 	SET_NETDEV_DEV(dev, &intf->dev);
+ 
+-	priv = ieee80211_priv(dev);
++	priv = ieee80211_priv_rtl7(dev);
+ 	priv->ieee80211 = netdev_priv(dev);
+ 	
+ 	priv->udev=udev;
+@@ -2418,7 +2474,12 @@
+ 	dev->do_ioctl = rtl8180_ioctl;
+ 	dev->set_multicast_list = r8180_set_multicast;
+ 	dev->set_mac_address = r8180_set_mac_adr;
++#if WIRELESS_EXT >= 12
++#if WIRELESS_EXT < 17
+ 	dev->get_wireless_stats = r8180_get_wireless_stats;
++#endif
++	dev->wireless_handlers = (struct iw_handler_def *) &r8180_wx_handlers_def;
++#endif
+ 	dev->type=ARPHRD_ETHER;
+ 	
+ 	if (dev_alloc_name(dev, ifname) < 0){
+@@ -2447,7 +2508,7 @@
+ 
+ 	
+ fail:
+-	free_ieee80211(dev);
++	free_ieee80211_rtl7(dev);
+ 		
+ 	DMESG("wlan driver load failed\n");
+ 	
+@@ -2464,7 +2525,7 @@
+ 		
+ 		unregister_netdev(dev);
+ 		
+-		priv=ieee80211_priv(dev);
++		priv=ieee80211_priv_rtl7(dev);
+ 		
+ 		rtl8180_proc_remove_one(dev);
+ 		
+@@ -2478,12 +2539,12 @@
+ 
+ 	}
+ //	pci_disable_device(pdev);
+-	free_ieee80211(dev);
++	free_ieee80211_rtl7(dev);
+ 	DMESG("wlan driver removed\n");
+ }
+ 
+ 
+-static int __init rtl8187_usb_module_init(void)
++static int __init rtl8187_usb_module_init_rtl7(void)
+ {
+ 	printk(KERN_INFO "\nLinux kernel driver for RTL8187 \
+ based WLAN cards\n");
+@@ -2495,7 +2556,7 @@
+ }
+ 
+ 
+-static void __exit rtl8187_usb_module_exit(void)
++static void __exit rtl8187_usb_module_exit_rtl7(void)
+ {
+ 	usb_deregister(&rtl8187_usb_driver);
+ 
+@@ -2508,14 +2569,14 @@
+ {
+ 	unsigned long flags;
+ 	short enough_desc;
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv_rtl7(dev);
+ 	
+ 	spin_lock_irqsave(&priv->tx_lock,flags);
+ 	enough_desc = check_nic_enought_desc(dev,pri);
+         spin_unlock_irqrestore(&priv->tx_lock,flags);	
+ 	
+ 	if(enough_desc)
+-		ieee80211_wake_queue(priv->ieee80211);
++		ieee80211_wake_queue_rtl7(priv->ieee80211);
+ }
+ 
+ 
+@@ -2523,5 +2584,5 @@
+ /***************************************************************************
+      ------------------- module init / exit stubs ----------------
+ ****************************************************************************/
+-module_init(rtl8187_usb_module_init);
+-module_exit(rtl8187_usb_module_exit);
++module_init(rtl8187_usb_module_init_rtl7);
++module_exit(rtl8187_usb_module_exit_rtl7);
+diff -Naur rtl8187_orig/beta-8187/r8187.h rtl8187_txpower/beta-8187/r8187.h
+--- rtl8187_orig/beta-8187/r8187.h	2006-06-06 08:48:10.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8187.h	2007-03-05 00:31:41.535179906 +0100
+@@ -26,7 +26,6 @@
+ 
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+-#include <linux/config.h>
+ #include <linux/init.h>
+ #include <linux/ioport.h>
+ #include <linux/sched.h>
+@@ -47,6 +46,10 @@
+ #include <asm/io.h>
+ #include <asm/semaphore.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ #define EPROM_93c46 0
+@@ -148,7 +151,7 @@
+ 	u8 challow[15]; //channels from 1 to 14, 0 not used
+ 	short up;
+ 	short crcmon; //if 1 allow bad crc frame reception in monitor mode
+-//	short prism_hdr;
++	short prism_hdr;
+ 	
+ //	struct timer_list scan_timer;
+ 	/*short scanpending;
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.c rtl8187_txpower/ieee80211/ieee80211_crypt.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt.c	2006-06-06 04:57:56.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_crypt.c	2007-03-05 00:31:52.275341919 +0100
+@@ -11,7 +11,6 @@
+  *
+  */
+ 
+-#include <linux/config.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -19,6 +18,10 @@
+ #include <asm/string.h>
+ #include <asm/errno.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ MODULE_AUTHOR("Jouni Malinen");
+@@ -38,7 +41,7 @@
+ 
+ static struct ieee80211_crypto *hcrypt;
+ 
+-void ieee80211_crypt_deinit_entries(struct ieee80211_device *ieee,
++void ieee80211_crypt_deinit_entries_rtl7(struct ieee80211_device *ieee,
+ 					   int force)
+ {
+ 	struct list_head *ptr, *n;
+@@ -61,13 +64,13 @@
+ 	}
+ }
+ 
+-void ieee80211_crypt_deinit_handler(unsigned long data)
++void ieee80211_crypt_deinit_handler_rtl7(unsigned long data)
+ {
+ 	struct ieee80211_device *ieee = (struct ieee80211_device *)data;
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&ieee->lock, flags);
+-	ieee80211_crypt_deinit_entries(ieee, 0);
++	ieee80211_crypt_deinit_entries_rtl7(ieee, 0);
+ 	if (!list_empty(&ieee->crypt_deinit_list)) {
+ 		printk(KERN_DEBUG "%s: entries remaining in delayed crypt "
+ 		       "deletion list\n", ieee->dev->name);
+@@ -78,7 +81,7 @@
+ 
+ }
+ 
+-void ieee80211_crypt_delayed_deinit(struct ieee80211_device *ieee,
++void ieee80211_crypt_delayed_deinit_rtl7(struct ieee80211_device *ieee,
+ 				    struct ieee80211_crypt_data **crypt)
+ {
+ 	struct ieee80211_crypt_data *tmp;
+@@ -103,7 +106,7 @@
+ 	spin_unlock_irqrestore(&ieee->lock, flags);
+ }
+ 
+-int ieee80211_register_crypto_ops(struct ieee80211_crypto_ops *ops)
++int ieee80211_register_crypto_ops_rtl7(struct ieee80211_crypto_ops *ops)
+ {
+ 	unsigned long flags;
+ 	struct ieee80211_crypto_alg *alg;
+@@ -128,7 +131,7 @@
+ 	return 0;
+ }
+ 
+-int ieee80211_unregister_crypto_ops(struct ieee80211_crypto_ops *ops)
++int ieee80211_unregister_crypto_ops_rtl7(struct ieee80211_crypto_ops *ops)
+ {
+ 	unsigned long flags;
+ 	struct list_head *ptr;
+@@ -159,7 +162,7 @@
+ }
+ 
+ 
+-struct ieee80211_crypto_ops * ieee80211_get_crypto_ops(const char *name)
++struct ieee80211_crypto_ops * ieee80211_get_crypto_ops_rtl7(const char *name)
+ {
+ 	unsigned long flags;
+ 	struct list_head *ptr;
+@@ -186,13 +189,13 @@
+ }
+ 
+ 
+-static void * ieee80211_crypt_null_init(int keyidx) { return (void *) 1; }
+-static void ieee80211_crypt_null_deinit(void *priv) {}
++static void * ieee80211_crypt_null_init_rtl7(int keyidx) { return (void *) 1; }
++static void ieee80211_crypt_null_deinit_rtl7(void *priv) {}
+ 
+ static struct ieee80211_crypto_ops ieee80211_crypt_null = {
+ 	.name			= "NULL",
+-	.init			= ieee80211_crypt_null_init,
+-	.deinit			= ieee80211_crypt_null_deinit,
++	.init			= ieee80211_crypt_null_init_rtl7,
++	.deinit			= ieee80211_crypt_null_deinit_rtl7,
+ 	.encrypt_mpdu		= NULL,
+ 	.decrypt_mpdu		= NULL,
+ 	.encrypt_msdu		= NULL,
+@@ -205,7 +208,7 @@
+ };
+ 
+ 
+-static int __init ieee80211_crypto_init(void)
++static int __init ieee80211_crypto_init_rtl7(void)
+ {
+ 	int ret = -ENOMEM;
+ 
+@@ -217,7 +220,7 @@
+ 	INIT_LIST_HEAD(&hcrypt->algs);
+ 	spin_lock_init(&hcrypt->lock);
+ 
+-	ret = ieee80211_register_crypto_ops(&ieee80211_crypt_null);
++	ret = ieee80211_register_crypto_ops_rtl7(&ieee80211_crypt_null);
+ 	if (ret < 0) {
+ 		kfree(hcrypt);
+ 		hcrypt = NULL;
+@@ -227,7 +230,7 @@
+ }
+ 
+ 
+-static void __exit ieee80211_crypto_deinit(void)
++static void __exit ieee80211_crypto_deinit_rtl7(void)
+ {
+ 	struct list_head *ptr, *n;
+ 
+@@ -247,13 +250,13 @@
+ 	kfree(hcrypt);
+ }
+ 
+-EXPORT_SYMBOL(ieee80211_crypt_deinit_entries);
+-EXPORT_SYMBOL(ieee80211_crypt_deinit_handler);
+-EXPORT_SYMBOL(ieee80211_crypt_delayed_deinit);
+-
+-EXPORT_SYMBOL(ieee80211_register_crypto_ops);
+-EXPORT_SYMBOL(ieee80211_unregister_crypto_ops);
+-EXPORT_SYMBOL(ieee80211_get_crypto_ops);
++EXPORT_SYMBOL(ieee80211_crypt_deinit_entries_rtl7);
++EXPORT_SYMBOL(ieee80211_crypt_deinit_handler_rtl7);
++EXPORT_SYMBOL(ieee80211_crypt_delayed_deinit_rtl7);
++
++EXPORT_SYMBOL(ieee80211_register_crypto_ops_rtl7);
++EXPORT_SYMBOL(ieee80211_unregister_crypto_ops_rtl7);
++EXPORT_SYMBOL(ieee80211_get_crypto_ops_rtl7);
+ 
+-module_init(ieee80211_crypto_init);
+-module_exit(ieee80211_crypto_deinit);
++module_init(ieee80211_crypto_init_rtl7);
++module_exit(ieee80211_crypto_deinit_rtl7);
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c	2007-03-05 00:31:52.295342221 +0100
+@@ -9,7 +9,6 @@
+  * more details.
+  */
+ 
+-#include <linux/config.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -22,11 +21,20 @@
+ #include <asm/string.h>
+ #include <linux/wireless.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++    #include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ 
+ #include <linux/crypto.h>
+-#include <asm/scatterlist.h>
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
++    #include <asm/scatterlist.h>
++#else
++    #include <linux/scatterlist.h>
++#endif
+ 
+ MODULE_AUTHOR("Jouni Malinen");
+ MODULE_DESCRIPTION("Host AP crypt: CCMP");
+@@ -59,7 +67,7 @@
+ 	u8 rx_b0[AES_BLOCK_LEN], rx_b[AES_BLOCK_LEN], rx_a[AES_BLOCK_LEN];
+ };
+ 
+-void ieee80211_ccmp_aes_encrypt(struct crypto_tfm *tfm,
++void ieee80211_ccmp_aes_encrypt_rtl7(struct crypto_tfm *tfm,
+ 			     const u8 pt[16], u8 ct[16])
+ {
+ 	struct scatterlist src, dst;
+@@ -75,7 +83,7 @@
+ 	crypto_cipher_encrypt(tfm, &dst, &src, AES_BLOCK_LEN);
+ }
+ 
+-static void * ieee80211_ccmp_init(int key_idx)
++static void * ieee80211_ccmp_init_rtl7(int key_idx)
+ {
+ 	struct ieee80211_ccmp_data *priv;
+ 
+@@ -105,7 +113,7 @@
+ }
+ 
+ 
+-static void ieee80211_ccmp_deinit(void *priv)
++static void ieee80211_ccmp_deinit_rtl7(void *priv)
+ {
+ 	struct ieee80211_ccmp_data *_priv = priv;
+ 	if (_priv && _priv->tfm)
+@@ -114,7 +122,7 @@
+ }
+ 
+ 
+-static inline void xor_block(u8 *b, u8 *a, size_t len)
++static inline void xor_block_rtl7(u8 *b, u8 *a, size_t len)
+ {
+ 	int i;
+ 	for (i = 0; i < len; i++)
+@@ -122,7 +130,7 @@
+ }
+ 
+ 
+-static void ccmp_init_blocks(struct crypto_tfm *tfm,
++static void ccmp_init_blocks_rtl7(struct crypto_tfm *tfm,
+ 			     struct ieee80211_hdr *hdr,
+ 			     u8 *pn, size_t dlen, u8 *b0, u8 *auth,
+ 			     u8 *s0)
+@@ -186,18 +194,18 @@
+ 	}
+ 
+ 	/* Start with the first block and AAD */
+-	ieee80211_ccmp_aes_encrypt(tfm, b0, auth);
+-	xor_block(auth, aad, AES_BLOCK_LEN);
+-	ieee80211_ccmp_aes_encrypt(tfm, auth, auth);
+-	xor_block(auth, &aad[AES_BLOCK_LEN], AES_BLOCK_LEN);
+-	ieee80211_ccmp_aes_encrypt(tfm, auth, auth);
++	ieee80211_ccmp_aes_encrypt_rtl7(tfm, b0, auth);
++	xor_block_rtl7(auth, aad, AES_BLOCK_LEN);
++	ieee80211_ccmp_aes_encrypt_rtl7(tfm, auth, auth);
++	xor_block_rtl7(auth, &aad[AES_BLOCK_LEN], AES_BLOCK_LEN);
++	ieee80211_ccmp_aes_encrypt_rtl7(tfm, auth, auth);
+ 	b0[0] &= 0x07;
+ 	b0[14] = b0[15] = 0;
+-	ieee80211_ccmp_aes_encrypt(tfm, b0, s0);
++	ieee80211_ccmp_aes_encrypt_rtl7(tfm, b0, s0);
+ }
+ 
+ 
+-static int ieee80211_ccmp_encrypt(struct sk_buff *skb, int hdr_len, void *priv)
++static int ieee80211_ccmp_encrypt_rtl7(struct sk_buff *skb, int hdr_len, void *priv)
+ {
+ 	struct ieee80211_ccmp_data *key = priv;
+ 	int data_len, i, blocks, last, len;
+@@ -237,7 +245,7 @@
+ 	*pos++ = key->tx_pn[0];
+ 
+ 	hdr = (struct ieee80211_hdr *) skb->data;
+-	ccmp_init_blocks(key->tfm, hdr, key->tx_pn, data_len, b0, b, s0);
++	ccmp_init_blocks_rtl7(key->tfm, hdr, key->tx_pn, data_len, b0, b, s0);
+ 
+ 	blocks = (data_len + AES_BLOCK_LEN - 1) / AES_BLOCK_LEN;
+ 	last = data_len % AES_BLOCK_LEN;
+@@ -245,13 +253,13 @@
+ 	for (i = 1; i <= blocks; i++) {
+ 		len = (i == blocks && last) ? last : AES_BLOCK_LEN;
+ 		/* Authentication */
+-		xor_block(b, pos, len);
+-		ieee80211_ccmp_aes_encrypt(key->tfm, b, b);
++		xor_block_rtl7(b, pos, len);
++		ieee80211_ccmp_aes_encrypt_rtl7(key->tfm, b, b);
+ 		/* Encryption, with counter */
+ 		b0[14] = (i >> 8) & 0xff;
+ 		b0[15] = i & 0xff;
+-		ieee80211_ccmp_aes_encrypt(key->tfm, b0, e);
+-		xor_block(pos, e, len);
++		ieee80211_ccmp_aes_encrypt_rtl7(key->tfm, b0, e);
++		xor_block_rtl7(pos, e, len);
+ 		pos += len;
+ 	}
+ 
+@@ -262,7 +270,7 @@
+ }
+ 
+ 
+-static int ieee80211_ccmp_decrypt(struct sk_buff *skb, int hdr_len, void *priv)
++static int ieee80211_ccmp_decrypt_rtl7(struct sk_buff *skb, int hdr_len, void *priv)
+ {
+ 	struct ieee80211_ccmp_data *key = priv;
+ 	u8 keyidx, *pos;
+@@ -326,8 +334,8 @@
+ 		return -4;
+ 	}
+ 
+-	ccmp_init_blocks(key->tfm, hdr, pn, data_len, b0, a, b);
+-	xor_block(mic, b, CCMP_MIC_LEN);
++	ccmp_init_blocks_rtl7(key->tfm, hdr, pn, data_len, b0, a, b);
++	xor_block_rtl7(mic, b, CCMP_MIC_LEN);
+ 
+ 	blocks = (data_len + AES_BLOCK_LEN - 1) / AES_BLOCK_LEN;
+ 	last = data_len % AES_BLOCK_LEN;
+@@ -337,11 +345,11 @@
+ 		/* Decrypt, with counter */
+ 		b0[14] = (i >> 8) & 0xff;
+ 		b0[15] = i & 0xff;
+-		ieee80211_ccmp_aes_encrypt(key->tfm, b0, b);
+-		xor_block(pos, b, len);
++		ieee80211_ccmp_aes_encrypt_rtl7(key->tfm, b0, b);
++		xor_block_rtl7(pos, b, len);
+ 		/* Authentication */
+-		xor_block(a, pos, len);
+-		ieee80211_ccmp_aes_encrypt(key->tfm, a, a);
++		xor_block_rtl7(a, pos, len);
++		ieee80211_ccmp_aes_encrypt_rtl7(key->tfm, a, a);
+ 		pos += len;
+ 	}
+ 
+@@ -365,7 +373,7 @@
+ }
+ 
+ 
+-static int ieee80211_ccmp_set_key(void *key, int len, u8 *seq, void *priv)
++static int ieee80211_ccmp_set_key_rtl7(void *key, int len, u8 *seq, void *priv)
+ {
+ 	struct ieee80211_ccmp_data *data = priv;
+ 	int keyidx;
+@@ -396,7 +404,7 @@
+ }
+ 
+ 
+-static int ieee80211_ccmp_get_key(void *key, int len, u8 *seq, void *priv)
++static int ieee80211_ccmp_get_key_rtl7(void *key, int len, u8 *seq, void *priv)
+ {
+ 	struct ieee80211_ccmp_data *data = priv;
+ 
+@@ -420,7 +428,7 @@
+ }
+ 
+ 
+-static char * ieee80211_ccmp_print_stats(char *p, void *priv)
++static char * ieee80211_ccmp_print_stats_rtl7(char *p, void *priv)
+ {
+ 	struct ieee80211_ccmp_data *ccmp = priv;
+ 	p += sprintf(p, "key[%d] alg=CCMP key_set=%d "
+@@ -437,34 +445,34 @@
+ }
+ 
+ 
+-static struct ieee80211_crypto_ops ieee80211_crypt_ccmp = {
++static struct ieee80211_crypto_ops ieee80211_crypt_ccmp_rtl7 = {
+ 	.name			= "CCMP",
+-	.init			= ieee80211_ccmp_init,
+-	.deinit			= ieee80211_ccmp_deinit,
+-	.encrypt_mpdu		= ieee80211_ccmp_encrypt,
+-	.decrypt_mpdu		= ieee80211_ccmp_decrypt,
++	.init			= ieee80211_ccmp_init_rtl7,
++	.deinit			= ieee80211_ccmp_deinit_rtl7,
++	.encrypt_mpdu		= ieee80211_ccmp_encrypt_rtl7,
++	.decrypt_mpdu		= ieee80211_ccmp_decrypt_rtl7,
+ 	.encrypt_msdu		= NULL,
+ 	.decrypt_msdu		= NULL,
+-	.set_key		= ieee80211_ccmp_set_key,
+-	.get_key		= ieee80211_ccmp_get_key,
+-	.print_stats		= ieee80211_ccmp_print_stats,
++	.set_key		= ieee80211_ccmp_set_key_rtl7,
++	.get_key		= ieee80211_ccmp_get_key_rtl7,
++	.print_stats		= ieee80211_ccmp_print_stats_rtl7,
+ 	.extra_prefix_len	= CCMP_HDR_LEN,
+ 	.extra_postfix_len	= CCMP_MIC_LEN,
+ 	.owner			= THIS_MODULE,
+ };
+ 
+ 
+-static int __init ieee80211_crypto_ccmp_init(void)
++static int __init ieee80211_crypto_ccmp_init_rtl7(void)
+ {
+-	return ieee80211_register_crypto_ops(&ieee80211_crypt_ccmp);
++	return ieee80211_register_crypto_ops_rtl7(&ieee80211_crypt_ccmp_rtl7);
+ }
+ 
+ 
+-static void __exit ieee80211_crypto_ccmp_exit(void)
++static void __exit ieee80211_crypto_ccmp_exit_rtl7(void)
+ {
+-	ieee80211_unregister_crypto_ops(&ieee80211_crypt_ccmp);
++	ieee80211_unregister_crypto_ops_rtl7(&ieee80211_crypt_ccmp_rtl7);
+ }
+ 
+ 
+-module_init(ieee80211_crypto_ccmp_init);
+-module_exit(ieee80211_crypto_ccmp_exit);
++module_init(ieee80211_crypto_ccmp_init_rtl7);
++module_exit(ieee80211_crypto_ccmp_exit_rtl7);
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.h rtl8187_txpower/ieee80211/ieee80211_crypt.h
+--- rtl8187_orig/ieee80211/ieee80211_crypt.h	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_crypt.h	2007-03-05 00:31:49.235296061 +0100
+@@ -75,12 +75,12 @@
+ 	atomic_t refcnt;
+ };
+ 
+-int ieee80211_register_crypto_ops(struct ieee80211_crypto_ops *ops);
+-int ieee80211_unregister_crypto_ops(struct ieee80211_crypto_ops *ops);
+-struct ieee80211_crypto_ops * ieee80211_get_crypto_ops(const char *name);
+-void ieee80211_crypt_deinit_entries(struct ieee80211_device *, int);
+-void ieee80211_crypt_deinit_handler(unsigned long);
+-void ieee80211_crypt_delayed_deinit(struct ieee80211_device *ieee,
++int ieee80211_register_crypto_ops_rtl7(struct ieee80211_crypto_ops *ops);
++int ieee80211_unregister_crypto_ops_rtl7(struct ieee80211_crypto_ops *ops);
++struct ieee80211_crypto_ops * ieee80211_get_crypto_ops_rtl7(const char *name);
++void ieee80211_crypt_deinit_entries_rtl7(struct ieee80211_device *, int);
++void ieee80211_crypt_deinit_handler_rtl7(unsigned long);
++void ieee80211_crypt_delayed_deinit_rtl7(struct ieee80211_device *ieee,
+ 				    struct ieee80211_crypt_data **crypt);
+ 
+ #endif
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c	2006-06-06 04:57:54.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c	2007-03-05 00:31:52.355343126 +0100
+@@ -9,7 +9,6 @@
+  * more details.
+  */
+ 
+-#include <linux/config.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -21,13 +20,22 @@
+ #include <linux/if_arp.h>
+ #include <asm/string.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
++    #include <asm/scatterlist.h>
++#else
++    #include <linux/scatterlist.h>
++#endif
+ 
+ #include <linux/crypto.h>
+-#include <asm/scatterlist.h>
+ #include <linux/crc32.h>
+ 
++
+ MODULE_AUTHOR("Jouni Malinen");
+ MODULE_DESCRIPTION("Host AP crypt: TKIP");
+ MODULE_LICENSE("GPL");
+@@ -62,7 +70,7 @@
+ 	u8 rx_hdr[16], tx_hdr[16];
+ };
+ 
+-static void * ieee80211_tkip_init(int key_idx)
++static void * ieee80211_tkip_init_rtl7(int key_idx)
+ {
+ 	struct ieee80211_tkip_data *priv;
+ 
+@@ -101,7 +109,7 @@
+ }
+ 
+ 
+-static void ieee80211_tkip_deinit(void *priv)
++static void ieee80211_tkip_deinit_rtl7(void *priv)
+ {
+ 	struct ieee80211_tkip_data *_priv = priv;
+ 	if (_priv && _priv->tfm_michael)
+@@ -200,7 +208,7 @@
+ 
+ #define PHASE1_LOOP_COUNT 8
+ 
+-static void tkip_mixing_phase1(u16 *TTAK, const u8 *TK, const u8 *TA, u32 IV32)
++static void tkip_mixing_phase1_rtl7(u16 *TTAK, const u8 *TK, const u8 *TA, u32 IV32)
+ {
+ 	int i, j;
+ 
+@@ -222,7 +230,7 @@
+ }
+ 
+ 
+-static void tkip_mixing_phase2(u8 *WEPSeed, const u8 *TK, const u16 *TTAK,
++static void tkip_mixing_phase2_rtl7(u8 *WEPSeed, const u8 *TK, const u16 *TTAK,
+ 			       u16 IV16)
+ {
+ 	/* Make temporary area overlap WEP seed so that the final copy can be
+@@ -268,7 +276,7 @@
+ #endif
+ }
+ 
+-static int ieee80211_tkip_encrypt(struct sk_buff *skb, int hdr_len, void *priv)
++static int ieee80211_tkip_encrypt_rtl7(struct sk_buff *skb, int hdr_len, void *priv)
+ {
+ 	struct ieee80211_tkip_data *tkey = priv;
+ 	int len;
+@@ -283,11 +291,11 @@
+ 
+ 	hdr = (struct ieee80211_hdr *) skb->data;
+ 	if (!tkey->tx_phase1_done) {
+-		tkip_mixing_phase1(tkey->tx_ttak, tkey->key, hdr->addr2,
++		tkip_mixing_phase1_rtl7(tkey->tx_ttak, tkey->key, hdr->addr2,
+ 				   tkey->tx_iv32);
+ 		tkey->tx_phase1_done = 1;
+ 	}
+-	tkip_mixing_phase2(rc4key, tkey->key, tkey->tx_ttak, tkey->tx_iv16);
++	tkip_mixing_phase2_rtl7(rc4key, tkey->key, tkey->tx_ttak, tkey->tx_iv16);
+ 
+ 	len = skb->len - hdr_len;
+ 	pos = skb_push(skb, 8);
+@@ -325,7 +333,7 @@
+ 	return 0;
+ }
+ 
+-static int ieee80211_tkip_decrypt(struct sk_buff *skb, int hdr_len, void *priv)
++static int ieee80211_tkip_decrypt_rtl7(struct sk_buff *skb, int hdr_len, void *priv)
+ {
+ 	struct ieee80211_tkip_data *tkey = priv;
+ 	u8 rc4key[16];
+@@ -382,10 +390,10 @@
+ 	}
+ 
+ 	if (iv32 != tkey->rx_iv32 || !tkey->rx_phase1_done) {
+-		tkip_mixing_phase1(tkey->rx_ttak, tkey->key, hdr->addr2, iv32);
++		tkip_mixing_phase1_rtl7(tkey->rx_ttak, tkey->key, hdr->addr2, iv32);
+ 		tkey->rx_phase1_done = 1;
+ 	}
+-	tkip_mixing_phase2(rc4key, tkey->key, tkey->rx_ttak, iv16);
++	tkip_mixing_phase2_rtl7(rc4key, tkey->key, tkey->rx_ttak, iv16);
+ 
+ 	plen = skb->len - hdr_len - 12;
+ 
+@@ -428,10 +436,14 @@
+ }
+ 
+ 
+-static int michael_mic(struct ieee80211_tkip_data *tkey, u8 *key, u8 *hdr,
++static int michael_mic_rtl7(struct ieee80211_tkip_data *tkey, u8 *key, u8 *hdr,
+ 		       u8 *data, size_t data_len, u8 *mic)
+ {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
++	struct hash_desc desc;
++#endif
+ 	struct scatterlist sg[2];
++	int ret=0;
+ 
+ 	if (tkey->tfm_michael == NULL) {
+ 		printk(KERN_WARNING "michael_mic: tfm_michael == NULL\n");
+@@ -445,15 +457,24 @@
+ 	sg[1].offset = offset_in_page(data);
+ 	sg[1].length = data_len;
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
+ 	crypto_digest_init(tkey->tfm_michael);
+ 	crypto_digest_setkey(tkey->tfm_michael, key, 8);
+ 	crypto_digest_update(tkey->tfm_michael, sg, 2);
+ 	crypto_digest_final(tkey->tfm_michael, mic);
++#else
++	if (crypto_hash_setkey(tkey->tfm_michael, key, 8))
++		return -1;
+ 
+-	return 0;
++	desc.tfm = tkey->tfm_michael;
++	desc.flags = 0;
++	ret = crypto_hash_digest(&desc, sg, data_len + 16, mic);
++#endif
++
++	return ret;
+ }
+ 
+-static void michael_mic_hdr(struct sk_buff *skb, u8 *hdr)
++static void michael_mic_hdr_rtl7(struct sk_buff *skb, u8 *hdr)
+ {
+ 	struct ieee80211_hdr *hdr11;
+ 
+@@ -483,7 +504,7 @@
+ }
+ 
+ 
+-static int ieee80211_michael_mic_add(struct sk_buff *skb, int hdr_len, void *priv)
++static int ieee80211_michael_mic_add_rtl7(struct sk_buff *skb, int hdr_len, void *priv)
+ {
+ 	struct ieee80211_tkip_data *tkey = priv;
+ 	u8 *pos;
+@@ -495,9 +516,9 @@
+ 		return -1;
+ 	}
+ 
+-	michael_mic_hdr(skb, tkey->tx_hdr);
++	michael_mic_hdr_rtl7(skb, tkey->tx_hdr);
+ 	pos = skb_put(skb, 8);
+-	if (michael_mic(tkey, &tkey->key[16], tkey->tx_hdr,
++	if (michael_mic_rtl7(tkey, &tkey->key[16], tkey->tx_hdr,
+ 			skb->data + hdr_len, skb->len - 8 - hdr_len, pos))
+ 		return -1;
+ 
+@@ -506,7 +527,7 @@
+ 
+ 
+ #if WIRELESS_EXT >= 18
+-static void ieee80211_michael_mic_failure(struct net_device *dev,
++static void ieee80211_michael_mic_failure_rtl7(struct net_device *dev,
+ 				       struct ieee80211_hdr *hdr,
+ 				       int keyidx)
+ {
+@@ -527,7 +548,7 @@
+ 	wireless_send_event(dev, IWEVMICHAELMICFAILURE, &wrqu, (char *) &ev);
+ }
+ #elif WIRELESS_EXT >= 15
+-static void ieee80211_michael_mic_failure(struct net_device *dev,
++static void ieee80211_michael_mic_failure_rtl7(struct net_device *dev,
+ 				       struct ieee80211_hdr *hdr,
+ 				       int keyidx)
+ {
+@@ -543,7 +564,7 @@
+ 	wireless_send_event(dev, IWEVCUSTOM, &wrqu, buf);
+ }
+ #else /* WIRELESS_EXT >= 15 */
+-static inline void ieee80211_michael_mic_failure(struct net_device *dev,
++static inline void ieee80211_michael_mic_failure_rtl7(struct net_device *dev,
+ 					      struct ieee80211_hdr *hdr,
+ 					      int keyidx)
+ {
+@@ -551,7 +572,7 @@
+ #endif /* WIRELESS_EXT >= 15 */
+ 
+ 
+-static int ieee80211_michael_mic_verify(struct sk_buff *skb, int keyidx,
++static int ieee80211_michael_mic_verify_rtl7(struct sk_buff *skb, int keyidx,
+ 				     int hdr_len, void *priv)
+ {
+ 	struct ieee80211_tkip_data *tkey = priv;
+@@ -560,8 +581,8 @@
+ 	if (!tkey->key_set)
+ 		return -1;
+ 
+-	michael_mic_hdr(skb, tkey->rx_hdr);
+-	if (michael_mic(tkey, &tkey->key[24], tkey->rx_hdr,
++	michael_mic_hdr_rtl7(skb, tkey->rx_hdr);
++	if (michael_mic_rtl7(tkey, &tkey->key[24], tkey->rx_hdr,
+ 			skb->data + hdr_len, skb->len - 8 - hdr_len, mic))
+ 		return -1;
+ 	if (memcmp(mic, skb->data + skb->len - 8, 8) != 0) {
+@@ -572,7 +593,7 @@
+ 		       skb->dev ? skb->dev->name : "N/A", MAC_ARG(hdr->addr2),
+ 		       keyidx);
+ 		if (skb->dev)
+-			ieee80211_michael_mic_failure(skb->dev, hdr, keyidx);
++			ieee80211_michael_mic_failure_rtl7(skb->dev, hdr, keyidx);
+ 		tkey->dot11RSNAStatsTKIPLocalMICFailures++;
+ 		return -1;
+ 	}
+@@ -588,7 +609,7 @@
+ }
+ 
+ 
+-static int ieee80211_tkip_set_key(void *key, int len, u8 *seq, void *priv)
++static int ieee80211_tkip_set_key_rtl7(void *key, int len, u8 *seq, void *priv)
+ {
+ 	struct ieee80211_tkip_data *tkey = priv;
+ 	int keyidx;
+@@ -618,7 +639,7 @@
+ }
+ 
+ 
+-static int ieee80211_tkip_get_key(void *key, int len, u8 *seq, void *priv)
++static int ieee80211_tkip_get_key_rtl7(void *key, int len, u8 *seq, void *priv)
+ {
+ 	struct ieee80211_tkip_data *tkey = priv;
+ 
+@@ -648,7 +669,7 @@
+ }
+ 
+ 
+-static char * ieee80211_tkip_print_stats(char *p, void *priv)
++static char * ieee80211_tkip_print_stats_rtl7(char *p, void *priv)
+ {
+ 	struct ieee80211_tkip_data *tkip = priv;
+ 	p += sprintf(p, "key[%d] alg=TKIP key_set=%d "
+@@ -675,34 +696,34 @@
+ }
+ 
+ 
+-static struct ieee80211_crypto_ops ieee80211_crypt_tkip = {
++static struct ieee80211_crypto_ops ieee80211_crypt_tkip_rtl7 = {
+ 	.name			= "TKIP",
+-	.init			= ieee80211_tkip_init,
+-	.deinit			= ieee80211_tkip_deinit,
+-	.encrypt_mpdu		= ieee80211_tkip_encrypt,
+-	.decrypt_mpdu		= ieee80211_tkip_decrypt,
+-	.encrypt_msdu		= ieee80211_michael_mic_add,
+-	.decrypt_msdu		= ieee80211_michael_mic_verify,
+-	.set_key		= ieee80211_tkip_set_key,
+-	.get_key		= ieee80211_tkip_get_key,
+-	.print_stats		= ieee80211_tkip_print_stats,
++	.init			= ieee80211_tkip_init_rtl7,
++	.deinit			= ieee80211_tkip_deinit_rtl7,
++	.encrypt_mpdu		= ieee80211_tkip_encrypt_rtl7,
++	.decrypt_mpdu		= ieee80211_tkip_decrypt_rtl7,
++	.encrypt_msdu		= ieee80211_michael_mic_add_rtl7,
++	.decrypt_msdu		= ieee80211_michael_mic_verify_rtl7,
++	.set_key		= ieee80211_tkip_set_key_rtl7,
++	.get_key		= ieee80211_tkip_get_key_rtl7,
++	.print_stats		= ieee80211_tkip_print_stats_rtl7,
+ 	.extra_prefix_len	= 4 + 4, /* IV + ExtIV */
+ 	.extra_postfix_len	= 8 + 4, /* MIC + ICV */
+ 	.owner		        = THIS_MODULE,
+ };
+ 
+ 
+-static int __init ieee80211_crypto_tkip_init(void)
++static int __init ieee80211_crypto_tkip_init_rtl7(void)
+ {
+-	return ieee80211_register_crypto_ops(&ieee80211_crypt_tkip);
++	return ieee80211_register_crypto_ops_rtl7(&ieee80211_crypt_tkip_rtl7);
+ }
+ 
+ 
+-static void __exit ieee80211_crypto_tkip_exit(void)
++static void __exit ieee80211_crypto_tkip_exit_rtl7(void)
+ {
+-	ieee80211_unregister_crypto_ops(&ieee80211_crypt_tkip);
++	ieee80211_unregister_crypto_ops_rtl7(&ieee80211_crypt_tkip_rtl7);
+ }
+ 
+ 
+-module_init(ieee80211_crypto_tkip_init);
+-module_exit(ieee80211_crypto_tkip_exit);
++module_init(ieee80211_crypto_tkip_init_rtl7);
++module_exit(ieee80211_crypto_tkip_exit_rtl7);
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_wep.c rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt_wep.c	2006-06-06 04:57:54.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c	2007-03-05 00:31:52.395343729 +0100
+@@ -9,7 +9,6 @@
+  * more details.
+  */
+ 
+-#include <linux/config.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -18,13 +17,22 @@
+ #include <linux/skbuff.h>
+ #include <asm/string.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ 
+ #include <linux/crypto.h>
+-#include <asm/scatterlist.h>
+ #include <linux/crc32.h>
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
++    #include <asm/scatterlist.h>
++#else
++    #include <linux/scatterlist.h>
++#endif
++
+ MODULE_AUTHOR("Jouni Malinen");
+ MODULE_DESCRIPTION("Host AP crypt: WEP");
+ MODULE_LICENSE("GPL");
+@@ -40,7 +48,7 @@
+ };
+ 
+ 
+-static void * prism2_wep_init(int keyidx)
++static void * prism2_wep_init_rtl7(int keyidx)
+ {
+ 	struct prism2_wep_data *priv;
+ 
+@@ -72,7 +80,7 @@
+ }
+ 
+ 
+-static void prism2_wep_deinit(void *priv)
++static void prism2_wep_deinit_rtl7(void *priv)
+ {
+ 	struct prism2_wep_data *_priv = priv;
+ 	if (_priv && _priv->tfm)
+@@ -87,7 +95,7 @@
+  *
+  * WEP frame payload: IV + TX key idx, RC4(data), ICV = RC4(CRC32(data))
+  */
+-static int prism2_wep_encrypt(struct sk_buff *skb, int hdr_len, void *priv)
++static int prism2_wep_encrypt_rtl7(struct sk_buff *skb, int hdr_len, void *priv)
+ {
+ 	struct prism2_wep_data *wep = priv;
+ 	u32 crc, klen, len;
+@@ -151,7 +159,7 @@
+  * Returns 0 if frame was decrypted successfully and ICV was correct and -1 on
+  * failure. If frame is OK, IV and ICV will be removed.
+  */
+-static int prism2_wep_decrypt(struct sk_buff *skb, int hdr_len, void *priv)
++static int prism2_wep_decrypt_rtl7(struct sk_buff *skb, int hdr_len, void *priv)
+ {
+ 	struct prism2_wep_data *wep = priv;
+ 	u32 crc, klen, plen;
+@@ -203,7 +211,7 @@
+ }
+ 
+ 
+-static int prism2_wep_set_key(void *key, int len, u8 *seq, void *priv)
++static int prism2_wep_set_key_rtl7(void *key, int len, u8 *seq, void *priv)
+ {
+ 	struct prism2_wep_data *wep = priv;
+ 
+@@ -217,7 +225,7 @@
+ }
+ 
+ 
+-static int prism2_wep_get_key(void *key, int len, u8 *seq, void *priv)
++static int prism2_wep_get_key_rtl7(void *key, int len, u8 *seq, void *priv)
+ {
+ 	struct prism2_wep_data *wep = priv;
+ 
+@@ -230,7 +238,7 @@
+ }
+ 
+ 
+-static char * prism2_wep_print_stats(char *p, void *priv)
++static char * prism2_wep_print_stats_rtl7(char *p, void *priv)
+ {
+ 	struct prism2_wep_data *wep = priv;
+ 	p += sprintf(p, "key[%d] alg=WEP len=%d\n",
+@@ -239,34 +247,34 @@
+ }
+ 
+ 
+-static struct ieee80211_crypto_ops ieee80211_crypt_wep = {
++static struct ieee80211_crypto_ops ieee80211_crypt_wep_rtl7 = {
+ 	.name			= "WEP",
+-	.init			= prism2_wep_init,
+-	.deinit			= prism2_wep_deinit,
+-	.encrypt_mpdu		= prism2_wep_encrypt,
+-	.decrypt_mpdu		= prism2_wep_decrypt,
++	.init			= prism2_wep_init_rtl7,
++	.deinit			= prism2_wep_deinit_rtl7,
++	.encrypt_mpdu		= prism2_wep_encrypt_rtl7,
++	.decrypt_mpdu		= prism2_wep_decrypt_rtl7,
+ 	.encrypt_msdu		= NULL,
+ 	.decrypt_msdu		= NULL,
+-	.set_key		= prism2_wep_set_key,
+-	.get_key		= prism2_wep_get_key,
+-	.print_stats		= prism2_wep_print_stats,
++	.set_key		= prism2_wep_set_key_rtl7,
++	.get_key		= prism2_wep_get_key_rtl7,
++	.print_stats		= prism2_wep_print_stats_rtl7,
+ 	.extra_prefix_len	= 4, /* IV */
+ 	.extra_postfix_len	= 4, /* ICV */
+ 	.owner			= THIS_MODULE,
+ };
+ 
+ 
+-static int __init ieee80211_crypto_wep_init(void)
++static int __init ieee80211_crypto_wep_init_rtl7(void)
+ {
+-	return ieee80211_register_crypto_ops(&ieee80211_crypt_wep);
++	return ieee80211_register_crypto_ops_rtl7(&ieee80211_crypt_wep_rtl7);
+ }
+ 
+ 
+-static void __exit ieee80211_crypto_wep_exit(void)
++static void __exit ieee80211_crypto_wep_exit_rtl7(void)
+ {
+-	ieee80211_unregister_crypto_ops(&ieee80211_crypt_wep);
++	ieee80211_unregister_crypto_ops_rtl7(&ieee80211_crypt_wep_rtl7);
+ }
+ 
+ 
+-module_init(ieee80211_crypto_wep_init);
+-module_exit(ieee80211_crypto_wep_exit);
++module_init(ieee80211_crypto_wep_init_rtl7);
++module_exit(ieee80211_crypto_wep_exit_rtl7);
+diff -Naur rtl8187_orig/ieee80211/ieee80211.h rtl8187_txpower/ieee80211/ieee80211.h
+--- rtl8187_orig/ieee80211/ieee80211.h	2006-06-06 04:57:56.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211.h	2007-03-05 00:31:49.235296061 +0100
+@@ -156,6 +156,22 @@
+ 	struct list_head list;
+ };
+ 
++#define LWNG_CAP_DID_BASE   (4 | (1 << 6)) /* section 4, group 1 */
++/* ARPHRD_IEEE80211_PRISM uses a bloated version of Prism2 RX frame header
++ * (from linux-wlan-ng) */
++struct linux_wlan_ng_val {
++	u32 did;
++	u16 status, len;
++	u32 data;
++} __attribute__ ((packed));
++
++struct linux_wlan_ng_prism_hdr {
++	u32 msgcode, msglen;
++	char devname[16];
++	struct linux_wlan_ng_val hosttime, mactime, channel, rssi, sq, signal,
++		noise, rate, istx, frmlen;
++} __attribute__ ((packed));
++
+ struct ieee80211_hdr {
+ 	u16 frame_ctl;
+ 	u16 duration_id;
+@@ -840,14 +856,14 @@
+ 
+ 
+ #if (LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,11))
+-extern inline int is_multicast_ether_addr(const u8 *addr)
++extern inline int is_multicast_ether_addr_rtl7(const u8 *addr)
+ {
+         return ((addr[0] != 0xff) && (0x01 & addr[0]));
+ }
+ #endif
+ 
+ #if (LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,13))
+-extern inline int is_broadcast_ether_addr(const u8 *addr)
++extern inline int is_broadcast_ether_addr_rtl7(const u8 *addr)
+ {
+ 	return ((addr[0] == 0xff) && (addr[1] == 0xff) && (addr[2] == 0xff) &&   \
+ 		(addr[3] == 0xff) && (addr[4] == 0xff) && (addr[5] == 0xff));
+@@ -1015,10 +1031,16 @@
+ 	struct timer_list beacon_timer;
+ 	
+ 	struct work_struct associate_complete_wq;
++
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++	struct delayed_work associate_retry_wq;
++	struct delayed_work softmac_scan_wq;
++#else
+ 	struct work_struct associate_retry_wq;
++	struct work_struct softmac_scan_wq;
++#endif
+ 	struct work_struct start_ibss_wq;
+ 	struct work_struct associate_procedure_wq;
+-	struct work_struct softmac_scan_wq;
+ 	struct work_struct wx_sync_scan_wq;
+ 	
+ 	struct workqueue_struct *wq;
+@@ -1154,12 +1176,12 @@
+ 
+ 
+ 
+-extern inline void *ieee80211_priv(struct net_device *dev)
++extern inline void *ieee80211_priv_rtl7(struct net_device *dev)
+ {
+ 	return ((struct ieee80211_device *)netdev_priv(dev))->priv;
+ }
+ 
+-extern inline int ieee80211_is_empty_essid(const char *essid, int essid_len)
++extern inline int ieee80211_is_empty_essid_rtl7(const char *essid, int essid_len)
+ {
+ 	/* Single white space is for Linksys APs */
+ 	if (essid_len == 1 && essid[0] == ' ')
+@@ -1175,7 +1197,7 @@
+ 	return 1;
+ }
+ 
+-extern inline int ieee80211_is_valid_mode(struct ieee80211_device *ieee, int mode)
++extern inline int ieee80211_is_valid_mode_rtl7(struct ieee80211_device *ieee, int mode)
+ {
+ 	/*
+ 	 * It is possible for both access points and our device to support
+@@ -1201,7 +1223,7 @@
+ 	return 0;
+ }
+ 
+-extern inline int ieee80211_get_hdrlen(u16 fc)
++extern inline int ieee80211_get_hdrlen_rtl7(u16 fc)
+ {
+ 	int hdrlen = 24;
+ 
+@@ -1229,140 +1251,144 @@
+ 
+ 
+ /* ieee80211.c */
+-extern void free_ieee80211(struct net_device *dev);
+-extern struct net_device *alloc_ieee80211(int sizeof_priv);
++extern void free_ieee80211_rtl7(struct net_device *dev);
++extern struct net_device *alloc_ieee80211_rtl7(int sizeof_priv);
+ 
+-extern int ieee80211_set_encryption(struct ieee80211_device *ieee);
++extern int ieee80211_set_encryption_rtl7(struct ieee80211_device *ieee);
+ 
+ /* ieee80211_tx.c */
+ 
+-extern int ieee80211_encrypt_fragment(
++extern int ieee80211_encrypt_fragment_rtl7(
+ 	struct ieee80211_device *ieee,
+ 	struct sk_buff *frag,
+ 	int hdr_len);
+ 	
+-extern int ieee80211_xmit(struct sk_buff *skb,
++extern int ieee80211_xmit_rtl7(struct sk_buff *skb,
+ 			  struct net_device *dev);
+-extern void ieee80211_txb_free(struct ieee80211_txb *);
++extern void ieee80211_txb_free_rtl7(struct ieee80211_txb *);
+ 
+ 
+ /* ieee80211_rx.c */
+-extern int ieee80211_rx(struct ieee80211_device *ieee, struct sk_buff *skb,
++extern int ieee80211_rx_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb,
+ 			struct ieee80211_rx_stats *rx_stats);
+-extern void ieee80211_rx_mgt(struct ieee80211_device *ieee,
++extern void ieee80211_rx_mgt_rtl7(struct ieee80211_device *ieee,
+ 			     struct ieee80211_hdr *header,
+ 			     struct ieee80211_rx_stats *stats);
+ 
+ /* ieee80211_wx.c */
+-extern int ieee80211_wx_get_scan(struct ieee80211_device *ieee,
++extern int ieee80211_wx_get_scan_rtl7(struct ieee80211_device *ieee,
+ 				 struct iw_request_info *info,
+ 				 union iwreq_data *wrqu, char *key);
+-extern int ieee80211_wx_set_encode(struct ieee80211_device *ieee,
++extern int ieee80211_wx_set_encode_rtl7(struct ieee80211_device *ieee,
+ 				   struct iw_request_info *info,
+ 				   union iwreq_data *wrqu, char *key);
+-extern int ieee80211_wx_get_encode(struct ieee80211_device *ieee,
++extern int ieee80211_wx_get_encode_rtl7(struct ieee80211_device *ieee,
+ 				   struct iw_request_info *info,
+ 				   union iwreq_data *wrqu, char *key);
+ /* ieee80211_softmac.c */
+-extern short ieee80211_is_54g(struct ieee80211_network net);
+-extern short ieee80211_is_shortslot(struct ieee80211_network net);
+-extern int ieee80211_rx_frame_softmac(struct ieee80211_device *ieee, struct sk_buff *skb,
++extern short ieee80211_is_54g_rtl7(struct ieee80211_network net);
++extern short ieee80211_is_shortslot_rtl7(struct ieee80211_network net);
++extern int ieee80211_rx_frame_softmac_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb,
+ 			struct ieee80211_rx_stats *rx_stats, u16 type,
+ 			u16 stype);
+-extern void ieee80211_softmac_new_net(struct ieee80211_device *ieee, struct ieee80211_network *net);
++extern void ieee80211_softmac_new_net_rtl7(struct ieee80211_device *ieee, struct ieee80211_network *net);
+ 
+-extern void ieee80211_softmac_xmit(struct ieee80211_txb *txb, struct ieee80211_device *ieee);
+-extern void ieee80211_softmac_check_all_nets(struct ieee80211_device *ieee);
+-extern void ieee80211_start_bss(struct ieee80211_device *ieee);
+-extern void ieee80211_start_master_bss(struct ieee80211_device *ieee);
+-extern void ieee80211_start_ibss(struct ieee80211_device *ieee);
+-extern void ieee80211_softmac_init(struct ieee80211_device *ieee);
+-extern void ieee80211_softmac_free(struct ieee80211_device *ieee);
+-extern void ieee80211_associate_abort(struct ieee80211_device *ieee);
+-extern void ieee80211_disassociate(struct ieee80211_device *ieee);
+-extern void ieee80211_stop_scan(struct ieee80211_device *ieee);
+-extern void ieee80211_start_scan_syncro(struct ieee80211_device *ieee);
+-extern void ieee80211_check_all_nets(struct ieee80211_device *ieee);
+-extern void ieee80211_start_protocol(struct ieee80211_device *ieee);
+-extern void ieee80211_stop_protocol(struct ieee80211_device *ieee);
+-extern void ieee80211_softmac_start_protocol(struct ieee80211_device *ieee);
+-extern void ieee80211_softmac_stop_protocol(struct ieee80211_device *ieee);
+-extern void ieee80211_reset_queue(struct ieee80211_device *ieee);
+-extern void ieee80211_wake_queue(struct ieee80211_device *ieee);
+-extern void ieee80211_stop_queue(struct ieee80211_device *ieee);
+-extern struct sk_buff *ieee80211_get_beacon(struct ieee80211_device *ieee);
+-extern void ieee80211_start_send_beacons(struct ieee80211_device *ieee);
+-extern void ieee80211_stop_send_beacons(struct ieee80211_device *ieee);
+-extern int ieee80211_wpa_supplicant_ioctl(struct ieee80211_device *ieee, struct iw_point *p);
+-extern void notify_wx_assoc_event(struct ieee80211_device *ieee);
+-extern void ieee80211_ps_tx_ack(struct ieee80211_device *ieee, short success);
++extern void ieee80211_softmac_xmit_rtl7(struct ieee80211_txb *txb, struct ieee80211_device *ieee);
++extern void ieee80211_softmac_check_all_nets_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_bss_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_master_bss_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_ibss_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_softmac_init_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_softmac_free_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_associate_abort_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_disassociate_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_stop_scan_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_scan_syncro_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_check_all_nets_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_protocol_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_stop_protocol_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_softmac_start_protocol_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_softmac_stop_protocol_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_reset_queue_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_wake_queue_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_stop_queue_rtl7(struct ieee80211_device *ieee);
++extern struct sk_buff *ieee80211_get_beacon_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_start_send_beacons_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_stop_send_beacons_rtl7(struct ieee80211_device *ieee);
++extern int ieee80211_wpa_supplicant_ioctl_rtl7(struct ieee80211_device *ieee, struct iw_point *p);
++extern void notify_wx_assoc_event_rtl7(struct ieee80211_device *ieee);
++extern void ieee80211_ps_tx_ack_rtl7(struct ieee80211_device *ieee, short success);
+ 
+ /* ieee80211_softmac_wx.c */
+ 
+-extern int ieee80211_wx_get_wap(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_get_wap_rtl7(struct ieee80211_device *ieee, 
+ 			    struct iw_request_info *info, 
+ 			    union iwreq_data *wrqu, char *ext);
+ 			    
+-extern int ieee80211_wx_set_wap(struct ieee80211_device *ieee,
++extern int ieee80211_wx_set_wap_rtl7(struct ieee80211_device *ieee,
+ 			 struct iw_request_info *info,
+ 			 union iwreq_data *awrq,
+ 			 char *extra);
+ 			 
+-extern int ieee80211_wx_get_essid(struct ieee80211_device *ieee, struct iw_request_info *a,union iwreq_data *wrqu,char *b);
++extern int ieee80211_wx_get_essid_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,union iwreq_data *wrqu,char *b);
+ 
+-extern int ieee80211_wx_set_rate(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_set_rate_rtl7(struct ieee80211_device *ieee, 
+ 			     struct iw_request_info *info,
+ 			     union iwreq_data *wrqu, char *extra);
+ 			     
+-extern int ieee80211_wx_get_rate(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_get_rate_rtl7(struct ieee80211_device *ieee, 
+ 			     struct iw_request_info *info, 
+ 			     union iwreq_data *wrqu, char *extra);
+ 			     
+-extern int ieee80211_wx_set_mode(struct ieee80211_device *ieee, struct iw_request_info *a,
++extern int ieee80211_wx_set_mode_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 			     
+-extern int ieee80211_wx_set_scan(struct ieee80211_device *ieee, struct iw_request_info *a,
++extern int ieee80211_wx_set_scan_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 			     
+-extern int ieee80211_wx_set_essid(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_set_essid_rtl7(struct ieee80211_device *ieee, 
+ 			      struct iw_request_info *a,
+ 			      union iwreq_data *wrqu, char *extra);
+ 			      
+-extern int ieee80211_wx_get_mode(struct ieee80211_device *ieee, struct iw_request_info *a,
++extern int ieee80211_wx_get_mode_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 
+-extern int ieee80211_wx_set_freq(struct ieee80211_device *ieee, struct iw_request_info *a,
++extern int ieee80211_wx_set_freq_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 
+-extern int ieee80211_wx_get_freq(struct ieee80211_device *ieee, struct iw_request_info *a,
++extern int ieee80211_wx_get_freq_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b);
+ 
+-extern void ieee80211_wx_sync_scan_wq(struct ieee80211_device *ieee);
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++extern void ieee80211_wx_sync_scan_wq_rtl7(struct work_struct *work);
++#else
++extern void ieee80211_wx_sync_scan_wq_rtl7(struct ieee80211_device *ieee);
++#endif
+ 
+-extern int ieee80211_wx_set_rawtx(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_set_rawtx_rtl7(struct ieee80211_device *ieee, 
+ 			       struct iw_request_info *info, 
+ 			       union iwreq_data *wrqu, char *extra);
+ 			       
+-extern int ieee80211_wx_get_name(struct ieee80211_device *ieee, 
++extern int ieee80211_wx_get_name_rtl7(struct ieee80211_device *ieee, 
+ 			     struct iw_request_info *info, 
+ 			     union iwreq_data *wrqu, char *extra);
+ 
+-extern int ieee80211_wx_set_power(struct ieee80211_device *ieee,
++extern int ieee80211_wx_set_power_rtl7(struct ieee80211_device *ieee,
+ 				 struct iw_request_info *info,
+ 				 union iwreq_data *wrqu, char *extra);
+ 
+-extern int ieee80211_wx_get_power(struct ieee80211_device *ieee,
++extern int ieee80211_wx_get_power_rtl7(struct ieee80211_device *ieee,
+ 				 struct iw_request_info *info,
+ 				 union iwreq_data *wrqu, char *extra);
+ 				 			     
+-extern const long ieee80211_wlan_frequencies[];
++extern const long ieee80211_wlan_frequencies_rtl7[];
+ 
+-extern inline void ieee80211_increment_scans(struct ieee80211_device *ieee)
++extern inline void ieee80211_increment_scans_rtl7(struct ieee80211_device *ieee)
+ {
+ 	ieee->scans++;
+ }
+ 
+-extern inline int ieee80211_get_scans(struct ieee80211_device *ieee)
++extern inline int ieee80211_get_scans_rtl7(struct ieee80211_device *ieee)
+ {
+ 	return ieee->scans;
+ }
+@@ -1372,7 +1398,7 @@
+ 	const char *s = essid;
+ 	char *d = escaped;
+ 
+-	if (ieee80211_is_empty_essid(essid, essid_len)) {
++	if (ieee80211_is_empty_essid_rtl7(essid, essid_len)) {
+ 		memcpy(escaped, "<hidden>", sizeof("<hidden>"));
+ 		return escaped;
+ 	}
+diff -Naur rtl8187_orig/ieee80211/ieee80211_module.c rtl8187_txpower/ieee80211/ieee80211_module.c
+--- rtl8187_orig/ieee80211/ieee80211_module.c	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_module.c	2007-03-05 00:31:52.435344332 +0100
+@@ -31,7 +31,6 @@
+ *******************************************************************************/
+ 
+ #include <linux/compiler.h>
+-#include <linux/config.h>
+ #include <linux/errno.h>
+ #include <linux/if_arp.h>
+ #include <linux/in6.h>
+@@ -52,6 +51,10 @@
+ #include <asm/uaccess.h>
+ #include <net/arp.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ MODULE_DESCRIPTION("802.11 data/management/control stack");
+@@ -60,7 +63,7 @@
+ 
+ #define DRV_NAME "ieee80211"
+ 
+-static inline int ieee80211_networks_allocate(struct ieee80211_device *ieee)
++static inline int ieee80211_networks_allocate_rtl7(struct ieee80211_device *ieee)
+ {
+ 	if (ieee->networks)
+ 		return 0;
+@@ -80,7 +83,7 @@
+ 	return 0;
+ }
+ 
+-static inline void ieee80211_networks_free(struct ieee80211_device *ieee)
++static inline void ieee80211_networks_free_rtl7(struct ieee80211_device *ieee)
+ {
+ 	if (!ieee->networks)
+ 		return;
+@@ -88,7 +91,7 @@
+ 	ieee->networks = NULL;
+ }
+ 
+-static inline void ieee80211_networks_initialize(struct ieee80211_device *ieee)
++static inline void ieee80211_networks_initialize_rtl7(struct ieee80211_device *ieee)
+ {
+ 	int i;
+ 
+@@ -99,7 +102,7 @@
+ }
+ 
+ 
+-struct net_device *alloc_ieee80211(int sizeof_priv)
++struct net_device *alloc_ieee80211_rtl7(int sizeof_priv)
+ {
+ 	struct ieee80211_device *ieee;
+ 	struct net_device *dev;
+@@ -113,17 +116,17 @@
+ 		goto failed;
+ 	}
+ 	ieee = netdev_priv(dev);
+-	dev->hard_start_xmit = ieee80211_xmit;
++	dev->hard_start_xmit = ieee80211_xmit_rtl7;
+ 
+ 	ieee->dev = dev;
+ 
+-	err = ieee80211_networks_allocate(ieee);
++	err = ieee80211_networks_allocate_rtl7(ieee);
+ 	if (err) {
+ 		IEEE80211_ERROR("Unable to allocate beacon storage: %d\n",
+ 				err);
+ 		goto failed;
+ 	}
+-	ieee80211_networks_initialize(ieee);
++	ieee80211_networks_initialize_rtl7(ieee);
+ 
+ 	/* Default fragmentation threshold is maximum payload size */
+ 	ieee->fts = DEFAULT_FTS;
+@@ -138,7 +141,7 @@
+ 	INIT_LIST_HEAD(&ieee->crypt_deinit_list);
+ 	init_timer(&ieee->crypt_deinit_timer);
+ 	ieee->crypt_deinit_timer.data = (unsigned long)ieee;
+-	ieee->crypt_deinit_timer.function = ieee80211_crypt_deinit_handler;
++	ieee->crypt_deinit_timer.function = ieee80211_crypt_deinit_handler_rtl7;
+ 
+ 	spin_lock_init(&ieee->lock);
+ 
+@@ -149,7 +152,7 @@
+  	ieee->ieee802_1x = 1;
+ 	ieee->raw_tx = 0;
+ 	
+-	ieee80211_softmac_init(ieee);
++	ieee80211_softmac_init_rtl7(ieee);
+ 	
+ 	for (i = 0; i < IEEE_IBSS_MAC_HASH_SIZE; i++)
+ 		INIT_LIST_HEAD(&ieee->ibss_mac_hash[i]);
+@@ -167,7 +170,7 @@
+ }
+ 
+ 
+-void free_ieee80211(struct net_device *dev)
++void free_ieee80211_rtl7(struct net_device *dev)
+ {
+ 	struct ieee80211_device *ieee = netdev_priv(dev);
+ 
+@@ -175,9 +178,9 @@
+ 	struct list_head *p, *q;
+ 	
+ 	
+-	ieee80211_softmac_free(ieee);
++	ieee80211_softmac_free_rtl7(ieee);
+ 	del_timer_sync(&ieee->crypt_deinit_timer);
+-	ieee80211_crypt_deinit_entries(ieee, 1);
++	ieee80211_crypt_deinit_entries_rtl7(ieee, 1);
+ 
+ 	for (i = 0; i < WEP_KEYS; i++) {
+ 		struct ieee80211_crypt_data *crypt = ieee->crypt[i];
+@@ -191,7 +194,7 @@
+ 		}
+ 	}
+ 
+-	ieee80211_networks_free(ieee);
++	ieee80211_networks_free_rtl7(ieee);
+ 	
+ 	for (i = 0; i < IEEE_IBSS_MAC_HASH_SIZE; i++) {
+ 		list_for_each_safe(p, q, &ieee->ibss_mac_hash[i]) {
+@@ -210,13 +213,13 @@
+ u32 ieee80211_debug_level = 0;
+ struct proc_dir_entry *ieee80211_proc = NULL;
+ 
+-static int show_debug_level(char *page, char **start, off_t offset,
++static int show_debug_level_rtl7(char *page, char **start, off_t offset,
+ 			    int count, int *eof, void *data)
+ {
+ 	return snprintf(page, count, "0x%08X\n", ieee80211_debug_level);
+ }
+ 
+-static int store_debug_level(struct file *file, const char *buffer,
++static int store_debug_level_rtl7(struct file *file, const char *buffer,
+ 			     unsigned long count, void *data)
+ {
+ 	char buf[] = "0x00000000";
+@@ -243,7 +246,7 @@
+ 	return strnlen(buf, count);
+ }
+ 
+-static int __init ieee80211_init(void)
++static int __init ieee80211_init_rtl7(void)
+ {
+ 	struct proc_dir_entry *e;
+ 
+@@ -268,7 +271,7 @@
+ 	return 0;
+ }
+ 
+-static void __exit ieee80211_exit(void)
++static void __exit ieee80211_exit_rtl7(void)
+ {
+ 	if (ieee80211_proc) {
+ 		remove_proc_entry("debug_level", ieee80211_proc);
+@@ -282,9 +285,9 @@
+ MODULE_PARM_DESC(debug, "debug output mask");
+ 
+ 
+-module_exit(ieee80211_exit);
+-module_init(ieee80211_init);
++module_exit(ieee80211_exit_rtl7);
++module_init(ieee80211_init_rtl7);
+ #endif
+ 
+-EXPORT_SYMBOL(alloc_ieee80211);
+-EXPORT_SYMBOL(free_ieee80211);
++EXPORT_SYMBOL(alloc_ieee80211_rtl7);
++EXPORT_SYMBOL(free_ieee80211_rtl7);
+diff -Naur rtl8187_orig/ieee80211/ieee80211_rx.c rtl8187_txpower/ieee80211/ieee80211_rx.c
+--- rtl8187_orig/ieee80211/ieee80211_rx.c	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_rx.c	2007-03-05 00:31:52.485345087 +0100
+@@ -22,7 +22,6 @@
+  
+ 
+ #include <linux/compiler.h>
+-#include <linux/config.h>
+ #include <linux/errno.h>
+ #include <linux/if_arp.h>
+ #include <linux/in6.h>
+@@ -43,18 +42,83 @@
+ #include <asm/uaccess.h>
+ #include <linux/ctype.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
++
+ #include "ieee80211.h"
+ 
+-static inline void ieee80211_monitor_rx(struct ieee80211_device *ieee,
++static inline void ieee80211_monitor_rx_rtl7(struct ieee80211_device *ieee,
+ 					struct sk_buff *skb,
+ 					struct ieee80211_rx_stats *rx_stats)
+ {
+-	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+-	u16 fc = le16_to_cpu(hdr->frame_ctl);
++	struct ieee80211_hdr *hdr1 = (struct ieee80211_hdr *)skb->data;
++	u16 fc = le16_to_cpu(hdr1->frame_ctl);
++	int prism_header;
++	int hdrlen, phdrlen, head_need, tail_need;
++
++	if (ieee->dev->type == ARPHRD_IEEE80211_PRISM) {
++		prism_header = 1;
++		phdrlen = sizeof(struct linux_wlan_ng_prism_hdr);
++	} else {
++		prism_header = 0;
++		phdrlen = 0;
++	}
++
++	hdrlen = ieee80211_get_hdrlen_rtl7(fc);
++
++	/* check if there is enough room for extra data; if not, expand skb
++	 * buffer to be large enough for the changes */
++	head_need = phdrlen;
++	tail_need = 0;
++#ifdef PRISM2_ADD_BOGUS_CRC
++	tail_need += 4;
++#endif /* PRISM2_ADD_BOGUS_CRC */
++
++	head_need -= skb_headroom(skb);
++	tail_need -= skb_tailroom(skb);
++
++	if (head_need > 0 || tail_need > 0) {
++		if (pskb_expand_head(skb, head_need > 0 ? head_need : 0,
++				     tail_need > 0 ? tail_need : 0,
++				     GFP_ATOMIC)) {
++			printk(KERN_DEBUG "%s: ieee80211_rx failed to "
++			       "reallocate skb buffer\n", ieee->dev->name);
++			dev_kfree_skb_any(skb);
++			return;
++		}
++	}
++
++	if (prism_header == 1) {
++		struct linux_wlan_ng_prism_hdr *hdr;
++		hdr = (struct linux_wlan_ng_prism_hdr *)
++			skb_push(skb, phdrlen);
++		memset(hdr, 0, phdrlen);
++		hdr->msgcode = LWNG_CAP_DID_BASE;
++		hdr->msglen = sizeof(*hdr);
++		memcpy(hdr->devname, ieee->dev->name, sizeof(hdr->devname));
++#define LWNG_SETVAL(f,i,s,l,d) \
++hdr->f.did = LWNG_CAP_DID_BASE | (i << 12); \
++hdr->f.status = s; hdr->f.len = l; hdr->f.data = d
++		LWNG_SETVAL(hosttime, 1, 0, 4, jiffies);
++		LWNG_SETVAL(mactime, 2, 0, 4, ((u32)rx_stats->mac_time));
++		LWNG_SETVAL(channel, 3, 1 /* no value */, 4, 0);
++		LWNG_SETVAL(rssi, 4, 1 /* no value */, 4, 0);
++		LWNG_SETVAL(sq, 5, 1 /* no value */, 4, 0);
++		LWNG_SETVAL(signal, 6, 0, 4, rx_stats->signal);
++		LWNG_SETVAL(noise, 7, 0, 4, rx_stats->noise);
++		LWNG_SETVAL(rate, 8, 0, 4, rx_stats->rate / 5);
++		LWNG_SETVAL(istx, 9, 0, 4, 0);
++		LWNG_SETVAL(frmlen, 10, 0, 4, skb->len - phdrlen);
++#undef LWNG_SETVAL
++	}
+ 
+ 	skb->dev = ieee->dev;
+ 	skb->mac.raw = skb->data;
+-	skb_pull(skb, ieee80211_get_hdrlen(fc));
++	skb_pull(skb, hdrlen);
++	if (prism_header)
++		skb_pull(skb, phdrlen);
+ 	skb->pkt_type = PACKET_OTHERHOST;
+ 	skb->protocol = __constant_htons(ETH_P_80211_RAW);
+ 	memset(skb->cb, 0, sizeof(skb->cb));
+@@ -64,7 +128,7 @@
+ 
+ /* Called only as a tasklet (software IRQ) */
+ static struct ieee80211_frag_entry *
+-ieee80211_frag_cache_find(struct ieee80211_device *ieee, unsigned int seq,
++ieee80211_frag_cache_find_rtl7(struct ieee80211_device *ieee, unsigned int seq,
+ 			  unsigned int frag, u8 *src, u8 *dst)
+ {
+ 	struct ieee80211_frag_entry *entry;
+@@ -94,7 +158,7 @@
+ 
+ /* Called only as a tasklet (software IRQ) */
+ static struct sk_buff *
+-ieee80211_frag_cache_get(struct ieee80211_device *ieee,
++ieee80211_frag_cache_get_rtl7(struct ieee80211_device *ieee,
+ 			 struct ieee80211_hdr *hdr)
+ {
+ 	struct sk_buff *skb = NULL;
+@@ -133,7 +197,7 @@
+ 	} else {
+ 		/* received a fragment of a frame for which the head fragment
+ 		 * should have already been received */
+-		entry = ieee80211_frag_cache_find(ieee, seq, frag, hdr->addr2,
++		entry = ieee80211_frag_cache_find_rtl7(ieee, seq, frag, hdr->addr2,
+ 						  hdr->addr1);
+ 		if (entry != NULL) {
+ 			entry->last_frag = frag;
+@@ -146,7 +210,7 @@
+ 
+ 
+ /* Called only as a tasklet (software IRQ) */
+-static int ieee80211_frag_cache_invalidate(struct ieee80211_device *ieee,
++static int ieee80211_frag_cache_invalidate_rtl7(struct ieee80211_device *ieee,
+ 					   struct ieee80211_hdr *hdr)
+ {
+ 	u16 sc;
+@@ -156,7 +220,7 @@
+ 	sc = le16_to_cpu(hdr->seq_ctl);
+ 	seq = WLAN_GET_SEQ_SEQ(sc);
+ 
+-	entry = ieee80211_frag_cache_find(ieee, seq, -1, hdr->addr2,
++	entry = ieee80211_frag_cache_find_rtl7(ieee, seq, -1, hdr->addr2,
+ 					  hdr->addr1);
+ 
+ 	if (entry == NULL) {
+@@ -178,7 +242,7 @@
+  *
+  * Called by ieee80211_rx */
+ static inline int
+-ieee80211_rx_frame_mgmt(struct ieee80211_device *ieee, struct sk_buff *skb,
++ieee80211_rx_frame_mgmt_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb,
+ 			struct ieee80211_rx_stats *rx_stats, u16 type,
+ 			u16 stype)
+ {
+@@ -187,8 +251,8 @@
+ 	 * response parser uses it
+ 	 */
+ 	rx_stats->len = skb->len;
+-	ieee80211_rx_mgt(ieee,(struct ieee80211_hdr *)skb->data,rx_stats);	
+-	ieee80211_rx_frame_softmac(ieee, skb, rx_stats, type, stype);
++	ieee80211_rx_mgt_rtl7(ieee,(struct ieee80211_hdr *)skb->data,rx_stats);	
++	ieee80211_rx_frame_softmac_rtl7(ieee, skb, rx_stats, type, stype);
+ 
+ 	dev_kfree_skb_any(skb);
+ 	
+@@ -253,7 +317,7 @@
+ /* No encapsulation header if EtherType < 0x600 (=length) */
+ 
+ /* Called by ieee80211_rx_frame_decrypt */
+-static int ieee80211_is_eapol_frame(struct ieee80211_device *ieee,
++static int ieee80211_is_eapol_frame_rtl7(struct ieee80211_device *ieee,
+ 				    struct sk_buff *skb)
+ {
+ 	struct net_device *dev = ieee->dev;
+@@ -294,7 +358,7 @@
+ 
+ /* Called only as a tasklet (software IRQ), by ieee80211_rx */
+ static inline int
+-ieee80211_rx_frame_decrypt(struct ieee80211_device* ieee, struct sk_buff *skb,
++ieee80211_rx_frame_decrypt_rtl7(struct ieee80211_device* ieee, struct sk_buff *skb,
+ 			   struct ieee80211_crypt_data *crypt)
+ {
+ 	struct ieee80211_hdr *hdr;
+@@ -304,7 +368,7 @@
+ 		return 0;
+ 
+ 	hdr = (struct ieee80211_hdr *) skb->data;
+-	hdrlen = ieee80211_get_hdrlen(le16_to_cpu(hdr->frame_ctl));
++	hdrlen = ieee80211_get_hdrlen_rtl7(le16_to_cpu(hdr->frame_ctl));
+ 
+ #ifdef CONFIG_IEEE80211_CRYPT_TKIP
+ 	if (ieee->tkip_countermeasures &&
+@@ -339,7 +403,7 @@
+ 
+ /* Called only as a tasklet (software IRQ), by ieee80211_rx */
+ static inline int
+-ieee80211_rx_frame_decrypt_msdu(struct ieee80211_device* ieee, struct sk_buff *skb,
++ieee80211_rx_frame_decrypt_msdu_rtl7(struct ieee80211_device* ieee, struct sk_buff *skb,
+ 			     int keyidx, struct ieee80211_crypt_data *crypt)
+ {
+ 	struct ieee80211_hdr *hdr;
+@@ -349,7 +413,7 @@
+ 		return 0;
+ 
+ 	hdr = (struct ieee80211_hdr *) skb->data;
+-	hdrlen = ieee80211_get_hdrlen(le16_to_cpu(hdr->frame_ctl));
++	hdrlen = ieee80211_get_hdrlen_rtl7(le16_to_cpu(hdr->frame_ctl));
+ 
+ 	atomic_inc(&crypt->refcnt);
+ 	res = crypt->ops->decrypt_msdu(skb, keyidx, hdrlen, crypt->priv);
+@@ -367,7 +431,7 @@
+ 
+ /* this function is stolen from ipw2200 driver*/
+ #define IEEE_PACKET_RETRY_TIME (5*HZ)
+-static int is_duplicate_packet(struct ieee80211_device *ieee,
++static int is_duplicate_packet_rtl7(struct ieee80211_device *ieee,
+ 				      struct ieee80211_hdr *header)
+ {
+ //	u16 fc = le16_to_cpu(header->frame_ctl);
+@@ -444,7 +508,7 @@
+ /* All received frames are sent to this function. @skb contains the frame in
+  * IEEE 802.11 format, i.e., in the format it was sent over air.
+  * This function is called only as a tasklet (software IRQ). */
+-int ieee80211_rx(struct ieee80211_device *ieee, struct sk_buff *skb,
++int ieee80211_rx_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb,
+ 		 struct ieee80211_rx_stats *rx_stats)
+ {
+ 	struct net_device *dev = ieee->dev;
+@@ -483,7 +547,7 @@
+ 	sc = le16_to_cpu(hdr->seq_ctl);
+ 	
+ 	frag = WLAN_GET_SEQ_FRAG(sc);
+-	hdrlen = ieee80211_get_hdrlen(fc);
++	hdrlen = ieee80211_get_hdrlen_rtl7(fc);
+ 
+ #ifdef NOT_YET
+ #if WIRELESS_EXT > 15
+@@ -501,12 +565,12 @@
+ 	}
+ #endif /* IW_WIRELESS_SPY */
+ #endif /* WIRELESS_EXT > 15 */
+-	hostap_update_rx_stats(local->ap, hdr, rx_stats);
++	hostap_update_rx_stats_rtl7(local->ap, hdr, rx_stats);
+ #endif
+ 
+ #if WIRELESS_EXT > 15
+ 	if (ieee->iw_mode == IW_MODE_MONITOR) {
+-		ieee80211_monitor_rx(ieee, skb, rx_stats);
++		ieee80211_monitor_rx_rtl7(ieee, skb, rx_stats);
+ 		stats->rx_packets++;
+ 		stats->rx_bytes += skb->len;
+ 		return 1;
+@@ -529,7 +593,7 @@
+ 		 * stations that do not support WEP key mapping). */
+ 
+ 		if (!(hdr->addr1[0] & 0x01) || local->bcrx_sta_key)
+-			(void) hostap_handle_sta_crypto(local, hdr, &crypt,
++			(void) hostap_handle_sta_crypto_rtl7(local, hdr, &crypt,
+ 							&sta);
+ #endif
+ 
+@@ -555,7 +619,7 @@
+ 	if (skb->len < IEEE80211_DATA_HDR3_LEN)
+ 		goto rx_dropped;
+ 
+-	if (is_duplicate_packet(ieee, hdr))
++	if (is_duplicate_packet_rtl7(ieee, hdr))
+ 		goto rx_dropped;
+ 
+ 
+@@ -575,7 +639,7 @@
+ 	#endif
+ 		
+ 	
+-		if (ieee80211_rx_frame_mgmt(ieee, skb, rx_stats, type, stype))
++		if (ieee80211_rx_frame_mgmt_rtl7(ieee, skb, rx_stats, type, stype))
+ 			goto rx_dropped;
+ 		else
+ 			goto rx_exit;
+@@ -606,7 +670,7 @@
+ 	}
+ 
+ #ifdef NOT_YET
+-	if (hostap_rx_frame_wds(ieee, hdr, fc, &wds))
++	if (hostap_rx_frame_wds_rtl7(ieee, hdr, fc, &wds))
+ 		goto rx_dropped;
+ 	if (wds) {
+ 		skb->dev = dev = wds;
+@@ -619,7 +683,7 @@
+ 	    memcmp(hdr->addr2, ieee->assoc_ap_addr, ETH_ALEN) == 0) {
+ 		/* Frame from BSSID of the AP for which we are a client */
+ 		skb->dev = dev = ieee->stadev;
+-		stats = hostap_get_stats(dev);
++		stats = hostap_get_stats_rtl7(dev);
+ 		from_assoc_ap = 1;
+ 	}
+ #endif
+@@ -630,7 +694,7 @@
+ 	if ((ieee->iw_mode == IW_MODE_MASTER ||
+ 	     ieee->iw_mode == IW_MODE_REPEAT) &&
+ 	    !from_assoc_ap) {
+-		switch (hostap_handle_sta_rx(ieee, dev, skb, rx_stats,
++		switch (hostap_handle_sta_rx_rtl7(ieee, dev, skb, rx_stats,
+ 					     wds != NULL)) {
+ 		case AP_RX_CONTINUE_NOT_AUTHORIZED:
+ 			frame_authorized = 0;
+@@ -664,7 +728,7 @@
+ 	/* skb: hdr + (possibly fragmented, possibly encrypted) payload */
+ 
+ 	if (ieee->host_decrypt && (fc & IEEE80211_FCTL_WEP) &&
+-	    (keyidx = ieee80211_rx_frame_decrypt(ieee, skb, crypt)) < 0)
++	    (keyidx = ieee80211_rx_frame_decrypt_rtl7(ieee, skb, crypt)) < 0)
+ 		goto rx_dropped;
+ 
+ 	hdr = (struct ieee80211_hdr *) skb->data;
+@@ -674,7 +738,7 @@
+ 	// ieee->host_decrypt && (fc & IEEE80211_FCTL_WEP) &&
+ 	if ((frag != 0 || (fc & IEEE80211_FCTL_MOREFRAGS))) {
+ 		int flen;
+-		struct sk_buff *frag_skb = ieee80211_frag_cache_get(ieee, hdr);
++		struct sk_buff *frag_skb = ieee80211_frag_cache_get_rtl7(ieee, hdr);
+ 		IEEE80211_DEBUG_FRAG("Rx Fragment received (%u)\n", frag);
+ 
+ 		if (!frag_skb) {
+@@ -694,7 +758,7 @@
+ 			printk(KERN_WARNING "%s: host decrypted and "
+ 			       "reassembled frame did not fit skb\n",
+ 			       dev->name);
+-			ieee80211_frag_cache_invalidate(ieee, hdr);
++			ieee80211_frag_cache_invalidate_rtl7(ieee, hdr);
+ 			goto rx_dropped;
+ 		}
+ 
+@@ -722,19 +786,19 @@
+ 		 * delivered, so remove skb from fragment cache */
+ 		skb = frag_skb;
+ 		hdr = (struct ieee80211_hdr *) skb->data;
+-		ieee80211_frag_cache_invalidate(ieee, hdr);
++		ieee80211_frag_cache_invalidate_rtl7(ieee, hdr);
+ 	}
+ 
+ 	/* skb: hdr + (possible reassembled) full MSDU payload; possibly still
+ 	 * encrypted/authenticated */
+ 	if (ieee->host_decrypt && (fc & IEEE80211_FCTL_WEP) &&
+-	    ieee80211_rx_frame_decrypt_msdu(ieee, skb, keyidx, crypt))
++	    ieee80211_rx_frame_decrypt_msdu_rtl7(ieee, skb, keyidx, crypt))
+ 		goto rx_dropped;
+ 
+ 	hdr = (struct ieee80211_hdr *) skb->data;
+ 	if (crypt && !(fc & IEEE80211_FCTL_WEP) && !ieee->open_wep) {
+ 		if (/*ieee->ieee802_1x &&*/
+-		    ieee80211_is_eapol_frame(ieee, skb)) {
++		    ieee80211_is_eapol_frame_rtl7(ieee, skb)) {
+ #ifdef CONFIG_IEEE80211_DEBUG
+ 			/* pass unencrypted EAPOL frames even if encryption is
+ 			 * configured */
+@@ -763,7 +827,7 @@
+ #endif
+ 
+ 	if (crypt && !(fc & IEEE80211_FCTL_WEP) && !ieee->open_wep &&
+-	    !ieee80211_is_eapol_frame(ieee, skb)) {
++	    !ieee80211_is_eapol_frame_rtl7(ieee, skb)) {
+ 		IEEE80211_DEBUG_DROP(
+ 			"dropped unencrypted RX data "
+ 			"frame from " MAC_FMT
+@@ -896,7 +960,7 @@
+ 
+ #define MGMT_FRAME_FIXED_PART_LENGTH		0x24
+ 
+-static inline int ieee80211_is_ofdm_rate(u8 rate)
++static inline int ieee80211_is_ofdm_rate_rtl7(u8 rate)
+ {
+ 	switch (rate & ~IEEE80211_BASIC_RATE_MASK) {
+ 	case IEEE80211_OFDM_RATE_6MB:
+@@ -913,7 +977,7 @@
+ }
+ 
+ 
+-static inline int ieee80211_network_init(
++static inline int ieee80211_network_init_rtl7(
+ 	struct ieee80211_device *ieee,
+ 	struct ieee80211_probe_response *beacon,
+ 	struct ieee80211_network *network,
+@@ -964,7 +1028,7 @@
+ 
+ 		switch (info_element->id) {
+ 		case MFIE_TYPE_SSID:
+-			if (ieee80211_is_empty_essid(info_element->data,
++			if (ieee80211_is_empty_essid_rtl7(info_element->data,
+ 						     info_element->len)) {
+ 				network->flags |= NETWORK_EMPTY_ESSID;
+ 				break;
+@@ -991,7 +1055,7 @@
+ #ifdef CONFIG_IEEE80211_DEBUG
+ 				p += snprintf(p, sizeof(rates_str) - (p - rates_str), "%02X ", network->rates[i]);
+ #endif
+-				if (ieee80211_is_ofdm_rate(info_element->data[i])) {
++				if (ieee80211_is_ofdm_rate_rtl7(info_element->data[i])) {
+ 					network->flags |= NETWORK_HAS_OFDM;
+ 					if (info_element->data[i] &
+ 					    IEEE80211_BASIC_RATE_MASK)
+@@ -1014,7 +1078,7 @@
+ #ifdef CONFIG_IEEE80211_DEBUG
+ 				p += snprintf(p, sizeof(rates_str) - (p - rates_str), "%02X ", network->rates[i]);
+ #endif
+-				if (ieee80211_is_ofdm_rate(info_element->data[i])) {
++				if (ieee80211_is_ofdm_rate_rtl7(info_element->data[i])) {
+ 					network->flags |= NETWORK_HAS_OFDM;
+ 					if (info_element->data[i] &
+ 					    IEEE80211_BASIC_RATE_MASK)
+@@ -1147,7 +1211,7 @@
+ 		return 1;
+ 	}
+ 
+-	if (ieee80211_is_empty_essid(network->ssid, network->ssid_len))
++	if (ieee80211_is_empty_essid_rtl7(network->ssid, network->ssid_len))
+ 		network->flags |= NETWORK_EMPTY_ESSID;
+ 
+ 	memcpy(&network->stats, stats, sizeof(network->stats));
+@@ -1155,7 +1219,7 @@
+ 	return 0;
+ }
+ 
+-static inline int is_same_network(struct ieee80211_network *src,
++static inline int is_same_network_rtl7(struct ieee80211_network *src,
+ 				  struct ieee80211_network *dst)
+ {
+ 	/* A network is only a duplicate if the channel, BSSID, ESSID
+@@ -1172,7 +1236,7 @@
+ 		(dst->capability & WLAN_CAPABILITY_BSS)));
+ }
+ 
+-static inline void update_network(struct ieee80211_network *dst,
++static inline void update_network_rtl7(struct ieee80211_network *dst,
+ 				  struct ieee80211_network *src)
+ {
+ 	memcpy(&dst->stats, &src->stats, sizeof(struct ieee80211_rx_stats));
+@@ -1204,7 +1268,7 @@
+ 	/* dst->last_associate is not overwritten */
+ }
+ 
+-static inline void ieee80211_process_probe_response(
++static inline void ieee80211_process_probe_response_rtl7(
+ 	struct ieee80211_device *ieee,
+ 	struct ieee80211_probe_response *beacon,
+ 	struct ieee80211_rx_stats *stats)
+@@ -1239,7 +1303,7 @@
+ 		(beacon->capability & (1<<0x1)) ? '1' : '0',
+ 		(beacon->capability & (1<<0x0)) ? '1' : '0');
+ 
+-	if (ieee80211_network_init(ieee, beacon, &network, stats)) {
++	if (ieee80211_network_init_rtl7(ieee, beacon, &network, stats)) {
+ 		IEEE80211_DEBUG_SCAN("Dropped '%s' (" MAC_FMT ") via %s.\n",
+ 				     escape_essid(info_element->data,
+ 						  info_element->len),
+@@ -1262,11 +1326,11 @@
+ 
+ 	spin_lock_irqsave(&ieee->lock, flags);
+ 	
+-	if(is_same_network(&ieee->current_network, &network))
+-		update_network(&ieee->current_network, &network);
++	if(is_same_network_rtl7(&ieee->current_network, &network))
++		update_network_rtl7(&ieee->current_network, &network);
+ 		
+ 	list_for_each_entry(target, &ieee->network_list, list) {
+-		if (is_same_network(target, &network))
++		if (is_same_network_rtl7(target, &network))
+ 			break;
+ 
+ 		if ((oldest == NULL) ||
+@@ -1306,7 +1370,7 @@
+ 		memcpy(target, &network, sizeof(*target));
+ 		list_add_tail(&target->list, &ieee->network_list);
+ 		if(ieee->softmac_features & IEEE_SOFTMAC_ASSOCIATE)
+-			ieee80211_softmac_new_net(ieee,&network); 
++			ieee80211_softmac_new_net_rtl7(ieee,&network); 
+ 	} else {
+ 		IEEE80211_DEBUG_SCAN("Updating '%s' (" MAC_FMT ") via %s.\n",
+ 				     escape_essid(target->ssid,
+@@ -1321,15 +1385,15 @@
+ 		 * net and call the new_net handler
+ 		 */
+ 		renew = !time_after(target->last_scanned + ieee->scan_age, jiffies);
+-		update_network(target, &network);
++		update_network_rtl7(target, &network);
+ 		if(renew && (ieee->softmac_features & IEEE_SOFTMAC_ASSOCIATE))
+-			ieee80211_softmac_new_net(ieee,&network); 
++			ieee80211_softmac_new_net_rtl7(ieee,&network); 
+ 	}
+ 
+ 	spin_unlock_irqrestore(&ieee->lock, flags);
+ }
+ 
+-void ieee80211_rx_mgt(struct ieee80211_device *ieee,
++void ieee80211_rx_mgt_rtl7(struct ieee80211_device *ieee,
+ 		      struct ieee80211_hdr *header,
+ 		      struct ieee80211_rx_stats *stats)
+ {
+@@ -1339,7 +1403,7 @@
+ 		IEEE80211_DEBUG_MGMT("received BEACON (%d)\n",
+ 				     WLAN_FC_GET_STYPE(header->frame_ctl));
+ 		IEEE80211_DEBUG_SCAN("Beacon\n");
+-		ieee80211_process_probe_response(
++		ieee80211_process_probe_response_rtl7(
+ 			ieee, (struct ieee80211_probe_response *)header, stats);
+ 		break;
+ 		
+@@ -1347,7 +1411,7 @@
+ 		IEEE80211_DEBUG_MGMT("received PROBE RESPONSE (%d)\n",
+ 				     WLAN_FC_GET_STYPE(header->frame_ctl));
+ 		IEEE80211_DEBUG_SCAN("Probe response\n");
+-		ieee80211_process_probe_response(
++		ieee80211_process_probe_response_rtl7(
+ 			ieee, (struct ieee80211_probe_response *)header, stats);
+ 		break;
+ 
+@@ -1355,5 +1419,5 @@
+ }
+ 
+ 
+-EXPORT_SYMBOL(ieee80211_rx_mgt);
+-EXPORT_SYMBOL(ieee80211_rx);
++EXPORT_SYMBOL(ieee80211_rx_mgt_rtl7);
++EXPORT_SYMBOL(ieee80211_rx_rtl7);
+diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/ieee80211_softmac.c
+--- rtl8187_orig/ieee80211/ieee80211_softmac.c	2006-06-19 03:27:33.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_softmac.c	2007-03-05 00:31:52.525345690 +0100
+@@ -20,12 +20,12 @@
+ #include <linux/delay.h>
+ #include <linux/version.h>
+ 
+-short ieee80211_is_54g(struct ieee80211_network net)
++short ieee80211_is_54g_rtl7(struct ieee80211_network net)
+ {
+ 	return ((net.rates_ex_len > 0) || (net.rates_len > 4));
+ }
+ 
+-short ieee80211_is_shortslot(struct ieee80211_network net)
++short ieee80211_is_shortslot_rtl7(struct ieee80211_network net)
+ {
+ 	return (net.capability & WLAN_CAPABILITY_SHORT_SLOT);
+ }
+@@ -34,7 +34,7 @@
+  * tag and the EXTENDED RATE MFIE tag if needed.
+  * It encludes two bytes per tag for the tag itself and its len
+  */
+-unsigned int ieee80211_MFIE_rate_len(struct ieee80211_device *ieee)
++unsigned int ieee80211_MFIE_rate_len_rtl7(struct ieee80211_device *ieee)
+ {
+ 	unsigned int rate_len = 0;
+ 	
+@@ -52,7 +52,7 @@
+  * Then it updates the pointer so that
+  * it points after the new MFIE tag added.
+  */  
+-void ieee80211_MFIE_Brate(struct ieee80211_device *ieee, u8 **tag_p)
++void ieee80211_MFIE_Brate_rtl7(struct ieee80211_device *ieee, u8 **tag_p)
+ {
+ 	u8 *tag = *tag_p; 
+ 	
+@@ -69,7 +69,7 @@
+ 	*tag_p = tag;
+ }
+ 
+-void ieee80211_MFIE_Grate(struct ieee80211_device *ieee, u8 **tag_p)
++void ieee80211_MFIE_Grate_rtl7(struct ieee80211_device *ieee, u8 **tag_p)
+ {	
+ 	u8 *tag = *tag_p; 
+ 	
+@@ -92,7 +92,7 @@
+ 	*tag_p = tag;
+ }
+ 
+-void enqueue_mgmt(struct ieee80211_device *ieee, struct sk_buff *skb)
++void enqueue_mgmt_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb)
+ {
+ 	int nh;
+ 	nh = (ieee->mgmt_queue_head +1) % MGMT_QUEUE_NUM;
+@@ -110,7 +110,7 @@
+ 	//return 0;
+ }
+ 
+-struct sk_buff *dequeue_mgmt(struct ieee80211_device *ieee)
++struct sk_buff *dequeue_mgmt_rtl7(struct ieee80211_device *ieee)
+ {
+ 	struct sk_buff *ret;
+ 	
+@@ -125,15 +125,15 @@
+ 	return ret;
+ }
+ 
+-void init_mgmt_queue(struct ieee80211_device *ieee)
++void init_mgmt_queue_rtl7(struct ieee80211_device *ieee)
+ {
+ 	ieee->mgmt_queue_tail = ieee->mgmt_queue_head = 0;
+ }
+ 
+ 
+-void ieee80211_sta_wakeup(struct ieee80211_device *ieee, short nl);
++void ieee80211_sta_wakeup_rtl7(struct ieee80211_device *ieee, short nl);
+ 
+-inline void softmac_mgmt_xmit(struct sk_buff *skb, struct ieee80211_device *ieee)
++inline void softmac_mgmt_xmit_rtl7(struct sk_buff *skb, struct ieee80211_device *ieee)
+ {
+ 	unsigned long flags;
+ 	short single = ieee->softmac_features & IEEE_SOFTMAC_SINGLE_QUEUE;
+@@ -144,13 +144,13 @@
+ 	spin_lock_irqsave(&ieee->lock, flags);
+ 	
+ 	/* called with 2nd param 0, no mgmt lock required */
+-	ieee80211_sta_wakeup(ieee,0);
++	ieee80211_sta_wakeup_rtl7(ieee,0);
+ 		
+ 	if(single){
+ 		
+ 		if(ieee->queue_stop){
+ 			
+-			enqueue_mgmt(ieee,skb);
++			enqueue_mgmt_rtl7(ieee,skb);
+ 		
+ 		}else{
+ 			header->seq_ctl = cpu_to_le16(ieee->seq_ctrl << 4);
+@@ -184,7 +184,7 @@
+ }
+ 
+ 
+-inline void softmac_ps_mgmt_xmit(struct sk_buff *skb, struct ieee80211_device *ieee)
++inline void softmac_ps_mgmt_xmit_rtl7(struct sk_buff *skb, struct ieee80211_device *ieee)
+ {
+ 	
+ 	short single = ieee->softmac_features & IEEE_SOFTMAC_SINGLE_QUEUE;
+@@ -219,7 +219,7 @@
+ 	}
+ }
+ 
+-inline struct sk_buff *ieee80211_probe_req(struct ieee80211_device *ieee)
++inline struct sk_buff *ieee80211_probe_req_rtl7(struct ieee80211_device *ieee)
+ {
+ 	unsigned int len,rate_len;
+ 	u8 *tag;
+@@ -228,7 +228,7 @@
+ 	
+ 	len = ieee->current_network.ssid_len;
+ 	
+-	rate_len = ieee80211_MFIE_rate_len(ieee);
++	rate_len = ieee80211_MFIE_rate_len_rtl7(ieee);
+ 	
+ 	skb = dev_alloc_skb(sizeof(struct ieee80211_probe_request) +
+ 			    2 + len + rate_len);
+@@ -251,21 +251,21 @@
+ 	memcpy(tag, ieee->current_network.ssid, len);
+ 	tag += len;
+ 	
+-	ieee80211_MFIE_Brate(ieee,&tag);
+-	ieee80211_MFIE_Grate(ieee,&tag);
++	ieee80211_MFIE_Brate_rtl7(ieee,&tag);
++	ieee80211_MFIE_Grate_rtl7(ieee,&tag);
+ 	return skb;
+ }
+ 
+-struct sk_buff *ieee80211_get_beacon_(struct ieee80211_device *ieee);
+-void ieee80211_send_beacon(struct ieee80211_device *ieee)
++struct sk_buff *ieee80211_get_beacon__rtl7(struct ieee80211_device *ieee);
++void ieee80211_send_beacon_rtl7(struct ieee80211_device *ieee)
+ {
+ 	struct sk_buff *skb;
+ 	
+ 	unsigned long flags;	
+ 	
+-	skb = ieee80211_get_beacon_(ieee);
++	skb = ieee80211_get_beacon__rtl7(ieee);
+ 	if (skb){
+-		softmac_mgmt_xmit(skb, ieee);
++		softmac_mgmt_xmit_rtl7(skb, ieee);
+ 		ieee->softmac_stats.tx_beacons++;
+ 	}
+ 
+@@ -279,37 +279,37 @@
+ }
+ 
+ 
+-void ieee80211_send_beacon_cb(unsigned long _ieee)
++void ieee80211_send_beacon_cb_rtl7(unsigned long _ieee)
+ {
+ 	struct ieee80211_device *ieee =
+ 		(struct ieee80211_device *) _ieee;
+-	ieee80211_send_beacon(ieee);
++	ieee80211_send_beacon_rtl7(ieee);
+ }
+ 
+ 
+-void ieee80211_send_probe(struct ieee80211_device *ieee)
++void ieee80211_send_probe_rtl7(struct ieee80211_device *ieee)
+ {
+ 	struct sk_buff *skb;
+ 	
+-	skb = ieee80211_probe_req(ieee);
++	skb = ieee80211_probe_req_rtl7(ieee);
+ 	if (skb){
+-		softmac_mgmt_xmit(skb, ieee);
++		softmac_mgmt_xmit_rtl7(skb, ieee);
+ 		ieee->softmac_stats.tx_probe_rq++;
+ 	}
+ }
+ 
+-void ieee80211_send_probe_requests(struct ieee80211_device *ieee)
++void ieee80211_send_probe_requests_rtl7(struct ieee80211_device *ieee)
+ {
+ 	if (ieee->active_scan && (ieee->softmac_features & IEEE_SOFTMAC_PROBERQ)){
+-		ieee80211_send_probe(ieee);
+-		ieee80211_send_probe(ieee);
++		ieee80211_send_probe_rtl7(ieee);
++		ieee80211_send_probe_rtl7(ieee);
+ 	}
+ }
+ 
+ /* this performs syncro scan blocking the caller until all channels
+  * in the allowed channel map has been checked. 
+  */
+-void ieee80211_softmac_scan_syncro(struct ieee80211_device *ieee)
++void ieee80211_softmac_scan_syncro_rtl7(struct ieee80211_device *ieee)
+ {
+ 	short ch = 0;
+         
+@@ -349,7 +349,7 @@
+ 		
+ 		ieee->set_chan(ieee->dev, ch);
+ 		
+-		ieee80211_send_probe_requests(ieee);
++		ieee80211_send_probe_requests_rtl7(ieee);
+ 		
+ 		/* this prevent excessive time wait when we
+ 		 * need to wait for a syncro scan to end..
+@@ -384,11 +384,17 @@
+ }
+ #endif
+ 
+-void ieee80211_softmac_scan_wq(struct ieee80211_device *ieee)
+-{	
+-	down(&ieee->scan_sem);
+-	
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_softmac_scan_wq_rtl7(struct work_struct *work)
++{
++	struct delayed_work *dwork = container_of(work, struct delayed_work, work);
++	struct ieee80211_device *ieee = container_of(dwork, struct ieee80211_device, softmac_scan_wq);
++#else
++void ieee80211_softmac_scan_wq_rtl7(struct ieee80211_device *ieee)
++{
++#endif
+ 	short watchdog = 0;
++	down(&ieee->scan_sem);
+ 	
+ 	do{
+ 		ieee->current_network.channel = 
+@@ -402,7 +408,7 @@
+ 		goto out;
+ 	
+ 	ieee->set_chan(ieee->dev, ieee->current_network.channel);
+-	ieee80211_send_probe_requests(ieee);
++	ieee80211_send_probe_requests_rtl7(ieee);
+ 
+ #if 0	
+ 	ieee->.expires = jiffies + (IEEE80211_SOFTMAC_SCAN_TIME);
+@@ -427,19 +433,19 @@
+ #endif
+ 
+ 
+-void ieee80211_beacons_start(struct ieee80211_device *ieee)
++void ieee80211_beacons_start_rtl7(struct ieee80211_device *ieee)
+ {
+ 	unsigned long flags;	
+ 
+ 	spin_lock_irqsave(&ieee->beacon_lock,flags);
+ 
+ 	ieee->beacon_txing = 1;
+-	ieee80211_send_beacon(ieee);
++	ieee80211_send_beacon_rtl7(ieee);
+ 	
+ 	spin_unlock_irqrestore(&ieee->beacon_lock,flags);
+ }
+ 
+-void ieee80211_beacons_stop(struct ieee80211_device *ieee)
++void ieee80211_beacons_stop_rtl7(struct ieee80211_device *ieee)
+ {
+ 	unsigned long flags;
+ 
+@@ -453,25 +459,25 @@
+ }
+ 
+ 
+-void ieee80211_stop_send_beacons(struct ieee80211_device *ieee)
++void ieee80211_stop_send_beacons_rtl7(struct ieee80211_device *ieee)
+ {
+ 	if(ieee->stop_send_beacons)
+ 		ieee->stop_send_beacons(ieee->dev);
+ 	if (ieee->softmac_features & IEEE_SOFTMAC_BEACONS)
+-		ieee80211_beacons_stop(ieee);
++		ieee80211_beacons_stop_rtl7(ieee);
+ }
+ 
+ 
+-void ieee80211_start_send_beacons(struct ieee80211_device *ieee)
++void ieee80211_start_send_beacons_rtl7(struct ieee80211_device *ieee)
+ {
+ 	if(ieee->start_send_beacons)
+ 		ieee->start_send_beacons(ieee->dev);
+ 	if(ieee->softmac_features & IEEE_SOFTMAC_BEACONS)
+-		ieee80211_beacons_start(ieee); 
++		ieee80211_beacons_start_rtl7(ieee); 
+ }
+ 
+ 
+-void ieee80211_softmac_stop_scan(struct ieee80211_device *ieee)
++void ieee80211_softmac_stop_scan_rtl7(struct ieee80211_device *ieee)
+ {
+ //	unsigned long flags;	
+ 	
+@@ -490,22 +496,22 @@
+ 	up(&ieee->scan_sem);
+ }
+ 
+-void ieee80211_stop_scan(struct ieee80211_device *ieee)
++void ieee80211_stop_scan_rtl7(struct ieee80211_device *ieee)
+ {
+ 	if (ieee->softmac_features & IEEE_SOFTMAC_SCAN)
+-		ieee80211_softmac_stop_scan(ieee);
++		ieee80211_softmac_stop_scan_rtl7(ieee);
+ 	else
+ 		ieee->stop_scan(ieee->dev);
+ }
+ 
+ /* called with ieee->lock held */
+-void ieee80211_start_scan(struct ieee80211_device *ieee)
++void ieee80211_start_scan_rtl7(struct ieee80211_device *ieee)
+ {
+ 	if (ieee->softmac_features & IEEE_SOFTMAC_SCAN){	
+ 		if (ieee->scanning == 0){
+ 			ieee->scanning = 1;
+ 			//ieee80211_softmac_scan(ieee);
+-			queue_work(ieee->wq, &ieee->softmac_scan_wq);
++			queue_delayed_work(ieee->wq, &ieee->softmac_scan_wq, 0);
+ 		}
+ 	}else
+ 		ieee->start_scan(ieee->dev);
+@@ -513,18 +519,18 @@
+ }
+ 
+ /* called with wx_sem held */
+-void ieee80211_start_scan_syncro(struct ieee80211_device *ieee)
++void ieee80211_start_scan_syncro_rtl7(struct ieee80211_device *ieee)
+ {
+ 	ieee->sync_scan_hurryup = 0;
+ 	
+ 	if (ieee->softmac_features & IEEE_SOFTMAC_SCAN)
+-		ieee80211_softmac_scan_syncro(ieee);
++		ieee80211_softmac_scan_syncro_rtl7(ieee);
+ 	else
+ 		ieee->scan_syncro(ieee->dev);
+ 		
+ }
+ 
+-inline struct sk_buff *ieee80211_authentication_req(struct ieee80211_network *beacon, 
++inline struct sk_buff *ieee80211_authentication_req_rtl7(struct ieee80211_network *beacon, 
+ 	struct ieee80211_device *ieee, int challengelen)
+ {
+ 	struct sk_buff *skb;	
+@@ -557,7 +563,7 @@
+ 	
+ }
+ 
+-static struct sk_buff* ieee80211_probe_resp(struct ieee80211_device *ieee, u8 *dest)
++static struct sk_buff* ieee80211_probe_resp_rtl7(struct ieee80211_device *ieee, u8 *dest)
+ {
+ 	u8 *tag;
+ 	int beacon_size;
+@@ -578,7 +584,7 @@
+ 	else
+ 		atim_len = 0;
+ 	
+-	if(ieee80211_is_54g(ieee->current_network)) 
++	if(ieee80211_is_54g_rtl7(ieee->current_network)) 
+ 		erp_len = 3;
+ 	else
+ 		erp_len = 0;
+@@ -664,7 +670,7 @@
+ }
+ 
+ 
+-struct sk_buff* ieee80211_assoc_resp(struct ieee80211_device *ieee, u8 *dest)
++struct sk_buff* ieee80211_assoc_resp_rtl7(struct ieee80211_device *ieee, u8 *dest)
+ {
+ 	struct sk_buff *skb;
+ 	u8* tag;
+@@ -673,7 +679,7 @@
+ 	struct ieee80211_assoc_response_frame *assoc;
+ 	short encrypt;
+ 	
+-	unsigned int rate_len = ieee80211_MFIE_rate_len(ieee);
++	unsigned int rate_len = ieee80211_MFIE_rate_len_rtl7(ieee);
+ 	int len = sizeof(struct ieee80211_assoc_response_frame) + rate_len;
+ 	
+ 	skb = dev_alloc_skb(len); 
+@@ -711,13 +717,13 @@
+ 	
+ 	tag = (u8*) skb_put(skb, rate_len);
+ 	
+-	ieee80211_MFIE_Brate(ieee, &tag);
+-	ieee80211_MFIE_Grate(ieee, &tag);
++	ieee80211_MFIE_Brate_rtl7(ieee, &tag);
++	ieee80211_MFIE_Grate_rtl7(ieee, &tag);
+ 	
+ 	return skb;
+ }
+ 
+-struct sk_buff* ieee80211_auth_resp(struct ieee80211_device *ieee,int status, u8 *dest)
++struct sk_buff* ieee80211_auth_resp_rtl7(struct ieee80211_device *ieee,int status, u8 *dest)
+ {
+ 	struct sk_buff *skb;
+ 	struct ieee80211_authentication *auth;
+@@ -744,7 +750,7 @@
+ 	
+ }
+ 
+-struct sk_buff* ieee80211_null_func(struct ieee80211_device *ieee,short pwr)
++struct sk_buff* ieee80211_null_func_rtl7(struct ieee80211_device *ieee,short pwr)
+ {
+ 	struct sk_buff *skb;
+ 	struct ieee80211_hdr_3addr* hdr;
+@@ -770,35 +776,35 @@
+ }
+ 
+ 
+-void ieee80211_resp_to_assoc_rq(struct ieee80211_device *ieee, u8* dest)
++void ieee80211_resp_to_assoc_rq_rtl7(struct ieee80211_device *ieee, u8* dest)
+ {
+-	struct sk_buff *buf = ieee80211_assoc_resp(ieee, dest);
++	struct sk_buff *buf = ieee80211_assoc_resp_rtl7(ieee, dest);
+ 	
+ 	if (buf)
+-		softmac_mgmt_xmit(buf, ieee);
++		softmac_mgmt_xmit_rtl7(buf, ieee);
+ }
+ 
+ 
+-void ieee80211_resp_to_auth(struct ieee80211_device *ieee, int s, u8* dest)
++void ieee80211_resp_to_auth_rtl7(struct ieee80211_device *ieee, int s, u8* dest)
+ {
+-	struct sk_buff *buf = ieee80211_auth_resp(ieee, s, dest);
++	struct sk_buff *buf = ieee80211_auth_resp_rtl7(ieee, s, dest);
+ 	
+ 	if (buf)
+-		softmac_mgmt_xmit(buf, ieee);
++		softmac_mgmt_xmit_rtl7(buf, ieee);
+ }
+ 
+ 
+-void ieee80211_resp_to_probe(struct ieee80211_device *ieee, u8 *dest)
++void ieee80211_resp_to_probe_rtl7(struct ieee80211_device *ieee, u8 *dest)
+ {
+ 	
+-	struct sk_buff *buf = ieee80211_probe_resp(ieee, dest);
++	struct sk_buff *buf = ieee80211_probe_resp_rtl7(ieee, dest);
+ 	
+ 	if (buf) 
+-		softmac_mgmt_xmit(buf, ieee);
++		softmac_mgmt_xmit_rtl7(buf, ieee);
+ }
+ 
+ 
+-inline struct sk_buff *ieee80211_association_req(struct ieee80211_network *beacon,struct ieee80211_device *ieee)
++inline struct sk_buff *ieee80211_association_req_rtl7(struct ieee80211_network *beacon,struct ieee80211_device *ieee)
+ {
+ 	struct sk_buff *skb;
+ 	
+@@ -807,7 +813,7 @@
+ 	
+ 	unsigned int wpa_len = beacon->wpa_ie_len;
+ 	
+-	unsigned int rate_len = ieee80211_MFIE_rate_len(ieee);
++	unsigned int rate_len = ieee80211_MFIE_rate_len_rtl7(ieee);
+ 	
+ 	
+ 	
+@@ -848,8 +854,8 @@
+ 	
+ 	tag = skb_put(skb, rate_len); 
+ 	
+-	ieee80211_MFIE_Brate(ieee, &tag);
+-	ieee80211_MFIE_Grate(ieee, &tag);
++	ieee80211_MFIE_Brate_rtl7(ieee, &tag);
++	ieee80211_MFIE_Grate_rtl7(ieee, &tag);
+ 	
+ 	tag = skb_put(skb,wpa_len);
+ 	
+@@ -858,7 +864,7 @@
+ 	return skb;
+ }
+ 
+-void ieee80211_associate_abort(struct ieee80211_device *ieee)
++void ieee80211_associate_abort_rtl7(struct ieee80211_device *ieee)
+ {
+ 	
+ 	unsigned long flags;
+@@ -887,13 +893,13 @@
+ 	spin_unlock_irqrestore(&ieee->lock, flags);
+ }
+ 
+-void ieee80211_associate_abort_cb(unsigned long dev)
++void ieee80211_associate_abort_cb_rtl7(unsigned long dev)
+ {
+-	ieee80211_associate_abort((struct ieee80211_device *) dev);
++	ieee80211_associate_abort_rtl7((struct ieee80211_device *) dev);
+ }
+ 
+ 
+-void ieee80211_associate_step1(struct ieee80211_device *ieee)
++void ieee80211_associate_step1_rtl7(struct ieee80211_device *ieee)
+ {
+ 	struct ieee80211_network *beacon = &ieee->current_network;
+ 	struct sk_buff *skb;
+@@ -901,20 +907,20 @@
+ 	IEEE80211_DEBUG_MGMT("Stopping scan\n");
+ 	
+ 	ieee->softmac_stats.tx_auth_rq++;
+-	skb=ieee80211_authentication_req(beacon, ieee, 0);
++	skb=ieee80211_authentication_req_rtl7(beacon, ieee, 0);
+ 	
+ 	if (!skb) 
+-		ieee80211_associate_abort(ieee);
++		ieee80211_associate_abort_rtl7(ieee);
+ 	else{ 
+ 		ieee->state = IEEE80211_ASSOCIATING_AUTHENTICATING ;
+ 		IEEE80211_DEBUG_MGMT("Sending authentication request\n");
+-		softmac_mgmt_xmit(skb, ieee);
++		softmac_mgmt_xmit_rtl7(skb, ieee);
+ 		ieee->associate_timer.expires = jiffies + (HZ / 2);
+ 		add_timer(&ieee->associate_timer);
+ 	}	
+ }
+ 
+-void ieee80211_auth_challenge(struct ieee80211_device *ieee, u8 *challenge, int chlen)
++void ieee80211_auth_challenge_rtl7(struct ieee80211_device *ieee, u8 *challenge, int chlen)
+ {
+ 	u8 *c;	
+ 	struct sk_buff *skb;
+@@ -924,9 +930,9 @@
+ 	ieee->associate_seq++;
+ 	ieee->softmac_stats.tx_auth_rq++;
+ 	
+-	skb = ieee80211_authentication_req(beacon, ieee, chlen+2);
++	skb = ieee80211_authentication_req_rtl7(beacon, ieee, chlen+2);
+ 	if (!skb) 
+-		ieee80211_associate_abort(ieee);
++		ieee80211_associate_abort_rtl7(ieee);
+ 	else{
+ 		c = skb_put(skb, chlen+2);
+ 		*(c++) = MFIE_TYPE_CHALLENGE;
+@@ -935,16 +941,16 @@
+ 		
+ 		IEEE80211_DEBUG_MGMT("Sending authentication challenge response\n");
+ 		
+-		ieee80211_encrypt_fragment(ieee, skb, sizeof(struct ieee80211_hdr_3addr  ));
++		ieee80211_encrypt_fragment_rtl7(ieee, skb, sizeof(struct ieee80211_hdr_3addr  ));
+ 			
+-		softmac_mgmt_xmit(skb, ieee);
++		softmac_mgmt_xmit_rtl7(skb, ieee);
+ 		ieee->associate_timer.expires = jiffies + (HZ / 2);
+ 		add_timer(&ieee->associate_timer);
+ 	}	
+ 	kfree(challenge);
+ }
+ 
+-void ieee80211_associate_step2(struct ieee80211_device *ieee)
++void ieee80211_associate_step2_rtl7(struct ieee80211_device *ieee)
+ {
+ 	struct sk_buff* skb;
+ 	struct ieee80211_network *beacon = &ieee->current_network;
+@@ -954,20 +960,26 @@
+ 	IEEE80211_DEBUG_MGMT("Sending association request\n");
+ 	
+ 	ieee->softmac_stats.tx_ass_rq++;
+-	skb=ieee80211_association_req(beacon, ieee);
++	skb=ieee80211_association_req_rtl7(beacon, ieee);
+ 	if (!skb) 
+-		ieee80211_associate_abort(ieee);
++		ieee80211_associate_abort_rtl7(ieee);
+ 	else{
+-		softmac_mgmt_xmit(skb, ieee);
++		softmac_mgmt_xmit_rtl7(skb, ieee);
+ 		ieee->associate_timer.expires = jiffies + (HZ / 2);
+ 		add_timer(&ieee->associate_timer);
+ 	}	
+ }
+ 
+-void ieee80211_associate_complete_wq(struct ieee80211_device *ieee)
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_associate_complete_wq_rtl7(struct work_struct *work)
++{
++	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, associate_complete_wq);
++#else
++void ieee80211_associate_complete_wq_rtl7(struct ieee80211_device *ieee)
+ {
++#endif
+ 	printk(KERN_INFO "Associated successfully\n");
+-	if(ieee80211_is_54g(ieee->current_network) && 
++	if(ieee80211_is_54g_rtl7(ieee->current_network) && 
+ 		(ieee->modulation & IEEE80211_OFDM_MODULATION)){
+ 		
+ 		ieee->rate = 540;
+@@ -977,13 +989,13 @@
+ 		printk(KERN_INFO"Using B rates\n");
+ 	}
+ 	ieee->link_change(ieee->dev);
+-	notify_wx_assoc_event(ieee); 
++	notify_wx_assoc_event_rtl7(ieee); 
+ 	if (ieee->data_hard_resume)
+ 		ieee->data_hard_resume(ieee->dev);
+ 	netif_carrier_on(ieee->dev);
+ }
+ 
+-void ieee80211_associate_complete(struct ieee80211_device *ieee)
++void ieee80211_associate_complete_rtl7(struct ieee80211_device *ieee)
+ {
+ 
+ 	del_timer_sync(&ieee->associate_timer);
+@@ -995,24 +1007,29 @@
+ 	queue_work(ieee->wq, &ieee->associate_complete_wq);
+ }
+ 
+-void ieee80211_associate_procedure_wq(struct ieee80211_device *ieee)
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_associate_procedure_wq_rtl7(struct work_struct *work)
++{
++	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, associate_procedure_wq);
++#else
++void ieee80211_associate_procedure_wq_rtl7(struct ieee80211_device *ieee)
+ {
++#endif
+ 	ieee->sync_scan_hurryup = 1;
+ 	down(&ieee->wx_sem);
+-	
+ 	if (ieee->data_hard_stop)
+ 		ieee->data_hard_stop(ieee->dev);
+ 	
+-	ieee80211_stop_scan(ieee);
++	ieee80211_stop_scan_rtl7(ieee);
+ 	ieee->set_chan(ieee->dev, ieee->current_network.channel);
+ 	
+ 	ieee->associate_seq = 1;
+-	ieee80211_associate_step1(ieee);
++	ieee80211_associate_step1_rtl7(ieee);
+ 	
+ 	up(&ieee->wx_sem);
+ }
+ 
+-inline void ieee80211_softmac_new_net(struct ieee80211_device *ieee, struct ieee80211_network *net)
++inline void ieee80211_softmac_new_net_rtl7(struct ieee80211_device *ieee, struct ieee80211_network *net)
+ {
+ 	
+ 	u8 tmp_ssid[IW_ESSID_MAX_SIZE+1];
+@@ -1079,7 +1096,7 @@
+ 					ieee->state = IEEE80211_ASSOCIATING;
+ 					queue_work(ieee->wq, &ieee->associate_procedure_wq);
+ 				}else{
+-					if(ieee80211_is_54g(ieee->current_network) && 
++					if(ieee80211_is_54g_rtl7(ieee->current_network) && 
+ 						(ieee->modulation & IEEE80211_OFDM_MODULATION)){
+ 						ieee->rate = 540;
+ 						printk(KERN_INFO"Using G rates\n");
+@@ -1095,14 +1112,13 @@
+ 
+ }
+ 
+-void ieee80211_softmac_check_all_nets(struct ieee80211_device *ieee)
++void ieee80211_softmac_check_all_nets_rtl7(struct ieee80211_device *ieee)
+ {
+ 	
+ 	unsigned long flags;
+ 	struct ieee80211_network *target;
+ 	
+ 	spin_lock_irqsave(&ieee->lock, flags);
+-			
+ 	list_for_each_entry(target, &ieee->network_list, list) {
+ 		
+ 		/* if the state become different that NOLINK means
+@@ -1112,7 +1128,7 @@
+ 			break;
+ 			
+ 		//if (ieee->scan_age == 0 || time_after(target->last_scanned + ieee->scan_age, jiffies))
+-			ieee80211_softmac_new_net(ieee, target);
++			ieee80211_softmac_new_net_rtl7(ieee, target);
+ 	}
+ 	
+ 	spin_unlock_irqrestore(&ieee->lock, flags);
+@@ -1120,7 +1136,7 @@
+ }
+ 
+ 
+-static inline u16 auth_parse(struct sk_buff *skb, u8** challenge, int *chlen)
++static inline u16 auth_parse_rtl7(struct sk_buff *skb, u8** challenge, int *chlen)
+ {
+ 	struct ieee80211_authentication *a;
+ 	u8 *t;
+@@ -1145,7 +1161,7 @@
+ }
+ 
+ 
+-int auth_rq_parse(struct sk_buff *skb,u8* dest)
++int auth_rq_parse_rtl7(struct sk_buff *skb,u8* dest)
+ {
+ 	struct ieee80211_authentication *a;
+ 	
+@@ -1163,7 +1179,7 @@
+ 	return WLAN_STATUS_SUCCESS;
+ }
+ 
+-static short probe_rq_parse(struct ieee80211_device *ieee, struct sk_buff *skb, u8 *src)
++static short probe_rq_parse_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb, u8 *src)
+ {
+ 	u8 *tag;
+ 	u8 *skbend;
+@@ -1201,7 +1217,7 @@
+ 		
+ }
+ 
+-int assoc_rq_parse(struct sk_buff *skb,u8* dest)
++int assoc_rq_parse_rtl7(struct sk_buff *skb,u8* dest)
+ {
+ 	struct ieee80211_assoc_request_frame *a;
+ 	
+@@ -1219,7 +1235,7 @@
+ 	return 0;
+ }
+ 
+-static inline u16 assoc_parse(struct sk_buff *skb, int *aid)
++static inline u16 assoc_parse_rtl7(struct sk_buff *skb, int *aid)
+ {
+ 	struct ieee80211_assoc_response_frame *a;
+ 	if (skb->len <  sizeof(struct ieee80211_assoc_response_frame)){ 
+@@ -1233,45 +1249,45 @@
+ }
+ 
+ static inline void
+-ieee80211_rx_probe_rq(struct ieee80211_device *ieee, struct sk_buff *skb)
++ieee80211_rx_probe_rq_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb)
+ {
+ 	u8 dest[ETH_ALEN];
+ 	
+ 	//IEEE80211DMESG("Rx probe");
+ 	ieee->softmac_stats.rx_probe_rq++;
+ 	//DMESG("Dest is "MACSTR, MAC2STR(dest));
+-	if (probe_rq_parse(ieee, skb, dest)){
++	if (probe_rq_parse_rtl7(ieee, skb, dest)){
+ 		//IEEE80211DMESG("Was for me!");
+ 		ieee->softmac_stats.tx_probe_rs++;
+-		ieee80211_resp_to_probe(ieee, dest);
++		ieee80211_resp_to_probe_rtl7(ieee, dest);
+ 	}
+ }
+ 
+ static inline void
+-ieee80211_rx_auth_rq(struct ieee80211_device *ieee, struct sk_buff *skb)
++ieee80211_rx_auth_rq_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb)
+ {
+ 	u8 dest[ETH_ALEN];
+ 	int status;
+ 	//IEEE80211DMESG("Rx probe");
+ 	ieee->softmac_stats.rx_auth_rq++;
+ 	
+-	if ((status = auth_rq_parse(skb, dest))!= -1){
+-		ieee80211_resp_to_auth(ieee, status, dest);
++	if ((status = auth_rq_parse_rtl7(skb, dest))!= -1){
++		ieee80211_resp_to_auth_rtl7(ieee, status, dest);
+ 	}
+ 	//DMESG("Dest is "MACSTR, MAC2STR(dest));
+ 	
+ }
+ 
+ static inline void
+-ieee80211_rx_assoc_rq(struct ieee80211_device *ieee, struct sk_buff *skb)
++ieee80211_rx_assoc_rq_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb)
+ {
+ 	
+ 	u8 dest[ETH_ALEN];
+ 	//unsigned long flags;
+ 	
+ 	ieee->softmac_stats.rx_ass_rq++;
+-	if (assoc_rq_parse(skb,dest) != -1){
+-		ieee80211_resp_to_assoc_rq(ieee, dest);
++	if (assoc_rq_parse_rtl7(skb,dest) != -1){
++		ieee80211_resp_to_assoc_rq_rtl7(ieee, dest);
+ 	}
+ 	
+ 	printk(KERN_INFO"New client associated: "MAC_FMT"\n", MAC_ARG(dest));
+@@ -1285,18 +1301,18 @@
+ 
+ 
+ 
+-void ieee80211_sta_ps_send_null_frame(struct ieee80211_device *ieee, short pwr)
++void ieee80211_sta_ps_send_null_frame_rtl7(struct ieee80211_device *ieee, short pwr)
+ {
+ 	
+-	struct sk_buff *buf = ieee80211_null_func(ieee, pwr);
++	struct sk_buff *buf = ieee80211_null_func_rtl7(ieee, pwr);
+ 	
+ 	if (buf)
+-		softmac_ps_mgmt_xmit(buf, ieee);
++		softmac_ps_mgmt_xmit_rtl7(buf, ieee);
+ 
+ } 
+ 
+ 
+-short ieee80211_sta_ps_sleep(struct ieee80211_device *ieee, u32 *time_h, u32 *time_l)
++short ieee80211_sta_ps_sleep_rtl7(struct ieee80211_device *ieee, u32 *time_h, u32 *time_l)
+ {	
+ 	int timeout = ieee->ps_timeout;
+ 	u8 dtim;
+@@ -1343,7 +1359,7 @@
+ 	
+ }
+ 
+-inline void ieee80211_sta_ps(struct ieee80211_device *ieee)
++inline void ieee80211_sta_ps_rtl7(struct ieee80211_device *ieee)
+ {
+ 
+ 	u32 th,tl;
+@@ -1360,12 +1376,12 @@
+ 		#warning CHECK_LOCK_HERE
+ 		spin_lock_irqsave(&ieee->mgmt_tx_lock, flags2);
+ 		
+-		ieee80211_sta_wakeup(ieee, 1);	
++		ieee80211_sta_wakeup_rtl7(ieee, 1);	
+ 		
+ 		spin_unlock_irqrestore(&ieee->mgmt_tx_lock, flags2);
+ 	}
+ 	
+-	sleep = ieee80211_sta_ps_sleep(ieee,&th, &tl);
++	sleep = ieee80211_sta_ps_sleep_rtl7(ieee,&th, &tl);
+ 	/* 2 wake, 1 sleep, 0 do nothing */
+ 	if(sleep == 0)
+ 		goto out;
+@@ -1386,7 +1402,7 @@
+ 				
+ 				ieee->ps_request_tx_ack(ieee->dev);
+ 				
+-				ieee80211_sta_ps_send_null_frame(ieee,1);
++				ieee80211_sta_ps_send_null_frame_rtl7(ieee,1);
+ 				
+ 				ieee->ps_th = th;
+ 				ieee->ps_tl = tl;
+@@ -1400,7 +1416,7 @@
+ #warning CHECK_LOCK_HERE
+ 		spin_lock_irqsave(&ieee->mgmt_tx_lock, flags2);
+ 			
+-		ieee80211_sta_wakeup(ieee,1);
++		ieee80211_sta_wakeup_rtl7(ieee,1);
+ 		
+ 		spin_unlock_irqrestore(&ieee->mgmt_tx_lock, flags2);
+ 	}
+@@ -1410,13 +1426,13 @@
+ 	
+ }
+ 
+-void ieee80211_sta_wakeup(struct ieee80211_device *ieee, short nl)
++void ieee80211_sta_wakeup_rtl7(struct ieee80211_device *ieee, short nl)
+ {
+ 	if(ieee->sta_sleep == 0){
+ 		if(nl){
+ 			printk("Warning: driver is probably failing to report TX ps error\n");
+ 			ieee->ps_request_tx_ack(ieee->dev);
+-			ieee80211_sta_ps_send_null_frame(ieee, 0);
++			ieee80211_sta_ps_send_null_frame_rtl7(ieee, 0);
+ 		}
+ 		return;
+ 		
+@@ -1429,11 +1445,11 @@
+ 	
+ 	if(nl){
+ 		ieee->ps_request_tx_ack(ieee->dev);
+-		ieee80211_sta_ps_send_null_frame(ieee, 0);
++		ieee80211_sta_ps_send_null_frame_rtl7(ieee, 0);
+ 	}
+ }
+ 
+-void ieee80211_ps_tx_ack(struct ieee80211_device *ieee, short success)
++void ieee80211_ps_tx_ack_rtl7(struct ieee80211_device *ieee, short success)
+ {
+ 	unsigned long flags,flags2;
+ 	
+@@ -1454,7 +1470,7 @@
+ 	
+ 		if((ieee->sta_sleep == 0) && !success){
+ 			spin_lock_irqsave(&ieee->mgmt_tx_lock, flags2);
+-			ieee80211_sta_ps_send_null_frame(ieee, 0);
++			ieee80211_sta_ps_send_null_frame_rtl7(ieee, 0);
+ 			spin_unlock_irqrestore(&ieee->mgmt_tx_lock, flags2);
+ 		}
+ 	}
+@@ -1462,17 +1478,18 @@
+ }
+ 
+ inline int
+-ieee80211_rx_frame_softmac(struct ieee80211_device *ieee, struct sk_buff *skb,
++ieee80211_rx_frame_softmac_rtl7(struct ieee80211_device *ieee, struct sk_buff *skb,
+ 			struct ieee80211_rx_stats *rx_stats, u16 type,
+ 			u16 stype)
+ {
+ 	struct ieee80211_hdr_3addr *header;
+-	header = (struct ieee80211_hdr_3addr *) skb->data;
+ 	u16 errcode;
+ 	u8* challenge;
+ 	int chlen;
+ 	int aid;
+ 	
++	header = (struct ieee80211_hdr_3addr *) skb->data;
++
+ 	if(!ieee->proto_started)
+ 		return 0;
+ 	
+@@ -1496,19 +1513,19 @@
+ 			if ((ieee->softmac_features & IEEE_SOFTMAC_ASSOCIATE) &&
+ 				ieee->state == IEEE80211_ASSOCIATING_AUTHENTICATED && 
+ 				ieee->iw_mode == IW_MODE_INFRA){
+-				if (0 == (errcode=assoc_parse(skb, &aid))){
++				if (0 == (errcode=assoc_parse_rtl7(skb, &aid))){
+ 					
+ 					ieee->state=IEEE80211_LINKED;
+ 					ieee->assoc_id = aid;
+ 					ieee->softmac_stats.rx_ass_ok++;
+ 					
+-					ieee80211_associate_complete(ieee);
++					ieee80211_associate_complete_rtl7(ieee);
+ 				}else{
+ 					ieee->softmac_stats.rx_ass_err++;
+ 					IEEE80211_DEBUG_MGMT(
+ 						"Association response status code 0x%x\n",
+ 						errcode);
+-					ieee80211_associate_abort(ieee); 
++					ieee80211_associate_abort_rtl7(ieee); 
+ 				}
+ 			}
+ 			break;
+@@ -1519,7 +1536,7 @@
+ 			if ((ieee->softmac_features & IEEE_SOFTMAC_ASSOCIATE) &&
+ 				ieee->iw_mode == IW_MODE_MASTER)
+ 					
+-				ieee80211_rx_assoc_rq(ieee, skb);
++				ieee80211_rx_assoc_rq_rtl7(ieee, skb);
+ 			break;
+ 			
+ 		case IEEE80211_STYPE_AUTH:
+@@ -1530,23 +1547,23 @@
+ 			
+ 						IEEE80211_DEBUG_MGMT("Received authentication response");
+ 						
+-						if (0 == (errcode=auth_parse(skb, &challenge, &chlen))){
++						if (0 == (errcode=auth_parse_rtl7(skb, &challenge, &chlen))){
+ 							if(ieee->open_wep || !challenge){
+ 								ieee->state = IEEE80211_ASSOCIATING_AUTHENTICATED;
+ 								ieee->softmac_stats.rx_auth_rs_ok++;
+ 								
+-								ieee80211_associate_step2(ieee);
++								ieee80211_associate_step2_rtl7(ieee);
+ 							}else{
+-								ieee80211_auth_challenge(ieee, challenge, chlen);
++								ieee80211_auth_challenge_rtl7(ieee, challenge, chlen);
+ 							}
+ 						}else{
+ 							ieee->softmac_stats.rx_auth_rs_err++;
+ 							IEEE80211_DEBUG_MGMT("Authentication respose status code 0x%x",errcode);
+-							ieee80211_associate_abort(ieee);
++							ieee80211_associate_abort_rtl7(ieee);
+ 						}
+ 						
+ 					}else if (ieee->iw_mode == IW_MODE_MASTER){
+-						ieee80211_rx_auth_rq(ieee, skb);
++						ieee80211_rx_auth_rq_rtl7(ieee, skb);
+ 					}
+ 				}
+ 			break;
+@@ -1558,7 +1575,7 @@
+ 				ieee->iw_mode == IW_MODE_MASTER) &&
+ 				ieee->state == IEEE80211_LINKED))
+ 				
+-				ieee80211_rx_probe_rq(ieee, skb);
++				ieee80211_rx_probe_rq_rtl7(ieee, skb);
+ 			break;
+ 			
+ 		case IEEE80211_STYPE_DISASSOC:
+@@ -1573,8 +1590,8 @@
+ 				ieee->state = IEEE80211_ASSOCIATING;
+ 				ieee->softmac_stats.reassoc++;
+ 				
+-				notify_wx_assoc_event(ieee);
+-								
++				notify_wx_assoc_event_rtl7(ieee);
++				
+ 				queue_work(ieee->wq, &ieee->associate_procedure_wq);
+ 			}
+ 			
+@@ -1610,7 +1627,7 @@
+  * to the driver later, when it wakes the queue.
+  */ 
+  
+-void ieee80211_softmac_xmit(struct ieee80211_txb *txb, struct ieee80211_device *ieee)
++void ieee80211_softmac_xmit_rtl7(struct ieee80211_txb *txb, struct ieee80211_device *ieee)
+ {
+ 	
+ 	
+@@ -1643,7 +1660,7 @@
+ 	#endif
+ 	
+ 	/* called with 2nd parm 0, no tx mgmt lock required */
+-	ieee80211_sta_wakeup(ieee,0);
++	ieee80211_sta_wakeup_rtl7(ieee,0);
+ 
+ 	for(i = 0; i < txb->nr_frags; i++) {
+ 	
+@@ -1662,7 +1679,7 @@
+ 		}
+ 	}	
+ 	
+-	ieee80211_txb_free(txb);
++	ieee80211_txb_free_rtl7(txb);
+ 	
+ 	exit:
+ 	spin_unlock_irqrestore(&ieee->lock,flags);
+@@ -1670,7 +1687,7 @@
+ }
+ 
+ /* called with ieee->lock acquired */
+-void ieee80211_resume_tx(struct ieee80211_device *ieee)
++void ieee80211_resume_tx_rtl7(struct ieee80211_device *ieee)
+ {
+ 	int i;
+ 	for(i = ieee->tx_pending.frag; i < ieee->tx_pending.txb->nr_frags; i++) {
+@@ -1690,19 +1707,19 @@
+ 	}
+ 	
+ 	
+-	ieee80211_txb_free(ieee->tx_pending.txb);
++	ieee80211_txb_free_rtl7(ieee->tx_pending.txb);
+ 	ieee->tx_pending.txb = NULL;
+ }
+ 
+ 
+-void ieee80211_reset_queue(struct ieee80211_device *ieee)
++void ieee80211_reset_queue_rtl7(struct ieee80211_device *ieee)
+ {
+ 	unsigned long flags;
+ 	
+ 	spin_lock_irqsave(&ieee->lock,flags);
+-	init_mgmt_queue(ieee);
++	init_mgmt_queue_rtl7(ieee);
+ 	if (ieee->tx_pending.txb){
+-		ieee80211_txb_free(ieee->tx_pending.txb);
++		ieee80211_txb_free_rtl7(ieee->tx_pending.txb);
+ 		ieee->tx_pending.txb = NULL;
+ 	}
+ 	ieee->queue_stop = 0;
+@@ -1710,7 +1727,7 @@
+ 
+ }
+ 
+-void ieee80211_wake_queue(struct ieee80211_device *ieee)
++void ieee80211_wake_queue_rtl7(struct ieee80211_device *ieee)
+ {
+ 
+ 	unsigned long flags;
+@@ -1723,7 +1740,7 @@
+ 	ieee->queue_stop = 0;
+ 	
+ 	if(ieee->softmac_features & IEEE_SOFTMAC_SINGLE_QUEUE){
+-		while (!ieee->queue_stop && (skb = dequeue_mgmt(ieee))){
++		while (!ieee->queue_stop && (skb = dequeue_mgmt_rtl7(ieee))){
+ 			
+ 			header = (struct ieee80211_hdr_3addr  *) skb->data;
+ 			
+@@ -1738,7 +1755,7 @@
+ 		}
+ 	}
+ 	if (!ieee->queue_stop && ieee->tx_pending.txb)
+-		ieee80211_resume_tx(ieee);
++		ieee80211_resume_tx_rtl7(ieee);
+ 	
+ 	if (!ieee->queue_stop && netif_queue_stopped(ieee->dev)){
+ 		ieee->softmac_stats.swtxawake++;
+@@ -1750,7 +1767,7 @@
+ }
+ 
+ 
+-void ieee80211_stop_queue(struct ieee80211_device *ieee)
++void ieee80211_stop_queue_rtl7(struct ieee80211_device *ieee)
+ {
+ 	//unsigned long flags;
+ 	//spin_lock_irqsave(&ieee->lock,flags);
+@@ -1765,7 +1782,7 @@
+ }
+ 
+ 
+-inline void ieee80211_randomize_cell(struct ieee80211_device *ieee)
++inline void ieee80211_randomize_cell_rtl7(struct ieee80211_device *ieee)
+ {
+ 	
+ 	get_random_bytes(ieee->current_network.bssid, ETH_ALEN);
+@@ -1778,7 +1795,7 @@
+ }
+ 
+ /* called in user context only */
+-void ieee80211_start_master_bss(struct ieee80211_device *ieee)
++void ieee80211_start_master_bss_rtl7(struct ieee80211_device *ieee)
+ {
+ 	ieee->assoc_id = 1;
+ 	
+@@ -1796,7 +1813,7 @@
+ 	ieee->set_chan(ieee->dev, ieee->current_network.channel);
+ 	ieee->state = IEEE80211_LINKED;
+ 	ieee->link_change(ieee->dev);
+-	notify_wx_assoc_event(ieee);
++	notify_wx_assoc_event_rtl7(ieee);
+ 	
+ 	if (ieee->data_hard_resume)
+ 		ieee->data_hard_resume(ieee->dev);
+@@ -1804,7 +1821,7 @@
+ 	netif_carrier_on(ieee->dev);
+ }
+ 
+-void ieee80211_start_monitor_mode(struct ieee80211_device *ieee)
++void ieee80211_start_monitor_mode_rtl7(struct ieee80211_device *ieee)
+ {
+ 	if(ieee->raw_tx){
+ 		
+@@ -1814,8 +1831,15 @@
+ 		netif_carrier_on(ieee->dev);
+ 	}
+ }
+-void ieee80211_start_ibss_wq(struct ieee80211_device *ieee)
++
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_start_ibss_wq_rtl7(struct work_struct *work)
+ {
++	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, start_ibss_wq);
++#else
++void ieee80211_start_ibss_wq_rtl7(struct ieee80211_device *ieee)
++{
++#endif
+ 	
+ 	/* iwconfig mode ad-hoc will schedule this and return
+ 	 * on the other hand this will block further iwconfig SET
+@@ -1834,7 +1858,7 @@
+ 	} 
+ 	
+ 	/* check if we have this cell in our network list */
+-	ieee80211_softmac_check_all_nets(ieee);
++	ieee80211_softmac_check_all_nets_rtl7(ieee);
+ 	
+ 	/* if not then the state is not linked. Maybe the user swithced to
+ 	 * ad-hoc mode just after being in monitor mode, or just after
+@@ -1851,13 +1875,13 @@
+ 	 * associated.
+ 	 */
+ 	if (ieee->state == IEEE80211_NOLINK)
+-		ieee80211_start_scan_syncro(ieee);
++		ieee80211_start_scan_syncro_rtl7(ieee);
+ 
+ 	/* the network definitively is not here.. create a new cell */
+ 	if (ieee->state == IEEE80211_NOLINK){
+ 		printk("creating new IBSS cell\n"); 
+ 		if(!ieee->wap_set)
+-			ieee80211_randomize_cell(ieee);
++			ieee80211_randomize_cell_rtl7(ieee);
+ 		
+ 		if(ieee->modulation & IEEE80211_CCK_MODULATION){
+ 		
+@@ -1901,9 +1925,9 @@
+ 	ieee->set_chan(ieee->dev, ieee->current_network.channel);
+ 	ieee->link_change(ieee->dev);
+ 	
+-	notify_wx_assoc_event(ieee);
++	notify_wx_assoc_event_rtl7(ieee);
+ 	
+-	ieee80211_start_send_beacons(ieee);
++	ieee80211_start_send_beacons_rtl7(ieee);
+ 	
+ 	if (ieee->data_hard_resume)
+ 		ieee->data_hard_resume(ieee->dev);
+@@ -1913,13 +1937,13 @@
+ 	up(&ieee->wx_sem);
+ }
+ 
+-inline void ieee80211_start_ibss(struct ieee80211_device *ieee)
++inline void ieee80211_start_ibss_rtl7(struct ieee80211_device *ieee)
+ {
+ 	queue_work(ieee->wq, &ieee->start_ibss_wq);
+ }
+ 
+ /* this is called only in user context, with wx_sem held */
+-void ieee80211_start_bss(struct ieee80211_device *ieee)
++void ieee80211_start_bss_rtl7(struct ieee80211_device *ieee)
+ {
+ 	unsigned long flags;
+ 	/* check if we have already found the net we
+@@ -1927,7 +1951,7 @@
+ 	 * if not (we are disassociated and we are not
+ 	 * in associating / authenticating phase) start the background scanning.
+ 	 */
+-	ieee80211_softmac_check_all_nets(ieee);
++	ieee80211_softmac_check_all_nets_rtl7(ieee);
+ 	
+ 	/* ensure no-one start an associating process (thus setting
+ 	 * the ieee->state to ieee80211_ASSOCIATING) while we
+@@ -1937,34 +1961,42 @@
+ 	 * the rx path), so we cannot be in the middle of such function
+ 	 */
+ 	spin_lock_irqsave(&ieee->lock, flags);
+-	
+ 	if (ieee->state == IEEE80211_NOLINK)
+-		ieee80211_start_scan(ieee);
++		ieee80211_start_scan_rtl7(ieee);
+ 	
+ 	spin_unlock_irqrestore(&ieee->lock, flags);
+ }
+ 
+ /* called only in userspace context */
+-void ieee80211_disassociate(struct ieee80211_device *ieee)
++void ieee80211_disassociate_rtl7(struct ieee80211_device *ieee)
+ {
+ 	netif_carrier_off(ieee->dev);
+ 	
+ 	if (ieee->softmac_features & IEEE_SOFTMAC_TX_QUEUE)
+-			ieee80211_reset_queue(ieee);
++			ieee80211_reset_queue_rtl7(ieee);
+ 	
+ 	if (ieee->data_hard_stop)
+ 			ieee->data_hard_stop(ieee->dev);
+ 	
+ 	ieee->state = IEEE80211_NOLINK;
+ 	ieee->link_change(ieee->dev);
+-	notify_wx_assoc_event(ieee);
++	notify_wx_assoc_event_rtl7(ieee);
+ 	
+ }
+-void ieee80211_associate_retry_wq(struct ieee80211_device *ieee)
++
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_associate_retry_wq_rtl7(struct work_struct *work)
++{
++	struct delayed_work *dwork = container_of(work, struct delayed_work, work);
++	struct ieee80211_device *ieee = container_of(dwork, struct ieee80211_device, associate_retry_wq);
++#else
++void ieee80211_associate_retry_wq_rtl7(struct ieee80211_device *ieee)
+ {
++#endif
+ 	unsigned long flags;
+ 	
+ 	down(&ieee->wx_sem);
++
+ 	if(!ieee->proto_started)
+ 		goto exit;
+ 		
+@@ -1986,12 +2018,12 @@
+ 	*/
+ 	ieee->state = IEEE80211_NOLINK;
+ 
+-	ieee80211_softmac_check_all_nets(ieee);
++	ieee80211_softmac_check_all_nets_rtl7(ieee);
+ 	
+ 	spin_lock_irqsave(&ieee->lock, flags);
+ 	
+ 	if(ieee->state == IEEE80211_NOLINK)
+-		ieee80211_start_scan(ieee);
++		ieee80211_start_scan_rtl7(ieee);
+ 	
+ 	spin_unlock_irqrestore(&ieee->lock, flags);
+ 
+@@ -1999,14 +2031,14 @@
+ 	up(&ieee->wx_sem);
+ }
+ 
+-struct sk_buff *ieee80211_get_beacon_(struct ieee80211_device *ieee)
++struct sk_buff *ieee80211_get_beacon__rtl7(struct ieee80211_device *ieee)
+ {
+ 	u8 broadcast_addr[] = {0xff,0xff,0xff,0xff,0xff,0xff};
+ 	
+ 	struct sk_buff *skb;
+ 	struct ieee80211_probe_response *b;
+ 	
+-	skb = ieee80211_probe_resp(ieee, broadcast_addr);
++	skb = ieee80211_probe_resp_rtl7(ieee, broadcast_addr);
+ 	
+ 	if (!skb) 
+ 		return NULL;
+@@ -2018,12 +2050,12 @@
+ 	
+ }
+ 
+-struct sk_buff *ieee80211_get_beacon(struct ieee80211_device *ieee)
++struct sk_buff *ieee80211_get_beacon_rtl7(struct ieee80211_device *ieee)
+ {
+ 	struct sk_buff *skb;
+ 	struct ieee80211_probe_response *b;
+ 	
+-	skb = ieee80211_get_beacon_(ieee);
++	skb = ieee80211_get_beacon__rtl7(ieee);
+ 	if(!skb) 
+ 		return NULL;
+ 		
+@@ -2038,44 +2070,44 @@
+ 	return skb;
+ }
+ 
+-void ieee80211_softmac_stop_protocol(struct ieee80211_device *ieee)
++void ieee80211_softmac_stop_protocol_rtl7(struct ieee80211_device *ieee)
+ {
+ 	ieee->sync_scan_hurryup = 1;
+ 	down(&ieee->wx_sem);
+-	ieee80211_stop_protocol(ieee);
++
++	ieee80211_stop_protocol_rtl7(ieee);
+ 	up(&ieee->wx_sem);
+ }
+ 
+ 
+-void ieee80211_stop_protocol(struct ieee80211_device *ieee)
++void ieee80211_stop_protocol_rtl7(struct ieee80211_device *ieee)
+ {
+ 	if (!ieee->proto_started)
+ 		return;
+ 	
+ 	ieee->proto_started = 0;
+ 	
+-	ieee80211_stop_send_beacons(ieee);
++	ieee80211_stop_send_beacons_rtl7(ieee);
+ 	
+ 	del_timer_sync(&ieee->associate_timer);
+ 	cancel_delayed_work(&ieee->associate_retry_wq);	
+ 	
+-	ieee80211_stop_scan(ieee);
++	ieee80211_stop_scan_rtl7(ieee);
+ 
+-	ieee80211_disassociate(ieee);
++	ieee80211_disassociate_rtl7(ieee);
+ }
+ 
+-void ieee80211_softmac_start_protocol(struct ieee80211_device *ieee)
++void ieee80211_softmac_start_protocol_rtl7(struct ieee80211_device *ieee)
+ {
+ 	ieee->sync_scan_hurryup = 0;
+ 	down(&ieee->wx_sem);
+-	ieee80211_start_protocol(ieee);
++	ieee80211_start_protocol_rtl7(ieee);
+ 	up(&ieee->wx_sem);
+ }
+ 
+-void ieee80211_start_protocol(struct ieee80211_device *ieee)
++void ieee80211_start_protocol_rtl7(struct ieee80211_device *ieee)
+ {
+ 	short ch = 0;
+-	
+ 	if (ieee->proto_started)
+ 		return;
+ 		
+@@ -2094,9 +2126,7 @@
+ 	
+ 	if (ieee->current_network.beacon_interval == 0)
+ 		ieee->current_network.beacon_interval = 100;
+-	
+ 	ieee->set_chan(ieee->dev,ieee->current_network.channel);
+-	
+ 	ieee->last_seq_num = -1;
+ 	ieee->last_frag_num = -1;
+ 	ieee->last_packet_time = 0;
+@@ -2109,21 +2139,18 @@
+ 	 */
+ 	
+ 	if (ieee->iw_mode == IW_MODE_INFRA)
+-		ieee80211_start_bss(ieee);
+-		
++		ieee80211_start_bss_rtl7(ieee);
+ 	else if (ieee->iw_mode == IW_MODE_ADHOC)
+-		ieee80211_start_ibss(ieee);
+-		
++		ieee80211_start_ibss_rtl7(ieee);
+ 	else if (ieee->iw_mode == IW_MODE_MASTER)
+-		ieee80211_start_master_bss(ieee);
+-		
++		ieee80211_start_master_bss_rtl7(ieee);
+ 	else if(ieee->iw_mode == IW_MODE_MONITOR)
+-		ieee80211_start_monitor_mode(ieee);	
++		ieee80211_start_monitor_mode_rtl7(ieee);
+ }
+ 
+ 
+ #define DRV_NAME  "Ieee80211"
+-void ieee80211_softmac_init(struct ieee80211_device *ieee)
++void ieee80211_softmac_init_rtl7(struct ieee80211_device *ieee)
+ {
+ 	memset(&ieee->current_network, 0, sizeof(struct ieee80211_network));
+ 	
+@@ -2143,7 +2170,7 @@
+ 	ieee->ps = IEEE80211_PS_DISABLED;
+ 	ieee->sta_sleep = 0;
+ 	
+-	init_mgmt_queue(ieee);
++	init_mgmt_queue_rtl7(ieee);
+ #if 0
+ 	init_timer(&ieee->scan_timer);
+ 	ieee->scan_timer.data = (unsigned long)ieee;
+@@ -2153,25 +2180,34 @@
+ 	
+ 	init_timer(&ieee->associate_timer);
+ 	ieee->associate_timer.data = (unsigned long)ieee;
+-	ieee->associate_timer.function = ieee80211_associate_abort_cb;
++	ieee->associate_timer.function = ieee80211_associate_abort_cb_rtl7;
+ 
+ 	init_timer(&ieee->beacon_timer);
+ 	ieee->beacon_timer.data = (unsigned long) ieee;
+-	ieee->beacon_timer.function = ieee80211_send_beacon_cb;
++	ieee->beacon_timer.function = ieee80211_send_beacon_cb_rtl7;
+ 	
+ #ifdef PF_SYNCTHREAD
+ 	ieee->wq = create_workqueue(DRV_NAME,0);
+ #else	
+ 	ieee->wq = create_workqueue(DRV_NAME);
+ #endif
+-	
+-	INIT_WORK(&ieee->start_ibss_wq,(void(*)(void*)) ieee80211_start_ibss_wq,ieee);
+-	INIT_WORK(&ieee->associate_retry_wq,(void(*)(void*)) ieee80211_associate_retry_wq,ieee);
+-	INIT_WORK(&ieee->associate_complete_wq,(void(*)(void*)) ieee80211_associate_complete_wq,ieee);
+-	INIT_WORK(&ieee->associate_procedure_wq,(void(*)(void*)) ieee80211_associate_procedure_wq,ieee);
+-	INIT_WORK(&ieee->softmac_scan_wq,(void(*)(void*)) ieee80211_softmac_scan_wq,ieee);
+-	INIT_WORK(&ieee->wx_sync_scan_wq,(void(*)(void*)) ieee80211_wx_sync_scan_wq,ieee);
+-	
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
++	INIT_WORK(&ieee->start_ibss_wq,(void(*)(void*)) ieee80211_start_ibss_wq_rtl7,ieee);
++	INIT_WORK(&ieee->associate_retry_wq,(void(*)(void*)) ieee80211_associate_retry_wq_rtl7,ieee);
++	INIT_WORK(&ieee->associate_complete_wq,(void(*)(void*)) ieee80211_associate_complete_wq_rtl7,ieee);
++	INIT_WORK(&ieee->associate_procedure_wq,(void(*)(void*)) ieee80211_associate_procedure_wq_rtl7,ieee);
++	INIT_WORK(&ieee->softmac_scan_wq,(void(*)(void*)) ieee80211_softmac_scan_wq_rtl7,ieee);
++	INIT_WORK(&ieee->wx_sync_scan_wq,(void(*)(void*)) ieee80211_wx_sync_scan_wq_rtl7,ieee);
++#else 
++	INIT_WORK(&ieee->start_ibss_wq, ieee80211_start_ibss_wq_rtl7);
++	INIT_DELAYED_WORK(&ieee->associate_retry_wq, ieee80211_associate_retry_wq_rtl7);
++	INIT_WORK(&ieee->associate_complete_wq, ieee80211_associate_complete_wq_rtl7);
++	INIT_WORK(&ieee->associate_procedure_wq, ieee80211_associate_procedure_wq_rtl7);
++	INIT_DELAYED_WORK(&ieee->softmac_scan_wq, ieee80211_softmac_scan_wq_rtl7);
++	INIT_WORK(&ieee->wx_sync_scan_wq, ieee80211_wx_sync_scan_wq_rtl7);
++#endif 
++
+ 	sema_init(&ieee->wx_sem, 1);
+ 	sema_init(&ieee->scan_sem, 1);
+ 	
+@@ -2179,12 +2215,12 @@
+ 	spin_lock_init(&ieee->beacon_lock);
+ 	
+ 	tasklet_init(&ieee->ps_task,
+-	     (void(*)(unsigned long)) ieee80211_sta_ps,
++	     (void(*)(unsigned long)) ieee80211_sta_ps_rtl7,
+ 	     (unsigned long)ieee);
+ 
+ }
+ 
+-void ieee80211_softmac_free(struct ieee80211_device *ieee)
++void ieee80211_softmac_free_rtl7(struct ieee80211_device *ieee)
+ {
+ 	down(&ieee->wx_sem);
+ 	
+@@ -2201,7 +2237,7 @@
+  ********************************************************/
+ 
+  
+-static int ieee80211_wpa_enable(struct ieee80211_device *ieee, int value)
++static int ieee80211_wpa_enable_rtl7(struct ieee80211_device *ieee, int value)
+ {
+ 	/* This is called when wpa_supplicant loads and closes the driver
+ 	 * interface. */
+@@ -2211,16 +2247,16 @@
+ }
+ 
+  
+-void ieee80211_wpa_assoc_frame(struct ieee80211_device *ieee, char *wpa_ie, int wpa_ie_len)
++void ieee80211_wpa_assoc_frame_rtl7(struct ieee80211_device *ieee, char *wpa_ie, int wpa_ie_len)
+ {
+ 	/* make sure WPA is enabled */
+-	ieee80211_wpa_enable(ieee, 1);
++	ieee80211_wpa_enable_rtl7(ieee, 1);
+ 
+-	ieee80211_disassociate(ieee);
++	ieee80211_disassociate_rtl7(ieee);
+ }
+ 
+ 
+-static int ieee80211_wpa_mlme(struct ieee80211_device *ieee, int command, int reason)
++static int ieee80211_wpa_mlme_rtl7(struct ieee80211_device *ieee, int command, int reason)
+ {
+ 	
+ 	int ret = 0;
+@@ -2231,7 +2267,7 @@
+ 		break;
+ 
+ 	case IEEE_MLME_STA_DISASSOC:
+-		ieee80211_disassociate(ieee);
++		ieee80211_disassociate_rtl7(ieee);
+ 		break;
+ 
+ 	default:
+@@ -2243,7 +2279,7 @@
+ }
+ 
+ 
+-static int ieee80211_wpa_set_wpa_ie(struct ieee80211_device *ieee,
++static int ieee80211_wpa_set_wpa_ie_rtl7(struct ieee80211_device *ieee,
+ 			      struct ieee_param *param, int plen)
+ {
+ 	u8 *buf;
+@@ -2267,14 +2303,14 @@
+ 		ieee->wpa_ie_len = 0;
+ 	}
+ 
+-	ieee80211_wpa_assoc_frame(ieee, ieee->wpa_ie, ieee->wpa_ie_len);
++	ieee80211_wpa_assoc_frame_rtl7(ieee, ieee->wpa_ie, ieee->wpa_ie_len);
+ 	return 0;
+ }
+ 
+ #define AUTH_ALG_OPEN_SYSTEM			0x1
+ #define AUTH_ALG_SHARED_KEY			0x2
+ 
+-static int ieee80211_wpa_set_auth_algs(struct ieee80211_device *ieee, int value)
++static int ieee80211_wpa_set_auth_algs_rtl7(struct ieee80211_device *ieee, int value)
+ {
+ 	
+ 	struct ieee80211_security sec = {
+@@ -2300,13 +2336,13 @@
+ 
+ 
+ 
+-static int ieee80211_wpa_set_param(struct ieee80211_device *ieee, u8 name, u32 value)
++static int ieee80211_wpa_set_param_rtl7(struct ieee80211_device *ieee, u8 name, u32 value)
+ {
+ 	int ret=0;
+ 
+ 	switch (name) {
+ 	case IEEE_PARAM_WPA_ENABLED:
+-		ret = ieee80211_wpa_enable(ieee, value);
++		ret = ieee80211_wpa_enable_rtl7(ieee, value);
+ 		break;
+ 
+ 	case IEEE_PARAM_TKIP_COUNTERMEASURES:
+@@ -2351,7 +2387,7 @@
+ 		break;
+ 
+ 	case IEEE_PARAM_AUTH_ALGS:
+-		ret = ieee80211_wpa_set_auth_algs(ieee, value);
++		ret = ieee80211_wpa_set_auth_algs_rtl7(ieee, value);
+ 		break;
+ 
+ 	case IEEE_PARAM_IEEE_802_1X:
+@@ -2368,7 +2404,7 @@
+ 
+ /* implementation borrowed from hostap driver */
+ 
+-static int ieee80211_wpa_set_encryption(struct ieee80211_device *ieee,
++static int ieee80211_wpa_set_encryption_rtl7(struct ieee80211_device *ieee,
+ 				  struct ieee_param *param, int param_len)
+ {
+ 	int ret = 0;
+@@ -2407,7 +2443,7 @@
+ 			//sec.encrypt = 0;
+ 			sec.level = SEC_LEVEL_0;
+ 			sec.flags |= SEC_ENABLED | SEC_LEVEL;
+-			ieee80211_crypt_delayed_deinit(ieee, crypt);
++			ieee80211_crypt_delayed_deinit_rtl7(ieee, crypt);
+ 		}
+ 		goto done;
+ 	}
+@@ -2421,16 +2457,16 @@
+ 	    strcmp(param->u.crypt.alg, "TKIP"))
+ 		goto skip_host_crypt;
+ 
+-	ops = ieee80211_get_crypto_ops(param->u.crypt.alg);
++	ops = ieee80211_get_crypto_ops_rtl7(param->u.crypt.alg);
+ 	if (ops == NULL && strcmp(param->u.crypt.alg, "WEP") == 0) {
+-		request_module("ieee80211_crypt_wep");
+-		ops = ieee80211_get_crypto_ops(param->u.crypt.alg);
++		request_module("ieee80211_crypt_wep_rtl7");
++		ops = ieee80211_get_crypto_ops_rtl7(param->u.crypt.alg);
+ 	} else if (ops == NULL && strcmp(param->u.crypt.alg, "TKIP") == 0) {
+-		request_module("ieee80211_crypt_tkip");
+-		ops = ieee80211_get_crypto_ops(param->u.crypt.alg);
++		request_module("ieee80211_crypt_tkip_rtl7");
++		ops = ieee80211_get_crypto_ops_rtl7(param->u.crypt.alg);
+ 	} else if (ops == NULL && strcmp(param->u.crypt.alg, "CCMP") == 0) {
+-		request_module("ieee80211_crypt_ccmp");
+-		ops = ieee80211_get_crypto_ops(param->u.crypt.alg);
++		request_module("ieee80211_crypt_ccmp_rtl7");
++		ops = ieee80211_get_crypto_ops_rtl7(param->u.crypt.alg);
+ 	}
+ 	if (ops == NULL) {
+ 		printk("unknown crypto alg '%s'\n", param->u.crypt.alg);
+@@ -2442,7 +2478,7 @@
+ 	if (*crypt == NULL || (*crypt)->ops != ops) {
+ 		struct ieee80211_crypt_data *new_crypt;
+ 
+-		ieee80211_crypt_delayed_deinit(ieee, crypt);
++		ieee80211_crypt_delayed_deinit_rtl7(ieee, crypt);
+ 
+ 		new_crypt = (struct ieee80211_crypt_data *)
+ 			kmalloc(sizeof(*new_crypt), GFP_KERNEL);
+@@ -2525,7 +2561,7 @@
+ 
+ 
+ 
+-int ieee80211_wpa_supplicant_ioctl(struct ieee80211_device *ieee, struct iw_point *p)
++int ieee80211_wpa_supplicant_ioctl_rtl7(struct ieee80211_device *ieee, struct iw_point *p)
+ {
+ 	struct ieee_param *param;
+ 	int ret=0;
+@@ -2552,20 +2588,20 @@
+ 	switch (param->cmd) {
+ 
+ 	case IEEE_CMD_SET_WPA_PARAM:
+-		ret = ieee80211_wpa_set_param(ieee, param->u.wpa_param.name,
++		ret = ieee80211_wpa_set_param_rtl7(ieee, param->u.wpa_param.name,
+ 					param->u.wpa_param.value);
+ 		break;
+ 
+ 	case IEEE_CMD_SET_WPA_IE:
+-		ret = ieee80211_wpa_set_wpa_ie(ieee, param, p->length);
++		ret = ieee80211_wpa_set_wpa_ie_rtl7(ieee, param, p->length);
+ 		break;
+ 
+ 	case IEEE_CMD_SET_ENCRYPTION:
+-		ret = ieee80211_wpa_set_encryption(ieee, param, p->length);
++		ret = ieee80211_wpa_set_encryption_rtl7(ieee, param, p->length);
+ 		break;
+ 
+ 	case IEEE_CMD_MLME:
+-		ret = ieee80211_wpa_mlme(ieee, param->u.mlme.command,
++		ret = ieee80211_wpa_mlme_rtl7(ieee, param->u.mlme.command,
+ 				   param->u.mlme.reason_code);
+ 		break;
+ 
+@@ -2585,7 +2621,7 @@
+ 	return ret;
+ }
+ 
+-void notify_wx_assoc_event(struct ieee80211_device *ieee)
++void notify_wx_assoc_event_rtl7(struct ieee80211_device *ieee)
+ {
+ 	union iwreq_data wrqu;
+ 	wrqu.ap_addr.sa_family = ARPHRD_ETHER;
+@@ -2597,14 +2633,14 @@
+ }
+ 
+ 
+-EXPORT_SYMBOL(ieee80211_get_beacon);
+-EXPORT_SYMBOL(ieee80211_wake_queue);
+-EXPORT_SYMBOL(ieee80211_stop_queue);
+-EXPORT_SYMBOL(ieee80211_reset_queue);
+-EXPORT_SYMBOL(ieee80211_softmac_stop_protocol);
+-EXPORT_SYMBOL(ieee80211_softmac_start_protocol);
+-EXPORT_SYMBOL(ieee80211_is_shortslot);
+-EXPORT_SYMBOL(ieee80211_is_54g);
+-EXPORT_SYMBOL(ieee80211_wpa_supplicant_ioctl);
+-EXPORT_SYMBOL(ieee80211_ps_tx_ack);
+-//EXPORT_SYMBOL(ieee80211_sta_ps_send_null_frame);
++EXPORT_SYMBOL(ieee80211_get_beacon_rtl7);
++EXPORT_SYMBOL(ieee80211_wake_queue_rtl7);
++EXPORT_SYMBOL(ieee80211_stop_queue_rtl7);
++EXPORT_SYMBOL(ieee80211_reset_queue_rtl7);
++EXPORT_SYMBOL(ieee80211_softmac_stop_protocol_rtl7);
++EXPORT_SYMBOL(ieee80211_softmac_start_protocol_rtl7);
++EXPORT_SYMBOL(ieee80211_is_shortslot_rtl7);
++EXPORT_SYMBOL(ieee80211_is_54g_rtl7);
++EXPORT_SYMBOL(ieee80211_wpa_supplicant_ioctl_rtl7);
++EXPORT_SYMBOL(ieee80211_ps_tx_ack_rtl7);
++//EXPORT_SYMBOL(ieee80211_sta_ps_send_null_frame_rtl7);
+diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c
+--- rtl8187_orig/ieee80211/ieee80211_softmac_wx.c	2006-06-06 04:57:54.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c	2007-03-05 00:31:52.575346444 +0100
+@@ -18,7 +18,7 @@
+ 
+ /* FIXME: add A freqs */
+ 
+-const long ieee80211_wlan_frequencies[] = {  
++const long ieee80211_wlan_frequencies_rtl7[] = {  
+ 	2412, 2417, 2422, 2427, 
+ 	2432, 2437, 2442, 2447, 
+ 	2452, 2457, 2462, 2467, 
+@@ -26,7 +26,7 @@
+ };
+ 
+ 
+-int ieee80211_wx_set_freq(struct ieee80211_device *ieee, struct iw_request_info *a,
++int ieee80211_wx_set_freq_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b)
+ {
+ 	int ret;
+@@ -46,7 +46,7 @@
+ 			int f = fwrq->m / 100000;
+ 			int c = 0;
+ 			
+-			while ((c < 14) && (f != ieee80211_wlan_frequencies[c]))
++			while ((c < 14) && (f != ieee80211_wlan_frequencies_rtl7[c]))
+ 				c++;
+ 			
+ 			/* hack to fall through */
+@@ -68,8 +68,8 @@
+ 		if(ieee->iw_mode == IW_MODE_ADHOC || ieee->iw_mode == IW_MODE_MASTER)
+ 			if(ieee->state == IEEE80211_LINKED){
+ 			
+-			ieee80211_stop_send_beacons(ieee);
+-			ieee80211_start_send_beacons(ieee);
++			ieee80211_stop_send_beacons_rtl7(ieee);
++			ieee80211_start_send_beacons_rtl7(ieee);
+ 			}
+ 	}
+ 
+@@ -80,7 +80,7 @@
+ }
+ 
+ 
+-int ieee80211_wx_get_freq(struct ieee80211_device *ieee,
++int ieee80211_wx_get_freq_rtl7(struct ieee80211_device *ieee,
+ 			     struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b)
+ {
+@@ -95,7 +95,7 @@
+ 	return 0;
+ }
+ 
+-int ieee80211_wx_get_wap(struct ieee80211_device *ieee, 
++int ieee80211_wx_get_wap_rtl7(struct ieee80211_device *ieee, 
+ 			    struct iw_request_info *info, 
+ 			    union iwreq_data *wrqu, char *extra)
+ {
+@@ -124,7 +124,7 @@
+ }
+ 
+ 
+-int ieee80211_wx_set_wap(struct ieee80211_device *ieee,
++int ieee80211_wx_set_wap_rtl7(struct ieee80211_device *ieee,
+ 			 struct iw_request_info *info,
+ 			 union iwreq_data *awrq,
+ 			 char *extra)
+@@ -134,14 +134,14 @@
+ 	u8 zero[] = {0,0,0,0,0,0};
+ 	unsigned long flags;
+ 	
++	struct sockaddr *temp = NULL;
+ 	short ifup = ieee->proto_started;//dev->flags & IFF_UP;
+ 	
+ 	ieee->sync_scan_hurryup = 1;
+ 	
+ 	down(&ieee->wx_sem);
+ 	
+-	struct sockaddr *temp = (struct sockaddr *)awrq;
+-	
++	temp = (struct sockaddr *)awrq;
+ 	/* use ifconfig hw ether */
+ 	if (ieee->iw_mode == IW_MODE_MASTER){
+ 		ret = -1;
+@@ -154,7 +154,7 @@
+ 	}
+ 	
+ 	if (ifup)
+-		ieee80211_stop_protocol(ieee);
++		ieee80211_stop_protocol_rtl7(ieee);
+ 	
+ 	/* just to avoid to give inconsistent infos in the
+ 	 * get wx method. not really needed otherwise 
+@@ -167,14 +167,14 @@
+ 	spin_unlock_irqrestore(&ieee->lock, flags);
+ 	
+ 	if (ifup)
+-		ieee80211_start_protocol(ieee);
++		ieee80211_start_protocol_rtl7(ieee);
+ 	
+ out:
+ 	up(&ieee->wx_sem);
+ 	return ret;
+ }
+ 	
+- int ieee80211_wx_get_essid(struct ieee80211_device *ieee, struct iw_request_info *a,union iwreq_data *wrqu,char *b)
++ int ieee80211_wx_get_essid_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,union iwreq_data *wrqu,char *b)
+ {
+ 	int len,ret = 0;
+ 	unsigned long flags;
+@@ -209,7 +209,7 @@
+ 	
+ }
+ 
+-int ieee80211_wx_set_rate(struct ieee80211_device *ieee, 
++int ieee80211_wx_set_rate_rtl7(struct ieee80211_device *ieee, 
+ 			     struct iw_request_info *info,
+ 			     union iwreq_data *wrqu, char *extra)
+ {
+@@ -223,7 +223,7 @@
+ 
+ 
+ 
+-int ieee80211_wx_get_rate(struct ieee80211_device *ieee, 
++int ieee80211_wx_get_rate_rtl7(struct ieee80211_device *ieee, 
+ 			     struct iw_request_info *info, 
+ 			     union iwreq_data *wrqu, char *extra)
+ {
+@@ -233,7 +233,7 @@
+ 	return 0;
+ }
+ 
+-int ieee80211_wx_set_mode(struct ieee80211_device *ieee, struct iw_request_info *a,
++int ieee80211_wx_set_mode_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b)
+ {
+ 	
+@@ -245,8 +245,7 @@
+ 		goto out;
+ 	
+ 	if (wrqu->mode == IW_MODE_MONITOR){
+-	
+-		ieee->dev->type = ARPHRD_IEEE80211;
++		ieee->dev->type = ARPHRD_IEEE80211_PRISM;
+ 	}else{
+ 		ieee->dev->type = ARPHRD_ETHER;
+ 	}
+@@ -254,9 +253,9 @@
+ 	if (!ieee->proto_started){
+ 		ieee->iw_mode = wrqu->mode;
+ 	}else{
+-		ieee80211_stop_protocol(ieee);
++		ieee80211_stop_protocol_rtl7(ieee);
+ 		ieee->iw_mode = wrqu->mode;
+-		ieee80211_start_protocol(ieee);
++		ieee80211_start_protocol_rtl7(ieee);
+ 	}
+ 
+ out:
+@@ -264,8 +263,14 @@
+ 	return 0;
+ }
+ 
+-void ieee80211_wx_sync_scan_wq(struct ieee80211_device *ieee)
++# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
++void ieee80211_wx_sync_scan_wq_rtl7(struct work_struct *work)
++{
++	struct ieee80211_device *ieee = container_of(work, struct ieee80211_device, wx_sync_scan_wq);
++#else
++void ieee80211_wx_sync_scan_wq_rtl7(struct ieee80211_device *ieee)
+ {
++#endif
+ 	short chan;
+ 
+ 	chan = ieee->current_network.channel;
+@@ -275,12 +280,12 @@
+ 	if (ieee->data_hard_stop)
+ 		ieee->data_hard_stop(ieee->dev);
+ 	
+-	ieee80211_stop_send_beacons(ieee);
++	ieee80211_stop_send_beacons_rtl7(ieee);
+ 		
+ 	ieee->state = IEEE80211_LINKED_SCANNING;
+ 	ieee->link_change(ieee->dev);
+ 	
+-	ieee80211_start_scan_syncro(ieee);
++	ieee80211_start_scan_syncro_rtl7(ieee);
+ 	
+ 	ieee->set_chan(ieee->dev, chan);
+ 	
+@@ -291,7 +296,7 @@
+ 		ieee->data_hard_resume(ieee->dev);
+ 	
+ 	if(ieee->iw_mode == IW_MODE_ADHOC || ieee->iw_mode == IW_MODE_MASTER)
+-		ieee80211_start_send_beacons(ieee);
++		ieee80211_start_send_beacons_rtl7(ieee);
+ 	
+ 	netif_carrier_on(ieee->dev);
+ 	
+@@ -299,7 +304,7 @@
+ 	
+ }
+ 
+-int ieee80211_wx_set_scan(struct ieee80211_device *ieee, struct iw_request_info *a,
++int ieee80211_wx_set_scan_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b)
+ {
+ 	int ret = 0;
+@@ -322,7 +327,7 @@
+ 	return ret;
+ }
+ 
+-int ieee80211_wx_set_essid(struct ieee80211_device *ieee, 
++int ieee80211_wx_set_essid_rtl7(struct ieee80211_device *ieee, 
+ 			      struct iw_request_info *a,
+ 			      union iwreq_data *wrqu, char *extra)
+ {
+@@ -348,7 +353,7 @@
+ 	}
+ 	
+ 	if(proto_started)
+-		ieee80211_stop_protocol(ieee);
++		ieee80211_stop_protocol_rtl7(ieee);
+ 	
+ 	/* this is just to be sure that the GET wx callback
+ 	 * has consisten infos. not needed otherwise
+@@ -356,7 +361,11 @@
+ 	spin_lock_irqsave(&ieee->lock, flags);
+ 	
+ 	if (wrqu->essid.flags && wrqu->essid.length) {
++#if WIRELESS_EXT > 20
++		len = min((int)wrqu->essid.length, IW_ESSID_MAX_SIZE);
++#else
+ 		len = ((wrqu->essid.length-1) < IW_ESSID_MAX_SIZE) ? (wrqu->essid.length-1) : IW_ESSID_MAX_SIZE;
++#endif
+ 		
+ 		strncpy(ieee->current_network.ssid, extra, len);
+ 		ieee->current_network.ssid_len = len;
+@@ -371,13 +380,13 @@
+ 	spin_unlock_irqrestore(&ieee->lock, flags);
+ 	
+ 	if (proto_started)
+-		ieee80211_start_protocol(ieee);
++		ieee80211_start_protocol_rtl7(ieee);
+ out:
+ 	up(&ieee->wx_sem);
+ 	return ret;
+ }
+ 
+- int ieee80211_wx_get_mode(struct ieee80211_device *ieee, struct iw_request_info *a,
++ int ieee80211_wx_get_mode_rtl7(struct ieee80211_device *ieee, struct iw_request_info *a,
+ 			     union iwreq_data *wrqu, char *b)
+ {
+ 
+@@ -385,7 +394,7 @@
+ 	return 0;
+ }
+ 
+- int ieee80211_wx_set_rawtx(struct ieee80211_device *ieee, 
++ int ieee80211_wx_set_rawtx_rtl7(struct ieee80211_device *ieee, 
+ 			       struct iw_request_info *info, 
+ 			       union iwreq_data *wrqu, char *extra)
+ {
+@@ -422,7 +431,7 @@
+ 	return 0;
+ }
+  
+-int ieee80211_wx_get_name(struct ieee80211_device *ieee, 
++int ieee80211_wx_get_name_rtl7(struct ieee80211_device *ieee, 
+ 			     struct iw_request_info *info, 
+ 			     union iwreq_data *wrqu, char *extra)
+ {
+@@ -446,7 +455,7 @@
+ 
+ 
+ /* this is mostly stolen from hostap */
+-int ieee80211_wx_set_power(struct ieee80211_device *ieee,
++int ieee80211_wx_set_power_rtl7(struct ieee80211_device *ieee,
+ 				 struct iw_request_info *info,
+ 				 union iwreq_data *wrqu, char *extra)
+ {
+@@ -509,7 +518,7 @@
+ }
+ 
+ /* this is stolen from hostap */
+-int ieee80211_wx_get_power(struct ieee80211_device *ieee,
++int ieee80211_wx_get_power_rtl7(struct ieee80211_device *ieee,
+ 				 struct iw_request_info *info,
+ 				 union iwreq_data *wrqu, char *extra)
+ {
+@@ -547,19 +556,19 @@
+ 
+ }
+ 
+-EXPORT_SYMBOL(ieee80211_wx_get_essid);
+-EXPORT_SYMBOL(ieee80211_wx_set_essid);
+-EXPORT_SYMBOL(ieee80211_wx_set_rate);
+-EXPORT_SYMBOL(ieee80211_wx_get_rate);
+-EXPORT_SYMBOL(ieee80211_wx_set_wap);
+-EXPORT_SYMBOL(ieee80211_wx_get_wap);
+-EXPORT_SYMBOL(ieee80211_wx_set_mode);
+-EXPORT_SYMBOL(ieee80211_wx_get_mode);
+-EXPORT_SYMBOL(ieee80211_wx_set_scan);
+-EXPORT_SYMBOL(ieee80211_wx_get_freq);
+-EXPORT_SYMBOL(ieee80211_wx_set_freq);
+-EXPORT_SYMBOL(ieee80211_wx_set_rawtx);
+-EXPORT_SYMBOL(ieee80211_wx_get_name);
+-EXPORT_SYMBOL(ieee80211_wx_set_power);
+-EXPORT_SYMBOL(ieee80211_wx_get_power);
+-EXPORT_SYMBOL(ieee80211_wlan_frequencies);
++EXPORT_SYMBOL(ieee80211_wx_get_essid_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_set_essid_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_set_rate_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_get_rate_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_set_wap_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_get_wap_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_set_mode_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_get_mode_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_set_scan_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_get_freq_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_set_freq_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_set_rawtx_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_get_name_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_set_power_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_get_power_rtl7);
++EXPORT_SYMBOL(ieee80211_wlan_frequencies_rtl7);
+diff -Naur rtl8187_orig/ieee80211/ieee80211_tx.c rtl8187_txpower/ieee80211/ieee80211_tx.c
+--- rtl8187_orig/ieee80211/ieee80211_tx.c	2006-06-06 04:57:54.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_tx.c	2007-03-05 00:31:52.575346444 +0100
+@@ -32,7 +32,6 @@
+ ******************************************************************************/
+ 
+ #include <linux/compiler.h>
+-#include <linux/config.h>
+ #include <linux/errno.h>
+ #include <linux/if_arp.h>
+ #include <linux/in6.h>
+@@ -52,6 +51,10 @@
+ #include <linux/etherdevice.h>
+ #include <asm/uaccess.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ 
+@@ -155,7 +158,7 @@
+ static u8 P802_1H_OUI[P80211_OUI_LEN] = { 0x00, 0x00, 0xf8 };
+ static u8 RFC1042_OUI[P80211_OUI_LEN] = { 0x00, 0x00, 0x00 };
+ 
+-static inline int ieee80211_put_snap(u8 *data, u16 h_proto)
++static inline int ieee80211_put_snap_rtl7(u8 *data, u16 h_proto)
+ {
+ 	struct ieee80211_snap_hdr *snap;
+ 	u8 *oui;
+@@ -178,7 +181,7 @@
+ 	return SNAP_SIZE + sizeof(u16);
+ }
+ 
+-int ieee80211_encrypt_fragment(
++int ieee80211_encrypt_fragment_rtl7(
+ 	struct ieee80211_device *ieee,
+ 	struct sk_buff *frag,
+ 	int hdr_len)
+@@ -225,7 +228,7 @@
+ }
+ 
+ 
+-void ieee80211_txb_free(struct ieee80211_txb *txb) {
++void ieee80211_txb_free_rtl7(struct ieee80211_txb *txb) {
+ 	int i;
+ 	if (unlikely(!txb))
+ 		return;
+@@ -235,7 +238,7 @@
+ 	kfree(txb);
+ }
+ 
+-struct ieee80211_txb *ieee80211_alloc_txb(int nr_frags, int txb_size,
++struct ieee80211_txb *ieee80211_alloc_txb_rtl7(int nr_frags, int txb_size,
+ 					  int gfp_mask)
+ {
+ 	struct ieee80211_txb *txb;
+@@ -267,7 +270,7 @@
+ }
+ 
+ /* SKBs are added to the ieee->tx_queue. */
+-int ieee80211_xmit(struct sk_buff *skb,
++int ieee80211_xmit_rtl7(struct sk_buff *skb,
+ 		   struct net_device *dev)
+ {
+ 	struct ieee80211_device *ieee = netdev_priv(dev);
+@@ -397,7 +400,7 @@
+ 		/* When we allocate the TXB we allocate enough space for the reserve
+ 		* and full fragment bytes (bytes_per_frag doesn't include prefix,
+ 		* postfix, header, FCS, etc.) */
+-		txb = ieee80211_alloc_txb(nr_frags, frag_size, GFP_ATOMIC);
++		txb = ieee80211_alloc_txb_rtl7(nr_frags, frag_size, GFP_ATOMIC);
+ 		if (unlikely(!txb)) {
+ 			printk(KERN_WARNING "%s: Could not allocate TXB\n",
+ 			ieee->dev->name);
+@@ -432,7 +435,7 @@
+ 			
+ 			/* Put a SNAP header on the first fragment */
+ 			if (i == 0) {
+-				ieee80211_put_snap(
++				ieee80211_put_snap_rtl7(
+ 					skb_put(skb_frag, SNAP_SIZE + sizeof(u16)),
+ 					ether_type);
+ 				bytes -= SNAP_SIZE + sizeof(u16);
+@@ -446,7 +449,7 @@
+ 			/* Encryption routine will move the header forward in order
+ 			* to insert the IV between the header and the payload */
+ 			if (encrypt)
+-				ieee80211_encrypt_fragment(ieee, skb_frag, hdr_len);
++				ieee80211_encrypt_fragment_rtl7(ieee, skb_frag, hdr_len);
+ 			if (ieee->config &
+ 			(CFG_IEEE80211_COMPUTE_FCS | CFG_IEEE80211_RESERVE_FCS))
+ 				skb_put(skb_frag, 4);
+@@ -458,13 +461,14 @@
+ 			ieee->seq_ctrl++;
+ 		//---
+ 	}else{
+-		if (unlikely(skb->len < sizeof(struct ieee80211_hdr_3addr))) {
++//		if (unlikely(skb->len < sizeof(struct ieee80211_hdr_3addr))) {
++		if (unlikely(skb->len < 14)) {
+ 			printk(KERN_WARNING "%s: skb too small (%d).\n",
+ 			ieee->dev->name, skb->len);
+ 			goto success;
+ 		}
+ 	
+-		txb = ieee80211_alloc_txb(1, skb->len, GFP_ATOMIC);
++		txb = ieee80211_alloc_txb_rtl7(1, skb->len, GFP_ATOMIC);
+ 		if(!txb){
+ 			printk(KERN_WARNING "%s: Could not allocate TXB\n",
+ 			ieee->dev->name);
+@@ -481,14 +485,14 @@
+ 	dev_kfree_skb_any(skb);
+ 	if (txb) {
+ 		if (ieee->softmac_features & IEEE_SOFTMAC_TX_QUEUE){
+-			ieee80211_softmac_xmit(txb, ieee);
++			ieee80211_softmac_xmit_rtl7(txb, ieee);
+ 		}else{
+ 			if ((*ieee->hard_start_xmit)(txb, dev) == 0) {
+ 				stats->tx_packets++;
+ 				stats->tx_bytes += txb->payload_size;
+ 				return 0;
+ 			}
+-			ieee80211_txb_free(txb);
++			ieee80211_txb_free_rtl7(txb);
+ 		}
+ 		
+ 		
+@@ -504,4 +508,4 @@
+ 
+ }
+ 
+-EXPORT_SYMBOL(ieee80211_txb_free);
++EXPORT_SYMBOL(ieee80211_txb_free_rtl7);
+diff -Naur rtl8187_orig/ieee80211/ieee80211_wx.c rtl8187_txpower/ieee80211/ieee80211_wx.c
+--- rtl8187_orig/ieee80211/ieee80211_wx.c	2006-06-06 04:57:56.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_wx.c	2007-03-05 00:31:52.635347349 +0100
+@@ -40,7 +40,7 @@
+ };
+ 
+ #define MAX_CUSTOM_LEN 64
+-static inline char *ipw2100_translate_scan(struct ieee80211_device *ieee,
++static inline char *ipw2100_translate_scan_rtl7(struct ieee80211_device *ieee,
+  					   char *start, char *stop,
+ 					   struct ieee80211_network *network)
+ {
+@@ -207,7 +207,7 @@
+ 	return start;
+ }
+ 
+-int ieee80211_wx_get_scan(struct ieee80211_device *ieee,
++int ieee80211_wx_get_scan_rtl7(struct ieee80211_device *ieee,
+ 			  struct iw_request_info *info,
+ 			  union iwreq_data *wrqu, char *extra)
+ {
+@@ -220,13 +220,14 @@
+ 
+ 	IEEE80211_DEBUG_WX("Getting scan\n");
+ 	down(&ieee->wx_sem);
++	printk("GOT WX GET SCAN WX_SEM LOCK");
+ 	spin_lock_irqsave(&ieee->lock, flags);
+ 
+ 	list_for_each_entry(network, &ieee->network_list, list) {
+ 		i++;
+ 		if (ieee->scan_age == 0 ||
+ 		    time_after(network->last_scanned + ieee->scan_age, jiffies))
+-			ev = ipw2100_translate_scan(ieee, ev, stop, network);
++			ev = ipw2100_translate_scan_rtl7(ieee, ev, stop, network);
+ 		else
+ 			IEEE80211_DEBUG_SCAN(
+ 				"Not showing network '%s ("
+@@ -247,7 +248,7 @@
+ 	return 0;
+ }
+ 
+-int ieee80211_wx_set_encode(struct ieee80211_device *ieee,
++int ieee80211_wx_set_encode_rtl7(struct ieee80211_device *ieee,
+ 			    struct iw_request_info *info,
+ 			    union iwreq_data *wrqu, char *keybuf)
+ {
+@@ -281,7 +282,7 @@
+ 		if (key_provided && *crypt) {
+ 			IEEE80211_DEBUG_WX("Disabling encryption on key %d.\n",
+ 					   key);
+-			ieee80211_crypt_delayed_deinit(ieee, crypt);
++			ieee80211_crypt_delayed_deinit_rtl7(ieee, crypt);
+ 		} else
+ 			IEEE80211_DEBUG_WX("Disabling encryption.\n");
+ 
+@@ -291,7 +292,7 @@
+ 			if (ieee->crypt[i] != NULL) {
+ 				if (key_provided)
+ 					break;
+-				ieee80211_crypt_delayed_deinit(
++				ieee80211_crypt_delayed_deinit_rtl7(
+ 					ieee, &ieee->crypt[i]);
+ 			}
+ 		}
+@@ -314,7 +315,7 @@
+ 	    strcmp((*crypt)->ops->name, "WEP") != 0) {
+ 		/* changing to use WEP; deinit previously used algorithm
+ 		 * on this key */
+-		ieee80211_crypt_delayed_deinit(ieee, crypt);
++		ieee80211_crypt_delayed_deinit_rtl7(ieee, crypt);
+ 	}
+ 
+ 	if (*crypt == NULL) {
+@@ -326,10 +327,10 @@
+ 		if (new_crypt == NULL)
+ 			return -ENOMEM;
+ 		memset(new_crypt, 0, sizeof(struct ieee80211_crypt_data));
+-		new_crypt->ops = ieee80211_get_crypto_ops("WEP");
++		new_crypt->ops = ieee80211_get_crypto_ops_rtl7("WEP");
+ 		if (!new_crypt->ops) {
+ 			request_module("ieee80211_crypt_wep");
+-			new_crypt->ops = ieee80211_get_crypto_ops("WEP");
++			new_crypt->ops = ieee80211_get_crypto_ops_rtl7("WEP");
+ 		}
+ 
+ 		if (new_crypt->ops && try_module_get(new_crypt->ops->owner))
+@@ -418,7 +419,7 @@
+ 	return 0;
+ }
+ 
+-int ieee80211_wx_get_encode(struct ieee80211_device *ieee,
++int ieee80211_wx_get_encode_rtl7(struct ieee80211_device *ieee,
+ 			    struct iw_request_info *info,
+ 			    union iwreq_data *wrqu, char *keybuf)
+ {
+@@ -470,6 +471,6 @@
+ }
+ 
+ 
+-EXPORT_SYMBOL(ieee80211_wx_get_scan);
+-EXPORT_SYMBOL(ieee80211_wx_set_encode);
+-EXPORT_SYMBOL(ieee80211_wx_get_encode);
++EXPORT_SYMBOL(ieee80211_wx_get_scan_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_set_encode_rtl7);
++EXPORT_SYMBOL(ieee80211_wx_get_encode_rtl7);

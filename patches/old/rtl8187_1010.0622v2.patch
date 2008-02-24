@@ -1,0 +1,981 @@
+diff -Naur rtl8187_orig/beta-8187/ieee80211.h rtl8187_txpower/beta-8187/ieee80211.h
+--- rtl8187_orig/beta-8187/ieee80211.h	2006-06-06 04:58:02.000000000 +0200
++++ rtl8187_txpower/beta-8187/ieee80211.h	2007-02-17 13:42:56.967245565 +0100
+@@ -156,6 +156,23 @@
+ 	struct list_head list;
+ };
+ 
++#define LWNG_CAP_DID_BASE   (4 | (1 << 6)) /* section 4, group 1 */
++#define IW_MODE_MONITOR_PRISM	15
++/* ARPHRD_IEEE80211_PRISM uses a bloated version of Prism2 RX frame header
++ * (from linux-wlan-ng) */
++struct linux_wlan_ng_val {
++	u32 did;
++	u16 status, len;
++	u32 data;
++} __attribute__ ((packed));
++
++struct linux_wlan_ng_prism_hdr {
++	u32 msgcode, msglen;
++	char devname[16];
++	struct linux_wlan_ng_val hosttime, mactime, channel, rssi, sq, signal,
++		noise, rate, istx, frmlen;
++} __attribute__ ((packed));
++
+ struct ieee80211_hdr {
+ 	u16 frame_ctl;
+ 	u16 duration_id;
+diff -Naur rtl8187_orig/beta-8187/r8180_hw.h rtl8187_txpower/beta-8187/r8180_hw.h
+--- rtl8187_orig/beta-8187/r8180_hw.h	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8180_hw.h	2007-02-17 13:42:57.047246772 +0100
+@@ -646,6 +646,7 @@
+ #define FFER_INTR    ((1<<15))
+ #define FFER_GWAKE   ((1<< 4))
+ 
+-
++#define MAX_TX_POWER	27
++#define MIN_TX_POWER	20
+ 
+ #endif
+diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225.h rtl8187_txpower/beta-8187/r8180_rtl8225.h
+--- rtl8187_orig/beta-8187/r8180_rtl8225.h	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8180_rtl8225.h	2007-02-17 13:42:57.127247979 +0100
+@@ -44,3 +44,5 @@
+ extern u32 rtl8225_chan[];
+ 
+ #endif
++
++void rtl8225z2_SetTXPowerLevel(struct net_device *dev, short ch);
+diff -Naur rtl8187_orig/beta-8187/r8180_rtl8225z2.c rtl8187_txpower/beta-8187/r8180_rtl8225z2.c
+--- rtl8187_orig/beta-8187/r8180_rtl8225z2.c	2006-06-06 04:58:02.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8180_rtl8225z2.c	2007-02-17 13:42:53.757197143 +0100
+@@ -418,7 +418,10 @@
+ 	
+ 	/* CCK power setting */
+ 	if(cck_power_level > max_cck_power_level)
++	{
+ 		cck_power_level = max_cck_power_level;
++		priv->chtxpwr[ch] = max_cck_power_level;
++	}
+ 	
+ 	cck_power_level += priv->cck_txpwr_base;
+ 	
+diff -Naur rtl8187_orig/beta-8187/r8180_wx.c rtl8187_txpower/beta-8187/r8180_wx.c
+--- rtl8187_orig/beta-8187/r8180_wx.c	2006-06-06 04:58:02.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8180_wx.c	2007-02-17 13:42:53.787197595 +0100
+@@ -21,6 +21,7 @@
+ 
+ #include "r8187.h"
+ #include "r8180_hw.h"
++#include "r8180_rtl8225.h"
+ 
+ 
+ #define RATE_COUNT 4
+@@ -108,6 +109,63 @@
+ 	return ret;
+ }
+ 
++static int r8180_wx_get_txpow(struct net_device *dev,
++			      struct iw_request_info *info,
++			      union iwreq_data *wrqu, char *extra)
++{
++	struct r8180_priv *priv = ieee80211_priv(dev);
++	down(&priv->wx_sem);
++	wrqu->power.value = priv->chtxpwr_ofdm[1] + MIN_TX_POWER;
++	wrqu->power.fixed = 1;
++	wrqu->power.flags = IW_TXPOW_DBM;
++	wrqu->power.disabled = 0;
++	up(&priv->wx_sem);
++
++	return 0;
++}
++
++#if 0
++static int r8180_wx_set_txpow(struct net_device *dev, 
++			      struct iw_request_info *info, 
++			      union iwreq_data *wrqu, char *extra)
++{
++	int ret = 0, i = 0;
++	struct r8180_priv *priv = ieee80211_priv(dev);	
++	
++	down(&priv->wx_sem);
++
++	if (wrqu->power.flags != IW_TXPOW_DBM)
++	{
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if(wrqu->power.value > MAX_TX_POWER)
++	{
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if(wrqu->power.value < MIN_TX_POWER)
++	{
++		ret = -EINVAL;
++		goto out;
++	}
++
++	for(i=1;i<=14;i++)
++	{
++		priv->chtxpwr[i] = wrqu->power.value + 1 - MIN_TX_POWER;
++		priv->chtxpwr_ofdm[i] = wrqu->power.value - MIN_TX_POWER;
++	}
++	rtl8225z2_SetTXPowerLevel(dev, 1);
++
++	out:
++	up(&priv->wx_sem);
++	
++	return ret;
++}
++#endif
++
+ static int r8180_wx_set_rawtx(struct net_device *dev, 
+ 			       struct iw_request_info *info, 
+ 			       union iwreq_data *wrqu, char *extra)
+@@ -623,8 +681,8 @@
+         dummy,                    /* SIOCGIWRTS */
+         r8180_wx_set_frag,        /* SIOCSIWFRAG */
+         r8180_wx_get_frag,        /* SIOCGIWFRAG */
+-        dummy,                    /* SIOCSIWTXPOW */
+-        dummy,                    /* SIOCGIWTXPOW */
++        NULL,                     /* SIOCSIWTXPOW */
++        r8180_wx_get_txpow,       /* SIOCGIWTXPOW */
+         r8180_wx_set_retry,       /* SIOCSIWRETRY */
+         r8180_wx_get_retry,       /* SIOCGIWRETRY */
+         r8180_wx_set_enc,         /* SIOCSIWENCODE */
+diff -Naur rtl8187_orig/beta-8187/r8187_core.c rtl8187_txpower/beta-8187/r8187_core.c
+--- rtl8187_orig/beta-8187/r8187_core.c	2006-06-22 07:43:30.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8187_core.c	2007-02-17 13:42:53.827198198 +0100
+@@ -57,6 +57,7 @@
+ #undef DEBUG_IRQ_TASKLET
+ #undef DEBUG_TX_ALLOC
+ #undef DEBUG_TX_DESC
++#undef DEBUG_TX_POWER
+ 
+ //#define CONFIG_RTL8180_IO_MAP
+ 
+@@ -98,6 +99,10 @@
+ #endif
+ static int channels = 0x3fff;
+ 
++#define DEBUG_EPROM
++#define DEBUG_REGISTERS
++#define DEBUG_TX_POWER
++
+ MODULE_LICENSE("GPL");
+ MODULE_VERSION("V 1.1");
+ MODULE_DEVICE_TABLE(usb, rtl8187_usb_id_tbl);
+@@ -158,7 +163,6 @@
+ #endif
+ };
+ 
+-
+ void write_nic_byte_E(struct net_device *dev, int indx, u8 data)
+ {
+ 	
+@@ -407,13 +411,14 @@
+ 	return len;
+ }		
+ 
+-
++#if WIRELESS_EXT < 17
+ static struct iw_statistics *r8180_get_wireless_stats(struct net_device *dev)
+ {
+        struct r8180_priv *priv = ieee80211_priv(dev);
+ 
+        return &priv->wstats;
+ }
++#endif
+ 
+ void rtl8180_proc_module_init(void)
+ {	
+@@ -561,7 +566,20 @@
+ {
+ 	int i;
+ 	for(i=0; i<63; i++)
+-		DMESG("EEPROM addr %x : %x", i, eprom_read(dev,i));
++		DMESG("EEPROM addr %02X : %04X", i, eprom_read(dev,i));
++}
++
++/* this is only for debug */
++void dump_tx_power(struct net_device *dev)
++{
++	struct r8180_priv *priv = ieee80211_priv(dev);
++	int i;
++	DMESG("CCK TX-Power (b-mode):");
++	for(i=1; i<=14; i++)
++		DMESG("Channel %d: %d", i, priv->chtxpwr[i]);
++	DMESG("OFDM TX-Power (g-mode):");
++	for(i=1; i<=14; i++)
++		DMESG("Channel %d: %d", i, priv->chtxpwr_ofdm[i]);
+ }
+ 
+ /* this is only for debug */
+@@ -575,9 +593,9 @@
+ 	
+ 	for(n=0;n<=max;)
+ 	{
+-		printk( "\nD: %2x> ", n);
++		printk( "\nD: %02X> ", n);
+ 		for(i=0;i<16 && n<=max;i++,n++)
+-			printk("%2x ",read_nic_byte(dev,n));
++			printk("%02X ",read_nic_byte(dev,n));
+ 	}
+ 	printk("\n");
+ }
+@@ -1112,7 +1130,10 @@
+ 	struct ieee80211_hdr *h = (struct ieee80211_hdr  *) skb->data;
+ 
+ 	if (le16_to_cpu(h->frame_ctl) & IEEE80211_FCTL_MOREFRAGS)
+-		morefrag = 1;
++	{
++		if(priv->ieee80211->iw_mode != IW_MODE_MONITOR || priv->ieee80211->raw_tx != 1)
++			morefrag = 1;
++	}
+ //	DMESG("%x %x", h->frame_ctl, h->seq_ctl);
+ 	/*
+ 	* This function doesn't require lock because we make
+@@ -1557,10 +1578,10 @@
+ 	struct r8180_priv *priv = ieee80211_priv(dev);
+ 	int i, j;
+ 	u16 word;
+-	int ch;
++	int ch, chans;
+ 	//u16 version;
+-	//u8 hw_version;
+-	//u8 config3;
++	u8 hw_version;
++	u8 config3;
+ 	
+ 	//FIXME: these constants are placed in a bad pleace.
+ 
+@@ -1580,6 +1601,13 @@
+ 		return -1;
+ 	}
+ 	ch=channels;
++	chans=0;
++	for (i=1; i<=14; i++) {
++		if( (u8)(ch & 0x01) ) chans++;
++		ch >>= 1;
++	}
++	DMESG("Enabling %d channels.", chans);
++	ch=channels;
+ 	 // set channels 1..14 allowed in given locale
+ 	for (i=1; i<=14; i++) {
+ 		(priv->ieee80211->channel_map)[i] = (u8)(ch & 0x01);
+@@ -1622,7 +1650,11 @@
+ 	priv->ieee80211->mode = IEEE_G;
+ 	priv->promisc = (dev->flags & IFF_PROMISC) ? 1:0;
+ 	spin_lock_init(&priv->tx_lock);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
+ 	INIT_WORK(&priv->reset_wq,(void(*)(void*)) rtl8180_restart,dev);
++#else
++	INIT_WORK(&priv->reset_wq,(void(*)(void*)) rtl8180_restart);
++#endif
+ 	sema_init(&priv->wx_sem,1);
+ 	tasklet_init(&priv->irq_rx_tasklet,
+ 		     (void(*)(unsigned long))rtl8180_irq_rx_tasklet,
+@@ -1716,6 +1748,12 @@
+ 	priv->enable_gpio0 = 0;
+ 
+ 	
++	hw_version =( read_nic_dword(dev, TCR) & TCR_HWVERID_MASK)>>TCR_HWVERID_SHIFT;
++	config3 = read_nic_byte(dev, CONFIG3);
++
++	DMESG("MAC chip version: %02X", hw_version);
++	DMESG("Card type: %02X", config3);
++
+ 	/* commented out just because we already do
+ 	   this when resetting the card
+ 	   andrea 20050924
+@@ -1807,6 +1845,12 @@
+ 	
+ 		
+ 	priv->rf_chip = 0xff & eprom_read(dev,EPROM_RFCHIPID);
++
++#ifdef DEBUG_TX_POWER
++	dump_tx_power(dev);
++#endif
++
++	DMESG("RF Chip ID: %02X", priv->rf_chip);
+ 	
+ 	word = eprom_read(dev,EPROM_TXPW_BASE);
+ 	priv->cck_txpwr_base = word & 0xf;
+@@ -2291,13 +2335,17 @@
+ /* based on ipw2200 driver */
+ int rtl8180_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ {
+-	struct r8180_priv *priv = (struct r8180_priv *)ieee80211_priv(dev);
++	struct r8180_priv *priv = NULL;
++	struct iwreq *wrq = NULL;
++
++	int ret=-1;
++	
++	priv = (struct r8180_priv *)ieee80211_priv(dev);
+ 	
+ 	down(&priv->wx_sem);
+ 	
+-	struct iwreq *wrq = (struct iwreq *)rq;
+-        
+-	int ret=-1;
++	wrq = (struct iwreq *)rq;
++	
+ 	switch (cmd) {
+ 	    case RTL_IOCTL_WPA_SUPPLICANT:
+ 		ret = ieee80211_wpa_supplicant_ioctl(priv->ieee80211, &wrq->u.data);
+@@ -2346,7 +2394,8 @@
+ 		
+ 		if( flen <= rx_urb->actual_length){
+ 		
+-			stats.signal = (desc[1] & 0x7f00)>>8;
++//			stats.signal = (desc[1] & 0x7f00)>>8;
++			stats.signal = (desc[1] & 0xff00)>>8;
+ 			stats.noise = desc[1] &0xff;
+ 			stats.rate = desc[0] >> 20 & 0xf;
+ 			stats.mac_time[0] = desc[2];
+@@ -2368,6 +2417,8 @@
+ 		//	priv->rxskb = skb;
+ 		//	priv->tempstats = &stats;
+ 
++
++			stats.signal -= stats.noise;
+ 			if(!ieee80211_rx(priv->ieee80211, 
+ 				skb, &stats))
+ 			dev_kfree_skb_any(skb);
+@@ -2418,7 +2469,12 @@
+ 	dev->do_ioctl = rtl8180_ioctl;
+ 	dev->set_multicast_list = r8180_set_multicast;
+ 	dev->set_mac_address = r8180_set_mac_adr;
++#if WIRELESS_EXT >= 12
++#if WIRELESS_EXT < 17
+ 	dev->get_wireless_stats = r8180_get_wireless_stats;
++#endif
++	dev->wireless_handlers = (struct iw_handler_def *) &r8180_wx_handlers_def;
++#endif
+ 	dev->type=ARPHRD_ETHER;
+ 	
+ 	if (dev_alloc_name(dev, ifname) < 0){
+diff -Naur rtl8187_orig/beta-8187/r8187.h rtl8187_txpower/beta-8187/r8187.h
+--- rtl8187_orig/beta-8187/r8187.h	2006-06-06 08:48:10.000000000 +0200
++++ rtl8187_txpower/beta-8187/r8187.h	2007-02-17 13:42:57.197249035 +0100
+@@ -26,7 +26,6 @@
+ 
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+-#include <linux/config.h>
+ #include <linux/init.h>
+ #include <linux/ioport.h>
+ #include <linux/sched.h>
+@@ -47,6 +46,10 @@
+ #include <asm/io.h>
+ #include <asm/semaphore.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ #define EPROM_93c46 0
+@@ -148,7 +151,7 @@
+ 	u8 challow[15]; //channels from 1 to 14, 0 not used
+ 	short up;
+ 	short crcmon; //if 1 allow bad crc frame reception in monitor mode
+-//	short prism_hdr;
++	short prism_hdr;
+ 	
+ //	struct timer_list scan_timer;
+ 	/*short scanpending;
+diff -Naur rtl8187_orig/beta-8187/r8187.mod.c rtl8187_txpower/beta-8187/r8187.mod.c
+--- rtl8187_orig/beta-8187/r8187.mod.c	1970-01-01 01:00:00.000000000 +0100
++++ rtl8187_txpower/beta-8187/r8187.mod.c	2007-02-17 13:42:53.827198198 +0100
+@@ -0,0 +1,25 @@
++#include <linux/module.h>
++#include <linux/vermagic.h>
++#include <linux/compiler.h>
++
++MODULE_INFO(vermagic, VERMAGIC_STRING);
++
++struct module __this_module
++__attribute__((section(".gnu.linkonce.this_module"))) = {
++ .name = KBUILD_MODNAME,
++ .init = init_module,
++#ifdef CONFIG_MODULE_UNLOAD
++ .exit = cleanup_module,
++#endif
++};
++
++static const char __module_depends[]
++__attribute_used__
++__attribute__((section(".modinfo"))) =
++"depends=ieee80211-rtl";
++
++MODULE_ALIAS("usb:v0BDAp8187d*dc*dsc*dp*ic*isc*ip*");
++MODULE_ALIAS("usb:v0846p6100d*dc*dsc*dp*ic*isc*ip*");
++MODULE_ALIAS("usb:v0846p6A00d*dc*dsc*dp*ic*isc*ip*");
++
++MODULE_INFO(srcversion, "B76939EB1EA6331677B0BFF");
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt.c rtl8187_txpower/ieee80211/ieee80211_crypt.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt.c	2006-06-06 04:57:56.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_crypt.c	2007-02-17 13:43:15.707528258 +0100
+@@ -11,7 +11,6 @@
+  *
+  */
+ 
+-#include <linux/config.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -19,6 +18,10 @@
+ #include <asm/string.h>
+ #include <asm/errno.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ MODULE_AUTHOR("Jouni Malinen");
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt_ccmp.c	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp.c	2007-02-17 13:43:15.707528258 +0100
+@@ -9,7 +9,6 @@
+  * more details.
+  */
+ 
+-#include <linux/config.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -22,11 +21,20 @@
+ #include <asm/string.h>
+ #include <linux/wireless.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++    #include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ 
+ #include <linux/crypto.h>
+-#include <asm/scatterlist.h>
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
++    #include <asm/scatterlist.h>
++#else
++    #include <linux/scatterlist.h>
++#endif
+ 
+ MODULE_AUTHOR("Jouni Malinen");
+ MODULE_DESCRIPTION("Host AP crypt: CCMP");
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_ccmp-rtl.mod.c rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp-rtl.mod.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt_ccmp-rtl.mod.c	1970-01-01 01:00:00.000000000 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_ccmp-rtl.mod.c	2007-02-17 13:43:15.737528711 +0100
+@@ -0,0 +1,20 @@
++#include <linux/module.h>
++#include <linux/vermagic.h>
++#include <linux/compiler.h>
++
++MODULE_INFO(vermagic, VERMAGIC_STRING);
++
++struct module __this_module
++__attribute__((section(".gnu.linkonce.this_module"))) = {
++ .name = KBUILD_MODNAME,
++ .init = init_module,
++#ifdef CONFIG_MODULE_UNLOAD
++ .exit = cleanup_module,
++#endif
++};
++
++static const char __module_depends[]
++__attribute_used__
++__attribute__((section(".modinfo"))) =
++"depends=ieee80211_crypt";
++
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt-rtl.mod.c rtl8187_txpower/ieee80211/ieee80211_crypt-rtl.mod.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt-rtl.mod.c	1970-01-01 01:00:00.000000000 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt-rtl.mod.c	2007-02-17 13:43:15.747528862 +0100
+@@ -0,0 +1,20 @@
++#include <linux/module.h>
++#include <linux/vermagic.h>
++#include <linux/compiler.h>
++
++MODULE_INFO(vermagic, VERMAGIC_STRING);
++
++struct module __this_module
++__attribute__((section(".gnu.linkonce.this_module"))) = {
++ .name = KBUILD_MODNAME,
++ .init = init_module,
++#ifdef CONFIG_MODULE_UNLOAD
++ .exit = cleanup_module,
++#endif
++};
++
++static const char __module_depends[]
++__attribute_used__
++__attribute__((section(".modinfo"))) =
++"depends=";
++
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt_tkip.c	2006-06-06 04:57:54.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_tkip.c	2007-02-17 13:43:15.797529616 +0100
+@@ -9,7 +9,6 @@
+  * more details.
+  */
+ 
+-#include <linux/config.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -21,13 +20,22 @@
+ #include <linux/if_arp.h>
+ #include <asm/string.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
++    #include <asm/scatterlist.h>
++#else
++    #include <linux/scatterlist.h>
++#endif
+ 
+ #include <linux/crypto.h>
+-#include <asm/scatterlist.h>
+ #include <linux/crc32.h>
+ 
++
+ MODULE_AUTHOR("Jouni Malinen");
+ MODULE_DESCRIPTION("Host AP crypt: TKIP");
+ MODULE_LICENSE("GPL");
+@@ -431,7 +439,11 @@
+ static int michael_mic(struct ieee80211_tkip_data *tkey, u8 *key, u8 *hdr,
+ 		       u8 *data, size_t data_len, u8 *mic)
+ {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
++	struct hash_desc desc;
++#endif
+ 	struct scatterlist sg[2];
++	int ret=0;
+ 
+ 	if (tkey->tfm_michael == NULL) {
+ 		printk(KERN_WARNING "michael_mic: tfm_michael == NULL\n");
+@@ -445,12 +457,21 @@
+ 	sg[1].offset = offset_in_page(data);
+ 	sg[1].length = data_len;
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
+ 	crypto_digest_init(tkey->tfm_michael);
+ 	crypto_digest_setkey(tkey->tfm_michael, key, 8);
+ 	crypto_digest_update(tkey->tfm_michael, sg, 2);
+ 	crypto_digest_final(tkey->tfm_michael, mic);
++#else
++	if (crypto_hash_setkey(tkey->tfm_michael, key, 8))
++		return -1;
+ 
+-	return 0;
++	desc.tfm = tkey->tfm_michael;
++	desc.flags = 0;
++	ret = crypto_hash_digest(&desc, sg, data_len + 16, mic);
++#endif
++
++	return ret;
+ }
+ 
+ static void michael_mic_hdr(struct sk_buff *skb, u8 *hdr)
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_tkip-rtl.mod.c rtl8187_txpower/ieee80211/ieee80211_crypt_tkip-rtl.mod.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt_tkip-rtl.mod.c	1970-01-01 01:00:00.000000000 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_tkip-rtl.mod.c	2007-02-17 13:43:15.827530068 +0100
+@@ -0,0 +1,20 @@
++#include <linux/module.h>
++#include <linux/vermagic.h>
++#include <linux/compiler.h>
++
++MODULE_INFO(vermagic, VERMAGIC_STRING);
++
++struct module __this_module
++__attribute__((section(".gnu.linkonce.this_module"))) = {
++ .name = KBUILD_MODNAME,
++ .init = init_module,
++#ifdef CONFIG_MODULE_UNLOAD
++ .exit = cleanup_module,
++#endif
++};
++
++static const char __module_depends[]
++__attribute_used__
++__attribute__((section(".modinfo"))) =
++"depends=ieee80211_crypt";
++
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_wep.c rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt_wep.c	2006-06-06 04:57:54.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_wep.c	2007-02-17 13:43:15.837530219 +0100
+@@ -9,7 +9,6 @@
+  * more details.
+  */
+ 
+-#include <linux/config.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -18,13 +17,22 @@
+ #include <linux/skbuff.h>
+ #include <asm/string.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ 
+ #include <linux/crypto.h>
+-#include <asm/scatterlist.h>
+ #include <linux/crc32.h>
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
++    #include <asm/scatterlist.h>
++#else
++    #include <linux/scatterlist.h>
++#endif
++
+ MODULE_AUTHOR("Jouni Malinen");
+ MODULE_DESCRIPTION("Host AP crypt: WEP");
+ MODULE_LICENSE("GPL");
+diff -Naur rtl8187_orig/ieee80211/ieee80211_crypt_wep-rtl.mod.c rtl8187_txpower/ieee80211/ieee80211_crypt_wep-rtl.mod.c
+--- rtl8187_orig/ieee80211/ieee80211_crypt_wep-rtl.mod.c	1970-01-01 01:00:00.000000000 +0100
++++ rtl8187_txpower/ieee80211/ieee80211_crypt_wep-rtl.mod.c	2007-02-17 13:43:15.877530823 +0100
+@@ -0,0 +1,20 @@
++#include <linux/module.h>
++#include <linux/vermagic.h>
++#include <linux/compiler.h>
++
++MODULE_INFO(vermagic, VERMAGIC_STRING);
++
++struct module __this_module
++__attribute__((section(".gnu.linkonce.this_module"))) = {
++ .name = KBUILD_MODNAME,
++ .init = init_module,
++#ifdef CONFIG_MODULE_UNLOAD
++ .exit = cleanup_module,
++#endif
++};
++
++static const char __module_depends[]
++__attribute_used__
++__attribute__((section(".modinfo"))) =
++"depends=ieee80211_crypt";
++
+diff -Naur rtl8187_orig/ieee80211/ieee80211.h rtl8187_txpower/ieee80211/ieee80211.h
+--- rtl8187_orig/ieee80211/ieee80211.h	2006-06-06 04:57:56.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211.h	2007-02-17 13:43:11.897470784 +0100
+@@ -156,6 +156,22 @@
+ 	struct list_head list;
+ };
+ 
++#define LWNG_CAP_DID_BASE   (4 | (1 << 6)) /* section 4, group 1 */
++/* ARPHRD_IEEE80211_PRISM uses a bloated version of Prism2 RX frame header
++ * (from linux-wlan-ng) */
++struct linux_wlan_ng_val {
++	u32 did;
++	u16 status, len;
++	u32 data;
++} __attribute__ ((packed));
++
++struct linux_wlan_ng_prism_hdr {
++	u32 msgcode, msglen;
++	char devname[16];
++	struct linux_wlan_ng_val hosttime, mactime, channel, rssi, sq, signal,
++		noise, rate, istx, frmlen;
++} __attribute__ ((packed));
++
+ struct ieee80211_hdr {
+ 	u16 frame_ctl;
+ 	u16 duration_id;
+diff -Naur rtl8187_orig/ieee80211/ieee80211_module.c rtl8187_txpower/ieee80211/ieee80211_module.c
+--- rtl8187_orig/ieee80211/ieee80211_module.c	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_module.c	2007-02-17 13:43:15.907531275 +0100
+@@ -31,7 +31,6 @@
+ *******************************************************************************/
+ 
+ #include <linux/compiler.h>
+-#include <linux/config.h>
+ #include <linux/errno.h>
+ #include <linux/if_arp.h>
+ #include <linux/in6.h>
+@@ -52,6 +51,10 @@
+ #include <asm/uaccess.h>
+ #include <net/arp.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ MODULE_DESCRIPTION("802.11 data/management/control stack");
+diff -Naur rtl8187_orig/ieee80211/ieee80211-rtl.mod.c rtl8187_txpower/ieee80211/ieee80211-rtl.mod.c
+--- rtl8187_orig/ieee80211/ieee80211-rtl.mod.c	1970-01-01 01:00:00.000000000 +0100
++++ rtl8187_txpower/ieee80211/ieee80211-rtl.mod.c	2007-02-17 13:43:15.937531728 +0100
+@@ -0,0 +1,16 @@
++#include <linux/module.h>
++#include <linux/vermagic.h>
++#include <linux/compiler.h>
++
++MODULE_INFO(vermagic, VERMAGIC_STRING);
++
++struct module __this_module
++__attribute__((section(".gnu.linkonce.this_module"))) = {
++ .name = KBUILD_MODNAME,
++};
++
++static const char __module_depends[]
++__attribute_used__
++__attribute__((section(".modinfo"))) =
++"depends=ieee80211_crypt";
++
+diff -Naur rtl8187_orig/ieee80211/ieee80211_rx.c rtl8187_txpower/ieee80211/ieee80211_rx.c
+--- rtl8187_orig/ieee80211/ieee80211_rx.c	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_rx.c	2007-02-17 13:43:15.947531879 +0100
+@@ -22,7 +22,6 @@
+  
+ 
+ #include <linux/compiler.h>
+-#include <linux/config.h>
+ #include <linux/errno.h>
+ #include <linux/if_arp.h>
+ #include <linux/in6.h>
+@@ -43,18 +42,83 @@
+ #include <asm/uaccess.h>
+ #include <linux/ctype.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
++
+ #include "ieee80211.h"
+ 
+ static inline void ieee80211_monitor_rx(struct ieee80211_device *ieee,
+ 					struct sk_buff *skb,
+ 					struct ieee80211_rx_stats *rx_stats)
+ {
+-	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+-	u16 fc = le16_to_cpu(hdr->frame_ctl);
++	struct ieee80211_hdr *hdr1 = (struct ieee80211_hdr *)skb->data;
++	u16 fc = le16_to_cpu(hdr1->frame_ctl);
++	int prism_header;
++	int hdrlen, phdrlen, head_need, tail_need;
++
++	if (ieee->dev->type == ARPHRD_IEEE80211_PRISM) {
++		prism_header = 1;
++		phdrlen = sizeof(struct linux_wlan_ng_prism_hdr);
++	} else {
++		prism_header = 0;
++		phdrlen = 0;
++	}
++
++	hdrlen = ieee80211_get_hdrlen(fc);
++
++	/* check if there is enough room for extra data; if not, expand skb
++	 * buffer to be large enough for the changes */
++	head_need = phdrlen;
++	tail_need = 0;
++#ifdef PRISM2_ADD_BOGUS_CRC
++	tail_need += 4;
++#endif /* PRISM2_ADD_BOGUS_CRC */
++
++	head_need -= skb_headroom(skb);
++	tail_need -= skb_tailroom(skb);
++
++	if (head_need > 0 || tail_need > 0) {
++		if (pskb_expand_head(skb, head_need > 0 ? head_need : 0,
++				     tail_need > 0 ? tail_need : 0,
++				     GFP_ATOMIC)) {
++			printk(KERN_DEBUG "%s: ieee80211_rx failed to "
++			       "reallocate skb buffer\n", ieee->dev->name);
++			dev_kfree_skb_any(skb);
++			return;
++		}
++	}
++
++	if (prism_header == 1) {
++		struct linux_wlan_ng_prism_hdr *hdr;
++		hdr = (struct linux_wlan_ng_prism_hdr *)
++			skb_push(skb, phdrlen);
++		memset(hdr, 0, phdrlen);
++		hdr->msgcode = LWNG_CAP_DID_BASE;
++		hdr->msglen = sizeof(*hdr);
++		memcpy(hdr->devname, ieee->dev->name, sizeof(hdr->devname));
++#define LWNG_SETVAL(f,i,s,l,d) \
++hdr->f.did = LWNG_CAP_DID_BASE | (i << 12); \
++hdr->f.status = s; hdr->f.len = l; hdr->f.data = d
++		LWNG_SETVAL(hosttime, 1, 0, 4, jiffies);
++		LWNG_SETVAL(mactime, 2, 0, 4, ((u32)rx_stats->mac_time));
++		LWNG_SETVAL(channel, 3, 1 /* no value */, 4, 0);
++		LWNG_SETVAL(rssi, 4, 1 /* no value */, 4, 0);
++		LWNG_SETVAL(sq, 5, 1 /* no value */, 4, 0);
++		LWNG_SETVAL(signal, 6, 0, 4, rx_stats->signal);
++		LWNG_SETVAL(noise, 7, 0, 4, rx_stats->noise);
++		LWNG_SETVAL(rate, 8, 0, 4, rx_stats->rate / 5);
++		LWNG_SETVAL(istx, 9, 0, 4, 0);
++		LWNG_SETVAL(frmlen, 10, 0, 4, skb->len - phdrlen);
++#undef LWNG_SETVAL
++	}
+ 
+ 	skb->dev = ieee->dev;
+ 	skb->mac.raw = skb->data;
+-	skb_pull(skb, ieee80211_get_hdrlen(fc));
++	skb_pull(skb, hdrlen);
++	if (prism_header)
++		skb_pull(skb, phdrlen);
+ 	skb->pkt_type = PACKET_OTHERHOST;
+ 	skb->protocol = __constant_htons(ETH_P_80211_RAW);
+ 	memset(skb->cb, 0, sizeof(skb->cb));
+diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac.c rtl8187_txpower/ieee80211/ieee80211_softmac.c
+--- rtl8187_orig/ieee80211/ieee80211_softmac.c	2006-06-19 03:27:33.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_softmac.c	2007-02-17 13:43:15.987532482 +0100
+@@ -386,9 +386,8 @@
+ 
+ void ieee80211_softmac_scan_wq(struct ieee80211_device *ieee)
+ {	
+-	down(&ieee->scan_sem);
+-	
+ 	short watchdog = 0;
++	down(&ieee->scan_sem);
+ 	
+ 	do{
+ 		ieee->current_network.channel = 
+@@ -1467,12 +1466,13 @@
+ 			u16 stype)
+ {
+ 	struct ieee80211_hdr_3addr *header;
+-	header = (struct ieee80211_hdr_3addr *) skb->data;
+ 	u16 errcode;
+ 	u8* challenge;
+ 	int chlen;
+ 	int aid;
+ 	
++	header = (struct ieee80211_hdr_3addr *) skb->data;
++
+ 	if(!ieee->proto_started)
+ 		return 0;
+ 	
+@@ -2165,12 +2165,21 @@
+ 	ieee->wq = create_workqueue(DRV_NAME);
+ #endif
+ 	
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20) 
+ 	INIT_WORK(&ieee->start_ibss_wq,(void(*)(void*)) ieee80211_start_ibss_wq,ieee);
+ 	INIT_WORK(&ieee->associate_retry_wq,(void(*)(void*)) ieee80211_associate_retry_wq,ieee);
+ 	INIT_WORK(&ieee->associate_complete_wq,(void(*)(void*)) ieee80211_associate_complete_wq,ieee);
+ 	INIT_WORK(&ieee->associate_procedure_wq,(void(*)(void*)) ieee80211_associate_procedure_wq,ieee);
+ 	INIT_WORK(&ieee->softmac_scan_wq,(void(*)(void*)) ieee80211_softmac_scan_wq,ieee);
+ 	INIT_WORK(&ieee->wx_sync_scan_wq,(void(*)(void*)) ieee80211_wx_sync_scan_wq,ieee);
++#else 
++	INIT_WORK(&ieee->start_ibss_wq,(void(*)(void*)) ieee80211_start_ibss_wq);
++	INIT_WORK(&ieee->associate_retry_wq,(void(*)(void*)) ieee80211_associate_retry_wq);
++	INIT_WORK(&ieee->associate_complete_wq,(void(*)(void*)) ieee80211_associate_complete_wq);
++	INIT_WORK(&ieee->associate_procedure_wq,(void(*)(void*)) ieee80211_associate_procedure_wq);
++	INIT_WORK(&ieee->softmac_scan_wq,(void(*)(void*)) ieee80211_softmac_scan_wq);
++	INIT_WORK(&ieee->wx_sync_scan_wq,(void(*)(void*)) ieee80211_wx_sync_scan_wq);
++#endif 
+ 	
+ 	sema_init(&ieee->wx_sem, 1);
+ 	sema_init(&ieee->scan_sem, 1);
+diff -Naur rtl8187_orig/ieee80211/ieee80211_softmac_wx.c rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c
+--- rtl8187_orig/ieee80211/ieee80211_softmac_wx.c	2006-06-06 04:57:54.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_softmac_wx.c	2007-02-17 13:43:16.057533538 +0100
+@@ -134,14 +134,14 @@
+ 	u8 zero[] = {0,0,0,0,0,0};
+ 	unsigned long flags;
+ 	
++	struct sockaddr *temp = NULL;
+ 	short ifup = ieee->proto_started;//dev->flags & IFF_UP;
+ 	
+ 	ieee->sync_scan_hurryup = 1;
+ 	
+ 	down(&ieee->wx_sem);
+ 	
+-	struct sockaddr *temp = (struct sockaddr *)awrq;
+-	
++	temp = (struct sockaddr *)awrq;
+ 	/* use ifconfig hw ether */
+ 	if (ieee->iw_mode == IW_MODE_MASTER){
+ 		ret = -1;
+@@ -245,8 +245,7 @@
+ 		goto out;
+ 	
+ 	if (wrqu->mode == IW_MODE_MONITOR){
+-	
+-		ieee->dev->type = ARPHRD_IEEE80211;
++		ieee->dev->type = ARPHRD_IEEE80211_PRISM;
+ 	}else{
+ 		ieee->dev->type = ARPHRD_ETHER;
+ 	}
+diff -Naur rtl8187_orig/ieee80211/ieee80211_tx.c rtl8187_txpower/ieee80211/ieee80211_tx.c
+--- rtl8187_orig/ieee80211/ieee80211_tx.c	2006-06-06 04:57:54.000000000 +0200
++++ rtl8187_txpower/ieee80211/ieee80211_tx.c	2007-02-17 13:43:16.057533538 +0100
+@@ -32,7 +32,6 @@
+ ******************************************************************************/
+ 
+ #include <linux/compiler.h>
+-#include <linux/config.h>
+ #include <linux/errno.h>
+ #include <linux/if_arp.h>
+ #include <linux/in6.h>
+@@ -52,6 +51,10 @@
+ #include <linux/etherdevice.h>
+ #include <asm/uaccess.h>
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <linux/config.h>
++#endif
++
+ #include "ieee80211.h"
+ 
+ 
+@@ -458,7 +461,8 @@
+ 			ieee->seq_ctrl++;
+ 		//---
+ 	}else{
+-		if (unlikely(skb->len < sizeof(struct ieee80211_hdr_3addr))) {
++//		if (unlikely(skb->len < sizeof(struct ieee80211_hdr_3addr))) {
++		if (unlikely(skb->len < 14)) {
+ 			printk(KERN_WARNING "%s: skb too small (%d).\n",
+ 			ieee->dev->name, skb->len);
+ 			goto success;
+diff -Naur rtl8187_orig/makedrv rtl8187_txpower/makedrv
+--- rtl8187_orig/makedrv	2006-09-05 07:21:10.000000000 +0200
++++ rtl8187_txpower/makedrv	2007-02-17 13:42:37.616953671 +0100
+@@ -5,6 +5,7 @@
+ cd ieee80211
+ make clean
+ make
++cp Module.symvers beta-8187/
+ cd ../beta-8187
+ make clean
+ make
+diff -Naur rtl8187_orig/makedrvbk rtl8187_txpower/makedrvbk
+--- rtl8187_orig/makedrvbk	2006-09-05 07:21:10.000000000 +0200
++++ rtl8187_txpower/makedrvbk	2007-02-17 13:42:41.357010089 +0100
+@@ -1,9 +1,11 @@
+ #!/bin/bash
+ 
+ cd ieee80211/
++rm Module.symvers
+ make clean
+ make
+ cd -
++cp ieee80211/Module.symvers beta-8187/
+ cd beta-8187/
+ make clean
+ make

@@ -1,0 +1,197 @@
+--- rtl8187_linux_26.1010.0622.2006/beta-8187/ieee80211.h	2006-06-06 04:58:02.000000000 +0200
++++ rtl8187_prismhdr/beta-8187/ieee80211.h	2006-11-29 20:28:16.152853116 +0100
+@@ -156,6 +156,23 @@
+ 	struct list_head list;
+ };
+ 
++#define LWNG_CAP_DID_BASE   (4 | (1 << 6)) /* section 4, group 1 */
++#define IW_MODE_MONITOR_PRISM	15
++/* ARPHRD_IEEE80211_PRISM uses a bloated version of Prism2 RX frame header
++ * (from linux-wlan-ng) */
++struct linux_wlan_ng_val {
++	u32 did;
++	u16 status, len;
++	u32 data;
++} __attribute__ ((packed));
++
++struct linux_wlan_ng_prism_hdr {
++	u32 msgcode, msglen;
++	char devname[16];
++	struct linux_wlan_ng_val hosttime, mactime, channel, rssi, sq, signal,
++		noise, rate, istx, frmlen;
++} __attribute__ ((packed));
++
+ struct ieee80211_hdr {
+ 	u16 frame_ctl;
+ 	u16 duration_id;
+--- rtl8187_linux_26.1010.0622.2006/beta-8187/r8187_core.c	2006-06-22 07:43:30.000000000 +0200
++++ rtl8187_prismhdr/beta-8187/r8187_core.c	2006-12-16 16:44:12.244211046 +0100
+@@ -1112,7 +1112,10 @@
+ 	struct ieee80211_hdr *h = (struct ieee80211_hdr  *) skb->data;
+ 
+ 	if (le16_to_cpu(h->frame_ctl) & IEEE80211_FCTL_MOREFRAGS)
+-		morefrag = 1;
++	{
++		if(priv->ieee80211->iw_mode != IW_MODE_MONITOR || priv->ieee80211->raw_tx != 1)
++			morefrag = 1;
++	}
+ //	DMESG("%x %x", h->frame_ctl, h->seq_ctl);
+ 	/*
+ 	* This function doesn't require lock because we make
+@@ -2346,7 +2349,8 @@
+ 		
+ 		if( flen <= rx_urb->actual_length){
+ 		
+-			stats.signal = (desc[1] & 0x7f00)>>8;
++//			stats.signal = (desc[1] & 0x7f00)>>8;
++			stats.signal = (desc[1] & 0xff00)>>8;
+ 			stats.noise = desc[1] &0xff;
+ 			stats.rate = desc[0] >> 20 & 0xf;
+ 			stats.mac_time[0] = desc[2];
+@@ -2368,6 +2372,8 @@
+ 		//	priv->rxskb = skb;
+ 		//	priv->tempstats = &stats;
+ 
++
++			stats.signal -= stats.noise;
+ 			if(!ieee80211_rx(priv->ieee80211, 
+ 				skb, &stats))
+ 			dev_kfree_skb_any(skb);
+--- rtl8187_linux_26.1010.0622.2006/beta-8187/r8187.h	2006-06-06 08:48:10.000000000 +0200
++++ rtl8187_prismhdr/beta-8187/r8187.h	2006-12-16 16:44:31.418296142 +0100
+@@ -148,7 +148,7 @@
+ 	u8 challow[15]; //channels from 1 to 14, 0 not used
+ 	short up;
+ 	short crcmon; //if 1 allow bad crc frame reception in monitor mode
+-//	short prism_hdr;
++	short prism_hdr;
+ 	
+ //	struct timer_list scan_timer;
+ 	/*short scanpending;
+--- rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211.h	2006-06-06 04:57:56.000000000 +0200
++++ rtl8187_prismhdr/ieee80211/ieee80211.h	2006-11-29 20:45:25.190415628 +0100
+@@ -156,6 +156,22 @@
+ 	struct list_head list;
+ };
+ 
++#define LWNG_CAP_DID_BASE   (4 | (1 << 6)) /* section 4, group 1 */
++/* ARPHRD_IEEE80211_PRISM uses a bloated version of Prism2 RX frame header
++ * (from linux-wlan-ng) */
++struct linux_wlan_ng_val {
++	u32 did;
++	u16 status, len;
++	u32 data;
++} __attribute__ ((packed));
++
++struct linux_wlan_ng_prism_hdr {
++	u32 msgcode, msglen;
++	char devname[16];
++	struct linux_wlan_ng_val hosttime, mactime, channel, rssi, sq, signal,
++		noise, rate, istx, frmlen;
++} __attribute__ ((packed));
++
+ struct ieee80211_hdr {
+ 	u16 frame_ctl;
+ 	u16 duration_id;
+--- rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_rx.c	2006-06-06 04:58:00.000000000 +0200
++++ rtl8187_prismhdr/ieee80211/ieee80211_rx.c	2006-12-14 11:40:23.461865287 +0100
+@@ -49,12 +49,72 @@
+ 					struct sk_buff *skb,
+ 					struct ieee80211_rx_stats *rx_stats)
+ {
+-	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+-	u16 fc = le16_to_cpu(hdr->frame_ctl);
++	struct ieee80211_hdr *hdr1 = (struct ieee80211_hdr *)skb->data;
++	u16 fc = le16_to_cpu(hdr1->frame_ctl);
++	int prism_header;
++	int hdrlen, phdrlen, head_need, tail_need;
++
++	if (ieee->dev->type == ARPHRD_IEEE80211_PRISM) {
++		prism_header = 1;
++		phdrlen = sizeof(struct linux_wlan_ng_prism_hdr);
++	} else {
++		prism_header = 0;
++		phdrlen = 0;
++	}
++
++	hdrlen = ieee80211_get_hdrlen(fc);
++
++	/* check if there is enough room for extra data; if not, expand skb
++	 * buffer to be large enough for the changes */
++	head_need = phdrlen;
++	tail_need = 0;
++#ifdef PRISM2_ADD_BOGUS_CRC
++	tail_need += 4;
++#endif /* PRISM2_ADD_BOGUS_CRC */
++
++	head_need -= skb_headroom(skb);
++	tail_need -= skb_tailroom(skb);
++
++	if (head_need > 0 || tail_need > 0) {
++		if (pskb_expand_head(skb, head_need > 0 ? head_need : 0,
++				     tail_need > 0 ? tail_need : 0,
++				     GFP_ATOMIC)) {
++			printk(KERN_DEBUG "%s: ieee80211_rx failed to "
++			       "reallocate skb buffer\n", ieee->dev->name);
++			dev_kfree_skb_any(skb);
++			return;
++		}
++	}
++
++	if (prism_header == 1) {
++		struct linux_wlan_ng_prism_hdr *hdr;
++		hdr = (struct linux_wlan_ng_prism_hdr *)
++			skb_push(skb, phdrlen);
++		memset(hdr, 0, phdrlen);
++		hdr->msgcode = LWNG_CAP_DID_BASE;
++		hdr->msglen = sizeof(*hdr);
++		memcpy(hdr->devname, ieee->dev->name, sizeof(hdr->devname));
++#define LWNG_SETVAL(f,i,s,l,d) \
++hdr->f.did = LWNG_CAP_DID_BASE | (i << 12); \
++hdr->f.status = s; hdr->f.len = l; hdr->f.data = d
++		LWNG_SETVAL(hosttime, 1, 0, 4, jiffies);
++		LWNG_SETVAL(mactime, 2, 0, 4, rx_stats->mac_time);
++		LWNG_SETVAL(channel, 3, 1 /* no value */, 4, 0);
++		LWNG_SETVAL(rssi, 4, 1 /* no value */, 4, 0);
++		LWNG_SETVAL(sq, 5, 1 /* no value */, 4, 0);
++		LWNG_SETVAL(signal, 6, 0, 4, rx_stats->signal);
++		LWNG_SETVAL(noise, 7, 0, 4, rx_stats->noise);
++		LWNG_SETVAL(rate, 8, 0, 4, rx_stats->rate / 5);
++		LWNG_SETVAL(istx, 9, 0, 4, 0);
++		LWNG_SETVAL(frmlen, 10, 0, 4, skb->len - phdrlen);
++#undef LWNG_SETVAL
++	}
+ 
+ 	skb->dev = ieee->dev;
+ 	skb->mac.raw = skb->data;
+-	skb_pull(skb, ieee80211_get_hdrlen(fc));
++	skb_pull(skb, hdrlen);
++	if (prism_header)
++		skb_pull(skb, phdrlen);
+ 	skb->pkt_type = PACKET_OTHERHOST;
+ 	skb->protocol = __constant_htons(ETH_P_80211_RAW);
+ 	memset(skb->cb, 0, sizeof(skb->cb));
+--- rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_tx.c	2006-06-06 04:57:54.000000000 +0200
++++ rtl8187_prismhdr/ieee80211/ieee80211_tx.c	2006-12-16 11:57:57.695139366 +0100
+@@ -458,7 +458,8 @@
+ 			ieee->seq_ctrl++;
+ 		//---
+ 	}else{
+-		if (unlikely(skb->len < sizeof(struct ieee80211_hdr_3addr))) {
++//		if (unlikely(skb->len < sizeof(struct ieee80211_hdr_3addr))) {
++		if (unlikely(skb->len < 14)) {
+ 			printk(KERN_WARNING "%s: skb too small (%d).\n",
+ 			ieee->dev->name, skb->len);
+ 			goto success;
+--- rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_softmac_wx.c	2006-06-06 04:57:54.000000000 +0200
++++ rtl8187_prismhdr/ieee80211/ieee80211_softmac_wx.c	2006-11-29 20:43:49.275996836 +0100
+@@ -245,8 +245,7 @@
+ 		goto out;
+ 	
+ 	if (wrqu->mode == IW_MODE_MONITOR){
+-	
+-		ieee->dev->type = ARPHRD_IEEE80211;
++		ieee->dev->type = ARPHRD_IEEE80211_PRISM;
+ 	}else{
+ 		ieee->dev->type = ARPHRD_ETHER;
+ 	}
