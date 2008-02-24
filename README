@@ -4,7 +4,40 @@ See also manpages and the forum.
 Airpcap
 -------
 
-Latest driver (3.2.1) is required. See README_AIRCAP.TXT for more information.
+Latest driver (3.2.1) is required.
+
+The Aircrack-ng suite provided has been modified to work in conjunction with the AirPcap 
+adapters and the drivers included in the AirPcap CD.
+
+aireplay-ng requires an AirPcap Tx adapter to be able to function while all the other tools can use either adapter.
+
+
+	Usage Instructions
+	------------------
+
+	The adapter name you need to use is \\.\airpcapXX, where XX is the number of the AirPcap device.
+	For example:
+
+	airodump-ng.exe \\.\airpcap00 airpcap 0 trace
+	or
+	aireplay-ng --fakeauth 0 -e "MYSSID" -a 11:22:33:44:55:66 -h 66:55:44:33:22:11 \\.\airpcap00
+
+
+	How to build the sources Instructions
+	-------------------------------------
+
+	1. Install cygwin from http://www.cygwin.com/
+	2. Download the AirPcap Develper's pack from http://www.cacetech.com/support/downloads.htm
+	3. Unpack the AirPcap Develper's pack inside the main aircrack folder, and rename the new directory to "AirPcap_Devpack"
+	4. Open a bash shell
+	5. run "make -f Makefile.airpcap"
+
+
+	More information
+	----------------
+
+	Official AirPcap Website:	www.cacetech.com
+
 
 
 OpenWrt Devices
@@ -36,7 +69,7 @@ Solution: That's a known bug in the driver, it may happen at any time
 Problem: When creating a new VAP airodump-ng takes up to 10-15 seconds to see the first packet
 Solution: It's the behaviour of madwifi-ng, don't worry.
 
-
+	
 Sample files
 ------------
 
