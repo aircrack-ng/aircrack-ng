@@ -4542,6 +4542,7 @@ usage:
 
 			    /* we could like this field... mhmhm! */
 			    memcpy( &power, r, sizeof( int8_t ) );
+			    r += sizeof( int8_t ); /* and go on.. */
 			    break;
 
 			  case IEEE80211_RADIOTAP_DBM_ANTNOISE:
@@ -4584,6 +4585,7 @@ usage:
 
 			    /* we could like this field... mhmhm! */
 			    power = (int) *r;
+			    r += sizeof( u_int8_t ); /* and go on.. */
 			    break;
 
 			  case IEEE80211_RADIOTAP_DB_ANTNOISE:
