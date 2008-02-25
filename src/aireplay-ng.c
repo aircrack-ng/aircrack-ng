@@ -5336,6 +5336,7 @@ usage:
         else
         {
             perror( "open(/dev/rtc) failed" );
+            dev.fd_rtc = -1;
         }
 
     }
