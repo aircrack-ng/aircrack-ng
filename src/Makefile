@@ -31,7 +31,7 @@ endif
 LIBPCAP		=
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE)
+		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE) airbase-ng$(EXE)
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
@@ -52,6 +52,7 @@ OBJS_AL		= airolib-ng.o crypto.c common.o
 OBJS_ES		= easside-ng.o common.o
 OBJS_BUDDY	= buddy-ng.o common.o
 OBJS_MI		= makeivs-ng.o common.o uniqueiv.o
+OBJS_AB		= airbase-ng.o common.o crypto.o
 
 
 OSD		= osdep
@@ -147,6 +148,9 @@ makeivs-ng$(EXE): $(OBJS_MI)
 airolib-ng$(EXE): $(OBJS_AL)
 	$(CC) $(CFLAGS) $(OBJS_AL) -o $(@) $(LIBSSL) -DHAVE_REGEXP $(LIBSQL)
 
+airbase-ng$(EXE): $(OBJS_AB) $(LIBOSD)
+	$(CC) $(CFLAGS) $(OBJS_AB) -o $(@) $(LIBS) $(LIBSSL) -lpthread
+
 strip: $(BINFILES) $(SBINFILES)
 	strip $(BINFILES) $(SBINFILES)
 
@@ -178,3 +182,4 @@ uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/aireplay-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/wesside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/easside-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/airbase-ng$(EXE)
