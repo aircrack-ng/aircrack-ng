@@ -1,0 +1,15 @@
+--- Makefile.ori	2007-10-08 22:46:20.343750000 +0200
++++ Makefile	2007-10-08 22:49:01.953125000 +0200
+@@ -726,11 +726,10 @@
+ 	mkdir -p doc
+ 	mv $(DOC) doc
+ 
+-install:	sqlite3 libsqlite3.la sqlite3.h ${HAVE_TCL:1=tcl_install}
++install:	libsqlite3.la sqlite3.h 
+ 	$(INSTALL) -d $(DESTDIR)$(libdir)
+ 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
+ 	$(INSTALL) -d $(DESTDIR)$(exec_prefix)/bin
+-	$(LTINSTALL) sqlite3 $(DESTDIR)$(exec_prefix)/bin
+ 	$(INSTALL) -d $(DESTDIR)$(prefix)/include
+ 	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(prefix)/include
+ 	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(prefix)/include

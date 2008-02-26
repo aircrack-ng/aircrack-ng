@@ -1,0 +1,49 @@
+diff -ur ../rt2570-cvs-2005112305/Module/rtusb_data.c ./Module/rtusb_data.c
+--- ../rt2570-cvs-2005112305/Module/rtusb_data.c	2005-11-04 23:53:18.000000000 +0100
++++ ./Module/rtusb_data.c	2005-11-23 14:44:16.000000000 +0100
+@@ -1711,6 +1711,9 @@
+  	        		struct sk_buff  *skb;
+  	       			if ((skb = __dev_alloc_skb(2048, GFP_DMA|GFP_ATOMIC)) != NULL)
+  	        		{
++					if (pAdapter->PortCfg.MallowRFMONTx == TRUE)
++						goto rfmontx_80211_receive;
++
+ 					// setup the wlan-ng prismheader
+ 
+ 					if (skb_headroom(skb) < sizeof(wlan_ng_prism2_header))
+@@ -1762,6 +1765,8 @@
+ 
+ 					// end prismheader setup
+ 
++				rfmontx_80211_receive:
++
+  	      				skb->dev = pAdapter->net;
+  	      				memcpy(skb_put(skb, pRxD->DataByteCnt-4), pData, pRxD->DataByteCnt-4);
+  	       				skb->mac.raw = skb->data;
+diff -ur ../rt2570-cvs-2005112305/Module/rtusb_info.c ./Module/rtusb_info.c
+--- ../rt2570-cvs-2005112305/Module/rtusb_info.c	2005-11-20 22:54:28.000000000 +0100
++++ ./Module/rtusb_info.c	2005-11-23 14:51:47.000000000 +0100
+@@ -277,7 +277,10 @@
+ 			pAdapter->PortCfg.BssType=BSS_MONITOR;
+ 			RTUSBEnqueueInternalCmd(pAdapter, RT_OID_LINK_DOWN);
+ 			pAdapter->bConfigChanged = TRUE;
+-			pAdapter->net->type = 802; // ARPHRD_IEEE80211_PRISM
++			if (pAdapter->PortCfg.MallowRFMONTx == TRUE)
++				pAdapter->net->type = 801; // ARPHRD_IEEE80211
++			else
++				pAdapter->net->type = 802; // ARPHRD_IEEE80211_PRISM
+ 			RTUSBWriteMACRegister(pAdapter, TXRX_CSR2, 0x4e);
+ 			break;	
+ 		default:
+@@ -1132,9 +1135,11 @@
+            {
+              case 1:
+                 pAdapter->PortCfg.MallowRFMONTx = TRUE;
++                pAdapter->net->type = 801; // ARPHRD_IEEE80211
+                 break;
+              case 0:
+                 pAdapter->PortCfg.MallowRFMONTx = FALSE;
++                pAdapter->net->type = 802; // ARPHRD_IEEE80211_PRISM
+                 break;
+              default:
+                 return -EOPNOTSUPP;

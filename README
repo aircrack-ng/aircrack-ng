@@ -1,0 +1,77 @@
+Documentation, tutorials, ... can be found on http://www.aircrack-ng.org
+See also manpages and the forum.
+
+Installing
+----------
+
+This version now require more libraries than 0.X versions to be compiled. 
+See INSTALLING file for more information
+
+OpenWrt Devices
+---------------
+
+You can use airodump-ng on OpenWrt devices. You'll have to use specify
+prism0 as interface. Airodump-ng will automatically create it.
+Rq: Aireplay DOESN'T work on OpenWrt with broadcom chipset since the driver doesn't support injection
+
+
+Other issue:
+------------
+
+Problem: Airodump-ng stop working after some time
+Solution: You may have a network manager running that puts back the card in managed mode. 
+          You'll have to disable it (the fastest solution is killing the process) then restart airodump-ng.
+
+
+Madwifi-ng known bugs:
+----------------------
+
+Problem: When changing rate while you are capturing packet makes airodump-ng stall
+Solution: Restart airodump-ng or change rate before starting it
+
+Problem: After some time it stops capturing packets and you're really sure no network manager are running at all.
+Solution: That's a known bug in the driver, it may happen at any time
+          (the time before it fails can vary a lot: from 5 minutes to 50 or even more).
+
+Problem: When creating a new VAP airodump-ng takes up to 10-15 seconds to see the first packet
+Solution: It's the behaviour of madwifi-ng, don't worry.
+
+Orinoco bugs
+------------
+
+Problem: BSSID is not reported correctly or is 00:00:00:00:00:00 or signal is not reported correctly.
+Solution: These are known bugs and we'll work on it.
+
+Airolib-ng bugs:
+----------------
+
+On windows only, opening/creating a database doesn't work when airolib-ng is in directories containing
+special characters like 'ç', 'é', 'è', 'à', ... (directories containing spaces are not affected).
+
+Sample files
+------------
+
+wep.open.system.authentication.cap:
+    It show a connexion (authentication then association) to a WEP network (open authentication).
+
+wep.shared.key.authentication.cap:
+    It shows a connexion (authentication then association to a WEP network (shared authentication).
+    The difference with open authentication is that the client has to encrypt a challenge text
+    and send it back (encrypted) to the AP to prove it has the right key.
+
+wpa.cap:
+    This is a sample file with a WPA handshake. It is located in the test/ directory of the install files. 
+    The passphrase is 'biscotte'. Use the password file (password.lst) which is in the same directory.
+
+wpa2.eapol.cap: 
+    This is a sample file with a WPA2 handshake. 
+    It is located in the test/ directory of the install files. 
+    The passphrase is '12345678'. Use the password file (password.lst) which is in the same directory.
+
+test.ivs (http://download.aircrack-ng.org/wiki-files/other/test.ivs): 
+    This is a 128 bit WEP key file.
+    The key is AE:5B:7F:3A:03:D0:AF:9B:F6:8D:A5:E2:C7.
+
+ptw.cap (http://dl.aircrack-ng.org/ptw.cap): 
+    This is a 64 bit WEP key file suitable for the PTW method (-z option).
+    The key is '1F:1F:1F:1F:1F'.

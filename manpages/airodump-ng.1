@@ -1,0 +1,147 @@
+.TH AIRODUMP-NG 1 "February 2008" "Version 1.0-beta2"
+
+.SH NAME
+airodump-ng - a packet capture tool for aircrack-ng
+.SH SYNOPSIS
+.B airodump-ng
+[options] <interface name>
+.SH DESCRIPTION
+.BI airodump-ng
+is a packet capture tool for aircrack-ng. It allows dumping packets directly from WLAN interface and saving them to a pcap or IVs file.
+.SH OPTIONS
+.PP
+.TP
+.I -H, --help
+Shows the help screen.
+.TP
+.I -i, --ivs
+It only saves IVs (only useful for cracking). If this option is specified, you have to give a dump prefix (\-\-write option)
+.TP
+.I -g, --gpsd
+Indicate that airodump-ng should try to use GPSd to get coordinates.
+.TP
+.I -w <prefix>, --write <prefix>
+Is the dump file prefix to use. If this option is not given, it will only show data on the screen.
+.TP
+.I -e, --beacons
+It will record all beacons into the cap file (by default it only records one).
+.TP
+.I -u <secs>, --update <secs>
+Delay <secs> seconds delay between display updates (default: 1 second). Useful for slow CPU.
+.TP
+.I --showack
+Prints ACK/CTS/RTS statistics. Helps in debugging and general injection optimization. It is indication if you inject, inject too fast, reach the AP, the frames are valid encrypted frames. Allows to detect "hidden" stations, which are too far away to capture high bitrate frames, as ACK frames are sent at 1Mbps.
+.TP
+.I -h
+Hides known stations for \-\-showack.
+.TP
+.I --berlin <secs>
+Time before removing the AP/client from the screen when no more packets are received (Default: 120 seconds). See airodump-ng source for more details about this option ;).
+.TP
+.I -c <channel>[,<channel>[,...]], --channel <channel>[,<channel>[,...]]
+Indicate the channel(s) to listen to. By default airodump-ng hop on all 2.4Ghz channels.
+.TP
+.I -b <abg>, --band <abg>
+Indicate the band on which airodump-ng should hop. It can be a combination of 'a', 'b' and 'g' ('b' and 'g' uses 2.4Ghz and 'a' uses 5Ghz)
+.TP
+.I -s <method>, --cswitch <method>
+Defines the way airodump-ng sets the channels when using more than one card. Valid values: 0, 1 or 2.
+.TP
+.I -r <file>
+Reads packet from a file.
+.PP
+.B Filter options:
+.TP
+.I -t <OPN|WEP|WPA|WPA1|WPA2>, --encrypt <OPN|WEP|WPA|WPA1|WPA2>
+It will only show networks, matching the given encryption. May be specified more than once: '\-t OPN \-t WPA2'
+.TP
+.I -d <bssid>, --bssid <bssid>
+It will only show networks, matching the given bssid.
+.TP
+.I -m <mask>, --netmask <mask>
+It will only show networks, matching the given bssid ^ netmask combination. Need \-\-bssid to be specified.
+.TP
+.I -a
+It will only show associated clients.
+.SH EXAMPLES
+.B airodump-ng
+\-\-band bg ath0
+.PP
+Here is an example screenshot:
+.PP
+-----------------------------------------------------------------------
+.br
+CH  9 ][ Elapsed: 1 min ][ 2007-04-26 17:41 ][ BAT: 2 hours 10 mins ][ WPA handshake: 00:14:6C:7E:40:80
+.br
+BSSID              PWR RXQ  Beacons    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSID
+.br
+.PP
+00:09:5B:1C:AA:1D   11  16       10        0    0  11  54. OPN              NETGEAR
+00:14:6C:7A:41:81   34 100       57       14    1   9  11  WEP  WEP         bigbear
+00:14:6C:7E:40:80   32 100      752       73    2   9  54  WPA  TKIP   PSK  teddy
+.br
+.PP
+BSSID              STATION            PWR  Lost  Packets  Probes
+.br
+.PP
+00:14:6C:7A:41:81  00:0F:B5:32:31:31   51     2       14
+(not associated)   00:14:A4:3F:8D:13   19     0        4  mossy
+00:14:6C:7A:41:81  00:0C:41:52:D1:D1   \-1     0        5
+00:14:6C:7E:40:80  00:0F:B5:FD:FB:C2   35     0       99  teddy
+.br
+-----------------------------------------------------------------------
+.br
+.PP
+            - CH is the channel on which the AP is setup
+            - BAT is the remaining battery time
+            - BSSID is the Access Point MAC address
+            - PWR is the signal power, which depends on the driver
+            - Beacons is the total number of beacons
+            - # Data: Number of captured data packets, including data broadcast packets.
+            - MB is the maximum communication speed (the dot mean short preamble).
+            - ENC is the encryption protocol in use:
+                OPN = open, WEP? = WEP or WPA (no data), WEP, WPA
+            - CIPHER: The cipher detected. One of CCMP, WRAP, TKIP, WEP, WEP40, or WEP104. Not mandatory, but TKIP is typically used with WPA and CCMP is typically used with WPA2.
+            - AUTH: The authentication protocol used. One of MGT (WPA/WPA2 using a separate authentication server), SKA (shared key for WEP), PSK (pre-shared key for WPA/WPA2), or OPN (open for WEP). 
+            - ESSID is the network identifier
+            - Lost: The number of data packets lost over the last 10 seconds based on the sequence number. See note below for a more detailed explanation. 
+            - Packets: The number of data packets sent by the client. 
+            - Probes: Then ESSIDs probed by the client. 
+
+.PP
+The first part is the detected access points (in this case, only 00:13:10:30:24:9C on channel 6 with WEP encryption). It also displays a list of detected wireless clients ("stations"), in this case 00:09:5B:EB:C5:2B and 00:02:2D:C1:5D:1F. By relying on the signal power, one can even physically pinpoint the location of a given station.
+.SH AUTHOR
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airsev-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B wesside-ng(1)

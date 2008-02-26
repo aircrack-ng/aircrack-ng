@@ -1,0 +1,152 @@
+#! /bin/sh
+
+PATCH=`which patch 2>/dev/null`
+FGREP1="^--- "
+FGREP2="^+++ "
+PREDIR="`pwd`"
+if [ x"`echo "$1" | grep "^/"`" = x ]
+then
+    WHOLEPATCH="`pwd`/$1"
+else
+    WHOLEPATCH="$1"
+fi
+
+if [ ! -f $WHOLEPATCH ]
+then
+    echo "Patch \"$1\" doesn't exist."
+    exit
+fi
+
+if [ x"$PATCH" = x ]
+then
+    echo "You need to install \"patch\" prior to patching anything."
+    exit
+fi
+
+if [ x"$1" = x ]
+then
+    echo "Usage: \"$0 foo.patch\""
+    exit
+fi
+
+if [ x"`grep "$FGREP1" "$WHOLEPATCH" | awk '{print $2}'`" = x ]
+then
+    echo "No valid patch file, you need to "
+fi
+
+fcount1=`grep "$FGREP1" "$WHOLEPATCH" | awk '{print $2}' | wc -l`
+fcount2=`grep "$FGREP2" "$WHOLEPATCH" | awk '{print $2}' | wc -l`
+
+if [ $fcount1 -ne $fcount2 ]
+then
+    echo "Different number of Files: add($fcount2) vs. sub($fcount1). Broken file?"
+    exit
+fi
+
+echo "Trying to find correct path and arguments..."
+
+cdr=1
+
+hits=0
+maxhits=0
+lastfiles=$fcount1
+value=0
+godown=0
+actdown=0
+maxcutglobaldirs=`pwd | sed 's/[^\/]//g' | wc -c`
+j=0
+down=0
+
+while [ $j -lt $maxcutglobaldirs ]
+do
+    fcurnum=`grep "$FGREP1" "$WHOLEPATCH" | awk '{print $2}' | cut -d/ -f$cdr- | grep -v "^$" | wc -l`
+    if [ $fcurnum -lt $fcount1 ]
+    then
+        #too many dirs cut, lost some files
+        down=1
+    fi
+
+    hits=0
+
+    i=1
+    while [ $i -lt $fcurnum ]
+    do
+        filename1=`grep "$FGREP1" "$WHOLEPATCH" | awk '{print $2}' | cut -d/ -f$cdr- | grep -v "^$" | head -n $i | tail -n 1`
+        filename2=`grep "$FGREP2" "$WHOLEPATCH" | awk '{print $2}' | cut -d/ -f$cdr- | grep -v "^$" | head -n $i | tail -n 1`
+
+        if [ -f $PREDIR/$filename1 -o -f $PREDIR/$filename2 ]
+        then
+            hits=$(($hits+1))
+        fi
+
+        i=$(($i+1))
+    done
+
+    if [ $hits -gt $maxhits ]
+    then
+        maxhits=$hits
+        value=$(($cdr-1))
+        actdown=$godown
+    fi
+
+    cdr=$(($cdr+1))
+
+    if [ $down -eq 1 ]
+    then
+        down=0
+        if [ $maxhits -eq $fcount1 ]
+        then
+            break
+        fi
+        godown=$(($godown+1))
+        PREDIR=`echo $PREDIR | cut -d/ -f1-$(($maxcutglobaldirs-$godown))`
+        j=$(($j+1))
+        cdr=0
+    fi
+done
+
+change="cd ./"
+
+i=0
+while [ $i -lt $actdown ]
+do
+    change="$change../"
+    i=$(($i+1))
+done
+
+$change
+
+if [ x"`$PATCH -f --dry-run -Np$value -i "$WHOLEPATCH" | grep "ignored\|ERROR"`" != x ]
+then
+    echo "Found problems with applying "$WHOLEPATCH" from this location."
+    exit
+fi
+
+if [ $maxhits -eq 0 ]
+then
+    echo "Found no files at all."
+    exit
+fi
+
+
+if [ $maxhits -lt $fcount1 ]
+then
+    #echo "I didn't found all files, which should be patched."
+    #echo "Just got $maxhits hits out of $fcount1 proposed"
+    if [ $actdown -gt 0 ]
+    then
+        echo "You may run:"
+        echo "\"($change; patch --dry-run -Np$value -i "$WHOLEPATCH")\""
+    else
+        echo "You may run:"
+        echo "\"patch --dry-run -Np$value -i $1\""
+    fi
+    echo "and in case you got no errors, just omit \"--dry-run\"."
+else
+    if [ $actdown -gt 0 ]
+    then
+        echo "You need to run \"($change; patch -Np$value -i "$WHOLEPATCH")\""
+    else
+        echo "You need to run \"patch -Np$value -i $1\""
+    fi
+fi
