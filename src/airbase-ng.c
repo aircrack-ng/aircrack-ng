@@ -82,6 +82,9 @@ static struct wif *_wi_in, *_wi_out;
 #define MAX(x,y) ( (x)>(y) ? (x) : (y) )
 #endif
 
+//if not all fragments are available 60 seconds after the last fragment was received, they will be removed
+#define FRAG_TIMEOUT (1000000*60)
+
 #define RTC_RESOLUTION  1024
 
 #define DEAUTH_REQ      \
@@ -139,13 +142,21 @@ char usage[] =
 "      -w wepkey        : use this WEP-KEY to en-/decrypt packets\n"
 // "      -t tods          : send frames to AP (1) or to client (0)\n"
 // "      -r file          : read frames out of pcap file\n"
+"      -h MAC           : source mac for mitm mode\n"
+"      -f disallow      : disallow specified client MACs (default: allow)\n"
+"      -W 0|1           : [don't] set wep flag in beacons 0|1 (default: auto)\n"
 "      -q               : quiet (do not print statistics)\n"
+"      -M               : M-I-T-M between [specified] clients and bssids\n"
+"      -Y               : external packet processing in MITM mode\n"
 "\n"
 "  Filter options:\n"
-// "      --bssid <mac>    : BSSID to repeat\n"
-// "      --netmask <mask> : netmask for BSSID filter\n"
-"      --essids <file>  : read list of ESSIDs out of that file\n"
-"      --essid <ESSID>  : uses a single ESSID\n"
+"      --bssid <MAC>    : BSSID to filter/use\n"
+"      --bssids <file>  : read a list of BSSIDs out of that file\n"
+"      --client <MAC>   : MAC of client to \n"
+"      --clients <file> : read a list of MACs out of that file\n"
+"      --essid <ESSID>  : specify a single ESSID\n"
+"      --essids <file>  : read a list of ESSIDs out of that file\n"
+"      "
 "\n"
 "      --help           : Displays this usage screen\n"
 "\n";
@@ -217,6 +228,28 @@ struct ESSID_list
     pESSID_t        next;
 };
 
+typedef struct MAC_list* pMAC_t;
+struct MAC_list
+{
+    unsigned char   mac[6];
+    pMAC_t          next;
+};
+
+typedef struct Fragment_list* pFrag_t;
+struct Fragment_list
+{
+    unsigned char   source[6];
+    unsigned short  sequence;
+    unsigned char*  fragment[16];
+    short           fragmentlen[16];
+    char            fragnum;
+    unsigned char*  header;
+    short           headerlen;
+    struct timeval  access;
+    char            wep;
+    pFrag_t         next;
+};
+
 unsigned long nb_pkt_sent;
 unsigned char h80211[4096];
 unsigned char tmpbuf[4096];
@@ -230,6 +263,9 @@ char * iwpriv;
 pthread_t apid;
 
 pESSID_t rESSID;
+pMAC_t rBSSID;
+pMAC_t rClient;
+pFrag_t rFragment;
 
 void sighandler( int signum )
 {
@@ -265,6 +301,316 @@ int addESSID(char* essid, int len)
     memcpy(cur->essid, essid, len);
     cur->essid[len] = 0x00;
     cur->len = len;
+
+    cur->next = NULL;
+
+    return 0;
+}
+
+int addFrag(unsigned char* packet, unsigned char* smac, int len)
+{
+    pFrag_t cur = rFragment;
+    int seq, frag, wep, z, i;
+    unsigned char frame[4096];
+    unsigned char K[128];
+
+    if(packet == NULL)
+        return -1;
+
+    if(smac == NULL)
+        return -1;
+
+    if(len <= 32 || len > 2000)
+        return -1;
+
+    if(rFragment == NULL)
+        return -1;
+
+    bzero(frame, 4096);
+    memcpy(frame, packet, len);
+
+    z = ( ( frame[1] & 3 ) != 3 ) ? 24 : 30;
+    frag = frame[22] & 0x0F;
+    seq = (frame[22] >> 4) | (frame[23] << 4);
+    wep = (frame[1] & 0x40) >> 6;
+
+    if(frag < 0 || frag > 15)
+        return -1;
+
+    if(wep && opt.crypt != CRYPT_WEP)
+        return -1;
+
+    if(wep)
+    {
+        //decrypt it
+        memcpy( K, frame + z, 3 );
+        memcpy( K + 3, opt.wepkey, opt.weplen );
+
+        if (decrypt_wep( frame + z + 4, len - z - 4,
+                        K, 3 + opt.weplen ) == 0 )
+        {
+            printf("error decrypting...\n");
+//             return -1;
+        }
+
+        /* WEP data packet was successfully decrypted, *
+        * remove the WEP IV & ICV and write the data  */
+
+        len -= 8;
+
+        memcpy( frame + z, frame + z + 4, len - z );
+
+        frame[1] &= 0xBF;
+    }
+
+    while(cur->next != NULL)
+    {
+        cur = cur->next;
+        if( (memcmp(smac, cur->source, 6) == 0) && (seq == cur->sequence) && (wep == cur->wep) )
+        {
+            //entry already exists, update
+//             printf("got seq %d, added fragment %d \n", seq, frag);
+            if(cur->fragment[frag] != NULL)
+                return 0;
+
+            if( (frame[1] & 0x04) == 0 )
+            {
+//                 printf("max fragnum is %d\n", frag);
+                cur->fragnum = frag;    //no higher frag number possible
+            }
+            cur->fragment[frag] = (unsigned char*) malloc(len-z);
+            memcpy(cur->fragment[frag], frame+z, len-z);
+            cur->fragmentlen[frag] = len-z;
+            gettimeofday(&cur->access, NULL);
+
+            return 0;
+        }
+    }
+
+//     printf("new seq %d, added fragment %d \n", seq, frag);
+    //new entry, first fragment received
+    //alloc mem
+    cur->next = (pFrag_t) malloc(sizeof(struct Fragment_list));
+    cur = cur->next;
+
+    for(i=0; i<16; i++)
+    {
+        cur->fragment[i] = NULL;
+        cur->fragmentlen[i] = 0;
+    }
+
+    if( (frame[1] & 0x04) == 0 )
+    {
+//         printf("max fragnum is %d\n", frag);
+        cur->fragnum = frag;    //no higher frag number possible
+    }
+    else
+    {
+        cur->fragnum = 0;
+    }
+
+    //remove retry & more fragments flag
+    frame[1] &= 0xF3;
+    //set frag number to 0
+    frame[22] &= 0xF0;
+    memcpy(cur->source, smac, 6);
+    cur->sequence = seq;
+    cur->header = (unsigned char*) malloc(z);
+    memcpy(cur->header, frame, z);
+    cur->headerlen = z;
+    cur->fragment[frag] = (unsigned char*) malloc(len-z);
+    memcpy(cur->fragment[frag], frame+z, len-z);
+    cur->fragmentlen[frag] = len-z;
+    cur->wep = wep;
+    gettimeofday(&cur->access, NULL);
+
+    cur->next = NULL;
+
+    return 0;
+}
+
+int timeoutFrag()
+{
+    pFrag_t old, cur = rFragment;
+    struct timeval tv;
+    int64_t timediff;
+    int i;
+
+    if(rFragment == NULL)
+        return -1;
+
+    gettimeofday(&tv, NULL);
+
+    while(cur->next != NULL)
+    {
+        old = cur->next;
+        timediff = (tv.tv_sec - old->access.tv_sec)*1000000 + (tv.tv_usec - old->access.tv_usec);
+        if(timediff > FRAG_TIMEOUT)
+        {
+            //remove captured fragments
+            if(old->header != NULL)
+                free(old->header);
+            for(i=0; i<16; i++)
+                if(old->fragment[i] != NULL)
+                    free(old->fragment[i]);
+
+            cur->next = old->next;
+            free(old);
+        }
+        cur = cur->next;
+    }
+    return 0;
+}
+
+int delFrag(unsigned char* smac, int sequence)
+{
+    pFrag_t old, cur = rFragment;
+    int i;
+
+    if(rFragment == NULL)
+        return -1;
+
+    if(smac == NULL)
+        return -1;
+
+    if(sequence < 0)
+        return -1;
+
+    while(cur->next != NULL)
+    {
+        old = cur->next;
+        if(memcmp(smac, old->source, 6) == 0 && old->sequence == sequence)
+        {
+            //remove captured fragments
+            if(old->header != NULL)
+                free(old->header);
+            for(i=0; i<16; i++)
+                if(old->fragment[i] != NULL)
+                    free(old->fragment[i]);
+
+            cur->next = old->next;
+            free(old);
+            return 0;
+        }
+        cur = cur->next;
+    }
+    return 0;
+}
+
+unsigned char* getCompleteFrag(unsigned char* smac, int sequence, int *packetlen)
+{
+    pFrag_t old, cur = rFragment;
+    int i, len=0;
+    unsigned char* packet=NULL;
+    unsigned char K[128];
+
+    if(rFragment == NULL)
+        return NULL;
+
+    if(smac == NULL)
+        return NULL;
+
+    while(cur->next != NULL)
+    {
+        old = cur->next;
+        if(memcmp(smac, old->source, 6) == 0 && old->sequence == sequence)
+        {
+            //check if all frags available
+            if(old->fragnum == 0)
+                return NULL;
+            for(i=0; i<=old->fragnum; i++)
+            {
+                if(old->fragment[i] == NULL)
+                    return NULL;
+                len += old->fragmentlen[i];
+            }
+
+            if(len > 2000)
+                return NULL;
+
+//             printf("got a complete frame -> build it\n");
+
+            if(old->wep)
+            {
+                packet = (unsigned char*) malloc(len+old->headerlen+8);
+
+                if( opt.crypt == CRYPT_WEP)
+                {
+                    K[0] = rand() & 0xFF;
+                    K[1] = rand() & 0xFF;
+                    K[2] = rand() & 0xFF;
+                    K[3] = 0x00;
+
+                    memcpy(packet, old->header, old->headerlen);
+                    len=old->headerlen;
+                    memcpy(packet+len, K, 4);
+                    len+=4;
+                    for(i=0; i<=old->fragnum; i++)
+                    {
+                        memcpy(packet+len, old->fragment[i], old->fragmentlen[i]);
+                        len+=old->fragmentlen[i];
+                    }
+
+                    /* write crc32 value behind data */
+                    if( add_crc32(packet+old->headerlen+4, len-old->headerlen-4) != 0 ) return NULL;
+
+                    len += 4; //icv
+
+                    memcpy( K + 3, opt.wepkey, opt.weplen );
+
+                    encrypt_wep( packet+old->headerlen+4, len-old->headerlen-4, K, opt.weplen+3 );
+
+                    packet[1] = packet[1] | 0x40;
+
+                    //delete captured fragments
+                    delFrag(smac, sequence);
+                    *packetlen = len;
+                    return packet;
+                }
+                else
+                    return NULL;
+
+            }
+            else
+            {
+                packet = (unsigned char*) malloc(len+old->headerlen);
+                memcpy(packet, old->header, old->headerlen);
+                len=old->headerlen;
+                for(i=0; i<=old->fragnum; i++)
+                {
+                    memcpy(packet+len, old->fragment[i], old->fragmentlen[i]);
+                    len+=old->fragmentlen[i];
+                }
+                //delete captured fragments
+                delFrag(smac, sequence);
+                *packetlen = len;
+                return packet;
+            }
+        }
+        cur = cur->next;
+    }
+    return packet;
+}
+
+int addMAC(pMAC_t pMAC, unsigned char* mac)
+{
+    pMAC_t cur = pMAC;
+
+    if(mac == NULL)
+        return -1;
+
+    if(pMAC == NULL)
+        return -1;
+
+    while(cur->next != NULL)
+        cur = cur->next;
+
+    //alloc mem
+    cur->next = (pMAC_t) malloc(sizeof(struct MAC_list));
+    cur = cur->next;
+
+    //set mac
+    memcpy(cur->mac, mac, 6);
 
     cur->next = NULL;
 
@@ -308,6 +654,34 @@ int delESSID(char* essid, int len)
     return -1;
 }
 
+int delMAC(pMAC_t pMAC, char* mac)
+{
+    pMAC_t old, cur = pMAC;
+
+    if(mac == NULL)
+        return -1;
+
+    if(pMAC == NULL)
+        return -1;
+
+    while(cur->next != NULL)
+    {
+        old = cur->next;
+        if(memcmp(old->mac, mac, 6) == 0)
+        {
+            //got it
+            cur->next = old->next;
+
+            old->next = NULL;
+            free(old);
+            return 0;
+        }
+        cur = cur->next;
+    }
+
+    return -1;
+}
+
 int gotESSID(char* essid, int len)
 {
     pESSID_t old, cur = rESSID;
@@ -332,6 +706,29 @@ int gotESSID(char* essid, int len)
             }
         }
         cur = cur->next;
+    }
+
+    return 0;
+}
+
+int gotMAC(pMAC_t pMAC, char* mac)
+{
+    pMAC_t cur = pMAC;
+
+    if(mac == NULL)
+        return -1;
+
+    if(pMAC == NULL)
+        return -1;
+
+    while(cur->next != NULL)
+    {
+        cur = cur->next;
+        if(memcmp(cur->mac, mac, 6) == 0)
+        {
+            //got it
+            return 1;
+        }
     }
 
     return 0;
@@ -367,6 +764,23 @@ int getESSIDcount()
     return count;
 }
 
+int getMACcount(pMAC_t pMAC)
+{
+    pMAC_t cur = pMAC;
+    int count=0;
+
+    if(pMAC == NULL)
+        return -1;
+
+    while(cur->next != NULL)
+    {
+        cur = cur->next;
+        count++;
+    }
+
+    return count;
+}
+
 int addESSIDfile(char* filename)
 {
     FILE *list;
@@ -382,6 +796,30 @@ int addESSIDfile(char* filename)
     while( fgets(essid, 256, list) != NULL )
     {
         addESSID(essid, strlen(essid));
+    }
+
+    fclose(list);
+
+    return 0;
+}
+
+int addMACfile(pMAC_t pMAC, char* filename)
+{
+    FILE *list;
+    unsigned char mac[6];
+    char buffer[256];
+
+    list = fopen(filename, "r");
+    if(list == NULL)
+    {
+        perror("Unable to open ESSID list");
+        return -1;
+    }
+
+    while( fgets(buffer, 256, list) != NULL )
+    {
+        if(getmac(buffer, 1, mac) == 0)
+            addMAC(pMAC, mac);
     }
 
     fclose(list);
@@ -811,6 +1249,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
     struct timeval tv1;
     u_int64_t timestamp;
     char *fessid;
+    int seqnum, fragnum, morefrag;
 
     int z;
 
@@ -859,6 +1298,26 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
     /* Got a data packet with our bssid set and ToDS==1*/
     if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 && (packet[1] & 0x03) == 0x01 )
     {
+        fragnum = packet[22] & 0x0F;
+        seqnum = (packet[22] >> 4) | (packet[23] << 4);
+        morefrag = packet[1] & 0x04;
+
+        /* Fragment? */
+        if(fragnum > 0 || morefrag)
+        {
+            addFrag(packet, smac, length);
+            buffer = getCompleteFrag(smac, seqnum, &len);
+
+            /* we got frag, no compelete packet avail -> do nothing */
+            if(buffer == NULL)
+                return 1;
+
+//             printf("got all frags!!!\n");
+            memcpy(packet, buffer, len);
+            length = len;
+            free(buffer);
+        }
+
         /* To our mac? */
         if( memcmp( dmac, opt.r_bssid, 6) == 0 )
         {
@@ -908,8 +1367,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
             memcpy(packet + 10, bssid, 6);
             memcpy(packet + 16, smac, 6);
 
-            send_packet(h80211, length);
-
+//             printf("sent packet length: %d\n", length);
             /* Is encrypted */
             if( (packet[z] != packet[z + 1] || packet[z + 2] != 0x03) && (packet[1] & 0x40) == 0x40 )
             {
@@ -935,12 +1393,45 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
                     memcpy( packet + z, packet + z + 4, length - z );
 
                     packet[1] &= 0xBF;
+
+                    /* reencrypt it to send it with a new IV */
+                    memcpy(h80211, packet, length);
+
+                    K[0] = rand() & 0xFF;
+                    K[1] = rand() & 0xFF;
+                    K[2] = rand() & 0xFF;
+                    K[3] = 0x00;
+
+                    /* write crc32 value behind data */
+                    if( add_crc32(h80211+z, length-z) != 0 ) return 1;
+
+                    length += 4; //icv
+
+                    buffer = (unsigned char*) malloc(4096);
+                    memcpy(buffer, h80211+z, length-z);
+                    memcpy(h80211+z+4, buffer, length-z);
+                    free(buffer);
+
+                    memcpy(h80211+z, K, 4);
+                    length += 4; //iv
+
+                    memcpy( K + 3, opt.wepkey, opt.weplen );
+
+                    encrypt_wep( h80211+z+4, length-z-4, K, opt.weplen+3 );
+
+                    h80211[1] = h80211[1] | 0x40;
+                    send_packet(h80211, length);
                 }
                 else
                 {
                     /* its a packet we can't decrypt -> just replay it through the wireless interface */
                     return 0;
                 }
+            }
+            else
+            {
+                /* unencrypted -> send it through the wireless interface */
+                send_packet(packet, length);
             }
 
         }
@@ -1291,6 +1782,9 @@ int main( int argc, char *argv[] )
     rESSID->essid = NULL;
     rESSID->len = 0;
     rESSID->next = NULL;
+
+    rFragment = (pFrag_t) malloc(sizeof(struct Fragment_list));
+    bzero(rFragment, sizeof(struct Fragment_list));
 
     opt.r_nbpps = 100;
     opt.tods    = 0;
