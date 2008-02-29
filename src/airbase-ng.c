@@ -87,6 +87,9 @@ static struct wif *_wi_in, *_wi_out;
 
 #define RTC_RESOLUTION  1024
 
+#define ALLOW_MACS      0
+#define BLOCK_MACS      1
+
 #define DEAUTH_REQ      \
     "\xC0\x00\x3A\x01\xCC\xCC\xCC\xCC\xCC\xCC\xBB\xBB\xBB\xBB\xBB\xBB" \
     "\xBB\xBB\xBB\xBB\xBB\xBB\x00\x00\x07\x00"
@@ -148,6 +151,10 @@ char usage[] =
 "      -q               : quiet (do not print statistics)\n"
 "      -M               : M-I-T-M between [specified] clients and bssids\n"
 "      -Y               : external packet processing in MITM mode\n"
+"      -c channel       : sets the channel the AP is running on\n"
+"      -X               : hidden ESSID\n"
+"      -s               : force shared key auth\n"
+"      -S               : set shared key challenge length (default: 128)\n"
 "\n"
 "  Filter options:\n"
 "      --bssid <MAC>    : BSSID to filter/use\n"
@@ -183,6 +190,14 @@ struct options
 
     int f_essid;
     int channel;
+    int setWEP;
+    int quiet;
+    int mitm;
+    int external;
+    int hidden;
+    int forceska;
+    int skalen;
+    int filter;
 }
 opt;
 
@@ -347,10 +362,10 @@ int addFrag(unsigned char* packet, unsigned char* smac, int len)
         memcpy( K + 3, opt.wepkey, opt.weplen );
 
         if (decrypt_wep( frame + z + 4, len - z - 4,
-                        K, 3 + opt.weplen ) == 0 )
+                        K, 3 + opt.weplen ) == 0 && (len-z-4 > 8) )
         {
-            printf("error decrypting...\n");
-//             return -1;
+            printf("error decrypting... len: %d\n", len-z-4);
+            return -1;
         }
 
         /* WEP data packet was successfully decrypted, *
@@ -711,7 +726,7 @@ int gotESSID(char* essid, int len)
     return 0;
 }
 
-int gotMAC(pMAC_t pMAC, char* mac)
+int gotMAC(pMAC_t pMAC, unsigned char* mac)
 {
     pMAC_t cur = pMAC;
 
@@ -1250,6 +1265,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
     u_int64_t timestamp;
     char *fessid;
     int seqnum, fragnum, morefrag;
+    int gotsource, gotbssid;
 
     int z;
 
@@ -1293,6 +1309,27 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
     {
         /* no wds support yet */
         return 1;
+    }
+
+    /* MAC Filter */
+    if(opt.filter >= 0)
+    {
+        if(getMACcount(rClient) > 0)
+        {
+            /* filter clients */
+            gotsource = gotMAC(rClient, smac);
+
+            if((gotsource && opt.filter == BLOCK_MACS) || ( !gotsource && opt.filter == ALLOW_MACS))
+                return 0;
+        }
+        if(getMACcount(rBSSID) > 0)
+        {
+            /* filter bssids */
+            gotbssid = gotMAC(rBSSID, bssid);
+
+            if((gotbssid && opt.filter == BLOCK_MACS) || ( !gotbssid && opt.filter == ALLOW_MACS))
+                return 0;
+        }
     }
 
     /* Got a data packet with our bssid set and ToDS==1*/
@@ -1579,6 +1616,13 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
                 memcpy(packet +  4, smac, 6);
                 memcpy(packet + 10, dmac, 6);
                 packet[z+2] = 0x02;
+
+                if(opt.forceska)
+                {
+                    packet[z] = 0x01;
+                    packet[z+4] = 13;
+                }
+
                 send_packet(packet, length);
                 return 0;
             }
@@ -1596,12 +1640,12 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
                     packet[length+1] = 0x80;
                     length += 2;
 
-                    for(i=0; i<128; i++)
+                    for(i=0; i<opt.skalen; i++)
                     {
                         packet[length+i] = rand() & 0xFF;
                     }
 
-                    length += 128;
+                    length += opt.skalen;
                     send_packet(packet, length);
                     return 0;
                 }
@@ -1771,6 +1815,7 @@ int main( int argc, char *argv[] )
     char *s, buf[128], *fessid;
     int caplen;
     struct AP_conf apc;
+    unsigned char mac[6];
 
     /* check the arguments */
 
@@ -1786,9 +1831,17 @@ int main( int argc, char *argv[] )
     rFragment = (pFrag_t) malloc(sizeof(struct Fragment_list));
     bzero(rFragment, sizeof(struct Fragment_list));
 
+    rClient = (pMAC_t) malloc(sizeof(struct MAC_list));
+    bzero(rClient, sizeof(struct MAC_list));
+
+    rBSSID = (pMAC_t) malloc(sizeof(struct MAC_list));
+    bzero(rBSSID, sizeof(struct MAC_list));
+
     opt.r_nbpps = 100;
     opt.tods    = 0;
-
+    opt.setWEP  = -1;
+    opt.skalen  = 128;
+    opt.filter  = -1;
 
     srand( time( NULL ) );
 
@@ -1797,16 +1850,21 @@ int main( int argc, char *argv[] )
         int option_index = 0;
 
         static struct option long_options[] = {
-            {"netmask", 1, 0, 'm'},
-            {"bssid",   1, 0, 'd'},
-            {"essid",   0, 0, 'e'},
-            {"essids",  0, 0, 'E'},
+            {"bssid",   1, 0, 'b'},
+            {"bssids",  1, 0, 'B'},
+            {"channel", 1, 0, 'c'},
+            {"client",  1, 0, 'd'},
+            {"clients", 1, 0, 'D'},
+            {"essid",   1, 0, 'e'},
+            {"essids",  1, 0, 'E'},
+            {"mitm",    0, 0, 'M'},
+            {"hidden",  0, 0, 'X'},
             {"help",    0, 0, 'H'},
             {0,         0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:t:w:m:d:He:E:c:",
+                        "a:h:i:r:w:He:E:c:d:D:f:W:qMYb:B:XsS:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -1827,17 +1885,6 @@ int main( int argc, char *argv[] )
                 printf("\"%s --help\" for help.\n", argv[0]);
                 return( 1 );
 
-/*            case 'x' :
-
-                ret = sscanf( optarg, "%d", &opt.r_nbpps );
-                if( opt.r_nbpps < 1 || opt.r_nbpps > 1024 || ret != 1 )
-                {
-                    printf( "Invalid number of packets per second. [1-1024]\n" );
-                    printf("\"%s --help\" for help.\n", argv[0]);
-                    return( 1 );
-                }
-                break;
-*/
             case 'a' :
 
                 if( getmac( optarg, 1, opt.r_bssid ) != 0 )
@@ -1870,13 +1917,53 @@ int main( int argc, char *argv[] )
             case 'E' :
 
                 if( addESSIDfile(optarg) != 0 )
+                    return( 1 );
+
+                opt.f_essid = 1;
+
+                break;
+
+            case 'X' :
+
+                opt.hidden = 1;
+
+                break;
+
+            case 's' :
+
+                opt.forceska = 1;
+
+                break;
+
+            case 'f' :
+
+                if( strncasecmp(optarg, "allow", 5) == 0 || strncmp(optarg, "0", 1) == 0 )
                 {
-                    printf( "Invalid ESSID, too long\n" );
+                    opt.filter = ALLOW_MACS; //block all, allow the specified macs
+                }
+                else if( strncasecmp(optarg, "disallow", 5) == 0 || strncmp(optarg, "1", 1) == 0 )
+                {
+                    opt.filter = BLOCK_MACS; //allow all, block the specified macs
+                }
+                else
+                {
+                    printf( "Invalid macfilter mode. [allow|disallow]\n" );
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
-                opt.f_essid = 1;
+                break;
+
+            case 'S' :
+
+                if(atoi(optarg) < 16 || atoi(optarg) > 1480)
+                {
+                    printf( "Invalid challenge length. [16-1480]\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+
+                opt.skalen = atoi(optarg);
 
                 break;
 
@@ -1899,6 +1986,37 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
                 opt.s_face = optarg;
+                break;
+
+            case 'W' :
+
+                if(atoi(optarg) < 0 || atoi(optarg) > 1)
+                {
+                    printf( "Invalid argument for (-W). Only \"0\" and \"1\" allowed.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+
+                opt.setWEP = atoi(optarg);
+
+                break;
+
+            case 'M' :
+
+                opt.mitm = 1;
+
+                break;
+
+            case 'Y' :
+
+                opt.external = 1;
+
+                break;
+
+            case 'q' :
+
+                opt.quiet = 1;
+
                 break;
 
             case 'w' :
@@ -1961,34 +2079,57 @@ int main( int argc, char *argv[] )
 
                 break;
 
-            case 'm':
-                if ( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 )
+            case 'd':
+
+                if(getmac(optarg, 1, mac) == 0)
                 {
-                    printf("Notice: netmask already given\n");
-                    printf("\"%s --help\" for help.\n", argv[0]);
-                    break;
+                    addMAC(rClient, mac);
+                    printf("added client mac\n");
                 }
-                if(getmac(optarg, 1, opt.f_netmask) != 0)
+                else
                 {
-                    printf("Notice: invalid netmask\n");
+                    printf( "Invalid source MAC address.\n" );
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
+
+                if(opt.filter == -1) opt.filter = ALLOW_MACS;
+
                 break;
 
-            case 'd':
-                if ( memcmp(opt.f_bssid, NULL_MAC, 6) != 0 )
+            case 'D':
+
+                if(addMACfile(rClient, optarg) != 0)
+                    return( 1 );
+
+                if(opt.filter == -1) opt.filter = ALLOW_MACS;
+
+                break;
+
+            case 'b':
+
+                if(getmac(optarg, 1, mac) == 0)
                 {
-                    printf("Notice: bssid already given\n");
-                    printf("\"%s --help\" for help.\n", argv[0]);
-                    break;
+                    addMAC(rBSSID, mac);
                 }
-                if(getmac(optarg, 1, opt.f_bssid) != 0)
+                else
                 {
-                    printf("Notice: invalid bssid\n");
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf( "Invalid BSSID address.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
+
+                if(opt.filter == -1) opt.filter = ALLOW_MACS;
+
+                break;
+
+            case 'B':
+
+                if(addMACfile(rBSSID, optarg) != 0)
+                    return( 1 );
+
+                if(opt.filter == -1) opt.filter = ALLOW_MACS;
+
                 break;
 
             case 'r' :
@@ -1996,7 +2137,7 @@ int main( int argc, char *argv[] )
                 if( opt.s_face != NULL || opt.s_file )
                 {
                     printf( "Packet source already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
                 opt.s_file = optarg;
@@ -2180,7 +2321,7 @@ usage:
     }
 
     memcpy(apc.bssid, opt.r_bssid, 6);
-    if( getESSIDcount() == 1 )
+    if( getESSIDcount() == 1 && opt.hidden != 1)
     {
         fessid = getESSID(&(apc.essid_len));
         apc.essid = (char*) malloc(apc.essid_len + 1);
@@ -2194,7 +2335,7 @@ usage:
     }
     apc.interval = 0x0064;
     apc.capa[0] = 0x01;
-    if(opt.crypt == CRYPT_WEP)
+    if( (opt.crypt == CRYPT_WEP && opt.setWEP == -1) || opt.setWEP == 1 )
         apc.capa[0] |= 0x10;
     apc.capa[1] = 0x04;
 
