@@ -201,12 +201,12 @@ float chrono( struct timeval *start, int reset )
 
 void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit )
 {
-    return;
-
     float delta;
     struct winsize ws;
     int i, et_h, et_m, et_s;
     static int is_cleared = 0;
+
+    return;
 
     if( ioctl( 0, TIOCGWINSZ, &ws ) < 0 )
     {
@@ -802,8 +802,12 @@ static void proc_ctl(struct wstate *ws, int stype)
 
 static void proc_mgt(struct wstate *ws, int stype, unsigned char *body)
 {
+	unsigned short * rc;
+	unsigned short * sc;
+	unsigned int aid;
+
 	if (stype == IEEE80211_FC0_SUBTYPE_DEAUTH) {
-		unsigned short* rc = (unsigned short*) body;
+		rc = (unsigned short*) body;
 
 		printf("\n");
 		time_print("Got deauth=%u\n", le16toh(*rc));
@@ -811,7 +815,7 @@ static void proc_mgt(struct wstate *ws, int stype, unsigned char *body)
 		return;
 
 	} else if (stype == IEEE80211_FC0_SUBTYPE_AUTH) {
-		unsigned short* sc = (unsigned short*) body;
+		sc = (unsigned short*) body;
 
 		if (*sc != 0) {
 			time_print("Warning got auth algo=%x\n", *sc);
@@ -843,12 +847,12 @@ static void proc_mgt(struct wstate *ws, int stype, unsigned char *body)
 		}
 	}
 	else if (stype == IEEE80211_FC0_SUBTYPE_ASSOC_RESP) {
-		unsigned short* sc = (unsigned short*) body;
+		sc = (unsigned short*) body;
 		sc++; // cap
 
 		if (*sc == 0) {
 			sc++;
-			unsigned int aid = le16toh(*sc) & 0x3FFF;
+			aid = le16toh(*sc) & 0x3FFF;
 			time_print("Associated (ID=%x)\n", aid);
 			ws->ws_state = GOT_ASSOC;
 			return;

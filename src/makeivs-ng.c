@@ -83,12 +83,6 @@ int main( int argc, char *argv[] )
     unsigned char byte;
     unsigned char **uiv_root;
 
-    i = 0;
-    memset(K, 0, 32);
-    memset(bssid, 0, 6);
-    uiv_root = uniqueiv_init();
-
-    /* check the arguments */
     static struct option long_options[] = {
         {"key",      1, 0, 'k'},
         {"write",    1, 0, 'w'},
@@ -104,6 +98,13 @@ int main( int argc, char *argv[] )
         {"help",     0, 0, 'H'},
         {0,          0, 0,  0 }
     };
+
+    i = 0;
+    memset(K, 0, 32);
+    memset(bssid, 0, 6);
+    uiv_root = uniqueiv_init();
+
+    /* check the arguments */
 
     do
     {

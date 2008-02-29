@@ -225,6 +225,7 @@ void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 
 
 void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80], unsigned char mic[20]) {
+	int i;
 	uchar pke[100];
 	HMAC_CTX ctx;
 
@@ -252,7 +253,6 @@ void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80],
 		memcpy( pke + 67, ap->wpa.snonce, 32 );
 	}
 
-	int i;
 	HMAC_CTX_init(&ctx);
 	HMAC_Init_ex(&ctx, pmk, 32, EVP_sha1(), NULL);
 	for(i = 0; i < 4; i++ )

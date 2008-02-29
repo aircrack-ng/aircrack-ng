@@ -3613,6 +3613,27 @@ int main( int argc, char *argv[] )
 
     fd_set             rfds;
 
+    static struct option long_options[] = {
+        {"band",     1, 0, 'b'},
+        {"beacon",   0, 0, 'e'},
+        {"beacons",  0, 0, 'e'},
+        {"cswitch",  1, 0, 's'},
+        {"netmask",  1, 0, 'm'},
+        {"bssid",    1, 0, 'd'},
+        {"channel",  1, 0, 'c'},
+        {"gpsd",     0, 0, 'g'},
+        {"ivs",      0, 0, 'i'},
+        {"write",    1, 0, 'w'},
+        {"encrypt",  1, 0, 't'},
+        {"update",   1, 0, 'u'},
+        {"berlin",   1, 0, 'B'},
+        {"help",     0, 0, 'H'},
+        {"nodecloak",0, 0, 'D'},
+        {"showack",  0, 0, 'A'},
+        {"detect-anomaly", 0, 0, 'E'},
+        {0,          0, 0,  0 }
+    };
+
     /* initialize a bunch of variables */
 
     memset( &G, 0, sizeof( G ) );
@@ -3687,26 +3708,6 @@ int main( int argc, char *argv[] )
 
 
     /* check the arguments */
-    static struct option long_options[] = {
-        {"band",     1, 0, 'b'},
-        {"beacon",   0, 0, 'e'},
-        {"beacons",  0, 0, 'e'},
-        {"cswitch",  1, 0, 's'},
-        {"netmask",  1, 0, 'm'},
-        {"bssid",    1, 0, 'd'},
-        {"channel",  1, 0, 'c'},
-        {"gpsd",     0, 0, 'g'},
-        {"ivs",      0, 0, 'i'},
-        {"write",    1, 0, 'w'},
-        {"encrypt",  1, 0, 't'},
-        {"update",   1, 0, 'u'},
-        {"berlin",   1, 0, 'B'},
-        {"help",     0, 0, 'H'},
-        {"nodecloak",0, 0, 'D'},
-        {"showack",  0, 0, 'A'},
-        {"detect-anomaly", 0, 0, 'E'},
-        {0,          0, 0,  0 }
-    };
 
     for(i=0; long_options[i].name != NULL; i++);
     num_opts = i;

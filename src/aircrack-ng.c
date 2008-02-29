@@ -4253,10 +4253,10 @@ int crack_wep_dict()
 
 static int crack_wep_ptw(struct AP_info *ap_cur)
 {
-    int len = 0;
-    opt.ap = ap_cur;
     int (* all)[256];
-    int i,j;
+    int i, j, len = 0;
+
+    opt.ap = ap_cur;
 
     all = malloc(256*32*sizeof(int));
     if (all == NULL) {

@@ -559,10 +559,11 @@ int set_sip(unsigned char* packet, int offset)
 
 int set_ipid(unsigned char* packet, int offset)
 {
+    unsigned short id;
+    
     if(packet == NULL) return 1;
     if(offset < 0 || offset > 2046) return 1;
 
-    unsigned short id;
     id = (rand()&0xFFFF);
     /* set IP Identification */
     memcpy(packet+offset, (unsigned char*)&id , 2);
@@ -624,11 +625,12 @@ int set_IVidx(unsigned char* packet)
 
 int next_keystream(unsigned char *dest, int size, unsigned char *bssid, int minlen)
 {
-    if(opt.ivs2 == NULL) return -1;
-    if(minlen > size+4) return -1;
     struct ivs2_pkthdr ivs2;
     char *buffer;
     int gotit=0;
+
+    if(opt.ivs2 == NULL) return -1;
+    if(minlen > size+4) return -1;
 
     while( fread( &ivs2, sizeof(struct ivs2_pkthdr), 1, opt.ivs2 ) == 1 )
     {

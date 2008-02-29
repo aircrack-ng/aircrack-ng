@@ -560,6 +560,14 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     unsigned char tmpbuf[4096];
     unsigned char rate;
 
+    unsigned char u8aRadiotap[] = {
+        0x00, 0x00, // <-- radiotap version
+        0x09, 0x00, // <- radiotap header length
+        0x04, 0x00, 0x00, 0x00, // <-- bitmap
+        0x00, // <-- rate
+    };
+
+
     if((unsigned) count > sizeof(tmpbuf)-22) return -1;
 
     /* XXX honor ti */
@@ -567,12 +575,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
 
     rate = dev->rate;
 
-    unsigned char u8aRadiotap[] = {
-        0x00, 0x00, // <-- radiotap version
-        0x09, 0x00, // <- radiotap header length
-        0x04, 0x00, 0x00, 0x00, // <-- bitmap
-        rate, // <-- rate
-    };
+    u8aRadiotap[8] = rate;
 
     switch (dev->drivertype) {
 

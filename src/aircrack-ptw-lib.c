@@ -438,11 +438,11 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	int i,j;
 	uint8_t fullkeybuf[PTW_KSBYTES];
 	uint8_t guessbuf[PTW_KSBYTES];
+	sorthelper(*sh)[n-1];
+	PTW_tableentry (*table)[n] = alloca(sizeof(PTW_tableentry) * n * keylen);
 
         tried=0;
-
-	sorthelper (* sh)[n-1] = NULL;
-	PTW_tableentry (*table)[n] = alloca(sizeof(PTW_tableentry) * n * keylen);
+	sh = NULL;
 
 	if (table == NULL) {
 		printf("could not allocate memory\n");
