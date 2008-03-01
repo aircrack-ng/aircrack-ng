@@ -207,6 +207,7 @@ struct devices
     int fd_out, arptype_out;
     int fd_rtc;
     struct tif *dv_ti;
+    struct tif *dv_ti2;
 
     int is_wlanng;
     int is_hostap;
@@ -796,6 +797,19 @@ int getMACcount(pMAC_t pMAC)
     return count;
 }
 
+unsigned char* getMAC(pMAC_t pMAC)
+{
+    pMAC_t cur = pMAC;
+
+    if(pMAC == NULL)
+        return NULL;
+
+    if(cur->next != NULL)
+        return cur->next->mac;
+
+    return NULL;
+}
+
 int addESSIDfile(char* filename)
 {
     FILE *list;
@@ -1086,64 +1100,85 @@ void print_packet ( uchar h80211[], int caplen )
 
 int set_IVidx(unsigned char* packet)
 {
+    uchar ividx[4];
+
     if(packet == NULL) return 1;
 
-    if(opt.prga == NULL)
+    if(opt.prga == NULL && opt.crypt != CRYPT_WEP)
     {
-        printf("Please specify a PRGA file (-y).\n");
+        printf("Please specify a WEP key (-w).\n");
         return 1;
     }
 
+    if( opt.crypt == CRYPT_WEP )
+    {
+        ividx[0] = rand() & 0xFF;
+        ividx[1] = rand() & 0xFF;
+        ividx[2] = rand() & 0xFF;
+        ividx[3] = 0x00;
+    }
+    else if(opt.prga != NULL)
+    {
+        memcpy(ividx, opt.prga, 4);
+    }
+
     /* insert IV+index */
-    memcpy(packet+24, opt.prga, 4);
+    memcpy(packet+24, ividx, 4);
 
     return 0;
 }
 
-int encrypt_data(unsigned char *dest, unsigned char* data, int length)
+int encrypt_data(unsigned char* data, int length)
 {
-    unsigned char cipher[2048];
-    int n;
+    uchar cipher[4096];
+    uchar K[128];
+//     int n;
 
-    if(dest == NULL)                return 1;
     if(data == NULL)                return 1;
     if(length < 1 || length > 2044) return 1;
 
-    if(opt.prga == NULL)
+    if(opt.prga == NULL && opt.crypt != CRYPT_WEP)
     {
-        printf("Please specify a PRGA file (-y).\n");
+        printf("Please specify a WEP key (-w).\n");
         return 1;
     }
 
-    if(opt.prgalen-4 < length)
+    if(opt.prgalen-4 < length && opt.crypt != CRYPT_WEP)
     {
         printf("Please specify a longer PRGA file (-y) with at least %i bytes.\n", (length+4));
         return 1;
     }
 
     /* encrypt data */
-    for(n=0; n<length; n++)
+    if(opt.crypt == CRYPT_WEP)
     {
-        cipher[n] = (data[n] ^ opt.prga[4+n]) & 0xFF;
-    }
+        K[0] = rand() & 0xFF;
+        K[1] = rand() & 0xFF;
+        K[2] = rand() & 0xFF;
+        memcpy( K + 3, opt.wepkey, opt.weplen );
 
-    memcpy(dest, cipher, length);
+        encrypt_wep( data, length, K, opt.weplen+3 );
+        memcpy(cipher, data, length);
+        memcpy(data+4, cipher, length);
+        memcpy(data, K, 3);
+        data[3] = 0x00;
+    }
 
     return 0;
 }
 
-int create_wep_packet(unsigned char* packet, int *length)
+int create_wep_packet(unsigned char* packet, int *length, int hdrlen)
 {
     if(packet == NULL) return 1;
 
     /* write crc32 value behind data */
-    if( add_crc32(packet+24, *length-24) != 0 )               return 1;
+    if( add_crc32(packet+hdrlen, *length-hdrlen) != 0 )               return 1;
 
     /* encrypt data+crc32 and keep a 4byte hole */
-    if( encrypt_data(packet+28, packet+24, *length-20) != 0 ) return 1;
+    if( encrypt_data(packet+hdrlen, *length-hdrlen+4) != 0 ) return 1;
 
-    /* write IV+IDX right in front of the encrypted data */
-    if( set_IVidx(packet) != 0 )                              return 1;
+//     /* write IV+IDX right in front of the encrypted data */
+//     if( set_IVidx(packet) != 0 )                              return 1;
 
     /* set WEP bit */
     packet[1] = packet[1] | 0x40;
@@ -1154,10 +1189,54 @@ int create_wep_packet(unsigned char* packet, int *length)
     return 0;
 }
 
+int intercept(uchar* packet, int length)
+{
+    uchar buf[4096];
+    uchar K[128];
+    int z=0;
+
+    bzero(buf, 4096);
+
+    z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+
+    if( opt.crypt == CRYPT_WEP )
+    {
+        memcpy( K, packet + z, 3 );
+        memcpy( K + 3, opt.wepkey, opt.weplen );
+
+        if (decrypt_wep( packet + z + 4, length - z - 4,
+                        K, 3 + opt.weplen ) == 0 )
+        {
+            printf("ICV check failed!\n");
+            return 1;
+        }
+
+        /* WEP data packet was successfully decrypted, *
+        * remove the WEP IV & ICV and write the data  */
+
+        length -= 8;
+
+        memcpy( packet + z, packet + z + 4, length - z );
+    }
+
+    /* clear wep bit */
+    packet[1] &= 0xBF;
+
+    //insert ethernet header
+    memcpy(buf+14, packet, length);
+    length += 14;
+
+    ti_write(dev.dv_ti2, buf, length);
+    return 0;
+}
+
 int packet_xmit(uchar* packet, int length)
 {
-    uchar K[64];
-    uchar buf[4096];
+    if(packet == NULL)
+        return 1;
+
+    if(length < 38)
+        return 1;
 
     memcpy(h80211, IEEE80211_LLC_SNAP, 32);
     memcpy(h80211+32, packet+14, length-14);
@@ -1180,35 +1259,46 @@ int packet_xmit(uchar* packet, int length)
 
     length = length+32-14; //32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
 
-    if( opt.crypt == CRYPT_WEP)
+    if( opt.crypt == CRYPT_WEP || opt.prgalen > 0 )
     {
-        K[0] = rand() & 0xFF;
-        K[1] = rand() & 0xFF;
-        K[2] = rand() & 0xFF;
-        K[3] = 0x00;
-
-        /* write crc32 value behind data */
-        if( add_crc32(h80211+24, length-24) != 0 ) return 1;
-
-        length += 4; //icv
-        memcpy(buf, h80211+24, length-24);
-        memcpy(h80211+28, buf, length-24);
-
-        memcpy(h80211+24, K, 4);
-        length += 4; //iv
-
-        memcpy( K + 3, opt.wepkey, opt.weplen );
-
-        encrypt_wep( h80211+24+4, length-24-4, K, opt.weplen+3 );
-
-        h80211[1] = h80211[1] | 0x40;
-    }
-    else if( opt.prgalen > 0 )
-    {
-        if(create_wep_packet(h80211, &length) != 0) return 1;
+        if(create_wep_packet(h80211, &length, 24) != 0) return 1;
     }
 
     send_packet(h80211, length);
+
+    return 0;
+}
+
+int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external);
+
+int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
+{
+    uchar buf[4096];
+    int z=0;
+
+    if(packet == NULL)
+        return 1;
+
+    if(length < 40)
+        return 1;
+
+    bzero(buf, 4096);
+    if(memcmp(packet, buf, 14) != 0)
+        return 1;
+
+    /* cut ethernet header */
+    memcpy(buf, packet+14, length-14);
+    length -= 14;
+    memcpy(packet, buf, length);
+
+    z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+
+    if( opt.crypt == CRYPT_WEP || opt.prgalen > 0 )
+    {
+        if(create_wep_packet(packet, &length, z) != 0) return 1;
+    }
+
+    packet_recv(packet, length, apc, 0);
 
     return 0;
 }
@@ -1251,7 +1341,7 @@ uchar* parse_tags(unsigned char *flags, unsigned char type, int length, int *tag
     return(NULL);
 }
 
-int packet_recv(uchar* packet, int length, struct AP_conf *apc)
+int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 {
     uchar K[64];
     uchar bssid[6];
@@ -1339,6 +1429,8 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
         seqnum = (packet[22] >> 4) | (packet[23] << 4);
         morefrag = packet[1] & 0x04;
 
+//         printf("frag: %d, morefrag: %d\n", fragnum, morefrag);
+
         /* Fragment? */
         if(fragnum > 0 || morefrag)
         {
@@ -1353,6 +1445,13 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
             memcpy(packet, buffer, len);
             length = len;
             free(buffer);
+        }
+
+        /* intercept packets in case we got external processing */
+        if(external)
+        {
+            intercept(packet, length);
+            return 0;
         }
 
         /* To our mac? */
@@ -1434,29 +1533,8 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc)
                     /* reencrypt it to send it with a new IV */
                     memcpy(h80211, packet, length);
 
-                    K[0] = rand() & 0xFF;
-                    K[1] = rand() & 0xFF;
-                    K[2] = rand() & 0xFF;
-                    K[3] = 0x00;
+                    if(create_wep_packet(h80211, &length, z) != 0) return 1;
 
-                    /* write crc32 value behind data */
-                    if( add_crc32(h80211+z, length-z) != 0 ) return 1;
-
-                    length += 4; //icv
-
-                    buffer = (unsigned char*) malloc(4096);
-                    memcpy(buffer, h80211+z, length-z);
-                    memcpy(h80211+z+4, buffer, length-z);
-                    free(buffer);
-
-                    memcpy(h80211+z, K, 4);
-                    length += 4; //iv
-
-                    memcpy( K + 3, opt.wepkey, opt.weplen );
-
-                    encrypt_wep( h80211+z+4, length-z-4, K, opt.weplen+3 );
-
-                    h80211[1] = h80211[1] | 0x40;
                     send_packet(h80211, length);
                 }
                 else
@@ -2084,7 +2162,6 @@ int main( int argc, char *argv[] )
                 if(getmac(optarg, 1, mac) == 0)
                 {
                     addMAC(rClient, mac);
-                    printf("added client mac\n");
                 }
                 else
                 {
@@ -2297,7 +2374,20 @@ usage:
         printf( "error opening tap device: %s\n", strerror( errno ) );
         return -1;
     }
-    printf( "created tap interface %s\n", ti_name(dev.dv_ti));
+    printf( "Created tap interface %s\n", ti_name(dev.dv_ti));
+
+    if(opt.external)
+    {
+        dev.dv_ti2 = ti_open(NULL);
+        if(!dev.dv_ti2)
+        {
+            printf( "error opening tap device: %s\n", strerror( errno ) );
+            return -1;
+        }
+        printf( "Created tap interface %s for external processing.\n", ti_name(dev.dv_ti2));
+        printf( "You need to get the interfaces up, read the fames [,modify]\n");
+        printf( "and send them back through the same interface \"%s\".\n", ti_name(dev.dv_ti2));
+    }
 
 //     if(opt.prgalen <= 0 && opt.crypt == CRYPT_NONE)
 //     {
@@ -2349,6 +2439,13 @@ usage:
                 opt.r_bssid[3], opt.r_bssid[4], opt.r_bssid[5]);
     }
 
+    if(opt.external)
+    {
+        if(ti_set_mac(dev.dv_ti2, (unsigned char*)"\xba\x98\x76\x54\x32\x10") != 0)
+        {
+            printf("Couldn't set MAC on interface \"%s\".\n", ti_name(dev.dv_ti2));
+        }
+    }
     //start sending beacons
     if( pthread_create( &(apid), NULL, (void *) beacon_thread,
             (void *) &apc ) != 0 )
@@ -2427,7 +2524,7 @@ usage:
 //                 send_packet(h80211, caplen);
 //             }
 
-            packet_recv( h80211, caplen, &apc);
+            packet_recv( h80211, caplen, &apc, opt.external);
             msleep( 1000/opt.r_nbpps );
             continue;
         }
@@ -2435,7 +2532,9 @@ usage:
         FD_ZERO( &read_fds );
         FD_SET( dev.fd_in, &read_fds );
         FD_SET(ti_fd(dev.dv_ti), &read_fds );
-        ret_val = select( MAX(ti_fd(dev.dv_ti), dev.fd_in) + 1, &read_fds, NULL, NULL, NULL );
+        if(opt.external)
+            FD_SET(ti_fd(dev.dv_ti2), &read_fds );
+        ret_val = select( MAX(ti_fd(dev.dv_ti), MAX(ti_fd(dev.dv_ti2), dev.fd_in)) + 1, &read_fds, NULL, NULL, NULL );
         if( ret_val < 0 )
             break;
         if( ret_val > 0 )
@@ -2448,12 +2547,20 @@ usage:
                     packet_xmit(buffer, len);
                 }
             }
+            if( FD_ISSET(ti_fd(dev.dv_ti2), &read_fds ) )
+            {
+                len = ti_read(dev.dv_ti2, buffer, sizeof( buffer ) );
+                if( len > 0  )
+                {
+                    packet_xmit_external(buffer, len, &apc);
+                }
+            }
             if( FD_ISSET( dev.fd_in, &read_fds ) )
             {
                 len = read_packet( buffer, sizeof( buffer ) );
                 if( len > 0 )
                 {
-                    packet_recv( buffer, len, &apc);
+                    packet_recv( buffer, len, &apc, opt.external);
                 }
             }
         } //if( ret_val > 0 )
