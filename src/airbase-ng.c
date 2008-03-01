@@ -78,6 +78,9 @@ static struct wif *_wi_in, *_wi_out;
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
 
+#define EXT_IN      0x01
+#define EXT_OUT     0x02
+
 #ifndef MAX
 #define MAX(x,y) ( (x)>(y) ? (x) : (y) )
 #endif
@@ -150,7 +153,7 @@ char usage[] =
 "      -W 0|1           : [don't] set wep flag in beacons 0|1 (default: auto)\n"
 "      -q               : quiet (do not print statistics)\n"
 "      -M               : M-I-T-M between [specified] clients and bssids\n"
-"      -Y               : external packet processing in MITM mode\n"
+"      -Y in|out|both   : external packet processing\n"
 "      -c channel       : sets the channel the AP is running on\n"
 "      -X               : hidden ESSID\n"
 "      -s               : force shared key auth\n"
@@ -1232,6 +1235,8 @@ int intercept(uchar* packet, int length)
 
 int packet_xmit(uchar* packet, int length)
 {
+    uchar buf[4096];
+
     if(packet == NULL)
         return 1;
 
@@ -1242,22 +1247,23 @@ int packet_xmit(uchar* packet, int length)
     memcpy(h80211+32, packet+14, length-14);
     memcpy(h80211+30, packet+12, 2);
 
-    if(opt.tods)
-    {
-        h80211[1] |= 0x01;
-        memcpy(h80211+4,  opt.r_bssid, 6);  //BSSID
-        memcpy(h80211+10, packet+6,    6);  //SRC_MAC
-        memcpy(h80211+16, packet,      6);  //DST_MAC
-    }
-    else
-    {
-        h80211[1] |= 0x02;
-        memcpy(h80211+10, opt.r_bssid, 6);  //BSSID
-        memcpy(h80211+16, packet+6,    6);  //SRC_MAC
-        memcpy(h80211+4,  packet,      6);  //DST_MAC
-    }
+    h80211[1] |= 0x02;
+    memcpy(h80211+10, opt.r_bssid, 6);  //BSSID
+    memcpy(h80211+16, packet+6,    6);  //SRC_MAC
+    memcpy(h80211+4,  packet,      6);  //DST_MAC
 
     length = length+32-14; //32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
+
+    if((opt.external & EXT_OUT))
+    {
+        bzero(buf, 4096);
+        memcpy(buf+14, h80211, length);
+        //mark it as outgoing packet
+        buf[12] = 0xFF;
+        buf[13] = 0xFF;
+        ti_write(dev.dv_ti2, buf, length);
+        return 0;
+    }
 
     if( opt.crypt == CRYPT_WEP || opt.prgalen > 0 )
     {
@@ -1279,17 +1285,17 @@ int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
     if(packet == NULL)
         return 1;
 
-    if(length < 40)
+    if(length < 40 || length > 3000)
         return 1;
 
     bzero(buf, 4096);
-    if(memcmp(packet, buf, 14) != 0)
+    if(memcmp(packet, buf, 12) != 0)
         return 1;
 
     /* cut ethernet header */
-    memcpy(buf, packet+14, length-14);
+    memcpy(buf, packet, length);
     length -= 14;
-    memcpy(packet, buf, length);
+    memcpy(packet, buf+14, length);
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
 
@@ -1298,7 +1304,13 @@ int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
         if(create_wep_packet(packet, &length, z) != 0) return 1;
     }
 
-    packet_recv(packet, length, apc, 0);
+    /* incoming packet */
+    if(memcmp(buf+12, (uchar *)"\x00\x00", 2) == 0)
+        packet_recv(packet, length, apc, 0);
+
+    /* outgoing packet */
+    if(memcmp(buf+12, (uchar *)"\xFF\xFF", 2) == 0)
+        send_packet(packet, length);
 
     return 0;
 }
@@ -1942,7 +1954,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:w:He:E:c:d:D:f:W:qMYb:B:XsS:",
+                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -2087,7 +2099,24 @@ int main( int argc, char *argv[] )
 
             case 'Y' :
 
-                opt.external = 1;
+                if( strncasecmp(optarg, "in", 2) == 0 )
+                {
+                    opt.external |= EXT_IN; //process incomming frames
+                }
+                else if( strncasecmp(optarg, "out", 3) == 0)
+                {
+                    opt.external |= EXT_OUT; //process outgoing frames
+                }
+                else if( strncasecmp(optarg, "both", 4) == 0 || strncasecmp(optarg, "all", 3) == 0)
+                {
+                    opt.external |= EXT_IN | EXT_OUT; //process both directions
+                }
+                else
+                {
+                    printf( "Invalid processing mode. [in|out|both]\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
 
                 break;
 
@@ -2524,7 +2553,7 @@ usage:
 //                 send_packet(h80211, caplen);
 //             }
 
-            packet_recv( h80211, caplen, &apc, opt.external);
+            packet_recv( h80211, caplen, &apc, (opt.external & EXT_IN));
             msleep( 1000/opt.r_nbpps );
             continue;
         }
@@ -2560,7 +2589,7 @@ usage:
                 len = read_packet( buffer, sizeof( buffer ) );
                 if( len > 0 )
                 {
-                    packet_recv( buffer, len, &apc, opt.external);
+                    packet_recv( buffer, len, &apc, (opt.external & EXT_IN));
                 }
             }
         } //if( ret_val > 0 )
