@@ -1225,6 +1225,8 @@ int intercept(uchar* packet, int length)
     /* clear wep bit */
     packet[1] &= 0xBF;
 
+//     printf("intercept packet with len: %d\n", length);
+
     //insert ethernet header
     memcpy(buf+14, packet, length);
     length += 14;
@@ -1261,7 +1263,7 @@ int packet_xmit(uchar* packet, int length)
         //mark it as outgoing packet
         buf[12] = 0xFF;
         buf[13] = 0xFF;
-        ti_write(dev.dv_ti2, buf, length);
+        ti_write(dev.dv_ti2, buf, length+14);
         return 0;
     }
 
@@ -1289,8 +1291,11 @@ int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
         return 1;
 
     bzero(buf, 4096);
-    if(memcmp(packet, buf, 12) != 0)
+    if(memcmp(packet, buf, 11) != 0)
+    {
+//         printf("wrong header...\n");
         return 1;
+    }
 
     /* cut ethernet header */
     memcpy(buf, packet, length);
@@ -1299,18 +1304,22 @@ int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
 
+//     printf("packet with len: %d\n", length);
     if( opt.crypt == CRYPT_WEP || opt.prgalen > 0 )
     {
         if(create_wep_packet(packet, &length, z) != 0) return 1;
     }
 
-    /* incoming packet */
-    if(memcmp(buf+12, (uchar *)"\x00\x00", 2) == 0)
+    if(memcmp(buf+12, (uchar *)"\x00\x00", 2) == 0) /* incoming packet */
+    {
+//         printf("receiving packet with len: %d\n", length);
         packet_recv(packet, length, apc, 0);
-
-    /* outgoing packet */
-    if(memcmp(buf+12, (uchar *)"\xFF\xFF", 2) == 0)
+    }
+    else if(memcmp(buf+12, (uchar *)"\xFF\xFF", 2) == 0) /* outgoing packet */
+    {
+//         printf("sending packet with len: %d\n", length);
         send_packet(packet, length);
+    }
 
     return 0;
 }
@@ -1437,6 +1446,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
     /* Got a data packet with our bssid set and ToDS==1*/
     if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 && (packet[1] & 0x03) == 0x01 )
     {
+//         printf("to me with len: %d\n", length);
         fragnum = packet[22] & 0x0F;
         seqnum = (packet[22] >> 4) | (packet[23] << 4);
         morefrag = packet[1] & 0x04;
@@ -2418,19 +2428,6 @@ usage:
         printf( "and send them back through the same interface \"%s\".\n", ti_name(dev.dv_ti2));
     }
 
-//     if(opt.prgalen <= 0 && opt.crypt == CRYPT_NONE)
-//     {
-//         printf( "No encryption specified. Sending and receiving frames through %s.\n", argv[optind]);
-//     }
-//     else if(opt.crypt != CRYPT_NONE)
-//     {
-//         printf( "WEP encryption specified. Sending and receiving frames through %s.\n", argv[optind] );
-//     }
-//     else
-//     {
-//         printf( "WEP encryption by PRGA specified. No reception, only sending frames through %s.\n", argv[optind] );
-//     }
-//
     if(opt.channel > 0)
         wi_set_channel(_wi_out, opt.channel);
 
@@ -2530,29 +2527,6 @@ usage:
                 memcpy( h80211, tmpbuf + n, caplen );
             }
 
-//             if( opt.repeat )
-//             {
-//                 if( memcmp(opt.f_bssid, NULL_MAC, 6) != 0 )
-//                 {
-//                     switch( h80211[1] & 3 )
-//                     {
-//                         case  0: memcpy( bssid, h80211 + 16, 6 ); break;
-//                         case  1: memcpy( bssid, h80211 +  4, 6 ); break;
-//                         case  2: memcpy( bssid, h80211 + 10, 6 ); break;
-//                         default: memcpy( bssid, h80211 + 10, 6 ); break;
-//                     }
-//                     if( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 )
-//                     {
-//                         if(is_filtered_netmask(bssid)) continue;
-//                     }
-//                     else
-//                     {
-//                         if( memcmp(opt.f_bssid, bssid, 6) != 0 ) continue;
-//                     }
-//                 }
-//                 send_packet(h80211, caplen);
-//             }
-
             packet_recv( h80211, caplen, &apc, (opt.external & EXT_IN));
             msleep( 1000/opt.r_nbpps );
             continue;
@@ -2562,8 +2536,12 @@ usage:
         FD_SET( dev.fd_in, &read_fds );
         FD_SET(ti_fd(dev.dv_ti), &read_fds );
         if(opt.external)
+        {
             FD_SET(ti_fd(dev.dv_ti2), &read_fds );
-        ret_val = select( MAX(ti_fd(dev.dv_ti), MAX(ti_fd(dev.dv_ti2), dev.fd_in)) + 1, &read_fds, NULL, NULL, NULL );
+            ret_val = select( MAX(ti_fd(dev.dv_ti), MAX(ti_fd(dev.dv_ti2), dev.fd_in)) + 1, &read_fds, NULL, NULL, NULL );
+        }
+        else
+            ret_val = select( MAX(ti_fd(dev.dv_ti), dev.fd_in) + 1, &read_fds, NULL, NULL, NULL );
         if( ret_val < 0 )
             break;
         if( ret_val > 0 )
@@ -2576,7 +2554,7 @@ usage:
                     packet_xmit(buffer, len);
                 }
             }
-            if( FD_ISSET(ti_fd(dev.dv_ti2), &read_fds ) )
+            if( opt.external && FD_ISSET(ti_fd(dev.dv_ti2), &read_fds ) )
             {
                 len = ti_read(dev.dv_ti2, buffer, sizeof( buffer ) );
                 if( len > 0  )
