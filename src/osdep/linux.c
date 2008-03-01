@@ -647,7 +647,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     if( ret < 0 )
     {
         if( errno == EAGAIN || errno == EWOULDBLOCK ||
-            errno == ENOBUFS )
+            errno == ENOBUFS || errno == ENOMEM )
         {
             usleep( 10000 );
             return( 0 );
