@@ -315,11 +315,12 @@ struct globals
 
     int one_beacon;         /* Record only 1 beacon?*/
 
-    unsigned char sharedkey[3][512]; /* array for 3 packets with a size of \
-                               up to 512Byte */
+    unsigned char sharedkey[3][4096]; /* array for 3 packets with a size of \
+                               up to 4096Byte */
     time_t sk_start;
     char *prefix;
     int sk_len;
+    int sk_len2;
 
     int * own_channels;	    /* custom channel list  */
 
@@ -369,8 +370,8 @@ int check_shared_key(unsigned char *h80211, int caplen)
 {
     int m_bmac, m_smac, m_dmac, n, textlen;
     char ofn[1024];
-    char text[256];
-    char prga[512];
+    char text[4096];
+    char prga[4096];
     unsigned int long crc;
 
     if((unsigned)caplen > sizeof(G.sharedkey[0])) return 1;
@@ -382,7 +383,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
     if( time(NULL) - G.sk_start > 5)
     {
         /* timeout(5sec) - remove all packets, restart timer */
-        memset(G.sharedkey, '\x00', 512*3);
+        memset(G.sharedkey, '\x00', 4096*3);
         G.sk_start = time(NULL);
     }
 
@@ -411,6 +412,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
     {
         /* encrypted */
         memcpy(G.sharedkey[1], h80211, caplen);
+        G.sk_len2 = caplen-24-4;
     }
 
     /* check if the 3 packets form a proper authentication */
@@ -441,6 +443,14 @@ int check_shared_key(unsigned char *h80211, int caplen)
     }
 
     textlen = G.sk_len;
+
+    if(textlen+4 != G.sk_len2)
+    {
+        snprintf(G.message, sizeof(G.message), "][ Broken SKA: %02X:%02X:%02X:%02X:%02X:%02X ",
+                    *(G.sharedkey[0]+m_bmac), *(G.sharedkey[0]+m_bmac+1), *(G.sharedkey[0]+m_bmac+2),
+                *(G.sharedkey[0]+m_bmac+3), *(G.sharedkey[0]+m_bmac+4), *(G.sharedkey[0]+m_bmac+5));
+        return 1;
+    }
 
     if((unsigned)textlen > sizeof(text) - 4) return 1;
 
@@ -3662,6 +3672,7 @@ int main( int argc, char *argv[] )
     G.keyout       =  NULL;
     G.f_xor        =  NULL;
     G.sk_len       =  0;
+    G.sk_len2      =  0;
     G.sk_start     =  0;
     G.prefix       =  NULL;
     G.f_encrypt    =  0;
