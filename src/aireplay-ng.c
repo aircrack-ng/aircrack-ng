@@ -1356,6 +1356,7 @@ int do_attack_fake_auth( void )
     int weight[16];
     int notice=0;
     int packets=0;
+    int aid=0;
 
     unsigned char ackbuf[14];
     unsigned char ctsbuf[10];
@@ -2005,7 +2006,8 @@ int do_attack_fake_auth( void )
                     continue;
                 }
 
-                printf( "Association successful :-)" );
+                aid=( ( (h80211[29] << 8) || (h80211[28]) ) & 0x3FFF);
+                printf( "Association successful :-) (AID: %d)", aid );
                 deauth_wait = 3;
                 fflush( stdout );
 
