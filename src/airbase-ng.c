@@ -85,6 +85,10 @@ static struct wif *_wi_in, *_wi_out;
 #define MAX(x,y) ( (x)>(y) ? (x) : (y) )
 #endif
 
+#ifndef MIN
+#define MIN(x,y) ( (x)>(y) ? (y) : (x) )
+#endif
+
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
 
@@ -1445,6 +1449,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
     char *fessid;
     int seqnum, fragnum, morefrag;
     int gotsource, gotbssid;
+    int remaining, bytes2use;
 
     int z;
 
@@ -1807,17 +1812,24 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     memcpy(packet + 10, dmac, 6);
                     packet[z+2] = 0x02;
 
-                    //add challenge
-                    packet[length] = 0x10;
-                    packet[length+1] = 0x80;
-                    length += 2;
+                   remaining = opt.skalen;
 
-                    for(i=0; i<opt.skalen; i++)
+                    while(remaining > 0)
                     {
-                        packet[length+i] = rand() & 0xFF;
-                    }
+                        bytes2use = MIN(255,remaining);
+                        remaining -= bytes2use;
+                        //add challenge
+                        packet[length] = 0x10;
+                        packet[length+1] = bytes2use;
+                        length += 2;
 
-                    length += opt.skalen;
+                        for(i=0; i<bytes2use; i++)
+                        {
+                            packet[length+i] = rand() & 0xFF;
+                        }
+
+                        length += bytes2use;
+                    }
                     send_packet(packet, length);
                     return 0;
                 }
@@ -1863,6 +1875,9 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             free(buffer);
 
             send_packet(packet, length);
+            if(!opt.quiet)
+                printf("Client %02X:%02X:%02X:%02X:%02X:%02X associated\n",
+                        smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
             return 0;
         }
 
