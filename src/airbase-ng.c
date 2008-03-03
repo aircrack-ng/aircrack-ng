@@ -1446,12 +1446,15 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
     uchar *tag=NULL;
     int len, i;
     uchar *buffer;
+    char essid[256];
     struct timeval tv1;
     u_int64_t timestamp;
     char *fessid;
     int seqnum, fragnum, morefrag;
     int gotsource, gotbssid;
     int remaining, bytes2use;
+
+    bzero(essid, 256);
 
     int z;
 
@@ -1542,6 +1545,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             memcpy(packet, buffer, len);
             length = len;
             free(buffer);
+            buffer = NULL;
         }
 
         /* intercept packets in case we got external processing */
@@ -1710,6 +1714,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     memcpy(packet+z+12, buffer, length-z);
                     length += 12;
                     free(buffer);
+                    buffer = NULL;
 
                     //add channel
                     packet[length]   = 0x03;
@@ -1768,6 +1773,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
                     length += 12; //fixed info
                     free(buffer);
+                    buffer = NULL;
                     length += 2+len; //default essid
 
                     //add channel
@@ -1859,6 +1865,14 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
         //asso req
         if(packet[0] == 0x00 && memcmp( bssid, opt.r_bssid, 6) == 0 )
         {
+            tag = parse_tags(packet+z+4, 0, length-z-4, &len);
+            if(tag != NULL && tag[0] >= 32 && tag[0] < 127 && len < 256)
+            {
+                memcpy(essid, tag, len);
+                essid[len] = 0x00;
+                if(opt.f_essid && !gotESSID(essid, len))
+                    return 0;
+            }
             packet[0] = 0x10;
             memcpy(packet +  4, smac, 6);
             memcpy(packet + 10, dmac, 6);
@@ -1875,11 +1889,18 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             memcpy(packet+z+6, buffer, length-z-4);
             length +=2;
             free(buffer);
+            buffer = NULL;
 
             send_packet(packet, length);
             if(!opt.quiet)
-                printf("Client %02X:%02X:%02X:%02X:%02X:%02X associated\n",
+            {
+                printf("Client %02X:%02X:%02X:%02X:%02X:%02X associated",
                         smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
+                if(essid[0] != 0x00)
+                    printf(" to ESSID: \"%s\"", essid);
+                printf("\n");
+            }
+            bzero(essid, 256);
             return 0;
         }
 
