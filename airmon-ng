@@ -7,6 +7,12 @@ CH=$3; [ x$3 = "x" ] && CH=10
 IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
+USE_IW=0
+
+if [ -f "`which iw 2>&1`" ]
+then
+	USE_IW = 1
+fi
 
 PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon|wlassistant"
 
@@ -354,19 +360,43 @@ do
     printf "$iface\t\t$CHIPSET\t$DRIVER - [$PHYDEV]"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
-        echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
-        sleep 0.1
-        iwconfig $MONDEV mode Monitor &>/dev/null
-        ifconfig $MONDEV up
-        printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+        if [ $USE_IW = 1 ]
+        then
+            iw dev $iface interface add $MONDEV type monitor
+            sleep 0.1
+            ifconfig $MONDEV up
+            printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+        else
+            if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
+            then
+                echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
+                sleep 0.1
+                iwconfig $MONDEV mode Monitor &>/dev/null
+                ifconfig $MONDEV up
+                printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+            else
+                printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from http://git.sipsolutions.net/iw.git\n"
+            fi
+        fi
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
     then
         z="`echo $iface | cut -b -3`"
         if [ x$z = "xmon" ]
         then
-            echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
-            printf " (removed)"
+            if [ $USE_IW = 1 ]
+            then
+                iw dev "$iface" interface del
+                printf " (removed)"
+            else
+                if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
+                then
+                    echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+                    printf " (removed)"
+                else
+                    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from http://git.sipsolutions.net/iw.git\n"
+                fi
+	    fi
         else
             ifconfig $iface down
             iwconfig $iface mode managed
