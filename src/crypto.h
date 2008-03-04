@@ -46,5 +46,7 @@ int calc_crc_buf( unsigned char *buf, int len );
 void calc_mic(struct AP_info *ap, unsigned char *pmk, unsigned char *ptk,
 	      unsigned char *mic);
 int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len);
+int add_crc32(unsigned char* data, int length);
+int add_crc32_plain(unsigned char* data, int length);
 
 #endif /* crypto.h */

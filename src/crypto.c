@@ -286,6 +286,17 @@ unsigned long calc_crc( unsigned char * buf, int len)
     return( ~crc );
 }
 
+//without inversion, must be used for bit flipping attacks
+unsigned long calc_crc_plain( unsigned char * buf, int len)
+{
+    unsigned long crc = 0x00000000;
+
+    for( ; len > 0; len--, buf++ )
+        crc = crc_tbl[(crc ^ *buf) & 0xFF] ^ ( crc >> 8 );
+
+    return( crc );
+}
+
 /* CRC checksum verification routine */
 
 int check_crc_buf( unsigned char *buf, int len )
@@ -307,6 +318,20 @@ int add_crc32(unsigned char* data, int length)
     unsigned long crc;
 
     crc = calc_crc(data, length);
+
+    data[length]   = (crc      ) & 0xFF;
+    data[length+1] = (crc >>  8) & 0xFF;
+    data[length+2] = (crc >> 16) & 0xFF;
+    data[length+3] = (crc >> 24) & 0xFF;
+
+    return 0;
+}
+
+int add_crc32_plain(unsigned char* data, int length)
+{
+    unsigned long crc;
+
+    crc = calc_crc_plain(data, length);
 
     data[length]   = (crc      ) & 0xFF;
     data[length+1] = (crc >>  8) & 0xFF;
