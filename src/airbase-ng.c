@@ -1858,6 +1858,9 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
                     length = z+6;
                     send_packet(packet, length);
+                    if(!opt.quiet)
+                        printf("SKA from %02X:%02X:%02X:%02X:%02X:%02X\n",
+                                smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
                 }
             }
         }
@@ -2619,7 +2622,9 @@ usage:
         printf( "error opening tap device: %s\n", strerror( errno ) );
         return -1;
     }
-    printf( "Created tap interface %s\n", ti_name(dev.dv_ti));
+
+    if(!opt.quiet)
+        printf( "Created tap interface %s\n", ti_name(dev.dv_ti));
 
     if(opt.external)
     {
@@ -2629,9 +2634,12 @@ usage:
             printf( "error opening tap device: %s\n", strerror( errno ) );
             return -1;
         }
-        printf( "Created tap interface %s for external processing.\n", ti_name(dev.dv_ti2));
-        printf( "You need to get the interfaces up, read the fames [,modify]\n");
-        printf( "and send them back through the same interface \"%s\".\n", ti_name(dev.dv_ti2));
+        if(!opt.quiet)
+        {
+            printf( "Created tap interface %s for external processing.\n", ti_name(dev.dv_ti2));
+            printf( "You need to get the interfaces up, read the fames [,modify]\n");
+            printf( "and send them back through the same interface \"%s\".\n", ti_name(dev.dv_ti2));
+        }
     }
 
     if(opt.channel > 0)
