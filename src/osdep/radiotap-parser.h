@@ -22,8 +22,11 @@
 typedef unsigned int u32;
 typedef unsigned short u16;
 typedef unsigned char u8;
+
+#ifndef _LINUX_TYPES_H
 typedef u32 __le32;
 typedef u16 __le16;
+#endif
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define	le16_to_cpu(x) (x)
