@@ -2535,6 +2535,7 @@ int do_attack_caffe_latte( void )
     int arp_off1, arp_off2;
     int i, n, caplen, nb_arp;
     long nb_pkt_read, nb_arp_tot, nb_ack_pkt;
+    uchar flip[4096];
 
     time_t tc;
     float f, ticks[3];
@@ -2845,13 +2846,14 @@ add_arp:
                     return( 1 );
                 }
 
-                h80211[49] ^= 0x01; //flip last bit of sender MAC
-                h80211[53] ^= 0x01; //flip last bit of sender IP
+                bzero(flip, 4096);
 
-                h80211[caplen-4] ^= 0x28;
-                h80211[caplen-3] ^= 0x04;
-                h80211[caplen-2] ^= 0x75;
-                h80211[caplen-1] ^= 0x78;
+                flip[49-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender MAC
+                flip[53-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender IP
+
+                add_crc32_plain(flip, caplen-24-4-4);
+                for(i=0; i<caplen-24-4; i++)
+                    (h80211+24+4)[i] ^= flip[i];
 
                 memcpy( arp[nb_arp].buf, h80211, caplen );
                 arp[nb_arp].len = caplen;

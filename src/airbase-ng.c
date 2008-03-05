@@ -1378,22 +1378,17 @@ uchar* parse_tags(unsigned char *flags, unsigned char type, int length, int *tag
 int addarp(uchar* packet, int length)
 {
     uchar bssid[6], smac[6], dmac[6];
-    int z=0;
-
-//     printf("addarp len: %d\n", length);
+    uchar flip[4096];
+    int z=0, i=0;
 
     if(packet == NULL)
         return -1;
 
-//     printf("add 1\n");
-
     if(length != 68 && length != 86)
         return -1;
 
-//     printf("add 2 ds: %d\n", ( packet[1] & 3 ));
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
 
-//     printf("add 3\n");
     memcpy( dmac, packet + 4, 6 );
     memcpy( bssid, packet + 10, 6 );
     memcpy( smac, packet + 16, 6 );
@@ -1401,38 +1396,26 @@ int addarp(uchar* packet, int length)
     if(memcmp(dmac, BROADCAST, 6) != 0)
         return -1;
 
-//     printf("add 4\n");
-
     if(memcmp(bssid, opt.r_bssid, 6) != 0)
         return -1;
-
-//     printf("add 5\n");
 
     if(opt.nb_arp >= opt.ringbuffer)
         return -1;
 
-//     printf("mod arp\n");
+    bzero(flip, 4096);
 
-//     packet[1] &= 0xFC;  //clear tods, fromds
-//     packet[1] |= 0x02;  //set fromds
+    flip[49-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender MAC
+    flip[53-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender IP
 
-    packet[49] ^= 0x01; //flip last bit of sender MAC
-    packet[53] ^= 0x01; //flip last bit of sender IP
-
-//     memcpy( packet + 4, BROADCAST, 6);
-//     memcpy( packet +10, bssid, 6);
-//     memcpy( packet +16, bssid, 6);
-
-    packet[length-4] ^= 0x28;
-    packet[length-3] ^= 0x04;
-    packet[length-2] ^= 0x75;
-    packet[length-1] ^= 0x78;
+    add_crc32_plain(flip, length-24-4-4);
+    for(i=0; i<length-24-4; i++)
+        (packet+24+4)[i] ^= flip[i];
 
     arp[opt.nb_arp].buf = (uchar*) malloc(length);
     arp[opt.nb_arp].len = length;
     memcpy(arp[opt.nb_arp].buf, packet, length);
     opt.nb_arp++;
-//     printf("number of arps: %d", opt.nb_arp);
+
     return 0;
 }
 
