@@ -23,7 +23,7 @@ typedef unsigned int u32;
 typedef unsigned short u16;
 typedef unsigned char u8;
 
-#ifndef _LINUX_TYPES_H
+#if !defined(_LINUX_TYPES_H) || __GNUC_PREREQ(3,0)
 typedef u32 __le32;
 typedef u16 __le16;
 #endif
