@@ -157,7 +157,9 @@ char usage[] =
 "      -f disallow      : disallow specified client MACs (default: allow)\n"
 "      -W 0|1           : [don't] set WEP flag in beacons 0|1 (default: auto)\n"
 "      -q               : quiet (do not print statistics)\n"
+"      -V               : verbose (print more messages)\n"
 "      -M               : M-I-T-M between [specified] clients and bssids\n"
+"      -A               : Ad-Hoc Mode (allows other clients to peer)\n"
 "      -Y in|out|both   : external packet processing\n"
 "      -c channel       : sets the channel the AP is running on\n"
 "      -X               : hidden ESSID\n"
@@ -210,7 +212,7 @@ struct options
     int filter;
     int caffelatte;
     int ringbuffer;
-
+    int adhoc;
     int nb_arp;
 }
 opt;
@@ -1389,9 +1391,18 @@ int addarp(uchar* packet, int length)
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
 
-    memcpy( dmac, packet + 4, 6 );
-    memcpy( bssid, packet + 10, 6 );
-    memcpy( smac, packet + 16, 6 );
+    if(( packet[1] & 3 ) == 0)
+    {
+        memcpy( dmac, packet + 4, 6 );
+        memcpy( smac, packet + 10, 6 );
+        memcpy( bssid, packet + 16, 6 );
+    }
+    else
+    {
+        memcpy( dmac, packet + 4, 6 );
+        memcpy( bssid, packet + 10, 6 );
+        memcpy( smac, packet + 16, 6 );
+    }
 
     if(memcmp(dmac, BROADCAST, 6) != 0)
         return -1;
@@ -1404,17 +1415,21 @@ int addarp(uchar* packet, int length)
 
     bzero(flip, 4096);
 
-    flip[49-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender MAC
-    flip[53-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender IP
+    flip[49-z-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender MAC
+    flip[53-z-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender IP
 
-    add_crc32_plain(flip, length-24-4-4);
-    for(i=0; i<length-24-4; i++)
-        (packet+24+4)[i] ^= flip[i];
+    add_crc32_plain(flip, length-z-4-4);
+    for(i=0; i<length-z-4; i++)
+        (packet+z+4)[i] ^= flip[i];
 
     arp[opt.nb_arp].buf = (uchar*) malloc(length);
     arp[opt.nb_arp].len = length;
     memcpy(arp[opt.nb_arp].buf, packet, length);
     opt.nb_arp++;
+
+    if(opt.nb_arp == 1 && !opt.quiet)
+        printf("Sending ARP requests to %02X:%02X:%02X:%02X:%02X:%02X at around %d pps.\n",
+                smac[0],smac[1],smac[2],smac[3],smac[4],smac[5],opt.r_nbpps);
 
     return 0;
 }
@@ -1539,7 +1554,8 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
         }
 
         /* To our mac? */
-        if( memcmp( dmac, opt.r_bssid, 6) == 0 )
+        if( (memcmp( dmac, opt.r_bssid, 6) == 0 && !opt.adhoc ) ||
+            (memcmp( dmac, opt.r_smac, 6) == 0 && opt.adhoc ) )
         {
             /* Is encrypted */
             if( (packet[z] != packet[z + 1] || packet[z + 2] != 0x03) && (packet[1] & 0x40) == 0x40 )
@@ -1580,13 +1596,22 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
         }
         else
         {
-            /* Our bssid, ToDS=1, but to a different destination MAC -> send it through both interfaces */
             packet[1] &= 0xFC; //clear ToDS/FromDS
-            packet[1] |= 0x02; //set FromDS=1
-            memcpy(packet +  4, dmac, 6);
-            memcpy(packet + 10, bssid, 6);
-            memcpy(packet + 16, smac, 6);
-
+            if(!opt.adhoc)
+            {
+                /* Our bssid, ToDS=1, but to a different destination MAC -> send it through both interfaces */
+                packet[1] |= 0x02; //set FromDS=1
+                memcpy(packet +  4, dmac, 6);
+                memcpy(packet + 10, bssid, 6);
+                memcpy(packet + 16, smac, 6);
+            }
+            else
+            {
+                /* adhoc, don't replay */
+                memcpy(packet +  4, dmac, 6);
+                memcpy(packet + 10, smac, 6);
+                memcpy(packet + 16, bssid, 6);
+            }
 //             printf("sent packet length: %d\n", length);
             /* Is encrypted */
             if( (packet[z] != packet[z + 1] || packet[z + 2] != 0x03) && (packet[1] & 0x40) == 0x40 )
@@ -1619,7 +1644,8 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
                     if(create_wep_packet(h80211, &length, z) != 0) return 1;
 
-                    send_packet(h80211, length);
+                    if(!opt.adhoc)
+                        send_packet(h80211, length);
                 }
                 else
                 {
@@ -1912,7 +1938,10 @@ void beacon_thread( void *arg )
     beacon_len+=4;
     memcpy(beacon+beacon_len , BROADCAST, 6);        //destination
     beacon_len+=6;
-    memcpy(beacon+beacon_len, apc.bssid, 6);        //source
+    if(!opt.adhoc)
+        memcpy(beacon+beacon_len, apc.bssid, 6);        //source
+    else
+        memcpy(beacon+beacon_len, opt.r_smac, 6);        //source
     beacon_len+=6;
     memcpy(beacon+beacon_len, apc.bssid, 6);        //bssid
     beacon_len+=6;
@@ -2133,12 +2162,14 @@ int main( int argc, char *argv[] )
             {"mitm",        0, 0, 'M'},
             {"hidden",      0, 0, 'X'},
             {"caffe-latte", 0, 0, 'L'},
+            {"verbose",     0, 0, 'V'},
+            {"ad-hoc",      0, 0, 'A'},
             {"help",        0, 0, 'H'},
             {0,             0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:",
+                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:VA",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -2194,6 +2225,12 @@ int main( int argc, char *argv[] )
                     return( 1 );
 
                 opt.f_essid = 1;
+
+                break;
+
+            case 'A' :
+
+                opt.adhoc = 1;
 
                 break;
 
@@ -2485,6 +2522,14 @@ usage:
         return( 1 );
     }
 
+    if( opt.mitm && (getMACcount(rBSSID) != 1 || getMACcount(rClient) < 1) )
+    {
+        printf("Notice: You need to specify exactly one BSSID (-b)"
+               " and at least one client MAC (-d)\n");
+        printf("\"%s --help\" for help.\n", argv[0]);
+        return( 1 );
+    }
+
     dev.fd_rtc = -1;
 
     /* open the RTC device if necessary */
@@ -2628,9 +2673,20 @@ usage:
     if(opt.channel > 0)
         wi_set_channel(_wi_out, opt.channel);
 
-    if( memcmp( opt.r_bssid, NULL_MAC, 6) == 0 )
+    if( memcmp( opt.r_bssid, NULL_MAC, 6) == 0 && !opt.adhoc)
     {
         wi_get_mac( _wi_out, opt.r_bssid);
+    }
+
+    if( memcmp( opt.r_smac, NULL_MAC, 6) == 0 )
+    {
+        wi_get_mac( _wi_out, opt.r_smac);
+    }
+
+    if(opt.adhoc)
+    {
+        for(i=0; i<6; i++) //random cell
+            opt.r_bssid[i] = rand() & 0xFF;
     }
 
     memcpy(apc.bssid, opt.r_bssid, 6);
@@ -2647,7 +2703,11 @@ usage:
         apc.essid_len = 1;
     }
     apc.interval = 0x0064;
-    apc.capa[0] = 0x01;
+    apc.capa[0] = 0x00;
+    if(opt.adhoc)
+        apc.capa[0] |= 0x02;
+    else
+        apc.capa[0] |= 0x01;
     if( (opt.crypt == CRYPT_WEP && opt.setWEP == -1) || opt.setWEP == 1 )
         apc.capa[0] |= 0x10;
     apc.capa[1] = 0x04;
