@@ -474,7 +474,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
             switch (iterator.this_arg_index) {
 
             case IEEE80211_RADIOTAP_TSFT:
-                ri->ri_mactime = *((uint64_t*)iterator.this_arg);
+                ri->ri_mactime = le64_to_cpu(*((uint64_t*)iterator.this_arg));
                 break;
 
             case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
@@ -529,7 +529,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
             }
         }
 
-        n=rthdr->it_len;
+        n = le16_to_cpu(rthdr->it_len);
 
         if( n <= 0 || n >= caplen )
             return( 0 );
