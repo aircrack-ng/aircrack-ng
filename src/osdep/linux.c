@@ -53,6 +53,7 @@
 #include "osdep.h"
 #include "pcap.h"
 #include "crctable_osdep.h"
+#include "common.h"
 
 #define uchar unsigned char
 
@@ -249,7 +250,7 @@ static int linux_get_channel(struct wif *wi)
 {
     struct priv_linux *dev = wi_priv(wi);
     struct iwreq wrq;
-    int fd;
+    int fd, frequency;
     int chan=0;
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
@@ -267,15 +268,13 @@ static int linux_get_channel(struct wif *wi)
     if( ioctl( fd, SIOCGIWFREQ, &wrq ) < 0 )
         return( -1 );
 
-    if(wrq.u.freq.m > 100000000)
-        chan = ((wrq.u.freq.m - 241200000)/500000)+1;
-    else if(wrq.u.freq.m > 1000000)
-        chan = ((wrq.u.freq.m - 2412000)/5000)+1;
-    else if(wrq.u.freq.m > 1000)
-        chan = ((wrq.u.freq.m - 2412)/5)+1;
-    else chan = wrq.u.freq.m;
-
-    if(chan == 15) chan = 14;
+    frequency = wrq.u.freq.m;
+    if (frequency > 100000000)
+	frequency/=100000;
+    else if (frequency > 1000000)
+	frequency/=1000;
+	
+    chan = getChannelFromFrequency(frequency);
 
     return chan;
 }
