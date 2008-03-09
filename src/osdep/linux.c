@@ -270,11 +270,13 @@ static int linux_get_channel(struct wif *wi)
 
     frequency = wrq.u.freq.m;
     if (frequency > 100000000)
-	frequency/=100000;
+        frequency/=100000;
     else if (frequency > 1000000)
-	frequency/=1000;
-	
-    chan = getChannelFromFrequency(frequency);
+        frequency/=1000;
+
+    if (frequency > 1000)
+        chan = getChannelFromFrequency(frequency);
+    else chan = frequency;
 
     return chan;
 }
