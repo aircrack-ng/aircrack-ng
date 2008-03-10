@@ -1432,6 +1432,11 @@ int addarp(uchar* packet, int length)
         printf("Sending ARP requests to %02X:%02X:%02X:%02X:%02X:%02X at around %d pps.\n",
                 smac[0],smac[1],smac[2],smac[3],smac[4],smac[5],opt.r_nbpps);
 
+    if(opt.verbose)
+    {
+        printf("Added an ARP to the caffe-latte ringbuffer %d/%d\n", opt.nb_arp, opt.ringbuffer);
+    }
+
     return 0;
 }
 
@@ -1823,6 +1828,11 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                 //make sure its an auth request
                 if(packet[z+2] == 0x01)
                 {
+                    if(opt.verbose)
+                    {
+                        printf("Got an auth request from %02X:%02X:%02X:%02X:%02X:%02X (open system)\n",
+                                smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
+                    }
                     memcpy(packet +  4, smac, 6);
                     memcpy(packet + 10, dmac, 6);
                     packet[z+2] = 0x02;
@@ -1842,6 +1852,11 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                 //first response
                 if(packet[z+2] == 0x01 && (packet[1] & 0x40) == 0x00 )
                 {
+                    if(opt.verbose)
+                    {
+                        printf("Got an auth request from %02X:%02X:%02X:%02X:%02X:%02X (shared key)\n",
+                                smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
+                    }
                     memcpy(packet +  4, smac, 6);
                     memcpy(packet + 10, dmac, 6);
                     packet[z+2] = 0x02;
@@ -2128,7 +2143,6 @@ int main( int argc, char *argv[] )
     struct pcap_pkthdr pkh;
     fd_set read_fds;
     unsigned char buffer[4096];
-//     unsigned char bssid[6];
     char *s, buf[128], *fessid;
     int caplen;
     struct AP_conf apc;
