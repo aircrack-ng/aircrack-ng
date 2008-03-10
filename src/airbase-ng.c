@@ -204,6 +204,14 @@ struct options
     char *s_file;
     uchar *prga;
 
+    int f_index;            /* outfiles index       */
+    FILE *f_xor;            /* output prga file     */
+    unsigned char sharedkey[3][4096]; /* array for 3 packets with a size of \
+                               up to 4096Byte */
+    time_t sk_start;
+    int sk_len;
+    int sk_len2;
+
     int r_nbpps;
     int prgalen;
     int tods;
@@ -986,6 +994,164 @@ int msleep( int msec )
 #define PCT { struct tm *lt; time_t tc = time( NULL ); \
               lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
               lt->tm_hour, lt->tm_min, lt->tm_sec ); }
+
+int check_shared_key(unsigned char *h80211, int caplen)
+{
+    int m_bmac, m_smac, m_dmac, n, textlen;
+    char ofn[1024];
+    unsigned char text[4096];
+    unsigned char prga[4096];
+    unsigned int long crc;
+
+    if((unsigned)caplen > sizeof(opt.sharedkey[0])) return 1;
+
+    m_bmac = 16;
+    m_smac = 10;
+    m_dmac = 4;
+
+    if( time(NULL) - opt.sk_start > 5)
+    {
+        /* timeout(5sec) - remove all packets, restart timer */
+        memset(opt.sharedkey, '\x00', 4096*3);
+        opt.sk_start = time(NULL);
+    }
+
+    /* is auth packet */
+    if( (h80211[1] & 0x40) != 0x40 )
+    {
+        /* not encrypted */
+        if( ( h80211[24] + (h80211[25] << 8) ) == 1 )
+        {
+            /* Shared-Key Authentication */
+            if( ( h80211[26] + (h80211[27] << 8) ) == 2 )
+            {
+                /* sequence == 2 */
+                memcpy(opt.sharedkey[0], h80211, caplen);
+                opt.sk_len = caplen-24;
+            }
+            if( ( h80211[26] + (h80211[27] << 8) ) == 4 )
+            {
+                /* sequence == 4 */
+                memcpy(opt.sharedkey[2], h80211, caplen);
+            }
+        }
+        else return 1;
+    }
+    else
+    {
+        /* encrypted */
+        memcpy(opt.sharedkey[1], h80211, caplen);
+        opt.sk_len2 = caplen-24-4;
+    }
+
+    /* check if the 3 packets form a proper authentication */
+
+    if( ( memcmp(opt.sharedkey[0]+m_bmac, NULL_MAC, 6) == 0 ) ||
+        ( memcmp(opt.sharedkey[1]+m_bmac, NULL_MAC, 6) == 0 ) ||
+        ( memcmp(opt.sharedkey[2]+m_bmac, NULL_MAC, 6) == 0 ) ) /* some bssids == zero */
+    {
+        return 1;
+    }
+
+    if( ( memcmp(opt.sharedkey[0]+m_bmac, opt.sharedkey[1]+m_bmac, 6) != 0 ) ||
+        ( memcmp(opt.sharedkey[0]+m_bmac, opt.sharedkey[2]+m_bmac, 6) != 0 ) ) /* all bssids aren't equal */
+    {
+        return 1;
+    }
+
+    if( ( memcmp(opt.sharedkey[0]+m_smac, opt.sharedkey[2]+m_smac, 6) != 0 ) ||
+        ( memcmp(opt.sharedkey[0]+m_smac, opt.sharedkey[1]+m_dmac, 6) != 0 ) ) /* SA in 2&4 != DA in 3 */
+    {
+        return 1;
+    }
+
+    if( (memcmp(opt.sharedkey[0]+m_dmac, opt.sharedkey[2]+m_dmac, 6) != 0 ) ||
+        (memcmp(opt.sharedkey[0]+m_dmac, opt.sharedkey[1]+m_smac, 6) != 0 ) ) /* DA in 2&4 != SA in 3 */
+    {
+        return 1;
+    }
+
+    textlen = opt.sk_len;
+
+    if(textlen+4 != opt.sk_len2)
+    {
+        PCT; printf("Broken SKA: %02X:%02X:%02X:%02X:%02X:%02X (expected: %d, got %d bytes)\n",
+                    *(opt.sharedkey[0]+m_dmac), *(opt.sharedkey[0]+m_dmac+1), *(opt.sharedkey[0]+m_dmac+2),
+                    *(opt.sharedkey[0]+m_dmac+3), *(opt.sharedkey[0]+m_dmac+4), *(opt.sharedkey[0]+m_dmac+5),
+                    textlen+4, opt.sk_len2);
+        return 1;
+    }
+
+    if((unsigned)textlen > sizeof(text) - 4) return 1;
+
+    memcpy(text, opt.sharedkey[0]+24, textlen);
+
+    /* increment sequence number from 2 to 3 */
+    text[2] = text[2]+1;
+
+    crc = 0xFFFFFFFF;
+
+    for( n = 0; n < textlen; n++ )
+        crc = crc_tbl[(crc ^ text[n]) & 0xFF] ^ (crc >> 8);
+
+    crc = ~crc;
+
+    /* append crc32 over body */
+    text[textlen]     = (crc      ) & 0xFF;
+    text[textlen+1]   = (crc >>  8) & 0xFF;
+    text[textlen+2]   = (crc >> 16) & 0xFF;
+    text[textlen+3]   = (crc >> 24) & 0xFF;
+
+    /* cleartext XOR cipher */
+    for(n=0; n<(textlen+4); n++)
+    {
+        prga[4+n] = (text[n] ^ opt.sharedkey[1][28+n]) & 0xFF;
+    }
+
+    /* write IV+index */
+    prga[0] = opt.sharedkey[1][24] & 0xFF;
+    prga[1] = opt.sharedkey[1][25] & 0xFF;
+    prga[2] = opt.sharedkey[1][26] & 0xFF;
+    prga[3] = opt.sharedkey[1][27] & 0xFF;
+
+    if( opt.f_xor != NULL )
+    {
+        fclose(opt.f_xor);
+        opt.f_xor = NULL;
+    }
+
+    snprintf( ofn, sizeof( ofn ) - 1, "keystream-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s", opt.f_index,
+              *(opt.sharedkey[0]+m_dmac), *(opt.sharedkey[0]+m_dmac+1), *(opt.sharedkey[0]+m_dmac+2),
+              *(opt.sharedkey[0]+m_dmac+3), *(opt.sharedkey[0]+m_dmac+4), *(opt.sharedkey[0]+m_dmac+5), "xor" );
+
+    opt.f_index++;
+
+    opt.f_xor = fopen( ofn, "w");
+    if(opt.f_xor == NULL)
+        return 1;
+
+    for(n=0; n<textlen+8; n++)
+        fputc((prga[n] & 0xFF), opt.f_xor);
+
+    fflush(opt.f_xor);
+
+    if( opt.f_xor != NULL )
+    {
+        fclose(opt.f_xor);
+        opt.f_xor = NULL;
+    }
+
+    if(!opt.quiet)
+    {
+        PCT; printf("Got %d bytes keystream: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                    textlen+4, *(opt.sharedkey[0]+m_dmac), *(opt.sharedkey[0]+m_dmac+1), *(opt.sharedkey[0]+m_dmac+2),
+                  *(opt.sharedkey[0]+m_dmac+3), *(opt.sharedkey[0]+m_dmac+4), *(opt.sharedkey[0]+m_dmac+5));
+    }
+
+    memset(opt.sharedkey, '\x00', 512*3);
+    /* ok, keystream saved */
+    return 0;
+}
 
 int read_prga(unsigned char **dest, char *file)
 {
@@ -1938,12 +2104,14 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                         length += bytes2use;
                     }
                     send_packet(packet, length);
+                    check_shared_key(packet, length);
                     return 0;
                 }
 
                 //second response
                 if( (packet[1] & 0x40) == 0x40 )
                 {
+                    check_shared_key(packet, length);
                     packet[1] = 0x00; //not encrypted
                     memcpy(packet +  4, smac, 6);
                     memcpy(packet + 10, dmac, 6);
@@ -1957,6 +2125,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
                     length = z+6;
                     send_packet(packet, length);
+                    check_shared_key(packet, length);
                     if(!opt.quiet)
                         PCT; printf("SKA from %02X:%02X:%02X:%02X:%02X:%02X\n",
                                 smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
@@ -2249,6 +2418,7 @@ int main( int argc, char *argv[] )
     opt.filter      = -1;
     opt.ringbuffer  = 10;
     opt.nb_arp      = 0;
+    opt.f_index     = 1;
 
     srand( time( NULL ) );
 
