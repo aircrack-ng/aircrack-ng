@@ -2663,7 +2663,7 @@ int do_attack_caffe_latte( void )
         if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
-            printf( "\rRead %ld packets (got %ld ARPs and %ld ACKs), "
+            printf( "\rRead %ld packets (%ld ARPs, %ld ACKs), "
                     "sent %ld packets...(%d pps)\r",
                     nb_pkt_read, nb_arp_tot, nb_ack_pkt, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
             fflush( stdout );
