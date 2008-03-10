@@ -1426,6 +1426,25 @@ void read_thread( void *arg )
 								 /* supplicant nonce set */
 				st_cur->wpa.state |= 2;
 			}
+
+			if( (st_cur->wpa.state & 4) != 4 )
+			{
+				/* copy the MIC & eapol frame */
+
+				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
+					+   h80211[z + 3] + 4;
+
+				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
+				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
+				memset( st_cur->wpa.eapol + 81, 0, 16 );
+
+									/* eapol frame & keymic set */
+				st_cur->wpa.state |= 4;
+
+				/* copy the key descriptor version */
+
+				st_cur->wpa.keyver = h80211[z + 6] & 7;
+			}
 		}
 
 		/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
@@ -1443,21 +1462,24 @@ void read_thread( void *arg )
 				st_cur->wpa.state |= 1;
 			}
 
-			/* copy the MIC & eapol frame */
+			if( (st_cur->wpa.state & 4) != 4 )
+			{
+				/* copy the MIC & eapol frame */
 
-			st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
-				+   h80211[z + 3] + 4;
+				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
+					+   h80211[z + 3] + 4;
 
-			memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
-			memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
-			memset( st_cur->wpa.eapol + 81, 0, 16 );
+				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
+				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
+				memset( st_cur->wpa.eapol + 81, 0, 16 );
 
-								 /* eapol frame & keymic set */
-			st_cur->wpa.state |= 4;
+									/* eapol frame & keymic set */
+				st_cur->wpa.state |= 4;
 
-			/* copy the key descriptor version */
+				/* copy the key descriptor version */
 
-			st_cur->wpa.keyver = h80211[z + 6] & 7;
+				st_cur->wpa.keyver = h80211[z + 6] & 7;
+			}
 		}
 
 		if( st_cur->wpa.state == 7 )
@@ -2155,6 +2177,25 @@ void check_thread( void *arg )
 								 /* supplicant nonce set */
 				st_cur->wpa.state |= 2;
 			}
+
+			if( (st_cur->wpa.state & 4) != 4 )
+			{
+				/* copy the MIC & eapol frame */
+
+				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
+					+   h80211[z + 3] + 4;
+
+				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
+				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
+				memset( st_cur->wpa.eapol + 81, 0, 16 );
+
+									/* eapol frame & keymic set */
+				st_cur->wpa.state |= 4;
+
+				/* copy the key descriptor version */
+
+				st_cur->wpa.keyver = h80211[z + 6] & 7;
+			}
 		}
 
 		/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
@@ -2172,21 +2213,24 @@ void check_thread( void *arg )
 				st_cur->wpa.state |= 1;
 			}
 
-			/* copy the MIC & eapol frame */
+			if( (st_cur->wpa.state & 4) != 4 )
+			{
+				/* copy the MIC & eapol frame */
 
-			st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
-				+   h80211[z + 3] + 4;
+				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
+					+   h80211[z + 3] + 4;
 
-			memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
-			memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
-			memset( st_cur->wpa.eapol + 81, 0, 16 );
+				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
+				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
+				memset( st_cur->wpa.eapol + 81, 0, 16 );
 
-								 /* eapol frame & keymic set */
-			st_cur->wpa.state |= 4;
+									/* eapol frame & keymic set */
+				st_cur->wpa.state |= 4;
 
-			/* copy the key descriptor version */
+				/* copy the key descriptor version */
 
-			st_cur->wpa.keyver = h80211[z + 6] & 7;
+				st_cur->wpa.keyver = h80211[z + 6] & 7;
+			}
 		}
 
 		if( st_cur->wpa.state == 7 )

@@ -1205,6 +1205,19 @@ usage:
 
                     memcpy( st_cur->snonce, &h80211[z + 17], 32 );
                 }
+
+                /* copy the MIC & eapol frame */
+
+                st_cur->eapol_size = ( h80211[z + 2] << 8 )
+                                   +   h80211[z + 3] + 4;
+
+                memcpy( st_cur->keymic, &h80211[z + 81], 16 );
+                memcpy( st_cur->eapol, &h80211[z], st_cur->eapol_size );
+                memset( st_cur->eapol + 81, 0, 16 );
+
+                /* copy the key descriptor version */
+
+                st_cur->keyver = h80211[z + 6] & 7;
             }
 
             /* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
