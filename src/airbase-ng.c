@@ -157,7 +157,7 @@ char usage[] =
 "      -f disallow      : disallow specified client MACs (default: allow)\n"
 "      -W 0|1           : [don't] set WEP flag in beacons 0|1 (default: auto)\n"
 "      -q               : quiet (do not print statistics)\n"
-"      -V               : verbose (print more messages)\n"
+"      -v               : verbose (print more messages)\n"
 "      -M               : M-I-T-M between [specified] clients and bssids\n"
 "      -A               : Ad-Hoc Mode (allows other clients to peer)\n"
 "      -Y in|out|both   : external packet processing\n"
@@ -214,6 +214,7 @@ struct options
     int ringbuffer;
     int adhoc;
     int nb_arp;
+    int verbose;
 }
 opt;
 
@@ -1693,12 +1694,19 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
         if( packet[0] == 0x40 )
         {
             tag = parse_tags(packet+z, 0, length-z, &len);
-            if(tag != NULL && tag[0] >= 32 && tag[0] < 127)
+            if(tag != NULL && tag[0] >= 32 && tag[0] < 127 && len <= 255) //directed probe
             {
                 if( !opt.f_essid || gotESSID((char*)tag, len) == 1)
                 {
                     //transform into probe response
                     packet[0] = 0x50;
+
+                    if(opt.verbose)
+                    {
+                        bzero(essid, 256);
+                        memcpy(essid, tag, len);
+                        printf("Got directed probe request to %s\n", essid);
+                    }
 
                     //store the tagged parameters and insert the fixed ones
                     buffer = (uchar*) malloc(length-z);
@@ -1740,12 +1748,17 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     return 0;
                 }
             }
-            else
+            else //broadcast probe
             {
                 if(!opt.f_essid)
                 {
                     //transform into probe response
                     packet[0] = 0x50;
+
+                    if(opt.verbose)
+                    {
+                        printf("Got broadcast probe request\n");
+                    }
 
                     //store the tagged parameters and insert the fixed ones
                     buffer = (uchar*) malloc(length-z);
@@ -1807,18 +1820,22 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
         {
             if(packet[z] == 0x00) //open system auth
             {
-                memcpy(packet +  4, smac, 6);
-                memcpy(packet + 10, dmac, 6);
-                packet[z+2] = 0x02;
-
-                if(opt.forceska)
+                //make sure its an auth request
+                if(packet[z+2] == 0x01)
                 {
-                    packet[z] = 0x01;
-                    packet[z+4] = 13;
-                }
+                    memcpy(packet +  4, smac, 6);
+                    memcpy(packet + 10, dmac, 6);
+                    packet[z+2] = 0x02;
 
-                send_packet(packet, length);
-                return 0;
+                    if(opt.forceska)
+                    {
+                        packet[z] = 0x01;
+                        packet[z+4] = 13;
+                    }
+
+                    send_packet(packet, length);
+                    return 0;
+                }
             }
             else //shared key auth
             {
@@ -2162,14 +2179,14 @@ int main( int argc, char *argv[] )
             {"mitm",        0, 0, 'M'},
             {"hidden",      0, 0, 'X'},
             {"caffe-latte", 0, 0, 'L'},
-            {"verbose",     0, 0, 'V'},
+            {"verbose",     0, 0, 'v'},
             {"ad-hoc",      0, 0, 'A'},
             {"help",        0, 0, 'H'},
             {0,             0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:VA",
+                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vA",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -2203,6 +2220,12 @@ int main( int argc, char *argv[] )
             case 'c' :
 
                 opt.channel = atoi(optarg);
+
+                break;
+
+            case 'v' :
+
+                opt.verbose = 1;
 
                 break;
 
