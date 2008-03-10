@@ -127,6 +127,14 @@ static struct wif *_wi_in, *_wi_out;
     "\x50\x00\x3a\x01\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"  \
     "\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
 
+#define WPA1_TAG        \
+    "\xdd\x16\x00\x50\xf2\x01\x01\x00\x00\x50\xf2\x01\x01\x00\x00\x50"  \
+    "\xf2\x01\x01\x00\x00\x50\xf2\x02"
+
+#define WPA2_TAG        \
+    "\x30\x14\x01\x00\x00\x0f\xac\x01\x01\x00\x00\x0f\xac\x01\x01\x00"  \
+    "\x00\x0f\xac\x02\x01\x00"
+
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
 extern char * searchInside(const char * dir, const char * filename);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
@@ -167,6 +175,9 @@ char usage[] =
 "      -S               : set shared key challenge length (default: 128)\n"
 "      --caffe-latte    : Caffe-Latte attack\n"
 "      -x nbpps         : number of packets per second (default: 100)\n"
+"      -y               : disables responses to broadcast probes\n"
+"      -z type          : sets WPA1 tags. 1=WEP40 2=TKIP 3=WRAP 4=CCMP 5=WEP104\n"
+"      -Z type          : same as -z, but for WPA2\n"
 "\n"
 "  Filter options:\n"
 "      --bssid <MAC>    : BSSID to filter/use\n"
@@ -215,6 +226,9 @@ struct options
     int adhoc;
     int nb_arp;
     int verbose;
+    int wpa1type;
+    int wpa2type;
+    int nobroadprobe;
 }
 opt;
 
@@ -1429,12 +1443,14 @@ int addarp(uchar* packet, int length)
     opt.nb_arp++;
 
     if(opt.nb_arp == 1 && !opt.quiet)
-        printf("Sending ARP requests to %02X:%02X:%02X:%02X:%02X:%02X at around %d pps.\n",
+    {
+        PCT; printf("Sending ARP requests to %02X:%02X:%02X:%02X:%02X:%02X at around %d pps.\n",
                 smac[0],smac[1],smac[2],smac[3],smac[4],smac[5],opt.r_nbpps);
+    }
 
     if(opt.verbose)
     {
-        printf("Added an ARP to the caffe-latte ringbuffer %d/%d\n", opt.nb_arp, opt.ringbuffer);
+        PCT; printf("Added an ARP to the caffe-latte ringbuffer %d/%d\n", opt.nb_arp, opt.ringbuffer);
     }
 
     return 0;
@@ -1710,7 +1726,8 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     {
                         bzero(essid, 256);
                         memcpy(essid, tag, len);
-                        printf("Got directed probe request to %s\n", essid);
+                        PCT; printf("Got directed probe request from %02X:%02X:%02X:%02X:%02X:%02X - \"%s\"\n",
+                                smac[0],smac[1],smac[2],smac[3],smac[4],smac[5], essid);
                     }
 
                     //store the tagged parameters and insert the fixed ones
@@ -1749,20 +1766,41 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     memcpy(packet + 10, opt.r_bssid, 6);
                     memcpy(packet + 16, opt.r_bssid, 6);
 
+                    if(opt.wpa2type > 0)
+                    {
+                        memcpy(packet+length, WPA2_TAG, 22);
+                        packet[length+7] = opt.wpa2type;
+                        packet[length+13] = opt.wpa2type;
+                        length += 22;
+                    }
+
+                    if(opt.wpa1type > 0)
+                    {
+                        memcpy(packet+length, WPA1_TAG, 24);
+                        packet[length+11] = opt.wpa1type;
+                        packet[length+17] = opt.wpa1type;
+                        length += 24;
+                    }
+
+                    send_packet(packet, length);
+
+                    send_packet(packet, length);
+
                     send_packet(packet, length);
                     return 0;
                 }
             }
             else //broadcast probe
             {
-                if(!opt.f_essid)
+                if(!opt.nobroadprobe)
                 {
                     //transform into probe response
                     packet[0] = 0x50;
 
                     if(opt.verbose)
                     {
-                        printf("Got broadcast probe request\n");
+                        PCT; printf("Got broadcast probe request from %02X:%02X:%02X:%02X:%02X:%02X\n",
+                                smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
                     }
 
                     //store the tagged parameters and insert the fixed ones
@@ -1814,6 +1852,26 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     memcpy(packet + 10, opt.r_bssid, 6);
                     memcpy(packet + 16, opt.r_bssid, 6);
 
+                    if(opt.wpa2type > 0)
+                    {
+                        memcpy(packet+length, WPA2_TAG, 22);
+                        packet[length+7] = opt.wpa2type;
+                        packet[length+13] = opt.wpa2type;
+                        length += 22;
+                    }
+
+                    if(opt.wpa1type > 0)
+                    {
+                        memcpy(packet+length, WPA1_TAG, 24);
+                        packet[length+11] = opt.wpa1type;
+                        packet[length+17] = opt.wpa1type;
+                        length += 24;
+                    }
+
+                    send_packet(packet, length);
+
+                    send_packet(packet, length);
+
                     send_packet(packet, length);
                     return 0;
                 }
@@ -1830,7 +1888,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                 {
                     if(opt.verbose)
                     {
-                        printf("Got an auth request from %02X:%02X:%02X:%02X:%02X:%02X (open system)\n",
+                        PCT; printf("Got an auth request from %02X:%02X:%02X:%02X:%02X:%02X (open system)\n",
                                 smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
                     }
                     memcpy(packet +  4, smac, 6);
@@ -1854,7 +1912,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                 {
                     if(opt.verbose)
                     {
-                        printf("Got an auth request from %02X:%02X:%02X:%02X:%02X:%02X (shared key)\n",
+                        PCT; printf("Got an auth request from %02X:%02X:%02X:%02X:%02X:%02X (shared key)\n",
                                 smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
                     }
                     memcpy(packet +  4, smac, 6);
@@ -1900,7 +1958,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     length = z+6;
                     send_packet(packet, length);
                     if(!opt.quiet)
-                        printf("SKA from %02X:%02X:%02X:%02X:%02X:%02X\n",
+                        PCT; printf("SKA from %02X:%02X:%02X:%02X:%02X:%02X\n",
                                 smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
                 }
             }
@@ -1938,7 +1996,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             send_packet(packet, length);
             if(!opt.quiet)
             {
-                printf("Client %02X:%02X:%02X:%02X:%02X:%02X associated",
+                PCT; printf("Client %02X:%02X:%02X:%02X:%02X:%02X associated",
                         smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
                 if(essid[0] != 0x00)
                     printf(" to ESSID: \"%s\"", essid);
@@ -1999,6 +2057,22 @@ void beacon_thread( void *arg )
     beacon[beacon_len+1] = 0x01;
     beacon[beacon_len+2] = wi_get_channel(_wi_in); //current channel
     beacon_len+=3;
+
+    if(opt.wpa2type > 0)
+    {
+        memcpy(beacon+beacon_len, WPA2_TAG, 22);
+        beacon[beacon_len+7] = opt.wpa2type;
+        beacon[beacon_len+13] = opt.wpa2type;
+        beacon_len += 22;
+    }
+
+    if(opt.wpa1type > 0)
+    {
+        memcpy(beacon+beacon_len, WPA1_TAG, 24);
+        beacon[beacon_len+11] = opt.wpa1type;
+        beacon[beacon_len+17] = opt.wpa1type;
+        beacon_len += 24;
+    }
 
     ticks[0]=0;
     ticks[1]=0;
@@ -2200,7 +2274,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vA",
+                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:y",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -2240,6 +2314,36 @@ int main( int argc, char *argv[] )
             case 'v' :
 
                 opt.verbose = 1;
+                if( opt.quiet != 0 )
+                {
+                    printf( "Don't specify -v and -q at the same time.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+
+                break;
+
+            case 'z' :
+
+                opt.wpa1type = atoi(optarg);
+                if( opt.wpa1type < 1 || opt.wpa1type > 5 )
+                {
+                    printf( "Invalid WPA1 type [1-5]\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+
+                break;
+
+            case 'Z' :
+
+                opt.wpa2type = atoi(optarg);
+                if( opt.wpa2type < 1 || opt.wpa2type > 5 )
+                {
+                    printf( "Invalid WPA2 type [1-5]\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
 
                 break;
 
@@ -2373,6 +2477,12 @@ int main( int argc, char *argv[] )
 
                 break;
 
+            case 'y' :
+
+                opt.nobroadprobe = 1;
+
+                break;
+
             case 'Y' :
 
                 if( strncasecmp(optarg, "in", 2) == 0 )
@@ -2399,6 +2509,12 @@ int main( int argc, char *argv[] )
             case 'q' :
 
                 opt.quiet = 1;
+                if( opt.verbose != 0 )
+                {
+                    printf( "Don't specify -v and -q at the same time.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
 
                 break;
 
@@ -2689,7 +2805,9 @@ usage:
     }
 
     if(!opt.quiet)
-        printf( "Created tap interface %s\n", ti_name(dev.dv_ti));
+    {
+        PCT; printf( "Created tap interface %s\n", ti_name(dev.dv_ti));
+    }
 
     if(opt.external)
     {
@@ -2701,6 +2819,7 @@ usage:
         }
         if(!opt.quiet)
         {
+            PCT;
             printf( "Created tap interface %s for external processing.\n", ti_name(dev.dv_ti2));
             printf( "You need to get the interfaces up, read the fames [,modify]\n");
             printf( "and send them back through the same interface \"%s\".\n", ti_name(dev.dv_ti2));
@@ -2793,7 +2912,7 @@ usage:
 
             if( fread( &pkh, n, 1, dev.f_cap_in ) != 1 )
             {
-                printf("Finished reading input file %s.\n", opt.s_file);
+                PCT; printf("Finished reading input file %s.\n", opt.s_file);
                 opt.s_file = NULL;
                 continue;
             }
@@ -2805,14 +2924,14 @@ usage:
 
             if( n <= 0 || n > (int) sizeof( h80211 ) )
             {
-                printf("Finished reading input file %s.\n", opt.s_file);
+                PCT; printf("Finished reading input file %s.\n", opt.s_file);
                 opt.s_file = NULL;
                 continue;
             }
 
             if( fread( h80211, n, 1, dev.f_cap_in ) != 1 )
             {
-                printf("Finished reading input file %s.\n", opt.s_file);
+                PCT; printf("Finished reading input file %s.\n", opt.s_file);
                 opt.s_file = NULL;
                 continue;
             }
