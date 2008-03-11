@@ -89,6 +89,8 @@ static struct wif *_wi_in, *_wi_out;
 #define MIN(x,y) ( (x)>(y) ? (y) : (x) )
 #endif
 
+#define NB_PRB 10       /* size of probed ESSID ring buffer */
+
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
 
@@ -144,7 +146,6 @@ extern int add_crc32(unsigned char* data, int length);
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
 
-
 char usage[] =
 "\n"
 "  %s - (C) 2008 Thomas d'Otreppe\n"
@@ -178,6 +179,7 @@ char usage[] =
 "      -y               : disables responses to broadcast probes\n"
 "      -z type          : sets WPA1 tags. 1=WEP40 2=TKIP 3=WRAP 4=CCMP 5=WEP104\n"
 "      -Z type          : same as -z, but for WPA2\n"
+"      -V type          : fake EAPOL 1=MD5 2=SHA1\n"
 "\n"
 "  Filter options:\n"
 "      --bssid <MAC>    : BSSID to filter/use\n"
@@ -193,6 +195,8 @@ char usage[] =
 
 struct options
 {
+    struct ST_info *st_1st, *st_end;
+
     unsigned char r_bssid[6];
     unsigned char r_dmac[6];
     unsigned char r_smac[6];
@@ -237,6 +241,7 @@ struct options
     int wpa1type;
     int wpa2type;
     int nobroadprobe;
+    int sendeapol;
 }
 opt;
 
@@ -303,6 +308,42 @@ struct Fragment_list
     struct timeval  access;
     char            wep;
     pFrag_t         next;
+};
+
+struct WPA_hdsk
+{
+    uchar stmac[6];				 /* supplicant MAC               */
+    uchar snonce[32];			 /* supplicant nonce             */
+    uchar anonce[32];			 /* authenticator nonce          */
+    uchar keymic[16];			 /* eapol frame MIC              */
+    uchar eapol[256];			 /* eapol frame contents         */
+    int eapol_size;				 /* eapol frame size             */
+    int keyver;					 /* key version (TKIP / AES)     */
+    int state;					 /* handshake completion         */
+};
+
+/* linked list of detected clients */
+
+struct ST_info
+{
+    struct ST_info *prev;    /* the prev client in list   */
+    struct ST_info *next;    /* the next client in list   */
+    struct AP_info *base;    /* AP this client belongs to */
+    time_t tinit, tlast;     /* first and last time seen  */
+    unsigned long nb_pkt;    /* total number of packets   */
+    unsigned char stmac[6];  /* the client's MAC address  */
+    char essid[256];         /* last associated essid     */
+    int essid_length;        /* essid length of last asso */
+    int probe_index;         /* probed ESSIDs ring index  */
+    char probes[NB_PRB][256];/* probed ESSIDs ring buffer */
+    int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
+    int power;               /* last signal power         */
+    int rate_to;             /* last bitrate to station   */
+    int rate_from;           /* last bitrate from station */
+    struct timeval ftimer;   /* time of restart           */
+    int missed;              /* number of missed packets  */
+    unsigned int lastseq;    /* last seen sequnce number  */
+    struct WPA_hdsk wpa;     /* WPA handshake data        */
 };
 
 unsigned long nb_pkt_sent;
@@ -1622,6 +1663,110 @@ int addarp(uchar* packet, int length)
     return 0;
 }
 
+int store_wpa_handshake(struct ST_info *st_cur)
+{
+    FILE *f_ivs;
+    struct ivs2_filehdr fivs2;
+    char ofn[1024];
+    struct ivs2_pkthdr ivs2;
+
+    if(st_cur == NULL)
+        return 1;
+
+    fivs2.version = IVS2_VERSION;
+
+    snprintf( ofn,  sizeof( ofn ) - 1, "wpa-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s",
+                opt.f_index, st_cur->stmac[0], st_cur->stmac[1], st_cur->stmac[2]
+                , st_cur->stmac[3], st_cur->stmac[4], st_cur->stmac[5], IVS2_EXTENSION );
+
+    opt.f_index++;
+
+    if( ( f_ivs = fopen( ofn, "wb+" ) ) == NULL )
+    {
+        perror( "fopen failed" );
+        fprintf( stderr, "Could not create \"%s\".\n", ofn );
+        return( 1 );
+    }
+
+    if( fwrite( IVS2_MAGIC, 1, 4, f_ivs ) != (size_t) 4 )
+    {
+        perror( "fwrite(IVs file MAGIC) failed" );
+        fclose( f_ivs );
+        return( 1 );
+    }
+
+    if( fwrite( &fivs2, 1, sizeof(struct ivs2_filehdr), f_ivs ) != (size_t) sizeof(struct ivs2_filehdr) )
+    {
+        perror( "fwrite(IVs file header) failed" );
+        fclose( f_ivs );
+        return( 1 );
+    }
+
+    memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
+
+    //write stmac as bssid and essid
+    ivs2.flags = 0;
+    ivs2.len = 0;
+
+    ivs2.len += st_cur->essid_length;
+    ivs2.flags |= IVS2_ESSID;
+
+    ivs2.flags |= IVS2_BSSID;
+    ivs2.len += 6;
+
+    if( fwrite( &ivs2, 1, sizeof(struct ivs2_pkthdr), f_ivs )
+        != (size_t) sizeof(struct ivs2_pkthdr) )
+    {
+        perror( "fwrite(IV header) failed" );
+        fclose( f_ivs );
+        return( 1 );
+    }
+
+    if( fwrite( opt.r_bssid, 1, 6, f_ivs ) != (size_t) 6 )
+    {
+        perror( "fwrite(IV bssid) failed" );
+        fclose( f_ivs );
+        return( 1 );
+    }
+    ivs2.len -= 6;
+
+    /* write essid */
+    if( fwrite( st_cur->essid, 1, st_cur->essid_length, f_ivs )
+        != (size_t) st_cur->essid_length )
+    {
+        perror( "fwrite(IV essid) failed" );
+        fclose( f_ivs );
+        return( 1 );
+    }
+
+    //add wpa data
+    ivs2.flags = 0;
+    ivs2.len = 0;
+
+    ivs2.len= sizeof(struct WPA_hdsk);
+    ivs2.flags |= IVS2_WPA;
+
+
+    if( fwrite( &ivs2, 1, sizeof(struct ivs2_pkthdr), f_ivs )
+        != (size_t) sizeof(struct ivs2_pkthdr) )
+    {
+        perror( "fwrite(IV header) failed" );
+        fclose( f_ivs );
+        return( 1 );
+    }
+
+    if( fwrite( &(st_cur->wpa), 1, sizeof(struct WPA_hdsk), f_ivs ) != (size_t) sizeof(struct WPA_hdsk) )
+    {
+        perror( "fwrite(IV wpa_hdsk) failed" );
+        fclose( f_ivs );
+        return( 1 );
+    }
+
+    fclose( f_ivs );
+
+    return 0;
+}
+
 int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 {
     uchar K[64];
@@ -1630,7 +1775,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
     uchar dmac[6];
     int trailer=0;
     uchar *tag=NULL;
-    int len, i;
+    int len, i, c;
     uchar *buffer;
     char essid[256];
     struct timeval tv1;
@@ -1639,6 +1784,9 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
     int seqnum, fragnum, morefrag;
     int gotsource, gotbssid;
     int remaining, bytes2use;
+
+    struct ST_info *st_cur = NULL;
+    struct ST_info *st_prv = NULL;
 
     bzero(essid, 256);
 
@@ -1706,6 +1854,67 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                 return 0;
         }
     }
+
+    /* check list of clients */
+    st_cur = opt.st_1st;
+    st_prv = NULL;
+
+    while( st_cur != NULL )
+    {
+        if( ! memcmp( st_cur->stmac, smac, 6 ) )
+            break;
+
+        st_prv = st_cur;
+        st_cur = st_cur->next;
+    }
+
+    /* if it's a new client, add it */
+
+    if( st_cur == NULL )
+    {
+        if( ! ( st_cur = (struct ST_info *) malloc(
+                         sizeof( struct ST_info ) ) ) )
+        {
+            perror( "malloc failed" );
+            return( 1 );
+        }
+
+        memset( st_cur, 0, sizeof( struct ST_info ) );
+
+        if( opt.st_1st == NULL )
+            opt.st_1st = st_cur;
+        else
+            st_prv->next  = st_cur;
+
+        memcpy( st_cur->stmac, smac, 6 );
+
+        st_cur->prev = st_prv;
+
+        st_cur->tinit = time( NULL );
+        st_cur->tlast = time( NULL );
+
+        st_cur->power = -1;
+        st_cur->rate_to = -1;
+        st_cur->rate_from = -1;
+
+        st_cur->probe_index = -1;
+        st_cur->missed  = 0;
+        st_cur->lastseq = 0;
+        gettimeofday( &(st_cur->ftimer), NULL);
+
+        for( i = 0; i < NB_PRB; i++ )
+        {
+            memset( st_cur->probes[i], 0, sizeof(
+                    st_cur->probes[i] ) );
+            st_cur->ssid_length[i] = 0;
+        }
+
+        bzero(st_cur->essid, 256);
+        st_cur->essid_length = 0;
+
+        opt.st_end = st_cur;
+    }
+
 
     /* Got a data packet with our bssid set and ToDS==1*/
     if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 && (packet[1] & 0x03) == 0x01 )
@@ -1780,6 +1989,95 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             else
             {
                 /* unencrypted data packet, nothing special, send it through dev_ti */
+                if(opt.sendeapol && memcmp(packet+z, "\xAA\xAA\x03\x00\x00\x00\x88\x8E\x01\x01", 10) == 0)
+                {
+                    /* got eapol start frame */
+                    st_cur->wpa.state = 0;
+
+                    for(i=0; i<32; i++)
+                        st_cur->wpa.anonce[i] = rand()&0xFF;
+
+                    st_cur->wpa.state |= 1;
+
+                    /* build first eapol frame */
+                    memcpy(h80211, "\x08\x02\xd5\x00", 4);
+                    len = 4;
+
+                    memcpy(h80211+len, smac, 6);
+                    len += 6;
+                    memcpy(h80211+len, bssid, 6);
+                    len += 6;
+                    memcpy(h80211+len, bssid, 6);
+                    len += 6;
+
+                    h80211[len] = 0x60;
+                    h80211[len+1] = 0x0f;
+                    len += 2;
+
+                    //llc+snap
+                    memcpy(h80211+len, "\xAA\xAA\x03\x00\x00\x00\x88\x8E", 8);
+                    len += 8;
+
+                    //eapol
+                    bzero(h80211+len, 99);
+                    h80211[len]    = 0x01;//version
+                    h80211[len+1]  = 0x03;//type
+                    h80211[len+2]  = 0x00;
+                    h80211[len+3]  = 0x5F;//len
+                    if(opt.wpa1type)
+                        h80211[len+4]  = 0xFE; //WPA1
+
+                    if(opt.wpa2type)
+                        h80211[len+4]  = 0x02; //WPA2
+
+                    if(opt.sendeapol == 1) //MD5
+                    {
+                        h80211[len+5] = 0x00;
+                        h80211[len+6] = 0x89;
+                    }
+                    else //SHA1
+                    {
+                        h80211[len+5] = 0x00;
+                        h80211[len+6] = 0x8a;
+                    }
+
+                    h80211[len+7] = 0x00;
+                    h80211[len+8] = 0x20; //keylen
+
+                    bzero(h80211+len+9, 90);
+                    memcpy(h80211+len+17, st_cur->wpa.anonce, 32);
+
+                    len+=99;
+
+                    send_packet(h80211, len);
+                    return 0;
+                }
+
+                if(opt.sendeapol && memcmp(packet+z, "\xAA\xAA\x03\x00\x00\x00\x88\x8E\x01\x03", 10) == 0)
+                {
+                    /* got eapol frame num 2 */
+                    memcpy( st_cur->wpa.snonce, &packet[z + 8 + 17], 32 );
+                    st_cur->wpa.state |= 2;
+
+                    st_cur->wpa.eapol_size = ( packet[z + 8 + 2] << 8 ) + packet[z + 8 + 3] + 4;
+
+                    memcpy( st_cur->wpa.keymic, &packet[z + 8 + 81], 16 );
+                    memcpy( st_cur->wpa.eapol,  &packet[z + 8], st_cur->wpa.eapol_size );
+                    memset( st_cur->wpa.eapol + 81, 0, 16 );
+                    st_cur->wpa.state |= 4;
+                    st_cur->wpa.keyver = packet[z + 8 + 6] & 7;
+
+                    memcpy( st_cur->wpa.stmac, st_cur->stmac, 6 );
+
+                    store_wpa_handshake(st_cur);
+                    if(!opt.quiet)
+                    {
+                        PCT; printf("Got WPA handshake from %02X:%02X:%02X:%02X:%02X:%02X\n",
+                                    smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
+                    }
+
+                    return 0;
+                }
             }
         }
         else
@@ -1885,13 +2183,40 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             {
                 if( !opt.f_essid || gotESSID((char*)tag, len) == 1)
                 {
+                    bzero(essid, 256);
+                    memcpy(essid, tag, len);
+
+                    /* store probes */
+                    for( i = 0; i < len; i++ )
+                        if( essid[i] > 0 && essid[i] < ' ' )
+                            goto skip_probe;
+
+                    /* got a valid ASCII probed ESSID, check if it's
+                    already in the ring buffer */
+
+                    for( i = 0; i < NB_PRB; i++ )
+                        if( memcmp( st_cur->probes[i], essid, len ) == 0 )
+                            goto skip_probe;
+
+                    st_cur->probe_index = ( st_cur->probe_index + 1 ) % NB_PRB;
+                    memset( st_cur->probes[st_cur->probe_index], 0, 256 );
+                    memcpy( st_cur->probes[st_cur->probe_index], essid, len ); //twice?!
+                    st_cur->ssid_length[st_cur->probe_index] = len;
+
+                    for( i = 0; i < len; i++ )
+                    {
+                        c = essid[i];
+                        if( c == 0 || ( c > 126 && c < 160 ) ) c = '.';  //could also check ||(c>0 && c<32)
+                        st_cur->probes[st_cur->probe_index][i] = c;
+                    }
+
+skip_probe:
+
                     //transform into probe response
                     packet[0] = 0x50;
 
                     if(opt.verbose)
                     {
-                        bzero(essid, 256);
-                        memcpy(essid, tag, len);
                         PCT; printf("Got directed probe request from %02X:%02X:%02X:%02X:%02X:%02X - \"%s\"\n",
                                 smac[0],smac[1],smac[2],smac[3],smac[4],smac[5], essid);
                     }
@@ -2171,7 +2496,76 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     printf(" to ESSID: \"%s\"", essid);
                 printf("\n");
             }
+
+            bzero(st_cur->essid, 256);
+            memcpy(st_cur->essid, essid, len);
+            st_cur->essid_length = len;
+
             bzero(essid, 256);
+
+            if(opt.sendeapol)
+            {
+                if(st_cur != NULL)
+                    st_cur->wpa.state = 0;
+
+                for(i=0; i<32; i++)
+                    st_cur->wpa.anonce[i] = rand()&0xFF;
+
+                st_cur->wpa.state |= 1;
+
+                /* build first eapol frame */
+                memcpy(h80211, "\x08\x02\xd5\x00", 4);
+                len = 4;
+
+                memcpy(h80211+len, smac, 6);
+                len += 6;
+                memcpy(h80211+len, bssid, 6);
+                len += 6;
+                memcpy(h80211+len, bssid, 6);
+                len += 6;
+
+                h80211[len] = 0x60;
+                h80211[len+1] = 0x0f;
+                len += 2;
+
+                //llc+snap
+                memcpy(h80211+len, "\xAA\xAA\x03\x00\x00\x00\x88\x8E", 8);
+                len += 8;
+
+                //eapol
+                bzero(h80211+len, 99);
+                h80211[len]    = 0x01;//version
+                h80211[len+1]  = 0x03;//type
+                h80211[len+2]  = 0x00;
+                h80211[len+3]  = 0x5F;//len
+                if(opt.wpa1type)
+                    h80211[len+4]  = 0xFE; //WPA1
+
+                if(opt.wpa2type)
+                    h80211[len+4]  = 0x02; //WPA2
+
+                if(opt.sendeapol == 1) //MD5
+                {
+                    h80211[len+5] = 0x00;
+                    h80211[len+6] = 0x89;
+                }
+                else //SHA1
+                {
+                    h80211[len+5] = 0x00;
+                    h80211[len+6] = 0x8a;
+                }
+
+                h80211[len+7] = 0x00;
+                h80211[len+8] = 0x20; //keylen
+
+                bzero(h80211+len+9, 90);
+                memcpy(h80211+len+17, st_cur->wpa.anonce, 32);
+
+                len+=99;
+
+                send_packet(h80211, len);
+            }
+
             return 0;
         }
 
@@ -2444,7 +2838,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:y",
+                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -2478,6 +2872,12 @@ int main( int argc, char *argv[] )
             case 'c' :
 
                 opt.channel = atoi(optarg);
+
+                break;
+
+            case 'V' :
+
+                opt.sendeapol = 1;
 
                 break;
 
@@ -2849,6 +3249,21 @@ usage:
     {
         printf("Notice: You need to specify exactly one BSSID (-b)"
                " and at least one client MAC (-d)\n");
+        printf("\"%s --help\" for help.\n", argv[0]);
+        return( 1 );
+    }
+
+    if( opt.wpa1type && opt.wpa2type )
+    {
+        printf("Notice: You can only set one method: WPA (-z) or WPA2 (-Z)\n");
+        printf("\"%s --help\" for help.\n", argv[0]);
+        return( 1 );
+    }
+
+    if( opt.sendeapol && !opt.wpa1type && !opt.wpa2type )
+    {
+        printf("Notice: You need to specify which WPA method to use"
+               " together with EAPOL. WPA (-z) or WPA2 (-Z)\n");
         printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
