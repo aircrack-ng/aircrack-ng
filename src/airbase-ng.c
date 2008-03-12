@@ -94,7 +94,7 @@ static struct wif *_wi_in, *_wi_out;
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
 
-#define RTC_RESOLUTION  1024
+#define RTC_RESOLUTION  512
 
 #define ALLOW_MACS      0
 #define BLOCK_MACS      1
@@ -130,12 +130,20 @@ static struct wif *_wi_in, *_wi_out;
     "\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
 
 #define WPA1_TAG        \
-    "\xdd\x16\x00\x50\xf2\x01\x01\x00\x00\x50\xf2\x01\x01\x00\x00\x50"  \
+    "\xdd\x16\x00\x50\xf2\x01\x01\x00\x00\x50\xf2\x02\x01\x00\x00\x50"  \
     "\xf2\x01\x01\x00\x00\x50\xf2\x02"
 
 #define WPA2_TAG        \
-    "\x30\x14\x01\x00\x00\x0f\xac\x01\x01\x00\x00\x0f\xac\x01\x01\x00"  \
+    "\x30\x14\x01\x00\x00\x0f\xac\x02\x01\x00\x00\x0f\xac\x01\x01\x00"  \
     "\x00\x0f\xac\x02\x01\x00"
+
+#define WPA_TAGS        \
+    "\x30\x28\x01\x00\x00\x0f\xac\x01\x05\x00\x00\x0f\xac\x01\x00\x0f"  \
+    "\xac\x02\x00\x0f\xac\x03\x00\x0f\xac\x04\x00\x0f\xac\x05\x02\x00"  \
+    "\x00\x0f\xac\x01\x00\x0f\xac\x02\x03\x00"  \
+    "\xdd\x2A\x00\x50\xf2\x01\x01\x00\x00\x50\xf2\x02\x05\x00\x00\x50"  \
+    "\xf2\x01\x00\x50\xf2\x02\x00\x50\xf2\x03\x00\x50\xf2\x04\x00\x50"  \
+    "\xf2\x05\x02\x00\x00\x50\xf2\x01\x00\x50\xf2\x02"
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
 extern char * searchInside(const char * dir, const char * filename);
@@ -177,9 +185,10 @@ char usage[] =
 "      --caffe-latte    : Caffe-Latte attack\n"
 "      -x nbpps         : number of packets per second (default: 100)\n"
 "      -y               : disables responses to broadcast probes\n"
+"      -0               : set all WPA tags. can't be used together with -z & -Z\n"
 "      -z type          : sets WPA1 tags. 1=WEP40 2=TKIP 3=WRAP 4=CCMP 5=WEP104\n"
 "      -Z type          : same as -z, but for WPA2\n"
-"      -V type          : fake EAPOL 1=MD5 2=SHA1\n"
+"      -V type          : fake EAPOL 1=MD5 2=SHA1 3=auto\n"
 "\n"
 "  Filter options:\n"
 "      --bssid <MAC>    : BSSID to filter/use\n"
@@ -242,6 +251,7 @@ struct options
     int wpa2type;
     int nobroadprobe;
     int sendeapol;
+    int allwpa;
 }
 opt;
 
@@ -344,6 +354,8 @@ struct ST_info
     int missed;              /* number of missed packets  */
     unsigned int lastseq;    /* last seen sequnce number  */
     struct WPA_hdsk wpa;     /* WPA handshake data        */
+    int wpatype;             /* 1=wpa1 2=wpa2             */
+    int wpahash;             /* 1=md5(tkip) 2=sha1(ccmp)  */
 };
 
 unsigned long nb_pkt_sent;
@@ -1116,10 +1128,13 @@ int check_shared_key(unsigned char *h80211, int caplen)
 
     if(textlen+4 != opt.sk_len2)
     {
-        PCT; printf("Broken SKA: %02X:%02X:%02X:%02X:%02X:%02X (expected: %d, got %d bytes)\n",
-                    *(opt.sharedkey[0]+m_dmac), *(opt.sharedkey[0]+m_dmac+1), *(opt.sharedkey[0]+m_dmac+2),
-                    *(opt.sharedkey[0]+m_dmac+3), *(opt.sharedkey[0]+m_dmac+4), *(opt.sharedkey[0]+m_dmac+5),
-                    textlen+4, opt.sk_len2);
+        if(!opt.quiet)
+        {
+            PCT; printf("Broken SKA: %02X:%02X:%02X:%02X:%02X:%02X (expected: %d, got %d bytes)\n",
+                        *(opt.sharedkey[0]+m_dmac), *(opt.sharedkey[0]+m_dmac+1), *(opt.sharedkey[0]+m_dmac+2),
+                        *(opt.sharedkey[0]+m_dmac+3), *(opt.sharedkey[0]+m_dmac+4), *(opt.sharedkey[0]+m_dmac+5),
+                        textlen+4, opt.sk_len2);
+        }
         return 1;
     }
 
@@ -1578,7 +1593,8 @@ uchar* parse_tags(unsigned char *flags, unsigned char type, int length, int *tag
     {
         cur_type = pos[0];
         cur_len = pos[1];
-
+//         printf("tag %d with len %d found, looking for tag %d\n", cur_type, cur_len, type);
+//         printf("gone through %d bytes from %d max\n", len+2+cur_len, length);
         if(len+2+cur_len > length)
             return(NULL);
 
@@ -1597,6 +1613,44 @@ uchar* parse_tags(unsigned char *flags, unsigned char type, int length, int *tag
     } while(len+2 <= length);
 
     return(NULL);
+}
+
+int wpa_client(struct ST_info *st_cur,uchar* tag, int length)
+{
+    if(tag == NULL)
+        return 1;
+
+    if(st_cur == NULL)
+        return 1;
+
+    if(tag[0] != 0xDD && tag[0] != 0x30) //wpa1 or wpa2
+        return 1;
+
+    if(tag[0] == 0xDD)
+    {
+        st_cur->wpatype = 1; //wpa1
+        if(length < 24)
+            return 1;
+
+        if( tag[17] == 0x02 )
+            st_cur->wpahash = 1; //md5|tkip
+        if( tag[17] == 0x04 )
+            st_cur->wpahash = 2; //sha1|ccmp
+    }
+
+    if(tag[0] == 0x30 && st_cur->wpatype == 0)
+    {
+        st_cur->wpatype = 2; //wpa2
+        if(length < 22)
+            return 1;
+
+        if( tag[13] == 0x02 )
+            st_cur->wpahash = 1; //md5|tkip
+        if( tag[13] == 0x04 )
+            st_cur->wpahash = 2; //sha1|ccmp
+    }
+
+    return 0;
 }
 
 int addarp(uchar* packet, int length)
@@ -1784,6 +1838,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
     int seqnum, fragnum, morefrag;
     int gotsource, gotbssid;
     int remaining, bytes2use;
+    int reasso=0, fixed=0;
 
     struct ST_info *st_cur = NULL;
     struct ST_info *st_prv = NULL;
@@ -1992,6 +2047,11 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                 if(opt.sendeapol && memcmp(packet+z, "\xAA\xAA\x03\x00\x00\x00\x88\x8E\x01\x01", 10) == 0)
                 {
                     /* got eapol start frame */
+                    if(opt.verbose)
+                    {
+                        PCT; printf("Got EAPOL start frame from %02X:%02X:%02X:%02X:%02X:%02X\n",
+                                smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
+                    }
                     st_cur->wpa.state = 0;
 
                     for(i=0; i<32; i++)
@@ -2030,15 +2090,39 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     if(opt.wpa2type)
                         h80211[len+4]  = 0x02; //WPA2
 
-                    if(opt.sendeapol == 1) //MD5
+                    if(!opt.wpa1type && !opt.wpa2type)
                     {
-                        h80211[len+5] = 0x00;
-                        h80211[len+6] = 0x89;
+                        if(st_cur->wpatype == 1) //WPA1
+                            h80211[len+4]  = 0xFE; //WPA1
+                        else if(st_cur->wpatype == 2)
+                            h80211[len+4]  = 0x02; //WPA2
                     }
-                    else //SHA1
+
+                    if(opt.sendeapol >= 1 && opt.sendeapol <= 2) //specified
                     {
-                        h80211[len+5] = 0x00;
-                        h80211[len+6] = 0x8a;
+                        if(opt.sendeapol == 1) //MD5
+                        {
+                            h80211[len+5] = 0x00;
+                            h80211[len+6] = 0x89;
+                        }
+                        else //SHA1
+                        {
+                            h80211[len+5] = 0x00;
+                            h80211[len+6] = 0x8a;
+                        }
+                    }
+                    else //from asso
+                    {
+                        if(st_cur->wpahash == 1) //MD5
+                        {
+                            h80211[len+5] = 0x00;
+                            h80211[len+6] = 0x89;
+                        }
+                        else if(st_cur->wpahash == 2) //SHA1
+                        {
+                            h80211[len+5] = 0x00;
+                            h80211[len+6] = 0x8a;
+                        }
                     }
 
                     h80211[len+7] = 0x00;
@@ -2257,6 +2341,12 @@ skip_probe:
                     memcpy(packet + 10, opt.r_bssid, 6);
                     memcpy(packet + 16, opt.r_bssid, 6);
 
+                    if( opt.allwpa )
+                    {
+                        memcpy(packet+length, WPA_TAGS, 0x56);
+                        length += 0x56;
+                    }
+
                     if(opt.wpa2type > 0)
                     {
                         memcpy(packet+length, WPA2_TAG, 22);
@@ -2342,6 +2432,12 @@ skip_probe:
                     memcpy(packet +  4, smac, 6);
                     memcpy(packet + 10, opt.r_bssid, 6);
                     memcpy(packet + 16, opt.r_bssid, 6);
+
+                    if( opt.allwpa )
+                    {
+                        memcpy(packet+length, WPA_TAGS, 0x56);
+                        length += 0x56;
+                    }
 
                     if(opt.wpa2type > 0)
                     {
@@ -2458,10 +2554,21 @@ skip_probe:
             }
         }
 
-        //asso req
-        if(packet[0] == 0x00 && memcmp( bssid, opt.r_bssid, 6) == 0 )
+        //asso req or reasso
+        if((packet[0] == 0x00 || packet[0] == 0x20) && memcmp( bssid, opt.r_bssid, 6) == 0 )
         {
-            tag = parse_tags(packet+z+4, 0, length-z-4, &len);
+            if(packet[0] == 0x00) //asso req
+            {
+                reasso = 0;
+                fixed = 4;
+            }
+            else
+            {
+                reasso = 1;
+                fixed = 10;
+            }
+
+            tag = parse_tags(packet+z+fixed, 0, length-z-fixed, &len);
             if(tag != NULL && tag[0] >= 32 && tag[0] < 127 && len < 256)
             {
                 memcpy(essid, tag, len);
@@ -2469,44 +2576,70 @@ skip_probe:
                 if(opt.f_essid && !gotESSID(essid, len))
                     return 0;
             }
-            packet[0] = 0x10;
+
+            st_cur->wpatype=0;
+            st_cur->wpahash=0;
+
+            tag = parse_tags(packet+z+fixed, 0xDD, length-z-fixed, &len);
+            while( tag != NULL )
+            {
+//                 printf("Found WPA TAG\n");
+                wpa_client(st_cur, tag-2, len+2);
+                tag += (tag-2)[1]+2;
+                tag = parse_tags(tag-2, 0xDD, length-(tag-packet)+2, &len);
+            }
+
+            tag = parse_tags(packet+z+fixed, 0x30, length-z-fixed, &len);
+            while( tag != NULL )
+            {
+//                 printf("Found WPA2 TAG\n");
+                wpa_client(st_cur, tag-2, len+2);
+                tag += (tag-2)[1]+2;
+                tag = parse_tags(tag-2, 0x30, length-(tag-packet)+2, &len);
+            }
+
+            if(!reasso)
+                packet[0] = 0x10;
+            else
+                packet[0] = 0x30;
+
             memcpy(packet +  4, smac, 6);
             memcpy(packet + 10, dmac, 6);
 
             //store the tagged parameters and insert the fixed ones
-            buffer = (uchar*) malloc(length-z-4);
-            memcpy(buffer, packet+z+4, length-z-4);
+            buffer = (uchar*) malloc(length-z-fixed);
+            memcpy(buffer, packet+z+fixed, length-z-fixed);
 
             packet[z+2] = 0x00;
             packet[z+3] = 0x00;
             packet[z+4] = 0x01;
             packet[z+5] = 0xC0;
 
-            memcpy(packet+z+6, buffer, length-z-4);
-            length +=2;
+            memcpy(packet+z+6, buffer, length-z-fixed);
+            length +=(6-fixed);
             free(buffer);
             buffer = NULL;
 
             send_packet(packet, length);
             if(!opt.quiet)
             {
-                PCT; printf("Client %02X:%02X:%02X:%02X:%02X:%02X associated",
-                        smac[0],smac[1],smac[2],smac[3],smac[4],smac[5]);
+                PCT; printf("Client %02X:%02X:%02X:%02X:%02X:%02X %sassociated",
+                        smac[0],smac[1],smac[2],smac[3],smac[4],smac[5], (reasso==0)?"":"re");
                 if(essid[0] != 0x00)
                     printf(" to ESSID: \"%s\"", essid);
                 printf("\n");
             }
 
             bzero(st_cur->essid, 256);
-            memcpy(st_cur->essid, essid, len);
-            st_cur->essid_length = len;
+            memcpy(st_cur->essid, essid, 255);
+            st_cur->essid_length = strlen(essid);
 
             bzero(essid, 256);
 
-            if(opt.sendeapol)
+            /* either specified or determined */
+            if( (opt.sendeapol && ( opt.wpa1type || opt.wpa2type ) ) || (st_cur->wpatype && st_cur->wpahash) )
             {
-                if(st_cur != NULL)
-                    st_cur->wpa.state = 0;
+                st_cur->wpa.state = 0;
 
                 for(i=0; i<32; i++)
                     st_cur->wpa.anonce[i] = rand()&0xFF;
@@ -2544,15 +2677,39 @@ skip_probe:
                 if(opt.wpa2type)
                     h80211[len+4]  = 0x02; //WPA2
 
-                if(opt.sendeapol == 1) //MD5
+                if(!opt.wpa1type && !opt.wpa2type)
                 {
-                    h80211[len+5] = 0x00;
-                    h80211[len+6] = 0x89;
+                    if(st_cur->wpatype == 1) //WPA1
+                        h80211[len+4]  = 0xFE; //WPA1
+                    else
+                        h80211[len+4]  = 0x02; //WPA2
                 }
-                else //SHA1
+
+                if(opt.sendeapol >= 1 && opt.sendeapol <= 2) //specified
                 {
-                    h80211[len+5] = 0x00;
-                    h80211[len+6] = 0x8a;
+                    if(opt.sendeapol == 1) //MD5
+                    {
+                        h80211[len+5] = 0x00;
+                        h80211[len+6] = 0x89;
+                    }
+                    else //SHA1
+                    {
+                        h80211[len+5] = 0x00;
+                        h80211[len+6] = 0x8a;
+                    }
+                }
+                else //from asso
+                {
+                    if(st_cur->wpahash == 1) //MD5
+                    {
+                        h80211[len+5] = 0x00;
+                        h80211[len+6] = 0x89;
+                    }
+                    else if(st_cur->wpahash == 2) //SHA1
+                    {
+                        h80211[len+5] = 0x00;
+                        h80211[len+6] = 0x8a;
+                    }
                 }
 
                 h80211[len+7] = 0x00;
@@ -2621,6 +2778,12 @@ void beacon_thread( void *arg )
     beacon[beacon_len+2] = wi_get_channel(_wi_in); //current channel
     beacon_len+=3;
 
+    if( opt.allwpa )
+    {
+        memcpy(beacon+beacon_len, WPA_TAGS, 0x56);
+        beacon_len += 0x56;
+    }
+
     if(opt.wpa2type > 0)
     {
         memcpy(beacon+beacon_len, WPA2_TAG, 22);
@@ -2672,15 +2835,15 @@ void beacon_thread( void *arg )
         }
 //         printf( "2 " );
 
-        if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)apc.interval/1000.0)*(double)seq )
+        if( ( (double)ticks[2] / (double)RTC_RESOLUTION*1.08 )  >= ((double)apc.interval/1000.0)*(double)seq )
         {
             /* threshold reach, send one frame */
-//            ticks[2] = 0;
-//             printf( "ticks: %f ", ticks[2] );
+//             ticks[2] = 0;
 //             printf( "3 " );
             fflush(stdout);
             gettimeofday( &tv1,  NULL );
             timestamp=tv1.tv_sec*1000000 + tv1.tv_usec;
+//             printf( "ticks: %f ; timestamp: %u\n", ticks[2], (unsigned int)timestamp );
 
 //             printf( "4 " );
             fflush(stdout);
@@ -2838,7 +3001,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:",
+                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -2877,7 +3040,13 @@ int main( int argc, char *argv[] )
 
             case 'V' :
 
-                opt.sendeapol = 1;
+                opt.sendeapol = atoi(optarg);
+                if(opt.sendeapol < 1 || opt.sendeapol > 3)
+                {
+                    printf( "EAPOL value can only be 1[MD5], 2[SHA1] or 3[auto].\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
 
                 break;
 
@@ -2948,6 +3117,14 @@ int main( int argc, char *argv[] )
             case 'X' :
 
                 opt.hidden = 1;
+
+                break;
+
+            case '0' :
+
+                opt.allwpa = 1;
+                if(opt.sendeapol == 0)
+                    opt.sendeapol = 3;
 
                 break;
 
@@ -3260,10 +3437,18 @@ usage:
         return( 1 );
     }
 
-    if( opt.sendeapol && !opt.wpa1type && !opt.wpa2type )
+//     if( opt.sendeapol && !opt.wpa1type && !opt.wpa2type )
+//     {
+//         printf("Notice: You need to specify which WPA method to use"
+//                " together with EAPOL. WPA (-z) or WPA2 (-Z)\n");
+//         printf("\"%s --help\" for help.\n", argv[0]);
+//         return( 1 );
+//     }
+
+    if( opt.allwpa && (opt.wpa1type || opt.wpa2type) )
     {
-        printf("Notice: You need to specify which WPA method to use"
-               " together with EAPOL. WPA (-z) or WPA2 (-Z)\n");
+        printf("Notice: You cannot use all WPA tags (-0)"
+               " together with WPA (-z) or WPA2 (-Z)\n");
         printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
