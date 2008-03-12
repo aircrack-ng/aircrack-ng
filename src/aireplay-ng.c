@@ -6107,7 +6107,8 @@ usage:
         }
         else
         {
-            perror( "open(/dev/rtc) failed" );
+            printf( "For information, no action required:"
+                    " Using gettimeofday() instead of /dev/rtc\n" );
             dev.fd_rtc = -1;
         }
 

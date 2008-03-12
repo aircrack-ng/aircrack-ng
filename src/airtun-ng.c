@@ -945,6 +945,12 @@ usage:
                 }
             }
         }
+        else
+        {
+            printf( "For information, no action required:"
+                    " Using gettimeofday() instead of /dev/rtc\n" );
+            dev.fd_rtc = -1;
+        }
     }
 #endif /* linux */
 #endif /* __i386__ */
