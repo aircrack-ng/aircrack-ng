@@ -1067,8 +1067,19 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     {
         if (set_monitor( dev, iface, fd ) && !dev->drivertype == DT_ORINOCO )
         {
-            printf("Error setting monitor mode on %s\n",iface);
-            return( 1 );
+            ifr.ifr_flags &= ~(IFF_UP | IFF_BROADCAST | IFF_RUNNING);
+
+            if( ioctl( fd, SIOCSIFFLAGS, &ifr ) < 0 )
+            {
+                perror( "ioctl(SIOCSIFFLAGS) failed" );
+                return( 1 );
+            }
+
+            if (set_monitor( dev, iface, fd ) && !dev->drivertype == DT_ORINOCO )
+            {
+                printf("Error setting monitor mode on %s\n",iface);
+                return( 1 );
+            }
         }
     }
 
