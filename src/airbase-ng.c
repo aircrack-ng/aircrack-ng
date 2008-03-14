@@ -92,6 +92,10 @@ static struct wif *_wi_in, *_wi_out;
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
 #define MAX_CF_XMIT 100
 
+#define PCT { struct tm *lt; time_t tc = time( NULL ); \
+              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
+              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
+
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
 
@@ -191,15 +195,15 @@ char usage[] =
 "      -z type          : sets WPA1 tags. 1=WEP40 2=TKIP 3=WRAP 4=CCMP 5=WEP104\n"
 "      -Z type          : same as -z, but for WPA2\n"
 "      -V type          : fake EAPOL 1=MD5 2=SHA1 3=auto\n"
+"      -F prefix        : write all sent and received frames into pcap file\n"
 "\n"
 "  Filter options:\n"
-"      --bssid <MAC>    : BSSID to filter/use\n"
-"      --bssids <file>  : read a list of BSSIDs out of that file\n"
-"      --client <MAC>   : MAC of client to \n"
-"      --clients <file> : read a list of MACs out of that file\n"
-"      --essid <ESSID>  : specify a single ESSID\n"
-"      --essids <file>  : read a list of ESSIDs out of that file\n"
-"      "
+"      --bssid MAC      : BSSID to filter/use\n"
+"      --bssids file    : read a list of BSSIDs out of that file\n"
+"      --client MAC     : MAC of client to filter\n"
+"      --clients file   : read a list of MACs out of that file\n"
+"      --essid ESSID    : specify a single ESSID\n"
+"      --essids file    : read a list of ESSIDs out of that file\n"
 "\n"
 "      --help           : Displays this usage screen\n"
 "\n";
@@ -219,7 +223,13 @@ struct options
     char *s_file;
     uchar *prga;
 
+    char *dump_prefix;
+    char *keyout;
+    char *f_cap_name;
+    char *prefix;
+
     int f_index;            /* outfiles index       */
+    FILE *f_cap;            /* output cap file      */
     FILE *f_xor;            /* output prga file     */
     unsigned char sharedkey[3][4096]; /* array for 3 packets with a size of \
                                up to 4096Byte */
@@ -256,6 +266,7 @@ struct options
     int allwpa;
     int cf_count;
     int cf_attack;
+    int record_data;
 }
 opt;
 
@@ -360,6 +371,7 @@ struct ST_info
     struct WPA_hdsk wpa;     /* WPA handshake data        */
     int wpatype;             /* 1=wpa1 2=wpa2             */
     int wpahash;             /* 1=md5(tkip) 2=sha1(ccmp)  */
+    int wep;                 /* capability encryption bit */
 };
 
 typedef struct CF_packet *pCF_t;
@@ -375,6 +387,7 @@ struct CF_packet
 };
 
 pthread_mutex_t mx_cf;              /* lock write access to rCF */
+pthread_mutex_t mx_cap;              /* lock write access to rCF */
 
 unsigned long nb_pkt_sent;
 unsigned char h80211[4096];
@@ -436,6 +449,125 @@ int addESSID(char* essid, int len)
     cur->next = NULL;
 
     return 0;
+}
+
+int capture_packet(uchar* packet, int length)
+{
+    struct pcap_pkthdr pkh;
+    struct timeval tv;
+
+    int n;
+
+    if( opt.f_cap != NULL && length >= 10)
+    {
+        pkh.caplen = pkh.len = length;
+
+        gettimeofday( &tv, NULL );
+
+        pkh.tv_sec  = tv.tv_sec;
+        pkh.tv_usec = tv.tv_usec;
+
+        n = sizeof( pkh );
+
+        if( fwrite( &pkh, 1, n, opt.f_cap ) != (size_t) n )
+        {
+            perror( "fwrite(packet header) failed" );
+            return( 1 );
+        }
+
+        fflush( stdout );
+
+        n = pkh.caplen;
+
+        if( fwrite( packet, 1, n, opt.f_cap ) != (size_t) n )
+        {
+            perror( "fwrite(packet data) failed" );
+            return( 1 );
+        }
+
+        fflush( stdout );
+
+        fflush( opt.f_cap );
+    }
+    return 0;
+}
+int dump_initialize( char *prefix )
+{
+    int i=0;
+    FILE *f;
+    char ofn[1024];
+
+    if ( prefix == NULL) {
+        return( 0 );
+    }
+
+    /* check not to overflow the ofn buffer */
+
+    if( strlen( prefix ) >= sizeof( ofn ) - 10 )
+        prefix[sizeof( ofn ) - 10] = '\0';
+
+    /* make sure not to overwrite any existing file */
+
+    memset( ofn, 0, sizeof( ofn ) );
+
+    opt.f_index = 1;
+
+    do
+    {
+        snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.%s",
+                    prefix, opt.f_index, "cap" );
+
+        if( ( f = fopen( ofn, "rb+" ) ) != NULL )
+        {
+            fclose( f );
+            opt.f_index++;
+            continue;
+        }
+        i++;
+    }
+    while( i < 1 );
+
+    opt.prefix = (char*) malloc(strlen(prefix)+2);
+    snprintf(opt.prefix, strlen(prefix)+1, "%s", prefix);
+
+    /* create the output packet capture file */
+
+    struct pcap_file_header pfh;
+
+    snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.cap",
+                prefix, opt.f_index );
+
+    if( ( opt.f_cap = fopen( ofn, "wb+" ) ) == NULL )
+    {
+        perror( "fopen failed" );
+        fprintf( stderr, "Could not create \"%s\".\n", ofn );
+        return( 1 );
+    }
+
+    opt.f_cap_name = (char*) malloc(128);
+    snprintf(opt.f_cap_name, 127, "%s",ofn);
+
+    pfh.magic           = TCPDUMP_MAGIC;
+    pfh.version_major   = PCAP_VERSION_MAJOR;
+    pfh.version_minor   = PCAP_VERSION_MINOR;
+    pfh.thiszone        = 0;
+    pfh.sigfigs         = 0;
+    pfh.snaplen         = 65535;
+    pfh.linktype        = LINKTYPE_IEEE802_11;
+
+    if( fwrite( &pfh, 1, sizeof( pfh ), opt.f_cap ) !=
+                (size_t) sizeof( pfh ) )
+    {
+        perror( "fwrite(pcap file header) failed" );
+        return( 1 );
+    }
+
+    if(!opt.quiet)
+    {
+        PCT; printf("Created capture file \"%s\".\n", ofn);
+    }
+
+    return( 0 );
 }
 
 int addFrag(unsigned char* packet, unsigned char* smac, int len)
@@ -999,6 +1131,11 @@ int send_packet(void *buf, size_t count)
                 return -1;
         }
 
+        pthread_mutex_lock( &mx_cap );
+        if(opt.record_data)
+            capture_packet(buf, count);
+        pthread_mutex_unlock( &mx_cap );
+
         nb_pkt_sent++;
         return 0;
 }
@@ -1064,10 +1201,6 @@ int msleep( int msec )
 
     return 0;
 }
-
-#define PCT { struct tm *lt; time_t tc = time( NULL ); \
-              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
-              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
 
 int check_shared_key(unsigned char *h80211, int caplen)
 {
@@ -2170,6 +2303,11 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
     bzero(essid, 256);
 
+    pthread_mutex_lock( &mx_cap );
+    if(opt.record_data)
+        capture_packet(packet, length);
+    pthread_mutex_unlock( &mx_cap );
+
     int z;
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
@@ -2291,6 +2429,10 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
         bzero(st_cur->essid, 256);
         st_cur->essid_length = 0;
+
+        st_cur->wpatype = 0;
+        st_cur->wpahash = 0;
+        st_cur->wep = 0;
 
         opt.st_end = st_cur;
     }
@@ -2903,6 +3045,8 @@ skip_probe:
                 fixed = 10;
             }
 
+            st_cur->wep = (packet[z] & 0x10) >> 4;
+
             tag = parse_tags(packet+z+fixed, 0, length-z-fixed, &len);
             if(tag != NULL && tag[0] >= 32 && tag[0] < 127 && len < 256)
             {
@@ -2960,6 +3104,27 @@ skip_probe:
             {
                 PCT; printf("Client %02X:%02X:%02X:%02X:%02X:%02X %sassociated",
                         smac[0],smac[1],smac[2],smac[3],smac[4],smac[5], (reasso==0)?"":"re");
+                if(st_cur->wpatype != 0)
+                {
+                    if(st_cur->wpatype == 1)
+                        printf(" (WPA1");
+                    else
+                        printf(" (WPA2");
+
+                    if(st_cur->wpahash == 1)
+                        printf(";TKIP)");
+                    else
+                        printf(";CCMP)");
+                }
+                else if(st_cur->wep != 0)
+                {
+                    printf(" (WEP)");
+                }
+                else
+                {
+                    printf(" (unencrypted)");
+                }
+
                 if(essid[0] != 0x00)
                     printf(" to ESSID: \"%s\"", essid);
                 printf("\n");
@@ -3170,7 +3335,7 @@ void beacon_thread( void *arg )
         }
 //         printf( "2 " );
 
-        if( ( (double)ticks[2] / (double)RTC_RESOLUTION*1.08 )  >= ((double)apc.interval/1000.0)*(double)seq )
+        if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)apc.interval/1000.0)*(double)seq )
         {
             /* threshold reach, send one frame */
 //             ticks[2] = 0;
@@ -3434,6 +3599,7 @@ int main( int argc, char *argv[] )
     bzero(rCF, sizeof(struct CF_packet));
 
     pthread_mutex_init( &mx_cf, NULL );
+    pthread_mutex_init( &mx_cap, NULL );
 
     opt.r_nbpps     = 100;
     opt.tods        = 0;
@@ -3469,7 +3635,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0N",
+                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0NF:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3799,6 +3965,17 @@ int main( int argc, char *argv[] )
 
                 break;
 
+            case 'F':
+
+                if (opt.dump_prefix != NULL) {
+                    printf( "Notice: dump prefix already given\n" );
+                    break;
+                }
+                /* Write prefix */
+                opt.dump_prefix   = optarg;
+                opt.record_data = 1;
+                break;
+
             case 'd':
 
                 if(getmac(optarg, 1, mac) == 0)
@@ -4008,6 +4185,10 @@ usage:
         else
             opt.r_nbpps = 500;
     }
+
+    if (opt.record_data)
+        if( dump_initialize( opt.dump_prefix ) )
+            return( 1 );
 
     if( opt.s_file != NULL )
     {
