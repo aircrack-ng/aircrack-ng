@@ -56,7 +56,7 @@
 #include <errno.h>
 #include <time.h>
 #include <getopt.h>
-
+#include <sys/file.h>
 #include <fcntl.h>
 
 #include "version.h"
@@ -469,9 +469,11 @@ int capture_packet(uchar* packet, int length)
 
         n = sizeof( pkh );
 
+        flock(fileno(opt.f_cap), LOCK_EX);
         if( fwrite( &pkh, 1, n, opt.f_cap ) != (size_t) n )
         {
             perror( "fwrite(packet header) failed" );
+            flock(fileno(opt.f_cap), LOCK_UN);
             return( 1 );
         }
 
@@ -482,12 +484,14 @@ int capture_packet(uchar* packet, int length)
         if( fwrite( packet, 1, n, opt.f_cap ) != (size_t) n )
         {
             perror( "fwrite(packet data) failed" );
+            flock(fileno(opt.f_cap), LOCK_UN);
             return( 1 );
         }
 
         fflush( stdout );
 
         fflush( opt.f_cap );
+        flock(fileno(opt.f_cap), LOCK_UN);
     }
     return 0;
 }
@@ -1851,13 +1855,15 @@ int set_final_arp(uchar *buf, uchar *mymac)
     return 0;
 }
 
-int set_clear_ip(uchar *buf) //set first 9 bytes
+int set_clear_ip(uchar *buf, int ip_len) //set first 9 bytes
 {
     if(buf == NULL)
         return -1;
 
     memcpy(buf, S_LLC_SNAP_IP, 8);
     buf[8]  = 0x45;
+    buf[10] = (ip_len >> 8)  & 0xFF;
+    buf[11] = ip_len & 0xFF;
 
     return 0;
 }
@@ -1874,6 +1880,8 @@ int set_final_ip(uchar *buf, uchar *mymac)
     buf[2] = 0x00;
     buf[3] = 0x01; //request
     memcpy(buf+4, mymac, 6); //sender mac
+    buf[10] = 0xA9; //sender IP from 169.254.XXX.XXX
+    buf[11] = 0xFE;
 
     return 0;
 }
@@ -2003,7 +2011,7 @@ int addCF(uchar* packet, int length)
 //         printf("Found IP packet\n");
         isarp = 0;
         //build the new packet
-        set_clear_ip(clear);
+        set_clear_ip(clear, length-z-4-8-4);
         set_final_ip(final, opt.r_smac);
 
         for(i=0; i<8; i++)
