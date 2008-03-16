@@ -1,0 +1,25 @@
+diff -Naur madwifi-ng/ath/if_ath.c madwifi-ng_raw/ath/if_ath.c
+--- madwifi-ng/ath/if_ath.c	2008-03-16 15:48:11.000000000 +0100
++++ madwifi-ng_raw/ath/if_ath.c	2008-03-16 15:57:16.000000000 +0100
+@@ -2875,6 +2875,7 @@
+ ath_tx_startraw(struct net_device *dev, struct ath_buf *bf, struct sk_buff *skb)
+ {
+ 	struct ath_softc *sc = dev->priv;
++	struct ieee80211com *ic = &sc->sc_ic;
+ 	struct ath_hal *ah = sc->sc_ah;
+ 	struct ieee80211_phy_params *ph = (struct ieee80211_phy_params *)
+ 		(SKB_CB(skb) + 1); /* NB: SKB_CB casts to CB struct*. */
+@@ -2888,7 +2889,12 @@
+ 	struct ieee80211_frame *wh;
+ 
+ 	wh = (struct ieee80211_frame *)skb->data;
+-	try0 = ph->try0;
++//        try0 = ph->try0;
++        try0 = (ic->ic_opmode == IEEE80211_M_MONITOR) ? 1 : ph->try0;
++        /*
++         * The retry value has to be patched to 1 when injecting,
++         * otherwise the sequence number will be overwritten
++         */
+ 	rt = sc->sc_currates;
+ 	txrate = dot11_to_ratecode(sc, rt, ph->rate0);
+ 	power = ph->power > 60 ? 60 : ph->power;
