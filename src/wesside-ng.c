@@ -271,6 +271,7 @@ static struct wstate *get_ws(void)
 }
 
 static void cleanup(int x);
+static void sigchild(int x);
 
 static void time_print(char* fmt, ...)
 {
@@ -1634,6 +1635,16 @@ static int do_crack(struct wstate *ws)
 	return 0;
 }
 
+static void sigchild(int x)
+{
+	struct wstate *ws;
+
+	if (x) {} /* XXX unused */
+
+	ws = get_ws();
+	ws->ws_crack_pid = 0; /* crack done */
+}
+
 static void try_crack(struct wstate *ws)
 {
 	if (ws->ws_crack_pid) {
@@ -1919,6 +1930,10 @@ static void own(struct wstate *ws)
 		perror("signal()");
 		exit(1);
 	}
+	if (signal (SIGCHLD, &sigchild) == SIG_ERR) {
+		perror("signal()");
+		exit(1);
+	}
 
 	time_print("Looking for a victim...\n");
 
@@ -1961,10 +1976,17 @@ static void own(struct wstate *ws)
 		FD_SET(wifd, &rfd);
 		tv.tv_sec = 0;
 		tv.tv_usec = 1000*10;
+
 		rd = select(largest+1, &rfd, NULL, NULL, &tv);
 		if (rd == -1) {
-			perror("select()");
-			exit(1);
+			switch (errno) {
+				case EINTR: /* handle SIGCHLD */
+					break;
+				default:
+					perror("select()");
+					exit(1);
+					break;
+			}
 		}
 
 		// read
