@@ -1304,7 +1304,7 @@ void read_thread( void *arg )
 				goto unlock_mx_apl;
 
 			if (opt.do_ptw) {
-				unsigned char *body = h80211 + 24;
+				unsigned char *body = h80211 + z;
 				int dlen = pkh.caplen - (body-h80211) - 4 -4;
 				unsigned char clear[2048];
 				int clearsize, i, j, k;
@@ -2086,7 +2086,7 @@ void check_thread( void *arg )
 				goto unlock_mx_apl;
 
 			if (opt.do_ptw) {
-				unsigned char *body = h80211 + 24;
+				unsigned char *body = h80211 + z;
 				int dlen = pkh.caplen - (body-h80211) - 4 -4;
 				unsigned char clear[2048];
 				int clearsize, k;
