@@ -1886,6 +1886,7 @@ int set_final_ip(uchar *buf, uchar *mymac)
     return 0;
 }
 
+//add packet for client fragmentation attack
 int addCF(uchar* packet, int length)
 {
     pCF_t   curCF = rCF;
@@ -2111,14 +2112,21 @@ int addCF(uchar* packet, int length)
 
     pthread_mutex_unlock( &mx_cf );
 
+    if(opt.cf_count == 1 && !opt.quiet)
+    {
+        PCT; printf("Starting Hirte attack against %02X:%02X:%02X:%02X:%02X:%02X at %d pps.\n",
+                smac[0],smac[1],smac[2],smac[3],smac[4],smac[5],opt.r_nbpps);
+    }
+
     if(opt.verbose)
     {
-        PCT; printf("Added %s frame to cfrag buffer.\n", isarp?"ARP":"IP");
+        PCT; printf("Added %s packet to cfrag buffer.\n", isarp?"ARP":"IP");
     }
 
     return 0;
 }
 
+//add packet for caffe latte attack
 int addarp(uchar* packet, int length)
 {
     uchar bssid[6], smac[6], dmac[6];
@@ -2171,7 +2179,7 @@ int addarp(uchar* packet, int length)
 
     if(opt.nb_arp == 1 && !opt.quiet)
     {
-        PCT; printf("Sending ARP requests to %02X:%02X:%02X:%02X:%02X:%02X at around %d pps.\n",
+        PCT; printf("Starting Caffe-Latte attack against %02X:%02X:%02X:%02X:%02X:%02X at %d pps.\n",
                 smac[0],smac[1],smac[2],smac[3],smac[4],smac[5],opt.r_nbpps);
     }
 
@@ -4282,6 +4290,10 @@ usage:
     {
         for(i=0; i<6; i++) //random cell
             opt.r_bssid[i] = rand() & 0xFF;
+
+        //generate an even first byte
+        if(opt.r_bssid[0] & 0x01)
+            opt.r_bssid[0] ^= 0x01;
     }
 
     memcpy(apc.bssid, opt.r_bssid, 6);
@@ -4349,6 +4361,20 @@ usage:
         {
             perror("cfrag pthread_create");
             return( 1 );
+        }
+    }
+
+    if( !opt.quiet )
+    {
+        if(opt.adhoc)
+        {
+            PCT; printf("Sending beacons in Ad-Hoc mode for Cell %02X:%02X:%02X:%02X:%02X:%02X.\n",
+                        opt.r_bssid[0],opt.r_bssid[1],opt.r_bssid[2],opt.r_bssid[3],opt.r_bssid[4],opt.r_bssid[5]);
+        }
+        else
+        {
+            PCT; printf("Access Point with BSSID %02X:%02X:%02X:%02X:%02X:%02X started.\n",
+                        opt.r_bssid[0],opt.r_bssid[1],opt.r_bssid[2],opt.r_bssid[3],opt.r_bssid[4],opt.r_bssid[5]);
         }
     }
 
