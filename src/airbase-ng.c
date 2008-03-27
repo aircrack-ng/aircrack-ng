@@ -1092,7 +1092,7 @@ int addMACfile(pMAC_t pMAC, char* filename)
     list = fopen(filename, "r");
     if(list == NULL)
     {
-        perror("Unable to open ESSID list");
+        perror("Unable to open MAC list");
         return -1;
     }
 
