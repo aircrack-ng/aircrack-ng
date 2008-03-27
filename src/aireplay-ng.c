@@ -302,6 +302,7 @@ static struct wif *_wi_in, *_wi_out;
 struct ARP_req
 {
     unsigned char *buf;
+    int hdrlen;
     int len;
 };
 
@@ -532,11 +533,20 @@ void read_sleep( int usec )
 
 int filter_packet( unsigned char *h80211, int caplen )
 {
-    int z, mi_b, mi_s, mi_d;
+    int z, mi_b, mi_s, mi_d, ext, qos;
+
+    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( ( h80211[0] & 0x80 ) == 0x80 )
+    {
+        qos = 1; /* 802.11e QoS */
+        z+=2;
+    }
+
+    ext = z-24; //how many bytes longer than default ieee80211 header
 
     /* check length */
-    if( caplen < opt.f_minlen ||
-        caplen > opt.f_maxlen ) return( 1 );
+    if( caplen-ext < opt.f_minlen ||
+        caplen-ext > opt.f_maxlen ) return( 1 );
 
     /* check the frame control bytes */
 
@@ -556,8 +566,6 @@ int filter_packet( unsigned char *h80211, int caplen )
         opt.f_iswep   >= 0 ) return( 1 );
 
     /* check the extended IV (TKIP) flag */
-
-    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
 
     if( opt.f_type == 2 && opt.f_iswep == 1 &&
         ( h80211[z + 3] & 0x20 ) != 0 ) return( 1 );
@@ -806,7 +814,7 @@ int capture_ask_packet( int *caplen, int just_grab )
     fd_set rfds;
     long nb_pkt_read;
     int i, j, n, mi_b=0, mi_s=0, mi_d=0, mi_t=0, mi_r=0, is_wds=0, key_index_offset;
-    int ret;
+    int ret, z;
 
     FILE *f_cap_out;
     struct pcap_file_header pfh_out;
@@ -914,6 +922,10 @@ int capture_ask_packet( int *caplen, int just_grab )
         if(opt.fast)
             break;
 
+        z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+        if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+            z+=2;
+
         switch( h80211[1] & 3 )
         {
             case  0: mi_b = 16; mi_s = 10; mi_d =  4; is_wds = 0; break;
@@ -927,8 +939,9 @@ int capture_ask_packet( int *caplen, int just_grab )
 
         if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
         {
-            if (is_wds) key_index_offset = 33; // WDS packets have an additional MAC, so the key index is at byte 33
-                else key_index_offset = 27;
+//             if (is_wds) key_index_offset = 33; // WDS packets have an additional MAC, so the key index is at byte 33
+//             else key_index_offset = 27;
+            key_index_offset = z+3;
 
             if( ( h80211[key_index_offset] & 0x20 ) == 0 )
                 printf( " (WEP)" );
@@ -2165,7 +2178,7 @@ int do_attack_arp_resend( void )
 {
     int nb_bad_pkt;
     int arp_off1, arp_off2;
-    int i, n, caplen, nb_arp;
+    int i, n, caplen, nb_arp, z;
     long nb_pkt_read, nb_arp_tot, nb_ack_pkt;
 
     time_t tc;
@@ -2424,6 +2437,10 @@ int do_attack_arp_resend( void )
         if( filter_packet( h80211, caplen ) == 0 )
         {
 add_arp:
+            z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+            if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+                z+=2;
+
             switch( h80211[1] & 3 )
             {
                 case  1: /* ToDS */
@@ -2461,13 +2478,14 @@ add_arp:
                 }
             }
 
-            h80211[0] = 0x08;   /* normal data */
+            //should be correct already, keep qos/wds status
+//             h80211[0] = 0x08;   /* normal data */
 
             /* if same IV, perhaps our own packet, skip it */
 
             for( i = 0; i < nb_arp; i++ )
             {
-                if( memcmp( h80211 + 24, arp[i].buf + 24, 4 ) == 0 )
+                if( memcmp( h80211 + z, arp[i].buf + arp[i].hdrlen, 4 ) == 0 )
                     break;
             }
 
@@ -2488,6 +2506,7 @@ add_arp:
 
                 memcpy( arp[arp_off2].buf, h80211, caplen );
                 arp[arp_off2].len = caplen;
+                arp[arp_off2].hdrlen = z;
 
                 if( ++arp_off2 >= nb_arp )
                     arp_off2 = 0;
@@ -2500,6 +2519,7 @@ add_arp:
 
                 memcpy( arp[nb_arp].buf, h80211, caplen );
                 arp[nb_arp].len = caplen;
+                arp[nb_arp].hdrlen = z;
                 nb_arp++;
 
                 pkh.tv_sec  = tv.tv_sec;
@@ -2533,7 +2553,7 @@ int do_attack_caffe_latte( void )
 {
     int nb_bad_pkt;
     int arp_off1, arp_off2;
-    int i, n, caplen, nb_arp;
+    int i, n, caplen, nb_arp, z;
     long nb_pkt_read, nb_arp_tot, nb_ack_pkt;
     uchar flip[4096];
 
@@ -2791,6 +2811,10 @@ int do_attack_caffe_latte( void )
         if( filter_packet( h80211, caplen ) == 0 )
         {
 add_arp:
+            z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+            if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+                z+=2;
+
             switch( h80211[1] & 3 )
             {
                 case  0: /* ad-hoc */
@@ -2837,13 +2861,13 @@ add_arp:
                     continue;
             }
 
-            h80211[0] = 0x08;   /* normal data */
+//             h80211[0] = 0x08;   /* normal data */
 
             /* if same IV, perhaps our own packet, skip it */
 
             for( i = 0; i < nb_arp; i++ )
             {
-                if( memcmp( h80211 + 24, arp[i].buf + 24, 4 ) == 0 )
+                if( memcmp( h80211 + z, arp[i].buf + arp[i].hdrlen, 4 ) == 0 )
                     break;
             }
 
@@ -2869,15 +2893,18 @@ add_arp:
 
                 bzero(flip, 4096);
 
-                flip[49-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender MAC
-                flip[53-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender IP
+//                 flip[49-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender MAC
+//                 flip[53-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender IP
+                flip[z+21] ^= ((rand() % 255)+1); //flip random bits in last byte of sender MAC
+                flip[z+25] ^= ((rand() % 255)+1); //flip random bits in last byte of sender IP
 
-                add_crc32_plain(flip, caplen-24-4-4);
-                for(i=0; i<caplen-24-4; i++)
-                    (h80211+24+4)[i] ^= flip[i];
+                add_crc32_plain(flip, caplen-z-4-4);
+                for(i=0; i<caplen-z-4; i++)
+                    (h80211+z+4)[i] ^= flip[i];
 
                 memcpy( arp[nb_arp].buf, h80211, caplen );
                 arp[nb_arp].len = caplen;
+                arp[nb_arp].hdrlen = z;
                 nb_arp++;
 
                 pkh.tv_sec  = tv.tv_sec;
