@@ -553,7 +553,7 @@ int filter_packet( unsigned char *h80211, int caplen )
     if( ( h80211[0] & 0x0C ) != ( opt.f_type    << 2 ) &&
         opt.f_type    >= 0 ) return( 1 );
 
-    if( ( h80211[0] & 0xF0 ) != ( opt.f_subtype << 4 ) &&
+    if( ( h80211[0] & 0x70 ) != (( opt.f_subtype << 4 ) & 0x70) && //ignore the leading bit (QoS)
         opt.f_subtype >= 0 ) return( 1 );
 
     if( ( h80211[1] & 0x01 ) != ( opt.f_tods         ) &&
@@ -3576,6 +3576,8 @@ int do_attack_chopchop( void )
 			data_end = 40;
 
             z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+            if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+                z+=2;
 
             if( ( chopped[data_end + 0] ^ srcbuf[data_end + 0] ) == 0x06 &&
                 ( chopped[data_end + 1] ^ srcbuf[data_end + 1] ) == 0x04 &&
@@ -3743,13 +3745,15 @@ int do_attack_chopchop( void )
             /* check if it's a WEP data packet */
 
             if( ( h80211[0] & 0x0C ) != 8 ) continue;
-            if( ( h80211[0] & 0xF0 ) != 0 ) continue;
+            if( ( h80211[0] & 0x70 ) != 0 ) continue;
             if( ( h80211[1] & 0x03 ) != 2 ) continue;
             if( ( h80211[1] & 0x40 ) == 0 ) continue;
 
             /* check the extended IV (TKIP) flag */
 
             z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+            if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+                z+=2;
 
             if( ( h80211[z + 3] & 0x20 ) != 0 ) continue;
 
@@ -3823,6 +3827,8 @@ int do_attack_chopchop( void )
     memcpy( h80211, srcbuf, caplen );
 
     z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+        z+=2;
 
     chopped[z + 4] = srcbuf[z + 4] ^ b1;
     chopped[z + 5] = srcbuf[z + 5] ^ b2;
