@@ -371,7 +371,7 @@ do
             then
                 echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
                 sleep 0.1
-                iwconfig $MONDEV mode Monitor &>/dev/null
+                iwconfig $MONDEV mode Monitor >/dev/null 2>&1
                 ifconfig $MONDEV up
                 printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
             else
@@ -415,16 +415,16 @@ do
     then
         cp $KISMET~ $KISMET 2>/dev/null &&
         echo "source=orinoco,$iface,HermesI" >>$KISMET
-        iwconfig $iface mode Monitor channel $CH &>/dev/null
-        iwpriv $iface monitor 1 $CH &>/dev/null
+        iwconfig $iface mode Monitor channel $CH >/dev/null 2>&1
+        iwpriv $iface monitor 1 $CH >/dev/null 2>&1
         ifconfig $iface up
         printf " (monitor mode enabled)"
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
     then
         ifconfig $iface down
-        iwpriv $iface monitor 0 &>/dev/null
-        iwconfig $iface mode Managed &>/dev/null
+        iwpriv $iface monitor 0 >/dev/null 2>&1
+        iwconfig $iface mode Managed >/dev/null 2>&1
         printf " (monitor mode disabled)"
     fi
     echo
@@ -560,7 +560,7 @@ do
          echo "source=prism54g,$iface,Prism54" >>$KISMET
          ifconfig $iface up
          iwconfig $iface mode Monitor channel $CH
-         iwpriv $iface set_prismhdr 1 &>/dev/null
+         iwpriv $iface set_prismhdr 1 >/dev/null 2>&1
          printf " (monitor mode enabled)"
      fi
      if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
@@ -580,7 +580,7 @@ do
          cp $KISMET~ $KISMET 2>/dev/null &&
          echo "source=hostap,$iface,Prism2" >>$KISMET
          iwconfig $iface mode Monitor channel $CH
-         iwpriv $iface monitor_type 1 &>/dev/null
+         iwpriv $iface monitor_type 1 >/dev/null 2>&1
          ifconfig $iface up
          printf " (monitor mode enabled)"
      fi
@@ -737,7 +737,7 @@ do
          iwconfig $iface mode Monitor channel $CH
          if [ x"`iwpriv $iface 2>/dev/null | grep prismhdr`" != "x" ]
          then
-            iwpriv $iface prismhdr 1 &>/dev/null
+            iwpriv $iface prismhdr 1 >/dev/null 2>&1
          fi
          ifconfig $iface up
          printf " (monitor mode enabled)"
@@ -761,7 +761,7 @@ do
          iwconfig $iface mode Monitor channel $CH
          if [ x"`iwpriv $iface 2>/dev/null | grep rawtx`" != "x" ]
          then
-             iwpriv $iface rawtx 1 &>/dev/null
+             iwpriv $iface rawtx 1 >/dev/null 2>&1
          fi
          ifconfig $iface up
          printf " (monitor mode enabled)"
