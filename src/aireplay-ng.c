@@ -3306,8 +3306,8 @@ read_packets:
 int do_attack_chopchop( void )
 {
     float f, ticks[4];
-    int i, j, n, z, caplen;
-    int data_start, data_end;
+    int i, j, n, z, caplen, srcz;
+    int data_start, data_end, srcdiff, diff;
     int guess, is_deauth_mode;
     int nb_bad_pkt;
     int tried_header_rec=0;
@@ -3341,6 +3341,7 @@ int do_attack_chopchop( void )
     z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
     if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
         z+=2;
+    srcz = z;
 
     if( (unsigned)caplen > sizeof(srcbuf) || (unsigned)caplen > sizeof(h80211) )
         return( 1 );
@@ -3392,8 +3393,9 @@ int do_attack_chopchop( void )
 
     memset( chopped, 0, n );
 
-    data_start = z + 4;
-    data_end   = caplen;
+    data_start = 24 + 4;
+    data_end   = n;
+    srcdiff = z-24;
 
     chopped[0] = 0x08;  /* normal data frame */
     chopped[1] = 0x41;  /* WEP = 1, ToDS = 1 */
@@ -3445,7 +3447,7 @@ int do_attack_chopchop( void )
     chopped[data_end - 1] = crc_mask; crc_mask >>= 8;
 
     for( i = data_start; i < data_end; i++ )
-        chopped[i] ^= srcbuf[i];
+        chopped[i] ^= srcbuf[i+srcdiff];
 
     data_start += 6; /* skip the SNAP header */
 
@@ -3573,25 +3575,27 @@ int do_attack_chopchop( void )
             printf( "\n\nThe AP appears to drop packets shorter "
                     "than %d bytes.\n",data_end );
 
-			data_end = 40;
+            data_end = 40;
 
             z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
             if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
                 z+=2;
 
-            if( ( chopped[data_end + 0] ^ srcbuf[data_end + 0] ) == 0x06 &&
-                ( chopped[data_end + 1] ^ srcbuf[data_end + 1] ) == 0x04 &&
-                ( chopped[data_end + 2] ^ srcbuf[data_end + 2] ) == 0x00 )
+            diff = z-24;
+
+            if( ( chopped[data_end + 0] ^ srcbuf[data_end + srcdiff + 0] ) == 0x06 &&
+                ( chopped[data_end + 1] ^ srcbuf[data_end + srcdiff + 1] ) == 0x04 &&
+                ( chopped[data_end + 2] ^ srcbuf[data_end + srcdiff + 2] ) == 0x00 )
             {
                 printf( "Enabling standard workaround: "
                         "ARP header re-creation.\n" );
 
-                chopped[z + 10] = srcbuf[z + 10] ^ 0x08;
-                chopped[z + 11] = srcbuf[z + 11] ^ 0x06;
-                chopped[z + 12] = srcbuf[z + 12] ^ 0x00;
-                chopped[z + 13] = srcbuf[z + 13] ^ 0x01;
-                chopped[z + 14] = srcbuf[z + 14] ^ 0x08;
-                chopped[z + 15] = srcbuf[z + 15] ^ 0x00;
+                chopped[24 + 10] = srcbuf[srcz + 10] ^ 0x08;
+                chopped[24 + 11] = srcbuf[srcz + 11] ^ 0x06;
+                chopped[24 + 12] = srcbuf[srcz + 12] ^ 0x00;
+                chopped[24 + 13] = srcbuf[srcz + 13] ^ 0x01;
+                chopped[24 + 14] = srcbuf[srcz + 14] ^ 0x08;
+                chopped[24 + 15] = srcbuf[srcz + 15] ^ 0x00;
             }
             else
             {
@@ -3600,33 +3604,33 @@ int do_attack_chopchop( void )
 
                 n = caplen - ( z + 16 );
 
-                chopped[z +  4] = srcbuf[z +  4] ^ 0xAA;
-                chopped[z +  5] = srcbuf[z +  5] ^ 0xAA;
-                chopped[z +  6] = srcbuf[z +  6] ^ 0x03;
-                chopped[z +  7] = srcbuf[z +  7] ^ 0x00;
-                chopped[z +  8] = srcbuf[z +  8] ^ 0x00;
-                chopped[z +  9] = srcbuf[z +  9] ^ 0x00;
-                chopped[z + 10] = srcbuf[z + 10] ^ 0x08;
-                chopped[z + 11] = srcbuf[z + 11] ^ 0x00;
-                chopped[z + 14] = srcbuf[z + 14] ^ ( n >> 8 );
-                chopped[z + 15] = srcbuf[z + 15] ^ ( n & 0xFF );
+                chopped[24 +  4] = srcbuf[srcz +  4] ^ 0xAA;
+                chopped[24 +  5] = srcbuf[srcz +  5] ^ 0xAA;
+                chopped[24 +  6] = srcbuf[srcz +  6] ^ 0x03;
+                chopped[24 +  7] = srcbuf[srcz +  7] ^ 0x00;
+                chopped[24 +  8] = srcbuf[srcz +  8] ^ 0x00;
+                chopped[24 +  9] = srcbuf[srcz +  9] ^ 0x00;
+                chopped[24 + 10] = srcbuf[srcz + 10] ^ 0x08;
+                chopped[24 + 11] = srcbuf[srcz + 11] ^ 0x00;
+                chopped[24 + 14] = srcbuf[srcz + 14] ^ ( n >> 8 );
+                chopped[24 + 15] = srcbuf[srcz + 15] ^ ( n & 0xFF );
 
                 memcpy( h80211, srcbuf, caplen );
 
                 for( i = z + 4; i < (int) caplen; i++ )
-                    h80211[i - 4] = h80211[i] ^ chopped[i];
+                    h80211[i - 4] = h80211[i] ^ chopped[i-diff];
 
                 /* sometimes the header length or the tos field vary */
 
                 for( i = 0; i < 16; i++ )
                 {
-                     h80211[z +  8] = 0x40 + i;
-                    chopped[z + 12] = srcbuf[z + 12] ^ ( 0x40 + i );
+                    h80211[z +  8] = 0x40 + i;
+                    chopped[24 + 12] = srcbuf[srcz + 12] ^ ( 0x40 + i );
 
                     for( j = 0; j < 256; j++ )
                     {
-                         h80211[z +  9] = j;
-                        chopped[z + 13] = srcbuf[z + 13] ^ j;
+                        h80211[z +  9] = j;
+                        chopped[24 + 13] = srcbuf[srcz + 13] ^ j;
 
                         if( check_crc_buf( h80211 + z, caplen - z - 8 ) )
                             goto have_crc_match;
@@ -3829,16 +3833,17 @@ int do_attack_chopchop( void )
     z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
     if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
         z+=2;
+    diff = z-24;
 
-    chopped[z + 4] = srcbuf[z + 4] ^ b1;
-    chopped[z + 5] = srcbuf[z + 5] ^ b2;
-    chopped[z + 6] = srcbuf[z + 6] ^ 0x03;
-    chopped[z + 7] = srcbuf[z + 7] ^ 0x00;
-    chopped[z + 8] = srcbuf[z + 8] ^ 0x00;
-    chopped[z + 9] = srcbuf[z + 9] ^ 0x00;
+    chopped[24 + 4] = srcbuf[srcz + 4] ^ b1;
+    chopped[24 + 5] = srcbuf[srcz + 5] ^ b2;
+    chopped[24 + 6] = srcbuf[srcz + 6] ^ 0x03;
+    chopped[24 + 7] = srcbuf[srcz + 7] ^ 0x00;
+    chopped[24 + 8] = srcbuf[srcz + 8] ^ 0x00;
+    chopped[24 + 9] = srcbuf[srcz + 9] ^ 0x00;
 
     for( i = z + 4; i < (int) caplen; i++ )
-        h80211[i - 4] = h80211[i] ^ chopped[i];
+        h80211[i - 4] = h80211[i] ^ chopped[i-diff];
 
     if( ! check_crc_buf( h80211 + z, caplen - z - 8 ) ) {
         if (!tried_header_rec) {
