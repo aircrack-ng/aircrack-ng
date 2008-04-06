@@ -11,7 +11,7 @@ USE_IW=0
 
 if [ -f "`which iw 2>&1`" ]
 then
-	USE_IW = 1
+	USE_IW=1
 fi
 
 PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon|wlassistant"
