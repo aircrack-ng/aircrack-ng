@@ -3101,7 +3101,7 @@ read_packets:
             keystream[i] = (h80211+z+4)[i] ^ clear[i];
 
         // correct 80211 header
-        h80211[0] = 0x08;    //data
+//         h80211[0] = 0x08;    //data
         if( (h80211[1] & 3) == 0x00 ) //ad-hoc
         {
             h80211[1] = 0x40;    //wep
@@ -3111,10 +3111,20 @@ read_packets:
         }
         else //tods
         {
-            h80211[1] = 0x42;    //wep+FromDS
-            memcpy(h80211+4, smac, 6);
-            memcpy(h80211+10, bssid, 6);
-            memcpy(h80211+16, opt.r_smac, 6);
+            if(opt.f_tods == 1)
+            {
+                h80211[1] = 0x41;    //wep+ToDS
+                memcpy(h80211+4 , bssid, 6);
+                memcpy(h80211+10, opt.r_smac, 6);
+                memcpy(h80211+16, smac, 6);
+            }
+            else
+            {
+                h80211[1] = 0x42;    //wep+FromDS
+                memcpy(h80211+4, smac, 6);
+                memcpy(h80211+10, bssid, 6);
+                memcpy(h80211+16, opt.r_smac, 6);
+            }
         }
         h80211[22] = 0xD0; //frag = 0;
         h80211[23] = 0x50;
@@ -3154,7 +3164,7 @@ read_packets:
             keystream[i] = (h80211+z+4)[i] ^ clear[i];
 
         // correct 80211 header
-        h80211[0] = 0x08;    //data
+//         h80211[0] = 0x08;    //data
         if( (h80211[1] & 3) == 0x00 ) //ad-hoc
         {
             h80211[1] = 0x40;    //wep
@@ -3164,10 +3174,20 @@ read_packets:
         }
         else
         {
-            h80211[1] = 0x42;    //wep+FromDS
-            memcpy(h80211+4, smac, 6);
-            memcpy(h80211+10, bssid, 6);
-            memcpy(h80211+16, opt.r_smac, 6);
+            if(opt.f_tods == 1)
+            {
+                h80211[1] = 0x41;    //wep+ToDS
+                memcpy(h80211+4 , bssid, 6);
+                memcpy(h80211+10, opt.r_smac, 6);
+                memcpy(h80211+16, smac, 6);
+            }
+            else
+            {
+                h80211[1] = 0x42;    //wep+FromDS
+                memcpy(h80211+4, smac, 6);
+                memcpy(h80211+10, bssid, 6);
+                memcpy(h80211+16, opt.r_smac, 6);
+            }
         }
         h80211[22] = 0xD0; //frag = 0;
         h80211[23] = 0x50;
