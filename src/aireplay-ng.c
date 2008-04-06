@@ -3798,7 +3798,7 @@ int do_attack_chopchop( void )
                 "%4ld frames written in %5.0fms\n", data_end - 1,
                 100 * ( caplen - data_end ) / n,
                 chopped[data_end - 1],
-                chopped[data_end - 1] ^ srcbuf[data_end - 1],
+                chopped[data_end - 1] ^ srcbuf[data_end + srcdiff - 1],
                 nb_pkt_sent, ticks[3] );
 
         if( is_deauth_mode )
@@ -3934,9 +3934,9 @@ int do_attack_chopchop( void )
         return( 1 );
     }
 
-    n = pkh.caplen + 8 - z;
+    n = pkh.caplen + 8 - 24;
 
-    if( fwrite( chopped + z, n, 1, f_cap_out ) != 1 )
+    if( fwrite( chopped + 24, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed" );
         return( 1 );
@@ -3946,7 +3946,7 @@ int do_attack_chopchop( void )
 
     printf( "\nCompleted in %lds (%0.2f bytes/s)\n\n",
             (long) time( NULL ) - tt,
-            (float) ( pkh.caplen - 6 - z ) /
+            (float) ( pkh.caplen - 6 - 24 ) /
             (float) ( time( NULL ) - tt  ) );
 
     return( 0 );
