@@ -533,7 +533,10 @@ void read_sleep( int usec )
 
 int filter_packet( unsigned char *h80211, int caplen )
 {
-    int z, mi_b, mi_s, mi_d, ext, qos;
+    int z, mi_b, mi_s, mi_d, ext=0, qos;
+
+    if(caplen <= 0)
+        return( 1 );
 
     z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
     if ( ( h80211[0] & 0x80 ) == 0x80 )
@@ -542,7 +545,8 @@ int filter_packet( unsigned char *h80211, int caplen )
         z+=2;
     }
 
-    ext = z-24; //how many bytes longer than default ieee80211 header
+    if( (h80211[0] & 0x0C) == 0x08)    //if data packet
+        ext = z-24; //how many bytes longer than default ieee80211 header
 
     /* check length */
     if( caplen-ext < opt.f_minlen ||
@@ -5448,7 +5452,7 @@ int do_attack_test()
                 h80211[26] = 0x2E;
                 h80211[27] = 0x00;
 
-                //random crap (as encrypted data)
+                //random bytes (as encrypted data)
                 for(j=0; j<132; j++)
                     h80211[28+j] = rand() & 0xFF;
 
@@ -5469,7 +5473,7 @@ int do_attack_test()
                 h80211[26] = 0x2E;
                 h80211[27] = 0x00;
 
-                //random crap (as encrypted data)
+                //random bytes (as encrypted data)
                 for(j=0; j<132; j++)
                     h80211[28+j] = rand() & 0xFF;
 
@@ -5542,7 +5546,7 @@ int do_attack_test()
                                 break;
                             }
                         }
-                        else if(i==3) //attack -3
+                        else if(i==3) //attack -2/-3/-4/-6
                         {
                             if( h80211[0] == packet[0] && memcmp(h80211+24, packet+24, caplen-24) == 0 )
                             {
@@ -5550,15 +5554,15 @@ int do_attack_test()
                                 break;
                             }
                         }
-                        else if(i==4) //attack -5
+                        else if(i==4) //attack -5/-7
                         {
                             if( h80211[0] == packet[0] && memcmp(h80211+24, packet+24, caplen-24) == 0 )
                             {
-                                if( (packet[1] & 0x04) && memcmp( h80211+22, packet+22, 2 ) == 0 )
-                                {
+                               if( (packet[1] & 0x04) && memcmp( h80211+22, packet+22, 2 ) == 0 )
+                               {
                                     k=1;
                                     break;
-                                }
+                               }
                             }
                         }
                     }
@@ -5576,46 +5580,46 @@ int do_attack_test()
                 k=0;
                 if(i==0) //attack -0
                 {
-                    PCT; printf("Attack -0:        OK\n");
+                    PCT; printf("Attack -0:           OK\n");
                 }
                 else if(i==1) //attack -1 (open)
                 {
-                    PCT; printf("Attack -1 (open): OK\n");
+                    PCT; printf("Attack -1 (open):    OK\n");
                 }
                 else if(i==2) //attack -1 (psk)
                 {
-                    PCT; printf("Attack -1 (psk):  OK\n");
+                    PCT; printf("Attack -1 (psk):     OK\n");
                 }
                 else if(i==3) //attack -3
                 {
-                    PCT; printf("Attack -2/-3/-4:  OK\n");
+                    PCT; printf("Attack -2/-3/-4/-6:  OK\n");
                 }
                 else if(i==4) //attack -5
                 {
-                    PCT; printf("Attack -5:        OK\n");
+                    PCT; printf("Attack -5/-7:        OK\n");
                 }
             }
             else
             {
                 if(i==0) //attack -0
                 {
-                    PCT; printf("Attack -0:        Failed\n");
+                    PCT; printf("Attack -0:           Failed\n");
                 }
                 else if(i==1) //attack -1 (open)
                 {
-                    PCT; printf("Attack -1 (open): Failed\n");
+                    PCT; printf("Attack -1 (open):    Failed\n");
                 }
                 else if(i==2) //attack -1 (psk)
                 {
-                    PCT; printf("Attack -1 (psk):  Failed\n");
+                    PCT; printf("Attack -1 (psk):     Failed\n");
                 }
                 else if(i==3) //attack -3
                 {
-                    PCT; printf("Attack -2/-3/-4:  Failed\n");
+                    PCT; printf("Attack -2/-3/-4/-6:  Failed\n");
                 }
                 else if(i==4) //attack -5
                 {
-                    PCT; printf("Attack -5:        Failed\n");
+                    PCT; printf("Attack -5/-7:        Failed\n");
                 }
             }
         }
