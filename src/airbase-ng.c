@@ -1786,26 +1786,40 @@ int wpa_client(struct ST_info *st_cur,uchar* tag, int length)
 
     if(tag[0] == 0xDD)
     {
-        st_cur->wpatype = 1; //wpa1
         if(length < 24)
             return 1;
 
-        if( tag[17] == 0x02 )
-            st_cur->wpahash = 1; //md5|tkip
-        if( tag[17] == 0x04 )
-            st_cur->wpahash = 2; //sha1|ccmp
+        switch(tag[17]) {
+            case 0x02:
+                st_cur->wpahash = 1; //md5|tkip
+                break;
+            case 0x04:
+                st_cur->wpahash = 2; //sha1|ccmp
+                break;
+            default:
+                return 1;
+        }
+
+        st_cur->wpatype = 1; //wpa1
     }
 
     if(tag[0] == 0x30 && st_cur->wpatype == 0)
     {
-        st_cur->wpatype = 2; //wpa2
         if(length < 22)
             return 1;
 
-        if( tag[13] == 0x02 )
-            st_cur->wpahash = 1; //md5|tkip
-        if( tag[13] == 0x04 )
-            st_cur->wpahash = 2; //sha1|ccmp
+        switch(tag[13]) {
+            case 0x02:
+                st_cur->wpahash = 1; //md5|tkip
+                break;
+            case 0x04:
+                st_cur->wpahash = 2; //sha1|ccmp
+                break;
+            default:
+                return 1;
+        }
+
+        st_cur->wpatype = 2; //wpa2
     }
 
     return 0;
