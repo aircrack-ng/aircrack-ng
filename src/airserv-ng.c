@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <signal.h>
+#include <asm/byteorder.h>
 
 #include "osdep/osdep.h"
 #include "osdep/network.h"
@@ -120,9 +121,8 @@ static void client_add(struct sstate *ss, int s, struct sockaddr_in *s_in)
 {
 	struct client *c;
 
-	if (!(c = malloc(sizeof(*c))))
-		err(1, "malloc()");
-	memset(c, 0, sizeof(*c));
+	if (!(c = calloc(sizeof(struct client), 1)))
+		err(1, "calloc()");
 
 	c->c_s = s;
 	strncpy(c->c_ip, inet_ntoa(s_in->sin_addr), sizeof(c->c_ip)-1);
@@ -134,15 +134,11 @@ static void client_add(struct sstate *ss, int s, struct sockaddr_in *s_in)
 	ss->ss_clients.c_next = c;
 }
 
-static void client_kill(struct sstate *ss, struct client *c)
+static void client_kill(struct client *c)
 {
-	if (ss) {} /* XXX unused */
-
 	c->c_prev->c_next = c->c_next;
 	c->c_next->c_prev = c->c_prev;
-
 	printf("Death from %s\n", c->c_ip);
-	memset(c, 0, sizeof(*c));
 	free(c);
 }
 
@@ -239,11 +235,11 @@ static void open_card_and_sock(struct sstate *ss, char *dev, int port, int chan)
 	printf("Serving %s chan %d on port %d\n", dev, chan, port);
 }
 
-static void net_send_kill(struct sstate *ss, struct client *c,
+static void net_send_kill(struct client *c,
 			  int cmd, void *data, int len)
 {
 	if (net_send(c->c_s, cmd, data, len) == -1)
-		client_kill(ss, c);
+		client_kill(c);
 }
 
 static void handle_set_chan(struct sstate *ss, struct client *c,
@@ -253,7 +249,7 @@ static void handle_set_chan(struct sstate *ss, struct client *c,
 	uint32_t rc;
 
 	if (len != sizeof(chan)) {
-		client_kill(ss, c);
+		client_kill(c);
 		return;
 	}
 
@@ -264,7 +260,7 @@ static void handle_set_chan(struct sstate *ss, struct client *c,
 	rc = card_set_chan(ss, chan);
 
 	rc = htonl(rc);
-	net_send_kill(ss, c, NET_RC, &rc, sizeof(rc));
+	net_send_kill(c, NET_RC, &rc, sizeof(rc));
 }
 
 static void handle_set_rate(struct sstate *ss, struct client *c,
@@ -274,7 +270,7 @@ static void handle_set_rate(struct sstate *ss, struct client *c,
 	uint32_t rc;
 
 	if (len != sizeof(rate)) {
-		client_kill(ss, c);
+		client_kill(c);
 		return;
 	}
 
@@ -285,7 +281,7 @@ static void handle_set_rate(struct sstate *ss, struct client *c,
 	rc = card_set_rate(ss, rate);
 
 	rc = htonl(rc);
-	net_send_kill(ss, c, NET_RC, &rc, sizeof(rc));
+	net_send_kill(c, NET_RC, &rc, sizeof(rc));
 }
 
 static void handle_get_mac(struct sstate *ss, struct client *c)
@@ -297,9 +293,9 @@ static void handle_get_mac(struct sstate *ss, struct client *c)
 	if (rc == -1) {
 		uint32_t x = htonl(rc);
 
-		net_send_kill(ss, c, NET_RC, &x, sizeof(x));
+		net_send_kill(c, NET_RC, &x, sizeof(x));
 	} else
-		net_send_kill(ss, c, NET_MAC, mac, 6);
+		net_send_kill(c, NET_MAC, mac, 6);
 }
 
 static void handle_get_chan(struct sstate *ss, struct client *c)
@@ -309,7 +305,7 @@ static void handle_get_chan(struct sstate *ss, struct client *c)
 
 	chan = htonl(rc);
 
-	net_send_kill(ss, c, NET_RC, &chan, sizeof(chan));
+	net_send_kill(c, NET_RC, &chan, sizeof(chan));
 }
 
 static void handle_get_rate(struct sstate *ss, struct client *c)
@@ -319,7 +315,7 @@ static void handle_get_rate(struct sstate *ss, struct client *c)
 
 	rate = htonl(rc);
 
-	net_send_kill(ss, c, NET_RC, &rate, sizeof(rate));
+	net_send_kill(c, NET_RC, &rate, sizeof(rate));
 }
 
 static void handle_get_monitor(struct sstate *ss, struct client *c)
@@ -329,7 +325,7 @@ static void handle_get_monitor(struct sstate *ss, struct client *c)
 
 	x = htonl(rc);
 
-	net_send_kill(ss, c, NET_RC, &x, sizeof(x));
+	net_send_kill(c, NET_RC, &x, sizeof(x));
 }
 
 static void handle_write(struct sstate *ss, struct client *c,
@@ -342,10 +338,11 @@ static void handle_write(struct sstate *ss, struct client *c,
 
 	len -= sizeof(*ti);
 
+	debug(ss, c, 2, "Relaying %d bytes packet from client\n", len);
 	rc = card_write(ss, hdr, len, ti);
 	x = htonl(rc);
 
-	net_send_kill(ss, c, NET_RC, &x, sizeof(x));
+	net_send_kill(c, NET_RC, &x, sizeof(x));
 }
 
 static void handle_client(struct sstate *ss, struct client *c)
@@ -357,7 +354,7 @@ static void handle_client(struct sstate *ss, struct client *c)
 	cmd = net_get(c->c_s, buf, &len);
 	if (cmd == -1) {
 		debug(ss, c, 2, "handle_client: net_get()\n");
-		client_kill(ss, c);
+		client_kill(c);
 		return;
 	}
 
@@ -393,7 +390,7 @@ static void handle_client(struct sstate *ss, struct client *c)
 
 	default:
 		printf("Unknown request %d\n", cmd);
-		client_kill(ss, c);
+		client_kill(c);
 		break;
 	}
 }
@@ -414,15 +411,17 @@ static void handle_server(struct sstate *ss)
 static void client_send_packet(struct sstate *ss, struct client *c,
 			       unsigned char *buf, int rd)
 {
-	debug(ss, c, 3, "Sending packet %d\n", rd);
-
 	/* XXX check if TX will block */
 	if (rd == -1) {
 		uint32_t rc = htonl(rd);
+		debug(ss, c, 3, "Sending result code %d to client\n", rd);
 
-		net_send_kill(ss, c, NET_RC, &rc, sizeof(rc));
-	} else
-		net_send_kill(ss, c, NET_PACKET, buf, rd);
+		net_send_kill(c, NET_RC, &rc, sizeof(rc));
+	} else {
+		debug(ss, c, 3, "Sending %d bytes packet to client\n", rd);
+
+		net_send_kill(c, NET_PACKET, buf, rd);
+	}
 }
 
 static void handle_card(struct sstate *ss)
@@ -432,16 +431,21 @@ static void handle_card(struct sstate *ss)
 	struct rx_info *ri = (struct rx_info*) buf;
 	struct client *c;
 
-	rd = card_read(ss, ri+1, sizeof(buf) - sizeof(*ri), ri);
+	rd = card_read(ss, ri + 1, sizeof(buf) - sizeof(*ri), ri);
+    if (rd >= 0)
+    	rd += sizeof(*ri);
+
+	ri->ri_mactime = __cpu_to_be64(ri->ri_mactime);
+	ri->ri_power = __cpu_to_be32(ri->ri_power);
+	ri->ri_noise = __cpu_to_be32(ri->ri_noise);
+	ri->ri_channel = __cpu_to_be32(ri->ri_channel);
+	ri->ri_rate = __cpu_to_be32(ri->ri_rate);
+	ri->ri_antenna = __cpu_to_be32(ri->ri_antenna);
 
 	c = ss->ss_clients.c_next;
 	while (c != &ss->ss_clients) {
-		struct client *next = c->c_next;
-
-		if (rd != -1)
-			rd += sizeof(*ri);
 		client_send_packet(ss, c, buf, rd);
-		c = next;
+		c = c->c_next;
 	}
 }
 
@@ -482,11 +486,10 @@ static void serv(struct sstate *ss, char *dev, int port, int chan)
 		/* handle clients */
 		c = ss->ss_clients.c_next;
 		while (c != &ss->ss_clients) {
-			struct client *next = c->c_next;
 			if (FD_ISSET(c->c_s, &fds))
 				handle_client(ss, c);
 
-			c = next;
+			c = c->c_next;
 		}
 
 		/* handle server */

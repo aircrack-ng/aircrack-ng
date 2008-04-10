@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sys/select.h>
+#include <errno.h>
+#include <asm/byteorder.h>
 
 #include "osdep.h"
 #include "network.h"
@@ -51,69 +53,57 @@ struct priv_net {
 
 int net_send(int s, int command, void *arg, int len)
 {
-        struct timeval tv;
-	struct net_hdr nh;
-        fd_set fds;
-	char* buffer;
+	struct net_hdr *pnh;
+	char *pktbuf;
+	size_t pktlen;
 
-	buffer = (char*) malloc(sizeof(nh) + len);
-	if(buffer == NULL)
-	{
-		perror("malloc");
-		return -1;
+	pktlen = sizeof(struct net_hdr) + len;
+
+	pktbuf = (char*)calloc(sizeof(char), pktlen);
+	if (pktbuf == NULL) {
+		perror("calloc");
+		goto net_send_error;
 	}
 
-        FD_ZERO(&fds);
-        FD_SET(s, &fds);
+	pnh = (struct net_hdr*)pktbuf;
+	pnh->nh_type = command;
+	pnh->nh_len = htonl(len);
 
-        tv.tv_sec=0;
-        tv.tv_usec=10;
+	memcpy(pktbuf + sizeof(struct net_hdr), arg, len);
 
-	memset(&nh, 0, sizeof(nh));
-	nh.nh_type	= command;
-	nh.nh_len	= htonl(len);
+	for (;;) {
+		ssize_t rc = send(s, pktbuf, pktlen, 0);
 
-	memcpy(buffer, &nh, sizeof(nh));
-	if(len != 0)
-		memcpy(buffer + sizeof(nh), arg, len);
+		if ((size_t)rc == pktlen)
+			break;
 
-        if( select(s+1, NULL, &fds, NULL, &tv) != 1)
-	{
-		free(buffer);
-        	return -1;
-	}
-	if (send(s, buffer, sizeof(nh)+len, 0) != (signed)(sizeof(nh)+len))
-	{
-		free(buffer);
-        	return -1;
+		if (rc == EAGAIN || rc == EWOULDBLOCK || rc == EINTR)
+			continue;
+
+		if (rc == ECONNRESET)
+			printf("Connection reset while sending packet!\n");
+
+		goto net_send_error;
 	}
 
-	free(buffer);
-
+	free(pktbuf);
 	return 0;
+
+net_send_error:
+	free(pktbuf);
+	return -1;
 }
 
 int net_read_exact(int s, void *arg, int len)
 {
-	unsigned char *p = arg;
-	int rc;
-        struct timeval tv;
-        fd_set fds;
+	ssize_t rc;
 
-	while (len) {
-            FD_ZERO(&fds);
-            FD_SET(s, &fds);
-
-            tv.tv_sec=0;
-            tv.tv_usec=10;
-
-		rc = read(s, p, len);
-		if (rc <= 0)
+	for (;;) {
+		rc = recv(s, arg, len, MSG_WAITALL);
+		if (rc > 0)
+			break;
+		if (rc != EAGAIN && rc != EINTR)
 			return -1;
-		p += rc;
-		len -= rc;
-
-		assert(rc > 0);
 	}
 
 	return 0;
@@ -272,6 +262,7 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 		    struct rx_info *ri)
 {
 	struct priv_net *pn = wi_priv(wi);
+	struct rx_info *pri;
 	unsigned char buf[2048];
 	int cmd;
 	int sz = sizeof(*ri);
@@ -290,6 +281,14 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 			return ntohl(*((uint32_t*)buf));
 		assert(cmd == NET_PACKET);
 	}
+
+	pri = (struct rx_info*)buf;
+	pri->ri_mactime = __be64_to_cpu(pri->ri_mactime);
+	pri->ri_power = __be32_to_cpu(pri->ri_power);
+	pri->ri_noise = __be32_to_cpu(pri->ri_noise);
+	pri->ri_channel = __be32_to_cpu(pri->ri_channel);
+	pri->ri_rate = __be32_to_cpu(pri->ri_rate);
+	pri->ri_antenna = __be32_to_cpu(pri->ri_antenna);
 
 	/* XXX */
 	if (ri)

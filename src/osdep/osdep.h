@@ -23,12 +23,12 @@ struct tx_info {
 };
 
 struct rx_info {
-        uint64_t         ri_mactime;
-        unsigned int     ri_power;
-        unsigned int     ri_noise;
-        unsigned int     ri_channel;
-        unsigned int     ri_rate;
-        unsigned int     ri_antenna;
+        uint64_t ri_mactime;
+        uint32_t ri_power;
+        uint32_t ri_noise;
+        uint32_t ri_channel;
+        uint32_t ri_rate;
+        uint32_t ri_antenna;
 } __packed;
 
 /* Normal code should not access this directly.  Only osdep.
