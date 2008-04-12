@@ -3,8 +3,8 @@
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes, darkAudax, Atheros support thx to green-freq
-# Date:	        28.01.2008
-# Version:	2.0.8 SVN TESTING RELEASE FOR AIRCRACK-NG 1.0 beta
+# Date:	        11.04.2008
+# Version:	2.0.9 SVN TESTING RELEASE FOR AIRCRACK-NG 1.0.2 beta
 # Dependencies: aircrack-ng, xterm, grep, awk, macchanger, drivers capable of injection, mdk3 (optional)
 #
 #		To change color theme just do a search and replace
@@ -20,7 +20,7 @@
 #CardCtl executable (on 2.4 kernels, it is cardctl)
 CARDCTL="pccardctl"
 #Your dhcp client utility
-DHCPSOFT="dhcpcd"
+DHCPSOFT="dhclient"
 #If you want the welcome message
 WELCOME="0"
 #Allows all xterm window to stay on screen after the operation they contain is finished
@@ -68,17 +68,6 @@ FRAG_CLIENT_IP="255.255.255.255"
 
 # leave this alone (if you edit this, it will screw up the menu)
 CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
-#This is the window size and layout settings
-# Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 96x25+0+0"
-# Upper right window -0+0
-TOPRIGHT="-geometry 70x25-0+0"
-# Bottom left window +0-0
-BOTTOMLEFT="-geometry 96x25+0-0"
-# Bottom right window -0-0
-BOTTOMRIGHT="-geometry 70x25-0-0"
-TOPLEFTBIG="-geometry 96x60+0+0"
-TOPRIGHTBIG="-geometry 70x60-0+0"
 ##################################################################################
 #
 #  Functions: these are all the commands used by the script
@@ -98,7 +87,114 @@ function menu {
   echo "### 9) Inject  - Jump to inj. menu  ###"
   echo ""			
 }
-
+# menu listing command	
+function reso {
+while true; do
+  echo "### Select screen resolution        ###"
+  echo "### 1) 640x480			    ###"
+  echo "### 2) 800x480                      ###"
+  echo "### 3) 800x600                      ###"
+  echo "### 4) 1024x768                     ###"
+  echo "### 5) 1280x768                     ###"
+  echo "### 6) 1280x1024                    ###"
+  echo "### 7) 1600x1200                    ###"
+  read yn
+  case $yn in
+    1 ) res1 ; break ;;
+    2 ) res2 ; break ;;
+    3 ) res3 ; break ;;
+    4 ) res4 ; break ;;
+    5 ) res5 ; break ;;
+    6 ) res6 ; break ;;
+    7 ) res7 ; break ;;
+    * ) echo "unknown response. Try again" ;;
+esac
+done
+}
+function res1 {
+# Upper left window +0+0 (size*size+position+position)
+TOPLEFT="-geometry 83x11+0+0"
+# Upper right window -0+0
+TOPRIGHT="-geometry 60x18-0+0"
+# Bottom left window +0-0
+BOTTOMLEFT="-geometry 75x18+0-0"
+# Bottom right window -0-0
+BOTTOMRIGHT="-geometry 27x17-0-0"
+TOPLEFTBIG="-geometry 100x30+0+0"
+TOPRIGHTBIG="-geometry 54x25-0+0"
+}
+function res2 {
+# Upper left window +0+0 (size*size+position+position)
+TOPLEFT="-geometry 90x11+0+0"
+# Upper right window -0+0
+TOPRIGHT="-geometry 60x18-0+0"
+# Bottom left window +0-0
+BOTTOMLEFT="-geometry 75x18+0-0"
+# Bottom right window -0-0
+BOTTOMRIGHT="-geometry 53x17-0-0"
+TOPLEFTBIG="-geometry  100x30+0+0"
+TOPRIGHTBIG="-geometry 78x25-0+0"
+}
+function res3 {
+# Upper left window +0+0 (size*size+position+position)
+TOPLEFT="-geometry 68x25+0+0"
+# Upper right window -0+0
+TOPRIGHT="-geometry 68x25-0+0"
+# Bottom left window +0-0
+BOTTOMLEFT="-geometry 68x25+0-0"
+# Bottom right window -0-0
+BOTTOMRIGHT="-geometry 68x25-0-0"
+TOPLEFTBIG="-geometry 68x60+0+0"
+TOPRIGHTBIG="-geometry 68x60-0+0"
+}
+function res4 {
+# Upper left window +0+0 (size*size+position+position)
+TOPLEFT="-geometry 92x14+0+0"
+# Upper right window -0+0
+TOPRIGHT="-geometry 68x25-0+0"
+# Bottom left window +0-0
+BOTTOMLEFT="-geometry 92x36+0-0"
+# Bottom right window -0-0
+BOTTOMRIGHT="-geometry 74x20-0-0"
+TOPLEFTBIG="-geometry 100x52+0+0"
+TOPRIGHTBIG="-geometry 74x30-0+0"
+}
+function res5 {
+# Upper left window +0+0 (size*size+position+position)
+TOPLEFT="-geometry 90x11+0+0"
+# Upper right window -0+0
+TOPRIGHT="-geometry 60x18-0+0"
+# Bottom left window +0-0
+BOTTOMLEFT="-geometry 75x18+0-0"
+# Bottom right window -0-0
+BOTTOMRIGHT="-geometry 53x17-0-0"
+TOPLEFTBIG="-geometry  100x30+0+0"
+TOPRIGHTBIG="-geometry 78x25-0+0"
+}
+function res6 {
+# Upper left window +0+0 (size*size+position+position)
+TOPLEFT="-geometry 68x25+0+0"
+# Upper right window -0+0
+TOPRIGHT="-geometry 68x25-0+0"
+# Bottom left window +0-0
+BOTTOMLEFT="-geometry 68x25+0-0"
+# Bottom right window -0-0
+BOTTOMRIGHT="-geometry 68x25-0-0"
+TOPLEFTBIG="-geometry 68x60+0+0"
+TOPRIGHTBIG="-geometry 68x60-0+0"
+}
+function res7 {
+# Upper left window +0+0 (size*size+position+position)
+TOPLEFT="-geometry 92x14+0+0"
+# Upper right window -0+0
+TOPRIGHT="-geometry 68x25-0+0"
+# Bottom left window +0-0
+BOTTOMLEFT="-geometry 92x36+0-0"
+# Bottom right window -0-0
+BOTTOMRIGHT="-geometry 74x20-0-0"
+TOPLEFTBIG="-geometry 100x52+0+0"
+TOPRIGHTBIG="-geometry 74x30-0+0"
+}
 # starts monitor mode on selected interface		
 function monitor_interface {
 if [ "$TYPE" = "RalinkUSB" ]
@@ -110,9 +206,9 @@ echo $IS_MONITOR
 elif [ "$TYPE" = "Ralinkb/g" ]
 then
 IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
+echo $IS_MONITOR
 iwpriv $WIFI rfmontx 1
 iwpriv $WIFI forceprism 1
-echo $IS_MONITOR
 
 elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 then
@@ -127,7 +223,6 @@ echo "running standard monitor mode command"
 echo $IS_MONITOR
 fi 
 }
-
 
 function airmoncheck {
 if [ "$TYPE" = "RalinkUSB" ]
@@ -151,7 +246,6 @@ echo ""
 fi 
 }
 
-
 function monitor_interface2 {
 if [ "$TYPE" = "RalinkUSB" ]
 then
@@ -162,17 +256,16 @@ echo $IS_MONITOR
 elif [ "$TYPE" = "Ralinkb/g" ]
 then
 IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+echo $IS_MONITOR
 iwpriv $WIFI rfmontx 1
 iwpriv $WIFI forceprism 1
-echo $IS_MONITOR
 
 elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 then
-IS_MONITOR=`$AIRMON start wifi0 $Host_CHAN |grep monitor`
-$AIRMON stop ath0
-$AIRMON stop ath1
-$AIRMON stop ath2
-echo $IS_MONITOR
+#IS_MONITOR=`$AIRMON start wifi0 $Host_CHAN |grep monitor`
+#$AIRMON stop ath0
+#echo $IS_MONITOR
+
 else
 IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
 echo "running standard monitor mode command"
@@ -834,10 +927,10 @@ if [ $Host_ENC = "WEP" ]
 		fi			
 }
 function crackptw   {
-xterm -hold -title "Aircracking-PTW: $Host_SSID" $TOPRIGHT -e $AIRCRACK -z -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+xterm -hold -title "Aircracking-PTW: $Host_SSID" $TOPRIGHTBIG -e $AIRCRACK -z -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
 }
 function crackstd   {
-xterm -hold -title "Aircracking: $Host_SSID" $TOPRIGHT -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+xterm -hold -title "Aircracking: $Host_SSID" $TOPRIGHTBIG -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
 }
 function crackman {
 echo -n "type fudge factor"
@@ -848,7 +941,7 @@ echo -n "type encryption size 64,128 etc..."
 read ENC_SIZE
 echo You typed: $ENC_SIZE
 set -- ${ENC_SIZE}
-xterm -hold -title "Manual cracking: $Host_SSID" $TOPRIGHT -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGE_FACTOR -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+xterm -hold -title "Manual cracking: $Host_SSID" $TOPRIGHTBIG -e $AIRCRACK -a 1 -b $Host_MAC -f $FUDGE_FACTOR -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
 }
 function crack {
 while true; do
@@ -1254,6 +1347,8 @@ greetings
 debug
 #checks if output dir exists
 checkdir
+#Set screen size
+reso
 #checks if interface is set, if not it ask you
 setinterface
 #displays main menu
