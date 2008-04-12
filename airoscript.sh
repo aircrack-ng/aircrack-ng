@@ -137,15 +137,15 @@ TOPRIGHTBIG="-geometry 78x25-0+0"
 }
 function res3 {
 # Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 68x25+0+0"
+TOPLEFT="-geometry 92x11+0+0"
 # Upper right window -0+0
 TOPRIGHT="-geometry 68x25-0+0"
 # Bottom left window +0-0
-BOTTOMLEFT="-geometry 68x25+0-0"
+BOTTOMLEFT="-geometry 78x26+0-0"
 # Bottom right window -0-0
-BOTTOMRIGHT="-geometry 68x25-0-0"
-TOPLEFTBIG="-geometry 68x60+0+0"
-TOPRIGHTBIG="-geometry 68x60-0+0"
+BOTTOMRIGHT="-geometry 52x15-0-0"
+TOPLEFTBIG="-geometry 92x39+0+0"
+TOPRIGHTBIG="-geometry 78x24-0+0"
 }
 function res4 {
 # Upper left window +0+0 (size*size+position+position)
@@ -161,39 +161,39 @@ TOPRIGHTBIG="-geometry 74x30-0+0"
 }
 function res5 {
 # Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 90x11+0+0"
+TOPLEFT="-geometry 100x20+0+0"
 # Upper right window -0+0
-TOPRIGHT="-geometry 60x18-0+0"
+TOPRIGHT="-geometry 109x20-0+0"
 # Bottom left window +0-0
-BOTTOMLEFT="-geometry 75x18+0-0"
+BOTTOMLEFT="-geometry 100x30+0-0"
 # Bottom right window -0-0
-BOTTOMRIGHT="-geometry 53x17-0-0"
-TOPLEFTBIG="-geometry  100x30+0+0"
-TOPRIGHTBIG="-geometry 78x25-0+0"
+BOTTOMRIGHT="-geometry 109x20-0-0"
+TOPLEFTBIG="-geometry  100x52+0+0"
+TOPRIGHTBIG="-geometry 109x30-0+0"
 }
 function res6 {
 # Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 68x25+0+0"
+TOPLEFT="-geometry 110x35+0+0"
 # Upper right window -0+0
-TOPRIGHT="-geometry 68x25-0+0"
+TOPRIGHT="-geometry 99x40-0+0"
 # Bottom left window +0-0
-BOTTOMLEFT="-geometry 68x25+0-0"
+BOTTOMLEFT="-geometry 110x35+0-0"
 # Bottom right window -0-0
-BOTTOMRIGHT="-geometry 68x25-0-0"
-TOPLEFTBIG="-geometry 68x60+0+0"
-TOPRIGHTBIG="-geometry 68x60-0+0"
+BOTTOMRIGHT="-geometry 99x30-0-0"
+TOPLEFTBIG="-geometry 110x72+0+0"
+TOPRIGHTBIG="-geometry 99x40-0+0"
 }
 function res7 {
 # Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 92x14+0+0"
+TOPLEFT="-geometry 130x43+0+0"
 # Upper right window -0+0
 TOPRIGHT="-geometry 68x25-0+0"
 # Bottom left window +0-0
-BOTTOMLEFT="-geometry 92x36+0-0"
+BOTTOMLEFT="-geometry 130x40+0-0"
 # Bottom right window -0-0
-BOTTOMRIGHT="-geometry 74x20-0-0"
-TOPLEFTBIG="-geometry 100x52+0+0"
-TOPRIGHTBIG="-geometry 74x30-0+0"
+BOTTOMRIGHT="-geometry 132x35-0-0"
+TOPLEFTBIG="-geometry 130x85+0+0"
+TOPRIGHTBIG="-geometry 132x48-0+0"
 }
 # starts monitor mode on selected interface		
 function monitor_interface {
@@ -265,7 +265,7 @@ then
 #IS_MONITOR=`$AIRMON start wifi0 $Host_CHAN |grep monitor`
 #$AIRMON stop ath0
 #echo $IS_MONITOR
-
+echo "Doing nothing"
 else
 IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
 echo "running standard monitor mode command"
