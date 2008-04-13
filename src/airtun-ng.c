@@ -563,6 +563,8 @@ int packet_recv(uchar* packet, int length)
     int z;
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( ( packet[0] & 0x80 ) == 0x80 ) /* QoS */
+            z+=2;
 
     if(length < z+8)
     {
