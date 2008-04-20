@@ -41,12 +41,6 @@ extern int net_get(int s, void *arg, int *len);
 
 #if defined(__CYGWIN32__)
 
-	// Hack for windows (but will only work on 2000 and up).
-	#ifndef MSG_WAITALL
-		#define MSG_WAITALL    0x08
-	#endif
-
-
 	#include <asm/byteorder.h>
 	#include <unistd.h>
 

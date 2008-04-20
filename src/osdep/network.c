@@ -97,13 +97,20 @@ net_send_error:
 int net_read_exact(int s, void *arg, int len)
 {
 	ssize_t rc;
+	int rlen = 0;
+	char *buf = (char*)arg;
+	while (rlen < len) {
+		rc = recv(s, buf, (len - rlen), 0);
 
-	for (;;) {
-		rc = recv(s, arg, len, MSG_WAITALL);
-		if (rc > 0)
-			break;
-		if (rc != EAGAIN && rc != EINTR)
+		if (rc < 1) {
+			if (rc == -1 && (rc == EAGAIN || rc == EINTR))
+				continue;
+
 			return -1;
+		}
+
+		buf += rc;
+		rlen += rc;
 	}
 
 	return 0;
