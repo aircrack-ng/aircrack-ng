@@ -25,7 +25,7 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 typedef uint8_t u8;
 
-#if !defined(_LINUX_TYPES_H) || __GNUC_PREREQ(3,0)
+#if !defined(_LINUX_TYPES_H) && __GNUC_PREREQ(3,0)
 typedef u64 __le64;
 typedef u32 __le32;
 typedef u16 __le16;
