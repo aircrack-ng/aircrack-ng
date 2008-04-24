@@ -25,12 +25,6 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 typedef uint8_t u8;
 
-#if !defined(_LINUX_TYPES_H) && __GNUC_PREREQ(3,0)
-typedef u64 __le64;
-typedef u32 __le32;
-typedef u16 __le16;
-#endif
-
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define	le16_to_cpu(x) (x)
 #define	le32_to_cpu(x) (x)
@@ -91,7 +85,7 @@ struct ieee80211_radiotap_iterator {
 
 	int arg_index;
 	u8 * arg;
-	__le32 *next_bitmap;
+	u32 *next_bitmap;
 	u32 bitmap_shifter;
 };
 

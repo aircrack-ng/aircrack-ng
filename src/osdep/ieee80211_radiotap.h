@@ -75,12 +75,12 @@ struct ieee80211_radiotap_header {
 				 * new fields does not count.
 				 */
 	u8 it_pad;
-	__le16 it_len;		/* length of the whole
+	u16 it_len;		/* length of the whole
 				 * header in bytes, including
 				 * it_version, it_pad,
 				 * it_len, and data fields.
 				 */
-	__le32 it_present;	/* A bitmap telling which
+	u32 it_present;		/* A bitmap telling which
 				 * fields are present. Set bit 31
 				 * (0x80000000) to extend the
 				 * bitmap by another 32 bits.
