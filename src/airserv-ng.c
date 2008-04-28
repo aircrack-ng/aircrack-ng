@@ -34,7 +34,12 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <signal.h>
+
+#ifdef __MACH__
+#include <libkern/OSByteOrder.h>
+#else
 #include <asm/byteorder.h>
+#endif /* __MACH__ */
 
 #include "osdep/osdep.h"
 #include "osdep/network.h"
@@ -435,12 +440,21 @@ static void handle_card(struct sstate *ss)
     if (rd >= 0)
     	rd += sizeof(*ri);
 
+#ifdef __MACH__
+	ri->ri_mactime = OSSwapHostToBigInt64(ri->ri_mactime);
+	ri->ri_power = OSSwapHostToBigInt32(ri->ri_power);
+	ri->ri_noise = OSSwapHostToBigInt32(ri->ri_noise);
+	ri->ri_channel = OSSwapHostToBigInt32(ri->ri_channel);
+	ri->ri_rate = OSSwapHostToBigInt32(ri->ri_rate);
+	ri->ri_antenna = OSSwapHostToBigInt32(ri->ri_antenna);
+#else
 	ri->ri_mactime = __cpu_to_be64(ri->ri_mactime);
 	ri->ri_power = __cpu_to_be32(ri->ri_power);
 	ri->ri_noise = __cpu_to_be32(ri->ri_noise);
 	ri->ri_channel = __cpu_to_be32(ri->ri_channel);
 	ri->ri_rate = __cpu_to_be32(ri->ri_rate);
 	ri->ri_antenna = __cpu_to_be32(ri->ri_antenna);
+#endif /* __MACH__ */
 
 	c = ss->ss_clients.c_next;
 	while (c != &ss->ss_clients) {
