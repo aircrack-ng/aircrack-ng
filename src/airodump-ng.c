@@ -146,6 +146,8 @@ int a_chans   [] =
     208, 212, 216,0
 };
 
+int *frequencies;
+
 /* linked list of received packets for the last few seconds */
 struct pkt_buf
 {
@@ -292,14 +294,17 @@ struct globals
 
     char * batt;            /* Battery string       */
     int channel[MAX_CARDS];           /* current channel #    */
+    int frequency[MAX_CARDS];           /* current frequency #    */
     int ch_pipe[2];         /* current channel pipe */
     int cd_pipe[2];	    /* current card pipe    */
     int gc_pipe[2];         /* gps coordinates pipe */
     float gps_loc[5];       /* gps coordinates      */
     int save_gps;           /* keep gps file flag   */
     int usegpsd;            /* do we use GPSd?      */
-    int * channels;
+    int *channels;
+//     int *frequencies;
     int singlechan;         /* channel hopping set 1*/
+    int singlefreq;         /* frequency hopping: 1 */
     int chswitch;	    /* switching method     */
     int f_encrypt;          /* encryption filter    */
     int update_s;	    /* update delay in sec  */
@@ -323,6 +328,7 @@ struct globals
     int sk_len2;
 
     int * own_channels;	    /* custom channel list  */
+    int * own_frequencies;	    /* custom frequency list  */
 
     int record_data;		/* do we record data?   */
     int asso_client;        /* only show associated clients */
@@ -363,6 +369,10 @@ struct globals
     FILE *f_cap_in;
     struct pcap_file_header pfh_in;
     int detect_anomaly;     /* Detect WIPS protecting WEP in action */
+
+    char *freqstring;
+    int freqoption;
+    int chanoption;
 }
 G;
 
@@ -552,6 +562,7 @@ char usage[] =
 "  You can make it capture on other/specific channel(s) by using:\n"
 "      --channel <channels>: Capture on specific channels\n"
 "      --band <abg>        : Band on which airodump-ng should hop\n"
+"      -C    <frequencies> : Uses these frequencies in MHz to hop\n"
 "      --cswitch  <method> : Set channel switching method\n"
 "                    0     : FIFO (default)\n"
 "                    1     : Round Robin\n"
@@ -2510,14 +2521,26 @@ void dump_print( int ws_row, int ws_col, int if_num )
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
-    snprintf(strbuf, sizeof(strbuf)-1, " CH %2d", G.channel[0]);
-    for(i=1; i<if_num; i++)
+    if(G.freqoption)
     {
-        memset( buffer, '\0', sizeof(buffer) );
-        snprintf(buffer, sizeof(buffer) , ",%2d", G.channel[i]);
-        strncat(strbuf, buffer, (sizeof(strbuf)-strlen(strbuf)));
+        snprintf(strbuf, sizeof(strbuf)-1, " Freq %4d", G.frequency[0]);
+        for(i=1; i<if_num; i++)
+        {
+            memset( buffer, '\0', sizeof(buffer) );
+            snprintf(buffer, sizeof(buffer) , ",%4d", G.frequency[i]);
+            strncat(strbuf, buffer, (sizeof(strbuf)-strlen(strbuf)));
+        }
     }
-
+    else
+    {
+        snprintf(strbuf, sizeof(strbuf)-1, " CH %2d", G.channel[0]);
+        for(i=1; i<if_num; i++)
+        {
+            memset( buffer, '\0', sizeof(buffer) );
+            snprintf(buffer, sizeof(buffer) , ",%2d", G.channel[i]);
+            strncat(strbuf, buffer, (sizeof(strbuf)-strlen(strbuf)));
+        }
+    }
     memset( buffer, '\0', sizeof(buffer) );
 
     if (G.gps_loc[0]) {
@@ -3176,7 +3199,10 @@ void sighandler( int signum)
     if( signum == SIGUSR1 )
     {
 	read( G.cd_pipe[0], &card, sizeof(int) );
-        read( G.ch_pipe[0], &(G.channel[card]), sizeof( int ) );
+        if(G.freqoption)
+            read( G.ch_pipe[0], &(G.frequency[card]), sizeof( int ) );
+        else
+            read( G.ch_pipe[0], &(G.channel[card]), sizeof( int ) );
     }
 
     if( signum == SIGUSR2 )
@@ -3228,6 +3254,21 @@ int getchancount(int valid)
     }
 
     if(valid) return chan_count;
+    return i;
+}
+
+int getfreqcount(int valid)
+{
+    int i=0, freq_count=0;
+
+    while(G.own_frequencies[i])
+    {
+        i++;
+        if(G.own_frequencies[i] != -1)
+            freq_count++;
+    }
+
+    if(valid) return freq_count;
     return i;
 }
 
@@ -3326,6 +3367,101 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
     exit( 0 );
 }
 
+void frequency_hopper(struct wif *wi[], int if_num, int chan_count )
+{
+    int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
+    int dropped=0;
+
+    while( getppid() != 1 )
+    {
+        for( j = 0; j < if_num; j++ )
+        {
+            again = 1;
+
+            ch_idx = chi % chan_count;
+
+            card = cai % if_num;
+
+            ++chi;
+            ++cai;
+
+            if( G.chswitch == 2 && !first )
+            {
+                j = if_num - 1;
+                card = if_num - 1;
+
+                if( getfreqcount(1) > if_num )
+                {
+                    while( again )
+                    {
+                        again = 0;
+                        for( k = 0; k < ( if_num - 1 ); k++ )
+                        {
+                            if( G.own_frequencies[ch_idx] == G.frequency[k] )
+                            {
+                                again = 1;
+                                ch_idx = chi % chan_count;
+                                chi++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if( G.own_frequencies[ch_idx] == -1 )
+            {
+                j--;
+                cai--;
+                dropped++;
+                if(dropped >= chan_count)
+                {
+                    ch = wi_get_freq(wi[card]);
+                    G.frequency[card] = ch;
+                    write( G.cd_pipe[1], &card, sizeof(int) );
+                    write( G.ch_pipe[1], &ch, sizeof( int ) );
+                    kill( getppid(), SIGUSR1 );
+                    usleep(1000);
+                }
+                continue;
+            }
+
+            dropped = 0;
+
+            ch = G.own_frequencies[ch_idx];
+
+            if(wi_set_freq(wi[card], ch ) == 0 )
+            {
+                G.frequency[card] = ch;
+                write( G.cd_pipe[1], &card, sizeof(int) );
+                write( G.ch_pipe[1], &ch, sizeof( int ) );
+                kill( getppid(), SIGUSR1 );
+                usleep(1000);
+            }
+            else
+            {
+                G.own_frequencies[ch_idx] = -1;      /* remove invalid channel */
+                j--;
+                cai--;
+                continue;
+            }
+        }
+
+        if(G.chswitch == 0)
+        {
+            chi=chi-(if_num - 1);
+        }
+
+        if(first)
+        {
+            first = 0;
+        }
+
+        usleep( (G.hopfreq*1000) );
+    }
+
+    exit( 0 );
+}
+
 int invalid_channel(int chan)
 {
     int i=0;
@@ -3335,6 +3471,18 @@ int invalid_channel(int chan)
         if (chan == abg_chans[i] && chan != 0 )
             return 0;
     } while (abg_chans[++i]);
+    return 1;
+}
+
+int invalid_frequency(int freq)
+{
+    int i=0;
+
+    do
+    {
+        if (freq == frequencies[i] && freq != 0 )
+            return 0;
+    } while (frequencies[++i]);
     return 1;
 }
 
@@ -3457,6 +3605,127 @@ int getchannels(const char *optarg)
     if(i==1) return G.own_channels[0];
     if(i==0) return -1;
     return 0;
+}
+
+/* parse a string, for example "1,2,3-7,11" */
+
+int getfrequencies(const char *optarg)
+{
+    unsigned int i=0,freq_cur=0,freq_first=0,freq_last=0,freq_max=5000,freq_remain=0;
+    char *optfreq = NULL, *optc;
+    char *token = NULL;
+    int *tmp_frequencies;
+
+    //got a NULL pointer?
+    if(optarg == NULL)
+        return -1;
+
+    freq_remain=freq_max;
+
+    //create a writable string
+    optc = optfreq = (char*) malloc(strlen(optarg)+1);
+    strncpy(optfreq, optarg, strlen(optarg));
+    optfreq[strlen(optarg)]='\0';
+
+    tmp_frequencies = (int*) malloc(sizeof(int)*(freq_max+1));
+
+    //split string in tokens, separated by ','
+    while( (token = strsep(&optfreq,",")) != NULL)
+    {
+        //range defined?
+        if(strchr(token, '-') != NULL)
+        {
+            //only 1 '-' ?
+            if(strchr(token, '-') == strrchr(token, '-'))
+            {
+                //are there any illegal characters?
+                for(i=0; i<strlen(token); i++)
+                {
+                    if( (token[i] < '0') && (token[i] > '9') && (token[i] != '-'))
+                    {
+                        free(tmp_frequencies);
+                        free(optc);
+                        return -1;
+                    }
+                }
+
+                if( sscanf(token, "%d-%d", &freq_first, &freq_last) != EOF )
+                {
+                    if(freq_first > freq_last)
+                    {
+                        free(tmp_frequencies);
+                        free(optc);
+                        return -1;
+                    }
+                    for(i=freq_first; i<=freq_last; i++)
+                    {
+                        if( (! invalid_frequency(i)) && (freq_remain > 0) )
+                        {
+                                tmp_frequencies[freq_max-freq_remain]=i;
+                                freq_remain--;
+                        }
+                    }
+                }
+                else
+                {
+                    free(tmp_frequencies);
+                    free(optc);
+                    return -1;
+                }
+
+            }
+            else
+            {
+                free(tmp_frequencies);
+                free(optc);
+                return -1;
+            }
+        }
+        else
+        {
+            //are there any illegal characters?
+            for(i=0; i<strlen(token); i++)
+            {
+                if( (token[i] < '0') && (token[i] > '9') )
+                {
+                    free(tmp_frequencies);
+                    free(optc);
+                    return -1;
+                }
+            }
+
+            if( sscanf(token, "%d", &freq_cur) != EOF)
+            {
+                if( (! invalid_frequency(freq_cur)) && (freq_remain > 0) )
+                {
+                        tmp_frequencies[freq_max-freq_remain]=freq_cur;
+                        freq_remain--;
+                }
+
+            }
+            else
+            {
+                free(tmp_frequencies);
+                free(optc);
+                return -1;
+            }
+        }
+    }
+
+    G.own_frequencies = (int*) malloc(sizeof(int)*(freq_max - freq_remain + 1));
+
+    for(i=0; i<(freq_max - freq_remain); i++)
+    {
+        G.own_frequencies[i]=tmp_frequencies[i];
+    }
+
+    G.own_frequencies[i]=0;
+
+    free(tmp_frequencies);
+    free(optc);
+    if(i==1) return G.own_frequencies[0];   //exactly 1 frequency given
+    if(i==0) return -1;                     //error occured
+    return 0;                               //frequency hopping
 }
 
 int setup_card(char *iface, struct wif **wis)
@@ -3595,13 +3864,77 @@ int check_channel(struct wif *wi[], int cards)
     return 0;
 }
 
+int check_frequency(struct wif *wi[], int cards)
+{
+    int i, freq;
+    for(i=0; i<cards; i++)
+    {
+        freq = wi_get_freq(wi[i]);
+        if(freq < 0) continue;
+        if(G.frequency[i] != freq)
+        {
+            memset(G.message, '\x00', sizeof(G.message));
+            snprintf(G.message, sizeof(G.message), "][ fixed frequency %s: %d ", wi_get_ifname(wi[i]), freq);
+            wi_set_freq(wi[i], G.frequency[i]);
+        }
+    }
+    return 0;
+}
+
+int detect_frequencies(struct wif *wi)
+{
+    int start_freq = 2312;
+    int end_freq = 2732;
+    int max_freq_num = 2048; //should be enough to keep all available channels
+    int freq=0, i=0;
+
+    printf("Checking available frequencies, this could take few seconds.\n");
+
+    frequencies = (int*) malloc((max_freq_num+1) * sizeof(int)); //field for frequencies supported
+    bzero(frequencies, (max_freq_num+1) * sizeof(int));
+    for(freq=start_freq; freq<=end_freq; freq+=5)
+    {
+        if(wi_set_freq(wi, freq) == 0)
+        {
+            frequencies[i] = freq;
+            i++;
+        }
+        if(freq == 2482)
+        {
+            //special case for chan 14, as its 12MHz away from 13, not 5MHz
+            freq = 2484;
+            if(wi_set_freq(wi, freq) == 0)
+            {
+                frequencies[i] = freq;
+                i++;
+            }
+            freq = 2482;
+        }
+    }
+
+    //again for 5GHz channels
+    start_freq=4920;
+    end_freq=6100;
+    for(freq=start_freq; freq<=end_freq; freq+=5)
+    {
+        if(wi_set_freq(wi, freq) == 0)
+        {
+            frequencies[i] = freq;
+            i++;
+        }
+    }
+
+    printf("Done.\n");
+    return 0;
+}
+
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
-    int caplen=0, i, j, cards, fdh, fd_is_set, chan_count;
+    int caplen=0, i, j, cards, fdh, fd_is_set, chan_count, freq_count;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
     int ivs_only, found;
-    int valid_channel, chanoption;
+    int valid_channel;
     int freq [2];
     int num_opts = 0;
     int option = 0;
@@ -3665,7 +3998,8 @@ int main( int argc, char *argv[] )
 
     h80211         =  NULL;
     ivs_only       =  0;
-    chanoption     =  0;
+    G.chanoption   =  0;
+    G.freqoption   =  0;
     cards	   =  0;
     fdh		   =  0;
     fd_is_set	   =  0;
@@ -3678,6 +4012,7 @@ int main( int argc, char *argv[] )
     G.channels     =  bg_chans;
     G.one_beacon   =  1;
     G.singlechan   =  0;
+    G.singlefreq   =  0;
     G.dump_prefix  =  NULL;
     G.record_data  =  0;
     G.f_cap        =  NULL;
@@ -3780,7 +4115,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:E",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3832,8 +4167,8 @@ int main( int argc, char *argv[] )
 
             case 'c' :
 
-                if (G.channel[0] > 0 || chanoption == 1) {
-                    if (chanoption == 1)
+                if (G.channel[0] > 0 || G.chanoption == 1) {
+                    if (G.chanoption == 1)
                         printf( "Notice: Channel range already given\n" );
                     else
                         printf( "Notice: Channel already given (%d)\n", G.channel[0]);
@@ -3845,7 +4180,7 @@ int main( int argc, char *argv[] )
                 if ( G.channel[0] < 0 )
                     goto usage;
 
-                chanoption = 1;
+                G.chanoption = 1;
 
                 if( G.channel[0] == 0 )
                 {
@@ -3855,9 +4190,30 @@ int main( int argc, char *argv[] )
                 G.channels = bg_chans;
                 break;
 
+            case 'C' :
+
+                if (G.channel[0] > 0 || G.chanoption == 1) {
+                    if (G.chanoption == 1)
+                        printf( "Notice: Channel range already given\n" );
+                    else
+                        printf( "Notice: Channel already given (%d)\n", G.channel[0]);
+                    break;
+                }
+
+                if (G.freqoption == 1) {
+                    printf( "Notice: Frequency range already given\n" );
+                    break;
+                }
+
+                G.freqstring = optarg;
+
+                G.freqoption = 1;
+
+                break;
+
             case 'b' :
 
-                if (chanoption == 1 && option != 'c') {
+                if (G.chanoption == 1 && option != 'c') {
                     printf( "Notice: Channel range already given\n" );
                     break;
                 }
@@ -4060,50 +4416,109 @@ usage:
                 fdh = fd_raw[i];
         }
 
-        chan_count = getchancount(0);
-
-        /* find the interface index */
-        /* start a child to hop between channels */
-
-        if( G.channel[0] == 0 )
+        if(G.freqoption == 1 && G.freqstring != NULL) // use frequencies
         {
-            pipe( G.ch_pipe );
-            pipe( G.cd_pipe );
-
-            signal( SIGUSR1, sighandler );
-
-            if( ! fork() )
+            detect_frequencies(wi[0]);
+            G.frequency[0] = getfrequencies(G.freqstring);
+            if(G.frequency[0] == -1)
             {
-                /* reopen cards.  This way parent & child don't share resources for
-                * accessing the card (e.g. file descriptors) which may cause
-                * problems.  -sorbo
-                */
-                for (i = 0; i < cards; i++) {
-                    strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam)-1);
-                    ifnam[sizeof(ifnam)-1] = 0;
+                printf("No valid frequency given.\n");
+                return(1);
+            }
 
-                    wi_close(wi[i]);
-                    wi[i] = wi_open(ifnam);
-                    if (!wi[i]) {
-                            printf("Can't reopen %s\n", ifnam);
-                            exit(1);
+            freq_count = getfreqcount(0);
+
+            /* find the interface index */
+            /* start a child to hop between frequencies */
+
+            if( G.frequency[0] == 0 )
+            {
+                pipe( G.ch_pipe );
+                pipe( G.cd_pipe );
+
+                signal( SIGUSR1, sighandler );
+
+                if( ! fork() )
+                {
+                    /* reopen cards.  This way parent & child don't share resources for
+                    * accessing the card (e.g. file descriptors) which may cause
+                    * problems.  -sorbo
+                    */
+                    for (i = 0; i < cards; i++) {
+                        strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam)-1);
+                        ifnam[sizeof(ifnam)-1] = 0;
+
+                        wi_close(wi[i]);
+                        wi[i] = wi_open(ifnam);
+                        if (!wi[i]) {
+                                printf("Can't reopen %s\n", ifnam);
+                                exit(1);
+                        }
                     }
+
+                    setuid( getuid() );
+
+                    frequency_hopper(wi, cards, freq_count);
+                    exit( 1 );
                 }
-
-                setuid( getuid() );
-
-                channel_hopper(wi, cards, chan_count);
-                exit( 1 );
+            }
+            else
+            {
+                for( i=0; i<cards; i++ )
+                {
+                    wi_set_freq(wi[i], G.frequency[0]);
+                    G.frequency[i] = G.frequency[0];
+                }
+                G.singlefreq = 1;
             }
         }
-        else
+        else    //use channels
         {
-            for( i=0; i<cards; i++ )
+            chan_count = getchancount(0);
+
+            /* find the interface index */
+            /* start a child to hop between channels */
+
+            if( G.channel[0] == 0 )
             {
-                wi_set_channel(wi[i], G.channel[0]);
-                G.channel[i] = G.channel[0];
+                pipe( G.ch_pipe );
+                pipe( G.cd_pipe );
+
+                signal( SIGUSR1, sighandler );
+
+                if( ! fork() )
+                {
+                    /* reopen cards.  This way parent & child don't share resources for
+                    * accessing the card (e.g. file descriptors) which may cause
+                    * problems.  -sorbo
+                    */
+                    for (i = 0; i < cards; i++) {
+                        strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam)-1);
+                        ifnam[sizeof(ifnam)-1] = 0;
+
+                        wi_close(wi[i]);
+                        wi[i] = wi_open(ifnam);
+                        if (!wi[i]) {
+                                printf("Can't reopen %s\n", ifnam);
+                                exit(1);
+                        }
+                    }
+
+                    setuid( getuid() );
+
+                    channel_hopper(wi, cards, chan_count);
+                    exit( 1 );
+                }
             }
-            G.singlechan = 1;
+            else
+            {
+                for( i=0; i<cards; i++ )
+                {
+                    wi_set_channel(wi[i], G.channel[0]);
+                    G.channel[i] = G.channel[0];
+                }
+                G.singlechan = 1;
+            }
         }
     }
 
@@ -4246,9 +4661,9 @@ usage:
             {
                 check_monitor(wi, fd_raw, &fdh, cards);
                 if(G.singlechan)
-                {
                     check_channel(wi, cards);
-                }
+                if(G.singlefreq)
+                    check_frequency(wi, cards);
             }
         }
 
