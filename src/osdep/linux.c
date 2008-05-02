@@ -591,7 +591,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
 {
     struct priv_linux *dev = wi_priv(wi);
     unsigned char maddr[6];
-    int ret;
+    int ret, usedrtap=0;
     unsigned char tmpbuf[4096];
     unsigned char rate;
 
@@ -620,7 +620,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
         count += sizeof (u8aRadiotap);
 
         buf = tmpbuf;
-
+        usedrtap = 1;
         break;
 
     case DT_WLANNG:
@@ -678,6 +678,22 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     }
 
     ret = write( dev->fd_out, buf, count );
+
+    if( ret < 0 )
+    {
+        if( errno == EAGAIN || errno == EWOULDBLOCK ||
+            errno == ENOBUFS || errno == ENOMEM )
+        {
+            usleep( 10000 );
+            return( 0 );
+        }
+
+        perror( "write failed" );
+        return( -1 );
+    }
+
+    if(usedrtap)
+        ret-=9;
 
     if( ret < 0 )
     {
