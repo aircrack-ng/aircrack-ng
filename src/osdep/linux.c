@@ -106,6 +106,7 @@ struct priv_linux {
 
     int sysfs_inject;
     int channel;
+    int freq;
     int rate;
     int tx_power;
     char *wlanctlng; /* XXX never set */
@@ -279,6 +280,39 @@ static int linux_get_channel(struct wif *wi)
     else chan = frequency;
 
     return chan;
+}
+
+static int linux_get_freq(struct wif *wi)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    struct iwreq wrq;
+    int fd, frequency;
+
+    memset( &wrq, 0, sizeof( struct iwreq ) );
+
+    if(dev->main_if)
+        strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
+    else
+        strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+
+
+    fd = dev->fd_in;
+    if(dev->drivertype == DT_IPW2200)
+        fd = dev->fd_main;
+
+    if( ioctl( fd, SIOCGIWFREQ, &wrq ) < 0 )
+        return( -1 );
+
+    frequency = wrq.u.freq.m;
+    if (frequency > 100000000)
+        frequency/=100000;
+    else if (frequency > 1000000)
+        frequency/=1000;
+
+    if (frequency < 500) //its not a freq, but the actual channel
+        frequency = getFrequencyFromChannel(frequency);
+
+    return frequency;
 }
 
 static int linux_set_rate(struct wif *wi, int rate)
@@ -746,6 +780,59 @@ static int linux_set_channel(struct wif *wi, int channel)
     }
 
     dev->channel = channel;
+
+    return( 0 );
+}
+
+static int linux_set_freq(struct wif *wi, int freq)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    char s[32];
+    int pid, status;
+    struct iwreq wrq;
+
+    memset( s, 0, sizeof( s ) );
+
+    switch (dev->drivertype) {
+    case DT_WLANNG:
+    case DT_ORINOCO:
+    case DT_ZD1211RW:
+        snprintf( s,  sizeof( s ) - 1, "%dM", freq );
+
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+            execlp(dev->iwconfig, "iwconfig", wi_get_ifname(wi),
+                    "freq", s, NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &status, 0 );
+        dev->freq = freq;
+        return 0;
+        break; //yeah ;)
+
+    default:
+        break;
+    }
+
+    memset( &wrq, 0, sizeof( struct iwreq ) );
+    strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+    wrq.u.freq.m = (double) freq*100000;
+    wrq.u.freq.e = (double) 1;
+
+    if( ioctl( dev->fd_in, SIOCSIWFREQ, &wrq ) < 0 )
+    {
+        usleep( 10000 ); /* madwifi needs a second chance */
+
+        if( ioctl( dev->fd_in, SIOCSIWFREQ, &wrq ) < 0 )
+        {
+/*          perror( "ioctl(SIOCSIWFREQ) failed" ); */
+            return( 1 );
+        }
+    }
+
+    dev->freq = freq;
 
     return( 0 );
 }
@@ -1720,6 +1807,8 @@ static struct wif *linux_open(char *iface)
         wi->wi_write            = linux_write;
         wi->wi_set_channel      = linux_set_channel;
         wi->wi_get_channel      = linux_get_channel;
+        wi->wi_set_freq		= linux_set_freq;
+        wi->wi_get_freq		= linux_get_freq;
         wi->wi_close            = linux_close;
 	wi->wi_fd		= linux_fd;
 	wi->wi_get_mac		= linux_get_mac;

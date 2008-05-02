@@ -50,6 +50,18 @@ int wi_get_channel(struct wif *wi)
         return wi->wi_get_channel(wi);
 }
 
+int wi_set_freq(struct wif *wi, int freq)
+{
+        assert(wi->wi_set_freq);
+        return wi->wi_set_freq(wi, freq);
+}
+
+int wi_get_freq(struct wif *wi)
+{
+	assert(wi->wi_get_freq);
+        return wi->wi_get_freq(wi);
+}
+
 int wi_get_monitor(struct wif *wi)
 {
         assert(wi->wi_get_monitor);

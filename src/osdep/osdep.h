@@ -27,6 +27,7 @@ struct rx_info {
         uint32_t ri_power;
         uint32_t ri_noise;
         uint32_t ri_channel;
+        uint32_t ri_freq;
         uint32_t ri_rate;
         uint32_t ri_antenna;
 } __packed;
@@ -43,6 +44,8 @@ struct wif {
                             struct tx_info *ti);
         int     (*wi_set_channel)(struct wif *wi, int chan);
         int     (*wi_get_channel)(struct wif *wi);
+        int     (*wi_set_freq)(struct wif *wi, int freq);
+        int     (*wi_get_freq)(struct wif *wi);
 	void	(*wi_close)(struct wif *wi);
 	int	(*wi_fd)(struct wif *wi);
 	int	(*wi_get_mac)(struct wif *wi, unsigned char *mac);
@@ -63,6 +66,8 @@ extern int wi_write(struct wif *wi, unsigned char *h80211, int len,
 		    struct tx_info *ti);
 extern int wi_set_channel(struct wif *wi, int chan);
 extern int wi_get_channel(struct wif *wi);
+extern int wi_set_freq(struct wif *wi, int freq);
+extern int wi_get_freq(struct wif *wi);
 extern void wi_close(struct wif *wi);
 extern char *wi_get_ifname(struct wif *wi);
 extern int wi_get_mac(struct wif *wi, unsigned char *mac);
