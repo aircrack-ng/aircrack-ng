@@ -2483,6 +2483,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
         {
             addFrag(packet, smac, length);
             buffer = getCompleteFrag(smac, seqnum, &len);
+            timeoutFrag();
 
             /* we got frag, no compelete packet avail -> do nothing */
             if(buffer == NULL)
