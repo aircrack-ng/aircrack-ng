@@ -354,7 +354,7 @@ do
     printf "$iface\t\t$CHIPSET\t$DRIVER - [$PHYDEV]"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
-        airvap-ng dev $iface interface add $MONDEV type monitor
+        airvif-ng dev $iface interface add $MONDEV type monitor
         sleep 0.1
         ifconfig $MONDEV up
         printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"   
@@ -364,7 +364,7 @@ do
         z="`echo $iface | cut -b -3`"
         if [ x$z = "xmon" ]
         then
-            airvap-ng dev "$iface" interface del
+            airvif-ng dev "$iface" interface del
             printf " (removed)"
         else
             ifconfig $iface down
