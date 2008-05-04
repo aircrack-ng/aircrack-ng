@@ -72,7 +72,7 @@ SRC_PTW		= aircrack-ptw-lib.c
 SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
 OBJS_PTW	= aircrack-ptw-lib.o
 OBJS_AC		= aircrack-ng.o crypto.o common.o uniqueiv.o $(OBJS_PTW)
-
+OBJS_AV 	= airvif-ng.o info.o interface.o
 OBJS_AD		= airdecap-ng.o crypto.o common.o
 OBJS_PF		= packetforge-ng.o common.o crypto.o
 OBJS_AR		= aireplay-ng.o common.o crypto.o
@@ -151,8 +151,8 @@ packetforge-ng$(EXE): $(OBJS_PF)
 aireplay-ng$(EXE): $(OBJS_AR) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL)
 
-airvif-ng$(EXE): 
-	make -f airvif-ng.mk
+airvif-ng$(EXE): $(OBJS_AV) $(LIBOSD)
+	$(CC) $(CFLAGS) $(OBJS_AV) -lnl -o $(@) $(LIBS)
 
 airodump-ng$(EXE): $(OBJS_ADU) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL)

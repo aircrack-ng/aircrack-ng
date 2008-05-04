@@ -24,22 +24,22 @@ SQLITE		= true
 endif
 endif
 
+COMMON_CFLAGS	= 
+
 ifeq ($(SQLITE), true)
-COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
-else
-COMMON_CFLAGS	=
+COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
 endif
 
 ifeq ($(sqlite), true)
-COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
+COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
 endif
 
 ifeq ($(SQLITE), TRUE)
-COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
+COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
 endif
 
 ifeq ($(sqlite), TRUE)
-COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
+COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
 endif
 
 ifeq ($(airpcap), true)
@@ -48,6 +48,38 @@ endif
 
 ifeq ($(AIRPCAP), true)
 LIBAIRPCAP	= -DHAVE_AIRPCAP -I$(AC_ROOT)/../developers/Airpcap_Devpack/include
+endif
+
+ifeq ($(AIRVIF), true)
+COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
+endif
+
+ifeq ($(AIRVIF), TRUE)
+COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
+endif
+
+ifeq ($(airvif), true)
+COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
+endif
+
+ifeq ($(airvif), TRUE)
+COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
+endif
+
+ifeq ($(AIRVIF-NG), true)
+COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
+endif
+
+ifeq ($(AIRVIF-NG), TRUE)
+COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
+endif
+
+ifeq ($(airvifng), true)
+COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
+endif
+
+ifeq ($(airvifng), TRUE)
+COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
 endif
 
 CC		= $(TOOL_PREFIX)gcc

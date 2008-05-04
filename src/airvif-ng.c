@@ -92,12 +92,13 @@ static int get_phy_or_dev(int *argc, char ***argv, char **name)
 
 static void usage(char *argv0)
 {
-	fprintf(stderr, "Usage:	%1$s dev <phydev> <OBJECT> <COMMAND> [OPTIONS]"
-			"\n	%1$s dev <phydev> info\n"
+	fprintf(stderr, "Usage:	%1$s dev <phydev> interface <COMMAND> [OPTIONS]\n"
+			"	%1$s dev <phydev> info\n"
 			"\n"
-			"where OBJECT := { interface | station | mpath }\n"
-			"and COMMAND := { add | del | set | get | dump }\n",
-			argv0);
+			"where COMMAND := { add | del }\n"
+			"\n"
+			"For add, OPTIONS := <name> type <type>\n"
+			"For del, OPTIONS should be blank and phydev is the interface to delete.\n", argv0);
 }
 
 int main(int argc, char **argv)
@@ -139,14 +140,10 @@ int main(int argc, char **argv)
 	argc--;
 	argv++;
 
-	if (strcmp(type, "interface") == 0)
+	if (strcmp(type, "interface") == 0 || strcmp(type, "iface") == 0 || strcmp(type, "if") == 0)
 		err = handle_interface(&nlstate, phyname, ifname, argc, argv);
 	else if (strcmp(type, "info") == 0)
 		err = handle_info(&nlstate, phyname, ifname);
-	else if (strcmp(type, "station") == 0)
-		err = handle_station(&nlstate, ifname, argc, argv);
-	else if (strcmp(type, "mpath") == 0)
-		err = handle_mpath(&nlstate, ifname, argc, argv);
 	else {
 		fprintf(stderr, "No such object type %s\n", type);
 		err = 1;

@@ -22,6 +22,8 @@ static void print_flag(const char *name, int *open)
 
 static int print_phy_handler(struct nl_msg *msg, void *arg)
 {
+	int *bitbucket = arg; /* don't fail with -Wall -Werror */
+	bitbucket++;
 	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 
@@ -109,6 +111,8 @@ static int print_phy_handler(struct nl_msg *msg, void *arg)
 static int ack_wait_handler(struct nl_msg *msg, void *arg)
 {
 	int *finished = arg;
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg)); /* don't fail with -Wall -Werror */
+	gnlh++;
 
 	*finished = 1;
 	return NL_STOP;

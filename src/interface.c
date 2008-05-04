@@ -42,12 +42,9 @@ static int get_if_type(int *argc, char ***argv, enum nl80211_iftype *type)
 	} else if (strcmp(tpstr, "wds") == 0) {
 		*type = NL80211_IFTYPE_WDS;
 		return 1;
-	} else if (strcmp(tpstr, "station") == 0) {
+	} else if (strcmp(tpstr, "station") == 0 ||
+		   strcmp(tpstr, "managed") == 0 ) {
 		*type = NL80211_IFTYPE_STATION;
-		return 1;
-	} else if (strcmp(tpstr, "mp") == 0 ||
-			strcmp(tpstr, "mesh") == 0) {
-		*type = NL80211_IFTYPE_MESH_POINT;
 		return 1;
 	}
 
@@ -60,7 +57,6 @@ static int handle_interface_add(struct nl80211_state *state,
 				char *phy, char *dev, int argc, char **argv)
 {
 	char *name;
-	char *mesh_id = NULL;
 	enum nl80211_iftype type;
 	int tpset, err = -ENOBUFS;
 	struct nl_msg *msg;
@@ -79,23 +75,6 @@ static int handle_interface_add(struct nl80211_state *state,
 		fprintf(stderr, "you must specify an interface type\n");
 	if (tpset <= 0)
 		return -1;
-
-	if (argc) {
-		if (strcmp(argv[0], "mesh_id") != 0) {
-			fprintf(stderr, "option %s not supported\n", argv[0]);
-			return -1;
-		}
-		argc--;
-		argv++;
-
-		if (!argc) {
-			fprintf(stderr, "not enough arguments\n");
-			return -1;
-		}
-		mesh_id = argv[0];
-		argc--;
-		argv++;
-	}
 
 	if (argc) {
 		fprintf(stderr, "too many arguments\n");
@@ -117,8 +96,6 @@ static int handle_interface_add(struct nl80211_state *state,
 	NLA_PUT_STRING(msg, NL80211_ATTR_IFNAME, name);
 	if (tpset)
 		NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, type);
-	if (mesh_id)
-		NLA_PUT(msg, NL80211_ATTR_MESH_ID, strlen(mesh_id), mesh_id);
 
 	if ((err = nl_send_auto_complete(state->nl_handle, msg)) < 0 ||
 	    (err = nl_wait_for_ack(state->nl_handle)) < 0) {
@@ -134,7 +111,7 @@ static int handle_interface_add(struct nl80211_state *state,
 }
 
 static int handle_interface_del(struct nl80211_state *state,
-				char *phy, char *dev, int argc, char **argv)
+				char *dev, int argc)
 {
 	int err = -ENOBUFS;
 	struct nl_msg *msg;
@@ -186,7 +163,7 @@ int handle_interface(struct nl80211_state *state,
 	if (strcmp(cmd, "add") == 0)
 		return handle_interface_add(state, phy, dev, argc, argv);
 	else if (strcmp(cmd, "del") == 0)
-		return handle_interface_del(state, phy, dev, argc, argv);
+		return handle_interface_del(state, dev, argc);
 
 	printf("invalid interface command %s\n", cmd);
 	return -1;
