@@ -32,8 +32,41 @@ LIBPCAP		=
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
 		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE) airbase-ng$(EXE)
+
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
+
+ifeq ($(AIRVIF), true)
+SBINFILES	+= airvif-ng$(EXE)
+endif
+
+ifeq ($(AIRVIF), TRUE)
+SBINFILES	+= airvif-ng$(EXE)
+endif
+
+ifeq ($(airvif), true)
+SBINFILES	+= airvif-ng$(EXE)
+endif
+
+ifeq ($(airvif), TRUE)
+SBINFILES	+= airvif-ng$(EXE)
+endif
+
+ifeq ($(AIRVIF-NG), true)
+SBINFILES	+= airvif-ng$(EXE)
+endif
+
+ifeq ($(AIRVIF-NG), TRUE)
+SBINFILES	+= airvif-ng$(EXE)
+endif
+
+ifeq ($(airvif-ng), true)
+SBINFILES	+= airvif-ng$(EXE)
+endif
+
+ifeq ($(airvif-ng), TRUE)
+SBINFILES	+= airvif-ng$(EXE)
+endif
 
 SRC_PTW		= aircrack-ptw-lib.c
 SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
@@ -118,6 +151,9 @@ packetforge-ng$(EXE): $(OBJS_PF)
 aireplay-ng$(EXE): $(OBJS_AR) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL)
 
+airvif-ng$(EXE): 
+	make -f airvif-ng.mk
+
 airodump-ng$(EXE): $(OBJS_ADU) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL)
 
@@ -183,3 +219,4 @@ uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/wesside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/easside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/airbase-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/airvif-ng$(EXE)
