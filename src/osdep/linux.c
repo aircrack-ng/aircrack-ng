@@ -1231,11 +1231,11 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
             fprintf( stderr, "\nUnsupported hardware link type %4d ",
                      ifr.ifr_hwaddr.sa_family );
 
-        fprintf( stderr, "- expected ARPHRD_IEEE80211\nor ARPHRD_IEEE8021"
-                         "1_PRISM instead.  Make sure RFMON is enabled:\n"
-                         "run 'ifconfig %s up; iwconfig %s mode Monitor "
-                         "channel <#>'\nSysfs injection support was not "
-                         "found either.\n\n", iface, iface );
+        fprintf( stderr, "- expected ARPHRD_IEEE80211,\nARPHRD_IEEE80211_"
+                         "FULL or ARPHRD_IEEE80211_PRISM instead.  Make\n"
+                         "sure RFMON is enabled: run 'airmon-ng start %s"
+                         " <#>'\nSysfs injection support was not found "
+                         "either.\n\n", iface );
         return( 1 );
     }
 
