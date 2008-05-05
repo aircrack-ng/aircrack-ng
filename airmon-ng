@@ -7,6 +7,18 @@ CH=$3; [ x$3 = "x" ] && CH=10
 IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
+NL80211=""
+MON_PREFIX="mon"
+
+if [ -f "`which nl80211-ng 2>&1`" ]
+then
+	NL80211="nl80211-ng"
+fi
+
+if [ -f "`which iw 2>&1`" -a "x$NL80211"="x" ]
+then
+	NL80211="iw"
+fi
 
 PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon|wlassistant"
 
@@ -137,7 +149,12 @@ getChipset() {
 
     if [ x$DRIVER = "xzd1211rw" -o x$DRIVER = "xzd1211rw_mac80211" ]
     then
-        CHIPSET="Zydas 1211"
+        CHIPSET="ZyDAS 1211"
+    fi
+
+    if [ x$DRIVER = "xb43" -o x$DRIVER = "xb43legacy" ]
+    then
+        CHIPSET="Broadcom 43xx"
     fi
 
     if [ x$DRIVER = "xhostap" ]
@@ -219,12 +236,12 @@ getPhy() {
 getNewMon() {
     i=0
 
-    while [ -d /sys/class/net/mon$i/ ]
+    while [ -d /sys/class/net/$MON_PREFIX$i/ ]
     do
         i=$(($i+1))
     done
 
-    MONDEV="mon$i"
+    MONDEV="$MON_PREFIX$i"
 }
 
 if [ x"`which id 2> /dev/null`" != "x" ]
@@ -354,18 +371,43 @@ do
     printf "$iface\t\t$CHIPSET\t$DRIVER - [$PHYDEV]"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
-        airvif-ng dev $iface interface add $MONDEV type monitor
-        sleep 0.1
-        ifconfig $MONDEV up
-        printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"   
+        if [ $NL80211 != "" ]
+        then
+            $NL80211 dev $iface interface add $MONDEV type monitor
+            sleep 0.1
+            ifconfig $MONDEV up
+            printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+        else
+            if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
+            then
+                echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
+                sleep 0.1
+                iwconfig $MONDEV mode Monitor >/dev/null 2>&1
+                ifconfig $MONDEV up
+                printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+            else
+                printf "\n\nERROR: Neither the sysfs interface links nor an nl80211 utility is available.\nPlease recompile aircrack-ng with nl80211 support (make nl80211=true).\n"
+            fi
+        fi
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
     then
-        z="`echo $iface | cut -b -3`"
-        if [ x$z = "xmon" ]
+        z="`echo $iface | cut -b -${#MON_PREFIX}`"
+        if [ x$z = "x$MON_PREFIX" ]
         then
-            airvif-ng dev "$iface" interface del
-            printf " (removed)"
+            if [ $NL80211 != "" ]
+            then
+                $NL80211 dev "$iface" interface del
+                printf " (removed)"
+            else
+                if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
+                then
+                    echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+                    printf " (removed)"
+                else
+                    printf "\n\nERROR: Neither the sysfs interface links nor an nl80211 utility is available.\nPlease recompile aircrack-ng with nl80211 support (make nl80211=true).\n"
+                fi
+	    fi
         else
             ifconfig $iface down
             iwconfig $iface mode managed

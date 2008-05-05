@@ -9,7 +9,7 @@
 #include <netlink/msg.h>
 #include <netlink/attr.h>
 
-#include "airvif-ng.h"
+#include "nl80211-ng.h"
 
 /* return 0 if not found, 1 if ok, -1 on error */
 static int get_if_type(int *argc, char ***argv, enum nl80211_iftype *type)

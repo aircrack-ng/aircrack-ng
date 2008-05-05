@@ -15,7 +15,7 @@
 #include <netlink/attr.h>
 #include "nl80211.h"
 
-#include "airvif-ng.h"
+#include "nl80211-ng.h"
 
 
 static int nl80211_init(struct nl80211_state *state)
@@ -90,15 +90,10 @@ static int get_phy_or_dev(int *argc, char ***argv, char **name)
 	return 0;
 }
 
-static void usage(char *argv0)
+static void usage()
 {
-	fprintf(stderr, "Usage:	%1$s dev <phydev> interface <COMMAND> [OPTIONS]\n"
-			"	%1$s dev <phydev> info\n"
-			"\n"
-			"where COMMAND := { add | del }\n"
-			"\n"
-			"For add, OPTIONS := <name> type <type>\n"
-			"For del, OPTIONS should be blank and phydev is the interface to delete.\n", argv0);
+	fprintf(stderr, "This tool is intended for aircrack-ng internal use only.\n"
+			"Don't call it directly, use airmon-ng instead.\n");
 }
 
 int main(int argc, char **argv)
@@ -116,7 +111,7 @@ int main(int argc, char **argv)
 	argv0 = *argv++;
 
 	if (argc == 0 || (argc == 1 && strcmp(*argv, "help") == 0)) {
-		usage(argv0);
+		usage();
 		goto out;
 	}
 

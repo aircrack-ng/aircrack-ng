@@ -8,7 +8,7 @@
 #include <netlink/msg.h>
 #include <netlink/attr.h>
 
-#include "airvif-ng.h"
+#include "nl80211-ng.h"
 
 static void print_flag(const char *name, int *open)
 {

@@ -50,35 +50,19 @@ ifeq ($(AIRPCAP), true)
 LIBAIRPCAP	= -DHAVE_AIRPCAP -I$(AC_ROOT)/../developers/Airpcap_Devpack/include
 endif
 
-ifeq ($(AIRVIF), true)
+ifeq ($(NL80211), true)
 COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
 endif
 
-ifeq ($(AIRVIF), TRUE)
+ifeq ($(NL80211), TRUE)
 COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
 endif
 
-ifeq ($(airvif), true)
+ifeq ($(nl80211), true)
 COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
 endif
 
-ifeq ($(airvif), TRUE)
-COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
-endif
-
-ifeq ($(AIRVIF-NG), true)
-COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
-endif
-
-ifeq ($(AIRVIF-NG), TRUE)
-COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
-endif
-
-ifeq ($(airvifng), true)
-COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
-endif
-
-ifeq ($(airvifng), TRUE)
+ifeq ($(nl80211), TRUE)
 COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
 endif
 

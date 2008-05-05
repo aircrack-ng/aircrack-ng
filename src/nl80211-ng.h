@@ -1,5 +1,5 @@
-#ifndef __AIRVIF_NG_H
-#define __AIRVIF_NG_H
+#ifndef __NL80211_NG_H
+#define __NL80211_NG_H
 
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
@@ -17,4 +17,4 @@ int handle_interface(struct nl80211_state *state,
 
 int handle_info(struct nl80211_state *state, char *phy, char *dev);
 
-#endif /* __AIRVIF_NG_H */
+#endif /* __NL80211_NG_H */
