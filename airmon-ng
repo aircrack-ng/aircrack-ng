@@ -143,7 +143,12 @@ getChipset() {
 
     if [ x$DRIVER = "xzd1211rw" -o x$DRIVER = "xzd1211rw_mac80211" ]
     then
-        CHIPSET="Zydas 1211"
+        CHIPSET="ZyDAS 1211"
+    fi
+
+    if [ x$DRIVER = "xb43" -o x$DRIVER = "xb43legacy" ]
+    then
+        CHIPSET="Broadcom 43xx"
     fi
 
     if [ x$DRIVER = "xhostap" ]
