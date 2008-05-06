@@ -8,7 +8,11 @@ IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
 NL80211=""
+
+if [ "x$MON_PREFIX"="x" ]
+then
 MON_PREFIX="mon"
+fi
 
 if [ -f "`which nl80211-ng 2>&1`" ]
 then
