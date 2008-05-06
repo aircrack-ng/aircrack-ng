@@ -204,6 +204,7 @@ char usage[] =
 "      -M <num>   : maximum number of IVs to use\n"
 "      -D         : WEP decloak mode\n"
 "      -P <num>   : PTW debug: 1 disable Klein, 2 PTW\n"
+"      -1         : try PTW attack only once\n"
 "\n"
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
