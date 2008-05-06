@@ -380,7 +380,7 @@ do
                 ifconfig $MONDEV up
                 printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
             else
-                printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from http://git.sipsolutions.net/iw.git\n"
+                printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from http://dl.aircrack-ng.org/iw.tar.bz2\n"
             fi
         fi
     fi
