@@ -73,7 +73,8 @@
 #define ARPHRD_IEEE80211_FULL   803
 
 #define REFRESH_RATE 100000  /* default delay in us between updates */
-#define DEFAULT_HOPFREQ 350  /* default delay in ms between channel hopping */
+#define DEFAULT_HOPFREQ 250  /* default delay in ms between channel hopping */
+#define DEFAULT_CWIDTH  20 /* 20 MHz channels by default */
 
 #define NB_PWR  5       /* size of signal power ring buffer */
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
@@ -103,6 +104,7 @@
 #undef MAX
 #endif
 #define	MAX(a,b)	((a)>(b)?(a):(b))
+#define ABS(a)          ((a)>=0?(a):(-(a)))
 
 //milliseconds to store last packets
 #define BUFFER_TIME 3000
@@ -3611,7 +3613,7 @@ int getchannels(const char *optarg)
 
 int getfrequencies(const char *optarg)
 {
-    unsigned int i=0,freq_cur=0,freq_first=0,freq_last=0,freq_max=5000,freq_remain=0;
+    unsigned int i=0,freq_cur=0,freq_first=0,freq_last=0,freq_max=10000,freq_remain=0;
     char *optfreq = NULL, *optc;
     char *token = NULL;
     int *tmp_frequencies;
@@ -3700,6 +3702,21 @@ int getfrequencies(const char *optarg)
                 {
                         tmp_frequencies[freq_max-freq_remain]=freq_cur;
                         freq_remain--;
+                }
+
+                /* special case "-C 0" means: scan all available frequencies */
+                if(freq_cur == 0)
+                {
+                    freq_first = 1;
+                    freq_last = 9999;
+                    for(i=freq_first; i<=freq_last; i++)
+                    {
+                        if( (! invalid_frequency(i)) && (freq_remain > 0) )
+                        {
+                                tmp_frequencies[freq_max-freq_remain]=i;
+                                freq_remain--;
+                        }
+                    }
                 }
 
             }
@@ -3928,6 +3945,63 @@ int detect_frequencies(struct wif *wi)
     return 0;
 }
 
+int array_contains(int *array, int length, int value)
+{
+    int i;
+    for(i=0;i<length;i++)
+        if(array[i] == value)
+            return 1;
+
+    return 0;
+}
+
+int rearrange_frequencies()
+{
+    int *freqs;
+    int count, left, pos;
+    int width, last_used=0;
+    int cur_freq, last_freq;
+//     int i;
+
+    width = DEFAULT_CWIDTH;
+    cur_freq=0;
+
+    count = getfreqcount(0);
+    left = count;
+    pos = 0;
+
+    freqs = malloc(sizeof(int) * (count + 1));
+    bzero(freqs, sizeof(int) * (count + 1));
+
+    while(left > 0)
+    {
+//         printf("pos: %d\n", pos);
+        last_freq = cur_freq;
+        cur_freq = G.own_frequencies[pos%count];
+//         printf("last_used: %d, cur_freq: %d, width: %d\n", last_used, cur_freq, width);
+        if(((count-left) > 0) && (last_used != cur_freq) && ( ABS( last_used-cur_freq ) < width ) )
+        {
+//             printf("skip it!\n");
+            pos++;
+            continue;
+        }
+        if(!array_contains( freqs, count, cur_freq))
+        {
+//             printf("not in there yet: %d\n", cur_freq);
+            freqs[count - left] = cur_freq;
+            last_used = cur_freq;
+            left--;
+        }
+
+        pos++;
+    }
+
+    memcpy(G.own_frequencies, freqs, count*sizeof(int));
+    free(freqs);
+
+    return 0;
+}
+
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
@@ -4035,7 +4109,7 @@ int main( int argc, char *argv[] )
     G.berlin       =  120;
     G.show_ack     =  0;
     G.hide_known   =  0;
-    G.hopfreq      =  350;
+    G.hopfreq      =  DEFAULT_HOPFREQ;
     G.s_file       =  NULL;
     G.s_iface      =  NULL;
     G.f_cap_in     =  NULL;
@@ -4425,6 +4499,8 @@ usage:
                 printf("No valid frequency given.\n");
                 return(1);
             }
+
+            rearrange_frequencies();
 
             freq_count = getfreqcount(0);
 
