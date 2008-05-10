@@ -41,7 +41,7 @@
 #include <netlink/genl/ctrl.h>  
 #include <netlink/msg.h>
 #include <netlink/attr.h>
-#include "nl80211.h"
+#include "include/nl80211.h"
 
 #include "nl80211-ng.h"
 
