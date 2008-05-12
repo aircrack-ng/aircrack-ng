@@ -329,7 +329,7 @@ do
     printf "$iface\t\tAtheros\t\tmadwifi-ng"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
-        IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor -bssid`
+        IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath`
         cp $KISMET~ $KISMET 2>/dev/null &&
         echo "source=madwifi_g,$iface,Atheros" >>$KISMET
         ifconfig $iface up
