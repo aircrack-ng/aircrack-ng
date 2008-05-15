@@ -14,6 +14,11 @@ then
 	USE_IW=1
 fi
 
+if [ "x$MON_PREFIX"="x" ]
+then
+MON_PREFIX="mon"
+fi
+
 PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon|wlassistant"
 
 usage() {
@@ -230,12 +235,12 @@ getPhy() {
 getNewMon() {
     i=0
 
-    while [ -d /sys/class/net/mon$i/ ]
+    while [ -d /sys/class/net/$MON_PREFIX$i/ ]
     do
         i=$(($i+1))
     done
 
-    MONDEV="mon$i"
+    MONDEV="$MON_PREFIX$i"
 }
 
 if [ x"`which id 2> /dev/null`" != "x" ]
@@ -386,8 +391,8 @@ do
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
     then
-        z="`echo $iface | cut -b -3`"
-        if [ x$z = "xmon" ]
+        z="`echo $iface | cut -b -${#MON_PREFIX}`"
+        if [ x$z = "x$MON_PREFIX" ]
         then
             if [ $USE_IW = 1 ]
             then
