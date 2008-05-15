@@ -315,7 +315,7 @@ struct APt
     unsigned char bssid[6];
     unsigned char chan;
     unsigned int  ping[REQUESTS];
-    unsigned int  pwr[REQUESTS];
+    int  pwr[REQUESTS];
 };
 
 struct APt ap[MAX_APS];
@@ -5155,8 +5155,8 @@ int do_attack_test()
                                 answers++;
                             }
                             ap[i].found++;
-                            if(ri.ri_power > 0)
-                                ap[i].pwr[j] = ri.ri_power;
+                            if((signed)ri.ri_power > -200)
+                                ap[i].pwr[j] = (signed)ri.ri_power;
                             break;
                         }
                     }
@@ -5178,8 +5178,8 @@ int do_attack_test()
                             answers++;
                         }
                         ap[i].found++;
-                        if(ri.ri_power > 0)
-                            ap[i].pwr[j] = ri.ri_power;
+                        if((signed)ri.ri_power > -200)
+                            ap[i].pwr[j] = (signed)ri.ri_power;
                         break;
                     }
                 }
@@ -5200,8 +5200,8 @@ int do_attack_test()
                             answers++;
                         }
                         ap[i].found++;
-                        if(ri.ri_power > 0)
-                            ap[i].pwr[j] = ri.ri_power;
+                        if((signed)ri.ri_power > -200)
+                            ap[i].pwr[j] = (signed)ri.ri_power;
                         break;
                     }
                 }
@@ -5224,8 +5224,8 @@ int do_attack_test()
                                 answers++;
                             }
                             ap[i].found++;
-                            if(ri.ri_power > 0)
-                                ap[i].pwr[j] = ri.ri_power;
+                            if((signed)ri.ri_power > -200)
+                                ap[i].pwr[j] = (signed)ri.ri_power;
                             break;
                         }
                     }
@@ -5344,8 +5344,8 @@ int do_attack_test()
                                         answers++;
                                     }
                                     ap[i].found++;
-                                    if(ri.ri_power > 0)
-                                        ap[i].pwr[j] = ri.ri_power;
+                                    if((signed)ri.ri_power > -200)
+                                        ap[i].pwr[j] = (signed)ri.ri_power;
                                     break;
                                 }
                             }
