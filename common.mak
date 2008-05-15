@@ -24,22 +24,16 @@ SQLITE		= true
 endif
 endif
 
+COMMON_CFLAGS	= 
+
 ifeq ($(SQLITE), true)
-COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
-else
-COMMON_CFLAGS	=
-endif
-
-ifeq ($(sqlite), true)
-COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
-endif
-
-ifeq ($(SQLITE), TRUE)
-COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
-endif
-
-ifeq ($(sqlite), TRUE)
-COMMON_CFLAGS	= -I/usr/local/include -DHAVE_SQLITE
+COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
+else ifeq ($(sqlite), true)
+COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
+else ifeq ($(SQLITE), TRUE)
+COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
+else ifeq ($(sqlite), TRUE)
+COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
 endif
 
 ifeq ($(airpcap), true)

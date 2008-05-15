@@ -14,17 +14,11 @@ BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
 		  ivstools$(EXE) kstats$(EXE) buddy-ng$(EXE) makeivs-ng$(EXE)
 ifeq ($(SQLITE), true)
 BINFILES	+= airolib-ng$(EXE)
-endif
-
-ifeq ($(sqlite), true)
+else ifeq ($(sqlite), true)
 BINFILES        += airolib-ng$(EXE)
-endif
-
-ifeq ($(SQLITE), TRUE)
+else ifeq ($(SQLITE), TRUE)
 BINFILES        += airolib-ng$(EXE)
-endif
-
-ifeq ($(sqlite), TRUE)
+else ifeq ($(sqlite), TRUE)
 BINFILES        += airolib-ng$(EXE)
 endif
 
@@ -66,17 +60,11 @@ LIBSSL		= -lssl -lcrypto $(LDFLAGS)
 LIBSQL		=
 ifeq ($(SQLITE), true)
 LIBSQL		= -L/usr/local/lib -lsqlite3
-endif
-
-ifeq ($(sqlite), true)
+else ifeq ($(sqlite), true)
 LIBSQL          = -L/usr/local/lib -lsqlite3
-endif
-
-ifeq ($(SQLITE), TRUE)
+else ifeq ($(SQLITE), TRUE)
 LIBSQL          = -L/usr/local/lib -lsqlite3
-endif
-
-ifeq ($(sqlite), TRUE)
+else ifeq ($(sqlite), TRUE)
 LIBSQL          = -L/usr/local/lib -lsqlite3
 endif
 
