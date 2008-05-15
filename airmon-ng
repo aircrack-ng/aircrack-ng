@@ -151,9 +151,14 @@ getChipset() {
         CHIPSET="ZyDAS 1211"
     fi
 
-    if [ x$DRIVER = "xb43" -o x$DRIVER = "xb43legacy" ]
+    if [ x$DRIVER = "xb43" -o x$DRIVER = "xb43legacy" -o x$DRIVER = "xbcm43xx" ]
     then
         CHIPSET="Broadcom 43xx"
+    fi
+
+    if [ x$DRIVER = "xprism54" -o x$DRIVER = "xp54pci" -o x$DRIVER = "xp54usb" ]
+    then
+        CHIPSET="PrismGT"
     fi
 
     if [ x$DRIVER = "xhostap" ]
@@ -196,17 +201,17 @@ getChipset() {
         CHIPSET="Intel 2200 b/g"
     fi
 
-    if [ x$DRIVER = "xipw3945" ]
+    if [ x$DRIVER = "xipw3945" -o x$DRIVER = "xipwraw" -o x$DRIVER = "xiwl3945" ]
     then
         CHIPSET="Intel 3945 a/b/g"
     fi
 
-    if [ x$DRIVER = "xipw4965" ]
+    if [ x$DRIVER = "xipw4965" -o x$DRIVER = "xiwl4965" ]
     then
         CHIPSET="Intel 4945 a/b/g/n"
     fi
 
-    if [ x$DRIVER = "xath_pci" ]
+    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k"]
     then
         CHIPSET="Atheros"
     fi
