@@ -3960,7 +3960,7 @@ int rearrange_frequencies()
     int *freqs;
     int count, left, pos;
     int width, last_used=0;
-    int cur_freq, last_freq;
+    int cur_freq, last_freq, round_done;
 //     int i;
 
     width = DEFAULT_CWIDTH;
@@ -3972,14 +3972,17 @@ int rearrange_frequencies()
 
     freqs = malloc(sizeof(int) * (count + 1));
     bzero(freqs, sizeof(int) * (count + 1));
+    round_done = 0;
 
     while(left > 0)
     {
 //         printf("pos: %d\n", pos);
         last_freq = cur_freq;
         cur_freq = G.own_frequencies[pos%count];
-//         printf("last_used: %d, cur_freq: %d, width: %d\n", last_used, cur_freq, width);
-        if(((count-left) > 0) && (last_used != cur_freq) && ( ABS( last_used-cur_freq ) < width ) )
+        if(cur_freq == last_used)
+            round_done=1;
+//         printf("count: %d, left: %d, last_used: %d, cur_freq: %d, width: %d\n", count, left, last_used, cur_freq, width);
+        if(((count-left) > 0) && !round_done && ( ABS( last_used-cur_freq ) < width ) )
         {
 //             printf("skip it!\n");
             pos++;
@@ -3991,6 +3994,7 @@ int rearrange_frequencies()
             freqs[count - left] = cur_freq;
             last_used = cur_freq;
             left--;
+            round_done = 0;
         }
 
         pos++;
@@ -4500,7 +4504,9 @@ usage:
                 return(1);
             }
 
+//             printf("gonna rearrange\n");
             rearrange_frequencies();
+//             printf("finished rearranging\n");
 
             freq_count = getfreqcount(0);
 
