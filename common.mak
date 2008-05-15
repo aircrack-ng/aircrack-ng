@@ -16,11 +16,22 @@ ifeq ($(OSNAME), cygwin)
 EXE		= .exe
 PIC		=
 SQLITE		= false
+NL80211		= false
 else
 EXE		=
 PIC		= -fPIC
 ifndef SQLITE
 SQLITE		= true
+endif
+# nl80211-ng came too late for 1.0, so disable it by default - enable it once we hit 1.1
+ifndef NL80211
+NL80211		= false
+nl80211		= false
+endif
+ifneq ($(OSNAME), Linux)
+# nl80211-ng is for linux only
+NL80211		= false
+nl80211		= false
 endif
 endif
 
@@ -28,17 +39,11 @@ COMMON_CFLAGS	=
 
 ifeq ($(SQLITE), true)
 COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
-endif
-
-ifeq ($(sqlite), true)
+else ifeq ($(sqlite), true)
 COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
-endif
-
-ifeq ($(SQLITE), TRUE)
+else ifeq ($(SQLITE), TRUE)
 COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
-endif
-
-ifeq ($(sqlite), TRUE)
+else ifeq ($(sqlite), TRUE)
 COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
 endif
 
@@ -52,17 +57,11 @@ endif
 
 ifeq ($(NL80211), true)
 COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
-endif
-
-ifeq ($(NL80211), TRUE)
+else ifeq ($(NL80211), TRUE)
 COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
-endif
-
-ifeq ($(nl80211), true)
+else ifeq ($(nl80211), true)
 COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
-endif
-
-ifeq ($(nl80211), TRUE)
+else ifeq ($(nl80211), TRUE)
 COMMON_CFLAGS	+= -I/lib/modules/`uname -r`/build/include -I/usr/include
 endif
 
