@@ -380,7 +380,7 @@ do
     printf "$iface\t\t$CHIPSET\t$DRIVER - [$PHYDEV]"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
-        if [ $NL80211 != "" ]
+        if [ "x$NL80211" != "x" ]
         then
             $NL80211 dev $iface interface add $MONDEV type monitor
             sleep 0.1
