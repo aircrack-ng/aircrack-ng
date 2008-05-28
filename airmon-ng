@@ -208,7 +208,7 @@ getChipset() {
 
     if [ x$DRIVER = "xipw4965" -o x$DRIVER = "xiwl4965" ]
     then
-        CHIPSET="Intel 4945 a/b/g/n"
+        CHIPSET="Intel 4965 a/b/g/n"
     fi
 
     if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" ]
