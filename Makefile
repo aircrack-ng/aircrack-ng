@@ -20,15 +20,20 @@ endif
 all: $(ALL)
 
 %.o: %.c
-	@$(NQ) ' CC  ' $@
+	@$(NQ) ' CC       ' $@
 	$(Q)$(CC) $(CFLAGS) -c -o $@ $<
 
 iw:	$(OBJS)
-	@$(NQ) ' CC  ' iw
+	@$(NQ) ' LD       ' iw
 	$(Q)$(CC) $(LDFLAGS) $(OBJS) -o iw
 
 check:
 	$(Q)$(MAKE) all CC="REAL_CC=$(CC) CHECK=\"sparse -Wall\" cgcc"
+
+install:
+	@$(NQ) ' INSTALL  ' iw
+	$(Q)install -d $(DESTDIR)/sbin
+	$(Q)install -m 755 iw $(DESTDIR)/sbin
 
 clean:
 	$(Q)rm -f iw *.o *~
