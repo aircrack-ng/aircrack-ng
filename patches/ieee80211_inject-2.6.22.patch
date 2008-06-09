@@ -1,0 +1,26 @@
+--- linux-2.6.23_orig/net/ieee80211/ieee80211_tx.c	2007-10-09 22:31:38.000000000 +0200
++++ linux-2.6.23/net/ieee80211/ieee80211_tx.c	2007-10-14 19:39:49.000000000 +0200
+@@ -293,6 +293,23 @@
+ 
+ 	ether_type = ntohs(((struct ethhdr *)skb->data)->h_proto);
+ 
++	if(ieee->iw_mode == IW_MODE_MONITOR)
++	{
++		txb = ieee80211_alloc_txb(1, skb->len,
++					ieee->tx_headroom, GFP_ATOMIC);
++		if (unlikely(!txb)) {
++			printk(KERN_WARNING "%s: Could not allocate TXB\n",
++			ieee->dev->name);
++			goto failed;
++		}
++
++		txb->encrypted = 0;
++		txb->payload_size = skb->len;
++		skb_copy_from_linear_data(skb, skb_put(txb->fragments[0],skb->len), skb->len);
++
++		goto success;
++	}
++
+ 	crypt = ieee->crypt[ieee->tx_keyidx];
+ 
+ 	encrypt = !(ether_type == ETH_P_PAE && ieee->ieee802_1x) &&

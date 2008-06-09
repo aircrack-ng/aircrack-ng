@@ -1,0 +1,14 @@
+# Patch to prevent mac80211 to clobber injected sequence numbers
+diff -bBur linux-2.6.24.4/net/mac80211/tx.c linux-2.6.24.4-sud/net/mac80211/tx.c
+--- linux-2.6.24.4/net/mac80211/tx.c	2008-01-24 23:58:37.000000000 +0100
++++ linux-2.6.24.4-sud/net/mac80211/tx.c	2008-04-05 16:43:19.000000000 +0200
+@@ -281,6 +281,9 @@
+ {
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)tx->skb->data;
+ 
++	if (unlikely(tx->flags & IEEE80211_TXRXD_TX_INJECTED))
++		return TXRX_CONTINUE;
++
+ 	if (ieee80211_get_hdrlen(le16_to_cpu(hdr->frame_control)) >= 24)
+ 		ieee80211_include_sequence(tx->sdata, hdr);
+ 

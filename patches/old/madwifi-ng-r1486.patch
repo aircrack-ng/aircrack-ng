@@ -1,0 +1,24 @@
+diff -ur madwifi-ng-r1486/ath/if_ath.c patched_madwifi-ng-r1486/ath/if_ath.c
+--- madwifi-ng-r1486/ath/if_ath.c	2006-03-23 22:09:04.000000000 +0100
++++ patched_madwifi-ng-r1486/ath/if_ath.c	2006-03-28 20:59:14.000000000 +0200
+@@ -2240,6 +2240,7 @@
+ 	struct ath_softc *sc = dev->priv;
+ 	struct ath_hal *ah = sc->sc_ah;
+ 	struct ieee80211_phy_params *ph = (struct ieee80211_phy_params *) (skb->cb + sizeof(struct ieee80211_cb));
++	struct ieee80211com *ic = &sc->sc_ic;
+ 	const HAL_RATE_TABLE *rt;
+ 	int pktlen;
+ 	int hdrlen;
+@@ -2254,7 +2255,11 @@
+ 	struct ieee80211_frame *wh; 
+ 	
+ 	wh = (struct ieee80211_frame *) skb->data;
+-	try0 = ATH_TXMAXTRY;
++	try0 = (ic->ic_opmode == IEEE80211_M_MONITOR) ? 1 : ATH_TXMAXTRY; 
++	/*
++	 * The retry value has to be patched to 1 when injecting,
++	 * otherwise the card waits for acknowledges...
++	 */
+ 	rt = sc->sc_currates;
+ 	txrate = dot11_to_ratecode(sc, rt, ph->rate0);
+ 	power = ph->power > 60 ? 60 : ph->power;

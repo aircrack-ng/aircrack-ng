@@ -1,0 +1,59 @@
+# Kernel >= 2.6.24.1 highly recommended
+#  Fixes injection speed (up to 350 pps)
+#  Fixes fragmented injection (requires mac80211 patch too)
+diff -bBur linux-2.6.24.4/drivers/net/wireless/b43/main.c linux-2.6.24.4-sud/drivers/net/wireless/b43/main.c
+--- linux-2.6.24.4/drivers/net/wireless/b43/main.c	2008-04-05 16:25:11.000000000 +0200
++++ linux-2.6.24.4-sud/drivers/net/wireless/b43/main.c	2008-04-05 16:45:11.000000000 +0200
+@@ -2516,6 +2516,11 @@
+ 		goto out;
+ 	if (unlikely(b43_status(dev) < B43_STAT_STARTED))
+ 		goto out;
++
++	if (ctl->type == IEEE80211_IF_TYPE_MNTR) {
++		ctl->flags |= IEEE80211_TXCTL_NO_ACK;
++	}
++
+ 	/* DMA-TX is done without a global lock. */
+ 	if (b43_using_pio(dev)) {
+ 		spin_lock_irqsave(&wl->irq_lock, flags);
+diff -bBur linux-2.6.24.4/drivers/net/wireless/b43/xmit.c linux-2.6.24.4-sud/drivers/net/wireless/b43/xmit.c
+--- linux-2.6.24.4/drivers/net/wireless/b43/xmit.c	2008-04-05 16:25:11.000000000 +0200
++++ linux-2.6.24.4-sud/drivers/net/wireless/b43/xmit.c	2008-04-05 16:48:51.000000000 +0200
+@@ -295,7 +295,8 @@
+ 	/* MAC control */
+ 	if (!(txctl->flags & IEEE80211_TXCTL_NO_ACK))
+ 		mac_ctl |= B43_TX4_MAC_ACK;
+-	if (!(((fctl & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_CTL) &&
++	if ( (txctl->type != IEEE80211_IF_TYPE_MNTR) &&
++	      !(((fctl & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_CTL) &&
+ 	      ((fctl & IEEE80211_FCTL_STYPE) == IEEE80211_STYPE_PSPOLL)))
+ 		mac_ctl |= B43_TX4_MAC_HWSEQ;
+ 	if (txctl->flags & IEEE80211_TXCTL_FIRST_FRAGMENT)
+diff -bBur linux-2.6.24.4/drivers/net/wireless/b43legacy/main.c linux-2.6.24.4-sud/drivers/net/wireless/b43legacy/main.c
+--- linux-2.6.24.4/drivers/net/wireless/b43legacy/main.c	2008-04-05 16:25:11.000000000 +0200
++++ linux-2.6.24.4-sud/drivers/net/wireless/b43legacy/main.c	2008-04-05 16:45:11.000000000 +0200
+@@ -2379,6 +2379,11 @@
+ 		goto out;
+ 	if (unlikely(b43legacy_status(dev) < B43legacy_STAT_STARTED))
+ 		goto out;
++
++	if (ctl->type == IEEE80211_IF_TYPE_MNTR) {
++		ctl->flags |= IEEE80211_TXCTL_NO_ACK;
++	}
++
+ 	/* DMA-TX is done without a global lock. */
+ 	if (b43legacy_using_pio(dev)) {
+ 		spin_lock_irqsave(&wl->irq_lock, flags);
+diff -bBur linux-2.6.24.4/drivers/net/wireless/b43legacy/xmit.c linux-2.6.24.4-sud/drivers/net/wireless/b43legacy/xmit.c
+--- linux-2.6.24.4/drivers/net/wireless/b43legacy/xmit.c	2008-04-05 16:25:11.000000000 +0200
++++ linux-2.6.24.4-sud/drivers/net/wireless/b43legacy/xmit.c	2008-04-05 16:49:02.000000000 +0200
+@@ -290,7 +290,8 @@
+ 	/* MAC control */
+ 	if (!(txctl->flags & IEEE80211_TXCTL_NO_ACK))
+ 		mac_ctl |= B43legacy_TX4_MAC_ACK;
+-	if (!(((fctl & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_CTL) &&
++	if ( (txctl->type != IEEE80211_IF_TYPE_MNTR) &&
++	      !(((fctl & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_CTL) &&
+ 	      ((fctl & IEEE80211_FCTL_STYPE) == IEEE80211_STYPE_PSPOLL)))
+ 		mac_ctl |= B43legacy_TX4_MAC_HWSEQ;
+ 	if (txctl->flags & IEEE80211_TXCTL_FIRST_FRAGMENT)

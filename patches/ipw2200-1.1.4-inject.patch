@@ -1,0 +1,98 @@
+diff -ur ipw2200-1.1.4/ipw2200.c ipw2200-1.1.4-inject/ipw2200.c
+--- ipw2200-1.1.4/ipw2200.c	2006-08-21 04:38:32.000000000 +0200
++++ ipw2200-1.1.4-inject/ipw2200.c	2006-08-23 14:20:31.000000000 +0200
+@@ -1945,6 +1945,66 @@
+ static DEVICE_ATTR(net_stats, S_IWUSR | S_IRUGO,
+ 		   show_net_stats, store_net_stats);
+ 
++static int ipw_tx_skb(struct ipw_priv *priv, struct ieee80211_txb *txb, int pri);
++
++/* SYSFS INJECT */
++static ssize_t store_inject(struct device *d,
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,12)
++	struct device_attribute *attr,
++#endif
++	const char *buf, size_t count) 
++{
++	struct ipw_priv *priv = (struct ipw_priv *)d->driver_data;
++	struct ieee80211_device *ieee = priv->ieee;
++	struct ieee80211_txb * txb;
++	struct sk_buff *skb_frag;
++	unsigned char * newbuf;
++	unsigned long flags;
++
++	// should test (ieee->is_queue_full) 
++	
++	// Fw only accepts data, so avoid accidental fw errors.
++	if ( (buf[0]&0x0c) != '\x08') {
++		//printk("ipw2200: inject: discarding non-data frame (type=%02X)\n",(int)(unsigned char)buf[0]);
++		return count;
++	}
++
++	if (count>1500) {
++		count=1500;
++		printk("ipw2200: inject: cutting down frame to 1500 bytes\n");
++	}
++	
++	spin_lock_irqsave(&priv->lock, flags);
++
++	// Create a txb with one skb
++	txb = kmalloc(sizeof(struct ieee80211_txb) + sizeof(u8 *), GFP_ATOMIC);
++	if (!txb)
++		goto nosepuede;
++	txb->nr_frags=1;
++	txb->frag_size = ieee->tx_headroom;
++	txb->fragments[0]=__dev_alloc_skb(count + ieee->tx_headroom, GFP_ATOMIC);
++	if (!txb->fragments[0]) {
++		kfree(txb);
++		goto nosepuede;
++	}
++	skb_reserve(txb->fragments[0], ieee->tx_headroom);
++	txb->encrypted=0;
++	txb->payload_size=count;
++	skb_frag = txb->fragments[0];
++	newbuf=skb_put(skb_frag, count);
++
++	// copy data into txb->skb and send it
++	memcpy(newbuf, buf, count);
++	
++	ipw_tx_skb(priv, txb, 0);
++
++nosepuede:
++	spin_unlock_irqrestore(&priv->lock, flags);
++	return count;
++}
++
++static DEVICE_ATTR(inject, S_IWUSR, NULL, store_inject);
++
+ static void notify_wx_assoc_event(struct ipw_priv *priv)
+ {
+ 	union iwreq_data wrqu;
+@@ -11478,6 +11538,7 @@
+ #ifdef CONFIG_IPW2200_PROMISCUOUS
+ 	&dev_attr_rtap_iface.attr,
+ 	&dev_attr_rtap_filter.attr,
++	&dev_attr_inject.attr,
+ #endif
+ 	NULL
+ };
+diff -ur ipw2200-1.1.4/Makefile ipw2200-1.1.4-inject/Makefile
+--- ipw2200-1.1.4/Makefile	2006-08-21 04:38:29.000000000 +0200
++++ ipw2200-1.1.4-inject/Makefile	2006-08-23 14:22:06.000000000 +0200
+@@ -30,14 +30,14 @@
+ # simply uncomment:
+ #
+ # NOTE:  To use RADIOTAP you must also enable MONITOR above.
+-#CONFIG_IPW2200_RADIOTAP=y
++CONFIG_IPW2200_RADIOTAP=y
+ 
+ # The above monitor mode provides standard monitor mode.  The following
+ # will create a new interface (named rtap%d) which will be sent all
+ # 802.11 frames received on the interface
+ #
+ # NOTE:  To use PROMISCUOUS you must also enable MONITOR above.
+-#CONFIG_IPW2200_PROMISCUOUS=y
++CONFIG_IPW2200_PROMISCUOUS=y
+ 
+ endif
+ 

@@ -1,0 +1,13 @@
+diff -ur ../prism54-svn-20050724/ksrc/islpci_dev.c ./ksrc/islpci_dev.c
+--- ../prism54-svn-20050724/ksrc/islpci_dev.c	2005-03-08 16:32:34.000000000 +0100
++++ ./ksrc/islpci_dev.c	2005-07-26 18:56:40.000000000 +0200
+@@ -758,9 +758,6 @@
+ 			pci_unmap_single(priv->pdev, buf->pci_addr,
+ 					MGMT_FRAME_SIZE, PCI_DMA_FROMDEVICE);
+ 		buf->pci_addr = 0;
+-		if (buf->skb)
+-			dev_kfree_skb(buf->skb);
+-		buf->skb = NULL;
+         }
+ 
+ 	/* clean up data rx buffers */
