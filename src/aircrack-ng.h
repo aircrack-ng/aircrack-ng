@@ -59,7 +59,7 @@ extern int shammx_data( unsigned char ctx[40], unsigned char data[128], unsigned
 __attribute__((regparm(3)));
 #endif
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern int readLine(char line[], int maxlength);
 extern int hexToInt(char s[], int len);

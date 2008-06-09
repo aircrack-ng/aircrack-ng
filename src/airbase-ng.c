@@ -150,7 +150,7 @@ static struct wif *_wi_in, *_wi_out;
     "\xf2\x01\x00\x50\xf2\x02\x00\x50\xf2\x03\x00\x50\xf2\x04\x00\x50"  \
     "\xf2\x05\x02\x00\x00\x50\xf2\x01\x00\x50\xf2\x02"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern char * searchInside(const char * dir, const char * filename);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
@@ -4072,7 +4072,7 @@ int main( int argc, char *argv[] )
 
             case 'H' :
 
-                printf( usage, getVersion("Airbase-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+                printf( usage, getVersion("Airbase-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
                 return( 1 );
 
             default : goto usage;
@@ -4084,7 +4084,7 @@ int main( int argc, char *argv[] )
         if(argc == 1)
         {
 usage:
-            printf( usage, getVersion("Airbase-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+            printf( usage, getVersion("Airbase-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
         }
         if( argc - optind == 0)
         {

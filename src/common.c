@@ -34,12 +34,12 @@
 #define HEX_BASE 16
 
 /* Return the version number */
-char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta)
+char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc)
 {
 	int len;
 	char * temp;
 	char * provis = calloc(1,20);
-	len = strlen(progname) + 100;
+	len = strlen(progname) + 200;
 	temp = (char *) calloc(1,len);
 
 	snprintf(temp, len, "%s %d.%d", progname, maj, min);
@@ -50,7 +50,11 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int
 		memset(provis,0,20);
 	}
 
-	if (beta > 0) {
+	if (rc > 0) {
+		snprintf(provis, 20, " rc%d", rc);
+		strncat(temp, provis, len - strlen(temp));
+		memset(provis, 0, 20);
+	} else if (beta > 0) {
 		snprintf(provis, 20, " beta%d", beta);
 		strncat(temp, provis, len - strlen(temp));
 		memset(provis, 0, 20);
@@ -59,6 +63,7 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int
 	if (svnrev > 0) {
 		snprintf(provis, 20," r%d",svnrev);
 		strncat(temp, provis, len - strlen(temp));
+		memset(provis, 0, 20);
 	}
 
 	free(provis);

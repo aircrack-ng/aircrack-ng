@@ -4415,7 +4415,7 @@ int main( int argc, char *argv[] )
 	// Start a new process group, we are perhaps going to call kill(0, ...) later
 	setsid();
 
-	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA);
+	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 
 	memset( &opt, 0, sizeof( opt ) );
 

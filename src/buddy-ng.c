@@ -36,7 +36,7 @@
 #include "easside.h"
 #include "version.h"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
 unsigned char ids[8192];
 unsigned short last_id;
@@ -200,7 +200,7 @@ void usage()
 		"       -h        : This help screen\n"
 		"       -p        : Don't drop privileges\n"
 		"\n",
-		getVersion("Buddy-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
+		getVersion("Buddy-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
 
 	exit(1);
 }
