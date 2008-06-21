@@ -1734,6 +1734,48 @@ int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
     return 0;
 }
 
+int remove_tag(unsigned char *flags, unsigned char type, int *length)
+{
+    int cur_type=0, cur_len=0, len=0;
+    unsigned char *pos;
+    unsigned char buffer[4096];
+
+    if(*length < 2)
+        return 1;
+
+    if(flags == NULL)
+        return 1;
+
+    pos = flags;
+
+    do
+    {
+        cur_type = pos[0];
+        cur_len = pos[1];
+//         printf("tag %d with len %d found, looking for tag %d\n", cur_type, cur_len, type);
+//         printf("gone through %d bytes from %d max\n", len+2+cur_len, *length);
+        if(len+2+cur_len > *length)
+            return 1;
+
+        if(cur_type == type)
+        {
+            if(cur_len > 0 && (pos-flags+cur_len+2) <= *length)
+            {
+                memcpy(buffer, pos+2+cur_len, *length-((pos+2+cur_len) - flags));
+                memcpy(pos, buffer, *length-((pos+2+cur_len) - flags));
+                *length = *length - 2 - cur_len;
+                return 0;
+            }
+            else
+                return 1;
+        }
+        pos += cur_len + 2;
+        len += cur_len + 2;
+    } while(len+2 <= *length);
+
+    return 0;
+}
+
 uchar* parse_tags(unsigned char *flags, unsigned char type, int length, int *taglen)
 {
     int cur_type=0, cur_len=0, len=0;
@@ -1896,6 +1938,8 @@ int set_final_ip(uchar *buf, uchar *mymac)
     memcpy(buf+4, mymac, 6); //sender mac
     buf[10] = 0xA9; //sender IP from 169.254.XXX.XXX
     buf[11] = 0xFE;
+    buf[12] = 0x57;
+    buf[13] = 0xC5; //end sender IP
 
     return 0;
 }
@@ -1962,6 +2006,26 @@ int addCF(uchar* packet, int length)
             memcpy( dmac, packet + 16, 6 );
             memcpy( smac, packet + 24, 6 );
             break;
+    }
+
+    if( is_ipv6(packet) )
+    {
+        if(opt.verbose)
+        {
+            PCT; printf("Ignored IPv6 packet.\n");
+        }
+
+        return 1;
+    }
+
+    if( is_dhcp_discover(packet, length-z-4-4) )
+    {
+        if(opt.verbose)
+        {
+            PCT; printf("Ignored DHCP Discover packet.\n");
+        }
+
+        return 1;
     }
 
     /* check if it's a potential ARP request */
@@ -3130,6 +3194,10 @@ skip_probe:
             free(buffer);
             buffer = NULL;
 
+            len = length - z - 6;
+            remove_tag(packet+z+6, 0, &len);
+            length = len + z + 6;
+
             send_packet(packet, length);
             if(!opt.quiet)
             {
@@ -3484,6 +3552,64 @@ int del_next_CF(pCF_t curCF)
     return 0;
 }
 
+int cfrag_fuzz(unsigned char *packet, int frags, int frag_num, int length, unsigned char rnd[2])
+{
+    int z, i;
+    uchar overlay[4096];
+    uchar *smac = NULL;
+
+    if(packet == NULL)
+        return 1;
+
+    z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+
+    if(length <= z+8)
+        return 1;
+
+    if(frags < 1)
+        return 1;
+
+    if(frag_num < 0 || frag_num > frags)
+        return 1;
+
+    if( (packet[1] & 3) <= 1 )
+        smac = packet + 10;
+    else if( (packet[1] & 3) == 2 )
+        smac = packet + 16;
+    else
+        smac = packet + 24;
+
+    bzero(overlay, 4096);
+
+    smac[4] ^= rnd[0];
+    smac[5] ^= rnd[1];
+
+    if(frags == 1 && frag_num == 1) /* ARP final */
+    {
+        overlay[z+14] = rnd[0];
+        overlay[z+15] = rnd[1];
+        overlay[z+18] = rnd[0];
+        overlay[z+19] = rnd[1];
+        add_crc32_plain(overlay+z+4, length-z-4-4);
+    }
+    else if(frags == 3 && frag_num == 3)/* IP final */
+    {
+        overlay[z+12] = rnd[0];
+        overlay[z+13] = rnd[1];
+        overlay[z+16] = rnd[0];
+        overlay[z+17] = rnd[1];
+        add_crc32_plain(overlay+z+4, length-z-4-4);
+    }
+
+    for(i=0; i<length; i++)
+    {
+        packet[i] ^= overlay[i];
+    }
+
+    return 0;
+}
+
+
 void cfrag_thread( void )
 {
     struct timeval tv, tv2;
@@ -3493,6 +3619,8 @@ void cfrag_thread( void )
     int nb_pkt_sent_1=0;
     int seq=0, i=0;
     pCF_t   curCF;
+    uchar rnd[2];
+    uchar buffer[4096];
 
     ticks[0]=0;
     ticks[1]=0;
@@ -3550,17 +3678,22 @@ void cfrag_thread( void )
                 if( nb_pkt_sent_1 == 0 )
                     ticks[0] = 0;
 
+                rnd[0] = rand() % 0xFF;
+                rnd[1] = rand() % 0xFF;
+
                 for(i=0; i<curCF->fragnum; i++ )
                 {
-                    if( send_packet( curCF->frags[i],
-                                    curCF->fraglen[i] ) < 0 )
+                    memcpy(buffer, curCF->frags[i], curCF->fraglen[i]);
+                    cfrag_fuzz(buffer, curCF->fragnum, i, curCF->fraglen[i], rnd);
+                    if( send_packet( buffer, curCF->fraglen[i] ) < 0 )
                     {
                         pthread_mutex_unlock( &mx_cf );
                         return;
                     }
                 }
-                if( send_packet( curCF->final,
-                                curCF->finallen ) < 0 )
+                memcpy(buffer, curCF->final, curCF->finallen);
+                cfrag_fuzz(buffer, curCF->fragnum, curCF->fragnum, curCF->finallen, rnd);
+                if( send_packet( buffer, curCF->finallen ) < 0 )
                 {
                     pthread_mutex_unlock( &mx_cf );
                     return;
@@ -3572,17 +3705,21 @@ void cfrag_thread( void )
 
                 if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent_1  )
                 {
+                    rnd[0] = rand() % 0xFF;
+                    rnd[1] = rand() % 0xFF;
                     for(i=0; i<curCF->fragnum; i++ )
                     {
-                        if( send_packet( curCF->frags[i],
-                                        curCF->fraglen[i] ) < 0 )
+                        memcpy(buffer, curCF->frags[i], curCF->fraglen[i]);
+                        cfrag_fuzz(buffer, curCF->fragnum, i, curCF->fraglen[i], rnd);
+                        if( send_packet( buffer, curCF->fraglen[i] ) < 0 )
                         {
                             pthread_mutex_unlock( &mx_cf );
                             return;
                         }
                     }
-                    if( send_packet( curCF->final,
-                                    curCF->finallen ) < 0 )
+                    memcpy(buffer, curCF->final, curCF->finallen);
+                    cfrag_fuzz(buffer, curCF->fragnum, curCF->fragnum, curCF->finallen, rnd);
+                    if( send_packet( buffer, curCF->finallen ) < 0 )
                     {
                         pthread_mutex_unlock( &mx_cf );
                         return;
