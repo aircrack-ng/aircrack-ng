@@ -2007,7 +2007,7 @@ int addCF(uchar* packet, int length)
             memcpy( smac, packet + 24, 6 );
             break;
     }
-
+	/*
     if( is_ipv6(packet) )
     {
         if(opt.verbose)
@@ -2027,7 +2027,7 @@ int addCF(uchar* packet, int length)
 
         return 1;
     }
-
+	*/
     /* check if it's a potential ARP request */
 
     //its length 68 or 86 and going to broadcast or a unicast mac (even first byte)
