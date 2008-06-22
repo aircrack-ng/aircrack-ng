@@ -173,6 +173,33 @@ int hexCharToInt(unsigned char c)
 	return table[c];
 }
 
+int hexStringToHex(char* in, int length, unsigned char* out)
+{
+    int i=0;
+    int char1, char2;
+
+    char *input=in;
+    unsigned char *output=out;
+
+    if(length < 1)
+        return 1;
+
+    for(i=0; i<length; i+=2)
+    {
+        if(input[i] == '-' || input[i] == ':' || input[i] == '_' || input[i] == ' ')
+        {
+            input++;
+            length--;
+        }
+        char1 = hexCharToInt(input[i]);
+        char2 = hexCharToInt(input[i+1]);
+        if(char1 < 0 || char1 > 15)
+            return -1;
+        output[i/2] = ((char1 << 4) + char2) & 0xFF;
+    }
+    return (i/2);
+}
+
 //Return the mac address bytes (or null if it's not a mac address)
 int getmac(char * macAddress, int strict, unsigned char * mac)
 {
