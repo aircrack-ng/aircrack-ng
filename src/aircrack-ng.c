@@ -2796,7 +2796,7 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 		printf( "%02X:", wepkey[i] );
 	printf( "%02X ] ",   wepkey[i] );
 
-	if( 100 * nb_ascii > 75 * keylen )
+	if( nb_ascii == keylen )
 	{
 		printf( "(ASCII: " );
 
