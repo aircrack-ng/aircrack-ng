@@ -98,7 +98,7 @@
 #define htole16(n) (n)
 #endif
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
 struct frag_state {
 	struct ieee80211_frame	fs_wh;
@@ -1591,7 +1591,8 @@ static void save_key(unsigned char *key, int len)
 			strncat(k, ":", 1);
 	}
 
-	fd = open(KEY_FILE, O_WRONLY | O_CREAT | 0644);
+	fd = open(KEY_FILE, O_WRONLY | O_CREAT, 
+                  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd == -1)
 		err(1, "open()");
 
@@ -2053,7 +2054,7 @@ static void usage(char* pname)
 		"       -f   <max chan> : Highest scanned chan (default: 11)\n"
 		"       -k      <txnum> : Ignore acks and tx txnum times\n"
 		"\n",
-		getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
+		getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
 
 	exit(0);
 }

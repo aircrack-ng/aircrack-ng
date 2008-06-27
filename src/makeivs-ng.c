@@ -33,7 +33,7 @@
 
 #define NULL_MAC "\x00\x00\x00\x00\x00\x00"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 
 char usage[] =
@@ -148,7 +148,7 @@ int main( int argc, char *argv[] )
 
 				paramUsed = 1;
                 if (atoi(optarg) < 2 || atoi(optarg) > 2300) {
-					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
                     printf( "Specified keystream length is invalid. [2-2300]" );
                     return( 1 );
                 }
@@ -160,7 +160,7 @@ int main( int argc, char *argv[] )
 
 				paramUsed = 1;
                 if (atoi(optarg) < 1 || atoi(optarg) > 0xFFFFFF) {
-					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
                     printf( "Specified number of IVs is invalid. [1-65535]" );
                     return( 1 );
                 }
@@ -185,7 +185,7 @@ int main( int argc, char *argv[] )
 				paramUsed = 1;
                 sscanf(optarg, "%f", &errorrate);
                 if (errorrate < 0.0f || errorrate > 100.0f) {
-					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
                     printf( "Specified errorrate is invalid. [0-100]" );
                     return( 1 );
                 }
@@ -197,7 +197,7 @@ int main( int argc, char *argv[] )
 				paramUsed = 1;
                 sscanf(optarg, "%f", &dupe);
                 if (dupe < 0.0f || dupe > 100.0f) {
-					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 
                     printf( "Specified dupe is invalid. [0-100]" );
                     return( 1 );
@@ -209,7 +209,7 @@ int main( int argc, char *argv[] )
 
 				paramUsed = 1;
                 if (atoi(optarg) < 0 || atoi(optarg) > 0xFFFFFF) {
-					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 
                     printf( "Specified start IV is invalid. [0-16777215]" );
                     return( 1 );
@@ -235,7 +235,7 @@ int main( int argc, char *argv[] )
                 }
                 if(getmac(optarg, 1, bssid) != 0)
                 {
-					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 
                     printf("Notice: invalid bssid\n");
                     return( 1 );
@@ -247,7 +247,7 @@ int main( int argc, char *argv[] )
 				paramUsed = 1;
                 if( crypt != 0 )
                 {
-					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 
                     printf( "Encryption key already specified.\n" );
                     return( 1 );
@@ -266,7 +266,7 @@ int main( int argc, char *argv[] )
                 {
                     if( n < 0 || n > 255 )
                     {
-						printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+						printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 
                         printf( "Invalid WEP key.\n" );
                         return( 1 );
@@ -290,7 +290,7 @@ int main( int argc, char *argv[] )
 
                 if( i != 5 && i != 13 && i != 29)
                 {
-					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 
                     printf( "Invalid WEP key length. [5,13,29]\n" );
                     return( 1 );
@@ -319,13 +319,13 @@ int main( int argc, char *argv[] )
 	if (paramUsed == 0)
 	{
 usage:
-		printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+		printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 		return( 0 );
 	}
 
     if(count > maxivs)
     {
-		printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+		printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 
         printf( "Specified too many IVs (%d), but there are only %d possible.\n", count, maxivs);
         return( 1 );
@@ -336,7 +336,7 @@ usage:
 
     if(crypt < 1)
     {
-		printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+		printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 
         printf("You need to specify the WEP key (-k).\n");
         return( 1 );
@@ -344,7 +344,7 @@ usage:
 
     if(filename == NULL)
     {
-		printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+		printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 
         printf("You need to specify the output filename (-w).\n");
         return( 1 );

@@ -1,3 +1,36 @@
+Version 1.0-rc1 (changes from aircrack-ng 1.0-beta2) - Released 09 Jun 2008:
+* airbase-ng: Multi-purpose tool aimed at attacking clients as opposed to the AP.
+* airbase-ng: Added replay tool for external packet processing feature.
+* aircrack-ng: Fixed: Displaying twice the wep key at the end and "Warning: Previous crack is still running".
+* aircrack-ng: Fixed detection of WPA handshake (was not working correctly in previous release).
+* aircrack-ng: Fixed PTW attack against QoS and WDS packets.
+* aircrack-ng: Added oneshot option to try PTW only once.
+* airodump-ng: Fixed channel numbers (Fixed "fixed channel" messages).
+* airodump-ng: Added frequency selection (-C).
+* aireplay-ng: Fixed injection on OpenBSD.
+* aireplay-ng: Fixed a rtc bug which freezed aireplay-ng in case /dev/rtc0 is not available.
+* aireplay-ng: Fixed chopchop attack against QoS packets.
+* aireplay-ng: Added Caffe-Latte attack.
+* aireplay-ng: Added CFrag attack: Turns every IP and ARP packet into an ARP request against the client.
+* airtun-ng: Added support for fragmented packets.
+* airdriver-ng: Updated drivers.
+* airserv-ng: Various fixes.
+* airmon-ng: Added nl80211 usage.
+* airmon-ng: Use 'iw' when it is found.
+* airmon-ng: Fixed error with madwifi-ng when creating new VAP.
+* wesside-ng: Added option to ignore ACKs.
+* OSdep: Fixed endieanness bugs.
+* OSdep: Orinoco: attempt to bring interface down before switching to monitor mode.
+* All: Added copyright and GPL in missing files.
+* All: Fixed compilation on Mac OSX 10.5.2 (PPC).
+* GUI: Fixed "Choose" button (airdecap-ng).
+* Makefile: Fixed usage of iCC versions other than 9.0.
+* patches: Updated rtl8187 patch.
+* patches: Updated madwifi-ng patch.
+* patches: Updated sqlite patch (cygwin).
+* patches: Added mac80211 frag patch.
+* patches: Added b43 and updated bcm43xx patches.
+
 Version 1.0-beta2 (changes from aircrack-ng 1.0-beta1) - Released 01 Feb 2008:
 * aircrack-ng: Cracking WPA now does only require 2 packets (instead of 4).
 * airodump-ng: Fixed (WEP) open system and shared key system detection.

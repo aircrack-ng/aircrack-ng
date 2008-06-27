@@ -72,7 +72,7 @@
 #define S_OWN_LOG	"own.log"
 #define S_MIN_RTO	10
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
 enum {
 	S_SEARCHING = 0,
@@ -2403,7 +2403,7 @@ void usage(char *p)
 		"       -c      <channel> : Lock card to this channel\n"
 		"       -n                : Determine Internet IP only\n"
 		"\n",
-		getVersion("Easside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
+		getVersion("Easside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
 }
 
 void load_prga(struct east_state *es)

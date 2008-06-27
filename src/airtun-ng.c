@@ -84,7 +84,7 @@ static struct wif *_wi_in, *_wi_out;
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern char * searchInside(const char * dir, const char * filename);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
@@ -1217,7 +1217,7 @@ int main( int argc, char *argv[] )
 
             case 'H' :
 
-            	printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+            	printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
             	return( 1 );
 
             default : goto usage;
@@ -1229,7 +1229,7 @@ int main( int argc, char *argv[] )
     	if(argc == 1)
     	{
 usage:
-	        printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+	        printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
         }
 	    if( argc - optind == 0)
 	    {

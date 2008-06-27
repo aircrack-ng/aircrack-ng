@@ -56,7 +56,7 @@
 #define IMPORT_PASSWD "passwd"
 #define IMPORT_COWPATTY "cowpatty"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
 void print_help(const char * msg) {
 	printf("\n"
@@ -84,7 +84,7 @@ void print_help(const char * msg) {
 		"       --export cowpatty <essid> <file> :\n"
 		"                        Export to a cowpatty file.\n"
 		"\n",
-		getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
+		getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
 
 	if (msg && strlen(msg) > 0) {
 		printf("%s", msg);

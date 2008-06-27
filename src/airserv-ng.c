@@ -45,7 +45,7 @@
 #include "osdep/network.h"
 #include "version.h"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
 void sighandler( int signum )
 {
@@ -91,7 +91,7 @@ static void usage(char *p)
 		"       -c  <chan> : Channel to use\n"
 		"       -v <level> : Debug level (1 to 3; default: 1)\n"
 		"\n",
-		getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
+		getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
 	exit(1);
 }
 

@@ -107,14 +107,14 @@ static uchar ZERO[32] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00";
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
 void usage(int what)
 {
     printf("\n  %s - (C) 2006,2007,2008 Thomas d\'Otreppe\n"
             "  Original work: Christophe Devine\n"
             "  http://www.aircrack-ng.org\n"
-            "\n   usage: ", getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA));
+            "\n   usage: ", getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
     if (what == 0 || what == 1)
         printf( "ivstools --convert <pcap file> <ivs output file>\n"
                 "        Extract ivs from a pcap file\n");
