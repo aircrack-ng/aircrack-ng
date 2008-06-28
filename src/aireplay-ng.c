@@ -1198,7 +1198,7 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
         }
 //        frag[23] = 0;
 
-    //Calculate packet lenght
+    //Calculate packet length
         if(fragsize <= packet_len-(header_size+t-fragsize))
             pack_size = header_size + 4 + fragsize;
         else
