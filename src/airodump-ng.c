@@ -1595,7 +1595,7 @@ skip_probe:
                 if( type == 0x30 ) p += 2;
 
             }
-            else if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x02\x01\x01\x80", 7) == 0)))
+            else if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x02\x01\x01", 6) == 0)))
             {
                 ap_cur->security |= STD_QOS;
                 p += length+2;
