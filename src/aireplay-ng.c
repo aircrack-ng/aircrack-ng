@@ -203,12 +203,16 @@ char usage[] =
 "      -z        : Ghosting\n"
 "\n"
 */
-"  source options:\n"
+"  Source options:\n"
 "\n"
 "      -i iface  : capture packets from this interface\n"
 "      -r file   : extract packets from this pcap file\n"
 "\n"
-"  attack modes (Numbers can still be used):\n"
+"  Miscellaneous options:\n"
+"\n"
+"      -R        : disable /dev/rtc usage\n"
+"\n"
+"  Attack modes (numbers can still be used):\n"
 "\n"
 "      --deauth      count : deauthenticate 1 or all stations (-0)\n"
 "      --fakeauth    delay : fake authentication with AP (-1)\n"
@@ -273,6 +277,7 @@ struct options
     int bittest;
 
     int nodetect;
+    int rtc;
 }
 opt;
 
@@ -5653,6 +5658,7 @@ int main( int argc, char *argv[] )
     opt.delay     = 15; opt.bittest     =  0;
     opt.fast      =  0; opt.r_smac_set  =  0;
     opt.npackets  =  1; opt.nodetect    =  0;
+    opt.rtc       =  1;
 
 /* XXX */
 #if 0
@@ -5691,7 +5697,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345679HFBD",
+                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345679HFBDR",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -6116,6 +6122,11 @@ int main( int argc, char *argv[] )
                 printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
                 return( 1 );
 
+            case 'R' :
+
+                opt.rtc = 0;
+                break;
+
             default : goto usage;
         }
     }
@@ -6175,7 +6186,10 @@ usage:
         {
             dev.fd_rtc = 0;
         }
-
+        if(opt.rtc == 0)
+        {
+            dev.fd_rtc = -1;
+        }
         if(dev.fd_rtc > 0)
         {
             if( ioctl( dev.fd_rtc, RTC_IRQP_SET, RTC_RESOLUTION ) < 0 )
