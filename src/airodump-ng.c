@@ -97,6 +97,8 @@
 #define	AUTH_PSK	0x0400
 #define	AUTH_MGT	0x0800
 
+#define STD_QOS         0x2000
+
 #define	QLT_TIME	5
 #define	QLT_COUNT	25
 
@@ -251,6 +253,7 @@ struct ST_info
     int missed;              /* number of missed packets  */
     unsigned int lastseq;    /* last seen sequnce number  */
     struct WPA_hdsk wpa;     /* WPA handshake data        */
+    int qos;                 /* does it use ieee 802.11e  */
 };
 
 /* linked list of detected macs through ack, cts or rts frames */
@@ -1294,6 +1297,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         st_cur->probe_index = -1;
         st_cur->missed  = 0;
         st_cur->lastseq = 0;
+        st_cur->qos = 0;
         gettimeofday( &(st_cur->ftimer), NULL);
 
         for( i = 0; i < NB_PRB; i++ )
@@ -1591,6 +1595,11 @@ skip_probe:
                 if( type == 0x30 ) p += 2;
 
             }
+            else if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x02\x01\x01\x80", 7) == 0)))
+            {
+                ap_cur->security |= STD_QOS;
+                p += length+2;
+            }
             else p += length+2;
         }
     }
@@ -1707,7 +1716,15 @@ skip_probe:
         z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
 
         /* Check if 802.11e (QoS) */
-        if( (h80211[0] & 0x80) == 0x80) z+=2;
+        if( (h80211[0] & 0x80) == 0x80)
+        {
+            z+=2;
+            if(st_cur != NULL)
+                st_cur->qos = 1;
+        }
+        else
+            if(st_cur != NULL)
+                st_cur->qos = 0;
 
         if(z==24)
         {
@@ -2599,12 +2616,12 @@ void dump_print( int ws_row, int ws_col, int if_num )
     if(G.singlechan)
     {
         memcpy( strbuf, " BSSID              PWR RXQ  Beacons"
-                        "    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSID", columns_ap );
+                        "    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID", columns_ap );
     }
     else
     {
         memcpy( strbuf, " BSSID              PWR  Beacons"
-                        "    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSID", columns_ap );
+                        "    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID", columns_ap );
     }
 
     strbuf[ws_col - 1] = '\0';
@@ -2668,9 +2685,10 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
         len = strlen(strbuf);
 
-        snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %3d%c ",
+        snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %3d%c%c ",
                  ap_cur->channel, ap_cur->max_speed,
-                 ( ap_cur->preamble ) ? '.' : ' ' );
+                 ( ap_cur->security & STD_QOS ) ? 'e' : ' ',
+                 ( ap_cur->preamble ) ? '.' : ' ');
 
         len = strlen(strbuf);
 
@@ -2745,7 +2763,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     fprintf( stderr, "%s\n", strbuf );
 
     memcpy( strbuf, " BSSID              STATION "
-            "           PWR   Rate  Lost  Packets  Probes", columns_sta );
+            "           PWR   Rate   Lost  Packets  Probes", columns_sta );
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
@@ -2811,6 +2829,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
             fprintf( stderr, "  %3d", st_cur->power    );
             fprintf( stderr, "  %2d", st_cur->rate_to/1000000  );
             fprintf( stderr,  "-%2d", st_cur->rate_from/1000000);
+            fprintf( stderr,  "%c", (st_cur->qos) ? 'e' : ' ');
             fprintf( stderr, "  %4d", st_cur->missed   );
             fprintf( stderr, " %8ld", st_cur->nb_pkt   );
 
