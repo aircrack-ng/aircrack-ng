@@ -30,6 +30,51 @@
 #define SPANTREE  (uchar*)"\x01\x80\xC2\x00\x00\x00"
 #define CDP_VTP   (uchar*)"\x01\x00\x0C\xCC\xCC\xCC"
 
+#define	IEEE80211_FC0_SUBTYPE_MASK              0xf0
+#define	IEEE80211_FC0_SUBTYPE_SHIFT             4
+
+/* for TYPE_DATA (bit combination) */
+#define	IEEE80211_FC0_SUBTYPE_QOS               0x80
+#define	IEEE80211_FC0_SUBTYPE_QOS_NULL          0xc0
+
+#define GET_SUBTYPE(fc) \
+    ( ( (fc) & IEEE80211_FC0_SUBTYPE_MASK ) >> IEEE80211_FC0_SUBTYPE_SHIFT ) \
+        << IEEE80211_FC0_SUBTYPE_SHIFT
+
+#define uchar  unsigned char
+
+#define ROL32( A, n ) \
+	( ((A) << (n)) | ( ((A)>>(32-(n))) & ( (1UL << (n)) - 1 ) ) )
+#define ROR32( A, n ) ROL32( (A), 32-(n) )
+
+struct WPA_ST_info
+{
+    struct WPA_ST_info *next;       /* next supplicant              */
+    uchar stmac[6];             /* supplicant MAC               */
+    uchar bssid[6];             /* authenticator MAC            */
+    uchar snonce[32];           /* supplicant nonce             */
+    uchar anonce[32];           /* authenticator nonce          */
+    uchar keymic[20];           /* eapol frame MIC              */
+    uchar eapol[256];           /* eapol frame contents         */
+    uchar ptk[80];              /* pairwise transcient key      */
+    int eapol_size;             /* eapol frame size             */
+    unsigned long t_crc;        /* last ToDS   frame CRC        */
+    unsigned long f_crc;        /* last FromDS frame CRC        */
+    int keyver, valid_ptk;
+};
+
+struct Michael
+{
+    unsigned long key0;
+    unsigned long key1;
+    unsigned long left;
+    unsigned long right;
+    unsigned long nBytesInM;
+    unsigned long message;
+    unsigned char mic[8];
+};
+
+
 // typedef unsigned char byte;    /* 8-bit byte (octet) */
 // typedef unsigned short u16b;   /* 16-bit unsigned word */
 // typedef unsigned long u32b;    /* 32-bit unsigned word */
@@ -123,7 +168,6 @@
 //         0xC382,0xB029,0x775A,0x111E,0xCB7B,0xFCA8,0xD66D,0x3A2C,
 //     }
 // };
-
 /* Used for own RC4 implementation */
 struct rc4_state
 {
@@ -144,5 +188,11 @@ int add_crc32(unsigned char* data, int length);
 int add_crc32_plain(unsigned char* data, int length);
 int is_ipv6(void *wh);
 int is_dhcp_discover(void *wh, int len);
-
+int calc_tkip_ppk( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char key[16] );
+int decrypt_tkip( unsigned char *h80211, int caplen, unsigned char TK1[16] );
+int decrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16] );
+int calc_ptk( struct WPA_ST_info *wpa, uchar pmk[32] );
+int calc_tkip_mic(uchar* packet, int length, uchar ptk[80], uchar value[8]);
+int michael_test(uchar key[8], uchar *message, int length, uchar out[8]);
+int calc_tkip_mic_key(uchar* packet, int length, uchar key[8]);
 #endif /* crypto.h */
