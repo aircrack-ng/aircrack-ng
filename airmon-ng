@@ -8,6 +8,7 @@ IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
 USE_IW=0
+IW_ERROR=""
 
 if [ -f "`which iw 2>&1`" ]
 then
@@ -19,7 +20,7 @@ then
 MON_PREFIX="mon"
 fi
 
-PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon|wlassistant"
+PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon|wlassistant"
 
 usage() {
 	printf "usage: `basename $0` <start|stop|check> <interface> [channel]\n"
@@ -28,18 +29,18 @@ usage() {
 }
 
 startStdIface() {
-	iwconfig $1 mode monitor 2> /dev/null >/dev/null
-	iwconfig $1 channel $2 2> /dev/null >/dev/null
-	iwconfig $1 key off 2> /dev/null >/dev/null
+	iwconfig $1 mode monitor >/dev/null 2>&1
+	iwconfig $1 channel $2 >/dev/null 2>&1
+	iwconfig $1 key off >/dev/null 2>&1
 	ifconfig $1 up
 	printf " (monitor mode enabled)"
 }
 
 
 stopStdIface() {
-	ifconfig $1 down 2> /dev/null >/dev/null
-	iwconfig $1 mode Managed 2> /dev/null >/dev/null
-	ifconfig $1 down 2> /dev/null >/dev/null
+	ifconfig $1 down >/dev/null 2>&1
+	iwconfig $1 mode Managed >/dev/null 2>&1
+	ifconfig $1 down >/dev/null 2>&1
 	printf " (monitor mode disabled)"
 }
 
@@ -144,7 +145,7 @@ getChipset() {
         return
     fi
 
-    CHIPSET=""
+    CHIPSET="Unknown "
 
     if [ x$DRIVER = "xzd1211rw" -o x$DRIVER = "xzd1211rw_mac80211" ]
     then
@@ -158,12 +159,17 @@ getChipset() {
 
     if [ x$DRIVER = "xprism54" -o x$DRIVER = "xp54pci" -o x$DRIVER = "xp54usb" ]
     then
-        CHIPSET="PrismGT"
+        CHIPSET="PrismGT "
     fi
 
     if [ x$DRIVER = "xhostap" ]
     then
         CHIPSET="Prism 2/2.5/3"
+    fi
+
+    if [ x$DRIVER = "xr8180" -o x$DRIVER = "xrtl8180" ]
+    then
+        CHIPSET="RTL8180/RTL8185"
     fi
 
     if [ x$DRIVER = "xr8187" -o x$DRIVER = "xrtl8187" ]
@@ -174,6 +180,11 @@ getChipset() {
     if [ x$DRIVER = "xrt2570" -o x$DRIVER = "xrt2500usb" ]
     then
         CHIPSET="Ralink 2570 USB"
+    fi
+
+    if [ x$DRIVER = "xrt2400" -o x$DRIVER = "xrt2400pci" ]
+    then
+        CHIPSET="Ralink 2400 PCI"
     fi
 
     if [ x$DRIVER = "xrt2500" -o x$DRIVER = "xrt2500pci" ]
@@ -193,27 +204,27 @@ getChipset() {
 
     if [ x$DRIVER = "xipw2100" ]
     then
-        CHIPSET="Intel 2100 b"
+        CHIPSET="Intel 2100B"
     fi
 
     if [ x$DRIVER = "xipw2200" ]
     then
-        CHIPSET="Intel 2200 b/g"
+        CHIPSET="Intel 2200BG"
     fi
 
     if [ x$DRIVER = "xipw3945" -o x$DRIVER = "xipwraw" -o x$DRIVER = "xiwl3945" ]
     then
-        CHIPSET="Intel 3945 a/b/g"
+        CHIPSET="Intel 3945ABG"
     fi
 
     if [ x$DRIVER = "xipw4965" -o x$DRIVER = "xiwl4965" ]
     then
-        CHIPSET="Intel 4965 a/b/g/n"
+        CHIPSET="Intel 4965AGN"
     fi
 
-    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" ]
+    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k_pci" ]
     then
-        CHIPSET="Atheros"
+        CHIPSET="Atheros "
     fi
 
     if [ x$DRIVER = "xorinoco" ]
@@ -377,16 +388,31 @@ do
     then
         if [ $USE_IW = 1 ]
         then
-            iw dev $iface interface add $MONDEV type monitor
-            sleep 0.1
-            ifconfig $MONDEV up
-            printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+            IW_ERROR=`iw dev $iface interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
+            if [ x$IW_ERROR = "x" ]
+            then
+                sleep 0.1
+                iwconfig $MONDEV channel $2 >/dev/null 2>&1
+                ifconfig $MONDEV up
+                printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+            else
+                if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
+                then
+                    echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
+                    sleep 0.1
+                    iwconfig $MONDEV mode Monitor channel $2 >/dev/null 2>&1
+                    ifconfig $MONDEV up
+                    printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+                else
+                    printf "\n\nERROR: nl80211 support is disabled in your kernel.\nPlease recompile your kernel with nl80211 support enabled.\n"
+                fi
+            fi
         else
             if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
             then
                 echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
                 sleep 0.1
-                iwconfig $MONDEV mode Monitor >/dev/null 2>&1
+                iwconfig $MONDEV mode Monitor channel $2 >/dev/null 2>&1
                 ifconfig $MONDEV up
                 printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
             else
@@ -401,8 +427,19 @@ do
         then
             if [ $USE_IW = 1 ]
             then
-                iw dev "$iface" interface del
-                printf " (removed)"
+                IW_ERROR=`iw dev "$iface" interface del 2>&1 | grep "nl80211 not found"`
+                if [ x$IW_ERROR = "x" ]
+                then
+                    printf " (removed)"
+                else
+                    if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
+                    then
+                        echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+                        printf " (removed)"
+                    else
+                        printf "\n\nERROR: nl80211 support is disabled in your kernel.\nPlease recompile your kernel with nl80211 support enabled.\n"
+                fi
+                fi
             else
                 if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
                 then
@@ -670,6 +707,14 @@ do
     then
          startStdIface $iface $CH
          iwpriv $iface rfmontx 1
+         if [ x"`iwpriv $iface 2>/dev/null | grep forceprismheader`" != "x" ]
+         then
+             iwpriv $iface forceprismheader 1
+         fi
+         if [ x"`iwpriv $iface 2>/dev/null | grep forceprism`" != "x" ]
+         then
+             iwpriv $iface forceprism 1
+         fi
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
      then
@@ -689,6 +734,14 @@ do
     then
          startStdIface $iface $CH
          iwpriv $iface rfmontx 1
+         if [ x"`iwpriv $iface 2>/dev/null | grep forceprismheader`" != "x" ]
+         then
+             iwpriv $iface forceprismheader 1
+         fi
+         if [ x"`iwpriv $iface 2>/dev/null | grep forceprism`" != "x" ]
+         then
+             iwpriv $iface forceprism 1
+         fi
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
      then
@@ -731,6 +784,10 @@ do
          if [ x"`iwpriv $iface 2>/dev/null | grep forceprismheader`" != "x" ]
          then
              iwpriv $iface forceprismheader 1
+         fi
+         if [ x"`iwpriv $iface 2>/dev/null | grep forceprism`" != "x" ]
+         then
+             iwpriv $iface forceprism 1
          fi
      fi
      if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
@@ -796,7 +853,7 @@ do
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
-         echo "source=wlanng_legacy,$iface,ZyDAS" >>$KISMET
+         echo "source=zd1211,$iface,ZyDAS" >>$KISMET
          startStdIface $iface $CH
      fi
      if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
@@ -814,7 +871,7 @@ do
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
-         echo "source=wlanng_legacy,$iface,ZyDAS" >>$KISMET
+         echo "source=zd1211,$iface,ZyDAS" >>$KISMET
          startStdIface $iface $CH
      fi
      if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
