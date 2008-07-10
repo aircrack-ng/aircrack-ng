@@ -770,7 +770,7 @@ void read_sleep( int usec )
 
 int filter_packet( unsigned char *h80211, int caplen )
 {
-    int z, mi_b, mi_s, mi_d, ext=0, qos;
+    int z, mi_b, mi_s, mi_d, ext=0, qos=0;
 
     if(caplen <= 0)
         return( 1 );
