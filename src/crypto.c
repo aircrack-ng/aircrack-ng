@@ -1034,9 +1034,9 @@ const short TkipSbox[2][256]=
 int calc_tkip_ppk( uchar *h80211, int caplen, uchar TK1[16], uchar key[16] )
 {
     int i, z;
-    uint IV32;
-    ushort IV16;
-    ushort PPK[6];
+    uint32_t IV32;
+    uint16_t IV16;
+    uint16_t PPK[6];
 
     if(caplen) {}
 
