@@ -72,6 +72,10 @@ getDriver() {
        DRIVER=""
        BUS=""
    fi
+   if [ x$(echo $DRIVER | cut -b 1,2,3,4,5) = "xath5k" ]
+   then
+       DRIVER="ath5k"
+   fi
 }
 
 scanProcesses() {
@@ -222,7 +226,7 @@ getChipset() {
         CHIPSET="Intel 4965AGN"
     fi
 
-    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k_pci" ]
+    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" ]
     then
         CHIPSET="Atheros "
     fi
