@@ -1471,7 +1471,7 @@ int main(int argc, char* argv[])
             return 1;
         }
     }
-    printf( "Wrote packet%c to: %s\n", (opt.num_packets > 1?'s':' '), opt.cap_out );
+    printf( "Wrote packet%s to: %s\n", (opt.num_packets > 1?"s":""), opt.cap_out );
 
     if(opt.ivs2)
         fclose(opt.ivs2);
