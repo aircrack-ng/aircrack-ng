@@ -1,0 +1,14 @@
+diff --git a/net/mac80211/tx.c b/net/mac80211/tx.c
+index f35eaea..e5e8483 100644
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -292,6 +292,9 @@ ieee80211_tx_h_sequence(struct ieee80211_tx_data *tx)
+ {
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)tx->skb->data;
+ 
++	if (unlikely(tx->flags & IEEE80211_TX_INJECTED))
++		return TX_CONTINUE;
++
+ 	if (ieee80211_get_hdrlen(le16_to_cpu(hdr->frame_control)) >= 24)
+ 		ieee80211_include_sequence(tx->sdata, hdr);
+ 
