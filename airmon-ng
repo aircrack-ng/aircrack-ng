@@ -87,7 +87,7 @@ scanProcesses() {
         echo "If airodump-ng, aireplay-ng or airtun-ng stops working after"
         echo "a short period of time, you may want to kill (some of) them!"
         echo
-        echo "PID\tName"
+        echo -e "PID\tName"
     else
         if [ x"$1" != xkill ]
         then
