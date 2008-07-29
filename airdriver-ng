@@ -178,9 +178,9 @@ LI_KSOURCE[$i]=""
 LDETECT[$i]=""
 
 i=$(($i+1))
-LNAME[$i]="Suse"
-LI_UTIL[$i]="yum"
-LI_ARGUMENT[$i]=""
+LNAME[$i]="openSUSE"
+LI_UTIL[$i]="zypper"
+LI_ARGUMENT[$i]="install"
 LI_KSOURCE[$i]="cat /etc/SuSE-release 2>/dev/null"
 LDETECT[$i]=""
 
