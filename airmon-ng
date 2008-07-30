@@ -163,6 +163,7 @@ getChipset() {
     if [ x$DRIVER = "xacx" -o x$DRIVER = "xacx-mac80211" -o x$DRIVER = "xacx1xx" ]
     then
         CHIPSET="TI ACX1xx"
+    fi
 
     if [ x$DRIVER = "adm8211" ]
     then
