@@ -72,9 +72,13 @@ getDriver() {
        DRIVER=""
        BUS=""
    fi
-   if [ x$(echo $DRIVER | cut -b 1,2,3,4,5) = "xath5k" ]
+   if [ x$(echo $DRIVER | grep ath5k) != "x" ]
    then
        DRIVER="ath5k"
+   fi
+   if [ x$(echo $DRIVER | grep ath9k) != "x" ]
+   then
+       DRIVER="ath9k"
    fi
 }
 
@@ -156,9 +160,23 @@ getChipset() {
         CHIPSET="ZyDAS 1211"
     fi
 
+    if [ x$DRIVER = "xacx" -o x$DRIVER = "xacx-mac80211" -o x$DRIVER = "xacx1xx" ]
+    then
+        CHIPSET="TI ACX1xx"
+
+    if [ x$DRIVER = "adm8211" ]
+    then
+        CHIPSET="ADMtek 8211"
+    fi
+
+    if [ x$DRIVER = "xat76_usb" ]
+    then
+        CHIPSET="Atmel   "
+    fi
+
     if [ x$DRIVER = "xb43" -o x$DRIVER = "xb43legacy" -o x$DRIVER = "xbcm43xx" ]
     then
-        CHIPSET="Broadcom 43xx"
+        CHIPSET="Broadcom"
     fi
 
     if [ x$DRIVER = "xprism54" -o x$DRIVER = "xp54pci" -o x$DRIVER = "xp54usb" ]
@@ -178,7 +196,7 @@ getChipset() {
 
     if [ x$DRIVER = "xr8187" -o x$DRIVER = "xrtl8187" ]
     then
-        CHIPSET="Realtek 8187L"
+        CHIPSET="RTL8187 "
     fi
 
     if [ x$DRIVER = "xrt2570" -o x$DRIVER = "xrt2500usb" ]
@@ -193,7 +211,7 @@ getChipset() {
 
     if [ x$DRIVER = "xrt2500" -o x$DRIVER = "xrt2500pci" ]
     then
-        CHIPSET="Ralink 2500 PCI"
+        CHIPSET="Ralink 2560 PCI"
     fi
 
     if [ x$DRIVER = "xrt61" -o x$DRIVER = "xrt61pci" ]
@@ -226,7 +244,7 @@ getChipset() {
         CHIPSET="Intel 4965AGN"
     fi
 
-    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" ]
+    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" -o x$DRIVER = "xath9k" ]
     then
         CHIPSET="Atheros "
     fi
@@ -328,7 +346,7 @@ do
 
  if [ x"`iwpriv $iface 2>/dev/null | grep ipwraw-ng`" != "x" ]
  then
-        printf "$iface\t\tCentrino a/b/g\tipwraw-ng"
+        printf "$iface\t\tIntel 3945ABG\tipwraw-ng"
         if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
         then
                 cp $KISMET~ $KISMET 2>/dev/null &&
@@ -490,7 +508,7 @@ do
 
  if [ x$DRIVER = "xipw2100" ] || [ x"`iwpriv $iface 2>/dev/null | grep set_crc_check`" != "x" ]
  then
-    printf "$iface\t\tCentrino b\tipw2100"
+    printf "$iface\t\tIntel 2100B\tipw2100"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
         cp $KISMET~ $KISMET 2>/dev/null &&
@@ -513,7 +531,7 @@ do
     then
     	echo "Monitor mode not supported, please upgrade"
     else
-	printf "$iface\t\tCentrino b/g\tipw2200"
+	printf "$iface\t\tIntel 2200BG\tipw2200"
 	if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
 	then
 	    cp $KISMET~ $KISMET 2>/dev/null &&
@@ -549,7 +567,7 @@ do
 
  if [ x$DRIVER = "xipw3945" ] || [ x"`iwpriv $iface 2>/dev/null | grep set_preamble | grep -v set_crc_check`" != "x" ]
   then
-        printf "$iface\t\tCentrino b/g\tipw3945"
+        printf "$iface\t\tIntel 3945ABG\tipw3945"
         if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
          then
                 cp $KISMET~ $KISMET 2>/dev/null &&
@@ -630,7 +648,7 @@ do
 
  if [ x$DRIVER = "xhostap" ] || [ x"`iwpriv $iface 2>/dev/null | grep antsel_rx`" != "x" ]
  then
-     printf "$iface\t\tPrism2\t\tHostAP"
+     printf "$iface\t\tPrism 2/2.5/3\tHostAP"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
@@ -651,7 +669,7 @@ do
 
  if [ x$DRIVER = "xwlan-ng" ] || [ x"`wlancfg show $iface 2>/dev/null | grep p2CnfWEPFlags`" != "x" ]
  then
-     printf "$iface\t\tPrism2\t\twlan-ng"
+     printf "$iface\t\tPrism 2/2.5/3\twlan-ng"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
@@ -680,18 +698,26 @@ do
  then
     if [ x"`iwconfig $iface | grep ESSID | awk -F\  '{ print $2}' | grep -i rt61`" != "x" ]
     then
-    	printf "$iface\t\tRalink b/g\trt61"
+    	printf "$iface\t\tRalink 2561 PCI\trt61"
     fi
 
     if [ x"`iwconfig $iface | grep ESSID | awk -F\  '{ print $2}' | grep -i rt73`" != "x" ]
     then
-        printf "$iface\t\tRalink USB\trt73"
+        printf "$iface\t\tRalink 2573 USB\trt73"
     fi
 
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
          startStdIface $iface $CH
          iwpriv $iface rfmontx 1
+         if [ x"`iwpriv $iface 2>/dev/null | grep forceprismheader`" != "x" ]
+         then
+             iwpriv $iface forceprismheader 1
+         fi
+         if [ x"`iwpriv $iface 2>/dev/null | grep forceprism`" != "x" ]
+         then
+             iwpriv $iface forceprism 1
+         fi
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
      then
@@ -705,7 +731,7 @@ do
 
  if [ x$DRIVER = "xrt61" ]
  then
-    printf "$iface\t\tRalink b/g\trt61"
+    printf "$iface\t\tRalink 2561 PCI\trt61"
 
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
@@ -732,7 +758,7 @@ do
 
  if [ x$DRIVER = "xrt73" ]
  then
-    printf "$iface\t\tRalink USB\trt73"
+    printf "$iface\t\tRalink 2573 USB\trt73"
 
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
@@ -759,7 +785,7 @@ do
 
  if [ x$DRIVER = "xrt2500" ] || [ x"`iwpriv $iface 2>/dev/null | grep bbp`" != "x" ]
  then
-     printf "$iface\t\tRalink b/g\trt2500"
+     printf "$iface\t\tRalink 2560 PCI\trt2500"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
@@ -778,7 +804,7 @@ do
 
  if [ x$DRIVER = "xrt2570" ] || [ x"`iwpriv $iface 2>/dev/null | grep wpapsk`" != "x" ] && [ x"`iwpriv $iface 2>/dev/null | grep get_RaAP_Cfg`" = "x" ]
  then
-     printf "$iface\t\tRalink USB\trt2570"
+     printf "$iface\t\tRalink 2570 USB\trt2570"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
@@ -805,7 +831,7 @@ do
 
  if [ x$DRIVER = "xr8180" ] || [ x"`iwpriv $iface 2>/dev/null | grep debugtx`" != "x" ]
  then
-     printf "$iface\t\tRTL8180\t\tr8180"
+     printf "$iface\t\tRTL8180/RTL8185\tr8180"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
@@ -853,7 +879,7 @@ do
 
  if [ x$DRIVER = "xzd1211rw" ] || [ x"`iwpriv $iface 2>/dev/null | grep get_regdomain`" != "x" ]
  then
-     printf "$iface\t\tZyDAS\t\tzd1211rw"
+     printf "$iface\t\tZyDAS 1211\tzd1211rw"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
@@ -871,7 +897,7 @@ do
 
  if [ x$DRIVER = "xzd1211" ] || [ x"`iwpriv $iface 2>/dev/null | grep dbg_flag`" != "x" ]
  then
-     printf "$iface\t\tZyDAS\t\tzd1211"
+     printf "$iface\t\tZyDAS 1211\tzd1211"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
@@ -889,7 +915,7 @@ do
 
  if [ x$DRIVER = "xacx" ] || [ x"`iwpriv $iface 2>/dev/null | grep GetAcx1`" != "x" ]
  then
-     printf "$iface\t\tTI\t\tacx111"
+     printf "$iface\t\tTI ACX1xx\tacx"
      if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
