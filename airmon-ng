@@ -35,7 +35,7 @@ usage() {
 
 startStdIface() {
 	iwconfig $1 mode monitor >/dev/null 2>&1
-	iwconfig $1 channel $2 >/dev/null 2>&1
+	iwconfig $1 channel $3 >/dev/null 2>&1
 	iwconfig $1 key off >/dev/null 2>&1
 	ifconfig $1 up
 	printf " (monitor mode enabled)"
