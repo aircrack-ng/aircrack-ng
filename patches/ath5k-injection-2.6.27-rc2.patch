@@ -1,0 +1,15 @@
+diff --git a/drivers/net/wireless/ath5k/base.c b/drivers/net/wireless/ath5k/base.c
+index 217d506..4e7a949 100644
+--- a/drivers/net/wireless/ath5k/base.c
++++ b/drivers/net/wireless/ath5k/base.c
+@@ -1219,7 +1219,9 @@ ath5k_txbuf_setup(struct ath5k_softc *sc, struct ath5k_buf *bf)
+ 	bf->skbaddr = pci_map_single(sc->pdev, skb->data, skb->len,
+ 			PCI_DMA_TODEVICE);
+ 
+-	if (info->flags & IEEE80211_TX_CTL_NO_ACK)
++	if (info->flags & IEEE80211_TX_CTL_NO_ACK ||
++	   (info->flags & IEEE80211_TX_CTL_INJECTED &&
++	   !(ieee80211_has_morefrags(((struct ieee80211_hdr *)skb->data)->frame_control))))
+ 		flags |= AR5K_TXDESC_NOACK;
+ 
+ 	pktlen = skb->len;
