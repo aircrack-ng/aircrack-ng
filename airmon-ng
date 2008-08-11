@@ -30,7 +30,7 @@ usage() {
 
 startStdIface() {
 	iwconfig $1 mode monitor >/dev/null 2>&1
-	iwconfig $1 channel $2 >/dev/null 2>&1
+	iwconfig $1 channel $3 >/dev/null 2>&1
 	iwconfig $1 key off >/dev/null 2>&1
 	ifconfig $1 up
 	printf " (monitor mode enabled)"
@@ -435,7 +435,7 @@ do
             then
                 echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
                 sleep 0.1
-                iwconfig $MONDEV mode Monitor channel $2 >/dev/null 2>&1
+                iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
                 ifconfig $MONDEV up
                 printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
             else
