@@ -420,7 +420,7 @@ do
             if [ x$NL80211_ERROR = "x" ]
             then
                 sleep 0.1
-                iwconfig $MONDEV channel $2 >/dev/null 2>&1
+                iwconfig $MONDEV channel $3 >/dev/null 2>&1
                 ifconfig $MONDEV up
                 printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
             else
@@ -428,7 +428,7 @@ do
                 then
                     echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
                     sleep 0.1
-                    iwconfig $MONDEV mode Monitor channel $2 >/dev/null 2>&1
+                    iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
                     ifconfig $MONDEV up
                     printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
                 else
@@ -440,7 +440,7 @@ do
             then
                 echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
                 sleep 0.1
-                iwconfig $MONDEV mode Monitor >/dev/null 2>&1
+                iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
                 ifconfig $MONDEV up
                 printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
             else
