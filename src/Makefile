@@ -13,13 +13,19 @@ PROF_DIR	= $(PWD)/prof
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
 		  ivstools$(EXE) kstats$(EXE) buddy-ng$(EXE) makeivs-ng$(EXE)
 ifeq ($(SQLITE), true)
-BINFILES	+= airolib-ng$(EXE)
-else ifeq ($(sqlite), true)
-BINFILES        += airolib-ng$(EXE)
-else ifeq ($(SQLITE), TRUE)
-BINFILES        += airolib-ng$(EXE)
-else ifeq ($(sqlite), TRUE)
-BINFILES        += airolib-ng$(EXE)
+	BINFILES	+= airolib-ng$(EXE)
+else
+	ifeq ($(sqlite), true)
+		BINFILES        += airolib-ng$(EXE)
+	else
+		ifeq ($(SQLITE), TRUE)
+			BINFILES        += airolib-ng$(EXE)
+		else
+			ifeq ($(sqlite), TRUE)
+				BINFILES        += airolib-ng$(EXE)
+			endif
+		endif
+	endif
 endif
 
 LIBPCAP		=
@@ -61,15 +67,20 @@ LIBOSD		= $(OSD)/lib$(OSD).a
 LIBSSL		= -lssl -lcrypto $(LDFLAGS)
 LIBSQL		=
 ifeq ($(SQLITE), true)
-LIBSQL		= -L/usr/local/lib -lsqlite3
-else ifeq ($(sqlite), true)
-LIBSQL          = -L/usr/local/lib -lsqlite3
-else ifeq ($(SQLITE), TRUE)
-LIBSQL          = -L/usr/local/lib -lsqlite3
-else ifeq ($(sqlite), TRUE)
-LIBSQL          = -L/usr/local/lib -lsqlite3
+	LIBSQL		= -L/usr/local/lib -lsqlite3
+else
+	ifeq ($(sqlite), true)
+		LIBSQL          = -L/usr/local/lib -lsqlite3
+	else
+		ifeq ($(SQLITE), TRUE)
+			LIBSQL          = -L/usr/local/lib -lsqlite3
+		else
+			ifeq ($(sqlite), TRUE)
+				LIBSQL          = -L/usr/local/lib -lsqlite3
+			endif
+		endif
+	endif
 endif
-
 
 all: osd userland $(SBINFILES)
 
