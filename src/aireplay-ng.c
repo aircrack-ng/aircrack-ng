@@ -4100,7 +4100,7 @@ int do_attack_fragment()
         {
             packet2[z+4] = ((packet2[z+4] ^ 0x42) ^ 0xAA);  //0x42 instead of 0xAA
             packet2[z+5] = ((packet2[z+5] ^ 0x42) ^ 0xAA);  //0x42 instead of 0xAA
-            packet2[z+6] = ((packet2[z+6] ^ 0x00) ^ 0x08);  //0x00 instead of 0x08
+            packet2[z+10] = ((packet2[z+10] ^ 0x00) ^ 0x08);  //0x00 instead of 0x08
         }
 
         prga_len = 7;
