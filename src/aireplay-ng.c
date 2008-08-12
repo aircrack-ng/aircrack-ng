@@ -1303,17 +1303,17 @@ int do_attack_deauth( void )
                     if( ! FD_ISSET( dev.fd_in, &rfds ) )
                         break;
 
-                    caplen = read_packet( h80211, sizeof( h80211 ), NULL );
+                    caplen = read_packet( tmpbuf, sizeof( tmpbuf ), NULL );
 
                     if(caplen <= 0 ) break;
                     if(caplen != 10) continue;
-                    if( h80211[0] == 0xD4)
+                    if( tmpbuf[0] == 0xD4)
                     {
-                        if( memcmp(h80211+4, opt.r_dmac, 6) == 0 )
+                        if( memcmp(tmpbuf+4, opt.r_dmac, 6) == 0 )
                         {
                             aacks++;
                         }
-                        if( memcmp(h80211+4, opt.r_bssid, 6) == 0 )
+                        if( memcmp(tmpbuf+4, opt.r_bssid, 6) == 0 )
                         {
                             sacks++;
                         }
