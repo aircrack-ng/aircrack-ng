@@ -1,0 +1,140 @@
+diff -Naur rt73-k2wrlz-3.0.1/Module/rtmp_info.c rt73-k2wrlz-3.0.1_rawtx/Module/rtmp_info.c
+--- rt73-k2wrlz-3.0.1/Module/rtmp_info.c	2008-07-24 02:05:27.000000000 +0200
++++ rt73-k2wrlz-3.0.1_rawtx/Module/rtmp_info.c	2008-08-12 22:30:20.000000000 +0200
+@@ -682,7 +682,11 @@
+         memcpy(iwe.u.ap_addr.sa_data, &pAdapter->ScanTab.BssEntry[i].Bssid, ETH_ALEN);
+ 
+         previous_ev = current_ev;
++#if WIRELESS_EXT >= 22
++        current_ev = iwe_stream_add_event(info, current_ev,end_buf, &iwe, IW_EV_ADDR_LEN);
++#else
+         current_ev = iwe_stream_add_event(current_ev,end_buf, &iwe, IW_EV_ADDR_LEN);
++#endif
+         if (current_ev == previous_ev)
+             break;
+ 
+@@ -694,7 +698,11 @@
+ 		iwe.u.data.flags = 1;
+ 
+         previous_ev = current_ev;
++#if WIRELESS_EXT >= 22
++		current_ev = iwe_stream_add_point(info, current_ev,end_buf, &iwe, pAdapter->ScanTab.BssEntry[i].Ssid);
++#else
+ 		current_ev = iwe_stream_add_point(current_ev,end_buf, &iwe, pAdapter->ScanTab.BssEntry[i].Ssid);
++#endif
+         if (current_ev == previous_ev)
+             break;
+ 
+@@ -717,7 +725,11 @@
+ 		iwe.len = IW_EV_UINT_LEN;
+ 
+         previous_ev = current_ev;
++#if WIRELESS_EXT >= 22
++		current_ev = iwe_stream_add_event(info, current_ev, end_buf, &iwe,  IW_EV_UINT_LEN);
++#else
+ 		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe,  IW_EV_UINT_LEN);
++#endif
+         if (current_ev == previous_ev)
+             break;
+ 
+@@ -733,7 +745,11 @@
+ 		iwe.u.freq.i = 0;
+ 
+ 		previous_ev = current_ev;
++#if WIRELESS_EXT >= 22
++		current_ev = iwe_stream_add_event(info, current_ev,end_buf, &iwe, IW_EV_FREQ_LEN);
++#else
+ 		current_ev = iwe_stream_add_event(current_ev,end_buf, &iwe, IW_EV_FREQ_LEN);
++#endif
+         if (current_ev == previous_ev)
+             break;
+ 
+@@ -747,7 +763,11 @@
+ 			iwe.u.data.flags = IW_ENCODE_DISABLED;
+ 
+         previous_ev = current_ev;
++#if WIRELESS_EXT >= 22
++        current_ev = iwe_stream_add_point(info, current_ev, end_buf,&iwe,  (char *)pAdapter->SharedKey[(iwe.u.data.flags & IW_ENCODE_INDEX)-1].Key);
++#else
+         current_ev = iwe_stream_add_point(current_ev, end_buf,&iwe,  (char *)pAdapter->SharedKey[(iwe.u.data.flags & IW_ENCODE_INDEX)-1].Key);
++#endif
+         if (current_ev == previous_ev)
+             break;
+ 
+@@ -762,9 +782,15 @@
+ 		{
+ 			iwe.u.bitrate.value = RateIdToMbps[pAdapter->ScanTab.BssEntry[i].SupRate[i]/2] * 1000000;
+ 			iwe.u.bitrate.disabled = 0;
++#if WIRELESS_EXT >= 22
++			current_val = iwe_stream_add_value(info, current_ev,
++				current_val, end_buf, &iwe,
++				IW_EV_PARAM_LEN);
++#else
+ 			current_val = iwe_stream_add_value(current_ev,
+ 				current_val, end_buf, &iwe,
+ 				IW_EV_PARAM_LEN);
++#endif
+ 		}
+ 
+ 
+@@ -817,9 +843,15 @@
+ 		}
+ 		iwe.u.bitrate.value = max_rate * 500000;
+ 		iwe.u.bitrate.disabled = 0;
++#if WIRELESS_EXT >= 22
++		current_val = iwe_stream_add_value(info, current_ev,
++			current_val, end_buf, &iwe,
++			IW_EV_PARAM_LEN);
++#else
+ 		current_val = iwe_stream_add_value(current_ev,
+ 			current_val, end_buf, &iwe,
+ 			IW_EV_PARAM_LEN);
++#endif
+ 		if((current_val-current_ev)>IW_EV_LCP_LEN)
+ 			current_ev = current_val;
+ 		else
+@@ -833,7 +865,11 @@
+ 		if (iwe.u.data.length)
+ 		{
+ 		    previous_ev = current_ev;
++#if WIRELESS_EXT >= 22
++			current_ev = iwe_stream_add_point(info, current_ev, end_buf, &iwe, custom);
++#else
+ 			current_ev = iwe_stream_add_point(current_ev, end_buf, &iwe, custom);
++#endif
+             if (current_ev == previous_ev)
+                 break;
+         }
+@@ -844,7 +880,11 @@
+ 		set_quality(pAdapter, &iwe.u.qual, pAdapter->ScanTab.BssEntry[i].Rssi);
+ 
+ 		previous_ev = current_ev;
++#if WIRELESS_EXT >= 22
++		current_ev = iwe_stream_add_event(info, current_ev, end_buf, &iwe, IW_EV_QUAL_LEN);
++#else
+ 		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe, IW_EV_QUAL_LEN);
++#endif
+         if (current_ev == previous_ev)
+             break;
+ 
+@@ -859,7 +899,11 @@
+ 		if (iwe.u.data.length)
+ 		{
+ 		    previous_ev = current_ev;
++#if WIRELESS_EXT >= 22
++			current_ev = iwe_stream_add_point(info, current_ev, end_buf, &iwe, custom);
++#else
+ 			current_ev = iwe_stream_add_point(current_ev, end_buf, &iwe, custom);
++#endif
+             if (current_ev == previous_ev)
+                 break;
+         }
+@@ -5703,7 +5747,7 @@
+ 	//UCHAR TmpPhy = pAd->PortCfg.PhyMode;
+ 	//pAd->PortCfg.PhyMode = 0xff;
+ 	//RTMPSetPhyMode(pAd, TmpPhy);
+-	
++
+ 	}
+ 
+ 	sprintf(msg+strlen(msg), "\n\nChannel | Tx Power\n-------------------\n");
