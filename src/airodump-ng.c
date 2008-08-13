@@ -3919,7 +3919,7 @@ int check_frequency(struct wif *wi[], int cards)
 
 int detect_frequencies(struct wif *wi)
 {
-    int start_freq = 2312;
+    int start_freq = 2192;
     int end_freq = 2732;
     int max_freq_num = 2048; //should be enough to keep all available channels
     int freq=0, i=0;
@@ -3949,8 +3949,8 @@ int detect_frequencies(struct wif *wi)
     }
 
     //again for 5GHz channels
-    start_freq=4920;
-    end_freq=6100;
+    start_freq=4800;
+    end_freq=6000;
     for(freq=start_freq; freq<=end_freq; freq+=5)
     {
         if(wi_set_freq(wi, freq) == 0)
