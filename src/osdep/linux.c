@@ -414,6 +414,47 @@ static int linux_get_rate(struct wif *wi)
     return wrq.u.bitrate.value;
 }
 
+static int linux_set_mtu(struct wif *wi, int mtu)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    struct ifreq ifr;
+
+    memset( &ifr, 0, sizeof( struct ifreq ) );
+
+    if(dev->main_if)
+        strncpy( ifr.ifr_name, dev->main_if, sizeof( ifr.ifr_name ) - 1 );
+    else
+        strncpy( ifr.ifr_name, wi_get_ifname(wi), sizeof( ifr.ifr_name ) - 1 );
+
+    ifr.ifr_mtu = mtu;
+    if( ioctl( dev->fd_in, SIOCSIFMTU, &ifr ) < 0 )
+    {
+        return( -1 );
+    }
+
+    return 0;
+}
+
+static int linux_get_mtu(struct wif *wi)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    struct ifreq ifr;
+
+    memset( &ifr, 0, sizeof( struct ifreq ) );
+
+    if(dev->main_if)
+        strncpy( ifr.ifr_name, dev->main_if, sizeof( ifr.ifr_name ) - 1 );
+    else
+        strncpy( ifr.ifr_name, wi_get_ifname(wi), sizeof( ifr.ifr_name ) - 1 );
+
+    if( ioctl( dev->fd_in, SIOCGIFMTU, &ifr ) < 0 )
+    {
+        return( -1 );
+    }
+
+    return ifr.ifr_mtu;
+}
+
 static int linux_read(struct wif *wi, unsigned char *buf, int count,
 		      struct rx_info *ri)
 {
@@ -1832,6 +1873,9 @@ static struct wif *linux_open(char *iface)
         wi->wi_get_monitor      = linux_get_monitor;
 	wi->wi_get_rate		= linux_get_rate;
 	wi->wi_set_rate		= linux_set_rate;
+	wi->wi_get_mtu		= linux_get_mtu;
+	wi->wi_set_mtu		= linux_set_mtu;
+
 
 	if (do_linux_open(wi, iface)) {
 		do_free(wi);
