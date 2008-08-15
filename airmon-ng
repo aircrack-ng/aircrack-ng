@@ -23,14 +23,19 @@ fi
 PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon|wlassistant"
 
 usage() {
-	printf "usage: `basename $0` <start|stop|check> <interface> [channel]\n"
+	printf "usage: `basename $0` <start|stop|check> <interface> [channel or frequency]\n"
 	echo
 	exit
 }
 
 startStdIface() {
 	iwconfig $1 mode monitor >/dev/null 2>&1
-	iwconfig $1 channel $3 >/dev/null 2>&1
+	if [ $3 -lt 1000 ]
+	then
+	    iwconfig $1 channel $3 >/dev/null 2>&1
+	else
+	    iwconfig $1 freq "$3"000000 > /dev/null 2>&1
+	fi
 	iwconfig $1 key off >/dev/null 2>&1
 	ifconfig $1 up
 	printf " (monitor mode enabled)"
@@ -377,7 +382,12 @@ do
         cp $KISMET~ $KISMET 2>/dev/null &&
         echo "source=madwifi_g,$iface,Atheros" >>$KISMET
         ifconfig $iface up
-        iwconfig $IFACE channel $CH
+        if [ $CH -lt 1000 ]
+        then
+            iwconfig $IFACE channel $CH
+        else
+            iwconfig $IFACE freq "$CH"000000
+        fi
         ifconfig $IFACE up
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
@@ -415,7 +425,12 @@ do
             if [ x$IW_ERROR = "x" ]
             then
                 sleep 0.1
-                iwconfig $MONDEV channel $3 >/dev/null 2>&1
+                if [ $3 -lt 1000 ]
+                then
+                    iwconfig $MONDEV channel $3 >/dev/null 2>&1
+                else
+                    iwconfig $MONDEV freq "$3"000000 >/dev/null 2>&1
+                fi
                 ifconfig $MONDEV up
                 printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
             else
@@ -423,7 +438,12 @@ do
                 then
                     echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
                     sleep 0.1
-                    iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
+                    if [ $3 -lt 1000 ]
+                    then
+                        iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
+                    else
+                        iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
+                    fi
                     ifconfig $MONDEV up
                     printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
                 else
@@ -435,7 +455,12 @@ do
             then
                 echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
                 sleep 0.1
-                iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
+                if [ $3 -lt 1000 ]
+                then
+                    iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
+                else
+                    iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
+                fi
                 ifconfig $MONDEV up
                 printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
             else
@@ -490,7 +515,12 @@ do
     then
         cp $KISMET~ $KISMET 2>/dev/null &&
         echo "source=orinoco,$iface,HermesI" >>$KISMET
-        iwconfig $iface mode Monitor channel $CH >/dev/null 2>&1
+        if [ $CH -lt 1000 ]
+        then
+            iwconfig $iface mode Monitor channel $CH >/dev/null 2>&1
+        else
+            iwconfig $iface mode Monitor freq "$CH"000000 >/dev/null 2>&1
+        fi
         iwpriv $iface monitor 1 $CH >/dev/null 2>&1
         ifconfig $iface up
         printf " (monitor mode enabled)"
@@ -634,7 +664,12 @@ do
          cp $KISMET~ $KISMET 2>/dev/null &&
          echo "source=prism54g,$iface,Prism54" >>$KISMET
          ifconfig $iface up
-         iwconfig $iface mode Monitor channel $CH
+         if [ $CH -lt 1000 ]
+         then
+             iwconfig $iface mode Monitor channel $CH
+         else
+             iwconfig $iface mode Monitor freq "$CH"000000
+         fi
          iwpriv $iface set_prismhdr 1 >/dev/null 2>&1
          printf " (monitor mode enabled)"
      fi
@@ -654,7 +689,12 @@ do
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
          echo "source=hostap,$iface,Prism2" >>$KISMET
-         iwconfig $iface mode Monitor channel $CH
+         if [ $CH -lt 1000 ]
+         then
+             iwconfig $iface mode Monitor channel $CH
+         else
+             iwconfig $iface mode Monitor freq "$CH"000000
+         fi
          iwpriv $iface monitor_type 1 >/dev/null 2>&1
          ifconfig $iface up
          printf " (monitor mode enabled)"
@@ -837,7 +877,12 @@ do
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
          echo "source=rt8180,$iface,Realtek" >>$KISMET
-         iwconfig $iface mode Monitor channel $CH
+         if [ $CH -lt 1000 ]
+         then
+             iwconfig $iface mode Monitor channel $CH
+         else
+             iwconfig $iface mode Monitor freq "$CH"000000
+         fi
          if [ x"`iwpriv $iface 2>/dev/null | grep prismhdr`" != "x" ]
          then
             iwpriv $iface prismhdr 1 >/dev/null 2>&1
@@ -861,7 +906,12 @@ do
      then
          cp $KISMET~ $KISMET 2>/dev/null &&
          echo "source=rt8180,$iface,Realtek" >>$KISMET
-         iwconfig $iface mode Monitor channel $CH
+         if [ $CH -lt 1000 ]
+         then
+             iwconfig $iface mode Monitor channel $CH
+         else
+             iwconfig $iface mode Monitor freq "$CH"000000
+         fi
          if [ x"`iwpriv $iface 2>/dev/null | grep rawtx`" != "x" ]
          then
              iwpriv $iface rawtx 1 >/dev/null 2>&1
