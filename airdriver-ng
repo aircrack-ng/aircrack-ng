@@ -576,7 +576,7 @@ DI_DRIVERDIR[$i]="bcm43xx"
 DI_PREPATCH[$i]=""
 DI_PATCHFILE[$i]="bcm43xx-injection-linux-2.6.22-v2.patch"
 DI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/bcm43xx-injection-linux-2.6.22-v2.patch"
-DI_PATCHPATH2[$i]=""
+DI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/bcm43xx-injection-linux-2.6.22-v2.patch"
 DI_PATCHARG[$i]="-p5" # XXX Is this correct for in-kernel?
 DI_PRECOMP[$i]=""
 DI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${DI_DRIVERDIR[$i]} modules"
@@ -2300,6 +2300,58 @@ install_softmac() {
         fi
     fi
 }
+
+install_mac80211() {
+    #use old patch for kernel < 2.6.26 non-wl
+    if [ $KMINOR -eq 6 -a $KPATCH -lt 26 -a $KISWL -eq 0 ]
+    then
+        SI_PATCHFILE[$1]="mac80211_2.6.24.4_frag.patch"
+        SI_PATCHPATH1[$1]="http://www.latinsud.com/pub/bcm/mac80211_2.6.24.4_frag.patch"
+        SI_PATCHPATH2[$1]="http://www.latinsud.com/pub/bcm/old/mac80211_2.6.24.4_frag.patch"
+    fi
+
+    if [ $2 -eq 1 ]
+    then
+        #check if kernel source is in /usr/src/linux instead
+        missing=0
+        #check for default files README COPYING CREDITS (i hope every kernel source includes them all)
+        if [ ! -f "/usr/src/linux/README" -o ! -f "/usr/src/linux/COPYING" -o ! -f "/usr/src/linux/CREDITS" ]
+        then
+            missing=1
+        #   echo "Kernel source missing!"
+#            return $ERROR
+        fi
+
+        #2nd check (in case README COPYING and CREDITS is included in kernel headers)
+        #searches for .c files in "net" subdir
+        if [ $missing = 0 -a x"`find "/usr/src/linux/net/" -name "*\.c" | head -n 1`" = x ]
+        then
+            missing=1
+        #   echo "Kernel source missing!"
+#            return $ERROR
+        fi
+
+        if [ $missing = 0 ]
+        then
+            SI_DRIVERPATH1[$1]=$SI_DRIVERPATH2[$1]
+        else
+            echo
+            echo "Your kernel source is neither in \"$KSRC\" nor in \"/usr/src/linux\"."
+            echo "Trying with vanilla source. (May fail on heavily patched distributions.)"
+            echo "If it fails install your proper kernel source and rerun this script."
+            echo
+            sleep 3
+
+            SI_DRIVERGET[$1]="wget"
+            SI_DRIVERFILE[$1]="linux-$VANILLA.tar.bz2"
+            SI_DRIVERPATH1[$1]="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-$VANILLA.tar.bz2"
+            SI_DRIVERPATH2[$1]="ftp://ftp.de.kernel.org/pub/linux/kernel/v2.6/linux-$VANILLA.tar.bz2"
+            SI_DRIVEREXDIR[$1]="linux-$VANILLA/net/ieee80211"
+            SI_DRIVERDIR[$1]="ieee80211"
+        fi
+    fi
+}
+
 #end
 
 #install script doing the dirty work
