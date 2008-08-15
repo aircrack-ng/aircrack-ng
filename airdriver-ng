@@ -217,7 +217,6 @@ SCONFIG[$i]="CONFIG_IEEE80211="
 SCONFIGS[$i]="CONFIG_IEEE80211=m CONFIG_IEEE80211_CRYPT_WEP=m CONFIG_IEEE80211_CRYPT_CCMP=m CONFIG_IEEE80211_CRYPT_TKIP=m"
 SMODULE[$i]="ieee80211"
 SMODULES[$i]="ieee80211 ieee80211_crypt ieee80211_crypt_wep ieee80211_crypt_tkip ieee80211_crypt_ccmp"
-# FIXME There is a new patch for 2.6.24 on SuD's site - add that to install_ieee80211!
 SI_INIT[$i]="install_ieee80211 $i"
 SI_DRIVERGET[$i]="cp"
 SI_DRIVERFILE[$i]="ieee80211_tx.c"
@@ -226,9 +225,9 @@ SI_DRIVERPATH2[$i]="/usr/src/linux/net/ieee80211"
 SI_DRIVEREXDIR[$i]=""
 SI_DRIVERDIR[$i]="ieee80211"
 SI_PREPATCH[$i]=""
-SI_PATCHFILE[$i]="ieee80211_inject-2.6.22.patch"
-SI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/ieee80211_inject-2.6.22.patch"
-SI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/ieee80211_inject-2.6.22.patch"
+SI_PATCHFILE[$i]="softmac-2.6.24.4.patch" #patch is misnamed - it's for ieee80211, not softmac
+SI_PATCHPATH1[$i]="http://www.latinsud.com/pub/softmac/softmac-2.6.24.4.patch"
+SI_PATCHPATH2[$i]="http://www.latinsud.com/pub/softmac/old/softmac-2.6.24.4.patch"
 SI_PATCHARG[$i]="-p3"
 SI_PRECOMP[$i]=""
 SI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${SI_DRIVERDIR[$i]} modules"
@@ -278,7 +277,7 @@ SI_PREPATCH[$i]=""
 # FIXME This must be renamed on the server!
 SI_PATCHFILE[$i]="mac80211_2.6.26_frag.patch"
 SI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/mac80211_2.6.26_frag.patch"
-SI_PATCHPATH2[$i]=""
+SI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/mac80211_2.6.26_frag.patch"
 SI_PATCHARG[$i]="-p3"
 SI_PRECOMP[$i]=""
 SI_COMPILE[$i]="$MAKE -C $KSRC/ M=$D_DIR/${SI_DRIVERDIR[$i]} modules"
@@ -379,7 +378,7 @@ DETECT_CS[$i]="ACX"
 
 i=$(($i+1))
 DNAME[$i]="ADMtek 8211"
-DSTACK[$i]="0"
+DSTACK[$i]="0" # XXX Fullmac stack for softmac card?
 DMODINFO[$i]="^depends: *ieee80211"
 DMODULE[$i]="adm8211"
 DCONFIG[$i]=""
@@ -458,7 +457,7 @@ DMODINFO[$i]=""
 DMODULE[$i]="atmel"
 DCONFIG[$i]="CONFIG_ATMEL="
 DCONFIGS[$i]="CONFIG_ATMEL=m CONFIG_PCI_ATMEL=m CONFIG_PCMCIA_ATMEL=m CONFIG_TCG_ATMEL=m"
-DMODULES[$i]="atmel atmel_cs atmel_pci at76c505a-rfmd2958 at76c505-rfmd2958 at76c505-rfmd.ko at76c503.ko at76c503-rfmd.ko at76c503-rfmd-acc.ko at76c503-i3863.ko at76c503-i3861.ko at76_usbdfu.ko" # FIXME This looks like 2 different drivers confused! FIXME .ko endings!
+DMODULES[$i]="atmel atmel_cs atmel_pci at76c505a-rfmd2958 at76c505-rfmd2958 at76c505-rfmd at76c503 at76c503-rfmd at76c503-rfmd-acc at76c503-i3863 at76c503-i3861 at76_usbdfu" # FIXME This looks like 2 different drivers confused!
 # FIXME No install code for at73c50x!
 DI_INIT[$i]=""
 DI_DRIVERGET[$i]=""
@@ -480,7 +479,7 @@ DF_FIRMFILES[$i]="atmel_at76c502_3com.bin atmel_at76c503-rfmd.bin atmel_at76c502
 DF_FIRMFILE[$i]="at76c503afw-0.1.tar.gz"
 DF_FIRMPATH1[$i]="http://downloads.sourceforge.net/at76c503a/at76c503afw-0.1.tar.gz"
 DF_FIRMPATH2[$i]="http://downloads.sourceforge.net/at76c503a/at76c503afw-0.1.tar.gz"
-DF_FIRMDIR[$i]="at76_usb-firmware-0.1"
+DF_FIRMDIR[$i]="at76_usb-firmware-0.1" # FIXME at76_usb?! 
 DF_INSTALLDIR[$i]=""
 DSITE[$i]=""
 DETECT_USB[$i]=""
@@ -2198,6 +2197,14 @@ install_ieee80211() {
         SI_PATCHPATH2[$1]="http://patches.aircrack-ng.org/old/ieee80211_inject.patch"
     fi
 
+    #use 2.6.22 patch for kernels 2.6.22 and 2.6.23
+    if [ $KMINOR -eq 6 -a $KPATCH -gte 22 -a $KPATCH -lt 24 ]
+    then
+        SI_PATCHFILE[$i]="ieee80211_inject-2.6.22.patch"
+        SI_PATCHPATH1[$i]="http://patches.aircrack-ng.org/ieee80211_inject-2.6.22.patch"
+        SI_PATCHPATH2[$i]="http://patches.aircrack-ng.org/old/ieee80211_inject-2.6.22.patch"
+    fi
+
     if [ $2 -eq 1 ]
     then
         #check if kernel source is in /usr/src/linux instead
@@ -2249,6 +2256,8 @@ install_softmac() {
         SI_PATCHPATH2[$1]=""
         SI_PATCHARG[$1]=""
     fi
+
+    #use old patch for kernel < 2.6.2
 
     if [ $2 -eq 1 ]
     then
