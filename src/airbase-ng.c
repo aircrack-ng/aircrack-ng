@@ -93,6 +93,9 @@ static struct wif *_wi_in, *_wi_out;
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
 #define MAX_CF_XMIT 100
 
+#define TI_MTU 1400
+#define WIF_MTU 1800
+
 #define PCT { struct tm *lt; time_t tc = time( NULL ); \
               lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
               lt->tm_hour, lt->tm_min, lt->tm_sec ); }
@@ -274,6 +277,9 @@ struct options
     int cf_count;
     int cf_attack;
     int record_data;
+
+    int ti_mtu;         //MTU of tun/tap interface
+    int wif_mtu;        //MTU of wireless interface
 }
 opt;
 
@@ -433,7 +439,7 @@ int addESSID(char* essid, int len, int expiration)
     pESSID_t tmp;
 	pESSID_t cur = rESSID;
 	time_t now;
-	
+
     if(essid == NULL)
         return -1;
 
@@ -463,18 +469,18 @@ int addESSID(char* essid, int len, int expiration)
     memcpy(tmp->essid, essid, len);
     tmp->essid[len] = 0x00;
     tmp->len = len;
-	
+
     // set expiration date
     if(expiration) {
         time(&now);
         tmp->expire = now + expiration;
     } else {
-        tmp->expire = 0;   
+        tmp->expire = 0;
     }
 
     tmp->next = NULL;
 	cur->next = tmp;
-		
+
     return 0;
 }
 
@@ -1127,7 +1133,7 @@ int addESSIDfile(char* filename)
     FILE *list;
     char essid[256];
 	int x;
-	
+
     list = fopen(filename, "r");
     if(list == NULL)
     {
@@ -2916,11 +2922,11 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                             goto skip_probe;
 
                     /* got a valid ASCII probed ESSID */
-                    
+
                     /* add this to the beacon queue */
                     if(opt.beacon_cache)
                         addESSID(essid, len, opt.beacon_cache);
-                    
+
                     /* check if it's already in the ring buffer */
                     for( i = 0; i < NB_PRB; i++ )
                         if( memcmp( st_cur->probes[i], essid, len ) == 0 )
@@ -3465,20 +3471,20 @@ void beacon_thread( void *arg )
 
 //             printf( "4 " );
             fflush(stdout);
-			
+
 
             if(cur_essid == NULL) cur_essid = rESSID;
             if(cur_essid == NULL) {
 	            essid = "default";
-	            essid_len = strlen(essid);	
+	            essid_len = strlen(essid);
             } else {
-                
+
                 /* flush expired ESSID entries */
                 flushESSID();
-                    
+
 	            essid     = cur_essid->essid;
 	            essid_len = cur_essid->len;
-	            cur_essid = cur_essid->next;			
+	            cur_essid = cur_essid->next;
             }
 
             beacon_len = 0;
@@ -3538,9 +3544,9 @@ void beacon_thread( void *arg )
                 beacon[beacon_len+11] = opt.wpa1type;
                 beacon[beacon_len+17] = opt.wpa1type;
                 beacon_len += 24;
-            }					
+            }
 
-		
+
             //copy timestamp into beacon; a mod 2^64 counter incremented each microsecond
             for(i=0; i<8; i++)
             {
@@ -3875,7 +3881,9 @@ int main( int argc, char *argv[] )
     opt.f_index     = 1;
     opt.interval    = 0x64;
     opt.beacon_cache = 0; /* disable by default */
-	
+    opt.ti_mtu = TI_MTU;
+    opt.wif_mtu = WIF_MTU;
+
     srand( time( NULL ) );
 
     while( 1 )
@@ -4010,25 +4018,25 @@ int main( int argc, char *argv[] )
                 opt.f_essid = 1;
 
                 break;
-				
+
             case 'P' :
 
                 opt.promiscuous = 1;
 
                 break;
-				
+
             case 'I' :
 
                 opt.interval = atoi(optarg);
 
                 break;
-				
+
             case 'C' :
 
                 opt.beacon_cache = atoi(optarg);
 
                 break;
-							
+
             case 'A' :
 
                 opt.adhoc = 1;
@@ -4525,6 +4533,22 @@ usage:
     if(!opt.quiet)
     {
         PCT; printf( "Created tap interface %s\n", ti_name(dev.dv_ti));
+    }
+
+    //Set MTU on tun/tap interface to a preferred value
+    if( ti_set_mtu(dev.dv_ti, opt.ti_mtu) != 0 )
+    {
+        printf( "error setting MTU on %s\n", ti_name(dev.dv_ti));
+    }
+
+    //Set MTU on wireless interface to a preferred value
+    if( wi_get_mtu(_wi_out) < opt.wif_mtu )
+    {
+        PCT; printf( "Trying to set MTU on %s to %i\n", _wi_out->wi_interface, opt.wif_mtu);
+        if( wi_set_mtu(_wi_out, opt.wif_mtu) != 0 )
+        {
+            printf( "error setting MTU on %s\n", _wi_out->wi_interface);
+        }
     }
 
     if(opt.external)
