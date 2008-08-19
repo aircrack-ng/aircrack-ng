@@ -10,7 +10,7 @@
 #define IVSONLY_MAGIC           "\xBF\xCA\x84\xD4"
 #define IVS2_MAGIC              "\xAE\x78\xD1\xFF"
 #define IVS2_EXTENSION		"ivs"
-#define IVS2_VERSION             1
+#define IVS2_VERSION             2
 
 #define PCAP_VERSION_MAJOR      2
 #define PCAP_VERSION_MINOR      4
@@ -50,6 +50,10 @@
 
 //unencrypted packet
 #define IVS2_CLR        0x0020
+
+/* [IV+IDX][i][XOR_1]..[XOR_i]                                     *
+ * holds i possible keystream/weight_vector pairs for the same IV  */
+#define IVS2_PTW2       0x0040
 
 struct pcap_file_header
 {

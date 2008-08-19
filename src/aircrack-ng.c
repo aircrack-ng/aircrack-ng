@@ -635,7 +635,7 @@ void read_thread( void *arg )
 	uchar bssid[6];
 	uchar dest[6];
 	uchar stmac[6];
-	uchar *buffer;
+	uchar *buffer, *buffer2;
 	uchar *h80211;
 	uchar *p;
 	int weight[16];
@@ -1112,6 +1112,78 @@ void read_thread( void *arg )
 
 				buffer[3] = buffer[6];
 				buffer[4] = buffer[7];
+				buffer[3] ^= 0xAA;
+				buffer[4] ^= 0xAA;
+				/* check for uniqueness first */
+
+				if( ap_cur->nb_ivs == 0 )
+					ap_cur->uiv_root = uniqueiv_init();
+
+				if( uniqueiv_check( ap_cur->uiv_root, buffer ) == 0 )
+				{
+					/* add the IV & first two encrypted bytes */
+
+					n = ap_cur->nb_ivs * 5;
+
+					if( n + 5 > ap_cur->ivbuf_size )
+					{
+						/* enlarge the IVs buffer */
+
+						ap_cur->ivbuf_size += 131072;
+						ap_cur->ivbuf = (uchar *) realloc(
+							ap_cur->ivbuf, ap_cur->ivbuf_size );
+
+						if( ap_cur->ivbuf == NULL )
+						{
+							perror( "realloc failed" );
+							break;
+						}
+					}
+
+
+					memcpy( ap_cur->ivbuf + n, buffer, 5 );
+					uniqueiv_mark( ap_cur->uiv_root, buffer );
+					ap_cur->nb_ivs++;
+				}
+			}
+			else if(ivs2.flags & IVS2_PTW2)
+			{
+				ap_cur->crypt = 2;
+
+				if (opt.do_ptw) {
+					int size, clearsize, total, i;
+
+					if ( ((ivs2.len-5) %2) == 1) //can't be an odd number of bytes as there is always twice the size of each keystream in there
+						goto unlock_mx_apl;
+
+					total = buffer[4];
+					clearsize = (ivs2.len - 5)/total/2;
+					if (clearsize < opt.keylen)
+						goto unlock_mx_apl;
+
+					size = PTW_KSBYTES*total;	//number of PTW_KSBYTE sized blocks for keystreams
+
+					buffer2 = (unsigned char*) malloc(size*2); //alloc twice the size for keystreams and weight vectors
+					bzero(buffer2, size*2);
+// 					if( clearsize < (6 + buffer[4]*32 + 16*(signed)sizeof(int)) )
+// 						goto unlock_mx_apl;
+
+					for(i=0; i<total; i++)
+					{
+						memcpy(buffer2     +i*PTW_KSBYTES, buffer+5+i*2*clearsize,            clearsize);
+						memcpy(buffer2+size+i*PTW_KSBYTES,  buffer+5+i*2*clearsize+clearsize, clearsize);
+					}
+// 					memcpy(weight, buffer+clearsize-15*sizeof(int), 16*sizeof(int));
+// 					printf("weight 1: %d, weight 2: %d\n", weight[0], weight[1]);
+
+					if (PTW2_addsession(ap_cur->ptw_vague, buffer, buffer+5, buffer+5+size, total))
+						ap_cur->nb_ivs_vague++;
+					free(buffer2);
+					goto unlock_mx_apl;
+				}
+
+				buffer[3] = buffer[5];
+				buffer[4] = buffer[6];
 				buffer[3] ^= 0xAA;
 				buffer[4] ^= 0xAA;
 				/* check for uniqueness first */
@@ -1907,6 +1979,29 @@ void check_thread( void *arg )
 					if (buffer[5] < opt.keylen)
 						goto unlock_mx_apl;
 					if( clearsize < (6 + buffer[4]*32 + 16*(signed)sizeof(int)) )
+						goto unlock_mx_apl;
+				}
+
+				if( ap_cur->nb_ivs == 0 )
+					ap_cur->uiv_root = uniqueiv_init();
+
+				if( uniqueiv_check( ap_cur->uiv_root, buffer ) == 0 )
+				{
+					uniqueiv_mark( ap_cur->uiv_root, buffer );
+					ap_cur->nb_ivs++;
+				}
+			}
+			else if(ivs2.flags & IVS2_PTW2)
+			{
+				ap_cur->crypt = 2;
+
+				if (opt.do_ptw) {
+					int clearsize, total;
+
+					total = buffer[4];
+					clearsize = (ivs2.len-5)/total/2;
+
+					if (clearsize < opt.keylen)
 						goto unlock_mx_apl;
 				}
 

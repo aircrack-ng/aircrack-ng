@@ -71,6 +71,7 @@ typedef struct {
 PTW_attackstate * PTW_newattackstate();
 void PTW_freeattackstate(PTW_attackstate *);
 int PTW_addsession(PTW_attackstate *, uint8_t *, uint8_t *, int *, int);
+int PTW2_addsession(PTW_attackstate *, uint8_t *, uint8_t *, uint8_t *, int);
 int PTW_computeKey(PTW_attackstate *, uint8_t *, int, int, int *, int [][PTW_n], int attacks);
 
 #endif

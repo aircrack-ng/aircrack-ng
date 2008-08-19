@@ -550,6 +550,17 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
  * iv - IV used in the session
  * keystream - recovered keystream from the session
  */
+int PTW2_addsession(PTW_attackstate * state, uint8_t * iv, uint8_t * keystream, uint8_t * weight, int total) {
+	if(state || iv || keystream || weight || total){};
+	return 0;
+}
+
+/*
+ * Add a new session to the attack
+ * state - state of attack
+ * iv - IV used in the session
+ * keystream - recovered keystream from the session
+ */
 int PTW_addsession(PTW_attackstate * state, uint8_t * iv, uint8_t * keystream, int * weight, int total) {
 	int i,j;
 	int il;
