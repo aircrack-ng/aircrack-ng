@@ -30,11 +30,14 @@
 #include <sys/select.h>
 #include <errno.h>
 
-#ifdef __MACH__ 
+#ifdef __MACH__
 #include <libkern/OSByteOrder.h>
+#elif defined (__sun) && defined (__sparc) /* Solaris SPARC, not Solaris x86 */
+#include <sys/byteorder.h>
 #else
 #include <asm/byteorder.h>
 #endif /* __MACH__ */
+
 
 #include "osdep.h"
 #include "network.h"
