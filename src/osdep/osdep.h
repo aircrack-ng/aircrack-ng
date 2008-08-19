@@ -107,6 +107,7 @@ struct tif {
 	int	(*ti_fd)(struct tif *ti);
 	char	*(*ti_name)(struct tif *ti);
 	int	(*ti_set_mtu)(struct tif *ti, int mtu);
+	int	(*ti_get_mtu)(struct tif *ti);
 	int	(*ti_set_ip)(struct tif *ti, struct in_addr *ip);
 	int	(*ti_set_mac)(struct tif *ti, unsigned char *mac);
 	void	(*ti_close)(struct tif *ti);
