@@ -4536,18 +4536,38 @@ usage:
     }
 
     //Set MTU on tun/tap interface to a preferred value
-    if( ti_set_mtu(dev.dv_ti, opt.ti_mtu) != 0 )
+    if(!opt.quiet)
     {
-        printf( "error setting MTU on %s\n", ti_name(dev.dv_ti));
+        PCT; printf( "Trying to set MTU on %s to %i\n", ti_name(dev.dv_ti), opt.ti_mtu);
+    }
+    if( ti_set_mtu(dev.dv_ti, opt.ti_mtu) != 0)
+    {
+        if(!opt.quiet)
+        {
+            printf( "error setting MTU on %s\n", ti_name(dev.dv_ti));
+        }
+            opt.ti_mtu = ti_get_mtu(dev.dv_ti);
+            if(!opt.quiet)
+            {
+                PCT; printf( "MTU on %s remains at %i\n", ti_name(dev.dv_ti), opt.ti_mtu);
+            }
     }
 
     //Set MTU on wireless interface to a preferred value
     if( wi_get_mtu(_wi_out) < opt.wif_mtu )
     {
-        PCT; printf( "Trying to set MTU on %s to %i\n", _wi_out->wi_interface, opt.wif_mtu);
+        if(!opt.quiet)
+        {
+            PCT; printf( "Trying to set MTU on %s to %i\n", _wi_out->wi_interface, opt.wif_mtu);
+        }
         if( wi_set_mtu(_wi_out, opt.wif_mtu) != 0 )
         {
-            printf( "error setting MTU on %s\n", _wi_out->wi_interface);
+            opt.wif_mtu = wi_get_mtu(_wi_out);
+            if(!opt.quiet)
+            {
+                printf( "error setting MTU on %s\n", _wi_out->wi_interface);
+                PCT; printf( "MTU on %s remains at %i\n", _wi_out->wi_interface, opt.wif_mtu);
+            }
         }
     }
 

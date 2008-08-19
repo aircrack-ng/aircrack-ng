@@ -114,6 +114,18 @@ static int ti_set_mtu_linux(struct tif *ti, int mtu)
 	return ioctl(priv->tl_ioctls, SIOCSIFMTU, &priv->tl_ifr);
 }
 
+static int ti_get_mtu_linux(struct tif *ti)
+{
+	int mtu;
+	struct tip_linux *priv = ti_priv(ti);
+
+	ioctl(priv->tl_ioctls, SIOCSIFMTU, &priv->tl_ifr);
+
+	mtu = priv->tl_ifr.ifr_mtu;
+
+	return mtu;
+}
+
 static int ti_set_mac_linux(struct tif *ti, unsigned char *mac)
 {
 	struct tip_linux *priv = ti_priv(ti);
@@ -165,6 +177,7 @@ static struct tif *ti_open_linux(char *iface)
 		return NULL;
 	ti->ti_name	= ti_name_linux;
 	ti->ti_set_mtu	= ti_set_mtu_linux;
+	ti->ti_get_mtu	= ti_get_mtu_linux;
 	ti->ti_close	= ti_close_linux;
 	ti->ti_fd	= ti_fd_linux;
 	ti->ti_read	= ti_read_linux;

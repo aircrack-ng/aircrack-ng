@@ -178,6 +178,12 @@ int ti_set_mtu(struct tif *ti, int mtu)
 	return ti->ti_set_mtu(ti, mtu);
 }
 
+int ti_get_mtu(struct tif *ti)
+{
+	assert(ti->ti_get_mtu);
+	return ti->ti_get_mtu(ti);
+}
+
 void ti_close(struct tif *ti)
 {
 	assert(ti->ti_close);

@@ -123,6 +123,7 @@ extern void *ti_priv(struct tif *ti);
 /* client routines */
 extern char *ti_name(struct tif *ti);
 extern int ti_set_mtu(struct tif *ti, int mtu);
+extern int ti_get_mtu(struct tif *ti);
 extern void ti_close(struct tif *ti);
 extern int ti_fd(struct tif *ti);
 extern int ti_read(struct tif *ti, void *buf, int len);
