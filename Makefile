@@ -9,7 +9,7 @@ endif
 AC_ROOT		= .
 include		$(AC_ROOT)/common.mak
 
-SCRIPTS         = airmon-ng airdriver-ng patchchk
+SCRIPTS         = airmon-ng airdriver-ng
 DOCFILES        = ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 
 
@@ -35,7 +35,6 @@ uninstall:
 	$(MAKE) -C src $(@)
 	-rm -f $(DESTDIR)$(sbindir)/airmon-ng
 	-rm -f $(DESTDIR)$(sbindir)/airdriver-ng
-	-rm -f $(DESTDIR)$(sbindir)/patchchk
 	-rm -f $(DESTDIR)$(mandir)/aircrack-ng.1
 	-rm -f $(DESTDIR)$(mandir)/airdecap-ng.1
 	-rm -f $(DESTDIR)$(mandir)/airdriver-ng.1
