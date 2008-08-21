@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "aircrack-ptw-lib.h"
+#include "aircrack-ptw2-lib.h"
 
 #define SUCCESS  0
 #define FAILURE  1
@@ -27,7 +27,7 @@
 
 #define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
 
-#define KEYHSBYTES PTW_KEYHSBYTES
+#define KEYHSBYTES PTW2_KEYHSBYTES
 
 #define MAX_THREADS 128
 
@@ -92,7 +92,10 @@ enum KoreK_attacks
 	A_4_s13,					 /* stable       13% on q = 4    */
 	A_4_u5_1,					 /* unstable      5% on q = 4    */
 	A_4_u5_2,					 /* unstable      5% on q = 4    */
-	A_neg						 /* helps reject false positives */
+	A_neg,						 /* helps reject false positives */
+	A_ptw,
+	A_ptw_good,
+	A_ptw_bad
 };
 
 struct options
@@ -207,8 +210,8 @@ struct AP_info
 	int target;					 /* flag set if AP is a target   */
 	struct ST_info *st_1st;		 /* linked list of stations      */
 	struct WPA_hdsk wpa;		 /* valid WPA handshake data     */
-        PTW_attackstate *ptw_clean;
-        PTW_attackstate *ptw_vague;
+        PTW2_attackstate *ptw_clean;
+        PTW2_attackstate *ptw_vague;
 };
 
 struct ST_info
@@ -228,6 +231,6 @@ struct mergeBSSID
 	struct mergeBSSID * next;
 };
 
-void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod );
+void show_wep_stats( int B, int force, PTW2_tableentry table[PTW2_KEYHSBYTES][PTW2_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod );
 
 #endif /* _AIRCRACK_NG_H */

@@ -36,9 +36,9 @@ SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
-SRC_PTW		= aircrack-ptw-lib.c
+SRC_PTW		= aircrack-ptw2-lib.c
 SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
-OBJS_PTW	= aircrack-ptw-lib.o
+OBJS_PTW	= aircrack-ptw2-lib.o
 OBJS_AC		= aircrack-ng.o crypto.o common.o uniqueiv.o $(OBJS_PTW)
 
 OBJS_AD		= airdecap-ng.o crypto.o common.o

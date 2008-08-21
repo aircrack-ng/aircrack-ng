@@ -145,7 +145,7 @@ int K_COEFF[N_ATTACKS] =
 };
 
 int PTW_DEFAULTWEIGHT[1] = { 256 };
-int PTW_DEFAULTBF[PTW_KEYHSBYTES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int PTW_DEFAULTBF[PTW2_KEYHSBYTES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 const uchar R[256] =
 {
@@ -967,14 +967,14 @@ void read_thread( void *arg )
 
 			if (opt.do_ptw == 1)
 			{
-				ap_cur->ptw_clean = PTW_newattackstate();
+				ap_cur->ptw_clean = PTW2_newattackstate();
 				if (!ap_cur->ptw_clean) {
 					perror("PTW_newattackstate()");
 					free(ap_cur);
 					ap_cur = NULL;
 					break;
 				}
-				ap_cur->ptw_vague = PTW_newattackstate();
+				ap_cur->ptw_vague = PTW2_newattackstate();
 				if (!ap_cur->ptw_vague) {
 					perror("PTW_newattackstate()");
 					free(ap_cur);
@@ -1041,11 +1041,13 @@ void read_thread( void *arg )
 					if (clearsize < opt.keylen+3)
 						goto unlock_mx_apl;
 
+					/*
 					if (PTW_addsession(ap_cur->ptw_clean, buffer, buffer+4, PTW_DEFAULTWEIGHT, 1))
 						ap_cur->nb_ivs_clean++;
 
 					if (PTW_addsession(ap_cur->ptw_vague, buffer, buffer+4, PTW_DEFAULTWEIGHT, 1))
 						ap_cur->nb_ivs_vague++;
+					*/
 
 					goto unlock_mx_apl;
 				}
@@ -1103,10 +1105,10 @@ void read_thread( void *arg )
 
 					memcpy(weight, buffer+clearsize-15*sizeof(int), 16*sizeof(int));
 // 					printf("weight 1: %d, weight 2: %d\n", weight[0], weight[1]);
-
+					/*
 					if (PTW_addsession(ap_cur->ptw_vague, buffer, buffer+6, weight, buffer[4]))
 						ap_cur->nb_ivs_vague++;
-
+					*/
 					goto unlock_mx_apl;
 				}
 
@@ -1161,7 +1163,7 @@ void read_thread( void *arg )
 					if (clearsize < opt.keylen)
 						goto unlock_mx_apl;
 
-					size = PTW_KSBYTES*total;	//number of PTW_KSBYTE sized blocks for keystreams
+					size = PTW2_KSBYTES*total;	//number of PTW_KSBYTE sized blocks for keystreams
 
 					buffer2 = (unsigned char*) malloc(size*2); //alloc twice the size for keystreams and weight vectors
 					bzero(buffer2, size*2);
@@ -1170,8 +1172,8 @@ void read_thread( void *arg )
 
 					for(i=0; i<total; i++)
 					{
-						memcpy(buffer2     +i*PTW_KSBYTES, buffer+5+i*2*clearsize,            clearsize);
-						memcpy(buffer2+size+i*PTW_KSBYTES,  buffer+5+i*2*clearsize+clearsize, clearsize);
+						memcpy(buffer2     +i*PTW2_KSBYTES, buffer+5+i*2*clearsize,            clearsize);
+						memcpy(buffer2+size+i*PTW2_KSBYTES,  buffer+5+i*2*clearsize+clearsize, clearsize);
 					}
 // 					memcpy(weight, buffer+clearsize-15*sizeof(int), 16*sizeof(int));
 // 					printf("weight 1: %d, weight 2: %d\n", weight[0], weight[1]);
@@ -1400,7 +1402,7 @@ void read_thread( void *arg )
                                     for (i = 0; i < clearsize; i++)
                                             clear[i+(32*j)] ^= body[4+i];
                                 }
-
+				/*
                                 if(k==1)
                                 {
                                     if (PTW_addsession(ap_cur->ptw_clean, body, clear, weight, k))
@@ -1409,7 +1411,7 @@ void read_thread( void *arg )
 
                                 if (PTW_addsession(ap_cur->ptw_vague, body, clear, weight, k))
                                         ap_cur->nb_ivs_vague++;
-
+				*/
 				goto unlock_mx_apl;
 			}
 
@@ -2727,7 +2729,7 @@ int crack_wep_thread( void *arg )
 
 /* display the current votes */
 
-void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod )
+void show_wep_stats( int B, int force, PTW2_tableentry table[PTW2_KEYHSBYTES][PTW2_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod )
 {
 	float delta;
 	struct winsize ws;
@@ -4434,17 +4436,17 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
         //first try without bruteforcing, using only "clean" keystreams
         if(opt.keylen != 13)
         {
-            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+            if(PTW2_computeKey(ap_cur->ptw_clean, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = opt.keylen;
         }
         else
         {
             /* try 1000 40bit keys first, to find the key "instantly" and you don't need to wait for 104bit to fail */
-            if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 5, 1000, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+            if(PTW2_computeKey(ap_cur->ptw_clean, wep.key, 5, 1000, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
-            else if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+            else if(PTW2_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 13;
-            else if(PTW_computeKey(ap_cur->ptw_clean, wep.key, 5, (KEYLIMIT*opt.ffact)/3, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+            else if(PTW2_computeKey(ap_cur->ptw_clean, wep.key, 5, (KEYLIMIT*opt.ffact)/3, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
         }
     }
@@ -4458,17 +4460,17 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
         if(opt.keylen != 13)
         {
-            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+            if(PTW2_computeKey(ap_cur->ptw_vague, wep.key, opt.keylen, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = opt.keylen;
         }
         else
         {
             /* try 1000 40bit keys first, to find the key "instantly" and you don't need to wait for 104bit to fail */
-            if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 5, 1000, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+            if(PTW2_computeKey(ap_cur->ptw_vague, wep.key, 5, 1000, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
-            else if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+            else if(PTW2_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 13;
-            else if(PTW_computeKey(ap_cur->ptw_vague, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+            else if(PTW2_computeKey(ap_cur->ptw_vague, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
         }
     }
