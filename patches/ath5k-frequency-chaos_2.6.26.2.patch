@@ -14,7 +14,7 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/ath5k.h linux-2.6.26.2-ath5
   * supported frequencies in some countries, so use this at your own risk,
   * you've been warned. */
 -#define CHAN_DEBUG	0
-+#define CHAN_DEBUG	1 /* If Atheros didn't want us to do this, why is this in the code? */
++#define CHAN_DEBUG	1
  
  #include <linux/io.h>
  #include <linux/types.h>
