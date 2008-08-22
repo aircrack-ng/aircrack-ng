@@ -98,6 +98,12 @@ static const int coeffs[] =
 30, 160, 30, 40, 30, 130, 40, 40, 
 -120, 0, 16, 0, 100, 45};
 
+/*
+static const int coeffs[] =
+{0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 16, 0, 100, 45};
+*/
 
 // Values for p_correct_i
 static const double eval[] = {
@@ -400,10 +406,10 @@ static int doComputation(PTW2_attackstate * state, uint8_t * key, int keylen, PT
 				show_wep_stats( keylen -1, 1, keytable, choices, depth, tried );
 			return 1;
 		}
-		while( (i < keylen * (n-1)) && ((strongbytes[sh2[i].keybyte] == 1) || (bf[sh2[i].keybyte] == 1) ) ) {
+		while( (i < (keylen-1) * (n-1)) && ((strongbytes[sh2[i].keybyte] == 1) || (bf[sh2[i].keybyte] == 1) ) ) {
 			i++;
 		}
-		if(i >= (keylen * (n-1)))
+		if(i >= ((keylen-1) * (n-1)))
 		{
 			break;
 		}
@@ -418,6 +424,7 @@ static int doComputation(PTW2_attackstate * state, uint8_t * key, int keylen, PT
 				prod *= n;
 			}
 		}
+		// printf("prod is now %d\n", prod);
 
                 /*
 		do {
@@ -445,6 +452,7 @@ static void doVote(PTW2_tableentry first[][n], PTW2_tableentry second[][n], int 
             for (j = 0; j <= i-keylength; j++) {
                 value = (value + 256 - iv[j])&0xff;
             }
+	    // printf("doing iv vote\n");
             first[keylength-1][value].votes += coeffs[attack]*weight;
         } else {
             for (j = 0; j < q; j++) {
@@ -471,6 +479,7 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
         int jj[n];
         
         int numVotes = 2*keylength+q;
+	// int numVotes = keylength;
         
         for (i = 0; i < n; i++) {
             S[i] = i;
@@ -782,14 +791,14 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 		}
 
 
-		for (i = 0; i < keylen; i++) {
+		for (i = 0; i < (keylen-1); i++) {
 			for (j = 1; j < n; j++) {
 				sh[i][j-1].distance = table[i][0].votes - table[i][j].votes;
 				sh[i][j-1].value = table[i][j].b;
 				sh[i][j-1].keybyte = i;
 			}
 		}
-		qsort(sh, (n-1)*keylen, sizeof(sorthelper), &comparesorthelper);
+		qsort(sh, (n-1)*(keylen-1), sizeof(sorthelper), &comparesorthelper);
 
 
 		if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, simple, bf, validchars)) {
@@ -827,9 +836,12 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 
 		// First, init the tables
 		for (i = 0; i < keylen; i++) {
+			bzero(&table[i][0], sizeof(PTW2_tableentry) * n);
 			bzero(&tablefirst[i][0], sizeof(PTW2_tableentry) * n);
 			bzero(&tablesecond[i][0], sizeof(PTW2_tableentry) * n);
+
 			for (j = 0; j < n; j++) {
+				table[i][j].b = j;
 				tablefirst[i][j].b = j;
 				tablesecond[i][j].b = j;
 			}
@@ -852,14 +864,15 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 		t = table[0][0].b;
 
 		// Now, correct the votes
-		for (i = 0; i < keylen-1; i++) {
+		for (i = 0; i < keylen; i++) {
 			for (j = 0; j < n; j++) {
 				table[i][j].b = j;
-				table[i][j].votes = tablefirst[i][j].votes + tablesecond[i][(j+t)&0xff].votes;
+				table[i][j].votes = (tablefirst[i][j].votes * coeffs[A_first]) + (tablesecond[i][(j+t)&0xff].votes * coeffs[A_second]);
 			}
 			qsort(&table[i][0], n, sizeof(PTW2_tableentry), &compare);
 			strongbytes[i] = 0;
 		}
+		// strongbytes[keylen-1] = 0;
 		
 		// We can now start the usual key ranking thing
 		sh = alloca(sizeof(sorthelper) * (n-1) * (keylen-1));
@@ -874,7 +887,7 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 				sh[i][j-1].keybyte = i;
 			}
 		}
-		qsort(sh, (n-1)*keylen, sizeof(sorthelper), &comparesorthelper);
+		qsort(sh, (n-1)*(keylen-1), sizeof(sorthelper), &comparesorthelper);
 		
 		if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, testlimit, bf, validchars)) {
 			return 1;

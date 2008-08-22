@@ -1175,8 +1175,8 @@ void read_thread( void *arg )
 						memcpy(buffer2     +i*PTW2_KSBYTES, buffer+5+i*2*clearsize,            clearsize);
 						memcpy(buffer2+size+i*PTW2_KSBYTES,  buffer+5+i*2*clearsize+clearsize, clearsize);
 					}
-// 					memcpy(weight, buffer+clearsize-15*sizeof(int), 16*sizeof(int));
-// 					printf("weight 1: %d, weight 2: %d\n", weight[0], weight[1]);
+// 					//memcpy(weight, buffer+clearsize-15*sizeof(int), 16*sizeof(int));
+ 					// printf("weight 1: %d, weight 2: %d\n", *(buffer+5+size), *(buffer+5+size+1));
 
 					if (PTW2_addsession(ap_cur->ptw_vague, buffer, buffer+5, buffer+5+size, total))
 						ap_cur->nb_ivs_vague++;
@@ -2786,7 +2786,7 @@ void show_wep_stats( int B, int force, PTW2_tableentry table[PTW2_KEYHSBYTES][PT
 
 	for( i = 0; i <= B; i++ )
 	{
-		int j, k = ( ws.ws_col - 20 ) / 11;
+		int j, k = ( ws.ws_col - 20 ) / 15;
 
 		if(!table)
 		{

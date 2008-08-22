@@ -95,7 +95,9 @@ enum KoreK_attacks
 	A_neg,						 /* helps reject false positives */
 	A_ptw,
 	A_ptw_good,
-	A_ptw_bad
+	A_ptw_bad,
+	A_first,
+	A_second
 };
 
 struct options
