@@ -82,6 +82,7 @@ int main( int argc, char *argv[] )
     int maxivs=0xFFFFFF;
     unsigned char byte;
     unsigned char **uiv_root;
+    unsigned char num_total;
 
     static struct option long_options[] = {
         {"key",      1, 0, 'k'},
@@ -476,8 +477,10 @@ usage:
         ivs2.flags = 0;
         ivs2.len = 0;
 
-        ivs2.flags |= IVS2_XOR;
-        ivs2.len += length+4;
+        ivs2.flags |= IVS2_PTW2;
+        ivs2.len += length+4+1;
+
+        num_total=1;
 
         if( fwrite( &ivs2, 1, sizeof(struct ivs2_pkthdr), f_ivs_out )
             != (size_t) sizeof(struct ivs2_pkthdr) )
@@ -498,11 +501,22 @@ usage:
         }
         ivs2.len -= 4;
 
+        if( fwrite( &num_total, 1, 1, f_ivs_out ) != (size_t) 1 )
+        {
+            perror( "fwrite(IV idx) failed" );
+            return( 1 );
+        }
+        ivs2.len -= 1;
+
         i = j = 0;
         for( k=0; k < length; k++ )
         {
             i = (i+1) & 0xFF; j = ( j + S[i] ) & 0xFF; SWAP(S[i], S[j]);
             fprintf( f_ivs_out, "%c", S[(S[i] + S[j]) & 0xFF] );
+        }
+        for( k=0; k < length; k++ )
+        {
+            fprintf( f_ivs_out, "%c", 0xFF );
         }
         if((n%10000) == 0)
             printf("%2.1f%%\r", ((float)n/(float)count)*100.0f);
