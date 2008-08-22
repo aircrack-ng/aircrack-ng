@@ -478,7 +478,7 @@ usage:
         ivs2.len = 0;
 
         ivs2.flags |= IVS2_PTW2;
-        ivs2.len += length+4+1;
+        ivs2.len += (length*2)+4+1;
 
         num_total=1;
 
