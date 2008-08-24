@@ -1172,13 +1172,13 @@ void read_thread( void *arg )
 
 					for(i=0; i<total; i++)
 					{
-						memcpy(buffer2     +i*PTW2_KSBYTES, buffer+5+i*2*clearsize,            clearsize);
-						memcpy(buffer2+size+i*PTW2_KSBYTES,  buffer+5+i*2*clearsize+clearsize, clearsize);
+						memcpy(buffer2     +i*PTW2_KSBYTES, buffer+5+i*2*clearsize,           MIN(clearsize, PTW2_KSBYTES));
+						memcpy(buffer2+size+i*PTW2_KSBYTES, buffer+5+i*2*clearsize+clearsize, MIN(clearsize, PTW2_KSBYTES));
 					}
 // 					//memcpy(weight, buffer+clearsize-15*sizeof(int), 16*sizeof(int));
  					// printf("weight 1: %d, weight 2: %d\n", *(buffer+5+size), *(buffer+5+size+1));
 
-					if (PTW2_addsession(ap_cur->ptw_vague, buffer, buffer+5, buffer+5+size, total))
+					if (PTW2_addsession(ap_cur->ptw_vague, buffer, buffer2, buffer2+size, total))
 						ap_cur->nb_ivs_vague++;
 					free(buffer2);
 					goto unlock_mx_apl;

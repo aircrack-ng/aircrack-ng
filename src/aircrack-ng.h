@@ -27,6 +27,9 @@
 
 #define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
 
+#define MAX(a,b) ((a)>(b)?(a):(b))
+#define MIN(a,b) ((a)>(b)?(b):(a))
+
 #define KEYHSBYTES PTW2_KEYHSBYTES
 
 #define MAX_THREADS 128
@@ -199,7 +202,7 @@ struct AP_info
 {
 	struct AP_info *next;		 /* next AP in linked list       */
 	unsigned char bssid[6];				 /* access point MAC address     */
-	char essid[33];				 /* access point identifier      */
+	char essid[256];				 /* access point identifier      */
 	unsigned char lanip[4];				 /* IP address if unencrypted    */
 	unsigned char *ivbuf;				 /* table holding WEP IV data    */
 	unsigned char **uiv_root;			 /* IV uniqueness root struct    */
