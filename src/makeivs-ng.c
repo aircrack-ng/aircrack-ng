@@ -79,7 +79,7 @@ int main( int argc, char *argv[] )
     float errorrate=0, dupe=0;
     unsigned char bssid[6];
     int seed=time(NULL), z;
-    int maxivs=0xFFFFFF;
+    int maxivs=0x1000000;
     unsigned char byte;
     unsigned char **uiv_root;
 
@@ -159,9 +159,9 @@ int main( int argc, char *argv[] )
             case 'c':
 
 				paramUsed = 1;
-                if (atoi(optarg) < 1 || atoi(optarg) > 0xFFFFFF) {
+                if (atoi(optarg) < 1 || atoi(optarg) > 0x1000000) {
 					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
-                    printf( "Specified number of IVs is invalid. [1-65535]" );
+                    printf( "Specified number of IVs is invalid. [1-16777216]" );
                     return( 1 );
                 }
 
