@@ -463,19 +463,17 @@ static void doVote(PTW2_tableentry first[][n], PTW2_tableentry second[][n], int 
 	
 }
 
-static void dumpTable(PTW2_tableentry table[][n], int keylen) {
+static void dumpTable(PTW2_tableentry * table, int i) {
 	FILE * f;
-	int i,j;
+	int j;
 
-	f = fopen("tables.txt", "w");
+	f = fopen("tables.txt", "w+");
 	if (f != NULL) {
-		for (i = 0; i < keylen; i++) {
-			fprintf(f, "table %d\n", i);
-			for (j = 0; j < n; j++) {
-				fprintf(f, "byte %d with %d votes\n", table[i][j].b, table[i][j].votes);
-			}
-			fprintf(f, "\n");
+		fprintf(f, "table %d\n", i);
+		for (j = 0; j < n; j++) {
+			fprintf(f, "byte %d with %d votes\n", table[j].b, table[j].votes);
 		}
+		fprintf(f, "\n");
 	}
 	fclose(f);
 }
@@ -888,12 +886,17 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 			}
 			qsort(&table[i][0], n, sizeof(PTW2_tableentry), &compare);
 			strongbytes[i] = 0;
+			dumpTable(&table[i][0], i);
+
+
 		}
 		for (j = 0; j < n; j++) {
 			table[keylen-1][j].b = j;
 			table[keylen-1][j].votes = (tablefirst[keylen-1][j].votes * coeffs[A_first]);
-			qsort(&table[keylen-1][0], n, sizeof(PTW2_tableentry), &compare);
 		}
+		dumpTable(&table[keylen-1][0],keylen-1);
+
+		qsort(&table[keylen-1][0], n, sizeof(PTW2_tableentry), &compare);
 
 		strongbytes[keylen-1] = 0;
 		
@@ -912,7 +915,6 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 		}
 		qsort(sh, (n-1)*(keylen-1), sizeof(sorthelper), &comparesorthelper);
 		
-		dumpTable(table, keylen);
 		if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, testlimit, bf, validchars)) {
 			return 1;
 		}
