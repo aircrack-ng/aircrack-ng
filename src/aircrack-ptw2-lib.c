@@ -463,6 +463,23 @@ static void doVote(PTW2_tableentry first[][n], PTW2_tableentry second[][n], int 
 	
 }
 
+static void dumpTable(PTW2_tableentry table[][n], int keylen) {
+	FILE * f;
+	int i,j;
+
+	f = fopen("tables.txt", "w");
+	if (f != NULL) {
+		for (i = 0; i < keylen; i++) {
+			fprintf(f, "table %d\n", i);
+			for (j = 0; j < n; j++) {
+				fprintf(f, "byte %d with %d votes\n", table[i][j].b, table[i][j].votes);
+			}
+			fprintf(f, "\n");
+		}
+	}
+	fclose(f);
+}
+
 static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], uint8_t * iv, uint8_t * ks, int * weights, int keylength) {
 	int i;
         int j;
@@ -864,7 +881,7 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 		t = table[0][0].b;
 
 		// Now, correct the votes
-		for (i = 0; i < keylen; i++) {
+		for (i = 0; i < keylen-1; i++) {
 			for (j = 0; j < n; j++) {
 				table[i][j].b = j;
 				table[i][j].votes = (tablefirst[i][j].votes * coeffs[A_first]) + (tablesecond[i][(j+t)&0xff].votes * coeffs[A_second]);
@@ -872,7 +889,13 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 			qsort(&table[i][0], n, sizeof(PTW2_tableentry), &compare);
 			strongbytes[i] = 0;
 		}
-		// strongbytes[keylen-1] = 0;
+		for (j = 0; j < n; j++) {
+			table[keylen-1][j].b = j;
+			table[keylen-1][j].votes = (tablefirst[keylen-1][j].votes * coeffs[A_first]);
+			qsort(&table[keylen-1][0], n, sizeof(PTW2_tableentry), &compare);
+		}
+
+		strongbytes[keylen-1] = 0;
 		
 		// We can now start the usual key ranking thing
 		sh = alloca(sizeof(sorthelper) * (n-1) * (keylen-1));
@@ -889,6 +912,7 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 		}
 		qsort(sh, (n-1)*(keylen-1), sizeof(sorthelper), &comparesorthelper);
 		
+		dumpTable(table, keylen);
 		if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, testlimit, bf, validchars)) {
 			return 1;
 		}
