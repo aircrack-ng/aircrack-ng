@@ -884,9 +884,10 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 				table[i][j].b = j;
 				table[i][j].votes = (tablefirst[i][j].votes * coeffs[A_first]) + (tablesecond[i][(j+t)&0xff].votes * coeffs[A_second]);
 			}
+			dumpTable(&table[i][0], i);
+
 			qsort(&table[i][0], n, sizeof(PTW2_tableentry), &compare);
 			strongbytes[i] = 0;
-			dumpTable(&table[i][0], i);
 
 
 		}
