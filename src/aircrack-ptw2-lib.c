@@ -467,7 +467,7 @@ static void dumpTable(PTW2_tableentry * table, int i) {
 	FILE * f;
 	int j;
 
-	f = fopen("tables.txt", "w+");
+	f = fopen("tables.txt", "a");
 	if (f != NULL) {
 		fprintf(f, "table %d\n", i);
 		for (j = 0; j < n; j++) {
