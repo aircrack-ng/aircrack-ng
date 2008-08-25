@@ -446,6 +446,8 @@ static int doComputation(PTW2_attackstate * state, uint8_t * key, int keylen, PT
 static void doVote(PTW2_tableentry first[][n], PTW2_tableentry second[][n], int i, int attack, int value, uint8_t * iv, int weight, int keylength) {
 	int q = PTW2_IVBYTES;
 	int j;
+	// printf("voting keybyte %d with attack %d to value %d\n", i, attack, value);
+	// weight = 1;
 	if (i < keylength) {
             first[i][value].votes +=  coeffs[attack]*weight;
         } else if(i < q+keylength) {
@@ -494,6 +496,8 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
         int jj[n];
         
         int numVotes = 2*keylength+q;
+
+	// printf("doing vote iv[0] = %d, iv[1] = %d, iv[2] = %d, ks[0] = %d, ks[1] = %d, keylen = %d\n", iv[0], iv[1], iv[2], ks[0], ks[1], keylength);
 	// int numVotes = keylength;
         
         for (i = 0; i < n; i++) {
@@ -861,7 +865,7 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 				tablesecond[i][j].b = j;
 			}
 		}
-
+		// printf("generating votes\n");
 		// Now, generate the votes
 		for (i = 0; i < state->packets_collected; i++) {
 			// fullkeybuf[0] = state->allsessions[j].iv[0];
@@ -884,7 +888,7 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 				table[i][j].b = j;
 				table[i][j].votes = (tablefirst[i][j].votes * coeffs[A_first]) + (tablesecond[i][(j+t)&0xff].votes * coeffs[A_second]);
 			}
-			dumpTable(&table[i][0], i);
+			// dumpTable(&table[i][0], i);
 
 			qsort(&table[i][0], n, sizeof(PTW2_tableentry), &compare);
 			strongbytes[i] = 0;
@@ -895,7 +899,7 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 			table[keylen-1][j].b = j;
 			table[keylen-1][j].votes = (tablefirst[keylen-1][j].votes * coeffs[A_first]);
 		}
-		dumpTable(&table[keylen-1][0],keylen-1);
+		// dumpTable(&table[keylen-1][0],keylen-1);
 
 		qsort(&table[keylen-1][0], n, sizeof(PTW2_tableentry), &compare);
 

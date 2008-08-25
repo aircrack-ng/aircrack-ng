@@ -4442,20 +4442,24 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
         else
         {
             /* try 1000 40bit keys first, to find the key "instantly" and you don't need to wait for 104bit to fail */
+	    /*
             if(PTW2_computeKey(ap_cur->ptw_clean, wep.key, 5, 1000, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
             else if(PTW2_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 13;
             else if(PTW2_computeKey(ap_cur->ptw_clean, wep.key, 5, (KEYLIMIT*opt.ffact)/3, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
+	    */
+	    if(PTW2_computeKey(ap_cur->ptw_clean, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+	        len = 13;
         }
     }
     if(!len)
     {
         ap_cur->nb_ivs = ap_cur->nb_ivs_vague;
         //in case its not found, try bruteforcing the id field and include "vague" keystreams
-        PTW_DEFAULTBF[10]=1;
-        PTW_DEFAULTBF[11]=1;
+        // PTW_DEFAULTBF[10]=1;
+        // PTW_DEFAULTBF[11]=1;
 //        PTW_DEFAULTBF[12]=1;
 
         if(opt.keylen != 13)
@@ -4466,12 +4470,16 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
         else
         {
             /* try 1000 40bit keys first, to find the key "instantly" and you don't need to wait for 104bit to fail */
+	    /*
             if(PTW2_computeKey(ap_cur->ptw_vague, wep.key, 5, 1000, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
             else if(PTW2_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 13;
             else if(PTW2_computeKey(ap_cur->ptw_vague, wep.key, 5, (KEYLIMIT*opt.ffact)/10, PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
                 len = 5;
+            */
+	    if(PTW2_computeKey(ap_cur->ptw_vague, wep.key, 13, (KEYLIMIT*opt.ffact), PTW_DEFAULTBF, all, opt.ptw_attack) == 1)
+	        len = 13;
         }
     }
 
