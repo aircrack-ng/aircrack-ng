@@ -94,8 +94,8 @@ static const uint8_t rc4initial[] =
 251,252,253,254,255};
 
 static const int coeffs[] =
-{300, 260, 240, 240, 240, 100, 50, 50, 
-30, 160, 30, 40, 30, 130, 40, 40, 
+{300, 260, 240, 240, 240, 100, 50, 50,
+30, 160, 30, 40, 30, 130, 40, 40,
 -120, 0, 16, 0, 100, 45};
 
 /*
@@ -462,9 +462,10 @@ static void doVote(PTW2_tableentry first[][n], PTW2_tableentry second[][n], int 
             }
             second[i - (q+keylength)][value].votes += coeffs[attack]*weight;
         }
-	
+
 }
 
+#if 0
 static void dumpTable(PTW2_tableentry * table, int i) {
 	FILE * f;
 	int j;
@@ -479,6 +480,7 @@ static void dumpTable(PTW2_tableentry * table, int i) {
 	}
 	fclose(f);
 }
+#endif
 
 static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], uint8_t * iv, uint8_t * ks, int * weights, int keylength) {
 	int i;
@@ -490,20 +492,20 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
         int j2;
         int t2;
 	int q = PTW2_IVBYTES;
-        
+
         int S[n];
         int Si[n];
         int jj[n];
-        
+
         int numVotes = 2*keylength+q;
 
 	// printf("doing vote iv[0] = %d, iv[1] = %d, iv[2] = %d, ks[0] = %d, ks[1] = %d, keylen = %d\n", iv[0], iv[1], iv[2], ks[0], ks[1], keylength);
 	// int numVotes = keylength;
-        
+
         for (i = 0; i < n; i++) {
             S[i] = i;
         }
-        
+
         j = 0;
         for (i = 0; i < q; i++) {
             j = (j + S[i] + iv[i])&0xff;
@@ -512,11 +514,11 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
             S[i] = S[j];
             S[j] = temp;
         }
-        
+
         for (i = 0; i < 256; i++) {
             Si[S[i]] = i;
         }
-        
+
         dq = j;
         for (i = 0; i < numVotes; i++) {
             dq = (dq + S[q+i])&0xff;
@@ -531,16 +533,16 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
                     was_bad = 1;
                     break;
                 }
-                
+
             }
             if (!was_bad) {
                 doVote(first, second, i, A_ptw_good, Kq, iv, weights[i+q-1], keylength);
                 // votes[i][A_ptw_good][Kq]++;
             }
             doVote(first, second, i, A_ptw, Kq, iv, weights[i+q-1], keylength);
-            // votes[i][A_ptw][Kq]++; 
+            // votes[i][A_ptw][Kq]++;
         }
-        
+
         if (S[2] == 0) {
             if ((S[1] == 2) && (ks[0] == 2)) {
                 dq = j;
@@ -568,14 +570,14 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
             for (i = 0; i < numVotes; i++) {
                 dq = (dq + S[q+i])&0xff;
                 if ((ks[1] == 0) && (S[q+i] == 0)) {
-                    
+
                     Kq = (2-dq+256)&0xff;
                     doVote(first, second, i, A_u15, Kq, iv, weights[1], keylength);
                     // votes[i][A_u15][Kq]++;
                 }
             }
         }
-        
+
         if ((S[1] == 1) && (ks[0] == S[2])) {
             dq = j;
             for (i = 0; i < numVotes; i++) {
@@ -588,7 +590,7 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
                 // votes[i][A_neg][Kq]++;
             }
         }
-        
+
         if ((S[1] == 0) && (S[0] == 1) && (ks[0] == 1)) {
             dq = j;
             for (i = 0; i < numVotes; i++) {
@@ -601,7 +603,7 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
                 // votes[i][A_neg][Kq]++;
             }
         }
-        
+
         dq = j;
         for (i = 0; i < numVotes; i++) {
             dq = (dq + S[q+i]) &0xff;
@@ -616,22 +618,22 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
                     // votes[i][A_u13_1][Kq]++;
                 } else if (Si[ks[0]] < q+i) {
                     jq = Si[(Si[ks[0]] - (q+i)+512)&0xff];
-                    
+
                     if (jq != 1) {
                         Kq = (jq - dq+256)&0xff;
                         doVote(first, second, i, A_u5_1, Kq, iv, weights[0], keylength);
                         // votes[i][A_u5_1][Kq]++;
                     }
                 }
-                
+
             }
-            
+
             if ((Si[ks[0]] == 2) && (S[q+i] == 1)) {
                 Kq = (1-dq + 256)&0xff;
                 doVote(first, second, i, A_u5_2, Kq, iv, weights[0], keylength);
                 // votes[i][A_u5_2][Kq]++;
             }
-            
+
             if (S[q+i] == q+i) {
                     if ((S[1] == 0) && (ks[0] == q+i)) {
                         Kq = (1-dq+256)&0xff;
@@ -647,27 +649,27 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
                         // votes[i][A_u5_3][Kq]++;
                     }
             }
-            
+
             if (
-                    (S[1] < (q)) && 
-                    (((S[1]+S[S[1]] - (q+i) + 256)&0xff) == 0) && 
-                    (Si[ks[0]] != 1) && 
+                    (S[1] < (q)) &&
+                    (((S[1]+S[S[1]] - (q+i) + 256)&0xff) == 0) &&
+                    (Si[ks[0]] != 1) &&
                     (Si[ks[0]] != S[S[1]])) {
                 Kq = (Si[ks[0]]-dq+256)&0xff;
                 doVote(first, second, i, A_s5_1, Kq, iv, weights[0], keylength);
                 // votes[i][A_s5_1][Kq]++;
             }
-             
+
 //            if (
-//                    (S[1] > (q+i)) && 
+//                    (S[1] > (q+i)) &&
 //                    (((S[2] + S[1] - (q+i) + 256) & 0xff) == 0) &&
-//                    (Si[ks[0]] != 1) && 
+//                    (Si[ks[0]] != 1) &&
 //                    (Si[ks[0]] != S[S[1]])
 //                    ) {
 //                Kq = (Si[ks[0]] - dq + 256)&0xff;
 //                votes[i][A_s5_1][Kq]++;
 //            }
-            
+
             if ((S[1] > (q+i)) && (((S[2] + S[1] - (q+i) + 256)&0xff) == 0) ) {
                 if (ks[1] == S[1]) {
                         jq = Si[(S[1] - S[2] + 256)&0xff];
@@ -678,31 +680,31 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
                         }
                 } else if (ks[1] == ((2-S[2]+256)&0xff)) {
                     jq = Si[ks[1]];
-                    
+
                     if ((jq != 1) && (jq != 2)) {
                         Kq = (jq - dq + 256)&0xff;
                         doVote(first, second, i, A_s5_3, Kq, iv, weights[1], keylength);
                         // votes[i][A_s5_3][Kq]++;
                     }
                 }
-                
+
             }
-            
+
             if ((S[1] != 2) && (S[2] != 0)) {
                 j2 = (S[1] + S[2])&0xff;
-                
+
                 if (j2 < (q+i)) {
                     t2 = (S[j2] + S[2])&0xff ;
-                    
+
                     if ((t2 == (q+i)) && (Si[ks[1]] != 1) && (Si[ks[1]] != 2) && (Si[ks[1]] != j2)) {
                         Kq = (Si[ks[1]] - dq + 256)&0xff;
                         doVote(first, second, i, A_s3, Kq, iv, weights[1], keylength);
                         // votes[i][A_s3][Kq]++;
                     }
-                    
+
                 }
             }
-            
+
             if (S[1] == 2) {
                 if ((q+i) == 4) {
                     if (ks[1] == 0) {
@@ -724,7 +726,7 @@ static void genVotes(PTW2_tableentry first[][n], PTW2_tableentry second[][n], ui
                 }
                 // We have to skip this attack
             }
-        
+
         }
 
 }
@@ -739,7 +741,7 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 	double normal[KEYHSBYTES];
 	double ausreisser[KEYHSBYTES];
 	doublesorthelper helper[KEYHSBYTES];
-	
+
 	int simple, onestrong, twostrong;
 	*/
 	int i,j,t;
@@ -871,11 +873,11 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 			// fullkeybuf[0] = state->allsessions[j].iv[0];
 			genVotes(tablefirst, tablesecond, state->allsessions[i].iv, state->allsessions[i].keystream, state->allsessions[i].weight, keylen);
 		}
-		
+
 		// Votes generated, now execute the attack
 
 		// First, we need to decide on the last keybyte. Fill the table for the last keybyte
-		for (i = 0; i < n; i++) {		
+		for (i = 0; i < n; i++) {
 			table[0][i].votes = tablefirst[keylen-1][i].votes;
 		}
 		qsort(&table[0][0], n, sizeof(PTW2_tableentry), &compare);
@@ -904,7 +906,7 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 		qsort(&table[keylen-1][0], n, sizeof(PTW2_tableentry), &compare);
 
 		strongbytes[keylen-1] = 0;
-		
+
 		// We can now start the usual key ranking thing
 		sh = alloca(sizeof(sorthelper) * (n-1) * (keylen-1));
 		if (sh == NULL) {
@@ -919,11 +921,11 @@ int PTW2_computeKey(PTW2_attackstate * state, uint8_t * keybuf, int keylen, int 
 			}
 		}
 		qsort(sh, (n-1)*(keylen-1), sizeof(sorthelper), &comparesorthelper);
-		
+
 		if (doComputation(state, keybuf, keylen, table, (sorthelper *) sh, strongbytes, testlimit, bf, validchars)) {
 			return 1;
 		}
-		
+
 
 
 

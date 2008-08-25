@@ -58,7 +58,7 @@
 
 #include "osdep/osdep.h"
 #include "pcap.h"
-#include "aircrack-ptw-lib.h"
+#include "aircrack-ptw2-lib.h"
 #include "ieee80211.h"
 #include "ethernet.h"
 #include "if_arp.h"
@@ -126,7 +126,7 @@ struct wstate {
 	int			ws_have_mac;
 	char			ws_myip[16];
 	unsigned char		*ws_victim_mac;
-	PTW_attackstate		*ws_ptw;
+	PTW2_attackstate		*ws_ptw;
 	unsigned int		ws_ack_timeout;
 	int			ws_min_prga;
 	int			ws_thresh_incr;
@@ -171,10 +171,10 @@ struct wstate {
 	unsigned char		ws_iv[3];
 } _wstate;
 
-#define KEYHSBYTES PTW_KEYHSBYTES
+#define KEYHSBYTES PTW2_KEYHSBYTES
 
 int PTW_DEFAULTWEIGHT[1] = { 256 };
-int PTW_DEFAULTBF[PTW_KEYHSBYTES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int PTW_DEFAULTBF[PTW2_KEYHSBYTES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 
 
@@ -199,7 +199,7 @@ float chrono( struct timeval *start, int reset )
 
 /* display the current votes */
 
-void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit )
+void show_wep_stats( int B, int force, PTW2_tableentry table[PTW2_KEYHSBYTES][PTW2_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit )
 {
     float delta;
     struct winsize ws;
@@ -1038,7 +1038,8 @@ static void add_keystream(struct wstate *ws, struct ieee80211_frame* wh, int rd)
 	int dlen = rd - sizeof(struct ieee80211_frame) - 4 - 4;
 	int clearsize;
 	unsigned char *body = (unsigned char*) (wh+1);
-	int i, weight[16], k, j;
+	unsigned char weight[2048];
+	int i, k, j;
 
 	k = known_clear(clear, &clearsize, weight, (void*) wh, dlen);
 	if (clearsize < 16)
@@ -1047,9 +1048,9 @@ static void add_keystream(struct wstate *ws, struct ieee80211_frame* wh, int rd)
         for (j=0; j<k; j++)
         {
             for (i = 0; i < clearsize; i++)
-                    clear[i+(32*j)] ^= body[4+i];
+                    clear[i+(PTW2_KSBYTES*j)] ^= body[4+i];
         }
-        PTW_addsession(ws->ws_ptw, body, clear, weight, k);
+        PTW2_addsession(ws->ws_ptw, body, clear, weight, k);
 }
 
 static void got_ip(struct wstate *ws)
@@ -1591,7 +1592,7 @@ static void save_key(unsigned char *key, int len)
 			strncat(k, ":", 1);
 	}
 
-	fd = open(KEY_FILE, O_WRONLY | O_CREAT, 
+	fd = open(KEY_FILE, O_WRONLY | O_CREAT,
                   S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd == -1)
 		err(1, "open()");
@@ -1607,7 +1608,7 @@ static void save_key(unsigned char *key, int len)
 
 static int do_crack(struct wstate *ws)
 {
-	unsigned char key[PTW_KEYHSBYTES];
+	unsigned char key[PTW2_KEYHSBYTES];
         int (* all)[256];
         int i,j;
 
@@ -1624,11 +1625,11 @@ static int do_crack(struct wstate *ws)
         }
 
 
-	if(PTW_computeKey(ws->ws_ptw, key, 13, KEYLIMIT, PTW_DEFAULTBF, all, 0) == 1) {
+	if(PTW2_computeKey(ws->ws_ptw, key, 13, KEYLIMIT, PTW_DEFAULTBF, all, 0) == 1) {
 		save_key(key, 13);
 		return 1;
 	}
-	if(PTW_computeKey(ws->ws_ptw, key, 5, KEYLIMIT/10, PTW_DEFAULTBF, all, 0) == 1) {
+	if(PTW2_computeKey(ws->ws_ptw, key, 5, KEYLIMIT/10, PTW_DEFAULTBF, all, 0) == 1) {
 		save_key(key, 5);
 		return 1;
 	}
@@ -2021,9 +2022,9 @@ static void start(struct wstate *ws, char *dev)
 	}
 	time_print("Using mac %s\n", mac2str(ws->ws_mymac));
 
-	ws->ws_ptw = PTW_newattackstate();
+	ws->ws_ptw = PTW2_newattackstate();
 	if (!ws->ws_ptw)
-		err(1, "PTW_newattackstate()");
+		err(1, "PTW2_newattackstate()");
 
 	own(ws);
 

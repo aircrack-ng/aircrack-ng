@@ -458,7 +458,7 @@ int is_cdp_vtp(void *wh)
 /* weight is used for guesswork in PTW.  Can be null if known_clear is not for
  * PTW, but just for getting known clear-text.
  */
-int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
+int known_clear(void *clear, int *clen, unsigned char *weight, unsigned char *wh, int len)
 {
         unsigned char *ptr = clear;
         int num;
@@ -490,7 +490,7 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
             len = ptr - ((unsigned char*)clear);
             *clen = len;
 	    if (weight)
-                weight[0] = 256;
+                memset(weight, 0xFF, len);
             return 1;
 
         }
@@ -503,7 +503,7 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
             len = ptr - ((unsigned char*)clear);
             *clen = len;
 	    if (weight)
-                weight[0] = 256;
+                memset(weight, 0xFF, len);
             return 1;
         }
         else if(is_cdp_vtp(wh)) /*spantree*/
@@ -515,7 +515,7 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
             len = ptr - ((unsigned char*)clear);
             *clen = len;
 	    if (weight)
-                weight[0] = 256;
+                memset(weight, 0xFF, len);
             return 1;
         }
         else /* IP */
@@ -559,14 +559,22 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 #endif
                 len = ptr - ((unsigned char*)clear);
                 *clen = len;
+		//first possibility done
 
-                memcpy(clear+32, clear, len);
-                memcpy(clear+32+14, "\x00\x00", 2); //ip flags=none
+                memcpy(clear+PTW2_KSBYTES, clear, len);
+                memcpy(clear+PTW2_KSBYTES+14, "\x00\x00", 2); //ip flags=none
 
                 num=2;
 		assert(weight);
-                weight[0] = 220;
-                weight[1] = 36;
+                memset(weight, 0xFF, len);
+                memset(weight+PTW2_KSBYTES, 0xFF, len);
+
+		weight[12] = 0;
+		weight[13] = 0;
+		weight[12+PTW2_KSBYTES] = 0;
+		weight[13+PTW2_KSBYTES] = 0;
+                weight[14] = 220;
+                weight[14+PTW2_KSBYTES] = 35;
 
                 return num;
         }

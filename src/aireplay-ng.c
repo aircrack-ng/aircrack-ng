@@ -1376,7 +1376,7 @@ int do_attack_fake_auth( void )
     int ska=0;
     int keystreamlen=0;
     int challengelen=0;
-    int weight[16];
+    unsigned char weight[2048];
     int notice=0;
     int packets=0;
     int aid=0;

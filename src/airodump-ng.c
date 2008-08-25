@@ -63,6 +63,7 @@
 #include "uniqueiv.h"
 //#include "crctable.h"
 #include "crypto.h"
+#include "aircrack-ptw2-lib.h"
 
 #include "osdep/osdep.h"
 
@@ -1021,7 +1022,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
     unsigned char stmac[6];
     unsigned char namac[6];
     unsigned char clear[2048];
-    int weight[16];
+    unsigned char weight[2048];
     int num_xor=0;
 
     struct AP_info *ap_cur = NULL;
@@ -1829,22 +1830,21 @@ skip_probe:
                     }
                     else
                     {
-                        //do it again to get it 2 bytes higher
-                        num_xor = known_clear(clear+2, &clen, weight, h80211, dlen);
-                        ivs2.flags |= IVS2_PTW;
-                        //len = 4(iv+idx) + 1(num of keystreams) + 1(len per keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
-                        ivs2.len += 4 + 1 + 1 + 32*num_xor + 16*sizeof(int);
+                        //do it again to get it a byte higher
+                        num_xor = known_clear(clear+1, &clen, weight, h80211, dlen);
+                        ivs2.flags |= IVS2_PTW2;
+                        //len = 4(iv+idx) + 1(num of keystreams) + num_xor*clen + num_xor*clen
+                        ivs2.len += 4 + 1 + num_xor*clen*2;
                         clear[0] = num_xor;
-                        clear[1] = clen;
                         /* reveal keystream (plain^encrypted) */
                         for(o=0; o<num_xor; o++)
                         {
                             for(n=0; n<(ivs2.len-4); n++)
                             {
-                                clear[2+n+o*32] = (clear[2+n+o*32] ^ h80211[z+4+n]) & 0xFF;
+                                clear[1+n+o*PTW2_KSBYTES] = (clear[1+n+o*PTW2_KSBYTES] ^ h80211[z+4+n]) & 0xFF;
                             }
                         }
-                        memcpy(clear+4 + 1 + 1 + 32*num_xor, weight, 16*sizeof(int));
+                        memcpy(clear+4 + 1 + PTW2_KSBYTES*num_xor, weight, num_xor*PTW2_KSBYTES);
                         //clear is now the keystream
                     }
 

@@ -1036,11 +1036,19 @@ void read_thread( void *arg )
 				if (opt.do_ptw) {
 					int clearsize;
 
-					clearsize = ivs2.len;
+					clearsize = ivs2.len-4;
+
+					buffer2 = (unsigned char*) malloc(MAX(clearsize, PTW2_KSBYTES));
+					memset(buffer2, 0xFF, clearsize);
 
 					if (clearsize < opt.keylen+3)
 						goto unlock_mx_apl;
 
+					if (PTW2_addsession(ap_cur->ptw_clean, buffer, buffer+4, buffer2, 1))
+						ap_cur->nb_ivs_clean++;
+
+					if (PTW2_addsession(ap_cur->ptw_vague, buffer, buffer+4, buffer2, 1))
+						ap_cur->nb_ivs_vague++;
 					/*
 					if (PTW_addsession(ap_cur->ptw_clean, buffer, buffer+4, PTW_DEFAULTWEIGHT, 1))
 						ap_cur->nb_ivs_clean++;
@@ -1094,14 +1102,37 @@ void read_thread( void *arg )
 				ap_cur->crypt = 2;
 
 				if (opt.do_ptw) {
-					int clearsize;
+					int clearsize, total, intvalue, size, i;
+					unsigned char ucharvalue;
 
-					clearsize = ivs2.len;
+					total = buffer[4];
 
 					if (buffer[5] < opt.keylen)
 						goto unlock_mx_apl;
-					if( clearsize < (6 + buffer[4]*32 + 16*(signed)sizeof(int)) )
+					if( ivs2.len < (6 + total*32 + 16*(signed)sizeof(int)) )
 						goto unlock_mx_apl;
+
+					clearsize = buffer[5];
+
+					size = PTW2_KSBYTES*total;	//number of PTW_KSBYTE sized blocks for keystreams
+
+					buffer2 = (unsigned char*) malloc(size*2); //alloc twice the size for keystreams and weight vectors
+					bzero(buffer2, size*2);
+// 					if( clearsize < (6 + buffer[4]*32 + 16*(signed)sizeof(int)) )
+// 						goto unlock_mx_apl;
+
+					for(i=0; i<total; i++)
+					{
+						memcpy(buffer2+i*PTW2_KSBYTES, buffer+6+i*32, MIN(clearsize, PTW2_KSBYTES));
+						intvalue = *((int*) buffer+6+clearsize*total+i*4);
+						ucharvalue = (intvalue>255?255:intvalue);
+						memset(buffer2+size+i*PTW2_KSBYTES, ucharvalue, MIN(clearsize, PTW2_KSBYTES));
+					}
+// 					//memcpy(weight, buffer+clearsize-15*sizeof(int), 16*sizeof(int));
+ 					// printf("weight 1: %d, weight 2: %d\n", *(buffer+5+size), *(buffer+5+size+1));
+
+					if (PTW2_addsession(ap_cur->ptw_vague, buffer, buffer2, buffer2+size, total))
+						ap_cur->nb_ivs_vague++;
 
 					memcpy(weight, buffer+clearsize-15*sizeof(int), 16*sizeof(int));
 // 					printf("weight 1: %d, weight 2: %d\n", weight[0], weight[1]);
@@ -1109,6 +1140,7 @@ void read_thread( void *arg )
 					if (PTW_addsession(ap_cur->ptw_vague, buffer, buffer+6, weight, buffer[4]))
 						ap_cur->nb_ivs_vague++;
 					*/
+					free(buffer2);
 					goto unlock_mx_apl;
 				}
 
@@ -1380,6 +1412,7 @@ void read_thread( void *arg )
 				unsigned char *body = h80211 + z;
 				int dlen = pkh.caplen - (body-h80211) - 4 -4;
 				unsigned char clear[2048];
+				unsigned char clear2[2048];
 				int clearsize, i, j, k;
                                 int weight[16];
 
@@ -1391,27 +1424,26 @@ void read_thread( void *arg )
 
 				bzero(weight, sizeof(weight));
 				bzero(clear, sizeof(clear));
+				bzero(clear2, sizeof(clear2));
 
 				/* calculate keystream */
-				k = known_clear(clear, &clearsize, weight, h80211, dlen);
+				k = known_clear(clear, &clearsize, clear2, h80211, dlen);
 				if (clearsize < (opt.keylen+3))
 					goto unlock_mx_apl;
 
                                 for (j=0; j<k; j++)
                                 {
                                     for (i = 0; i < clearsize; i++)
-                                            clear[i+(32*j)] ^= body[4+i];
+                                            clear[i+(PTW2_KSBYTES*j)] ^= body[4+i];
                                 }
-				/*
                                 if(k==1)
                                 {
-                                    if (PTW_addsession(ap_cur->ptw_clean, body, clear, weight, k))
+                                    if (PTW2_addsession(ap_cur->ptw_clean, body, clear, clear2, k))
                                             ap_cur->nb_ivs_clean++;
                                 }
 
-                                if (PTW_addsession(ap_cur->ptw_vague, body, clear, weight, k))
+                                if (PTW2_addsession(ap_cur->ptw_vague, body, clear, clear2, k))
                                         ap_cur->nb_ivs_vague++;
-				*/
 				goto unlock_mx_apl;
 			}
 
@@ -1618,7 +1650,6 @@ void check_thread( void *arg )
 	uchar *buffer;
 	uchar *h80211;
 	uchar *p;
-	int weight[16];
 
 	struct ivs2_pkthdr ivs2;
 	struct ivs2_filehdr fivs2;
@@ -2185,7 +2216,11 @@ void check_thread( void *arg )
 				unsigned char *body = h80211 + z;
 				int dlen = pkh.caplen - (body-h80211) - 4 -4;
 				unsigned char clear[2048];
+				unsigned char clear2[2048];
 				int clearsize, k;
+
+				bzero(clear, sizeof(clear));
+				bzero(clear2, sizeof(clear2));
 
                                 if((h80211[1] & 0x03) == 0x03) //30byte header
                                 {
@@ -2194,7 +2229,7 @@ void check_thread( void *arg )
                                 }
 
 				/* calculate keystream */
-				k = known_clear(clear, &clearsize, weight, h80211, dlen);
+				k = known_clear(clear, &clearsize, clear2, h80211, dlen);
 				if (clearsize < (opt.keylen+3))
 					goto unlock_mx_apl;
 			}
