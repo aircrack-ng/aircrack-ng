@@ -93,8 +93,10 @@ static struct wif *_wi_in, *_wi_out;
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
 #define MAX_CF_XMIT 100
 
-#define TI_MTU 1400
+#define TI_MTU 1500
 #define WIF_MTU 1800
+
+#define MAX_FRAME_EXTENSION 100
 
 #define PCT { struct tm *lt; time_t tc = time( NULL ); \
               lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
@@ -1722,6 +1724,8 @@ int intercept(uchar* packet, int length)
 int packet_xmit(uchar* packet, int length)
 {
     uchar buf[4096];
+    int fragments=1, i;
+    int newlen=0, usedlen=0, length2;
 
     if(packet == NULL)
         return 1;
@@ -1729,35 +1733,81 @@ int packet_xmit(uchar* packet, int length)
     if(length < 38)
         return 1;
 
-    memcpy(h80211, IEEE80211_LLC_SNAP, 32);
-    memcpy(h80211+32, packet+14, length-14);
-    memcpy(h80211+30, packet+12, 2);
+    if(length-14 > 16*opt.wif_mtu-MAX_FRAME_EXTENSION)
+        return 1;
 
-    h80211[1] |= 0x02;
-    memcpy(h80211+10, opt.r_bssid, 6);  //BSSID
-    memcpy(h80211+16, packet+6,    6);  //SRC_MAC
-    memcpy(h80211+4,  packet,      6);  //DST_MAC
+    if(length+MAX_FRAME_EXTENSION > opt.wif_mtu)
+        fragments=((length-14+MAX_FRAME_EXTENSION) / opt.wif_mtu) + 1;
 
-    length = length+32-14; //32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
+    if(fragments > 16)
+        return 1;
 
-    if((opt.external & EXT_OUT))
+    if(fragments > 1)
+        newlen = (length-14+MAX_FRAME_EXTENSION)/fragments;
+    else
+        newlen = length-14;
+//     printf("Sending %i fragments with size %i/%i\n", fragments, newlen, length-14);
+    for(i=0; i<fragments; i++)
     {
-        bzero(buf, 4096);
-        memcpy(buf+14, h80211, length);
-        //mark it as outgoing packet
-        buf[12] = 0xFF;
-        buf[13] = 0xFF;
-        ti_write(dev.dv_ti2, buf, length+14);
-        return 0;
+        if(i == fragments-1)
+            newlen = length-14-usedlen; //use all remaining bytes for the last fragment
+
+        if(i==0)
+        {
+            memcpy(h80211, IEEE80211_LLC_SNAP, 32);
+            memcpy(h80211+32, packet+14+usedlen, newlen);
+            memcpy(h80211+30, packet+12, 2);
+        }
+        else
+        {
+            memcpy(h80211, IEEE80211_LLC_SNAP, 24);
+            memcpy(h80211+24, packet+14+usedlen, newlen);
+//             memcpy(h80211+30, packet+12, 2);
+        }
+
+        h80211[1] |= 0x02;
+        memcpy(h80211+10, opt.r_bssid, 6);  //BSSID
+        memcpy(h80211+16, packet+6,    6);  //SRC_MAC
+        memcpy(h80211+4,  packet,      6);  //DST_MAC
+
+//    frag = frame[22] & 0x0F;
+//    seq = (frame[22] >> 4) | (frame[23] << 4);
+        h80211[22] |= i & 0x0F; //set fragment
+        h80211[1]  |= 0x04; //more frags
+
+        if(i == (fragments-1))
+        {
+            h80211[1]  &= 0xFB; //no more frags
+        }
+
+//         length = length+32-14; //32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
+        length2 = newlen+32;
+
+        if((opt.external & EXT_OUT))
+        {
+            bzero(buf, 4096);
+            memcpy(buf+14, h80211, length2);
+            //mark it as outgoing packet
+            buf[12] = 0xFF;
+            buf[13] = 0xFF;
+            ti_write(dev.dv_ti2, buf, length2+14);
+//             return 0;
+        }
+        else
+        {
+            if( opt.crypt == CRYPT_WEP || opt.prgalen > 0 )
+            {
+                if(create_wep_packet(h80211, &length2, 24) != 0) return 1;
+            }
+
+            send_packet(h80211, length2);
+        }
+
+        usedlen += newlen;
+
+        if((i+1)<fragments)
+            usleep(3000);
     }
-
-    if( opt.crypt == CRYPT_WEP || opt.prgalen > 0 )
-    {
-        if(create_wep_packet(h80211, &length, 24) != 0) return 1;
-    }
-
-    send_packet(h80211, length);
-
     return 0;
 }
 
