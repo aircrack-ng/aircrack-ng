@@ -147,6 +147,9 @@ int check_crc_buf_osdep( unsigned char *buf, int len )
 {
     unsigned long crc;
 
+    if (len<0)
+    	return 0;
+
     crc = calc_crc_osdep(buf, len);
     buf+=len;
     return( ( ( crc       ) & 0xFF ) == buf[0] &&
