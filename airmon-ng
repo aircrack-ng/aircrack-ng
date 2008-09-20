@@ -425,12 +425,15 @@ do
             if [ x$IW_ERROR = "x" ]
             then
                 sleep 0.1
-                if [ $3 -lt 1000 ]
+		if [ ! -z $3 ]
                 then
-                    iwconfig $MONDEV channel $3 >/dev/null 2>&1
-                else
-                    iwconfig $MONDEV freq "$3"000000 >/dev/null 2>&1
-                fi
+            	    if [ $3 -lt 1000 ]
+            	    then
+                	iwconfig $MONDEV channel $3 >/dev/null 2>&1
+            	    else
+                	iwconfig $MONDEV freq "$3"000000 >/dev/null 2>&1
+            	    fi
+            	fi
                 ifconfig $MONDEV up
                 printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
             else
