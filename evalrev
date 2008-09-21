@@ -13,9 +13,12 @@ then
 	REVISION="`svn info 2> /dev/null | grep -i revision | sed 's/[^0-9]*//g'`"
 fi
 
-if [ x$REVISION = "x" -a -e ".svn/entries" ]
+if [ x$REVISION = "x" ]
 then
-	REVISION="`cat .svn/entries | grep -i revision | head -n 1 | sed 's/[^0-9]*//g'`"
+	if [ -f ".svn/entries" ]
+	then
+		REVISION="`cat .svn/entries | grep -i revision | head -n 1 | sed 's/[^0-9]*//g'`"
+	fi
 fi
 
 if [ x$REVISION = "x" ]
