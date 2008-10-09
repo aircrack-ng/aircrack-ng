@@ -4010,9 +4010,10 @@ int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac
 void save_prga(char *filename, uchar *iv, uchar *prga, int prgalen)
 {
     FILE *xorfile;
+    size_t unused;
     xorfile = fopen(filename, "wb");
-    fwrite (iv, 1, 4, xorfile);
-    fwrite (prga, 1, prgalen, xorfile);
+    unused = fwrite (iv, 1, 4, xorfile);
+    unused = fwrite (prga, 1, prgalen, xorfile);
     fclose (xorfile);
 }
 

@@ -3141,6 +3141,7 @@ int dump_write_csv( void )
 
 void gps_tracker( void )
 {
+	ssize_t unused;
     int gpsd_sock;
     char line[256], *p;
     struct sockaddr_in gpsd_addr;
@@ -3206,20 +3207,21 @@ void gps_tracker( void )
 
         G.save_gps = 1;
 
-        write( G.gc_pipe[1], G.gps_loc, sizeof( float ) * 5 );
+        unused = write( G.gc_pipe[1], G.gps_loc, sizeof( float ) * 5 );
         kill( getppid(), SIGUSR2 );
     }
 }
 
 void sighandler( int signum)
 {
+	ssize_t unused;
     int card=0;
 
     signal( signum, sighandler );
 
     if( signum == SIGUSR1 )
     {
-	read( G.cd_pipe[0], &card, sizeof(int) );
+		unused = read( G.cd_pipe[0], &card, sizeof(int) );
         if(G.freqoption)
             read( G.ch_pipe[0], &(G.frequency[card]), sizeof( int ) );
         else
@@ -3227,7 +3229,7 @@ void sighandler( int signum)
     }
 
     if( signum == SIGUSR2 )
-        read( G.gc_pipe[0], &G.gps_loc, sizeof( float ) * 5 );
+        unused = read( G.gc_pipe[0], &G.gps_loc, sizeof( float ) * 5 );
 
     if( signum == SIGINT || signum == SIGTERM )
     {
@@ -3295,6 +3297,7 @@ int getfreqcount(int valid)
 
 void channel_hopper(struct wif *wi[], int if_num, int chan_count )
 {
+	ssize_t unused;
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
     int dropped=0;
 
@@ -3343,8 +3346,8 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
                 {
                     ch = wi_get_channel(wi[card]);
                     G.channel[card] = ch;
-                    write( G.cd_pipe[1], &card, sizeof(int) );
-                    write( G.ch_pipe[1], &ch, sizeof( int ) );
+                    unused = write( G.cd_pipe[1], &card, sizeof(int) );
+                    unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
                     kill( getppid(), SIGUSR1 );
                     usleep(1000);
                 }
@@ -3358,8 +3361,8 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
             if(wi_set_channel(wi[card], ch ) == 0 )
             {
                 G.channel[card] = ch;
-                write( G.cd_pipe[1], &card, sizeof(int) );
-                write( G.ch_pipe[1], &ch, sizeof( int ) );
+                unused = write( G.cd_pipe[1], &card, sizeof(int) );
+                unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
                 kill( getppid(), SIGUSR1 );
                 usleep(1000);
             }
@@ -3390,6 +3393,7 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
 
 void frequency_hopper(struct wif *wi[], int if_num, int chan_count )
 {
+	ssize_t unused;
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
     int dropped=0;
 
@@ -3438,8 +3442,8 @@ void frequency_hopper(struct wif *wi[], int if_num, int chan_count )
                 {
                     ch = wi_get_freq(wi[card]);
                     G.frequency[card] = ch;
-                    write( G.cd_pipe[1], &card, sizeof(int) );
-                    write( G.ch_pipe[1], &ch, sizeof( int ) );
+                    unused = write( G.cd_pipe[1], &card, sizeof(int) );
+                    unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
                     kill( getppid(), SIGUSR1 );
                     usleep(1000);
                 }
@@ -3453,8 +3457,8 @@ void frequency_hopper(struct wif *wi[], int if_num, int chan_count )
             if(wi_set_freq(wi[card], ch ) == 0 )
             {
                 G.frequency[card] = ch;
-                write( G.cd_pipe[1], &card, sizeof(int) );
-                write( G.ch_pipe[1], &ch, sizeof( int ) );
+                unused = write( G.cd_pipe[1], &card, sizeof(int) );
+                unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
                 kill( getppid(), SIGUSR1 );
                 usleep(1000);
             }
@@ -4028,7 +4032,7 @@ int rearrange_frequencies()
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
-    int caplen=0, i, j, cards, fdh, fd_is_set, chan_count, freq_count;
+    int caplen=0, i, j, cards, fdh, fd_is_set, chan_count, freq_count, unused;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
     int ivs_only, found;
     int valid_channel;
@@ -4534,8 +4538,8 @@ usage:
 
             if( G.frequency[0] == 0 )
             {
-                pipe( G.ch_pipe );
-                pipe( G.cd_pipe );
+                unused = pipe( G.ch_pipe );
+                unused = pipe( G.cd_pipe );
 
                 signal( SIGUSR1, sighandler );
 
@@ -4582,8 +4586,8 @@ usage:
 
             if( G.channel[0] == 0 )
             {
-                pipe( G.ch_pipe );
-                pipe( G.cd_pipe );
+                unused = pipe( G.ch_pipe );
+                unused = pipe( G.cd_pipe );
 
                 signal( SIGUSR1, sighandler );
 
@@ -4681,7 +4685,7 @@ usage:
 
     if (G.usegpsd)
     {
-        pipe( G.gc_pipe );
+        unused = pipe( G.gc_pipe );
         signal( SIGUSR2, sighandler );
 
         if( ! fork() )
