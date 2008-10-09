@@ -4523,6 +4523,11 @@ int main( int argc, char *argv[] )
 					return( FAILURE );
 				}
 
+				if (opt.amode == 1 && opt.nbdict > 0)
+				{
+					opt.do_ptw = 0;
+				}
+
 				break;
 
 			case 'e' :
@@ -4762,6 +4767,10 @@ int main( int argc, char *argv[] )
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
 				}
+				else if (opt.amode == 1 && opt.nbdict > 0)
+				{
+					opt.do_ptw = 0;
+				}
 				break;
 #ifdef HAVE_SQLITE
 			case 'r' :
@@ -4844,6 +4853,11 @@ usage:
 		nodict:
 		printf( "Please specify a dictionary (option -w).\n" );
 		goto exit_main;
+	}
+
+	if (opt.amode == 1 && opt.nbdict > 0)
+	{
+		opt.do_ptw = 0;
 	}
 
 	if( (! opt.essid_set && ! opt.bssid_set) && ( opt.is_quiet || opt.no_stdin ) )
@@ -5147,6 +5161,11 @@ usage:
 	if( ap_cur->crypt == 2 )
 	{
 		crack_wep:
+
+		if (opt.nbdict > 0)
+		{
+			opt.do_ptw = 0;
+		}
 
 		if( opt.keylen == 0 )
 			opt.keylen = 13;
