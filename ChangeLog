@@ -1,3 +1,43 @@
+Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released ?? ??? 2008:
+* aircrack-ng: Fixed usage of a dictionnary with WEP.
+* aircrack-ng: Now only display ASCII WEP keys when 100% of the hex key can be converted to ASCII.
+* airodump-ng: Fixed power value display (for ath interface with a high number, more than 99).
+* airodump-ng: Can work on the new frequencies (allowed by frequency Chaos patch).
+* airodump-ng: Now display if the network has QoS enabled.
+* aireplay-ng: Fixed crash with too short packets (seen with zd1211.
+* aireplay-ng: Fixed STP usage in fragmentation attack.
+* aireplay-ng: Fixed bug with deauth attack.
+* airtun-ng: Fixed STP conversion.
+* airolib-ng: Added sample database in test/ directory.
+* tkip-tun: New tool to inject on WPA1 with QoS enabled networks. Full description:
+  decrypt packets comming from the AP in a TKIP network, which uses QoS (ieee802.11e).
+  It also breaks the MIC Key for sending packets towards the Client correctly encrypted and signed.
+  Stores plaintext packet and keystream in seperate files.
+* airbase-ng: Several improvments ( See http://trac.aircrack-ng.org/ticket/466 ).
+* airbase-ng: Added compatibility with some clients. added random source IPs and MACs for cfrag attack (-N) to evade simple flood protection.
+* airmon-ng: Fixed some 'unary operator expected' errors.
+* airmon-ng: Fixed channel number setting with mac80211 drivers.
+* airmon-ng: Recognition of 3 new chipsets: acx1xx, at76_usb, adm8211.
+* airmon-ng: Fixed some chipset naming inconsistencies between ieee80211 and mac80211 drivers.
+* airmon-ng: Fixed display of "airmon-ng check".
+* airmon-ng: Improved mac80211 driver handling.
+* airdriver-ng: Fixed madwifi-ng driver download URL.
+* airdriver-ng: Updated openSuse information.
+* wesside-ng: Fixed open() with O_CREAT that needs 3 arguments.
+* osdep: Added TAP/TUN MTU getter.
+* manpages: Fixed misspelled airserv-ng manpage filename.
+* Makefile: Fixed errors when compiling on OSX 10.5.
+* Makefile: Now ensure that make 3.81 or higher (mandatory) is used when compiling on OSX 10.4.
+* general: Fixed 'evalrev' on Solaris.
+* general: Fixed compilation on Sun SPARC.
+* general: Fixed compilation on some distribution (with a recent version of gcc) due to warnings (because of not getting the return value of some functions).
+* patches: Added rt2570 patch (kernel 2.6.24).
+* patches: Updated madwifi-ng patch for r3745.
+* patches: Added mac80211 fragmentation patch.
+* patches: Added zd1211rw patch for 2.6.26, b43/b43legacy for 2.6.26-wl.
+* patches: rt73, r8187 patches for fedora kernels (should work on 2.6.27).
+* patches: Added Defcon 16 patch (more frequencies than the usuals) for ath5k called frequency Chaos.
+
 Version 1.0-rc1 (changes from aircrack-ng 1.0-beta2) - Released 09 Jun 2008:
 * airbase-ng: Multi-purpose tool aimed at attacking clients as opposed to the AP.
 * airbase-ng: Added replay tool for external packet processing feature.
