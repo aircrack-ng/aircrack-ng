@@ -77,7 +77,7 @@ Enable last two keybytes bruteforcing.
 Disable bruteforce multithreading (SMP only).
 .TP
 .I -s
-Shows ASCII version of the key at the right of the screen
+Shows ASCII version of the key at the right of the screen.
 .TP
 .I -y  
 This is an experimental single brute-force attack which should only be used when the standard attack mode fails with more than one million IVs.
@@ -93,6 +93,12 @@ Use KoreK attacks instead of PTW.
 .TP
 .I -D
 WEP decloak mode.
+.TP
+.I -1
+Run only 1 try to crack key with PTW.
+.TP
+.I -M <num>
+Specify maximum number of IVs to use.
 .PP
 .TP
 .B WPA-PSK cracking options:
