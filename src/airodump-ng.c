@@ -2727,7 +2727,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
         strbuf[ws_col-1] = '\0';
 
-        fprintf(stderr, strbuf);
+        fprintf(stderr, "%s", strbuf);
 
         if( ws_col > (columns_ap - 4) )
         {
@@ -3223,9 +3223,9 @@ void sighandler( int signum)
     {
 		unused = read( G.cd_pipe[0], &card, sizeof(int) );
         if(G.freqoption)
-            read( G.ch_pipe[0], &(G.frequency[card]), sizeof( int ) );
+            unused = read( G.ch_pipe[0], &(G.frequency[card]), sizeof( int ) );
         else
-            read( G.ch_pipe[0], &(G.channel[card]), sizeof( int ) );
+            unused = read( G.ch_pipe[0], &(G.channel[card]), sizeof( int ) );
     }
 
     if( signum == SIGUSR2 )
