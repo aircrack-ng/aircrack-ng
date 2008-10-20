@@ -70,6 +70,8 @@
 sqlite3 *db;
 #endif
 
+extern int get_nb_cpus();
+
 static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -178,8 +180,8 @@ char usage[] =
 "\n"
 "      -a <amode> : force attack mode (1/WEP, 2/WPA-PSK)\n"
 "      -e <essid> : target selection: network identifier\n"
-"      -b <bssid> : target selection: access point's MAC"
-"%s"
+"      -b <bssid> : target selection: access point's MAC\n"
+"      -p <nbcpu> : # of CPU to use  (default: all CPUs)\n"
 "      -q         : enable quiet mode (no status output)\n"
 "      -C <macs>  : merge the given APs to a virtual one\n"
 "\n"
@@ -4389,8 +4391,8 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option, j, ret1, nbMergeBSSID, unused;
-	int cpudetectfailed, showhelp, z, zz, forceptw;
+	int i, n, ret, option, j, ret1, nbMergeBSSID, unused;
+	int cpu_count, showhelp, z, zz, forceptw;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 	int old=0;
@@ -4407,7 +4409,6 @@ int main( int argc, char *argv[] )
 #endif
 
 	ret = FAILURE;
-	cpudetectfailed = 0;
 	showhelp = 0;
 
 	// Start a new process group, we are perhaps going to call kill(0, ...) later
@@ -4419,21 +4420,13 @@ int main( int argc, char *argv[] )
 
 	srand( time( NULL ) );
 
-	#ifdef _SC_NPROCESSORS_ONLN
+	// Get number of CPU (return -1 if failed).
+	cpu_count = get_nb_cpus();
+	opt.nbcpu = 1;
+	if (cpu_count > 1) {
+		opt.nbcpu = cpu_count;
+	}
 
-	max_cpu   = sysconf(_SC_NPROCESSORS_ONLN);
-	/* Fails on some archs */
-	cpudetectfailed = ( max_cpu < 1 );
-	if (cpudetectfailed)
-		max_cpu = 1;
-	opt.nbcpu = max_cpu;
-
-	#else
-
-	cpudetectfailed = 1;
-	max_cpu   = 255;
-	opt.nbcpu =   1;
-	#endif
 	j=0;
 	/* check the arguments */
 
@@ -4469,14 +4462,11 @@ int main( int argc, char *argv[] )
             {"ptw-debug",         0, 0, 'P'},
             {"visual-inspection", 0, 0, 'V'},
             {"oneshot",           0, 0, '1'},
+            {"cpu-detect",        0, 0, 'u'},
             {0,                   0, 0,  0 }
         };
 
-		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:DP:zV1",
-                        long_options, &option_index );
-		else
-			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
+		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -4493,6 +4483,10 @@ int main( int argc, char *argv[] )
 
 				printf("\"%s --help\" for help.\n", argv[0]);
 				return( 1 );
+
+			case 'u' :
+				printf("Nb CPU detected: %d\n", cpu_count);
+				return( 0 );
 
 			case 'V' :
 				if (forceptw)
@@ -4550,10 +4544,9 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'p' :
-				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 ||
-					opt.nbcpu < 1 || opt.nbcpu > max_cpu )
+				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 || opt.nbcpu < 1 )
 				{
-					printf( "Invalid number of processes. [1-%d]\n", max_cpu );
+					printf( "Invalid number of processes (recommended: %d)\n", cpu_count );
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
@@ -4832,11 +4825,14 @@ int main( int argc, char *argv[] )
 		{
 usage:
 			printf (usage, progname,
-				( max_cpu == 1 && cpudetectfailed == 0) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n",
-				( max_cpu == 1 && cpudetectfailed == 0) ? "\n" : "\n      -X         : disable bruteforce multithreading (SMP only)\n");
+				( cpu_count > 1 || cpu_count == -1) ? "\n      -X         : disable  bruteforce   multithreading\n" : "\n");
+
+			// If the user requested help, exit directly.
 			if (showhelp == 1)
 				exit(0);
 		}
+
+		// Missing parameters
 		if( argc - optind == 0)
 	    {
 	    	printf("No file to crack specified.\n");
