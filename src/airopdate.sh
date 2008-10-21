@@ -2,7 +2,8 @@
 
 # Program:	Airopdate                                                          
 # Authors:	Base Code by Daouid
-# Date:	        10.04.2008
+#		Continued by XayOn
+# Date:	        21.10.2008
 
 DUMP_PATH=`mktemp`
 
@@ -16,43 +17,30 @@ while true; do
   echo "###   Select aircrack-ng version    ###"
   echo "###                                 ###"
   echo "###   1) Stable 0.9.3               ###"
-  echo "###   2) Latest 1.0-beta2           ###"
+  echo "###   2) Latest Version (1.0-rc2)   ###"
   echo "###   3) Specific revision          ###"
   echo "###                                 ###"
   echo "#######################################"
   read yn
   case $yn in
-    1 ) latest09 ; break ;;
-    2 ) latest10 ; break ;;
+    1 ) VER="0.9.3"; svn co http://trac.aircrack-ng.org/svn/tags/0.9.3/ aircrack-ng-$VER ; installsvn ; break ;;
+    2 ) VER="1.0-rc2"; svn co http://trac.aircrack-ng.org/svn/trunk/ aircrack-ng-$VER ; installsvn ; break ;;
     3 ) svnrev ; break ;;
     * ) echo "unknown response. Try again" ;;
   esac
 done 
 }
-# This part is for aircrack-ng
-function latest09 { # Lastest 0.9.X version 
-	svn co http://trac.aircrack-ng.org/svn/tags/0.9.3/ aircrack-ng-0.9.3
-	cd aircrack-ng-0.9.3
-	make clean
-	make uninstall
-	make
-	make install
-	cd $DUMP_PATH
-}
-function latest10 { # lastest 1.0.x version
-	svn co http://trac.aircrack-ng.org/svn/trunk/ aircrack-ng-1.02
-	cd aircrack-ng-1.02
-	make clean
-	make uninstall
-	make
-	make install
-	cd $DUMP_PATH
+
+function installsvn {
+	cd aircrack-ng-$VER
+	make clean && make uninstall && make && make install && cd $DUMP_PATH 
 }
 
 function svnrev {
 	  echo "#######################################"
 	  echo "###     Input revision number       ###"
 	  echo "#######################################"
+
 	read rev
 	echo You typed: $rev
 	set -- ${rev}
@@ -289,12 +277,12 @@ function prism54 {
 
 # menu listing command	
 function menu {
-  echo "###########################################"
-  echo "### What do you want to do?             ###"
-  echo "### 1) Aircrack-ng - Get aircrack-ng    ###"
-  echo "### 2) Drivers     - Get drivers        ###"
-  echo "### 3) Airoscript  - Get airoscript     ###"
-  echo "### 4) Quit        - Exit this script   ###"		
+  echo "##############################################"
+  echo "### What do you want to do?                ###"
+  echo "### 1) Aircrack-ng - Get aircrack-ng       ###"
+  echo "### 2) Drivers     - Get drivers (outdated)###"
+  echo "### 3) Airoscript  - Get airoscript        ###"
+  echo "### 4) Quit        - Exit this script      ###"		
 }
 
 #######################################################################
