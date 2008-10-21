@@ -22,33 +22,36 @@ STATUS:
 Airoscript is currently in an unstable state.
 
 USAGE:
-Before doing anything make sure to open airoscript in a text editor
+Before doing anything make sure to open airoscript config file
 and set all variable according to your environnement.
 The most important variables are:
 
 # The TROUBLESHOOTING debug mod (1 for enable, 0 for disable)
 DEBUG="0"
+
 # Your interface: wlan0, ath0 etc... (if not set airoscript will ask for one
 at every launch of it)
 WIFI=""
-# The path where the data is stored (FOLDER MUST EXIST !)
-DUMP_PATH="/wifi"
 
-First you need to enable execution of the script by doing:
-
-"chmod +x airoscript.sh"
+If installing from sources, and you don't want to install it (you should be root
+to execute aircrack, anyway), you'll need to adapt FUNCTIONS var on your config file
+(you can put it on your home dir as .airoscript.conf) and make airoscript.sh executable.
+( executing "chmod +x airoscript.sh" )
 
 be sure to have root access and then you can run it by typing:
-
 "./airoscript.sh"
 
 COMPILATION:
 a shell script doesnt need to be compiled, but it can be put into bin folder
 to allow it to be run from anywhere.
+There is a makefile to make this way easier:
+	# make
+Of course, as root. =)
 
 DEVELOPERS:
-Help and feedback is greatly appreciated. Please feel free to mail me at
-daouid@gmail.com for any suggestion or correction.
+Help and feedback is greatly appreciated. 
+Please feel free to mail daouid at daouid@gmail.com 
+or XayOn at thexayon@gmail.com for any suggestion or correction.
 I will be pleased to add you to the contributors of airoscript.
 
 KNOWN ISSUES:

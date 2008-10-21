@@ -1,0 +1,8 @@
+/usr/share/airoscript
+	themes/ -> directory where themes (just shell scripts defining colors) are stored
+	airoscfunc.sh -> All airoscript funcions should be stored here.
+/etc/
+	airoscript.conf -> airoscript main configuration.
+/usr/sbin/
+	airoscript -> Main airoscript script =)
+	airoptdate -> Updating script. Allows update of drivers, aircrack-ng and so on.

@@ -1,73 +1,5 @@
-#! /bin/bash
-
-# Program:	Airoscript                                                          
-# Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others
-# Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes, darkAudax, Atheros support thx to green-freq
-# Date of this version:	        12.04.2008
-# Version of aircrack-ng required:  AIRCRACK-NG 1.0.2 beta
-# Dependencies: aircrack-ng, xterm, grep, awk, macchanger, drivers capable of injection, mdk3 (optional)
-#
-#		To change color theme just do a search and replace
-#
-#     Colors:   #Dumping	White	#FFFFFF                                            
-#               #Injection	Green	#1DFF00                                            
-#               #Association	Red	#FF0009                                            
-#               #Deauth	        Blue	#99CCFF                                            
-#               #Background	Black	#000000                                            
-#                                                                                           
-# Notes:  Important  ===>>>  Set variable DEBUG to 1 to enable debugging of errors  <<<===
-#         IMPORTANT DO NOT PUT others FILES IN OUTPUT FOLDER, because it's content can be erased
-#CardCtl executable (on 2.4 kernels, it is cardctl)
-CARDCTL="pccardctl"
-#Your dhcp client utility
-DHCPSOFT="dhclient"
-#Allows all xterm window to stay on screen after the operation they contain is finished
-DEBUG="0"
-#This is the interface you want to use to perform the attack
-#If you dont set this, airoscript will ask you for interface to use
-WIFI=""
-#This is the rate per second at wich packets will be injected
-INJECTRATE="330"
-#How many times the deauth attack is run
-DEAUTHTIME="3"
-#Time between re-association with target AP
-AUTHDELAY="80"
-KEEPALIVE="30"
-#Fudge factor setting
-FUDGEFACTOR="2"
-#Path to binaries                                     
-AIRMON="airmon-ng"		
-AIRODUMP="airodump-ng"
-AIREPLAY="aireplay-ng"	
-AIRCRACK="aircrack-ng"
-ARPFORGE="packetforge-ng"
-WESSIDE="wesside-ng"
-#The path where the data is stored (FOLDER MUST EXIST !)
-DUMP_PATH="/wifi"
-# Path to your wordlist file (for WPA and WEP dictionnary attack)
-WORDLIST="/wifi/wordlist.txt"
-#The Mac address used to associate with AP during fakeauth			
-FAKE_MAC="00:06:25:02:FF:D8"
-# IP of the AP and clients to be used for CHOPCHOP and Fragmentation attack
-# Host_IP and Client_IP used for arp generation from xor file (frag and chopchop)
-#Host_IP="192.168.1.1"
-#Client_IP="192.168.1.37"
-#Host_IP="192.168.0.1"
-#Client_IP="192.168.0.37"
-Host_IP="255.255.255.255"
-Client_IP="255.255.255.255"
-# Fragmentation IP
-#FRAG_HOST_IP="192.168.1.1"
-#FRAG_CLIENT_IP="192.168.1.37"
-#FRAG_HOST_IP="192.168.0.1"
-#FRAG_CLIENT_IP="192.168.0.37"
-FRAG_HOST_IP="255.255.255.255"
-FRAG_CLIENT_IP="255.255.255.255"
-# leave this alone (if you edit this, it will screw up the menu)
+# Funcion file used by airoscript
 CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
-##################################################################################
-#  Functions: these are all the functions used by the script
-# menu listing command	
 function menu {
   echo "Select next action              "
   echo ""
@@ -81,10 +13,11 @@ function menu {
   echo "### 8) Inject  - Jump to inj. menu  ###"
   echo ""			
 }
+
 function reso {
 while true; do
   echo "   Select screen resolution            "
-  echo "### 1) 640x480			            ###"
+  echo "### 1) 640x480			    ###"
   echo "### 2) 800x480                      ###"
   echo "### 3) 800x600                      ###"
   echo "### 4) 1024x768                     ###"
@@ -93,98 +26,80 @@ while true; do
   echo "### 7) 1600x1200                    ###"
   read yn
   case $yn in
-    1 ) res1 ; break ;;
-    2 ) res2 ; break ;;
-    3 ) res3 ; break ;;
-    4 ) res4 ; break ;;
-    5 ) res5 ; break ;;
-    6 ) res6 ; break ;;
-    7 ) res7 ; break ;;
+    1 ) TLX="83";TLY="11";TRX="60";TRY="18";BLX="75";BLY="18";BRX="27";BRY="17";bLX="100";bLY="30";bRX="54";bRY="25"; setterminal; break;;
+    2 ) TLX="90";TLY="11";TRX="60";TRY="18";BLX="78";BLY="26";BRX="52";BRY="15";bLX="130";bLY="30";bRX="78";bRY="25"; setterminal; break;;
+    3 ) TLX="92";TLY="11";TRX="68";TRY="25";BLX="78";BLY="26";BRX="52";BRY="15";bLX="92" ;bLY="39";bRX="78";bRY="24"; setterminal; break;;
+    4 ) TLX="92";TLY="14";TRX="68";TRY="25";BLX="92";BLY="36";BRX="74";BRY="20";bLX="100";bLY="52";bRX="54";bRY="25"; setterminal; break;;
+    5 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
+    6 ) TLX="110";TLY="35";TRX="99";TRY="40";BLX="110";BLY="35";BRX="99";BRY="30";bLX="110";bLY="72";bRX="99";bRY="40"; setterminal; break;;
+    7 ) TLX="130";TLY="40";TRX="68";TRY="25";BLX="130";BLY="40";BRX="132";BRY="35";bLX="130";bLY="85";bRX="132";bRY="48"; setterminal; break;;
     * ) echo "unknown response. Try again" ;;
 esac
+
 done
 }
-function res1 {
-# Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 83x11+0+0"
-# Upper right window -0+0
-TOPRIGHT="-geometry 60x18-0+0"
-# Bottom left window +0-0
-BOTTOMLEFT="-geometry 75x18+0-0"
-# Bottom right window -0-0
-BOTTOMRIGHT="-geometry 27x17-0-0"
-TOPLEFTBIG="-geometry 100x30+0+0"
-TOPRIGHTBIG="-geometry 54x25-0+0"
+
+function setterminal {
+clear
+echo "I'm going to set a term for you now"
+getterminal
+# This way we support multiple terminals, not only xterm
+case $TERMINAL in 
+
+	xterm|uxterm ) 
+		TOPLEFT="--geometry $TLX*$TLY+0+0"
+		TOPRIGHT="--geometry $TRX*$TRY-0+0"
+		BOTTOMLEFT="--geometry $BLX*$BLY+0-0"
+		BOTTOMRIGHT="--geometry $BRX*$BRY-0-0"
+		TOPLEFTBIG="--geometry $bLX*$bLY+0+0"
+		TOPRIGHTBIG="--geometry $bLX*$bLY+0-0"
+		EXECFLAG="-e"
+		HOLDFLAG="-hold"
+		;;
+	
+	gnome-terminal|gnome-terminal.wrapper ) 
+		TOPLEFT="--geometry $TLX*$TLY+0+0"
+		TOPRIGHT="--geometry $TRX*$TRY-0+0"
+		BOTTOMLEFT="--geometry $BLX*$BLY+0-0"
+		BOTTOMRIGHT="--geometry $BRX*$BRY-0-0"
+		TOPLEFTBIG="--geometry $bLX*$bLY+0+0"
+		TOPRIGHTBIG="--geometry $bLX*$bLY+0-0"
+		EXECFLAG="-e"
+		HOLDFLAG="" # Apparently, gnome terminal can't be hold that way. 
+		;;
+	
+esac
+
 }
-function res2 {
-# size*size+position+position)
-TOPLEFT="-geometry 90x11+0+0"
-TOPRIGHT="-geometry 60x18-0+0"
-BOTTOMLEFT="-geometry 75x18+0-0"
-BOTTOMRIGHT="-geometry 53x17-0-0"
-TOPLEFTBIG="-geometry  130x30+0+0"
-TOPRIGHTBIG="-geometry 78x25-0+0"
+
+function getterminal {
+	# TERM var is on config, if valid, use it, if not, use system default, if not abailable, use xterm.
+	if [ -e $TERM ] 
+	then
+		TERMINAL=$TERM
+	else
+		TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;
+		if [ -e $TERMINAL ] 
+		then
+			echo -e "Using default terminal\n"
+		else
+			if [ -e "/usr/bin/xterm" ]
+			then
+				TERMINAL="xterm"
+				echo -e "Using Xterm\n"
+			else
+				echo -e 
+				"I cant find any good terminal, please set one on your conffile
+				 Your TERM var contains no valid temrinal
+				 Your alternative against x-terminal-emulator contains no terminal
+				 Xterm can't be found on your system\n"
+				exit
+			fi
+		fi
+	fi
+
 }
-function res3 {
-# Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 92x11+0+0"
-# Upper right window -0+0
-TOPRIGHT="-geometry 68x25-0+0"
-# Bottom left window +0-0
-BOTTOMLEFT="-geometry 78x26+0-0"
-# Bottom right window -0-0
-BOTTOMRIGHT="-geometry 52x15-0-0"
-TOPLEFTBIG="-geometry 92x39+0+0"
-TOPRIGHTBIG="-geometry 78x24-0+0"
-}
-function res4 {
-# Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 92x14+0+0"
-# Upper right window -0+0
-TOPRIGHT="-geometry 68x25-0+0"
-# Bottom left window +0-0
-BOTTOMLEFT="-geometry 92x36+0-0"
-# Bottom right window -0-0
-BOTTOMRIGHT="-geometry 74x20-0-0"
-TOPLEFTBIG="-geometry 100x52+0+0"
-TOPRIGHTBIG="-geometry 74x30-0+0"
-}
-function res5 {
-# Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 100x20+0+0"
-# Upper right window -0+0
-TOPRIGHT="-geometry 109x20-0+0"
-# Bottom left window +0-0
-BOTTOMLEFT="-geometry 100x30+0-0"
-# Bottom right window -0-0
-BOTTOMRIGHT="-geometry 109x20-0-0"
-TOPLEFTBIG="-geometry  100x52+0+0"
-TOPRIGHTBIG="-geometry 109x30-0+0"
-}
-function res6 {
-# Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 110x35+0+0"
-# Upper right window -0+0
-TOPRIGHT="-geometry 99x40-0+0"
-# Bottom left window +0-0
-BOTTOMLEFT="-geometry 110x35+0-0"
-# Bottom right window -0-0
-BOTTOMRIGHT="-geometry 99x30-0-0"
-TOPLEFTBIG="-geometry 110x72+0+0"
-TOPRIGHTBIG="-geometry 99x40-0+0"
-}
-function res7 {
-# Upper left window +0+0 (size*size+position+position)
-TOPLEFT="-geometry 130x43+0+0"
-# Upper right window -0+0
-TOPRIGHT="-geometry 68x25-0+0"
-# Bottom left window +0-0
-BOTTOMLEFT="-geometry 130x40+0-0"
-# Bottom right window -0-0
-BOTTOMRIGHT="-geometry 132x35-0-0"
-TOPLEFTBIG="-geometry 130x85+0+0"
-TOPRIGHTBIG="-geometry 132x48-0+0"
-}
+
 # starts monitor mode on selected interface		
 function monitor_interface {
 if [ "$TYPE" = "RalinkUSB" ]

@@ -1,0 +1,10 @@
+#     Colors:   #Dumping	White	#FFFFFF                                            
+#               #Injection	Green	#1DFF00                                            
+#               #Association	Red	#FF0009                                            
+#               #Deauth	        Blue	#99CCFF                                            
+#               #Background	Black	#000000         
+DUMPING_COLOR="#FFFFFF"
+INJECTION_COLOR="#1DFF00"
+ASSOCIATION_COLOR="#FF0009"
+DEAUTH_COLOR="#99CCFF"
+BACKGROUND_COLOR="#000000"
