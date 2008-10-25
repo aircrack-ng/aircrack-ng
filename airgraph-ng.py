@@ -1,23 +1,23 @@
 #!/usr/bin/env python
+#Welcome to airgraph written by TheX1le
 import getopt, subprocess, sys
 ####################################
 #      Global Vars                 # 
 ####################################
-PROG = "AirGraph"
+PROG = "airgraph-ng"
 block = '\n#################################\n'
 ####################################
 # Module to open aircrack dump     #
 ####################################
 
 def airDumpOpen(file):
-       	#note this is all fucked up and so im coding around an issue its reading each line into a long ass string instead of a list ask rel1k
-	raw_macs = open(file, "r")
+       	raw_macs = open(file, "r")
 	Rmacs = raw_macs.readlines() #reads each line one at a time and store them a list
 	cleanup = []
 	for line in Rmacs: #iterates through the lines and strips of the new line and line returns ie \r\n
 		cleanup.append(line.rstrip())
 	raw_macs.close()
-	return cleanup	
+	return cleanup
 ####################################
 # Modules to Parse targets into a  #
 # Logical format for keeping track #
@@ -31,8 +31,9 @@ def airDumpParse(ardump):
 	del ardump[stationStart:]#removed all of the client info leaving only the info on available target AP's in ardump maby i should create a new list for APs?
 	def dictCreate(device):
 		dict = {}
-		for entry in device[:]: #the following loop through the Clients List creates a nexsted list of each client in its own list grouped by a parent list of client info
-			string_list = entry[1:-1].split(',') #splits the string line and turns it into a list object
+		for entry in device: #the following loop through the Clients List creates a nexsted list of each client in its own list grouped by a parent list of client info
+			entry = entry.replace(' ','') #remove spaces
+			string_list = entry.split(',') #splits the string line and turns it into a list object
 			if string_list[0] != '':
 				dict[string_list[0]] = string_list[:] #if the line isnt a blank line then it is stored in dictionlary with the MAC/BSSID as the key
 		return dict			
@@ -63,10 +64,15 @@ def dot_create(info):
 	graph = ["digraph G {\n"]
 	Clients = info[0]
 	AP = info[1]	
+	NA = [] #create a far to keep the not associdated Ap's
 	for mac in (Clients):
 		key = Clients[mac]
-		graph.extend(['\t','"',key[5],'"',sep,'"',mac,'"',';\n','\t','"',mac,'"','[label="',mac,'"];\n','\t','"',key[5],'"','[label="',key[5],'"];\n']) 
-		
+		if key[5] != "(notassociated)":
+			if AP.has_key(key[5]): # does key look up in the Access point dictionary
+				bssidI = AP[key[5]]
+				graph.extend(['\t','"',key[5],'"',sep,'"',mac,'"',';\n','\t','"',mac,'"','[label="',mac,'"];\n','\t','"',key[5],'"','[label="',key[5],' Essid:',bssidI[13],'"];\n']) 
+		else: 
+			NA.append(key) #stores the lines of the none assocated AP's in a list
 	graph.append("}")
 	output = ''.join(graph)
 	return output	

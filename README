@@ -1,0 +1,14 @@
+Welcome to airgraph-ng 
+
+airgraph-ng's purpose is to graph the txt file that is created when you run airodump with the -w option
+
+airgraph-ng depends are as follows
+
+graphviz with png support
+airodump >= 1.0
+
+The program usage is as follows
+
+airgraph-ng -i [your txt file] -o [the output file in png format]
+
+This is still a work in progress if you have questions contact TheX1le at thex1le@gmail.com
