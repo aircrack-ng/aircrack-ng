@@ -163,6 +163,11 @@ getChipset() {
 
     CHIPSET="Unknown "
 
+    if [ x$DRIVER = "xOtus" -o x$DRIVER = "arusb_lnx" ]
+    then
+	CHIPSET="AR9001U"
+    fi
+
     if [ x$DRIVER = "xzd1211rw" -o x$DRIVER = "xzd1211rw_mac80211" ]
     then
         CHIPSET="ZyDAS 1211"
@@ -560,6 +565,21 @@ do
     continue
  fi
 
+
+ if [ x$DRIVER = "xarusb_lnx" ] || [ x$DRIVER = "Otus" ]
+ then
+    printf "$iface\t\tAR9001USB\tOtus"
+    if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+    then
+	echo "Monitor mode not yet supported"
+    fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+    then
+	stopStdIface $iface
+    fi
+    echo
+    continue
+ fi  
 
  if [ x$DRIVER = "xipw2200" ] || [ x"`iwpriv $iface 2>/dev/null | grep sw_reset`" != "x" ]
  then
