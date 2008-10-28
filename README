@@ -1,6 +1,7 @@
 Welcome to airgraph-ng 
 
 airgraph-ng's purpose is to graph the txt file that is created when you run airodump with the -w option
+The idea is that we are showing the relationships of the clients to the AP's so dont be shocked if you see only one mapping as you may only have captured one client
 
 airgraph-ng depends are as follows
 

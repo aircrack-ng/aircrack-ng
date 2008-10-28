@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 #Welcome to airgraph written by TheX1le
+#Speical Thanks to Rel1k and Zero_Chaos two people whom with out i would not be who I am!
+#I would also like to thank muts and Remote Exploit Community for all their help and support!
 import getopt, subprocess, sys
 ####################################
 #      Global Vars                 # 
@@ -60,17 +62,31 @@ def dot_write(data):
 	file.close()
 
 def dot_create(info):
-	sep = '->'
-	graph = ["digraph G {\n"]
+	graph = ["digraph G {\n"] #start the graphviz config file
 	Clients = info[0]
 	AP = info[1]	
-	NA = [] #create a far to keep the not associdated Ap's
+	NA = [] #create a var to keep the not associdated clients
+	NAP = [] #create a var to keep track of associated clients to AP's we cant see
+	def graphviz_link(objA,sep,objB):
+		graph.extend(['\t','"',objA,'"',sep,'"',objB,'"',';\n'])
+
+	def graphviz_label_client(client,label):
+		graph.extend(['\t','"',client,'"','[label="',label,'"];\n',])
+
+	def graphviz_label_AP(bssid,essidi,channel):
+		graph.extend(['\t','"',bssid,'"','[label="',bssid,'\\nEssid:',essid,'\\nChannel:',channel,'"];\n'])
+
 	for mac in (Clients):
 		key = Clients[mac]
 		if key[5] != "(notassociated)":
 			if AP.has_key(key[5]): # does key look up in the Access point dictionary
-				bssidI = AP[key[5]]
-				graph.extend(['\t','"',key[5],'"',sep,'"',mac,'"',';\n','\t','"',mac,'"','[label="',mac,'"];\n','\t','"',key[5],'"','[label="',key[5],' Essid:',bssidI[13],'"];\n']) 
+				bssidI = AP[key[5]] # stores teh correct acess point in the var
+				essid = bssidI[13].rstrip('\x00') #when readidng a null essid it has binary space? so rstrip removes this 
+				graphviz_link(key[5],'->',mac)
+				graphviz_label_client(mac,mac)
+				graphviz_label_AP(key[5],essid,bssidI[3]) 
+			else:
+				NAP.append(key)
 		else: 
 			NA.append(key) #stores the lines of the none assocated AP's in a list
 	graph.append("}")
@@ -98,8 +114,8 @@ if __name__ == "__main__":
 
         for o, a in opts:
                 if o == '-i':
-                        in_file = a
-
+             		in_file = a
+	
                 elif o == '-o':
                         filename = a
                         
@@ -111,17 +127,12 @@ if __name__ == "__main__":
                         showBanner()
                         sys.exit(0)
 	
-	#if in_file != None and filename != None:
 	returned_var = airDumpOpen(in_file)
 	returned_var = airDumpParse(returned_var)
 	returned_var = dot_create(returned_var)
 	dot_write(returned_var)
 	grpahviz_Call(filename)
-	#else:
-	#	print "You must provide an input and output file!"
-	#	about()
-	#	showBanner()
-	#	sys.exit(1)
+
 ################################################################################
 #                                     EOF                                      #
 ################################################################################
