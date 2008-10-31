@@ -4765,15 +4765,20 @@ int main( int argc, char *argv[] )
 					opt.do_ptw = 0;
 				}
 				break;
-#ifdef HAVE_SQLITE
+
 			case 'r' :
+#ifdef HAVE_SQLITE
 				if(sqlite3_open(optarg, &db)) {
 					fprintf(stderr, "Database error: %s\n", sqlite3_errmsg(db));
 					sqlite3_close(db);
 					return FAILURE;
 				}
-				break;
+#else
+				fprintf(stderr, "Error: Aircrack-ng wasn't compiled with sqlite support\n");
+				return FAILURE;
 #endif
+				break;
+
 			case '0' :
 
 				opt.l33t = 1;
