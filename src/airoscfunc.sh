@@ -67,6 +67,16 @@ case $TERMINAL in
 		EXECFLAG="-e"
 		HOLDFLAG="" # Apparently, gnome terminal can't be hold that way. 
 		;;
+	screen )
+		# WARNING, THIS IS FULLY EXPERIMENTAL!!!!
+		TOPLEFT=""
+		TOPRIGHT=""
+		BOTTOMLEFT=""
+		BOTTOMRIGHT=""
+		TOPLEFTBIG=""
+		TOPRIGHTBIG=""
+		EXECFLAG="-c /usr/share/airoscript/screenrc -t airoscript -s"
+		HOLDFLAG=""	
 	
 esac
 

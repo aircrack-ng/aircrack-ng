@@ -1,3 +1,6 @@
+Changelog for 2.0.11
+- Tested with screen on terminal. It works so noone will need more another version if doesnt want to use gui.
+
 Changelog for 2.0.10
 - Added multiple terminal support
 - Added theme support
