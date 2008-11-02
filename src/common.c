@@ -96,10 +96,10 @@ int get_nb_cpus()
 									number = atoi(pos + 1);
 							}
 					}
-					fclose(f);
-
 					++number;
+					free(s);
 				}
+				fclose(f);
         }
 
         #ifdef _SC_NPROCESSORS_ONLN
