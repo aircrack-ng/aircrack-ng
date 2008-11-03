@@ -1,4 +1,5 @@
 Welcome to airgraph-ng 
+!!! Please note due to a lack of PNG support in Graphviz under BackTrack 3 Airgraph-ng is not currently supported here. I am aware of the issue i just havent had time to fix it!!!!!!
 
 airgraph-ng's purpose is to graph the txt file that is created when you run airodump with the -w option
 The idea is that we are showing the relationships of the clients to the AP's so dont be shocked if you see only one mapping as you may only have captured one client
