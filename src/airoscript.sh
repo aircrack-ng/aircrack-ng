@@ -60,6 +60,9 @@ fi
 # include functions, functions value is on config file.
 if [ -e $FUNCTIONS ]; then
 	. $FUNCTIONS
+	if [-e $UNSTABLEF ]; then
+		. $UNSTABLEF
+	fi
 else
 	echo -e "[ERROR] : Functions file does not exists, quitting\n"
 	exit
@@ -127,6 +130,10 @@ select choix in $CHOICES; do
 
 	elif [ "$choix" = "8" ]; then
 		injectmenu
+		menu
+
+	elif [ "$choix" = "9" ]; then
+		wlandecrypter	
 		menu
 
 	else

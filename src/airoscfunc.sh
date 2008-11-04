@@ -11,6 +11,7 @@ function menu {
   echo "### 6) Deauth  - Deauth from target ###"
   echo "### 7) Others  - Various utilities  ###"
   echo "### 8) Inject  - Jump to inj. menu  ###"
+  echo "### 9) Wlandecrypter - Just that    ###"
   echo ""			
 }
 
