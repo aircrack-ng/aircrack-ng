@@ -11,6 +11,14 @@ airodump >= 1.0
 
 The program usage is as follows
 
-airgraph-ng -i [your txt file] -o [the output file in png format]
+airgraph-ng -i [your txt file] -o [the output file in png format] -t [graph Format option is either CAPR or CPG]
+
+I am happy to indroduce an option for graph types
+There are two current graph types
+CAPR or Client to AP Relationship
+	This shows you all the clients attached to a particular AP
+CPR or Client Prob Graph
+	This showes you all the clients that are sending out probe requests for the same ESSID's
+	;-) Fake AP any one?
 
 This is still a work in progress if you have questions contact TheX1le at thex1le@gmail.com
