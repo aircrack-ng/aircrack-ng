@@ -15,6 +15,7 @@ install:
 	@install -D -g $(UID) -o $(GID) -m $(BINMODE) $(CURDIR)/src/airoscript.conf $(ETCDIR)/airoscript.conf
 	@install -D -g $(UID) -o $(GID) -m $(BINMODE) $(CURDIR)/src/default.theme $(SHAREDIR)/themes/default.theme
 	@install -D -g $(UID) -o $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc.sh $(SHAREDIR)/airoscfunc.sh
+	@install -D -g $(UID) -o $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc_unstable.sh $(SHAREDIR)/airoscfunc_unstable.sh
 
 all: install
 
