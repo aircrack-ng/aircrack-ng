@@ -135,7 +135,7 @@ def dot_create(info,graph_type):
 					essid = bssidI[13].rstrip('\x00') #when readidng a null essid it has binary space? so rstrip removes this 
 					CAPR_graphviz_link(key[5],'->',mac)
 					CAPR_graphviz_label_client(mac,mac)
-					AP_label = [key[5],essid,bssidI[3],bssidI[6]]
+					AP_label = [key[5],essid,bssidI[3],bssidI[5]]
 					CAPR_graphviz_label_AP(AP_label)
 				
 				else:
