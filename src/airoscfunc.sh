@@ -1,20 +1,11 @@
 # Funcion file used by airoscript
-CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
 
-function menu {
-  echo "Select next action              "
-  echo ""
-  echo "### 1) Scan    - Scan for target    ###"
-  echo "### 2) Select  - Select target      ###"
-  echo "### 3) Attack  - Attack target      ###"
-  echo "### 4) Crack   - Get target key     ###"
-  echo "### 5) Fakeauth- Auth with target   ###"
-  echo "### 6) Deauth  - Deauth from target ###"
-  echo "### 7) Others  - Various utilities  ###"
-  echo "### 8) Inject  - Jump to inj. menu  ###"
-  echo "### 9) Wlandecrypter - Just that    ###"
-  echo ""			
-}
+###################################################
+######@@THOSE ARE MAIN FUNCTIONS@@#################
+###################################################
+###################################################
+
+CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
 
 function reso {
 while true; do
@@ -49,25 +40,30 @@ getterminal
 case $TERMINAL in 
 
 	xterm|uxterm ) 
-		TOPLEFT="--geometry $TLX*$TLY+0+0"
-		TOPRIGHT="--geometry $TRX*$TRY-0+0"
-		BOTTOMLEFT="--geometry $BLX*$BLY+0-0"
-		BOTTOMRIGHT="--geometry $BRX*$BRY-0-0"
-		TOPLEFTBIG="--geometry $bLX*$bLY+0+0"
-		TOPRIGHTBIG="--geometry $bLX*$bLY+0-0"
+		TOPLEFT="--geometry $TLX*$TLY+0+0 "
+		TOPRIGHT="--geometry $TRX*$TRY-0+0 "
+		BOTTOMLEFT="--geometry $BLX*$BLY+0-0 "
+		BOTTOMRIGHT="--geometry $BRX*$BRY-0-0 "
+		TOPLEFTBIG="--geometry $bLX*$bLY+0+0 "
+		TOPRIGHTBIG="--geometry $bLX*$bLY+0-0 "
 		EXECFLAG="-e"
 		HOLDFLAG="-hold"
+		TITLEFLAG="-title"
+		FGC="-fg"
+		BGC="-bg"
 		;;
 	
 	gnome-terminal|gnome-terminal.wrapper ) 
-		TOPLEFT="--geometry $TLX*$TLY+0+0"
-		TOPRIGHT="--geometry $TRX*$TRY-0+0"
-		BOTTOMLEFT="--geometry $BLX*$BLY+0-0"
-		BOTTOMRIGHT="--geometry $BRX*$BRY-0-0"
-		TOPLEFTBIG="--geometry $bLX*$bLY+0+0"
-		TOPRIGHTBIG="--geometry $bLX*$bLY+0-0"
-		EXECFLAG="-e"
+		TOPLEFT="--geometry $TLX*$TLY+0+0 "
+		TOPRIGHT="--geometry $TRX*$TRY-0+0 "
+		BOTTOMLEFT="--geometry $BLX*$BLY+0-0 "
+		BOTTOMRIGHT="--geometry $BRX*$BRY-0-0 "
+		TOPLEFTBIG="--geometry $bLX*$bLY+0+0 "
+		TOPRIGHTBIG="--geometry $bLX*$bLY+0-0 "
+		EXECFLAG="-e "
 		HOLDFLAG="" # Apparently, gnome terminal can't be hold that way. 
+		$FGC="-fg "
+		$BGC="-bg "
 		;;
 	screen )
 		# WARNING, THIS IS FULLY EXPERIMENTAL!!!! Use Screen as your own risk! (may not work)
@@ -79,7 +75,10 @@ case $TERMINAL in
 		TOPRIGHTBIG=""
 		EXECFLAG="-c /usr/share/airoscript/screenrc -t airoscript -s" 
 		HOLDFLAG=""	
-	
+		TITLEFLAG="-title"
+		FGC="-fg"
+		BGC="-bg"
+		;;
 esac
 
 }
@@ -112,34 +111,244 @@ function getterminal {
 
 }
 
-# starts monitor mode on selected interface		
-function monitor_interface {
-if [ "$TYPE" = "RalinkUSB" ]
-then
-IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
-iwconfig $WIFI mode monitor
-echo $IS_MONITOR
 
-elif [ "$TYPE" = "Ralinkb/g" ]
-then
-IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
-echo $IS_MONITOR
-iwpriv $WIFI rfmontx 1
-iwpriv $WIFI forceprism 1
-
-elif [ "$TYPE" = "Atherosmadwifi-ng" ]
-then
-IS_MONITOR=`$AIRMON start wifi0 |grep monitor`
-$AIRMON stop ath0
-$AIRMON stop ath1
-$AIRMON stop ath2
-echo $IS_MONITOR
-else
-IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
-echo "running standard monitor mode command"
-echo $IS_MONITOR
-fi 
+function menu {
+  echo "Select next action              "
+  echo ""
+  echo "### 1) Scan    - Scan for target    ###"
+  echo "### 2) Select  - Select target      ###"
+  echo "### 3) Attack  - Attack target      ###"
+  echo "### 4) Crack   - Get target key     ###"
+  echo "### 5) Fakeauth- Auth with target   ###"
+  echo "### 6) Deauth  - Deauth from target ###"
+  echo "### 7) Others  - Various utilities  ###"
+  echo "### 8) Inject  - Jump to inj. menu  ###"
+  echo "### 9) Wlandecrypter - Just that    ###"
+  echo ""			
 }
+
+##################################################################################
+##################################################################################
+######################### This is for SCAN (1) option: ###########################
+##################################################################################
+##################################################################################
+function choosetype {
+while true; do
+  clear
+  echo "#######################################"
+  echo "###     Select AP specification     ###"
+  echo "###                                 ###"
+  echo "###   1) No filter                  ###"
+  echo "###   2) OPN (open)                 ###"
+  echo "###   3) WEP                        ###"
+  echo "###   4) WPA                        ###"
+  echo "###   5) WPA1                       ###"
+  echo "###   6) WPA2                       ###"
+  echo "###                                 ###"
+  echo "#######################################"
+  read yn
+  echo ""
+  case $yn in
+    1 ) ENCRYPT="" ; break ;;
+    2 ) ENCRYPT="OPN" ; break ;;
+    3 ) ENCRYPT="WEP" ; break ;;
+    4 ) ENCRYPT="WPA" ; break ;;
+    5 ) ENCRYPT="WPA1" ; break ;;
+    6 ) ENCRYPT="WPA2" ; break ;;
+    * ) echo "Unknown response. Try again" ;;
+  esac
+done 
+}
+
+function choosescan {
+while true; do
+  echo "#######################################"
+  echo "###  Select channel to use          ###"
+  echo "###                                 ###"
+  echo "###   1) Channel Hopping            ###"
+  echo "###   2) Specific channel(s)        ###"
+  echo "###                                 ###"
+  echo "#######################################"
+  read yn
+  echo ""
+  case $yn in
+    1 ) Scan ; break ;;
+    2 ) Scanchan ; break ;;  
+    * ) echo "unknown response. Try again" ;;
+  esac
+done 
+
+function Scan {
+	clear
+	rm -rf $DUMP_PATH/dump*
+	$TERM $HOLD $TITLEFLAG "Scanning for targets" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $WIFI
+}
+
+function Scanchan {
+  echo "#######################################"
+  echo "###    Input channel number         ###"
+  echo "###                                 ###"
+  echo "###  A single number   6            ###"
+  echo "###  A range           1-5          ###"
+  echo "###  Multiple channels 1,1,2,5-7,11 ###"
+  echo "###                                 ###"
+  echo "#######################################"
+	read channel_number
+	echo You typed: $channel_number
+	set -- ${channel_number}
+	clear
+	rm -rf $DUMP_PATH/dump*
+	$AIRMON start $WIFI $channel_number
+	$TERM $HOLD -title "Scanning for targets on channel $channel_number" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --channel "$channel_number" --encrypt $ENCRYPT -a $WIFI
+}
+
+##################################################################################
+##################################################################################
+######################### This is for SELECT (2) option: #########################
+##################################################################################
+##################################################################################
+function Parseforap {
+	i=0
+	ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
+	head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
+	clear
+
+	echo "        Detected Access point list"
+	echo ""
+	echo " #      MAC                      CHAN    SECU    POWER   #CHAR   SSID"
+	echo ""
+
+	while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do 
+	 longueur=${#MAC}
+	   if [ $longueur -ge 17 ]; then
+	    i=$(($i+1))
+	    echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$IDLENGTH"\t"$ESSID
+	    aidlenght=$IDLENGTH
+	    assid[$i]=$ESSID
+	    achannel[$i]=$CHANNEL
+	    amac[$i]=$MAC
+	    aprivacy[$i]=$PRIVACY
+	    aspeed[$i]=$SPEED
+	   fi
+	done < $DUMP_PATH/dump-02.txt
+
+	echo ""
+	echo "        Select target             "
+	read choice
+
+	idlenght=${aidlenght[$choice]}
+	ssid=${assid[$choice]}
+	channel=${achannel[$choice]}
+	mac=${amac[$choice]}
+	privacy=${aprivacy[$choice]}
+	speed=${aspeed[$choice]}
+	Host_IDL=$idlength
+	Host_SPEED=$speed
+	Host_ENC=$privacy
+	Host_MAC=$mac
+	Host_CHAN=$channel
+	acouper=${#ssid}
+	fin=$(($acouper-idlength))
+	Host_SSID=${ssid:1:fin}
+}
+
+
+
+function choosetarget {
+while true; do
+  clear
+  echo "#######################################"
+  echo "### Do you want to select a client? ###"
+  echo "###                                 ###"
+  echo "###   1) Yes, only associated       ###"
+  echo "###   2) No i dont want to          ###"
+  echo "###   3) Try to detect some         ###"
+  echo "###   4) Yes show me the clients    ###"
+  echo "###   5) Correct the SSID first     ###"
+  echo "###                                 ###"
+  echo "#######################################"
+  read yn
+  case $yn in
+    1 ) listsel2  ; break ;;
+    2 ) break ;;
+    3 ) clientdetect && clientfound ; break ;;
+    4 ) askclientsel ; break ;;
+    5 ) Host_ssidinput && choosetarget ; break ;;
+    * ) echo "unknown response. Try again" ;;
+  esac
+done 
+}
+ # Those are subproducts of choosetarget.
+	# List clients, (Option 1)
+	function listsel2 {
+	HOST=`cat $DUMP_PATH/dump-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
+		clear
+	  echo "#######################################"
+	  echo "###                                 ###"
+	  echo "###       Select client now         ###"
+	  echo "###  These clients are connected to ###"
+	  echo "###          $Host_SSID             ###"
+	  echo "###                                 ###"
+	  echo "#######################################"
+		select CLIENT in $HOST;
+			do
+			export Client_MAC=` echo $CLIENT | awk '{
+					split($1, info, "," )
+					print info[1]  }' `	
+			break;
+		done
+	}
+
+
+	# This way we detect clients. (Option 3)
+	function clientdetect {
+		iwconfig $WIFI channel $Host_CHAN
+		capture & deauthall & menufonction # Those functions are used from many others, so I dont let them here, they'll be independent.
+	}
+
+	function clientfound {
+		while true; do
+		  clear
+		  echo "#######################################"
+		  echo "###  Did you find desired client?   ###"
+		  echo "###                                 ###"
+		  echo "###   1) Yes, someone associated    ###" 
+		  echo "###   2) No, no clients showed up   ###"
+		  echo "###                                 ###"
+		  echo "#######################################"
+		  read yn
+		  case $yn in
+		    1 ) listsel3 ; break ;;
+		    2 ) break ;;
+		    * ) echo "unknown response. Try again" ;;
+		  esac
+		done 
+		}
+
+	# Show clientes (Option 4)
+	function askclientsel {
+		while true; do
+		  clear
+		  echo "#######################################"
+		  echo "###      Select next step           ###"
+		  echo "###                                 ###"
+		  echo "###   1) Detected clients           ###"
+		  echo "###   2) Manual Input               ###"
+		  echo "###   3) Associated client list     ###"
+		  echo "###                                 ###"
+		  echo "#######################################"
+		  read yn
+		  echo ""
+		  case $yn in
+		    1 ) asklistsel ; break ;;
+		    2 ) clientinput ; break ;;
+		    3 ) listsel2 ; break ;;
+		    * ) echo "unknown response. Try again" ;;
+		  esac
+	done 
+	}
+
+
 
 function airmoncheck {
 if [ "$TYPE" = "RalinkUSB" ]
@@ -163,31 +372,60 @@ echo ""
 fi 
 }
 
+
+# starts monitor mode on selected interface		
+function monitor_interface {
+	if [ "$TYPE" = "RalinkUSB" ]
+	then
+		IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
+		iwconfig $WIFI mode monitor
+		echo $IS_MONITOR
+	
+	elif [ "$TYPE" = "Ralinkb/g" ]
+	then
+		IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
+		echo $IS_MONITOR
+		iwpriv $WIFI rfmontx 1
+		iwpriv $WIFI forceprism 1
+	
+	elif [ "$TYPE" = "Atherosmadwifi-ng" ]
+	then
+		IS_MONITOR=`$AIRMON start wifi0 |grep monitor`
+		$AIRMON stop ath0
+		$AIRMON stop ath1
+		$AIRMON stop ath2
+		echo $IS_MONITOR
+	else
+		IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
+		echo "Running standard monitor mode command"
+		echo $IS_MONITOR
+	fi 
+}
+
 function monitor_interface2 {
-if [ "$TYPE" = "RalinkUSB" ]
-then
-IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
-iwconfig $WIFI mode monitor channel $Host_CHAN
-echo $IS_MONITOR
+	if [ "$TYPE" = "RalinkUSB" ]
+	then
+		IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+		iwconfig $WIFI mode monitor channel $Host_CHAN
+		echo $IS_MONITOR
+	elif [ "$TYPE" = "Ralinkb/g" ]
+	then
+		IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+		echo $IS_MONITOR
+		iwpriv $WIFI rfmontx 1
+		iwpriv $WIFI forceprism 1
 
-elif [ "$TYPE" = "Ralinkb/g" ]
-then
-IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
-echo $IS_MONITOR
-iwpriv $WIFI rfmontx 1
-iwpriv $WIFI forceprism 1
-
-elif [ "$TYPE" = "Atherosmadwifi-ng" ]
-then
-#IS_MONITOR=`$AIRMON start wifi0 $Host_CHAN |grep monitor`
-#$AIRMON stop ath0
-#echo $IS_MONITOR
-echo "Atheros device, not spamming another one => Doing nothing"
-else
-IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
-echo "running standard monitor mode command"
-echo $IS_MONITOR
-fi 
+	elif [ "$TYPE" = "Atherosmadwifi-ng" ]
+	then
+		#IS_MONITOR=`$AIRMON start wifi0 $Host_CHAN |grep monitor`
+		#$AIRMON stop ath0
+		#echo $IS_MONITOR
+		echo "Atheros device, not spamming another one => Doing nothing"
+	else
+		IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+		echo "running standard monitor mode command"
+		echo $IS_MONITOR
+	fi 
 }
 
 # this sets wifi interface if not hard coded in the script
@@ -276,73 +514,7 @@ clear
 # This is the function to select Target from a list
 ## MAJOR CREDITS TO: Befa , MY MASTER, I have an ALTAR dedicated to him in my living room  
 ## And HIRTE for making all those great patch and fixing the SSID issue	
-function Parseforap {
-ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
-head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
-clear
-echo "        Detected Access point list"
-echo ""
-echo " #      MAC                      CHAN    SECU    POWER   #CHAR   SSID"
-echo ""
-i=0
-while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do 
- longueur=${#MAC}
-   if [ $longueur -ge 17 ]; then
-    i=$(($i+1))
-    echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$IDLENGTH"\t"$ESSID
-    aidlenght=$IDLENGTH
-    assid[$i]=$ESSID
-    achannel[$i]=$CHANNEL
-    amac[$i]=$MAC
-    aprivacy[$i]=$PRIVACY
-    aspeed[$i]=$SPEED
-   fi
-done < $DUMP_PATH/dump-02.txt
-echo ""
-echo "        Select target             "
-read choice
-idlenght=${aidlenght[$choice]}
-ssid=${assid[$choice]}
-channel=${achannel[$choice]}
-mac=${amac[$choice]}
-privacy=${aprivacy[$choice]}
-speed=${aspeed[$choice]}
-Host_IDL=$idlength
-Host_SPEED=$speed
-Host_ENC=$privacy
-Host_MAC=$mac
-Host_CHAN=$channel
-acouper=${#ssid}
-fin=$(($acouper-idlength))
-Host_SSID=${ssid:1:fin}
-}
-function choosetype {
-while true; do
-  clear
-  echo "#######################################"
-  echo "###     Select AP specification     ###"
-  echo "###                                 ###"
-  echo "###   1) No filter                  ###"
-  echo "###   2) OPN                        ###"
-  echo "###   3) WEP                        ###"
-  echo "###   4) WPA                        ###"
-  echo "###   5) WPA1                       ###"
-  echo "###   6) WPA2                       ###"
-  echo "###                                 ###"
-  echo "#######################################"
-  read yn
-  echo ""
-  case $yn in
-    1 ) ENCRYPT="" ; break ;;
-    2 ) ENCRYPT="OPN" ; break ;;
-    3 ) ENCRYPT="WEP" ; break ;;
-    4 ) ENCRYPT="WPA" ; break ;;
-    5 ) ENCRYPT="WPA1" ; break ;;
-    6 ) ENCRYPT="WPA2" ; break ;;
-    * ) echo "unknown response. Try again" ;;
-  esac
-done 
-}
+
 function choosefake {
 while true; do
   clear
@@ -363,66 +535,10 @@ while true; do
   esac
 done 
 }
-function choosescan {
-while true; do
-  echo "#######################################"
-  echo "###  Select channel to use          ###"
-  echo "###                                 ###"
-  echo "###   1) Channel Hopping            ###"
-  echo "###   2) Specific channel(s)        ###"
-  echo "###                                 ###"
-  echo "#######################################"
-  read yn
-  echo ""
-  case $yn in
-    1 ) Scan ; break ;;
-    2 ) Scanchan ; break ;;  
-    * ) echo "unknown response. Try again" ;;
-  esac
-done 
+
 }
-function choosetarget {
-while true; do
-  clear
-  echo "#######################################"
-  echo "### Do you want to select a client? ###"
-  echo "###                                 ###"
-  echo "###   1) Yes, only associated       ###"
-  echo "###   2) No i dont want to          ###"
-  echo "###   3) Try to detect some         ###"
-  echo "###   4) Yes show me the clients    ###"
-  echo "###   5) Correct the SSID first     ###"
-  echo "###                                 ###"
-  echo "#######################################"
-  read yn
-  case $yn in
-    1 ) listsel2  ; break ;;
-    2 ) break ;;
-    3 ) clientdetect && clientfound ; break ;;
-    4 ) askclientsel ; break ;;
-    5 ) Host_ssidinput && choosetarget ; break ;;
-    * ) echo "unknown response. Try again" ;;
-  esac
-done 
-}
-function clientfound {
-while true; do
-  clear
-  echo "#######################################"
-  echo "###  Did you find desired client?   ###"
-  echo "###                                 ###"
-  echo "###   1) Yes, someone associated    ###" 
-  echo "###   2) No, no clients showed up   ###"
-  echo "###                                 ###"
-  echo "#######################################"
-  read yn
-  case $yn in
-    1 ) listsel3 ; break ;;
-    2 ) break ;;
-    * ) echo "unknown response. Try again" ;;
-  esac
-done 
-}
+
+
 function choosedeauth {
 while true; do
   clear
@@ -490,27 +606,7 @@ function attackopn {
   echo "###   You need to select a target   ###"
   echo "#######################################"
 }
-function askclientsel {
-while true; do
-  clear
-  echo "#######################################"
-  echo "###      Select next step           ###"
-  echo "###                                 ###"
-  echo "###   1) Detected clients           ###"
-  echo "###   2) Manual Input               ###"
-  echo "###   3) Associated client list     ###"
-  echo "###                                 ###"
-  echo "#######################################"
-  read yn
-  echo ""
-  case $yn in
-    1 ) asklistsel ; break ;;
-    2 ) clientinput ; break ;;
-    3 ) listsel2 ; break ;;
-    * ) echo "unknown response. Try again" ;;
-  esac
-done 
-}
+
 function clientinput {
   echo "#######################################"
   echo "###                                 ###"
@@ -564,24 +660,7 @@ HOST=`cat $DUMP_PATH/dump-01.txt | grep -a "0.:..:..:..:.." | awk '{ print $1 }'
 		break;
 	done
 }
-function listsel2 {
-HOST=`cat $DUMP_PATH/dump-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
-	clear
-  echo "#######################################"
-  echo "###                                 ###"
-  echo "###       Select client now         ###"
-  echo "###  These clients are connected to ###
-  echo "###          $Host_SSID             ###"
-  echo "###                                 ###"
-  echo "#######################################"
-	select CLIENT in $HOST;
-		do
-		export Client_MAC=` echo $CLIENT | awk '{
-				split($1, info, "," )
-				print info[1]  }' `	
-		break;
-	done
-}
+
 function listsel3 {
 HOST=`cat $DUMP_PATH/$Host_MAC-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
 	clear
@@ -847,28 +926,7 @@ xterm $HOLD -title "Capturing data on channel: $Host_CHAN" $TOPLEFTBIG -bg "#000
 function wpacrack {
 xterm -hold $TOPRIGHT -title "Aircracking: $Host_SSID" -e $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction
 }
-function Scan {
-clear
-rm -rf $DUMP_PATH/dump*
-xterm $HOLD -title "Scanning for targets" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $WIFI
-}
-function Scanchan {
-  echo "#######################################"
-  echo "###    Input channel number         ###"
-  echo "###                                 ###"
-  echo "###  A single number   6            ###"
-  echo "###  A range           1-5          ###"
-  echo "###  Multiple channels 1,1,2,5-7,11 ###"
-  echo "###                                 ###"
-  echo "#######################################"
-read channel_number
-echo You typed: $channel_number
-set -- ${channel_number}
-clear
-rm -rf $DUMP_PATH/dump*
-$AIRMON start $WIFI $channel_number
-xterm $HOLD -title "Scanning for targets on channel $channel_number" $TOPLEFTBIG -bg "#000000" -fg "#FFFFFF" -e $AIRODUMP -w $DUMP_PATH/dump --channel "$channel_number" --encrypt $ENCRYPT -a $WIFI
-}
+
 function capture {
 clear
 rm -rf $DUMP_PATH/$Host_MAC*
@@ -895,10 +953,7 @@ xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -f
 function fakeauth3 {
 xterm $HOLD -title "Associating with: $Host_SSID " $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e $AIREPLAY --fakeauth 5 -o 10 -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI & menufonction
 }
-function clientdetect {
-iwconfig $WIFI channel $Host_CHAN
-capture & deauthall & menufonction
-}
+
 function attack {
 capture & xterm $HOLD -title "Injection: Host: $Host_MAC" $BOTTOMLEFT -bg "#000000" -fg "#1DFF00" -e $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE & fakeauth3 & menufonction
 }
