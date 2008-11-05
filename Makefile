@@ -65,3 +65,6 @@ clean:
 
 distclean: clean
 
+check: 
+	$(MAKE) -C src $(@)
+	
