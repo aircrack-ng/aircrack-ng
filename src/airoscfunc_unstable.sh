@@ -1,16 +1,21 @@
 #!/bin/bash
+# Unstable functions file for airoscript.
+# Requires: wlandecrypter 
+# By David Francos (XayOn) <yo.orco@gmail.com>
+echo -e "
+\tUnstable functions from airoscript loaded,\n\tif you don't want this, set UNSTABLE=0 in\n\tconfig file"
 
-function wlandecrypter {
+function wld {
 
-	CAPFILE=`mktemp -p $TMPDIR`
-	DICFILE=`mktemp -p $TMPDIR` 
+	CAPFILE=`mktemp -p $DUMP_PATH`
+	DICFILE=`mktemp -p $DUMP_PATH` 
 	
 	echo -e "##################################\n##"
 	echo -e "Do you want to specify a channel? \n##"
 	echo -e "If so, enter the channel, if not, \n##"
 	echo -e "leave it empty and press enter.   \n##"
 	echo -e "##################################\n"
-	clear
+
 
 	read CHANNEL
 	if [ $CHANNEL -ne "" ]
@@ -18,7 +23,7 @@ function wlandecrypter {
 		OPT="--channel "
 	fi
 
-	airodump-ng -w $CAPFILE  $OPT $CHANNEL $WIFI && clear 
+	clear && airodump-ng -w $CAPFILE  $OPT $CHANNEL $WIFI && clear 
 	
 	echo  "\n#############################"
 	echo  "## Enter target kind of wlan ##"

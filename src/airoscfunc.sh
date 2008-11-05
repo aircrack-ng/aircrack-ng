@@ -1,5 +1,6 @@
 # Funcion file used by airoscript
 CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
+
 function menu {
   echo "Select next action              "
   echo ""
@@ -69,14 +70,14 @@ case $TERMINAL in
 		HOLDFLAG="" # Apparently, gnome terminal can't be hold that way. 
 		;;
 	screen )
-		# WARNING, THIS IS FULLY EXPERIMENTAL!!!!
+		# WARNING, THIS IS FULLY EXPERIMENTAL!!!! Use Screen as your own risk! (may not work)
 		TOPLEFT=""
 		TOPRIGHT=""
 		BOTTOMLEFT=""
 		BOTTOMRIGHT=""
 		TOPLEFTBIG=""
 		TOPRIGHTBIG=""
-		EXECFLAG="-c /usr/share/airoscript/screenrc -t airoscript -s"
+		EXECFLAG="-c /usr/share/airoscript/screenrc -t airoscript -s" 
 		HOLDFLAG=""	
 	
 esac
@@ -1214,69 +1215,3 @@ mkdir $DUMP_PATH
 echo "        Output folder is now set to $DUMP_PATH"
 fi
 }
-
-##################################################################################
-#
-# Main Section this is the "menu" part, where all the functions are called		
-#
-# 
-
-#runs debug routine to set $HOLD value
-debug
-#checks if output dir exists
-checkdir
-#Set screen size
-reso
-#checks if interface is set, if not it ask you
-setinterface
-#displays main menu
-menu	
-select choix in $CHOICES; do					
-	if [ "$choix" = "1" ]; then
-	choosetype
-	choosescan
-	clear
-	menu			
-	elif [ "$choix" = "2" ]; then
-	Parseforap
-	clear
-	choosetarget
-	if [ "$Host_SSID" = $'\r' ]
- 	then blankssid;
-	target
-	menu
-	elif [ "$Host_SSID" = "No SSID has been detected!" ]
-	then blankssid;
-	target
-	menu
-	else
-	target
-	echo " "
-	menu
-	fi					
-	elif [ "$choix" = "3" ]; then
-	witchattack	
-	menu
-	elif [ "$choix" = "4" ]; then
-	witchcrack
-	menu	
-	elif [ "$choix" = "5" ]; then
-	echo launching fake auth commands
-	choosefake && menu	
-	elif [ "$choix" = "6" ]; then	
-	choosedeauth
-	menu
-	elif [ "$choix" = "7" ]; then
-	optionmenu
-	menu
-	elif [ "$choix" = "8" ]; then
-	injectmenu
-	menu
-	else
-	clear
-	menu
-        echo "#######################################"
-        echo "###      Wrong number entered       ###"
-	fi
-done
-#END

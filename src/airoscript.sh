@@ -60,7 +60,7 @@ fi
 # include functions, functions value is on config file.
 if [ -e $FUNCTIONS ]; then
 	. $FUNCTIONS
-	if [-e $UNSTABLEF ]; then
+	if [ -e $UNSTABLEF ]; then
 		. $UNSTABLEF
 	fi
 else
@@ -128,14 +128,14 @@ select choix in $CHOICES; do
 		optionmenu
 		menu
 
+
 	elif [ "$choix" = "8" ]; then
 		injectmenu
 		menu
-
+	
 	elif [ "$choix" = "9" ]; then
-		wlandecrypter	
+		wld
 		menu
-
 	else
 		clear
 		menu
