@@ -12,7 +12,9 @@ iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
-		  ivstools$(EXE) kstats$(EXE) buddy-ng$(EXE) makeivs-ng$(EXE)
+		  ivstools$(EXE) kstats$(EXE) buddy-ng$(EXE) makeivs-ng$(EXE) \
+		  airdecloak-ng$(EXE)
+
 ifeq ($(SQLITE), true)
 	BINFILES	+= airolib-ng$(EXE)
 else
@@ -55,6 +57,7 @@ OBJS_ES		= easside-ng.o common.o
 OBJS_BUDDY	= buddy-ng.o common.o
 OBJS_MI		= makeivs-ng.o common.o uniqueiv.o
 OBJS_AB		= airbase-ng.o common.o crypto.o
+OBJS_AU		= airdecloak-ng.o common.o
 OBJS_TT		= tkiptun-ng.o common.o crypto.o
 
 
@@ -153,6 +156,9 @@ airolib-ng$(EXE): $(OBJS_AL)
 airbase-ng$(EXE): $(OBJS_AB) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AB) -o $(@) $(LIBS) $(LIBSSL) -lpthread
 
+airdecloak-ng$(EXE): $(OBJS_AU)
+	$(CC) $(CFLAGS) $(OBJS_AU) -o $(@)
+
 tkiptun-ng$(EXE): $(OBJS_TT) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_TT) -o $(@) $(LIBS) $(LIBSSL)
 
@@ -188,6 +194,7 @@ uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/wesside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/easside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/airbase-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/airuncloak-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/tkiptun-ng$(EXE)
 
 check: aircrack-ng$(EXE)
