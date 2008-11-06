@@ -400,7 +400,10 @@ BOOLEAN read_packets(void)
 
         if( bytes_read != (size_t) _packet_elt_head->current->header.caplen )
         {
-			printf("Error reading the file: read %d bytes out of %d.\n", bytes_read, _packet_elt_head->current->header.caplen);
+			printf("Error reading the file: read %lu bytes out of %d.\n",
+						(unsigned long) bytes_read,
+						_packet_elt_head->current->header.caplen);
+
             break;
 		}
 
