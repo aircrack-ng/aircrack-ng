@@ -3,7 +3,7 @@
  *
  *  Copyright (C) 2008 Thomas d'Otreppe
  *
- *  Thanks to Alex Hernandez for the hardware.
+ *  Thanks to Alex Hernandez aka alt3kx for the hardware.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
