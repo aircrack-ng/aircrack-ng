@@ -115,7 +115,7 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/hw.c linux-2.6.26.2-ath5k-f
 -			ah->ah_capabilities.cap_range.range_5ghz_min = 5005; /* 4920 */
 -			ah->ah_capabilities.cap_range.range_5ghz_max = 6100;
 +			ah->ah_capabilities.cap_range.range_5ghz_min = 4800; /* 4920 */
-+			ah->ah_capabilities.cap_range.range_5ghz_max = 6000; /* 6100 is what atheros said but */
++			ah->ah_capabilities.cap_range.range_5ghz_max = 6000; /* 6100 is what the code said but */
 +									     /* it fried one of my cards      */
  
  			/* Set supported modes */
@@ -131,6 +131,28 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/hw.c linux-2.6.26.2-ath5k-f
  
  			if (AR5K_EEPROM_HDR_11B(ee_header))
  				__set_bit(AR5K_MODE_11B,
+@@ -2318,24 +2319,6 @@
+        ATH5K_TRACE(ah->ah_sc);
+
+        switch (ah->ah_op_mode) {
+-       case IEEE80211_IF_TYPE_IBSS:
+-               pcu_reg |= AR5K_STA_ID1_ADHOC | AR5K_STA_ID1_DESC_ANTENNA |
+-                       (ah->ah_version == AR5K_AR5210 ?
+-                               AR5K_STA_ID1_NO_PSPOLL : 0);
+-               beacon_reg |= AR5K_BCR_ADHOC;
+-               break;
+-
+-       case IEEE80211_IF_TYPE_AP:
+-               pcu_reg |= AR5K_STA_ID1_AP | AR5K_STA_ID1_RTS_DEF_ANTENNA |
+-                       (ah->ah_version == AR5K_AR5210 ?
+-                               AR5K_STA_ID1_NO_PSPOLL : 0);
+-               beacon_reg |= AR5K_BCR_AP;
+-               break;
+-
+-       case IEEE80211_IF_TYPE_STA:
+-               pcu_reg |= AR5K_STA_ID1_DEFAULT_ANTENNA |
+-                       (ah->ah_version == AR5K_AR5210 ?
+-                               AR5K_STA_ID1_PWR_SV : 0);
 diff -Naur linux-2.6.26.2/net/wireless/reg.c linux-2.6.26.2-ath5k-freq-chaos/net/wireless/reg.c
 --- linux-2.6.26.2/net/wireless/reg.c	2008-08-13 03:16:40.000000000 -0400
 +++ linux-2.6.26.2-ath5k-freq-chaos/net/wireless/reg.c	2008-08-13 03:16:47.000000000 -0400
