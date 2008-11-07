@@ -128,11 +128,10 @@ select choix in $CHOICES; do
 		optionmenu
 		menu
 
-
 	elif [ "$choix" = "8" ]; then
 		injectmenu
 		menu
-	
+
 	elif [ "$choix" = "9" ]; then
 		wld
 		menu
