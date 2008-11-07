@@ -327,8 +327,10 @@ then
     then
         scanProcesses "$2"
     fi
-
-    exit
+    if [ x"$1" = xcheck ]
+    then
+        exit
+    fi
 fi
 
 echo && echo
