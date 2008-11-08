@@ -3935,7 +3935,7 @@ int main( int argc, char *argv[] )
 
             case 'H' :
 
-                printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+                printf( usage, getVersion("Tkiptun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
                 return( 1 );
 
             case 'K' :
@@ -4002,7 +4002,7 @@ int main( int argc, char *argv[] )
     	if(argc == 1)
     	{
 usage:
-	        printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
+	        printf( usage, getVersion("Tkiptun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA)  );
         }
 	    if( argc - optind == 0)
 	    {
