@@ -4195,8 +4195,6 @@ usage:
     i = michael_test((unsigned char*)"\x82\x92\x5c\x1c\xa1\xd1\x30\xb8", (unsigned char*)buf, strlen(buf), (unsigned char*)"\x43\x47\x21\xca\x40\x63\x9b\x3f");
     PCT; printf("Michael Test: %s\n", i ? "Successful" : "Failed");
 
-
-    exit(1);
     /* END MICHAEL TEST*/
 
     if(getnet(NULL, 0, 0) != 0)
