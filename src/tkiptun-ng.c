@@ -1,5 +1,5 @@
 /*
- *  802.11 WEP replay & injection attacks
+ *  802.11 WPA replay & injection attacks
  *
  *  Copyright (C) 2008 Martin Beck
  *
