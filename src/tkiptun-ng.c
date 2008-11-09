@@ -3696,7 +3696,7 @@ int main( int argc, char *argv[] )
     memset( &dev, 0, sizeof( dev ) );
 
     opt.f_type    = -1; opt.f_subtype   = -1;
-    opt.f_minlen  = -1; opt.f_maxlen    = -1;
+    opt.f_minlen  = 80; opt.f_maxlen    = 96;
     opt.f_tods    = -1; opt.f_fromds    = -1;
     opt.f_iswep   = -1; opt.ringbuffer  =  8;
 
@@ -4276,12 +4276,30 @@ usage:
         printf("%02X\n", opt.wpa_sta.ptk[63]);
     }
 
+    /* Select ToDS ARP from Client */
+
+    PCT; printf("Waiting for an ARP packet coming from the Client...\n");
+
+/*    opt.f_minlen = 80;
+    opt.f_maxlen = 80;*/
+    opt.f_tods = 1;
+    opt.f_fromds = 0;
+    memcpy(opt.f_smac, opt.r_smac, 6);
+//     memcpy(opt.f_dmac, opt.f_bssid, 6);
+    opt.fast = 1;
+
+    if( capture_ask_packet( &caplen, 0 ) != 0 )
+        return( 1 );
+
+    memcpy(packet2, h80211, caplen);
+    packet2_len = caplen;
+
     /* Select FromDS ARP to Client */
 
-    PCT; printf("Waiting for an ARP data packet comming from the AP...\n");
+    PCT; printf("Waiting for an ARP response packet coming from the AP...\n");
 
-    opt.f_minlen = 80;
-    opt.f_maxlen = 80;
+/*    opt.f_minlen = 80;
+    opt.f_maxlen = 80;*/
     opt.f_tods = 0;
     opt.f_fromds = 1;
     memcpy(opt.f_dmac, opt.r_smac, 6);
@@ -4294,23 +4312,6 @@ usage:
     memcpy(packet1, h80211, caplen);
     packet1_len = caplen;
 
-    /* Select ToDS ARP from Client */
-
-    PCT; printf("Waiting for an ARP response packet comming from the Client...\n");
-
-    opt.f_minlen = 80;
-    opt.f_maxlen = 80;
-    opt.f_tods = 1;
-    opt.f_fromds = 0;
-    memcpy(opt.f_smac, opt.r_smac, 6);
-    memcpy(opt.f_dmac, opt.f_bssid, 6);
-    opt.fast = 1;
-
-    if( capture_ask_packet( &caplen, 0 ) != 0 )
-        return( 1 );
-
-    memcpy(packet2, h80211, caplen);
-    packet2_len = caplen;
 
     PCT; printf("Got the answer!\n");
 
