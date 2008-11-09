@@ -4303,7 +4303,7 @@ usage:
     opt.f_tods = 0;
     opt.f_fromds = 1;
     memcpy(opt.f_dmac, opt.r_smac, 6);
-    memcpy(opt.f_smac, opt.f_bssid, 6);
+    memcpy(opt.f_smac, NULL_MAC, 6);
     opt.fast = 1;
 
     if( capture_ask_packet( &caplen, 0 ) != 0 )
