@@ -221,7 +221,7 @@ def dot_create(info,graph_type):
 def grpahviz_Call(output):
 	print "Creating your Graph, Depending on your system this can take a bit. Please standby.............."
 	subprocess.Popen(["fdp","-Tpng","airGconfig.dot","-o",output]).wait()
-	#subprocess.Popen(["rm","-rf","airGconfig.dot"])  # commenting out this line will leave the dot config file for debuging
+	subprocess.Popen(["rm","-rf","airGconfig.dot"])  # commenting out this line will leave the dot config file for debuging
 	print "Graph Creation Complete!"
 ###################################
 #               MAIN              #
