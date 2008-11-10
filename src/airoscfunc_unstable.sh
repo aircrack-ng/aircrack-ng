@@ -9,7 +9,7 @@ function wld {
 	if [ $Host_MAC ] 
 	then
 
-		CAPFILE=`mktemp -p $DUMP_PATH`
+		CAPFILE= `mktemp -p $DUMP_PATH`
 		DICFILE= `mktemp -p $DUMP_PATH`
 			echo  "######################################"
 			echo  "##Do you want to specify a channel? ##"
@@ -30,7 +30,7 @@ function wld {
 			then
 				airodump-ng -w $CAPFILE  $OPT $CHANNEL $WIFI
 				clear 
-				wlandecrypter $Host_MAC $WLAN_KIND $DICFILE 
+				wlandecrypter $HOST_MAC $HOST_SSID $DICFILE 
 				aircrack-ng -b $HOST_MAC -w $DICFILE $CAPFILE 
 			else
 				echo "No valid ssid detected, your target must be\n supported by wlandecrypter"
