@@ -3781,7 +3781,7 @@ int next_dict(int nb)
 			{
 				fclose( opt.dict );
 				opt.dict = NULL;
-				printf( "Empty dictionnary\n" );
+				printf( "Empty dictionary\n" );
 				opt.nbdict++;
 				continue;
 			}
@@ -3916,7 +3916,7 @@ int do_wpa_crack( struct AP_info *ap )
 
 			if(opt.dict == NULL)
 			{
-				printf( "\nPassphrase not in dictionnary \n" );
+				printf( "\nPassphrase not in dictionary \n" );
 				return( FAILURE );
 			}
 
@@ -3927,7 +3927,7 @@ int do_wpa_crack( struct AP_info *ap )
 					if( opt.l33t )
 						printf( "\33[32;22m" );
 
-					/* printf( "\nPassphrase not in dictionnary %s \n", opt.dicts[opt.nbdict] );*/
+					/* printf( "\nPassphrase not in dictionary %s \n", opt.dicts[opt.nbdict] );*/
 					if(next_dict(opt.nbdict+1) != 0)
 					{
 						/* no more words, but we still have to collect results from words sent to previous cpus */
@@ -4076,7 +4076,7 @@ collect_and_test:
 		}
 	}
 
-	printf( "\nPassphrase not in dictionnary \n" );
+	printf( "\nPassphrase not in dictionary \n" );
 	return( FAILURE );
 }
 
@@ -4095,7 +4095,7 @@ int next_key( char **key, int keysize )
 		tmp = tmp2;
 		if(opt.dict == NULL)
 		{
-			printf( "\nPassphrase not in dictionnary \n" );
+			printf( "\nPassphrase not in dictionary \n" );
 			free(tmp);
 			tmp = NULL;
 			return( FAILURE );
@@ -4108,7 +4108,7 @@ int next_key( char **key, int keysize )
 				if( opt.l33t )
 					printf( "\33[32;22m" );
 
-//				printf( "\nPassphrase not in dictionnary \"%s\" \n", opt.dicts[opt.nbdict] );
+//				printf( "\nPassphrase not in dictionary \"%s\" \n", opt.dicts[opt.nbdict] );
 				if(next_dict(opt.nbdict+1) != 0)
 				{
 					free(tmp);
@@ -4162,7 +4162,7 @@ int next_key( char **key, int keysize )
 				if( opt.l33t )
 					printf( "\33[32;22m" );
 
-//				printf( "\nPassphrase not in dictionnary \"%s\" \n", opt.dicts[opt.nbdict] );
+//				printf( "\nPassphrase not in dictionary \"%s\" \n", opt.dicts[opt.nbdict] );
 				if(next_dict(opt.nbdict+1) != 0)
 				{
 					free(tmp);
