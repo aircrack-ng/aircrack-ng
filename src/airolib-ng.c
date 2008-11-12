@@ -198,7 +198,7 @@ int stmt_stdout(sqlite3_stmt* stmt, int* rowcount) {
 
 	int i = 0;
 	do {
-		printf(sqlite3_column_name(stmt,i++));
+		printf("%s", sqlite3_column_name(stmt,i++));
 		if (i < ccount) printf("\t");
 	} while (i < ccount);
 	printf("\n");
@@ -207,7 +207,7 @@ int stmt_stdout(sqlite3_stmt* stmt, int* rowcount) {
 		i = 0;
 		rcount++;
 		do {
-			printf((char *)sqlite3_column_text(stmt,i++));
+			printf("%s", (char *)sqlite3_column_text(stmt,i++));
 			if (i < ccount) printf("\t");
 		} while (i < ccount);
 		printf("\n");
