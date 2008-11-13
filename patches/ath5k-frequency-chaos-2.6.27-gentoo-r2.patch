@@ -6,9 +6,9 @@ you.   -ZC
 
 -----------------------------------------------------------------------------------
 
-diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/ath5k.h linux-2.6.26.2-ath5k-freq-chaos/drivers/net/wireless/ath5k/ath5k.h
---- linux-2.6.26.2/drivers/net/wireless/ath5k/ath5k.h	2008-08-13 03:16:40.000000000 -0400
-+++ linux-2.6.26.2-ath5k-freq-chaos/drivers/net/wireless/ath5k/ath5k.h	2008-08-13 03:16:47.000000000 -0400
+diff -Naur linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/ath5k.h linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/ath5k.h
+--- linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/ath5k.h	2008-10-09 18:13:53.000000000 -0400
++++ linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/ath5k.h	2008-11-12 23:19:12.000000000 -0500
 @@ -23,7 +23,7 @@
   * long and results timeouts). It's also illegal to tune to some of the
   * supported frequencies in some countries, so use this at your own risk,
@@ -18,10 +18,10 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/ath5k.h linux-2.6.26.2-ath5
  
  #include <linux/io.h>
  #include <linux/types.h>
-diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/base.c linux-2.6.26.2-ath5k-freq-chaos/drivers/net/wireless/ath5k/base.c
---- linux-2.6.26.2/drivers/net/wireless/ath5k/base.c	2008-08-13 03:16:40.000000000 -0400
-+++ linux-2.6.26.2-ath5k-freq-chaos/drivers/net/wireless/ath5k/base.c	2008-08-13 03:16:47.000000000 -0400
-@@ -226,7 +226,7 @@
+diff -Naur linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/base.c linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/base.c
+--- linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/base.c	2008-10-09 18:13:53.000000000 -0400
++++ linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/base.c	2008-11-12 23:19:12.000000000 -0500
+@@ -217,7 +217,7 @@
  static void 	ath5k_detach(struct pci_dev *pdev,
  			struct ieee80211_hw *hw);
  /* Channel/mode setup */
@@ -30,7 +30,7 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/base.c linux-2.6.26.2-ath5k
  static unsigned int ath5k_copy_rates(struct ieee80211_rate *rates,
  				const struct ath5k_rate_table *rt,
  				unsigned int max);
-@@ -830,12 +830,15 @@
+@@ -804,12 +804,15 @@
   * Convert IEEE channel number to MHz frequency.
   */
  static inline short
@@ -50,7 +50,7 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/base.c linux-2.6.26.2-ath5k
  }
  
  static unsigned int
-@@ -865,7 +868,8 @@
+@@ -839,7 +842,8 @@
  		unsigned int mode,
  		unsigned int max)
  {
@@ -60,7 +60,7 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/base.c linux-2.6.26.2-ath5k
  
  	if (!test_bit(mode, ah->ah_modes))
  		return 0;
-@@ -873,14 +877,17 @@
+@@ -847,14 +851,17 @@
  	switch (mode) {
  	case AR5K_MODE_11A:
  	case AR5K_MODE_11A_TURBO:
@@ -81,7 +81,7 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/base.c linux-2.6.26.2-ath5k
  		chfreq = CHANNEL_2GHZ;
  		break;
  	default:
-@@ -888,9 +895,8 @@
+@@ -862,9 +869,8 @@
  		return 0;
  	}
  
@@ -93,22 +93,24 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/base.c linux-2.6.26.2-ath5k
  
  		/* Check if channel is supported by the chipset */
  		if (!ath5k_channel_ok(ah, freq, chfreq))
-diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/base.h linux-2.6.26.2-ath5k-freq-chaos/drivers/net/wireless/ath5k/base.h
---- linux-2.6.26.2/drivers/net/wireless/ath5k/base.h	2008-08-13 03:16:40.000000000 -0400
-+++ linux-2.6.26.2-ath5k-freq-chaos/drivers/net/wireless/ath5k/base.h	2008-08-13 03:16:47.000000000 -0400
-@@ -50,7 +50,7 @@
+diff -Naur linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/base.h linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/base.h
+--- linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/base.h	2008-10-09 18:13:53.000000000 -0400
++++ linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/base.h	2008-11-12 23:27:26.000000000 -0500
+@@ -51,8 +51,8 @@
  #include "debug.h"
  
  #define	ATH_RXBUF	40		/* number of RX buffers */
 -#define	ATH_TXBUF	200		/* number of TX buffers */
+-#define ATH_BCBUF	1		/* number of beacon buffers */
 +#define	ATH_TXBUF	0		/* number of TX buffers */
- #define ATH_BCBUF	1		/* number of beacon buffers */
++#define ATH_BCBUF	0		/* number of beacon buffers */
  
  struct ath5k_buf {
-diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/hw.c linux-2.6.26.2-ath5k-freq-chaos/drivers/net/wireless/ath5k/hw.c
---- linux-2.6.26.2/drivers/net/wireless/ath5k/hw.c	2008-08-13 03:16:40.000000000 -0400
-+++ linux-2.6.26.2-ath5k-freq-chaos/drivers/net/wireless/ath5k/hw.c	2008-08-13 03:16:47.000000000 -0400
-@@ -2258,8 +2258,9 @@
+ 	struct list_head	list;
+diff -Naur linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/hw.c linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/hw.c
+--- linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/hw.c	2008-10-09 18:13:53.000000000 -0400
++++ linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/hw.c	2008-11-12 23:21:29.000000000 -0500
+@@ -2319,8 +2319,9 @@
  		 */
  
  		if (AR5K_EEPROM_HDR_11A(ee_header)) {
@@ -120,7 +122,7 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/hw.c linux-2.6.26.2-ath5k-f
  
  			/* Set supported modes */
  			__set_bit(AR5K_MODE_11A,
-@@ -2275,8 +2276,8 @@
+@@ -2336,8 +2337,8 @@
  		 * connected */
  		if (AR5K_EEPROM_HDR_11B(ee_header) ||
  				AR5K_EEPROM_HDR_11G(ee_header)) {
@@ -131,31 +133,34 @@ diff -Naur linux-2.6.26.2/drivers/net/wireless/ath5k/hw.c linux-2.6.26.2-ath5k-f
  
  			if (AR5K_EEPROM_HDR_11B(ee_header))
  				__set_bit(AR5K_MODE_11B,
-@@ -2318,24 +2319,6 @@
-        ATH5K_TRACE(ah->ah_sc);
-
-        switch (ah->ah_op_mode) {
--       case IEEE80211_IF_TYPE_IBSS:
--               pcu_reg |= AR5K_STA_ID1_ADHOC | AR5K_STA_ID1_DESC_ANTENNA |
--                       (ah->ah_version == AR5K_AR5210 ?
--                               AR5K_STA_ID1_NO_PSPOLL : 0);
--               beacon_reg |= AR5K_BCR_ADHOC;
--               break;
+@@ -2379,24 +2380,6 @@
+ 	ATH5K_TRACE(ah->ah_sc);
+ 
+ 	switch (ah->ah_op_mode) {
+-	case IEEE80211_IF_TYPE_IBSS:
+-		pcu_reg |= AR5K_STA_ID1_ADHOC | AR5K_STA_ID1_DESC_ANTENNA |
+-			(ah->ah_version == AR5K_AR5210 ?
+-				AR5K_STA_ID1_NO_PSPOLL : 0);
+-		beacon_reg |= AR5K_BCR_ADHOC;
+-		break;
 -
--       case IEEE80211_IF_TYPE_AP:
--               pcu_reg |= AR5K_STA_ID1_AP | AR5K_STA_ID1_RTS_DEF_ANTENNA |
--                       (ah->ah_version == AR5K_AR5210 ?
--                               AR5K_STA_ID1_NO_PSPOLL : 0);
--               beacon_reg |= AR5K_BCR_AP;
--               break;
+-	case IEEE80211_IF_TYPE_AP:
+-		pcu_reg |= AR5K_STA_ID1_AP | AR5K_STA_ID1_RTS_DEF_ANTENNA |
+-			(ah->ah_version == AR5K_AR5210 ?
+-				AR5K_STA_ID1_NO_PSPOLL : 0);
+-		beacon_reg |= AR5K_BCR_AP;
+-		break;
 -
--       case IEEE80211_IF_TYPE_STA:
--               pcu_reg |= AR5K_STA_ID1_DEFAULT_ANTENNA |
--                       (ah->ah_version == AR5K_AR5210 ?
--                               AR5K_STA_ID1_PWR_SV : 0);
-diff -Naur linux-2.6.26.2/net/wireless/reg.c linux-2.6.26.2-ath5k-freq-chaos/net/wireless/reg.c
---- linux-2.6.26.2/net/wireless/reg.c	2008-08-13 03:16:40.000000000 -0400
-+++ linux-2.6.26.2-ath5k-freq-chaos/net/wireless/reg.c	2008-08-13 03:16:47.000000000 -0400
+-	case IEEE80211_IF_TYPE_STA:
+-		pcu_reg |= AR5K_STA_ID1_DEFAULT_ANTENNA |
+-			(ah->ah_version == AR5K_AR5210 ?
+-				AR5K_STA_ID1_PWR_SV : 0);
+ 	case IEEE80211_IF_TYPE_MNTR:
+ 		pcu_reg |= AR5K_STA_ID1_DEFAULT_ANTENNA |
+ 			(ah->ah_version == AR5K_AR5210 ?
+diff -Naur linux-2.6.27-gentoo-r2/net/wireless/reg.c linux-2.6.27-gentoo-r2-afc/net/wireless/reg.c
+--- linux-2.6.27-gentoo-r2/net/wireless/reg.c	2008-10-09 18:13:53.000000000 -0400
++++ linux-2.6.27-gentoo-r2-afc/net/wireless/reg.c	2008-11-12 23:23:53.000000000 -0500
 @@ -70,6 +70,22 @@
  	RANGE_PWR(5745, 5825, 30, 6, 0),
  };
