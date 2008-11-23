@@ -21,4 +21,6 @@ CPR or Client Prob Graph
 	This showes you all the clients that are sending out probe requests for the same ESSID's
 	;-) Fake AP any one?
 
+dumpjoin.py is a short support script that will allow you to join two airodump CSV files into one. Run the program with no arugments to see the usage
+
 This is still a work in progress if you have questions contact TheX1le at thex1le@gmail.com
