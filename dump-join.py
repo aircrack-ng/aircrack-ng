@@ -34,10 +34,10 @@ def join_write(data,name):
 	for line in data[0]:
                 line=line.rstrip()
                 if len(line)>1:
-           		file.write(line+"\n")
+           		file.write(line+'\n')
 	for line in data [1]:
                 if len(line)>1:
-         		file.write(line + '\n')
+         		file.write(line+'\n')
 	file.close()
 def showBanner():
 	print "Airodump Joiner\nJoin Two Airodump CSV Files\n\n\t-i\tInput Files [ foo_name_1 foo_name_2 foo_name_3 .....] \n\t-o\tOutput File\n"
