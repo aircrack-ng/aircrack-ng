@@ -8,6 +8,7 @@ IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
 USE_IW=0
+IW_SOURCE="http://wireless.kernel.org/download/iw/iw-0.9.6.tar.bz2"
 IW_ERROR=""
 
 if [ -f "`which iw 2>&1`" ]
@@ -477,7 +478,7 @@ do
                 ifconfig $MONDEV up
                 printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
             else
-                printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from http://dl.aircrack-ng.org/iw.tar.bz2\n"
+                printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
             fi
         fi
     fi
@@ -507,7 +508,7 @@ do
                     echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
                     printf " (removed)"
                 else
-                    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from http://dl.aircrack-ng.org/iw.tar.bz2\n"
+                    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
                 fi
 	    fi
         else
