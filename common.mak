@@ -26,6 +26,14 @@ endif
 
 COMMON_CFLAGS	=
 
+ifeq ($(OSNAME), cygwin)
+COMMON_CFLAGS   += -DCYGWIN
+endif
+
+ifeq ($(OSNAME), cygwin)
+COMMON_CFLAGS   += -DCYGWIN
+endif
+
 ifeq ($(SQLITE), true)
     COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
 else
@@ -50,7 +58,12 @@ ifeq ($(AIRPCAP), true)
 LIBAIRPCAP	= -DHAVE_AIRPCAP -I$(AC_ROOT)/../developers/Airpcap_Devpack/include
 endif
 
+ifeq ($(OSNAME), cygwin)
+CC              = $(TOOL_PREFIX)gcc-4
+else
 CC		= $(TOOL_PREFIX)gcc
+endif
+
 RANLIB		= $(TOOL_PREFIX)ranlib
 AR		= $(TOOL_PREFIX)ar
 
