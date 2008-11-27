@@ -1040,12 +1040,11 @@ int CFC_filter_consecutive_sn_client() {
 }
 
 int CFC_filter_duplicate_iv() {
+	unsigned char * ivs_table;
 	int nb_packets = 0;
 	puts("Cloaking - Duplicate IV filtering");
 
-	unsigned char * ivs_table;
-
-	ivs_table = (unsigned char *) calloc(16777216, 1);
+	ivs_table = (unsigned char *) calloc(16777215, 1);
 	if (ivs_table == NULL) {
 		puts("Failed to allocate memory for IVs table, exiting");
 		exit(-1);
