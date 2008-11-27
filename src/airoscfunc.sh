@@ -327,11 +327,11 @@ done
 ##################################################################################
 
 function witchattack {
-	if [ $Host_ENC = "WEP" ]
+	if [ "$Host_ENC" = "WEP" ]
 	then
 		monitor_interface2
 		attackwep
-	elif [ $Host_ENC = "WPA" ]
+	elif [ "$Host_ENC" = "WPA" ]
 	then
 		monitor_interface2
 		wpahandshake
@@ -509,27 +509,32 @@ function witchattack {
 ##################################################################################
 ##################################################################################
 function witchcrack {
-		while true; do
-			echo "#######################################"
-			echo "###      WEP/WPA CRACKING OPTIONS   ###"
-			echo "###                                 ###"
-			echo "###   1) Use Wlandecrypter          ###"
-			echo "###   2) Use aircrack-ng            ###"
-			echo "###                                 ###"
-			echo "#######################################"
-		
-			read yn
+		if [ "$UNSTABLE" = "1" ]
+		then
+			while true; do
+				echo "#######################################"
+				echo "###      WEP/WPA CRACKING OPTIONS   ###"
+				echo "###                                 ###"
+				echo "###   1) Use Wlandecrypter          ###"
+				echo "###   2) Use aircrack-ng            ###"
+				echo "###                                 ###"
+				echo "#######################################"
 			
-			case $yn in
-				1 ) selectcracking ; break ;;
-				2 ) wld ; break ;;
-				* ) echo "Unknown response. Try again" ;;
-			esac
-		done 
+				read yn
+				
+				case $yn in
+					1 ) selectcracking ; break ;;
+					2 ) wld ; break ;;
+					* ) echo "Unknown response. Try again" ;;
+				esac
+			done 
+		else
+			selectcracking
+		fi
 }
 
 function selectcracking {
-	if [ $Host_ENC = "WEP" ]
+	if [ "$Host_ENC" = "WEP" ]
 	then
 		crack
 	else
