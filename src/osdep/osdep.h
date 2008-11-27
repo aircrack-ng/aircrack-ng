@@ -24,8 +24,8 @@ struct tx_info {
 
 struct rx_info {
         uint64_t ri_mactime;
-        uint32_t ri_power;
-        uint32_t ri_noise;
+        int32_t ri_power;
+        int32_t ri_noise;
         uint32_t ri_channel;
         uint32_t ri_freq;
         uint32_t ri_rate;

@@ -608,6 +608,12 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
             }
         }
 
+        if( ri->ri_power > 127 )
+            ri->ri_power -= 255;
+
+        if( ri->ri_noise > 127 )
+            ri->ri_noise -= 255;
+
         n = le16_to_cpu(rthdr->it_len);
 
         if( n <= 0 || n >= caplen )
