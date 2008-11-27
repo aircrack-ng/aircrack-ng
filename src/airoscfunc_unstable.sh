@@ -29,7 +29,7 @@ function wld {
 					OPT="--channel "
 				fi
 
-			echo -e "I'm going to launch airodump now, when you\n get sufficent iv's, stop it" 
+			echo -e "I'm going to launch airodump now, when you\n get sufficent (3-6) iv's, stop it" 
 
 			sleep 2 
 			case $Host_SSID in
@@ -44,7 +44,7 @@ function wld {
 				
 
 		clear
-		echo -e "Error: You must select a client before performing this cracking.\n"
+		echo -e "Error: You must select a client before performing this attack.\n"
 	fi
 	
 }
