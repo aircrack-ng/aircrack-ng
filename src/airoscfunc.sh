@@ -1,6 +1,7 @@
 # Funcion file used by airoscript
 CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
-
+export TEXTDOMAINDIR=/usr/share/locale
+export TEXTDOMAIN=airoscript
 function menu {
   echo -e "`gettext \"Select next action
   ### 1) Scan    - Scan for target    ###
@@ -70,7 +71,7 @@ done
 	function Scan {
 		clear
 		rm -rf $DUMP_PATH/dump*
-		$TERMINAL $HOLD $TITLEFLAG 'Scanning for targets' $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $WIFI
+		$TERMINAL $HOLD $TITLEFLAG "`gettext \"Scanning for targets\"`" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $WIFI
 	}
 
 	function Scanchan {
@@ -120,7 +121,7 @@ function Parseforap {
 	done < $DUMP_PATH/dump-02.txt
 
 	echo ""
-	echo "        Select target             "
+	echo -e "`gettext \"        Select target             \"`"
 	read choice
 
 	idlenght=${aidlenght[$choice]}
@@ -207,7 +208,7 @@ done
 		  case $yn in
 		    1 ) listsel3 ; break ;;
 		    2 ) break ;;
-		    * ) echo "unknown response. Try again" ;;
+		    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 		  esac
 		done 
 		}
@@ -249,7 +250,7 @@ done
 		    1 ) asklistsel ; break ;;
 		    2 ) clientinput ; break ;;
 		    3 ) listsel2 ; break ;;
-		    * ) echo "unknown response. Try again" ;;
+		    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 		  esac
 	done 
 	}
@@ -268,7 +269,7 @@ done
 				
 				if [ "$Host_SSID" = $'\r' ]
 				then
-					Host_SSID=`gettext \"No SSID has been detected!\"`
+					Host_SSID="`gettext \"No SSID has been detected!\"`"
 				fi
 				
 				echo  ""
@@ -277,7 +278,7 @@ done
 				case $yn in
 					1 ) listsel2 ; break ;;
 					2 ) listsel1 ; break ;;
-					* ) echo -e "`gettext \"unknown response. Try again\"`" ;;
+					* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 				esac
 			done 
 		}
@@ -356,10 +357,10 @@ function witchattack {
 			#IS_MONITOR=`$AIRMON start wifi0 $Host_CHAN |grep monitor`
 			#$AIRMON stop ath0
 			#echo $IS_MONITOR
-			echo "Atheros device, not spamming another one => Doing nothing"
+			echo -e "`gettext \"Atheros device, not spamming another one => Doing nothing\"`"
 		else
 			IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
-			echo "running standard monitor mode command"
+			echo -e "`gettext \"Running standard monitor mode command\"`"
 			echo $IS_MONITOR
 		fi 
 	}
@@ -402,7 +403,7 @@ function witchattack {
 	    11 ) chopchopattackclient ; break ;;
 	    12 ) pskarp ; break ;;
 	    13 ) break ;;
-	    * ) echo "unknown response. Try again" ;;
+	    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 	  esac
 	done 
 	}
@@ -410,11 +411,11 @@ function witchattack {
 
 		#Ooption 1 (fake auth auto)
 		function attack {
-			capture & $TERMINAL $HOLD $TITLEFLAG "Injection: Host: $Host_MAC" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE & fakeauth3 & menufonction
+			capture & $TERMINAL $HOLD $TITLEFLAG "`gettext \"Injection: Host: $Host_MAC\"`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE & fakeauth3 & menufonction
 		}
 		#Option 2 (fake auth interactive)
 		function fakeinteractiveattack {
-			capture & $TERMINAL $HOLD $TITLEFLAG "Interactive Packet Sel on Host: $Host_SSID" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE & fakeauth3 & menufonction
+			capture & $TERMINAL $HOLD $TITLEFLAG "`gettext \"Interactive Packet Sel on Host: $Host_SSID\"`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE & fakeauth3 & menufonction
 		}
 
 		#Option 3 (fragmentation attack)
@@ -423,7 +424,7 @@ function witchattack {
 			rm -rf $DUMP_PATH/frag_*.cap
 			rm -rf $DUMP_PATH/$Host_MAC*
 			killall -9 airodump-ng aireplay-ng # FIXME Is this a good idea? I think we should save pids of what we launched, and then kill them.
-		$TERMINAL -hold $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "Fragmentation attack on $Host_SSID" $EXECFLAG $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture & fakeauth3 &  injectmenu
+		$TERMINAL -hold $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "`gettext \"Fragmentation attack on $Host_SSID\"`" $EXECFLAG $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture & fakeauth3 &  injectmenu
 			}
 
 		#Option 4 (chopchopattack)
@@ -431,27 +432,27 @@ function witchattack {
 			clear
 			rm -rf $DUMP_PATH/$Host_MAC*
 			rm -rf replay_dec-*.xor
-			capture &  fakeauth3 &  $TERMINAL -hold $TITLEFLAG "ChopChop'ing: $Host_SSID" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $EXECFLAG $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $WIFI & injectmenu
+			capture &  fakeauth3 &  $TERMINAL -hold $TITLEFLAG "`gettext \"ChopChop\'ing: $Host_SSID\"`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $EXECFLAG $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $WIFI & injectmenu
 		}
 		#Option 5 (caffe late attack)
 		function cafelatteattack {
-			capture & $TERMINAL $HOLD $TITLEFLAG "Cafe Latte Attack on: $Host_SSID" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI & fakeauth3 & menufonction
+			capture & $TERMINAL $HOLD $TITLEFLAG "`gettext \"Cafe Latte Attack on: $Host_SSID\"`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI & fakeauth3 & menufonction
 			}
 
 		#Option 6 (hirte attack)
 		function hirteattack {
-			capture & $TERMINAL $HOLD $TITLEFLAG "Hirte Attack on: $Host_SSID" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI & fakeauth3 & menufonction
+			capture & $TERMINAL $HOLD $TITLEFLAG "`gettext \"Hirte Attack on: $Host_SSID\"`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI & fakeauth3 & menufonction
 		}
 
 		#Option 7 (Auto arp replay)
 		function attackclient {
-			capture & $TERMINAL $HOLD $TITLEFLAG "Injection: Host : $Host_MAC CLient : $Client_MAC" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE & menufonction
+			capture & $TERMINAL $HOLD $TITLEFLAG "`gettext \"Injection: Host : $Host_MAC CLient : $Client_MAC\"`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE & menufonction
 		}
 
 		#Option 8 (interactive arp replay) 
 
 		function interactiveattack {
-			capture & $TERMINAL $HOLD $TITLEFLAG "Interactive Packet Sel on: $Host_SSID" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC $Client_MAC -x $INJECTRATE & menufonction
+			capture & $TERMINAL $HOLD $TITLEFLAG "`gettext \"Interactive Packet Sel on: $Host_SSID\"`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $WIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC $Client_MAC -x $INJECTRATE & menufonction
 		}
 
 		#Option 9 (fragmentation attack)
@@ -460,7 +461,7 @@ function witchattack {
 			rm -rf $DUMP_PATH/frag_*.cap
 			rm -rf $DUMP_PATH/$Host_MAC*
 			killall -9 airodump-ng aireplay-ng
-			$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "Fragmentation attack on $Host_SSID" $EXECFLAG $AIREPLAY -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  injectmenu
+			$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "`gettext \"Fragmentation attack on $Host_SSID\"`" $EXECFLAG $AIREPLAY -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  injectmenu
 		}
 
 		#Option 10 (fragmentation attack with client)
@@ -469,20 +470,20 @@ function witchattack {
 			rm -rf $DUMP_PATH/frag_*.cap
 			rm -rf $DUMP_PATH/$Host_MAC*
 			killall -9 airodump-ng aireplay-ng
-			$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "Fragmentation attack on $Host_SSID" $EXECFLAG $AIREPLAY -7 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  injectmenu
+			$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "`gettext \"Fragmentation attack on $Host_SSID\"`" $EXECFLAG $AIREPLAY -7 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI & capture &  injectmenu
 		}
 		#Option 11
 		function chopchopattackclient {
 			clear
 			rm -rf $DUMP_PATH/$Host_MAC*
 			rm -rf replay_dec-*.xor
-			capture &  $TERMINAL -hold $TITLEFLAG "ChopChop'ing: $Host_SSID" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $EXECFLAG $AIREPLAY --chopchop -h $Client_MAC $WIFI & injectmenu
+			capture &  $TERMINAL -hold $TITLEFLAG "`gettext \"ChopChop\'ing: $Host_SSID\"`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $EXECFLAG $AIREPLAY --chopchop -h $Client_MAC $WIFI & injectmenu
 		}
 		#Option 12 (pskarp)
 		function pskarp {
 			rm -rf $DUMP_PATH/arp_*.cap
 			$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
-			capture & $TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "Sending forged ARP to: $Host_SSID" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
+			capture & $TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext \"Sending forged ARP to: $Host_SSID\"`" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
 		}
 		# End of subproducts.
 
@@ -490,7 +491,7 @@ function witchattack {
 	function wpahandshake {
 		clear
 		rm -rf $DUMP_PATH/$Host_MAC*
-		$TERMINAL $HOLD $TITLEFLAG "Capturing data on channel: $Host_CHAN" $TOPLEFTBIG $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $WIFI & menufonction
+		$TERMINAL $HOLD $TITLEFLAG "`gettext \"Capturing data on channel: $Host_CHAN\"`" $TOPLEFTBIG $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $WIFI & menufonction
 	}
 
 	function attackopn { # If no encryption detected
@@ -576,11 +577,11 @@ function selectcracking {
 			read FUDGE_FACTOR
 			echo You typed: $FUDGE_FACTOR
 			set -- ${FUDGE_FACTOR}
-			echo -n "type encryption size 64,128 etc..."
+			echo -e -n "`gettext \"type encryption size 64,128 etc...\"`"
 			read ENC_SIZE
 			echo You typed: $ENC_SIZE
 			set -- ${ENC_SIZE}
-			$TERMINAL -hold $TITLEFLAG "Manual cracking: $Host_SSID" $TOPRIGHTBIG $EXECFLAG $AIRCRACK -a 1 -b $Host_MAC -f $FUDGE_FACTOR -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
+			$TERMINAL -hold $TITLEFLAG "`gettext \"Manual cracking: $Host_SSID\"`" $TOPRIGHTBIG $EXECFLAG $AIRCRACK -a 1 -b $Host_MAC -f $FUDGE_FACTOR -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction
 		}
 
 	# This is for wpa cracking
@@ -660,15 +661,15 @@ function choosedeauth {
 
 	# Subproducts of choosedeauth
 		function deauthall {
-			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "Kicking everybody from: $Host_SSID" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $WIFI
+			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext \"Kicking everybody from: $Host_SSID\"`" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $WIFI
 		}
 		
 		function deauthclient {
-			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "Kicking $Client_MAC from: $Host_SSID" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $WIFI
+			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext \"Kicking $Client_MAC from: $Host_SSID\"`" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $WIFI
 		}
 		
 		function deauthfake {
-			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "Kicking $FAKE_MAC from: $Host_SSID" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $WIFI
+			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext \"Kicking $FAKE_MAC from: $Host_SSID\"`" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $WIFI
 		}
 
 
@@ -729,8 +730,8 @@ function optionmenu {
 		
 		TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
 		clear
-		echo "Interface used is : $WIFI"
-		echo "Interface type is : $TYPE"
+		echo "`gettext \"Interface used is : $WIFI\"`"
+		echo "`gettext \"Interface type is : $TYPE\"`"
 		testmac
 	}
 	# 3.
@@ -782,7 +783,7 @@ function optionmenu {
 			then
 				fakechangemacath
 			else
-			echo "Unknow way to change mac"
+			echo -e "`gettext \"Unknow way to change mac\"`"
 			fi			
 		}		
 			# And those from fakemacchanger
@@ -826,7 +827,7 @@ function optionmenu {
 			then
 				changemacath
 			else
-				echo "Unknow way to change mac"
+				echo -e "`gettext \"Unknow way to change mac\"`"
 			fi			
 		}
 			# Those are part of macchanger
@@ -858,7 +859,7 @@ function optionmenu {
 			}
 			
 		function macinput {
-			echo -n "OK, now type in new MAC: "
+			echo -n -e "`gettext \"OK, now type in new MAC: \"`"
 			read MANUAL_MAC
 			echo You typed: $MANUAL_MAC
 			set -- ${MANUAL_MAC}
@@ -936,11 +937,11 @@ function optionmenu {
 		}
 	
 			function mdkpain {
-				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "MDK attack" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG mdk3 $WIFI d & choosemdk
+				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "`gettext \"MDK attack\"`" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG mdk3 $WIFI d & choosemdk
 			}
 			
 			function mdktargetedpain {
-				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "MDK attack on AP: $Host_SSID" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG mdk3 $WIFI p -b a -c $Host_CHAN -t $Host_MAC & choosemdk
+				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "`gettext \"MDK attack on AP: $Host_SSID\"`" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG mdk3 $WIFI p -b a -c $Host_CHAN -t $Host_MAC & choosemdk
 			}
 			
 			function mdknewtarget {
@@ -986,7 +987,7 @@ function optionmenu {
 			}
 
 			function mdkauth {
-				$TERMINAL $HOLD $TOPLEFTBIG $TITLEFLAG "Wesside-ng attack on AP: $Host_SSID" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG mdk3 $WIFI a & choosemdk
+				$TERMINAL $HOLD $TOPLEFTBIG $TITLEFLAG "`gettext \"Wesside-ng attack on AP: $Host_SSID\"`" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG mdk3 $WIFI a & choosemdk
 			}
 	
 	# 6.
@@ -1015,7 +1016,7 @@ function optionmenu {
 					4 ) wessidetargetpoor ; break ;;
 					5 ) wessidenewtarget ; break ;;
 					6 ) break ;;
-					* ) echo "unknown response. Try again" ;;
+					* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 				esac
 			done 
 		}
@@ -1025,28 +1026,28 @@ function optionmenu {
 				rm -rf prga.log
 				rm -rf wep.cap
 				rm -rf key.log
-				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "Wesside-ng attack" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -i $WIFI & choosewesside
+				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "`gettext \"Wesside-ng attack\"`" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -i $WIFI & choosewesside
 			}
 
 			function wessidetarget {
 				rm -rf prga.log
 				rm -rf wep.cap
 				rm -rf key.log
-				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "Wesside-ng attack on AP: $Host_SSID" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -i $WIFI & choosewesside
+				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "`gettext \"Wesside-ng attack on AP: $Host_SSID\"`" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -i $WIFI & choosewesside
 			}
 
 			function wessidetargetmaxer {
 				rm -rf prga.log
 				rm -rf wep.cap
 				rm -rf key.log
-				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "Wesside-ng attack on AP: $Host_SSID" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -k 1 -i $WIFI & choosewesside
+				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "`gettext \"Wesside-ng attack on AP: $Host_SSID\"`" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -k 1 -i $WIFI & choosewesside
 			}
 
 			function wessidetargetpoor {
 				rm -rf prga.log
 				rm -rf wep.cap
 				rm -rf key.log
-				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "Wesside-ng attack on AP: $Host_SSID" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -k 3 -i $WIFI & choosewesside
+				$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "`gettext \"Wesside-ng attack on AP: $Host_SSID\"`" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -k 3 -i $WIFI & choosewesside
 			}
 
 			function wessidenewtarget {
@@ -1056,7 +1057,7 @@ function optionmenu {
 				ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
 				head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
 				clear
-				echo "        Detected Access point list"
+				echo -e "`gettext\"        Detected Access point list\"`"
 				echo ""
 				echo " #      MAC                      CHAN    SECU    POWER   #CHAR   SSID"
 				echo ""
@@ -1076,7 +1077,7 @@ function optionmenu {
 				
 				done < $DUMP_PATH/dump-02.txt
 					echo ""
-					echo "        Select target               "
+					echo -e "`gettext \"       Select target               \"`"
 					read choice
 						idlenght=${aidlenght[$choice]}
 						ssid=${assid[$choice]}
@@ -1092,7 +1093,7 @@ function optionmenu {
 						acouper=${#ssid}
 						fin=$(($acouper-idlength))
 						Host_SSID=${ssid:1:fin}
-						$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "Wesside-ng attack on AP: $Host_SSID" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -i $WIFI & choosewesside
+						$TERMINAL -hold $TOPLEFTBIG $TITLEFLAG "`gettext \"Wesside-ng attack on AP: $Host_SSID\"`" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -i $WIFI & choosewesside
 			}
 
 	# 7.
@@ -1181,24 +1182,24 @@ function injectmenu {
 
 	function fragnoclientend {
 		$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
-		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "Injecting forged packet on $Host_SSID" $EXECFLAG $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI & menufonction
+		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "`gettext \"Injecting forged packet on $Host_SSID\"`" $EXECFLAG $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI & menufonction
 	}
 
 	function fragmentationattackend {
 		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
-		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "Injecting forged packet on $Host_SSID" $EXECFLAG $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
+		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "`gettext \"Injecting forged packet on $Host_SSID\"`" $EXECFLAG $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
 	}
 
 	function chopchopend {
 		rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 		$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor	
-		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "Sending chopchop to: $Host_SSID" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI & menufonction
+		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext \"Sending chopchop to: $Host_SSID\"`" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI & menufonction
 	}
 	
 	function chopchopclientend {
 		rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor
-		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "Sending chopchop to: $Host_SSID" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
+		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext \"Sending chopchop to: $Host_SSID\"`" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
 	}
 
 ###########################################
@@ -1210,7 +1211,7 @@ function setinterface {
 	INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'`
 	if [ "$WIFI" = "" ]
 	then
-		echo "=> Select your interface: (athX for madwifi devices)"
+		echo "`gettext \"=> Select your interface: \(athX for madwifi devices\)\"`"
 		echo ""
 		
 		select WIFI in $INTERFACES; do
@@ -1220,15 +1221,15 @@ function setinterface {
 		TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
 		clear
 		
-		echo "Interface used is : $WIFI"
-		echo "Interface type is : $TYPE"
+		echo -e "`gettext \"Interface used is : $WIFI\"`"
+		echo -e "`gettext \"Interface type is : $TYPE\"`"
 		testmac
 	else
 		TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
 		clear
 		
-		echo "Interface used is : $WIFI"
-		echo "Interface type is : $TYPE"
+		echo -e "`gettext \"Interface used is : $WIFI\"`"
+		echo -e "`gettext \"Interface type is : $TYPE\"`"
 		testmac 
 	fi
 }
@@ -1239,7 +1240,7 @@ function testmac {
 	then
 		echo "Previous fake_mac : $FAKE_MAC"
 		FAKE_MAC=`ifconfig $WIFI | grep $WIFI | awk '{print $5}' | cut -c -17  | sed -e "s/-/:/" | sed -e "s/\-/:/"  | sed -e "s/\-/:/" | sed -e "s/\-/:/" | sed -e "s/\-/:/"`
-		echo "Changed fake_mac : $FAKE_MAC" 
+		echo -e "`gettext \"Changed fake_mac : $FAKE_MAC\"`" 
 		else
 		echo ""
 	fi
@@ -1282,19 +1283,19 @@ function target {
 function checkdir {
 if [[ -d $DUMP_PATH ]]
 then
-echo "        Output folder is $DUMP_PATH"
+echo -e "        Output folder is $DUMP_PATH"
 echo ""
 else
-echo "        Output folder does not exist, i will create it now"
+echo -e "`gettext \"        Output folder does not exist, i will create it now\"`"
 mkdir $DUMP_PATH
-echo "        Output folder is now set to $DUMP_PATH"
+echo -e "`gettext \"        Output folder is now set to $DUMP_PATH\"`"
 fi
 }
 
 
 function reso {
 	while true; do
-		echo "   Select screen resolution            "
+		echo -e "`gettext \"   Select screen resolution            \"`"
 		echo "### 1) 640x480			    ###"
 		echo "### 2) 800x480                      ###"
 		echo "### 3) 800x600                      ###"
@@ -1311,7 +1312,7 @@ function reso {
 			5 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
 			6 ) TLX="110";TLY="35";TRX="99";TRY="40";BLX="110";BLY="35";BRX="99";BRY="30";bLX="110";bLY="72";bRX="99";bRY="40"; setterminal; break;;
 			7 ) TLX="130";TLY="40";TRX="68";TRY="25";BLX="130";BLY="40";BRX="132";BRY="35";bLX="130";bLY="85";bRX="132";bRY="48"; setterminal; break;;
-			* ) echo "unknown response. Try again" ;;
+			* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 		esac
 	done
 }
@@ -1319,11 +1320,10 @@ function reso {
 function setterminal {
 	clear
 	getterminal
-	echo "I'm going to set terminal options for your terminal now"
+	echo -e "`gettext \"I\'m going to set terminal options for your terminal now\"`"
 	# This way we support multiple terminals, not only $TERMINAL
 	case $TERMINAL in 
 		xterm|uxterm ) 
-			echo "Using xterm, it'll work ok"
 			export TOPLEFT="-geometry $TLX*$TLY+0+0 "
 			export TOPRIGHT="-geometry $TRX*$TRY-0+0 "
 			export BOTTOMLEFT="-geometry $BLX*$BLY+0-0 "
@@ -1380,7 +1380,7 @@ echo -e "\n"
 function debug {
 	if [ $DEBUG = 1 ]
 	then
-		echo " 	Debug Mode enabled, you'll have to manually close windows"
+		echo "`gettext \" 	Debug Mode enabled, you\'ll have to manually close windows\"`"
 		HOLD=$HOLDFLAG
 	else
 		HOLD=""
@@ -1391,7 +1391,7 @@ function getterminal {
 	# TERMINAL var is on config if valid, use it, if not set it to defaults, if that fails, use environment terminal, and if that fails too, use xterm :-D, if xterm isnt available, giva a fatal warning and exit (who doesnt have a terminal?)
 	if [ -e /usr/bin/$TERMINAL ]
 	then
-		echo -e "Using configured terminal"
+		echo -e "`gettext \"Using configured terminal\"`"
 	else
 		TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;
 	fi
@@ -1402,7 +1402,7 @@ function getterminal {
 	else
 		if [ -e $TERM ] 
 		then
-			echo -e "Using environment defined terminal ($TERM)\n"
+			echo -e "`gettext \"Using environment defined terminal ($TERM)\n\"`"
 			TERMINAL=$TERM
 		else
 			if [ -e "/usr/bin/xterm" ]
@@ -1411,10 +1411,10 @@ function getterminal {
 				echo -e "Using Xterm\n"
 			else
 			echo -e 
-				"I cant find any good terminal, please set one on your conffile
+				"`gettext \"I cant find any good terminal, please set one on your conffile
 				 Your TERMINAL var contains no valid temrinal
 				 Your alternative against x-terminal-emulator contains no terminal
-				 Xterm can't be found on your system\n"
+				 Xterm can\'t be found on your system\n\"`"
 				exit
 			fi
 		fi
@@ -1432,21 +1432,21 @@ function getterminal {
 	function capture {
 		clear
 		rm -rf $DUMP_PATH/$Host_MAC*
-		$TERMINAL $HOLD $TITLEFLAG "Capturing data on channel: $Host_CHAN" $TOPLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI
+		$TERMINAL $HOLD $TITLEFLAG "`gettext \"Capturing data on channel: $Host_CHAN\"`" $TOPLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI
 	}
 
 	function fakeauth {
-		$TERMINAL $HOLD $TITLEFLAG "Associating with: $Host_SSID " $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE $EXECFLAG "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
+		$TERMINAL $HOLD $TITLEFLAG "`gettext \"Associating with: $Host_SSID \"`" $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE $EXECFLAG "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
 	}
 
 	function menufonction {
-		$TERMINAL $HOLD $TOPRIGHT $TITLEFLAG "Fake function to jump to menu" $EXECFLAG echo "Aircrack-ng is a great tool, Mister_X ASPj & HIRTE are GODS"
+		$TERMINAL $HOLD $TOPRIGHT $TITLEFLAG "`gettext \"Fake function to jump to menu\"`" $EXECFLAG echo "Aircrack-ng is a great tool, Mister_X ASPj & HIRTE are GODS"
 	}
 	
 	# This is the input part for ssid. Used for almost two functions. (blankssid and choosetarget)
 	function Host_ssidinput {
 		echo "#######################################"
-		echo "###       Please enter SSID         ###"
+		echo -e "`gettext \"###       Please enter SSID         ###\"`"
 		read Host_SSID
 		set -- ${Host_SSID}
 		clear

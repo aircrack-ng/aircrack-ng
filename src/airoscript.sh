@@ -1,24 +1,26 @@
 #! /bin/bash
+export TEXTDOMAINDIR=/usr/share/locale
+export TEXTDOMAIN=airoscript
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others; Continued by XayOn.
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes, darkAudax, Atheros support thx to green-freq
-# Date of this version:	        15.11.2008
+# Date of this version:	        27.11.2008
 # Version of aircrack-ng required:  AIRCRACK-NG 1.0.2
-# Dependencies: aircrack-ng, xterm|urxvt|gnome-terminal|... , grep, awk, macchanger, drivers capable of injection (for injection =) ), mdk3 (optional)
+# Dependencies: aircrack-ng, xterm|urxvt|gnome-terminal|... , grep, awk, macchanger, drivers capable of injection (for injection =) ), mdk3 (optional), wlandecrypter (optional)
 
 # Get config.
 if [ -e ~/.airoscript.conf ];
 	then 	
 		if [ $HOME != "/root" ] 
 		then
-			echo -e "\t\tYou're going to use a config file on your home dir. 
+			echo -e "`gettext \"\\t\\tYou're going to use a config file on your home dir. 
 		This may be harmfull, for example, if your user have been 
 		compromised, and you're getting rights trought sudo, someone
 		can modify your config file to do something malicious as 
 		root. Be sure to check your home config file before using it. 
 		Defaults on /etc/airoscript.conf should be ok so you can 
 		safely remove your ~/.airoscript.conf\n\n
-		Do you really want to do it (Yes/No) (Case sensitive)"
+		Do you really want to do it (Yes/No) (Case sensitive)\"`"
 
 			read response
 
@@ -35,6 +37,7 @@ if [ -e ~/.airoscript.conf ];
 	else
 		if [ -e /etc/airoscript.conf ]; then
 			. /etc/airoscript.conf
+			echo -e "`gettext \"Me\"`"
 		else
 			if [ -e airoscript.conf ]; then
 				. airoscript.conf
@@ -98,7 +101,7 @@ select choix in $CHOICES; do
  			then blankssid;
 			target
 			menu
-		elif [ "$Host_SSID" = "No SSID has been detected!" ]
+		elif [ "$Host_SSID" = " `gettext \"No SSID has been detected\"` " ]
 			then blankssid;
 			target
 			menu
@@ -138,7 +141,7 @@ select choix in $CHOICES; do
 	else
 		clear
 		menu
-        echo "#######################################"
-        echo "###      Wrong number entered       ###"
+        echo "`gettext \"#######################################\"`"
+        echo "`gettext \"###      Wrong number entered       ###\"`"
 	fi
 done
