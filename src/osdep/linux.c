@@ -557,23 +557,37 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                 break;
 
             case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
-                ri->ri_power = *iterator.this_arg;
+                if( *iterator.this_arg < 127 )
+                    ri->ri_power = *iterator.this_arg;
+                else
+                    ri->ri_power = *iterator.this_arg - 255;
                 got_signal=1;
                 break;
 
             case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
-                if(!got_signal)
-                    ri->ri_power = *iterator.this_arg;
+                if(!got_signal) {
+                    if( *iterator.this_arg < 127 )
+                        ri->ri_power = *iterator.this_arg;
+                    else
+                        ri->ri_power = *iterator.this_arg - 255;
+                }
                 break;
 
             case IEEE80211_RADIOTAP_DBM_ANTNOISE:
-                ri->ri_noise = *iterator.this_arg;
+                if( *iterator.this_arg < 127 )
+                    ri->ri_noise = *iterator.this_arg;
+                else
+                    ri->ri_noise = *iterator.this_arg - 255;
                 got_noise=1;
                 break;
 
             case IEEE80211_RADIOTAP_DB_ANTNOISE:
-                if(!got_noise)
-                    ri->ri_noise = *iterator.this_arg;
+                if(!got_noise) {
+                    if( *iterator.this_arg < 127 )
+                        ri->ri_noise = *iterator.this_arg;
+                    else
+                        ri->ri_noise = *iterator.this_arg - 255;
+                }
                 break;
 
             case IEEE80211_RADIOTAP_ANTENNA:
@@ -607,12 +621,6 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
             }
         }
-
-        if( ri->ri_power > 127 )
-            ri->ri_power -= 255;
-
-        if( ri->ri_noise > 127 )
-            ri->ri_noise -= 255;
 
         n = le16_to_cpu(rthdr->it_len);
 
