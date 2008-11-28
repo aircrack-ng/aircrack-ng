@@ -17,7 +17,9 @@ install:
 	@install -D -g $(UID) -o $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc.sh $(SHAREDIR)/airoscfunc.sh
 	@install -D -g $(UID) -o $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc_unstable.sh $(SHAREDIR)/airoscfunc_unstable.sh
 	@install -D -g $(UID) -o $(GID) -m $(BINMODE) $(CURDIR)/src/screenrc $(SHAREDIR)/screenrc
+	@msgfmt -o /usr/share/locale/es/LC_MESSAGES/airoscript.mo $(CURDIR)/src/i10n/po/es_ES
 
-all: install
+
+all: install 
 
 .PHONY: all install configure

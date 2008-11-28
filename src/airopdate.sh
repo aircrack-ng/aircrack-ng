@@ -297,7 +297,7 @@ select choix in $CHOICES; do
 		chooseversion
 		menu			
 	elif [ "$choix" = "2" ]; then
-		choosedriver
+		echo -e "Please use airdriver-ng instead\n"
 		menu					
 	elif [ "$choix" = "3" ]; then
 		airoscript
