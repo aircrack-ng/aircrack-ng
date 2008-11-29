@@ -86,7 +86,6 @@ PS3=`gettext 'Input number: '`
 select choix in $CHOICES; do					
 	if [ "$choix" = "1" ]; then
 		choosetype
-		choosescan
 		clear
 		menu			
 

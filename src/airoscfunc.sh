@@ -45,17 +45,19 @@ ____________Encryption_______________
 ##   4) WPA                        ##
 ##   5) WPA1                       ##
 ##   6) WPA2                       ##
+##   7) Return to main menu	   ##
 ##_________________________________##
 Option number: ' `"
 
   read yn
   case $yn in
-    1 ) ENCRYPT="" ; break ;;
-    2 ) ENCRYPT="OPN" ; break ;;
-    3 ) ENCRYPT="WEP" ; break ;;
-    4 ) ENCRYPT="WPA" ; break ;;
-    5 ) ENCRYPT="WPA1" ; break ;;
-    6 ) ENCRYPT="WPA2" ; break ;;
+    1 ) ENCRYPT="" ; choosescan; break ;;
+    2 ) ENCRYPT="OPN" ; choosescan; break ;;
+    3 ) ENCRYPT="WEP" ; choosescan; break ;;
+    4 ) ENCRYPT="WPA" ; choosescan; break ;;
+    5 ) ENCRYPT="WPA1" ; choosescan; break ;;
+    6 ) ENCRYPT="WPA2" ; choosescan; break ;;
+    7 ) break;;
     * ) echo `gettext 'Unknown response. Try again'` ;;
 
   esac
@@ -543,10 +545,8 @@ function witchattack {
 	function attackopn { # If no encryption detected
 	  if [ "$Host_SSID" = "" ] 
 	  then
-	 	 echo `gettext "
-		 ________________________________________________
-	 	 ##   You need to select a target              ##
-	 	 ##____________________________________________##"`
+		 clear
+	 	 echo  "`gettext 'ERROR: You have to select a target'`"
 	  else
 		clear
 		echo `gettext "ERROR: $Host_SSID is not encrypted"`
@@ -572,7 +572,7 @@ function witchcrack {
 	##                                 ##
 	##   1) Use Wlandecrypter          ##
 	##   2) Use aircrack-ng            ##
-	##                                 ##
+	##   3) Return to main menu        ##
 	##_________________________________##
 	Option:'`"
 			
@@ -581,6 +581,7 @@ function witchcrack {
 				case $yn in
 					1 ) wld ; break ;;
 					2 ) selectcracking ; break ;;
+					3 ) clear; break;;
 					* ) echo "Unknown response. Try again" ;;
 				esac
 			done 
