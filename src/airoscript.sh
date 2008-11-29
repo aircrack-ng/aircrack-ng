@@ -37,7 +37,6 @@ if [ -e ~/.airoscript.conf ];
 	else
 		if [ -e /etc/airoscript.conf ]; then
 			. /etc/airoscript.conf
-			echo -e "`gettext \"Me\"`"
 		else
 			if [ -e airoscript.conf ]; then
 				. airoscript.conf
@@ -101,7 +100,7 @@ select choix in $CHOICES; do
  			then blankssid;
 			target
 			menu
-		elif [ "$Host_SSID" = " `gettext \"No SSID has been detected\"` " ]
+		elif [ "$Host_SSID" = " `gettext 'No SSID has been detected'` " ]
 			then blankssid;
 			target
 			menu
@@ -136,8 +135,10 @@ select choix in $CHOICES; do
 		menu
 
 	elif [ "$choix" = "9" ]; then
-		wld
-		menu
+		echo `gettext 'Deconfiguring interface...'`
+		airmon-ng stop $WIFI
+		echo `gettext 'done.'`
+		exit
 	else
 		clear
 		menu

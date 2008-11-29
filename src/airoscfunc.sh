@@ -11,7 +11,8 @@ function menu {
   ### 5) Fakeauth- Auth with target   ###
   ### 6) Deauth  - Deauth from target ###
   ### 7) Others  - Various utilities  ###
-  ### 8) Inject  - Jump to inj. menu  ###\"`"
+  ### 8) Inject  - Jump to inj. menu  ###
+  ### 9) Exit    - Quits              ###\"`"
 }
 
 ##################################################################################
@@ -496,9 +497,16 @@ function witchattack {
 	}
 
 	function attackopn { # If no encryption detected
-	  echo "#######################################"
-	  echo "###   You need to select a target   ###"
-	  echo "#######################################"
+	  if [ "$Host_SSID" = "" ] 
+	  then
+	 	 echo `gettext "
+		 ##################################################
+	 	 ###   You need to select a target              ###
+	 	 ##################################################"`
+	  else
+		clear
+		echo `gettext "ERROR: $Host_SSID is not encrypted"`
+	  fi
 	}
 
 
@@ -1336,17 +1344,20 @@ function setterminal {
 			export FGC="-fg"
 			export BGC="-bg"
 			export EXECFLAG="-e"
-			echo $TOPLEFT
-			echo $TOPRIGHT
-			echo $BOTTOMLEFT
-			echo $BOTTOMRIGHT
-			echo $TOPLEFTBIG
-			echo $TOPRIGHTBIG
-			printf -- "$EXECFLAG \n"
-			echo $HOLDFLAG
-			echo $TITLEFLAG
-			echo $FGC
-			echo $BGC
+			if [ "$DEBUG" = "1" ]
+			then
+				echo $TOPLEFT
+				echo $TOPRIGHT
+				echo $BOTTOMLEFT
+				echo $BOTTOMRIGHT
+				echo $TOPLEFTBIG
+				echo $TOPRIGHTBIG
+				printf -- "$EXECFLAG \n"
+				echo $HOLDFLAG
+				echo $TITLEFLAG
+				echo $FGC
+				echo $BGC
+			fi
 			;;
 		
 		gnome-terminal|gnome-terminal.wrapper ) 

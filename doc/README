@@ -33,6 +33,10 @@ The most important variables are:
 # The TROUBLESHOOTING debug mod (1 for enable, 0 for disable)
 DEBUG="0"
 
+# The critical troubleshooting debug mode: uncomment or add this line to your conffile:
+CDCMD="echo "
+# This will make every terminal command to be showed up instead of executing
+
 # Your interface: wlan0, ath0 etc... (if not set airoscript will ask for one
 at every launch of it)
 WIFI=""
@@ -58,6 +62,9 @@ Execute-time:   Terminal emulator (mrxvt, xterm...) -> Preferibly xterm
 		Aircrack-ng > 1.0.2
 		Bash
 		wlandecrypter (optional)
+		mdk (optional)
+		GNU Tools like grep awk...
+		macchanger
 
 DEVELOPERS:
 Help and feedback is greatly appreciated. 
