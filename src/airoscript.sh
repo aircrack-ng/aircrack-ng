@@ -47,6 +47,14 @@ if [ -e ~/.airoscript.conf ];
 		fi
 fi
 
+# include functions, functions value is on config file.
+if [ -e $FUNCTIONS ]; then
+	. $FUNCTIONS
+else
+	echo -e "[ERROR] : Functions file does not exists, quitting\n"
+	exit
+fi
+
 # get theme, theme value is on config file
 if [ -e $THEMEDIR/$THEME.theme ]; then
 	. $THEMEDIR/$THEME.theme 
@@ -57,17 +65,6 @@ else
 	ASSOCIATION_COLOR="#FF0009"
 	DEAUTH_COLOR="#99CCFF"
 	BACKGROUND_COLOR="#000000"
-fi
-
-# include functions, functions value is on config file.
-if [ -e $FUNCTIONS ]; then
-	. $FUNCTIONS
-	if [ -e $UNSTABLEF ]; then
-		. $UNSTABLEF
-	fi
-else
-	echo -e "[ERROR] : Functions file does not exists, quitting\n"
-	exit
 fi
 
 #runs debug routine to set $HOLD value
@@ -83,8 +80,9 @@ reso
 setinterface
 
 #displays main menu
-menu	
-
+menu
+# Sets ps3, wich will be shown after input in the select	
+PS3=`gettext 'Input number: '`
 select choix in $CHOICES; do					
 	if [ "$choix" = "1" ]; then
 		choosetype
@@ -93,23 +91,25 @@ select choix in $CHOICES; do
 		menu			
 
 	elif [ "$choix" = "2" ]; then
-		Parseforap
-		clear
-		choosetarget
-		if [ "$Host_SSID" = $'\r' ]
- 			then blankssid;
+		if [ -e $DUMP_PATH/dump-01.txt ]	
+		then
+			Parseforap
+			clear
+			if [ "$Host_SSID" = $'\r' ]
+	 			then blankssid;
+			elif [ "$Host_SSID" = "No SSID has been detected" ]
+				then blankssid;
+			fi
 			target
-			menu
-		elif [ "$Host_SSID" = " `gettext 'No SSID has been detected'` " ]
-			then blankssid;
-			target
+			choosetarget
+			clear
 			menu
 		else
-			target
-			echo " "
+			clear
+			echo "ERROR: You have to scan for targets first"
 			menu
 		fi
-					
+
 	elif [ "$choix" = "3" ]; then
 		witchattack	
 		menu
@@ -135,9 +135,14 @@ select choix in $CHOICES; do
 		menu
 
 	elif [ "$choix" = "9" ]; then
-		echo `gettext 'Deconfiguring interface...'`
-		airmon-ng stop $WIFI
-		echo `gettext 'done.'`
+		echo -n `gettext "	Do you want me to stop monitor mode on $WIFI? (y/n)"`
+		read dis
+		if [ $dis = "y" ]
+		then
+			echo -n `gettext 'Deconfiguring interface...'`
+			airmon-ng stop $WIFI
+		fi
+		rm -r $DUMP_PATH
 		exit
 	else
 		clear

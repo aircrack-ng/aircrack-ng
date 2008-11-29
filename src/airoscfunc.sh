@@ -1,18 +1,30 @@
 # Funcion file used by airoscript
-CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
+CHOICES="1 2 3 4 5 6 7 8 9 X X X"
 export TEXTDOMAINDIR=/usr/share/locale
 export TEXTDOMAIN=airoscript
+if [ "$UNSTABLE" = "1" ]
+then
+	if [ -e $UNSTABLEF ]; then
+		. $UNSTABLEF
+	fi
+fi
+
 function menu {
-  echo -e "`gettext \"Select next action
-  ### 1) Scan    - Scan for target    ###
-  ### 2) Select  - Select target      ###
-  ### 3) Attack  - Attack target      ###
-  ### 4) Crack   - Get target key     ###
-  ### 5) Fakeauth- Auth with target   ###
-  ### 6) Deauth  - Deauth from target ###
-  ### 7) Others  - Various utilities  ###
-  ### 8) Inject  - Jump to inj. menu  ###
-  ### 9) Exit    - Quits              ###\"`"
+  echo -e "`gettext '
+  _________________Menu________________
+  ##        Select next action       ##
+  ## 1) Scan    - Scan for target    ##
+  ## 2) Select  - Select target      ##
+  ## 3) Attack  - Attack target      ##
+  ## 4) Crack   - Get target key     ##
+  ## 5) Fakeauth- Auth with target   ##
+  ## 6) Deauth  - Deauth from target ##
+  ## 7) Others  - Various utilities  ##
+  ## 8) Inject  - Jump to inj. menu  ##
+  ## 9) Exit    - Quits              ##
+  ##_________________________________##
+
+  '`"
 }
 
 ##################################################################################
@@ -23,20 +35,20 @@ function menu {
 function choosetype {
 while true; do
   clear
-  echo -e "`gettext \"#######################################\\n
-###     Select AP specification     ###
-###                                 ###
-###   1) No filter                  ###
-###   2) OPN (open)                 ###
-###   3) WEP                        ###
-###   4) WPA                        ###
-###   5) WPA1                       ###
-###   6) WPA2                       ###
-###                                 ###
-#######################################\" `"
+  echo -e -n "`gettext '
+____________Encryption_______________
+##     Select AP specification     ##
+##                                 ##
+##   1) No filter                  ##
+##   2) OPN (open)                 ##
+##   3) WEP                        ##
+##   4) WPA                        ##
+##   5) WPA1                       ##
+##   6) WPA2                       ##
+##_________________________________##
+Option number: ' `"
 
   read yn
-  echo ""
   case $yn in
     1 ) ENCRYPT="" ; break ;;
     2 ) ENCRYPT="OPN" ; break ;;
@@ -44,7 +56,7 @@ while true; do
     4 ) ENCRYPT="WPA" ; break ;;
     5 ) ENCRYPT="WPA1" ; break ;;
     6 ) ENCRYPT="WPA2" ; break ;;
-    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+    * ) echo `gettext 'Unknown response. Try again'` ;;
 
   esac
 done 
@@ -52,19 +64,22 @@ done
 
 function choosescan {
 while true; do
-  echo -e " `gettext \"#######################################
-  ###  Select channel to use          ###
-  ###                                 ###
-  ###   1) Channel Hopping            ###
-  ###   2) Specific channel(s)        ###
-  ###                                 ###
-  ########################################\"`"
+  echo -e -n " `gettext '
+	||
+	||
+	\/
+  ______________Channel________________
+  ##      Select channel to use      ##
+  ##                                 ##
+  ##   1) Channel Hopping            ##
+  ##   2) Specific channel(s)        ##
+  ##_________________________________##
+  Option number:'`"
   read yn
-  echo ""
   case $yn in
     1 ) Scan;break;;
     2 ) Scanchan;break;;  
-    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+    * ) echo -e "\n `gettext \"Unknown response. Try again\"`" ;;
   esac
 done 
 }
@@ -76,14 +91,19 @@ done
 	}
 
 	function Scanchan {
-	  echo -e "`gettext \"######################################
-	  ###    Input channel number         ###
-	  ###                                 ###
-	  ###  A single number   6            ###
-	  ###  A range           1-5          ###
-	  ###  Multiple channels 1,1,2,5-7,11 ###
-	  ###                                 ###
-	  #######################################\"`"
+	  echo -e "\n `gettext '
+		||
+		||
+		\/
+	  _____________Channel Input___________
+	  ##      Please input channel       ##
+	  ##				     ##
+	  ##         You can insert:         ##
+	  ##  A single number   6            ##
+	  ##  A range           1-5          ##
+	  ##  Multiple channels 1,1,2,5-7,11 ##
+	  ##_________________________________##
+	  '`"
 		read channel_number
 		echo -e "`gettext \"You typed: $channel_number\"`"
 		set -- ${channel_number}
@@ -121,8 +141,7 @@ function Parseforap {
 	   fi
 	done < $DUMP_PATH/dump-02.txt
 
-	echo ""
-	echo -e "`gettext \"        Select target             \"`"
+	echo -e -n "`gettext 'Select target: '`"
 	read choice
 
 	idlenght=${aidlenght[$choice]}
@@ -144,17 +163,18 @@ function Parseforap {
 
 function choosetarget {
 while true; do
-  clear
-  echo -e  "`gettext \"  #######################################
-  ### Do you want to select a client? ###
-  ###                                 ###
-  ###   1) Yes, only associated       ###
-  ###   2) No i dont want to          ###
-  ###   3) Try to detect some         ###
-  ###   4) Yes show me the clients    ###
-  ###   5) Correct the SSID first     ###
-  ###                                 ###
-  #######################################\"`"
+
+  echo -n -e  "`gettext '
+  ___________Client selection__________
+  ## Do you want to select a client? ##
+  ##                                 ##
+  ##   1) Yes, only associated       ##
+  ##   2) No i dont want to          ##
+  ##   3) Try to detect some         ##
+  ##   4) Yes show me the clients    ##
+  ##   5) Correct the SSID first     ##
+  ##_________________________________##
+  Option: '`"
   read yn
   case $yn in
     1 ) listsel2  ; break ;;
@@ -162,7 +182,7 @@ while true; do
     3 ) clientdetect && clientfound ; break ;;
     4 ) askclientsel ; break ;;
     5 ) Host_ssidinput && choosetarget ; break ;; #Host_ssidinput is called from many places, not putting it here.
-    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+    * ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; clear ;;
   esac
 done 
 }
@@ -170,15 +190,17 @@ done
 	# List clients, (Option 1)
 	function listsel2 {
 	HOST=`cat $DUMP_PATH/dump-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
-		clear
-	  echo -e "`gettext \"
-	  #######################################
-	  ###                                 ###
-	  ###       Select client now         ###
-	  ###  These clients are connected to ###
-	  ###          $Host_SSID             ###
-	  ###                                 ###
-	  #######################################\"`"
+
+	  echo -e "`gettext '
+		||
+		||
+		\/
+	  ___________Client selection_________
+	  ##                                 ##
+	  ##       Select client now         ##
+	  ##  These clients are connected to ##
+	  ##          $Host_SSID             ##
+	  ##_________________________________##'`"
 		select CLIENT in $HOST;
 			do
 			export Client_MAC=` echo $CLIENT | awk '{
@@ -197,18 +219,19 @@ done
 
 	function clientfound {
 		while true; do
-		  clear
-		  echo -e "`gettext \"
-		  #######################################
-		  ###  Did you find desired client?   ###
-		  ###                                 ###
-		  ###   1) Yes, someone associated    ### 
-		  ###   2) No, no clients showed up   ###
-		  ###                                 ###
-		  #######################################\"`"
+	         echo -e "`gettext '
+		||
+		||
+		\/
+	  ____________Client selection_________
+	  ##  Did you find desired client?   ##
+	  ##                                 ##
+	  ##   1) Yes, someone associated    ## 
+	  ##   2) No, no clients showed up   ##
+	  ##_________________________________##'`"
 		  read yn
 		  case $yn in
-		    1 ) listsel3 ; break ;;
+	    1 ) listsel3 ; break ;;
 		    2 ) break ;;
 		    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 		  esac
@@ -218,13 +241,17 @@ done
 		function listsel3 {
 			HOST=`cat $DUMP_PATH/$Host_MAC-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
 			clear
-			echo -e "`gettext \"#######################################
-			###                                 ###
-			###       Select client now         ###
-			###  These clients are connected to ###
-			###          $Host_SSID             ###
-			###                                 ###
-			#######################################\"`"
+			echo -e "`gettext '    
+		    ||
+		    ||
+		    \/
+		 __________Client selection__________
+		 ##                                 ##
+		 ##       Select client now         ##
+		 ##  These clients are connected to ##
+	 	 ##          $Host_SSID             ##
+		 ##                                 ##
+		 ##_________________________________##'`"
 				select CLIENT in $HOST;
 				do
 					export Client_MAC=` echo $CLIENT | awk '{
@@ -238,21 +265,23 @@ done
 	function askclientsel {
 		while true; do
 		  clear
-		  echo "`gettext \"#######################################
-		  ###      Select next step           ###
-		  ###                                 ###
-		  ###   1) Detected clients           ###
-		  ###   2) Manual Input               ###
-		  ###   3) Associated client list     ###
-		  ###                                 ###
-		  #######################################\"`"
+		  echo "`gettext '
+		  ___________Client selection_________
+		  ##      Select next step          ##
+		  ##                                ##
+		  ##   1) Detected clients          ##
+		  ##   2) Manual Input              ##
+		  ##   3) Associated client list    ##
+		  ##                                ##
+		  ##________________________________##
+		  Option: '`"
 		  read yn
 		  echo ""
 		  case $yn in
 		    1 ) asklistsel ; break ;;
 		    2 ) clientinput ; break ;;
 		    3 ) listsel2 ; break ;;
-		    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+		    * ) echo -e "`gettext 'Unknown response. Try again'`" ;;
 		  esac
 	done 
 	}
@@ -261,13 +290,17 @@ done
 		function asklistsel {
 			while true; do
 				clear
-				echo -e "`gettext \"#######################################
-				###      Select next step           ###
-				###                                 ###
-				###   1) Clients of $Host_SSID      ###
-				###   2) Full list (all MACs)       ###
-				###                                 ###
-				#######################################\"`"
+				echo -n -e "`gettext '
+				  ||
+				  ||
+				  \/
+				____________Client selection_________
+				##      Select next step           ##
+				##                                 ##
+				##   1) Clients of $Host_SSID      ##
+				##   2) Full list (all MACs)       ##
+				##_________________________________##
+				Option: '`"
 				
 				if [ "$Host_SSID" = $'\r' ]
 				then
@@ -289,11 +322,15 @@ done
 			function listsel1 {
 				HOST=`cat $DUMP_PATH/dump-01.txt | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`
 				clear
-				echo -e "`gettext \"#######################################
-				###                                 ###
-				###       Select client now         ###
-				###                                 ###
-				#######################################\"`"
+				echo -e "`gettext '
+				 ||
+				 ||
+				 \/
+				_________Client selection____________
+				##                                 ##
+				##       Select client now         ##
+				##_________________________________##
+				Option: '`"
 				select CLIENT in $HOST;
 				do
 					export Client_MAC=` echo $CLIENT | awk '{
@@ -304,17 +341,16 @@ done
 			}
 
 		function clientinput {
-			echo -e "`gettext \"#######################################
-			###                                 ###
-			###   Type in client mac now        ###
-			###                                 ###
-			#######################################\"`"
+			echo -e "`gettext '
+			||
+			||
+			\/
+			__________Client selection___________
+			##                                 ##
+			##   Type in client mac now        ##
+			##_________________________________##
+			MAC: '`"
 			read Client_MAC
-			echo -e "`gettext \"#######################################
-			###                                 ###
-			###   You typed: $Client_MAC  ###
-			###                                 ###
-			#######################################\"`"
 			set -- ${Client_MAC}
 		}
 		
@@ -370,25 +406,33 @@ function witchattack {
 	function attackwep {
 	while true; do
 	  clear
-	  echo -e "`gettext \"#######################################
-	  ### Attacks not using a client      ###
-	  ### 1)  Fake auth => Automatic      ###
-	  ### 2)  Fake auth => Interactive    ###
-	  ### 3)  Fragmentation attack        ###
-	  ### 4)  Chopchop attack             ###
-	  ### 5)  Cafe Latte attack           ###
-	  ### 6)  Hirte attack                ###
-	  #######################################
-	  ### Attacks using a client          ###
-	  ### 7)  ARP replay => Automatic     ###
-	  ### 8)  ARP replay => Interactive   ###
-	  ### 9)  Fragmentation attack        ###
-	  ###10)  Frag. attack on client      ###
-	  ###11)  Chopchop attack             ###
-	  #######################################
-	  ### Injection if xor file generated ### 
-	  ###12) ARP inject from xor (PSK)    ###
-	  ###13) Return to main menu          ###\"`"
+	  echo -e "`gettext '
+	  ___________WEP ATTACKS________________
+	  ##  Attacks not using a client      ##
+	  ##				      ##
+	  ##  1)  Fake auth => Automatic      ##
+	  ##  2)  Fake auth => Interactive    ##
+	  ##  3)  Fragmentation attack        ##
+	  ##  4)  Chopchop attack             ##
+	  ##  5)  Cafe Latte attack           ##
+	  ##  6)  Hirte attack                ##
+	  ##__________________________________##
+	  ##				      ##
+	  ##  Attacks using a client          ##
+	  ##				      ##
+	  ##  7)  ARP replay => Automatic     ##
+	  ##  8)  ARP replay => Interactive   ##
+	  ##  9)  Fragmentation attack        ##
+	  ## 10)  Frag. attack on client      ##
+	  ## 11)  Chopchop attack             ##
+	  ##__________________________________##
+	  ##				      ##
+	  ## Injection if xor file generated  ##
+	  ##				      ## 
+	  ## 12) ARP inject from xor (PSK)    ##
+	  ## 13) Return to main menu          ##
+	  ##__________________________________##
+	  Option: '`"
 	  read yn
 	  echo ""
 	  case $yn in
@@ -500,9 +544,9 @@ function witchattack {
 	  if [ "$Host_SSID" = "" ] 
 	  then
 	 	 echo `gettext "
-		 ##################################################
-	 	 ###   You need to select a target              ###
-	 	 ##################################################"`
+		 ________________________________________________
+	 	 ##   You need to select a target              ##
+	 	 ##____________________________________________##"`
 	  else
 		clear
 		echo `gettext "ERROR: $Host_SSID is not encrypted"`
@@ -519,20 +563,24 @@ function witchcrack {
 		if [ "$UNSTABLE" = "1" ]
 		then
 			while true; do
-				echo -e "`gettext \"
-				#######################################
-				###      WEP/WPA CRACKING OPTIONS   ###
-				###                                 ###
-				###   1) Use Wlandecrypter          ###
-				###   2) Use aircrack-ng            ###
-				###                                 ###
-				#######################################\"`"
+				echo -e -n "`gettext '
+		||
+		||
+		\/
+	_____________________________________
+	##      WEP/WPA CRACKING OPTIONS   ##
+	##                                 ##
+	##   1) Use Wlandecrypter          ##
+	##   2) Use aircrack-ng            ##
+	##                                 ##
+	##_________________________________##
+	Option:'`"
 			
 				read yn
 				
 				case $yn in
-					1 ) selectcracking ; break ;;
-					2 ) wld ; break ;;
+					1 ) wld ; break ;;
+					2 ) selectcracking ; break ;;
 					* ) echo "Unknown response. Try again" ;;
 				esac
 			done 
@@ -542,32 +590,38 @@ function witchcrack {
 }
 
 function selectcracking {
-	if [ "$Host_ENC" = "WEP" ]
+	if [ "$Host_ENC" = "OPN" ]
 	then
-		crack
+		echo "ERROR: $Host_SSID is not encrypted"
 	else
-		wpacrack
+		if [ "$Host_ENC" = "WEP" ]
+		then
+			crack
+		else
+			wpacrack
+		fi
 	fi
 }
 
 #This is crack function, for WEP encryption:
 	function crack {
 		while true; do
-		echo -e "`gettext \"
-		#######################################
-		###      WEP CRACKING OPTIONS       ###
-		###                                 ###
-		###   1) aircrack-ng PTW attack     ###
-		###   2) aircrack-ng standard       ###
-		###   3) aircrack-ng user options   ###
-		###                                 ###
-		#######################################\"`"
+		echo -e -n "`gettext '
+		_____________________________________
+		##      WEP CRACKING OPTIONS       ##
+		##                                 ##
+		##   1) aircrack-ng PTW attack     ##
+		##   2) aircrack-ng standard       ##
+		##   3) aircrack-ng user options   ##
+		##                                 ##
+		##_________________________________##
+		Option: '`"
 		read yn
 		case $yn in
 		1 ) crackptw ; break ;;
 		2 ) crackstd ; break ;;
 		3 ) crackman ; break ;;
-		* ) echo "unknown response. Try again" ;;
+		* ) echo "`gettext 'Unknown response. Try again'`" ;;
 		esac
 		done 
 	}
@@ -610,21 +664,21 @@ function selectcracking {
 function choosefake {
 	while true; do
 		clear
-		echo -e "`gettext \"
-		#######################################
-		###   Select fakeauth method        ###
-		###                                 ###
-		###   1) Conservative               ###
-		###   2) Standard                   ###
-		###   3) Progressive                ###
-		###                                 ###
-		#######################################\"`"
+		echo -n -e "`gettext '
+		______________Fake auth______________
+		##   Select fakeauth method        ##
+		##                                 ##
+		##   1) Conservative               ##
+		##   2) Standard                   ##
+		##   3) Progressive                ##
+		##_________________________________##
+		Option: '`"
 		read yn
 		case $yn in
 			1 ) fakeauth1 ; break ;;
 			2 ) fakeauth2 ; break ;;
 			3 ) fakeauth3 ; break ;;
-			* ) echo "unknown response. Try again" ;;
+			* ) echo "Unknown response. Try again" ;;
 		esac
 	done 
 }
@@ -648,15 +702,15 @@ function choosefake {
 function choosedeauth {
 	while true; do
 	clear
-	echo -e "`gettext \"
-	#######################################
-	###   Who do you want to deauth ?   ###
-	###                                 ###
-	###   1) Everybody                  ###
-	###   2) Myself (the Fake MAC)      ###
-	###   3) Selected client            ###
-	###                                 ###
-	#######################################\"`"
+	echo -n -e "`gettext '
+	_____________________________________
+	##   Who do you want to deauth ?   ##
+	##                                 ##
+	##   1) Everybody                  ##
+	##   2) Myself (the Fake MAC)      ##
+	##   3) Selected client            ##
+	##_________________________________##
+	Option: '`"
 	read yn
 	case $yn in
 	1 ) deauthall ; break ;;
@@ -689,21 +743,21 @@ function choosedeauth {
 ##################################################################################
 function optionmenu {
 	while true; do
-	echo -e "`gettext \"
-	#######################################
-	###  Select task to perform         ###
-	###                                 ###
-	###   1) Test injection             ###
-	###   2) Select another interface   ###
-	###   3) Reset selected interface   ###
-	###   4) Change MAC of interface    ###
-	###   5) Mdk3                       ###
-	###   6) Wesside-ng                 ###
-	###   7) Enable monitor mode        ###
-	###   8) Checks with airmon-ng      ###
-	###   9) Return to main menu        ###
-	###                                 ###
-	#######################################\"`"
+	echo -e -n "`gettext '
+	_____________________________________
+	##  Select task to perform         ##
+	##                                 ##
+	##   1) Test injection             ##
+	##   2) Select another interface   ##
+	##   3) Reset selected interface   ##
+	##   4) Change MAC of interface    ##
+	##   5) Mdk3                       ##
+	##   6) Wesside-ng                 ##
+	##   7) Enable monitor mode        ##
+	##   8) Checks with airmon-ng      ##
+	##   9) Return to main menu        ##
+	##_________________________________##
+	Option: '`"
 	read yn
 	echo ""
 	case $yn in
@@ -760,16 +814,15 @@ function optionmenu {
 	# 4.
 	function wichchangemac {
 		while true; do
-			echo -e "`gettext \"
-			#######################################
-			###      Select next step           ###
-			###                                 ###
-			###   1) Change MAC to FAKEMAC      ###
-			###   2) Change MAC to CLIENTMAC    ###
-			###   3) Manual Mac input           ###
-			###                                 ###
-			#######################################\"`"
-			
+			echo -n -e "`gettext '
+			_____________________________________
+			##      Select next step           ##
+			##                                 ##
+			##   1) Change MAC to FAKEMAC      ##
+			##   2) Change MAC to CLIENTMAC    ##
+			##   3) Manual Mac input           ##
+			##_________________________________##
+			Option: '`"
 			read yn
 			
 			case $yn in
@@ -921,17 +974,18 @@ function optionmenu {
 		function choosemdk {
 			while true; do
 				clear
-				echo "`gettext \"
-				#######################################
-				###   Choose MDK3 Options           ###
-				###                                 ###
-				###   1) Deauthentication           ###
-				###   2) Prob selected AP           ###
-				###   3) Select another target      ###
-				###   4) Authentication DoS         ###
-				###   5) Return to main menu        ###
-				###                                 ###
-				#######################################\"`"
+				echo -n "`gettext '
+			_____________________________________
+			##   Choose MDK3 Options           ##
+			##                                 ##
+			##   1) Deauthentication           ##
+			##   2) Prob selected AP           ##
+			##   3) Select another target      ##
+			##   4) Authentication DoS         ##
+			##   5) Return to main menu        ##
+			##_________________________________##
+			Option: '`"
+
 				read yn
 				
 				case $yn in
@@ -1003,18 +1057,18 @@ function optionmenu {
 		function choosewesside {
 			while true; do
 				clear
-				echo -e "`gettext \"
-				#######################################
-				###   Choose Wesside-ng Options     ###
-				###                                 ###
-				###   1) No arguments               ###
-				###   2) Selected target            ###
-				###   3) Sel. target max rertransmit###
-				###   4) Sel. target poor connection###
-				###   5) Select another target      ###
-				###   6) Return to main menu        ###
-				###                                 ###
-				#######################################\"`"
+				echo -e -n "`gettext '
+			_____________________________________
+			##   Choose Wesside-ng Options     ##
+			##                                 ##
+			##   1) No arguments               ##
+			##   2) Selected target            ##
+			##   3) Sel. target max rertransmit #
+			##   4) Sel. target poor connection #
+			##   5) Select another target      ##
+			##   6) Return to main menu        ##
+			##_________________________________##
+				Option: '`"
 			
 				read yn
 
@@ -1163,18 +1217,19 @@ function optionmenu {
 ##################################################################################
 function injectmenu {
 	while true; do
-		echo -e "`gettext \"
-		#######################################
-		###  If previous step went fine     ###
-		###  Select next, otherwise hit5    ###
-		###                                 ###
-		###   1) Frag injection             ###
-		###   2) Frag with client injection ###
-		###   3) Chochop injection          ###
-		###   4) Chopchop with client inj.  ###
-		###   5) Return to main menu        ###
-		###                                 ###
-		#######################################\"`"	
+		echo -n -e "`gettext '
+		_____________________________________
+		##  If previous step went fine     ##
+		##  Select next, otherwise hit5    ##
+		##                                 ##
+		##   1) Frag injection             ##
+		##   2) Frag with client injection ##
+		##   3) Chochop injection          ##
+		##   4) Chopchop with client inj.  ##
+		##   5) Return to main menu        ##
+		##                                 ##
+		##_________________________________##
+		Option: '`"	
 		read yn
 		echo ""
 		case $yn in
@@ -1217,16 +1272,14 @@ function injectmenu {
 function setinterface {
 	#INTERFACES=`iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
 	#INTERFACES=`iwconfig|egrep "^[a-Z]+[0-9]+" |awk '{print $1}'`
-	INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'`
+	#INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'` # I dont really know why is this like that, the cut for spaces and awk print $1 doesnt make the same things?
+	INTERFACES=`ip link|egrep "^[0-9]+"|cut -d ':' -f 2 |awk {'print $1'} |grep -v lo`
 	if [ "$WIFI" = "" ]
 	then
-		echo "`gettext \"=> Select your interface: \(athX for madwifi devices\)\"`"
-		echo ""
-		
+		echo "`gettext '=> Select your interface: (athX for madwifi devices)'`"
 		select WIFI in $INTERFACES; do
 			break;
 		done
-
 		TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
 		clear
 		
@@ -1259,12 +1312,14 @@ function testmac {
 function blankssid {
 	while true; do
 		clear
-		echo -e "`gettext \"
-		#######################################
-		###       Blank SSID detected       ###
-		###    Do you want to in put one    ###
-		###    1) Yes                       ###
-		###    2) No                        ###\"`"
+		echo -e -n "`gettext '
+		_____________________________________
+		##       Blank SSID detected       ##
+		##    Do you want to in put one    ##
+		##    1) Yes                       ##
+		##    2) No                        ##
+		##_________________________________##
+		Option: '`"
 		read yn
 		case $yn in
 			1 ) Host_ssidinput ; break ;;
@@ -1276,17 +1331,16 @@ function blankssid {
 
 function target {
 	echo -e "`gettext \"
-	######################################
-	###
-	###   AP SSID   = $Host_SSID
-	###   AP MAC    = $Host_MAC
-	###   AP Chan   =$Host_CHAN
-	###   ClientMAC = $Client_MAC
-	###   FakeMAC 	= $FAKE_MAC
-	###   AP Encrypt= $Host_ENC
-	###   AP Speed  =$Host_SPEED
-	###
-	#######################################\"`"
+  _______Target information______
+
+   AP SSID       = $Host_SSID
+   AP MAC        = $Host_MAC
+   AP Channel    =$Host_CHAN
+   Client MAC    = $Client_MAC
+   Fake MAC      = $FAKE_MAC
+   AP Encryption =$Host_ENC
+   AP Speed      =$Host_SPEED
+  ________________________________\"`"
 }  
 
 function checkdir {
@@ -1304,16 +1358,25 @@ fi
 
 function reso {
 	while true; do
+		if [ "$resonset" = "" ]
+		then
 		echo -e "`gettext \"   Select screen resolution            \"`"
-		echo "### 1) 640x480			    ###"
-		echo "### 2) 800x480                      ###"
-		echo "### 3) 800x600                      ###"
-		echo "### 4) 1024x768                     ###"
-		echo "### 5) 1280x768                     ###"
-		echo "### 6) 1280x1024                    ###"
-		echo "### 7) 1600x1200                    ###"
-		read yn
-		case $yn in
+			echo -n "
+____Available resolutions_____
+##			    ##
+## 	1) 640x480 	    ##
+## 	2) 800x480  	    ##
+## 	3) 800x600	    ##
+##	4) 1024x768 	    ##
+##	5) 1280x768 	    ##
+##	6) 1280x1024	    ##
+##	7) 1600x1200	    ##
+##__________________________##
+Option: "
+read reson
+		fi
+
+		case $reson in
 			1 ) TLX="83";TLY="11";TRX="60";TRY="18";BLX="75";BLY="18";BRX="27";BRY="17";bLX="100";bLY="30";bRX="54";bRY="25"; setterminal; break;;
 			2 ) TLX="90";TLY="11";TRX="60";TRY="18";BLX="78";BLY="26";BRX="52";BRY="15";bLX="130";bLY="30";bRX="78";bRY="25"; setterminal; break;;
 			3 ) TLX="92";TLY="11";TRX="68";TRY="25";BLX="78";BLY="26";BRX="52";BRY="15";bLX="92" ;bLY="39";bRX="78";bRY="24"; setterminal; break;;
@@ -1321,8 +1384,9 @@ function reso {
 			5 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
 			6 ) TLX="110";TLY="35";TRX="99";TRY="40";BLX="110";BLY="35";BRX="99";BRY="30";bLX="110";bLY="72";bRX="99";bRY="40"; setterminal; break;;
 			7 ) TLX="130";TLY="40";TRX="68";TRY="25";BLX="130";BLY="40";BRX="132";BRY="35";bLX="130";bLY="85";bRX="132";bRY="48"; setterminal; break;;
-			* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+			* ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; clear ;;
 		esac
+
 	done
 }
 
@@ -1453,9 +1517,8 @@ function getterminal {
 ########Those three are called from many places.#########
 ###########################################
 	function capture {
-		clear
 		rm -rf $DUMP_PATH/$Host_MAC*
-		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Capturing data on channel'`: $Host_CHAN" $TOPLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI
+		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Capturing data on channel'`: $Host_CHAN" $TOPLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI 
 	}
 
 	function fakeauth {

@@ -5,7 +5,6 @@
 echo -e "\tUnstable functions from airoscript loaded,\n\tif you don't want this, set UNSTABLE=0 in\n\tconfig file"
 function doitwld {
 	airodump-ng -w $CAPFILE  $OPT $CHANNEL $WIFI
-	clear 
 	wlandecrypter $Host_MAC $Host_SSID $DICFILE 
 	aircrack-ng -b $Host_MAC -w $DICFILE $CAPFILE 
 }
@@ -15,34 +14,40 @@ function wld {
 	if [ $Host_MAC ] 
 	then
 
-		CAPFILE= `mktemp -p $DUMP_PATH`
-		DICFILE= `mktemp -p $DUMP_PATH`
-			echo  "######################################"
-			echo  "##Do you want to specify a channel? ##"
-			echo  "##If so, enter the channel, if not, ##"
-			echo  "##leave it empty and press enter.   ##"
-			echo  "######################################"
+		CAPFILE= `mktemp`
+		DICFILE= `mktemp`
+			echo  "______________________________________"
+			echo  "# Do you want to specify a channel?  #"
+			echo  "# If so, enter the channel, if not,  #"
+			echo  "# leave it empty and press enter.    #"
+			echo  "#____________________________________#"
+			echo -n "Channel: "
 
 			read CHANNEL
-				if [ $CHANNEL -ne "" ]
+				if [ "$CHANNEL" != "" ]
 				then
 					OPT="--channel "
 				fi
 
-			echo -e "I'm going to launch airodump now, when you\n get sufficent (3-6) iv's, stop it" 
-
-			sleep 2 
+			sleep 1 
 			case $Host_SSID in
 				WLAN_[1-9][1-9] )
-					echo "Your wifi is the form WLAN_XX so I'll try it"
+					echo "
+	_____________________________________
+	# Your wifi is the form WLAN_XX so  #
+	# I'll try to launch airodump now   #
+	# When you get sufficent ivs (data  #
+	# packets, almost 10), press ctrl+c #
+	#___________________________________#				
+	"
 					doitwld
 					;;
 				*)
-					echo "Sorry, your selected wlan is not supported"
+					echo "Sorry, your target is not supported (not wlan_XX type)"
 					;;
 			esac
 				
-
+	else
 		clear
 		echo -e "Error: You must select a client before performing this attack.\n"
 	fi

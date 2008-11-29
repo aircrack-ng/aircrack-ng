@@ -1,7 +1,7 @@
 Airoscript - a companion for aircrack-ng
 -------------------------------------------------------------------------------
 Daouid's project page
-http://daouid.googlepages.com/
+http://daouid.googlepages.com/ --> Not updated, please, for now use the one below
 
 XayOn's project page
 http://code.google.com/p/airoscript
@@ -26,7 +26,7 @@ Airoscript is currently in an unstable state.
 
 USAGE:
 Before doing anything make sure to open airoscript config file
-and set all variable according to your environnement. (Not allways necesary)
+and set all variable according to your environnement. (Not necesary yet)
 
 The most important variables are:
 
