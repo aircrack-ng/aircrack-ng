@@ -210,7 +210,7 @@ char usage[] =
 "\n"
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
-"      -w <words> : give filename(s) of the dictionaries\n"
+"      -w <words> : path to wordlist(s) filename(s)\n"
 #ifdef HAVE_SQLITE
 "      -r <DB>    : path to airolib-ng database\n"
 "                   (Cannot be used with -w)\n"
