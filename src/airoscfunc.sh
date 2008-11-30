@@ -243,7 +243,7 @@ done
 		function listsel3 {
 			HOST=`cat $DUMP_PATH/$Host_MAC-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
 			clear
-			echo -e "`gettext '    
+			echo -e "`gettext \"   
 		    ||
 		    ||
 		    \/
@@ -253,7 +253,7 @@ done
 		 ##  These clients are connected to ##
 	 	 ##          $Host_SSID             ##
 		 ##                                 ##
-		 ##_________________________________##'`"
+		 ##_________________________________##\"`"
 				select CLIENT in $HOST;
 				do
 					export Client_MAC=` echo $CLIENT | awk '{
@@ -267,16 +267,16 @@ done
 	function askclientsel {
 		while true; do
 		  clear
-		  echo "`gettext '
-		  ___________Client selection_________
-		  ##      Select next step          ##
-		  ##                                ##
-		  ##   1) Detected clients          ##
-		  ##   2) Manual Input              ##
-		  ##   3) Associated client list    ##
-		  ##                                ##
-		  ##________________________________##
-		  Option: '`"
+		  echo -n "`gettext '
+	  ___________Client selection_________
+	  ##      Select next step          ##
+	  ##                                ##
+	  ##   1) Detected clients          ##
+	  ##   2) Manual Input              ##
+	  ##   3) Associated client list    ##
+	  ##                                ##
+	  ##________________________________##
+	  Option: '`"
 		  read yn
 		  echo ""
 		  case $yn in
@@ -292,17 +292,17 @@ done
 		function asklistsel {
 			while true; do
 				clear
-				echo -n -e "`gettext '
-				  ||
-				  ||
-				  \/
-				____________Client selection_________
-				##      Select next step           ##
-				##                                 ##
-				##   1) Clients of $Host_SSID      ##
-				##   2) Full list (all MACs)       ##
-				##_________________________________##
-				Option: '`"
+				echo -n -e "`gettext \"
+		  ||
+		  ||
+		  \/
+		____________Client selection_________
+		##      Select next step           ##
+		##                                 ##
+		##   1) Clients of $Host_SSID      ##
+		##   2) Full list (all MACs)       ##
+		##_________________________________##
+		Option: \"`"
 				
 				if [ "$Host_SSID" = $'\r' ]
 				then
@@ -324,15 +324,15 @@ done
 			function listsel1 {
 				HOST=`cat $DUMP_PATH/dump-01.txt | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`
 				clear
-				echo -e "`gettext '
-				 ||
-				 ||
-				 \/
-				_________Client selection____________
-				##                                 ##
-				##       Select client now         ##
-				##_________________________________##
-				Option: '`"
+				echo -e -n "`gettext '
+			 ||
+			 ||
+			 \/
+			_________Client selection____________
+			##                                 ##
+			##       Select client now         ##
+			##_________________________________##
+			Option: '`"
 				select CLIENT in $HOST;
 				do
 					export Client_MAC=` echo $CLIENT | awk '{

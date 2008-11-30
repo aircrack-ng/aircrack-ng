@@ -43,6 +43,7 @@ function wld {
 					doitwld
 					;;
 				*)
+					clear
 					echo "Sorry, your target is not supported (not wlan_XX type)"
 					;;
 			esac
