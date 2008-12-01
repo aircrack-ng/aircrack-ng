@@ -129,7 +129,7 @@ function Parseforap {
 	clear
 
 	echo -e "`gettext \"\\tDetected Access point list\"`\n"
-	echo -e "`gettext \"#\\tMAC\\t\\tCHAN\\tSECU\\tPOWER\\t#CHAR\\tSSID\"`\n"
+	echo -e "`gettext \"#\\t\\tMAC\\t\\tCHAN\\tSECU\\tPOWER\\t#CHAR\\t\\tSSID\"`\n"
 
 	while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do 
 	 longueur=${#MAC}
@@ -365,11 +365,11 @@ done
 ##################################################################################
 
 function witchattack {
-	if [ "$Host_ENC" = "WEP" ]
+	if [ "$Host_ENC" = " WEP " ] || [ "$Host_ENC" = "WEP" ]
 	then
 		monitor_interface2
 		attackwep
-	elif [ "$Host_ENC" = "WPA" ]
+	elif [ "$Host_ENC" = " WPA " ] || [ "$Host_ENC" = "WPA" ]
 	then
 		monitor_interface2
 		wpahandshake
@@ -549,7 +549,7 @@ function witchattack {
 	 	 echo  "`gettext 'ERROR: You have to select a target'`"
 	  else
 		clear
-		echo `gettext "ERROR: $Host_SSID is not encrypted"`
+		echo `gettext "ERROR: $Host_SSID is not encrypted ($Host_ENC)"`
 	  fi
 	}
 
@@ -593,7 +593,7 @@ function witchcrack {
 function selectcracking {
 	if [ "$Host_ENC" = "OPN" ]
 	then
-		echo "ERROR: $Host_SSID is not encrypted"
+		echo "ERROR: $Host_SSID is not encrypted ($Host_ENC)"
 	else
 		if [ "$Host_ENC" = "WEP" ]
 		then
