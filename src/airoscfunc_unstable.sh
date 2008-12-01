@@ -4,9 +4,9 @@
 # By David Francos (XayOn) <yo.orco@gmail.com>
 echo -e "\tUnstable functions from airoscript loaded,\n\tif you don't want this, set UNSTABLE=0 in\n\tconfig file"
 function doitwld {
-	airodump-ng -w $CAPFILE  $OPT $CHANNEL $WIFI
-	wlandecrypter $Host_MAC $Host_SSID $DICFILE 
-	aircrack-ng -b $Host_MAC -w $DICFILE $CAPFILE 
+	airodump-ng -w $DUMP_PATH/wldcap  $OPT $CHANNEL $WIFI
+	wlandecrypter $Host_MAC $Host_SSID $DUMP_PATH/wlddic 
+	aircrack-ng -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/wldcap
 }
 
 function wld {
@@ -14,8 +14,9 @@ function wld {
 	if [ $Host_MAC ] 
 	then
 
-		CAPFILE= `mktemp`
-		DICFILE= `mktemp`
+		touch "$DUMP_PATH/wldcap"
+		touch "$DUMP_PATH/wlddic"
+
 			echo  "______________________________________"
 			echo  "# Do you want to specify a channel?  #"
 			echo  "# If so, enter the channel, if not,  #"

@@ -81,6 +81,7 @@ setinterface
 
 #displays main menu
 menu
+
 # Sets ps3, wich will be shown after input in the select	
 PS3=`gettext 'Input number: '`
 select choix in $CHOICES; do					
@@ -132,16 +133,28 @@ select choix in $CHOICES; do
 	elif [ "$choix" = "8" ]; then
 		injectmenu
 		menu
-
 	elif [ "$choix" = "9" ]; then
-		echo -n `gettext "	Do you want me to stop monitor mode on $WIFI? (y/n)"`
+		doauto
+		menu
+
+	elif [ "$choix" = "10" ]; then
+		echo -n `gettext "	Do you want me to stop monitor mode on $WIFI? (y/N) "`
 		read dis
 		if [ $dis = "y" ]
 		then
 			echo -n `gettext 'Deconfiguring interface...'`
 			airmon-ng stop $WIFI
 		fi
-		rm -r $DUMP_PATH
+		echo -n `gettext 'Do you want me to delete temporary data dir? (y/N) '`
+		read del
+
+		if [ $del = "y" ]
+		then
+			echo -n `gettext 'Deleting'` " $DUMP_PATH ..."
+			rm -r $DUMP_PATH
+			echo `gettext 'done'`
+		fi
+
 		exit
 	else
 		clear

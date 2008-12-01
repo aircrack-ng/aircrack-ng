@@ -1,7 +1,8 @@
 # Funcion file used by airoscript
-CHOICES="1 2 3 4 5 6 7 8 9 X X X"
+CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
 export TEXTDOMAINDIR=/usr/share/locale
 export TEXTDOMAIN=airoscript
+
 if [ "$UNSTABLE" = "1" ]
 then
 	if [ -e $UNSTABLEF ]; then
@@ -12,17 +13,18 @@ fi
 function menu {
   echo -e "`gettext '
   _________________Menu________________
-  ##        Select next action       ##
-  ## 1) Scan    - Scan for target    ##
-  ## 2) Select  - Select target      ##
-  ## 3) Attack  - Attack target      ##
-  ## 4) Crack   - Get target key     ##
-  ## 5) Fakeauth- Auth with target   ##
-  ## 6) Deauth  - Deauth from target ##
-  ## 7) Others  - Various utilities  ##
-  ## 8) Inject  - Jump to inj. menu  ##
-  ## 9) Exit    - Quits              ##
-  ##_________________________________##
+  ##        Select next action        ##
+  ## 1)  Scan    - Scan for target    ##
+  ## 2)  Select  - Select target      ##
+  ## 3)  Attack  - Attack target      ##
+  ## 4)  Crack   - Get target key     ##
+  ## 5)  Fakeauth- Auth with target   ##
+  ## 6)  Deauth  - Deauth from target ##
+  ## 7)  Others  - Various utilities  ##
+  ## 8)  Inject  - Jump to inj. menu  ##
+  ## 9)  Auto    - Does 1,2 and 3     ##
+  ## 10) Exit    - Quits              ##
+  ##__________________________________##
 
   '`"
 }
@@ -242,7 +244,6 @@ done
 		
 		function listsel3 {
 			HOST=`cat $DUMP_PATH/$Host_MAC-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
-			clear
 			echo -e "`gettext \"   
 		    ||
 		    ||
@@ -323,7 +324,6 @@ done
 		
 			function listsel1 {
 				HOST=`cat $DUMP_PATH/dump-01.txt | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`
-				clear
 				echo -e -n "`gettext '
 			 ||
 			 ||
@@ -663,25 +663,33 @@ function selectcracking {
 ## And HIRTE for making all those great patch and fixing the SSID issue	
 
 function choosefake {
+if [ "$Host_SSID" = "" ]
+then 
+	clear
+	echo "ERROR: You have to select a target first"
+else
 	while true; do
-		clear
 		echo -n -e "`gettext '
-		______________Fake auth______________
-		##   Select fakeauth method        ##
-		##                                 ##
-		##   1) Conservative               ##
-		##   2) Standard                   ##
-		##   3) Progressive                ##
-		##_________________________________##
-		Option: '`"
+	||
+	||
+	\/	
+______________Fake auth______________
+##   Select fakeauth method        ##
+##                                 ##
+##   1) Conservative               ##
+##   2) Standard                   ##
+##   3) Progressive                ##
+##_________________________________##
+Option: '`"
 		read yn
 		case $yn in
-			1 ) fakeauth1 ; break ;;
-			2 ) fakeauth2 ; break ;;
-			3 ) fakeauth3 ; break ;;
+			1 ) fakeauth1 ;clear; break ;;
+			2 ) fakeauth2 ;clear; break ;;
+			3 ) fakeauth3 ;clear; break ;;
 			* ) echo "Unknown response. Try again" ;;
 		esac
 	done 
+fi
 }
 
 # Those are subproducts of choosefake
@@ -701,26 +709,34 @@ function choosefake {
 ##################################################################################
 ##################################################################################
 function choosedeauth {
-	while true; do
+if [ "$Host_SSID" = "" ]
+then
 	clear
+	echo "ERROR: You have to select a target first"
+else
+	while true; do
 	echo -n -e "`gettext '
-	_____________________________________
-	##   Who do you want to deauth ?   ##
-	##                                 ##
-	##   1) Everybody                  ##
-	##   2) Myself (the Fake MAC)      ##
-	##   3) Selected client            ##
-	##_________________________________##
-	Option: '`"
+	||
+	||
+	\/	
+_____________________________________
+##   Who do you want to deauth ?   ##
+##                                 ##
+##   1) Everybody                  ##
+##   2) Myself (the Fake MAC)      ##
+##   3) Selected client            ##
+##_________________________________##
+Option: '`"
 	read yn
 	case $yn in
-	1 ) deauthall ; break ;;
-	2 ) deauthfake ; break ;;
+	1 ) deauthall ; clear ; break ;;
+	2 ) deauthfake ; clear ; break ;;
 	3 ) deauthclient ; break ;; 
 	* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 
 	esac
 	done 
+fi
 }
 
 	# Subproducts of choosedeauth
@@ -729,7 +745,13 @@ function choosedeauth {
 		}
 		
 		function deauthclient {
+		if [ "$Client_MAC" = "" ]
+		then	
+			clear
+			echo "ERROR: You have to select a client first"
+		else
 			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext 'Kicking $Client_MAC from:'` $Host_SSID" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $WIFI
+		fi
 		}
 		
 		function deauthfake {
@@ -744,21 +766,24 @@ function choosedeauth {
 ##################################################################################
 function optionmenu {
 	while true; do
-	echo -e -n "`gettext '
-	_____________________________________
-	##  Select task to perform         ##
-	##                                 ##
-	##   1) Test injection             ##
-	##   2) Select another interface   ##
-	##   3) Reset selected interface   ##
-	##   4) Change MAC of interface    ##
-	##   5) Mdk3                       ##
-	##   6) Wesside-ng                 ##
-	##   7) Enable monitor mode        ##
-	##   8) Checks with airmon-ng      ##
-	##   9) Return to main menu        ##
-	##_________________________________##
-	Option: '`"
+echo -e -n "`gettext '
+	||
+	||
+	\/	
+_____________________________________
+##  Select task to perform         ##
+##                                 ##
+##   1) Test injection             ##
+##   2) Select another interface   ##
+##   3) Reset selected interface   ##
+##   4) Change MAC of interface    ##
+##   5) Mdk3                       ##
+##   6) Wesside-ng                 ##
+##   7) Enable monitor mode        ##
+##   8) Checks with airmon-ng      ##
+##   9) Return to main menu        ##
+##_________________________________##
+Option: '`"
 	read yn
 	echo ""
 	case $yn in
@@ -770,9 +795,9 @@ function optionmenu {
 	6 ) choosewesside ; break ;;
 	7 ) monitor_interface ; break ;;
 	8 ) airmoncheck ; break ;;
-	9 ) break ;;
+	9 ) clear;break ;;
 	* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-
+	
 	esac
 	done 
 }
@@ -785,7 +810,7 @@ function optionmenu {
 	# 2.
 	function setinterface2 {
 		INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'`
-		echo "   Select your interface"
+		echo "   Select your interface: "
 		echo " "
 		
 		select WIFI in $INTERFACES; do
@@ -816,14 +841,17 @@ function optionmenu {
 	function wichchangemac {
 		while true; do
 			echo -n -e "`gettext '
-			_____________________________________
-			##      Select next step           ##
-			##                                 ##
-			##   1) Change MAC to FAKEMAC      ##
-			##   2) Change MAC to CLIENTMAC    ##
-			##   3) Manual Mac input           ##
-			##_________________________________##
-			Option: '`"
+	||
+	||
+	\/
+	_____________________________________
+	##      Select next step           ##
+	##                                 ##
+	##   1) Change MAC to FAKEMAC      ##
+	##   2) Change MAC to CLIENTMAC    ##
+	##   3) Manual Mac input           ##
+	##_________________________________##
+	Option: '`"
 			read yn
 			
 			case $yn in
@@ -924,7 +952,7 @@ function optionmenu {
 		function macinput {
 			echo -n -e "`gettext \"OK, now type in new MAC: \"`"
 			read MANUAL_MAC
-			echo You typed: $MANUAL_MAC
+			echo `gettext 'You typed:'` $MANUAL_MAC
 			set -- ${MANUAL_MAC}
 			manualmacchanger
 		}
@@ -943,7 +971,7 @@ function optionmenu {
 					echo "Unknow way to change mac"
 				fi			
 			}
-			
+			# I suppose all this code if for precaution. I mean, if sometime the method differes between the different kind of cards, or if we've got to add a new card with a differente method.
 				function manualchangemacrausb {
 					ifconfig $WIFI down
 					iwconfig $WIFI mode managed
@@ -1219,18 +1247,18 @@ function optionmenu {
 function injectmenu {
 	while true; do
 		echo -n -e "`gettext '
-		_____________________________________
-		##  If previous step went fine     ##
-		##  Select next, otherwise hit5    ##
-		##                                 ##
-		##   1) Frag injection             ##
-		##   2) Frag with client injection ##
-		##   3) Chochop injection          ##
-		##   4) Chopchop with client inj.  ##
-		##   5) Return to main menu        ##
-		##                                 ##
-		##_________________________________##
-		Option: '`"	
+_____________________________________
+##  If previous step went fine     ##
+##  Select next, otherwise hit5    ##
+##                                 ##
+##   1) Frag injection             ##
+##   2) Frag with client injection ##
+##   3) Chochop injection          ##
+##   4) Chopchop with client inj.  ##
+##   5) Return to main menu        ##
+##                                 ##
+##_________________________________##
+Option: '`"	
 		read yn
 		echo ""
 		case $yn in
@@ -1238,33 +1266,61 @@ function injectmenu {
 			2 ) fragmentationattackend ; break ;;
 			3 ) chopchopend ; break ;; 
 			4 ) chopchopclientend ; break ;;
-			5 ) break ;;
-			* ) echo "unknown response. Try again" ;;
+			5 ) clear; break ;;
+			* ) echo "Unknown response. Try again" ;;
 		esac
 	done 
 }
 
 
 	function fragnoclientend {
+		if [ "$Host_MAC" = "" ]
+		then
+			clear
+			echo `gettext 'ERROR: You must select a target first'`
+		else
 		$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
 		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "`gettext 'Injecting forged packet on'` $Host_SSID" $EXECFLAG $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI & menufonction
+		fi
 	}
 
 	function fragmentationattackend {
+
+		if [ "$Host_MAC" = "" ]
+		then
+			clear
+			echo `gettext 'ERROR: You must select a target first' `
+		else
 		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
 		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "`gettext 'Injecting forged packet on'` $Host_SSID" $EXECFLAG $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
+		fi
 	}
 
 	function chopchopend {
+		if [ "$Host_MAC" = "" ]
+		then
+			clear
+			echo `gettext 'ERROR: You must select a target first' `
+		else
+		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
+
 		rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 		$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor	
 		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext 'Sending chopchop to:'` $Host_SSID" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI & menufonction
+		fi
 	}
 	
 	function chopchopclientend {
+		if [ "$Host_MAC" = "" ]
+		then
+			clear
+			echo `gettext 'ERROR: You must select a target first' `
+		else
+		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
 		rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor
 		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext 'Sending chopchop to:'` $Host_SSID" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
+		fi
 	}
 
 ###########################################
@@ -1561,4 +1617,29 @@ function configure {
 function wpaconfigure {
 		$AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST &> $DUMP_PATH/$Host_MAC.key
 		KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
+}
+function doauto {
+		# First the first funcion, those where you scan for targets :-)
+		choosetype
+
+		# Now the one on wich you select target
+		if [ -e $DUMP_PATH/dump-01.txt ]	
+		then
+			Parseforap
+			clear
+			if [ "$Host_SSID" = $'\r' ]
+	 			then blankssid;
+			elif [ "$Host_SSID" = "No SSID has been detected" ]
+				then blankssid;
+			fi
+			target
+			choosetarget
+			clear
+		else
+			clear
+			echo "ERROR: You have to scan for targets first"
+		fi
+		# And now the cracking option :-) 
+		# I really really hope this will be usefull.
+		witchattack	
 }
