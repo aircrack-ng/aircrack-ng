@@ -31,13 +31,13 @@ usage() {
 
 startStdIface() {
 	iwconfig $1 mode monitor >/dev/null 2>&1
-	if [ ! -z $3 ]
+	if [ ! -z $2 ]
 	then
-	    if [ $3 -lt 1000 ]
+	    if [ $2 -lt 1000 ]
 	    then
-		iwconfig $1 channel $3 >/dev/null 2>&1
+		iwconfig $1 channel $2 >/dev/null 2>&1
 	    else
-		iwconfig $1 freq "$3"000000 > /dev/null 2>&1
+		iwconfig $1 freq "$2"000000 > /dev/null 2>&1
 	    fi
 	fi
 	iwconfig $1 key off >/dev/null 2>&1
