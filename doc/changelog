@@ -1,11 +1,17 @@
 Changelog for 2.0.11
-- Tested with screen on terminal. It works so noone will need more another version if doesnt want to use gui.
+- Changed interface. Now it looks nicer.
+- Corrected some bugs
+- Added support for gettext
+- Added support for wlandecrypter
+- Added an "Auto" function
+- Added a "exit" function, asking user if he wants delete temporary directory and/or stop monitor mode on selected interface.
+- Code cleaned and reorganised.
 
 Changelog for 2.0.10
 - Added multiple terminal support
 - Added theme support
 - Added config file support
-- Added aleatory temp file creation
+- Added aleatory temp dir creation
 - Wrote a makefile for airoscript
 - Corrected bug #521 (airopdate rt61 bug)
 

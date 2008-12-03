@@ -162,6 +162,7 @@ select choix in $CHOICES; do
 		then
 			echo -n `gettext 'Deleting'` " $DUMP_PATH ..."
 			rm -r $DUMP_PATH
+			rm *.cap
 			echo `gettext 'done'`
 		fi
 

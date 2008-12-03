@@ -408,7 +408,7 @@ function witchattack {
 	function attackwep {
 	while true; do
 	  clear
-	  echo -e "`gettext '
+	  echo -e -n "`gettext '
 	  ___________WEP ATTACKS________________
 	  ##  Attacks not using a client      ##
 	  ##				      ##
@@ -438,19 +438,19 @@ function witchattack {
 	  read yn
 	  echo ""
 	  case $yn in
-	    1 ) attack ; break ;;
-	    2 ) fakeinteractiveattack ; break ;;
-	    3 ) fragnoclient ; break ;;
-	    4 ) chopchopattack ; break ;;
-	    5 ) cafelatteattack ; break ;;
-	    6 ) hirteattack ; break ;;
-	    7 ) attackclient ; break ;;
-	    8 ) interactiveattack ; break ;;
-	    9 ) fragmentationattack ; break ;;
-	    10 ) fragmentationattackclient ; break ;;   
-	    11 ) chopchopattackclient ; break ;;
-	    12 ) pskarp ; break ;;
-	    13 ) break ;;
+	    1 ) attack ;clear; break ;;
+	    2 ) fakeinteractiveattack;clear ; break ;;
+	    3 ) fragnoclient ;clear; break ;;
+	    4 ) chopchopattack ;clear; break ;;
+	    5 ) cafelatteattack ;clear; break ;;
+	    6 ) hirteattack ;clear; break ;;
+	    7 ) attackclient ;clear; break ;;
+	    8 ) interactiveattack ;clear; break ;;
+	    9 ) fragmentationattack ;clear; break ;;
+	    10 ) fragmentationattackclient;clear ; break ;;   
+	    11 ) chopchopattackclient;clear ; break ;;
+	    12 ) pskarp ;clear; break ;;
+	    13 ) clear;break ;;
 	    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 	  esac
 	done 
@@ -591,9 +591,10 @@ function witchcrack {
 }
 
 function selectcracking {
-	if [ "$Host_ENC" = "OPN" ]
+	if [ "$Host_ENC" = "OPN" ] | [ $Host_ENC = "" ]
 	then
-		echo "ERROR: $Host_SSID is not encrypted ($Host_ENC)"
+		clear
+		echo `gettext "ERROR: Network not encrypted or no network selected "`
 	else
 		if [ "$Host_ENC" = " WEP " ] || [ "$Host_ENC" = "WEP" ]
 		then
