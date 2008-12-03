@@ -595,7 +595,7 @@ function selectcracking {
 	then
 		echo "ERROR: $Host_SSID is not encrypted ($Host_ENC)"
 	else
-		if [ "$Host_ENC" = "WEP" ]
+		if [ "$Host_ENC" = " WEP " ] || [ "$Host_ENC" = "WEP" ]
 		then
 			crack
 		else
@@ -1623,7 +1623,7 @@ function doauto {
 		choosetype
 
 		# Now the one on wich you select target
-		if [ -e $DUMP_PATH/dump-01.txt ]	
+		if [ -e $DUMP_PATH/dump-01.txt ] 	
 		then
 			Parseforap
 			clear

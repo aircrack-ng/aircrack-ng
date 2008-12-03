@@ -8,27 +8,29 @@ export TEXTDOMAIN=airoscript
 # Version of aircrack-ng required:  AIRCRACK-NG 1.0.2
 # Dependencies: aircrack-ng, xterm|urxvt|gnome-terminal|... , grep, awk, macchanger, drivers capable of injection (for injection =) ), mdk3 (optional), wlandecrypter (optional)
 
+function confwarn {
+echo -n -e "`gettext 'Youre going to use a config file on your home or current dir. 
+This may be harmfull, for example, if your user have been 
+compromised, and youre getting rights trought sudo, someone
+can modify your config file to do something malicious as 
+root. Be sure to check your home config file before using it. 
+Defaults on /etc/airoscript.conf should be ok so you can 
+safely remove your ~/.airoscript.conf\n\n
+Do you really want to do it (yes/No): '`"
+}
+
 # Get config.
 if [ -e ~/.airoscript.conf ];
 	then 	
-		if [ $HOME != "/root" ] 
+		if [ $HOME != "/root" ]
 		then
-			echo -e "`gettext \"\\t\\tYou're going to use a config file on your home dir. 
-		This may be harmfull, for example, if your user have been 
-		compromised, and you're getting rights trought sudo, someone
-		can modify your config file to do something malicious as 
-		root. Be sure to check your home config file before using it. 
-		Defaults on /etc/airoscript.conf should be ok so you can 
-		safely remove your ~/.airoscript.conf\n\n
-		Do you really want to do it (Yes/No) (Case sensitive)\"`"
-
+			confwarn
 			read response
-
-			if [ $response = "Yes" ]
+			if [ "$response" = "yes" ]
 				then
 					. ~/.airoscript.conf
 				else
-					echo "Ok, quitting, please remove/rename your $HOME/.airoscript.conf"
+					echo `gettext "Ok, please remove/rename your $HOME/.airoscript.conf"`
 					exit
 			fi
 		else
@@ -39,9 +41,17 @@ if [ -e ~/.airoscript.conf ];
 			. /etc/airoscript.conf
 		else
 			if [ -e airoscript.conf ]; then
-				. airoscript.conf
+				confwarn
+				read response
+				if [ "$response" = "yes" ]
+				then
+					. airoscript.conf
+				else
+					echo -e `gettext "Ok, please remove/rename your $HOME/.airoscript.conf"`
+					exit
+				fi
 			else
-				echo -e "Error, no config file found, quitting"
+				echo -e `gettext "Error, no config file found, quitting"`
 				exit
 			fi
 		fi
