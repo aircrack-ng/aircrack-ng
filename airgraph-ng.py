@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 #Welcome to airgraph written by TheX1le
 #Special Thanks to Rel1k and Zero_Chaos two people whom with out i would not be who I am!
 #I would also like to thank muts and Remote Exploit Community for all their help and support!
@@ -21,18 +21,19 @@
 #########################################
 # Import Psyco if available to speed up execution
 try:
-	import psyco
-	psyco.full()
+#	import psyco
+#	psyco.full()
+	pass
 except ImportError:
 	print "Psyco optimizer not installed, You may want to download and install it!"
 
 
-import getopt, subprocess, sys, pdb
+import getopt, subprocess, sys, pdb, optparse
 sys.path.append("./lib/")
 import lib_Airgraphviz   #note this should be further down
 dot_libs = lib_Airgraphviz
 
-
+#pdb.set_trace() #debug point
 ####################################
 #      Global Vars                 # 
 ####################################
@@ -44,7 +45,11 @@ block = '\n####################################\n'
 ####################################
 
 def airDumpOpen(file):
-       	raw_macs = open(file, "r")
+	try:
+		raw_macs = open(file, "r")
+	except Exception:
+		print "Error Opening file ",file,". Please check and try again"
+		sys.exit(1)
 	Rmacs = raw_macs.readlines() #reads each line one at a time and store them a list
 	cleanup = []
 	for line in Rmacs: #iterates through the lines and strips of the new line and line returns ie \r\n
@@ -57,8 +62,12 @@ def airDumpOpen(file):
 # of targets "bssid:info"          #
 ####################################
 def airDumpParse(ardump):
-	del ardump[0] #remove the first line of text with the headings
-	stationStart = ardump.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, Probed ESSIDs') 
+	try: #some very basic error handeling to make sure they are loading up the correct file
+		del ardump[0] #remove the first line of text with the headings
+		stationStart = ardump.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, Probed ESSIDs') 
+	except Exception:
+		print "You Seem to have provided an improper input file please make sure you are loading an airodump txt file and not a pcap"
+		sys.exit(1)
 	del ardump[stationStart] #this removes the client Station Mac, ect heading.....
 	Clients = ardump[stationStart:] #splits off the clients into their own list
 	del ardump[stationStart:]#removed all of the client info leaving only the info on available target AP's in ardump maby i should create a new list for APs?
@@ -82,35 +91,33 @@ def airDumpParse(ardump):
 def about():
 	print block , "#     Welcome to",PROG,"      #" , block
 def showBanner():
-	print "Usage",PROG,"-i[airodumpfile.txt] -o[outputfile.png] -t[CAPR OR CPG]\n\t-i\tInput File\n\t-o\tOutput File\n\t-t\tChoose the Graph Type Current types are [CAPR (Client to AP Relationship) & CPG (Common probe graph)]\n\t-a\tPrint the about\n\t-h\tPrint this help"
+	print "Usage",PROG,"-i [airodumpfile.txt] -o [outputfile.png] -t [CAPR OR CPG]\n\t-i\tInput File\n\t-o\tOutput File\n\t-g\tChoose the Graph Type Current types are [CAPR (Client to AP Relationship) & CPG (Common probe graph)]\n\t-a\tPrint the about\n\t-h\tPrint this help"
 
 ###################################
 #          Graphviz work          #
 ###################################
 
 def dot_create(info,graph_type):
-		
-	def ZKS_main(info): # Zero Chaos Kitchen Sink Mode..... Every Thing but the Kitchen Sink!
+	#please dont try to use this feature yet its not finish and will error	
+
+	def ZKS_main(info): # Zero_Chaos Kitchen Sink Mode..... Every Thing but the Kitchen Sink!
+		#info comes in as list Clients Dictionary at postion 0 and AP Dictionary at postion1
+		print "Feature is not ready yet"
+		sys.exit(1)
+		#pdb.set_trace() #debug point
 		return_var = CARP_main(info)
-		APNC = return_var[0]
-		CNAP = return_var[1]
-			
-		def subgraph(items,name,graph_name):
-			subgraph = ['\tsubgraph cluster_',graph_name,'{\n\tlabel="',name,'" ;\n']
-			for line in items:
-				clientMAC = line[0]
-				probe_req = ', '.join(line[6:])
-				subgraph.extend(['\tnode [label="',clientMAC,' \\nProbe Requests: ',probe_req,'" ] "',clientMAC,'";\n'])
-			subgraph.extend(['\t}\n'])
-			return subgraph
-				
+		dot_file = return_var[0]
+		APNC = return_var[2]
+		CNAP = return_var[3]
+	
+
 		if len(APNC) != 0: # there should be a better way to check for null lists
-			subAP = subgraph(APNC,'Acess Points with no Clients','AP')
-			graph.extend(subAP)
+			dot_file.extend(dot_libs.subgraph(APNC,'Acess Points with no Clients','AP'))
 		if len(CNAP) != 0:
-			subClient = subgraph(CNAP,'Clients that are Not Assoicated','Clients')
-			graph.extend(subClient)
-		return graph
+			dot_file.extend(dot_libs.subgraph(CNAP,'Clients that are Not Assoicated','Clients'))
+		footer = ['test','test']
+		return_lst = [dot_file,footer]
+		return return_lst
 
 
 	def CPG_main(info): #CPG stands for Common Probe Graph
@@ -163,7 +170,7 @@ def dot_create(info,graph_type):
 						AP_label = [key[5],essid,bssidI[3],bssidI[5]]# Create a list with all our info to label the clients with
 						color = dot_libs.Return_Enc_type(bssidI[5]) # Deterimine what color the graph should be 
 						dot_file.extend(dot_libs.AP_Label_Color(AP_label,color)) #create the label for the access point and return it to the dot file we are creating
-					AP_Count[key[5]] = essid #is essid correct here?
+						AP_Count[key[5]] = essid #is essid correct here?
 				else:
 					NAP.append(key) # stores the clients that are talking to an access point we cant see
 			else: 
@@ -182,62 +189,57 @@ def dot_create(info,graph_type):
 		return_var = dot_libs.dot_close(return_var[0],return_var[1])
 	elif graph_type == "ZKS":
 		return_var = ZKS_main(info)
-		return_var = graphviz_close(return_var)		
+		return_var = dot_libs.dot_close(return_var[0],return_var[1])		
 	
 	return return_var	
 
 
 def grpahviz_Call(output):
 	print "Creating your Graph, Depending on your system this can take a bit. Please standby.............."
-	subprocess.Popen(["fdp","-Tpng","airGconfig.dot","-o",output]).wait()
+	try:
+		subprocess.Popen(["fdp","-Tpng","airGconfig.dot","-o",output]).wait()
+	except Exception:
+		print "You seem to be missing the Graphviz tool set did you check out the deps in the read me?"
+		sys.exit(1)
 	subprocess.Popen(["rm","-rf","airGconfig.dot"])  # commenting out this line will leave the dot config file for debuging
 	print "Graph Creation Complete!"
 ###################################
-#               MAIN              #
+#              MAIN               #
 ###################################
 
 if __name__ == "__main__":
-	graph_type = ''
+	#graph_type = ''  #creats the graph type var so its declared
 	if len(sys.argv) <= 1:
-        	about()
+        	about()  #may not be needed
         	showBanner()
-        	sys.exit(1)
+        	sys.exit(0)
 
-
-        try:
-                opts, args = getopt.getopt(sys.argv[1:],'t:i:o:,a,h')
-
-        except getopt.GetoptError, e:
-                print e
-
-        for o, a in opts:
-                if o == '-i':
-             		in_file = a
+        parser = optparse.OptionParser("usage: %prog [options] -i input -o output -g graph type .....")  #read up more on this
+	parser.add_option("-o", "--output",  dest="output",nargs=1, help="Our Output Image ie... Image.png")
+	parser.add_option("-i", "--dump", dest="input", nargs=1 ,help="Airodump txt file in CSV format NOT the pcap")
+	parser.add_option("-g", "--graph", dest="graph_type", nargs=1 ,help="Choose the Graph Type Current types are [CAPR (Client to AP Relationship) & CPG (Common probe graph)]")
+	(options, args) = parser.parse_args()
+	filename = options.output
+	graph_type = options.graph_type
+	in_file = options.input
 	
-                elif o == '-o':
-                        filename = a
-                        
-                elif o == '-t':
-			graph_type = a
-			
-		elif o == '-a':
-                        about()
-                        sys.exit(0)
-                if o == '-h':
-                        about()
-                        showBanner()
-                        sys.exit(0)
-	
-	#pdb.set_trace()
+	#pdb.set_trace() #debug point
+	if filename == None:
+		print "You must choose an output file name"
+		sys.exit(1)
 	if graph_type not in ['CAPR','CPG','ZKS']:
 		print "Error Invalid Graph Type\nVaild types are CAPR or CPG"
 		sys.exit(1)
 	if graph_type == '':
 		print "Error No Graph Type Defined"
 		sys.exit(1)
+	#pdb.set_trace() #debug point
 	returned_var = airDumpOpen(in_file)
+	#pdb.set_trace() #debug point
 	returned_var = airDumpParse(returned_var)
+	#pdb.set_trace() #debut point	
 	returned_var = dot_create(returned_var,graph_type)
+	#pdb.set_trace() #debug point 
 	dot_libs.dot_write(returned_var)
 	grpahviz_Call(filename)
 	
@@ -246,4 +248,6 @@ if __name__ == "__main__":
 ################################################################################
 #                                     EOF                                      #
 ################################################################################
-
+#notes windows port
+#subprocess.Popen(["del","airGconfig.dot"])  # commenting out this line will leave the dot config file for debuging
+#subprocess.Popen(["c:\\Program Files\\Graphviz2.21\\bin\\fdp.exe","-Tpng","airGconfig.dot","-o",output,"-Kfdp"]).wait(

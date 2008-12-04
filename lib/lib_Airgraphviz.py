@@ -58,8 +58,48 @@ def dot_close(input,footer):
 	return output
 
 def dot_write(data): #write out our config file
-        file = open('airGconfig.dot','a')
+        #pdb.set_trace() #debug break point 
+	try:
+		subprocess.Popen(["rm","-rf","airGconfig.dot"]) # insures that if the file exists that were not apending to it
+	except Exception:
+		pass
+	file = open('airGconfig.dot','a')
 	file.writelines(data)
 	file.close()
 
+def subgraph(items,name,graph_name):
+	#items is an incomeing dictonary 
+	subgraph = ['\tsubgraph cluster_',graph_name,'{\n\tlabel="',name,'" ;\n']
+	for line in items:
+		clientMAC = line[0]
+		probe_req = ', '.join(line[6:])
+		subgraph.extend(['\tnode [label="',clientMAC,' \\nProbe Requests: ',probe_req,'" ] "',clientMAC,'";\n'])
+	subgraph.extend(['\t}\n'])
+	return subgraph
 
+
+###############################################
+#                Filter Class                 #
+###############################################
+def filter_enc(input,enc):
+	AP = info[1]
+	for key in AP:
+		bssid = AP[key]
+		if bssid[5] != enc:
+			del AP[bssid]
+	return_list = [info[0],AP]
+	return return_list
+
+
+
+
+#encryption type
+#number of clients
+#OUI
+#channel
+#beacon rate?
+#essid
+#speed
+#time
+#probe requests
+#whore mode... search for ANY one wanting to connect
