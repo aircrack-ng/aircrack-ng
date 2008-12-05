@@ -7,498 +7,880 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: yo.orco@gmail.com \n"
-"POT-Creation-Date: 2008-11-29 12:13+0100\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-12-05 13:12+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: David Francos Cuatero <yo.orco@gmail.com>\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: airoscript.sh:16
-msgid ""
-"\\t\\tYou're going to use a config file on your home dir. \n"
-"\t\tThis may be harmfull, for example, if your user have been \n"
-"\t\tcompromised, and you're getting rights trought sudo, someone\n"
-"\t\tcan modify your config file to do something malicious as \n"
-"\t\troot. Be sure to check your home config file before using it. \n"
-"\t\tDefaults on /etc/airoscript.conf should be ok so you can \n"
-"\t\tsafely remove your ~/.airoscript.conf\\n\\n\n"
-"\t\tDo you really want to do it (Yes/No) (Case sensitive)"
-msgstr ""
-
-#: airoscript.sh:103
-msgid "No SSID has been detected"
-msgstr ""
-
-#: airoscript.sh:143
-msgid "#######################################"
-msgstr ""
-
-#: airoscript.sh:144
-msgid "###      Wrong number entered       ###"
-msgstr ""
-
-#: airoscfunc.sh:6
-msgid ""
-"Select next action\n"
-"  ### 1) Scan    - Scan for target    ###\n"
-"  ### 2) Select  - Select target      ###\n"
-"  ### 3) Attack  - Attack target      ###\n"
-"  ### 4) Crack   - Get target key     ###\n"
-"  ### 5) Fakeauth- Auth with target   ###\n"
-"  ### 6) Deauth  - Deauth from target ###\n"
-"  ### 7) Others  - Various utilities  ###\n"
-"  ### 8) Inject  - Jump to inj. menu  ###"
-msgstr ""
-
-#: airoscfunc.sh:25
-msgid ""
-"#######################################\\n\n"
-"###     Select AP specification     ###\n"
-"###                                 ###\n"
-"###   1) No filter                  ###\n"
-"###   2) OPN (open)                 ###\n"
-"###   3) WEP                        ###\n"
-"###   4) WPA                        ###\n"
-"###   5) WPA1                       ###\n"
-"###   6) WPA2                       ###\n"
-"###                                 ###\n"
-"#######################################"
-msgstr ""
-
-#: airoscfunc.sh:46 airoscfunc.sh:66 airoscfunc.sh:164 airoscfunc.sh:212
-#: airoscfunc.sh:254 airoscfunc.sh:282 airoscfunc.sh:407 airoscfunc.sh:657
-#: airoscfunc.sh:711 airoscfunc.sh:771 airoscfunc.sh:1020 airoscfunc.sh:1316
-msgid "Unknown response. Try again"
-msgstr ""
-
-#: airoscfunc.sh:54
-msgid ""
-"#######################################\n"
-"  ###  Select channel to use          ###\n"
-"  ###                                 ###\n"
-"  ###   1) Channel Hopping            ###\n"
-"  ###   2) Specific channel(s)        ###\n"
-"  ###                                 ###\n"
-"  ########################################"
-msgstr ""
-
-#: airoscfunc.sh:74
-msgid "Scanning for targets"
-msgstr ""
-
-#: airoscfunc.sh:78
-msgid ""
-"######################################\n"
-"\t  ###    Input channel number         ###\n"
-"\t  ###                                 ###\n"
-"\t  ###  A single number   6            ###\n"
-"\t  ###  A range           1-5          ###\n"
-"\t  ###  Multiple channels 1,1,2,5-7,11 ###\n"
-"\t  ###                                 ###\n"
-"\t  #######################################"
-msgstr ""
-
-#: airoscfunc.sh:92
-msgid "Scanning for targets on channel"
-msgstr ""
-
-#: airoscfunc.sh:106
-msgid "\\tDetected Access point list"
-msgstr ""
-
-#: airoscfunc.sh:107
-msgid "#\\tMAC\\t\\tCHAN\\tSECU\\tPOWER\\t#CHAR\\tSSID"
-msgstr ""
-
-#: airoscfunc.sh:124
-msgid "        Select target             "
-msgstr ""
-
-#: airoscfunc.sh:147
-msgid ""
-"  #######################################\n"
-"  ### Do you want to select a client? ###\n"
-"  ###                                 ###\n"
-"  ###   1) Yes, only associated       ###\n"
-"  ###   2) No i dont want to          ###\n"
-"  ###   3) Try to detect some         ###\n"
-"  ###   4) Yes show me the clients    ###\n"
-"  ###   5) Correct the SSID first     ###\n"
-"  ###                                 ###\n"
-"  #######################################"
-msgstr ""
-
-#: airoscfunc.sh:200
+#: airoscfunc.sh:14
 msgid ""
 "\n"
-"\t\t  #######################################\n"
-"\t\t  ###  Did you find desired client?   ###\n"
-"\t\t  ###                                 ###\n"
-"\t\t  ###   1) Yes, someone associated    ### \n"
-"\t\t  ###   2) No, no clients showed up   ###\n"
-"\t\t  ###                                 ###\n"
-"\t\t  #######################################"
+"  _________________Menu________________\n"
+"  ##        Select next action        ##\n"
+"  ## 1)  Scan    - Scan for target    ##\n"
+"  ## 2)  Select  - Select target      ##\n"
+"  ## 3)  Attack  - Attack target      ##\n"
+"  ## 4)  Crack   - Get target key     ##\n"
+"  ## 5)  Fakeauth- Auth with target   ##\n"
+"  ## 6)  Deauth  - Deauth from target ##\n"
+"  ## 7)  Others  - Various utilities  ##\n"
+"  ## 8)  Inject  - Jump to inj. menu  ##\n"
+"  ## 9)  Auto    - Does 1,2 and 3     ##\n"
+"  ## 10) Exit    - Quits              ##\n"
+"  ##__________________________________##\n"
+"\n"
+"  "
 msgstr ""
+"\n"
+"  _________________Menu______________________\n"
+"  ##               Siguiente paso:         ##\n"
+"  ## 1)  Escanear    - Busca un objetivo   ##\n"
+"  ## 2)  Seleccionar - Selecciona objetivo ##\n"
+"  ## 3)  Atacar      - Attaca objetivo     ##\n"
+"  ## 4)  Crackear    - Consigue la clave   ##\n"
+"  ## 5)  Fakeauth    - Auth con objetivo   ##\n"
+"  ## 6)  Deauth      - Deauth desde objet. ##\n"
+"  ## 7)  Otros       - Utilidades varias   ##\n"
+"  ## 8)  Inyectar    - Ir al menu inyeccion##\n"
+"  ## 9)  Automatico  - Hace 1,2 y 3        ##\n"
+"  ## 10) Salir       - Sale del programa   ##\n"
+"  ##_______________________________________##\n"
+"\n"
+"  "
 
-#: airoscfunc.sh:240
+#: airoscfunc.sh:40
 msgid ""
-"#######################################\n"
-"\t\t  ###      Select next step           ###\n"
-"\t\t  ###                                 ###\n"
-"\t\t  ###   1) Detected clients           ###\n"
-"\t\t  ###   2) Manual Input               ###\n"
-"\t\t  ###   3) Associated client list     ###\n"
-"\t\t  ###                                 ###\n"
-"\t\t  #######################################"
+"\n"
+"____________Encryption_______________\n"
+"##     Select AP specification     ##\n"
+"##                                 ##\n"
+"##   1) No filter                  ##\n"
+"##   2) OPN (open)                 ##\n"
+"##   3) WEP                        ##\n"
+"##   4) WPA                        ##\n"
+"##   5) WPA1                       ##\n"
+"##   6) WPA2                       ##\n"
+"##   7) Return to main menu\t   ##\n"
+"##_________________________________##\n"
+"Option number: "
 msgstr ""
+"\n"
+"____________Encriptacion_____________\n"
+"##     Select AP specification     ##\n"
+"##                                 ##\n"
+"##   1) Sin filtro                 ##\n"
+"##   2) OPN (abierto)              ##\n"
+"##   3) WEP                        ##\n"
+"##   4) WPA                        ##\n"
+"##   5) WPA1                       ##\n"
+"##   6) WPA2                       ##\n"
+"##   7) Volver al menu principal   ##\n"
+"##_________________________________##\n"
+"Opcion: "
 
-#: airoscfunc.sh:273
+#: airoscfunc.sh:63 airoscfunc.sh:86 airoscfunc.sh:189 airoscfunc.sh:240
+#: airoscfunc.sh:287 airoscfunc.sh:319 airoscfunc.sh:454 airoscfunc.sh:627
+#: airoscfunc.sh:737 airoscfunc.sh:801 airoscfunc.sh:863 airoscfunc.sh:1113
+#: airoscfunc.sh:1446 airoscfunc.sh:1443 airoscfunc.sh:1445
+msgid "Unknown response. Try again"
+msgstr "Respuesta desconocida, intentalo de nuevo."
+
+#: airoscfunc.sh:71
+msgid ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\n"
+"  ______________Channel________________\n"
+"  ##      Select channel to use      ##\n"
+"  ##                                 ##\n"
+"  ##   1) Channel Hopping            ##\n"
+"  ##   2) Specific channel(s)        ##\n"
+"  ##_________________________________##\n"
+"  Option number:"
+msgstr ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\n"
+"  ______________Canalel________________\n"
+"  ##      Seleccion de canal:        ##\n"
+"  ##                                 ##\n"
+"  ##   1) Canales aleatorios         ##\n"
+"  ##   2) Canal(es) especificos      ##\n"
+"  ##_________________________________##\n"
+"  Opcion:"
+
+#: airoscfunc.sh:94
+msgid "Scanning for targets"
+msgstr "Buscando objetivos"
+
+#: airoscfunc.sh:98
+msgid ""
+"\n"
+"\t\t||\n"
+"\t\t||\n"
+"\t\t\\/\n"
+"\t  _____________Channel Input___________\n"
+"\t  ##      Please input channel       ##\n"
+"\t  ##\t\t\t\t     ##\n"
+"\t  ##         You can insert:         ##\n"
+"\t  ##  A single number   6            ##\n"
+"\t  ##  A range           1-5          ##\n"
+"\t  ##  Multiple channels 1,1,2,5-7,11 ##\n"
+"\t  ##_________________________________##\n"
+"\t  "
+msgstr ""
+"\n"
+"\t\t||\n"
+"\t\t||\n"
+"\t\t\\/\n"
+"\t  ____________Introduce Canal____________\n"
+"\t  ##    Por favor introduce un canal   ##\n"
+"\t  ##                                   ##\n"
+"\t  ##       Puedes introducir:          ##\n"
+"\t  ##  Un solo numero    6              ##\n"
+"\t  ##  Un range           1-5           ##\n"
+"\t  ##  Multiples canales 1,1,2,5-7,11   ##\n"
+"\t  ##___________________________________##\n"
+"\t  "
+
+#: airoscfunc.sh:117
+msgid "Scanning for targets on channel"
+msgstr "Buscando objetivos en el canal"
+
+#: airoscfunc.sh:131
+msgid "\\tDetected Access point list"
+msgstr "\\tLista de puntos deacceso detectados"
+
+#: airoscfunc.sh:132
+msgid "#\\t\\tMAC\\t\\tCHAN\\tSECU\\tPOWER\\t#CHAR\\t\\tSSID"
+msgstr "#\\t\\tMAC\\t\\tCAN\tSEGUR\\tPOTEN\\t#NUM\\t\\tSSID"
+
+#: airoscfunc.sh:148
+msgid "Select target: "
+msgstr "Selecciona objetivo"
+
+#: airoscfunc.sh:171
+msgid ""
+"\n"
+"  ___________Client selection__________\n"
+"  ## Do you want to select a client? ##\n"
+"  ##                                 ##\n"
+"  ##   1) Yes, only associated       ##\n"
+"  ##   2) No i dont want to          ##\n"
+"  ##   3) Try to detect some         ##\n"
+"  ##   4) Yes show me the clients    ##\n"
+"  ##   5) Correct the SSID first     ##\n"
+"  ##_________________________________##\n"
+"  Option: "
+msgstr ""
+"\n"
+"  _________Seleccion de cliente________\n"
+"  ## ¿Quieres seleccionar un cliente?##\n"
+"  ##                                 ##\n"
+"  ##   1) Si, solo asociados         ##\n"
+"  ##   2) No, no quiero              ##\n"
+"  ##   3) Intenta decetar algunos    ##\n"
+"  ##   4) Si, enseñame los clientes  ##\n"
+"  ##   5) Primero corrije el SSID    ##\n"
+"  ##_________________________________##\n"
+"  Opcion: "
+
+#: airoscfunc.sh:198
+#, sh-format
+msgid ""
+"\n"
+"\t\t||\n"
+"\t\t||\n"
+"\t\t\\/\n"
+"\t  ___________Client selection_________\n"
+"\t  ##                                 ##\n"
+"\t  ##       Select client now         ##\n"
+"\t  ##  These clients are connected to ##\n"
+"\t  ##          $Host_SSID             ##\n"
+"\t  ##_________________________________##"
+msgstr ""
+"\n"
+"\t\t||\n"
+"\t\t||\n"
+"\t\t\\/\n"
+"\t  _________Seleccion de cliente_______\n"
+"\t  ##                                 ##\n"
+"\t  ##       Selecciona un cliente     ##\n"
+"\t  ##  Estos clientes estan en:       ##\n"
+"\t  ##          $Host_SSID             ##\n"
+"\t  ##_________________________________##"
+
+#: airoscfunc.sh:226
+msgid ""
+"\n"
+"\t\t||\n"
+"\t\t||\n"
+"\t\t\\/\n"
+"\t  ____________Client selection_________\n"
+"\t  ##  Did you find desired client?   ##\n"
+"\t  ##                                 ##\n"
+"\t  ##   1) Yes, someone associated    ## \n"
+"\t  ##   2) No, no clients showed up   ##\n"
+"\t  ##_________________________________##"
+msgstr ""
+"\n"
+"\t\t||\n"
+"\t\t||\n"
+"\t\t\\/\n"
+"\t  __________Seleccion de cliente_______\n"
+"\t  ## ¿Encontraste el cliente deseado?##\n"
+"\t  ##                                 ##\n"
+"\t  ##   1) Si, alguien se ha asociado ## \n"
+"\t  ##   2) No, no hay ningun cliente  ##\n"
+"\t  ##_________________________________##"
+
+#: airoscfunc.sh:271
+msgid ""
+"\n"
+"\t  _________Seleccion de cliente_______\n"
+"\t  ##      Select next step          ##\n"
+"\t  ##                                ##\n"
+"\t  ##   1) Detected clients          ##\n"
+"\t  ##   2) Manual Input              ##\n"
+"\t  ##   3) Associated client list    ##\n"
+"\t  ##                                ##\n"
+"\t  ##________________________________##\n"
+"\t  Opcion: "
+msgstr ""
+"\n"
+"\t  ________Seleccion de cliente________\n"
+"\t  ##      Siguiente paso:           ##\n"
+"\t  ##                                ##\n"
+"\t  ##   1) Clientes detectados       ##\n"
+"\t  ##   2) Entrada manual            ##\n"
+"\t  ##   3) Lista de clientes asoc.   ##\n"
+"\t  ##                                ##\n"
+"\t  ##________________________________##\n"
+"\t  Opcion: "
+
+#: airoscfunc.sh:310
 msgid "No SSID has been detected!"
-msgstr ""
+msgstr "¡No se ha detectado ninguna SSID!"
 
-#: airoscfunc.sh:291
-msgid ""
-"#######################################\n"
-"\t\t\t\t###                                 ###\n"
-"\t\t\t\t###       Select client now         ###\n"
-"\t\t\t\t###                                 ###\n"
-"\t\t\t\t#######################################"
-msgstr ""
-
-#: airoscfunc.sh:306
-msgid ""
-"#######################################\n"
-"\t\t\t###                                 ###\n"
-"\t\t\t###   Type in client mac now        ###\n"
-"\t\t\t###                                 ###\n"
-"\t\t\t#######################################"
-msgstr ""
-
-#: airoscfunc.sh:361
+#: airoscfunc.sh:400
 msgid "Atheros device, not spamming another one => Doing nothing"
-msgstr ""
+msgstr "Dispositivo atheros, no se hace nada"
 
-#: airoscfunc.sh:364
+#: airoscfunc.sh:403
 msgid "Running standard monitor mode command"
-msgstr ""
+msgstr "Ejecutando comando standard para el modo monitor"
 
-#: airoscfunc.sh:372
+#: airoscfunc.sh:411
 msgid ""
-"#######################################\n"
-"\t  ### Attacks not using a client      ###\n"
-"\t  ### 1)  Fake auth => Automatic      ###\n"
-"\t  ### 2)  Fake auth => Interactive    ###\n"
-"\t  ### 3)  Fragmentation attack        ###\n"
-"\t  ### 4)  Chopchop attack             ###\n"
-"\t  ### 5)  Cafe Latte attack           ###\n"
-"\t  ### 6)  Hirte attack                ###\n"
-"\t  #######################################\n"
-"\t  ### Attacks using a client          ###\n"
-"\t  ### 7)  ARP replay => Automatic     ###\n"
-"\t  ### 8)  ARP replay => Interactive   ###\n"
-"\t  ### 9)  Fragmentation attack        ###\n"
-"\t  ###10)  Frag. attack on client      ###\n"
-"\t  ###11)  Chopchop attack             ###\n"
-"\t  #######################################\n"
-"\t  ### Injection if xor file generated ### \n"
-"\t  ###12) ARP inject from xor (PSK)    ###\n"
-"\t  ###13) Return to main menu          ###"
+"\n"
+"\t  ___________WEP ATTACKS________________\n"
+"\t  ##  Attacks not using a client      ##\n"
+"\t  ##\t\t\t\t      ##\n"
+"\t  ##  1)  Fake auth => Automatic      ##\n"
+"\t  ##  2)  Fake auth => Interactive    ##\n"
+"\t  ##  3)  Fragmentation attack        ##\n"
+"\t  ##  4)  Chopchop attack             ##\n"
+"\t  ##  5)  Cafe Latte attack           ##\n"
+"\t  ##  6)  Hirte attack                ##\n"
+"\t  ##__________________________________##\n"
+"\t  ##\t\t\t\t      ##\n"
+"\t  ##  Attacks using a client          ##\n"
+"\t  ##\t\t\t\t      ##\n"
+"\t  ##  7)  ARP replay => Automatic     ##\n"
+"\t  ##  8)  ARP replay => Interactive   ##\n"
+"\t  ##  9)  Fragmentation attack        ##\n"
+"\t  ## 10)  Frag. attack on client      ##\n"
+"\t  ## 11)  Chopchop attack             ##\n"
+"\t  ##__________________________________##\n"
+"\t  ##\t\t\t\t      ##\n"
+"\t  ## Injection if xor file generated  ##\n"
+"\t  ##\t\t\t\t      ## \n"
+"\t  ## 12) ARP inject from xor (PSK)    ##\n"
+"\t  ## 13) Return to main menu          ##\n"
+"\t  ##__________________________________##\n"
+"\t  Option: "
 msgstr ""
+"\n"
+"\t  ___________Ataques WEP________________\n"
+"\t  ##  Ataques que no usan cliente     ##\n"
+"\t  ##\t\t\t\t      ##\n"
+"\t  ##  1)  Fake auth => Automatico     ##\n"
+"\t  ##  2)  Fake auth => Interactivo    ##\n"
+"\t  ##  3)  Ataque de fragmentacion     ##\n"
+"\t  ##  4)  Ataque chopcho              ##\n"
+"\t  ##  5)  Ataque cafe latte           ##\n"
+"\t  ##  6)  Ataque hirte                ##\n"
+"\t  ##__________________________________##\n"
+"\t  ##\t\t\t\t      ##\n"
+"\t  ##  Ataques que usan un cliente     ##\n"
+"\t  ##\t\t\t\t      ##\n"
+"\t  ##  7)  ARP replay => Automatico    ##\n"
+"\t  ##  8)  ARP replay => Interactivo   ##\n"
+"\t  ##  9)  Ataque de fragmentacion     ##\n"
+"\t  ## 10)  Ataque de frag. al cliente  ##\n"
+"\t  ## 11)  Ataque chopchop             ##\n"
+"\t  ##__________________________________##\n"
+"\t  ##\t\t\t\t      ##\n"
+"\t  ## Inyeccion si hay archivo XOR     ##\n"
+"\t  ##\t\t\t\t      ## \n"
+"\t  ## 12) Inyeccion arp desde xor (PSK)##\n"
+"\t  ##__________________________________##\n"
+"\t  ## 13) Volver al menu principal     ##\n"
+"\t  ##__________________________________##\n"
+"\t  Opcion: "
 
-#: airoscfunc.sh:415
+#: airoscfunc.sh:462
 #, sh-format
 msgid "Injection: Host: $Host_MAC"
-msgstr ""
+msgstr "Inyeccion: Host: $Host_MAC"
 
-#: airoscfunc.sh:419
+#: airoscfunc.sh:466
 #, sh-format
 msgid "Interactive Packet Sel on Host: $Host_SSID"
-msgstr ""
+msgstr "Seleccion interactiva de paquetes en: $Host_SSID"
 
-#: airoscfunc.sh:428 airoscfunc.sh:465 airoscfunc.sh:474
+#: airoscfunc.sh:475 airoscfunc.sh:512 airoscfunc.sh:521
 #, sh-format
 msgid "Fragmentation attack on $Host_SSID"
-msgstr ""
+msgstr "Ataque de fragmentacion en $Host_SSID"
 
-#: airoscfunc.sh:436 airoscfunc.sh:481
+#: airoscfunc.sh:483 airoscfunc.sh:528
 #, sh-format
 msgid "ChopChoping: $Host_SSID"
-msgstr ""
-
-#: airoscfunc.sh:440
-#, sh-format
-msgid "Cafe Latte Attack on: $Host_SSID"
-msgstr ""
-
-#: airoscfunc.sh:450
-msgid "Injection:"
-msgstr ""
-
-#: airoscfunc.sh:450
-msgid "Host"
-msgstr ""
-
-#: airoscfunc.sh:450
-msgid "Client"
-msgstr ""
-
-#: airoscfunc.sh:456
-msgid "Interactive Packet Sel on:"
-msgstr ""
+msgstr "Chopchop en $Host_SSID"
 
 #: airoscfunc.sh:487
 #, sh-format
-msgid "Sending forged ARP to: $Host_SSID"
-msgstr ""
+msgid "Cafe Latte Attack on: $Host_SSID"
+msgstr "Ataque Cafe Latte en $Host_SSID"
 
-#: airoscfunc.sh:495
-msgid "Capturing data on channel:"
-msgstr ""
+#: airoscfunc.sh:497
+msgid "Injection:"
+msgstr "Inyeccion:"
 
-#: airoscfunc.sh:514
-msgid ""
-"\n"
-"\t\t\t\t#######################################\n"
-"\t\t\t\t###      WEP/WPA CRACKING OPTIONS   ###\n"
-"\t\t\t\t###                                 ###\n"
-"\t\t\t\t###   1) Use Wlandecrypter          ###\n"
-"\t\t\t\t###   2) Use aircrack-ng            ###\n"
-"\t\t\t\t###                                 ###\n"
-"\t\t\t\t#######################################"
-msgstr ""
+#: airoscfunc.sh:497
+msgid "Host"
+msgstr "Equipo:"
 
-#: airoscfunc.sh:548
-msgid ""
-"\n"
-"\t\t#######################################\n"
-"\t\t###      WEP CRACKING OPTIONS       ###\n"
-"\t\t###                                 ###\n"
-"\t\t###   1) aircrack-ng PTW attack     ###\n"
-"\t\t###   2) aircrack-ng standard       ###\n"
-"\t\t###   3) aircrack-ng user options   ###\n"
-"\t\t###                                 ###\n"
-"\t\t#######################################"
-msgstr ""
+#: airoscfunc.sh:497
+msgid "Client"
+msgstr "Cliente"
 
-#: airoscfunc.sh:581
-msgid "type encryption size 64,128 etc..."
-msgstr ""
+#: airoscfunc.sh:503
+msgid "Interactive Packet Sel on:"
+msgstr "Seleccion interactiva de paquetes en: "
 
-#: airoscfunc.sh:585
-msgid "Manual cracking:"
-msgstr ""
-
-#: airoscfunc.sh:605
-msgid ""
-"\n"
-"\t\t#######################################\n"
-"\t\t###   Select fakeauth method        ###\n"
-"\t\t###                                 ###\n"
-"\t\t###   1) Conservative               ###\n"
-"\t\t###   2) Standard                   ###\n"
-"\t\t###   3) Progressive                ###\n"
-"\t\t###                                 ###\n"
-"\t\t#######################################"
-msgstr ""
-
-#: airoscfunc.sh:626 airoscfunc.sh:629 airoscfunc.sh:632 airoscfunc.sh:1451
-msgid "Associating with:"
-msgstr ""
-
-#: airoscfunc.sh:643
-msgid ""
-"\n"
-"\t#######################################\n"
-"\t###   Who do you want to deauth ?   ###\n"
-"\t###                                 ###\n"
-"\t###   1) Everybody                  ###\n"
-"\t###   2) Myself (the Fake MAC)      ###\n"
-"\t###   3) Selected client            ###\n"
-"\t###                                 ###\n"
-"\t#######################################"
-msgstr ""
-
-#: airoscfunc.sh:665
-msgid "Kicking everybody from:"
-msgstr ""
-
-#: airoscfunc.sh:669
+#: airoscfunc.sh:534
 #, sh-format
-msgid "Kicking $Client_MAC from:"
-msgstr ""
+msgid "Sending forged ARP to: $Host_SSID"
+msgstr "Enviando arp forjados a: $Host_SSID"
 
-#: airoscfunc.sh:673
-msgid "Kicking"
-msgstr ""
+#: airoscfunc.sh:542
+msgid "Capturing data on channel:"
+msgstr "Capturando datos en el canal: "
 
-#: airoscfunc.sh:684
+#: airoscfunc.sh:549
+msgid "ERROR: You have to select a target"
+msgstr "ERROR: Tienes que seleccionar un objetivo"
+
+#: airoscfunc.sh:566
 msgid ""
 "\n"
-"\t#######################################\n"
-"\t###  Select task to perform         ###\n"
-"\t###                                 ###\n"
-"\t###   1) Test injection             ###\n"
-"\t###   2) Select another interface   ###\n"
-"\t###   3) Reset selected interface   ###\n"
-"\t###   4) Change MAC of interface    ###\n"
-"\t###   5) Mdk3                       ###\n"
-"\t###   6) Wesside-ng                 ###\n"
-"\t###   7) Enable monitor mode        ###\n"
-"\t###   8) Checks with airmon-ng      ###\n"
-"\t###   9) Return to main menu        ###\n"
-"\t###                                 ###\n"
-"\t#######################################"
+"\t\t||\n"
+"\t\t||\n"
+"\t\t\\/\n"
+"\t_____________________________________\n"
+"\t##      WEP/WPA CRACKING OPTIONS   ##\n"
+"\t##                                 ##\n"
+"\t##   1) Use Wlandecrypter          ##\n"
+"\t##   2) Use aircrack-ng            ##\n"
+"\t##   3) Return to main menu        ##\n"
+"\t##_________________________________##\n"
+"\tOption:"
 msgstr ""
+"\n"
+"\t\t||\n"
+"\t\t||\n"
+"\t\t\\/\n"
+"\t_______________________________________\n"
+"\t##      Opciones de craqueo wep/wpa  ##\n"
+"\t##                                   ##\n"
+"\t##   1) Usar Wlandecrypter            ##\n"
+"\t##   2) Usar aircrack-ng              ##\n"
+"\t##   3) Volver al menu principal     ##\n"
+"\t##___________________________________##\n"
+"\tOption:"
+
+#: airoscfunc.sh:597
+msgid "ERROR: Network not encrypted or no network selected "
+msgstr "ERROR: Red no encriptada o no seleccionada."
+
+#: airoscfunc.sh:612
+msgid ""
+"\n"
+"\t\t_____________________________________\n"
+"\t\t##      WEP CRACKING OPTIONS       ##\n"
+"\t\t##                                 ##\n"
+"\t\t##   1) aircrack-ng PTW attack     ##\n"
+"\t\t##   2) aircrack-ng standard       ##\n"
+"\t\t##   3) aircrack-ng user options   ##\n"
+"\t\t##                                 ##\n"
+"\t\t##_________________________________##\n"
+"\t\tOption: "
+msgstr ""
+"\n"
+"\t\t_____________________________________\n"
+"\t\t##      Opciones de crack WEP      ##\n"
+"\t\t##                                 ##\n"
+"\t\t##   1) aircrack-ng ataque ptw     ##\n"
+"\t\t##   2) aircrack-ng normal         ##\n"
+"\t\t##   3) aircrack-ng interactivo    ##\n"
+"\t\t##                                 ##\n"
+"\t\t##_________________________________##\n"
+"\t\tOption: "
+
+#: airoscfunc.sh:646
+msgid "type encryption size 64,128 etc..."
+msgstr "Tamaño del tipo de encriptacion (64, 128 etc...)"
+
+#: airoscfunc.sh:650
+msgid "Manual cracking:"
+msgstr "Cracking manual"
+
+#: airoscfunc.sh:674
+msgid ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\t\n"
+"______________Fake auth______________\n"
+"##   Select fakeauth method        ##\n"
+"##                                 ##\n"
+"##   1) Conservative               ##\n"
+"##   2) Standard                   ##\n"
+"##   3) Progressive                ##\n"
+"##_________________________________##\n"
+"Option: "
+msgstr ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\t\n"
+"______________Fake auth______________\n"
+"##   Selecciona metodo fakeauth    ##\n"
+"##                                 ##\n"
+"##   1) Conservativo               ##\n"
+"##   2) Standard                   ##\n"
+"##   3) Progressivo                ##\n"
+"##_________________________________##\n"
+"Opcion: "
+
+#: airoscfunc.sh:699 airoscfunc.sh:702 airoscfunc.sh:705 airoscfunc.sh:1584
+#: airoscfunc.sh:1581 airoscfunc.sh:1583
+msgid "Associating with:"
+msgstr "Asociando con:"
+
+#: airoscfunc.sh:720
+msgid ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\t\n"
+"_____________________________________\n"
+"##   Who do you want to deauth ?   ##\n"
+"##                                 ##\n"
+"##   1) Everybody                  ##\n"
+"##   2) Myself (the Fake MAC)      ##\n"
+"##   3) Selected client            ##\n"
+"##_________________________________##\n"
+"Option: "
+msgstr ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\t\n"
+"_________________________________________\n"
+"##   A quien quieres desautentificar ? ##\n"
+"##                                     ##\n"
+"##   1) Todo el mundo                  ##\n"
+"##   2) Yo mismo (la mac falsa)        ##\n"
+"##   3) Cliente seleccionado           ##\n"
+"##_____________________________________##\n"
+"Option: "
+
+#: airoscfunc.sh:746
+msgid "Kicking everybody from:"
+msgstr "Pateando a todos de:"
 
 #: airoscfunc.sh:755
+#, sh-format
+msgid "Kicking $Client_MAC from:"
+msgstr "Pateando $Client_MAC de:"
+
+#: airoscfunc.sh:760
+msgid "Kicking"
+msgstr "Pateando"
+
+#: airoscfunc.sh:771
 msgid ""
 "\n"
-"\t\t\t#######################################\n"
-"\t\t\t###      Select next step           ###\n"
-"\t\t\t###                                 ###\n"
-"\t\t\t###   1) Change MAC to FAKEMAC      ###\n"
-"\t\t\t###   2) Change MAC to CLIENTMAC    ###\n"
-"\t\t\t###   3) Manual Mac input           ###\n"
-"\t\t\t###                                 ###\n"
-"\t\t\t#######################################"
+"\t||\n"
+"\t||\n"
+"\t\\/\t\n"
+"_____________________________________\n"
+"##  Select task to perform         ##\n"
+"##                                 ##\n"
+"##   1) Test injection             ##\n"
+"##   2) Select another interface   ##\n"
+"##   3) Reset selected interface   ##\n"
+"##   4) Change MAC of interface    ##\n"
+"##   5) Mdk3                       ##\n"
+"##   6) Wesside-ng                 ##\n"
+"##   7) Enable monitor mode        ##\n"
+"##   8) Checks with airmon-ng      ##\n"
+"##   9) Return to main menu        ##\n"
+"##_________________________________##\n"
+"Option: "
 msgstr ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\t\n"
+"_____________________________________\n"
+"##  Select task to perform         ##\n"
+"##                                 ##\n"
+"##   1) Probar inyeccion           ##\n"
+"##   2) Seleccionar otra interfaz  ##\n"
+"##   3) Resetear interfaz selecc.  ##\n"
+"##   4) Cambiar MAC de la interfaz ##\n"
+"##   5) Mdk3                       ##\n"
+"##   6) Wesside-ng                 ##\n"
+"##   7) Activar modo monitor       ##\n"
+"##   8) Comprobar con airmon-ng    ##\n"
+"##   9) Volver al menu principal   ##\n"
+"##_________________________________##\n"
+"Opcion: "
 
-#: airoscfunc.sh:787 airoscfunc.sh:831
+#: airoscfunc.sh:845
+msgid ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\n"
+"\t_____________________________________\n"
+"\t##      Select next step           ##\n"
+"\t##                                 ##\n"
+"\t##   1) Change MAC to FAKEMAC      ##\n"
+"\t##   2) Change MAC to CLIENTMAC    ##\n"
+"\t##   3) Manual Mac input           ##\n"
+"\t##_________________________________##\n"
+"\tOption: "
+msgstr ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\n"
+"\t_____________________________________\n"
+"\t##      Siguiente paso:            ##\n"
+"\t##                                 ##\n"
+"\t##   1) Cambiar MAC a FAKEMAC      ##\n"
+"\t##   2) Cambiar MAC a CLIENTMAC    ##\n"
+"\t##   3) Insercion manual de MAC    ##\n"
+"\t##_________________________________##\n"
+"\tOpcion: "
+
+#: airoscfunc.sh:879 airoscfunc.sh:923
 msgid "Unknow way to change mac"
-msgstr ""
+msgstr "No se como cambiar la mac"
 
-#: airoscfunc.sh:863
+#: airoscfunc.sh:955
 msgid "OK, now type in new MAC: "
-msgstr ""
+msgstr "Bien, ahora escribe la nueva mac"
 
-#: airoscfunc.sh:916
+#: airoscfunc.sh:957
+msgid "You typed:"
+msgstr "Has escrito:"
+
+#: airoscfunc.sh:1008
 msgid ""
 "\n"
-"\t\t\t\t#######################################\n"
-"\t\t\t\t###   Choose MDK3 Options           ###\n"
-"\t\t\t\t###                                 ###\n"
-"\t\t\t\t###   1) Deauthentication           ###\n"
-"\t\t\t\t###   2) Prob selected AP           ###\n"
-"\t\t\t\t###   3) Select another target      ###\n"
-"\t\t\t\t###   4) Authentication DoS         ###\n"
-"\t\t\t\t###   5) Return to main menu        ###\n"
-"\t\t\t\t###                                 ###\n"
-"\t\t\t\t#######################################"
+"\t\t\t_____________________________________\n"
+"\t\t\t##   Choose MDK3 Options           ##\n"
+"\t\t\t##                                 ##\n"
+"\t\t\t##   1) Deauthentication           ##\n"
+"\t\t\t##   2) Prob selected AP           ##\n"
+"\t\t\t##   3) Select another target      ##\n"
+"\t\t\t##   4) Authentication DoS         ##\n"
+"\t\t\t##   5) Return to main menu        ##\n"
+"\t\t\t##_________________________________##\n"
+"\t\t\tOption: "
 msgstr ""
+"\n"
+"\t\t\t_____________________________________\n"
+"\t\t\t##   Elije opciones de mdk3        ##\n"
+"\t\t\t##                                 ##\n"
+"\t\t\t##   1) Deauthentication           ##\n"
+"\t\t\t##   2) Probar ap seleccionado     ##\n"
+"\t\t\t##   3) Cambiar objetivo           ##\n"
+"\t\t\t##   4) DoS de autentificacion     ##\n"
+"\t\t\t##   5) Volver al menu principal   ##\n"
+"\t\t\t##_________________________________##\n"
+"\t\t\tOpcion: "
 
-#: airoscfunc.sh:941
+#: airoscfunc.sh:1034
 msgid "MDK attack"
-msgstr ""
+msgstr "Ataque MDK"
 
-#: airoscfunc.sh:945
+#: airoscfunc.sh:1038
 msgid "MDK attack on AP:"
-msgstr ""
+msgstr "Ataque MDK en el AP:"
 
-#: airoscfunc.sh:991
+#: airoscfunc.sh:1084
 msgid "Wesside-ng attack on AP:"
-msgstr ""
+msgstr "Ataque Wesside-ng en el AP:"
 
-#: airoscfunc.sh:998
+#: airoscfunc.sh:1091
 msgid ""
 "\n"
-"\t\t\t\t#######################################\n"
-"\t\t\t\t###   Choose Wesside-ng Options     ###\n"
-"\t\t\t\t###                                 ###\n"
-"\t\t\t\t###   1) No arguments               ###\n"
-"\t\t\t\t###   2) Selected target            ###\n"
-"\t\t\t\t###   3) Sel. target max rertransmit###\n"
-"\t\t\t\t###   4) Sel. target poor connection###\n"
-"\t\t\t\t###   5) Select another target      ###\n"
-"\t\t\t\t###   6) Return to main menu        ###\n"
-"\t\t\t\t###                                 ###\n"
-"\t\t\t\t#######################################"
+"\t\t\t_____________________________________\n"
+"\t\t\t##   Choose Wesside-ng Options     ##\n"
+"\t\t\t##                                 ##\n"
+"\t\t\t##   1) No arguments               ##\n"
+"\t\t\t##   2) Selected target            ##\n"
+"\t\t\t##   3) Sel. target max rertransmit #\n"
+"\t\t\t##   4) Sel. target poor connection #\n"
+"\t\t\t##   5) Select another target      ##\n"
+"\t\t\t##   6) Return to main menu        ##\n"
+"\t\t\t##_________________________________##\n"
+"\t\t\t\tOption: "
 msgstr ""
+"\n"
+"\t\t\t_____________________________________\n"
+"\t\t\t##   Elije opciones wesside-ng     ##\n"
+"\t\t\t##                                 ##\n"
+"\t\t\t##   1) Sin argumentos             ##\n"
+"\t\t\t##   2) Objetivo seleccionado      ##\n"
+"\t\t\t##   3) Objetivo s. max rertransmis #\n"
+"\t\t\t##   4) Ojbet. sel. conexion pobre ##\n"
+"\t\t\t##   5) Seleccionar otro objetivo  ##\n"
+"\t\t\t##   6) Volver al menu principal   ##\n"
+"\t\t\t##_________________________________##\n"
+"\t\t\t\tOpcion: "
 
-#: airoscfunc.sh:1030 airoscfunc.sh:1037 airoscfunc.sh:1044 airoscfunc.sh:1051
-#: airoscfunc.sh:1097
+#: airoscfunc.sh:1123 airoscfunc.sh:1130 airoscfunc.sh:1137 airoscfunc.sh:1144
+#: airoscfunc.sh:1190
 msgid "Wesside-ng attack"
-msgstr ""
+msgstr "Ataque wesside-ng"
 
-#: airoscfunc.sh:1081
+#: airoscfunc.sh:1174
 msgid "       Select target               "
 msgstr ""
 
-#: airoscfunc.sh:1158
+#: airoscfunc.sh:1251
 msgid ""
 "\n"
-"\t\t#######################################\n"
-"\t\t###  If previous step went fine     ###\n"
-"\t\t###  Select next, otherwise hit5    ###\n"
-"\t\t###                                 ###\n"
-"\t\t###   1) Frag injection             ###\n"
-"\t\t###   2) Frag with client injection ###\n"
-"\t\t###   3) Chochop injection          ###\n"
-"\t\t###   4) Chopchop with client inj.  ###\n"
-"\t\t###   5) Return to main menu        ###\n"
-"\t\t###                                 ###\n"
-"\t\t#######################################"
+"_____________________________________\n"
+"##  If previous step went fine     ##\n"
+"##  Select next, otherwise hit5    ##\n"
+"##                                 ##\n"
+"##   1) Frag injection             ##\n"
+"##   2) Frag with client injection ##\n"
+"##   3) Chochop injection          ##\n"
+"##   4) Chopchop with client inj.  ##\n"
+"##   5) Return to main menu        ##\n"
+"##                                 ##\n"
+"##_________________________________##\n"
+"Option: "
 msgstr ""
+"\n"
+"_____________________________________\n"
+"##  Si los pasos anteriores no     ##\n"
+"##  fueron bien, pulsa 5           ##\n"
+"##                                 ##\n"
+"##   1) Inyeccion FRAG             ##\n"
+"##   2) Inyeccion FRAG con cliente ##\n"
+"##   3) Inyeccion chopchop         ##\n"
+"##   4) Iny. Chopchop con cliente  ##\n"
+"##   5) Volver al menu principal   ##\n"
+"##_________________________________##\n"
+"Opcion: "
 
-#: airoscfunc.sh:1186 airoscfunc.sh:1191
+#: airoscfunc.sh:1282 airoscfunc.sh:1294 airoscfunc.sh:1305 airoscfunc.sh:1319
+msgid "ERROR: You must select a target first"
+msgstr "ERROR: Primero tienes que seleccionar un objetivo"
+
+#: airoscfunc.sh:1285 airoscfunc.sh:1297
 msgid "Injecting forged packet on"
-msgstr ""
+msgstr "Inyectando paquete forjando en "
 
-#: airoscfunc.sh:1197 airoscfunc.sh:1203
+#: airoscfunc.sh:1311 airoscfunc.sh:1324
 msgid "Sending chopchop to:"
-msgstr ""
+msgstr "Enviando chopchop a:"
 
-#: airoscfunc.sh:1215
-msgid "=> Select your interface: \\(athX for madwifi devices\\)"
-msgstr ""
+#: airoscfunc.sh:1338
+msgid "=> Select your interface: (athX for madwifi devices)"
+msgstr "=> Selecciona tu interfaz (athX para dispositivos madwifi)"
 
-#: airoscfunc.sh:1254
+#: airoscfunc.sh:1374 airoscfunc.sh:1371
 msgid ""
 "\n"
-"\t\t#######################################\n"
-"\t\t###       Blank SSID detected       ###\n"
-"\t\t###    Do you want to in put one    ###\n"
-"\t\t###    1) Yes                       ###\n"
-"\t\t###    2) No                        ###"
+"\t\t_____________________________________\n"
+"\t\t##       Blank SSID detected       ##\n"
+"\t\t##    Do you want to in put one    ##\n"
+"\t\t##    1) Yes                       ##\n"
+"\t\t##    2) No                        ##\n"
+"\t\t##_________________________________##\n"
+"\t\tOption: "
 msgstr ""
+"\n"
+"\t\t_____________________________________\n"
+"\t\t##       SSID en blanco            ##\n"
+"\t\t##   ¿Quieres poner una?           ##\n"
+"\t\t##    1) Si                        ##\n"
+"\t\t##    2) No                        ##\n"
+"\t\t##_________________________________##\n"
+"\t\tOpcion: "
 
-#: airoscfunc.sh:1290
+#: airoscfunc.sh:1411 airoscfunc.sh:1408
 msgid "        Output folder does not exist, i will create it now"
-msgstr ""
+msgstr "       El directorio de salida no existe, lo voy a crear ahora."
 
-#: airoscfunc.sh:1299
+#: airoscfunc.sh:1422 airoscfunc.sh:1419
 msgid "   Select screen resolution            "
-msgstr ""
+msgstr "   Selecciona la resoluccion de pantalla:"
 
-#: airoscfunc.sh:1324
+#: airoscfunc.sh:1455 airoscfunc.sh:1452 airoscfunc.sh:1454
 msgid "Im going to set terminal options for your terminal now"
-msgstr ""
+msgstr "Ahora voy a establecer las opciones para tu terminal."
 
-#: airoscfunc.sh:1395
+#: airoscfunc.sh:1529 airoscfunc.sh:1526 airoscfunc.sh:1528
 msgid " \tDebug Mode enabled, you'll have to manually close windows"
-msgstr ""
+msgstr "\tMode debug activado, tendras que cerrar las ventanas a mano"
 
-#: airoscfunc.sh:1406
+#: airoscfunc.sh:1540 airoscfunc.sh:1537 airoscfunc.sh:1539
 msgid "Using configured terminal"
-msgstr ""
+msgstr "Usando terminal configurado"
 
-#: airoscfunc.sh:1426
+#: airoscfunc.sh:1560 airoscfunc.sh:1557 airoscfunc.sh:1559
 msgid ""
 "I cant find any good terminal, please set one on your conffile\n"
 "\t\t\t\t Your TERMINAL var contains no valid temrinal\n"
 "\t\t\t\t Your alternative against x-terminal-emulator contains no terminal\n"
 "\t\t\t\t Xterm can't be found on your system\\n"
 msgstr ""
+"No puedo encontrar ningun terminal bueno, por favor pon uno en\n"
+"\t\t\t\t tu archivo de configuracion.                "
 
-#: airoscfunc.sh:1447
+#: airoscfunc.sh:1580 airoscfunc.sh:1577 airoscfunc.sh:1579
 msgid "Capturing data on channel"
-msgstr ""
+msgstr "Capturando datos en el canal"
 
-#: airoscfunc.sh:1455
+#: airoscfunc.sh:1588 airoscfunc.sh:1585 airoscfunc.sh:1587
 msgid "Fake function to jump to menu"
+msgstr "Funcion falsa para volver al menu"
+
+#: airoscfunc.sh:1594 airoscfunc.sh:1591 airoscfunc.sh:1593
+msgid "###       Please enter SSID         ###"
+msgstr "###\t  Por favor introduzca SSID ###"
+
+#: airoscript.sh:12
+msgid ""
+"Youre going to use a config file on your home or current dir. \n"
+"This may be harmfull, for example, if your user have been \n"
+"compromised, and youre getting rights trought sudo, someone\n"
+"can modify your config file to do something malicious as \n"
+"root. Be sure to check your home config file before using it. \n"
+"Defaults on /etc/airoscript.conf should be ok so you can \n"
+"safely remove your ~/.airoscript.conf\\n\\n\n"
+"Do you really want to do it (yes/No): "
 msgstr ""
 
-#: airoscfunc.sh:1461
-msgid "###       Please enter SSID         ###"
+#: airoscript.sh:54
+msgid "Error, no config file found, quitting"
+msgstr "Error, no se ha encontrado ningun archivo de configuracion, saliendo."
+
+#: airoscript.sh:96
+msgid "Input number: "
+msgstr "Numero:"
+
+#: airoscript.sh:155
+msgid "Deconfiguring interface..."
+msgstr "Desconfigurando interfaz..."
+
+#: airoscript.sh:158
+msgid "Do you want me to delete temporary data dir? (y/N) "
+msgstr "¿Quieres que borre el directorio temporal? (y/N)"
+
+#: airoscript.sh:163
+msgid "Deleting"
+msgstr "Borrando"
+
+#: airoscript.sh:166
+msgid "done"
+msgstr "Terminado"
+
+#: airoscript.sh:173
+msgid "#######################################"
+msgstr "#######################################"
+
+#: airoscript.sh:174
+msgid "###      Wrong number entered       ###"
+msgstr "###         Numero erroneo          ###"
+
+#: airoscfunc.sh:271
+msgid ""
+"\n"
+"\t  ___________Client selection_________\n"
+"\t  ##      Select next step          ##\n"
+"\t  ##                                ##\n"
+"\t  ##   1) Detected clients          ##\n"
+"\t  ##   2) Manual Input              ##\n"
+"\t  ##   3) Associated client list    ##\n"
+"\t  ##                                ##\n"
+"\t  ##________________________________##\n"
+"\t  Option: "
 msgstr ""
+
+#: airoscfunc.sh:327
+msgid ""
+"\n"
+"\t\t\t ||\n"
+"\t\t\t ||\n"
+"\t\t\t \\/\n"
+"\t\t\t_________Client selection____________\n"
+"\t\t\t##                                 ##\n"
+"\t\t\t##       Select client now         ##\n"
+"\t\t\t##_________________________________##\n"
+"\t\t\tOption: "
+msgstr ""
+
+#: airoscfunc.sh:346
+msgid ""
+"\n"
+"\t\t\t||\n"
+"\t\t\t||\n"
+"\t\t\t\\/\n"
+"\t\t\t__________Client selection___________\n"
+"\t\t\t##                                 ##\n"
+"\t\t\t##   Type in client mac now        ##\n"
+"\t\t\t##_________________________________##\n"
+"\t\t\tMAC: "
+msgstr ""
+
+#: airoscfunc.sh:1344 airoscfunc.sh:1350 airoscfunc.sh:1345 airoscfunc.sh:1353
+msgid "Interface type is :"
+msgstr "Tipo de interfaz: "
+
+#: airoscfunc.sh:1349 airoscfunc.sh:1346 airoscfunc.sh:1352
+msgid "Interface used is :"
+msgstr "Interfaz: "
+
+#: airoscfunc.sh:1423
+msgid  "____Available resolutions_____"
+msgstr "__Resolucciones disponibles___"

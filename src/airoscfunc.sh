@@ -763,7 +763,7 @@ fi
 
 ##################################################################################
 ##################################################################################
-######################### This is for deauth  (7)  option:       ###################################
+######################### This is for others  (7)  option:       #################
 ##################################################################################
 ##################################################################################
 function optionmenu {
@@ -1342,16 +1342,16 @@ function setinterface {
 		TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
 		clear
 		
-		echo -e "`gettext \"Interface used is : $WIFI\"`"
-		echo -e "`gettext \"Interface type is : $TYPE\"`"
+		echo  `gettext 'Interface type is :'` $TYPE
+		echo  `gettext 'Interface used is :'` $WIFI
 		testmac
 	else
 		TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
 		clear
-		
-		echo -e "`gettext \"Interface used is : $WIFI\"`"
-		echo -e "`gettext \"Interface type is : $TYPE\"`"
-		testmac 
+
+		echo  `gettext 'Interface used is :'` $WIFI
+		echo  `gettext 'Interface type is :'` $TYPE
+		testmac
 	fi
 }
 
@@ -1405,7 +1405,7 @@ function target {
 function checkdir {
 if [[ -d $DUMP_PATH ]]
 then
-echo -e "        Output folder is $DUMP_PATH"
+echo -e "`gettext \"        Output folder is $DUMP_PATH\"`"
 echo ""
 else
 echo -e "`gettext \"        Output folder does not exist, i will create it now\"`"
@@ -1420,9 +1420,8 @@ function reso {
 		if [ "$resonset" = "" ]
 		then
 		echo -e "`gettext \"   Select screen resolution            \"`"
-			echo -n "
-____Available resolutions_____
-##			    ##
+		echo -e "`gettext \"____Available resolutions_____\"`"
+echo -n "##			    ##
 ## 	1) 640x480 	    ##
 ## 	2) 800x480  	    ##
 ## 	3) 800x600	    ##

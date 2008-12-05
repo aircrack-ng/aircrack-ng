@@ -150,7 +150,7 @@ select choix in $CHOICES; do
 	elif [ "$choix" = "10" ]; then
 		echo -n `gettext "	Do you want me to stop monitor mode on $WIFI? (y/N) "`
 		read dis
-		if [ $dis = "y" ]
+		if [ "$dis" = "y" ]
 		then
 			echo -n `gettext 'Deconfiguring interface...'`
 			airmon-ng stop $WIFI
@@ -158,7 +158,7 @@ select choix in $CHOICES; do
 		echo -n `gettext 'Do you want me to delete temporary data dir? (y/N) '`
 		read del
 
-		if [ $del = "y" ]
+		if [ "$del" = "y" ]
 		then
 			echo -n `gettext 'Deleting'` " $DUMP_PATH ..."
 			rm -r $DUMP_PATH
