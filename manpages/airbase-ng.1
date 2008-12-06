@@ -9,23 +9,22 @@ airbase-ng - multi-purpose tool aimed at attacking clients as opposed to the Acc
 .BI airbase-ng
 is multi-purpose tool aimed at attacking clients as opposed to the Access Point (AP) itself. Since it is so versatile and flexible, summarizing it is a challenge. Here are some of the feature highlights: 
 .br
-Implements the Caffe Latte WEP client attack
+- Implements the Caffe Latte WEP client attack
 .br
-Implements the Hirte WEP client attack
+- Implements the Hirte WEP client attack
 .br
-Ability to cause the WPA/WPA2 handshake to be captured
+- Ability to cause the WPA/WPA2 handshake to be captured
 .br
-Ability to act as an ad-hoc Access Point
+- Ability to act as an ad-hoc Access Point
 .br
-Ability to act as a full Access Point
+- Ability to act as a full Access Point
 .br
-Ability to filter by SSID or client MAC addresses
+- Ability to filter by SSID or client MAC addresses
 .br
-Ability to manipulate and resend packets
+- Ability to manipulate and resend packets
 .br
-Ability to encrypt sent packets and decrypt received packets
-.br
-.br
+- Ability to encrypt sent packets and decrypt received packets
+
 The main idea is of the implementation is that it should encourage clients to associate with the fake AP, not prevent them from accessing the real AP. 
 
 A tap interface (atX) is created when airbase-ng is run. This can be used to receive decrypted packets or to send encrypted packets. 
