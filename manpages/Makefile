@@ -3,7 +3,7 @@ include		$(AC_ROOT)/common.mak
 
 MP_FILES        = aircrack-ng.1 airdecap-ng.1 airdriver-ng.1 aireplay-ng.1 \
                   airmon-ng.1 airodump-ng.1 airserv-ng.1 airtun-ng.1 buddy-ng.1 \
-                  easside-ng.1 ivstools.1 kstats.1 makeivs-ng.1 \
+                  easside-ng.1 ivstools.1 kstats.1 makeivs-ng.1 airbase-ng.1 \
                   packetforge-ng.1 wesside-ng.1 airdecloak-ng.1 tkiptun-ng.1
 
 
