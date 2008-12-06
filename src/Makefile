@@ -43,6 +43,7 @@ SRC_PTW		= aircrack-ptw-lib.c
 SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
 OBJS_PTW	= aircrack-ptw-lib.o
 OBJS_AC		= aircrack-ng.o crypto.o common.o uniqueiv.o $(OBJS_PTW)
+ASM_AC		= sha1-sse2.S
 
 OBJS_AD		= airdecap-ng.o crypto.o common.o
 OBJS_PF		= packetforge-ng.o common.o crypto.o
@@ -97,22 +98,22 @@ $(LIBOSD):
 	$(MAKE) -C $(OSD)
 
 aircrack-ng-opt: $(SRC_AC)
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) $(SRC_AC) $(LIBSSL) \
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) $(SRC_AC) $(ASM_AC) $(LIBSSL) \
 	uniqueiv.o -o aircrack-ng-opt -lpthread $(LIBSQL)
 
 aircrack-ng-opt-prof_gen: $(SRC_AC)
 	mkdir -p prof
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_genx -DDO_PGO_DUMP \
-	-prof_dir$(PROF_DIR) $(SRC_AC) $(LIBSSL) uniqueiv.o -o \
+	-prof_dir$(PROF_DIR) $(SRC_AC) $(ASM_AC) $(LIBSSL) uniqueiv.o -o \
 	aircrack-ng-opt-prof_gen -lpthread $(LIBSQL)
 
 aircrack-ng-opt-prof_use: $(SRC_AC)
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_use \
-	-prof_dir$(PROF_DIR) $(SRC_AC) $(LIBSSL) uniqueiv.o -o \
+	-prof_dir$(PROF_DIR) $(SRC_AC) $(ASM_AC) $(LIBSSL) uniqueiv.o -o \
 	aircrack-ng-opt-prof -lpthread $(LIBSQL)
 
 aircrack-ng$(EXE): $(OBJS_AC)
-	$(CC) $(CFLAGS) $(OBJS_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL)
+	$(CC) $(CFLAGS) $(OBJS_AC) $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL)
 
 airdecap-ng$(EXE): $(OBJS_AD)
 	$(CC) $(CFLAGS) $(OBJS_AD) -o $(@) $(LIBSSL)
