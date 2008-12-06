@@ -1,16 +1,26 @@
 .TH AIRMON 1 "June 2008" "Version 1.0-rc1"
 
 .SH NAME
-airmon-ng - bash script designed to turn wireless cards into monitor mode
+airmon-ng - bash script designed to turn wireless cards into monitor mode.
 .SH SYNOPSIS
 .B airmon-ng
 <start|stop> <interface> [channel]
+.B airmon-ng
+<check> [kill]
 .SH DESCRIPTION
 .BI airmon-ng
-is a bash script designed to turn wireless cards into monitor mode. It autodetects which card you have and run the right commands.
-.br
-.BI airmon-ng  
-can set the right sources in /etc/kismet/kismet.conf too.
+is script can be used to enable monitor mode on wireless interfaces. It may also be used to go back from monitor mode to managed mode. Entering the airmon-ng command without parameters will show the interfaces status. 
+It can list/kill programs that can interfere with the wireless card and set the right sources in /etc/kismet/kismet.conf too.
+.SH OPTIONAL PARAMETERS
+.PP
+.TP
+.I start <interface> [channel]
+Enable monitor mode on an interface (and specify a channel). Note: Madwifi-ng is a special case, 'start' has to be used on wifi interfaces and 'stop' on ath interfaces.
+.I stop <interface>
+Disable monitor mode and go back to managed mode (except for madwifi-ng where it kills the ath VAP).
+.TP
+.I check [kill]
+List all possible programs that could interfere with the wireless card. If 'kill' is specified, it will try to kill all of them.
 .SH AUTHOR
 This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
 Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
