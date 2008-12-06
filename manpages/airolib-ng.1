@@ -7,7 +7,7 @@ airolib-ng - manage and create a WPA/WPA2 pre-computed hashes tables
 <database> <operation> [options]
 .SH DESCRIPTION
 .BI airolib-ng
-is a tool designed to manage and create WPA/WPA pre-computed tables to be used with aircrack-ng. It uses SQLite tables and can import/export to coWPAtty hash tables or generate tables by itself.
+is a tool for the aircrack-ng suite to store and manage essid and password lists, compute their Pairwise Master Keys (PMKs) and use them in WPA/WPA2 cracking. The program uses the lightweight SQLite3 database as the storage mechanism which is available on most platforms. The SQLite3 database was selected taking in consideration platform availability plus management, memory and disk overhead.
 .SH DATABASE
 .TP
 .I database
