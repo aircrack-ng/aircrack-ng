@@ -17,7 +17,7 @@ install:
 	@install    -g $(UID) -o $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc.sh          $(SHAREDIR)/airoscfunc.sh
 	@install    -g $(UID) -o $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc_unstable.sh $(SHAREDIR)/airoscfunc_unstable.sh
 	@install    -g $(UID) -o $(GID) -m 644        $(CURDIR)/src/screenrc               $(SHAREDIR)/screenrc
-	@msgfmt -o /usr/share/locale/es/LC_MESSAGES/airoscript.mo $(CURDIR)/src/i10n/po/es_ES
+	@msgfmt -o $(DESTDIR)/usr/share/locale/es/LC_MESSAGES/airoscript.mo $(CURDIR)/src/i10n/po/es_ES
 
 
 all: install 
