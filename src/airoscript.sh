@@ -169,8 +169,7 @@ select choix in $CHOICES; do
 		exit
 	else
 		clear
+		echo "`gettext 'ERROR: Wrong number entered'`"
 		menu
-        echo "`gettext \"#######################################\"`"
-        echo "`gettext \"###      Wrong number entered       ###\"`"
 	fi
 done

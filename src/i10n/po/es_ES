@@ -807,7 +807,7 @@ msgstr "Error, no se ha encontrado ningun archivo de configuracion, saliendo."
 
 #: airoscript.sh:96
 msgid "Input number: "
-msgstr "Numero:"
+msgstr "Numero: "
 
 #: airoscript.sh:155
 msgid "Deconfiguring interface..."
