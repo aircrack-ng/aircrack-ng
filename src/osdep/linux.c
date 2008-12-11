@@ -464,10 +464,9 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
     struct priv_linux *dev = wi_priv(wi);
     unsigned char tmpbuf[4096];
 
-    int caplen, n = 0;
-    char got_signal=0;
-    char got_noise=0;
-    int fcs_removed=0;
+	int caplen, n, got_signal, got_noise, got_channel, fcs_removed;
+
+	caplen = n = got_signal = got_noise = got_channel = fcs_removed = 0;
 
     if((unsigned)count > sizeof(tmpbuf))
         return( -1 );
@@ -506,6 +505,9 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                 ri->ri_power = tmpbuf[0x33];
                 ri->ri_noise = *(unsigned int *)( tmpbuf + 0x33 + 12 );
                 ri->ri_rate = (*(unsigned int *)( tmpbuf + 0x33 + 24 ))*500000;
+
+                got_signal = 1;
+                got_noise = 1;
             }
 
             n = 0x40;
@@ -525,6 +527,10 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                     ri->ri_power -= *(int *)( tmpbuf + 0x68 );
                 if( dev->drivertype == DT_MADWIFING )
                     ri->ri_power -= *(int *)( tmpbuf + 0x68 );
+
+                got_channel = 1;
+                got_signal = 1;
+                got_noise = 1;
             }
 
             n = *(int *)( tmpbuf + 4 );
@@ -557,11 +563,14 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                 break;
 
             case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
-                if( *iterator.this_arg < 127 )
-                    ri->ri_power = *iterator.this_arg;
-                else
-                    ri->ri_power = *iterator.this_arg - 255;
-                got_signal=1;
+            	if(!got_signal) {
+					if( *iterator.this_arg < 127 )
+						ri->ri_power = *iterator.this_arg;
+					else
+						ri->ri_power = *iterator.this_arg - 255;
+
+					got_signal = 1;
+				}
                 break;
 
             case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
@@ -570,15 +579,20 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                         ri->ri_power = *iterator.this_arg;
                     else
                         ri->ri_power = *iterator.this_arg - 255;
+
+                    got_signal = 1;
                 }
                 break;
 
             case IEEE80211_RADIOTAP_DBM_ANTNOISE:
-                if( *iterator.this_arg < 127 )
-                    ri->ri_noise = *iterator.this_arg;
-                else
-                    ri->ri_noise = *iterator.this_arg - 255;
-                got_noise=1;
+            	if(!got_noise) {
+					if( *iterator.this_arg < 127 )
+						ri->ri_noise = *iterator.this_arg;
+					else
+						ri->ri_noise = *iterator.this_arg - 255;
+
+					got_noise = 1;
+				}
                 break;
 
             case IEEE80211_RADIOTAP_DB_ANTNOISE:
@@ -587,6 +601,8 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                         ri->ri_noise = *iterator.this_arg;
                     else
                         ri->ri_noise = *iterator.this_arg - 255;
+
+                    got_noise = 1;
                 }
                 break;
 
@@ -596,6 +612,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
             case IEEE80211_RADIOTAP_CHANNEL:
                 ri->ri_channel = *iterator.this_arg;
+                got_channel = 1;
                 break;
 
             case IEEE80211_RADIOTAP_RATE:
@@ -638,7 +655,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
     memcpy( buf, tmpbuf + n, caplen );
 
-    if(ri)
+    if(ri && !got_channel)
         ri->ri_channel = wi_get_channel(wi);
 
     return( caplen );
