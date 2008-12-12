@@ -1,11 +1,15 @@
 Changelog for 2.0.11
 - Changed interface. Now it looks nicer.
+- Now it advises you if you don't have some optional thing installed and try to exec it. 
+- It doesnt allow you to do something if you've had to do something else before and you haven't (for example, doing a selection (2) befora a scan (1)
 - Corrected some bugs
 - Added support for gettext
 - Added support for wlandecrypter
 - Added an "Auto" function
 - Added a "exit" function, asking user if he wants delete temporary directory and/or stop monitor mode on selected interface.
 - Code cleaned and reorganised.
+- Corrected lots of things in makefile
+- Added a "critical debug command" (well... it echoes every terminal command instead of executing it, for terminal related errors)
 
 Changelog for 2.0.10
 - Added multiple terminal support

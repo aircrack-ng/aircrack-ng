@@ -31,8 +31,9 @@ function wld {
 				fi
 
 			sleep 1 
-			case $Host_SSID in
-				WLAN_[1-9][1-9] )
+			export START=`echo $Host_SSID|cut -d_ -f1`
+			case $START in
+				WLAN )
 					echo "
 	_____________________________________
 	# Your wifi is the form WLAN_XX so  #
@@ -45,7 +46,7 @@ function wld {
 					;;
 				*)
 					clear
-					echo "Sorry, your target is not supported (not wlan_XX type)"
+					echo "Sorry, your target is not supported (not wlan_XX type) $Host_SSID ($START)"
 					;;
 			esac
 				
