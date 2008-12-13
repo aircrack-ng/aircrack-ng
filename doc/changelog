@@ -1,3 +1,13 @@
+Changelog for 2.0.12 
+- Added real screen support
+- Corrected lots of bugs with i10n
+- Corrected bug in wlandecrypter bug
+- Modified CDCMD to write in a logfile
+- Changed config so it whould not use unstable functions by default
+- Corrected lots of bugs in makefile, like having 755 permisions for screenrc file, $DESTDIR problems 
+- Corrected more quoting problems :-)
+- Added support for jazzteldecrypter
+
 Changelog for 2.0.11
 - Changed interface. Now it looks nicer.
 - Now it advises you if you don't have some optional thing installed and try to exec it. 

@@ -572,8 +572,9 @@ function witchcrack {
 	##      WEP/WPA CRACKING OPTIONS   ##
 	##                                 ##
 	##   1) Use Wlandecrypter          ##
-	##   2) Use aircrack-ng            ##
-	##   3) Return to main menu        ##
+	##   2) Use Jazzteldecrypter	   ##	
+	##   3) Use aircrack-ng            ##
+	##   4) Return to main menu        ##
 	##_________________________________##
 	Option:'`"
 			
@@ -581,8 +582,9 @@ function witchcrack {
 				
 				case $yn in
 					1 ) wld ; break ;;
-					2 ) selectcracking ; break ;;
-					3 ) clear; break;;
+					2 ) jtd ; break ;;
+					3 ) selectcracking ; break ;;
+					4 ) clear; break;;
 					* ) echo "Unknown response. Try again" ;;
 				esac
 			done 
