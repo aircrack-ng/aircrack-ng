@@ -129,7 +129,6 @@ select choix in $CHOICES; do
 		menu	
 
 	elif [ "$choix" = "5" ]; then
-		echo launching fake auth commands
 		choosefake && menu	
 
 	elif [ "$choix" = "6" ]; then	

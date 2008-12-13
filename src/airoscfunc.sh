@@ -550,8 +550,8 @@ function witchattack {
 	 	 echo  "`gettext 'ERROR: You have to select a target'`"
 	  else
 		clear
-		echo `gettext "ERROR: $Host_SSID is not encrypted ($Host_ENC)"`
-	  fi
+			echo `gettext "ERROR: Network not encrypted or no network selected "`
+			fi
 	}
 
 
@@ -561,24 +561,24 @@ function witchattack {
 ##################################################################################
 ##################################################################################
 function witchcrack {
-		if [ "$UNSTABLE" = "1" ]
+	if [ "$UNSTABLE" = "1" ]
 		then
 			while true; do
 				echo -e -n "`gettext '
-		||
-		||
-		\/
-	_____________________________________
-	##      WEP/WPA CRACKING OPTIONS   ##
-	##                                 ##
-	##   1) Use Wlandecrypter          ##
-	##   2) Use Jazzteldecrypter	   ##	
-	##   3) Use aircrack-ng            ##
-	##   4) Return to main menu        ##
-	##_________________________________##
-	Option:'`"
-			
-				read yn
+					||
+					||
+					\/
+					_____________________________________
+##      WEP/WPA CRACKING OPTIONS   ##
+##                                 ##
+##   1) Use Wlandecrypter          ##
+##   2) Use Jazzteldecrypter	   ##	
+##   3) Use aircrack-ng            ##
+##   4) Return to main menu        ##
+##_________________________________##
+					Option:'`"
+
+					read yn
 				
 				case $yn in
 					1 ) wld ; break ;;
@@ -594,12 +594,12 @@ function witchcrack {
 }
 
 function selectcracking {
-	if [ "$Host_ENC" = "OPN" ] | [ "$Host_ENC" = "" ]
+	if [ "$Host_ENC" = "OPN" ] | [ "$Host_ENC" = "" ] | [ "$Host_ENC" = " OPN " ]
 	then
 		clear
 		echo `gettext "ERROR: Network not encrypted or no network selected "`
+
 	else
-		echo $Host_ENC
 		if [ "$Host_ENC" = " WEP " ] || [ "$Host_ENC" = "WEP" ]
 		then
 			crack
