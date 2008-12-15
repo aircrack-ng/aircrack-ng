@@ -247,6 +247,9 @@ enum ieee80211_radiotap_type {
 						 * retries */
 #define IEEE80211_RADIOTAP_F_TX_CTS	0x0002	/* used cts 'protection' */
 #define IEEE80211_RADIOTAP_F_TX_RTS	0x0004	/* used rts/cts handshake */
+#define IEEE80211_RADIOTAP_F_TX_NOACK	0x0008	/* frame should not be ACKed */
+#define IEEE80211_RADIOTAP_F_TX_NOSEQ	0x0010	/* sequence number handled
+						 * by userspace */
 
 /* Ugly macro to convert literal channel numbers into their mhz equivalents
  * There are certianly some conditions that will break this (like feeding it '30')
