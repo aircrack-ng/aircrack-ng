@@ -6,7 +6,7 @@ export TEXTDOMAIN=airoscript
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes, darkAudax, Atheros support thx to green-freq
 # Date of this version:	        27.11.2008
 # Version of aircrack-ng required:  AIRCRACK-NG 1.0.2
-# Dependencies: aircrack-ng, xterm|urxvt|gnome-terminal|... , grep, awk, macchanger, drivers capable of injection (for injection =) ), mdk3 (optional), wlandecrypter (optional)
+# Dependencies: aircrack-ng, xterm|urxvt|gnome-terminal|..., awk, macchanger, drivers capable of injection (for injection =) ), mdk3 (optional), wlandecrypter (optional), jazzteldecrypter (optional), grep (included on almost all systems by default)
 
 function confwarn {
 echo -n -e "`gettext 'Youre going to use a config file on your home or current dir. 
@@ -82,6 +82,31 @@ debug
 
 #checks if output dir exists, if not, it creates it.
 checkdir
+
+# Check if user especifies a terminal trought command line
+if [ "$1" = "" ]
+then
+	echo "No terminal especified, using configured terminal"
+else
+	echo "Using $1 as terminal"
+	TERMINAL="$1"
+fi
+
+if [ "$TERMINAL" = "screen" ]
+then
+	if [ -e ~/.airoscript.screen_has_started ]
+	then
+		rm ~/.airoscript.screen_has_started
+	else
+		touch ~/.airoscript.screen_has_started
+		screen -S airoscript -c /usr/share/airoscript/screenrc airoscript
+		clear
+		echo `gettext 'Airoscript is terminating...'`
+		exit
+	fi
+
+
+fi
 
 #Ask for screen size
 reso

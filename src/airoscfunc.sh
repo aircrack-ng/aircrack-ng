@@ -1335,6 +1335,81 @@ Option: '`"
 	}
 
 ###########################################
+########Those three are called from many places.#########
+###########################################
+	function capture {
+		rm -rf $DUMP_PATH/$Host_MAC*
+		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Capturing data on channel'`: $Host_CHAN" $TOPLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI 
+	}
+
+	function fakeauth {
+		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Associating with:'` $Host_SSID " $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE $EXECFLAG "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
+	}
+
+	function menufonction {
+		$TERMINAL $HOLD $TOPRIGHT $TITLEFLAG "`gettext 'Fake function to jump to menu'`" $EXECFLAG echo "Aircrack-ng is a great tool, Mister_X ASPj & HIRTE are GODS"
+	}
+	
+	# This is the input part for ssid. Used for almost two functions. (blankssid and choosetarget)
+	function Host_ssidinput {
+		echo "#######################################"
+		echo -e "`gettext \"###       Please enter SSID         ###\"`"
+		read Host_SSID
+		set -- ${Host_SSID}
+		clear
+	}
+###########################################
+########End of the ones that are called from many places.####
+###########################################
+
+
+################### Warning: I can't find those functions called from anywhere ###########
+function witchconfigure {
+if [ $Host_ENC = "WEP" ]
+  		then
+		configure
+		else
+		wpaconfigure
+		fi			
+}
+
+function configure {
+		$AIRCRACK -a 1 -b $Host_MAC -s -0 -z $DUMP_PATH/$Host_MAC-01.cap &> $DUMP_PATH/$Host_MAC.key 
+		KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
+}
+
+function wpaconfigure {
+		$AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST &> $DUMP_PATH/$Host_MAC.key
+		KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
+}
+function doauto {
+		# First the first funcion, those where you scan for targets :-)
+		choosetype
+
+		# Now the one on wich you select target
+		if [ -e $DUMP_PATH/dump-01.txt ] 	
+		then
+			Parseforap
+			clear
+			if [ "$Host_SSID" = $'\r' ]
+	 			then blankssid;
+			elif [ "$Host_SSID" = "No SSID has been detected" ]
+				then blankssid;
+			fi
+			target
+			choosetarget
+			clear
+		else
+			clear
+			echo "ERROR: You have to scan for targets first"
+		fi
+		# And now the cracking option :-) 
+		# I really really hope this will be usefull.
+		witchattack	
+}
+
+
+###########################################
 #############Called directly from the menu.###########
 ###########################################
 function setinterface {
@@ -1460,7 +1535,7 @@ read reson
 function setterminal {
 	clear
 	getterminal
-	echo -e "`gettext \"Im going to set terminal options for your terminal now\"`"
+	echo -e "`gettext 'Im going to set terminal options for your terminal now'`"
 	# This way we support multiple terminals, not only $TERMINAL
 	case $TERMINAL in 
 		xterm|uxterm ) 
@@ -1511,25 +1586,8 @@ function setterminal {
 			BGC=""
 			;;
 		screen )
-			# WARNING, THIS IS FULLY EXPERIMENTAL!!!! Use Screen as your own risk! (may not work)
-			TOPLEFT=""
-			TOPRIGHT=""
-			BOTTOMLEFT=""
-			BOTTOMRIGHT=""
-			TOPLEFTBIG=""
-			TOPRIGHTBIG=""
-			#EXECFLAG="-c /usr/share/airoscript/screenrc -t airoscript -s" 
-			EXECFLAG="-c /usr/share/airoscript/screenrc -t airoscript" 
-			HOLDFLAG=""	
-			TITLEFLAG="-t"
-		# Themes disabled for screen
-			FGC=""
-			DUMPING_COLOR=""
-			INJECTION_COLOR=""
-			ASSOCIATION_COLOR=""
-			DEAUTH_COLOR=""
-			BACKGROUND_COLOR=""
-			BGC=""
+		# Now, we add modified functions file, to support screen
+			. $SCREEN_FUNCTIONS
 			;;
 	esac
 echo -e "\n"
@@ -1587,76 +1645,3 @@ function getterminal {
 ########End of called directly from the menu.  ###########
 ###########################################
 
-###########################################
-########Those three are called from many places.#########
-###########################################
-	function capture {
-		rm -rf $DUMP_PATH/$Host_MAC*
-		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Capturing data on channel'`: $Host_CHAN" $TOPLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI 
-	}
-
-	function fakeauth {
-		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Associating with:'` $Host_SSID " $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE $EXECFLAG "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
-	}
-
-	function menufonction {
-		$TERMINAL $HOLD $TOPRIGHT $TITLEFLAG "`gettext 'Fake function to jump to menu'`" $EXECFLAG echo "Aircrack-ng is a great tool, Mister_X ASPj & HIRTE are GODS"
-	}
-	
-	# This is the input part for ssid. Used for almost two functions. (blankssid and choosetarget)
-	function Host_ssidinput {
-		echo "#######################################"
-		echo -e "`gettext \"###       Please enter SSID         ###\"`"
-		read Host_SSID
-		set -- ${Host_SSID}
-		clear
-	}
-###########################################
-########End of the ones that are called from many places.####
-###########################################
-
-
-################### Warning: I can't find those functions called from anywhere ###########
-function witchconfigure {
-if [ $Host_ENC = "WEP" ]
-  		then
-		configure
-		else
-		wpaconfigure
-		fi			
-}
-
-function configure {
-		$AIRCRACK -a 1 -b $Host_MAC -s -0 -z $DUMP_PATH/$Host_MAC-01.cap &> $DUMP_PATH/$Host_MAC.key 
-		KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
-}
-
-function wpaconfigure {
-		$AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST &> $DUMP_PATH/$Host_MAC.key
-		KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
-}
-function doauto {
-		# First the first funcion, those where you scan for targets :-)
-		choosetype
-
-		# Now the one on wich you select target
-		if [ -e $DUMP_PATH/dump-01.txt ] 	
-		then
-			Parseforap
-			clear
-			if [ "$Host_SSID" = $'\r' ]
-	 			then blankssid;
-			elif [ "$Host_SSID" = "No SSID has been detected" ]
-				then blankssid;
-			fi
-			target
-			choosetarget
-			clear
-		else
-			clear
-			echo "ERROR: You have to scan for targets first"
-		fi
-		# And now the cracking option :-) 
-		# I really really hope this will be usefull.
-		witchattack	
-}

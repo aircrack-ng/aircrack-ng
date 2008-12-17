@@ -2,11 +2,12 @@ Changelog for 2.0.12
 - Added real screen support
 - Corrected lots of bugs with i10n
 - Corrected bug in wlandecrypter bug
-- Modified CDCMD to write in a logfile
+- Modified CDCMD to write in a logfile (Not working, deleted)
 - Changed config so it whould not use unstable functions by default
 - Corrected lots of bugs in makefile, like having 755 permisions for screenrc file, $DESTDIR problems 
 - Corrected more quoting problems :-)
 - Added support for jazzteldecrypter
+- Now you can especify a terminal without editing config by passing it as parameter ( airoscript terminal )
 
 Changelog for 2.0.11
 - Changed interface. Now it looks nicer.
