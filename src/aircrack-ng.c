@@ -417,8 +417,8 @@ void eof_wait( int *eof_notified )
 inline int wpa_send_passphrase(char *key, struct WPA_data* data, int lock)
 {
 	pthread_mutex_lock(&data->mutex);
-	
-	if ((data->back+1) % data->nkeys == data->front) 
+
+	if ((data->back+1) % data->nkeys == data->front)
 	{
 		if (lock != 0)
 		{
@@ -435,7 +435,7 @@ inline int wpa_send_passphrase(char *key, struct WPA_data* data, int lock)
 	// put one key in the buffer:
 	memcpy(data->key_buffer + data->back*128, key, 128);
 	data->back = (data->back+1) % data->nkeys;
-	
+
 	pthread_mutex_unlock(&data->mutex);
 
 	return 1;
@@ -3693,7 +3693,7 @@ uchar mic[16], int force )
 
 	if (force != 0)
 		pthread_mutex_lock(&mx_wpastats);  // if forced, wait until we can lock
-	else 
+	else
 		if (pthread_mutex_trylock(&mx_wpastats) != 0)  // if not forced, just try
 			return;
 
@@ -3713,7 +3713,7 @@ uchar mic[16], int force )
 		t_kprev.tv_sec += 3;
 		delta = chrono( &t_kprev, 0 );
 		nb_kprev *= delta / delta0;
-		
+
 	}
 
 	if( opt.l33t ) printf( "\33[33;1m" );
@@ -3780,7 +3780,7 @@ int crack_wpa_thread( void *arg )
 
 #if defined(__i386__) || defined(__x86_64__)
 	// Check for SSE2, with SSE2 the algorithm works with 4 keys
-	if (shasse2_cpuid()>=2) 
+	if (shasse2_cpuid()>=2)
 		nparallel = 4;
 #endif
 
@@ -3823,7 +3823,7 @@ int crack_wpa_thread( void *arg )
 		{
 			key[j][0]=0;
 
-			while(wpa_receive_passphrase(key[j], data)==0) 
+			while(wpa_receive_passphrase(key[j], data)==0)
 			{
 				if (wpa_wordlists_done==1) // if no more words will arrive and...
 				{
@@ -3871,8 +3871,8 @@ int crack_wpa_thread( void *arg )
 					if (!opt.stdin_dict) fclose(opt.dict);
 					opt.dict = NULL;
 				}
-				
-				for( i = 0; i < opt.nbcpu; i++ )  
+
+				for( i = 0; i < opt.nbcpu; i++ )
 				{
 					// we make sure do_wpa_crack doesn't block before exiting,
 					// now that we're not consuming passphrases here any longer
@@ -4040,7 +4040,7 @@ int do_wpa_crack()
 	res = 0;
 	opt.amode = 2;
 	num_cpus = opt.nbcpu;
-	
+
 
 	if( ! opt.is_quiet )
 	{
@@ -4099,7 +4099,7 @@ int do_wpa_crack()
 		while( i < 8 );
 
 		/* send the keys */
-		
+
 		for(i=0; i<opt.nbcpu; ++i)
 		{
 			res = wpa_send_passphrase(key1, &(wpa_data[cid]), 0/*don't block*/);
@@ -4524,7 +4524,18 @@ int main( int argc, char *argv[] )
 				return( 1 );
 
 			case 'u' :
-				printf("Nb CPU detected: %d\n", cpu_count);
+				printf("Nb CPU detected: %d ", cpu_count);
+#if defined(__i386__) || defined(__x86_64__)
+				unused = shasse2_cpuid();
+
+				if (unused == 1) {
+					printf(" (MMX available)");
+				}
+				if (unused >= 2) {
+					printf(" (SSE2 available)");
+				}
+#endif
+				printf("\n");
 				return( 0 );
 
 			case 'V' :
@@ -5425,7 +5436,7 @@ usage:
 
 				id++;
 			}
-	
+
 			ret = do_wpa_crack();	// we feed keys to the cracking threads
 			wpa_wordlists_done = 1; // we tell the threads that they shouldn't expect more words (don't wait for parallel crack)
 
