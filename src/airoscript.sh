@@ -177,13 +177,17 @@ select choix in $CHOICES; do
 
 	elif [ "$choix" = "10" ]; then
 		echo -n `gettext "	Do you want me to stop monitor mode on $WIFI? (y/N) "`
+		echo -n " "
 		read dis
 		if [ "$dis" = "y" ]
 		then
-			echo -n `gettext 'Deconfiguring interface...'`
-			airmon-ng stop $WIFI
+			echo -n `gettext 'Deconfiguring interface...'` 
+			echo -n " "
+			airmon-ng stop $WIFI > /dev/null
+			echo "`gettext 'done'`"
 		fi
 		echo -n `gettext 'Do you want me to delete temporary data dir? (y/N) '`
+		echo -n " "
 		read del
 
 		if [ "$del" = "y" ]
