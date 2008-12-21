@@ -1,12 +1,16 @@
 #! /bin/bash
-export TEXTDOMAINDIR=/usr/share/locale
-export TEXTDOMAIN=airoscript
 # Program:	Airoscript                                                          
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others; Continued by XayOn.
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes, darkAudax, Atheros support thx to green-freq
 # Date of this version:	        27.11.2008
 # Version of aircrack-ng required:  AIRCRACK-NG 1.0.2
 # Dependencies: aircrack-ng, xterm|urxvt|gnome-terminal|..., awk, macchanger, drivers capable of injection (for injection =) ), mdk3 (optional), wlandecrypter (optional), jazzteldecrypter (optional), grep (included on almost all systems by default)
+
+# Clear screen first of all
+clear
+# Set variables for airoscript's locale
+export TEXTDOMAINDIR=/usr/share/locale
+export TEXTDOMAIN=airoscript
 
 function confwarn {
 echo -n -e "`gettext 'Youre going to use a config file on your home or current dir. 
@@ -61,7 +65,7 @@ fi
 if [ -e $FUNCTIONS ]; then
 	. $FUNCTIONS
 else
-	echo -e "[ERROR] : Functions file does not exists, quitting\n"
+	echo -e "`gettext '[ERROR] : Functions file does not exists, quitting'`\n"
 	exit
 fi
 
@@ -69,7 +73,7 @@ fi
 if [ -e $THEMEDIR/$THEME.theme ]; then
 	. $THEMEDIR/$THEME.theme 
 else
-	echo -e "[WARN] : theme file does not exists, using defaults...\n" 
+	echo -e "`gettext '[WARN] : theme file does not exists, using defaults...'`\n" 
 	DUMPING_COLOR="#FFFFFF"
 	INJECTION_COLOR="#1DFF00"
 	ASSOCIATION_COLOR="#FF0009"
@@ -86,9 +90,9 @@ checkdir
 # Check if user especifies a terminal trought command line
 if [ "$1" = "" ]
 then
-	echo "No terminal especified, using configured terminal"
+	echo -e "`gettext '[INFO] No terminal especified, using configured terminal'`\n"
 else
-	echo "Using $1 as terminal"
+	echo `gettext "Using $1 as terminal"`
 	TERMINAL="$1"
 fi
 
@@ -141,7 +145,7 @@ select choix in $CHOICES; do
 			menu
 		else
 			clear
-			echo "ERROR: You have to scan for targets first"
+			echo "`gettext 'ERROR: You have to scan for targets first'`"
 			menu
 		fi
 
@@ -184,9 +188,9 @@ select choix in $CHOICES; do
 
 		if [ "$del" = "y" ]
 		then
-			echo -n `gettext 'Deleting'` " $DUMP_PATH ..."
-			rm -r $DUMP_PATH
-			rm *.cap
+			echo -n `gettext 'Deleting'` " $DUMP_PATH ... "
+			rm -r $DUMP_PATH 2>/dev/null
+			rm *.cap 2>/dev/null
 			echo `gettext 'done'`
 		fi
 

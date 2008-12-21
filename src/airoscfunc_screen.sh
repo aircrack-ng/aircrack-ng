@@ -59,7 +59,7 @@
 		function attackclient {
 			capture & 
 			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
-			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE" & menufonction
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$AIREPLAY $WIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE " & menufonction
 		}
 
 		#Option 8 (interactive arp replay) 
@@ -145,18 +145,22 @@
 
 # Those are subproducts of choosefake
 	function fakeauth1 {
-		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Associating with:'` $Host_SSID " $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth 6000 -o 1 -q 10 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI & menufonction
+					$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff  "$AIREPLAY --fakeauth 6000 -o 1 -q 10 -e $Host_SSID -a $Host_MAC -h $FAKE_MAC $WIFI" & menufonction
 	}
 	function fakeauth2 {
-		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Associating with:'`$Host_SSID" $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth 0 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI & menufonction
+					$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$AIREPLAY --fakeauth 0 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI" & menufonction
 	}
 	function fakeauth3 {
-		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Associating with:'`$Host_SSID" $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth 5 -o 10 -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI & menufonction
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff  "$AIREPLAY --fakeauth 5 -o 10 -q 1 -e $Host_SSID -a $Host_MAC -h $FAKE_MAC $WIFI" & menufonction
 	}
 	
 	# Subproducts of choosedeauth
 		function deauthall {
-			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext 'Kicking everybody from:'` $Host_SSID" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $WIFI
+						$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $WIFI"
 		}
 		
 		function deauthclient {
@@ -165,58 +169,68 @@
 			clear
 			echo "ERROR: You have to select a client first"
 		else
-			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext 'Kicking $Client_MAC from:'` $Host_SSID" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $WIFI
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff  "$AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $WIFI"
 		fi
 		}
 		
 		function deauthfake {
-			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext 'Kicking'` $FAKE_MAC ( $Host_SSID )" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $WIFI
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff  "$AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $WIFI"
 		}
 
 
 # I suppose all these are part of this option(Others:7):
 	# 1.
 	function inject_test {
-		$TERMINAL $HOLD $TOPLEFTBIG $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $WIFI --test & menufonction
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$AIREPLAY $WIFI --test" & menufonction
 	}
 			function mdkpain {
-				$TERMINAL $HOLD $TOPLEFTBIG $TITLEFLAG "`gettext 'MDK attack'`" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $MDK3 $WIFI d & choosemdk
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff " $MDK3 $WIFI d" & choosemdk
 			}
 			
 			function mdktargetedpain {
-				$TERMINAL $HOLD $TOPLEFTBIG $TITLEFLAG "`gettext 'MDK attack on AP:'` $Host_SSID" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $MDK3 $WIFI p -b a -c $Host_CHAN -t $Host_MAC & choosemdk
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$MDK3 $WIFI p -b a -c $Host_CHAN -t $Host_MAC" & choosemdk
 			}
 
 			function mdkauth {
-				$TERMINAL $HOLD $TOPLEFTBIG $TITLEFLAG "`gettext 'Wesside-ng attack on AP:'` $Host_SSID" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $MDK3 $WIFI a & choosemdk
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$MDK3 $WIFI a" & choosemdk
 			}
 	
 			function wesside {
 				rm -rf prga.log
 				rm -rf wep.cap
 				rm -rf key.log
-				$TERMINAL $HOLD $TOPLEFTBIG $TITLEFLAG "`gettext 'Wesside-ng attack'`" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -i $WIFI & choosewesside
+				$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+				$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff  "$WESSIDE -i $WIFI" & choosewesside
 			}
 
 			function wessidetarget {
 				rm -rf prga.log
 				rm -rf wep.cap
 				rm -rf key.log
-				$TERMINAL $HOLD $TOPLEFTBIG $TITLEFLAG "`gettext 'Wesside-ng attack'` ($Host_SSID)" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -i $WIFI & choosewesside
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff  "$WESSIDE -v $Host_MAC -i $WIFI" & choosewesside
 			}
 
 			function wessidetargetmaxer {
 				rm -rf prga.log
 				rm -rf wep.cap
 				rm -rf key.log
-				$TERMINAL $HOLD $TOPLEFTBIG $TITLEFLAG "`gettext 'Wesside-ng attack'` ($Host_SSID)" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -k 1 -i $WIFI & choosewesside
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$EXECFLAG $WESSIDE -v $Host_MAC -k 1 -i $WIFI" & choosewesside
 			}
 
 			function wessidetargetpoor {
 				rm -rf prga.log
 				rm -rf wep.cap
 				rm -rf key.log
-				$TERMINAL $HOLD $TOPLEFTBIG $TITLEFLAG "`gettext 'Wesside-ng attack'` ($Host_SSID)" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -k 3 -i $WIFI & choosewesside
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$WESSIDE -v $Host_MAC -k 3 -i $WIFI" & choosewesside
 			}
 
 			function wessidenewtarget {
@@ -262,7 +276,8 @@
 						acouper=${#ssid}
 						fin=$(($acouper-idlength))
 						Host_SSID=${ssid:1:fin}
-						$TERMINAL $HOLD $TOPLEFTBIG $TITLEFLAG "`gettext 'Wesside-ng attack'` ($Host_SSID9" $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG wesside-ng -v $Host_MAC -i $WIFI & choosewesside
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$WESSIDE -v $Host_MAC -i $WIFI" & choosewesside
 			}
 
 	function fragnoclientend {
@@ -272,7 +287,8 @@
 			echo `gettext 'ERROR: You must select a target first'`
 		else
 		$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
-		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "`gettext 'Injecting forged packet on'` $Host_SSID" $EXECFLAG $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI & menufonction
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff " $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI" & menufonction
 		fi
 	}
 
@@ -284,7 +300,8 @@
 			echo `gettext 'ERROR: You must select a target first' `
 		else
 		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
-		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG "`gettext 'Injecting forged packet on'` $Host_SSID" $EXECFLAG $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff  "$AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI" & menufonction
 		fi
 	}
 
@@ -298,7 +315,8 @@
 
 		rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 		$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor	
-		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext 'Sending chopchop to:'` $Host_SSID" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI & menufonction
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI" & menufonction
 		fi
 	}
 	
@@ -311,21 +329,25 @@
 		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
 		rm -rf $DUMP_PATH/chopchop_$Host_MAC*
 		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor
-		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext 'Sending chopchop to:'` $Host_SSID" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI & menufonction
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff " $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI" & menufonction
 		fi
 	}
 
 
 	function capture {
 		rm -rf $DUMP_PATH/$Host_MAC*
-		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Capturing data on channel'`: $Host_CHAN" $TOPLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI 
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff " $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI "
 	}
 
 	function fakeauth {
-		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Associating with:'` $Host_SSID " $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE $EXECFLAG "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI"
 	}
 
 	function menufonction {
-		$TERMINAL $HOLD $TOPRIGHT $TITLEFLAG "`gettext 'Fake function to jump to menu'`" $EXECFLAG echo "Aircrack-ng is a great tool, Mister_X ASPj & HIRTE are GODS"
+			echo "Fake function to return to menu within screen, deleted everyting since this part should not be seen by user)"
+			clear	
 	}
 	

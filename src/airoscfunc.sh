@@ -589,17 +589,20 @@ function witchcrack {
 				esac
 			done 
 		else
+			echo "No unstable functions loaded, defaulting to wep/wpa cracking"
 			selectcracking
 		fi
 }
 
 function selectcracking {
-	if [ "$Host_ENC" = "OPN" ] | [ "$Host_ENC" = "" ] | [ "$Host_ENC" = " OPN " ]
+	echo $Host_ENC
+	if [ "$Host_ENC" = "OPN" ] || [ "$Host_ENC" = "" ] || [ "$Host_ENC" = " OPN " ]
 	then
 		clear
 		echo `gettext "ERROR: Network not encrypted or no network selected "`
 
 	else
+		echo $Host_ENC
 		if [ "$Host_ENC" = " WEP " ] || [ "$Host_ENC" = "WEP" ]
 		then
 			crack
@@ -1343,7 +1346,7 @@ Option: '`"
 	}
 
 	function fakeauth {
-		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Associating with:'` $Host_SSID " $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE $EXECFLAG "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
+		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Associating with:'` $Host_SSID " $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $WIFI
 	}
 
 	function menufonction {
@@ -1489,12 +1492,11 @@ function target {
 function checkdir {
 if [[ -d $DUMP_PATH ]]
 then
-echo -e "`gettext \"        Output folder is $DUMP_PATH\"`"
-echo ""
+	echo -e "`gettext \"[INFO] Output folder is $DUMP_PATH\"`"
 else
-echo -e "`gettext \"        Output folder does not exist, i will create it now\"`"
-mkdir $DUMP_PATH
-echo -e "`gettext \"        Output folder is now set to $DUMP_PATH\"`"
+	echo -e "`gettext \"[INFO] Output folder does not exist, i will create it now\"`"
+	mkdir $DUMP_PATH
+	echo -e "`gettext \"[INFO]  Output folder is now set to $DUMP_PATH\"`"
 fi
 }
 
@@ -1503,7 +1505,7 @@ function reso {
 	while true; do
 		if [ "$resonset" = "" ]
 		then
-		echo -e "`gettext \"   Select screen resolution            \"`"
+		echo -e "`gettext \"Select screen resolution            \"` \n"
 		echo -e "`gettext \"____Available resolutions_____\"`"
 echo -n "##			    ##
 ## 	1) 640x480 	    ##

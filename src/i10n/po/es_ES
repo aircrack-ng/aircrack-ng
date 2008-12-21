@@ -752,8 +752,8 @@ msgid "        Output folder does not exist, i will create it now"
 msgstr "       El directorio de salida no existe, lo voy a crear ahora."
 
 #: airoscfunc.sh:1422 airoscfunc.sh:1419
-msgid "   Select screen resolution            "
-msgstr "   Selecciona la resoluccion de pantalla:"
+msgid "Select screen resolution            "
+msgstr "Selecciona la resoluccion de pantalla:"
 
 #: airoscfunc.sh:1455 airoscfunc.sh:1452 airoscfunc.sh:1454
 msgid "Im going to set terminal options for your terminal now"
