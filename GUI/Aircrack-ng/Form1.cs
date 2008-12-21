@@ -442,7 +442,7 @@ namespace Aircrack_ng
         {
             this.tbWPADico.Text += "," + this.FileDialog("Wordlist|*.*", 0, true, ",").Trim();
 
-            this.tbWPADico.Text = this.tbWPADico.Text.Trim(',');
+            this.tbWPADico.Text = this.tbWPADico.Text.Trim(',').Trim('\"');
         }
 
         private void cbPMKDecap_CheckedChanged(object sender, EventArgs e)
