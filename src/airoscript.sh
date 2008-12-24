@@ -61,6 +61,12 @@ if [ -e ~/.airoscript.conf ];
 		fi
 fi
 
+# Now, if terminal is provided by $1, replace terminal from config with $1
+if [ "$1" != "" ]
+then
+	export TERMINAL=$1
+fi
+
 # include functions, functions value is on config file.
 if [ -e $FUNCTIONS ]; then
 	. $FUNCTIONS
@@ -94,7 +100,7 @@ then
 		rm ~/.airoscript.screen_has_started
 	else
 		touch ~/.airoscript.screen_has_started
-		screen -S airoscript -c /usr/share/airoscript/screenrc airoscript
+		screen -S airoscript -c /usr/share/airoscript/screenrc airoscript screen
 		clear
 		echo `gettext 'Airoscript is terminating...'`
 		exit

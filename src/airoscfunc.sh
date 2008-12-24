@@ -658,7 +658,7 @@ function selectcracking {
 
 	# This is for wpa cracking
 	function wpacrack {
-		$TERMINAL $HOLD $TOPRIGHT $TITLEFLAG "Aircracking: $Host_SSID" $EXECFLAG $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction
+		$TERMINAL $HOLD $TOPRIGHT $TITLEFLAG "Aircracking: $Host_SSID" $EXECFLAG $AIRCRACK -a 2 -b $Host_MAC $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction # There was a -0 -s before $DPATH/$HmaC but that's not docummented on aircrack.
 	}
 	
 ##################################################################################
@@ -1537,7 +1537,7 @@ read reson
 function setterminal {
 	clear
 	getterminal
-	echo -e "`gettext 'Im going to set terminal options for your terminal now'`"
+	echo -e "`gettext 'Im going to set terminal options for your terminal now'`" 
 	# This way we support multiple terminals, not only $TERMINAL
 	case $TERMINAL in 
 		xterm|uxterm ) 
@@ -1587,11 +1587,15 @@ function setterminal {
 			BACKGROUND_COLOR=""
 			BGC=""
 			;;
-		screen )
+
+		screen | "screen" | "screen " )
 		# Now, we add modified functions file, to support screen
 			. $SCREEN_FUNCTIONS
+			echo "Screen functons loaded, replacing functions"
 			;;
+
 	esac
+
 echo -e "\n"
 
 }
@@ -1620,41 +1624,42 @@ function getterminal {
 
 	if [ -e /usr/bin/$TERMINAL ]
 	then
-		echo -en "`gettext \"Using configured terminal\"`"
-		echo $TERMINAL
+		echo -e "`gettext \"Using configured terminal\"`"
 	else
-		echo -en '`gettext "Using default terminal"`'
-		echo $TERMINAL
-		TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;
-	fi
-
+		echo -en "$TERMINAL was not used, not found on path"
+		echo -en '`gettext "Using default terminal"`' 
+		TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;        
+	fi      
+                
 	if [ -e /usr/bin/$TERMINAL ] # If there is an alternative for terminal select it.
-	then
-		D="1" 
-	else
+	then    
+		D="1" # I forgot what this is for :-P
+                echo "Using terminal $TERMINAL" 
+                
+	else            
 		if [ -e $TERM ] 
-		then
+		then            
 			echo -e "`gettext \"Using environment defined terminal ($TERM)\n\"`"
 			TERMINAL=$TERM
-		else
+		else            
 			if [ -e "/usr/bin/xterm" ]
-			then
+			then    
 				TERMINAL="xterm"
 				echo -e "Using Xterm\n"
-			else
+			else    
 			echo -e 
 				"`gettext \"I cant find any good terminal, please set one on your conffile
-				 Your TERMINAL var contains no valid temrinal
-				 Your alternative against x-terminal-emulator contains no terminal
-				 Xterm can\'t be found on your system\n\"`"
+				Your TERMINAL var contains no valid temrinal
+				Your alternative against x-terminal-emulator contains no terminal
+				Xterm can\'t be found on your system, Maybe not in /usr/bin?\n\"`"
 				exit
 			fi
-		fi
-	fi
+		fi     
+
+	fi      
 }
 
 
 ###########################################
 ########End of called directly from the menu.  ###########
 ###########################################
-
