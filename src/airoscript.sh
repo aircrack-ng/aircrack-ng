@@ -87,15 +87,6 @@ debug
 #checks if output dir exists, if not, it creates it.
 checkdir
 
-# Check if user especifies a terminal trought command line
-if [ "$1" = "" ]
-then
-	echo -e "`gettext '[INFO] No terminal especified, using configured terminal'`\n"
-else
-	echo `gettext "Using $1 as terminal"`
-	TERMINAL="$1"
-fi
-
 if [ "$TERMINAL" = "screen" ]
 then
 	if [ -e ~/.airoscript.screen_has_started ]

@@ -1610,10 +1610,21 @@ function debug {
 
 function getterminal {
 	# TERMINAL var is on config if valid, use it, if not set it to defaults, if that fails, use environment terminal, and if that fails too, use xterm :-D, if xterm isnt available, giva a fatal warning and exit (who doesnt have a terminal?)
+
+# This is for parameter input.
+# Didn't work as expected, so I disabled it.
+#	if [ "$1" != "" ]
+#	then	
+#		export TERMINAL="$1"
+#	fi
+
 	if [ -e /usr/bin/$TERMINAL ]
 	then
-		echo -e "`gettext \"Using configured terminal\"`"
+		echo -en "`gettext \"Using configured terminal\"`"
+		echo $TERMINAL
 	else
+		echo -en '`gettext "Using default terminal"`'
+		echo $TERMINAL
 		TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;
 	fi
 
