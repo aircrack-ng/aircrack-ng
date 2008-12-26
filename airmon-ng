@@ -76,7 +76,7 @@ getDriver() {
    if [ -e "/sys/class/net/$1/device/driver" ]
    then
        DRIVER="`ls -l "/sys/class/net/$1/device/driver" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/'`"
-       BUS="`ls -l /sys/class/net/$1/device/driver | sed 's/^.*\/\([a-zA-Z0-9_-]*\)\/.*\/.*$/\1/'`"
+       BUS="`ls -l "/sys/class/net/$1/device/driver" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)\/.*\/.*$/\1/'`"
    else
        DRIVER=""
        BUS=""
@@ -95,12 +95,11 @@ scanProcesses() {
     match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
     if [ $match -gt 0 -a x"$1" != xkill ]
     then
-        echo && echo
+        printf "\n\n"
         echo "Found $match processes that could cause trouble."
         echo "If airodump-ng, aireplay-ng or airtun-ng stops working after"
         echo "a short period of time, you may want to kill (some of) them!"
-        echo
-        echo -e "PID\tName"
+        echo -e "\nPID\tName"
     else
         if [ x"$1" != xkill ]
         then
@@ -164,7 +163,7 @@ getChipset() {
 
     CHIPSET="Unknown "
 
-    if [ x$DRIVER = "xOtus" -o x$DRIVER = "arusb_lnx" ]
+    if [ x$DRIVER = "xOtus" -o x$DRIVER = "xarusb_lnx" -o x$DRIVER = "xar9170" ]
     then
 	CHIPSET="AR9001U"
     fi
@@ -334,7 +333,7 @@ then
     fi
 fi
 
-echo && echo
+printf "\n\n"
 
 if [ $# -ne "0" ]
 then
@@ -355,7 +354,7 @@ then
     SYSFS=1
 fi
 
-printf "Interface\tChipset\t\tDriver\n" && echo
+printf "Interface\tChipset\t\tDriver\n\n"
 
 
 for iface in `ifconfig -a 2>/dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
@@ -1102,7 +1101,7 @@ do
      continue
  fi
 
-printf "$iface\t\tUnknown\t\tUnknown (MONITOR MODE NOT SUPPORTED)" && echo
+printf "$iface\t\tUnknown\t\tUnknown (MONITOR MODE NOT SUPPORTED)\n"
 
 done
 
