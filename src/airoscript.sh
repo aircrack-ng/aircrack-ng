@@ -100,7 +100,7 @@ then
 		rm ~/.airoscript.screen_has_started
 	else
 		touch ~/.airoscript.screen_has_started
-		screen -S airoscript -c /usr/share/airoscript/screenrc airoscript screen
+		screen -S airoscript -c $SCREENRC airoscript screen
 		clear
 		echo `gettext 'Airoscript is terminating...'`
 		exit
