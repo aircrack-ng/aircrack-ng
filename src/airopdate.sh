@@ -5,7 +5,7 @@
 #		Continued by XayOn
 # Date:	        21.10.2008
 
-DUMP_PATH=`mktemp`
+DUMP_PATH=`mktemp -d`
 
 # leave this alone (if you edit this, it will screw up the menu)
 CHOICES="1 2 3 4 5"
@@ -13,14 +13,13 @@ CHOICES="1 2 3 4 5"
 function chooseversion {
 while true; do
   clear
-  echo "#######################################"
-  echo "###   Select aircrack-ng version    ###"
-  echo "###                                 ###"
-  echo "###   1) Stable 0.9.3               ###"
-  echo "###   2) Latest Version (1.0-rc2)   ###"
-  echo "###   3) Specific revision          ###"
-  echo "###                                 ###"
-  echo "#######################################"
+  echo "_____________AIRCRACK__________________"
+  echo "##    Select aircrack-ng version     ##"
+  echo "##                                   ##"
+  echo "##    1) Legacy 0.9.3                ##"
+  echo "##    2) Latest Version (1.0-rc1)    ##"
+  echo "##    3) Specific revision           ##"
+  echo "##___________________________________##"
   read yn
   case $yn in
     1 ) VER="0.9.3"; svn co http://trac.aircrack-ng.org/svn/tags/0.9.3/ aircrack-ng-$VER ; installsvn ; break ;;
@@ -37,9 +36,9 @@ function installsvn {
 }
 
 function svnrev {
-	  echo "#######################################"
-	  echo "###     Input revision number       ###"
-	  echo "#######################################"
+	  echo "_________________SVN___________________"
+	  echo "#       Input revision number         #"
+	  echo "#_____________________________________#"
 
 	read rev
 	echo You typed: $rev
@@ -70,19 +69,19 @@ function choosedriver {
 while true; do
   clear
   echo "#######################################"
-  echo "###  Select driver/chipset version  ###"
-  echo "###  Currently outdated use         ###"
-  echo "###  airdriver-ng instead           ###"
-  echo "###   1) ASPj's rt2570 drivers      ###"
-  echo "###   2) rt2500                     ###"
-  echo "###   3) Madwifi-ng                 ###"
-  echo "###   4) Prism54                    ###"
-  echo "###   5) Hostap                     ###"
-  echo "###   6) Wlanng                     ###"
-  echo "###   7) rt61                       ###"
-  echo "###   8) rt73                       ###"
-  echo "###   9) r8180-sa2400               ###"
-  echo "###                                 ###"
+  echo "##   Select driver/chipset version  ###"
+  echo "##   Currently outdated use         ###"
+  echo "##   airdriver-ng instead           ###"
+  echo "##    1) ASPj's rt2570 drivers      ###"
+  echo "##    2) rt2500                     ###"
+  echo "##    3) Madwifi-ng                 ###"
+  echo "##    4) Prism54                    ###"
+  echo "##    5) Hostap                     ###"
+  echo "##    6) Wlanng                     ###"
+  echo "##    7) rt61                       ###"
+  echo "##    8) rt73                       ###"
+  echo "##    9) r8180-sa2400               ###"
+  echo "##                                  ###"
   echo "#######################################"
   read yn
   case $yn in
@@ -277,39 +276,46 @@ function prism54 {
 
 # menu listing command	
 function menu {
-  echo "##############################################"
-  echo "### What do you want to do?                ###"
-  echo "### 1) Aircrack-ng - Get aircrack-ng       ###"
-  echo "### 2) Drivers     - Get drivers (outdated)###"
-  echo "### 3) Airoscript  - Get airoscript        ###"
-  echo "### 4) Quit        - Exit this script      ###"		
+  echo "____________Select_Action_____________________"
+  echo "##  1) Aircrack-ng - Get aircrack-ng        ##"
+  echo "##  2) Drivers     - Get drivers (outdated) ##"
+  echo "##  3) Airoscript  - Get airoscript         ##"
+  echo "##  4) Quit        - Exit this script       ##"		
+  echo "##__________________________________________##"
 }
 
 #######################################################################
 # script start
 	
-	mkdir $DUMP_PATH
 	cd $DUMP_PATH
+	clear
 	menu	
 
 select choix in $CHOICES; do					
 	if [ "$choix" = "1" ]; then
+		clear
 		chooseversion
+		clear
 		menu			
 	elif [ "$choix" = "2" ]; then
+		clear
 		echo -e "Please use airdriver-ng instead\n"
 		menu					
 	elif [ "$choix" = "3" ]; then
+		clear
+		echo "Downloading and installing lastest airoscript version"
 		airoscript
+		clear
+		echo "Installed lastest airoscript version"
 		menu	
 	elif [ "$choix" = "4" ]; then
+		clear
 		echo -e "Script terminated\n"
 		exit			
 	else
 		clear
+		echo "Wrong number entered"
 		menu
-	        echo "#######################################"
-	        echo "###      Wrong number entered       ###"
 	fi
 done
 #END
