@@ -173,6 +173,7 @@ struct AP_info
     int channel;              /* AP radio channel         */
     int max_speed;            /* AP maximum speed in Mb/s */
     int avg_power;            /* averaged signal power    */
+    int best_power;           /* best signal power    */
     int power_index;          /* index in power ring buf. */
     int power_lvl[NB_PWR];    /* signal power ring buffer */
     int preamble;             /* 0 = long, 1 = short      */
@@ -180,6 +181,10 @@ struct AP_info
     int beacon_logged;        /* We need 1 beacon per AP  */
     int dict_started;         /* 1 if dict attack started */
     int ssid_length;          /* length of ssid           */
+    float gps_loc_min[5];     /* min gps coordinates      */
+    float gps_loc_max[5];     /* max gps coordinates      */
+    float gps_loc_best[5];    /* best gps coordinates     */
+
 
     unsigned long nb_bcn;     /* total number of beacons  */
     unsigned long nb_pkt;     /* total number of packets  */
@@ -292,6 +297,7 @@ struct globals
 
     int f_index;            /* outfiles index       */
     FILE *f_txt;            /* output csv file      */
+    FILE *f_kis;            /* output kismet csv file      */
     FILE *f_gps;            /* output gps file      */
     FILE *f_cap;            /* output cap file      */
     FILE *f_ivs;            /* output ivs file      */
@@ -728,6 +734,18 @@ int dump_initialize( char *prefix, int ivs_only )
         return( 1 );
     }
 
+    /* create the output CSV & GPS files */
+
+    snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.csv",
+              prefix, G.f_index );
+
+    if( ( G.f_kis = fopen( ofn, "wb+" ) ) == NULL )
+    {
+        perror( "fopen failed" );
+        fprintf( stderr, "Could not create \"%s\".\n", ofn );
+        return( 1 );
+    }
+
     if (G.usegpsd)
     {
         snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.gps",
@@ -1115,6 +1133,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         ap_cur->tlast = time( NULL );
 
         ap_cur->avg_power   = -1;
+        ap_cur->best_power  = -1;
         ap_cur->power_index = -1;
 
         for( i = 0; i < NB_PWR; i++ )
@@ -1152,8 +1171,12 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         ap_cur->decloak_detect=G.decloak;
         ap_cur->is_decloak = 0;
         ap_cur->packets = NULL;
+
         ap_cur->data_root = NULL;
         ap_cur->EAP_detected = 0;
+        memcpy(ap_cur->gps_loc_min, G.gps_loc, sizeof(float)*5);
+        memcpy(ap_cur->gps_loc_max, G.gps_loc, sizeof(float)*5);
+        memcpy(ap_cur->gps_loc_best, G.gps_loc, sizeof(float)*5);
     }
 
     /* update the last time seen */
@@ -1183,12 +1206,32 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         }
 
         if( n > 0 )
+        {
             ap_cur->avg_power /= n;
+            if( ap_cur->avg_power > ap_cur->best_power )
+            {
+                ap_cur->best_power = ap_cur->avg_power;
+                memcpy(ap_cur->gps_loc_best, G.gps_loc, sizeof(float)*5);
+            }
+        }
         else
             ap_cur->avg_power = -1;
 
         /* every packet in here comes from the AP */
 
+        if(G.gps_loc[0] > ap_cur->gps_loc_max[0])
+            ap_cur->gps_loc_max[0] = G.gps_loc[0];
+        if(G.gps_loc[1] > ap_cur->gps_loc_max[1])
+            ap_cur->gps_loc_max[1] = G.gps_loc[1];
+        if(G.gps_loc[2] > ap_cur->gps_loc_max[2])
+            ap_cur->gps_loc_max[2] = G.gps_loc[2];
+
+        if(G.gps_loc[0] < ap_cur->gps_loc_min[0])
+            ap_cur->gps_loc_min[0] = G.gps_loc[0];
+        if(G.gps_loc[1] < ap_cur->gps_loc_min[1])
+            ap_cur->gps_loc_min[1] = G.gps_loc[1];
+        if(G.gps_loc[2] < ap_cur->gps_loc_min[2])
+            ap_cur->gps_loc_min[2] = G.gps_loc[2];
 //        printf("seqnum: %i\n", seq);
 
         if(ap_cur->fcapt == 0 && ap_cur->fmiss == 0) gettimeofday( &(ap_cur->ftimef), NULL);
@@ -3139,6 +3182,205 @@ int dump_write_csv( void )
     return 0;
 }
 
+#define KISMET_HEADER "Network;NetType;ESSID;BSSID;Info;Channel;Cloaked;Encryption;Decrypted;MaxRate;MaxSeenRate;Beacon;LLC;Data;Crypt;Weak;Total;Carrier;Encoding;FirstTime;LastTime;BestQuality;BestSignal;BestNoise;GPSMinLat;GPSMinLon;GPSMinAlt;GPSMinSpd;GPSMaxLat;GPSMaxLon;GPSMaxAlt;GPSMaxSpd;GPSBestLat;GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n"
+
+
+int dump_write_kismet_csv( void )
+{
+    int i, k;
+//     struct tm *ltime;
+/*    char ssid_list[512];*/
+    struct AP_info *ap_cur;
+
+    if (! G.record_data)
+    	return 0;
+
+    fseek( G.f_kis, 0, SEEK_SET );
+
+    fprintf( G.f_kis, KISMET_HEADER );
+
+    ap_cur = G.ap_1st;
+
+    printf("dumping to kismet csv file\n");
+
+    k=1;
+    while( ap_cur != NULL )
+    {
+        if( memcmp( ap_cur->bssid, BROADCAST, 6 ) == 0 )
+        {
+            ap_cur = ap_cur->next;
+            continue;
+        }
+
+        if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
+        {
+            ap_cur = ap_cur->next;
+            continue;
+        }
+
+        if( ap_cur->nb_pkt < 2 )
+        {
+            ap_cur = ap_cur->next;
+            continue;
+        }
+
+        //Network
+        fprintf( G.f_kis, "%d;", k );
+
+        //NetType
+        fprintf( G.f_kis, "infrastructure;");
+
+        //ESSID
+        for(i=0; i<ap_cur->ssid_length; i++)
+        {
+            fprintf( G.f_kis, "%c", ap_cur->essid[i] );
+        }
+        fprintf( G.f_kis, ";" );
+
+        //BSSID
+        fprintf( G.f_kis, "%02X:%02X:%02X:%02X:%02X:%02X;",
+                 ap_cur->bssid[0], ap_cur->bssid[1],
+                 ap_cur->bssid[2], ap_cur->bssid[3],
+                 ap_cur->bssid[4], ap_cur->bssid[5] );
+
+        //Info
+        fprintf( G.f_kis, ";");
+
+        //Channel
+        fprintf( G.f_kis, "%d;", ap_cur->channel);
+
+        //Cloaked
+        fprintf( G.f_kis, "No;");
+
+        //Encryption
+        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) != 0)
+        {
+            if( ap_cur->security & STD_WPA2 ) fprintf( G.f_kis, "WPA2," );
+            if( ap_cur->security & STD_WPA  ) fprintf( G.f_kis, "WPA," );
+            if( ap_cur->security & STD_WEP  ) fprintf( G.f_kis, "WEP," );
+            if( ap_cur->security & STD_OPN  ) fprintf( G.f_kis, "OPN," );
+        }
+
+        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( G.f_kis, "None,");
+        else
+        {
+            if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_kis, "AES-CCM,");
+            if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis, "WRAP,");
+            if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis, "TKIP,");
+            if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_kis, "WEP104,");
+            if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis, "WEP40,");
+/*            if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis, " WEP,");*/
+        }
+
+        fseek(G.f_kis, -1, SEEK_CUR);
+        fprintf(G.f_kis, ";");
+
+        //Decrypted
+        fprintf( G.f_kis, "No;");
+
+        //MaxRate
+        fprintf( G.f_kis, "%d.0;", ap_cur->max_speed );
+
+        //MaxSeenRate
+        fprintf( G.f_kis, "0;");
+
+        //Beacon
+        fprintf( G.f_kis, "%ld;", ap_cur->nb_bcn);
+
+        //LLC
+        fprintf( G.f_kis, "0;");
+
+        //Data
+        fprintf( G.f_kis, "%ld;", ap_cur->nb_data );
+
+        //Crypt
+        fprintf( G.f_kis, "0;");
+
+        //Weak
+        fprintf( G.f_kis, "0;");
+
+        //Total
+        fprintf( G.f_kis, "%ld;", ap_cur->nb_data );
+
+        //Carrier
+        fprintf( G.f_kis, ";");
+
+        //Encoding
+        fprintf( G.f_kis, ";");
+
+        //FirstTime
+        fprintf( G.f_kis, "%s", ctime(&ap_cur->tinit) );
+        fseek(G.f_kis, -1, SEEK_CUR);
+        fprintf( G.f_kis, ";");
+
+        //LastTime
+        fprintf( G.f_kis, "%s", ctime(&ap_cur->tlast) );
+        fseek(G.f_kis, -1, SEEK_CUR);
+        fprintf( G.f_kis, ";");
+
+        //BestQuality
+        fprintf( G.f_kis, "%d;", ap_cur->avg_power );
+
+        //BestSignal
+        fprintf( G.f_kis, "0;" );
+
+        //BestNoise
+        fprintf( G.f_kis, "0;" );
+
+        //GPSMinLat
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_min[0]);
+
+        //GPSMinLon
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_min[1]);
+
+        //GPSMinAlt
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_min[2]);
+
+        //GPSMinSpd
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_min[3]);
+
+        //GPSMaxLat
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_max[0]);
+
+        //GPSMaxLon
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_max[1]);
+
+        //GPSMaxAlt
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_max[2]);
+
+        //GPSMaxSpd
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_max[3]);
+
+        //GPSBestLat
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_best[0]);
+
+        //GPSBestLon
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_best[1]);
+
+        //GPSBestAlt
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_best[2]);
+
+        //DataSize
+        fprintf( G.f_kis, "0;" );
+
+        //IPType
+        fprintf( G.f_kis, "0;" );
+
+        //IP
+        fprintf( G.f_kis, "%d.%d.%d.%d;",
+                 ap_cur->lanip[0], ap_cur->lanip[1],
+                 ap_cur->lanip[2], ap_cur->lanip[3] );
+
+        fprintf( G.f_kis, "\r\n");
+
+        ap_cur = ap_cur->next;
+        k++;
+    }
+
+    fflush( G.f_kis );
+    return 0;
+}
+
 void gps_tracker( void )
 {
 	ssize_t unused;
@@ -4119,6 +4361,7 @@ int main( int argc, char *argv[] )
     G.f_cap        =  NULL;
     G.f_ivs        =  NULL;
     G.f_txt        =  NULL;
+    G.f_kis        =  NULL;
     G.f_gps        =  NULL;
     G.keyout       =  NULL;
     G.f_xor        =  NULL;
@@ -4724,6 +4967,7 @@ usage:
 
             tt1 = time( NULL );
             dump_write_csv();
+            dump_write_kismet_csv();
 
             /* sort the APs by power */
 
@@ -4980,8 +5224,10 @@ usage:
 
     if (G.record_data) {
         dump_write_csv();
+        dump_write_kismet_csv();
 
         if( G.f_txt != NULL ) fclose( G.f_txt );
+        if( G.f_kis != NULL ) fclose( G.f_kis );
         if( G.f_gps != NULL ) fclose( G.f_gps );
         if( G.f_cap != NULL ) fclose( G.f_cap );
         if( G.f_ivs != NULL ) fclose( G.f_ivs );
