@@ -4066,7 +4066,7 @@ int do_wpa_crack()
 		do
 		{
 			memset(key1, 0, sizeof(key1));
-			if( fgets( key1, sizeof( key1 ), opt.dict ) == NULL )
+			if (fgets(key1, sizeof(key1), opt.dict) == NULL)
 			{
 				if( opt.l33t )
 					printf( "\33[32;22m" );
@@ -4087,10 +4087,9 @@ int do_wpa_crack()
 			if( i < 8 ) continue;
 			if( i > 64 ) i = 64;
 
-			if( key1[i - 1] == '\n' ) key1[--i] = '\0';
-			if( key1[i - 1] == '\r' ) key1[--i] = '\0';
-			if( key1[i - 1] == '\n' ) key1[--i] = '\0';
-			if( key1[i - 1] == '\r' ) key1[--i] = '\0';
+			while(i>0 && (key1[i-1]=='\r' || key1[i-1]=='\n')) i--;
+			if (i==0) continue;
+			key1[i] = '\0';
 
 			for(j=0; j<i; j++)
 				if(!isascii(key1[j]) || key1[j] < 32) i=0;
