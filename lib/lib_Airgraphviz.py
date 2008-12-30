@@ -18,30 +18,35 @@
 #
 #########################################
 
-import pdb
+#import pdb
 
-def AP_Label_Color(Label,color):
+def AP_Label_Color(Label,colorLS):
 	# returns the Colors for the AP, enc = Label[3], essid = Label[1], bssid = Label[0], channel = Label[2]  //position that each bit of inforamtion comes in from the caller
-	graph = ['\t','"',Label[0],'"','[label="',Label[0],'\\nEssid:',Label[1],'\\nChannel:',Label[2],'\\nEncryption:',Label[3],'"','color="',color,'"',' fontcolor="',color,'"','];\n']
+	color = colorLS[0]
+	fontC = colorLS[1]
+	graph = ['\t','"',Label[0],'"','[label="',Label[0],'\\nEssid:',Label[1],'\\nChannel:',Label[2],'\\nEncryption: ',Label[3],'"',' style=filled',' fillcolor="',color,'"',' fontcolor="',fontC,'"','];\n']
 	return graph
 
 def Client_Label_Color(mac,color):
 	#creates a label for the client information passed in is our label info and the mac address of the client
-	label = mac #in the future i assuem ill be brining some info in that we will want to write on our client
-	graph = ['\t','"',mac,'"','[label="',label,'"','color="',color,'"','];\n']
+	label = mac #in the future i assume ill be brining some info in that we will want to write on our client
+	graph = ['\tnode [label="',label,'"','color="',color,'"','] "',mac,'";\n']
 	return graph
 	
 def Return_Enc_type(enc):
 	#check the type of encryption in use and returns the correct color to use based on it
+	fontC = "black"
 	if enc == "OPN":
-		color = "crimson"
+		color = "red"
 	elif enc == "WEP":
-		color = "darkgoldenrod2"
+		color = "yellow"
 	elif enc in ["WPA","WPA2WPA","WPA2","WPAOPN"]:
-		color = "darkgreen"
+		color = "green"
 	else:
 		color = "black"  #idealy no AP should ever get to this point as they will either be encrypted or open
-	return color
+		fontC = "white"
+	colorLS = (color,fontC)
+	return colorLS
 
 
 def graphviz_link(objA,sep,objB):
@@ -67,13 +72,17 @@ def dot_write(data): #write out our config file
 	file.writelines(data)
 	file.close()
 
-def subgraph(items,name,graph_name):
+def subgraph(items,name,graph_name,parse='y'):
 	#items is an incomeing dictonary 
 	subgraph = ['\tsubgraph cluster_',graph_name,'{\n\tlabel="',name,'" ;\n']
-	for line in items:
-		clientMAC = line[0]
-		probe_req = ', '.join(line[6:])
-		subgraph.extend(['\tnode [label="',clientMAC,' \\nProbe Requests: ',probe_req,'" ] "',clientMAC,'";\n'])
+	if parse == "y":
+		for line in items:
+			clientMAC = line[0]
+			probe_req = ', '.join(line[6:])
+			subgraph.extend(['\tnode [label="',clientMAC,' \\nProbe Requests: ',probe_req,'" ] "',clientMAC,'";\n'])
+		subgraph.extend(['\t}\n'])
+	elif parse == "n":
+		subgraph.extend(items)
 	subgraph.extend(['\t}\n'])
 	return subgraph
 
@@ -81,14 +90,14 @@ def subgraph(items,name,graph_name):
 ###############################################
 #                Filter Class                 #
 ###############################################
-def filter_enc(input,enc):
-	AP = info[1]
-	for key in AP:
-		bssid = AP[key]
-		if bssid[5] != enc:
-			del AP[bssid]
-	return_list = [info[0],AP]
-	return return_list
+#def filter_enc(input,enc):
+#	AP = info[1]
+#	for key in AP:
+#		bssid = AP[key]
+#		if bssid[5] != enc:
+#			del AP[bssid]
+#	return_list = [info[0],AP]
+#	return return_list
 
 
 

@@ -21,9 +21,9 @@
 #########################################
 # Import Psyco if available to speed up execution
 try:
-#	import psyco
-#	psyco.full()
-	pass
+	import psyco
+	psyco.full()
+#	pass
 except ImportError:
 	print "Psyco optimizer not installed, You may want to download and install it!"
 
@@ -91,7 +91,7 @@ def airDumpParse(ardump):
 def about():
 	print block , "#     Welcome to",PROG,"      #" , block
 def showBanner():
-	print "Usage",PROG,"-i [airodumpfile.txt] -o [outputfile.png] -t [CAPR OR CPG]\n\t-i\tInput File\n\t-o\tOutput File\n\t-g\tChoose the Graph Type Current types are [CAPR (Client to AP Relationship) & CPG (Common probe graph)]\n\t-a\tPrint the about\n\t-h\tPrint this help"
+	print "Usage",PROG,"-i [airodumpfile.txt] -o [outputfile.png] -g [CAPR OR CPG]\n\t-i\tInput File\n\t-o\tOutput File\n\t-g\tChoose the Graph Type Current types are [CAPR (Client to AP Relationship) & CPG (Common probe graph)]\n\t-a\tPrint the about\n\t-h\tPrint this help"
 
 ###################################
 #          Graphviz work          #
@@ -99,17 +99,19 @@ def showBanner():
 
 def dot_create(info,graph_type):
 	#please dont try to use this feature yet its not finish and will error	
-
 	def ZKS_main(info): # Zero_Chaos Kitchen Sink Mode..... Every Thing but the Kitchen Sink!
 		#info comes in as list Clients Dictionary at postion 0 and AP Dictionary at postion1
-		print "Feature is not ready yet"
-		sys.exit(1)
+		#print "Feature is not ready yet"
+		#sys.exit(1)
 		#pdb.set_trace() #debug point
-		return_var = CARP_main(info)
-		dot_file = return_var[0]
+		return_var = CAPR_main(info)
+		#dot_file = return_var[0]
 		APNC = return_var[2]
 		CNAP = return_var[3]
-	
+		CAPR = return_var[0]
+		del CAPR[:1] #remove the graphviz heading...
+		dot_file = ['digraph G {\n\tsize ="96,96";\n\toverlap=scale;\n'] #start the graphviz config file
+		dot_file.extend(dot_libs.subgraph(CAPR,'Clients to AP Relationships','CAPR','n'))
 
 		if len(APNC) != 0: # there should be a better way to check for null lists
 			dot_file.extend(dot_libs.subgraph(APNC,'Acess Points with no Clients','AP'))
@@ -142,7 +144,7 @@ def dot_create(info,graph_type):
 		return_list = [dot_file,footer]
 		return return_list 
 
-	def CARP_main(info): #The Main Module for Client AP Relationship Grpah
+	def CAPR_main(info): #The Main Module for Client AP Relationship Grpah
 		#info comes in a list Clients Dictionary at postion 0 and AP Dictionary at postion 1
 		Clients = info[0]
 		AP = info[1]
@@ -167,8 +169,10 @@ def dot_create(info,graph_type):
 					if AP_Count.has_key(key[5]): #check to see if we have allready created a label for this access point
 						pass
 					else:
-						AP_label = [key[5],essid,bssidI[3],bssidI[5]]# Create a list with all our info to label the clients with
 						color = dot_libs.Return_Enc_type(bssidI[5]) # Deterimine what color the graph should be 
+						if bssidI[5] == '': #if there is no encryption detected we set it to unknown
+							bssidI[5] = "Unknown"
+						AP_label = [key[5],essid,bssidI[3],bssidI[5]]# Create a list with all our info to label the clients with
 						dot_file.extend(dot_libs.AP_Label_Color(AP_label,color)) #create the label for the access point and return it to the dot file we are creating
 						AP_Count[key[5]] = essid #is essid correct here?
 				else:
@@ -182,7 +186,7 @@ def dot_create(info,graph_type):
                 
 
 	if graph_type == "CAPR":
-		return_var = CARP_main(info) #return_var is a list, dotfile postion 0, Not asscioated clients in  3 and Clients talking to access points we cant see 2, the footer in 1
+		return_var = CAPR_main(info) #return_var is a list, dotfile postion 0, Not asscioated clients in  3 and Clients talking to access points we cant see 2, the footer in 1
 		return_var = dot_libs.dot_close(return_var[0],return_var[1])
 	elif graph_type == "CPG":
 		return_var = CPG_main(info) #return_var is a list, dotfile postion 0, the footer in 1
@@ -201,7 +205,7 @@ def grpahviz_Call(output):
 	except Exception:
 		print "You seem to be missing the Graphviz tool set did you check out the deps in the read me?"
 		sys.exit(1)
-	subprocess.Popen(["rm","-rf","airGconfig.dot"])  # commenting out this line will leave the dot config file for debuging
+	#subprocess.Popen(["rm","-rf","airGconfig.dot"])  # commenting out this line will leave the dot config file for debuging
 	print "Graph Creation Complete!"
 ###################################
 #              MAIN               #
