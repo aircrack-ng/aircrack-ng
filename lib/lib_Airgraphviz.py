@@ -37,11 +37,11 @@ def Return_Enc_type(enc):
 	#check the type of encryption in use and returns the correct color to use based on it
 	fontC = "black"
 	if enc == "OPN":
-		color = "red"
+		color = "firebrick2"
 	elif enc == "WEP":
-		color = "yellow"
+		color = "gold2"
 	elif enc in ["WPA","WPA2WPA","WPA2","WPAOPN"]:
-		color = "green"
+		color = "green3"
 	else:
 		color = "black"  #idealy no AP should ever get to this point as they will either be encrypted or open
 		fontC = "white"

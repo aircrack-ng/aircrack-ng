@@ -153,6 +153,7 @@ def dot_create(info,graph_type):
 		NAP = [] #create a var to keep track of associated clients to AP's we cant see
 		AP_Count = {} # track the number of access points with clients connected and keep track of dumplicate lables
 		Client_count = {} # count the number of clients dict is faster the list
+		#color_trac = {} #track the colors of each AP
 
 		for mac in (Clients):
 			key = Clients[mac]
@@ -161,11 +162,11 @@ def dot_create(info,graph_type):
 					bssidI = AP[key[5]] # stores the correct bssid in the var
 					essid = bssidI[13].rstrip('\x00') #when readidng a null essid it has binary space? so rstrip removes this 
 					dot_file.extend(dot_libs.graphviz_link(key[5],'->',mac)) #call the libary function to create a basic link between the two devices
-					if Client_count.has_key(mac): #check to see if we have allready given the client a label
-						pass
-					else:
-						dot_file.extend(dot_libs.Client_Label_Color(mac,"Black")) #label the client with a name and a color right now all colors are black
-						Client_count[mac] = mac #add our client to the list of labled clients
+					#if Client_count.has_key(mac): #check to see if we have allready given the client a label
+					#	pass
+					#else:
+					#	dot_file.extend(dot_libs.Client_Label_Color(mac,"Black")) #label the client with a name and a color right now all colors are black
+					#	Client_count[mac] = mac #add our client to the list of labled clients
 					if AP_Count.has_key(key[5]): #check to see if we have allready created a label for this access point
 						pass
 					else:
@@ -174,7 +175,14 @@ def dot_create(info,graph_type):
 							bssidI[5] = "Unknown"
 						AP_label = [key[5],essid,bssidI[3],bssidI[5]]# Create a list with all our info to label the clients with
 						dot_file.extend(dot_libs.AP_Label_Color(AP_label,color)) #create the label for the access point and return it to the dot file we are creating
-						AP_Count[key[5]] = essid #is essid correct here?
+						AP_Count[key[5]] = essid
+					
+					if Client_count.has_key(mac): #check to see if we have allready given the client a label
+						pass
+					else:
+					        dot_file.extend(dot_libs.Client_Label_Color(mac,"black")) #label the client with a name and a color right now all colors are black
+						Client_count[mac] = mac #add our client to the list of labled clients
+
 				else:
 					NAP.append(key) # stores the clients that are talking to an access point we cant see
 			else: 
@@ -205,7 +213,7 @@ def grpahviz_Call(output):
 	except Exception:
 		print "You seem to be missing the Graphviz tool set did you check out the deps in the read me?"
 		sys.exit(1)
-	#subprocess.Popen(["rm","-rf","airGconfig.dot"])  # commenting out this line will leave the dot config file for debuging
+	subprocess.Popen(["rm","-rf","airGconfig.dot"])  # commenting out this line will leave the dot config file for debuging
 	print "Graph Creation Complete!"
 ###################################
 #              MAIN               #
