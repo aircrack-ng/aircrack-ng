@@ -481,16 +481,16 @@ function witchattack {
 			clear
 			rm -rf $DUMP_PATH/$Host_MAC*
 			rm -rf replay_dec-*.xor
-			capture &  fakeauth3 & $CDCMD  $TERMINAL $HOLD $TITLEFLAG  "`gettext 'ChopChoping: $Host_SSID'` " $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $EXECFLAG $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $WIFI & injectmenu
+			capture &  fakeauth3 & $CDCMD  $TERMINAL $HOLD $TITLEFLAG  "`gettext 'ChopChoping:'` $Host_SSID " $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $EXECFLAG $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $WIFI & injectmenu
 		}
 		#Option 5 (caffe late attack)
 		function cafelatteattack {
-			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG  "`gettext 'Cafe Latte Attack on: $Host_SSID'` " $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI & fakeauth3 & menufonction
+			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG  "`gettext 'Cafe Latte Attack on:'` $Host_SSID " $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI & fakeauth3 & menufonction
 			}
 
 		#Option 6 (hirte attack)
 		function hirteattack {
-			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG \"`gettext "Hirte Attack on: $Host_SSID"`\" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI & fakeauth3 & menufonction
+			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Hirte Attack on:'` $Host_SSID" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI & fakeauth3 & menufonction
 		}
 
 		#Option 7 (Auto arp replay)
