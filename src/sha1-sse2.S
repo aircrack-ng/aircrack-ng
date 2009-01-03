@@ -410,7 +410,9 @@ _shasse2_cpuid:
 		popfl
 		xorl	%ecx, %eax
 		jz		no_cpuid
-#endif   		
+#endif   	
+		
+		pusha	
    		movl	$1, %eax
    		cpuid
    		
@@ -419,14 +421,17 @@ _shasse2_cpuid:
    		testl	$0x04000000, %edx  // bit 26 (SSE2)
    		jz		mmx_only
    		
+		popa
 		movl	$2, %eax
 		ret
 		
 mmx_only:
+		popa
 		movl	$1, %eax
 		ret
 
 no_mmx:
+		popa
 no_cpuid:
 		movl	$0, %eax
 		ret
