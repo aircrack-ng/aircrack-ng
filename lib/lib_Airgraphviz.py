@@ -19,12 +19,18 @@
 #########################################
 
 #import pdb
+try:
+	import psyco
+	psyco.full()
+except ImportError:
+	pass
 
 def AP_Label_Color(Label,colorLS):
 	# returns the Colors for the AP, enc = Label[3], essid = Label[1], bssid = Label[0], channel = Label[2]  //position that each bit of inforamtion comes in from the caller
 	color = colorLS[0]
 	fontC = colorLS[1]
-	graph = ['\t','"',Label[0],'"','[label="',Label[0],'\\nEssid:',Label[1],'\\nChannel:',Label[2],'\\nEncryption: ',Label[3],'"',' style=filled',' fillcolor="',color,'"',' fontcolor="',fontC,'"','];\n']
+	essid = Label[1].rstrip('\x00') #when readidng a null essid it has binary space? so rstrip removes this
+	graph = ['\t','"',Label[0],'"','[label="',Label[0],'\\nEssid: ',essid,'\\nChannel: ',Label[2],'\\nEncryption: ',Label[3],'"',' style=filled',' fillcolor="',color,'"',' fontcolor="',fontC,'"','];\n']
 	return graph
 
 def Client_Label_Color(mac,color):
@@ -72,14 +78,17 @@ def dot_write(data): #write out our config file
 	file.writelines(data)
 	file.close()
 
-def subgraph(items,name,graph_name,parse='y'):
+def subgraph(items,name,graph_name,tracked,parse='y'):
 	#items is an incomeing dictonary 
 	subgraph = ['\tsubgraph cluster_',graph_name,'{\n\tlabel="',name,'" ;\n']
 	if parse == "y":
+		print items
 		for line in items:
 			clientMAC = line[0]
 			probe_req = ', '.join(line[6:])
-			subgraph.extend(['\tnode [label="',clientMAC,' \\nProbe Requests: ',probe_req,'" ] "',clientMAC,'";\n'])
+			for bssid in tracked:
+				if clientMAC not in bssid:
+					subgraph.extend(['\tnode [label="',clientMAC,' \\nProbe Requests: ',probe_req,'" ] "',clientMAC,'";\n'])
 		subgraph.extend(['\t}\n'])
 	elif parse == "n":
 		subgraph.extend(items)
