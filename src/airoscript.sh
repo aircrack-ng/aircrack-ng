@@ -196,6 +196,10 @@ select choix in $CHOICES; do
 		fi
 
 		exit
+	elif [ "$choix"="11" ]; then
+		clear
+		unstablemenu
+		menu
 	else
 		clear
 		echo "`gettext 'ERROR: Wrong number entered'`"

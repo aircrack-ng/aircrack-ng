@@ -4,12 +4,17 @@ CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
 export TEXTDOMAINDIR=/usr/share/locale
 export TEXTDOMAIN=airoscript
 
-if [ "$UNSTABLE" = "1" ]
-then
+if [ "$UNSTABLE" = "1" ]; then
 	if [ -e $UNSTABLEF ]; then
 		. $UNSTABLEF
 	fi
 fi
+if [ "$EXTERNAL" = "1" ]; then
+	if [ -e $EXTF ]; then
+		. $EXTF
+	fi
+fi
+
 
 function menu {
   echo -e "`gettext '
@@ -24,10 +29,14 @@ function menu {
   ## 7)  Others  - Various utilities  ##
   ## 8)  Inject  - Jump to inj. menu  ##
   ## 9)  Auto    - Does 1,2 and 3     ##
-  ## 10) Exit    - Quits              ##
-  ##__________________________________##
+  ## 10) Exit    - Quits              ##'`"
 
-  '`"
+if [ "$UNSTABLE" = "1" ]; then
+	echo    "`gettext '  ## 11) Unstable- Not well tested    ##'`"
+	echo -e "`gettext '  ##__________________________________##\n'`"
+else
+	echo -e "`gettext '  ##__________________________________##\n'`"
+fi
 }
 
 ##################################################################################
@@ -37,7 +46,7 @@ function menu {
 ##################################################################################
 function choosetype {
 while true; do
-  clear
+  $CLEAR
   echo -e -n "`gettext '
 ____________Encryption_______________
 ##     Select AP specification     ##
@@ -90,7 +99,7 @@ done
 }
 	#Subproducts of choosescan.
 	function Scan {
-		clear
+		$CLEAR
 		rm -rf $DUMP_PATH/dump*
 		$CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Scanning for targets'`" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $WIFI
 	}
@@ -112,7 +121,7 @@ done
 		read channel_number
 		echo -e "`gettext \"You typed: $channel_number\"`"
 		set -- ${channel_number}
-		clear
+		$CLEAR
 		rm -rf $DUMP_PATH/dump*
 		monmode $WIFI $channel_number
 		$CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Scanning for targets on channel'` $channel_number" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG $AIRODUMP -w $DUMP_PATH/dump --channel $channel_number --encrypt $ENCRYPT -a $WIFI
@@ -127,7 +136,7 @@ function Parseforap {
 	i=0
 	ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
 	head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
-	clear
+	$CLEAR
 
 	echo -e "`gettext \"\\tDetected Access point list\"`\n"
 	echo -e "`gettext \"#\\t\\tMAC\\t\\tCHAN\\tSECU\\tPOWER\\t#CHAR\\t\\tSSID\"`\n"
@@ -187,7 +196,7 @@ while true; do
     3 ) clientdetect && clientfound ; break ;;
     4 ) askclientsel ; break ;;
     5 ) Host_ssidinput && choosetarget ; break ;; #Host_ssidinput is called from many places, not putting it here.
-    * ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; clear ;;
+    * ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; $CLEAR ;;
   esac
 done 
 }
@@ -268,7 +277,7 @@ done
 	# Show clientes (Option 4)
 	function askclientsel {
 		while true; do
-		  clear
+		  $CLEAR
 		  echo -n "`gettext '
 	  ___________Client selection_________
 	  ##      Select next step          ##
@@ -293,7 +302,7 @@ done
 	
 		function asklistsel {
 			while true; do
-				clear
+				$CLEAR
 				echo -n -e "`gettext \"
 		  ||
 		  ||
@@ -415,7 +424,7 @@ function witchattack {
 	# If wep
 	function attackwep {
 	while true; do
-	  clear
+	  $CLEAR
 	  echo -e -n "`gettext '
 	  ___________WEP ATTACKS________________
 	  ##  Attacks not using a client      ##
@@ -446,19 +455,19 @@ function witchattack {
 	  read yn
 	  echo ""
 	  case $yn in
-	    1 ) attack ;clear; break ;;
-	    2 ) fakeinteractiveattack;clear ; break ;;
-	    3 ) fragnoclient ;clear; break ;;
-	    4 ) chopchopattack ;clear; break ;;
-	    5 ) cafelatteattack ;clear; break ;;
-	    6 ) hirteattack ;clear; break ;;
-	    7 ) attackclient ;clear; break ;;
-	    8 ) interactiveattack ;clear; break ;;
-	    9 ) fragmentationattack ;clear; break ;;
-	    10 ) fragmentationattackclient;clear ; break ;;   
-	    11 ) chopchopattackclient;clear ; break ;;
-	    12 ) pskarp ;clear; break ;;
-	    13 ) clear;break ;;
+	    1 ) attack ;$CLEAR; break ;;
+	    2 ) fakeinteractiveattack;$CLEAR ; break ;;
+	    3 ) fragnoclient ;$CLEAR; break ;;
+	    4 ) chopchopattack ;$CLEAR; break ;;
+	    5 ) cafelatteattack ;$CLEAR; break ;;
+	    6 ) hirteattack ;$CLEAR; break ;;
+	    7 ) attackclient ;$CLEAR; break ;;
+	    8 ) interactiveattack ;$CLEAR; break ;;
+	    9 ) fragmentationattack ;$CLEAR; break ;;
+	    10 ) fragmentationattackclient;$CLEAR ; break ;;   
+	    11 ) chopchopattackclient;$CLEAR ; break ;;
+	    12 ) pskarp ;$CLEAR; break ;;
+	    13 ) $CLEAR;break ;;
 	    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 	  esac
 	done 
@@ -485,7 +494,7 @@ function witchattack {
 
 		#Option 4 (chopchopattack)
 		function chopchopattack {
-			clear
+			$CLEAR
 			rm -rf $DUMP_PATH/$Host_MAC*
 			rm -rf replay_dec-*.xor
 			capture &  fakeauth3 & $CDCMD  $TERMINAL $HOLD $TITLEFLAG  "`gettext 'ChopChoping:'` $Host_SSID " $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $EXECFLAG $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $WIFI & injectmenu
@@ -530,7 +539,7 @@ function witchattack {
 		}
 		#Option 11
 		function chopchopattackclient {
-			clear
+			$CLEAR
 			rm -rf $DUMP_PATH/$Host_MAC*
 			rm -rf replay_dec-*.xor
 			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'ChopChoping: $Host_SSID'`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $EXECFLAG $AIREPLAY --chopchop -h $Client_MAC $WIFI & injectmenu
@@ -545,7 +554,7 @@ function witchattack {
 
 	# If wpa
 	function wpahandshake {
-		clear
+		$CLEAR
 		rm -rf $DUMP_PATH/$Host_MAC*
 		$CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Capturing data on channel:'` $Host_CHAN" $TOPLEFTBIG $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $WIFI & menufonction
 	}
@@ -553,10 +562,10 @@ function witchattack {
 	function attackopn { # If no encryption detected
 	  if [ "$Host_SSID" = "" ] 
 	  then
-		 clear
+		 $CLEAR
 	 	 echo  "`gettext 'ERROR: You have to select a target'`"
 	  else
-		clear
+		$CLEAR
 			echo `gettext "ERROR: Network not encrypted or no network selected "`
 			fi
 	}
@@ -568,22 +577,22 @@ function witchattack {
 ##################################################################################
 ##################################################################################
 function witchcrack {
-	if [ "$UNSTABLE" = "1" ]
+	if [ "$EXTERNAL" = "1" ]
 		then
 			while true; do
 				echo -e -n "`gettext '
-					||
-					||
-					\/
-					_____________________________________
-##      WEP/WPA CRACKING OPTIONS   ##
-##                                 ##
-##   1) Use Wlandecrypter          ##
-##   2) Use Jazzteldecrypter	   ##	
-##   3) Use aircrack-ng            ##
-##   4) Return to main menu        ##
-##_________________________________##
-					Option:'`"
+	||
+	||
+	\/
+	_____________________________________
+	##      WEP/WPA CRACKING OPTIONS   ##
+	##                                 ##
+	##   1) Use Wlandecrypter          ##
+	##   2) Use Jazzteldecrypter	   ##	
+	##   3) Use aircrack-ng            ##
+	##   4) Return to main menu        ##
+	##_________________________________##
+	Option:'`"
 
 					read yn
 				
@@ -591,12 +600,12 @@ function witchcrack {
 					1 ) wld ; break ;;
 					2 ) jtd ; break ;;
 					3 ) selectcracking ; break ;;
-					4 ) clear; break;;
+					4 ) $CLEAR; break;;
 					* ) echo "Unknown response. Try again" ;;
 				esac
 			done 
 		else
-			echo "No unstable functions loaded, defaulting to wep/wpa cracking"
+			echo "No external functions loaded, defaulting to wep/wpa cracking"
 			selectcracking
 		fi
 }
@@ -605,7 +614,7 @@ function selectcracking {
 	echo $Host_ENC
 	if [ "$Host_ENC" = "OPN" ] || [ "$Host_ENC" = "" ] || [ "$Host_ENC" = " OPN " ]
 	then
-		clear
+		$CLEAR
 		echo `gettext "ERROR: Network not encrypted or no network selected "`
 
 	else
@@ -680,7 +689,7 @@ function selectcracking {
 function choosefake {
 if [ "$Host_SSID" = "" ]
 then 
-	clear
+	$CLEAR
 	echo "ERROR: You have to select a target first"
 else
 	while true; do
@@ -698,9 +707,9 @@ ______________Fake auth______________
 Option: '`"
 		read yn
 		case $yn in
-			1 ) fakeauth1 ;clear; break ;;
-			2 ) fakeauth2 ;clear; break ;;
-			3 ) fakeauth3 ;clear; break ;;
+			1 ) fakeauth1 ;$CLEAR; break ;;
+			2 ) fakeauth2 ;$CLEAR; break ;;
+			3 ) fakeauth3 ;$CLEAR; break ;;
 			* ) echo "Unknown response. Try again" ;;
 		esac
 	done 
@@ -726,7 +735,7 @@ fi
 function choosedeauth {
 if [ "$Host_SSID" = "" ]
 then
-	clear
+	$CLEAR
 	echo "ERROR: You have to select a target first"
 else
 	while true; do
@@ -744,8 +753,8 @@ _____________________________________
 Option: '`"
 	read yn
 	case $yn in
-	1 ) deauthall ; clear ; break ;;
-	2 ) deauthfake ; clear ; break ;;
+	1 ) deauthall ; $CLEAR ; break ;;
+	2 ) deauthfake ; $CLEAR ; break ;;
 	3 ) deauthclient ; break ;; 
 	* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 
@@ -762,7 +771,7 @@ fi
 		function deauthclient {
 		if [ "$Client_MAC" = "" ]
 		then	
-			clear
+			$CLEAR
 			echo "ERROR: You have to select a client first"
 		else
 			$TERMINAL $HOLD $TOPRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext 'Kicking $Client_MAC from:'` $Host_SSID" $EXECFLAG $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $WIFI
@@ -810,7 +819,7 @@ Option: '`"
 	6 ) choosewesside ; break ;;
 	7 ) monitor_interface ; break ;;
 	8 ) airmoncheck ; break ;;
-	9 ) clear;break ;;
+	9 ) $CLEAR;break ;;
 	* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 	
 	esac
@@ -841,7 +850,7 @@ Option: '`"
 				DRIVER=`$AIRMON stop  $WIFI | grep monitor | awk '{print $4}'`
 			fi
 
-		clear
+		$CLEAR
 		echo  `gettext 'Interface used is :'` $WIFI
 		echo  `gettext 'Interface type is :'` "$TYPE ($DRIVER)"
 		testmac
@@ -851,7 +860,7 @@ Option: '`"
 		killall -9 aireplay-ng airodump-ng > /dev/null &
 		$AIRMON stop $WIFI
 		ifconfig $WIFI down
-		clear
+		$CLEAR
 		sleep 2
 		$CARDCTL eject
 		sleep 2
@@ -1027,7 +1036,7 @@ Option: '`"
 			if [ -x $MDK3 ] 
 			then
 			while true; do
-				clear
+				$CLEAR
 				echo -n "`gettext '
 			_____________________________________
 			##   Choose MDK3 Options           ##
@@ -1052,7 +1061,7 @@ Option: '`"
 				esac
 			done 
 			else
-				clear
+				$CLEAR
 				echo "Sorry, this function is not installed on your system"
 			fi
 		}
@@ -1068,7 +1077,7 @@ Option: '`"
 			function mdknewtarget {
 				ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
 				head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
-				clear
+				$CLEAR
 				echo "        Detected Access point list"
 				echo ""
 				echo " #      MAC                      CHAN    SECU    POWER   #CHAR   SSID"
@@ -1114,7 +1123,7 @@ Option: '`"
 	# 6.
 		function choosewesside {
 			while true; do
-				clear
+				$CLEAR
 				echo -e -n "`gettext '
 			_____________________________________
 			##   Choose Wesside-ng Options     ##
@@ -1177,7 +1186,7 @@ Option: '`"
 				rm -rf key.log
 				ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
 				head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
-				clear
+				$CLEAR
 				echo -e "`gettext\"        Detected Access point list\"`"
 				echo ""
 				echo " #      MAC                      CHAN    SECU    POWER   #CHAR   SSID"
@@ -1296,7 +1305,7 @@ Option: '`"
 			2 ) fragmentationattackend ; break ;;
 			3 ) chopchopend ; break ;; 
 			4 ) chopchopclientend ; break ;;
-			5 ) clear; break ;;
+			5 ) $CLEAR; break ;;
 			* ) echo "Unknown response. Try again" ;;
 		esac
 	done 
@@ -1306,7 +1315,7 @@ Option: '`"
 	function fragnoclientend {
 		if [ "$Host_MAC" = "" ]
 		then
-			clear
+			$CLEAR
 			echo `gettext 'ERROR: You must select a target first'`
 		else
 		$ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
@@ -1318,7 +1327,7 @@ Option: '`"
 
 		if [ "$Host_MAC" = "" ]
 		then
-			clear
+			$CLEAR
 			echo `gettext 'ERROR: You must select a target first' `
 		else
 		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
@@ -1329,7 +1338,7 @@ Option: '`"
 	function chopchopend {
 		if [ "$Host_MAC" = "" ]
 		then
-			clear
+			$CLEAR
 			echo `gettext 'ERROR: You must select a target first' `
 		else
 		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
@@ -1343,7 +1352,7 @@ Option: '`"
 	function chopchopclientend {
 		if [ "$Host_MAC" = "" ]
 		then
-			clear
+			$CLEAR
 			echo `gettext 'ERROR: You must select a target first' `
 		else
 		$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
@@ -1375,7 +1384,7 @@ Option: '`"
 		echo -e "`gettext \"###       Please enter SSID         ###\"`"
 		read Host_SSID
 		set -- ${Host_SSID}
-		clear
+		$CLEAR
 	}
 ###########################################
 ########End of the ones that are called from many places.####
@@ -1409,7 +1418,7 @@ function doauto {
 		if [ -e $DUMP_PATH/dump-01.txt ] 	
 		then
 			Parseforap
-			clear
+			$CLEAR
 			if [ "$Host_SSID" = $'\r' ]
 	 			then blankssid;
 			elif [ "$Host_SSID" = "No SSID has been detected" ]
@@ -1417,9 +1426,9 @@ function doauto {
 			fi
 			target
 			choosetarget
-			clear
+			$CLEAR
 		else
-			clear
+			$CLEAR
 			echo "ERROR: You have to scan for targets first"
 		fi
 		# And now the cracking option :-) 
@@ -1457,7 +1466,7 @@ function setinterface {
 				DRIVER=`$AIRMON stop  $WIFI | grep monitor | awk '{print $4}'`
 			fi
 
-		clear
+		$CLEAR
 		echo  `gettext 'Interface used is :'` $WIFI
 		echo  `gettext 'Interface type is :'` "$TYPE ($DRIVER)"
 		testmac
@@ -1474,7 +1483,7 @@ function setinterface {
 				DRIVER=`$AIRMON stop  $WIFI | grep monitor | awk '{print $2 $3}'`
 			fi
 
-		clear
+		$CLEAR
 
 		echo  `gettext 'Interface used is :'` $WIFI
 		echo  `gettext 'Interface type is :'` "$TYPE ($DRIVER)"
@@ -1505,7 +1514,7 @@ function testmac {
 # This is another great contribution from CurioCT that allows you to manually enter SSID if none is set
 function blankssid {
 	while true; do
-		clear
+		$CLEAR
 		echo -e -n "`gettext '
 		_____________________________________
 		##       Blank SSID detected       ##
@@ -1577,14 +1586,14 @@ read reson
 			5 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
 			6 ) TLX="110";TLY="35";TRX="99";TRY="40";BLX="110";BLY="35";BRX="99";BRY="30";bLX="110";bLY="72";bRX="99";bRY="40"; setterminal; break;;
 			7 ) TLX="130";TLY="40";TRX="68";TRY="25";BLX="130";BLY="40";BRX="132";BRY="35";bLX="130";bLY="85";bRX="132";bRY="48"; setterminal; break;;
-			* ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; clear ;;
+			* ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; $CLEAR ;;
 		esac
 
 	done
 }
 
 function setterminal {
-	clear
+	$CLEAR
 	getterminal
 	echo -e "`gettext '\tIm going to set terminal options for your terminal now'`...`gettext 'done'`" 
 	# This way we support multiple terminals, not only $TERMINAL
@@ -1671,7 +1680,7 @@ function getterminal {
 		TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;        
 	fi      
                 
-	if [ -e /usr/bin/$TERMINAL ] # If there is an alternative for terminal select it.
+	if [ -x $TERMBIN/$TERMINAL ] # If there is an alternative for terminal select it.
 	then    
 		D="1" # I forgot what this is for :-P
                 echo " ($TERMINAL)" 
@@ -1682,7 +1691,7 @@ function getterminal {
 			echo -e "`gettext \"Using environment defined terminal ($TERM)\n\"`"
 			TERMINAL=$TERM
 		else            
-			if [ -e "/usr/bin/xterm" ]
+			if [ -x "$TERMBIN/xterm" ]
 			then    
 				TERMINAL="xterm"
 				echo -e "Using Xterm\n"
