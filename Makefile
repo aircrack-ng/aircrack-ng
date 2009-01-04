@@ -31,7 +31,7 @@ install: airopdate
 	@gzip -f -9 $(MANDIR)/airoscript.1
 	@echo -en "...done\nInstalling documentation"	
 	@mkdir -p $(DOCDIR)
-	@cp -r $(CURDIR)/doc/ $(DOCDIR)
+	@cp -r $(CURDIR)/doc/* $(DOCDIR)
 	@echo -en "...done\n"
 
 airopdate:
@@ -41,9 +41,10 @@ uninstall:
 	@echo "Uninstalling airoscript."
 	@rm  $(SBINDIR)/airoscript
 	@rm -r $(SHAREDIR)
+	@rm -r $(DOCDIR)
 	@rm $(ETCDIR)/airoscript.conf
-	@rm $(DESTDIR)$(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo
-	@rm $(DESTDIR)$(ORIGLOCALEDIR)/es/LC_MESSAGES/airoscript.mo
+	@rm $(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo
+	@rm $(ORIGLOCALEDIR)/es/LC_MESSAGES/airoscript.mo
 	
 
 all: install 

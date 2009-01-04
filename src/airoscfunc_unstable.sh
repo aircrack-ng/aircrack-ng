@@ -6,7 +6,7 @@ echo -e "\tUnstable functions from airoscript loaded,\n\tif you don't want this,
 
 function doitwld {
 	$WLD $Host_MAC $Host_SSID $DUMP_PATH/wlddic 
-	$AIRCRACKOLD -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/$HOST_MAC-01.cap
+	$AIRCRACKOLD $FORCEKOREK -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/$HOST_MAC-01.cap
 }
 
 function wld {
@@ -40,7 +40,7 @@ function wld {
 
 function doitjt {
 	$JTD $Host_MAC $Host_SSID $DUMP_PATH/jtddic
-	$AIRCRACKOLD -b $Host_MAC -w $DUMP_PATH/jtddic $DUMP_PATH/$HOST_MAC-01.cap
+	$AIRCRACKOLD $FORCEKOREK -b $Host_MAC -w $DUMP_PATH/jtddic $DUMP_PATH/$HOST_MAC-01.cap
 }
 
 function jtd {

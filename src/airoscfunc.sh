@@ -114,7 +114,7 @@ done
 		set -- ${channel_number}
 		clear
 		rm -rf $DUMP_PATH/dump*
-		$AIRMON start $WIFI $channel_number
+		monmode $WIFI $channel_number
 		$CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Scanning for targets on channel'` $channel_number" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG $AIRODUMP -w $DUMP_PATH/dump --channel $channel_number --encrypt $ENCRYPT -a $WIFI
 	}
 
@@ -399,6 +399,13 @@ function witchattack {
 			#$AIRMON stop ath0
 			#echo $IS_MONITOR
 			echo -e "`gettext \"Atheros device, not spamming another one => Doing nothing\"`"
+
+		elif [ "$DRIVER" = "zd1211rw_mac80211" ]
+		then
+			#IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+			#echo $IS_MONITOR				
+			echo -e `gettext 'mac80211 device, not spamming another one => Doing nothing'`
+	
 		else
 			IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
 			echo -e "`gettext \"Running standard monitor mode command\"`"
@@ -658,7 +665,7 @@ function selectcracking {
 
 	# This is for wpa cracking
 	function wpacrack {
-		$TERMINAL $HOLD $TOPRIGHT $TITLEFLAG "Aircracking: $Host_SSID" $EXECFLAG $AIRCRACKOLD -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction # There was a -0 -s before $DPATH/$HmaC but -0 is not documented, anyway, it works, so I replaced it (-s is for showing ascii key)
+		$TERMINAL $HOLD $TOPRIGHT $TITLEFLAG "Aircracking: $Host_SSID" $EXECFLAG $AIRCRACKOLD $FORCEKOREK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction # There was a -0 -s before $DPATH/$HmaC but -0 is not documented, anyway, it works, so I replaced it (-s is for showing ascii key)
 	}
 	
 ##################################################################################
@@ -817,18 +824,26 @@ Option: '`"
 	}
 	# 2.
 	function setinterface2 {
-		INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'`
-		echo "   Select your interface: "
-		echo " "
-		
+
+		echo "`gettext 'Select your interface:'`"
 		select WIFI in $INTERFACES; do
 			break;
 		done
-		
-		TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
+
+		echo -n `gettext 'Should I put it in monitor mode?'` " (Y/n) "
+		read answer
+			if [ "$answer" != "n" ]
+			then
+				TYPE=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON start $WIFI | grep monitor | awk '{print $4}'`
+			else
+				TYPE=`$AIRMON stop  $WIFI | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON stop  $WIFI | grep monitor | awk '{print $4}'`
+			fi
+
 		clear
-		echo "`gettext \"Interface used is : $WIFI\"`"
-		echo "`gettext \"Interface type is : $TYPE\"`"
+		echo  `gettext 'Interface used is :'` $WIFI
+		echo  `gettext 'Interface type is :'` "$TYPE ($DRIVER)"
 		testmac
 	}
 	# 3.
@@ -1226,6 +1241,7 @@ Option: '`"
 			$AIRMON stop ath2
 			echo $IS_MONITOR
 		else
+
 			IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
 			echo "Running standard monitor mode command"
 			echo $IS_MONITOR
@@ -1382,7 +1398,7 @@ function configure {
 }
 
 function wpaconfigure {
-		$AIRCRACKOLD -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST &> $DUMP_PATH/$Host_MAC.key
+		$AIRCRACKOLD $FORCEKOREK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST &> $DUMP_PATH/$Host_MAC.key
 		KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
 }
 function doauto {
@@ -1418,27 +1434,59 @@ function doauto {
 function setinterface {
 	#INTERFACES=`iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
 	#INTERFACES=`iwconfig|egrep "^[a-Z]+[0-9]+" |awk '{print $1}'`
-	#INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'` # I dont really know why is this like that, the cut for spaces and awk print $1 doesnt make the same things?
+	#INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'` # I dont really know why is this like that, the cut for spaces and awk print $1 doesnt make the same things? --> No, awk also treats tabs as spaces as I know
 	INTERFACES=`ip link|egrep "^[0-9]+"|cut -d ':' -f 2 |awk {'print $1'} |grep -v lo`
 	if [ "$WIFI" = "" ]
 	then
-		echo "`gettext '=> Select your interface: (athX for madwifi devices)'`"
+		echo -e "\n_____"`gettext 'Interface selection'`"_____"
+		PS3="`gettext 'Select your interface: '`"
+
 		select WIFI in $INTERFACES; do
 			break;
 		done
-		TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
+
+		echo -e "______________________________\n"
+		echo -n `gettext 'Should I put it in monitor mode?'` " (Y/n) "
+		read answer
+			if [ "$answer" != "n" ]
+			then
+				TYPE=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON start $WIFI | grep monitor | awk '{print $4}'`
+			else
+				TYPE=`$AIRMON stop  $WIFI | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON stop  $WIFI | grep monitor | awk '{print $4}'`
+			fi
+
 		clear
-		
-		echo  `gettext 'Interface type is :'` $TYPE
 		echo  `gettext 'Interface used is :'` $WIFI
+		echo  `gettext 'Interface type is :'` "$TYPE ($DRIVER)"
 		testmac
 	else
-		TYPE=`$AIRMON start $WIFI | grep monitor |awk '{print $2 $3}'`
+		echo -n `gettext 'Shall I put in monitor mode'` $WIFI "? (Y/n) "
+		read answer
+			if [ "$answer" != "n" ]
+			then
+				TYPE=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
+
+			else
+				TYPE=`$AIRMON stop  $WIFI | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON stop  $WIFI | grep monitor | awk '{print $2 $3}'`
+			fi
+
 		clear
 
 		echo  `gettext 'Interface used is :'` $WIFI
-		echo  `gettext 'Interface type is :'` $TYPE
+		echo  `gettext 'Interface type is :'` "$TYPE ($DRIVER)"
 		testmac
+	fi
+}
+
+monmode() {
+	if [ "`iwconfig $1 |grep Monitor`" ];then
+		echo "`gettext 'Your card is already in monitor mode'`"
+	else
+		$AIRMON start $1 $2
 	fi
 }
 
@@ -1449,7 +1497,7 @@ function testmac {
 		echo "Previous fake_mac : $FAKE_MAC"
 		FAKE_MAC=`ifconfig $WIFI | grep $WIFI | awk '{print $5}' | cut -c -17  | sed -e "s/-/:/" | sed -e "s/\-/:/"  | sed -e "s/\-/:/" | sed -e "s/\-/:/" | sed -e "s/\-/:/"`
 		echo -e "`gettext \"Changed fake_mac : $FAKE_MAC\"`" 
-		else
+	else
 		echo ""
 	fi
 }
@@ -1493,10 +1541,11 @@ function checkdir {
 if [[ -d $DUMP_PATH ]]
 then
 	echo -e "`gettext \"[INFO] Output folder is $DUMP_PATH\"`"
-else
-	echo -e "`gettext \"[INFO] Output folder does not exist, i will create it now\"`"
-	mkdir $DUMP_PATH
-	echo -e "`gettext \"[INFO]  Output folder is now set to $DUMP_PATH\"`"
+# Disabled, now it uses mktmp to create temp directory, so this is not required.
+#else
+#	echo -e "`gettext \"[INFO] Output folder does not exist, i will create it now\"`"
+#	mkdir $DUMP_PATH
+#	echo -e "`gettext \"[INFO]  Output folder is now set to $DUMP_PATH\"`"
 fi
 }
 
@@ -1537,7 +1586,7 @@ read reson
 function setterminal {
 	clear
 	getterminal
-	echo -e "`gettext 'Im going to set terminal options for your terminal now'`" 
+	echo -e "`gettext '\tIm going to set terminal options for your terminal now'`...`gettext 'done'`" 
 	# This way we support multiple terminals, not only $TERMINAL
 	case $TERMINAL in 
 		xterm|uxterm ) 
@@ -1595,9 +1644,6 @@ function setterminal {
 			;;
 
 	esac
-
-echo -e "\n"
-
 }
 
 
@@ -1616,15 +1662,9 @@ function getterminal {
 	# TERMINAL var is on config if valid, use it, if not set it to defaults, if that fails, use environment terminal, and if that fails too, use xterm :-D, if xterm isnt available, giva a fatal warning and exit (who doesnt have a terminal?)
 
 # This is for parameter input.
-# Didn't work as expected, so I disabled it.
-#	if [ "$1" != "" ]
-#	then	
-#		export TERMINAL="$1"
-#	fi
-
 	if [ -e /usr/bin/$TERMINAL ]
 	then
-		echo -e "`gettext \"Using configured terminal\"`"
+		echo -en "\t`gettext \"Using configured terminal\"`"
 	else
 		echo -en "$TERMINAL was not used, not found on path"
 		echo -en '`gettext "Using default terminal"`' 
@@ -1634,7 +1674,7 @@ function getterminal {
 	if [ -e /usr/bin/$TERMINAL ] # If there is an alternative for terminal select it.
 	then    
 		D="1" # I forgot what this is for :-P
-                echo "Using terminal $TERMINAL" 
+                echo " ($TERMINAL)" 
                 
 	else            
 		if [ -e $TERM ] 

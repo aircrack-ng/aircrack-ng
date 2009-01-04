@@ -140,7 +140,7 @@
 	# This is for wpa cracking
 	function wpacrack {
 			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -D -RR -X screen
-			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$AIRCRACKOLD -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST" & menufonction
+			$CDCMD screen -S airoscript -c /usr/share/airoscript/screenrc -X at "*" stuff "$AIRCRACKOLD $FORCEKOREK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST" & menufonction
 	}
 
 # Those are subproducts of choosefake
