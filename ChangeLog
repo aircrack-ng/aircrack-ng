@@ -1,4 +1,4 @@
-Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released ?? ??? 2008:
+Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released ?? Jan 2009:
 * aircrack-ng: Fixed detection of the number of CPU (especially with recent CPUs).
 * aircrack-ng: Fixed long lasting WPA bugs: cannot find the key with SMP computers,
   wasn't exiting correctly, ...
@@ -9,6 +9,7 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released ?? ??? 2008:
   It was a problem on some ubuntu.
 * airdecloak-ng: New tool to remove wep cloaked frames from a pcap file.
   For more details see http://www.aircrack-ng.org/doku.php?id=airdecloak-ng
+* airodump-ng: Added kismet csv output support.
 * airodump-ng: Fixed power value display (for ath interface with a high number, more than 99).
 * airodump-ng: Can work on the new frequencies (allowed by frequency Chaos patch).
 * airodump-ng: Now display if the network has QoS enabled.
@@ -44,14 +45,16 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released ?? ??? 2008:
 * general: Fixed compilation on Sun SPARC.
 * general: Fixed compilation on some distribution (with a recent version of gcc) due to warnings (because of not getting the return value of some functions).
 * general: Several compilation fixes.
+* patches: Updated ath5k patches
 * patches: Added rt2570 patch (kernel 2.6.24).
 * patches: Updated madwifi-ng patch for r3745.
-* patches: Added mac80211 fragmentation patch.
+* patches: Updated mac80211 patches.
 * patches: Added zd1211rw patch for 2.6.26, b43/b43legacy for 2.6.26-wl.
 * patches: rt73, r8187 patches for fedora kernels (should work on 2.6.27).
 * patches: Added Defcon 16 patch (more frequencies than the usuals) for ath5k called frequency Chaos.
 * patches: Added injection patch for rtl8187 (mac80211).
 * patches: Added a universal mac80211 fragmentation and injection speed patch.
+* GUI (windows): Fixed: Windows GUI gives "please specify dictionnary".
 
 Version 1.0-rc1 (changes from aircrack-ng 1.0-beta2) - Released 09 Jun 2008:
 * airbase-ng: Multi-purpose tool aimed at attacking clients as opposed to the AP.
