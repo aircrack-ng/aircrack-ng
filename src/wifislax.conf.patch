@@ -1,0 +1,30 @@
+6c6
+< 	UNSTABLE=1
+---
+> 	UNSTABLE=0
+20c20
+< 	DHCPSOFT="dhclient"
+---
+> 	DHCPSOFT="dhcpcd"
+40,47c40,47
+< 	BINDIR="/usr/bin/"
+< 	SBINDIR="/usr/sbin/"                     
+< 	AIRMON=$SBINDIR"airmon-ng"		
+< 	AIRODUMP=$SBINDIR"airodump-ng"
+< 	AIREPLAY=$SBINDIR"aireplay-ng"	
+< 	AIRCRACK=$BINDIR"aircrack-ng"
+< 	ARPFORGE=$BINDIR"packetforge-ng"
+< 	WESSIDE=$SBINDIR"wesside-ng"
+---
+> 	BINDIR="/usr/local/bin/"			
+> 	SBINDIR="/usr/local/sbin/"                     	
+> 	AIRMON=$SBINDIR"airmon-ng"			
+> 	AIRODUMP=$SBINDIR"airodump-ng"			
+> 	AIREPLAY=$SBINDIR"aireplay-ng"			
+> 	AIRCRACK=$BINDIR"aircrack-ng"			
+> 	ARPFORGE=$BINDIR"packetforge-ng"		
+> 	WESSIDE=$SBINDIR"wesside-ng"			
+54c54
+< 	TERMBIN=$BINDIR # Change this if your terminal is not in bindir, for example, on /usr/X11R6/bin or /usr/local/bin ...
+---
+> 	TERMBIN="/usr/X11R6/bin" # Change this if your terminal is not in bindir, for example, on /usr/X11R6/bin or /usr/local/bin ...
