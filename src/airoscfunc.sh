@@ -1671,7 +1671,7 @@ function getterminal {
 	# TERMINAL var is on config if valid, use it, if not set it to defaults, if that fails, use environment terminal, and if that fails too, use xterm :-D, if xterm isnt available, giva a fatal warning and exit (who doesnt have a terminal?)
 
 # This is for parameter input.
-	if [ -e /usr/bin/$TERMINAL ]
+	if [ -x $TERMBIN/$TERMINAL ]
 	then
 		echo -en "\t`gettext \"Using configured terminal\"`"
 	else
