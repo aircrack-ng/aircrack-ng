@@ -48,8 +48,10 @@ uninstall:
 	@rm $(ORIGLOCALEDIR)/es/LC_MESSAGES/airoscript.mo
 
 wifiway: install
-	@echo "Applying wifiway patch"
-	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/wifislax.conf.patch
+	@echo "Applying wifi(way/slax) patch"
+	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/patches/wifislax.conf.patch
+
+wifislax: wifiway
 
 all: install 
 
