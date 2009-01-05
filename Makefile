@@ -49,7 +49,7 @@ uninstall:
 
 wifiway: install
 	@echo "Applying wifi(way/slax) patch"
-	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/patches/wifislax.conf.patch
+	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/wifislax.conf.patch
 
 wifislax: wifiway
 
