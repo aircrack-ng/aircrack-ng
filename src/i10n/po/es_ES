@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-01-04 19:24+0100\n"
+"POT-Creation-Date: 2009-01-07 10:03+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -58,7 +58,8 @@ msgstr ""
 #: src/airoscfunc.sh:199 src/airoscfunc.sh:250 src/airoscfunc.sh:297
 #: src/airoscfunc.sh:329 src/airoscfunc.sh:471 src/airoscfunc.sh:649
 #: src/airoscfunc.sh:759 src/airoscfunc.sh:823 src/airoscfunc.sh:893
-#: src/airoscfunc.sh:1149 src/airoscfunc.sh:1589
+#: src/airoscfunc.sh:1149 src/airoscfunc.sh:1589 src/airoscfunc.sh:825
+#: src/airoscfunc.sh:895 src/airoscfunc.sh:1151 src/airoscfunc.sh:1600
 msgid "Unknown response. Try again"
 msgstr "Respuesta desconocida, intentalo de nuevo."
 
@@ -435,7 +436,7 @@ msgstr ""
 #: airoscfunc.sh:1581 airoscfunc.sh:1583 src/airoscfunc.sh:712
 #: src/airoscfunc.sh:715 src/airoscfunc.sh:718 src/airoscfunc.sh:1365
 #: src/airoscfunc.sh:721 src/airoscfunc.sh:724 src/airoscfunc.sh:727
-#: src/airoscfunc.sh:1374
+#: src/airoscfunc.sh:1374 src/airoscfunc.sh:1385
 msgid "Associating with:"
 msgstr "Asociando con:"
 
@@ -480,47 +481,8 @@ msgstr "Pateando $Client_MAC de:"
 msgid "Kicking"
 msgstr "Pateando"
 
-#: airoscfunc.sh:771 src/airoscfunc.sh:784 src/airoscfunc.sh:793
-msgid ""
-"\n"
-"\t||\n"
-"\t||\n"
-"\t\\/\t\n"
-"_____________________________________\n"
-"##  Select task to perform         ##\n"
-"##                                 ##\n"
-"##   1) Test injection             ##\n"
-"##   2) Select another interface   ##\n"
-"##   3) Reset selected interface   ##\n"
-"##   4) Change MAC of interface    ##\n"
-"##   5) Mdk3                       ##\n"
-"##   6) Wesside-ng                 ##\n"
-"##   7) Enable monitor mode        ##\n"
-"##   8) Checks with airmon-ng      ##\n"
-"##   9) Return to main menu        ##\n"
-"##_________________________________##\n"
-"Option: "
-msgstr ""
-"\n"
-"\t||\n"
-"\t||\n"
-"\t\\/\t\n"
-"_____________________________________\n"
-"##  Select task to perform         ##\n"
-"##                                 ##\n"
-"##   1) Probar inyeccion           ##\n"
-"##   2) Seleccionar otra interfaz  ##\n"
-"##   3) Resetear interfaz selecc.  ##\n"
-"##   4) Cambiar MAC de la interfaz ##\n"
-"##   5) Mdk3                       ##\n"
-"##   6) Wesside-ng                 ##\n"
-"##   7) Activar modo monitor       ##\n"
-"##   8) Comprobar con airmon-ng    ##\n"
-"##   9) Volver al menu principal   ##\n"
-"##_________________________________##\n"
-"Opcion: "
-
-#: airoscfunc.sh:845 src/airoscfunc.sh:866 src/airoscfunc.sh:875
+#: src/airoscfunc.sh:875
+#: src/airoscfunc.sh:877
 msgid ""
 "\n"
 "\t||\n"
@@ -550,18 +512,22 @@ msgstr ""
 
 #: airoscfunc.sh:879 airoscfunc.sh:923 src/airoscfunc.sh:900
 #: src/airoscfunc.sh:944 src/airoscfunc.sh:909 src/airoscfunc.sh:953
+#: src/airoscfunc.sh:911 src/airoscfunc.sh:955
 msgid "Unknow way to change mac"
 msgstr "No se como cambiar la mac"
 
 #: airoscfunc.sh:955 src/airoscfunc.sh:976 src/airoscfunc.sh:985
+#: src/airoscfunc.sh:987
 msgid "OK, now type in new MAC: "
 msgstr "Bien, ahora escribe la nueva mac"
 
 #: airoscfunc.sh:957 src/airoscfunc.sh:978 src/airoscfunc.sh:987
+#: src/airoscfunc.sh:989
 msgid "You typed:"
 msgstr "Has escrito:"
 
 #: airoscfunc.sh:1008 src/airoscfunc.sh:1031 src/airoscfunc.sh:1040
+#: src/airoscfunc.sh:1042
 msgid ""
 "\n"
 "\t\t\t_____________________________________\n"
@@ -588,18 +554,22 @@ msgstr ""
 "\t\t\tOpcion: "
 
 #: airoscfunc.sh:1034 src/airoscfunc.sh:1061 src/airoscfunc.sh:1070
+#: src/airoscfunc.sh:1072
 msgid "MDK attack"
 msgstr "Ataque MDK"
 
 #: airoscfunc.sh:1038 src/airoscfunc.sh:1065 src/airoscfunc.sh:1074
+#: src/airoscfunc.sh:1076
 msgid "MDK attack on AP:"
 msgstr "Ataque MDK en el AP:"
 
 #: airoscfunc.sh:1084 src/airoscfunc.sh:1111 src/airoscfunc.sh:1120
+#: src/airoscfunc.sh:1122
 msgid "Wesside-ng attack on AP:"
 msgstr "Ataque Wesside-ng en el AP:"
 
 #: airoscfunc.sh:1091 src/airoscfunc.sh:1118 src/airoscfunc.sh:1127
+#: src/airoscfunc.sh:1129
 msgid ""
 "\n"
 "\t\t\t_____________________________________\n"
@@ -631,16 +601,19 @@ msgstr ""
 #: airoscfunc.sh:1190 src/airoscfunc.sh:1150 src/airoscfunc.sh:1157
 #: src/airoscfunc.sh:1164 src/airoscfunc.sh:1171 src/airoscfunc.sh:1217
 #: src/airoscfunc.sh:1159 src/airoscfunc.sh:1166 src/airoscfunc.sh:1173
-#: src/airoscfunc.sh:1180 src/airoscfunc.sh:1226
+#: src/airoscfunc.sh:1180 src/airoscfunc.sh:1226 src/airoscfunc.sh:1161
+#: src/airoscfunc.sh:1168 src/airoscfunc.sh:1175 src/airoscfunc.sh:1182
+#: src/airoscfunc.sh:1228
 msgid "Wesside-ng attack"
 msgstr "Ataque wesside-ng"
 
 #: airoscfunc.sh:1174 src/airoscfunc_screen.sh:263 src/airoscfunc.sh:1201
-#: src/airoscfunc.sh:1210
+#: src/airoscfunc.sh:1210 src/airoscfunc.sh:1212
 msgid "       Select target               "
 msgstr ""
 
 #: airoscfunc.sh:1251 src/airoscfunc.sh:1279 src/airoscfunc.sh:1288
+#: src/airoscfunc.sh:1299
 msgid ""
 "\n"
 "_____________________________________\n"
@@ -674,17 +647,20 @@ msgstr ""
 #: src/airoscfunc_screen.sh:312 src/airoscfunc_screen.sh:327
 #: src/airoscfunc.sh:1310 src/airoscfunc.sh:1322 src/airoscfunc.sh:1333
 #: src/airoscfunc.sh:1347 src/airoscfunc.sh:1319 src/airoscfunc.sh:1331
-#: src/airoscfunc.sh:1342 src/airoscfunc.sh:1356
+#: src/airoscfunc.sh:1342 src/airoscfunc.sh:1356 src/airoscfunc.sh:1330
+#: src/airoscfunc.sh:1353 src/airoscfunc.sh:1367
 msgid "ERROR: You must select a target first"
 msgstr "ERROR: Primero tienes que seleccionar un objetivo"
 
 #: airoscfunc.sh:1285 airoscfunc.sh:1297 src/airoscfunc.sh:1313
 #: src/airoscfunc.sh:1325 src/airoscfunc.sh:1322 src/airoscfunc.sh:1334
+#: src/airoscfunc.sh:1333 src/airoscfunc.sh:1345
 msgid "Injecting forged packet on"
 msgstr "Inyectando paquete forjando en "
 
 #: airoscfunc.sh:1311 airoscfunc.sh:1324 src/airoscfunc.sh:1339
 #: src/airoscfunc.sh:1352 src/airoscfunc.sh:1348 src/airoscfunc.sh:1361
+#: src/airoscfunc.sh:1359 src/airoscfunc.sh:1372
 msgid "Sending chopchop to:"
 msgstr "Enviando chopchop a:"
 
@@ -693,7 +669,7 @@ msgid "=> Select your interface: (athX for madwifi devices)"
 msgstr "=> Selecciona tu interfaz (athX para dispositivos madwifi)"
 
 #: airoscfunc.sh:1374 airoscfunc.sh:1371 src/airoscfunc.sh:1509
-#: src/airoscfunc.sh:1518
+#: src/airoscfunc.sh:1518 src/airoscfunc.sh:1529
 msgid ""
 "\n"
 "\t\t_____________________________________\n"
@@ -718,7 +694,7 @@ msgid "        Output folder does not exist, i will create it now"
 msgstr "       El directorio de salida no existe, lo voy a crear ahora."
 
 #: airoscfunc.sh:1422 airoscfunc.sh:1419 src/airoscfunc.sh:1557
-#: src/airoscfunc.sh:1566
+#: src/airoscfunc.sh:1566 src/airoscfunc.sh:1577
 msgid "Select screen resolution            "
 msgstr "Selecciona la resoluccion de pantalla:"
 
@@ -727,12 +703,12 @@ msgid "Im going to set terminal options for your terminal now"
 msgstr "Ahora voy a establecer las opciones para tu terminal."
 
 #: airoscfunc.sh:1529 airoscfunc.sh:1526 airoscfunc.sh:1528
-#: src/airoscfunc.sh:1654 src/airoscfunc.sh:1663
+#: src/airoscfunc.sh:1654 src/airoscfunc.sh:1663 src/airoscfunc.sh:1674
 msgid " \tDebug Mode enabled, you'll have to manually close windows"
 msgstr "\tMode debug activado, tendras que cerrar las ventanas a mano"
 
 #: airoscfunc.sh:1540 airoscfunc.sh:1537 airoscfunc.sh:1539
-#: src/airoscfunc.sh:1667 src/airoscfunc.sh:1676
+#: src/airoscfunc.sh:1667 src/airoscfunc.sh:1676 src/airoscfunc.sh:1687
 msgid "Using configured terminal"
 msgstr "Usando terminal configurado"
 
@@ -747,17 +723,17 @@ msgstr ""
 "\t\t\t\t tu archivo de configuracion.                "
 
 #: airoscfunc.sh:1580 airoscfunc.sh:1577 airoscfunc.sh:1579
-#: src/airoscfunc.sh:1361 src/airoscfunc.sh:1370
+#: src/airoscfunc.sh:1361 src/airoscfunc.sh:1370 src/airoscfunc.sh:1381
 msgid "Capturing data on channel"
 msgstr "Capturando datos en el canal"
 
 #: airoscfunc.sh:1588 airoscfunc.sh:1585 airoscfunc.sh:1587
-#: src/airoscfunc.sh:1369 src/airoscfunc.sh:1378
+#: src/airoscfunc.sh:1369 src/airoscfunc.sh:1378 src/airoscfunc.sh:1389
 msgid "Fake function to jump to menu"
 msgstr "Funcion falsa para volver al menu"
 
 #: airoscfunc.sh:1594 airoscfunc.sh:1591 airoscfunc.sh:1593
-#: src/airoscfunc.sh:1375 src/airoscfunc.sh:1384
+#: src/airoscfunc.sh:1375 src/airoscfunc.sh:1384 src/airoscfunc.sh:1395
 msgid "###       Please enter SSID         ###"
 msgstr "###\t  Por favor introduzca SSID ###"
 
@@ -794,7 +770,7 @@ msgid "Deleting"
 msgstr "Borrando"
 
 #: airoscript.sh:166 src/airoscfunc.sh:1589 src/airoscript.sh:184
-#: src/airoscript.sh:195 src/airoscfunc.sh:1598
+#: src/airoscript.sh:195 src/airoscfunc.sh:1598 src/airoscfunc.sh:1609
 msgid "done"
 msgstr "Terminado"
 
@@ -849,16 +825,19 @@ msgstr ""
 #: airoscfunc.sh:1344 airoscfunc.sh:1350 airoscfunc.sh:1345 airoscfunc.sh:1353
 #: src/airoscfunc.sh:846 src/airoscfunc.sh:1462 src/airoscfunc.sh:1480
 #: src/airoscfunc.sh:855 src/airoscfunc.sh:1471 src/airoscfunc.sh:1489
+#: src/airoscfunc.sh:857 src/airoscfunc.sh:1482 src/airoscfunc.sh:1500
 msgid "Interface type is :"
 msgstr "Tipo de interfaz: "
 
 #: airoscfunc.sh:1349 airoscfunc.sh:1346 airoscfunc.sh:1352
 #: src/airoscfunc.sh:845 src/airoscfunc.sh:1461 src/airoscfunc.sh:1479
 #: src/airoscfunc.sh:854 src/airoscfunc.sh:1470 src/airoscfunc.sh:1488
+#: src/airoscfunc.sh:856 src/airoscfunc.sh:1481 src/airoscfunc.sh:1499
 msgid "Interface used is :"
 msgstr "Interfaz: "
 
 #: airoscfunc.sh:1423 src/airoscfunc.sh:1558 src/airoscfunc.sh:1567
+#: src/airoscfunc.sh:1578
 msgid "____Available resolutions_____"
 msgstr "__Resolucciones disponibles___"
 
@@ -878,31 +857,31 @@ msgstr "Ataque cafe latte en:"
 msgid "Hirte Attack on:"
 msgstr "Ataque Hirte en:"
 
-#: src/airoscfunc.sh:828 src/airoscfunc.sh:837
+#: src/airoscfunc.sh:828 src/airoscfunc.sh:837 src/airoscfunc.sh:839
 msgid "Select your interface:"
 msgstr "Selecciona tu interfaz: "
 
-#: src/airoscfunc.sh:1441 src/airoscfunc.sh:1450
+#: src/airoscfunc.sh:1441 src/airoscfunc.sh:1450 src/airoscfunc.sh:1461
 msgid "Interface selection"
 msgstr "Seleccion de interfaz"
 
-#: src/airoscfunc.sh:1442 src/airoscfunc.sh:1451
+#: src/airoscfunc.sh:1442 src/airoscfunc.sh:1451 src/airoscfunc.sh:1462
 msgid "Select your interface: "
 msgstr "Selecciona tu interfaz: "
 
-#: src/airoscfunc.sh:1465 src/airoscfunc.sh:1474
+#: src/airoscfunc.sh:1465 src/airoscfunc.sh:1474 src/airoscfunc.sh:1485
 msgid "Shall I put in monitor mode"
 msgstr "¿Deveria poner en modo monitor "
 
-#: src/airoscfunc.sh:1487 src/airoscfunc.sh:1496
+#: src/airoscfunc.sh:1487 src/airoscfunc.sh:1496 src/airoscfunc.sh:1507
 msgid "Your card is already in monitor mode"
 msgstr "Tu tarjeta ya esta en modo monitor"
 
-#: src/airoscfunc.sh:1589 src/airoscfunc.sh:1598
+#: src/airoscfunc.sh:1589 src/airoscfunc.sh:1598 src/airoscfunc.sh:1609
 msgid "\\tIm going to set terminal options for your terminal now"
 msgstr "\\tVoy a determinar las opciones de tu terminal ahora"
 
-#: src/airoscfunc.sh:1691 src/airoscfunc.sh:1700
+#: src/airoscfunc.sh:1691 src/airoscfunc.sh:1700 src/airoscfunc.sh:1711
 msgid ""
 "I cant find any good terminal, please set one on your conffile\n"
 "\t\t\t\tYour TERMINAL var contains no valid temrinal\n"
@@ -958,7 +937,7 @@ msgid "ERROR: Wrong number entered"
 msgstr "ERROR: Numero erroneo"
 
 #: src/airoscfunc.sh:833 src/airoscfunc.sh:1449 src/airoscfunc.sh:842
-#: src/airoscfunc.sh:1458
+#: src/airoscfunc.sh:1458 src/airoscfunc.sh:844 src/airoscfunc.sh:1469
 msgid "Should I put it in monitor mode?"
 msgstr "¿Devería ponerla en modo monitor?"
 
@@ -1038,3 +1017,58 @@ msgstr ""
 "\t##   4) Volver al menu principal   ##\n"
 "\t##_________________________________##\n"
 "\tOpcion:"
+
+#: src/airoscfunc.sh:793
+msgid ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\t\n"
+"_____________________________________\n"
+"##  Select task to perform         ##\n"
+"##                                 ##\n"
+"##   1) Test injection             ##\n"
+"##   2) Select another interface   ##\n"
+"##   3) Reset selected interface   ##\n"
+"##   4) Change MAC of interface    ##\n"
+"##   5) Mdk3                       ##\n"
+"##   6) Wesside-ng                 ##\n"
+"##   7) Enable monitor mode        ##\n"
+"##   8) Checks with airmon-ng      ##\n"
+"##   9) Change DUMP_PATH           ##\n"
+"##   10) Return to main menu       ##\n"
+"##_________________________________##\n"
+"Option: "
+msgstr ""
+"\n"
+"\t||\n"
+"\t||\n"
+"\t\\/\t\n"
+"_____________________________________\n"
+"##  Selecciona una opcion          ##\n"
+"##                                 ##\n"
+"##   1) Probar inyeccion           ##\n"
+"##   2) Seleccionar otra interfaz  ##\n"
+"##   3) Resetear interfaz selecc.  ##\n"
+"##   4) Cambiar MAC de la interfaz ##\n"
+"##   5) Mdk3                       ##\n"
+"##   6) Wesside-ng                 ##\n"
+"##   7) Activar modo monitor       ##\n"
+"##   8) Comprobar con airmon-ng    ##\n"
+"##   9) Cambiar DUMP_PATH	    ##\n"
+"##   10) Volver al menu principal  ##\n"
+"##_________________________________##\n"
+"Opcion: "
+
+
+#: src/airoscfunc.sh:1285
+msgid "Enter new path: "
+msgstr "Introduce el nuevo directorio: "
+
+#: src/airoscfunc.sh:1286
+msgid "Copy data into new folder? (y/N): "
+msgstr "¿Copiar los datos en el directorio nuevo?"
+
+#: src/airoscfunc.sh:1287
+msgid "Erase old folder? (y/N): "
+msgstr "¿Borrar directorio antiguo?"

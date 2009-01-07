@@ -805,7 +805,8 @@ _____________________________________
 ##   6) Wesside-ng                 ##
 ##   7) Enable monitor mode        ##
 ##   8) Checks with airmon-ng      ##
-##   9) Return to main menu        ##
+##   9) Change DUMP_PATH	   ##
+##   10) Return to main menu       ##
 ##_________________________________##
 Option: '`"
 	read yn
@@ -819,7 +820,8 @@ Option: '`"
 	6 ) choosewesside ; break ;;
 	7 ) monitor_interface ; break ;;
 	8 ) airmoncheck ; break ;;
-	9 ) $CLEAR;break ;;
+	9 ) changedumppath; break;;
+	10 ) $CLEAR;break ;;
 	* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 	
 	esac
@@ -1278,9 +1280,18 @@ Option: '`"
 		fi 
 	}
 
+changedumppath(){
+	OLD_DUMP_PATH=$DUMP_PATH
+	read -p "`gettext 'Enter new path: '`" DUMP_PATH
+	read -p "`gettext 'Copy data into new folder? (y/N): '`" ACP && [[ "$ACP" = "y" ]]; cp -r $OLD_DUMP_PATH/* $DUMP_PATH/
+	read -p "`gettext 'Erase old folder? (y/N): '`" EPF && [[ "$EPF" = "y" ]]; rm -r $OLD_DUMP_PATH
+	mkdir -p $DUMP_PATH # If exists, it won't be created again, so we don't lose anything fot this :-)
+	clear
+}
+
 ##################################################################################
 ##################################################################################
-######################### This is for iNJECTION  (8)  option:       ################################
+######################### This is for iNJECTION  (8)  option:       ##############
 ##################################################################################
 ##################################################################################
 function injectmenu {
