@@ -3,14 +3,17 @@
 UID="root"
 GID="root"
 
+# This is ok for local installs but change it for packaging... on some systems it hasn't got to be changed for packaging :-)
+PREF="/usr/local"
+
 # Dirs
 BINMODE="755"
-SBINDIR=$(DESTDIR)"/usr/local/sbin"
+SBINDIR=$(DESTDIR)$(PREF)"/sbin"
 ETCDIR=$(DESTDIR)"/etc"
-SHAREDIR=$(DESTDIR)"/usr/local/share/airoscript"
-LOCALEDIR=$(DESTDIR)"/usr/local/share/locale/"
-MANDIR=$(DESTDIR)"/usr/local/share/man/man1"
-DOCDIR=$(DESTDIR)"/usr/local/share/doc/airoscript"
+SHAREDIR=$(DESTDIR)$(PREF)"/share/airoscript"
+LOCALEDIR=$(DESTDIR)$(PREF)"/share/locale/"
+MANDIR=$(DESTDIR)$(PREF)"/share/man/man1"
+DOCDIR=$(DESTDIR)$(PREF)"/share/doc/airoscript"
 ORIGLOCALEDIR=$(DESTDIR)"/usr/share/locale"
 
 install: airopdate
@@ -49,10 +52,15 @@ uninstall:
 
 wifiway: install
 	@echo "Applying wifi(way/slax) patch"
-	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/wifislax.conf.patch
+	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/patches/wifislax.conf.patch
 
 wifislax: wifiway
+	@# Now, these are the same (wifislax and wifiway)...
+
+debian-package: install
+	@echo "Applying debian package patch"
+	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/patches/debian-package.conf.patch
 
 all: install 
 
-.PHONY: all install uninstall
+.PHONY: all install uninstall wifiway wifislax debian-package
