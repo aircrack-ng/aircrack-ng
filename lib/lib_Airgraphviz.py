@@ -18,10 +18,11 @@
 #
 #########################################
 
-#import pdb
+import pdb
 try:
-	import psyco
-	psyco.full()
+#	import psyco
+#	psyco.full()
+	pass
 except ImportError:
 	pass
 
@@ -30,7 +31,7 @@ def AP_Label_Color(Label,colorLS):
 	color = colorLS[0]
 	fontC = colorLS[1]
 	essid = Label[1].rstrip('\x00') #when readidng a null essid it has binary space? so rstrip removes this
-	graph = ['\t','"',Label[0],'"','[label="',Label[0],'\\nEssid: ',essid,'\\nChannel: ',Label[2],'\\nEncryption: ',Label[3],'"',' style=filled',' fillcolor="',color,'"',' fontcolor="',fontC,'"','];\n']
+	graph = ['\t','"',Label[0],'"','[label="',Label[0],'\\nEssid: ',essid,'\\nChannel: ',Label[2],'\\nEncryption: ',Label[3],'\\nNumber of Clients: ','%s' %(Label[4]),'"',' style=filled',' fillcolor="',color,'"',' fontcolor="',fontC,'"','];\n']
 	return graph
 
 def Client_Label_Color(mac,color):
@@ -79,15 +80,18 @@ def dot_write(data): #write out our config file
 	file.close()
 
 def subgraph(items,name,graph_name,tracked,parse='y'):
+	#pdb.set_trace()
 	#items is an incomeing dictonary 
 	subgraph = ['\tsubgraph cluster_',graph_name,'{\n\tlabel="',name,'" ;\n']
 	if parse == "y":
-		print items
 		for line in items:
+			#print line[0]
 			clientMAC = line[0]
 			probe_req = ', '.join(line[6:])
 			for bssid in tracked:
-				if clientMAC not in bssid:
+				#if clientMAC == "00:10:DB:A0:D6:A1": 
+				#	print clientMAC,' ',tracked[bssid]  #why do so many nodes get created with the dakuna file?
+				if clientMAC not in tracked[bssid]:#check to make sure were not creating a node for a client that has an association allready
 					subgraph.extend(['\tnode [label="',clientMAC,' \\nProbe Requests: ',probe_req,'" ] "',clientMAC,'";\n'])
 		subgraph.extend(['\t}\n'])
 	elif parse == "n":

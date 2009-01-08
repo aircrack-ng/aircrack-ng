@@ -30,9 +30,13 @@ except ImportError:
 
 
 import getopt, subprocess, sys, pdb, optparse
-sys.path.append("./lib/")
-import lib_Airgraphviz   #note this should be further down
-dot_libs = lib_Airgraphviz
+try:
+	sys.path.append("./lib/")
+	import lib_Airgraphviz   #note this should be further down
+	dot_libs = lib_Airgraphviz #i dont think i need this but ill look at it later
+except ImportError:
+	print "Support libary import error does lib_Airgraphviz exist?"
+	sys.exit(1)
 
 #pdb.set_trace() #debug point
 ####################################
@@ -112,7 +116,7 @@ def dot_create(info,graph_type):
 		CAPR = return_var[0]
 		del CAPR[:1] #remove the graphviz heading...
 		dot_file = ['digraph G {\n\tsize ="96,96";\n\toverlap=scale;\n'] #start the graphviz config file
-		dot_file.extend(dot_libs.subgraph(CAPR,'Clients to AP Relationships','CAPR','n'))
+		dot_file.extend(dot_libs.subgraph(CAPR,'Clients to AP Relationships','CAPR',return_var[4],'n'))
 
 		if len(APNC) != 0: # there should be a better way to check for null lists
 			dot_file.extend(dot_libs.subgraph(APNC,'Acess Points with no Clients','AP',return_var[4]))
@@ -152,48 +156,43 @@ def dot_create(info,graph_type):
 		dot_file = ['digraph G {\n\tsize ="96,96";\n\toverlap=scale;\n'] #start the graphviz config file
 		NA = [] #create a var to keep the not associdated clients
 		NAP = [] #create a var to keep track of associated clients to AP's we cant see
-		AP_Count = {} # track the number of access points with clients connected and keep track of dumplicate lables
-		Client_count = {} # count the number of clients dict is faster the list stored as BSSID:ESSID
-		Client_track = {} # keep track of the clients under each AP
-
-		for mac in (Clients):
-			key = Clients[mac]
-			#pdb.set_trace()
-			if key[5] != "(notassociated)":
-				if AP.has_key(key[5]): # does key look up in the Access point dictionary
-					bssidI = AP[key[5]] # stores the correct bssid in the var
-					#essid = bssidI[13].rstrip('\x00') #when readidng a null essid it has binary space? so rstrip removes this 
-					dot_file.extend(dot_libs.graphviz_link(key[5],'->',mac)) #call the libary function to create a basic link between the two devices
-					if Client_track.has_key(key[5]):
-							hack = [mac] # a bug where mac doesnt come in as a string and instead comes in as one character as its own string, This hack fixes it
-							Client_track[key[5]].extend(hack)
+		AP_count = {} # count number of Aps dict is faster the list stored as BSSID:number of essids
+		Client_count = 0
+		AP_client = {} #dict that stores bssid and clients as a nested list 
+		for key in (Clients):
+			mac = Clients[key] #mac denotes the mac addy of the client
+			if mac[5] != '(notassociated)': #one line of of our dictionary of clients
+				if AP.has_key(mac[5]): # if it is check to see its an AP we can see and have info on
+					if AP_client.has_key(mac[5]):
+						AP_client[mac[5]].extend([key])
 					else:
-						bssid = [mac]
-						Client_track[key[5]] = bssid
-					if AP_Count.has_key(key[5]): #check to see if we have allready created a label for this access point
-						pass
-					else:
-						color = dot_libs.Return_Enc_type(bssidI[5]) # Deterimine what color the graph should be 
-						if bssidI[5] == '': #if there is no encryption detected we set it to unknown
-							bssidI[5] = "Unknown"
-						AP_label = [key[5],bssidI[13],bssidI[3],bssidI[5]]# Create a list with all our info to label the clients with
-						dot_file.extend(dot_libs.AP_Label_Color(AP_label,color)) #create the label for the access point and return it to the dot file we are creating
-						AP_Count[key[5]] = bssidI[13] #updates the AP_count and also allows you to link an ESSID back to BSSID
-					
-					if Client_count.has_key(mac): #check to see if we have allready given the client a label
-						pass
-					else:
-					        dot_file.extend(dot_libs.Client_Label_Color(mac,"black")) #label the client with a name and a color right now all colors are black
-						Client_count[mac] = mac #add our client to the list of labled clients
-
-				else:
+						AP_client[mac[5]] = [key]
+				else:	
 					NAP.append(key) # stores the clients that are talking to an access point we cant see
-			else: 
-				NA.append(key) #stores the lines of the none assocated AP's in a list
+
+			else:
+				NA.append(key) #stores the lines of the not assocated AP's in a list
+		#pdb.set_trace()
+		for bssid in (AP_client):
+			client_list = AP_client[bssid]
+			for client in (client_list):
+				dot_file.extend(dot_libs.graphviz_link(bssid,'->',client)) #create a basic link between the two devices
+				dot_file.extend(dot_libs.Client_Label_Color(client,"black")) #label the client with a name and a color
+			AP_count[bssid] = len(client_list) #count the number of APs
+			Client_count += len(client_list) #count the number of Clients
+
+			bssidI = AP[bssid] #get the BSSID info from the AP dict
+			color = dot_libs.Return_Enc_type(bssidI[5]) # Deterimine what color the graph should be
+			if bssidI[5] == '': #if there is no encryption detected we set it to unknown
+				bssidI[5] = "Unknown"
+			AP_label = [bssid,bssidI[13],bssidI[3],bssidI[5],len(client_list)]# Create a list with all our info to label the clients with
+			dot_file.extend(dot_libs.AP_Label_Color(AP_label,color)) #label the access point and add it to the dotfile
+
+			
 		
 		#pdb.set_trace()
-		footer = ['label="Generated by Airgraph-ng','\\n%s'%(len(AP_Count)),' Access Points and','\\n%s'%(len(Client_count)),' Clients are shown";\n']
-		return_list = [dot_file,footer,NAP,NA,Client_track] # the chaft list is where we store all the lines that eneded up on the cutting room floor
+		footer = ['label="Generated by Airgraph-ng','\\n%s'%(len(AP_count)),' Access Points and','\\n%s'%(Client_count),' Clients are shown";\n']
+		return_list = [dot_file,footer,NAP,NA,AP_client] 
 		return return_list
                 
 
