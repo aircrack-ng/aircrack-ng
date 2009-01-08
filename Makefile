@@ -14,7 +14,6 @@ SHAREDIR=$(DESTDIR)$(PREF)"/share/airoscript"
 LOCALEDIR=$(DESTDIR)$(PREF)"/share/locale/"
 MANDIR=$(DESTDIR)$(PREF)"/share/man/man1"
 DOCDIR=$(DESTDIR)$(PREF)"/share/doc/airoscript"
-ORIGLOCALEDIR=$(DESTDIR)"/usr/share/locale"
 
 install: airopdate
 	@echo -en "Installing files into:$(BINDIR) $(ETCDIR) $(SHAREDIR) $(DOCDIR) $(SBINDIR) "
@@ -29,7 +28,6 @@ install: airopdate
 	@install    -o $(UID) -g $(GID) -m 644        $(CURDIR)/src/screenrc               $(SHAREDIR)/screenrc
 	@echo -en "...done\nInstalling locale (spanish) on $(LOCALEDIR) and link to $(ORIGLOCALEDIR)"
 	@msgfmt -o $(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo $(CURDIR)/src/i10n/po/es_ES
-	@ln -f -s $(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo $(ORIGLOCALEDIR)/es/LC_MESSAGES/airoscript.mo
 	@echo -en "...done\nInstalling manpage"
 	@install -D -g $(UID) -o $(GID) -m 644	      $(CURDIR)/src/airoscript.1	   $(MANDIR)/airoscript.1
 	@gzip -f -9 $(MANDIR)/airoscript.1
