@@ -31,13 +31,13 @@ def AP_Label_Color(Label,colorLS):
 	color = colorLS[0]
 	fontC = colorLS[1]
 	essid = Label[1].rstrip('\x00') #when readidng a null essid it has binary space? so rstrip removes this
-	graph = ['\t','"',Label[0],'"','[label="',Label[0],'\\nEssid: ',essid,'\\nChannel: ',Label[2],'\\nEncryption: ',Label[3],'\\nNumber of Clients: ','%s' %(Label[4]),'"',' style=filled',' fillcolor="',color,'"',' fontcolor="',fontC,'"','];\n']
+	graph = ['\t','"',Label[0],'"','[label="',Label[0],'\\nEssid: ',essid,'\\nChannel: ',Label[2],'\\nEncryption: ',Label[3],'\\nNumber of Clients: ','%s' %(Label[4]),'"',' style=filled',' fillcolor="',color,'"',' fontcolor="',fontC,'"',' fontsize=8','];\n']
 	return graph
 
 def Client_Label_Color(mac,color):
 	#creates a label for the client information passed in is our label info and the mac address of the client
 	label = mac #in the future i assume ill be brining some info in that we will want to write on our client
-	graph = ['\tnode [label="',label,'"','color="',color,'"','] "',mac,'";\n']
+	graph = ['\tnode [label="',label,'"','color="',color,'"',' fontsize=8','] "',mac,'";\n']
 	return graph
 	
 def Return_Enc_type(enc):
