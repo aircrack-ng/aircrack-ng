@@ -1,3 +1,14 @@
+Changelog for 2.1.0
+- Now you can especify a terminal without editing config by passing it as parameter ( airoscript terminal )
+- Added patches for debian-packaging wifislax and wifiway conffile
+- Added ~/.airoscript/ directory, where config can be stored, as .airoscript.screen-has-started and wordlist.
+- Now it cd's to DUMP_PATH so all residual data will remain there not in `pwd`
+- Added unstable functions file, and moved current one to a "external functions" file, since it requires from external binaries not aircrack-related.
+- Added unstable option in menu (only appears when unstable activated on config)
+- Added external functions to menu (same as unstable, only when activated on config)
+- Modified paths to /usr/local/ as it should be.
+- i10n upgrades for spanish.
+
 Changelog for 2.0.12 
 - Added real screen support
 - Corrected lots of bugs with i10n
@@ -7,7 +18,6 @@ Changelog for 2.0.12
 - Corrected lots of bugs in makefile, like having 755 permisions for screenrc file, $DESTDIR problems 
 - Corrected more quoting problems :-)
 - Added support for jazzteldecrypter
-- Now you can especify a terminal without editing config by passing it as parameter ( airoscript terminal )
 
 Changelog for 2.0.11
 - Changed interface. Now it looks nicer.
@@ -29,6 +39,7 @@ Changelog for 2.0.10
 - Added aleatory temp dir creation
 - Wrote a makefile for airoscript
 - Corrected bug #521 (airopdate rt61 bug)
+- Here I come, I (XayOn) started here ;-).
 
 Changelog for 2.0.9
 -fixed client and clientless attacks chopchop and frag packet injection not generating IVs because -h MAC was not set

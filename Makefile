@@ -4,9 +4,10 @@ UID="root"
 GID="root"
 
 # This is ok for local installs but change it for packaging... on some systems it hasn't got to be changed for packaging :-)
-PREF="/usr/local"
+
 
 # Dirs
+PREF="/usr/local"
 BINMODE="755"
 SBINDIR=$(DESTDIR)$(PREF)"/sbin"
 ETCDIR=$(DESTDIR)"/etc"
@@ -52,12 +53,9 @@ wifiway: install
 	@echo "Applying wifi(way/slax) patch"
 	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/patches/wifislax.conf.patch
 
-wifislax: wifiway
-	@# Now, these are the same (wifislax and wifiway)...
-
-debian-package: install
-	@echo "Applying debian package patch"
-	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/patches/debian-package.conf.patch
+debian: install
+	@echo "Applying debian config patch (asuming your aircrack-ng is from debian packaging, if not, don't call make debian, just call make"
+	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/patches/debian.conf.patch
 
 all: install 
 

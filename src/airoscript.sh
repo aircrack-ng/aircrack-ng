@@ -24,7 +24,7 @@ Do you really want to do it (yes/No): '`"
 }
 
 # Get config.
-if [ -e ~/.airoscript.conf ];
+if [ -e ~/.airoscript/airoscript.conf ];
 	then 	
 		if [ $HOME != "/root" ]
 		then
@@ -32,13 +32,13 @@ if [ -e ~/.airoscript.conf ];
 			read response
 			if [ "$response" = "yes" ]
 				then
-					. ~/.airoscript.conf
+					. ~/.airoscript/airoscript.conf
 				else
-					echo `gettext "Ok, please remove/rename your $HOME/.airoscript.conf"`
+					echo `gettext "Ok, please remove/rename your $HOME/.airoscript/airoscript.conf"`
 					exit
 			fi
 		else
-			. ~/.airoscript.conf
+			. ~/.airoscript/airoscript.conf
 		fi
 	else
 		if [ -e /etc/airoscript.conf ]; then
@@ -60,6 +60,8 @@ if [ -e ~/.airoscript.conf ];
 			fi
 		fi
 fi
+
+cd $DUMP_PATH
 
 # Now, if terminal is provided by $1, replace terminal from config with $1
 if [ "$1" != "" ]
@@ -95,11 +97,11 @@ checkdir
 
 if [ "$TERMINAL" = "screen" ]
 then
-	if [ -e ~/.airoscript.screen_has_started ]
+	if [ -e ~/.airoscript/screen_has_started ]
 	then
-		rm ~/.airoscript.screen_has_started
+		rm ~/.airoscript/screen_has_started
 	else
-		touch ~/.airoscript.screen_has_started
+		touch ~/.airoscript/screen_has_started
 		screen -S airoscript -c $SCREENRC airoscript screen
 		clear
 		echo `gettext 'Airoscript is terminating...'`
@@ -196,10 +198,17 @@ select choix in $CHOICES; do
 		fi
 
 		exit
+
 	elif [ "$choix"="11" ]; then
-		clear
-		unstablemenu
-		menu
+		if [ $UNSTABLE = "1" ]; then
+			clear
+			unstablemenu
+			menu
+		else
+			clear
+			echo "`gettext 'ERROR: Wrong number entered'`"
+			menu
+		fi
 	else
 		clear
 		echo "`gettext 'ERROR: Wrong number entered'`"

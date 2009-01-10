@@ -1,0 +1,6 @@
+42,43c42,43
+< 	BINDIR="$PREFIX/bin/"
+< 	SBINDIR="$PREFIX/sbin/"                     
+---
+> 	BINDIR="/usr/bin/"
+> 	SBINDIR="/usr/sbin/"                     

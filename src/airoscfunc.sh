@@ -611,14 +611,12 @@ function witchcrack {
 }
 
 function selectcracking {
-	echo $Host_ENC
 	if [ "$Host_ENC" = "OPN" ] || [ "$Host_ENC" = "" ] || [ "$Host_ENC" = " OPN " ]
 	then
 		$CLEAR
 		echo `gettext "ERROR: Network not encrypted or no network selected "`
 
 	else
-		echo $Host_ENC
 		if [ "$Host_ENC" = " WEP " ] || [ "$Host_ENC" = "WEP" ]
 		then
 			crack
