@@ -27,7 +27,8 @@ install: airopdate
 	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc_external.sh $(SHAREDIR)/airoscfunc_external.sh
 	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc_unstable.sh $(SHAREDIR)/airoscfunc_unstable.sh
 	@install    -o $(UID) -g $(GID) -m 644        $(CURDIR)/src/screenrc               $(SHAREDIR)/screenrc
-	@echo -en "...done\nInstalling locale (spanish) on $(LOCALEDIR) and link to $(ORIGLOCALEDIR)"
+	@echo -en "...done\nInstalling locale (spanish) on $(LOCALEDIR)"
+	@mkdir -p $(LOCALEDIR) 
 	@msgfmt -o $(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo $(CURDIR)/src/i10n/po/es_ES
 	@echo -en "...done\nInstalling manpage"
 	@install -D -g $(UID) -o $(GID) -m 644	      $(CURDIR)/src/airoscript.1	   $(MANDIR)/airoscript.1
