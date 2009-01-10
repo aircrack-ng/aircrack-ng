@@ -3,7 +3,8 @@ Depends: xterm|screen , gawk, aircrack-ng, macchanger
 Build-Deps: debhelper ... 
 Build-Deps-Indep: gettext
 
-Makefile should be called as "make debian-packaging" and you have to change PREF var on makefile from /usr/local to /usr .
-Anyway, a single line changed on makefile, and a rules file calling make with "debian-packaging" option should be everything.
+You'll have to change PREF var on makefile from /usr/local to /usr and edit some things on conffile.
+
 I'm not really sure how will be installing docs, because they are mostly html and there is a license file (that, on debian, can be safely removed since its a gpl-2 copy). Manpage is also installed by make :-)
-Note this is a script, and should be threated like that 
+
+Note this is a script, and should be threated like that when packaging.
