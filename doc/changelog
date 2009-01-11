@@ -1,4 +1,5 @@
 Changelog for 2.1.0
+- Bugfixes on terminal titles.
 - Now you can especify a terminal without editing config by passing it as parameter ( airoscript terminal )
 - Added patches for debian-packaging wifislax and wifiway conffile
 - Added ~/.airoscript/ directory, where config can be stored, as .airoscript.screen-has-started and wordlist.
