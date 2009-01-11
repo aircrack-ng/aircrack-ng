@@ -1,5 +1,5 @@
 
-#!/usr/bin/env python
+#!/usr/bin/python
 # this script is a total hack it works and ill clean it up later
 import sys,getopt, optparse, pdb, re
 def raw_lines(file):
@@ -11,7 +11,7 @@ def raw_lines(file):
         Rlines = raw_lines.readlines() 
        	return Rlines
 
-def parse_file(file):
+def parse_file(file,file_name):
 	cleanup = []
 	for line in file:
                # match=re.search("\n", line) # the next few lines are notes and can be ignored
@@ -21,10 +21,14 @@ def parse_file(file):
 		#	clean = filter(lambda y: y != '\n', x)
 		clean = line.rstrip()
 		cleanup.append(clean)
-	header = cleanup.index('BSSID, First time seen, Last time seen, channel, Speed, Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, ID-length, ESSID, Key')
-	stationStart = cleanup.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, Probed ESSIDs')
-        del cleanup[header]
-        Clients = cleanup[stationStart:] #splits off the clients into their own list
+	try:
+		header = cleanup.index('BSSID, First time seen, Last time seen, channel, Speed, Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, ID-length, ESSID, Key')
+		stationStart = cleanup.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, Probed ESSIDs')
+        	del cleanup[header]
+	except Exception:
+		print "You seem to have provided an improper input file"" '",file_name,"' ""Please make sure you are loading an airodump txt file and not a Pcap"
+        	sys.exit(1)
+	Clients = cleanup[stationStart:] #splits off the clients into their own list
 	stationStart = stationStart - 1 #ulgy hack to make sure the heading gets deleted from end of the APs List
 	del cleanup[stationStart:]#removed all of the client info leaving only the info on available target AP's in ardump maby i should create a new list for APs?
 	lines = [cleanup,Clients]
@@ -47,7 +51,7 @@ def file_pool(files):
 	Clients = []
 	for file in files:
 		ret = raw_lines(file)
-		ret = parse_file(ret)
+		ret = parse_file(ret,file)
 		AP.extend(ret[1])
 		Clients.extend(ret[0])
 	lines = [AP,Clients]

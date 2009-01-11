@@ -9,7 +9,7 @@
 #
 # Copyright (C) 2008 Ben Smith <thex1le@gmail.com>
 #
-# This program is free software; you can redistribute it and/or modify it
+# This program and its support programs are free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 as
 # published by the Free Software Foundation; version 2.
 #
@@ -48,7 +48,7 @@ block = '\n####################################\n'
 ####################################
 #          Maltego Support         #
 ####################################
-def airgraph_maltegoRTN(in_file,graph_type):
+def airgraph_maltegoRTN(in_file,graph_type="CAPR"):
 	        returned_var = airDumpOpen(in_file)
 		#pdb.set_trace() #debug point
 		returned_var = airDumpParse(returned_var) #returns the info dictionary list with the client and ap dictionarys
@@ -178,19 +178,21 @@ def dot_create(info,graph_type,maltego="false"):
 		AP_count = {} # count number of Aps dict is faster the list stored as BSSID:number of essids
 		Client_count = 0
 		AP_client = {} #dict that stores bssid and clients as a nested list 
+		#more parsing 
 		for key in (Clients):
 			mac = Clients[key] #mac denotes the mac addy of the client
 			if mac[5] != '(notassociated)': #one line of of our dictionary of clients
 				if AP.has_key(mac[5]): # if it is check to see its an AP we can see and have info on
-					if AP_client.has_key(mac[5]):
+					if AP_client.has_key(mac[5]): #if key exists append new client
 						AP_client[mac[5]].extend([key])
-					else:
+					else: #create new key and append the client
 						AP_client[mac[5]] = [key]
 				else:	
 					NAP.append(key) # stores the clients that are talking to an access point we cant see
 
 			else:
 				NA.append(key) #stores the lines of the not assocated AP's in a list
+		#labeling starts
 		#pdb.set_trace()
 		for bssid in (AP_client):
 			client_list = AP_client[bssid]
@@ -235,9 +237,10 @@ def grpahviz_Call(output):
 	try:
 		subprocess.Popen(["fdp","-Tpng","airGconfig.dot","-o",output]).wait()
 	except Exception:
-		print "You seem to be missing the Graphviz tool set did you check out the deps in the read me?"
+		subprocess.Popen(["rm","-rf","airGconfig.dot"])
+		print "You seem to be missing the Graphviz tool set did you check out the deps in the README?"
 		sys.exit(1)
-	#subprocess.Popen(["rm","-rf","airGconfig.dot"])  # commenting out this line will leave the dot config file for debuging
+	subprocess.Popen(["rm","-rf","airGconfig.dot"])  # commenting out this line will leave the dot config file for debuging
 	print "Graph Creation Complete!"
 ###################################
 #              MAIN               #
