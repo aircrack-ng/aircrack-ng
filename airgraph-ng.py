@@ -22,9 +22,9 @@
 # Import Psyco if available to speed up execution
 # When debugging airgraph-ng comment out the two lines after try and uncomment pass or pdb will not function
 try:
-#	import psyco
-#	psyco.full()
-	pass
+	import psyco
+	psyco.full()
+#	pass
 except ImportError:
 	print "Psyco optimizer not installed, You may want to download and install it!"
 
