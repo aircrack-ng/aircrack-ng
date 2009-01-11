@@ -19,7 +19,10 @@ DOCDIR=$(DESTDIR)$(PREF)"/share/doc/airoscript"
 install: airopdate
 	@echo -en "Installing files into:$(BINDIR) $(ETCDIR) $(SHAREDIR) $(DOCDIR) $(SBINDIR) "
 	@install -D -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscript.sh          $(SBINDIR)/airoscript
-	@install -D -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/themes/default.theme          $(SHAREDIR)/themes/default.theme
+	@mkdir -p $(SHAREDIR)/themes
+	@cp -r $(CURDIR)/src/themes/*					                   $(SHAREDIR)/themes/
+	@chown $(UID):$(GID) $(SHAREDIR)/themes/*
+	@chmod $(BINMODE) $(SHAREDIR)/themes/*.theme
 	@install -D -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscript.conf        $(ETCDIR)/airoscript.conf
 	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airopdate.sh           $(SHAREDIR)/airopdate
 	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc.sh          $(SHAREDIR)/airoscfunc.sh
@@ -28,7 +31,7 @@ install: airopdate
 	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc_unstable.sh $(SHAREDIR)/airoscfunc_unstable.sh
 	@install    -o $(UID) -g $(GID) -m 644        $(CURDIR)/src/screenrc               $(SHAREDIR)/screenrc
 	@echo -en "...done\nInstalling locale (spanish) on $(LOCALEDIR)"
-	@mkdir -p $(LOCALEDIR) 
+	@mkdir -p $(LOCALEDIR)/es/LC_MESSAGES/
 	@msgfmt -o $(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo $(CURDIR)/src/i10n/po/es_ES
 	@echo -en "...done\nInstalling manpage"
 	@install -D -g $(UID) -o $(GID) -m 644	      $(CURDIR)/src/airoscript.1	   $(MANDIR)/airoscript.1
@@ -48,7 +51,6 @@ uninstall:
 	@rm -r $(DOCDIR)
 	@rm $(ETCDIR)/airoscript.conf
 	@rm $(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo
-	@rm $(ORIGLOCALEDIR)/es/LC_MESSAGES/airoscript.mo
 
 wifiway: install
 	@echo "Applying wifi(way/slax) patch"
