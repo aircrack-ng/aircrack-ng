@@ -4473,18 +4473,20 @@ int main( int argc, char *argv[] )
 	j=0;
 	/* check the arguments */
 
+	opt.nbdict		= 0;
+	opt.amode		= 0;
 	opt.do_brute    = 1;
 	opt.do_mt_brute = 1;
 	opt.showASCII   = 0;
 	opt.probability = 51;
-        opt.next_ptw_try= 0;
-	opt.do_ptw = 1;
-	opt.max_ivs = INT_MAX;
+	opt.next_ptw_try= 0;
+	opt.do_ptw		= 1;
+	opt.max_ivs		= INT_MAX;
 	opt.visual_inspection = 0;
-	opt.firstbssid = NULL;
+	opt.firstbssid	= NULL;
 	opt.bssid_list_1st = NULL;
-	opt.bssidmerge = NULL;
-	opt.oneshot = 0;
+	opt.bssidmerge	= NULL;
+	opt.oneshot		= 0;
 
 	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
 	bzero(all_ivs, (256*256*256)*sizeof(used_iv));
@@ -4857,6 +4859,11 @@ int main( int argc, char *argv[] )
 					printf("Visual inspection can only be used with KoreK\n");
 					printf("Use \"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
+				}
+
+				if (opt.amode == 1 && opt.nbdict > 0)
+				{
+					opt.do_ptw = 0;
 				}
 
 				forceptw = 1;
