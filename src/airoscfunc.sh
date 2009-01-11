@@ -641,9 +641,9 @@ function selectcracking {
 		Option: '`"
 		read yn
 		case $yn in
-		1 ) crackptw ; break ;;
-		2 ) crackstd ; break ;;
-		3 ) crackman ; break ;;
+		1 ) crackptw ; $CLEAR; break ;;
+		2 ) crackstd ; $CLEAR; break ;;
+		3 ) crackman ; $CLEAR; break ;;
 		* ) echo "`gettext 'Unknown response. Try again'`" ;;
 		esac
 		done 
@@ -810,15 +810,15 @@ Option: '`"
 	read yn
 	echo ""
 	case $yn in
-	1 ) inject_test ; break ;;
-	2 ) setinterface2 ; break ;;
-	3 ) cleanup ; break ;; 
-	4 ) wichchangemac ; break ;;
-	5 ) choosemdk ; break ;;
-	6 ) choosewesside ; break ;;
-	7 ) monitor_interface ; break ;;
-	8 ) airmoncheck ; break ;;
-	9 ) changedumppath; break;;
+	1 ) inject_test ; $CLEAR; break ;;
+	2 ) setinterface2 ; $ClEAR; break ;;
+	3 ) cleanup ;$CLEAR; break ;; 
+	4 ) wichchangemac ;$CLEAR; break ;;
+	5 ) choosemdk ;$CLEAR; break;;
+	6 ) choosewesside ;$CLEAR; break ;;
+	7 ) monitor_interface;$CLEAR ; break ;;
+	8 ) airmoncheck ;$CLEAR; break ;;
+	9 ) changedumppath;$CLEAR; break;;
 	10 ) $CLEAR;break ;;
 	* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 	
@@ -1239,8 +1239,8 @@ Option: '`"
 		then
 			IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
 			echo $IS_MONITOR
-			iwpriv $WIFI rfmontx 1
-			iwpriv $WIFI forceprism 1
+			iwpriv $WIFI rfmontx 1 2>/dev/null
+			iwpriv $WIFI forceprism 1 2>/dev/null
 	
 		elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 		then
