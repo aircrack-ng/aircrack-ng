@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-01-07 10:03+0100\n"
+"POT-Creation-Date: 2009-01-12 10:25+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -60,6 +60,7 @@ msgstr ""
 #: src/airoscfunc.sh:759 src/airoscfunc.sh:823 src/airoscfunc.sh:893
 #: src/airoscfunc.sh:1149 src/airoscfunc.sh:1589 src/airoscfunc.sh:825
 #: src/airoscfunc.sh:895 src/airoscfunc.sh:1151 src/airoscfunc.sh:1600
+#: src/airoscfunc.sh:647 src/airoscfunc.sh:757 src/airoscfunc.sh:1598
 msgid "Unknown response. Try again"
 msgstr "Respuesta desconocida, intentalo de nuevo."
 
@@ -367,11 +368,12 @@ msgid "ERROR: You have to select a target"
 msgstr "ERROR: Tienes que seleccionar un objetivo"
 
 #: airoscfunc.sh:597 src/airoscfunc.sh:560 src/airoscfunc.sh:609
-#: src/airoscfunc.sh:569 src/airoscfunc.sh:618
+#: src/airoscfunc.sh:569 src/airoscfunc.sh:618 src/airoscfunc.sh:617
 msgid "ERROR: Network not encrypted or no network selected "
 msgstr "ERROR: Red no encriptada o no seleccionada."
 
 #: airoscfunc.sh:612 src/airoscfunc.sh:625 src/airoscfunc.sh:634
+#: src/airoscfunc.sh:632
 msgid ""
 "\n"
 "\t\t_____________________________________\n"
@@ -396,15 +398,17 @@ msgstr ""
 "\t\tOption: "
 
 #: airoscfunc.sh:646 src/airoscfunc_screen.sh:132 src/airoscfunc.sh:659
-#: src/airoscfunc.sh:668
+#: src/airoscfunc.sh:668 src/airoscfunc.sh:666
 msgid "type encryption size 64,128 etc..."
 msgstr "Tamaño del tipo de encriptacion (64, 128 etc...)"
 
 #: airoscfunc.sh:650 src/airoscfunc.sh:663 src/airoscfunc.sh:672
+#: src/airoscfunc.sh:670
 msgid "Manual cracking:"
 msgstr "Cracking manual"
 
 #: airoscfunc.sh:674 src/airoscfunc.sh:687 src/airoscfunc.sh:696
+#: src/airoscfunc.sh:694
 msgid ""
 "\n"
 "\t||\n"
@@ -436,11 +440,13 @@ msgstr ""
 #: airoscfunc.sh:1581 airoscfunc.sh:1583 src/airoscfunc.sh:712
 #: src/airoscfunc.sh:715 src/airoscfunc.sh:718 src/airoscfunc.sh:1365
 #: src/airoscfunc.sh:721 src/airoscfunc.sh:724 src/airoscfunc.sh:727
-#: src/airoscfunc.sh:1374 src/airoscfunc.sh:1385
+#: src/airoscfunc.sh:1374 src/airoscfunc.sh:1385 src/airoscfunc.sh:719
+#: src/airoscfunc.sh:722 src/airoscfunc.sh:725 src/airoscfunc.sh:1383
 msgid "Associating with:"
 msgstr "Asociando con:"
 
 #: airoscfunc.sh:720 src/airoscfunc.sh:733 src/airoscfunc.sh:742
+#: src/airoscfunc.sh:740
 msgid ""
 "\n"
 "\t||\n"
@@ -469,20 +475,22 @@ msgstr ""
 "Option: "
 
 #: airoscfunc.sh:746 src/airoscfunc.sh:759 src/airoscfunc.sh:768
+#: src/airoscfunc.sh:766
 msgid "Kicking everybody from:"
 msgstr "Pateando a todos de:"
 
 #: airoscfunc.sh:755 src/airoscfunc.sh:768 src/airoscfunc.sh:777
+#: src/airoscfunc.sh:775
 #, sh-format
 msgid "Kicking $Client_MAC from:"
 msgstr "Pateando $Client_MAC de:"
 
 #: airoscfunc.sh:760 src/airoscfunc.sh:773 src/airoscfunc.sh:782
+#: src/airoscfunc.sh:780
 msgid "Kicking"
 msgstr "Pateando"
 
-#: src/airoscfunc.sh:875
-#: src/airoscfunc.sh:877
+#: src/airoscfunc.sh:875 src/airoscfunc.sh:877
 msgid ""
 "\n"
 "\t||\n"
@@ -613,7 +621,7 @@ msgid "       Select target               "
 msgstr ""
 
 #: airoscfunc.sh:1251 src/airoscfunc.sh:1279 src/airoscfunc.sh:1288
-#: src/airoscfunc.sh:1299
+#: src/airoscfunc.sh:1299 src/airoscfunc.sh:1297
 msgid ""
 "\n"
 "_____________________________________\n"
@@ -648,19 +656,22 @@ msgstr ""
 #: src/airoscfunc.sh:1310 src/airoscfunc.sh:1322 src/airoscfunc.sh:1333
 #: src/airoscfunc.sh:1347 src/airoscfunc.sh:1319 src/airoscfunc.sh:1331
 #: src/airoscfunc.sh:1342 src/airoscfunc.sh:1356 src/airoscfunc.sh:1330
-#: src/airoscfunc.sh:1353 src/airoscfunc.sh:1367
+#: src/airoscfunc.sh:1353 src/airoscfunc.sh:1367 src/airoscfunc.sh:1328
+#: src/airoscfunc.sh:1340 src/airoscfunc.sh:1351 src/airoscfunc.sh:1365
 msgid "ERROR: You must select a target first"
 msgstr "ERROR: Primero tienes que seleccionar un objetivo"
 
 #: airoscfunc.sh:1285 airoscfunc.sh:1297 src/airoscfunc.sh:1313
 #: src/airoscfunc.sh:1325 src/airoscfunc.sh:1322 src/airoscfunc.sh:1334
-#: src/airoscfunc.sh:1333 src/airoscfunc.sh:1345
+#: src/airoscfunc.sh:1333 src/airoscfunc.sh:1345 src/airoscfunc.sh:1331
+#: src/airoscfunc.sh:1343
 msgid "Injecting forged packet on"
 msgstr "Inyectando paquete forjando en "
 
 #: airoscfunc.sh:1311 airoscfunc.sh:1324 src/airoscfunc.sh:1339
 #: src/airoscfunc.sh:1352 src/airoscfunc.sh:1348 src/airoscfunc.sh:1361
-#: src/airoscfunc.sh:1359 src/airoscfunc.sh:1372
+#: src/airoscfunc.sh:1359 src/airoscfunc.sh:1372 src/airoscfunc.sh:1357
+#: src/airoscfunc.sh:1370
 msgid "Sending chopchop to:"
 msgstr "Enviando chopchop a:"
 
@@ -669,7 +680,7 @@ msgid "=> Select your interface: (athX for madwifi devices)"
 msgstr "=> Selecciona tu interfaz (athX para dispositivos madwifi)"
 
 #: airoscfunc.sh:1374 airoscfunc.sh:1371 src/airoscfunc.sh:1509
-#: src/airoscfunc.sh:1518 src/airoscfunc.sh:1529
+#: src/airoscfunc.sh:1518 src/airoscfunc.sh:1529 src/airoscfunc.sh:1527
 msgid ""
 "\n"
 "\t\t_____________________________________\n"
@@ -694,7 +705,7 @@ msgid "        Output folder does not exist, i will create it now"
 msgstr "       El directorio de salida no existe, lo voy a crear ahora."
 
 #: airoscfunc.sh:1422 airoscfunc.sh:1419 src/airoscfunc.sh:1557
-#: src/airoscfunc.sh:1566 src/airoscfunc.sh:1577
+#: src/airoscfunc.sh:1566 src/airoscfunc.sh:1577 src/airoscfunc.sh:1575
 msgid "Select screen resolution            "
 msgstr "Selecciona la resoluccion de pantalla:"
 
@@ -704,11 +715,13 @@ msgstr "Ahora voy a establecer las opciones para tu terminal."
 
 #: airoscfunc.sh:1529 airoscfunc.sh:1526 airoscfunc.sh:1528
 #: src/airoscfunc.sh:1654 src/airoscfunc.sh:1663 src/airoscfunc.sh:1674
+#: src/airoscfunc.sh:1672
 msgid " \tDebug Mode enabled, you'll have to manually close windows"
 msgstr "\tMode debug activado, tendras que cerrar las ventanas a mano"
 
 #: airoscfunc.sh:1540 airoscfunc.sh:1537 airoscfunc.sh:1539
 #: src/airoscfunc.sh:1667 src/airoscfunc.sh:1676 src/airoscfunc.sh:1687
+#: src/airoscfunc.sh:1685
 msgid "Using configured terminal"
 msgstr "Usando terminal configurado"
 
@@ -724,16 +737,19 @@ msgstr ""
 
 #: airoscfunc.sh:1580 airoscfunc.sh:1577 airoscfunc.sh:1579
 #: src/airoscfunc.sh:1361 src/airoscfunc.sh:1370 src/airoscfunc.sh:1381
+#: src/airoscfunc.sh:1379
 msgid "Capturing data on channel"
 msgstr "Capturando datos en el canal"
 
 #: airoscfunc.sh:1588 airoscfunc.sh:1585 airoscfunc.sh:1587
 #: src/airoscfunc.sh:1369 src/airoscfunc.sh:1378 src/airoscfunc.sh:1389
+#: src/airoscfunc.sh:1387
 msgid "Fake function to jump to menu"
 msgstr "Funcion falsa para volver al menu"
 
 #: airoscfunc.sh:1594 airoscfunc.sh:1591 airoscfunc.sh:1593
 #: src/airoscfunc.sh:1375 src/airoscfunc.sh:1384 src/airoscfunc.sh:1395
+#: src/airoscfunc.sh:1393
 msgid "###       Please enter SSID         ###"
 msgstr "###\t  Por favor introduzca SSID ###"
 
@@ -753,24 +769,25 @@ msgstr ""
 msgid "Error, no config file found, quitting"
 msgstr "Error, no se ha encontrado ningun archivo de configuracion, saliendo."
 
-#: airoscript.sh:96 src/airoscript.sh:122
+#: airoscript.sh:96 src/airoscript.sh:122 src/airoscript.sh:124
 msgid "Input number: "
 msgstr "Numero: "
 
-#: airoscript.sh:155 src/airoscript.sh:181
+#: airoscript.sh:155 src/airoscript.sh:181 src/airoscript.sh:183
 msgid "Deconfiguring interface..."
 msgstr "Desconfigurando interfaz..."
 
-#: airoscript.sh:158 src/airoscript.sh:186
+#: airoscript.sh:158 src/airoscript.sh:186 src/airoscript.sh:188
 msgid "Do you want me to delete temporary data dir? (y/N) "
 msgstr "¿Quieres que borre el directorio temporal? (y/N)"
 
-#: airoscript.sh:163 src/airoscript.sh:192
+#: airoscript.sh:163 src/airoscript.sh:192 src/airoscript.sh:194
 msgid "Deleting"
 msgstr "Borrando"
 
 #: airoscript.sh:166 src/airoscfunc.sh:1589 src/airoscript.sh:184
 #: src/airoscript.sh:195 src/airoscfunc.sh:1598 src/airoscfunc.sh:1609
+#: src/airoscfunc.sh:1607 src/airoscript.sh:186 src/airoscript.sh:197
 msgid "done"
 msgstr "Terminado"
 
@@ -826,6 +843,7 @@ msgstr ""
 #: src/airoscfunc.sh:846 src/airoscfunc.sh:1462 src/airoscfunc.sh:1480
 #: src/airoscfunc.sh:855 src/airoscfunc.sh:1471 src/airoscfunc.sh:1489
 #: src/airoscfunc.sh:857 src/airoscfunc.sh:1482 src/airoscfunc.sh:1500
+#: src/airoscfunc.sh:1498
 msgid "Interface type is :"
 msgstr "Tipo de interfaz: "
 
@@ -833,11 +851,12 @@ msgstr "Tipo de interfaz: "
 #: src/airoscfunc.sh:845 src/airoscfunc.sh:1461 src/airoscfunc.sh:1479
 #: src/airoscfunc.sh:854 src/airoscfunc.sh:1470 src/airoscfunc.sh:1488
 #: src/airoscfunc.sh:856 src/airoscfunc.sh:1481 src/airoscfunc.sh:1499
+#: src/airoscfunc.sh:1497
 msgid "Interface used is :"
 msgstr "Interfaz: "
 
 #: airoscfunc.sh:1423 src/airoscfunc.sh:1558 src/airoscfunc.sh:1567
-#: src/airoscfunc.sh:1578
+#: src/airoscfunc.sh:1578 src/airoscfunc.sh:1576
 msgid "____Available resolutions_____"
 msgstr "__Resolucciones disponibles___"
 
@@ -862,26 +881,32 @@ msgid "Select your interface:"
 msgstr "Selecciona tu interfaz: "
 
 #: src/airoscfunc.sh:1441 src/airoscfunc.sh:1450 src/airoscfunc.sh:1461
+#: src/airoscfunc.sh:1459
 msgid "Interface selection"
 msgstr "Seleccion de interfaz"
 
 #: src/airoscfunc.sh:1442 src/airoscfunc.sh:1451 src/airoscfunc.sh:1462
+#: src/airoscfunc.sh:1460
 msgid "Select your interface: "
 msgstr "Selecciona tu interfaz: "
 
 #: src/airoscfunc.sh:1465 src/airoscfunc.sh:1474 src/airoscfunc.sh:1485
+#: src/airoscfunc.sh:1483
 msgid "Shall I put in monitor mode"
 msgstr "¿Deveria poner en modo monitor "
 
 #: src/airoscfunc.sh:1487 src/airoscfunc.sh:1496 src/airoscfunc.sh:1507
+#: src/airoscfunc.sh:1505
 msgid "Your card is already in monitor mode"
 msgstr "Tu tarjeta ya esta en modo monitor"
 
 #: src/airoscfunc.sh:1589 src/airoscfunc.sh:1598 src/airoscfunc.sh:1609
+#: src/airoscfunc.sh:1607
 msgid "\\tIm going to set terminal options for your terminal now"
 msgstr "\\tVoy a determinar las opciones de tu terminal ahora"
 
 #: src/airoscfunc.sh:1691 src/airoscfunc.sh:1700 src/airoscfunc.sh:1711
+#: src/airoscfunc.sh:1709
 msgid ""
 "I cant find any good terminal, please set one on your conffile\n"
 "\t\t\t\tYour TERMINAL var contains no valid temrinal\n"
@@ -916,28 +941,30 @@ msgstr "Intentare craquearlo ahora"
 msgid "Sorry, your target is not supported (not jazztel type)"
 msgstr "Lo siento, objetivo no soportado (no es del tipo jazztel_XX)"
 
-#: src/airoscript.sh:74
+#: src/airoscript.sh:74 src/airoscript.sh:76
 msgid "[ERROR] : Functions file does not exists, quitting"
 msgstr "[ERROR] : El archivo de funciones no existe, saliendo"
 
-#: src/airoscript.sh:82
+#: src/airoscript.sh:82 src/airoscript.sh:84
 msgid "[WARN] : theme file does not exists, using defaults..."
 msgstr "[WARN] : El archivo de temas no existe, usando tema por defecto."
 
-#: src/airoscript.sh:105
+#: src/airoscript.sh:105 src/airoscript.sh:107
 msgid "Airoscript is terminating..."
 msgstr "Airoscript terminado..."
 
-#: src/airoscript.sh:145
+#: src/airoscript.sh:145 src/airoscript.sh:147
 msgid "ERROR: You have to scan for targets first"
 msgstr "ERROR: Primero tienes que buscar objetivos"
 
 #: src/airoscript.sh:201 src/airoscript.sh:204 src/airoscript.sh:205
+#: src/airoscript.sh:209 src/airoscript.sh:214
 msgid "ERROR: Wrong number entered"
 msgstr "ERROR: Numero erroneo"
 
 #: src/airoscfunc.sh:833 src/airoscfunc.sh:1449 src/airoscfunc.sh:842
 #: src/airoscfunc.sh:1458 src/airoscfunc.sh:844 src/airoscfunc.sh:1469
+#: src/airoscfunc.sh:1467
 msgid "Should I put it in monitor mode?"
 msgstr "¿Devería ponerla en modo monitor?"
 
@@ -1018,7 +1045,19 @@ msgstr ""
 "\t##_________________________________##\n"
 "\tOpcion:"
 
-#: src/airoscfunc.sh:793
+#: src/airoscfunc.sh:1285 src/airoscfunc.sh:1283
+msgid "Enter new path: "
+msgstr "Introduce el nuevo directorio: "
+
+#: src/airoscfunc.sh:1286 src/airoscfunc.sh:1284
+msgid "Copy data into new folder? (y/N): "
+msgstr "¿Copiar los datos en el directorio nuevo?"
+
+#: src/airoscfunc.sh:1287 src/airoscfunc.sh:1285
+msgid "Erase old folder? (y/N): "
+msgstr "¿Borrar directorio antiguo?"
+
+#: src/airoscfunc.sh:791
 msgid ""
 "\n"
 "\t||\n"
@@ -1035,7 +1074,7 @@ msgid ""
 "##   6) Wesside-ng                 ##\n"
 "##   7) Enable monitor mode        ##\n"
 "##   8) Checks with airmon-ng      ##\n"
-"##   9) Change DUMP_PATH           ##\n"
+"##   9) Change DUMP_PATH\t   ##\n"
 "##   10) Return to main menu       ##\n"
 "##_________________________________##\n"
 "Option: "
@@ -1055,20 +1094,7 @@ msgstr ""
 "##   6) Wesside-ng                 ##\n"
 "##   7) Activar modo monitor       ##\n"
 "##   8) Comprobar con airmon-ng    ##\n"
-"##   9) Cambiar DUMP_PATH	    ##\n"
+"##   9) Cambiar DUMP_PATH\t    ##\n"
 "##   10) Volver al menu principal  ##\n"
 "##_________________________________##\n"
 "Opcion: "
-
-
-#: src/airoscfunc.sh:1285
-msgid "Enter new path: "
-msgstr "Introduce el nuevo directorio: "
-
-#: src/airoscfunc.sh:1286
-msgid "Copy data into new folder? (y/N): "
-msgstr "¿Copiar los datos en el directorio nuevo?"
-
-#: src/airoscfunc.sh:1287
-msgid "Erase old folder? (y/N): "
-msgstr "¿Borrar directorio antiguo?"

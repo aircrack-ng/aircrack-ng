@@ -6,7 +6,7 @@ echo -e "\tExternal functions from airoscript loaded,\n\tif you don't want this,
 
 function doitwld {
 	$WLD $Host_MAC $Host_SSID $DUMP_PATH/wlddic 
-	$AIRCRACKOLD $FORCEKOREK -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/$HOST_MAC-01.cap
+	$AIRCRACKOLD $FORCEKOREK -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_MAC-01.cap
 }
 
 function wld {
@@ -17,11 +17,11 @@ function wld {
 			case $START in
 				WLAN ) 
 					echo "I'll try to crack it now"
-					if [ -e $DUMP_PATH/$HOST_MAC-01.cap ]
+					if [ -e $DUMP_PATH/$Host_MAC-01.cap ]
 					then	
 						doitwld
 					else
-						echo "`gettext 'No capture file. You will have to capture some ivs first to use wlandecrypter.'`"
+						echo "`gettext 'No capture file. You will have to capture some ivs first to use wlandecrypter.'` $DUMP_paTH/$Host_MAC"
 					fi
 					;;
 				*)
@@ -40,7 +40,7 @@ function wld {
 
 function doitjt {
 	$JTD $Host_MAC $Host_SSID $DUMP_PATH/jtddic
-	$AIRCRACKOLD $FORCEKOREK -b $Host_MAC -w $DUMP_PATH/jtddic $DUMP_PATH/$HOST_MAC-01.cap
+	$AIRCRACKOLD $FORCEKOREK -b $Host_MAC -w $DUMP_PATH/jtddic $DUMP_PATH/$Host_MAC-01.cap
 }
 
 function jtd {
@@ -51,7 +51,7 @@ function jtd {
 			case $START in
 				WLAN ) 
 					echo "`gettext 'I will try to crack it now'`"
-					if [ -e $DUMP_PATH/$HOST_MAC-01.cap ]
+					if [ -e $DUMP_PATH/$Host_MAC-01.cap ]
 					then	
 						doitjtd
 					else

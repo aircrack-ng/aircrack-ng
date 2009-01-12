@@ -52,7 +52,7 @@ uninstall:
 	@rm $(ETCDIR)/airoscript.conf
 	@rm $(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo
 
-wifiway: install
+slackware: install
 	@echo "Applying wifi(way/slax) patch"
 	@patch $(DESTDIR)/etc/airoscript.conf $(CURDIR)/src/patches/wifislax.conf.patch
 
