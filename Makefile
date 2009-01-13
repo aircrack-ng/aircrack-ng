@@ -44,13 +44,17 @@ install: airopdate
 airopdate:
 	@install -D -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airopdate.sh $(SBINDIR)/airopdate
 	
-uninstall:
+uninstall: uninstall-airopdate
 	@echo "Uninstalling airoscript."
 	@rm  $(SBINDIR)/airoscript
 	@rm -r $(SHAREDIR)
 	@rm -r $(DOCDIR)
 	@rm $(ETCDIR)/airoscript.conf
 	@rm $(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo
+	@rm $(MANDIR)/airoscript.1
+
+uninstall-airopdate:
+	@rm $(SBINDIR)/airopdate
 
 slackware: install
 	@echo "Applying wifi(way/slax) patch"
