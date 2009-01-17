@@ -37,7 +37,7 @@ def AP_Label_Color(Label,colorLS):
 def Client_Label_Color(mac,color):
 	#creates a label for the client information passed in is our label info and the mac address of the client
 	label = mac #in the future i assume ill be brining some info in that we will want to write on our client
-	graph = ['\tnode [label="',label,'"','color="',color,'"',' fontsize=8','] "',mac,'";\n']
+	graph = ['\t','"',mac,'"',' [label="',label,'"',' color="',color,'"',' fontsize=8','];\n']
 	return graph
 	
 def Return_Enc_type(enc):

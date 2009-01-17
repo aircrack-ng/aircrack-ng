@@ -22,9 +22,9 @@
 # Import Psyco if available to speed up execution
 # When debugging airgraph-ng comment out the two lines after try and uncomment pass or pdb will not function
 try:
-	import psyco
-	psyco.full()
-#	pass
+#	import psyco
+#	psyco.full()
+	pass
 except ImportError:
 	print "Psyco optimizer not installed, You may want to download and install it!"
 
@@ -154,9 +154,7 @@ def dot_create(info,graph_type,maltego="false"):
 		for mac in (Clients):
 			key = Clients[mac]
 			for probe in key[6:]:
-				if probe == '':
-					pass
-				else:
+				if probe != '':
 					Clients_list.append(key[0])
 					if probe not in Probe_list:
 						Probe_list.append(probe)
