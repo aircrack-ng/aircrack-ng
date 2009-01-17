@@ -20,9 +20,9 @@
 
 import pdb
 try:
-#	import psyco
-#	psyco.full()
-	pass
+	import psyco
+	psyco.full()
+#	pass
 except ImportError:
 	pass
 
@@ -89,8 +89,6 @@ def subgraph(items,name,graph_name,tracked,parse='y'):
 			clientMAC = line[0]
 			probe_req = ', '.join(line[6:])
 			for bssid in tracked:
-				#if clientMAC == "00:10:DB:A0:D6:A1": 
-				#	print clientMAC,' ',tracked[bssid]  #why do so many nodes get created with the dakuna file?
 				if clientMAC not in tracked[bssid]:#check to make sure were not creating a node for a client that has an association allready
 					subgraph.extend(['\tnode [label="',clientMAC,' \\nProbe Requests: ',probe_req,'" ] "',clientMAC,'";\n'])
 		subgraph.extend(['\t}\n'])
