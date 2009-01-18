@@ -150,7 +150,7 @@ def dot_create(info,graph_type,maltego="false"):
 		AP = info[1]
 		Clients_list = [] #keep trakc of our clients
 		Probe_list = [] #keep track of requested probes
-		dot_file = ['digraph G {\n\tsize ="96,96";\n\toverlap=scale;\n'] #start the graphviz config file
+		dot_file = ['digraph G {\n\tsize ="144,144";\n\toverlap=false;\n'] #start the graphviz config file
 		for mac in (Clients):
 			key = Clients[mac]
 			for probe in key[6:]:
@@ -170,7 +170,7 @@ def dot_create(info,graph_type,maltego="false"):
 		#info comes in a list Clients Dictionary at postion 0 and AP Dictionary at postion 1
 		Clients = info[0]
 		AP = info[1]
-		dot_file = ['digraph G {\n\tsize ="96,96";\n\toverlap=scale;\n'] #start the graphviz config file
+		dot_file = ['digraph G {\n\tsize ="144,144";\n\toverlap=false;\n'] #start the graphviz config file
 		NA = [] #create a var to keep the not associdated clients
 		NAP = [] #create a var to keep track of associated clients to AP's we cant see
 		AP_count = {} # count number of Aps dict is faster the list stored as BSSID:number of essids
@@ -231,6 +231,7 @@ def dot_create(info,graph_type,maltego="false"):
 
 
 def grpahviz_Call(output):
+	print "Warning Images can be large!"
 	print "Creating your Graph, Depending on your system this can take a bit. Please standby.............."
 	try:
 		subprocess.Popen(["fdp","-Tpng","airGconfig.dot","-o",output]).wait()
