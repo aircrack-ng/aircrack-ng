@@ -18,39 +18,77 @@ Rq: Aireplay DOESN'T work on OpenWrt with broadcom chipset since the driver does
 Known bugs:
 ===========
 
+Drivers
+-------
 
-Madwifi-ng known bugs:
-----------------------
-
-Problem: When changing rate while you are capturing packet makes airodump-ng stall
-Solution: Restart airodump-ng or change rate before starting it
-
-Problem: After some time it stops capturing packets and you're really sure no network manager are running at all.
-Solution: That's a known bug in the driver, it may happen at any time
-          (the time before it fails can vary a lot: from 5 minutes to 50 or even more).
-
-Problem: When creating a new VAP airodump-ng takes up to 10-15 seconds to see the first packet
-Solution: It's the behaviour of madwifi-ng, don't worry.
-
-Orinoco bugs
-------------
-
-Problem: BSSID is not reported correctly or is 00:00:00:00:00:00 or signal is not reported correctly.
-Solution: These are known bugs and we'll work on it.
-
-Airolib-ng bugs:
-----------------
-
-On windows only, opening/creating a database doesn't work when airolib-ng is in directories containing
-special characters like 'ç', 'é', 'è', 'à', ... (directories containing spaces are not affected).
+	Madwifi-ng
+	----------
+	
+	The cause of most of these problems (1, 2 and 3) is that Madwifi-ng cannot easily change the rate in monitor mode.
+	Technically, when changing rate while in monitor mode, the raw socket gets invalidated and we have
+	 to get it again.
+	Madwifi-ng is getting replaced by several drivers: ath5k, ath9k and another one for new atheros 802.11n USB devices.
+	
+	
+	Problem 1: No client can associate to an airbase soft AP.
+	Solution 1: None at this time.
+	
+	
+	Problem 2: When changing rate while you are capturing packet makes airodump-ng stall
+	Solution 3: Restart airodump-ng or change rate before starting it
+	
+	Problem 3: After some time it stops capturing packets and you're really sure no network manager are running at all.
+	Solution 3: That's a known bug in the driver, it may happen at any time
+		  (the time before it fails can vary a lot: from 5 minutes to 50 or even more).
+	
+	Problem 4: When creating a new VAP airodump-ng takes up to 10-15 seconds to see the first packet
+	Solution 4: It's the behaviour of madwifi-ng, don't worry (... be happy ;)).
 
 
-Other issue:
-------------
+	Orinoco
+	-------
 
-Problem: Airodump-ng stop working after some time
-Solution: You may have a network manager running that puts back the card in managed mode. 
-          You'll have to disable it (the fastest solution is killing the process) then restart airodump-ng.
+	Problem: BSSID is not reported correctly or is 00:00:00:00:00:00 or signal is not reported correctly.
+	Solution: None at this time. Consider replacing your card, orinoco is really really old.
+
+
+Aircrack-ng
+-----------
+
+	Aireplay-ng
+	-----------
+
+	Problem: Fakeauth on a WRT54G with WEP (shared authentication) doesn't work.
+	Solution: None at this time (we'll try to fix it for next release).
+
+
+	Airolib-ng
+	----------
+
+	Problem: On windows only, opening/creating a database doesn't work when airolib-ng is in directories containing
+	         special characters like 'ç', 'é', 'è', 'à', ... (directories containing spaces are not affected).
+	Reason: It's a SQLite issue.
+	Solution: Rename the directory or move the database into another directory.
+
+
+	Airbase-ng
+	----------
+
+	Problem: SSID are not displayed correctly (when scanning for networks) when using airbase-ng with r8187 driver.
+	Reason: Beacons are truncated (the beginning is missing) when sent in the air.
+	Solution: None at this time (we'll try to fix it for next release)
+
+	Airodump-ng
+	-----------
+
+	Problem: Airodump-ng stop working after some time
+	Solution: You may have a network manager running that puts back the card in managed mode. 
+		  You'll have to disable it (the fastest solution is killing the process) then restart airodump-ng.
+
+	Problem: Airodump-ng can segfault when exiting with Ctrl-C if GPSd parameter is used or 
+		  kismet CSV files is created.
+	Solution: None at this time (will be fixed in next release).
+
 
 Sample files
 ============
