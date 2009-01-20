@@ -20,9 +20,9 @@
 
 import pdb
 try:
-#	import psyco
-#	psyco.full()
-	pass
+	import psyco
+	psyco.full()
+#	pass
 except ImportError:
 	pass
 
