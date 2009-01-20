@@ -20,9 +20,9 @@
 
 import pdb
 try:
-	import psyco
-	psyco.full()
-#	pass
+#	import psyco
+#	psyco.full()
+	pass
 except ImportError:
 	pass
 
@@ -34,9 +34,10 @@ def AP_Label_Color(Label,colorLS):
 	graph = ['\t','"',Label[0],'"','[label="',Label[0],'\\nEssid: ',essid,'\\nChannel: ',Label[2],'\\nEncryption: ',Label[3],'\\nNumber of Clients: ','%s' %(Label[4]),'"',' style=filled',' fillcolor="',color,'"',' fontcolor="',fontC,'"',' fontsize=7','];\n']
 	return graph
 
-def Client_Label_Color(mac,color):
+def Client_Label_Color(mac,color,label = ''):
 	#creates a label for the client information passed in is our label info and the mac address of the client
-	label = mac #in the future i assume ill be brining some info in that we will want to write on our client
+	if label == '':	
+		label = mac #in the future i assume ill be brining some info in that we will want to write on our client
 	graph = ['\t','"',mac,'"',' [label="',label,'"',' color="',color,'"',' fontsize=7','];\n']
 	return graph
 	
