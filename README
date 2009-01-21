@@ -11,7 +11,7 @@ airodump >= 1.0
 
 The program usage is as follows
 
-airgraph-ng -i [your txt file] -o [the output file in png format] -t [graph Format option is either CAPR or CPG]
+airgraph-ng -i [your txt file] -o [the output file in png format] -g [graph Format option is either CAPR or CPG]
 
 I am happy to indroduce an option for graph types
 There are two current graph types
