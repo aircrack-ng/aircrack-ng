@@ -672,7 +672,7 @@ function selectcracking {
 
 	# This is for wpa cracking
 	function wpacrack {
-		$TERMINAL $HOLDFLAG $TOPRIGHT $TITLEFLAG "Aircracking: $Host_SSID" $EXECFLAG $AIRCRACKOLD $FORCEKOREK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction # There was a -0 -s before $DPATH/$HmaC but -0 is not documented, anyway, it works, so I replaced it (-s is for showing ascii key)
+		$TERMINAL $HOLDFLAG $TOPRIGHT $TITLEFLAG "Aircracking: $Host_SSID" $EXECFLAG $AIRCRACKOLD $FORCEWPAKOREK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction # There was a -0 -s before $DPATH/$HmaC but -0 is not documented, anyway, it works, so I replaced it (-s is for showing ascii key)
 	}
 	
 ##################################################################################
@@ -1417,7 +1417,7 @@ function configure {
 }
 
 function wpaconfigure {
-		$AIRCRACKOLD $FORCEKOREK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST &> $DUMP_PATH/$Host_MAC.key
+		$AIRCRACKOLD $FORCEWPAKOREK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST &> $DUMP_PATH/$Host_MAC.key
 		KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
 }
 function doauto {
