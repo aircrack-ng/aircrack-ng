@@ -47,17 +47,7 @@ struct hashdb_rec {
 	uint8_t pmk[32];
 } __attribute__ ((packed));
 
-#ifdef __i386__
 
-extern int shammx_init( unsigned char ctx[40] )
-__attribute__((regparm(1)));
-
-extern int shammx_ends( unsigned char ctx[40], unsigned char digests[40] )
-__attribute__((regparm(2)));
-
-extern int shammx_data( unsigned char ctx[40], unsigned char data[128], unsigned char buf[640] )
-__attribute__((regparm(3)));
-#endif
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
@@ -228,6 +218,21 @@ struct mergeBSSID
 	struct mergeBSSID * next;
 };
 
+
+struct WPA_data {
+	struct AP_info* ap;				/* AP information */
+	int	thread;						/* number of this thread */
+	int nkeys;						/* buffer capacity */
+	char *key_buffer;				/* queue as a circular buffer for feeding and consuming keys */
+	int front;						/* front marker for the circular buffers */
+	int back;						/* back marker for the circular buffers */
+	char key[128];					/* cracked key (0 while not found) */
+	pthread_cond_t cond;			/* condition for waiting when buffer is full until keys are tried and new keys can be written */
+	pthread_mutex_t mutex;
+};
+
+
 void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod );
+
 
 #endif /* _AIRCRACK_NG_H */
