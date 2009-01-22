@@ -2,8 +2,8 @@
  *  802.11 WEP network connection tunneling
  *  based on aireplay-ng
  *
- *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
- *  Copyright (C) 2006, 2007, 2008 Martin Beck
+ *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
+ *  Copyright (C) 2006, 2007, 2008, 2009 Martin Beck
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 char usage[] =
 "\n"
-"  %s - (C) 2006,2007,2008 Thomas d'Otreppe\n"
+"  %s - (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe\n"
 "  Original work: Christophe Devine and Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"

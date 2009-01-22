@@ -1,7 +1,7 @@
 /*
  *  WEP Cloaking filtering
  *
- *  Copyright (C) 2008 Thomas d'Otreppe
+ *  Copyright (C) 2008, 2009 Thomas d'Otreppe
  *
  *  Thanks to Alex Hernandez aka alt3kx for the hardware.
  *
@@ -1280,7 +1280,7 @@ BOOLEAN print_statistics() {
 
 void usage() {
 	printf("\n"
-			"  %s - (C) 2008 Thomas d\'Otreppe\n"
+			"  %s - (C) 2008, 2009 Thomas d\'Otreppe\n"
 			"  http://www.aircrack-ng.org\n"
 			"\n"
 			"  usage: airdecloak-ng [options]\n"

@@ -1,7 +1,7 @@
 /*
  *  Common functions for all aircrack-ng tools
  *
- *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
  *
  *  WEP decryption attack (chopchop) developped by KoreK
  *

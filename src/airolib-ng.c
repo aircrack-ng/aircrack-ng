@@ -60,7 +60,7 @@ extern char * getVersion(char * progname, int maj, int min, int submin, int svnr
 
 void print_help(const char * msg) {
 	printf("\n"
-		"  %s - (C) 2007 ebfe\n"
+		"  %s - (C) 2007, 2008, 2009 ebfe\n"
 		"  http://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: airolib-ng <database> <operation> [options]\n"

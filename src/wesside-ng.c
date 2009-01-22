@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005, 2006, 2007, 2008 Andrea Bittau <a.bittau@cs.ucl.ac.uk>
+ *  Copyright (C) 2005, 2006, 2007, 2008, 2009 Andrea Bittau <a.bittau@cs.ucl.ac.uk>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1591,7 +1591,7 @@ static void save_key(unsigned char *key, int len)
 			strncat(k, ":", 1);
 	}
 
-	fd = open(KEY_FILE, O_WRONLY | O_CREAT, 
+	fd = open(KEY_FILE, O_WRONLY | O_CREAT,
                   S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd == -1)
 		err(1, "open()");
@@ -2035,7 +2035,7 @@ static void usage(char* pname)
 	if (pname) {}
 
 	printf("\n"
-		"  %s - (C) 2007,2008 Andrea Bittau\n"
+		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
 		"  http://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: wesside-ng <options>\n"
