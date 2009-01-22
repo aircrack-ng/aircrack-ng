@@ -1,4 +1,4 @@
-Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released ?? Jan 2009:
+Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * aircrack-ng: Added SSE2 supports (WPA cracking speed is improved a lot) thanks to nx5.
 * aircrack-ng: Fixed detection of the number of CPU (especially with recent CPUs).
 * aircrack-ng: Fixed long lasting WPA bugs: cannot find the key with SMP computers,
