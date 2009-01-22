@@ -1,0 +1,194 @@
+This patch allows for highly extended frequency settings for Atheros wifi cards.
+I have tested and confirmed the frequencies as best as I can.  Monitoring should be
+safe, but transmitting will most likely lead to the fcc paying you a vist. I have
+done all I can to stop you from accidently getting in trouble, the rest is up to
+you.   -ZC
+
+-----------------------------------------------------------------------------------
+
+diff -Naur linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/ath5k.h linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/ath5k.h
+--- linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/ath5k.h	2008-10-09 18:13:53.000000000 -0400
++++ linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/ath5k.h	2008-11-12 23:19:12.000000000 -0500
+@@ -23,7 +23,7 @@
+  * long and results timeouts). It's also illegal to tune to some of the
+  * supported frequencies in some countries, so use this at your own risk,
+  * you've been warned. */
+-#define CHAN_DEBUG	0
++#define CHAN_DEBUG	1
+ 
+ #include <linux/io.h>
+ #include <linux/types.h>
+diff -Naur linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/base.c linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/base.c
+--- linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/base.c	2008-10-09 18:13:53.000000000 -0400
++++ linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/base.c	2008-11-12 23:19:12.000000000 -0500
+@@ -217,7 +217,7 @@
+ static void 	ath5k_detach(struct pci_dev *pdev,
+ 			struct ieee80211_hw *hw);
+ /* Channel/mode setup */
+-static inline short ath5k_ieee2mhz(short chan);
++static inline short ath5k_ieee2mhz(int chan, unsigned int chfreq);
+ static unsigned int ath5k_copy_rates(struct ieee80211_rate *rates,
+ 				const struct ath5k_rate_table *rt,
+ 				unsigned int max);
+@@ -804,12 +804,15 @@
+  * Convert IEEE channel number to MHz frequency.
+  */
+ static inline short
+-ath5k_ieee2mhz(short chan)
++ath5k_ieee2mhz(int chan, unsigned int chfreq)
+ {
+-	if (chan <= 14 || chan >= 27)
+-		return ieee80211chan2mhz(chan);
++	if (chfreq == CHANNEL_5GHZ)
++		return (chan + 1000) * 5;
+ 	else
+-		return 2212 + chan * 20;
++		if (chan <= 14 || chan >= 27)
++			return ieee80211chan2mhz(chan);
++		else
++			return 2212 + chan * 20;
+ }
+ 
+ static unsigned int
+@@ -839,7 +842,8 @@
+ 		unsigned int mode,
+ 		unsigned int max)
+ {
+-	unsigned int i, count, size, chfreq, freq, ch;
++	unsigned int i, count, size, chfreq, freq;
++       	int ch;
+ 
+ 	if (!test_bit(mode, ah->ah_modes))
+ 		return 0;
+@@ -847,14 +851,17 @@
+ 	switch (mode) {
+ 	case AR5K_MODE_11A:
+ 	case AR5K_MODE_11A_TURBO:
+-		/* 1..220, but 2GHz frequencies are filtered by check_channel */
+-		size = 220 ;
++		/* -16..220 */
++		size = 241 ;
++		ch = -40;
+ 		chfreq = CHANNEL_5GHZ;
+ 		break;
+ 	case AR5K_MODE_11B:
+ 	case AR5K_MODE_11G:
+ 	case AR5K_MODE_11G_TURBO:
+-		size = 26;
++		/* -19..26 */
++		size = 70;
++		ch = -42;
+ 		chfreq = CHANNEL_2GHZ;
+ 		break;
+ 	default:
+@@ -862,9 +869,8 @@
+ 		return 0;
+ 	}
+ 
+-	for (i = 0, count = 0; i < size && max > 0; i++) {
+-		ch = i + 1 ;
+-		freq = ath5k_ieee2mhz(ch);
++	for (i = 0, count = 0; i < size && max > 0; i++,ch++) {
++		freq = ath5k_ieee2mhz(ch,chfreq);
+ 
+ 		/* Check if channel is supported by the chipset */
+ 		if (!ath5k_channel_ok(ah, freq, chfreq))
+diff -Naur linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/base.h linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/base.h
+--- linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/base.h	2008-10-09 18:13:53.000000000 -0400
++++ linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/base.h	2008-11-12 23:27:26.000000000 -0500
+@@ -51,8 +51,8 @@
+ #include "debug.h"
+ 
+ #define	ATH_RXBUF	40		/* number of RX buffers */
+-#define	ATH_TXBUF	200		/* number of TX buffers */
+-#define ATH_BCBUF	1		/* number of beacon buffers */
++#define	ATH_TXBUF	0		/* number of TX buffers */
++#define ATH_BCBUF	0		/* number of beacon buffers */
+ 
+ struct ath5k_buf {
+ 	struct list_head	list;
+diff -Naur linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/hw.c linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/hw.c
+--- linux-2.6.27-gentoo-r2/drivers/net/wireless/ath5k/hw.c	2008-10-09 18:13:53.000000000 -0400
++++ linux-2.6.27-gentoo-r2-afc/drivers/net/wireless/ath5k/hw.c	2008-11-12 23:21:29.000000000 -0500
+@@ -2319,8 +2319,9 @@
+ 		 */
+ 
+ 		if (AR5K_EEPROM_HDR_11A(ee_header)) {
+-			ah->ah_capabilities.cap_range.range_5ghz_min = 5005; /* 4920 */
+-			ah->ah_capabilities.cap_range.range_5ghz_max = 6100;
++			ah->ah_capabilities.cap_range.range_5ghz_min = 4800; /* 4920 */
++			ah->ah_capabilities.cap_range.range_5ghz_max = 6000; /* 6100 is what the code said but */
++									     /* it fried one of my cards      */
+ 
+ 			/* Set supported modes */
+ 			__set_bit(AR5K_MODE_11A,
+@@ -2336,8 +2337,8 @@
+ 		 * connected */
+ 		if (AR5K_EEPROM_HDR_11B(ee_header) ||
+ 				AR5K_EEPROM_HDR_11G(ee_header)) {
+-			ah->ah_capabilities.cap_range.range_2ghz_min = 2412; /* 2312 */
+-			ah->ah_capabilities.cap_range.range_2ghz_max = 2732;
++			ah->ah_capabilities.cap_range.range_2ghz_min = 2192; /* 2312 */
++			ah->ah_capabilities.cap_range.range_2ghz_max = 2737; /* 2732 */
+ 
+ 			if (AR5K_EEPROM_HDR_11B(ee_header))
+ 				__set_bit(AR5K_MODE_11B,
+@@ -2379,24 +2380,6 @@
+ 	ATH5K_TRACE(ah->ah_sc);
+ 
+ 	switch (ah->ah_op_mode) {
+-	case IEEE80211_IF_TYPE_IBSS:
+-		pcu_reg |= AR5K_STA_ID1_ADHOC | AR5K_STA_ID1_DESC_ANTENNA |
+-			(ah->ah_version == AR5K_AR5210 ?
+-				AR5K_STA_ID1_NO_PSPOLL : 0);
+-		beacon_reg |= AR5K_BCR_ADHOC;
+-		break;
+-
+-	case IEEE80211_IF_TYPE_AP:
+-		pcu_reg |= AR5K_STA_ID1_AP | AR5K_STA_ID1_RTS_DEF_ANTENNA |
+-			(ah->ah_version == AR5K_AR5210 ?
+-				AR5K_STA_ID1_NO_PSPOLL : 0);
+-		beacon_reg |= AR5K_BCR_AP;
+-		break;
+-
+-	case IEEE80211_IF_TYPE_STA:
+-		pcu_reg |= AR5K_STA_ID1_DEFAULT_ANTENNA |
+-			(ah->ah_version == AR5K_AR5210 ?
+-				AR5K_STA_ID1_PWR_SV : 0);
+ 	case IEEE80211_IF_TYPE_MNTR:
+ 		pcu_reg |= AR5K_STA_ID1_DEFAULT_ANTENNA |
+ 			(ah->ah_version == AR5K_AR5210 ?
+diff -Naur linux-2.6.27-gentoo-r2/net/wireless/reg.c linux-2.6.27-gentoo-r2-afc/net/wireless/reg.c
+--- linux-2.6.27-gentoo-r2/net/wireless/reg.c	2008-10-09 18:13:53.000000000 -0400
++++ linux-2.6.27-gentoo-r2-afc/net/wireless/reg.c	2008-11-12 23:23:53.000000000 -0500
+@@ -70,6 +70,22 @@
+ 	RANGE_PWR(5745, 5825, 30, 6, 0),
+ };
+ 
++static const struct ieee80211_channel_range ieee80211_DEBUG_channels[] = {
++/*
++ * WARNING: These values are strictly based on my own limited testing.
++ * This does not seem to damage MY cards in the limited time I was testing.
++ * Monitor mode tuning of these channels *should* be 100% safe, however,
++ * ANY transmissions may not only permanently damage your card, it may also
++ * bring the feds down on you.
++ *
++ */
++	/* IEEE 802.11b/g, channels -42..26 */
++	RANGE_PWR(2192, 2732, 1, 6, 0),
++	/* IEEE 802.11a, channels -40..240, outdoor */
++	RANGE_PWR(4800, 6000, 1, 6, 0),
++};
++
++
+ static const struct ieee80211_channel_range ieee80211_JP_channels[] = {
+ 	/* IEEE 802.11b/g, channels 1..14 */
+ 	RANGE_PWR(2412, 2484, 20, 6, 0),
+@@ -108,6 +124,7 @@
+ 	REGDOM(US),
+ 	REGDOM(JP),
+ 	REGDOM(EU),
++	REGDOM(DEBUG),
+ };
+ 
+ 

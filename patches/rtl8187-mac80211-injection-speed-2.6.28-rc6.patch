@@ -1,0 +1,30 @@
+diff --git a/drivers/net/wireless/rtl818x/rtl8187_dev.c b/drivers/net/wireless/rtl818x/rtl8187_dev.c
+index 9212cea..08d04a3 100644
+--- a/drivers/net/wireless/rtl8187_dev.c
++++ b/drivers/net/wireless/rtl8187_dev.c
+@@ -214,7 +214,11 @@ static int rtl8187_tx(struct ieee80211_hw *dev, struct sk_buff *skb)
+ 		hdr->flags = cpu_to_le32(flags);
+ 		hdr->len = 0;
+ 		hdr->rts_duration = rts_dur;
+-		hdr->retry = cpu_to_le32(info->control.retry_limit << 8);
++		if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
++			hdr->retry =
++				cpu_to_le32(info->control.retry_limit << 8);
++		else
++			hdr->retry = 0;
+ 		buf = hdr;
+ 
+ 		ep = 2;
+@@ -232,7 +235,11 @@ static int rtl8187_tx(struct ieee80211_hw *dev, struct sk_buff *skb)
+ 		memset(hdr, 0, sizeof(*hdr));
+ 		hdr->flags = cpu_to_le32(flags);
+ 		hdr->rts_duration = rts_dur;
+-		hdr->retry = cpu_to_le32(info->control.retry_limit << 8);
++		if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
++			hdr->retry =
++				cpu_to_le32(info->control.retry_limit << 8);
++		else
++			hdr->retry = 0;
+ 		hdr->tx_duration =
+ 			ieee80211_generic_frame_duration(dev, priv->vif,
+ 							 skb->len, txrate);

@@ -1,0 +1,80 @@
+.TH airolib-ng 1 "January 2009" "Version 1.0-rc2"
+
+.SH NAME
+airolib-ng - manage and create a WPA/WPA2 pre-computed hashes tables
+.SH SYNOPSIS
+.B airolib-ng
+<database> <operation> [options]
+.SH DESCRIPTION
+.BI airolib-ng
+is a tool for the aircrack-ng suite to store and manage essid and password lists, compute their Pairwise Master Keys (PMKs) and use them in WPA/WPA2 cracking. The program uses the lightweight SQLite3 database as the storage mechanism which is available on most platforms. The SQLite3 database was selected taking in consideration platform availability plus management, memory and disk overhead.
+.SH DATABASE
+.TP
+.I database
+It is name of the database file. Optionally specify the full path.
+.SH OPERATION
+.TP
+.I --stats
+Output information about the database.
+.TP
+.I --sql <sql>
+Execute specified SQL statement.
+.TP
+.I --clean [all]
+Clean the database from old junk. When specifying 'all', it will also reduce filesize if possible and run an integrity check.
+.TP
+.I --batch
+Start batch-processing all combinations of ESSIDs and passwords.
+.TP
+.I --verify [all]
+Verify a set of randomly chosen PMKs. If 'all' is given, all invalid PMK in the database will be deleted.
+.TP
+.I --import [essid|passwd] <file>
+Import a flat file as a list of ESSIDs or passwords.
+.TP
+.I import cowpatty <file>
+Import a coWPAtty file.
+.TP
+.I --export cowpatty <essid> <file>
+Export to a cowpatty file.
+.SH AUTHOR
+This manual page was written by Thomas d'Otreppe.
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)

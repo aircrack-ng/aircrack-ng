@@ -1,0 +1,130 @@
+.TH TKIPTUN-NG 1 "January 2009" "Version 1.0-rc2"
+
+.SH NAME
+tkiptun-ng - inject a few frames into a WPA TKIP network with QoS
+.SH SYNOPSIS
+.B tkiptun-ng
+[options] <replay interface>
+.SH DESCRIPTION
+.BI tkiptun-ng
+is a tool created by Martin Beck aka hirte, a member of aircrack-ng team. This tool is able to inject a few frames into a WPA TKIP network with QoS. He worked with Erik Tews (who created PTW attack) for a conference in PacSec 2008: "Gone in 900 Seconds, Some Crypto Issues with WPA".
+.SH OPERATION
+.PP
+.TP
+.I -H, --help
+Shows the help screen.
+.TP
+.B Filter options:
+.TP
+.I -d <dmac>
+MAC address of destination.
+.TP
+.I -s <smac>
+MAC address of source.
+.TP
+.I -m <len>
+Minimum packet length.
+.TP
+.I -n <len>
+Maximum packet length.
+.TP
+.I -t <tods>
+Frame control, "To" DS bit.
+.TP
+.I -f <fromds>
+Frame control, "From" DS bit.
+.TP
+.I -D 
+Disable AP Detection.
+.PP
+.TP
+.B Replay options:
+.TP
+.I -x <nbpps>
+Number of packets per second.
+.TP
+.I -p <fctrl>
+Set frame control word (hex).
+.TP
+.I -a <bssid>
+Set Access Point MAC address.
+.TP
+.I -c <dmac>
+Set destination MAC address.
+.TP
+.I -h <smac>
+Set source MAC address.
+.TP
+.I -F
+Choose first matching packet.
+.TP
+.I -e <essid>
+Set target SSID.
+.PP
+.TP
+.B Debug options:
+.TP
+.I -K <prga>
+Keystream for continuation.
+.TP
+.I -y <file>
+Keystream file for continuation.
+.TP
+.I -j
+Inject FromFS packets.
+.TP
+.I -P <PMK>
+Pairwise Master key (PMK) for verification or vulnerability testing.
+.TP
+.I -p <PSK>
+Preshared key (PSK) to calculate PMK with essid.
+.PP
+.TP
+.B Source options:
+.TP
+.I -i <iface>
+Capture packets from this interface.
+.TP
+.I -r <file>
+Extract packets from this pcap file.
+.SH AUTHOR
+This manual page was written by Thomas d'Otreppe.
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B wesside-ng(1)

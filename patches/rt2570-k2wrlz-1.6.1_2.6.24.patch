@@ -1,0 +1,56 @@
+diff -Naur rt2570-k2wrlz-1.6.1/Module/rtusb_main.c rt2570-k2wrlz-1.6.1-24/Module/rtusb_main.c
+--- rt2570-k2wrlz-1.6.1/Module/rtusb_main.c	2007-07-05 18:41:51.000000000 +0200
++++ rt2570-k2wrlz-1.6.1-24/Module/rtusb_main.c	2008-06-27 10:48:28.000000000 +0200
+@@ -1629,7 +1629,9 @@
+ 	netif_stop_queue(netdev);
+ 	pAdapter->config = dev->config;
+ 	pAdapter->usb = dev;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+ 	SET_MODULE_OWNER(pAdapter->net);
++#endif
+ 	ether_setup(pAdapter->net);
+ #if LINUX_VERSION_CODE > KERNEL_VERSION(2,5,0)
+ 	SET_ETHTOOL_OPS(net_dev, &rt2x00_ethtool_ops);
+@@ -1650,7 +1652,9 @@
+ 	pAdapter->net->hard_header_len = 14;
+ 	pAdapter->net->mtu = 1500;
+ 	pAdapter->net->addr_len = 6;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+ 	pAdapter->net->weight = 64;
++#endif
+ 	pAdapter->MediaState = NdisMediaStateDisconnected;
+ 
+ 	{// find available
+@@ -1961,7 +1965,9 @@
+ 	netif_stop_queue(netdev);
+ 	pAdapter->config = &dev->config->desc;
+ 	pAdapter->usb = dev;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+ 	SET_MODULE_OWNER(pAdapter->net);
++#endif
+ 	ether_setup(pAdapter->net);
+ 	netdev->open = usb_rtusb_open;
+ 	netdev->stop = usb_rtusb_close;
+@@ -1981,7 +1987,9 @@
+ 	pAdapter->net->hard_header_len = 14;
+ 	pAdapter->net->mtu = 1500;
+ 	pAdapter->net->addr_len = 6;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+ 	pAdapter->net->weight = 64;
++#endif
+ 	pAdapter->MediaState = NdisMediaStateDisconnected;
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 0)
+ 	pAdapter->MLMEThr_pid= -1;
+@@ -2011,8 +2019,11 @@
+ 		for (i = 0; i < 8; i++)
+ 		{
+ 			sprintf(slot_name, pAdapter->net->name, i);
+-
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24))
++			for (device = first_net_device(&init_net); device != NULL;
++#else
+ 			for (device = first_net_device(); device != NULL;
++#endif
+ 					device = next_net_device(device))
+ 			{
+ 				if (strncmp(device->name, slot_name, IFNAMSIZ) == 0)

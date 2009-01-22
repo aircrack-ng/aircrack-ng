@@ -1,0 +1,82 @@
+.TH easside-ng 1 "January 2009" "Version 1.0-rc2"
+
+.SH NAME
+easside-ng - an auto-magic tool which allows you to communicate via an WEP-encrypted AP without knowing the key
+.SH SYNOPSIS
+.B easside-ng
+<options>
+.SH DESCRIPTION
+.BI easside-ng
+is an auto-magic tool which allows you to communicate via an WEP-encrypted access point (AP) without knowing the WEP key. It first identifies a network, then proceeds to associate with it, obtain PRGA (pseudo random generation algorithm) xor data, determine the network IP scheme and then setup a TAP interface so that you can communicate with the AP without requiring the WEP key. All this is done without your intervention.
+.SH OPTIONS
+.PP
+.TP
+.I -h
+Shows the help screen.
+.TP
+.I -v <victim mac>
+Victim BSSID (Optional).
+.TP
+.I -m <src mac>
+Source MAC address to be used (Optional).
+.TP
+.I -i <ip>
+Source IP address to be used on the wireless LAN. Defaults to the decoded network plus '.123' (Optional).
+.TP
+.I -r <router ip>
+IP address of the AP router. This could be the WAN IP of the AP or an actual router IP depending on the topology. Defaults to the decoded network plus '.1' (Optional).
+.TP
+.I -s <buddy ip>
+IP address of Buddy-ng server (Mandatory)
+.TP
+.I -f <iface>
+Wireless interface to use (Mandatory)
+.TP
+.I -c <channel>
+Lock interface to this channel (Optional).
+.TP
+.I -n
+Determine Internet IP only.
+.SH AUTHOR
+This manual page was written by Thomas d'Otreppe.
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)

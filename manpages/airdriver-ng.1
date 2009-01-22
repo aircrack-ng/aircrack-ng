@@ -1,0 +1,92 @@
+.TH airdriver-ng 1 "January 2009" "Version 1.0-rc2"
+
+.SH NAME
+airdriver-ng - automatically install/uninstall and patch drivers and 802.11 stacks
+.SH SYNOPSIS
+.B airdriver-ng
+<command> [drivernumber]
+.SH DESCRIPTION
+.BI airdriver-ng
+is a script that provides status information about the wireless drivers on your system plus the ability to load and unload the drivers. Additionally, airdriver-ng allows you to install and uninstall drivers complete with the patches required for monitor and injection modes. Plus a number of other functions.
+.SH COMMAND
+.PP
+.TP
+.I supported
+Lists all supported drivers
+.TP
+.I kernel
+Lists all in-kernel drivers
+.TP
+.I installed
+Lists all installed drivers
+.TP
+.I loaded
+Lists all loaded drivers
+.TP
+.I load <drivernum>
+Loads a driver
+.TP
+.I unload <drivernum>
+Unloads a driver
+.TP
+.I reload <drivernum>
+Reloads a driver
+.TP
+.I install <drivernum>
+Installs a driver
+.TP
+.I remove <drivernum>
+Removes a driver
+.TP
+.I remove_stack <num>
+Removes a stack
+.TP
+.I install_stack <num>
+Installs a stack
+.TP
+.I details <drivernum>
+Prints driver details
+.TP
+.I detect
+Detects wireless cards
+.SH AUTHOR
+This manual page was written by Thomas d'Otreppe.
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)

@@ -1,0 +1,106 @@
+.TH airdecloak-ng 1 "January 2009" "Version 1.0-rc2"
+
+.SH NAME
+airuncloak-ng - Removes wep cloaked framed from a pcap file.
+.SH SYNOPSIS
+.B airuncloak-ng
+<options>
+.SH DESCRIPTION
+.BI airuncloak-ng
+is a tool that removes wep cloaking from a pcap file. Some WIPS (actually one) can actively "prevent" cracking a WEP key by inserting chaff (fake wep frames) in the air to fool aircrack-ng. In some rare cases, cloaking fails and the key can be recovered without removing this chaff. In the cases where the key cannot be recovered, use this tool to filter out chaff.
+
+The program works by reading the input file and selecting packets from a specific network.
+Each selected packet is put into a list and classified (default status is "unknown"). Filters are then applied (in the order specified by the user) on this list. They will change the status of the packets (unknown, uncloaked, potentially cloaked or cloaked).
+The order of the filters is really important since each filter will base its analysis amongst other things on the status of the packets and different orders will give different results.
+
+Important requirement: The pcap file needs to have all packets (including beacons and all other "useless" packets) for the analysis (and if possible, prism/radiotap headers).
+.SH OPTIONS
+.PP
+.TP
+.I -h, --help
+Shows the help screen.
+.TP
+.I -i <file>
+Path to the capture file.
+.TP
+.I --ssid <ESSID>
+Essid of the network (not yet implemented) to filter.
+.TP
+.I --bssid <BSSID>
+BSSID of the network to filter.
+.TP
+.I --null-packets
+Assume that null packets can be cloaked.
+.TP
+.I --disable-base-filter
+Do not apply base filter.
+.TP
+.I --drop-frag
+Drop fragmented packets.
+.TP
+.I --filters <filters>
+Apply different filters (separated by a comma). See below.
+.SH FILTERS
+.PP
+.TP
+.I signal
+Try to filter based on signal (prism or radiotap headers in the pcap file).
+.TP
+.I duplicate_sn
+Remove all duplicate sequence numbers for both the AP and the client (that are close to each other).
+.TP
+.I duplicate_sn_ap
+Remove duplicate sequence number for the AP only (that are close to each other).
+.TP
+.I duplicate_sn_client
+Remove duplicate sequence number for the client only (that are close to each other).
+.TP
+.I consecutive_sn
+Filter based on the fact that IV should be consecutive (only for AP).
+.TP
+.I duplicate_iv
+Filter out all duplicate IV.
+.TP
+.I signal_dup_consec_sn
+Use signal (if available), duplicate and consecutive sequence number (filtering is much more precise than using all these filters one by one).
+.SH AUTHOR
+This manual page was written by Thomas d'Otreppe.
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)

@@ -1,0 +1,29 @@
+#!/bin/sh
+
+if [ ! -d ".svn/" ]
+then
+	echo "0"
+	exit ;
+fi
+
+REVISION="`svnversion 2> /dev/null | sed 's/[^0-9]*//g'`"
+
+if [ x$REVISION = "x" ]
+then
+	REVISION="`svn info 2> /dev/null | grep -i revision | sed 's/[^0-9]*//g'`"
+fi
+
+if [ x$REVISION = "x" ]
+then
+	if [ -f ".svn/entries" ]
+	then
+		REVISION="`cat .svn/entries | grep -i revision | head -n 1 | sed 's/[^0-9]*//g'`"
+	fi
+fi
+
+if [ x$REVISION = "x" ]
+then
+	REVISION="-1"
+fi
+
+echo $REVISION
