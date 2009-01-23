@@ -413,11 +413,16 @@ _shasse2_cpuid:
 		ret
 do_cpuid:
 #endif   	
-		
+
+#ifdef __x86_64__
+		push    %rbx
+		push    %rcx
+		push    %rdx
+#else
 		push	%ebx
 		push	%ecx
 		push	%edx
-		
+#endif		
    		movl	$1, %eax
    		cpuid
    		
@@ -438,9 +443,15 @@ no_mmx:
 		movl	$0, %eax
 
 cpuid_exit:
+#ifdef __x86_64__
+		pop		%rdx
+		pop		%rcx
+		pop		%rbx
+#else
 		pop		%edx
 		pop		%ecx
 		pop		%ebx
+#endif
 		ret
 #endif
 

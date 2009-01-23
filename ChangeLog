@@ -1,4 +1,5 @@
 Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
+* aircrack-ng: Fixed compilation on 64 bit.
 * airmon-ng: Bypass interface checks when ps command returns an error. Needed for BusyBox? limited ps command
 
 Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
