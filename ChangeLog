@@ -1,3 +1,6 @@
+Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
+* airmon-ng: Bypass interface checks when ps command returns an error. Needed for BusyBox? limited ps command
+
 Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * aircrack-ng: Added SSE2 supports (WPA cracking speed is improved a lot) thanks to nx5.
 * aircrack-ng: Fixed detection of the number of CPU (especially with recent CPUs).
@@ -14,7 +17,7 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * airodump-ng: Fixed power value display (for ath interface with a high number, more than 99).
 * airodump-ng: Can work on the new frequencies (allowed by frequency Chaos patch).
 * airodump-ng: Now display if the network has QoS enabled.
-* aireplay-ng: Fixed crash with too short packets (seen with zd1211.
+* aireplay-ng: Fixed crash with too short packets (seen with zd1211).
 * aireplay-ng: Fixed STP usage in fragmentation attack.
 * aireplay-ng: Fixed bug with deauth attack.
 * airtun-ng: Fixed STP conversion.
