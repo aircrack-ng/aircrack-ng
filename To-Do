@@ -1,0 +1,6 @@
+Implement support for:
+	Injection with:
+		tkiptun-ng
+		airtun-ng
+		I know those aren't just for inject, but by i'm just adding support for injection...
+

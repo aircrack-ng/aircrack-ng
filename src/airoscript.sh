@@ -6,8 +6,8 @@
 # Version of aircrack-ng required:  AIRCRACK-NG 1.0.2
 # Dependencies: aircrack-ng, xterm|urxvt|gnome-terminal|..., awk, macchanger, drivers capable of injection (for injection =) ), mdk3 (optional), wlandecrypter (optional), jazzteldecrypter (optional), grep (included on almost all systems by default)
 
-# Clear screen first of all
-clear
+# $CLEAR screen first of all
+$CLEAR
 # Set variables for airoscript's locale
 export TEXTDOMAINDIR=/usr/share/locale
 export TEXTDOMAIN=airoscript
@@ -103,7 +103,7 @@ then
 	else
 		touch ~/.airoscript/screen_has_started
 		screen -S airoscript -c $SCREENRC airoscript screen
-		clear
+		$CLEAR
 		echo `gettext 'Airoscript is terminating...'`
 		exit
 	fi
@@ -125,14 +125,14 @@ PS3=`gettext 'Input number: '`
 select choix in $CHOICES; do					
 	if [ "$choix" = "1" ]; then
 		choosetype
-		clear
+		$CLEAR
 		menu			
 
 	elif [ "$choix" = "2" ]; then
 		if [ -e $DUMP_PATH/dump-01.txt ]	
 		then
 			Parseforap
-			clear
+			$CLEAR
 			if [ "$Host_SSID" = $'\r' ]
 	 			then blankssid;
 			elif [ "$Host_SSID" = "No SSID has been detected" ]
@@ -140,10 +140,10 @@ select choix in $CHOICES; do
 			fi
 			target
 			choosetarget
-			clear
+			$CLEAR
 			menu
 		else
-			clear
+			$CLEAR
 			echo "`gettext 'ERROR: You have to scan for targets first'`"
 			menu
 		fi
@@ -201,16 +201,16 @@ select choix in $CHOICES; do
 
 	elif [ "$choix"="11" ]; then
 		if [ $UNSTABLE = "1" ]; then
-			clear
+			$CLEAR
 			unstablemenu
 			menu
 		else
-			clear
+			$CLEAR
 			echo "`gettext 'ERROR: Wrong number entered'`"
 			menu
 		fi
 	else
-		clear
+		$CLEAR
 		echo "`gettext 'ERROR: Wrong number entered'`"
 		menu
 	fi

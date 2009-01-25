@@ -1,3 +1,7 @@
+Changelog for 2.1.1
+- Added support for airserv-ng
+- Bugfixes (again) for $clean
+
 Changelog for 2.1.0
 - Bugfixes on terminal titles.
 - Now you can especify a terminal without editing config by passing it as parameter ( airoscript terminal )

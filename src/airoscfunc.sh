@@ -1459,12 +1459,14 @@ function setinterface {
 	then
 		echo -e "\n_____"`gettext 'Interface selection'`"_____"
 		PS3="`gettext 'Select your interface: '`"
-
+		
 		select WIFI in $INTERFACES; do
 			break;
 		done
-
+		
+			
 		echo -e "______________________________\n"
+
 		echo -n `gettext 'Should I put it in monitor mode?'` " (Y/n) "
 		read answer
 			if [ "$answer" != "n" ]
@@ -1479,7 +1481,22 @@ function setinterface {
 		$CLEAR
 		echo  `gettext 'Interface used is :'` $WIFI
 		echo  `gettext 'Interface type is :'` "$TYPE ($DRIVER)"
-		testmac
+			testmac 
+		read -p "Do you want to use airserv-ng? [y/N] " var 
+		if [ "$var" == "y" ]; then
+			WIFICARD=$WIFI
+			read -p "Start a local server? [y/N] " var
+			if [ "$var" == "y" ]; then
+				export WIFI="127.0.0.1:666"
+				$AIRSERV -d  $WIFICARD >/dev/null 2>1 & 
+			else
+				read -p "Enter airserv-ng address [127.0.0.1:666]" WIFI
+				if [ "$WIFI" == "" ]; then
+					WIFI="127.0.0.1:666"
+				fi
+				export WIFI=$WIFI
+			fi
+		fi
 	else
 		echo -n `gettext 'Shall I put in monitor mode'` $WIFI "? (Y/n) "
 		read answer
