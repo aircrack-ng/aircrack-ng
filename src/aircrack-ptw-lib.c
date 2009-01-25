@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "pcap.h"
 #include "aircrack-ptw-lib.h"
 #include "aircrack-ng.h"
