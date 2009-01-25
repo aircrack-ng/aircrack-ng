@@ -21,6 +21,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <assert.h>
+#include <pthread.h>
 #include "crypto.h"
 #include "crctable.h"
 #include "aircrack-ng.h"
