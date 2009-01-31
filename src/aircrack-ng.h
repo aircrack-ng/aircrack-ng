@@ -147,6 +147,10 @@ struct options
                                  /* keybytes                     */
 
 	int oneshot;
+#ifdef ENABLE_FPGA
+	int *fpganums;
+	int fpganums_len;
+#endif
 }
 
 opt;

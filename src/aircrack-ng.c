@@ -68,6 +68,10 @@
 #include "aircrack-ng.h"
 #include "sha1-sse2.h"
 
+#ifdef ENABLE_FPGA
+#include "../../picod/libpicod.h"
+#endif
+
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
 sqlite3 *db;
@@ -215,6 +219,9 @@ char usage[] =
 "      -D         : WEP decloak, skips broken keystreams\n"
 "      -P <num>   : PTW debug:  1: disable Klein, 2: PTW\n"
 "      -1         : run only 1 try to crack key with PTW\n"
+#ifdef ENABLE_FPGA
+"      -F <num>   : run  wpa   cracking   on   num  fpga\n"
+#endif
 "\n"
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
@@ -229,6 +236,326 @@ char usage[] =
 
 char * progname;
 int intr_read = 0;
+
+#ifdef ENABLE_FPGA
+#define MAX_FPGAS  256
+#define FPGA_MAX   256
+#define FPGA_CORES 8
+#define FPGA_BITS  8
+#define CORE_OFF   0x12340000
+
+#define FPGA_DIFF  (FPGA_BITS - (FPGA_CORES - 1))
+
+struct fpga_s {
+	int set;
+	char passphrase[64];
+	unsigned char mac0[20];
+} fpga[MAX_FPGAS][FPGA_MAX];
+struct fifo_s {
+	int set;
+	char passphrase[64];
+	unsigned char pmk[32];
+} fifo[MAX_FPGAS][FPGA_MAX];
+int fifo_wr[MAX_FPGAS], fifo_rd[MAX_FPGAS];
+int fpga_read[MAX_FPGAS];
+int fpga_idx[MAX_FPGAS];
+int fpga_finished;
+pthread_mutex_t mx_fin;
+
+int
+picofifo_write(int piconum, char *passphrase, unsigned char *pmk)
+{
+	if(fifo[piconum][fifo_wr[piconum]].set)
+		return 0;
+	memcpy(fifo[piconum][fifo_wr[piconum]].passphrase, passphrase, 64);
+	memcpy(fifo[piconum][fifo_wr[piconum]].pmk, pmk, 32);
+	fifo[piconum][fifo_wr[piconum]].set = 1;
+	fifo_wr[piconum]++;
+	if(fifo_wr[piconum] >= FPGA_MAX)
+		fifo_wr[piconum] = 0;
+	return 1;
+}
+
+int
+picofifo_read(int piconum, char *passphrase, unsigned char *pmk)
+{
+	if(!fifo[piconum][fifo_rd[piconum]].set)
+		return 0;
+	memcpy(passphrase, fifo[piconum][fifo_rd[piconum]].passphrase, 64);
+	memcpy(pmk, fifo[piconum][fifo_rd[piconum]].pmk, 32);
+	fifo[piconum][fifo_rd[piconum]].set = 0;
+	fifo_rd[piconum]++;
+	if(fifo_rd[piconum] >= FPGA_MAX)
+		fifo_rd[piconum] = 0;
+	return 1;
+}
+
+int *fpganums_parse(char *optarg, int *len)
+{
+	int i, j, l, snum = -1, t;
+	int *fpganums = (int *)malloc(sizeof(int) * 256);
+	int fpganums_len = 0;
+	char num[4];
+
+	l = strlen(optarg) + 1;
+	if(l > 0 && optarg[0] == '*') {
+		fpganums_len = piconumcards();
+		for(i = 0; i < fpganums_len; i++)
+			fpganums[i] = i;
+		goto done;
+	}
+	for(i = j = 0; i < l; i++) {
+		if(optarg[i] >= '0' && optarg[i] <= '9')
+			num[j++] = optarg[i];
+		else {
+			num[j] = '\0';
+			j = 0;
+			t = atoi(num);
+			switch(optarg[i]) {
+			case '-':
+				snum = t;
+				break;
+			case ',':
+			case '\0':
+				if((snum >= 0) && (snum < t)) {
+					for(; snum < t; snum++) {
+						if(fpganums_len >= 255)
+							goto fail;
+						fpganums[fpganums_len++] = snum;
+					}
+					snum = -1;
+				} else
+					if(fpganums_len >= 255)
+						goto fail;
+					fpganums[fpganums_len++] = t;
+				break;
+			default:
+				goto fail;
+				break;
+			}
+		}
+	}
+
+done:
+	if(len != NULL)
+		*len = fpganums_len;
+
+	t = piconumcards();
+	for(i = 0; i < fpganums_len; i++)
+		if(fpganums[i] >= t) {
+			printf("%d >= %d\n", fpganums[i], t);
+			goto fail;
+		}
+
+	printf("[*] Using FPGA%s: ", fpganums_len > 1 ? "s" : "");
+	for(i = 0; i < fpganums_len; i++)
+		printf("%d ", fpganums[i]);
+	printf("\n");
+	return fpganums;
+
+fail:
+	fprintf(stderr, "[!] Invalid fpganum argument!\n");
+	exit(2);
+	return NULL;
+}
+
+void
+initfpga(int piconum)
+{
+	int i;
+	unsigned long t, addr;
+
+	fpga_finished = 0;
+
+	for(i = 0; i < FPGA_MAX; i++) {
+		fpga[piconum][i].set = 0;
+		memset(fpga[piconum][i].passphrase, 0, 64);
+	}
+	fpga_read[piconum] = 0;
+	fpga_idx[piconum] = 0;
+	fifo_rd[piconum] = 0;
+	fifo_wr[piconum] = 0;
+	for(i = 0; i < FPGA_MAX; i++)
+		fifo[piconum][i].set = 0;
+
+	printf("[*] Rebooting card %d...\n", piconum);
+	if(picoise12(piconum))
+		picoreboot(piconum, "E12LX-CoWPAtty.bit");
+	else if(picoise16(piconum))
+		picoreboot(piconum, "E16LX-CoWPAtty.bin");
+
+	/* reset */
+	t = 2;
+	picomemwrite(piconum, CORE_OFF | 0x5000, &t, 4);
+
+	t = 0;
+	for(i = 0, addr = CORE_OFF | 0x38; i < FPGA_MAX; i++, addr += 0x40)
+		picomemwrite(piconum, addr, &t, 4);
+
+	/* ~reset */
+	t = 0;
+	picomemwrite(piconum, CORE_OFF | 0x5000, &t, 4);
+}
+
+int
+swapbytes(unsigned char *to, unsigned char *from, int len)
+{
+	int i, j;
+
+	for(i = 0; i < len; i += 4) {
+		for(j = 0; j < 4; j++) {
+			to[i + j] = from[i + (3 - j)];
+		}
+	}
+
+	return len;
+}
+
+void
+getreg(int piconum, int idx)
+{
+	unsigned char mac[20];
+	unsigned char pmk[32];
+
+	if(!(idx & 1)) {
+		picomemread(piconum, CORE_OFF | (idx << 6) | 0x28, mac, 20);
+		memcpy(fpga[piconum][idx].mac0, mac, 20);
+	} else {
+		picomemread(piconum, CORE_OFF | (idx << 6) | 0x28, mac, 20);
+		swapbytes(pmk, fpga[piconum][idx ^ 1].mac0, 20);
+		swapbytes(pmk + 20, mac, 12);
+		picofifo_write(piconum, fpga[piconum][idx].passphrase, pmk);
+	}
+}
+
+void
+startfpga(int piconum)
+{
+	unsigned long ctrl, addr = CORE_OFF | 0x5000;
+
+	/* reset */
+	ctrl = 2;
+	picomemwrite(piconum, addr, &ctrl, 4);
+	ctrl = 0;
+	picomemwrite(piconum, addr, &ctrl, 4);
+
+	/* start */
+	ctrl = 1;
+	picomemwrite(piconum, addr, &ctrl, 4);
+}
+
+int
+processing(int piconum)
+{
+	int i, count = 0;
+
+	for(i = 0; i < FPGA_MAX; i++) {
+		if(fpga[piconum][i].set)
+			count++;
+	}
+
+	return count;
+}
+
+int
+findreg(int piconum, int idx)
+{
+	unsigned long t, count = 0;
+
+	if(!fpga_read[piconum])
+		return idx;
+
+	if(close_aircrack)
+		return -1;
+
+	while(!close_aircrack) {
+		picomemread(piconum, CORE_OFF | (idx << 6) | 0x3c, &t, 4);
+
+		if(t != 0xdeadd00d) {
+			if(((unsigned int)t == 0xcafebabe) && fpga_read[piconum]) {
+				getreg(piconum, idx);
+				break;
+			}
+			if(!fpga[piconum][idx].set)
+				break;
+		} else
+			count++;
+		sched_yield();
+	}
+
+	return idx;
+}
+
+void addreg(int piconum, unsigned char *ictx, unsigned char *octx, unsigned char *digest, char *passphrase)
+{
+	unsigned long addr;
+	char mac[20];
+
+	swapbytes((unsigned char *)mac, digest, 20);
+
+	fpga_idx[piconum] = findreg(piconum, fpga_idx[piconum]);
+	if(fpga_idx[piconum] == -1)
+		exit(0);
+	addr = CORE_OFF | (fpga_idx[piconum] << 6);
+	addr += picomemwrite(piconum, addr, ictx, 20);
+	addr += picomemwrite(piconum, addr, octx, 20);
+	addr += picomemwrite(piconum, addr, mac, 20);
+
+	memcpy(fpga[piconum][fpga_idx[piconum]].passphrase, passphrase, 64);
+	fpga[piconum][fpga_idx[piconum]].set = 1;
+
+	if(fpga_idx[piconum] == (FPGA_MAX - FPGA_DIFF)) {
+		if(!fpga_read[piconum]) {
+			startfpga(piconum);
+			fpga_read[piconum] = 1;
+		}
+		fpga_idx[piconum] = 0;
+	} else if((fpga_idx[piconum] % FPGA_BITS) == (FPGA_CORES - 1))
+		fpga_idx[piconum] += FPGA_DIFF;
+	else
+		fpga_idx[piconum]++;
+}
+
+void calc_pmk_fpga(int piconum, char *key, char *essid_pre, uchar pmk[40] )
+{
+	int i, slen;
+	uchar buffer[65];
+	char essid[33+4];
+	SHA_CTX ctx_ipad;
+	SHA_CTX ctx_opad;
+
+	memset(essid, 0, sizeof(essid));
+	memcpy(essid, essid_pre, strlen(essid_pre));
+	slen = strlen( essid ) + 4;
+
+	/* setup the inner and outer contexts */
+
+	memset( buffer, 0, sizeof( buffer ) );
+	strncpy( (char *) buffer, key, sizeof( buffer ) - 1 );
+
+	for( i = 0; i < 64; i++ )
+		buffer[i] ^= 0x36;
+
+	SHA1_Init( &ctx_ipad );
+	SHA1_Update( &ctx_ipad, buffer, 64 );
+
+	for( i = 0; i < 64; i++ )
+		buffer[i] ^= 0x6A;
+
+	SHA1_Init( &ctx_opad );
+	SHA1_Update( &ctx_opad, buffer, 64 );
+
+	/* iterate HMAC-SHA1 over itself 8192 times */
+
+	essid[slen - 1] = '\1';
+	HMAC(EVP_sha1(), (uchar *)key, strlen(key), (uchar*)essid, slen, pmk, NULL);
+	addreg(piconum, (unsigned char *)&ctx_ipad.h0, (unsigned char *)&ctx_opad.h0, pmk, key);
+
+	essid[slen - 1] = '\2';
+	HMAC(EVP_sha1(), (uchar *)key, strlen(key), (uchar*)essid, slen, pmk+20, NULL);
+	addreg(piconum, (unsigned char *)&ctx_ipad.h0, (unsigned char *)&ctx_opad.h0, pmk + 20, key);
+}
+#endif
 
 int safe_write( int fd, void *buf, size_t len );
 
@@ -3760,6 +4087,179 @@ uchar mic[16], int force )
 	pthread_mutex_unlock(&mx_wpastats);
 }
 
+#ifdef ENABLE_FPGA
+int crack_wpa_fpga_thread( void *arg )
+{
+	char  essid[36];
+	char  key[128];
+	uchar pmk[128];
+
+	uchar pke[100];
+	uchar ptk[80];
+	uchar mic[20];
+
+	struct WPA_data* data;
+	struct AP_info* ap;
+	int thread, piconum;
+	int ret=0;
+	int i, len, idx = 0;
+
+	data = (struct WPA_data*)arg;
+	ap = data->ap;
+	thread = data->thread;
+	piconum = data->thread - opt.nbcpu;
+	strncpy(essid, ap->essid, 36);
+
+	/* pre-compute the key expansion buffer */
+	memcpy( pke, "Pairwise key expansion", 23 );
+	if( memcmp( ap->wpa.stmac, ap->bssid, 6 ) < 0 )	{
+		memcpy( pke + 23, ap->wpa.stmac, 6 );
+		memcpy( pke + 29, ap->bssid, 6 );
+	} else {
+		memcpy( pke + 23, ap->bssid, 6 );
+		memcpy( pke + 29, ap->wpa.stmac, 6 );
+	}
+	if( memcmp( ap->wpa.snonce, ap->wpa.anonce, 32 ) < 0 ) {
+		memcpy( pke + 35, ap->wpa.snonce, 32 );
+		memcpy( pke + 67, ap->wpa.anonce, 32 );
+	} else {
+		memcpy( pke + 35, ap->wpa.anonce, 32 );
+		memcpy( pke + 67, ap->wpa.snonce, 32 );
+	}
+
+	int slen;
+
+	/* receive the essid */
+
+	slen = strlen(essid) + 4;
+
+	while( 1 )
+	{
+		if (close_aircrack)
+			pthread_exit(&ret);
+
+		/* receive passphrases */
+		key[0]=0;
+
+		while(wpa_receive_passphrase(key, data)==0)
+		{
+			if (wpa_wordlists_done==1) {
+				if(fpga_finished >= opt.fpganums_len)
+					return 0;
+				if(!processing(opt.fpganums[piconum])) {
+					pthread_mutex_lock(&mx_fin);
+					fpga_finished++;
+					pthread_mutex_unlock(&mx_fin);
+					return 0;
+				}
+				if(findreg(opt.fpganums[piconum], idx) < 0) {
+					pthread_mutex_lock(&mx_fin);
+					fpga_finished++;
+					pthread_mutex_unlock(&mx_fin);
+					return 0;
+				}
+				if(idx == (FPGA_MAX - FPGA_DIFF))
+					idx = 0;
+				else
+					idx++;
+			}
+
+			if (picofifo_read(opt.fpganums[piconum], key, pmk))
+				goto found;
+
+			sched_yield();
+		}
+
+		key[127]=0;
+
+
+		// PMK calculation
+		calc_pmk_fpga(opt.fpganums[piconum], key, essid, pmk );
+		if(!picofifo_read(opt.fpganums[piconum], key, pmk))
+			continue;
+
+		/* compute the pairwise transient key and the frame MIC */
+
+found:
+		for (i = 0; i < 4; i++)
+		{
+			pke[99] = i;
+			HMAC(EVP_sha1(), pmk, 32, pke, 100, ptk + i * 20, NULL);
+		}
+
+		if (ap->wpa.keyver == 1)
+			HMAC(EVP_md5(), ptk, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic, NULL);
+		else
+			HMAC(EVP_sha1(), ptk, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic, NULL);
+
+		if (memcmp( mic, ap->wpa.keymic, 16 ) == 0)
+		{
+			// to stop do_wpa_crack, we close the dictionary
+			if(opt.dict != NULL)
+			{
+				if (!opt.stdin_dict) fclose(opt.dict);
+				opt.dict = NULL;
+			}
+
+			for( i = 0; i < opt.nbcpu; i++ )
+			{
+				// we make sure do_wpa_crack doesn't block before exiting,
+				// now that we're not consuming passphrases here any longer
+				pthread_mutex_lock(&wpa_data[i].mutex);
+				pthread_cond_signal(&wpa_data[i].cond);
+				pthread_mutex_unlock(&wpa_data[i].mutex);
+			}
+
+			memcpy(data->key, key, sizeof(data->key));
+
+			if (opt.is_quiet) {
+				pthread_mutex_lock(&mx_fin);
+				fpga_finished++;
+				pthread_mutex_unlock(&mx_fin);
+				return SUCCESS;
+			}
+
+			pthread_mutex_lock(&mx_nb);
+			nb_tried++;
+			nb_kprev++;
+			pthread_mutex_unlock(&mx_nb);
+
+			len = strlen(key);
+			if (len > 64 ) len = 64;
+			if (len < 8) len = 8;
+			show_wpa_stats( key, len, pmk, ptk, mic, 1 );
+
+			if (opt.l33t)
+				printf( "\33[31;1m" );
+
+			printf("\33[8;%dH\33[2KKEY FOUND! [ %s ]\33[11B\n",
+				( 80 - 15 - (int) len ) / 2, key );
+
+			if (opt.l33t)
+				printf( "\33[32;22m" );
+	
+			pthread_mutex_lock(&mx_fin);
+			fpga_finished = opt.fpganums_len;
+			pthread_mutex_unlock(&mx_fin);
+			return SUCCESS;
+		}
+
+		pthread_mutex_lock(&mx_nb);
+		nb_tried++;
+		nb_kprev++;
+		pthread_mutex_unlock(&mx_nb);
+
+		if (!opt.is_quiet)
+		{
+			len = strlen(key);
+			if (len > 64 ) len = 64;
+			if (len < 8) len = 8;
+
+			show_wpa_stats(key, len, pmk, ptk, mic, 0);
+		}
+	}
+}
+#endif
 
 int crack_wpa_thread( void *arg )
 {
@@ -3887,8 +4387,8 @@ int crack_wpa_thread( void *arg )
 					return SUCCESS;
 
 				pthread_mutex_lock(&mx_nb);
-				nb_tried += 4;
-				nb_kprev += 4;
+				nb_tried += nparallel;
+				nb_kprev += nparallel;
 				pthread_mutex_unlock(&mx_nb);
 
 				len = strlen(key[j]);
@@ -3910,8 +4410,8 @@ int crack_wpa_thread( void *arg )
 		}
 
 		pthread_mutex_lock(&mx_nb);
-		nb_tried += 4;
-		nb_kprev += 4;
+		nb_tried += nparallel;
+		nb_kprev += nparallel;
 		pthread_mutex_unlock(&mx_nb);
 
 		if (!opt.is_quiet)
@@ -4039,7 +4539,7 @@ int do_wpa_crack()
     i = 0;
 	res = 0;
 	opt.amode = 2;
-	num_cpus = opt.nbcpu;
+	num_cpus = opt.nbcpu + opt.fpganums_len;
 
 
 	if( ! opt.is_quiet )
@@ -4099,18 +4599,18 @@ int do_wpa_crack()
 
 		/* send the keys */
 
-		for(i=0; i<opt.nbcpu; ++i)
+		for(i=0; i<(opt.nbcpu+opt.fpganums_len); ++i)
 		{
 			res = wpa_send_passphrase(key1, &(wpa_data[cid]), 0/*don't block*/);
 			if (res != 0)
 				break;
-			cid = (cid+1) % opt.nbcpu;
+			cid = (cid+1) % (opt.nbcpu+opt.fpganums_len);
 		}
 
 		if (res==0) // if all queues are full, we block until there's room
 		{
 			wpa_send_passphrase(key1, &(wpa_data[cid]), 1/*block*/);
-			cid = (cid+1) % opt.nbcpu;
+			cid = (cid+1) % (opt.nbcpu+opt.fpganums_len);
 		}
 	}
 
@@ -4482,6 +4982,10 @@ int main( int argc, char *argv[] )
 	opt.bssid_list_1st = NULL;
 	opt.bssidmerge	= NULL;
 	opt.oneshot		= 0;
+#ifdef ENABLE_FPGA
+	opt.fpganums = NULL;
+	opt.fpganums_len = 0;
+#endif
 
 	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
 	bzero(all_ivs, (256*256*256)*sizeof(used_iv));
@@ -4506,8 +5010,13 @@ int main( int argc, char *argv[] )
             {0,                   0, 0,  0 }
         };
 
-		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
+#ifdef ENABLE_FPGA
+		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1F:",
                         long_options, &option_index );
+#else
+		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1F:",
+                        long_options, &option_index );
+#endif
 
 		if( option < 0 ) break;
 
@@ -4731,6 +5240,12 @@ int main( int argc, char *argv[] )
 				}
 
 				break;
+
+#ifdef ENABLE_FPGA
+			case 'F' :
+				opt.fpganums = fpganums_parse(optarg, &opt.fpganums_len);
+				break;
+#endif
 
 			case 'k' :
 
@@ -5412,7 +5927,21 @@ usage:
 		if (db == NULL) {
 #endif
 
+#ifdef ENABLE_FPGA
+			if(opt.fpganums_len > 0) {
+				opt.nbcpu = 0;
+				picoinit(NULL);
+				for(i = 0; i < opt.fpganums_len; i++)
+					initfpga(opt.fpganums[i]);
+				chrono( &t_begin, 1 );
+				chrono( &t_stats, 1 );
+				chrono( &t_kprev, 1 );
+			}
+
+			for( i = 0; i < opt.nbcpu + opt.fpganums_len; i++ )
+#else
 			for( i = 0; i < opt.nbcpu; i++ )
+#endif
 			{
 				/* start one thread per cpu */
 				wpa_data[i].ap = ap_cur;
@@ -5425,6 +5954,18 @@ usage:
 				pthread_cond_init(&wpa_data[i].cond, NULL);
 				pthread_mutex_init(&wpa_data[i].mutex, NULL);
 
+#ifdef ENABLE_FPGA
+				if(i >= opt.nbcpu) {
+					if(pthread_create(&(tid[id]), NULL, (void *)crack_wpa_fpga_thread,
+						(void *)&(wpa_data[i])) != 0)
+					{
+						perror("pthread_create failed");
+						goto exit_main;
+					}
+					id++;
+					continue;
+				}
+#endif
 				if( pthread_create( &(tid[id]), NULL, (void *) crack_wpa_thread,
 					(void *) &(wpa_data[i]) ) != 0 )
 				{
@@ -5445,11 +5986,25 @@ usage:
 
 			ret = do_wpa_crack();	// we feed keys to the cracking threads
 			wpa_wordlists_done = 1; // we tell the threads that they shouldn't expect more words (don't wait for parallel crack)
+#ifdef ENABLE_FPGA
+			while(1) {
+				pthread_mutex_lock(&mx_fin);
+				if(fpga_finished >= opt.fpganums_len)
+					break;
+				pthread_mutex_unlock(&mx_fin);
+			}
 
+			for( i = 0; i < opt.nbcpu + opt.fpganums_len; i++ ) // we wait for the cracking threads to end
+#else
 			for( i = 0; i < opt.nbcpu; i++ ) // we wait for the cracking threads to end
+#endif
 				pthread_join(tid[--id], NULL);
 
+#ifdef ENABLE_FPGA
+			for( i = 0; i < opt.nbcpu + opt.fpganums_len; i++ )
+#else
 			for( i = 0; i < opt.nbcpu; i++ )
+#endif
 			{
 				if (wpa_data[i].key[0] != 0)
 				{

@@ -4,7 +4,7 @@ include $(AC_ROOT)/common.mak
 
 TEST_DIR	= $(AC_ROOT)/test
 
-CFLAGS		+= -Iinclude
+CFLAGS		+= -Iinclude -DENABLE_FPGA
 
 iCC             = $(shell find /opt/intel/cc/*/bin/icc)
 iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro $(COMMON_CFLAGS)
@@ -113,7 +113,7 @@ aircrack-ng-opt-prof_use: $(SRC_AC)
 	aircrack-ng-opt-prof -lpthread $(LIBSQL)
 
 aircrack-ng$(EXE): $(OBJS_AC)
-	$(CC) $(CFLAGS) $(OBJS_AC) $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL)
+	$(CC) $(CFLAGS) $(OBJS_AC) $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL) ../../picod/libpicod.a
 
 airdecap-ng$(EXE): $(OBJS_AD)
 	$(CC) $(CFLAGS) $(OBJS_AD) -o $(@) $(LIBSSL)
