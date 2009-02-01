@@ -8,6 +8,7 @@ airgraph-ng depends are as follows
 
 graphviz with png support
 airodump >= 1.0
+python
 
 The program usage is as follows
 
@@ -20,7 +21,8 @@ CAPR or Client to AP Relationship
 CPR or Client Prob Graph
 	This showes you all the clients that are sending out probe requests for the same ESSID's
 	;-) Fake AP any one?
-	
+Once you have airgraph-ng set up and installed i have included some test data to allow you to quickly see if airgraph-ng is working. This data can be found in the test directory inside the libs directory	
+
 Airgraph-ng sets graphviz to use the latin character set if this is a problem for you please let me know. I did this to clear up a bug i had with the CPG graphs
 
 dumpjoin.py is a short support script that will allow you to join two airodump CSV files into one. Run the program with no arugments to see the usage
