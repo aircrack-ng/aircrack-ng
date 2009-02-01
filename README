@@ -20,11 +20,8 @@ CAPR or Client to AP Relationship
 CPR or Client Prob Graph
 	This showes you all the clients that are sending out probe requests for the same ESSID's
 	;-) Fake AP any one?
-	Known Error
-	Error: UTF8 codes > 3 bytes are not currently supported. Or perhaps "-Gcharset=latin1" is needed?
-
-	If you see an error like the one above then you have a probe request that violates the UTF8 Codes. This is an error with graphviz not airgraph-ng. 
-	If you know how to fix this please let me know.
+	
+Airgraph-ng sets graphviz to use the latin character set if this is a problem for you please let me know. I did this to clear up a bug i had with the CPG graphs
 
 dumpjoin.py is a short support script that will allow you to join two airodump CSV files into one. Run the program with no arugments to see the usage
 

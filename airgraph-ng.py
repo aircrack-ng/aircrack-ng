@@ -246,7 +246,7 @@ def grpahviz_Call(output):
 	print "Warning Images can be large!"
 	print "Creating your Graph, Depending on your system this can take a bit. Please standby.............."
 	try:
-		subprocess.Popen(["fdp","-Tpng","airGconfig.dot","-o",output]).wait()
+		subprocess.Popen(["fdp","-Tpng","airGconfig.dot","-o",output,"-Gcharset=latin1"]).wait()
 	except Exception:
 		subprocess.Popen(["rm","-rf","airGconfig.dot"])
 		print "You seem to be missing the Graphviz tool set did you check out the deps in the README?"
