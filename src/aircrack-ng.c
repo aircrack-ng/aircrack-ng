@@ -192,6 +192,7 @@ char usage[] =
 "      -p <nbcpu> : # of CPU to use  (default: all CPUs)\n"
 "      -q         : enable quiet mode (no status output)\n"
 "      -C <macs>  : merge the given APs to a virtual one\n"
+"      -l <file>  : write key to file\n"
 "\n"
 "  Static WEP cracking options:\n"
 "\n"
@@ -2844,8 +2845,9 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 
 static void key_found(unsigned char *wepkey, int keylen, int B)
 {
-	int nb_ascii = 0;
+	FILE * keyFile;
 	int i, n;
+	int nb_ascii = 0;
 
 	for( i = 0; i < keylen; i++ )
 		if( wepkey[i] == 0 ||
@@ -2895,6 +2897,17 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 
 	printf( "\n\tDecrypted correctly: %d%%\n", opt.probability );
 	printf( "\n" );
+
+	// Write the key to a file
+	if (opt.logKeyToFile != NULL) {
+		keyFile = fopen(opt.logKeyToFile, "w");
+		if (keyFile != NULL)
+		{
+			for( i = 0; i < keylen; i++ )
+				fprintf(keyFile, "%02X", wepkey[i]);
+			fclose(keyFile);
+		}
+	}
 }
 
 /* test if the current WEP key is valid */
@@ -3763,6 +3776,7 @@ uchar mic[16], int force )
 
 int crack_wpa_thread( void *arg )
 {
+	FILE * keyFile;
 	char  essid[36];
 	char  key[4][128];
 	uchar pmk[4][128];
@@ -3905,6 +3919,16 @@ int crack_wpa_thread( void *arg )
 				if (opt.l33t)
 					printf( "\33[32;22m" );
 
+				// Write the key to a file
+				if (opt.logKeyToFile != NULL) {
+					keyFile = fopen(opt.logKeyToFile, "w");
+					if (keyFile != NULL)
+					{
+						fprintf(keyFile, "%s", key[j]);
+						fclose(keyFile);
+					}
+				}
+
 				return SUCCESS;
 			}
 		}
@@ -3990,6 +4014,7 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 
 	unsigned char ptk[80];
 	unsigned char mic[20];
+	FILE * keyFile;
 
 	if(ccount) {} //XXX
 	if(columnnames) {} //XXX
@@ -3998,6 +4023,16 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 
 	if( memcmp( mic, ap->wpa.keymic, 16 ) == 0 )
 	{
+		// Write the key to a file
+		if (opt.logKeyToFile != NULL) {
+			keyFile = fopen(opt.logKeyToFile, "w");
+			if (keyFile != NULL)
+			{
+				fprintf(keyFile, "%s", values[1]);
+				fclose(keyFile);
+			}
+		}
+
 		if( opt.is_quiet )
 		{
 			printf( "KEY FOUND! [ %s ]\n", values[1] );
@@ -4482,6 +4517,7 @@ int main( int argc, char *argv[] )
 	opt.bssid_list_1st = NULL;
 	opt.bssidmerge	= NULL;
 	opt.oneshot		= 0;
+	opt.logKeyToFile = NULL;
 
 	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
 	bzero(all_ivs, (256*256*256)*sizeof(used_iv));
@@ -4506,7 +4542,7 @@ int main( int argc, char *argv[] )
             {0,                   0, 0,  0 }
         };
 
-		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
+		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:l:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -4744,6 +4780,17 @@ int main( int argc, char *argv[] )
 
 				K_COEFF[(opt.korek) - 1] = 0;
 
+				break;
+
+			case 'l' :
+				opt.logKeyToFile = (char *)malloc(strlen(optarg) + 1);
+				if (opt.logKeyToFile == NULL)
+				{
+					printf("Error allocating memory\n");
+					return( FAILURE );
+				}
+
+				strcpy(opt.logKeyToFile, optarg);
 				break;
 
 			case 'M' :

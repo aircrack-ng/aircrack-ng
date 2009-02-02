@@ -146,7 +146,10 @@ struct options
                                  /* inspection of the different  */
                                  /* keybytes                     */
 
-	int oneshot;
+	int oneshot;				 /* Do PTW once */
+
+	char * logKeyToFile;
+
 }
 
 opt;
