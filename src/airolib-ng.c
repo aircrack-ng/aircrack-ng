@@ -960,20 +960,26 @@ int main(int argc, char **argv) {
 			case 'i':
 				// Import
 
-				if ( check_for_db(&db, argv[1], 1, 0) ) {
-					return 1;
-				}
-
 				if (argc < 5) {
 					print_help("You must specifiy an import format and a file.");
-				} else if (strcasecmp(argv[3],IMPORT_COWPATTY)==0) {
+				} else if (strcasecmp(argv[3], IMPORT_COWPATTY) == 0) {
+					if ( check_for_db(&db, argv[1], 1, 0) ) {
+						return 1;
+					}
 					import_cowpatty(db,argv[4]);
-				} else if (strcasecmp(argv[3],IMPORT_ESSID)==0) {
-					import_ascii(db,IMPORT_ESSID,argv[4]);
-				} else if (strcasecmp(argv[3],IMPORT_PASSWD)==0 || strcasecmp(argv[3],"password")==0) {
+				} else if (strcasecmp(argv[3], IMPORT_ESSID) == 0) {
+					if ( check_for_db(&db, argv[1], 1, 0) ) {
+						return 1;
+					}
+					import_ascii(db, IMPORT_ESSID,argv[4]);
+				} else if (strcasecmp(argv[3], IMPORT_PASSWD) == 0 || strcasecmp(argv[3],"password") == 0) {
+					if ( check_for_db(&db, argv[1], 1, 0) ) {
+						return 1;
+					}
 					import_ascii(db,IMPORT_PASSWD, argv[4]);
 				} else {
 					print_help("Invalid import format specified.");
+					return 1;
 				}
 				break;
 			case 's':
