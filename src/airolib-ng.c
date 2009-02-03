@@ -971,7 +971,6 @@ int main(int argc, char **argv) {
 				} else if (strcasecmp(argv[3],IMPORT_ESSID)==0) {
 					import_ascii(db,IMPORT_ESSID,argv[4]);
 				} else if (strcasecmp(argv[3],IMPORT_PASSWD)==0 || strcasecmp(argv[3],"password")==0) {
-					printf("3");
 					import_ascii(db,IMPORT_PASSWD, argv[4]);
 				} else {
 					print_help("Invalid import format specified.");
