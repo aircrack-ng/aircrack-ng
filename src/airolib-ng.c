@@ -930,10 +930,7 @@ int main(int argc, char **argv) {
 				break;
 
 			case 'e':
-				// Export
-				if ( check_for_db(&db, argv[1], 0, 0) ) {
-					return 1;
-				}
+
 
 				if (argc < 4) {
 					print_help("You must specify an export format.");
@@ -941,6 +938,10 @@ int main(int argc, char **argv) {
 					if (argc < 6) {
 						print_help("You must specify essid and output file.");
 					} else {
+						// Export
+						if ( check_for_db(&db, argv[1], 0, 0) ) {
+							return 1;
+						}
 						export_cowpatty(db,argv[4],argv[5]);
 					}
 				} else {
@@ -989,7 +990,6 @@ int main(int argc, char **argv) {
 				if ( check_for_db(&db, argv[1], 0, 0) ) {
 					return 1;
 				}
-
 
 				sql_stdout(db, argv[3], 0);
 
