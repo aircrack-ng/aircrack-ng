@@ -1,0 +1,15 @@
+diff -Naur linux-2.6.28/drivers/net/wireless/ath5k/base.c linux-2.6.28-chaos/drivers/net/wireless/ath5k/base.c
+--- linux-2.6.28/drivers/net/wireless/ath5k/base.c	2008-12-24 18:26:37.000000000 -0500
++++ linux-2.6.28-chaos/drivers/net/wireless/ath5k/base.c	2009-02-06 21:38:43.000000000 -0500
+@@ -1732,6 +1738,11 @@
+ 				goto accept;
+ 			}
+ 
++			/* Allow CRC errors through */
++			if (rs.rs_status & AR5K_RXERR_CRC) {
++				goto accept;
++			}
++
+ 			/* let crypto-error packets fall through in MNTR */
+ 			if ((rs.rs_status &
+ 				~(AR5K_RXERR_DECRYPT|AR5K_RXERR_MIC)) ||
