@@ -424,8 +424,8 @@ static void inject(struct wif *wi, void *buf, int len)
 		perror("writev()");
 		exit(1);
 	}
-	if (rc != len) {
-		time_print("Error Wrote %d out of %d\n", rc, len);
+	if (rc != len && rc != len + 3 /* packet length increases by 9 on Radiotap interfaces - this is normal */) {
+		time_print("ERROR: Packet length changed while transmitting (%d instead of %d).\n", rc, len);
 		exit(1);
 	}
 }
