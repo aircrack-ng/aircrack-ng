@@ -34,8 +34,25 @@ endif
 LIBPCAP		=
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE) airbase-ng$(EXE) \
+		  airtun-ng$(EXE) easside-ng$(EXE) airbase-ng$(EXE) \
 		  tkiptun-ng$(EXE)
+
+ifeq ($(UNSTABLE), true)
+	SBINFILES	+= wesside-ng$(EXE)
+else
+	ifeq ($(unstable), true)
+		SBINFILES        += wesside-ng$(EXE)
+	else
+		ifeq ($(UNSTABLE), TRUE)
+			SBINFILES        += wesside-ng$(EXE)
+		else
+			ifeq ($(unstable), TRUE)
+				SBINFILES        += wesside-ng$(EXE)
+			endif
+		endif
+	endif
+endif
+
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
