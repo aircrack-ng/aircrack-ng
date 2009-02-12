@@ -3201,8 +3201,6 @@ int dump_write_kismet_csv( void )
 
     ap_cur = G.ap_1st;
 
-    printf("dumping to kismet csv file\n");
-
     k=1;
     while( ap_cur != NULL )
     {
