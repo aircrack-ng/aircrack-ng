@@ -31,13 +31,31 @@ else
 	endif
 endif
 
+
 LIBPCAP		=
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE) airbase-ng$(EXE) \
+		  airtun-ng$(EXE) easside-ng$(EXE) airbase-ng$(EXE) \
 		  tkiptun-ng$(EXE)
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
+
+ifeq ($(UNSTABLE), true)
+	SBINFILES	+= wesside-ng$(EXE)
+else
+	ifeq ($(unstable), true)
+		SBINFILES        += wesside-ng$(EXE)
+	else
+		ifeq ($(UNSTABLE), TRUE)
+			SBINFILES        += wesside-ng$(EXE)
+		else
+			ifeq ($(unstable), TRUE)
+				SBINFILES        += wesside-ng$(EXE)
+			endif
+		endif
+	endif
+endif
+
 
 SRC_PTW		= aircrack-ptw-lib.c
 SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
