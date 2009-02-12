@@ -133,11 +133,13 @@ static pthread_mutex_t mx_wpastats = PTHREAD_MUTEX_INITIALIZER;
 #define K16_IV	0x00080000
 #define K17_IV	0x00100000
 
+/*
 typedef struct
 {
 	unsigned int used;
 }used_iv;
 used_iv* all_ivs;
+*/
 
 typedef struct
 {
@@ -4519,8 +4521,10 @@ int main( int argc, char *argv[] )
 	opt.oneshot		= 0;
 	opt.logKeyToFile = NULL;
 
+	/*
 	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
 	bzero(all_ivs, (256*256*256)*sizeof(used_iv));
+	*/
 
 	forceptw = 0;
 
