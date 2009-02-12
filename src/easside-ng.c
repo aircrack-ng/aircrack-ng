@@ -1,5 +1,5 @@
  /*
-  *  Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
+  *  Copyright (c) 2007, 2008, 2009 Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  This program is free software; you can redistribute it and/or modify
   *  it under the terms of the GNU General Public License as published by
@@ -1492,8 +1492,8 @@ void send_frame(struct east_state *es, void *buf, int len)
         rc = wi_write(es->es_wi, buf, len, NULL);
         if(rc == -1)
 		err(1, "wi_write()");
-        if (rc != len) {
-                printf("Error Wrote %d out of %d\n", rc, len);
+        if (rc != len && rc != len + 3 /* packet length increases by 9 on Radiotap interfaces - this is normal */) { 
+                printf("ERROR: Packet length changed while transmitting (%d instead of %d).\n", rc, len);
                 exit(1);
         }
 
@@ -2386,7 +2386,7 @@ void usage(char *p)
 	if (p) {}
 
 	printf("\n"
-		"  %s - (C) 2007,2008 Andrea Bittau\n"
+		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
 		"  http://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: easside-ng <options>\n"

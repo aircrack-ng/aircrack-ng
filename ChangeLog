@@ -1,4 +1,13 @@
-Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released ?? Jan 2009:
+Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
+* aircrack-ng: Fixed useless memory allocation.
+* aircrack-ng: Fixed compilation on 64 bit (SHA-SSE2).
+* aircrack-ng: Fixed errors when compiling on OS X 10.5.6 PPC.
+* aircrack-ng: Added an option to write the key to a file.
+* airolib-ng: Fixed a bug where database is created even if parameters are not correct.
+* airmon-ng: Bypass interface checks when ps command returns an error. Needed for BusyBox limited ps command.
+* easside-ng & wesside-ng: Fixing again "Error Wrote 39 out of 30" error message.
+
+Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * aircrack-ng: Added SSE2 supports (WPA cracking speed is improved a lot) thanks to nx5.
 * aircrack-ng: Fixed detection of the number of CPU (especially with recent CPUs).
 * aircrack-ng: Fixed long lasting WPA bugs: cannot find the key with SMP computers,
@@ -14,7 +23,7 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released ?? Jan 2009:
 * airodump-ng: Fixed power value display (for ath interface with a high number, more than 99).
 * airodump-ng: Can work on the new frequencies (allowed by frequency Chaos patch).
 * airodump-ng: Now display if the network has QoS enabled.
-* aireplay-ng: Fixed crash with too short packets (seen with zd1211.
+* aireplay-ng: Fixed crash with too short packets (seen with zd1211).
 * aireplay-ng: Fixed STP usage in fragmentation attack.
 * aireplay-ng: Fixed bug with deauth attack.
 * airtun-ng: Fixed STP conversion.
