@@ -9,7 +9,6 @@ endif
 AC_ROOT		= .
 include		$(AC_ROOT)/common.mak
 
-SCRIPTS         = airmon-ng airdriver-ng
 DOCFILES        = ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 
 
@@ -27,15 +26,14 @@ aircrack-ng-opt-prof_use:
 
 install:
 	$(MAKE) -C src $(@)
-	install -m 755 $(SCRIPTS) $(DESTDIR)$(sbindir)
+	$(MAKE) -C scripts $(@)
 	$(MAKE) -C manpages $(@)
 
 uninstall:
 	$(MAKE) -C src $(@)
-	-rm -f $(DESTDIR)$(sbindir)/airmon-ng
-	-rm -f $(DESTDIR)$(sbindir)/airdriver-ng
 	-rm -fr $(DESTDIR)$(docdir)
 	$(MAKE) -C manpages $(@)
+	$(MAKE) -C scripts $(@)
 
 strip:
 	$(MAKE) -C src $(@)
