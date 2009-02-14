@@ -712,7 +712,7 @@ int dump_initialize( char *prefix, int ivs_only )
         for( i = 0; i < NB_EXTENSIONS; i++ )
         {
 			memset(ofn, 0, ofn_len);
-            snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
+            snprintf( ofn,  ofn_len, "%s-%02d.%s",
                       prefix, G.f_index, f_ext[i] );
 
             if( ( f = fopen( ofn, "rb+" ) ) != NULL )
@@ -733,7 +733,7 @@ int dump_initialize( char *prefix, int ivs_only )
     /* create the output CSV file */
 
 	memset(ofn, 0, ofn_len);
-    snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
+    snprintf( ofn,  ofn_len, "%s-%02d.%s",
               prefix, G.f_index, AIRODUMP_NG_CSV_EXT );
 
     if( ( G.f_txt = fopen( ofn, "wb+" ) ) == NULL )
@@ -747,7 +747,7 @@ int dump_initialize( char *prefix, int ivs_only )
     /* create the output Kismet CSV file */
 
     memset(ofn, 0, ofn_len);
-    snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
+    snprintf( ofn,  ofn_len, "%s-%02d.%s",
               prefix, G.f_index, KISMET_CSV_EXT );
 
     if( ( G.f_kis = fopen( ofn, "wb+" ) ) == NULL )
@@ -763,7 +763,7 @@ int dump_initialize( char *prefix, int ivs_only )
     if (G.usegpsd)
     {
         memset(ofn, 0, ofn_len);
-        snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
+        snprintf( ofn,  ofn_len, "%s-%02d.%s",
                   prefix, G.f_index, AIRODUMP_NG_GPS_EXT );
 
         if( ( G.f_gps = fopen( ofn, "wb+" ) ) == NULL )
@@ -782,7 +782,7 @@ int dump_initialize( char *prefix, int ivs_only )
         struct pcap_file_header pfh;
 
         memset(ofn, 0, ofn_len);
-        snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
+        snprintf( ofn,  ofn_len, "%s-%02d.%s",
                   prefix, G.f_index, AIRODUMP_NG_CAP_EXT );
 
         if( ( G.f_cap = fopen( ofn, "wb+" ) ) == NULL )
@@ -817,7 +817,7 @@ int dump_initialize( char *prefix, int ivs_only )
         fivs2.version = IVS2_VERSION;
 
         memset(ofn, 0, ofn_len);
-        snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
+        snprintf( ofn,  ofn_len, "%s-%02d.%s",
                   prefix, G.f_index, IVS2_EXTENSION );
 
         if( ( G.f_ivs = fopen( ofn, "wb+" ) ) == NULL )
