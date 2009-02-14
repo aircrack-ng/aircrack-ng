@@ -88,7 +88,7 @@ def airDumpParse(ardump):
 		del ardump[0] #remove the first line of text with the headings
 		stationStart = ardump.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, Probed ESSIDs') 
 	except Exception:
-		print "You Seem to have provided an improper input file please make sure you are loading an airodump txt file and not a pcap"
+		print "You Seem to have provided an improper input file please make sure you are loading an airodump csv file and not a pcap"
 		sys.exit(1)
 	del ardump[stationStart] #this removes the client Station Mac, ect heading.....
 	Clients = ardump[stationStart:] #splits off the clients into their own list
@@ -113,7 +113,7 @@ def airDumpParse(ardump):
 def about():
 	print block , "#     Welcome to",PROG,"      #" , block
 def showBanner():
-	print "Usage",PROG,"-i [airodumpfile.txt] -o [outputfile.png] -g [CAPR OR CPG]\n\t-i\tInput File\n\t-o\tOutput File\n\t-g\tChoose the Graph Type Current types are [CAPR (Client to AP Relationship) & CPG (Common probe graph)]\n\t-a\tPrint the about\n\t-h\tPrint this help"
+	print "Usage",PROG,"-i [airodumpfile.csv] -o [outputfile.png] -g [CAPR OR CPG]\n\t-i\tInput File\n\t-o\tOutput File\n\t-g\tChoose the Graph Type Current types are [CAPR (Client to AP Relationship) & CPG (Common probe graph)]\n\t-a\tPrint the about\n\t-h\tPrint this help"
 
 ###################################
 #          Graphviz work          #
@@ -266,7 +266,7 @@ if __name__ == "__main__":
 
         parser = optparse.OptionParser("usage: %prog [options] -i input -o output -g graph type .....")  #read up more on this
 	parser.add_option("-o", "--output",  dest="output",nargs=1, help="Our Output Image ie... Image.png")
-	parser.add_option("-i", "--dump", dest="input", nargs=1 ,help="Airodump txt file in CSV format NOT the pcap")
+	parser.add_option("-i", "--dump", dest="input", nargs=1 ,help="Airodump csv file in CSV format NOT the pcap")
 	parser.add_option("-g", "--graph", dest="graph_type", nargs=1 ,help="Choose the Graph Type Current types are [CAPR (Client to AP Relationship) & CPG (Common probe graph)]")
 	(options, args) = parser.parse_args()
 	filename = options.output

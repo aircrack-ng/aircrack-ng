@@ -26,7 +26,7 @@ def parse_file(file,file_name):
 		stationStart = cleanup.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, Probed ESSIDs')
         	del cleanup[header]
 	except Exception:
-		print "You seem to have provided an improper input file"" '",file_name,"' ""Please make sure you are loading an airodump txt file and not a Pcap"
+		print "You seem to have provided an improper input file"" '",file_name,"' ""Please make sure you are loading an airodump csv file and not a Pcap"
         	sys.exit(1)
 	Clients = cleanup[stationStart:] #splits off the clients into their own list
 	stationStart = stationStart - 1 #ulgy hack to make sure the heading gets deleted from end of the APs List
@@ -81,11 +81,11 @@ if  __name__ == "__main__":
 	filenames = options.filename
 	outfile = options.output
 	if outfile == None:
-		print "You must provide a file name to write out to. IE... -o foo.txt\n"
+		print "You must provide a file name to write out to. IE... -o foo.csv\n"
 		showBanner()
 		sys.exit(1)
 	elif filenames == None:
-		print "You must provide at least two file names to join. IE... -i foo1.txt foo2.txt\n"
+		print "You must provide at least two file names to join. IE... -i foo1.csv foo2.csv\n"
 		showBanner()
 		sys.exit(1)
 	for file_name in args:
