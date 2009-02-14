@@ -1,0 +1,30 @@
+.TH airgraph-ng "January 2009" Linux "User Manual"
+
+
+.SH NAME
+airgraph-ng - a 802.11 visualization utility 
+
+.SH SYNOPSIS
+airgraph-ng [options]
+
+.SH DESCRIPITION
+.I	airgraph-ng's purpose is to graph the txt file that is created when 
+.I	you run airodump with the -w option. The idea is that we are showing 
+.I	the relationships of the clients to the AP's so dont be shocked if 
+.I	you see only one mapping as you may only have captured one client
+ 
+                                
+airgraph-ng -i [your txt file] -o [the output file in png format] -g [graph 
+Format option is either CAPR or CPG]
+
+.SH OPTIONS
+.IP	-h  
+Shows the help screen.
+.IP	-i  
+Airodump input file
+.IP	-o  
+Output png file.
+.IP	-g  
+Choose the Graph Type Current types are [CAPR (Client to AP Relationship) & CPG (Common probe graph)]
+.IP	-a  
+Print the about
