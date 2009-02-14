@@ -114,8 +114,15 @@
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 
+#define AIRODUMP_NG_CSV_EXT "csv"
+#define KISMET_CSV_EXT "kismet.csv"
+#define AIRODUMP_NG_GPS_EXT "gps"
+#define AIRODUMP_NG_CAP_EXT "cap"
+
+#define NB_EXTENSIONS 5
+
 const unsigned char llcnull[4] = {0, 0, 0, 0};
-char *f_ext[4] = { "txt", "gps", "cap", "ivs" };
+char *f_ext[NB_EXTENSIONS] = { AIRODUMP_NG_CSV_EXT, AIRODUMP_NG_GPS_EXT, AIRODUMP_NG_CAP_EXT, IVS2_EXTENSION, KISMET_CSV_EXT };
 
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
@@ -680,33 +687,32 @@ void update_rx_quality( )
 
 int dump_initialize( char *prefix, int ivs_only )
 {
-    int i;
+    int i, ofn_len;
     FILE *f;
-    char ofn[1024];
+    char * ofn = NULL;
 
 
     /* If you only want to see what happening, send all data to /dev/null */
 
-    if ( prefix == NULL) {
+    if ( prefix == NULL || strlen( prefix ) == 0) {
 	    return( 0 );
     }
 
-    /* check not to overflow the ofn buffer */
-
-    if( strlen( prefix ) >= sizeof( ofn ) - 10 )
-        prefix[sizeof( ofn ) - 10] = '\0';
-
-    /* make sure not to overwrite any existing file */
-
-    memset( ofn, 0, sizeof( ofn ) );
+	/* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
+	   + longest extension ("kismet.csv") + terminating 0. */
+	ofn_len = strlen(prefix) + 1 + 2 + 1 + 10 + 1;
+	ofn = (char *)calloc(1, ofn_len);
 
     G.f_index = 1;
 
+
+	/* Make sure no file with the same name & all possible file extensions. */
     do
     {
-        for( i = 0; i < 4; i++ )
+        for( i = 0; i < NB_EXTENSIONS; i++ )
         {
-            snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.%s",
+			memset(ofn, 0, ofn_len);
+            snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
                       prefix, G.f_index, f_ext[i] );
 
             if( ( f = fopen( ofn, "rb+" ) ) != NULL )
@@ -717,65 +723,79 @@ int dump_initialize( char *prefix, int ivs_only )
             }
         }
     }
-    while( i < 4 );
+    /* If we did all extensions then no file with that name or extension exist
+       so we can use that number */
+    while( i < NB_EXTENSIONS );
 
-    G.prefix = (char*) malloc(strlen(prefix)+2);
-    snprintf(G.prefix, strlen(prefix)+1, "%s", prefix);
+    G.prefix = (char *) malloc(strlen(prefix) + 1);
+    memcpy(G.prefix, prefix, strlen(prefix) + 1);
 
-    /* create the output CSV & GPS files */
+    /* create the output CSV file */
 
-    snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.txt",
-              prefix, G.f_index );
+	memset(ofn, 0, ofn_len);
+    snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
+              prefix, G.f_index, AIRODUMP_NG_CSV_EXT );
 
     if( ( G.f_txt = fopen( ofn, "wb+" ) ) == NULL )
     {
         perror( "fopen failed" );
         fprintf( stderr, "Could not create \"%s\".\n", ofn );
+        free( ofn );
         return( 1 );
     }
 
-    /* create the output CSV & GPS files */
+    /* create the output Kismet CSV file */
 
-    snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.csv",
-              prefix, G.f_index );
+    memset(ofn, 0, ofn_len);
+    snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
+              prefix, G.f_index, KISMET_CSV_EXT );
 
     if( ( G.f_kis = fopen( ofn, "wb+" ) ) == NULL )
     {
         perror( "fopen failed" );
         fprintf( stderr, "Could not create \"%s\".\n", ofn );
+        free( ofn );
         return( 1 );
     }
 
+	/* create the output GPS file */
+
     if (G.usegpsd)
     {
-        snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.gps",
-                  prefix, G.f_index );
+        memset(ofn, 0, ofn_len);
+        snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
+                  prefix, G.f_index, AIRODUMP_NG_GPS_EXT );
 
         if( ( G.f_gps = fopen( ofn, "wb+" ) ) == NULL )
         {
             perror( "fopen failed" );
             fprintf( stderr, "Could not create \"%s\".\n", ofn );
+            free( ofn );
             return( 1 );
         }
     }
+
     /* create the output packet capture file */
 
     if( ivs_only == 0 )
     {
         struct pcap_file_header pfh;
 
-        snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.cap",
-                  prefix, G.f_index );
+        memset(ofn, 0, ofn_len);
+        snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
+                  prefix, G.f_index, AIRODUMP_NG_CAP_EXT );
 
         if( ( G.f_cap = fopen( ofn, "wb+" ) ) == NULL )
         {
             perror( "fopen failed" );
             fprintf( stderr, "Could not create \"%s\".\n", ofn );
+            free( ofn );
             return( 1 );
         }
 
-        G.f_cap_name = (char*) malloc(128);
-        snprintf(G.f_cap_name, 127, "%s",ofn);
+        G.f_cap_name = (char *) malloc( strlen( ofn ) + 1 );
+        memcpy( G.f_cap_name, ofn, strlen( ofn ) + 1 );
+        free( ofn );
 
         pfh.magic           = TCPDUMP_MAGIC;
         pfh.version_major   = PCAP_VERSION_MAJOR;
@@ -796,15 +816,18 @@ int dump_initialize( char *prefix, int ivs_only )
 
         fivs2.version = IVS2_VERSION;
 
-        snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.%s",
+        memset(ofn, 0, ofn_len);
+        snprintf( ofn,  ofn_len - 1, "%s-%02d.%s",
                   prefix, G.f_index, IVS2_EXTENSION );
 
         if( ( G.f_ivs = fopen( ofn, "wb+" ) ) == NULL )
         {
             perror( "fopen failed" );
             fprintf( stderr, "Could not create \"%s\".\n", ofn );
+            free( ofn );
             return( 1 );
         }
+        free( ofn );
 
         if( fwrite( IVS2_MAGIC, 1, 4, G.f_ivs ) != (size_t) 4 )
         {
