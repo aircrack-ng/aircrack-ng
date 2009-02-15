@@ -4451,7 +4451,11 @@ int crack_wpa_thread( void *arg )
 	}
 }
 
-
+/**
+ * Open a specific dictionnary
+ * nb: index of the dictionnary
+ * return 0 on success and FAILURE if it failed
+ */
 int next_dict(int nb)
 {
 	if(opt.dict != NULL)
@@ -4828,7 +4832,7 @@ int crack_wep_dict()
 
 	if(wep.nb_ivs < TEST_MIN_IVS)
 	{
-		printf( "\nYou need to capture at least %d IVs!\n", TEST_MIN_IVS );
+		printf( "\n%ld IVs is below the minimum required for a dictionnary attack (%d IVs min.)!\n", wep.nb_ivs, TEST_MIN_IVS);
 		return( FAILURE );
 	}
 
@@ -5116,11 +5120,6 @@ int main( int argc, char *argv[] )
 					return( FAILURE );
 				}
 
-				if (opt.amode == 1 && opt.nbdict > 0)
-				{
-					opt.do_ptw = 0;
-				}
-
 				break;
 
 			case 'e' :
@@ -5143,7 +5142,7 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'p' :
-				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 || opt.nbcpu < 1 )
+				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 || opt.nbcpu < 1 || opt.nbcpu > MAX_THREADS)
 				{
 					printf( "Invalid number of processes (recommended: %d)\n", cpu_count );
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -5376,10 +5375,6 @@ int main( int argc, char *argv[] )
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
 				}
-				else if (opt.amode == 1 && opt.nbdict > 0)
-				{
-					opt.do_ptw = 0;
-				}
 				break;
 
 			case 'r' :
@@ -5424,17 +5419,12 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'z' :
-				/* only for backwards compatibility - ptw used by default */
+				/* only for backwards compatibility - PTW used by default */
 				if (opt.visual_inspection)
 				{
 					printf("Visual inspection can only be used with KoreK\n");
 					printf("Use \"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
-				}
-
-				if (opt.amode == 1 && opt.nbdict > 0)
-				{
-					opt.do_ptw = 0;
 				}
 
 				forceptw = 1;
@@ -5477,19 +5467,11 @@ usage:
 		goto exit_main;
 	}
 
-	if (opt.amode == 1 && opt.nbdict > 0)
-	{
-		opt.do_ptw = 0;
-	}
-
 	if( (! opt.essid_set && ! opt.bssid_set) && ( opt.is_quiet || opt.no_stdin ) )
 	{
 		printf( "Please specify an ESSID or BSSID.\n" );
 		goto exit_main;
 	}
-
-        if( opt.keylen == 0 )
-                opt.keylen = 13;
 
 	/* start one thread per input file */
 
@@ -5638,7 +5620,6 @@ usage:
 			else
 			{
 				printf( "Choosing first network as target.\n" );
-// 				sleep( 2 );
 				ap_cur = ap_1st;
 			}
 
@@ -5646,6 +5627,12 @@ usage:
 
 			memcpy( opt.bssid, ap_cur->bssid,  6 );
 			opt.bssid_set = 1;
+
+			/* Disable PTW if dictionnary used in WEP */
+			if (ap_cur->crypt == 2 && opt.dict != NULL)
+			{
+				opt.do_ptw = 0;
+			}
 		}
 
 		ap_1st = NULL;
@@ -5784,17 +5771,13 @@ usage:
 	{
 		crack_wep:
 
-		if (opt.nbdict > 0)
-		{
-			opt.do_ptw = 0;
-		}
-
+		/* Default key length: 128 bits */
 		if( opt.keylen == 0 )
 			opt.keylen = 13;
 
 		if(j + opt.do_brute > 4)
 		{
-			printf( "Specified more then 4 bytes to bruteforce!" );
+			printf( "Bruteforcing more then 4 bytes will take too long, aborting!" );
 			goto exit_main;
 		}
 
