@@ -129,7 +129,7 @@ select choix in $CHOICES; do
 		menu			
 
 	elif [ "$choix" = "2" ]; then
-		if [ -e $DUMP_PATH/dump-01.txt ]	
+		if [ -e $DUMP_PATH/dump-01.csv ]	
 		then
 			Parseforap
 			$CLEAR

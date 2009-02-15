@@ -237,8 +237,8 @@
 				rm -rf prga.log
 				rm -rf wep.cap
 				rm -rf key.log
-				ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
-				head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
+				ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
+				head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv
 				clear
 				echo -e "`gettext\"        Detected Access point list\"`"
 				echo ""
@@ -258,7 +258,7 @@
 					aspeed[$i]=$SPEED
 				fi
 				
-				done < $DUMP_PATH/dump-02.txt
+				done < $DUMP_PATH/dump-02.csv
 					echo ""
 					echo -e "`gettext \"       Select target               \"`"
 					read choice

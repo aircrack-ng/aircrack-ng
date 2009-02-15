@@ -134,8 +134,8 @@ done
 ##################################################################################
 function Parseforap {
 	i=0
-	ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
-	head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
+	ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
+	head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv
 	$CLEAR
 
 	echo -e "`gettext \"\\tDetected Access point list\"`\n"
@@ -153,7 +153,7 @@ function Parseforap {
 	    aprivacy[$i]=$PRIVACY
 	    aspeed[$i]=$SPEED
 	   fi
-	done < $DUMP_PATH/dump-02.txt
+	done < $DUMP_PATH/dump-02.csv
 
 	echo -e -n "`gettext 'Select target: '`"
 	read choice
@@ -203,7 +203,7 @@ done
  # Those are subproducts of choosetarget.
 	# List clients, (Option 1)
 	function listsel2 {
-	HOST=`cat $DUMP_PATH/dump-01.txt | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
+	HOST=`cat $DUMP_PATH/dump-01.csv | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
 
 	  echo -e "`gettext '
 		||
@@ -333,7 +333,7 @@ done
 		
 		
 			function listsel1 {
-				HOST=`cat $DUMP_PATH/dump-01.txt | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`
+				HOST=`cat $DUMP_PATH/dump-01.csv | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`
 				echo -e -n "`gettext '
 			 ||
 			 ||
@@ -1130,8 +1130,8 @@ Option: '`"
 			}
 			
 			function mdknewtarget {
-				ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
-				head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
+				ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
+				head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv
 				$CLEAR
 				echo "        Detected Access point list"
 				echo ""
@@ -1150,7 +1150,7 @@ Option: '`"
 					aprivacy[$i]=$PRIVACY
 					aspeed[$i]=$SPEED
 					fi
-				done < $DUMP_PATH/dump-02.txt
+				done < $DUMP_PATH/dump-02.csv
 				echo ""
 				echo "        Select target               "
 				read choice
@@ -1239,8 +1239,8 @@ Option: '`"
 				rm -rf prga.log
 				rm -rf wep.cap
 				rm -rf key.log
-				ap_array=`cat $DUMP_PATH/dump-01.txt | grep -a -n Station | awk -F : '{print $1}'`
-				head -n $ap_array $DUMP_PATH/dump-01.txt &> $DUMP_PATH/dump-02.txt
+				ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
+				head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv
 				$CLEAR
 				echo -e "`gettext\"        Detected Access point list\"`"
 				echo ""
@@ -1260,7 +1260,7 @@ Option: '`"
 					aspeed[$i]=$SPEED
 				fi
 				
-				done < $DUMP_PATH/dump-02.txt
+				done < $DUMP_PATH/dump-02.csv
 					echo ""
 					echo -e "`gettext \"       Select target               \"`"
 					read choice
@@ -1490,7 +1490,7 @@ function doauto {
 		choosetype
 
 		# Now the one on wich you select target
-		if [ -e $DUMP_PATH/dump-01.txt ] 	
+		if [ -e $DUMP_PATH/dump-01.csv ] 	
 		then
 			Parseforap
 			$CLEAR
