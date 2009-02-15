@@ -4634,7 +4634,7 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'p' :
-				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 || opt.nbcpu < 1 )
+				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 || opt.nbcpu < 1 || opt.nbcpu > MAX_THREADS)
 				{
 					printf( "Invalid number of processes (recommended: %d)\n", cpu_count );
 					printf("\"%s --help\" for help.\n", argv[0]);

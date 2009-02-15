@@ -1,6 +1,7 @@
 Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
 * airodump-ng: Changed file extensions for CSV (.csv instead of .txt) and for kismet CSV
   (.kismet.csv instead of .csv).
+* aircrack-ng: Fixed -w with WEP.
 * aircrack-ng: Fixed useless memory allocation.
 * aircrack-ng: Fixed compilation on 64 bit (SHA-SSE2).
 * aircrack-ng: Fixed errors when compiling on OS X 10.5.6 PPC.
