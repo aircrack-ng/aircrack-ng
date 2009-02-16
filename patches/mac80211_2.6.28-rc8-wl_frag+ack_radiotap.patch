@@ -1,0 +1,75 @@
+diff --git a/include/net/ieee80211_radiotap.h b/include/net/ieee80211_radiotap.h
+index d364fd5..4e28c0c 100644
+--- a/include/net/ieee80211_radiotap.h
++++ b/include/net/ieee80211_radiotap.h
+@@ -247,6 +247,9 @@ enum ieee80211_radiotap_type {
+ 						 * retries */
+ #define IEEE80211_RADIOTAP_F_TX_CTS	0x0002	/* used cts 'protection' */
+ #define IEEE80211_RADIOTAP_F_TX_RTS	0x0004	/* used rts/cts handshake */
++#define IEEE80211_RADIOTAP_F_TX_NOACK	0x0008	/* frame should not be ACKed */
++#define IEEE80211_RADIOTAP_F_TX_NOSEQ	0x0010	/* sequence number handled
++						 * by userspace */
+ 
+ /* Ugly macro to convert literal channel numbers into their mhz equivalents
+  * There are certianly some conditions that will break this (like feeding it '30')
+diff --git a/net/mac80211/tx.c b/net/mac80211/tx.c
+index 22702e7..b397aed 100644
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -609,6 +609,10 @@ ieee80211_tx_h_sequence(struct ieee80211_tx_data *tx)
+ 	u8 *qc;
+ 	int tid;
+ 
++	if (unlikely(!(info->flags & IEEE80211_TX_CTL_ASSIGN_SEQ)))
++		return TX_CONTINUE;
++	info->flags &= ~IEEE80211_TX_CTL_ASSIGN_SEQ;
++
+ 	/*
+ 	 * Packet injection may want to control the sequence
+ 	 * number, if we have no matching interface then we
+@@ -867,6 +871,7 @@ __ieee80211_parse_tx_radiotap(struct ieee80211_tx_data *tx,
+ 	struct ieee80211_radiotap_header *rthdr =
+ 		(struct ieee80211_radiotap_header *) skb->data;
+ 	struct ieee80211_supported_band *sband;
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(tx->skb);
+ 	int ret = ieee80211_radiotap_iterator_init(&iterator, rthdr, skb->len);
+ 
+ 	sband = tx->local->hw.wiphy->bands[tx->channel->band];
+@@ -913,6 +918,12 @@ __ieee80211_parse_tx_radiotap(struct ieee80211_tx_data *tx,
+ 			if (*iterator.this_arg & IEEE80211_RADIOTAP_F_FRAG)
+ 				tx->flags |= IEEE80211_TX_FRAGMENTED;
+ 			break;
++		case IEEE80211_RADIOTAP_TX_FLAGS:
++			if (*iterator.this_arg & IEEE80211_RADIOTAP_F_TX_NOACK)
++				info->flags |= IEEE80211_TX_CTL_NO_ACK;
++			if (*iterator.this_arg & IEEE80211_RADIOTAP_F_TX_NOSEQ)
++				info->flags &= ~IEEE80211_TX_CTL_ASSIGN_SEQ;
++			break;
+ 
+ 		/*
+ 		 * Please update the file
+@@ -965,6 +976,8 @@ __ieee80211_tx_prepare(struct ieee80211_tx_data *tx,
+ 	 * it will be cleared/left by radiotap as desired.
+ 	 */
+ 	tx->flags |= IEEE80211_TX_FRAGMENTED;
++	/* Same here, controlled by radiotap and the stack */
++	info->flags |= IEEE80211_TX_CTL_ASSIGN_SEQ;
+ 
+ 	/* process and remove the injection radiotap header */
+ 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+@@ -992,13 +1005,10 @@ __ieee80211_tx_prepare(struct ieee80211_tx_data *tx,
+ 			info->flags |= IEEE80211_TX_CTL_AMPDU;
+ 	}
+ 
+-	if (is_multicast_ether_addr(hdr->addr1)) {
+-		tx->flags &= ~IEEE80211_TX_UNICAST;
++	if (is_multicast_ether_addr(hdr->addr1))
+ 		info->flags |= IEEE80211_TX_CTL_NO_ACK;
+-	} else {
++	else
+ 		tx->flags |= IEEE80211_TX_UNICAST;
+-		info->flags &= ~IEEE80211_TX_CTL_NO_ACK;
+-	}
+ 
+ 	if (tx->flags & IEEE80211_TX_FRAGMENTED) {
+ 		if ((tx->flags & IEEE80211_TX_UNICAST) &&

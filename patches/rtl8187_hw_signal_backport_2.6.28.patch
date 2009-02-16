@@ -1,0 +1,104 @@
+From: Larry Finger <Larry.Finger@lwfinger.net>
+Date: Thu, 4 Dec 2008 04:21:20 +0000 (-0600)
+Subject: rtl8187: Improve wireless statistics for RTL8187
+X-Git-Tag: master-2009-01-05~191
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Flinville%2Fwireless-testing.git;a=commitdiff_plain;h=cd2865552927d616be4a0da7c24$
+
+rtl8187: Improve wireless statistics for RTL8187
+
+The current wireless statistics for the RTL8187 poorly indicate the signal
+strength and quality. With testing, I found that the AGC value is inversely
+correlated with the strength as in the RTL8187B. By implementing a similar
+calculation, much more code becomes common to the two devices.
+
+Signed-off-by: Larry Finger <Larry.Finger@lwfinger.net>
+Tested by: MartÃ­n Ernesto Barreyro <barreyromartin@gmail.com>
+Acked-by: Hin-Tak Leung <htl10@users.sourceforge.net>
+Signed-off-by: John W. Linville <linville@tuxdriver.com>
+Crudely-backported-by: Zero_Chaos <zero_chaos@pentoo.ch>
+---
+
+diff -Naur linux-2.6.28-orig/drivers/net/wireless/rtl8187_dev.c linux-2.6.28/drivers/net/wireless/rtl8187_dev.c
+--- linux-2.6.28-orig/drivers/net/wireless/rtl8187_dev.c	2009-02-09 16:52:51.000000000 -0500
++++ linux-2.6.28/drivers/net/wireless/rtl8187_dev.c	2009-02-09 17:22:50.000000000 -0500
+@@ -303,29 +303,14 @@
+ 		struct rtl8187_rx_hdr *hdr =
+ 			(typeof(hdr))(skb_tail_pointer(skb) - sizeof(*hdr));
+ 		flags = le32_to_cpu(hdr->flags);
+-		signal = hdr->signal & 0x7f;
++		/* As with the RTL8187B below, the AGC is used to calculate
++		 * signal strength and quality. In this case, the scaling
++		 * constants are derived from the output of p54usb.
++		 */
++		quality = 130 - ((41 * hdr->agc) >> 6);
++		signal = -4 - ((27 * hdr->agc) >> 6);
+ 		rx_status.antenna = (hdr->signal >> 7) & 1;
+-		rx_status.noise = hdr->noise;
+ 		rx_status.mactime = le64_to_cpu(hdr->mac_time);
+-		priv->quality = signal;
+-		rx_status.qual = priv->quality;
+-		priv->noise = hdr->noise;
+-		rate = (flags >> 20) & 0xF;
+-		if (rate > 3) { /* OFDM rate */
+-			if (signal > 90)
+-				signal = 90;
+-			else if (signal < 25)
+-				signal = 25;
+-			signal = 90 - signal;
+-		} else {	/* CCK rate */
+-			if (signal > 95)
+-				signal = 95;
+-			else if (signal < 30)
+-				signal = 30;
+-			signal = 95 - signal;
+-		}
+-		rx_status.signal = signal;
+-		priv->signal = signal;
+ 	} else {
+ 		struct rtl8187b_rx_hdr *hdr =
+ 			(typeof(hdr))(skb_tail_pointer(skb) - sizeof(*hdr));
+@@ -343,18 +328,18 @@
+ 		 */
+ 		flags = le32_to_cpu(hdr->flags);
+ 		quality = 170 - hdr->agc;
+-		if (quality > 100)
+-			quality = 100;
+ 		signal = 14 - hdr->agc / 2;
+-		rx_status.qual = quality;
+-		priv->quality = quality;
+-		rx_status.signal = signal;
+-		priv->signal = signal;
+ 		rx_status.antenna = (hdr->rssi >> 7) & 1;
+ 		rx_status.mactime = le64_to_cpu(hdr->mac_time);
+-		rate = (flags >> 20) & 0xF;
+ 	}
+ 
++	if (quality > 100)
++		quality = 100;
++	rx_status.qual = quality;
++	priv->quality = quality;
++	rx_status.signal = signal;
++	priv->signal = signal;
++	rate = (flags >> 20) & 0xF;
+ 	skb_trim(skb, flags & 0x0FFF);
+ 	rx_status.rate_idx = rate;
+ 	rx_status.freq = dev->conf.channel->center_freq;
+@@ -1065,6 +1050,7 @@
+ 
+ 	priv->mode = NL80211_IFTYPE_MONITOR;
+ 	dev->flags = IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING |
++		     IEEE80211_HW_SIGNAL_DBM |
+ 		     IEEE80211_HW_RX_INCLUDES_FCS;
+ 
+ 	eeprom.data = dev;
+@@ -1184,10 +1170,6 @@
+ 		printk(KERN_WARNING "rtl8187: 8187B chip detected. Support "
+ 			"is EXPERIMENTAL, and could damage your\n"
+ 			"         hardware, use at your own risk\n");
+-		dev->flags |= IEEE80211_HW_SIGNAL_DBM;
+-	} else {
+-		dev->flags |= IEEE80211_HW_SIGNAL_UNSPEC;
+-		dev->max_signal = 65;
+ 	}
+ 
+ 	dev->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);

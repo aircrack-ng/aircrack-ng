@@ -1,0 +1,37 @@
+diff --git a/drivers/net/wireless/ath5k/attach.c b/drivers/net/wireless/ath5k/attach.c
+index 51d5698..49d82d7 100644
+--- a/drivers/net/wireless/ath5k/attach.c
++++ b/drivers/net/wireless/ath5k/attach.c
+@@ -317,9 +317,16 @@ struct ath5k_hw *ath5k_hw_attach(struct ath5k_softc *sc, u8 mac_version)
+ 		goto err_free;
+ 	}
+ 
++	/* Set MAC address */
++	ret = ath5k_eeprom_read_mac(ah, mac);
++	if (ret) {
++		ATH5K_ERR(sc, "unable to read address from EEPROM: 0x%04x\n",
++			sc->pdev->device);
++		goto err_free;
++	}
++
+-	/* MAC address is cleared until add_interface */
+ 	ath5k_hw_set_lladdr(ah, mac);
+ 
+ 	/* Set BSSID to bcast address: ff:ff:ff:ff:ff:ff for now */
+ 	memset(ah->ah_bssid, 0xff, ETH_ALEN);
+ 	ath5k_hw_set_associd(ah, ah->ah_bssid, 0);
+diff --git a/drivers/net/wireless/ath5k/base.c b/drivers/net/wireless/ath5k/base.c
+index 9eb9871..ec0104f 100644
+--- a/drivers/net/wireless/ath5k/base.c
++++ b/drivers/net/wireless/ath5k/base.c
+@@ -1182,7 +1182,9 @@ ath5k_txbuf_setup(struct ath5k_softc *sc, struct ath5k_buf *bf)
+ 	bf->skbaddr = pci_map_single(sc->pdev, skb->data, skb->len,
+ 			PCI_DMA_TODEVICE);
+ 
+-	if (info->flags & IEEE80211_TX_CTL_NO_ACK)
++	if ((info->flags & IEEE80211_TX_CTL_NO_ACK) &&
++	   !((info->flags & IEEE80211_TX_CTL_INJECTED) &&
++	   (ieee80211_has_morefrags(((struct ieee80211_hdr *)skb->data)->frame_control))))
+ 		flags |= AR5K_TXDESC_NOACK;
+ 
+ 	pktlen = skb->len;
