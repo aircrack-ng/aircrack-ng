@@ -35,7 +35,7 @@ try:
 	import lib_Airgraphviz   #note this should be further down
 	dot_libs = lib_Airgraphviz #i dont think i need this but ill look at it later
 except ImportError:
-	print "Support libary import error does lib_Airgraphviz exist?"
+	print "Support library import error. Does lib_Airgraphviz exist?"
 	sys.exit(1)
 
 #pdb.set_trace() #debug point
