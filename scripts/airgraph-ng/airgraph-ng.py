@@ -32,6 +32,7 @@ except ImportError:
 import getopt, subprocess, sys, pdb, optparse
 try:
 	sys.path.append("./lib/")
+	sys.path.append("/usr/local/bin/lib/")
 	import lib_Airgraphviz   #note this should be further down
 	dot_libs = lib_Airgraphviz #i dont think i need this but ill look at it later
 except ImportError:
