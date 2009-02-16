@@ -10,6 +10,7 @@ Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
 * airmon-ng and airdriver-ng: Move them in script/ directory.
 * airmon-ng: Bypass interface checks when ps command returns an error. Needed for BusyBox limited ps command.
 * easside-ng & wesside-ng: Fixing again "Error Wrote 39 out of 30" error message.
+* manpages: Fixed manpages titles.
 * Makefile: Only compile wesside-ng with "make unstable=true".
 
 Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
