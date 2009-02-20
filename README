@@ -89,13 +89,6 @@ Aircrack-ng
 		  kismet CSV files is created.
 	Solution: None at this time (will be fixed in next release).
 
-	Aircrack-ng
-	-----------
-	
-	Problem: Option -w is ignored when using it with WEP. ie: aircrack-ng -w password.lst capture.cap
-	Solution: Add -K parameter to force it. ie: aircrack-ng -K -w password.lst capture.cap
-	          (will be fixed in next release).
-
 
 Sample files
 ============
