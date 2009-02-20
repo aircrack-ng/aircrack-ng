@@ -89,13 +89,6 @@ Aircrack-ng
 		  kismet CSV files is created.
 	Solution: None at this time (will be fixed in next release).
 
-	Aircrack-ng
-	-----------
-	
-	Problem: Option -w is ignored when using it with WEP. ie: aircrack-ng -w password.lst capture.cap
-	Solution: Add -K parameter to force it. ie: aircrack-ng -K -w password.lst capture.cap
-	          (will be fixed in next release).
-
 
 Sample files
 ============
@@ -124,3 +117,10 @@ test.ivs (http://download.aircrack-ng.org/wiki-files/other/test.ivs):
 ptw.cap (http://dl.aircrack-ng.org/ptw.cap): 
     This is a 64 bit WEP key file suitable for the PTW method (-z option).
     The key is '1F:1F:1F:1F:1F'.
+
+password.lst
+    This is a sample wordlist for WPA key cracking. More wordlists can be found at
+    http://www.aircrack-ng.org/doku.php?id=faq#where_can_i_find_good_wordlists
+    
+password.db
+    This is a sample airolib-ng database for WPA key cracking.
