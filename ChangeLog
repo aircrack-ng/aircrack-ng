@@ -11,7 +11,7 @@ Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
 * airmon-ng: Bypass interface checks when ps command returns an error. Needed for BusyBox limited ps command.
 * easside-ng & wesside-ng: Fixing again "Error Wrote 39 out of 30" error message.
 * manpages: Fixed manpages titles.
-* Makefile: Only compile wesside-ng with "make unstable=true".
+* Makefile: Only compile and install wesside-ng, easside-ng, buddy-ng and tkiptun-ng with "make unstable=true".
 * patches: Updated sqlite (v3.6.11) patch for cygwin.
 
 Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
