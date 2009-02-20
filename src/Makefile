@@ -12,7 +12,7 @@ iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
-		  ivstools$(EXE) kstats$(EXE) buddy-ng$(EXE) makeivs-ng$(EXE) \
+		  ivstools$(EXE) kstats$(EXE) makeivs-ng$(EXE) \
 		  airdecloak-ng$(EXE)
 
 ifeq ($(SQLITE), true)
@@ -35,22 +35,28 @@ endif
 LIBPCAP		=
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE) easside-ng$(EXE) airbase-ng$(EXE) \
-		  tkiptun-ng$(EXE)
+		  airtun-ng$(EXE) airbase-ng$(EXE)
+		  
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
+
+
 ifeq ($(UNSTABLE), true)
-	SBINFILES	+= wesside-ng$(EXE)
+	SBINFILES	+= wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
+	BINFILES	+= buddy-ng$(EXE)
 else
 	ifeq ($(unstable), true)
-		SBINFILES        += wesside-ng$(EXE)
+		SBINFILES       += wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
+		BINFILES	+= buddy-ng$(EXE)
 	else
 		ifeq ($(UNSTABLE), TRUE)
-			SBINFILES        += wesside-ng$(EXE)
+			SBINFILES       += wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
+			BINFILES	+= buddy-ng$(EXE)
 		else
 			ifeq ($(unstable), TRUE)
-				SBINFILES        += wesside-ng$(EXE)
+				SBINFILES       += wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
+				BINFILES	+= buddy-ng$(EXE)
 			endif
 		endif
 	endif
