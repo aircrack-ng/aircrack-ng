@@ -3529,14 +3529,14 @@ int do_wep_crack2( int B )
 
 int inner_bruteforcer_thread(void *arg)
 {
-	int i, j, k, l, reduce=0;
-	size_t nthread = (size_t)arg;
+	int i, j, k, l, reduce;
 	uchar wepkey[64];
-	int ret=0;
+	int ret;
+	size_t nthread = (size_t)arg;
 
 	inner_bruteforcer_thread_start:
 
-	reduce=0;
+	reduce = 0; ret = 0;
 
 	if( close_aircrack )
 		return(ret);
@@ -3643,15 +3643,16 @@ int crack_wpa_thread( void *arg )
 	char  essid[36];
 	char  key1[128];
 	uchar pmk1[128];
-	int len1;
+	int len1, ret;
+	int slen, cid;
 	/*
 	char  key2[128];
 	uchar pmk2[128];
 	int len2;
 	*/
-	int ret=0;
 
-	int slen, cid = (long) arg;
+	cid = (long) arg;
+	ret = 0;
 
 	/* receive the essid */
 
