@@ -535,6 +535,7 @@ int dump_initialize( char *prefix )
     int i=0;
     FILE *f;
     char ofn[1024];
+    struct pcap_file_header pfh;
 
     if ( prefix == NULL) {
         return( 0 );
@@ -570,8 +571,6 @@ int dump_initialize( char *prefix )
     snprintf(opt.prefix, strlen(prefix)+1, "%s", prefix);
 
     /* create the output packet capture file */
-
-    struct pcap_file_header pfh;
 
     snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.cap",
                 prefix, opt.f_index );
@@ -2514,19 +2513,18 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
     int seqnum, fragnum, morefrag;
     int gotsource, gotbssid;
     int remaining, bytes2use;
-    int reasso=0, fixed=0;
+    int reasso, fixed, z;
 
     struct ST_info *st_cur = NULL;
     struct ST_info *st_prv = NULL;
 
+	reasso = 0; fixed = 0;
     bzero(essid, 256);
 
     pthread_mutex_lock( &mx_cap );
     if(opt.record_data)
         capture_packet(packet, length);
     pthread_mutex_unlock( &mx_cap );
-
-    int z;
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
 

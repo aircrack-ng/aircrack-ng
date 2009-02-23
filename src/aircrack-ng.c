@@ -4291,7 +4291,7 @@ int crack_wpa_thread( void *arg )
 	struct AP_info* ap;
 	int thread;
 	int ret=0;
-	int i, j, len;
+	int i, j, len, slen;
 	int nparallel = 1;
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -4321,8 +4321,6 @@ int crack_wpa_thread( void *arg )
 		memcpy( pke + 35, ap->wpa.anonce, 32 );
 		memcpy( pke + 67, ap->wpa.snonce, 32 );
 	}
-
-	int slen;
 
 	/* receive the essid */
 

@@ -51,24 +51,26 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
     char  key3[128] __attribute__ ((aligned (16)));
 	char  key4[128] __attribute__ ((aligned (16)));
     uchar pmks[128*4] __attribute__ ((aligned (16)));
-	
+
+	// All in double size
+    uchar k_ipad[256] __attribute__ ((aligned (16)));
+	uchar ctx_ipad[80] __attribute__ ((aligned (16)));
+    uchar k_opad[256] __attribute__ ((aligned (16)));
+	uchar ctx_opad[80] __attribute__ ((aligned (16)));
+    uchar buffer[256] __attribute__ ((aligned (16)));
+	uchar sha1_ctx[80] __attribute__ ((aligned (16)));
+    uchar wrkbuf[1280] __attribute__ ((aligned (16)));
+    uint i, *u, *v, *w, *u3, *v4;
+	uchar *pmk1, *pmk2, *pmk3, *pmk4;
+
+	pmk1=pmks; pmk2=pmks+128; pmk3=pmks+128*2; pmk4=pmks+128*3;
+
+
 	strncpy(essid, _essid, 35);
 	strncpy(key1, _key1, 127);
 	strncpy(key2, _key2, 127);
 	strncpy(key3, _key3, 127);
 	strncpy(key4, _key4, 127);
-
-	// todos estos doble tamaño
-    uchar k_ipad[256] __attribute__ ((aligned (16)));
-	uchar ctx_ipad[80] __attribute__ ((aligned (16)));
-    uchar k_opad[256] __attribute__ ((aligned (16)));
-	uchar ctx_opad[80] __attribute__ ((aligned (16)));
-    uchar buffer[256] __attribute__ ((aligned (16))); 
-	uchar sha1_ctx[80] __attribute__ ((aligned (16)));
-    uchar wrkbuf[1280] __attribute__ ((aligned (16)));
-    uint i, *u, *v, *w, *u3, *v4;
-	uchar *pmk1=pmks, *pmk2=pmks+128, *pmk3=pmks+128*2, *pmk4=pmks+128*3;
-
 
     slen = strlen( essid ) + 4;
 
@@ -111,9 +113,9 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
         shasse2_data( ctx_ipad, buffer, wrkbuf );
 
         u = (uint *) ( k_opad      );
-        v = (uint *) ( k_opad + 64 ); 
+        v = (uint *) ( k_opad + 64 );
         u3 = (uint *) ( k_opad + 128 );
-        v4 = (uint *) ( k_opad + 192 ); 
+        v4 = (uint *) ( k_opad + 192 );
         w = (uint *) buffer;
 
         for( i = 0; i < 16; i++ )
@@ -133,11 +135,11 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 		buffer[ 80] = buffer[ 84] = buffer[ 88] = buffer[ 92] = 0x80;
         buffer[242] = buffer[246] = buffer[250] = buffer[254] = 0x02;
         buffer[243] = buffer[247] = buffer[251] = buffer[255] = 0xA0;
-		
-		
+
+
 		essid[slen - 1] = '\1';
 
-	
+
 		HMAC(EVP_sha1(), (uchar *)key1, strlen(key1), (uchar*)essid, slen, pmk1, NULL);
 		HMAC(EVP_sha1(), (uchar *)key2, strlen(key2), (uchar*)essid, slen, pmk2, NULL);
 		HMAC(EVP_sha1(), (uchar *)key3, strlen(key3), (uchar*)essid, slen, pmk3, NULL);
