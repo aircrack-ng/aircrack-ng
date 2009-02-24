@@ -52,7 +52,6 @@ uninstall: uninstall-airopdate
 	@rm $(ETCDIR)/airoscript.conf
 	@rm $(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo
 	-rm $(MANDIR)/airoscript.1.gz
-	-rm $(MANDIR)/airoscript.1
 
 uninstall-airopdate:
 	@rm $(SBINDIR)/airopdate
