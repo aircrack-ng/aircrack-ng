@@ -1,7 +1,13 @@
-Changelog for 2.1.1
+Changelog for 2.1.1-2
 - Added support for airserv-ng
 - Added tkiptun basic support
 - Bugfixes (again) for $clean
+- Support for a different interface for injection
+- iwconfig is not anymore called directly, binary can be configured trought conffile.
+- Compatibility with cygwin 
+- Added documentation about cygwin-compatibility.
+- Makefile adapted to auto-detect os.
+- Updated documentation for tkiptun-ng
 
 Changelog for 2.1.0
 - Bugfixes on terminal titles.
