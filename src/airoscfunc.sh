@@ -227,7 +227,7 @@ done
 
 	# This way we detect clients. (Option 3)
 	function clientdetect {
-		iwconfig $WIFICARD channel $Host_CHAN
+		$iwconfig $WIFICARD channel $Host_CHAN
 		capture & deauthall & menufonction # Those functions are used from many others, so I dont let them here, they'll be independent.
 	}
 
@@ -392,7 +392,7 @@ function witchattack {
 		if [ "$TYPE" = "RalinkUSB" ]
 		then
 			IS_MONITOR=`$AIRMON start $WIFICARD $Host_CHAN |grep monitor`
-			iwconfig $WIFICARD mode monitor channel $Host_CHAN
+			$iwconfig $WIFICARD mode monitor channel $Host_CHAN
 			echo $IS_MONITOR
 		elif [ "$TYPE" = "Ralinkb/g" ]
 		then
@@ -907,7 +907,7 @@ Option: '`"
 		$CARDCTL insert
 		ifconfig $WIFICARD up
 		$AIRMON start $WIFICARD $Host_CHAN
-		iwconfig $WIFICARD
+		$iwconfig $WIFICARD
 	}
 	# 4.
 	function wichchangemac {
@@ -955,34 +955,34 @@ Option: '`"
 			# And those from fakemacchanger
 			function fakechangemacrausb {
 				ifconfig $WIFICARD down
-				iwconfig $WIFICARD mode managed
+				$iwconfig $WIFICARD mode managed
 				sleep 2
 				macchanger -m $FAKE_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				iwconfig $WIFICARD mode monitor			
+				$iwconfig $WIFICARD mode monitor			
 			}
 	
 			function fakechangemacwlan {
 				echo -n "Shutting down interface..." 
 				ifconfig $WIFICARD down
 				echo -e "Done\n Putting in mode managed"
-				iwconfig $WIFICARD mode managed
+				$iwconfig $WIFICARD mode managed
 				sleep 2
 				echo -n "Changing mac with macchanger..."
 				macchanger -m $FAKE_MAC $WIFICARD
 				echo "Done"
 				echo "Putting in mode monitor interface "
 				ifconfig $WIFICARD up
-				iwconfig $WIFICARD mode monitor		
+				$iwconfig $WIFICARD mode monitor		
 			}
 			
 			function fakechangemacath {
 				ifconfig $WIFICARD down
-				iwconfig $WIFICARD mode managed
+				$iwconfig $WIFICARD mode managed
 				sleep 2
 				macchanger -m $FAKE_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				iwconfig $WIFICARD mode monitor			
+				$iwconfig $WIFICARD mode monitor			
 			}
 		
 	
@@ -1008,29 +1008,29 @@ Option: '`"
 			# Those are part of macchanger
 			function changemacrausb {
 				ifconfig $WIFICARD down
-				iwconfig $WIFICARD mode managed
+				$iwconfig $WIFICARD mode managed
 				sleep 2
 				macchanger -m $Client_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				iwconfig $WIFICARD mode monitor			
+				$iwconfig $WIFICARD mode monitor			
 			}
 			
 			function changemacwlan {
 				ifconfig $WIFICARD down
-				iwconfig $WIFICARD mode managed
+				$iwconfig $WIFICARD mode managed
 				sleep 2
 				macchanger -m $Client_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				iwconfig $WIFICARD mode monitor			
+				$iwconfig $WIFICARD mode monitor			
 			}
 			
 			function changemacath {
 				ifconfig $WIFICARD down
-				iwconfig $WIFICARD mode managed
+				$iwconfig $WIFICARD mode managed
 				sleep 2
 				macchanger -m $Client_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				iwconfig $WIFICARD mode monitor			
+				$iwconfig $WIFICARD mode monitor			
 			}
 			
 		function macinput {
@@ -1062,29 +1062,29 @@ Option: '`"
 			# I suppose all this code if for precaution. I mean, if sometime the method differes between the different kind of cards, or if we've got to add a new card with a differente method.
 				function manualchangemacrausb {
 					ifconfig $WIFICARD down
-					iwconfig $WIFICARD mode managed
+					$iwconfig $WIFICARD mode managed
 					sleep 2
 					macchanger -m $Client_MAC $WIFICARD
 					ifconfig $WIFICARD up
-					iwconfig $WIFICARD mode monitor			
+					$iwconfig $WIFICARD mode monitor			
 				}
 
 				function manualchangemacwlan {
 					ifconfig $WIFICARD down
-					iwconfig $WIFICARD mode managed
+					$iwconfig $WIFICARD mode managed
 					sleep 2
 					macchanger -m $Client_MAC $WIFICARD
 					ifconfig $WIFICARD up
-					iwconfig $WIFICARD mode monitor				
+					$iwconfig $WIFICARD mode monitor				
 				}
 
 				function manualchangemacath {
 					ifconfig $WIFICARD down
-					iwconfig $WIFICARD mode managed
+					$iwconfig $WIFICARD mode managed
 					sleep 2
 					macchanger -m $Client_MAC $WIFICARD
 					ifconfig $WIFICARD up
-					iwconfig $WIFICARD mode monitor				
+					$iwconfig $WIFICARD mode monitor				
 				}
 
 	# 5. 
@@ -1288,7 +1288,7 @@ Option: '`"
 		if [ "$TYPE" = "RalinkUSB" ]
 		then
 			IS_MONITOR=`$AIRMON start $WIFICARD |grep monitor`
-			iwconfig $WIFICARD mode monitor
+			$iwconfig $WIFICARD mode monitor
 			echo $IS_MONITOR
 	
 		elif [ "$TYPE" = "Ralinkb/g" ]
@@ -1517,8 +1517,8 @@ function doauto {
 #############Called directly from the menu.###########
 ###########################################
 function setinterface {
-	#INTERFACES=`iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
-	#INTERFACES=`iwconfig|egrep "^[a-Z]+[0-9]+" |awk '{print $1}'`
+	#INTERFACES=`$iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
+	#INTERFACES=`$iwconfig|egrep "^[a-Z]+[0-9]+" |awk '{print $1}'`
 	#INTERFACES=`ip link |egrep "^[0-9]+" | cut -d':' -f 2 | cut -d' ' -f 2 | grep -v "lo" |awk '{print $1}'` # I dont really know why is this like that, the cut for spaces and awk print $1 doesnt make the same things? --> No, awk also treats tabs as spaces as I know
 	INTERFACES=`ip link|egrep "^[0-9]+"|cut -d ':' -f 2 |awk {'print $1'} |grep -v lo`
 	if [ "$WIFI" = "" ]
@@ -1587,7 +1587,7 @@ function setinterface {
 }
 
 monmode() {
-	if [ "`iwconfig $1 |grep Monitor`" ];then
+	if [ "`$iwconfig $1 |grep Monitor`" ];then
 		echo "`gettext 'Your card is already in monitor mode'`"
 	else
 		$AIRMON start $1 $2
