@@ -1,4 +1,4 @@
-Changelog for 2.1.1-2
+Changelog for 2.2 (Not yet released)
 - Added support for airserv-ng
 - Added tkiptun basic support
 - Bugfixes (again) for $clean
@@ -8,8 +8,20 @@ Changelog for 2.1.1-2
 - Added documentation about cygwin-compatibility.
 - Makefile adapted to auto-detect os.
 - Updated documentation for tkiptun-ng
+- Added interactive option to conffile, that way airoscript is more interactive on some attacks.
+- Now you'll be able to select wich kind of fake auth to perform on main attacks.
+- Corrected a bug that prevented airoscript change mac with macchanger on rt61 drivers (at most, maybe in more drivers)
+- Now airoscript asks you for changing mac to fakemac at start if not configured to do other thing. (FORCE_MAC_ADDRESS in conffile will disable it)
+- Added a "special case" terminal: GUI, so if gui is selected as terminal, airosperl will be executed.
+- Modified changelog for a new versioning system: instead of 2.1.1-2 this
+version is now called 2.2 and now I use dates too.
+- Corrected a bug with interatively part on airoscript, airoscript didn't
+properly set default value for from/to destination bit.
+- Added GUI (airosperl) (Not yet finished, as soon as it's finished and
+aircrack-ng 1.0-rc3 released I will rename this version to 3.0)
 
-Changelog for 2.1.0
+
+Changelog for 2.1
 - Bugfixes on terminal titles.
 - Now you can especify a terminal without editing config by passing it as parameter ( airoscript terminal )
 - Added patches for debian-packaging wifislax and wifiway conffile

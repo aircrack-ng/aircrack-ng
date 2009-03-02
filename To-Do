@@ -1,4 +1,3 @@
-Implement support for:
-	Injection with:
-		airtun-ng
-
+Write airosperl module.
+Write airosperl glade
+Write airosperl main binary.

@@ -11,6 +11,8 @@ $CLEAR
 # Set variables for airoscript's locale
 export TEXTDOMAINDIR=/usr/share/locale
 export TEXTDOMAIN=airoscript
+# Sets ps3, wich will be shown after input in the select	
+PS3=`gettext 'Input number: '`
 
 function confwarn {
 echo -n -e "`gettext 'Youre going to use a config file on your home or current dir. 
@@ -89,8 +91,6 @@ else
 	BACKGROUND_COLOR="#000000"
 fi
 
-#runs debug routine to set $HOLD value
-debug
 
 #checks if output dir exists, if not, it creates it.
 checkdir
@@ -114,14 +114,15 @@ fi
 #Ask for screen size
 reso
 
+#runs debug routine to set $HOLD value
+debug
+
 #checks if interface is set, if not it ask you
 setinterface
 
-#displays main menu
-menu
+# Checks if mac is fakemac
+checkforcemac
 
-# Sets ps3, wich will be shown after input in the select	
-PS3=`gettext 'Input number: '`
 select choix in $CHOICES; do					
 	if [ "$choix" = "1" ]; then
 		choosetype
