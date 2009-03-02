@@ -188,6 +188,7 @@ int add_crc32(unsigned char* data, int length);
 int add_crc32_plain(unsigned char* data, int length);
 int is_ipv6(void *wh);
 int is_dhcp_discover(void *wh, int len);
+int is_qos_arp_tkip(void *wh, int len);
 int calc_tkip_ppk( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char key[16] );
 int decrypt_tkip( unsigned char *h80211, int caplen, unsigned char TK1[16] );
 int decrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16] );
