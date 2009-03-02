@@ -133,6 +133,8 @@
 #define RATE_48M 48000000
 #define RATE_54M 54000000
 
+#define DEFAULT_MIC_FAILURE_INTERVAL 60
+
 static uchar ZERO[32] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -162,11 +164,12 @@ char usage[] =
 "\n"
 "      -d dmac   : MAC address, Destination\n"
 "      -s smac   : MAC address, Source\n"
-"      -m len    : minimum packet length\n"
-"      -n len    : maximum packet length\n"
+"      -m len    : minimum packet length (default: 80) \n"
+"      -n len    : maximum packet length (default: 80)\n"
 "      -t tods   : frame control, To      DS bit\n"
 "      -f fromds : frame control, From    DS bit\n"
 "      -D        : disable AP detection\n"
+"      -Z        : select packets manually\n"
 "\n"
 "  Replay options:\n"
 "\n"
@@ -174,8 +177,8 @@ char usage[] =
 "      -a bssid  : set Access Point MAC address\n"
 "      -c dmac   : set Destination  MAC address\n"
 "      -h smac   : set Source       MAC address\n"
-"      -F        : choose first matching packet\n"
 "      -e essid  : set target AP SSID\n"
+"      -M sec    : MIC error timout in seconds [60]\n"
 "\n"
 "  Debug options:\n"
 "\n"
@@ -2146,6 +2149,7 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
     int tried_header_rec=0;
     int tries=0;
     int keystream_len=0;
+    int settle=0;
 
     unsigned char b1 = 0xAA;
     unsigned char b2 = 0xAA;
@@ -2452,6 +2456,16 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
 
         /* wait for the next timer interrupt, or sleep */
 
+        if( (nb_pkt_sent > 0) && (nb_pkt_sent % 256 == 0) && settle == 0)
+        {
+            printf( "\rLooks like mic failure report was not detected."
+                    "Waiting %i seconds before trying again to avoid "
+                    "the AP shutting down.\n", opt.mic_failure_interval);
+            fflush( stdout );
+            settle = 1;
+            sleep(opt.mic_failure_interval);
+        }
+
         if( dev.fd_rtc >= 0 )
         {
             if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
@@ -2618,6 +2632,8 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
                     guess = 0;
                 else
                     tries++;
+
+                settle=0;
             }
 
             if(tries > 768 && data_end < srclen)
@@ -2760,6 +2776,7 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
 
 //         guess = h80211[9];
         tries = 0;
+        settle = 0;
         guess = (guess - 1) % 256;
 
         chopped[data_end - 1] ^= guess;
@@ -3696,16 +3713,16 @@ int main( int argc, char *argv[] )
     memset( &dev, 0, sizeof( dev ) );
 
     opt.f_type    = -1; opt.f_subtype   = -1;
-    opt.f_minlen  = 80; opt.f_maxlen    = 98;
+    opt.f_minlen  = 80; opt.f_maxlen    = 80;
     opt.f_tods    = -1; opt.f_fromds    = -1;
     opt.f_iswep   = -1; opt.ringbuffer  =  8;
 
     opt.a_mode    = -1; opt.r_fctrl     = -1;
     opt.ghost     =  0; opt.npackets    = -1;
     opt.delay     = 15; opt.bittest     =  0;
-    opt.fast      =  0; opt.r_smac_set  =  0;
+    opt.fast      = -1; opt.r_smac_set  =  0;
     opt.npackets  =  1; opt.nodetect    =  0;
-    opt.mic_failure_interval = 60;
+    opt.mic_failure_interval = DEFAULT_MIC_FAILURE_INTERVAL;
 
 /* XXX */
 #if 0
@@ -3736,7 +3753,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "d:s:m:n:t:f:x:a:c:h:e:jy:i:r:HFDK:P:p:",
+                        "d:s:m:n:t:f:x:a:c:h:e:jy:i:r:HZDK:P:p:M:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3928,9 +3945,9 @@ int main( int argc, char *argv[] )
                 opt.s_file = optarg;
                 break;
 
-            case 'F' :
+            case 'Z' :
 
-                opt.fast = 1;
+                opt.fast = 0;
                 break;
 
             case 'H' :
@@ -3991,6 +4008,17 @@ int main( int argc, char *argv[] )
                 }
                 strncpy( opt.psk, optarg, sizeof( opt.psk )  - 1 );
                 opt.got_psk = 1;
+                break;
+
+            case 'M' :
+
+                ret = sscanf( optarg, "%d", &opt.mic_failure_interval );
+                if( opt.mic_failure_interval < 0 )
+                {
+                    printf( "Invalid MIC error timeout. [>=0]\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
                 break;
 
             default : goto usage;
@@ -4280,13 +4308,12 @@ usage:
 
     PCT; printf("Waiting for an ARP packet coming from the Client...\n");
 
-/*    opt.f_minlen = 80;
-    opt.f_maxlen = 80;*/
     opt.f_tods = 1;
     opt.f_fromds = 0;
     memcpy(opt.f_smac, opt.r_smac, 6);
 //    memcpy(opt.f_dmac, opt.f_bssid, 6);
-    opt.fast = 1;
+    if(opt.fast == -1)
+        opt.fast = 1;
 
     while(1)
     {
@@ -4303,13 +4330,10 @@ usage:
 
     PCT; printf("Waiting for an ARP response packet coming from the AP...\n");
 
-/*    opt.f_minlen = 80;
-    opt.f_maxlen = 80;*/
     opt.f_tods = 0;
     opt.f_fromds = 1;
     memcpy(opt.f_dmac, opt.r_smac, 6);
     memcpy(opt.f_smac, NULL_MAC, 6);
-    opt.fast = 1;
 
     while(1)
     {
