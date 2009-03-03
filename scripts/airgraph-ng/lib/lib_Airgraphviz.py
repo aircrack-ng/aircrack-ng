@@ -1,11 +1,17 @@
-#~ /usr/bin/env python
-#this is a support lib for airgraph-ng
-#file name [lib_Airgraphviz.py] 
+__author__ = 'Ben "TheX1le" Smith'
+__email__ = 'thex1le@gmail.com'
+__website__= 'http://trac.aircrack-ng.org/browser/trunk/scripts/airgraph-ng/'
+__date__ = '03/02/09'
+__version__ = ''
+__file__ = 'lib_Airgraphviz.py'
+__data__ = 'This library supports airgraph-ng'
+
+"""
 ########################################
 #
 # Airgraph-ng.py --- Generate Graphs from airodump CSV Files
 #
-# Copyright (C) 2008 Ben Smith <thex1le@gmail.com>
+# Copyright (C) 2009 Ben Smith <thex1le[a.t]gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 as
@@ -17,76 +23,101 @@
 # General Public License for more details.
 #
 #########################################
+"""
 
-import pdb
-try:
-	import psyco
-	psyco.full()
-#	pass
-except ImportError:
-	pass
+""" Airgraph-ng Support Library """
 
-def AP_Label_Color(Label,colorLS):
-	# returns the Colors for the AP, enc = Label[3], essid = Label[1], bssid = Label[0], channel = Label[2]  //position that each bit of inforamtion comes in from the caller
-	color = colorLS[0]
-	fontC = colorLS[1]
-	essid = Label[1].rstrip('\x00') #when readidng a null essid it has binary space? so rstrip removes this
-	graph = ['\t','"',Label[0],'"','[label="',Label[0],'\\nEssid: ',essid,'\\nChannel: ',Label[2],'\\nEncryption: ',Label[3],'\\nNumber of Clients: ','%s' %(Label[4]),'"',' style=filled',' fillcolor="',color,'"',' fontcolor="',fontC,'"',' fontsize=7','];\n']
+def apColor(Label,APcolorList): #OLDNAME AP_Label_Color
+	"""
+        Inputs a list containing AP information and the AP color information
+        Returns a graph object that holds AP information (colors and details)
+        TODO: Get sample data for each line?
+	"""
+	APcolor = APcolorList[0]
+	fontColor = APcolorList[1]
+
+	graph = ['\t','"',Label[0],'"',
+		 '[label="',Label[0],
+		 '\\nEssid: ',Label[1].rstrip('\x00'), #NULL ESSID is equal to binary space, must remove
+		 '\\nChannel: ',Label[2],
+		 '\\nEncryption: ',Label[3],
+		 '\\nNumber of Clients: ','%s' %(Label[4]), #Check to see if this method is actually needed
+		 '"',' style=filled',
+		 ' fillcolor="',APcolor,
+		 '"',' fontcolor="',fontColor,
+		 '"',' fontsize=7','];\n']
 	return graph
 
-def Client_Label_Color(mac,color,label = ''):
-	#creates a label for the client information passed in is our label info and the mac address of the client
-	if label == '':	
-		label = mac #in the future i assume ill be brining some info in that we will want to write on our client
+def clientColor(mac,color,label=""): #OLDNAME Client_Label_Color
+	"""
+	Creates a label for the client information passed in (mac, color)
+	Returns a graph object
+        TODO: Pass a label in that may hold additional client data that could in turn be written on the client.
+	"""
+	if label == "":
+		label = mac
 	graph = ['\t','"',mac,'"',' [label="',label,'"',' color="',color,'"',' fontsize=7','];\n']
 	return graph
-	
-def Return_Enc_type(enc):
-	#check the type of encryption in use and returns the correct color to use based on it
-	fontC = "black"
+
+def encryptionColor(enc): #OLDNAME Return_Enc_type
+	"""
+        Take in the encryption used by the AP and return the proper color scheme based on that value.
+        Returns a list containing the AP fill color and AP font color
+        """
+	fontColor = "black" #Default Font Color to be used
+
 	if enc == "OPN":
 		color = "firebrick2"
 	elif enc == "WEP":
 		color = "gold2"
 	elif enc in ["WPA","WPA2WPA","WPA2","WPAOPN"]:
 		color = "green3"
-	else:
-		color = "black"  #idealy no AP should ever get to this point as they will either be encrypted or open
-		fontC = "white"
-	colorLS = (color,fontC)
-	return colorLS
+	else: #No AP should ever get to this point as they will either be encrypted or open
+		color = "black"
+		fontColor = "white"
+
+	APcolorList = (color,fontColor) #OLDNAME colorLS
+	return APcolorList
 
 
-def graphviz_link(objA,sep,objB):
-	#this is the basic dot format with object one linked to object two linked by a sperator we define
+def graphvizLinker(objA,sep,objB): #OLDNAME graphviz_link
+	"""
+        Return a graph object that links 2 objects together. Both objects are passed in with a separator
+        """
 	graph =['\t','"',objA,'"',sep,'"',objB,'"',';\n']
 	return graph
 
-def dot_close(input,footer):
-	#closes our graphviz config file and returns the final output to be written
-	#pdb.set_trace()   #debugging break point
+def dotClose(input,footer): #OLDNAME dot_close
+	"""
+        Close the graphiz config file
+        Return final output to be written
+        """
 	input.extend(footer)
 	input.append("}")
 	output = ''.join(input)
 	return output
 
-def dot_write(data): #write out our config file
-        #pdb.set_trace() #debug break point 
+def dotWrite(data): #OLDNAME dot_write
+	"""
+        Write all the information obtained to a configuration file
+        """
 	try:
-		subprocess.Popen(["rm","-rf","airGconfig.dot"]) # insures that if the file exists that were not apending to it
+		subprocess.Popen(["rm","-rf","airGconfig.dot"]) #Delete the file if it already exists
 	except Exception:
 		pass
 	file = open('airGconfig.dot','a')
 	file.writelines(data)
 	file.close()
 
-def subgraph(items,name,graph_name,tracked,parse='y'):
-	#pdb.set_trace()
-	#items is an incomeing dictonary 
-	subgraph = ['\tsubgraph cluster_',graph_name,'{\n\tlabel="',name,'" ;\n']
+def subGraph(items,graphName,graphType,tracked,parse): #OLDNAME subgraph
+	"""
+        Create a subgraph based on the incoming values
+        TODO: Figure out what this does and clean it up
+        """
+	subgraph = ['\tsubgraph cluster_',graphType,'{\n\tlabel="',graphName,'" ;\n']
+
 	if parse == "y":
 		for line in items:
-			#print line[0]
 			clientMAC = line[0]
 			probe_req = ', '.join(line[6:])
 			for bssid in tracked:
