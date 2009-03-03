@@ -215,6 +215,8 @@ struct options
     unsigned char f_smac[6];
     int f_minlen;
     int f_maxlen;
+    int f_minlen_set;
+    int f_maxlen_set;
     int f_type;
     int f_subtype;
     int f_tods;
@@ -3714,6 +3716,8 @@ int main( int argc, char *argv[] )
 
     opt.f_type    = -1; opt.f_subtype   = -1;
     opt.f_minlen  = 80; opt.f_maxlen    = 80;
+    opt.f_minlen_set = 0;
+    opt.f_maxlen_set = 0;
     opt.f_tods    = -1; opt.f_fromds    = -1;
     opt.f_iswep   = -1; opt.ringbuffer  =  8;
 
@@ -3803,6 +3807,7 @@ int main( int argc, char *argv[] )
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
+                opt.f_minlen_set=1;
                 break;
 
             case 'n' :
@@ -3814,6 +3819,7 @@ int main( int argc, char *argv[] )
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
+                opt.f_maxlen_set=1;
                 break;
 
             case 't' :
@@ -4315,6 +4321,13 @@ usage:
     if(opt.fast == -1)
         opt.fast = 1;
 
+    if(opt.f_minlen_set == 0) {
+        opt.f_minlen = 80;
+    }
+    if(opt.f_maxlen_set == 0) {
+        opt.f_maxlen = 80;
+    }
+
     while(1)
     {
         if( capture_ask_packet( &caplen, 0 ) != 0 )
@@ -4334,6 +4347,13 @@ usage:
     opt.f_fromds = 1;
     memcpy(opt.f_dmac, opt.r_smac, 6);
     memcpy(opt.f_smac, NULL_MAC, 6);
+
+    if(opt.f_minlen_set == 0) {
+        opt.f_minlen = 80;
+    }
+    if(opt.f_maxlen_set == 0) {
+        opt.f_maxlen = 98;
+    }
 
     while(1)
     {

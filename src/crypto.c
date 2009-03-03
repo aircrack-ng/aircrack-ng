@@ -438,17 +438,22 @@ int is_arp(void *wh, int len)
         return 0;
 }
 
-//assuming its always from a wireless station, never padded for ethernet travel
 int is_qos_arp_tkip(void *wh, int len)
 {
-        int qosarpsize = (24 + 2) + 8 + (8 + (8 + 10*2)) + 8 + 4;
+        unsigned char *packet = (unsigned char*) wh;
+        int qosarpsize = (24 + 2) + 8 + (8 + (8 + 10*2)) + 8 + 4; //82 in total
 
-        if(wh) {}
-        /* remove non BROADCAST frames? could be anything, but
-         * chances are good that we got an arp response tho.   */
+        if((packet[1] & 3) == 1) //to ds
+        {
+            if (len == qosarpsize) //always wireless
+                return 1;
+        }
 
-        if (len == qosarpsize) //wireless or padded wired
-            return 1;
+        if((packet[1] & 3) == 2) //from ds
+        {
+            if (len == qosarpsize || len == qosarpsize + 18) //wireless or padded wired
+                return 1;
+        }
 
         return 0;
 }
