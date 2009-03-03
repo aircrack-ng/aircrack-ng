@@ -200,7 +200,8 @@ struct ST_info
     int missed;              /* number of missed packets  */
     unsigned int lastseq;    /* last seen sequnce number  */
     struct WPA_hdsk wpa;     /* WPA handshake data        */
-    int qos;                 /* does it use ieee 802.11e  */
+    int qos_to_ds;           /* does it use 802.11e to ds */
+    int qos_fr_ds;           /* does it receive 802.11e   */
 };
 
 /* linked list of detected macs through ack, cts or rts frames */

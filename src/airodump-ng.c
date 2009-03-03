@@ -731,7 +731,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
     struct pcap_pkthdr pkh;
     struct timeval tv;
     struct ivs2_pkthdr ivs2;
-    unsigned char *p, c;
+    unsigned char *p, *org_p, c;
     unsigned char bssid[6];
     unsigned char stmac[6];
     unsigned char namac[6];
@@ -1037,7 +1037,8 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         st_cur->probe_index = -1;
         st_cur->missed  = 0;
         st_cur->lastseq = 0;
-        st_cur->qos = 0;
+        st_cur->qos_fr_ds = 0;
+        st_cur->qos_to_ds = 0;
         gettimeofday( &(st_cur->ftimer), NULL);
 
         for( i = 0; i < NB_PRB; i++ )
@@ -1240,13 +1241,17 @@ skip_probe:
         {
             type = p[0];
             length = p[1];
-            if(p+2+length > h80211 + caplen)
+            if(p+2+length > h80211 + caplen) {
+/*                printf("error parsing tags! %p vs. %p (tag: %i, length: %i,position: %i)\n", (p+2+length), (h80211+caplen), type, length, (p-h80211));
+                exit(1);*/
                 break;
+            }
 
             if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x01\x01\x00", 6) == 0)) || (type == 0x30) )
             {
                 ap_cur->security &= ~(STD_WEP|ENC_WEP|STD_WPA);
 
+                org_p = p;
                 offset = 0;
 
                 if(type == 0xDD)
@@ -1334,6 +1339,7 @@ skip_probe:
 
                 if( type == 0x30 ) p += 2;
 
+                p = org_p + length+2;
             }
             else if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x02\x01\x01", 6) == 0)))
             {
@@ -1460,11 +1466,23 @@ skip_probe:
         {
             z+=2;
             if(st_cur != NULL)
-                st_cur->qos = 1;
+            {
+                if( (h80211[1] & 3) == 1 ) //ToDS
+                    st_cur->qos_to_ds = 1;
+                else
+                    st_cur->qos_fr_ds = 1;
+            }
         }
         else
+        {
             if(st_cur != NULL)
-                st_cur->qos = 0;
+            {
+                if( (h80211[1] & 3) == 1 ) //ToDS
+                    st_cur->qos_to_ds = 0;
+                else
+                    st_cur->qos_fr_ds = 0;
+            }
+        }
 
         if(z==24)
         {
@@ -2233,7 +2251,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     struct ST_info *st_cur;
     struct NA_info *na_cur;
     int columns_ap = 83;
-    int columns_sta = 72;
+    int columns_sta = 74;
     int columns_na = 68;
 
     if(!G.singlechan) columns_ap -= 4; //no RXQ in scan mode
@@ -2503,7 +2521,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     fprintf( stderr, "%s\n", strbuf );
 
     memcpy( strbuf, " BSSID              STATION "
-            "           PWR   Rate   Lost  Packets  Probes", columns_sta );
+            "           PWR   Rate    Lost  Packets  Probes", columns_sta );
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
@@ -2566,10 +2584,11 @@ void dump_print( int ws_row, int ws_col, int if_num )
                     st_cur->stmac[2], st_cur->stmac[3],
                     st_cur->stmac[4], st_cur->stmac[5] );
 
-            fprintf( stderr, "  %3d", st_cur->power    );
+            fprintf( stderr, "  %3d ", st_cur->power    );
             fprintf( stderr, "  %2d", st_cur->rate_to/1000000  );
+            fprintf( stderr,  "%c", (st_cur->qos_fr_ds) ? 'e' : ' ');
             fprintf( stderr,  "-%2d", st_cur->rate_from/1000000);
-            fprintf( stderr,  "%c", (st_cur->qos) ? 'e' : ' ');
+            fprintf( stderr,  "%c", (st_cur->qos_to_ds) ? 'e' : ' ');
             fprintf( stderr, "  %4d", st_cur->missed   );
             fprintf( stderr, " %8ld", st_cur->nb_pkt   );
 
