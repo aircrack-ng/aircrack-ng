@@ -30,10 +30,6 @@ ifeq ($(OSNAME), cygwin)
 COMMON_CFLAGS   += -DCYGWIN
 endif
 
-ifeq ($(OSNAME), cygwin)
-COMMON_CFLAGS   += -DCYGWIN
-endif
-
 ifeq ($(SQLITE), true)
     COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
 else
