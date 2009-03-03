@@ -1,6 +1,7 @@
 Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
 * airodump-ng: Changed file extensions for CSV (.csv instead of .txt) and for kismet CSV
   (.kismet.csv instead of .csv).
+* airodump-ng: Fixed WPA tag parsing and added QoS detection based on direction.
 * aircrack-ng: Fixed -w with WEP.
 * aircrack-ng: Fixed useless memory allocation.
 * aircrack-ng: Fixed compilation with gcc 2.95.
@@ -10,6 +11,8 @@ Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
 * airolib-ng: Fixed a bug where database is created even if parameters are not correct.
 * airmon-ng and airdriver-ng: Move them in script/ directory.
 * airmon-ng: Bypass interface checks when ps command returns an error. Needed for BusyBox limited ps command.
+* tkiptun-ng: Allow padded arp packets to the client.
+* airserv-ng & osdep: Fixed compilation on FreeBSD 7.1
 * easside-ng & wesside-ng: Fixing again "Error Wrote 39 out of 30" error message.
 * manpages: Fixed manpages titles.
 * Makefile: Only compile and install wesside-ng, easside-ng, buddy-ng and tkiptun-ng with "make unstable=true".
