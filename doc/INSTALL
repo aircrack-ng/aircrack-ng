@@ -1,15 +1,10 @@
-REQUIREMENTS
-- GNU gettext (Debian/Ubuntu: gettext package)
-- ip (Debian/Ubuntu: iproute package)
-- aircrack-ng 1.0 rc2
-- WORKING injection capable driver for the interface you want to use
-
 COMPILING:
 To install just type "make" in main dir, as root. 
 Airoscript is a bash script, so it hasn't got to be compilated, anyway, it has a build dep: gettext.
 
 NEW FEATURES
 Airoscript is fully i10n now, configurable by /etc/airoscript.conf , themable, modular and supports screen (so X is not required anymore).
+And it works under cygwin!
 
 PATCHES
 If you are running a supported non-standard distro (like wifislax) you should try executing:
