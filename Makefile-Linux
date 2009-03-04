@@ -22,7 +22,7 @@ install: airopdate
 	@mkdir -p $(SHAREDIR)/themes
 	@mkdir -p $(SHAREDIR)/airosperl
 	@install -D -o $(UID) -g $(GID) -m $(BINMODE)   $(CURDIR)/src/airosperl/*            $(SHAREDIR)/airosperl/
-	@ln -fs $(SHAREDIR)/airosperl/airosperl.pl                                          $(BINDIR)/airosperl
+	@ln -fs $(SHAREDIR)/airosperl/airosperl.pl                                          $(SBINDIR)/airosperl
 	@cp -r $(CURDIR)/src/themes/*.theme				                   $(SHAREDIR)/themes/
 	@chown $(UID):$(GID) $(SHAREDIR)/themes/*.theme
 	@chmod $(BINMODE) $(SHAREDIR)/themes/*.theme
