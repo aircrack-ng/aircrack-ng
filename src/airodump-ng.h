@@ -51,13 +51,14 @@ extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac
 
 #define AIRODUMP_NG_CSV_EXT "csv"
 #define KISMET_CSV_EXT "kismet.csv"
+#define KISMET_NETXML_EXT "kismet.netxml"
 #define AIRODUMP_NG_GPS_EXT "gps"
 #define AIRODUMP_NG_CAP_EXT "cap"
 
-#define NB_EXTENSIONS 5
+#define NB_EXTENSIONS 6
 
 const unsigned char llcnull[4] = {0, 0, 0, 0};
-char *f_ext[NB_EXTENSIONS] = { AIRODUMP_NG_CSV_EXT, AIRODUMP_NG_GPS_EXT, AIRODUMP_NG_CAP_EXT, IVS2_EXTENSION, KISMET_CSV_EXT };
+char *f_ext[NB_EXTENSIONS] = { AIRODUMP_NG_CSV_EXT, AIRODUMP_NG_GPS_EXT, AIRODUMP_NG_CAP_EXT, IVS2_EXTENSION, KISMET_CSV_EXT, KISMET_NETXML_EXT };
 
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
@@ -241,6 +242,7 @@ struct globals
     int f_index;            /* outfiles index       */
     FILE *f_txt;            /* output csv file      */
     FILE *f_kis;            /* output kismet csv file      */
+    FILE *f_kis_xml;        /* output kismet netxml file */
     FILE *f_gps;            /* output gps file      */
     FILE *f_cap;            /* output cap file      */
     FILE *f_ivs;            /* output ivs file      */
@@ -327,6 +329,9 @@ struct globals
     char *freqstring;
     int freqoption;
     int chanoption;
+
+    /* Airodump-ng start time: for kismet netxml file */
+    char * airodump_start_time;
 }
 G;
 

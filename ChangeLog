@@ -1,4 +1,5 @@
 Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
+* airodump-ng: Added support for kismet-newcore netxml files (DTD v3.1.0)
 * airodump-ng: Changed file extensions for CSV (.csv instead of .txt) and for kismet CSV
   (.kismet.csv instead of .csv).
 * airodump-ng: Fixed WPA tag parsing and added QoS detection based on direction.

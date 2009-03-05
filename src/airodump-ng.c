@@ -67,6 +67,8 @@
 #include "osdep/osdep.h"
 
 #include "airodump-ng.h"
+#include "osdep/common.h"
+
 
 int check_shared_key(unsigned char *h80211, int caplen)
 {
@@ -373,8 +375,8 @@ int dump_initialize( char *prefix, int ivs_only )
     }
 
 	/* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
-	   + longest extension ("kismet.csv") + terminating 0. */
-	ofn_len = strlen(prefix) + 1 + 2 + 1 + 10 + 1;
+	   + longest extension ("kismet.netxml") + terminating 0. */
+	ofn_len = strlen(prefix) + 1 + 2 + 1 + 13 + 1;
 	ofn = (char *)calloc(1, ofn_len);
 
     G.f_index = 1;
@@ -447,6 +449,20 @@ int dump_initialize( char *prefix, int ivs_only )
             free( ofn );
             return( 1 );
         }
+    }
+
+    /* Create the output kismet.netxml file */
+
+    memset(ofn, 0, ofn_len);
+    snprintf( ofn,  ofn_len, "%s-%02d.%s",
+              prefix, G.f_index, KISMET_NETXML_EXT );
+
+    if( ( G.f_kis_xml = fopen( ofn, "wb+" ) ) == NULL )
+    {
+        perror( "fopen failed" );
+        fprintf( stderr, "Could not create \"%s\".\n", ofn );
+        free( ofn );
+        return( 1 );
     }
 
     /* create the output packet capture file */
@@ -2898,6 +2914,246 @@ int dump_write_csv( void )
     return 0;
 }
 
+#define KISMET_NETXML_HEADER_BEGIN "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<!DOCTYPE detection-run SYSTEM \"http://kismetwireless.net/kismet-3.1.0.dtd\">\n\n<detection-run kismet-version=\"airodump-ng-1.0\" start-time=\""
+#define KISMET_NETXML_HEADER_END "\">\n\n"
+
+#define KISMET_NETXML_TRAILER "</detection-run>"
+
+int dump_write_kismet_netxml( time_t * airodump_start_time )
+{
+    int network_number, average_power, ssid_cloaked, unused, i;
+    struct AP_info *ap_cur;
+    char start_time[255];
+    char first_time[255];
+    char last_time[255];
+
+    if (! G.record_data)
+    	return 0;
+
+    fseek( G.f_kis_xml, 0, SEEK_SET );
+
+	/* Header and airodump-ng start time */
+	strcpy( start_time, ctime( airodump_start_time ) );
+	start_time[strlen(start_time) - 1] = 0; // remove new line
+    fprintf( G.f_kis_xml, "%s%s%s",
+    		KISMET_NETXML_HEADER_BEGIN,
+			start_time,
+    		KISMET_NETXML_HEADER_END );
+
+
+    ap_cur = G.ap_1st;
+
+    network_number = 0;
+    while( ap_cur != NULL )
+    {
+        if( memcmp( ap_cur->bssid, BROADCAST, 6 ) == 0 )
+        {
+            ap_cur = ap_cur->next;
+            continue;
+        }
+
+        if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
+        {
+            ap_cur = ap_cur->next;
+            continue;
+        }
+
+        if( ap_cur->nb_pkt < 2 )
+        {
+            ap_cur = ap_cur->next;
+            continue;
+        }
+
+		++network_number; // Network Number
+		strcpy(first_time, ctime(&ap_cur->tinit));
+		first_time[strlen(first_time) - 1] = 0; // remove new line
+
+		strcpy(last_time, ctime(&ap_cur->tlast));
+		last_time[strlen(last_time) - 1] = 0; // remove new line
+
+		fprintf(G.f_kis_xml, "\t<wireless-network number=\"%d\" type=\"infrastructure\" ",
+			network_number);
+		fprintf(G.f_kis_xml, "first-time=\"%s\" last-time=\"%s\">\n", first_time, last_time);
+
+		fprintf(G.f_kis_xml, "\t\t<SSID first-time=\"%s\" last-time=\"%s\">\n",
+				first_time, last_time);
+		fprintf(G.f_kis_xml, "\t\t\t<type>Beacon</type>\n" );
+		fprintf(G.f_kis_xml, "\t\t\t<max-rate>%d.000000</max-rate>\n", ap_cur->max_speed );
+		fprintf(G.f_kis_xml, "\t\t\t<packets>%ld</packets>\n", ap_cur->nb_bcn );
+		fprintf(G.f_kis_xml, "\t\t\t<beaconrate>%d</beaconrate>\n", 10 );
+		fprintf(G.f_kis_xml, "\t\t\t<encryption>");
+		//Encryption
+		if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) != 0)
+		{
+			if( ap_cur->security & STD_WPA2 ) fprintf( G.f_kis_xml, "WPA2 " );
+			if( ap_cur->security & STD_WPA  ) fprintf( G.f_kis_xml, "WPA " );
+			if( ap_cur->security & STD_WEP  ) fprintf( G.f_kis_xml, "WEP " );
+			if( ap_cur->security & STD_OPN  ) fprintf( G.f_kis_xml, "OPN " );
+		}
+
+		if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 )
+		{
+			fprintf( G.f_kis_xml, "None,");
+		}
+		else
+		{
+			if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_kis_xml, "AES-CCM ");
+			if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis_xml, "WRAP ");
+			if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis_xml, "TKIP ");
+			if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_kis_xml, "WEP104");
+			if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis_xml, "WEP40 ");
+/*      	if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis, " WEP ");*/
+		}
+		fprintf(G.f_kis_xml, "</encryption>\n");
+
+		/* ESSID */
+		ssid_cloaked = 1;
+		if ( ap_cur->ssid_length > 0 )
+		{
+			for(i = 0; i < ap_cur->ssid_length; ++i)
+			{
+				if (ap_cur->essid[i] != 0)
+				{
+					ssid_cloaked = 0;
+					break;
+				}
+			}
+		}
+
+		fprintf(G.f_kis_xml, "\t\t\t<essid cloaked=\"%s\">", (ssid_cloaked) ? "true" : "false");
+		for(i = 0; i < ap_cur->ssid_length; ++i)
+		{
+			/* fputc is used on purpose: to be sure that if the ESSID
+			   contains null characters, all of them are written */
+			unused = fputc( ap_cur->essid[i], G.f_kis_xml );
+		}
+		fprintf(G.f_kis_xml, "</essid>\n");
+
+		/* End of SSID tag */
+		fprintf(G.f_kis_xml, "\t\t</SSID>\n");
+
+		/* BSSID and manufacturer */
+		fprintf( G.f_kis_xml, "\t\t<BSSID>%02X:%02X:%02X:%02X:%02X:%02X</BSSID>\n",
+					 ap_cur->bssid[0], ap_cur->bssid[1],
+					 ap_cur->bssid[2], ap_cur->bssid[3],
+					 ap_cur->bssid[4], ap_cur->bssid[5] );
+
+		/* Manufacturer
+		   XXX: Needs the MAC Address list file */
+		fprintf(G.f_kis_xml, "\t\t<manuf>%s</manuf>\n", "Unknown");
+
+		/* Channel
+		   FIXME: Take G.freqoption in account */
+		fprintf(G.f_kis_xml, "\t\t<channel>%d</channel>\n", ap_cur->channel);
+
+		/* Freq (in Mhz) and total number of packet on that frequency
+		   FIXME: Take G.freqoption in account */
+		fprintf(G.f_kis_xml, "\t\t<freqmhz>%d %ld</freqmhz>\n",
+					getFrequencyFromChannel(ap_cur->channel),
+					//ap_cur->nb_data + ap_cur->nb_bcn );
+					ap_cur->nb_pkt );
+
+		/* XXX: What about 5.5Mbit */
+		fprintf(G.f_kis_xml, "\t\t<maxseenrate>%d</maxseenrate>\n", ap_cur->max_speed * 1000);
+
+		/* Packets */
+		fprintf(G.f_kis_xml, "\t\t<packets>\n"
+					"\t\t\t<LLC>%ld</LLC>\n"
+					"\t\t\t<data>%ld</data>\n"
+					"\t\t\t<crypt>0</crypt>\n"
+					"\t\t\t<total>%ld</total>\n"
+					"\t\t\t<fragments>0</fragments>\n"
+					"\t\t\t<retries>0</retries>\n"
+					"\t\t</packets>\n",
+					ap_cur->nb_bcn, ap_cur->nb_data,
+					//ap_cur->nb_data + ap_cur->nb_bcn );
+					ap_cur->nb_pkt );
+
+
+		/*
+		 * XXX: What does that field mean? Is it the total size of data?
+		 *      It seems that 'd' is appended at the end for clients, why?
+		 */
+		fprintf(G.f_kis_xml, "\t\t<datasize>0</datasize>\n");
+
+		/* SNR information */
+		average_power = ap_cur->avg_power;
+		if (average_power == -1)
+		{
+				average_power = 0;
+		}
+		fprintf(G.f_kis_xml, "\t\t<snr-info>\n"
+					"\t\t\t<last_signal_dbm>%d</last_signal_dbm>\n"
+					"\t\t\t<last_noise_dbm>0</last_noise_dbm>\n"
+					"\t\t\t<last_signal_rssi>%d</last_signal_rssi>\n"
+					"\t\t\t<last_noise_rssi>0</last_noise_rssi>\n"
+					"\t\t\t<min_signal_dbm>%d</min_signal_dbm>\n"
+					"\t\t\t<min_noise_dbm>0</min_noise_dbm>\n"
+					"\t\t\t<min_signal_rssi>1024</min_signal_rssi>\n"
+					"\t\t\t<min_noise_rssi>1024</min_noise_rssi>\n"
+					"\t\t\t<max_signal_dbm>%d</max_signal_dbm>\n"
+					"\t\t\t<max_noise_dbm>0</max_noise_dbm>\n"
+					"\t\t\t<max_signal_rssi>%d</max_signal_rssi>\n"
+					"\t\t\t<max_noise_rssi>0</max_noise_rssi>\n"
+					 "\t\t</snr-info>\n",
+					 average_power, average_power, average_power,
+					 average_power, average_power );
+
+		/* GPS Coordinates */
+		if (G.usegpsd)
+		{
+			fprintf(G.f_kis_xml, "\t\t<gps-info>\n"
+						"\t\t\t<min-lat>%.6f</min-lat>\n"
+						"\t\t\t<min-lon>%.6f</min-lon>\n"
+						"\t\t\t<min-alt>%.6f</min-alt>\n"
+						"\t\t\t<min-spd>%.6f</min-spd>\n"
+						"\t\t\t<max-lat>%.6f</max-lat>\n"
+						"\t\t\t<max-lon>%.6f</max-lon>\n"
+						"\t\t\t<max-alt>%.6f</max-alt>\n"
+						"\t\t\t<max-spd>%.6f</max-spd>\n"
+						"\t\t\t<peak-lat>%.6f</peak-lat>\n"
+						"\t\t\t<peak-lon>%.6f</peak-lon>\n"
+						"\t\t\t<peak-alt>%.6f</peak-alt>\n"
+						"\t\t\t<avg-lat>%.6f</avg-lat>\n"
+						"\t\t\t<avg-lon>%.6f</avg-lon>\n"
+						"\t\t\t<avg-alt>%.6f</avg-alt>\n"
+						 "\t\t</gps-info>\n",
+						ap_cur->gps_loc_min[0],
+						ap_cur->gps_loc_min[1],
+						ap_cur->gps_loc_min[2],
+						ap_cur->gps_loc_min[3],
+						ap_cur->gps_loc_max[0],
+						ap_cur->gps_loc_max[1],
+						ap_cur->gps_loc_max[2],
+						ap_cur->gps_loc_max[3],
+						ap_cur->gps_loc_best[0],
+						ap_cur->gps_loc_best[1],
+						ap_cur->gps_loc_best[2],
+						/* Can the "best" be considered as average??? */
+						ap_cur->gps_loc_best[0],
+						ap_cur->gps_loc_best[1],
+						ap_cur->gps_loc_best[2] );
+		}
+
+		/* Trailing information */
+		fprintf(G.f_kis_xml, "\t\t<bsstimestamp>0</bsstimestamp>\n"
+					 "\t\t<cdp-device></cdp-device>\n"
+					 "\t\t<cdp-portid></cdp-portid>\n");
+
+		/* Closing tag for the current wireless network */
+		fprintf(G.f_kis_xml, "\t</wireless-network>\n");
+		//-------- End of XML
+
+        ap_cur = ap_cur->next;
+    }
+
+	/* Trailing */
+    fprintf( G.f_kis_xml, "%s\n", KISMET_NETXML_TRAILER );
+
+    fflush( G.f_kis_xml );
+    return 0;
+}
+
 #define KISMET_HEADER "Network;NetType;ESSID;BSSID;Info;Channel;Cloaked;Encryption;Decrypted;MaxRate;MaxSeenRate;Beacon;LLC;Data;Crypt;Weak;Total;Carrier;Encoding;FirstTime;LastTime;BestQuality;BestSignal;BestNoise;GPSMinLat;GPSMinLon;GPSMinAlt;GPSMinSpd;GPSMaxLat;GPSMaxLon;GPSMaxAlt;GPSMaxSpd;GPSBestLat;GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n"
 
 
@@ -4076,6 +4332,7 @@ int main( int argc, char *argv[] )
     G.f_ivs        =  NULL;
     G.f_txt        =  NULL;
     G.f_kis        =  NULL;
+    G.f_kis_xml    =  NULL;
     G.f_gps        =  NULL;
     G.keyout       =  NULL;
     G.f_xor        =  NULL;
@@ -4098,6 +4355,7 @@ int main( int argc, char *argv[] )
     G.s_iface      =  NULL;
     G.f_cap_in     =  NULL;
     G.detect_anomaly = 0;
+    G.airodump_start_time = NULL;
 
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
@@ -4682,6 +4940,7 @@ usage:
             tt1 = time( NULL );
             dump_write_csv();
             dump_write_kismet_csv();
+            dump_write_kismet_netxml(&start_time);
 
             /* sort the APs by power */
 
@@ -4939,9 +5198,11 @@ usage:
     if (G.record_data) {
         dump_write_csv();
         dump_write_kismet_csv();
+        dump_write_kismet_netxml(&start_time);
 
         if( G.f_txt != NULL ) fclose( G.f_txt );
         if( G.f_kis != NULL ) fclose( G.f_kis );
+        if( G.f_kis_xml != NULL ) fclose( G.f_kis_xml );
         if( G.f_gps != NULL ) fclose( G.f_gps );
         if( G.f_cap != NULL ) fclose( G.f_cap );
         if( G.f_ivs != NULL ) fclose( G.f_ivs );

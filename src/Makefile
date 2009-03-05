@@ -73,6 +73,9 @@ OBJS_AD		= airdecap-ng.o crypto.o common.o
 OBJS_PF		= packetforge-ng.o common.o crypto.o
 OBJS_AR		= aireplay-ng.o common.o crypto.o
 OBJS_ADU	= airodump-ng.o common.o crypto.o uniqueiv.o
+ifeq ($(OSNAME), cygwin)
+	OBJS_ADU	+= osdep/common.o
+endif
 OBJS_AT		= airtun-ng.o common.o crypto.o
 OBJS_IV		= ivstools.o common.o crypto.o uniqueiv.o
 OBJS_AS		= airserv-ng.o common.o
