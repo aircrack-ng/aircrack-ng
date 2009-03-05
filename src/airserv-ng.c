@@ -37,6 +37,8 @@
 
 #ifdef __MACH__
 #include <libkern/OSByteOrder.h>
+#elif defined(__FreeBSD__)
+#include <machine/endian.h>
 #else
 #include <asm/byteorder.h>
 #endif /* __MACH__ */
@@ -447,6 +449,16 @@ static void handle_card(struct sstate *ss)
 	ri->ri_channel = OSSwapHostToBigInt32(ri->ri_channel);
 	ri->ri_rate = OSSwapHostToBigInt32(ri->ri_rate);
 	ri->ri_antenna = OSSwapHostToBigInt32(ri->ri_antenna);
+
+#elif defined(__FreeBSD__)
+#if BYTE_ORDER == BIG_ENDIAN
+# define __be32_to_cpu(x)       (x)
+# define __be64_to_cpu(x)       (x)
+#elif BYTE_ORDER == LITTLE_ENDIAN
+# define __be32_to_cpu(x)       __bswap32(x)
+# define __be64_to_cpu(x)       __bswap64(x)
+#endif
+
 #else
 	ri->ri_mactime = __cpu_to_be64(ri->ri_mactime);
 	ri->ri_power = __cpu_to_be32(ri->ri_power);

