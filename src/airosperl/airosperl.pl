@@ -36,7 +36,7 @@ else{require ($ENV{'HOME'}.".airosperl.conf");}
 	our (%bin,%termopts); #From config file.
 
 # FIXME : This is not real:
-$os="linux";
+$os="Linux";
 
 # Create dump_path.
 	my $dump_path=&create_dump_path();
@@ -47,27 +47,32 @@ $os="linux";
 	$MainGladeFile->signal_autoconnect_from_package('main');# So we can handle easily signals.
 	$MainWindow=$MainGladeFile->get_widget('MainWindow');
 	$MainWindow->show_all();
+		$MainWindow->signal_connect( delete_event => sub {Gtk2->main_quit();1;});# Program ends when main window closed.
+
 
 # Define widgets
-
 	# Those are normal widgets (mostly input and labels).	
-	$Airserv_INPUT=$MainGladeFile->get_widget('airservng');	
-	$Reso_INPUT=$MainGladeFile->get_widget('Resolution');
-	$Wifi_INPUT=$MainGladeFile->get_widget('Wifi_Interface');
-	$DefaultInput=$MainGladeFile->get_widget('DefaultAirservng');
-	$TreeViewWidget=$MainGladeFile->get_widget('WIFI_List');
-	$ErrLabel=$MainGladeFile->get_widget('El');
-	$Wifi_Interface=$MainGladeFile->get_widget('WifiCombo');
+		$Airserv_INPUT=$MainGladeFile->get_widget('airservng');	
+		$Reso_INPUT=$MainGladeFile->get_widget('Resolution');
+		$Wifi_INPUT=$MainGladeFile->get_widget('Wifi_Interface');
+		$DefaultInput=$MainGladeFile->get_widget('DefaultAirservng');
+		$TreeViewWidget=$MainGladeFile->get_widget('WIFI_List');
+		$ErrLabel=$MainGladeFile->get_widget('El');
+		$Wifi_Interface=$MainGladeFile->get_widget('WifiCombo');
 
 	# Those are windows
-	$SWifiWindow=$MainGladeFile->get_widget('WIFI_Selector');
-	$FileChooserWindow=$MainGladeFile->get_widget('FileChooser');
-	$FolderChooserWindow=$MainGladeFile->get_widget('FileChooser');
-	$ChangeMacWindow=$MainGladeFile->get_widget('ChangeMacWindow');
-	$ErrWindow=$MainGladeFile->get_widget('ErrWindow');
-	$MdkWindow=$MainGladeFile->get_widget('MdkWindow');
-	$WessideWindow=$MainGladeFile->get_widget('WessideWindow');
-	$ChangeMacWindow=$MainGladeFile->get_widget('ChangeMacWindow');
+		$SWifiWindow=$MainGladeFile->get_widget('WIFI_Selector');
+			$SWifiWindow->signal_connect( delete_event => sub {$SWifiWindow->hide();});
+		$FileChooserWindow=$MainGladeFile->get_widget('FileChooser');
+		$FolderChooserWindow=$MainGladeFile->get_widget('FileChooser');
+		$ChangeMacWindow=$MainGladeFile->get_widget('ChangeMacWindow');
+		$ErrWindow=$MainGladeFile->get_widget('ErrWindow');
+			$ErrWindow->signal_connect( delete_event => sub {$ErrWindow->hide();});
+
+
+		$MdkWindow=$MainGladeFile->get_widget('MdkWindow');
+		$WessideWindow=$MainGladeFile->get_widget('WessideWindow');
+		$ChangeMacWindow=$MainGladeFile->get_widget('ChangeMacWindow');
 
 # Main Subfunctions 
 	sub resetapp(){
@@ -91,7 +96,6 @@ $os="linux";
 		$Wifi_Interface->set_text_column(1);
 	}
 
-
 	sub setwifidata(){
 	  		$TreeView = Gtk2::SimpleList->new_from_treeview($TreeViewWidget,
 	                          'Name'                => 'text',
@@ -103,16 +107,17 @@ $os="linux";
 			system($bin{'terminal'}." ".$termopts{'exec'}." ".$bin{'airodump-ng'}." -w $dump_path/maindump");
 			open FH, "<$dump_path/maindump-01.csv";my @array_data=<FH>;
 			pop (@array_data);shift(@array_data); # Delete first and last line.
-			while (<@array_data>){my @a=split(/,/,$_);my $abssid=shift(@a);pop(@a);my $last=pop(@a);$final.=$abssid.$a[4].$a[6].$last;}
+			my ($bssid,$name,$enc);
+			while (<@array_data>){my @a=split(/,/,$_); $bssid=shift(@a);pop(@a);$name=pop(@a);$enc=$a[6];}
 			close FH;
-	  	# FIXME OMG: This is almost not readable!, Set it on treeview...
-}
+		 	push (@{$TreeView->{data}}, [$name,$bssid,$enc]);
+	}
 
 	sub popup_error(){
 		$ErrLabel->set_label(@_);
-		$ErrWindow->show();
+		$ErrWindow->run();
 	}
-	
+
 	sub setmonitormode(){
 		system($bin{'ifconfig'}.$_[0]." down");
 		system($bin{'airmon'}." start ".$wifi);
@@ -122,13 +127,17 @@ $os="linux";
 	sub create_dump_path(){my $dpath;
 		if ($os eq "Windows"){ $dpath=$ENV{'systemdir'}."/tmp/airosperl-".rand('222000')."/";}
 		else{
-			if ($os eq "Linux"){$dpath="/";}
-			else{$os eq "Other"; $dpath="/tmp/"}
+			if ($os eq "Linux"){$dpath=`mktemp -d`;}
+			else{$os eq "Other"; $dpath="/"}
 		}
 		mkpath $dpath;
 		return $dpath;
 	}
-	sub GetTerminalOptions(){}
+
+
+	sub GetTerminalOptions(){
+		
+	}
 
 # Signal handler' subfunctions
      

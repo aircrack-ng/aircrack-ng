@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Wed Mar  4 01:27:01 2009 -->
+<!--Generated with glade3 3.4.5 on Wed Mar  4 20:03:34 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="MainWindow">
     <property name="default_width">500</property>
@@ -179,112 +179,74 @@
                     <property name="n_rows">6</property>
                     <property name="n_columns">3</property>
                     <child>
-                      <widget class="GtkComboBoxEntry" id="WifiCombo">
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <widget class="GtkLayout" id="layout1">
                         <property name="visible">True</property>
-                        <child internal-child="entry">
-                          <widget class="GtkEntry" id="Wifi_Interface">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                          </widget>
-                        </child>
                       </widget>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <widget class="GtkFileChooserButton" id="FC_WordList">
+                      <widget class="GtkLabel" id="label19">
                         <property name="visible">True</property>
-                        <property name="select_multiple">True</property>
-                        <property name="local_only">False</property>
+                        <property name="label" translatable="yes">Set your preferences here</property>
+                        <property name="use_underline">True</property>
+                        <property name="justify">GTK_JUSTIFY_CENTER</property>
+                        <property name="wrap">True</property>
                       </widget>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">4</property>
-                        <property name="bottom_attach">5</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkLabel" id="label10">
+                      <widget class="GtkCheckButton" id="DefaultAirservng">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">WordList</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">Localhost:666</property>
+                        <property name="response_id">0</property>
+                        <property name="draw_indicator">True</property>
+                        <signal name="toggled" handler="on_DefaultAirservng_toggled"/>
                       </widget>
                       <packing>
-                        <property name="top_attach">4</property>
-                        <property name="bottom_attach">5</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label5">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Resolution:</property>
-                      </widget>
-                      <packing>
-                        <property name="top_attach">3</property>
-                        <property name="bottom_attach">4</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label4">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">WIFI Interface</property>
-                      </widget>
-                      <packing>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label7">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Airserv-ng IP:PORT</property>
-                      </widget>
-                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
                         <property name="top_attach">5</property>
                         <property name="bottom_attach">6</property>
                         <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkCheckButton" id="MonitorMode">
+                      <widget class="GtkEntry" id="airservng">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="label" translatable="yes">Monitor mode</property>
-                        <property name="response_id">0</property>
-                        <property name="draw_indicator">True</property>
                       </widget>
                       <packing>
-                        <property name="left_attach">2</property>
-                        <property name="right_attach">3</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">5</property>
+                        <property name="bottom_attach">6</property>
                       </packing>
                     </child>
                     <child>
@@ -315,56 +277,95 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkEntry" id="airservng">
+                      <widget class="GtkCheckButton" id="MonitorMode">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                      </widget>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">5</property>
-                        <property name="bottom_attach">6</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkCheckButton" id="DefaultAirservng">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="label" translatable="yes">Localhost:666</property>
+                        <property name="label" translatable="yes">Monitor mode</property>
                         <property name="response_id">0</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="toggled" handler="on_DefaultAirservng_toggled"/>
+                        <signal name="toggled" handler="on_MonitorMode_toggled"/>
                       </widget>
                       <packing>
                         <property name="left_attach">2</property>
                         <property name="right_attach">3</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="label7">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Airserv-ng IP:PORT</property>
+                      </widget>
+                      <packing>
                         <property name="top_attach">5</property>
                         <property name="bottom_attach">6</property>
                         <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkLabel" id="label19">
+                      <widget class="GtkLabel" id="label4">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Set your preferences here</property>
-                        <property name="use_underline">True</property>
-                        <property name="justify">GTK_JUSTIFY_CENTER</property>
-                        <property name="wrap">True</property>
+                        <property name="label" translatable="yes">WIFI Interface</property>
                       </widget>
                       <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkLayout" id="layout1">
+                      <widget class="GtkLabel" id="label5">
                         <property name="visible">True</property>
+                        <property name="label" translatable="yes">Resolution:</property>
+                      </widget>
+                      <packing>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="label10">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">WordList</property>
+                      </widget>
+                      <packing>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkFileChooserButton" id="FC_WordList">
+                        <property name="visible">True</property>
+                        <property name="select_multiple">True</property>
+                        <property name="local_only">False</property>
                       </widget>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">1</property>
-                        <property name="bottom_attach">2</property>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkComboBoxEntry" id="WifiCombo">
+                        <property name="visible">True</property>
+                        <child internal-child="entry">
+                          <widget class="GtkEntry" id="Wifi_Interface">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                          </widget>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
                       </packing>
                     </child>
                   </widget>
