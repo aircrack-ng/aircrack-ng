@@ -18,8 +18,10 @@ are available, such as chopchop, fragmentation attack, fakeauth, deauth,
 dictionnary attacks and WPA cracking.
 
 REQUIREMENTS:
-aircrack-ng version 1.0.2
-WORKING injection capable driver for the interface you want to use
+- GNU gettext (Debian/Ubuntu: gettext package)
+- ip (Debian/Ubuntu: iproute package)
+- aircrack-ng 1.0 rc2
+- WORKING injection capable driver for the interface you want to use
 
 USAGE:
 Airoscript can now get the terminal emulator from command line, you won't have to 
