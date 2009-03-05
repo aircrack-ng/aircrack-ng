@@ -183,12 +183,16 @@ static char * searchInside(const char * dir, const char * filename)
     DIR *dp;
     struct dirent *ep;
 
-    len = strlen(filename);
-    lentot = strlen(dir) + 256 + 2;
-    curfile = (char *)calloc(1, lentot);
     dp = opendir(dir);
     if (dp == NULL)
-            return NULL;
+    {
+        return NULL;
+	}
+
+    len = strlen( filename );
+    lentot = strlen( dir ) + 256 + 2;
+    curfile = (char *) calloc( 1, lentot );
+
     while ((ep = readdir(dp)) != NULL)
     {
 
@@ -214,12 +218,14 @@ static char * searchInside(const char * dir, const char * filename)
                 if (ret != NULL)
                 {
                     (void)closedir(dp);
+                    free( curfile );
                     return ret;
                 }
             }
         }
     }
     (void)closedir(dp);
+    free( curfile );
     return NULL;
 }
 
