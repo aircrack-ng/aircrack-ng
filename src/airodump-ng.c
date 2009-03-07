@@ -2921,8 +2921,10 @@ int dump_write_csv( void )
 
 int dump_write_kismet_netxml( time_t * airodump_start_time )
 {
-    int network_number, average_power, ssid_cloaked, unused, i;
+    int network_number, average_power, ssid_cloaked, unused, client_nbr, i;
+    int client_max_rate;
     struct AP_info *ap_cur;
+    struct ST_info *st_cur;
     char start_time[255];
     char first_time[255];
     char last_time[255];
@@ -2958,6 +2960,7 @@ int dump_write_kismet_netxml( time_t * airodump_start_time )
             continue;
         }
 
+		/* XXX: Maybe this check should be removed */
         if( ap_cur->nb_pkt < 2 )
         {
             ap_cur = ap_cur->next;
@@ -3076,12 +3079,119 @@ int dump_write_kismet_netxml( time_t * airodump_start_time )
 		 */
 		fprintf(G.f_kis_xml, "\t\t<datasize>0</datasize>\n");
 
-		/* SNR information */
-		average_power = ap_cur->avg_power;
-		if (average_power == -1)
+		/* Client information */
+		st_cur = G.st_1st;
+		client_nbr = 0;
+
+		while ( st_cur != NULL )
 		{
-				average_power = 0;
+			/* If not associated or Broadcast Mac, try next one */
+			if ( st_cur->base == NULL ||
+				 memcmp( st_cur->stmac, BROADCAST, 6 ) == 0  )
+			{
+				st_cur = st_cur->next;
+				continue;
+			}
+
+			/* Compare BSSID */
+			if ( memcmp( st_cur->base->bssid, ap_cur->bssid, 6 ) != 0 )
+			{
+				st_cur = st_cur->next;
+				continue;
+			}
+
+			++client_nbr;
+
+			fprintf(G.f_kis_xml, "\t\t<wireless-client number=\"%d\" "
+								 "type=\"established\" first-time=\"%s\""
+								 " last-time=\"%s\">\n",
+								 client_nbr, first_time, last_time );
+
+			fprintf( G.f_kis_xml, "\t\t\t<client-mac>%02X:%02X:%02X:%02X:%02X:%02X</client-mac>\n",
+						 st_cur->stmac[0], st_cur->stmac[1],
+						 st_cur->stmac[2], st_cur->stmac[3],
+						 st_cur->stmac[4], st_cur->stmac[5] );
+
+			/* Manufacturer
+			   XXX: Needs the MAC Address list file */
+			fprintf(G.f_kis_xml, "\t\t\t<client-manuf>%s</client-manuf>\n", "Unknown");
+
+			/* Channel
+			   FIXME: Take G.freqoption in account */
+			fprintf(G.f_kis_xml, "\t\t\t<channel>%d</channel>\n", ap_cur->channel);
+
+			/* Rate: unaccurate because it's the latest rate seen */
+			client_max_rate = ( st_cur->rate_from > st_cur->rate_to ) ? st_cur->rate_from : st_cur->rate_to ;
+			fprintf(G.f_kis_xml, "\t\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate / 1000000.0 );
+
+			/* Packets */
+			fprintf(G.f_kis_xml, "\t\t\t<packets>\n"
+						"\t\t\t\t<LLC>0</LLC>\n"
+						"\t\t\t\t<data>0</data>\n"
+						"\t\t\t\t<crypt>0</crypt>\n"
+						"\t\t\t\t<total>%ld</total>\n"
+						"\t\t\t\t<fragments>0</fragments>\n"
+						"\t\t\t\t<retries>0</retries>\n"
+						"\t\t\t</packets>\n",
+						st_cur->nb_pkt );
+
+			/* SNR information */
+			average_power = (st_cur->power == -1) ? 0 : st_cur->power;
+			fprintf(G.f_kis_xml, "\t\t\t<snr-info>\n"
+					"\t\t\t\t<last_signal_dbm>%d</last_signal_dbm>\n"
+					"\t\t\t\t<last_noise_dbm>0</last_noise_dbm>\n"
+					"\t\t\t\t<last_signal_rssi>%d</last_signal_rssi>\n"
+					"\t\t\t\t<last_noise_rssi>0</last_noise_rssi>\n"
+					"\t\t\t\t<min_signal_dbm>%d</min_signal_dbm>\n"
+					"\t\t\t\t<min_noise_dbm>0</min_noise_dbm>\n"
+					"\t\t\t\t<min_signal_rssi>1024</min_signal_rssi>\n"
+					"\t\t\t\t<min_noise_rssi>1024</min_noise_rssi>\n"
+					"\t\t\t\t<max_signal_dbm>%d</max_signal_dbm>\n"
+					"\t\t\t\t<max_noise_dbm>0</max_noise_dbm>\n"
+					"\t\t\t\t<max_signal_rssi>%d</max_signal_rssi>\n"
+					"\t\t\t\t<max_noise_rssi>0</max_noise_rssi>\n"
+					 "\t\t\t</snr-info>\n",
+					 average_power, average_power, average_power,
+					 average_power, average_power );
+
+			/* GPS Coordinates
+			   XXX: We don't have GPS coordinates for clients */
+			if (G.usegpsd)
+			{
+				fprintf(G.f_kis_xml, "\t\t<gps-info>\n"
+							"\t\t\t<min-lat>%.6f</min-lat>\n"
+							"\t\t\t<min-lon>%.6f</min-lon>\n"
+							"\t\t\t<min-alt>%.6f</min-alt>\n"
+							"\t\t\t<min-spd>%.6f</min-spd>\n"
+							"\t\t\t<max-lat>%.6f</max-lat>\n"
+							"\t\t\t<max-lon>%.6f</max-lon>\n"
+							"\t\t\t<max-alt>%.6f</max-alt>\n"
+							"\t\t\t<max-spd>%.6f</max-spd>\n"
+							"\t\t\t<peak-lat>%.6f</peak-lat>\n"
+							"\t\t\t<peak-lon>%.6f</peak-lon>\n"
+							"\t\t\t<peak-alt>%.6f</peak-alt>\n"
+							"\t\t\t<avg-lat>%.6f</avg-lat>\n"
+							"\t\t\t<avg-lon>%.6f</avg-lon>\n"
+							"\t\t\t<avg-alt>%.6f</avg-alt>\n"
+							 "\t\t</gps-info>\n",
+							 0.0, 0.0, 0.0, 0.0,
+							 0.0, 0.0, 0.0, 0.0,
+							 0.0, 0.0, 0.0,
+							 0.0, 0.0, 0.0 );
+			}
+
+
+			/* Trailing information */
+			fprintf(G.f_kis_xml, "\t\t\t<cdp-device></cdp-device>\n"
+								 "\t\t\t<cdp-portid></cdp-portid>\n");
+			fprintf(G.f_kis_xml, "\t\t</wireless-client>\n" );
+
+			/* Next client */
+			st_cur = st_cur->next;
 		}
+
+		/* SNR information */
+		average_power = (ap_cur->avg_power == -1) ? 0 : ap_cur->avg_power;
 		fprintf(G.f_kis_xml, "\t\t<snr-info>\n"
 					"\t\t\t<last_signal_dbm>%d</last_signal_dbm>\n"
 					"\t\t\t<last_noise_dbm>0</last_noise_dbm>\n"
