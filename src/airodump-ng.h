@@ -199,7 +199,7 @@ struct ST_info
     int rate_from;           /* last bitrate from station */
     struct timeval ftimer;   /* time of restart           */
     int missed;              /* number of missed packets  */
-    unsigned int lastseq;    /* last seen sequnce number  */
+    unsigned int lastseq;    /* last seen sequence number */
     struct WPA_hdsk wpa;     /* WPA handshake data        */
     int qos_to_ds;           /* does it use 802.11e to ds */
     int qos_fr_ds;           /* does it receive 802.11e   */
