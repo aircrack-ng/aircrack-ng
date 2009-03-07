@@ -3,6 +3,8 @@ Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
 * airodump-ng: Changed file extensions for CSV (.csv instead of .txt) and for kismet CSV
   (.kismet.csv instead of .csv).
 * airodump-ng: Fixed WPA tag parsing and added QoS detection based on direction.
+* airodump-ng: Added option to only disable capture file; all other files
+  (CSV, kismet CSV, kismet netxml, GPS) will be created.
 * aircrack-ng: Fixed -w with WEP.
 * aircrack-ng: Fixed useless memory allocation.
 * aircrack-ng: Fixed compilation with gcc 2.95.

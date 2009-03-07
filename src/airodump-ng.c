@@ -243,8 +243,9 @@ char usage[] =
 "      -f          <msecs> : Time in ms between hopping channels\n"
 "      --berlin     <secs> : Time before removing the AP/client\n"
 "                            from the screen when no more packets\n"
-"                            are received (Default: 120 seconds).\n"
+"                            are received (Default: 120 seconds)\n"
 "      -r           <file> : Read packets from that file\n"
+"      --nocap             : Don't write pcap/ivs file (require -w)\n"
 "\n"
 "  Filter options:\n"
 "      --encrypt   <suite> : Filter APs by cipher suite\n"
@@ -466,6 +467,12 @@ int dump_initialize( char *prefix, int ivs_only )
     }
 
     /* create the output packet capture file */
+
+	if ( G.dont_write_cap_file )
+	{
+        free( ofn );
+        return( 0 );
+	}
 
     if( ivs_only == 0 )
     {
@@ -4409,6 +4416,7 @@ int main( int argc, char *argv[] )
         {"nodecloak",0, 0, 'D'},
         {"showack",  0, 0, 'A'},
         {"detect-anomaly", 0, 0, 'E'},
+        {"nocap",    0, 0, 'n'},
         {0,          0, 0,  0 }
     };
 
@@ -4463,6 +4471,7 @@ int main( int argc, char *argv[] )
     G.f_cap_in     =  NULL;
     G.detect_anomaly = 0;
     G.airodump_start_time = NULL;
+    G.dont_write_cap_file = 0;
 
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
@@ -4538,7 +4547,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:n",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -4782,6 +4791,11 @@ int main( int argc, char *argv[] )
                 set_encryption_filter(optarg);
                 break;
 
+			case 'n':
+
+				G.dont_write_cap_file = 1;
+				break;
+
             case 'H':
 
   	            printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
@@ -4819,7 +4833,8 @@ usage:
         return( 1 );
     }
 
-    if ( ivs_only && !G.record_data ) {
+    if ( (G.dont_write_cap_file && !G.record_data )
+          || ( ivs_only && !G.record_data ) ) {
         printf( "Missing dump prefix (-w)\n" );
         printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );

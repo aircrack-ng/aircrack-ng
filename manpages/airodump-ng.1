@@ -49,6 +49,9 @@ Defines the way airodump-ng sets the channels when using more than one card. Val
 .TP
 .I -r <file>
 Reads packet from a file.
+.TP
+.I --nocap, -n
+Don't write pcap or ivs file (require -w or --write). It can be usefull for scripts that only parse generated text files (besides the capture file) or for reconnaissance.
 .PP
 .B Filter options:
 .TP
