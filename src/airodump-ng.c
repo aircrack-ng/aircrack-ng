@@ -2919,13 +2919,12 @@ int dump_write_csv( void )
 
 #define KISMET_NETXML_TRAILER "</detection-run>"
 
-int dump_write_kismet_netxml( time_t * airodump_start_time )
+int dump_write_kismet_netxml( void )
 {
     int network_number, average_power, ssid_cloaked, unused, client_nbr, i;
     int client_max_rate;
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
-    char start_time[255];
     char first_time[255];
     char last_time[255];
 
@@ -2935,11 +2934,9 @@ int dump_write_kismet_netxml( time_t * airodump_start_time )
     fseek( G.f_kis_xml, 0, SEEK_SET );
 
 	/* Header and airodump-ng start time */
-	strcpy( start_time, ctime( airodump_start_time ) );
-	start_time[strlen(start_time) - 1] = 0; // remove new line
     fprintf( G.f_kis_xml, "%s%s%s",
     		KISMET_NETXML_HEADER_BEGIN,
-			start_time,
+			G.airodump_start_time,
     		KISMET_NETXML_HEADER_END );
 
 
@@ -5036,6 +5033,12 @@ usage:
     G.elapsed_time = (char *) calloc( 1, 4 );
     strncpy(G.elapsed_time, "0 s", 4-1);
 
+	/* Create start time string for kismet netxml file */
+    G.airodump_start_time = (char *) calloc( 1, 1000 * sizeof(char) );
+    strcpy(G.airodump_start_time, ctime( & start_time ) );
+	G.airodump_start_time[strlen(G.airodump_start_time) - 1] = 0; // remove new line
+	G.airodump_start_time = (char *) realloc( G.airodump_start_time, sizeof(char) * (strlen(G.airodump_start_time) + 1) );
+
     while( 1 )
     {
         if( G.do_exit )
@@ -5050,7 +5053,7 @@ usage:
             tt1 = time( NULL );
             dump_write_csv();
             dump_write_kismet_csv();
-            dump_write_kismet_netxml(&start_time);
+            dump_write_kismet_netxml();
 
             /* sort the APs by power */
 
@@ -5308,11 +5311,15 @@ usage:
     if (G.record_data) {
         dump_write_csv();
         dump_write_kismet_csv();
-        dump_write_kismet_netxml(&start_time);
+        dump_write_kismet_netxml();
 
         if( G.f_txt != NULL ) fclose( G.f_txt );
         if( G.f_kis != NULL ) fclose( G.f_kis );
-        if( G.f_kis_xml != NULL ) fclose( G.f_kis_xml );
+        if( G.f_kis_xml != NULL )
+        {
+			fclose( G.f_kis_xml );
+			free(G.airodump_start_time);
+		}
         if( G.f_gps != NULL ) fclose( G.f_gps );
         if( G.f_cap != NULL ) fclose( G.f_cap );
         if( G.f_ivs != NULL ) fclose( G.f_ivs );
