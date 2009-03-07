@@ -3,6 +3,8 @@
 
 /* some constants */
 
+#define MAX_IE_ELEMENT_SIZE 256
+
 #define ARPHRD_IEEE80211        801
 #define ARPHRD_IEEE80211_PRISM  802
 #define ARPHRD_IEEE80211_FULL   803
@@ -137,7 +139,8 @@ struct AP_info
     struct timeval tv;        /* time for data per second */
 
     unsigned char bssid[6];   /* the access point's MAC   */
-    unsigned char essid[256]; /* ascii network identifier */
+    unsigned char essid[MAX_IE_ELEMENT_SIZE];
+                              /* ascii network identifier */
 
     unsigned char lanip[4];   /* last detected ip address */
                               /* if non-encrypted network */
@@ -192,7 +195,8 @@ struct ST_info
     unsigned long nb_pkt;    /* total number of packets   */
     unsigned char stmac[6];  /* the client's MAC address  */
     int probe_index;         /* probed ESSIDs ring index  */
-    char probes[NB_PRB][256];/* probed ESSIDs ring buffer */
+    char probes[NB_PRB][MAX_IE_ELEMENT_SIZE];
+                             /* probed ESSIDs ring buffer */
     int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
     int power;               /* last signal power         */
     int rate_to;             /* last bitrate to station   */
