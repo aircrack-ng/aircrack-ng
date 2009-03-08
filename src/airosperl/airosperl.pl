@@ -9,8 +9,8 @@
 #
 #      OPTIONS:  None
 # REQUIREMENTS:  airosperl.pm airosperl.glade
-#         BUGS:  When pressing apply configuration twice it doesn't do anything...
-#        NOTES:  ... Cause it's not even started
+#         BUGS:  
+#        NOTES:  
 #       AUTHOR:  David Francos Cuartero (XayOn), yo.orco@gmail.com
 #      COMPANY:  None
 #      VERSION:  0.0
@@ -32,8 +32,8 @@ else{require ($ENV{'HOME'}.".airosperl.conf");}
 # Define variables
 	my ($bssid,$airservng_addr,$wifi,$DefaultAirservNg,$reso,$capfile,$final,$TreeVie,$TreeView,$action,$os);# Standard
 	my ($ErrLabel,$Airserv_INPUT,$DefaultInput,$Wifi_INPUT,$Reso_INPUT,$MonitorMode,$TreeViewWidget,$Wifi_Interface,$model);# Widgets
-	our ($MainWindow, $FileChooserWindow, $SWifiWindow,$ErrWindow,$ChangeMacWindow,$MdkWindow,$WessideWindow,$FolderChooserWindow); # Windows
-	our (%bin,%termopts); #From config file.
+	our ($MainWindow, $FileChooserWindow, $SWifiWindow,$ErrWindow,$ChangeMacWindow,$MdkWindow,$WessideWindow,$FolderChooserWindow,$AboutWindow); # Windows
+	our (%bin,%termopts);
 
 # FIXME : This is not real:
 $os="Linux";
@@ -49,7 +49,6 @@ $os="Linux";
 	$MainWindow->show_all();
 		$MainWindow->signal_connect( delete_event => sub {Gtk2->main_quit();1;});# Program ends when main window closed.
 
-
 # Define widgets
 	# Those are normal widgets (mostly input and labels).	
 		$Airserv_INPUT=$MainGladeFile->get_widget('airservng');	
@@ -61,29 +60,27 @@ $os="Linux";
 		$Wifi_Interface=$MainGladeFile->get_widget('WifiCombo');
 
 	# Those are windows
+
+		$MdkWindow=$MainGladeFile->get_widget('MdkWindow');
+			$MdkWindow->signal_connect( delete_event => sub {$MdkWindow->hide();});
 		$SWifiWindow=$MainGladeFile->get_widget('WIFI_Selector');
 			$SWifiWindow->signal_connect( delete_event => sub {$SWifiWindow->hide();});
 		$FileChooserWindow=$MainGladeFile->get_widget('FileChooser');
+			$FileChooserWindow->signal_connect( delete_event => sub {$FileChooserWindow->hide();});
 		$FolderChooserWindow=$MainGladeFile->get_widget('FileChooser');
+			$FolderChooserWindow->signal_connect( delete_event => sub {$FolderChooserWindow->hide();});
 		$ChangeMacWindow=$MainGladeFile->get_widget('ChangeMacWindow');
+			$ChangeMacWindow->signal_connect( delete_event => sub {$ChangeMacWindow->hide();});
 		$ErrWindow=$MainGladeFile->get_widget('ErrWindow');
 			$ErrWindow->signal_connect( delete_event => sub {$ErrWindow->hide();});
-
-
-		$MdkWindow=$MainGladeFile->get_widget('MdkWindow');
+		$AboutWindow=$MainGladeFile->get_widget('AboutWindow');
+			$AboutWindow->signal_connect( delete_event => sub {$AboutWindow->hide();});
 		$WessideWindow=$MainGladeFile->get_widget('WessideWindow');
-		$ChangeMacWindow=$MainGladeFile->get_widget('ChangeMacWindow');
+			$WessideWindow->signal_connect( delete_event => sub {$WessideWindow->hide();});
 
-# Main Subfunctions 
-	sub resetapp(){
-		Gtk2->main_quit;
-		sleep 1;
-		rmtree $dump_path;
-		$b=abs_path($0);
-		system("perl $b &");
-		exit(0);
-	}
 
+# Main Subfunctions
+	# Main Window things:
 	sub SetWifiInterfaces(){
 		my $id=0;my $iter;  
 		my $liststore = Gtk2::ListStore->new("Glib::Int","Glib::String");
@@ -95,33 +92,15 @@ $os="Linux";
 		$Wifi_Interface->set_model($liststore);
 		$Wifi_Interface->set_text_column(1);
 	}
-
-	sub setwifidata(){
-	  		$TreeView = Gtk2::SimpleList->new_from_treeview($TreeViewWidget,
-	                          'Name'                => 'text',
-	                          'bssid'               => 'text',
-	                          'Encription'          => 'text'
-	                          );
-			my @linedata;my $finaldata;
-			unlink ("$dump_path/maindump-*.csv");
-			system($bin{'terminal'}." ".$termopts{'exec'}." ".$bin{'airodump-ng'}." -w $dump_path/maindump");
-			open FH, "<$dump_path/maindump-01.csv";my @array_data=<FH>;
-			pop (@array_data);shift(@array_data); # Delete first and last line.
-			my ($bssid,$name,$enc);
-			while (<@array_data>){my @a=split(/,/,$_); $bssid=shift(@a);pop(@a);$name=pop(@a);$enc=$a[6];}
-			close FH;
-		 	push (@{$TreeView->{data}}, [$name,$bssid,$enc]);
-	}
-
 	sub popup_error(){
 		$ErrLabel->set_label(@_);
 		$ErrWindow->run();
 	}
 
 	sub setmonitormode(){
-		system($bin{'ifconfig'}.$_[0]." down");
-		system($bin{'airmon'}." start ".$wifi);
-		system($bin{'ifconfig'}.$_[0]." up");
+		system($bin{'ifconfig'}." ".$_[0]." down");
+		system($bin{'airmon'}." start ".$_[0]);
+		system($bin{'ifconfig'}." ".$_[0]." up");
 	}
 
 	sub create_dump_path(){my $dpath;
@@ -131,16 +110,51 @@ $os="Linux";
 			else{$os eq "Other"; $dpath="/"}
 		}
 		mkpath $dpath;
+		chomp($dpath);
 		return $dpath;
 	}
 
-
 	sub GetTerminalOptions(){
-		
+		# Set termopts by terminal type. so specify terminal on window.	
 	}
 
+	# Menu items
+		# File: connect
+	sub setwifidata(){
+	  		$TreeView = Gtk2::SimpleList->new_from_treeview($TreeViewWidget,
+	                          'Name'                => 'text',
+	                          'bssid'               => 'text',
+	                          'Encription'          => 'text'
+	                          );
+			my @linedata;my $finaldata;
+			unlink ("$dump_path/maindump-*.csv");
+			my $cmd=$bin{'terminal'}." ".$termopts{'exec'}." \" ".$bin{'airodump'}." $wifi -w $dump_path/maindump \"";system $cmd;
+			system("tac $dump_path/maindump-01.csv | sed '1,3d' | tac| sed '1,2d' > $dump_path/maindump-01.csv2");
+			open FH, "<$dump_path/maindump-01.csv2";
+			my ($bssid,$name,$enc);
+			while (<FH>){my @a=split(/,/,$_); $bssid=$a[0]; $name=$a[13]; 
+			$enc=$a[6];push (@{$TreeView->{data}}, [$name,$bssid,$enc]); print "$_ dp \n";}
+			close FH;
+	}
+
+		# File: new 
+		sub resetapp(){
+			Gtk2->main_quit;
+			sleep 1;
+			rmtree $dump_path;
+			$b=abs_path($0);
+			system("perl $b &");
+			exit(0);
+		}
+
+		# Others reset interface
+			sub resetwifi(){
+				system ('	killall -9 aireplay-ng airodump-ng > /dev/null &');
+				&setmonitormode;
+			}
+		
+
 # Signal handler' subfunctions
-     
 #### Menu Items...
 	# File :
 	sub on_MI_WIFISEL_activate(){
@@ -166,11 +180,27 @@ $os="Linux";
 
 	# Others:
 	sub on_MI_ChangeMac_activate(){$ChangeMacWindow->show_all();}
+	sub on_MI_Mdk3_activate(){$MdkWindow->show_all();}
+	sub on_MI_Wesside_activate(){$WessideWindow->show_all;}
+	sub on_MI_resetiface_activate(){&resetwifi;&popup_error("Interface $wifi reseted");}
+	sub on_MI_About_activate(){$AboutWindow->show_all;}
+# Buttons
+  	# Close Buttons
+	sub on_WS_BTN_Cancel_clicked(){$SWifiWindow->hide();}
+	sub on_ErrOk_clicked(){$ErrWindow->hide();}
+	sub on_FC_BTN_Cancel_clicked{$FileChooserWindow->hide();}
+	sub on_FoC_BTN_Cancel_clicked{$FolderChooserWindow->hide();}
+	sub on_About_BTN_Cancel_clicked{$AboutWindow->hide();}
+
+	# Rest of buttons
+	sub on_CMW_Ok_clicked{$ChangeMacWindow->hide();}
+	sub on_WS_BTN_Ok_clicked(){$SWifiWindow->hide();}
+	sub on_FC_BTN_Ok_clicked(){my $destfile=$FileChooserWindow->get_filename();copy ("$dump_path/*","$destfile/");	}
+	sub on_FoC_BTIN_Ok_clicked(){$capfile=$FolderChooserWindow->get_filename();}
 
 ##### Main window items
-	sub on_DefaultAirservng_toggled(){$DefaultAirservNg=1;}
-
-	sub on_MonitorMode_toggled(){$MonitorMode=1;}
+	sub on_DefaultAirservng_clicked(){$DefaultAirservNg=1 if !$MonitorMode; $MonitorMode="" if $MonitorMode;}
+	sub on_MonitorMode_clicked(){$MonitorMode=1 if !$MonitorMode; $MonitorMode="" if $MonitorMode;}
 
 	sub on_apply_clicked{# Apply main configuration.
 		$airservng_addr=$Airserv_INPUT->get_text(); 
@@ -185,21 +215,9 @@ $os="Linux";
 		&popup_error("Wifi interface to be used is $wifi .\nResolution is $reso . $MonitorMode");
 	}
 
-# Buttons
-  	# Close Buttons
-	sub on_WS_BTN_Cancel_clicked(){$SWifiWindow->hide();}
-	sub on_ErrOk_clicked(){$ErrWindow->hide();}
-	sub on_FC_BTN_Cancel_clicked{$FileChooserWindow->hide();}
-	sub on_FoC_BTN_Cancel_clicked{$FolderChooserWindow->hide();}
-
-	# Rest of buttons
-	sub on_CMW_Ok_clicked{$ChangeMacWindow->hide();}
-	sub on_WS_BTN_Ok_clicked(){$SWifiWindow->hide();}
-	sub on_FC_BTN_Ok_clicked(){my $destfile=$FileChooserWindow->get_filename();copy ("$dump_path/*","$destfile/");	}
-	sub on_FoC_BTIN_Ok_clicked(){$capfile=$FolderChooserWindow->get_filename();}
-
+#### Main program.
 # Get term options and set them on $termopts hash.
-%termopts=&GetTerminalOptions();
+#%termopts=&GetTerminalOptions();
 
 # Set wifi interfaces in main window.
 &SetWifiInterfaces();
