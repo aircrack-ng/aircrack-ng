@@ -44,6 +44,9 @@ except ImportError:
 
 try:
 	sys.path.append("./lib/")
+	# The previous line works fine and find the lib if psyco isn't installed
+	# When psyco is installed, it does not work anymore and a full path has to be used
+	sys.path.append("/usr/local/bin/lib/")
 	import lib_Airgraphviz
 	dot_libs = lib_Airgraphviz #i dont think i need this but ill look at it later
 except ImportError:
