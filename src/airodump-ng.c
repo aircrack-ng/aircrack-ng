@@ -245,6 +245,7 @@ char usage[] =
 "                            from the screen when no more packets\n"
 "                            are received (Default: 120 seconds)\n"
 "      -r           <file> : Read packets from that file\n"
+"      -x          <msecs> : Active Scanning Simulation\n"
 "      --nocap             : Don't write pcap/ivs file (require -w)\n"
 "\n"
 "  Filter options:\n"
@@ -769,6 +770,10 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
     struct ST_info *st_prv = NULL;
     struct NA_info *na_prv = NULL;
 
+    /* skip all non probe response frames in active scanning simulation mode */
+    if( G.active_scan_sim > 0 && h80211[0] != 0x50 )
+        return(0);
+
     /* skip packets smaller than a 802.11 header */
 
     if( caplen < 24 )
@@ -1254,9 +1259,9 @@ skip_probe:
         }
     }
 
-    /* packet parsing: Beacon */
+    /* packet parsing: Beacon & Probe response */
 
-    if( h80211[0] == 0x80 && caplen > 38)
+    if( (h80211[0] == 0x80 || h80211[0] == 0x50) && caplen > 38)
     {
         p=h80211+36;         //ignore hdr + fixed params
 
@@ -3591,6 +3596,58 @@ void sighandler( int signum)
     }
 }
 
+int send_probe_request(struct wif *wi)
+{
+    int len;
+    unsigned char p[4096], r_smac[6];
+
+    memcpy(p, PROBE_REQ, 24);
+
+    len = 24;
+
+    p[24] = 0x00;      //ESSID Tag Number
+    p[25] = 0x00;      //ESSID Tag Length
+
+    len += 2;
+
+    memcpy(p+len, RATES, 16);
+
+    len += 16;
+
+    r_smac[0] = 0x00;
+    r_smac[1] = rand() & 0xFF;
+    r_smac[2] = rand() & 0xFF;
+    r_smac[3] = rand() & 0xFF;
+    r_smac[4] = rand() & 0xFF;
+    r_smac[5] = rand() & 0xFF;
+
+    memcpy(p+10, r_smac, 6);
+
+    if (wi_write(wi, p, len, NULL) == -1) {
+        switch (errno) {
+        case EAGAIN:
+        case ENOBUFS:
+            usleep(10000);
+            return 0; /* XXX not sure I like this... -sorbo */
+        }
+
+        perror("wi_write()");
+        return -1;
+    }
+
+    return 0;
+}
+
+int send_probe_requests(struct wif *wi[], int cards)
+{
+    int i=0;
+    for(i=0; i<cards; i++)
+    {
+        send_probe_request(wi[i]);
+    }
+    return 0;
+}
+
 int getchancount(int valid)
 {
     int i=0, chan_count=0;
@@ -3689,6 +3746,7 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
                 G.channel[card] = ch;
                 unused = write( G.cd_pipe[1], &card, sizeof(int) );
                 unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
+                send_probe_request(wi[card]);
                 kill( getppid(), SIGUSR1 );
                 usleep(1000);
             }
@@ -4357,7 +4415,7 @@ int rearrange_frequencies()
 
 int main( int argc, char *argv[] )
 {
-    long time_slept, cycle_time;
+    long time_slept, cycle_time, cycle_time2;
     int caplen=0, i, j, cards, fdh, fd_is_set, chan_count, freq_count, unused;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
     int ivs_only, found;
@@ -4389,8 +4447,11 @@ int main( int argc, char *argv[] )
     struct timeval     tv1;
     struct timeval     tv2;
     struct timeval     tv3;
+    struct timeval     tv4;
     struct winsize     ws;
     struct tm          *lt;
+
+    srand( time( NULL ) );
 
     /*
     struct sockaddr_in provis_addr;
@@ -4457,6 +4518,7 @@ int main( int argc, char *argv[] )
     G.prefix       =  NULL;
     G.f_encrypt    =  0;
     G.asso_client  =  0;
+    G.active_scan_sim  =  0;
     G.update_s     =  0;
     G.decloak      =  1;
     G.is_berlin    =  0;
@@ -4547,7 +4609,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:n",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:nx:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -4741,7 +4803,7 @@ int main( int argc, char *argv[] )
 
                 /* If failed to parse or value <= 0, use default, 100ms */
                 if (G.hopfreq <= 0)
-                	G.hopfreq = REFRESH_RATE;
+                	G.hopfreq = DEFAULT_HOPFREQ;
 
                 break;
 
@@ -4798,8 +4860,16 @@ int main( int argc, char *argv[] )
 
             case 'H':
 
-  	            printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
-  	            return( 1 );
+                printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
+                return( 1 );
+
+            case 'x':
+
+                G.active_scan_sim = atoi(optarg);
+
+                if (G.active_scan_sim <= 0)
+                    G.active_scan_sim = 0;
+                break;
 
             default : goto usage;
         }
@@ -5042,6 +5112,7 @@ usage:
     tt2        = time( NULL );
     tt3        = time( NULL );
     gettimeofday( &tv3, NULL );
+    gettimeofday( &tv4, NULL );
 
     G.batt     = getBatteryString();
 
@@ -5102,6 +5173,15 @@ usage:
 
         cycle_time = 1000000 * ( tv1.tv_sec  - tv3.tv_sec  )
                              + ( tv1.tv_usec - tv3.tv_usec );
+
+        cycle_time2 = 1000000 * ( tv1.tv_sec  - tv4.tv_sec  )
+                              + ( tv1.tv_usec - tv4.tv_usec );
+
+        if( G.active_scan_sim > 0 && cycle_time2 > G.active_scan_sim*1000 )
+        {
+            gettimeofday( &tv4, NULL );
+            send_probe_requests(wi, cards);
+        }
 
         if( cycle_time > 500000 )
         {
