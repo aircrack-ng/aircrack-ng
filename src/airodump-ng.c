@@ -4451,8 +4451,6 @@ int main( int argc, char *argv[] )
     struct winsize     ws;
     struct tm          *lt;
 
-    srand( time( NULL ) );
-
     /*
     struct sockaddr_in provis_addr;
     */
@@ -4483,6 +4481,8 @@ int main( int argc, char *argv[] )
 
     /* initialize a bunch of variables */
 
+
+	srand( time( NULL ) );
     memset( &G, 0, sizeof( G ) );
 
     h80211         =  NULL;
