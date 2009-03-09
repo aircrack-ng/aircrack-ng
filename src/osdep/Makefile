@@ -60,7 +60,7 @@ all:
 	touch $(@)
 
 .os.%: .os.dummy
-	@echo "Your platform is unsupported"
+	@echo "Your platform is unsupported by osdep, dummy code compiled."
 	touch $(@)
 
 install: all
