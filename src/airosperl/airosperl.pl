@@ -198,6 +198,27 @@ $os="Linux";
 	sub on_FC_BTN_Ok_clicked(){my $destfile=$FileChooserWindow->get_filename();copy ("$dump_path/*","$destfile/");	}
 	sub on_FoC_BTIN_Ok_clicked(){$capfile=$FolderChooserWindow->get_filename();}
 
+# Radio buttons are not working properly with my version of glade so i'll make groups manually.
+	# Injection tab
+	my $RBI1=$MainGladeFile->get_widget('IN1');
+	my $RBI2=$MainGladeFile->get_widget('IN2');
+		$RBI2->set_group($RBI1);
+	# Fake auth tab
+	my $RBFA1=$MainGladeFile->get_widget('FA1');
+	my $RBFA2=$MainGladeFile->get_widget('FA2');
+		$RBFA2->set_group($RBFA1);
+	my $RBFA3=$MainGladeFile->get_widget('FA3');
+		$RBFA3->set_group($RBFA);
+
+	# deauth tab
+	my $DA1=$MainGladeFile->get_widget('DA1');
+	my $DA2=$MainGladeFile->get_widget('DA2');
+		$DA2->set_group($DA1);
+	my $DA3=$MainGladeFile->get_widget('DA3');
+		$DA2->set_group($DA1);
+
+
+
 ##### Main window items
 	sub on_DefaultAirservng_clicked(){$DefaultAirservNg=1 if !$MonitorMode; $MonitorMode="" if $MonitorMode;}
 	sub on_MonitorMode_clicked(){$MonitorMode=1 if !$MonitorMode; $MonitorMode="" if $MonitorMode;}

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sat Mar  7 02:12:45 2009 -->
+<!--Generated with glade3 3.4.5 on Mon Mar  9 01:12:35 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="MainWindow">
     <property name="default_width">500</property>
@@ -429,42 +429,206 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkTable" id="table2">
+              <widget class="GtkVBox" id="vbox9">
                 <property name="visible">True</property>
-                <property name="n_rows">3</property>
-                <property name="n_columns">3</property>
                 <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="label8">
+                  <widget class="GtkVButtonBox" id="vbuttonbox6">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">Attacks</property>
+                    <child>
+                      <widget class="GtkHBox" id="hbox4">
+                        <property name="visible">True</property>
+                        <child>
+                          <widget class="GtkRadioButton" id="radiobutton1">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="label" translatable="yes">Fake Auth</property>
+                            <property name="response_id">0</property>
+                            <property name="active">True</property>
+                            <property name="draw_indicator">True</property>
+                          </widget>
+                        </child>
+                        <child>
+                          <widget class="GtkCheckButton" id="checkbutton1">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="label" translatable="yes">Interactive</property>
+                            <property name="response_id">0</property>
+                            <property name="draw_indicator">True</property>
+                          </widget>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkRadioButton" id="radiobutton2">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">Frag attack</property>
+                        <property name="response_id">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </widget>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkRadioButton" id="radiobutton3">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">Chopchop attack</property>
+                        <property name="response_id">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </widget>
+                      <packing>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkRadioButton" id="radiobutton4">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">Caffe late attack</property>
+                        <property name="response_id">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </widget>
+                      <packing>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkRadioButton" id="radiobutton6">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">Hirte attack</property>
+                        <property name="response_id">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </widget>
+                      <packing>
+                        <property name="position">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="label8">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">With client:</property>
+                      </widget>
+                      <packing>
+                        <property name="position">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkHBox" id="hbox5">
+                        <property name="visible">True</property>
+                        <child>
+                          <widget class="GtkRadioButton" id="radiobutton7">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="label" translatable="yes">Arp Replay</property>
+                            <property name="response_id">0</property>
+                            <property name="active">True</property>
+                            <property name="draw_indicator">True</property>
+                          </widget>
+                        </child>
+                        <child>
+                          <widget class="GtkCheckButton" id="checkbutton2">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="label" translatable="yes">Interactive</property>
+                            <property name="response_id">0</property>
+                            <property name="draw_indicator">True</property>
+                          </widget>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="position">6</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkHBox" id="hbox6">
+                        <property name="visible">True</property>
+                        <child>
+                          <widget class="GtkRadioButton" id="radiobutton12">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="label" translatable="yes">Frag attack</property>
+                            <property name="response_id">0</property>
+                            <property name="active">True</property>
+                            <property name="draw_indicator">True</property>
+                          </widget>
+                        </child>
+                        <child>
+                          <widget class="GtkCheckButton" id="checkbutton3">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="label" translatable="yes">On client</property>
+                            <property name="response_id">0</property>
+                            <property name="draw_indicator">True</property>
+                          </widget>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="position">7</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkRadioButton" id="radiobutton13">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">ChopChop attack</property>
+                        <property name="response_id">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </widget>
+                      <packing>
+                        <property name="position">8</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="label9">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">XOR Injection</property>
+                      </widget>
+                      <packing>
+                        <property name="position">9</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkRadioButton" id="radiobutton15">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">Arp Inject from XOR</property>
+                        <property name="response_id">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </widget>
+                      <packing>
+                        <property name="position">10</property>
+                      </packing>
+                    </child>
+                  </widget>
+                </child>
+                <child>
+                  <widget class="GtkButton" id="button6">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="label" translatable="yes">Attack!</property>
+                    <property name="response_id">0</property>
                   </widget>
                   <packing>
-                    <property name="top_attach">1</property>
-                    <property name="bottom_attach">2</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
               </widget>
@@ -608,7 +772,7 @@
                         <property name="visible">True</property>
                         <property name="layout_style">GTK_BUTTONBOX_START</property>
                         <child>
-                          <widget class="GtkRadioButton" id="radiobutton6">
+                          <widget class="GtkRadioButton" id="FA1">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="has_tooltip">True</property>
@@ -620,7 +784,7 @@
                           </widget>
                         </child>
                         <child>
-                          <widget class="GtkRadioButton" id="radiobutton7">
+                          <widget class="GtkRadioButton" id="FA2">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="has_tooltip">True</property>
@@ -635,7 +799,7 @@
                           </packing>
                         </child>
                         <child>
-                          <widget class="GtkRadioButton" id="radiobutton8">
+                          <widget class="GtkRadioButton" id="FA3">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="tooltip_text">Progressive fake auth attack ( 5 -o 10 -q 1 )</property>
@@ -704,7 +868,7 @@
                       <widget class="GtkVButtonBox" id="vbuttonbox3">
                         <property name="visible">True</property>
                         <child>
-                          <widget class="GtkRadioButton" id="radiobutton3">
+                          <widget class="GtkRadioButton" id="DA1">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">MySelf</property>
@@ -714,7 +878,7 @@
                           </widget>
                         </child>
                         <child>
-                          <widget class="GtkRadioButton" id="radiobutton4">
+                          <widget class="GtkRadioButton" id="DA2">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">Everybody</property>
@@ -730,9 +894,13 @@
                           <widget class="GtkHBox" id="hbox1">
                             <property name="visible">True</property>
                             <child>
-                              <widget class="GtkLabel" id="label20">
+                              <widget class="GtkRadioButton" id="DA3">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">Ip </property>
+                                <property name="can_focus">True</property>
+                                <property name="label" translatable="yes">ip</property>
+                                <property name="response_id">0</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
                               </widget>
                             </child>
                             <child>
@@ -827,7 +995,7 @@
                         <property name="visible">True</property>
                         <property name="layout_style">GTK_BUTTONBOX_START</property>
                         <child>
-                          <widget class="GtkRadioButton" id="radiobutton1">
+                          <widget class="GtkRadioButton" id="IN1">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">ChopChop  Injection</property>
@@ -837,7 +1005,7 @@
                           </widget>
                         </child>
                         <child>
-                          <widget class="GtkRadioButton" id="radiobutton2">
+                          <widget class="GtkRadioButton" id="IN2">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">Fragmentation Injection</property>
@@ -895,22 +1063,21 @@
                 <child>
                   <widget class="GtkVButtonBox" id="vbuttonbox5">
                     <property name="visible">True</property>
-                    <property name="layout_style">GTK_BUTTONBOX_START</property>
                     <child>
-                      <widget class="GtkRadioButton" id="radiobutton12">
+                      <widget class="GtkRadioButton" id="C1">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="label" translatable="yes">radiobutton</property>
+                        <property name="label" translatable="yes">WPA</property>
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkRadioButton" id="radiobutton13">
+                      <widget class="GtkRadioButton" id="C2">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="label" translatable="yes">radiobutton</property>
+                        <property name="label" translatable="yes">WEP - Standard</property>
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
@@ -920,10 +1087,10 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkRadioButton" id="radiobutton14">
+                      <widget class="GtkRadioButton" id="C3">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="label" translatable="yes">radiobutton</property>
+                        <property name="label" translatable="yes">WEP- PTW</property>
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
@@ -932,7 +1099,46 @@
                         <property name="position">2</property>
                       </packing>
                     </child>
+                    <child>
+                      <widget class="GtkRadioButton" id="C4">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">WEP - Custom</property>
+                        <property name="response_id">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </widget>
+                      <packing>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
                   </widget>
+                </child>
+                <child>
+                  <widget class="GtkHBox" id="hbox3">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkEntry" id="FFentry">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="invisible_char">*</property>
+                        <property name="text" translatable="yes">Fudge Factor</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkEntry" id="entry4">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="text" translatable="yes">Encryption Size</property>
+                      </widget>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </widget>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
                 </child>
                 <child>
                   <widget class="GtkHButtonBox" id="hbuttonbox6">
@@ -948,7 +1154,7 @@
                     </child>
                   </widget>
                   <packing>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
               </widget>
