@@ -2314,7 +2314,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
         if(G.numaps > G.maxnumaps)
             G.maxnumaps = G.numaps;
 
-        G.maxaps--;
+//        G.maxaps--;
     }
 
     /*
@@ -3746,7 +3746,8 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
                 G.channel[card] = ch;
                 unused = write( G.cd_pipe[1], &card, sizeof(int) );
                 unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
-                send_probe_request(wi[card]);
+                if(G.active_scan_sim > 0)
+                    send_probe_request(wi[card]);
                 kill( getppid(), SIGUSR1 );
                 usleep(1000);
             }
