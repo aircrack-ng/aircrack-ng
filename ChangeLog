@@ -1,4 +1,5 @@
 Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
+* airodump-ng: Added Active Scanning Simulation.
 * airodump-ng: Added support for kismet-newcore netxml files (DTD v3.1.0)
 * airodump-ng: Changed file extensions for CSV (.csv instead of .txt) and for kismet CSV
   (.kismet.csv instead of .csv).
@@ -22,6 +23,7 @@ Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
 * manpages: Fixed manpages titles.
 * Makefile: Only compile and install wesside-ng, easside-ng, buddy-ng and tkiptun-ng with "make unstable=true".
 * patches: Updated sqlite (v3.6.11) patch for cygwin.
+* patches: Added patch for aircrack-ng on MacOSX
 
 Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * aircrack-ng: Added SSE2 supports (WPA cracking speed is improved a lot) thanks to nx5.
