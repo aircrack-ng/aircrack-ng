@@ -3497,7 +3497,7 @@ void gps_tracker( void )
 
     /* loop reading the GPS coordinates */
 
-    while( 1 )
+    while( G.do_exit == 0 )
     {
         sleep( 1 );
 
@@ -3510,9 +3510,15 @@ void gps_tracker( void )
         if( send( gpsd_sock, line, 7, 0 ) != 7 )
             return;
 
+		if (G.do_exit)
+			return;
+
         memset( line, 0, sizeof( line ) );
         if( recv( gpsd_sock, line, sizeof( line ) - 1, 0 ) <= 0 )
             return;
+
+		if (G.do_exit)
+			return;
 
         if( memcmp( line, "GPSD,P=", 7 ) != 0 )
             continue;
@@ -3538,8 +3544,11 @@ void gps_tracker( void )
 
         G.save_gps = 1;
 
-        unused = write( G.gc_pipe[1], G.gps_loc, sizeof( float ) * 5 );
-        kill( getppid(), SIGUSR2 );
+		if (G.do_exit == 0)
+		{
+        	unused = write( G.gc_pipe[1], G.gps_loc, sizeof( float ) * 5 );
+        	kill( getppid(), SIGUSR2 );
+		}
     }
 }
 

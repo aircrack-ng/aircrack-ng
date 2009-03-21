@@ -280,7 +280,7 @@ struct globals
     int is_orinoco[MAX_CARDS];         /* set if orinoco       */
     int is_madwifing[MAX_CARDS];       /* set if madwifi-ng    */
     int is_zd1211rw[MAX_CARDS];       /* set if zd1211rw    */
-    int do_exit;            /* interrupt flag       */
+    volatile int do_exit;            /* interrupt flag       */
     struct winsize ws;      /* console window size  */
 
     char * elapsed_time;	/* capture time			*/
