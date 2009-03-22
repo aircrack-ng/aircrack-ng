@@ -3,6 +3,8 @@
 
 /* some constants */
 
+#define MAX_IE_ELEMENT_SIZE 256
+
 #define ARPHRD_IEEE80211        801
 #define ARPHRD_IEEE80211_PRISM  802
 #define ARPHRD_IEEE80211_FULL   803
@@ -42,6 +44,13 @@
 #endif
 #define	MAX(a,b)	((a)>(b)?(a):(b))
 #define ABS(a)          ((a)>=0?(a):(-(a)))
+
+#define RATES           \
+    "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
+
+#define PROBE_REQ       \
+    "\x40\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"  \
+    "\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
 
 //milliseconds to store last packets
 #define BUFFER_TIME 3000
@@ -137,7 +146,8 @@ struct AP_info
     struct timeval tv;        /* time for data per second */
 
     unsigned char bssid[6];   /* the access point's MAC   */
-    unsigned char essid[256]; /* ascii network identifier */
+    unsigned char essid[MAX_IE_ELEMENT_SIZE];
+                              /* ascii network identifier */
 
     unsigned char lanip[4];   /* last detected ip address */
                               /* if non-encrypted network */
@@ -192,7 +202,8 @@ struct ST_info
     unsigned long nb_pkt;    /* total number of packets   */
     unsigned char stmac[6];  /* the client's MAC address  */
     int probe_index;         /* probed ESSIDs ring index  */
-    char probes[NB_PRB][256];/* probed ESSIDs ring buffer */
+    char probes[NB_PRB][MAX_IE_ELEMENT_SIZE];
+                             /* probed ESSIDs ring buffer */
     int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
     int power;               /* last signal power         */
     int rate_to;             /* last bitrate to station   */
@@ -269,7 +280,7 @@ struct globals
     int is_orinoco[MAX_CARDS];         /* set if orinoco       */
     int is_madwifing[MAX_CARDS];       /* set if madwifi-ng    */
     int is_zd1211rw[MAX_CARDS];       /* set if zd1211rw    */
-    int do_exit;            /* interrupt flag       */
+    volatile int do_exit;            /* interrupt flag       */
     struct winsize ws;      /* console window size  */
 
     char * elapsed_time;	/* capture time			*/
@@ -329,9 +340,12 @@ struct globals
     char *freqstring;
     int freqoption;
     int chanoption;
+    int active_scan_sim;    /* simulates an active scan, sending probe requests */
 
     /* Airodump-ng start time: for kismet netxml file */
     char * airodump_start_time;
+
+    int dont_write_cap_file;
 }
 G;
 
