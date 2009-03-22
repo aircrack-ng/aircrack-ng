@@ -5,7 +5,7 @@
    - SQLite development package >= 3.3.17 (3.6.X version or better is recommended)
    - autoconf 2.50
    - libtool
- * For cygwin, it also requires w32api package
+ * On windows, cygwin has to be use and it also requires w32api and gcc-4 package.
  * If you want to use Airpcap, the 'developer' directory from the CD is required.
  
 
@@ -13,35 +13,41 @@
 
  * Compilation:
     make
-    # If you want to use airolib-ng and co,
-    # issue 'make SQLITE=true' instead of 'make'
-    # On cygwin, you have to install sqlite manually, 
-    # see next point for instructions on how to install it.
-    
-    # If you want Airpcap support (cygwin only), append
-    # 'airpcap=true' to make. Requirement: Copy 'developers'
-    # directory from Airpcap CD one level below this
-    # INSTALLING file
 
  * Strip debugging symbols:
     make strip
 
  * Installing:
     make install
-    # If you want to use airolib-ng and co,
-    # issue 'make SQLITE=true install' instead of 'make install'
-    
-    # Airpcap installation doesn't require any special parameter
-    # since it's built-in (sqlite require an additional file to be
-    # installed).
 
  * Uninstall:
     make uninstall
 
+==== Makefile flags ====
 
-REM:
- * You can find a several WPA handshake and other capture files
-   as well as a dictionnary in "test/" directory
+When compile and installing, the following flags can be used and combined
+to compile and install the suite:
+
+* sqlite:   needed to compile airolib-ng and add support for airolib-ng
+            databases in aircrack-ng.
+            On cygwin: SQLite has to be compiled manually. See next section.
+
+* airpcap:  needed for supporting airpcap devices on windows (cygwin only)
+            REQUIREMENT: Copy 'developers' directory from Airpcap CD one 
+                         level below this INSTALLING file
+            Note: Not working yet.
+
+* unstable: needed to compile tkiptun-ng, easside-ng (and buddy-ng) and
+            wesside-ng
+
+Example:
+
+  * Compiling:
+    make sqlite=true unstable=true
+
+  * Installing:
+    make sqlite=true unstable=true install
+
 
 === Compiling sqlite on cygwin ===
 
@@ -58,6 +64,7 @@ REM:
 
 Linux/BSD:
  * Use your package manager to download aircrack-ng
+ * In most cases, they have an old version.
  
 Windows:
  * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data)
