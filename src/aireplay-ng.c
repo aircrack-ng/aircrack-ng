@@ -5655,7 +5655,7 @@ int main( int argc, char *argv[] )
     opt.f_iswep   = -1; opt.ringbuffer  =  8;
 
     opt.a_mode    = -1; opt.r_fctrl     = -1;
-    opt.ghost     =  0; opt.npackets    = -1;
+    opt.ghost     =  0; 
     opt.delay     = 15; opt.bittest     =  0;
     opt.fast      =  0; opt.r_smac_set  =  0;
     opt.npackets  =  1; opt.nodetect    =  0;
