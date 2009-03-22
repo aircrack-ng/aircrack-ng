@@ -1,4 +1,4 @@
-Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
+Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? March 2009:
 * airodump-ng: Added Active Scanning Simulation.
 * airodump-ng: Added support for kismet-newcore netxml files (DTD v3.1.0)
 * airodump-ng: Changed file extensions for CSV (.csv instead of .txt) and for kismet CSV
