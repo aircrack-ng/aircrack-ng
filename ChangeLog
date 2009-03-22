@@ -17,6 +17,7 @@ Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? ??? 2009:
 * airmon-ng: Updated iw download link (0.9.9).
 * airmon-ng and airdriver-ng: Move them in script/ directory.
 * airmon-ng: Bypass interface checks when ps command returns an error. Needed for BusyBox limited ps command.
+* airdriver-ng: Update legacy RT73 driver to use rt73-k2wrlz v3.0.2
 * tkiptun-ng: Allow padded arp packets to the client.
 * airserv-ng & osdep: Fixed compilation on FreeBSD 7.1
 * easside-ng & wesside-ng: Fixing again "Error Wrote 39 out of 30" error message.
