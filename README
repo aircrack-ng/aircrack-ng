@@ -25,9 +25,8 @@ Drivers
 	----------
 	
 	The cause of most of these problems (1, 2 and 3) is that Madwifi-ng cannot easily change the rate in monitor mode.
-	Technically, when changing rate while in monitor mode, the raw socket gets invalidated and we have
-	 to get it again.
-	Madwifi-ng is getting replaced by several drivers: ath5k, ath9k and another one for new atheros 802.11n USB devices.
+	Technically, when changing rate while in monitor mode, the raw socket gets invalidated and we have to get it again.
+	Madwifi-ng is getting replaced by several drivers: ath5k, ath9k and ar9170.
 	
 	
 	Problem 1: No client can associate to an airbase soft AP.
@@ -35,11 +34,13 @@ Drivers
 	
 	
 	Problem 2: When changing rate while you are capturing packet makes airodump-ng stall
-	Solution 3: Restart airodump-ng or change rate before starting it
+	Solution 2: Restart airodump-ng or change rate before starting it.
 	
 	Problem 3: After some time it stops capturing packets and you're really sure no network manager are running at all.
-	Solution 3: That's a known bug in the driver, it may happen at any time
-		  (the time before it fails can vary a lot: from 5 minutes to 50 or even more).
+	Solution 3: That's a known bug in the driver, it may happen at any time (the time before it fails can vary a lot: 
+	            from 5 minutes to 50 or even more). Try (as root) unloading completely the driver with 'madwifi-unload'
+	            and then run 'modprobe ath_pci autocreate=monitor'.
+		  
 	
 	Problem 4: When creating a new VAP airodump-ng takes up to 10-15 seconds to see the first packet
 	Solution 4: It's the behaviour of madwifi-ng, don't worry (... be happy ;)).
@@ -49,7 +50,7 @@ Drivers
 	-------
 
 	Problem: BSSID is not reported correctly or is 00:00:00:00:00:00 or signal is not reported correctly.
-	Solution: None at this time. Consider replacing your card, orinoco is really really old.
+	Solution: None. Consider replacing your card, orinoco is really really old.
 
 
 Aircrack-ng
@@ -81,9 +82,10 @@ Aircrack-ng
 	Airodump-ng
 	-----------
 
-	Problem: Airodump-ng stop working after some time
-	Solution: You may have a network manager running that puts back the card in managed mode. 
-		  You'll have to disable it (the fastest solution is killing the process) then restart airodump-ng.
+	Problem: Airodump-ng stop working after some time.
+	Solution 1: You may have a network manager running that puts back the card in managed mode. 
+	            You'll have to disable it (the fastest solution is killing the process) then restart airodump-ng.
+	Solution 2: See Problem 3 of Madwifi-ng.
 
 	Problem: Airodump-ng corrupts pcap file when using GPSd (--gpsd).
 	Solution: None at this time (will be fixed in next release).
