@@ -64,10 +64,6 @@ def airgraphMaltego(inFile,graphType="CAPR"):
 
 	maltegoRTN = [info_lst,returned_var[2],returned_var[3],returned_var[4]]
 	return maltegoRTN
-	#info_list comes in a list Clients Dictionary at postion 0 and AP Dictionary at postion 1 the key for the Clients dict is the mac addy of the client. this will return all the info about the client. the Key for AP dict is the bssid of the Ap returning all the info about the AP.
-	#return_var[3]  create a var to keep the not associdated clients
-	#return_var[2] create a var to keep track of associated clients to AP's we cant see
-	#return_var[4] a dictionary file in the format of BSSID:[Clients] where clients is a nested list of all attachd clients.
 
 def airDumpOpen(file):
 	"""
@@ -111,6 +107,7 @@ def airDumpParse(cleanedDump):
 	clientDict = clientTag(clientList)
 	resultDicts = [clientDict,apDict] #Put both dictionaries into a list
 	return resultDicts
+
 def apTag(devices):
 	"""
 	Create a ap dictionary with tags of the data type on an incoming list
@@ -123,22 +120,12 @@ def apTag(devices):
 		#sorry for the clusterfuck but i swear it all makse sense
 		len(string_list)
 		if len(string_list) == 15:
-			ap = {"bssid":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"channel":string_list[3].replace(' ',''),"speed":string_list[4],"privacy":string_list[5].replace(' ',''),"cipher":string_list[6],"auth":string_list[7],"power":string_list[8],"beacons":string_list[9],"iv":string_list[10],"ip":string_list[11],"id":string_list[12],"essid":string_list[13].replace(' ',''),"key":string_list[14]}
+			ap = {"bssid":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"channel":string_list[3].replace(' ',''),"speed":string_list[4],"privacy":string_list[5].replace(' ',''),"cipher":string_list[6],"auth":string_list[7],"power":string_list[8],"beacons":string_list[9],"iv":string_list[10],"ip":string_list[11],"id":string_list[12],"essid":string_list[13][1:],"key":string_list[14]}
 		elif len(string_list) == 11:
-			ap = {"bssid":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"channel":string_list[3].replace(' ',''),"speed":string_list[4],"privacy":string_list[5].replace(' ',''),"power":string_list[6],"beacons":string_list[7],"data":string_list[8],"ip":string_list[9],"essid":string_list[10].replace(' ','')}
+			ap = {"bssid":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"channel":string_list[3].replace(' ',''),"speed":string_list[4],"privacy":string_list[5].replace(' ',''),"power":string_list[6],"beacons":string_list[7],"data":string_list[8],"ip":string_list[9],"essid":string_list[10][1:]}
 		if len(ap) != 0:
 			dict[string_list[0]] = ap
 	return dict
-
-def rmSpace(item,num):
-	"""
-	removes the spaces from items in a list
-	"""
-	for pos in item[:num]:
-		pos = pos.replace(' ','')	
-		
-
-
 
 def clientTag(devices):
 	"""
@@ -149,7 +136,7 @@ def clientTag(devices):
 		client = {}
 		string_list = entry.split(',')
 		if len(string_list) >= 7:
-			client = {"station":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"power":string_list[3],"packets":string_list[4],"bssid":string_list[5].replace(' ',''),"probe":string_list[6:]}
+			client = {"station":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"power":string_list[3],"packets":string_list[4],"bssid":string_list[5].replace(' ',''),"probe":string_list[6:][1:]}
 		if len(client) != 0:
 			dict[string_list[0]] = client
 	return dict
