@@ -10,8 +10,7 @@ __data__ = 'This is the main airgraph-ng file'
 """
 Welcome to airgraph written by TheX1le
 Special Thanks to Rel1k and Zero_Chaos two people whom with out i would not be who I am!
-More Thanks to Brandon x0ne Dixon who really cleaned up the code forced it into pydoc format and cleaned up the logic a bit
-Thanks Man!
+More Thanks to Brandon x0ne Dixon who really cleaned up the code forced it into pydoc format and cleaned up the logic a bit Thanks Man!
 I would also like to thank muts and Remote Exploit Community for all their help and support!
 
 ########################################
@@ -35,12 +34,12 @@ I would also like to thank muts and Remote Exploit Community for all their help 
 """ Airgraph-ng """
 
 import getopt, subprocess, sys, pdb, optparse
-
-try: # Import Psyco if available to speed up execution
-	import psyco 
-	psyco.full()
-except ImportError:
-	print "Psyco optimizer not installed, You may want to download and install it!"
+def importPsyco():
+	try: # Import Psyco if available to speed up execution
+		import psyco 
+		psyco.full()
+	except ImportError:
+		print "Psyco optimizer not installed, You may want to download and install it!"
 
 try:
 	sys.path.append("./lib/")
@@ -89,26 +88,79 @@ def airDumpParse(cleanedDump):
         Returns a list of 2 dictionaries (Clients and APs)
         """
 	try: #some very basic error handeling to make sure they are loading up the correct file
-		del cleanedDump[0] #remove the first line of text with the headings
-		stationStart = cleanedDump.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, Probed ESSIDs')
+		try:
+			apStart = cleanedDump.index('BSSID, First time seen, Last time seen, Channel, Speed, Privacy, Power, # beacons, # data, LAN IP, ESSID')
+		except Exception:
+			apStart = cleanedDump.index('BSSID, First time seen, Last time seen, channel, Speed, Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, ID-length, ESSID, Key')
+		del cleanedDump[apStart] #remove the first line of text with the headings
+		try:
+			stationStart = cleanedDump.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, Probed ESSIDs')
+		except Exception:
+			stationStart = cleanedDump.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, ESSID')
 	except Exception:
 		print "You Seem to have provided an improper input file please make sure you are loading an airodump txt file and not a pcap"
 		sys.exit(1)
 
+	#pdb.set_trace()
 	del cleanedDump[stationStart] #Remove the heading line
 	clientList = cleanedDump[stationStart:] #Splits all client data into its own list
 	del cleanedDump[stationStart:] #The remaining list is all of the AP information
-	apDict = dictCreate(cleanedDump) #Create a dictionary from the list
-	clientDict = dictCreate(clientList) #Create a dictionary from the list
+	#apDict = dictCreate(cleanedDump) #Create a dictionary from the list
+	#clientDict = dictCreate(clientList) #Create a dictionary from the list
+	apDict = apTag(cleanedDump)
+	clientDict = clientTag(clientList)
 	resultDicts = [clientDict,apDict] #Put both dictionaries into a list
 	return resultDicts
+def apTag(devices):
+	"""
+	Create a ap dictionary with tags of the data type on an incoming list
+	"""
+	dict = {}
+	for entry in devices:
+		ap = {}
+		string_list = entry.split(',')
+		#entry = entry.replace(' ','')
+		#sorry for the clusterfuck but i swear it all makse sense
+		len(string_list)
+		if len(string_list) == 15:
+			ap = {"bssid":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"channel":string_list[3].replace(' ',''),"speed":string_list[4],"privacy":string_list[5].replace(' ',''),"cipher":string_list[6],"auth":string_list[7],"power":string_list[8],"beacons":string_list[9],"iv":string_list[10],"ip":string_list[11],"id":string_list[12],"essid":string_list[13].replace(' ',''),"key":string_list[14]}
+		elif len(string_list) == 11:
+			ap = {"bssid":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"channel":string_list[3].replace(' ',''),"speed":string_list[4],"privacy":string_list[5].replace(' ',''),"power":string_list[6],"beacons":string_list[7],"data":string_list[8],"ip":string_list[9],"essid":string_list[10].replace(' ','')}
+		if len(ap) != 0:
+			dict[string_list[0]] = ap
+	return dict
+
+def rmSpace(item,num):
+	"""
+	removes the spaces from items in a list
+	"""
+	for pos in item[:num]:
+		pos = pos.replace(' ','')	
+		
+
+
+
+def clientTag(devices):
+	"""
+	Create a client dictionary with tags of the data type on an incoming list
+	"""
+	dict = {}
+	for entry in devices:
+		client = {}
+		string_list = entry.split(',')
+		if len(string_list) >= 7:
+			client = {"station":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"power":string_list[3],"packets":string_list[4],"bssid":string_list[5].replace(' ',''),"probe":string_list[6:]}
+		if len(client) != 0:
+			dict[string_list[0]] = client
+	return dict
 
 def dictCreate(device):
+	#deprecated
 	"""
         Create a dictionary using an incoming list
         """
 	dict = {}
-	for entry in device: #the following loop through the Clients List creates a nexsted list of each client in its own list grouped by a parent list of client info
+	for entry in device: #the following loop through the Clients List creates a nested list of each client in its own list grouped by a parent list of client info
 		entry = entry.replace(' ','')
 		string_list = entry.split(',')
 		if string_list[0] != '':
@@ -121,7 +173,7 @@ def usage():
         """
 	print "############################################","\n#         Welcome to Airgraph-ng           #","\n############################################\n"
 	print "Usage: python airgraph-ng -i [airodumpfile.txt] -o [outputfile.png] -g [CAPR OR CPG]"
-	print "\n-i\tInput File\n-o\tOutput File\n-g\tGraph Type [CAPR (Client to AP Relationship) OR CPG (Common probe graph)]\n-a\tPrint the about\n-h\tPrint this help"
+	print "\n-i\tInput File\n-o\tOutput File\n-g\tGraph Type [CAPR (Client to AP Relationship) OR CPG (Common probe graph)]\n-p\tDisable Psyco JIT compiler\n-h\tPrint this help"
 
 def dotCreate(info,graphType,maltego="false"):
 	"""
@@ -167,14 +219,16 @@ def dotCreate(info,graphType,maltego="false"):
 		dotFile = ['digraph G {\n\tsize ="144,144";\n\toverlap=false;\n'] #start the graphviz config file
 		clientProbe = {}
 
+		#pdb.set_trace()
 		for key in (clients):
 			mac = clients[key]
-			for probe in mac[6:]:
-				if probe != '':
-					if clientProbe.has_key(mac[0]):
-						clientProbe[mac[0]].extend([probe])
-					else:
-						clientProbe[mac[0]] = [probe]
+			if len(mac["probe"]) > 1 or mac["probe"] != ['']:
+				for probe in mac["probe"]:
+					if probe != '':
+						if clientProbe.has_key(mac["station"]):
+							clientProbe[mac["station"]].extend([probe])
+						else:
+							clientProbe[mac["station"]] = [probe]
 
 		for Client in (clientProbe):
 			for probe in clientProbe[Client]:				
@@ -205,12 +259,12 @@ def dotCreate(info,graphType,maltego="false"):
 
 		for key in (clients):
 			mac = clients[key] #mac is the MAC address of the client
-			if mac[5] != '(notassociated)': #one line of of our dictionary of clients
-				if AP.has_key(mac[5]): # if it is check to see its an AP we can see and have info on
-					if apClient.has_key(mac[5]): #if key exists append new client
-						apClient[mac[5]].extend([key])
+			if mac["bssid"] != ' (notassociated) ': #one line of of our dictionary of clients
+				if AP.has_key(mac["bssid"]): # if it is check to see its an AP we can see and have info on
+					if apClient.has_key(mac["bssid"]): #if key exists append new client
+						apClient[mac["bssid"]].extend([key])
 					else: #create new key and append the client
-						apClient[mac[5]] = [key]
+						apClient[mac["bssid"]] = [key]
 				else:	
 					NAP.append(key) # stores the clients that are talking to an access point we cant see
 
@@ -225,11 +279,13 @@ def dotCreate(info,graphType,maltego="false"):
 			apCount[bssid] = len(clientList) #count the number of APs
 			clientCount += len(clientList) #count the number of clients
 
-			bssidI = AP[bssid] #get the BSSID info from the AP dict
-			color = dot_libs.encryptionColor(bssidI[5]) # Deterimine what color the graph should be
-			if bssidI[5] == '': #if there is no encryption detected we set it to unknown
-				bssidI[5] = "Unknown"
-			AP_label = [bssid,bssidI[13],bssidI[3],bssidI[5],len(clientList)]# Create a list with all our info to label the clients with
+			#pdb.set_trace()
+			#note the following code is an ulgy hack and will need to be cleaned up for direct tag calling
+			bssidI = AP[bssid]["bssid"] #get the BSSID info from the AP dict
+			color = dot_libs.encryptionColor(AP[bssid]["privacy"]) # Deterimine what color the graph should be
+			if AP[bssid]["privacy"] == '': #if there is no encryption detected we set it to unknown
+				AP[bssid]["privacy"] = "Unknown"
+			AP_label = [bssid,AP[bssid]["essid"],AP[bssid]["channel"],AP[bssid]["privacy"],len(clientList)]# Create a list with all our info to label the clients with
 			dotFile.extend(dot_libs.apColor(AP_label,color)) #label the access point and add it to the dotfile
 
 		footer = ['label="Generated by Airgraph-ng','\\n%s'%(len(apCount)),' Access Points and','\\n%s'%(clientCount),' Clients are shown";\n']
@@ -286,11 +342,14 @@ if __name__ == "__main__":
 	parser.add_option("-o", "--output",  dest="output",nargs=1, help="Our Output Image ie... Image.png")
 	parser.add_option("-i", "--dump", dest="input", nargs=1 ,help="Airodump txt file in CSV format NOT the pcap")
 	parser.add_option("-g", "--graph", dest="graph_type", nargs=1 ,help="Graph Type Current [CAPR (Client to AP Relationship) OR CPG (Common probe graph)]")
+	parser.add_option("-p", "--nopsyco",dest="pysco",action="store_false",default=True,help="Disable the use of Psyco JIT")
 	(options, args) = parser.parse_args()
 
 	outFile = options.output
 	graphType = options.graph_type
 	inFile = options.input
+	if options.pysco == True:
+		importPsyco()
 
 	if inFile == None:
 		print "Error No Input File Specified"
