@@ -14,7 +14,7 @@ Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released ?? March 2009:
 * aircrack-ng: Added an option to write the key to a file.
 * airolib-ng: Fixed a bug where database is created even if parameters are not correct.
 * airmon-ng: Added wifibox to the list of network manager.
-* airmon-ng: Updated iw download link (0.9.9).
+* airmon-ng: Updated iw download link (0.9.11).
 * airmon-ng and airdriver-ng: Move them in script/ directory.
 * airmon-ng: Bypass interface checks when ps command returns an error. Needed for BusyBox limited ps command.
 * airdriver-ng: Update legacy RT73 driver to use rt73-k2wrlz v3.0.2
