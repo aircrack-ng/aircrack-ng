@@ -1,0 +1,80 @@
+.TH AIRDECAP-NG 1 "March 2009" "Version 1.0-rc3"
+
+.SH NAME
+airdecap-ng - decrypt a WEP/WPA crypted pcap file
+.SH SYNOPSIS
+.B airdecap-ng
+[options] <pcap file>
+.SH DESCRIPTION
+.BI airdecap-ng
+decrypts a WEP/WPA crypted pcap file to a uncrypted one by using the right WEP/WPA keys.
+.SH OPTIONS
+.TP
+.I -H, --help
+Shows the help screen.
+.TP
+.I -l
+Do not remove the 802.11 header.
+.TP
+.I -b <bssid>
+Access point MAC address filter.
+.TP
+.I -k <pmk>
+WPA Pairwise Master Key in hex.
+.TP
+.I -e <essid>
+Target network SSID.
+.TP
+.I -p <pass>
+Target network WPA passphrase.
+.TP
+.I -w <key>
+Target network WEP key in hex.
+.SH EXAMPLES
+airdecap-ng \-b 00:09:5B:10:BC:5A open-network.cap
+.br
+airdecap-ng \-w 11A3E229084349BC25D97E2939 wep.cap
+.br
+airdecap-ng \-e my_essid \-p my_passphrase tkip.cap
+.br
+.SH AUTHOR
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)

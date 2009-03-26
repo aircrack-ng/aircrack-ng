@@ -1,0 +1,152 @@
+diff -Naur linux-2.6.28/drivers/net/wireless/ath5k/base.c linux-2.6.28-chaos/drivers/net/wireless/ath5k/base.c
+--- linux-2.6.28/drivers/net/wireless/ath5k/base.c	2008-12-24 18:26:37.000000000 -0500
++++ linux-2.6.28-chaos/drivers/net/wireless/ath5k/base.c	2009-02-06 21:38:43.000000000 -0500
+@@ -272,7 +272,7 @@
+ static void 	ath5k_detach(struct pci_dev *pdev,
+ 			struct ieee80211_hw *hw);
+ /* Channel/mode setup */
+-static inline short ath5k_ieee2mhz(short chan);
++static inline short ath5k_ieee2mhz(int chan, unsigned int chfreq);
+ static unsigned int ath5k_copy_channels(struct ath5k_hw *ah,
+ 				struct ieee80211_channel *channels,
+ 				unsigned int mode,
+@@ -848,12 +848,16 @@
+  * Convert IEEE channel number to MHz frequency.
+  */
+ static inline short
+-ath5k_ieee2mhz(short chan)
++ath5k_ieee2mhz(int chan, unsigned int chfreq)
+ {
+-	if (chan <= 14 || chan >= 27)
+-		return ieee80211chan2mhz(chan);
++	if (chfreq == CHANNEL_5GHZ)
++		return (chan + 1000) * 5;
+ 	else
+-		return 2212 + chan * 20;
++// XXX: This part needs to be fixed
++		if (chan <= 14 || chan >= 27)
++			return ieee80211chan2mhz(chan);
++		else
++			return 2212 + chan * 20;
+ }
+ 
+ static unsigned int
+@@ -862,22 +866,25 @@
+ 		unsigned int mode,
+ 		unsigned int max)
+ {
+-	unsigned int i, count, size, chfreq, freq, ch;
++	unsigned int i, count, size, chfreq, freq;
++       	int ch;
+ 
+ 	if (!test_bit(mode, ah->ah_modes))
+ 		return 0;
+ 
+ 	switch (mode) {
++        /* I don't even like channel numbers */
+ 	case AR5K_MODE_11A:
+ 	case AR5K_MODE_11A_TURBO:
+-		/* 1..220, but 2GHz frequencies are filtered by check_channel */
+-		size = 220 ;
++		size = 241 ; // going over 6.0GHz may be dangerous so I am limiting it
++		ch = -40; // might be able to push this to -201 or so, needs more testing
+ 		chfreq = CHANNEL_5GHZ;
+ 		break;
+ 	case AR5K_MODE_11B:
+ 	case AR5K_MODE_11G:
+ 	case AR5K_MODE_11G_TURBO:
+-		size = 26;
++		size = 70;
++		ch = -43;
+ 		chfreq = CHANNEL_2GHZ;
+ 		break;
+ 	default:
+@@ -885,9 +892,8 @@
+ 		return 0;
+ 	}
+ 
+-	for (i = 0, count = 0; i < size && max > 0; i++) {
+-		ch = i + 1 ;
+-		freq = ath5k_ieee2mhz(ch);
++	for (i = 0, count = 0; i < size && max > 0; i++,ch++) {
++		freq = ath5k_ieee2mhz(ch,chfreq);
+ 
+ 		/* Check if channel is supported by the chipset */
+ 		if (!ath5k_channel_ok(ah, freq, chfreq))
+diff -Naur linux-2.6.28/drivers/net/wireless/ath5k/base.h linux-2.6.28-chaos/drivers/net/wireless/ath5k/base.h
+--- linux-2.6.28/drivers/net/wireless/ath5k/base.h	2008-12-24 18:26:37.000000000 -0500
++++ linux-2.6.28-chaos/drivers/net/wireless/ath5k/base.h	2009-02-06 21:38:43.000000000 -0500
+@@ -93,11 +93,7 @@
+ };
+ 
+ 
+-#if CHAN_DEBUG
+-#define ATH_CHAN_MAX	(26+26+26+200+200)
+-#else
+-#define ATH_CHAN_MAX	(14+14+14+252+20)
+-#endif
++#define ATH_CHAN_MAX	(70+70+70+240+240) // b+g+gT+a+aT XXX: This is probably excessive
+ 
+ /* Software Carrier, keeps track of the driver state
+  * associated with an instance of a device */
+diff -Naur linux-2.6.28/drivers/net/wireless/ath5k/caps.c linux-2.6.28-chaos/drivers/net/wireless/ath5k/caps.c
+--- linux-2.6.28/drivers/net/wireless/ath5k/caps.c	2008-12-24 18:26:37.000000000 -0500
++++ linux-2.6.28-chaos/drivers/net/wireless/ath5k/caps.c	2009-02-06 21:38:43.000000000 -0500
+@@ -69,9 +69,9 @@
+ 
+ 		if (AR5K_EEPROM_HDR_11A(ee_header)) {
+ 			/* 4920 */
+-			ah->ah_capabilities.cap_range.range_5ghz_min = 5005;
+-			ah->ah_capabilities.cap_range.range_5ghz_max = 6100;
+-
++			ah->ah_capabilities.cap_range.range_5ghz_min = 4800;
++			ah->ah_capabilities.cap_range.range_5ghz_max = 6000; /* 6100 is what the code said but */
++									     /* it fried my Ubiquiti SRC       */
+ 			/* Set supported modes */
+ 			__set_bit(AR5K_MODE_11A,
+ 					ah->ah_capabilities.cap_mode);
+@@ -87,7 +87,7 @@
+ 		if (AR5K_EEPROM_HDR_11B(ee_header) ||
+ 				AR5K_EEPROM_HDR_11G(ee_header)) {
+ 			/* 2312 */
+-			ah->ah_capabilities.cap_range.range_2ghz_min = 2412;
++			ah->ah_capabilities.cap_range.range_2ghz_min = 2192; /* this is the bottom of the registers */
+ 			ah->ah_capabilities.cap_range.range_2ghz_max = 2732;
+ 
+ 			if (AR5K_EEPROM_HDR_11B(ee_header))
+diff -Naur linux-2.6.28/net/mac80211/tx.c linux-2.6.28-chaos/net/mac80211/tx.c
+--- linux-2.6.28/net/mac80211/tx.c	2008-12-24 18:26:37.000000000 -0500
++++ linux-2.6.28-chaos/net/mac80211/tx.c	2009-02-06 21:38:53.000000000 -0500
+@@ -1378,10 +1378,32 @@
+ 				 struct net_device *dev)
+ {
+ 	struct ieee80211_local *local = wdev_priv(dev->ieee80211_ptr);
++	struct ieee80211_channel *chan = local->hw.conf.channel;
+ 	struct ieee80211_radiotap_header *prthdr =
+ 		(struct ieee80211_radiotap_header *)skb->data;
+ 	u16 len_rthdr;
+ 
++	/*
++	 * Frame injection is not allowed if beaconing is not allowed
++	 * or if we need radar detection. Beaconing is usually not allowed when
++	 * the mode or operation (Adhoc, AP, Mesh) does not support DFS.
++	 * Passive scan is also used in world regulatory domains where
++	 * your country is not known and as such it should be treated as
++	 * NO TX unless the channel is explicitly allowed in which case
++	 * your current regulatory domain would not have the passive scan
++	 * flag.
++	 *
++	 * Since AP mode uses monitor interfaces to inject/TX management
++	 * frames we can make AP mode the exception to this rule once it
++	 * supports radar detection as its implementation can deal with
++	 * radar detection by itself. We can do that later by adding a
++	 * monitor flag interfaces used for AP support.
++	 */
++	if ((chan->flags & (IEEE80211_CHAN_NO_IBSS | IEEE80211_CHAN_RADAR |
++	     IEEE80211_CHAN_PASSIVE_SCAN)))
++	        return TX_DROP;
++		/* This was intended for the kernel patch but it didn't work;  goto fail; */
++
+ 	/* check for not even having the fixed radiotap header part */
+ 	if (unlikely(skb->len < sizeof(struct ieee80211_radiotap_header)))
+ 		goto fail; /* too short to be possibly valid */

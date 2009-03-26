@@ -1,0 +1,13 @@
+Index: sha1-sse2.S
+===================================================================
+--- sha1-sse2.S	(revision 1470)
++++ sha1-sse2.S	(working copy)
+@@ -21,7 +21,7 @@
+ .globl _shasse2_cpuid;
+ 
+ .data
+-.align(16)
++.align(12)
+ const_init_a:
+ .long 0x67452301
+ .long 0x67452301

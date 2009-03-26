@@ -1,0 +1,230 @@
+.TH AIREPLAY-NG 1 "March 2009" "Version 1.0-rc3"
+
+.SH NAME
+aireplay-ng - inject packets into a wireless network to generate traffic
+.SH SYNOPSIS
+.B aireplay-ng
+[options] <replay interface>
+.SH DESCRIPTION
+.B aireplay-ng
+is used to inject/replay frames.
+The primary function is to generate traffic for the later use in aircrack-ng for cracking the WEP and WPA-PSK keys. There are different attacks which can cause deauthentications for the purpose of capturing WPA handshake data, fake authentications, Interactive packet replay, hand-crafted ARP request injection and ARP-request reinjection. With the packetforge-ng tool it's possible to create arbitrary frames.
+.br
+.PP
+.B aireplay-ng
+supports single-NIC injection/monitor.
+.br
+This feature needs driver patching.
+.br
+.SH OPTIONS
+.TP
+.I -H, --help
+Shows the help screen.
+.PP
+.TP
+.B Filter options:
+.TP
+.I -b <bssid>
+MAC address of access point.
+.TP
+.I -d <dmac>
+MAC address of destination.
+.TP
+.I -s <smac>
+MAC address of source.
+.TP
+.I -m <len>
+Minimum packet length.
+.TP
+.I -n <len>
+Maximum packet length.
+.TP
+.I -u <type>
+Frame control, type field.
+.TP
+.I -v <subt>
+Frame control, subtype field.
+.TP
+.I -t <tods>
+Frame control, "To" DS bit.
+.TP
+.I -f <fromds>
+Frame control, "From" DS bit.
+.TP
+.I -D 
+Disable AP Detection.
+.PP
+.TP
+.B Replay options:
+.TP
+.I -x <nbpps>
+Number of packets per second.
+.TP
+.I -p <fctrl>
+Set frame control word (hex).
+.TP
+.I -a <bssid>
+Set Access Point MAC address.
+.TP
+.I -c <dmac>
+Set destination MAC address.
+.TP
+.I -h <smac>
+Set source MAC address.
+.TP
+.I -g <nb_packets>
+Change ring buffer size (default: 8 packets). The minimum is 1.
+.TP
+.I -F
+Choose first matching packet.
+.TP
+.I -e <essid>
+Set target SSID for Fake Authentication attack (see below).
+.TP
+.I -o <npackets>
+Set the number of packets for every authentication and association attempt (Default: 1). 0 means auto
+.TP
+.I -q <seconds>
+Set the time between keep-alive packets in fake authentication mode.
+.TP
+.I -y <prga>
+Specifies the keystream file for fake shared key authentication.
+.TP
+.I -j
+ARP Replay attack : inject FromDS pakets (see below).
+.TP
+.I -k <IP>
+Set destination IP in fragments.
+.TP
+.I -l <IP>
+Set source IP in fragments.
+.TP
+.I -B
+Test option: bitrate test.
+.PP
+.TP
+.B Source options:
+.TP
+.I -i <iface>
+Capture packets from this interface.
+.TP
+.I -r <file>
+Extract packets from this pcap file.
+.PP
+.TP
+.B Miscellaneous options:
+.TP
+.I -R
+disable /dev/rtc usage.
+.PP
+.TP
+.B Attack modes:          
+.TP
+.I -0 <count>, --deauth=<count>
+This attack sends disassocate packets to one or more clients which are currently associated with a particular access point. Disassociating clients can be done for a number of reasons: 
+Recovering a hidden ESSID. This is an ESSID which is not being broadcast. Another term for this is "cloaked" or
+Capturing WPA/WPA2 handshakes by forcing clients to reauthenticate or
+Generate ARP requests (Windows clients sometimes flush their ARP cache when disconnected).
+Of course, this attack is totally useless if there are no associated wireless client or on fake authentications.
+.TP
+.I -1 <delay>, --fakeauth=<delay>
+The fake authentication attack allows you to perform the two types of WEP authentication (Open System and Shared Key) plus associate with the access point (AP). This is useful is only useful when you need an associated MAC address in various aireplay-ng attacks and there is currently no associated client. It should be noted that the fake authentication attack does NOT generate any ARP packets. Fake authentication cannot be used to authenticate/associate with WPA/WPA2 Access Points.
+.TP
+.I -2, --interactive
+This attack allows you to choose a specific packet for replaying (injecting). The attack can obtain packets to replay from two sources. The first being a live flow of packets from your wireless card. The second being from a pcap file. Reading from a file is an often overlooked feature of aireplay-ng. This allows you read packets from other capture sessions or quite often, various attacks generate pcap files for easy reuse. A common use of reading a file containing a packet your created with packetforge-ng.
+.TP
+.I -3, --arpreplay
+The classic ARP request replay attack is the most effective way to generate new initialization vectors (IVs), and works very reliably. The program listens for an ARP packet then retransmits it back to the access point. This, in turn, causes the access point to repeat the ARP packet with a new IV. The program retransmits the same ARP packet over and over. However, each ARP packet repeated by the access point has a new IVs. It is all these new IVs which allow you to determine the WEP key.
+.TP
+.I -4, --chopchop
+This attack, when successful, can decrypt a WEP data packet without knowing the key. It can even work against dynamic WEP. This attack does not recover the WEP key itself, but merely reveals the plaintext. However, some access points are not vulnerable to this attack. Some may seem vulnerable at first but actually drop data packets shorter that 60 bytes. If the access point drops packets shorter than 42 bytes, aireplay tries to guess the rest of the missing data, as far as the headers are predictable. If an IP packet is captured, it additionally checks if the checksum of the header is correct after guessing the missing parts of it. This attack requires at least one WEP data packet.
+.TP
+.I -5, --fragment
+This attack, when successful, can obtain 1500 bytes of PRGA (pseudo random generation algorithm). This attack does not recover the WEP key itself, but merely obtains the PRGA. The PRGA can then be used to generate packets with packetforge-ng which are in turn used for various injection attacks. It requires at least one data packet to be received from the access point in order to initiate the attack.
+.TP
+.I -6, --caffe-latte
+In general, for an attack to work, the attacker has to be in the range of an AP and a connected client (fake or real). Caffe Latte attacks allows to gather enough packets to crack a WEP key without the need of an AP, it just need a client to be in range.
+.TP
+.I -7, --cfrag
+This attack turns IP or ARP packets from a client into ARP request against the client. This attack works especially well against ad-hoc networks. As well it can be used against softAP clients and normal AP clients.
+.TP
+.I -9, --test
+Tests injection and quality.
+.SH FRAGMENTATION VERSUS CHOPCHOP
+.PP
+.PP
+.B Fragmentation:
+.TP
+.PP
+.I Pros
+.br
+- Can obtain the full packet length of 1500 bytes XOR. This means you can subsequently pretty well create any size of packet.
+.br
+- May work where chopchop does not
+.br
+- Is extremely fast. It yields the XOR stream extremely quickly when successful.
+.TP
+.PP
+.I Cons
+.br
+- Setup to execute the attack is more subject to the device drivers. For example, Atheros does not generate the correct packets unless the wireless card is set to the mac address you are spoofing.
+.br
+- You need to be physically closer to the access point since if any packets are lost then the attack fails.
+.PP
+.B Chopchop
+.TP
+.PP
+.I Pro
+.br
+- May work where frag does not work.
+.TP
+.PP
+.I Cons
+.br
+- Cannot be used against every access point.
+.br
+- The maximum XOR bits is limited to the length of the packet you chopchop against.
+.br
+- Much slower then the fragmentation attack.
+.br
+.SH AUTHOR
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)

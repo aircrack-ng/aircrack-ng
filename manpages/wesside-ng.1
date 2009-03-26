@@ -1,0 +1,83 @@
+.TH WESSIDE-NG 1 "March 2009" "Version 1.0-rc3"
+
+.SH NAME
+wesside-ng - crack a WEP key of an open network without user intervention
+.SH SYNOPSIS
+.B wesside-ng
+<options>
+.SH DESCRIPTION
+.BI wesside-ng
+is an auto-magic tool which incorporates a number of techniques to seamlessly obtain a WEP key in minutes. It first identifies a network, then proceeds to associate with it, obtain PRGA (pseudo random generation algorithm) xor data, determine the network IP scheme, reinject ARP requests and finally determine the WEP key. All this is done without your intervention.
+.SH OPTIONS
+.PP
+.TP
+.I -h
+Shows the help screen.
+.TP
+.I -i <iface>
+Wireless interface name. (Mandatory)
+.TP
+.I -n <network ip>
+Network IP as in 'who has destination IP (netip) tell source IP (myip)'. Defaults to the source IP on the ARP request which is captured and decrypted. (Optional)
+.TP
+.I -m <my ip>
+\'who has destination IP (netip) tell source IP (myip)\'. Defaults to the network.123 on the ARP request captured (Optional).
+.TP
+.I -a <source mac>
+Source MAC address (Optional)
+.TP
+.I -c
+Do not crack the key. Simply capture the packets until control-C is hit to stop the program! (Optional)
+.TP
+.I -p <min PRGA>
+Determines the minimum number of bytes of PRGA which is gathered. Defaults to 128 bytes. (Optional).
+.TP
+.I -v <victim MAC>
+Wireless access point MAC address (Optional).
+.TP
+.I -t <threshold>
+For each number of IVs specified, restart the airecrack-ng PTW engine (Optional). It will restart PTW every <threshold> IVs.
+.TP
+.I -f <channel>
+Allows the highest channel for scanning to be defined. Defaults to channel 11 (Optional).
+.SH AUTHOR
+This manual page was written by Thomas d'Otreppe.
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)

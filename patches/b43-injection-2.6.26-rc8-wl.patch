@@ -1,0 +1,44 @@
+diff --git a/drivers/net/wireless/b43/xmit.c b/drivers/net/wireless/b43/xmit.c
+index bf6f6c1..735f2d0 100644
+--- a/drivers/net/wireless/b43/xmit.c
++++ b/drivers/net/wireless/b43/xmit.c
+@@ -315,9 +315,15 @@ int b43_generate_txhdr(struct b43_wldev *dev,
+ 	}
+ 
+ 	/* MAC control */
+-	if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
++	/* dev->wl->if_type returns IEEE80211_IF_TYPE_INVALID instead of
++	 * IEEE80211_IF_TYPE_MNTR for monitor interfaces, as monitor mode
++	 * is not considered "operating" by mac80211.
++	 */
++	if (dev->wl->if_type != 5 && dev->wl->if_type != 0 &&
++	      !(info->flags & IEEE80211_TX_CTL_NO_ACK))
+ 		mac_ctl |= B43_TXH_MAC_ACK;
+-	if (!ieee80211_is_pspoll(fctl))
++	if (dev->wl->if_type != 5 && dev->wl->if_type != 0 &&
++	    !ieee80211_is_pspoll(fctl))
+ 		mac_ctl |= B43_TXH_MAC_HWSEQ;
+ 	if (info->flags & IEEE80211_TX_CTL_FIRST_FRAGMENT)
+ 		mac_ctl |= B43_TXH_MAC_STMSDU;
+diff --git a/drivers/net/wireless/b43legacy/xmit.c b/drivers/net/wireless/b43legacy/xmit.c
+index a354078..d4d6e61 100644
+--- a/drivers/net/wireless/b43legacy/xmit.c
++++ b/drivers/net/wireless/b43legacy/xmit.c
+@@ -293,9 +293,15 @@ static int generate_txhdr_fw3(struct b43legacy_wldev *dev,
+ 	}
+ 
+ 	/* MAC control */
+-	if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
++	/* dev->wl->if_type returns IEEE80211_IF_TYPE_INVALID instead of
++	 * IEEE80211_IF_TYPE_MNTR for monitor interfaces, as monitor mode
++	 * is not considered "operating" by mac80211.
++	 */
++	if (dev->wl->if_type != 5 && dev->wl->if_type != 0 &&
++	      !(info->flags & IEEE80211_TX_CTL_NO_ACK))
+ 		mac_ctl |= B43legacy_TX4_MAC_ACK;
+-	if (!(((fctl & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_CTL) &&
++	if (dev->wl->if_type != 5 && dev->wl->if_type != 0 &&
++	      !(((fctl & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_CTL) &&
+ 	      ((fctl & IEEE80211_FCTL_STYPE) == IEEE80211_STYPE_PSPOLL)))
+ 		mac_ctl |= B43legacy_TX4_MAC_HWSEQ;
+ 	if (info->flags & IEEE80211_TX_CTL_FIRST_FRAGMENT)

@@ -1,0 +1,64 @@
+.TH AIRMON-NG 1 "March 2009" "Version 1.0-rc3"
+
+.SH NAME
+airmon-ng - bash script designed to turn wireless cards into monitor mode.
+.SH SYNOPSIS
+.B airmon-ng
+<start|stop> <interface> [channel]
+.B airmon-ng
+<check> [kill]
+.SH DESCRIPTION
+.BI airmon-ng
+is script can be used to enable monitor mode on wireless interfaces. It may also be used to go back from monitor mode to managed mode. Entering the airmon-ng command without parameters will show the interfaces status. 
+It can list/kill programs that can interfere with the wireless card and set the right sources in /etc/kismet/kismet.conf too.
+.SH OPTIONAL PARAMETERS
+.PP
+.TP
+.I start <interface> [channel]
+Enable monitor mode on an interface (and specify a channel). Note: Madwifi-ng is a special case, 'start' has to be used on wifi interfaces and 'stop' on ath interfaces.
+.I stop <interface>
+Disable monitor mode and go back to managed mode (except for madwifi-ng where it kills the ath VAP).
+.TP
+.I check [kill]
+List all possible programs that could interfere with the wireless card. If 'kill' is specified, it will try to kill all of them.
+.SH AUTHOR
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)

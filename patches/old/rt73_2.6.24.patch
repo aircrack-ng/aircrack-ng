@@ -1,0 +1,1372 @@
+diff -Naur rt73-k2wrlz-2.0.1/Module/rtmp_def.h rt73-k2wrlz-2.0.1-24/Module/rtmp_def.h
+--- rt73-k2wrlz-2.0.1/Module/rtmp_def.h	2007-07-10 10:01:32.000000000 +0200
++++ rt73-k2wrlz-2.0.1-24/Module/rtmp_def.h	2008-02-13 23:12:13.000000000 +0100
+@@ -1,26 +1,26 @@
+-/*************************************************************************** 
+- * RT2x00 SourceForge Project - http://rt2x00.serialmonkey.com             * 
+- *                                                                         * 
+- *   This program is free software; you can redistribute it and/or modify  * 
+- *   it under the terms of the GNU General Public License as published by  * 
+- *   the Free Software Foundation; either version 2 of the License, or     * 
+- *   (at your option) any later version.                                   * 
+- *                                                                         * 
+- *   This program is distributed in the hope that it will be useful,       * 
+- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        * 
+- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         * 
+- *   GNU General Public License for more details.                          * 
+- *                                                                         * 
+- *   You should have received a copy of the GNU General Public License     * 
+- *   along with this program; if not, write to the                         * 
+- *   Free Software Foundation, Inc.,                                       * 
+- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             * 
+- *                                                                         * 
+- *   Licensed under the GNU GPL                                            * 
+- *   Original code supplied under license from RaLink Inc, 2004.           * 
++/***************************************************************************
++ * RT2x00 SourceForge Project - http://rt2x00.serialmonkey.com             *
++ *                                                                         *
++ *   This program is free software; you can redistribute it and/or modify  *
++ *   it under the terms of the GNU General Public License as published by  *
++ *   the Free Software Foundation; either version 2 of the License, or     *
++ *   (at your option) any later version.                                   *
++ *                                                                         *
++ *   This program is distributed in the hope that it will be useful,       *
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++ *   GNU General Public License for more details.                          *
++ *                                                                         *
++ *   You should have received a copy of the GNU General Public License     *
++ *   along with this program; if not, write to the                         *
++ *   Free Software Foundation, Inc.,                                       *
++ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
++ *                                                                         *
++ *   Licensed under the GNU GPL                                            *
++ *   Original code supplied under license from RaLink Inc, 2004.           *
+  ***************************************************************************/
+ 
+-/*************************************************************************** 
++/***************************************************************************
+  *	Module Name:	rtmp_def.h
+  *
+  *	Abstract: Miniport related definition header
+@@ -31,7 +31,7 @@
+  *	Paul Lin	08-01-2002	created
+  *	John Chang	08-05-2003	add definition for 11g & other drafts
+  *	idamlaj	04-10-2006	Add extra devices
+- *	
++ *
+  ***************************************************************************/
+ 
+ #ifndef __RTMP_DEF_H__
+@@ -61,7 +61,7 @@
+ #define TYPE_RXD					1
+ #endif
+ 
+-//WEP 
++//WEP
+ #define WEP_SMALL_KEY_LEN	(40/8)
+ #define WEP_LARGE_KEY_LEN	(104/8)
+ 
+@@ -237,7 +237,7 @@
+ #define MAX_LEN_OF_SUPPORTED_RATES        12    // 1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54
+ #define MAX_LEN_OF_KEY                    32      // 32 octets == 256 bits, Redefine for WPA
+ 
+-#define MAX_NUM_OF_CHANNELS               43    //1-14, 36/40/44/48/52/56/60/64/100/104/108/112/116/120/124/ 
++#define MAX_NUM_OF_CHANNELS               43    //1-14, 36/40/44/48/52/56/60/64/100/104/108/112/116/120/124/
+                                                 //128/132/136/140/149/153/157/161/165/34/38/42/46 + 1 as NULL termination
+ #define MAX_NUM_OF_A_CHANNELS             24    //36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157, 161, 165
+ #define J52_CHANNEL_START_OFFSET          38    //1-14, 36/40/44/48/52/56/60/64/100/104/108/112/116/120/124/
+@@ -245,7 +245,7 @@
+ #define MAX_LEN_OF_SSID                   32
+ #define CIPHER_TEXT_LEN                   128
+ #define MAX_LEN_OF_MLME_BUFFER            2048
+-#define MAX_MLME_HANDLER_MEMORY           20    //each them cantains  MAX_LEN_OF_MLME_BUFFER size 
++#define MAX_MLME_HANDLER_MEMORY           20    //each them cantains  MAX_LEN_OF_MLME_BUFFER size
+ #define MAX_FRAME_LEN                     2338
+ #define	MAX_VIE_LEN                       160	// New for WPA cipher suite variable IE sizes.
+ 
+@@ -304,7 +304,7 @@
+ #define MLME_SUCCESS                      0
+ #define MLME_UNSPECIFY_FAIL               1
+ #define MLME_CANNOT_SUPPORT_CAP           10
+-#define MLME_REASSOC_DENY_ASSOC_EXIST     11 
++#define MLME_REASSOC_DENY_ASSOC_EXIST     11
+ #define MLME_ASSOC_DENY_OUT_SCOPE         12
+ #define MLME_ALG_NOT_SUPPORT              13
+ #define MLME_SEQ_NR_OUT_OF_SEQUENCE       14
+@@ -334,7 +334,7 @@
+ #define IE_802_11D_REQUEST                10    // 802.11d
+ #define IE_QBSS_LOAD                      11    // 802.11e d9
+ #define IE_EDCA_PARAMETER                 12    // 802.11e d9
+-#define IE_TSPEC                          13    // 802.11e d9 
++#define IE_TSPEC                          13    // 802.11e d9
+ #define IE_TCLAS                          14    // 802.11e d9
+ #define IE_SCHEDULE                       15    // 802.11e d9
+ #define IE_CHALLENGE_TEXT                 16
+@@ -422,7 +422,7 @@
+ #define ASSOC_MACHINE_BASE              0
+ #define MT2_MLME_ASSOC_REQ              0
+ #define MT2_MLME_REASSOC_REQ            1
+-#define MT2_MLME_DISASSOC_REQ           2  
++#define MT2_MLME_DISASSOC_REQ           2
+ #define MT2_PEER_DISASSOC_REQ           3
+ #define MT2_PEER_ASSOC_REQ              4
+ #define MT2_PEER_ASSOC_RSP              5
+@@ -491,7 +491,7 @@
+ 
+ //
+ // STA's WPA-PSK State machine: states, events, total function #
+-// 
++//
+ #define WPA_PSK_IDLE					0
+ #define MAX_WPA_PSK_STATE				1
+ 
+@@ -650,8 +650,8 @@
+ #define	CIPHER_AES				4
+ #define CIPHER_CKIP64			5
+ #define CIPHER_CKIP128			6
+-#define CIPHER_TKIP_NO_MIC		7	 // MIC has been appended by driver, not a valid value in hardware key table 
+-									
++#define CIPHER_TKIP_NO_MIC		7	 // MIC has been appended by driver, not a valid value in hardware key table
++
+ 
+ // value domain for pAd->RfIcType
+ #define RFIC_5226				1  //A/B/G
+@@ -813,6 +813,7 @@
+ // VID/PID
+ //-------------------
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+ #define RT73_USB_DEVICES { \
+  {USB_DEVICE(0x0b05,0x1723)}, /* ASUS */	\
+  {USB_DEVICE(0x148f,0x2573)}, /* Ralink */      \
+@@ -843,7 +844,38 @@
+  {USB_DEVICE(0x0df6,0x90ac)}, /* Sitecom */	\
+  {USB_DEVICE(0x13b1,0x0023)}, /* LinkSys */	\
+  {USB_DEVICE(0,0)}} /* end marker */
+-
++#else
++#define RT73_USB_DEVICES { \
++ {USB_DEVICE(0x0b05,0x1723)}, /* ASUS */	\
++ {USB_DEVICE(0x148f,0x2573)}, /* Ralink */      \
++ {USB_DEVICE(0x148f,0x2671)}, /* Ralink */      \
++ {USB_DEVICE(0x18e8,0x6196)}, /* Qcom */        \
++ {USB_DEVICE(0x18e8,0x6229)}, /* Qcom */        \
++ {USB_DEVICE(0x1044,0x8008)}, /* Gigabyte */    \
++ {USB_DEVICE(0x14b2,0x3c22)}, /* Conceptronic */    \
++ {USB_DEVICE(0x0db0,0x6877)}, /* MSI */         \
++ {USB_DEVICE(0x0db0,0xa874)}, /* MSI */         \
++ {USB_DEVICE(0x0db0,0xa861)}, /* MSI */         \
++ {USB_DEVICE(0x07b8,0xb21d)}, /* AboCom */      \
++ {USB_DEVICE(0x0769,0x31f3)}, /* Surecom */     \
++ {USB_DEVICE(0x1472,0x0009)}, /* Huawei-3Com */     \
++ {USB_DEVICE(0x1371,0x9022)}, /* CNet */        \
++ {USB_DEVICE(0x1371,0x9032)}, /* CNet */        \
++ {USB_DEVICE(0x1631,0xc019)}, /* Billionton */  \
++ {USB_DEVICE(0x1044,0x800a)}, /* Gigabyte */	\
++ {USB_DEVICE(0x07d1,0x3c03)}, /* D-Link */      \
++ {USB_DEVICE(0x07d1,0x3c04)}, /* D-Link */      \
++ {USB_DEVICE(0x050d,0x7050)}, /* Belkin */      \
++ {USB_DEVICE(0x050d,0x705a)}, /* Belkin */      \
++ {USB_DEVICE(0x13b1,0x0020)}, /* Linksys */     \
++ {USB_DEVICE(0x18e8,0x6196)}, /* Qcom*/         \
++ {USB_DEVICE(0x0df6,0x9712)}, /* Sitecom */     \
++ {USB_DEVICE(0x06f8,0xe010)}, /* Hercules */    \
++ {USB_DEVICE(0x1690,0x0722)}, /* Askey */	\
++ {USB_DEVICE(0x0df6,0x90ac)}, /* Sitecom */	\
++ {USB_DEVICE(0x13b1,0x0023)}, /* LinkSys */	\
++ {}} /* end marker */
++#endif
+ 
+ #endif	// __RTMP_DEF_H__
+ 
+diff -Naur rt73-k2wrlz-2.0.1/Module/rtmp_main.c rt73-k2wrlz-2.0.1-24/Module/rtmp_main.c
+--- rt73-k2wrlz-2.0.1/Module/rtmp_main.c	2007-10-26 21:35:39.000000000 +0200
++++ rt73-k2wrlz-2.0.1-24/Module/rtmp_main.c	2008-02-13 23:03:14.000000000 +0100
+@@ -1,26 +1,26 @@
+-/*************************************************************************** 
+- * RT2x00 SourceForge Project - http://rt2x00.serialmonkey.com             * 
+- *                                                                         * 
+- *   This program is free software; you can redistribute it and/or modify  * 
+- *   it under the terms of the GNU General Public License as published by  * 
+- *   the Free Software Foundation; either version 2 of the License, or     * 
+- *   (at your option) any later version.                                   * 
+- *                                                                         * 
+- *   This program is distributed in the hope that it will be useful,       * 
+- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        * 
+- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         * 
+- *   GNU General Public License for more details.                          * 
+- *                                                                         * 
+- *   You should have received a copy of the GNU General Public License     * 
+- *   along with this program; if not, write to the                         * 
+- *   Free Software Foundation, Inc.,                                       * 
+- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             * 
+- *                                                                         * 
+- *   Licensed under the GNU GPL                                            * 
+- *   Original code supplied under license from RaLink Inc, 2004.           * 
++/***************************************************************************
++ * RT2x00 SourceForge Project - http://rt2x00.serialmonkey.com             *
++ *                                                                         *
++ *   This program is free software; you can redistribute it and/or modify  *
++ *   it under the terms of the GNU General Public License as published by  *
++ *   the Free Software Foundation; either version 2 of the License, or     *
++ *   (at your option) any later version.                                   *
++ *                                                                         *
++ *   This program is distributed in the hope that it will be useful,       *
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++ *   GNU General Public License for more details.                          *
++ *                                                                         *
++ *   You should have received a copy of the GNU General Public License     *
++ *   along with this program; if not, write to the                         *
++ *   Free Software Foundation, Inc.,                                       *
++ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
++ *                                                                         *
++ *   Licensed under the GNU GPL                                            *
++ *   Original code supplied under license from RaLink Inc, 2004.           *
+  ***************************************************************************/
+ 
+-/*************************************************************************** 
++/***************************************************************************
+  *	Module Name:	rtmp_main.c
+  *
+  *	Abstract: Main initialization routines
+@@ -29,8 +29,8 @@
+  *	Who		When		What
+  *	--------	----------	-----------------------------
+  *	Jan Lee		01-10-2005	modified
+- *	idamlaj		04-10-2006	Apply patch by Ace17 (from forum)		
+- *	
++ *	idamlaj		04-10-2006	Apply patch by Ace17 (from forum)
++ *
+  ***************************************************************************/
+ 
+ #include "rt_config.h"
+@@ -67,7 +67,7 @@
+ 
+ /* module table */
+ struct usb_device_id    rtusb_usb_id[] = RT73_USB_DEVICES;
+-INT const               rtusb_usb_id_len = sizeof(rtusb_usb_id) / sizeof(struct usb_device_id);   
++INT const               rtusb_usb_id_len = sizeof(rtusb_usb_id) / sizeof(struct usb_device_id);
+ MODULE_DEVICE_TABLE(usb, rtusb_usb_id);
+ 
+ 
+@@ -158,7 +158,7 @@
+ 	// for cslip etc
+ 	pAd->stats.rx_compressed = 0;
+ 	pAd->stats.tx_compressed = 0;
+-   
++
+ 	return &pAd->stats;
+ }
+ 
+@@ -214,22 +214,22 @@
+ #endif
+ 
+ VOID RTUSBHalt(
+-	IN	PRTMP_ADAPTER	pAd, 
++	IN	PRTMP_ADAPTER	pAd,
+ 	IN  BOOLEAN         IsFree)
+ {
+ 	MLME_DISASSOC_REQ_STRUCT DisReq;
+ 	MLME_QUEUE_ELEM          MsgElem;
+ 	INT                      i;
+-	
++
+ 	DBGPRINT(RT_DEBUG_TRACE, "====> RTUSBHalt\n");
+ 
+ 	//
+-	// before set flag fRTMP_ADAPTER_HALT_IN_PROGRESS, 
++	// before set flag fRTMP_ADAPTER_HALT_IN_PROGRESS,
+ 	// we should send a disassoc frame to our AP.
+ 	//
+ 	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST))
+ 	{
+-		if (INFRA_ON(pAd)) 
++		if (INFRA_ON(pAd))
+ 		{
+ 			COPY_MAC_ADDR(DisReq.Addr, pAd->PortCfg.Bssid);
+ 			DisReq.Reason =  REASON_DISASSOC_STA_LEAVING;
+@@ -252,7 +252,7 @@
+ 			RTMPSendNullFrame(pAd, RATE_6);
+ 			RTMPusecDelay(1000);
+ 		}
+-	
++
+ 		// disable BEACON generation and other BEACON related hardware timers
+ 		AsicDisableSync(pAd);
+ 		RTMPSetLED(pAd, LED_HALT);
+@@ -281,23 +281,23 @@
+ 
+     // Free the entire adapter object
+ 	ReleaseAdapter(pAd, IsFree, FALSE);
+-  	
++
+ 	// reset mlme & command thread
+     pAd->MLMEThr_pid = -1;
+ 	pAd->RTUSBCmdThr_pid = -1;
+-	
++
+ 	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS);
+ }
+ 
+ VOID CMDHandler(
+-    IN PRTMP_ADAPTER pAd) 
++    IN PRTMP_ADAPTER pAd)
+ {
+ 	PCmdQElmt	cmdqelmt;
+ 	PUCHAR	    pData;
+ 	NDIS_STATUS	NdisStatus = NDIS_STATUS_SUCCESS;
+     ULONG       IrqFlags;
+     ULONG       Now;
+-    
++
+ 	while (pAd->CmdQ.size > 0)
+ 	{
+ 		NdisStatus = NDIS_STATUS_SUCCESS;
+@@ -339,7 +339,7 @@
+ 						// Update extra information
+ 						pAd->ExtraInfo = HW_RADIO_OFF;
+ 					}
+-				}		
++				}
+ 			}
+ 			break;
+ 
+@@ -351,11 +351,11 @@
+ 			{
+ 				if (pAd->Mlme.CntlMachine.CurrState != CNTL_IDLE)
+ 				{
+-					MlmeEnqueue(pAd, 
++					MlmeEnqueue(pAd,
+ 					            MLME_CNTL_STATE_MACHINE,
+ 					            RT_CMD_RESET_MLME,
+ 					            0,
+-					            NULL);	
++					            NULL);
+ 
+ 				}
+ 
+@@ -372,17 +372,17 @@
+ 				RTUSBMlmeUp(pAd);
+ 			}
+ 			break;
+-			
++
+ 			case RT_OID_802_11_BSSID:
+ 			{
+ 
+ 				if (pAd->Mlme.CntlMachine.CurrState != CNTL_IDLE)
+ 				{
+-					MlmeEnqueue(pAd, 
++					MlmeEnqueue(pAd,
+ 					            MLME_CNTL_STATE_MACHINE,
+ 					            RT_CMD_RESET_MLME,
+ 					            0,
+-					            NULL);	
++					            NULL);
+ 
+ 				}
+ 
+@@ -399,16 +399,16 @@
+ 				RTUSBMlmeUp(pAd);
+ 			}
+ 			break;
+-			
++
+ 			case OID_802_11_SSID:
+ 			{
+ 				if (pAd->Mlme.CntlMachine.CurrState != CNTL_IDLE)
+-				{				
+-					MlmeEnqueue(pAd, 
++				{
++					MlmeEnqueue(pAd,
+ 					            MLME_CNTL_STATE_MACHINE,
+ 					            RT_CMD_RESET_MLME,
+ 					            0,
+-					            NULL);	
++					            NULL);
+ 
+ 				}
+ 
+@@ -421,7 +421,7 @@
+ 				MlmeEnqueue(pAd,
+ 							MLME_CNTL_STATE_MACHINE,
+ 							OID_802_11_SSID,
+-							cmdqelmt->bufferlength, 
++							cmdqelmt->bufferlength,
+ 							pData);
+ 				RTUSBMlmeUp(pAd);
+ 			}
+@@ -431,11 +431,11 @@
+ 			{
+ 				if (pAd->Mlme.CntlMachine.CurrState != CNTL_IDLE)
+ 				{
+-					MlmeEnqueue(pAd, 
++					MlmeEnqueue(pAd,
+ 					            MLME_CNTL_STATE_MACHINE,
+ 					            RT_CMD_RESET_MLME,
+ 					            0,
+-					            NULL);	
++					            NULL);
+ 
+ 				}
+ 
+@@ -456,7 +456,7 @@
+ 
+ 		        NDIS_802_11_ANTENNA	Antenna = *(NDIS_802_11_ANTENNA *)pData;
+ 
+-				    if (Antenna == 0) 
++				    if (Antenna == 0)
+ 					    pAd->Antenna.field.RxDefaultAntenna = 1;    // ant-A
+ 				    else if(Antenna == 1)
+ 					    pAd->Antenna.field.RxDefaultAntenna = 2;    // ant-B
+@@ -473,7 +473,7 @@
+ 		    {
+ 			    NDIS_802_11_ANTENNA	Antenna = *(NDIS_802_11_ANTENNA *)pData;
+ 
+-			    if (Antenna == 0) 
++			    if (Antenna == 0)
+ 				    pAd->Antenna.field.TxDefaultAntenna = 1;    // ant-A
+ 			    else if(Antenna == 1)
+ 				    pAd->Antenna.field.TxDefaultAntenna = 2;    // ant-B
+@@ -517,7 +517,7 @@
+ 				RTUSBReadEEPROM(pAd, Offset, pData + 4, Length);
+ 			}
+ 			break;
+-				    
++
+ 			case RT_OID_USB_VENDOR_EEPROM_WRITE:
+ 			{
+ 				USHORT	Offset = *((PUSHORT)pData);
+@@ -563,26 +563,26 @@
+ 			case RT_OID_USB_RESET_BULK_OUT:
+ 			{
+ 				INT 	Index;
+-				
++
+ 		        DBGPRINT_RAW(RT_DEBUG_ERROR, "RT_OID_USB_RESET_BULK_OUT\n");
+-				
++
+ 				RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_RESET_PIPE_IN_PROGRESS);
+ 
+-				RTUSBRejectPendingPackets(pAd); //reject all NDIS packets waiting in TX queue						
++				RTUSBRejectPendingPackets(pAd); //reject all NDIS packets waiting in TX queue
+ 				RTUSBCancelPendingBulkOutIRP(pAd);
+ 				RTUSBCleanUpDataBulkOutQueue(pAd);
+ 
+ 				NICInitializeAsic(pAd);
+ 				ReleaseAdapter(pAd, FALSE, TRUE);   // unlink urb releated tx context
+ 				NICInitTransmit(pAd);
+-				
+-				RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RESET_PIPE_IN_PROGRESS); 
+-				
++
++				RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RESET_PIPE_IN_PROGRESS);
++
+ 				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BULKOUT_RESET))
+ 				{
+ 					RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_BULKOUT_RESET);
+ 				}
+-				
++
+ 				if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF))
+ 				{
+ 					for (Index = 0; Index < 4; Index++)
+@@ -594,8 +594,8 @@
+ 					}
+ 
+ 					RTUSBKickBulkOut(pAd);
+-				}		
+-			}	 
++				}
++			}
+ 
+     	    break;
+ 
+@@ -618,7 +618,7 @@
+ 					}
+ 					if (pRxContext->TransferBuffer != NULL)
+ 					{
+-						kfree(pRxContext->TransferBuffer); 
++						kfree(pRxContext->TransferBuffer);
+ 						pRxContext->TransferBuffer = NULL;
+ 					}
+ 				}
+@@ -722,9 +722,9 @@
+ 				//disable Rx
+ 				RTUSBWriteMACRegister(pAd, TXRX_CSR2, 1);
+ 				//Ask our device to complete any pending bulk in IRP.
+-				while ((atomic_read(&pAd->PendingRx) > 0) || 
++				while ((atomic_read(&pAd->PendingRx) > 0) ||
+                        (pAd->BulkOutPending[0] == TRUE) ||
+-					   (pAd->BulkOutPending[1] == TRUE) || 
++					   (pAd->BulkOutPending[1] == TRUE) ||
+ 					   (pAd->BulkOutPending[2] == TRUE) ||
+ 					   (pAd->BulkOutPending[3] == TRUE))
+ 
+@@ -743,7 +743,7 @@
+ 					}
+ 
+ 					if ((pAd->BulkOutPending[0] == TRUE) ||
+-						(pAd->BulkOutPending[1] == TRUE) || 
++						(pAd->BulkOutPending[1] == TRUE) ||
+ 						(pAd->BulkOutPending[2] == TRUE) ||
+ 						(pAd->BulkOutPending[3] == TRUE))
+ 					{
+@@ -758,7 +758,7 @@
+ 					RTMPusecDelay(500000);
+ 				}
+ 
+-				NICResetFromError(pAd);            
++				NICResetFromError(pAd);
+ 				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_HARDWARE_ERROR))
+ 				{
+ 					RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_HARDWARE_ERROR);
+@@ -814,12 +814,12 @@
+ 			case RT_OID_VENDOR_WRITE_RF:
+ 			{
+ 				ULONG	Value = *((PULONG)pData);
+-        	
++
+ 				DBGPRINT_RAW(RT_DEBUG_INFO, "value = 0x%08x\n", Value);
+ 				RTUSBWriteRFRegister(pAd, Value);
+ 			}
+ 			break;
+-			    
++
+ 			case RT_OID_802_11_RESET_COUNTERS:
+ 			{
+ 				UCHAR	Value[22];
+@@ -865,7 +865,7 @@
+ 									NULL,
+ 									0);
+ 			break;
+-#endif			
++#endif
+ 			case RT_OID_VENDOR_FLIP_IQ:
+ 			{
+ 				ULONG	Value1, Value2;
+@@ -926,7 +926,7 @@
+ 				else
+ 					NdisStatus = NDIS_STATUS_FAILURE;
+ 				DBGPRINT(RT_DEBUG_ERROR, "CMDHandler::OID_802_11_NETWORK_TYPE_IN_USE (=%d)\n",NetType);
+-			
++
+             }
+             break;
+ 			case RT_OID_802_11_PHY_MODE:
+@@ -958,7 +958,7 @@
+ 				    pAd->PortCfg.GroupCipher = WepStatus;
+ 
+ #if 1
+-					if ((WepStatus == Ndis802_11Encryption1Enabled) && 
++					if ((WepStatus == Ndis802_11Encryption1Enabled) &&
+ 						(pAd->SharedKey[pAd->PortCfg.DefaultKeyId].KeyLen != 0))
+ 					{
+ 						if (pAd->SharedKey[pAd->PortCfg.DefaultKeyId].KeyLen <= 5)
+@@ -973,7 +973,7 @@
+ 
+ 							pAd->SharedKey[pAd->PortCfg.DefaultKeyId].CipherAlg = CIPHER_WEP128;
+ 						}
+-#if 0	    
++#if 0
+ 						RTUSBReadMACRegister_old(pAd, TXRX_CSR0, &Value);
+ 						Value &= 0xfe00;
+ 						Value |= ((LENGTH_802_11 << 3) | (pAd->PortCfg.CipherAlg));
+@@ -1013,7 +1013,7 @@
+ 						Value &= 0xfe00;
+ 						RTUSBWriteMACRegister_old(pAd, TXRX_CSR0, Value);
+ #endif
+-					}else 
++					}else
+ 					{
+ 						DBGPRINT(RT_DEBUG_ERROR, " ERROR Cipher   !!!  \n");
+ 					}
+@@ -1027,7 +1027,7 @@
+ 				PNDIS_802_11_WEP	pWepKey;
+ 
+ 				DBGPRINT(RT_DEBUG_TRACE, "CMDHandler::OID_802_11_ADD_WEP  \n");
+-				
++
+ 				pWepKey = (PNDIS_802_11_WEP)pData;
+ 				KeyIdx = pWepKey->KeyIndex & 0x0fffffff;
+ 
+@@ -1037,7 +1037,7 @@
+ 					NdisStatus = NDIS_STATUS_FAILURE;
+ 					DBGPRINT(RT_DEBUG_ERROR, "CMDHandler::OID_802_11_ADD_WEP, INVALID_DATA!!\n");
+ 				}
+-				else 
++				else
+ 				{
+ 					UCHAR CipherAlg;
+ 					pAd->SharedKey[KeyIdx].KeyLen = (UCHAR) pWepKey->KeyLength;
+@@ -1048,18 +1048,18 @@
+ 					{
+ 						// Default key for tx (shared key)
+ 						pAd->PortCfg.DefaultKeyId = (UCHAR) KeyIdx;
+-					}							
++					}
+ 					AsicAddSharedKeyEntry(pAd, 0, (UCHAR)KeyIdx, CipherAlg, pWepKey->KeyMaterial, NULL, NULL);
+ 					DBGPRINT(RT_DEBUG_TRACE, "CMDHandler::OID_802_11_ADD_WEP (KeyIdx=%d, Len=%d-byte)\n", KeyIdx, pWepKey->KeyLength);
+ 				}
+ 			}
+ 			break;
+-			    
++
+ 			case OID_802_11_REMOVE_WEP:
+ 			{
+ 				ULONG		KeyIdx;
+ 
+-				
++
+ 				KeyIdx = *(NDIS_802_11_KEY_INDEX *) pData;
+ 				if (KeyIdx & 0x80000000)
+ 				{
+@@ -1081,14 +1081,14 @@
+ 						AsicRemoveSharedKeyEntry(pAd, 0, (UCHAR)KeyIdx);
+ 						DBGPRINT(RT_DEBUG_TRACE, "CMDHandler::OID_802_11_REMOVE_WEP (KeyIdx=%d)\n", KeyIdx);
+ 					}
+-				}	
++				}
+ 			}
+ 			break;
+ 
+ 			case OID_802_11_ADD_KEY_WEP:
+ 			{
+ 				PNDIS_802_11_KEY		pKey;
+-				ULONG					i, KeyIdx;						
++				ULONG					i, KeyIdx;
+ 
+ 				pKey = (PNDIS_802_11_KEY) pData;
+ 				KeyIdx = pKey->KeyIndex & 0x0fffffff;
+@@ -1099,10 +1099,10 @@
+ 			        NdisStatus = NDIS_STATUS_FAILURE;
+ 			        DBGPRINT(RT_DEBUG_ERROR, "CMDHandler::OID_802_11_ADD_KEY_WEP, Invalid KeyIdx[=%d]!!\n", KeyIdx);
+ 			    }
+-			    else 
++			    else
+ 			    {
+ 			        UCHAR CipherAlg;
+-					 
++
+ 			        pAd->SharedKey[KeyIdx].KeyLen = (UCHAR) pKey->KeyLength;
+ 			        memcpy(pAd->SharedKey[KeyIdx].Key, &pKey->KeyMaterial, pKey->KeyLength);
+ 
+@@ -1118,12 +1118,12 @@
+ 				    {
+ 				        for(i = 1; i < (16 / pKey->KeyLength); i++)
+ 				        {
+-				            memcpy(&pAd->SharedKey[KeyIdx].Key[i * pKey->KeyLength], 
+-										   &pKey->KeyMaterial[0], 
++				            memcpy(&pAd->SharedKey[KeyIdx].Key[i * pKey->KeyLength],
++										   &pKey->KeyMaterial[0],
+ 										   pKey->KeyLength);
+ 				        }
+-					    memcpy(&pAd->SharedKey[KeyIdx].Key[i * pKey->KeyLength], 
+-									   &pKey->KeyMaterial[0], 
++					    memcpy(&pAd->SharedKey[KeyIdx].Key[i * pKey->KeyLength],
++									   &pKey->KeyMaterial[0],
+ 									   16 - (i * pKey->KeyLength));
+ 				    }
+ 
+@@ -1135,16 +1135,16 @@
+ 				    }
+ 
+ 				    AsicAddSharedKeyEntry(pAd, 0, (UCHAR)KeyIdx, CipherAlg, pAd->SharedKey[KeyIdx].Key, NULL, NULL);
+-				    DBGPRINT(RT_DEBUG_TRACE, "CMDHandler::OID_802_11_ADD_KEY_WEP (KeyIdx=%d, KeyLen=%d, CipherAlg=%d)\n", 
++				    DBGPRINT(RT_DEBUG_TRACE, "CMDHandler::OID_802_11_ADD_KEY_WEP (KeyIdx=%d, KeyLen=%d, CipherAlg=%d)\n",
+ 				        pAd->PortCfg.DefaultKeyId, pAd->SharedKey[KeyIdx].KeyLen, pAd->SharedKey[KeyIdx].CipherAlg);
+ 				}
+ 			}
+ 			break;
+ 
+ 			case OID_802_11_ADD_KEY:
+-			{  
++			{
+                 PNDIS_802_11_KEY	pkey = (PNDIS_802_11_KEY)pData;
+-                
++
+ 				NdisStatus = RTMPWPAAddKeyProc(pAd, pkey);
+ 				RTUSBBulkReceive(pAd);
+ 				DBGPRINT(RT_DEBUG_TRACE, "CMDHandler::OID_802_11_ADD_KEY\n");
+@@ -1157,7 +1157,7 @@
+ 			{
+ 				ULONG  KeyIdx;
+ 
+-				
++
+ 				KeyIdx = *(NDIS_802_11_KEY_INDEX *) pData;
+ 				if (KeyIdx & 0x80000000)
+ 				{
+@@ -1179,7 +1179,7 @@
+ 				}
+ 			}
+ 			break;
+-#if 0				
++#if 0
+ 			{
+ 				//PNDIS_802_11_REMOVE_KEY  pRemoveKey;
+ 				ULONG  KeyIdx;
+@@ -1190,7 +1190,7 @@
+ 				DBGPRINT(RT_DEBUG_ERROR, "CMDHandler::OID_802_11_REMOVE_WEP\n");
+ 				//if (InformationBufferLength != sizeof(NDIS_802_11_KEY_INDEX))
+ 				//	Status = NDIS_STATUS_INVALID_LENGTH;
+-				//else 
++				//else
+ 				{
+ 					KeyIdx = *(NDIS_802_11_KEY_INDEX *) pData;
+ 
+@@ -1223,17 +1223,17 @@
+ 			{
+ 				PNDIS_802_11_REMOVE_KEY  pRemoveKey;
+ 				ULONG  KeyIdx;
+-				
++
+ 				pRemoveKey = (PNDIS_802_11_REMOVE_KEY) pData;
+ 				if (pAd->PortCfg.AuthMode >= Ndis802_11AuthModeWPA)
+ 				{
+ 					NdisStatus = RTMPWPARemoveKeyProc(pAd, pData);
+ 					DBGPRINT(RT_DEBUG_TRACE, "CMDHandler::RTMPWPARemoveKeyProc\n");
+ 				}
+-				else 
++				else
+ 				{
+ 					KeyIdx = pRemoveKey->KeyIndex;
+-						
++
+ 					if (KeyIdx & 0x80000000)
+ 					{
+ 						// Should never set default bit when remove key
+@@ -1246,7 +1246,7 @@
+ 						if (KeyIdx >= 4)
+ 						{
+ 							NdisStatus = NDIS_STATUS_FAILURE;
+-							DBGPRINT(RT_DEBUG_ERROR, "CMDHandler::OID_802_11_REMOVE_KEY, Invalid KeyIdx[=%d]!!\n", KeyIdx);										
++							DBGPRINT(RT_DEBUG_ERROR, "CMDHandler::OID_802_11_REMOVE_KEY, Invalid KeyIdx[=%d]!!\n", KeyIdx);
+ 						}
+ 						else
+ 						{
+@@ -1260,24 +1260,24 @@
+ 
+ 			}
+ 			break;
+-				
++
+ 			case OID_802_11_POWER_MODE:
+ 			{
+ 				NDIS_802_11_POWER_MODE PowerMode = *(PNDIS_802_11_POWER_MODE) pData;
+ 				DBGPRINT(RT_DEBUG_TRACE, "CMDHandler::OID_802_11_POWER_MODE (=%d)\n",PowerMode);
+-				
++
+ 				// save user's policy here, but not change PortCfg.Psm immediately
+-				if (PowerMode == Ndis802_11PowerModeCAM) 
++				if (PowerMode == Ndis802_11PowerModeCAM)
+ 				{
+ 					// clear PSM bit immediately
+ 					MlmeSetPsmBit(pAd, PWR_ACTIVE);
+-		        
+-					OPSTATUS_SET_FLAG(pAd, fOP_STATUS_RECEIVE_DTIM); 
++
++					OPSTATUS_SET_FLAG(pAd, fOP_STATUS_RECEIVE_DTIM);
+ 					if (pAd->PortCfg.bWindowsACCAMEnable == FALSE)
+ 						pAd->PortCfg.WindowsPowerMode = PowerMode;
+ 					pAd->PortCfg.WindowsBatteryPowerMode = PowerMode;
+-				} 
+-				else if (PowerMode == Ndis802_11PowerModeMAX_PSP) 
++				}
++				else if (PowerMode == Ndis802_11PowerModeMAX_PSP)
+ 				{
+ 					// do NOT turn on PSM bit here, wait until MlmeCheckPsmChange()
+ 					// to exclude certain situations.
+@@ -1285,10 +1285,10 @@
+ 					if (pAd->PortCfg.bWindowsACCAMEnable == FALSE)
+ 						pAd->PortCfg.WindowsPowerMode = PowerMode;
+ 					pAd->PortCfg.WindowsBatteryPowerMode = PowerMode;
+-					OPSTATUS_SET_FLAG(pAd, fOP_STATUS_RECEIVE_DTIM); 
++					OPSTATUS_SET_FLAG(pAd, fOP_STATUS_RECEIVE_DTIM);
+ 					pAd->PortCfg.DefaultListenCount = 5;
+-				} 
+-				else if (PowerMode == Ndis802_11PowerModeFast_PSP) 
++				}
++				else if (PowerMode == Ndis802_11PowerModeFast_PSP)
+ 				{
+ 					// do NOT turn on PSM bit here, wait until MlmeCheckPsmChange()
+ 					// to exclude certain situations.
+@@ -1298,8 +1298,8 @@
+ 						pAd->PortCfg.WindowsPowerMode = PowerMode;
+ 					pAd->PortCfg.WindowsBatteryPowerMode = PowerMode;
+ 					pAd->PortCfg.DefaultListenCount = 3;
+-				} 
+-			}					
++				}
++			}
+ 			break;
+ 
+ 			case RT_PERFORM_SOFT_DIVERSITY:
+@@ -1318,7 +1318,7 @@
+ 			break;
+ 		}
+ 
+-    
++
+ 		if (cmdqelmt->CmdFromNdis == TRUE)
+ 		{
+ 			if ((cmdqelmt->command != OID_802_11_BSSID_LIST_SCAN) &&
+@@ -1330,20 +1330,20 @@
+ 
+ 			if ((cmdqelmt->command != RT_OID_MULTI_READ_MAC) &&
+ 				(cmdqelmt->command != RT_OID_VENDOR_READ_BBP) &&
+-#ifdef DBG					
++#ifdef DBG
+ 				(cmdqelmt->command != RT_OID_802_11_QUERY_HARDWARE_REGISTER) &&
+-#endif					
++#endif
+ 				(cmdqelmt->command != RT_OID_USB_VENDOR_EEPROM_READ))
+ 			{
+ 				if (cmdqelmt->buffer != NULL)
+ 			        kfree(cmdqelmt->buffer);
+ 			}
+-			
++
+ 			kfree((PCmdQElmt)cmdqelmt);
+ 		}
+ 		else
+             cmdqelmt->InUse = FALSE;
+-            
++
+ 	}
+ 
+ 
+@@ -1443,16 +1443,16 @@
+ 	PRTMP_ADAPTER   pAd = (PRTMP_ADAPTER) net_dev->priv;
+ 	NDIS_STATUS     Status = NDIS_STATUS_SUCCESS;
+ 	UCHAR           TmpPhy;
+-	
++
+ 	printk("rt73 driver version - %s\n", DRIVER_VERSION);
+ 
+ 	init_MUTEX(&(pAd->usbdev_semaphore));
+-	
++
+ 	// init mediastate to disconnected
+ 	OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED);
+-	
++
+ 	pAd->rx_bh.func = RTUSBRxPacket;
+-	
++
+ 	// Initialize pAd->PortCfg to manufacture default
+ 	PortCfgInit(pAd);
+ 
+@@ -1481,19 +1481,19 @@
+ 	{
+ 		goto out;
+ 	}
+-	
++
+ 
+ 	// Wait for hardware stable
+ 	{
+         ULONG MacCsr0 = 0, Index = 0;
+-		
++
+ 		do
+ 		{
+ 			Status = RTUSBReadMACRegister(pAd, MAC_CSR0, &MacCsr0);
+ 
+ 			if (MacCsr0 != 0)
+ 				break;
+-			
++
+ 			RTMPusecDelay(1000);
+ 		} while (Index++ < 1000);
+ 		DBGPRINT(RT_DEBUG_TRACE, "Init: MAC_CSR0=0x%08x, Status=0x%08x\n", MacCsr0, Status);
+@@ -1509,8 +1509,8 @@
+ 	// Initialize Asics
+ 	NICInitializeAsic(pAd);
+ 
+-	// Read RaConfig profile parameters 
+-#ifdef  READ_PROFILE_FROM_FILE 
++	// Read RaConfig profile parameters
++#ifdef  READ_PROFILE_FROM_FILE
+ 	RTMPReadParametersFromFile(pAd);
+ #endif
+ 
+@@ -1560,7 +1560,7 @@
+ 		memcpy(pAd->net_dev->dev_addr, pAd->CurrentAddress, pAd->net_dev->addr_len);
+ 	else
+ 		memcpy(pAd->CurrentAddress, pAd->net_dev->dev_addr, pAd->net_dev->addr_len);
+-    
++
+ 	// Clear Reset Flag before starting receiving/transmitting
+ 	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RESET_IN_PROGRESS);
+ 
+@@ -1577,10 +1577,10 @@
+ 
+     // USB_ID info for UI
+     pAd->VendorDesc = 0x148F2573;
+-   
++
+ 	// Start net_dev interface tx /rx
+ 	netif_start_queue(net_dev);
+-	
++
+ 	netif_carrier_on(net_dev);
+ 	netif_wake_queue(net_dev);
+ 	return 0;
+@@ -1598,17 +1598,17 @@
+ 	PRTMP_ADAPTER   pAd = (PRTMP_ADAPTER) net_dev->priv;
+ 	int             ret;
+ 	int		i = 0;
+-	
+-	DECLARE_WAIT_QUEUE_HEAD (unlink_wakeup); 
++
++	DECLARE_WAIT_QUEUE_HEAD (unlink_wakeup);
+ 	DECLARE_WAITQUEUE (wait, current);
+-	
++
+ 	DBGPRINT(RT_DEBUG_TRACE,"-->rt73_close\n");
+-	
++
+ 	netif_carrier_off(pAd->net_dev);
+ 	netif_stop_queue(pAd->net_dev);
+ 
+ 	DBGPRINT(RT_DEBUG_INFO,"Ensure there are no more active urbs \n");
+-	// ensure there are no more active urbs. 
++	// ensure there are no more active urbs.
+ 	add_wait_queue (&unlink_wakeup, &wait);
+ 	pAd->wait = &unlink_wakeup;
+ 	// maybe wait for deletions to finish.
+@@ -1618,35 +1618,35 @@
+ 		DBGPRINT (RT_DEBUG_INFO,"waited for %d urb to complete\n", atomic_read(&pAd->PendingRx));
+ 	}
+ 	pAd->wait = NULL;
+-	remove_wait_queue (&unlink_wakeup, &wait); 
++	remove_wait_queue (&unlink_wakeup, &wait);
+ 
+-	if (pAd->MLMEThr_pid >= 0) 
++	if (pAd->MLMEThr_pid >= 0)
+ 	{
+ 		mlme_kill = 1;
+ 		RTUSBMlmeUp(pAd);
+ 		wmb(); // need to check
+ 		ret = kill_proc (pAd->MLMEThr_pid, SIGTERM, 1);
+-		if (ret) 
++		if (ret)
+ 		{
+ 			printk (KERN_ERR "%s: unable to signal thread\n", pAd->net_dev->name);
+ 			//return ret;		Fix process killing
+ 		}
+ 		wait_for_completion (&pAd->notify);
+ 	}
+-	if (pAd->RTUSBCmdThr_pid>= 0) 
++	if (pAd->RTUSBCmdThr_pid>= 0)
+ 	{
+ 		RTUSBCmd_kill = 1;
+ 		RTUSBCMDUp(pAd);
+ 		wmb(); // need to check
+ 		ret = kill_proc (pAd->RTUSBCmdThr_pid, SIGTERM, 1);
+-		if (ret) 
++		if (ret)
+ 		{
+ 			printk (KERN_ERR "%s: unable to signal thread\n", pAd->net_dev->name);
+ 			//return ret;		Fix process killing
+ 		}
+ 	    wait_for_completion (&pAd->notify);
+ 	}
+-	
++
+ 	RTUSBHalt(pAd, TRUE);
+ 	DBGPRINT(RT_DEBUG_TRACE,"<--rt73_close\n");
+ 
+@@ -1676,7 +1676,7 @@
+ 
+ 		/* lock the device pointers , need to check if required*/
+ 		down(&(pAd->usbdev_semaphore));
+-		MlmeHandler(pAd);		
++		MlmeHandler(pAd);
+ 
+ 		/* unlock the device pointers */
+ 		up(&(pAd->usbdev_semaphore));
+@@ -1703,7 +1703,7 @@
+ 	}
+ #endif
+ 
+-	/* notify the exit routine that we're actually exiting now 
++	/* notify the exit routine that we're actually exiting now
+ 	 *
+ 	 * complete()/wait_for_completion() is similar to up()/down(),
+ 	 * except that complete() is safe in the case where the structure
+@@ -1744,13 +1744,13 @@
+ 
+ 		/* lock the device pointers , need to check if required*/
+ 		down(&(pAd->usbdev_semaphore));
+-		CMDHandler(pAd);		
++		CMDHandler(pAd);
+ 
+ 		/* unlock the device pointers */
+ 		up(&(pAd->usbdev_semaphore));
+ 	}
+ 
+-	/* notify the exit routine that we're actually exiting now 
++	/* notify the exit routine that we're actually exiting now
+ 	 *
+ 	 * complete()/wait_for_completion() is similar to up()/down(),
+ 	 * except that complete() is safe in the case where the structure
+@@ -1771,12 +1771,12 @@
+ 
+ static void *usb_rtusb_probe(struct usb_device *dev, UINT interface,
+ 				const struct usb_device_id *id_table)
+-{	
++{
+ 	PRTMP_ADAPTER       pAd = (PRTMP_ADAPTER)NULL;
+ 	int                 i;
+ 	struct net_device   *netdev;
+ 	int                 res = -ENOMEM;
+-	
++
+ 	for (i = 0; i < rtusb_usb_id_len; i++)
+ 	{
+ 		if (le32_to_cpu(dev->descriptor.idVendor) == rtusb_usb_id[i].idVendor &&
+@@ -1797,20 +1797,22 @@
+ 	if(!netdev)
+ 	{
+ 		printk("alloc_etherdev failed\n");
+-			
++
+ 		MOD_DEC_USE_COUNT;
+ 		usb_dec_dev_use(dev);
+ 		return NULL;
+ 	}
+-	
++
+ 	pAd = netdev->priv;
+ 	pAd->net_dev = netdev;
+ 	netif_stop_queue(netdev);
+ 	pAd->config = dev->config;
+ 	pAd->pUsb_Dev= dev;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+ 	SET_MODULE_OWNER(pAd->net_dev);
++#endif
+ 	ether_setup(pAd->net_dev);
+-	
++
+ 	netdev->open = usb_rtusb_open;
+ 	netdev->hard_start_xmit = RTMPSendPackets;
+ 	netdev->stop = usb_rtusb_close;
+@@ -1826,22 +1828,24 @@
+ 	pAd->net_dev->hard_header_len = 14;
+ 	pAd->net_dev->mtu = 1500;
+ 	pAd->net_dev->addr_len = 6;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+ 	pAd->net_dev->weight = 64;
++#endif
+ 
+ 	OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED);
+ 
+-	{// find available 
++	{// find available
+ 		int 	i=0;
+ 		char	slot_name[IFNAMSIZ];
+ 		struct  net_device	*device;
+-		struct  usb_interface *ifp= &dev->actconfig->interface[interface];  // get interface from system           
++		struct  usb_interface *ifp= &dev->actconfig->interface[interface];  // get interface from system
+         struct  usb_interface_descriptor *as;
+-        struct  usb_endpoint_descriptor *ep;             
++        struct  usb_endpoint_descriptor *ep;
+ 
+ 		for (i = 0; i < 8; i++)
+ 		{
+ 			sprintf(slot_name, "rausb%d", i);
+-			
++
+ 			read_lock_bh(&dev_base_lock); // avoid multiple init
+ 			for (device = dev_base; device != NULL; device = device->next)
+ 			{
+@@ -1876,13 +1880,13 @@
+ 
+ 	//pAd->rx_bh.data = (unsigned long)pAd;
+ 	pAd->rx_bh.func = RTUSBRxPacket;
+-	
++
+ 	res = register_netdev(pAd->net_dev);
+ 	if (res)
+ 		goto out;
+ 
+ 	return pAd;
+-	
++
+ out:
+ 	printk("register_netdev failed err=%d\n",res);
+ 	return NULL;
+@@ -1892,16 +1896,16 @@
+ static void usb_rtusb_disconnect(struct usb_device *dev, void *ptr)
+ {
+ 	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER) ptr;
+-	
++
+ 
+ 	if (!pAd)
+ 		return;
+-	
++
+ 	tasklet_kill(&pAd->rx_bh);
+ 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST);
+ 	// for debug, wait to show some messages to /proc system
+ 	udelay(1);
+-	//After Add Thread implementation, Upon exec there, pAd->net_dev seems becomes NULL, 
++	//After Add Thread implementation, Upon exec there, pAd->net_dev seems becomes NULL,
+ 	//need to check why???
+ 	//assert(pAd->net_dev != NULL)
+ 	if(pAd->net_dev != NULL)
+@@ -1926,19 +1930,19 @@
+ 	PRTMP_ADAPTER   pAd = (PRTMP_ADAPTER) net_dev->priv;
+ 	int             ret;
+ 	int	            i = 0;
+-	
+-	DECLARE_WAIT_QUEUE_HEAD (unlink_wakeup); 
++
++	DECLARE_WAIT_QUEUE_HEAD (unlink_wakeup);
+ 	DECLARE_WAITQUEUE (wait, current);
+-	
++
+ 	DBGPRINT(RT_DEBUG_TRACE,"-->rt73_close \n");
+-	
++
+ 	netif_carrier_off(pAd->net_dev);
+ 	netif_stop_queue(pAd->net_dev);
+ 
+-	// ensure there are no more active urbs. 
++	// ensure there are no more active urbs.
+ 	add_wait_queue (&unlink_wakeup, &wait);
+ 	pAd->wait = &unlink_wakeup;
+-	
++
+ 	// maybe wait for deletions to finish.
+ 	while ((i < 25) && atomic_read(&pAd->PendingRx) > 0) {
+ #if LINUX_VERSION_CODE >KERNEL_VERSION(2,6,9)
+@@ -1948,28 +1952,28 @@
+ 		i++;
+ 	}
+ 	pAd->wait = NULL;
+-	remove_wait_queue (&unlink_wakeup, &wait); 
++	remove_wait_queue (&unlink_wakeup, &wait);
+ 
+-	if (pAd->MLMEThr_pid >= 0) 
++	if (pAd->MLMEThr_pid >= 0)
+ 	{
+ 		mlme_kill = 1;
+ 		RTUSBMlmeUp(pAd);
+ 		wmb(); // need to check
+ 		ret = kill_proc (pAd->MLMEThr_pid, SIGTERM, 1);
+-		if (ret) 
++		if (ret)
+ 		{
+ 			printk (KERN_ERR "%s: unable to signal thread\n", pAd->net_dev->name);
+ 			//return ret;
+ 		}
+ 		wait_for_completion (&pAd->notify);
+ 	}
+-	if (pAd->RTUSBCmdThr_pid>= 0) 
++	if (pAd->RTUSBCmdThr_pid>= 0)
+ 	{
+ 		RTUSBCmd_kill = 1;
+ 		RTUSBCMDUp(pAd);
+ 		wmb(); // need to check
+ 		ret = kill_proc (pAd->RTUSBCmdThr_pid, SIGTERM, 1);
+-		if (ret) 
++		if (ret)
+ 		{
+ 			printk (KERN_ERR "%s: unable to signal thread\n", pAd->net_dev->name);
+ 			//return ret;
+@@ -1977,7 +1981,7 @@
+ 		wait_for_completion (&pAd->notify);
+ 	}
+ 	RTUSBHalt(pAd, TRUE);
+-	
++
+ 	DBGPRINT(RT_DEBUG_TRACE,"<--rt73_close \n");
+ 
+ 	return 0;
+@@ -2008,13 +2012,13 @@
+ 		/* lock the device pointers , need to check if required*/
+ 		down(&(pAd->usbdev_semaphore));
+ 
+-		MlmeHandler(pAd);		
++		MlmeHandler(pAd);
+ 
+ 		/* unlock the device pointers */
+ 		up(&(pAd->usbdev_semaphore));
+ 	}
+ 
+-	/* notify the exit routine that we're actually exiting now 
++	/* notify the exit routine that we're actually exiting now
+ 	 *
+ 	 * complete()/wait_for_completion() is similar to up()/down(),
+ 	 * except that complete() is safe in the case where the structure
+@@ -2057,13 +2061,13 @@
+ 		/* lock the device pointers , need to check if required*/
+ 		down(&(pAd->usbdev_semaphore));
+ 
+-		CMDHandler(pAd);		
++		CMDHandler(pAd);
+ 
+ 		/* unlock the device pointers */
+ 		up(&(pAd->usbdev_semaphore));
+ 	}
+ 
+-	/* notify the exit routine that we're actually exiting now 
++	/* notify the exit routine that we're actually exiting now
+ 	 *
+ 	 * complete()/wait_for_completion() is similar to up()/down(),
+ 	 * except that complete() is safe in the case where the structure
+@@ -2082,7 +2086,7 @@
+ 
+ static int usb_rtusb_probe (struct usb_interface *intf,
+ 					  const struct usb_device_id *id)
+-{	
++{
+ 	struct usb_device   *dev = interface_to_usbdev(intf);
+ 	PRTMP_ADAPTER       pAd = (PRTMP_ADAPTER)NULL;
+ 	int                 i;
+@@ -2111,19 +2115,21 @@
+ 	if(!netdev)
+ 	{
+ 		printk("alloc_etherdev failed\n");
+-	
++
+ 		module_put(THIS_MODULE);
+ 		return res;
+ 	}
+-	
++
+ 	pAd = netdev->priv;
+ 	pAd->net_dev = netdev;
+ 	netif_stop_queue(netdev);
+ 	pAd->config = &dev->config->desc;
+ 	pAd->pUsb_Dev = dev;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+ 	SET_MODULE_OWNER(pAd->net_dev);
++#endif
+ 	ether_setup(pAd->net_dev);
+-	
++
+ 	netdev->open = usb_rtusb_open;
+ 	netdev->stop = usb_rtusb_close;
+ 	netdev->priv = pAd;
+@@ -2141,7 +2147,9 @@
+ 	pAd->net_dev->hard_header_len = 14;
+ 	pAd->net_dev->mtu = 1500;
+ 	pAd->net_dev->addr_len = 6;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+ 	pAd->net_dev->weight = 64;
++#endif
+ 
+ 	OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED);
+ 
+@@ -2149,23 +2157,23 @@
+ 	pAd->RTUSBCmdThr_pid= -1;
+ 
+ 	SET_NETDEV_DEV(pAd->net_dev, &intf->dev);
+-    
+-	{// find available 
++
++	{// find available
+ 		int 	i=0;
+ 		char	slot_name[IFNAMSIZ];
+ 		//struct  net_device	*device;
+         struct  usb_host_interface *iface_desc;
+         struct  usb_endpoint_descriptor *endpoint;
+ 
+-        
++
+ 		for (i = 0; i < 8; i++)
+ 		{
+ 			sprintf(slot_name, "rausb%d", i);
+ 
+-#if 1          
+-			if(dev_get_by_name(slot_name)==NULL)                
++#if 1
++			if(dev_get_by_name(&init_net, slot_name)==NULL)
+ 				break;
+-#else			
++#else
+ 			read_lock_bh(&dev_base_lock); // avoid multiple init
+ 			for (device = dev_base; device != NULL; device = device->next)
+ 			{
+@@ -2175,9 +2183,9 @@
+ 				}
+ 			}
+ 			read_unlock_bh(&dev_base_lock);
+-			
++
+ 			if(device == NULL)	break;
+-#endif			
++#endif
+ 		}
+ 		if(i == 8)
+ 		{
+@@ -2194,18 +2202,18 @@
+ 
+         /* check out the endpoint: it has to be Interrupt & IN */
+         endpoint = &iface_desc->endpoint[i].desc;
+-        
++
+         /* get Max Packet Size from endpoint */
+         pAd->BulkOutMaxPacketSize = (USHORT)endpoint->wMaxPacketSize;
+         DBGPRINT(RT_DEBUG_TRACE, "BulkOutMaxPacketSize  %d\n", pAd->BulkOutMaxPacketSize);
+ 
+ 	}
+-	
++
+     //bottom half data is assign at  each task_scheduler
+ 	//pAd->rx_bh.data = (unsigned long)pAd;
+ 	pAd->rx_bh.func = RTUSBRxPacket;
+ 
+-   
++
+ 	res = register_netdev(pAd->net_dev);
+ 	if (res)
+ 		goto out;
+@@ -2217,7 +2225,7 @@
+ 	usb_set_intfdata(intf, pAd);
+ 
+ 	return 0;
+-	
++
+ out:
+ 	printk("register_netdev failed err=%d\n",res);
+ 	free_netdev(netdev);
+@@ -2229,7 +2237,7 @@
+ {
+ 	struct usb_device   *dev = interface_to_usbdev(intf);
+ 	PRTMP_ADAPTER       pAd = (PRTMP_ADAPTER)NULL;
+-	
++
+ 	pAd = usb_get_intfdata(intf);
+ 
+ 	usb_set_intfdata(intf, NULL);
+@@ -2238,11 +2246,11 @@
+ 		dev->bus->bus_name, dev->devpath);
+ 	if (!pAd)
+ 		return;
+-	
++
+ 	tasklet_kill(&pAd->rx_bh);
+ 	// for debug, wait to show some messages to /proc system
+ 	udelay(1);
+-	//After Add Thread implementation, Upon exec there, pAd->net_dev seems becomes NULL, 
++	//After Add Thread implementation, Upon exec there, pAd->net_dev seems becomes NULL,
+ 	//need to check why???
+ 	//assert(pAd->net_dev != NULL)
+ 	if(pAd->net_dev!= NULL)
+@@ -2295,7 +2303,7 @@
+ 	udelay(1);
+ 	udelay(1);
+ 	usb_deregister(&rtusb_driver);
+-	
++
+ 	printk("<=== rtusb exit\n");
+ }
+ /**************************************/

@@ -1,0 +1,54 @@
+.TH KSTATS 1 "March 2009" "Version 1.0-rc3"
+
+.SH NAME
+kstats - show statistical FMS algorithm votes for an ivs dump and a specified WEP key
+.SH SYNOPSIS
+.B kstats
+<ivs file> <104-bit key>
+.SH DESCRIPTION
+.BI kstats
+is a tool designed to show the FMS algorithm votes for an ivs dump (intialization vectors) with a specified WEP key. The ivs dump can be get by using the combinaison of both airodump(1) and ivstools(1).
+.SH EXAMPLE
+.B kstats
+kstats out.ivs 123456789ABCDEF123456789AB
+.SH AUTHOR
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)

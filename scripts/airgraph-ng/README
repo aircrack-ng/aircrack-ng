@@ -1,0 +1,30 @@
+Welcome to airgraph-ng 
+!!! Please note due to a lack of PNG support in Graphviz under BackTrack 3 Airgraph-ng is not currently supported here. I am aware of the issue i just havent had time to fix it!!!!!!
+
+airgraph-ng's purpose is to graph the txt file that is created when you run airodump with the -w option
+The idea is that we are showing the relationships of the clients to the AP's so dont be shocked if you see only one mapping as you may only have captured one client
+
+airgraph-ng depends are as follows
+
+graphviz with png support
+airodump-ng
+python
+
+The program usage is as follows
+
+airgraph-ng -i [your txt file] -o [the output file in png format] -g [graph Format option is either CAPR or CPG]
+
+I am happy to indroduce an option for graph types
+There are two current graph types
+CAPR or Client to AP Relationship
+	This shows you all the clients attached to a particular AP
+CPR or Client Prob Graph
+	This showes you all the clients that are sending out probe requests for the same ESSID's
+	;-) Fake AP any one?
+Once you have airgraph-ng set up and installed i have included some test data to allow you to quickly see if airgraph-ng is working. This data can be found in the test directory inside the libs directory	
+
+Airgraph-ng sets graphviz to use the latin character set if this is a problem for you please let me know. I did this to clear up a bug i had with the CPG graphs
+
+dumpjoin.py is a short support script that will allow you to join two airodump CSV files into one. Run the program with no arugments to see the usage
+
+This is still a work in progress if you have questions contact TheX1le at thex1le <AT> gmail.com

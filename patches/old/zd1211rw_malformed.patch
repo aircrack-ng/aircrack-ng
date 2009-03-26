@@ -1,0 +1,45 @@
+--- linux-source-2.6.17-orig/drivers/net/wireless/zd1211rw/zd_mac.c	2006-10-01 18:42:47.000000000 +0200
++++ linux-source-2.6.17-rawtx/drivers/net/wireless/zd1211rw/zd_mac.c	2007-04-01 22:35:50.000000000 +0200
+@@ -716,6 +716,8 @@
+ 	u8  rt_rate;
+ 	u16 rt_channel;
+ 	u16 rt_chbitmask;
++	u8  rt_antsignal;
++	u8  rt_antnoise;
+ } __attribute__((packed));
+ 
+ static void fill_rt_header(void *buffer, struct zd_mac *mac,
+@@ -729,7 +731,9 @@
+ 	hdr->rt_hdr.it_len = cpu_to_le16(sizeof(struct zd_rt_hdr));
+ 	hdr->rt_hdr.it_present = cpu_to_le32((1 << IEEE80211_RADIOTAP_FLAGS) |
+ 		                 (1 << IEEE80211_RADIOTAP_CHANNEL) |
+-				 (1 << IEEE80211_RADIOTAP_RATE));
++				 (1 << IEEE80211_RADIOTAP_RATE) |
++		                 (1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL) |
++		                 (1 << IEEE80211_RADIOTAP_DBM_ANTNOISE));
+ 
+ 	hdr->rt_flags = 0;
+ 	if (status->decryption_type & (ZD_RX_WEP64|ZD_RX_WEP128|ZD_RX_WEP256))
+@@ -743,6 +747,12 @@
+ 	hdr->rt_chbitmask = cpu_to_le16(IEEE80211_CHAN_2GHZ |
+ 		((status->frame_status & ZD_RX_FRAME_MODULATION_MASK) ==
+ 		ZD_RX_OFDM ? IEEE80211_CHAN_OFDM : IEEE80211_CHAN_CCK));
++
++	hdr->rt_antsignal = status->signal_strength;
++	if(status->frame_status & ZD_RX_OFDM)
++		hdr->rt_antnoise = status->signal_strength - status->signal_quality_ofdm;
++	else
++		hdr->rt_antnoise = status->signal_strength - status->signal_quality_cck;
+ }
+ 
+ /* Returns 1 if the data packet is for us and 0 otherwise. */
+@@ -834,7 +844,8 @@
+ 	const struct rx_status *status;
+ 
+ 	*pstatus = status = zd_tail(buffer, length, sizeof(struct rx_status));
+-	if (status->frame_status & ZD_RX_ERROR) {
++	if (status->frame_status & ZD_RX_ERROR
++		|| status->frame_status & ~0x21) {
+ 		/* FIXME: update? */
+ 		return -EINVAL;
+ 	}

@@ -1,0 +1,157 @@
+.TH AIRCRACK-NG 1 "March 2009" "Version 1.0-rc3"
+
+.SH NAME
+aircrack-ng - a 802.11 WEP / WPA-PSK key cracker
+.SH SYNOPSIS
+.B aircrack-ng
+[options] <.cap / .ivs file(s)>
+.SH DESCRIPTION
+.BI aircrack-ng
+is an 802.11 WEP and WPA/WPA2-PSK key cracking program.
+.br
+It can recover the WEP key once enough encrypted packets have been captured with airodump-ng. This part of the aircrack-ng suite determines the WEP key using two fundamental methods. The first method is via the PTW approach (Pyshkin, Tews, Weinmann). The main advantage of the PTW approach is that very few data packets are required to crack the WEP key. The second method is the FMS/KoreK method. The FMS/KoreK method incorporates various statistical attacks to discover the WEP key and uses these in combination with brute forcing. 
+.br
+Additionally, the program offers a dictionary method for determining the WEP key. For cracking WPA/WPA2 pre-shared keys, a wordlist (file or stdin) or an airolib-ng has to be used.
+.SH OPTIONS
+.TP
+.I -H, --help
+Shows the help screen.
+.PP
+.TP
+.B Common options:
+.TP
+.I -a <amode>
+Force the attack mode, 1 or wep for WEP and 2 or wpa for WPA-PSK.
+.TP
+.I -e <essid>
+Select the target network based on the ESSID. This option is also required for WPA cracking if the SSID is cloacked.
+.TP
+.I -b <bssid>
+Select the target network based on the access point MAC address.
+.TP
+.I -p <nbcpu>
+Set this option to the number of CPUs to use (only available on SMP systems). By default, it uses all available CPUs
+.TP
+.I -q
+If set, no status information is displayed.
+.TP
+.I -C <macs>
+Merges all those APs MAC (separated by a comma) into a virtual one.
+.TP
+.I -l <file>
+Write the key into a file.
+.PP
+.TP
+.B Static WEP cracking options:
+.TP
+.I -c
+Search alpha-numeric characters only.
+.TP
+.I -t
+Search binary coded decimal characters only.
+.TP
+.I -h 
+Search the numeric key for Fritz!BOX
+.TP
+.I -d <mask>
+Specify mask of the key. For example: A1:XX:CF
+.TP
+.I -m <maddr>
+Only keep the IVs coming from packets that match this MAC address. Alternatively, use \-m ff:ff:ff:ff:ff:ff to use all and every IVs, regardless of the network (this disables ESSID and BSSID filtering).
+.TP
+.I -n <nbits>
+Specify the length of the key: 64 for 40-bit WEP, 128 for 104-bit WEP, etc., until 512 bits of length. The default value is 128.
+.TP
+.I -i <index>
+Only keep the IVs that have this key index (1 to 4). The default behaviour is to ignore the key index in the packet, and use the IV regardless.
+.TP
+.I -f <fudge>
+By default, this parameter is set to 2. Use a higher value to increase the bruteforce level: cracking will take more time, but with a higher likelihood of success.
+.TP
+.I -k <korek>
+There are 17 KoreK attacks. Sometimes one attack creates a huge false positive that prevents the key from being found, even with lots of IVs. Try \-k 1, \-k 2, ... \-k 17 to disable each attack selectively.
+.TP
+.I -x or -x0
+Disable last keybytes bruteforce (not advised).
+.TP
+.I -x1
+Enable last keybyte bruteforcing (default)
+.TP
+.I -x2
+Enable last two keybytes bruteforcing.
+.TP
+.I -X
+Disable bruteforce multithreading (SMP only).
+.TP
+.I -s
+Shows ASCII version of the key at the right of the screen.
+.TP
+.I -y  
+This is an experimental single brute-force attack which should only be used when the standard attack mode fails with more than one million IVs.
+.TP
+.I -z  
+Uses PTW (Andrei Pyshkin, Erik Tews and Ralf-Philipp Weinmann) attack (default attack).
+.TP
+.I -P <num>
+PTW debug: 1 Disable klein, 2 PTW.
+.TP
+.I -K
+Use KoreK attacks instead of PTW.
+.TP
+.I -D
+WEP decloak mode.
+.TP
+.I -1
+Run only 1 try to crack key with PTW.
+.TP
+.I -M <num>
+Specify maximum number of IVs to use.
+.PP
+.TP
+.B WPA-PSK cracking options:
+.TP
+.I -w <words>
+Path to a dictionary file for wpa cracking. Specify "-" to use stdin.
+.I -r <database>
+Path to the airolib-ng database. Cannot be used with '-w'.
+.SH AUTHOR
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
+.B aireplay-ng(1)
+.br
+.B airmon-ng(1)
+.br
+.B airodump-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
+.B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)
