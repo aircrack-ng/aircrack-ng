@@ -7,7 +7,7 @@ The idea is that we are showing the relationships of the clients to the AP's so 
 airgraph-ng depends are as follows
 
 graphviz with png support
-airodump >= 1.0
+airodump-ng
 python
 
 The program usage is as follows
