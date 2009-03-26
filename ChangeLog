@@ -25,6 +25,7 @@ Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released 26 March 2009:
 * Makefile: Only compile and install wesside-ng, easside-ng, buddy-ng and tkiptun-ng with "make unstable=true".
 * patches: Updated sqlite (v3.6.11) patch for cygwin.
 * patches: Added patch for aircrack-ng on MacOSX
+* scripts: Added a script to automatically patch and install SQLite in cygwin.
 
 Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * aircrack-ng: Added SSE2 supports (WPA cracking speed is improved a lot) thanks to nx5.
