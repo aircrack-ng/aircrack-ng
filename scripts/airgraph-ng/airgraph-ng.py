@@ -2,8 +2,8 @@
 __author__ = 'Ben "TheX1le" Smith'
 __email__ = 'thex1le@gmail.com'
 __website__= 'http://trac.aircrack-ng.org/browser/trunk/scripts/airgraph-ng/'
-__date__ = '03/02/09'
-__version__ = ''
+__date__ = '03/26/09'
+__version__ = '0.2.3'
 __file__ = 'airgraph-ng'
 __data__ = 'This is the main airgraph-ng file'
 
