@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Mon Mar  9 01:12:35 2009 -->
+<!--Generated with glade3 3.4.5 on Mon Mar 16 17:28:43 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="MainWindow">
     <property name="default_width">500</property>
@@ -113,14 +113,6 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="MI_ChangeDestfile">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Change destfile.</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_MI_ChangeDestfile_activate"/>
-                      </widget>
-                    </child>
-                    <child>
                       <widget class="GtkMenuItem" id="MI_ChangeMac">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Change mac</property>
@@ -205,95 +197,56 @@
                       <placeholder/>
                     </child>
                     <child>
-                      <widget class="GtkComboBoxEntry" id="WifiCombo">
+                      <widget class="GtkLayout" id="layout1">
                         <property name="visible">True</property>
-                        <child internal-child="entry">
-                          <widget class="GtkEntry" id="Wifi_Interface">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                          </widget>
-                        </child>
                       </widget>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkFileChooserButton" id="FC_WordList">
+                      <widget class="GtkLabel" id="label19">
                         <property name="visible">True</property>
-                        <property name="select_multiple">True</property>
-                        <property name="local_only">False</property>
+                        <property name="label" translatable="yes">Set your preferences here</property>
+                        <property name="use_underline">True</property>
+                        <property name="justify">GTK_JUSTIFY_CENTER</property>
+                        <property name="wrap">True</property>
                       </widget>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">4</property>
-                        <property name="bottom_attach">5</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkLabel" id="label10">
+                      <widget class="GtkCheckButton" id="DefaultAirservng">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">WordList</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">Localhost:666</property>
+                        <property name="response_id">0</property>
+                        <property name="draw_indicator">True</property>
+                        <signal name="toggled" handler="on_DefaultAirservng_toggled"/>
                       </widget>
                       <packing>
-                        <property name="top_attach">4</property>
-                        <property name="bottom_attach">5</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label5">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Resolution:</property>
-                      </widget>
-                      <packing>
-                        <property name="top_attach">3</property>
-                        <property name="bottom_attach">4</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label4">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">WIFI Interface</property>
-                      </widget>
-                      <packing>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label7">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Airserv-ng IP:PORT</property>
-                      </widget>
-                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
                         <property name="top_attach">5</property>
                         <property name="bottom_attach">6</property>
                         <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkCheckButton" id="MonitorMode">
+                      <widget class="GtkEntry" id="airservng">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="label" translatable="yes">Monitor mode</property>
-                        <property name="response_id">0</property>
-                        <property name="draw_indicator">True</property>
-                        <signal name="toggled" handler="on_MonitorMode_toggled"/>
                       </widget>
                       <packing>
-                        <property name="left_attach">2</property>
-                        <property name="right_attach">3</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">5</property>
+                        <property name="bottom_attach">6</property>
                       </packing>
                     </child>
                     <child>
@@ -324,56 +277,95 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkEntry" id="airservng">
+                      <widget class="GtkCheckButton" id="MonitorMode">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                      </widget>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">5</property>
-                        <property name="bottom_attach">6</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkCheckButton" id="DefaultAirservng">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="label" translatable="yes">Localhost:666</property>
+                        <property name="label" translatable="yes">Monitor mode</property>
                         <property name="response_id">0</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="toggled" handler="on_DefaultAirservng_toggled"/>
+                        <signal name="toggled" handler="on_MonitorMode_toggled"/>
                       </widget>
                       <packing>
                         <property name="left_attach">2</property>
                         <property name="right_attach">3</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="label7">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Airserv-ng IP:PORT</property>
+                      </widget>
+                      <packing>
                         <property name="top_attach">5</property>
                         <property name="bottom_attach">6</property>
                         <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkLabel" id="label19">
+                      <widget class="GtkLabel" id="label4">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Set your preferences here</property>
-                        <property name="use_underline">True</property>
-                        <property name="justify">GTK_JUSTIFY_CENTER</property>
-                        <property name="wrap">True</property>
+                        <property name="label" translatable="yes">WIFI Interface</property>
                       </widget>
                       <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkLayout" id="layout1">
+                      <widget class="GtkLabel" id="label5">
                         <property name="visible">True</property>
+                        <property name="label" translatable="yes">Resolution:</property>
+                      </widget>
+                      <packing>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="label10">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">WordList</property>
+                      </widget>
+                      <packing>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkFileChooserButton" id="FC_WordList">
+                        <property name="visible">True</property>
+                        <property name="select_multiple">True</property>
+                        <property name="local_only">False</property>
                       </widget>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">1</property>
-                        <property name="bottom_attach">2</property>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkComboBoxEntry" id="WifiCombo">
+                        <property name="visible">True</property>
+                        <child internal-child="entry">
+                          <widget class="GtkEntry" id="Wifi_Interface">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                          </widget>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
                       </packing>
                     </child>
                   </widget>
@@ -432,23 +424,31 @@
               <widget class="GtkVBox" id="vbox9">
                 <property name="visible">True</property>
                 <child>
+                  <widget class="GtkLabel" id="label17">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">WEP attacks</property>
+                  </widget>
+                </child>
+                <child>
                   <widget class="GtkVButtonBox" id="vbuttonbox6">
                     <property name="visible">True</property>
+                    <property name="border_width">50</property>
                     <child>
                       <widget class="GtkHBox" id="hbox4">
                         <property name="visible">True</property>
                         <child>
-                          <widget class="GtkRadioButton" id="radiobutton1">
+                          <widget class="GtkRadioButton" id="WEP1">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">Fake Auth</property>
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
+                            <signal name="group_changed" handler="on_MW_group_changed" object="xterm"/>
                           </widget>
                         </child>
                         <child>
-                          <widget class="GtkCheckButton" id="checkbutton1">
+                          <widget class="GtkCheckButton" id="WEP1I">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">Interactive</property>
@@ -462,52 +462,56 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkRadioButton" id="radiobutton2">
+                      <widget class="GtkRadioButton" id="WEP2">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="label" translatable="yes">Frag attack</property>
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed" object="xterm"/>
                       </widget>
                       <packing>
                         <property name="position">1</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkRadioButton" id="radiobutton3">
+                      <widget class="GtkRadioButton" id="WEP3">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="label" translatable="yes">Chopchop attack</property>
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">2</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkRadioButton" id="radiobutton4">
+                      <widget class="GtkRadioButton" id="WEP4">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="label" translatable="yes">Caffe late attack</property>
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">3</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkRadioButton" id="radiobutton6">
+                      <widget class="GtkRadioButton" id="WEP5">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="label" translatable="yes">Hirte attack</property>
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">4</property>
@@ -526,17 +530,18 @@
                       <widget class="GtkHBox" id="hbox5">
                         <property name="visible">True</property>
                         <child>
-                          <widget class="GtkRadioButton" id="radiobutton7">
+                          <widget class="GtkRadioButton" id="WEP6">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">Arp Replay</property>
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
+                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                         </child>
                         <child>
-                          <widget class="GtkCheckButton" id="checkbutton2">
+                          <widget class="GtkCheckButton" id="WEP6I">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">Interactive</property>
@@ -556,17 +561,18 @@
                       <widget class="GtkHBox" id="hbox6">
                         <property name="visible">True</property>
                         <child>
-                          <widget class="GtkRadioButton" id="radiobutton12">
+                          <widget class="GtkRadioButton" id="WEP7">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">Frag attack</property>
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
+                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                         </child>
                         <child>
-                          <widget class="GtkCheckButton" id="checkbutton3">
+                          <widget class="GtkCheckButton" id="WEP7I">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">On client</property>
@@ -583,13 +589,14 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkRadioButton" id="radiobutton13">
+                      <widget class="GtkRadioButton" id="WEP8">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="label" translatable="yes">ChopChop attack</property>
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">8</property>
@@ -605,30 +612,49 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkRadioButton" id="radiobutton15">
+                      <widget class="GtkRadioButton" id="WEP9">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="label" translatable="yes">Arp Inject from XOR</property>
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">10</property>
                       </packing>
                     </child>
-                  </widget>
-                </child>
-                <child>
-                  <widget class="GtkButton" id="button6">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="label" translatable="yes">Attack!</property>
-                    <property name="response_id">0</property>
+                    <child>
+                      <widget class="GtkIconView" id="iconview1">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                      </widget>
+                      <packing>
+                        <property name="position">11</property>
+                      </packing>
+                    </child>
                   </widget>
                   <packing>
                     <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkHButtonBox" id="hbuttonbox7">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkButton" id="Wepapply">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="label" translatable="yes">Attack!</property>
+                        <property name="response_id">0</property>
+                        <signal name="clicked" handler="on_Wepapply_clicked"/>
+                      </widget>
+                    </child>
+                  </widget>
+                  <packing>
+                    <property name="position">2</property>
                   </packing>
                 </child>
               </widget>
@@ -648,77 +674,57 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkTable" id="table3">
+              <widget class="GtkVBox" id="vbox10">
                 <property name="visible">True</property>
-                <property name="n_rows">3</property>
-                <property name="n_columns">3</property>
                 <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <widget class="GtkButton" id="button4">
+                  <widget class="GtkVButtonBox" id="vbuttonbox7">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="label" translatable="yes">Attack!</property>
-                    <property name="response_id">0</property>
+                    <property name="border_width">50</property>
+                    <property name="spacing">9</property>
+                    <property name="layout_style">GTK_BUTTONBOX_START</property>
+                    <child>
+                      <widget class="GtkRadioButton" id="WPA1">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">Standard WPA Attack</property>
+                        <property name="response_id">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkRadioButton" id="WPA2">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">WPA/WMM Attack</property>
+                        <property name="response_id">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed"/>
+                      </widget>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </widget>
+                </child>
+                <child>
+                  <widget class="GtkHButtonBox" id="hbuttonbox8">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkButton" id="Wpaapply">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="label" translatable="yes">Attack!</property>
+                        <property name="response_id">0</property>
+                        <signal name="activate" handler="on_Wpaapply_activate"/>
+                      </widget>
+                    </child>
                   </widget>
                   <packing>
-                    <property name="left_attach">1</property>
-                    <property name="right_attach">2</property>
-                    <property name="top_attach">2</property>
-                    <property name="bottom_attach">3</property>
-                    <property name="x_options">GTK_SHRINK</property>
-                    <property name="y_options">GTK_SHRINK</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkRadioButton" id="radiobutton10">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="label" translatable="yes">Standard wpa attack</property>
-                    <property name="response_id">0</property>
-                    <property name="active">True</property>
-                    <property name="draw_indicator">True</property>
-                  </widget>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="right_attach">2</property>
-                    <property name="x_options"></property>
-                    <property name="y_options"></property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkRadioButton" id="radiobutton11">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="label" translatable="yes">Wpa/WMM tkiptun-ng attack</property>
-                    <property name="response_id">0</property>
-                    <property name="active">True</property>
-                    <property name="draw_indicator">True</property>
-                  </widget>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="right_attach">2</property>
-                    <property name="top_attach">1</property>
-                    <property name="bottom_attach">2</property>
-                    <property name="x_options"></property>
-                    <property name="y_options"></property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
               </widget>
@@ -781,6 +787,7 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
+                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                         </child>
                         <child>
@@ -793,6 +800,7 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
+                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                           <packing>
                             <property name="position">1</property>
@@ -807,6 +815,7 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
+                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                           <packing>
                             <property name="position">2</property>
@@ -827,6 +836,7 @@
                             <property name="receives_default">True</property>
                             <property name="label" translatable="yes">Launch</property>
                             <property name="response_id">0</property>
+                            <signal name="clicked" handler="on_MW_clicked"/>
                           </widget>
                         </child>
                       </widget>
@@ -875,6 +885,7 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
+                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                         </child>
                         <child>
@@ -885,6 +896,7 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
+                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                           <packing>
                             <property name="position">1</property>
@@ -901,6 +913,7 @@
                                 <property name="response_id">0</property>
                                 <property name="active">True</property>
                                 <property name="draw_indicator">True</property>
+                                <signal name="group_changed" handler="on_MW_group_changed"/>
                               </widget>
                             </child>
                             <child>
@@ -1002,6 +1015,7 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
+                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                         </child>
                         <child>
@@ -1012,6 +1026,7 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
+                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                           <packing>
                             <property name="position">1</property>
@@ -1063,6 +1078,7 @@
                 <child>
                   <widget class="GtkVButtonBox" id="vbuttonbox5">
                     <property name="visible">True</property>
+                    <property name="layout_style">GTK_BUTTONBOX_END</property>
                     <child>
                       <widget class="GtkRadioButton" id="C1">
                         <property name="visible">True</property>
@@ -1071,6 +1087,7 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                     </child>
                     <child>
@@ -1094,6 +1111,7 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">2</property>
@@ -1107,6 +1125,7 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">3</property>
@@ -1347,48 +1366,57 @@
   </widget>
   <widget class="GtkWindow" id="MdkWindow">
     <child>
-      <widget class="GtkNotebook" id="notebook3">
+      <widget class="GtkVButtonBox" id="vbuttonbox8">
         <property name="visible">True</property>
-        <property name="can_focus">True</property>
         <child>
-          <placeholder/>
+          <widget class="GtkRadioButton" id="radiobutton3">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="label" translatable="yes">Deauthentication</property>
+            <property name="response_id">0</property>
+            <property name="active">True</property>
+            <property name="draw_indicator">True</property>
+            <signal name="group_changed" handler="on_MW_group_changed"/>
+          </widget>
         </child>
         <child>
-          <widget class="GtkLabel" id="label24">
+          <widget class="GtkRadioButton" id="radiobutton2">
             <property name="visible">True</property>
-            <property name="label" translatable="yes">page 1</property>
+            <property name="can_focus">True</property>
+            <property name="label" translatable="yes">Prob selected AP </property>
+            <property name="response_id">0</property>
+            <property name="active">True</property>
+            <property name="draw_indicator">True</property>
+            <signal name="group_changed" handler="on_MW_group_changed"/>
           </widget>
           <packing>
-            <property name="type">tab</property>
-            <property name="tab_fill">False</property>
-          </packing>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-        <child>
-          <widget class="GtkLabel" id="label25">
-            <property name="visible">True</property>
-            <property name="label" translatable="yes">page 2</property>
-          </widget>
-          <packing>
-            <property name="type">tab</property>
             <property name="position">1</property>
-            <property name="tab_fill">False</property>
           </packing>
         </child>
         <child>
-          <placeholder/>
-        </child>
-        <child>
-          <widget class="GtkLabel" id="label26">
+          <widget class="GtkRadioButton" id="radiobutton1">
             <property name="visible">True</property>
-            <property name="label" translatable="yes">page 3</property>
+            <property name="can_focus">True</property>
+            <property name="label" translatable="yes">Authentication DoS  </property>
+            <property name="response_id">0</property>
+            <property name="active">True</property>
+            <property name="draw_indicator">True</property>
+            <signal name="group_changed" handler="on_MW_group_changed"/>
           </widget>
           <packing>
-            <property name="type">tab</property>
             <property name="position">2</property>
-            <property name="tab_fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="GtkButton" id="button4">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="label" translatable="yes">Attack!</property>
+            <property name="response_id">0</property>
+          </widget>
+          <packing>
+            <property name="position">3</property>
           </packing>
         </child>
       </widget>
@@ -1396,48 +1424,82 @@
   </widget>
   <widget class="GtkWindow" id="WessideWindow">
     <child>
-      <widget class="GtkNotebook" id="notebook4">
+      <widget class="GtkVBox" id="vbox11">
         <property name="visible">True</property>
-        <property name="can_focus">True</property>
         <child>
-          <placeholder/>
+          <widget class="GtkVButtonBox" id="vbuttonbox9">
+            <property name="visible">True</property>
+            <property name="layout_style">GTK_BUTTONBOX_START</property>
+            <child>
+              <widget class="GtkRadioButton" id="radiobutton4">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label" translatable="yes">No arguments</property>
+                <property name="response_id">0</property>
+                <property name="active">True</property>
+                <property name="draw_indicator">True</property>
+                <signal name="group_changed" handler="on_MW_group_changed"/>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkRadioButton" id="radiobutton6">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label" translatable="yes">Selected target</property>
+                <property name="response_id">0</property>
+                <property name="active">True</property>
+                <property name="draw_indicator">True</property>
+                <signal name="group_changed" handler="on_MW_group_changed"/>
+              </widget>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkRadioButton" id="radiobutton7">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label" translatable="yes">Sel. target max rertransmit</property>
+                <property name="response_id">0</property>
+                <property name="active">True</property>
+                <property name="draw_indicator">True</property>
+                <signal name="group_changed" handler="on_MW_group_changed"/>
+              </widget>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkRadioButton" id="radiobutton8">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label" translatable="yes">Sel. target poor connection </property>
+                <property name="response_id">0</property>
+                <property name="active">True</property>
+                <property name="draw_indicator">True</property>
+                <signal name="group_changed" handler="on_MW_group_changed"/>
+              </widget>
+              <packing>
+                <property name="position">3</property>
+              </packing>
+            </child>
+          </widget>
         </child>
         <child>
-          <widget class="GtkLabel" id="label27">
+          <widget class="GtkHButtonBox" id="hbuttonbox9">
             <property name="visible">True</property>
-            <property name="label" translatable="yes">page 1</property>
+            <child>
+              <widget class="GtkButton" id="button6">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="label" translatable="yes">Attack!</property>
+                <property name="response_id">0</property>
+              </widget>
+            </child>
           </widget>
           <packing>
-            <property name="type">tab</property>
-            <property name="tab_fill">False</property>
-          </packing>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-        <child>
-          <widget class="GtkLabel" id="label28">
-            <property name="visible">True</property>
-            <property name="label" translatable="yes">page 2</property>
-          </widget>
-          <packing>
-            <property name="type">tab</property>
             <property name="position">1</property>
-            <property name="tab_fill">False</property>
-          </packing>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-        <child>
-          <widget class="GtkLabel" id="label29">
-            <property name="visible">True</property>
-            <property name="label" translatable="yes">page 3</property>
-          </widget>
-          <packing>
-            <property name="type">tab</property>
-            <property name="position">2</property>
-            <property name="tab_fill">False</property>
           </packing>
         </child>
       </widget>
@@ -1626,6 +1688,9 @@ Daouid
           <widget class="GtkHButtonBox" id="dialog-action_area6">
             <property name="visible">True</property>
             <property name="layout_style">GTK_BUTTONBOX_END</property>
+            <child>
+              <placeholder/>
+            </child>
           </widget>
           <packing>
             <property name="expand">False</property>
