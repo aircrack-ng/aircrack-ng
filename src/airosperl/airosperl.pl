@@ -5,84 +5,50 @@
 #
 #        USAGE:  airosperl  
 #
-#  DESCRIPTION:  Airoscript perl gui with glade interface
-#
-#      OPTIONS:  None
-# REQUIREMENTS:  airosperl.pm airosperl.glade
-#         BUGS:  As not released, bugs are still on comments. Look for FIXME and TODO
-#        NOTES:  
+#         BUGS:  When selecting a new wifi network, screen keeps white.
+#  DESCRIPTION:  Airoscript perl gui with Gtk(glade) interface
+# REQUIREMENTS:  airosperl.glade
 #       AUTHOR:  David Francos Cuartero (XayOn), yo.orco@gmail.com
-#      COMPANY:  None
-#      VERSION:  0.0
 #      CREATED:  01/03/09 19:38:55
-#     REVISION:  0
 #===============================================================================
 
-use strict;
-use warnings;no warnings 'uninitialized';
-use Gtk2 -init; # Gtk2
-use Gtk2::GladeXML; # Obvious, a parser for glade files
-use Gtk2::SimpleList; # Wifi list...
-use File::Path;use File::Copy; # This is for copy, delete and move files.
-use Cwd 'abs_path';# This is for restarting app
-my ($WIFI,$Host_MAC); # Those are being used to all script
+use strict;use warnings;no warnings 'uninitialized';
+use Gtk2 -init; use Gtk2::GladeXML; use Gtk2::SimpleList; 
+use File::Path;use File::Copy; use Cwd 'abs_path';
+
+# Get config.
 if (!-e $ENV{'HOME'}.".airosperl.conf"){require ("/etc/airosperl.conf");}
 else{require ($ENV{'HOME'}.".airosperl.conf");}
-our ($FT,$FAKE_MAC,$INJMAC,$INJECTRATE); # Those comes from airosperl.conf
-#TODO it have to launch a fake auth attack... ideally we could launch a warning with popup_error...
-# FIXME client selection menu should be created.
-# FIXME Also, wifi data are not really saved...
+our (%termopts,%bin,$q,$FT,$FAKE_MAC,$INJMAC,$INJECTRATE,$TKIPTUN_MAX_PL,$TKIPTUN_MIN_PL); # Those comes from airosperl.conf
 
 # Define variables
-	my ($bssid,$airservng_addr,$wifi,$DefaultAirservNg,$reso,$capfile,$final,$TreeVie,$TreeView,$action,$os,$mwcmd,$Client_MAC,$FRAG_CLIENT_IP,$FRAG_HOST_IP,$Host_CHAN);# Standard
-	my ($ErrLabel,$Airserv_INPUT,$DefaultInput,$Wifi_INPUT,$Reso_INPUT,$MonitorMode,$TreeViewWidget,$Wifi_Interface,$model);# Widgets
-	our ($MainWindow, $FileChooserWindow, $SWifiWindow,$ErrWindow,$ChangeMacWindow,$MdkWindow,$WessideWindow,$FolderChooserWindow,$AboutWindow); # Windows
-	our (%bin,%termopts,$q);
+	my ($bssid,$airservng_addr,$wifi,$DefaultAirservNG,,$capfile,$final,$TreeVie,$TreeView,$action,$os,$mwcmd,$Client_MAC,$FRAG_CLIENT_IP,$FRAG_HOST_IP,$Host_CHAN,@wepactions,@wpaactions,@injactions,@crackactions,@fakeactions,@deauthactions,$Host_SSID,$WIFI,$Host_MAC,$Thing_Mac);# Standard
+	my ($ErrLabel,$Airserv_INPUT,$DefaultInput,$Wifi_INPUT,$MonitorMode,$TreeViewWidget,$Wifi_Interface,$model,$IN_ClientMac);# Widgets
+	our ($MainWindow, $FileChooserWindow, $SWifiWindow,$ErrWindow,$ChangeMacWindow,$MdkWindow,$WessideWindow,$FolderChooserWindow,$AboutWindow,$ClientSelWindow,$ConfigWindow); # Windows
 
-if (-e "/bin/uname"){$os="Linux";}
-else { if (-e $ENV{'systemroot'}){$os="Windows"}}
+if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows"}}
 
 # Create dump_path before setting actions...
 	my $dump_path=&create_dump_path();
 
-my @wepactions=(
-	$bin{'aireplay'} . $WIFI . " --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE",
-	$bin{'aireplay'}." $WIFI --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE",
-	$bin{'aireplay'}." -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI ",
-	$bin{'aireplay'}."--chopchop -b $Host_MAC -h $FAKE_MAC $WIFI ",
-	$bin{'aireplay'}."-6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI ",
-	$bin{'aireplay'}." -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI",
-	$bin{'aireplay'}." $WIFI --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE ",
-	$bin{'aireplay'}."$WIFI --interactive -p $FT -c $INJMAC -b $Host_MAC $Client_MAC -x $INJECTRATE",
-	$bin{'aireplay'}."-5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI",
-	$bin{'aireplay'}." -7 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI ",
-	$bin{'aireplay'}." --chopchop -h $Client_MAC $WIFI ",
-	$bin{'aireplay'}." --interactive -r $dump_path/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI",
-	$bin{'aireplay'}."-w $dump_path/$Host_MAC --channel $Host_CHAN -a $WIFI "
-);
-
-my @wpaactions=('','','','','');
-
-# Open glade file
-# And show main window
+# Open glade file and show main window
 	my $MainGladeFile=new Gtk2::GladeXML('airosperl.glade');
 	$MainGladeFile->signal_autoconnect_from_package('main');# So we can handle easily signals.
 	$MainWindow=$MainGladeFile->get_widget('MainWindow');
+	$MainWindow->signal_connect( delete_event => sub {Gtk2->main_quit();1;});# Program ends when main window closed.
 	$MainWindow->show_all();
-		$MainWindow->signal_connect( delete_event => sub {Gtk2->main_quit();1;});# Program ends when main window closed.
 
 # Define widgets
 	# Those are normal widgets (mostly input and labels).	
 		$Airserv_INPUT=$MainGladeFile->get_widget('airservng');	
-		$Reso_INPUT=$MainGladeFile->get_widget('Resolution');
-		$Wifi_INPUT=$MainGladeFile->get_widget('Wifi_Interface');
+		$IN_ClientMac=$MainGladeFile->get_widget('IN_ClientMac');	
+		$Wifi_INPUT=$MainGladeFile->get_widget('Wifi');
 		$DefaultInput=$MainGladeFile->get_widget('DefaultAirservng');
 		$TreeViewWidget=$MainGladeFile->get_widget('WIFI_List');
 		$ErrLabel=$MainGladeFile->get_widget('El');
 		$Wifi_Interface=$MainGladeFile->get_widget('WifiCombo');
 
 	# Those are windows
-
 		$MdkWindow=$MainGladeFile->get_widget('MdkWindow');
 			$MdkWindow->signal_connect( delete_event => sub {$MdkWindow->hide();});
 		$SWifiWindow=$MainGladeFile->get_widget('WIFI_Selector');
@@ -101,15 +67,15 @@ my @wpaactions=('','','','','');
 			$WessideWindow->signal_connect( delete_event => sub {$WessideWindow->hide();});
 		$AboutWindow=$MainGladeFile->get_widget('AboutWindow');
 			$AboutWindow->signal_connect( delete_event => sub {$AboutWindow->hide();});
-
+		$ClientSelWindow=$MainGladeFile->get_widget('ClientSelWindow');
+			$ClientSelWindow->signal_connect( delete_event => sub {$ClientSelWindow->hide();});
+		$ConfigWindow=$MainGladeFile->get_widget('ConfigWindow');
+			$ConfigWindow->signal_connect( delete_event => sub {$ConfigWindow->hide();});
 
 
 # Main Subfunctions
 	# Main Window things:
-	sub popup_error(){
-		$ErrLabel->set_label(@_);
-		$ErrWindow->run();
-	}
+	sub popup_error(){$ErrLabel->set_label(@_);	$ErrWindow->run();}
 
 	sub SetWifiInterfaces(){
 		my $id=0;my $iter;  
@@ -128,37 +94,92 @@ my @wpaactions=('','','','','');
 
 	sub setmonitormode(){
 		system($bin{'ifconfig'}." ".$wifi." down");
-		print $bin{'airmon'}." start ".$wifi;
 		system($bin{'airmon'}." start ".$wifi);
 		system($bin{'ifconfig'}." ".$wifi." up");
 	}
 
 	sub create_dump_path(){my $dpath;
 		if ($os eq "Windows"){ $dpath=$ENV{'systemdir'}."/tmp/airosperl-".rand('222000')."/";}
-		else{$dpath=`mktemp -d`|"/";}
-		mkpath $dpath;
-		chomp($dpath);
-		return $dpath;
+		else{$dpath=`mktemp -d`|"/";} chomp($dpath);mkpath $dpath;return $dpath;
 	}
 
 	sub GetTerminalOptions(){
-		# Set termopts by terminal type. so specify terminal on window.	
+	#	switch ($TERM){
+			#case "xterm"{
+				%termopts=(''=>'');
+	#		}
+	#	}
+	#	return %termopts;
 	}
 
-	sub runaction(){my @commands=split(/XXX/,$_[0]); foreach my $cmd(@commands){system ("$bin{'terminal'} $termopts{'exec'} $q $cmd $q");	}}
+	sub runaction(){my @commands=split(/XXX/,$_[1]);if (!$WIFI){&popup_error('You have to select a wifi card first');return;} foreach my $cmd(@commands){system ("$bin{'terminal'} $_[0] $termopts{'exec'} $q $cmd $q &");}}
+
+	sub setattacks(){# Note: Last in airoscript must be first here.
+		@wepactions=( 
+                        $bin{'aireplay'}." --interactive -r $dump_path/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $WIFI",
+                        $bin{'aireplay'}." --chopchop -h $Client_MAC $WIFI ",
+                        $bin{'aireplay'}." -5 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI",
+                        $bin{'aireplay'}." $WIFI --arpreplay -b $Host_MAC -d $INJMAC -t 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE ",
+                        $bin{'aireplay'}." -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI",
+                        $bin{'aireplay'}." -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $WIFI ",
+                        $bin{'aireplay'}." --chopchop -b $Host_MAC -h $FAKE_MAC $WIFI ",
+                        $bin{'aireplay'}." -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI ",
+                        $bin{'aireplay'} ." ". $WIFI . " --arpreplay -b $Host_MAC -d $INJMAC -f 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE");
+# FIXME : Those are selected in checkbox, if checkbox selected, execute this instead of the others... This can be in wepapply code.
+#                        $bin{'aireplay'}." -7 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI ",
+#                        $bin{'aireplay'}." $WIFI --interactive -p $FT -c $INJMAC -b $Host_MAC $Client_MAC -x $INJECTRATE",
+#                        $bin{'aireplay'}." $WIFI --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE",
+
+		@wpaactions=(
+			$bin{'tkiptun'}. " -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL $WIFI",
+                        $bin{'airodump'}." -w $dump_path/$Host_MAC --channel $Host_CHAN -a $WIFI"
+		);
+
+		@fakeactions=(
+		        $bin{'aireplay'}." --fakeauth 5 -o 10 -q 1 -e $Host_SSID -a $Host_MAC -h $FAKE_MAC $WIFI ",
+                        $bin{'aireplay'}." --fakeauth 0 -e $Host_SSID -a $Host_MAC -h $FAKE_MAC $WIFI ",
+                        $bin{'aireplay'}." --fakeauth 6000 -o 1 -q 10 -e $Host_SSID -a $Host_MAC -h $FAKE_MAC $WIFI "
+
+		);
+
+		@deauthactions=(
+			"",
+			"",
+			""
+		);
+
+		@injactions=(
+			$bin{'arpforge'}." -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap".
+			"XXX".
+			$bin{'aireplay'}." -2 -r $DUMP_PATH/frag_$Thing_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI",
+
+			""
+		);
+
+		@crackactions=(
+			"",
+			"",
+			""
+		);
+
+	}
 
 	# Menu items
 		# File: connect
-	sub setwifidata(){
-	  		$TreeView = Gtk2::SimpleList->new_from_treeview($TreeViewWidget,'Name'=>'text','bssid' => 'text', 'Encription' => 'text');
+	sub setwifiaps(){
+	  		$TreeView = Gtk2::SimpleList->new_from_treeview($TreeViewWidget,'Name'=>'text','Chan'=>'text','bssid' => 'text', 'Encription' => 'text');
+			$TreeView->signal_connect (row_activated => sub { my ($sl, $path, $column) = @_; my $row_ref = $sl->get_row_data_from_path ($path);$Host_MAC=@$row_ref[2];$Host_SSID=@$row_ref[0];$Host_CHAN=@$row_ref[1];print @$row_ref;});
 			my @linedata;my $finaldata;
 			unlink ("$dump_path/maindump-*.csv");
 			my $cmd=$bin{'terminal'}." ".$termopts{'exec'}." \" ".$bin{'airodump'}." $wifi -w $dump_path/maindump \"";system $cmd;
-			system("tac $dump_path/maindump-01.csv | sed '1,3d' | tac| sed '1,2d' > $dump_path/maindump-01.csv2");
+			system("tac $dump_path/maindump-01.csv | sed '1,3d' | tac| sed '1,2d'|cut -d, -f1,4,6,14 > $dump_path/maindump-01.csv2");
 			open FH, "<$dump_path/maindump-01.csv2";
-			my ($bssid,$name,$enc);
-			while (<FH>){my @a=split(/,/,$_); $bssid=$a[0]; $name=$a[13]; 
-			$enc=$a[6];push (@{$TreeView->{data}}, [$name,$bssid,$enc]); print "$_ dp \n";}
+			my ($bssid,$name,$enc,$chan);
+			while (<FH>){
+			my @a=split(/,/,$_);print @a;
+			$bssid=$a[1]; $chan=$a[0];$name=$a[3]; 	$enc=$a[2];
+			chomp ($bssid,$chan,$name,$enc);
+			push (@{$TreeView->{data}}, [$name,$bssid,$chan,$enc]); print "$_ dp \n";}
 			close FH;
 	}
 
@@ -168,12 +189,26 @@ my @wpaactions=('','','','','');
 		# Others reset interface
 			sub resetwifi(){system ('killall -9 aireplay-ng airodump-ng > /dev/null &');&setmonitormode();}
 		
+		# File: Select clients
+		sub setwificlients(){# FIXME This doesnt work... failed in the system calls.
+	  		$TreeView = Gtk2::SimpleList->new_from_treeview($TreeViewWidget,'Name'=>'text','bssid' => 'text', 'Encription' => 'text');
+			$TreeView->signal_connect (row_activated => sub { my ($sl, $path, $column) = @_; my $row_ref = $sl->get_row_data_from_path ($path);$Client_MAC=@$row_ref[1];});
+			my @linedata;my $finaldata;	unlink ("$dump_path/maindump-*.csv");
+			my $cmd=$bin{'terminal'}." ".$termopts{'exec'}." \" ".$bin{'airodump'}." $wifi -w $dump_path/maindump \"";system $cmd;
+			system("tac $dump_path/maindump-01.csv | sed '1,3d' | tac| sed '1,2d' > $dump_path/maindump-01.csv2");
+			system("cat $dump_path/maindump-01.csv2 | grep -a \"0.:..:..:..:..\" | awk \'{ print $1 }\'| grep -a -v 00:00:00:00 > $dump_path/maindump-01.csv");# Test this, that awk.
+			open FH, "<$dump_path/maindump-01.csv";	my $bssid;
+			while (<FH>){$bssid=`echo $_ |awk '{split(\$1, info, "," )print info[1]  }'`; # And even this shouldn't work. It should get the first...
+				push (@{$TreeView->{data}}, ['',$bssid,'']);
+			}
+			close FH;
+		}
 
 # Signal handler' subfunctions
 #### Menu Items...
 	# File :
 	sub on_MI_WIFISEL_activate(){
-		if ($wifi) {&setwifidata();	$SWifiWindow->show_all;	}
+		if ($wifi) {&setwifiaps();	$SWifiWindow->show_all;	}
 		else{&popup_error('You have to select an interface first');}
 	}
     
@@ -182,8 +217,8 @@ my @wpaactions=('','','','','');
 	sub on_MI_New_activate(){&resetapp();}
 
 	sub on_MI_Save_activate(){ 
-		if ($bssid){$action="Close";
-				if (-e "$dump_path/$bssid.cap"){
+		if ($Host_MAC){$action="Close";
+				if (-e "$dump_path/$Host_MAC.cap"){
 					$FileChooserWindow->show_all();
 					}
 				else{&popup_error('No file recorded');}
@@ -193,21 +228,20 @@ my @wpaactions=('','','','','');
 
 	sub on_MI_Exit_activate(){Gtk2->main_quit();exit();}
 
+	sub on_MI_Client_activate{&setwificlients();$ClientSelWindow->show_all;}
+
 	# Others:
 	sub on_MI_ChangeMac_activate(){$ChangeMacWindow->show_all();}
-	sub on_MI_Mdk3_activate(){$MdkWindow->show_all();}
+	sub on_MI_Mdk3_activate(){$MdkWindow->show_all;}
 	sub on_MI_WessideNg_activate(){$WessideWindow->show_all;}
-	sub on_MI_ResetIface_activate(){
-		if ($wifi){
-			&resetwifi(); 
-			&popup_error("Interface $wifi reseted");
-		}
-		else{
-			&popup_error("Interface not selected");
-			}
-	}
+	sub on_MI_ResetIface_activate(){if ($wifi){&resetwifi(); &popup_error("Interface $wifi reseted");}else{&popup_error("Interface not selected");}}
 	sub on_MI_About_activate(){$AboutWindow->show_all;}
-	sub on_MI_AircrackTest(){&runaction("airmon-ng check");}
+	sub on_MI_AircrackTest_activate(){&runaction('hold',"airmon-ng check");}
+
+	# Configure
+	sub on_MI_Configure_activate(){
+		$ConfigWindow->show_all;	
+	}
 
 # Buttons
   	# Close Buttons
@@ -216,13 +250,14 @@ my @wpaactions=('','','','','');
 	sub on_FC_BTN_Cancel_clicked{$FileChooserWindow->hide();}
 	sub on_FoC_BTN_Cancel_clicked{$FolderChooserWindow->hide();}
 	sub on_About_BTN_Cancel_clicked{$AboutWindow->hide();}
+	sub on_CS_BTN_Ok_clicked(){&setattacks();$ClientSelWindow->hide();}
 
 	# Rest of buttons
 	sub on_CMW_Ok_clicked{$ChangeMacWindow->hide();}
-	sub on_WS_BTN_Ok_clicked(){$SWifiWindow->hide();}# FIXME: here wifi data should be set.
+	sub on_WS_BTN_Ok_clicked(){&setattacks();	$SWifiWindow->hide();}
 	sub on_FC_BTN_Ok_clicked(){my $destfile=$FileChooserWindow->get_filename();copy ("$dump_path/*","$destfile/");	}
 	sub on_FoC_BTIN_Ok_clicked(){$capfile=$FolderChooserWindow->get_filename();}
-
+	
 # Radio buttons are not working properly with my version of glade so i'll make groups manually (I'd better not used glade at all, but it's a fast way of doing gtk apps).
 	# Injection tab
 	my $RBI1=$MainGladeFile->get_widget('IN1');
@@ -276,14 +311,13 @@ my @wpaactions=('','','','','');
 		$C4->set_group($C1);
 
 ##### Main window items
-	sub on_DefaultAirservng_clicked(){$DefaultAirservNg=1 if !$MonitorMode; $MonitorMode="" if $MonitorMode;}
+	sub on_DefaultAirservng_clicked(){$DefaultAirservNG=1 if !$DefaultAirservNG; $DefaultAirservNG="" if $DefaultAirservNG;}
 	sub on_MonitorMode_toggled(){$MonitorMode=1 if !$MonitorMode; $MonitorMode="" if $MonitorMode;}
 
 	sub on_apply_clicked{# Apply main configuration.
 		$airservng_addr=$Airserv_INPUT->get_text(); 
-		$wifi=$Wifi_INPUT->get_text();
-		$reso=$Reso_INPUT->get_text();
-		if ($DefaultAirservNg){$airservng_addr="127.0.0.1:666";}else{$airservng_addr="";}
+		$wifi=$Wifi_INPUT->get_text(); $WIFI=$wifi;
+		if ($DefaultAirservNG){$airservng_addr="127.0.0.1:666";}else{$airservng_addr="";}
 		if ($MonitorMode){&setmonitormode($wifi);}
 		if ($airservng_addr ne ""){
 			if ($wifi eq ""){$wifi=$airservng_addr;}
@@ -293,24 +327,48 @@ my @wpaactions=('','','','','');
 
 	sub on_Wpaapply_clicked(){
 		my $btnn=0;my $selbutton;	my $WPA1=$MainGladeFile->get_widget('WPA1');my $group=$WPA1->get_group();
-		foreach my $btn (@$group){$btnn++;$selbutton=$btnn if $btn->get_active;}
-		&runaction($wpaactions[$selbutton]);system "echo executing $wepactions[$selbutton]";
+		foreach my $btn (@$group){$selbutton=$btnn if $btn->get_active;$btnn++;}
+		&runaction('',$wpaactions[$selbutton]);print " executing ($selbutton) $wpaactions[$selbutton] ";
 	}
 
 	sub on_Wepapply_clicked(){
 		my $btnn=0;my $selbutton;	my $WEP1=$MainGladeFile->get_widget('WEP1');my $group=$WEP1->get_group();
-		foreach my $btn (@$group){$btnn++;$selbutton=$btnn if $btn->get_active;}
-		&runaction($wepactions[$selbutton]);system "echo executing $wepactions[$selbutton]";
+		foreach my $btn (@$group){print "We are on button $btnn, checking if selected...";$selbutton=$btnn if $btn->get_active;print "yes\n" if $btn->get_active;$btnn++; }
+		&popup_error('You should launch a fake attack now');
+		print "Executing $wepactions[$selbutton] ($selbutton)\n";&runaction('',$wepactions[$selbutton]);
 	}
 
 
-	sub on_MW_group_changed(){# my ($widget,$commands)=@_; $mwcmd=$commands; } 	
-}
-#### Main program.
-# Get term options and set them on $termopts hash. This is a future todo, not required for now. 
-#%termopts=&GetTerminalOptions();
+	sub on_Fakeapply_clicked(){
+		my $btnn=0;my $selbutton;	my $FA1=$MainGladeFile->get_widget('FA1');my $group=$FA1->get_group();
+		foreach my $btn (@$group){$selbutton=$btnn if $btn->get_active;$btnn++;}
+		print "Executing $fakeactions[$selbutton] ($selbutton)\n";&runaction('',$fakeactions[$selbutton]);
+	}
 
-# Set wifi interfaces in main window.
+
+	sub on_Deauthapply_clicked{ # TODO This should do same as others but, if button=2, get text from text entry and assign foo stuff to bar.
+		my $btnn=0;my $selbutton;	my $IN1=$MainGladeFile->get_widget('IN1');my $group=$IN1->get_group();
+		foreach my $btn (@$group){$selbutton=$btnn if $btn->get_active;$btnn++;}
+		if ($selbutton == 2){}
+		else{
+			print "Executing $injactions[$selbutton]\n";&runaction('',$injactions[$selbutton]);
+		}
+	}
+
+	sub on_Injectionapply_clicked(){
+		my $btnn=0;my $selbutton;	
+		my $IN1=$MainGladeFile->get_widget('IN1');my $group=$IN1->get_group();
+		foreach my $btn (@$group){$selbutton=$btnn if $btn->get_active;$btnn++;}
+		$Thing_Mac=$IN_ClientMac->get_text();$Thing_Mac=$Host_MAC if !$Thing_Mac;
+		print "Executing $injactions[$selbutton]\n";&runaction('',$injactions[$selbutton]);
+	}
+
+
+	sub on_Crackapply_clicked(){ # TODO similar as deauthapply
+	}
+
+	sub on_config_clicked{system('airosconf update');$ConfigWindow->hide();}
+
+#%termopts=&GetTerminalOptions();
 &SetWifiInterfaces();
-# Main application loop
 Gtk2->main;

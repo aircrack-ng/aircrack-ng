@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Mon Mar 16 17:28:43 2009 -->
+<!--Generated with glade3 3.4.5 on Mon Apr 13 14:32:54 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="MainWindow">
+    <property name="title" translatable="yes">Airoscript</property>
     <property name="default_width">500</property>
     <property name="default_height">400</property>
     <child>
@@ -27,6 +28,14 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_MI_WIFISEL_activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="MI_Client">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Detect clients</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_MI_Client_activate"/>
                       </widget>
                     </child>
                     <child>
@@ -133,6 +142,46 @@
               </widget>
             </child>
             <child>
+              <widget class="GtkMenuItem" id="M_WLG">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_Wordlist Generators</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu2">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkMenuItem" id="MI_WLG">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Jazztel</property>
+                        <property name="use_underline">True</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem1">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">telefonica</property>
+                        <property name="use_underline">True</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem2">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">thomson</property>
+                        <property name="use_underline">True</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem3">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Auto</property>
+                        <property name="use_underline">True</property>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+            <child>
               <widget class="GtkMenuItem" id="M_Help">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">_Help</property>
@@ -160,6 +209,14 @@
                 </child>
               </widget>
             </child>
+            <child>
+              <widget class="GtkMenuItem" id="MI_Configure">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Configure</property>
+                <property name="use_underline">True</property>
+                <signal name="activate" handler="on_MI_Configure_activate"/>
+              </widget>
+            </child>
           </widget>
           <packing>
             <property name="expand">False</property>
@@ -175,6 +232,7 @@
                 <property name="visible">True</property>
                 <child>
                   <widget class="GtkTable" id="table1">
+                    <property name="height_request">210</property>
                     <property name="visible">True</property>
                     <property name="n_rows">6</property>
                     <property name="n_columns">3</property>
@@ -197,8 +255,21 @@
                       <placeholder/>
                     </child>
                     <child>
-                      <widget class="GtkLayout" id="layout1">
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="label19">
                         <property name="visible">True</property>
+                        <property name="label" translatable="yes">Interface selection</property>
+                        <property name="use_underline">True</property>
+                        <property name="justify">GTK_JUSTIFY_CENTER</property>
+                        <property name="wrap">True</property>
                       </widget>
                       <packing>
                         <property name="left_attach">1</property>
@@ -208,16 +279,55 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkLabel" id="label19">
+                      <widget class="GtkCheckButton" id="MonitorMode">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Set your preferences here</property>
-                        <property name="use_underline">True</property>
-                        <property name="justify">GTK_JUSTIFY_CENTER</property>
-                        <property name="wrap">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">Monitor mode</property>
+                        <property name="response_id">0</property>
+                        <property name="draw_indicator">True</property>
+                        <signal name="toggled" handler="on_MonitorMode_toggled"/>
+                      </widget>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkComboBoxEntry" id="WifiCombo">
+                        <property name="width_request">40</property>
+                        <property name="height_request">10</property>
+                        <property name="visible">True</property>
+                        <child internal-child="entry">
+                          <widget class="GtkEntry" id="Wifi">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                          </widget>
+                        </child>
                       </widget>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                        <property name="x_options">GTK_FILL</property>
+                        <property name="y_options">GTK_FILL</property>
+                        <property name="x_padding">20</property>
+                        <property name="y_padding">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="label4">
+                        <property name="height_request">10</property>
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">WIFI Interface</property>
+                      </widget>
+                      <packing>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
                     <child>
@@ -250,50 +360,6 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkComboBoxEntry" id="ComboReso">
-                        <property name="visible">True</property>
-                        <property name="items" comments="I think those shouldn't been translated">640x480
-800x480
-800x600
-1024x768
-1280x768
-1280x1024
-1600x1200</property>
-                        <child internal-child="entry">
-                          <widget class="GtkEntry" id="Resolution">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="editable">False</property>
-                            <property name="shadow_type">GTK_SHADOW_ETCHED_IN</property>
-                          </widget>
-                        </child>
-                      </widget>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">3</property>
-                        <property name="bottom_attach">4</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkCheckButton" id="MonitorMode">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="label" translatable="yes">Monitor mode</property>
-                        <property name="response_id">0</property>
-                        <property name="draw_indicator">True</property>
-                        <signal name="toggled" handler="on_MonitorMode_toggled"/>
-                      </widget>
-                      <packing>
-                        <property name="left_attach">2</property>
-                        <property name="right_attach">3</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
                       <widget class="GtkLabel" id="label7">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Airserv-ng IP:PORT</property>
@@ -301,28 +367,6 @@
                       <packing>
                         <property name="top_attach">5</property>
                         <property name="bottom_attach">6</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label4">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">WIFI Interface</property>
-                      </widget>
-                      <packing>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label5">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Resolution:</property>
-                      </widget>
-                      <packing>
-                        <property name="top_attach">3</property>
-                        <property name="bottom_attach">4</property>
                         <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
@@ -351,40 +395,17 @@
                         <property name="y_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
                       </packing>
                     </child>
-                    <child>
-                      <widget class="GtkComboBoxEntry" id="WifiCombo">
-                        <property name="visible">True</property>
-                        <child internal-child="entry">
-                          <widget class="GtkEntry" id="Wifi_Interface">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                          </widget>
-                        </child>
-                      </widget>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                      </packing>
-                    </child>
-                  </widget>
-                </child>
-                <child>
-                  <widget class="GtkFixed" id="fixed1">
-                    <property name="visible">True</property>
                   </widget>
                   <packing>
-                    <property name="position">1</property>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkFixed" id="fixed2">
-                    <property name="visible">True</property>
-                  </widget>
-                  <packing>
-                    <property name="position">2</property>
-                  </packing>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
                 </child>
                 <child>
                   <widget class="GtkHButtonBox" id="hbuttonbox1">
@@ -444,7 +465,6 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
-                            <signal name="group_changed" handler="on_MW_group_changed" object="xterm"/>
                           </widget>
                         </child>
                         <child>
@@ -469,7 +489,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed" object="xterm"/>
                       </widget>
                       <packing>
                         <property name="position">1</property>
@@ -483,7 +502,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">2</property>
@@ -497,7 +515,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">3</property>
@@ -511,7 +528,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">4</property>
@@ -537,7 +553,6 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
-                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                         </child>
                         <child>
@@ -568,7 +583,6 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
-                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                         </child>
                         <child>
@@ -596,7 +610,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">8</property>
@@ -619,7 +632,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">10</property>
@@ -690,7 +702,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                     </child>
                     <child>
@@ -701,7 +712,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">1</property>
@@ -719,7 +729,7 @@
                         <property name="receives_default">True</property>
                         <property name="label" translatable="yes">Attack!</property>
                         <property name="response_id">0</property>
-                        <signal name="activate" handler="on_Wpaapply_activate"/>
+                        <signal name="clicked" handler="on_Wpaapply_clicked"/>
                       </widget>
                     </child>
                   </widget>
@@ -787,7 +797,6 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
-                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                         </child>
                         <child>
@@ -800,7 +809,6 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
-                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                           <packing>
                             <property name="position">1</property>
@@ -815,7 +823,6 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
-                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                           <packing>
                             <property name="position">2</property>
@@ -830,13 +837,13 @@
                       <widget class="GtkHButtonBox" id="hbuttonbox3">
                         <property name="visible">True</property>
                         <child>
-                          <widget class="GtkButton" id="button2">
+                          <widget class="GtkButton" id="Fakeapply">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="label" translatable="yes">Launch</property>
                             <property name="response_id">0</property>
-                            <signal name="clicked" handler="on_MW_clicked"/>
+                            <signal name="clicked" handler="on_Fakeapply_clicked"/>
                           </widget>
                         </child>
                       </widget>
@@ -885,7 +892,6 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
-                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                         </child>
                         <child>
@@ -896,7 +902,6 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
-                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                           <packing>
                             <property name="position">1</property>
@@ -913,7 +918,6 @@
                                 <property name="response_id">0</property>
                                 <property name="active">True</property>
                                 <property name="draw_indicator">True</property>
-                                <signal name="group_changed" handler="on_MW_group_changed"/>
                               </widget>
                             </child>
                             <child>
@@ -997,7 +1001,7 @@
                       <widget class="GtkLabel" id="label22">
                         <property name="height_request">45</property>
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Select injection attack</property>
+                        <property name="label" translatable="yes">Select injection attack (only if already generated XOR)</property>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
@@ -1015,7 +1019,6 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
-                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                         </child>
                         <child>
@@ -1026,7 +1029,6 @@
                             <property name="response_id">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
-                            <signal name="group_changed" handler="on_MW_group_changed"/>
                           </widget>
                           <packing>
                             <property name="position">1</property>
@@ -1043,13 +1045,17 @@
                   <widget class="GtkHButtonBox" id="hbuttonbox4">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkButton" id="button3">
+                      <widget class="GtkButton" id="Injectionapply">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="label" translatable="yes">Launch</property>
                         <property name="response_id">0</property>
+                        <signal name="clicked" handler="on_Injectionapply_clicked"/>
                       </widget>
+                      <packing>
+                        <property name="position">-1</property>
+                      </packing>
                     </child>
                   </widget>
                   <packing>
@@ -1087,7 +1093,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                     </child>
                     <child>
@@ -1111,7 +1116,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">2</property>
@@ -1125,7 +1129,6 @@
                         <property name="response_id">0</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="group_changed" handler="on_MW_group_changed"/>
                       </widget>
                       <packing>
                         <property name="position">3</property>
@@ -1163,12 +1166,13 @@
                   <widget class="GtkHButtonBox" id="hbuttonbox6">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkButton" id="button5">
+                      <widget class="GtkButton" id="Crackapply">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="label" translatable="yes">Crack!</property>
                         <property name="response_id">0</property>
+                        <signal name="clicked" handler="on_crackapply_clicked"/>
                       </widget>
                     </child>
                   </widget>
@@ -1212,6 +1216,7 @@
   </widget>
   <widget class="GtkFileChooserDialog" id="FileChooser">
     <property name="border_width">5</property>
+    <property name="title" translatable="yes">Select file</property>
     <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
@@ -1324,6 +1329,7 @@
   </widget>
   <widget class="GtkDialog" id="ErrWindow">
     <property name="border_width">5</property>
+    <property name="title" translatable="yes">ERROR</property>
     <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
     <property name="has_separator">False</property>
@@ -1365,6 +1371,7 @@
     </child>
   </widget>
   <widget class="GtkWindow" id="MdkWindow">
+    <property name="title" translatable="yes">Mdk3</property>
     <child>
       <widget class="GtkVButtonBox" id="vbuttonbox8">
         <property name="visible">True</property>
@@ -1376,7 +1383,6 @@
             <property name="response_id">0</property>
             <property name="active">True</property>
             <property name="draw_indicator">True</property>
-            <signal name="group_changed" handler="on_MW_group_changed"/>
           </widget>
         </child>
         <child>
@@ -1387,7 +1393,6 @@
             <property name="response_id">0</property>
             <property name="active">True</property>
             <property name="draw_indicator">True</property>
-            <signal name="group_changed" handler="on_MW_group_changed"/>
           </widget>
           <packing>
             <property name="position">1</property>
@@ -1401,7 +1406,6 @@
             <property name="response_id">0</property>
             <property name="active">True</property>
             <property name="draw_indicator">True</property>
-            <signal name="group_changed" handler="on_MW_group_changed"/>
           </widget>
           <packing>
             <property name="position">2</property>
@@ -1423,6 +1427,7 @@
     </child>
   </widget>
   <widget class="GtkWindow" id="WessideWindow">
+    <property name="title" translatable="yes">Wesside</property>
     <child>
       <widget class="GtkVBox" id="vbox11">
         <property name="visible">True</property>
@@ -1438,7 +1443,6 @@
                 <property name="response_id">0</property>
                 <property name="active">True</property>
                 <property name="draw_indicator">True</property>
-                <signal name="group_changed" handler="on_MW_group_changed"/>
               </widget>
             </child>
             <child>
@@ -1449,7 +1453,6 @@
                 <property name="response_id">0</property>
                 <property name="active">True</property>
                 <property name="draw_indicator">True</property>
-                <signal name="group_changed" handler="on_MW_group_changed"/>
               </widget>
               <packing>
                 <property name="position">1</property>
@@ -1463,7 +1466,6 @@
                 <property name="response_id">0</property>
                 <property name="active">True</property>
                 <property name="draw_indicator">True</property>
-                <signal name="group_changed" handler="on_MW_group_changed"/>
               </widget>
               <packing>
                 <property name="position">2</property>
@@ -1477,7 +1479,6 @@
                 <property name="response_id">0</property>
                 <property name="active">True</property>
                 <property name="draw_indicator">True</property>
-                <signal name="group_changed" handler="on_MW_group_changed"/>
               </widget>
               <packing>
                 <property name="position">3</property>
@@ -1508,6 +1509,7 @@
   <widget class="GtkWindow" id="ChangeMacWindow">
     <property name="width_request">300</property>
     <property name="height_request">0</property>
+    <property name="title" translatable="yes">Change mac</property>
     <child>
       <widget class="GtkVBox" id="vbox4">
         <property name="visible">True</property>
@@ -1602,6 +1604,7 @@
   </widget>
   <widget class="GtkFileChooserDialog" id="FolderChooser">
     <property name="border_width">5</property>
+    <property name="title" translatable="yes">Selector de carpeta</property>
     <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
@@ -1697,6 +1700,76 @@ Daouid
             <property name="pack_type">GTK_PACK_END</property>
           </packing>
         </child>
+      </widget>
+    </child>
+  </widget>
+  <widget class="GtkDialog" id="ClientSelWindow">
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes" comments="This selects bssid of network to attack.">Select a client</property>
+    <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
+    <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
+    <property name="has_separator">False</property>
+    <child internal-child="vbox">
+      <widget class="GtkVBox" id="dialog-vbox8">
+        <property name="visible">True</property>
+        <property name="spacing">2</property>
+        <child>
+          <widget class="GtkTreeView" id="WIFI_List1">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="headers_clickable">True</property>
+          </widget>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child internal-child="action_area">
+          <widget class="GtkHButtonBox" id="dialog-action_area8">
+            <property name="visible">True</property>
+            <property name="layout_style">GTK_BUTTONBOX_END</property>
+            <child>
+              <widget class="GtkButton" id="WS_BTN_Ok1">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="label" translatable="yes">Ok</property>
+                <property name="response_id">0</property>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkButton" id="WS_BTN_Cancel1">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="label" translatable="yes">Cancel</property>
+                <property name="response_id">0</property>
+              </widget>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+            <property name="pack_type">GTK_PACK_END</property>
+          </packing>
+        </child>
+      </widget>
+    </child>
+  </widget>
+  <widget class="GtkWindow" id="ConfigWindow">
+    <property name="width_request">10</property>
+    <property name="height_request">10</property>
+    <child>
+      <widget class="GtkButton" id="config">
+        <property name="width_request">10</property>
+        <property name="height_request">10</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="label" translatable="yes">Update config from airoscript.conf</property>
+        <property name="response_id">0</property>
+        <signal name="clicked" handler="on_config_clicked"/>
       </widget>
     </child>
   </widget>
