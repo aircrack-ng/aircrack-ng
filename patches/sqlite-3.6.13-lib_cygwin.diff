@@ -1,0 +1,18 @@
+--- Makefile.ori	2009-04-14 18:50:49.953125000 +0100
++++ Makefile	2009-04-14 18:52:45.562500000 +0100
+@@ -776,14 +776,10 @@
+ 	$(INSTALL) -d $(DESTDIR)$(libdir)
+ 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
+ 	
+-install:	sqlite3$(BEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_install}
+-	$(INSTALL) -d $(DESTDIR)$(bindir)
+-	$(LTINSTALL) sqlite3$(BEXE) $(DESTDIR)$(bindir)
++install:	lib_install sqlite3.h
+ 	$(INSTALL) -d $(DESTDIR)$(includedir)
+ 	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(includedir)
+ 	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(includedir)
+-	$(INSTALL) -d $(DESTDIR)$(pkgconfigdir)
+-	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
+ 
+ pkgIndex.tcl:
+ 	echo 'package ifneeded sqlite3 $(RELEASE) [list load $(TCLLIBDIR)/libtclsqlite3.so sqlite3]' > $@
