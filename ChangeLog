@@ -1,5 +1,6 @@
 Version 1.0-rc4 (changes from aircrack-ng 1.0-rc3) - Released ?? ??? ????:
 * aircrack-ng: Fixed compilation on FreeBSD.
+* airmon-ng: Updated iw download link (0.9.12).
 * airdriver-ng: Updated to rt2570 k2wrlz v1.6.3
 * patches: Updated sqlite (v3.6.13) patch for cygwin.
 * patches: Updated wlanng patch for 2.6.28
