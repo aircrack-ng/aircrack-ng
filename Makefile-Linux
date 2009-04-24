@@ -16,7 +16,9 @@ LOCALEDIR=$(DESTDIR)$(PREF)"/share/locale/"
 MANDIR=$(DESTDIR)$(PREF)"/share/man/man1"
 DOCDIR=$(DESTDIR)$(PREF)"/share/doc/airoscript"
 
-install: airopdate
+install: airoscript airopdate airosperl locale manpages
+
+airoscript:
 	@echo -en "Installing files into:$(BINDIR) $(ETCDIR) $(SHAREDIR) $(DOCDIR) $(SBINDIR) "
 	@install -D -o $(UID) -g $(GID) -m $(BINMODE)   $(CURDIR)/src/airoscript.sh          $(SBINDIR)/airoscript
 	@mkdir -p $(SHAREDIR)/themes
@@ -27,15 +29,19 @@ install: airopdate
 	@chown $(UID):$(GID) $(SHAREDIR)/themes/*.theme
 	@chmod $(BINMODE) $(SHAREDIR)/themes/*.theme
 	@install -D -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscript.conf        $(ETCDIR)/airoscript.conf
-	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airopdate.sh           $(SHAREDIR)/airopdate
 	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc.sh          $(SHAREDIR)/airoscfunc.sh
 	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc_screen.sh   $(SHAREDIR)/airoscfunc_screen.sh
 	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc_external.sh $(SHAREDIR)/airoscfunc_external.sh
+	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airosconf.sh $(SBINDIR)/airosconf
+	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc_unstable.sh $(SHAREDIR)/airoscfunc_unstable.sh
 	@install    -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airoscfunc_unstable.sh $(SHAREDIR)/airoscfunc_unstable.sh
 	@install    -o $(UID) -g $(GID) -m 644        $(CURDIR)/src/screenrc               $(SHAREDIR)/screenrc
+locale:
 	@echo -en "...done\nInstalling locale (spanish) on $(LOCALEDIR)"
 	@mkdir -p $(LOCALEDIR)/es/LC_MESSAGES/
 	@msgfmt -o $(LOCALEDIR)/es/LC_MESSAGES/airoscript.mo $(CURDIR)/src/i10n/po/es_ES
+
+manpages:
 	@echo -en "...done\nInstalling manpage"
 	@install -D -g $(UID) -o $(GID) -m 644	      $(CURDIR)/src/airoscript.1	   $(MANDIR)/airoscript.1
 	@gzip -f -9 $(MANDIR)/airoscript.1
@@ -47,6 +53,12 @@ install: airopdate
 airopdate:
 	@install -D -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airopdate.sh $(SBINDIR)/airopdate
 	
+airosperl:
+	@install -D -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airosperl/airosperl.pl $(SBINDIR)/airosperl
+	@install -D -o $(UID) -g $(GID) -m $(BINMODE) $(CURDIR)/src/airosperl/airosperl.conf /etc/
+	@install -D -o $(UID) -g $(GID) -m 644 $(CURDIR)/src/airosperl/airosperl.glade $(SHAREDIR)/airosperl/
+	@airosconf --set --to-airosperl apppath "$(SHAREDIR)/airosperl/" --force-yes
+
 uninstall: uninstall-airopdate
 	@echo "Uninstalling airoscript."
 	@rm  $(SBINDIR)/airoscript
@@ -69,4 +81,4 @@ debian: install
 
 all: install 
 
-.PHONY: all install uninstall wifiway wifislax debian-package
+.PHONY: all install uninstall slackware debian-package airosperl locale manpages

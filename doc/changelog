@@ -1,4 +1,9 @@
 Changelog for 2.2 (Not yet released)
+- Added airoswordlist.pl for automatising wordlist creation.
+- Added airosconf.sh for airoscript configuration modify trought command line
+- Modified makefile to use airosconf to autoconfigure airosperl on install.
+- Fixed a bug when changing dump path.
+- Added a initial display message advertising of airoscript use.
 - Added support for airserv-ng
 - Added tkiptun basic support
 - Bugfixes (again) for $clean
@@ -18,7 +23,7 @@ version is now called 2.2 and now I use dates too.
 - Corrected a bug with interatively part on airoscript, airoscript didn't
 properly set default value for from/to destination bit.
 - Added GUI (airosperl) (Not yet finished, as soon as it's finished and
-aircrack-ng 1.0-rc3 released I will rename this version to 3.0)
+aircrack-ng 1.0-rc3 released I will rename this version to 2.3.0)
 
 
 Changelog for 2.1

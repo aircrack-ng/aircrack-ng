@@ -17,9 +17,9 @@ use Gtk2 -init; use Gtk2::GladeXML; use Gtk2::SimpleList;
 use File::Path;use File::Copy; use Cwd 'abs_path';
 
 # Get config.
-if (!-e $ENV{'HOME'}.".airosperl.conf"){require ("/etc/airosperl.conf");}
-else{require ($ENV{'HOME'}.".airosperl.conf");}
-our (%termopts,%bin,$q,$FT,$FAKE_MAC,$INJMAC,$INJECTRATE,$TKIPTUN_MAX_PL,$TKIPTUN_MIN_PL); # Those comes from airosperl.conf
+if (!-e $ENV{'HOME'}.".airosperl.conf"){require ("/etc/airosperl.conf") or die "Could not open conffile";}
+else{require ($ENV{'HOME'}.".airosperl.conf") or die "Could not open conffile";}
+our ($apppath,%termopts,%bin,$q,$FT,$FAKE_MAC,$INJMAC,$INJECTRATE,$TKIPTUN_MAX_PL,$TKIPTUN_MIN_PL,$Client_IP,$Host_IP); # Those comes from airosperl.conf
 
 # Define variables
 	my ($bssid,$airservng_addr,$wifi,$DefaultAirservNG,,$capfile,$final,$TreeVie,$TreeView,$action,$os,$mwcmd,$Client_MAC,$FRAG_CLIENT_IP,$FRAG_HOST_IP,$Host_CHAN,@wepactions,@wpaactions,@injactions,@crackactions,@fakeactions,@deauthactions,$Host_SSID,$WIFI,$Host_MAC,$Thing_Mac);# Standard
@@ -32,7 +32,7 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 	my $dump_path=&create_dump_path();
 
 # Open glade file and show main window
-	my $MainGladeFile=new Gtk2::GladeXML('airosperl.glade');
+	my $MainGladeFile=new Gtk2::GladeXML($apppath.'airosperl.glade');
 	$MainGladeFile->signal_autoconnect_from_package('main');# So we can handle easily signals.
 	$MainWindow=$MainGladeFile->get_widget('MainWindow');
 	$MainWindow->signal_connect( delete_event => sub {Gtk2->main_quit();1;});# Program ends when main window closed.
@@ -149,9 +149,9 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 		);
 
 		@injactions=(
-			$bin{'arpforge'}." -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap".
+			$bin{'arpforge'}." -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $dump_path/frag_$Host_MAC.cap".
 			"XXX".
-			$bin{'aireplay'}." -2 -r $DUMP_PATH/frag_$Thing_MAC.cap -h $FAKE_MAC -x $INJECTRATE $WIFI",
+			$bin{'aireplay'}." -2 -r $dump_path/frag_$Thing_Mac.cap -h $FAKE_MAC -x $INJECTRATE $WIFI",
 
 			""
 		);
@@ -237,7 +237,11 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 	sub on_MI_ResetIface_activate(){if ($wifi){&resetwifi(); &popup_error("Interface $wifi reseted");}else{&popup_error("Interface not selected");}}
 	sub on_MI_About_activate(){$AboutWindow->show_all;}
 	sub on_MI_AircrackTest_activate(){&runaction('hold',"airmon-ng check");}
+	sub on_MI_WL_activate{
+		&popup_error("Wordlist generated at".$ENV{'HOME'}.$Host_MAC."wl");
+		system ("airoswordlist -m $Host_MAC -s $Host_SSID -filename  ".$ENV{'HOME'}.$Host_MAC.".wl"." &");
 
+	}
 	# Configure
 	sub on_MI_Configure_activate(){
 		$ConfigWindow->show_all;	

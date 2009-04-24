@@ -1362,8 +1362,8 @@ Option: '`"
 changedumppath(){
 	OLD_DUMP_PATH=$DUMP_PATH
 	read -p "`gettext 'Enter new path: '`" DUMP_PATH
-	read -p "`gettext 'Copy data into new folder? (y/N): '`" ACP && [[ "$ACP" = "y" ]]; cp -r $OLD_DUMP_PATH/* $DUMP_PATH/
-	read -p "`gettext 'Erase old folder? (y/N): '`" EPF && [[ "$EPF" = "y" ]]; rm -r $OLD_DUMP_PATH
+	read -p "`gettext 'Copy data into new folder? (y/N): '`" ACP && [[ "$ACP" = "y" ]] && cp -r $OLD_DUMP_PATH/* $DUMP_PATH/
+	read -p "`gettext 'Erase old folder? (y/N): '`" EPF && [[ "$EPF" = "y" ]] && rm -r $OLD_DUMP_PATH
 	mkdir -p $DUMP_PATH # If exists, it won't be created again, so we don't lose anything fot this :-)
 	clear
 }
@@ -1672,8 +1672,7 @@ function target {
 }  
 
 function checkdir {
-if [[ -d $DUMP_PATH ]]
-then
+if [ -d $DUMP_PATH ]; then
 	echo -e "`gettext \"[INFO] Output folder is $DUMP_PATH\"`"
 # Disabled, now it uses mktmp to create temp directory, so this is not required.
 #else

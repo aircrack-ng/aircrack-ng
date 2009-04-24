@@ -65,6 +65,11 @@ fi
 
 cd $DUMP_PATH
 
+if [ $SHOW_AIROSCRIPT_WARNING ]
+then
+	echo $warntext # TODO put text here, and also, show_airscript_warning on config file.
+fi
+
 # Now, if terminal is provided by $1, replace terminal from config with $1
 if [ "$1" != "" ]
 then
