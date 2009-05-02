@@ -4325,7 +4325,7 @@ int detect_frequencies(struct wif *wi)
     printf("Checking available frequencies, this could take few seconds.\n");
 
     frequencies = (int*) malloc((max_freq_num+1) * sizeof(int)); //field for frequencies supported
-    bzero(frequencies, (max_freq_num+1) * sizeof(int));
+    memset(frequencies, 0, (max_freq_num+1) * sizeof(int));
     for(freq=start_freq; freq<=end_freq; freq+=5)
     {
         if(wi_set_freq(wi, freq) == 0)
@@ -4388,7 +4388,7 @@ int rearrange_frequencies()
     pos = 0;
 
     freqs = malloc(sizeof(int) * (count + 1));
-    bzero(freqs, sizeof(int) * (count + 1));
+    memset(freqs, 0, sizeof(int) * (count + 1));
     round_done = 0;
 
     while(left > 0)

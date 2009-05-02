@@ -830,7 +830,7 @@ int calc_tkip_mic_key(uchar* packet, int length, uchar key[8])
     uchar *ptr;
     struct Michael mic;
 
-    bzero(message, 4096);
+    memset(message, 0, 4096);
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
 
@@ -843,7 +843,7 @@ int calc_tkip_mic_key(uchar* packet, int length, uchar key[8])
         is_qos = 1;
     }
 
-    bzero(prio, 4);
+    memset(prio, 0, 4);
     if(is_qos)
     {
         prio[0] = packet[z-2] & 0x0f;
@@ -953,7 +953,7 @@ int calc_tkip_mic(uchar* packet, int length, uchar ptk[80], uchar value[8])
     michael_append(&mic, dmac, 6);
     michael_append(&mic, smac, 6);
 
-    bzero(prio, 4);
+    memset(prio, 0, 4);
     if(is_qos)
     {
         prio[0] = packet[z-2] & 0x0f;

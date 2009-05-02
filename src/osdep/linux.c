@@ -1639,11 +1639,11 @@ static int do_linux_open(struct wif *wi, char *iface)
 
         //use name in buf as new iface and set original iface as main iface
         dev->main_if = (char*) malloc(strlen(iface)+1);
-        bzero(dev->main_if, strlen(iface)+1);
+        memset(dev->main_if, 0, strlen(iface)+1);
         strncpy(dev->main_if, iface, strlen(iface));
 
         iface=(char*)malloc(strlen(buf)+1);
-        bzero(iface, strlen(buf)+1);
+        memset(iface, 0, strlen(buf)+1);
         strncpy(iface, buf, strlen(buf));
     }
 

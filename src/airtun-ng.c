@@ -222,7 +222,7 @@ int addFrag(unsigned char* packet, unsigned char* smac, int len)
     if(rFragment == NULL)
         return -1;
 
-    bzero(frame, 4096);
+    memset(frame, 0, 4096);
     memcpy(frame, packet, len);
 
     z = ( ( frame[1] & 3 ) != 3 ) ? 24 : 30;
@@ -1029,7 +1029,7 @@ int main( int argc, char *argv[] )
     memset( &dev, 0, sizeof( dev ) );
 
     rFragment = (pFrag_t) malloc(sizeof(struct Fragment_list));
-    bzero(rFragment, sizeof(struct Fragment_list));
+    memset(rFragment, 0, sizeof(struct Fragment_list));
 
     opt.r_nbpps = 100;
     opt.tods    = 0;

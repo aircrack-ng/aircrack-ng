@@ -245,7 +245,7 @@ void clean_exit(int ret)
 	int child_pid;
 
 	char tmpbuf[128];
-	bzero(tmpbuf, 128);
+	memset(tmpbuf, 0, 128);
 
 	if(ret && !opt.is_quiet)
 	{
@@ -738,7 +738,7 @@ void read_thread( void *arg )
 	memset( &rb, 0, sizeof( rb ) );
 	ap_cur = NULL;
 
-	bzero(&pfh, sizeof(struct pcap_file_header));
+	memset(&pfh, 0, sizeof(struct pcap_file_header));
 
 	if( ( buffer = (uchar *) malloc( 65536 ) ) == NULL )
 	{
@@ -1401,8 +1401,8 @@ void read_thread( void *arg )
                                     dlen -=6;
                                 }
 
-				bzero(weight, sizeof(weight));
-				bzero(clear, sizeof(clear));
+				memset(weight, 0, sizeof(weight));
+				memset(clear, 0, sizeof(clear));
 
 				/* calculate keystream */
 				k = known_clear(clear, &clearsize, weight, h80211, dlen);
@@ -4525,7 +4525,7 @@ int main( int argc, char *argv[] )
 
 	/*
 	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
-	bzero(all_ivs, (256*256*256)*sizeof(used_iv));
+	memset(all_ivs, 0, (256*256*256)*sizeof(used_iv));
 	*/
 
 	forceptw = 0;

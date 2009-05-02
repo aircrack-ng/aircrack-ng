@@ -2205,7 +2205,7 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
 //     if( opt.r_smac_set == 1 )
 //     {
 //         //handle picky APs (send one valid packet before all the invalid ones)
-//         bzero(packet, sizeof(packet));
+//         memset(packet, 0, sizeof(packet));
 //
 //         memcpy( packet, NULL_DATA, 24 );
 //         memcpy( packet +  4, "\xFF\xFF\xFF\xFF\xFF\xFF", 6 );
@@ -2246,7 +2246,7 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
             printf("%02X:", rc4key[i]);
         printf("%02X\n", rc4key[15]);
 
-        bzero(keystream, 4096);
+        memset(keystream, 0, 4096);
 
         keystream_len = caplen - z - 8;
         encrypt_wep(keystream, keystream_len, rc4key, 16);
@@ -4224,7 +4224,7 @@ usage:
 
     /* DO MICHAEL TEST */
 
-    bzero(buf, 128);
+    memset(buf, 0, 128);
     memcpy(buf, "M", 1);
     i = michael_test((unsigned char*)"\x82\x92\x5c\x1c\xa1\xd1\x30\xb8", (unsigned char*)buf, strlen(buf), (unsigned char*)"\x43\x47\x21\xca\x40\x63\x9b\x3f");
     PCT; printf("Michael Test: %s\n", i ? "Successful" : "Failed");

@@ -2908,7 +2908,7 @@ add_arp:
                     return( 1 );
                 }
 
-                bzero(flip, 4096);
+                memset(flip, 0, 4096);
 
 //                 flip[49-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender MAC
 //                 flip[53-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender IP
@@ -3086,13 +3086,13 @@ read_packets:
             break;
     }
 
-    bzero(clear, 4096);
-    bzero(final, 4096);
-    bzero(flip, 4096);
-    bzero(frag1, 128);
-    bzero(frag2, 128);
-    bzero(frag3, 128);
-    bzero(keystream, 128);
+    memset(clear, 0, 4096);
+    memset(final, 0, 4096);
+    memset(flip, 0, 4096);
+    memset(frag1, 0, 128);
+    memset(frag2, 0, 128);
+    memset(frag3, 0, 128);
+    memset(keystream, 0, 128);
 
     /* check if it's a potential ARP request */
 
@@ -3378,7 +3378,7 @@ int do_attack_chopchop( void )
     if( opt.r_smac_set == 1 )
     {
         //handle picky APs (send one valid packet before all the invalid ones)
-        bzero(packet, sizeof(packet));
+        memset(packet, 0, sizeof(packet));
 
         memcpy( packet, NULL_DATA, 24 );
         memcpy( packet +  4, "\xFF\xFF\xFF\xFF\xFF\xFF", 6 );

@@ -627,7 +627,7 @@ int addFrag(unsigned char* packet, unsigned char* smac, int len)
     if(rFragment == NULL)
         return -1;
 
-    bzero(frame, 4096);
+    memset(frame, 0, 4096);
     memcpy(frame, packet, len);
 
     z = ( ( frame[1] & 3 ) != 3 ) ? 24 : 30;
@@ -1683,7 +1683,7 @@ int intercept(uchar* packet, int length)
     uchar K[128];
     int z=0;
 
-    bzero(buf, 4096);
+    memset(buf, 0, 4096);
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
 
@@ -1784,7 +1784,7 @@ int packet_xmit(uchar* packet, int length)
 
         if((opt.external & EXT_OUT))
         {
-            bzero(buf, 4096);
+            memset(buf, 0, 4096);
             memcpy(buf+14, h80211, length2);
             //mark it as outgoing packet
             buf[12] = 0xFF;
@@ -1823,7 +1823,7 @@ int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
     if(length < 40 || length > 3000)
         return 1;
 
-    bzero(buf, 4096);
+    memset(buf, 0, 4096);
     if(memcmp(packet, buf, 11) != 0)
     {
 //         printf("wrong header...\n");
@@ -2099,13 +2099,13 @@ int addCF(uchar* packet, int length)
     if(opt.cf_count >= 100)
         return 1;
 
-    bzero(clear, 4096);
-    bzero(final, 4096);
-    bzero(flip, 4096);
-    bzero(frag1, 128);
-    bzero(frag2, 128);
-    bzero(frag3, 128);
-    bzero(keystream, 128);
+    memset(clear, 0, 4096);
+    memset(final, 0, 4096);
+    memset(flip, 0, 4096);
+    memset(frag1, 0, 128);
+    memset(frag2, 0, 128);
+    memset(frag3, 0, 128);
+    memset(keystream, 0, 128);
 
     switch( packet[1] & 3 )
     {
@@ -2364,7 +2364,7 @@ int addarp(uchar* packet, int length)
     if(opt.nb_arp >= opt.ringbuffer)
         return -1;
 
-    bzero(flip, 4096);
+    memset(flip, 0, 4096);
 
     flip[49-z-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender MAC
     flip[53-z-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender IP
@@ -2519,7 +2519,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
     struct ST_info *st_prv = NULL;
 
 	reasso = 0; fixed = 0;
-    bzero(essid, 256);
+    memset(essid, 0, 256);
 
     pthread_mutex_lock( &mx_cap );
     if(opt.record_data)
@@ -2643,7 +2643,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             st_cur->ssid_length[i] = 0;
         }
 
-        bzero(st_cur->essid, 256);
+        memset(st_cur->essid, 0, 256);
         st_cur->essid_length = 0;
 
         st_cur->wpatype = 0;
@@ -2769,7 +2769,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     len += 8;
 
                     //eapol
-                    bzero(h80211+len, 99);
+                    memset(h80211+len, 0, 99);
                     h80211[len]    = 0x01;//version
                     h80211[len+1]  = 0x03;//type
                     h80211[len+2]  = 0x00;
@@ -2818,7 +2818,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     h80211[len+7] = 0x00;
                     h80211[len+8] = 0x20; //keylen
 
-                    bzero(h80211+len+9, 90);
+                    memset(h80211+len+9, 0, 90);
                     memcpy(h80211+len+17, st_cur->wpa.anonce, 32);
 
                     len+=99;
@@ -2944,7 +2944,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
         if(length < 60)
         {
             trailer = 60 - length;
-            bzero(h80211 + length, trailer);
+            memset(h80211 + length, 0, trailer);
             length += trailer;
         }
 
@@ -2961,7 +2961,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             {
                 if( opt.promiscuous || !opt.f_essid || gotESSID((char*)tag, len) == 1)
                 {
-                    bzero(essid, 256);
+                    memset(essid, 0, 256);
                     memcpy(essid, tag, len);
 
                     /* store probes */
@@ -3355,11 +3355,11 @@ skip_probe:
                 printf("\n");
             }
 
-            bzero(st_cur->essid, 256);
+            memset(st_cur->essid, 0, 256);
             memcpy(st_cur->essid, essid, 255);
             st_cur->essid_length = strlen(essid);
 
-            bzero(essid, 256);
+            memset(essid, 0, 256);
 
             /* either specified or determined */
             if( (opt.sendeapol && ( opt.wpa1type || opt.wpa2type ) ) || (st_cur->wpatype && st_cur->wpahash) )
@@ -3391,7 +3391,7 @@ skip_probe:
                 len += 8;
 
                 //eapol
-                bzero(h80211+len, 99);
+                memset(h80211+len, 0, 99);
                 h80211[len]    = 0x01;//version
                 h80211[len+1]  = 0x03;//type
                 h80211[len+2]  = 0x00;
@@ -3440,7 +3440,7 @@ skip_probe:
                 h80211[len+7] = 0x00;
                 h80211[len+8] = 0x20; //keylen
 
-                bzero(h80211+len+9, 90);
+                memset(h80211+len+9, 0, 90);
                 memcpy(h80211+len+17, st_cur->wpa.anonce, 32);
 
                 len+=99;
@@ -3729,7 +3729,7 @@ int cfrag_fuzz(unsigned char *packet, int frags, int frag_num, int length, unsig
     else
         smac = packet + 24;
 
-    bzero(overlay, 4096);
+    memset(overlay, 0, 4096);
 
     smac[4] ^= rnd[0];
     smac[5] ^= rnd[1];
@@ -3902,19 +3902,19 @@ int main( int argc, char *argv[] )
     memset( &apc, 0, sizeof( struct AP_conf ));
 
     rESSID = (pESSID_t) malloc(sizeof(struct ESSID_list));
-    bzero(rESSID, sizeof(struct ESSID_list));
+    memset(rESSID, 0, sizeof(struct ESSID_list));
 
     rFragment = (pFrag_t) malloc(sizeof(struct Fragment_list));
-    bzero(rFragment, sizeof(struct Fragment_list));
+    memset(rFragment, 0, sizeof(struct Fragment_list));
 
     rClient = (pMAC_t) malloc(sizeof(struct MAC_list));
-    bzero(rClient, sizeof(struct MAC_list));
+    memset(rClient, 0, sizeof(struct MAC_list));
 
     rBSSID = (pMAC_t) malloc(sizeof(struct MAC_list));
-    bzero(rBSSID, sizeof(struct MAC_list));
+    memset(rBSSID, 0, sizeof(struct MAC_list));
 
     rCF = (pCF_t) malloc(sizeof(struct CF_packet));
-    bzero(rCF, sizeof(struct CF_packet));
+    memset(rCF, 0, sizeof(struct CF_packet));
 
     pthread_mutex_init( &mx_cf, NULL );
     pthread_mutex_init( &mx_cap, NULL );

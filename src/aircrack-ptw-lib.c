@@ -454,7 +454,7 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	{
 		// Try the original klein attack first
 		for (i = 0; i < keylen; i++) {
-			bzero(&table[i][0], sizeof(PTW_tableentry) * n);
+			memset(&table[i][0], 0, sizeof(PTW_tableentry) * n);
 			for (j = 0; j < n; j++) {
 				table[i][j].b = j;
 			}
@@ -602,7 +602,7 @@ PTW_attackstate * PTW_newattackstate() {
 	if (state == NULL) {
 		return NULL;
 	}
-	bzero(state, sizeof(PTW_attackstate));
+	memset(state, 0, sizeof(PTW_attackstate));
 	for (i = 0; i < PTW_KEYHSBYTES; i++) {
                 for (k = 0; k < n; k++) {
                         state->table[i][k].b = k;
