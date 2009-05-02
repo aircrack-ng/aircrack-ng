@@ -53,8 +53,11 @@ Reads packet from a file.
 .I -x <msecs>
 Active Scanning Simulation (send probe requests and parse the probe responses).
 .TP
-.I --nocap, -n
-Don't write pcap or ivs file (require -w or --write). It can be usefull for scripts that only parse generated text files (besides the capture file) or for reconnaissance.
+.I --output-format <formats>
+Define the formats to use (separated by a comma). Possible values are: pcap, ivs, csv, gps, kismet, netxml. The default values are: pcap, csv, kismet, kismet-newcore.
+'pcap' is for recording a capture in pcap format, 'ivs' is for ivs format (it is a shortcut for --ivs). 'csv' will create an airodump-ng CSV file, 'kismet' will create a kismet csv file and 'kismet-newcore' will create the kismet netxml file. 'gps' is a shortcut for --gps.
+.br
+Theses values can be combined with the exception of ivs and pcap.
 .PP
 .B Filter options:
 .TP

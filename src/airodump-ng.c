@@ -246,7 +246,9 @@ char usage[] =
 "                            are received (Default: 120 seconds)\n"
 "      -r           <file> : Read packets from that file\n"
 "      -x          <msecs> : Active Scanning Simulation\n"
-"      --nocap             : Don't write pcap/ivs file (require -w)\n"
+"      --output-format\n"
+"                <formats> : Output format. Possible values:\n"
+"                            pcap, ivs, csv, gps, kismet, netxml\n"
 "\n"
 "  Filter options:\n"
 "      --encrypt   <suite> : Filter APs by cipher suite\n"
@@ -410,31 +412,34 @@ int dump_initialize( char *prefix, int ivs_only )
 
     /* create the output CSV file */
 
-	memset(ofn, 0, ofn_len);
-    snprintf( ofn,  ofn_len, "%s-%02d.%s",
-              prefix, G.f_index, AIRODUMP_NG_CSV_EXT );
+	if (G.output_format_csv) {
+		memset(ofn, 0, ofn_len);
+		snprintf( ofn,  ofn_len, "%s-%02d.%s",
+				  prefix, G.f_index, AIRODUMP_NG_CSV_EXT );
 
-    if( ( G.f_txt = fopen( ofn, "wb+" ) ) == NULL )
-    {
-        perror( "fopen failed" );
-        fprintf( stderr, "Could not create \"%s\".\n", ofn );
-        free( ofn );
-        return( 1 );
-    }
+		if( ( G.f_txt = fopen( ofn, "wb+" ) ) == NULL )
+		{
+			perror( "fopen failed" );
+			fprintf( stderr, "Could not create \"%s\".\n", ofn );
+			free( ofn );
+			return( 1 );
+		}
+	}
 
     /* create the output Kismet CSV file */
+	if (G.output_format_kismet_csv) {
+		memset(ofn, 0, ofn_len);
+		snprintf( ofn,  ofn_len, "%s-%02d.%s",
+				  prefix, G.f_index, KISMET_CSV_EXT );
 
-    memset(ofn, 0, ofn_len);
-    snprintf( ofn,  ofn_len, "%s-%02d.%s",
-              prefix, G.f_index, KISMET_CSV_EXT );
-
-    if( ( G.f_kis = fopen( ofn, "wb+" ) ) == NULL )
-    {
-        perror( "fopen failed" );
-        fprintf( stderr, "Could not create \"%s\".\n", ofn );
-        free( ofn );
-        return( 1 );
-    }
+		if( ( G.f_kis = fopen( ofn, "wb+" ) ) == NULL )
+		{
+			perror( "fopen failed" );
+			fprintf( stderr, "Could not create \"%s\".\n", ofn );
+			free( ofn );
+			return( 1 );
+		}
+	}
 
 	/* create the output GPS file */
 
@@ -455,27 +460,22 @@ int dump_initialize( char *prefix, int ivs_only )
 
     /* Create the output kismet.netxml file */
 
-    memset(ofn, 0, ofn_len);
-    snprintf( ofn,  ofn_len, "%s-%02d.%s",
-              prefix, G.f_index, KISMET_NETXML_EXT );
+	if (G.output_format_kismet_netxml) {
+		memset(ofn, 0, ofn_len);
+		snprintf( ofn,  ofn_len, "%s-%02d.%s",
+				  prefix, G.f_index, KISMET_NETXML_EXT );
 
-    if( ( G.f_kis_xml = fopen( ofn, "wb+" ) ) == NULL )
-    {
-        perror( "fopen failed" );
-        fprintf( stderr, "Could not create \"%s\".\n", ofn );
-        free( ofn );
-        return( 1 );
-    }
-
-    /* create the output packet capture file */
-
-	if ( G.dont_write_cap_file )
-	{
-        free( ofn );
-        return( 0 );
+		if( ( G.f_kis_xml = fopen( ofn, "wb+" ) ) == NULL )
+		{
+			perror( "fopen failed" );
+			fprintf( stderr, "Could not create \"%s\".\n", ofn );
+			free( ofn );
+			return( 1 );
+		}
 	}
 
-    if( ivs_only == 0 )
+    /* create the output packet capture file */
+    if( G.output_format_pcap )
     {
         struct pcap_file_header pfh;
 
@@ -509,7 +509,7 @@ int dump_initialize( char *prefix, int ivs_only )
             perror( "fwrite(pcap file header) failed" );
             return( 1 );
         }
-    } else {
+    } else if ( ivs_only ) {
         struct ivs2_filehdr fivs2;
 
         fivs2.version = IVS2_VERSION;
@@ -2723,7 +2723,7 @@ int dump_write_csv( void )
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
 
-    if (! G.record_data)
+    if (! G.record_data || !G.output_format_csv)
     	return 0;
 
     fseek( G.f_txt, 0, SEEK_SET );
@@ -2940,7 +2940,7 @@ int dump_write_kismet_netxml( void )
     char first_time[255];
     char last_time[255];
 
-    if (! G.record_data)
+    if (! G.record_data || !G.output_format_kismet_netxml)
     	return 0;
 
     fseek( G.f_kis_xml, 0, SEEK_SET );
@@ -3283,7 +3283,7 @@ int dump_write_kismet_csv( void )
 /*    char ssid_list[512];*/
     struct AP_info *ap_cur;
 
-    if (! G.record_data)
+    if (! G.record_data || !G.output_format_kismet_csv)
     	return 0;
 
     fseek( G.f_kis, 0, SEEK_SET );
@@ -4426,6 +4426,7 @@ int rearrange_frequencies()
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time, cycle_time2;
+    char * output_format_string;
     int caplen=0, i, j, cards, fdh, fd_is_set, chan_count, freq_count, unused;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
     int ivs_only, found;
@@ -4437,6 +4438,7 @@ int main( int argc, char *argv[] )
     char ifnam[64];
     int wi_read_failed=0;
     int n = 0;
+    int output_format_first_time = 1;
 
     struct AP_info *ap_cur, *ap_prv, *ap_next;
     struct ST_info *st_cur, *st_next;
@@ -4485,7 +4487,7 @@ int main( int argc, char *argv[] )
         {"nodecloak",0, 0, 'D'},
         {"showack",  0, 0, 'A'},
         {"detect-anomaly", 0, 0, 'E'},
-        {"nocap",    0, 0, 'n'},
+        {"output-format",  1, 0, 'o'},
         {0,          0, 0,  0 }
     };
 
@@ -4543,7 +4545,11 @@ int main( int argc, char *argv[] )
     G.f_cap_in     =  NULL;
     G.detect_anomaly = 0;
     G.airodump_start_time = NULL;
-    G.dont_write_cap_file = 0;
+
+	G.output_format_pcap = 1;
+    G.output_format_csv = 1;
+    G.output_format_kismet_csv = 1;
+    G.output_format_kismet_netxml = 1;
 
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
@@ -4619,7 +4625,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:nx:",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:o:x:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -4747,6 +4753,11 @@ int main( int argc, char *argv[] )
                 break;
 
             case 'i':
+                
+                if (G.output_format_pcap) {
+                    fprintf(stderr, "Invalid output format: IVS and PCAP format cannot be used together.\n");
+                    return( 1 );
+                }
 
                 ivs_only = 1;
                 break;
@@ -4863,9 +4874,73 @@ int main( int argc, char *argv[] )
                 set_encryption_filter(optarg);
                 break;
 
-			case 'n':
+			case 'o':
 
-				G.dont_write_cap_file = 1;
+				// Reset output format if it's the first time the option is specified
+				if (output_format_first_time) {
+					output_format_first_time = 0;
+
+					G.output_format_pcap = 0;
+					G.output_format_csv = 0;
+					G.output_format_kismet_csv = 0;
+    				G.output_format_kismet_netxml = 0;
+				}
+
+				// Parse the value
+				output_format_string = strtok(optarg, ",");
+				while (output_format_string != NULL) {
+					if (strlen(output_format_string) != 0) {
+						if (strncasecmp(output_format_string, "csv", 3) == 0
+							|| strncasecmp(output_format_string, "txt", 3) == 0) {
+							G.output_format_csv = 1;
+						} else if (strncasecmp(output_format_string, "pcap", 4) == 0
+							|| strncasecmp(output_format_string, "cap", 3) == 0) {
+                            if (ivs_only) {
+                                printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
+                                fprintf(stderr, "Invalid output format: IVS and PCAP format cannot be used together.\n");
+                                return( 1 );
+                            }
+							G.output_format_pcap = 1;
+						} else if (strncasecmp(output_format_string, "ivs", 3) == 0) {
+                            if (G.output_format_pcap) {
+                                printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
+                                fprintf(stderr, "Invalid output format: IVS and PCAP format cannot be used together.\n");
+                                return( 1 );
+                            }
+							ivs_only = 1;
+						} else if (strncasecmp(output_format_string, "kismet", 6) == 0) {
+							G.output_format_kismet_csv = 1;
+						} else if (strncasecmp(output_format_string, "gps", 3) == 0) {
+							G.usegpsd  = 1;
+						} else if (strncasecmp(output_format_string, "netxml", 6) == 0
+							|| strncasecmp(output_format_string, "newcore", 7) == 0
+							|| strncasecmp(output_format_string, "kismet-nc", 9) == 0
+							|| strncasecmp(output_format_string, "kismet_nc", 9) == 0
+							|| strncasecmp(output_format_string, "kismet-newcore", 14) == 0
+							|| strncasecmp(output_format_string, "kismet_newcore", 14) == 0) {
+							G.output_format_kismet_netxml = 1;
+						} else if (strncasecmp(output_format_string, "default", 6) == 0) {
+							G.output_format_pcap = 1;
+							G.output_format_csv = 1;
+							G.output_format_kismet_csv = 1;
+							G.output_format_kismet_netxml = 1;
+						} else if (strncasecmp(output_format_string, "none", 6) == 0) {
+							G.output_format_pcap = 0;
+							G.output_format_csv = 0;
+							G.output_format_kismet_csv = 0;
+    						G.output_format_kismet_netxml = 0;
+
+							G.usegpsd  = 0;
+							ivs_only = 0;
+						} else {
+							// Display an error if it does not match any value
+							fprintf(stderr, "Invalid output format: <%s>\n", output_format_string);
+							exit(1);
+						}
+					}
+					output_format_string = strtok(NULL, ",");
+				}
+
 				break;
 
             case 'H':
@@ -4909,13 +4984,6 @@ usage:
     if( ( memcmp(G.f_netmask, NULL_MAC, 6) != 0 ) && ( memcmp(G.f_bssid, NULL_MAC, 6) == 0 ) )
     {
         printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
-        printf("\"%s --help\" for help.\n", argv[0]);
-        return( 1 );
-    }
-
-    if ( (G.dont_write_cap_file && !G.record_data )
-          || ( ivs_only && !G.record_data ) ) {
-        printf( "Missing dump prefix (-w)\n" );
         printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
@@ -5142,14 +5210,14 @@ usage:
             break;
         }
 
-        if( time( NULL ) - tt1 >= 20 )
+        if( time( NULL ) - tt1 >= 5 )
         {
             /* update the csv stats file */
 
             tt1 = time( NULL );
-            dump_write_csv();
-            dump_write_kismet_csv();
-            dump_write_kismet_netxml();
+            if (G. output_format_csv)  dump_write_csv();
+            if (G.output_format_kismet_csv) dump_write_kismet_csv();
+            if (G.output_format_kismet_netxml) dump_write_kismet_netxml();
 
             /* sort the APs by power */
 
@@ -5414,20 +5482,20 @@ usage:
         wi_close(wi[i]);
 
     if (G.record_data) {
-        dump_write_csv();
-        dump_write_kismet_csv();
-        dump_write_kismet_netxml();
+        if ( G. output_format_csv)  dump_write_csv();
+        if ( G.output_format_kismet_csv) dump_write_kismet_csv();
+        if ( G.output_format_kismet_netxml) dump_write_kismet_netxml();
 
-        if( G.f_txt != NULL ) fclose( G.f_txt );
-        if( G.f_kis != NULL ) fclose( G.f_kis );
-        if( G.f_kis_xml != NULL )
+        if ( G. output_format_csv || G.f_txt != NULL ) fclose( G.f_txt );
+        if ( G.output_format_kismet_csv || G.f_kis != NULL ) fclose( G.f_kis );
+        if ( G.output_format_kismet_netxml || G.f_kis_xml != NULL )
         {
 			fclose( G.f_kis_xml );
 			free(G.airodump_start_time);
 		}
-        if( G.f_gps != NULL ) fclose( G.f_gps );
-        if( G.f_cap != NULL ) fclose( G.f_cap );
-        if( G.f_ivs != NULL ) fclose( G.f_ivs );
+        if ( G.f_gps != NULL ) fclose( G.f_gps );
+        if ( G.output_format_pcap ||  G.f_cap != NULL ) fclose( G.f_cap );
+        if ( G.f_ivs != NULL ) fclose( G.f_ivs );
     }
 
     if( ! G.save_gps )

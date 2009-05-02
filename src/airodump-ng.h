@@ -345,7 +345,10 @@ struct globals
     /* Airodump-ng start time: for kismet netxml file */
     char * airodump_start_time;
 
-    int dont_write_cap_file;
+    int output_format_pcap;
+    int output_format_csv;
+    int output_format_kismet_csv;
+    int output_format_kismet_netxml;
 }
 G;
 
