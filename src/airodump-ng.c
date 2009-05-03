@@ -2997,24 +2997,20 @@ int dump_write_kismet_netxml( void )
 		//Encryption
 		if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) != 0)
 		{
-			if( ap_cur->security & STD_WPA2 ) fprintf( G.f_kis_xml, "WPA2 " );
-			if( ap_cur->security & STD_WPA  ) fprintf( G.f_kis_xml, "WPA " );
-			if( ap_cur->security & STD_WEP  ) fprintf( G.f_kis_xml, "WEP " );
-			if( ap_cur->security & STD_OPN  ) fprintf( G.f_kis_xml, "OPN " );
+			if( ap_cur->security & STD_WPA2 ) fprintf( G.f_kis_xml, "WPA2" );
+			if( ap_cur->security & STD_WPA  ) fprintf( G.f_kis_xml, "WPA" );
+			if( ap_cur->security & STD_WEP  ) fprintf( G.f_kis_xml, "WEP" );
+			if( ap_cur->security & STD_OPN  ) fprintf( G.f_kis_xml, "OPN" );
 		}
 
-		if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 )
+		if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) != 0 )
 		{
-			fprintf( G.f_kis_xml, "None,");
-		}
-		else
-		{
-			if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_kis_xml, "AES-CCM ");
-			if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis_xml, "WRAP ");
-			if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis_xml, "TKIP ");
-			if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_kis_xml, "WEP104");
-			if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis_xml, "WEP40 ");
-/*      	if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis, " WEP ");*/
+			if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_kis_xml, " AES-CCM");
+			if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis_xml, " WRAP");
+			if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis_xml, " TKIP");
+			if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_kis_xml, " WEP104");
+			if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis_xml, " WEP40");
+/*      	if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis, " WEP");*/
 		}
 		fprintf(G.f_kis_xml, "</encryption>\n");
 
@@ -4753,7 +4749,7 @@ int main( int argc, char *argv[] )
                 break;
 
             case 'i':
-                
+
                 if (G.output_format_pcap) {
                     fprintf(stderr, "Invalid output format: IVS and PCAP format cannot be used together.\n");
                     return( 1 );
