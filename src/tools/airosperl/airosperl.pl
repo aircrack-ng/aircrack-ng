@@ -23,7 +23,7 @@ our ($apppath,%termopts,%bin,$q,$FT,$FAKE_MAC,$INJMAC,$INJECTRATE,$TKIPTUN_MAX_P
 
 # Define variables
 	my ($bssid,$airservng_addr,$wifi,$DefaultAirservNG,,$capfile,$final,$TreeVie,$TreeView,$action,$os,$mwcmd,$Client_MAC,$FRAG_CLIENT_IP,$FRAG_HOST_IP,$Host_CHAN,@wepactions,@wpaactions,@injactions,@crackactions,@fakeactions,@deauthactions,$Host_SSID,$WIFI,$Host_MAC,$Thing_Mac);# Standard
-	my ($ErrLabel,$Airserv_INPUT,$DefaultInput,$Wifi_INPUT,$MonitorMode,$TreeViewWidget,$Wifi_Interface,$model,$IN_ClientMac);# Widgets
+	my ($ErrLabel,$Airserv_INPUT,$DefaultInput,$Wifi_INPUT,$MonitorMode,$TreeViewWidget,$Wifi_Interface,$model,$IN_ClientMac,$MonModeInput);# Widgets
 	our ($MainWindow, $FileChooserWindow, $SWifiWindow,$ErrWindow,$ChangeMacWindow,$MdkWindow,$WessideWindow,$FolderChooserWindow,$AboutWindow,$ClientSelWindow,$ConfigWindow); # Windows
 
 if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows"}}
@@ -44,6 +44,7 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 		$IN_ClientMac=$MainGladeFile->get_widget('IN_ClientMac');	
 		$Wifi_INPUT=$MainGladeFile->get_widget('Wifi');
 		$DefaultInput=$MainGladeFile->get_widget('DefaultAirservng');
+		$MonModeInput=$MainGladeFile->get_widget('MonitorMode');
 		$TreeViewWidget=$MainGladeFile->get_widget('WIFI_List');
 		$ErrLabel=$MainGladeFile->get_widget('El');
 		$Wifi_Interface=$MainGladeFile->get_widget('WifiCombo');
@@ -71,7 +72,7 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 			$ClientSelWindow->signal_connect( delete_event => sub {$ClientSelWindow->hide();});
 		$ConfigWindow=$MainGladeFile->get_widget('ConfigWindow');
 			$ConfigWindow->signal_connect( delete_event => sub {$ConfigWindow->hide();});
-
+	
 
 # Main Subfunctions
 	# Main Window things:
@@ -112,7 +113,7 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 	#	return %termopts;
 	}
 
-	sub runaction(){my @commands=split(/XXX/,$_[1]);if (!$WIFI){&popup_error('You have to select a wifi card first');return;} foreach my $cmd(@commands){system ("$bin{'terminal'} $_[0] $termopts{'exec'} $q $cmd $q &");}}
+	sub runaction(){my @commands=split(/XXX/,$_[1]);if (!$WIFI){&popup_error('You have to select a wifi card first');return;} foreach my $cmd(@commands){system ("$bin{'terminal'} $termopts{$_[0]} $termopts{'exec'} $q $cmd $q &");}}
 
 	sub setattacks(){# Note: Last in airoscript must be first here.
 		@wepactions=( 
@@ -126,9 +127,11 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
                         $bin{'aireplay'}." -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI ",
                         $bin{'aireplay'} ." ". $WIFI . " --arpreplay -b $Host_MAC -d $INJMAC -f 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE");
 # FIXME : Those are selected in checkbox, if checkbox selected, execute this instead of the others... This can be in wepapply code.
-#                        $bin{'aireplay'}." -7 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI ",
-#                        $bin{'aireplay'}." $WIFI --interactive -p $FT -c $INJMAC -b $Host_MAC $Client_MAC -x $INJECTRATE",
-#                        $bin{'aireplay'}." $WIFI --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE",
+		@alternative_wepactions=(
+                        $bin{'aireplay'}." -7 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $WIFI ",
+                        $bin{'aireplay'}." $WIFI --interactive -p $FT -c $INJMAC -b $Host_MAC $Client_MAC -x $INJECTRATE",
+                        $bin{'aireplay'}." $WIFI --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE",
+		);
 
 		@wpaactions=(
 			$bin{'tkiptun'}. " -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL $WIFI",
@@ -193,14 +196,26 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 		sub setwificlients(){# FIXME This doesnt work... failed in the system calls.
 	  		$TreeView = Gtk2::SimpleList->new_from_treeview($TreeViewWidget,'Name'=>'text','bssid' => 'text', 'Encription' => 'text');
 			$TreeView->signal_connect (row_activated => sub { my ($sl, $path, $column) = @_; my $row_ref = $sl->get_row_data_from_path ($path);$Client_MAC=@$row_ref[1];});
-			my @linedata;my $finaldata;	unlink ("$dump_path/maindump-*.csv");
-			my $cmd=$bin{'terminal'}." ".$termopts{'exec'}." \" ".$bin{'airodump'}." $wifi -w $dump_path/maindump \"";system $cmd;
-			system("tac $dump_path/maindump-01.csv | sed '1,3d' | tac| sed '1,2d' > $dump_path/maindump-01.csv2");
-			system("cat $dump_path/maindump-01.csv2 | grep -a \"0.:..:..:..:..\" | awk \'{ print $1 }\'| grep -a -v 00:00:00:00 > $dump_path/maindump-01.csv");# Test this, that awk.
+
+			my @linedata;
+			my $finaldata;	
+
+			unlink ("$dump_path/maindump-*.csv");
+
+			my $cmd=$bin{'terminal'}." ".$termopts{'exec'}." \" ".$bin{'airodump'}." $wifi -w $dump_path/maindump \"";
+			print STDERR "\nExecuting $cmd\n";
+			system $cmd;
+
+			system("tac $dump_path/maindump-01.csv  | sed '1,3d' | tac| sed '1,2d' > $dump_path/maindump-01.csv2");
+			system("cat $dump_path/maindump-01.csv2 | grep -a \"0.:..:..:..:..\" | awk \'{ print \$1 }\'| grep -a -v 00:00:00:00 > $dump_path/maindump-01.csv");
+
 			open FH, "<$dump_path/maindump-01.csv";	my $bssid;
-			while (<FH>){$bssid=`echo $_ |awk '{split(\$1, info, "," )print info[1]  }'`; # And even this shouldn't work. It should get the first...
+
+			while (<FH>){
+				$bssid=`echo \"$_\" |awk '{split(\$1, info, "," )print info[1]  }'`; 
 				push (@{$TreeView->{data}}, ['',$bssid,'']);
 			}
+
 			close FH;
 		}
 
@@ -315,8 +330,8 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 		$C4->set_group($C1);
 
 ##### Main window items
-	sub on_DefaultAirservng_clicked(){$DefaultAirservNG=1 if !$DefaultAirservNG; $DefaultAirservNG="" if $DefaultAirservNG;}
-	sub on_MonitorMode_toggled(){$MonitorMode=1 if !$MonitorMode; $MonitorMode="" if $MonitorMode;}
+	sub on_DefaultAirservng_toggled(){$DefaultAirservNG=$DefaultInput->get_active();}
+	sub on_MonitorMode_toggled(){$MonitorMode=$MonModeInput->get_active();}
 
 	sub on_apply_clicked{# Apply main configuration.
 		$airservng_addr=$Airserv_INPUT->get_text(); 
@@ -336,10 +351,33 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 	}
 
 	sub on_Wepapply_clicked(){
+		my @excluded=(1,2,3); my $_excluded; # FIXME : Those are not really that, and I've got to change the checkbuttons names.
 		my $btnn=0;my $selbutton;	my $WEP1=$MainGladeFile->get_widget('WEP1');my $group=$WEP1->get_group();
-		foreach my $btn (@$group){print "We are on button $btnn, checking if selected...";$selbutton=$btnn if $btn->get_active;print "yes\n" if $btn->get_active;$btnn++; }
+		foreach my $btn (@$group){
+			print STDERR "We are on button $btnn, checking if selected...";
+			$selbutton=$btnn if $btn->get_active;
+			print STDERR "yes\n" if $btn->get_active;
+			$btnn++; 
+		}
+		foreach (@excluded){
+			if ( $btnn == $_ ) {
+				# So, check if button is checked, if so, set _excluded to true
+				my $checkbutton=$MainGladeFile->get_widget("CHKWEP".$_);
+				if ($checkbutton->checked){$_excluded=1;}
+			}
+		}
+
 		&popup_error('You should launch a fake attack now');
-		print "Executing $wepactions[$selbutton] ($selbutton)\n";&runaction('',$wepactions[$selbutton]);
+
+
+		if ($_excluded){
+			print STDERR "Executing alternative_wepactions[$selbutton] ($selbutton)\n";
+			&runaction('',$alternative_wepactions[$selbutton]);
+		} else {
+			print STDERR "Executing $wepactions[$selbutton] ($selbutton)\n";
+			&runaction('',$wepactions[$selbutton]);
+
+		}
 	}
 
 
@@ -353,11 +391,14 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 	sub on_Deauthapply_clicked{ # TODO This should do same as others but, if button=2, get text from text entry and assign foo stuff to bar.
 		my $btnn=0;my $selbutton;	my $IN1=$MainGladeFile->get_widget('IN1');my $group=$IN1->get_group();
 		foreach my $btn (@$group){$selbutton=$btnn if $btn->get_active;$btnn++;}
-		if ($selbutton == 2){}
+		if ($selbutton == 2){
+			
+		}
 		else{
 			print "Executing $injactions[$selbutton]\n";&runaction('',$injactions[$selbutton]);
 		}
 	}
+
 
 	sub on_Injectionapply_clicked(){
 		my $btnn=0;my $selbutton;	
@@ -368,11 +409,32 @@ if (-e "/bin/uname"){$os="Linux";}else { if (-e $ENV{'systemroot'}){$os="Windows
 	}
 
 
-	sub on_Crackapply_clicked(){ # TODO similar as deauthapply
+	sub on_Crackapply_clicked(){ 
+		my $btnn=0;
+		my $selbutton;	
+		my $IN1=$MainGladeFile->get_widget('IN1');
+		my $group=$IN1->get_group();
+
+		foreach my $btn (@$group){$selbutton=$btnn if $btn->get_active;$btnn++;}
+			if ($selbutton == 2){
+				my $INWIDGET=$MainGladeFile->get_widget('');
+				my $text=$INWIDGET->get_text();
+				print "Executing $crackactions[$selbutton]\n with text $text";
+				&runaction('',$injactions[$selbutton]." ".$text);
+			} else {
+				print "Executing $injactions[$selbutton]\n";
+				&runaction('',$injactions[$selbutton]);
+			}
 	}
+
 
 	sub on_config_clicked{system('airosconf update');$ConfigWindow->hide();}
 
 #%termopts=&GetTerminalOptions();
 &SetWifiInterfaces();
 Gtk2->main;
+
+
+																			
+
+
