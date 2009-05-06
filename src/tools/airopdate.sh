@@ -17,13 +17,13 @@ while true; do
   echo "##    Select aircrack-ng version     ##"
   echo "##                                   ##"
   echo "##    1) Legacy 0.9.3                ##"
-  echo "##    2) Latest Version (1.0-rc1)    ##"
+  echo "##    2) Latest Version (1.0-rc3)    ##"
   echo "##    3) Specific revision           ##"
   echo "##___________________________________##"
   read yn
   case $yn in
     1 ) VER="0.9.3"; svn co http://trac.aircrack-ng.org/svn/tags/0.9.3/ aircrack-ng-$VER ; installsvn ; break ;;
-    2 ) VER="1.0-rc2"; svn co http://trac.aircrack-ng.org/svn/trunk/ aircrack-ng-$VER ; installsvn ; break ;;
+    2 ) VER="1.0-rc3"; svn co http://trac.aircrack-ng.org/svn/trunk/ aircrack-ng-$VER ; installsvn ; break ;;
     3 ) svnrev ; break ;;
     * ) echo "unknown response. Try again" ;;
   esac
@@ -44,9 +44,13 @@ function svnrev {
 	echo You typed: $rev
 	set -- ${rev}
 
-	svn co -r $rev http://trac.aircrack-ng.org/svn/trunk/ aircrack-ng-r"$rev"
-	cd aircrack-ng-r"$rev"
+	if [ $rev ]; then
+		svn co -r $rev http://trac.aircrack-ng.org/svn/trunk/ aircrack-ng"$rev"
+	else
+		svn co  http://trac.aircrack-ng.org/svn/trunk/ aircrack-ng
+	fi
 
+	cd aircrack-ng"$rev"
 	make clean
 	make uninstall
 	make

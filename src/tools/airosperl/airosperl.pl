@@ -22,7 +22,7 @@ else{require ($ENV{'HOME'}.".airosperl.conf") or die "Could not open conffile";}
 our ($apppath,%termopts,%bin,$q,$FT,$FAKE_MAC,$INJMAC,$INJECTRATE,$TKIPTUN_MAX_PL,$TKIPTUN_MIN_PL,$Client_IP,$Host_IP); # Those comes from airosperl.conf
 
 # Define variables
-	my ($bssid,$airservng_addr,$wifi,$DefaultAirservNG,,$capfile,$final,$TreeVie,$TreeView,$action,$os,$mwcmd,$Client_MAC,$FRAG_CLIENT_IP,$FRAG_HOST_IP,$Host_CHAN,@wepactions,@wpaactions,@injactions,@crackactions,@fakeactions,@deauthactions,$Host_SSID,$WIFI,$Host_MAC,$Thing_Mac);# Standard
+	my ($bssid,$airservng_addr,$wifi,$DefaultAirservNG,,$capfile,$final,$TreeVie,$TreeView,$action,$os,$mwcmd,$Client_MAC,$FRAG_CLIENT_IP,$FRAG_HOST_IP,$Host_CHAN,,@alternative_wepactions,@wepactions,@wpaactions,@injactions,@crackactions,@fakeactions,@deauthactions,$Host_SSID,$WIFI,$Host_MAC,$Thing_Mac);# Standard
 	my ($ErrLabel,$Airserv_INPUT,$DefaultInput,$Wifi_INPUT,$MonitorMode,$TreeViewWidget,$Wifi_Interface,$model,$IN_ClientMac,$MonModeInput);# Widgets
 	our ($MainWindow, $FileChooserWindow, $SWifiWindow,$ErrWindow,$ChangeMacWindow,$MdkWindow,$WessideWindow,$FolderChooserWindow,$AboutWindow,$ClientSelWindow,$ConfigWindow); # Windows
 
