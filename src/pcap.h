@@ -19,6 +19,7 @@
 #define LINKTYPE_IEEE802_11     105
 #define LINKTYPE_PRISM_HEADER   119
 #define LINKTYPE_RADIOTAP_HDR   127
+#define LINKTYPE_PPI_HDR		192
 
 #define uchar  unsigned char
 #define ushort unsigned short

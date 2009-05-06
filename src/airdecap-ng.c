@@ -105,6 +105,12 @@ opt;
 uchar buffer[65536];
 uchar buffer2[65536];
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define	le16_to_cpu(x) (x)
+#else
+#define	le16_to_cpu(x) ((((x)&0xff)<<8)|(((x)&0xff00)>>8))
+#endif
+
 /* this routine handles to 802.11 to Ethernet translation */
 
 int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, uchar *h80211 )
@@ -491,7 +497,8 @@ usage:
 
     if( pfh.linktype != LINKTYPE_IEEE802_11 &&
         pfh.linktype != LINKTYPE_PRISM_HEADER &&
-        pfh.linktype != LINKTYPE_RADIOTAP_HDR )
+        pfh.linktype != LINKTYPE_RADIOTAP_HDR &&
+		pfh.linktype != LINKTYPE_PPI_HDR )
     {
         printf( "\"%s\" isn't a regular 802.11 "
                 "(wireless) capture.\n", argv[optind] );
@@ -657,6 +664,25 @@ usage:
 
             h80211 += n; pkh.caplen -= n;
         }
+
+		if( linktype == LINKTYPE_PPI_HDR )
+		{
+			/* Remove the PPI header */
+
+			n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+			if( n <= 0 || n>= (int) pkh.caplen )
+				continue;
+
+			/* for a while Kismet logged broken PPI headers */
+			if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+				n = 32;
+
+			if( n <= 0 || n>= (int) pkh.caplen )
+				continue;
+
+			h80211 += n; pkh.caplen -= n;
+		}
 
         /* remove the FCS if present (madwifi) */
 

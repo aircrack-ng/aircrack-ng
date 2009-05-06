@@ -178,6 +178,12 @@ const uchar R[256] =
 	, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255
 };
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define	le16_to_cpu(x) (x)
+#else
+#define	le16_to_cpu(x) ((((x)&0xff)<<8)|(((x)&0xff00)>>8))
+#endif
+
 char usage[] =
 "\n"
 "  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
@@ -800,7 +806,8 @@ void read_thread( void *arg )
 
 		if( pfh.linktype != LINKTYPE_IEEE802_11 &&
 			pfh.linktype != LINKTYPE_PRISM_HEADER &&
-			pfh.linktype != LINKTYPE_RADIOTAP_HDR )
+			pfh.linktype != LINKTYPE_RADIOTAP_HDR &&
+			pfh.linktype != LINKTYPE_PPI_HDR)
 		{
 			fprintf( stderr, "This file is not a regular "
 				"802.11 (wireless) capture.\n" );
@@ -944,6 +951,25 @@ void read_thread( void *arg )
 				n = *(unsigned short *)( h80211 + 2 );
 
 				if( n <= 0 || n >= (int) pkh.caplen )
+					continue;
+
+				h80211 += n; pkh.caplen -= n;
+			}
+
+			if( pfh.linktype == LINKTYPE_PPI_HDR )
+			{
+				/* Remove the PPI header */
+
+				n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+				if( n <= 0 || n>= (int) pkh.caplen )
+					continue;
+
+				/* for a while Kismet logged broken PPI headers */
+				if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+					n = 32;
+
+				if( n <= 0 || n>= (int) pkh.caplen )
 					continue;
 
 				h80211 += n; pkh.caplen -= n;
@@ -1702,7 +1728,8 @@ void check_thread( void *arg )
 
 		if( pfh.linktype != LINKTYPE_IEEE802_11 &&
 			pfh.linktype != LINKTYPE_PRISM_HEADER &&
-			pfh.linktype != LINKTYPE_RADIOTAP_HDR )
+			pfh.linktype != LINKTYPE_RADIOTAP_HDR &&
+			pfh.linktype != LINKTYPE_PPI_HDR )
 		{
 			fprintf( stderr, "This file is not a regular "
 				"802.11 (wireless) capture.\n" );
@@ -1827,6 +1854,25 @@ void check_thread( void *arg )
 				n = *(unsigned short *)( h80211 + 2 );
 
 				if( n <= 0 || n >= (int) pkh.caplen )
+					continue;
+
+				h80211 += n; pkh.caplen -= n;
+			}
+
+			if( pfh.linktype == LINKTYPE_PPI_HDR )
+			{
+				/* Remove the PPI header */
+
+				n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+				if( n <= 0 || n>= (int) pkh.caplen )
+					continue;
+
+				/* for a whole Kismet logged broken PPI headers */
+				if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+					n = 32;
+
+				if( n <= 0 || n>= (int) pkh.caplen )
 					continue;
 
 				h80211 += n; pkh.caplen -= n;

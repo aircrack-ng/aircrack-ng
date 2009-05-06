@@ -107,6 +107,12 @@ static uchar ZERO[32] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00";
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define	le16_to_cpu(x) (x)
+#else
+#define	le16_to_cpu(x) ((((x)&0xff)<<8)|(((x)&0xff00)>>8))
+#endif
+
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
 void usage(int what)
@@ -825,7 +831,8 @@ int main( int argc, char *argv[] )
 
     if( pfh.linktype != LINKTYPE_IEEE802_11 &&
         pfh.linktype != LINKTYPE_PRISM_HEADER &&
-        pfh.linktype != LINKTYPE_RADIOTAP_HDR )
+        pfh.linktype != LINKTYPE_RADIOTAP_HDR &&
+		pfh.linktype != LINKTYPE_PPI_HDR )
     {
         printf( "\"%s\" isn't a regular 802.11 "
                 "(wireless) capture.\n", argv[2] );
@@ -915,6 +922,25 @@ int main( int argc, char *argv[] )
 
             h80211 += n; pkh.caplen -= n;
         }
+
+		if( pfh.linktype == LINKTYPE_PPI_HDR )
+		{
+			/* Remove the PPI header */
+
+			n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+			if( n <= 0 || n>= (int) pkh.caplen )
+				continue;
+
+			/* for a while Kismet logged broken PPI headers */
+			if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+				n = 32;
+
+			if( n <= 0 || n>= (int) pkh.caplen )
+				continue;
+
+			h80211 += n; pkh.caplen -= n;
+		}
 
         ret = dump_add_packet(h80211, pkh.caplen);
 
