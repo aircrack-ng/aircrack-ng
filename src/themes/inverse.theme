@@ -1,0 +1,11 @@
+#!/bin/bash
+#     Colors:   #Dumping	White	#FFFFFF                                            
+#               #Injection	Green	#1DFF00                                            
+#               #Association	Red	#FF0009                                            
+#               #Deauth	        Blue	#99CCFF                                            
+#               #Background	Black	#000000         
+DUMPING_COLOR="black"
+INJECTION_COLOR="green"
+ASSOCIATION_COLOR="red"
+DEAUTH_COLOR="blue"
+BACKGROUND_COLOR="white"

@@ -1,0 +1,8 @@
+20c20
+< 	DHCPSOFT="dhclient"
+---
+> 	DHCPSOFT="dhcpcd"
+61c61
+< 	TERMBIN="/usr/bin/" # Change this if your terminal is not in /usr/bin, for example, on /usr/X11R6/bin or /usr/local/bin ... 
+---
+> 	TERMBIN="/usr/X11R6/bin" # Change this if your terminal is not in /usr/bin, for example, on /usr/X11R6/bin or /usr/local/bin ... 

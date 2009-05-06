@@ -1,0 +1,7 @@
+Airopdate is a simple shell script that allows you to get various versions of aircrack-ng, airoscript and drivers for multiple wifi devices.
+It's divided in 4 sections
+
+aircrack-ng	allows you to get any version of aircrack-ng : stable, latest svn, latest 1.0-dev,or a specific revision
+drivers		allows you to install drivers automatically. For now only a few drivers are supported. (DEPRECATED, use airdriver-ng instad)
+airoscript	allows you to get the latest version of airoscript (works with latest rev, maybe on other too)
+quit		exits the script and return you to your shell.

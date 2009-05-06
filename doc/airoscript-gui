@@ -1,0 +1,4 @@
+== Airosperl ==
+Airosperl is a perl-gtk gui for airoscript.
+It's a separated part of main script, in perl, but acts as an airoscript gui, note this is not a gui for aircrack-ng since it doesn't (at my opinion) have sufficent funcionality.
+

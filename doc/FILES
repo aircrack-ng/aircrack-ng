@@ -1,0 +1,15 @@
+/usr/share/airoscript
+	themes/ -> directory where themes (just shell scripts defining colors) are stored
+	airoscfunc.sh -> All airoscript funcions should be stored here.
+	airoscfunc_unstable.sh ->  But unstable functions, that will be here.
+	airoscfunc_external.sh -> Functions that require external software
+/etc/
+	airoscript.conf -> airoscript main configuration.
+
+/usr/sbin/
+	airoscript -> Main airoscript script =)
+	airoptdate -> Updating script. Allows manual update of aircrack-ng airoscript and so on.
+
+/usr/share/locale/*/LC_MESSAGES/
+	airoscript.mo -> Airoscript translations.
+

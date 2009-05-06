@@ -1,0 +1,22 @@
+REQUIREMENTS
+- GNU gettext (Debian/Ubuntu: gettext package)
+- ip (Debian/Ubuntu: iproute package)
+- aircrack-ng 1.0 rc2
+- WORKING injection capable driver for the interface you want to use
+
+COMPILING:
+To install just type "make" in main dir, as root. 
+Airoscript is a bash script, so it hasn't got to be compilated, anyway, it has a build dep: gettext.
+
+NEW FEATURES
+Airoscript is fully i10n now, configurable by /etc/airoscript.conf , themable, modular and supports screen (so X is not required anymore).
+
+PATCHES
+If you are running a supported non-standard distro (like wifislax) you should try executing:
+make wifislax
+that will patch /etc/airoscript.conf with a default config that will work for you.
+
+PROBLEMS:
+If your system has not aircrack-ng or xterm installed in /usr/bin you should change that paths. 
+If something fails when trying to use dhcp, check that you have dhclient installed, if not, just change $DHCPSOFT var on config file for your dhcp client software.
+

@@ -1,0 +1,10 @@
+If you're planning to package this for debian-based distos you should know:
+Depends: xterm|screen , gawk, aircrack-ng, macchanger
+Build-Deps: debhelper ... 
+Build-Deps-Indep: gettext
+
+You'll have to change PREF var on makefile from /usr/local to /usr and edit some things on conffile.
+
+I'm not really sure how will be installing docs, because they are mostly html and there is a license file (that, on debian, can be safely removed since its a gpl-2 copy). Manpage is also installed by make :-)
+
+Note this is a script, and should be threated like that when packaging.
