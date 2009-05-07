@@ -8,9 +8,7 @@
 
 # $CLEAR screen first of all
 $CLEAR
-# Set variables for airoscript's locale
-export TEXTDOMAINDIR=/usr/share/locale
-export TEXTDOMAIN=airoscript
+
 # Sets ps3, wich will be shown after input in the select	
 PS3=`gettext 'Input number: '`
 
@@ -46,23 +44,27 @@ if [ -e ~/.airoscript/airoscript.conf ];
 		if [ -e /etc/airoscript.conf ]; then
 			. /etc/airoscript.conf
 		else
-			if [ -e airoscript.conf ]; then
-				confwarn
-				read response
-				if [ "$response" = "yes" ]
-				then
-					. airoscript.conf
+			if [ -e /usr/local/etc/airoscript.conf ]; then
+				. /usr/local/etc/airoscript.conf
+			else
+				if [ -e airoscript.conf ]; then
+					confwarn
+					read response
+					if [ "$response" = "yes" ]
+					then
+						. airoscript.conf
+					else
+						echo -e `gettext "Ok, please remove/rename your $HOME/.airoscript.conf"`
+						exit
+					fi
 				else
-					echo -e `gettext "Ok, please remove/rename your $HOME/.airoscript.conf"`
+					echo -e `gettext "Error, no config file found, quitting"`
 					exit
 				fi
-			else
-				echo -e `gettext "Error, no config file found, quitting"`
-				exit
 			fi
 		fi
 fi
-
+if [ $DEBUG ]; then echo "Text domain dir is $TEXTDOMAINDIR and textdomain is $TEXTDOMAIN" ;fi
 cd $DUMP_PATH
 
 if [ $SHOW_AIROSCRIPT_WARNING ]
