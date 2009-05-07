@@ -2,9 +2,10 @@ Version 1.0-rc4 (changes from aircrack-ng 1.0-rc3) - Released ?? ??? ????:
 * airodump-ng: Decreased time before writing text files to 5 sec (instead of 20).
 * airodump-ng: New option --output-format option (to replace --nocap): specify output files.
 * aircrack-ng: Fixed compilation on FreeBSD.
-* airmon-ng: Updated iw download link (0.9.12).
+* airmon-ng: Updated iw download link (0.9.13).
 * airdriver-ng: Updated to rt2570 k2wrlz v1.6.3
 * airdriver-ng: Updated r8187 patch.
+* aircrack-ng, airdecap-ng, ivstools: Added support for PPI captures support (Thanks to dragorn).
 * patches: Updated sqlite (v3.6.13) patch for cygwin.
 * patches: Updated wlanng patch for 2.6.28.
 * patches: update rtl8187 speedpatch for 2.6.30-rc3.
