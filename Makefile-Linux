@@ -37,7 +37,8 @@ installdirs:
         			$(docdir)/html/images $(sysconfdir) \
                                 $(mandir) $(localedir) \
 				$(datadir)/themes \
-				$(datadir)/airosperl
+				$(datadir)/airosperl \
+				$(docdir)/tools
 	
 install-airoscript:
 	@echo "Installing airoscript"
