@@ -6,15 +6,20 @@ REQUIREMENTS
 
 COMPILING:
 To install just type "make" in main dir, as root. 
-Airoscript is a bash script, so it hasn't got to be compilated, anyway, it has a build dep: gettext.
+Airoscript is a bash script, so it hasn't got to be compiled, anyway, it has a build dep: gettext.
+Airosperl (Airoscript gui) is a perl script, so, it hasnt got to be compiled neither.
 
 NEW FEATURES
-Airoscript is fully i10n now, configurable by /etc/airoscript.conf , themable, modular and supports screen (so X is not required anymore).
+Airoscript is fully i10n (currently translated to spanish), configurable , themable and modular. 
 
 PATCHES
 If you are running a supported non-standard distro (like wifislax) you should try executing:
 make wifislax
 that will patch /etc/airoscript.conf with a default config that will work for you.
+
+DEBIAN:
+There is a file regarding debian packaging, if you're going to package airoscript for debian.
+For normal installations where aircrack-ng is installed by debian package you should use "make debian".
 
 PROBLEMS:
 If your system has not aircrack-ng or xterm installed in /usr/bin you should change that paths. 

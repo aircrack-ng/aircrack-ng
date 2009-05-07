@@ -22,6 +22,7 @@ REQUIREMENTS:
 - ip (Debian/Ubuntu: iproute package)
 - aircrack-ng 1.0 rc2
 - WORKING injection capable driver for the interface you want to use
+FIXME : update airosperl requeriments
 
 USAGE:
 Airoscript can now get the terminal emulator from command line, you won't have to 
