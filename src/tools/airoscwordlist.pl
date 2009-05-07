@@ -1,38 +1,36 @@
 #!/usr/bin/perl
-#==============================================================================
-#
-#         FILE:  airoscwordlist.pl
-#
-#        USAGE:  ./airoscwordlist.pl  
-#
-#  DESCRIPTION:  Creates a wordlist automagically according to a config file.
-#
-#      OPTIONS:  --mac-address|-m
-#                --essid|-e 
-#                --filename|-f
-#                --company|-c
-#                --companyfile|-cf
-#                --verbose|-v
-#                --version|-V
-#
-# REQUIREMENTS:  ---
-#         BUGS:  ---
-#        NOTES:  GPL2+
-#       AUTHOR:  David Francos Cuartero (XayOn), yo.orco@gmail.com
-#      COMPANY:  
-#      VERSION:  1.0
-#      CREATED:  22/04/09 19:28:24
-#     REVISION:  ---
-#==============================================================================
+
 use strict;use warnings;use Getopt::Long;use YAML::Syck qw(LoadFile);
+
 GetOptions("mac-address|m:s"=>\(my $mac),"ssid|s:s"=>\(my $essid),
 "filename|f:s" => \(my $filename),"company|c:s" => \(my $company),
-"companyfile|cf:s" => \(my $cf),"verbose" => \(my $verbose));
+"companyfile|cf:s" => \(my $cf),"verbose" => \(my $verbose),
+"version|V" => \(my $getversion),"license|L" =>\(my $license));
 
-my $executable;my $usage="$0 [OPTIONS]\nOPTIONS:\n\t--mac-address|-m\n\t".
+my $executable;
+
+	# Main Info here.
+my $usage="$0 [OPTIONS]\nOPTIONS:\n\t--mac-address|-m\n\t".
 "[--essid|-e] \n\t[--filename|-f]\n\t[--company|-c]\n\t--companyfile|-cf\n\t".
-"[--verbose|-v]\n\t[--version|-V]\n";
+"[--verbose|-v]\n\t[--license|-L]\n\t[--version|-V]\n";my $version="1.0";
+
+my $licensewarn="Copyright (C) 2009 David Francos Cuartero
+\tThis program is free software; you can redistribute it and/or
+\tmodify it under the terms of the GNU General Public License
+\tas published by the Free Software Foundation; either version 2
+\tof the License, or (at your option) any later version.";
+	my $extendedlw="\n\n\tThis program is distributed in the hope that it will be useful,
+\tbut WITHOUT ANY WARRANTY; without even the implied warranty of
+\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+\tGNU General Public License for more details.
+\n\tYou should have received a copy of the GNU General Public License
+\talong with this program; if not, write to the Free Software
+\tFoundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.";
+
+die "Airoscwordlist ".$version."\n".$licensewarn if $getversion;
+die $licensewarn.$extendedlw if $license;
 die $usage if !$mac or !$cf;
+
 my $comp=LoadFile($cf) or die "ERROR, could not open company file: $!";
 
 sub _guess_company(){
@@ -42,20 +40,26 @@ sub _guess_company(){
 	} else { exit(404); }
 }
 
-sub _execute_wholething(){
-	s/FILENAME/$filename/;
-	s/MACADDR/$mac/;
-	s/ESSID/$essid/;
+sub _execute_wholething(){my $_=shift;
+	s/FILENAME/$filename/ if $filename;
+	s/MACADDR/$mac/ if $mac;
+	s/ESSID/$essid/ if $essid;
 	print;
 	system($_);
 }
 
 
-$filename=$ENV{'home'}."/generated-wordlist-".localtime(time) if !$filename;
+$filename=$ENV{'HOME'}."/generated-wordlist-".localtime(time) if !$filename;
 $cf="/usr/share/airoscript/default_company_names" if !$cf;
 
-($executable,$company)=&_guess_company($mac) if !$company;
-print "Company recognised: $company" if $verbose;
+($company,$executable)=&_guess_company($mac) if !$company;
+print "Company recognised: $company, executable $executable" if $verbose;
 
 &_execute_wholething($executable);
 
+__DATA__
+=head1 NAME
+  Airoscwordlist - Automatic wordlist generator for airoscript.
+
+
+=head1 OPTIONS
