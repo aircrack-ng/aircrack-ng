@@ -1,3 +1,4 @@
+all: install
 install:
 	@echo -e "\t Installing html documentation"
 	@$(INSTALLDATA) *.html $(docdir)/html

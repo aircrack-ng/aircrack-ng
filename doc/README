@@ -33,39 +33,14 @@ SYNTAX:
 where terminal is one of xterm,urxvt,gnome-terminal (please, someone help me adding support for this one), and screen (some bugs are not corrected yet on screen support).
 
 CONFIGURATION:
-All config is done by the file /etc/airoscript.conf or ~/.airoscript.conf .
-
-The most important variables are:
-
-The TROUBLESHOOTING debug mod (1 for enable, 0 for disable)
-	DEBUG="0"
-
-The critical troubleshooting debug mode: uncomment or add this line to your conffile:
-This will make every terminal command to be showed up instead of executing
-	CDCMD="echo "
-
-
-Your interface: wlan0, ath0 etc... (if not set airoscript will ask for one
-at every launch of it)
-	WIFI=""
-
-And the paths.
-
-Note:
-If installing from sources, and you don't want to install it (you should be root
-to execute aircrack, anyway), you'll need to adapt FUNCTIONS var on your config file
-(you can put it on your home dir as .airoscript.conf) and make airoscript.sh executable.
-( executing "chmod +x airoscript.sh" )
-
-be sure to have root access and then you can run it by typing:
-"./airoscript.sh"
+All config is done by the file airoscript.conf 
 
 COMPILATION:
-A shell script doesnt need to be compiled, but it can be put into bin folder
-to allow it to be run from anywhere.
-There is a makefile to make this way easier:
-	# make
-Of course, as root. =)
+Just run 
+"make"
+"make debian"
+"make slackware"
+depending on your distro.
 
 Airoscript have few dependences:
 Compile-time: gettext
@@ -98,5 +73,3 @@ There is also forum thread in aircrack-ng official forum where you can ask
 questions, or just get updates, support etc.
 You can also submit bugs to airoscript's google code page.
 
-NEEDED HELP:
-Really, help with screen support will be appreciated, it "just works" but I don't like how it works :-P.

@@ -1,4 +1,24 @@
 #!/usr/bin/perl
+# Airoscwordlist.pl - Wordlist generator for airoscript
+
+=pod
+
+  Copyright (C) 2009 David Francos Cuartero
+        This program is free software; you can redistribute it and/or
+        modify it under the terms of the GNU General Public License
+        as published by the Free Software Foundation; either version 2
+        of the License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU General Public License for more details.
+
+        You should have received a copy of the GNU General Public License
+        along with this program; if not, write to the Free Software
+        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. at airoscwordlist.pl line 31.
+
+=cut
 
 use strict;use warnings;use Getopt::Long;use YAML::Syck qw(LoadFile);
 
@@ -58,8 +78,47 @@ print "Company recognised: $company, executable $executable" if $verbose;
 &_execute_wholething($executable);
 
 __DATA__
+
 =head1 NAME
+
   Airoscwordlist - Automatic wordlist generator for airoscript.
 
+=head1 USAGE
+
+  Airoscwordlist [ OPTIONS ]
 
 =head1 OPTIONS
+
+        --mac-address|-m	Target mac address
+        [--essid|-e] 		Target essid
+        [--filename|-f]		Filename to write wordlist
+        [--company|-c]		Company to look for
+        --companyfile|-cf	Company file
+        [--verbose|-v]		Enable verbosity
+        [--license|-L]		Show license and exit
+        [--version|-V]		Show version and exit
+
+=head1 COMPANY FILE
+
+  Company file is just a yaml file with the format:
+
+  "00:00:00": # Those are the last 6 digits of mac addr
+  		name: CompanyName
+		exec: CommandToExecute ESSID FILENAME MAC 
+  
+  Where ESSID, FILENAME and MAC are replaced by options-specified ones.
+
+=head1 FUNCTIONS
+
+=over
+
+=item _guess_company()
+
+	Processes yaml file and returns exec and name from company.
+
+=item _execute_wholething()
+
+  Replaces MAC, ESSID and FILENAME by options-specified ones.
+  and executes command given by _guess_company
+
+=back

@@ -3,13 +3,27 @@
 # Authors:	Base Code by Daouid; Mods & Tweaks by CurioCT and others; Continued by XayOn.
 # Credits:      Hirte, Befa, Stouf, Mister_X, ASPj , Andrea, Pilotsnipes, darkAudax, Atheros support thx to green-freq
 # Date of this version:	        27.11.2008
-# Version of aircrack-ng required:  AIRCRACK-NG 1.0.2
+# Version of aircrack-ng required:  AIRCRACK-NG 1.0
 # Dependencies: aircrack-ng, xterm|urxvt|gnome-terminal|..., awk, macchanger, drivers capable of injection (for injection =) ), mdk3 (optional), wlandecrypter (optional), jazzteldecrypter (optional), grep (included on almost all systems by default)
 
-# $CLEAR screen first of all
-$CLEAR
+# Copyright (C) 2009 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 
 # Sets ps3, wich will be shown after input in the select	
+$CLEAR
 PS3=`gettext 'Input number: '`
 
 function confwarn {

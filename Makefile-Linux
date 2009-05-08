@@ -37,8 +37,7 @@ installdirs:
         			$(docdir)/html/images $(sysconfdir) \
                                 $(mandir) $(localedir) \
 				$(datadir)/themes \
-				$(datadir)/airosperl \
-				$(docdir)/tools
+				$(datadir)/airosperl
 	
 install-airoscript:
 	@echo "Installing airoscript"
@@ -95,7 +94,7 @@ generate-locale:
 	@ echo "Installing locales"
 	@for i in $(srcdir)/locale/* ; do \
 		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
-			make -s -C $$i ; \
+			make -s -C $$i &> /dev/null ; \
 		fi ; \
 	done
 
@@ -103,7 +102,7 @@ generate-locale:
 install-locale: generate-locale
 	@for i in $(srcdir)/locale/* ; do \
 		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
-			make -s -C $$i install localedir="$(localedir)" INSTALLDATA="$(INSTALLDATA)" ; \
+			make -s -C $$i install localedir="$(localedir)" INSTALLDATA="$(INSTALLDATA)" &>/dev/null ; \
 		fi ; \
 	done
 

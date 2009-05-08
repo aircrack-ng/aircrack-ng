@@ -1,4 +1,5 @@
 Changelog for 2.2 (Not yet released)
+- Updated licenses on all documents (closes: )
 - Bugfixes (lots) on airoscfunc.sh 
 - Added airoswordlist.pl for automatising wordlist creation.
 - Added airosconf.sh for airoscript configuration modify trought command line
