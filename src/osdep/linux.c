@@ -776,7 +776,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     }
 
     if(usedrtap)
-        ret-=9;
+        ret-=u8aRadiotap[3];
 
     if( ret < 0 )
     {
