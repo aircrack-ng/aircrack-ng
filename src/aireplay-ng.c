@@ -1502,10 +1502,6 @@ int do_attack_fake_auth( void )
 
                     if( send_packet( ackbuf, 14 ) < 0 )
                         return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
                 }
 
                 break;
@@ -1629,10 +1625,6 @@ int do_attack_fake_auth( void )
 
                     if( send_packet( ackbuf, 14 ) < 0 )
                         return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
                 }
 
                 break;
@@ -1719,10 +1711,6 @@ int do_attack_fake_auth( void )
                     if( send_packet( h80211, 46 + n ) < 0 )
                         return( 1 );
 
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
                     usleep(10);
 
                     if( send_packet( ackbuf, 14 ) < 0 )
