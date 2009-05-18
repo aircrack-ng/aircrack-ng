@@ -178,12 +178,6 @@ const uchar R[256] =
 	, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255
 };
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define	le16_to_cpu(x) (x)
-#else
-#define	le16_to_cpu(x) ((((x)&0xff)<<8)|(((x)&0xff00)>>8))
-#endif
-
 char usage[] =
 "\n"
 "  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"

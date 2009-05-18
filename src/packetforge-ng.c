@@ -235,6 +235,41 @@ int capture_ask_packet( int *caplen )
             memcpy( h80211, tmpbuf + n, *caplen );
         }
 
+        if( dev.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR )
+        {
+            /* remove the radiotap header */
+
+            n = *(unsigned short *)( h80211 + 2 );
+
+            if( n <= 0 || n >= (int) *caplen )
+                continue;
+
+            memcpy( tmpbuf, h80211, *caplen );
+            *caplen -= n;
+            memcpy( h80211, tmpbuf + n, *caplen );
+        }
+
+        if( dev.pfh_in.linktype == LINKTYPE_PPI_HDR )
+        {
+            /* remove the PPI header */
+
+            n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+            if( n <= 0 || n>= (int) *caplen )
+                continue;
+
+            /* for a while Kismet logged broken PPI headers */
+            if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+                n = 32;
+
+            if( n <= 0 || n>= (int) *caplen )
+                continue;
+
+            memcpy( tmpbuf, h80211, *caplen );
+            *caplen -= n;
+            memcpy( h80211, tmpbuf + n, *caplen );
+        }
+
         nb_pkt_read++;
 
         switch( h80211[1] & 3 )
@@ -1397,7 +1432,9 @@ int main(int argc, char* argv[])
             SWAP32(dev.pfh_in.linktype);
 
         if( dev.pfh_in.linktype != LINKTYPE_IEEE802_11 &&
-            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER )
+            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER &&
+            dev.pfh_in.linktype != LINKTYPE_RADIOTAP_HDR &&
+            dev.pfh_in.linktype != LINKTYPE_PPI_HDR )
         {
             fprintf( stderr, "Wrong linktype from pcap file header "
                              "(expected LINKTYPE_IEEE802_11) -\n"

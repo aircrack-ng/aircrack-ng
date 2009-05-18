@@ -85,7 +85,7 @@ OBJS_ES		= easside-ng.o common.o
 OBJS_BUDDY	= buddy-ng.o common.o
 OBJS_MI		= makeivs-ng.o common.o uniqueiv.o
 OBJS_AB		= airbase-ng.o common.o crypto.o
-OBJS_AU		= airdecloak-ng.o common.o
+OBJS_AU		= airdecloak-ng.o common.o osdep/radiotap-parser.o
 OBJS_TT		= tkiptun-ng.o common.o crypto.o
 
 

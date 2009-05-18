@@ -41,6 +41,8 @@
 #include <getopt.h>
 #include "airdecloak-ng.h"
 #include "version.h"
+#include "radiotap-parser.h"
+#include "ieee80211_radiotap.h"
 
 uchar buffer[65536];
 
@@ -187,7 +189,8 @@ FILE * open_existing_pcap(const char * filename) {
 
     if( _pfh_in.linktype != LINKTYPE_IEEE802_11 &&
         _pfh_in.linktype != LINKTYPE_PRISM_HEADER &&
-        _pfh_in.linktype != LINKTYPE_RADIOTAP_HDR )
+        _pfh_in.linktype != LINKTYPE_RADIOTAP_HDR &&
+        _pfh_in.linktype != LINKTYPE_PPI_HDR )
     {
         printf( "\"%s\" isn't a regular 802.11 "
                 "(wireless) capture.\n", filename );
@@ -196,7 +199,11 @@ FILE * open_existing_pcap(const char * filename) {
     }
     else if (_pfh_in.linktype == LINKTYPE_RADIOTAP_HDR)
     {
-		printf("Radiotap not yet supported\n");
+		printf("Radiotap header found. Parsing Radiotap is experimental.\n");
+	}
+    else if (_pfh_in.linktype == LINKTYPE_PPI_HDR)
+    {
+		printf("PPI not yet supported\n");
 		fclose(f);
         return NULL;
 	}
@@ -301,6 +308,27 @@ void print_packet(struct packet_elt * packet) {
 	printf("Signal: %d - Retry bit: %d - is cloaked: %d\n", packet->signal_quality, packet->retry_bit, packet->is_cloaked);
 }
 
+int get_rtap_signal(int caplen)
+{
+	struct ieee80211_radiotap_iterator iterator;
+	struct ieee80211_radiotap_header *rthdr;
+
+	rthdr = (struct ieee80211_radiotap_header *)buffer;
+
+	if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen) < 0)
+	return 0;
+
+	while (ieee80211_radiotap_iterator_next(&iterator) >= 0) {
+		if (iterator.this_arg_index == IEEE80211_RADIOTAP_DBM_ANTSIGNAL)
+			return *iterator.this_arg;
+		if (iterator.this_arg_index == IEEE80211_RADIOTAP_DB_ANTSIGNAL)
+			return *iterator.this_arg;
+		if (iterator.this_arg_index == IEEE80211_RADIOTAP_LOCK_QUALITY)
+			return *iterator.this_arg;
+	}
+	return 0;
+}
+
 // !!!! WDS not yet implemented
 BOOLEAN read_packets(void)
 {
@@ -320,17 +348,21 @@ BOOLEAN read_packets(void)
 			start = 144; // based on madwifi-ng
 			break;
 		case LINKTYPE_RADIOTAP_HDR:
-			// No idea
+			start = (int)(buffer[2]); // variable length!
+			break;
 		case LINKTYPE_IEEE802_11:
 			// 0
+		case LINKTYPE_PPI_HDR:
+			// ?
 		default:
 			start = 0;
 			break;
 	}
 
 	// Show link type
-	printf("Link type (Prism: %d - Radiotap: %d - 80211: %d): ",
-			LINKTYPE_PRISM_HEADER, LINKTYPE_RADIOTAP_HDR, LINKTYPE_IEEE802_11);
+	printf("Link type (Prism: %d - Radiotap: %d - 80211: %d - PPI - %d): ",
+			LINKTYPE_PRISM_HEADER, LINKTYPE_RADIOTAP_HDR,
+			LINKTYPE_IEEE802_11, LINKTYPE_PPI_HDR);
 
 	switch (_pfh_in.linktype) {
 		case LINKTYPE_PRISM_HEADER:
@@ -342,6 +374,8 @@ BOOLEAN read_packets(void)
 		case LINKTYPE_IEEE802_11:
 			puts("802.11");
 			break;
+		case LINKTYPE_PPI_HDR:
+			puts("PPI");
 		default:
 			printf("Unknown (%d)\n", _pfh_in.linktype);
 			break;
@@ -608,7 +642,8 @@ BOOLEAN read_packets(void)
 			_packet_elt_head->current->signal_quality = buffer[0x44];
 		}
 		else if (_pfh_in.linktype == LINKTYPE_RADIOTAP_HDR) {
-			// No idea atm (+ check email with different fields used) + check OSdep
+			_packet_elt_head->current->signal_quality = get_rtap_signal(
+				_packet_elt_head->current->header.caplen);
 		}
 		#ifdef DEBUG
 		printf("Signal quality: %d\n", _packet_elt_head->current->signal_quality);
