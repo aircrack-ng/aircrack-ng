@@ -38,8 +38,6 @@
 #ifndef IEEE80211RADIOTAP_H
 #define IEEE80211RADIOTAP_H
 
-#include <linux/kernel.h>
-
 /* Radiotap header version (from official NetBSD feed) */
 #define IEEE80211RADIOTAP_VERSION	"1.5"
 /* Base version of the radiotap packet header data */

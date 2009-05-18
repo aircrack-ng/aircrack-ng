@@ -19,8 +19,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <pcap.h>
-
 #include "../include/radiotap-parser.h"
 
 
