@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "../include/radiotap-parser.h"
+#include "radiotap-parser.h"
 
 
 /*
