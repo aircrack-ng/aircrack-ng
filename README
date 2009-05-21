@@ -119,7 +119,7 @@ test.ivs (http://download.aircrack-ng.org/wiki-files/other/test.ivs):
     The key is AE:5B:7F:3A:03:D0:AF:9B:F6:8D:A5:E2:C7.
 
 ptw.cap (http://dl.aircrack-ng.org/ptw.cap): 
-    This is a 64 bit WEP key file suitable for the PTW method (-z option).
+    This is a 64 bit WEP key file suitable for the PTW method.
     The key is '1F:1F:1F:1F:1F'.
 
 password.lst
