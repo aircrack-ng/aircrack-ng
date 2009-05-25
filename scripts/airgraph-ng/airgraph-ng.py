@@ -136,7 +136,7 @@ def clientTag(devices):
 		client = {}
 		string_list = entry.split(',')
 		if len(string_list) >= 7:
-			client = {"station":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"power":string_list[3],"packets":string_list[4],"bssid":string_list[5].replace(' ',''),"probe":string_list[6:][1:]}
+			client = {"station":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"power":string_list[3],"packets":string_list[4],"bssid":string_list[5].replace(' ',''),"probe":string_list[6:][0:]}
 		if len(client) != 0:
 			dict[string_list[0]] = client
 	return dict
