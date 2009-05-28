@@ -1,0 +1,285 @@
+Quick Notes for the CUDA version of aircrack-ng:
+	-> Only works with wpa cracking
+	-> Tested on a 1.0 Compute Card using CUDA_SDK 2.2 (LINUX)
+	-> No SLI Support as yet (I have no way of testing currently)
+
+Preq:
+	-> CUDA SDK 2.2 Installed with ENV vars (see cuda install guide for more details)
+		* PATH to contain /usr/local/cuda/bin
+		* LD_LIBRARY_PATH to contain /usr/local/cuda/cudaprof/bin:/usr/local/cuda/lib
+		* CUDA_INSTALL_PATH to contain /usr/local/cuda
+		(or where ever you installed it ;)
+
+Building CUDA aircrack-ng:
+	make clean
+	CUDA=true make
+
+Testing:
+	cd src
+	./aircrack-ng ../test/wpa.cap -w ../test/password.lst
+
+Have Fun,
+Julian Tyler (tylerj@crm114.net)
+
+
+-------------------------------------------------------------
+-- Performance Review
+-------------------------------------------------------------
+GPU: 
+src # /root/NVIDIA_CUDA_SDK/bin/linux/release/deviceQuery
+CUDA Device Query (Runtime API) version (CUDART static linking)
+There is 1 device supporting CUDA
+
+Device 0: "GeForce 8800 GTS 512"
+  CUDA Capability Major revision number:         1
+  CUDA Capability Minor revision number:         1
+  Total amount of global memory:                 536150016 bytes
+  Number of multiprocessors:                     16
+  Number of cores:                               128
+  Total amount of constant memory:               65536 bytes
+  Total amount of shared memory per block:       16384 bytes
+  Total number of registers available per block: 8192
+  Warp size:                                     32
+  Maximum number of threads per block:           512
+  Maximum sizes of each dimension of a block:    512 x 512 x 64
+  Maximum sizes of each dimension of a grid:     65535 x 65535 x 1
+  Maximum memory pitch:                          262144 bytes
+  Texture alignment:                             256 bytes
+  Clock rate:                                    1.62 GHz
+  Concurrent copy and execution:                 Yes
+  Run time limit on kernels:                     No
+  Integrated:                                    No
+  Support host page-locked memory mapping:       No
+  Compute mode:                                  Default (multiple host threads can use this device simultaneously)
+
+Test PASSED
+
+----
+GPU Test:
+
+src # time ./aircrack-ng -p 1 ../test/wpa.cap -w ~/words
+
+real	1m12.439s
+user	0m29.990s
+sys	0m42.370s
+
+keys: 176984 keys
+
+k/p = 2458.11
+----
+
+
+CPU: (DUAL CORE)
+src # cat /proc/cpuinfo 
+processor	: 0 & 1
+vendor_id	: GenuineIntel
+cpu family	: 15
+model		: 6
+model name	: Intel(R) Pentium(R) D CPU 3.00GHz
+stepping	: 2
+cpu MHz		: 3014.642
+cache size	: 2048 KB
+physical id	: 0
+siblings	: 2
+core id		: 0
+cpu cores	: 2
+apicid		: 0
+initial apicid	: 0
+fdiv_bug	: no
+hlt_bug		: no
+f00f_bug	: no
+coma_bug	: no
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 6
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe nx lm constant_tsc pebs bts pni dtes64 monitor ds_cpl vmx cid cx16 xtpr pdcm lahf_lm tpr_shadow
+bogomips	: 6029.28
+clflush size	: 64
+power management:
+
+----
+CPU (SSE2) Test:
+
+time ./aircrack-ng -p 2 ../test/wpa.cap -w ~/words
+
+
+real	4m59.881s
+user	9m57.630s
+sys	0m0.430s
+
+keys: 176984
+
+k/s = 772.85
+----
+
+-------------------------------------------------------------
+-- Sliding Window for W[] to fit in shared Memory
+-------------------------------------------------------------
+
+In cudacrypto.cu:
+
+	#define W(x)  ( W[x + (tid*20)] )
+and Replace all W[x] with W(x)
+
+Replace uint W[80] with
+	__shared__ unsigned int W[20 * THREADS_PER_BLOCK];
+
+This needs to be Added before each call to "#include "cudacrypto_sha1_process.cuh""
+
+        /* End Byte and Padding */
+        W(5) = 0x80000000;
+        W(6) = 0;
+        W(7) = 0;
+        W(8) = 0;
+        W(9) = 0;
+        W(10) = 0;
+        W(11) = 0;
+        W(12) = 0;
+        W(13) = 0;
+ 
+        /* Size */
+        W(14) = 0;
+        W(15) = 0x200 + 8*20;
+
+
+Replace cudacrypto_sha1_process.cuh
+{
+            #pragma unroll
+            for(t = 16; t < 20; t++)
+            {
+               W(t) = SHA1CircularShift(1,W(t-3) ^ W(t-8) ^ W(t-14) ^ W(t-16));
+            }
+
+
+            A = h0;
+            B = h1;
+            C = h2;
+            D = h3;
+            E = h4;
+
+           #pragma unroll
+           for(t = 0; t < 20; t++)
+            {
+                temp =  SHA1CircularShift(5,A) + ((B & C) | ((~B) & D)) + E + W(t) + D_K0;
+                //temp &= 0xFFFFFFFF;
+                E = D;
+                D = C;
+                C = SHA1CircularShift(30,B);
+                B = A;
+                A = temp;
+            }
+             
+                /* 20 -> 40*/
+W(0) = SHA1CircularShift(1, W(17) ^ W(12) ^ W(6) ^ W(4));
+W(1) = SHA1CircularShift(1, W(18) ^ W(13) ^ W(7) ^ W(5));
+W(2) = SHA1CircularShift(1, W(19) ^ W(14) ^ W(8) ^ W(6));
+W(3) = SHA1CircularShift(1, W(0) ^ W(15) ^ W(9) ^ W(7));
+W(4) = SHA1CircularShift(1, W(1) ^ W(16) ^ W(10) ^ W(8));
+W(5) = SHA1CircularShift(1, W(2) ^ W(17) ^ W(11) ^ W(9));
+W(6) = SHA1CircularShift(1, W(3) ^ W(18) ^ W(12) ^ W(10));
+W(7) = SHA1CircularShift(1, W(4) ^ W(19) ^ W(13) ^ W(11));
+W(8) = SHA1CircularShift(1, W(5) ^ W(0) ^ W(14) ^ W(12));
+W(9) = SHA1CircularShift(1, W(6) ^ W(1) ^ W(15) ^ W(13));
+W(10) = SHA1CircularShift(1, W(7) ^ W(2) ^ W(16) ^ W(14));
+W(11) = SHA1CircularShift(1, W(8) ^ W(3) ^ W(17) ^ W(15));
+W(12) = SHA1CircularShift(1, W(9) ^ W(4) ^ W(18) ^ W(16));
+W(13) = SHA1CircularShift(1, W(10) ^ W(5) ^ W(19) ^ W(17));
+W(14) = SHA1CircularShift(1, W(11) ^ W(6) ^ W(0) ^ W(18));
+W(15) = SHA1CircularShift(1, W(12) ^ W(7) ^ W(1) ^ W(19));
+W(16) = SHA1CircularShift(1, W(13) ^ W(8) ^ W(2) ^ W(0));
+W(17) = SHA1CircularShift(1, W(14) ^ W(9) ^ W(3) ^ W(1));
+W(18) = SHA1CircularShift(1, W(15) ^ W(10) ^ W(4) ^ W(2));
+W(19) = SHA1CircularShift(1, W(16) ^ W(11) ^ W(5) ^ W(3));
+
+            #pragma unroll
+            for(t = 0; t < 20; t++)
+            {
+                temp = SHA1CircularShift(5,A) + (B ^ C ^ D) + E + W(t) + D_K1;
+                //temp &= 0xFFFFFFFF;
+                E = D;
+                D = C;
+                C = SHA1CircularShift(30,B);
+                B = A;
+                A = temp;
+            }
+
+                /* 40 -> 60*/
+W(0) = SHA1CircularShift(1, W(17) ^ W(12) ^ W(6) ^ W(4));
+W(1) = SHA1CircularShift(1, W(18) ^ W(13) ^ W(7) ^ W(5));
+W(2) = SHA1CircularShift(1, W(19) ^ W(14) ^ W(8) ^ W(6));
+W(3) = SHA1CircularShift(1, W(0) ^ W(15) ^ W(9) ^ W(7));
+W(4) = SHA1CircularShift(1, W(1) ^ W(16) ^ W(10) ^ W(8));
+W(5) = SHA1CircularShift(1, W(2) ^ W(17) ^ W(11) ^ W(9));
+W(6) = SHA1CircularShift(1, W(3) ^ W(18) ^ W(12) ^ W(10));
+W(7) = SHA1CircularShift(1, W(4) ^ W(19) ^ W(13) ^ W(11));
+W(8) = SHA1CircularShift(1, W(5) ^ W(0) ^ W(14) ^ W(12));
+W(9) = SHA1CircularShift(1, W(6) ^ W(1) ^ W(15) ^ W(13));
+W(10) = SHA1CircularShift(1, W(7) ^ W(2) ^ W(16) ^ W(14));
+W(11) = SHA1CircularShift(1, W(8) ^ W(3) ^ W(17) ^ W(15));
+W(12) = SHA1CircularShift(1, W(9) ^ W(4) ^ W(18) ^ W(16));
+W(13) = SHA1CircularShift(1, W(10) ^ W(5) ^ W(19) ^ W(17));
+W(14) = SHA1CircularShift(1, W(11) ^ W(6) ^ W(0) ^ W(18));
+W(15) = SHA1CircularShift(1, W(12) ^ W(7) ^ W(1) ^ W(19));
+W(16) = SHA1CircularShift(1, W(13) ^ W(8) ^ W(2) ^ W(0));
+W(17) = SHA1CircularShift(1, W(14) ^ W(9) ^ W(3) ^ W(1));
+W(18) = SHA1CircularShift(1, W(15) ^ W(10) ^ W(4) ^ W(2));
+W(19) = SHA1CircularShift(1, W(16) ^ W(11) ^ W(5) ^ W(3));
+
+            #pragma unroll
+            for(t = 0; t < 20; t++)
+            {
+                temp = SHA1CircularShift(5,A) +
+                       ((B & C) | (B & D) | (C & D)) + E + W(t) + D_K2;
+                //temp &= 0xFFFFFFFF;
+                E = D;
+                D = C;
+                C = SHA1CircularShift(30,B);
+                B = A;
+                A = temp;
+            }
+
+                /* 60 -> 80*/
+W(0) = SHA1CircularShift(1, W(17) ^ W(12) ^ W(6) ^ W(4));
+W(1) = SHA1CircularShift(1, W(18) ^ W(13) ^ W(7) ^ W(5));
+W(2) = SHA1CircularShift(1, W(19) ^ W(14) ^ W(8) ^ W(6));
+W(3) = SHA1CircularShift(1, W(0) ^ W(15) ^ W(9) ^ W(7));
+W(4) = SHA1CircularShift(1, W(1) ^ W(16) ^ W(10) ^ W(8));
+W(5) = SHA1CircularShift(1, W(2) ^ W(17) ^ W(11) ^ W(9));
+W(6) = SHA1CircularShift(1, W(3) ^ W(18) ^ W(12) ^ W(10));
+W(7) = SHA1CircularShift(1, W(4) ^ W(19) ^ W(13) ^ W(11));
+W(8) = SHA1CircularShift(1, W(5) ^ W(0) ^ W(14) ^ W(12));
+W(9) = SHA1CircularShift(1, W(6) ^ W(1) ^ W(15) ^ W(13));
+W(10) = SHA1CircularShift(1, W(7) ^ W(2) ^ W(16) ^ W(14));
+W(11) = SHA1CircularShift(1, W(8) ^ W(3) ^ W(17) ^ W(15));
+W(12) = SHA1CircularShift(1, W(9) ^ W(4) ^ W(18) ^ W(16));
+W(13) = SHA1CircularShift(1, W(10) ^ W(5) ^ W(19) ^ W(17));
+W(14) = SHA1CircularShift(1, W(11) ^ W(6) ^ W(0) ^ W(18));
+W(15) = SHA1CircularShift(1, W(12) ^ W(7) ^ W(1) ^ W(19));
+W(16) = SHA1CircularShift(1, W(13) ^ W(8) ^ W(2) ^ W(0));
+W(17) = SHA1CircularShift(1, W(14) ^ W(9) ^ W(3) ^ W(1));
+W(18) = SHA1CircularShift(1, W(15) ^ W(10) ^ W(4) ^ W(2));
+W(19) = SHA1CircularShift(1, W(16) ^ W(11) ^ W(5) ^ W(3));
+
+            #pragma unroll
+            for(t = 0; t < 20; t++)
+            {
+                temp = SHA1CircularShift(5,A) + (B ^ C ^ D) + E + W(t) + D_K3;
+                //temp &= 0xFFFFFFFF;
+                E = D;
+                D = C;
+                C = SHA1CircularShift(30,B);
+                B = A;
+                A = temp;
+            }
+
+            h0 = (h0 + A);   
+            h1 = (h1 + B);
+            h2 = (h2 + C);
+            h3 = (h3 + D);
+            h4 = (h4 + E);
+}
+
+------------------------
+
+

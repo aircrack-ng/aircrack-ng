@@ -69,6 +69,11 @@ OBJS_PTW	= aircrack-ptw-lib.o
 OBJS_AC		= aircrack-ng.o crypto.o common.o uniqueiv.o $(OBJS_PTW)
 ASM_AC		= sha1-sse2.S
 
+ifeq ($(CUDA), true)
+	SRC_AC		+= cudacrypto.cu cudacrypto_sha1_process.cuh
+	OBJS_AC		+= cudacrypto.o
+endif
+
 OBJS_AD		= airdecap-ng.o crypto.o common.o
 OBJS_PF		= packetforge-ng.o common.o crypto.o
 OBJS_AR		= aireplay-ng.o common.o crypto.o
@@ -228,3 +233,25 @@ uninstall:
 check: aircrack-ng$(EXE)
 	./aircrack-ng$(EXE) -w $(TEST_DIR)/password.lst -a 2 -e Harkonen -q $(TEST_DIR)/wpa2.eapol.cap | grep 'KEY FOUND! \[ 12345678 \]' 
 	./aircrack-ng$(EXE) -w $(TEST_DIR)/password.lst -a 2 -e test -q $(TEST_DIR)/wpa.cap | grep 'KEY FOUND! \[ biscotte \]'
+
+
+ifeq ($(CUDA), true)
+CFLAGS += -DCUDA_ENABLED
+
+NVCC := $(CUDA_INSTALL_PATH)/bin/nvcc
+INCLUDES += -I. -I$(CUDA_INSTALL_PATH)/include
+COMMONFLAGS += $(INCLUDES) -DUNIX
+
+NVCCFLAGS += --compiler-options -fno-strict-aliasing --host-compilation=C $(COMMONFLAGS)
+
+# Change this only if you have COMPUTE > 1.0
+NVCCFLAGS += -maxrregcount 12
+
+# Enable this for extra compiler and as output
+#NVCCFLAGS += --ptxas-options "-v" --verbose
+
+LIBSSL += -L$(CUDA_INSTALL_PATH)/lib -lcuda -lcudart
+
+%.o : %.cu   
+	$(NVCC) $(NVCCFLAGS) $(SMVERSIONFLAGS) -o $@ -c $<
+endif

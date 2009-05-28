@@ -68,6 +68,10 @@
 #include "aircrack-ng.h"
 #include "sha1-sse2.h"
 
+#ifdef CUDA_ENABLED
+#include "cudacrypto.cuh"
+#endif
+
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
 sqlite3 *db;
@@ -3840,6 +3844,15 @@ int crack_wpa_thread( void *arg )
 		nparallel = 4;
 #endif
 
+#ifdef CUDA_ENABLED
+	int cudadetected = 0;
+
+	if(cuda_getblocksize() != 0) {
+		cudadetected = 1;
+		nparallel = cuda_getblocksize();
+	}
+#endif
+
         key = malloc(sizeof(char *) * nparallel);
         pmk = malloc(sizeof(uchar *) * nparallel);
         ptk = malloc(sizeof(uchar *) * nparallel);
@@ -3920,13 +3933,19 @@ int crack_wpa_thread( void *arg )
 			key[j][127]=0;
 		}
 
-
 		// PMK calculation
-		if (nparallel==4)
-			calc_4pmk(key[0], key[1], key[2], key[3], essid, pmk[0], pmk[1], pmk[2], pmk[3]);
-		else
-			for(j=0; j<nparallel; ++j)
-				calc_pmk( key[j], essid, pmk[j] );
+#ifdef CUDA_ENABLED
+		if(cudadetected) {
+			cuda_calc_pmk(nparallel, key, essid, pmk);
+		} else
+#endif
+		{
+			if (nparallel==4)
+				calc_4pmk(key[0], key[1], key[2], key[3], essid, pmk[0], pmk[1], pmk[2], pmk[3]);
+			else
+				for(j=0; j<nparallel; ++j)
+					calc_pmk( key[j], essid, pmk[j] );
+		}
 
 		for(j=0; j<nparallel; ++j)
 		{
