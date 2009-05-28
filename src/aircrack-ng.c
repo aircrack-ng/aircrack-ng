@@ -3982,8 +3982,8 @@ int crack_wpa_thread( void *arg )
 				}
 
 				pthread_mutex_lock(&mx_nb);
-				nb_tried += 4;
-				nb_kprev += 4;
+				nb_tried += nparallel;
+				nb_kprev += nparallel;
 				pthread_mutex_unlock(&mx_nb);
 
 				len = strlen(key[j]);
@@ -4029,8 +4029,8 @@ int crack_wpa_thread( void *arg )
 		}
 
 		pthread_mutex_lock(&mx_nb);
-		nb_tried += 4;
-		nb_kprev += 4;
+		nb_tried += nparallel;
+		nb_kprev += nparallel;
 		pthread_mutex_unlock(&mx_nb);
 
 		if (!opt.is_quiet)
