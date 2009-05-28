@@ -16,7 +16,9 @@ Building CUDA aircrack-ng:
 
 Testing:
 	cd src
-	./aircrack-ng ../test/wpa.cap -w ../test/password.lst
+	./aircrack-ng -p 1 ../test/wpa.cap -w ../test/password.lst
+
+NOTE: Multiple threads will just queue tasks for the gfx card. (-p 1)
 
 Have Fun,
 Julian Tyler (tylerj@crm114.net)
