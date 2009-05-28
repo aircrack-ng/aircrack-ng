@@ -3820,12 +3820,12 @@ int crack_wpa_thread( void *arg )
 {
 	FILE * keyFile;
 	char  essid[36];
-	char  key[4][128];
-	uchar pmk[4][128];
-
 	uchar pke[100];
-	uchar ptk[4][80];
-	uchar mic[4][20];
+
+	char  **key;
+	uchar **pmk;
+	uchar **ptk;
+	uchar **mic;
 
 	struct WPA_data* data;
 	struct AP_info* ap;
@@ -3839,6 +3839,18 @@ int crack_wpa_thread( void *arg )
 	if (shasse2_cpuid()>=2)
 		nparallel = 4;
 #endif
+
+        key = malloc(sizeof(char *) * nparallel);
+        pmk = malloc(sizeof(uchar *) * nparallel);
+        ptk = malloc(sizeof(uchar *) * nparallel);
+        mic = malloc(sizeof(uchar *) * nparallel);
+
+        for(i = 0; i < nparallel; i++) {
+                key[i] = malloc(sizeof(char) * 128);
+                pmk[i] = malloc(sizeof(uchar) * 128);
+                ptk[i] = malloc(sizeof(uchar) * 80);
+                mic[i] = malloc(sizeof(uchar) * 20);
+        }
 
 	data = (struct WPA_data*)arg;
 	ap = data->ap;
@@ -3881,9 +3893,23 @@ int crack_wpa_thread( void *arg )
 			{
 				if (wpa_wordlists_done==1) // if no more words will arrive and...
 				{
-					if (j==0) // ...this is the first key in this loop: there's nothing else to do
+					if (j==0) { // ...this is the first key in this loop: there's nothing else to do
+						// Free dynamic memory
+						for(i = 0; i < nparallel; i++) 
+						{
+							free(key[i]);
+							free(pmk[i]);
+							free(ptk[i]);
+							free(mic[i]);
+						}
+
+						free(key);
+						free(pmk);
+						free(ptk);
+						free(mic);
+
 						return 0;
-					else	  // ...we have some key pending in this loop: keep working
+					} else	  // ...we have some key pending in this loop: keep working
 						break;
 				}
 
@@ -3937,8 +3963,23 @@ int crack_wpa_thread( void *arg )
 
 				memcpy(data->key, key[j], sizeof(data->key));
 
-				if (opt.is_quiet)
+				if (opt.is_quiet) {
+					// Free dynamic memory
+					for(i = 0; i < nparallel; i++) 
+					{
+						free(key[i]);
+						free(pmk[i]);
+						free(ptk[i]);
+						free(mic[i]);
+					}
+
+					free(key);
+					free(pmk);
+					free(ptk);
+					free(mic);
+
 					return SUCCESS;
+				}
 
 				pthread_mutex_lock(&mx_nb);
 				nb_tried += 4;
@@ -3968,6 +4009,20 @@ int crack_wpa_thread( void *arg )
 						fclose(keyFile);
 					}
 				}
+
+				// Free dynamic memory
+				for(i = 0; i < nparallel; i++) 
+				{
+					free(key[i]);
+					free(pmk[i]);
+					free(ptk[i]);
+					free(mic[i]);
+				}
+
+				free(key);
+				free(pmk);
+				free(ptk);
+				free(mic);
 
 				return SUCCESS;
 			}
