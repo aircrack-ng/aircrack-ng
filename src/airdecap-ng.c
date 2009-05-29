@@ -895,6 +895,8 @@ usage:
 
                 if( write_packet( f_out, &pkh, h80211 ) != 0 )
                     break;
+				else
+					continue;
             }
 
             z += 2;
