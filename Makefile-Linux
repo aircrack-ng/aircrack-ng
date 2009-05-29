@@ -37,7 +37,8 @@ installdirs:
         			$(docdir)/html/images $(sysconfdir) \
                                 $(mandir) $(localedir) \
 				$(datadir)/themes \
-				$(datadir)/airosperl
+				$(datadir)/airosperl \
+				$(docdir)/tools
 	
 install-airoscript:
 	@echo "Installing airoscript"
@@ -55,15 +56,15 @@ install-themes:
 install-tools:
 	@echo "Installing tools:"
 	@# Binary files	
-	@echo -e "\t airosconf"
-	@$(INSTALL) $(srcdir)/tools/airosconf.sh $(bindir)/airosconf
+	@#echo -e "\t airosconf"
+	@#$(INSTALL) $(srcdir)/tools/airosconf.sh $(bindir)/airosconf
 	@echo -e "\t airoscwordlist"
 	@$(INSTALL) $(srcdir)/tools/airoscwordlist.pl $(bindir)/airoscwordlist
 	@echo -e "\t airopdate"
 	@$(INSTALL) $(srcdir)/tools/airopdate.sh $(bindir)/airopdate
-	@echo -e "\t airosperl"
-	@$(INSTALL) $(srcdir)/tools/airosperl/airosperl.pl\
-	 $(bindir)/airosperl.pl
+	@#echo -e "\t airosperl"
+	@#$(INSTALL) $(srcdir)/tools/airosperl/airosperl.pl\
+	 #$(bindir)/airosperl.pl
 	
 	@# Data files.
 	@$(INSTALLDATA) $(srcdir)/conffiles/airosperl.conf $(sysconfdir)
