@@ -1546,7 +1546,7 @@ function doauto {
 ###########################################
 
 function checkforcemac
-if [ $FORCE_MAC_ADDRESS ]; then
+if [ "$FORCE_MAC_ADDRESS" -ne 0 ]; then
 	$CLEAR
 	echo "Warn: Not checking mac address"
 	menu
@@ -1581,12 +1581,19 @@ function setinterface {
 		read answer
 			if [ "$answer" != "n" ]
 			then
-				TYPE=`$AIRMON start $WIFICARD | grep monitor | awk '{print $2 $3}'`
-				DRIVER=`$AIRMON start $WIFICARD | grep monitor | awk '{print $4}'`
+				AIROUTPUT=$($AIRMON start $WIFICARD|grep -A 1 $WIFICARD);
+				TYPE=`echo \"$AIROUTPUT\"  | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`echo \"$AIROUTPUT\" | grep monitor | awk '{print $4}'`
+				wifi=`echo \"$AIROUTPUT\"|awk {'print $NF'}|cut -d ")" -f1`
+				if [ "$wifi" != "" ] ; then WIFI=$wifi; fi
 			else
-				TYPE=`$AIRMON stop $WIFICARD | grep monitor | awk '{print $2 $3}'`
-				DRIVER=`$AIRMON stop $WIFICARD | grep monitor | awk '{print $4}'`
+				AIROUTPUT=`$AIRMON stop $WIFICARD`;
+				TYPE=`echo \"$AIROUTPUT\" | grep monitor | awk '{print $2 $3}'`
+				DRIVER=`echo \"$AIROUTPUT\" | grep monitor | awk '{print $4}'`
 			fi
+
+
+
 
 		$CLEAR
 		echo  `gettext 'Interface used is :'` $WIFI
