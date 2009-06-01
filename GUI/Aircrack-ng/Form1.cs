@@ -241,7 +241,7 @@ namespace Aircrack_ng
         private void btOpenCapFiles_Click(object sender, EventArgs e)
         {
             string captureFileExtensions =
-                "Capture files (*.cap, *.ivs, *.dump)|*.cap;*.ivs;*.dump|All files (*.*)|*.*";
+                "Capture files (*.cap, *.pcap, *.ivs, *.dump)|*.cap;*.pcap;*.ivs;*.dump|All files (*.*)|*.*";
             this.tbFilenames.Text += " " + 
               this.FileDialog(captureFileExtensions, 0, true, null, LastDir(tbFilenames.Text)).Trim();
             this.tbFilenames.Text = this.tbFilenames.Text.Trim();
@@ -569,7 +569,7 @@ namespace Aircrack_ng
         private void btLoadDecapFile_Click(object sender, EventArgs e)
         {
             string captureFileExtensions =
-                "Capture files (*.cap, *.dump)|*.cap;*.dump|All files (*.*)|*.*";
+                "Capture files (*.cap, *.pcap, *.dump)|*.cap;*.pcap;*.dump|All files (*.*)|*.*";
 
             this.tbDecapFile.Text = this.FileDialog(captureFileExtensions, 0, false, null).Trim();
         }
