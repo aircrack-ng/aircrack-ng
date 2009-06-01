@@ -174,15 +174,29 @@ namespace Aircrack_ng
         /// <param name="Filter"></param>
         /// <param name="FilterIndex"></param>
         /// <param name="multipleFiles"></param>
+        /// <param name="separator"></param>
         /// <returns></returns>
         private string FileDialog(string Filter, int FilterIndex, bool multipleFiles, string separator)
+        {
+          return FileDialog(Filter, FilterIndex, multipleFiles, separator, ".");
+        }
+        /// <summary>
+        /// Standard Open file dialog
+        /// </summary>
+        /// <param name="Filter"></param>
+        /// <param name="FilterIndex"></param>
+        /// <param name="multipleFiles"></param>
+        /// <param name="separator"></param>
+        /// <param name="initDirectory"></param>
+        /// <returns></returns>
+        private string FileDialog(string Filter, int FilterIndex, bool multipleFiles, string separator, string initDirectory)
         {
             string fileseparator = separator;
             string filenames = "";
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Filter = Filter;
             ofd.FilterIndex = FilterIndex;
-            ofd.InitialDirectory = ".";
+            ofd.InitialDirectory = initDirectory;
             ofd.Multiselect = multipleFiles;
             ofd.RestoreDirectory = true;
             ofd.DereferenceLinks = true;
@@ -205,6 +219,19 @@ namespace Aircrack_ng
             }
             return filenames;
         }
+        private string LastDir(string fileNames)
+        {
+          if (fileNames == null || fileNames.Trim() == "")
+            return ".";
+
+          string[] directorys = fileNames.Split(' ');
+          string lastDir = System.IO.Path.GetFullPath(directorys[directorys.Length - 1]);
+
+          if (System.IO.Directory.Exists(lastDir))
+            return lastDir;
+          else
+            return ".";
+        }
 
         /// <summary>
         /// Open a file dialog to select capture files
@@ -215,7 +242,8 @@ namespace Aircrack_ng
         {
             string captureFileExtensions =
                 "Capture files (*.cap, *.ivs, *.dump)|*.cap;*.ivs;*.dump|All files (*.*)|*.*";
-            this.tbFilenames.Text += " " + this.FileDialog(captureFileExtensions, 0, true, null).Trim();
+            this.tbFilenames.Text += " " + 
+              this.FileDialog(captureFileExtensions, 0, true, null, LastDir(tbFilenames.Text)).Trim();
             this.tbFilenames.Text = this.tbFilenames.Text.Trim();
         }
 
