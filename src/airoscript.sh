@@ -37,6 +37,9 @@ safely remove your ~/.airoscript.conf\n\n
 Do you really want to do it (yes/No): '`"
 }
 
+# Die if no root.
+li=`tput lines`; cen=`expr $li / 2 + 2`; if [ "$UID" != 0 ]; then clear;echo -e "\E[3;22H===Airoscript===\E[$cen;15H\E[31mYou Must be root to use airoscript\E[39;49;00m\E[$li;20H"; exit 1; fi; 
+
 # Get config.
 if [ -e ~/.airoscript/airoscript.conf ];
 	then 	

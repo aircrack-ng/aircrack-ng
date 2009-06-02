@@ -1545,8 +1545,8 @@ function doauto {
 #############Called directly from the menu.###########
 ###########################################
 
-function checkforcemac
-if [ "$FORCE_MAC_ADDRESS" -ne 0 ]; then
+checkforcemac(){
+if [ $FORCE_MAC_ADDRESS -eq 1 ]; then
 	$CLEAR
 	echo "Warn: Not checking mac address"
 	menu
@@ -1554,11 +1554,11 @@ else
 	echo -ne "Checking mac address...done"
 	mac=`$MACCHANGER -s wlan0|awk {'print $3'}`
 	if [ "$FAKE_MAC" != "$mac" ]; then
-		wichchangemac
-		$CLEAR
-		menu
+		wichchangemac;$CLEAR;menu
 	fi
 fi
+}
+
 function setinterface {
 	#INTERFACES=`$iwconfig|grep --regexp=^[^:blank:].[:alnum:]|awk '{print $1}'`
 	#INTERFACES=`$iwconfig|egrep "^[a-Z]+[0-9]+" |awk '{print $1}'`
