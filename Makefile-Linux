@@ -35,7 +35,7 @@ install: installdirs\
 installdirs:
 	@$(SHELL) $(srcdir)/mkinstalldirs $(bindir) $(datadir) \
         			$(docdir)/html/images $(sysconfdir) \
-                                $(mandir) $(localedir) \
+                                $(mandir)/man1 $(localedir) \
 				$(datadir)/themes \
 				$(datadir)/airosperl \
 				$(docdir)/tools
@@ -67,12 +67,12 @@ install-tools:
 	 #$(bindir)/airosperl.pl
 	
 	@# Data files.
-	@$(INSTALLDATA) $(srcdir)/conffiles/airosperl.conf $(sysconfdir)
-	@$(INSTALLDATA) $(srcdir)/tools/airosperl/airosperl.glade $(datadir)
+	@#$(INSTALLDATA) $(srcdir)/conffiles/airosperl.conf $(sysconfdir)
+	@#$(INSTALLDATA) $(srcdir)/tools/airosperl/airosperl.glade $(datadir)
 	
 	@# Airosperl configuration
-	@$(SHELL) $(srcdir)/tools/airosconf.sh --set --to-airosperl apppath\
-	 "$(datadir)" --force-yes
+	@#$(SHELL) $(srcdir)/tools/airosconf.sh --set --to-airosperl apppath\
+	 #"$(datadir)" --force-yes
 
 
 install-docs: install-main-docs install-manpages
