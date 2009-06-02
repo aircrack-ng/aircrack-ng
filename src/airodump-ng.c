@@ -4750,10 +4750,21 @@ int main( int argc, char *argv[] )
 
             case 'i':
 
-                if (G.output_format_pcap) {
-                    fprintf(stderr, "Invalid output format: IVS and PCAP format cannot be used together.\n");
-                    return( 1 );
-                }
+				// Reset output format if it's the first time the option is specified
+				if (output_format_first_time) {
+					output_format_first_time = 0;
+
+					G.output_format_pcap = 0;
+					G.output_format_csv = 0;
+					G.output_format_kismet_csv = 0;
+    				G.output_format_kismet_netxml = 0;
+				}
+
+ 				if (G.output_format_pcap) {
+					printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
+					fprintf(stderr, "Invalid output format: IVS and PCAP format cannot be used together.\n");
+					return( 1 );
+				}
 
                 ivs_only = 1;
                 break;
