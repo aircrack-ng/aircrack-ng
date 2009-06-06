@@ -43,6 +43,7 @@
 #include "version.h"
 #include "pcap.h"
 #include "crypto.h"
+#include "compatibility.h"
 
 #define ARP_REQ \
     "\x08\x00\x02\x01\xBB\xBB\xBB\xBB\xBB\xBB\xCC\xCC\xCC\xCC\xCC\xCC" \

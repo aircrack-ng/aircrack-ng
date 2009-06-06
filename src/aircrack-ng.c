@@ -67,6 +67,7 @@
 #include "uniqueiv.h"
 #include "aircrack-ng.h"
 #include "sha1-sse2.h"
+#include "compatibility.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>

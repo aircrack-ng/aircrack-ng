@@ -30,24 +30,6 @@
 #include <sys/select.h>
 #include <errno.h>
 
-#ifdef __MACH__
-#include <libkern/OSByteOrder.h>
-#elif defined(__FreeBSD__)
-#include <machine/endian.h>
-#if BYTE_ORDER == BIG_ENDIAN
-# define __be32_to_cpu(x)       (x)
-# define __be64_to_cpu(x)       (x)
-#elif BYTE_ORDER == LITTLE_ENDIAN
-# define __be32_to_cpu(x)       __bswap32(x)
-# define __be64_to_cpu(x)       __bswap64(x)
-#endif
-#elif defined (__sun) && defined (__sparc) /* Solaris SPARC, not Solaris x86 */
-#include <sys/byteorder.h>
-#else
-#include <asm/byteorder.h>
-#endif /* __MACH__ */
-
-
 #include "osdep.h"
 #include "network.h"
 
@@ -308,21 +290,12 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 
 	pri = (struct rx_info*)buf;
 
-#ifdef __MACH__
-	pri->ri_mactime = OSSwapBigToHostInt64(pri->ri_mactime);
-	pri->ri_power = OSSwapBigToHostInt32(pri->ri_power);
-	pri->ri_noise = OSSwapBigToHostInt32(pri->ri_noise);
-	pri->ri_channel = OSSwapBigToHostInt32(pri->ri_channel);
-	pri->ri_rate = OSSwapBigToHostInt32(pri->ri_rate);
-	pri->ri_antenna = OSSwapBigToHostInt32(pri->ri_antenna);
-#else
 	pri->ri_mactime = __be64_to_cpu(pri->ri_mactime);
 	pri->ri_power = __be32_to_cpu(pri->ri_power);
 	pri->ri_noise = __be32_to_cpu(pri->ri_noise);
 	pri->ri_channel = __be32_to_cpu(pri->ri_channel);
 	pri->ri_rate = __be32_to_cpu(pri->ri_rate);
 	pri->ri_antenna = __be32_to_cpu(pri->ri_antenna);
-#endif /* __MACH__ */
 
 	/* XXX */
 	if (ri)

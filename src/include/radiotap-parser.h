@@ -17,33 +17,13 @@
 
 
 #define	__user
-#include <endian.h>
+#include "../compatibility.h"
 #include <stdint.h>
 
 typedef uint64_t u64;
 typedef uint32_t u32;
 typedef uint16_t u16;
 typedef uint8_t u8;
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define	le16_to_cpu(x) (x)
-#define	le32_to_cpu(x) (x)
-#define le64_to_cpu(x) (x)
-#else
-#define	le16_to_cpu(x) ((((x)&0xff)<<8)|(((x)&0xff00)>>8))
-#define	le32_to_cpu(x) \
-((((x)&0xff)<<24)|(((x)&0xff00)<<8)|(((x)&0xff0000)>>8)|(((x)&0xff000000)>>24))
-#define le64_to_cpu(x) \
-  ((u64)( \
-    (u64)(((u64)(x) & (u64)0x00000000000000ffULL) << 56) | \
-    (u64)(((u64)(x) & (u64)0x000000000000ff00ULL) << 40) | \
-    (u64)(((u64)(x) & (u64)0x0000000000ff0000ULL) << 24) | \
-    (u64)(((u64)(x) & (u64)0x00000000ff000000ULL) <<  8) | \
-    (u64)(((u64)(x) & (u64)0x000000ff00000000ULL) >>  8) | \
-    (u64)(((u64)(x) & (u64)0x0000ff0000000000ULL) >> 24) | \
-    (u64)(((u64)(x) & (u64)0x00ff000000000000ULL) >> 40) | \
-    (u64)(((u64)(x) & (u64)0xff00000000000000ULL) >> 56) ))
-#endif
 
 #ifndef unlikely
 #define	unlikely(x) (x)

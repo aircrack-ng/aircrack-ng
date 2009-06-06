@@ -32,12 +32,6 @@
           ( ( x <<  8 ) & 0x00FF0000 ) | \
           ( ( x << 24 ) & 0xFF000000 ) );
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define	le16_to_cpu(x) (x)
-#else
-#define	le16_to_cpu(x) ((((x)&0xff)<<8)|(((x)&0xff00)>>8))
-#endif
-
 //BSSID const. length of 6 bytes; can be together with all the other types
 #define IVS2_BSSID	0x0001
 

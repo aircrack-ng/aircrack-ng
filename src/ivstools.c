@@ -41,6 +41,7 @@
 #include "crypto.h"
 #include "pcap.h"
 #include "uniqueiv.h"
+#include "compatibility.h"
 
 #define FAILURE -1
 #define IVS     1
@@ -106,12 +107,6 @@ static uchar ZERO[32] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00";
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define	le16_to_cpu(x) (x)
-#else
-#define	le16_to_cpu(x) ((((x)&0xff)<<8)|(((x)&0xff00)>>8))
-#endif
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
