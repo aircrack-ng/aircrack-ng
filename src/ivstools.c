@@ -41,7 +41,7 @@
 #include "crypto.h"
 #include "pcap.h"
 #include "uniqueiv.h"
-#include "compatibility.h"
+#include "osdep/compatibility.h"
 
 #define FAILURE -1
 #define IVS     1
