@@ -288,10 +288,13 @@
 	/*
 	 * Custom stuff
 	 */
-	#ifdef __MACH__
+	#if  defined(__MACH__) && !defined(__APPLE_CC__)
 		#include <libkern/OSByteOrder.h>
 		#define __cpu_to_be64(x) = OSSwapHostToBigInt64(x)
-		#define __cpu_to_be32(x) OSSwapHostToBigInt32(x)
+		#define __cpu_to_be32(x) = OSSwapHostToBigInt32(x)
+
+		#define cpu_to_be64(x) __cpu_to_be64(x)
+		#define cpu_to_be32(x) __cpu_to_be32(x)
 	#endif
 
 
