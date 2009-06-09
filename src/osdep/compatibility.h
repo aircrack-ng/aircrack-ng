@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2009 Thomas d'Otreppe de Bouvette
+ *
  * Copyright (C) Jan 2006 Mellanox Technologies Ltd. All rights reserved.
  *
  * This software is available to you under a choice of one of two
@@ -34,6 +36,12 @@
  *  Version: $Id: compatibility.h 2752 2006-01-19 14:40:17Z mst $
  *
  */
+
+/*
+TODO: Cleanup and only have the BYTE_ORDER define set so it will define the macros
+      only once for all architectures with maybe a few exceptions.
+      And thus only the includes for each OS will be left.
+*/
 
 #ifndef _AIRCRACK_NG__COMPATIBILITY_H_
 #define _AIRCRACK_NG_COMPATIBILITY_H_
@@ -302,11 +310,59 @@
 	#ifdef __FreeBSD__
 		#include <machine/endian.h>
 		#if BYTE_ORDER == BIG_ENDIAN
-			# define __be32_to_cpu(x)       (x)
-			# define __be64_to_cpu(x)       (x)
+
+			#define __be64_to_cpu(x) (x)
+			#define __be32_to_cpu(x) (x)
+			#define __be16_to_cpu(x) (x)
+			#define __cpu_to_be64(x) (x)
+			#define __cpu_to_be32(x) (x)
+			#define __cpu_to_be16(x) (x)
+			#define __le64_to_cpu(x) ___my_swab64(x)
+			#define __le32_to_cpu(x) ___my_swab32(x)
+			#define __le16_to_cpu(x) ___my_swab16(x)
+			#define __cpu_to_le64(x) ___my_swab64(x)
+			#define __cpu_to_le32(x) ___my_swab32(x)
+			#define __cpu_to_le16(x) ___my_swab16(x)
+
+			#define be64_to_cpu(x) __be64_to_cpu(x)
+			#define be32_to_cpu(x) __be32_to_cpu(x)
+			#define be16_to_cpu(x) __be16_to_cpu(x)
+			#define cpu_to_be64(x) __cpu_to_be64(x)
+			#define cpu_to_be32(x) __cpu_to_be32(x)
+			#define cpu_to_be16(x) __cpu_to_be16(x)
+			#define le64_to_cpu(x) (x)
+			#define le32_to_cpu(x) (x)
+			#define le16_to_cpu(x) (x)
+			#define cpu_to_le64(x) (x)
+			#define cpu_to_le32(x) (x)
+			#define cpu_to_le16(x) (x)
 		#elif BYTE_ORDER == LITTLE_ENDIAN
-			# define __be32_to_cpu(x)       __bswap32(x)
-			# define __be64_to_cpu(x)       __bswap64(x)
+
+			#define __be64_to_cpu(x) ___my_swab64(x)
+			#define __be32_to_cpu(x) ___my_swab32(x)
+			#define __be16_to_cpu(x) ___my_swab16(x)
+			#define __cpu_to_be64(x) ___my_swab64(x)
+			#define __cpu_to_be32(x) ___my_swab32(x)
+			#define __cpu_to_be16(x) ___my_swab16(x)
+			#define __le64_to_cpu(x) (x)
+			#define __le32_to_cpu(x) (x)
+			#define __le16_to_cpu(x) (x)
+			#define __cpu_to_le64(x) (x)
+			#define __cpu_to_le32(x) (x)
+			#define __cpu_to_le16(x) (x)
+
+			#define be64_to_cpu(x) __be64_to_cpu(x)
+			#define be32_to_cpu(x) __be32_to_cpu(x)
+			#define be16_to_cpu(x) __be16_to_cpu(x)
+			#define cpu_to_be64(x) __cpu_to_be64(x)
+			#define cpu_to_be32(x) __cpu_to_be32(x)
+			#define cpu_to_be16(x) __cpu_to_be16(x)
+			#define le64_to_cpu(x) (x)
+			#define le32_to_cpu(x) (x)
+			#define le16_to_cpu(x) (x)
+			#define cpu_to_le64(x) (x)
+			#define cpu_to_le32(x) (x)
+			#define cpu_to_le16(x) (x)
 		#endif
 	#endif
 
