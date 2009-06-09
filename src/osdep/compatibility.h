@@ -392,21 +392,4 @@ TODO: Cleanup and only have the BYTE_ORDER define set so it will define the macr
 		#define CPUID() CPUID_NOTHING_AVAILABLE
 	#endif
 
-
-	/*-
-	 * Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
-	 *
-	 * pack structures
-	 *
-	 */
-
-	#ifndef __packed
-		#define __packed __attribute__ ((__packed__))
-	#endif /* __packed */
-
-	#ifndef __aligned
-		#define __aligned(n)
-	#endif
-	/* End of pack structure */
-
 #endif

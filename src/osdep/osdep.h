@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include "compatibility.h"
+#include "packed.h"
 
 /* For all structures, when adding new fields, always append them to the end.
  * This way legacy binary code does not need to be recompiled.  This is
