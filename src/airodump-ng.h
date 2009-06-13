@@ -5,10 +5,6 @@
 
 #define MAX_IE_ELEMENT_SIZE 256
 
-#define ARPHRD_IEEE80211        801
-#define ARPHRD_IEEE80211_PRISM  802
-#define ARPHRD_IEEE80211_FULL   803
-
 #define REFRESH_RATE 100000  /* default delay in us between updates */
 #define DEFAULT_HOPFREQ 250  /* default delay in ms between channel hopping */
 #define DEFAULT_CWIDTH  20 /* 20 MHz channels by default */

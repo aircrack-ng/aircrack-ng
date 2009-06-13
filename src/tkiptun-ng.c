@@ -70,14 +70,6 @@
 #include "osdep/osdep.h"
 #include "crypto.h"
 
-#define ARPHRD_IEEE80211        801
-#define ARPHRD_IEEE80211_PRISM  802
-#define ARPHRD_IEEE80211_FULL   803
-
-#ifndef ETH_P_80211_RAW
-#define ETH_P_80211_RAW 25
-#endif
-
 #define RTC_RESOLUTION  8192
 
 #define REQUESTS    30

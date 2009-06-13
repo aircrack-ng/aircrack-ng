@@ -70,14 +70,6 @@
 
 static struct wif *_wi_in, *_wi_out;
 
-#define ARPHRD_IEEE80211        801
-#define ARPHRD_IEEE80211_PRISM  802
-#define ARPHRD_IEEE80211_FULL   803
-
-#ifndef ETH_P_80211_RAW
-#define ETH_P_80211_RAW 25
-#endif
-
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
 
