@@ -575,10 +575,6 @@ int msleep( int msec )
     return 0;
 }
 
-#define PCT { struct tm *lt; time_t tc = time( NULL ); \
-              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
-              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
-
 int read_prga(unsigned char **dest, char *file)
 {
     FILE *f;
