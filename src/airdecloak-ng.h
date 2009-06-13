@@ -2,7 +2,7 @@
 #define _AIRUNDEFENSE_H_
 
 #include "pcap.h"
-
+#include "common.h"
 
 typedef enum {false, true} BOOLEAN;
 
@@ -35,9 +35,6 @@ typedef enum {
 #define WEIRD_FRAME_TYPE 100
 
 
-
-
-
 #define FRAME_TYPE_MANAGEMENT 0
 #define FRAME_TYPE_CONTROL 1
 #define FRAME_TYPE_DATA 2
@@ -59,8 +56,6 @@ typedef enum {
 #define FILTER_SIGNAL_DUPLICATE_AND_CONSECUTIVE_SN 7
 
 
-
-#define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
 #define getBit(pckt, startbit) getBits(pckt, startbit, 1)
 #define get_iv(packet) ((packet)->iv[0]+((packet)->iv[1] * 256)+((packet)->iv[2] *256*256))
 

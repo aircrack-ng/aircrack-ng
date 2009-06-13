@@ -61,6 +61,7 @@
 #include "version.h"
 #include "pcap.h"
 #include "crypto.h"
+#include "common.h"
 
 #include "osdep/osdep.h"
 

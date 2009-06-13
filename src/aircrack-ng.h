@@ -25,8 +25,6 @@
 
 #define PTW_TRY_STEP    5000
 
-#define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
-
 #define KEYHSBYTES PTW_KEYHSBYTES
 
 #define MAX_THREADS 128

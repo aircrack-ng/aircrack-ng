@@ -68,6 +68,7 @@
 #include "aircrack-ng.h"
 #include "sha1-sse2.h"
 #include "osdep/compatibility.h"
+#include "common.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -133,14 +134,6 @@ static pthread_mutex_t mx_wpastats = PTHREAD_MUTEX_INITIALIZER;
 #define K15_IV	0x00040000
 #define K16_IV	0x00080000
 #define K17_IV	0x00100000
-
-/*
-typedef struct
-{
-	unsigned int used;
-}used_iv;
-used_iv* all_ivs;
-*/
 
 typedef struct
 {

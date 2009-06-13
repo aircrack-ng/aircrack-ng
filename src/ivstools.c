@@ -42,6 +42,7 @@
 #include "pcap.h"
 #include "uniqueiv.h"
 #include "osdep/compatibility.h"
+#include "common.h"
 
 #define FAILURE -1
 #define IVS     1

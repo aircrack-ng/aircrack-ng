@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
+#include "common.h"
 
 #define N_ATTACKS 17
 

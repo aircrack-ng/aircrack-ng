@@ -43,6 +43,8 @@
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
+#include "osdep/compatibility.h"
+#include "common.h"
 
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
@@ -104,12 +106,6 @@ opt;
 
 uchar buffer[65536];
 uchar buffer2[65536];
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define	le16_to_cpu(x) (x)
-#else
-#define	le16_to_cpu(x) ((((x)&0xff)<<8)|(((x)&0xff00)>>8))
-#endif
 
 /* this routine handles to 802.11 to Ethernet translation */
 

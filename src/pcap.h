@@ -26,12 +26,6 @@
 #define uint   unsigned int
 #define ulong  unsigned long
 
-#define SWAP32(x)       \
-    x = ( ( ( x >> 24 ) & 0x000000FF ) | \
-          ( ( x >>  8 ) & 0x0000FF00 ) | \
-          ( ( x <<  8 ) & 0x00FF0000 ) | \
-          ( ( x << 24 ) & 0xFF000000 ) );
-
 //BSSID const. length of 6 bytes; can be together with all the other types
 #define IVS2_BSSID	0x0001
 

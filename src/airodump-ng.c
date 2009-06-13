@@ -61,14 +61,11 @@
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.h"
-//#include "crctable.h"
 #include "crypto.h"
-
 #include "osdep/osdep.h"
-
 #include "airodump-ng.h"
 #include "osdep/common.h"
-
+#include "common.h"
 
 int check_shared_key(unsigned char *h80211, int caplen)
 {

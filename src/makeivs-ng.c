@@ -28,8 +28,7 @@
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.h"
-
-#define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
+#include "common.h"
 
 #define NULL_MAC "\x00\x00\x00\x00\x00\x00"
 

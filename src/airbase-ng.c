@@ -63,8 +63,10 @@
 #include "version.h"
 #include "pcap.h"
 #include "crypto.h"
+#include "common.h"
 
 #include "osdep/osdep.h"
+#include "osdep/common.h"
 
 static struct wif *_wi_in, *_wi_out;
 

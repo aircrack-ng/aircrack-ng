@@ -17,9 +17,6 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 
-// #define SWAP(x,y) { uchar tmp = x; x = y; y = tmp; }
-
-
 void show_result(char* key, uchar* pmk)
 {
 	int i;
