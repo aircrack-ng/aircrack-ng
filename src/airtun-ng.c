@@ -70,10 +70,6 @@ static struct wif *_wi_in, *_wi_out;
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
 
-#ifndef MAX
-#define MAX(x,y) ( (x)>(y) ? (x) : (y) )
-#endif
-
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
 

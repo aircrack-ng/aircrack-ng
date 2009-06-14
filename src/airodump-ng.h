@@ -35,12 +35,6 @@
 #define	QLT_TIME	5
 #define	QLT_COUNT	25
 
-#ifdef MAX
-#undef MAX
-#endif
-#define	MAX(a,b)	((a)>(b)?(a):(b))
-#define ABS(a)          ((a)>=0?(a):(-(a)))
-
 #define RATES           \
     "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 

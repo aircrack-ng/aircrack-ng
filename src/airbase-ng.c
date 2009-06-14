@@ -76,14 +76,6 @@ static struct wif *_wi_in, *_wi_out;
 #define EXT_IN      0x01
 #define EXT_OUT     0x02
 
-#ifndef MAX
-#define MAX(x,y) ( (x)>(y) ? (x) : (y) )
-#endif
-
-#ifndef MIN
-#define MIN(x,y) ( (x)>(y) ? (y) : (x) )
-#endif
-
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
 #define MAX_CF_XMIT 100
 
