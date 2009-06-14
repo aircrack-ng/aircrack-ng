@@ -17,7 +17,7 @@
 
 
 #define	__user
-#include "../osdep/byteorder.h"
+#include "../byteorder.h"
 #include <stdint.h>
 
 typedef uint64_t u64;

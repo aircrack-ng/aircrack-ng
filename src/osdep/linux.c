@@ -40,7 +40,7 @@
 #include <dirent.h>
 #include <sys/utsname.h>
 
-#include "../include/radiotap-parser.h"
+#include "radiotap/radiotap-parser.h"
         /* radiotap-parser defines types like u8 that
          * ieee80211_radiotap.h needs
          *
@@ -49,7 +49,7 @@
          * - since we can't support extensions we don't understand
          * - since linux does not include it in userspace headers
          */
-#include "../include/ieee80211_radiotap.h"
+#include "radiotap/ieee80211_radiotap.h"
 #include "osdep.h"
 #include "pcap.h"
 #include "crctable_osdep.h"

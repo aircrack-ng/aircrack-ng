@@ -1,6 +1,8 @@
 AC_ROOT	= ../..
 include $(AC_ROOT)/common.mak
 
+RTAP		= radiotap
+
 LIB		= libosdep.a 
 CFLAGS		+= $(PIC) -I.. $(LIBAIRPCAP)
 
@@ -13,7 +15,7 @@ OBJS_APCAP	= airpcap.o
 OBJS_OBSD	= $(OBJS) openbsd.o openbsd_tap.o
 OBJS_NBSD	= $(OBJS) netbsd.o netbsd_tap.o
 OBJS_FBSD	= $(OBJS) freebsd.o freebsd_tap.o
-OBJS_LINUX	= $(OBJS) linux.o linux_tap.o radiotap-parser.o common.o
+OBJS_LINUX	= $(OBJS) linux.o linux_tap.o radiotap/radiotap-parser.o common.o
 OBJS_DUMMY	= $(OBJS) dummy.o dummy_tap.o
 OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o
 
@@ -67,5 +69,6 @@ install: all
 
 uninstall:
 
-clean:
+clean: 
+	$(MAKE) -C $(RTAP) clean
 	rm -f $(LIB) *.o .os.*
