@@ -18,8 +18,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _AIRCRACK_NG__COMPATIBILITY_H_
-#define _AIRCRACK_NG_COMPATIBILITY_H_
+#ifndef _AIRCRACK_NG_BYTEORDER_H_
+#define _AIRCRACK_NG_BYTEORDER_H_
 
 	#define ___my_swab16(x) \
 	((u_int16_t)( \

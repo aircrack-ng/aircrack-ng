@@ -65,7 +65,7 @@
 #include "if_llc.h"
 #include "crypto.h"
 #include "version.h"
-#include "osdep/compatibility.h"
+#include "osdep/byteorder.h"
 
 #define FIND_VICTIM		0
 #define FOUND_VICTIM		1

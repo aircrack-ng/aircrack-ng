@@ -41,7 +41,7 @@
 #include "crypto.h"
 #include "pcap.h"
 #include "uniqueiv.h"
-#include "osdep/compatibility.h"
+#include "osdep/byteorder.h"
 #include "common.h"
 
 #define FAILURE -1

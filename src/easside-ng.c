@@ -49,7 +49,7 @@
 #include "if_arp.h"
 #include "ethernet.h"
 #include "version.h"
-#include "osdep/compatibility.h"
+#include "osdep/byteorder.h"
 
 
 #define S_MTU		1500

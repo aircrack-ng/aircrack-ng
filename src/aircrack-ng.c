@@ -67,7 +67,7 @@
 #include "uniqueiv.h"
 #include "aircrack-ng.h"
 #include "sha1-sse2.h"
-#include "osdep/compatibility.h"
+#include "osdep/byteorder.h"
 #include "common.h"
 
 #ifdef HAVE_SQLITE

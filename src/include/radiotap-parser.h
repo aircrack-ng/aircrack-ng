@@ -17,7 +17,7 @@
 
 
 #define	__user
-#include "../osdep/compatibility.h"
+#include "../osdep/byteorder.h"
 #include <stdint.h>
 
 typedef uint64_t u64;

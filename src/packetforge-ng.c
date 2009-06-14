@@ -43,7 +43,7 @@
 #include "version.h"
 #include "pcap.h"
 #include "crypto.h"
-#include "osdep/compatibility.h"
+#include "osdep/byteorder.h"
 #include "common.h"
 
 #define ARP_REQ \

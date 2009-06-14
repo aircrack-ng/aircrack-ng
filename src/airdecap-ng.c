@@ -43,7 +43,7 @@
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
-#include "osdep/compatibility.h"
+#include "osdep/byteorder.h"
 #include "common.h"
 
 #define CRYPT_NONE 0
