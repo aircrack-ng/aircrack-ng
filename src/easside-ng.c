@@ -49,19 +49,8 @@
 #include "if_arp.h"
 #include "ethernet.h"
 #include "version.h"
+#include "osdep/compatibility.h"
 
-/* XXX assuming little endian platform */
-#ifndef htole16
-#define htole16(n)	n
-#endif
-
-#ifndef htole32
-#define htole32(n)	n
-#endif
-
-#ifndef le16toh
-#define le16toh(n)	n
-#endif
 
 #define S_MTU		1500
 #define S_MCAST		"\x01\x00\x5e\x01\x00"
@@ -1492,7 +1481,7 @@ void send_frame(struct east_state *es, void *buf, int len)
         rc = wi_write(es->es_wi, buf, len, NULL);
         if(rc == -1)
 		err(1, "wi_write()");
-        if (rc != len && rc != len + 3 /* packet length increases by 9 on Radiotap interfaces - this is normal */) { 
+        if (rc != len && rc != len + 3 /* packet length increases by 9 on Radiotap interfaces - this is normal */) {
                 printf("ERROR: Packet length changed while transmitting (%d instead of %d).\n", rc, len);
                 exit(1);
         }

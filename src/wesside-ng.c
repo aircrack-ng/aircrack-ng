@@ -65,6 +65,7 @@
 #include "if_llc.h"
 #include "crypto.h"
 #include "version.h"
+#include "osdep/compatibility.h"
 
 #define FIND_VICTIM		0
 #define FOUND_VICTIM		1
@@ -88,15 +89,6 @@
 #define KEY_FILE "key.log"
 #define PRGA_FILE "prga.log"
 #define KEYLIMIT 1000000
-
-/* XXX assuming little endian */
-#ifndef le16toh
-#define le16toh(n) (n)
-#endif
-
-#ifndef htole16
-#define htole16(n) (n)
-#endif
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
