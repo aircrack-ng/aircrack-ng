@@ -230,6 +230,10 @@
 	#endif
 
 
+	// Mac: Check http://www.opensource.apple.com/source/CF/CF-476.18/CFByteOrder.h
+	//      http://developer.apple.com/DOCUMENTATION/CoreFoundation/Reference/CFByteOrderUtils/Reference/reference.html
+	// Write to apple to ask what should be used.
+
 
 	// Common defines
 	#define cpu_to_le64 __cpu_to_le64
