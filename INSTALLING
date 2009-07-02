@@ -55,9 +55,9 @@ Example:
 
 === Compiling sqlite on cygwin ===
 
-  wget http://www.sqlite.org/sqlite-3.6.15.tar.gz
-  tar -zxf sqlite-3.6.15.tar.gz
-  cd sqlite-3.6.15
+  wget http://www.sqlite.org/sqlite-3.6.16.tar.gz
+  tar -zxf sqlite-3.6.16.tar.gz
+  cd sqlite-3.6.16
   ./configure --disable-tcl
   
   wget http://patches.aircrack-ng.org/sqlite-3.6.13-lib_cygwin.diff
