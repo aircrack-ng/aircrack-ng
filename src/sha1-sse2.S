@@ -1,6 +1,6 @@
 
-// SHA-1 SSE2 implementation, (C) 2008 Alvaro Salmador, ported from Simon Marechal's SHA-1 MMX
-// SHA-1 MMX implementation, (C) 2005 Simon Marechal
+// SHA-1 SSE2 implementation, (C) 2008 Alvaro Salmador (naplam33@msn.com), ported from Simon Marechal's SHA-1 MMX
+// SHA-1 MMX implementation, (C) 2005 Simon Marechal (simon@banquise.net)
 
 // This code computes two (with sse now four) SHA-1 digests at the same time. It
 // doesn't take care of padding (0x80 and size << 3), so make
