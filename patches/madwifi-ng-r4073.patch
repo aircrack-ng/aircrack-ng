@@ -1,0 +1,88 @@
+diff -dru madwifi-ng/ath/if_ath.c madwifi-ng-fixed/ath/if_ath.c
+--- madwifi-ng/ath/if_ath.c	2009-07-10 01:46:48.000000000 +0200
++++ madwifi-ng-fixed/ath/if_ath.c	2009-07-10 01:59:58.000000000 +0200
+@@ -3010,6 +3010,7 @@
+ ath_tx_startraw(struct net_device *dev, struct ath_buf *bf, struct sk_buff *skb)
+ {
+ 	struct ath_softc *sc = netdev_priv(dev);
++	struct ieee80211com *ic = &sc->sc_ic;
+ 	struct ath_hal *ah = sc->sc_ah;
+ 	struct ieee80211_phy_params *ph = &(SKB_CB(skb)->phy); 
+ 	const HAL_RATE_TABLE *rt;
+@@ -3022,7 +3023,7 @@
+ 	struct ieee80211_frame *wh;
+ 
+ 	wh = (struct ieee80211_frame *)skb->data;
+-	try0 = ph->try[0];
++	try0 = (ic->ic_opmode == IEEE80211_M_MONITOR) ? 1 : ph->try[0];
+ 	rt = sc->sc_currates;
+ 	txrate = dot11_to_ratecode(sc, rt, ph->rate[0]);
+ 	power = ph->power > 60 ? 60 : ph->power;
+@@ -3046,7 +3047,8 @@
+ 	rt = sc->sc_currates;
+ 	KASSERT(rt != NULL, ("no rate table, mode %u", sc->sc_curmode));
+ 
+-	if (IEEE80211_IS_MULTICAST(wh->i_addr1)) {
++	if (IEEE80211_IS_MULTICAST(wh->i_addr1) || ((ic->ic_opmode == 
++IEEE80211_M_MONITOR) && (skb->data[1]&3) != 0x01) ) {
+ 		flags |= HAL_TXDESC_NOACK;	/* no ack on broad/multicast */
+ 		sc->sc_stats.ast_tx_noack++;
+ 		try0 = 1;
+Only in madwifi-ng-fixed/ath: if_ath.c.orig
+diff -dru madwifi-ng/ath_hal/ar5211/ar5211_reset.c madwifi-ng-fixed/ath_hal/ar5211/ar5211_reset.c
+--- madwifi-ng/ath_hal/ar5211/ar5211_reset.c	2009-07-10 01:46:38.000000000 +0200
++++ madwifi-ng-fixed/ath_hal/ar5211/ar5211_reset.c	2009-07-10 01:52:18.000000000 +0200
+@@ -987,7 +987,7 @@
+ 	if (AH_PRIVATE(ah)->ah_macVersion < AR_SREV_VERSION_OAHU &&
+ 	    ath_hal_getnfcheckrequired(ah, (HAL_CHANNEL *) chan)) {
+ 		static const uint8_t runtime[3] = { 0, 2, 7 };
+-		int16_t nf, nfThresh;
++		int16_t nf, nfThresh = 0;
+ 		int i;
+ 
+ 		if (!getNoiseFloorThresh(ah, chan, &nfThresh))
+diff -dru madwifi-ng/ath_hal/ar5212/ar5212_reset.c madwifi-ng-fixed/ath_hal/ar5212/ar5212_reset.c
+--- madwifi-ng/ath_hal/ar5212/ar5212_reset.c	2009-07-10 01:46:41.000000000 +0200
++++ madwifi-ng-fixed/ath_hal/ar5212/ar5212_reset.c	2009-07-10 01:53:24.000000000 +0200
+@@ -1264,7 +1264,7 @@
+ {
+ 	struct ath_hal_5212 *ahp = AH5212(ah);
+ 	struct ar5212NfCalHist *h = &ahp->ah_nfCalHist;
+-	int16_t nf, nfThresh;
++	int16_t nf, nfThresh = 0;
+  	int32_t val;
+ 
+ 	if (OS_REG_READ(ah, AR_PHY_AGC_CONTROL) & AR_PHY_AGC_CONTROL_NF) {
+diff -dru madwifi-ng/net80211/ieee80211_scan_sta.c madwifi-ng-fixed/net80211/ieee80211_scan_sta.c
+--- madwifi-ng/net80211/ieee80211_scan_sta.c	2009-07-10 01:46:32.000000000 +0200
++++ madwifi-ng-fixed/net80211/ieee80211_scan_sta.c	2009-07-10 01:56:57.000000000 +0200
+@@ -357,7 +357,7 @@
+ 	struct ieee80211_scan_state *ss,
+ 	enum ieee80211_phymode mode, const u_int16_t freq[], int nfreq)
+ {
+-	struct ieee80211_channel *c, *cg;
++	struct ieee80211_channel *c, *cg = NULL;
+ 	u_int modeflags;
+ 	int i;
+ 
+@@ -1293,7 +1293,7 @@
+ 	u_int32_t flags)
+ {
+ 	struct sta_table *st = ss->ss_priv;
+-	struct sta_entry *selbs;
++	struct sta_entry *selbs = NULL;
+ 	struct ieee80211_channel *chan;
+ 
+ 	KASSERT(vap->iv_opmode == IEEE80211_M_IBSS ||
+diff -dru madwifi-ng/net80211/ieee80211_skb.c madwifi-ng-fixed/net80211/ieee80211_skb.c
+--- madwifi-ng/net80211/ieee80211_skb.c	2009-07-10 01:46:32.000000000 +0200
++++ madwifi-ng-fixed/net80211/ieee80211_skb.c	2009-07-10 01:54:54.000000000 +0200
+@@ -464,7 +464,7 @@
+  *  - Break the linked list, clearing next skb's prev pointer if possible. */
+ void ieee80211_dev_kfree_skb(struct sk_buff **pskb) 
+ {
+-	struct sk_buff *skb;
++	struct sk_buff *skb = NULL;
+ 
+ 	/* Do not fail on null, as we are going to use this in cleanup code. */
+ 	if (!pskb || !(skb = *pskb))
