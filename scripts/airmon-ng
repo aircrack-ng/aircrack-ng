@@ -448,7 +448,7 @@ do
             IW_ERROR=`iw dev $iface interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
             if [ x$IW_ERROR = "x" ]
             then
-                sleep 0.1
+                sleep 1s
 		if [ ! -z $3 ]
                 then
             	    if [ $3 -lt 1000 ]
@@ -464,7 +464,7 @@ do
                 if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
                 then
                     echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
-                    sleep 0.1
+                    sleep 1s
                     if [ $3 -lt 1000 ]
                     then
                         iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
@@ -481,7 +481,7 @@ do
             if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
             then
                 echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
-                sleep 0.1
+                sleep 1s
                 if [ $3 -lt 1000 ]
                 then
                     iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
