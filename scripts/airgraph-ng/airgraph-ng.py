@@ -159,8 +159,6 @@ def usage():
         Prints the usage to use airgraph-ng
         """
 	print "############################################","\n#         Welcome to Airgraph-ng           #","\n############################################\n"
-	print "Usage: python airgraph-ng -i [airodumpfile.txt] -o [outputfile.png] -g [CAPR OR CPG]"
-	print "\n-i\tInput File\n-o\tOutput File\n-g\tGraph Type [CAPR (Client to AP Relationship) OR CPG (Common probe graph)]\n-p\tDisable Psyco JIT compiler\n-h\tPrint this help"
 
 def dotCreate(info,graphType,maltego="false"):
 	"""
@@ -321,15 +319,15 @@ if __name__ == "__main__":
         Parses command line input for proper switches and arguments. Error checking is done in here.
         Variables are defined and all calls are made from MAIN.
         """
-	if len(sys.argv) <= 1:
-		usage()
-		sys.exit(0)
 
-	parser = optparse.OptionParser("usage: %prog [options] -i input -o output -g graph type .....")  #read up more on this
+	parser = optparse.OptionParser("usage: %prog options [-p] -o -i -g ")  #
 	parser.add_option("-o", "--output",  dest="output",nargs=1, help="Our Output Image ie... Image.png")
 	parser.add_option("-i", "--dump", dest="input", nargs=1 ,help="Airodump txt file in CSV format NOT the pcap")
 	parser.add_option("-g", "--graph", dest="graph_type", nargs=1 ,help="Graph Type Current [CAPR (Client to AP Relationship) OR CPG (Common probe graph)]")
 	parser.add_option("-p", "--nopsyco",dest="pysco",action="store_false",default=True,help="Disable the use of Psyco JIT")
+	if len(sys.argv) <= 1:
+		parser.print_help()
+		sys.exit(0)
 	(options, args) = parser.parse_args()
 
 	outFile = options.output
