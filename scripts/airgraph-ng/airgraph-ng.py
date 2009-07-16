@@ -3,7 +3,7 @@ __author__ = 'Ben "TheX1le" Smith'
 __email__ = 'thex1le@gmail.com'
 __website__= 'http://trac.aircrack-ng.org/browser/trunk/scripts/airgraph-ng/'
 __date__ = '07/16/09'
-__version__ = '0.2.5'
+__version__ = '0.2.5.1'
 __file__ = 'airgraph-ng'
 __data__ = 'This is the main airgraph-ng file'
 
@@ -33,7 +33,7 @@ I would also like to thank muts and Remote Exploit Community for all their help 
 
 """ Airgraph-ng """
 
-import getopt, subprocess, sys, pdb, optparse
+import subprocess, sys, optparse
 def importPsyco():
 	try: # Import Psyco if available to speed up execution
 		import psyco 
@@ -97,12 +97,9 @@ def airDumpParse(cleanedDump):
 		print "You Seem to have provided an improper input file please make sure you are loading an airodump txt file and not a pcap"
 		sys.exit(1)
 
-	#pdb.set_trace()
 	del cleanedDump[stationStart] #Remove the heading line
 	clientList = cleanedDump[stationStart:] #Splits all client data into its own list
 	del cleanedDump[stationStart:] #The remaining list is all of the AP information
-	#apDict = dictCreate(cleanedDump) #Create a dictionary from the list
-	#clientDict = dictCreate(clientList) #Create a dictionary from the list
 	apDict = apTag(cleanedDump)
 	clientDict = clientTag(clientList)
 	resultDicts = [clientDict,apDict] #Put both dictionaries into a list
@@ -116,8 +113,7 @@ def apTag(devices):
 	for entry in devices:
 		ap = {}
 		string_list = entry.split(',')
-		#entry = entry.replace(' ','')
-		#sorry for the clusterfuck but i swear it all makse sense
+		#sorry for the clusterfuck but i swear it all makse sense this is builiding a dic from our list so we dont have to do postion calls later
 		len(string_list)
 		if len(string_list) == 15:
 			ap = {"bssid":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"channel":string_list[3].replace(' ',''),"speed":string_list[4],"privacy":string_list[5].replace(' ',''),"cipher":string_list[6],"auth":string_list[7],"power":string_list[8],"beacons":string_list[9],"iv":string_list[10],"ip":string_list[11],"id":string_list[12],"essid":string_list[13][1:],"key":string_list[14]}
@@ -172,9 +168,7 @@ def dotCreate(info,graphType,maltego="false"):
 		#info comes in as list Clients Dictionary at postion 0 and AP Dictionary at postion1
 		print "Feature is not ready yet"
 		sys.exit(1)
-		#pdb.set_trace() #debug point
 		return_var = CAPR_main(info)
-		#dot_file = return_var[0]
 		APNC = return_var[2]
 		CNAP = return_var[3]
 		CAPR = return_var[0]
@@ -204,7 +198,6 @@ def dotCreate(info,graphType,maltego="false"):
 		dotFile = ['digraph G {\n\tsize ="144,144";\n\toverlap=false;\n'] #start the graphviz config file
 		clientProbe = {}
 
-		#pdb.set_trace()
 		for key in (clients):
 			mac = clients[key]
 			if len(mac["probe"]) > 1 or mac["probe"] != ['']:
@@ -264,8 +257,6 @@ def dotCreate(info,graphType,maltego="false"):
 			apCount[bssid] = len(clientList) #count the number of APs
 			clientCount += len(clientList) #count the number of clients
 
-			#pdb.set_trace()
-			#note the following code is an ulgy hack and will need to be cleaned up for direct tag calling
 			bssidI = AP[bssid]["bssid"] #get the BSSID info from the AP dict
 			color = dot_libs.encryptionColor(AP[bssid]["privacy"]) # Deterimine what color the graph should be
 			if AP[bssid]["privacy"] == '': #if there is no encryption detected we set it to unknown
@@ -326,6 +317,7 @@ if __name__ == "__main__":
 	parser.add_option("-g", "--graph", dest="graph_type", nargs=1 ,help="Graph Type Current [CAPR (Client to AP Relationship) OR CPG (Common probe graph)]")
 	parser.add_option("-p", "--nopsyco",dest="pysco",action="store_false",default=True,help="Disable the use of Psyco JIT")
 	if len(sys.argv) <= 1:
+		usage()
 		parser.print_help()
 		sys.exit(0)
 	(options, args) = parser.parse_args()
