@@ -50,6 +50,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 #include <time.h>
 #include <getopt.h>
@@ -2923,6 +2924,40 @@ int dump_write_csv( void )
     return 0;
 }
 
+char * sanitize_xml(unsigned char * text, int length)
+{
+	int i;
+	char * pos;
+	char * newtext = NULL;
+	if (text != NULL && length > 0) {
+		newtext = (char *)calloc(1, 5 * (length + 1) * sizeof(char)); // Make sure we have enough space
+		pos = (char *)text;
+		for (i = 0; i < length; ++i, ++pos) {
+			switch (*pos) {
+				case '&':
+					strcat(newtext, "&amp;");
+					break;
+				case '<':
+					strcat(newtext, "&lt;");
+					break;
+				case '>':
+					strcat(newtext, "&gt;");
+					break;
+				default:
+					if (isprint((int)(*pos))) {
+						newtext[strlen(newtext)] = *pos;
+					} else {
+						newtext[strlen(newtext)] = '\\';
+						sprintf(pos + strlen(newtext), "%3u", *pos);
+					}
+			}
+		}
+		newtext = (char *) realloc(newtext, strlen(newtext) + 1);
+	}
+
+	return newtext;
+}
+
 #define KISMET_NETXML_HEADER_BEGIN "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<!DOCTYPE detection-run SYSTEM \"http://kismetwireless.net/kismet-3.1.0.dtd\">\n\n<detection-run kismet-version=\"airodump-ng-1.0\" start-time=\""
 #define KISMET_NETXML_HEADER_END "\">\n\n"
 
@@ -2930,12 +2965,13 @@ int dump_write_csv( void )
 
 int dump_write_kismet_netxml( void )
 {
-    int network_number, average_power, ssid_cloaked, unused, client_nbr, i;
+    int network_number, average_power, client_nbr;
     int client_max_rate;
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
     char first_time[255];
     char last_time[255];
+    char * essid = NULL;
 
     if (! G.record_data || !G.output_format_kismet_netxml)
     	return 0;
@@ -3012,25 +3048,12 @@ int dump_write_kismet_netxml( void )
 		fprintf(G.f_kis_xml, "</encryption>\n");
 
 		/* ESSID */
-		ssid_cloaked = 1;
-		if ( ap_cur->ssid_length > 0 )
-		{
-			for(i = 0; i < ap_cur->ssid_length; ++i)
-			{
-				if (ap_cur->essid[i] != 0)
-				{
-					ssid_cloaked = 0;
-					break;
-				}
-			}
-		}
-
-		fprintf(G.f_kis_xml, "\t\t\t<essid cloaked=\"%s\">", (ssid_cloaked) ? "true" : "false");
-		for(i = 0; i < ap_cur->ssid_length; ++i)
-		{
-			/* fputc is used on purpose: to be sure that if the ESSID
-			   contains null characters, all of them are written */
-			unused = fputc( ap_cur->essid[i], G.f_kis_xml );
+		fprintf(G.f_kis_xml, "\t\t\t<essid cloaked=\"%s\">",
+					(ap_cur->essid[0] == 0) ? "true" : "false");
+		essid = sanitize_xml(ap_cur->essid, ap_cur->ssid_length);
+		if (essid != NULL) {
+			fprintf(G.f_kis_xml, "%s", essid);
+			free(essid);
 		}
 		fprintf(G.f_kis_xml, "</essid>\n");
 
