@@ -23,11 +23,6 @@
  * Uninstall:
     make uninstall
 
-Note: On OSX (Intel), Aircrack-ng must be patched before compiling:
-
-      cd aircrack-ng-1.0rc3/src
-      patch -i ../patches/aicrack-ng-rc2_Intel_macOSX.patch
-
 ==== Makefile flags ====
 
 When compile and installing, the following flags can be used and combined

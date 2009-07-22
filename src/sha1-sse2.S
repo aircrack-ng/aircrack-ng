@@ -21,7 +21,11 @@
 .globl _shasse2_cpuid;
 
 .data
+#ifdef __APPLE__
+.align(12)
+#else
 .align(16)
+#endif
 const_init_a:
 .long 0x67452301
 .long 0x67452301
