@@ -110,9 +110,8 @@ int sql_exec_cb(sqlite3* db, const char *sql, void* callback, void* cb_arg) {
 	while (1) {
 		rc = sqlite3_exec(db,sql,callback,cb_arg,&zErrMsg);
 		if (rc == SQLITE_LOCKED || rc == SQLITE_BUSY) {
-			fprintf(stdout,"Database is locked or busy. Waiting %is ... %1c    \r",++waited, looper[looperc]);
+			fprintf(stdout,"Database is locked or busy. Waiting %is ... %1c    \r",++waited, looper[looperc++ % sizeof(looper)]);
 			fflush(stdout);
-			looperc = looperc+1 % sizeof(looper);
 			sleep(1);
 		} else {
 			if (rc != SQLITE_OK) {
