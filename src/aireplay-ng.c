@@ -172,6 +172,7 @@ char usage[] =
 "      -o npckts : number of packets per burst (0=auto, default: 1)\n"
 "      -q sec    : seconds between keep-alives\n"
 "      -y prga   : keystream for shared key auth\n"
+"      -T n      : exit after retry fake auth request n time\n"
 "\n"
 "      Arp Replay attack options:\n"
 "\n"
@@ -254,6 +255,7 @@ struct options
     int a_mode;
     int a_count;
     int a_delay;
+	int f_retry;
 
     int ringbuffer;
     int ghost;
@@ -1392,9 +1394,9 @@ int do_attack_fake_auth( void )
     int i, n, state, caplen, z;
     int mi_b, mi_s, mi_d;
     int x_send;
-//     int ret;
     int kas;
     int tries;
+    int retry = 0;
     int abort;
     int gotack = 0;
     uchar capa[2];
@@ -1454,6 +1456,13 @@ int do_attack_fake_auth( void )
         switch( state )
         {
             case 0:
+				if (opt.f_retry > 0) {
+					if (retry == opt.f_retry) {
+						abort = 1;
+						return 1;
+					}
+					++retry;
+				}
 
                 if(ska && keystreamlen == 0)
                 {
@@ -5723,7 +5732,7 @@ int main( int argc, char *argv[] )
     opt.delay     = 15; opt.bittest     =  0;
     opt.fast      =  0; opt.r_smac_set  =  0;
     opt.npackets  =  1; opt.nodetect    =  0;
-    opt.rtc       =  1;
+    opt.rtc       =  1; opt.f_retry	=  0;
 
 /* XXX */
 #if 0
@@ -5762,7 +5771,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345679HFBDR",
+                        "b:d:s:m:n:u:v:t:T:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345679HFBDR",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -5856,6 +5865,15 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
                 break;
+
+            case 'T' :
+		ret = sscanf(optarg, "%d", &opt.f_retry);
+		if ((opt.f_retry < 1) || (opt.f_retry > 65535) || (ret != 1)) {
+			printf("Invalid retry setting. [1-65535]\n");
+			printf("\"%s --help\" for help.\n", argv[0]);
+			return(1);
+		}
+		break;
 
             case 't' :
 
