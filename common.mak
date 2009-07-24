@@ -67,7 +67,7 @@ REVISION	= $(shell $(AC_ROOT)/evalrev)
 REVFLAGS	= -D_REVISION=$(REVISION)
 
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
-CFLAGS          ?= -g -W -Wall -Werror -O3
+CFLAGS          ?= -g -W -Wall -Werror -O2
 CFLAGS          += $(OPTFLAGS) $(REVFLAGS) $(COMMON_CFLAGS)
 
 prefix          = /usr/local
