@@ -28,6 +28,8 @@ install:
 	$(MAKE) -C src $(@)
 	$(MAKE) -C scripts $(@)
 	$(MAKE) -C manpages $(@)
+	@echo " "
+	@echo "[*] Run 'airodump-ng-oui-update' as root (or with sudo) to install or update Airodump-ng OUI file (Internet connection required)."
 
 uninstall:
 	$(MAKE) -C src $(@)

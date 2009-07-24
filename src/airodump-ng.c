@@ -68,6 +68,52 @@
 #include "osdep/common.h"
 #include "common.h"
 
+struct oui * load_oui_file(void) {
+	FILE *fp;
+	char buffer[BUFSIZ];
+	unsigned char a[2];
+	unsigned char b[2];
+	unsigned char c[2];
+	struct oui *oui_ptr = NULL, *oui_head = NULL;
+
+	if (!(fp = fopen(OUI_PATH, "r")))
+		return NULL;
+
+	memset(buffer, 0x00, sizeof(buffer));
+	while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+		if (!(strstr(buffer, "(hex)")))
+			continue;
+
+		memset(a, 0x00, sizeof(a));
+		memset(b, 0x00, sizeof(b));
+		memset(c, 0x00, sizeof(c));
+		if (sscanf(buffer, "%2c-%2c-%2c", a, b, c) == 3) {
+			if (oui_ptr == NULL) {
+				if (!(oui_ptr = (struct oui *)malloc(sizeof(struct oui)))) {
+					perror("malloc failed");
+					return NULL;
+				}
+			} else {
+				if (!(oui_ptr->next = (struct oui *)malloc(sizeof(struct oui)))) {
+					perror("malloc failed");
+									return NULL;
+				}
+				oui_ptr = oui_ptr->next;
+			}
+			memset(oui_ptr->id, 0x00, sizeof(oui_ptr->id));
+			memset(oui_ptr->manuf, 0x00, sizeof(oui_ptr->manuf));
+			snprintf(oui_ptr->id, sizeof(oui_ptr->id), "%c%c:%c%c:%c%c", a[0], a[1], b[0], b[1], c[0], c[1]);
+			snprintf(oui_ptr->manuf, sizeof(oui_ptr->manuf), "%s", buffer+(sizeof(oui_ptr->id) * 2));
+			if (oui_head == NULL)
+				oui_head = oui_ptr;
+			oui_ptr->next = NULL;
+		}
+	}
+
+	fclose(fp);
+	return oui_head;
+}
+
 int check_shared_key(unsigned char *h80211, int caplen)
 {
     int m_bmac, m_smac, m_dmac, n, textlen;
@@ -849,6 +895,9 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
             ap_prv->next  = ap_cur;
 
         memcpy( ap_cur->bssid, bssid, 6 );
+		if (ap_cur->manuf == NULL) {
+			ap_cur->manuf = get_manufacturer(ap_cur->bssid[0], ap_cur->bssid[1], ap_cur->bssid[2]);
+		}
 
         ap_cur->prev = ap_prv;
 
@@ -1050,6 +1099,10 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
             st_prv->next  = st_cur;
 
         memcpy( st_cur->stmac, stmac, 6 );
+
+		if (st_cur->manuf == NULL) {
+			st_cur->manuf = get_manufacturer(st_cur->stmac[0], st_cur->stmac[1], st_cur->stmac[2]);
+		}
 
         st_cur->prev = st_prv;
 
@@ -2958,6 +3011,75 @@ char * sanitize_xml(unsigned char * text, int length)
 	return newtext;
 }
 
+char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2) {
+	char oui[9];
+	char *manuf;
+	struct oui *ptr;
+	FILE *fp;
+	char buffer[BUFSIZ];
+	char temp[BUFSIZ];
+	unsigned char a[2];
+	unsigned char b[2];
+	unsigned char c[2];
+	int found = 0;
+
+	if ((manuf = (char *)calloc(1, 128 * sizeof(char))) == NULL) {
+		perror("calloc failed");
+		return NULL;
+	}
+
+	snprintf(oui, sizeof(oui), "%02X:%02X:%02X", mac0, mac1, mac2 );
+
+	if (G.manufList != NULL) {
+		// Search in the list
+		ptr = G.manufList;
+		while (ptr != NULL && found == 0) {
+			found = ! strncasecmp(ptr->id, oui, 8);
+			if (found) {
+				memcpy(manuf, ptr->manuf, 128);
+			} else {
+				ptr = ptr->next;
+			}
+		}
+	} else {
+		// If the file exist, then query it each time we need to get a manufacturer.
+		fp = fopen(OUI_PATH, "r");
+		if (fp != NULL) {
+
+			memset(buffer, 0x00, sizeof(buffer));
+			while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+				if (!(strstr(buffer, "(hex)")))
+					continue;
+
+				memset(a, 0x00, sizeof(a));
+				memset(b, 0x00, sizeof(b));
+				memset(c, 0x00, sizeof(c));
+				if (sscanf(buffer, "%2c-%2c-%2c", a, b, c) == 3) {
+					snprintf(temp, sizeof(temp), "%c%c:%c%c:%c%c", a[0], a[1], b[0], b[1], c[0], c[1] );
+					found = !memcmp(temp, oui, strlen(oui));
+					if (found) {
+						snprintf(manuf, 128 * sizeof(char), "%s", buffer+(sizeof(oui) * 2));
+						break;
+					}
+				}
+				memset(buffer, 0x00, sizeof(buffer));
+			}
+
+			fclose(fp);
+		}
+	}
+
+	// Not found, use "Unknown".
+	if (!found) {
+		memcpy(manuf, "Unknown", 7);
+	}
+
+	manuf[strlen(manuf)-1] = '\0';
+	manuf = (char *)realloc(manuf, (strlen(manuf) + 1) * sizeof(char));
+
+	return manuf;
+}
+
 #define KISMET_NETXML_HEADER_BEGIN "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<!DOCTYPE detection-run SYSTEM \"http://kismetwireless.net/kismet-3.1.0.dtd\">\n\n<detection-run kismet-version=\"airodump-ng-1.0\" start-time=\""
 #define KISMET_NETXML_HEADER_END "\">\n\n"
 
@@ -3060,15 +3182,14 @@ int dump_write_kismet_netxml( void )
 		/* End of SSID tag */
 		fprintf(G.f_kis_xml, "\t\t</SSID>\n");
 
-		/* BSSID and manufacturer */
+		/* BSSID */
 		fprintf( G.f_kis_xml, "\t\t<BSSID>%02X:%02X:%02X:%02X:%02X:%02X</BSSID>\n",
 					 ap_cur->bssid[0], ap_cur->bssid[1],
 					 ap_cur->bssid[2], ap_cur->bssid[3],
 					 ap_cur->bssid[4], ap_cur->bssid[5] );
 
-		/* Manufacturer
-		   XXX: Needs the MAC Address list file */
-		fprintf(G.f_kis_xml, "\t\t<manuf>%s</manuf>\n", "Unknown");
+		/* Manufacturer, if set using standard oui list */
+		fprintf(G.f_kis_xml, "\t\t<manuf>%s</manuf>\n", (ap_cur->manuf != NULL) ? ap_cur->manuf : "Unknown");
 
 		/* Channel
 		   FIXME: Take G.freqoption in account */
@@ -3137,9 +3258,8 @@ int dump_write_kismet_netxml( void )
 						 st_cur->stmac[2], st_cur->stmac[3],
 						 st_cur->stmac[4], st_cur->stmac[5] );
 
-			/* Manufacturer
-			   XXX: Needs the MAC Address list file */
-			fprintf(G.f_kis_xml, "\t\t\t<client-manuf>%s</client-manuf>\n", "Unknown");
+			/* Manufacturer, if set using standard oui list */
+			fprintf(G.f_kis_xml, "\t\t\t<client-manuf>%s</client-manuf>\n", (st_cur->manuf != NULL) ? st_cur->manuf : "Unknown");
 
 			/* Channel
 			   FIXME: Take G.freqoption in account */
@@ -4459,6 +4579,7 @@ int main( int argc, char *argv[] )
     struct AP_info *ap_cur, *ap_prv, *ap_next;
     struct ST_info *st_cur, *st_next;
     struct NA_info *na_cur, *na_next;
+    struct oui *oui_cur, *oui_next;
 
     struct pcap_pkthdr pkh;
 
@@ -4561,6 +4682,7 @@ int main( int argc, char *argv[] )
     G.f_cap_in     =  NULL;
     G.detect_anomaly = 0;
     G.airodump_start_time = NULL;
+	G.manufList = NULL;
 
 	G.output_format_pcap = 1;
     G.output_format_csv = 1;
@@ -5195,6 +5317,11 @@ usage:
 
     sighandler( SIGWINCH );
 
+    /* fill oui struct if ram is greater than 32 MB */
+    if (get_ram_size()  > MIN_RAM_SIZE_LOAD_OUI_RAM) {
+        G.manufList = load_oui_file();
+	}
+
     /* start the GPS tracker */
 
     if (G.usegpsd)
@@ -5578,7 +5705,10 @@ usage:
 
         list_tail_free(&(ap_cur->packets));
 
-		if (G.detect_anomaly)
+	if (G.manufList)
+		free(ap_cur->manuf);
+
+	if (G.detect_anomaly)
         	data_wipe(ap_cur->data_root);
 
         ap_prv = ap_cur;
@@ -5604,6 +5734,8 @@ usage:
     while(st_cur != NULL)
     {
         st_next = st_cur->next;
+	if (G.manufList)
+		free(st_cur->manuf);
         free(st_cur);
         st_cur = st_next;
     }
@@ -5616,6 +5748,15 @@ usage:
         na_next = na_cur->next;
         free(na_cur);
         na_cur = na_next;
+    }
+
+    if (G.manufList) {
+        oui_cur = G.manufList;
+        while (oui_cur != NULL) {
+            oui_next = oui_cur->next;
+	    free(oui_cur);
+	    oui_cur = oui_next;
+        }
     }
 
     fprintf( stderr, "\33[?25h" );

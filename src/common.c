@@ -33,6 +33,28 @@
 #define isHex(c) (hexToInt(c) != -1)
 #define HEX_BASE 16
 
+int get_ram_size(void) {
+	FILE *fp;
+	char str[256];
+	int val = 0;
+	int ret = -1;
+
+	if (!(fp = fopen("/proc/meminfo", "r"))) {
+		perror("fopen fails");
+		return ret;
+	}
+
+	memset(str, 0x00, sizeof(str));
+	while ((fscanf(fp, "%s %d", str, &val)) != 0 && ret == -1) {
+		if (!(strncmp(str, "MemTotal", 8))) {
+			ret = val;
+		}
+	}
+
+	fclose(fp);
+	return ret;
+}
+
 /* Return the version number */
 char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc)
 {

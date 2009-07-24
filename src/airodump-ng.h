@@ -47,6 +47,8 @@
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
+extern int get_ram_size(void);
+char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
 
 #define AIRODUMP_NG_CSV_EXT "csv"
 #define KISMET_CSV_EXT "kismet.csv"
@@ -67,6 +69,9 @@ static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00";
+
+#define OUI_PATH "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt"
+#define MIN_RAM_SIZE_LOAD_OUI_RAM 32768
 
 int read_pkts=0;
 
@@ -103,8 +108,14 @@ struct pkt_buf
     struct timeval  ctime;      /* capture time */
 };
 
-/* linked list of detected access points */
+/* oui struct for list management */
+struct oui {
+	char id[9]; /* TODO: Don't use ASCII chars to compare, use unsigned char[3] (later) with the value (hex ascii will have to be converted) */
+	char manuf[128]; /* TODO: Switch to a char * later to improve memory usage */
+	struct oui *next;
+};
 
+/* linked list of detected access points */
 struct AP_info
 {
     struct AP_info *prev;     /* prev. AP in list         */
@@ -136,6 +147,7 @@ struct AP_info
     struct timeval tv;        /* time for data per second */
 
     unsigned char bssid[6];   /* the access point's MAC   */
+    char *manuf;              /* the access point's manufacturer */
     unsigned char essid[MAX_IE_ELEMENT_SIZE];
                               /* ascii network identifier */
 
@@ -191,6 +203,7 @@ struct ST_info
     time_t tinit, tlast;     /* first and last time seen  */
     unsigned long nb_pkt;    /* total number of packets   */
     unsigned char stmac[6];  /* the client's MAC address  */
+    char *manuf;             /* the client's manufacturer */
     int probe_index;         /* probed ESSIDs ring index  */
     char probes[NB_PRB][MAX_IE_ELEMENT_SIZE];
                              /* probed ESSIDs ring buffer */
@@ -232,6 +245,7 @@ struct globals
     struct AP_info *ap_1st, *ap_end;
     struct ST_info *st_1st, *st_end;
     struct NA_info *na_1st, *na_end;
+    struct oui *manufList;
 
     unsigned char prev_bssid[6];
     unsigned char f_bssid[6];
