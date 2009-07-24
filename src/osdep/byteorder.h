@@ -50,37 +50,6 @@
 		#include <endian.h>
 		#include <unistd.h>
 
-		#if BYTE_ORDER == BIG_ENDIAN
-
-			#define __be64_to_cpu(x) (x)
-			#define __be32_to_cpu(x) (x)
-			#define __be16_to_cpu(x) (x)
-			#define __cpu_to_be64(x) (x)
-			#define __cpu_to_be32(x) (x)
-			#define __cpu_to_be16(x) (x)
-			#define __le64_to_cpu(x) ___my_swab64(x)
-			#define __le32_to_cpu(x) ___my_swab32(x)
-			#define __le16_to_cpu(x) ___my_swab16(x)
-			#define __cpu_to_le64(x) ___my_swab64(x)
-			#define __cpu_to_le32(x) ___my_swab32(x)
-			#define __cpu_to_le16(x) ___my_swab16(x)
-
-		#elif BYTE_ORDER == LITTLE_ENDIAN
-
-			#define __be64_to_cpu(x) ___my_swab64(x)
-			#define __be32_to_cpu(x) ___my_swab32(x)
-			#define __be16_to_cpu(x) ___my_swab16(x)
-			#define __cpu_to_be64(x) ___my_swab64(x)
-			#define __cpu_to_be32(x) ___my_swab32(x)
-			#define __cpu_to_be16(x) ___my_swab16(x)
-			#define __le64_to_cpu(x) (x)
-			#define __le32_to_cpu(x) (x)
-			#define __le16_to_cpu(x) (x)
-			#define __cpu_to_le64(x) (x)
-			#define __cpu_to_le32(x) (x)
-			#define __cpu_to_le16(x) (x)
-		#endif
-
 	#endif
 
 	/*
@@ -103,6 +72,8 @@
 		#define __cpu_to_le32(x) (x)
 		#define __cpu_to_le16(x) (x)
 
+		#define AIRCRACK_NG_BYTE_ORDER_DEFINED
+
 	#endif
 
 	/*
@@ -124,6 +95,9 @@
 		#define __cpu_to_le64(x) (x)
 		#define __cpu_to_le32(x) (x)
 		#define __cpu_to_le16(x) (x)
+
+		#define AIRCRACK_NG_BYTE_ORDER_DEFINED
+
 	#endif
 
 	/*
@@ -152,6 +126,8 @@
 		#define __BIG_ENDIAN    4321
 		#define __PDP_ENDIAN    3412
 		#define __BYTE_ORDER    __BIG_ENDIAN
+
+		#define AIRCRACK_NG_BYTE_ORDER_DEFINED
 
 	#endif
 
@@ -182,6 +158,8 @@
 		typedef uint16_t u_int16_t;
 		typedef uint8_t  u_int8_t;
 
+		#define AIRCRACK_NG_BYTE_ORDER_DEFINED
+
 	#endif
 
 	/*
@@ -191,29 +169,28 @@
 		#include <libkern/OSByteOrder.h>
 		#define __cpu_to_be64(x) = OSSwapHostToBigInt64(x)
 		#define __cpu_to_be32(x) = OSSwapHostToBigInt32(x)
+
+		#define AIRCRACK_NG_BYTE_ORDER_DEFINED
+
 	#endif
 
 
 	// FreeBSD
 	#ifdef __FreeBSD__
 		#include <machine/endian.h>
-		#if BYTE_ORDER == BIG_ENDIAN
+	#endif
 
-			#define __be64_to_cpu(x) (x)
-			#define __be32_to_cpu(x) (x)
-			#define __be16_to_cpu(x) (x)
-			#define __cpu_to_be64(x) (x)
-			#define __cpu_to_be32(x) (x)
-			#define __cpu_to_be16(x) (x)
-			#define __le64_to_cpu(x) ___my_swab64(x)
-			#define __le32_to_cpu(x) ___my_swab32(x)
-			#define __le16_to_cpu(x) ___my_swab16(x)
-			#define __cpu_to_le64(x) ___my_swab64(x)
-			#define __cpu_to_le32(x) ___my_swab32(x)
-			#define __cpu_to_le16(x) ___my_swab16(x)
+	// XXX: Is there anything to include on OpenBSD/NetBSD/DragonFlyBSD/...?
 
-		#elif BYTE_ORDER == LITTLE_ENDIAN
 
+	// XXX: Mac: Check http://www.opensource.apple.com/source/CF/CF-476.18/CFByteOrder.h
+	//           http://developer.apple.com/DOCUMENTATION/CoreFoundation/Reference/CFByteOrderUtils/Reference/reference.html
+	//           Write to apple to ask what should be used.
+
+
+	#if (BYTE_ORDER == LITTLE_ENDIAN || __BYTE_ORDER == LITTLE_ENDIAN || __BYTE_ORDER == __LITTLE_ENDIAN)
+
+		#ifndef AIRCRACK_NG_BYTE_ORDER_DEFINED
 			#define __be64_to_cpu(x) ___my_swab64(x)
 			#define __be32_to_cpu(x) ___my_swab32(x)
 			#define __be16_to_cpu(x) ___my_swab16(x)
@@ -227,30 +204,6 @@
 			#define __cpu_to_le32(x) (x)
 			#define __cpu_to_le16(x) (x)
 		#endif
-	#endif
-
-
-	// Mac: Check http://www.opensource.apple.com/source/CF/CF-476.18/CFByteOrder.h
-	//      http://developer.apple.com/DOCUMENTATION/CoreFoundation/Reference/CFByteOrderUtils/Reference/reference.html
-	// Write to apple to ask what should be used.
-
-
-	// Common defines
-	#define cpu_to_le64 __cpu_to_le64
-	#define le64_to_cpu __le64_to_cpu
-	#define cpu_to_le32 __cpu_to_le32
-	#define le32_to_cpu __le32_to_cpu
-	#define cpu_to_le16 __cpu_to_le16
-	#define le16_to_cpu __le16_to_cpu
-	#define cpu_to_be64 __cpu_to_be64
-	#define be64_to_cpu __be64_to_cpu
-	#define cpu_to_be32 __cpu_to_be32
-	#define be32_to_cpu __be32_to_cpu
-	#define cpu_to_be16 __cpu_to_be16
-	#define be16_to_cpu __be16_to_cpu
-
-
-	#if (BYTE_ORDER == LITTLE_ENDIAN || __BYTE_ORDER == LITTLE_ENDIAN || __BYTE_ORDER == __LITTLE_ENDIAN)
 
 		#ifndef htobe16
 			#define htobe16 ___my_swab16
@@ -282,6 +235,21 @@
 
 	#if (BYTE_ORDER == BIG_ENDIAN || __BYTE_ORDER == BIG_ENDIAN || __BYTE_ORDER == __BIG_ENDIAN)
 
+		#ifndef AIRCRACK_NG_BYTE_ORDER_DEFINED
+			#define __be64_to_cpu(x) (x)
+			#define __be32_to_cpu(x) (x)
+			#define __be16_to_cpu(x) (x)
+			#define __cpu_to_be64(x) (x)
+			#define __cpu_to_be32(x) (x)
+			#define __cpu_to_be16(x) (x)
+			#define __le64_to_cpu(x) ___my_swab64(x)
+			#define __le32_to_cpu(x) ___my_swab32(x)
+			#define __le16_to_cpu(x) ___my_swab16(x)
+			#define __cpu_to_le64(x) ___my_swab64(x)
+			#define __cpu_to_le32(x) ___my_swab32(x)
+			#define __cpu_to_le16(x) ___my_swab16(x)
+		#endif
+
 		#ifndef htobe16
 			#define htobe16(x) (x)
 		#endif
@@ -310,6 +278,19 @@
 
 	#endif
 
+	// Common defines
+	#define cpu_to_le64 __cpu_to_le64
+	#define le64_to_cpu __le64_to_cpu
+	#define cpu_to_le32 __cpu_to_le32
+	#define le32_to_cpu __le32_to_cpu
+	#define cpu_to_le16 __cpu_to_le16
+	#define le16_to_cpu __le16_to_cpu
+	#define cpu_to_be64 __cpu_to_be64
+	#define be64_to_cpu __be64_to_cpu
+	#define cpu_to_be32 __cpu_to_be32
+	#define be32_to_cpu __be32_to_cpu
+	#define cpu_to_be16 __cpu_to_be16
+	#define be16_to_cpu __be16_to_cpu
 
 	#ifndef le16toh
 		#define le16toh le16_to_cpu
