@@ -3074,7 +3074,7 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 		memcpy(manuf, "Unknown", 7);
 	}
 
-	manuf[strlen(manuf)-1] = '\0';
+	manuf[strlen(manuf)] = '\0';
 	manuf = (char *)realloc(manuf, (strlen(manuf) + 1) * sizeof(char));
 
 	return manuf;
