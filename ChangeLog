@@ -1,15 +1,33 @@
-Version 1.0-rc4 (changes from aircrack-ng 1.0-rc3) - Released ?? ??? ????:
+Version 1.0-rc4 (changes from aircrack-ng 1.0-rc3) - Released ?? July 2009:
 * airodump-ng: Decreased time before writing text files to 5 sec (instead of 20).
 * airodump-ng: New option --output-format option (to replace --nocap): specify output files.
+* airodump-ng: Fixed encryption tag value in kismet netxml files.
+* airodump-ng: Sanitize essid before writing it into kismet netxml files.
+* airodump-ng: Log manufacturer into kismet netxml files.
+* aireplay-ng: Fake auth: reduce the number of ACKs to 2 per packet.
+* aireplay-ng: Added possibility to stop sending fake auth requests after n retry failures.
 * aircrack-ng: Fixed compilation on FreeBSD.
-* airmon-ng: Updated iw download link (0.9.13).
+* aircrack-ng: Fixed aircrack-ng --help on OSX.
+* airmon-ng: Updated iw download link (0.9.15).
+* airmon-ng: Fix chipset detection for iwlagn (show "Intel 4965/5xxx" instead of "Unknown").
+* airmon-ng: Display a message when udev rename madwifi-ng VAPs.
+* airmon-ng: sleep 1s instead of 0.1 (0.1 is not supported by all distro).
+* airolib-ng: Fixed locked database counter.
 * airdriver-ng: Updated to rt2570 k2wrlz v1.6.3
 * airdriver-ng: Updated r8187 patch.
-* aircrack-ng, airdecap-ng, ivstools: Added support for PPI captures support (Thanks to dragorn).
+* aircrack-ng, airdecap-ng, ivstools, airodump-ng, airbase-ng, aireplay-ng, airtun-ng, packetforge-ng, tkiptun-ng: Added support for PPI captures support (Thanks to dragorn).
+* airdecap-ng: Fixed segfault on some capture files.
+* wesside-ng, easside-ng: "ERROR: Packet length changed while transmitting (XX instead of YY)" should finaly be fixed.
+* All: Added compatibility file for functions like cpu_to_le32. That should fix compilation on a lot of OSes.
+* All: Temporary fix to allow compilation with recent gcc (Error message: "dereferencing type-punned pointer will break strict-aliasing rules"). I hope it doesn't break anything. A cleaner fix will be applied later.
+* INSTALLING: OSX patch for Intel CPU isn't required anymore
+* INSTALLING: Updated instructions to compile sqlite on cygwin for 3.6.16.
 * patches: Updated sqlite (v3.6.13) patch for cygwin.
 * patches: Updated wlanng patch for 2.6.28.
-* patches: update rtl8187 speedpatch for 2.6.30-rc3.
+* patches: Updated madwifi-ng patch to r4073
 * packages: Fixed spec (RPM) file.
+* GUI (windows): Use last used directory when selecting another file to crack.
+* GUI (windows): Allow .pcap files too (next to .cap, ...). 
 
 Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released 26 March 2009:
 * airodump-ng: Added Active Scanning Simulation.
