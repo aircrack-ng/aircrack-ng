@@ -1481,7 +1481,7 @@ void send_frame(struct east_state *es, void *buf, int len)
         rc = wi_write(es->es_wi, buf, len, NULL);
         if(rc == -1)
 		err(1, "wi_write()");
-        if (rc != len && rc != len + 3 /* packet length increases by 9 on Radiotap interfaces - this is normal */) {
+        if (rc != len) {
                 printf("ERROR: Packet length changed while transmitting (%d instead of %d).\n", rc, len);
                 exit(1);
         }

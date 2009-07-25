@@ -54,6 +54,7 @@
 #include "pcap.h"
 #include "crctable_osdep.h"
 #include "common.h"
+#include "byteorder.h"
 
 #define uchar unsigned char
 
@@ -675,6 +676,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     int ret, usedrtap=0;
     unsigned char tmpbuf[4096];
     unsigned char rate;
+    unsigned short int *p_rtlen;
 
     unsigned char u8aRadiotap[] = {
         0x00, 0x00, // <-- radiotap version
@@ -684,6 +686,9 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
         0x00, // <-- padding for natural alignment
         0x18, 0x00, // <-- TX flags
     };
+
+    /* Pointer to the radiotap header length field for later use. */
+    p_rtlen = (unsigned short int*)(u8aRadiotap+2);
 
 
     if((unsigned) count > sizeof(tmpbuf)-22) return -1;
@@ -775,8 +780,9 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
         return( -1 );
     }
 
+    /* radiotap header length is stored little endian on all systems */
     if(usedrtap)
-        ret-=u8aRadiotap[3];
+        ret-=letoh16(*p_rtlen);
 
     if( ret < 0 )
     {
