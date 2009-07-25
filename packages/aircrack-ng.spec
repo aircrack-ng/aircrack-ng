@@ -1,4 +1,4 @@
-%define _rel rc3
+%define _rel rc4
 
 # these bits are constant across distributions
 #
