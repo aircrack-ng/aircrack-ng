@@ -274,13 +274,13 @@ struct packet_elt * getPacketNr(int position) {
 
 char * iv2string(unsigned char * iv) {
 	char * string = (char *)malloc(9);
-	sprintf(string, "%02X %02X %02X", iv[0], iv[1], iv[2]);
+	snprintf(string, 9, "%02X %02X %02X", iv[0], iv[1], iv[2]);
 	return string;
 }
 
 char * icv2string(unsigned char * icv) {
 	char * string = (char *)malloc(12);
-	sprintf(string, "%02X %02X %02X %02X", icv[0], icv[1], icv[2], icv[3]);
+	snprintf(string, 12, "%02X %02X %02X %02X", icv[0], icv[1], icv[2], icv[3]);
 	return string;
 }
 

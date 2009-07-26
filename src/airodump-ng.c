@@ -5416,11 +5416,11 @@ usage:
     G.batt     = getBatteryString();
 
     G.elapsed_time = (char *) calloc( 1, 4 );
-    strncpy(G.elapsed_time, "0 s", 4-1);
+    strlcpy(G.elapsed_time, "0 s", 4);
 
 	/* Create start time string for kismet netxml file */
     G.airodump_start_time = (char *) calloc( 1, 1000 * sizeof(char) );
-    strcpy(G.airodump_start_time, ctime( & start_time ) );
+    strlcpy(G.airodump_start_time, ctime( & start_time ), 1000);
 	G.airodump_start_time[strlen(G.airodump_start_time) - 1] = 0; // remove new line
 	G.airodump_start_time = (char *) realloc( G.airodump_start_time, sizeof(char) * (strlen(G.airodump_start_time) + 1) );
 
