@@ -68,8 +68,44 @@
 #include "osdep/common.h"
 #include "common.h"
 
+char * get_manufacturer_from_string(char * buffer) {
+	char * manuf = NULL;
+	char * buffer_manuf;
+	if (buffer != NULL && strlen(buffer) > 0) {
+		buffer_manuf = strstr(buffer, "(hex)");
+		if (buffer_manuf != NULL) {
+			buffer_manuf += 6; // skip '(hex)' and one more character (there's at least one 'space' character after that string)
+			while (*buffer_manuf == '\t' || *buffer_manuf == ' ') {
+				++buffer_manuf;
+			}
+
+			// Did we stop at the manufacturer
+			if (*buffer_manuf != '\0') {
+
+				// First make sure there's no end of line
+				if (buffer_manuf[strlen(buffer_manuf) - 1] == '\n' || buffer_manuf[strlen(buffer_manuf) - 1] == '\r') {
+					buffer_manuf[strlen(buffer_manuf) - 1] = '\0';
+					if (*buffer_manuf != '\0' && (buffer_manuf[strlen(buffer_manuf) - 1] == '\n' || buffer[strlen(buffer_manuf) - 1] == '\r')) {
+						buffer_manuf[strlen(buffer_manuf) - 1] = '\0';
+					}
+				}
+				if (*buffer_manuf != '\0') {
+					if ((manuf = (char *)malloc((strlen(buffer_manuf) + 1) * sizeof(char))) == NULL) {
+						perror("malloc failed");
+						return NULL;
+					}
+					snprintf(manuf, strlen(buffer_manuf) + 1, "%s", buffer_manuf);
+				}
+			}
+		}
+	}
+
+	return manuf;
+}
+
 struct oui * load_oui_file(void) {
 	FILE *fp;
+	char * manuf;
 	char buffer[BUFSIZ];
 	unsigned char a[2];
 	unsigned char b[2];
@@ -103,7 +139,13 @@ struct oui * load_oui_file(void) {
 			memset(oui_ptr->id, 0x00, sizeof(oui_ptr->id));
 			memset(oui_ptr->manuf, 0x00, sizeof(oui_ptr->manuf));
 			snprintf(oui_ptr->id, sizeof(oui_ptr->id), "%c%c:%c%c:%c%c", a[0], a[1], b[0], b[1], c[0], c[1]);
-			snprintf(oui_ptr->manuf, sizeof(oui_ptr->manuf), "%s", buffer+(sizeof(oui_ptr->id) * 2));
+			manuf = get_manufacturer_from_string(buffer);
+			if (manuf != NULL) {
+				snprintf(oui_ptr->manuf, sizeof(oui_ptr->manuf), "%s", manuf);
+				free(manuf);
+			} else {
+				snprintf(oui_ptr->manuf, sizeof(oui_ptr->manuf), "Unknown");
+			}
 			if (oui_head == NULL)
 				oui_head = oui_ptr;
 			oui_ptr->next = NULL;
@@ -3011,19 +3053,24 @@ char * sanitize_xml(unsigned char * text, int length)
 	return newtext;
 }
 
+
+#define OUI_STR_SIZE 8
+#define MANUF_SIZE 128
 char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2) {
-	char oui[9];
+	char oui[OUI_STR_SIZE + 1];
 	char *manuf;
+	//char *buffer_manuf;
+	char * manuf_str;
 	struct oui *ptr;
 	FILE *fp;
 	char buffer[BUFSIZ];
-	char temp[BUFSIZ];
+	char temp[OUI_STR_SIZE + 1];
 	unsigned char a[2];
 	unsigned char b[2];
 	unsigned char c[2];
 	int found = 0;
 
-	if ((manuf = (char *)calloc(1, 128 * sizeof(char))) == NULL) {
+	if ((manuf = (char *)calloc(1, MANUF_SIZE * sizeof(char))) == NULL) {
 		perror("calloc failed");
 		return NULL;
 	}
@@ -3033,13 +3080,13 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 	if (G.manufList != NULL) {
 		// Search in the list
 		ptr = G.manufList;
-		while (ptr != NULL && found == 0) {
-			found = ! strncasecmp(ptr->id, oui, 8);
+		while (ptr != NULL) {
+			found = ! strncasecmp(ptr->id, oui, OUI_STR_SIZE);
 			if (found) {
-				memcpy(manuf, ptr->manuf, 128);
-			} else {
-				ptr = ptr->next;
+				memcpy(manuf, ptr->manuf, MANUF_SIZE);
+				break;
 			}
+			ptr = ptr->next;
 		}
 	} else {
 		// If the file exist, then query it each time we need to get a manufacturer.
@@ -3048,8 +3095,9 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 
 			memset(buffer, 0x00, sizeof(buffer));
 			while (fgets(buffer, sizeof(buffer), fp) != NULL) {
-				if (!(strstr(buffer, "(hex)")))
+				if (strstr(buffer, "(hex)") == NULL) {
 					continue;
+				}
 
 				memset(a, 0x00, sizeof(a));
 				memset(b, 0x00, sizeof(b));
@@ -3058,7 +3106,12 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 					snprintf(temp, sizeof(temp), "%c%c:%c%c:%c%c", a[0], a[1], b[0], b[1], c[0], c[1] );
 					found = !memcmp(temp, oui, strlen(oui));
 					if (found) {
-						snprintf(manuf, 128 * sizeof(char), "%s", buffer+(sizeof(oui) * 2));
+						manuf_str = get_manufacturer_from_string(buffer);
+						if (manuf_str != NULL) {
+							snprintf(manuf, MANUF_SIZE, "%s", manuf_str);
+							free(manuf_str);
+						}
+
 						break;
 					}
 				}
@@ -3070,15 +3123,18 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 	}
 
 	// Not found, use "Unknown".
-	if (!found) {
+	if (!found || *manuf == '\0') {
 		memcpy(manuf, "Unknown", 7);
+		manuf[strlen(manuf)] = '\0';
 	}
 
-	manuf[strlen(manuf)] = '\0';
 	manuf = (char *)realloc(manuf, (strlen(manuf) + 1) * sizeof(char));
 
 	return manuf;
 }
+#undef OUI_STR_SIZE
+#undef MANUF_SIZE
+
 
 #define KISMET_NETXML_HEADER_BEGIN "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<!DOCTYPE detection-run SYSTEM \"http://kismetwireless.net/kismet-3.1.0.dtd\">\n\n<detection-run kismet-version=\"airodump-ng-1.0\" start-time=\""
 #define KISMET_NETXML_HEADER_END "\">\n\n"
