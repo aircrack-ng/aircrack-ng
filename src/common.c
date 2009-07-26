@@ -160,7 +160,7 @@ int maccmp(unsigned char *mac1, unsigned char *mac2)
 char * mac2string(unsigned char *mac_address )
 {
 	char * mac_string = (char *)malloc(sizeof(char)*18);
-	sprintf(mac_string, "%02X:%02X:%02X:%02X:%02X:%02X", *mac_address,
+	snprintf(mac_string, 18, "%02X:%02X:%02X:%02X:%02X:%02X", *mac_address,
 						*(mac_address+1), *(mac_address+2), *(mac_address+3),
 						*(mac_address+4), *(mac_address+5));
 	return mac_string;

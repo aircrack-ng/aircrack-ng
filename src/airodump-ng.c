@@ -2577,7 +2577,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
         else if( ap_cur->security & STD_WEP  ) snprintf( strbuf+len, sizeof(strbuf)-len, "WEP " );
         else if( ap_cur->security & STD_OPN  ) snprintf( strbuf+len, sizeof(strbuf)-len, "OPN " );
 
-        strncat( strbuf, " ", sizeof(strbuf)-1);
+        strlcat( strbuf, " ", sizeof(strbuf)-1);
 
         len = strlen(strbuf);
 
@@ -3022,10 +3022,12 @@ int dump_write_csv( void )
 char * sanitize_xml(unsigned char * text, int length)
 {
 	int i;
+	size_t len;
 	char * pos;
 	char * newtext = NULL;
 	if (text != NULL && length > 0) {
-		newtext = (char *)calloc(1, 5 * (length + 1) * sizeof(char)); // Make sure we have enough space
+		len = 5 * (length + 1);
+		newtext = (char *)calloc(1, len * sizeof(char)); // Make sure we have enough space
 		pos = (char *)text;
 		for (i = 0; i < length; ++i, ++pos) {
 			switch (*pos) {
@@ -3043,7 +3045,7 @@ char * sanitize_xml(unsigned char * text, int length)
 						newtext[strlen(newtext)] = *pos;
 					} else {
 						newtext[strlen(newtext)] = '\\';
-						sprintf(newtext + strlen(newtext), "%3u", *pos);
+						snprintf(newtext + strlen(newtext), len, "%3u", *pos);
 					}
 			}
 		}
@@ -3191,7 +3193,7 @@ int dump_write_kismet_netxml( void )
 		strcpy(first_time, ctime(&ap_cur->tinit));
 		first_time[strlen(first_time) - 1] = 0; // remove new line
 
-		strcpy(last_time, ctime(&ap_cur->tlast));
+		strncpy(last_time, ctime(&ap_cur->tlast), 255);
 		last_time[strlen(last_time) - 1] = 0; // remove new line
 
 		fprintf(G.f_kis_xml, "\t<wireless-network number=\"%d\" type=\"infrastructure\" ",
