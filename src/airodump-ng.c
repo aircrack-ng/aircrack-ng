@@ -2577,7 +2577,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
         else if( ap_cur->security & STD_WEP  ) snprintf( strbuf+len, sizeof(strbuf)-len, "WEP " );
         else if( ap_cur->security & STD_OPN  ) snprintf( strbuf+len, sizeof(strbuf)-len, "OPN " );
 
-        strlcat( strbuf, " ", sizeof(strbuf)-1);
+        strncat( strbuf, " ", sizeof(strbuf)-1);
 
         len = strlen(strbuf);
 
@@ -3032,13 +3032,13 @@ char * sanitize_xml(unsigned char * text, int length)
 		for (i = 0; i < length; ++i, ++pos) {
 			switch (*pos) {
 				case '&':
-					strlcat(newtext, "&amp;", len);
+					strncat(newtext, "&amp;", len);
 					break;
 				case '<':
-					strlcat(newtext, "&lt;", len);
+					strncat(newtext, "&lt;", len);
 					break;
 				case '>':
-					strlcat(newtext, "&gt;", len);
+					strncat(newtext, "&gt;", len);
 					break;
 				default:
 					if (isprint((int)(*pos))) {
@@ -3191,7 +3191,7 @@ int dump_write_kismet_netxml( void )
         }
 
 		++network_number; // Network Number
-		strlcpy(first_time, ctime(&ap_cur->tinit), TIME_STR_LENGTH);
+		strncpy(first_time, ctime(&ap_cur->tinit), TIME_STR_LENGTH);
 		first_time[strlen(first_time) - 1] = 0; // remove new line
 
 		strncpy(last_time, ctime(&ap_cur->tlast), TIME_STR_LENGTH);
@@ -3468,7 +3468,7 @@ int dump_write_kismet_netxml( void )
 
     /* Sometimes there can be crap at the end of the file, so truncating is a good idea.
        XXX: Is this really correct, I hope fileno() won't have any side effect */
-	ftruncate(fileno(G.f_kis_xml), ftello( G.f_kis_xml ) );
+	ftruncate(fileno(G.f_kis_xml), ftell( G.f_kis_xml ) );
 
     return 0;
 }
@@ -5416,11 +5416,11 @@ usage:
     G.batt     = getBatteryString();
 
     G.elapsed_time = (char *) calloc( 1, 4 );
-    strlcpy(G.elapsed_time, "0 s", 4);
+    strncpy(G.elapsed_time, "0 s", 4);
 
 	/* Create start time string for kismet netxml file */
     G.airodump_start_time = (char *) calloc( 1, 1000 * sizeof(char) );
-    strlcpy(G.airodump_start_time, ctime( & start_time ), 1000);
+    strncpy(G.airodump_start_time, ctime( & start_time ), 1000);
 	G.airodump_start_time[strlen(G.airodump_start_time) - 1] = 0; // remove new line
 	G.airodump_start_time = (char *) realloc( G.airodump_start_time, sizeof(char) * (strlen(G.airodump_start_time) + 1) );
 

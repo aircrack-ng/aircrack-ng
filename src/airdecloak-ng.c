@@ -1134,16 +1134,16 @@ char * status_format(int status) {
 
 	switch (status) {
 		case VALID_FRAME_UNCLOAKED:
-			strlcpy(ret, "uncloacked", len);
+			strncpy(ret, "uncloacked", len);
 			break;
 		case CLOAKED_FRAME:
-			strlcpy(ret, "cloaked", len);
+			strncpy(ret, "cloaked", len);
 			break;
 		case POTENTIALLY_CLOAKED_FRAME:
-			strlcpy(ret, "potentially cloaked", len);
+			strncpy(ret, "potentially cloaked", len);
 			break;
 		case UKNOWN_FRAME_CLOAKING_STATUS:
-			strlcpy(ret, "unknown cloaking", len);
+			strncpy(ret, "unknown cloaking", len);
 			break;
 		default:
 			snprintf(ret, len,"type %d", status);
@@ -1552,10 +1552,10 @@ int main( int argc, char *argv[] )
 		snprintf(_filename_output_filtered, temp + 10 + 5, "%s-filtered.pcap", input_filename);
 	}
 	else {
-		strlcpy(_filename_output_cloaked, input_filename, temp + 9 + 5);
-		strlcpy(_filename_output_filtered, input_filename, temp + 10 + 5);
-		strlcat(_filename_output_cloaked, "-cloaked.pcap", temp + 9 + 5);
-		strlcat(_filename_output_filtered, "-filtered.pcap", temp + 10 + 5);
+		strncpy(_filename_output_cloaked, input_filename, temp + 9 + 5);
+		strncpy(_filename_output_filtered, input_filename, temp + 10 + 5);
+		strncat(_filename_output_cloaked, "-cloaked.pcap", temp + 9 + 5);
+		strncat(_filename_output_filtered, "-filtered.pcap", temp + 10 + 5);
 	}
 
 
