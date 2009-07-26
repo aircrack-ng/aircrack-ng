@@ -3024,10 +3024,11 @@ char * sanitize_xml(unsigned char * text, int length)
 	int i;
 	size_t len;
 	char * pos;
+	char * newpos;
 	char * newtext = NULL;
 	if (text != NULL && length > 0) {
-		len = 5 * (length + 1);
-		newtext = (char *)calloc(1, len * sizeof(char)); // Make sure we have enough space
+		len = 5 * length;
+		newtext = (char *)calloc(1, (len + 1) * sizeof(char)); // Make sure we have enough space
 		pos = (char *)text;
 		for (i = 0; i < length; ++i, ++pos) {
 			switch (*pos) {
@@ -3045,8 +3046,10 @@ char * sanitize_xml(unsigned char * text, int length)
 						newtext[strlen(newtext)] = *pos;
 					} else {
 						newtext[strlen(newtext)] = '\\';
-						snprintf(newtext + strlen(newtext), len, "%3u", *pos);
+						newpos = newtext + strlen(newtext);
+						snprintf(newpos, strlen(newpos) + 1, "%3u", *pos);
 					}
+					break;
 			}
 		}
 		newtext = (char *) realloc(newtext, strlen(newtext) + 1);
@@ -3191,10 +3194,10 @@ int dump_write_kismet_netxml( void )
         }
 
 		++network_number; // Network Number
-		strncpy(first_time, ctime(&ap_cur->tinit), TIME_STR_LENGTH);
+		strncpy(first_time, ctime(&ap_cur->tinit), TIME_STR_LENGTH - 1);
 		first_time[strlen(first_time) - 1] = 0; // remove new line
 
-		strncpy(last_time, ctime(&ap_cur->tlast), TIME_STR_LENGTH);
+		strncpy(last_time, ctime(&ap_cur->tlast), TIME_STR_LENGTH - 1);
 		last_time[strlen(last_time) - 1] = 0; // remove new line
 
 		fprintf(G.f_kis_xml, "\t<wireless-network number=\"%d\" type=\"infrastructure\" ",

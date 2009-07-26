@@ -1129,8 +1129,8 @@ int CFC_filter_duplicate_iv() {
 }
 
 char * status_format(int status) {
-	size_t len = 50;
-	char * ret = (char *) calloc(1, len * sizeof(char));
+	size_t len = 19;
+	char * ret = (char *) calloc(1, (len + 1) * sizeof(char));
 
 	switch (status) {
 		case VALID_FRAME_UNCLOAKED:
@@ -1146,7 +1146,7 @@ char * status_format(int status) {
 			strncpy(ret, "unknown cloaking", len);
 			break;
 		default:
-			snprintf(ret, len,"type %d", status);
+			snprintf(ret, len + 1,"type %d", status);
 			break;
 	}
 
@@ -1548,14 +1548,14 @@ int main( int argc, char *argv[] )
 
 	// No extension
 	if (temp == 0) {
-		snprintf(_filename_output_cloaked, temp + 9 + 5, "%s-cloaked.pcap", input_filename);
-		snprintf(_filename_output_filtered, temp + 10 + 5, "%s-filtered.pcap", input_filename);
+		snprintf(_filename_output_cloaked, strlen( input_filename ) + 9 + 5, "%s-cloaked.pcap", input_filename);
+		snprintf(_filename_output_filtered, strlen( input_filename ) + 10 + 5, "%s-filtered.pcap", input_filename);
 	}
 	else {
-		strncpy(_filename_output_cloaked, input_filename, temp + 9 + 5);
-		strncpy(_filename_output_filtered, input_filename, temp + 10 + 5);
-		strncat(_filename_output_cloaked, "-cloaked.pcap", temp + 9 + 5);
-		strncat(_filename_output_filtered, "-filtered.pcap", temp + 10 + 5);
+		strncpy(_filename_output_cloaked, input_filename, strlen( input_filename ) + 9 + 5 - 1);
+		strncpy(_filename_output_filtered, input_filename, strlen( input_filename ) + 10 + 5 - 1);
+		strncat(_filename_output_cloaked, "-cloaked.pcap", 14);
+		strncat(_filename_output_filtered, "-filtered.pcap", 15);
 	}
 
 
