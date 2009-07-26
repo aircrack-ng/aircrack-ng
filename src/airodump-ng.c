@@ -3043,7 +3043,7 @@ char * sanitize_xml(unsigned char * text, int length)
 						newtext[strlen(newtext)] = *pos;
 					} else {
 						newtext[strlen(newtext)] = '\\';
-						sprintf(pos + strlen(newtext), "%3u", *pos);
+						sprintf(newtext + strlen(newtext), "%3u", *pos);
 					}
 			}
 		}
