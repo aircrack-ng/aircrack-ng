@@ -4818,14 +4818,14 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'l' :
-				opt.logKeyToFile = (char *)malloc(strlen(optarg) + 1);
+				opt.logKeyToFile = (char *)calloc(1, strlen(optarg) + 1);
 				if (opt.logKeyToFile == NULL)
 				{
 					printf("Error allocating memory\n");
 					return( FAILURE );
 				}
 
-				strlcpy(opt.logKeyToFile, optarg, strlen(optarg) + 1);
+				strncpy(opt.logKeyToFile, optarg, strlen(optarg));
 				break;
 
 			case 'M' :
