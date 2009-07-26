@@ -4825,7 +4825,7 @@ int main( int argc, char *argv[] )
 					return( FAILURE );
 				}
 
-				strcpy(opt.logKeyToFile, optarg);
+				strlcpy(opt.logKeyToFile, optarg, strlen(optarg) + 1);
 				break;
 
 			case 'M' :

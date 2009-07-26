@@ -1548,8 +1548,8 @@ int main( int argc, char *argv[] )
 
 	// No extension
 	if (temp == 0) {
-		sprintf(_filename_output_cloaked, "%s-cloaked.pcap", input_filename);
-		sprintf(_filename_output_filtered, "%s-filtered.pcap", input_filename);
+		snprintf(_filename_output_cloaked, temp + 9 + 5, "%s-cloaked.pcap", input_filename);
+		snprintf(_filename_output_filtered, temp + 10 + 5, "%s-filtered.pcap", input_filename);
 	}
 	else {
 		strlcpy(_filename_output_cloaked, input_filename, temp + 9 + 5);

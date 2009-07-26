@@ -3032,13 +3032,13 @@ char * sanitize_xml(unsigned char * text, int length)
 		for (i = 0; i < length; ++i, ++pos) {
 			switch (*pos) {
 				case '&':
-					strcat(newtext, "&amp;");
+					strlcat(newtext, "&amp;", len);
 					break;
 				case '<':
-					strcat(newtext, "&lt;");
+					strlcat(newtext, "&lt;", len);
 					break;
 				case '>':
-					strcat(newtext, "&gt;");
+					strlcat(newtext, "&gt;", len);
 					break;
 				default:
 					if (isprint((int)(*pos))) {
@@ -3143,14 +3143,15 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 
 #define KISMET_NETXML_TRAILER "</detection-run>"
 
+#define TIME_STR_LENGTH 255
 int dump_write_kismet_netxml( void )
 {
     int network_number, average_power, client_nbr;
     int client_max_rate;
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
-    char first_time[255];
-    char last_time[255];
+    char first_time[TIME_STR_LENGTH];
+    char last_time[TIME_STR_LENGTH];
     char * essid = NULL;
 
     if (! G.record_data || !G.output_format_kismet_netxml)
@@ -3190,10 +3191,10 @@ int dump_write_kismet_netxml( void )
         }
 
 		++network_number; // Network Number
-		strcpy(first_time, ctime(&ap_cur->tinit));
+		strlcpy(first_time, ctime(&ap_cur->tinit), TIME_STR_LENGTH);
 		first_time[strlen(first_time) - 1] = 0; // remove new line
 
-		strncpy(last_time, ctime(&ap_cur->tlast), 255);
+		strncpy(last_time, ctime(&ap_cur->tlast), TIME_STR_LENGTH);
 		last_time[strlen(last_time) - 1] = 0; // remove new line
 
 		fprintf(G.f_kis_xml, "\t<wireless-network number=\"%d\" type=\"infrastructure\" ",
@@ -3471,6 +3472,7 @@ int dump_write_kismet_netxml( void )
 
     return 0;
 }
+#undef TIME_STR_LENGTH
 
 #define KISMET_HEADER "Network;NetType;ESSID;BSSID;Info;Channel;Cloaked;Encryption;Decrypted;MaxRate;MaxSeenRate;Beacon;LLC;Data;Crypt;Weak;Total;Carrier;Encoding;FirstTime;LastTime;BestQuality;BestSignal;BestNoise;GPSMinLat;GPSMinLon;GPSMinAlt;GPSMinSpd;GPSMaxLat;GPSMaxLon;GPSMaxAlt;GPSMaxSpd;GPSBestLat;GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n"
 
