@@ -1552,10 +1552,10 @@ int main( int argc, char *argv[] )
 		sprintf(_filename_output_filtered, "%s-filtered.pcap", input_filename);
 	}
 	else {
-		strlcpy(_filename_output_cloaked, input_filename, temp);
-		strlcpy(_filename_output_filtered, input_filename, temp);
-		strlcat(_filename_output_cloaked, "-cloaked.pcap", temp);
-		strlcat(_filename_output_filtered, "-filtered.pcap", temp);
+		strlcpy(_filename_output_cloaked, input_filename, temp + 9 + 5);
+		strlcpy(_filename_output_filtered, input_filename, temp + 10 + 5);
+		strlcat(_filename_output_cloaked, "-cloaked.pcap", temp + 9 + 5);
+		strlcat(_filename_output_filtered, "-filtered.pcap", temp + 10 + 5);
 	}
 
 
