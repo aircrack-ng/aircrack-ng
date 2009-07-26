@@ -3462,6 +3462,11 @@ int dump_write_kismet_netxml( void )
     fprintf( G.f_kis_xml, "%s\n", KISMET_NETXML_TRAILER );
 
     fflush( G.f_kis_xml );
+
+    /* Sometimes there can be crap at the end of the file, so truncating is a good idea.
+       XXX: Is this really correct, I hope fileno() won't have any side effect */
+	ftruncate(fileno(G.f_kis_xml), ftello( G.f_kis_xml ) );
+
     return 0;
 }
 
