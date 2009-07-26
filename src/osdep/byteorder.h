@@ -187,8 +187,51 @@
 	//           http://developer.apple.com/DOCUMENTATION/CoreFoundation/Reference/CFByteOrderUtils/Reference/reference.html
 	//           Write to apple to ask what should be used.
 
+	#if defined(LITTLE_ENDIAN)
+		#define AIRCRACK_NG_LITTLE_ENDIAN LITTLE_ENDIAN
+	#elif defined(__LITTLE_ENDIAN)
+		#define AIRCRACK_NG_LITTLE_ENDIAN __LITTLE_ENDIAN
+	#elif defined(_LITTLE_ENDIAN)
+		#define AIRCRACK_NG_LITTLE_ENDIAN _LITTLE_ENDIAN
+	#endif
 
-	#if (BYTE_ORDER == LITTLE_ENDIAN || __BYTE_ORDER == LITTLE_ENDIAN || __BYTE_ORDER == __LITTLE_ENDIAN)
+	#if defined(BIG_ENDIAN)
+		#define AIRCRACK_NG_BIG_ENDIAN BIG_ENDIAN
+	#elif defined(__BIG_ENDIAN)
+		#define AIRCRACK_NG_BIG_ENDIAN __BIG_ENDIAN
+	#elif defined(_BIG_ENDIAN)
+		#define AIRCRACK_NG_BIG_ENDIAN _BIG_ENDIAN
+	#endif
+
+	#if !defined(AIRCRACK_NG_LITTLE_ENDIAN) && !defined(AIRCRACK_NG_BIG_ENDIAN)
+		#error Impossible to determine endianness (Little or Big endian), please contact the author.
+	#endif
+
+	#if defined(BYTE_ORDER)
+		#if (BYTE_ORDER == AIRCRACK_NG_LITTLE_ENDIAN)
+			#define AIRCRACK_NG_BYTE_ORDER AIRCRACK_NG_LITTLE_ENDIAN
+		#elif (BYTE_ORDER == AIRCRACK_NG_BIG_ENDIAN)
+			#define AIRCRACK_NG_BYTE_ORDER AIRCRACK_NG_BIG_ENDIAN
+		#endif
+	#elif defined(__BYTE_ORDER)
+		#if (__BYTE_ORDER == AIRCRACK_NG_LITTLE_ENDIAN)
+			#define AIRCRACK_NG_BYTE_ORDER AIRCRACK_NG_LITTLE_ENDIAN
+		#elif (__BYTE_ORDER == AIRCRACK_NG_BIG_ENDIAN)
+			#define AIRCRACK_NG_BYTE_ORDER AIRCRACK_NG_BIG_ENDIAN
+		#endif
+	#elif defined(_BYTE_ORDER)
+		#if (_BYTE_ORDER == AIRCRACK_NG_LITTLE_ENDIAN)
+			#define AIRCRACK_NG_BYTE_ORDER AIRCRACK_NG_LITTLE_ENDIAN
+		#elif (_BYTE_ORDER == AIRCRACK_NG_BIG_ENDIAN)
+			#define AIRCRACK_NG_BYTE_ORDER AIRCRACK_NG_BIG_ENDIAN
+		#endif
+	#endif
+
+	#ifndef AIRCRACK_NG_BYTE_ORDER
+		#error Impossible to determine endianness (Little or Big endian), please contact the author.
+	#endif
+
+	#if (AIRCRACK_NG_BYTE_ORDER == AIRCRACK_NG_LITTLE_ENDIAN)
 
 		#ifndef AIRCRACK_NG_BYTE_ORDER_DEFINED
 			#define __be64_to_cpu(x) ___my_swab64(x)
@@ -233,7 +276,7 @@
 
 	#endif
 
-	#if (BYTE_ORDER == BIG_ENDIAN || __BYTE_ORDER == BIG_ENDIAN || __BYTE_ORDER == __BIG_ENDIAN)
+	#if (AIRCRACK_NG_BYTE_ORDER == AIRCRACK_NG_BIG_ENDIAN)
 
 		#ifndef AIRCRACK_NG_BYTE_ORDER_DEFINED
 			#define __be64_to_cpu(x) (x)
