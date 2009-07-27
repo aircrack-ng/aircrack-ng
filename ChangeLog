@@ -1,4 +1,4 @@
-Version 1.0-rc4 (changes from aircrack-ng 1.0-rc3) - Released ?? July 2009:
+Version 1.0-rc4 (changes from aircrack-ng 1.0-rc3) - Released 27 July 2009:
 * airodump-ng: Decreased time before writing text files to 5 sec (instead of 20).
 * airodump-ng: New option --output-format option (to replace --nocap): specify output files.
 * airodump-ng: Fixed encryption tag value in kismet netxml files.
