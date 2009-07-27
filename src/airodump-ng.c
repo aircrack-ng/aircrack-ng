@@ -3150,7 +3150,7 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 int dump_write_kismet_netxml( void )
 {
     int network_number, average_power, client_nbr;
-    int client_max_rate;
+    int client_max_rate, unused;
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
     char first_time[TIME_STR_LENGTH];
@@ -3471,7 +3471,7 @@ int dump_write_kismet_netxml( void )
 
     /* Sometimes there can be crap at the end of the file, so truncating is a good idea.
        XXX: Is this really correct, I hope fileno() won't have any side effect */
-	ftruncate(fileno(G.f_kis_xml), ftell( G.f_kis_xml ) );
+	unused = ftruncate(fileno(G.f_kis_xml), ftell( G.f_kis_xml ) );
 
     return 0;
 }
