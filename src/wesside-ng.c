@@ -488,6 +488,7 @@ static void send_frame(struct wstate *ws, unsigned char* buf, int len)
 #endif
 }
 
+/* Expects host-endian arguments, but returns little-endian seq. */
 static unsigned short fnseq(unsigned short fn, unsigned short seq)
 {
         unsigned short r = 0;
@@ -501,7 +502,7 @@ static unsigned short fnseq(unsigned short fn, unsigned short seq)
 
         r |=  ( (seq % 4096) << IEEE80211_SEQ_SEQ_SHIFT);
 
-        return r;
+        return htole16(r);
 }
 
 static void fill_basic(struct wstate *ws, struct ieee80211_frame* wh)
@@ -568,7 +569,7 @@ static void send_assoc(struct wstate *ws)
 static void wepify(struct wstate *ws, unsigned char* body, int dlen)
 {
 	uLong crc;
-	unsigned long *pcrc;
+	unsigned int *pcrc;
 	int i;
 
 	assert(dlen + 4 <= ws->ws_pi.pi_len);
@@ -581,8 +582,8 @@ static void wepify(struct wstate *ws, unsigned char* body, int dlen)
 	// crc
 	crc = crc32(0L, Z_NULL, 0);
 	crc = crc32(crc, body, dlen);
-	pcrc = (unsigned long*) (body+dlen);
-	*pcrc = crc;
+	pcrc = (unsigned int*) (body+dlen);
+	*pcrc = htole32(crc);
 
 	for (i = 0; i < dlen +4; i++)
 		*body++ ^= ws->ws_pi.pi_prga[i];
@@ -600,7 +601,7 @@ static void send_auth(struct wstate *ws)
 
 	n = (unsigned short*) ((unsigned char*) wh + sizeof(*wh));
 	n++;
-	*n = 1;
+	*n = htole16(1);
 
 	send_frame(ws, buf, sizeof(*wh) + 2 + 2 + 2);
 }
@@ -810,26 +811,26 @@ static void proc_mgt(struct wstate *ws, int stype, unsigned char *body)
 	} else if (stype == IEEE80211_FC0_SUBTYPE_AUTH) {
 		sc = (unsigned short*) body;
 
-		if (*sc != 0) {
-			time_print("Warning got auth algo=%x\n", *sc);
+		if (le16toh(*sc) != 0) {
+			time_print("Warning got auth algo=%x\n", le16toh(*sc));
 			exit(1);
 			return;
 		}
 		sc++;
 
-		if (*sc != 2) {
-			time_print("Warning got auth seq=%x\n", *sc);
+		if (le16toh(*sc) != 2) {
+			time_print("Warning got auth seq=%x\n", le16toh(*sc));
 			return;
 		}
 
 		sc++;
 
-		if (*sc == 1) {
+		if (le16toh(*sc) == 1) {
 			time_print("Auth rejected.  Spoofin mac.\n");
 			ws->ws_state = SPOOF_MAC;
 			return;
 
-		} else if (*sc == 0) {
+		} else if (le16toh(*sc) == 0) {
 			time_print("Authenticated\n");
 			ws->ws_state = GOT_AUTH;
 			return;
@@ -843,20 +844,20 @@ static void proc_mgt(struct wstate *ws, int stype, unsigned char *body)
 		sc = (unsigned short*) body;
 		sc++; // cap
 
-		if (*sc == 0) {
+		if (le16toh(*sc) == 0) {
 			sc++;
 			aid = le16toh(*sc) & 0x3FFF;
 			time_print("Associated (ID=%x)\n", aid);
 			ws->ws_state = GOT_ASSOC;
 			return;
 
-		} else if (*sc == 12 || *sc == 1) {
+		} else if (le16toh(*sc) == 12 || le16toh(*sc) == 1) {
 			time_print("Assoc rejected..."
 				   " trying to spoof mac.\n");
 			ws->ws_state = SPOOF_MAC;
 			return;
 		} else {
-			time_print("got assoc %d\n", *sc);
+			time_print("got assoc %d\n", le16toh(*sc));
 			exit(1);
 		}
 
@@ -1239,7 +1240,7 @@ static void anal(struct wstate *ws, unsigned char* buf, int rd) // yze
 
 	// XXX i know it aint great...
 	seqptr = (unsigned short*)  wh->i_seq;
-	seq = (*seqptr & IEEE80211_SEQ_SEQ_MASK) >> IEEE80211_SEQ_SEQ_SHIFT;
+	seq = (le16toh(*seqptr) & IEEE80211_SEQ_SEQ_MASK) >> IEEE80211_SEQ_SEQ_SHIFT;
 	if (seq == lastseq && (wh->i_fc[1] & IEEE80211_FC1_RETRY) &&
 	    type != IEEE80211_FC0_TYPE_CTL) {
 //		printf("Ignoring dup packet... seq=%d\n", seq);
@@ -1320,7 +1321,7 @@ static void send_fragment(struct wstate *ws, struct frag_state* fs,
 	unsigned char* body;
 	int fragsize;
 	uLong crc;
-	unsigned long *pcrc;
+	unsigned int *pcrc;
 	int i;
 	unsigned short* seq;
 	unsigned short sn, fn;
@@ -1350,15 +1351,15 @@ static void send_fragment(struct wstate *ws, struct frag_state* fs,
 
 	crc = crc32(0L, Z_NULL, 0);
 	crc = crc32(crc, body, fragsize);
-	pcrc = (unsigned long*) (body+fragsize);
-	*pcrc = crc;
+	pcrc = (unsigned int*) (body+fragsize);
+	*pcrc = htole32(crc);
 
 	for (i = 0; i < (fragsize + 4); i++)
 		body[i] ^= pi->pi_prga[i];
 
 	seq = (unsigned short*) &wh->i_seq;
-	sn = (*seq & IEEE80211_SEQ_SEQ_MASK) >> IEEE80211_SEQ_SEQ_SHIFT;
-	fn = *seq & IEEE80211_SEQ_FRAG_MASK;
+	sn = (le16toh(*seq) & IEEE80211_SEQ_SEQ_MASK) >> IEEE80211_SEQ_SEQ_SHIFT;
+	fn = le16toh(*seq) & IEEE80211_SEQ_FRAG_MASK;
 //	printf ("Sent frag (data=%d) (seq=%d fn=%d)\n", fragsize, sn, fn);
 
 	send_frame(ws, buf, sizeof(*wh) + 4 + fragsize+4);
