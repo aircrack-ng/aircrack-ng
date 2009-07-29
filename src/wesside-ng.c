@@ -811,6 +811,9 @@ static void proc_mgt(struct wstate *ws, int stype, unsigned char *body)
 	} else if (stype == IEEE80211_FC0_SUBTYPE_AUTH) {
 		sc = (unsigned short*) body;
 
+		if (ws->ws_state != SENDING_AUTH) /* We didn't ask for it. */
+			return;
+
 		if (le16toh(*sc) != 0) {
 			time_print("Warning got auth algo=%x\n", le16toh(*sc));
 			exit(1);
@@ -843,6 +846,9 @@ static void proc_mgt(struct wstate *ws, int stype, unsigned char *body)
 	else if (stype == IEEE80211_FC0_SUBTYPE_ASSOC_RESP) {
 		sc = (unsigned short*) body;
 		sc++; // cap
+
+		if (ws->ws_state != SENDING_ASSOC) /* We didn't ask for it. */
+			return;
 
 		if (le16toh(*sc) == 0) {
 			sc++;
