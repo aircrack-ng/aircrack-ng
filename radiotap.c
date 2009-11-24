@@ -10,7 +10,7 @@
  * Alternatively, this software may be distributed under the terms of BSD
  * license.
  *
- * See README and COPYING for more details.
+ * See COPYING for more details.
  *
  *
  * Modified for userspace by Johannes Berg <johannes@sipsolutions.net>
