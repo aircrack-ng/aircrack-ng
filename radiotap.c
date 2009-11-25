@@ -43,6 +43,36 @@ typedef unsigned int		u32;
 
 /* function prototypes and related defs are in radiotap_iter.h */
 
+static const struct radiotap_align_size rtap_namespace_sizes[] = {
+	[IEEE80211_RADIOTAP_TSFT] = { .align = 8, .size = 8, },
+	[IEEE80211_RADIOTAP_FLAGS] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_RATE] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_CHANNEL] = { .align = 2, .size = 4, },
+	[IEEE80211_RADIOTAP_FHSS] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_DBM_ANTSIGNAL] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_DBM_ANTNOISE] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_LOCK_QUALITY] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_TX_ATTENUATION] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_DB_TX_ATTENUATION] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_DBM_TX_POWER] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_ANTENNA] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_DB_ANTSIGNAL] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_DB_ANTNOISE] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_RX_FLAGS] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_TX_FLAGS] = { .align = 2, .size = 2, },
+	[IEEE80211_RADIOTAP_RTS_RETRIES] = { .align = 1, .size = 1, },
+	[IEEE80211_RADIOTAP_DATA_RETRIES] = { .align = 1, .size = 1, },
+	/*
+	 * add more here as they are defined in
+	 * include/net/ieee80211_radiotap.h
+	 */
+};
+
+static const struct ieee80211_radiotap_namespace radiotap_ns = {
+	.n_bits = sizeof(rtap_namespace_sizes) / sizeof(rtap_namespace_sizes[0]),
+	.align_size = rtap_namespace_sizes,
+};
+
 /**
  * ieee80211_radiotap_iterator_init - radiotap parser iterator initialization
  * @iterator: radiotap_iterator to initialize
@@ -85,7 +115,8 @@ typedef unsigned int		u32;
 int ieee80211_radiotap_iterator_init(
     struct ieee80211_radiotap_iterator *iterator,
     struct ieee80211_radiotap_header *radiotap_header,
-    int max_length)
+    int max_length,
+    const struct ieee80211_radiotap_vendor_namespaces *vns)
 {
 	/* Linux only supports version 0 radiotap format */
 	if (radiotap_header->it_version)
@@ -101,10 +132,12 @@ int ieee80211_radiotap_iterator_init(
 	iterator->bitmap_shifter = get_unaligned_le32(&radiotap_header->it_present);
 	iterator->arg = (u8 *)radiotap_header + sizeof(*radiotap_header);
 	iterator->this_arg = NULL;
-	iterator->is_vendor = 0;
 	iterator->reset_on_ext = 0;
 	iterator->next_bitmap = &radiotap_header->it_present;
 	iterator->next_bitmap++;
+	iterator->vns = vns;
+	iterator->current_namespace = &radiotap_ns;
+	iterator->is_radiotap_ns = 1;
 
 	/* find payload start allowing for extended bitmap(s) */
 
@@ -139,6 +172,26 @@ int ieee80211_radiotap_iterator_init(
 }
 EXPORT_SYMBOL(ieee80211_radiotap_iterator_init);
 
+static void find_ns(struct ieee80211_radiotap_iterator *iterator,
+		    uint32_t oui, uint8_t subns)
+{
+	int i;
+
+	iterator->current_namespace = NULL;
+
+	if (!iterator->vns)
+		return;
+
+	for (i = 0; i < iterator->vns->n_ns; i++) {
+		if (iterator->vns->ns[i].oui != oui)
+			continue;
+		if (iterator->vns->ns[i].subns != subns)
+			continue;
+
+		iterator->current_namespace = &iterator->vns->ns[i];
+		break;
+	}
+}
 
 /**
  * ieee80211_radiotap_iterator_next - return next radiotap parser iterator arg
@@ -166,96 +219,62 @@ EXPORT_SYMBOL(ieee80211_radiotap_iterator_init);
 int ieee80211_radiotap_iterator_next(
     struct ieee80211_radiotap_iterator *iterator)
 {
-
-	/*
-	 * small length lookup table for all radiotap types we heard of
-	 * starting from b0 in the bitmap, so we can walk the payload
-	 * area of the radiotap header
-	 *
-	 * There is a requirement to pad args, so that args
-	 * of a given length must begin at a boundary of that length
-	 * -- but note that compound args are allowed (eg, 2 x u16
-	 * for IEEE80211_RADIOTAP_CHANNEL) so total arg length is not
-	 * a reliable indicator of alignment requirement.
-	 *
-	 * upper nybble: content alignment for arg
-	 * lower nybble: content length for arg
-	 */
-
-	static const u8 rt_sizes[] = {
-		[IEEE80211_RADIOTAP_TSFT] = 0x88,
-		[IEEE80211_RADIOTAP_FLAGS] = 0x11,
-		[IEEE80211_RADIOTAP_RATE] = 0x11,
-		[IEEE80211_RADIOTAP_CHANNEL] = 0x24,
-		[IEEE80211_RADIOTAP_FHSS] = 0x22,
-		[IEEE80211_RADIOTAP_DBM_ANTSIGNAL] = 0x11,
-		[IEEE80211_RADIOTAP_DBM_ANTNOISE] = 0x11,
-		[IEEE80211_RADIOTAP_LOCK_QUALITY] = 0x22,
-		[IEEE80211_RADIOTAP_TX_ATTENUATION] = 0x22,
-		[IEEE80211_RADIOTAP_DB_TX_ATTENUATION] = 0x22,
-		[IEEE80211_RADIOTAP_DBM_TX_POWER] = 0x11,
-		[IEEE80211_RADIOTAP_ANTENNA] = 0x11,
-		[IEEE80211_RADIOTAP_DB_ANTSIGNAL] = 0x11,
-		[IEEE80211_RADIOTAP_DB_ANTNOISE] = 0x11,
-		[IEEE80211_RADIOTAP_RX_FLAGS] = 0x22,
-		[IEEE80211_RADIOTAP_TX_FLAGS] = 0x22,
-		[IEEE80211_RADIOTAP_RTS_RETRIES] = 0x11,
-		[IEEE80211_RADIOTAP_DATA_RETRIES] = 0x11,
-		[IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE] = 0x10,
-		[IEEE80211_RADIOTAP_VENDOR_NAMESPACE] = 0x26,
-		[IEEE80211_RADIOTAP_EXT] = 0x10,
-		/*
-		 * add more here as they are defined in
-		 * include/net/ieee80211_radiotap.h
-		 */
-	};
-
-	/*
-	 * for every radiotap entry we can at
-	 * least skip (by knowing the length)...
-	 */
-
-	while (iterator->arg_index < sizeof(rt_sizes)) {
+	while (1) {
 		int hit = 0;
-		int pad;
+		int pad, align, size, subns;
+		uint32_t oui;
+
+		/* if no more EXT bits, that's it */
+		if ((iterator->arg_index % 32) == IEEE80211_RADIOTAP_EXT &&
+		    !(iterator->bitmap_shifter & 1))
+			return -ENOENT;
 
 		if (!(iterator->bitmap_shifter & 1))
 			goto next_entry; /* arg not present */
 
-		/*
-		 * We cannot properly parse vendor extensions except
-		 * bits 29/30/31 in them.
-		 */
-		if (iterator->is_vendor && (iterator->arg_index % 32) < 29)
-			goto next_entry;
+		/* get alignment/size of data */
+		switch (iterator->arg_index % 32) {
+		case IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE:
+		case IEEE80211_RADIOTAP_EXT:
+			align = 1;
+			size = 0;
+			break;
+		case IEEE80211_RADIOTAP_VENDOR_NAMESPACE:
+			align = 2;
+			size = 6;
+			break;
+		default:
+			if (!iterator->current_namespace ||
+			    iterator->arg_index >= iterator->current_namespace->n_bits) {
+				if (iterator->current_namespace != &radiotap_ns) {
+					iterator->arg = iterator->end_ns;
+					goto next_entry;
+				} else
+					return -ENOENT;
+			}
+
+			align = iterator->current_namespace->align_size[iterator->arg_index].align;
+			size = iterator->current_namespace->align_size[iterator->arg_index].size;
+			break;
+		}
 
 		/*
 		 * arg is present, account for alignment padding
-		 *  8-bit args can be at any alignment
-		 * 16-bit args must start on 16-bit boundary
-		 * 32-bit args must start on 32-bit boundary
-		 * 64-bit args must start on 64-bit boundary
 		 *
-		 * note that total arg size can differ from alignment of
-		 * elements inside arg, so we use upper nybble of length
-		 * table to base alignment on
-		 *
-		 * also note: these alignments are ** relative to the
-		 * start of the radiotap header **.  There is no guarantee
+		 * Note that these alignments are relative to the start
+		 * of the radiotap header.  There is no guarantee
 		 * that the radiotap header itself is aligned on any
 		 * kind of boundary.
 		 *
-		 * the above is why get_unaligned() is used to dereference
-		 * multibyte elements from the radiotap area
+		 * The above is why get_unaligned() is used to dereference
+		 * multibyte elements from the radiotap area.
 		 */
 
 		pad = (((ulong)iterator->arg) -
-			((ulong)iterator->rtheader)) &
-			((rt_sizes[iterator->arg_index] >> 4) - 1);
+			((ulong)iterator->rtheader)) & (align - 1);
 
 		if (pad)
-			iterator->arg +=
-				(rt_sizes[iterator->arg_index] >> 4) - pad;
+			iterator->arg += align - pad;
 
 		/*
 		 * this is what we will return to user, but we need to
@@ -265,7 +284,7 @@ int ieee80211_radiotap_iterator_next(
 		iterator->this_arg = iterator->arg;
 
 		/* internally move on the size of this arg */
-		iterator->arg += rt_sizes[iterator->arg_index] & 0x0f;
+		iterator->arg += size;
 
 		/*
 		 * check for insanity where we are given a bitmap that
@@ -284,18 +303,26 @@ int ieee80211_radiotap_iterator_next(
 			iterator->bitmap_shifter >>= 1;
 			iterator->arg_index++;
 
-			/* skip vendor namespace for now */
-			iterator->is_vendor = 1;
 			iterator->reset_on_ext = 1;
-			/* move over the entire vendor namespace */
-			iterator->arg += get_unaligned_le16(iterator->this_arg + 4);
+
+			iterator->end_ns = iterator->arg +
+				get_unaligned_le16(iterator->this_arg + 4);
+			oui = (*iterator->this_arg << 16) |
+				(*(iterator->this_arg + 1) << 8) |
+				*(iterator->this_arg + 2);
+			subns = *(iterator->this_arg + 3);
+
+			find_ns(iterator, oui, subns);
+
+			iterator->is_radiotap_ns = 0;
 			break;
 		case IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE:
 			iterator->bitmap_shifter >>= 1;
 			iterator->arg_index++;
 
 			iterator->reset_on_ext = 1;
-			iterator->is_vendor = 0;
+			iterator->current_namespace = &radiotap_ns;
+			iterator->is_radiotap_ns = 1;
 			break;
 		case IEEE80211_RADIOTAP_EXT:
 			/*
@@ -323,8 +350,5 @@ int ieee80211_radiotap_iterator_next(
 		if (hit)
 			return 0;
 	}
-
-	/* we don't know how to handle any more args, we're done */
-	return -ENOENT;
 }
 EXPORT_SYMBOL(ieee80211_radiotap_iterator_next);
