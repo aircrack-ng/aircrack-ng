@@ -27,7 +27,7 @@ static const struct ieee80211_radiotap_vendor_namespaces vns = {
 	.n_ns = sizeof(vns_array)/sizeof(vns_array[0]),
 };
 
-void print_radiotap_namespace(struct ieee80211_radiotap_iterator *iter)
+static void print_radiotap_namespace(struct ieee80211_radiotap_iterator *iter)
 {
 	switch (iter->this_arg_index) {
 	case IEEE80211_RADIOTAP_TSFT:
@@ -59,7 +59,7 @@ void print_radiotap_namespace(struct ieee80211_radiotap_iterator *iter)
 	}
 }
 
-void print_test_namespace(struct ieee80211_radiotap_iterator *iter)
+static void print_test_namespace(struct ieee80211_radiotap_iterator *iter)
 {
 	switch (iter->this_arg_index) {
 	case 0:
