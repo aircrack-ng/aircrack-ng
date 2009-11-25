@@ -36,8 +36,8 @@
 	__ptr->__val;						\
 })
 #define EXPORT_SYMBOL(x)
-#define get_unaligned_le16(p)	le16_to_cpu(get_unaligned(p))
-#define get_unaligned_le32(p)	le32_to_cpu(get_unaligned(p))
+#define get_unaligned_le16(p)	le16_to_cpu(get_unaligned((uint16_t *)(p)))
+#define get_unaligned_le32(p)	le32_to_cpu(get_unaligned((uint32_t *)(p)))
 
 /* function prototypes and related defs are in radiotap_iter.h */
 
@@ -140,7 +140,7 @@ int ieee80211_radiotap_iterator_init(
 
 	if (unlikely(iterator->_bitmap_shifter & (1<<IEEE80211_RADIOTAP_EXT))) {
 		while (get_unaligned_le32(iterator->_arg) &
-		       (1 << IEEE80211_RADIOTAP_EXT)) {
+					(1 << IEEE80211_RADIOTAP_EXT)) {
 			iterator->_arg += sizeof(uint32_t);
 
 			/*
