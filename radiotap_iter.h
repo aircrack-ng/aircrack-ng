@@ -25,30 +25,44 @@ struct ieee80211_radiotap_vendor_namespaces {
 
 /**
  * struct ieee80211_radiotap_iterator - tracks walk thru present radiotap args
- * @rtheader: pointer to the radiotap header we are walking through
- * @max_length: length of radiotap header in cpu byte ordering
  * @this_arg_index: index of current arg
  * @this_arg: pointer to current radiotap arg
- * @arg_index: internal next argument index
- * @arg: internal next argument pointer
- * @next_bitmap: internal pointer to next present u32
- * @bitmap_shifter: internal shifter for curr u32 bitmap, b0 set == arg present
+ * @current_namespace: pointer to the current namespace definition
+ *	(or internally %NULL if the current namespace is unknown)
+ * @is_radiotap_ns: indicates whether the current namespace is the default
+ *	radiotap namespace or not
+ * @_rtheader: pointer to the radiotap header we are walking through
+ * @_max_length: length of radiotap header in cpu byte ordering
+ * @_arg_index: next argument index
+ * @_arg: next argument pointer
+ * @_next_bitmap: internal pointer to next present u32
+ * @_bitmap_shifter: internal shifter for curr u32 bitmap, b0 set == arg present
+ * @_vns: vendor namespace definitions
+ * @_next_ns_data: beginning of the next namespace's data
+ * @_reset_on_ext: internal; reset the arg index to 0 when going to the
+ *	next bitmap word
+ *
+ * Describes the radiotap parser state. Fields prefixed with an underscore
+ * must not be used by users of the parser, only by the parser internally.
  */
 
 struct ieee80211_radiotap_iterator {
-	struct ieee80211_radiotap_header *rtheader;
-	int max_length;
-	int this_arg_index;
-	unsigned char *this_arg;
-
-	int arg_index;
-	unsigned char *arg, *end_ns;
-	uint32_t *next_bitmap;
-	uint32_t bitmap_shifter;
-	int reset_on_ext;
-	int is_radiotap_ns;
-	const struct ieee80211_radiotap_vendor_namespaces *vns;
+	struct ieee80211_radiotap_header *_rtheader;
+	const struct ieee80211_radiotap_vendor_namespaces *_vns;
 	const struct ieee80211_radiotap_namespace *current_namespace;
+
+	unsigned char *_arg, *_next_ns_data;
+	uint32_t *_next_bitmap;
+
+	unsigned char *this_arg;
+	int this_arg_index;
+
+	int is_radiotap_ns;
+
+	int _max_length;
+	int _arg_index;
+	uint32_t _bitmap_shifter;
+	int _reset_on_ext;
 };
 
 extern int ieee80211_radiotap_iterator_init(
