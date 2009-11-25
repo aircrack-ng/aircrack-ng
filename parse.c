@@ -72,4 +72,6 @@ int main(int argc, char *argv[])
 		printf("malformed radiotap data\n");
 		return 3;
 	}
+
+	return 0;
 }
