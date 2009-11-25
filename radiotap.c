@@ -101,6 +101,10 @@ int ieee80211_radiotap_iterator_init(
 	iterator->bitmap_shifter = get_unaligned_le32(&radiotap_header->it_present);
 	iterator->arg = (u8 *)radiotap_header + sizeof(*radiotap_header);
 	iterator->this_arg = NULL;
+	iterator->is_vendor = 0;
+	iterator->reset_on_ext = 0;
+	iterator->next_bitmap = &radiotap_header->it_present;
+	iterator->next_bitmap++;
 
 	/* find payload start allowing for extended bitmap(s) */
 
@@ -197,6 +201,9 @@ int ieee80211_radiotap_iterator_next(
 		[IEEE80211_RADIOTAP_TX_FLAGS] = 0x22,
 		[IEEE80211_RADIOTAP_RTS_RETRIES] = 0x11,
 		[IEEE80211_RADIOTAP_DATA_RETRIES] = 0x11,
+		[IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE] = 0x10,
+		[IEEE80211_RADIOTAP_VENDOR_NAMESPACE] = 0x26,
+		[IEEE80211_RADIOTAP_EXT] = 0x10,
 		/*
 		 * add more here as they are defined in
 		 * include/net/ieee80211_radiotap.h
@@ -214,6 +221,13 @@ int ieee80211_radiotap_iterator_next(
 
 		if (!(iterator->bitmap_shifter & 1))
 			goto next_entry; /* arg not present */
+
+		/*
+		 * We cannot properly parse vendor extensions except
+		 * bits 29/30/31 in them.
+		 */
+		if (iterator->is_vendor && (iterator->arg_index % 32) < 29)
+			goto next_entry;
 
 		/*
 		 * arg is present, account for alignment padding
@@ -249,7 +263,6 @@ int ieee80211_radiotap_iterator_next(
 		 */
 		iterator->this_arg_index = iterator->arg_index;
 		iterator->this_arg = iterator->arg;
-		hit = 1;
 
 		/* internally move on the size of this arg */
 		iterator->arg += rt_sizes[iterator->arg_index] & 0x0f;
@@ -265,21 +278,46 @@ int ieee80211_radiotap_iterator_next(
 		    iterator->max_length)
 			return -EINVAL;
 
-	next_entry:
-		iterator->arg_index++;
-		if (unlikely((iterator->arg_index & 31) == 0)) {
-			/* completed current u32 bitmap */
-			if (iterator->bitmap_shifter & 1) {
-				/* b31 was set, there is more */
-				/* move to next u32 bitmap */
-				iterator->bitmap_shifter =
-				    get_unaligned_le32(iterator->next_bitmap);
-				iterator->next_bitmap++;
-			} else
-				/* no more bitmaps: end */
-				iterator->arg_index = sizeof(rt_sizes);
-		} else /* just try the next bit */
+		/* these special ones are valid in each bitmap word */
+		switch (iterator->arg_index % 32) {
+		case IEEE80211_RADIOTAP_VENDOR_NAMESPACE:
 			iterator->bitmap_shifter >>= 1;
+			iterator->arg_index++;
+
+			/* skip vendor namespace for now */
+			iterator->is_vendor = 1;
+			iterator->reset_on_ext = 1;
+			/* move over the entire vendor namespace */
+			iterator->arg += get_unaligned_le16(iterator->this_arg + 4);
+			break;
+		case IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE:
+			iterator->bitmap_shifter >>= 1;
+			iterator->arg_index++;
+
+			iterator->reset_on_ext = 1;
+			iterator->is_vendor = 0;
+			break;
+		case IEEE80211_RADIOTAP_EXT:
+			/*
+			 * bit 31 was set, there is more
+			 * -- move to next u32 bitmap
+			 */
+			iterator->bitmap_shifter =
+				get_unaligned_le32(iterator->next_bitmap);
+			iterator->next_bitmap++;
+			if (iterator->reset_on_ext)
+				iterator->arg_index = 0;
+			else
+				iterator->arg_index++;
+			iterator->reset_on_ext = 0;
+			break;
+		default:
+			/* we've got a hit! */
+			hit = 1;
+ next_entry:
+			iterator->bitmap_shifter >>= 1;
+			iterator->arg_index++;
+		}
 
 		/* if we found a valid arg earlier, return it now */
 		if (hit)

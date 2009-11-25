@@ -28,6 +28,8 @@ struct ieee80211_radiotap_iterator {
 	unsigned char *arg;
 	uint32_t *next_bitmap;
 	uint32_t bitmap_shifter;
+	int is_vendor;
+	int reset_on_ext;
 };
 
 extern int ieee80211_radiotap_iterator_init(
