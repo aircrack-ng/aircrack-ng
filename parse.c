@@ -11,6 +11,7 @@
 
 static const struct radiotap_align_size align_size_000000_00[] = {
 	[0] = { .align = 1, .size = 4, },
+	[52] = { .align = 1, .size = 4, },
 };
 
 static const struct ieee80211_radiotap_namespace vns_array[] = {
@@ -67,8 +68,13 @@ static void print_test_namespace(struct ieee80211_radiotap_iterator *iter)
 			*iter->this_arg, *(iter->this_arg + 1),
 			*(iter->this_arg + 2), *(iter->this_arg + 3));
 		break;
+	case 52:
+		printf("\t00:00:00-00|52: %.2x/%.2x/%.2x/%2.x\n",
+			*iter->this_arg, *(iter->this_arg + 1),
+			*(iter->this_arg + 2), *(iter->this_arg + 3));
+		break;
 	default:
-		printf("\tBOGUS DATA\n");
+		printf("\tBOGUS DATA - vendor ns %d\n", iter->this_arg_index);
 		break;
 	}
 }

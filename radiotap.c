@@ -243,15 +243,20 @@ int ieee80211_radiotap_iterator_next(
 		default:
 			if (!iterator->current_namespace ||
 			    iterator->_arg_index >= iterator->current_namespace->n_bits) {
-				if (iterator->current_namespace != &radiotap_ns) {
-					iterator->_arg = iterator->_next_ns_data;
-					goto next_entry;
-				} else
+				if (iterator->current_namespace == &radiotap_ns)
 					return -ENOENT;
+				align = 0;
+			} else {
+				align = iterator->current_namespace->align_size[iterator->_arg_index].align;
+				size = iterator->current_namespace->align_size[iterator->_arg_index].size;
 			}
-
-			align = iterator->current_namespace->align_size[iterator->_arg_index].align;
-			size = iterator->current_namespace->align_size[iterator->_arg_index].size;
+			if (!align) {
+				/* skip all subsequent data */
+				iterator->_arg = iterator->_next_ns_data;
+				/* give up on this namespace */
+				iterator->current_namespace = NULL;
+				goto next_entry;
+			}
 			break;
 		}
 
