@@ -22,8 +22,6 @@
 #include <endian.h>
 #include "radiotap_iter.h"
 
-typedef unsigned char		u8;
-typedef unsigned int		u32;       
 #define le16_to_cpu		le16toh
 #define le32_to_cpu		le32toh
 #define __le32			uint32_t
@@ -130,7 +128,7 @@ int ieee80211_radiotap_iterator_init(
 	iterator->_max_length = get_unaligned_le16(&radiotap_header->it_len);
 	iterator->_arg_index = 0;
 	iterator->_bitmap_shifter = get_unaligned_le32(&radiotap_header->it_present);
-	iterator->_arg = (u8 *)radiotap_header + sizeof(*radiotap_header);
+	iterator->_arg = (uint8_t *)radiotap_header + sizeof(*radiotap_header);
 	iterator->this_arg = NULL;
 	iterator->_reset_on_ext = 0;
 	iterator->_next_bitmap = &radiotap_header->it_present;
@@ -144,7 +142,7 @@ int ieee80211_radiotap_iterator_init(
 	if (unlikely(iterator->_bitmap_shifter & (1<<IEEE80211_RADIOTAP_EXT))) {
 		while (get_unaligned_le32(iterator->_arg) &
 		       (1 << IEEE80211_RADIOTAP_EXT)) {
-			iterator->_arg += sizeof(u32);
+			iterator->_arg += sizeof(uint32_t);
 
 			/*
 			 * check for insanity where the present bitmaps
@@ -157,7 +155,7 @@ int ieee80211_radiotap_iterator_init(
 				return -EINVAL;
 		}
 
-		iterator->_arg += sizeof(u32);
+		iterator->_arg += sizeof(uint32_t);
 
 		/*
 		 * no need to check again for blowing past stated radiotap
