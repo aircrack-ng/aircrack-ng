@@ -1,3 +1,5 @@
+CFLAGS = -g -Wall
+
 
 parse:	parse.c radiotap.c
 
