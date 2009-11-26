@@ -1,5 +1,7 @@
 #!/bin/sh
 
+bin="$1/parse"
+
 for t in *.bin ; do
 	echo -n "Checking $t: "
 	args=""
@@ -7,5 +9,5 @@ for t in *.bin ; do
 	if [ -f "$base.args" ] ; then
 		args="$(cat "$base.args")"
 	fi
-	../parse $args $t | diff "$base.out" - && echo "OK" || echo "FAIL"
+	"$bin" $args $t | diff "$base.out" - && echo "OK" || echo "FAIL"
 done
