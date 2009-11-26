@@ -119,7 +119,7 @@ int ieee80211_radiotap_iterator_init(
 
 	/* find payload start allowing for extended bitmap(s) */
 
-	if (unlikely(iterator->_bitmap_shifter & (1<<IEEE80211_RADIOTAP_EXT))) {
+	if (iterator->_bitmap_shifter & (1<<IEEE80211_RADIOTAP_EXT)) {
 		while (get_unaligned_le32(iterator->_arg) &
 					(1 << IEEE80211_RADIOTAP_EXT)) {
 			iterator->_arg += sizeof(uint32_t);
@@ -130,8 +130,8 @@ int ieee80211_radiotap_iterator_init(
 			 * stated radiotap header length
 			 */
 
-			if (((ulong)iterator->_arg -
-			     (ulong)iterator->_rtheader) > iterator->_max_length)
+			if (((unsigned long)iterator->_arg -
+			     (unsigned long)iterator->_rtheader) > iterator->_max_length)
 				return -EINVAL;
 		}
 
@@ -283,8 +283,8 @@ int ieee80211_radiotap_iterator_next(
 		 * multibyte elements from the radiotap area.
 		 */
 
-		pad = (((ulong)iterator->_arg) -
-			((ulong)iterator->_rtheader)) & (align - 1);
+		pad = (((unsigned long)iterator->_arg) -
+			((unsigned long)iterator->_rtheader)) & (align - 1);
 
 		if (pad)
 			iterator->_arg += align - pad;
@@ -306,7 +306,7 @@ int ieee80211_radiotap_iterator_next(
 		 * max_length on the last arg, never exceeding it.
 		 */
 
-		if (((ulong)iterator->_arg - (ulong)iterator->_rtheader) >
+		if (((unsigned long)iterator->_arg - (unsigned long)iterator->_rtheader) >
 		    iterator->_max_length)
 			return -EINVAL;
 

@@ -7,9 +7,6 @@
 
 #define le16_to_cpu		le16toh
 #define le32_to_cpu		le32toh
-#define __le32			uint32_t
-#define ulong			unsigned long
-#define unlikely(cond)		(cond)
 #define get_unaligned(p)					\
 ({								\
 	struct packed_dummy_struct {				\
