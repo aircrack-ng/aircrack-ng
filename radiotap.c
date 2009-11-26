@@ -105,7 +105,6 @@ int ieee80211_radiotap_iterator_init(
 	iterator->_arg_index = 0;
 	iterator->_bitmap_shifter = get_unaligned_le32(&radiotap_header->it_present);
 	iterator->_arg = (uint8_t *)radiotap_header + sizeof(*radiotap_header);
-	iterator->this_arg = NULL;
 	iterator->_reset_on_ext = 0;
 	iterator->_next_bitmap = &radiotap_header->it_present;
 	iterator->_next_bitmap++;
@@ -296,6 +295,7 @@ int ieee80211_radiotap_iterator_next(
 		 */
 		iterator->this_arg_index = iterator->_arg_index;
 		iterator->this_arg = iterator->_arg;
+		iterator->this_arg_size = size;
 
 		/* internally move on the size of this arg */
 		iterator->_arg += size;

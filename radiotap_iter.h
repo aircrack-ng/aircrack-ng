@@ -37,6 +37,7 @@ struct ieee80211_radiotap_vendor_namespaces {
  *	call to ieee80211_radiotap_iterator_next() but also after
  *	ieee80211_radiotap_iterator_init() where it will point to
  *	the beginning of the actual data portion
+ * @this_arg_size: length of the current arg, for convenience
  * @current_namespace: pointer to the current namespace definition
  *	(or internally %NULL if the current namespace is unknown)
  * @is_radiotap_ns: indicates whether the current namespace is the default
@@ -74,6 +75,7 @@ struct ieee80211_radiotap_iterator {
 	int n_overrides;
 #endif
 	int this_arg_index;
+	int this_arg_size;
 
 	int is_radiotap_ns;
 
