@@ -1,4 +1,4 @@
-CFLAGS = -g -Wall -DRADIOTAP_SUPPORT_OVERRIDES
+CFLAGS = -g -Wextra -Wall -DRADIOTAP_SUPPORT_OVERRIDES
 
 
 parse:	parse.c radiotap.c
