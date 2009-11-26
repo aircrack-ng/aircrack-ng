@@ -231,6 +231,8 @@ enum ieee80211_radiotap_type {
 						 * 802.11 header and payload
 						 * (to 32-bit boundary)
 						 */
+#define IEEE80211_RADIOTAP_F_BADFCS	0x40	/* frame failed FCS check */
+
 /* For IEEE80211_RADIOTAP_RX_FLAGS */
 #define IEEE80211_RADIOTAP_F_RX_BADPLCP	0x0002 /* bad PLCP */
 
