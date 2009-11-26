@@ -7,6 +7,11 @@
  *   implemented in radiotap.c
  */
 
+struct radiotap_override {
+	uint8_t field;
+	uint8_t align:4, size:4;
+};
+
 struct radiotap_align_size {
 	uint8_t align:4, size:4;
 };
@@ -31,6 +36,10 @@ struct ieee80211_radiotap_vendor_namespaces {
  *	(or internally %NULL if the current namespace is unknown)
  * @is_radiotap_ns: indicates whether the current namespace is the default
  *	radiotap namespace or not
+ *
+ * @overrides: override standard radiotap fields
+ * @n_overrides: number of overrides
+ *
  * @_rtheader: pointer to the radiotap header we are walking through
  * @_max_length: length of radiotap header in cpu byte ordering
  * @_arg_index: next argument index
@@ -55,6 +64,10 @@ struct ieee80211_radiotap_iterator {
 	uint32_t *_next_bitmap;
 
 	unsigned char *this_arg;
+#ifdef RADIOTAP_SUPPORT_OVERRIDES
+	const struct radiotap_override *overrides;
+	int n_overrides;
+#endif
 	int this_arg_index;
 
 	int is_radiotap_ns;

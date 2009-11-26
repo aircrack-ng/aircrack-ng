@@ -2,5 +2,10 @@
 
 for t in *.bin ; do
 	echo -n "Checking $t: "
-	../parse $t | diff $(basename $t .bin).out - && echo "OK" || echo "FAIL"
+	args=""
+	base="$(basename "$t" .bin)"
+	if [ -f "$base.args" ] ; then
+		args="$(cat "$base.args")"
+	fi
+	../parse $args $t | diff "$base.out" - && echo "OK" || echo "FAIL"
 done

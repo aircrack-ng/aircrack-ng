@@ -2,6 +2,7 @@
  * Radiotap parser
  *
  * Copyright 2007		Andy Green <andy@warmcat.com>
+ * Copyright 2009		Johannes Berg <johannes@sipsolutions.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -135,6 +136,10 @@ int ieee80211_radiotap_iterator_init(
 	iterator->_vns = vns;
 	iterator->current_namespace = &radiotap_ns;
 	iterator->is_radiotap_ns = 1;
+#ifdef RADIOTAP_SUPPORT_OVERRIDES
+	iterator->n_overrides = 0;
+	iterator->overrides = NULL;
+#endif
 
 	/* find payload start allowing for extended bitmap(s) */
 
@@ -190,6 +195,30 @@ static void find_ns(struct ieee80211_radiotap_iterator *iterator,
 	}
 }
 
+#ifdef RADIOTAP_SUPPORT_OVERRIDES
+static int find_override(struct ieee80211_radiotap_iterator *iterator,
+			 int *align, int *size)
+{
+	int i;
+
+	if (!iterator->overrides)
+		return 0;
+
+	for (i = 0; i < iterator->n_overrides; i++) {
+		if (iterator->_arg_index == iterator->overrides[i].field) {
+			*align = iterator->overrides[i].align;
+			*size = iterator->overrides[i].size;
+			if (!*align) /* erroneous override */
+				return 0;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+#endif
+
+
 /**
  * ieee80211_radiotap_iterator_next - return next radiotap parser iterator arg
  * @iterator: radiotap_iterator to move to next arg (if any)
@@ -241,6 +270,11 @@ int ieee80211_radiotap_iterator_next(
 			size = 6;
 			break;
 		default:
+#ifdef RADIOTAP_SUPPORT_OVERRIDES
+			if (find_override(iterator, &align, &size)) {
+				/* all set */
+			} else
+#endif
 			if (!iterator->current_namespace ||
 			    iterator->_arg_index >= iterator->current_namespace->n_bits) {
 				if (iterator->current_namespace == &radiotap_ns)

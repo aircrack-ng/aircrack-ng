@@ -7,7 +7,10 @@
 #include <stdio.h>
 #include <endian.h>
 #include <errno.h>
+#include <string.h>
 #include "radiotap_iter.h"
+
+static int fcshdr = 0;
 
 static const struct radiotap_align_size align_size_000000_00[] = {
 	[0] = { .align = 1, .size = 4, },
@@ -49,8 +52,17 @@ static void print_radiotap_namespace(struct ieee80211_radiotap_iterator *iter)
 	case IEEE80211_RADIOTAP_ANTENNA:
 	case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
 	case IEEE80211_RADIOTAP_DB_ANTNOISE:
-	case IEEE80211_RADIOTAP_RX_FLAGS:
 	case IEEE80211_RADIOTAP_TX_FLAGS:
+		break;
+	case IEEE80211_RADIOTAP_RX_FLAGS:
+		if (fcshdr) {
+			printf("\tFCS in header: %.8x\n",
+				le32toh(*(uint32_t *)iter->this_arg));
+			break;
+		}
+		printf("\tRX flags: %#.4x\n",
+			le16toh(*(uint16_t *)iter->this_arg));
+		break;
 	case IEEE80211_RADIOTAP_RTS_RETRIES:
 	case IEEE80211_RADIOTAP_DATA_RETRIES:
 		break;
@@ -79,21 +91,31 @@ static void print_test_namespace(struct ieee80211_radiotap_iterator *iter)
 	}
 }
 
+static const struct radiotap_override overrides[] = {
+	{ .field = 14, .align = 4, .size = 4, }
+};
+
 int main(int argc, char *argv[])
 {
 	struct ieee80211_radiotap_iterator iter;
 	struct stat statbuf;
-	int fd, err;
+	int fd, err, fnidx = 1;
 	void *data;
 
-	if (argc != 2) {
-		fprintf(stderr, "usage: parse <file>\n");
+	if (argc != 2 && argc != 3) {
+		fprintf(stderr, "usage: parse [--fcshdr] <file>\n");
+		fprintf(stderr, "	--fcshdr: read bit 14 as FCS\n");
 		return 2;
 	}
 
-	fd = open(argv[1], O_RDONLY);
+	if (strcmp(argv[1], "--fcshdr") == 0) {
+		fcshdr = 1;
+		fnidx++;
+	}
+
+	fd = open(argv[fnidx], O_RDONLY);
 	if (fd < 0) {
-		perror("open");
+		fprintf(stderr, "cannot open file %s\n", argv[fnidx]);
 		return 2;
 	}
 
@@ -108,6 +130,11 @@ int main(int argc, char *argv[])
 	if (err) {
 		printf("malformed radiotap header (init returns %d)\n", err);
 		return 3;
+	}
+
+	if (fcshdr) {
+		iter.overrides = overrides;
+		iter.n_overrides = sizeof(overrides)/sizeof(overrides[0]);
 	}
 
 	while (!(err = ieee80211_radiotap_iterator_next(&iter))) {
