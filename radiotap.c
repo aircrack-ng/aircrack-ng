@@ -36,7 +36,6 @@
 								\
 	__ptr->__val;						\
 })
-#define EXPORT_SYMBOL(x)
 #define get_unaligned_le16(p)	le16_to_cpu(get_unaligned((uint16_t *)(p)))
 #define get_unaligned_le32(p)	le32_to_cpu(get_unaligned((uint32_t *)(p)))
 
@@ -172,7 +171,6 @@ int ieee80211_radiotap_iterator_init(
 
 	return 0;
 }
-EXPORT_SYMBOL(ieee80211_radiotap_iterator_init);
 
 static void find_ns(struct ieee80211_radiotap_iterator *iterator,
 		    uint32_t oui, uint8_t subns)
@@ -387,4 +385,3 @@ int ieee80211_radiotap_iterator_next(
 			return 0;
 	}
 }
-EXPORT_SYMBOL(ieee80211_radiotap_iterator_next);
