@@ -224,7 +224,7 @@ int ieee80211_radiotap_iterator_next(
 {
 	while (1) {
 		int hit = 0;
-		int pad, align, size, subns;
+		int pad, align, size, subns, vnslen;
 		uint32_t oui;
 
 		/* if no more EXT bits, that's it */
@@ -320,8 +320,8 @@ int ieee80211_radiotap_iterator_next(
 
 			iterator->_reset_on_ext = 1;
 
-			iterator->_next_ns_data = iterator->_arg +
-				get_unaligned_le16(iterator->this_arg + 4);
+			vnslen = get_unaligned_le16(iterator->this_arg + 4);
+			iterator->_next_ns_data = iterator->_arg + vnslen;
 			oui = (*iterator->this_arg << 16) |
 				(*(iterator->this_arg + 1) << 8) |
 				*(iterator->this_arg + 2);
@@ -330,6 +330,16 @@ int ieee80211_radiotap_iterator_next(
 			find_ns(iterator, oui, subns);
 
 			iterator->is_radiotap_ns = 0;
+			/* allow parsers to show this information */
+			iterator->this_arg_index =
+				IEEE80211_RADIOTAP_VENDOR_NAMESPACE;
+			iterator->this_arg_size += vnslen;
+			if ((unsigned long)iterator->this_arg +
+			    iterator->this_arg_size -
+			    (unsigned long)iterator->_rtheader >
+			    (unsigned long)(unsigned long)iterator->_max_length)
+				return -EINVAL;
+			hit = 1;
 			break;
 		case IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE:
 			iterator->_bitmap_shifter >>= 1;

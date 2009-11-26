@@ -66,6 +66,12 @@ static void print_radiotap_namespace(struct ieee80211_radiotap_iterator *iter)
 	case IEEE80211_RADIOTAP_RTS_RETRIES:
 	case IEEE80211_RADIOTAP_DATA_RETRIES:
 		break;
+	case IEEE80211_RADIOTAP_VENDOR_NAMESPACE:
+		printf("\tvendor NS (%.2x-%.2x-%.2x:%d, %d bytes)\n",
+			iter->this_arg[0], iter->this_arg[1],
+			iter->this_arg[2], iter->this_arg[3],
+			le16toh(*(uint16_t *)(iter->this_arg + 4)));
+		break;
 	default:
 		printf("\tBOGUS DATA\n");
 		break;
@@ -138,7 +144,8 @@ int main(int argc, char *argv[])
 	}
 
 	while (!(err = ieee80211_radiotap_iterator_next(&iter))) {
-		if (iter.is_radiotap_ns)
+		if (iter.is_radiotap_ns ||
+		    iter.this_arg_index == IEEE80211_RADIOTAP_VENDOR_NAMESPACE)
 			print_radiotap_namespace(&iter);
 		else if (iter.current_namespace == &vns_array[0])
 			print_test_namespace(&iter);
