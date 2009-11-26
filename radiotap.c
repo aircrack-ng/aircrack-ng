@@ -38,8 +38,7 @@ static const struct radiotap_align_size rtap_namespace_sizes[] = {
 	[IEEE80211_RADIOTAP_RTS_RETRIES] = { .align = 1, .size = 1, },
 	[IEEE80211_RADIOTAP_DATA_RETRIES] = { .align = 1, .size = 1, },
 	/*
-	 * add more here as they are defined in
-	 * include/net/ieee80211_radiotap.h
+	 * add more here as they are defined in radiotap.h
 	 */
 };
 
@@ -83,8 +82,7 @@ static const struct ieee80211_radiotap_namespace radiotap_ns = {
  * get_unaligned((type *)iterator.this_arg) to dereference
  * iterator.this_arg for type "type" safely on all arches.
  *
- * Example code:
- * See Documentation/networking/radiotap-headers.txt
+ * Example code: parse.c
  */
 
 int ieee80211_radiotap_iterator_init(
