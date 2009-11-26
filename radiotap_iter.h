@@ -31,8 +31,12 @@ struct ieee80211_radiotap_vendor_namespaces {
 
 /**
  * struct ieee80211_radiotap_iterator - tracks walk thru present radiotap args
- * @this_arg_index: index of current arg
- * @this_arg: pointer to current radiotap arg
+ * @this_arg_index: index of current arg, valid after each successful call
+ *	to ieee80211_radiotap_iterator_next()
+ * @this_arg: pointer to current radiotap arg; it is valid after each
+ *	call to ieee80211_radiotap_iterator_next() but also after
+ *	ieee80211_radiotap_iterator_init() where it will point to
+ *	the beginning of the actual data portion
  * @current_namespace: pointer to the current namespace definition
  *	(or internally %NULL if the current namespace is unknown)
  * @is_radiotap_ns: indicates whether the current namespace is the default

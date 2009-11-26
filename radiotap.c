@@ -12,10 +12,6 @@
  * license.
  *
  * See COPYING for more details.
- *
- *
- * Modified for userspace by Johannes Berg <johannes@sipsolutions.net>
- * I only modified some things on top to ease syncing should bugs be found.
  */
 #include "radiotap_iter.h"
 #include "platform.h"
@@ -147,6 +143,8 @@ int ieee80211_radiotap_iterator_init(
 		 * checks it before it is dereferenced
 		 */
 	}
+
+	iterator->this_arg = iterator->_arg;
 
 	/* we are all initialized happily */
 
