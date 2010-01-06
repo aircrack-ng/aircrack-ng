@@ -38,6 +38,8 @@ namespace Aircrack_ng
         private int nbCpu;
         private string Windir;
         private string cmd_exe;
+        private string lastDirectory = ".";
+
 
         private const String debugFile = "debug.log";
         private StreamWriter debugStream = null;
@@ -211,26 +213,20 @@ namespace Aircrack_ng
                 foreach (string filename in ofd.FileNames)
                 {
                     filenames += fileseparator;
+                    
                     if (filename.Contains(" "))
                         filenames += "\"" + filename + "\"";
                     else
-                        filenames += filename;
+                        filenames += filename;    
+                }
+
+                // Save last directory
+                if (ofd.FileNames.Length > 0)
+                {
+                    this.lastDirectory = System.IO.Path.GetDirectoryName(ofd.FileNames[ofd.FileNames.Length - 1]);
                 }
             }
             return filenames;
-        }
-        private string LastDir(string fileNames)
-        {
-          if (fileNames == null || fileNames.Trim() == "")
-            return ".";
-
-          string[] directorys = fileNames.Split(' ');
-          string lastDir = System.IO.Path.GetFullPath(directorys[directorys.Length - 1]);
-
-          if (System.IO.Directory.Exists(lastDir))
-            return lastDir;
-          else
-            return ".";
         }
 
         /// <summary>
@@ -242,8 +238,9 @@ namespace Aircrack_ng
         {
             string captureFileExtensions =
                 "Capture files (*.cap, *.pcap, *.ivs, *.dump)|*.cap;*.pcap;*.ivs;*.dump|All files (*.*)|*.*";
-            this.tbFilenames.Text += " " + 
-              this.FileDialog(captureFileExtensions, 0, true, null, LastDir(tbFilenames.Text)).Trim();
+            string resultFilename = this.FileDialog(captureFileExtensions, 0, true, null, this.lastDirectory);
+                //System.IO.Path.GetFullPath
+            this.tbFilenames.Text += " " + resultFilename.Trim();
             this.tbFilenames.Text = this.tbFilenames.Text.Trim();
         }
 
