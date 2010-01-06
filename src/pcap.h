@@ -1,5 +1,5 @@
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef _AIRCRACK_NG_PCAP_H_
+#define _AIRCRACK_NG_PCAP_H_
 
 #define FORMAT_CAP      1
 #define FORMAT_IVS      2
