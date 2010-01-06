@@ -93,7 +93,12 @@ Aircrack-ng
 	Problem: On windows, it doesn't display a list of adapters like the old 0.X
 	Solution: It requires you to develop your own DLL.
 
-
+	Aircrack-ng
+	-----------
+	
+	Problem: Aircrack-ng can't use dictionnaries/wordlists bigger than 2GB
+	Solution: Split your files. Cleaning can also help because WPA only use passphrases of 8 to 63 characters.
+	
 Sample files
 ============
 
