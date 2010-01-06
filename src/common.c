@@ -3,8 +3,6 @@
  *
  *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
  *
- *  WEP decryption attack (chopchop) developped by KoreK
- *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
