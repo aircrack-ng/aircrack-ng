@@ -8,7 +8,7 @@ IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
 USE_IW=0
-IW_SOURCE="http://wireless.kernel.org/download/iw/iw-0.9.15.tar.bz2"
+IW_SOURCE="http://wireless.kernel.org/download/iw/iw-0.9.17.tar.bz2"
 IW_ERROR=""
 UDEV_ISSUE=0
 
