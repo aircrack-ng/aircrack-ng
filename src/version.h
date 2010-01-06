@@ -2,5 +2,5 @@
 #define _MIN 0
 #define _SUB_MIN 0
 #define _BETA 0
-#define _RC 4
+#define _RC 0
 #define WEBSITE "http://www.aircrack-ng.org"
