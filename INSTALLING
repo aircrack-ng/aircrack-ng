@@ -7,7 +7,6 @@
    - libtool
  * On windows, cygwin has to be use and it also requires w32api and gcc-4 package.
  * If you want to use Airpcap, the 'developer' directory from the CD is required.
- * On OSX, patch is required.
 
 === Compilating ===
 
