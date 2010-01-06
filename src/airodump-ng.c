@@ -3310,6 +3310,13 @@ int dump_write_kismet_netxml( void )
 
 			++client_nbr;
 
+
+			strncpy(first_time, ctime(&st_cur->tinit), TIME_STR_LENGTH - 1);
+			first_time[strlen(first_time) - 1] = 0; // remove new line
+
+			strncpy(last_time, ctime(&st_cur->tlast), TIME_STR_LENGTH - 1);
+			last_time[strlen(last_time) - 1] = 0; // remove new line
+
 			fprintf(G.f_kis_xml, "\t\t<wireless-client number=\"%d\" "
 								 "type=\"established\" first-time=\"%s\""
 								 " last-time=\"%s\">\n",
