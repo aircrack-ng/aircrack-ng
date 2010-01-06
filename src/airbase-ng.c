@@ -1128,7 +1128,7 @@ int addESSIDfile(char* filename)
     {
         // trim trailing whitespace
         x = strlen(essid) - 1;
-        while (x >= 0 && isspace(essid[x]))
+        while (x >= 0 && isspace((int)essid[x]))
             essid[x--] = 0;
 
         if(strlen(essid))

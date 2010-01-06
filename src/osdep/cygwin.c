@@ -85,7 +85,7 @@ char *stristr(const char *String, const char *Pattern)
            start++, slen--)
       {
             /* find start of pattern in string */
-            while (toupper(*start) != toupper(*Pattern))
+            while (toupper((int)*start) != toupper((int)*Pattern))
             {
                   start++;
                   slen--;
@@ -99,7 +99,7 @@ char *stristr(const char *String, const char *Pattern)
             sptr = start;
             pptr = (char *)Pattern;
 
-            while (toupper(*sptr) == toupper(*pptr))
+            while (toupper((int)*sptr) == toupper((int)*pptr))
             {
                   sptr++;
                   pptr++;
