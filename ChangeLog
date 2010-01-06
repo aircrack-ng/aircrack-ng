@@ -1,4 +1,4 @@
-Version 1.0 (changes from aircrack-ng 1.0-rc4) - Released ?? August 2009:
+Version 1.0 (changes from aircrack-ng 1.0-rc4) - Released 08 September 2009:
 * airserv-ng: Now works fine between 32 and 64bit OSes.
 * wesside-ng: Fixed some endianness bugs
 * airodump-ng-oui-update: Make sure the user is root when updating the file.
