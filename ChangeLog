@@ -1,3 +1,14 @@
+Version 1.0 (changes from aircrack-ng 1.0-rc4) - Released ?? August 2009:
+* airserv-ng: Now works fine between 32 and 64bit OSes.
+* wesside-ng: Fixed some endianness bugs
+* airodump-ng-oui-update: Make sure the user is root when updating the file.
+* airmon-ng: Updated iw download link (0.9.17).
+* All: Fixed compilation with some gcc.
+* patches: Added missing patches from patches.aircrack-ng.org: mac80211_2.6.28-rc4-wl_frag+ack_v3.patch
+* manpage: Updated aireplay-ng manpage.
+* INSTALLING: Removed (now) useless requirement for OSX installation.
+* GUI (windows): Fixed 2nd selection of a capture file.
+
 Version 1.0-rc4 (changes from aircrack-ng 1.0-rc3) - Released 27 July 2009:
 * airodump-ng: Decreased time before writing text files to 5 sec (instead of 20).
 * airodump-ng: New option --output-format option (to replace --nocap): specify output files.
