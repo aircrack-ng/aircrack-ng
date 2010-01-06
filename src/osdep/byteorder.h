@@ -46,7 +46,7 @@
 	/*
 	 * Linux
 	 */
-	#if defined(linux)
+	#if defined(linux) || defined(Linux) || defined(__linux__) || defined(__linux) || defined(__gnu_linux__)
 		#include <endian.h>
 		#include <unistd.h>
 		#include <stdint.h>
