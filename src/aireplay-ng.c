@@ -2033,7 +2033,7 @@ int do_attack_fake_auth( void )
                 }
 
                 aid=( ( (h80211[29] << 8) || (h80211[28]) ) & 0x3FFF);
-                printf( "Association successful :-) (AID: %d)", aid );
+                printf( "Association successful :-) (AID: %d)\n", aid );
                 deauth_wait = 3;
                 fflush( stdout );
 
