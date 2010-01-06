@@ -46,10 +46,13 @@ Frame control, type field.
 Frame control, subtype field.
 .TP
 .I -t <tods>
-Frame control, "To" DS bit.
+Frame control, "To" DS bit (0 or 1).
 .TP
 .I -f <fromds>
-Frame control, "From" DS bit.
+Frame control, "From" DS bit (0 or 1).
+.TP
+.I -w <iswep>
+Frame control, WEP bit (0 or 1).
 .TP
 .I -D 
 Disable AP Detection.
@@ -79,28 +82,28 @@ Change ring buffer size (default: 8 packets). The minimum is 1.
 Choose first matching packet.
 .TP
 .I -e <essid>
-Set target SSID for Fake Authentication attack (see below). For SSID containing special characters, see http://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc._in_ap_names
+Fake Authentication attack: Set target SSID (see below). For SSID containing special characters, see http://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc._in_ap_names
 .TP
 .I -o <npackets>
-Set the number of packets for every authentication and association attempt (Default: 1). 0 means auto
+Fake Authentication attack: Set the number of packets for every authentication and association attempt (Default: 1). 0 means auto
 .TP
 .I -q <seconds>
-Set the time between keep-alive packets in fake authentication mode.
+Fake Authentication attack: Set the time between keep-alive packets in fake authentication mode.
 .TP
 .I -y <prga>
-Specifies the keystream file for fake shared key authentication.
+Fake Authentication attack: Specifies the keystream file for fake shared key authentication.
 .TP
 .I -T n
-Exit if fake authentication fails 'n' time(s).
+Fake Authentication attack: Exit if fake authentication fails 'n' time(s).
 .TP
 .I -j
 ARP Replay attack : inject FromDS pakets (see below).
 .TP
 .I -k <IP>
-Set destination IP in fragments.
+Fragmentation attack: Set destination IP in fragments.
 .TP
 .I -l <IP>
-Set source IP in fragments.
+Fragmentation attack: Set source IP in fragments.
 .TP
 .I -B
 Test option: bitrate test.
