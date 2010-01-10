@@ -1,10 +1,9 @@
 === Requirements ===
 
  * OpenSSL development package
- * If you want to use airolib-ng and '-r' option on aircrack-ng, 
-   - SQLite development package >= 3.3.17 (3.6.X version or better is recommended)
-   - autoconf 2.50
-   - libtool
+ * If you want to use airolib-ng and '-r' option on aircrack-ng,
+   SQLite development package >= 3.3.17 (3.6.X version or better is recommended):
+   -  libsqlite3-devel
  * On windows, cygwin has to be use and it also requires w32api and gcc-4 package.
  * If you want to use Airpcap, the 'developer' directory from the CD is required.
 
@@ -46,19 +45,6 @@ Example:
 
   * Installing:
     make sqlite=true unstable=true install
-
-=== Compiling sqlite on cygwin ===
-
-  wget http://www.sqlite.org/sqlite-3.6.17.tar.gz
-  tar -zxf sqlite-3.6.17.tar.gz
-  cd sqlite-3.6.17
-  ./configure --disable-tcl
-  
-  wget http://patches.aircrack-ng.org/sqlite-3.6.13-lib_cygwin.diff
-  patch -i sqlite-3.6.13-lib_cygwin.diff
-  
-  make
-  make install
 
 === Using precompiled binaries ===
 
