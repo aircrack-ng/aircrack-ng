@@ -3815,11 +3815,9 @@ int do_attack_chopchop( void )
 
                 if( nb_bad_pkt > 256 )
                 {
-                    printf(
-                "\n\nFailure: got several deauthentication packets "
-                "from the AP - try running\nanother aireplay-ng with "
-                "attack \"-1\" (fake open-system authentication).\n\n" );
-                    return( 1 );
+                    printf("\rgot several deauthentication packets - pausing 3 seconds for reconnection\n");
+                    sleep(3);
+                    nb_bad_pkt = 0;
                 }
 
                 continue;

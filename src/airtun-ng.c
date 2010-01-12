@@ -93,11 +93,19 @@ char usage[] =
 "\n"
 "      -x nbpps         : number of packets per second (default: 100)\n"
 "      -a bssid         : set Access Point MAC address\n"
+"                       : In WDS Mode this sets the Receiver\n"
 "      -i iface         : capture packets from this interface\n"
 "      -y file          : read PRGA from this file\n"
 "      -w wepkey        : use this WEP-KEY to encrypt packets\n"
 "      -t tods          : send frames to AP (1) or to client (0)\n"
+"                       : or tunnel them into a WDS/Bridge (2)\n"
 "      -r file          : read frames out of pcap file\n"
+"\n"
+"  WDS/Bridge Mode options:\n"
+"      -s transmitter   : set Transmitter MAC address for WDS Mode\n"
+"      -b               : bidirectional mode. This enables communication\n"
+"                       : in Transmitter's AND Receiver's networks.\n"
+"                       : Works only if you can see both stations.\n"
 "\n"
 "  Repeater options:\n"
 "      --repeat         : activates repeat mode\n"
@@ -112,6 +120,7 @@ struct options
     unsigned char r_bssid[6];
     unsigned char r_dmac[6];
     unsigned char r_smac[6];
+    unsigned char r_trans[6];
 
     unsigned char f_bssid[6];
     unsigned char f_netmask[6];
@@ -123,6 +132,7 @@ struct options
     int r_nbpps;
     int prgalen;
     int tods;
+    int bidir;
 
     uchar wepkey[64];
     int weplen, crypt;
@@ -171,17 +181,80 @@ struct Fragment_list
     pFrag_t         next;
 };
 
+struct net_entry
+{
+    unsigned char *addr;
+    unsigned char net;
+    struct net_entry *next;
+};
+
 unsigned long nb_pkt_sent;
 unsigned char h80211[4096];
 unsigned char tmpbuf[4096];
 unsigned char srcbuf[4096];
 char strbuf[512];
+struct net_entry *nets = NULL;
 
 int ctrl_c, alarmed;
 
 char * iwpriv;
 
 pFrag_t     rFragment;
+
+struct net_entry *find_entry(unsigned char *adress) {
+    struct net_entry *cur = nets;
+
+    if (cur == NULL) return NULL;
+
+    do {
+        if (! memcmp(cur->addr, adress, 6)) {
+            return cur;
+        }
+        cur = cur->next;
+    } while (cur != nets);
+
+    return NULL;
+}
+
+void set_entry(unsigned char *adress, unsigned char network) {
+    struct net_entry *cur;
+
+    if( nets == NULL ) {
+        nets = malloc(sizeof(struct net_entry));
+        nets->addr = malloc(6 * sizeof(unsigned char));
+        nets->next = nets;
+        cur = nets;
+    } else {
+        cur = find_entry(adress);
+        if (cur == NULL) {
+            cur = malloc(sizeof(struct net_entry));
+            cur->addr = malloc(6 * sizeof(unsigned char));
+            cur->next = nets->next;
+            nets->next = cur;
+        }
+    }
+
+    memcpy(cur->addr, adress, 6);
+    cur->net = network;
+}
+
+int get_entry(unsigned char *adress) {
+    struct net_entry *cur = find_entry(adress);
+
+    if (cur == NULL) {
+        return -1;
+    } else {
+        return cur->net;
+    }
+}
+
+void swap_ra_ta(unsigned char *h80211) {
+     unsigned char mbuf[6];
+
+     memcpy(mbuf     , h80211+ 4, 6);
+     memcpy(h80211+ 4, h80211+10, 6);
+     memcpy(h80211+10, mbuf     , 6);
+}
 
 void sighandler( int signum )
 {
@@ -715,7 +788,7 @@ void print_packet ( uchar h80211[], int caplen )
     "\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"  \
     "\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32\xAA\xAA\x03\x00\x00\x00\x08\x00"
 
-int set_IVidx(unsigned char* packet)
+int set_IVidx(unsigned char* packet, int data_begin)
 {
     if(packet == NULL) return 1;
 
@@ -726,7 +799,7 @@ int set_IVidx(unsigned char* packet)
     }
 
     /* insert IV+index */
-    memcpy(packet+24, opt.prga, 4);
+    memcpy(packet + data_begin, opt.prga, 4);
 
     return 0;
 }
@@ -763,18 +836,18 @@ int encrypt_data(unsigned char *dest, unsigned char* data, int length)
     return 0;
 }
 
-int create_wep_packet(unsigned char* packet, int *length)
+int create_wep_packet(unsigned char* packet, int *length, int data_begin)
 {
     if(packet == NULL) return 1;
 
     /* write crc32 value behind data */
-    if( add_crc32(packet+24, *length-24) != 0 )               return 1;
+    if( add_crc32(packet + data_begin, *length - data_begin) != 0 )               return 1;
 
     /* encrypt data+crc32 and keep a 4byte hole */
-    if( encrypt_data(packet+28, packet+24, *length-20) != 0 ) return 1;
+    if( encrypt_data(packet + data_begin + 4, packet + data_begin, *length-(data_begin - 4)) != 0 ) return 1;
 
     /* write IV+IDX right in front of the encrypted data */
-    if( set_IVidx(packet) != 0 )                              return 1;
+    if( set_IVidx(packet, data_begin) != 0 )                              return 1;
 
     /* set WEP bit */
     packet[1] = packet[1] | 0x40;
@@ -789,6 +862,8 @@ int packet_xmit(uchar* packet, int length)
 {
     uchar K[64];
     uchar buf[4096];
+    int data_begin = 24;
+    int dest_net;
 
     if( memcmp(packet, SPANTREE, 6) == 0 )
     {
@@ -805,13 +880,25 @@ int packet_xmit(uchar* packet, int length)
         length = length+32-14; //32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
     }
 
-
-    if(opt.tods)
+    if(opt.tods == 1)
     {
         h80211[1] |= 0x01;
         memcpy(h80211+4,  opt.r_bssid, 6);  //BSSID
         memcpy(h80211+10, packet+6,    6);  //SRC_MAC
         memcpy(h80211+16, packet,      6);  //DST_MAC
+    }
+    else if(opt.tods == 2)
+    {
+        h80211[1] |= 0x03;
+        length += 6; //additional MAC addr
+        data_begin += 6;
+        memcpy(buf, h80211+24, length-24);
+        memcpy(h80211+30, buf, length-24);
+
+        memcpy(h80211+24, packet+6   , 6);  //SRC_MAC
+        memcpy(h80211+10, opt.r_trans, 6);  //TRANSMITTER
+        memcpy(h80211+16, packet     , 6);  //DST_MAC
+        memcpy(h80211+4,  opt.r_bssid, 6);  //RECEIVER
     }
     else
     {
@@ -829,27 +916,41 @@ int packet_xmit(uchar* packet, int length)
         K[3] = 0x00;
 
         /* write crc32 value behind data */
-        if( add_crc32(h80211+24, length-24) != 0 ) return 1;
+        if( add_crc32(h80211+data_begin, length-data_begin) != 0 ) return 1;
 
         length += 4; //icv
-        memcpy(buf, h80211+24, length-24);
-        memcpy(h80211+28, buf, length-24);
+        memcpy(buf, h80211 + data_begin, length - data_begin);
+        memcpy(h80211 + data_begin + 4, buf, length - data_begin);
 
-        memcpy(h80211+24, K, 4);
+        memcpy(h80211 + data_begin, K, 4);
         length += 4; //iv
 
         memcpy( K + 3, opt.wepkey, opt.weplen );
 
-        encrypt_wep( h80211+24+4, length-24-4, K, opt.weplen+3 );
+        encrypt_wep( h80211 + data_begin + 4, length - data_begin - 4, K, opt.weplen + 3 );
 
         h80211[1] = h80211[1] | 0x40;
     }
     else if( opt.prgalen > 0 )
     {
-        if(create_wep_packet(h80211, &length) != 0) return 1;
+        if(create_wep_packet(h80211, &length, data_begin) != 0) return 1;
     }
 
-    send_packet(h80211, length);
+    if ((opt.tods == 2) && opt.bidir) {
+        dest_net = get_entry(packet);  //Search the list to determine in which network part to send the packet.
+        if (dest_net == 0) {
+            send_packet(h80211, length);
+        } else if (dest_net == 1) {
+            swap_ra_ta(h80211);
+            send_packet(h80211, length);
+        } else {
+            send_packet(h80211, length);
+            swap_ra_ta(h80211);
+            send_packet(h80211, length);
+        }
+    } else {
+        send_packet(h80211, length);
+    }
 
     return 0;
 }
@@ -863,6 +964,7 @@ int packet_recv(uchar* packet, int length)
     int len;
     int z;
     int fragnum, seqnum, morefrag;
+    int process_packet;
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
     if ( ( packet[0] & 0x80 ) == 0x80 ) /* QoS */
@@ -919,7 +1021,18 @@ int packet_recv(uchar* packet, int length)
         buffer = NULL;
     }
 
-    if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
+    process_packet = 0;
+    if( opt.tods == 2) {  // In WDS mode we want to see packets from both sides of the network
+        if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
+            process_packet = 1;
+        if( memcmp( bssid, opt.r_trans, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
+            process_packet = 1;
+    } else {
+        if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
+            process_packet = 1;
+    }
+
+    if( process_packet )
     {
         if( (packet[z] != packet[z + 1] || packet[z + 2] != 0x03) && opt.crypt == CRYPT_WEP )
         {
@@ -960,9 +1073,19 @@ int packet_recv(uchar* packet, int length)
                 break;
             case 3:
                 memcpy( h80211,   packet+16, 6);  //DST_MAC
-                memcpy( h80211+6, packet+10, 6);  //SRC_MAC
+                memcpy( h80211+6, packet+24, 6);  //SRC_MAC
                 break;
             default: break;
+        }
+
+        /* Keep track of known MACs, so we only have to tunnel into one side of the WDS network */
+        if (((packet[1] & 3) == 3) && opt.bidir) {
+            if (! memcmp(packet+10, opt.r_bssid, 6)) {
+                set_entry(packet+24, 0);
+            }
+            if (! memcmp(packet+10, opt.r_trans, 6)) {
+                set_entry(packet+24, 1);
+            }
         }
 
         if( memcmp(dmac, SPANTREE, 6) == 0 )
@@ -1034,7 +1157,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "x:a:h:i:r:y:t:w:m:d:fH",
+                        "x:a:h:i:r:y:t:s:bw:m:d:fH",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -1120,8 +1243,24 @@ int main( int argc, char *argv[] )
 
             case 't' :
 
-                if( atoi(optarg) ) opt.tods = 1;
+                if( atoi(optarg) == 1) opt.tods = 1;
+                else if ( atoi(optarg) == 2) opt.tods = 2;
                 else opt.tods = 0;
+                break;
+
+            case 's' :
+
+                if( getmac( optarg, 1, opt.r_trans ) != 0 )
+                {
+                    printf( "Invalid Transmitter MAC address.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+                break;
+
+            case 'b' :
+
+                opt.bidir = 1;
                 break;
 
             case 'w' :
@@ -1262,6 +1401,13 @@ usage:
     if( memcmp( opt.r_bssid, NULL_MAC, 6) == 0 )
     {
         printf( "Please specify a BSSID (-a).\n" );
+   		printf("\"%s --help\" for help.\n", argv[0]);
+        return 1;
+    }
+
+    if( ( memcmp( opt.r_trans, NULL_MAC, 6) == 0 ) && opt.tods == 2 )
+    {
+        printf( "Please specify a Transmitter (-s).\n" );
    		printf("\"%s --help\" for help.\n", argv[0]);
         return 1;
     }
@@ -1409,9 +1555,18 @@ usage:
         printf( "WEP encryption by PRGA specified. No reception, only sending frames through %s.\n", argv[optind] );
     }
 
-    if( opt.tods )
+    if( opt.tods == 1 )
     {
         printf( "ToDS bit set in all frames.\n" );
+    }
+    else if( opt.tods == 2)
+    {
+        printf( "ToDS and FromDS bit set in all frames (WDS/Bridge) - " );
+        if (opt.bidir) {
+            printf( "bidirectional mode\n" );
+        } else {
+            printf( "unidirectional mode\n" );
+        }
     }
     else
     {
