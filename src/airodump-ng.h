@@ -19,6 +19,8 @@
 #define	STD_WPA		0x0004
 #define	STD_WPA2	0x0008
 
+#define STD_FIELD	(STD_OPN | STD_WEP | STD_WPA | STD_WPA2)
+
 #define	ENC_WEP		0x0010
 #define	ENC_TKIP	0x0020
 #define	ENC_WRAP	0x0040
@@ -26,14 +28,53 @@
 #define ENC_WEP40	0x1000
 #define	ENC_WEP104	0x0100
 
+#define ENC_FIELD	(ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP40 | ENC_WEP104)
+
 #define	AUTH_OPN	0x0200
 #define	AUTH_PSK	0x0400
 #define	AUTH_MGT	0x0800
+
+#define AUTH_FIELD	(AUTH_OPN | AUTH_PSK | AUTH_MGT)
 
 #define STD_QOS         0x2000
 
 #define	QLT_TIME	5
 #define	QLT_COUNT	25
+
+#define SORT_BY_NOTHING 0
+#define SORT_BY_BSSID	1
+#define SORT_BY_POWER	2
+#define SORT_BY_BEACON	3
+#define SORT_BY_DATA	4
+#define SORT_BY_PRATE	5
+#define SORT_BY_CHAN	6
+#define	SORT_BY_MBIT	7
+#define SORT_BY_ENC	8
+#define SORT_BY_CIPHER	9
+#define SORT_BY_AUTH	10
+#define SORT_BY_ESSID	11
+#define MAX_SORT	11
+
+#define TEXT_RESET	0
+#define TEXT_BRIGHT 	1
+#define TEXT_DIM	2
+#define TEXT_UNDERLINE 	3
+#define TEXT_BLINK	4
+#define TEXT_REVERSE	7
+#define TEXT_HIDDEN	8
+
+#define TEXT_MAX_STYLE	8
+
+#define TEXT_BLACK 	0
+#define TEXT_RED	1
+#define TEXT_GREEN	2
+#define TEXT_YELLOW	3
+#define TEXT_BLUE	4
+#define TEXT_MAGENTA	5
+#define TEXT_CYAN	6
+#define	TEXT_WHITE	7
+
+#define TEXT_MAX_COLOR	7
 
 #define RATES           \
     "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
@@ -179,6 +220,9 @@ struct AP_info
     						  /* detecting WEP cloak	  */
     						  /* + one byte to indicate   */
     						  /* (in)existence of the IV  */
+					  
+    int marked;
+    int marked_color;
 };
 
 struct WPA_hdsk
@@ -330,6 +374,8 @@ struct globals
      * We implemented this option in the highest tower (TV Tower) of Berlin, eating an ice.
      */
 
+    int show_ap;
+    int show_sta;
     int show_ack;
     int hide_known;
 
@@ -353,6 +399,25 @@ struct globals
     int output_format_csv;
     int output_format_kismet_csv;
     int output_format_kismet_netxml;
+    pthread_t input_tid;
+    int sort_by;
+    int sort_inv;
+    int start_print_ap;
+    int start_print_sta;
+    int selected_ap;
+    int selected_sta;
+    int selection_ap;
+    int selection_sta;
+    int mark_cur_ap;
+    int num_cards;
+    int skip_columns;
+    int do_pause;
+    int do_sort_always;
+    
+    pthread_mutex_t mx_print;			 /* lock write access to ap LL   */
+    pthread_mutex_t mx_sort;			 /* lock write access to ap LL   */
+    
+    uchar selected_bssid[6];	/* bssid that is selected */
 }
 G;
 
