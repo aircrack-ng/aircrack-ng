@@ -18,7 +18,7 @@ Shows the help screen.
 Sets maximum number of packets per second.
 .TP
 .I -a <BSSID>
-Specifies the BSSID for the iee802.11 header.
+Specifies the BSSID for the iee802.11 header. In WDS Mode this sets the Receiver.
 .TP
 .I -h <SMAC>
 Specifies the source MAC for the iee802.11 header.
@@ -36,7 +36,7 @@ Is the name of the file, which provides the keystream for WEP encoding. (No rece
 This is the WEP key to en-/decrypt all traffic going through the tunnel.
 .TP
 .I -t <tods>
-Defines the ToDS and FromDS bit in the ieee802.11 header. For tods=1, the ToDS bit is set to 1 and FromDS to 0, while tods=0 sets them the other way around.
+Defines the ToDS and FromDS bit in the ieee802.11 header. For tods=1, the ToDS bit is set to 1 and FromDS to 0, while tods=0 sets them the other way around. If set to 2, it will be tunneled in a WDS/bridge.
 .TP
 .I -m <netmask>, --netmask <netmask>
 Filters networks based on bssid ^ netmask combination. Needs \-d, used in replay mode. 
@@ -46,6 +46,12 @@ Filters networks based on the <BSSID>. Used in replay mode.
 .TP
 .I -f, --repeat
 Enables replay mode. All read frames, filtered by bssid and netmask (if specified), will be replayed.
+.TP
+.I -s <transmitter>
+Set Transmitter MAC address for WDS Mode.
+.TP
+.I -b
+Bidirectional mode. This enables communication in Transmitter's AND Receiver's networks. Works only if you can see both stations.
 .SH EXAMPLES
 .B airtun-ng
 \-a 00:14:22:56:F3:4E \-t 0 \-y keystream.xor wlan0
