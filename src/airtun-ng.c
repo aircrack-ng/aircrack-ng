@@ -1022,15 +1022,15 @@ int packet_recv(uchar* packet, int length)
     }
 
     process_packet = 0;
-    if( opt.tods == 2) {  // In WDS mode we want to see packets from both sides of the network
-        if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
-            process_packet = 1;
-        if( memcmp( bssid, opt.r_trans, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
-            process_packet = 1;
-    } else {
-        if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
-            process_packet = 1;
-    }
+
+    // In WDS mode we want to see packets from both sides of the network
+    if ( ( packet[0] & 0x08 ) == 0x08 ) {
+		if( memcmp( bssid, opt.r_bssid, 6) == 0 ) {
+				process_packet = 1;
+		} else if( opt.tods == 2 && memcmp( bssid, opt.r_trans, 6) == 0 ) {
+				process_packet = 1;
+		}
+	}
 
     if( process_packet )
     {
