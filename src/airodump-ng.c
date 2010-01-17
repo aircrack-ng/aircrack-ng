@@ -5186,11 +5186,6 @@ int main( int argc, char *argv[] )
 
     fd_set             rfds;
 
-    pthread_mutex_init( &(G.mx_print), NULL );
-    pthread_mutex_init( &(G.mx_sort), NULL );
-
-    textstyle(TEXT_RESET);//(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
-
     static struct option long_options[] = {
         {"band",     1, 0, 'b'},
         {"beacon",   0, 0, 'e'},
@@ -5213,8 +5208,13 @@ int main( int argc, char *argv[] )
         {0,          0, 0,  0 }
     };
 
-    /* initialize a bunch of variables */
 
+	pthread_mutex_init( &(G.mx_print), NULL );
+    pthread_mutex_init( &(G.mx_sort), NULL );
+
+    textstyle(TEXT_RESET);//(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
+
+	/* initialize a bunch of variables */
 
 	srand( time( NULL ) );
     memset( &G, 0, sizeof( G ) );
