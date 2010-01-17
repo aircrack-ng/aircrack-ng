@@ -1,0 +1,33 @@
+PaulFertser> Get _your_ country code from regd.h, add 32768 and supply as a parameter.
+fercerpav@gmail.com
+--- linux-2.6.32-gentoo-r1-orig/drivers/net/wireless/ath/ath5k/base.c	2009-12-03 06:51:21.000000000 +0300
++++ linux-2.6.32-gentoo-r1/drivers/net/wireless/ath/ath5k/base.c	2010-01-16 00:02:51.000000000 +0300
+@@ -68,6 +68,11 @@
+ module_param_named(all_channels, modparam_all_channels, bool, S_IRUGO);
+ MODULE_PARM_DESC(all_channels, "Expose all channels the device can use.");
+ 
++static int modparam_override_eeprom_regdomain = -1;
++module_param_named(override_eeprom_regdomain, 
++			modparam_override_eeprom_regdomain, int, S_IRUGO);
++MODULE_PARM_DESC(override_eeprom_regdomain, "Override regdomain hardcoded in EEPROM with this value (DANGEROUS).");
++
+ 
+ /******************\
+ * Internal defines *
+@@ -572,6 +577,15 @@
+ 		goto err_irq;
+ 	}
+ 
++	if (modparam_override_eeprom_regdomain != -1) {
++		ATH5K_ERR(sc, "DANGER! You're overriding EEPROM-defined regulatory domain.\n");
++		ATH5K_ERR(sc, "Your card was not certified to operate on the domain you choosed.\n");
++		ATH5K_ERR(sc, "This might result in a violation of your local regulatory rules.\n");
++		ATH5K_ERR(sc, "Do not ever do that unless you really know what you do!\n");
++		sc->ah->ah_capabilities.cap_eeprom.ee_regdomain =
++			modparam_override_eeprom_regdomain;
++	}
++
+ 	/* set up multi-rate retry capabilities */
+ 	if (sc->ah->ah_version == AR5K_AR5212) {
+ 		hw->max_rates = 4;
+

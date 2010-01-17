@@ -1,0 +1,31 @@
+PaulFertser> Get _your_ country code from regd.h, add 32768 and supply as a parameter.
+fercerpav@gmail.com
+--- linux-2.6.32-gentoo-r1-orig/drivers/net/wireless/ath/ath9k/main.c	2009-12-03 06:51:21.000000000 +0300
++++ linux-2.6.32-gentoo-r1/drivers/net/wireless/ath/ath9k/main.c	2010-01-16 02:04:00.000000000 +0300
+@@ -28,6 +28,11 @@
+ module_param_named(nohwcrypt, modparam_nohwcrypt, int, 0444);
+ MODULE_PARM_DESC(nohwcrypt, "Disable hardware encryption");
+ 
++static int modparam_override_eeprom_regdomain = -1;
++module_param_named(override_eeprom_regdomain, 
++			modparam_override_eeprom_regdomain, int, S_IRUGO);
++MODULE_PARM_DESC(override_eeprom_regdomain, "Override regdomain hardcoded in EEPROM with this value (DANGEROUS).");
++
+ /* We use the hw_value as an index into our private channel structure */
+ 
+ #define CHAN2G(_freq, _idx)  { \
+@@ -1588,6 +1593,14 @@
+ 	if (error != 0)
+ 		return error;
+ 
++	if (modparam_override_eeprom_regdomain != -1) {
++		printk(KERN_ERR "ath9k: DANGER! You're overriding EEPROM-defined regulatory domain.\n");
++		printk(KERN_ERR "ath9k: Your card was not certified to operate on the domain you choosed.\n");
++		printk(KERN_ERR "ath9k: This might result in a violation of your local regulatory rules.\n");
++		printk(KERN_ERR "ath9k: Do not ever do that unless you really know what you do!\n");
++		sc->common.regulatory.current_rd = modparam_override_eeprom_regdomain;
++	}
++
+ 	/* get mac address from hardware and set in mac80211 */
+ 
+ 	SET_IEEE80211_PERM_ADDR(hw, sc->sc_ah->macaddr);

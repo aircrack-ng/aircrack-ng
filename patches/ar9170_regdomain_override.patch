@@ -1,0 +1,31 @@
+PaulFertser> Get _your_ country code from regd.h, add 32768 and supply as a parameter.
+fercerpav@gmail.com
+--- linux-2.6.32-gentoo-r1-orig/drivers/net/wireless/ath/ar9170/main.c	2009-12-03 06:51:21.000000000 +0300
++++ linux-2.6.32-gentoo-r1/drivers/net/wireless/ath/ar9170/main.c	2010-01-16 02:20:36.000000000 +0300
+@@ -53,6 +53,11 @@
+ module_param_named(ht, modparam_ht, bool, S_IRUGO);
+ MODULE_PARM_DESC(ht, "enable MPDU aggregation.");
+ 
++static int modparam_override_eeprom_regdomain = -1;
++module_param_named(override_eeprom_regdomain, 
++			modparam_override_eeprom_regdomain, int, S_IRUGO);
++MODULE_PARM_DESC(override_eeprom_regdomain, "Override regdomain hardcoded in EEPROM with this value (DANGEROUS).");
++
+ #define RATE(_bitrate, _hw_rate, _txpidx, _flags) {	\
+ 	.bitrate	= (_bitrate),			\
+ 	.flags		= (_flags),			\
+@@ -2687,6 +2692,14 @@
+ 	if (err)
+ 		goto err_out;
+ 
++	if (modparam_override_eeprom_regdomain != -1) {
++		dev_err(pdev, "DANGER! You're overriding EEPROM-defined regulatory domain.\n");
++		dev_err(pdev, "Your card was not certified to operate on the domain you choosed.\n");
++		dev_err(pdev, "This might result in a violation of your local regulatory rules.\n");
++		dev_err(pdev, "Do not ever do that unless you really know what you do!\n");
++		regulatory->current_rd = modparam_override_eeprom_regdomain;
++	}
++
+ 	err = ath_regd_init(regulatory, ar->hw->wiphy,
+ 			    ar9170_reg_notifier);
+ 	if (err)
