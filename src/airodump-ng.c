@@ -181,14 +181,14 @@ int mygetch( ) {
 #define KEY_s		0x73	//cycle through sorting
 
 void input_thread( void *arg) {
-    
+
     if(!arg){}
-    
+
     while( G.do_exit == 0 ) {
 	int keycode=0;
-	
+
 	keycode=mygetch();
-	
+
 //	snprintf(G.message, sizeof(G.message), "][ Key: %i ", in);
         snprintf(G.message, sizeof(G.message), "][ Key: %3d decimal, 0x%02x hex", keycode, (unsigned char)keycode);
 //        if (isprint(keycode)) {
@@ -203,7 +203,7 @@ void input_thread( void *arg) {
 
 	    if(G.sort_by > MAX_SORT)
 		G.sort_by = 0;
-	    
+
 	    switch(G.sort_by) {
 		case SORT_BY_NOTHING:
 		    snprintf(G.message, sizeof(G.message), "][ sorting by first seen");
@@ -248,12 +248,12 @@ void input_thread( void *arg) {
 		dump_sort();
 	    pthread_mutex_unlock( &(G.mx_sort) );
 	}
-	    
+
 	if(keycode == KEY_q) {
 	    G.do_exit=1;
 	    snprintf(G.message, sizeof(G.message), "][ shutting down...");
 	}
-	
+
 	if(keycode == KEY_SPACE) {
 	    G.do_pause = (G.do_pause+1)%2;
 	    if(G.do_pause) {
@@ -264,7 +264,7 @@ void input_thread( void *arg) {
 		    dump_print( G.ws.ws_row, G.ws.ws_col, G.num_cards );
 		    fprintf( stderr, "\33[J" );
 		    fflush(stderr);
-		    
+
 		pthread_mutex_unlock( &(G.mx_print) );
 	    }
 	    else
@@ -282,7 +282,7 @@ void input_thread( void *arg) {
 	if(keycode == KEY_m) {
 	    G.mark_cur_ap = 1;
 	}
-	
+
 	if(keycode == KEY_ARROW_DOWN) {
 	    if(G.selection_ap == 1) {
 		G.selected_ap++;
@@ -291,7 +291,7 @@ void input_thread( void *arg) {
 		G.selected_sta++;
 	    }
 	}
-	
+
 	if(keycode == KEY_ARROW_UP) {
 	    if(G.selection_ap == 1) {
 		G.selected_ap--;
@@ -304,7 +304,7 @@ void input_thread( void *arg) {
 		    G.selected_sta = 1;
 	    }
 	}
-	
+
 	if(keycode == KEY_i) {
 	    G.sort_inv*=-1;
 	    if(G.sort_inv < 0)
@@ -312,7 +312,7 @@ void input_thread( void *arg) {
 	    else
 		snprintf(G.message, sizeof(G.message), "][ normal sorting order");
 	}
-	
+
 	if(keycode == KEY_TAB) {
 	    if(G.selection_ap == 0) {
 		G.selection_ap = 1;
@@ -1248,7 +1248,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
 
 	ap_cur->marked = 0;
 	ap_cur->marked_color = 1;
-	
+
         ap_cur->data_root = NULL;
         ap_cur->EAP_detected = 0;
         memcpy(ap_cur->gps_loc_min, G.gps_loc, sizeof(float)*5);
@@ -2686,7 +2686,7 @@ int get_ap_list_count() {
     time_t tt;
     struct tm *lt;
     struct AP_info *ap_cur;
-    
+
     int num_ap;
 
     tt = time( NULL );
@@ -2717,7 +2717,7 @@ int get_ap_list_count() {
 	num_ap++;
 	ap_cur = ap_cur->prev;
     }
-    
+
     return num_ap;
 }
 
@@ -2726,16 +2726,16 @@ int get_sta_list_count() {
     struct tm *lt;
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
-    
+
     int num_sta;
 
     tt = time( NULL );
     lt = localtime( &tt );
-    
+
     ap_cur = G.ap_end;
 
     num_sta = 0;
-    
+
     while( ap_cur != NULL )
     {
         if( ap_cur->nb_pkt < 2 ||
@@ -2792,7 +2792,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     int columns_ap = 83;
     int columns_sta = 74;
     int columns_na = 68;
-    
+
     int num_ap;
     int num_sta;
 
@@ -2802,13 +2802,13 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
     if( nlines >= ws_row )
         return;
-    
+
     if(G.do_sort_always) {
 	pthread_mutex_lock( &(G.mx_sort) );
 	    dump_sort();
 	pthread_mutex_unlock( &(G.mx_sort) );
     }
-    
+
     tt = time( NULL );
     lt = localtime( &tt );
 
@@ -2960,8 +2960,8 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		G.start_print_ap = 1;
     //	printf("%i\n", G.start_print_ap);
 	}
-	
-	
+
+
 	while( ap_cur != NULL )
 	{
 	    /* skip APs with only one packet, or those older than 2 min.
@@ -2986,7 +2986,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		ap_cur = ap_cur->prev;
 		continue;
 	    }
-	    
+
 	    nlines++;
 
 	    if( nlines > (ws_row-1) )
@@ -3124,7 +3124,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	strbuf[ws_col - 1] = '\0';
 	fprintf( stderr, "%s\n", strbuf );
     }
-    
+
     if(G.show_sta) {
 	memcpy( strbuf, " BSSID              STATION "
 		"           PWR   Rate    Lost  Packets  Probes", columns_sta );
@@ -3138,7 +3138,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	ap_cur = G.ap_end;
 
 	num_sta = 0;
-	
+
 	while( ap_cur != NULL )
 	{
 	    if( ap_cur->nb_pkt < 2 ||
@@ -3166,7 +3166,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	    if(ap_cur->marked) {
 		textcolor_fg(ap_cur->marked_color);
 	    }
-	    
+
 	    while( st_cur != NULL )
 	    {
 		if( st_cur->base != ap_cur ||
@@ -3186,7 +3186,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
 		if(G.start_print_sta > num_sta)
 		    continue;
-		
+
 		nlines++;
 
 		if( ws_row != 0 && nlines >= ws_row )
@@ -3251,7 +3251,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	    ap_cur = ap_cur->prev;
 	}
     }
-    
+
     if(G.show_ack)
     {
         /* print some informations about each unknown station */
@@ -5162,9 +5162,6 @@ int main( int argc, char *argv[] )
     struct NA_info *na_cur, *na_next;
     struct oui *oui_cur, *oui_next;
 
-    pthread_mutex_init( &(G.mx_print), NULL );
-    pthread_mutex_init( &(G.mx_sort), NULL );
-
     struct pcap_pkthdr pkh;
 
     time_t tt1, tt2, tt3, start_time;
@@ -5188,6 +5185,9 @@ int main( int argc, char *argv[] )
     */
 
     fd_set             rfds;
+
+    pthread_mutex_init( &(G.mx_print), NULL );
+    pthread_mutex_init( &(G.mx_sort), NULL );
 
     textstyle(TEXT_RESET);//(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
@@ -5278,7 +5278,7 @@ int main( int argc, char *argv[] )
 
     G.sort_by = SORT_BY_POWER;
     G.sort_inv = 1;
-    
+
     G.start_print_ap=1;
     G.start_print_sta=1;
     G.selected_ap=1;
@@ -5290,7 +5290,7 @@ int main( int argc, char *argv[] )
     G.do_pause=0;
     G.do_sort_always=0;
     memset(G.selected_bssid, '\x00', 6);
-    
+
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
     memset(&G.pfh_in, '\x00', sizeof(struct pcap_file_header));
@@ -5960,7 +5960,7 @@ usage:
     strncpy(G.airodump_start_time, ctime( & start_time ), 1000 - 1);
     G.airodump_start_time[strlen(G.airodump_start_time) - 1] = 0; // remove new line
     G.airodump_start_time = (char *) realloc( G.airodump_start_time, sizeof(char) * (strlen(G.airodump_start_time) + 1) );
-        
+
     if( pthread_create( &(G.input_tid), NULL, (void *) input_thread, NULL ) != 0 )
     {
 	perror( "pthread_create failed" );
