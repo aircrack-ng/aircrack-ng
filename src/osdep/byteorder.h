@@ -112,23 +112,47 @@
 	 * MAC (Darwin)
 	 */
 	#if defined(__APPLE_CC__)
-		#include <architecture/byte_order.h>
+		#if defined(__x86_64__) && defined(__APPLE__)
 
-		#define __swab64(x)      NXSwapLongLong(x)
-		#define __swab32(x)      NXSwapLong(x)
-		#define __swab16(x)      NXSwapShort(x)
-		#define __be64_to_cpu(x) NXSwapBigLongLongToHost(x)
-		#define __be32_to_cpu(x) NXSwapBigLongToHost(x)
-		#define __be16_to_cpu(x) NXSwapBigShortToHost(x)
-		#define __le64_to_cpu(x) NXSwapLittleLongLongToHost(x)
-		#define __le32_to_cpu(x) NXSwapLittleLongToHost(x)
-		#define __le16_to_cpu(x) NXSwapLittleShortToHost(x)
-		#define __cpu_to_be64(x) NXSwapHostLongLongToBig(x)
-		#define __cpu_to_be32(x) NXSwapHostLongToBig(x)
-		#define __cpu_to_be16(x) NXSwapHostShortToBig(x)
-		#define __cpu_to_le64(x) NXSwapHostLongLongToLittle(x)
-		#define __cpu_to_le32(x) NXSwapHostLongToLittle(x)
-		#define __cpu_to_le16(x) NXSwapHostShortToLittle(x)
+			#include <libkern/OSByteOrder.h>
+
+			#define __swab64(x)      (unsigned long long) OSSwapInt64((uint64_t)x)
+			#define __swab32(x)      (unsigned long) OSSwapInt32((uint32_t)x)
+			#define __swab16(x)      (unsigned short) OSSwapInt16((uint16_t)x)
+			#define __be64_to_cpu(x) (unsigned long long) OSSwapBigToHostInt64((uint64_t)x)
+			#define __be32_to_cpu(x) (unsigned long) OSSwapBigToHostInt32((uint32_t)x)
+			#define __be16_to_cpu(x) (unsigned short) OSSwapBigToHostInt16((uint16_t)x)
+			#define __le64_to_cpu(x) (unsigned long long) OSSwapLittleToHostInt64((uint64_t)x)
+			#define __le32_to_cpu(x) (unsigned long) OSSwapLittleToHostInt32((uint32_t)x)
+			#define __le16_to_cpu(x) (unsigned short) OSSwapLittleToHostInt16((uint16_t)x)
+			#define __cpu_to_be64(x) (unsigned long long) OSSwapHostToBigInt64((uint64_t)x)
+			#define __cpu_to_be32(x) (unsigned long) OSSwapHostToBigInt32((uint32_t)x)
+			#define __cpu_to_be16(x) (unsigned short) OSSwapHostToBigInt16((uint16_t)x)
+			#define __cpu_to_le64(x) (unsigned long long) OSSwapHostToLittleInt64((uint64_t)x)
+			#define __cpu_to_le32(x) (unsigned long) OSSwapHostToLittleInt32((uint32_t)x)
+			#define __cpu_to_le16(x) (unsigned short) OSSwapHostToLittleInt16((uint16_t)x)
+
+		#else
+
+			#include <architecture/byte_order.h>
+
+			#define __swab64(x)      NXSwapLongLong(x)
+			#define __swab32(x)      NXSwapLong(x)
+			#define __swab16(x)      NXSwapShort(x)
+			#define __be64_to_cpu(x) NXSwapBigLongLongToHost(x)
+			#define __be32_to_cpu(x) NXSwapBigLongToHost(x)
+			#define __be16_to_cpu(x) NXSwapBigShortToHost(x)
+			#define __le64_to_cpu(x) NXSwapLittleLongLongToHost(x)
+			#define __le32_to_cpu(x) NXSwapLittleLongToHost(x)
+			#define __le16_to_cpu(x) NXSwapLittleShortToHost(x)
+			#define __cpu_to_be64(x) NXSwapHostLongLongToBig(x)
+			#define __cpu_to_be32(x) NXSwapHostLongToBig(x)
+			#define __cpu_to_be16(x) NXSwapHostShortToBig(x)
+			#define __cpu_to_le64(x) NXSwapHostLongLongToLittle(x)
+			#define __cpu_to_le32(x) NXSwapHostLongToLittle(x)
+			#define __cpu_to_le16(x) NXSwapHostShortToLittle(x)
+
+		#endif
 
 		#define __LITTLE_ENDIAN 1234
 		#define __BIG_ENDIAN    4321

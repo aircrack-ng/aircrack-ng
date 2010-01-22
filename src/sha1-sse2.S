@@ -7,6 +7,11 @@
 // sure the last input block is properly padded. Both 64-byte
 // input blocks must be (four bytes) interleaved.
 
+#if defined(__x86_64__) && defined(__APPLE__)
+#define MANGLE(x) x(%rip)
+#else
+#define MANGLE(x) x
+#endif
 
 #if defined(__i386__) || defined(__x86_64__)
 
@@ -137,13 +142,13 @@ const_00ff:
         paddd  tmp2, e;                         \
         movdqa   b, tmp2;                         \
         pslld  $30, b;                          \
-        paddd  k, e;							\
+        paddd  MANGLE(k), e;							\
         psrld  $2, tmp2;                        \
         por    tmp2, b;                         \
         movdqa   (data*16)(edx_rsi), tmp1;            \
         movdqa   tmp1, tmp2;                      \
-        pand   const_ff00, tmp1;                \
-        pand   const_00ff, tmp2;                \
+        pand   MANGLE(const_ff00), tmp1;                \
+        pand   MANGLE(const_00ff), tmp2;                \
         psrld  $8, tmp1;                        \
         pslld  $8, tmp2;                        \
         por    tmp2, tmp1;                      \
@@ -176,7 +181,7 @@ const_00ff:
         paddd  tmp2, e;                         \
         movdqa   b, tmp2;                         \
         pslld  $30, b;                          \
-        paddd  k, e;                            \
+        paddd  MANGLE(k), e;                            \
         psrld  $2, tmp2;                        \
         por    tmp2, b;
  
@@ -187,11 +192,11 @@ const_00ff:
  shasse2_init:
 _shasse2_init:
 
-        movdqa   const_init_a, ctxa
-        movdqa   const_init_b, ctxb
-        movdqa   const_init_c, ctxc
-        movdqa   const_init_d, ctxd
-        movdqa   const_init_e, ctxe
+        movdqa   MANGLE(const_init_a), ctxa
+        movdqa   MANGLE(const_init_b), ctxb
+        movdqa   MANGLE(const_init_c), ctxc
+        movdqa   MANGLE(const_init_d), ctxd
+        movdqa   MANGLE(const_init_e), ctxe
 
         movdqa   ctxa, 0(eax_rdi)
         movdqa   ctxb, 16(eax_rdi)
@@ -213,12 +218,12 @@ _shasse2_ends:
         movdqa   48(eax_rdi), ctxd
         movdqa   64(eax_rdi), ctxe
 
-        movdqa   const_ff00, tmp3
+        movdqa   MANGLE(const_ff00), tmp3
         movdqa   ctxa, tmp1
         movdqa   ctxb, tmp2
         pand   tmp3, ctxa
         pand   tmp3, ctxb
-        movdqa   const_00ff, tmp3
+        movdqa   MANGLE(const_00ff), tmp3
         pand   tmp3, tmp1
         pand   tmp3, tmp2
         psrld  $8, ctxa
@@ -238,14 +243,14 @@ _shasse2_ends:
         movdqa   ctxa,  0(edx_rsi)
         movdqa   ctxb,  16(edx_rsi)
 
-        movdqa   const_ff00, tmp5
+        movdqa   MANGLE(const_ff00), tmp5
         movdqa   ctxc, tmp1
         movdqa   ctxd, tmp2
         movdqa   ctxe, tmp3
         pand   tmp5, ctxc
         pand   tmp5, ctxd
         pand   tmp5, ctxe
-        movdqa   const_00ff, tmp5
+        movdqa   MANGLE(const_00ff), tmp5
         pand   tmp5, tmp1
         pand   tmp5, tmp2
         pand   tmp5, tmp3
