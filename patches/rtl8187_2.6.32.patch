@@ -1,0 +1,115 @@
+diff -udpr rtl8187_linux_26.1010.0622.2006/beta-8187/r8187.h rtl8187_linux_26.1010.0622.2006_2.6.32/beta-8187/r8187.h
+--- rtl8187_linux_26.1010.0622.2006/beta-8187/r8187.h	2010-01-31 11:32:06.000000000 -0500
++++ rtl8187_linux_26.1010.0622.2006_2.6.32/beta-8187/r8187.h	2010-01-31 09:28:57.000000000 -0500
+@@ -43,12 +43,14 @@
+ #include <linux/if_arp.h>
+ #include <linux/random.h>
+ #include <linux/version.h>
+-#include <asm/io.h>
+-#include <asm/semaphore.h>
+ 
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
++#include <asm/io.h>
++#include <asm/semaphore.h>
+ #include <linux/config.h>
+ #else
++#include <linux/io.h>
++#include <linux/semaphore.h>
+ #include <linux/autoconf.h>
+ #endif
+ 
+diff -udpr rtl8187_linux_26.1010.0622.2006/beta-8187/r8187_core.c rtl8187_linux_26.1010.0622.2006_2.6.32/beta-8187/r8187_core.c
+--- rtl8187_linux_26.1010.0622.2006/beta-8187/r8187_core.c	2010-01-31 11:32:05.000000000 -0500
++++ rtl8187_linux_26.1010.0622.2006_2.6.32/beta-8187/r8187_core.c	2010-01-31 11:15:27.000000000 -0500
+@@ -1893,8 +1893,6 @@ short rtl8180_init(struct net_device *de
+ 		DMESG("Reported EEPROM chip is a 93c46 (1Kbit)");
+ 	}
+ 
+-	dev->get_stats = rtl8180_stats;
+-
+ 	dev->dev_addr[0]=eprom_read(dev,MAC_ADR) & 0xff;
+ 	dev->dev_addr[1]=(eprom_read(dev,MAC_ADR) & 0xff00)>>8;
+ 	dev->dev_addr[2]=eprom_read(dev,MAC_ADR+1) & 0xff;
+@@ -2597,6 +2595,19 @@ void rtl8180_irq_rx_tasklet(struct r8180
+      ---------------------------- USB_STUFF---------------------------
+ *****************************************************************************/
+ 
++#ifdef HAVE_NET_DEVICE_OPS
++static const struct net_device_ops rtl8180_netdev_ops = {
++    .ndo_open = rtl8180_open,
++    .ndo_stop = rtl8180_close,
++    .ndo_get_stats = rtl8180_stats,
++    .ndo_tx_timeout = tx_timeout,
++    .ndo_do_ioctl = rtl8180_ioctl,
++    .ndo_set_multicast_list = r8180_set_multicast,
++    .ndo_set_mac_address = r8180_set_mac_adr,
++    .ndo_start_xmit = ieee80211_xmit_rtl7,
++//    .ndo_start_xmit = ieee80211_xmit,
++};
++#endif
+ 
+ static int __devinit rtl8187_usb_probe(struct usb_interface *intf,
+ 			 const struct usb_device_id *id)
+@@ -2622,14 +2633,20 @@ static int __devinit rtl8187_usb_probe(s
+ 
+ 	priv->udev=udev;
+ 
++#ifdef HAVE_NET_DEVICE_OPS
++	dev->netdev_ops = &rtl8180_netdev_ops;
++#else
+ 	dev->open = rtl8180_open;
+ 	dev->stop = rtl8180_close;
++	dev->get_stats = rtl8180_stats;
+ 	//dev->hard_start_xmit = rtl8180_8023_hard_start_xmit;
+ 	dev->tx_timeout = tx_timeout;
+ 	dev->wireless_handlers = &r8180_wx_handlers_def;
+ 	dev->do_ioctl = rtl8180_ioctl;
+ 	dev->set_multicast_list = r8180_set_multicast;
+ 	dev->set_mac_address = r8180_set_mac_adr;
++#endif
++
+ #if WIRELESS_EXT >= 12
+ #if WIRELESS_EXT < 17
+ 	dev->get_wireless_stats = r8180_get_wireless_stats;
+diff -udpr rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_module.c rtl8187_linux_26.1010.0622.2006_2.6.32/ieee80211/ieee80211_module.c
+--- rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_module.c	2010-01-31 11:32:06.000000000 -0500
++++ rtl8187_linux_26.1010.0622.2006_2.6.32/ieee80211/ieee80211_module.c	2010-01-31 09:25:48.000000000 -0500
+@@ -117,8 +117,12 @@ struct net_device *alloc_ieee80211_rtl7(
+ 		IEEE80211_ERROR("Unable to network device.\n");
+ 		goto failed;
+ 	}
++
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,5,0) 
+ 	ieee = netdev_priv(dev);
+-	dev->hard_start_xmit = ieee80211_xmit_rtl7;
++#else
++	ieee = (struct ieee80211_device *)dev->priv;
++#endif
+ 
+ 	ieee->dev = dev;
+ 
+diff -udpr rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_rx.c rtl8187_linux_26.1010.0622.2006_2.6.32/ieee80211/ieee80211_rx.c
+--- rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_rx.c	2010-01-31 11:28:19.000000000 -0500
++++ rtl8187_linux_26.1010.0622.2006_2.6.32/ieee80211/ieee80211_rx.c	2010-01-31 11:49:16.000000000 -0500
+@@ -104,7 +104,12 @@ static inline void ieee80211_monitor_rx_
+ hdr->f.did = LWNG_CAP_DID_BASE | (i << 12); \
+ hdr->f.status = s; hdr->f.len = l; hdr->f.data = d
+ 		LWNG_SETVAL(hosttime, 1, 0, 4, jiffies);
+-		LWNG_SETVAL(mactime, 2, 0, 4, ((u32)rx_stats->mac_time));
++
++		hdr->mactime.did = LWNG_CAP_DID_BASE | (2 << 12);
++		hdr->mactime.status = 0;
++		hdr->mactime.len = 4;
++		hdr->mactime.data = rx_stats->mac_time[0];
++
+ 		LWNG_SETVAL(channel, 3, 1 /* no value */, 4, 0);
+ 		LWNG_SETVAL(rssi, 4, 1 /* no value */, 4, 0);
+ 		LWNG_SETVAL(sq, 5, 1 /* no value */, 4, 0);
+diff -udpr rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_tx.c rtl8187_linux_26.1010.0622.2006_2.6.32/ieee80211/ieee80211_tx.c
+--- rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_tx.c	2010-01-31 11:32:06.000000000 -0500
++++ rtl8187_linux_26.1010.0622.2006_2.6.32/ieee80211/ieee80211_tx.c	2010-01-31 11:17:55.000000000 -0500
+@@ -511,3 +511,4 @@ int ieee80211_xmit_rtl7(struct sk_buff *
+ }
+ 
+ EXPORT_SYMBOL(ieee80211_txb_free_rtl7);
++EXPORT_SYMBOL(ieee80211_xmit_rtl7);
