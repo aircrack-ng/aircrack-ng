@@ -77,3 +77,4 @@ mandir          = $(prefix)/man/man1
 datadir         = $(prefix)/share
 docdir          = $(datadir)/doc/aircrack-ng
 libdir		= $(prefix)/lib
+etcdir		= $(prefix)/etc/aircrack-ng 

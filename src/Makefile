@@ -222,8 +222,10 @@ uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/wesside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/easside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/airbase-ng$(EXE)
-	-rm -f $(DESTDIR)$(sbindir)/airuncloak-ng$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/makeivs-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/airdecloak-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/tkiptun-ng$(EXE)
+	-rm -rf $(DESTDIR)$(etcdir)
 
 check: aircrack-ng$(EXE)
 	./aircrack-ng$(EXE) -w $(TEST_DIR)/password.lst -a 2 -e Harkonen -q $(TEST_DIR)/wpa2.eapol.cap | grep 'KEY FOUND! \[ 12345678 \]' 
