@@ -1448,7 +1448,7 @@ static void decrypt(struct wstate *ws)
 
 	// guess diff prga byte...
 	if (ws->ws_dfs.fs_waiting_relay) {
-		unsigned short* seq;
+		unsigned short seq;
 		ws->ws_dpi.pi_prga[ws->ws_dpi.pi_len-1]++;
 
 		ws->ws_dfs.fs_wh.i_addr3[5] =
@@ -1457,8 +1457,11 @@ static void decrypt(struct wstate *ws)
 		ws->ws_dfs.fs_waiting_relay = 0;
 		ws->ws_dfs.fs_ptr = ws->ws_dfs.fs_data;
 
-		seq = (unsigned short*) &ws->ws_dfs.fs_wh.i_seq;
-		*seq = fnseq(0, ws->ws_psent);
+		seq = fnseq(0, ws->ws_psent);
+		ws->ws_dfs.fs_wh.i_seq[0] = (u_int8_t)(seq >> 8);
+		ws->ws_dfs.fs_wh.i_seq[1] = (u_int8_t)(seq % 256);
+		//seq = (unsigned short*) &ws->ws_dfs.fs_wh.i_seq;
+		//*seq = fnseq(0, ws->ws_psent);
 	}
 
 	send_fragment(ws, &ws->ws_dfs,
