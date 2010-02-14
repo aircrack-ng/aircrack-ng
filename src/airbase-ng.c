@@ -4013,6 +4013,11 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
 
+                if (opt.setWEP == -1)
+                {
+					opt.setWEP = 1;
+				}
+
                 break;
 
             case 'Z' :
@@ -4024,6 +4029,11 @@ int main( int argc, char *argv[] )
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
+
+				if (opt.setWEP == -1)
+                {
+					opt.setWEP = 1;
+				}
 
                 break;
 
