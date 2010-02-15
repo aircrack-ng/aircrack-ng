@@ -1,3 +1,22 @@
+Version 1.1 (changes from aircrack-ng 1.0) - Released ?? ??? 2010:
+* airodump-ng: Added interaction (see wiki for the commands).
+* osdep: Strict aliasing and x86_64 fix.
+* osdep: Add tap support for Darwin/OS X. Still require tuntaposx from sourceforge to work.
+* All: Fixed compilation on cygwin 1.7.
+* All: Fixed compilation on recent version of OSX.
+* airtun-ng: Add WDS and bridge support.
+* patches: Added 2.6.32 patch for r8187 driver (ieee80211).
+* airbase-ng: automatically set privacy bit to 1 if WPA or WPA2 is used (-Z or -z option).
+* airodump-ng: Fixed client time in netxml file.
+* airmon-ng: Updated iw URL for v0.9.19.
+* airdriver-ng: Fixed link for madwifi-ng.
+* cygwin: Compiling sqlite isn't necessary anymore, libsqlite3-devel package can be used.
+* aireplay-ng: Chopchop enhancement to not stop but wait on deauth packets.
+* patches: Added regulatory domains override patches for atheros drivers (ath5k, ath9k and ar9170).
+* Makefiles: Fixed make uninstall.
+* manpages: Fixed aireplay-ng manpage for attack 0: not disassociation packets, deauth packets.
+* wesside-ng: Fixed compilation bug with recent version of gcc.
+
 Version 1.0 (changes from aircrack-ng 1.0-rc4) - Released 08 September 2009:
 * airserv-ng: Now works fine between 32 and 64bit OSes.
 * wesside-ng: Fixed some endianness bugs
