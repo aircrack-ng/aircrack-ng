@@ -2101,7 +2101,6 @@ void check_thread( void *arg )
 
 		skip_station:
 
-		if (st_cur == NULL)
 		/* packet parsing: Beacon or Probe Response */
 
 		if( h80211[0] == 0x80 ||
