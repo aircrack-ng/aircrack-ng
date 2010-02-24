@@ -1362,7 +1362,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
 
             /* FromDS packet, reject broadcast MACs */
 
-            if( h80211[4] != 0 ) goto skip_station;
+            if( (h80211[4]%2) != 0 ) goto skip_station;
             memcpy( stmac, h80211 +  4, 6 ); break;
 
         default: goto skip_station;
