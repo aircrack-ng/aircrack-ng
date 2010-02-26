@@ -1,0 +1,50 @@
+#[comments]
+#All lines in this file are commented out
+# The # symbol at the front of a line denotes a commented line
+#airdrop-ng.py rule configuration file
+#a is allow
+#d is deny
+#format is (a or d)/bssid|(any or client mac or list of client macs in format of mac1,mac2,mac3)
+
+#it is not wise to mix rule types for example
+#d/any|00:17:AB:5C:DE:3A,00:1B:63:00:60:C4,apple
+#While i may work i have no idea result it will have and at this time is not recomended
+
+#EX d/bssid|mac1,mac2  #note this is not a valid rule just shows format the / and | placement do matter
+
+#MORE EXAMPLE RULES
+#d/00:1F:90:CA:0B:74|00:18:41:75:8E:4B
+#deny rule with a single client
+
+#d/any|00:21:E9:3D:EB:45,00:17:AB:5C:DE:3A,00:1B:63:00:60:C4
+#a deny rule for several clients on any AP
+
+#d/any|any
+#a global deny any any rule
+
+#A/00:17:3F:3A:F0:7E|00:21:E9:3D:EB:45,00:17:AB:5C:DE:3A,00:1B:63:00:60:C4
+#an allow rule with multiple clients
+
+#D/00-1E-58-00-FF-5E|00:19:7E:9A:66:96
+#another deny rule with a differnt mac format
+
+#d/12:02:DC:02:10:00|any
+#a bssid deny any client rule
+
+#a/any|any
+#a global allow, no idea why you would wanna use this ;)
+
+#oui examples
+
+#d/any|Apple, Inc;APPLE COMPUTER;APPLE COMPUTER, INC.;Apple Computer Inc.;APPLE COMPUTER INC.;APPLE, INC
+#d/any|apple
+
+#d/action|broadcom #kicks only broadcom devices off actiontech routers
+
+#d/00:1F:3C|any #kicks all clients that match that oui
+
+#d/action|00:1F:3C kick any clinets off an actiontec router that match the oui
+
+#d/action|00:21:E9:3D:EB:45,00:17:AB:5C:DE:3A,00:1B:63:00:60:C4 #kick the following clients off an any actiontech router
+
+#d/00:17:3F:3A:F0:7E|apple kick any apple device off that ap

@@ -1,0 +1,43 @@
+.TH AIRDROP-NG 1
+.SH NAME
+airdrop-ng - A rule based wireless deauth tool
+.SH SYNOPSIS
+.B airdrop-ng 
+[-i <card> -t <data> -r <rules>] -d <driver> -s <sleep> -p -b -u
+.SH DESCRIPTION
+.BI airdrop-ng
+is a program used for targeted, rule-based deauthentication of users. It can target based on MAC address, type of hardware, (by using an OUI lookup, IE, "APPLE" devices) or completely deauthenticate ALL users. lorcon and pylorcon are used in the transmission of the deauth packets.
+.SH OPTIONS
+.TP
+.I -d <driver> , --driver <driver>
+Driver for injection. Supported drivers are:
+.br
+wlan-ng, hostap, airjack, prism54, madwifing, madwifiold, rtl8180, rt2570, rt2500, rt73, rt61, zd1211rw, bcm43xx, mac80211 . The default is mac80211. 
+.TP
+.I -i <card> , --interface <card>
+Interface of the card for injection. IE, -i mon0 
+.TP
+.I -l , --logging
+Enable logging to a file. If a file path is not provided, airdrop-ng will log to default location. 
+.TP
+.I -r <rules> , --rule <rules>
+This is what seperates airdrop-ng from other deauthentication applications. You can specify what users you want to kick off, based on MAC address, OUI, or completely kick everyone off. Multiple rules can be set. See dropRules.conf in the testing/ directory, or the README included with the installer. 
+.TP
+.I -s <sleep> , --sleep <sleep>
+Time to sleep before sending next set of packets. 
+.TP
+.I -t <data> , --dump <data>
+Path to the txt file in .CSV format from airodump-ng
+.TP
+.I -u , --update
+Updates OUI list and to latest version of airdrop-ng. 
+.SH AUTHOR
+The application aircrack-ng was written by TheX1le, and King_Tuna.
+.br
+This manual page was written by Ronnie Tokazowski <marfi[at]net-sploit.org> for Linux. 
+.br
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+.SH SEE ALSO
+.br
+.B lorcon(3)
+

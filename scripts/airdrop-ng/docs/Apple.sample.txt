@@ -1,0 +1,16 @@
+#direct string lookup
+#strings were grep'd from the oui Txt file
+Apple Computer
+Apple Computer Inc
+Apple Computer Inc.
+Apple Computer, Inc.
+Apple Inc
+Apple, Inc
+Apple, Inc.
+APPLE COMPUTER
+APPLE COMPUTER INC.
+APPLE COMPUTER, INC.
+APPLE, INC
+#regex lookup
+apple 
+#this will return the same ouis as the strings above
