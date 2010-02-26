@@ -49,6 +49,8 @@ If pylorcon reports import errors you need to run the following command:
 This will create a symlink to the directory that pylorcon looks in for 
 liborcon.
 
+If you are on ubuntu you will also need to install the python-dev 
+package as they do not include the headers
 #####################################################
 
 # Usage and Options #
