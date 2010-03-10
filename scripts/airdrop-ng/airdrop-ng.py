@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #part of project lemonwedge
 __author__	= "TheX1le & King_Tuna"
-__version__ = "2010.2.26.2.00.00"
+__version__ = "2010.3.20.14.46.00"
 __licence__ = "GPL2"
 """
 Airdrop-ng A rule based wireless deauth tool
@@ -394,7 +394,7 @@ class ruleMatch:
 		set global class values one at a time
 		then call matcher
 		"""
-		for num in range(1,len(self.rulesDB)+1):
+		for num in sorted(self.rulesDB.keys()):
 			#make sure the rules are called in order
 			#it stops iterating at one less then we need so add +1
 			if type(self.rulesDB[num]).__name__ == "list":
@@ -816,7 +816,7 @@ class getTargets():
 		"""
 		self.targets = self.dataParse()
 
-def lorconTX(pktNum=5,packet=None, channel=1 ,sleept=0):
+def lorconTX(pktNum=5,packet=None, channel=1 ,slept=0):
 	"""
 	Uses lorcon to send the actual packets
 	"""
@@ -842,11 +842,11 @@ def lorconTX(pktNum=5,packet=None, channel=1 ,sleept=0):
 			sys.exit(-1)
 		count += 1
 	else:
-        	if sleept > 0:
-               		sleep(sleept)
+        	if slept > 0:
+               		sleep(slept)
 	return
 
-def makeMagic(targets,sleept = 0):
+def makeMagic(targets,slept = 0):
 	"""
 	function where the targes are looped though 
 	and packets are sent to them
@@ -870,7 +870,7 @@ def makeMagic(targets,sleept = 0):
 			packetQue[0][0], #packet in hex
 			int(packetQue[0][1]) #channel to tx the packet on
 			)
-		sleep(sleept)
+		sleep(slept)
 		del packetQue[0] #remove the sent packet from the que
 	message.printMessage(
 		"\nSent "+str(numPackets)+" packets "+str(packetCount)+" times each")
@@ -899,7 +899,7 @@ def firstLoad():
 				"driver":"mac80211",			#driver of the card we inject with
 				"adlog":os.getcwd()+"/log/airodump.log",#logfile to parse to decide on kick types
 				"rules":os.getcwd()+"/support/",	#the drop rules
-				"sleept":"0"					#sleep time between packet tx's
+				"slept":"0"					#sleep time between each packet tx's
 				}
 			}
 	
@@ -962,9 +962,10 @@ if __name__ == "__main__":
 				nargs=1,
 				help="Injection driver. Default is mac80211, Possible options are "+str(driverList),
 				)
-	parser.add_option("-s", "--sleep",dest="sleept",default=0,nargs=1,help="Time to sleep between sending next group of packets")
+	parser.add_option("-s", "--sleep",dest="slept",default=0,nargs=1,type="int",help="Time to sleep between sending each packet")
 	parser.add_option("-b", "--debug",dest="debug",action="store_true",default=False,help="Turn on Rule Debugging")
 	parser.add_option("-l", "--logging",dest="log",action="store_true",default=False,help="Enable Logging to a file, if file path not provided airdrop will log to default location")
+	parser.add_option("-n", "--nap",dest="nap",default=1,type="int",nargs=1,help="Time to sleep between loops")
 
 	if len(sys.argv) <= 1: #check and show help if no arugments are provided at runtime
 				parser.print_help()
@@ -1053,9 +1054,9 @@ if __name__ == "__main__":
 		while True:
 				Targeting.run()	
 				if Targeting.targets != None:
-					TotalPacket += makeMagic(Targeting.targets,int(options.sleept))
+					TotalPacket += makeMagic(Targeting.targets,int(options.slept))
 					message.printMessage("Waiting 1 sec in between loops\n")
-					sleep(1)
+					sleep(int(options.nap))
 
 	except (KeyboardInterrupt, SystemExit):
 		message.printMessage(["\nAirdrop-ng will now exit","Sent "+str(TotalPacket)+" Packets",
