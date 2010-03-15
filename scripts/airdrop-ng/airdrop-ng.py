@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #part of project lemonwedge
 __author__	= "TheX1le & King_Tuna"
-__version__ = "2010.3.20.14.46.00"
+__version__ = "2010.2.26.2.00.00"
 __licence__ = "GPL2"
 """
 Airdrop-ng A rule based wireless deauth tool
@@ -945,7 +945,7 @@ if __name__ == "__main__":
 	
 	driverList = ['wlan-ng','hostap','airjack','prism54','madwifing','madwifiold',
 		'rtl8180','rt2570','rt2500','rt73','rt61','zd1211rw','bcm43xx','mac80211']
-	parser = optparse.OptionParser("usage: %prog options [-i,-t,-r] -d -s -p -b ")  #
+	parser = optparse.OptionParser("usage: %prog options [-i,-t,-r] -d -s -p -b -n")  #
 	parser.add_option("-i", "--interface",  dest="card",nargs=1, 
 				help="Wireless card in monitor mode to inject from")
 	parser.add_option("-t", "--dump", dest="data", nargs=1 ,
@@ -965,7 +965,7 @@ if __name__ == "__main__":
 	parser.add_option("-s", "--sleep",dest="slept",default=0,nargs=1,type="int",help="Time to sleep between sending each packet")
 	parser.add_option("-b", "--debug",dest="debug",action="store_true",default=False,help="Turn on Rule Debugging")
 	parser.add_option("-l", "--logging",dest="log",action="store_true",default=False,help="Enable Logging to a file, if file path not provided airdrop will log to default location")
-	parser.add_option("-n", "--nap",dest="nap",default=1,type="int",nargs=1,help="Time to sleep between loops")
+	parser.add_option("-n", "--nap",dest="nap",default=0,nargs=1,help="Time to sleep between loops")
 
 	if len(sys.argv) <= 1: #check and show help if no arugments are provided at runtime
 				parser.print_help()
@@ -1043,6 +1043,7 @@ if __name__ == "__main__":
 					ouiLookup = libOuiParse.macOUI_lookup("/usr/lib/airdrop-ng/oui.txt")
 			except IOError:
 				message.printError(["oui.txt not found in /usr/lib/airdrop-ng","or ./support/"])
+				message.printError("Please run python airdrop-ng -u")
 				sys.exit(-1)
 
 		except ImportError,e:
@@ -1055,8 +1056,8 @@ if __name__ == "__main__":
 				Targeting.run()	
 				if Targeting.targets != None:
 					TotalPacket += makeMagic(Targeting.targets,int(options.slept))
-					message.printMessage("Waiting 1 sec in between loops\n")
-					sleep(int(options.nap))
+					message.printMessage("Waiting "+str(options.nap)+" sec in between loops\n")
+					sleep(float(options.nap))
 
 	except (KeyboardInterrupt, SystemExit):
 		message.printMessage(["\nAirdrop-ng will now exit","Sent "+str(TotalPacket)+" Packets",
