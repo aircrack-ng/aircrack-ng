@@ -11,7 +11,7 @@ if geteuid() != 0:
 yno = raw_input ("You shouldn't need this. Remove? (y/n): ")
 if yno == "y":
 	print "Removing man entry and airdrop-ng..."
-	system ("sudo rm /usr/share/man/man1/airdrop-ng.1.gz")
+	system ("sudo rm /usr/share/man/man1/airdrop-ng.1")
 	system ("sudo rm /usr/bin/airdrop-ng")
 	system ("sudo rm -r /usr/lib/airdrop-ng")
 else:
