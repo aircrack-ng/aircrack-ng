@@ -4402,7 +4402,8 @@ usage:
 
     /* Chop the packet down, get a keystream+plaintext, calculate the MIC Key */
 
-    do_attack_tkipchop(h80211, caplen);
+    if (do_attack_tkipchop(h80211, caplen) == 1)
+	return( 1 );
 
     /* derive IPs and MACs; relays on QoS, ARP and fromDS packet */
     if(opt.chopped_from_plain != NULL)
