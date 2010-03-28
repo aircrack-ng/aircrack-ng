@@ -934,6 +934,12 @@ usage:
                 st_cur->eapol_size = ( h80211[z + 2] << 8 )
                                    +   h80211[z + 3] + 4;
 
+                if ((int)pkh.len - z < st_cur->eapol_size )
+                {
+                	// Ignore the packet trying to crash us.
+                	continue;
+                }
+
                 memcpy( st_cur->keymic, &h80211[z + 81], 16 );
                 memcpy( st_cur->eapol, &h80211[z], st_cur->eapol_size );
                 memset( st_cur->eapol + 81, 0, 16 );
@@ -961,6 +967,12 @@ usage:
 
                 st_cur->eapol_size = ( h80211[z + 2] << 8 )
                                    +   h80211[z + 3] + 4;
+
+                if ((int)pkh.len - z < st_cur->eapol_size )
+				{
+					// Ignore the packet trying to crash us.
+					continue;
+				}
 
                 memcpy( st_cur->keymic, &h80211[z + 81], 16 );
                 memcpy( st_cur->eapol, &h80211[z], st_cur->eapol_size );

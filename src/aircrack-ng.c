@@ -1533,6 +1533,12 @@ void read_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				{
+					// Ignore the packet trying to crash us.
+					continue;
+				}
+
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
 				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
 				memset( st_cur->wpa.eapol + 81, 0, 16 );
@@ -1567,6 +1573,12 @@ void read_thread( void *arg )
 
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
+
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				{
+					// Ignore the packet trying to crash us.
+					continue;
+				}
 
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
 				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
@@ -2304,6 +2316,12 @@ void check_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				{
+					// Ignore the packet trying to crash us.
+					continue;
+				}
+
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
 				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
 				memset( st_cur->wpa.eapol + 81, 0, 16 );
@@ -2338,6 +2356,12 @@ void check_thread( void *arg )
 
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
+
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				{
+					// Ignore the packet trying to crash us.
+					continue;
+				}
 
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
 				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );

@@ -2115,6 +2115,12 @@ skip_probe:
                     st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                             +   h80211[z + 3] + 4;
 
+                    if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+					{
+						// Ignore the packet trying to crash us.
+                    	goto write_packet;
+					}
+
                     memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
                     memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
                     memset( st_cur->wpa.eapol + 81, 0, 16 );
@@ -2140,6 +2146,12 @@ skip_probe:
                 {
                     st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                             +   h80211[z + 3] + 4;
+
+                    if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+					{
+						// Ignore the packet trying to crash us.
+                    	goto write_packet;
+					}
 
                     memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
                     memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
