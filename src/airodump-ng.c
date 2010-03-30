@@ -208,13 +208,6 @@ void input_thread( void *arg) {
 
 	keycode=mygetch();
 
-//	snprintf(G.message, sizeof(G.message), "][ Key: %i ", in);
-        snprintf(G.message, sizeof(G.message), "][ Key: %3d decimal, 0x%02x hex", keycode, (unsigned char)keycode);
-//        if (isprint(keycode)) {
-//            snprintf(G.message, sizeof(G.message), ":   \'%c\'\n", keycode);
-//        }
-//        printf("\n");
-
 	if(keycode == KEY_s) {
 	    G.sort_by++;
 	    G.selection_ap = 0;
