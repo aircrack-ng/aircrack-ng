@@ -165,6 +165,24 @@ int mygetch( ) {
   return ch;
 }
 
+void resetSelection()
+{
+    G.sort_by = SORT_BY_POWER;
+    G.sort_inv = 1;
+
+    G.start_print_ap=1;
+    G.start_print_sta=1;
+    G.selected_ap=1;
+    G.selected_sta=1;
+    G.selection_ap=0;
+    G.selection_sta=0;
+    G.mark_cur_ap=0;
+    G.skip_columns=0;
+    G.do_pause=0;
+    G.do_sort_always=0;
+    memset(G.selected_bssid, '\x00', 6);
+}
+
 #define KEY_TAB		0x09	//switch between APs/clients for scrolling
 #define KEY_SPACE	0x20	//pause/resume output
 #define KEY_ARROW_UP	0x41	//scroll
@@ -173,6 +191,7 @@ int mygetch( ) {
 #define KEY_ARROW_LEFT	0x44	//scroll
 #define KEY_a		0x61	//cycle through active information (ap/sta/ap+sta/ap+sta+ack)
 #define KEY_c		0x63	//cycle through channels
+#define KEY_d		0x64	//default mode
 #define KEY_i		0x69	//inverse sorting
 #define KEY_m		0x6D	//mark current AP
 #define KEY_n		0x6E	//?
@@ -348,6 +367,11 @@ void input_thread( void *arg) {
 		G.show_ack = 0;
 		snprintf(G.message, sizeof(G.message), "][ display ap+sta");
 	    }
+	}
+
+	if (keycode == KEY_d) {
+		resetSelection();
+		snprintf(G.message, sizeof(G.message), "][ reset selection to default");
 	}
 
 	if(G.do_exit == 0 && !G.do_pause) {
@@ -5288,20 +5312,8 @@ int main( int argc, char *argv[] )
     G.output_format_kismet_csv = 1;
     G.output_format_kismet_netxml = 1;
 
-    G.sort_by = SORT_BY_POWER;
-    G.sort_inv = 1;
-
-    G.start_print_ap=1;
-    G.start_print_sta=1;
-    G.selected_ap=1;
-    G.selected_sta=1;
-    G.selection_ap=0;
-    G.selection_sta=0;
-    G.mark_cur_ap=0;
-    G.skip_columns=0;
-    G.do_pause=0;
-    G.do_sort_always=0;
-    memset(G.selected_bssid, '\x00', 6);
+	// Default selection.
+    resetSelection();
 
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
