@@ -1,6 +1,7 @@
  /*
   *  Server for osdep network driver.  Uses osdep itself!  [ph33r teh recursion]
   *
+  *  Copyright (C) 2010 Backtrack Linux
   *  Copyright (c) 2007, 2008, 2009  Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  Advanced WEP attacks developed by KoreK
@@ -72,7 +73,8 @@ static void usage(char *p)
 	if (p) {}
 
 	printf("\n"
-		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
+		"  %s - (C) 2010 Backtrack Linux\n"
+		"       (C) 2007, 2008, 2009 Andrea Bittau\n"
 		"  http://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: airserv-ng <options>\n"

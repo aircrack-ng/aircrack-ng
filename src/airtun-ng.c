@@ -2,6 +2,7 @@
  *  802.11 WEP network connection tunneling
  *  based on aireplay-ng
  *
+ *  Copyright (C) 2010 Backtrack Linux
  *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
  *  Copyright (C) 2006, 2007, 2008, 2009 Martin Beck
  *
@@ -85,7 +86,8 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 char usage[] =
 "\n"
-"  %s - (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe\n"
+"  %s - (C) 2010 Backtrack Linux\n"
+"       (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe\n"
 "  Original work: Christophe Devine and Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"

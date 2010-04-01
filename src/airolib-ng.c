@@ -1,6 +1,7 @@
 /*
  *  A tool to compute and manage PBKDF2 values as used in WPA-PSK and WPA2-PSK
  *
+ *  Copyright (C) 2010 Backtrack Linux
  *  Copyright (C) 2007; 2008, 2009 ebfe
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -60,7 +61,8 @@ extern char * getVersion(char * progname, int maj, int min, int submin, int svnr
 
 void print_help(const char * msg) {
 	printf("\n"
-		"  %s - (C) 2007, 2008, 2009 ebfe\n"
+		"  %s - (C) 2010 Backtrack Linux\n"
+		"       (C) 2007, 2008, 2009 ebfe\n"
 		"  http://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: airolib-ng <database> <operation> [options]\n"

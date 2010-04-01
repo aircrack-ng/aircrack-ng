@@ -1,6 +1,7 @@
  /*
   *  IVS Tools - Convert or merge IVs
   *
+  *  Copyright (C) 2010 Backtrack Linux
   *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
   *  Copyright (C) 2004, 2005  Christophe Devine (pcap2ivs and mergeivs)
   *
@@ -113,7 +114,8 @@ extern char * getVersion(char * progname, int maj, int min, int submin, int svnr
 
 void usage(int what)
 {
-    printf("\n  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
+    printf("\n  %s - (C) 2010 Backtrack Linux\n"
+			"       (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
             "  Original work: Christophe Devine\n"
             "  http://www.aircrack-ng.org\n"
             "\n   usage: ", getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));

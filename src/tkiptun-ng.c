@@ -1,6 +1,7 @@
 /*
  *  802.11 WPA replay & injection attacks
  *
+ *  Copyright (C) 2010 Backtrack Linux
  *  Copyright (C) 2008, 2009 Martin Beck
  *
  *  WEP decryption attack (chopchop) developed by KoreK
@@ -144,7 +145,8 @@ extern int hexStringToHex(char* in, int length, unsigned char* out);
 char usage[] =
 
 "\n"
-"  %s - (C) 2008, 2009 Thomas d\'Otreppe\n"
+"  %s - (C) 2010 Backtrack Linux\n"
+"       (C) 2008, 2009 Thomas d\'Otreppe\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: tkiptun-ng <options> <replay interface>\n"

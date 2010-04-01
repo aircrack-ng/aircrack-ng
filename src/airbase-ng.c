@@ -2,6 +2,7 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
+ *  Copyright (C) 2010 Backtrack Linux
  *  Copyright (C) 2008-2010 Thomas d'Otreppe
  *  Copyright (C) 2008, 2009 Martin Beck
  *
@@ -149,7 +150,8 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 char usage[] =
 "\n"
-"  %s - (C) 2008-2010 Thomas d'Otreppe\n"
+"  %s - (C) 2010 Backtrack Linux\n"
+"       (C) 2008-2010 Thomas d'Otreppe\n"
 "  Original work: Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"

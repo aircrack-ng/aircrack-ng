@@ -1,6 +1,7 @@
 /*
  *  pcap-compatible 802.11 packet sniffer
  *
+ *  Copyright (C) 2010 Backtrack Linux
  *  Copyright (C) 2006-2010 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
@@ -588,7 +589,8 @@ int check_shared_key(unsigned char *h80211, int caplen)
 char usage[] =
 
 "\n"
-"  %s - (C) 2006-2010 Thomas d\'Otreppe\n"
+"  %s - (C) 2010 Backtrack Linux\n"
+"       (C) 2006-2010 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"

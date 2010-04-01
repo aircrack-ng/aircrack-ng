@@ -1,6 +1,7 @@
  /*
   * Server for osdep network driver.  Uses osdep itself!  [ph33r teh recursion]
   *
+  *  Copyright (C) 2010 Backtrack Linux
   *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
   *  Copyright (C) 2004, 2005 Christophe Devine
   *
@@ -38,7 +39,8 @@ extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac
 char usage[] =
 
 "\n"
-"  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
+"  %s - (C) 2010 Backtrack Linux\n"
+"       (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
