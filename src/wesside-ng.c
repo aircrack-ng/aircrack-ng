@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 2005, 2006, 2007, 2008, 2009 Andrea Bittau <a.bittau@cs.ucl.ac.uk>
  *
+ *  Copyright (C) 2010 Backtrack Linux
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -2037,7 +2038,8 @@ static void usage(char* pname)
 	if (pname) {}
 
 	printf("\n"
-		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
+		"  %s - (C) 2010 Backtrack Linux\n"
+		"       (C) 2007, 2008, 2009 Andrea Bittau\n"
 		"  http://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: wesside-ng <options>\n"
