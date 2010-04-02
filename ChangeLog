@@ -1,5 +1,4 @@
-Version 1.1 (changes from aircrack-ng 1.0) - Released 01 April 2010:
-* All: Updated copyrights
+Version 1.1 (changes from aircrack-ng 1.0) - Released ?? ??? 2010:
 * airdrop-ng: New tool by TheX1le.
 * aircrack-ng: Fixed multicast detection (WPA handshake detection).
 * airodump-ng: Added interaction (see wiki for the commands).
