@@ -1533,7 +1533,7 @@ void read_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
-				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size || st_cur->wpa.eapol_size == 0)
 				{
 					// Ignore the packet trying to crash us.
 					continue;
@@ -1574,7 +1574,7 @@ void read_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
-				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
 				{
 					// Ignore the packet trying to crash us.
 					continue;

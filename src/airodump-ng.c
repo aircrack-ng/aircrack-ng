@@ -2132,7 +2132,7 @@ skip_probe:
                     st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                             +   h80211[z + 3] + 4;
 
-                    if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+                    if ((int)pkh.len - z < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
 					{
 						// Ignore the packet trying to crash us.
                     	goto write_packet;
@@ -2164,7 +2164,7 @@ skip_probe:
                     st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                             +   h80211[z + 3] + 4;
 
-                    if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+                    if ((int)pkh.len - z < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
 					{
 						// Ignore the packet trying to crash us.
                     	goto write_packet;
