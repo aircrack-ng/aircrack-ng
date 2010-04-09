@@ -55,7 +55,7 @@ char usage[] =
 "      -e <num>   : Percentage of erroneous keystreams\n"
 "      -l <num>   : Length of keystreams\n"
 "      -n         : Ignores ignores weak IVs\n"
-"      -p         : Uses prng algorith to generate IVs\n"
+"      -p         : Uses prng algorithm to generate IVs\n"
 "\n"
 "      --help     : Displays this usage screen\n"
 "\n";

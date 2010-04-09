@@ -4008,8 +4008,8 @@ int crack_wpa_thread( void *arg )
 }
 
 /**
- * Open a specific dictionnary
- * nb: index of the dictionnary
+ * Open a specific dictionary
+ * nb: index of the dictionary
  * return 0 on success and FAILURE if it failed
  */
 int next_dict(int nb)
@@ -4388,7 +4388,7 @@ int crack_wep_dict()
 
 	if(wep.nb_ivs < TEST_MIN_IVS)
 	{
-		printf( "\n%ld IVs is below the minimum required for a dictionnary attack (%d IVs min.)!\n", wep.nb_ivs, TEST_MIN_IVS);
+		printf( "\n%ld IVs is below the minimum required for a dictionary attack (%d IVs min.)!\n", wep.nb_ivs, TEST_MIN_IVS);
 		return( FAILURE );
 	}
 
@@ -5170,7 +5170,7 @@ usage:
 			memcpy( opt.bssid, ap_cur->bssid,  6 );
 			opt.bssid_set = 1;
 
-			/* Disable PTW if dictionnary used in WEP */
+			/* Disable PTW if dictionary used in WEP */
 			if (ap_cur->crypt == 2 && opt.dict != NULL)
 			{
 				opt.do_ptw = 0;

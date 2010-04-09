@@ -786,7 +786,7 @@ int initDataBase(const char * filename, sqlite3 ** db)
 #endif
 
 	sqlite3_close(*db);
-	printf("Database <%s> sucessfully created\n", filename);
+	printf("Database <%s> successfully created\n", filename);
 	return 0;
 }
 
