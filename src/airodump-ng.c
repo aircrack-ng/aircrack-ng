@@ -619,7 +619,7 @@ char usage[] =
 "      --bssid     <bssid> : Filter APs by BSSID\n"
 "      -a                  : Filter unassociated clients\n"
 "\n"
-"  By default, airodump-ng hop on 2.4Ghz channels.\n"
+"  By default, airodump-ng hop on 2.4GHz channels.\n"
 "  You can make it capture on other/specific channel(s) by using:\n"
 "      --channel <channels>: Capture on specific channels\n"
 "      --band <abg>        : Band on which airodump-ng should hop\n"
