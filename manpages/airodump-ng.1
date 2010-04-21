@@ -72,6 +72,45 @@ It will only show networks, matching the given bssid ^ netmask combination. Need
 .TP
 .I -a
 It will only show associated clients.
+.SH INTERACTION
+.PP
+.BI airodump-ng
+can receive and interpret key strokes while running. The following list describes the currently assigned keys and supposed actions:
+.TP
+.I a
+Select active areas by cycling through these display options: AP+STA; AP+STA+ACK; AP only; STA only
+.TP
+.I d
+Reset sorting to defaults (Power)
+.TP
+.I i
+Invert sorting algorithm
+.TP
+.I m
+Mark the selected AP or cycle through different colors if the selected AP is already marked
+.TP
+.I q
+Quit airodump-ng
+.TP
+.I r
+(De-)Activate realtime sorting - applies sorting algorithm everytime the display will be redrawn
+.TP
+.I s
+Change column to sort by, which currently includes: First seen; BSSID; PWR level; Beacons; Data packets; Packet rate; Channel; Max. data rate; Encryption; Strongest Ciphersuite; Strongest Authentication; ESSID
+.TP
+.I SPACE
+Pause display redrawing/ Resume redrawing
+.TP
+.I TAB
+Enable/Disable scrolling through AP list
+.TP
+.I UP
+Select the AP prior to the currently marked AP in the displayed list if available
+.TP
+.I DOWN
+Select the AP after the currently marked AP if available
+.PP
+If an AP is selected or marked, all the connected stations will also be selected or marked with the same color as the corresponding Access Point. 
 .SH EXAMPLES
 .B airodump-ng
 \-\-band bg ath0
