@@ -2811,11 +2811,19 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
                 if(opt.sendeapol && memcmp(packet+z, "\xAA\xAA\x03\x00\x00\x00\x88\x8E\x01\x03", 10) == 0)
                 {
+					st_cur->wpa.eapol_size = ( packet[z + 8 + 2] << 8 ) + packet[z + 8 + 3] + 4;
+
+					if (length - z - 10 < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
+					{
+						// Ignore the packet trying to crash us.
+						printf("Something is trying to crash us; length: %d - z: %d - eapol size: %d\n",
+								length, z, st_cur->wpa.eapol_size);
+						return 1;
+                	}
+
                     /* got eapol frame num 2 */
                     memcpy( st_cur->wpa.snonce, &packet[z + 8 + 17], 32 );
                     st_cur->wpa.state |= 2;
-
-                    st_cur->wpa.eapol_size = ( packet[z + 8 + 2] << 8 ) + packet[z + 8 + 3] + 4;
 
                     memcpy( st_cur->wpa.keymic, &packet[z + 8 + 81], 16 );
                     memcpy( st_cur->wpa.eapol,  &packet[z + 8], st_cur->wpa.eapol_size );
