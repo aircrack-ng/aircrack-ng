@@ -118,11 +118,14 @@ Here is an example screenshot:
 .br
 CH  9 ][ Elapsed: 1 min ][ 2007-04-26 17:41 ][ BAT: 2 hours 10 mins ][ WPA handshake: 00:14:6C:7E:40:80
 .br
+.PP
 BSSID              PWR RXQ  Beacons    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSID
 .br
 .PP
 00:09:5B:1C:AA:1D   11  16       10        0    0  11  54. OPN              <length: 7>
+.br
 00:14:6C:7A:41:81   34 100       57       14    1   9  11  WEP  WEP         bigbear
+.br
 00:14:6C:7E:40:80   32 100      752       73    2   9  54  WPA  TKIP   PSK  teddy
 .br
 .PP
@@ -130,31 +133,67 @@ BSSID              STATION            PWR   Rate   Lost  Packets  Probes
 .br
 .PP
 00:14:6C:7A:41:81  00:0F:B5:32:31:31   51   11-11     2       14  bigbear
+.br
 (not associated)   00:14:A4:3F:8D:13   19   11-11     0        4  mossy
+.br
 00:14:6C:7A:41:81  00:0C:41:52:D1:D1   \-1    11-2     0        5  bigbear
+.br
 00:14:6C:7E:40:80  00:0F:B5:FD:FB:C2   35   36-24     0       99  teddy
 .br
 -----------------------------------------------------------------------
 .br
 .PP
-            - BSSID: MAC address of the access point. In the Client section, a BSSID of "(not associated)" means that the client is not associated with any AP. In this unassociated state, it is searching for an AP to connect with.
-            - PWR: Signal level reported by the card. Its signification depends on the driver, but as the signal gets higher you get closer to the AP or the station. If the BSSID PWR is -1, then the driver doesn't support signal level reporting. If the PWR is -1 for a limited number of stations then this is for a packet which came from the AP to the client but the client transmissions are out of range for your card. Meaning you are hearing only 1/2 of the communication. If all clients have PWR as -1 then the driver doesn't support signal level reporting.
-            - RXQ (Only shown when on a fixed channel): Receive Quality as measured by the percentage of packets (management and data frames) successfully received over the last 10 seconds. It's measured over all management and data frames. That's the clue, this allows you to read more things out of this value. Lets say you got 100 percent RXQ and all 10 (or whatever the rate) beacons per second coming in. Now all of a sudden the RXQ drops below 90, but you still capture all sent beacons. Thus you know that the AP is sending frames to a client but you can't hear the client nor the AP sending to the client (need to get closer). Another thing would be, that you got a 11MB card to monitor and capture frames (say a prism2.5) and you have a very good position to the AP. The AP is set to 54MBit and then again the RXQ drops, so you know that there is at least one 54MBit client connected to the AP.
-            - Beacons: Number of beacons sent by the AP. Each access point sends about ten beacons per second at the lowest rate (1M), so they can usually be picked up from very far.
-            - #Data: Number of captured data packets (if WEP, unique IV count), including data broadcast packets.
-            - #/s: Number of data packets per second measure over the last 10 seconds.
-            - CH: Channel number (taken from beacon packets). Note: sometimes packets from other channels are captured even if airodump-ng is not hopping, because of radio interference.
-            - MB: Maximum speed supported by the AP. If MB = 11, it's 802.11b, if MB = 22 it's 802.11b+ and higher rates are 802.11g. The dot (after 54 above) indicates short preamble is supported. 'e' indicates that the network has QoS (802.11e) enabled.
-            - ENC: Encryption algorithm in use. OPN = no encryption,"WEP?" = WEP or higher (not enough data to choose between WEP and WPA/WPA2), WEP (without the question mark) indicates static or dynamic WEP, and WPA or WPA2 if TKIP or CCMP or MGT is present.
-            - CIPHER: The cipher detected. One of CCMP, WRAP, TKIP, WEP, WEP40, or WEP104. Not mandatory, but TKIP is typically used with WPA and CCMP is typically used with WPA2. WEP40 is displayed when the key index is greater then 0. The standard states that the index can be 0-3 for 40bit and should be 0 for 104 bit.
-            - AUTH: The authentication protocol used. One of MGT (WPA/WPA2 using a separate authentication server), SKA (shared key for WEP), PSK (pre-shared key for WPA/WPA2), or OPN (open for WEP).
-            - ESSID: The so-called "SSID", which can be empty if SSID hiding is activated. In this case, airodump-ng will try to recover the SSID from probe responses and association requests.
-            - STATION: MAC address of each associated station or stations searching for an AP to connect with. Clients not currently associated with an AP have a BSSID of "(not associated)".
-            - Rate: This is only displayed when using a single channel. The first number is the last data rate from the AP (BSSID) to the Client (STATION). The second number is the last data rate from Client (STATION) to the AP (BSSID).
-            - Lost: It means lost packets coming from the client. To determine the number of packets lost, there is a sequence field on every non-control frame, so you can subtract the second last sequence number from the last sequence number and you know how many packets you have lost.
-            - Packets: The number of data packets sent by the client.
-            - Probes: The ESSIDs probed by the client. These are the networks the client is trying to connect to if it is not currently connected.
-
+.TP
+.I BSSID
+MAC address of the access point. In the Client section, a BSSID of "(not associated)" means that the client is not associated with any AP. In this unassociated state, it is searching for an AP to connect with.
+.TP
+.I PWR
+Signal level reported by the card. Its signification depends on the driver, but as the signal gets higher you get closer to the AP or the station. If the BSSID PWR is -1, then the driver doesn't support signal level reporting. If the PWR is -1 for a limited number of stations then this is for a packet which came from the AP to the client but the client transmissions are out of range for your card. Meaning you are hearing only 1/2 of the communication. If all clients have PWR as -1 then the driver doesn't support signal level reporting.
+.TP
+.I RXQ
+Only shown when on a fixed channel. Receive Quality as measured by the percentage of packets (management and data frames) successfully received over the last 10 seconds. It's measured over all management and data frames. That's the clue, this allows you to read more things out of this value. Lets say you got 100 percent RXQ and all 10 (or whatever the rate) beacons per second coming in. Now all of a sudden the RXQ drops below 90, but you still capture all sent beacons. Thus you know that the AP is sending frames to a client but you can't hear the client nor the AP sending to the client (need to get closer). Another thing would be, that you got a 11MB card to monitor and capture frames (say a prism2.5) and you have a very good position to the AP. The AP is set to 54MBit and then again the RXQ drops, so you know that there is at least one 54MBit client connected to the AP.
+.TP
+.I Beacons
+Number of beacons sent by the AP. Each access point sends about ten beacons per second at the lowest rate (1M), so they can usually be picked up from very far.
+.TP
+.I #Data
+Number of captured data packets (if WEP, unique IV count), including data broadcast packets.
+.TP
+.I #/s
+Number of data packets per second measure over the last 10 seconds.
+.TP
+.I CH
+Channel number (taken from beacon packets). Note: sometimes packets from other channels are captured even if airodump-ng is not hopping, because of radio interference.
+.TP
+.I MB
+Maximum speed supported by the AP. If MB = 11, it's 802.11b, if MB = 22 it's 802.11b+ and higher rates are 802.11g. The dot (after 54 above) indicates short preamble is supported. 'e' indicates that the network has QoS (802.11e) enabled.
+.TP
+.I ENC
+Encryption algorithm in use. OPN = no encryption,"WEP?" = WEP or higher (not enough data to choose between WEP and WPA/WPA2), WEP (without the question mark) indicates static or dynamic WEP, and WPA or WPA2 if TKIP or CCMP or MGT is present.
+.TP
+.I CIPHER
+The cipher detected. One of CCMP, WRAP, TKIP, WEP, WEP40, or WEP104. Not mandatory, but TKIP is typically used with WPA and CCMP is typically used with WPA2. WEP40 is displayed when the key index is greater then 0. The standard states that the index can be 0-3 for 40bit and should be 0 for 104 bit.
+.TP
+.I AUTH
+The authentication protocol used. One of MGT (WPA/WPA2 using a separate authentication server), SKA (shared key for WEP), PSK (pre-shared key for WPA/WPA2), or OPN (open for WEP).
+.TP
+.I ESSID
+The so-called "SSID", which can be empty if SSID hiding is activated. In this case, airodump-ng will try to recover the SSID from probe responses and association requests.
+.TP
+.I STATION
+MAC address of each associated station or stations searching for an AP to connect with. Clients not currently associated with an AP have a BSSID of "(not associated)".
+.TP
+.I Rate
+This is only displayed when using a single channel. The first number is the last data rate from the AP (BSSID) to the Client (STATION). The second number is the last data rate from Client (STATION) to the AP (BSSID).
+.TP
+.I Lost
+It means lost packets coming from the client. To determine the number of packets lost, there is a sequence field on every non-control frame, so you can subtract the second last sequence number from the last sequence number and you know how many packets you have lost.
+.TP
+.I Packets
+The number of data packets sent by the client.
+.TP
+.I Probes
+The ESSIDs probed by the client. These are the networks the client is trying to connect to if it is not currently connected.
 .PP
 The first part is the detected access points. The second part is a list of detected wireless clients, stations. By relying on the signal power, one can even physically pinpoint the location of a given station.
 .SH AUTHOR
