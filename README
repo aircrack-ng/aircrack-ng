@@ -86,9 +86,6 @@ Aircrack-ng
 	Solution 1: You may have a network manager running that puts back the card in managed mode. 
 	            You'll have to disable it (the fastest solution is killing the process) then restart airodump-ng.
 	Solution 2: See Problem 3 of Madwifi-ng.
-
-	Problem: Airodump-ng corrupts pcap file when using GPSd (--gpsd).
-	Solution: None at this time (will be fixed in next release).
 	
 	Problem: On windows, it doesn't display a list of adapters like the old 0.X
 	Solution: It requires you to develop your own DLL.
