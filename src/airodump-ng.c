@@ -195,7 +195,6 @@ void resetSelection()
 #define KEY_i		0x69	//inverse sorting
 #define KEY_m		0x6D	//mark current AP
 #define KEY_n		0x6E	//?
-#define KEY_q		0x71	//quit
 #define KEY_r		0x72	//realtime sort (de)activate
 #define KEY_s		0x73	//cycle through sorting
 
@@ -259,11 +258,6 @@ void input_thread( void *arg) {
 	    pthread_mutex_lock( &(G.mx_sort) );
 		dump_sort();
 	    pthread_mutex_unlock( &(G.mx_sort) );
-	}
-
-	if(keycode == KEY_q) {
-	    G.do_exit=1;
-	    snprintf(G.message, sizeof(G.message), "][ shutting down...");
 	}
 
 	if(keycode == KEY_SPACE) {
