@@ -1,7 +1,6 @@
 /*
  *  pcap-compatible 802.11 packet sniffer
  *
- *  Copyright (C) 2010 Backtrack Linux
  *  Copyright (C) 2006-2010 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
@@ -196,7 +195,6 @@ void resetSelection()
 #define KEY_i		0x69	//inverse sorting
 #define KEY_m		0x6D	//mark current AP
 #define KEY_n		0x6E	//?
-#define KEY_q		0x71	//quit
 #define KEY_r		0x72	//realtime sort (de)activate
 #define KEY_s		0x73	//cycle through sorting
 
@@ -260,11 +258,6 @@ void input_thread( void *arg) {
 	    pthread_mutex_lock( &(G.mx_sort) );
 		dump_sort();
 	    pthread_mutex_unlock( &(G.mx_sort) );
-	}
-
-	if(keycode == KEY_q) {
-	    G.do_exit=1;
-	    snprintf(G.message, sizeof(G.message), "][ shutting down...");
 	}
 
 	if(keycode == KEY_SPACE) {
@@ -589,8 +582,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
 char usage[] =
 
 "\n"
-"  %s - (C) 2010 Backtrack Linux\n"
-"       (C) 2006-2010 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2010 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -621,7 +613,7 @@ char usage[] =
 "      --bssid     <bssid> : Filter APs by BSSID\n"
 "      -a                  : Filter unassociated clients\n"
 "\n"
-"  By default, airodump-ng hop on 2.4Ghz channels.\n"
+"  By default, airodump-ng hop on 2.4GHz channels.\n"
 "  You can make it capture on other/specific channel(s) by using:\n"
 "      --channel <channels>: Capture on specific channels\n"
 "      --band <abg>        : Band on which airodump-ng should hop\n"
@@ -2134,7 +2126,7 @@ skip_probe:
                     st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                             +   h80211[z + 3] + 4;
 
-                    if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+                    if ((int)pkh.len - z < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
 					{
 						// Ignore the packet trying to crash us.
                     	goto write_packet;
@@ -2166,7 +2158,7 @@ skip_probe:
                     st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                             +   h80211[z + 3] + 4;
 
-                    if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+                    if ((int)pkh.len - z < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
 					{
 						// Ignore the packet trying to crash us.
                     	goto write_packet;

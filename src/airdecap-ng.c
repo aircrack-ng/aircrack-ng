@@ -934,7 +934,7 @@ usage:
                 st_cur->eapol_size = ( h80211[z + 2] << 8 )
                                    +   h80211[z + 3] + 4;
 
-                if ((int)pkh.len - z < st_cur->eapol_size )
+                if ((int)pkh.len - z < st_cur->eapol_size  || st_cur->eapol_size == 0)
                 {
                 	// Ignore the packet trying to crash us.
                 	continue;
@@ -968,7 +968,7 @@ usage:
                 st_cur->eapol_size = ( h80211[z + 2] << 8 )
                                    +   h80211[z + 3] + 4;
 
-                if ((int)pkh.len - z < st_cur->eapol_size )
+                if ((int)pkh.len - z < st_cur->eapol_size  || st_cur->eapol_size == 0)
 				{
 					// Ignore the packet trying to crash us.
 					continue;

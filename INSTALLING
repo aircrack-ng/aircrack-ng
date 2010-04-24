@@ -1,10 +1,10 @@
 === Requirements ===
 
  * OpenSSL development package
- * If you want to use airolib-ng and '-r' option on aircrack-ng,
+ * If you want to use airolib-ng and '-r' option in aircrack-ng,
    SQLite development package >= 3.3.17 (3.6.X version or better is recommended):
    -  libsqlite3-devel
- * On windows, cygwin has to be use and it also requires w32api and gcc-4 package.
+ * On windows, cygwin has to be used and it also requires w32api and gcc-4 package.
  * If you want to use Airpcap, the 'developer' directory from the CD is required.
 
 === Compilating ===
@@ -53,8 +53,7 @@ Linux/BSD:
  * In most cases, they have an old version.
  
 Windows:
- * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data)
-   See "Drivers" page on the wiki: http://www.aircrack-ng.org/doku.php?id=drivers and 
+ * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data).
  * aircrack-ng suite is command line tools. So, you have to open a commandline
    (Start menu -> Run... -> cmd.exe) then use them
  * Run the executables without any parameters to have help

@@ -1,7 +1,6 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2010 Backtrack Linux
  *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
@@ -175,12 +174,11 @@ const uchar R[256] =
 
 char usage[] =
 "\n"
-"  %s - (C) 2010 Backtrack Linux\n"
-"       (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
+"  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
-"  usage: backcrack-ng [options] <.cap / .ivs file(s)>\n"
+"  usage: aircrack-ng [options] <.cap / .ivs file(s)>\n"
 "\n"
 "  Common options:\n"
 "\n"
@@ -1535,7 +1533,7 @@ void read_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
-				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size || st_cur->wpa.eapol_size == 0)
 				{
 					// Ignore the packet trying to crash us.
 					continue;
@@ -1576,7 +1574,7 @@ void read_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
-				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
 				{
 					// Ignore the packet trying to crash us.
 					continue;
@@ -4010,8 +4008,8 @@ int crack_wpa_thread( void *arg )
 }
 
 /**
- * Open a specific dictionnary
- * nb: index of the dictionnary
+ * Open a specific dictionary
+ * nb: index of the dictionary
  * return 0 on success and FAILURE if it failed
  */
 int next_dict(int nb)
@@ -4390,7 +4388,7 @@ int crack_wep_dict()
 
 	if(wep.nb_ivs < TEST_MIN_IVS)
 	{
-		printf( "\n%ld IVs is below the minimum required for a dictionnary attack (%d IVs min.)!\n", wep.nb_ivs, TEST_MIN_IVS);
+		printf( "\n%ld IVs is below the minimum required for a dictionary attack (%d IVs min.)!\n", wep.nb_ivs, TEST_MIN_IVS);
 		return( FAILURE );
 	}
 
@@ -4551,7 +4549,7 @@ int main( int argc, char *argv[] )
 	// Start a new process group, we are perhaps going to call kill(0, ...) later
 	setsid();
 
-	progname = getVersion("Backcrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 
 	memset( &opt, 0, sizeof( opt ) );
 
@@ -5172,7 +5170,7 @@ usage:
 			memcpy( opt.bssid, ap_cur->bssid,  6 );
 			opt.bssid_set = 1;
 
-			/* Disable PTW if dictionnary used in WEP */
+			/* Disable PTW if dictionary used in WEP */
 			if (ap_cur->crypt == 2 && opt.dict != NULL)
 			{
 				opt.do_ptw = 0;
