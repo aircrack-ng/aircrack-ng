@@ -1,5 +1,6 @@
-Version 1.1 (changes from aircrack-ng 1.0) - Released ?? ??? 2010:
+Version 1.1 (changes from aircrack-ng 1.0) - Released 24 April 2010:
 * airdrop-ng: New tool by TheX1le.
+* airodump-ng, aircrack-ng, airdecap-ng, airbase-ng: Fixed buffer overflow in airodump-ng due to forged eapol frame.
 * aircrack-ng: Fixed multicast detection (WPA handshake detection).
 * airodump-ng: Added interaction (see wiki for the commands).
 * airodump-ng: Fixed client time in netxml file.
@@ -8,6 +9,7 @@ Version 1.1 (changes from aircrack-ng 1.0) - Released ?? ??? 2010:
 * airmon-ng: Updated iw URL for v0.9.19.
 * airdriver-ng: Fixed link for madwifi-ng.
 * aireplay-ng: Chopchop enhancement to not stop but wait on deauth packets.
+* tkiptun-ng: Fixed segfault.
 * wesside-ng: Fixed compilation bug with recent version of gcc.
 * cygwin: Compiling sqlite isn't necessary anymore, libsqlite3-devel package can be used.
 * osdep: Strict aliasing and x86_64 fix.
@@ -15,6 +17,7 @@ Version 1.1 (changes from aircrack-ng 1.0) - Released ?? ??? 2010:
 * All: Fixed compilation on cygwin 1.7.
 * All: Fixed compilation on recent version of OSX.
 * manpages: Fixed aireplay-ng manpage for attack 0: not disassociation packets, deauth packets.
+* manpages: Added the keys for interaction in airodump-ng.
 * patches: Added regulatory domains override patches for atheros drivers (ath5k, ath9k and ar9170).
 * patches: Added 2.6.32 patch for r8187 driver (ieee80211).
 * Makefiles: Fixed make uninstall.
