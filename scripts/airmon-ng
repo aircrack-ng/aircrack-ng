@@ -171,7 +171,7 @@ getChipset() {
 
     CHIPSET="Unknown "
 
-    if [ x$DRIVER = "xOtus" -o x$DRIVER = "xarusb_lnx" -o x$DRIVER = "xar9170" ]
+    if [ x$DRIVER = "xOtus" -o x$DRIVER = "xarusb_lnx" -o x$DRIVER = "xar9170usb" ]
     then
 	CHIPSET="AR9001U"
     fi
@@ -271,7 +271,7 @@ getChipset() {
         CHIPSET="Intel 4965/5xxx"
     fi
 
-    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" -o x$DRIVER = "xath9k" -o x$DRIVER = "xar9170usb" ]
+    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" -o x$DRIVER = "xath9k" ]
     then
         CHIPSET="Atheros "
     fi
