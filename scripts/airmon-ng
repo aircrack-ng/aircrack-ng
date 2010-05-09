@@ -271,7 +271,7 @@ getChipset() {
         CHIPSET="Intel 4965/5xxx"
     fi
 
-    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" -o x$DRIVER = "xath9k" ]
+    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" -o x$DRIVER = "xath9k" -o x$DRIVER = "xar9170usb" ]
     then
         CHIPSET="Atheros "
     fi
