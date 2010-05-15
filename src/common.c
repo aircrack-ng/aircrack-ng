@@ -296,6 +296,9 @@ int getmac(char * macAddress, int strict, unsigned char * mac)
 
 	while (macAddress[i] != 0)
 	{
+		if (macAddress[i] == '\n' || macAddress[i] == '\r')
+			break;
+
 		byte[0] = macAddress[i];
 		byte[1] = macAddress[i+1];
 
