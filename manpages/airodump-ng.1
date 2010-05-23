@@ -45,7 +45,7 @@ Indicate the channel(s) to listen to. By default airodump-ng hop on all 2.4GHz c
 Indicate the band on which airodump-ng should hop. It can be a combination of 'a', 'b' and 'g' letters ('b' and 'g' uses 2.4GHz and 'a' uses 5GHz). Incompatible with --channel option.
 .TP
 .I -s <method>, --cswitch <method>
-Defines the way airodump-ng sets the channels when using more than one card. Valid values: 0, 1 or 2.
+Defines the way airodump-ng sets the channels when using more than one card. Valid values: 0 (FIFO, default value), 1 (Round Robin) or 2 (Hop on last).
 .TP
 .I -r <file>
 Reads packet from a file.
