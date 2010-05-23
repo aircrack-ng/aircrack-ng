@@ -2816,8 +2816,6 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 					if (length - z - 10 < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
 					{
 						// Ignore the packet trying to crash us.
-						printf("Something is trying to crash us; length: %d - z: %d - eapol size: %d\n",
-								length, z, st_cur->wpa.eapol_size);
 						return 1;
                 	}
 
