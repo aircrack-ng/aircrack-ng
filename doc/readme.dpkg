@@ -1,0 +1,19 @@
+If you're planning to package this for debian-based distos you should know:
+Depends: xterm|screen , gawk, aircrack-ng, grep
+Build-Deps: debhelper
+Build-Deps-Indep: gettext
+Recommends: dhclient, macchanger
+
+Prefix will be changed to /usr for airoscript and aircrack doing the following:
+
+::
+    make aircrackprefix="\/usr\/" prefix="\/usr\/"
+
+
+So, just put that on your debian/rules =), then, edit config as usual
+
+I'm not really sure how will be installing docs, because they
+are mostly html and there is a license file (that, on debian,
+can be safely removed since its a gpl-2 copy).
+
+Note this is a script, and should be threated like that when packaging.

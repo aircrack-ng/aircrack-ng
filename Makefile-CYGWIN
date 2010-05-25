@@ -1,0 +1,11 @@
+install: uninstall
+	mkdir /usr/share/airoscript
+	cp -r src/* /usr/share/airoscript
+	mv /usr/share/airoscript/airoscript.sh /usr/bin/airoscript
+	mv /usr/share/airoscript/airoscript.conf /etc/
+	ln -fs /usr/share/airosperl/airosperl.pl /usr/bin/airosperl
+
+uninstall:
+	if test -d /usr/share/airoscript ; then rm -fr /usr/share/airoscript; fi
+	if test -e /usr/bin/airoscript; then rm /usr/bin/airoscript; fi
+	if test -e /etc/airoscript.conf; then rm /etc/airoscript.conf; fi

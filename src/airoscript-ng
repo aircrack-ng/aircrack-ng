@@ -1,0 +1,51 @@
+#! /bin/bash
+# Depends: aircrack-ng, xterm|urxvt|gnome-terminal, awk, macchanger, grep, bash >= 4
+# Recommends: mdk3, wlandecrypter, jazzteldecrypter
+
+# Copyright (C) 2008 Daouid
+# Copyright (C) 2009, 2010 David Francos Cuartero
+# See Authors for a more detailed authors spec.
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+_source(){
+    for cfile in $1; do
+        if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; fi
+    done
+}
+
+# We preload functions, configs and themes in a cool way.
+_source "./airoscript-ng.conf.devel ~/.airoscript-ng/airoscript-ng.conf /etc/airoscript-ng.conf /usr/local/etc/airoscript-ng.conf"
+_source "$path/internal $path/generic $path/dicts"
+_source  "$path/themes/$theme" || default_theme
+
+# For locale debugging
+_debug "Text domain dir is $TEXTDOMAINDIR and textdomain is $TEXTDOMAIN"
+
+# Whoah, this looks chaotic. I like it ^^
+setaircrackpaths
+rootwarn
+setps
+setargs
+check_cardctl
+_resonset
+reso
+debug
+setinterface
+checkforcemac
+
+[[ $show_warn ]] && _initial_warning;
+[[ "$TERMINAL" == "screen"  ]] && screen_startup
+[[ "$dict" == "1"  ]] && _source $path/dict 
+mainmenu

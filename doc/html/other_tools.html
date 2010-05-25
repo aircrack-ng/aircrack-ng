@@ -1,0 +1,73 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+	<head>
+		<title>Airoscript Documentation - Title</title>
+		<meta name="Generator" content="Vim/7.1">
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<link rel="stylesheet" href="./style.css">
+	</head>
+
+	<body>
+		<p class="indexlink"><a href="./index.html">Return to index</a></p>
+
+		<h1>Other Tools</h1>
+		<p class="main"> This is the "cajon de sastre" for airoscript. </p>
+		<img src="./images/other1.png" alt="Other tools" />
+
+		<h2 class="left"> Test injection </h2>
+		<p class="main"> This launch aireplay to test inyection (--test option) see aireplay documentation for more info. </p>
+	
+		<h2 class="left">Select another interface</h2>
+		<p class="main"> If you want to change your selected interface, you don't have to exit airoscript, just use this option to select the new one.</p>
+
+		<h2 class="left">Reset selected interface</h2>
+		<p class="main">Stops all aireplay and airodump instances and stops selected interface (and monitor mode, if enabled).<br/> Then it ejects pcmcia card and re-inserts it (usefull only if you have a pcmcia card)<br />
+			<font size="-1" color="red"><center>Note: This will eject your card, even if your card is not your wifi card, what may be not desirable in some cases</center></font>
+		Finally it will relaunch the interface (ifconfig interface up) and start monitor mode on that interface.
+		</p>
+
+		<h2 class="left">Change mac of interface</h2>
+		<p class="main"> You'll be asked if you want to:</p>
+		<img src="./images/other2.png" alt="Macchange options"/>
+		<p class="main"> 
+			First options sets your mac to FAKEMAC (fake mac that will be used on most attacks)<br/>
+			Second option sets your mac to selected client's mac<br/>
+			Third option asks you the mac that will be set<br/>
+		</p>
+
+		<h2 class="left">MDK3</h2>
+		<p class="main">Launch the mdk selection menu.</p>
+		<img src="images/other3.png" alt="mdk selection menu"/>
+		<p style="text-align:center;color:red;font-size:small;">
+		Note: You must have mdk3 installed<br/>
+		Refer to mdk3 documentation for more info.
+		</p>
+
+		<h2 class="left"> Wesside-ng </h2>
+		<p class="main"> Launches wesside-ng tool <br/>
+		You can launch wesside-ng specifiying some arguments or even change target.
+		Please, referr to wesside-ng documentation for more info.
+		</p>
+		<img src="./images/other4.png" alt="wesside-ng" />
+
+		<h2 class="left"> Enable monitor mode </h2>
+		<p class="main">
+			This enables monitor mode on selected interface.
+			Depending on the kind of your interface it will call iwconfig or airmon (even iwpriv on some interfaces like rt61 is needed).
+		</p>
+
+		<h2 class="left"> Checks with airmon-ng </h2>
+		<p class="main"> 
+		Launches airmon-ng to check if some app is using your wireless 
+		<br/>interface (wich may cause problems) and returns its pids.
+		</p>
+
+		<h2 class="left"> Change DUMP_PATH </h2>
+		<p class="main"> Does your /tmp space (or current DUMP_PATH location) fill? You may prefer switching it to another device. <br/>
+		With this option you can change DUMP_PATH to other folder.
+		</p>
+
+		<p class="prevlink"><a href="./deauth.html">Prev: Deautentication (6)</a> 
+		<p class="nextlink"><a href="./injection.html">Next: injection (8)</a>
+	</body>
+</html>

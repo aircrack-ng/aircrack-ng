@@ -1,0 +1,41 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+	<head>
+		<title>Airoscript Documentation - Title</title>
+		<meta name="Generator" content="Vim/7.1">
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<link rel="stylesheet" href="./style.css">
+	</head>
+
+	<body>
+		<p class="indexlink"><a href="./index.html">Return to index</a></p>
+
+		<h1>Fake Authentication</h1>
+		<p class="main">
+			It performs a fake authentication with aireplay-ng. <br/>
+			There are three kinds of methods for fakeauth: Conservative, standard, and progressive.
+		</p>
+
+		<h2 class="left">Conservative</h2>
+		<p>
+			It executes <font color="red"><b>aireplay-ng --fakeauth 6000 -e Host_SSID -a Host_MAC -h FAKE_MAC WIFI_INTERFACE</b></font>
+		<br/> This executes fakeauth with a delay of 6000
+		</p>
+
+		<h2 class="left">Progressive</h2>
+		<p>
+			It executes <font color="red"><b>aireplay-ng --fakeauth 0 -e Host_SSID -a Host_MAC -h FAKE_MAC WIFI_INTERFACE</b></font>
+		<br/> This executes fakeauth with a delay of 0
+		</p>
+
+		<h2 class="left">Standard</h2>
+		<p>
+			It executes <font color="red"><b>aireplay-ng --fakeauth 5 -o 10 -q 1 -e Host_SSID -a Host_MAC -h FAKE_MAC WIFI_INTERFACE</b></font>
+		<br/> This executes fakeauth with a delay of 5 launching 10 packet for every attempt and waiting 1 second between each packet.
+		</p>
+
+
+		<p class="prevlink"><a href="./crack.html">Prev: Crack (4)</a> 
+		<p class="nextlink"><a href="./deauth.html">Next: Deautentication (6)</a>
+	</body>
+</html>

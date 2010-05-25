@@ -1,0 +1,39 @@
+p.nextlink {
+	float: right;
+	width: 49.8%;
+	text-align:right;
+	border:1px dotted;
+	padding:0;
+	margin:0;	
+	border-color:grey;
+}
+
+h1 {text-align:center;}
+
+p.indexlink{}
+
+a {color:white;}
+
+a:hover {color:grey;}
+
+p.prevlink{
+	width: 49.8%;
+	float:left;
+	border: 1px dotted;
+	padding:0;
+	margin:0;
+	border-color:grey;
+}
+
+p.main {
+	margin-left:10px;
+	
+}
+
+body {
+	background: black;
+	color:white;
+}
+
+h2 {text-align:center;}
+h2.left {text-align:left;}

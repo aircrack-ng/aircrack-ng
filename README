@@ -1,0 +1,55 @@
+Airoscript - a companion for aircrack-ng
+========================================
+
+Airoscript Homepage
+-------------------
+
+    http://airoscript.aircrack-ng.org/ 
+
+Google Code package release page.
+---------------------------------
+
+    http://code.google.com/p/airoscript
+
+About
+------
+
+    Airoscript is a complete text user interface for aircrack-ng.
+    It gives you almost all functionality that aircrack-ng has, allowing you to
+    save some time from writting commands.
+    Writing commands may be good to learn how does it work, but repeatedly doing
+    so can damage your mind and your body.
+
+Usage
+-----
+
+    Just launch airoscript as described in syntax. 
+
+Syntax
+------
+
+	airoscript [TERMINAL]
+    where terminal is one of xterm,urxvt,gnome-terminal and screen 
+
+
+Developers
+----------
+
+    Help and feedback is greatly appreciated. 
+    Please feel free to mail XayOn at thexayon@gmail.com.
+
+Compliance
+----------
+
+    In the wrong hands, airoscript and aircrack-ng could easily violate the 
+    government certification of your radio.  A simple example is running injection
+    on frequencies your radio isn't certified for in your geographic region.
+    you and only you are responsible for making sure that your tools -- including
+    airoscript -- are compliant with the regulations in your country and region.
+
+Bugs and feature requests
+-------------------------
+
+    Please submit bugs in aircrack-ng trac or aircrack-ng oficial forum "airoscript
+    support" subforum.
+
