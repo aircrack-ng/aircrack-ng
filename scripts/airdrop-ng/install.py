@@ -69,13 +69,13 @@ class installAirdrop:
 		# moves everything to build/. This is to keep everything clean,
 		# and not clutter up the directory. 
  
-		os.system ("cp airdrop-ng.py build/ && cp -r lib build/ && cp docs/airdrop-ng.1 build/")
+		os.system ("cp airdrop-ng build/ && cp -r lib build/ && cp docs/airdrop-ng.1 build/")
 		print "Files copied. Now, moving to directory..."
 		os.chdir ("build")
 		if os.path.isdir("/usr/lib/airdrop-ng") == True:
 			rmtree ("/usr/lib/airdrop-ng")
 		print "Moving airdrop-ng to /usr/bin, lib to \n/usr/lib/airdrop-ng, and installing man pages..."
-		os.system ("cp airdrop-ng.py /usr/bin/airdrop-ng && cp -r lib /usr/lib/airdrop-ng && cp airdrop-ng.1 /usr/share/man/man1/")
+		os.system ("cp airdrop-ng /usr/bin/airdrop-ng && cp -r lib /usr/lib/airdrop-ng && cp airdrop-ng.1 /usr/share/man/man1/")
 		#os.chdir ("..")
 		print "airdrop-ng installed!  =)"
 

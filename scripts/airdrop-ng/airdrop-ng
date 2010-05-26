@@ -922,15 +922,12 @@ def usage():
 
 def commandUsage():
 	print "\nSample command line arguments:"
-	print "\npython airdrop-ng.py -i mon0 -t airodump.csv -r rulefile.txt\n"	
+	print "\npython airdrop-ng -i mon0 -t airodump.csv -r rulefile.txt\n"	
 
 def OUIupdate():
 	"""
 	update the ouilist
 	"""
-	#note to self why the hell am i calling another function hear?
-	#must be marfi's code
-	#   Marfi: Which was working....
 	message.printMessage("Updating OUI list...")
 	ouiUpdate()
 	sys.exit(0)
