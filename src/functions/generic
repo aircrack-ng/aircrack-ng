@@ -18,6 +18,8 @@
 CHOICES="1 2 3 4 5 6 7 8 9 10 11 12 13"
 
 menu(){
+    if [ "$AUTO" == 1 ]; then return; fi
+    setps
     mkmenu "Main Menu" "Scan     - Scan for target" "Select   - Select target" "Attack   - Attack target" "Crack    - Get target key" "Fakeauth - Auth with target" "Deauth   - Deauth from target" "Others   - Various utilities" "Inject   - Jump to inj. menu" "Auto     - Does 1,2,3" "Exit    - Quits"
 }
 
@@ -87,14 +89,17 @@ Parseforap(){
 	i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
 	head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
 
-	_ "\tDetected Access point list" "\n"
-	_ "#\t\tMAC\t\tCHAN\tSECU\tPOWER\t#CHAR\t\tSSID" "\n"
-
+    if [ "$AUTO" != 1 ]; then
+    	_ "\tDetected Access point list" "\n"
+    	_ "#\t\tMAC\t\tCHAN\tSECU\tPOWER\t#CHAR\t\tSSID" "\n"
+    fi
 	while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
 	 longueur=${#MAC}
 	   if [ $longueur -ge 17 ]; then
 	    i=$(($i+1))
-	    echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$IDLENGTH"\t"$ESSID
+        if [ "$AUTO" != 1  ]; then
+    	    echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$IDLENGTH"\t"$ESSID
+        fi
 	    aidlenght=$IDLENGTH
 	    assid[$i]=$ESSID; achannel[$i]=$CHANNEL; 
         amac[$i]=$MAC; aprivacy[$i]=$PRIVACY;
@@ -102,8 +107,14 @@ Parseforap(){
 	   fi
 	done < $DUMP_PATH/dump-02.csv
 
+
+    if [ "$AUTO" == 1 ]; then
+        CURRENT=$(( $CURRENT + 1 ))
+        choice=$CURRENT
+    else
 	_ 'Select target: '
-	read choice
+	    read choice
+    fi
 
 	idlenght=${aidlenght[$choice]}
 	ssid=${assid[$choice]}
@@ -119,6 +130,8 @@ Parseforap(){
 	acouper=${#ssid}
 	fin=$(($acouper-idlength))
 	Host_SSID=${ssid:1:fin}
+    echo "Target network is $Host_SSID $Host_MAC"
+    sleep 2
 }
 
 choosetarget(){
@@ -833,26 +846,41 @@ configure(){
 
 doauto(){
     F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-        choosescan; choosetype
+        choosetype && choosescan && sleep $time_to_scan && killall -2 "airodump-ng" && sleep 2
+        echo " done"; sleep 1
 		if [ -e $DUMP_PATH/dump-01.csv ]; then
-			Parseforap && target && choosetarget && $clear
+        head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv && $clear && i=0
+	    while IFS=, read MAC; do i=$(($i+1)) ; done < $DUMP_PATH/dump-02.csv
+            sleep 1
+        MAX_TARGETS=$i
+            echo "Networks detected $MAX_TARGETS"; sleep 1
+            for i in $MAX_TARGETS; do
+                echo "Trying to crack target: $i"
+    			Parseforap
+                sleep 1
+                if [ "$Host_SSID" != "" ]; then
+                autopwn
+                else
+                    echo "Couldn't find essid, next try"
+                fi
+            done
         else $clear; _ "ERROR: Could not autodetect access points"; fi
-		autopwn
+        export AUTO=0; export QUIET=0; export INTERACTIVE=1;
 }
 
 autopwn(){ 
     F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-
+    sleep 1
     for i in $attack_functions; do
-        $i & cleanp &
+        echo "Gonna use $i in $Host_MAC"
+        sleep 3
+        $i & cleanp && sleep 2 &
         while [ "1" ]; do 
-            if [ "$F" == "1" ]; then break; fi
+            if [ "$F" == "1" ]; then return; fi
             sleep $autopwn_min_sleep; 
             if [ "`check_if_worked`" == 1 ]; then auto; F=1; fi
-            return
         done
         [[ `check_if_worked` == 1 ]] && auto
-        return
     done
 
     export AUTO=0; export QUIET=0; export INTERACTIVE=1 
@@ -860,19 +888,25 @@ autopwn(){
 }
 
 cleanp(){
-    F=1; sleep $autopwn_sleep && clean_processes; 
+    sleep $autopwn_sleep && clean_processes; 
 }
 
 check_all_ivs(){
     for i in $DUMP_PATH/$Host_MAC*.cap; do
-       maxn=$(( $maxn + `ivstools --convert $i|awk '/IVs/ {print $2}'` )); 
+        cur=`ivstools --convert $i|awk '/IVs/ {print $2}'`
+        if [ "$cur" = "" ]; then cur=0; fi
+        maxn=$(( $maxn + $cur ))
     done
-    return $maxn
+    if [ "$maxn" == "" ]; then echo 0; fi
+    echo $maxn
 }
 
 check_if_worked(){
-    min_ivs=`$AIROSCWORDLIST -m $Host_MAC $Host_SSID`
-    if [ `check_all_ivs` -ft "$min_ivs" ]; then return 1; fi
+    if [ -x "$AIROSCWORDLIST" ]; then min_ivs=`$AIROSCWORDLIST -m $Host_MAC $Host_SSID`
+    else min_ivs=50000; fi
+    echo "Minium ivs required: $min_ivs"
+    if [ "$min_ivs" == "" ]; then min_ivs=0; fi
+    if [ "`check_all_ivs`" -lt $min_ivs ]; then return 1; fi
     return 0
 }
 

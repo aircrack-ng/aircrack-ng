@@ -23,6 +23,7 @@ _(){
 }
 
 mainmenu(){
+    if [ "$AUTO" == 1 ]; then return; fi
     select choix in $CHOICES; do
         case "$choix" in
             1)choosetype;;
@@ -148,7 +149,8 @@ execute(){
 		$CDCMD screen -S airoscript -c $SCREENRC -D -RR -X screen -t $title
 		$CDCMD screen -S airoscript -c $SCREENRC -X at "*" stuff "${@}"
     else
-        if [ "$QUIET" != "" ] && [ "$SCAN" != "1" ]; then 
+        if [ "$QUIET" != "" ] || [ "$AUTO" != "1" ]; then 
+            echo -n $title...
             ${@} &> /dev/null &
         else
             $CDCMD $TERMINAL $HOLD $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@}" &
@@ -166,11 +168,12 @@ get_childs(){
     echo $( ps axo ppid,pid|awk "/$1/ {print \$2}"|grep -v "$pid"); 
 }
 clean_processes(){ 
-    for i in `ls /var/run/airoscript/`; do kill $i; done; 
+    for i in `ls /var/run/airoscript/`; do kill -2 $i; rm /var/run/airoscript/$i; done; 
     }
 
 arrow(){ 
-    echo -e -n "\t\n||\t\n||\t\n\/";
+    return
+#    echo -e -n "\t\n||\t\n||\t\n\/";
 }
 fill_menu(){
     len=$(( $1 - $2 )); for i in `seq 0 $len`; do echo -n "$3"; done; 
@@ -214,7 +217,7 @@ mkmenu(){
 monmode(){ $iwconfig $1 |grep "Monitor" && if [ $? != 0 ]; then $AIRMON start $1 $2; fi;}
 reso() {
 	while true; do
-		if [ "$resonset" = "" ]; then mkmenu "Resolution" "640x480" "800x480" "800x600" "1024x768" "1280x768" "1280x1024" "1600x1200"; read -p "Select resolution" reson; fi
+		if [ "$resonset" = "" ]; then mkmenu "Resolution" "640x480" "800x480" "800x600" "1024x768" "1280x768" "1280x1024" "1600x1200"; read -p "Select resolution: " reson; fi
 
 		case $reson in
 			1 ) TLX="83";TLY="11";TRX="60";TRY="18";BLX="75";BLY="18";
