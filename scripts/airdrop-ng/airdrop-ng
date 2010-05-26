@@ -350,7 +350,7 @@ class ruleMatch:
 		iterate though capr and find unknown bssid a client is 
 		associated with
 		"""
-		for bssidKey in self.capr:
+		for bssidKey in self.capr.keys():
 			if self.Client in self.capr[bssidKey]:
 				client_bssid = bssidKey
 				#break at first match
@@ -495,8 +495,6 @@ class ruleMatch:
 					for client in self.clients:
 						self.Client = client
 						self.bssid = self.locate_key()
-						#set channel 
-						self.channel = self.ClientApDB[1][self.bssid]["channel"]
 						#look up each client and update self.bssid
 						if self.bssid == None:
 							message.printMessage([
@@ -504,6 +502,9 @@ class ruleMatch:
 								"Client will be ignored"])
 							#continue #skip this client and move on to the next in the for loop
 							return
+						else: 
+							#set channel
+							self.channel = self.ClientApDB[1][self.bssid]["channel"]
 						try:
 							#locate the clients postion in capr
 							position = self.capr[self.bssid].index(self.Client)
