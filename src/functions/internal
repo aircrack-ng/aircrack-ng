@@ -149,7 +149,7 @@ execute(){
 		$CDCMD screen -S airoscript -c $SCREENRC -D -RR -X screen -t $title
 		$CDCMD screen -S airoscript -c $SCREENRC -X at "*" stuff "${@}"
     else
-        if [ "$QUIET" != "" ] || [ "$AUTO" != "1" ]; then 
+        if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
             echo -n $title...
             ${@} &> /dev/null &
         else
