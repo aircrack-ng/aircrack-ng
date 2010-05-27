@@ -15,17 +15,17 @@
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-CHOICES="1 2 3 4 5 6 7 8 9 10 11 12 13"
+CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
 
 menu(){
     if [ "$AUTO" == 1 ]; then return; fi
     setps
-    mkmenu "Main Menu" "Scan     - Scan for target" "Select   - Select target" "Attack   - Attack target" "Crack    - Get target key" "Fakeauth - Auth with target" "Deauth   - Deauth from target" "Others   - Various utilities" "Inject   - Jump to inj. menu" "Auto     - Does 1,2,3" "Exit    - Quits"
+    mkmenu "Main Menu" "Select   - Select target" "Attack   - Attack target" "Crack    - Get target key" "Fakeauth - Auth with target" "Deauth   - Deauth from target" "Others   - Various utilities" "Inject   - Jump to inj. menu" "Scan - Manually scan targets" "Auto     - Does 1,2,3" "Exit    - Quits"
 }
 
 ## This is for SCAN (1) option: ###########################
 choosetype(){
-if [ "$AUTO" == 1 ]; then ENCRYPT="WEP"; return; fi # We actually just try to crack wep on autpwn mode. 
+if [ "$AUTO" == 1 ]; then ENCRYPT="$1"; return; fi # We actually just try to crack wep on autpwn mode. 
 
 while true; do $clear
   mkmenu "Select encryption" "No filter" "OPN (open)" "WEP" "WPA" "WPA1" "WPA2" "Return to main menu"
@@ -247,35 +247,10 @@ witchattack(){ monmode
 
 	# If wep
     attackwep(){
-    while true; do $clear   
-	  echo -e -n "`gettext '
-	  +----------WEP ATTACKS---------------+
-	  |   Attacks not using a client       |
-	  |                                    |
-	  |   1)  Fake auth => Automatic       |
-	  |   2)  Fake auth => Interactive     |
-	  |   3)  Fragmentation attack         |
-	  |   4)  Chopchop attack              |
-	  |   5)  Cafe Latte attack            |
-	  |   6)  Hirte attack                 |
-	  | __________________________________ |
-	  |                                    |
-	  |   Attacks using a client           |
-	  |                                    |
-	  |   7)  ARP replay => Automatic      |
-	  |   8)  ARP replay => Interactive    |
-	  |   9)  Fragmentation attack         |
-	  |  10)  Frag. attack on client       |
-	  |  11)  Chopchop attack              |
-	  | __________________________________ |
-	  |                                    |
-	  |  Injection if xor file generated   |
-	  |                                    |
-	  |  12) ARP inject from xor (PSK)     |
-	  |  13) Return to main menu           |
-	  +------------------------------------+
-	  Option: '`"
-	  read yn
+    while true; do $clear  
+        mkmenu "Wep Attacks" "-   Attacks not using a client" "Fake auth => Automatic  " "Fake auth => Interactive" "Fragmentation attack " "Chopchop attack " "Cafe Latte attack " "Hirte attack " "separator"	"- Attacks using a client "	"ARP replay => Automatic"	"ARP replay => Interactive"	"Fragmentation attack "	"Frag. attack on client "	"Chopchop attack"	"separator"	"-  Injection if xor file generated "	"ARP inject from xor (PSK) " "Return to main menu "
+
+	  read -p "Enter attack:" yn
 	  echo ""
 	  case $yn in
 	    1  ) fakeautoattack ; break ;;
@@ -558,23 +533,74 @@ deauthfake(){
 
 # This is for others  (7)  option
 
-optionmenu(){ 
-    while true; do
-        mkmenu "Options" "Test injection" "Select another interface" "Reset selected interface" "Change MAC of interface" "Mdk3" "Wesside-ng" "Enable monitor mode" "Checks with airmon-ng" "Change DUMP_PATH" "Merge all ivs from all sessions" "Decrypt current packages" "Try to configure network" "Return to main menu"
+decrypt(){
+# TODO decrypt packages.
+    echo "Error: Not yet implemented"; sleep 3 && $clear
+}
+
+optionmenu(){
+        mkmenu "Options"  "Select another interface" "Reset selected interface"\
+            "Change MAC of interface"  "Enable monitor mode" "Change DUMP_PATH"\
+            "Try to configure network" "Return to main menu"
+
+        read -p "Select option: " yn; 
+        case $yn in
+        1 ) setinterface 1 ; $clear; break ;;
+        2 ) cleanup; $clear; break ;;
+        3 ) wichchangemac ; $clear; break ;;
+        4 ) monmode;$clear ; break ;;
+        5 ) changedumppath;$clear; break;;
+        6 ) configure;$clear; break;;
+        7 ) $clear;break ;;
+        * ) _ "Unknown response. Try again" ;;
+        esac
+}
+
+advancmenu(){
+        mkmenu "Advanced tools" "Test injection" "Checks with airmon-ng" "Mdk3" "Wesside-ng"\
+            "Return to main menu"
         read -p "Select option: " yn; 
         case $yn in
         1 ) inject_test ; $clear; break ;;
-        2 ) setinterface 1 ; $ClEAR; break ;;
-        3 ) cleanup; $clear; break ;;
-        4 ) wichchangemac ; $clear; break ;;
-        5 ) choosemdk;$clear; break;;
-        6 ) choosewesside;$clear; break ;;
-        7 ) monmode;$clear ; break ;;
-        8 ) airmoncheck ;$clear; break ;;
-        9 ) changedumppath;$clear; break;;
-        10) mergeallivs;$clear; break;;
-        11 ) $clear;break ;;
+        2 ) airmoncheck ;$clear; break ;;
+        3 ) choosemdk;$clear; break;;
+        4 ) choosewesside;$clear; break ;;
+        5 ) $clear;break ;;
         * ) _ "Unknown response. Try again" ;;
+        esac
+
+}
+
+ivstoomenu(){
+        mkmenu "IVs tools" "Merge all ivs from all sessions" "Decrypt current packages"\
+            "Return to main menu"
+        read -p "Select option: " yn; 
+        case $yn in
+
+        1) mergeallivs;$clear; break;;
+        2) decrypt; $clear; break;;
+        3 ) $clear;break ;;
+        * ) _ "Unknown response. Try again" ;;
+        esac
+}
+
+extramenu(){ 
+    while true; do
+        mkmenu "Extra tools" "Airoscript Options" "Ivs Tools" "Advanced tools" "Return to main menu"
+        read -p "Select option: " yn; 
+        case $yn in
+            1) optionmenu; $clear; break;;
+            2) advancmenu; $clear; break;;
+            3) ivstoomenu; $clear; break;;
+            5 ) $clear;break ;;
+            * ) _ "Unknown response. Try again" ;;
+        esac
+    
+        read -p "Select option: " yn; 
+        case $yn in
+
+
+
         esac
     done
 }
@@ -597,22 +623,28 @@ cleanup(){
 # 4.
 wichchangemac(){
     while true; do
-        arrow; mkmenu "Mac" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Manual Mac Input"
-        read yn
+        arrow; mkmenu "Mac" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input" 
+        read -p "Input number: " yn
         case $yn in
 
             1 )	ifconfig $wificard down
-                $MACCHANGER -m  $FAKE_MAC $wificard
-                ifconfig $wificard up; $clear; break ;;
+                $MACCHANGER -m  $FAKE_MAC $wificard &>/dev/null
+                ifconfig $wificard up; break ;;
 
             2 ) ifconfig $wificard down; sleep 2
-                $MACCHANGER -m  $Client_MAC $wificard
-                ifconfig $wificard up ;$clear; break ;;
+                $MACCHANGER -m  $Client_MAC $wificard &>/dev/null
+                ifconfig $wificard up ; break ;;
+            3)  export FAKE_MAC=$mac
+                echo "Using for $wificard $FAKE_MAC = $mac"
+                ifconfig $wificard down; sleep 2; 
+                $MACCHANGER -m $mac $wificard &>/dev/null
+                ifconfig $wificard up;
+                break;; 
 
-            3 ) read -p "MAC: " Manual_MAC
+            4 ) read -p "MAC: " Manual_MAC
                 ifconfig $wificard down
-                $MACCHANGER -m  $Manual_MAC $wificard
-                ifconfig $wificard up; $clear; break ;;
+                $MACCHANGER -m  $Manual_MAC $wificard &>/dev/null
+                ifconfig $wificard up; break ;;
 
             * ) _ "Unknown response. Try again" ;;
 
@@ -776,6 +808,7 @@ mergeallivs(){ # TODO Untested
     ivstools --merge $newdir/* $DUMP_PATH/merged.cap
     read -p "`gettext 'Select merged data as target? (y/N): '`" ACP && [[ "$ACP" = "y" ]] && Host_MAC="merged"
 }
+
 changedumppath(){
     OLD_DUMP_PATH=$DUMP_PATH
     read -p "`gettext 'Enter new path: '`" DUMP_PATH
@@ -838,15 +871,19 @@ Host_ssidinput(){
 }
 
 configure(){
-    KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
-    $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key s:$KEY &>/dev/null
-    $DHCPSOFT $wificard &>/dev/null || _ "Could not autoconfigure network" && return 2
-    sleep 3; $clear;
+    if [ -O $DUMP_PATH/$Host_MAC.key ] && [ "$Host_MAC" != "" ]; then
+        KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
+        $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key s:$KEY &>/dev/null
+        $DHCPSOFT $wificard &>/dev/null || _ "Could not autoconfigure network" && return 2
+        sleep 3; $clear;
+    else
+        echo "You haven't cracked this network yet"; sleep 3; $clear
+    fi
 }
 
 doauto(){
     F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-        choosetype && choosescan && sleep $time_to_scan && killall -2 "airodump-ng" && sleep 2
+        choosetype "WEP" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng" && sleep 2
         echo " done"; sleep 1
 		if [ -e $DUMP_PATH/dump-01.csv ]; then
         head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv && $clear && i=0
@@ -865,30 +902,32 @@ doauto(){
                 fi
             done
         else $clear; _ "ERROR: Could not autodetect access points"; fi
-        export AUTO=0; export QUIET=0; export INTERACTIVE=1;
+    cleanautovars
 }
 
 autopwn(){ 
-    F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
+    F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0; next=0;
     sleep 1
     for i in $attack_functions; do
         echo "Gonna use $i in $Host_MAC"
         sleep 3
-        $i & cleanp && sleep 2 &
+        $i & cleanp &
         while [ "1" ]; do 
-            if [ "$F" == "1" ]; then return; fi
-            sleep $autopwn_min_sleep; 
-            if [ "`check_if_worked`" == 1 ]; then auto; F=1; fi
+            [[ "$next" == 1 ]] && break;
+            sleep $autopwn_min_sleep && 
+            if [ "`check_if_worked`" == 1 ]; then
+                auto && cleanautovars && return; fi
         done
-        [[ `check_if_worked` == 1 ]] && auto
     done
+    cleanautovars
+}
 
-    export AUTO=0; export QUIET=0; export INTERACTIVE=1 
-
+cleanautovars(){
+    export AUTO=0; export QUIET=""; export INTERACTIVE=1 
 }
 
 cleanp(){
-    sleep $autopwn_sleep && clean_processes; 
+    sleep $autopwn_sleep && clean_processes && export next=1; 
 }
 
 check_all_ivs(){
@@ -911,10 +950,10 @@ check_if_worked(){
 }
 
 checkforcemac() {
-    if [ "$force_mac_address" == "1" ]; then $clear && echo "Warn: Not checking mac" && menu
+    if [ "$force_mac_address" == "1" ]; then $clear && echo "Warn: Not checking mac" 
     else
-    	mac=`$MACCHANGER -s $wificard|awk {'print $3'}`
-	    if [ "$FAKE_MAC" != "$mac" ]; then wichchangemac;$clear;menu; fi
+    	export mac=`$MACCHANGER -s $wificard|awk {'print $3'}`
+	    if [ "$FAKE_MAC" != "$mac" ]; then wichchangemac; fi
     fi
 }
 
@@ -936,24 +975,25 @@ setupairservng(){
 		fi
 	fi
 }
+askinterface(){
+    mkmenu "Interface selection__" $INTERFACES
+    read -p "Select interface: " j
+	export wificard=`echo $INTERFACES|awk {"print \\\$$j"}`
+}
 
 setinterface(){
     if [ "$1" == "" ]; then
-    	INTERFACES=`ip link|egrep "^[0-9]+"|cut -d ':' -f 2 |awk {'print $1'} |grep -v lo`
+        INTERFACES=`ip link|egrep "^[0-9]+"|cut -d ':' -f 2 |awk {'print $1'} |grep -v lo`; 
     fi
 
-    if [ "$wifi" = "" ]; then
-		echo -e -n "\n_____"; _ "Interface selection" "_____\n"
-		PS3='Select your interface: '
-		select wifi in $INTERFACES; do break; done
-		export wificard=$wifi
-    fi
+    askinterface && checkforcemac
 
-	echo -e "__________________________________\n"
 	_ 'Should I put it in monitor mode?' " (Y/n) "; read answer;
     [[ "$anwser" != n ]] && ac="start" || ac="stop"
     guess_idata $ac; clear; testmac
+
     export iwifi=$wifi
+
 	_ "Interface used is :" $wifi "\n"
 	_ 'Interface type is :' "$TYPE ($DRIVER)" "\n"
     sleep 3
@@ -991,6 +1031,7 @@ _______Target information______
    AP Encryption =$Host_ENC
    AP Speed      =$Host_SPEED
 ________________________________\"`"
+read -p "Press any key to continue " foo
 }
 
 

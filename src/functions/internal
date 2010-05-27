@@ -26,14 +26,14 @@ mainmenu(){
     if [ "$AUTO" == 1 ]; then return; fi
     select choix in $CHOICES; do
         case "$choix" in
-            1)choosetype;;
-            2)select_ap;;
-            3)witchattack;;
-            4)witchcrack;;
-            5)choosefake && menu ;;
-            6)choosedeauth;;
-            7)optionmenu;;
-            8)injectmenu;;
+            1)select_ap;;
+            2)witchattack;;
+            3)witchcrack;;
+            4)choosefake && menu ;;
+            5)choosedeauth;;
+            6)extramenu;;
+            7)injectmenu;;
+            8)choosetype;;
             9)doauto;;
             10)doexit;;
             11)if [ $UNSTABLE = "1" ]; then $clear && unstablemenu; fi;;
@@ -48,7 +48,9 @@ rootwarn(){
 }
 
 setps(){
-    $clear && PS3=`_ 'Input number: '`
+    $clear
+    if [ "$1" != "" ]; then PS3=`_ "$1"`; 
+    else PS3=`_ 'Input number: '`; fi
 }
 
 _debug(){
@@ -96,8 +98,6 @@ screen_startup(){
 		$clear && _ 'airoscript-ng is terminating...'; exit
 	fi
 }
-
-
 
 usage(){
 cat << eof
@@ -199,19 +199,26 @@ mkmenu(){
         echo -e "- $menu_t -"
         for i in `seq 0 $(( $max + 5 ))`; do echo -ne "-"; done
         echo
-
-        for i in "${@}"; do n=$(( $n + 1 )); 
+        n=0
+        for i in "${@}"; do 
             if [ "$i" != "separator" ]; then
-                echo -n "$separator_v $n$f" `gettext "$i"`
+                if [ "`echo $i|cut -b1`" != "-" ]; then 
+                n=$(( $n + 1 )); 
+                    echo -n "$separator_v $n$f" `gettext "$i"`
+                else
+                    echo
+                    echo $i | cut -b2-
+
+                fi
                     if [ $n -gt 9 ]; then fill_menu $(( $max - 1 )) ${#i} " ";
                     else fill_menu $max ${#i} " ";fi
                 echo -e "$separator_v"
             else
-                fill_menu $max $(( $max + ${#menu_t} * 2 )) "-"
+                for i in `seq 0 $(( $max + 5 ))`; do echo -ne "-"; done
             fi
         done
         for i in `seq 0 $(( $max + 5 ))`; do echo -ne "-"; done
-        echo -e "\n\n"
+        echo -e "\n"
 }
 
 monmode(){ $iwconfig $1 |grep "Monitor" && if [ $? != 0 ]; then $AIRMON start $1 $2; fi;}
@@ -240,7 +247,7 @@ reso() {
 }
 
 function setterminal {
-	$clear && getterminal
+	getterminal
 	_debug "Im going to set terminal options for your terminal now"
 
     case $TERMINAL in 
