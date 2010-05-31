@@ -413,7 +413,7 @@ witchcrack(){
                 arrow; mkmenu "WEP/WPA Cracking Options" "Autocrack" "Wlandecrypter" "Jazzteldecripter" "Standard aircrack-ng" "Return to menu" &&  read yn
 				case $yn in
 					1 ) echo "AUTO"; sleep 2; auto ; break ;;
-					2 ) echo "WLD"; sleep 2; wld ; break ;;
+					2 ) echo "WLD"; sleep 2; wld ; sleep 2; break ;;
 					3 ) echo "JTD"; sleep 2; jtd ; break ;;
 					4 ) selectcracking ; break ;;
 					5 ) $clear; break;;
