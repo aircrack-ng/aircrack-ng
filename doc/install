@@ -1,5 +1,5 @@
 REQUIREMENTS
-============
+------------
 
     - GNU gettext (gettext package)
     - ip (iproute package)
@@ -7,18 +7,20 @@ REQUIREMENTS
     - *Working* injection capable driver for the interface you want to use
 
     Build-deps: gettext
-    Deps:   Terminal emulator (mrxvt, xterm...) -> Preferibly xterm
-		Aircrack-ng > 1.0.2
-		Bash
-		wlandecrypter (optional)
-		jazzteldecrypter (optional)
-		mdk (optional)
-		GNU Tools like grep awk...
-		macchanger (optional, highly recommended)
+    Deps:
+        mrxvt|xterm|gnome-terminal -> Preferibly xterm
+		Aircrack-ng ( = airoscript-ng_version) )
+		bash ( >3.5 )
+        grep
+        macchanger
+
+    Recomends:
+		wlandecrypter
+		jazzteldecrypter
+		mdk 
 
 COMPILING:
 ==========
-
     You have to identify where your aircrack-ng installation is.
     It can be on /usr or on /usr/local
         Hint: packages are usually in /usr, if you installed

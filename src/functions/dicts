@@ -18,16 +18,19 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 doitwld(){
+    echo "Cracking WLAN"; sleep 2
 	execute $WLD $Host_MAC $Host_SSID $DUMP_PATH/wlddic 
 	execute $AIRCRACK -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_MAC-01.cap
 }
 
 doitjt(){
+    echo "Cracking Jazztel"; sleep 2
 	execute $JTD $Host_MAC $Host_SSID $DUMP_PATH/jtddic
 	execute $AIRCRACK  -b $Host_MAC -w $DUMP_PATH/jtddic $DUMP_PATH/$Host_MAC-01.cap
 }
 
 wld(){
+    echo "WLAN"
     if [ "$Host_MAC" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
     if [[ "$Host_MAC" =~ "WLAN(.*)" ]]; then
         if [ -e $DUMP_PATH/$Host_MAC-01.cap ]; then doitjtd
@@ -38,6 +41,7 @@ wld(){
 }
 
 jtd(){
+    echo "JAZZTEL"
     if [ "$Host_MAC" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
     if [[ "$Host_MAC" =~ "JAZZTEL(.*)" ]]; then
         if [ -e $DUMP_PATH/$Host_MAC-01.cap ]; then doitjtd

