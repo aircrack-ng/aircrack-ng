@@ -145,8 +145,10 @@ _resonset(){
 execute(){ 
     title=$1; shift;
 
-    if [ "" !=  "$ADDOPTIONS" ]; then
-        read -p "Enter extra options to execute for \"$@\"" eopts
+    if [  "$ADDOPTIONS" != "" ]; then
+        printf -- "Executing $@"
+        echo
+        read -p "Enter extra options to execute: " eopts
     fi
 
     if [ $TERMINAL == "screen" ]; then
