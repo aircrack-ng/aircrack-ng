@@ -145,15 +145,19 @@ _resonset(){
 execute(){ 
     title=$1; shift;
 
+    if [ "" !=  "$ADDOPTIONS" ]; then
+        read -p "Enter extra options to execute for \"$@\"" eopts
+    fi
+
     if [ $TERMINAL == "screen" ]; then
 		$CDCMD screen -S airoscript -c $SCREENRC -D -RR -X screen -t $title
-		$CDCMD screen -S airoscript -c $SCREENRC -X at "*" stuff "${@}"
+		$CDCMD screen -S airoscript -c $SCREENRC -X at "*" stuff "${@} $eopts" 
     else
         if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
             echo -n $title...
-            ${@} &> /dev/null &
+            ${@} $eopts &> /dev/null &
         else
-            $CDCMD $TERMINAL $HOLD $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@}" &
+            $CDCMD $TERMINAL $HOLD $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
         fi
     fi 
     save_pids $!

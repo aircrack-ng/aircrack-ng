@@ -512,9 +512,9 @@ fi
                 read yn; $clear
                 case $yn in
                     1 ) deauthall ; break ;;
-                2 ) deauthfake ; break ;;
-            3 ) deauthclient ; break ;;
-        * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+                    2 ) deauthfake ; break ;;
+                    3 ) deauthclient ; break ;;
+                    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
     esac
 done
     fi
