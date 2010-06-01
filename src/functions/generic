@@ -439,10 +439,10 @@ selectcracking(){
         fi
 
 		while true; do
-        mkmenu "WEP Cracking Options" "aircrack-ng PTW attack" "aircrack-ng Korek" "aircrack-ng PTW user options"
-		read yn
+        mkmenu "WEP Cracking Options" "aircrack-ng defaults" "aircrack-ng old Korek" "aircrack-ng interactive"
+		read -p "Select option: " yn
 		case $yn in
-	    	2 ) execute $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -f $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction; $clear; break ;;
+	    	1 ) execute $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -f $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction; $clear; break ;;
 	    	2 ) execute $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -f $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K & menufonction; $clear; break ;;
 	    	3 ) read -p "Insert Fudge Factor: " FUDGE_FACTOR;
                 read -p "`gettext 'Type encryption size (64,128...): '`" ENC_SIZE
@@ -457,8 +457,19 @@ selectcracking(){
 
 	# This is for wpa cracking
     wpacrack(){
-        execute $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction
-	}
+		    while true; do
+                mkmenu "WPA Cracking Options" "Standard" "Use precomputed pmk database"
+                read -p "Select option: " foo
+
+                case $foo in
+                    1)  execute $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction ; $clear;;
+                    2)  $clear; read -p "Enter Database location [$db_location]" db_location;
+                        execute $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location
+	    	        * ) echo "`gettext 'Unknown response. Try again'`" ;;
+        		esac
+	      	done
+                
+    }
 	
 # This is for Fake auth  (5)  option
 choosefake(){
@@ -568,17 +579,81 @@ advancmenu(){
 
 }
 
+othertmenu(){
+    while true; do
+    mkmenu "Other aircrack-ng tools" "Operations with ivstools" "Decloak packages" "Create virtual interface with airtun-ng" "Show kstats report" "Return to main menu"
+        read -p "Select option: " yn; 
+        case $yn in
+            1) ivstoomenu; $clear; break;;
+            2) airdecmenu; $clear; break;;
+            3) airtunmenu; $clear; break;;
+            4) kstatsmenu; $clear; break;;
+            5) $clean; break;;
+        esac
+    done
+}
+
+airdecmenu(){
+    while true; do
+        if [ "$d_cloaked_null" == 1 ]; then $d_cloaked_null_status="X"; else $d_cloaked_null_status=" "; fi
+        if [ "$d_cloaked_base" == 1 ]; then $d_cloaked_base_status="X"; else $d_cloaked_base_status=" "; fi
+        if [ "$d_cloaked_frag" == 1 ]; then $d_cloaked_frag_status="X"; else $d_cloaked_frag_status=" "; fi
+
+        mkmenu "Airdecloak-ng" "Asume that null packets can be cloacked [$d_cloaked_null_status]" "Disable base filter [$d_cloaked_base_status]" "Drop fragmented packets [$d_cloaked_frag_status]" "Specify filters (comma separated)" "Launch decloak" "Return to main menu"
+        opts="";
+        read -p "Select option: " yn; 
+        case $yn in
+            1) if [ "$d_cloaked_null" == 1 ]; then d_cloaked_null=0; else d_cloaked_null=1; fi; $clear;;
+            2) if [ "$d_cloaked_base" == 1 ]; then d_cloaked_base=0; else d_cloaked_base=1; fi; $clear;;
+            3) if [ "$d_cloaked_frag" == 1 ]; then d_cloaked_frag=0; else d_cloaked_frag=1; fi; $clear;;
+            4) read -p "Enter filters: " d_cloaked_filters; $clear;;
+            5)
+                if [ "$d_cloaked_null" == 1 ]; then opts="$opts --null-packets"; fi
+                if [ "$d_cloaked_base" == 1 ]; then opts="$opts --diable-base-filter"; fi
+                if [ "$d_cloaked_frag" == 1 ]; then opts="$opts --drop-frag"; fi
+                execute $AIRDECLOAK $opts --ssid $Host_SSID --bssid $Host_MAC --filters $d_cloaked_filters -i $DUMP_PATH/$Host_MAC-01.cap 
+                $clear; break;;
+            6) $clear; break;;
+        esac
+    done
+    
+}
+
+airtunmenu(){
+    if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ -e $DUMP_PATH/$Host_MAC.key ]; then
+        _ "Creating virtual interface" && sleep 2
+        $AIRTUN -a $Host_MAC -i $wificard -w "`cat $DUMP_PATH/$Host_MAC.key`"
+        _ "Take note of the created virtual interface"; sleep 2; $clear; return
+    else
+        $clear; echo "You don't have a cracked WEP interface"; sleep 2; $clear; return
+    fi
+}
+
+kstatsmenu(){
+    if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ -e $DUMP_PATH/$Host_MAC.key ]; then
+        _ "Converting to ivs"; sleep 0.2
+        $IVSTOOLS --convert $DUMP_PATH/$Host_MAC.cap $DUMP_PATH/$Host_MAC.ivs &> /dev/null
+        _ "I'm going to print here kstats info"; sleep 1
+        $KSTATS $DUMP_PATH/$Host_MAC-01.ivs `cat $DUMP_PATH/$Host_MAC.key`
+        read -p "Enter any key to continue" ktc
+    else
+        $clear; echo "You don't have a cracked WEP interface"; sleep 2; $clear; return
+    fi
+
+}
+
 ivstoomenu(){
+    while true; do
         mkmenu "IVs tools" "Merge all ivs from all sessions" "Decrypt current packages"\
             "Return to main menu"
         read -p "Select option: " yn; 
         case $yn in
-
-        1) mergeallivs;$clear; break;;
-        2) decrypt; $clear; break;;
-        3 ) $clear;break ;;
-        * ) _ "Unknown response. Try again" ;;
+            1) mergeallivs;$clear; break;;
+            2) decrypt; $clear; break;;
+            3 ) $clear;break ;;
+            * ) _ "Unknown response. Try again" ;;
         esac
+    done
 }
 
 extramenu(){ 
@@ -587,17 +662,10 @@ extramenu(){
         read -p "Select option: " yn; 
         case $yn in
             1) optionmenu; $clear; break;;
-            2) advancmenu; $clear; break;;
-            3) ivstoomenu; $clear; break;;
-            5 ) $clear;break ;;
+            2) othertmenu; $clear; break;;
+            3) advancmenu; $clear; break;;
+            4 ) $clear;break ;;
             * ) _ "Unknown response. Try again" ;;
-        esac
-    
-        read -p "Select option: " yn; 
-        case $yn in
-
-
-
         esac
     done
 }

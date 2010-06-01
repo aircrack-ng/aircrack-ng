@@ -10,6 +10,10 @@ Changelog for airoscript-ng 1.1:
 prettyer
 - New theme "minimal" is default now.
 - Configuration made much simpler.
+- Pmk databases from airolib-ng support
+- Decloaking support with airdecloak-ng
+- Added an option to create a virtual interface with airtun-ng
+- Kstats support
 
 Changelog for airoscript-ng 1.0:
 - Fixed client selection menu 
