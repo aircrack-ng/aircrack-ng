@@ -9,10 +9,11 @@ REQUIREMENTS
     Build-deps: gettext
     Deps:
         mrxvt|xterm|gnome-terminal -> Preferibly xterm
-		Aircrack-ng ( = airoscript-ng_version) )
+		aircrack-ng ( = airoscript-ng_version) )
 		bash ( >3.5 )
         grep
         macchanger
+        iproute ( /bin/ip )
 
     Recomends:
 		wlandecrypter
