@@ -464,7 +464,7 @@ selectcracking(){
                 case $foo in
                     1)  execute $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction ; $clear;;
                     2)  $clear; read -p "Enter Database location [$db_location]" db_location;
-                        execute $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location
+                        execute $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location;;
 	    	        * ) echo "`gettext 'Unknown response. Try again'`" ;;
         		esac
 	      	done
@@ -1048,7 +1048,7 @@ askinterface(){
 
 setinterface(){
     if [ "$1" == "" ]; then
-        INTERFACES=`ip link|egrep "^[0-9]+"|cut -d ':' -f 2 |awk {'print $1'} |grep -v lo`; 
+        INTERFACES=`ip link|egrep "^[0-9]+"|awk '/: /{gsub(":"," "); print $2}' |grep -v lo`; 
     fi
 
     askinterface && checkforcemac
