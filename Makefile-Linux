@@ -95,10 +95,11 @@ uninstall: uninstall-manpages uninstall-binary uninstall-data uninstall-docs uni
 
 uninstall-binary:
 	@rm  $(bindir)/$(name)
-	@rm $(bindir)/airopdate
+#	@rm $(bindir)/airopdate
 
 uninstall-data: uninstall-locale
-	@rm $(etcdir)/airosperl.conf $(sysconfdir)/airoscript-ng.conf
+#	@rm $(etcdir)/airosperl.conf 
+	@rm $(etcdir)/airoscript-ng.conf
 	@rm -r $(datadir)
 
 uninstall-docs:
