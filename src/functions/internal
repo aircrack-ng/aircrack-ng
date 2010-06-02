@@ -74,6 +74,9 @@ setaircrackpaths(){
 	TKIPTUN=$SBINDIR"tkiptun-ng"
     IVSTOOLS=$SBINDIR"ivstools"
 	MACCHANGER=$BINDIR"macchanger"
+    AIRGRAPH=$BINDIR"airgraph-ng"
+    AIRDECLOAK=$BINDIR"airdecloak-ng"
+    KSTATS=$BINDIR"kstats"
 	iwconfig="iwconfig"
 
 }

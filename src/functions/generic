@@ -547,7 +547,7 @@ decrypt(){
 }
 
 optionmenu(){
-        mkmenu "Options"  "Select another interface" "Reset selected interface"\
+        mkmenu "Airoscript options"  "Select another interface" "Reset selected interface"\
             "Change MAC of interface"  "Enable monitor mode" "Change DUMP_PATH"\
             "Try to configure network" "Return to main menu"
 
@@ -564,33 +564,33 @@ optionmenu(){
         esac
 }
 
-advancmenu(){
-        mkmenu "Advanced tools" "Test injection" "Checks with airmon-ng" "Mdk3" "Wesside-ng"\
-            "Return to main menu"
-        read -p "Select option: " yn; 
-        case $yn in
-        1 ) inject_test ; $clear; break ;;
-        2 ) airmoncheck ;$clear; break ;;
-        3 ) choosemdk;$clear; break;;
-        4 ) choosewesside;$clear; break ;;
-        5 ) $clear;break ;;
-        * ) _ "Unknown response. Try again" ;;
-        esac
-
-}
 
 othertmenu(){
     while true; do
-    mkmenu "Other aircrack-ng tools" "Operations with ivstools" "Decloak packages" "Create virtual interface with airtun-ng" "Show kstats report" "Return to main menu"
+    mkmenu "Other aircrack-ng tools" "Operations with ivstools" "Decloak packages" "Create virtual interface with airtun-ng" "Show kstats report" "Test injection" "Checks with airmon-ng" "mdk3" "Auto crack wep with wesside-ng" "Create graphs" "Return to main menu"
         read -p "Select option: " yn; 
         case $yn in
-            1) ivstoomenu; $clear; break;;
-            2) airdecmenu; $clear; break;;
-            3) airtunmenu; $clear; break;;
-            4) kstatsmenu; $clear; break;;
-            5) $clean; break;;
+            1  ) ivstoomenu    ; $clear; break;;
+            2  ) airdecmenu    ; $clear; break;;
+            3  ) airtunmenu    ; $clear; break;;
+            4  ) kstatsmenu    ; $clear; break;;
+            5  ) inject_test   ; $clear; break;;
+            6  ) airmoncheck   ; $clear; break;;
+            7  ) choosemdk     ; $clear; break;;
+            8  ) choosewesside ; $clear; break;;
+            9  ) _airgraph     ; $clear; break;;
+            10 ) $clear        ; break ;;
         esac
     done
+}
+
+_airgraph(){
+    if [ "$Host_MAC" == "" ]; then
+        read -p "Enter format (CPG|CAPR): " g
+        read -p "Do you want to launch a browser? [y|N] " yn
+        execute "Generating graphics" $AIRGRAPH -i $DUMP_PATH/$Host_MAC.csv -o $DUMP_PATH/$Host_MAC.png -g $g
+        [ $yn == "y" ] && sensible-browser $DUMP_PATH/$Host_MAC.png
+    else $clear; _ "Error: You have to scan for targets first"; fi
 }
 
 airdecmenu(){
@@ -658,12 +658,11 @@ ivstoomenu(){
 
 extramenu(){ 
     while true; do
-        mkmenu "Extra tools" "Airoscript Options" "Ivs Tools" "Advanced tools" "Return to main menu"
+        mkmenu "Extra tools" "Airoscript Options" "Advanced tools" "Return to main menu"
         read -p "Select option: " yn; 
         case $yn in
             1) optionmenu; $clear; break;;
             2) othertmenu; $clear; break;;
-            3) advancmenu; $clear; break;;
             4 ) $clear;break ;;
             * ) _ "Unknown response. Try again" ;;
         esac
