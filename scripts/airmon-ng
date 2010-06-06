@@ -196,7 +196,7 @@ getChipset() {
         CHIPSET="Atmel   "
     fi
 
-    if [ x$DRIVER = "xb43" -o x$DRIVER = "xb43legacy" -o x$DRIVER = "xbcm43xx" -o x$DRIVER = "xwl"]
+    if [ x$DRIVER = "xb43" -o x$DRIVER = "xb43legacy" -o x$DRIVER = "xbcm43xx" -o x$DRIVER = "xwl" ]
     then
         CHIPSET="Broadcom"
     fi
