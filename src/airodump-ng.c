@@ -3683,6 +3683,7 @@ int dump_write_kismet_netxml( void )
     struct ST_info *st_cur;
     char first_time[TIME_STR_LENGTH];
     char last_time[TIME_STR_LENGTH];
+    char * manuf;
     char * essid = NULL;
 
     if (! G.record_data || !G.output_format_kismet_netxml)
@@ -3779,7 +3780,9 @@ int dump_write_kismet_netxml( void )
 					 ap_cur->bssid[4], ap_cur->bssid[5] );
 
 		/* Manufacturer, if set using standard oui list */
-		fprintf(G.f_kis_xml, "\t\t<manuf>%s</manuf>\n", (ap_cur->manuf != NULL) ? ap_cur->manuf : "Unknown");
+		manuf = sanitize_xml((unsigned char *)ap_cur->manuf, strlen(ap_cur->manuf));
+		fprintf(G.f_kis_xml, "\t\t<manuf>%s</manuf>\n", (manuf != NULL) ? manuf : "Unknown");
+		free(manuf);
 
 		/* Channel
 		   FIXME: Take G.freqoption in account */
