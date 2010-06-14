@@ -1,7 +1,7 @@
 AC_ROOT		= ..
 include		$(AC_ROOT)/common.mak
 
-SCRIPTS         = airmon-ng airdriver-ng airodump-ng-oui-update versuck-ng
+SCRIPTS         = airmon-ng airdriver-ng airodump-ng-oui-update
 
 default: all
 
@@ -12,7 +12,6 @@ install:
 	install -m 755 $(SCRIPTS) $(DESTDIR)$(sbindir)
 
 uninstall:
-	-rm -f $(DESTDIR)$(sbindir)/versuck-ng
 	-rm -f $(DESTDIR)$(sbindir)/airmon-ng
 	-rm -f $(DESTDIR)$(sbindir)/airdriver-ng
 	-rm -f $(DESTDIR)$(sbindir)/airodump-ng-oui-update
