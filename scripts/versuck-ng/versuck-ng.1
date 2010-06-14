@@ -10,7 +10,10 @@ versuck-ng [options]
 .SH DESCRIPITION
 .I	versuck-ng's purpose is to calculate the default WEP key for verizon 
 .I	issued actiontec wireless routers.  It does this using a list of  
-.I	known hardware IDs in the BSSID used by the router.
+.I	known hardware IDs in the wired mac used by the router. 
+.I	Depending on the BSSID you can some times use it as well. 
+.I	The OUI needs to match on both the wireless and wired mac for use of 
+.I	the bssid to work.
  
                                 
 versuck-ng -m [the internal mac address] -e [the ESSID of the device]
