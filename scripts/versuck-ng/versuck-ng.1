@@ -1,0 +1,24 @@
+.TH versuck-ng "June 2010" Linux "User Manual"
+
+
+.SH NAME
+versuck-ng - an actiontec router default wep key generator
+
+.SH SYNOPSIS
+versuck-ng [options]
+
+.SH DESCRIPITION
+.I	versuck-ng's purpose is to calculate the default WEP key for verizon 
+.I	issued actiontec wireless routers.  It does this using a list of  
+.I	known hardware IDs in the BSSID used by the router.
+ 
+                                
+versuck-ng -m [the internal mac address] -e [the ESSID of the device]
+
+.SH OPTIONS
+.IP	-h  
+Shows the help screen.
+.IP	-m  
+The internal mac address of the device.
+.IP	-e
+The ESSID that the device is using.

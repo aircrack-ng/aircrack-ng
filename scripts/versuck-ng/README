@@ -1,0 +1,12 @@
+Please read the tools manpage 
+this can be done with the following command from the current directory
+
+man ./versuck-ng.1
+
+Also please check out the tools help with 
+
+./versuck-ng -h
+
+Thank you
+-TheX1le
+

