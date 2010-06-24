@@ -136,17 +136,24 @@ class parseFiles:
 		"""
 		clientList	  = []
 		pipe		  = ruleRaw.find('|')
-		compTrue	  = ruleRaw[1:].find(',') 
 		clientOuiList = [] #list to store client ouis
 		bssidOuiList  = [] #list to store bssid ouis
 		bssid		  = None #place holder
 		bssidList	  = []
 		essidList	  = {}
+		#build an essid to bssid lookup
+		#BUG may be here if a essid has multiple bssids
 		for ap in self.airoAP.values():
 			essidList[ap["essid"]] = ap["bssid"]
-		
-		if compTrue == -1: delim = ';'
-		else: delim = ','
+		compTrue = ruleRaw[1:].find(';')
+		if compTrue != -1:
+				delim = ';'
+		else:
+			compTrue	  = ruleRaw[1:].find(',') 
+			if compTrue == -1:
+				delim = ';'
+			else: 
+				delim = ','
 		for postion in ruleRaw[pipe+1:].split(delim):
 			if postion.upper() == "ANY": #client any
 				break
