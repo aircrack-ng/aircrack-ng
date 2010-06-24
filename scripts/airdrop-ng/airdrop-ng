@@ -144,7 +144,7 @@ class parseFiles:
 		#build an essid to bssid lookup
 		#BUG may be here if a essid has multiple bssids
 		for ap in self.airoAP.values():
-			essidList[ap["essid"]] = ap["bssid"]
+			essidList[ap["bssid"]] = ap["essid"]
 		compTrue = ruleRaw[1:].find(';')
 		if compTrue != -1:
 				delim = ';'
@@ -184,14 +184,19 @@ class parseFiles:
 		if ruleRaw[2:pipe].upper() != "ANY":
 			bssidMac = ruleRaw[2:pipe].replace("-",":") 
 			valid = self.validMacChk(bssidMac)
+			import pdb
+			pdb.set_trace()
 			if valid == True :
 				#match mac address
 				bssidList = [bssidMac.upper()]
 			
-			elif bssidMac in essidList.keys():
-				for essid in essidList.keys():
-					if bssidMac == essid:
-						bssidList.append(essidList[essid])
+			elif bssidMac in essidList.values():
+				#bssidMac is provided by the user and at this point is most
+				#likely a essid
+				for bssid in essidList:
+					#bssid is a true bssid
+					if essidList[bssid] == bssidMac:
+						bssidList.append(bssid)
 			
 			elif ouiLookup.compKeyChk(bssidMac) == True: #company oui lookup
 				bssidOuiList.extend(ouiLookup.lookup_company(bssidMac))
