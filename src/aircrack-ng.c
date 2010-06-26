@@ -3960,6 +3960,13 @@ int crack_wpa_thread( void *arg )
 
 				pthread_mutex_lock(&mx_nb);
 				nb_tried += 4;
+
+				// # of key tried might not always be a multiple of 4
+				if(key[0][0]==0) nb_tried--;
+				if(key[1][0]==0) nb_tried--;
+				if(key[2][0]==0) nb_tried--;
+				if(key[3][0]==0) nb_tried--;
+
 				nb_kprev += 4;
 				pthread_mutex_unlock(&mx_nb);
 
@@ -3993,6 +4000,13 @@ int crack_wpa_thread( void *arg )
 
 		pthread_mutex_lock(&mx_nb);
 		nb_tried += 4;
+
+		// # of key tried might not always be a multiple of 4
+		if(key[0][0]==0) nb_tried--;
+		if(key[1][0]==0) nb_tried--;
+		if(key[2][0]==0) nb_tried--;
+		if(key[3][0]==0) nb_tried--;
+
 		nb_kprev += 4;
 		pthread_mutex_unlock(&mx_nb);
 
