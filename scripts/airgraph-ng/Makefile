@@ -1,7 +1,7 @@
 AG_ROOT		= .
 include		$(AG_ROOT)/common.mak
 
-SCRIPTS         = airgraph-ng.py dump-join.py
+SCRIPTS         = airgraph-ng dump-join
 DOCFILES        = README
 
 default: all
@@ -15,8 +15,8 @@ install:
 	$(MAKE) -C lib $(@)
 
 uninstall:
-	-rm -f $(DESTDIR)$(bindir)/airgraph-ng.py 
-	-rm -f $(DESTDIR)$(bindir)/dump-join.py
+	-rm -f $(DESTDIR)$(bindir)/airgraph-ng
+	-rm -f $(DESTDIR)$(bindir)/dump-join
 	-rm -f $(DESTDIR)$(docdir)/README
 	$(MAKE) -C lib $(@)
 	$(MAKE) -C man $(@)
