@@ -285,6 +285,11 @@ getChipset() {
     then
         CHIPSET="Hermes/Prism"
     fi
+    
+    if [ x$DRIVER = "xath9k_htc" ]
+    then
+        CHIPSET="AR9001/9002"
+    fi
 }
 
 getPhy() {
