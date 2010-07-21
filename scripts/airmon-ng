@@ -258,7 +258,7 @@ getChipset() {
 
     if [ x$DRIVER = "xipw2200" ]
     then
-        CHIPSET="Intel 2200BG"
+        CHIPSET="Intel 2200BG/2915ABG"
     fi
 
     if [ x$DRIVER = "xipw3945" -o x$DRIVER = "xipwraw" -o x$DRIVER = "xiwl3945" ]
@@ -289,6 +289,11 @@ getChipset() {
     if [ x$DRIVER = "xath9k_htc" ]
     then
         CHIPSET="AR9001/9002/9271"
+    fi
+    
+    if [ x$DRIVER = "xwl12xx" ]
+    then
+            CHIPSET="TI WL1251/WL1271"
     fi
 }
 
