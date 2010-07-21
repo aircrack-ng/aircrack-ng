@@ -94,6 +94,12 @@ getDriver() {
 }
 
 scanProcesses() {
+    if [ -f "`which service 2>&1`" ] && [ x"$1" == xkill ]
+    then
+    	service network-manager stop 2>/dev/null >/dev/null
+ 	service avahi-daemon stop 2>/dev/null >/dev/null
+    fi
+
     match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
     if [ $match -gt 0 -a x"$1" != xkill ]
     then
