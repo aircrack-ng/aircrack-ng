@@ -1,5 +1,5 @@
-AG_ROOT		= ..
-include		$(AG_ROOT)/common.mak
+AC_ROOT		= ../../..
+include		$(AC_ROOT)/common.mak
 
 LIB_FILES	= lib_Airgraphviz.py
 

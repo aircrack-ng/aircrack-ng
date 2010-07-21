@@ -1,5 +1,5 @@
-AG_ROOT		= ..
-include		$(AG_ROOT)/common.mak
+AC_ROOT		= ../../..
+include		$(AC_ROOT)/common.mak
 
 MP_FILES        = airgraph-ng.1 dump-join.1
 
