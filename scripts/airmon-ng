@@ -252,7 +252,7 @@ getChipset() {
         CHIPSET="Ralink 2573 USB"
     fi
 
-    if [ x$DRIVER = "xrt2800" -o x$DRIVER = "xrt2800usb" ]
+    if [ x$DRIVER = "xrt2800" -o x$DRIVER = "xrt2800usb" -o x$DRIVER = "xrt3070sta" ]
     then
         CHIPSET="Ralink RT2870/3070"
     fi
