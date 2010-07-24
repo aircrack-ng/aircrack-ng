@@ -292,7 +292,7 @@ getChipset() {
         CHIPSET="Hermes/Prism"
     fi
     
-    if [ x$DRIVER = "xath9k_htc" ]
+    if [ x$DRIVER = "xath9k_htc" -o x$DRIVER = "xusb" ]
     then
         CHIPSET="AR9001/9002/9271"
     fi
