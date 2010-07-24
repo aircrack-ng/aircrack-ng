@@ -5582,7 +5582,11 @@ usage:
 				return( SUCCESS );
 			}
 			else
-				printf( "\nPassphrase not in dictionary \n" );
+				{
+					printf( "\nPassphrase not in dictionary \n" );
+					printf("\33[5;30H %lld",nb_tried);
+					printf("\33[32;0H\n");
+				}
 
 			printf("\n");
 
