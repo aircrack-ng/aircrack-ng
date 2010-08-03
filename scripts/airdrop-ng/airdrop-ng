@@ -184,8 +184,6 @@ class parseFiles:
 		if ruleRaw[2:pipe].upper() != "ANY":
 			bssidMac = ruleRaw[2:pipe].replace("-",":") 
 			valid = self.validMacChk(bssidMac)
-			import pdb
-			pdb.set_trace()
 			if valid == True :
 				#match mac address
 				bssidList = [bssidMac.upper()]
