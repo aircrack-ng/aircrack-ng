@@ -301,6 +301,12 @@ getChipset() {
     then
             CHIPSET="TI WL1251/WL1271"
     fi
+    
+    
+    if [ x$DRIVER = "xr871x_usb_drv" ]
+    then
+            CHIPSET="Realtek 81XX"
+    fi
 }
 
 getPhy() {
