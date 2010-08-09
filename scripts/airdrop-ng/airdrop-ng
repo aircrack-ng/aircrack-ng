@@ -579,7 +579,7 @@ class ruleMatch:
 						self.Client = client
 						self.bssid  = self.locate_key()
 						if self.bssid == None:
-							message.printMessage(["Unable to locate bssid for "+client,
+							message.printMessage(["Unable to locate bssid for client "+client,
 								" Skipping\n"])
 							continue
 						#set channel
@@ -1059,13 +1059,23 @@ if __name__ == "__main__":
 			sys.exit(-1)
 		
 		#Start the main loop
+		napTime = float(options.nap)
 		Targeting = getTargets(options.rule,options.data,options.debug)
 		while True:
 				Targeting.run()	
 				if Targeting.targets != None:
-					TotalPacket += makeMagic(Targeting.targets,int(options.slept))
-					message.printMessage("Waiting "+str(options.nap)+" sec in between loops\n")
-					sleep(float(options.nap))
+					rtnPktCount = makeMagic(Targeting.targets,int(options.slept))
+					if rtnPktCount == 0:
+						message.printMessage("Zero Packets were to be sent, Napping for 5 sec to await changes in sniffed data\n")
+						zp = True
+					TotalPacket += rtnPktCount
+					if zp is True:
+						time = 5
+						zp = False
+					else:
+						time = napTime
+					message.printMessage("Waiting "+str(time)+" sec in between loops\n")
+					sleep(time)
 
 	except (KeyboardInterrupt, SystemExit):
 		message.printMessage(["\nAirdrop-ng will now exit","Sent "+str(TotalPacket)+" Packets",
