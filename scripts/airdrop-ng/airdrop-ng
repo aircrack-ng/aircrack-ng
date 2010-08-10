@@ -835,14 +835,20 @@ def lorconTX(pktNum=5,packet=None, channel=1 ,slept=0):
 	#pktNum is number each packet is sent
 	count = 0
   	tx.setfunctionalmode("INJECT")
-	if tx.getchannel() != channel:
-		try:
-			tx.setchannel(channel) #set the channel to send packets on
-		except pylorcon.LorconError,e:
-			message.printError(["\nError Message from lorcon:",str(e),
-				"Unable to set channel card does not seem to support it",
-				"Skipping packet"])
-			return False
+	try:
+		if tx.getchannel() != channel:
+			try:
+				tx.setchannel(channel) #set the channel to send packets on
+			except pylorcon.LorconError,e:
+				message.printError(["\nError Message from lorcon:",str(e),
+					"Unable to set channel card does not seem to support it",
+					"Skipping packet"])
+				return False
+	except pylorcon.LorconError,e:
+		message.printError(["\nError Message from lorcon:",str(e),
+			"Unable to check cards channel card does not seem to support it",
+			"Skipping packet"])
+		return False
 	while count != pktNum:
 		try:
 			tx.txpacket(packet)
@@ -1061,6 +1067,8 @@ if __name__ == "__main__":
 		#Start the main loop
 		napTime = float(options.nap)
 		Targeting = getTargets(options.rule,options.data,options.debug)
+		#set zero packet flag to false
+		zp = False
 		while True:
 				Targeting.run()	
 				if Targeting.targets != None:
