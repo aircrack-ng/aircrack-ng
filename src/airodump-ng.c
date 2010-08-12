@@ -3570,7 +3570,7 @@ char * sanitize_xml(unsigned char * text, int length)
 					strncat(newtext, "&gt;", len);
 					break;
 				default:
-					if (isprint((int)(*pos))) {
+					if ( isprint((int)(*pos)) || (*pos)<0 ) {
 						newtext[strlen(newtext)] = *pos;
 					} else {
 						newtext[strlen(newtext)] = '\\';
