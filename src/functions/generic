@@ -594,9 +594,9 @@ _airgraph(){
 
 airdecmenu(){
     while true; do
-        if [ "$d_cloaked_null" == 1 ]; then $d_cloaked_null_status="X"; else $d_cloaked_null_status=" "; fi
-        if [ "$d_cloaked_base" == 1 ]; then $d_cloaked_base_status="X"; else $d_cloaked_base_status=" "; fi
-        if [ "$d_cloaked_frag" == 1 ]; then $d_cloaked_frag_status="X"; else $d_cloaked_frag_status=" "; fi
+        if [ "$d_cloaked_null" == 1 ]; then d_cloaked_null_status="X"; else d_cloaked_null_status=" "; fi
+        if [ "$d_cloaked_base" == 1 ]; then d_cloaked_base_status="X"; else d_cloaked_base_status=" "; fi
+        if [ "$d_cloaked_frag" == 1 ]; then d_cloaked_frag_status="X"; else d_cloaked_frag_status=" "; fi
 
         mkmenu "Airdecloak-ng" "Asume that null packets can be cloacked [$d_cloaked_null_status]" "Disable base filter [$d_cloaked_base_status]" "Drop fragmented packets [$d_cloaked_frag_status]" "Specify filters (comma separated)" "Launch decloak" "Return to main menu"
         opts="";

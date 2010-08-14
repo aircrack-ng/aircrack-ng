@@ -106,7 +106,7 @@ uninstall-docs:
 	@rm -r $(docdir)
 
 uninstall-manpages:
-	@for i in $(srcdir)/*.1 ; do $(INSTALLDATA) $$i $(mandir)/man1/ ; done
+	@for i in $(srcdir)/*.1 ; do rm $(mandir)/man1/$$i ; done
 
 uninstall-locale:
 	@for i in $(srcdir)/locale/* ; do \
