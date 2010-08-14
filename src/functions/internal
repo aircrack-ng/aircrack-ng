@@ -28,8 +28,8 @@ mainmenu(){
         case "$choix" in
             1)select_ap;;
             2)witchattack;;
-            3)witchcrack;;
-            4)choosefake && menu ;;
+            3) if [ "$interactive" == "0" ]; then auto; else witchcrack; fi ;;
+            4)choosefake ;;
             5)choosedeauth;;
             6)extramenu;;
             7)injectmenu;;

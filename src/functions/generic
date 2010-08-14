@@ -162,7 +162,7 @@ listsel2(){
 clientdetect(){
     if [ "$AUTO" == "1" ]; then return; fi
     $iwconfig $wificard channel $Host_CHAN
-    capture & deauthall & menufonction # Those functions are used from many others, so I dont let them here, they'll be independent.
+    capture & deauthall  # Those functions are used from many others, so I dont let them here, they'll be independent.
 }
 
 clientfound(){
@@ -254,21 +254,21 @@ esac
                 echo ""
                 case $yn in
                     1  ) fakeautoattack ; break ;;
-                2  ) fakeinteractiveattack;$clear ; break ;;
-            3  ) fragnoclient ;$clear; break ;;
-        4  ) chopchopattack ;$clear; break ;;
-    5  ) cafelatteattack ;$clear; break ;;
-6  ) hirteattack ;$clear; break ;;
-        7  ) attackclient ;$clear; break ;;
-    8  ) interactiveattack ;$clear; break ;;
-9  ) fragmentationattack -5 ;$clear; break ;;
-        10 ) fragmentationattack -7 ;$clear ; break ;;  
-    11 ) chopchopattackclient;$clear ; break ;;
-12 ) pskarp ;$clear; break ;;
-        13 ) $clear;break ;;
-    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-esac
-    done
+                    2  ) fakeinteractiveattack;$clear ; break ;;
+                    3  ) fragnoclient ;$clear; break ;;
+                    4  ) chopchopattack ;$clear; break ;;
+                    5  ) cafelatteattack ;$clear; break ;;
+                    6  ) hirteattack ;$clear; break ;;
+                    7  ) attackclient ;$clear; break ;;
+                    8  ) interactiveattack ;$clear; break ;;
+                    9  ) fragmentationattack -5 ;$clear; break ;;
+                    10 ) fragmentationattack -7 ;$clear ; break ;;  
+                    11 ) chopchopattackclient;$clear ; break ;;
+                    12 ) pskarp ;$clear; break ;;
+                    13 ) $clear;break ;;
+                    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+                esac
+            done
 }
 # Subproducts of attackwep function:
 #Option 1 (fake auth auto)
@@ -318,12 +318,12 @@ chopchopattack(){
 
 #Option 5 (caffe late attack)
 cafelatteattack(){
-    capture & execute  "Cafe Latte Attack on: $Host_SSID " $AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 & menufonction
+    capture & execute  "Cafe Latte Attack on: $Host_SSID " $AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 
 }
 
 #Option 6 (hirte attack)
 hirteattack(){
-    capture & execute "Hirte Attack on: $Host_SSID" $AIREPLAY -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 & menufonction
+    capture & execute "Hirte Attack on: $Host_SSID" $AIREPLAY -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 
 }
 
 #Option 7 (Auto arp replay)
@@ -334,7 +334,7 @@ attackclient(){
         read -p "`gettext 'Enable From or To destination bit (f/t):  '`" FT
         if [ "$FT" = "" ]; then FT="f"; fi
     else INJMAC="FF:FF:FF:FF:FF:FF"; FT="f"; fi
-    capture & execute "Injection in Host: $Host_MAC Client $Client_MAC" $AIREPLAY $iwifi --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE & menufonction
+    capture & execute "Injection in Host: $Host_MAC Client $Client_MAC" $AIREPLAY $iwifi --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE 
 }
 
 #Option 8 (interactive arp replay)
@@ -345,7 +345,7 @@ interactiveattack(){
         read -p "`gettext 'Set framecontrol word (hex): (0841) '`" FT
         if [ "$FT" = "" ]; then FT="0841"; fi
     else INJMAC="FF:FF:FF:FF:FF:FF"; FT="0841"; fi
-    capture & execute "Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC $Client_MAC -x $INJECTRATE & menufonction
+    capture & execute "Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC $Client_MAC -x $INJECTRATE 
 }
 
 #Option 9 (fragmentation attack)
@@ -362,15 +362,15 @@ chopchopattackclient(){
 #Option 12 (pskarp)
 pskarp(){
     rm -rf $DUMP_PATH/arp_*.cap
-    $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
-    execute "PSK ARP Replaying" $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $iwifi & menufonction
+    execute "Forging package" $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
+    execute "PSK ARP Replaying" $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $iwifi 
 }
 # End of subproducts.
 
 # If wpa
 wpahandshake(){
     $clear && hardclean 
-    execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $wifi & menufonction
+    execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $wifi 
 }
 
 attackopn(){ # If no encryption detected
@@ -388,7 +388,7 @@ attackwpa(){
         read n
         case $n in
             1) wpahandshake; $clear; break;;
-        2) tkiptunstdqos; $clear; break;;
+            2) tkiptunstdqos; $clear; break;;
     esac
 done
     }
@@ -396,14 +396,14 @@ done
     # 1 just capture
     wpahandshake(){
         $clear && hardclean
-        execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $wifi & menufonction
+        execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $wifi 
     }
 
     # 2 Use tkiptun-ng
     tkiptunstdqos(){
         $clear && hardclean 
         ifconfig $wificard channel $Host_CHAN # Hope this is ok for all cards
-        execute "Executing tkiptun-ng for ap $Host_MAC"  $TKIPTUN -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL  $wifi & menufonction
+        execute "Executing tkiptun-ng for ap $Host_MAC"  $TKIPTUN -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL  $wifi 
     }
 
 
@@ -442,13 +442,12 @@ selectcracking(){
         mkmenu "WEP Cracking Options" "aircrack-ng defaults" "aircrack-ng old Korek" "aircrack-ng interactive"
 		read -p "Select option: " yn
 		case $yn in
-	    	1 ) execute $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -f $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap & menufonction; $clear; break ;;
-	    	2 ) execute $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -f $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K & menufonction; $clear; break ;;
+	    	1 ) execute $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -f $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap ; $clear; break ;;
+	    	2 ) execute $AIRCRACK -a 1 -b $Host_MAC -f $FUDGEFACTOR -f $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K ; $clear; break ;;
 	    	3 ) read -p "Insert Fudge Factor: " FUDGE_FACTOR;
                 read -p "`gettext 'Type encryption size (64,128...): '`" ENC_SIZE
 			    execute "Manual cracking" $AIRCRACK -a 1 -b $Host_MAC -f $FUDGE_FACTOR\
-                -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-*.cap -f $DUMP_PATH/$Host_MAC.key & 
-                menufonction ; $clear; 
+                -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-*.cap -f $DUMP_PATH/$Host_MAC.key &  $clear; 
                 break ;;
 	    	* ) echo "`gettext 'Unknown response. Try again'`" ;;
 		esac
@@ -462,7 +461,7 @@ selectcracking(){
                 read -p "Select option: " foo
 
                 case $foo in
-                    1)  execute $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST & menufonction ; $clear;;
+                    1)  execute $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST  ; $clear;;
                     2)  $clear; read -p "Enter Database location [$db_location]" db_location;
                         execute $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location;;
 	    	        * ) echo "`gettext 'Unknown response. Try again'`" ;;
@@ -492,13 +491,13 @@ fi
 
 # Those are subproducts of choosefake
     fakeauth1(){
-        execute "Fake auth (1) " $AIREPLAY --fakeauth 6000 -o 1 -q 10 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi & menufonction
+        execute "Fake auth (1) " $AIREPLAY --fakeauth 6000 -o 1 -q 10 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi 
 	}
     fakeauth2(){
-        execute "Fake auth (2) " $AIREPLAY --fakeauth 0 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi & menufonction
+        execute "Fake auth (2) " $AIREPLAY --fakeauth 0 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi 
 	}
     fakeauth3(){
-        execute "Fake auth (3) " $AIREPLAY --fakeauth 5 -o 10 -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi & menufonction
+        execute "Fake auth (3) " $AIREPLAY --fakeauth 5 -o 10 -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi 
     }
 
 
@@ -672,7 +671,7 @@ extramenu(){
 # I suppose all these are part of this option:
 # 1.
 inject_test(){
-    execute "Test injection" $AIREPLAY $iwifi --test & menufonction
+    execute "Test injection" $AIREPLAY $iwifi --test 
 }
 
 # 3.
@@ -902,7 +901,7 @@ fragend(){
         $clear && _ 'ERROR: You must select a target first'
     else
         $ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
-        execute "Fragmentation without client" $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $1 -x $INJECTRATE $iwifi & menufonction
+        execute "Fragmentation without client" $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $1 -x $INJECTRATE $iwifi 
     fi
 }
 
@@ -913,7 +912,7 @@ chopchopend(){
         $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
         rm -rf $DUMP_PATH/chopchop_$Host_MAC*
         $ARPFORGE -0 -a $Host_MAC -h $1 -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor	
-        execute "ChopChop End" $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $1 -x $INJECTRATE $iwifi & menufonction
+        execute "ChopChop End" $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $1 -x $INJECTRATE $iwifi 
     fi
 }
 
@@ -926,7 +925,6 @@ fakeauth(){
     execute "Fake auth on $Host_SSID" $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi
 }
 
-menufonction(){ execute "Fake to jump to menu" echo; }
 Host_ssidinput(){
     echo "---------------------------------------"
     echo -e "`gettext \"###       Please enter SSID         ###\"`"

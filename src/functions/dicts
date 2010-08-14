@@ -30,10 +30,10 @@ doitjt(){
 }
 
 wld(){
-    echo "WLAN"
+    if [ ! -x $WLD ]; then $clear; _ "Could not find Wlandecrypter" return; fi
     if [ "$Host_SSID" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
     if [[ "$Host_SSID" =~ WLAN* ]]; then
-        if [ -e $DUMP_PATH/$Host_MAC-01.cap ]; then doitjtd
+        if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then doitwld
         else echo "`gettext 'No capture file. Capture some ivs'`"; fi
     else
         _ "Cant crack this network with this dictionary $Host_SSID"
@@ -41,10 +41,10 @@ wld(){
 }
 
 jtd(){
-    echo "JAZZTEL"
+    if [ ! -x $JTD ]; then $clear; _ "Could not find jazzteldecrypter" return; fi
     if [ "$Host_SSID" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
     if [[ "$Host_SSID" =~ JAZZTEL* ]]; then
-        if [ -e $DUMP_PATH/$Host_MAC-01.cap ]; then doitjtd
+        if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then doitjtd
         else echo "`gettext 'No capture file. Capture some ivs'`"; fi
     else
         _ "Cant crack this network with this dictionary"
@@ -52,7 +52,19 @@ jtd(){
 }
 
 auto(){
-    $AIROSCWORDLIST $DUMP_PATH/$Host_SSID.dic $CMPFILE $Host_SSID $Host_SSID;
-    if [ $? =! "404" ]; then $AIRCRACK -f $DUMP_PATH/$Host_SSID.key -b $Host_SSID -w $DUMP_PATH/$Host_SSID.dic $DUMP_PATH/$Host_SSID*.cap; fi
-        if [ $? == "404" ]; then crack; fi
+    if [ "$Host_SSID" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
+    if [[ "$Host_SSID" =~ WLAN* ]]; then
+    if [ ! -x "$WLD" ]; then $clear; _ "Could not find Wlandecrypter" return; fi
+        if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then doitwld; return
+        else echo "`gettext 'No capture file. Capture some ivs'`"; fi
+    fi
+    if [[ "$Host_SSID" =~ JAZZTEL* ]]; then
+    if [ ! -x "$JTD" ]; then $clear; _ "Could not find Jazzteldecrypter" return; fi
+        if [ -e $DUMP_PATH/$Host_MAC-01.cap ]; then doitjtd; return
+        else echo "`gettext 'No capture file. Capture some ivs'`"; fi
+    fi
+
+    _ "Cant crack this network like this, do it manually"
+    selectcracking
+
 }
