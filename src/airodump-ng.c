@@ -1000,6 +1000,12 @@ int list_add_packet(struct pkt_buf **list, int length, unsigned char* packet)
     return 0;
 }
 
+/*
+ * Check if the same IV was used if the first two bytes were the same.
+ * If they are not identical, it would complain.
+ * The reason is that the first two bytes unencrypted are 'aa'
+ * so with the same IV it should always be encrypted to the same thing.
+ */
 int list_check_decloak(struct pkt_buf **list, int length, unsigned char* packet)
 {
     struct pkt_buf *next = *list;
