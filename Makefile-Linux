@@ -1,4 +1,5 @@
 #!/usr/bin/make
+
 NAME="airoscript-ng"
 name=$(NAME)
 # Binary install programs
@@ -18,14 +19,8 @@ locale=$(data)/locale
 mandir=$(data)/man
 srcdir=./src
 
-# Manpages
-
-###############################################################################
-#		                    install                                   #
-###############################################################################
-
 install: installdirs\
-	 install-airoscript install-themes \
+	 install-binary \
 	 install-docs \
 	 install-locale \
 	 post-install
@@ -38,15 +33,12 @@ installdirs:
 				$(datadir)/airosperl \
 				$(docdir)/tools
 	
-install-airoscript:
+install-binary:
 	@echo "Installing airoscript"
 	@$(INSTALL) $(srcdir)/airoscript-ng $(bindir)/$(name)
 	@$(INSTALL) $(srcdir)/airoscript-ng.conf $(etcdir)
 	@$(INSTALL) $(srcdir)/functions/* $(datadir)
 	@$(INSTALLDATA) $(srcdir)/screenrc.airoscript $(etcdir)
-
-
-install-themes:
 	@echo "Installing themes"
 	@$(INSTALLDATA) $(srcdir)/themes/*.theme $(datadir)/themes
 
@@ -55,21 +47,14 @@ post-install:
 	@echo ""
 	@if [ "$(aircrack_prefix)" != "/usr/local " ]; then sed -i 's/AIRPREFIX=\"\/usr\/local\"/AIRPREFIX=\"$(aircrack_prefix)\"/g' $(etcdir)/airoscript-ng.conf &>/dev/null;fi
 
-install-docs: install-main-docs install-manpages
-
-install-main-docs:
+install-docs:
 	@echo "Installing documentation"
 	@echo "\t Installing standard documentation"
 	@for i in doc/* ; do if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then make -s -C $$i docdir="$(docdir)" INSTALLDATA="$(INSTALLDATA)" ; else $(INSTALLDATA) $$i $(docdir) ;fi ; done
-
-install-manpages: 
 	@# This will install any manpage on manpages dir. (Just man1 manpages)
 	@echo  "\t Installing manpages"
 	@for i in $(srcdir)/*.1 ; do $(INSTALLDATA) $$i $(mandir)/man1/ ; done
 
-###############################################################################
-#		                    locale                                   #
-###############################################################################
 generate-locale:
 	@for i in $(srcdir)/locale/* ; do \
 		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
@@ -86,34 +71,18 @@ install-locale: generate-locale
 		fi ; \
 	done
 
-###############################################################################
-#		                    uninstall                                 #
-###############################################################################
-
-uninstall: uninstall-manpages uninstall-binary uninstall-data uninstall-docs uninstall-locale
-	@echo "Uninstalled succesfully"
-
-uninstall-binary:
+uninstall: 
 	@rm  $(bindir)/$(name)
-#	@rm $(bindir)/airopdate
-
-uninstall-data: uninstall-locale
-#	@rm $(etcdir)/airosperl.conf 
 	@rm $(etcdir)/airoscript-ng.conf
 	@rm -r $(datadir)
-
-uninstall-docs:
 	@rm -r $(docdir)
-
-uninstall-manpages:
 	@for i in $(srcdir)/*.1 ; do rm $(mandir)/man1/$$i ; done
-
-uninstall-locale:
 	@for i in $(srcdir)/locale/* ; do \
 		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
 			make -s -C $$i uninstall localedir=$(locale) ; \
 		fi ; \
 	done
+	@echo "Uninstalled succesfully"
 	
 
 all: install 
