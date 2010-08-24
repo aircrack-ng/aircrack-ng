@@ -712,8 +712,9 @@ wichchangemac(){
                 $MACCHANGER -m  $Manual_MAC $wificard &>/dev/null
                 ifconfig $wificard up; break ;;
 
-            5 ) if [ -e $XOR_FILE ]
+                5 ) if [ -e $XOR_FILE ]; then
                 aireplay-ng -1 0  -e teddy -y sharedkey-04-00-14-6C-7E-40-80.xor -a 00:14:6C:7E:40:80 -h 00:09:5B:EC:EE:F2 ath0
+            fi;;
 
             * ) _ "Unknown response. Try again" ;;
 
