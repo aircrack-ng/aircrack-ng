@@ -3557,13 +3557,13 @@ char * sanitize_xml(unsigned char * text, int length)
 {
 	int i;
 	size_t len;
-	char * pos;
+	unsigned char * pos;
 	char * newpos;
 	char * newtext = NULL;
 	if (text != NULL && length > 0) {
 		len = 5 * length;
 		newtext = (char *)calloc(1, (len + 1) * sizeof(char)); // Make sure we have enough space
-		pos = (char *)text;
+		pos = text;
 		for (i = 0; i < length; ++i, ++pos) {
 			switch (*pos) {
 				case '&':
@@ -3576,7 +3576,7 @@ char * sanitize_xml(unsigned char * text, int length)
 					strncat(newtext, "&gt;", len);
 					break;
 				default:
-					if ( isprint((int)(*pos)) || (*pos)<0 ) {
+					if ( isprint((int)(*pos)) || (*pos)>127 ) {
 						newtext[strlen(newtext)] = *pos;
 					} else {
 						newtext[strlen(newtext)] = '\\';
