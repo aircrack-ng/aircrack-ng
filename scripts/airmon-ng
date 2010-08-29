@@ -300,6 +300,18 @@ getChipset() {
     if [ x$DRIVER = "xwl12xx" ]
     then
             CHIPSET="TI WL1251/WL1271"
+            IS_WL1251="`dmesg| grep firmware | grep wl1251 | wc -l`"
+            IS_WL1271="`dmesg| grep firmware | grep wl1271 | wc -l`"
+
+            if [ $IS_WL1251 != "0" ] && [ $IS_WL1271 = "0" ]
+            then
+                CHIPSET="TI WL1251"
+            fi
+            if [ $IS_WL1271 != "0" ] && [ $IS_WL1251 = "0" ]
+            then
+                CHIPSET="TI WL1271"
+            fi
+            # In any other case, we can't determine the chipset and thus give the generic: 1251/1271
     fi
     
     
