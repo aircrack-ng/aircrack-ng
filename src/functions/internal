@@ -35,8 +35,9 @@ mainmenu(){
             7)injectmenu;;
             8)choosetype;;
             9)doauto;;
-            10)doexit;;
-            11)if [ $UNSTABLE = "1" ]; then $clear && unstablemenu; fi;;
+            10)eassideng;;
+            11)doexit;;
+            12)if [ $UNSTABLE = "1" ]; then $clear && unstablemenu; fi;;
             *)$clear && _ 'ERROR: Wrong number entered';;
         esac
         menu
@@ -73,6 +74,8 @@ setaircrackpaths(){
 	AIRSERV=$SBINDIR"airserv-ng"
 	TKIPTUN=$SBINDIR"tkiptun-ng"
     IVSTOOLS=$SBINDIR"ivstools"
+    BUDDY=$SBINDIR"buddy-ng"
+    EASSIDE=$SBINDIR"easside-ng"
 	MACCHANGER=$BINDIR"macchanger"
     AIRGRAPH=$BINDIR"airgraph-ng"
     AIRDECLOAK=$BINDIR"airdecloak-ng"

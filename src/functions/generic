@@ -20,7 +20,35 @@ CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
 menu(){
     if [ "$AUTO" == 1 ]; then return; fi
     setps
-    mkmenu "Main Menu" "Select   - Select target" "Attack   - Attack target" "Crack    - Get target key" "Fakeauth - Auth with target" "Deauth   - Deauth from target" "Others   - Various utilities" "Inject   - Jump to inj. menu" "Scan - Manually scan targets" "Auto     - Does 1,2,3" "Exit    - Quits"
+    mkmenu "Main Menu" "Select   - Select target" "Attack   - Attack target" "Crack    - Get target key" "Fakeauth - Auth with target" "Deauth   - Deauth from target" "Others   - Various utilities" "Inject   - Jump to inj. menu" "Scan - Manually scan targets" "Auto     - Does 1,2,3" "Easside-ng" "Exit    - Quits"
+}
+
+eassideng(){
+    while true; do $clear
+    mkmenu "Easside-ng" "Create virtual interface" "Run buddy server" "Return to main menu"
+        echo _ "Option number: "
+        read yn
+        case $yn in
+            1 )
+                while true; do $clear
+                    read -p "Select buddy IP" buddyip; $clear
+                    mkmenu "Choose ap mac " "Choose source mac " "Chosse Source IP " "Choose router ip " "Execute" "Return"; echo
+                        read -p "Option number: " yn; echo
+                        read -p "Anser: " answer; echo
+                        case $yn in
+                            1 ) opts=" $opts -v $answer " ;break ;;
+                            2 ) opts=" $opts -m $answer " ;break ;;
+                            3 ) opts=" $opts -i $answer " ;break ;;
+                            4 ) opts=" $opts -r $answer " ;break ;;
+                            5 ) execute "Easside-ng" $EASSIDE -s $buddyip -f $wifi $opts ;break ;;
+                            6 ) $clear; break ;;
+                        esac
+                    done ;;
+            2 ) execute $BUDDY ;;
+            3 ) $clear ; break ;;
+            * ) $clear; echo  _ "Unknow response, try again"; sleep 2 ;;
+        esac
+    done
 }
 
 ## This is for SCAN (1) option: ###########################
@@ -730,13 +758,13 @@ choosemdk(){
             read yn
             case $yn in
                 1 ) mdkpain ; break ;;
-            2 ) mdktargetedpain ; break ;;
-        3 ) mdknewtarget ; break ;;
-    4 ) mdkauth ; break ;;
-5 ) break ;;
-                    * ) echo "unknown response. Try again" ;;
-                esac
-            done
+                2 ) mdktargetedpain ; break ;;
+                3 ) mdknewtarget ; break ;;
+                4 ) mdkauth ; break ;;
+                5 ) break ;;
+                * ) echo "unknown response. Try again" ;;
+            esac
+        done
 
         else $clear && echo "Sorry, this is not installed on your system"
         fi
@@ -1032,6 +1060,7 @@ guess_idata(){
 	export DRIVER=`echo \"$AIROUTPUT\" | grep monitor      | awk '{print $4}'`
 	export tmpwifi=`echo \"$AIROUTPUT\" | awk {'print $NF'} | cut -d ")" -f1`
     if [[ "$tmpwifi" =~ (.*)[0-9] ]];  then wifi=$tmpwifi; fi
+
 }
 
 setupairservng(){
