@@ -176,12 +176,3 @@ class macOUI_lookup:
 			print "Exiting airdrop-ng. Card in monitor mode or not root?"
 			sys.exit(0)
 
-#used for testing
-if __name__ == "__main__": 
-	lookup = macOUI_lookup("../support/oui.txt")
-	print lookup.lookup_OUI('00:20:DB')
-	value = lookup.lookup_company("apple")
-	print value
-	print len(value)
-
-
