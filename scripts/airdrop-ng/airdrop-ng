@@ -104,7 +104,7 @@ class parseFiles:
 		try:
 			openFile = open(name,"r")
 		except IOError,e:
-			message.printError("\nAirdrop-ng rule file",name,"does not exist")
+			message.printError("\nAirdrop-ng rule file "+name+" does not exist")
 			sys.exit(-1)
 		rules = openFile.xreadlines()
 		cleanedRules = []
