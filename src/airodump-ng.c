@@ -4809,7 +4809,7 @@ int getfrequencies(const char *optarg)
                 //are there any illegal characters?
                 for(i=0; i<strlen(token); i++)
                 {
-                    if( (token[i] < '0') && (token[i] > '9') && (token[i] != '-'))
+                    if( (token[i] < '0' || token[i] > '9') && (token[i] != '-'))
                     {
                         free(tmp_frequencies);
                         free(optc);
