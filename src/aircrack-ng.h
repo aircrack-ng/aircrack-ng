@@ -148,6 +148,8 @@ struct options
 
 	char * logKeyToFile;
 
+	char * wkp;					 /* EWSA Project file */
+
 }
 
 opt;

@@ -69,6 +69,7 @@
 #include "sha1-sse2.h"
 #include "osdep/byteorder.h"
 #include "common.h"
+#include "wkp-frame.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -189,6 +190,7 @@ char usage[] =
 "      -q         : enable quiet mode (no status output)\n"
 "      -C <macs>  : merge the given APs to a virtual one\n"
 "      -l <file>  : write key to file\n"
+"      -E <file>  : create EWSA Project file\n"
 "\n"
 "  Static WEP cracking options:\n"
 "\n"
@@ -4140,6 +4142,124 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 }
 #endif
 
+int do_make_wkp(struct AP_info *ap_cur)
+{
+	int i = 0;
+
+	while( ap_cur != NULL )
+	{
+		if( ap_cur->target && ap_cur->wpa.state == 7 )
+			break;
+		ap_cur = ap_cur->next;
+	}
+
+	if( ap_cur == NULL )
+	{
+		printf( "No valid WPA handshakes found.\n" );
+		return( 0 );
+	}
+
+	if( memcmp( ap_cur->essid, ZERO, 32 ) == 0 && ! opt.essid_set )
+	{
+		printf( "An ESSID is required. Try option -e.\n" );
+		return( 0 );
+	}
+
+	if( opt.essid_set && ap_cur->essid[0] == '\0' )
+	{
+		memset(  ap_cur->essid, 0, sizeof( ap_cur->essid ) );
+		strncpy( ap_cur->essid, opt.essid, sizeof( ap_cur->essid ) - 1 );
+	}
+
+	printf("\n\nBuilding WKP (2.12) file...\n\n");
+
+	printf("[*] ESSID (length: %d): %s\n", strlen(ap_cur->essid), ap_cur->essid);
+
+	printf("[*] Key version: %d\n", ap_cur->wpa.keyver);
+
+	printf("[*] BSSID: %02X:%02X:%02X:%02X:%02X:%02X\n",
+		ap_cur->bssid[0], ap_cur->bssid[1],
+		ap_cur->bssid[2], ap_cur->bssid[3],
+		ap_cur->bssid[4], ap_cur->bssid[5]
+		);
+	printf("[*] STA: %02X:%02X:%02X:%02X:%02X:%02X",
+		ap_cur->wpa.stmac[0], ap_cur->wpa.stmac[1],
+		ap_cur->wpa.stmac[2], ap_cur->wpa.stmac[3],
+		ap_cur->wpa.stmac[4], ap_cur->wpa.stmac[5]
+		);
+
+	printf("\n[*] anonce:");
+	for(i = 0; i < 32; i++)
+	{
+		if(i % 16 == 0) printf("\n    ");
+		printf("%02X ", ap_cur->wpa.anonce[i]);
+	}
+
+	printf("\n[*] snonce:");
+	for(i = 0; i < 32; i++)
+	{
+		if(i % 16 == 0) printf("\n    ");
+		printf("%02X ", ap_cur->wpa.snonce[i]);
+	}
+
+	printf("\n[*] Key MIC:\n   ");
+	for(i = 0; i < 16; i++)
+	{
+		printf(" %02X", ap_cur->wpa.keymic[i]);
+	}
+
+	printf("\n[*] eapol:");
+	for( i = 0; i < ap_cur->wpa.eapol_size; i++)
+	{
+		if( i % 16 == 0 ) printf("\n    ");
+		printf("%02X ",ap_cur->wpa.eapol[i]);
+
+	}
+
+	printf("\n");
+
+	//write file
+	FILE * fp_wkp;
+	char frametmp[2206]={0};
+	char *ptmp;
+
+	memcpy(frametmp,wkp_frame,2206);
+
+	// Make sure the filename contains the extension
+	if (( strstr(opt.wkp, ".wkp") == NULL || strlen(strstr(opt.wkp, ".wkp")) == 4 )
+		 ||	( strstr(opt.wkp, ".WKP") == NULL || strlen(strstr(opt.wkp, ".WKP")) == 4) )
+	{
+		strcat(opt.wkp, ".wkp");
+	}
+
+	fp_wkp = fopen( opt.wkp,"w" );
+	if (fp_wkp != NULL)
+	{
+		memcpy(&frametmp[0x63c],ap_cur->essid,sizeof(ap_cur->essid));
+		ptmp = (char *)ap_cur->bssid;
+		memcpy(&frametmp[0x690], ptmp, 6);
+		ptmp = (char *)ap_cur->wpa.stmac;
+		memcpy(&frametmp[0x696], ptmp, 6);
+		memcpy(&frametmp[0x69c], ap_cur->essid, sizeof(ap_cur->essid));
+		frametmp[0x6bc] = strlen(ap_cur->essid);
+		frametmp[0x6c0] = ap_cur->wpa.keyver;
+		frametmp[0x6c4] = ap_cur->wpa.eapol_size;
+		ptmp = (char *)ap_cur->wpa.anonce;
+		memcpy(&frametmp[0x6c8], ptmp, 32);
+		ptmp = (char *)ap_cur->wpa.snonce;
+		memcpy(&frametmp[0x6e8], ptmp, 32);
+		ptmp = (char *)ap_cur->wpa.eapol;
+		memcpy(&frametmp[0x708], ptmp, ap_cur->wpa.eapol_size);
+		ptmp = (char *)ap_cur->wpa.keymic;
+		memcpy(&frametmp[0x808], ptmp, 16);
+
+		fwrite(frametmp,1,2206,fp_wkp);
+		fclose(fp_wkp);
+
+	}
+	//write end
+	return( 1 );
+}
 
 
 int do_wpa_crack()
@@ -4594,6 +4714,7 @@ int main( int argc, char *argv[] )
 	opt.bssidmerge	= NULL;
 	opt.oneshot		= 0;
 	opt.logKeyToFile = NULL;
+	opt.wkp = NULL;
 
 	/*
 	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
@@ -4620,7 +4741,7 @@ int main( int argc, char *argv[] )
             {0,                   0, 0,  0 }
         };
 
-		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:l:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
+		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:l:E:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -4866,6 +4987,19 @@ int main( int argc, char *argv[] )
 				strncpy(opt.logKeyToFile, optarg, strlen(optarg));
 				break;
 
+			case 'E' :
+				// Make sure there's enough space for file extension just in case it was forgotten
+				opt.wkp = (char *)calloc(1, strlen(optarg) + 1 + 4);
+				if (opt.wkp == NULL)
+				{
+					printf("Error allocating memory\n");
+					return( FAILURE );
+				}
+
+				strncpy(opt.wkp, optarg, strlen(optarg));
+
+				break;
+
 			case 'M' :
 
 				if( sscanf( optarg, "%d", &opt.max_ivs) != 1 || opt.max_ivs < 1)
@@ -5019,7 +5153,15 @@ usage:
 	if( opt.amode == 2 && opt.dict == NULL )
 	{
 		nodict:
-		printf( "Please specify a dictionary (option -w).\n" );
+		if (opt.wkp == NULL)
+		{
+			printf( "Please specify a dictionary (option -w).\n" );
+		}
+		else
+		{
+			ap_cur = ap_1st;
+			ret = do_make_wkp(ap_cur);
+		}
 		goto exit_main;
 	}
 
