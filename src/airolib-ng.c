@@ -434,7 +434,7 @@ void vacuum(sqlite3* db, int deep) {
 // returns 0 if ok, !=0 otherwise
 void verify(sqlite3* db, int complete) {
 	if (complete != 1) {
-		printf("Checking ~10.000 randomly chosen PMKs...\n");
+		printf("Checking ~10 000 randomly chosen PMKs...\n");
 		// this is faster than 'order by random()'. we need the subquery to trick the optimizer...
 		sql_stdout(db,"select s.essid AS ESSID, COUNT(*) AS CHECKED, CASE WHEN MIN(s.pmk == PMK(essid,passwd)) == 0 THEN 'FAILED' ELSE 'OK' END AS STATUS FROM (select distinct essid,passwd,pmk FROM pmk INNER JOIN passwd ON passwd.passwd_id = pmk.passwd_id INNER JOIN essid ON essid.essid_id = pmk.essid_id WHERE abs(random() % (select count(*) from pmk)) < 10000) AS s GROUP BY s.essid;",0);
 	} else {

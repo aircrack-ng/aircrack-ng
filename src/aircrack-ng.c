@@ -3290,8 +3290,8 @@ int do_wep_crack1( int B )
 		if( ! opt.no_stdin )
 		{
 			printf(
-				"Not enough IVs available. You need about 250.000 IVs to crack\n"
-				"40-bit WEP, and more than 800.000 IVs to crack a 104-bit key.\n" );
+				"Not enough IVs available. You need about 250 000 IVs to crack\n"
+				"40-bit WEP, and more than 800 000 IVs to crack a 104-bit key.\n" );
 			kill( 0, SIGTERM );
 			_exit( FAILURE );
 		}
@@ -5522,7 +5522,7 @@ usage:
 					{
 						printf( "   Attack failed. Possible reasons:\n\n"
 							"     * Out of luck: you must capture more IVs. Usually, 104-bit WEP\n"
-							"       can be cracked with about 80.000 IVs, sometimes more.\n\n"
+							"       can be cracked with about 80 000 IVs, sometimes more.\n\n"
 							"     * Try to raise the fudge factor (-f).\n");
 						ret=0;
 					}
