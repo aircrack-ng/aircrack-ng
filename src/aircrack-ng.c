@@ -4192,7 +4192,7 @@ int do_make_wkp(struct AP_info *ap_cur)
 
 	printf("\n\nBuilding WKP (2.12) file...\n\n");
 
-	printf("[*] ESSID (length: %d): %s\n", strlen(ap_cur->essid), ap_cur->essid);
+	printf("[*] ESSID (length: %d): %s\n", (int)strlen(ap_cur->essid), ap_cur->essid);
 
 	printf("[*] Key version: %d\n", ap_cur->wpa.keyver);
 
