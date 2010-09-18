@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
+ *  Copyright (C) 2006-2010 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  Advanced WEP attacks developed by KoreK
@@ -175,7 +175,7 @@ const uchar R[256] =
 
 char usage[] =
 "\n"
-"  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2010 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -1067,6 +1067,12 @@ void read_thread( void *arg )
 
 			ap_cur->crypt = -1;
 
+			// Shortcut to set encryption:
+			// - WEP is 2 for 'crypt' and 1 for 'amode'.
+			// - WPA is 3 for 'crypt' and 2 for 'amode'.
+			if (opt.forced_amode)
+				ap_cur->crypt = opt.amode + 1;
+
 			if (opt.do_ptw == 1)
 			{
 				ap_cur->ptw_clean = PTW_newattackstate();
@@ -1390,13 +1396,16 @@ void read_thread( void *arg )
 
 		if( h80211[z] != h80211[z + 1] || h80211[z + 2] != 0x03 )
 		{
-			ap_cur->crypt = 2;	 /* encryption = WEP */
+			if( !opt.forced_amode ) {
+				ap_cur->crypt = 2;	 /* encryption = WEP */
 
-			/* check the extended IV flag */
-
-			if( ( h80211[z + 3] & 0x20 ) != 0 )
-								 /* encryption = WPA */
+				/* check the extended IV flag */
+				if( ( h80211[z + 3] & 0x20 ) != 0)
+				{
+					/* encryption = WPA */
 					ap_cur->crypt = 3;
+				}
+			}
 
 			/* check the WEP key index */
 
@@ -1492,6 +1501,7 @@ void read_thread( void *arg )
 			goto unlock_mx_apl;
 
 		ap_cur->eapol = 0;
+		if( !opt.forced_amode )
 		ap_cur->crypt = 3;		 /* set WPA */
 
 		if( st_cur == NULL )
@@ -1978,6 +1988,12 @@ void check_thread( void *arg )
 			memcpy( ap_cur->bssid, bssid, 6 );
 
 			ap_cur->crypt = -1;
+
+			// Shortcut to set encryption:
+			// - WEP is 2 for 'crypt' and 1 for 'amode'.
+			// - WPA is 3 for 'crypt' and 2 for 'amode'.
+			if (opt.forced_amode)
+				ap_cur->crypt = opt.amode + 1;
 		}
 
 		if( fmt == FORMAT_IVS )
@@ -2204,13 +2220,16 @@ void check_thread( void *arg )
 
 		if( h80211[z] != h80211[z + 1] || h80211[z + 2] != 0x03 )
 		{
+			if( !opt.forced_amode )
 			ap_cur->crypt = 2;	 /* encryption = WEP */
 
 			/* check the extended IV flag */
 
-			if( ( h80211[z + 3] & 0x20 ) != 0 )
-								 /* encryption = WPA */
-					ap_cur->crypt = 3;
+			if( ( h80211[z + 3] & 0x20 ) != 0 && !opt.forced_amode)
+			{
+				/* encryption = WPA */
+				ap_cur->crypt = 3;
+			}
 
 			/* check the WEP key index */
 
@@ -4715,6 +4734,7 @@ int main( int argc, char *argv[] )
 	opt.oneshot		= 0;
 	opt.logKeyToFile = NULL;
 	opt.wkp = NULL;
+	opt.forced_amode	= 0;
 
 	/*
 	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
@@ -4802,6 +4822,8 @@ int main( int argc, char *argv[] )
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
+
+				opt.forced_amode = 1;
 
 				break;
 

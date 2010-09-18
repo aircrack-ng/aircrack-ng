@@ -148,6 +148,8 @@ struct options
 
 	char * logKeyToFile;
 
+        int forced_amode;	/* signals disregarding automatic detection of encryption type */
+
 	char * wkp;					 /* EWSA Project file */
 
 }

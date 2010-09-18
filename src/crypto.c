@@ -438,6 +438,18 @@ int is_arp(void *wh, int len)
         return 0;
 }
 
+int is_wlccp(void *wh, int len)
+{
+	int wlccpsize = 58;
+
+	if(wh) {}
+
+	if (len == wlccpsize)
+		return 1;
+
+	return 0;
+}
+
 int is_qos_arp_tkip(void *wh, int len)
 {
         unsigned char *packet = (unsigned char*) wh;
@@ -506,6 +518,29 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
             /* src mac */
             len = 6;
             memcpy(ptr, get_sa(wh), len);
+            ptr += len;
+
+            len = ptr - ((unsigned char*)clear);
+            *clen = len;
+	    if (weight)
+                weight[0] = 256;
+            return 1;
+
+        }
+        else if(is_wlccp(wh, len)) /*wlccp*/
+        {
+            len = sizeof(S_LLC_SNAP_WLCCP) - 1;
+            memcpy(ptr, S_LLC_SNAP_WLCCP, len);
+            ptr += len;
+
+            /* wlccp hdr */
+            len = 4;
+            memcpy(ptr, "\x00\x32\x40\x01", len);
+            ptr += len;
+
+            /* dst mac */
+            len = 6;
+            memcpy(ptr, get_da(wh), len);
             ptr += len;
 
             len = ptr - ((unsigned char*)clear);

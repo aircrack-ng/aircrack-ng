@@ -90,6 +90,9 @@ Fake Authentication attack: Set the number of packets for every authentication a
 .I -q <seconds>
 Fake Authentication attack: Set the time between keep-alive packets in fake authentication mode.
 .TP
+.I -Q
+Fake Authentication attack: Sends reassociation requests instead of performing a complete authentication and association after each delay period.
+.TP
 .I -y <prga>
 Fake Authentication attack: Specifies the keystream file for fake shared key authentication.
 .TP
@@ -153,6 +156,9 @@ In general, for an attack to work, the attacker has to be in the range of an AP 
 .TP
 .I -7, --cfrag
 This attack turns IP or ARP packets from a client into ARP request against the client. This attack works especially well against ad-hoc networks. As well it can be used against softAP clients and normal AP clients.
+.TP
+.I -8, --migmode
+This attack works against Cisco Aironet access points configured in WPA Migration Mode, which enables both WPA and WEP clients to associate to an access point using the same Service Set Identifier (SSID).  The program listens for a WEP-encapsulated broadcast ARP packet, bitflips it to make it into an ARP coming from the attacker's MAC address and retransmits it to the access point. This, in turn, causes the access point to repeat the ARP packet with a new IV and also to forward the ARP reply to the attacker with a new IV. The program retransmits the same ARP packet over and over. However, each ARP packet repeated by the access point has a new IV as does the ARP reply forwarded to the attacker by the access point. It is all these new IVs which allow you to determine the WEP key.
 .TP
 .I -9, --test
 Tests injection and quality.
