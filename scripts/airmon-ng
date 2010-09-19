@@ -333,10 +333,10 @@ getChipset() {
         done
         
         TEMP_CHIPSET=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS`
-        if [ x$TEMP_CHIPSET = "5100AGN" ]
+        if [ x$TEMP_CHIPSET = "x5100AGN" ]
         then
         	CHIPSET="Intel $TEMP_CHIPSET"
-        elif [ x$TEMP_CHIPSET = "1000" ]
+        elsif [ x$TEMP_CHIPSET = "x1000" ]
         	LINK_POS=$[$LINK_POS+2]
         	TYPE_TEMP=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS`
         	CHIPSET="Intel ${TEMP_CHIPSET}${TYPE_TEMP}"
