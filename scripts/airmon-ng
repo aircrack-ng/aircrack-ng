@@ -282,7 +282,13 @@ getChipset() {
         CHIPSET="Intel 4965/5xxx"
     fi
 
-    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" -o x$DRIVER = "xath9k" ]
+	if [ x$DRIVER = "xath5k" ]
+	then
+		getPhy $2
+		CHIPSET="Atheros `dmesg | grep $PHYDEV | grep "chip found" | cut -d':' -f 2 | cut -d' ' -f 3`"
+	fi
+	
+    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath9k" ]
     then
         CHIPSET="Atheros "
     fi
@@ -472,7 +478,7 @@ do
  getModule  $iface
  getDriver  $iface
  getStack   $iface
- getChipset $DRIVER
+ getChipset $DRIVER $iface
 
 
  if [ x$MAC80211 = "x1" ]
