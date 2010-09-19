@@ -349,9 +349,15 @@ getChipset() {
 		CHIPSET="Atheros `dmesg | grep $PHYDEV | grep "chip found" | cut -d':' -f 2 | cut -d' ' -f 3`"
 	fi
 	
-    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath9k" ]
+    if [ x$DRIVER = "xath_pci" ]
     then
         CHIPSET="Atheros "
+    fi
+    
+    if [ x$DRIVER = "xath9k" ]
+    then
+    	getPhy $2
+    	CHIPSET="Atheros `dmesg | grep $PHYDEV | grep Atheros | tail -n 1 | cut -d':' -f 2 | cut -d' ' -f 3`"
     fi
 
     if [ x$DRIVER = "xorinoco" ]
