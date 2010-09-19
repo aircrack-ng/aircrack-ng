@@ -4163,6 +4163,7 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 
 int do_make_wkp(struct AP_info *ap_cur)
 {
+	size_t unused;
 	int i = 0;
 
 	while( ap_cur != NULL )
@@ -4272,8 +4273,8 @@ int do_make_wkp(struct AP_info *ap_cur)
 		ptmp = (char *)ap_cur->wpa.keymic;
 		memcpy(&frametmp[0x808], ptmp, 16);
 
-		fwrite(frametmp,1,2206,fp_wkp);
-		fclose(fp_wkp);
+		unused = fwrite(frametmp,1,2206,fp_wkp);
+		i = fclose(fp_wkp);
 
 	}
 	//write end
