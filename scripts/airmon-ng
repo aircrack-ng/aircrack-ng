@@ -177,14 +177,28 @@ getChipset() {
 
     CHIPSET="Unknown "
 
-    if [ x$DRIVER = "xOtus" -o x$DRIVER = "xarusb_lnx" -o x$DRIVER = "xar9170usb" ]
+    if [ x$DRIVER = "xOtus" -o x$DRIVER = "xarusb_lnx" ]
     then
-	CHIPSET="AR9001U"
+		CHIPSET="AR9001U"
+    fi
+    
+    if [ x$DRIVER = "xar9170usb" ]
+    then
+    	getPhy $2
+    	CHIPSET="Atheros `dmesg | grep $PHYDEV | grep "is registered as" | cut -d':' -f 2 | cut -d' ' -f 3`"
     fi
 
-    if [ x$DRIVER = "xzd1211rw" -o x$DRIVER = "xzd1211rw_mac80211" ]
+    if [ x$DRIVER = "xzd1211rw_mac80211" ]
     then
         CHIPSET="ZyDAS 1211"
+    fi
+
+	if [ x$DRIVER = "xzd1211rw" ]
+    then
+        getPhy $2
+        TEMP_USBPORT="`dmesg | grep $PHYDEV | grep zd1211rw | cut -d'w' -f 2 | cut -d' ' -f 2`"
+        TEMP_CHIPSET="`dmesg | grep "$TEMP_USBPORT" | grep chip | tail -n 1 | cut -d':' -f 3 | cut -d' ' -f 2`"
+        CHIPSET="Zydas $TEMP_CHIPSET"
     fi
 
     if [ x$DRIVER = "xacx" -o x$DRIVER = "xacx-mac80211" -o x$DRIVER = "xacx1xx" ]
@@ -205,6 +219,15 @@ getChipset() {
     if [ x$DRIVER = "xb43" -o x$DRIVER = "xb43legacy" -o x$DRIVER = "xbcm43xx" -o x$DRIVER = "xwl" ]
     then
         CHIPSET="Broadcom"
+        if [ x$DRIVER = "xb43" ]
+        then
+        	getPhy $2
+        	TEMP_CHIPSET="`dmesg | grep $PHYDEV | grep found | cut -d':' -f 2 | cut -d' ' -f 3`"
+        	if [ x$TEMP_CHIPSET = "x4318" ]
+        	then
+        		CHIPSET="$CHIPSET $TEMP_CHIPSET"
+        	fi
+        fi
     fi
 
     if [ x$DRIVER = "xprism54" -o x$DRIVER = "xp54pci" -o x$DRIVER = "xp54usb" ]
@@ -222,7 +245,19 @@ getChipset() {
         CHIPSET="RTL8180/RTL8185"
     fi
 
-    if [ x$DRIVER = "xr8187" -o x$DRIVER = "xrtl8187" ]
+    if [ x$DRIVER = "xrtl8187" ]
+    then
+        getPhy $2
+    	CHIPSET="`dmesg | grep $PHYDEV | grep hwaddr | cut -d',' -f 2 | cut -d' ' -f 2`"
+    	if [ x$CHIPSET = "xRTL8187vB" ]
+    	then
+    		CHIPSET="Realtek RTL8187L"
+    	else
+    		CHIPSET="Realtek $CHIPSET"
+    	fi
+    fi
+    
+    if [ x$DRIVER = "xr8187" ]
     then
         CHIPSET="RTL8187 "
     fi
@@ -252,6 +287,12 @@ getChipset() {
         CHIPSET="Ralink 2573 USB"
     fi
 
+	#if [ x$DRIVER = "xrt2800usb" ]
+	#then
+	#	getPhy $2
+	#	CHIPSET="Ralink `dmesg | grep rt2800usb | grep firmware | cut -d':' -f 4 | cut -d' ' -f 3 | cut -d'.' -f 1`"
+	#fi
+	
     if [ x$DRIVER = "xrt2800" -o x$DRIVER = "xrt2800usb" -o x$DRIVER = "xrt3070sta" ]
     then
         CHIPSET="Ralink RT2870/3070"
@@ -279,7 +320,27 @@ getChipset() {
 
     if [ x$DRIVER = "xiwlagn" ]
     then
-        CHIPSET="Intel 4965/5xxx"
+        CHIPSET="Intel 4965/5xxx/1xxx"
+        
+        DETECTED_STR="`dmesg | grep iwlagn | grep Detected | tail -n 1 `"
+        LINK_POS="3"
+        FOUND="0"
+        
+        while [ $FOUND = "0" ]
+        do
+        	FOUND=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS | grep Link | wc -l`
+        	LINK_POS=$[$LINK_POS+1]
+        done
+        
+        TEMP_CHIPSET=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS`
+        if [ x$TEMP_CHIPSET = "5100AGN" ]
+        then
+        	CHIPSET="Intel $TEMP_CHIPSET"
+        elif [ x$TEMP_CHIPSET = "1000" ]
+        	LINK_POS=$[$LINK_POS+2]
+        	TYPE_TEMP=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS`
+        	CHIPSET="Intel ${TEMP_CHIPSET}${TYPE_TEMP}"
+        fi
     fi
 
 	if [ x$DRIVER = "xath5k" ]
