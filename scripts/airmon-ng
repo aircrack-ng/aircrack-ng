@@ -406,7 +406,10 @@ getPhy() {
         return
     fi
 
-    PHYDEV="`ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/'`"
+    if [ -d /sys/class/net/$1/phy80211/ ]
+    then
+	PHYDEV="`ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/'`"
+    fi
 }
 
 getNewMon() {
