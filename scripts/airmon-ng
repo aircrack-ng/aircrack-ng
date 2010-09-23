@@ -94,14 +94,14 @@ getDriver() {
 }
 
 scanProcesses() {
-    if [ -f "`which service 2>&1`" ] && [ x"$1" == xkill ]
+    if [ -f "`which service 2>&1`" ] && [ x"$1" == "xkill" ]
     then
     	service network-manager stop 2>/dev/null >/dev/null
  	service avahi-daemon stop 2>/dev/null >/dev/null
     fi
 
     match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
-    if [ $match -gt 0 -a x"$1" != xkill ]
+    if [ $match -gt 0 -a x"$1" != "xkill" ]
     then
         printf "\n\n"
         echo "Found $match processes that could cause trouble."
@@ -109,13 +109,13 @@ scanProcesses() {
         echo "a short period of time, you may want to kill (some of) them!"
         echo -e "\nPID\tName"
     else
-        if [ x"$1" != xkill ]
+        if [ x"$1" != "xkill" ]
         then
             return
         fi
     fi
 
-    if [ $match -gt 0 -a x"$1" = xkill ]
+    if [ $match -gt 0 -a x"$1" = "xkill" ]
     then
         echo "Killing all those processes..."
     fi
@@ -125,7 +125,7 @@ scanProcesses() {
     do
         pid=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}'`
         pname=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}'`
-        if [ x"$1" != xkill ]
+        if [ x"$1" != "xkill" ]
         then
             printf "$pid\t$pname\n"
         else
@@ -136,7 +136,7 @@ scanProcesses() {
 }
 
 checkProcessesIface() {
-    if [ x"$1" = x ]
+    if [ x"$1" = "x" ]
     then
         return
     fi
@@ -155,7 +155,7 @@ checkProcessesIface() {
 }
 
 getStack() {
-    if [ x"$1" = x ]
+    if [ x"$1" = "x" ]
     then
         return
     fi
@@ -170,7 +170,7 @@ getStack() {
 
 #you need to run getDriver $iface prior to getChipset
 getChipset() {
-    if [ x"$1" = x ]
+    if [ x"$1" = "x" ]
     then
         return
     fi
@@ -396,7 +396,7 @@ getChipset() {
 
 getPhy() {
     PHYDEV=""
-    if [ x"$1" = x ]
+    if [ x"$1" = "x" ]
     then
         return
     fi
@@ -438,7 +438,7 @@ fi
 iwpriv > /dev/null 2> /dev/null ||
   { echo Wireless tools not found ; exit ; }
 
-if [ x"$1" = xcheck ] || [ x"$1" = xstart ]
+if [ x"$1" = "xcheck" ] || [ x"$1" = "xstart" ]
 then
     scanProcesses
     for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
@@ -448,11 +448,11 @@ then
         checkProcessesIface $iface
     done
 
-    if [ x"$2" = xkill ]
+    if [ x"$2" = "xkill" ]
     then
         scanProcesses "$2"
     fi
-    if [ x"$1" = xcheck ]
+    if [ x"$1" = "xcheck" ]
     then
         exit
     fi
