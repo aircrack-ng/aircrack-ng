@@ -190,7 +190,7 @@ char usage[] =
 "      -q         : enable quiet mode (no status output)\n"
 "      -C <macs>  : merge the given APs to a virtual one\n"
 "      -l <file>  : write key to file\n"
-"      -E <file>  : create EWSA Project file\n"
+"      -E <file>  : create EWSA Project file v3\n"
 "\n"
 "  Static WEP cracking options:\n"
 "\n"
@@ -4163,7 +4163,7 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 
 int do_make_wkp(struct AP_info *ap_cur)
 {
-	size_t unused;
+	size_t elt_written;
 	int i = 0;
 
 	while( ap_cur != NULL )
@@ -4191,7 +4191,7 @@ int do_make_wkp(struct AP_info *ap_cur)
 		strncpy( ap_cur->essid, opt.essid, sizeof( ap_cur->essid ) - 1 );
 	}
 
-	printf("\n\nBuilding WKP (2.12) file...\n\n");
+	printf("\n\nBuilding WKP (3.02) file...\n\n");
 
 	printf("[*] ESSID (length: %d): %s\n", (int)strlen(ap_cur->essid), ap_cur->essid);
 
@@ -4238,46 +4238,77 @@ int do_make_wkp(struct AP_info *ap_cur)
 
 	printf("\n");
 
-	//write file
+	// write file
 	FILE * fp_wkp;
-	char frametmp[2206]={0};
+	char frametmp[WKP_FRAME_LENGTH];
 	char *ptmp;
 
-	memcpy(frametmp,wkp_frame,2206);
+	memcpy(frametmp, wkp_frame,WKP_FRAME_LENGTH * sizeof(char));
 
 	// Make sure the filename contains the extension
-	if (( strstr(opt.wkp, ".wkp") == NULL || strlen(strstr(opt.wkp, ".wkp")) == 4 )
-		 ||	( strstr(opt.wkp, ".WKP") == NULL || strlen(strstr(opt.wkp, ".WKP")) == 4) )
+	if (( strstr(opt.wkp, ".wkp") == NULL || strlen(strstr(opt.wkp, ".wkp")) != 4 )
+		 &&	( strstr(opt.wkp, ".WKP") == NULL || strlen(strstr(opt.wkp, ".WKP")) != 4) )
 	{
 		strcat(opt.wkp, ".wkp");
 	}
 
 	fp_wkp = fopen( opt.wkp,"w" );
-	if (fp_wkp != NULL)
+	if (fp_wkp == NULL)
 	{
-		memcpy(&frametmp[0x63c],ap_cur->essid,sizeof(ap_cur->essid));
-		ptmp = (char *)ap_cur->bssid;
-		memcpy(&frametmp[0x690], ptmp, 6);
-		ptmp = (char *)ap_cur->wpa.stmac;
-		memcpy(&frametmp[0x696], ptmp, 6);
-		memcpy(&frametmp[0x69c], ap_cur->essid, sizeof(ap_cur->essid));
-		frametmp[0x6bc] = strlen(ap_cur->essid);
-		frametmp[0x6c0] = ap_cur->wpa.keyver;
-		frametmp[0x6c4] = ap_cur->wpa.eapol_size;
-		ptmp = (char *)ap_cur->wpa.anonce;
-		memcpy(&frametmp[0x6c8], ptmp, 32);
-		ptmp = (char *)ap_cur->wpa.snonce;
-		memcpy(&frametmp[0x6e8], ptmp, 32);
-		ptmp = (char *)ap_cur->wpa.eapol;
-		memcpy(&frametmp[0x708], ptmp, ap_cur->wpa.eapol_size);
-		ptmp = (char *)ap_cur->wpa.keymic;
-		memcpy(&frametmp[0x808], ptmp, 16);
-
-		unused = fwrite(frametmp,1,2206,fp_wkp);
-		i = fclose(fp_wkp);
-
+		printf("\nFailed to create EWSA project file\n");
+		return 0;
 	}
-	//write end
+
+	// ESSID
+	memcpy(&frametmp[0x4c0], ap_cur->essid, sizeof(ap_cur->essid));
+
+
+	// BSSID
+	ptmp = (char *)ap_cur->bssid;
+	memcpy(&frametmp[0x514], ptmp, 6);
+
+	// Station Mac
+	ptmp = (char *)ap_cur->wpa.stmac;
+	memcpy(&frametmp[0x51a], ptmp, 6);
+
+	// ESSID
+	memcpy(&frametmp[0x520], ap_cur->essid, sizeof(ap_cur->essid));
+
+	// ESSID length
+	frametmp[0x540] = strlen(ap_cur->essid);
+
+	// WPA Key version
+	frametmp[0x544] = ap_cur->wpa.keyver;
+
+	// Size of EAPOL
+	frametmp[0x548] = ap_cur->wpa.eapol_size;
+
+	// anonce
+	ptmp = (char *)ap_cur->wpa.anonce;
+	memcpy(&frametmp[0x54c], ptmp, 32);
+
+	// snonce
+	ptmp = (char *)ap_cur->wpa.snonce;
+	memcpy(&frametmp[0x56c], ptmp, 32);
+
+	// EAPOL
+	ptmp = (char *)ap_cur->wpa.eapol;
+	memcpy(&frametmp[0x58c], ptmp, ap_cur->wpa.eapol_size);
+
+	// Key MIC
+	ptmp = (char *)ap_cur->wpa.keymic;
+	memcpy(&frametmp[0x68c], ptmp, 16);
+
+	elt_written = fwrite(frametmp, 1, WKP_FRAME_LENGTH, fp_wkp);
+	i = fclose(fp_wkp);
+
+
+	if ((int)elt_written == WKP_FRAME_LENGTH) {
+		printf("\nSuccessfully written to %s\n", opt.wkp);
+	} else {
+		printf("\nFailed to write to %s\n !", opt.wkp);
+	}
+
 	return( 1 );
 }
 
