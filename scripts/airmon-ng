@@ -326,21 +326,30 @@ getChipset() {
         LINK_POS="3"
         FOUND="0"
         
-        while [ $FOUND = "0" ]
-        do
-        	FOUND=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS | grep Link | wc -l`
-        	LINK_POS=$[$LINK_POS+1]
-        done
-        
-        TEMP_CHIPSET=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS`
-        if [ x$TEMP_CHIPSET = "x5100AGN" ]
+        if [ x"$DETECTED_STR" != "x" ]
         then
-        	CHIPSET="Intel $TEMP_CHIPSET"
-        elsif [ x$TEMP_CHIPSET = "x1000" ]
-        	LINK_POS=$[$LINK_POS+2]
-        	TYPE_TEMP=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS`
-        	CHIPSET="Intel ${TEMP_CHIPSET}${TYPE_TEMP}"
+		while [ $FOUND = "0" ]
+		do
+			FOUND=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS | grep Link | wc -l`
+			LINK_POS=$[$LINK_POS+1]
+		done
+
+		TEMP_CHIPSET=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS`
+
+		case "x${TEMP_CHIPSET}" in
+	#               x5100AGN)
+	#                       CHIPSET="Intel $TEMP_CHIPSET"
+	#                       ;;
+			x1000)
+				TYPE_TEMP=`echo "$DETECTED_STR" | cut -d' ' -f $[$LINK_POS+2]`
+				CHIPSET="Intel ${TEMP_CHIPSET}${TYPE_TEMP}"
+				;;
+			*)
+				CHIPSET="Intel $TEMP_CHIPSET"
+				;;
+		esac
         fi
+
     fi
 
 	if [ x$DRIVER = "xath5k" ]
