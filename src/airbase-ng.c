@@ -2510,6 +2510,9 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
 
+	if (packet[0] == 0x88)
+		z += 2; /* handle QoS field */
+
     if(length < z)
     {
         return 1;
