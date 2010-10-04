@@ -90,13 +90,13 @@ OBJS_TT		= tkiptun-ng.o common.o crypto.o
 
 
 OSD		= osdep
-LIBS		= -L$(OSD) -l$(OSD) $(LIBPCAP) $(LDFLAGS)
+LIBS		= -L$(OSD) -l$(OSD) $(LIBPCAP)
 ifeq ($(OSNAME), cygwin)
 LIBS		+= -liphlpapi -lsetupapi -luuid
 endif
 LIBOSD		= $(OSD)/lib$(OSD).a
 
-LIBSSL		= -lssl -lcrypto $(LDFLAGS)
+LIBSSL		= -lssl -lcrypto
 LIBSQL		=
 ifeq ($(SQLITE), true)
 	LIBSQL		= -L/usr/local/lib -lsqlite3
@@ -140,55 +140,55 @@ aircrack-ng-opt-prof_use: $(SRC_AC)
 	aircrack-ng-opt-prof -lpthread $(LIBSQL)
 
 aircrack-ng$(EXE): $(OBJS_AC)
-	$(CC) $(CFLAGS) $(OBJS_AC) $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AC) $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL)
 
 airdecap-ng$(EXE): $(OBJS_AD)
-	$(CC) $(CFLAGS) $(OBJS_AD) -o $(@) $(LIBSSL)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AD) -o $(@) $(LIBSSL)
 
 packetforge-ng$(EXE): $(OBJS_PF)
-	$(CC) $(CFLAGS) $(OBJS_PF) -o $(@) $(LIBSSL)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_PF) -o $(@) $(LIBSSL)
 
 aireplay-ng$(EXE): $(OBJS_AR) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL)
 
 airodump-ng$(EXE): $(OBJS_ADU) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL) -lpthread
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL) -lpthread
 
 airserv-ng$(EXE): $(OBJS_AS) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AS) -o $(@) $(LIBS) $(LIBPCAP)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AS) -o $(@) $(LIBS) $(LIBPCAP)
 
 airtun-ng$(EXE): $(OBJS_AT) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL)
 
 ivstools$(EXE): $(OBJS_IV)
-	$(CC) $(CFLAGS) $(OBJS_IV) -o $(@) $(LIBSSL)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_IV) -o $(@) $(LIBSSL)
 
 kstats$(EXE): kstats.o
-	$(CC) $(CFLAGS) kstats.o -o $(@)
+	$(CC) $(CFLAGS) $(LDFLAGS) kstats.o -o $(@)
 
 wesside-ng$(EXE): $(OBJS_WS) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_WS) -o $(@) $(LIBS) $(LIBSSL) -lz
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_WS) -o $(@) $(LIBS) $(LIBSSL) -lz
 
 easside-ng$(EXE): $(OBJS_ES) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_ES) -o $(@) $(LIBS) -lz
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_ES) -o $(@) $(LIBS) -lz
 
 buddy-ng$(EXE): $(OBJS_BUDDY)
-	$(CC) $(CFLAGS) $(OBJS_BUDDY) -o $(@)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_BUDDY) -o $(@)
 
 makeivs-ng$(EXE): $(OBJS_MI)
-	$(CC) $(CFLAGS) $(OBJS_MI) -o $(@)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_MI) -o $(@)
 
 airolib-ng$(EXE): $(OBJS_AL)
-	$(CC) $(CFLAGS) $(OBJS_AL) -o $(@) $(LIBSSL) -DHAVE_REGEXP $(LIBSQL)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AL) -o $(@) $(LIBSSL) -DHAVE_REGEXP $(LIBSQL)
 
 airbase-ng$(EXE): $(OBJS_AB) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_AB) -o $(@) $(LIBS) $(LIBSSL) -lpthread
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AB) -o $(@) $(LIBS) $(LIBSSL) -lpthread
 
 airdecloak-ng$(EXE): $(OBJS_AU)
-	$(CC) $(CFLAGS) $(OBJS_AU) -o $(@)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AU) -o $(@)
 
 tkiptun-ng$(EXE): $(OBJS_TT) $(LIBOSD)
-	$(CC) $(CFLAGS) $(OBJS_TT) -o $(@) $(LIBS) $(LIBSSL)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_TT) -o $(@) $(LIBS) $(LIBSSL)
 
 strip: $(BINFILES) $(SBINFILES)
 	strip $(BINFILES) $(SBINFILES)
