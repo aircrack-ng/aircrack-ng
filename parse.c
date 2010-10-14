@@ -80,12 +80,12 @@ static void print_test_namespace(struct ieee80211_radiotap_iterator *iter)
 {
 	switch (iter->this_arg_index) {
 	case 0:
-		printf("\t00:00:00-00|0: %.2x/%.2x/%.2x/%2.x\n",
+		printf("\t00:00:00-00|0: %.2x/%.2x/%.2x/%.2x\n",
 			*iter->this_arg, *(iter->this_arg + 1),
 			*(iter->this_arg + 2), *(iter->this_arg + 3));
 		break;
 	case 52:
-		printf("\t00:00:00-00|52: %.2x/%.2x/%.2x/%2.x\n",
+		printf("\t00:00:00-00|52: %.2x/%.2x/%.2x/%.2x\n",
 			*iter->this_arg, *(iter->this_arg + 1),
 			*(iter->this_arg + 2), *(iter->this_arg + 3));
 		break;
