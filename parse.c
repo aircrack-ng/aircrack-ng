@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 {
 	struct ieee80211_radiotap_iterator iter;
 	struct stat statbuf;
-	int fd, err, fnidx = 1;
+	int fd, err, fnidx = 1, i;
 	void *data;
 
 	if (argc != 2 && argc != 3) {
@@ -141,12 +141,20 @@ int main(int argc, char *argv[])
 	}
 
 	while (!(err = ieee80211_radiotap_iterator_next(&iter))) {
-		if (iter.this_arg_index == IEEE80211_RADIOTAP_VENDOR_NAMESPACE)
+		if (iter.this_arg_index == IEEE80211_RADIOTAP_VENDOR_NAMESPACE) {
 			printf("\tvendor NS (%.2x-%.2x-%.2x:%d, %d bytes)\n",
 				iter.this_arg[0], iter.this_arg[1],
 				iter.this_arg[2], iter.this_arg[3],
-				le16toh(*(uint16_t *)(iter.this_arg + 4)));
-		else if (iter.is_radiotap_ns)
+				iter.this_arg_size - 6);
+			for (i = 6; i < iter.this_arg_size; i++) {
+				if (i % 8 == 6)
+					printf("\t\t");
+				else
+					printf(" ");
+				printf("%.2x", iter.this_arg[i]);
+			}
+			printf("\n");
+		} else if (iter.is_radiotap_ns)
 			print_radiotap_namespace(&iter);
 		else if (iter.current_namespace == &vns_array[0])
 			print_test_namespace(&iter);
