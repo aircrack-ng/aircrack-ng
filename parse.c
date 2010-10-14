@@ -44,6 +44,8 @@ static void print_radiotap_namespace(struct ieee80211_radiotap_iterator *iter)
 		printf("\tflags: %02x\n", *iter->this_arg);
 		break;
 	case IEEE80211_RADIOTAP_RATE:
+		printf("\trate: %lf\n", (double)*iter->this_arg/2);
+		break;
 	case IEEE80211_RADIOTAP_CHANNEL:
 	case IEEE80211_RADIOTAP_FHSS:
 	case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
