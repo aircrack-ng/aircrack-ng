@@ -395,12 +395,6 @@ pskarp(){
 }
 # End of subproducts.
 
-# If wpa
-wpahandshake(){
-    $clear && hardclean 
-    execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $wifi 
-}
-
 attackopn(){ # If no encryption detected
     if [ "$Host_SSID" = "" ]; then
         $clear &&  echo  "`gettext 'ERROR: You have to select a target'`"
@@ -424,7 +418,7 @@ done
     # 1 just capture
     wpahandshake(){
         $clear && hardclean
-        execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --channel $Host_CHAN -a $wifi 
+        execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC -b $Host_MAC --channel $Host_CHAN - -a $wifi 
     }
 
     # 2 Use tkiptun-ng

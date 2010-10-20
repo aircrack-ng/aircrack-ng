@@ -113,7 +113,7 @@ options:
    -h      show this message
    -t      specify terminal
    -s      use screen interface
-   -g      launch graphical interface
+   -g      launch graphical interface (requires airosperl)
    -d      debug mode
 eof
 }
@@ -329,7 +329,7 @@ getterminal(){
 			TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;        
 	fi
 
-	if [ -x $TERMBIN/$TERMINAL ] || [ -x /usr/bin/$TERMINAL] || [ -x /usr/sbin/$TERMINAL ]; then D="1" 
+	if [ -x "$TERMBIN/$TERMINAL" ] || [ -x "/usr/bin/$TERMINAL" ] || [ -x "/usr/sbin/$TERMINAL" ]; then D="1" 
 	else
         if [ -e $TERM ]; then 
 		    _debug "Using environment defined terminal ($TERM)"
