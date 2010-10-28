@@ -30,8 +30,7 @@ doitjt(){
 }
 
 wld(){
-    if [ ! -x $WLD ]; then $clear; _ "Could not find Wlandecrypter" return; fi
-    if [ "$Host_SSID" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
+    if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a client before performing this attack'`\n"; fi
     if [[ "$Host_SSID" =~ WLAN* ]]; then
         if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then doitwld
         else echo "`gettext 'No capture file. Capture some ivs'`"; fi
@@ -41,8 +40,7 @@ wld(){
 }
 
 jtd(){
-    if [ ! -x $JTD ]; then $clear; _ "Could not find jazzteldecrypter" return; fi
-    if [ "$Host_SSID" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
+    if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a client before performing this attack'`\n"; fi
     if [[ "$Host_SSID" =~ JAZZTEL* ]]; then
         if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then doitjtd
         else echo "`gettext 'No capture file. Capture some ivs'`"; fi
@@ -52,7 +50,7 @@ jtd(){
 }
 
 auto(){
-    if [ "$Host_SSID" == "" ]; then clear; echo -e "gettext `'Error: You must select a client before performing this attack'`\n"; fi
+    if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a client before performing this attack'`\n"; fi
     if [[ "$Host_SSID" =~ WLAN* ]]; then
     if [ ! -x "$WLD" ]; then $clear; _ "Could not find Wlandecrypter" return; fi
         if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then doitwld; return
