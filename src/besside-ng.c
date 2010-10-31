@@ -789,7 +789,7 @@ __no_resolve:
 		"Content-Length: %d\r\n\r\n",
 		_conf.cf_wpa_server,
 		boundary,
-		strlen(h1) + strlen(form) + tot);
+		(int) (strlen(h1) + strlen(form) + tot));
 
 	if (write(s, buf, strlen(buf)) != (int) strlen(buf))
 		goto __fail;
