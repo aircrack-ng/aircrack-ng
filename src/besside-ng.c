@@ -800,6 +800,9 @@ __no_resolve:
 	if ((off = lseek(_state.s_wpafd, 0, SEEK_CUR)) == (off_t) -1)
 		err(1, "lseek()");
 
+	if (lseek(_state.s_wpafd, 0, SEEK_SET) == (off_t) -1)
+		err(1, "lseek()");
+
 	while (tot) {
 		int l = tot;
 
