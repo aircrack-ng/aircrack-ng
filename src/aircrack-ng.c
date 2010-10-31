@@ -4370,7 +4370,7 @@ int do_wpa_crack()
 			if( i > 64 ) i = 64;
 
 			while(i>0 && (key1[i-1]=='\r' || key1[i-1]=='\n')) i--;
-			if (i==0) continue;
+ 			if (i<=0) continue;
 			key1[i] = '\0';
 
 			for(j=0; j<i; j++)
