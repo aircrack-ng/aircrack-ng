@@ -35,7 +35,7 @@ endif
 LIBPCAP		=
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE) airbase-ng$(EXE)
+		  airtun-ng$(EXE) airbase-ng$(EXE) besside-ng$(EXE)
 		  
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
@@ -80,6 +80,7 @@ OBJS_AT		= airtun-ng.o common.o crypto.o
 OBJS_IV		= ivstools.o common.o crypto.o uniqueiv.o
 OBJS_AS		= airserv-ng.o common.o
 OBJS_WS		= wesside-ng.o crypto.c common.o $(OBJS_PTW)
+OBJS_BS		= besside-ng.o crypto.c common.o $(OBJS_PTW)
 OBJS_AL		= airolib-ng.o crypto.c common.o
 OBJS_ES		= easside-ng.o common.o
 OBJS_BUDDY	= buddy-ng.o common.o
@@ -175,6 +176,9 @@ easside-ng$(EXE): $(OBJS_ES) $(LIBOSD)
 buddy-ng$(EXE): $(OBJS_BUDDY)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_BUDDY) -o $(@)
 
+besside-ng$(EXE): $(OBJS_BS) $(LIBOSD)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_BS) -o $(@) $(LIBS) $(LIBSSL) -lz
+
 makeivs-ng$(EXE): $(OBJS_MI)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_MI) -o $(@)
 
@@ -221,6 +225,7 @@ uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/aireplay-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/wesside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/easside-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/besside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/airbase-ng$(EXE)
 	-rm -f $(DESTDIR)$(bindir)/makeivs-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/airdecloak-ng$(EXE)
