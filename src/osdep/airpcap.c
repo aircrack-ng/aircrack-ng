@@ -95,7 +95,7 @@ int isAirpcapDevice(const char * iface)
 
 	// Checking that it contains 2 figures at the end.
 	// No need to check for length, it was already done by the first check
-	if (! (isdigit(iface[len - 1])) || !(isdigit(iface[len - 2])))
+	if (! (isdigit((int)iface[len - 1])) || !(isdigit((int)iface[len - 2])))
 		return 0;
 
 	return 1;
