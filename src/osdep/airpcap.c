@@ -208,6 +208,7 @@ void airpcap_close(void)
 	if (airpcap_handle != NULL)
 	{
 		AirpcapClose(airpcap_handle);
+		airpcap_handle = NULL;
 	}
 }
 
