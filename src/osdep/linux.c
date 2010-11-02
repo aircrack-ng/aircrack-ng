@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/utsname.h>
+#include <net/if_arp.h>
 
 #include "radiotap/radiotap-parser.h"
         /* radiotap-parser defines types like u8 that
@@ -1880,13 +1881,12 @@ static int linux_set_mac(struct wif *wi, unsigned char *mac)
             return( 1 );
         }
 
-// 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-// 	ifr.ifr_hwaddr.sa_len = 6;
+ 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	memcpy(ifr.ifr_hwaddr.sa_data, mac, 6);
 	memcpy(pl->pl_mac, mac, 6);
 
         //set mac
-        ret = ioctl(fd, SIOCSIFHWADDR, ifr);
+        ret = ioctl(fd, SIOCSIFHWADDR, &ifr);
 
         //if up
         ifr.ifr_flags |= IFF_UP | IFF_BROADCAST | IFF_RUNNING;

@@ -210,6 +210,9 @@ struct network {
 	struct packet	n_beacon;
 	int		n_beacon_wrote;
 	struct client	*n_client_handshake;
+	int		n_mac_filter;
+	struct client	*n_client_mac;
+	int		n_got_mac;
 };
 
 struct state {
@@ -332,6 +335,10 @@ static void save_network(FILE *f, struct network *n)
 //	fprintf(f, " | %s", n->n_crypto == CRYPTO_WEP ? "WEP" : "WPA");
 	fprintf(f, " | %s", mac2str(n->n_bssid));
 
+	fprintf(f, " | ");
+	if (n->n_got_mac)
+		fprintf(f, "%s", mac2str(n->n_client_mac->c_mac));
+
 	fprintf(f, "\n");
 }
 
@@ -345,7 +352,8 @@ static void save_log(void)
 		err(1, "fopen()");
 
 	fprintf(f, "# SSID              ");
-	fprintf(f, "| KEY                                    | BSSID\n");
+	fprintf(f, "| KEY                                    | BSSID");
+	fprintf(f, "             | Client MAC\n");
 
 	while (n) {
 		save_network(f, n);
@@ -1025,6 +1033,38 @@ static void ping_reply(struct network *n, struct ieee80211_frame *wh)
 	}
 }
 
+static void set_mac(void *mac)
+{
+	if (memcmp(mac, _state.s_mac, 6) == 0)
+		return;
+#if 0
+	if (wi_set_mac(_state.s_wi, mac) == -1)
+			err(1, "wi_set_mac()");
+#endif
+	time_printf(V_VERBOSE, "Can't set MAC - this'll suck."
+		    " Set it manually to %s for best performance.\n",
+		    mac2str(mac));
+
+	memcpy(_state.s_mac, mac, 6);
+}
+
+static int have_mac(struct network *n)
+{
+	if (!n->n_mac_filter)
+		return 1;
+
+	/* XXX try different clients based on feedback */
+	if (!n->n_client_mac)
+		n->n_client_mac = n->n_clients.c_next;
+
+	if (!n->n_client_mac)
+		return 0;
+
+	set_mac(n->n_client_mac->c_mac);
+
+	return 1;
+}
+
 static void attack_ping(void *a)
 {
 	struct network *n = a;
@@ -1225,6 +1265,9 @@ static void network_auth(void *a)
 	    || n->n_wstate != WSTATE_NONE)
 		return;
 
+	if (!have_mac(n))
+		return;
+
 	time_printf(V_VERBOSE, "Authenticating...\n");
 
 	send_auth(n);
@@ -1367,8 +1410,12 @@ static void speed_calculate(struct speed *s)
 
 static void do_flood(struct network *n)
 {
+	struct ieee80211_frame *wh = (struct ieee80211_frame*) n->n_replay;
+
 	if (!network_connect(n))
 		return;
+
+	memcpy(wh->i_addr2, _state.s_mac, sizeof(wh->i_addr2));
 
 	wifi_send(n->n_replay, n->n_replay_len);
 	speed_add(&n->n_flood_out);
@@ -1499,6 +1546,9 @@ static void found_new_client(struct network *n, struct client *c)
 {
 	time_printf(V_VERBOSE, "Found client for network [%s] %s\n",
 		    n->n_ssid, mac2str(c->c_mac));
+
+	if (n->n_mac_filter && !n->n_client_mac)
+		attack_continue(n);
 }
 
 static void found_new_network(struct network *n)
@@ -1663,13 +1713,27 @@ static int for_us(struct ieee80211_frame *wh)
 	return memcmp(wh->i_addr1, _state.s_mac, sizeof(wh->i_addr1)) == 0;
 }
 
+static void has_mac_filter(struct network *n)
+{
+	time_printf(V_VERBOSE, "MAC address filter on %s\n", n->n_ssid);
+	n->n_mac_filter = 1;
+}
+
 static void wifi_auth(struct network *n, struct ieee80211_frame *wh,
 		      int len)
 {
 	uint16_t *p = (uint16_t*) (wh + 1);
+	int rc;
 
 	if (len < (int) (sizeof(*wh) + 2 + 2 + 2))
 		goto __bad;
+
+	rc = le16toh(p[2]);
+
+	if (for_us(wh) && rc != 0) {
+		if (!n->n_mac_filter)
+			has_mac_filter(n);
+	}
 
 	if (for_us(wh) && n->n_astate == ASTATE_PING) {
 		ping_reply(n, wh);
@@ -1684,8 +1748,7 @@ static void wifi_auth(struct network *n, struct ieee80211_frame *wh,
 			n->n_wstate = WSTATE_AUTH;
 			time_printf(V_VERBOSE, "Authenticated\n");
 			network_connect(n);
-		} else
-			time_printf(V_NORMAL, "Auth died %d\n", le16toh(p[2]));
+		}
 	}
 
 	return;
@@ -1709,9 +1772,19 @@ static void wifi_assoc_resp(struct network *n, struct ieee80211_frame *wh,
 			time_printf(V_NORMAL, "Associated to %s AID [%d]\n",
 				    n->n_ssid, aid);
 
+			if (n->n_mac_filter && !n->n_got_mac) {
+				assert(n->n_client_mac);
+
+				time_printf(V_NORMAL, "Found MAC %s for %s\n",
+					    mac2str(n->n_client_mac->c_mac),
+					    n->n_ssid);
+
+				n->n_got_mac = 1;
+			}
+
 			attack_continue(n);
 		} else
-			time_printf(V_NORMAL, "Assoc died %d\n", le16toh(p[2]));
+			time_printf(V_NORMAL, "Assoc died %d\n", le16toh(p[1]));
 	}
 
 	return;
@@ -2235,8 +2308,10 @@ static void wifi_data(struct network *n, struct ieee80211_frame *wh, int len)
 
 	if (eapol) {
 		c = client_get(n, wh);
-		assert(c);
-		process_eapol(n, c, p, len, wh, orig);
+
+		/* c can be null if using our MAC (e.g., VAPs) */
+		if (c) 
+			process_eapol(n, c, p, len, wh, orig);
 		return;
 	}
 
@@ -2559,6 +2634,19 @@ static void resume_network(char *buf)
 		/* bssid */
 		case 2:
 			parse_hex(n->n_bssid, p, sizeof(n->n_bssid));
+			break;
+
+		case 3:
+			if (*p) {
+				struct client *c = xmalloc(sizeof(*c));
+
+				memset(c, 0, sizeof(*c));
+
+				parse_hex(c->c_mac, p, sizeof(c->c_mac));
+
+				n->n_client_mac = c;
+				n->n_got_mac    = 1;
+			}
 			break;
 		}
 
