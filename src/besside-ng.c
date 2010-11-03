@@ -120,6 +120,7 @@ struct network;
 
 typedef void (*timer_cb)(void*);
 typedef void (*cracker_cb)(struct cracker *, struct network *n);
+typedef int (*check_cb)(struct network *n);
 
 struct channel {
 	int		c_num;
@@ -133,6 +134,7 @@ struct conf {
 	int		cf_deauthfreq;
 	unsigned char	*cf_bssid;
 	int		cf_attackwait;
+	int		cf_floodwait;
 	char		*cf_wordlist;
 	int		cf_verb;
 	int		cf_to;
@@ -199,6 +201,7 @@ struct network {
 	unsigned char	n_replay[2048];
 	int		n_replay_len;
 	int		n_replay_got;
+	struct timeval	n_replay_last;
 	struct speed	n_flood_in;
 	struct speed	n_flood_out;
 	int		n_data_count;
@@ -353,7 +356,7 @@ static void save_log(void)
 
 	fprintf(f, "# SSID              ");
 	fprintf(f, "| KEY                                    | BSSID");
-	fprintf(f, "             | Client MAC\n");
+	fprintf(f, "             | MAC filter\n");
 
 	while (n) {
 		save_network(f, n);
@@ -1080,14 +1083,15 @@ static void attack_ping(void *a)
 		if (loss < 0)
 			loss = 0;
 
-		time_printf(V_NORMAL,
+		time_printf(V_VERBOSE,
 			    "Ping results for %s %d/%d (%d%% loss)\n",
 			    n->n_ssid, got, sent, loss);
 
 		if (loss >= 80) {
 			time_printf(V_NORMAL,
-				    "Crappy connection - %s unreachable\n",
-				    n->n_ssid);
+				    "Crappy connection - %s unreachable"
+				    " got %d/%d (%d%% loss)\n",
+				    n->n_ssid, got, sent, loss);
 
 			n->n_astate = ASTATE_UNREACH;
 		} else
@@ -1129,35 +1133,34 @@ static int should_attack(struct network *n)
 	return 1;
 }
 
-static void print_work(void)
+static int check_ownable(struct network *n)
+{
+	return should_attack(n);
+}
+
+static int check_owned(struct network *n)
+{
+	/* resumed network */
+	if (n->n_beacon.p_len == 0)
+		return 0;
+
+	return n->n_astate == ASTATE_DONE;
+}
+
+static int check_unreach(struct network *n)
+{
+	return n->n_astate == ASTATE_UNREACH;
+}
+
+static void print_list(char *label, check_cb cb)
 {
 	struct network *n = _state.s_networks.n_next;
 	int first = 1;
 
-	time_printf(V_NORMAL, "TO-OWN [");
+	printf("%s [", label);
 
 	while (n) {
-		if (should_attack(n)) {
-			if (first)
-				first = 0;
-			else
-				printf(", ");
-
-			printf("%s", n->n_ssid);
-			if (n->n_crypto == CRYPTO_WPA)
-				printf("*");
-		}
-
-		n = n->n_next;
-	}
-
-	printf("] OWNED [");
-
-	first = 1;
-	n = _state.s_networks.n_next;
-
-	while (n) {
-		if (n->n_astate == ASTATE_DONE) {
+		if (cb(n)) {
 			if (first)
 				first = 0;
 			else
@@ -1170,7 +1173,19 @@ static void print_work(void)
 		n = n->n_next;
 	}
 
-	printf("]\n");
+	printf("]");
+}
+
+static void print_work(void)
+{
+	time_printf(V_NORMAL, "");
+
+	print_list("TO-OWN", check_ownable);
+	print_list(" OWNED", check_owned);
+	if (_conf.cf_verb > V_NORMAL)
+		print_list(" UNREACH", check_unreach);
+
+	printf("\n");
 
 	save_log();
 }
@@ -1183,7 +1198,7 @@ static void pwned(struct network *n)
 	s -= m * 60;
 
 	time_printf(V_NORMAL,
-		    "Pwned network %s in %d:%d (M:S)\n", n->n_ssid, m, s);
+		    "Pwned network %s in %d:%.2d mins\n", n->n_ssid, m, s);
 
 	n->n_astate = ASTATE_DONE;
 
@@ -1235,25 +1250,38 @@ static void attack_next(void)
 		scan_start();
 }
 
+static int watchdog_next(struct network *n)
+{
+	if (n->n_crypto == CRYPTO_WEP
+	    && n->n_astate == ASTATE_WEP_FLOOD
+	    && n->n_replay_got) {
+		int diff;
+		int to = _conf.cf_floodwait * 1000 * 1000;
+
+		diff = time_diff(&n->n_replay_last, &_state.s_now);
+
+		if (diff < to)
+			return to - diff;
+	}
+
+	return 0;
+}
+
 static void attack_watchdog(void *arg)
 {
 	struct network *n = arg;
+	int next;
 
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n)
 		return;
 
-	if (n->n_crypto == CRYPTO_WEP) {
-		if (n->n_astate == ASTATE_WEP_FLOOD
-		    && n->n_flood_in.s_speed > 0)
-			goto __good;
-	}
+	next = watchdog_next(n);
 
-	time_printf(V_VERBOSE, "Giving up on %s for now\n", n->n_ssid);
-
-	attack_next();
-	return;
-__good:
-	timer_in(_conf.cf_attackwait * 1000 * 1000, attack_watchdog, n);
+	if (next == 0) {
+		time_printf(V_VERBOSE, "Giving up on %s for now\n", n->n_ssid);
+		attack_next();
+	} else
+		timer_in(next, attack_watchdog, n);
 }
 
 static void network_auth(void *a)
@@ -1453,7 +1481,7 @@ static void replay_check(void *a)
 
 static void start_flood(struct network *n)
 {
-	n->n_replay_got = 0;
+	n->n_replay_got = 0; /* refresh replay packet if it sucks */
 
 	timer_in(5 * 1000 * 1000, replay_check, n);
 	wep_flood(n);
@@ -1756,6 +1784,20 @@ __bad:
 	printf("Bad auth\n");
 }
 
+static void found_mac(struct network *n)
+{
+	if (!n->n_mac_filter || n->n_got_mac)
+		return;
+
+	assert(n->n_client_mac);
+
+	time_printf(V_NORMAL, "Found MAC %s for %s\n",
+		    mac2str(n->n_client_mac->c_mac),
+		    n->n_ssid);
+
+	n->n_got_mac = 1;
+}
+
 static void wifi_assoc_resp(struct network *n, struct ieee80211_frame *wh,
 		            int len)
 {
@@ -1772,15 +1814,7 @@ static void wifi_assoc_resp(struct network *n, struct ieee80211_frame *wh,
 			time_printf(V_NORMAL, "Associated to %s AID [%d]\n",
 				    n->n_ssid, aid);
 
-			if (n->n_mac_filter && !n->n_got_mac) {
-				assert(n->n_client_mac);
-
-				time_printf(V_NORMAL, "Found MAC %s for %s\n",
-					    mac2str(n->n_client_mac->c_mac),
-					    n->n_ssid);
-
-				n->n_got_mac = 1;
-			}
+			found_mac(n);
 
 			attack_continue(n);
 		} else
@@ -2068,6 +2102,9 @@ static void process_eapol(struct network *n, struct client *c, unsigned char *p,
 			    "Got necessary WPA handshake info for %s\n",
 			    n->n_ssid);
 
+		n->n_client_mac = c;
+		found_mac(n);
+
 		if (n->n_ssid[0]) {
 			n->n_astate = ASTATE_WPA_CRACK;
 			attack_continue(n);
@@ -2140,6 +2177,7 @@ static void check_replay(struct network *n, struct ieee80211_frame *wh, int len)
 		return;
 
 	n->n_replay_got++;
+	memcpy(&n->n_replay_last, &_state.s_now, sizeof(n->n_replay_last));
 
 	// ack clocked
 	do_flood(n);
@@ -2403,6 +2441,44 @@ static void wifi_read(void)
 	}
 }
 
+static const char *astate2str(int astate)
+{
+	static char num[16];
+	static char *states[] = {
+		"NONE",
+		"PING",
+		"READY",
+		"DEAUTH",
+		"WPA_CRACK",
+		"GET REPLAY",
+		"FLOOD",
+		"NONE",
+		"DONE" };
+
+	if (astate >= (int) (sizeof(states) / sizeof(*states))) {
+		snprintf(num, sizeof(num), "%d", astate);
+		return num;
+	}
+
+	return states[astate];
+}
+
+static const char *wstate2str(int astate)
+{
+	static char num[16];
+	static char *states[] = {
+		"NONE",
+		"AUTH",
+		"ASSOC" };
+
+	if (astate >= (int) (sizeof(states) / sizeof(*states))) {
+		snprintf(num, sizeof(num), "%d", astate);
+		return num;
+	}
+
+	return states[astate];
+}
+
 static void print_status(int advance)
 {
 	static char status[]  = "|/-|/-\\";
@@ -2419,10 +2495,13 @@ static void print_status(int advance)
 		break;
 
 	case STATE_ATTACK:
-		printf(" Attacking [%s] %s - %d",
+		printf(" Attacking [%s] %s - %s",
 		       n->n_ssid,
 		       n->n_crypto == CRYPTO_WPA ? "WPA" : "WEP",
-		       n->n_astate);
+		       astate2str(n->n_astate));
+
+		if (need_connect(n) && n->n_wstate != WSTATE_ASSOC)
+			printf(" [conn: %s]", wstate2str(n->n_wstate));
 
 		switch (n->n_astate) {
 		case ASTATE_WEP_FLOOD:
@@ -2433,10 +2512,13 @@ static void print_status(int advance)
 			speed_calculate(&n->n_flood_in);
 			speed_calculate(&n->n_flood_out);
 
-			printf(" - %d IVs PPS %d [%d out]",
+			printf(" - %d IVs rate %d [%d PPS out] len %d",
 			       n->n_data_count,
 			       n->n_flood_in.s_speed,
-			       n->n_flood_out.s_speed);
+			       n->n_flood_out.s_speed,
+			       n->n_replay_len - sizeof(struct ieee80211_frame) 
+			       		       - 4 - 4
+			       );
 			break;
 
 		case ASTATE_DEAUTH:
@@ -2804,6 +2886,7 @@ static void init_conf(void)
 	_conf.cf_hopfreq    = 250;
 	_conf.cf_deauthfreq = 2500;
 	_conf.cf_attackwait = 10;
+	_conf.cf_floodwait  = 60;
 	_conf.cf_to	    = 100;
 	_conf.cf_floodfreq  = 10 * 1000;
 	_conf.cf_crack_int  = 5000;
