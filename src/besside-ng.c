@@ -87,6 +87,7 @@ enum {
 	CRYPTO_NONE = 0,
 	CRYPTO_WEP,
 	CRYPTO_WPA,
+	CRYPTO_WPA_MGT,
 };
 
 enum {
@@ -293,7 +294,7 @@ static void save_network(FILE *f, struct network *n)
 {
 	int len;
 
-	if (n->n_crypto == CRYPTO_NONE)
+	if (n->n_crypto != CRYPTO_WPA && n->n_crypto != CRYPTO_WEP)
 		return;
 
 	if (!n->n_have_beacon)
@@ -335,7 +336,6 @@ static void save_network(FILE *f, struct network *n)
 	while (len++ < 38)
 		fprintf(f, " ");
 
-//	fprintf(f, " | %s", n->n_crypto == CRYPTO_WEP ? "WEP" : "WPA");
 	fprintf(f, " | %s", mac2str(n->n_bssid));
 
 	fprintf(f, " | ");
@@ -613,15 +613,23 @@ static inline void print_hex(void *p, int len)
 
 static void network_print(struct network *n)
 {
-	const char *crypto = "NONE";
+	const char *crypto = "dunno";
 
 	switch (n->n_crypto) {
+	case CRYPTO_NONE:
+		crypto = "none";
+		break;
+
 	case CRYPTO_WEP:
 		crypto = "WEP";
 		break;
 
 	case CRYPTO_WPA:
 		crypto = "WPA";
+		break;
+
+	case CRYPTO_WPA_MGT:
+		crypto = "WPA-SECURE";
 		break;
 	}
 
@@ -1090,8 +1098,8 @@ static void attack_ping(void *a)
 		if (loss >= 80) {
 			time_printf(V_NORMAL,
 				    "Crappy connection - %s unreachable"
-				    " got %d/%d (%d%% loss)\n",
-				    n->n_ssid, got, sent, loss);
+				    " got %d/%d (%d%% loss) [%d dbm]\n",
+				    n->n_ssid, got, sent, loss, n->n_dbm);
 
 			n->n_astate = ASTATE_UNREACH;
 		} else
@@ -1124,7 +1132,7 @@ static int should_attack(struct network *n)
 		return 0;
 	}
 
-	if (n->n_crypto == CRYPTO_NONE)
+	if (n->n_crypto != CRYPTO_WEP && n->n_crypto != CRYPTO_WPA)
 		return 0;
 
 	if (!_conf.cf_do_wep && n->n_crypto == CRYPTO_WEP)
@@ -1198,7 +1206,7 @@ static void pwned(struct network *n)
 	s -= m * 60;
 
 	time_printf(V_NORMAL,
-		    "Pwned network %s in %d:%.2d mins\n", n->n_ssid, m, s);
+		    "Pwned network %s in %d:%.2d mins:sec\n", n->n_ssid, m, s);
 
 	n->n_astate = ASTATE_DONE;
 
@@ -1591,8 +1599,14 @@ static void found_new_network(struct network *n)
 	}
 
 	if (_conf.cf_bssid &&
-	    memcmp(n->n_bssid, _conf.cf_bssid, sizeof(n->n_bssid)) == 0)
-		attack(n);
+	    memcmp(n->n_bssid, _conf.cf_bssid, sizeof(n->n_bssid)) == 0) {
+		if (should_attack(n)) {
+			attack(n);
+		} else {
+			time_printf(V_NORMAL, "Can't attack %s\n", n->n_ssid);
+			_state.s_state = STATE_DONE;
+		}
+	}
 }
 
 static void packet_copy(struct packet *p, void *d, int len)
@@ -1642,12 +1656,83 @@ static void found_ssid(struct network *n)
 	}
 }
 
+static int parse_rsn(struct network *n, unsigned char *p, int l, int rsn)
+{
+	int c;
+	unsigned char *start = p;
+	int psk = 0;
+
+	if (l < 2)
+		return 0;
+
+	if (memcmp(p, "\x01\x00", 2) != 0)
+		return 0;
+
+	n->n_crypto = CRYPTO_WPA;
+
+	if (l < 8)
+		return -1;
+
+	p += 2;
+	p += 4;
+
+	/* cipher */
+	c = le16toh(*((uint16_t*) p));
+
+	p += 2 + 4 * c;
+
+	if (l < ((p - start) + 2))
+		return -1;
+
+	/* auth */
+	c = le16toh(*((uint16_t*) p));
+	p += 2;
+
+	if (l < ((p - start) + c * 4))
+		return -1;
+
+	while (c--) {
+		if (rsn && memcmp(p, "\x00\x0f\xac\x02", 4) == 0)
+			psk++;
+
+		if (!rsn && memcmp(p, "\x00\x50\xf2\x02", 4) == 0)
+			psk++;
+
+		p += 4;
+	}
+
+	assert(l >= (p - start));
+
+	if (!psk)
+		n->n_crypto = CRYPTO_WPA_MGT;
+
+	return 0;
+}
+
+static int parse_elem_vendor(struct network *n, unsigned char *e, int l)
+{
+	struct ieee80211_ie_wpa *wpa = (struct ieee80211_ie_wpa*) e;
+
+	if (l < 5)
+		return 0;
+
+	if (memcmp(wpa->wpa_oui, "\x00\x50\xf2", 3) != 0)
+		return 0;
+
+	if (l < 8)
+		return 0;
+
+	if (wpa->wpa_type != WPA_OUI_TYPE)
+		return 0;
+
+	return parse_rsn(n, (unsigned char*) &wpa->wpa_version, l - 6, 0);
+}
+
 static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 			int totlen)
 {
 	unsigned char *p = (unsigned char*) (wh + 1);
 	int bhlen = 8 + 2 + 2;
-	struct ieee80211_ie_wpa *wpa;
 	int new = 0;
 	int len = totlen;
 	int hidden = 0;
@@ -1693,24 +1778,13 @@ static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 			break;
 
 		case IEEE80211_ELEMID_VENDOR:
-			wpa = (struct ieee80211_ie_wpa*) &p[-2];
-
-			if (l < 3)
+			if (parse_elem_vendor(n, &p[-2], l + 2) == -1)
 				goto __bad;
-
-			if (memcmp(wpa->wpa_oui, "\x00\x50\xf2", 3) == 0) {
-                        	if (wpa->wpa_type == WPA_OUI_TYPE
-				    && le16toh(wpa->wpa_version) == WPA_VERSION)
-					n->n_crypto = CRYPTO_WPA;
-			}
 			break;
 
 		case IEEE80211_ELEMID_RSN:
-			if (l < 2)
+			if (parse_rsn(n, p, l, 1) == -1)
 				goto __bad;
-
-			if (memcmp(p, "\x01\x00", 2) == 0)
-				n->n_crypto = CRYPTO_WPA;
 			break;
 
 		default:
@@ -1728,7 +1802,6 @@ static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 
 		if (hidden && n->n_ssid[0])
 			found_ssid(n);
-			
 	}
 
 	return;
@@ -2007,7 +2080,8 @@ static struct client *client_update(struct network *n,
 		c->c_next = n->n_clients.c_next;
 		n->n_clients.c_next = c;
 
-		if (n->n_have_beacon && n->n_crypto != CRYPTO_NONE)
+		if (n->n_have_beacon && 
+		    (n->n_crypto == CRYPTO_WPA || n->n_crypto == CRYPTO_WEP))
 			found_new_client(n, c);
 	}
 
