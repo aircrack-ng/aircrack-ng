@@ -6,8 +6,8 @@ RTAP		= radiotap
 LIB		= libosdep.a 
 CFLAGS		+= $(PIC) -I.. $(LIBAIRPCAP)
 
-OBJS_NET	= network.o
-OBJS		= osdep.o $(OBJS_NET)
+OBJS_COMMON	= network.o file.o
+OBJS		= osdep.o $(OBJS_COMMON)
 
 #AIRPCAP_DIR	= airpcap
 OBJS_APCAP	= airpcap.o
