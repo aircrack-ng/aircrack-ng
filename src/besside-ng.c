@@ -2470,7 +2470,7 @@ static struct network *network_update(struct ieee80211_frame* wh)
 
 	assert(n);
 
-	if ((fromnet = memcmp(wh->i_addr2, bssid, sizeof(wh->i_addr2))) == 0)
+	if ((fromnet = (memcmp(wh->i_addr2, bssid, sizeof(wh->i_addr2)) == 0)))
 		n->n_dbm = _state.s_ri->ri_power;
 
 	c = client_update(n, wh);
@@ -2590,8 +2590,8 @@ static void print_status(int advance)
 			       n->n_data_count,
 			       n->n_flood_in.s_speed,
 			       n->n_flood_out.s_speed,
-			       n->n_replay_len - sizeof(struct ieee80211_frame) 
-			       		       - 4 - 4
+			       (int) (n->n_replay_len 
+			       	       - sizeof(struct ieee80211_frame) - 4 - 4)
 			       );
 			break;
 
