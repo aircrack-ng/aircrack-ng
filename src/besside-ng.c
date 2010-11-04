@@ -1623,6 +1623,7 @@ static void found_ssid(struct network *n)
 {
 	unsigned char *p;
 	int ssidlen;
+	int origlen;
 
 	time_printf(V_NORMAL, "Found SSID [%s] for %s\n",
 		    n->n_ssid, mac2str(n->n_bssid));
@@ -1637,13 +1638,16 @@ static void found_ssid(struct network *n)
 	assert(*p == IEEE80211_ELEMID_SSID);
 	p++;
 
-	assert(*p == 0);
-	*p++ = ssidlen;
+	origlen = *p;
+	*p++    = ssidlen;
 
-	memmove(p + ssidlen, p, n->n_beacon.p_len - (p - n->n_beacon.p_data));
+	assert(origlen == 0 || p[0] == 0);
+
+	memmove(p + ssidlen, p + origlen,
+		n->n_beacon.p_len - (p + origlen - n->n_beacon.p_data));
 	memcpy(p, n->n_ssid, ssidlen);
 
-	n->n_beacon.p_len += ssidlen;
+	n->n_beacon.p_len += ssidlen - origlen;
 
 	if (n->n_client_handshake) {
 		n->n_astate = ASTATE_WPA_CRACK;
@@ -1770,11 +1774,12 @@ static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 			if (++ssids > 1)
 				break;
 
-			if (l != 0) {
+			if (l == 0 || p[0] == 0)
+				hidden = 1;
+			else {
 				memcpy(n->n_ssid, p, l);
 				n->n_ssid[l] = 0;
-			} else
-				hidden = 1;
+			}
 			break;
 
 		case IEEE80211_ELEMID_DSPARMS:
