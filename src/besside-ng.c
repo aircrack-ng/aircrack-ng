@@ -2570,7 +2570,7 @@ static void print_status(int advance)
 	static char *statusp = status;
 	struct network *n = _state.s_curnet;
 	struct client *c;
-	int ccount;
+	int ccount = 0;
 
 	time_printf(V_NORMAL, "%c", *statusp);
 
