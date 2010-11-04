@@ -1736,6 +1736,7 @@ static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 	int new = 0;
 	int len = totlen;
 	int hidden = 0;
+	int ssids = 0;
 
 	totlen -= sizeof(*wh);
 
@@ -1766,6 +1767,9 @@ static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 
 		switch (id) {
 		case IEEE80211_ELEMID_SSID:
+			if (++ssids > 1)
+				break;
+
 			if (l != 0) {
 				memcpy(n->n_ssid, p, l);
 				n->n_ssid[l] = 0;
@@ -1802,6 +1806,13 @@ static void wifi_beacon(struct network *n, struct ieee80211_frame *wh,
 
 		if (hidden && n->n_ssid[0])
 			found_ssid(n);
+
+		if (ssids > 1 && should_attack(n)) {
+			time_printf(V_NORMAL,
+			    	    "WARNING: unsupported multiple SSIDs"
+			    	    " for network %s [%s]\n",
+				    mac2str(n->n_bssid), n->n_ssid);
+		}
 	}
 
 	return;
