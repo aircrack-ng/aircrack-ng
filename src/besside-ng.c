@@ -2394,7 +2394,7 @@ static void wifi_data(struct network *n, struct ieee80211_frame *wh, int len)
 	unsigned char *p = (unsigned char*) (wh + 1);
         struct llc* llc;
 	int wep = wh->i_fc[1] & IEEE80211_FC1_WEP;
-	int eapol;
+	int eapol = 0;
 	struct client *c;
 	int stype = wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK;
 	int orig = len;
