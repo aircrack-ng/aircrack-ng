@@ -47,5 +47,5 @@ reso && $clear && setinterface
 
 F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
 echo "Auto scanning for networks"
-choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"  && cleanautovars &&
+choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng";cleanautovars; select_ap
 menu && mainmenu

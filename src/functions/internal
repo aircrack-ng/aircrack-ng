@@ -26,18 +26,17 @@ mainmenu(){
     if [ "$AUTO" == 1 ]; then return; fi
     select choix in $CHOICES; do
         case "$choix" in
-            1)select_ap;;
-            2)witchattack;;
-            3) if [ "$interactive" == "0" ]; then auto; else witchcrack; fi ;;
-            4)choosefake ;;
-            5)choosedeauth;;
-            6)extramenu;;
-            7)injectmenu;;
-            8)choosetype;;
-            9)doauto;;
-            10)eassideng;;
-            11)doexit;;
-            12)if [ $UNSTABLE = "1" ]; then $clear && unstablemenu; fi;;
+
+            
+
+            1)witchattack;;
+            2) if [ "$interactive" == "0" ]; then auto; else witchcrack; fi ;;
+            3)choosetype;;
+            4)select_ap;;
+            5)extramenu;;
+            6)doauto;;
+            7)doexit;;
+            8)if [ $UNSTABLE = "1" ]; then $clear && unstablemenu; fi;;
             *)$clear && _ 'ERROR: Wrong number entered';;
         esac
         menu
@@ -177,7 +176,7 @@ save_pids(){
 }
 
 get_childs(){ 
-    echo $( ps axo ppid,pid|awk "/$1/ {print \$2}"|grep -v "$pid"); 
+    ps axo ppid,pid|awk "/$1/ {print \$2}"|grep -v "$pid" 
 }
 clean_processes(){ 
     for i in `ls /var/run/airoscript/`; do kill -2 $i; rm /var/run/airoscript/$i; done; 

@@ -19,14 +19,14 @@
 
 doitwld(){
     echo "Cracking WLAN"; sleep 2
-	execute $WLD $Host_SSID $Host_SSID $DUMP_PATH/wlddic 
-	execute $AIRCRACK -b $Host_SSID -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_SSID-01.cap
+    AUTO=1; SILENT=1; execute "Creating dictionary" $WLD $Host_MAC $Host_SSID $DUMP_PATH/wlddic 
+	execute "Cracking" $AIRCRACK -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_SSID-01.cap; AUTO=0; SILENT=0;
 }
 
 doitjt(){
     echo "Cracking Jazztel"; sleep 2
-	execute $JTD $Host_SSID $Host_SSID $DUMP_PATH/jtddic
-	execute $AIRCRACK  -b $Host_SSID -w $DUMP_PATH/jtddic $DUMP_PATH/$Host_SSID-01.cap
+	execute $JTD $Host_MAC $Host_SSID $DUMP_PATH/jtddic
+	execute $AIRCRACK  -b $Host_MAAC -w $DUMP_PATH/jtddic $DUMP_PATH/$Host_SSID-01.cap
 }
 
 wld(){
