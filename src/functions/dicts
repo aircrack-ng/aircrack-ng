@@ -18,15 +18,18 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 doitwld(){
-    echo "Cracking WLAN"; sleep 2
-    AUTO=1; SILENT=1; execute "Creating dictionary" $WLD $Host_MAC $Host_SSID $DUMP_PATH/wlddic 
-	execute "Cracking" $AIRCRACK -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_SSID-01.cap; AUTO=0; SILENT=0;
+    AUTO=1; QUIET=1;
+    echo "Cracking WLAN"; sleep 1
+    execute "Creating dictionary" $WLD -x $Host_MAC $Host_SSID $DUMP_PATH/wlddic
+    AUTO=0; QUIET="";
+	execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_MAC-01.cap
+
 }
 
 doitjt(){
     echo "Cracking Jazztel"; sleep 2
 	execute $JTD $Host_MAC $Host_SSID $DUMP_PATH/jtddic
-	execute $AIRCRACK  -b $Host_MAAC -w $DUMP_PATH/jtddic $DUMP_PATH/$Host_SSID-01.cap
+	execute "Cracking" crack $AIRCRACK  -b $Host_MAC -w $DUMP_PATH/jtddic $DUMP_PATH/$Host_MAC-01.cap
 }
 
 wld(){
@@ -52,12 +55,10 @@ jtd(){
 auto(){
     if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a client before performing this attack'`\n"; fi
     if [[ "$Host_SSID" =~ WLAN* ]]; then
-    if [ ! -x "$WLD" ]; then $clear; _ "Could not find Wlandecrypter" return; fi
         if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then doitwld; return
         else echo "`gettext 'No capture file. Capture some ivs'`"; fi
     fi
     if [[ "$Host_SSID" =~ JAZZTEL* ]]; then
-    if [ ! -x "$JTD" ]; then $clear; _ "Could not find Jazzteldecrypter" return; fi
         if [ -e $DUMP_PATH/$Host_MAC-01.cap ]; then doitjtd; return
         else echo "`gettext 'No capture file. Capture some ivs'`"; fi
     fi

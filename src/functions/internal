@@ -160,11 +160,13 @@ execute(){
 		$CDCMD screen -S airoscript -c $SCREENRC -D -RR -X screen -t $title
 		$CDCMD screen -S airoscript -c $SCREENRC -X at "*" stuff "${@} $eopts" 
     else
+        HOLDA=$HOLD
+        if [ "$1" == "crack" ]; then HOLDA="-hold"; shift; fi # FIXME This will work just on xterm.
         if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
             echo -n $title...
             ${@} $eopts &> /dev/null &
         else
-            $CDCMD $TERMINAL $HOLD $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
+            $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
         fi
     fi 
     save_pids $!
@@ -202,7 +204,7 @@ function mkbox(){
 mkmenu(){ 
     # TODO IMPLEMENT INDENTATION LEVELS.
     $clear
-    separator="|"; menu_t=$1 && shift; n=0; max=1; f=")";
+    separator="|"; menu_t=$1 && shift; n=0; max=1; f="$red)$end";
     for i in "${@}"; do if [ "${#i}" -gt "$max" ]; then max=${#i}; fi; done;
 
     if [ "$NO_NUMBERED" == "1" ]; then f=""; fi 
@@ -215,7 +217,7 @@ mkmenu(){
             if [ "$i" != "separator" ]; then
                 if [ "`echo $i|cut -b1`" != "-" ]; then 
                 n=$(( $n + 1 )); 
-                    echo -n "$separator_v $n$f" `gettext "$i"`
+                    echo -n "$separator_v ${white}${n}${end}${f}" `gettext "$i"`
                 else
                     echo
                     echo $i | cut -b2-

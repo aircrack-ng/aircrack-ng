@@ -180,15 +180,14 @@ choosetarget(){
 # This way we detect clients. (Option 3)
 detectclients(){
     if [ "$AUTO" == "1" ]; then return; fi
-    $iwconfig $wificard channel $Host_CHAN; capture & deauthall
-    Selectclient $Host_MAC-01.csv filter
+    $iwconfig $wificard channel $Host_CHAN; capture & deauthall && read -p "Press enter to select client"; SelectClient $Host_MAC-01.csv filter
 }
 
 SelectClient(){
     HOST=`cat $DUMP_PATH/$1 | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC|sed 's/,//'`
     if [ "$2" == "nofilter" ]; then HOST=`cat $DUMP_PATH/dump-01.csv | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`; fi
     if [ "$AUTO" == "1" ]; then return; fi;  [[ -z $HOST ]] && return
-    arrow; mkbox "Client Selection" "Select client now" "These clients are connected to" $Host_SSID
+    arrow; mkbox "Client Selection" "Select client now" "These clients are connected to $Host_SSID "
     select CLIENT in $HOST; do export Client_MAC=` echo $CLIENT | awk '{split($1, info, "," )  print info[1]  }'`; break;done
 }
 
@@ -382,19 +381,19 @@ selectcracking(){
 #This is crack function, for WEP encryption:
     crack(){
         if [ "$AUTO" == 1 ]; then
-	    	$AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -f $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap &>/dev/null  &
+	    	execute "Cracking wep" $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap
             return
         fi
 
 		while true; do
-        mkmenu "WEP Cracking Options" "aircrack-ng defaults" "aircrack-ng old Korek" "aircrack-ng interactive"
+        mkmenu "WEP Cracking Options" "aircrack-ng defaults" "aircrack-ng Korek" "aircrack-ng interactive"
 		read -p "Select option: " yn
 		case $yn in
-	    	1 ) execute $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -f $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap ; $clear; break ;;
-	    	2 ) execute $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -f $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K ; $clear; break ;;
+	    	1 ) execute "Cracking wep, default options" crack $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap ; $clear; break ;;
+	    	2 ) execute "Cracking wep, Korek" crack $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K ; $clear; break ;;
 	    	3 ) read -p "Insert Fudge Factor: " FUDGE_FACTOR;
                 read -p "`gettext 'Type encryption size (64,128...): '`" ENC_SIZE
-			    execute "Manual cracking" $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGE_FACTOR\
+			    execute "Cracking wep, manual options" crack $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGE_FACTOR\
                 -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-*.cap -f $DUMP_PATH/$Host_MAC.key &  $clear; 
                 break ;;
 	    	* ) echo "`gettext 'Unknown response. Try again'`" ;;
@@ -409,9 +408,9 @@ selectcracking(){
                 read -p "Select option: " foo
 
                 case $foo in
-                    1)  execute $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST  ; $clear;;
+                    1)  execute "Cracking WPA" crack $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST  ; $clear;;
                     2)  $clear; read -p "Enter Database location [$db_location]" db_location;
-                        execute $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location;;
+                        execute "Cracking WPA with pmk database" crack  $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location;;
 	    	        * ) echo "`gettext 'Unknown response. Try again'`" ;;
         		esac
 	      	done

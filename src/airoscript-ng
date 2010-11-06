@@ -22,7 +22,7 @@
 _source(){
     for cfile in $1; do
         if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; echo "Loading $cfile"; sleep 0.4;
-        else echo "Could not load $cfile"; sleep 0.4 ; fi
+        else echo "Could not load $cfile"; sleep 0.2 ; fi
     done
 }
 
