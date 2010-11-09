@@ -13,7 +13,7 @@ PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
 		  ivstools$(EXE) kstats$(EXE) makeivs-ng$(EXE) \
-		  airdecloak-ng$(EXE)
+		  airdecloak-ng$(EXE) besside-ng-crawler$(EXE)
 
 ifeq ($(SQLITE), true)
 	BINFILES	+= airolib-ng$(EXE)
@@ -81,6 +81,7 @@ OBJS_IV		= ivstools.o common.o crypto.o uniqueiv.o
 OBJS_AS		= airserv-ng.o common.o
 OBJS_WS		= wesside-ng.o crypto.c common.o $(OBJS_PTW)
 OBJS_BS		= besside-ng.o crypto.c common.o $(OBJS_PTW)
+OBJS_BC		= besside-ng-crawler.o
 OBJS_AL		= airolib-ng.o crypto.c common.o
 OBJS_ES		= easside-ng.o common.o
 OBJS_BUDDY	= buddy-ng.o common.o
@@ -179,6 +180,9 @@ buddy-ng$(EXE): $(OBJS_BUDDY)
 besside-ng$(EXE): $(OBJS_BS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_BS) -o $(@) $(LIBS) $(LIBSSL) -lz
 
+besside-ng-crawler$(EXE): $(OBJS_BC)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_BC) -o $(@) -lpcap
+
 makeivs-ng$(EXE): $(OBJS_MI)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_MI) -o $(@)
 
@@ -226,6 +230,7 @@ uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/wesside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/easside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/besside-ng$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/besside-ng-crawler$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/airbase-ng$(EXE)
 	-rm -f $(DESTDIR)$(bindir)/makeivs-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/airdecloak-ng$(EXE)
