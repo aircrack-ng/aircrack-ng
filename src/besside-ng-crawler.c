@@ -241,13 +241,13 @@ void process_file(const char *file) {
   stats_caps++;
   
   if ((pcap_datalink(handle) != DLT_IEEE802_11) && (pcap_datalink(handle) != DLT_PRISM_HEADER)){
-    //TODO: Add support for PRISM_HEADER and RADIOTAP!!!!
+    //TODO: Add support for RADIOTAP!!!!
     printf("Dumpfile %s is not an IEEE 802.11 capture: %s\n", file, pcap_datalink_val_to_name(pcap_datalink(handle)));
     pcap_close(handle);
     return;
   }
   
-  //printf("Scanning dumpfile %s\n", file);
+  printf("Scanning dumpfile %s\n", file);
   eapol_networks = get_eapol_bssids(handle);
   
   pcap_close(handle);
@@ -308,7 +308,7 @@ void process_directory(const char *dir) {
   
   if (errno) perror("Reading directory failed");
   
-  free(curdir);
+  closedir(curdir);
   return;
 }
 
