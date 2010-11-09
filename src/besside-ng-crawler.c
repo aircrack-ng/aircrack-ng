@@ -75,7 +75,7 @@ struct bsslist *is_in_list(struct bsslist *bsl, const u_char *bssid) {
 
 
 struct bsslist *add_to_list(struct bsslist *bsl, const u_char *bssid) {
-  struct bsslist *new;
+  struct bsslist *new, *search;
   
   new= malloc(sizeof(struct bsslist));
   new->bssid = malloc(6);
@@ -87,7 +87,9 @@ struct bsslist *add_to_list(struct bsslist *bsl, const u_char *bssid) {
   if (bsl == NULL) {
     return new;
   } else {
-    bsl->next = new;
+    search = bsl;
+    while (search->next) search = search->next;
+    search->next = new;
     return bsl;
   }
 }
@@ -105,26 +107,41 @@ void free_bsslist(struct bsslist *bsl) {
 
 struct bsslist *get_eapol_bssids(pcap_t *handle) {
   struct pcap_pkthdr header;
-  const u_char *pkt, *llc, *bssid;
+  const u_char *pkt, *llc, *bssid, *offset = NULL;
   struct bsslist *bsl = NULL;
+  int o = 0;
   
   pkt = pcap_next(handle, &header);
+
+  if (pcap_datalink(handle) == DLT_PRISM_HEADER) {
+    if (pkt[5] || pkt[6]) {
+      printf("Unsupported PRISM_HEADER format!\n");
+      return NULL;
+    }
+    if (pkt[7] == 0x40) { //prism54 format
+      offset = pkt + 7;
+    } else {
+      offset = pkt + 4;
+    }
+  }
   
   while (pkt != NULL) {
     stats_packets++;
     
-    if ((pkt[0] == 0x08) || (pkt[0] == 0x88)) { //Data or QoS Data
+    if (offset) o = (*offset);
+    
+    if ((pkt[0+o] == 0x08) || (pkt[0+o] == 0x88)) { //Data or QoS Data
       
-      if (pkt[0] == 0x88) { //Qos Data has 2 bytes extra in header
-	llc = pkt + 26;
+      if (pkt[0+o] == 0x88) { //Qos Data has 2 bytes extra in header
+	llc = pkt + 26 + o;
       } else {
-	llc = pkt + 24;
+	llc = pkt + 24 + o;
       }
       
-      if ((pkt[1] & 0x03) == 0x01) { //toDS
-	bssid = pkt + 4;
+      if ((pkt[1+o] & 0x03) == 0x01) { //toDS
+	bssid = pkt + 4 + o;
       } else {	//fromDS - I skip adhoc and wds since its unlikely to have eapol in there (?)
-	bssid = pkt + 10;
+	bssid = pkt + 10 + o;
       }
       
       if (! memcmp(llc, "\xaa\xaa\x03\x00\x00\x00\x88\x8e", 8)) {
@@ -147,24 +164,36 @@ struct bsslist *get_eapol_bssids(pcap_t *handle) {
 
 void process_eapol_networks(pcap_t *handle, struct bsslist *bsl) {
   struct pcap_pkthdr header;
-  const u_char *pkt, *llc, *bssid;
+  const u_char *pkt, *llc, *bssid, *offset = 0;
   struct bsslist *known;
+  int o = 0;
   
   pkt = pcap_next(handle, &header);
   
+  if (pcap_datalink(handle) == DLT_PRISM_HEADER) {
+    if (pkt[7] == 0x40) { //prism54 format
+      offset = pkt + 7;
+    } else {
+      offset = pkt + 4;
+    }
+  }
+  
   while (pkt != NULL) {
     
-    if ((pkt[0] == 0x08) || (pkt[0] == 0x88) || (pkt[0] == 0x80)) {
+    if (offset) o = (*offset);
+    header.len -= o;
+    
+    if ((pkt[0+o] == 0x08) || (pkt[0+o] == 0x88) || (pkt[0+o] == 0x80)) {
 
-      if ((pkt[1] & 0x03) == 0x01) { //toDS
-	bssid = pkt + 4;
-      } else if ((pkt[1] & 0x03) == 0x00) {	//beacon
-	bssid = pkt + 16;
+      if ((pkt[1+o] & 0x03) == 0x01) { //toDS
+	bssid = pkt + 4 + o;
+      } else if ((pkt[1+o] & 0x03) == 0x00) {	//beacon
+	bssid = pkt + 16 + o;
       } else {	//fromDS
-	bssid = pkt + 10;
+	bssid = pkt + 10 + o;
       }
       
-      if (pkt[0] == 0x80) {	//beacon
+      if (pkt[0+o] == 0x80) {	//beacon
 	known = is_in_list(bsl, bssid);
 	if (!known || known->beacon_saved) {
 	  pkt = pcap_next(handle, &header);
@@ -172,21 +201,21 @@ void process_eapol_networks(pcap_t *handle, struct bsslist *bsl) {
 	}
 	
 	//Saving ONE beacon per WPA network
-	pcap_dump((u_char *) dumper, &header, pkt);
+	pcap_dump((u_char *) dumper, &header, pkt + o);
 	known->beacon_saved = 0x01;
       }
       
-      if (pkt[0] == 0x88) {
+      if (pkt[0+o] == 0x88) {
 	//printf("QoS Data\n");
-	llc = pkt + 26;
+	llc = pkt + 26 + o;
       } else {
-	llc = pkt + 24;
+	llc = pkt + 24 + o;
       }
       
       if (! memcmp(llc, "\xaa\xaa\x03\x00\x00\x00\x88\x8e", 8)) {
 	if (is_in_list(bsl, bssid)) {
 	  // Saving EAPOL
-	  pcap_dump((u_char *) dumper, &header, pkt);
+	  pcap_dump((u_char *) dumper, &header, pkt + o);
 	}
       }
     }
@@ -211,14 +240,14 @@ void process_file(const char *file) {
   
   stats_caps++;
   
-  if (pcap_datalink(handle) != DLT_IEEE802_11) {
+  if ((pcap_datalink(handle) != DLT_IEEE802_11) && (pcap_datalink(handle) != DLT_PRISM_HEADER)){
     //TODO: Add support for PRISM_HEADER and RADIOTAP!!!!
     printf("Dumpfile %s is not an IEEE 802.11 capture: %s\n", file, pcap_datalink_val_to_name(pcap_datalink(handle)));
     pcap_close(handle);
     return;
   }
   
-  printf("Scanning dumpfile %s\n", file);
+  //printf("Scanning dumpfile %s\n", file);
   eapol_networks = get_eapol_bssids(handle);
   
   pcap_close(handle);
