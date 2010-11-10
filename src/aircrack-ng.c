@@ -86,6 +86,7 @@ static uchar ZERO[32] =
 
 /* stats global data */
 
+static int _speed_test;
 struct timeval t_begin;			 /* time at start of attack      */
 struct timeval t_stats;			 /* time since last update       */
 struct timeval t_kprev;			 /* time at start of window      */
@@ -222,6 +223,10 @@ char usage[] =
 "      -r <DB>    : path to airolib-ng database\n"
 "                   (Cannot be used with -w)\n"
 #endif
+"\n"
+"  WPA-PSK options:\n"
+"\n"
+"      -S         : WPA cracking speed test\n"
 "\n"
 "      --help     : Displays this usage screen\n"
 "\n";
@@ -3810,6 +3815,20 @@ uchar mic[16], int force )
 
 	}
 
+	if (_speed_test) {
+		int ks = (int) ((float) nb_kprev / delta);
+
+		printf("%d k/s\r", ks);
+		fflush(stdout);
+
+		if (et_s >= 5) {
+			printf("\n");
+			exit(0);
+		}
+
+		goto __out;
+	}
+
 	if( opt.l33t ) printf( "\33[33;1m" );
 	printf( "\33[5;20H[%02d:%02d:%02d] %lld keys tested "
 		"(%2.2f k/s)", et_h, et_m, et_s,
@@ -3850,7 +3869,7 @@ uchar mic[16], int force )
 		printf( "%02X ", mic[i] );
 
 	printf( "\n" );
-
+__out:
 	pthread_mutex_unlock(&mx_wpastats);
 }
 
@@ -4324,7 +4343,7 @@ int do_wpa_crack()
 	num_cpus = opt.nbcpu;
 
 
-	if( ! opt.is_quiet )
+	if( ! opt.is_quiet && !_speed_test)
 	{
 		if( opt.l33t )
 			printf( "\33[37;40m" );
@@ -4709,6 +4728,33 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
     return SUCCESS;
 }
 
+static void *fake_dict_feeder(void *arg)
+{
+	int fd = (int) arg;
+	char key[] = "aaaaaaaa";
+
+	while (1) {
+		if (write(fd, key, sizeof(key)) != sizeof(key))
+			err(1, "write()");
+	}
+
+	return NULL;
+}
+
+static FILE *fake_dict(void)
+{
+	int fd[2];
+	pthread_t pt;
+
+	if (pipe(fd) == -1)
+		err(1, "pipe()");
+
+	if (pthread_create(&pt, NULL, fake_dict_feeder, (void*) fd[1]) != 0)
+		err(1, "pthread_create()");
+
+	return fdopen(fd[0], "r");
+}
+
 int main( int argc, char *argv[] )
 {
 	int i, n, ret, option, j, ret1, nbMergeBSSID, unused;
@@ -4793,13 +4839,31 @@ int main( int argc, char *argv[] )
             {0,                   0, 0,  0 }
         };
 
-		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:l:E:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
+		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:l:E:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1S",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
 
 		switch( option )
 		{
+			case 'S':
+				_speed_test = 1;
+				opt.amode = 2;
+				opt.dict = fake_dict();
+				opt.bssid_set = 1;
+
+				ap_1st = ap_cur = malloc(sizeof(*ap_cur));
+				if (!ap_cur)
+					err(1, "malloc()");
+
+				memset(ap_cur, 0, sizeof(*ap_cur));
+		
+				ap_cur->target = 1;	
+				ap_cur->wpa.state = 7;
+				strcpy(ap_cur->essid, "sorbo");
+
+				goto __start;
+				break;
 
 			case ':' :
 
@@ -5502,6 +5566,7 @@ usage:
 		}
 	}
 
+__start:
 	/* launch the attack */
 
 	nb_tried = 0;
@@ -5788,7 +5853,7 @@ usage:
 
 #ifdef HAVE_SQLITE
 		} else {
-			if( ! opt.is_quiet ) {
+			if( ! opt.is_quiet && !_speed_test) {
 				if( opt.l33t )
 					printf( "\33[37;40m" );
 					printf( "\33[2J" );
