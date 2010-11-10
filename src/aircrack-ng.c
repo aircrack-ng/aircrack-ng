@@ -4730,7 +4730,8 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
 static void *fake_dict_feeder(void *arg)
 {
-	int fd = (int) arg;
+	int *fds = arg;
+	int fd = fds[1];
 	char key[] = "aaaaaaaa";
 
 	while (1) {
@@ -4749,7 +4750,7 @@ static FILE *fake_dict(void)
 	if (pipe(fd) == -1)
 		err(1, "pipe()");
 
-	if (pthread_create(&pt, NULL, fake_dict_feeder, (void*) fd[1]) != 0)
+	if (pthread_create(&pt, NULL, fake_dict_feeder, fd) != 0)
 		err(1, "pthread_create()");
 
 	return fdopen(fd[0], "r");
