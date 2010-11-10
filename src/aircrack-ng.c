@@ -4367,7 +4367,9 @@ int do_wpa_crack()
 		do
 		{
 			memset(key1, 0, sizeof(key1));
-			if (fgets(key1, sizeof(key1), opt.dict) == NULL)
+			if (_speed_test)
+				strcpy(key1, "sorbosorbo");
+			else if (fgets(key1, sizeof(key1), opt.dict) == NULL)
 			{
 				if( opt.l33t )
 					printf( "\33[32;22m" );
@@ -4728,34 +4730,6 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
     return SUCCESS;
 }
 
-static void *fake_dict_feeder(void *arg)
-{
-	int *fds = arg;
-	int fd = fds[1];
-	char key[] = "aaaaaaaa";
-
-	while (1) {
-		if (write(fd, key, sizeof(key)) != sizeof(key))
-			err(1, "write()");
-	}
-
-	return NULL;
-}
-
-static FILE *fake_dict(void)
-{
-	int fd[2];
-	pthread_t pt;
-
-	if (pipe(fd) == -1)
-		err(1, "pipe()");
-
-	if (pthread_create(&pt, NULL, fake_dict_feeder, fd) != 0)
-		err(1, "pthread_create()");
-
-	return fdopen(fd[0], "r");
-}
-
 int main( int argc, char *argv[] )
 {
 	int i, n, ret, option, j, ret1, nbMergeBSSID, unused;
@@ -4850,7 +4824,7 @@ int main( int argc, char *argv[] )
 			case 'S':
 				_speed_test = 1;
 				opt.amode = 2;
-				opt.dict = fake_dict();
+				opt.dict = stdin;
 				opt.bssid_set = 1;
 
 				ap_1st = ap_cur = malloc(sizeof(*ap_cur));
