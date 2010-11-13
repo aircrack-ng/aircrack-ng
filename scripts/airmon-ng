@@ -245,16 +245,22 @@ getChipset() {
         CHIPSET="RTL8180/RTL8185"
     fi
 
+    # r8187 is reporting itself as rtl8187
     if [ x$DRIVER = "xrtl8187" ]
     then
         getPhy $2
-    	CHIPSET="`dmesg | grep $PHYDEV | grep hwaddr | cut -d',' -f 2 | cut -d' ' -f 2`"
-    	if [ x$CHIPSET = "xRTL8187vB" ]
-    	then
-    		CHIPSET="Realtek RTL8187L"
-    	else
-    		CHIPSET="Realtek $CHIPSET"
-    	fi
+       if [ x"$PHYDEV" = "x" ]
+       then
+               CHIPSET="RTL8187 "
+       else
+               CHIPSET="`dmesg | grep $PHYDEV | grep hwaddr | cut -d',' -f 2 | cut -d' ' -f 2`"
+               if [ x$CHIPSET = "xRTL8187vB" ]
+               then
+                       CHIPSET="Realtek RTL8187L"
+               else
+                       CHIPSET="Realtek $CHIPSET"
+               fi
+       fi
     fi
     
     if [ x$DRIVER = "xr8187" ]
