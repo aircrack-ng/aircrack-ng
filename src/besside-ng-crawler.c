@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <time.h>
 
 #include <sys/types.h>
 #include <dirent.h>
@@ -262,7 +263,7 @@ void process_file(const char *file) {
 }
 
 
-void process_directory(const char *dir) {
+void process_directory(const char *dir, time_t begin) {
   DIR *curdir;
   struct dirent *curent;
   struct stat curstat;
@@ -294,9 +295,13 @@ void process_directory(const char *dir) {
       printf("Statting %s ", fullname); perror("failed");
     } else {
       if (S_ISREG(curstat.st_mode)) {
-	process_file(fullname);
+	if (curstat.st_mtime >= begin) {
+	  printf("Skipping file %s, which is newer than the crawler process (avoid loops)\n", fullname);
+	} else {
+	  process_file(fullname);
+	}
       } else if (S_ISDIR(curstat.st_mode)) {
-	process_directory(fullname);
+	process_directory(fullname, begin);
       } else {
 	printf("%s is a neither a directory nor a regular file\n", fullname);
       }
@@ -314,6 +319,7 @@ void process_directory(const char *dir) {
 
 
 int main(int argc, char *argv[]) {
+  time_t begin = time(NULL);	//Every file newer than when crawler started is skipped (it may be the file the crawler created!)
   
   if (argc != 3) {
     printf("Use: %s <SearchDir> <CapFileOut>\n", argv[0]);
@@ -329,7 +335,7 @@ int main(int argc, char *argv[]) {
   dumphandle = pcap_open_dead(DLT_IEEE802_11, BUFSIZ);
   dumper = pcap_dump_open(dumphandle, argv[2]);
   
-  process_directory(argv[1]);
+  process_directory(argv[1], begin);
   
   pcap_dump_close(dumper);
   pcap_close(dumphandle);
