@@ -22,7 +22,7 @@ doitwld(){
     echo "Cracking WLAN"; sleep 1
     execute "Creating dictionary" $WLD -x $Host_MAC $Host_SSID $DUMP_PATH/wlddic
     AUTO=0; QUIET="";
-	execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -b $Host_MAC -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_MAC-01.cap
+	execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_MAC-01.cap
 
 }
 

@@ -940,8 +940,8 @@ Host_ssidinput(){
 
 configure(){
     if [ -O $DUMP_PATH/$Host_MAC.key ] && [ "$Host_MAC" != "" ]; then
-        KEY=`cat $DUMP_PATH/$Host_MAC.key | grep -a KEY | awk '{ print $4 }'`
-        $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key s:$KEY &>/dev/null
+        KEY=`cat $DUMP_PATH/$Host_MAC.key`
+        $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key $KEY &>/dev/null
         $DHCPSOFT $wificard &>/dev/null || _ "Could not autoconfigure network" && return 2
         sleep 3; $clear;
     else
