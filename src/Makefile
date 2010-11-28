@@ -13,7 +13,14 @@ PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
 		  ivstools$(EXE) kstats$(EXE) makeivs-ng$(EXE) \
-		  airdecloak-ng$(EXE) besside-ng-crawler$(EXE)
+		  airdecloak-ng$(EXE)
+
+ifneq ($(OSNAME), cygwin) #There is yet no libpcap support for windows, so we skip the crawler
+	HAVE_PCAP	= $(shell ld -lpcap 2> /dev/null && echo yes)
+	ifeq ($(HAVE_PCAP), yes) #cannot link with -lpcap, skip crawler
+		BINFILES	+= besside-ng-crawler$(EXE)
+	endif
+endif
 
 ifeq ($(SQLITE), true)
 	BINFILES	+= airolib-ng$(EXE)
