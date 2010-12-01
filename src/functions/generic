@@ -677,7 +677,7 @@ wichchangemac(){
                 $MACCHANGER -m  $Client_MAC $wificard &>/dev/null
                 ifconfig $wificard up ; break ;;
             3)  export FAKE_MAC=$mac
-                echo "Using for $wificard $FAKE_MAC = $mac"
+                echo -e "$mark Using for $wificard $FAKE_MAC = $mac"
                 ifconfig $wificard down; sleep 2; 
                 $MACCHANGER -m $mac $wificard &>/dev/null
                 ifconfig $wificard up;
@@ -710,11 +710,11 @@ choosemdk(){
                 3 ) mdknewtarget ; break ;;
                 4 ) mdkauth ; break ;;
                 5 ) break ;;
-                * ) echo "unknown response. Try again" ;;
+                * ) _ "Unknown response. Try again" ;;
             esac
         done
 
-        else $clear && echo "Sorry, this is not installed on your system"
+        else $clear && _ "Sorry, this is not installed on your system"
         fi
     }
 
@@ -869,7 +869,7 @@ injectmenu(){
     $clear
     while true; do
         ls -lah $DUMP_PATH/fragment-*.xor &>/dev/null
-        [[ $? != 0 ]] && {  _ "Can't open fragmentation xor files. Returning"; echo;  return; }
+        [[ $? != 0 ]] && { echo -en "$mark";  _ "Can't open fragmentation xor files. Returning"; echo;  return; }
         if [ "$1" == "frag" ]; then
             if [ "$AUTO" == 1 ]; then
                 if [ "$Client_MAC" != "" ]; then fragend $Client_MAC; return; fi
@@ -903,7 +903,7 @@ injectmenu(){
 
 fragend(){
     if [ "$Host_MAC" = "" ]; then
-        $clear && _ 'ERROR: You must select a target first'
+        $clear && echo -en $mark;  _ 'ERROR: You must select a target first'
     else
         $ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
         execute "Fragmentation without client" $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $1 -x $INJECTRATE $iwifi 
@@ -912,7 +912,7 @@ fragend(){
 
 chopchopend(){
     if [ "$Host_MAC" = "" ]; then
-        $clear && _ 'ERROR: You must select a target first'
+        $clear && echo -en $mark ; _ 'ERROR: You must select a target first'
     else
         $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
         rm -rf $DUMP_PATH/chopchop_$Host_MAC*
@@ -958,17 +958,17 @@ doauto(){
 	    while IFS=, read MAC; do i=$(($i+1)) ; done < $DUMP_PATH/dump-02.csv
             sleep 1
         MAX_TARGETS=$i
-            echo "Networks detected $MAX_TARGETS"; sleep 1
+            echo -e "$mark Networks detected $MAX_TARGETS"; sleep 1
             for i in `seq 1 $MAX_TARGETS`; do
                 echo "Trying to crack target: $i"
     			AUTO=1; Parseforap;  sleep 1
                 if [ "$Host_SSID" != "" ]; then
                     autopwn
                 else
-                    echo "Couldn't find essid, next try"
+                    echo -e "$mark Couldn't find essid, next try"
                 fi
             done
-        else $clear; _ "ERROR: Could not autodetect access points"; fi
+        else $clear; echo -en $mark;  _ "ERROR: Could not autodetect access points"; fi
     cleanautovars
 }
 
@@ -977,7 +977,7 @@ autopwn(){
     sleep 1
     oldclear=$clear;clear="";
     for i in $attack_functions; do
-        echo "Gonna use $i in $Host_MAC"
+        echo -e "$mark Gonna use $i in $Host_MAC"
         sleep 3
         $i & cleanp &
         while [ "1" ]; do 
@@ -1023,7 +1023,7 @@ check_if_worked(){
 }
 
 checkforcemac() {
-    if [ "$force_mac_address" == "1" ]; then $clear && echo "Warn: Not checking mac" 
+    if [ "$force_mac_address" == "1" ]; then $clear && echo -e "$mark Warn: Not checking mac" 
     else
     	export mac=`$MACCHANGER -s $wificard|awk {'print $3'}`
 	    if [ "$FAKE_MAC" != "$mac" ]; then wichchangemac; fi
@@ -1049,8 +1049,9 @@ setupairservng(){
 		fi
 	fi
 }
+
 askinterface(){
-    mkmenu "Interface selection__" $INTERFACES
+    mkmenu "Interface selection" $INTERFACES
     read -p "Select interface: " j
 	export wificard=`echo $INTERFACES|awk {"print \\\$$j"}`
 }
@@ -1068,7 +1069,10 @@ setinterface(){
 
     export iwifi=$wifi
 
-	_ "Interface used is :" $wifi "\n"
+
+	echo -en $mark;
+    _ "Interface used is :" $wifi "\n"
+	echo -en $mark;
 	_ 'Interface type is :' "$TYPE ($DRIVER)" "\n"
     sleep 3
 }

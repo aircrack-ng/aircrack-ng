@@ -23,7 +23,8 @@ separator=""
 separator_h=""
 separator_v=""
 
-red=
-white=
-end=
-
+mark="[\e[0;31m+\e[0m] "
+red="\e[0;31m"
+white="\e[1;37m"
+lgrey="\e[1;27m"
+end="\e[0m"

@@ -54,7 +54,7 @@ setps(){
 }
 
 _debug(){
-    if [ "$debug" == 1 ]; then _ $1; fi
+    if [ "$debug" == 1 ]; then echo -en $mark; _ $1; fi
 }
 
 default_theme(){
@@ -131,6 +131,7 @@ done
 }
 
 initial_warning(){
+	echo -en $mark;
     _ "Airoscript is provided under the gpl.
 I'm not responsible of the use anyone can give to airoscript.
 Written for educational purpose in mind.
@@ -217,7 +218,7 @@ mkmenu(){
             if [ "$i" != "separator" ]; then
                 if [ "`echo $i|cut -b1`" != "-" ]; then 
                 n=$(( $n + 1 )); 
-                    echo -n "$separator_v ${white}${n}${end}${f}" `gettext "$i"`
+                    echo -ne "$separator_v ${white}${n}${end}${f}" `gettext "$i"`
                 else
                     echo
                     echo $i | cut -b2-
