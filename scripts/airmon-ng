@@ -337,7 +337,7 @@ getChipset() {
 		while [ $FOUND = "0" ]
 		do
 			FOUND=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS | grep Link | wc -l`
-			LINK_POS=$[$LINK_POS+1]
+			LINK_POS=$(($LINK_POS+1))
 		done
 
 		TEMP_CHIPSET=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS`
@@ -346,6 +346,9 @@ getChipset() {
 	#               x5100AGN)
 	#                       CHIPSET="Intel $TEMP_CHIPSET"
 	#                       ;;
+			x5300)
+				TYPE_TEMP=`echo "$DETECTED_STR" | cut -d' ' -f $(($LINK_POS+1)) | awk -F, '{ print $1 }' `
+				CHIPSET="Intel ${TEMP_CHIPSET}${TYPE_TEMP}"
 			x1000)
 				TYPE_TEMP=`echo "$DETECTED_STR" | cut -d' ' -f $[$LINK_POS+2]`
 				CHIPSET="Intel ${TEMP_CHIPSET}${TYPE_TEMP}"
