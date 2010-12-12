@@ -349,6 +349,7 @@ getChipset() {
 			x5300)
 				TYPE_TEMP=`echo "$DETECTED_STR" | cut -d' ' -f $(($LINK_POS+1)) | awk -F, '{ print $1 }' `
 				CHIPSET="Intel ${TEMP_CHIPSET}${TYPE_TEMP}"
+				;;
 			x1000)
 				TYPE_TEMP=`echo "$DETECTED_STR" | cut -d' ' -f $[$LINK_POS+2]`
 				CHIPSET="Intel ${TEMP_CHIPSET}${TYPE_TEMP}"
