@@ -14,6 +14,21 @@ prettyer
 - Decloaking support with airdecloak-ng
 - Added an option to create a virtual interface with airtun-ng
 - Kstats support
+- Airdecap-ng support
+- Some beauty colouring
+- Now you'll have to select a network at start
+- Fixed dictionary issues, now it's much simpler to add a dictionary
+generator.
+- Added automatic network configurator
+- Remade fake and auto auth menus into an "authentication" menu
+- Fixed the injection options (didn't work until now)
+- Support for PMK database
+- Support for custom commands (It'll ask you for extra options *in every
+command it executes*! use carefully!)
+- Lots of lil bugfixes on interface and cracking stuff 
+- Fixed cracking WPA
+- Added a warning when wpa cracking
+- Fixed wpa handshake standard airodump-ng attack
 
 Changelog for airoscript-ng 1.0:
 - Fixed client selection menu 

