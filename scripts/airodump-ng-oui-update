@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 CURL=`which curl 2>/dev/null`
 WGET=`which wget 2>/dev/null`
