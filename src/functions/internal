@@ -235,7 +235,7 @@ mkmenu(){
         echo -e "\n"
 }
 
-monmode(){ $iwconfig $1 |grep "Monitor" && if [ $? != 0 ]; then $AIRMON start $1 $2; fi;}
+monmode(){ ifconfig $1 up; $iwconfig $1 |grep "Monitor" && if [ $? != 0 ]; then MON_PREFIX=$mon_prefix $AIRMON start $1 $2; fi;}
 reso() {
 	while true; do
 		if [ "$resonset" = "" ]; then mkmenu "Resolution" "640x480" "800x480" "800x600" "1024x768" "1280x768" "1280x1024" "1600x1200"; read -p "Select resolution: " reson; fi
