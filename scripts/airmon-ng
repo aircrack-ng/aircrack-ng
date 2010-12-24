@@ -17,7 +17,7 @@ then
 	USE_IW=1
 fi
 
-if [ "x$MON_PREFIX"="x" ]
+if [ "x$MON_PREFIX" = "x" ]
 then
 MON_PREFIX="mon"
 fi
@@ -94,7 +94,7 @@ getDriver() {
 }
 
 scanProcesses() {
-    if [ -f "`which service 2>&1`" ] && [ x"$1" == "xkill" ]
+    if [ -f "`which service 2>&1`" ] && [ x"$1" = "xkill" ]
     then
     	service network-manager stop 2>/dev/null >/dev/null
  	service avahi-daemon stop 2>/dev/null >/dev/null
