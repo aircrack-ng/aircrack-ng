@@ -202,8 +202,8 @@ function mkbox(){
      echo -n "+"; fill "$menu_t" "$separator_h" "$(( $max + ${#menu_t} ))" center; echo "+"
 }
 
+    # TODO IMPLEMENT INDENTATION LEVELS.cc
 mkmenu(){ 
-    # TODO IMPLEMENT INDENTATION LEVELS.
     $clear
     separator="|"; menu_t=$1 && shift; n=0; max=1; f="$red)$end";
     for i in "${@}"; do if [ "${#i}" -gt "$max" ]; then max=${#i}; fi; done;
@@ -217,8 +217,10 @@ mkmenu(){
         for i in "${@}"; do 
             if [ "$i" != "separator" ]; then
                 if [ "`echo $i|cut -b1`" != "-" ]; then 
-                n=$(( $n + 1 )); 
-                    echo -ne "$separator_v ${white}${n}${end}${f}" `gettext "$i"`
+                n=$(( $n + 1 ));
+                    if [ "$SHOW_SMALL_MENU" == 1 ]; then
+                        echo -ne "$separator_v ${white}${n}${end}${f}" `gettext "$( echo $i |cut -d"-" -f1 )"`
+                    else echo -ne "$separator_v ${white}${n}${end}${f}" `gettext "$i"`; fi
                 else
                     echo
                     echo $i | cut -b2-
