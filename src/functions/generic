@@ -111,7 +111,7 @@ Scanchan(){
 }
 
 # This is for SELECT (2) option
-Parseforap(){
+selectAp(){
     i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
     head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
 
@@ -132,7 +132,7 @@ Parseforap(){
             aspeed[$i]=$SPEED; apower[$i]=$POWER
         fi
     done < $DUMP_PATH/dump-02.csv
-
+    echo "r) Rescan targets"
 
     if [ "$AUTO" == 1 ]; then
         CURRENT=$(( $CURRENT + 1 ))
@@ -141,23 +141,26 @@ Parseforap(){
         _ 'Select target: '
         read choice
     fi
-
-    idlenght=${aidlenght[$choice]}
-    ssid=${assid[$choice]}
-    channel=${achannel[$choice]}
-    mac=${amac[$choice]}
-    privacy=${aprivacy[$choice]}
-    speed=${aspeed[$choice]}
-    Host_IDL=$idlength
-    Host_SPEED=$speed
-    Host_ENC=$privacy
-    Host_MAC=$mac
-    Host_CHAN=$channel
-    acouper=${#ssid}
-    fin=$(($acouper-idlength))
-    Host_SSID=${ssid:1:fin}
-    echo "Target network is $Host_SSID $Host_MAC"
-    sleep 2
+    if [ "$choice" != "q" ] ; then
+        idlenght=${aidlenght[$choice]}
+        ssid=${assid[$choice]}
+        channel=${achannel[$choice]}
+        mac=${amac[$choice]}
+        privacy=${aprivacy[$choice]}
+        speed=${aspeed[$choice]}
+        Host_IDL=$idlength
+        Host_SPEED=$speed
+        Host_ENC=$privacy
+        Host_MAC=$mac
+        Host_CHAN=$channel
+        acouper=${#ssid}
+        fin=$(($acouper-idlength))
+        Host_SSID=${ssid:1:fin}
+        echo "Target network is $Host_SSID $Host_MAC"
+        sleep 2
+    else
+        selectAp
+    fi
 }
 
 choosetarget(){
@@ -963,7 +966,7 @@ doauto(){
             echo -e "$mark Networks detected $MAX_TARGETS"; sleep 1
             for i in `seq 1 $MAX_TARGETS`; do
                 echo "Trying to crack target: $i"
-    			AUTO=1; Parseforap;  sleep 1
+    			AUTO=1; selectAp;  sleep 1
                 if [ "$Host_SSID" != "" ]; then
                     autopwn
                 else

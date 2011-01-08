@@ -26,17 +26,12 @@ mainmenu(){
     if [ "$AUTO" == 1 ]; then return; fi
     select choix in $CHOICES; do
         case "$choix" in
-
-            
-
             1)witchattack;;
             2) if [ "$interactive" == "0" ]; then auto; else witchcrack; fi ;;
             3)choosetype;;
             4)select_ap;;
             5)extramenu;;
-            6)doauto;;
-            7)doexit;;
-            8)if [ $UNSTABLE = "1" ]; then $clear && unstablemenu; fi;;
+            6)doexit;;
             *)$clear && _ 'ERROR: Wrong number entered';;
         esac
         menu
@@ -354,7 +349,7 @@ getterminal(){
 
 select_ap(){
 		if [ -e $DUMP_PATH/dump-01.csv ]; then
-			Parseforap; $clear
+			selectAp; $clear
 			if [ "$Host_SSID" = $'\r' ]; then blankssid;
 			elif [ "$Host_SSID" = "No SSID has been detected" ]; then blankssid; fi
 			target; choosetarget; $clear
