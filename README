@@ -36,7 +36,7 @@ Developers
 ----------
 
     Help and feedback is greatly appreciated. 
-    Please feel free to mail XayOn at thexayon@gmail.com.
+    Please feel free to mail XayOn at xayon@xayon.net 
 
 Compliance
 ----------
@@ -53,3 +53,19 @@ Bugs and feature requests
     Please submit bugs in aircrack-ng trac or aircrack-ng oficial forum "airoscript
     support" subforum.
 
+Deps
+-----
+
+    Airoscript-ng currently depends on:
+        xterm
+        macchanger
+        iw
+        aircrack-ng (currently not available on debian squeeze, download it from sid or compile it yourself)
+        mdk3 (http://homepages.tu-darmstadt.de/~p_larbig/wlan/) # For mdk3 support
+        digenpy (http://github.com/XayOn/digenpy) # Only required for dictionary generation on WLAN_XX and Jazztel_XX
+            - python 2.6 ^ (not necesary if you don't want digenpy)
+
+
+    To do an easy install in debian sid (without dictionary generators or mdk3):
+        # apt-get install xterm macchanger iw aircrack-ng
+        # make 

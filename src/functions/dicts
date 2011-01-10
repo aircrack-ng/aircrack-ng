@@ -17,53 +17,23 @@
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-doitwld(){
-    AUTO=1; QUIET=1;
-    echo "Cracking WLAN"; sleep 1
-    execute "Creating dictionary" $WLD -x $Host_MAC $Host_SSID $DUMP_PATH/wlddic
-    AUTO=0; QUIET="";
-	execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -w $DUMP_PATH/wlddic $DUMP_PATH/$Host_MAC-01.cap
-
+digenpy(){
+    if [ "$3" == "crack" ]; then
+        execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -w $DUMP_PATH/digenpy_dic $DUMP_PATH/$Host_MAC-01.cap
+    else AUTO=1; QUIET=1;
+        execute "Creating dictionary ($1:$2) for $Host_SSID" digenpy $1 $2 $Host_MAC $Host_SSID > $DUMP_PATH/digenpy_dic
+    AUTO=0; QUIET=""; fi
 }
 
-doitjt(){
-    echo "Cracking Jazztel"; sleep 2
-	execute $JTD $Host_MAC $Host_SSID $DUMP_PATH/jtddic
-	execute "Cracking" crack $AIRCRACK  -b $Host_MAC -w $DUMP_PATH/jtddic $DUMP_PATH/$Host_MAC-01.cap
-}
-
-wld(){
-    if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a client before performing this attack'`\n"; fi
-    if [[ "$Host_SSID" =~ WLAN* ]]; then
-        if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then doitwld
-        else echo "`gettext 'No capture file. Capture some ivs'`"; fi
-    else
-        _ "Cant crack this network with this dictionary $Host_SSID"
-    fi
-}
-
-jtd(){
-    if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a client before performing this attack'`\n"; fi
-    if [[ "$Host_SSID" =~ JAZZTEL* ]]; then
-        if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then doitjtd
-        else echo "`gettext 'No capture file. Capture some ivs'`"; fi
-    else
-        _ "Cant crack this network with this dictionary"
-    fi
-}
+Telefonica(){ if [[ "$Host_SSID" =~ WLAN* ]]; then digenpy Spain Telefonica crack; cracked=1;  fi }
+Jazztel(){ if [[ "$Host_SSID" =~ JAZZTEL* ]]; then digenpy Spain Jazztel crack; cracked=1;  fi; }
 
 auto(){
-    if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a client before performing this attack'`\n"; fi
-    if [[ "$Host_SSID" =~ WLAN* ]]; then
-        if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then doitwld; return
-        else echo "`gettext 'No capture file. Capture some ivs'`"; fi
-    fi
-    if [[ "$Host_SSID" =~ JAZZTEL* ]]; then
-        if [ -e $DUMP_PATH/$Host_MAC-01.cap ]; then doitjtd; return
-        else echo "`gettext 'No capture file. Capture some ivs'`"; fi
-    fi
+    if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a target first'`\n"; return; fi
+    if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then 
+        for function in $_functions; do $function; [[ "$cracked" == "1" ]] && return; done
+    else echo "`gettext 'Error: No capture file. Capture some ivs'`"; fi
 
     _ "Cant crack this network like this, do it manually"
     selectcracking
-
 }
