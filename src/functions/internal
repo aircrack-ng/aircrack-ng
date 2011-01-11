@@ -145,10 +145,10 @@ check_cardctl(){
     else CARDCTL="cardctl"; fi
 }
 
-_get_current_reso(){ awk '/*/ {print $1}' <<< "`xrandr`"; }
+_get_current_reso(){ awk '/\*/ {print $1}' <<< "`xrandr`"; }
 
 _resonset(){
-	for i in 640x480 800x480 800x600 1024x768 1280x768 1280x800 1280x1024 1600x1200; do 
+	for i in 640x480 800x480 800x600 1024x600 1024x768 1280x768 1280x800 1280x1024 1600x1200; do 
         reso=`_get_current_reso` ;
         [[ "$i" == $reso ]] && {
              reson=$reso
@@ -259,11 +259,12 @@ reso() {
                 "640x480") reson=1;;
                 "800x480") reson=2;;
                 "800x600") reson=3;;
-                "1024x768") reson=4;;
-                "1280x768") reson=5 ;;
-                "1280x800") reson=6;;
-                "1280x1024") reson=7;;
-                "1600x1200") reson=8;;
+                "1024x600") reson=4;;
+                "1024x768") reson=5;;
+                "1280x768") reson=6 ;;
+                "1280x800") reson=7;;
+                "1280x1024") reson=8;;
+                "1600x1200") reson=9;;
             esac
         }
 		case $reson in
@@ -275,13 +276,16 @@ reso() {
                 BRX="52";BRY="15";bLX="92" ;bLY="39";bRX="78";bRY="24"; setterminal; break;;
 			4 ) TLX="92";TLY="14";TRX="68";TRY="25";BLX="92";BLY="36";
                 BRX="74";BRY="20";bLX="100";bLY="52";bRX="54";bRY="25"; setterminal; break;;
-			5 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";
-                BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
+			5 ) TLX="92";TLY="14";TRX="68";TRY="25";BLX="92";BLY="36";
+                BRX="74";BRY="20";bLX="100";bLY="52";bRX="54";bRY="25"; setterminal; break;;
+
 			6 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";
                 BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
-			7 ) TLX="110";TLY="35";TRX="99";TRY="40";BLX="110";BLY="35";
+			7 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";
+                BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
+			8 ) TLX="110";TLY="35";TRX="99";TRY="40";BLX="110";BLY="35";
                 BRX="99";BRY="30";bLX="110";bLY="72";bRX="99";bRY="40"; setterminal; break;;
-			8 ) TLX="130";TLY="40";TRX="68";TRY="25";BLX="130";BLY="40";
+			9 ) TLX="130";TLY="40";TRX="68";TRY="25";BLX="130";BLY="40";
                 BRX="132";BRY="35";bLX="130";bLY="85";bRX="132";bRY="48"; setterminal; break;;
 			* ) _ "Unknown response. Try again"; sleep 1; $clear ;;
 		esac
