@@ -15,13 +15,6 @@
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-CHOICES="1 2 3 4 5 6 7 8 9 10 11 12"
-
-menu(){
-    if [ "$AUTO" == 1 ]; then return; fi
-    setps; mkmenu "Main Menu" "Attack   - Attack target" "Crack    - Get target key"  "Scan - Manually scan for targets" "Select - Reselect target" "Others   - Various utilities" "Exit    - Quits"
-}
-
 eassideng(){
     while true; do $clear
     mkmenu "Easside-ng" "Create virtual interface" "Run buddy server" "Return to main menu"
@@ -87,8 +80,10 @@ choosescan(){
 #Subproducts of choosescan.
 Scan(){
     export SCAN=1
-    $clear; rm -rf $DUMP_PATH/dump*
+    rm -rf $DUMP_PATH/dump* &>/dev/null
+    temporary_switch_clear
     execute "Scanning for targets" $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
+    temporary_switch_clear
     export SCAN=0
 }
 
@@ -132,7 +127,7 @@ selectAp(){
             aspeed[$i]=$SPEED; apower[$i]=$POWER
         fi
     done < $DUMP_PATH/dump-02.csv
-    echo "r) Rescan targets"
+    echo -e " r)\tRescan targets"
 
     if [ "$AUTO" == 1 ]; then
         CURRENT=$(( $CURRENT + 1 ))
@@ -141,7 +136,7 @@ selectAp(){
         _ 'Select target: '
         read choice
     fi
-    if [ "$choice" != "q" ] ; then
+    if [ "$choice" != "r" ] ; then
         idlenght=${aidlenght[$choice]}
         ssid=${assid[$choice]}
         channel=${achannel[$choice]}
@@ -156,10 +151,12 @@ selectAp(){
         acouper=${#ssid}
         fin=$(($acouper-idlength))
         Host_SSID=${ssid:1:fin}
-        echo "Target network is $Host_SSID $Host_MAC"
+        echo -e "$mark Target network is $Host_SSID $Host_MAC"
         sleep 2
     else
-        selectAp
+        F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
+        choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
+        cleanautovars; select_ap
     fi
 }
 
@@ -195,7 +192,7 @@ SelectClient(){
 }
 
 # This is for ATTACK (3) option
- witchattack(){ monmode
+ witchattack(){ monmode &>/dev/null
             if [[ "$Host_ENC" =~ (.*)"WEP"(.*) ]]; then attackwep
             elif [[ "$Host_ENC" =~ (.*)"WPA"(.*) ]]; then attackwpa
             else attackopn; fi
@@ -204,27 +201,48 @@ SelectClient(){
         # If wep
         attackwep(){
             while true; do $clear  
-                mkmenu "Wep Attacks" "-   Attacks not using a client" "Fake auth => Automatic  " "Fake auth => Interactive" "Fragmentation attack " "Chopchop attack " "Cafe Latte attack " "Hirte attack " "separator"	"- Attacks using a client "	"ARP replay => Automatic"	"ARP replay => Interactive"	"Fragmentation attack "	"Frag. attack on client "	"Chopchop attack"	"separator"	"-  Injection if xor file generated "	"ARP inject from xor (PSK) " "Return to main menu "
+                mkmenu "Wep Attacks" "Attacks not using a client" "Attacks using a client " "ARP inject from xor (PSK) " "Return to main menu "
 
-                read -p "Enter attack:" yn
+                read -p "Choose option:" yn
                 echo ""
                 case $yn in
-                    1  ) fakeautoattack ; break ;;
-                    2  ) fakeinteractiveattack;$clear ; break ;;
-                    3  ) fragnoclient ;$clear; break ;;
-                    4  ) chopchopattack ;$clear; break ;;
-                    5  ) cafelatteattack ;$clear; break ;;
-                    6  ) hirteattack ;$clear; break ;;
-                    7  ) attackclient ;$clear; break ;;
-                    8  ) interactiveattack ;$clear; break ;;
-                    9  ) fragmentationattack -5 ;$clear; break ;;
-                    10 ) fragmentationattack -7 ;$clear ; break ;;  
-                    11 ) chopchopattackclient;$clear ; break ;;
-                    12 ) pskarp ;$clear; break ;;
-                    13 ) $clear;break ;;
-                    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+                    1  ) { mkmenu "Attacks not using a client" "Fake auth => Automatic  " "Fake auth => Interactive" "Fragmentation attack " "Chopchop attack " "Cafe Latte attack " "Hirte attack " "Return to main menu"
+                    read -p "Choose option:" yn
+                    echo ""
+                    case $yn in
+                        1  ) fakeautoattack ; break ;;
+                        2  ) fakeinteractiveattack;$clear ; break ;;
+                        3  ) fragnoclient ;$clear; break ;;
+                        4  ) chopchopattack ;$clear; break ;;
+                        5  ) cafelatteattack ;$clear; break ;;
+                        6  ) hirteattack ;$clear; break ;;
+                        7  ) $clear; break ;;
+                        *  ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+                    esac
+                     } ; break;;
+                    2  ) {
+                mkmenu "Attacks using a client" "ARP replay => Automatic"	"ARP replay => Interactive"	"Fragmentation attack "	"Frag. attack on client "	"Chopchop attack" "Return to main menu"
+                read -p "Choose option:" yn
+                echo ""
+                case $yn in
+                    1  ) attackclient ;$clear; break ;;
+                    2  ) interactiveattack ;$clear; break ;;
+                    3  ) fragmentationattack -5 ;$clear; break ;;
+                    4  ) fragmentationattack -7 ;$clear ; break ;;  
+                    5  ) chopchopattackclient;$clear ; break ;;
+                    6  ) $clear; break ;;
+                    *  ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+                esac
+                    } ; break;;
+                    3  ) pskarp; $clear; break;;
+                    4  ) $clear; break ;;
+                    *  ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
                 esac
             done
+        
+
+
+
 }
 
 #Option 1 (fake auth auto)
@@ -668,8 +686,9 @@ cleanup(){
 
 # 4.
 wichchangemac(){
+    clear
     while true; do
-        arrow; mkmenu "Mac" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input" 
+        echo; mkmenu "Mac" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input" 
         read -p "Input number: " yn
         case $yn in
 
@@ -999,7 +1018,7 @@ autopwn(){
 }
 
 cleanautovars(){
-    export AUTO=0; export QUIET=""; export INTERACTIVE=1 
+    export AUTO=0; export QUIET=""; export INTERACTIVE=$OLDINTERACTIVE
 }
 
 cleanp(){
@@ -1067,18 +1086,16 @@ setinterface(){
 
     askinterface && checkforcemac
 
-	_ 'Should I put it in monitor mode?' " (Y/n) "; read answer;
-    [[ "$anwser" != n ]] && ac="start" || ac="stop"
+    [[ "$DEFAULT_MONITOR_MODE" == 1 ]] &&{ ac="start"; } || {
+    	_ 'Should I put it in monitor mode?' " (Y/n) "; read answer;
+        [[ "$anwser" != n ]] && ac="start" || ac="stop"
+    }
     guess_idata $ac; clear; testmac
 
     export iwifi=$wifi
 
-
-	echo -en $mark;
-    _ "Interface used is :" $wifi "\n"
-	echo -en $mark;
-	_ 'Interface type is :' "$TYPE ($DRIVER)" "\n"
-    sleep 3
+	echo -e "$mark`gettext 'Interface used is'` : $wifi "
+	echo -e "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
 }
 
 

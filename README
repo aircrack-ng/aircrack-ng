@@ -69,3 +69,11 @@ Deps
     To do an easy install in debian sid (without dictionary generators or mdk3):
         # apt-get install xterm macchanger iw aircrack-ng
         # make 
+
+Menu usage
+----------
+Since svn rev on 11-1-11 (nice date heh? ;) ) airoscript
+is able to queue commands, that is, you can tell airoscript-ng
+to do 1 then 2 in a menu just by entering "1 2" (without the quotes).
+Just as easy as that =) Give it a try!
+

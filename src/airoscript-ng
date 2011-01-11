@@ -21,8 +21,8 @@
 
 _source(){
     for cfile in $1; do
-        if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; echo "Loading $cfile"; sleep 0.4;
-        else echo "Could not load $cfile"; sleep 0.2 ; fi
+        if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; echo "Loading $cfile"; sleep 0.1;
+        else if [ "$debug" == 1 ]; then echo "Could not load $cfile"; sleep 0.2 ;fi; fi
     done
 }
 
@@ -41,12 +41,15 @@ setps
 setargs
 check_cardctl
 debug
-_resonset
-reso && $clear && setinterface
+echo -e "$mark Welcome to airoscript, have a nice day"
+reso
+echo
+temporary_switch_clear
+setinterface
+temporary_switch_clear
 
-F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-echo "Auto scanning for networks"
+OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
 choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
 cleanautovars
 select_ap
-menu && mainmenu
+mainmenu
