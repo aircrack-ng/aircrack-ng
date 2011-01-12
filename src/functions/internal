@@ -30,7 +30,6 @@ mainmenu(){
     read -a choice
 
         for choix in ${choice[*]}; do
-    echo "Selected '${choix}'"; sleep 2;
         case "$choix" in
             1)witchattack;;
             2) if [ "$interactive" == "0" ]; then auto; else witchcrack; fi ;;
@@ -213,40 +212,22 @@ function mkbox(){
 }
 
 temporary_switch_clear(){ foo="$oldclear"; oldclear=$clear; clear=$foo; } 
-menutitle(){ echo "- $1 -"; }
 vline(){ for i in `seq 0 $1`; do echo -n "-"; done; }
+mkmenuline(){ echo -en "$separator_x"; for i in $(seq 1 $1); do echo -en "$separator_h"; done; echo "$separator_x"; }   
+mkmenuheader(){ echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }
+getmaxlenfromlist(){ max=0; for i in "${@}"; do [[ ${#i} -gt $max ]] && max=${#i}; done; echo $max; }
+mkmenueline(){ echo -en "${separator_v}\033[${1}C${separator_v}\033[${1}D${white}${2}${red})${end} ${separator_v}";}
+mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( line + 1 )); mkmenueline $max $line; echo " $i"; done; }
+
 mkmenu(){
-    $clear
-    separator="|"; menu_t=$1 && shift; n=0; max=1; f="$red)$end | ";
-    for i in "${@}"; do if [ "${#i}" -gt "$max" ]; then max=${#i}; fi; done;
-
-    if [ "$NO_NUMBERED" == "1" ]; then f=""; fi 
-    for i in `seq 0 $(( ($max - ${#menu_t} - 4) /2 ))`; do echo -n ' '; done
-        menutitle "$menu_t"
-        vline $(( $max + 8 )) "-"
-        echo
-        n=0
-        for i in "${@}"; do 
-            if [ "$i" != "separator" ]; then
-                if [ "`echo $i|cut -b1`" != "-" ]; then 
-                n=$(( $n + 1 ));
-                    if [ "$SHOW_SMALL_MENU" == 1 ]; then
-                        echo -ne "$separator_v ${white}${n}${end}${f}" `gettext "$( echo $i |cut -d"-" -f1 )"`
-                    else echo -ne "$separator_v ${white}${n}${end}${f}" `gettext "$i"`; fi
-                else
-                    echo
-                    echo $i | cut -b2-
-
-                fi
-                    if [ $n -gt 9 ]; then fill_menu $(( $max - 1 )) ${#i} " ";
-                    else fill_menu $max ${#i} " ";fi
-                echo -e "$separator_v"
-            else
-                for i in `seq 0 $(( $max + 8 ))`; do echo -ne "-"; done
-            fi
-        done
-        vline $(( $max + 8 )) "-"
-        echo -e "\n"
+    max=`getmaxlenfromlist "${@}"`
+    max=$(( $max + 10 ))
+    title=$1; shift; line=0;
+    f=$((`tput cols` - 10)); 
+    mkmenuheader $title $max
+    mkmenuline $max
+    mkmenulines $max "${@}"
+    mkmenuline $max
 }
 
 monmode(){ ifconfig $1 up; $iwconfig $1 |grep "Monitor" && if [ $? != 0 ]; then MON_PREFIX=$mon_prefix $AIRMON start $1 $2; fi;}

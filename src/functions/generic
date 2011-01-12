@@ -109,30 +109,35 @@ Scanchan(){
 selectAp(){
     i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
     head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
-
-    if [ "$AUTO" != 1 ]; then
-        _ "\tDetected Access point list" "\n"
-        _ "#\t\tMac\t\tChan\tSec\tPwr\t\tSSID" "\n"
-    fi
-    while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
-        longueur=${#MAC}
-        if [ $longueur -ge 17 ]; then
-            i=$(($i+1))
-            if [ "$AUTO" != 1  ]; then
-                echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$ESSID
-            fi
-            aidlenght=$IDLENGTH
-            assid[$i]=$ESSID; achannel[$i]=$CHANNEL; 
-            amac[$i]=$MAC; aprivacy[$i]=$PRIVACY;
-            aspeed[$i]=$SPEED; apower[$i]=$POWER
-        fi
-    done < $DUMP_PATH/dump-02.csv
-    echo -e " r)\tRescan targets"
-
     if [ "$AUTO" == 1 ]; then
         CURRENT=$(( $CURRENT + 1 ))
         choice=$CURRENT
     else
+    title=$1; shift; line=0;
+    max=$((`tput cols` - 10));
+    mkmenuheader "Detected acess points" $max
+    mkmenuline $max
+    fi
+    while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
+        longueur=${#MAC}
+        if [ $longueur -ge 17 ]; then
+            k=$(($k+1))
+            if [ "$AUTO" != 1  ]; then
+                mkmenueline $max $k
+                echo -e " $MAC | $CHANNEL | $PRIVACY | $POWER | $IDLENGTH | $ESSID"
+            fi
+            aidlenght=$IDLENGTH
+            assid[$k]=$ESSID; achannel[$k]=$CHANNEL; 
+            amac[$k]=$MAC; aprivacy[$k]=$PRIVACY;
+            aspeed[$k]=$SPEED; apower[$k]=$POWER
+        fi
+    done < $DUMP_PATH/dump-02.csv
+    mkmenueline $max r
+    echo " Rescan targets"
+
+
+    if [ "$AUTO" != 1 ]; then
+        mkmenuline $max
         _ 'Select target: '
         read choice
     fi
@@ -164,6 +169,7 @@ choosetarget(){
     if [ "$AUTO" == 1 ]; then return; fi
     while true; do
         mkmenu "Client Selection" "Detect clients" "Select from associated clients" "Select from all clients" "Manually enter client MAC" "No select client"
+        _ 'Select Option: '
         read yn
         case $yn in
             1 ) detectclients ; break ;;
@@ -688,7 +694,7 @@ cleanup(){
 wichchangemac(){
     clear
     while true; do
-        echo; mkmenu "Mac" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input" 
+        echo; mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input" 
         read -p "Input number: " yn
         case $yn in
 
