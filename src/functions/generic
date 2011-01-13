@@ -161,7 +161,7 @@ selectAp(){
     else
         F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
         choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
-        cleanautovars; select_ap
+        cleanautovars; 
     fi
 }
 
@@ -699,11 +699,13 @@ wichchangemac(){
         case $yn in
 
             1 )	ifconfig $wificard down
-                $MACCHANGER -m  $FAKE_MAC $wificard &>/dev/null
+                fail=`$MACCHANGER -m  $FAKE_MAC $wificard 2>&1`
+                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
                 ifconfig $wificard up; break ;;
 
             2 ) ifconfig $wificard down; sleep 2
-                $MACCHANGER -m  $Client_MAC $wificard &>/dev/null
+                fail=`$MACCHANGER -m  $Client_MAC $wificard 2>&1`
+                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
                 ifconfig $wificard up ; break ;;
             3)  export FAKE_MAC=$mac
                 echo -e "$mark Using for $wificard $FAKE_MAC = $mac"
@@ -714,12 +716,9 @@ wichchangemac(){
 
             4 ) read -p "MAC: " Manual_MAC
                 ifconfig $wificard down
-                $MACCHANGER -m  $Manual_MAC $wificard &>/dev/null
+                fail=`$MACCHANGER -m  $Manual_MAC $wificard &>/dev/null`
+                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
                 ifconfig $wificard up; break ;;
-
-                5 ) if [ -e $XOR_FILE ]; then
-                aireplay-ng -1 0  -e teddy -y sharedkey-04-00-14-6C-7E-40-80.xor -a 00:14:6C:7E:40:80 -h 00:09:5B:EC:EE:F2 ath0
-            fi;;
 
             * ) _ "Unknown response. Try again" ;;
 
@@ -1087,7 +1086,11 @@ askinterface(){
 
 setinterface(){
     if [ "$1" == "" ]; then
-        INTERFACES=`ip link|egrep "^[0-9]+"|awk '/: /{gsub(":"," "); print $2}' |grep -v lo`; 
+        if [ "$show_only_wireless_extensions" == 1 ]; then
+            INTERFACES=`{ iwconfig|grep -v "no wireless extensions"|grep IEEE|grep -v airoscript|awk '{print $1}';} 2>/dev/null`
+        else
+            INTERFACES=`ip link|egrep "^[0-9]+"|awk '/: /{gsub(":"," "); print $2}' |grep -v lo`; 
+        fi
     fi
 
     askinterface && checkforcemac
@@ -1096,7 +1099,7 @@ setinterface(){
     	_ 'Should I put it in monitor mode?' " (Y/n) "; read answer;
         [[ "$anwser" != n ]] && ac="start" || ac="stop"
     }
-    guess_idata $ac; clear; testmac
+    { guess_idata $ac; testmac; } &>/dev/null
 
     export iwifi=$wifi
 
