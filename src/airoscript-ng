@@ -38,14 +38,14 @@ _debug "Text domain dir is $TEXTDOMAINDIR and textdomain is $TEXTDOMAIN"
 setaircrackpaths
 rootwarn
 setps
-setargs
+setargs $@
 check_cardctl
 debug
 echo -e "$mark Welcome to airoscript, have a nice day"
 reso
 echo
 temporary_switch_clear
-setinterface
+setinterface "start"
 temporary_switch_clear
 
 OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0

@@ -37,6 +37,7 @@ mainmenu(){
             4)select_ap;;
             5)extramenu;;
             6)doexit;;
+            7)autopwn;;
             *)$clear && _ 'ERROR: Wrong number entered';;
         esac
         done
@@ -112,19 +113,29 @@ options:
    -h      show this message
    -t      specify terminal
    -s      use screen interface
-   -g      launch graphical interface (requires airosperl)
-   -d      debug mode
+   -v      Verbose & debug mode
+   -w      Specify wifi card
+   -f      Change mac to fakemac before everything else.
+   -a      Automatic mode
+           -n  Filter SSID by regex (for automatic mode)
+
+
 eof
 }
 
 setargs(){
-while getopts “ht:s:d” option; do
+while getopts “ht:w:scvmfn:a” option; do
      case $option in
          h)  usage; exit 1;;
-         t)  TERMINAL=$optarg;;
+         n)  export filter_ssid=$OPTARG; echo "$mark Selected filter: $filter_ssid";;
+         t)  TERMINAL=$OPTARG;;
          s)  TERMINAL=screen;;
-         g)  TERMINAL=gui;;
          v)  debug=1; hold=1;;
+         w)  wificard=$OPTARG;;
+         m) { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; echo "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
+         c)  checkforcemac 3; { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; echo "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
+         f)  wichchangemac 1; { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; echo "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
+         a)  temporary_switch_clear;clear=""; doauto; exit;;
          ?)  usage; exit;;
      esac
 done
@@ -170,13 +181,12 @@ execute(){
 		$CDCMD screen -S airoscript -c $SCREENRC -D -RR -X screen -t $title
 		$CDCMD screen -S airoscript -c $SCREENRC -X at "*" stuff "${@} $eopts" 
     else
-        HOLDA=$HOLD
         if [ "$1" == "crack" ]; then HOLDA="-hold"; shift; fi # FIXME This will work just on xterm.
         if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
-            echo -ne $mark $title...
+            echo -e $mark $title
             ${@} $eopts &> /dev/null &
         else
-            $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
+            $CDCMD $TERMINAL $HOLDA -hold $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
         fi
     fi 
     save_pids $!
@@ -232,6 +242,7 @@ mkmenu(){
 
 monmode(){ ifconfig $1 up; $iwconfig $1 |grep "Monitor" && if [ $? != 0 ]; then MON_PREFIX=$mon_prefix $AIRMON start $1 $2; fi;}
 reso() {
+    xhost &>/dev/null || { echo -e "$mark Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
         _resonset
 	while true; do
 		if [ "$resonset" = "" ]; then mkmenu "$resonset" "Resolution" "640x480" "800x480" "800x600" "1024x768" "1280x768" "1280x800" "1280x1024" "1600x1200"; read -p "Select resolution: " reson; fi
@@ -373,6 +384,7 @@ select_ap(){
 }
 
 deconfigure(){
+    airmon-ng
     airmon-ng stop $WIFI &> /dev/null
     ifconfig $WIFI down
 }
@@ -382,8 +394,8 @@ delete_dpath(){
 }
 
 doexit(){
-		_ "Do you want me to stop monitor mode on $WIFI? (y/N) "
-		read dis; if [ "$dis" = "y" ]; then
+		_ "Do you want me to stop monitor mode on $WIFI? (Y/n) "
+		read dis; if [ "$dis" != "N" ]; then
 			_ 'Deconfiguring interface...'; deconfigure
 		fi
 

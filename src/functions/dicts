@@ -30,10 +30,20 @@ Jazztel(){ if [[ "$Host_SSID" =~ JAZZTEL* ]]; then digenpy Spain Jazztel crack; 
 
 auto(){
     if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a target first'`\n"; return; fi
-    if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then 
-        for function in $_functions; do $function; [[ "$cracked" == "1" ]] && return; done
-    else echo "`gettext 'Error: No capture file. Capture some ivs'`"; fi
 
-    _ "Cant crack this network like this, do it manually"
-    selectcracking
+    if [ "$1" == "return_ivs" ]; then
+        for function in $_functions; do $function; [[ "$cracked" == "1" ]] && return 4; done
+        return 255
+    else
+        if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then 
+            for function in $_functions; do $function; [[ "$cracked" == "1" ]] && break; done
+        else echo "`gettext 'Error: No capture file. Capture some ivs'`"; fi
+        _ "Cant crack this network like this, do it manually"
+        if [ $1 == "autocrack" ]; then
+        AUTO=1;    crack ; AUTO=0
+        else
+            selectcracking
+        fi
+
+    fi
 }

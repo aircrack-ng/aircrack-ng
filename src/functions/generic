@@ -132,15 +132,17 @@ selectAp(){
             aspeed[$k]=$SPEED; apower[$k]=$POWER
         fi
     done < $DUMP_PATH/dump-02.csv
-    mkmenueline $max r
-    echo " Rescan targets"
+   
 
-
+    
     if [ "$AUTO" != 1 ]; then
+        mkmenueline $max r
+        echo " Rescan targets"
         mkmenuline $max
         _ 'Select target: '
         read choice
     fi
+
     if [ "$choice" != "r" ] ; then
         idlenght=${aidlenght[$choice]}
         ssid=${assid[$choice]}
@@ -156,13 +158,15 @@ selectAp(){
         acouper=${#ssid}
         fin=$(($acouper-idlength))
         Host_SSID=${ssid:1:fin}
-        echo -e "$mark Target network is $Host_SSID $Host_MAC"
-        sleep 2
+        echo "$mark Target network is $Host_SSID $Host_MAC"
+        sleep 1
     else
         F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
         choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
         cleanautovars; 
     fi
+ # FIXME Filte disabled, make it work    
+#    echo $Host_SSID|egrep "$filter_ssid" && return  || { AUTO=1 selectAp & return; }
 }
 
 choosetarget(){
@@ -174,7 +178,7 @@ choosetarget(){
         case $yn in
             1 ) detectclients ; break ;;
             2 ) SelectClient dump-01.csv filter; break ;;
-            3 ) SelectClient dump-01.csv nofilter; breack;; 
+            3 ) SelectClient dump-01.csv nofilter; break;; 
             4 ) arrow; mkbox "Client selection" "Type in client mac now"; read Client_MAC; set -- ${Client_MAC} ; break ;;
             5 ) break ;;
             * ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; $clear ;;
@@ -669,7 +673,7 @@ extramenu(){
         case $yn in
             1) optionmenu; $clear; break;;
             2) othertmenu; $clear; break;;
-            4 ) $clear;break ;;
+            3) $clear;break ;;
             * ) _ "Unknown response. Try again" ;;
         esac
     done
@@ -694,8 +698,10 @@ cleanup(){
 wichchangemac(){
     clear
     while true; do
-        echo; mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input" 
-        read -p "Input number: " yn
+        [[ "$1" != "" ]] && yn=$1 || {
+            echo; mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input" 
+            read -p "Input number: " yn
+        }
         case $yn in
 
             1 )	ifconfig $wificard down
@@ -897,7 +903,7 @@ injectmenu(){
     $clear
     while true; do
         ls -lah $DUMP_PATH/fragment-*.xor &>/dev/null
-        [[ $? != 0 ]] && { echo -en "$mark";  _ "Can't open fragmentation xor files. Returning"; echo;  return; }
+        [[ $? != 0 ]] && { echo -n "$mark";  _ "Can't open fragmentation xor files. Returning"; echo;  return; }
         if [ "$1" == "frag" ]; then
             if [ "$AUTO" == 1 ]; then
                 if [ "$Client_MAC" != "" ]; then fragend $Client_MAC; return; fi
@@ -931,7 +937,7 @@ injectmenu(){
 
 fragend(){
     if [ "$Host_MAC" = "" ]; then
-        $clear && echo -en $mark;  _ 'ERROR: You must select a target first'
+        $clear && echo -n $mark;  _ 'ERROR: You must select a target first'
     else
         $ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
         execute "Fragmentation without client" $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $1 -x $INJECTRATE $iwifi 
@@ -940,7 +946,7 @@ fragend(){
 
 chopchopend(){
     if [ "$Host_MAC" = "" ]; then
-        $clear && echo -en $mark ; _ 'ERROR: You must select a target first'
+        $clear && echo -n $mark ; _ 'ERROR: You must select a target first'
     else
         $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
         rm -rf $DUMP_PATH/chopchop_$Host_MAC*
@@ -982,41 +988,46 @@ doauto(){
         choosetype "WEP" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng" && sleep 2
         echo " done"; sleep 1
 		if [ -e $DUMP_PATH/dump-01.csv ]; then
+        ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
         head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv && $clear && i=0
-	    while IFS=, read MAC; do i=$(($i+1)) ; done < $DUMP_PATH/dump-02.csv
-            sleep 1
+	    while IFS=, read MAC; do i=$(( $i + 1 )) ; done < $DUMP_PATH/dump-02.csv
+        sleep 1
         MAX_TARGETS=$i
-            echo -e "$mark Networks detected $MAX_TARGETS"; sleep 1
+            echo "$mark Networks detected $MAX_TARGETS"; sleep 1
             for i in `seq 1 $MAX_TARGETS`; do
                 echo "Trying to crack target: $i"
     			AUTO=1; selectAp;  sleep 1
                 if [ "$Host_SSID" != "" ]; then
                     autopwn
                 else
-                    echo -e "$mark Couldn't find essid, next try"
+                    echo "$mark Couldn't find essid, next try"
                 fi
             done
-        else $clear; echo -en $mark;  _ "ERROR: Could not autodetect access points"; fi
+        else $clear; echo -n $mark;  _ "ERROR: Could not autodetect access points, have you selected an interface?"; fi
     cleanautovars
 }
 
 autopwn(){ 
     F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0; next=0;
     sleep 1
-    oldclear=$clear;clear="";
+    count=0
     for i in $attack_functions; do
-        echo -e "$mark Gonna use $i in $Host_MAC"
-        sleep 3
+        #reset
+        echo "$mark Attack $count. Using $i in $Host_MAC"
         $i & cleanp &
+        #for i in `seq 1  ${autopwn_tries[$count]}`; do
+        #    echo "$mark Try #$i"
+        #    sleep ${autopwn_sleep[$count]} && check_if_worked && { exit_=1; auto && cleanautovars; return; exit_=1; } || break; 
+        #done &
+        #echo
+        get_current_ivs
+        echo "$mark Needed ivs: $min_ivs"
         while [ "1" ]; do 
-            [[ "$next" == 1 ]] && break;
-            sleep $autopwn_min_sleep && check_if_worked
-            if [ "$?" == 1 ]; then
-                auto && cleanautovars && return; 
-            else
-                next=1;
-            fi
+            echo -en "\r$mark IVS: `check_all_ivs`"  ;
+            sleep 5
+            { [[ "`check_all_ivs`" -gt "$min_ivs" ]] && { echo; echo "$mark Trying to crack network, we have enough ivs"; cleanautovars; auto autocrack; cleanautovars ; echo "$mark Network cracked, pass `cat $DUMP_PATH/$Host_MAC.key`"; read -p "Press any key to exit, c to configure" foo; [[ "$foo" == "c" ]] && configure || doexit ; } ; } 
         done
+        count=$(( $count + 1 ))
     done
     cleanautovars
     clear=$oldclear;
@@ -1028,12 +1039,11 @@ cleanautovars(){
 
 cleanp(){
     sleep $autopwn_sleep && clean_processes
-    export next=1; 
 }
 
 check_all_ivs(){
     for i in $DUMP_PATH/$Host_MAC*.cap; do
-        cur=`ivstools --convert $i|awk '/IVs/ {print $2}'`
+        cur=`ivstools --convert $i $DUMP_PATH/temporal|awk '/IVs/ {print $2}'`
         if [ "$cur" = "" ]; then cur=0; fi
         maxn=$(( $maxn + $cur ))
     done
@@ -1041,20 +1051,24 @@ check_all_ivs(){
     echo $maxn
 }
 
+get_current_ivs(){
+    auto return_ivs
+    [[ "$?" == 255 ]] && min_ivs=$autopwn_min_ivs || min_ivs=$?
+}
+
 check_if_worked(){
-    if [ -x "$AIROSCWORDLIST" ]; then min_ivs=`$AIROSCWORDLIST -m $Host_MAC $Host_SSID`
-    else min_ivs=50000; fi
-    echo "Minium ivs required: $min_ivs"
-    if [ "$min_ivs" == "" ]; then min_ivs=4; fi
-    if [ "`check_all_ivs`" -gt $min_ivs ]; then return 1; fi
-    return 0
+    get_current_ivs
+    echo $'\t' "$mark Minium ivs required for this network: $min_ivs"
+    civs=`check_all_ivs`; echo $'\t' "$mark Current IVSs: $civs"
+    if [ "`check_all_ivs`" -gt $min_ivs ]; then echo $'\t' "$mark It worked, I have $min_ivs =)"; return 0; fi
+    return 1
 }
 
 checkforcemac() {
-    if [ "$force_mac_address" == "1" ]; then $clear && echo -e "$mark Warn: Not checking mac" 
+    if [ "$force_mac_address" == "1" ]; then $clear && echo "$mark Warn: Not checking mac" 
     else
     	export mac=`$MACCHANGER -s $wificard|awk {'print $3'}`
-	    if [ "$FAKE_MAC" != "$mac" ]; then wichchangemac; fi
+	    if [ "$FAKE_MAC" != "$mac" ]; then wichchangemac $@; fi
     fi
 }
 
@@ -1085,7 +1099,8 @@ askinterface(){
 }
 
 setinterface(){
-    if [ "$1" == "" ]; then
+    [[ "$wifi" != "" ]] && [[ "$1" == "start" ]] && [[ "$set_wifi_by_args" == 1 ]] || { 
+    if [ "$1" == "" ] || [ "$1" == "start" ]  ; then
         if [ "$show_only_wireless_extensions" == 1 ]; then
             INTERFACES=`{ iwconfig|grep -v "no wireless extensions"|grep IEEE|grep -v airoscript|awk '{print $1}';} 2>/dev/null`
         else
@@ -1100,11 +1115,12 @@ setinterface(){
         [[ "$anwser" != n ]] && ac="start" || ac="stop"
     }
     { guess_idata $ac; testmac; } &>/dev/null
-
+    
+    }    
     export iwifi=$wifi
 
-	echo -e "$mark`gettext 'Interface used is'` : $wifi "
-	echo -e "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
+    echo "$mark`gettext 'Interface used is'` : $wifi ($iwifi) for $wificard "
+	echo "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
 }
 
 
