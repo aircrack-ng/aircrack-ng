@@ -40,7 +40,7 @@ rootwarn
 setps
 setargs $@
 check_cardctl
-debug
+#debug
 echo -e "$mark Welcome to airoscript, have a nice day"
 reso
 echo

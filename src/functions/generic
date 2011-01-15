@@ -110,10 +110,11 @@ selectAp(){
     i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
     head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
  # FIXME Filte disabled, make it work    
-    [[ "$filter_ssid" != "" ]] && { command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
+    [[ "$filter_ssid" != "" ]] && { echo "$mark Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
     if [ "$AUTO" == 1 ]; then
-        CURRENT=$(( $CURRENT + 1 ))
+
         choice=$CURRENT
+        CURRENT=$(( $CURRENT + 1 ))
     else
     title=$1; shift; line=0;
     max=$((`tput cols` - 10));
@@ -133,7 +134,7 @@ selectAp(){
             amac[$k]=$MAC; aprivacy[$k]=$PRIVACY;
             aspeed[$k]=$SPEED; apower[$k]=$POWER
         fi
-    done < $DUMP_PATH/dump-02.csv
+    done < $DUMP_PATH/dump-03.csv
    
 
     
@@ -161,7 +162,6 @@ selectAp(){
         fin=$(($acouper-idlength))
         Host_SSID=${ssid:1:fin}
         echo "$mark Target network is $Host_SSID $Host_MAC"
-        sleep 1
     else
         F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
         choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
@@ -990,9 +990,10 @@ doauto(){
         choosetype "WEP" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng" && sleep 2
         echo " done"; sleep 1
 		if [ -e $DUMP_PATH/dump-01.csv ]; then
+    head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
         ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
-        head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv && $clear && i=0
-	    while IFS=, read MAC; do i=$(( $i + 1 )) ; done < $DUMP_PATH/dump-02.csv
+    [[ "$filter_ssid" != "" ]] && { echo "$mark Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
+	    while IFS=, read MAC; do i=$(( $i + 1 )) ; done < $DUMP_PATH/dump-03.csv
         sleep 1
         MAX_TARGETS=$i
             echo "$mark Networks detected $MAX_TARGETS"; sleep 1
@@ -1025,7 +1026,7 @@ autopwn(){
         while [ "1" ]; do 
             echo -en "\r$mark IVS: `check_all_ivs`"  ;
             sleep 5
-            { [[ "`check_all_ivs`" -gt "$min_ivs" ]] && { echo; echo "$mark Trying to crack network, we have enough ivs"; cleanautovars; auto autocrack; cleanautovars ; reset; echo "$mark Network cracked, password stored in $DUMP_PATH/$Host_MAC.key"; read -p -n1 "Press enter to continue, q to exit and c to configure" foo; [[ "$foo" == "c" ]] && configure; [[ "$foo" == "q" ]] && doexit ; } ; } 
+            { [[ "`check_all_ivs`" -gt "$min_ivs" ]] && { echo; echo "$mark Trying to crack network, we have enough ivs"; cleanautovars; auto autocrack; cleanautovars ; reset; echo "$mark Network cracked, password stored in $DUMP_PATH/$Host_MAC.key"; read -n1 -p "Press enter to continue, q to exit and c to configure" foo; [[ "$foo" == "c" ]] && configure; [[ "$foo" == "q" ]] && doexit ; } ; } 
         done
         count=$(( $count + 1 ))
     done

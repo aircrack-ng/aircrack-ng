@@ -39,7 +39,7 @@ auto(){
             for function in $_functions; do $function; [[ "$cracked" == "1" ]] && break; done
         else echo "`gettext 'Error: No capture file. Capture some ivs'`"; fi
         _ "Cant crack this network like this, do it manually"
-        if [ $1 == "autocrack" ]; then
+        if [ "$1" == "autocrack" ]; then
         AUTO=1; crack; wait $! ; AUTO=0
         else
             selectcracking
