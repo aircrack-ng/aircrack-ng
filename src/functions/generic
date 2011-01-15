@@ -109,6 +109,8 @@ Scanchan(){
 selectAp(){
     i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
     head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
+ # FIXME Filte disabled, make it work    
+    [[ "$filter_ssid" != "" ]] && { command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
     if [ "$AUTO" == 1 ]; then
         CURRENT=$(( $CURRENT + 1 ))
         choice=$CURRENT
@@ -165,8 +167,7 @@ selectAp(){
         choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
         cleanautovars; 
     fi
- # FIXME Filte disabled, make it work    
-#    echo $Host_SSID|egrep "$filter_ssid" && return  || { AUTO=1 selectAp & return; }
+
 }
 
 choosetarget(){
@@ -411,7 +412,7 @@ selectcracking(){
 #This is crack function, for WEP encryption:
     crack(){
         if [ "$AUTO" == 1 ]; then
-	    	execute "Cracking wep" $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap
+	    	execute $'Cracking wep\n' $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap
             return
         fi
 
@@ -975,8 +976,9 @@ Host_ssidinput(){
 configure(){
     if [ -O $DUMP_PATH/$Host_MAC.key ] && [ "$Host_MAC" != "" ]; then
         KEY=`cat $DUMP_PATH/$Host_MAC.key`
-        $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key $KEY &>/dev/null
-        $DHCPSOFT $wificard &>/dev/null || _ "Could not autoconfigure network" && return 2
+        $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key $KEY &>/dev/null && {
+            $DHCPSOFT $wificard &>/dev/null || _ "Could not autoconfigure network" && return 2
+        } || { echo "$mark" `_'Could not autoconfigure network, wrong password? '`; }
         sleep 3; $clear;
     else
         echo "You haven't cracked this network yet"; sleep 3; $clear
@@ -1012,15 +1014,8 @@ autopwn(){
     sleep 1
     count=0
     for i in $attack_functions; do
-        #reset
         echo "$mark Attack $count. Using $i in $Host_MAC"
-        $i & cleanp &
-        #for i in `seq 1  ${autopwn_tries[$count]}`; do
-        #    echo "$mark Try #$i"
-        #    sleep ${autopwn_sleep[$count]} && check_if_worked && { exit_=1; auto && cleanautovars; return; exit_=1; } || break; 
-        #done &
-        #echo
-        get_current_ivs
+        $i & cleanp & get_current_ivs
         echo "$mark Needed ivs: $min_ivs"
         while [ "1" ]; do 
             echo -en "\r$mark IVS: `check_all_ivs`"  ;

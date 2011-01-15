@@ -124,7 +124,7 @@ eof
 }
 
 setargs(){
-while getopts “ht:w:scvmfn:a” option; do
+while getopts “n:ht:w:scvmfa” option; do
      case $option in
          h)  usage; exit 1;;
          n)  export filter_ssid=$OPTARG; echo "$mark Selected filter: $filter_ssid";;

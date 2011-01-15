@@ -40,7 +40,7 @@ auto(){
         else echo "`gettext 'Error: No capture file. Capture some ivs'`"; fi
         _ "Cant crack this network like this, do it manually"
         if [ $1 == "autocrack" ]; then
-        AUTO=1;    crack ; AUTO=0
+        AUTO=1; crack; wait $! ; AUTO=0
         else
             selectcracking
         fi
