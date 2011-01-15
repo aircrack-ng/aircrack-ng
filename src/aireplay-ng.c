@@ -205,7 +205,9 @@ char usage[] =
 "\n"
 "  Miscellaneous options:\n"
 "\n"
-"      -R        : disable /dev/rtc usage\n"
+"      -R                    : disable /dev/rtc usage\n"
+"      --ignore-negative-one : if the interface's channel can't be determined,\n"
+"                              ignore the mismatch, needed for unpatched cfg80211\n"
 "\n"
 "  Attack modes (numbers can still be used):\n"
 "\n"
@@ -274,6 +276,7 @@ struct options
     int bittest;
 
     int nodetect;
+    int ignore_negative_one;
     int rtc;
 
     int reassoc;
@@ -723,6 +726,13 @@ int attack_check(uchar* bssid, char* essid, uchar* capa, struct wif *wi)
 
     iface_chan = wi_get_channel(wi);
 
+    if(iface_chan == -1 && !opt.ignore_negative_one)
+    {
+        PCT; printf("Couldn't determine current channel for %s, you should either force the operation with --ignore-negative-one or apply a kernel patch\n",
+                wi_get_ifname(wi));
+        return -1;
+    }
+
     if(bssid != NULL)
     {
         ap_chan = wait_for_beacon(bssid, capa, essid);
@@ -731,7 +741,7 @@ int attack_check(uchar* bssid, char* essid, uchar* capa, struct wif *wi)
             PCT; printf("No such BSSID available.\n");
             return -1;
         }
-        if(ap_chan != iface_chan)
+        if((ap_chan != iface_chan) && (iface_chan != -1 || !opt.ignore_negative_one))
         {
             PCT; printf("%s is on channel %d, but the AP uses channel %d\n", wi_get_ifname(wi), iface_chan, ap_chan);
             return -1;
@@ -6318,6 +6328,7 @@ int main( int argc, char *argv[] )
             {"fast",        0, 0, 'F'},
             {"bittest",     0, 0, 'B'},
             {"migmode",     0, 0, '8'},
+            {"ignore-negative-one", 0, &opt.ignore_negative_one, 1},
             {0,             0, 0,  0 }
         };
 
