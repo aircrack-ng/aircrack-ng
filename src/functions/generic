@@ -1007,6 +1007,11 @@ doauto(){
             done
         else $clear; echo -n $mark;  _ "ERROR: Could not autodetect access points, have you selected an interface?"; fi
     cleanautovars
+
+    echo $mark "Cracked networks: "
+    for i in /tmp/tmp.*/*.key; do
+        echo "\t$mark $i : `cat $i`"
+    done
 }
 
 autopwn(){ 
@@ -1020,7 +1025,7 @@ autopwn(){
         while [ "1" ]; do 
             echo -en "\r$mark IVS: `check_all_ivs`"  ;
             sleep 5
-            { [[ "`check_all_ivs`" -gt "$min_ivs" ]] && { echo; echo "$mark Trying to crack network, we have enough ivs"; cleanautovars; auto autocrack; cleanautovars ; echo "$mark Network cracked, pass `cat $DUMP_PATH/$Host_MAC.key`"; read -p "Press any key to exit, c to configure" foo; [[ "$foo" == "c" ]] && configure || doexit ; } ; } 
+            { [[ "`check_all_ivs`" -gt "$min_ivs" ]] && { echo; echo "$mark Trying to crack network, we have enough ivs"; cleanautovars; auto autocrack; cleanautovars ; reset; echo "$mark Network cracked, password stored in $DUMP_PATH/$Host_MAC.key"; read -p -n1 "Press enter to continue, q to exit and c to configure" foo; [[ "$foo" == "c" ]] && configure; [[ "$foo" == "q" ]] && doexit ; } ; } 
         done
         count=$(( $count + 1 ))
     done

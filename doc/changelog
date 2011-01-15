@@ -1,4 +1,4 @@
-Changelog for airoscript-ng 1.1:
+Changelog for airoscript-ng 1.1 (independent release, shortly will become airoscript 1.2 with aircrack-ng release)
 - Refactorised almost all functions
 - Added autopawn functionality
 - Fixed changing mac address
@@ -29,6 +29,12 @@ command it executes*! use carefully!)
 - Fixed cracking WPA
 - Added a warning when wpa cracking
 - Fixed wpa handshake standard airodump-ng attack
+- Added Automatic network cracking option
+- Added cli interface
+- Using xhost to automatically setting resolution
+- Refactorished menu function, it's creating real nice menus now with shell scape codes
+- Same with target selection menu
+- Added an option to rescan for targets in starting auto scan.
 
 Changelog for airoscript-ng 1.0:
 - Fixed client selection menu 

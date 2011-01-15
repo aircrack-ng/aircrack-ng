@@ -107,7 +107,7 @@ screen_startup(){
 
 usage(){
 cat << eof
-usage: $0 options
+usage: $0 [-h] [-t TERMINAL] [-s] [-v] [-m] [-c] [-a] [-n FILTER] [-w WIFICARD] [-f]
 
 options:
    -h      show this message
@@ -116,6 +116,8 @@ options:
    -v      Verbose & debug mode
    -w      Specify wifi card
    -f      Change mac to fakemac before everything else.
+   -c      Change FAKE_MAC to use real mac
+   -m      Start monitor mode witout caring for mac
    -a      Automatic mode
            -n  Filter SSID by regex (for automatic mode)
 
