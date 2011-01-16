@@ -188,7 +188,7 @@ execute(){
             echo -e $mark $title
             ${@} $eopts &> /dev/null &
         else
-            $CDCMD $TERMINAL $HOLDA -hold $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
+            $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
         fi
     fi 
     save_pids $!
