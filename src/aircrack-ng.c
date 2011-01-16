@@ -191,7 +191,6 @@ char usage[] =
 "      -q         : enable quiet mode (no status output)\n"
 "      -C <macs>  : merge the given APs to a virtual one\n"
 "      -l <file>  : write key to file\n"
-"      -E <file>  : create EWSA Project file v3\n"
 "\n"
 "  Static WEP cracking options:\n"
 "\n"
@@ -219,17 +218,22 @@ char usage[] =
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
 "      -w <words> : path to wordlist(s) filename(s)\n"
+"\n"
+"  WPA-PSK options:\n"
+"\n"
+"      -E <file>  : create EWSA Project file v3\n"
+"      -S         : WPA cracking speed test\n"
 #ifdef HAVE_SQLITE
 "      -r <DB>    : path to airolib-ng database\n"
 "                   (Cannot be used with -w)\n"
 #endif
 "\n"
-"  WPA-PSK options:\n"
+"  Other options:\n"
 "\n"
-"      -S         : WPA cracking speed test\n"
-"\n"
+"      -u         : Displays # of CPUs & MMX/SSE support\n"
 "      --help     : Displays this usage screen\n"
 "\n";
+
 
 char * progname;
 int intr_read = 0;
@@ -4807,7 +4811,7 @@ int main( int argc, char *argv[] )
             {"combine",           0, 0, 'C'},
             {"help",              0, 0, 'H'},
             {"wep-decloak",       0, 0, 'D'},
-            {"ptw-debug",         0, 0, 'P'},
+            {"ptw-debug",         1, 0, 'P'},
             {"visual-inspection", 0, 0, 'V'},
             {"oneshot",           0, 0, '1'},
             {"cpu-detect",        0, 0, 'u'},
@@ -4832,8 +4836,8 @@ int main( int argc, char *argv[] )
 					err(1, "malloc()");
 
 				memset(ap_cur, 0, sizeof(*ap_cur));
-		
-				ap_cur->target = 1;	
+
+				ap_cur->target = 1;
 				ap_cur->wpa.state = 7;
 				strcpy(ap_cur->essid, "sorbo");
 
