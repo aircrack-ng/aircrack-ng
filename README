@@ -161,3 +161,9 @@ Requirements (Deps)
     Recomends:
         digenpy ( http://github.com/XayOn/Digenpy ) # Depends on python 2.6
 		mdk 
+
+
+Plugin support
+==============
+Airoscript supports plugins, shell scripts listed in enabled_plugins on airoscript configuration (use the full path there).
+For a plugin to work, you'll have to set $plugins_menu["Title of the menu you want to use"] to an array of the entries you want to add.

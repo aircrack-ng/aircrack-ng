@@ -30,6 +30,7 @@ _source(){
 _source "./airoscript-ng.conf.devel ~/.airoscript-ng/airoscript-ng.conf /etc/airoscript-ng.conf /usr/local/etc/airoscript-ng.conf"
 _source "$path/internal $path/generic $path/dicts"
 _source  "$path/themes/$theme" || default_theme
+for i in $enabled_plugins; do _source $i; done # Enable plugins =)
 
 # For locale debugging
 _debug "Text domain dir is $TEXTDOMAINDIR and textdomain is $TEXTDOMAIN"
@@ -48,8 +49,10 @@ temporary_switch_clear
 setinterface "start"
 temporary_switch_clear
 
+[[ "$noscan" != 1 ]] && {
 OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
 choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
 cleanautovars
 select_ap
+}
 mainmenu
