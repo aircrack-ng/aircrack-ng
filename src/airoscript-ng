@@ -19,6 +19,9 @@
 #        Along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+declare -a enabled_plugins
+declare -a p_menu
+
 _source(){
     for cfile in $1; do
         if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; echo "Loading $cfile"; sleep 0.1;
@@ -30,7 +33,7 @@ _source(){
 _source "./airoscript-ng.conf.devel ~/.airoscript-ng/airoscript-ng.conf /etc/airoscript-ng.conf /usr/local/etc/airoscript-ng.conf"
 _source "$path/internal $path/generic $path/dicts"
 _source  "$path/themes/$theme" || default_theme
-for i in $enabled_plugins; do _source $i; done # Enable plugins =)
+_source ${enabled_plugins[@]};
 
 # For locale debugging
 _debug "Text domain dir is $TEXTDOMAINDIR and textdomain is $TEXTDOMAIN"

@@ -669,17 +669,25 @@ ivstoomenu(){
 
 extramenu(){ 
     while true; do
-        mkmenu "Extra tools" "Airoscript Options" "Advanced tools" "Return to main menu"
+        mkmenu "Extra tools" "Airoscript Options" "Advanced tools" "External plugins" "Return to main menu"
         read -p "Select option: " yn; 
         case $yn in
             1) optionmenu; $clear; break;;
             2) othertmenu; $clear; break;;
-            3) $clear;break ;;
+            3) pluginsmenu; $clear; break;;
+            4) $clear;break ;;
             * ) _ "Unknown response. Try again" ;;
         esac
     done
 }
 
+pluginsmenu(){
+    mkmenu "External plugins" "${p_menu[@]}"
+    read -p "Enter option: " foo; foo=$(( $foo + 1 ))
+    echo `echo ${p_menu[$foo]}|sed 's/ /_/g'`
+    sleep 10
+    `echo ${p_menu[$foo]}|sed 's/ /_/g'` || { _ "Wrong option, try again"; sleep 1; $clear; pluginsmenu; }
+}
 # I suppose all these are part of this option:
 # 1.
 inject_test(){
