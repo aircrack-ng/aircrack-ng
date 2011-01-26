@@ -107,7 +107,7 @@ Scanchan(){
 
 # This is for SELECT (2) option
 selectAp(){
-    i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
+    k=0; i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
     head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
  # FIXME Filte disabled, make it work    
     [[ "$filter_ssid" != "" ]] && { echo "$mark Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
@@ -1034,7 +1034,7 @@ autopwn(){
         while [ "1" ]; do 
             echo -en "\r$mark IVS: `check_all_ivs`"  ;
             sleep 5
-            { [[ "`check_all_ivs`" -gt "$min_ivs" ]] && { echo; echo "$mark Trying to crack network, we have enough ivs"; cleanautovars; auto autocrack; cleanautovars ; reset; echo "$mark Network cracked, password stored in $DUMP_PATH/$Host_MAC.key"; read -n1 -p "Press enter to continue, q to exit and c to configure" foo; [[ "$foo" == "c" ]] && configure; [[ "$foo" == "q" ]] && doexit ; } ; } 
+            { [[ "`check_all_ivs`" -gt "$min_ivs" ]] && { echo; echo "$mark Trying to crack network, we have enough ivs"; cleanautovars; auto autocrack; cleanautovars ; reset; echo "$mark Network cracked, password stored in $DUMP_PATH/$Host_MAC.key"; read -n1 -p "Press enter to continue, q to exit and c to configure" foo; [[ "$foo" == "c" ]] && configure; [[ "$foo" == "q" ]] && doexit killme ; } ; } 
         done
         count=$(( $count + 1 ))
     done

@@ -53,9 +53,9 @@ setinterface "start"
 temporary_switch_clear
 
 [[ "$noscan" != 1 ]] && {
-OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
-cleanautovars
-select_ap
+    OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
+    choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
+    cleanautovars
+    select_ap
 }
 mainmenu

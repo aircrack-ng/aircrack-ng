@@ -230,7 +230,7 @@ mkmenuline(){ echo -en "$separator_x"; for i in $(seq 1 $1); do echo -en "$separ
 mkmenuheader(){ echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }
 getmaxlenfromlist(){ max=0; for i in "${@}"; do [[ ${#i} -gt $max ]] && max=${#i}; done; echo $max; }
 mkmenueline(){ echo -en "${separator_v}\033[${1}C${separator_v}\033[${1}D${white}${2}${red})${end} ${separator_v}";}
-mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( line + 1 )); mkmenueline $max $line; echo " $i"; done; }
+mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; echo " $i"; done; }
 
 mkmenu(){
     max=`getmaxlenfromlist "${@}"`
@@ -406,7 +406,8 @@ doexit(){
 		read del; if [ "$del" = "y" ]; then
 			echo -n `gettext 'Deleting'` " $DUMP_PATH ... "; delete_dpath
 		fi
-		exit
+        [[ "$1" == "killme" ]] && kill -9 $$ || exit # Needed because of autopwn
+
 
 }
 

@@ -1,7 +1,6 @@
 #!/bin/bash
-# Unstable functions file for airoscript.
-# Requires: wlandecrypter 
-
+# Dict generators for airoscript
+# Depends on Digenpy
 # Copyright (C) 2009, 2010 David Francos Cuartero
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
@@ -17,16 +16,18 @@
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+
 digenpy(){
     if [ "$3" == "crack" ]; then
         execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -w $DUMP_PATH/digenpy_dic $DUMP_PATH/$Host_MAC-01.cap
-    else AUTO=1; QUIET=1;
-        execute "Creating dictionary ($1:$2) for $Host_SSID" digenpy $1 $2 $Host_MAC $Host_SSID > $DUMP_PATH/digenpy_dic
+    else AUTO=1; QUIET=0;
+        digenpy $1 $2 $Host_MAC $Host_SSID 
     AUTO=0; QUIET=""; fi
 }
 
-Telefonica(){ if [[ "$Host_SSID" =~ WLAN* ]]; then digenpy Spain Telefonica crack; cracked=1;  fi }
-Jazztel(){ if [[ "$Host_SSID" =~ JAZZTEL* ]]; then digenpy Spain Jazztel crack; cracked=1;  fi; }
+Telefonica(){ if [[ "$Host_SSID" =~ WLAN* ]]; then digenpy Spain Telefonica > $DUMP_PATH/digenpy_dic; digenpy Spain Telefonica crack; cracked=1; else _ "\tIs not a telefonica network"; fi }
+Jazztel(){ if [[ "$Host_SSID" =~ JAZZTEL* ]]; then digenpy Spain Jazztel > $DUMP_PATH/digenpy_dic; digenpy Spain Jazztel crack; cracked=1; else _ "\tIs not a jazztel network";  fi; }
 
 auto(){
     if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a target first'`\n"; return; fi
@@ -35,10 +36,11 @@ auto(){
         for function in $_functions; do $function; [[ "$cracked" == "1" ]] && return 4; done
         return 255
     else
-        if [ -e "$DUMP_PATH/$Host_MAC-01.cap" ]; then 
-            for function in $_functions; do $function; [[ "$cracked" == "1" ]] && break; done
-        else echo "`gettext 'Error: No capture file. Capture some ivs'`"; fi
+        echo "$mark Checking..."
+        echo "Available $mfunctions"
+        for function in "Telefonica" "Jazztel"; do echo "Trying  $function"; $function; [[ "$cracked" == "1" ]] && return; done
         _ "Cant crack this network like this, do it manually"
+
         if [ "$1" == "autocrack" ]; then
         AUTO=1; crack; wait $! ; AUTO=0
         else
