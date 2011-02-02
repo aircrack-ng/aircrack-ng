@@ -445,26 +445,44 @@ int addESSID(char* essid, int len, int expiration)
         cur = cur->next;
     }
 
-    //alloc mem
-    tmp = (pESSID_t) malloc(sizeof(struct ESSID_list));
-
-    //set essid
-    tmp->essid = (char*) malloc(len+1);
-    memcpy(tmp->essid, essid, len);
-    tmp->essid[len] = 0x00;
-    tmp->len = len;
-
-    // set expiration date
-    if(expiration) {
-        time(&now);
-        tmp->expire = now + expiration;
-    } else {
-        tmp->expire = 0;
-    }
-
-    tmp->next = NULL;
-	cur->next = tmp;
-
+	if (cur->essid != NULL) {
+	    //alloc mem
+	    tmp = (pESSID_t) malloc(sizeof(struct ESSID_list));
+	
+	    //set essid
+	    tmp->essid = (char*) malloc(len+1);
+	    memcpy(tmp->essid, essid, len);
+	    tmp->essid[len] = 0x00;
+	    tmp->len = len;
+	
+	    // set expiration date
+	    if(expiration) {
+	        time(&now);
+	        tmp->expire = now + expiration;
+	    } else {
+	        tmp->expire = 0;
+	    }
+	
+	    tmp->next = NULL;
+		cur->next = tmp;
+	} else {
+		//set essid
+	    cur->essid = (char*) malloc(len+1);
+	    memcpy(cur->essid, essid, len);
+	    cur->essid[len] = 0x00;
+	    cur->len = len;
+	
+	    // set expiration date
+	    if(expiration) {
+	        time(&now);
+	        cur->expire = now + expiration;
+	    } else {
+	        cur->expire = 0;
+	    }
+	
+	    cur->next = NULL;
+	}
+	
     return 0;
 }
 
