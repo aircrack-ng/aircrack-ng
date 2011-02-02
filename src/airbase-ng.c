@@ -448,13 +448,13 @@ int addESSID(char* essid, int len, int expiration)
 	if (cur->essid != NULL) {
 	    //alloc mem
 	    tmp = (pESSID_t) malloc(sizeof(struct ESSID_list));
-	
+
 	    //set essid
 	    tmp->essid = (char*) malloc(len+1);
 	    memcpy(tmp->essid, essid, len);
 	    tmp->essid[len] = 0x00;
 	    tmp->len = len;
-	
+
 	    // set expiration date
 	    if(expiration) {
 	        time(&now);
@@ -462,7 +462,7 @@ int addESSID(char* essid, int len, int expiration)
 	    } else {
 	        tmp->expire = 0;
 	    }
-	
+
 	    tmp->next = NULL;
 		cur->next = tmp;
 	} else {
@@ -471,7 +471,7 @@ int addESSID(char* essid, int len, int expiration)
 	    memcpy(cur->essid, essid, len);
 	    cur->essid[len] = 0x00;
 	    cur->len = len;
-	
+
 	    // set expiration date
 	    if(expiration) {
 	        time(&now);
@@ -479,10 +479,10 @@ int addESSID(char* essid, int len, int expiration)
 	    } else {
 	        cur->expire = 0;
 	    }
-	
+
 	    cur->next = NULL;
 	}
-	
+
     return 0;
 }
 
@@ -1620,7 +1620,6 @@ int encrypt_data(unsigned char* data, int length)
 {
     uchar cipher[4096];
     uchar K[128];
-//     int n;
 
     if(data == NULL)                return 1;
     if(length < 1 || length > 2044) return 1;
@@ -1695,7 +1694,7 @@ int intercept(uchar* packet, int length)
         if (decrypt_wep( packet + z + 4, length - z - 4,
                         K, 3 + opt.weplen ) == 0 )
         {
-//             printf("ICV check failed!\n");
+			// ICV check failed!
             return 1;
         }
 
@@ -1709,8 +1708,6 @@ int intercept(uchar* packet, int length)
 
     /* clear wep bit */
     packet[1] &= 0xBF;
-
-//     printf("intercept packet with len: %d\n", length);
 
     //insert ethernet header
     memcpy(buf+14, packet, length);
@@ -1745,7 +1742,7 @@ int packet_xmit(uchar* packet, int length)
         newlen = (length-14+MAX_FRAME_EXTENSION)/fragments;
     else
         newlen = length-14;
-//     printf("Sending %i fragments with size %i/%i\n", fragments, newlen, length-14);
+
     for(i=0; i<fragments; i++)
     {
         if(i == fragments-1)
@@ -1826,7 +1823,7 @@ int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
     memset(buf, 0, 4096);
     if(memcmp(packet, buf, 11) != 0)
     {
-//         printf("wrong header...\n");
+		// Wrong header
         return 1;
     }
 
@@ -1837,7 +1834,6 @@ int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
 
-//     printf("packet with len: %d\n", length);
     if( opt.crypt == CRYPT_WEP || opt.prgalen > 0 )
     {
         if(create_wep_packet(packet, &length, z) != 0) return 1;
@@ -1845,12 +1841,10 @@ int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
 
     if(memcmp(buf+12, (uchar *)"\x00\x00", 2) == 0) /* incoming packet */
     {
-//         printf("receiving packet with len: %d\n", length);
         packet_recv(packet, length, apc, 0);
     }
     else if(memcmp(buf+12, (uchar *)"\xFF\xFF", 2) == 0) /* outgoing packet */
     {
-//         printf("sending packet with len: %d\n", length);
         send_packet(packet, length);
     }
 
@@ -1916,8 +1910,6 @@ uchar* parse_tags(unsigned char *flags, unsigned char type, int length, int *tag
     {
         cur_type = pos[0];
         cur_len = pos[1];
-//         printf("tag %d with len %d found, looking for tag %d\n", cur_type, cur_len, type);
-//         printf("gone through %d bytes from %d max\n", len+2+cur_len, length);
         if(len+2+cur_len > length)
             return(NULL);
 
@@ -2157,7 +2149,6 @@ int addCF(uchar* packet, int length)
     if( (length == 68 || length == 86) && (memcmp(dmac, BROADCAST, 6) == 0 || (dmac[0]%2) == 0) )
     {
         /* process ARP */
-//         printf("Found ARP packet\n");
         isarp = 1;
         //build the new packet
         set_clear_arp(clear, smac, dmac);
@@ -2210,7 +2201,6 @@ int addCF(uchar* packet, int length)
     else
     {
         /* process IP */
-//         printf("Found IP packet\n");
         isarp = 0;
         //build the new packet
         set_clear_ip(clear, length-z-4-8-4);
@@ -3488,7 +3478,6 @@ void beacon_thread( void *arg )
     while( 1 )
     {
         /* sleep until the next clock tick */
-//         printf( "1 " );
         if( dev.fd_rtc >= 0 )
         {
             if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
@@ -3514,19 +3503,14 @@ void beacon_thread( void *arg )
             ticks[1] += f / ( 1000000/RTC_RESOLUTION );
             ticks[2] += f / ( 1000000/RTC_RESOLUTION );
         }
-//         printf( "2 " );
 
         if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)apc.interval/1000.0)*(double)seq )
         {
             /* threshold reach, send one frame */
 //             ticks[2] = 0;
-//             printf( "3 " );
             fflush(stdout);
             gettimeofday( &tv1,  NULL );
             timestamp=tv1.tv_sec*1000000 + tv1.tv_usec;
-//             printf( "ticks: %f ; timestamp: %u\n", ticks[2], (unsigned int)timestamp );
-
-//             printf( "4 " );
             fflush(stdout);
 
 
@@ -3613,7 +3597,6 @@ void beacon_thread( void *arg )
             beacon[22] = (seq << 4) & 0xFF;
             beacon[23] = (seq >> 4) & 0xFF;
 
-//             printf( "5 " );
             fflush(stdout);
 
             if( send_packet( beacon, beacon_len ) < 0 )
@@ -3623,9 +3606,6 @@ void beacon_thread( void *arg )
             }
 
             seq++;
-
-//             printf( "6\n" );
-
         }
     }
 }
@@ -3633,8 +3613,6 @@ void beacon_thread( void *arg )
 void caffelatte_thread( void )
 {
     struct timeval tv, tv2;
-//     int beacon_len=0;
-//     int seq=0, i=0, n=0;
     float f, ticks[3];
     int arp_off1=0;
     int nb_pkt_sent_1=0;
@@ -3675,7 +3653,6 @@ void caffelatte_thread( void )
                     return;
 
                 nb_pkt_sent_1++;
-//                 printf("sent arp: %d\n", nb_pkt_sent_1);
 
                 if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent_1  )
                 {
@@ -3772,8 +3749,6 @@ int cfrag_fuzz(unsigned char *packet, int frags, int frag_num, int length, unsig
 void cfrag_thread( void )
 {
     struct timeval tv, tv2;
-//     int beacon_len=0;
-//     int seq=0, i=0, n=0;
     float f, ticks[3];
     int nb_pkt_sent_1=0;
     int seq=0, i=0;
@@ -3818,8 +3793,6 @@ void cfrag_thread( void )
                     continue;
                 }
 
-//                 curCF = curCF->next;
-
                 while( curCF->next != NULL && curCF->next->xmitcount >= MAX_CF_XMIT )
                 {
                     del_next_CF(curCF);
@@ -3860,7 +3833,6 @@ void cfrag_thread( void )
 
                 curCF->xmitcount++;
                 nb_pkt_sent_1++;
-//                 printf("sent arp: %d\n", nb_pkt_sent_1);
 
                 if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent_1  )
                 {
