@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dict generators for airoscript
-# Depends on Digenpy
+# Depends on digenpy_
 # Copyright (C) 2009, 2010 David Francos Cuartero
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
@@ -18,16 +18,17 @@
 
 
 
-digenpy(){
+digenpy_(){
     if [ "$3" == "crack" ]; then
-        execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -w $DUMP_PATH/digenpy_dic $DUMP_PATH/$Host_MAC-01.cap
+        execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -w $DUMP_PATH/digenpy__dic $DUMP_PATH/$Host_MAC-01.cap
     else AUTO=1; QUIET=0;
-        digenpy $1 $2 $Host_MAC $Host_SSID 
+        echo "Calling digenpy $1 $2 $Host_MAC $Host_SSID >/$DUMP_PATH/digenpy__dic"
+        digenpy $1 $2 $Host_MAC $Host_SSID  > $DUMP_PATH/digenpy__dic
     AUTO=0; QUIET=""; fi
 }
 
-Telefonica(){ if [[ "$Host_SSID" =~ WLAN* ]]; then digenpy Spain Telefonica > $DUMP_PATH/digenpy_dic; digenpy Spain Telefonica crack; cracked=1; else _ "\tIs not a telefonica network"; fi }
-Jazztel(){ if [[ "$Host_SSID" =~ JAZZTEL* ]]; then digenpy Spain Jazztel > $DUMP_PATH/digenpy_dic; digenpy Spain Jazztel crack; cracked=1; else _ "\tIs not a jazztel network";  fi; }
+Telefonica(){ if [[ "$Host_SSID" =~ WLAN* ]]; then echo "It's a telefonica network. Calling digenpy_"; digenpy_ Spanish Telefonica $Host_MAC $Host_SSID; digenpy_ Spanish Telefonica crack; cracked=1; else _ "\tIs not a telefonica network"; fi }
+Jazztel(){ if [[ "$Host_SSID" =~ JAZZTEL* ]]; then digenpy_ Spanish Jazztel $Host_MAC $Host_SSID  digenpy_ Spanish Jazztel crack; cracked=1; else _ "\tIs not a jazztel network";  fi; }
 
 auto(){
     if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a target first'`\n"; return; fi
