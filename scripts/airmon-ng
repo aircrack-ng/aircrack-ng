@@ -411,6 +411,12 @@ getChipset() {
     then
             CHIPSET="Realtek 81XX"
     fi
+    
+    if [ x$DRIVER = "xcarl9170" ]
+    then
+            getPhy $2
+            CHIPSET=`dmesg | grep usb | grep $PHYDEV | awk -F\  '{ print $3 " " $4 }'`
+    fi
 }
 
 getPhy() {
