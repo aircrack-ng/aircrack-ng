@@ -445,43 +445,25 @@ int addESSID(char* essid, int len, int expiration)
         cur = cur->next;
     }
 
-	if (cur->essid != NULL) {
-	    //alloc mem
-	    tmp = (pESSID_t) malloc(sizeof(struct ESSID_list));
+    //alloc mem
+    tmp = (pESSID_t) malloc(sizeof(struct ESSID_list));
 
-	    //set essid
-	    tmp->essid = (char*) malloc(len+1);
-	    memcpy(tmp->essid, essid, len);
-	    tmp->essid[len] = 0x00;
-	    tmp->len = len;
+    //set essid
+    tmp->essid = (char*) malloc(len+1);
+    memcpy(tmp->essid, essid, len);
+    tmp->essid[len] = 0x00;
+    tmp->len = len;
 
-	    // set expiration date
-	    if(expiration) {
-	        time(&now);
-	        tmp->expire = now + expiration;
-	    } else {
-	        tmp->expire = 0;
-	    }
+    // set expiration date
+    if(expiration) {
+        time(&now);
+        tmp->expire = now + expiration;
+    } else {
+        tmp->expire = 0;
+    }
 
-	    tmp->next = NULL;
-		cur->next = tmp;
-	} else {
-		//set essid
-	    cur->essid = (char*) malloc(len+1);
-	    memcpy(cur->essid, essid, len);
-	    cur->essid[len] = 0x00;
-	    cur->len = len;
-
-	    // set expiration date
-	    if(expiration) {
-	        time(&now);
-	        cur->expire = now + expiration;
-	    } else {
-	        cur->expire = 0;
-	    }
-
-	    cur->next = NULL;
-	}
+    tmp->next = NULL;
+	cur->next = tmp;
 
     return 0;
 }
@@ -3514,7 +3496,10 @@ void beacon_thread( void *arg )
             fflush(stdout);
 
 
-            if(cur_essid == NULL) cur_essid = rESSID;
+            if(cur_essid == NULL) {
+            	cur_essid = rESSID;
+            	cur_essid = cur_essid->next;
+            }
             if(cur_essid == NULL) {
 	            essid = "default";
 	            essid_len = strlen(essid);
