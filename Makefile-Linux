@@ -5,16 +5,17 @@ name=$(NAME)
 # Binary install programs
 INSTALL = install -c
 INSTALLDATA = install -c -m 644
+DESTDIR =
 
 # Destdirs. 
 	# prefixes
-data=$(prefix)/share
+data=$(DESTDIR)/$(prefix)/share
 
 	# main
-bindir=$(prefix)/sbin/
+bindir=$(DESTDIR)/$(prefix)/sbin/
 datadir=$(data)/$(NAME)/
 docdir=$(data)/doc/$(NAME)
-etcdir=$(prefix)/etc
+etcdir=$(DESTDIR)/$(prefix)/etc
 locale=$(data)/locale
 mandir=$(data)/man
 srcdir=./src
@@ -37,7 +38,7 @@ install-binary:
 	@echo "Installing airoscript"
 	@$(INSTALL) $(srcdir)/airoscript-ng $(bindir)/$(name)
 	@$(INSTALL) $(srcdir)/airoscript-ng.conf $(etcdir)
-	@$(INSTALL) $(srcdir)/functions/* $(datadir)
+	@cp -r $(srcdir)/functions/ $(datadir) # FIXME
 	@$(INSTALLDATA) $(srcdir)/screenrc.airoscript $(etcdir)
 	@echo "Installing themes"
 	@$(INSTALLDATA) $(srcdir)/themes/*.theme $(datadir)/themes
@@ -49,10 +50,10 @@ post-install:
 
 install-docs:
 	@echo "Installing documentation"
-	@echo "\t Installing standard documentation"
+	@echo -e "\t Installing standard documentation"
 	@for i in doc/* ; do if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then make -s -C $$i docdir="$(docdir)" INSTALLDATA="$(INSTALLDATA)" ; else $(INSTALLDATA) $$i $(docdir) ;fi ; done
 	@# This will install any manpage on manpages dir. (Just man1 manpages)
-	@echo  "\t Installing manpages"
+	@echo -e  "\t Installing manpages"
 	@for i in $(srcdir)/*.1 ; do $(INSTALLDATA) $$i $(mandir)/man1/ ; done
 
 generate-locale:
