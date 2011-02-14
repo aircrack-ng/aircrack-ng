@@ -2,7 +2,7 @@
 
 CURL=`which curl 2>/dev/null`
 WGET=`which wget 2>/dev/null`
-OUI_DOWNLOAD_URL="http://standards.ieee.org/regauth/oui/oui.txt"
+OUI_DOWNLOAD_URL="http://standards.ieee.org/develop/regauth/oui/oui.txt"
 
 OUI_PATH="/usr/local/etc/aircrack-ng"
 AIRODUMP_NG_OUI="${OUI_PATH}/airodump-ng-oui.txt"
@@ -41,7 +41,7 @@ if [ ${CURL} ] || [ ${WGET} ]; then
 	if [ ${WGET} ]; then
 		${WGET} ${OUI_DOWNLOAD_URL} -O ${OUI_IEEE} >/dev/null 2>/dev/null
 	else
-		${CURL} ${OUI_DOWNLOAD_URL} > ${OUI_IEEE} 2>/dev/null
+		${CURL} -L ${OUI_DOWNLOAD_URL} > ${OUI_IEEE} 2>/dev/null
 	fi
 	
 	if [ "${?}" -ne 0 ]; then
