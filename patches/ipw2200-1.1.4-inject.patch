@@ -1,6 +1,15 @@
 diff -ur ipw2200-1.1.4/ipw2200.c ipw2200-1.1.4-inject/ipw2200.c
 --- ipw2200-1.1.4/ipw2200.c	2006-08-21 04:38:32.000000000 +0200
 +++ ipw2200-1.1.4-inject/ipw2200.c	2006-08-23 14:20:31.000000000 +0200
+@@ -30,6 +30,8 @@
+ 
+ ******************************************************************************/
+ 
++#include <linux/version.h>
++
+ #include "ipw2200.h"
+ 
+ 
 @@ -1945,6 +1945,66 @@
  static DEVICE_ATTR(net_stats, S_IWUSR | S_IRUGO,
  		   show_net_stats, store_net_stats);
