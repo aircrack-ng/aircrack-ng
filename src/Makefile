@@ -240,7 +240,7 @@ uninstall:
 	-rm -f $(DESTDIR)$(bindir)/besside-ng-crawler$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/airbase-ng$(EXE)
 	-rm -f $(DESTDIR)$(bindir)/makeivs-ng$(EXE)
-	-rm -f $(DESTDIR)$(sbindir)/airdecloak-ng$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/airdecloak-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/tkiptun-ng$(EXE)
 	-rm -rf $(DESTDIR)$(etcdir)
 
