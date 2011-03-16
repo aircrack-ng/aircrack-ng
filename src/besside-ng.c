@@ -411,10 +411,22 @@ static inline void timer_print(void)
 	int i = 0;
 	struct timer *t = _state.s_timers.t_next;
 
-	printf("\nNow %lu.%lu\n", _state.s_now.tv_sec, _state.s_now.tv_usec);
+	printf(
+			#ifndef __APPLE_CC__
+			"\nNow %lu.%lu\n",
+			#else
+			"\nNow %lu.%d\n",
+			#endif
+			_state.s_now.tv_sec, _state.s_now.tv_usec);
 
 	while (t) {
-		printf("%d) %lu.%lu %p(%p)\n",
+		
+		printf(
+				#ifndef __APPLE_CC__
+				"%d) %lu.%lu %p(%p)\n",
+				#else
+				"%d) %lu.%d %p(%p)\n",
+				#endif
 		       i++,
 		       t->t_tv.tv_sec,
 		       t->t_tv.tv_usec,
@@ -3058,9 +3070,22 @@ static void print_state(int UNUSED(x))
 	} while (c != c2);
 	printf("\n");
 
-	printf("Now: %lu.%lu\n", s->s_now.tv_sec, s->s_now.tv_usec);
+	printf(
+		#ifndef __APPLE_CC__
+		"Now: %lu.%lu\n",
+		#else
+		"Now: %lu.%d\n",
+		#endif
+		s->s_now.tv_sec, s->s_now.tv_usec);
+
+	
 	while (t) {
-		printf("Timer: %lu.%lu %p[%s](%p)\n",
+		printf(
+		       #ifndef __APPLE_CC__
+		       "Timer: %lu.%lu %p[%s](%p)\n",
+		       #else
+		       "Timer: %lu.%d %p[%s](%p)\n",
+		       #endif
 		       t->t_tv.tv_sec, t->t_tv.tv_usec, t->t_cb,
 		       timer_cb2str(t->t_cb), t->t_arg);
 
