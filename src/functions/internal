@@ -17,11 +17,6 @@
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-_(){
-   a=$1; shift
-   echo -en "`gettext \"$a\"` $@"
-}
-
 mainmenu(){
     mkmenu "Main Menu" "Attack   - Attack target" "Crack    - Get target key"  "Scan - Manually scan for targets" "Select - Reselect target" "Others   - Various utilities" "Exit    - Quits"
     if [ "$AUTO" == 1 ]; then return; fi
@@ -44,25 +39,24 @@ mainmenu(){
     mainmenu
 }
 
+autoscan(){
+    OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
+    choosetype "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
+    cleanautovars
+    select_ap
+}
+
 rootwarn(){
     li=`tput lines`; cen=`expr $li / 2 + 2`; if [ "$UID" != 0 ]; then $clear;echo -e "\E[3;22H===airoscript-ng===\E[$cen;15H\E[31mYou Must be root to use airoscript\E[39;49;00m\E[$li;20H"; exit 1; fi;
 }
 
-setps(){
-    $clear
-    if [ "$1" != "" ]; then PS3=`_ "$1"`; 
-    else PS3=`_ 'Input number: '`; fi
-}
+
 
 _debug(){
     if [ "$debug" == 1 ]; then echo -en $mark; _ $1; fi
 }
 
-default_theme(){
-    _ '[WARN] : theme file does not exists, using defaults...'
-	DUMPING_COLOR="#FFFFFF"; INJECTION_COLOR="#1DFF00"
-	ASSOCIATION_COLOR="#FF0009"; DEAUTH_COLOR="#99CCFF"; BACKGROUND_COLOR="#000000"
-}
+
 
 setaircrackpaths(){
 	AIRMON=$SBINDIR"airmon-ng"		
@@ -158,18 +152,7 @@ check_cardctl(){
     else CARDCTL="cardctl"; fi
 }
 
-_get_current_reso(){ awk '/\*/ {print $1}' <<< "`xrandr`"; }
 
-_resonset(){
-	for i in 640x480 800x480 800x600 1024x600 1024x768 1280x768 1280x800 1280x1024 1600x1200; do 
-        reso=`_get_current_reso` ;
-        [[ "$i" == $reso ]] && {
-             reson=$reso
-            echo -e "$mark Automatically setting resolution to $reso";
-         }
-    done
-    if [ "$reson" != "" ]; then export resonset=1; fi
-}
 
 execute(){ 
     title=$1; shift;
@@ -224,7 +207,12 @@ function mkbox(){
      echo -n "+"; fill "$menu_t" "$separator_h" "$(( $max + ${#menu_t} ))" center; echo "+"
 }
 
-temporary_switch_clear(){ foo="$oldclear"; oldclear=$clear; clear=$foo; } 
+temporary_switch_clear(){ 
+    temp="$oldclear"; oldclear=$clear; clear=$temp;
+    $@ ;
+    clear=$oldclear
+} 
+
 vline(){ for i in `seq 0 $1`; do echo -n "-"; done; }
 mkmenuline(){ echo -en "$separator_x"; for i in $(seq 1 $1); do echo -en "$separator_h"; done; echo "$separator_x"; }   
 mkmenuheader(){ echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }

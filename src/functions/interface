@@ -1,0 +1,50 @@
+#!/bin/bash
+# Interface library for airoscript.
+# Recommends: wlandecrypter 
+
+# Copyright (C) 2009 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+_(){
+   a=$1; shift
+   echo -en "`gettext \"$a\"` $@"
+}
+
+setps(){
+    $clear
+    if [ "$1" != "" ]; then PS3=`_ "$1"`;
+    else PS3=`_ 'Input number: '`; fi
+}
+
+default_theme(){
+    _ '[WARN] : theme file does not exists, using defaults...'
+	DUMPING_COLOR="#FFFFFF"; INJECTION_COLOR="#1DFF00"
+	ASSOCIATION_COLOR="#FF0009"; DEAUTH_COLOR="#99CCFF"; BACKGROUND_COLOR="#000000"
+}
+
+_get_current_reso(){ awk '/\*/ {print $1}' <<< "`xrandr`" | head -n1; }
+
+_resonset(){
+	for i in 640x480 800x480 800x600 1024x600 1024x768 1280x768 1280x800 1280x1024 1440x900 1600x1200; do
+        reso=`_get_current_reso` ;
+        [[ "$i" == $reso ]] && {
+             reson=$reso
+            echo -e "$mark Automatically setting resolution to $reso";
+         }
+    done
+    if [ "$reson" != "" ]; then export resonset=1; fi
+}
+
+
