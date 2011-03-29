@@ -564,7 +564,7 @@ int get_battery_state(void)
     int value;
     size_t len;
 
-    len = 1;
+    len = 4;
     value = 0;
     sysctlbyname("hw.acpi.acline", &value, &len, NULL, 0);
     if (value == 0)
