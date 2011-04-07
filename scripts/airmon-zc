@@ -3,7 +3,6 @@
 USERID=""
 IFACE=""
 CH=$3; [ x$3 = "x" ] && CH=10
-IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
 USE_IW=0
@@ -156,7 +155,7 @@ getStack() {
 		MAC80211=0
 		STACK="ieee80211"
 	fi
-	if [ $MADWIFI = "1" ]
+	if [ -e "/proc/sys/dev/$1/fftxqmin" ]
 	then
 		STACK="net80211"
 	fi
