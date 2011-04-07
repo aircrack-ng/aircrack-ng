@@ -222,26 +222,6 @@ checkProcessesIface() {
     done
 }
 
-getStack() {
-    if [ x"$1" = "x" ]
-    then
-        return
-    fi
-
-    if [ -d /sys/class/net/$1/phy80211/ ]
-    then
-        MAC80211=1
-	STACK="mac80211"
-    else
-        MAC80211=0
-	STACK="ieee80211"
-    fi
-    if [ $MADWIFI = "1" ]
-    then
-    	STACK="net80211"
-    fi
-}
-
 getPhy() {
     PHYDEV=""
     if [ x"$1" = "x" ]
