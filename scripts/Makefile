@@ -1,7 +1,7 @@
 AC_ROOT		= ..
 include		$(AC_ROOT)/common.mak
 
-SCRIPTS         = airmon-ng airdriver-ng airodump-ng-oui-update
+SCRIPTS         = airmon-ng airmon-zc airdriver-ng airodump-ng-oui-update
 
 default: all
 

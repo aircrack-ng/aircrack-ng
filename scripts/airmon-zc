@@ -1,0 +1,470 @@
+#!/bin/sh
+
+USERID=""
+IFACE=""
+CH=$3; [ x$3 = "x" ] && CH=10
+IFACE_FOUND="false"
+MADWIFI=0
+MAC80211=0
+USE_IW=0
+IW_SOURCE="http://wireless.kernel.org/download/iw/iw-0.9.22.tar.bz2"
+IW_ERROR=""
+UDEV_ISSUE=0
+
+if [ -x "`which iw 2>&1`" ]
+then
+	USE_IW=1
+fi
+
+if [ ! -x "`which ethtool 2>&1`" ]
+then
+	echo "Please install the ethtool package for your distro"
+	exit
+fi
+
+if [ "x$MON_PREFIX" = "x" ]
+then
+MON_PREFIX="mon"
+fi
+
+PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox"
+PS_ERROR="invalid"
+
+usage() {
+	printf "usage: `basename $0` <start|stop|check> <interface> [channel or frequency]\n"
+	echo
+	exit
+}
+
+startStdIface() {
+	iwconfig $1 mode monitor >/dev/null 2>&1
+	if [ ! -z $2 ]
+	then
+	    if [ $2 -lt 1000 ]
+	    then
+		iwconfig $1 channel $2 >/dev/null 2>&1
+	    else
+		iwconfig $1 freq "$2"000000 > /dev/null 2>&1
+	    fi
+	fi
+	iwconfig $1 key off >/dev/null 2>&1
+	ifconfig $1 up
+	printf " (monitor mode enabled)"
+}
+
+
+stopStdIface() {
+	ifconfig $1 down >/dev/null 2>&1
+	iwconfig $1 mode Managed >/dev/null 2>&1
+	ifconfig $1 down >/dev/null 2>&1
+	printf " (monitor mode disabled)"
+}
+
+getDriver() {
+	DRIVER=`echo "$ethtool_output" | awk '/driver/ {print $2}'`
+	FIRMWARE=`echo "$ethtool_output" | awk '/firmware-version/ {print $2}'`
+	if [ "$FIRMWARE" = "N/A" ]
+	then
+		FIRMWARE="$FIRMWARE\t"
+	elif [ -z "$FIRMWARE" ]
+	then
+		FIRMWARE="unavailable"
+	fi
+}
+
+getChipset() {
+	if [ -f /sys/class/net/$1//device/modalias ]
+	then
+		BUS=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1`
+		if [ $BUS = "usb" ]
+		then
+			BUSINFO=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/'`
+			CHIPSET=`lsusb | grep -i "$BUSINFO" | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
+		elif [ $BUS = "pci" ]
+		then
+			BUSINFO=`echo "$ethtool_output" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //'`
+			CHIPSET=`lspci | grep "$BUSINFO" | cut -f3- -d ":" | sed 's/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
+		else
+			CHIPSET="Not pci or usb"
+		fi
+	else
+		echo "YOU SUCK, non-mac80211 device"
+	fi
+}
+
+getStack() {
+	if [ x"$1" = "x" ]
+	then
+		return
+	fi
+
+	if [ -d /sys/class/net/$1/phy80211/ ]
+	then
+		MAC80211=1
+		STACK="mac80211"
+	else
+		MAC80211=0
+		STACK="ieee80211"
+	fi
+	if [ $MADWIFI = "1" ]
+	then
+		STACK="net80211"
+	fi
+}
+
+scanProcesses() {
+    if [ -f "`which service 2>&1`" ] && [ x"$1" = "xkill" ]
+    then
+    	service network-manager stop 2>/dev/null >/dev/null
+ 	service avahi-daemon stop 2>/dev/null >/dev/null
+    fi
+
+    match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
+    if [ $match -gt 0 -a x"$1" != "xkill" ]
+    then
+        printf "\n\n"
+        echo "Found $match processes that could cause trouble."
+        echo "If airodump-ng, aireplay-ng or airtun-ng stops working after"
+        echo "a short period of time, you may want to kill (some of) them!"
+        echo -e "\nPID\tName"
+    else
+        if [ x"$1" != "xkill" ]
+        then
+            return
+        fi
+    fi
+
+    if [ $match -gt 0 -a x"$1" = "xkill" ]
+    then
+        echo "Killing all those processes..."
+    fi
+
+    i=1
+    while [ $i -le $match ]
+    do
+        pid=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}'`
+        pname=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}'`
+        if [ x"$1" != "xkill" ]
+        then
+            printf "$pid\t$pname\n"
+        else
+            kill $pid
+        fi
+        i=$(($i+1))
+    done
+}
+
+checkProcessesIface() {
+    if [ x"$1" = "x" ]
+    then
+        return
+    fi
+
+    match2=`ps -o comm= -p 1 2>&1 | grep $PS_ERROR | grep -v grep | wc -l`
+    if [ $match2 -gt 0 ]
+    then
+	return
+    fi
+
+    for i in `ps auxw | grep $1 | grep -v "grep" | grep -v "airmon-zc" | awk '{print $2}'`
+    do
+        pname=`ps -o comm= -p $i`
+        echo "Process with PID $i ($pname) is running on interface $1"
+    done
+}
+
+getStack() {
+    if [ x"$1" = "x" ]
+    then
+        return
+    fi
+
+    if [ -d /sys/class/net/$1/phy80211/ ]
+    then
+        MAC80211=1
+	STACK="mac80211"
+    else
+        MAC80211=0
+	STACK="ieee80211"
+    fi
+    if [ $MADWIFI = "1" ]
+    then
+    	STACK="net80211"
+    fi
+}
+
+getPhy() {
+    PHYDEV=""
+    if [ x"$1" = "x" ]
+    then
+        return
+    fi
+
+    if [ x$MAC80211 = "x" ]
+    then
+        return
+    fi
+
+    if [ -d /sys/class/net/$1/phy80211/ ]
+    then
+	PHYDEV="`ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/'`"
+    fi
+}
+
+getNewMon() {
+    i=0
+
+    while [ -d /sys/class/net/$MON_PREFIX$i/ ]
+    do
+        i=$(($i+1))
+    done
+
+    MONDEV="$MON_PREFIX$i"
+}
+
+if [ x"`which id 2> /dev/null`" != "x" ]
+then
+	USERID="`id -u 2> /dev/null`"
+fi
+
+if [ x$USERID = "x" -a x$UID != "x" ]
+then
+	USERID=$UID
+fi
+
+if [ x$USERID != "x" -a x$USERID != "x0" ]
+then
+	echo Run it as root ; exit ;
+fi
+
+iwpriv > /dev/null 2> /dev/null ||
+  { echo Wireless tools not found ; exit ; }
+
+if [ x"$1" = "xcheck" ] || [ x"$1" = "xstart" ]
+then
+    scanProcesses
+    for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
+    do
+        checkProcessesIface $iface
+    done
+
+    if [ x"$2" = "xkill" ]
+    then
+        scanProcesses "$2"
+    fi
+    if [ x"$1" = "xcheck" ]
+    then
+        exit
+    fi
+fi
+
+printf "\n"
+
+if [ $# -ne "0" ]
+then
+    if [ x$1 != "xstart" ] && [ x$1 != "xstop" ]
+    then
+        usage
+    fi
+
+    if [ x$2 = "x" ]
+    then
+        usage
+    fi
+fi
+
+SYSFS=0
+if [ -d /sys/ ]
+then
+    SYSFS=1
+fi
+
+printf "XXX: Warning, airmon-zc is under heavy development!!!\n"
+printf "This script is intended to replace airmon-ng and is functionally based on it.\n"
+printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng\n"
+printf "Currently only mac80211 devices are supported, please don't report that, I already know.\n\n"
+
+uname -a
+if [ -f /sys/module/compat/parameters/compat_version ]
+then
+	printf "\nCompat-wireless is installed!\n"
+	cat /sys/module/compat/parameters/compat_version
+fi
+printf "\n[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\n\n"
+
+
+for iface in `ifconfig -a 2>/dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
+do
+
+ if [ x"`iwpriv $iface 2>/dev/null | grep ipwraw-ng`" != "x" ]
+ then
+        printf "$iface\t\tIntel 3945ABG\tipwraw-ng"
+        if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+        then
+                startStdIface $iface $CH
+                iwconfig $iface rate 1M 2> /dev/null >/dev/null
+                iwconfig $iface txpower 16 2> /dev/null >/dev/null
+        fi
+        if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+        then
+                stopStdIface $iface
+                iwconfig $iface txpower 15 2> /dev/null >/dev/null
+                iwconfig $iface rate 54M 2> /dev/null >/dev/null
+        fi
+        echo
+        continue
+ fi
+
+ if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
+ then
+    MADWIFI=1
+    ifconfig $iface up
+    printf "$iface\t\tAtheros\t\tmadwifi-ng"
+    if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+    then
+        IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath`
+        ifconfig $iface up 2>/dev/null >/dev/null
+        if [ $CH -lt 1000 ]
+        then
+            iwconfig $IFACE channel $CH 2>/dev/null >/dev/null
+        else
+            iwconfig $IFACE freq "$CH"000000 2>/dev/null >/dev/null
+        fi
+        ifconfig $IFACE up 2>/dev/null >/dev/null
+        UDEV_ISSUE=$?
+    fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+    then
+            echo "$iface does not support 'stop', do it on ath interface"
+    fi
+    echo
+    continue
+ fi
+done
+
+if [ $MADWIFI -eq 1 ]
+then
+	sleep 1s
+fi
+
+for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
+do
+ ethtool_output=""
+ ethtool_output="`ethtool -i $iface`"
+ if [ "$ethtool_output"!="Cannot get driver information: Operation not supportedi\n" ]
+ then
+	getDriver  $iface
+	getStack   $iface
+	getChipset $iface
+ else
+ 	echo "ethtool failed, fallback to old method"
+	exit
+ fi
+
+ if [ x$MAC80211 = "x1" ]
+ then
+    getPhy $iface
+    getNewMon
+    printf "[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET "
+    if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+    then
+        if [ $USE_IW = 1 ]
+        then
+            IW_ERROR=`iw dev $iface interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
+            if [ x$IW_ERROR = "x" ]
+            then
+                sleep 1s
+		if [ ! -z $3 ]
+                then
+            	    if [ $3 -lt 1000 ]
+            	    then
+                	iwconfig $MONDEV channel $3 >/dev/null 2>&1
+            	    else
+                	iwconfig $MONDEV freq "$3"000000 >/dev/null 2>&1
+            	    fi
+            	fi
+                ifconfig $MONDEV up
+                printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+            else
+                if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
+                then
+                    echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
+                    sleep 1s
+                    if [ $3 -lt 1000 ]
+                    then
+                        iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
+                    else
+                        iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
+                    fi
+                    ifconfig $MONDEV up
+                    printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+                else
+                    printf "\n\nERROR: nl80211 support is disabled in your kernel.\nPlease recompile your kernel with nl80211 support enabled.\n"
+                fi
+            fi
+        else
+            if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
+            then
+                echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
+                sleep 1s
+                if [ $3 -lt 1000 ]
+                then
+                    iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
+                else
+                    iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
+                fi
+                ifconfig $MONDEV up
+                printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+            else
+                printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
+            fi
+        fi
+    fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+    then
+        z="`echo $iface | cut -b -${#MON_PREFIX}`"
+        if [ x$z = "x$MON_PREFIX" ]
+        then
+            if [ $USE_IW = 1 ]
+            then
+                IW_ERROR=`iw dev "$iface" interface del 2>&1 | grep "nl80211 not found"`
+                if [ x$IW_ERROR = "x" ]
+                then
+                    printf " (removed)"
+                else
+                    if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
+                    then
+                        echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+                        printf " (removed)"
+                    else
+                        printf "\n\nERROR: nl80211 support is disabled in your kernel.\nPlease recompile your kernel with nl80211 support enabled.\n"
+                fi
+                fi
+            else
+                if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
+                then
+                    echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+                    printf " (removed)"
+                else
+                    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
+                fi
+	    fi
+        else
+            ifconfig $iface down
+            iwconfig $iface mode managed
+            printf "\n\t\t\t\t(monitor mode disabled)"
+        fi
+    fi
+    echo
+    continue
+ fi
+
+done
+
+echo
+
+if [ $UDEV_ISSUE != 0 ] ; then
+	echo udev renamed the interface. Read the following for a solution:
+	echo http://www.aircrack-ng.org/doku.php?id=airmon-ng#interface_athx_number_rising_ath0_ath1_ath2...._ath45
+	echo 
+fi
