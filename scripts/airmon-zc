@@ -36,7 +36,7 @@ usage() {
 	exit
 }
 
-startStdIface() {
+startDeprecatedIface() {
 	iwconfig $1 mode monitor >/dev/null 2>&1
 	if [ ! -z $2 ]
 	then
@@ -52,8 +52,58 @@ startStdIface() {
 	printf " (monitor mode enabled)"
 }
 
+startMac80211Iface() {
+	IW_ERROR=`iw dev $iface interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
+		if [ x$IW_ERROR = "x" ]
+		then
+			sleep 2s
+			if [ ! -z $3 ]
+			then
+				if [ $3 -lt 1000 ]
+				then
+					iw dev $MONDEV set channel $3
+				else
+					iw dev $MONDEV set freq "$3"
+				fi
+			fi
+		ifconfig $MONDEV up
+		printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+		else
+			if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
+			then
+				echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
+				sleep 1s
+				if [ $3 -lt 1000 ]
+				then
+					iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
+				else
+					iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
+				fi
+			ifconfig $MONDEV up
+			printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+			else
+				printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
+			fi
+	fi
+}
 
-stopStdIface() {
+stopMac80211Iface() {
+	IW_ERROR=`iw dev "$iface" del 2>&1 | grep "nl80211 not found"`
+	if [ x$IW_ERROR = "x" ]
+	then
+		printf " (removed)"
+	else
+		if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
+		then
+			echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+			printf " (removed)"
+		else
+		printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
+		fi
+	fi
+}
+
+stopDeprecatedIface() {
 	ifconfig $1 down >/dev/null 2>&1
 	iwconfig $1 mode Managed >/dev/null 2>&1
 	ifconfig $1 down >/dev/null 2>&1
@@ -296,25 +346,6 @@ printf "\n[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\n\n"
 for iface in `ifconfig -a 2>/dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
 do
 
- if [ x"`iwpriv $iface 2>/dev/null | grep ipwraw-ng`" != "x" ]
- then
-        printf "$iface\t\tIntel 3945ABG\tipwraw-ng"
-        if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
-        then
-                startStdIface $iface $CH
-                iwconfig $iface rate 1M 2> /dev/null >/dev/null
-                iwconfig $iface txpower 16 2> /dev/null >/dev/null
-        fi
-        if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
-        then
-                stopStdIface $iface
-                iwconfig $iface txpower 15 2> /dev/null >/dev/null
-                iwconfig $iface rate 54M 2> /dev/null >/dev/null
-        fi
-        echo
-        continue
- fi
-
  if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
  then
     MADWIFI=1
@@ -368,92 +399,11 @@ do
     printf "[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET "
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
-        if [ $USE_IW = 1 ]
-        then
-            IW_ERROR=`iw dev $iface interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
-            if [ x$IW_ERROR = "x" ]
-            then
-                sleep 1s
-		if [ ! -z $3 ]
-                then
-            	    if [ $3 -lt 1000 ]
-            	    then
-                	iwconfig $MONDEV channel $3 >/dev/null 2>&1
-            	    else
-                	iwconfig $MONDEV freq "$3"000000 >/dev/null 2>&1
-            	    fi
-            	fi
-                ifconfig $MONDEV up
-                printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
-            else
-                if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
-                then
-                    echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
-                    sleep 1s
-                    if [ $3 -lt 1000 ]
-                    then
-                        iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
-                    else
-                        iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
-                    fi
-                    ifconfig $MONDEV up
-                    printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
-                else
-                    printf "\n\nERROR: nl80211 support is disabled in your kernel.\nPlease recompile your kernel with nl80211 support enabled.\n"
-                fi
-            fi
-        else
-            if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
-            then
-                echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
-                sleep 1s
-                if [ $3 -lt 1000 ]
-                then
-                    iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
-                else
-                    iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
-                fi
-                ifconfig $MONDEV up
-                printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
-            else
-                printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
-            fi
-        fi
+	startMac80211Iface $iface
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
     then
-        z="`echo $iface | cut -b -${#MON_PREFIX}`"
-        if [ x$z = "x$MON_PREFIX" ]
-        then
-            if [ $USE_IW = 1 ]
-            then
-                IW_ERROR=`iw dev "$iface" interface del 2>&1 | grep "nl80211 not found"`
-                if [ x$IW_ERROR = "x" ]
-                then
-                    printf " (removed)"
-                else
-                    if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
-                    then
-                        echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
-                        printf " (removed)"
-                    else
-                        printf "\n\nERROR: nl80211 support is disabled in your kernel.\nPlease recompile your kernel with nl80211 support enabled.\n"
-                fi
-                fi
-            else
-                if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
-                then
-                    echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
-                    printf " (removed)"
-                else
-                    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
-                fi
-	    fi
-        else
-            ifconfig $iface down
-            iwconfig $iface mode managed
-            printf "\n\t\t\t\t(monitor mode disabled)"
-        fi
+	stopMac80211Iface $iface
     fi
     echo
     continue
