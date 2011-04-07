@@ -155,7 +155,7 @@ getStack() {
 		MAC80211=0
 		STACK="ieee80211"
 	fi
-	if [ -e "/proc/sys/dev/$1/fftxqmin" ]
+	if [ -e /proc/sys/dev/$1/fftxqmin ]
 	then
 		STACK="net80211"
 	fi
@@ -381,14 +381,14 @@ for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/
 do
  ethtool_output=""
  ethtool_output="`ethtool -i $iface`"
- if [ "$ethtool_output"!="Cannot get driver information: Operation not supportedi\n" ]
+ if [ "$ethtool_output"!="Cannot get driver information: Operation not supported\n" ]
  then
 	getDriver  $iface
 	getStack   $iface
 	getChipset $iface
  else
- 	echo "ethtool failed, fallback to old method"
-	exit
+ 	echo "ethtool failed, fallback to old method...\n"
+	echo "Only mac80211 devices on kernel higher than 2.6.32 are supported, no fallback.\n"
  fi
 
  if [ x$MAC80211 = "x1" ]
