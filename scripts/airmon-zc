@@ -111,6 +111,17 @@ stopDeprecatedIface() {
 
 getDriver() {
 	DRIVER=`echo "$ethtool_output" | awk '/driver/ {print $2}'`
+
+	if [ `modprobe -l $DRIVER | grep ^drivers` ]
+	then
+		FROM="K"
+	elif [ `modprobe -l $DRIVER | grep ^updates` ]
+	then
+		FROM="C"
+	else
+		FROM="?"
+	fi
+
 	FIRMWARE=`echo "$ethtool_output" | awk '/firmware-version/ {print $2}'`
 	if [ "$FIRMWARE" = "N/A" ]
 	then
@@ -122,7 +133,7 @@ getDriver() {
 }
 
 getChipset() {
-	if [ -f /sys/class/net/$1//device/modalias ]
+	if [ -f /sys/class/net/$1/device/modalias ]
 	then
 		BUS=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1`
 		if [ $BUS = "usb" ]
@@ -137,7 +148,13 @@ getChipset() {
 			CHIPSET="Not pci or usb"
 		fi
 	else
-		echo "YOU SUCK, non-mac80211 device"
+		CHIPSET="non-mac80211 device? (report this!)"
+	fi
+
+	#UBNT WifiStation, possibly other ath9k devices?
+	if [ -f /sys/class/net/$1/device/product ]
+	then
+		EXTENDED=`cat /sys/class/net/$1/device/product`
 	fi
 }
 
@@ -287,8 +304,6 @@ then
     fi
 fi
 
-printf "\n"
-
 if [ $# -ne "0" ]
 then
     if [ x$1 != "xstart" ] && [ x$1 != "xstop" ]
@@ -308,7 +323,7 @@ then
     SYSFS=1
 fi
 
-printf "XXX: Warning, airmon-zc is under heavy development!!!\n"
+printf "\nXXX: Warning, airmon-zc is under heavy development!!!\n"
 printf "This script is intended to replace airmon-ng and is functionally based on it.\n"
 printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng\n"
 printf "Currently only mac80211 devices are supported, please don't report that, I already know.\n\n"
@@ -316,10 +331,13 @@ printf "Currently only mac80211 devices are supported, please don't report that,
 uname -a
 if [ -f /sys/module/compat/parameters/compat_version ]
 then
-	printf "\nCompat-wireless is installed!\n"
+	printf "\nCompat-wireless is installed! Version: "
 	cat /sys/module/compat/parameters/compat_version
+	printf "\n\nK indicates driver is from `uname -r`\n"
+	printf "C indicates driver is from `cat /sys/module/compat/parameters/compat_version`\n"
+	printf "? indicates driver does not appear to be from kernel or compat-wireless... report this\n"
 fi
-printf "\n[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\n\n"
+printf "\n\n [PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
 
 
 for iface in `ifconfig -a 2>/dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
@@ -368,14 +386,14 @@ do
 	getChipset $iface
  else
  	echo "ethtool failed, fallback to old method...\n"
-	echo "Only mac80211 devices on kernel higher than 2.6.32 are supported, no fallback.\n"
+	echo "Only mac80211 devices on kernel 2.6.33 or higher are supported, no fallback.\n"
  fi
 
  if [ x$MAC80211 = "x1" ]
  then
     getPhy $iface
     getNewMon
-    printf "[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET "
+    printf "$FROM[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET\t\t\t$EXTENDED"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
 	startMac80211Iface $iface
