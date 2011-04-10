@@ -112,6 +112,19 @@ stopDeprecatedIface() {
 getDriver() {
 	DRIVER=`echo "$ethtool_output" | awk '/driver/ {print $2}'`
 
+	#here we test for driver usb, so far it is only ath9k_htc which is incorrectly detected... let's see if that holds true
+	if [ "$DRIVER" = "usb" ]
+	then
+		#if [ `lsmod | grep -q ath9k_htc` ]
+		#then
+
+		#for now we just unsafely set this
+			DRIVER="ath9k_htc"
+		#elif [ blah]
+		#else we shouldn't need
+		#fi
+	fi
+
 	if [ `modprobe -l $DRIVER | grep ^drivers` ]
 	then
 		FROM="K"
@@ -133,6 +146,8 @@ getDriver() {
 }
 
 getChipset() {
+	#this needs cleanup, we shouldn't have multiple lines assigning chipset per bus
+	#fix this to be one line per bus
 	if [ -f /sys/class/net/$1/device/modalias ]
 	then
 		BUS=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1`
@@ -147,6 +162,11 @@ getChipset() {
 		else
 			CHIPSET="Not pci or usb"
 		fi
+	#we don't do a check for usb here but it is obviously only going to work for usb
+	elif [ -f /sys/class/net/$1/device/idVendor -a -f /sys/class/net/$1/device/idProduct ]
+	then
+		USBID=`cat /sys/class/net/$1/device/idVendor`:`cat /sys/class/net/$1/device/idProduct`
+		CHIPSET=`lsusb | grep -i "$USBID" | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
 	else
 		CHIPSET="non-mac80211 device? (report this!)"
 	fi
@@ -391,7 +411,7 @@ do
  then
     getPhy $iface
     getNewMon
-    printf "$FROM[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET\t\t\t$EXTENDED"
+    printf "$FROM[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET\t\t$EXTENDED"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
 	startMac80211Iface $iface
