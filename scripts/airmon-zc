@@ -115,14 +115,14 @@ getDriver() {
 	#here we test for driver usb, so far it is only ath9k_htc which is incorrectly detected... let's see if that holds true
 	if [ "$DRIVER" = "usb" ]
 	then
-		#if [ `lsmod | grep -q ath9k_htc` ]
-		#then
+		lsmod | grep -q ath9k_htc 1>&2 /dev/null
+		if [ $0 != 0 ]
+		then
 
-		#for now we just unsafely set this
 			DRIVER="ath9k_htc"
 		#elif [ blah]
 		#else we shouldn't need
-		#fi
+		fi
 	fi
 
 	if [ `modprobe -l $DRIVER | grep ^drivers` ]
