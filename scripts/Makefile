@@ -13,6 +13,7 @@ install:
 
 uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/airmon-ng
+	-rm -f $(DESTDIR)$(sbindir)/airmon-zc
 	-rm -f $(DESTDIR)$(sbindir)/airdriver-ng
 	-rm -f $(DESTDIR)$(sbindir)/airodump-ng-oui-update
 
