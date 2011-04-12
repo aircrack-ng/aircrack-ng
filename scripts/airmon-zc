@@ -316,15 +316,15 @@ checkProcessesIface() {
 }
 
 getPhy() {
-    PHYDEV=""
     if [ x"$1" = "x" ]
     then
         return
     fi
 
-    if [ x$MAC80211 = "x" ]
+    if [ $MAC80211 = "0" ]
     then
-        return
+        PHYDEV="null"
+	return
     fi
 
     if [ -d /sys/class/net/$1/phy80211/ ]
@@ -451,12 +451,13 @@ fi
 
 for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
 do
- unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO USBID CHIPSET EXTENDED 
+ unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO USBID CHIPSET EXTENDED PHYDEV 
  ethtool_output="`ethtool -i $iface`"
  if [ "$ethtool_output"!="Cannot get driver information: Operation not supported\n" ]
  then
 	getDriver  $iface
 	getStack   $iface
+	getPhy     $iface
 	getChipset $iface
 	getExtendedInfo $iface
  else
@@ -469,7 +470,6 @@ do
 
  if [ x$MAC80211 = "x1" ]
  then
-    getPhy $iface
     getNewMon
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
