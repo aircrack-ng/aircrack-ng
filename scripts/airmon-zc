@@ -116,10 +116,12 @@ getDriver() {
 	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
 	if [ "$DRIVER" = "usb" ]
 	then
-		#ugly and long
-		#BUSADDR="`cat /sys/class/net/$1/device/busnum`-`cat /sys/class/net/$1/device/devpath`:1.0"
 		BUSADDR="`echo "$ethtool_output" | awk '/bus-info/ {print $2}'`:1.0"
-		DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent`"
+
+		if [ -f /sys/class/net/$1/device/$BUSADDR/uevent ]
+		then
+			DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent`"
+		fi
 
 		#here we can normalize driver names we don't like
 		if [ "$DRIVER" = "rt2870" ]
@@ -250,6 +252,33 @@ getExtendedInfo() {
 			EXTENDED="Blacklist rt2870sta and use rt2800usb"
 		else
 			EXTENDED="Upgrade to kernel 2.6.35 or install compat-wireless stable"
+		fi
+		#add in a flag for "did you tell use to do X" and emit instructions
+	elif [ "$DRIVER" = "rt3070sta" ]
+	#untested
+	then
+		if [ "$KVMINOR" -ge "35" ]
+		then
+			EXTENDED="Blacklist rt3070sta and use rt2800usb"
+		else
+			EXTENDED="Upgrade to kernel 2.6.35 or install compat-wireless stable"
+		fi
+	elif [ "$DRIVER" = "ar9170usb" ]
+	then
+		if [ "$KVMINOR" -ge "37" ]
+		then
+			EXTENDED="Blacklist ar9170usb and use carl9170"
+		else
+			EXTENDED="Upgrade to kernel 2.6.37 or install compat-wireless stable"
+		fi
+	elif [ "$DRIVER" = "arusb_lnx" ]
+	#untested
+	then
+		if [ "$KVMINOR" -ge "37" ]
+		then
+			EXTENDED="Blacklist arusb_lnx and use carl9170"
+		else
+			EXTENDED="Upgrade to kernel 2.6.37 or install compat-wireless stable"
 		fi
 	fi
 }
