@@ -134,7 +134,7 @@ getDriver() {
 	fi
 
 	#from detection
-	if [ `modprobe -l $DRIVER | grep ^drivers` ]
+	if [ `modprobe -l $DRIVER | grep ^kernel` ]
 	then
 		FROM="K"
 	elif [ `modprobe -l $DRIVER | grep ^updates` ]
@@ -196,13 +196,6 @@ getChipset() {
         then
                 echo $CHIPSET
         fi
-
-
-	#UBNT WifiStation, possibly other ath9k devices?
-	if [ -f /sys/class/net/$1/device/product ]
-	then
-		EXTENDED=`cat /sys/class/net/$1/device/product`
-	fi
 }
 
 getStack() {
@@ -230,6 +223,35 @@ getStack() {
                 echo $STACK
         fi
 
+}
+
+getExtendedInfo() {
+	#first we set all the real info
+        if [ -f /sys/class/net/$1/device/product ]
+        then
+                EXTENDED=`cat /sys/class/net/$1/device/product`
+        fi
+
+	#now we set all the overrides based on bad drivers
+	KV=`uname -r | awk -F'-' '{print $1}'`
+	KVMAJOR=`echo $KV | awk -F'.' '{print $1$2}'`
+	KVMINOR=`echo $KV | awk -F'.' '{print $3}'`
+
+	if [ "$KVMAJOR" != "26" ]
+	then
+		echo "You aren't running a 2.6 kernel, I'm surprised it didn't error before now."
+		exit
+	fi
+
+	if [ "$DRIVER" = "rt2870sta" ]
+	then
+		if [ "$KVMINOR" -ge "35" ]
+		then
+			EXTENDED="Please blacklist rt2870 and use rt2800usb"
+		else
+			EXTENDED="Please upgrade to kernel 2.6.35 before using"
+		fi
+	fi
 }
 
 scanProcesses() {
@@ -429,23 +451,26 @@ fi
 
 for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
 do
- ethtool_output=""
+ unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO USBID CHIPSET EXTENDED 
  ethtool_output="`ethtool -i $iface`"
  if [ "$ethtool_output"!="Cannot get driver information: Operation not supported\n" ]
  then
 	getDriver  $iface
 	getStack   $iface
 	getChipset $iface
+	getExtendedInfo $iface
  else
  	echo "ethtool failed, fallback to old method...\n"
 	echo "Only mac80211 devices on kernel 2.6.33 or higher are supported, no fallback.\n"
  fi
+ 
+ #yes this really is the main output loop
+ printf "$FROM[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET\t\t$EXTENDED"
 
  if [ x$MAC80211 = "x1" ]
  then
     getPhy $iface
     getNewMon
-    printf "$FROM[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET\t\t$EXTENDED"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
 	startMac80211Iface $iface
