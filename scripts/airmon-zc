@@ -247,9 +247,9 @@ getExtendedInfo() {
 	then
 		if [ "$KVMINOR" -ge "35" ]
 		then
-			EXTENDED="Please blacklist rt2870 and use rt2800usb"
+			EXTENDED="Blacklist rt2870sta and use rt2800usb"
 		else
-			EXTENDED="Please upgrade to kernel 2.6.35 before using"
+			EXTENDED="Upgrade to kernel 2.6.35 or install compat-wireless stable"
 		fi
 	fi
 }
