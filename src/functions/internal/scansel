@@ -1,0 +1,66 @@
+#! /bin/bash
+# Copyright (C)  2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+
+Scanchan(){
+    export SCAN=1;
+    arrow; echo -e "\n `gettext '
+    +------------Channel Input----------+
+    |       Please input channel        |
+    |                                   |
+    |          You can insert:          |
+    |   A single number   6             |
+    |   A range           1-5           |
+    |   Multiple channels 1,1,2,5-7,11  |
+    +-----------------------------------+
+    '`"
+    read channel_number; set -- ${channel_number}
+    $clear; rm -rf $DUMP_PATH/dump*; monmode $wifi $channel_number
+    execute "Scanning for targets on channel $channel_number" $AIRODUMP -w $DUMP_PATH/dump --channel $channel_number --encrypt $ENCRYPT -a $wifi
+    export SCAN=0
+}
+
+select_target(){
+    if [ "$AUTO" == 1 ]; then return; fi
+    while true; do
+        mkmenu "Client Selection" "Detect clients" "Select from associated clients" "Select from all clients" "Manually enter client MAC" "No select client"
+        _ 'Select Option: '
+        read yn
+        case $yn in
+            1 ) detectclients ; break ;;
+            2 ) SelectClient dump-01.csv filter; break ;;
+            3 ) SelectClient dump-01.csv nofilter; break;; 
+            4 ) arrow; mkbox "Client selection" "Type in client mac now"; read Client_MAC; set -- ${Client_MAC} ; break ;;
+            5 ) break ;;
+            * ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; $clear ;;
+          esac
+    done
+}
+
+detectclients(){
+    check_function deauthall || source $path/attacks/auth
+    if [ "$AUTO" == "1" ]; then return; fi
+    $iwconfig $wificard channel $Host_CHAN; capture & deauthall && read -p "Press enter to select client"; SelectClient $Host_MAC-01.csv filter
+}
+
+SelectClient(){
+    HOST=`cat $DUMP_PATH/$1 | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC|sed 's/,//'`
+    if [ "$2" == "nofilter" ]; then HOST=`cat $DUMP_PATH/dump-01.csv | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`; fi
+    if [ "$AUTO" == "1" ]; then return; fi;  [[ -z $HOST ]] && return
+    arrow; mkbox "Client Selection" "Select client now" "These clients are connected to $Host_SSID "
+    select CLIENT in $HOST; do export Client_MAC=` echo $CLIENT | awk '{split($1, info, "," )  print info[1]  }'`; break;done
+}

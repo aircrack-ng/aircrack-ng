@@ -1,0 +1,246 @@
+#!/bin/bash
+# Interface library for airoscript.
+
+# Copyright (C) 2009-2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+_(){
+   a=$1; shift
+   echo -en "`gettext \"$a\"` $@"
+}
+
+setps(){
+    $clear
+    if [ "$1" != "" ]; then PS3=`_ "$1"`;
+    else PS3=`_ 'Input number: '`; fi
+}
+
+default_theme(){
+    _ '[WARN] : theme file does not exists, using defaults...'
+	DUMPING_COLOR="#FFFFFF"; INJECTION_COLOR="#1DFF00"
+	ASSOCIATION_COLOR="#FF0009"; DEAUTH_COLOR="#99CCFF"; BACKGROUND_COLOR="#000000"
+}
+
+_get_current_reso(){ awk '/\*/ {print $1}' <<< "`xrandr`" | head -n1; }
+
+_resonset(){
+	for i in 640x480 800x480 800x600 1024x600 1024x768 1280x768 1280x800 1280x1024 1440x900 1600x1200; do
+        reso=`_get_current_reso` ;
+        [[ "$i" == $reso ]] && {
+             reson=$reso
+            echo -e "$mark Automatically setting resolution to $reso";
+         }
+    done
+    if [ "$reson" != "" ]; then export resonset=1; fi
+}
+
+target(){
+	echo -e "`gettext \"
+_______Target information______
+
+   AP SSID       = $Host_SSID
+   AP MAC        = $Host_MAC
+   AP Channel    =$Host_CHAN
+   Client MAC    = $Client_MAC
+   Fake MAC      = $FAKE_MAC
+   AP Encryption =$Host_ENC
+   AP Speed      =$Host_SPEED
+________________________________\"`"
+read -p "Press any key to continue " foo
+}
+
+arrow(){ 
+    return
+    echo -e -n "\t\n||\t\n||\t\n\/";
+}
+
+fill_menu(){
+    len=$(( $1 - $2 )); for i in `seq 0 $len`; do echo -n "$3"; done; 
+}
+
+fill(){
+    menu_w="$3"; separator="$2"; title="$1"; len_1=$((${#title} + 3))
+    half_len_1=$(( $len_1 / 2 )) ; loop_times=$(( $menu_w / 2 - $half_len_1 ))
+    fill_menu $loop_times 1 "$separator";echo -n "$title";fill_menu $loop_times 1 "$separator"
+}
+
+function mkbox(){   
+     echo -n "+"; fill "$menu_t" "$separator_h" "$(( $max + ${#menu_t} ))" center; 
+     echo "+"
+}
+
+temporary_switch_clear(){ 
+    temp="$oldclear"; oldclear=$clear; clear=$temp;
+    $@ ;
+    clear=$oldclear
+} 
+
+vline(){ for i in `seq 0 $1`; do echo -n "-"; done; }
+mkmenuline(){ echo -en "$separator_x"; for i in $(seq 1 $1); do echo -en "$separator_h"; done; echo "$separator_x"; }   
+mkmenuheader(){ echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }
+getmaxlenfromlist(){ max=0; for i in "${@}"; do [[ ${#i} -gt $max ]] && max=${#i}; done; echo $max; }
+mkmenueline(){ echo -en "${separator_v}\033[${1}C${separator_v}\033[${1}D${white}${2}${red})${end} ${separator_v}";}
+mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; echo " $i"; done; }
+
+mkmenu(){
+    max=`getmaxlenfromlist "${@}"`
+    max=$(( $max + 10 ))
+    title=$1; shift; line=0;
+    f=$((`tput cols` - 10)); 
+    mkmenuheader $title $max
+    mkmenuline $max
+    mkmenulines $max "${@}"
+    mkmenuline $max
+}
+
+rootwarn(){
+    li=`tput lines`; cen=`expr $li / 2 + 2`; if [ "$UID" != 0 ]; then $clear;echo -e "\E[3;22H===airoscript-ng===\E[$cen;15H\E[31mYou Must be root to use airoscript\E[39;49;00m\E[$li;20H"; exit 1; fi;
+}
+
+getterminal(){
+    [[ "$TERMINAL" = "GUI" ]] && TERMINAL="airosperl"
+    if [ -x $TERMBIN/$TERMINAL ]; then
+	    _debug "Using configured terminal"
+	else
+		_debug "$TERMINAL was not used, not found on path"
+		_debug "Using default terminal"
+			TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;        
+	fi
+
+	if [ -x "$TERMBIN/$TERMINAL" ] || [ -x "/usr/bin/$TERMINAL" ] || [ -x "/usr/sbin/$TERMINAL" ]; then D="1" 
+	else
+        if [ -e $TERM ]; then 
+		    _debug "Using environment defined terminal ($TERM)"
+			TERMINAL=$TERM
+		else
+            if [ -x "$TERMBIN/xterm" ]; then
+				TERMINAL="xterm" && _debug "Using Xterm"
+			else
+			_   "I cant find any good terminal, please set one on your conffile
+				Your TERMINAL var contains no valid temrinal
+				Your alternative against x-terminal-emulator contains no terminal
+				Xterm can\'t be found on your system, Maybe not in /usr/bin?"
+				exit
+			fi
+		fi     
+	fi
+}
+
+reso() {
+    xhost &>/dev/null || { echo -e "$mark Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
+        _resonset
+	while true; do
+		if [ "$resonset" = "" ]; then mkmenu "$resonset" "Resolution" "640x480" "800x480" "800x600" "1024x768" "1280x768" "1280x800" "1280x1024" "1600x1200"; read -p "Select resolution: " reson; fi
+        { echo $reson| grep "x"; } &>/dev/null && {
+            case $reson in
+                "640x480") reson=1;;
+                "800x480") reson=2;;
+                "800x600") reson=3;;
+                "1024x600") reson=4;;
+                "1024x768") reson=5;;
+                "1280x768") reson=6 ;;
+                "1280x800") reson=7;;
+                "1280x1024") reson=8;;
+                "1600x1200") reson=9;;
+            esac
+        }
+		case $reson in
+			1 ) TLX="83";TLY="11";TRX="60";TRY="18";BLX="75";BLY="18";
+                BRX="27";BRY="17";bLX="100";bLY="30";bRX="54";bRY="25"; setterminal; break;;
+			2 ) TLX="90";TLY="11";TRX="60";TRY="18";BLX="78";BLY="26";
+                BRX="52";BRY="15";bLX="130";bLY="30";bRX="78";bRY="25"; setterminal; break;;
+			3 ) TLX="92";TLY="11";TRX="68";TRY="25";BLX="78";BLY="26";
+                BRX="52";BRY="15";bLX="92" ;bLY="39";bRX="78";bRY="24"; setterminal; break;;
+			4 ) TLX="92";TLY="14";TRX="68";TRY="25";BLX="92";BLY="36";
+                BRX="74";BRY="20";bLX="100";bLY="52";bRX="54";bRY="25"; setterminal; break;;
+			5 ) TLX="92";TLY="14";TRX="68";TRY="25";BLX="92";BLY="36";
+                BRX="74";BRY="20";bLX="100";bLY="52";bRX="54";bRY="25"; setterminal; break;;
+
+			6 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";
+                BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
+			7 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";
+                BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
+			8 ) TLX="110";TLY="35";TRX="99";TRY="40";BLX="110";BLY="35";
+                BRX="99";BRY="30";bLX="110";bLY="72";bRX="99";bRY="40"; setterminal; break;;
+			9 ) TLX="130";TLY="40";TRX="68";TRY="25";BLX="130";BLY="40";
+                BRX="132";BRY="35";bLX="130";bLY="85";bRX="132";bRY="48"; setterminal; break;;
+			* ) _ "Unknown response. Try again"; sleep 1; $clear ;;
+		esac
+	done
+}
+
+function setterminal {
+	getterminal
+	_debug "Im going to set terminal options for your terminal now"
+
+    case $TERMINAL in 
+		xterm|uxterm ) 
+			TOPLEFT="-geometry $TLX*$TLY+0+0 "
+			TOPRIGHT="-geometry $TRX*$TRY-0+0 "
+			BOTTOMLEFT="-geometry $BLX*$BLY+0-0 "
+			BOTTOMRIGHT="-geometry $BRX*$BRY-0-0 "
+			TOPLEFTBIG="-geometry $bLX*$bLY+0+0 "
+			TOPRIGHTBIG="-geometry $bLX*$bLY+0-0 "
+			HOLDFLAG="-hold"
+			TITLEFLAG="-T"
+			FGC="-fg"
+			BGC="-bg"
+			EXECFLAG="-e"
+            ;;
+		gnome-terminal|gnome-terminal.wrapper ) 
+			TOPLEFT="-geometry=$TLX*$TLY+0+0 "
+			TOPRIGHT="-geometry=$TRX*$TRY-0+0 "
+			BOTTOMLEFT="-geometry=$BLX*$BLY+0-0 "
+			BOTTOMRIGHT="-geometry=$BRX*$BRY-0-0 "
+			TOPLEFTBIG="-geometry=$bLX*$bLY+0+0 "
+			TOPRIGHTBIG="-geometry=$bLX*$bLY+0-0 "
+			EXECFLAG="-e "
+			HOLDFLAG="" 
+			TITLEFLAG="-t"
+			FGC=""
+			DUMPING_COLOR=""
+			INJECTION_COLOR=""
+			ASSOCIATION_COLOR=""
+			DEAUTH_COLOR=""
+			BACKGROUND_COLOR=""
+			BGC=""
+            ;;
+
+		airosperl ) airosperl & exit ;;
+		gui ) airosperl & exit ;;
+	esac
+    [[ "$debug" = "1" ]] && echo $TOPLEFT \
+				$TOPRIGHT \
+				$BOTTOMLEFT \
+				$BOTTOMRIGHT \
+				$TOPLEFTBIG \
+				$TOPRIGHTBIG \
+				$HOLDFLAG\
+				$TITLEFLAG\
+				$FGC\
+			    $BGC\
+				printf -- "$EXECFLAG \n"
+}
+
+
+screen_startup(){
+    if [ -O ~/.airoscript-ng/screen_has_started ]; then
+        rm ~/.airoscript-ng-ng/screen_has_started
+	else
+		touch ~/.airoscript-ng/screen_has_started
+		screen -S airoscript-ng -c $SCREENRC $0 screen
+		$clear && _ 'airoscript-ng is terminating...'; exit
+	fi
+}

@@ -1,0 +1,38 @@
+#!/bin/bash
+# Exit and cleanup file used by airoscript
+# Copyright (C) 2010-2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+
+deconfigure(){
+    airmon-ng
+    airmon-ng stop $WIFI &> /dev/null
+    ifconfig $WIFI down
+}
+
+delete_dpath(){
+	rm -r $DUMP_PATH 2>/dev/null
+}
+
+doexit(){
+		_ "Do you want me to stop monitor mode on $WIFI? (Y/n) "
+		read dis; if [ "$dis" != "N" ]; then
+			_ 'Deconfiguring interface...'; deconfigure
+		fi
+
+		_ 'Do you want me to delete temporary data dir? (y/N) ';
+		read del; if [ "$del" = "y" ]; then
+			echo -n `gettext 'Deleting'` " $DUMP_PATH ... "; delete_dpath
+		fi
+        [[ "$1" == "killme" ]] && kill -9 $$ || exit # Needed because of autopwn
+}

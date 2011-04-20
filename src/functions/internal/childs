@@ -1,0 +1,32 @@
+#!/bin/bash
+# Child management file used by airoscript
+# Copyright (C) 2010-2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+
+get_childs(){ 
+    ps axo ppid,pid|awk "/$1/ {print \$2}"|grep -v "$pid" 
+}
+
+clean_processes(){ 
+    for i in `ls /var/run/airoscript/`; do kill -2 $i; rm /var/run/airoscript/$i; done; 
+}
+
+save_pids(){
+    mkdir /var/run/airoscript 2>/dev/null
+    for i in `get_childs $1`; do touch "/var/run/airoscript/$i"; done
+}
+
+cleanp(){
+        sleep $autopwn_sleep && clean_processes
+}

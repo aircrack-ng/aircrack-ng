@@ -1,0 +1,214 @@
+#! /bin/bash
+# Copyright (C)  2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+check_cardctl(){
+    if [ `uname -r|cut -d . -f 2` == "6" ]; then CARDCTL="pccardctl"
+    else CARDCTL="cardctl"; fi
+}
+
+setinterface(){
+     [[ "$wifi" != "" ]] && [[ "$1" == "start" ]] && [[ "$set_wifi_by_args" == 1 ]] || { 
+        if [ "$1" == "" ] || [ "$1" == "start" ]  ; then
+        if [ "$show_only_wireless_extensions" == 1 ]; then
+            INTERFACES=`{ iwconfig|grep -v "no wireless extensions"|grep IEEE|grep -v airoscript|awk '{print $1}';} 2>/dev/null`
+        else
+            INTERFACES=`ip link|egrep "^[0-9]+"|awk '/: /{gsub(":"," "); print $2}' |grep -v lo`; 
+        fi
+        fi
+        askinterface && checkforcemac
+        [[ "$DEFAULT_MONITOR_MODE" == 1 ]] &&{ ac="start"; } || {
+        _ 'Should I put it in monitor mode?' " (Y/n) "; read answer;
+        [[ "$anwser" != n ]] && ac="start" || ac="stop"
+        }
+        { guess_idata $ac; testmac; } &>/dev/null
+     }    
+     export iwifi=$wifi
+     echo "$mark`gettext 'Interface used is'` : $wifi ($iwifi) for $wificard "
+     echo "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
+}
+
+askinterface(){
+    mkmenu "Interface selection" $INTERFACES
+    read -p "Select interface: " j
+        export wificard=`echo $INTERFACES|awk {"print \\\$$j"}`
+}
+
+checkforcemac() {
+    if [ "$force_mac_address" == "1" ]; then $clear && echo "$mark Warn: Not checking mac" 
+    else
+        export mac=`$MACCHANGER -s $wificard|awk '/Current/ {print $3}'`
+            if [ "$FAKE_MAC" != "$mac" ]; then wichchangemac $@; fi
+    fi
+}
+
+guess_idata(){
+        AIROUTPUT=$($AIRMON $1 $wificard|grep -v "running"|grep -A 1 $wificard);
+        export TYPE=`echo \"$AIROUTPUT\" | grep monitor      | awk '{print $2 $3}'`
+        export DRIVER=`echo \"$AIROUTPUT\" | grep monitor      | awk '{print $4}'`
+        export tmpwifi=`echo \"$AIROUTPUT\" | awk {'print $NF'} | cut -d ")" -f1`
+    if [[ "$tmpwifi" =~ (.*)[0-9] ]];  then wifi=$tmpwifi; fi
+}
+
+wichchangemac(){
+    $clear
+    while true; do
+        [[ "$1" != "" ]] && yn=$1 || {
+            echo; mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input"
+            read -p "Input number: " yn
+        }
+        case $yn in
+            1 ) ifconfig $wificard down
+                fail=`$MACCHANGER -m  $FAKE_MAC $wificard 2>&1`
+                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
+                ifconfig $wificard up; break ;;
+            2 ) ifconfig $wificard down; sleep 2
+                fail=`$MACCHANGER -m  $Client_MAC $wificard 2>&1`
+                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
+                ifconfig $wificard up ; break ;;
+            3)  export FAKE_MAC=$mac
+                echo -e "$mark Using for $wificard $FAKE_MAC = $mac"
+                ifconfig $wificard down; sleep 2;
+                $MACCHANGER -m $mac $wificard &>/dev/null
+                ifconfig $wificard up;
+                break;;
+            4 ) read -p "MAC: " Manual_MAC
+                ifconfig $wificard down
+                fail=`$MACCHANGER -m  $Manual_MAC $wificard &>/dev/null`
+                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
+                ifconfig $wificard up; break ;;
+
+            * ) _ "Unknown response. Try again" ;;
+
+        esac
+    done
+}
+
+# Some various functions that didn't know where to put them
+selectAp(){
+    k=0; i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
+    head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
+ # FIXME Filte disabled, make it work    
+    [[ "$filter_ssid" != "" ]] && { echo "$mark Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
+    if [ "$AUTO" == 1 ]; then
+
+        choice=$CURRENT
+        CURRENT=$(( $CURRENT + 1 ))
+    else
+    title=$1; shift; line=0;
+    max=$((`tput cols` - 10));
+    mkmenuheader "Detected acess points" $max
+    mkmenuline $max
+    fi
+    while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
+        longueur=${#MAC}
+        if [ $longueur -ge 17 ]; then
+            k=$(($k+1))
+            if [ "$AUTO" != 1  ]; then
+                mkmenueline $max $k
+                echo -e " $MAC | $CHANNEL | $PRIVACY | $POWER | $IDLENGTH | $ESSID"
+            fi
+            aidlenght=$IDLENGTH
+            assid[$k]=$ESSID; achannel[$k]=$CHANNEL; 
+            amac[$k]=$MAC; aprivacy[$k]=$PRIVACY;
+            aspeed[$k]=$SPEED; apower[$k]=$POWER
+        fi
+    done < $DUMP_PATH/dump-03.csv
+   
+
+    
+    if [ "$AUTO" != 1 ]; then
+        mkmenueline $max r
+        echo " Rescan targets"
+        mkmenuline $max
+        _ 'Select target: '
+        read choice
+    fi
+
+    if [ "$choice" != "r" ] ; then
+        idlenght=${aidlenght[$choice]}
+        ssid=${assid[$choice]}
+        channel=${achannel[$choice]}
+        mac=${amac[$choice]}
+        privacy=${aprivacy[$choice]}
+        speed=${aspeed[$choice]}
+        Host_IDL=$idlength
+        Host_SPEED=$speed
+        Host_ENC=$privacy
+        Host_MAC=$mac
+        Host_CHAN=$channel
+        acouper=${#ssid}
+        fin=$(($acouper-idlength))
+        Host_SSID=${ssid:1:fin}
+        echo "$mark Target network is $Host_SSID $Host_MAC"
+    else
+        F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
+        menu_type "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
+        cleanautovars; 
+    fi
+}
+
+autoscan(){
+    OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
+    menu_type "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
+    cleanautovars
+    select_ap
+}
+
+Scan(){
+    export SCAN=1
+    rm -rf $DUMP_PATH/dump* &>/dev/null
+    temporary_switch_clear
+    execute "Scanning for targets" $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
+    temporary_switch_clear
+    export SCAN=0
+}
+
+Host_ssidinput(){
+    echo -e "`gettext \"       Please enter SSID         \"`"
+    echo "---------------------------------------"
+    read Host_SSID
+    $clear
+}
+
+setaircrackpaths(){
+	AIRMON=$SBINDIR"airmon-ng"		
+	AIRODUMP=$SBINDIR"airodump-ng"
+	AIREPLAY=$SBINDIR"aireplay-ng"	
+	AIRCRACK=$BINDIR"aircrack-ng"
+	ARPFORGE=$BINDIR"packetforge-ng"
+	WESSIDE=$SBINDIR"wesside-ng"
+	AIRSERV=$SBINDIR"airserv-ng"
+	TKIPTUN=$SBINDIR"tkiptun-ng"
+    IVSTOOLS=$SBINDIR"ivstools"
+    BUDDY=$SBINDIR"buddy-ng"
+    EASSIDE=$SBINDIR"easside-ng"
+	MACCHANGER=$BINDIR"macchanger"
+    AIRGRAPH=$BINDIR"airgraph-ng"
+    AIRDECLOAK=$BINDIR"airdecloak-ng"
+    KSTATS=$BINDIR"kstats"
+	iwconfig="iwconfig"
+}
+
+confwarn(){
+_ 'Youre going to use a config file on your home or current dir.
+This may be harmfull, for example, if your user have been
+compromised, and youre getting rights trought sudo, someone
+can modify your config file to do something malicious as
+root. Be sure to check your home config file before using it.
+Defaults on /etc/airoscript-ng.conf should be ok so you can
+safely remove your ~/.airoscript-ng.conf\n\n
+Do you really want to do it (yes/No): '
+}
