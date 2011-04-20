@@ -1,0 +1,119 @@
+#!/bin/bash
+# Funcion file used by airoscript
+# Copyright (C) 2010-2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+mainmenu(){
+    mkmenu "Main Menu" "Attack   - Attack target" "Crack    - Get target key"  "Scan - Manually scan for targets" "Select - Reselect target" "Others   - Various utilities" "Exit    - Quits"
+    if [ "$AUTO" == 1 ]; then return; fi
+    echo -en "$mark `_ ' Select option: '` "
+    set -a choice
+    read -a choice
+        for choix in ${choice[*]}; do
+            case "$choix" in
+                1)menu_attack;;
+                2) if [ "$interactive" == "0" ]; then auto; else menu_crack; fi ;;
+                3)menu_type;;
+                4)select_ap;;
+                5)menu_extra;;
+                6)check_function autopwn || source $path/autocrack; autopwn;;
+                7)check_function doexit || source $path/internal/exit; doexit;;
+                *)$clear && _ 'ERROR: Wrong number entered';;
+            esac
+        done
+    mainmenu
+}
+
+menu_attack(){
+    monmode &>/dev/null
+    if [[ "$Host_ENC" =~ (.*)"WEP"(.*) ]]; then attack_wep
+    elif [[ "$Host_ENC" =~ (.*)"WPA"(.*) ]]; then attack_wpa
+    else attack_opn; fi
+}
+
+menu_crack(){
+    check_function auto || source $path/crack/dicts
+    check_function crack_wep || source $path/crack/main
+			while true; do
+                arrow; mkmenu "WEP/WPA Cracking Options" "Try a dictionary generator" "Crack with manual dictionary" "Standard aircrack-ng" "Return to menu" &&  read yn
+				case $yn in
+					1 ) echo "Trying a dictionary generator"; sleep 2; auto ; break ;;
+					2 ) echo "Crack with .airoscript/wordlist"; sleep 2; jtd ; break ;;
+					3 ) selectcracking ; break ;;
+					4 ) $clear; break;;
+					* ) echo "Unknown response. Try again" ;;
+				esac
+			done
+}
+
+menu_type(){
+     if [ "$AUTO" == 1 ]; then ENCRYPT="$1"; return; fi # We actually just try to crack wep on autpwn mode. 
+
+    while true; do $clear
+          mkmenu "Select encryption" "No filter" "OPN (open)" "WEP" "WPA" "WPA1" "WPA2" "Return to main menu"
+        echo "Option number: "
+        read yn
+        case $yn in
+             1 ) ENCRYPT="" ; choosescan; break ;;
+            2 ) ENCRYPT="OPN" ; choosescan; break ;;
+            3 ) ENCRYPT="WEP" ; choosescan; break ;;
+            4 ) ENCRYPT="WPA" ; choosescan; break ;;
+            5 ) ENCRYPT="WPA1" ; choosescan; break ;;
+            6 ) ENCRYPT="WPA2" ; choosescan; break ;;
+            7 ) break;;
+            * ) _ 'Unknown response. Try again' ;;
+      esac
+      done
+}
+
+choosescan(){
+    if [ "$AUTO" == 1 ]; then Scan; return; fi
+
+    while true; do
+        arrow; mkmenu "Channel" "Channel Hoping" "Specific Channel"
+        read yn
+        case $yn in
+            1 ) Scan;break;;
+            2 ) Scanchan;break;;
+            * ) _ "Unknown response. Try again" ;;
+        esac
+    done
+}
+
+select_ap(){
+    check_function select_target || source $path/internal/scansel
+		if [ -e $DUMP_PATH/dump-01.csv ]; then
+			selectAp; $clear
+			if [ "$Host_SSID" = $'\r' ]; then blankssid;
+			elif [ "$Host_SSID" = "No SSID has been detected" ]; then blankssid; fi
+			select_target; $clear
+		else $clear && _ 'ERROR: You have to scan for targets first'; fi
+}
+
+menu_extra(){ 
+    check_function menu_options || source $path/attacks/others
+    while true; do
+        mkmenu "Extra tools" "Airoscript Options" "Advanced tools" "External plugins" "Return to main menu"
+        read -p "Select option: " yn; 
+        case $yn in
+            1) menu_options; $clear; break;;
+            2) othertmenu; $clear; break;;
+            3) menu_plugins; $clear; break;;
+            4) $clear;break ;;
+            * ) _ "Unknown response. Try again" ;;
+        esac
+    done
+}
+
