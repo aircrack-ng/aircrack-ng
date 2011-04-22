@@ -30,24 +30,23 @@ setinterface(){
         fi
         askinterface && checkforcemac
         [[ "$DEFAULT_MONITOR_MODE" == 1 ]] &&{ ac="start"; } || {
-        _ 'Should I put it in monitor mode?' " (Y/n) "; read answer;
+        _ 'Should I put it in monitor mode?' " (Y/n) "; _read answer;
         [[ "$anwser" != n ]] && ac="start" || ac="stop"
         }
         { guess_idata $ac; testmac; } &>/dev/null
      }    
      export iwifi=$wifi
-     echo "$mark`gettext 'Interface used is'` : $wifi ($iwifi) for $wificard "
-     echo "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
+     warn "$mark`gettext 'Interface used is'` : $wifi ($iwifi) for $wificard "
+     warn "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
 }
 
 askinterface(){
     mkmenu "Interface selection" $INTERFACES
-    read -p "Select interface: " j
-        export wificard=`echo $INTERFACES|awk {"print \\\$$j"}`
+    export wificard=`echo $INTERFACES|awk {"print \\\$$choice"}`
 }
 
 checkforcemac() {
-    if [ "$force_mac_address" == "1" ]; then $clear && echo "$mark Warn: Not checking mac" 
+    if [ "$force_mac_address" == "1" ]; then $clear && warn "$mark Warn: Not checking mac" 
     else
         export mac=`$MACCHANGER -s $wificard|awk '/Current/ {print $3}'`
             if [ "$FAKE_MAC" != "$mac" ]; then wichchangemac $@; fi
@@ -66,10 +65,9 @@ wichchangemac(){
     $clear
     while true; do
         [[ "$1" != "" ]] && yn=$1 || {
-            echo; mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input"
-            read -p "Input number: " yn
+            mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input"
         }
-        case $yn in
+        case $choice in
             1 ) ifconfig $wificard down
                 fail=`$MACCHANGER -m  $FAKE_MAC $wificard 2>&1`
                 [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
@@ -84,7 +82,7 @@ wichchangemac(){
                 $MACCHANGER -m $mac $wificard &>/dev/null
                 ifconfig $wificard up;
                 break;;
-            4 ) read -p "MAC: " Manual_MAC
+            4 ) _read -p "MAC: " Manual_MAC
                 ifconfig $wificard down
                 fail=`$MACCHANGER -m  $Manual_MAC $wificard &>/dev/null`
                 [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
@@ -101,7 +99,7 @@ selectAp(){
     k=0; i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
     head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
  # FIXME Filte disabled, make it work    
-    [[ "$filter_ssid" != "" ]] && { echo "$mark Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
+    [[ "$filter_ssid" != "" ]] && { warn "$mark Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
     if [ "$AUTO" == 1 ]; then
 
         choice=$CURRENT
@@ -134,7 +132,7 @@ selectAp(){
         echo " Rescan targets"
         mkmenuline $max
         _ 'Select target: '
-        read choice
+        _read choice
     fi
 
     if [ "$choice" != "r" ] ; then
@@ -162,7 +160,7 @@ selectAp(){
 
 autoscan(){
     OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-    menu_type "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
+    menu_type "" && sleep $time_to_scan && killall -2 "airodump-ng"; 
     cleanautovars
     select_ap
 }
@@ -179,7 +177,7 @@ Scan(){
 Host_ssidinput(){
     echo -e "`gettext \"       Please enter SSID         \"`"
     echo "---------------------------------------"
-    read Host_SSID
+    _read Host_SSID
     $clear
 }
 

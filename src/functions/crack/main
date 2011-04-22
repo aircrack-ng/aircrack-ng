@@ -43,7 +43,7 @@ crack_wpa(){
                 read -p "Select option: " foo
 
                 case $foo in
-                    1)  if [ ! -e $WORDLIST ]; then echo "Sorry, you cant crack wpa without a dictionary on $WORDLIST"; sleep 3; else
+                    1)  if [ ! -e $WORDLIST ]; then warn "Sorry, you cant crack wpa without a dictionary on $WORDLIST"; sleep 3; else
                         execute "Cracking WPA" crack $AIRCRACK -a 2 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap -w $WORDLIST  ; $clear; fi ;;
 
                     2)  $clear; read -p "Enter Database location [$db_location]" db_location;

@@ -18,7 +18,7 @@
 
 doauto(){
     F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-        menu_type "WEP" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng" && sleep 2
+        menu_type "WEP" && CHoosescan && sleep $time_to_scan && killall -2 "airodump-ng" && sleep 2
         echo " done"; sleep 1
 		if [ -e $DUMP_PATH/dump-01.csv ]; then
     head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
@@ -67,7 +67,7 @@ autopwn(){
                     cleanautovars;
                     reset; 
                     echo "$mark Network cracked, password stored in $DUMP_PATH/$Host_MAC.key"; 
-                    read -n1 -p "Press enter to continue, q to exit and c to configure" foo; 
+                    _read -n1 -p "Press enter to continue, q to exit and c to configure" foo; 
                     [[ "$foo" == "c" ]] && configure; [[ "$foo" == "q" ]] && {
                         check_function doexit || source $path/internal/exit
                         doexit killme ; } 

@@ -45,9 +45,8 @@ setps
 setargs $@
 check_cardctl
 #debug
-echo -e "$mark Welcome to airoscript, have a nice day"
+warn "$mark Welcome to airoscript, have a nice day"
 reso
-echo
 temporary_switch_clear
 setinterface "start"
 temporary_switch_clear

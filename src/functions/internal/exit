@@ -25,13 +25,13 @@ delete_dpath(){
 }
 
 doexit(){
-		_ "Do you want me to stop monitor mode on $WIFI? (Y/n) "
-		read dis; if [ "$dis" != "N" ]; then
+		single_question "Do you want me to stop monitor mode on $WIFI? (Y/n) "
+		if [ "$ans" != "N" ]; then
 			_ 'Deconfiguring interface...'; deconfigure
 		fi
 
-		_ 'Do you want me to delete temporary data dir? (y/N) ';
-		read del; if [ "$del" = "y" ]; then
+		single_question 'Do you want me to delete temporary data dir? (y/N) ';
+		if [ "$ans" = "y" ]; then
 			echo -n `gettext 'Deleting'` " $DUMP_PATH ... "; delete_dpath
 		fi
         [[ "$1" == "killme" ]] && kill -9 $$ || exit # Needed because of autopwn

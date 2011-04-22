@@ -95,6 +95,7 @@ mkmenueline(){ echo -en "${separator_v}\033[${1}C${separator_v}\033[${1}D${white
 mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; echo " $i"; done; }
 
 mkmenu(){
+    if [ "$AUTO" == 1 ]; then return; fi
     max=`getmaxlenfromlist "${@}"`
     max=$(( $max + 10 ))
     title=$1; shift; line=0;
@@ -103,6 +104,10 @@ mkmenu(){
     mkmenuline $max
     mkmenulines $max "${@}"
     mkmenuline $max
+
+    echo -en "$mark `_ ' Select option: '` "
+    set -a choice
+    _read -a choice
 }
 
 rootwarn(){
@@ -142,9 +147,12 @@ reso() {
     xhost &>/dev/null || { echo -e "$mark Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
         _resonset
 	while true; do
-		if [ "$resonset" = "" ]; then mkmenu "$resonset" "Resolution" "640x480" "800x480" "800x600" "1024x768" "1280x768" "1280x800" "1280x1024" "1600x1200"; read -p "Select resolution: " reson; fi
+		if [ "$resonset" = "" ]; then
+            mkmenu "$resonset" "Resolution" "640x480" "800x480" "800x600" "1024x768" "1280x768" "1280x800" "1280x1024" "1600x1200";
+            reson=$choice;
+        fi
         { echo $reson| grep "x"; } &>/dev/null && {
-            case $reson in
+              case $reson in
                 "640x480") reson=1;;
                 "800x480") reson=2;;
                 "800x600") reson=3;;
@@ -157,7 +165,7 @@ reso() {
             esac
         }
 		case $reson in
-			1 ) TLX="83";TLY="11";TRX="60";TRY="18";BLX="75";BLY="18";
+			1  ) TLX="83";TLY="11";TRX="60";TRY="18";BLX="75";BLY="18";
                 BRX="27";BRY="17";bLX="100";bLY="30";bRX="54";bRY="25"; setterminal; break;;
 			2 ) TLX="90";TLY="11";TRX="60";TRY="18";BLX="78";BLY="26";
                 BRX="52";BRY="15";bLX="130";bLY="30";bRX="78";bRY="25"; setterminal; break;;

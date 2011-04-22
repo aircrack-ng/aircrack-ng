@@ -21,15 +21,10 @@ check_function fakeauth3 || source $path/attacks/auth # It depends on auth modul
 
 wep_attacks_menu(){
                while true; do $clear  
-                 mkmenu "Wep Attacks" "Attacks not using a client" "Attacks using a client " "ARP inject from xor (PSK) " "Return to main menu "
-
-                read -p "Choose option:" yn
-                echo ""
-                case $yn in
+                mkmenu "Wep Attacks" "Attacks not using a client" "Attacks using a client " "ARP inject from xor (PSK) " "Return to main menu "
+                case $choice in
                     1  ) { mkmenu "Attacks not using a client" "Fake auth => Automatic  " "Fake auth => Interactive" "Fragmentation attack " "Chopchop attack " "Cafe Latte attack " "Hirte attack " "Return to main menu"
-                    read -p "Choose option:" yn
-                    echo ""
-                    case $yn in
+                    case $choice in
                         1  ) wep_attacks fakeauto ; break ;;
                         2  ) wep_attacks fakeinteractive;$clear ; break ;;
                         3  ) wep_attacks fragmentation NC ;$clear; break ;;
@@ -42,9 +37,7 @@ wep_attacks_menu(){
                      } ; break;;
                       2  ) {
                 mkmenu "Attacks using a client" "ARP replay => Automatic"	"ARP replay => Interactive"	"Fragmentation attack "	"Frag. attack on client "	"Chopchop attack" "Return to main menu"
-                read -p "Choose option:" yn
-                echo ""
-                case $yn in
+                case $choice in
                     1  ) wep_attacks arpreplay_auto ;$clear; break ;;
                     2  ) wep_attacks arpreplay_interactive ;$clear; break ;;
                     3  ) wep_attacks fragmentation -5 ;$clear; break ;;

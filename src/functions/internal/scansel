@@ -17,8 +17,8 @@
 
 
 Scanchan(){
-    export SCAN=1;
-    arrow; echo -e "\n `gettext '
+    export SCAN=1; # TODO Create a mkinfobox function.
+    echo -e "\n `gettext '
     +------------Channel Input----------+
     |       Please input channel        |
     |                                   |
@@ -28,7 +28,7 @@ Scanchan(){
     |   Multiple channels 1,1,2,5-7,11  |
     +-----------------------------------+
     '`"
-    read channel_number; set -- ${channel_number}
+    _read channel_number; set -- ${channel_number}
     $clear; rm -rf $DUMP_PATH/dump*; monmode $wifi $channel_number
     execute "Scanning for targets on channel $channel_number" $AIRODUMP -w $DUMP_PATH/dump --channel $channel_number --encrypt $ENCRYPT -a $wifi
     export SCAN=0
@@ -38,13 +38,11 @@ select_target(){
     if [ "$AUTO" == 1 ]; then return; fi
     while true; do
         mkmenu "Client Selection" "Detect clients" "Select from associated clients" "Select from all clients" "Manually enter client MAC" "No select client"
-        _ 'Select Option: '
-        read yn
-        case $yn in
+        case $choice in
             1 ) detectclients ; break ;;
             2 ) SelectClient dump-01.csv filter; break ;;
             3 ) SelectClient dump-01.csv nofilter; break;; 
-            4 ) arrow; mkbox "Client selection" "Type in client mac now"; read Client_MAC; set -- ${Client_MAC} ; break ;;
+            4 ) arrow; mkbox "Client selection" "Type in client mac now"; _read Client_MAC; set -- ${Client_MAC} ; break ;;
             5 ) break ;;
             * ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; $clear ;;
           esac

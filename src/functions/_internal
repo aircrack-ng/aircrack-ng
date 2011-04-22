@@ -28,10 +28,10 @@ configure(){
         KEY=`cat $DUMP_PATH/$Host_MAC.key`
         $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key $KEY &>/dev/null && {
             $DHCPSOFT $wificard &>/dev/null || _ "Could not autoconfigure network" && return 2
-        } || { echo "$mark" `_'Could not autoconfigure network, wrong password? '`; }
+        } || { warn "$mark" `_'Could not autoconfigure network, wrong password? '`; }
         sleep 3; $clear;
     else
-        echo "You haven't cracked this network yet"; sleep 3; $clear
+        warn "You haven't cracked this network yet"; sleep 3; $clear
     fi
 }
 
@@ -59,15 +59,15 @@ setargs(){
      while getopts “n:ht:w:szcvmfa” option; do
         case $option in
             h)  usage; exit 1;;
-            n)  export filter_ssid=$OPTARG; echo "$mark Selected filter: $filter_ssid";;
+            n)  export filter_ssid=$OPTARG; warn "$mark Selected filter: $filter_ssid";;
             t)  TERMINAL=$OPTARG;;
             s)  TERMINAL=screen;;
             z)  noscan=1;;
             v)  debug=1; hold=1;;
             w)  wificard=$OPTARG;;
-            m) { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; echo "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
-            c)  checkforcemac 3; { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; echo "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
-            f)  wichchangemac 1; { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; echo "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
+            m) { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
+            c)  checkforcemac 3; { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
+            f)  wichchangemac 1; { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
             a)  temporary_switch_clear;clear=""; check_function doauto || source $path/autocrack; doauto; exit;;
             ?)  usage; exit;;
         esac
@@ -75,7 +75,7 @@ setargs(){
 }
 
 initial_warning(){
-	echo -en $mark;
+	warn -en $mark;
     _ "  Airoscript is provided under the gpl.
 I'm not responsible of the use anyone can give to airoscript.
 Written for educational purpose in mind.
@@ -106,7 +106,7 @@ execute(){
     else
         if [ "$1" == "crack" ]; then HOLDA="-hold"; shift; fi # FIXME This will work just on xterm.
         if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
-            echo -e $mark $title
+            warn $mark $title
             ${@} $eopts &> /dev/null &
         else
             $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
@@ -124,6 +124,10 @@ function debug {
 	else export HOLD="" ;fi
 }
 
+_read(){
+    # Read function so we can override it later, to add another interface.
+    read "${@}"; 
+}
 
 # Various checks.
 checkdir(){
@@ -168,5 +172,8 @@ capture(){
 }
 
 hardclean(){ rm -rf $DUMP_PATH/$Host_MAC*; }
+
+single_question(){ read -p "${@}" ans; }
+warn(){ echo "${@}"; }
 
 _source $path/internal/startup

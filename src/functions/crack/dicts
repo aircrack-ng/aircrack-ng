@@ -22,14 +22,14 @@ digenpy_(){
     if [ "$3" == "crack" ]; then
         execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -w $DUMP_PATH/digenpy__dic $DUMP_PATH/$Host_MAC-01.cap
     else AUTO=1; QUIET=0;
-        echo "Calling digenpy $1 $2 $Host_MAC $Host_SSID >/$DUMP_PATH/digenpy__dic"
+        warn "Calling digenpy $1 $2 $Host_MAC $Host_SSID >/$DUMP_PATH/digenpy__dic"
         digenpy $1 $2 $Host_MAC $Host_SSID  > $DUMP_PATH/digenpy__dic
     AUTO=0; QUIET=""; fi
 }
 
 Telefonica(){
     if [[ "$Host_SSID" =~ WLAN* ]]; then 
-        echo "It's a telefonica network. Calling digenpy_"; 
+        warn "It's a telefonica network. Calling digenpy_"; 
         digenpy_ Spanish Telefonica $Host_MAC $Host_SSID; 
         digenpy_ Spanish Telefonica crack; 
         cracked=1; 
@@ -55,9 +55,9 @@ auto(){
         for function in $_functions; do $function; [[ "$cracked" == "1" ]] && return 4; done
         return 255
     else
-        echo "$mark Checking..."
-        echo "Available $mfunctions"
-        for function in "Telefonica" "Jazztel"; do echo "Trying  $function"; $function; [[ "$cracked" == "1" ]] && return; done
+        warn "$mark Checking..."
+        warn "Available $mfunctions"
+        for function in "Telefonica" "Jazztel"; do warn "Trying  $function"; $function; [[ "$cracked" == "1" ]] && return; done
         _ "Cant crack this network like this, do it manually"
 
         if [ "$1" == "autocrack" ]; then

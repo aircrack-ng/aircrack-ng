@@ -30,12 +30,11 @@ fakeauth1(){
     # This is for deauth  (6)  option
     choosedeauth(){
         if [ "$Host_SSID" = "" ]; then $clear
-            echo "ERROR: You have to select a target first"
+            warn "ERROR: You have to select a target first"
         else
             while true; do
-                arrow; mkmenu "Who do you want to deauth?" "Everybody" "Myself (fake mac)" "Selected client"
-                read yn; $clear
-                case $yn in
+                mkmenu "Who do you want to deauth?" "Everybody" "Myself (fake mac)" "Selected client"
+                case $choice in
                     1 ) deauthall ; break ;;
                     2 ) deauthfake ; break ;;
                     3 ) deauthclient ; break ;;
@@ -53,7 +52,7 @@ deauthall(){
 
 deauthclient(){
     if [ "$Client_MAC" = "" ]; then 
-        $clear; echo "ERROR: You have to select a client first"
+        $clear; warn "ERROR: You have to select a client first"
     else 
         execute "Deauth client" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC \
             -c $Client_MAC $iwifi
@@ -71,8 +70,7 @@ fakeauth(){
 authmenu(){
     while true; do
         mkmenu "Autentication menu" "Fake autentication" "Deautentication" "Return to main menu"
-        read -p "Select option: " yn; 
-        case $yn in
+        case $choice in
             1  ) choosefake    ; $clear; break;;
             2  ) choosedeauth  ; $clear; break;;
             3  ) $clear ; break;;
@@ -82,12 +80,12 @@ authmenu(){
 }
 
 choosefake(){
-    if [ "$Host_SSID" = "" ]; then $clear; echo "ERROR: You have to select a target first"
+    if [ "$Host_SSID" = "" ]; then $clear; warn "ERROR: You have to select a target first"
     else
     if [ "$INTERACTIVE" == "1" ]; then
     	while true; do
             mkmenu "Fake Auth Method" "Conservative" "Standard" "Progressive" "Xor Injection"
-    		read yn; case $yn in
+    		case $choice in
 		    	1 ) fakeauth1 ;$clear; break ;;
 		    	2 ) fakeauth2 ;$clear; break ;;
 		    	3 ) fakeauth3 ;$clear; break ;;

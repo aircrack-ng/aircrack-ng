@@ -18,22 +18,18 @@
 check_function fakeauth3 || source $path/attacks/auth # It depends on auth module ;)
 
 othertmenu(){
-      while true; do
-
-    mkmenu "Other aircrack-ng tools" "Injection" "Autentication" "Operations with ivstools" "Decloak packages" "Create virtual interface with airtun-ng" "Diagnostics and reports" "mdk3" "Auto crack wep with wesside-ng" "Easside-ng" "Return to main menu"
-
-        read -p "Select option: " yn; 
-        case $yn in
+    while true; do
+         mkmenu "Other aircrack-ng tools" "Injection" "Autentication" "Operations with ivstools" "Decloak packages" "Create virtual interface with airtun-ng" "Diagnostics and reports" "Auto crack wep with wesside-ng" "Easside-ng" "Return to main menu"
+        case $choice in
             1  ) injectmenu    ; $clear; break;;
             2  ) authmenu      ; $clear; break;;
             3  ) ivstoomenu    ; $clear; break;;
             4  ) airdecmenu    ; $clear; break;;
             5  ) airtunmenu    ; $clear; break;;
             6  ) diagmenu      ; $clear; break;;
-            7  ) choosemdk     ; $clear; break;;
-            8  ) choosewesside ; $clear; break;;
-            9  ) eassideng     ; $clear; break;;
-            10 ) $clear        ; break ;;
+            7  ) choosewesside ; $clear; break;;
+            8  ) eassideng     ; $clear; break;;
+            9  ) $clear        ; break ;;
             *  ) _ "Unknown response, try again"; sleep 1; $clear;;
         esac
     done
@@ -47,12 +43,11 @@ airdecmenu(){
 
         mkmenu "Airdecloak-ng" "Asume that null packets can be cloacked [$d_cloaked_null_status]" "Disable base filter [$d_cloaked_base_status]" "Drop fragmented packets [$d_cloaked_frag_status]" "Specify filters (comma separated)" "Launch decloak" "Return to main menu"
         opts="";
-        read -p "Select option: " yn; 
-        case $yn in
+        case $choice in
             1) if [ "$d_cloaked_null" == 1 ]; then d_cloaked_null=0; else d_cloaked_null=1; fi; $clear;;
             2) if [ "$d_cloaked_base" == 1 ]; then d_cloaked_base=0; else d_cloaked_base=1; fi; $clear;;
             3) if [ "$d_cloaked_frag" == 1 ]; then d_cloaked_frag=0; else d_cloaked_frag=1; fi; $clear;;
-            4) read -p "Enter filters: " d_cloaked_filters; $clear;;
+            4) single_question "Enter filters: "; d_cloaked_filters=$ans; $clear;;
             5)
                 if [ "$d_cloaked_null" == 1 ]; then opts="$opts --null-packets"; fi
                 if [ "$d_cloaked_base" == 1 ]; then opts="$opts --diable-base-filter"; fi
@@ -70,7 +65,7 @@ airtunmenu(){
         $AIRTUN -a $Host_MAC -i $wificard -w "`cat $DUMP_PATH/$Host_MAC.key`"
         _ "Take note of the created virtual interface"; sleep 2; $clear; return
     else
-        $clear; echo "You don't have a cracked WEP interface"; sleep 2; $clear; return
+        $clear; warn "You don't have a cracked WEP interface"; sleep 2; $clear; return
     fi
 }
 
@@ -78,8 +73,7 @@ ivstoomenu(){
     while true; do
         mkmenu "IVs tools" "Merge all ivs from all sessions" "Decrypt current packages"\
             "Return to main menu"
-        read -p "Select option: " yn; 
-        case $yn in
+        case $choice in
             1) mergeallivs;$clear; break;;
             2) decrypt; $clear; break;;
             3 ) $clear;break ;;
@@ -102,64 +96,8 @@ mergeallivs(){ # TODO Untested
     read -p "`gettext 'Select merged data as target? (y/N): '`" ACP && [[ "$ACP" = "y" ]] && Host_MAC="merged"
 }
 
-choosemdk(){
-    if [ -x "$MDK3" ]; then
-        while true; do
-            $clear; mkmenu "Choose MDK3 Options" "Deauthentication" "Prob selected AP" "Select another target" "Autentication DoS" "Return to main menu"
-            read yn
-            case $yn in
-                1 ) mdkpain ; break ;;
-                2 ) mdktargetedpain ; break ;;
-                3 ) mdknewtarget ; break ;;
-                4 ) mdkauth ; break ;;
-                5 ) break ;;
-                * ) _ "Unknown response. Try again" ;;
-            esac
-        done
 
-        else $clear && _ "Sorry, this is not installed on your system"
-        fi
-}
 
-mdkpain(){
-        execute "MDK3 Pain" $MDK3 $wifi d & choosemdk
-}
-
-mdktargetedpain(){
-        execute "MDK3 Targeted pain" $MDK3 $wifi p -b a -c $Host_CHAN -t $Host_MAC & choosemdk
-}
-
-mdknewtarget(){
-        ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
-        head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
-        echo " +--------------------------------------------------------------------+"
-        echo " |       Detected Access point list                                   |"
-        echo " |      MAC                      CHAN    SECU    POWER   #CHAR   SSID |"
-        echo " |                                                                    |"
-        i=0
-        while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
-            longueur=${#MAC}
-            if [ $longueur -ge 17 ]; then i=$(($i+1))
-                echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$IDLENGTH"\t"$ESSID
-                aidlenght=$IDLENGTH; assid[$i]=$ESSID; achannel[$i]=$CHANNEL;
-                amac[$i]=$MAC; aprivacy[$i]=$PRIVACY; aspeed[$i]=$SPEED
-            fi
-        done < $DUMP_PATH/dump-02.csv
-        echo -n "\n        Select target               "
-        read choice
-        idlenght=${aidlenght[$choice]};	ssid=${assid[$choice]};
-        channel=${achannel[$choice]}; mac=${amac[$choice]};
-        privacy=${aprivacy[$choice]};speed=${aspeed[$choice]};
-        Host_IDL=$idlength;Host_SPEED=$speed;
-        Host_ENC=$privacy;Host_MAC=$mac;
-        Host_CHAN=$channel;acouper=${#ssid};
-        fin=$(($acouper-idlength));Host_SSID=${ssid:1:fin};
-        choosemdk
-}
-
-mdkauth(){
-        execute "MDK3 AUTH" $MDK3 $wifi a & choosemdk
-}
 
 choosewesside(){
         while true; do
@@ -259,7 +197,7 @@ kstatsmenu(){
         $KSTATS $DUMP_PATH/$Host_MAC-01.ivs `cat $DUMP_PATH/$Host_MAC.key`
         read -p "Enter any key to continue" ktc
     else
-        $clear; echo "You don't have a cracked WEP interface"; sleep 2; $clear; return
+        $clear; warn "You don't have a cracked WEP interface"; sleep 2; $clear; return
     fi
 
 }
@@ -285,7 +223,7 @@ _airgraph(){
 
 decrypt(){
     $AIRDECAP $DUMP_PATH/$Host_MAC.cap -w "`cat $DUMP_PATH/$Host_MAC.key`"
-    echo "Decrypted packages to $DUMP_PATH/$Host_MAC.cap-dec.cap"
+    warn "Decrypted packages to $DUMP_PATH/$Host_MAC.cap-dec.cap"
 }
 
 menu_options(){
@@ -344,25 +282,22 @@ testmac(){
 
 eassideng(){
      while true; do $clear
-    mkmenu "Easside-ng" "Create virtual interface" "Run buddy server" "Return to main menu"
-        echo _ "Option number: "
-        read yn
-        case $yn in
+        mkmenu "Easside-ng" "Create virtual interface" "Run buddy server" "Return to main menu"
+        case $choice in
             1 )
                 while true; do $clear
                     read -p "Select buddy IP" buddyip; $clear
-                    mkmenu "Choose ap mac " "Choose source mac " "Chosse Source IP " "Choose router ip " "Execute" "Return"; echo
-                        read -p "Option number: " yn; echo
-                        read -p "Anser: " answer; echo
-                        case $yn in
-                            1 ) opts=" $opts -v $answer " ;break ;;
-                            2 ) opts=" $opts -m $answer " ;break ;;
-                            3 ) opts=" $opts -i $answer " ;break ;;
-                            4 ) opts=" $opts -r $answer " ;break ;;
-                            5 ) execute "Easside-ng" $EASSIDE -s $buddyip -f $wifi $opts ;break ;;
-                            6 ) $clear; break ;;
-                        esac
-                    done ;;
+                    mkmenu "Choose ap mac " "Choose source mac " "Chosse Source IP " "Choose router ip " "Execute" "Return"; 
+                    read -p "Anser: " answer; echo
+                    case $choice in
+                        1 ) opts=" $opts -v $answer " ;break ;;
+                        2 ) opts=" $opts -m $answer " ;break ;;
+                        3 ) opts=" $opts -i $answer " ;break ;;
+                        4 ) opts=" $opts -r $answer " ;break ;;
+                        5 ) execute "Easside-ng" $EASSIDE -s $buddyip -f $wifi $opts ;break ;;
+                        6 ) $clear; break ;;
+                    esac
+                done ;;
             2 ) execute $BUDDY ;;
             3 ) $clear ; break ;;
             * ) $clear; echo  _ "Unknow response, try again"; sleep 2 ;;
@@ -380,11 +315,12 @@ airbaseng(){
 
 
 setupairservng(){
-	read -p "Do you want to use airserv-ng? [y/N] " var
-	if [ "$var" == "y" ]; then
-		export wificard=$wifi && read -p "Start a local server? [y/N] " var
-		if [ "$var" == "y" ]; then export wifi="127.0.0.1:666" && $AIRSERV -d  $wificard >/dev/null 2>1 &
-		else read -p "Enter airserv-ng address [127.0.0.1:666]" wifi
+	single_question "Do you want to use airserv-ng? [y/N] "
+	if [ "$ans" == "y" ]; then
+		export wificard=$wifi && single_question "Start a local server? [y/N] "
+		if [ "$ans" == "y" ]; then export wifi="127.0.0.1:666" && $AIRSERV -d  $wificard >/dev/null 2>1 &
+		else read -p "Enter airserv-ng address [127.0.0.1:666]"
+            wifi=$ans
 			if [ "$wifi" == "" ]; then export wifi="127.0.0.1:666";fi
 		fi
 	fi
