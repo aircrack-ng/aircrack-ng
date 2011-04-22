@@ -141,6 +141,9 @@ getDriver() {
 	fi
 
 	#from detection
+	if [ $DRIVER ]
+	then
+	#remove the above when DRIVER detection actually works properly
 	if [ `modprobe -l $DRIVER | grep ^kernel` ]
 	then
 		FROM="K"
@@ -155,7 +158,7 @@ getDriver() {
         then
                 echo $FROM
         fi
-
+	fi
 
 	FIRMWARE=`echo "$ethtool_output" | awk '/firmware-version/ {print $2}'`
 	if [ "$FIRMWARE" = "N/A" ]
