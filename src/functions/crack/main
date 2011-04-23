@@ -22,18 +22,17 @@ crack_wep(){
         fi
 
 		while true; do
-        mkmenu "WEP Cracking Options" "aircrack-ng defaults" "aircrack-ng Korek" "aircrack-ng interactive"
-		read -p "Select option: " yn
-		case $yn in
-	    	1 ) execute "Cracking wep, default options" crack $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap ; $clear; break ;;
-	    	2 ) execute "Cracking wep, Korek" crack $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K ; $clear; break ;;
-	    	3 ) read -p "Insert Fudge Factor: " FUDGE_FACTOR;
-                read -p "`gettext 'Type encryption size (64,128...): '`" ENC_SIZE
+            mkmenu "WEP Cracking Options" "aircrack-ng defaults" "aircrack-ng Korek" "aircrack-ng interactive"
+	        case $choice in
+ 	    	    1 ) execute "Cracking wep, default options" crack $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap ; $clear; break ;;
+	    	    2 ) execute "Cracking wep, Korek" crack $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K ; $clear; break ;;
+	            3 ) single_question "Insert Fudge Factor: ";  FUDGE_FACTOR="$ans";
+                single_question "`gettext 'Type encryption size (64,128...): '`"; ENC_SIZE="$ans";
 			    execute "Cracking wep, manual options" crack $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGE_FACTOR\
                 -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-*.cap -f $DUMP_PATH/$Host_MAC.key &  $clear; 
-                break ;;
+                break ;;  
 	    	* ) echo "`gettext 'Unknown response. Try again'`" ;;
-		esac
+		    esac
   		done
 }
 
@@ -50,8 +49,8 @@ crack_wpa(){
                         execute "Cracking WPA with pmk database" crack  $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location;;
 	    	        * ) echo "`gettext 'Unknown response. Try again'`" ;;
         		esac
-	      	done
-}
+ 	      	done
+} 
 
 selectcracking(){
 	if [ "$Host_ENC" = "OPN" ] || [ "$Host_ENC" = "" ] || [ "$Host_ENC" = " OPN " ]; then

@@ -31,6 +31,7 @@ installdirs:
         			$(docdir)/html/images $(etcdir) \
                                 $(mandir)/man1 $(locale) \
 				$(datadir)/themes \
+				$(datadir)/plugins \
 				$(datadir)/airosperl \
 				$(docdir)/tools
 	
@@ -42,6 +43,8 @@ install-binary:
 	@$(INSTALLDATA) $(srcdir)/screenrc.airoscript $(etcdir)
 	@echo "Installing themes"
 	@$(INSTALLDATA) $(srcdir)/themes/*.theme $(datadir)/themes
+	@echo "Installing plugins"
+	@$(INSTALLDATA) $(srcdir)/plugins/* $(datadir)/plugins
 
 
 post-install:

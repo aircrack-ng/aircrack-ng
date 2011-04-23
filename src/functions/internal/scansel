@@ -18,17 +18,8 @@
 
 Scanchan(){
     export SCAN=1; # TODO Create a mkinfobox function.
-    echo -e "\n `gettext '
-    +------------Channel Input----------+
-    |       Please input channel        |
-    |                                   |
-    |          You can insert:          |
-    |   A single number   6             |
-    |   A range           1-5           |
-    |   Multiple channels 1,1,2,5-7,11  |
-    +-----------------------------------+
-    '`"
-    _read channel_number; set -- ${channel_number}
+    single_question "$mark Enter channel (single, range, or comma-separated): "
+    channel_number="$ans"; set -- ${channel_number}
     $clear; rm -rf $DUMP_PATH/dump*; monmode $wifi $channel_number
     execute "Scanning for targets on channel $channel_number" $AIRODUMP -w $DUMP_PATH/dump --channel $channel_number --encrypt $ENCRYPT -a $wifi
     export SCAN=0
@@ -42,7 +33,7 @@ select_target(){
             1 ) detectclients ; break ;;
             2 ) SelectClient dump-01.csv filter; break ;;
             3 ) SelectClient dump-01.csv nofilter; break;; 
-            4 ) arrow; mkbox "Client selection" "Type in client mac now"; _read Client_MAC; set -- ${Client_MAC} ; break ;;
+            4 ) single_question "Type in client mac now"; Client_MAC="$ans"; set -- ${Client_MAC} ; break ;;
             5 ) break ;;
             * ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; $clear ;;
           esac
@@ -52,13 +43,14 @@ select_target(){
 detectclients(){
     check_function deauthall || source $path/attacks/auth
     if [ "$AUTO" == "1" ]; then return; fi
-    $iwconfig $wificard channel $Host_CHAN; capture & deauthall && read -p "Press enter to select client"; SelectClient $Host_MAC-01.csv filter
+    $iwconfig $wificard channel $Host_CHAN; capture & deauthall
+    SelectClient $Host_MAC-01.csv filter
 }
 
 SelectClient(){
     HOST=`cat $DUMP_PATH/$1 | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC|sed 's/,//'`
     if [ "$2" == "nofilter" ]; then HOST=`cat $DUMP_PATH/dump-01.csv | grep -a "0.:..:..:..:.." | awk '{ print $1 }'| grep -a -v 00:00:00:00`; fi
     if [ "$AUTO" == "1" ]; then return; fi;  [[ -z $HOST ]] && return
-    arrow; mkbox "Client Selection" "Select client now" "These clients are connected to $Host_SSID "
+    mkmenu "Select client" $HOST  # FIXME Untested, and the line below wont work on GUI.
     select CLIENT in $HOST; do export Client_MAC=` echo $CLIENT | awk '{split($1, info, "," )  print info[1]  }'`; break;done
 }

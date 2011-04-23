@@ -30,8 +30,8 @@ setinterface(){
         fi
         askinterface && checkforcemac
         [[ "$DEFAULT_MONITOR_MODE" == 1 ]] &&{ ac="start"; } || {
-        _ 'Should I put it in monitor mode?' " (Y/n) "; _read answer;
-        [[ "$anwser" != n ]] && ac="start" || ac="stop"
+        single_question 'Should I put it in monitor mode? (Y/n) ';
+        [[ "$ans" != n ]] && ac="start" || ac="stop"
         }
         { guess_idata $ac; testmac; } &>/dev/null
      }    
@@ -82,7 +82,7 @@ wichchangemac(){
                 $MACCHANGER -m $mac $wificard &>/dev/null
                 ifconfig $wificard up;
                 break;;
-            4 ) _read -p "MAC: " Manual_MAC
+            4 ) single_question "MAC: "; Manual_MAC="$ans";
                 ifconfig $wificard down
                 fail=`$MACCHANGER -m  $Manual_MAC $wificard &>/dev/null`
                 [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
@@ -128,11 +128,8 @@ selectAp(){
 
     
     if [ "$AUTO" != 1 ]; then
-        mkmenueline $max r
-        echo " Rescan targets"
-        mkmenuline $max
-        _ 'Select target: '
-        _read choice
+        mkmenueline $max r; echo " Rescan targets"; mkmenuline $max
+        single_question "Select Target"; choice="$ans"
     fi
 
     if [ "$choice" != "r" ] ; then
@@ -150,11 +147,11 @@ selectAp(){
         acouper=${#ssid}
         fin=$(($acouper-idlength))
         Host_SSID=${ssid:1:fin}
-        echo "$mark Target network is $Host_SSID $Host_MAC"
+        echo "$mark Target network is $Host_SSID $Ho st_MAC"
     else
         F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
         menu_type "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
-        cleanautovars; 
+        cleanautovars;  
     fi
 }
 
@@ -175,9 +172,8 @@ Scan(){
 }
 
 Host_ssidinput(){
-    echo -e "`gettext \"       Please enter SSID         \"`"
-    echo "---------------------------------------"
-    _read Host_SSID
+    single_question "Please enter Host SSID"; 
+    Host_SSID="$ans";
     $clear
 }
 

@@ -44,9 +44,7 @@ fakeauth1(){
     fi
 }
 
-# Subproducts of choosedeauth
 deauthall(){
-    # Deauth Everybody
     execute "Deauth All" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $wifi
 }
 
