@@ -56,8 +56,8 @@ eof
 }
 
 setargs(){
-     while getopts “n:ht:w:szcvmfa” option; do
-        case $option in
+     while getopts “n:ht:w:szcvmfap:” option; do
+        case $option in 
             h)  usage; exit 1;;
             n)  export filter_ssid=$OPTARG; warn "$mark Selected filter: $filter_ssid";;
             t)  TERMINAL=$OPTARG;;
@@ -69,8 +69,17 @@ setargs(){
             c)  checkforcemac 3; { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
             f)  wichchangemac 1; { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
             a)  temporary_switch_clear;clear=""; check_function doauto || source $path/autocrack; doauto; exit;;
+            p)  load_plugins $OPTARG  ;;
             ?)  usage; exit;;
         esac
+    done
+}
+
+load_plugins(){
+    for i in "${@}"; do 
+        if [ -e $path/plugins/$i ]; then
+            _source $path/plugins/$i
+        fi
     done
 }
 

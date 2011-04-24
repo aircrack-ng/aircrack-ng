@@ -1,86 +1,29 @@
 #!/bin/bash 
 # Copyright (2011) Degenerated Labs
-# License still unclear.
+# Copyright (2011) David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 export mark="";
-
-mkmenu(){
-    title=$1; shift
-    res=();
-    n=0;
-    for i in "${@}"; do
-        n=$(( n + 1 ));
-        [[ "$n" == 1 ]] && ST="TRUE" || ST="FALSE"
-        res+=( "$ST" "$n" "$i" );
-    done
+warn(){ notify-send "${@}"; }
+single_question(){ ans=`zenity --entry --text "${@}"`; }
+mkmenuheader(){ return; }
+mkmenuline(){ return; }
+mkmenueline(){ return; }
+mkmenu(){ title=$1; shift;res=();n=0;
+    for i in "${@}"; do n=$(( n + 1 )); [[ "$n" == 1 ]] && ST="TRUE" || ST="FALSE"; res+=( "$ST" "$n" "$i" ); done
     choice=`zenity  --list  --text "$title" --radiolist  --column "Pick " --column "hidden" --column "Choose" --hide-column 2 "${res[@]}";`
-    [[ $? == 1 ]] && [[ $title == "Main Menu" ]] && exit  
+    [[ $? == 1 ]] && [[ $title == "Main Menu" ]] && exit
 }
-
-warn(){
- #    zenity --info --text "${@}" &
-    notify-send "${@}"
-}
-
-single_question(){
-    ans=`zenity --entry --text "${@}"`;
-}
-
-selectAp(){
-    k=0; i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
-    head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
-    if [ "$AUTO" == 1 ]; then
-        choice=$CURRENT
-        CURRENT=$(( $CURRENT + 1 ))
-    else
-        title=$1; shift; line=0;
-        title="Detected accesss points"
-        res=();
-    fi
-
-
-    while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
-        if [ ${#MAC} -ge 17 ]; then
-            k=$(($k+1))
-            if [ "$AUTO" != 1  ]; then
-                res+=(" $MAC | $CHANNEL | $PRIVACY | $POWER | $IDLENGTH | $ESSID");
-            fi
-            aidlenght=$IDLENGTH
-            assid[$k]=$ESSID; achannel[$k]=$CHANNEL; 
-            amac[$k]=$MAC; aprivacy[$k]=$PRIVACY;
-            aspeed[$k]=$SPEED; apower[$k]=$POWER
-        fi
-    done < $DUMP_PATH/dump-03.csv
-    
-    if [ "$AUTO" != 1 ]; then
-        resa=();
-        for i in "${res[@]}"; do
-            n=$(( n + 1 ));
-            [[ "$n" == 1 ]] && ST="TRUE" || ST="FALSE"
-            resa+=( "$ST" "$n" "${i[1]}" "${i[2]}" "$i[3]" "${i[4]}" "${i[6]}" );
-        done
-        choice=`zenity  --list  --text "$title" --radiolist  --column "X" --column "hidden" --column "MAC" --column "Channel" --column "Privacy" --column "POWER" --column "ESSID" --hide-column 2 "${res[@]}";`
-    fi
-
-    if [ "$choice" != "r" ] ; then
-        idlenght=${aidlenght[$choice]}
-        ssid=${assid[$choice]}
-        channel=${achannel[$choice]}
-        mac=${amac[$choice]}
-        privacy=${aprivacy[$choice]}
-        speed=${aspeed[$choice]}
-        Host_IDL=$idlength
-        Host_SPEED=$speed
-        Host_ENC=$privacy
-        Host_MAC=$mac
-        Host_CHAN=$channel
-        acouper=${#ssid}
-        fin=$(($acouper-idlength))
-        Host_SSID=${ssid:1:fin}
-        warn "$mark Target network is $Host_SSID $Ho st_MAC"
-    else
-        F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-        menu_type "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
-        cleanautovars;  
-    fi
-}
+selectap_wrapper(){ choice=`zenity  --list  --text "$title" --radiolist  --column "X" --column "hidden" --column "MAC" --column "Channel" --column "Privacy" --column "POWER" --column "LENGHT" --column "ESSID" --hide-column 2 "${res[@]}"`; }

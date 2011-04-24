@@ -93,6 +93,11 @@ wichchangemac(){
     done
 }
 
+# Wrapper to make interface creation easier.
+selectap_wrapper(){
+        mkmenueline $max r; echo " Rescan targets"; mkmenuline $max
+        single_question "Select Target"; choice="$ans"
+}
 # Some various functions that didn't know where to put them
 selectAp(){
     k=0; i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
@@ -104,6 +109,7 @@ selectAp(){
         choice=$CURRENT
         CURRENT=$(( $CURRENT + 1 ))
     else
+    res=();
     title=$1; shift; line=0;
     max=$((`tput cols` - 10));
     mkmenuheader "Detected acess points" $max
@@ -114,6 +120,8 @@ selectAp(){
         if [ $longueur -ge 17 ]; then
             k=$(($k+1))
             if [ "$AUTO" != 1  ]; then
+                [[ "$k" == 1 ]] && ST="TRUE" || ST="FALSE"
+                res+=( "$ST" "$k" " $MAC " "$CHANNEL" "$PRIVACY" "$POWER" "$IDLENGTH" "$ESSID");
                 mkmenueline $max $k
                 echo -e " $MAC | $CHANNEL | $PRIVACY | $POWER | $IDLENGTH | $ESSID"
             fi
@@ -123,12 +131,10 @@ selectAp(){
             aspeed[$k]=$SPEED; apower[$k]=$POWER
         fi
     done < $DUMP_PATH/dump-03.csv
-   
-
     
     if [ "$AUTO" != 1 ]; then
-        mkmenueline $max r; echo " Rescan targets"; mkmenuline $max
-        single_question "Select Target"; choice="$ans"
+        selectap_wrapper
+
     fi
 
     if [ "$choice" != "r" ] ; then
