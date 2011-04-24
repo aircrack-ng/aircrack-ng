@@ -20,7 +20,8 @@ Scanchan(){
     export SCAN=1; # TODO Create a mkinfobox function.
     single_question "$mark Enter channel (single, range, or comma-separated): "
     channel_number="$ans"; set -- ${channel_number}
-    $clear; rm -rf $DUMP_PATH/dump*; monmode $wifi $channel_number
+    rm -rf $DUMP_PATH/dump* &>/dev/null; monmode $wifi $channel_number
+
     execute "Scanning for targets on channel $channel_number" $AIRODUMP -w $DUMP_PATH/dump --channel $channel_number --encrypt $ENCRYPT -a $wifi
     export SCAN=0
 }

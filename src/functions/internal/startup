@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 # Copyright (C)  2011 David Francos Cuartero
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
@@ -36,8 +36,7 @@ setinterface(){
         { guess_idata $ac; testmac; } &>/dev/null
      }    
      export iwifi=$wifi
-     warn "$mark`gettext 'Interface used is'` : $wifi ($iwifi) for $wificard "
-     warn "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
+
 }
 
 askinterface(){
@@ -55,29 +54,29 @@ checkforcemac() {
 
 guess_idata(){
         AIROUTPUT=$($AIRMON $1 $wificard|grep -v "running"|grep -A 1 $wificard);
-        export TYPE=`echo \"$AIROUTPUT\" | grep monitor      | awk '{print $2 $3}'`
-        export DRIVER=`echo \"$AIROUTPUT\" | grep monitor      | awk '{print $4}'`
-        export tmpwifi=`echo \"$AIROUTPUT\" | awk {'print $NF'} | cut -d ")" -f1`
-    if [[ "$tmpwifi" =~ (.*)[0-9] ]];  then wifi=$tmpwifi; fi
+        export TYPE=$(awk '/monitor/ {print $2 $3 }' <<< $AIROUTPUT);
+        export DRIVER=$(awk '/monitor/ {print $5 }' <<< $AIROUTPUT );
+        export tmpwifi=$(awk '{sub("\)","", $NF ); print $NF}' <<< $AIROUTPUT);
+     if [[ "$tmpwifi" =~ (.*)[0-9] ]];  then wifi=$tmpwifi; else wifi=$wificard; fi
 }
 
 wichchangemac(){
     $clear
     while true; do
-        [[ "$1" != "" ]] && yn=$1 || {
+         [[ "$1" != "" ]] && yn=$1 || {
             mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input"
         }
         case $choice in
-            1 ) ifconfig $wificard down
+             1 ) ifconfig $wificard down
                 fail=`$MACCHANGER -m  $FAKE_MAC $wificard 2>&1`
                 [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
-                ifconfig $wificard up; break ;;
+                  ifconfig $wificard up; break ;;
             2 ) ifconfig $wificard down; sleep 2
-                fail=`$MACCHANGER -m  $Client_MAC $wificard 2>&1`
+                 fail=`$MACCHANGER -m  $Client_MAC $wificard 2>&1`
                 [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
                 ifconfig $wificard up ; break ;;
             3)  export FAKE_MAC=$mac
-                echo -e "$mark Using for $wificard $FAKE_MAC = $mac"
+                warn "$mark Using for $wificard $FAKE_MAC = $mac"
                 ifconfig $wificard down; sleep 2;
                 $MACCHANGER -m $mac $wificard &>/dev/null
                 ifconfig $wificard up;
@@ -166,6 +165,8 @@ Scan(){
     export SCAN=1
     rm -rf $DUMP_PATH/dump* &>/dev/null
     temporary_switch_clear
+    warn "$mark`gettext 'Interface used is'` : $wifi ($iwifi) for $wificard "
+    warn "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
     execute "Scanning for targets" $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
     temporary_switch_clear
     export SCAN=0
@@ -205,4 +206,11 @@ root. Be sure to check your home config file before using it.
 Defaults on /etc/airoscript-ng.conf should be ok so you can
 safely remove your ~/.airoscript-ng.conf\n\n
 Do you really want to do it (yes/No): '
+}
+
+testmac(){
+	if [ "$TYPE" = "Atherosmadwifi-ng" ]; then
+		FAKE_MAC=`ifconfig $wificard | grep $wifi | awk '{print $5}' | cut -c -17  | sed -e "s/-/:/" | sed -e "s/\-/:/"  | sed -e "s/\-/:/" | sed -e "s/\-/:/" | sed -e "s/\-/:/"`
+		_ "Changed fake_mac :" " $FAKE_MAC"
+	fi
 }

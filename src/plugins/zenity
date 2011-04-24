@@ -18,7 +18,8 @@ mkmenu(){
 }
 
 warn(){
-    zenity --info --text "${@}" &
+ #    zenity --info --text "${@}" &
+    notify-send "${@}"
 }
 
 single_question(){

@@ -273,12 +273,6 @@ changedumppath(){
 }
 
 
-testmac(){
-	if [ "$TYPE" = "Atherosmadwifi-ng" ]; then
-		FAKE_MAC=`ifconfig $wificard | grep $wifi | awk '{print $5}' | cut -c -17  | sed -e "s/-/:/" | sed -e "s/\-/:/"  | sed -e "s/\-/:/" | sed -e "s/\-/:/" | sed -e "s/\-/:/"`
-		_ "Changed fake_mac :" " $FAKE_MAC"
-	fi
-}
 
 eassideng(){
      while true; do $clear
