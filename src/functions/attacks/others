@@ -61,12 +61,14 @@ airdecmenu(){
 
 airtunmenu(){
     if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ -e $DUMP_PATH/$Host_MAC.key ]; then
-        _ "Creating virtual interface" && sleep 2
-        $AIRTUN -a $Host_MAC -i $wificard -w "`cat $DUMP_PATH/$Host_MAC.key`"
-        _ "Take note of the created virtual interface"; sleep 2; $clear; return
+        execute $AIRTUN -a $Host_MAC -i $wificard -w "`cat $DUMP_PATH/$Host_MAC.key`"
     else
-        $clear; warn "You don't have a cracked WEP interface"; sleep 2; $clear; return
-    fi
+        if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ $Host_ENC =~ (.*)"OPN"(.*) ]; then
+            execute $AIRTUN -a $Host_MAC -i $wificard
+        else
+            warn "Error: Network not selected"
+         fi
+       fi
 }
 
 ivstoomenu(){
@@ -243,16 +245,6 @@ menu_options(){
         * ) _ "Unknown response. Try again" ;;
         esac
 }
-
-
-menu_plugins(){
-    mkmenu "External plugins" "${p_menu[@]}"
-    read -p "Enter option: " foo; foo=$(( $foo + 1 ))
-    echo `echo ${p_menu[$foo]}|sed 's/ /_/g'`
-    sleep 10
-    `echo ${p_menu[$foo]}|sed 's/ /_/g'` || { _ "Wrong option, try again"; sleep 1; $clear; menu_plugins; }
-}
-
 
 cleanup(){
     killall -9 aireplay-ng airodump-ng &> /dev/null &
