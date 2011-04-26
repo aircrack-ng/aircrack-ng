@@ -58,6 +58,8 @@ install-docs:
 	@# This will install any manpage on manpages dir. (Just man1 manpages)
 	@echo  "\t Installing manpages"
 	@for i in $(srcdir)/*.1 ; do $(INSTALLDATA) $$i $(mandir)/man1/ ; done
+	@echo "\t Installing artwork"
+	@install src/airoscriptlogo_med.png $(docdir)/airoscript-ng.png
 
 generate-locale:
 	@for i in $(srcdir)/locale/* ; do \

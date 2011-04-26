@@ -16,7 +16,7 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 export mark="";
-warn(){ notify-send "${@}"; }
+warn(){ notify-send -i "$path/../doc/airoscript-ng/airoscript-ng.png" "Airoscript notification" "${@}"; }
 single_question(){ ans=`zenity --entry --text "${@}"`; }
 mkmenuheader(){ return; }
 mkmenuline(){ return; }
