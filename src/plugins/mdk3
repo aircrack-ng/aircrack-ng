@@ -1,9 +1,30 @@
-# TODO Do this.
+#!/bin/bash 
+# Copyright (2011) David Francos Cuartero, and some of the sources might be from other versions.
+# This is highly unmantained, as now is a plugin, you can easily modify it =)
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
 
-choosemdk(){
-    if [ -x "$MDK3" ]; then
-        while true; do
-            $clear; mkmenu "Choose MDK3 Options" "Deauthentication" "Prob selected AP" "Select another target" "Autentication DoS" "Return to main menu"
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# This can also be used as a menu-adding skeleton for airoscript plugin system
+# Just add to p_menu array the menu you want, and call the main plugin function MENU_NAME_SEPARATED_BY_SPACES
+
+
+p_menu+=( "Mdk3 Attacks" );
+
+Mdk3_Attacks(){
+     if [ -x "$MDK3" ]; then
+         while true; do
+             $clear; mkmenu "Choose MDK3 Options" "Deauthentication" "Prob selected AP" "Select another target" "Autentication DoS" "Return to main menu"
             read yn
             case $yn in
                 1 ) mdkpain ; break ;;
@@ -15,7 +36,7 @@ choosemdk(){
             esac
         done
 
-        else $clear && _ "Sorry, this is not installed on your system"
+        else warn "Sorry, this is not installed on your system"
         fi
 }
 

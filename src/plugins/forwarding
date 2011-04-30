@@ -1,0 +1,33 @@
+#!/bin/bash 
+# Copyright (2011) David Francos Cuartero, and some of the sources might be from other versions.
+# This is highly unmantained, as now is a plugin, you can easily modify it =)
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+function enable_ip_forwarding(){
+    echo 1 > /proc/sys/net/ipv4/ip_forward 
+}
+
+function enable_traffic_redirect(){
+    iptables_save > $DUMP_PATH/original_iptables
+    iptables -t nat -A PREROUTING -p tcp –destination-port 80 -j REDIRECT –to-ports 8080
+}
+
+function disable_traffic_redirect(){
+    iptables-restore < $DUMP_PATH/original_iptables
+}
+
+function disable_ip_forwarding(){
+    echo 0 > /proc/sys/net/ipv4/ip_forward 
+}
+

@@ -15,6 +15,8 @@
 #        Along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+# This can also be used as skeleton for airoscript override-functions plugin.
+
 export mark="";
 warn(){ notify-send -i "$path/../doc/airoscript-ng/airoscript-ng.png" "Airoscript notification" "${@}"; }
 single_question(){ ans=`zenity --entry --text "${@}"`; }

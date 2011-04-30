@@ -63,12 +63,16 @@ airtunmenu(){
     if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ -e $DUMP_PATH/$Host_MAC.key ]; then
         execute $AIRTUN -a $Host_MAC -i $wificard -w "`cat $DUMP_PATH/$Host_MAC.key`"
     else
-        if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ $Host_ENC =~ (.*)"OPN"(.*) ]; then
+        if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [[ $Host_ENC =~ (.*)"OPN"(.*) ]]; then
             execute $AIRTUN -a $Host_MAC -i $wificard
         else
             warn "Error: Network not selected"
          fi
        fi
+}
+
+cleanairtun() {
+    killall airtun-ng
 }
 
 ivstoomenu(){

@@ -110,3 +110,9 @@ menu_extra(){
     done
 }
 
+menu_plugins(){
+    mkmenu "External plugins" "${p_menu[@]}"
+    $(sed 's/ /_/g' <<< ${p_menu[$choice]}) || { $clear; warn "Wrong option, try again"; menu_plugins; }
+}
+
+
