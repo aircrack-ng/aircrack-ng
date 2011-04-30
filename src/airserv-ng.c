@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include <err.h>
 #include <string.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <signal.h>
 
