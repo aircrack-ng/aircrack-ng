@@ -453,6 +453,7 @@ static void serv(struct sstate *ss, char *dev, int port, int chan)
 	int max;
 	fd_set fds;
 	struct client *c;
+	struct client *next;	
 	int card_fd;
 
 	open_card_and_sock(ss, dev, port, chan);
@@ -485,10 +486,11 @@ static void serv(struct sstate *ss, char *dev, int port, int chan)
 		/* handle clients */
 		c = ss->ss_clients.c_next;
 		while (c != &ss->ss_clients) {
+			next = c->c_next;	
 			if (FD_ISSET(c->c_s, &fds))
 				handle_client(ss, c);
 
-			c = c->c_next;
+			c = next;
 		}
 
 		/* handle server */
