@@ -144,12 +144,16 @@ getDriver() {
 	if [ $DRIVER ]
 	then
 	#remove the above when DRIVER detection actually works properly
-	if [ `modprobe -l $DRIVER | grep ^kernel` ]
+	if [ `modprobe -l $DRIVER | grep kernel` ]
 	then
 		FROM="K"
-	elif [ `modprobe -l $DRIVER | grep ^updates` ]
+	elif [ `modprobe -l $DRIVER | grep updates` ]
 	then
 		FROM="C"
+	elif [ `modprobe -l $DRIVER | grep misc` ]
+	then
+		FROM="M"
+		#add a yell at the user in here
 	else
 		FROM="?"
 	fi
