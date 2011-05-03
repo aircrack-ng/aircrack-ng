@@ -112,15 +112,25 @@ stopDeprecatedIface() {
 getDriver() {
 	#standard detection path, this is all that is needed for proper drivers
 	DRIVER=`echo "$ethtool_output" | awk '/driver/ {print $2}'`
+
+	if [ "$DRIVER" = "" ]
+	then
+		if [ -f /sys/class/net/$1/device/uevent ]
+		then
+			DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/uevent`"
+		fi
+	fi
 	
 	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
 	if [ "$DRIVER" = "usb" ]
 	then
 		BUSADDR="`echo "$ethtool_output" | awk '/bus-info/ {print $2}'`:1.0"
-
-		if [ -f /sys/class/net/$1/device/$BUSADDR/uevent ]
+		if [ "$BUSADDR" != "" ]
 		then
-			DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent`"
+			if [ -f /sys/class/net/$1/device/$BUSADDR/uevent ]
+			then
+				DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent`"
+			fi
 		fi
 
 		#here we can normalize driver names we don't like
@@ -128,10 +138,12 @@ getDriver() {
 		then
 			DRIVER="rt2870sta"
 		fi
-		if [ "$DRIVER" = "rt3070" ]
+		if [ -f /sys/class/net/$1/device/idProduct ]
 		then
-			DRIVER="rt3070sta"
-			echo "WARN_ON"
+			if [ `cat /sys/class/net/$1/device/idProduct` = "3070" ]
+			then
+				DRIVER="rt3070sta"
+			fi
 		fi
 	fi
 	
@@ -197,7 +209,7 @@ getChipset() {
 		else
 			CHIPSET="Not pci or usb"
 		fi
-	#we don't do a check for usb here but it is obviously only going to work for usb
+	#we don't do a check for usb here but it is obviously only going to work for pci
 	elif [ -f /sys/class/net/$1/device/idVendor -a -f /sys/class/net/$1/device/idProduct ]
 	then
 		USBID=`cat /sys/class/net/$1/device/idVendor`:`cat /sys/class/net/$1/device/idProduct`
