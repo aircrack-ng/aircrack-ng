@@ -1,4 +1,4 @@
-Changelog for airoscript-ng 1.1 (independent release, shortly will become airoscript 1.2 with aircrack-ng release)
+Changelog for airoscript-ng 1.2
 - Refactorised almost all functions
 - Added autopawn functionality
 - Fixed changing mac address
@@ -35,6 +35,16 @@ command it executes*! use carefully!)
 - Refactorished menu function, it's creating real nice menus now with shell scape codes
 - Same with target selection menu
 - Added an option to rescan for targets in starting auto scan.
+- Added plugins system
+- Added sslstrip plugin (experimental)
+- Added zenity graphical interface (as plugin)
+- Added airtun tool menu to airoscript
+- Code is now splitted in a more usable and editable way
+- Fixed menu function to work as expected
+- Some changes to make plugin generation way easier
+- Added airoscript-ng logo
+- Added source dependences, so we're not loading everything from the beggining
+- Made it all
 
 Changelog for airoscript-ng 1.0:
 - Fixed client selection menu 
