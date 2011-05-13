@@ -455,7 +455,7 @@ fi
 printf "\nXXX: Warning, airmon-zc is under heavy development!!!\n"
 printf "This script is intended to replace airmon-ng and is functionally based on it.\n"
 printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng\n"
-printf "If your card doesn't show up that means it isn't supoorted, please don't report that, I already know.\n\n"
+printf "If your card doesn't show up that means it isn't supported, please don't report that, I already know.\n\n"
 
 uname -a
 if [ -f /sys/module/compat/parameters/compat_version ]
@@ -505,6 +505,7 @@ fi
 for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
 do
  unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO USBID CHIPSET EXTENDED PHYDEV 
+ #add a RUNNING check here and up the device if it isn't already
  ethtool_output="`ethtool -i $iface`"
  if [ "$ethtool_output"!="Cannot get driver information: Operation not supported" ]
  then
