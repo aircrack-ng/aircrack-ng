@@ -96,7 +96,7 @@ wichchangemac(){
 # Wrapper to make interface creation easier.
 selectap_wrapper(){
         mkmenueline $max r; echo " Rescan targets"; mkmenuline $max
-        single_question "Select Target"; choice="$ans"
+        single_question "Select Target: "; choice="$ans"
 }
 # Some various functions that didn't know where to put them
 selectAp(){
@@ -132,11 +132,7 @@ selectAp(){
         fi
     done < $DUMP_PATH/dump-03.csv
     
-    if [ "$AUTO" != 1 ]; then
-        selectap_wrapper
-
-    fi
-
+    if [ "$AUTO" != 1 ]; then selectap_wrapper; fi
     if [ "$choice" != "r" ] ; then
         idlenght=${aidlenght[$choice]}
         ssid=${assid[$choice]}
@@ -153,14 +149,18 @@ selectAp(){
         fin=$(($acouper-idlength))
         Host_SSID=${ssid:1:fin}
         echo "$mark Target network is $Host_SSID $Ho st_MAC"
-    else
-        F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-        menu_type "" && choosescan && sleep $time_to_scan && killall -2 "airodump-ng"; 
-        cleanautovars;  
-    fi
+    else autoscan; fi
+}
+
+launch_counter(){
+    for i in $( seq 1 $1 ); do
+        a=$(( ($i * 100) / $1 ))
+        sleep 1; echo -ne "\rScanning for targets: [$a/100 completed]";
+    done
 }
 
 autoscan(){
+    launch_counter $time_to_scan &
     OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
     menu_type "" && sleep $time_to_scan && killall -2 "airodump-ng"; 
     cleanautovars

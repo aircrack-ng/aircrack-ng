@@ -25,8 +25,7 @@ wpa_attacks(){
 wpa_attacks_menu(){
     while true; do
         $clear; mkmenu "Select WPA Attack" "Standard attack" "Standard attack with QoS (WMM)"
-        read n
-        case $n in
+        case $choice in
              1) wpa_attacks_handshake; $clear; break;;
              2) wpa_attacks_qos; $clear; break;;
         esac
