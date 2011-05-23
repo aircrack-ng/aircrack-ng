@@ -58,7 +58,7 @@ def airgraphMaltego(inFile,graphType="CAPR"):
         TODO: Comment out code and show what is going on
         """
 	returned_var = airDumpOpen(inFile)
-	returned_var = airDumpParse(returned_var) #returns the info dictionary list with the client and ap dictionarys
+	returned_var = airDumpParse(returned_var) #returns the info dictionary list with the client and ap dictionaries
 	info_lst = returned_var
 	returned_var = dotCreate(returned_var,graphType,"true")
 
@@ -113,7 +113,7 @@ def apTag(devices):
 	for entry in devices:
 		ap = {}
 		string_list = entry.split(',')
-		#sorry for the clusterfuck but i swear it all makse sense this is builiding a dic from our list so we dont have to do postion calls later
+		#sorry for the clusterfuck but i swear it all makes sense this is builiding a dic from our list so we dont have to do postion calls later
 		len(string_list)
 		if len(string_list) == 15:
 			ap = {"bssid":string_list[0].replace(' ',''),"fts":string_list[1],"lts":string_list[2],"channel":string_list[3].replace(' ',''),"speed":string_list[4],"privacy":string_list[5].replace(' ',''),"cipher":string_list[6],"auth":string_list[7],"power":string_list[8],"beacons":string_list[9],"iv":string_list[10],"ip":string_list[11],"id":string_list[12],"essid":string_list[13][1:],"key":string_list[14]}
@@ -163,7 +163,7 @@ def dotCreate(info,graphType,maltego="false"):
         """
 
 
-	#please dont try to use this feature yet its not finish and will error	
+	#please dont try to use this feature yet its not finished and will error	
 	def ZKS_main(info): # Zero_Chaos Kitchen Sink Mode..... Every Thing but the Kitchen Sink!
 		#info comes in as list Clients Dictionary at postion 0 and AP Dictionary at postion1
 		print "Feature is not ready yet"
