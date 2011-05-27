@@ -1,6 +1,6 @@
 
 
-/* nx5 - C code for SSE2 (i386) optimized SHA1 */
+/* nx5 - C code for SSE2 (i386) optimized SHA1 - License: GPLv2 */
 
 
 #include <stdlib.h>
