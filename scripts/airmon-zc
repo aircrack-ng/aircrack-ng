@@ -5,14 +5,16 @@ IFACE=""
 CH=$3; [ x$3 = "x" ] && CH=10
 MADWIFI=0
 MAC80211=0
-USE_IW=0
 IW_SOURCE="http://wireless.kernel.org/download/iw/iw-0.9.22.tar.bz2"
 IW_ERROR=""
 UDEV_ISSUE=0
 
-if [ -x "`which iw 2>&1`" ]
+if [ ! -x "`which iw 2>&1`" ]
 then
-	USE_IW=1
+	echo "You don't have iw installed, please install it from your distro's package manager."
+	echo "If your distro doesn't have a recent version you can download it from this link:"
+	echo $IW_SOURCE
+	exit
 fi
 
 if [ ! -x "`which ethtool 2>&1`" ]
@@ -209,13 +211,14 @@ getChipset() {
 		else
 			CHIPSET="Not pci or usb"
 		fi
-	#we don't do a check for usb here but it is obviously only going to work for pci
+	#we don't do a check for usb here but it is obviously only going to work for usb
 	elif [ -f /sys/class/net/$1/device/idVendor -a -f /sys/class/net/$1/device/idProduct ]
 	then
 		USBID=`cat /sys/class/net/$1/device/idVendor`:`cat /sys/class/net/$1/device/idProduct`
 		CHIPSET=`lsusb | grep -i "$USBID" | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
 	else
 		CHIPSET="non-mac80211 device? (report this!)"
+		#this seems to somehow trigger on b43's 4318 chip.... but it really shouldn't.
 	fi
 
 	if [ "$DEBUG" = "1" ]
