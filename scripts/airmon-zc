@@ -487,6 +487,10 @@ printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng\n"
 printf "If your card doesn't show up that means it isn't supported, please don't report that, I already know.\n\n"
 
 uname -a
+if [ -n "`modprobe -l compat 2>&1`" ]
+then
+        modprobe compat 2>&1
+fi
 if [ -f /sys/module/compat/parameters/compat_version ]
 then
 	printf "\nK indicates driver is from `uname -r`\n"
