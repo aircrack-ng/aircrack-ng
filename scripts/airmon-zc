@@ -19,7 +19,33 @@ fi
 
 if [ ! -x "`which ethtool 2>&1`" ]
 then
-	echo "Please install the ethtool package for your distro"
+	echo "Please install the ethtool package for your distro."
+	exit
+fi
+
+if [ ! -x "`which lsusb 2>&1`" ]
+then
+	echo "Please install lsusb from your distro's package manager."
+	exit
+fi
+
+if [ ! -x "`which lspci 2>&1`" ]
+then
+        echo "Please install lspci from your distro's package manager."
+        exit
+fi
+
+if [ ! -x "`which awk 2>&1`" ]
+then
+	echo "How in the world do you not have awk installed?"
+	echo "Please select a linux distro which has at least basic functionality (or install awk)."
+	exit
+fi
+
+if [ ! -x "`which grep 2>&1`" ]
+then
+	echo "How in the world do you not have grep installed?"
+	echo "Please select a linux distro which has at least basic functionality (or install grep)."
 	exit
 fi
 
