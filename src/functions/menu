@@ -16,7 +16,7 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 mainmenu(){
-    mkmenu "Main Menu" "Attack   - Attack target" "Crack    - Get target key"  "Scan - Manually scan for targets" "Select - Reselect target" "Others   - Various utilities" "Exit    - Quits"
+    mkmenu "Main Menu" "Attack   - Attack target" "Crack    - Get target key"  "Scan - Manually scan for targets" "Select - Reselect target" "Others   - Various utilities" "Autopawn - Automatic cracking" "Exit    - Quits"
 
         for choix  in ${choice[*]}; do
             case "$choix" in
