@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{223B034E-A2F0-4BC7-875A-F9B5972C0670}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>NDeskdbus</RootNamespace>
+    <AssemblyName>NDesk-dbus</AssemblyName>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile>ndesk.snk</AssemblyOriginatorKeyFile>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <additionalargs>/unsafe</additionalargs>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <additionalargs>/unsafe</additionalargs>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Authentication.cs" />
+    <Compile Include="Bus.cs" />
+    <Compile Include="BusObject.cs" />
+    <Compile Include="Connection.cs" />
+    <Compile Include="DBus.cs" />
+    <Compile Include="DProxy.cs" />
+    <Compile Include="ExportObject.cs" />
+    <Compile Include="Introspection.cs" />
+    <Compile Include="Mapper.cs" />
+    <Compile Include="MatchRule.cs" />
+    <Compile Include="Message.cs" />
+    <Compile Include="MessageFilter.cs" />
+    <Compile Include="MessageReader.cs" />
+    <Compile Include="MessageWriter.cs" />
+    <Compile Include="Address.cs" />
+    <Compile Include="PendingCall.cs" />
+    <Compile Include="Protocol.cs" />
+    <Compile Include="Signature.cs" />
+    <Compile Include="SocketTransport.cs" />
+    <Compile Include="Transport.cs" />
+    <Compile Include="TypeImplementer.cs" />
+    <Compile Include="UnixNativeTransport.cs" />
+    <Compile Include="UnixTransport.cs" />
+    <Compile Include="Wrapper.cs" />
+    <Compile Include="Notifications.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>
