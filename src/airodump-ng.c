@@ -3156,7 +3156,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
     if(G.show_sta) {
 	memcpy( strbuf, " BSSID              STATION "
-		"           PWR   Rate    Lost  Packets  Probes", columns_sta );
+		"           PWR   Rate    Lost    Frames  Probes", columns_sta );
 	strbuf[ws_col - 1] = '\0';
 	fprintf( stderr, "%s\n", strbuf );
 
