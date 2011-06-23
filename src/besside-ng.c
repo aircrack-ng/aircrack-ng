@@ -1337,7 +1337,8 @@ static void do_assoc(struct network *n, int stype)
 
 	wh->i_fc[0] |= IEEE80211_FC0_TYPE_MGT | stype;
 
-	*rc++ = htole16(IEEE80211_CAPINFO_ESS | IEEE80211_CAPINFO_PRIVACY);
+	*rc++ = htole16(IEEE80211_CAPINFO_ESS | IEEE80211_CAPINFO_PRIVACY
+			| IEEE80211_CAPINFO_SHORT_PREAMBLE);
 	*rc++ = htole16(0);
 
 	p = (unsigned char*) rc;

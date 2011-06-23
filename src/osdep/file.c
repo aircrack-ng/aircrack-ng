@@ -60,6 +60,11 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
 	if (rc != sizeof(pkh))
 		return -1;
 
+	if (pkh.caplen > sizeof(buf)) {
+		printf("Bad caplen %d\n", pkh.caplen);
+		return 0;
+	}
+
 	assert(pkh.caplen <= sizeof(buf));
 
 	rc = read(pf->pf_fd, buf, pkh.caplen);
@@ -90,6 +95,28 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
 			}
 		}
 		break;
+
+	case LINKTYPE_PRISM_HEADER:
+        	if (buf[7] == 0x40)
+          		off = 0x40;
+		else
+			off = *((int *)(buf + 4));
+
+		rc -= 4;
+		break;
+
+	case LINKTYPE_PPI_HDR:
+		off = le16_to_cpu(*(unsigned short *)(buf + 2));
+
+		/* for a while Kismet logged broken PPI headers */
+                if (off == 24 && le16_to_cpu(*(unsigned short *)(buf + 8)) == 2 )
+			off = 32;
+		
+		break;
+
+	case LINKTYPE_ETHERNET:
+		printf("Ethernet packets\n");
+		return 0;
 
 	default:
 		errx(1, "Unknown DTL %d", pf->pf_dtl);
@@ -171,6 +198,8 @@ static void file_close(struct wif *wi)
 
 	if (pn->pf_fd)
 		close(pn->pf_fd);
+
+	free(wi);
 }
 
 static int file_fd(struct wif *wi)
@@ -207,23 +236,29 @@ struct wif *file_open(char *iface)
 	wi->wi_get_mac		= file_get_mac;
 	wi->wi_get_monitor	= file_get_monitor;
 
+        pf = wi_priv(wi);
+
 	fd = open(iface + 7, O_RDONLY);
 	if (fd == -1)
 		err(1, "open()");
 
+	pf->pf_fd = fd;
+
 	if ((rc = read(fd, &pfh, sizeof(pfh))) != sizeof(pfh))
-		err(1, "read()");
+		goto __err;
 
 	if (pfh.magic != TCPDUMP_MAGIC)
-		errx(1, "bad magic");
+		goto __err;
 
 	if (pfh.version_major != PCAP_VERSION_MAJOR
 	    || pfh.version_minor != PCAP_VERSION_MINOR)
-		errx(1, "bad version");
+		goto __err;
 
-        pf = wi_priv(wi);
-	pf->pf_fd  = fd;
 	pf->pf_dtl = pfh.linktype;
 
 	return wi;
+
+__err:
+	wi_close(wi);
+	return (struct wif*) -1;
 }

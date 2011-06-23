@@ -13,7 +13,7 @@ PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
 		  ivstools$(EXE) kstats$(EXE) makeivs-ng$(EXE) \
-		  airdecloak-ng$(EXE)
+		  airdecloak-ng$(EXE) wpaclean$(EXE)
 
 ifneq ($(OSNAME), cygwin) #There is yet no libpcap support for windows, so we skip the crawler
 	HAVE_PCAP	= $(shell ld -lpcap 2> /dev/null && echo yes)
@@ -96,7 +96,7 @@ OBJS_MI		= makeivs-ng.o common.o uniqueiv.o
 OBJS_AB		= airbase-ng.o common.o crypto.o
 OBJS_AU		= airdecloak-ng.o common.o osdep/radiotap/radiotap-parser.o
 OBJS_TT		= tkiptun-ng.o common.o crypto.o
-
+OBJS_WC		= wpaclean.o
 
 OSD		= osdep
 LIBS		= -L$(OSD) -l$(OSD) $(LIBPCAP)
@@ -205,6 +205,9 @@ airdecloak-ng$(EXE): $(OBJS_AU)
 tkiptun-ng$(EXE): $(OBJS_TT) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_TT) -o $(@) $(LIBS) $(LIBSSL)
 
+wpaclean: $(OBJS_WC)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_WC) -o $(@) $(LIBS)
+
 strip: $(BINFILES) $(SBINFILES)
 	strip $(BINFILES) $(SBINFILES)
 
@@ -238,6 +241,7 @@ uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/easside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/besside-ng$(EXE)
 	-rm -f $(DESTDIR)$(bindir)/besside-ng-crawler$(EXE)
+	-rm -f $(DESTDIR)$(bindir)/wpaclean$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/airbase-ng$(EXE)
 	-rm -f $(DESTDIR)$(bindir)/makeivs-ng$(EXE)
 	-rm -f $(DESTDIR)$(bindir)/airdecloak-ng$(EXE)
