@@ -91,6 +91,14 @@ getDriver() {
    then
        DRIVER="ath9k"
    fi
+   if [ x$DRIVER = "x" ]
+   then
+	if [ -d /sys/class/net/tiwlan0/wireless ]
+	then
+		DRIVER=WiLink
+	fi
+   fi
+
 }
 
 scanProcesses() {
@@ -180,6 +188,17 @@ getChipset() {
     if [ x$DRIVER = "xOtus" -o x$DRIVER = "xarusb_lnx" ]
     then
 		CHIPSET="AR9001U"
+    fi
+
+    if [ x$DRIVER = "xWiLink" ]
+    then
+	CHIPSET=`dmesg | grep TIWLAN | grep CHIP | tail -n 1 | awk -F\  '{ print $6 }'` 
+   	if [ x$CHIPSET = "x" ]
+	then
+		CHIPSET="Unknown"
+	else
+		CHIPSET="TI${CHIPSET}"	
+	fi 
     fi
     
     if [ x$DRIVER = "xar9170usb" ]
@@ -740,6 +759,22 @@ do
     echo
     continue
  fi  
+
+ if [ x$DRIVER = "xWiLink" ]
+ then
+    getChipset $iface
+    printf "$iface\t\t${CHIPSET}\t\t${DRIVER}"
+    if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+    then 
+        printf "\n\t\t\t\tMonitor mode not yet supported"
+    fi  
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+    then 
+        stopStdIface $iface
+    fi  
+    echo
+    continue
+ fi
 
  if [ x$DRIVER = "xipw2200" ] || [ x"`iwpriv $iface 2>/dev/null | grep sw_reset`" != "x" ]
  then
