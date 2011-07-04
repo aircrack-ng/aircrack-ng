@@ -273,6 +273,7 @@ static struct client *find_add_client(struct network *n, unsigned char *mac)
 	return c;
 }
 
+#if 0
 static void hexdump(void *p, int len)
 {
 	unsigned char *x = p;
@@ -282,6 +283,7 @@ static void hexdump(void *p, int len)
 
 	printf("\n");
 }
+#endif
 
 static int parse_rsn(unsigned char *p, int l, int rsn)
 {
