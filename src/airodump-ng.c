@@ -589,42 +589,44 @@ char usage[] =
 "  usage: airodump-ng <options> <interface>[,<interface>,...]\n"
 "\n"
 "  Options:\n"
-"      --ivs               : Save only captured IVs\n"
-"      --gpsd              : Use GPSd\n"
-"      --write    <prefix> : Dump file prefix\n"
-"      -w                  : same as --write \n"
-"      --beacons           : Record all beacons in dump file\n"
-"      --update     <secs> : Display update delay in seconds\n"
-"      --showack           : Prints ack/cts/rts statistics\n"
-"      -h                  : Hides known stations for --showack\n"
-"      -f          <msecs> : Time in ms between hopping channels\n"
-"      --berlin     <secs> : Time before removing the AP/client\n"
-"                            from the screen when no more packets\n"
-"                            are received (Default: 120 seconds)\n"
-"      -r           <file> : Read packets from that file\n"
-"      -x          <msecs> : Active Scanning Simulation\n"
+"      --ivs                 : Save only captured IVs\n"
+"      --gpsd                : Use GPSd\n"
+"      --write      <prefix> : Dump file prefix\n"
+"      -w                    : same as --write \n"
+"      --beacons             : Record all beacons in dump file\n"
+"      --update       <secs> : Display update delay in seconds\n"
+"      --showack             : Prints ack/cts/rts statistics\n"
+"      -h                    : Hides known stations for --showack\n"
+"      -f            <msecs> : Time in ms between hopping channels\n"
+"      --berlin       <secs> : Time before removing the AP/client\n"
+"                              from the screen when no more packets\n"
+"                              are received (Default: 120 seconds)\n"
+"      -r             <file> : Read packets from that file\n"
+"      -x            <msecs> : Active Scanning Simulation\n"
 "      --output-format\n"
-"                <formats> : Output format. Possible values:\n"
-"                            pcap, ivs, csv, gps, kismet, netxml\n"
+"                  <formats> : Output format. Possible values:\n"
+"                              pcap, ivs, csv, gps, kismet, netxml\n"
+"      --ignore-negative-one : Removes the message that says\n"
+"                              fixed channel <interface>: -1\n"
 "\n"
 "  Filter options:\n"
-"      --encrypt   <suite> : Filter APs by cipher suite\n"
-"      --netmask <netmask> : Filter APs by mask\n"
-"      --bssid     <bssid> : Filter APs by BSSID\n"
-"      -a                  : Filter unassociated clients\n"
+"      --encrypt   <suite>   : Filter APs by cipher suite\n"
+"      --netmask <netmask>   : Filter APs by mask\n"
+"      --bssid     <bssid>   : Filter APs by BSSID\n"
+"      -a                    : Filter unassociated clients\n"
 "\n"
 "  By default, airodump-ng hop on 2.4GHz channels.\n"
 "  You can make it capture on other/specific channel(s) by using:\n"
-"      --channel <channels>: Capture on specific channels\n"
-"      --band <abg>        : Band on which airodump-ng should hop\n"
-"      -C    <frequencies> : Uses these frequencies in MHz to hop\n"
-"      --cswitch  <method> : Set channel switching method\n"
-"                    0     : FIFO (default)\n"
-"                    1     : Round Robin\n"
-"                    2     : Hop on last\n"
-"      -s                  : same as --cswitch\n"
+"      --channel <channels>  : Capture on specific channels\n"
+"      --band <abg>          : Band on which airodump-ng should hop\n"
+"      -C    <frequencies>   : Uses these frequencies in MHz to hop\n"
+"      --cswitch  <method>   : Set channel switching method\n"
+"                    0       : FIFO (default)\n"
+"                    1       : Round Robin\n"
+"                    2       : Hop on last\n"
+"      -s                    : same as --cswitch\n"
 "\n"
-"      --help              : Displays this usage screen\n"
+"      --help                : Displays this usage screen\n"
 "\n";
 
 int is_filtered_netmask(uchar *bssid)
@@ -5037,6 +5039,7 @@ int check_channel(struct wif *wi[], int cards)
     for(i=0; i<cards; i++)
     {
         chan = wi_get_channel(wi[i]);
+        if(G.ignore_negative_one == 1 && chan==-1) return 0;
         if(G.channel[i] != chan)
         {
             memset(G.message, '\x00', sizeof(G.message));
@@ -5237,6 +5240,7 @@ int main( int argc, char *argv[] )
         {"showack",  0, 0, 'A'},
         {"detect-anomaly", 0, 0, 'E'},
         {"output-format",  1, 0, 'o'},
+        {"ignore-negative-one", 0, &G.ignore_negative_one, 1},
         {0,          0, 0,  0 }
     };
 

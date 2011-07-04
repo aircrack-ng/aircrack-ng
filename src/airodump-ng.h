@@ -418,6 +418,8 @@ struct globals
     pthread_mutex_t mx_sort;			 /* lock write access to ap LL   */
     
     uchar selected_bssid[6];	/* bssid that is selected */
+
+    int ignore_negative_one;
 }
 G;
 
