@@ -249,6 +249,9 @@ getChipset() {
 
 	if [ "$DEBUG" = "1" ]
         then
+		echo $BUS
+		echo $BUSINFO
+		echo $USBID
                 echo $CHIPSET
         fi
 }
