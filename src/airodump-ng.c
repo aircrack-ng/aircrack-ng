@@ -383,8 +383,11 @@ struct oui * load_oui_file(void) {
 	unsigned char c[2];
 	struct oui *oui_ptr = NULL, *oui_head = NULL;
 
-	if (!(fp = fopen(OUI_PATH, "r")))
-		return NULL;
+	if (!(fp = fopen(OUI_PATH0, "r"))) {
+		if (!(fp = fopen(OUI_PATH1, "r"))) {
+			return NULL;
+		}
+	}
 
 	memset(buffer, 0x00, sizeof(buffer));
 	while (fgets(buffer, sizeof(buffer), fp) != NULL) {
@@ -3598,6 +3601,7 @@ char * sanitize_xml(unsigned char * text, int length)
 #define OUI_STR_SIZE 8
 #define MANUF_SIZE 128
 char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2) {
+	static char * oui_location = NULL;
 	char oui[OUI_STR_SIZE + 1];
 	char *manuf;
 	//char *buffer_manuf;
@@ -3631,7 +3635,20 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 		}
 	} else {
 		// If the file exist, then query it each time we need to get a manufacturer.
-		fp = fopen(OUI_PATH, "r");
+		if (oui_location == NULL) {
+			fp = fopen(OUI_PATH0, "r");
+			if (fp == NULL) {
+				fp = fopen(OUI_PATH1, "r");
+				if (fp != NULL) {
+					oui_location = OUI_PATH1;
+				}
+			} else {
+				oui_location = OUI_PATH0;
+			}
+		} else {
+			fp = fopen(oui_location, "r");
+		}
+
 		if (fp != NULL) {
 
 			memset(buffer, 0x00, sizeof(buffer));
