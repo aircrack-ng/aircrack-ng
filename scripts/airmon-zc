@@ -173,6 +173,10 @@ getDriver() {
 				DRIVER="rt3070sta"
 			fi
 		fi
+		if [ "$DRIVER" = "rtl8187L" ]
+		then
+			DRIVER="r8187l"
+		fi
 	fi
 	
 	if [ "$DEBUG" = "1" ]
@@ -336,6 +340,18 @@ getExtendedInfo() {
 		else
 			EXTENDED="Upgrade to kernel 2.6.37 or install compat-wireless stable"
 		fi
+	elif [ "$KVMINOR" -ge "29" ]
+	then
+		if [ "$DRIVER" = "r8187" ]
+		then
+			EXTENDED="Blacklist r8187 and use rtl8187 from the kernel"
+		fi
+		if [ "$DRIVER" = "r8187l" ]
+		then
+			EXTENDED="Blacklist r8187l and use rtl8187 from the kernel"
+		fi
+	else
+		EXTENDED="Upgrade to kernel 2.6.29 or install compat-wireless stable"
 	fi
 }
 
