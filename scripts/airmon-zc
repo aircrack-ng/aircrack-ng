@@ -9,556 +9,565 @@ IW_SOURCE="http://wireless.kernel.org/download/iw/iw-0.9.22.tar.bz2"
 IW_ERROR=""
 UDEV_ISSUE=0
 
-if [ ! -x "`which iw 2>&1`" ]
-then
-	echo "You don't have iw installed, please install it from your distro's package manager."
-	echo "If your distro doesn't have a recent version you can download it from this link:"
-	echo $IW_SOURCE
-	exit
-fi
+    if [ ! -x "`which iw 2>&1`" ]
+    then
+	    echo "You don't have iw installed, please install it from your distro's package manager."
+	    echo "If your distro doesn't have a recent version you can download it from this link:"
+	    echo $IW_SOURCE
+	    exit
+    fi
 
-if [ ! -x "`which ethtool 2>&1`" ]
-then
-	echo "Please install the ethtool package for your distro."
-	exit
-fi
+    if [ ! -x "`which ethtool 2>&1`" ]
+    then
+	    echo "Please install the ethtool package for your distro."
+	    exit
+    fi
 
-if [ ! -x "`which lsusb 2>&1`" ]
-then
-	echo "Please install lsusb from your distro's package manager."
-	exit
-fi
+    if [ ! -x "`which lsusb 2>&1`" ]
+    then
+	    echo "Please install lsusb from your distro's package manager."
+	    exit
+    fi
 
-if [ ! -x "`which lspci 2>&1`" ]
-then
-        echo "Please install lspci from your distro's package manager."
-        exit
-fi
+    if [ ! -x "`which lspci 2>&1`" ]
+    then
+	    echo "Please install lspci from your distro's package manager."
+	    exit
+    fi
 
-if [ ! -x "`which awk 2>&1`" ]
-then
-	echo "How in the world do you not have awk installed?"
-	echo "Please select a linux distro which has at least basic functionality (or install awk)."
-	exit
-fi
+    if [ ! -x "`which awk 2>&1`" ]
+    then
+	    echo "How in the world do you not have awk installed?"
+	    echo "Please select a linux distro which has at least basic functionality (or install awk)."
+	    exit
+    fi
 
-if [ ! -x "`which grep 2>&1`" ]
-then
-	echo "How in the world do you not have grep installed?"
-	echo "Please select a linux distro which has at least basic functionality (or install grep)."
-	exit
-fi
+    if [ ! -x "`which grep 2>&1`" ]
+    then
+	    echo "How in the world do you not have grep installed?"
+	    echo "Please select a linux distro which has at least basic functionality (or install grep)."
+	    exit
+    fi
 
-if [ "x$MON_PREFIX" = "x" ]
-then
-MON_PREFIX="mon"
-fi
+    if [ "x$MON_PREFIX" = "x" ]
+    then
+    MON_PREFIX="mon"
+    fi
 
-PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox"
-PS_ERROR="invalid"
+    PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox"
+    PS_ERROR="invalid"
 
-usage() {
-	printf "usage: `basename $0` <start|stop|check> <interface> [channel or frequency]\n"
-	echo
-	exit
-}
+    usage() {
+	    printf "usage: `basename $0` <start|stop|check> <interface> [channel or frequency]\n"
+	    echo
+	    exit
+    }
 
-startDeprecatedIface() {
-	iwconfig $1 mode monitor >/dev/null 2>&1
-	if [ ! -z $2 ]
-	then
-	    if [ $2 -lt 1000 ]
+    startDeprecatedIface() {
+	    iwconfig $1 mode monitor >/dev/null 2>&1
+	    if [ ! -z $2 ]
 	    then
-		iwconfig $1 channel $2 >/dev/null 2>&1
+		if [ $2 -lt 1000 ]
+		then
+		    iwconfig $1 channel $2 >/dev/null 2>&1
+		else
+		    iwconfig $1 freq "$2"000000 > /dev/null 2>&1
+		fi
+	    fi
+	    iwconfig $1 key off >/dev/null 2>&1
+	    ifconfig $1 up
+	    printf " (monitor mode enabled)"
+    }
+
+    startMac80211Iface() {
+	    IW_ERROR=`iw dev $iface interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
+		    if [ x$IW_ERROR = "x" ]
+		    then
+			    sleep 2s
+			    if [ ! -z $3 ]
+			    then
+				    if [ $3 -lt 1000 ]
+				    then
+					    iw dev $MONDEV set channel $3
+				    else
+					    iw dev $MONDEV set freq "$3"
+				    fi
+			    fi
+		    ifconfig $MONDEV up
+		    printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+		    else
+			    if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
+			    then
+				    echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
+				    sleep 1s
+				    if [ $3 -lt 1000 ]
+				    then
+					    iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
+				    else
+					    iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
+				    fi
+			    ifconfig $MONDEV up
+			    printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+			    else
+				    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
+			    fi
+	    fi
+    }
+
+    stopMac80211Iface() {
+	    IW_ERROR=`iw dev "$iface" del 2>&1 | grep "nl80211 not found"`
+	    if [ x$IW_ERROR = "x" ]
+	    then
+		    printf " (removed)"
 	    else
-		iwconfig $1 freq "$2"000000 > /dev/null 2>&1
+		    if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
+		    then
+			    echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+			    printf " (removed)"
+		    else
+		    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
+		    fi
+	    fi
+    }
+
+    stopDeprecatedIface() {
+	    ifconfig $1 down >/dev/null 2>&1
+	    iwconfig $1 mode Managed >/dev/null 2>&1
+	    ifconfig $1 down >/dev/null 2>&1
+	    printf " (monitor mode disabled)"
+    }
+
+    getDriver() {
+	    #standard detection path, this is all that is needed for proper drivers
+	    DRIVER=`echo "$ethtool_output" | awk '/driver/ {print $2}'`
+
+	    if [ "$DRIVER" = "" ]
+	    then
+		    if [ -f /sys/class/net/$1/device/uevent ]
+		    then
+			    DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/uevent`"
+		    fi
+	    fi
+	    
+	    #here we test for driver usb, ath9k_htc,rt2870, possibly others show this
+	    if [ "$DRIVER" = "usb" ]
+	    then
+		    BUSADDR="`echo "$ethtool_output" | awk '/bus-info/ {print $2}'`:1.0"
+		    if [ "$BUSADDR" != "" ]
+		    then
+			    if [ -f /sys/class/net/$1/device/$BUSADDR/uevent ]
+			    then
+				    DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent`"
+			    fi
+		    fi
+
+		    #here we can normalize driver names we don't like
+		    if [ "$DRIVER" = "rt2870" ]
+		    then
+			    DRIVER="rt2870sta"
+		    fi
+		    if [ -f /sys/class/net/$1/device/idProduct ]
+		    then
+			    if [ `cat /sys/class/net/$1/device/idProduct` = "3070" ]
+			    then
+				    DRIVER="rt3070sta"
+			    fi
+		    fi
+	    fi
+	    if [ "$DRIVER" = "rtl8187L" ]
+	    then
+		    DRIVER="r8187l"
+	    fi
+
+	    if [ "$DEBUG" = "1" ]
+	    then
+		    echo $DRIVER
+	    fi
+
+	    #from detection
+	    if [ $DRIVER ]
+	    then
+	    #remove the above when DRIVER detection actually works properly
+	    if [ `modprobe -l $DRIVER | grep 'kernel/drivers'` ]
+	    then
+		    FROM="K"
+		    #we add special handling here because we hate the vendor drivers AND they install in the wrong place
+		    if [ "$DRIVER" = "r8187" ]
+		    then
+		    	FROM="V"
+		    elif [ "$DRIVER" = "r8187l" ]
+		    then
+		    	FROM="V"
+		    fi
+	    elif [ `modprobe -l $DRIVER | grep 'updates/drivers'` ]
+	    then
+		    FROM="C"
+	    elif [ `modprobe -l $DRIVER | grep misc` ]
+	    then
+		    FROM="M"
+		    #add a yell at the user in here
+	    else
+		    FROM="?"
+	    fi
+
+	    if [ "$DEBUG" = "1" ]
+	    then
+		    echo $FROM
+	    fi
+	    fi
+
+	    FIRMWARE=`echo "$ethtool_output" | awk '/firmware-version/ {print $2}'`
+	    if [ "$FIRMWARE" = "N/A" ]
+	    then
+		    FIRMWARE="$FIRMWARE\t"
+	    elif [ -z "$FIRMWARE" ]
+	    then
+		    FIRMWARE="unavailable"
+	    fi
+
+	    if [ "$DEBUG" = "1" ]
+	    then
+		    echo $FIRMWARE
+	    fi
+
+    }
+
+    getChipset() {
+	    #this needs cleanup, we shouldn't have multiple lines assigning chipset per bus
+	    #fix this to be one line per bus
+	    if [ -f /sys/class/net/$1/device/modalias ]
+	    then
+		    BUS=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1`
+		    if [ $BUS = "usb" ]
+		    then
+			    BUSINFO=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/'`
+			    CHIPSET=`lsusb | grep -i "$BUSINFO" | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
+		    elif [ $BUS = "pci" ]
+		    then
+			    BUSINFO=`echo "$ethtool_output" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //'`
+			    CHIPSET=`lspci | grep "$BUSINFO" | cut -f3- -d ":" | sed 's/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
+		    else
+			    CHIPSET="Not pci or usb"
+		    fi
+	    #we don't do a check for usb here but it is obviously only going to work for usb
+	    elif [ -f /sys/class/net/$1/device/idVendor -a -f /sys/class/net/$1/device/idProduct ]
+	    then
+		    USBID=`cat /sys/class/net/$1/device/idVendor`:`cat /sys/class/net/$1/device/idProduct`
+		    CHIPSET=`lsusb | grep -i "$USBID" | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
+	    else
+		    CHIPSET="non-mac80211 device? (report this!)"
+		    #this seems to somehow trigger on b43's 4318 chip.... but it really shouldn't.
+	    fi
+
+	    if [ "$DEBUG" = "1" ]
+	    then
+		    echo $BUS
+		    echo $BUSINFO
+		    echo $USBID
+		    echo $CHIPSET
+	    fi
+    }
+
+    getStack() {
+	    if [ x"$1" = "x" ]
+	    then
+		    return
+	    fi
+
+	    if [ -d /sys/class/net/$1/phy80211/ ]
+	    then
+		    MAC80211=1
+		    STACK="mac80211"
+	    else
+		    MAC80211=0
+		    STACK="ieee80211"
+	    fi
+	    if [ -e /proc/sys/dev/$1/fftxqmin ]
+	    then
+		    MAC80211=0
+		    STACK="net80211"
+	    fi
+
+	    if [ "$DEBUG" = "1" ]
+	    then
+		    echo $STACK
+	    fi
+
+    }
+
+    getExtendedInfo() {
+	    #first we set all the real info
+	    if [ -f /sys/class/net/$1/device/product ]
+	    then
+		    EXTENDED=`cat /sys/class/net/$1/device/product`
+	    fi
+
+	    #now we set all the overrides based on bad drivers
+	    KV=`uname -r | awk -F'-' '{print $1}'`
+	    KVMAJOR=`echo $KV | awk -F'.' '{print $1$2}'`
+	    KVMINOR=`echo $KV | awk -F'.' '{print $3}'`
+
+	    if [ "$KVMAJOR" != "26" ]
+	    then
+		    echo "You aren't running a 2.6 kernel, I'm surprised it didn't error before now."
+		    exit
+	    fi
+
+	    if [ "$DRIVER" = "rt2870sta" ]
+	    then
+		    if [ "$KVMINOR" -ge "35" ]
+		    then
+			    EXTENDED="Blacklist rt2870sta and use rt2800usb"
+		    else
+			    EXTENDED="Upgrade to kernel 2.6.35 or install compat-wireless stable"
+		    fi
+		    #add in a flag for "did you tell use to do X" and emit instructions
+	    elif [ "$DRIVER" = "rt3070sta" ]
+	    #untested
+	    then
+		    if [ "$KVMINOR" -ge "35" ]
+		    then
+			    EXTENDED="Blacklist rt3070sta and use rt2800usb"
+		    else
+			    EXTENDED="Upgrade to kernel 2.6.35 or install compat-wireless stable"
+		    fi
+	    elif [ "$DRIVER" = "ar9170usb" ]
+	    then
+		    if [ "$KVMINOR" -ge "37" ]
+		    then
+			    EXTENDED="Blacklist ar9170usb and use carl9170"
+		    else
+			    EXTENDED="Upgrade to kernel 2.6.37 or install compat-wireless stable"
+		    fi
+	    elif [ "$DRIVER" = "arusb_lnx" ]
+	    #untested
+	    then
+		    if [ "$KVMINOR" -ge "37" ]
+		    then
+			    EXTENDED="Blacklist arusb_lnx and use carl9170"
+		    else
+			    EXTENDED="Upgrade to kernel 2.6.37 or install compat-wireless stable"
+		    fi
+	    elif [ "$KVMINOR" -ge "29" ]
+	    then
+		    if [ "$DRIVER" = "r8187" ]
+		    then
+			    EXTENDED="\tBlacklist r8187 and use rtl8187 from the kernel"
+		    fi
+		    if [ "$DRIVER" = "r8187l" ]
+		    then
+			    EXTENDED="\tBlacklist r8187l and use rtl8187 from the kernel"
+		    fi
+	    else
+		    EXTENDED="Upgrade to kernel 2.6.29 or install compat-wireless stable"
+	    fi
+    }
+
+    scanProcesses() {
+	if [ -f "`which service 2>&1`" ] && [ x"$1" = "xkill" ]
+	then
+	    service network-manager stop 2>/dev/null >/dev/null
+	    service avahi-daemon stop 2>/dev/null >/dev/null
+	fi
+
+	match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
+	if [ $match -gt 0 -a x"$1" != "xkill" ]
+	then
+	    printf "\n\n"
+	    echo "Found $match processes that could cause trouble."
+	    echo "If airodump-ng, aireplay-ng or airtun-ng stops working after"
+	    echo "a short period of time, you may want to kill (some of) them!"
+	    echo -e "\nPID\tName"
+	else
+	    if [ x"$1" != "xkill" ]
+	    then
+		return
 	    fi
 	fi
-	iwconfig $1 key off >/dev/null 2>&1
-	ifconfig $1 up
-	printf " (monitor mode enabled)"
-}
 
-startMac80211Iface() {
-	IW_ERROR=`iw dev $iface interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
-		if [ x$IW_ERROR = "x" ]
-		then
-			sleep 2s
-			if [ ! -z $3 ]
-			then
-				if [ $3 -lt 1000 ]
-				then
-					iw dev $MONDEV set channel $3
-				else
-					iw dev $MONDEV set freq "$3"
-				fi
-			fi
-		ifconfig $MONDEV up
-		printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
-		else
-			if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
-			then
-				echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
-				sleep 1s
-				if [ $3 -lt 1000 ]
-				then
-					iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
-				else
-					iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
-				fi
-			ifconfig $MONDEV up
-			printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
-			else
-				printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
-			fi
-	fi
-}
-
-stopMac80211Iface() {
-	IW_ERROR=`iw dev "$iface" del 2>&1 | grep "nl80211 not found"`
-	if [ x$IW_ERROR = "x" ]
+	if [ $match -gt 0 -a x"$1" = "xkill" ]
 	then
-		printf " (removed)"
-	else
-		if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
-		then
-			echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
-			printf " (removed)"
-		else
-		printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
-		fi
-	fi
-}
-
-stopDeprecatedIface() {
-	ifconfig $1 down >/dev/null 2>&1
-	iwconfig $1 mode Managed >/dev/null 2>&1
-	ifconfig $1 down >/dev/null 2>&1
-	printf " (monitor mode disabled)"
-}
-
-getDriver() {
-	#standard detection path, this is all that is needed for proper drivers
-	DRIVER=`echo "$ethtool_output" | awk '/driver/ {print $2}'`
-
-	if [ "$DRIVER" = "" ]
-	then
-		if [ -f /sys/class/net/$1/device/uevent ]
-		then
-			DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/uevent`"
-		fi
-	fi
-	
-	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
-	if [ "$DRIVER" = "usb" ]
-	then
-		BUSADDR="`echo "$ethtool_output" | awk '/bus-info/ {print $2}'`:1.0"
-		if [ "$BUSADDR" != "" ]
-		then
-			if [ -f /sys/class/net/$1/device/$BUSADDR/uevent ]
-			then
-				DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent`"
-			fi
-		fi
-
-		#here we can normalize driver names we don't like
-		if [ "$DRIVER" = "rt2870" ]
-		then
-			DRIVER="rt2870sta"
-		fi
-		if [ -f /sys/class/net/$1/device/idProduct ]
-		then
-			if [ `cat /sys/class/net/$1/device/idProduct` = "3070" ]
-			then
-				DRIVER="rt3070sta"
-			fi
-		fi
-	fi
-	if [ "$DRIVER" = "rtl8187L" ]
-	then
-		DRIVER="r8187l"
+	    echo "Killing all those processes..."
 	fi
 
-	if [ "$DEBUG" = "1" ]
-	then
-		echo $DRIVER
-	fi
+	i=1
+	while [ $i -le $match ]
+	do
+	    pid=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}'`
+	    pname=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}'`
+	    if [ x"$1" != "xkill" ]
+	    then
+		printf "$pid\t$pname\n"
+	    else
+		kill $pid
+	    fi
+	    i=$(($i+1))
+	done
+    }
 
-	#from detection
-	if [ $DRIVER ]
-	then
-	#remove the above when DRIVER detection actually works properly
-	if [ `modprobe -l $DRIVER | grep 'kernel/drivers'` ]
-	then
-		FROM="K"
-	elif [ `modprobe -l $DRIVER | grep 'updates/drivers'` ]
-	then
-		FROM="C"
-	elif [ `modprobe -l $DRIVER | grep misc` ]
-	then
-		FROM="M"
-		#add a yell at the user in here
-	else
-		FROM="?"
-	fi
-
-	if [ "$DEBUG" = "1" ]
-        then
-                echo $FROM
-        fi
-	fi
-
-	FIRMWARE=`echo "$ethtool_output" | awk '/firmware-version/ {print $2}'`
-	if [ "$FIRMWARE" = "N/A" ]
-	then
-		FIRMWARE="$FIRMWARE\t"
-	elif [ -z "$FIRMWARE" ]
-	then
-		FIRMWARE="unavailable"
-	fi
-
-        if [ "$DEBUG" = "1" ]
-        then
-                echo $FIRMWARE
-        fi
-
-}
-
-getChipset() {
-	#this needs cleanup, we shouldn't have multiple lines assigning chipset per bus
-	#fix this to be one line per bus
-	if [ -f /sys/class/net/$1/device/modalias ]
-	then
-		BUS=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1`
-		if [ $BUS = "usb" ]
-		then
-			BUSINFO=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/'`
-			CHIPSET=`lsusb | grep -i "$BUSINFO" | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
-		elif [ $BUS = "pci" ]
-		then
-			BUSINFO=`echo "$ethtool_output" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //'`
-			CHIPSET=`lspci | grep "$BUSINFO" | cut -f3- -d ":" | sed 's/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
-		else
-			CHIPSET="Not pci or usb"
-		fi
-	#we don't do a check for usb here but it is obviously only going to work for usb
-	elif [ -f /sys/class/net/$1/device/idVendor -a -f /sys/class/net/$1/device/idProduct ]
-	then
-		USBID=`cat /sys/class/net/$1/device/idVendor`:`cat /sys/class/net/$1/device/idProduct`
-		CHIPSET=`lsusb | grep -i "$USBID" | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
-	else
-		CHIPSET="non-mac80211 device? (report this!)"
-		#this seems to somehow trigger on b43's 4318 chip.... but it really shouldn't.
-	fi
-
-	if [ "$DEBUG" = "1" ]
-        then
-		echo $BUS
-		echo $BUSINFO
-		echo $USBID
-                echo $CHIPSET
-        fi
-}
-
-getStack() {
+    checkProcessesIface() {
 	if [ x"$1" = "x" ]
 	then
-		return
+	    return
+	fi
+
+	match2=`ps -o comm= -p 1 2>&1 | grep $PS_ERROR | grep -v grep | wc -l`
+	if [ $match2 -gt 0 ]
+	then
+	    return
+	fi
+
+	for i in `ps auxw | grep $1 | grep -v "grep" | grep -v "airmon-zc" | awk '{print $2}'`
+	do
+	    pname=`ps -o comm= -p $i`
+	    echo "Process with PID $i ($pname) is running on interface $1"
+	done
+    }
+
+    getPhy() {
+	if [ x"$1" = "x" ]
+	then
+	    return
+	fi
+
+	if [ $MAC80211 = "0" ]
+	then
+	    PHYDEV="null"
+	    return
 	fi
 
 	if [ -d /sys/class/net/$1/phy80211/ ]
 	then
-		MAC80211=1
-		STACK="mac80211"
-	else
-		MAC80211=0
-		STACK="ieee80211"
+	    PHYDEV="`ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/'`"
 	fi
-	if [ -e /proc/sys/dev/$1/fftxqmin ]
-	then
-		MAC80211=0
-		STACK="net80211"
-	fi
+    }
 
-	if [ "$DEBUG" = "1" ]
-        then
-                echo $STACK
-        fi
+    getNewMon() {
+	i=0
 
-}
+	while [ -d /sys/class/net/$MON_PREFIX$i/ ]
+	do
+	    i=$(($i+1))
+	done
 
-getExtendedInfo() {
-	#first we set all the real info
-        if [ -f /sys/class/net/$1/device/product ]
-        then
-                EXTENDED=`cat /sys/class/net/$1/device/product`
-        fi
+	MONDEV="$MON_PREFIX$i"
+    }
 
-	#now we set all the overrides based on bad drivers
-	KV=`uname -r | awk -F'-' '{print $1}'`
-	KVMAJOR=`echo $KV | awk -F'.' '{print $1$2}'`
-	KVMINOR=`echo $KV | awk -F'.' '{print $3}'`
-
-	if [ "$KVMAJOR" != "26" ]
-	then
-		echo "You aren't running a 2.6 kernel, I'm surprised it didn't error before now."
-		exit
-	fi
-
-	if [ "$DRIVER" = "rt2870sta" ]
-	then
-		if [ "$KVMINOR" -ge "35" ]
-		then
-			EXTENDED="Blacklist rt2870sta and use rt2800usb"
-		else
-			EXTENDED="Upgrade to kernel 2.6.35 or install compat-wireless stable"
-		fi
-		#add in a flag for "did you tell use to do X" and emit instructions
-	elif [ "$DRIVER" = "rt3070sta" ]
-	#untested
-	then
-		if [ "$KVMINOR" -ge "35" ]
-		then
-			EXTENDED="Blacklist rt3070sta and use rt2800usb"
-		else
-			EXTENDED="Upgrade to kernel 2.6.35 or install compat-wireless stable"
-		fi
-	elif [ "$DRIVER" = "ar9170usb" ]
-	then
-		if [ "$KVMINOR" -ge "37" ]
-		then
-			EXTENDED="Blacklist ar9170usb and use carl9170"
-		else
-			EXTENDED="Upgrade to kernel 2.6.37 or install compat-wireless stable"
-		fi
-	elif [ "$DRIVER" = "arusb_lnx" ]
-	#untested
-	then
-		if [ "$KVMINOR" -ge "37" ]
-		then
-			EXTENDED="Blacklist arusb_lnx and use carl9170"
-		else
-			EXTENDED="Upgrade to kernel 2.6.37 or install compat-wireless stable"
-		fi
-	elif [ "$KVMINOR" -ge "29" ]
-	then
-		if [ "$DRIVER" = "r8187" ]
-		then
-			EXTENDED="Blacklist r8187 and use rtl8187 from the kernel"
-		fi
-		if [ "$DRIVER" = "r8187l" ]
-		then
-			EXTENDED="Blacklist r8187l and use rtl8187 from the kernel"
-		fi
-	else
-		EXTENDED="Upgrade to kernel 2.6.29 or install compat-wireless stable"
-	fi
-}
-
-scanProcesses() {
-    if [ -f "`which service 2>&1`" ] && [ x"$1" = "xkill" ]
+    if [ x"`which id 2> /dev/null`" != "x" ]
     then
-    	service network-manager stop 2>/dev/null >/dev/null
- 	service avahi-daemon stop 2>/dev/null >/dev/null
+	    USERID="`id -u 2> /dev/null`"
     fi
 
-    match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
-    if [ $match -gt 0 -a x"$1" != "xkill" ]
+    if [ x$USERID = "x" -a x$UID != "x" ]
     then
-        printf "\n\n"
-        echo "Found $match processes that could cause trouble."
-        echo "If airodump-ng, aireplay-ng or airtun-ng stops working after"
-        echo "a short period of time, you may want to kill (some of) them!"
-        echo -e "\nPID\tName"
-    else
-        if [ x"$1" != "xkill" ]
-        then
-            return
-        fi
+	    USERID=$UID
     fi
 
-    if [ $match -gt 0 -a x"$1" = "xkill" ]
+    if [ x$USERID != "x" -a x$USERID != "x0" ]
     then
-        echo "Killing all those processes..."
+	    echo Run it as root ; exit ;
     fi
 
-    i=1
-    while [ $i -le $match ]
+    iwpriv > /dev/null 2> /dev/null ||
+      { echo Wireless tools not found ; exit ; }
+
+    if [ x"$1" = "xcheck" ] || [ x"$1" = "xstart" ]
+    then
+	scanProcesses
+	for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
+	do
+	    checkProcessesIface $iface
+	done
+
+	if [ x"$2" = "xkill" ]
+	then
+	    scanProcesses "$2"
+	fi
+	if [ x"$1" = "xcheck" ]
+	then
+	    exit
+	fi
+    fi
+
+    if [ $# -ne "0" ]
+    then
+	if [ x$1 != "xstart" ] && [ x$1 != "xstop" ]
+	then
+	    usage
+	fi
+
+	if [ x$2 = "x" ]
+	then
+	    usage
+	fi
+    fi
+
+    SYSFS=0
+    if [ -d /sys/ ]
+    then
+	SYSFS=1
+    fi
+
+    printf "\nXXX: Warning, airmon-zc is under heavy development!!!\n"
+    printf "This script is intended to replace airmon-ng and is functionally based on it.\n"
+    printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng\n"
+    printf "If your card doesn't show up that means it isn't supported, please don't report that, I already know.\n\n"
+
+    uname -a
+    printf "\nK indicates driver is from `uname -r`\n"
+    if [ -n "`modprobe -l compat 2>&1`" ]
+    then
+	    modprobe compat 2>&1
+    fi
+    if [ -f /sys/module/compat/parameters/compat_version ]
+    then
+	    printf "C indicates driver is from `cat /sys/module/compat/parameters/compat_version`\n"
+    fi
+    printf "V indicates driver comes directly from the vendor, almost certainly a bad thing\n"
+    printf "? indicates we do not know where the driver comes from... report this\n"
+    printf "\n\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
+
+
+    for iface in `ifconfig -a 2>/dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
     do
-        pid=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}'`
-        pname=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}'`
-        if [ x"$1" != "xkill" ]
-        then
-            printf "$pid\t$pname\n"
-        else
-            kill $pid
-        fi
-        i=$(($i+1))
-    done
-}
 
-checkProcessesIface() {
-    if [ x"$1" = "x" ]
-    then
-        return
-    fi
-
-    match2=`ps -o comm= -p 1 2>&1 | grep $PS_ERROR | grep -v grep | wc -l`
-    if [ $match2 -gt 0 ]
-    then
-	return
-    fi
-
-    for i in `ps auxw | grep $1 | grep -v "grep" | grep -v "airmon-zc" | awk '{print $2}'`
-    do
-        pname=`ps -o comm= -p $i`
-        echo "Process with PID $i ($pname) is running on interface $1"
-    done
-}
-
-getPhy() {
-    if [ x"$1" = "x" ]
-    then
-        return
-    fi
-
-    if [ $MAC80211 = "0" ]
-    then
-        PHYDEV="null"
-	return
-    fi
-
-    if [ -d /sys/class/net/$1/phy80211/ ]
-    then
-	PHYDEV="`ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/'`"
-    fi
-}
-
-getNewMon() {
-    i=0
-
-    while [ -d /sys/class/net/$MON_PREFIX$i/ ]
-    do
-        i=$(($i+1))
+     if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
+     then
+	MADWIFI=1
+	ifconfig $iface up
+	printf "$iface\t\tAtheros\t\tmadwifi-ng"
+	if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+	then
+	    IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath`
+	    ifconfig $iface up 2>/dev/null >/dev/null
+	    if [ $CH -lt 1000 ]
+	    then
+		iwconfig $IFACE channel $CH 2>/dev/null >/dev/null
+	    else
+		iwconfig $IFACE freq "$CH"000000 2>/dev/null >/dev/null
+	    fi
+	    ifconfig $IFACE up 2>/dev/null >/dev/null
+	    UDEV_ISSUE=$?
+	fi
+	if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+	then
+		echo "$iface does not support 'stop', do it on ath interface"
+	fi
+	echo
+	continue
+     fi
     done
 
-    MONDEV="$MON_PREFIX$i"
-}
+    if [ $MADWIFI -eq 1 ]
+    then
+	    sleep 1s
+    fi
 
-if [ x"`which id 2> /dev/null`" != "x" ]
-then
-	USERID="`id -u 2> /dev/null`"
-fi
-
-if [ x$USERID = "x" -a x$UID != "x" ]
-then
-	USERID=$UID
-fi
-
-if [ x$USERID != "x" -a x$USERID != "x0" ]
-then
-	echo Run it as root ; exit ;
-fi
-
-iwpriv > /dev/null 2> /dev/null ||
-  { echo Wireless tools not found ; exit ; }
-
-if [ x"$1" = "xcheck" ] || [ x"$1" = "xstart" ]
-then
-    scanProcesses
     for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
     do
-        checkProcessesIface $iface
-    done
-
-    if [ x"$2" = "xkill" ]
-    then
-        scanProcesses "$2"
-    fi
-    if [ x"$1" = "xcheck" ]
-    then
-        exit
-    fi
-fi
-
-if [ $# -ne "0" ]
-then
-    if [ x$1 != "xstart" ] && [ x$1 != "xstop" ]
-    then
-        usage
-    fi
-
-    if [ x$2 = "x" ]
-    then
-        usage
-    fi
-fi
-
-SYSFS=0
-if [ -d /sys/ ]
-then
-    SYSFS=1
-fi
-
-printf "\nXXX: Warning, airmon-zc is under heavy development!!!\n"
-printf "This script is intended to replace airmon-ng and is functionally based on it.\n"
-printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng\n"
-printf "If your card doesn't show up that means it isn't supported, please don't report that, I already know.\n\n"
-
-uname -a
-if [ -n "`modprobe -l compat 2>&1`" ]
-then
-        modprobe compat 2>&1
-fi
-if [ -f /sys/module/compat/parameters/compat_version ]
-then
-	printf "\nK indicates driver is from `uname -r`\n"
-	printf "C indicates driver is from `cat /sys/module/compat/parameters/compat_version`\n"
-	printf "? indicates driver does not appear to be from kernel or compat-wireless... report this\n"
-fi
-printf "\n\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
-
-
-for iface in `ifconfig -a 2>/dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
-do
-
- if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
- then
-    MADWIFI=1
-    ifconfig $iface up
-    printf "$iface\t\tAtheros\t\tmadwifi-ng"
-    if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
-    then
-        IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath`
-        ifconfig $iface up 2>/dev/null >/dev/null
-        if [ $CH -lt 1000 ]
-        then
-            iwconfig $IFACE channel $CH 2>/dev/null >/dev/null
-        else
-            iwconfig $IFACE freq "$CH"000000 2>/dev/null >/dev/null
-        fi
-        ifconfig $IFACE up 2>/dev/null >/dev/null
-        UDEV_ISSUE=$?
-    fi
-    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
-    then
-            echo "$iface does not support 'stop', do it on ath interface"
-    fi
-    echo
-    continue
- fi
-done
-
-if [ $MADWIFI -eq 1 ]
-then
-	sleep 1s
-fi
-
-for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
-do
- unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO USBID CHIPSET EXTENDED PHYDEV 
- #add a RUNNING check here and up the device if it isn't already
- ethtool_output="`ethtool -i $iface`"
+     unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO USBID CHIPSET EXTENDED PHYDEV 
+     #add a RUNNING check here and up the device if it isn't already
+     ethtool_output="`ethtool -i $iface 2>&1`"
  if [ "$ethtool_output"!="Cannot get driver information: Operation not supported" ]
  then
 	getDriver  $iface
