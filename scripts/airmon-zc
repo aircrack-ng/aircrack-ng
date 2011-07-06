@@ -173,12 +173,12 @@ getDriver() {
 				DRIVER="rt3070sta"
 			fi
 		fi
-		if [ "$DRIVER" = "rtl8187L" ]
-		then
-			DRIVER="r8187l"
-		fi
 	fi
-	
+	if [ "$DRIVER" = "rtl8187L" ]
+	then
+		DRIVER="r8187l"
+	fi
+
 	if [ "$DEBUG" = "1" ]
 	then
 		echo $DRIVER
