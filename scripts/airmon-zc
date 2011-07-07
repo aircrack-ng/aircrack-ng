@@ -178,6 +178,10 @@ UDEV_ISSUE=0
 	    then
 		    DRIVER="r8187l"
 	    fi
+	    if [ "$DRIVER" = "rtl8187" ] && [ "$STACK" = "ieee80211" ]
+	    then
+	    	    DRIVER="r8187"
+	    fi
 
 	    if [ "$DEBUG" = "1" ]
 	    then
@@ -575,8 +579,8 @@ UDEV_ISSUE=0
      ethtool_output="`ethtool -i $iface 2>&1`"
  if [ "$ethtool_output"!="Cannot get driver information: Operation not supported" ]
  then
-	getDriver  $iface
-	getStack   $iface
+	getStack  $iface
+	getDriver   $iface
 	getPhy     $iface
 	getChipset $iface
 	getExtendedInfo $iface
