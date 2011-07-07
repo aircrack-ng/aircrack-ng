@@ -245,7 +245,7 @@ UDEV_ISSUE=0
 		    elif [ $BUS = "pci" ]
 		    then
 			    BUSINFO=`echo "$ethtool_output" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //'`
-			    CHIPSET=`lspci | grep "$BUSINFO" | cut -f3- -d ":" | sed 's/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
+			    CHIPSET=`lspci | grep "$BUSINFO" | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
 		    else
 			    CHIPSET="Not pci or usb"
 		    fi
@@ -299,7 +299,12 @@ UDEV_ISSUE=0
 	    #first we set all the real info
 	    if [ -f /sys/class/net/$1/device/product ]
 	    then
-		    EXTENDED=`cat /sys/class/net/$1/device/product`
+		    EXTENDED=\t`cat /sys/class/net/$1/device/product`
+	    fi
+
+	    if [ "$DRIVER" = "brcmsmac" ]
+	    then
+		EXTENDED="Driver commonly referred to as brcm80211 (no injection yet)"
 	    fi
 
 	    #now we set all the overrides based on bad drivers
@@ -317,9 +322,9 @@ UDEV_ISSUE=0
 	    then
 		    if [ "$KVMINOR" -ge "35" ]
 		    then
-			    EXTENDED="Blacklist rt2870sta and use rt2800usb"
+			    EXTENDED="\tBlacklist rt2870sta and use rt2800usb"
 		    else
-			    EXTENDED="Upgrade to kernel 2.6.35 or install compat-wireless stable"
+			    EXTENDED="\tUpgrade to kernel 2.6.35 or install compat-wireless stable"
 		    fi
 		    #add in a flag for "did you tell use to do X" and emit instructions
 	    elif [ "$DRIVER" = "rt3070sta" ]
@@ -327,39 +332,39 @@ UDEV_ISSUE=0
 	    then
 		    if [ "$KVMINOR" -ge "35" ]
 		    then
-			    EXTENDED="Blacklist rt3070sta and use rt2800usb"
+			    EXTENDED="\tBlacklist rt3070sta and use rt2800usb"
 		    else
-			    EXTENDED="Upgrade to kernel 2.6.35 or install compat-wireless stable"
+			    EXTENDED="\tUpgrade to kernel 2.6.35 or install compat-wireless stable"
 		    fi
 	    elif [ "$DRIVER" = "ar9170usb" ]
 	    then
 		    if [ "$KVMINOR" -ge "37" ]
 		    then
-			    EXTENDED="Blacklist ar9170usb and use carl9170"
+			    EXTENDED="\tBlacklist ar9170usb and use carl9170"
 		    else
-			    EXTENDED="Upgrade to kernel 2.6.37 or install compat-wireless stable"
+			    EXTENDED="\tUpgrade to kernel 2.6.37 or install compat-wireless stable"
 		    fi
 	    elif [ "$DRIVER" = "arusb_lnx" ]
 	    #untested
 	    then
 		    if [ "$KVMINOR" -ge "37" ]
 		    then
-			    EXTENDED="Blacklist arusb_lnx and use carl9170"
+			    EXTENDED="\tBlacklist arusb_lnx and use carl9170"
 		    else
-			    EXTENDED="Upgrade to kernel 2.6.37 or install compat-wireless stable"
+			    EXTENDED="\tUpgrade to kernel 2.6.37 or install compat-wireless stable"
 		    fi
 	    elif [ "$KVMINOR" -ge "29" ]
 	    then
 		    if [ "$DRIVER" = "r8187" ]
 		    then
-			    EXTENDED="\tBlacklist r8187 and use rtl8187 from the kernel"
+			    EXTENDED="\t\tBlacklist r8187 and use rtl8187 from the kernel"
 		    fi
 		    if [ "$DRIVER" = "r8187l" ]
 		    then
-			    EXTENDED="\tBlacklist r8187l and use rtl8187 from the kernel"
+			    EXTENDED="\t\tBlacklist r8187l and use rtl8187 from the kernel"
 		    fi
 	    else
-		    EXTENDED="Upgrade to kernel 2.6.29 or install compat-wireless stable"
+		    EXTENDED="\tUpgrade to kernel 2.6.29 or install compat-wireless stable"
 	    fi
     }
 
@@ -581,7 +586,7 @@ UDEV_ISSUE=0
  fi
  
  #yes this really is the main output loop
- printf "$FROM[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET\t\t$EXTENDED"
+ printf "$FROM[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET\t$EXTENDED"
 
  if [ x$MAC80211 = "x1" ]
  then
