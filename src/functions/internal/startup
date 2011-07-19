@@ -19,16 +19,21 @@ check_cardctl(){
     else CARDCTL="cardctl"; fi
 }
 
+_askinterface(){
+        askinterface && checkforcemac 
+}
+
 setinterface(){
+    declare -a INTERFACES
      [[ "$wifi" != "" ]] && [[ "$1" == "start" ]] && [[ "$set_wifi_by_args" == 1 ]] || { 
         if [ "$1" == "" ] || [ "$1" == "start" ]  ; then
         if [ "$show_only_wireless_extensions" == 1 ]; then
-            INTERFACES=`{ iwconfig|grep -v "no wireless extensions"|grep IEEE|grep -v airoscript|awk '{print $1}';} 2>/dev/null`
+            INTERFACES=(`{ iwconfig|grep -v "no wireless extensions"|grep IEEE|grep -v airoscript|awk '{print $1}';} 2>/dev/null`)
         else
-            INTERFACES=`ip link|egrep "^[0-9]+"|awk '/: /{gsub(":"," "); print $2}' |grep -v lo`; 
+            INTERFACES=(`ip link|egrep "^[0-9]+"|awk '/: /{gsub(":"," "); print $2}' |grep -v lo`)
         fi
         fi
-        askinterface && checkforcemac
+        _askinterface
         [[ "$DEFAULT_MONITOR_MODE" == 1 ]] &&{ ac="start"; } || {
         single_question 'Should I put it in monitor mode? (Y/n) ';
         [[ "$ans" != n ]] && ac="start" || ac="stop"
@@ -40,8 +45,13 @@ setinterface(){
 }
 
 askinterface(){
-    mkmenu "Interface selection" $INTERFACES
-    export wificard=`echo $INTERFACES|awk {"print \\\$$choice"}`
+    mkmenu "Interface" ${INTERFACES[@]}
+    export wificard="${INTERFACES[$choice - 1]}"
+    [[ $wificard == "" ]] && {
+        $clear
+        warn "$mark Error: That interface does not exists"
+        askinterface
+    }
 }
 
 checkforcemac() {
