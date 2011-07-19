@@ -92,7 +92,7 @@ select_ap(){
 			selectAp; $clear
 			if [ "$Host_SSID" = $'\r' ]; then blankssid;
 			elif [ "$Host_SSID" = "No SSID has been detected" ]; then blankssid; fi
-			select_target; $clear
+			select_target;
 		else $clear && _ 'ERROR: You have to scan for targets first'; fi
 }
 

@@ -115,10 +115,16 @@ execute(){
     else
         if [ "$1" == "crack" ]; then HOLDA="-hold"; shift; fi # FIXME This will work just on xterm.
         if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
-            warn $mark $title
+            warn $mark $title 
             ${@} $eopts &> /dev/null &
         else
-            $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
+            if [[ $wait_for_execute == 1 ]]; then
+                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts"
+
+            else
+                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
+
+            fi
         fi
     fi 
     save_pids $!
