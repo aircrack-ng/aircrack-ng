@@ -47,7 +47,7 @@ menu_crack(){
                 mkmenu "WEP/WPA Cracking Options" "Try a dictionary generator" "Crack with manual dictionary" "Standard aircrack-ng" "Return to menu" 
                 case $choice in
 					1 ) auto ; break ;;
-					2 ) manual_dict ; break ;;
+					2 ) export $crack_extra_opts=" -w $WORDLIST"; selectcracking; break ;;
 					3 ) selectcracking ; break ;;
 					4 ) $clear; break;;
 					* ) echo "Unknown response. Try again" ;;

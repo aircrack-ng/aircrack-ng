@@ -51,7 +51,7 @@ deauthall(){
 deauthclient(){
     if [ "$Client_MAC" = "" ]; then 
         $clear; warn "ERROR: You have to select a client first"
-    else 
+    else
         execute "Deauth client" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC \
             -c $Client_MAC $iwifi
     fi

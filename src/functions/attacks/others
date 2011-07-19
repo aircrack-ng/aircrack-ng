@@ -108,8 +108,7 @@ mergeallivs(){ # TODO Untested
 choosewesside(){
         while true; do
             $clear; mkmenu "Choose Wesside-ng Options" "No args" "Selected target" "Sel. target max retrans" "Sel. target poor conection" "Select another target" "Return to main menu"
-            read yn;
-            case $yn in
+            case $choice in
                 1 ) wesside ; break ;;
                 2 ) wessidetarget ; break ;;
                 3 ) wessidetargetmaxer ; break ;;
@@ -183,8 +182,7 @@ wessidenewtarget(){
 diagmenu(){
     while true; do
         mkmenu "Diagnostic tools and reports" "Show kstats report" "Test injection" "Checks with airmon-ng" "Create graphs" "Return to main menu"
-        read -p "Select option: " yn; 
-        case $yn in
+        case $choice in
             1  ) kstatsmenu    ; $clear; break;;
             2  ) inject_test   ; $clear; break;;
             3  ) airmoncheck   ; $clear; break;;
@@ -237,8 +235,7 @@ menu_options(){
             "Change MAC of interface"  "Enable monitor mode" "Change DUMP_PATH"\
             "Try to configure network" "Return to main menu"
 
-        read -p "Select option: " yn; 
-        case $yn in
+        case $choice in
         1 ) setinterface 1 ; $clear; break ;;
         2 ) cleanup; $clear; break ;;
         3 ) wichchangemac ; $clear; break ;;

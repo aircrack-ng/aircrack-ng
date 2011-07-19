@@ -18,6 +18,7 @@
 # Warning! at least generic, internal and interface must be loaded before this one!
 
 check_function fakeauth3 || source $path/attacks/auth # It depends on auth module ;)
+check_function injectmenu || source $path/attacks/injection # It depends on injection module ;)
 
 wep_attacks_menu(){
                while true; do $clear  

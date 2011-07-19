@@ -35,6 +35,7 @@ wpa_attacks_menu(){
 wpa_attacks_handshake(){
     $clear && hardclean
     execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP -w $DUMP_PATH/$Host_MAC --bssid $Host_MAC --channel $Host_CHAN -a $wifi 
+    choosedeauth
 }
 
 wpa_attacks_qos(){
