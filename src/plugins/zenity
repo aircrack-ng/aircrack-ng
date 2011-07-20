@@ -25,7 +25,9 @@ mkmenuline(){ return; }
 mkmenueline(){ return; }
 mkmenu(){ title=$1; shift;res=();n=0;
     for i in "${@}"; do n=$(( n + 1 )); [[ "$n" == 1 ]] && ST="TRUE" || ST="FALSE"; res+=( "$ST" "$n" "$i" ); done
-    choice=`zenity  --list  --text "$title" --radiolist  --column "Pick " --column "hidden" --column "Choose" --hide-column 2 "${res[@]}";`
+    choice=`zenity  --list  --text "$title" --width=350 --height=400 --radiolist  --column "Pick " --column "hidden" --column "Choose" --hide-column 2 "${res[@]}";`
     [[ $? == 1 ]] && [[ $title == "Main Menu" ]] && exit
 }
-selectap_wrapper(){ choice=`zenity  --list  --text "$title" --radiolist  --column "X" --column "hidden" --column "MAC" --column "Channel" --column "Privacy" --column "POWER" --column "LENGHT" --column "ESSID" --hide-column 2 "${res[@]}"`; }
+selectap_wrapper(){ choice=`zenity  --list  --text "$title" --width=300 --height=500 --radiolist  --column "X" --column "hidden" --column "MAC" --column "Channel" --column "Privacy" --column "POWER" --column "LENGHT" --column "ESSID" --hide-column 2 "${res[@]}"`; }
+
+launch_counter(){  ( for i in $( seq 1 $1 ); do a=$(( ($i * 100) / $1 )); sleep 1; echo "$a"; done ) | zenity --text "Scanning for targets" --progress --auto-close --title="Scanning for targets"; }

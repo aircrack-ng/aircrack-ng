@@ -58,10 +58,11 @@ crack_wpa(){
                                 -w $WORDLIST"  ;
                             $clear;
                         fi
+                        break
                         ;;
                     2)  $clear; read -p "Enter Database location [$db_location]" db_location_;
                         [[ $db_location ]] && db_location=db_location_;
-                        execute "Cracking WPA with pmk database" crack  "$pipe $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location";;
+                        execute "Cracking WPA with pmk database" crack  "$pipe $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location"; break;;
                     3 ) break ;;
 	    	        * ) echo "`gettext 'Unknown response. Try again'`" ;;
         		esac
