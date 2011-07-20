@@ -23,19 +23,18 @@ Crack_with_john_the_ripper(){
     [[ -e $WORDLIST ]] && wordlist="-w $WORDLIST"
     mkmenu "John the ripper options" "Use autoincremental" "Use custom rule"
     c=$choice;
+    wl=" -wordlist=$WORDLIST " ;
     case $c in
-        1) opts=( "Alnum" "Alpha" "Digits" "LanMan" )
+        1) opts=( "All" "Alnum" "Alpha" "Digits" "LanMan" )
            mkmenu "Choose incremental type" ${opts[@]}
-           jopts+=" --incremental:${opts[$choice - 1]}"
+           jopts+=" --incremental:${opts[$choice - 1]} $wl"
         ;;
-        2) 
-            
-            grep "\[" $jtr_conf|tr '[' ''|tr ']' '' > $DUMP_PATH/parsed_john_config
-            while read opt ; do
-                rules+=" -ru=$opt "
-            done < $DUMP_PATH/parsed_john_config
+        2)  command grep '\[List.Rules' ~/.john/john.conf|tr -d '[]' |\
+            sed 's/List.Rules://g'|grep -v "#"|\
+            tr '\n' ' ' > $DUMP_PATH/parsed_john_config
+             _rules=( `cat $DUMP_PATH/parsed_john_config` ); mkmenu "Rules"  ${_rules[@]}; rules+=" -ru=${_rules[$choice - 1]} "
         ;;
     esac
-    export pipe="john $wordlist ${rules[@]} ${jopts[@]} --stdout |";
+    export pipe="john $wordlist $wl ${rules[@]} ${jopts[@]} -stdout |";
     selectcracking;
 }
