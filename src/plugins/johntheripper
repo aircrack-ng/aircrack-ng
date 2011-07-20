@@ -1,0 +1,41 @@
+#!/bin/bash 
+# Copyright (2011) David Francos Cuartero, and some of the sources might be from other versions.
+# This is highly unmantained, as now is a plugin, you can easily modify it =)
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+check_function selectcracking || source $path/crack/main # It depends on injection module ;)
+
+p_menu+=("Crack with john the ripper");
+Crack_with_john_the_ripper(){
+    declare -a opts jopts rules
+    [[ -e $WORDLIST ]] && wordlist="-w $WORDLIST"
+    mkmenu "John the ripper options" "Use autoincremental" "Use custom rule"
+    c=$choice;
+    case $c in
+        1) opts=( "Alnum" "Alpha" "Digits" "LanMan" )
+           mkmenu "Choose incremental type" ${opts[@]}
+           jopts+=" --incremental:${opts[$choice - 1]}"
+        ;;
+        2) 
+            
+            grep "\[" $jtr_conf|tr '[' ''|tr ']' '' > $DUMP_PATH/parsed_john_config
+            while read opt ; do
+                rules+=" -ru=$opt "
+            done < $DUMP_PATH/parsed_john_config
+        ;;
+    esac
+    export pipe="john $wordlist ${rules[@]} ${jopts[@]} --stdout |";
+    selectcracking;
+}
