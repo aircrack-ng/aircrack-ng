@@ -22,7 +22,7 @@ crack_wep(){
         fi
 
 		while true; do
-            mkmenu "WEP Cracking Options" "aircrack-ng defaults" "aircrack-ng Korek" "aircrack-ng interactive"
+            mkmenu "WEP Cracking Options" "aircrack-ng defaults" "aircrack-ng Korek" "aircrack-ng interactive" "Return to main menu"
 	        case $choice in
  	    	    1 ) execute "Cracking wep, default options" crack "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap $crack_extra_opts"; $clear; break ;;
 	    	    2 ) execute "Cracking wep, Korek" crack $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K $crack_extra_opts ; $clear; break ;;
@@ -31,6 +31,7 @@ crack_wep(){
 			    execute "Cracking wep, manual options" crack "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGE_FACTOR\
                 -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-*.cap -f $DUMP_PATH/$Host_MAC.key $crack_extra_opts" &  $clear; 
                 break ;;  
+                4 ) break ;;
 	    	* ) echo "`gettext 'Unknown response. Try again'`" ;;
 		    esac
   		done
@@ -39,7 +40,7 @@ crack_wep(){
 crack_wpa(){
             warn "$mark Cracking wpa"
 		    while true; do
-                mkmenu "WPA Cracking Options" "Standard" "Use precomputed pmk database"
+                mkmenu "WPA Cracking Options" "Standard" "Use precomputed pmk database" "Return to main menu"
                 case $choice in
                     1)  if [ ! -e $WORDLIST ]; then 
                             [[ $pipe ]] && {
@@ -61,6 +62,7 @@ crack_wpa(){
                     2)  $clear; read -p "Enter Database location [$db_location]" db_location_;
                         [[ $db_location ]] && db_location=db_location_;
                         execute "Cracking WPA with pmk database" crack  "$pipe $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location";;
+                    3 ) break ;;
 	    	        * ) echo "`gettext 'Unknown response. Try again'`" ;;
         		esac
  	      	done

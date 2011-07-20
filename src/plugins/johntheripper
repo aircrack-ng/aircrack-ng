@@ -19,22 +19,27 @@ check_function selectcracking || source $path/crack/main # It depends on injecti
 
 p_menu+=("Crack with john the ripper");
 Crack_with_john_the_ripper(){
-    declare -a opts jopts rules
-    [[ -e $WORDLIST ]] && wordlist="-w $WORDLIST"
-    mkmenu "John the ripper options" "Use autoincremental" "Use custom rule"
+    declare -a opts jopts rules words
+    [[ -e $WORDLIST ]] && wl="-w=$WORDLIST"
+
+    mkmenu "John the ripper options" "Use autoincremental" "Use dictionary with custom rule" "Return to main menu"
     c=$choice;
-    wl=" -wordlist=$WORDLIST " ;
+
     case $c in
-        1) opts=( "All" "Alnum" "Alpha" "Digits" "LanMan" )
+        1) opts=( "All" "Alnum" "Alpha" "Digits" "LanMan" "Return" )
+           [[ $choice == ${#opts} ]] && break;
            mkmenu "Choose incremental type" ${opts[@]}
-           jopts+=" --incremental:${opts[$choice - 1]} $wl"
+           jopts+=" -incremental=${opts[$choice - 1]} "
         ;;
         2)  command grep '\[List.Rules' ~/.john/john.conf|tr -d '[]' |\
             sed 's/List.Rules://g'|grep -v "#"|\
             tr '\n' ' ' > $DUMP_PATH/parsed_john_config
-             _rules=( `cat $DUMP_PATH/parsed_john_config` ); mkmenu "Rules"  ${_rules[@]}; rules+=" -ru=${_rules[$choice - 1]} "
+             _rules=( `cat $DUMP_PATH/parsed_john_config` ); mkmenu "Rules"  ${_rules[@]}; rules+="$wl -ru=${_rules[$choice - 1]} "
         ;;
+        3) break ;;
     esac
-    export pipe="john $wordlist $wl ${rules[@]} ${jopts[@]} -stdout |";
+
+    export pipe="john ${words[@]} ${rules[@]} ${jopts[@]} -stdout |";
+    echo $pipe
     selectcracking;
 }

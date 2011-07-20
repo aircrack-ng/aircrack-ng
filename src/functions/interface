@@ -105,7 +105,7 @@ mkmenu(){
     mkmenulines $max "${@}"
     mkmenuline $max
 
-    echo -en "$mark `_ ' Select option: '` "
+    echo -en "$mark`_ 'Select option:'`"
     set -a choice
     _read -a choice
 }
