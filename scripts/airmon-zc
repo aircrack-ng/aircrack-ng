@@ -119,7 +119,7 @@ stopMac80211Iface() {
 	then
 		if [ "`cat /sys/class/net/$1/type`" != "803" ]
 		then
-			echo "\n\nYou are trying to stop a device that isn't in monitor mode."
+			printf "\n\nYou are trying to stop a device that isn't in monitor mode.\n"
 			echo "Doing so is a terrible idea, if you really want to do it then you"
 			echo "need to type 'iw $1 del' yourself since it is a terrible idea."
 			echo "If you feel you have reached this warning in error,"
