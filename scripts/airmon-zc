@@ -80,7 +80,7 @@ UDEV_ISSUE=0
     }
 
     startMac80211Iface() {
-	    IW_ERROR=`iw dev $iface interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
+	    IW_ERROR=`iw dev $1 interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
 		    if [ x$IW_ERROR = "x" ]
 		    then
 			    sleep 2s
@@ -94,7 +94,7 @@ UDEV_ISSUE=0
 				    fi
 			    fi
 		    ifconfig $MONDEV up
-		    printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+		    printf "\n\t\t\t\t(mac80211 monitor mode enabled on $MONDEV)"
 		    else
 			    if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
 			    then
@@ -107,7 +107,7 @@ UDEV_ISSUE=0
 					    iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
 				    fi
 			    ifconfig $MONDEV up
-			    printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+			    printf "\n\t\t\t\t(mac80211 monitor mode enabled on $MONDEV)"
 			    else
 				    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
 			    fi
@@ -115,15 +115,15 @@ UDEV_ISSUE=0
     }
 
     stopMac80211Iface() {
-	    IW_ERROR=`iw dev "$iface" del 2>&1 | grep "nl80211 not found"`
+	    IW_ERROR=`iw dev "$1" del 2>&1 | grep "nl80211 not found"`
 	    if [ x$IW_ERROR = "x" ]
 	    then
-		    printf " (removed)"
+		    printf " (mac80211 removed)"
 	    else
 		    if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
 		    then
-			    echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
-			    printf " (removed)"
+			    echo -n "$1" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+			    printf " (mac80211 removed)"
 		    else
 		    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
 		    fi
@@ -242,11 +242,11 @@ UDEV_ISSUE=0
 	    if [ -f /sys/class/net/$1/device/modalias ]
 	    then
 		    BUS=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1`
-		    if [ $BUS = "usb" ]
+		    if [ "$BUS" = "usb" ]
 		    then
 			    BUSINFO=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/'`
 			    CHIPSET=`lsusb | grep -i "$BUSINFO" | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
-		    elif [ $BUS = "pci" ]
+		    elif [ "$BUS" = "pci" ]
 		    then
 			    BUSINFO=`echo "$ethtool_output" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //'`
 			    CHIPSET=`lspci | grep "$BUSINFO" | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
