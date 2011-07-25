@@ -119,9 +119,11 @@ stopMac80211Iface() {
 	then
 		if [ "`cat /sys/class/net/$1/type`" != "803" ]
 		then
-			echo "\nYou are trying to stop a device that isn't in monitor mode."
+			echo "\n\nYou are trying to stop a device that isn't in monitor mode."
 			echo "Doing so is a terrible idea, if you really want to do it then you"
 			echo "need to type 'iw $1 del' yourself since it is a terrible idea."
+			echo "If you feel you have reached this warning in error,"
+			echo "please report it following the directions above."
 		else
 			IW_ERROR=`iw dev "$1" del 2>&1 | grep "nl80211 not found"`
 			if [ x$IW_ERROR = "x" ]
