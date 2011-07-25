@@ -114,21 +114,31 @@ UDEV_ISSUE=0
 	    fi
     }
 
-    stopMac80211Iface() {
-	    IW_ERROR=`iw dev "$1" del 2>&1 | grep "nl80211 not found"`
-	    if [ x$IW_ERROR = "x" ]
-	    then
-		    printf " (mac80211 removed)"
-	    else
-		    if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
-		    then
-			    echo -n "$1" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
-			    printf " (mac80211 removed)"
-		    else
-		    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
-		    fi
-	    fi
-    }
+stopMac80211Iface() {
+	if [ -f /sys/class/net/$1/type ]
+	then
+		if [ "`cat /sys/class/net/$1/type`" != "803" ]
+		then
+			echo "\nYou are trying to stop a device that isn't in monitor mode."
+			echo "Doing so is a terrible idea, if you really want to do it then you"
+			echo "need to type 'iw $1 del' yourself since it is a terrible idea."
+		else
+			IW_ERROR=`iw dev "$1" del 2>&1 | grep "nl80211 not found"`
+			if [ x$IW_ERROR = "x" ]
+			then
+				printf " (mac80211 vif removed)"
+			else
+				if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
+				then
+					echo -n "$1" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+					printf " (mac80211 vif removed)"
+				else
+					printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
+				fi
+			fi
+		fi
+	fi
+}
 
     stopDeprecatedIface() {
 	    ifconfig $1 down >/dev/null 2>&1
