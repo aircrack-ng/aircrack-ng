@@ -122,6 +122,7 @@ stopMac80211Iface() {
 			printf "\n\nYou are trying to stop a device that isn't in monitor mode.\n"
 			echo "Doing so is a terrible idea, if you really want to do it then you"
 			echo "need to type 'iw $1 del' yourself since it is a terrible idea."
+			echo "Most likely you want to remove an interface called mon[0-9]"
 			echo "If you feel you have reached this warning in error,"
 			echo "please report it following the directions above."
 		else
@@ -464,6 +465,7 @@ stopMac80211Iface() {
     }
 
     getNewMon() {
+    #XXX rewrite this crap to work like kismet
 	i=0
 
 	while [ -d /sys/class/net/$MON_PREFIX$i/ ]
