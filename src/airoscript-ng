@@ -43,8 +43,10 @@ setaircrackpaths
 rootwarn
 setps
 setargs $@
-check_cardctl
-#debug
+check_cardctl; #debug
+
+[[ $show_startup_goodie ]] && { airoscript_ascii_art 2>/dev/null ; }
+
 warn "$mark Welcome to airoscript, have a nice day"
 reso
 temporary_switch_clear
