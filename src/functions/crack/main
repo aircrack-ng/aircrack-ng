@@ -38,13 +38,13 @@ crack_wep(){
 }
 
 crack_wpa(){
-            warn "$mark Cracking wpa"
+            warn "${mark}Cracking wpa"
 		    while true; do
                 mkmenu "WPA Cracking Options" "Standard" "Use precomputed pmk database" "Return to main menu"
                 case $choice in
                     1)  if [ ! -e $WORDLIST ]; then 
                             [[ $pipe ]] && {
-                                warn "$mark Cracking with stdin entered data by $pipe"
+                                warn "${mark}Cracking with stdin entered data by $pipe"
                                 execute "Cracking WPA" crack "$pipe $AIRCRACK -a 2\
                                     -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap \
                                     -w -"  ; 

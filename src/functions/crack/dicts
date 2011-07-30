@@ -29,22 +29,19 @@ digenpy_(){
 
 Telefonica(){
     if [[ "$Host_SSID" =~ WLAN* ]]; then 
-        warn "It's a telefonica network. Calling digenpy_"; 
+        avail=1; 
+        [[ $test == 1 ]] && return
         digenpy_ Spanish Telefonica $Host_MAC $Host_SSID; 
-        digenpy_ Spanish Telefonica crack; 
-        cracked=1; 
-    else 
-        _ "\tIs not a telefonica network"; 
+        digenpy_ Spanish Telefonica crack && cracked=1
     fi 
 }
 
 Jazztel(){ 
     if [[ "$Host_SSID" =~ JAZZTEL* ]]; then 
-        digenpy_ Spanish Jazztel $Host_MAC $Host_SSID ;
-        digenpy_ Spanish Jazztel crack; 
-        cracked=1; 
-    else 
-        _ "\tIs not a jazztel network";
+        avail=1; 
+        [[ $test == 1 ]] && return
+        digenpy_ Spanish Jazztel $Host_MAC $Host_SSID WPA ;
+        digenpy_ Spanish Jazztel crack && cracked=1
     fi;
 }
 
@@ -52,11 +49,10 @@ auto(){
     if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a target first'`\n"; return; fi
 
     if [ "$1" == "return_ivs" ]; then
-        for function in $_functions; do $function; [[ "$cracked" == "1" ]] && return 4; done
+        for function in "Telefonica" "Jazztel" ; do test=1; $function; test=0; [[ "$avail" == "1" ]] && return 4; done
         return 255
     else
-        warn "$mark Checking..."
-        warn "Available $mfunctions"
+        warn "${mark}Checking..."
         for function in "Telefonica" "Jazztel"; do warn "Trying  $function"; $function; [[ "$cracked" == "1" ]] && return; done
         _ "Cant crack this network like this, do it manually"
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Internal functions file for airoscript.
-# Recommends: wlandecrypter 
+# Recommends: wlandecrypter
 
 # Copyright (C) 2009-2011 David Francos Cuartero
 #        This program is free software; you can redistribute it and/or
@@ -59,16 +59,25 @@ setargs(){
      while getopts “n:ht:w:szcvmfap:” option; do
         case $option in 
             h)  usage; exit 1;;
-            n)  export filter_ssid=$OPTARG; warn "$mark Selected filter: $filter_ssid";;
+            n)  export filter_ssid=$OPTARG; warn "${mark}Selected filter: $filter_ssid";;
             t)  TERMINAL=$OPTARG;;
             s)  TERMINAL=screen;;
             z)  noscan=1;;
             v)  debug=1; hold=1;;
             w)  wificard=$OPTARG;;
-            m) { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
-            c)  checkforcemac 3; { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
-            f)  wichchangemac 1; { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "$mark Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
-            a)  temporary_switch_clear;clear=""; check_function doauto || source $path/autocrack; doauto; exit;;
+            m) { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
+            c)  checkforcemac 3;
+                { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; 
+                warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; 
+                sleep 1; set_wifi_by_args=1;;
+            f)  wichchangemac 1;
+                { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null;
+                warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard...";
+                sleep 1; set_wifi_by_args=1 ;;
+            a)  noscan=1; temporary_switch_clear;clear="";
+                check_function doauto || source $path/autocrack;
+                doauto;
+                exit;;
             p)  load_plugins $OPTARG  ;;
             ?)  usage; exit;;
         esac
@@ -100,6 +109,7 @@ _debug(){
 }
 
 execute(){ 
+    source $path/interface
     check_function save_pids || source $path/internal/childs
     title=$1; shift;
 
@@ -115,16 +125,18 @@ execute(){
     else
         if [ "$1" == "crack" ]; then HOLDA="-hold"; shift; fi # FIXME This will work just on xterm.
         if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
-            warn $mark $title 
-            ${@} $eopts &> /dev/null &
-        else
-            if [[ $wait_for_execute == 1 ]]; then
-                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts"
-
+            warn ${mark}$title
+            if [[ $wait_for_execute ]]; then
+                ${@} $eopts &> /dev/null
             else
-                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
-
+                ${@} $eopts &> /dev/null &
             fi
+        else
+            [[ $wait_for_execute == 1 ]] && {
+                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts"
+            } || {
+                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
+            }
         fi
     fi 
     save_pids $!
@@ -183,12 +195,15 @@ attack_opn(){ # If no encryption detected
 
 capture(){
     hardclean
-    execute "Capturing" $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $wifi
+    execute "Capturing" $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $wifi 
+    echo
 }
+
+tag(){ echo -ne "\t"; }
 
 hardclean(){ rm -rf $DUMP_PATH/$Host_MAC*; }
 
 single_question(){ read -p "${@}" ans; }
 warn(){ echo "${@}"; }
-
+specialwarn(){ echo -e -n "${@}"; }
 _source $path/internal/startup

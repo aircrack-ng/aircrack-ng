@@ -49,13 +49,13 @@ askinterface(){
     export wificard="${INTERFACES[$choice - 1]}"
     [[ $wificard == "" ]] && {
         $clear
-        warn "$mark Error: That interface does not exists"
+        warn "${mark}Error: That interface does not exists"
         askinterface
     }
 }
 
 checkforcemac() {
-    if [ "$force_mac_address" == "1" ]; then $clear && warn "$mark Warn: Not checking mac" 
+    if [ "$force_mac_address" == "1" ]; then $clear && warn "${mark}Warn: Not checking mac" 
     else
         export mac=`$MACCHANGER -s $wificard|awk '/Current/ {print $3}'`
             if [ "$FAKE_MAC" != "$mac" ]; then wichchangemac $@; fi
@@ -71,22 +71,22 @@ guess_idata(){
 }
 
 wichchangemac(){
-    $clear
+    $clear; 
     while true; do
-         [[ "$1" != "" ]] && yn=$1 || {
+         [[ "$1" != "" ]] && choice=$1 || {
             mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input"
         }
         case $choice in
              1 ) ifconfig $wificard down
                 fail=`$MACCHANGER -m  $FAKE_MAC $wificard 2>&1`
-                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
+                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
                   ifconfig $wificard up; break ;;
             2 ) ifconfig $wificard down; sleep 2
                  fail=`$MACCHANGER -m  $Client_MAC $wificard 2>&1`
-                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
+                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
                 ifconfig $wificard up ; break ;;
             3)  export FAKE_MAC=$mac
-                warn "$mark Using for $wificard $FAKE_MAC = $mac"
+                warn "${mark}Using for $wificard $FAKE_MAC = $mac"
                 ifconfig $wificard down; sleep 2;
                 $MACCHANGER -m $mac $wificard &>/dev/null
                 ifconfig $wificard up;
@@ -94,7 +94,7 @@ wichchangemac(){
             4 ) single_question "MAC: "; Manual_MAC="$ans";
                 ifconfig $wificard down
                 fail=`$MACCHANGER -m  $Manual_MAC $wificard &>/dev/null`
-                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "$mark Unable to set interface mac: $?\n $fail"
+                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
                 ifconfig $wificard up; break ;;
 
             * ) _ "Unknown response. Try again" ;;
@@ -108,28 +108,30 @@ selectap_wrapper(){
         mkmenueline $max r; echo " Rescan targets"; mkmenuline $max
         single_question "Select Target: "; choice="$ans"
 }
+
 # Some various functions that didn't know where to put them
 selectAp(){
     k=0; i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
     head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
  # FIXME Filte disabled, make it work    
-    [[ "$filter_ssid" != "" ]] && { warn "$mark Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
-    if [ "$AUTO" == 1 ]; then
-
+    #[[ "$filter_ssid" != "" ]] && { warn "${mark}Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { 
+    cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;
+    if [ "$AUTO" == 2 ]; then
         choice=$CURRENT
         CURRENT=$(( $CURRENT + 1 ))
     else
-    res=();
-    title=$1; shift; line=0;
-    max=$((`tput cols` - 10));
-    mkmenuheader "Detected acess points" $max
-    mkmenuline $max
+        res=();
+        title=$1; shift; line=0;
+        max=$((`tput cols` - 10));
+        echo
+        mkmenuheader "Detected access points" $max
+        mkmenuline $max
     fi
     while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
         longueur=${#MAC}
         if [ $longueur -ge 17 ]; then
             k=$(($k+1))
-            if [ "$AUTO" != 1  ]; then
+            if [ "$AUTO" != 2  ]; then
                 [[ "$k" == 1 ]] && ST="TRUE" || ST="FALSE"
                 res+=( "$ST" "$k" " $MAC " "$CHANNEL" "$PRIVACY" "$POWER" "$IDLENGTH" "$ESSID");
                 mkmenueline $max $k
@@ -142,7 +144,7 @@ selectAp(){
         fi
     done < $DUMP_PATH/dump-03.csv
     
-    if [ "$AUTO" != 1 ]; then selectap_wrapper; fi
+    if [ "$AUTO" != 2 ]; then selectap_wrapper; fi
     if [ "$choice" != "r" ] ; then
         idlenght=${aidlenght[$choice]}
         ssid=${assid[$choice]}
@@ -158,7 +160,7 @@ selectAp(){
         acouper=${#ssid}
         fin=$(($acouper-idlength))
         Host_SSID=${ssid:1:fin}
-        echo "$mark Target network is $Host_SSID $Ho st_MAC"
+        tag; echo "${mark}Target network is $Host_SSID $Host_MAC"
     else autoscan; fi
 }
 
@@ -169,12 +171,20 @@ launch_counter(){
     done
 }
 
+autoscan_autopwn(){
+    launch_counter $time_to_scan &
+    OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=2; export QUIET=1; export INTERACTIVE=0
+    export ENCRYPT="WEP"; choosescan;  sleep $time_to_scan && killall -2 "airodump-ng"; 
+    [[ $AUTO != 2 ]] && select_ap
+    cleanautovars
+}
+
 autoscan(){
     launch_counter $time_to_scan &
     OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
     menu_type "" && sleep $time_to_scan && killall -2 "airodump-ng"; 
+    [[ $AUTO != 2 ]] && select_ap
     cleanautovars
-    select_ap
 }
 
 Scan(){
@@ -183,7 +193,8 @@ Scan(){
     temporary_switch_clear
     warn "$mark`gettext 'Interface used is'` : $wifi ($iwifi) for $wificard "
     warn "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
-    execute "Scanning for targets" $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
+    export QUIET=1;
+    execute "Scanning for targets: " $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
     temporary_switch_clear
     export SCAN=0
 }

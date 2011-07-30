@@ -18,7 +18,7 @@
 
 Scanchan(){
     export SCAN=1; # TODO Create a mkinfobox function.
-    single_question "$mark Enter channel (single, range, or comma-separated): "
+    single_question "${mark}Enter channel (single, range, or comma-separated): "
     channel_number="$ans"; set -- ${channel_number}
     rm -rf $DUMP_PATH/dump* &>/dev/null; monmode $wifi $channel_number
 
@@ -27,8 +27,9 @@ Scanchan(){
 }
 
 select_target(){
-    if [ "$AUTO" == 1 ]; then return; fi
+    if [ "$AUTO" == 2 ]; then return; fi
     while true; do
+        echo "Selecting client"
         mkmenu "Client Selection" "Detect clients" "Select from associated clients" "Select from all clients" "Manually enter client MAC" "No select client"
         case $choice in
             1 ) detectclients ; break ;;
@@ -36,16 +37,19 @@ select_target(){
             3 ) SelectClient dump-01.csv nofilter; break;; 
             4 ) single_question "Type in client mac now"; Client_MAC="$ans"; set -- ${Client_MAC} ; break ;;
             5 ) break ;;
-            * ) echo -e "`gettext \"Unknown response. Try again\"`"; sleep 1; $clear ;;
+            * ) echo -e "`gettext \"Unknown response. Try again\"`";;
           esac
     done
 }
 
 detectclients(){
     check_function deauthall || source $path/attacks/auth
-    if [ "$AUTO" == "1" ]; then return; fi
+    if [ "$AUTO" == "2" ]; then return; fi
     $iwconfig $wificard channel $Host_CHAN; deauthall &
-    export wait_for_execute=1; capture; export wait_for_execute=0;
+    export AUTO=0; export QUIET=""; export wait_for_execute=1; 
+    warn "${mark}Press ctrl+C when you've collected as many clients as you want"
+    capture; 
+    export wait_for_execute=0;
     SelectClient $Host_MAC-01.csv filter
 }
 

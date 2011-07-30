@@ -40,7 +40,7 @@ _resonset(){
         reso=`_get_current_reso` ;
         [[ "$i" == $reso ]] && {
              reson=$reso
-            echo -e "$mark Automatically setting resolution to $reso";
+            echo -e "${mark}Automatically setting resolution to $reso";
          }
     done
     if [ "$reson" != "" ]; then export resonset=1; fi
@@ -95,7 +95,7 @@ mkmenueline(){ echo -en "${separator_v}\033[${1}C${separator_v}\033[${1}D${white
 mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; echo " $i"; done; }
 
 mkmenu(){
-    if [ "$AUTO" == 1 ]; then return; fi
+    if [ "$AUTO" == 2 ]; then return; fi
     max=`getmaxlenfromlist "${@}"`
     max=$(( $max + 10 ))
     title=$1; shift; line=0;
@@ -144,7 +144,7 @@ getterminal(){
 }
 
 reso() {
-    xhost &>/dev/null || { echo -e "$mark Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
+    xhost &>/dev/null || { echo -e "${mark}Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
         _resonset
 	while true; do
 		if [ "$resonset" = "" ]; then

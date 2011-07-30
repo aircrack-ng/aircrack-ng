@@ -57,8 +57,9 @@ menu_crack(){
 
 menu_type(){
     if [ "$AUTO" == 1 ]; then ENCRYPT="$1"; choosescan; return; fi
+    if [ "$AUTO" == 2 ]; then ENCRYPT="$1"; choosescan; return; fi
 
-    while true; do $clear
+    while true; do echo
         mkmenu "Select encryption" "No filter" "OPN (open)" "WEP" "WPA" "WPA1" "WPA2" "Return to main menu"
         case $choice in
             1 ) ENCRYPT=""     ; choosescan; break ;;
@@ -75,6 +76,7 @@ menu_type(){
 
 choosescan(){
     if [ "$AUTO" == 1 ]; then Scan; return; fi
+    if [ "$AUTO" == 2 ]; then Scan; return; fi
 
     while true; do
         mkmenu "Channel" "Channel Hoping" "Specific Channel"

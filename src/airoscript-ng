@@ -42,13 +42,16 @@ _debug "Text domain dir is $TEXTDOMAINDIR and textdomain is $TEXTDOMAIN"
 setaircrackpaths
 rootwarn
 setps
-setargs $@
-check_cardctl; #debug
 
+clear=""
 [[ $show_startup_goodie ]] && { airoscript_ascii_art 2>/dev/null ; }
-
-warn "$mark Welcome to airoscript, have a nice day"
+warn "${mark}Welcome to airoscript, have a nice day"
 reso
+check_cardctl; #debug
+setargs $@
+clear=clear;
+cleanautovars
+
 temporary_switch_clear
 setinterface "start"
 temporary_switch_clear

