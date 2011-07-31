@@ -42,14 +42,15 @@ doauto(){
     filter_ssid;
     MAX_TARGETS=$(count_aps);
     echo;
-    attack_functions=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
+    attack_functions_wep=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
+    attack_functions_wpa=(wpa_attacks_handshake)
     tag; warn "${mark}Networks detected $MAX_TARGETS"; sleep 1
 
     for i in `seq 1 $MAX_TARGETS`; do
         tag; warn "${mark}Trying to crack target $i"
         export AUTO=2; selectAp;  sleep 1
         if [ "$Host_SSID" != "" ]; then autopwn; 
-        else warn "${mark}Couldn't find essid, next try"; fi
+        else tag; warn "${mark}Couldn't find essid, next try"; fi
     done
     cleanautovars
 
@@ -69,6 +70,7 @@ autopwn(){
     F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0; next=0;
     sleep 1
     count=0
+    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && attack_functions=${attack_functions_wpa[@]} || attack_functions=${attack_functions_wep}
 
     for i in ${attack_functions[@]}; do
         tag; echo "${mark}Attack $count. Using $i in $Host_MAC"

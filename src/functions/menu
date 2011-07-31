@@ -44,12 +44,11 @@ menu_crack(){
     check_function auto || source $path/crack/dicts
     check_function crack_wep || source $path/crack/main
 			while true; do
-                mkmenu "WEP/WPA Cracking Options" "Try a dictionary generator" "Crack with manual dictionary" "Standard aircrack-ng" "Return to menu" 
+                mkmenu "WEP/WPA Cracking Options" "Crack with manual dictionary" "Standard aircrack-ng" "Return to menu" 
                 case $choice in
-					1 ) auto ; break ;;
-					2 ) export crack_extra_opts=" -w $WORDLIST"; selectcracking; break ;;
-					3 ) selectcracking ; break ;;
-					4 ) $clear; break;;
+					1 ) export crack_extra_opts=" -w $WORDLIST"; selectcracking; break ;;
+					2 ) selectcracking ; break ;;
+					3 ) $clear; break;;
 					* ) echo "Unknown response. Try again" ;;
 				esac
 			done
@@ -116,5 +115,3 @@ menu_plugins(){
     mkmenu "External plugins" "${p_menu[@]}"
     $(sed 's/ /_/g' <<< ${p_menu[$choice - 1]}) || { $clear; warn "Wrong option, try again"; menu_plugins; }
 }
-
-

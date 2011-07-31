@@ -49,31 +49,8 @@ mdktargetedpain(){
 }
 
 mdknewtarget(){
-        ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
-        head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
-        echo " +--------------------------------------------------------------------+"
-        echo " |       Detected Access point list                                   |"
-        echo " |      MAC                      CHAN    SECU    POWER   #CHAR   SSID |"
-        echo " |                                                                    |"
-        i=0
-        while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
-            longueur=${#MAC}
-            if [ $longueur -ge 17 ]; then i=$(($i+1))
-                echo -e " "$i")\t"$MAC"\t"$CHANNEL"\t"$PRIVACY"\t"$POWER"\t"$IDLENGTH"\t"$ESSID
-                aidlenght=$IDLENGTH; assid[$i]=$ESSID; achannel[$i]=$CHANNEL;
-                amac[$i]=$MAC; aprivacy[$i]=$PRIVACY; aspeed[$i]=$SPEED
-            fi
-        done < $DUMP_PATH/dump-02.csv
-        echo -n "\n        Select target               "
-        read choice
-        idlenght=${aidlenght[$choice]};	ssid=${assid[$choice]};
-        channel=${achannel[$choice]}; mac=${amac[$choice]};
-        privacy=${aprivacy[$choice]};speed=${aspeed[$choice]};
-        Host_IDL=$idlength;Host_SPEED=$speed;
-        Host_ENC=$privacy;Host_MAC=$mac;
-        Host_CHAN=$channel;acouper=${#ssid};
-        fin=$(($acouper-idlength));Host_SSID=${ssid:1:fin};
-        choosemdk
+    selectAp
+    choosemdk
 }
 
 mdkauth(){

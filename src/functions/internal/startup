@@ -109,13 +109,13 @@ selectap_wrapper(){
         single_question "Select Target: "; choice="$ans"
 }
 
+valid_mac(){ (( ${#1} >= 17 )) && return 0 || return 1; }
+
 # Some various functions that didn't know where to put them
 selectAp(){
-    k=0; i=0; ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
-    head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv ; $clear
- # FIXME Filte disabled, make it work    
-    #[[ "$filter_ssid" != "" ]] && { warn "${mark}Filtering essid to $filter_ssid"; command grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv ; } || { 
-    cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;
+    k=0; i=0; 
+    cat $DUMP_PATH/dump-01.csv|sed -e '1,/BSSID/ s/.*//' -e '/Station/,$ s/.*//'|tac > $DUMP_PATH/dump-03.csv 2>/dev/null
+
     if [ "$AUTO" == 2 ]; then
         choice=$CURRENT
         CURRENT=$(( $CURRENT + 1 ))
@@ -126,10 +126,10 @@ selectAp(){
         echo
         mkmenuheader "Detected access points" $max
         mkmenuline $max
-    fi
+    fi 
+
     while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
-        longueur=${#MAC}
-        if [ $longueur -ge 17 ]; then
+        $(valid_mac "$MAC") && {
             k=$(($k+1))
             if [ "$AUTO" != 2  ]; then
                 [[ "$k" == 1 ]] && ST="TRUE" || ST="FALSE"
@@ -141,7 +141,7 @@ selectAp(){
             assid[$k]=$ESSID; achannel[$k]=$CHANNEL; 
             amac[$k]=$MAC; aprivacy[$k]=$PRIVACY;
             aspeed[$k]=$SPEED; apower[$k]=$POWER
-        fi
+        }
     done < $DUMP_PATH/dump-03.csv
     
     if [ "$AUTO" != 2 ]; then selectap_wrapper; fi
@@ -174,7 +174,7 @@ launch_counter(){
 autoscan_autopwn(){
     launch_counter $time_to_scan &
     OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=2; export QUIET=1; export INTERACTIVE=0
-    export ENCRYPT="WEP"; choosescan;  sleep $time_to_scan && killall -2 "airodump-ng"; 
+    export ENCRYPT=""; choosescan;  sleep $time_to_scan && killall -2 "airodump-ng"; 
     [[ $AUTO != 2 ]] && select_ap
     cleanautovars
 }
