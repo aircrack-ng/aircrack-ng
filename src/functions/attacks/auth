@@ -32,8 +32,8 @@ fakeauth1(){
         if [ "$Host_SSID" = "" ]; then $clear
             warn "ERROR: You have to select a target first"
         else
-            [[ $AUTO == 2 ]] && { deauthall; deauthfake; deauthclient; return; }
-            [[ $AUTO == 1 ]] && { deauthall; deauthfake; deauthclient; return; }
+            [[ $AUTO == 2 ]] && { deauthall;  return; }
+            [[ $AUTO == 1 ]] && { deauthall;  return; }
             while true; do
                 mkmenu "Who do you want to deauth?" "Everybody" "Myself (fake mac)" "Selected client"
                 case $choice in

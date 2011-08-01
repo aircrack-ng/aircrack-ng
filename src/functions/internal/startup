@@ -111,11 +111,21 @@ selectap_wrapper(){
 
 valid_mac(){ (( ${#1} >= 17 )) && return 0 || return 1; }
 
+
+filter_ssid(){
+    [[ "$filter_ssid" != "" ]] && {
+        tag; warn "${mark}Filtering essid to $filter_ssid";
+        command grep "$filter_ssid" $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv;
+    } || {
+        cp $DUMP_PATH/dump-02.csv $DUMP_PATH/dump-03.csv;
+    }
+}
+
 # Some various functions that didn't know where to put them
 selectAp(){
     k=0; i=0; 
-    cat $DUMP_PATH/dump-01.csv|sed -e '1,/BSSID/ s/.*//' -e '/Station/,$ s/.*//'|tac > $DUMP_PATH/dump-03.csv 2>/dev/null
-
+    cat $DUMP_PATH/dump-01.csv|sed -e '1,/BSSID/ s/.*//' -e '/Station/,$ s/.*//'|tac > $DUMP_PATH/dump-02.csv 2>/dev/null
+    filter_ssid
     if [ "$AUTO" == 2 ]; then
         choice=$CURRENT
         CURRENT=$(( $CURRENT + 1 ))
