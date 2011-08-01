@@ -32,6 +32,8 @@ fakeauth1(){
         if [ "$Host_SSID" = "" ]; then $clear
             warn "ERROR: You have to select a target first"
         else
+            [[ $AUTO == 2 ]] && { deauthall; deauthfake; deauthclient; return; }
+            [[ $AUTO == 1 ]] && { deauthall; deauthfake; deauthclient; return; }
             while true; do
                 mkmenu "Who do you want to deauth?" "Everybody" "Myself (fake mac)" "Selected client"
                 case $choice in
@@ -39,8 +41,8 @@ fakeauth1(){
                     2 ) deauthfake ; break ;;
                     3 ) deauthclient ; break ;;
                     * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-    esac
-    done
+                esac
+            done
     fi
 }
 
