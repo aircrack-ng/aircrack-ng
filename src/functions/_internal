@@ -25,11 +25,16 @@ cleanautovars(){
 
 configure(){
     if [ -O $DUMP_PATH/$Host_MAC.key ] && [ "$Host_MAC" != "" ]; then
-        KEY=`cat $DUMP_PATH/$Host_MAC.key`
-        $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key $KEY &>/dev/null && {
-            $DHCPSOFT $wificard &>/dev/null || _ "Could not autoconfigure network" && return 2
-        } || { warn "$mark" `_'Could not autoconfigure network, wrong password? '`; }
-        sleep 3; $clear;
+        KEY="$(cat $DUMP_PATH/$Host_MAC.key)"
+        [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
+            wpa_passphrase $Host_SSID "$KEY" > $DUMP_PATH/$Host_MAC.wpa_supplicant;
+            wpa_supplicant -i $wificard -B -c$DUMP_PATH/$Host_MAC.wpa_supplicant;
+            $DHCPSOFT $wificard &>/dev/null || warn "${mark}Could not autoconfigure network"
+        } || {
+            $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key $KEY &>/dev/null && {
+                $DHCPSOFT $wificard &>/dev/null || warn  "${mark}Could not autoconfigure network" && return 2
+            } || { warn "${mark}Could not autoconfigure network, wrong password size?"; }
+        }
     else
         warn "You haven't cracked this network yet"; sleep 3; $clear
     fi

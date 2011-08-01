@@ -21,11 +21,12 @@ p_menu+=("Crack with dictionary generator");
 
 
 digenpy_(){
+    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && { enc="WPA"; } || { enc=""; }
     if [ "$3" == "crack" ]; then
         execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -w $DUMP_PATH/digenpy__dic $DUMP_PATH/$Host_MAC-01.cap
     else AUTO=1; QUIET=0;
-        warn "Calling digenpy $1 $2 $Host_MAC $Host_SSID >/$DUMP_PATH/digenpy__dic"
-        digenpy $1 $2 $Host_MAC $Host_SSID  > $DUMP_PATH/digenpy__dic
+        warn "Calling digenpy $1 $2 $Host_MAC $Host_SSID $enc >/$DUMP_PATH/digenpy__dic"
+        digenpy $1 $2 $Host_MAC $Host_SSID $enc > $DUMP_PATH/digenpy__dic
     AUTO=0; QUIET=""; fi
 }
 
@@ -33,7 +34,7 @@ Telefonica(){
     if [[ "$Host_SSID" =~ WLAN* ]]; then 
         avail=1; 
         [[ $test == 1 ]] && return
-        digenpy_ Spanish Telefonica $Host_MAC $Host_SSID; 
+        digenpy_ Spanish Telefonica
         digenpy_ Spanish Telefonica crack && cracked=1
     fi 
 }
@@ -41,9 +42,11 @@ Telefonica(){
 Jazztel(){ 
     if [[ "$Host_SSID" =~ JAZZTEL* ]]; then 
         avail=1; 
-        [[ $test == 1 ]] && return
-        digenpy_ Spanish Jazztel $Host_MAC $Host_SSID WPA ;
-        digenpy_ Spanish Jazztel crack && cracked=1
+        [[ $test == 1 ]] && return 
+        [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {  min_ivs=10; return; }
+        warn "Encription is $Host_ENC"
+        digenpy_ Spanish Jazztel
+        digenpy_ Spanish Jazztel crack  && cracked=1
     fi;
 }
 
@@ -55,11 +58,11 @@ Crack_with_dictionary_generator(){
         return 255
     else
         warn "${mark}Checking..."
-        for function in "Telefonica" "Jazztel"; do warn "Trying  $function"; $function; [[ "$cracked" == "1" ]] && return; done
-        _ "Cant crack this network like this, do it manually"
+        for function in "Telefonica" "Jazztel"; do tag; warn "${mark}Trying $function"; $function; [[ "$cracked" == "1" ]] && return; done
+        warn "${mark}Cant crack this network like this, do it manually"
 
         if [ "$1" == "autocrack" ]; then
-        AUTO=1; selectcracking 1; wait $! ; AUTO=0
+            export wait_for_execute=1; AUTO=1; selectcracking 1; AUTO=0; export wait_for_execute=0;
         else
             selectcracking
         fi

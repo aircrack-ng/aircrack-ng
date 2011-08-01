@@ -76,11 +76,15 @@ autopwn(){
         while [ "1" ]; do 
             sleep 5 && { 
                 [[ $(check_if_worked) ]] && { 
-                    echo; warn "${mark}Trying to crack network, we have enough ivs or handshakes.";
+                    warn "${mark}Trying to crack network, we have enough ivs or handshakes.";
                     cleanautovars;
-                    auto autocrack
+                    check_function Crack_with_dictionary_generator && {
+                        Crack_with_dictionary_generator autocrack 
+                    } || {
+                        export wait_for_execute=1; AUTO=1; selectcracking 1; AUTO=0; export wait_for_execute=0;
+                    }
                     cleanautovars;
-                    [[ -e $DUMP_PATH/$Host_MAC.key ]] && warn "${mark}Network cracked, password stored in $DUMP_PATH/$Host_MAC.key" || warn "${mark}Network NOT cracked. Something failed, if your enc is WPA probably key is not in your ~/.airoscript/wordlist.txt"
+                    [[ -e $DUMP_PATH/$Host_MAC.key ]] && warn "${mark}Network cracked, password is  `cat $DUMP_PATH/$Host_MAC.key`" || warn "${mark}Network NOT cracked. Something failed, if your enc is WPA probably key is not in your ~/.airoscript/wordlist.txt"
                     continue_autocrack
                  } || {
                     specialwarn "\r${mark}Current IVS: `check_all_ivs`"  ;
@@ -100,7 +104,12 @@ check_all_ivs(){  awk "/^$Host_MAC/ { gsub(/,/, \"\", \$13); print \$13; }" ${DU
 
 get_min_ivs(){
     [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {  min_ivs=10; return; }
-    auto return_ivs; a=$?
+
+    check_function Crack_with_dictionary_generator && {
+        Crack_with_dictionary_generator return_ivs; a=$?
+    } || {
+        a=255
+    }
     [[ "$a" == 255 ]] && min_ivs=$autopwn_min_ivs || min_ivs=$a
 }
 

@@ -52,7 +52,6 @@ crack_wpa(){
                                 warn "Sorry, you cant crack wpa without a dictionary on $WORDLIST"; sleep 3; 
                             }
                         else
-                            $clear;
                             execute "Cracking WPA" crack "$AIRCRACK -a 2\
                                 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap\
                                 -w $WORDLIST $writekey"  ;
@@ -77,27 +76,3 @@ selectcracking(){
         else crack_wpa $@; fi
 	fi
 }
-
-auto(){
-    if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a target first'`\n"; return; fi
-    check_function digenpy_ && {
-        if [[ $1 == "return_ivs" ]]; then
-            for function in "Telefonica" "Jazztel" ; do test=1; $function; test=0; [[ "$avail" == "1" ]] && return 4; done
-            return 255
-        else
-            for function in "Telefonica" "Jazztel"; do warn "Trying  $function"; $function; [[ "$cracked" == "1" ]] && return; done
-            warn "${mark}Cant crack this network with digenpy, doing it manually"
-        fi
-    } || {
-        [[ $1 == "return_ivs" ]] && return 255 
-    }
-
-    if [ "$1" == "autocrack" ]; then
-        export wait_for_execute=1; AUTO=1; selectcracking 1; AUTO=0; export wait_for_execute=0;
-    else
-        selectcracking
-    fi
-
-
-}
-
