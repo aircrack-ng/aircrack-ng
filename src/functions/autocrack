@@ -17,8 +17,7 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 filter_ssid(){
-    sleep 6;
-    echo
+    sleep 3; echo # ... must be like this for good-looking foo.
     [[ "$filter_ssid" != "" ]] && {
         tag; warn "${mark}Filtering essid to $filter_ssid";
         grep $filter_ssid $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-03.csv;
@@ -32,7 +31,7 @@ unknown(){
     head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv
 }
 
-count_aps(){ i=0; while IFS=, read MAC; do i=$(( $i + 1 )) ; done < $DUMP_PATH/dump-03.csv ; echo $i; }
+count_aps(){ a=($(wc -l $DUMP_PATH/dump-03.csv)); echo ${a[0]}; } # benchmarks shows this is a little more efficent than using cut.
 
 doauto(){
     source $path/autopwn
