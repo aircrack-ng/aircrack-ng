@@ -90,6 +90,8 @@ choosescan(){
 select_ap(){
     check_function select_target || source $path/internal/scansel
 		if [ -e $DUMP_PATH/dump-01.csv ]; then
+            cat $DUMP_PATH/dump-01.csv|sed -e '1,/BSSID/ s/.*//' -e '/Station/,$ s/.*//'|tac > $DUMP_PATH/dump-02.csv 2>/dev/null
+            filter_ssid
 			selectAp; $clear
 			if [ "$Host_SSID" = $'\r' ]; then blankssid;
 			elif [ "$Host_SSID" = "No SSID has been detected" ]; then blankssid; fi

@@ -25,13 +25,19 @@ cleanautovars(){
 
 configure(){
     if [ -O $DUMP_PATH/$Host_MAC.key ] && [ "$Host_MAC" != "" ]; then
+        warn "${mark}Configuring network"
         KEY="$(cat $DUMP_PATH/$Host_MAC.key)"
+        tag;warn "${mark}Got key: $KEY"
         [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
+            tag;warn "${mark}Configuring wpa_supplicant"
             wpa_passphrase $Host_SSID "$KEY" > $DUMP_PATH/$Host_MAC.wpa_supplicant;
             wpa_supplicant -i $wificard -B -c$DUMP_PATH/$Host_MAC.wpa_supplicant;
+            tag; warn "${mark}Launching $DHCPSOFT to $wificard"
             $DHCPSOFT $wificard &>/dev/null || warn "${mark}Could not autoconfigure network"
         } || {
+            tag; warn "${mark}Configuring network with iwconfig"
             $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key $KEY &>/dev/null && {
+            tag; warn "${mark}Launching $DHCPSOFT to $wificard"
                 $DHCPSOFT $wificard &>/dev/null || warn  "${mark}Could not autoconfigure network" && return 2
             } || { warn "${mark}Could not autoconfigure network, wrong password size?"; }
         }
@@ -42,7 +48,7 @@ configure(){
 
 usage(){
     cat << eof
-usage: $0 [-h] [-t TERMINAL] [-s] [-v] [-m] [-c] [-a] [-n FILTER] [-w WIFICARD] [-f]
+usage: $0 [-h] [-t TERMINAL] [-s] [-v] [-m] [-c] [-x] [-n FILTER] [-w WIFICARD] [-f] [-a]
 
 options:
    -h      Show this message
@@ -55,13 +61,15 @@ options:
    -m      Start monitor mode witout caring for mac
    -a      Automatic mode
            -n  Filter SSID by regex (for automatic mode)
+   -x      Autoconfigure network after automatic crack (requires -a)
    -z      Don't scan automatically at start
 
+NOTE: -a must allways be the lastest option provided.
 eof
 }
 
 setargs(){
-     while getopts “n:ht:w:szcvmfap:” option; do
+     while getopts “n:ht:w:szxcvmfap:” option; do
         case $option in 
             h)  usage; exit 1;;
             n)  export filter_ssid=$OPTARG; warn "${mark}Selected filter: $filter_ssid";;
@@ -70,6 +78,7 @@ setargs(){
             z)  noscan=1;;
             v)  debug=1; hold=1;;
             w)  wificard=$OPTARG;;
+            x)  export options_autoconfigure=1;;
             m) { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
             c)  checkforcemac 3;
                 { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; 
