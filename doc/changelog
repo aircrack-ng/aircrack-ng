@@ -1,6 +1,23 @@
 Changelog for airoscript-ng 1.2
-- Refactorised almost all functions
 - Added autopawn functionality
+- Added plugins system
+- Added sslstrip plugin (experimental)
+- Added zenity graphical interface (as plugin)
+- Added digenpy plugin
+- Deleted old dictionary generators
+- Added john the ripper plugin 
+- Fixed WPA cracking
+- Fixed some wep options
+- Made auth functions less verbose
+- Added autoconfigure option in arguments
+- Updated airoscript-ng manpage
+- Fixed some broken options
+- Added a nice startup coloured ascii art logo
+- Fixed zenity plugins's autoscan dialog.
+- Fixed client selection menu
+
+Changelog for airoscript-ng 1.1
+- Refactorised almost all functions
 - Fixed changing mac address
 - Rewrote airoscript-ng script to be more readable
 - Autoscan function at start.
@@ -35,9 +52,7 @@ command it executes*! use carefully!)
 - Refactorished menu function, it's creating real nice menus now with shell scape codes
 - Same with target selection menu
 - Added an option to rescan for targets in starting auto scan.
-- Added plugins system
-- Added sslstrip plugin (experimental)
-- Added zenity graphical interface (as plugin)
+
 - Added airtun tool menu to airoscript
 - Code is now splitted in a more usable and editable way
 - Fixed menu function to work as expected

@@ -1,10 +1,10 @@
-REQUIREMENTS
-------------
+Airoscript-ng installation
+--------------------------
 
-    - GNU gettext (gettext package)
-    - ip (iproute package)
-    - aircrack-ng (same version as airoscript-ng)
-    - *Working* injection capable driver for the interface you want to use
+REQUIREMENTS
+============
+
+    *Working* injection capable driver for the interface you want to use
 
     Build-deps: gettext
     Deps:
