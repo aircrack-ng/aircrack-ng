@@ -1,4 +1,3 @@
-#!/bin/bash
 # Internal functions file for airoscript.
 # Recommends: wlandecrypter
 
@@ -220,4 +219,8 @@ hardclean(){ rm -rf $DUMP_PATH/$Host_MAC*; }
 single_question(){ read -p "${@}" ans; }
 warn(){ echo "${@}"; }
 specialwarn(){ echo -e -n "${@}"; }
+yesno(){
+    read -p "${@} [Y|n]" -n1 -s a; echo
+    [[ $a =~ (.*)[N|n](.*) ]] && return 1 || return 0
+}
 _source $path/internal/startup

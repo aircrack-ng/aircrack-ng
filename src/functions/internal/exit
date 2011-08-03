@@ -1,4 +1,3 @@
-#!/bin/bash
 # Exit and cleanup file used by airoscript
 # Copyright (C) 2010-2011 David Francos Cuartero
 #        This program is free software; you can redistribute it and/or
@@ -14,25 +13,12 @@
 #        You should have received a copy of the GNU General Public License
 #        along with this program; if not, write to the Free Software
 
-deconfigure(){
-    airmon-ng
-    airmon-ng stop $WIFI &> /dev/null
-    ifconfig $WIFI down
-}
-
-delete_dpath(){
-	rm -r $DUMP_PATH 2>/dev/null
-}
+delete_vinterfaces(){ for i in $(awk '/airoscript/ {print $1}' <(airmon-ng)); do iw dev $i del; done; }
+deconfigure(){ airmon-ng stop $wifi &> /dev/null ; delete_vinterfaces &>/dev/null; }
+delete_dpath(){ grep "tmp" <<< $DUMP_PATH && rm -r $DUMP_PATH &2>/dev/null;  }
 
 doexit(){
-		single_question "Do you want me to stop monitor mode on $WIFI? (Y/n) "
-		if [ "$ans" != "N" ]; then
-			_ 'Deconfiguring interface...'; deconfigure
-		fi
-
-		single_question 'Do you want me to delete temporary data dir? (y/N) ';
-		if [ "$ans" = "y" ]; then
-			echo -n `gettext 'Deleting'` " $DUMP_PATH ... "; delete_dpath
-		fi
-        [[ "$1" == "killme" ]] && kill -9 $$ || exit # Needed because of autopwn
+        yesno "Do you want me to stop monitor mode on $wifi and delete virtual interfaces? (Y/n) " && { warn "${mark}Cleaning interface"; deconfigure; }
+        yesno 'Do you want me to delete temporary data dir? (y/N) ' && { warn "${mark}Deleting $DUMP_PATH"; delete_dpath; }
+        [[ "$1" == "killme" ]] && pkill air $$ || exit # Needed because of autopwn
 }

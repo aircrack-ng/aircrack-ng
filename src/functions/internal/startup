@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright (C)  2011 David Francos Cuartero
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
@@ -115,8 +114,8 @@ valid_mac(){ (( ${#1} >= 17 )) && return 0 || return 1; }
 filter_ssid(){
     [[ "$filter_ssid" != "" ]] && {
         tag; warn "${mark}Filtering essid to $filter_ssid "
-        grep "$filter_ssid" $DUMP_PATH/dump-02.csv > $DUMP_PATH/dump-01.csv;
-    }
+        grep "$filter_ssid" $DUMP_PATH/dump-01.csv > $DUMP_PATH/dump-02.csv;
+    } 
 }
 
 # Some various functions that didn't know where to put them
@@ -149,7 +148,7 @@ selectAp(){
             amac[$k]=$MAC; aprivacy[$k]=$PRIVACY;
             aspeed[$k]=$SPEED; apower[$k]=$POWER
         }
-    done < $DUMP_PATH/dump-01.csv
+    done < $DUMP_PATH/dump-02.csv
     
     if [ "$AUTO" != 2 ]; then selectap_wrapper; fi
     if [ "$choice" != "r" ] ; then

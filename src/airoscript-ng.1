@@ -1,34 +1,86 @@
-.TH AIROSCRIPT 1 "December  15, 2008"
+.TH AIROSCRIPT 1 "August 3, 2011"
 
 .SH NAME
-airoscript - console interface to aircrack-ng
+airoscript - text interface to aircrack-ng
 
 .SH DESCRIPTION
 airoscript is program designed to ease the use of aircrack-ng. 
 .br .
 airoscript allows you to scan select and attack any detected access poing and guides you trought different kinds of attacks available for selected ap's encryption type.
 
-
 .SH SYNOPSIS
-.B airoscript 
-[TERMINAL]
+.B airoscript [-h] [-t TERMINAL] [-s] [-v] [-m] [-c] [-x] [-n FILTER] [-w WIFICARD] [-f] [-a]
 
 .TP
-.I TERMINAL 
+.I -t TERMINAL 
 Especifies the terminal to use instead of the one in config file.
+.PP
+
+.TP
+.I -s
+Uses screen interface instead of xterm (unstable)
+.PP
+
+.TP
+.I -v
+Enables verbose and debug mode
+.PP
+
+.TP
+.I -w [WIFICARD]
+Specify wificard (has no effect if no -m -c or -f provided)
+.PP
+
+.TP
+.I -f
+Change mac to fake mac, then start monitor mode
+.PP
+
+.TP
+.I -c
+Use your real mac and start monitor mode
+.PP
+
+.TP
+.I -m
+Start monitor mode without caring about the mac
+.PP
+
+.TP
+.I -a
+Enable automatic mode, starts a completly automatic (non-interactive)
+version of airoscript
+.BR
+If no filter provided, it'll attack all networks (WARN: this might be risky
+.PP
+
+.TP
+.I -n [REGEX]
+Filter essid by REGEX
+.PP
+
+.TP
+.I -x
+Autoconfigure network after automatic crack (requires -a)
+.PP
+
+.TP
+.I -z
+Dont do autoscan at start
+.PP
 
 .SH CONFIGURATION
 Configuration is done by file /etc/airoscript.conf . 
 .br
 It should run fine without customization, 
-but you can especify resolution, terminal and interface
+but you can especify terminal and interface
 there.
 .br
 
 .SH AUTHOR
 Airoscript was written by daouid and mantained by David Francos Cuartero.
 .br
-This manual page was written by David Francos Cuartero <yo.orco@gmail.com>.
+This manual page was written by David Francos Cuartero <xayon@xayon.net>.
 
 .SH SEE ALSO
 .br

@@ -1,4 +1,3 @@
-#!/bin/bash
 source $path/attacks/others
 source $path/attacks/injection
 source $path/attacks/wpa

@@ -19,6 +19,7 @@
 
 export mark="";
 warn(){ notify-send -i "$path/../doc/airoscript-ng/airoscript-ng.png" "Airoscript notification" "${@}"; }
+yesno(){ zenity --question $@; }
 single_question(){ ans=`zenity --entry --text "${@}"`; }
 mkmenuheader(){ return; }
 mkmenuline(){ return; }
