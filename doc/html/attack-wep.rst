@@ -3,10 +3,6 @@ Wep attacks
 
 .. image:: images/wep-attacks.png
 
-Airoscript comes out with a bunch of ready-to-attack wep attacks.
-
-First distinction we'll find is between attacks requiring a client, attacks not requiring a client and ARP injection from xor.
-
 Attacks not using a client
 ==========================
 
@@ -59,9 +55,9 @@ Have a look at _Fake auth at aircrack-ng wiki: http://www.aircrack-ng.org/doku.p
 Fragmentation attack
 +++++++++++++++++++++++
 
-Here, airoscript-ng kills every airodump-ng and aireplay-ng processes (-9 kill, be careful as all airodump processes will stop recording and not save data) and removes all old fragmentation captures and normal captures (hard-cleans everything). Be careful!
+Here, airoscript-ng kills *every airodump-ng and aireplay-ng processes* (-9 kill, be careful as all airodump processes will stop recording and not save data) and removes all old fragmentation captures and normal captures (hard-cleans everything). Be careful!
 
-Note to self: IF NO DUMP_PATH PROVIDED, AND NO HOST MAC PROVIDED (It's imposible to get here with airoscript, just if you source attacks/wep and execute directly wep_attacks_fragmentation) it will do a rm /* wich is dangerous
+Note to self: IF NO _DUMP_PATH_ PROVIDED, AND NO HOST MAC PROVIDED (It's imposible to get here with airoscript, just if you source attacks/wep and execute directly wep_attacks_fragmentation) it will do a rm /* wich is dangerous
 
 Then it launches aireplay, in this case, assuming you've no clients, with injection (-5, --fragment option) like this:
 
