@@ -13,7 +13,7 @@
 #        You should have received a copy of the GNU General Public License
 #        along with this program; if not, write to the Free Software
 
-delete_vinterfaces(){ for i in $(awk '/airoscript/ {print $1}' <(airmon-ng)); do iw dev $i del; done; }
+delete_vinterfaces(){ for i in $(awk "/$MON_PREFIX/ {print \$1}" <(airmon-ng)); do iw dev $i del; done; }
 deconfigure(){ airmon-ng stop $wifi &> /dev/null ; delete_vinterfaces &>/dev/null; }
 delete_dpath(){ grep "tmp" <<< $DUMP_PATH && rm -r $DUMP_PATH &2>/dev/null;  }
 

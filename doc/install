@@ -20,35 +20,11 @@ REQUIREMENTS
 		jazzteldecrypter
 		mdk 
 
-COMPILING:
-==========
-    You have to identify where your aircrack-ng installation is.
-    It can be on /usr or on /usr/local
-        Hint: packages are usually in /usr, if you installed
-        it manually it should be in /usr/local
-
-    You can specify the paths for aircrack-ng if you need so, just do:
-
-    ::
-
-        make aircrack_prefix="\/foo\/bar"
-    
-    Don't forget to scape (\) the slashes, like in the example.
-
-    Note: On slackware you'll need dhclient or config airoscript 
-          to use dhcpdb instead
-
 FEATURES
 ========
 
-    Airoscript is fully i10n (currently translated to spanish), configurable,
+    Airoscript is fully i10n, configurable,
     themable and modular. 
-
-
-DEBIAN
-=======
-    There is a file regarding debian packaging, if you're going to package 
-    airoscript for debian.
 
 PROBLEMS
 ========

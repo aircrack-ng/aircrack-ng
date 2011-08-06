@@ -14,6 +14,8 @@ data=$(DESTDIR)/$(prefix)/share
 	# main
 bindir=$(DESTDIR)/$(prefix)/sbin/
 datadir=$(data)/$(NAME)/
+picdir=/usr/share/pixmaps/
+appdir=/usr/share/applications/
 docdir=$(data)/doc/$(NAME)
 etcdir=$(DESTDIR)/$(prefix)/etc
 locale=$(data)/locale
@@ -24,32 +26,29 @@ install: installdirs\
 	 install-binary \
 	 install-docs \
 	 install-locale \
-	 post-install
+	 install-desktop \
 
 installdirs:
 	@$(SHELL) ./.mkinstalldirs $(bindir) $(datadir) \
         			$(docdir)/html/images $(etcdir) \
-                                $(mandir)/man1 $(locale) \
-				$(datadir)/themes \
-				$(datadir)/plugins \
-				$(datadir)/airosperl \
-				$(docdir)/tools
+        			$(docdir)/html/css \
+                    $(mandir)/man1 $(locale) \
+					$(datadir)/themes \
+					$(datadir)/plugins \
+					$(datadir)/airosperl \
+					$(docdir)/tools
 	
 install-binary:
 	@echo "Installing airoscript"
 	@$(INSTALL) $(srcdir)/airoscript-ng $(bindir)/$(name)
 	@$(INSTALL) $(srcdir)/airoscript-ng.conf $(etcdir)
+	@$(INSTALL) $(srcdir)/airoscript-ng_advanced.conf $(etcdir)
 	@cp -r $(srcdir)/functions/* $(datadir)
 	@$(INSTALLDATA) $(srcdir)/screenrc.airoscript $(etcdir)
 	@echo "Installing themes"
 	@$(INSTALLDATA) $(srcdir)/themes/*.theme $(datadir)/themes
 	@echo "Installing plugins"
 	@$(INSTALLDATA) $(srcdir)/plugins/* $(datadir)/plugins
-
-
-post-install:
-	@echo ""
-	@if [ "$(aircrack_prefix)" != "/usr/local " ]; then sed -i 's/AIRPREFIX=\"\/usr\/local\"/AIRPREFIX=\"$(aircrack_prefix)\"/g' $(etcdir)/airoscript-ng.conf &>/dev/null;fi
 
 install-docs:
 	@echo "Installing documentation"
@@ -60,6 +59,11 @@ install-docs:
 	@for i in $(srcdir)/*.1 ; do $(INSTALLDATA) $$i $(mandir)/man1/ ; done
 	@echo "\t Installing artwork"
 	@install src/airoscriptlogo_med.png $(docdir)/airoscript-ng.png
+
+install-desktop:
+	@install aircrack-airoscript.desktop $(appdir)/
+	@install src/airoscriptlogo_med.png $(picdir)/airoscript-ng.png
+	@xdg-desktop-menu install $(appdir)/aircrack-airoscript.desktop
 
 generate-locale:
 	@for i in $(srcdir)/locale/* ; do \

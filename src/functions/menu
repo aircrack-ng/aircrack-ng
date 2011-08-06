@@ -40,7 +40,6 @@ menu_attack(){
 }
 
 menu_crack(){
-    check_function auto || source $path/crack/dicts
     check_function crack_wep || source $path/crack/main
 			while true; do
                 mkmenu "WEP/WPA Cracking Options" "Crack with manual dictionary" "Standard aircrack-ng" "Return to menu" 
