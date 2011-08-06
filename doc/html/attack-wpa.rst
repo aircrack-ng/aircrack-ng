@@ -1,8 +1,6 @@
 WPA attacks
 -----------
 
-.. image:: images/wpa-attacks.png
-
 Standard attack
 ==========================
 
