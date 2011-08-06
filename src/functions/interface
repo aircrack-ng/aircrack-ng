@@ -144,7 +144,7 @@ getterminal(){
 
 reso() {
     xhost &>/dev/null || { echo -e "${mark}Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
-        _resonset
+        _resonset 
 	while true; do
 		if [ "$resonset" = "" ]; then
             mkmenu "$resonset" "Resolution" "640x480" "800x480" "800x600" "1024x768" "1280x768" "1280x800" "1280x1024" "1600x1200";

@@ -4,14 +4,38 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
-<title></title>
+<title>Crack</title>
 <link rel="stylesheet" href="css/stylesheet.css" type="text/css" />
 </head>
 <body>
-<div class="document">
+<div class="document" id="crack">
+<h1 class="title">Crack</h1>
 
-
-
+<img alt="images/crack.png" src="images/crack.png" />
+<p>This section defines cracking menu.
+Note: If &quot;pipe&quot; variable is set, it will be executed and piped into aircrack-ng (that's the way the john the ripper plugin works, actually)</p>
+<div class="section" id="wpa-crack">
+<h1>WPA Crack</h1>
+<img alt="images/wpa_crack.png" src="images/wpa_crack.png" />
+</div>
+<div class="section" id="wep-crack">
+<h1>WEP Crack</h1>
+<img alt="images/wep_crack.png" src="images/wep_crack.png" />
+<div class="section" id="default">
+<h2>Default</h2>
+<p>Default option passes</p>
+<p>Executes</p>
+<pre class="literal-block">
+&quot;$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap $crack_extra_opts $writekey&quot;; $clear; break ;;
+</pre>
+</div>
+<div class="section" id="korek">
+<h2>Korek</h2>
+</div>
+<div class="section" id="interactive">
+<h2>Interactive</h2>
+</div>
+</div>
 </div>
 </body>
 </html>

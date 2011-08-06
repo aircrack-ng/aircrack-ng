@@ -43,7 +43,7 @@ _source  "$path/themes/$theme" || default_theme
 _source ${enabled_plugins[@]};
 
 # Setup wordlist
-[[ ! -e $DUMP_PATH/wordlist.txt ]] && { cp $WORDLIST $DUMP_PATH; WORDLIST="DUMP_PATH/`basename $WORDLIST`"; }
+[[ ! -e $DUMP_PATH/wordlist.txt ]] && { cp $WORDLIST $DUMP_PATH &>/dev/null; WORDLIST="DUMP_PATH/`basename $WORDLIST`"; }
 
 # For locale debugging
 _debug "Text domain dir is $TEXTDOMAINDIR and textdomain is $TEXTDOMAIN"
