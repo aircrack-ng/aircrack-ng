@@ -92,6 +92,10 @@ uninstall:
 			make -s -C $$i uninstall localedir=$(locale) ; \
 		fi ; \
 	done
+	$(etcdir)/airoscript-ng_advanced.conf
+	$(etcdir)/screenrc.airoscript
+	@rm /usr/share/applications/aircrack-airoscript.desktop /usr/share/pixmaps/airoscript-ng.png
+
 	@echo "Uninstalled succesfully"
 	
 

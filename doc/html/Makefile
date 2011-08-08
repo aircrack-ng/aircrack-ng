@@ -1,4 +1,4 @@
-all: build install 
+all: install 
 
 install:
 	@echo "\t Installing html documentation"
