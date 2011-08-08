@@ -86,7 +86,7 @@ uninstall:
 	@rm $(etcdir)/airoscript-ng.conf
 	@rm -r $(datadir)
 	@rm -r $(docdir)
-	@for i in $(srcdir)/*.1 ; do rm $(mandir)/man1/$$i ; done
+	@rm $(mandir)/man1/airoscript-ng.1
 	@for i in $(srcdir)/locale/* ; do \
 		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
 			make -s -C $$i uninstall localedir=$(locale) ; \
