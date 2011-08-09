@@ -286,12 +286,18 @@
 		#ifndef htobe32
 			#define htobe32 ___my_swab32
 		#endif
+                #ifndef htobe64
+                        #define htobe64 ___my_swab64
+                #endif
 		#ifndef betoh16
 			#define betoh16 ___my_swab16
 		#endif
 		#ifndef betoh32
 			#define betoh32 ___my_swab32
 		#endif
+                #ifndef betoh64
+                        #define betoh64 ___my_swab64
+                #endif
 
 		#ifndef htole16
 			#define htole16(x) (x)
@@ -299,12 +305,18 @@
 		#ifndef htole32
 			#define htole32(x) (x)
 		#endif
+                #ifndef htole64
+                        #define htole64(x) (x)
+                #endif
 		#ifndef letoh16
 			#define letoh16(x) (x)
 		#endif
 		#ifndef letoh32
 			#define letoh32(x) (x)
 		#endif
+                #ifndef letoh64
+                        #define letoh64(x) (x)
+                #endif
 
 	#endif
 
@@ -331,12 +343,18 @@
 		#ifndef htobe32
 			#define htobe32(x) (x)
 		#endif
+                #ifndef htobe64
+                        #define htobe64(x) (x)
+                #endif
 		#ifndef betoh16
 			#define betoh16(x) (x)
 		#endif
 		#ifndef betoh32
 			#define betoh32(x) (x)
 		#endif
+                #ifndef betoh64
+                        #define betoh64(x) (x)
+                #endif
 
 		#ifndef htole16
 			#define htole16 ___my_swab16
@@ -344,12 +362,18 @@
 		#ifndef htole32
 			#define htole32 ___my_swab32
 		#endif
+                #ifndef htole64
+                        #define htole64 ___my_swab64
+                #endif
 		#ifndef letoh16
 			#define letoh16 ___my_swab16
 		#endif
 		#ifndef letoh32
 			#define letoh32 ___my_swab32
 		#endif
+                #ifndef letoh64
+                        #define letoh64 ___my_swab64
+                #endif
 
 	#endif
 
