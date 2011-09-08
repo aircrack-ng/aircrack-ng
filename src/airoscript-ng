@@ -53,6 +53,10 @@ setaircrackpaths
 rootwarn
 setps
 
+exit_trap(){ check_function doexit || source $path/internal/exit; echo; echo; doexit; }
+trap exit_trap 1 2 3 4 5 6 7 8 10 12 13 14 15 20
+
+
 clear=""
 [[ $show_startup_goodie ]] && { airoscript_ascii_art 2>/dev/null ; }
 warn "${mark}Welcome to airoscript, have a nice day"

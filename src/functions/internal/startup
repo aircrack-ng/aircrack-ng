@@ -168,6 +168,7 @@ selectAp(){
         Host_SSID=${ssid:1:fin}
         tag; echo "${mark}Target network is $Host_SSID $Host_MAC"
     else autoscan; fi
+    [[ $report_mode_enabled == 1 ]] && report_mode
 }
 
 launch_counter(){

@@ -1,0 +1,27 @@
+# Dict generators for airoscript
+# Depends on digenpy_
+# Copyright (C) 2009-2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+p_menu+=("Show tcpdstats report on cracked network");
+
+Show_tcpdstats_report_on_cracked_network(){
+    _tcpdstat; less $DUMP_PATH/$Host_MAC.report_proto_stats 
+}
+_tcpdstat(){
+    airdecap-ng -w `cat $DUMP_PATH/$Host_MAC.key` $DUMP_PATH/$Host_MAC-01.cap 
+    tcpdstats $DUMP_PATH/$Host_MAC-01-dec.cap &> $DUMP_PATH/$Host_MAC.report_proto_stats 
+}

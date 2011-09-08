@@ -1,0 +1,64 @@
+# Copyright (C)  2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+report_file=$DUMP_PATH/$Host_MAC.report
+
+report_proto_stats(){
+    check_function tcpdstat || source $path/plugins/tcpdstat
+    tcpdstat -foo &>/dev/null; [[ $? == 157 ]] ||  _tcpdstat
+}
+
+make_report(){
+    cp $path/templates/start ${report_file}.html
+    echo "<div id='network_data'>" >> ${report_file}.html
+    report_mode_html &>> ${report_file}.html
+    echo "</div>" >> ${report_file}.html
+    echo "<div id='kstats'" >> ${report_file}.html
+    kstatsmenu auto; cat $DUMP_PATH/$Host_MAC.kstats >> ${report_file}.html
+    echo "</div>" >> ${report_file}.html
+    _airgraph
+    echo "<div id='graphs'><img src=\"$DUMP_PATH/$Host_MAC.png\" /></div>" >> ${report_file}.html
+    cat $path/templates/end >> ${report_file}.html
+}
+
+report_mode_html(){
+
+}
+
+report_mode(){
+    key=`cat $DUMP_PATH/$Host_MAC.key`
+    echo -e "Network, Mac, Channel, Encription, Speed, key\n$Host_SSID, $Host_MAC, $Host_CHAN, $Host_ENC, $Host_SPEED, $key" > ${report_file}_standard.csv
+}
+
+kstatsmenu(){
+    if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ -e $DUMP_PATH/$Host_MAC.key ]; then
+        $IVSTOOLS --convert $DUMP_PATH/$Host_MAC.cap $DUMP_PATH/$Host_MAC.ivs &> /dev/null
+        $KSTATS $DUMP_PATH/$Host_MAC-01.ivs `cat $DUMP_PATH/$Host_MAC.key` &> $DUMP_PATH/$Host_MAC.kstats 
+        [[ $1 == "" ]] && less $DUMP_PATH/$Host_MAC.kstats
+    else
+        $clear; warn "You don't have a cracked WEP interface"; sleep 2; $clear; return
+    fi
+
+}
+
+_airgraph(){
+    if [[ "$Host_MAC" != "" ]]; then
+        read -p "Enter format (CPG|CAPR) (CAPR by default): " g
+        read -p "Do you want to launch a browser? [y|N] " yn
+	[[ $g != "CPG" ]] && g="CAPR"
+        execute "Generating graphics" $AIRGRAPH -i $DUMP_PATH/$Host_MAC.csv -o $DUMP_PATH/$Host_MAC.png -g $g
+        [ $yn == "y" ] && sensible-browser $DUMP_PATH/$Host_MAC.png
+    else $clear; _ "Error: You have to scan for targets first"; fi
+}

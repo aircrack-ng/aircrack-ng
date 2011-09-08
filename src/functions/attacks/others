@@ -146,31 +146,23 @@ wessidenewtarget(){
 }
 
 diagmenu(){
+    check_function kstatsmenu || source $path/reporting
     while true; do
-        mkmenu "Diagnostic tools and reports" "Show kstats report" "Test injection" "Checks with airmon-ng" "Create graphs" "Return to main menu"
+        mkmenu "Diagnostic tools and reports" "Show kstats report" "Test injection" "Checks with airmon-ng" "Create graphs" "Update airoscript report" "Return to main menu"
         case $choice in
             1  ) kstatsmenu    ; $clear; break;;
             2  ) inject_test   ; $clear; break;;
             3  ) airmoncheck   ; $clear; break;;
             4  ) _airgraph     ; $clear; break;;
-            5  )                 $clear; break;;
+            5  ) report_mode   ; $clear; break;;
+            6  ) make_report   ; $clear; break;;
+            7  )                 $clear; break;;
             *  ) _ "Unknown response, try again"; sleep 1; $clear;;
         esac
     done
 }
 
-kstatsmenu(){
-    if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ -e $DUMP_PATH/$Host_MAC.key ]; then
-        _ "Converting to ivs"; sleep 0.2
-        $IVSTOOLS --convert $DUMP_PATH/$Host_MAC.cap $DUMP_PATH/$Host_MAC.ivs &> /dev/null
-        _ "I'm going to print here kstats info"; sleep 1
-        $KSTATS $DUMP_PATH/$Host_MAC-01.ivs `cat $DUMP_PATH/$Host_MAC.key`
-        read -p "Enter any key to continue" ktc
-    else
-        $clear; warn "You don't have a cracked WEP interface"; sleep 2; $clear; return
-    fi
 
-}
 
 inject_test(){
     execute "Test injection" $AIREPLAY $iwifi --test 
@@ -179,15 +171,6 @@ inject_test(){
 airmoncheck(){
     if [ "$TYPE" = "Atherosmadwifi-ng" ]; then $AIRMON check wifi0
     else $AIRMON check $wificard; fi
-}
-
-_airgraph(){
-    if [ "$Host_MAC" == "" ]; then
-        read -p "Enter format (CPG|CAPR): " g
-        read -p "Do you want to launch a browser? [y|N] " yn
-        execute "Generating graphics" $AIRGRAPH -i $DUMP_PATH/$Host_MAC.csv -o $DUMP_PATH/$Host_MAC.png -g $g
-        [ $yn == "y" ] && sensible-browser $DUMP_PATH/$Host_MAC.png
-    else $clear; _ "Error: You have to scan for targets first"; fi
 }
 
 

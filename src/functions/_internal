@@ -55,6 +55,7 @@ options:
    -s      Use screen interface
    -v      Verbose & debug mode
    -w      Specify wifi card
+   -v      Writes a csv file with network data.
    -f      Change mac to fakemac before everything else.
    -c      Change FAKE_MAC to use real mac
    -m      Start monitor mode witout caring for mac
@@ -68,11 +69,12 @@ eof
 }
 
 setargs(){
-     while getopts “n:ht:w:szxcvmfap:” option; do
+     while getopts “vn:ht:w:szxcvmfap:” option; do
         case $option in 
             h)  usage; exit 1;;
             n)  export filter_ssid=$OPTARG; warn "${mark}Selected filter: $filter_ssid";;
             t)  TERMINAL=$OPTARG;;
+            r)  report_mode=1;;
             s)  TERMINAL=screen;;
             z)  noscan=1;;
             v)  debug=1; hold=1;;
