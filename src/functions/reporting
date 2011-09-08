@@ -1,4 +1,5 @@
 # Copyright (C)  2011 David Francos Cuartero
+        
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
 #        as published by the Free Software Foundation; either version 2
@@ -20,21 +21,41 @@ report_proto_stats(){
     tcpdstat -foo &>/dev/null; [[ $? == 157 ]] ||  _tcpdstat
 }
 
-make_report(){
-    cp $path/templates/start ${report_file}.html
-    echo "<div id='network_data'>" >> ${report_file}.html
-    report_mode_html &>> ${report_file}.html
+_make_report(){
+# Virtual function so I can easily override make_report while preserving this one.
+    kstatsmenu auto; _airgraph; cp $path/templates/start.html ${report_file}.html
+    echo "<h1 class=\"title\">Report for $Host_SSID : $Host_MAC </h1>" >> ${report_file}.html
+    echo "<div id='network_data' class='section'>" >> ${report_file}.html
+    report_html &>> ${report_file}.html
+    echo "</div><div id='kstats' class='section'>" >> ${report_file}.html
+    cat $DUMP_PATH/$Host_MAC.kstats >> ${report_file}.html
+    echo "</div><div id='graphs' class='section'><img src=\"$DUMP_PATH/$Host_MAC.png\" /></div>" >> ${report_file}.html
+    echo "<div id='warnings' class='section'>" >> ${report_file}.html
+    get_html_warnings >> ${report_file}.html
     echo "</div>" >> ${report_file}.html
-    echo "<div id='kstats'" >> ${report_file}.html
-    kstatsmenu auto; cat $DUMP_PATH/$Host_MAC.kstats >> ${report_file}.html
-    echo "</div>" >> ${report_file}.html
-    _airgraph
-    echo "<div id='graphs'><img src=\"$DUMP_PATH/$Host_MAC.png\" /></div>" >> ${report_file}.html
     cat $path/templates/end >> ${report_file}.html
 }
 
-report_mode_html(){
+make_report(){ _make_report; }
 
+}
+
+get_html_warnings(){ get_warnings; while read warning; do echo "<p class='warning'> ${warning} </p>"; done < ${report_file}.warns; }
+
+get_warnings(){
+    key=`cat $DUMP_PATH/$Host_MAC.key`
+    [[ "$Host_ENC" =~ (.*)"WEP"(.*) ]] && echo "WEP encription is unsecure and should not be used" >> ${report_file}.warns
+    (( ${#key} < 104 )) && echo "Key lenght is less than 104 bytes" >> ${report_file}.warns
+}
+
+report_html(){
+    key=`cat $DUMP_PATH/$Host_MAC.key`
+    echo "<p><span style='font-weight:bolder'>Network SSID </span> $Host_SSID</p>"
+    echo "<p><span style='font-weight:bolder'>Network MAC </span> $Host_MAC</p>"
+    echo "<p><span style='font-weight:bolder'>Network channel </span> $Host_CHAN</p>"
+    echo "<p><span style='font-weight:bolder'>Network encription </span> $Host_ENC</p>"
+    echo "<p><span style='font-weight:bolder'>Network speed </span> $Host_SPEED</p>"
+    echo "<p><span style='font-weight:bolder'>Network key </span> $key"
 }
 
 report_mode(){

@@ -36,7 +36,8 @@ installdirs:
 					$(datadir)/themes \
 					$(datadir)/plugins \
 					$(datadir)/airosperl \
-					$(docdir)/tools
+					$(docdir)/tools \
+					$(datadir)/templates
 	
 install-binary:
 	@echo "Installing airoscript"
@@ -44,6 +45,7 @@ install-binary:
 	@$(INSTALL) $(srcdir)/airoscript-ng.conf $(etcdir)
 	@$(INSTALL) $(srcdir)/airoscript-ng_advanced.conf $(etcdir)
 	@cp -r $(srcdir)/functions/* $(datadir)
+	@cp -r $(srcdir)/templates/* $(datadir)/templates
 	@$(INSTALLDATA) $(srcdir)/screenrc.airoscript $(etcdir)
 	@echo "Installing themes"
 	@$(INSTALLDATA) $(srcdir)/themes/*.theme $(datadir)/themes
