@@ -151,6 +151,7 @@ struct options
         int forced_amode;	/* signals disregarding automatic detection of encryption type */
 
 	char * wkp;					 /* EWSA Project file */
+	char * hccap;				         /* Hashcat capture file */                  
 
 }
 

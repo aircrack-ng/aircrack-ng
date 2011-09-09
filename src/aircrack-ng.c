@@ -222,6 +222,7 @@ char usage[] =
 "  WPA-PSK options:\n"
 "\n"
 "      -E <file>  : create EWSA Project file v3\n"
+"      -J <file>  : create Hashcat Capture file\n"
 "      -S         : WPA cracking speed test\n"
 #ifdef HAVE_SQLITE
 "      -r <DB>    : path to airolib-ng database\n"
@@ -4335,6 +4336,135 @@ int do_make_wkp(struct AP_info *ap_cur)
 	return( 1 );
 }
 
+int do_make_hccap(struct AP_info *ap_cur)
+{
+	size_t elt_written;
+	int i = 0;
+
+	while( ap_cur != NULL )
+	{
+		if( ap_cur->target && ap_cur->wpa.state == 7 )
+			break;
+		ap_cur = ap_cur->next;
+	}
+
+	if( ap_cur == NULL )
+	{
+		printf( "No valid WPA handshakes found.\n" );
+		return( 0 );
+	}
+
+	if( memcmp( ap_cur->essid, ZERO, 32 ) == 0 && ! opt.essid_set )
+	{
+		printf( "An ESSID is required. Try option -e.\n" );
+		return( 0 );
+	}
+
+	if( opt.essid_set && ap_cur->essid[0] == '\0' )
+	{
+		memset(  ap_cur->essid, 0, sizeof( ap_cur->essid ) );
+		strncpy( ap_cur->essid, opt.essid, sizeof( ap_cur->essid ) - 1 );
+	}
+
+	printf("\n\nBuilding Hashcat (1.00) file...\n\n");
+
+	printf("[*] ESSID (length: %d): %s\n", (int)strlen(ap_cur->essid), ap_cur->essid);
+
+	printf("[*] Key version: %d\n", ap_cur->wpa.keyver);
+
+	printf("[*] BSSID: %02X:%02X:%02X:%02X:%02X:%02X\n",
+		ap_cur->bssid[0], ap_cur->bssid[1],
+		ap_cur->bssid[2], ap_cur->bssid[3],
+		ap_cur->bssid[4], ap_cur->bssid[5]
+		);
+	printf("[*] STA: %02X:%02X:%02X:%02X:%02X:%02X",
+		ap_cur->wpa.stmac[0], ap_cur->wpa.stmac[1],
+		ap_cur->wpa.stmac[2], ap_cur->wpa.stmac[3],
+		ap_cur->wpa.stmac[4], ap_cur->wpa.stmac[5]
+		);
+
+	printf("\n[*] anonce:");
+	for(i = 0; i < 32; i++)
+	{
+		if(i % 16 == 0) printf("\n    ");
+		printf("%02X ", ap_cur->wpa.anonce[i]);
+	}
+
+	printf("\n[*] snonce:");
+	for(i = 0; i < 32; i++)
+	{
+		if(i % 16 == 0) printf("\n    ");
+		printf("%02X ", ap_cur->wpa.snonce[i]);
+	}
+
+	printf("\n[*] Key MIC:\n   ");
+	for(i = 0; i < 16; i++)
+	{
+		printf(" %02X", ap_cur->wpa.keymic[i]);
+	}
+
+	printf("\n[*] eapol:");
+	for( i = 0; i < ap_cur->wpa.eapol_size; i++)
+	{
+		if( i % 16 == 0 ) printf("\n    ");
+		printf("%02X ",ap_cur->wpa.eapol[i]);
+
+	}
+
+	printf("\n");
+
+	// write file
+	FILE * fp_hccap;
+
+	strcat(opt.hccap, ".hccap");
+
+	fp_hccap = fopen( opt.hccap,"wb" );
+	if (fp_hccap == NULL)
+	{
+		printf("\nFailed to create Hashcat capture file\n");
+		return 0;
+	}
+
+	typedef struct
+	{
+		char          essid[36];
+
+		unsigned char mac1[6];
+		unsigned char mac2[6];
+		unsigned char nonce1[32];
+		unsigned char nonce2[32];
+
+		unsigned char eapol[256];
+		int           eapol_size;
+
+		int           keyver;
+		unsigned char keymic[16];
+
+	} hccap_t;
+
+	hccap_t hccap;
+
+	memcpy (&hccap.essid,      &ap_cur->essid,          sizeof (ap_cur->essid));
+	memcpy (&hccap.mac1,       &ap_cur->bssid,          sizeof (ap_cur->bssid));
+	memcpy (&hccap.mac2,       &ap_cur->wpa.stmac,      sizeof (ap_cur->wpa.stmac));
+	memcpy (&hccap.nonce1,     &ap_cur->wpa.snonce,     sizeof (ap_cur->wpa.snonce));
+	memcpy (&hccap.nonce2,     &ap_cur->wpa.anonce,     sizeof (ap_cur->wpa.anonce));
+	memcpy (&hccap.eapol,      &ap_cur->wpa.eapol,      sizeof (ap_cur->wpa.eapol));
+	memcpy (&hccap.eapol_size, &ap_cur->wpa.eapol_size, sizeof (ap_cur->wpa.eapol_size));
+	memcpy (&hccap.keyver,     &ap_cur->wpa.keyver,     sizeof (ap_cur->wpa.keyver));
+	memcpy (&hccap.keymic,     &ap_cur->wpa.keymic,     sizeof (ap_cur->wpa.keymic));
+
+	elt_written = fwrite(&hccap, sizeof (hccap_t), 1, fp_hccap);
+	i = fclose(fp_hccap);
+
+	if ((int)elt_written == 1) {
+		printf("\nSuccessfully written to %s\n", opt.hccap);
+	} else {
+		printf("\nFailed to write to %s\n !", opt.hccap);
+	}
+
+	return( 1 );
+}
 
 int do_wpa_crack()
 {
@@ -4791,6 +4921,7 @@ int main( int argc, char *argv[] )
 	opt.oneshot		= 0;
 	opt.logKeyToFile = NULL;
 	opt.wkp = NULL;
+	opt.hccap = NULL;
 	opt.forced_amode	= 0;
 
 	/*
@@ -4818,7 +4949,7 @@ int main( int argc, char *argv[] )
             {0,                   0, 0,  0 }
         };
 
-		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:l:E:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1Su",
+		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1Su",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -5097,6 +5228,19 @@ int main( int argc, char *argv[] )
 
 				break;
 
+			case 'J' :
+				// Make sure there's enough space for file extension just in case it was forgotten
+				opt.hccap = (char *)calloc(1, strlen(optarg) + 1 + 6);
+				if (opt.hccap == NULL)
+				{
+					printf("Error allocating memory\n");
+					return( FAILURE );
+				}
+
+				strncpy(opt.hccap, optarg, strlen(optarg));
+
+				break;
+
 			case 'M' :
 
 				if( sscanf( optarg, "%d", &opt.max_ivs) != 1 || opt.max_ivs < 1)
@@ -5250,16 +5394,24 @@ usage:
 	if( opt.amode == 2 && opt.dict == NULL )
 	{
 		nodict:
-		if (opt.wkp == NULL)
+		if (opt.wkp == NULL && opt.hccap == NULL)
 		{
 			printf( "Please specify a dictionary (option -w).\n" );
 		}
 		else
 		{
-			ap_cur = ap_1st;
-			ret = do_make_wkp(ap_cur);
-		}
-		goto exit_main;
+			if (opt.wkp)
+			{
+				ap_cur = ap_1st;
+				ret = do_make_wkp(ap_cur);
+			}
+			if (opt.hccap)
+			{
+				ap_cur = ap_1st;
+				ret = do_make_hccap(ap_cur);
+			}
+	}
+	goto exit_main;
 	}
 
 	if( (! opt.essid_set && ! opt.bssid_set) && ( opt.is_quiet || opt.no_stdin ) )
