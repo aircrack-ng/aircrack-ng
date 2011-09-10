@@ -353,9 +353,14 @@ getChipset() {
         
         if [ x"$DETECTED_STR" != "x" ]
         then
-		while [ $FOUND = "0" ]
+        	IS_LINK=`echo "$DETECTED_STR" | grep Link | wc -l`
+        	while [ $FOUND = "0" ]
 		do
-			FOUND=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS | grep Link | wc -l`
+			if [ $IS_LINK = "1" ]
+				FOUND=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS | grep Link | wc -l`
+			else
+				FOUND=`echo "$DETECTED_STR" | cut -d' ' -f $LINK_POS | grep Wireless | wc -l`
+			fi
 			LINK_POS=$(($LINK_POS+1))
 		done
 
