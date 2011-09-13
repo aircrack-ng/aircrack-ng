@@ -39,7 +39,7 @@ _source(){
 
 Enable_plugin(){
     cd $path/plugins; available_plugins=(*); cd -; mkmenu "Enable plugin" "${available_plugins[@]}"
-    load $path/plugins/${available_plugins[$choice - 1 ]} || { warn "${mark}Unknown option or bad plugin, try again"; Enable_plugin; }
+    _source $path/plugins/${available_plugins[$choice - 1 ]} || { warn "${mark}Unknown option or bad plugin, try again"; Enable_plugin; }
 }
 
 Return_to_main_menu(){ mainmenu; }
