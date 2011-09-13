@@ -22,6 +22,8 @@
 declare -a enabled_plugins
 declare -a p_menu
 
+p_menu+=( "Enable plugin" )
+
 _source(){
     for cfile in $@; do
         if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; echo "${mark}Loading $cfile";
@@ -34,6 +36,13 @@ _source(){
         [[ -e /usr/local/share/airoscript-ng/ ]] && path=/usr/local/share/airoscript-ng 
     }
 }
+
+Enable_plugin(){
+    cd $path/plugins; available_plugins=(*); cd -; mkmenu "Enable plugin" "${available_plugins[@]}"
+    load $path/plugins/${available_plugins[$choice - 1 ]} || { warn "${mark}Unknown option or bad plugin, try again"; Enable_plugin; }
+}
+
+Return_to_main_menu(){ mainmenu; }
 
 # We preload functions, configs and themes in a cool way.
 _source "./airoscript-ng.conf.devel ~/.airoscript-ng/airoscript-ng.conf /etc/airoscript-ng.conf /usr/local/etc/airoscript-ng.conf"
