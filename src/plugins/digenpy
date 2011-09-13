@@ -50,7 +50,7 @@ Jazztel(){
 }
 
 Crack_with_dictionary_generator(){ 
-    if [ "$Host_SSID" == "" ]; then clear; echo -e "`gettext 'Error: You must select a target first'`\n"; return; fi
+    if [ "$Host_SSID" == "" ]; then $clear; echo -e "`gettext 'Error: You must select a target first'`\n"; return; fi
 
     if [ "$1" == "return_ivs" ]; then
         for function in "Telefonica" "Jazztel" ; do test=1; $function; test=0; [[ "$avail" == "1" ]] && return 4; done
