@@ -21,9 +21,11 @@ report_proto_stats(){
     tcpdstat -foo &>/dev/null; [[ $? == 157 ]] ||  _tcpdstat
 }
 
+_get_report_data(){ kstatsmenu auto; _airgraph;  }
+
 _make_report(){
 # Virtual function so I can easily override make_report while preserving this one.
-    kstatsmenu auto; _airgraph; cp $path/templates/start.html ${report_file}.html
+    cp $path/templates/start.html ${report_file}.html; 
     echo "<h1 class=\"title\">Report for $Host_SSID : $Host_MAC </h1>" >> ${report_file}.html
     echo "<div id='network_data' class='section'>" >> ${report_file}.html
     report_html &>> ${report_file}.html
@@ -36,9 +38,7 @@ _make_report(){
     cat $path/templates/end >> ${report_file}.html
 }
 
-make_report(){ _make_report; }
-
-}
+make_report(){ [[ -e $DUMP_PATH/$Host_MAC.key ]] && { _get_report_data; _make_report &>/dev/null; }; }
 
 get_html_warnings(){ get_warnings; while read warning; do echo "<p class='warning'> ${warning} </p>"; done < ${report_file}.warns; }
 

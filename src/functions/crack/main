@@ -74,6 +74,6 @@ selectcracking(){
 		if [ "$Host_ENC" = " WEP " ] || [ "$Host_ENC" = "WEP" ]; then crack_wep $@
         else crack_wpa $@; fi
 	fi 
-
+    check_function report_mode || source $path/reporting
     report_mode # If cracking finished, will print out the key.
 }
