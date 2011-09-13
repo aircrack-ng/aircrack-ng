@@ -2,11 +2,13 @@ Airoscript - a companion for aircrack-ng
 ========================================
 
 Airoscript a is fully i10n, configurable,
-    themable and modular TUI for aircrack-ng supporting autocracking of
-    wireless networks.
+themable and modular TUI for aircrack-ng supporting autocracking of
+wireless networks.
 
 Airoscript Homepage
 -------------------
+
+::
 
     http://airoscript.aircrack-ng.org/ 
 
@@ -18,11 +20,13 @@ Google Code package release page.
 About
 ------
 
-    Airoscript is a complete text user interface for aircrack-ng.
-    It gives you almost all functionality that aircrack-ng has, allowing you to
-    save some time from writting commands.
-    Writing commands may be good to learn how does it work, but repeatedly doing
-    so can damage your mind and your body.
+Airoscript is a complete text user interface for aircrack-ng.
+It gives you almost all functionality that aircrack-ng has, allowing you to
+save some time from writting commands.
+Writing commands may be good to learn how does it work, but repeatedly doing
+so can damage your mind and your body.
+Airoscript also provides a comprehensive way to generate CEO-readable network 
+security reports, writable (by wkhtml2pdf plugin) as pdf.
 
 Usage
 -----
@@ -32,8 +36,31 @@ Usage
 Syntax
 ------
 
-	airoscript [TERMINAL]
-    where terminal is one of xterm,urxvt,gnome-terminal and screen 
+airoscript [-h] [-t TERMINAL] [-s] [-v] [-m] [-c] [-x] [-n FILTER] [-w WIFICARD] [-f] [-a]
+
+    -t TERMINAL     Specifies the terminal to use instead of the one in config file.
+    -s              Uses screen interface instead of xterm (unstable)
+    -v              Enables verbose and debug mode
+    -w [WIFICARD]   Specify wificard (has no effect if no -m -c or -f provided)
+    -v              Writes a csv file with network data
+    -f              Change mac to fake mac, then start monitor mode
+    -c              Use your real mac and start monitor mode
+    -m              Start monitor mode without caring about the mac
+    -a              Enable automatic mode, starts a completly automatic (non-interactive)
+                    If no filter provided, it'll attack all networks (WARN: this might be risky
+    -n [REGEX]      Filter essid by REGEX
+    -x              Autoconfigure network after automatic crack (requires -a)
+    -z              Dont do autoscan at start
+
+NOTE: -a must always be the lastest option provided 
+
+    Examples:
+        airoscript-ng -i wlan0 -c -a -n "XayOnTest_(.*)" # Will crack the first of all my test networks =) using my own mac
+        airoscript-ng -i wlan0 -f -a # Will try to crack any network with faked mac. Warning, this may conduct you to commit a crime,
+            # I'm not responsible for any baduse of this option, just don't do it.
+
+    For now, airoscript automatic mode only supports WEP networks.
+
 
 
 Developers
@@ -56,31 +83,6 @@ Bugs and feature requests
 
     Please submit bugs in aircrack-ng trac or aircrack-ng oficial forum "airoscript
     support" subforum.
-
-CLI usage
----------
-
-    usage: airoscript-ng [-h] [-t TERMINAL] [-s] [-v] [-m] [-c] [-a] [-n FILTER] [-w WIFICARD] [-f]
-
-    options:
-       -h      show this message
-       -t      specify terminal
-       -s      use screen interface
-       -v      Verbose & debug mode
-       -w      Specify wifi card
-       -f      Change mac to fakemac before everything else.
-       -c      Change FAKE_MAC to use real mac
-       -m      Start monitor mode witout caring for mac
-       -a      Automatic mode
-               -n  Filter SSID by regex (for automatic mode)
-
-    Examples:
-        airoscript-ng -i wlan0 -c -a -n "XayOnTest_(.*)" # Will crack the first of all my test networks =) using my own mac
-        airoscript-ng -i wlan0 -f -a # Will try to crack any network with faked mac. Warning, this may conduct you to commit a crime,
-            # I'm not responsible for any baduse of this option, just don't do it.
-
-    For now, airoscript automatic mode only supports WEP networks.
-
 
 Menu usage
 ----------
@@ -166,4 +168,25 @@ Requirements (Deps)
 Plugin support
 ==============
 Airoscript supports plugins, shell scripts listed in enabled_plugins on airoscript configuration (use the full path there).
-For a plugin to work, you'll have to set $plugins_menu["Title of the menu you want to use"] to an array of the entries you want to add.
+
+Since svn revision 1969 airoscript-ng has a plugin menu, wich will make you able to enable any plugin after airoscript has been started just by selecting it.
+
+Airoscript plugin names are the program they depend on.
+
+Currently (at 1969) the plugin list that comes out with airoscript is:
+
+arpspoof --> Enables arp spoof menu
+digenpy --> Enables digenpy dictionary generator for cracking
+dsniff --> launches dsniff (better use it with arpspoof and sslstrip)
+hydra --> Configures network, then launches hydra to get router password
+iptables --> Configures iptables to redirect trough it (needed for arpspoof sslstrip)
+johntheripper --> Enables john the ripper to generate password lists for cracking WPA
+mdk3 --> Enables mdk3 menu
+sslstrip --> Enables sslstrip menu 
+tcpdstat --> When making a report, includes tcpdstat's protocol statistics
+wkhtmltopdf --> Converts reports to pdf 
+zenity --> Enables a zenity-based graphical interface for airoscript-ng (needs also libnotify-bin)
+
+Creating a plugin 
+=================
+For a plugin to add a menu entry, you'll have to set $plugins_menu["Title of the menu you want to use"] to an array of the entries you want to add.
