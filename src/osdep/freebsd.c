@@ -560,7 +560,7 @@ struct wif *wi_open_osdep(char *iface)
 
 int get_battery_state(void)
 {
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
     int value;
     size_t len;
 

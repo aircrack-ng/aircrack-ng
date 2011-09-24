@@ -2,7 +2,7 @@ ifndef TOOL_PREFIX
 TOOL_PREFIX	=
 endif
 ifndef OSNAME
-OSNAME		= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g')
+OSNAME		= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g' -e 's,/,-,g')
 endif
 ifndef SQLITE
 SQLITE		= false

@@ -41,6 +41,11 @@ all:
 	$(RANLIB) $(LIB)
 	touch $(@)
 
+.os.GNU-kFreeBSD: $(OBJS_FBSD)
+	$(AR) cru $(LIB) $(OBJS_FBSD)
+	$(RANLIB) $(LIB)
+	touch $(@)
+
 .os.OpenBSD: $(OBJS_OBSD)
 	$(AR) cru $(LIB) $(OBJS_OBSD)
 	$(RANLIB) $(LIB)
