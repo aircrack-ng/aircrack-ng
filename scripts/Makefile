@@ -1,7 +1,8 @@
 AC_ROOT		= ..
 include		$(AC_ROOT)/common.mak
 
-SCRIPTS         = airmon-ng airmon-zc airdriver-ng airodump-ng-oui-update
+SCRIPTS         = airodump-ng-oui-update
+SCRIPTS_LNX	= airmon-ng airmon-zc airdriver-ng
 
 default: all
 
@@ -10,6 +11,13 @@ all:
 	
 install:
 	install -m 755 $(SCRIPTS) $(DESTDIR)$(sbindir)
+ifeq ($(OSNAME), Linux)
+	install -m 755 $(SCRIPTS_LNX) $(DESTDIR)$(sbindir)
+endif
+ifeq ($(filter FreeBSD GNU-kFreeBSD, $(OSNAME)),)
+else
+	install -m 755 airmon-ng.freebsd $(DESTDIR)$(sbindir)/airmon-ng
+endif
 
 uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/airmon-ng
