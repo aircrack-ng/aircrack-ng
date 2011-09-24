@@ -1,0 +1,12 @@
+#!/bin/sh
+
+cat << EOF
+On $(uname), it is not necessary to use airmon-ng to enable the monitor
+mode of your wireless card. Instead, you need to specify this mode when
+creating your wlan device. For example:
+
+        ifconfig wlan0 create wlandev ath0 wlanmode monitor
+
+EOF
+
+exit 0
