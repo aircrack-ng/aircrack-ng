@@ -360,7 +360,11 @@ getChipset() {
         		if [ "`echo "$DETECTED_STR" | grep $INTEL_WORD | wc -l`" = "0" ]
 			then
 				INTEL_WORD="Ultimate"
-        		fi
+        			if [ "`echo "$DETECTED_STR" | grep $INTEL_WORD | wc -l`" = "0" ]
+				then
+						INTEL_WORD="Advanced"
+	        		fi	
+			fi
         	fi
         	
         	while [ $FOUND = "0" ]
