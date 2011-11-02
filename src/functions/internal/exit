@@ -15,9 +15,7 @@
 
 delete_vinterfaces(){ for i in $(awk "/$MON_PREFIX/ {print \$1}" <(airmon-ng)); do iw dev $i del; done; }
 deconfigure(){ airmon-ng stop $wifi &> /dev/null ; delete_vinterfaces &>/dev/null; }
-delete_dpath(){ grep "tmp" <<< $DUMP_PATH && rm -r $DUMP_PATH &2>/dev/null;  } # First checks if there is tmp in dump_path, so dump_path will have to have tmp on it. That's because of some old trouble having dump_path as /home/xayon/ ... ¬¬
-
-
+delete_dpath(){ grep "tmp" <<< $DUMP_PATH && rm -r $DUMP_PATH &>/dev/null;  } # First checks if there is tmp in dump_path, so dump_path will have to have tmp on it. That's because of some old trouble having dump_path as /home/xayon/ ... ¬¬ (Note: I've been asked more than twice so I clear it here: i didn't lost anything, I have all in sync with a git repository =) )
 
 doexit(){
         check_function make_report || source $path/reporting 
@@ -27,8 +25,10 @@ doexit(){
                 yesno "Copy report to ~?" && { cp $DUMP_PATH/$Host_MAC.report.html $DUMP_PATH/$Host_MAC.report.pdf $HOME/; }
             }
         }
-        yesno "Stop monitor mode on $wifi and delete virtual interfaces? (Y/n) " && { warn "${mark}Cleaning interface"; deconfigure; }
-        yesno 'Delete temporary data dir? (y/N) ' && { warn "${mark}Deleting $DUMP_PATH"; delete_dpath &>/dev/null; }
 
+        [[ $keep_exit_quiet == 0 ]] && {
+            yesno "Stop monitor mode on $wifi and delete virtual interfaces? (Y/n) " && { warn "${mark}Cleaning interface"; deconfigure; }
+            yesno 'Delete temporary data dir? (y/N) ' && { warn "${mark}Deleting $DUMP_PATH"; delete_dpath &>/dev/null; }
+        } || { deconfigure; [[ $delete_files_on_exit == 1 ]] && delete_dpath &>/dev/null;  }
         [[ "$1" == "killme" ]] && pkill air $$ || exit # Needed because of autopwn
 }

@@ -21,7 +21,7 @@ Scanchan(){
     channel_number="$ans"; set -- ${channel_number}
     rm -rf $DUMP_PATH/dump* &>/dev/null; monmode $wifi $channel_number
 
-    execute "Scanning for targets on channel $channel_number" $AIRODUMP -w $DUMP_PATH/dump --channel $channel_number --encrypt $ENCRYPT -a $wifi
+    execute "Scanning for targets on channel $channel_number" $AIRODUMP --ignore-negative-one -w $DUMP_PATH/dump --channel $channel_number --encrypt $ENCRYPT -a $wifi
     export SCAN=0
 }
 

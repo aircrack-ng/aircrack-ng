@@ -202,7 +202,7 @@ Scan(){
     warn "$mark`gettext 'Interface used is'` : $wifi ($iwifi) for $wificard "
     warn "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
     export QUIET=1;
-    execute "Scanning for targets: " $AIRODUMP -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
+    execute "Scanning for targets: " $AIRODUMP --ignore-negative-one -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
     temporary_switch_clear
     export SCAN=0
 }

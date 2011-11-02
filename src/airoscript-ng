@@ -42,6 +42,7 @@ Enable_plugin(){
     _source $path/plugins/${available_plugins[$choice - 1 ]} || { warn "${mark}Unknown option or bad plugin, try again"; Enable_plugin; }
 }
 
+exit_trap(){ check_function doexit || source $path/internal/exit; echo; echo; doexit; }
 Return_to_main_menu(){ mainmenu; }
 
 # We preload functions, configs and themes in a cool way.
@@ -54,30 +55,18 @@ _source ${enabled_plugins[@]};
 # Setup wordlist
 [[ ! -e $DUMP_PATH/wordlist.txt ]] && { cp $WORDLIST $DUMP_PATH &>/dev/null; WORDLIST="DUMP_PATH/`basename $WORDLIST`"; }
 
-# For locale debugging
-_debug "Text domain dir is $TEXTDOMAINDIR and textdomain is $TEXTDOMAIN"
-
-# Whoah, this looks chaotic. I like it ^^
-setaircrackpaths
-rootwarn
-setps
-
-exit_trap(){ check_function doexit || source $path/internal/exit; echo; echo; doexit; }
-trap exit_trap 1 2 3 4 5 6 7 8 10 12 13 14 15 20
-
-
-clear=""
-[[ $show_startup_goodie ]] && { airoscript_ascii_art 2>/dev/null ; }
+trap exit_trap 1 2 3 4 5 6 7 8 10 12 13 14 15 20 # Set an exit trap to clean out all the interfaces
+setaircrackpaths # Set aircrack-ng paths
+rootwarn # Check conffile permissions!
+setps # Set PS3 variable
+clear="" # Clear
+[[ $show_startup_goodie ]] && { airoscript_ascii_art 2>/dev/null ; } # Display some startup ascii art =)
 warn "${mark}Welcome to airoscript, have a nice day"
-reso
+resolution
 check_cardctl; #debug
 setargs $@
+setinterface "start"
 clear=clear;
 cleanautovars
-
-temporary_switch_clear
-setinterface "start"
-temporary_switch_clear
-
 [[ "$noscan" != 1 ]] && autoscan
 mainmenu

@@ -210,7 +210,7 @@ attack_opn(){ # If no encryption detected
 
 capture(){
     hardclean
-    execute "Capturing" $AIRODUMP --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $wifi 
+    execute "Capturing" $AIRODUMP --ignore-negative-one --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $wifi 
     echo
 }
 

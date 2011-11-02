@@ -32,17 +32,14 @@ default_theme(){
 	ASSOCIATION_COLOR="#FF0009"; DEAUTH_COLOR="#99CCFF"; BACKGROUND_COLOR="#000000"
 }
 
-_get_current_reso(){ awk '/\*/ {print $1}' <(xrandr) | head -n1; }
-
-_resonset(){
-	for i in 640x480 800x480 800x600 1024x600 1024x768 1280x768 1280x800 1280x1024 1440x900 1600x1200; do
-        reso=`_get_current_reso` ;
-        [[ "$i" == $reso ]] && {
-            reson=$reso
-            echo -e "${mark}Automatically setting resolution to $reso";
-         }
-    done
-    if [ "$reson" != "" ]; then export resonset=1; fi
+resolution() {
+    reso=$( awk '/\*/ {print $1}' <(xrandr) | head -n1; )
+    for i in ${available_resos[@]}; do [[ "$i" == $reso ]] && reson=$reso; done 
+    [[ $reson != "" ]] && { export resonset=1;  echo -e "${mark}Automatically setting resolution to $reso" ; }
+    xhost &>/dev/null || { echo -e "${mark}Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
+    if [[ ${resonset} = "" ]]; then mkmenu "Resolution" ${available_resos[@]}; reson=$choice; fi
+    { echo $reson| grep "x"; } &>/dev/null && { a=0; for i in ${available_resos[@]}; do a=$(( $a + 1)); [[ $reson == $i ]] && reson=$a; done; }
+    set_resolution_data $reson
 }
 
 target(){
@@ -58,11 +55,6 @@ _______Target information______
    AP Speed      =$Host_SPEED
 ________________________________\"`"
 read -p "Press any key to continue " foo
-}
-
-arrow(){ 
-    return
-    echo -e -n "\t\n||\t\n||\t\n\/";
 }
 
 fill_menu(){
@@ -142,52 +134,6 @@ getterminal(){
 	fi
 }
 
-reso() {
-    xhost &>/dev/null || { echo -e "${mark}Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
-        _resonset
-	while true; do
-		if [ "$resonset" = "" ]; then
-            mkmenu "$resonset" "Resolution" "640x480" "800x480" "800x600" "1024x768" "1280x768" "1280x800" "1280x1024" "1600x1200";
-            reson=$choice;
-        fi
-        { echo $reson| grep "x"; } &>/dev/null && {
-              case $reson in
-                "640x480") reson=1;;
-                "800x480") reson=2;;
-                "800x600") reson=3;;
-                "1024x600") reson=4;;
-                "1024x768") reson=5;;
-                "1280x768") reson=6 ;;
-                "1280x800") reson=7;;
-                "1280x1024") reson=8;;
-		"1440x900") reson=8;;
-                "1600x1200") reson=9;;
-            esac
-        }
-		case $reson in
-			1  ) TLX="83";TLY="11";TRX="60";TRY="18";BLX="75";BLY="18";
-                BRX="27";BRY="17";bLX="100";bLY="30";bRX="54";bRY="25"; setterminal; break;;
-			2 ) TLX="90";TLY="11";TRX="60";TRY="18";BLX="78";BLY="26";
-                BRX="52";BRY="15";bLX="130";bLY="30";bRX="78";bRY="25"; setterminal; break;;
-			3 ) TLX="92";TLY="11";TRX="68";TRY="25";BLX="78";BLY="26";
-                BRX="52";BRY="15";bLX="92" ;bLY="39";bRX="78";bRY="24"; setterminal; break;;
-			4 ) TLX="92";TLY="14";TRX="68";TRY="25";BLX="92";BLY="36";
-                BRX="74";BRY="20";bLX="100";bLY="52";bRX="54";bRY="25"; setterminal; break;;
-			5 ) TLX="92";TLY="14";TRX="68";TRY="25";BLX="92";BLY="36";
-                BRX="74";BRY="20";bLX="100";bLY="52";bRX="54";bRY="25"; setterminal; break;;
-
-			6 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";
-                BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
-			7 ) TLX="100";TLY="20";TRX="109";TRY="20";BLX="100";BLY="30";
-                BRX="109";BRY="20";bLX="100";bLY="52";bRX="109";bRY="30"; setterminal; break;;
-			8 ) TLX="110";TLY="35";TRX="99";TRY="40";BLX="110";BLY="35";
-                BRX="99";BRY="30";bLX="110";bLY="72";bRX="99";bRY="40"; setterminal; break;;
-			9 ) TLX="130";TLY="40";TRX="68";TRY="25";BLX="130";BLY="40";
-                BRX="132";BRY="35";bLX="130";bLY="85";bRX="132";bRY="48"; setterminal; break;;
-			* ) _ "Unknown response. Try again"; sleep 1; reson=1; $clear ;;
-		esac
-	done
-}
 
 function setterminal {
 	getterminal
