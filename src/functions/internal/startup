@@ -178,14 +178,6 @@ launch_counter(){
     done
 }
 
-autoscan_autopwn(){
-    launch_counter $time_to_scan &
-    OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=2; export QUIET=1; export INTERACTIVE=0
-    export ENCRYPT=""; choosescan;  sleep $time_to_scan && killall -2 "airodump-ng"; 
-    [[ $AUTO != 2 ]] && select_ap
-    cleanautovars
-}
-
 autoscan(){
     launch_counter $time_to_scan &
     OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0

