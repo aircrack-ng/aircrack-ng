@@ -65,21 +65,22 @@ report_mode(){
 
 kstatsmenu(){
     if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ -e $DUMP_PATH/$Host_MAC.key ]; then
-        $IVSTOOLS --convert $DUMP_PATH/$Host_MAC.cap $DUMP_PATH/$Host_MAC.ivs &> /dev/null
-        $KSTATS $DUMP_PATH/$Host_MAC-01.ivs `cat $DUMP_PATH/$Host_MAC.key` &> $DUMP_PATH/$Host_MAC.kstats 
+        $IVSTOOLS --convert $DUMP_PATH/$Host_MAC.cap $DUMP_PATH/$Host_MAC.ivs &> /dev/null &&
+        $KSTATS $DUMP_PATH/$Host_MAC.ivs `cat $DUMP_PATH/$Host_MAC.key` &> $DUMP_PATH/$Host_MAC.kstats 
         [[ $1 == "" ]] && less $DUMP_PATH/$Host_MAC.kstats
     else
         $clear; warn "You don't have a cracked WEP interface"; sleep 2; $clear; return
     fi
-
 }
 
 _airgraph(){
     if [[ "$Host_MAC" != "" ]]; then
         read -p "Enter format (CPG|CAPR) (CAPR by default): " g
-        read -p "Do you want to launch a browser? [y|N] " yn
 	[[ $g != "CPG" ]] && g="CAPR"
-        execute "Generating graphics" $AIRGRAPH -i $DUMP_PATH/$Host_MAC.csv -o $DUMP_PATH/$Host_MAC.png -g $g
+        execute "Generating graphics" $AIRGRAPH -i $DUMP_PATH/dump-01.csv -o $DUMP_PATH/$Host_MAC.png -g $g
+        read -p "Do you want to launch a browser? [y|N] " yn
         [ $yn == "y" ] && sensible-browser $DUMP_PATH/$Host_MAC.png
+
     else $clear; _ "Error: You have to scan for targets first"; fi
+
 }
