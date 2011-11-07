@@ -43,6 +43,7 @@ install-binary:
 	@echo "Installing airoscript"
 	@$(INSTALL) $(srcdir)/airoscript-ng $(bindir)/$(name)
 	@$(INSTALL) $(srcdir)/airoscript-ng.conf $(etcdir)
+	@$(INSTALL) $(srcdir)/airoscript-ng_debug.conf $(etcdir)
 	@$(INSTALL) $(srcdir)/airoscript-ng_advanced.conf $(etcdir)
 	@cp -r $(srcdir)/functions/* $(datadir)
 	@cp -r $(srcdir)/templates/* $(datadir)/templates

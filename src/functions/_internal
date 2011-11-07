@@ -77,7 +77,7 @@ setargs(){
             b)  report_mode=1;;
             s)  TERMINAL=screen;;
             z)  noscan=1;;
-            v)  debug=1; hold=1;;
+            v)  export debug=1; export hold=1; _source "./airoscript-ng_debug.conf ~/airoscript-ng_debug.conf /etc/airoscript-ng_debug.conf /usr/local/etc/airoscript-ng_debug.conf" ;;
             w)  wificard=$OPTARG;;
             x)  export options_autoconfigure=1;;
             m) { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
