@@ -16,6 +16,10 @@
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+reload_config(){
+    _source "./airoscript-ng.conf.devel ~/.airoscript-ng/airoscript-ng.conf /etc/airoscript-ng.conf /usr/local/etc/airoscript-ng.conf"
+    _source "./airoscript-ng_advanced.conf.devel ~/.airoscript-ng_advanced/airoscript-ng_advanced.conf /etc/airoscript-ng_advanced.conf /usr/local/etc/airoscript-ng_advanced.conf"
+}
 
 cleanautovars(){
     export AUTO=0; export QUIET=""; export INTERACTIVE=$OLDINTERACTIVE
