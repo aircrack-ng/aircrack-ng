@@ -17,8 +17,9 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 reload_config(){
-    _source "./airoscript-ng.conf.devel ~/.airoscript-ng/airoscript-ng.conf /etc/airoscript-ng.conf /usr/local/etc/airoscript-ng.conf"
-    _source "./airoscript-ng_advanced.conf.devel ~/.airoscript-ng_advanced/airoscript-ng_advanced.conf /etc/airoscript-ng_advanced.conf /usr/local/etc/airoscript-ng_advanced.conf"
+#    _source "./airoscript-ng.conf.devel ~/.airoscript-ng/airoscript-ng.conf /etc/airoscript-ng.conf /usr/local/etc/airoscript-ng.conf"
+#    _source "./airoscript-ng_advanced.conf.devel ~/.airoscript-ng_advanced/airoscript-ng_advanced.conf /etc/airoscript-ng_advanced.conf /usr/local/etc/airoscript-ng_advanced.conf"
+return
 }
 
 cleanautovars(){
@@ -76,31 +77,55 @@ setargs(){
      while getopts “bn:ht:w:szxcvmfap:” option; do
         case $option in 
             h)  usage; exit 1;;
-            n)  export filter_ssid=$OPTARG; warn "${mark}Selected filter: $filter_ssid";;
+            n)  export filter_ssid_=$OPTARG; warn "${mark}Selected filter: $filter_ssid_";;
             t)  TERMINAL=$OPTARG;;
-            b)  report_mode=1;;
             s)  TERMINAL=screen;;
+            b)  report_mode=1;;
             z)  noscan=1;;
             v)  export debug=1; export hold=1; _source "./airoscript-ng_debug.conf ~/airoscript-ng_debug.conf /etc/airoscript-ng_debug.conf /usr/local/etc/airoscript-ng_debug.conf" ;;
             w)  wificard=$OPTARG;;
             x)  export options_autoconfigure=1;;
-            m) { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1;;
-            c)  checkforcemac 3;
-                { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; 
-                warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; 
-                sleep 1; set_wifi_by_args=1;;
-            f)  wichchangemac 1;
-                { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null;
-                warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard...";
-                sleep 1; set_wifi_by_args=1 ;;
-            a)  noscan=1; temporary_switch_clear;clear="";
-                check_function doauto || source $path/autocrack;
-                doauto;
-                exit;;
-            p)  load_plugins $OPTARG  ;;
+            m)  opt_functions+=(m);;
+            c)  opt_functions+=(c);;
+            f)  opt_functions+=(f);;
+            a)  opt_functions+=(auto);;
+            p)  load_plugins $OPTARG;;
             ?)  usage; exit;;
         esac
     done
+
+for i in ${opt_functions[@]}; do
+	[[ $i != auto ]] && options_$i || execute_auto=1
+done
+
+[[ $execute_auto ]] && options_auto; # Small hack to execute auto the lastest
+
+}
+
+options_f(){
+  wichchangemac 1;
+                { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null;
+                warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard...";
+                sleep 1; set_wifi_by_args=1 
+
+}
+
+options_c(){
+ checkforcemac 3;
+                { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; 
+                warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; 
+                sleep 1; set_wifi_by_args=1
+
+}
+options_m(){
+{ guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1
+}
+
+options_auto(){
+	noscan=1; temporary_switch_clear;clear="";
+	check_function doauto || source $path/autocrack;
+	check_function doexit || source $path/internal/exit;
+        doauto; doexit;
 }
 
 load_plugins(){
@@ -161,7 +186,7 @@ execute(){
     save_pids $!
 }
 
-monmode(){ ifconfig $1 up; $iwconfig $1 |grep "Monitor" && if [ $? != 0 ]; then MON_PREFIX=$mon_prefix $AIRMON start $1 $2; fi;}
+monmode(){ { ifconfig $1 up; $iwconfig $1 |grep "Monitor" && if [ $? != 0 ]; then MON_PREFIX=$mon_prefix $AIRMON start $1 $2; fi; } &>/dev/null ; }
 
 # this function allows debugging, called from main menu.
 function debug {

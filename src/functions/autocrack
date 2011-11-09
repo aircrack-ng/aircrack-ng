@@ -60,21 +60,20 @@ doauto(){
 }
 
 continue_autocrack(){
+    check_function doexit || source $path/internal/exit; 
     [[ $options_autoconfigure ]] && { 
-        check_function doexit || source $path/internal/exit; 
-        configure; doexit; 
+        configure; doexit killme; 
     } || {
-    read -p "Press c to configure, q to quit, any key to continue" -s -n1 ans
+    read -p "Press c to configure, q to quit, n to next network and any key to continue" -s -n1 ans
     echo $ans; echo; echo
-        [[ "$ans" == "c" ]] && { 
-            check_function doexit || source $path/internal/exit; 
-            configure; doexit; 
-        }
+        [[ "$ans" == "c" ]] && configure; doexit; 
         [[ $ans == "q" ]] && { 
             warn "${mark}Exiting..."
-            check_function doexit || source $path/internal/exit; 
             doexit killme ;
+		exit; pkill -9 airoscript-ng; killall -9 airoscript-ng
         }
+
+	[[ $ans == "n" ]] && return 1 || return 0
     }
 }
 
@@ -99,14 +98,14 @@ autopwn(){
                     cleanautovars;
 
                     check_function Crack_with_dictionary_generator && {
-                        Crack_with_dictionary_generator autocrack 
+                        export wait_for_execute=1; AUTO=1; Crack_with_dictionary_generator autocrack 
                     } || {
                         export wait_for_execute=1; AUTO=1; selectcracking 1; AUTO=0; export wait_for_execute=0;
                     }
                     cleanautovars;
                     [[ -e $DUMP_PATH/$Host_MAC.key ]] && warn "${mark}Network cracked, password is  `cat $DUMP_PATH/$Host_MAC.key`" || warn "${mark}Network NOT cracked. Something failed, if your enc is WPA probably key is not in your ~/.airoscript/wordlist.txt"
 
-                    continue_autocrack
+                    continue_autocrack || break;
                  } || {
                     [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {  
                         specialwarn "\r${mark}Current Handshakes: $handshakes"  ;

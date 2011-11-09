@@ -77,24 +77,24 @@ wichchangemac(){
             mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input"
         }
         case $choice in
-             1 ) ifconfig $wifi down;fail=`$MACCHANGER -m  $FAKE_MAC $wifi 2>&1`
+             1 ) ifconfig $wifi down &>/dev/null;fail=`$MACCHANGER -m  $FAKE_MAC $wifi 2>&1`
                 [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
-                  ifconfig $wifi up; break ;;
-            2 ) ifconfig $wifi down; sleep 2
+                  ifconfig $wifi up &>/dev/null; break ;;
+            2 ) ifconfig $wifi down &>/dev/null; sleep 2
                  fail=`$MACCHANGER -m  $Client_MAC $wifi 2>&1`
                 [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
-                ifconfig $wifi up ; break ;;
+                ifconfig $wifi up &>/dev/null ; break ;;
             3)  export FAKE_MAC=$mac
                 warn "${mark}Using for $wificard $FAKE_MAC = $mac"
-                ifconfig $wifi down; sleep 2;
+                ifconfig $wifi down &>/dev/null; sleep 2;
                 $MACCHANGER -m $mac $wifi &>/dev/null
-                ifconfig $wifi up;
+                ifconfig $wifi up &>/dev/null;
                 break;;
             4 ) single_question "MAC: "; Manual_MAC="$ans";
-                ifconfig $wifi down
+                ifconfig $wifi down &>/dev/null
                 fail=`$MACCHANGER -m  $Manual_MAC $wifi &>/dev/null`
                 [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
-                ifconfig $wifi up; break ;;
+                ifconfig $wifi up &>/dev/null; break ;;
 
             * ) _ "Unknown response. Try again" ;;
 
@@ -112,9 +112,9 @@ valid_mac(){ (( ${#1} >= 17 )) && return 0 || return 1; }
 
 
 filter_ssid(){
-    [[ "$filter_ssid" != "" ]] && {
-        tag; warn "${mark}Filtering essid to $filter_ssid "
-        grep "$filter_ssid" $DUMP_PATH/dump-01.csv > $DUMP_PATH/dump-02.csv;
+    [[ -n "$filter_ssid_" ]] && { echo; echo;
+        tag; warn "${mark}Filtering essid to $filter_ssid_ "
+        grep -a "$filter_ssid_" $DUMP_PATH/dump-01.csv > $DUMP_PATH/dump-02.csv;
     } 
 }
 

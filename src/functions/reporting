@@ -17,11 +17,12 @@
 report_file=$DUMP_PATH/$Host_MAC.report
 
 report_proto_stats(){
-    check_function tcpdstat || source $path/plugins/tcpdstat
-    tcpdstat -foo &>/dev/null; [[ $? == 157 ]] ||  _tcpdstat
+    check_function tcpdstat_ || source $path/plugins/tcpdstat
+    echo "${warn}Loading tcpdstat plugin"
+    _tcpdstat
 }
 
-_get_report_data(){ kstatsmenu auto; _airgraph;  }
+_get_report_data(){ kstatsmenu auto; _airgraph; report_proto_stats; }
 
 _make_report(){
 # Virtual function so I can easily override make_report while preserving this one.
@@ -29,9 +30,9 @@ _make_report(){
     echo "<h1 class=\"title\">Report for $Host_SSID : $Host_MAC </h1>" >> ${report_file}.html
     echo "<div id='network_data' class='section'>" >> ${report_file}.html
     report_html &>> ${report_file}.html
-    echo "</div><div id='kstats' class='section'>" >> ${report_file}.html
-    cat $DUMP_PATH/$Host_MAC.kstats >> ${report_file}.html
-    echo "</div><div id='graphs' class='section'><img src=\"$DUMP_PATH/$Host_MAC.png\" /></div>" >> ${report_file}.html
+    echo "</div><div id='kstats' class='section'><pre>" >> ${report_file}.html
+    cat $DUMP_PATH/$Host_MAC.report_proto_stats $DUMP_PATH/$Host_MAC.kstats >> ${report_file}.html
+    echo "</pre></div><div id='graphs' class='section'><img src=\"./$Host_MAC.png\" /></div>" >> ${report_file}.html
     echo "<div id='warnings' class='section'>" >> ${report_file}.html
     get_html_warnings >> ${report_file}.html
     echo "</div>" >> ${report_file}.html
@@ -64,23 +65,18 @@ report_mode(){
 }
 
 kstatsmenu(){
-    if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ -e $DUMP_PATH/$Host_MAC.key ]; then
-        $IVSTOOLS --convert $DUMP_PATH/$Host_MAC.cap $DUMP_PATH/$Host_MAC.ivs &> /dev/null &&
-        $KSTATS $DUMP_PATH/$Host_MAC.ivs `cat $DUMP_PATH/$Host_MAC.key` &> $DUMP_PATH/$Host_MAC.kstats 
-        [[ $1 == "" ]] && less $DUMP_PATH/$Host_MAC.kstats
-    else
-        $clear; warn "You don't have a cracked WEP interface"; sleep 2; $clear; return
-    fi
+    $IVSTOOLS --convert $DUMP_PATH/$Host_MAC.cap $DUMP_PATH/$Host_MAC.ivs &> /dev/null &&
+    $KSTATS $DUMP_PATH/$Host_MAC.ivs `cat $DUMP_PATH/$Host_MAC.key` &> $DUMP_PATH/$Host_MAC.kstats 
+    [[ $1 == "" ]] && less $DUMP_PATH/$Host_MAC.kstats
 }
 
 _airgraph(){
     if [[ "$Host_MAC" != "" ]]; then
         read -p "Enter format (CPG|CAPR) (CAPR by default): " g
 	[[ $g != "CPG" ]] && g="CAPR"
-        execute "Generating graphics" $AIRGRAPH -i $DUMP_PATH/dump-01.csv -o $DUMP_PATH/$Host_MAC.png -g $g
-        read -p "Do you want to launch a browser? [y|N] " yn
-        [ $yn == "y" ] && sensible-browser $DUMP_PATH/$Host_MAC.png
-
+        export wait_for_execute=1; AUTO=1; execute "Generating graphics" $AIRGRAPH -i $DUMP_PATH/$Host_MAC-01.csv -o $DUMP_PATH/$Host_MAC.png -g $g; export wait_for_execute=0; AUTO=0; 
+        read -p "Do you want to launch a browser? [y|N] " yn # Didn't like it.
+        [[ $yn == "y" ]] && x-www-browser $DUMP_PATH/$Host_MAC.png
     else $clear; _ "Error: You have to scan for targets first"; fi
 
 }

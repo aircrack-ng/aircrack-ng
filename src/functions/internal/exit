@@ -22,7 +22,7 @@ doexit(){
         [[ -e $DUMP_PATH/$Host_MAC.key ]] && {
             yesno "Create a full report?" && {
                 warn "${mark}Creating report"; make_report;
-                yesno "Copy report to ~?" && { cp $DUMP_PATH/$Host_MAC.report.html $DUMP_PATH/$Host_MAC.report.pdf $HOME/; }
+                yesno "Copy report to ~?" && { cp -f $DUMP_PATH/$Host_MAC.png $DUMP_PATH/$Host_MAC.report.html $DUMP_PATH/$Host_MAC.report.pdf $HOME/ &>/dev/null; }
             }
         }
 
