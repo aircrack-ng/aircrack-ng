@@ -52,80 +52,72 @@ configure(){
 
 usage(){
     cat << eof
-usage: $0 [-h] [-t TERMINAL] [-s] [-v] [-m] [-c] [-x] [-n FILTER] [-w WIFICARD] [-f] [-a]
+Usage: $0 [-h] [-t TERMINAL] [-v] [-w WIRELESS_CARD] [-b] [-m fakemac|realmac] [-a] [-n FILTER] [-x] [-z] [-p PLUGIN_FILE]
 
 options:
-   -h      Show this message
-   -t      Specify terminal
-   -s      Use screen interface
-   -v      Verbose & debug mode
-   -w      Specify wifi card
-   -v      Writes a csv file with network data.
-   -f      Change mac to fakemac before everything else.
-   -c      Change FAKE_MAC to use real mac
-   -m      Start monitor mode witout caring for mac
-   -a      Automatic mode
-           -n  Filter SSID by regex (for automatic mode)
-   -x      Autoconfigure network after automatic crack (requires -a)
-   -z      Don't scan automatically at start
+   -h                    Show this message
+   -t [xterm|screen]     Specify terminal
+   -v                    Verbose & debug mode
+   -w wireless_card      Specify wifi card
+   -b                    Writes a csv file with network data.
+   -m [fakemac|realmac]  Change mac to fakemac before everything else.
+   -a                    Automatic mode
+   -n [regex]            Filter SSID by regex
+   -x                    Autoconfigure network after automatic crack (requires -a)
+   -z                    Don't scan automatically at start
+   -p [plugin file]      Load plugin at start
 
-NOTE: -a must allways be the lastest option provided.
 eof
 }
 
 setargs(){
-     while getopts “bn:ht:w:szxcvmfap:” option; do
+
+     while getopts “bn:ht:w:zxcvmfap:” option; do
         case $option in 
-            h)  usage; exit 1;;
-            n)  export filter_ssid_=$OPTARG; warn "${mark}Selected filter: $filter_ssid_";;
-            t)  TERMINAL=$OPTARG;;
-            s)  TERMINAL=screen;;
-            b)  report_mode=1;;
-            z)  noscan=1;;
-            v)  export debug=1; export hold=1; _source "./airoscript-ng_debug.conf ~/airoscript-ng_debug.conf /etc/airoscript-ng_debug.conf /usr/local/etc/airoscript-ng_debug.conf" ;;
-            w)  wificard=$OPTARG;;
-            x)  export options_autoconfigure=1;;
-            m)  opt_functions+=(m);;
-            c)  opt_functions+=(c);;
-            f)  opt_functions+=(f);;
+            h)  opt_functions+=(usage);;
+            t)  export TERMINAL="$OPTARG";;
+            v)  opt_functions+=(v);;
+            w)  export wificard="$OPTARG";;
+            b)  export report_mode=1;;
+            m)  opts_mac_opt="$OPTARG"; opt_functions+=(m);;
             a)  opt_functions+=(auto);;
+            n)  export filter_ssid_="$OPTARG";;
+            x)  export options_autoconfigure=1;;
+            z)  export noscan=1;;
             p)  load_plugins $OPTARG;;
-            ?)  usage; exit;;
+            ?)  opt_functions+=(usage);;
         esac
     done
 
-for i in ${opt_functions[@]}; do
-	[[ $i != auto ]] && options_$i || execute_auto=1
-done
-
-[[ $execute_auto ]] && options_auto; # Small hack to execute auto the lastest
+    for i in ${opt_functions[@]}; do [[ $i == "usage" ]] && usage; exit 1; done # Small hack to execute usage the first 
+    for i in ${opt_functions[@]}; do [[ $i != auto ]] && options_$i || execute_auto=1; done
+    [[ $execute_auto ]] && options_auto; # Small hack to execute auto the lastest xD
 
 }
 
-options_f(){
-  wichchangemac 1;
-                { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null;
-                warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard...";
-                sleep 1; set_wifi_by_args=1 
+options_m(){ opts_change_$opts_mac_opt; }
+opts_change_fakemac(){ wichchangemac 1; opts_wireless; }
+opts_use_realmac(){ checkforcemac 3; opt_wireless; }
 
+options_v(){
+    export debug=1;
+    export hold=1;
+    _source "./airoscript-ng_debug.conf ~/airoscript-ng_debug.conf /etc/airoscript-ng_debug.conf /usr/local/etc/airoscript-ng_debug.conf"
 }
 
-options_c(){
- checkforcemac 3;
-                { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; 
-                warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; 
-                sleep 1; set_wifi_by_args=1
-
-}
-options_m(){
-{ guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null; warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1
+opts_wireless(){
+    { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null;
+    warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1
 }
 
 options_auto(){
-	noscan=1; temporary_switch_clear;clear="";
+	export noscan=1;
+    temporary_switch_clear;
+    export clear="";
 	check_function doauto || source $path/autocrack;
 	check_function doexit || source $path/internal/exit;
-        doauto; doexit;
+    doauto;
+    doexit;
 }
 
 load_plugins(){
