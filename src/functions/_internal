@@ -52,7 +52,7 @@ configure(){
 
 usage(){
     cat << eof
-Usage: $0 [-h] [-t TERMINAL] [-v] [-w WIRELESS_CARD] [-b] [-m fakemac|realmac] [-a] [-n FILTER] [-x] [-z] [-p PLUGIN_FILE]
+Usage: $(basename $0) [-h] [-t TERMINAL] [-v] [-w WIRELESS_CARD] [-b] [-m fakemac|realmac] [-a] [-n FILTER] [-x] [-z] [-p PLUGIN_FILE]
 
 options:
    -h                    Show this message
