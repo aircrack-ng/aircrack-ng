@@ -130,7 +130,6 @@
 int bitrates[RATE_NUM]={RATE_1M, RATE_2M, RATE_5_5M, RATE_6M, RATE_9M, RATE_11M, RATE_12M, RATE_18M, RATE_24M, RATE_36M, RATE_48M, RATE_54M};
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-extern char * searchInside(const char * dir, const char * filename);
 extern int maccmp(unsigned char *mac1, unsigned char *mac2);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
