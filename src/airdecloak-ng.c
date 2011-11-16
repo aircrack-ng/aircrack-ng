@@ -376,6 +376,7 @@ BOOLEAN read_packets(void)
 			break;
 		case LINKTYPE_PPI_HDR:
 			puts("PPI");
+			break;
 		default:
 			printf("Unknown (%d)\n", _pfh_in.linktype);
 			break;
@@ -1479,8 +1480,10 @@ int main( int argc, char *argv[] )
 				break;
 			case 'r':
 				_options_disable_retry = 1;
+				break;
 			case 'n':
 				_options_assume_null_packets_uncloaked = 1;
+				break;
 			case 'e':
 				printf("'%c' option not yet implemented\n", option);
 				exit(0);
