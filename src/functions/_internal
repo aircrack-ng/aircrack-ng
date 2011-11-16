@@ -72,7 +72,7 @@ eof
 
 setargs(){
 
-     while getopts “bn:ht:w:zxcvmfap:” option; do
+     while getopts “bn:ht:w:zxcvm:fap:” option; do
         case $option in 
             h)  opt_functions+=(usage);;
             t)  export TERMINAL="$OPTARG";;
@@ -89,7 +89,7 @@ setargs(){
         esac
     done
 
-    for i in ${opt_functions[@]}; do [[ $i == "usage" ]] && usage; exit 1; done # Small hack to execute usage the first 
+    for i in ${opt_functions[@]}; do [[ $i == "usage" ]] && { usage; exit 1; }; done # Small hack to execute usage the first 
     for i in ${opt_functions[@]}; do [[ $i != auto ]] && options_$i || execute_auto=1; done
     [[ $execute_auto ]] && options_auto; # Small hack to execute auto the lastest xD
 
@@ -97,7 +97,7 @@ setargs(){
 
 options_m(){ opts_change_$opts_mac_opt; }
 opts_change_fakemac(){ wichchangemac 1; opts_wireless; }
-opts_use_realmac(){ checkforcemac 3; opt_wireless; }
+opts_change_realmac(){ checkforcemac 3; opts_wireless; }
 
 options_v(){
     export debug=1;

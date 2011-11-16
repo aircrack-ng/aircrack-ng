@@ -43,6 +43,7 @@ doauto(){
     echo; tag; warn "${mark}Networks detected $MAX_TARGETS"; sleep 1
 
     for i in `seq 1 $MAX_TARGETS`; do
+	echo
         tag; warn "${mark}Trying to crack target $i"
 
         export AUTO=2; selectAp;  sleep 1
@@ -94,7 +95,7 @@ autopwn(){
             sleep 5 && {
                 check_if_worked
                 [[ $? == 0 ]] && { 
-                    warn "${mark}Trying to crack network, we have enough ivs or handshakes.";
+                    echo; tag; warn "${mark}Trying to crack network, we have enough ivs or handshakes.";
                     cleanautovars;
 
                     check_function Crack_with_dictionary_generator && {
@@ -108,9 +109,9 @@ autopwn(){
                     continue_autocrack || break;
                  } || {
                     [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {  
-                        specialwarn "\r${mark}Current Handshakes: $handshakes"  ;
+                        specialwarn "\r\t${mark}Current Handshakes: $handshakes"  ;
                     } || {
-                        specialwarn "\r${mark}Current IVS: `check_all_ivs`"  ;
+                        specialwarn "\r\t${mark}Current IVS: `check_all_ivs`"  ;
                     }
                 }
             }

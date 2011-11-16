@@ -26,7 +26,7 @@ p_menu+=( "Enable plugin" )
 
 _source(){
     for cfile in $@; do
-        if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; echo "${mark}Loading $cfile";
+        if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; 
         else if [ "$debug" == 1 ]; then echo "Could not load $cfile"; sleep 0.2 ;fi; fi
     done
 }

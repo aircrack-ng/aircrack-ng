@@ -24,7 +24,6 @@ digenpy_(){
     if [ "$3" == "crack" ]; then
         execute "Cracking" crack $AIRCRACK -0 -l $DUMP_PATH/$Host_MAC.key -w $DUMP_PATH/digenpy__dic $DUMP_PATH/$Host_MAC-01.cap
     else AUTO=1; QUIET=0;
-        warn "Calling digenpy $1 $2 $Host_MAC $Host_SSID $enc >/$DUMP_PATH/digenpy__dic"
         digenpy $1 $2 $Host_MAC $Host_SSID $enc > $DUMP_PATH/digenpy__dic
     AUTO=0; QUIET=""; fi
 }
@@ -56,9 +55,7 @@ Crack_with_dictionary_generator(){
         for function in "Telefonica" "Jazztel" ; do test=1; $function; test=0; [[ "$avail" == "1" ]] && return 4; done
         return 255
     else
-        warn "${mark}Checking if we can create a dictionary for it..."
         for function in "Telefonica" "Jazztel"; do tag; warn "${mark}Trying $function"; $function; [[ "$cracked" == "1" ]] && return; done
-        warn "${mark}Cant crack this network with digenpy, doing it manually (dict if provided/needed or just aircrack)"
 
         if [ "$1" == "autocrack" ]; then
             export wait_for_execute=1; AUTO=1; selectcracking 1; AUTO=0; export wait_for_execute=0;
