@@ -1,6 +1,6 @@
 .\" Man page generated from reStructeredText.
 .
-.TH AIROSCRIPT-NG 8 "2011-11-17" "1.1" "net"
+.TH AIROSCRIPT-NG 1 "2011-11-17" "1.1" "net"
 .SH NAME
 Airoscript-ng \- User interface to aircrack-ng
 .
@@ -36,35 +36,49 @@ airoscript\-ng [\-h] [\-t TERMINAL] [\-v] [\-w WIRELESS_CARD] [\-b] [\-m fakemac
 .SH DESCRIPTION
 .sp
 Airoscript is a complete user interface for aircrack\-ng.
+.sp
 It gives you almost all functionality that aircrack\-ng has, allowing you to
-save some time from writting commands.
-Writing commands may be good to learn how does it work, but repeatedly doing
-so can damage your mind and your body.
+save some time from writting commands. Writing commands may be good to learn
+how does it work, but repeatedly doing so can damage your mind and your body.
+.sp
 Airoscript also provides a comprehensive way to generate CEO\-readable network
 security reports, writable (by wkhtml2pdf plugin) as pdf.
 .SH OPTIONS
 .INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-\-h                    Show this message
-\-t [xterm|screen]     Specify terminal
-\-v                    Verbose & debug mode
-\-w wireless_card      Specify wifi card
-\-b                    Writes a csv file with network data.
-\-m [fakemac|realmac]  Change mac to fakemac before everything else.
-\-a                    Automatic mode
-\-n [regex]            Filter SSID by regex
-\-x                    Autoconfigure network after automatic crack (requires \-a)
-\-z                    Don\(aqt scan automatically at start
-.ft P
-.fi
-.UNINDENT
+.TP
+.B \-h
+Show this message
+.TP
+.BI \-t \ terminal
+Specify terminal (xterm or screen)
+.TP
+.B \-v
+Verbose & debug mode
+.TP
+.BI \-w \ wireless_card
+Specify wifi card
+.TP
+.B \-b
+Writes a csv file with network data.
+.TP
+.BI \-m \ mac_mode
+Change mac to fakemac before everything else. (mac mode can be fakemac or realmac)
+.TP
+.B \-a
+Automatic mode
+.TP
+.BI \-n \ regex
+Filter SSID by regex
+.TP
+.B \-x
+Autoconfigure network after automatic crack (requires \-a)
+.TP
+.B \-z
+Don\(aqt scan automatically at start
 .UNINDENT
 .SH EXAMPLES
 .sp
-Crack the first of all my test networks =) using my own mac
+Crack the first of all my test networks using my own mac
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -76,7 +90,8 @@ airoscript\-ng \-w wlan0 \-m realmac \-n "XayOnTest_(.*)"
 .UNINDENT
 .UNINDENT
 .sp
-Try to crack any network with faked mac. Warning, this may conduct you to commit a crime
+Try to crack any network with faked mac. Warning, this may
+conduct you to commit a crime
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -87,116 +102,73 @@ airoscript\-ng \-w wlan0 \-m fakemac \-a
 .fi
 .UNINDENT
 .UNINDENT
-.sp
-The following one is a little bigger
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
-It loads digenpy plugin (wich means that if a network can be cracked with a dictionary provided by digenpy, it will wait for only FOUR packages, then crack it with dict)
-.IP \(bu 2
-It forces to use xterm interface (wich, by the way, is the default stuff)
-.IP \(bu 2
-Uses wlan1 as interface
-.IP \(bu 2
-Writes a csv file with the network data for posterior analysis
-.IP \(bu 2
-Uses your real mac
-.IP \(bu 2
-.INDENT 2.0
-.TP
-.B Starts debugging mode (it just prints out more information than usual (ugly as hell, meant for dev))
-.INDENT 7.0
-.IP \(bu 2
-Autoconfigures network after cracking. This SHOULD NOT DO ANYTHING IN THIS EXAMPLE (auto mode), as at the end of automatic mode, it already asks you to configure it.
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.sp
-.nf
-.ft C
-airoscript\-ng \-t xterm \-v \-w wlan1 \-b \-m realmac \-a \-n "XayOn_" \-x \-pdigenpy
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
+.\" The following one is a little bigger
+.\" - It loads digenpy plugin (wich means that if a network can be cracked with a dictionary provided by digenpy, it will wait for only FOUR packages, then crack it with dict)
+.\" - It forces to use xterm interface (wich, by the way, is the default stuff)
+.\" - Uses wlan1 as interface
+.\" - Writes a csv file with the network data for posterior analysis
+.\" - Uses your real mac
+.\" - Starts debugging mode (it just prints out more information than usual (ugly as hell, meant for dev))
+.\" - Autoconfigures network after cracking. This SHOULD NOT DO ANYTHING IN THIS EXAMPLE (auto mode), as at the end of automatic mode, it already asks you to configure it.
+.\" 
+.\" airoscript-ng -t xterm -v -w wlan1 -b -m realmac -a -n "XayOn_" -x -pdigenpy
+.
 .SH DEVELOPERS
-.sp
+.nf
 Help and feedback is greatly appreciated.
 Please feel free to mail XayOn at \fI\%xayon@xayon.net\fP
+.fi
+.sp
 .SH COMPLIANCE
 .sp
 In the wrong hands, airoscript and aircrack\-ng could easily violate the
-government certification of your radio.  A simple example is running injection
-on frequencies your radio isn\(aqt certified for in your geographic region.
-you and only you are responsible for making sure that your tools \-\- including
-airoscript \-\- are compliant with the regulations in your country and region.
+government certification of your radio.
+.sp
+A simple example is running injection on frequencies your radio isn\(aqt
+certified for in your geographic region.
+.sp
+You and only you are responsible for making sure that your tools \fIincluding\fP
+\fIairoscript\fP are compliant with the regulations in your country and region.
 .SH BUGS AND FEATURE REQUESTS
 .sp
 Please submit bugs in aircrack\-ng trac or aircrack\-ng oficial forum "airoscript
 support" subforum.
 .SH MENU USAGE
 .sp
-Since svn rev on 11\-1\-11 (nice date heh? ;) ) airoscript
-is able to queue commands, that is, you can tell airoscript\-ng
+Airoscript\-ng menu is quite intuitive, and it\(aqs documented in the html docs.
+.sp
+Since version 1.1 is able to queue commands, that is, you can tell it
 to do 1 then 2 in a menu just by entering "1 2" (without the quotes).
-Just as easy as that =) Give it a try!
 .SH CONFIGURATION
 .sp
-Airoscrip\-ng contains 2 configuration files, airoscript\-ng.conf and
+There are 2 configuration files, airoscript\-ng.conf and
 airoscript\-ng_advanced.conf that are well explained within them.
+.\" this is for the manpage, sorry for the inconvenience
+.
 .SH REQUIREMENTS (DEPS)
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
+.SS Build\-deps
+.sp
+gettext
+.SS Deps:
+.nf
 GNU gettext (gettext package)
-.IP \(bu 2
 ip (iproute package)
-.IP \(bu 2
 aircrack\-ng (same version as airoscript\-ng)
-.IP \(bu 2
 \fIWorking\fP injection capable driver for the interface you want to use
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.sp
-Build\-deps: gettext
-Deps:
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
 mrxvt|xterm|gnome\-terminal \-> Preferibly xterm
-.IP \(bu 2
 aircrack\-ng ( = airoscript\-ng_version) )
-.IP \(bu 2
 bash ( >4.0 )
-.IP \(bu 2
 grep
-.IP \(bu 2
 macchanger
-.IP \(bu 2
 iproute ( /bin/ip )
-.UNINDENT
-.UNINDENT
-.UNINDENT
+.fi
 .sp
-Recomends:
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
+.SS Recommended
+.nf
 digenpy ( \fI\%http://github.com/XayOn/Digenpy\fP ) # Depends on python 2.6
-.IP \(bu 2
 mdk
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.UNINDENT
+.fi
+.sp
 .SH PLUGIN SUPPORT
 .sp
 Airoscript supports plugins, shell scripts listed in enabled_plugins on
@@ -239,67 +211,35 @@ pyrit \-\-> a raw interface for pyrit, requires pyrit knowledge
 .UNINDENT
 .SH CREATING A PLUGIN
 .sp
-For a plugin to add a menu entry, you\(aqll have to set $plugins_menu["Title of the menu you want to use"] to an array of the entries you want to add.
-Have a look at \fI\%http://xayon.net/adding\-nessus\-support\-to\-airoscript/\fP for a more complete tutorial.
-.SH SEE ALSO
+For a plugin to add a menu entry, you\(aqll have to set
+$plugins_menu["Title of the menu you want to use"] to an array of
+the entries you want to add.
 .sp
-
+Have a look at \fI\%http://xayon.net/adding\-nessus\-support\-to\-airoscript/\fP for
+a more complete tutorial.
+.SH SEE ALSO
 .nf
-\(ga<airoscript\-ng homepage> http://airoscript.aircrack\-ng.org/\(ga__
-.fi
-
-
-.nf
-\(ga<airoscript\-ng google code> http://code.google.com/p/airoscript\(ga__
-.fi
-
-
-.nf
-\(ga<XayOns blog> http://www.xayon.net\(ga__
-.fi
-
-.INDENT 0.0
-.IP \(bu 2
 airoscript.conf(1)
-.IP \(bu 2
 airdecap\-ng(1)
-.IP \(bu 2
 airdriver\-ng(1)
-.IP \(bu 2
 aireplay\-ng(1)
-.IP \(bu 2
 airmon\-ng(1)
-.IP \(bu 2
 airodump\-ng(1)
-.IP \(bu 2
 airolib\-ng(1)
-.IP \(bu 2
 airsev\-ng(1)
-.IP \(bu 2
 airtun\-ng(1)
-.IP \(bu 2
 buddy\-ng(1)
-.IP \(bu 2
 easside\-ng(1)
-.IP \(bu 2
 ivstools(1)
-.IP \(bu 2
 kstats(1)
-.IP \(bu 2
 makeivs\-ng(1)
-.IP \(bu 2
 packetforge\-ng(1)
-.IP \(bu 2
 wesside\-ng(1)
-.IP \(bu 2
 aircrack\-ng(1)
-.UNINDENT
-.SH DOCUTILS SYSTEM MESSAGES
-.IP "System Message: ERROR/3 (README:)"
-Anonymous hyperlink mismatch: 3 references but 0 targets.
-See "backrefs" attribute for IDs.
+.fi
+.sp
 .SH AUTHOR
-me@davidfrancos.net
+This manual page was written by David Francos <me@davidfrancos.net>
 .SH COPYRIGHT
 David Francos Cuartero
 .\" Generated by docutils manpage writer.

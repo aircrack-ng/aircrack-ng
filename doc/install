@@ -1,35 +1,28 @@
-Airoscript-ng installation
---------------------------
+Requirements (Deps)
+===================
 
-REQUIREMENTS
-============
+Build-deps
+++++++++++
 
-    *Working* injection capable driver for the interface you want to use
+gettext
 
-    Build-deps: gettext
-    Deps:
-        mrxvt|xterm|gnome-terminal -> Preferibly xterm
-		aircrack-ng ( = airoscript-ng_version) )
-		bash ( >3.5 )
-        grep
-        macchanger
-        iproute ( /bin/ip )
+Deps:
++++++
 
-    Recomends:
-		wlandecrypter
-		jazzteldecrypter
-		mdk 
+| GNU gettext (gettext package)
+| ip (iproute package)
+| aircrack-ng (same version as airoscript-ng)
+| *Working* injection capable driver for the interface you want to use
+| mrxvt|xterm|gnome-terminal -> Preferibly xterm
+| aircrack-ng ( = airoscript-ng_version) )
+| bash ( >4.0 )
+| grep
+| macchanger
+| iproute ( /bin/ip )
 
-FEATURES
-========
+Recommended
+++++++++++++
 
-    Airoscript is fully i10n, configurable,
-    themable and modular. 
-
-PROBLEMS
-========
-    If something fails when trying to use dhcp, check that you have dhclient
-    installed, if dhclient is not your client, just change $DHCPSOFT var on 
-    config file for your dhcp client software.
-
-
+| digenpy ( http://github.com/XayOn/Digenpy ) # Depends on python 2.6
+| mdk
+   
