@@ -19,7 +19,7 @@
 #        Along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-declare -a enabled_plugins
+declare -a -x enabled_plugins 
 declare -a p_menu
 
 p_menu+=( "Enable plugin" )
@@ -64,9 +64,8 @@ clear="" # Clear
 warn "${mark}Welcome to airoscript, have a nice day"
 resolution
 check_cardctl; #debug
-setargs $@
+setargs $@ # Plugins are also loaded here, so be carefull
 setinterface "start"
-clear=clear;
-cleanautovars
+clear=clear; cleanautovars
 [[ "$noscan" != 1 ]] && autoscan
 mainmenu

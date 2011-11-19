@@ -64,9 +64,11 @@ install-docs:
 	@install src/airoscriptlogo_med.png $(docdir)/airoscript-ng.png
 
 install-desktop:
-	@install aircrack-airoscript.desktop $(appdir)/
+	@install airoscript-ng.desktop $(appdir)/
+	@install airoscript-ng_gtk.desktop $(appdir)/
 	@install src/airoscriptlogo_med.png $(picdir)/airoscript-ng.png
-	@xdg-desktop-menu install $(appdir)/aircrack-airoscript.desktop
+	@xdg-desktop-menu install $(appdir)/airoscript-ng.desktop
+	@xdg-desktop-menu install $(appdir)/airoscript-ng_gtk.desktop
 
 generate-locale:
 	@for i in $(srcdir)/locale/* ; do \

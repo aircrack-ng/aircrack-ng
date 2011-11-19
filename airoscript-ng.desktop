@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Encoding=UTF-8
+Name=Airoscript-ng
+Comment=Aircrack-ng TUI
+GenericName=Airoscript-ng
+Exec=su-to-root -c airoscript-ng
+Icon=airoscript-ng
+StartupNotify=true
+Terminal=true
+MimeType=text/plain
+Categories=Gnome;Network

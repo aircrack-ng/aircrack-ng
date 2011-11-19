@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Encoding=UTF-8
+Name=Airoscript-ng GTK
+Comment=Aircrack-ng GUI
+GenericName=Airoscript-ng-gtk
+Exec=gksu "airoscript-ng -pzenity"
+Icon=airoscript-ng
+StartupNotify=true
+Terminal=false
+MimeType=text/plain
+Categories=Gnome;Network
+

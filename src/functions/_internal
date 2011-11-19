@@ -121,9 +121,9 @@ options_auto(){
 }
 
 load_plugins(){
-    for i in "${@}"; do 
-        if [ -e $path/plugins/$i ]; then
-            _source $path/plugins/$i
+    for i in ${@}; do 
+        if [[ -e $path/plugins/$i ]]; then
+            _source "${path}/plugins/${i}"
         fi
     done
 }
@@ -145,7 +145,7 @@ _debug(){
 }
 
 execute(){ 
-    source $path/interface
+    check_function mkmenu || source $path/interface
     check_function save_pids || source $path/internal/childs
     title=$1; shift;
 
