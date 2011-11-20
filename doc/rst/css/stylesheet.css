@@ -1,0 +1,46 @@
+h1, h2{ text-shadow: 2px 2px 2px #ca9; text-align:center; }
+p{ padding-left:10px; }
+pre{ padding-left:30px; }
+body { background: #fafafa url(black-Linen.png);  }
+img{ 
+    display: block;   
+    margin-left: auto;
+    margin-right: auto;
+    border: solid 1px #EFEFEF;
+    border: solid 1px #CCC;
+    -moz-box-shadow: 3px 3px 5px #999;
+    -webkit-box-shadow: 3px 3px 5px #999;
+    box-shadow: 3px 3px 5px #999;
+}
+
+.section {
+    color:black;
+    position: relative;
+    width: 90%;
+    padding: 10px 0;
+    background: rgba(240, 240, 240, 0.5);
+    padding: 20px 20px 20px 20px;
+    margin-left:auto;
+    margin-right:auto;
+    margin-bottom:30px;
+    margin-top:30px;
+    /*** cross browser box shadow ***/
+    -moz-box-shadow: 0 0 2px #fff;
+    -webkit-box-shadow: 0 0 2px #fff;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Glow(color=#ffffff,strength=3)";
+    filter:
+        progid:DXImageTransform.Microsoft.Shadow(color=#ffffff,direction=0,strength=3)
+        progid:DXImageTransform.Microsoft.Shadow(color=#ffffff,direction=90,strength=3)
+        progid:DXImageTransform.Microsoft.Shadow(color=#ffffff,direction=180,strength=3)
+        progid:DXImageTransform.Microsoft.Shadow(color=#ffffff,direction=270,strength=3);
+    box-shadow: 0 0 2px #fff;
+ }
+
+.document{
+    color: white;
+    padding: 14px 20px;
+    background-color: rgba(90,60,40,0.6);
+    margin: 20px 20px 20px 20px;
+    -webkit-border-radius: 6px;    /* for Safari */
+    -moz-border-radius: 6px;       /* for Firefox */
+}
