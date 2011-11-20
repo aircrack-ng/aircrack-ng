@@ -37,9 +37,6 @@ doauto(){
     filter_ssid
     MAX_TARGETS=$(count_aps);
 
-    attack_functions_wep=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
-    attack_functions_wpa=(wpa_attacks_handshake)
-
     echo; tag; warn "${mark}Networks detected $MAX_TARGETS"; sleep 1
 
     for i in `seq 1 $MAX_TARGETS`; do
@@ -80,6 +77,8 @@ continue_autocrack(){
 
 autopwn(){
     check_function cleanp || source $path/internal/childs
+    attack_functions_wep=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
+    attack_functions_wpa=(wpa_attacks_handshake)
 
     F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0; next=0; count=0
     [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && { attack_functions=${attack_functions_wpa[@]}; min_ivs=10; } || attack_functions=${attack_functions_wep}

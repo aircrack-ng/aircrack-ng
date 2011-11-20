@@ -181,6 +181,7 @@ decrypt(){
 }
 
 menu_options(){
+    while [ "1" ] ; do
         mkmenu "Airoscript options"  "Select another interface" "Reset selected interface"\
             "Change MAC of interface"  "Enable monitor mode" "Change DUMP_PATH"\
             "Try to configure network" "Return to main menu"
@@ -195,14 +196,25 @@ menu_options(){
         7 ) $clear;break ;;
         * ) _ "Unknown response. Try again" ;;
         esac
+    done
 }
 
 cleanup(){
-    killall -9 aireplay-ng airodump-ng &> /dev/null &
-    $AIRMON stop $wificard; ifconfig $wificard down
-    $clear; sleep 2; $CARDCTL eject; sleep 2; $CARDCTL insert
-    ifconfig $wificard up; $AIRMON start $wificard $Host_CHAN
-    $iwconfig $wificard
+    while [ "1" ]; do
+        mkmenu "Interface cleanup" "Normal cleanup" "Reset driver" "Vmware fix for bt4" "Return to main menu"
+        case $choice in 
+            1 ) { killall -9 aireplay-ng airodump-ng &> /dev/null &
+                $AIRMON stop $wificard; ifconfig $wificard down;
+                $clear; sleep 2; $CARDCTL eject; sleep 2; $CARDCTL insert;
+                ifconfig $wificard up; $AIRMON start $wificard $Host_CHAN;
+                $iwconfig $wificard;
+            } &>/dev/null ; break ;;
+            2 ) { rmmod $DRIVER; modprobe $DRIVER; } &>/dev/null; break ;;
+            3 ) { ifconfig $wificard down; rmmod $DRIVER; rfkill blockall; rfkill unblock all; modprobe $DRIVER; rfkill unblock all; ifconfig $wificard up; } &>/dev/null; break ;;
+            4 ) $clear; break ;;
+            * ) clear;;
+        esac 
+    done
 }
 
 

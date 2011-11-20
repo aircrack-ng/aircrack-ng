@@ -107,7 +107,7 @@ options_v(){
 
 opts_wireless(){
     { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null;
-    warn "${mark}Monitor interface setup correctly $iwifi $wifi $wificard..."; sleep 1; set_wifi_by_args=1
+    sleep 1; set_wifi_by_args=1
 }
 
 options_auto(){

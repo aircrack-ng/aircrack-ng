@@ -62,11 +62,14 @@ checkforcemac() {
     fi
 }
 
+
 guess_idata(){
     AIROUTPUT=$($AIRMON $1 $wificard|grep -v "running"|grep -A 1 $wificard);
-    export TYPE=$(awk '/monitor/ {print $2 $3 }' <<< $AIROUTPUT);
-    export DRIVER=$(awk '/monitor/ {print $5 }' <<< $AIROUTPUT );
-    export tmpwifi=$(awk '{sub("\)","", $NF ); print $NF}' <<< $AIROUTPUT);
+    [[ $AIROUTPUT  =~ (.*)-(.*)phy(.*)monitor\ mode\ enabled\ on(.*)\) ]]; tmpwifi="${BASH_REMATCH[4]}";
+    AIROUTPUT=( ${BASH_REMATCH[1]} ); # Messy, but works.
+    export DRIVER=${AIROUTPUT[@]: -1}; export TYPE="${a[1]} ${a[2]}"
+    export TYPE="${AIROUTPUT[1]} ${AIROUTPUT[2]}"
+    echo $DRIVER $TYPE
     if [[ "$tmpwifi" =~ (.*)[0-9] ]];  then wifi=$tmpwifi; else wifi=$wificard; fi 
 
 }
