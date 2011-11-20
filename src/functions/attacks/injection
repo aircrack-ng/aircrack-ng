@@ -16,8 +16,19 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 # This is for iNJECTION  (8)  option
+
+othersinjectmenu(){
+    while true; do 
+        mkmenu "Injection type" "Frag Injection" "ChopChop injection"; 
+        case $choice in 
+            1) injectmenu frag; break;;
+            2) injectmenu chopchop; break;;
+            *) $clear;
+        esac
+    done
+}
+
 injectmenu(){
-    $clear
     while true; do
         ls -lah $DUMP_PATH/fragment-*.xor &>/dev/null
         [[ $? != 0 ]] && { warn  "${mark}Can't open fragmentation xor files. Returning"; echo;  return; }
@@ -35,6 +46,7 @@ injectmenu(){
                 * ) $clear; break;;
             esac
         fi
+
         if [ "$1" == "chopchop" ]; then
             if [ "$AUTO" == 1 ]; then
                 if [ "$Client_MAC" != "" ]; then chopchopend $Client_MAC; return; fi

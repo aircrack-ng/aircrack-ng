@@ -15,12 +15,13 @@
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 check_function fakeauth3 || source $path/attacks/auth # It depends on auth module ;)
+check_function injectmenu || source $path/attacks/injection # It depends on injection module ;)
 
 othertmenu(){
     while true; do
          mkmenu "Other aircrack-ng tools" "Injection" "Autentication" "Operations with ivstools" "Decloak packages" "Create virtual interface with airtun-ng" "Diagnostics and reports" "Auto crack wep with wesside-ng" "Easside-ng" "Return to main menu"
         case $choice in
-            1  ) injectmenu    ; $clear; break;;
+            1  ) othersinjectmenu    ; $clear; break;;
             2  ) authmenu      ; $clear; break;;
             3  ) ivstoomenu    ; $clear; break;;
             4  ) airdecmenu    ; $clear; break;;
