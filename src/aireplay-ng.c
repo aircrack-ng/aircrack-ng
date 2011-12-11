@@ -1120,6 +1120,7 @@ int capture_ask_packet( int *caplen, int just_grab )
 
         if( fwrite( &pfh_out, n, 1, f_cap_out ) != 1 )
         {
+        	fclose(f_cap_out);
             perror( "fwrite failed\n" );
             return( 1 );
         }
@@ -1133,6 +1134,7 @@ int capture_ask_packet( int *caplen, int just_grab )
 
         if( fwrite( &pkh, n, 1, f_cap_out ) != 1 )
         {
+        	fclose(f_cap_out);
             perror( "fwrite failed" );
             return( 1 );
         }
@@ -1141,6 +1143,7 @@ int capture_ask_packet( int *caplen, int just_grab )
 
         if( fwrite( h80211, n, 1, f_cap_out ) != 1 )
         {
+        	fclose(f_cap_out);
             perror( "fwrite failed" );
             return( 1 );
         }
@@ -1175,6 +1178,7 @@ int read_prga(unsigned char **dest, char *file)
 
     if( fread( (*dest), size, 1, f ) != 1 )
     {
+    	fclose(f);
         fprintf( stderr, "fread failed\n" );
         return( 1 );
     }

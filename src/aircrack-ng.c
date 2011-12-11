@@ -4721,7 +4721,6 @@ int crack_wep_dict()
 	int i, origlen, keysize;
 	char *key;
 
-	key = (char*) malloc(sizeof(char) * (opt.keylen + 1));
 	keysize = opt.keylen+1;
 
 	update_ivbuf();
@@ -4732,6 +4731,7 @@ int crack_wep_dict()
 		return( FAILURE );
 	}
 
+	key = (char*) malloc(sizeof(char) * (opt.keylen + 1));
 	gettimeofday( &t_last, NULL );
 	t_last.tv_sec--;
 
@@ -4767,7 +4767,10 @@ int crack_wep_dict()
 		}
 
 		if(check_wep_key(wep.key, opt.keylen, 0) == SUCCESS)
+		{
+			free(key);
 			return( SUCCESS );
+		}
 	}
 }
 

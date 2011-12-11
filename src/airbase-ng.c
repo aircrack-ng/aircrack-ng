@@ -1450,6 +1450,7 @@ int read_prga(unsigned char **dest, char *file)
 
     if( fread( (*dest), size, 1, f ) != 1 )
     {
+    	fclose(f);
         fprintf( stderr, "fread failed\n" );
         return( 1 );
     }

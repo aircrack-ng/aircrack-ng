@@ -1126,6 +1126,8 @@ int CFC_filter_duplicate_iv() {
 		}
 	} while (next_packet_pointer() == true);
 
+	free(ivs_table);
+
 	return nb_packets;
 }
 

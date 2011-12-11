@@ -158,36 +158,47 @@ int merge( int argc, char *argv[] )
 
         if( ( f_in = fopen( argv[i], "rb" ) ) == NULL )
         {
+        	fclose(f_out);
             perror( "fopen failed" );
             return( 1 );
         }
 
         if( fread( buffer, 1, 4, f_in ) != 4 )
         {
+        	fclose(f_out);
+        	fclose(f_in);
             perror( "fread file header failed" );
             return( 1 );
         }
 
         if( memcmp( buffer, IVSONLY_MAGIC, 4 ) == 0 )
         {
+        	fclose(f_out);
+        	fclose(f_in);
             printf( "%s is an old .ivs file\n", argv[i] );
             return( 1 );
         }
 
         if( memcmp( buffer, IVS2_MAGIC, 4 ) != 0 )
         {
+        	fclose(f_out);
+        	fclose(f_in);
             printf( "%s is not an .%s file\n", argv[i], IVS2_EXTENSION );
             return( 1 );
         }
 
         if( fread( &fivs2, 1, sizeof(struct ivs2_filehdr), f_in ) != (size_t) sizeof(struct ivs2_filehdr) )
         {
+        	fclose(f_out);
+        	fclose(f_in);
             perror( "fread file header failed" );
             return( 1 );
         }
 
         if( fivs2.version > IVS2_VERSION )
         {
+        	fclose(f_out);
+        	fclose(f_in);
             printf( "Error, wrong %s version: %d. Supported up to version %d.\n", IVS2_EXTENSION, fivs2.version, IVS2_VERSION );
             return( 1 );
         }

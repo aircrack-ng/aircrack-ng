@@ -400,13 +400,15 @@ struct oui * load_oui_file(void) {
 		if (sscanf(buffer, "%2c-%2c-%2c", a, b, c) == 3) {
 			if (oui_ptr == NULL) {
 				if (!(oui_ptr = (struct oui *)malloc(sizeof(struct oui)))) {
+					fclose(fp);
 					perror("malloc failed");
 					return NULL;
 				}
 			} else {
 				if (!(oui_ptr->next = (struct oui *)malloc(sizeof(struct oui)))) {
+					fclose(fp);
 					perror("malloc failed");
-									return NULL;
+					return NULL;
 				}
 				oui_ptr = oui_ptr->next;
 			}
