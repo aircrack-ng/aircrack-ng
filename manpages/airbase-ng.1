@@ -64,7 +64,7 @@ One other use of "auto" is to deal with clients which can automatically adjust t
 In practice, it is best to set the value to the type of clients you are dealing with. 
 .TP
 .I -q
-This surpresses printing any statistics or status information.
+This suppresses printing any statistics or status information.
 .TP
 .I -v
 This prints additional messages and details to assist in debugging.
@@ -105,7 +105,7 @@ It sets the shared key challenge length, which can be anything from 16 to 1480. 
 .I -L, --caffe-latte
 Airbase-ng also contains the new caffe-latte attack, which is also implemented in aireplay-ng as attack "-6". It can be used with "-L" or "caffe-latte". This attack specifically works against clients, as it waits for a broadcast arp request, which happens to be a gratuitous arp. See this for an explaination of what a gratuitous arp is. It then flips a few bits in the sender MAC and IP, corrects the ICV (crc32) value and sends it back to the client, where it came from. The point why this attack works in practice is, that at least windows sends gratuitous arps after a connection on layer 2 is established and a static ip is set, or dhcp fails and windows assigned an IP out of 169.254.X.X. 
 
-"-x <pps>" sets the number of packets per second to send when performing the caffe-latte attack. At the moment, this attack doesn't stop, it continuously sends arp requests. Airodump-ng is needed to capture the replys.
+"-x <pps>" sets the number of packets per second to send when performing the caffe-latte attack. At the moment, this attack doesn't stop, it continuously sends arp requests. Airodump-ng is needed to capture the replies.
 .TP
 .I -N, --cfrag
 This attack listens for an ARP request or IP packet from the client. Once one is received, a small amount of PRGA is extracted and then used to create an ARP request packet targeted to the client. This ARP request is actually made of up of multiple packet fragments such that when received, the client will respond. 
