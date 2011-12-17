@@ -345,7 +345,7 @@ getChipset() {
 
     if [ x$DRIVER = "xiwlagn" ]
     then
-        CHIPSET="Intel 4965/5xxx/1xxx"
+        CHIPSET="Intel 4965/5xxx/6xxx/1xxx"
         
         DETECTED_STR="`dmesg | grep iwlagn | grep Detected | tail -n 1 `"
         LINK_POS="3"
