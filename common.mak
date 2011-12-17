@@ -67,7 +67,7 @@ REVISION	= $(shell $(AC_ROOT)/evalrev)
 REVFLAGS	= -D_REVISION=$(REVISION)
 
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
-CFLAGS          ?= -g -W -Wall -O3 -Wno-unused-but-set-variable
+CFLAGS          ?= -g -W -Wall -O3
 CFLAGS          += $(OPTFLAGS) $(REVFLAGS) $(COMMON_CFLAGS)
 
 prefix          = /usr/local
@@ -78,3 +78,7 @@ datadir         = $(prefix)/share
 docdir          = $(datadir)/doc/aircrack-ng
 libdir		= $(prefix)/lib
 etcdir		= $(prefix)/etc/aircrack-ng 
+
+ifneq ($(OSNAME), cygwin)
+CFLAGS		+= -Wno-unused-but-set-variable
+endif
