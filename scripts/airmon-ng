@@ -740,6 +740,20 @@ do
     continue
  fi
 
+ if [ x$DRIVER = "xrtl819xU" ]
+ then
+ 	printf "$iface\t\tRealtek 819x\trtl819xU"
+    if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+    then
+        startStdIface $iface $CH
+    fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+    then
+        stopStdIface $iface
+    fi
+    echo
+    continue
+ fi
 
  if [ x$DRIVER = "xipw2100" ] || [ x"`iwpriv $iface 2>/dev/null | grep set_crc_check`" != "x" ]
  then
