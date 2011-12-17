@@ -361,12 +361,8 @@ getChipset() {
 			then
 				INTEL_WORD="Ultimate"
         			if [ "`echo "$DETECTED_STR" | grep $INTEL_WORD | wc -l`" = "0" ]
-					then
+				then
 						INTEL_WORD="Advanced"
-						if [ "`echo "$DETECTED_STR" | grep $INTEL_WORD | wc -l`" = "0" ]
-						then
-							INTEL_WORD="Wireless"
-	        			fi	
 	        		fi	
 			fi
         	fi
