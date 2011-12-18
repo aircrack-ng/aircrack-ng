@@ -79,6 +79,7 @@ docdir          = $(datadir)/doc/aircrack-ng
 libdir		= $(prefix)/lib
 etcdir		= $(prefix)/etc/aircrack-ng 
 
-ifneq ($(OSNAME), cygwin)
+GCC_OVER45	= $(shell expr 45 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
+ifeq ($(GCC_OVER45), 1)
 CFLAGS		+= -Wno-unused-but-set-variable
 endif
