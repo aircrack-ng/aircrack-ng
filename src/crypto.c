@@ -1185,6 +1185,10 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
     is_a4 = ( h80211[1] & 3 ) == 3;
 
     z = 24 + 6 * is_a4;
+    if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS )
+    {
+        z += 2;
+    }
 
     PN[0] = h80211[z + 7];
     PN[1] = h80211[z + 6];
@@ -1204,7 +1208,15 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
 
     memset( AAD, 0, sizeof( AAD ) );
 
-    AAD[1] = 22 + 6 * is_a4;
+    if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS )
+    {
+        AAD[1] = 22+2 + 6 * is_a4;
+    }
+    else
+    {
+    	AAD[1] = 22 + 6 * is_a4;
+    }
+
     AAD[2] = h80211[0] & 0x8F;
     AAD[3] = h80211[1] & 0xC7;
     memcpy( AAD + 4, h80211 + 4, 3 * 6 );
