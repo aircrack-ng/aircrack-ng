@@ -212,7 +212,7 @@ cleanup(){
             2 ) { rmmod $DRIVER; modprobe $DRIVER; } &>/dev/null; break ;;
             3 ) { ifconfig $wificard down; rmmod $DRIVER; rfkill blockall; rfkill unblock all; modprobe $DRIVER; rfkill unblock all; ifconfig $wificard up; } &>/dev/null; break ;;
             4 ) $clear; break ;;
-            * ) clear;;
+            * ) $clear;;
         esac 
     done
 }

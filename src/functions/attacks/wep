@@ -19,42 +19,79 @@
 check_function fakeauth3 || source $path/attacks/auth # It depends on auth module ;)
 check_function injectmenu || source $path/attacks/injection # It depends on injection module ;)
 
+check_client(){
+    [[ $Client_MAC ]] && {
+         return 0;
+     } || {
+         $clear; error "You have not selected a client"; return 20
+     }
+}
+
+check_dump_xor(){
+    $DUMP_PATH/dump*xor && {
+        return 0;
+    } || {
+        $clear; error "You need to get a XOR packet. You can do it for example with a frag attack or a chopchop attack"; return 20
+    }
+
+}
+
 wep_attacks_menu(){
-               while true; do $clear  
-                mkmenu "Wep Attacks" "Attacks not using a client" "Attacks using a client " "ARP inject from xor (PSK) " "Return to main menu "
-                case $choice in
-                    1  ) { mkmenu "Attacks not using a client" "Fake auth => Automatic  " "Fake auth => Interactive" "Fragmentation attack " "Chopchop attack " "Return to main menu"
+    while true; do $clear  
+        mkmenu "Wep Attacks"\
+            "Attacks not using a client"\
+            "Attacks using a client "\
+            "ARP inject from xor (PSK) "\
+            "Return to main menu "
+
+        case $choice in
+            1) {
+                    mkmenu "Attacks not using a client"\
+                           "Fake auth => Automatic"\
+                           "Fake auth => Interactive"\
+                           "Fragmentation attack "\
+                           "Chopchop attack "\
+                           "Return to main menu"
+
                     case $choice in
-                        1  ) wep_attacks fakeauto ; break ;;
-                        2  ) wep_attacks fakeinteractive;$clear ; break ;;
-                        3  ) wep_attacks fragmentation NC ;$clear; break ;;
-                        4  ) wep_attacks chopchop ;$clear; break ;;
-                        5  ) $clear; break ;;
-                        *  ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+                        1) wep_attacks fakeauto ; break ;;
+                        2) wep_attacks fakeinteractive; break ;;
+                        3) wep_attacks fragmentation NC ; break ;;
+                        4) wep_attacks chopchop; break ;;
+                        5) $clear; break ;;
+                        *) echo -e "`gettext \"Unknown response. Try again\"`" ;;
                     esac
-                     } ; break;;
-                      2  ) {
-                mkmenu "Attacks using a client" "ARP replay => Automatic"	"ARP replay => Interactive"	"Fragmentation attack"	"Chopchop attack" "Cafe latte" "Return to main menu"
+            } ; break;;
+            2) {
+                    mkmenu "Attacks using a client"\
+                        "ARP replay => Automatic"\
+                        "ARP replay => Interactive"\
+                        "Fragmentation attack"\
+                        "Chopchop attack"\
+                        "Cafe latte"\
+                        "Return to main menu"
+
                 case $choice in
-                    1  ) wep_attacks arpreplay_auto ;$clear; break ;;
-                    2  ) wep_attacks arpreplay_interactive ;$clear; break ;;
-                    3  ) wep_attacks fragmentation -7 ;$clear ; break ;;  
-                    4  ) wep_attacks chopchopclient;$clear ; break ;;
-                    5  ) wep_attacks caffelate ;$clear; break ;;
-                    6  ) $clear; break ;;
-                    *  ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+                    1) check_client && wep_attacks arpreplay_auto; break ;;
+                    2) check_client && wep_attacks arpreplay_interactive; break ;;
+                    3) check_client && wep_attacks fragmentation -7; break ;;  
+                    4) check_client && wep_attacks chopchopclient; break ;;
+                    5) check_client && wep_attacks caffelate; break ;;
+                    6) $clear; break ;;
+                    *) echo -e "`gettext \"Unknown response. Try again\"`" ;;
                 esac
-                    } ; break;;
-                    3  ) wep_attacks_pskarp; $clear; break;;
-                    4  ) $clear; break ;;
-                    *  ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-                esac
-            done
+            } ; break;;
+            3) check_dump_xor && wep_attacks pskarp; break;;
+            4) $clear; break ;;
+            *) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+        esac
+    done
 }
 
 wep_attacks(){
     attack=$1; shift;
     wep_attacks_$attack $@
+    $clear;
 }
 
 wep_attacks_fakeauto(){

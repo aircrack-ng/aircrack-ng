@@ -19,7 +19,7 @@ check_cardctl(){
 }
 
 _askinterface(){
-        askinterface && checkforcemac 
+        askinterface && checkforcemac $startup_mac_set
 }
 
 setinterface(){
@@ -45,6 +45,7 @@ setinterface(){
 }
 
 askinterface(){
+    [[ ${#INTERFACES[@]} == 1 ]] && { warn "${mark}Only one capable wireless interface found. Selecting" ${INTERFACES[0]}; wificard=${INTERFACES[0]}; auto_fake_mac=1 return; }
     mkmenu "Interface" ${INTERFACES[@]}
     export wificard="${INTERFACES[$choice - 1]}"
     [[ $wificard == "" ]] && {
@@ -58,8 +59,15 @@ checkforcemac() {
     if [ "$force_mac_address" == "1" ]; then $clear && warn "${mark}Warn: Not checking mac" 
     else
         export mac=`$MACCHANGER -s $wificard|awk '/Current/ {print $3}'`
-        if [ "$FAKE_MAC" != "$mac" ]; then wichchangemac $@; fi
+        if [ "$FAKE_MAC" != "$mac" ]; then
+            wichchangemac $@;
+        fi
     fi
+}
+
+special_info(){
+    echo $@>/dev/null # TODO
+
 }
 
 
@@ -76,7 +84,7 @@ guess_idata(){
 
 wichchangemac(){
     while true; do
-         [[ "$1" != "" ]] && choice=$1 || {
+         [[ "$1" != "" ]] && { startup_mac_set=$1; choice=$1; } || {
             mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input"
         }
         case $choice in
