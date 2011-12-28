@@ -87,7 +87,7 @@ mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenue
 
 mkmenu(){
     if [ "$AUTO" == 2 ]; then return; fi
-    echo "${mark} Error: ${ERRORS[@]}"
+    [[ ${ERRORS} ]] && echo "${mark} Error: ${ERRORS[@]}"
     max=`getmaxlenfromlist "${@}"`
     max=$(( $max + 10 ))
     title=$1; shift; line=0;
@@ -191,12 +191,14 @@ function setterminal {
 
 
 screen_startup(){
-    if [ -O ~/.airoscript-ng/screen_has_started ]; then
-        rm ~/.airoscript-ng-ng/screen_has_started
+    if [[ -O ~/.airoscript/screen_has_started ]]; then
+        rm ~/.airoscript/screen_has_started
 	else
-		touch ~/.airoscript-ng/screen_has_started
-		screen -S airoscript-ng -c $SCREENRC $0 screen
-		$clear && _ 'airoscript-ng is terminating...'; exit
+        # Reset airoscript,but this time inside a screen session.
+		touch ~/.airoscript/screen_has_started
+        warn "${mark}airoscript-ng is terminating...";
+		screen -S airoscript -t "Airoscript-ng" -c $SCREENRC $0 $@
+        exit 
 	fi
 }
 

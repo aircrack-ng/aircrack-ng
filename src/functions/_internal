@@ -86,7 +86,6 @@ help_fifo(){
 }
 
 setargs(){
-
      while getopts “bn:ht:w:zxcvm:fap:” option; do
         case $option in 
             h)  opt_functions+=(usage);;
@@ -107,7 +106,7 @@ setargs(){
     for i in ${opt_functions[@]}; do [[ $i == "usage" ]] && { usage; exit 1; }; done # Small hack to execute usage the first 
     for i in ${opt_functions[@]}; do [[ $i != auto ]] && options_$i || execute_auto=1; done
     [[ $execute_auto ]] && options_auto; # Small hack to execute auto the lastest xD
-
+    [[ $TERMINAL == "screen" ]] && screen_startup ${@}
 }
 
 options_m(){ opts_change_$opts_mac_opt; }
@@ -129,9 +128,9 @@ options_auto(){
 	export noscan=1;
     temporary_switch_clear;
     export clear="";
-	check_function doauto || source $path/autocrack;
+	check_function autopwn || source $path/autocrack;
 	check_function doexit || source $path/internal/exit;
-    doauto;
+    autopwn runner
     doexit;
 }
 
@@ -169,14 +168,13 @@ execute(){
         echo
         read -p "Enter extra options to execute: " eopts
     fi
-
     if [ $TERMINAL == "screen" ]; then
 		$CDCMD screen -S airoscript -c $SCREENRC -D -RR -X screen -t $title
-		$CDCMD screen -S airoscript -c $SCREENRC -X at "*" stuff "${@} $eopts" 
+		$CDCMD screen -S airoscript -c $SCREENRC -X at "*" eval "stuff \"${@} $eopts; exit\"\015" 
     else
         if [ "$1" == "crack" ]; then HOLDA="-hold"; shift; fi # FIXME This will work just on xterm.
         if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
-            warn ${mark}$title
+            [[ $NOTITLE ]] || warn "${mark}$title"
             if [[ $wait_for_execute ]]; then
                 ${@} $eopts &> /dev/null
             else

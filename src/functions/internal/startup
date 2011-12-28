@@ -185,7 +185,7 @@ selectAp(){
 launch_counter(){
     for i in $( seq 1 $1 ); do
         a=$(( ($i * 100) / $1 ))
-        sleep 1; echo -ne "\rScanning for targets: [$a/100 completed]";
+        sleep 1; echo -ne "\r${mark}Scanning for targets: [$a/100 completed]";
     done
 }
 
@@ -204,8 +204,8 @@ Scan(){
 
     warn "$mark`gettext 'Interface used is'` : $wifi ($iwifi) for $wificard "
     warn "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
-    export QUIET=1;
-    execute "Scanning for targets: " $AIRODUMP --ignore-negative-one -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
+    export QUIET=1; export NOTITLE=1;
+    execute "" $AIRODUMP --ignore-negative-one -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
     temporary_switch_clear
     export SCAN=0
 }

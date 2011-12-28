@@ -23,7 +23,7 @@ mainmenu(){
                 3) menu_type;;
                 4) select_ap;;
                 5) menu_extra;;
-                6) check_function autopwn || source $path/autocrack; autopwn;;
+                6) check_function autopwn || source $path/autocrack; autopwn runner;;
                 7) check_function doexit || source $path/internal/exit; doexit;;
                 *) $clear && _ "ERROR: Wrong number entered";;
             esac

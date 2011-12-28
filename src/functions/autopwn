@@ -1,6 +1,0 @@
-source $path/attacks/others
-source $path/attacks/injection
-source $path/attacks/wpa
-source $path/attacks/auth
-source $path/attacks/wep
-source $path/crack/main

