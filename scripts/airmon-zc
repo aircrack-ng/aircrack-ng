@@ -612,7 +612,7 @@ stopMac80211Iface() {
  fi
  
  #yes this really is the main output loop
- printf "$FROM[$PHYDEV]$iface\t$DRIVER[$STACK]-$FIRMWARE\t$CHIPSET\t$EXTENDED"
+ printf "${FROM}[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]-${FIRMWARE}\t${CHIPSET}\t${EXTENDED}"
 
  if [ x$MAC80211 = "x1" ]
  then
