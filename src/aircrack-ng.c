@@ -4111,9 +4111,9 @@ int next_dict(int nb)
 
 			if ( ftello( opt.dict ) <= 0L )
 			{
+				printf("ERROR: %s\n", strerror(errno));
 				fclose( opt.dict );
 				opt.dict = NULL;
-				printf( "Empty dictionary\n" );
 				opt.nbdict++;
 				continue;
 			}
