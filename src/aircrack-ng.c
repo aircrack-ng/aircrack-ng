@@ -4109,7 +4109,7 @@ int next_dict(int nb)
 
 			fseek(opt.dict, 0L, SEEK_END);
 
-			if ( ftell( opt.dict ) <= 0L )
+			if ( ftello( opt.dict ) <= 0L )
 			{
 				fclose( opt.dict );
 				opt.dict = NULL;
