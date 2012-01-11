@@ -599,7 +599,7 @@ stopMac80211Iface() {
      unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO USBID CHIPSET EXTENDED PHYDEV 
      #add a RUNNING check here and up the device if it isn't already
      ethtool_output="`ethtool -i $iface 2>&1`"
- if [ "$ethtool_output"!="Cannot get driver information: Operation not supported" ]
+ if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]
  then
 	getStack  $iface
 	getDriver   $iface
