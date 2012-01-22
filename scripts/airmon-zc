@@ -69,7 +69,7 @@ UDEV_ISSUE=0
 	    then
 		if [ $2 -lt 1000 ]
 		then
-		    iwconfig $1 channel $2 >/dev/null 2>&1
+		    iwconfig $1 channel $2 > /dev/null 2>&1
 		else
 		    iwconfig $1 freq "$2"000000 > /dev/null 2>&1
 		fi
