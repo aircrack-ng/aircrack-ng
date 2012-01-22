@@ -64,7 +64,7 @@ UDEV_ISSUE=0
     }
 
     startDeprecatedIface() {
-	    iwconfig $1 mode monitor >/dev/null 2>&1
+	    iwconfig $1 mode monitor > /dev/null 2>&1
 	    if [ ! -z $2 ]
 	    then
 		if [ $2 -lt 1000 ]
@@ -74,7 +74,7 @@ UDEV_ISSUE=0
 		    iwconfig $1 freq "$2"000000 > /dev/null 2>&1
 		fi
 	    fi
-	    iwconfig $1 key off >/dev/null 2>&1
+	    iwconfig $1 key off > /dev/null 2>&1
 	    ifconfig $1 up
 	    printf " (monitor mode enabled)"
     }
@@ -102,9 +102,9 @@ UDEV_ISSUE=0
 				    sleep 1s
 				    if [ $3 -lt 1000 ]
 				    then
-					    iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
+					    iwconfig $MONDEV mode Monitor channel $3 > /dev/null 2>&1
 				    else
-					    iwconfig $MONDEV mode Monitor freq "$3"000000 >/dev/null 2>&1
+					    iwconfig $MONDEV mode Monitor freq "$3"000000 > /dev/null 2>&1
 				    fi
 			    ifconfig $MONDEV up
 			    printf "\n\t\t\t\t(mac80211 monitor mode enabled on $MONDEV)"
@@ -144,9 +144,9 @@ stopMac80211Iface() {
 }
 
     stopDeprecatedIface() {
-	    ifconfig $1 down >/dev/null 2>&1
-	    iwconfig $1 mode Managed >/dev/null 2>&1
-	    ifconfig $1 down >/dev/null 2>&1
+	    ifconfig $1 down > /dev/null 2>&1
+	    iwconfig $1 mode Managed > /dev/null 2>&1
+	    ifconfig $1 down > /dev/null 2>&1
 	    printf " (monitor mode disabled)"
     }
 
@@ -396,8 +396,8 @@ stopMac80211Iface() {
     scanProcesses() {
 	if [ -f "`which service 2>&1`" ] && [ x"$1" = "xkill" ]
 	then
-	    service network-manager stop 2>/dev/null >/dev/null
-	    service avahi-daemon stop 2>/dev/null >/dev/null
+	    service network-manager stop 2> /dev/null > /dev/null
+	    service avahi-daemon stop 2> /dev/null > /dev/null
 	fi
 
 	match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
@@ -505,7 +505,7 @@ stopMac80211Iface() {
     if [ x"$1" = "xcheck" ] || [ x"$1" = "xstart" ]
     then
 	scanProcesses
-	for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
+	for iface in `iwconfig 2> /dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
 	do
 	    checkProcessesIface $iface
 	done
@@ -559,7 +559,7 @@ stopMac80211Iface() {
     printf "\n\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
 
 
-    for iface in `ifconfig -a 2>/dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
+    for iface in `ifconfig -a 2> /dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
     do
 
      if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
@@ -570,14 +570,14 @@ stopMac80211Iface() {
 	if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
 	then
 	    IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath`
-	    ifconfig $iface up 2>/dev/null >/dev/null
+	    ifconfig $iface up 2> /dev/null > /dev/null
 	    if [ $CH -lt 1000 ]
 	    then
-		iwconfig $IFACE channel $CH 2>/dev/null >/dev/null
+		iwconfig $IFACE channel $CH 2> /dev/null > /dev/null
 	    else
-		iwconfig $IFACE freq "$CH"000000 2>/dev/null >/dev/null
+		iwconfig $IFACE freq "$CH"000000 2> /dev/null > /dev/null
 	    fi
-	    ifconfig $IFACE up 2>/dev/null >/dev/null
+	    ifconfig $IFACE up 2> /dev/null > /dev/null
 	    UDEV_ISSUE=$?
 	fi
 	if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
@@ -594,7 +594,7 @@ stopMac80211Iface() {
 	    sleep 1s
     fi
 
-    for iface in `iwconfig 2>/dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
+    for iface in `iwconfig 2> /dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
     do
      unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO USBID CHIPSET EXTENDED PHYDEV 
      #add a RUNNING check here and up the device if it isn't already
