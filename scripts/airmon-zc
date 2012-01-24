@@ -352,13 +352,13 @@ stopMac80211Iface() {
 
 	    if [ "$KVMAJOR" != "26" ] && [ "$KVMAJOR" != "30" ]
 	    then
-		    echo "You aren't running a 2.6 kernel, I'm surprised it didn't error before now."
+		    echo "You aren't running a 2.6  or 3.0 kernel, I'm surprised it didn't error before now."
 		    exit
 	    fi
 
 	    if [ "$DRIVER" = "rt2870sta" ]
 	    then
-		    if [ "$KVMINOR" -ge "35" ]
+		    if [ "$KVMAJOR" = "26" ] && [ "$KVMINOR" -ge "35" ]
 		    then
 			    EXTENDED="\tBlacklist rt2870sta and use rt2800usb"
 		    else
@@ -368,7 +368,7 @@ stopMac80211Iface() {
 	    elif [ "$DRIVER" = "rt3070sta" ]
 	    #untested
 	    then
-		    if [ "$KVMINOR" -ge "35" ]
+		    if [ "$KVMAJOR" = "26" ] && [ "$KVMINOR" -ge "35" ]
 		    then
 			    EXTENDED="\tBlacklist rt3070sta and use rt2800usb"
 		    else
@@ -376,7 +376,7 @@ stopMac80211Iface() {
 		    fi
 	    elif [ "$DRIVER" = "ar9170usb" ]
 	    then
-		    if [ "$KVMINOR" -ge "37" ]
+		    if [ "$KVMAJOR" = "26" ] && [ "$KVMINOR" -ge "37" ]
 		    then
 			    EXTENDED="\tBlacklist ar9170usb and use carl9170"
 		    else
@@ -385,25 +385,28 @@ stopMac80211Iface() {
 	    elif [ "$DRIVER" = "arusb_lnx" ]
 	    #untested
 	    then
-		    if [ "$KVMINOR" -ge "37" ]
+		    if [ "$KVMAJOR" = "26" ] && [ "$KVMINOR" -ge "37" ]
 		    then
 			    EXTENDED="\tBlacklist arusb_lnx and use carl9170"
 		    else
 			    EXTENDED="\tUpgrade to kernel 2.6.37 or install compat-wireless stable"
 		    fi
-	    elif [ "$KVMINOR" -ge "29" ]
+	    elif [ "$DRIVER" = "r8187" ]
 	    then
-		    if [ "$DRIVER" = "r8187" ]
+		    if [ "$KVMAJOR" = "26" ] && [ "$KVMINOR" -ge "29" ]
 		    then
 			    EXTENDED="\t\tBlacklist r8187 and use rtl8187 from the kernel"
+		    else
+			    EXTENDED="\t\tUpgrade to kernel 2.6.29 or install compat-wireless stable"
 		    fi
-		    if [ "$DRIVER" = "r8187l" ]
-		    then
-			    EXTENDED="\t\tBlacklist r8187l and use rtl8187 from the kernel"
-		    fi
-	    elif [ "$KVMAJOR" != "30" ]
-	    then 
-		    EXTENDED="\tUpgrade to kernel 2.6.29 or install compat-wireless stable"
+	    elif [ "$DRIVER" = "r8187l" ]
+	    then
+                    if [ "$KVMAJOR" = "26" ] && [ "$KVMINOR" -ge "29" ]
+                    then
+                            EXTENDED="\t\tBlacklist r8187l and use rtl8187 from the kernel"
+                    else
+                            EXTENDED="\t\tUpgrade to kernel 2.6.29 or install compat-wireless stable"
+                    fi
 	    fi
     }
 
