@@ -37,15 +37,15 @@ UDEV_ISSUE=0
 
     if [ ! -x "`which modprobe 2>&1`" ]
     then
-	    echo "How in the world do you not have modprobe installed?
-	    echo "Please select a linux distro which has at least basic functionality (or install modprobe).""
+	    echo "How in the world do you not have modprobe installed?"
+	    echo "Please select a linux distro which has at least basic functionality (or install modprobe)."
 	    exit
     fi
 
     if [ ! -x "`which modinfo 2>&1`" ]
     then
-	    echo "How in the world do you not have modinfo installed?
-	    echo "Please select a linux distro which has at least basic functionality (or install modinfo).""
+	    echo "How in the world do you not have modinfo installed?"
+	    echo "Please select a linux distro which has at least basic functionality (or install modinfo)."
 	    exit
     fi
 
