@@ -205,7 +205,7 @@ stopMac80211Iface() {
 	    if [ $DRIVER ]
 	    then
 	    #remove the above when DRIVER detection actually works properly
-	    if [ `modprobe -l $DRIVER | grep 'kernel/drivers'` ]
+	    if [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep 'kernel/drivers'` ]
 	    then
 		    FROM="K"
 		    #we add special handling here because we hate the vendor drivers AND they install in the wrong place
@@ -216,10 +216,10 @@ stopMac80211Iface() {
 		    then
 		    	FROM="V"
 		    fi
-	    elif [ `modprobe -l $DRIVER | grep 'updates/drivers'` ]
+	    elif [ `modinfo $DRIVER | awk '/filename/ {print $2}'  | grep 'updates/drivers'` ]
 	    then
 		    FROM="C"
-	    elif [ `modprobe -l $DRIVER | grep misc` ]
+	    elif [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep misc` ]
 	    then
 		    FROM="M"
 		    #add a yell at the user in here
@@ -546,7 +546,7 @@ stopMac80211Iface() {
 
     uname -a
     printf "\nK indicates driver is from `uname -r`\n"
-    if [ -n "`modprobe -l compat 2>&1`" ]
+    if [ "`modinfo compat 2>&1`" != "ERROR: modinfo: could not find module compat" ]
     then
 	    modprobe compat 2>&1
     fi
