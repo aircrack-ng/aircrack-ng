@@ -556,10 +556,8 @@ stopMac80211Iface() {
 	SYSFS=1
     fi
 
-    printf "\nXXX: Warning, airmon-zc is under heavy development!!!\n"
-    printf "This script is intended to replace airmon-ng and is functionally based on it.\n"
+    printf "\nThis script is intended to replace airmon-ng and is functionally based on it.\n"
     printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng\n"
-    printf "If your card doesn't show up that means it isn't supported, please don't report that, I already know.\n\n"
 
     uname -a
     printf "\nK indicates driver is from `uname -r`\n"
