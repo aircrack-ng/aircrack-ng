@@ -560,9 +560,9 @@ stopMac80211Iface() {
 
     uname -a
     printf "\nK indicates driver is from `uname -r`\n"
-    if [ "`modinfo compat 2>&1`" != "ERROR: modinfo: could not find module compat" ]
+    if [ `modinfo compat > /dev/null 2>&1` ]
     then
-	    modprobe compat 2>&1
+	    modprobe compat
     fi
     if [ -f /sys/module/compat/parameters/compat_version ]
     then
