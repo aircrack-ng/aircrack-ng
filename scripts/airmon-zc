@@ -350,7 +350,7 @@ stopMac80211Iface() {
 	    KVMAJOR=`echo $KV | awk -F'.' '{print $1$2}'`
 	    KVMINOR=`echo $KV | awk -F'.' '{print $3}'`
 
-	    if [ "$KVMAJOR" != "26" ] && [ "$KVMAJOR" != "30" ]
+	    if [ "$KVMAJOR" != "26" ] && [ "$KVMAJOR" -ge "30" ]
 	    then
 		    echo "You aren't running a 2.6  or 3.0 kernel, I'm surprised it didn't error before now."
 		    exit
