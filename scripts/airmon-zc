@@ -568,6 +568,7 @@ stopMac80211Iface() {
     if [ `modinfo compat > /dev/null 2>&1` ]
     then
 	    modprobe compat
+	    echo "Loading compat..."
     fi
     if [ -f /sys/module/compat/parameters/compat_version ]
     then
