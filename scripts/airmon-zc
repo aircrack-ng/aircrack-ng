@@ -352,7 +352,11 @@ stopMac80211Iface() {
 
 	    if [ "$KVMAJOR" != "26" ] && [ "$KVMAJOR" -ge "30" ]
 	    then
-		    echo "You aren't running a 2.6  or 3.0 kernel, I'm surprised it didn't error before now."
+		    echo "You aren't running a 2.6 or 3.0 kernel, I'm surprised it didn't error before now."
+	            if [ "$DEBUG" = "1" ]
+	            then
+        	            echo ${KVMAJOR} ${KVMINOR}
+          	    fi
 		    exit
 	    fi
 
