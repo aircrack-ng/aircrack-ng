@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.8.1: http://docutils.sourceforge.net/" />
+<title>Wep attacks</title>
+<link rel="stylesheet" href="css/stylesheet.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="wep-attacks">
+<h1 class="title">Wep attacks</h1>
+
+<img alt="images/wep-attacks.png" src="images/wep-attacks.png" />
+<div class="section" id="attacks-not-using-a-client">
+<h1>Attacks not using a client</h1>
+<img alt="images/wep-attacks-noclient.png" src="images/wep-attacks-noclient.png" />
+<p>If you have no connected clients (for example, if you've only got one wireless card, and you're auditing your own network)
+you might need to use this attacks.</p>
+<div class="section" id="fake-auth-automatic">
+<h2>Fake auth (Automatic)</h2>
+<p>Airoscript here performs a fake auth attack, to associate with AP, and a arp replay attack for injection, typically doing something like:</p>
+<pre class="literal-block">
+aireplay-ng WIFI_INTERFACE --arpreplay -b TARJET_MAC -d INJECTION_MAC -f 1 -m 68 -h FAKE_MAC -x 1000
+aireplay-ng -3 -b AP_MAC -h SOURCE_MAC WIFI_INTERFACE
+</pre>
+<p>Where source mac (in this case) is INJ_MAC</p>
+<p>That is, fake auth and arp replay attacks. Basically, according to aircrack-ng wiki:</p>
+<pre class="literal-block">
+The fake authentication attack allows you to perform the two types of WEP
+authentication (Open System and Shared Key) plus associate with the access point (AP).
+This is only useful when you need an associated MAC address in various aireplay-ng attacks
+and there is currently no associated client. It should be noted that the fake authentication
+attack does NOT generate any ARP packets. Fake authentication cannot be used to
+authenticate/associate with WPA/WPA2 Access Points.
+
+The classic ARP request replay attack is the most effective way to generate new
+initialization vectors (IVs), and works very reliably. The program listens for an ARP packet
+then retransmits it back to the access point. This, in turn, causes the access point to repeat
+the ARP packet with a new IV. The program retransmits the same ARP packet over and over.
+However, each ARP packet repeated by the access point has a new IVs. It is all these new IVs
+which allow you to determine the WEP key.
+</pre>
+<p>In interactive mode, you'll be asked for the &quot;f&quot; (from-to destination bit), making you able to make it into a t, and the destmac (wich, by default, is FF:FF:FF:FF:FF:FF)</p>
+<p>Have a look at _Fake auth at aircrack-ng wiki: <a class="reference external" href="http://www.aircrack-ng.org/doku.php?id=fake_authentication">http://www.aircrack-ng.org/doku.php?id=fake_authentication</a>
+and _ARP replay at: <a class="reference external" href="http://www.aircrack-ng.org/doku.php?id=arp-request_reinjection">http://www.aircrack-ng.org/doku.php?id=arp-request_reinjection</a></p>
+</div>
+<div class="section" id="fake-auth-interactive">
+<h2>Fake auth (Interactive)</h2>
+<p>Almost same as fake auth, automatic, except for aireplay being called in interactive mode, wich will force the user to select a packet instead of injecting the first that it gets.</p>
+<p>Have a look at _Fake auth at aircrack-ng wiki: <a class="reference external" href="http://www.aircrack-ng.org/doku.php?id=fake_authentication">http://www.aircrack-ng.org/doku.php?id=fake_authentication</a></p>
+</div>
+<div class="section" id="fragmentation-attack">
+<h2>Fragmentation attack</h2>
+<p>Here, airoscript-ng kills <em>every airodump-ng and aireplay-ng processes</em> (-9 kill, be careful as all airodump processes will stop recording and not save data) and removes all old fragmentation captures and normal captures (hard-cleans everything). Be careful!</p>
+<p>Note to self: IF NO _DUMP_PATH_ PROVIDED, AND NO HOST MAC PROVIDED (It's imposible to get here with airoscript, just if you source attacks/wep and execute directly wep_attacks_fragmentation) it will do a rm /* wich is dangerous</p>
+<p>Then it launches aireplay, in this case, assuming you've no clients, with injection (-5, --fragment option) like this:</p>
+<pre class="literal-block">
+aireplay-ng -5 -b AP_MAC -h FAKE_MAC -k FRAG_CLIENT_IP -l FRAG_HOST_IP WIFI_INTERFACE
+</pre>
+<p>Have a look at _Fragmentation at aircrack-ng wiki: www.aircrack-ng.org/doku.php?id=fragmentation</p>
+</div>
+<div class="section" id="chopchop-attack">
+<h2>Chopchop attack</h2>
+<p>Makes a hardclean. Starts capturing, fake auth (3) and aireplay with chopchop attack, then it calls
+the _Injection menu: injection.html</p>
+<pre class="literal-block">
+aireplay --chopchop -b AP_MAC -h FAKE_MAC WIFI_INTERFACE
+</pre>
+<p>According to aircrack-ng wiki:</p>
+<pre class="literal-block">
+This attack, when successful, can decrypt a WEP data packet without knowing the key.
+It can even work against dynamic WEP. This attack does not recover the WEP key itself,
+but merely reveals the plaintext. However, some access points are not vulnerable to this
+attack. Some may seem vulnerable at first but actually drop data packets shorter
+that 60 bytes. If the access point drops packets shorter than 42 bytes, aireplay
+tries to guess the rest of the missing data, as far as the headers are predictable.
+If an IP packet is captured, it additionally checks if the checksum of the header
+is correct after guessing the missing parts of it. This attack requires at
+least one WEP data packet.
+</pre>
+<p>Have a look at its aircrack-ng docs at _aircrack-ng wiki: <a class="reference external" href="http://www.aircrack-ng.org/doku.php?id=korek_chopchop">http://www.aircrack-ng.org/doku.php?id=korek_chopchop</a></p>
+</div>
+</div>
+<div class="section" id="attacks-using-a-client">
+<h1>Attacks using a client</h1>
+<img alt="images/wep-attacks-client.png" src="images/wep-attacks-client.png" />
+<p>When the ap has a client connected, you can use the following attacks.</p>
+<div class="section" id="arp-replay-automatic">
+<h2>Arp replay (Automatic)</h2>
+<p>Calls aireplay-ng for a arpreplay, as in fake auth, except that does not execute a fake auth attack.</p>
+<pre class="literal-block">
+aireplay WIFI_INTERFACE --arpreplay -b AP_MAC -d INJECTION_MAC\
+-f 1 -m 68 -n 86 -h CLIENT_MAC -x INJECTRATE
+</pre>
+</div>
+<div class="section" id="arp-replay-interactive">
+<h2>Arp replay (Interactive)</h2>
+<p>Same as previous attack, interactive mode.</p>
+</div>
+<div class="section" id="id1">
+<h2>Fragmentation attack</h2>
+<p>Have a look at fragmentation attack without clients, this is basically the same,
+except for aireplay-ng being called with -7 option, like this:</p>
+<pre class="literal-block">
+aireplay-ng -7 -b AP_MAC -h CLIENT_MAC -k FRAG_CLIENT_IP -l FRAG_HOST_IP WIFI_INTERFACE
+</pre>
+<p>Have a look at _Fragmentation at aircrack-ng wiki: www.aircrack-ng.org/doku.php?id=fragmentation</p>
+</div>
+<div class="section" id="id2">
+<h2>Chopchop attack</h2>
+<p>Almost the same as non-client directed chopchop, except this one does not make a fake_auth attack, and provides client_mac like this:</p>
+<pre class="literal-block">
+aireplay-ng --chopchop -h CLIENT_MAC WIFI_INTERFACE
+</pre>
+<p>It also calls inject menu, directed for chopchop.</p>
+</div>
+<div class="section" id="cafe-latte-attack">
+<h2>Cafe latte attack</h2>
+<p>It just executes fakeauth3 and caffe late attack ( -6 option to aireplay-ng )</p>
+<p>According to aircrack-ng wiki:</p>
+<pre class="literal-block">
+The Cafe Latte attack allows you to obtain a WEP key from a client system.
+Briefly, this is done by capturing an ARP packet from the client, manipulating
+it and then send it back to the client. The client in turn generates packets
+which can be captured by airodump-ng. Subsequently, aircrack-ng can be used
+to determine the WEP key.
+</pre>
+<p>Have a look at its aircrack-ng docs at _aircrack-ng wiki: <a class="reference external" href="http://www.aircrack-ng.org/doku.php?id=caffe-lat">http://www.aircrack-ng.org/doku.php?id=caffe-lat</a></p>
+</div>
+</div>
+</div>
+</body>
+</html>

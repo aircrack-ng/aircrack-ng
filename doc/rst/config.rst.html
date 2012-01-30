@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.8.1: http://docutils.sourceforge.net/" />
+<title>Airoscript-ng configuration file</title>
+<link rel="stylesheet" href="css/stylesheet.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="airoscript-ng-configuration-file">
+<h1 class="title">Airoscript-ng configuration file</h1>
+
+<p>Airoscript-ng's config is divided in two files, and some (not all) oiptions are configurable by arguments.
+Conffiles are airoscript-ng.conf and airoscript-ng_advanced.conf.</p>
+<div class="section" id="standard-configuration-file">
+<h1>Standard configuration file</h1>
+<p>Here, we'll find a couple of sections, defining sets of arrays or variables.</p>
+<div class="section" id="wordlists">
+<h2>Wordlists</h2>
+<p><em>WORDLIST</em>
+The variable WORDLIST sets the original location of the wordlist that will be used by airoscript to crack WPA or manual dictionary WEP (see crack section).</p>
+<p>Note that this file will be copied to DUMP_DIR, so, if you want to use a custom wordlist, AFTER airoscript-ng initialization, you've got to copy it to <em>DUMP_PATH/WORDLIST_FILE_NAME</em> having in account that WORDLIST_FILE_NAME contains no directories, is the basename of the WORDLIST variable.</p>
+<p><em>db_location</em>
+This variable will be passed to aircrack as the PMK database location.</p>
+</div>
+<div class="section" id="plugins-support">
+<h2>Plugins support</h2>
+<p>The variable enabled_plugins is just an array of the plugins that will be loaded by default
+Actually, those are john the ripper and MDK3</p>
+</div>
+<div class="section" id="wireless-interfaces">
+<h2>Wireless interfaces</h2>
+<p>You can setup here wifi and iwifi interfaces.
+Wifi interface is the standard wifi interface, this will allow you to setup a iwifi interface, it will also make it not ask you to select an interface each time you start airoscript-ng.</p>
+</div>
+<div class="section" id="appearance">
+<h2>Appearance</h2>
+<p>This configuration section will allow you to make airoscript prettier for you.
+Variables:</p>
+<ul class="simple">
+<li><em>theme</em> : The theme file, theme files are stored in path/themes/</li>
+<li><em>DEFAULT_MONITOR_MODE</em> : (Bool) start or not monitor mode on selected interface by default.</li>
+<li><em>SHOW_SMALL_MENU</em> : (Bool) Show a small version of all the menus, with just the title, perfect for small screens.</li>
+<li><em>show_only_wireless_extensions</em>: (Bool) Show only interfaces with wireless extensions enabled. If your card is not detected by airoscript, you might set this to 0.</li>
+<li><em>Show warning</em> (Bool) (Currently no effect) Shows an usage warning at startup</li>
+<li><em>INTERACTIVE</em> (Bool): Asks for some more stuffs than usual</li>
+<li><em>force_mac_address</em> (Bool): Do not check for mac address mode.</li>
+<li><em>MON_PREFIX</em> : Prefix to use for airoscript-created virtual interfaces (passed to airmon_ng), this will be used, for example, for interface cleanup.</li>
+<li><em>ADDOPTIONS</em> : HARDCORE: THIS WILL ASK YOU FOR EXTRA OPTIONS FOREACH COMMAND IT EXECUTES.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="advanced-configuration-file">
+<h1>Advanced configuration file</h1>
+<p>Advanced configuration will not be covered here, it's allways changing, and the most remarcable things are aircrack-ng configuration values and debug mode.</p>
+</div>
+</div>
+</body>
+</html>

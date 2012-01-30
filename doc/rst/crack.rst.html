@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.8.1: http://docutils.sourceforge.net/" />
+<title>Crack</title>
+<link rel="stylesheet" href="css/stylesheet.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="crack">
+<h1 class="title">Crack</h1>
+
+<p>This section defines cracking menu.</p>
+<p>Note: If &quot;pipe&quot; variable is set, it will be executed and piped into aircrack-ng (that's the way the john the ripper plugin works, actually)</p>
+<p>Note: If writekey variable contains a set of commands to write the key to a file (wich is default on auto)</p>
+<div class="section" id="wpa-crack">
+<h1>WPA Crack</h1>
+<p>It will execute attacks against a wordlist.</p>
+</div>
+<div class="section" id="wep-crack">
+<h1>WEP Crack</h1>
+<div class="section" id="default">
+<h2>Default</h2>
+<p>Executes aircrack-ng with the following options</p>
+<pre class="literal-block">
+&quot;$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap $crack_extra_opts $writekey&quot;; $clear; break ;;
+</pre>
+</div>
+<div class="section" id="korek">
+<h2>Korek</h2>
+<p>Executes aircrack-ng with the following options</p>
+<p>AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K $crack_extra_opts $writekey</p>
+</div>
+<div class="section" id="interactive">
+<h2>Interactive</h2>
+<p>Same as default, except that it allows you to enter personalized fudge_factor and enc_size.</p>
+<p>Executes aircrack-ng with the following options:</p>
+<dl class="docutils">
+<dt>::</dt>
+<dd>AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K $crack_extra_opts $writekey</dd>
+</dl>
+</div>
+</div>
+</div>
+</body>
+</html>
