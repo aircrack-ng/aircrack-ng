@@ -1,5 +1,5 @@
 #!/usr/bin/make
 # Configure prefix here:
-prefix="/usr/local"
+prefix=$(DESTDIR)/usr
 OSTYPE:=$(shell uname -s|cut -d_ -f1)
 include Makefile-$(OSTYPE)

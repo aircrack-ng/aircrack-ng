@@ -45,6 +45,9 @@ install-binary:
 	@$(INSTALL) $(srcdir)/airoscript-ng.conf $(etcdir)
 	@$(INSTALL) $(srcdir)/airoscript-ng_debug.conf $(etcdir)
 	@$(INSTALL) $(srcdir)/airoscript-ng_advanced.conf $(etcdir)
+ifeq ($(debianpackage),yes)
+	@$(INSTALL) $(srcdir)/airoscript-ng_debian.conf $(etcdir)
+endif
 	@cp -r $(srcdir)/functions/* $(datadir)
 	@cp -r $(srcdir)/templates/* $(datadir)/templates
 	@$(INSTALLDATA) $(srcdir)/screenrc.airoscript $(etcdir)
