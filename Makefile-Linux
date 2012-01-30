@@ -1,25 +1,17 @@
 #!/usr/bin/make
-
-NAME="airoscript-ng"
-name=$(NAME)
-# Binary install programs
+name="airoscript-ng"
 INSTALL = install -c
 INSTALLDATA = install -c -m 644
-DESTDIR =
 
-# Destdirs. 
-	# prefixes
-data=$(DESTDIR)/$(prefix)/share
-
-	# main
-bindir=$(DESTDIR)/$(prefix)/sbin/
-datadir=$(data)/$(NAME)/
-picdir=/usr/share/pixmaps/
-appdir=/usr/share/applications/
-docdir=$(data)/doc/$(NAME)
+data=$(prefix)/share
 etcdir=$(DESTDIR)/etc
+bindir=$(prefix)/sbin/
+picdir=$(data)/pixmaps/
+appdir=$(data)/applications/
 locale=$(data)/locale
 mandir=$(data)/man
+docdir=$(data)/doc/$(name)
+datadir=$(data)/$(name)/
 srcdir=./src
 
 install: installdirs\
@@ -33,7 +25,7 @@ installdirs:
         			$(docdir)/html/images $(etcdir) \
         			$(docdir)/html/css \
                     $(mandir)/man1 $(locale) \
-					$(datadir)/themes \
+					$(datadir)/themes $(picdir) $(appdir) \
 					$(datadir)/plugins \
 					$(datadir)/airosperl \
 					$(docdir)/tools \
