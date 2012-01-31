@@ -19,6 +19,38 @@ else
 	install -m 755 airmon-ng.freebsd $(DESTDIR)$(sbindir)/airmon-ng
 endif
 
+ifeq ($(ext_scripts),true)
+	@for i in * ; do \
+		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
+			make -C $$i install DESTDIR=$(DESTDIR) ; \
+		fi ; \
+	done
+endif
+
+ifeq ($(ext_scripts),TRUE)
+	@for i in * ; do \
+		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
+			make -C $$i install DESTDIR=$(DESTDIR) ; \
+		fi ; \
+	done
+endif
+
+ifeq ($(EXT_SCRIPTS),TRUE)
+	@for i in * ; do \
+		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
+			make -C $$i install DESTDIR=$(DESTDIR) ; \
+		fi ; \
+	done
+endif
+
+ifeq ($(EXT_SCRIPTS),true)
+	@for i in * ; do \
+		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
+			make -C $$i install DESTDIR=$(DESTDIR) ; \
+		fi ; \
+	done
+endif
+
 uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/airmon-ng
 	-rm -f $(DESTDIR)$(sbindir)/airmon-zc

@@ -38,6 +38,11 @@ to compile and install the suite:
 * unstable: needed to compile tkiptun-ng, easside-ng (and buddy-ng) and
             wesside-ng
 
+* ext_scripts: needed to build airoscript-ng, versuck-ng, airgraph-ng and 
+            airdrop-ng. 
+            Note: Experimental. Each script has its own dependences.
+            Note: It's only required in install phase.
+
 Example:
 
   * Compiling:
@@ -45,6 +50,9 @@ Example:
 
   * Installing:
     make sqlite=true unstable=true install
+
+  * Installing, with external scripts:
+    make sqlite=true unstable=true ext_scripts=true
 
 === Using precompiled binaries ===
 
