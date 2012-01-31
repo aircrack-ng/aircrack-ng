@@ -62,6 +62,7 @@ Usage: $(basename $0) [-h] [-t TERMINAL] [-v] [-w WIRELESS_CARD] [-b] [-m fakema
 options:
    -h                    Show this message
    -t [xterm|screen]     Specify terminal
+   -c                    Launches an interface selection menu (requires -pzenity)
    -v                    Verbose & debug mode
    -w wireless_card      Specify wifi card
    -b                    Writes a csv file with network data.
@@ -85,9 +86,14 @@ help_fifo(){
     echo $@ > $DUMP_PATH/help_fifo
 }
 
+function choose_interface(){
+    zenity --question --ok-label "Graphical" --cancel-label "Text" --text "Wich interface would you like to use?" --title "Interface selection" && load_plugins zenity
+}
+
 setargs(){
      while getopts “bn:ht:w:zxcvm:fap:” option; do
-        case $option in 
+        case $option in
+            c)  choose_interface ;;
             h)  opt_functions+=(usage);;
             t)  export TERMINAL="$OPTARG";;
             v)  opt_functions+=(v);;
