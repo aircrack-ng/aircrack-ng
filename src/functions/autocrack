@@ -29,7 +29,6 @@ source $path/crack/main
 autopwn(){ func=$1; shift; autopwn_$func $@; }
 
 autopwn_setvars(){
-    source $path/autopwn;
     attack_functions_wep=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
     attack_functions_wpa=(wpa_attacks_handshake)
 
