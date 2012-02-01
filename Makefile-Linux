@@ -33,12 +33,12 @@ installdirs:
 	
 install-binary:
 	@echo "Installing airoscript"
-	@$(INSTALL) $(srcdir)/airoscript-ng $(bindir)/$(name)
-	@$(INSTALL) $(srcdir)/airoscript-ng.conf $(etcdir)
-	@$(INSTALL) $(srcdir)/airoscript-ng_debug.conf $(etcdir)
-	@$(INSTALL) $(srcdir)/airoscript-ng_advanced.conf $(etcdir)
+	@$(INSTALLDATA) $(srcdir)/airoscript-ng $(bindir)/$(name)
+	@$(INSTALLDATA) $(srcdir)/airoscript-ng.conf $(etcdir)
+	@$(INSTALLDATA) $(srcdir)/airoscript-ng_debug.conf $(etcdir)
+	@$(INSTALLDATA) $(srcdir)/airoscript-ng_advanced.conf $(etcdir)
 ifeq ($(debianpackage),yes)
-	@$(INSTALL) $(srcdir)/airoscript-ng_debian.conf $(etcdir)
+	@$(INSTALLDATA) $(srcdir)/airoscript-ng_debian.conf $(etcdir)
 endif
 	@cp -r $(srcdir)/functions/* $(datadir)
 	@cp -r $(srcdir)/templates/* $(datadir)/templates
@@ -56,12 +56,12 @@ install-docs:
 	@echo  "\t Installing manpages"
 	@for i in $(srcdir)/*.1 ; do $(INSTALLDATA) $$i $(mandir)/man1/ ; done
 	@echo "\t Installing artwork"
-	@install src/airoscriptlogo_med.png $(docdir)/airoscript-ng.png
+	@$(INSTALLDATA) src/airoscriptlogo_med.png $(docdir)/airoscript-ng.png
 
 install-desktop:
 	@install airoscript-ng.desktop $(appdir)/
 	@install airoscript-ng_gtk.desktop $(appdir)/
-	@install src/airoscriptlogo_med.png $(picdir)/airoscript-ng.png
+	@$(INSTALLDATA) src/airoscriptlogo_med.png $(picdir)/airoscript-ng.png
 	@xdg-desktop-menu install $(appdir)/airoscript-ng.desktop
 	@xdg-desktop-menu install $(appdir)/airoscript-ng_gtk.desktop
 
