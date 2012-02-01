@@ -5,10 +5,9 @@ Encoding=UTF-8
 Name=Airoscript-ng GTK
 Comment=Aircrack-ng GUI
 GenericName=Airoscript-ng-gtk
-Exec=gksu "airoscript-ng -pzenity"
+Exec=su-to-root -X -c "airoscript-ng -pzenity"
 Icon=airoscript-ng
 StartupNotify=true
 Terminal=false
 MimeType=text/plain
-Categories=Gnome;Network
-
+Categories=System;Monitor
