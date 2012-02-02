@@ -42,7 +42,7 @@ Time before removing the AP/client from the screen when no more packets are rece
 Indicate the channel(s) to listen to. By default airodump-ng hop on all 2.4GHz channels.
 .TP
 .I -b <abg>, --band <abg>
-Indicate the band on which airodump-ng should hop. It can be a combination of 'a', 'b' and 'g' letters ('b' and 'g' uses 2.4GHz and 'a' uses 5GHz). Incompatible with --channel option.
+Indicate the band on which airodump-ng should hop. It can be a combination of \(aqa\(aq, \(aqb\(aq and \(aqg\(aq letters (\(aqb\(aq and \(aqg\(aq uses 2.4GHz and \(aqa\(aq uses 5GHz). Incompatible with --channel option.
 .TP
 .I -s <method>, --cswitch <method>
 Defines the way airodump-ng sets the channels when using more than one card. Valid values: 0 (FIFO, default value), 1 (Round Robin) or 2 (Hop on last).
@@ -55,17 +55,17 @@ Active Scanning Simulation (send probe requests and parse the probe responses).
 .TP
 .I --output-format <formats>
 Define the formats to use (separated by a comma). Possible values are: pcap, ivs, csv, gps, kismet, netxml. The default values are: pcap, csv, kismet, kismet-newcore.
-\(aqpcap' is for recording a capture in pcap format, 'ivs' is for ivs format (it is a shortcut for --ivs). 'csv' will create an airodump-ng CSV file, 'kismet' will create a kismet csv file and 'kismet-newcore' will create the kismet netxml file. 'gps' is a shortcut for --gps.
+\(aqpcap\(aq is for recording a capture in pcap format, \(aqivs\(aq is for ivs format (it is a shortcut for --ivs). \(aqcsv\(aq will create an airodump-ng CSV file, \(aqkismet\(aq will create a kismet csv file and \(aqkismet-newcore\(aq will create the kismet netxml file. \(aqgps\(aq is a shortcut for --gps.
 .br
 Theses values can be combined with the exception of ivs and pcap.
 .TP
 .I --ignore-negative-one
-Removes the message that says 'fixed channel <interface>: -1'.
+Removes the message that says \(aqfixed channel <interface>: -1\(aq.
 .PP
 .B Filter options:
 .TP
 .I -t <OPN|WEP|WPA|WPA1|WPA2>, --encrypt <OPN|WEP|WPA|WPA1|WPA2>
-It will only show networks matching the given encryption. May be specified more than once: '\-t OPN \-t WPA2'
+It will only show networks matching the given encryption. May be specified more than once: \(aq\-t OPN \-t WPA2\(aq
 .TP
 .I -d <bssid>, --bssid <bssid>
 It will only show networks, matching the given bssid.
@@ -151,10 +151,10 @@ BSSID              STATION            PWR   Rate   Lost   Frames  Probes
 MAC address of the access point. In the Client section, a BSSID of "(not associated)" means that the client is not associated with any AP. In this unassociated state, it is searching for an AP to connect with.
 .TP
 .I PWR
-Signal level reported by the card. Its signification depends on the driver, but as the signal gets higher you get closer to the AP or the station. If the BSSID PWR is -1, then the driver doesn't support signal level reporting. If the PWR is -1 for a limited number of stations then this is for a packet which came from the AP to the client but the client transmissions are out of range for your card. Meaning you are hearing only 1/2 of the communication. If all clients have PWR as -1 then the driver doesn't support signal level reporting.
+Signal level reported by the card. Its signification depends on the driver, but as the signal gets higher you get closer to the AP or the station. If the BSSID PWR is -1, then the driver doesn\(aqt support signal level reporting. If the PWR is -1 for a limited number of stations then this is for a packet which came from the AP to the client but the client transmissions are out of range for your card. Meaning you are hearing only 1/2 of the communication. If all clients have PWR as -1 then the driver doesn\(aqt support signal level reporting.
 .TP
 .I RXQ
-Only shown when on a fixed channel. Receive Quality as measured by the percentage of packets (management and data frames) successfully received over the last 10 seconds. It's measured over all management and data frames. That's the clue, this allows you to read more things out of this value. Lets say you got 100 percent RXQ and all 10 (or whatever the rate) beacons per second coming in. Now all of a sudden the RXQ drops below 90, but you still capture all sent beacons. Thus you know that the AP is sending frames to a client but you can't hear the client nor the AP sending to the client (need to get closer). Another thing would be, that you got a 11MB card to monitor and capture frames (say a prism2.5) and you have a very good position to the AP. The AP is set to 54MBit and then again the RXQ drops, so you know that there is at least one 54MBit client connected to the AP.
+Only shown when on a fixed channel. Receive Quality as measured by the percentage of packets (management and data frames) successfully received over the last 10 seconds. It\(aqs measured over all management and data frames. That\(aqs the clue, this allows you to read more things out of this value. Lets say you got 100 percent RXQ and all 10 (or whatever the rate) beacons per second coming in. Now all of a sudden the RXQ drops below 90, but you still capture all sent beacons. Thus you know that the AP is sending frames to a client but you can\(aqt hear the client nor the AP sending to the client (need to get closer). Another thing would be, that you got a 11MB card to monitor and capture frames (say a prism2.5) and you have a very good position to the AP. The AP is set to 54MBit and then again the RXQ drops, so you know that there is at least one 54MBit client connected to the AP.
 .TP
 .I Beacons
 Number of beacons sent by the AP. Each access point sends about ten beacons per second at the lowest rate (1M), so they can usually be picked up from very far.
@@ -169,7 +169,7 @@ Number of data packets per second measure over the last 10 seconds.
 Channel number (taken from beacon packets). Note: sometimes packets from other channels are captured even if airodump-ng is not hopping, because of radio interference.
 .TP
 .I MB
-Maximum speed supported by the AP. If MB = 11, it's 802.11b, if MB = 22 it's 802.11b+ and higher rates are 802.11g. The dot (after 54 above) indicates short preamble is supported. 'e' indicates that the network has QoS (802.11e) enabled.
+Maximum speed supported by the AP. If MB = 11, it\(aqs 802.11b, if MB = 22 it\(aqs 802.11b+ and higher rates are 802.11g. The dot (after 54 above) indicates short preamble is supported. \(aqe\(aq indicates that the network has QoS (802.11e) enabled.
 .TP
 .I ENC
 Encryption algorithm in use. OPN = no encryption,"WEP?" = WEP or higher (not enough data to choose between WEP and WPA/WPA2), WEP (without the question mark) indicates static or dynamic WEP, and WPA or WPA2 if TKIP or CCMP or MGT is present.

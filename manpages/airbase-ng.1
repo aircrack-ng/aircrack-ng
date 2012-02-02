@@ -75,16 +75,16 @@ This option is not implemented yet. It is a man-in-the-middle attack between spe
 .I -A, --ad-hoc
 This causes airbase-ng to act as an ad-hoc client instead of a normal Access Point. 
 
-In ad-hoc mode airbase-ng also sends beacons, but doesn't need any authentication/association. It can be activated by using "-A". The soft AP will adjust all flags needed to simulate a station in ad-hoc mode automatically and generate a random MAC, which is used as CELL MAC instead of the BSSID. This can be overwritten by the "-a <BSSID>" tag. The interface MAC will then be used as source mac, which can be changed with "-h <sourceMAC>".
+In ad-hoc mode airbase-ng also sends beacons, but doesn\(aqt need any authentication/association. It can be activated by using "-A". The soft AP will adjust all flags needed to simulate a station in ad-hoc mode automatically and generate a random MAC, which is used as CELL MAC instead of the BSSID. This can be overwritten by the "-a <BSSID>" tag. The interface MAC will then be used as source mac, which can be changed with "-h <sourceMAC>".
 .TP
 .I -Y <in|out|both>
 The parameter "-Y" enables the "external processing" Mode. This creates a second interface "atX", which is used to replay/modify/drop or inject packets at will. This interface must also be brought up with ifconfig and an external tool is needed to create a loop on that interface. 
 
-The packet structure is rather simple: the ethernet header (14 bytes) is ignored and right after that follows the complete ieee80211 frame the same way it is going to be processed by airbase-ng (for incoming packets) or before the packets will be sent out of the wireless card (outgoing packets). This mode intercepts all data packets and loops them through an external application, which decides what happens with them. The MAC and IP of the second tap interface doesn't matter, as real ethernet frames on this interface are dropped dropped anyway. 
+The packet structure is rather simple: the ethernet header (14 bytes) is ignored and right after that follows the complete ieee80211 frame the same way it is going to be processed by airbase-ng (for incoming packets) or before the packets will be sent out of the wireless card (outgoing packets). This mode intercepts all data packets and loops them through an external application, which decides what happens with them. The MAC and IP of the second tap interface doesn\(aqt matter, as real ethernet frames on this interface are dropped dropped anyway. 
 
-There are 3 arguments for "-Y": "in", "out" and "both", which specify the direction of frames to loop through the external application. Obviously "in" redirects only incoming (through the wireless NIC) frames, while outgoing frames aren't touched. "out" does the opposite, it only loops outgoing packets and "both" sends all both directions through the second tap interface. 
+There are 3 arguments for "-Y": "in", "out" and "both", which specify the direction of frames to loop through the external application. Obviously "in" redirects only incoming (through the wireless NIC) frames, while outgoing frames aren\(aqt touched. "out" does the opposite, it only loops outgoing packets and "both" sends all both directions through the second tap interface. 
 
-There is a small and simple example application to replay all frames on the second interface. The tool is called "replay.py" and is located in "./test". It's written in python, but the language doesn't matter. It uses pcapy to read the frames and scapy to possibly alter/show and reinject the frames. The tool as it is, simply replays all frames and prints a short summary of the received frames. The variable "packet" contains the complete ieee80211 packet, which can easily be dissected and modified using scapy. 
+There is a small and simple example application to replay all frames on the second interface. The tool is called "replay.py" and is located in "./test". It\(aqs written in python, but the language doesn\(aqt matter. It uses pcapy to read the frames and scapy to possibly alter/show and reinject the frames. The tool as it is, simply replays all frames and prints a short summary of the received frames. The variable "packet" contains the complete ieee80211 packet, which can easily be dissected and modified using scapy. 
 
 This can be compared to ettercap filters, but is more powerful, as a real programming language can be used to build complex logic for filtering and packet customization. The downside on using python is, that it adds a delay of around 100ms and the cpu utilizations is rather large on a high speed network, but its perfect for a demonstration with only a few lines of code.
 .TP
@@ -105,7 +105,7 @@ It sets the shared key challenge length, which can be anything from 16 to 1480. 
 .I -L, --caffe-latte
 Airbase-ng also contains the new caffe-latte attack, which is also implemented in aireplay-ng as attack "-6". It can be used with "-L" or "caffe-latte". This attack specifically works against clients, as it waits for a broadcast arp request, which happens to be a gratuitous arp. See this for an explaination of what a gratuitous arp is. It then flips a few bits in the sender MAC and IP, corrects the ICV (crc32) value and sends it back to the client, where it came from. The point why this attack works in practice is, that at least windows sends gratuitous arps after a connection on layer 2 is established and a static ip is set, or dhcp fails and windows assigned an IP out of 169.254.X.X. 
 
-"-x <pps>" sets the number of packets per second to send when performing the caffe-latte attack. At the moment, this attack doesn't stop, it continuously sends arp requests. Airodump-ng is needed to capture the replies.
+"-x <pps>" sets the number of packets per second to send when performing the caffe-latte attack. At the moment, this attack doesn\(aqt stop, it continuously sends arp requests. Airodump-ng is needed to capture the replies.
 .TP
 .I -N, --cfrag
 This attack listens for an ARP request or IP packet from the client. Once one is received, a small amount of PRGA is extracted and then used to create an ARP request packet targeted to the client. This ARP request is actually made of up of multiple packet fragments such that when received, the client will respond. 
@@ -155,7 +155,7 @@ Read a list of BSSIDs out of that file.
 MAC of client to accept.
 .TP
 .I --clients <file>, -D <file>
-Read a list of client's MACs out of that file 
+Read a list of client\(aqs MACs out of that file 
 .TP
 .I --essid <ESSID>, -e <ESSID>
 Specify a single ESSID. For SSID containing special characters, see http://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc._in_ap_names
@@ -163,7 +163,7 @@ Specify a single ESSID. For SSID containing special characters, see http://www.a
 .I --essids <file>, -E <file>
 read a list of ESSIDs out of that file.
 .SH AUTHOR
-This manual page was written by Thomas d'Otreppe.
+This manual page was written by Thomas d\(aqOtreppe.
 Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
 On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
 .PP

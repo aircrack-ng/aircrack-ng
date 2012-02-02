@@ -8,7 +8,7 @@ aireplay-ng - inject packets into a wireless network to generate traffic
 .SH DESCRIPTION
 .B aireplay-ng
 is used to inject/replay frames.
-The primary function is to generate traffic for the later use in aircrack-ng for cracking the WEP and WPA-PSK keys. There are different attacks which can cause deauthentications for the purpose of capturing WPA handshake data, fake authentications, Interactive packet replay, hand-crafted ARP request injection and ARP-request reinjection. With the packetforge-ng tool it's possible to create arbitrary frames.
+The primary function is to generate traffic for the later use in aircrack-ng for cracking the WEP and WPA-PSK keys. There are different attacks which can cause deauthentications for the purpose of capturing WPA handshake data, fake authentications, Interactive packet replay, hand-crafted ARP request injection and ARP-request reinjection. With the packetforge-ng tool it\(aqs possible to create arbitrary frames.
 .br
 .PP
 .B aireplay-ng
@@ -97,7 +97,7 @@ Fake Authentication attack: Sends reassociation requests instead of performing a
 Fake Authentication attack: Specifies the keystream file for fake shared key authentication.
 .TP
 .I -T n
-Fake Authentication attack: Exit if fake authentication fails 'n' time(s).
+Fake Authentication attack: Exit if fake authentication fails \(aqn\(aq time(s).
 .TP
 .I -j
 ARP Replay attack : inject FromDS pakets (see below).
@@ -127,7 +127,7 @@ Extract packets from this pcap file.
 disable /dev/rtc usage.
 .PP
 .I --ignore-negative-one
-if the interface's channel can't be determined ignore the mismatch, needed for unpatched cfg80211
+if the interface\(aqs channel can\(aqt be determined ignore the mismatch, needed for unpatched cfg80211
 .PP
 .TP
 .B Attack modes:          
@@ -161,7 +161,7 @@ In general, for an attack to work, the attacker has to be in the range of an AP 
 This attack turns IP or ARP packets from a client into ARP request against the client. This attack works especially well against ad-hoc networks. As well it can be used against softAP clients and normal AP clients.
 .TP
 .I -8, --migmode
-This attack works against Cisco Aironet access points configured in WPA Migration Mode, which enables both WPA and WEP clients to associate to an access point using the same Service Set Identifier (SSID).  The program listens for a WEP-encapsulated broadcast ARP packet, bitflips it to make it into an ARP coming from the attacker's MAC address and retransmits it to the access point. This, in turn, causes the access point to repeat the ARP packet with a new IV and also to forward the ARP reply to the attacker with a new IV. The program retransmits the same ARP packet over and over. However, each ARP packet repeated by the access point has a new IV as does the ARP reply forwarded to the attacker by the access point. It is all these new IVs which allow you to determine the WEP key.
+This attack works against Cisco Aironet access points configured in WPA Migration Mode, which enables both WPA and WEP clients to associate to an access point using the same Service Set Identifier (SSID).  The program listens for a WEP-encapsulated broadcast ARP packet, bitflips it to make it into an ARP coming from the attacker\(aqs MAC address and retransmits it to the access point. This, in turn, causes the access point to repeat the ARP packet with a new IV and also to forward the ARP reply to the attacker with a new IV. The program retransmits the same ARP packet over and over. However, each ARP packet repeated by the access point has a new IV as does the ARP reply forwarded to the attacker by the access point. It is all these new IVs which allow you to determine the WEP key.
 .TP
 .I -9, --test
 Tests injection and quality.
