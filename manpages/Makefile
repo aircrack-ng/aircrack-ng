@@ -29,13 +29,13 @@ ifeq ($(UNSTABLE), true)
 	MP_FILES	+= wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 airmon-zc.1 
 else
 	ifeq ($(unstable), true)
-		MP_FILES        += wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 
+		MP_FILES        += wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 airmon-zc.1
 	else
 		ifeq ($(UNSTABLE), TRUE)
-			MP_FILES        += wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 
+			MP_FILES        += wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 airmon-zc.1
 		else
 			ifeq ($(unstable), TRUE)
-				MP_FILES        += wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 
+				MP_FILES        += wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 airmon-zc.1
 			endif
 		endif
 	endif
