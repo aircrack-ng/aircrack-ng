@@ -339,18 +339,23 @@ stopMac80211Iface() {
     }
 
     getExtendedInfo() {
-	    #first we set all the real info
+	    #first we set all the real (useful) info we can find
 	    if [ -f /sys/class/net/$1/device/product ]
 	    then
 		    EXTENDED=\t`cat /sys/class/net/$1/device/product`
 	    fi
 
+	    #then we sweep for known broken drivers with no available better drivers
 	    if [ "$DRIVER" = "brcmsmac" ]
 	    then
 		EXTENDED="Driver commonly referred to as brcm80211 (no injection yet)"
 	    fi
+	    if [ "$DRIVER" = "r8712u" ]
+	    then
+		EXTENDED="\t\t\t\tStaging driver with no monitor or injection support"
+	    fi
 
-	    #now we set all the overrides based on bad drivers
+	    #lastly we detect all the broken drivers which have working alturnatives
 	    KV=`uname -r | awk -F'-' '{print $1}'`
 	    KVMAJOR=`echo $KV | awk -F'.' '{print $1$2}'`
 	    KVMINOR=`echo $KV | awk -F'.' '{print $3}'`
