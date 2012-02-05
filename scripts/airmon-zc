@@ -429,7 +429,7 @@ stopMac80211Iface() {
 	match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
 	if [ $match -gt 0 -a x"$1" != "xkill" ]
 	then
-	    printf "\n\n"
+	    printf "\n"
 	    echo "Found $match processes that could cause trouble."
 	    echo "If airodump-ng, aireplay-ng or airtun-ng stops working after"
 	    echo "a short period of time, you may want to kill (some of) them!"
@@ -531,7 +531,9 @@ stopMac80211Iface() {
     if [ x"$1" = "xcheck" ] || [ x"$1" = "xstart" ]
     then
 	scanProcesses
-	for iface in `iwconfig 2> /dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
+#	Honestly this needs a complete rewrite but for now I'm just bypassing the annoying part
+#	for iface in `iwconfig 2> /dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
+	for iface in `iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
 	do
 	    checkProcessesIface $iface
 	done
