@@ -240,6 +240,11 @@ stopMac80211Iface() {
 	    else
 		    FROM="?"
 	    fi
+	    #check for staging drivers seperately
+	    if [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep staging` ]
+	    then
+		    FROM="S"
+            fi
 
 	    if [ "$DEBUG" = "1" ]
 	    then
@@ -561,7 +566,7 @@ stopMac80211Iface() {
     fi
 
     printf "\nThis script is intended to replace airmon-ng and is functionally based on it.\n"
-    printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng\n"
+    printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng\n\n"
 
     uname -a
     printf "\nK indicates driver is from `uname -r`\n"
@@ -574,6 +579,7 @@ stopMac80211Iface() {
 	    printf "C indicates driver is from `cat /sys/module/compat/parameters/compat_version`\n"
     fi
     printf "V indicates driver comes directly from the vendor, almost certainly a bad thing\n"
+    printf "S indicates driver comes from the staging tree, these drivers are meant for reference not actual use, BEWARE\n"
     printf "? indicates we do not know where the driver comes from... report this\n"
     printf "\n\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
 
@@ -613,7 +619,13 @@ stopMac80211Iface() {
 	    sleep 1s
     fi
 
-    for iface in `iwconfig 2> /dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
+#	This next line is bad for two reasons:
+#	1.) not all wifi cards proclaim they are wifi cards
+#	2.) a random reverse grep for wifi is almost certainly damned for false positives
+#	The saving grace is that wifi cards are spit out with 1> and everything else is spit out with 2>
+#    for iface in `iwconfig 2> /dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
+#	So we adjust like this...
+    for iface in `iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
     do
      unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO USBID CHIPSET EXTENDED PHYDEV 
      #add a RUNNING check here and up the device if it isn't already
