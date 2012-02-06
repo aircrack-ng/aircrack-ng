@@ -359,7 +359,7 @@ stopMac80211Iface() {
 	    fi
 	    if [ "$DRIVER" = "r8712u" ]
 	    then
-		EXTENDED="\t\t\t\tNo monitor or injection support"
+		EXTENDED="\t\t\t\tNo monitor or injection support\n"
 	    fi
 
 	    #lastly we detect all the broken drivers which have working alturnatives
