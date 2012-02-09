@@ -19,10 +19,11 @@ check_function injectmenu || source $path/attacks/injection # It depends on inje
 
 othertmenu(){
     while true; do
-         mkmenu "Other aircrack-ng tools" "Injection" "Autentication" "Operations with ivstools" "Decloak packages" "Create virtual interface with airtun-ng" "Diagnostics and reports" "Auto crack wep with wesside-ng" "Easside-ng" "Return to main menu"
+         mkmenu "Other aircrack-ng tools" "Injection" "Autentication" "Generate hcap file" "Operations with ivstools" "Decloak packages" "Create virtual interface with airtun-ng" "Diagnostics and reports" "Auto crack wep with wesside-ng" "Easside-ng" "Return to main menu"
         case $choice in
             1  ) othersinjectmenu    ; $clear; break;;
             2  ) authmenu      ; $clear; break;;
+            3  ) generate_hcap ; $clear; break;;
             3  ) ivstoomenu    ; $clear; break;;
             4  ) airdecmenu    ; $clear; break;;
             5  ) airtunmenu    ; $clear; break;;
@@ -33,6 +34,12 @@ othertmenu(){
             *  ) _ "Unknown response, try again"; sleep 1; $clear;;
         esac
     done
+}
+
+generate_hcap(){
+    wait_for_execute=1; execute $AIRCRACK $DUMP_PATH/$Host_MAC-01.cap -J $DUMP_PATH/$Host_MAC-01.hccap; wait_for_execute=0;
+    read -p "${mark}Your hccap file is in $DUMP_PATH/$Host_MAC-01.hccap . Press enter to continue"
+    export HCCAPFILE=$DUMP_PATH/$Host_MAC-01.hccap
 }
 
 airdecmenu(){
