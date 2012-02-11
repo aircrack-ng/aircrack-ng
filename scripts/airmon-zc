@@ -218,6 +218,11 @@ stopMac80211Iface() {
 	    	    DRIVER="r8187"
 	    fi
 
+	    if [ "$DRIVER" = "RALINK WLAN" ]
+	    then
+		    DRIVER="rt5390sta"
+	    fi
+
 	    if [ "$DEBUG" = "1" ]
 	    then
 		    echo $DRIVER
@@ -237,6 +242,9 @@ stopMac80211Iface() {
 		    elif [ "$DRIVER" = "r8187l" ]
 		    then
 		    	FROM="V"
+		    elif [ "$DRIVER" = "rt5390sta" ]
+		    then
+			FROM="V"
 		    fi
 	    elif [ `modinfo $DRIVER | awk '/filename/ {print $2}'  | grep 'updates/drivers'` ]
 	    then
@@ -395,6 +403,14 @@ stopMac80211Iface() {
 			    EXTENDED="\tBlacklist rt3070sta and use rt2800usb"
 		    else
 			    EXTENDED="\tUpgrade to kernel 2.6.35 or install compat-wireless stable"
+		    fi
+	    elif [ "$DRIVER" = "rt5390sta" ]
+	    then
+		    if [ "$KVMAJOR" = "26" ] && [ "$KVMINOR" -ge "39" ]
+		    then
+			    EXTENDED="\tBlacklist rt5390sta and use rt2800usb"
+		    else
+			    EXTENDED="\tUpgrade to kernel 2.6.39 or install compat-wireless stable"
 		    fi
 	    elif [ "$DRIVER" = "ar9170usb" ]
 	    then
