@@ -218,7 +218,8 @@ stopMac80211Iface() {
 	    	    DRIVER="r8187"
 	    fi
 
-	    if [ "$DRIVER" = "RALINK WLAN" ]
+	    #Full text here is actually "RALINK WLAN"
+	    if [ "$DRIVER" = "RALINK" ]
 	    then
 		    DRIVER="rt5390sta"
 	    fi
