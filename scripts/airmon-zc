@@ -14,7 +14,8 @@ UDEV_ISSUE=0
 #remove iw* commands from everywhere except *deprecated()
 #add "test" mode to verify basic channel control
 #add band detection
-
+#change names to mimic hostapd or kismet
+#prevent more than one monitor interface from being created
 
     if [ ! -x "`which iw 2>&1`" ]
     then
@@ -579,8 +580,8 @@ stopMac80211Iface() {
 	SYSFS=1
     fi
 
-    printf "\nThis script is intended to replace airmon-ng and is functionally based on it.\n"
-    printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng\n\n"
+    printf "\nThis script is intended to replace airmon-ng in 1.3 and is functionally based on it.\n"
+    printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng or on trac\n\n"
 
     uname -a
     printf "\nK indicates driver is from `uname -r`\n"
