@@ -654,7 +654,9 @@ stopMac80211Iface() {
 	getExtendedInfo $iface
  else
  	echo "ethtool failed, fallback to old method...\n"
-	echo "Only mac80211 devices on kernel 2.6.33 or higher are supported, no fallback.\n"
+	echo "Only mac80211 devices on kernel 2.6.33 or higher are supported by airmon-zc.\n"
+	echo "Running airmon-ng:"
+	airmon-ng
 	exit
  fi
  
