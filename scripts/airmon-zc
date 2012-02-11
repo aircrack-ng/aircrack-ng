@@ -670,7 +670,7 @@ stopMac80211Iface() {
 	getChipset $iface
 	getExtendedInfo $iface
  else
- 	echo "ethtool failed, fallback to old method...\n"
+ 	echo "\nethtool failed, fallback to old method...\n"
 	echo "Only mac80211 devices on kernel 2.6.33 or higher are supported by airmon-zc.\n"
 	echo "Running airmon-ng:"
 	airmon-ng
