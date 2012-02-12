@@ -11,11 +11,20 @@ UDEV_ISSUE=0
 
 
 #TODO LIST
+
 #remove iw* commands from everywhere except *deprecated()
+#ozzie scripts # cat /sys/class/net/wlan0/uevent 
+#DEVTYPE=wlan
+#?
+
 #add "test" mode to verify basic channel control
 #add band detection
 #change names to mimic hostapd or kismet
 #prevent more than one monitor interface from being created
+
+#fix indent
+#getDriver done
+#break getFrom and getFirmware out of get Driver for cleanlyness
 
     if [ ! -x "`which iw 2>&1`" ]
     then
@@ -172,129 +181,136 @@ stopMac80211Iface() {
 	    printf " (monitor mode disabled)"
     }
 
-    getDriver() {
-	    #standard detection path, this is all that is needed for proper drivers
-	    DRIVER=`echo "$ethtool_output" | awk '/driver/ {print $2}'`
+getDriver() {
+	#standard detection path, this is all that is needed for proper drivers
+	DRIVER=`echo "$ethtool_output" | awk '/driver/ {print $2}'`
 
-	    if [ "$DRIVER" = "" ]
-	    then
-		    if [ -f /sys/class/net/$1/device/uevent ]
-		    then
-			    DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/uevent`"
-		    fi
-	    fi
-	    
-	    #here we test for driver usb, ath9k_htc,rt2870, possibly others show this
-	    if [ "$DRIVER" = "usb" ]
-	    then
-		    BUSADDR="`echo "$ethtool_output" | awk '/bus-info/ {print $2}'`:1.0"
-		    if [ "$BUSADDR" != "" ]
-		    then
-			    if [ -f /sys/class/net/$1/device/$BUSADDR/uevent ]
-			    then
-				    DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent`"
-			    fi
-		    fi
+	if [ "$DRIVER" = "" ]
+	then
+		if [ -f /sys/class/net/$1/device/uevent ]
+		then
+			DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/uevent`"
+		else
+			#DRIVER we put SOMETHING in DRIVER here if we are unable to find anything real
+			DRIVER="??????"
+		fi
+	fi
 
-		    #here we can normalize driver names we don't like
-		    if [ "$DRIVER" = "rt2870" ]
-		    then
-			    DRIVER="rt2870sta"
-		    fi
-		    if [ -f /sys/class/net/$1/device/idProduct ]
-		    then
-			    if [ `cat /sys/class/net/$1/device/idProduct` = "3070" ]
-			    then
-				    DRIVER="rt3070sta"
-			    fi
-		    fi
-	    fi
-	    if [ "$DRIVER" = "rtl8187L" ]
-	    then
-		    DRIVER="r8187l"
-	    fi
-	    if [ "$DRIVER" = "rtl8187" ] && [ "$STACK" = "ieee80211" ]
-	    then
-	    	    DRIVER="r8187"
-	    fi
+	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
+	if [ "$DRIVER" = "usb" ]
+	then
+		BUSADDR="`echo "$ethtool_output" | awk '/bus-info/ {print $2}'`:1.0"
+		if [ "$BUSADDR" != "" ]
+		then
+			if [ -f /sys/class/net/$1/device/$BUSADDR/uevent ]
+			then
+				DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent`"
+			fi
+		fi
 
-	    #Full text here is actually "RALINK WLAN"
-	    if [ "$DRIVER" = "RALINK" ]
-	    then
-		    DRIVER="rt5390sta"
-	    fi
+		#here we can normalize driver names we don't like
+		if [ "$DRIVER" = "rt2870" ]
+		then
+			DRIVER="rt2870sta"
+		fi
+		if [ -f /sys/class/net/$1/device/idProduct ]
+		then
+			if [ `cat /sys/class/net/$1/device/idProduct` = "3070" ]
+			then
+				DRIVER="rt3070sta"
+			fi
+		fi
+	fi
+	if [ "$DRIVER" = "rtl8187L" ]
+	then
+		DRIVER="r8187l"
+	fi
+	if [ "$DRIVER" = "rtl8187" ] && [ "$STACK" = "ieee80211" ]
+	then
+		DRIVER="r8187"
+	fi
 
-	    if [ "$DEBUG" = "1" ]
-	    then
-		    echo $DRIVER
-	    fi
+	#Here we will catch the broken lying drivers not caught above
+	#currently this only functions for pci devices and not usb since lsusb has no -k option
+	if `modinfo $DRIVER  > /dev/null 2>&1`
+	then
+		true
+	else
+		DRIVER="`lspci -d $DEVICEID -k | awk '/modules/ {print $3}'`"
+		if [ "$DRIVER" = "" ]
+		then
+			DRIVER="??????"
+		fi
+	fi
+	if [ "$DEBUG" = "1" ]
+	then
+		echo $DRIVER
+	fi
 
-	    #from detection
-	    if [ $DRIVER ]
-	    then
-	    #remove the above when DRIVER detection actually works properly
-	    if [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep 'kernel/drivers'` ]
-	    then
-		    FROM="K"
-		    #we add special handling here because we hate the vendor drivers AND they install in the wrong place
-		    if [ "$DRIVER" = "r8187" ]
-		    then
-		    	FROM="V"
-		    elif [ "$DRIVER" = "r8187l" ]
-		    then
-		    	FROM="V"
-		    elif [ "$DRIVER" = "rt5390sta" ]
-		    then
+	#from detection
+	if [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep 'kernel/drivers'` ]
+	then
+		FROM="K"
+		#we add special handling here because we hate the vendor drivers AND they install in the wrong place
+		if [ "$DRIVER" = "r8187" ]
+		then
 			FROM="V"
-		    fi
-	    elif [ `modinfo $DRIVER | awk '/filename/ {print $2}'  | grep 'updates/drivers'` ]
-	    then
-		    FROM="C"
-	    elif [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep misc` ]
-	    then
-		    FROM="M"
-		    #add a yell at the user in here
-	    else
-		    FROM="?"
-	    fi
-	    #check for staging drivers seperately
-	    if [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep staging` ]
-	    then
-		    FROM="S"
-            fi
+		elif [ "$DRIVER" = "r8187l" ]
+		then
+			FROM="V"
+		elif [ "$DRIVER" = "rt5390sta" ]
+		then
+			FROM="V"
+		fi
+	elif [ `modinfo $DRIVER | awk '/filename/ {print $2}'  | grep 'updates/drivers'` ]
+	then
+		FROM="C"
+	elif [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep misc` ]
+	then
+		FROM="M"
+		#add a yell at the user in here
+	else
+		FROM="?"
+	fi
 
-	    if [ "$DEBUG" = "1" ]
-	    then
-		    echo $FROM
-	    fi
-	    fi
+	#check for staging drivers seperately
+	if [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep staging` ]
+	then
+		FROM="S"
+        fi
 
-	    FIRMWARE=`echo "$ethtool_output" | awk '/firmware-version/ {print $2}'`
+	if [ "$DEBUG" = "1" ]
+	then
+		echo $FROM
+	fi
 
-            #ath9k_htc firmware is a shorter version number than most so trap and make it pretty
-            if [ "$DRIVER" = "ath9k_htc" ]
-            then
-                    FIRMWARE="$FIRMWARE\t"
-            fi
+	FIRMWARE=`echo "$ethtool_output" | awk '/firmware-version/ {print $2}'`
+	#ath9k_htc firmware is a shorter version number than most so trap and make it pretty
+	if [ "$DRIVER" = "ath9k_htc" ]
+	then
+		FIRMWARE="$FIRMWARE\t"
+	fi
 
-	    if [ "$FIRMWARE" = "N/A" ]
-	    then
-		    FIRMWARE="$FIRMWARE\t"
-	    elif [ -z "$FIRMWARE" ]
-	    then
-		    FIRMWARE="unavailable"
-	    fi
+	if [ "$FIRMWARE" = "N/A" ]
+	then
+		FIRMWARE="$FIRMWARE\t"
+	elif [ -z "$FIRMWARE" ]
+	then
+		FIRMWARE="unavailable"
+	fi
 
-	    if [ "$DEBUG" = "1" ]
-	    then
-		    echo $FIRMWARE
-	    fi
+	if [ "$DEBUG" = "1" ]
+	then
+		echo $FIRMWARE
+	fi
 
-    }
+}
 
     getChipset() {
 	    #this needs cleanup, we shouldn't have multiple lines assigning chipset per bus
 	    #fix this to be one line per bus
+	    #when I wrote this I didn't know how to lspci -nn
+	    #I need to save the pciid or usbid into a variable here for use in getDriver, clean this up.
 	    if [ -f /sys/class/net/$1/device/modalias ]
 	    then
 		    BUS=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1`
@@ -306,14 +322,15 @@ stopMac80211Iface() {
 		    then
 			    BUSINFO=`echo "$ethtool_output" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //'`
 			    CHIPSET=`lspci | grep "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
+			    DEVICEID=`lspci -nn | grep "$BUSINFO" | grep '[[0-9][0-9][0-9][0-9]:[0-9][0-9][0-9][0-9]' -o`
 		    else
 			    CHIPSET="Not pci or usb"
 		    fi
 	    #we don't do a check for usb here but it is obviously only going to work for usb
 	    elif [ -f /sys/class/net/$1/device/idVendor -a -f /sys/class/net/$1/device/idProduct ]
 	    then
-		    USBID=`cat /sys/class/net/$1/device/idVendor`:`cat /sys/class/net/$1/device/idProduct`
-		    CHIPSET=`lsusb | grep -i "$USBID" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
+		    DEVICEID=`cat /sys/class/net/$1/device/idVendor`:`cat /sys/class/net/$1/device/idProduct`
+		    CHIPSET=`lsusb | grep -i "$DEVICEID" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
 	    else
 		    CHIPSET="non-mac80211 device? (report this!)"
 		    #this seems to somehow trigger on b43's 4318 chip.... but it really shouldn't.
@@ -323,7 +340,7 @@ stopMac80211Iface() {
 	    then
 		    echo $BUS
 		    echo $BUSINFO
-		    echo $USBID
+		    echo $DEVICEID
 		    echo $CHIPSET
 	    fi
     }
@@ -356,10 +373,14 @@ stopMac80211Iface() {
     }
 
     getExtendedInfo() {
+	    if [ "$DRIVER" = "??????" ]
+	    then
+		    EXTENDED="\t Failure detecting driver properly please report"
+	    fi
 	    #first we set all the real (useful) info we can find
 	    if [ -f /sys/class/net/$1/device/product ]
 	    then
-		    EXTENDED=\t`cat /sys/class/net/$1/device/product`
+		    EXTENDED="\t`cat /sys/class/net/$1/device/product`"
 	    fi
 
 	    #then we sweep for known broken drivers with no available better drivers
@@ -659,15 +680,15 @@ stopMac80211Iface() {
 #	So we adjust like this...
     for iface in `iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
     do
-     unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO USBID CHIPSET EXTENDED PHYDEV 
+     unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV 
      #add a RUNNING check here and up the device if it isn't already
      ethtool_output="`ethtool -i $iface 2>&1`"
  if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]
  then
 	getStack  $iface
+	getChipset $iface
 	getDriver   $iface
 	getPhy     $iface
-	getChipset $iface
 	getExtendedInfo $iface
  else
  	echo "\nethtool failed, fallback to old method...\n"
