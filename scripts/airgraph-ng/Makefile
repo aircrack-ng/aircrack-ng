@@ -1,24 +1,20 @@
 AC_ROOT		= ../..
 include		$(AC_ROOT)/common.mak
 
-SCRIPTS         = airgraph-ng dump-join
+#SCRIPTS         = airgraph-ng dump-join
 DOCFILES        = README
 
 default: all
-
-all:
-	@echo Nothing to do. Run make install
+all: install doc
 
 install:
-	install -m 755 $(SCRIPTS) $(DESTDIR)$(bindir)
+	#install -m 755 $(SCRIPTS) $(DESTDIR)$(bindir)
 	$(MAKE) -C man $(@)
-	$(MAKE) -C lib $(@)
+	#$(MAKE) -C lib $(@)
+	python setup.py install
 
 uninstall:
-	-rm -f $(DESTDIR)$(bindir)/airgraph-ng
-	-rm -f $(DESTDIR)$(bindir)/dump-join
-	-rm -f $(DESTDIR)$(docdir)/README
-	$(MAKE) -C lib $(@)
+	#$(MAKE) -C lib $(@)
 	$(MAKE) -C man $(@)
 
 doc:
