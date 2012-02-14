@@ -244,7 +244,7 @@ getDriver() {
 	fi
 	if [ "$DEBUG" = "1" ]
 	then
-		echo $DRIVER
+		echo "getdriver() $DRIVER"
 	fi
 }
 
@@ -283,7 +283,7 @@ getFrom() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		echo $FROM
+		echo "getFrom() $FROM"
 	fi
 }
 
@@ -305,7 +305,7 @@ getFirmware() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		echo $FIRMWARE
+		echo "getFirmware $FIRMWARE"
 	fi
 
 }
@@ -346,10 +346,10 @@ getChipset() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		echo $BUS
-		echo $BUSINFO
-		echo $DEVICEID
-		echo $CHIPSET
+		echo "getchipset() $CHIPSET"
+		echo "BUS = $BUS"
+		echo "BUSINFO = $BUSINFO"
+		echo "DEVICEID = $DEVICEID"
 	fi
 }
 
@@ -376,7 +376,7 @@ getStack() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		echo $STACK
+		echo "getStack $STACK"
 	fi
 
 }
