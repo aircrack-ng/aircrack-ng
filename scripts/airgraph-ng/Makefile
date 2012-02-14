@@ -1,28 +1,25 @@
 AC_ROOT		= ../..
+DOCFILES        = README
 include		$(AC_ROOT)/common.mak
 
-#SCRIPTS         = airgraph-ng dump-join
-DOCFILES        = README
-
 default: all
-all: install doc
+all: install doc 
 
 install:
-	#install -m 755 $(SCRIPTS) $(DESTDIR)$(bindir)
-	$(MAKE) -C man $(@)
-	#$(MAKE) -C lib $(@)
-	python setup.py install
-
-uninstall:
-	#$(MAKE) -C lib $(@)
-	$(MAKE) -C man $(@)
+	python setup.py install --record files.txt
 
 doc:
+	$(MAKE) -C man install 
 	install -d $(DESTDIR)$(docdir)
 	install -m 644 $(DOCFILES) $(DESTDIR)$(docdir)
 
+uninstall:
+	$(MAKE) -C man $(@)
+	cat files.txt | xargs rm -rf
+	rm -f files.txt
+
 clean:
-	@echo Nothing to do.
+	python setup.py clean
+	rm -rf build
 
 distclean: clean
-	
