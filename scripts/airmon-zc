@@ -111,6 +111,19 @@ startDeprecatedIface() {
 }
 
 startMac80211Iface() {
+	#check if $1 already has a mon interface on the same phy and bail if it does
+	if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]
+	then
+		for i in `ls /sys/class/ieee80211/${PHYDEV}/device/net/`
+		do
+			if [ "`cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type`" = "803" ]
+			then
+				echo "\n\t\t(mac80211 monitor mode already enabled for [${PHYDEV}]${1} on [${PHYDEV}]${i})"
+				exit
+			fi
+		done
+	fi
+	#we didn't bail means we need a monitor interface
 	IW_ERROR=`iw dev $1 interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
 	if [ x$IW_ERROR = "x" ]
 	then
@@ -125,23 +138,9 @@ startMac80211Iface() {
 			fi
 		fi
 		ifconfig $MONDEV up
-		printf "\n\t\t\t\t(mac80211 monitor mode enabled on $MONDEV)"
+		printf "\n\t\t(mac80211 monitor mode enabled for [${PHYDEV}]${1} on [${PHYDEV}]$MONDEV)"
 	else
-		if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
-		then
-			echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
-			sleep 1s
-			if [ $3 -lt 1000 ]
-			then
-				iwconfig $MONDEV mode Monitor channel $3 > /dev/null 2>&1
-			else
-				iwconfig $MONDEV mode Monitor freq "$3"000000 > /dev/null 2>&1
-			fi
-			ifconfig $MONDEV up
-			printf "\n\t\t\t\t(mac80211 monitor mode enabled on $MONDEV)"
-		else
-			printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
-		fi
+		printf "\n\nERROR: something went wrong with iw."
 	fi
 }
 
