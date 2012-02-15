@@ -21,7 +21,7 @@ uninstall:
 	rm -f files.txt
 
 clean:
-	python setup.py --prefix="$(prefix)" clean
+	python setup.py clean
 	rm -rf build
 
 distclean: clean

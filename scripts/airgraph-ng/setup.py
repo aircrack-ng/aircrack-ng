@@ -10,7 +10,6 @@ setup(name='airgraph-ng',
       author='TheX1le',
       console = [{"script": "airgraph-ng" }],
       url='http://aircrack-ng.org',
-      download_url='http://github.com/XayOn/socialstickers',
       license='GPL2',
       classifiers=[
           'Development Status :: 4 - Beta',
