@@ -8,7 +8,7 @@ all:
 	@echo Nothing to do. Run make install
 
 install: doc
-	python setup.py install --record files.txt
+	python setup.py install --prefix="$(prefix)" --record files.txt
 
 doc:
 	$(MAKE) -C man install 
@@ -21,7 +21,7 @@ uninstall:
 	rm -f files.txt
 
 clean:
-	python setup.py clean
+	python setup.py --prefix="$(prefix)" clean
 	rm -rf build
 
 distclean: clean
