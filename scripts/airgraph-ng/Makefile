@@ -15,7 +15,7 @@ doc:
 	install -d $(DESTDIR)$(docdir)
 	install -m 644 $(DOCFILES) $(DESTDIR)$(docdir)
 
-uninstall:
+uninstall: clean
 	$(MAKE) -C man $(@)
 	cat files.txt | xargs rm -rf
 	rm -f files.txt
