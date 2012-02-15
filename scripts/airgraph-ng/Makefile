@@ -3,9 +3,11 @@ DOCFILES        = README
 include		$(AC_ROOT)/common.mak
 
 default: all
-all: install doc 
 
-install:
+all:
+        @echo Nothing to do. Run make install
+
+install: doc
 	python setup.py install --record files.txt
 
 doc:
