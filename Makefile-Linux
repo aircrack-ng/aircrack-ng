@@ -37,8 +37,8 @@ install-binary:
 	@$(INSTALLDATA) $(srcdir)/airoscript-ng.conf $(etcdir)
 	@$(INSTALLDATA) $(srcdir)/airoscript-ng_debug.conf $(etcdir)
 	@$(INSTALLDATA) $(srcdir)/airoscript-ng_advanced.conf $(etcdir)
-ifeq ($(debianpackage),yes)
-	@$(INSTALLDATA) $(srcdir)/airoscript-ng_debian.conf $(etcdir)
+ifeq ($(package),yes)
+	@$(INSTALLDATA) $(srcdir)/airoscript-ng_packaged.conf $(etcdir)
 endif
 	@cp -r $(srcdir)/functions/* $(datadir)
 	@cp -r $(srcdir)/templates/* $(datadir)/templates
@@ -52,9 +52,6 @@ install-docs:
 	@echo "Installing documentation"
 	@echo "\t Installing standard documentation"
 	@for i in doc/* ; do if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then make -s -C $$i docdir="$(docdir)" INSTALLDATA="$(INSTALLDATA)" ; else $(INSTALLDATA) $$i $(docdir) ;fi ; done
-ifeq ($(debianpackage),yes)
-	@rm $(docdir)/license
-endif
 	@# This will install any manpage on manpages dir. (Just man1 manpages)
 	@echo  "\t Installing manpages"
 	@for i in $(srcdir)/*.1 ; do $(INSTALLDATA) $$i $(mandir)/man1/ ; done
@@ -104,4 +101,4 @@ uninstall:
 
 all: install 
 
-.PHONY: all install uninstall slackware debian-package airosperl locale manpages
+.PHONY: all install uninstall locale manpages
