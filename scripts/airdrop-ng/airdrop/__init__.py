@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-"""
-Python module for adding colors to print statements
-"""
+import os, sys
+
 class bcolors:
     """
     class for using colored text
@@ -24,3 +22,11 @@ class bcolors:
         self.FAIL = ''
         self.ENDC = ''
 
+encoding = sys.getfilesystemencoding()
+if hasattr(sys, 'frozen'):
+    install_dir = os.path.abspath(os.path.dirname(unicode(sys.executable, encoding)))
+install_dir = os.path.abspath(os.path.dirname(unicode(__file__, encoding)))
+try:
+    os.mkdir(install_dir + "/support")
+except:
+    pass

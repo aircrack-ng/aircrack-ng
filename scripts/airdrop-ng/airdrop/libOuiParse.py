@@ -22,6 +22,8 @@ __data__ = 'a class for dealing with the oui txt file'
 #########################################
 """
 
+from airdrop import install_dir
+
 import re, urllib2, sys, os
 class macOUI_lookup:
 	"""
@@ -33,8 +35,8 @@ class macOUI_lookup:
 		"""
 		#a poor fix where if we have no file it trys to download it
 		self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
-		self.ouiUnPath   = '/usr/lib/airdrop-ng/'#path to oui.txt if module is installed
-		self.ouiInPath   = './support/'         #path to oui.txt if module is not installed
+		self.ouiUnPath   = install_dir#path to oui.txt if module is installed
+		self.ouiInPath   = install_dir + '/support/'         #path to oui.txt if module is not installed
 		if oui == None:
 			"if the file name is not provided attempt to get it"
 			self.ouiTxt  = None
@@ -149,7 +151,7 @@ class macOUI_lookup:
 			print "Going to support/ to install new oui.txt..."
 			ouiDIR = self.ouiInPath
 		else:
-			print "Going to /usr/lib/airdrop-ng to install new oui.txt..."
+			print "Going to " +install_dir+ " to install new oui.txt..."
 			ouiDIR = self.ouiUnPath
 			try:
 				os.remove(ouiDIR+"oui.txt")
@@ -157,7 +159,6 @@ class macOUI_lookup:
 				print "Unable to delete oui.txt"
 		try:
 			# Checks to see if it's running from a directory when not installed.
-			# If not, then goes to /usr/lib/airdrop-ng , where the main file is. 
 			ouiOnline = urllib2.urlopen(self.ouiTxtUrl)
 			print "Writing OUI file"
 			#lFile = open (ouiDIR+"oui.txt", "w")

@@ -14,18 +14,17 @@ import sys, optparse, re, time, random, pdb, os
 #lib for the libraries and support for the oui.txt file
 
 # adds possible paths for support modules
-sys.path.extend(["./lib","/usr/lib/airdrop-ng"])
-import libDumpParse
+#sys.path.extend(["./lib","/usr/lib/airdrop-ng"])
 from time import sleep,localtime
-from colorize import bcolors
-import libOuiParse
+from airdrop import bcolors, install_dir
+from airdrop import libOuiParse, libDumpParse
 from binascii import a2b_hex
 class messages:
 	"""
 	handle all printing 
 	allows for central logging
 	"""
-	def __init__(self,log,dir="./logs"):
+	def __init__(self,log, dir="/var/log/"):
 		"""
 		int vars for printing class
 		"""
@@ -34,7 +33,7 @@ class messages:
 		self.time	 = str(date[3])+"-"+str(date[4])+"-"+str(date[5])
 		self.logging = log #log error messages to a file
 		#logfile
-		self.logfile = dir+'/Airdrop-'+self.date+"-"+self.time+".log"
+		self.logfile = dir+'/airdrop-ng_'+self.date+"-"+self.time+".log"
 		self.color 	 = True #enable colors
 		self.logBuff = [] #hold info before we write to a file
 		
@@ -914,8 +913,8 @@ def firstLoad():
 		"startAirdrop":{
 				"iface":"", 				 	#injection interface
 				"driver":"mac80211",			#driver of the card we inject with
-				"adlog":os.getcwd()+"/log/airodump.log",#logfile to parse to decide on kick types
-				"rules":os.getcwd()+"/support/",	#the drop rules
+				"adlog":"/var/log/airodump-ng.log",#logfile to parse to decide on kick types
+				"rules":install_dir + "/support/",	#the drop rules
 				"slept":"0"					#sleep time between each packet tx's
 				}
 			}
@@ -1054,9 +1053,9 @@ if __name__ == "__main__":
 				try:
 					ouiLookup = libOuiParse.macOUI_lookup("./support/oui.txt")
 				except IOError:
-					ouiLookup = libOuiParse.macOUI_lookup("/usr/lib/airdrop-ng/oui.txt")
+					ouiLookup = libOuiParse.macOUI_lookup(install_dir + "/support/oui.txt")
 			except IOError:
-				message.printError(["oui.txt not found in /usr/lib/airdrop-ng","or ./support/"])
+				message.printError(["oui.txt not found in " + install_dir +"/support","or ./support/"])
 				message.printError("Please run python airdrop-ng -u")
 				sys.exit(-1)
 
