@@ -19,7 +19,7 @@
 #d/any|00:21:E9:3D:EB:45,00:17:AB:5C:DE:3A,00:1B:63:00:60:C4
 #a deny rule for several clients on any AP
 
-d/any|any
+#d/any|any
 #a global deny any any rule
 
 #A/00:17:3F:3A:F0:7E|00:21:E9:3D:EB:45,00:17:AB:5C:DE:3A,00:1B:63:00:60:C4
@@ -41,8 +41,7 @@ d/any|any
 
 #d/action|broadcom #kicks only broadcom devices off actiontech routers
 
-#d/00:1A:2B|any
-#kicks all clients that match that oui
+#d/00:1F:3C|any #kicks all clients that match that oui 
 
 #d/action|00:1F:3C kick any clinets off an actiontec router that match the oui
 
