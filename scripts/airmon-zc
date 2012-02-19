@@ -633,7 +633,7 @@ printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng or
 
 uname -a
 printf "\nK indicates driver is from `uname -r`\n"
-if `modinfo compat > /dev/null 2>&1`
+if $(modinfo compat > /dev/null 2>&1)
 then
 	modprobe compat
 fi
