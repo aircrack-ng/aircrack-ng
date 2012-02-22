@@ -25,6 +25,6 @@ Once you have airgraph-ng set up and installed i have included some test data to
 
 Airgraph-ng sets graphviz to use the latin character set if this is a problem for you please let me know. I did this to clear up a bug i had with the CPG graphs
 
-dumpjoin.py is a short support script that will allow you to join two airodump CSV files into one. Run the program with no arugments to see the usage
+dumpjoin is a short support script that will allow you to join two airodump CSV files into one. Run the program with no arugments to see the usage
 
 This is still a work in progress if you have questions contact TheX1le at thex1le <AT> gmail.com
