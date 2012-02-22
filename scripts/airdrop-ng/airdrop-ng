@@ -981,14 +981,18 @@ if __name__ == "__main__":
         sys.exit(-1)
 
     #no longer need to import lorcon here instead we should just test opening up the card and check for errors
+    liborcon2 = '/usr/local/lib/liborcon2.so'
+    if os.path.isfile(liborcon2) is False:
+        liborcon2 = '/usr/lib/liborcon2.so' #support the ubuntu folks
+    
     try:
         try:
             #open card up for injection
             try:
-                liblorcon = lorcon.Lorcon('/usr/local/lib/liborcon2.so')
+                liblorcon = lorcon.Lorcon(liborcon2)
             except OSError:
                 message.printMessage(['\n',
-                'Unable to find liborcon2.so in /usr/local/lib, is lorcon2 installed?'])
+                'Unable to find liborcon2.so in /usr/local/lib or /usr/lib , is lorcon2 installed?'])
                 sys.exit(-1)
             driver = liblorcon.auto_driver(options.card)
             tx = liblorcon.create(options.card, driver)
