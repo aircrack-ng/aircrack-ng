@@ -118,7 +118,7 @@ startMac80211Iface() {
 		do
 			if [ "`cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type`" = "803" ]
 			then
-				echo "\n\t\t(mac80211 monitor mode already enabled for [${PHYDEV}]${1} on [${PHYDEV}]${i})"
+				printf "\n\t\t(mac80211 monitor mode already enabled for [${PHYDEV}]${1} on [${PHYDEV}]${i})\n"
 				exit
 			fi
 		done
@@ -138,7 +138,7 @@ startMac80211Iface() {
 			fi
 		fi
 		ifconfig $MONDEV up
-		printf "\n\t\t(mac80211 monitor mode enabled for [${PHYDEV}]${1} on [${PHYDEV}]$MONDEV)"
+		printf "\n\t\t(mac80211 monitor mode enabled for [${PHYDEV}]${1} on [${PHYDEV}]$MONDEV)\n"
 	else
 		printf "\n\nERROR: something went wrong with iw."
 	fi
