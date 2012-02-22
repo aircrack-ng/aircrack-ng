@@ -22,34 +22,37 @@ __data__ = 'a class for dealing with the oui txt file'
 #########################################
 """
 
-import re, urllib2, sys, os
+import re, urllib, sys, os
 import pdb
 #this lib is crap and needs to be rewritten -Textile 
+
+if os.path.isdir('./support/'):
+    path='./support/'
+elif os.path.isdir('/usr/local/share/airgraph-ng/'):
+    path='/usr/local/share/airgraph-ng/'
+elif os.path.isdir('/usr/share/airgraph-ng/'):
+    path='/usr/share/airgraph-ng/'
+else:
+    raise Exception("Could not determine path, please, check your installation")
 
 class macOUI_lookup:
     """
     A class for deaing with OUIs and deterimining device type
     """
-    def __init__(self,oui=None):
+    def __init__(self, oui=False):
         """
         generate the two dictionaries and return them
         """
         #a poor fix where if we have no file it trys to download it
         self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
-        self.ouiUnPath   = '/usr/lib/airgraph-ng/'#path to oui.txt if module is installed
-        self.ouiInPath   = './support/'         #path to oui.txt if module is not installed
-        if oui == None:
-            "if the file name is not provided attempt to get it"
-            self.ouiTxt  = None
+
+        self.ouiTxt = oui
+        if not oui or not os.path.isfile(self.ouiTxt):
             self.ouiUpdate()
-        else:
-            self.ouiTxt  = oui          #location of the oui txtfile on the hard drive
-        if os.path.isfile(self.ouiTxt) is False:
-            self.ouiTxt = None
-            self.ouiUpdate()
+            self.ouiTxt = path + "oui.txt"
         self.last_error = None
-        self.identDeviceDict('ouiDevice.txt')
-        self.identDeviceDictWhacMac('whatcDB.csv')
+        self.identDeviceDict(path + 'ouiDevice.txt')
+        self.identDeviceDictWhacMac(path + 'whatcDB.csv')
         self.ouiRaw      = self.ouiOpen(self.ouiTxt)
         self.oui_company = self.ouiParse()  #dict where oui's are the keys to company names
         self.company_oui = self.companyParse()  #dict where company name is the key to oui's
@@ -161,35 +164,12 @@ class macOUI_lookup:
         """
         Grab the oui txt file off the ieee.org website
         """
-        if os.path.isdir (self.ouiInPath) == True:
-            print "Going to support/ to install new oui.txt..."
-            ouiDIR = self.ouiInPath
-        else:
-            print "Going to /usr/lib/airgraph-ng to install new oui.txt..."
-            ouiDIR = self.ouiUnPath
-            try:
-                os.remove(ouiDIR+"oui.txt")
-            except OSError:
-                print "Unable to delete oui.txt"
         try:
-            # Checks to see if it's running from a directory when not installed.
-            # If not, then goes to /usr/lib/airgraph-ng , where the main file is. 
-            ouiOnline = urllib2.urlopen(self.ouiTxtUrl)
-            print "Writing OUI file"
-            #lFile = open (ouiDIR+"oui.txt", "w")
-            #lFile.writelines(ouiOnline)
-            #lFile.close()  
-            #ouiOnline.close()
-            #self.ouiTxt = ouiDIR+"oui.txt"
-            dire = ouiDIR + "oui.txt"
-            import urllib
-            urllib.urlretrieve(self.ouiTxtUrl, dire)
+            print("Getting OUI file from %s to %s" %(self.ouiTxtUrl, path))
+            urllib.urlretrieve(self.ouiTxtUrl, path + "oui.txt")
             print "Completed Successfully"
-            sys.exit(0)
-        except Exception,e:
-            print e
-            print "Could not download file."
-            print "Exiting airgraph-ng."
+        except Exception, error:
+            print("Could not download file:\n %s\n Exiting airgraph-ng" %(error))
             sys.exit(0)
    
     def identDeviceDict(self,fname):

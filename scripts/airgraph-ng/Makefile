@@ -12,7 +12,8 @@ install: doc
 
 doc:
 	$(MAKE) -C man install 
-	install -d $(DESTDIR)$(docdir)
+	install -d $(prefix)$(docdir)
+	install -d $(prefix)/share/airgraph-ng
 	install -m 644 $(DOCFILES) $(DESTDIR)$(docdir)
 
 uninstall: clean
