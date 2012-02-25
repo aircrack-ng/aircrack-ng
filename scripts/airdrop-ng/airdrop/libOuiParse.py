@@ -35,15 +35,16 @@ class macOUI_lookup:
 		"""
 		#a poor fix where if we have no file it trys to download it
 		aircrackOUI = '/usr/local/etc/aircrack-ng/airodump-ng-oui.txt'
-        self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
+		self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
 		self.ouiUnPath   = install_dir#path to oui.txt if module is installed
 		self.ouiInPath   = install_dir + '/support/'         #path to oui.txt if module is not installed
 		if oui == None:
 			"if the file name is not provided attempt to get it"
 			self.ouiTxt  = None
 			if os.path.isfile(aircrackOUI) is False:
-                self.ouiUpdate()
-            else self.ouiTxt = aircrackOUI
+				self.ouiUpdate()
+			else:
+				self.ouiTxt = aircrackOUI
 		else:
 			self.ouiTxt	 = oui 			#location of the oui txtfile on the hard drive
 	
