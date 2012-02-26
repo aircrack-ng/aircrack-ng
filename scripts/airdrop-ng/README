@@ -16,31 +16,28 @@ Readme Written by Mubix & TheX1le
 
 #####################################################
 
-Supports Python 2.6 and may support 2.5 and 2.4.
+Requires python 2.7 for the installer to work, unless you edit it and remove the "--prefix " part.
 
 Dependencies:
 
-[*] lorcon-old aka lorcon version 1 (already installed on BT4 final)
-
-[*] pylorcon
-
-[*] A lorcon supported wireless card with monitor mode and injection
+[*] liblorcon
+[*] A lorcon supported wireless card (mac80211 drivers) with monitor mode and injection
 
 Optional Dependencies:
 
 [*] pysco JIT
 
 **********************
-
 * Installing lorcon *
-
 **********************
 
-Currently we only support the older version of lorcon you can download
+You can get lorcon source from:
 
-these files from the following svn link:
+[*] svn co http://802.11ninja.net/svn/lorcon/trunk 
 
-[*] svn co http://802.11ninja.net/svn/lorcon/branch/lorcon-old
+Then you will have to compile it:
+
+[*] cd trunk && make && make install
 
 If pylorcon reports import errors you need to run the following command:
 
