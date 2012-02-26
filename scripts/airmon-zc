@@ -653,6 +653,28 @@ checkvm() {
 			echo ${lscpu_data} | grep -iq "Microsoft" 2> /dev/null && vm = "MS Hyper-V"
 		fi
 	fi
+
+	#Check vmnet
+	if [ !${vm} ]
+	then
+		if [ -e /dev/vmnet ]
+		then
+			vm = "VMware"
+		fi
+	fi
+
+	# Check dmesg Output
+	if [ !${vm} ]
+	then
+		if [ -x "`which dmesg 2>&1`" ]
+                then
+			dmesg_output=`dmesg`
+			echo ${dmesg_output} | grep -iq "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)" && vm = "VirtualBox"
+			echo ${dmesg_output} | grep -iq "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)" && vm = "VMware"
+			echo ${dmesg_output} | grep -iq "(xen_mem)|(xen-vbd)" && vm =  "Xen"
+			echo ${dmesg_output} | grep -iq "(qemu virtual cpu version)" && vm = "Qemu/KVM"
+		fi
+	fi
 }
 
 #all functions defined, going into startup checks (startup checks should move up to the top)
