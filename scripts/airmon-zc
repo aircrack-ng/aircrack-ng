@@ -581,6 +581,7 @@ checkvm() {
 			echo ${dmi_info} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
 			echo ${dmi_info} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
 			echo ${dmi_info} | grep -iq "domu" 2> /dev/null && vm="Xen"
+			vm_from="dmi_info"
 		fi
 	fi
 
@@ -597,6 +598,7 @@ checkvm() {
 				echo ${lsmod} | grep -iq "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
 				echo ${lsmod} | grep -iq "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
 				echo ${lsmod} | grep -iq "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
+				vm_from="lsmod"
 			fi
 		fi
 	fi
@@ -608,6 +610,7 @@ checkvm() {
 		then
 			grep -iq "vmware" /proc/scsi/scsi 2> /dev/null && vm="VMware"
 			grep -iq "vbox" /proc/scsi/scsi 2> /dev/null && vm="VirtualBox"
+			vm_from="/pro/scsi/scsi"
 		fi
 	fi
 
@@ -622,6 +625,7 @@ checkvm() {
 			echo ${ide_model} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
 			echo ${ide_model} | grep -iq "virtual hd" 2> /dev/null && vm="Hyper-V/Virtual PC"
 			echo ${ide_model} | grep -iq "virtual cd" 2> /dev/null && vm="Hyper-V/Virtual PC"
+			vm_from="ide_model"
 		fi
 	fi
 
@@ -633,6 +637,7 @@ checkvm() {
 			lspci_data=`lspci`
 			echo ${lspci_data} | grep -iq "vmware" 2> /dev/null && vm="VMware"
 			echo ${lspci_data} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+			vm_from="lspci"
 		fi
 	fi
 
@@ -640,6 +645,7 @@ checkvm() {
 	if [ !${vm} ]
 	then
 		ls -1 /sys/bus | grep -iq "xen" 2> /dev/null && vm="Xen"
+		vm_from="/sys/bus/xen"
 	fi
 
 	# Check using lscpu
@@ -651,6 +657,7 @@ checkvm() {
 			echo ${lscpu_data} | grep -iq "Xen" 2> /dev/null && vm="Xen"
 			echo ${lscpu_data} | grep -iq "KVM" 2> /dev/null && vm="KVM"
 			echo ${lscpu_data} | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
+			vm_from="lscpu"
 		fi
 	fi
 
@@ -660,6 +667,7 @@ checkvm() {
 		if [ -e /dev/vmnet ]
 		then
 			vm="VMware"
+			vm_from="/dev/vmnet"
 		fi
 	fi
 
@@ -673,6 +681,7 @@ checkvm() {
 			echo ${dmesg_output} | grep -iq "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)" && vm="VMware"
 			echo ${dmesg_output} | grep -iq "(xen_mem)|(xen-vbd)" && vm="Xen"
 			echo ${dmesg_output} | grep -iq "(qemu virtual cpu version)" && vm="Qemu/KVM"
+			vm_from="dmesg"
 		fi
 	fi
 }
@@ -744,6 +753,7 @@ uname -a
 checkvm
 if [ ${vm} ]
 then
+	echo "Detected VM using ${vm_from}
 	echo "This appears to be a ${vm} Virtual Machine"
 fi
 
