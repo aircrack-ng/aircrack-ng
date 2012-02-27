@@ -586,7 +586,7 @@ checkvm() {
 	fi
 
 	#check loaded modules
-	if [ !${vm} ]
+	if [ -z ${vm} ]
 	then
 		if [ -x "`which lsmod 2>&1`" ]
 		then
@@ -604,7 +604,7 @@ checkvm() {
 	fi
 
 	#check scsi driver
-	if [ !${vm} ]
+	if [ -z ${vm} ]
 	then
 		if [ -f /proc/scsi/scsi ]
 		then
@@ -615,7 +615,7 @@ checkvm() {
 	fi
 
 	# Check IDE Devices
-	if [ !${vm} ]
+	if [ -z ${vm} ]
 	then
 		if [ -d /proc/ide ]
 		then
@@ -629,7 +629,7 @@ checkvm() {
 	fi
 
 	# Check using lspci
-	if [ !${vm} ]
+	if [ -z ${vm} ]
 	then
 		if [ -x "`which lspci 2>&1`" ]
 		then
@@ -641,7 +641,7 @@ checkvm() {
 	fi
 
 	# Xen bus check
-	if [ !${vm} ]
+	if [ -z ${vm} ]
 	then
 		ls -1 /sys/bus | grep -iq "xen" 2> /dev/null && vm="Xen"
 		vm_from="/sys/bus/xen"
@@ -661,7 +661,7 @@ checkvm() {
 	fi
 
 	#Check vmnet
-	if [ !${vm} ]
+	if [ -z ${vm} ]
 	then
 		if [ -e /dev/vmnet ]
 		then
@@ -671,7 +671,7 @@ checkvm() {
 	fi
 
 	# Check dmesg Output
-	if [ !${vm} ]
+	if [ -z ${vm} ]
 	then
 		if [ -x "`which dmesg 2>&1`" ]
                 then
