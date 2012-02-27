@@ -44,7 +44,7 @@ class macOUI_lookup:
 			if os.path.isfile(aircrackOUI) is False:
 				self.ouiUpdate()
 			else:
-                print "Found aircrack-ng oui txt file, not getting a new one"
+				print "Found aircrack-ng oui txt file, not getting a new one"
 				self.ouiTxt = aircrackOUI
 		else:
 			self.ouiTxt	 = oui 			#location of the oui txtfile on the hard drive
