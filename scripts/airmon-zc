@@ -753,7 +753,7 @@ uname -a
 checkvm
 if [ ${vm} ]
 then
-	echo "Detected VM using ${vm_from}
+	echo "Detected VM using ${vm_from}"
 	echo "This appears to be a ${vm} Virtual Machine"
 fi
 
