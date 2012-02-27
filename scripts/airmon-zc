@@ -5,7 +5,7 @@ IFACE=""
 CH=$3; [ x$3 = "x" ] && CH=10
 MADWIFI=0
 MAC80211=0
-IW_SOURCE="http://wireless.kernel.org/download/iw/iw-3.1.tar.bz2"
+IW_SOURCE="http://wireless.kernel.org/download/iw/iw-latest.tar.bz2"
 IW_ERROR=""
 UDEV_ISSUE=0
 
@@ -641,11 +641,13 @@ checkvm() {
 	fi
 
 	# Xen bus check
-	if [ -z ${vm} ]
-	then
-		ls -1 /sys/bus | grep -iq "xen" 2> /dev/null && vm="Xen"
-		vm_from="/sys/bus/xen"
-	fi
+	## XXX: Removing unsafe check
+	# this check triggers if CONFIG_XEN_PRIVILEGED_GUEST=y et al are set in kconfig (debian default) even in not actually a guest
+	#if [ -z ${vm} ]
+	#then
+	#	ls -1 /sys/bus | grep -iq "xen" 2> /dev/null && vm="Xen"
+	#	vm_from="/sys/bus/xen"
+	#fi
 
 	# Check using lscpu
 	if [ !${vm} ]
