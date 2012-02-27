@@ -935,7 +935,7 @@ if __name__ == "__main__":
     parser.add_option("-t", "--dump", dest="data", nargs=1 ,
                 help="Airodump txt file in CSV format NOT the pcap")
     parser.add_option("-r", "--rule",dest="rule", nargs=1 ,help="Rule File for matched deauths")
-    parser.add_option("-u", "--update",dest="OUIupdate", nargs=0, help="Updates OUI list")
+    parser.add_option("-u", "--update", dest="OUIupdate", action="store_true", help="Updates OUI list")
     parser.add_option("-s", "--sleep",dest="slept",default=0,nargs=1,type="int",help="Time to sleep between sending each packet")
     parser.add_option("-b", "--debug",dest="debug",action="store_true",default=False,help="Turn on Rule Debugging")
     parser.add_option("-l", "--logging",dest="log",action="store_true",default=False,help="Enable Logging to a file, if file path not provided airdrop will log to default location")
@@ -973,12 +973,13 @@ if __name__ == "__main__":
         "Please 'su' or 'sudo -i' and run again.\n","Exiting...\n\n"])
         sys.exit(-1)
     
-    if options.OUIupdate != None:
+    if options.OUIupdate:
         libOuiParse.macOUI_lookup(None)
-
-    if None in [options.card,options.rule,options.data]:
-        message.printMessage("You are missing either -i, -t or -r")
-        sys.exit(-1)
+        sys.exit(0)
+    else:
+        if None in [options.card,options.rule,options.data]:
+            message.printMessage("You are missing either -i, -t, -u or -r.")
+            sys.exit(-1)
 
     #no longer need to import lorcon here instead we should just test opening up the card and check for errors
     liborcon2 = '/usr/local/lib/liborcon2.so'
@@ -999,11 +1000,11 @@ if __name__ == "__main__":
             tx.open_inject()
         except lorcon.LorconError,e:
             message.printMessage(["\n",
-                e,"Interface "+options.card+" does not exist"])
+                e,"Interface %s does not exist" %(options.card)])
             sys.exit(-1)
         except ValueError:
             message.printMessage(["\n",
-                "Interface "+options.card+" does not exist"])
+                "Interface %s does not exist" %(options.card)])
             sys.exit(-1)
         try:
             #populate the oui lookup datatbases
