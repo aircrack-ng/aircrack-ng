@@ -2,6 +2,7 @@
 name="airoscript-ng"
 INSTALL = install -c
 INSTALLDATA = install -c -m 644
+INSTALLBIN = install -c -m 755 
 
 data=$(prefix)/share
 etcdir=$(DESTDIR)/etc
@@ -33,7 +34,7 @@ installdirs:
 	
 install-binary:
 	@echo "Installing airoscript"
-	@$(INSTALLDATA) $(srcdir)/airoscript-ng $(bindir)/$(name)
+	@$(INSTALLBIN) $(srcdir)/airoscript-ng $(bindir)/$(name)
 	@$(INSTALLDATA) $(srcdir)/airoscript-ng.conf $(etcdir)
 	@$(INSTALLDATA) $(srcdir)/airoscript-ng_debug.conf $(etcdir)
 	@$(INSTALLDATA) $(srcdir)/airoscript-ng_advanced.conf $(etcdir)
@@ -92,8 +93,7 @@ uninstall:
 			make -s -C $$i uninstall localedir=$(locale) ; \
 		fi ; \
 	done
-	$(etcdir)/airoscript-ng_advanced.conf
-	$(etcdir)/screenrc.airoscript
+	@rm $(etcdir)/airoscript-ng_advanced.conf $(etcdir)/screenrc.airoscript
 	@rm /usr/share/applications/aircrack-airoscript.desktop /usr/share/pixmaps/airoscript-ng.png
 
 	@echo "Uninstalled succesfully"
