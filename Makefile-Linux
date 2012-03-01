@@ -83,8 +83,8 @@ install-locale: generate-locale
 	done
 
 uninstall: 
-	@rm  $(bindir)/$(name)
-	@rm $(etcdir)/airoscript-ng.conf
+	@rm -f $(bindir)/$(name)
+	@rm -f $(etcdir)/airoscript-ng.conf
 	@rm -r $(datadir)
 	@rm -r $(docdir)
 	@rm $(mandir)/man1/airoscript-ng.1
@@ -93,9 +93,8 @@ uninstall:
 			make -s -C $$i uninstall localedir=$(locale) ; \
 		fi ; \
 	done
-	@rm $(etcdir)/airoscript-ng_advanced.conf $(etcdir)/screenrc.airoscript
-	@rm /usr/share/applications/aircrack-airoscript.desktop /usr/share/pixmaps/airoscript-ng.png
-
+	@rm -f $(etcdir)/airoscript-ng_advanced.conf $(etcdir)/airoscript-ng_debug.conf $(etcdir)/screenrc.airoscript
+	@rm -f $(picdir)/airoscript-ng.png $(picdir)/airoscript-ng.desktop $(picdir)/airoscript-ng_gtk.desktop
 	@echo "Uninstalled succesfully"
 	
 
