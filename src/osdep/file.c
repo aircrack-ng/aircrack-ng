@@ -31,9 +31,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <err.h>
+#include <pcap.h>
 
 #include "osdep.h"
-#include "pcap.h"
 #include "radiotap/radiotap-parser.h"
 #include "radiotap/ieee80211_radiotap.h"
 
