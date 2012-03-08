@@ -710,9 +710,14 @@ then
 	scanProcesses
 	#Honestly this needs a complete rewrite but for now I'm just bypassing the annoying part
 	#for iface in `iwconfig 2> /dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
-	for iface in `iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
+	#this is also filth, as we can't count on systems to have wireless extensions anymore...
+	#for iface in `iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
+	for iface in `ls -1 /sys/class/net`
 	do
-		checkProcessesIface $iface
+		if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
+		then
+			checkProcessesIface $iface
+		fi
 	done
 
 	if [ x"$2" = "xkill" ]
@@ -815,45 +820,50 @@ done
 #	The saving grace is that wifi cards are spit out with 1> and everything else is spit out with 2>
 #    for iface in `iwconfig 2> /dev/null | egrep '(IEEE|ESSID|802\.11|WLAN)' | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/' | grep -v wifi`
 #	So we adjust like this...
-for iface in `iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
+#for iface in `iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
+#	but since wireless extensions shouldn't be required now we completely deprecate iwconfig usage
+for iface in `ls -1 /sys/class/net`
 do
-	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV 
-	#add a RUNNING check here and up the device if it isn't already
-	ethtool_output="`ethtool -i $iface 2>&1`"
-	if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]
+	if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
 	then
-		getStack  $iface
-		getChipset $iface
-		getDriver   $iface
-		getFrom $iface
-		getFirmware $iface
-		getPhy     $iface
-		getExtendedInfo $iface
-	else
- 		echo "\nethtool failed, fallback to old method...\n"
-		echo "Only mac80211 devices on kernel 2.6.33 or higher are supported by airmon-zc.\n"
-		echo "Running airmon-ng:"
-		airmon-ng $@
-		exit
-	fi
- 
-	#yes this really is the main output loop
-	printf "${FROM}[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]-${FIRMWARE}\t${CHIPSET}\t${EXTENDED}"
-
-	if [ x$MAC80211 = "x1" ]
-	then
-		getNewMon
-		if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+		unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV 
+		#add a RUNNING check here and up the device if it isn't already
+		ethtool_output="`ethtool -i $iface 2>&1`"
+		if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]
 		then
-			startMac80211Iface $iface
+			getStack  $iface
+			getChipset $iface
+			getDriver   $iface
+			getFrom $iface
+			getFirmware $iface
+			getPhy     $iface
+			getExtendedInfo $iface
+		else
+	 		echo "\nethtool failed, fallback to old method...\n"
+			echo "Only mac80211 devices on kernel 2.6.33 or higher are supported by airmon-zc.\n"
+			echo "Running airmon-ng:"
+			airmon-ng $@
+			exit
 		fi
 
-		if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+		#yes this really is the main output loop
+		printf "${FROM}[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]-${FIRMWARE}\t${CHIPSET}\t${EXTENDED}"
+
+		if [ x$MAC80211 = "x1" ]
 		then
-			stopMac80211Iface $iface
+			getNewMon
+			if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+			then
+				startMac80211Iface $iface
+			fi
+
+			if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+			then
+				stopMac80211Iface $iface
+			fi
+			echo
+			continue
 		fi
-		echo
-		continue
 	fi
 done
 
