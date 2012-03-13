@@ -24,13 +24,13 @@ othertmenu(){
             1  ) othersinjectmenu    ; $clear; break;;
             2  ) authmenu      ; $clear; break;;
             3  ) generate_hcap ; $clear; break;;
-            3  ) ivstoomenu    ; $clear; break;;
-            4  ) airdecmenu    ; $clear; break;;
-            5  ) airtunmenu    ; $clear; break;;
-            6  ) diagmenu      ; $clear; break;;
-            7  ) choosewesside ; $clear; break;;
-            8  ) eassideng     ; $clear; break;;
-            9  ) $clear        ; break ;;
+            4  ) ivstoomenu    ; $clear; break;;
+            5  ) airdecmenu    ; $clear; break;;
+            6  ) airtunmenu    ; $clear; break;;
+            7  ) diagmenu      ; $clear; break;;
+            8  ) choosewesside ; $clear; break;;
+            9  ) eassideng     ; $clear; break;;
+            10 ) $clear        ; break ;;
             *  ) _ "Unknown response, try again"; sleep 1; $clear;;
         esac
     done
