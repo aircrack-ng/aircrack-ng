@@ -5,9 +5,9 @@ pyrit_attacks=(attack_batch attack_cowpatty attack_db attack_passthrough  batch 
 Crack_password_with_pyrit(){
     [[ ! -e $DUMP_PATH/$Host_MAC-01.cap ]] && Crack_password_with_pyrit_error || {
         read -i "$default_pyrit_dictionary" -p "Enter dictionary " pyrit_dictionary 
-        pyrit_opts="-b '$Host_MAC' -e '$Host_SSID' -i '$pyrit_dictionary' -o '$DUMP_PATH/$Host_MAC.pyrit_key' -r '$DUMP_PATH/$Host_MAC-01.cap' "
+        pyrit_opts="-b \"$Host_MAC\" -e \"$Host_SSID\" -i \"$pyrit_dictionary\" -o \"$DUMP_PATH/$Host_MAC.pyrit_key\" -r \"$DUMP_PATH/$Host_MAC-01.cap\" "
         mkmenu "Select pyrit attack" ${pyrit_attacks[@]} 
-        read -i "Add any custom pyrit opt you want (e.j, remote servers, relay stuffs...): " custom_opts
-        pyrit $pyrit_opts $custom_opts ${pyrit_attacks[$(($choice -1))]} && cp $DUMP_PATH/$Host_MAC.pyrit_key $DUMP_PATH/$Host_MAC.key
+        read -i "$custom_opts" "Add any custom pyrit opt you want (e.j, remote servers, relay stuffs...): " custom_opts
+        execute "pyrit attack" pyrit $pyrit_opts ${pyrit_attacks[$choice - 1]} && cp $DUMP_PATH/$Host_MAC.pyrit_key $DUMP_PATH/$Host_MAC.key
     }
 }
