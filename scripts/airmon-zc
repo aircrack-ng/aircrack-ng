@@ -12,6 +12,7 @@ UDEV_ISSUE=0
 
 #TODO LIST
 
+#auto set some channel at start because some drivers do not work otherwise
 #add "test" mode to verify basic channel control
 #add band detection
 #change names to mimic hostapd or kismet
@@ -177,6 +178,13 @@ stopDeprecatedIface() {
 getDriver() {
 	#standard detection path, this is all that is needed for proper drivers
 	DRIVER=`echo "$ethtool_output" | awk '/driver/ {print $2}'`
+
+	if $(modinfo ${DRIVER} > /dev/null 2>&1)
+	then
+		true
+	else
+		unset DRIVER
+	fi
 
 	if [ "$DRIVER" = "" ]
 	then
