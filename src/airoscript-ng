@@ -24,12 +24,7 @@ declare -a p_menu
 
 p_menu+=( "Enable plugin" )
 
-_source(){
-    for cfile in $@; do
-        if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; 
-        else if [ "$debug" == 1 ]; then echo "Could not load $cfile"; sleep 0.2 ;fi; fi
-    done
-}
+_source(){ for cfile in $@; do if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; else if [ "$debug" == 1 ]; then echo "Could not load $cfile"; sleep 0.2 ;fi; fi; done; }
 
 [[ ! $path ]] && {
     [[ -e /usr/share/airoscript-ng/ ]] && path=/usr/share/airoscript-ng || { 
@@ -39,8 +34,8 @@ _source(){
 
 Enable_plugin(){
     cd $path/plugins; available_plugins=(*); cd -; mkmenu "Enable plugin" "${available_plugins[@]}"
-    _source $path/plugins/${available_plugins[$choice - 1 ]} || { warn "${mark}Unknown option or bad plugin, try again"; Enable_plugin; }
-}
+    _source $path/plugins/${available_plugins[$choice - 1 ]} || { warn "${mark}Unknown option or bad plugin, try again"; Enable_plugin; } #nodebug
+ }
 
 exit_trap(){ check_function doexit || source $path/internal/exit; echo; echo; doexit; }
 Return_to_main_menu(){ mainmenu; }
