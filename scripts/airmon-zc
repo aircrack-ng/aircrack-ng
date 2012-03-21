@@ -729,12 +729,9 @@ then
 			iface_list="${iface_list}\n ${iface}"
 		done
 	fi
-	for iface in $(echo "${iface_list}" | sort -bu)
+	for iface in $(echo -e "${iface_list}" | sort -bu)
 	do
-		if [ "${iface}" != "\n" ]
-		then
-			checkProcessesIface ${iface}
-		fi
+		checkProcessesIface ${iface}
 	done
 
 	if [ x"$2" = "xkill" ]
@@ -845,10 +842,8 @@ then
 		iface_list="${iface_list}\n ${iface}"
 	done
 fi
-for iface in $(echo ${iface_list} | sort -bu)
+for iface in $(echo -e ${iface_list} | sort -bu)
 do
-	if [ "${iface}" != "\n" ]
-	then
 	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV 
 	#add a RUNNING check here and up the device if it isn't already
 	ethtool_output="`ethtool -i $iface 2>&1`"
@@ -886,7 +881,6 @@ do
 		fi
 		echo
 		continue
-	fi
 	fi
 done
 
