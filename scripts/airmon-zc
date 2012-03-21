@@ -85,8 +85,7 @@ PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpc
 PS_ERROR="invalid"
 
 usage() {
-	printf "usage: `basename $0` <start|stop|check> <interface> [channel or frequency]\n"
-	echo
+	printf "usage: `basename $0` <start|stop|check> <interface> [channel or frequency]\n\n"
 	exit
 }
 
@@ -150,11 +149,11 @@ stopMac80211Iface() {
 		if [ "`cat /sys/class/net/$1/type`" != "803" ]
 		then
 			printf "\n\nYou are trying to stop a device that isn't in monitor mode.\n"
-			echo "Doing so is a terrible idea, if you really want to do it then you"
-			echo "need to type 'iw $1 del' yourself since it is a terrible idea."
-			echo "Most likely you want to remove an interface called mon[0-9]"
-			echo "If you feel you have reached this warning in error,"
-			echo "please report it following the directions above."
+			printf "Doing so is a terrible idea, if you really want to do it then you\n"
+			printf "need to type 'iw $1 del' yourself since it is a terrible idea.\n"
+			printf "Most likely you want to remove an interface called mon[0-9]\n"
+			printf "If you feel you have reached this warning in error,\n"
+			printf "please report it following the directions above."
 		else
 			IW_ERROR=`iw dev "$1" del 2>&1 | grep "nl80211 not found"`
 			if [ x$IW_ERROR = "x" ]
@@ -182,7 +181,7 @@ stopDeprecatedIface() {
 
 getDriver() {
 	#standard detection path, this is all that is needed for proper drivers
-	DRIVER=`echo "$ethtool_output" | awk '/driver/ {print $2}'`
+	DRIVER=$(printf "$ethtool_output" | awk '/driver/ {print $2}')
 
 	if $(modinfo ${DRIVER} > /dev/null 2>&1)
 	then
@@ -205,7 +204,7 @@ getDriver() {
 	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
 	if [ "$DRIVER" = "usb" ]
 	then
-		BUSADDR="`echo "$ethtool_output" | awk '/bus-info/ {print $2}'`:1.0"
+		BUSADDR="$(printf "$ethtool_output" | awk '/bus-info/ {print $2}'):1.0"
 		if [ "$BUSADDR" != "" ]
 		then
 			if [ -f /sys/class/net/$1/device/$BUSADDR/uevent ]
@@ -250,7 +249,7 @@ getDriver() {
 	fi
 	if [ "$DEBUG" = "1" ]
 	then
-		echo "getdriver() $DRIVER"
+		printf "getdriver() $DRIVER"
 	fi
 }
 
@@ -289,12 +288,12 @@ getFrom() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		echo "getFrom() $FROM"
+		printf "getFrom() $FROM"
 	fi
 }
 
 getFirmware() {
-	FIRMWARE=`echo "$ethtool_output" | awk '/firmware-version/ {print $2}'`
+	FIRMWARE=$(printf "$ethtool_output" | awk '/firmware-version/ {print $2}')
 	#ath9k_htc firmware is a shorter version number than most so trap and make it pretty
 	if [ "$DRIVER" = "ath9k_htc" ]
 	then
@@ -311,7 +310,7 @@ getFirmware() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		echo "getFirmware $FIRMWARE"
+		printf "getFirmware $FIRMWARE"
 	fi
 
 }
@@ -333,7 +332,7 @@ getChipset() {
 				DEVICEID=`cat /sys/class/net/$1/device/vendor`:`cat /sys/class/net/$1/device/device`
 				CHIPSET=`lspci -d $DEVICEID | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
 			else
-				BUSINFO=`echo "$ethtool_output" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //'`
+				BUSINFO=$(printf "$ethtool_output" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //')
 				CHIPSET=`lspci | grep "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
 				DEVICEID=`lspci -nn | grep "$BUSINFO" | grep '[[0-9][0-9][0-9][0-9]:[0-9][0-9][0-9][0-9]' -o`
 			fi
@@ -352,10 +351,10 @@ getChipset() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		echo "getchipset() $CHIPSET"
-		echo "BUS = $BUS"
-		echo "BUSINFO = $BUSINFO"
-		echo "DEVICEID = $DEVICEID"
+		printf "getchipset() $CHIPSET"
+		printf "BUS = $BUS"
+		printf "BUSINFO = $BUSINFO"
+		printf "DEVICEID = $DEVICEID"
 	fi
 }
 
@@ -382,7 +381,7 @@ getStack() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		echo "getStack $STACK"
+		printf "getStack $STACK"
 	fi
 
 }
@@ -411,15 +410,15 @@ getExtendedInfo() {
 
 	#lastly we detect all the broken drivers which have working alturnatives
 	KV=`uname -r | awk -F'-' '{print $1}'`
-	KVMAJOR=`echo $KV | awk -F'.' '{print $1$2}'`
-	KVMINOR=`echo $KV | awk -F'.' '{print $3}'`
+	KVMAJOR=$(printf ${KV} | awk -F'.' '{print $1$2}')
+	KVMINOR=$(printf ${KV} | awk -F'.' '{print $3}')
 
 	if [ $KVMAJOR -lt 26 ]
 	then
-		echo "You are running a kernel older than 2.6, I'm surprised it didn't error before now."
+		printf "You are running a kernel older than 2.6, I'm surprised it didn't error before now."
 	        if [ "$DEBUG" = "1" ]
 	        then
-			echo ${KVMAJOR} ${KVMINOR}
+			printf ${KVMAJOR} ${KVMINOR}
 		fi
 		exit
 	fi
@@ -494,11 +493,10 @@ scanProcesses() {
 	match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
 	if [ $match -gt 0 -a x"$1" != "xkill" ]
 	then
-		printf "\n"
-		echo "Found $match processes that could cause trouble."
-		echo "If airodump-ng, aireplay-ng or airtun-ng stops working after"
-		echo "a short period of time, you may want to kill (some of) them!"
-		echo "\nPID\tName"
+		printf "\nFound $match processes that could cause trouble.\n"
+		printf "If airodump-ng, aireplay-ng or airtun-ng stops working after\n"
+		printf "a short period of time, you may want to kill (some of) them!\n"
+		printf "\nPID\tName\n"
 	else
 		if [ x"$1" != "xkill" ]
 		then
@@ -508,7 +506,7 @@ scanProcesses() {
 
 	if [ $match -gt 0 -a x"$1" = "xkill" ]
 	then
-		echo "Killing all those processes..."
+		printf "Killing all those processes..."
 	fi
 
 	i=1
@@ -541,7 +539,7 @@ checkProcessesIface() {
 	for i in `ps auxw | grep $1 | grep -v "grep" | grep -v "airmon-zc" | awk '{print $2}'`
 	do
 		pname=`ps -o comm= -p $i`
-		echo "Process with PID $i ($pname) is running on interface $1"
+		printf "Process with PID $i ($pname) is running on interface $1\n"
 	done
 }
 
@@ -583,11 +581,11 @@ checkvm() {
 		dmi_info=`dmidecode`
 		if [ dmi_info ]
 		then
-			echo ${dmi_info} | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
-			echo ${dmi_info} | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			echo ${dmi_info} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
-			echo ${dmi_info} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
-			echo ${dmi_info} | grep -iq "domu" 2> /dev/null && vm="Xen"
+			printf ${dmi_info} | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
+			printf ${dmi_info} | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			printf ${dmi_info} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+			printf ${dmi_info} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
+			printf ${dmi_info} | grep -iq "domu" 2> /dev/null && vm="Xen"
 			vm_from="dmi_info"
 		fi
 	fi
@@ -600,11 +598,11 @@ checkvm() {
 			lsmod=`lsmod`
 			if [ lsmod ]
 			then
-				echo ${lsmod} | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
-				echo ${lsmod} | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
-				echo ${lsmod} | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
-				echo ${lsmod} | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
-				echo ${lsmod} | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
+				printf ${lsmod} | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
+				printf ${lsmod} | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
+				printf ${lsmod} | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
+				printf ${lsmod} | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
+				printf ${lsmod} | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
 				vm_from="lsmod"
 			fi
 		fi
@@ -627,10 +625,10 @@ checkvm() {
 		if [ -d /proc/ide ]
 		then
 			ide_model=`cat /proc/ide/hd*/model`
-			echo ${ide_model} | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
-			echo ${ide_model} | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			echo ${ide_model} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
-			echo ${ide_model} | grep -iqE "virtual (hd|cd)" 2> /dev/null && vm="Hyper-V/Virtual PC"
+			printf ${ide_model} | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
+			printf ${ide_model} | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			printf ${ide_model} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
+			printf ${ide_model} | grep -iqE "virtual (hd|cd)" 2> /dev/null && vm="Hyper-V/Virtual PC"
 			vm_from="ide_model"
 		fi
 	fi
@@ -641,8 +639,8 @@ checkvm() {
 		if [ -x "`which lspci 2>&1`" ]
 		then
 			lspci_data=`lspci`
-			echo ${lspci_data} | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			echo ${lspci_data} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+			printf ${lspci_data} | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			printf ${lspci_data} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
 			vm_from="lspci"
 		fi
 	fi
@@ -662,9 +660,9 @@ checkvm() {
 		if [ -x "`which lscpu 2>&1`" ]
                 then
                         lscpu_data=`lscpu`
-			echo ${lscpu_data} | grep -iq "Xen" 2> /dev/null && vm="Xen"
-			echo ${lscpu_data} | grep -iq "KVM" 2> /dev/null && vm="KVM"
-			echo ${lscpu_data} | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
+			printf ${lscpu_data} | grep -iq "Xen" 2> /dev/null && vm="Xen"
+			printf ${lscpu_data} | grep -iq "KVM" 2> /dev/null && vm="KVM"
+			printf ${lscpu_data} | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
 			vm_from="lscpu"
 		fi
 	fi
@@ -685,10 +683,10 @@ checkvm() {
 		if [ -x "`which dmesg 2>&1`" ]
                 then
 			dmesg_output=`dmesg`
-			echo ${dmesg_output} | grep -iqE "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)" && vm="VirtualBox"
-			echo ${dmesg_output} | grep -iqE "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)" && vm="VMware"
-			echo ${dmesg_output} | grep -iqE "(xen_mem)|(xen-vbd)" && vm="Xen"
-			echo ${dmesg_output} | grep -iqE "(qemu virtual cpu version)" && vm="Qemu/KVM"
+			printf ${dmesg_output} | grep -iqE "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)" && vm="VirtualBox"
+			printf ${dmesg_output} | grep -iqE "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)" && vm="VMware"
+			printf ${dmesg_output} | grep -iqE "(xen_mem)|(xen-vbd)" && vm="Xen"
+			printf ${dmesg_output} | grep -iqE "(qemu virtual cpu version)" && vm="Qemu/KVM"
 			vm_from="dmesg"
 		fi
 	fi
@@ -707,10 +705,10 @@ fi
 
 if [ x$USERID != "x" -a x$USERID != "x0" ]
 then
-	echo Run it as root ; exit ;
+	printf "Run it as root\n" ; exit ;
 fi
 
-iwpriv > /dev/null 2> /dev/null || { echo Wireless tools not found ; exit ; }
+iwpriv > /dev/null 2> /dev/null || { printf "Wireless tools not found\n" ; exit ; }
 
 if [ x"$1" = "xcheck" ] || [ x"$1" = "xstart" ]
 then
@@ -773,8 +771,8 @@ uname -a
 checkvm
 if [ ${vm} ]
 then
-	echo "Detected VM using ${vm_from}"
-	echo "This appears to be a ${vm} Virtual Machine"
+	printf "Detected VM using ${vm_from}\n"
+	printf "This appears to be a ${vm} Virtual Machine\n"
 fi
 
 printf "\nK indicates driver is from `uname -r`\n"
@@ -815,10 +813,11 @@ do
 
 		if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
 		then
-			echo "$iface does not support 'stop', do it on ath interface"
+			printf "$iface does not support 'stop', do it on ath interface\n"
 		fi
 
-		echo
+		#why, dear god why is there a random newline here?
+		printf "\n"
 		continue
 	fi
 done
@@ -857,9 +856,9 @@ do
 		getPhy     $iface
 		getExtendedInfo $iface
 	else
- 		echo "\nethtool failed, fallback to old method...\n"
-		echo "Only mac80211 devices on kernel 2.6.33 or higher are supported by airmon-zc.\n"
-		echo "Running airmon-ng:"
+ 		printf "\nethtool failed, fallback to old method...\n"
+		printf "Only mac80211 devices on kernel 2.6.33 or higher are supported by airmon-zc.\n"
+		printf "Running airmon-ng:"
 		airmon-ng $@
 		exit
 	fi
@@ -879,15 +878,18 @@ do
 		then
 			stopMac80211Iface $iface
 		fi
-		echo
+
+		#why, dear god why is there a random newline here?
+		printf "\n"
 		continue
 	fi
 done
 
-echo
+#why, dear god why is there a random newline here?
+printf "\n"
 
 if [ $UDEV_ISSUE != 0 ]
 then
-	echo "udev renamed the interface. Read the following for a solution:"
-	echo "http://www.aircrack-ng.org/doku.php?id=airmon-ng#interface_athx_number_rising_ath0_ath1_ath2...._ath45\n"
+	printf "udev renamed the interface. Read the following for a solution:\n"
+	printf "http://www.aircrack-ng.org/doku.php?id=airmon-ng#interface_athx_number_rising_ath0_ath1_ath2...._ath45\n\n"
 fi
