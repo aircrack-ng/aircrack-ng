@@ -22,55 +22,55 @@ UDEV_ISSUE=0
 #check for all needed binaries
 if [ ! -x "`which iw 2>&1`" ]
 then
-	echo "You don't have iw installed, please install it from your distro's package manager."
-	echo "If your distro doesn't have a recent version you can download it from this link:"
-	echo $IW_SOURCE
+	printf "You don't have iw installed, please install it from your distro's package manager.\n"
+	printf "If your distro doesn't have a recent version you can download it from this link:\n"
+	printf "${IW_SOURCE}\n"
 	exit
 fi
 
 if [ ! -x "`which ethtool 2>&1`" ]
 then
-	echo "Please install the ethtool package for your distro."
+	printf "Please install the ethtool package for your distro.\n"
 	exit
 fi
 
 if [ ! -x "`which lsusb 2>&1`" ]
 then
-	echo "Please install lsusb from your distro's package manager."
+	printf "Please install lsusb from your distro's package manager.\n"
 	exit
 fi
 
 if [ ! -x "`which lspci 2>&1`" ]
 then
-	echo "Please install lspci from your distro's package manager."
+	printf "Please install lspci from your distro's package manager.\n"
 	exit
 fi
 
 if [ ! -x "`which modprobe 2>&1`" ]
 then
-	echo "How in the world do you not have modprobe installed?"
-	echo "Please select a linux distro which has at least basic functionality (or install modprobe)."
+	printf "How in the world do you not have modprobe installed?\n"
+	printf "Please select a linux distro which has at least basic functionality (or install modprobe).\n"
 	exit
 fi
 
 if [ ! -x "`which modinfo 2>&1`" ]
 then
-	echo "How in the world do you not have modinfo installed?"
-	echo "Please select a linux distro which has at least basic functionality (or install modinfo)."
+	printf "How in the world do you not have modinfo installed?\n"
+	printf "Please select a linux distro which has at least basic functionality (or install modinfo).\n"
 	exit
 fi
 
 if [ ! -x "`which awk 2>&1`" ]
 then
-	echo "How in the world do you not have awk installed?"
-	echo "Please select a linux distro which has at least basic functionality (or install awk)."
+	printf "How in the world do you not have awk installed?\n"
+	printf "Please select a linux distro which has at least basic functionality (or install awk).\n"
 	exit
 fi
 
 if [ ! -x "`which grep 2>&1`" ]
 then
-	echo "How in the world do you not have grep installed?"
-	echo "Please select a linux distro which has at least basic functionality (or install grep)."
+	printf "How in the world do you not have grep installed?\n"
+	printf "Please select a linux distro which has at least basic functionality (or install grep).\n"
 	exit
 fi
 #done checking for binaries
