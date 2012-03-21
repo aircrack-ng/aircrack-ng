@@ -12,7 +12,8 @@ UDEV_ISSUE=0
 
 #TODO LIST
 
-#auto set some channel at start because some drivers do not work otherwise
+#cleanup getDriver()
+#cleanup start channel settings
 #add "test" mode to verify basic channel control
 #add band detection
 #change names to mimic hostapd or kismet
@@ -99,6 +100,8 @@ startDeprecatedIface() {
 		else
 			iwconfig $1 freq "$2"000000 > /dev/null 2>&1
 		fi
+	else
+		iwconfig $1 channel ${CH} > /dev/null 2>&1
 	fi
 	iwconfig $1 key off > /dev/null 2>&1
 	ifconfig $1 up
@@ -131,6 +134,8 @@ startMac80211Iface() {
 			else
 				iw dev $MONDEV set freq "$3"
 			fi
+		else
+			iw dev ${MONDEV} set channel ${CH}
 		fi
 		ifconfig $MONDEV up
 		printf "\n\t\t(mac80211 monitor mode enabled for [${PHYDEV}]${1} on [${PHYDEV}]$MONDEV)\n"
@@ -726,7 +731,10 @@ then
 	fi
 	for iface in $(echo "${iface_list}" | sort -bu)
 	do
+		if [ "${iface}" != "\n" ]
+		then
 			checkProcessesIface ${iface}
+		fi
 	done
 
 	if [ x"$2" = "xkill" ]
@@ -839,6 +847,8 @@ then
 fi
 for iface in $(echo ${iface_list} | sort -bu)
 do
+	if [ "${iface}" != "\n" ]
+	then
 	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV 
 	#add a RUNNING check here and up the device if it isn't already
 	ethtool_output="`ethtool -i $iface 2>&1`"
@@ -876,6 +886,7 @@ do
 		fi
 		echo
 		continue
+	fi
 	fi
 done
 
