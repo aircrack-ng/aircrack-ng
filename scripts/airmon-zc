@@ -20,7 +20,7 @@ UDEV_ISSUE=0
 
 
 #check for all needed binaries
-if [ ! -x "`which iw 2>&1`" ]
+if [ ! -x "$(which iw 2>&1)" ]
 then
 	printf "You don't have iw installed, please install it from your distro's package manager.\n"
 	printf "If your distro doesn't have a recent version you can download it from this link:\n"
@@ -28,46 +28,46 @@ then
 	exit
 fi
 
-if [ ! -x "`which ethtool 2>&1`" ]
+if [ ! -x "$(which ethtool 2>&1)" ]
 then
 	printf "Please install the ethtool package for your distro.\n"
 	exit
 fi
 
-if [ ! -x "`which lsusb 2>&1`" ]
+if [ ! -x "$(which lsusb 2>&1)" ]
 then
 	printf "Please install lsusb from your distro's package manager.\n"
 	exit
 fi
 
-if [ ! -x "`which lspci 2>&1`" ]
+if [ ! -x "$(which lspci 2>&1)" ]
 then
 	printf "Please install lspci from your distro's package manager.\n"
 	exit
 fi
 
-if [ ! -x "`which modprobe 2>&1`" ]
+if [ ! -x "$(which modprobe 2>&1)" ]
 then
 	printf "How in the world do you not have modprobe installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install modprobe).\n"
 	exit
 fi
 
-if [ ! -x "`which modinfo 2>&1`" ]
+if [ ! -x "$(which modinfo 2>&1)" ]
 then
 	printf "How in the world do you not have modinfo installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install modinfo).\n"
 	exit
 fi
 
-if [ ! -x "`which awk 2>&1`" ]
+if [ ! -x "$(which awk 2>&1)" ]
 then
 	printf "How in the world do you not have awk installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install awk).\n"
 	exit
 fi
 
-if [ ! -x "`which grep 2>&1`" ]
+if [ ! -x "$(which grep 2>&1)" ]
 then
 	printf "How in the world do you not have grep installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install grep).\n"
@@ -85,7 +85,7 @@ PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpc
 PS_ERROR="invalid"
 
 usage() {
-	printf "usage: `basename $0` <start|stop|check> <interface> [channel or frequency]\n\n"
+	printf "usage: $(basename $0) <start|stop|check> <interface> [channel or frequency]\n\n"
 	exit
 }
 
@@ -111,9 +111,9 @@ startMac80211Iface() {
 	#check if $1 already has a mon interface on the same phy and bail if it does
 	if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]
 	then
-		for i in `ls /sys/class/ieee80211/${PHYDEV}/device/net/`
+		for i in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/)
 		do
-			if [ "`cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type`" = "803" ]
+			if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type)" = "803" ]
 			then
 				printf "\n\t\t(mac80211 monitor mode already enabled for [${PHYDEV}]${1} on [${PHYDEV}]${i})\n"
 				exit
@@ -121,7 +121,7 @@ startMac80211Iface() {
 		done
 	fi
 	#we didn't bail means we need a monitor interface
-	IW_ERROR=`iw dev $1 interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
+	IW_ERROR=$(iw dev $1 interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found")
 	if [ x$IW_ERROR = "x" ]
 	then
 		sleep 2s
@@ -146,7 +146,7 @@ startMac80211Iface() {
 stopMac80211Iface() {
 	if [ -f /sys/class/net/$1/type ]
 	then
-		if [ "`cat /sys/class/net/$1/type`" != "803" ]
+		if [ "$(cat /sys/class/net/$1/type)" != "803" ]
 		then
 			printf "\n\nYou are trying to stop a device that isn't in monitor mode.\n"
 			printf "Doing so is a terrible idea, if you really want to do it then you\n"
@@ -155,14 +155,14 @@ stopMac80211Iface() {
 			printf "If you feel you have reached this warning in error,\n"
 			printf "please report it following the directions above."
 		else
-			IW_ERROR=`iw dev "$1" del 2>&1 | grep "nl80211 not found"`
+			IW_ERROR=$(iw dev "$1" del 2>&1 | grep "nl80211 not found")
 			if [ x$IW_ERROR = "x" ]
 			then
 				printf " (mac80211 vif removed)"
 			else
 				if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
 				then
-					echo -n "$1" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+					printf "$1" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
 					printf " (mac80211 vif removed)"
 				else
 					printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
@@ -194,7 +194,7 @@ getDriver() {
 	then
 		if [ -f /sys/class/net/$1/device/uevent ]
 		then
-			DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/uevent`"
+			DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/uevent)"
 		else
 			#DRIVER we put SOMETHING in DRIVER here if we are unable to find anything real
 			DRIVER="??????"
@@ -209,7 +209,7 @@ getDriver() {
 		then
 			if [ -f /sys/class/net/$1/device/$BUSADDR/uevent ]
 			then
-				DRIVER="`awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent`"
+				DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent)"
 			fi
 		fi
 
@@ -220,7 +220,7 @@ getDriver() {
 		fi
 		if [ -f /sys/class/net/$1/device/idProduct ]
 		then
-			if [ `cat /sys/class/net/$1/device/idProduct` = "3070" ]
+			if [ $(cat /sys/class/net/$1/device/idProduct) = "3070" ]
 			then
 				DRIVER="rt3070sta"
 			fi
@@ -237,11 +237,11 @@ getDriver() {
 
 	#Here we will catch the broken lying drivers not caught above
 	#currently this only functions for pci devices and not usb since lsusb has no -k option
-	if `modinfo $DRIVER  > /dev/null 2>&1`
+	if $(modinfo $DRIVER  > /dev/null 2>&1)
 	then
 		true
 	else
-		DRIVER="`lspci -d $DEVICEID -k | awk '/modules/ {print $3}'`"
+		DRIVER="$(lspci -d $DEVICEID -k | awk '/modules/ {print $3}')"
 		if [ "$DRIVER" = "" ]
 		then
 			DRIVER="??????"
@@ -255,7 +255,7 @@ getDriver() {
 
 getFrom() {
 	#from detection
-	if [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep 'kernel/drivers'` ]
+	if [ $(modinfo $DRIVER | awk '/filename/ {print $2}' | grep 'kernel/drivers') ]
 	then
 		FROM="K"
 		#we add special handling here because we hate the vendor drivers AND they install in the wrong place
@@ -269,10 +269,10 @@ getFrom() {
 		then
 			FROM="V"
 		fi
-	elif [ `modinfo $DRIVER | awk '/filename/ {print $2}'  | grep 'updates/drivers'` ]
+	elif [ $(modinfo $DRIVER | awk '/filename/ {print $2}'  | grep 'updates/drivers') ]
 	then
 		FROM="C"
-	elif [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep misc` ]
+	elif [ $(modinfo $DRIVER | awk '/filename/ {print $2}' | grep misc) ]
 	then
 		FROM="M"
 		#add a yell at the user in here
@@ -281,7 +281,7 @@ getFrom() {
 	fi
 
 	#check for staging drivers seperately
-	if [ `modinfo $DRIVER | awk '/filename/ {print $2}' | grep staging` ]
+	if [ $(modinfo $DRIVER | awk '/filename/ {print $2}' | grep staging) ]
 	then
 		FROM="S"
         fi
@@ -320,21 +320,21 @@ getChipset() {
 	#fix this to be one line per bus
 	if [ -f /sys/class/net/$1/device/modalias ]
 	then
-		BUS=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1`
+		BUS=$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1)
 		if [ "$BUS" = "usb" ]
 		then
-			BUSINFO=`cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/'`
-			CHIPSET=`lsusb | grep -i "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
+			BUSINFO=$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/')
+			CHIPSET=$(lsusb | grep -i "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')
 		elif [ "$BUS" = "pci" ]
 		then
 			if [ -f /sys/class/net/$1/device/vendor -a -f /sys/class/net/$1/device/device ]
 			then
-				DEVICEID=`cat /sys/class/net/$1/device/vendor`:`cat /sys/class/net/$1/device/device`
-				CHIPSET=`lspci -d $DEVICEID | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
+				DEVICEID=$(cat /sys/class/net/$1/device/vendor):$(cat /sys/class/net/$1/device/device)
+				CHIPSET=$(spci -d $DEVICEID | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')
 			else
 				BUSINFO=$(printf "$ethtool_output" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //')
-				CHIPSET=`lspci | grep "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //'`
-				DEVICEID=`lspci -nn | grep "$BUSINFO" | grep '[[0-9][0-9][0-9][0-9]:[0-9][0-9][0-9][0-9]' -o`
+				CHIPSET=$(lspci | grep "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')
+				DEVICEID=$(lspci -nn | grep "$BUSINFO" | grep '[[0-9][0-9][0-9][0-9]:[0-9][0-9][0-9][0-9]' -o)
 			fi
 		else
 			CHIPSET="Not pci or usb"
@@ -342,8 +342,8 @@ getChipset() {
 	#we don't do a check for usb here but it is obviously only going to work for usb
 	elif [ -f /sys/class/net/$1/device/idVendor -a -f /sys/class/net/$1/device/idProduct ]
 	then
-		DEVICEID=`cat /sys/class/net/$1/device/idVendor`:`cat /sys/class/net/$1/device/idProduct`
-		CHIPSET=`lsusb | grep -i "$DEVICEID" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //'`
+		DEVICEID=$(cat /sys/class/net/$1/device/idVendor):$(cat /sys/class/net/$1/device/idProduct)
+		CHIPSET=$(lsusb | grep -i "$DEVICEID" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')
 	else
 		CHIPSET="non-mac80211 device? (report this!)"
 		#this seems to somehow trigger on b43's 4318 chip.... but it really shouldn't.
@@ -395,7 +395,7 @@ getExtendedInfo() {
 	#first we set all the real (useful) info we can find
 	if [ -f /sys/class/net/$1/device/product ]
 	then
-		EXTENDED="\t`cat /sys/class/net/$1/device/product`"
+		EXTENDED="\t$(cat /sys/class/net/$1/device/product)"
 	fi
 
 	#then we sweep for known broken drivers with no available better drivers
@@ -409,7 +409,7 @@ getExtendedInfo() {
 	fi
 
 	#lastly we detect all the broken drivers which have working alturnatives
-	KV=`uname -r | awk -F'-' '{print $1}'`
+	KV=$(uname -r | awk -F'-' '{print $1}')
 	KVMAJOR=$(printf ${KV} | awk -F'.' '{print $1$2}')
 	KVMINOR=$(printf ${KV} | awk -F'.' '{print $3}')
 
@@ -484,13 +484,13 @@ getExtendedInfo() {
 }
 
 scanProcesses() {
-	if [ -f "`which service 2>&1`" ] && [ x"$1" = "xkill" ]
+	if [ -f "$(which service 2>&1)" ] && [ x"$1" = "xkill" ]
 	then
 		service network-manager stop 2> /dev/null > /dev/null
 		service avahi-daemon stop 2> /dev/null > /dev/null
 	fi
 
-	match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
+	match=$(ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l)
 	if [ $match -gt 0 -a x"$1" != "xkill" ]
 	then
 		printf "\nFound $match processes that could cause trouble.\n"
@@ -512,8 +512,8 @@ scanProcesses() {
 	i=1
 	while [ $i -le $match ]
 	do
-		pid=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}'`
-		pname=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}'`
+		pid=$(ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}')
+		pname=$(ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}')
 		if [ x"$1" != "xkill" ]
 		then
 			printf "$pid\t$pname\n"
@@ -530,15 +530,15 @@ checkProcessesIface() {
 		return
 	fi
 
-	match2=`ps -o comm= -p 1 2>&1 | grep $PS_ERROR | grep -v grep | wc -l`
+	match2=$(ps -o comm= -p 1 2>&1 | grep $PS_ERROR | grep -v grep | wc -l)
 	if [ $match2 -gt 0 ]
 	then
 		return
 	fi
 
-	for i in `ps auxw | grep $1 | grep -v "grep" | grep -v "airmon-zc" | awk '{print $2}'`
+	for i in $(ps auxw | grep $1 | grep -v "grep" | grep -v "airmon-zc" | awk '{print $2}')
 	do
-		pname=`ps -o comm= -p $i`
+		pname=$(ps -o comm= -p $i)
 		printf "Process with PID $i ($pname) is running on interface $1\n"
 	done
 }
@@ -557,7 +557,7 @@ getPhy() {
 
 	if [ -d /sys/class/net/$1/phy80211/ ]
 	then
-		PHYDEV="`ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/'`"
+		PHYDEV="$(ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/')"
 	fi
 }
 
@@ -576,9 +576,9 @@ getNewMon() {
 checkvm() {
 	#this entire section of code is completely stolen from Carlos Perez's work in checkvm.rb for metasploit and rewritten (poorly) in sh
 	#Check dmi info
-	if [ -x "`which dmidecode 2>&1`" ]
+	if [ -x "$(which dmidecode 2>&1)" ]
 	then
-		dmi_info=`dmidecode`
+		dmi_info=$(dmidecode)
 		if [ dmi_info ]
 		then
 			printf ${dmi_info} | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
@@ -593,16 +593,16 @@ checkvm() {
 	#check loaded modules
 	if [ -z ${vm} ]
 	then
-		if [ -x "`which lsmod 2>&1`" ]
+		if [ -x "$(which lsmod 2>&1)" ]
 		then
-			lsmod=`lsmod`
+			lsmod_data=$(lsmod)
 			if [ lsmod ]
 			then
-				printf ${lsmod} | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
-				printf ${lsmod} | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
-				printf ${lsmod} | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
-				printf ${lsmod} | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
-				printf ${lsmod} | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
+				printf ${lsmod_data} | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
+				printf ${lsmod_data} | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
+				printf ${lsmod_data} | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
+				printf ${lsmod_data} | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
+				printf ${lsmod_data} | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
 				vm_from="lsmod"
 			fi
 		fi
@@ -624,7 +624,7 @@ checkvm() {
 	then
 		if [ -d /proc/ide ]
 		then
-			ide_model=`cat /proc/ide/hd*/model`
+			ide_model=$(cat /proc/ide/hd*/model)
 			printf ${ide_model} | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
 			printf ${ide_model} | grep -iq "vmware" 2> /dev/null && vm="VMware"
 			printf ${ide_model} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
@@ -636,9 +636,9 @@ checkvm() {
 	# Check using lspci
 	if [ -z ${vm} ]
 	then
-		if [ -x "`which lspci 2>&1`" ]
+		if [ -x "$(which lspci 2>&1)" ]
 		then
-			lspci_data=`lspci`
+			lspci_data=$(lspci)
 			printf ${lspci_data} | grep -iq "vmware" 2> /dev/null && vm="VMware"
 			printf ${lspci_data} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
 			vm_from="lspci"
@@ -657,9 +657,9 @@ checkvm() {
 	# Check using lscpu
 	if [ !${vm} ]
 	then
-		if [ -x "`which lscpu 2>&1`" ]
+		if [ -x "$(which lscpu 2>&1)" ]
                 then
-                        lscpu_data=`lscpu`
+                        lscpu_data=$(lscpu)
 			printf ${lscpu_data} | grep -iq "Xen" 2> /dev/null && vm="Xen"
 			printf ${lscpu_data} | grep -iq "KVM" 2> /dev/null && vm="KVM"
 			printf ${lscpu_data} | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
@@ -680,9 +680,9 @@ checkvm() {
 	# Check dmesg Output
 	if [ -z ${vm} ]
 	then
-		if [ -x "`which dmesg 2>&1`" ]
+		if [ -x "$(which dmesg 2>&1)" ]
                 then
-			dmesg_output=`dmesg`
+			dmesg_output=$(dmesg)
 			printf ${dmesg_output} | grep -iqE "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)" && vm="VirtualBox"
 			printf ${dmesg_output} | grep -iqE "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)" && vm="VMware"
 			printf ${dmesg_output} | grep -iqE "(xen_mem)|(xen-vbd)" && vm="Xen"
@@ -693,9 +693,9 @@ checkvm() {
 }
 
 #all functions defined, going into startup checks (startup checks should move up to the top)
-if [ x"`which id 2> /dev/null`" != "x" ]
+if [ x"$(which id 2> /dev/null)" != "x" ]
 then
-	USERID="`id -u 2> /dev/null`"
+	USERID="$(id -u 2> /dev/null)"
 fi
 
 if [ x$USERID = "x" -a x$UID != "x" ]
@@ -720,7 +720,7 @@ then
 			iface_list="${iface_list}\n ${iface}"
 		fi
 	done
-	if [ -x "`which iwconfig 2>&1`" ] && [ -x "`which sort 2>&1`" ]
+	if [ -x "$(which iwconfig 2>&1)" ] && [ -x "$(which sort 2>&1)" ]
 	then
 		for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
 		do
@@ -775,21 +775,21 @@ then
 	printf "This appears to be a ${vm} Virtual Machine\n"
 fi
 
-printf "\nK indicates driver is from `uname -r`\n"
+printf "\nK indicates driver is from $(uname -r)\n"
 if $(modinfo compat > /dev/null 2>&1)
 then
 	modprobe compat
 fi
 if [ -f /sys/module/compat/parameters/compat_version ]
 then
-	printf "C indicates driver is from `cat /sys/module/compat/parameters/compat_version`\n"
+	printf "C indicates driver is from $(cat /sys/module/compat/parameters/compat_version)\n"
 fi
 printf "V indicates driver comes directly from the vendor, almost certainly a bad thing\n"
 printf "S indicates driver comes from the staging tree, these drivers are meant for reference not actual use, BEWARE\n"
 printf "? indicates we do not know where the driver comes from... report this\n"
 printf "\n\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
 
-for iface in `ifconfig -a 2> /dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/'`
+for iface in $(ifconfig -a 2> /dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
 do
 
 	if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
@@ -799,7 +799,7 @@ do
 		printf "$iface\t\tAtheros\t\tmadwifi-ng"
 		if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
 		then
-			IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath`
+			IFACE=$(wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath)
 			ifconfig $iface up 2> /dev/null > /dev/null
 			if [ $CH -lt 1000 ]
 			then
@@ -834,7 +834,7 @@ do
 		iface_list="${iface_list}\n ${iface}"
 	fi
 done
-if [ -x "`which iwconfig 2>&1`" ] && [ -x "`which sort 2>&1`" ]
+if [ -x "$(which iwconfig 2>&1)" ] && [ -x "$(which sort 2>&1)" ]
 then
 	for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
 	do
@@ -845,7 +845,7 @@ for iface in $(printf "${iface_list}" | sort -bu)
 do
 	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV 
 	#add a RUNNING check here and up the device if it isn't already
-	ethtool_output="`ethtool -i $iface 2>&1`"
+	ethtool_output="$(ethtool -i $iface 2>&1)"
 	if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]
 	then
 		getStack  $iface
