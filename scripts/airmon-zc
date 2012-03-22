@@ -183,7 +183,7 @@ getDriver() {
 	#standard detection path, this is all that is needed for proper drivers
 	DRIVER=$(printf "$ethtool_output" | awk '/driver/ {print $2}')
 
-	if $(modinfo ${DRIVER} > /dev/null 2>&1)
+	if $(modinfo -n ${DRIVER} > /dev/null 2>&1)
 	then
 		true
 	else
@@ -237,7 +237,7 @@ getDriver() {
 
 	#Here we will catch the broken lying drivers not caught above
 	#currently this only functions for pci devices and not usb since lsusb has no -k option
-	if $(modinfo $DRIVER  > /dev/null 2>&1)
+	if $(modinfo -n $DRIVER  > /dev/null 2>&1)
 	then
 		true
 	else
@@ -255,7 +255,7 @@ getDriver() {
 
 getFrom() {
 	#from detection
-	if [ $(modinfo $DRIVER | awk '/filename/ {print $2}' | grep 'kernel/drivers') ]
+	if [ $(modinfo -n $DRIVER | awk '/filename/ {print $2}' | grep 'kernel/drivers') ]
 	then
 		FROM="K"
 		#we add special handling here because we hate the vendor drivers AND they install in the wrong place
@@ -269,10 +269,10 @@ getFrom() {
 		then
 			FROM="V"
 		fi
-	elif [ $(modinfo $DRIVER | awk '/filename/ {print $2}'  | grep 'updates/drivers') ]
+	elif [ $(modinfo -n $DRIVER | awk '/filename/ {print $2}'  | grep 'updates/drivers') ]
 	then
 		FROM="C"
-	elif [ $(modinfo $DRIVER | awk '/filename/ {print $2}' | grep misc) ]
+	elif [ $(modinfo -n $DRIVER | awk '/filename/ {print $2}' | grep misc) ]
 	then
 		FROM="M"
 		#add a yell at the user in here
@@ -281,7 +281,7 @@ getFrom() {
 	fi
 
 	#check for staging drivers seperately
-	if [ $(modinfo $DRIVER | awk '/filename/ {print $2}' | grep staging) ]
+	if [ $(modinfo -n $DRIVER | awk '/filename/ {print $2}' | grep staging) ]
 	then
 		FROM="S"
         fi
