@@ -581,11 +581,11 @@ checkvm() {
 		dmi_info=$(dmidecode)
 		if [ dmi_info ]
 		then
-			printf ${dmi_info} | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
-			printf ${dmi_info} | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf ${dmi_info} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
-			printf ${dmi_info} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
-			printf ${dmi_info} | grep -iq "domu" 2> /dev/null && vm="Xen"
+			echo ${dmi_info} | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
+			echo ${dmi_info} | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			echo ${dmi_info} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+			echo ${dmi_info} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
+			echo ${dmi_info} | grep -iq "domu" 2> /dev/null && vm="Xen"
 			vm_from="dmi_info"
 		fi
 	fi
@@ -598,11 +598,11 @@ checkvm() {
 			lsmod_data=$(lsmod)
 			if [ lsmod ]
 			then
-				printf ${lsmod_data} | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
-				printf ${lsmod_data} | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
-				printf ${lsmod_data} | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
-				printf ${lsmod_data} | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
-				printf ${lsmod_data} | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
+				echo ${lsmod_data} | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
+				echo ${lsmod_data} | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
+				echo ${lsmod_data} | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
+				echo ${lsmod_data} | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
+				echo ${lsmod_data} | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
 				vm_from="lsmod"
 			fi
 		fi
@@ -625,10 +625,10 @@ checkvm() {
 		if [ -d /proc/ide ]
 		then
 			ide_model=$(cat /proc/ide/hd*/model)
-			printf ${ide_model} | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
-			printf ${ide_model} | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf ${ide_model} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
-			printf ${ide_model} | grep -iqE "virtual (hd|cd)" 2> /dev/null && vm="Hyper-V/Virtual PC"
+			echo ${ide_model} | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
+			echo ${ide_model} | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			echo ${ide_model} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
+			echo ${ide_model} | grep -iqE "virtual (hd|cd)" 2> /dev/null && vm="Hyper-V/Virtual PC"
 			vm_from="ide_model"
 		fi
 	fi
@@ -639,8 +639,8 @@ checkvm() {
 		if [ -x "$(which lspci 2>&1)" ]
 		then
 			lspci_data=$(lspci)
-			printf ${lspci_data} | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf ${lspci_data} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+			echo ${lspci_data} | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			echo ${lspci_data} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
 			vm_from="lspci"
 		fi
 	fi
@@ -660,9 +660,9 @@ checkvm() {
 		if [ -x "$(which lscpu 2>&1)" ]
                 then
                         lscpu_data=$(lscpu)
-			printf ${lscpu_data} | grep -iq "Xen" 2> /dev/null && vm="Xen"
-			printf ${lscpu_data} | grep -iq "KVM" 2> /dev/null && vm="KVM"
-			printf ${lscpu_data} | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
+			echo ${lscpu_data} | grep -iq "Xen" 2> /dev/null && vm="Xen"
+			echo ${lscpu_data} | grep -iq "KVM" 2> /dev/null && vm="KVM"
+			echo ${lscpu_data} | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
 			vm_from="lscpu"
 		fi
 	fi
@@ -683,10 +683,10 @@ checkvm() {
 		if [ -x "$(which dmesg 2>&1)" ]
                 then
 			dmesg_output=$(dmesg)
-			printf ${dmesg_output} | grep -iqE "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)" && vm="VirtualBox"
-			printf ${dmesg_output} | grep -iqE "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)" && vm="VMware"
-			printf ${dmesg_output} | grep -iqE "(xen_mem)|(xen-vbd)" && vm="Xen"
-			printf ${dmesg_output} | grep -iqE "(qemu virtual cpu version)" && vm="Qemu/KVM"
+			echo ${dmesg_output} | grep -iqE "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)" && vm="VirtualBox"
+			echo ${dmesg_output} | grep -iqE "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)" && vm="VMware"
+			echo ${dmesg_output} | grep -iqE "(xen_mem)|(xen-vbd)" && vm="Xen"
+			echo ${dmesg_output} | grep -iqE "(qemu virtual cpu version)" && vm="Qemu/KVM"
 			vm_from="dmesg"
 		fi
 	fi
