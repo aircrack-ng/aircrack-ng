@@ -20,7 +20,7 @@ UDEV_ISSUE=0
 
 
 #check for all needed binaries
-if [ ! -x "$(which iw 2>&1)" ]
+if [ ! -x "$(command -v iw 2>&1)" ]
 then
 	printf "You don't have iw installed, please install it from your distro's package manager.\n"
 	printf "If your distro doesn't have a recent version you can download it from this link:\n"
@@ -28,46 +28,46 @@ then
 	exit
 fi
 
-if [ ! -x "$(which ethtool 2>&1)" ]
+if [ ! -x "$(command -v ethtool 2>&1)" ]
 then
 	printf "Please install the ethtool package for your distro.\n"
 	exit
 fi
 
-if [ ! -x "$(which lsusb 2>&1)" ]
+if [ ! -x "$(command -v lsusb 2>&1)" ]
 then
 	printf "Please install lsusb from your distro's package manager.\n"
 	exit
 fi
 
-if [ ! -x "$(which lspci 2>&1)" ]
+if [ ! -x "$(command -v lspci 2>&1)" ]
 then
 	printf "Please install lspci from your distro's package manager.\n"
 	exit
 fi
 
-if [ ! -x "$(which modprobe 2>&1)" ]
+if [ ! -x "$(command -v modprobe 2>&1)" ]
 then
 	printf "How in the world do you not have modprobe installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install modprobe).\n"
 	exit
 fi
 
-if [ ! -x "$(which modinfo 2>&1)" ]
+if [ ! -x "$(command -v modinfo 2>&1)" ]
 then
 	printf "How in the world do you not have modinfo installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install modinfo).\n"
 	exit
 fi
 
-if [ ! -x "$(which awk 2>&1)" ]
+if [ ! -x "$(command -v awk 2>&1)" ]
 then
 	printf "How in the world do you not have awk installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install awk).\n"
 	exit
 fi
 
-if [ ! -x "$(which grep 2>&1)" ]
+if [ ! -x "$(command -v grep 2>&1)" ]
 then
 	printf "How in the world do you not have grep installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install grep).\n"
@@ -484,7 +484,7 @@ getExtendedInfo() {
 }
 
 scanProcesses() {
-	if [ -f "$(which service 2>&1)" ] && [ x"$1" = "xkill" ]
+	if [ -f "$(command -v service 2>&1)" ] && [ x"$1" = "xkill" ]
 	then
 		service network-manager stop 2> /dev/null > /dev/null
 		service avahi-daemon stop 2> /dev/null > /dev/null
@@ -576,7 +576,7 @@ getNewMon() {
 checkvm() {
 	#this entire section of code is completely stolen from Carlos Perez's work in checkvm.rb for metasploit and rewritten (poorly) in sh
 	#Check dmi info
-	if [ -x "$(which dmidecode 2>&1)" ]
+	if [ -x "$(command -v dmidecode 2>&1)" ]
 	then
 		dmi_info=$(dmidecode)
 		if [ dmi_info ]
@@ -593,7 +593,7 @@ checkvm() {
 	#check loaded modules
 	if [ -z ${vm} ]
 	then
-		if [ -x "$(which lsmod 2>&1)" ]
+		if [ -x "$(command -v lsmod 2>&1)" ]
 		then
 			lsmod_data=$(lsmod)
 			if [ lsmod ]
@@ -636,7 +636,7 @@ checkvm() {
 	# Check using lspci
 	if [ -z ${vm} ]
 	then
-		if [ -x "$(which lspci 2>&1)" ]
+		if [ -x "$(command -v lspci 2>&1)" ]
 		then
 			lspci_data=$(lspci)
 			echo ${lspci_data} | grep -iq "vmware" 2> /dev/null && vm="VMware"
@@ -657,7 +657,7 @@ checkvm() {
 	# Check using lscpu
 	if [ !${vm} ]
 	then
-		if [ -x "$(which lscpu 2>&1)" ]
+		if [ -x "$(command -v lscpu 2>&1)" ]
                 then
                         lscpu_data=$(lscpu)
 			echo ${lscpu_data} | grep -iq "Xen" 2> /dev/null && vm="Xen"
@@ -680,7 +680,7 @@ checkvm() {
 	# Check dmesg Output
 	if [ -z ${vm} ]
 	then
-		if [ -x "$(which dmesg 2>&1)" ]
+		if [ -x "$(command -v dmesg 2>&1)" ]
                 then
 			dmesg_output=$(dmesg)
 			echo ${dmesg_output} | grep -iqE "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)" && vm="VirtualBox"
@@ -693,7 +693,7 @@ checkvm() {
 }
 
 #all functions defined, going into startup checks (startup checks should move up to the top)
-if [ x"$(which id 2> /dev/null)" != "x" ]
+if [ x"$(command -v id 2> /dev/null)" != "x" ]
 then
 	USERID="$(id -u 2> /dev/null)"
 fi
@@ -720,7 +720,7 @@ then
 			iface_list="${iface_list}\n ${iface}"
 		fi
 	done
-	if [ -x "$(which iwconfig 2>&1)" ] && [ -x "$(which sort 2>&1)" ]
+	if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]
 	then
 		for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
 		do
@@ -834,7 +834,7 @@ do
 		iface_list="${iface_list}\n ${iface}"
 	fi
 done
-if [ -x "$(which iwconfig 2>&1)" ] && [ -x "$(which sort 2>&1)" ]
+if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]
 then
 	for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
 	do
