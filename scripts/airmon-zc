@@ -773,6 +773,8 @@ if [ ${vm} ]
 then
 	printf "Detected VM using ${vm_from}\n"
 	printf "This appears to be a ${vm} Virtual Machine\n"
+	printf "If your system supports VT-d, it may be possible to use PCI devices\n"
+	printf "If your system does not support VT-d, you can only use USB wifi cards\n"
 fi
 
 printf "\nK indicates driver is from $(uname -r)\n"
