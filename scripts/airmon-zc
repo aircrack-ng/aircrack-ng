@@ -715,9 +715,11 @@ then
 	scanProcesses
 	for iface in $(ls -1 /sys/class/net)
 	do
-		if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
-		then
-			iface_list="${iface_list}\n ${iface}"
+		if [ -f /sys/class/net/${iface}/uevent ]; then
+			if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
+			then
+				iface_list="${iface_list}\n ${iface}"
+			fi
 		fi
 	done
 	if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]
@@ -831,9 +833,11 @@ done
 
 for iface in $(ls -1 /sys/class/net)
 do
-	if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
-	then
-		iface_list="${iface_list}\n ${iface}"
+	if [ -f /sys/class/net/${iface}/uevent ]; then
+		if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
+		then
+			iface_list="${iface_list}\n ${iface}"
+		fi
 	fi
 done
 if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]
