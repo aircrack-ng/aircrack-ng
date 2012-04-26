@@ -8,16 +8,33 @@ MAC80211=0
 IW_SOURCE="http://wireless.kernel.org/download/iw/iw-latest.tar.bz2"
 IW_ERROR=""
 UDEV_ISSUE=0
-
+SYSFS=0
+if [ -d /sys/ ]
+then
+	SYSFS=1
+fi
 
 #TODO LIST
 
 #cleanup getDriver()
-#cleanup start channel settings
-#add "test" mode to verify basic channel control
 #add band detection
 #change names to mimic hostapd or kismet
 
+
+if [ x"$(command -v id 2> /dev/null)" != "x" ]
+then
+	USERID="$(id -u 2> /dev/null)"
+fi
+
+if [ x$USERID = "x" -a x$UID != "x" ]
+then
+	USERID=$UID
+fi
+
+if [ x$USERID != "x" -a x$USERID != "x0" ]
+then
+	printf "Run it as root\n" ; exit ;
+fi
 
 #check for all needed binaries
 if [ ! -x "$(command -v iw 2>&1)" ]
@@ -74,7 +91,6 @@ then
 	exit
 fi
 #done checking for binaries
-
 
 if [ "x$MON_PREFIX" = "x" ]
 then
@@ -636,13 +652,10 @@ checkvm() {
 	# Check using lspci
 	if [ -z ${vm} ]
 	then
-		if [ -x "$(command -v lspci 2>&1)" ]
-		then
 			lspci_data=$(lspci)
 			echo ${lspci_data} | grep -iq "vmware" 2> /dev/null && vm="VMware"
 			echo ${lspci_data} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
 			vm_from="lspci"
-		fi
 	fi
 
 	# Xen bus check
@@ -692,23 +705,7 @@ checkvm() {
 	fi
 }
 
-#all functions defined, going into startup checks (startup checks should move up to the top)
-if [ x"$(command -v id 2> /dev/null)" != "x" ]
-then
-	USERID="$(id -u 2> /dev/null)"
-fi
-
-if [ x$USERID = "x" -a x$UID != "x" ]
-then
-	USERID=$UID
-fi
-
-if [ x$USERID != "x" -a x$USERID != "x0" ]
-then
-	printf "Run it as root\n" ; exit ;
-fi
-
-iwpriv > /dev/null 2> /dev/null || { printf "Wireless tools not found\n" ; exit ; }
+#other startup checks
 
 if [ x"$1" = "xcheck" ] || [ x"$1" = "xstart" ]
 then
@@ -756,13 +753,6 @@ then
 		usage
 	fi
 fi
-
-SYSFS=0
-if [ -d /sys/ ]
-then
-	SYSFS=1
-fi
-
 
 #startup checks complete, headers then main
 printf "\nThis script is intended to replace airmon-ng in 1.3 and is functionally based on it.\n"
@@ -863,7 +853,7 @@ do
 		getExtendedInfo $iface
 	else
  		printf "\nethtool failed, fallback to old method...\n"
-		printf "Only mac80211 devices on kernel 2.6.33 or higher are supported by airmon-zc.\n"
+		printf "Only mac80211 devices on kernel 2.6.33 or higher are officially supported by airmon-zc.\n"
 		printf "Running airmon-ng:"
 		airmon-ng $@
 		exit
