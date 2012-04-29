@@ -2029,6 +2029,10 @@ void check_thread( void *arg )
 		{
 			if(ivs2.flags & IVS2_ESSID)
 			{
+				if (ivs2.len > 32) { // Max length of the ESSID (and length -1 of that field)
+					fprintf(stderr, "Invalid SSID length, it must be <= 32\n");
+					exit(1);
+				}
 				memcpy( ap_cur->essid, buffer, ivs2.len);
 				if(opt.essid_set && ! strcmp( opt.essid, ap_cur->essid ) )
 					memcpy( opt.bssid, ap_cur->bssid, 6 );
