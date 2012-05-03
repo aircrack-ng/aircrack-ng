@@ -265,7 +265,7 @@ getDriver() {
 	fi
 	if [ "$DEBUG" = "1" ]
 	then
-		printf "getdriver() $DRIVER"
+		printf "getdriver() $DRIVER\n"
 	fi
 }
 
@@ -304,7 +304,7 @@ getFrom() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		printf "getFrom() $FROM"
+		printf "getFrom() $FROM\n"
 	fi
 }
 
@@ -326,7 +326,7 @@ getFirmware() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		printf "getFirmware $FIRMWARE"
+		printf "getFirmware $FIRMWARE\n"
 	fi
 
 }
@@ -367,10 +367,10 @@ getChipset() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		printf "getchipset() $CHIPSET"
-		printf "BUS = $BUS"
-		printf "BUSINFO = $BUSINFO"
-		printf "DEVICEID = $DEVICEID"
+		printf "getchipset() $CHIPSET\n"
+		printf "BUS = $BUS\n"
+		printf "BUSINFO = $BUSINFO\n"
+		printf "DEVICEID = $DEVICEID\n"
 	fi
 }
 
@@ -397,7 +397,7 @@ getStack() {
 
 	if [ "$DEBUG" = "1" ]
 	then
-		printf "getStack $STACK"
+		printf "getStack $STACK\n"
 	fi
 
 }
