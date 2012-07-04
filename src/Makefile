@@ -123,12 +123,9 @@ else
 	endif
 endif
 
-all: osd userland $(SBINFILES)
+all: userland $(SBINFILES)
 
 userland: $(BINFILES)
-
-osd:
-	$(MAKE) -C $(OSD)
 
 $(LIBOSD):
 	$(MAKE) -C $(OSD)
