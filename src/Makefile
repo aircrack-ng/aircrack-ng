@@ -202,7 +202,7 @@ airdecloak-ng$(EXE): $(OBJS_AU)
 tkiptun-ng$(EXE): $(OBJS_TT) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_TT) -o $(@) $(LIBS) $(LIBSSL)
 
-wpaclean$(EXE): $(OBJS_WC)
+wpaclean$(EXE): $(OBJS_WC) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_WC) -o $(@) $(LIBS)
 
 strip: $(BINFILES) $(SBINFILES)
