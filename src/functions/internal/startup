@@ -23,6 +23,11 @@ _askinterface(){
 }
 
 setinterface(){
+	help_fifo "${mark} ${red}Welcome to airoscript-ng${end}, I'll be your guide from now on\n"\
+		"First, we have to setup a wireless interface to work with.\n" \
+		"Be careful, using this interface with airoscript-ng will disrupt any traffic going trough it." \
+		"If you're using it to connect to the internet, you'll be most likely disconnected "
+
     declare -a INTERFACES
      [[ "$wifi" != "" ]] && [[ "$1" == "start" ]] && [[ "$set_wifi_by_args" == 1 ]] || { 
         if [ "$1" == "" ] || [ "$1" == "start" ]  ; then
@@ -64,12 +69,6 @@ checkforcemac() {
         fi
     fi
 }
-
-special_info(){
-    echo $@>/dev/null # TODO
-
-}
-
 
 guess_idata(){
     AIROUTPUT=$($AIRMON $1 $wificard|grep -v "running"|grep -A 1 $wificard);
@@ -113,10 +112,15 @@ wichchangemac(){
     done
 }
 
+is_number(){ return $(expr "$1 + 1" &> /dev/null); }
+
 # Wrapper to make interface creation easier.
 selectap_wrapper(){
+	while [ "1" ]; do
         mkmenueline $max r; echo " Rescan targets"; mkmenuline $max
         single_question "Select Target: "; choice="$ans"
+		is_number $choice && break
+	done
 }
 
 valid_mac(){ (( ${#1} >= 17 )) && return 0 || return 1; }
@@ -183,9 +187,10 @@ selectAp(){
 }
 
 launch_counter(){
+	o=$2; [[ $o == "" ]] && o="targets"
     for i in $( seq 1 $1 ); do
         a=$(( ($i * 100) / $1 ))
-        sleep 1; echo -ne "\r${mark}Scanning for targets: [$a/100 completed]";
+        sleep 1; echo -ne "\r${mark}Scanning for $o: [$a/100 completed]";
     done
 }
 
@@ -198,6 +203,9 @@ autoscan(){
 }
 
 Scan(){
+	help_fifo "${mark}${red}Scanning${end}\nWe're scanning for near networks \n"\
+		"You'll be asked to select one of them, ${red}they're ordered according to their signal strenght${end}"\
+		"The strongest is the lastest, your network should be near the end" 
     export SCAN=1
     rm -rf $DUMP_PATH/dump* &>/dev/null
     temporary_switch_clear

@@ -17,13 +17,15 @@
 # This can also be used as a menu-adding skeleton for airoscript plugin system
 # Just add to p_menu array the menu you want, and call the main plugin function MENU_NAME_SEPARATED_BY_SPACES
 
-
+MDK3=mdk3
 p_menu+=( "Mdk3 Attacks" );
 
 Mdk3_Attacks(){
-     if [ -x "$MDK3" ]; then
+     if [ $( whereis mdk3) ]; then
          while true; do
-             $clear; mkmenu "Choose MDK3 Options" "Deauthentication" "Prob selected AP" "Select another target" "Autentication DoS" "Return to main menu"
+            $clear; mkmenu "Choose MDK3 Options" "Deauthentication"\
+             "Prob selected AP" "Select another target"\
+             "Autentication DoS" "Return to main menu"
             read yn
             case $yn in
                 1 ) mdkpain ; break ;;
@@ -44,7 +46,8 @@ mdkpain(){
 }
 
 mdktargetedpain(){
-        execute "MDK3 Targeted pain" $MDK3 $wifi p -b a -c $Host_CHAN -t $Host_MAC & choosemdk
+        execute "MDK3 Targeted pain" $MDK3 $wifi p -b a -c $Host_CHAN -t\
+            $Host_MAC & choosemdk
 }
 
 mdknewtarget(){

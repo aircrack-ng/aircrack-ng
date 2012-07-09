@@ -19,13 +19,12 @@ check_function injectmenu || source $path/attacks/injection # It depends on inje
 
 othertmenu(){
     while true; do
-         mkmenu "Other aircrack-ng tools" "Injection" "Autentication" "Generate hcap file" "Operations with ivstools" "Decloak packages" "Create virtual interface with airtun-ng" "Diagnostics and reports" "Auto crack wep with wesside-ng" "Easside-ng" "Return to main menu"
+         mkmenu "Other aircrack-ng tools" "Scanning" "Injection" "Autentication" "Package manipulation" "Create virtual interface with airtun-ng" "Diagnostics and reports" "Auto crack wep with wesside-ng" "Easside-ng" "Return to main menu"
         case $choice in
+			1  ) AUTO=0 menu_type; $clear; break;; 
             1  ) othersinjectmenu    ; $clear; break;;
             2  ) authmenu      ; $clear; break;;
-            3  ) generate_hcap ; $clear; break;;
-            4  ) ivstoomenu    ; $clear; break;;
-            5  ) airdecmenu    ; $clear; break;;
+			3  ) package_menu  ; $clear; break;;
             6  ) airtunmenu    ; $clear; break;;
             7  ) diagmenu      ; $clear; break;;
             8  ) choosewesside ; $clear; break;;
@@ -35,6 +34,7 @@ othertmenu(){
         esac
     done
 }
+
 
 generate_hcap(){
     wait_for_execute=1; execute $AIRCRACK $DUMP_PATH/$Host_MAC-01.cap -J $DUMP_PATH/$Host_MAC-01.hccap; wait_for_execute=0;
@@ -82,16 +82,30 @@ cleanairtun() {
     killall airtun-ng
 }
 
-ivstoomenu(){
+package_menu(){
     while true; do
-        mkmenu "IVs tools" "Merge all ivs from all sessions" "Decrypt current packages"\
-            "Return to main menu"
-        case $choice in
-            1) mergeallivs;$clear; break;;
-            2) decrypt; $clear; break;;
-            3 ) $clear;break ;;
-            * ) _ "Unknown response. Try again" ;;
-        esac
+		[[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
+			mkmenu "Package manipulation tools" "Merge all ivs from all sessions" "Decrypt current packages" "Decloack packages"\
+				"Generate hccap file for oclhashcat" "Return to main menu"
+		    case $choice in
+			    1) mergeallivs;$clear; break;;
+				2) decrypt; $clear; break;;
+				3) airdecmenu; $clear; break;; 
+		        4) generate_hcap ; $clear; break;;
+	            5) $clear;break ;;
+	            * ) _ "Unknown response. Try again" ;;
+	        esac
+		} || {
+			mkmenu "Package manipulation tools" "Merge all ivs from all sessions" "Decrypt current packages" "Decloack packages"\
+				"Return to main menu"
+		    case $choice in
+			    1) mergeallivs;$clear; break;;
+				2) decrypt; $clear; break;;
+				3) airdecmenu; $clear; break;; 
+	            4) $clear;break ;;
+	            * ) _ "Unknown response. Try again" ;;
+	        esac
+		}
     done
 }
 

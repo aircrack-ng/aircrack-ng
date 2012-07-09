@@ -12,86 +12,61 @@
 #        You should have received a copy of the GNU General Public License
 #        Along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-   
-fakeauth1(){
-        execute "Fake auth (1) " $AIREPLAY --fakeauth 6000 -o 1 -q 10 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi 
-	}
-    fakeauth2(){
-        execute "Fake auth (2) " $AIREPLAY --fakeauth 0 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi 
-	}
-    fakeauth3(){
-        execute "Fake auth (3) " $AIREPLAY --fakeauth 5 -o 10 -q 1 -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi 
-    }
-    fakeauth4(){
-        execute "Fake auth (4) " $AIREPLAY -1 0 -e "$HOST_SSID" -y $DUMP_PATH/*.xor -a $Host_MAC -h $FAKE_MAC $iwifi
-    }
-
-    # This is for deauth  (6)  option
-    choosedeauth(){
-        if [ "$Host_SSID" = "" ]; then $clear
-            warn "ERROR: You have to select a target first"
-        else
-            [[ $AUTO == 2 ]] && { deauthall;  return; }
-            [[ $AUTO == 1 ]] && { deauthall;  return; }
-            while true; do
-                mkmenu "Who do you want to deauth?" "Everybody" "Myself (fake mac)" "Selected client"
-                case $choice in
-                    1 ) deauthall ; break ;;
-                    2 ) deauthfake ; break ;;
-                    3 ) deauthclient ; break ;;
-                    * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-                esac
-            done
-    fi
-}
-
-deauthall(){
-    execute "Deauth All" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $wifi
-}
-
-deauthclient(){
-    if [ "$Client_MAC" = "" ]; then 
-        $clear; warn "ERROR: You have to select a client first"
-    else
-        execute "Deauth client" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC \
-            -c $Client_MAC $iwifi
-    fi
-}
-
-deauthfake(){
-    execute "Deautenticating" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $iwifi
-}
-
-fakeauth(){
-    execute "Fake auth on $Host_SSID" $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi
-}
 
 authmenu(){
     while true; do
         mkmenu "Autentication menu" "Fake autentication" "Deautentication" "Return to main menu"
         case $choice in
-            1  ) choosefake    ; $clear; break;;
-            2  ) choosedeauth  ; $clear; break;;
+            1  ) choose_fake    ; $clear; break;;
+            2  ) choose_deauth  ; $clear; break;;
             3  ) $clear ; break;;
             *  ) _ "Unknown response, try again"; sleep 1; $clear;;
         esac
     done
 }
 
-choosefake(){
-    if [ "$Host_SSID" = "" ]; then $clear; warn "ERROR: You have to select a target first"
-    else
-    if [ "$INTERACTIVE" == "1" ]; then
-    	while true; do
-            mkmenu "Fake Auth Method" "Conservative" "Standard" "Progressive" "Xor Injection"
-    		case $choice in
-		    	1 ) fakeauth1 ;$clear; break ;;
-		    	2 ) fakeauth2 ;$clear; break ;;
-		    	3 ) fakeauth3 ;$clear; break ;;
-		    	4 ) fakeauth4 ;$clear; break ;;
-		    	* ) echo "Unknown response. Try again" ;;
-	        esac
-    	done
-    else fakeauth1||fakeauth2||fakeauth3; $clear; fi
-    fi
+choose_deauth(){
+	[[ $1 ]] && { auth_attacks_deauth $1; return ; } 
+    [[ $AUTO == 2 ]] && { auth_attacks_deauth 1;return; }
+    [[ $AUTO == 1 ]] && { auth_attacks_deauth 1;return; }
+    while true; do
+		mkmenu "Who do you want to deauth?" "Everybody" "Myself (fake mac)" "Selected client"
+		auth_attacks_deauth $choice || echo "Unknown response. Try again" ;
+	done
+}
+
+auth_attacks_deauth(){ attack=$1;
+	case $attack in
+		1) execute "Deauth All" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $wifi;;
+		2) execute "Deauth client" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $iwifi;; 
+		3) execute "Deautenticating" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $iwifi;;
+	esac
+}
+
+choose_fake(){
+	required "$Host_SSID" "You have to select a target first" || return;
+	[[ "$INTERACTIVE" != "1" ]] && { auth_attacks_fake 1; auth_attacks_fake 2; auth_attacks_fake 3; return; }
+	while true; do
+		mkmenu "Fake Auth Method" "Conservative" "Standard" "Progressive" "Xor Injection"
+		check_function "${auth_attacks_fake_$choice}" && { auth_attacks_fake $choice; break; }
+		echo "Unknown response. Try again" ;
+	done
+}
+
+auth_attacks_fake(){
+	case $choice in
+		1 ) execute "Fake auth (1) " $AIREPLAY --fakeauth 6000 -o 1 -q 10\
+		   	-e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi;;
+		2 ) execute "Fake auth (2) " $AIREPLAY --fakeauth 0\
+		   	-e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi ;;
+		3 ) execute "Fake auth (3) " $AIREPLAY --fakeauth 5 -o 10 -q 1\
+		   	-e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi ;;
+		4 ) execute "Fake auth (4) " $AIREPLAY -1 0 -e "$HOST_SSID"\
+		   	-y $DUMP_PATH/*.xor -a $Host_MAC -h $FAKE_MAC $iwifi ;;
+		* ) return 1; 
+	esac
+}
+
+fakeauth(){
+    execute "Fake auth on $Host_SSID" $AIREPLAY --fakeauth $AUTHDELAY -q $KEEPALIVE -e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi
 }

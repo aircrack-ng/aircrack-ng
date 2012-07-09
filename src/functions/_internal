@@ -16,18 +16,22 @@
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+required(){
+	check_function $1 ||  { echo "${warn}${2}"; return 1; }
+}
+
 error(){
     export ERRORS="$@";
 }
 
 reload_config(){
-#    _source "./airoscript-ng.conf.devel ~/.airoscript-ng/airoscript-ng.conf /etc/airoscript-ng.conf /usr/local/etc/airoscript-ng.conf"
-#    _source "./airoscript-ng_advanced.conf.devel ~/.airoscript-ng_advanced/airoscript-ng_advanced.conf /etc/airoscript-ng_advanced.conf /usr/local/etc/airoscript-ng_advanced.conf"
-return
+	return
 }
 
 cleanautovars(){
-    export AUTO=0; export QUIET=""; export INTERACTIVE=$OLDINTERACTIVE
+    export AUTO=0; 
+	export QUIET=""; 
+	export INTERACTIVE=$OLDINTERACTIVE
     return
 }
 
@@ -77,13 +81,13 @@ eof
 }
 
 launch_help_fifo(){
-    mkfifo $DUMP_PATH/help_fifo
-    xterm -e "tail -f $DUMP_PATH/help_fifo"
+    [[ -e $DUMP_PATH/help_fifo ]] || mkfifo $DUMP_PATH/help_fifo &>/dev/null
+	execute "Help"  "tail -f $DUMP_PATH/help_fifo"
 }
 
 help_fifo(){
-    clear > $DUMP_PATH/help_fifo
-    echo $@ > $DUMP_PATH/help_fifo
+    clear >> $DUMP_PATH/help_fifo
+    echo -e $@ >> $DUMP_PATH/help_fifo
 }
 
 function choose_interface(){
@@ -265,4 +269,11 @@ yesno(){
     read -p "${@} [Y|n]" -n1 -s a; echo
     [[ $a =~ (.*)[N|n](.*) ]] && return 1 || return 0
 }
+
+check_default_software(){
+	for program in ${required_software[@]}; do
+		[[ $(whereis $program) ]] || { echo "$program not found, quitting." ; exit ; } 
+	done
+}
+
 _source $path/internal/startup

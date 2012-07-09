@@ -37,24 +37,23 @@ resolution() {
     for i in ${available_resos[@]}; do [[ "$i" == $reso ]] && reson=$reso; done 
     [[ $reson != "" ]] && { export resonset=1;  echo -e "${mark}Automatically setting resolution to $reso" ; }
     xhost &>/dev/null || { echo -e "${mark}Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
-    if [[ ${resonset} = "" ]]; then mkmenu "Resolution" ${available_resos[@]}; reson=$choice; fi
-    { echo $reson| grep "x"; } &>/dev/null && { a=0; for i in ${available_resos[@]}; do a=$(( $a + 1)); [[ $reson == $i ]] && reson=$a; done; }
-    set_resolution_data $reson
+	while true; do 
+		if [[ ${resonset} == "" ]]; then mkmenu "Resolution" ${available_resos[@]}; reson=$choice; fi
+	    set_resolution_data $reson;
+		[[ $TLX == "" ]] && { $clear; echo "${mark}Unknown resolution, try again"; } || break;
+	done
 }
 
 target(){
-	echo -e "`gettext \"
-_______Target information______
-
-   AP SSID       = $Host_SSID
-   AP MAC        = $Host_MAC
-   AP Channel    =$Host_CHAN
-   Client MAC    = $Client_MAC
-   Fake MAC      = $FAKE_MAC
-   AP Encryption =$Host_ENC
-   AP Speed      =$Host_SPEED
-________________________________\"`"
-read -p "Press any key to continue " foo
+help_fifo "${red}_______Target information______${end}\n"\
+"   AP SSID       = $Host_SSID\n"\
+"   AP MAC        = $Host_MAC\n"\
+"   AP Channel    =$Host_CHAN\n"\
+"   Client MAC    = $Client_MAC\n"\
+"   Fake MAC      = $FAKE_MAC\n"\
+"   AP Encryption =$Host_ENC\n"\
+"   AP Speed      =$Host_SPEED\n"\
+"________________________________"
 }
 
 fill_menu(){

