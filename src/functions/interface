@@ -34,12 +34,12 @@ default_theme(){
 
 resolution() {
     reso=$( awk '/\*/ {print $1}' <(xrandr) | head -n1; )
-    for i in ${available_resos[@]}; do [[ "$i" == $reso ]] && reson=$reso; done 
+    for i in ${!available_resos[@]}; do [[ ${available_resos[$i]} == $reso ]] && {  reson=$reso; pos=$i; }; done 
     [[ $reson != "" ]] && { export resonset=1;  echo -e "${mark}Automatically setting resolution to $reso" ; }
     xhost &>/dev/null || { echo -e "${mark}Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
 	while true; do 
 		if [[ ${resonset} == "" ]]; then mkmenu "Resolution" ${available_resos[@]}; reson=$choice; fi
-	    set_resolution_data $reson;
+	    set_resolution_data $pos
 		[[ $TLX == "" ]] && { $clear; echo "${mark}Unknown resolution, try again"; } || break;
 	done
 }
@@ -91,7 +91,7 @@ mkmenu(){
     max=$(( $max + 10 ))
     title=$1; shift; line=0;
     f=$((`tput cols` - 10)); 
-    mkmenuheader $title $max
+    mkmenuheader "$title" $max
     mkmenuline $max
     mkmenulines $max "${@}"
     mkmenuline $max
