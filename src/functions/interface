@@ -38,7 +38,7 @@ resolution() {
     [[ $reson != "" ]] && { export resonset=1;  echo -e "${mark}Automatically setting resolution to $reso" ; }
     xhost &>/dev/null || { echo -e "${mark}Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
 	while true; do 
-		if [[ ${resonset} == "" ]]; then mkmenu "Resolution" ${available_resos[@]}; reson=$choice; fi
+		if [[ ${resonset} == "" ]]; then mkmenu "Resolution" ${available_resos[@]}; pos=$choice; fi
 	    set_resolution_data $pos
 		[[ $TLX == "" ]] && { $clear; echo "${mark}Unknown resolution, try again"; } || break;
 	done
