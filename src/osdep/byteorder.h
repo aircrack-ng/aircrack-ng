@@ -211,7 +211,7 @@
 	/*
 	 * Custom stuff
 	 */
-	#if  defined(__MACH__) && !defined(__APPLE_CC__)
+	#if  defined(__MACH__) && !defined(__APPLE_CC__) && !defined(__GNU__)
 		#include <libkern/OSByteOrder.h>
 		#define __cpu_to_be64(x) = OSSwapHostToBigInt64(x)
 		#define __cpu_to_be32(x) = OSSwapHostToBigInt32(x)
