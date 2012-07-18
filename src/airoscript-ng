@@ -41,6 +41,7 @@ Enable_plugin(){
 
 exit_trap(){ check_function doexit || source $path/internal/exit; echo; echo; doexit; }
 Return_to_main_menu(){ mainmenu; }
+if [ "$UID" != 0 ]; then echo -e "You Must be root to use airoscript"; exit 1; fi;
 
 # We preload functions, configs and themes in a cool way.
 _source "./airoscript-ng.conf.devel ~/.airoscript-ng/airoscript-ng.conf /etc/airoscript-ng.conf /usr/local/etc/airoscript-ng.conf"
@@ -53,8 +54,9 @@ _source ${enabled_plugins[@]};
 [[ ! -e $DUMP_PATH/wordlist.txt ]] && { cp $WORDLIST $DUMP_PATH &>/dev/null; WORDLIST="$DUMP_PATH/`basename $WORDLIST`"; }
 
 trap exit_trap 1 2 3 4 5 6 7 8 10 12 13 14 15 20 # Set an exit trap to clean out all the interfaces
+
 setaircrackpaths # Set aircrack-ng paths
-rootwarn # Check conffile permissions!
+
 setps # Set PS3 variable
 warn "${mark}Welcome to airoscript, have a nice day"
 check_default_software &

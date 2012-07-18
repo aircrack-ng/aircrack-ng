@@ -32,7 +32,7 @@ setinterface(){
      [[ "$wifi" != "" ]] && [[ "$1" == "start" ]] && [[ "$set_wifi_by_args" == 1 ]] || { 
         if [ "$1" == "" ] || [ "$1" == "start" ]  ; then
         if [ "$show_only_wireless_extensions" == 1 ]; then
-            INTERFACES=(`{ iwconfig|grep -v "no wireless extensions"|grep IEEE|grep -v airoscript|awk '{print $1}';} 2>/dev/null`)
+            INTERFACES=(`{ iwconfig|grep -v "no wireless extensions"|grep IEEE|grep -v mon|grep -v airoscript|awk '{print $1}';} 2>/dev/null`)
         else
             INTERFACES=(`ip link|egrep "^[0-9]+"|awk '/: /{gsub(":"," "); print $2}' |grep -v lo`)
         fi

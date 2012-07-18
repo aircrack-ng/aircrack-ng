@@ -65,7 +65,7 @@ Usage: $(basename $0) [-h] [-t TERMINAL] [-v] [-w WIRELESS_CARD] [-b] [-m fakema
 
 options:
    -h                    Show this message
-   -t [xterm|screen]     Specify terminal
+   -t TERMINAL           Specify terminal
    -c                    Launches an interface selection menu (requires -pzenity)
    -v                    Verbose & debug mode
    -w wireless_card      Specify wifi card
@@ -116,7 +116,6 @@ setargs(){
     for i in ${opt_functions[@]}; do [[ $i == "usage" ]] && { usage; exit 1; }; done # Small hack to execute usage the first 
     for i in ${opt_functions[@]}; do [[ $i != auto ]] && options_$i || execute_auto=1; done
     [[ $execute_auto ]] && options_auto; # Small hack to execute auto the lastest xD
-    [[ $TERMINAL == "screen" ]] && screen_startup ${@}
 }
 
 options_m(){ opts_change_$opts_mac_opt; }
@@ -178,10 +177,6 @@ execute(){
         echo
         read -p "Enter extra options to execute: " eopts
     fi
-    if [ $TERMINAL == "screen" ]; then
-		$CDCMD screen -S airoscript -c $SCREENRC -D -RR -X screen -t $title
-		$CDCMD screen -S airoscript -c $SCREENRC -X at "*" eval "stuff \"${@} $eopts; exit\"\015" 
-    else
         if [ "$1" == "crack" ]; then HOLDA="-hold"; shift; fi # FIXME This will work just on xterm.
         if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
             [[ $NOTITLE ]] || warn "${mark}$title"
@@ -197,7 +192,6 @@ execute(){
                 $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
             }
         fi
-    fi 
     save_pids $!
 }
 

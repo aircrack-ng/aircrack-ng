@@ -33,7 +33,7 @@ default_theme(){
 }
 
 resolution() {
-    reso=$( awk '/\*/ {print $1}' <(xrandr) | head -n1; )
+   { reso=$( awk '/\*/ {print $1}' <(xrandr) | head -n1; ); } &>/dev/null
     for i in ${!available_resos[@]}; do [[ ${available_resos[$i]} == $reso ]] && {  reson=$reso; pos=$i; }; done 
     [[ $reson != "" ]] && { export resonset=1;  echo -e "${mark}Automatically setting resolution to $reso" ; }
     xhost &>/dev/null || { echo -e "${mark}Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
@@ -101,9 +101,7 @@ mkmenu(){
     _read -a choice
 }
 
-rootwarn(){
-    li=`tput lines`; cen=`expr $li / 2 + 2`; if [ "$UID" != 0 ]; then $clear;echo -e "\E[3;22H===airoscript-ng===\E[$cen;15H\E[31mYou Must be root to use airoscript\E[39;49;00m\E[$li;20H"; exit 1; fi;
-}
+
 
 getterminal(){
     [[ "$TERMINAL" = "GUI" ]] && TERMINAL="airosperl"
@@ -186,18 +184,5 @@ function setterminal {
 				$FGC\
 			    $BGC\
 				printf -- "$EXECFLAG \n"
-}
-
-
-screen_startup(){
-    if [[ -O ~/.airoscript/screen_has_started ]]; then
-        rm ~/.airoscript/screen_has_started
-	else
-        # Reset airoscript,but this time inside a screen session.
-		touch ~/.airoscript/screen_has_started
-        warn "${mark}airoscript-ng is terminating...";
-		screen -S airoscript -t "Airoscript-ng" -c $SCREENRC $0 $@
-        exit 
-	fi
 }
 
