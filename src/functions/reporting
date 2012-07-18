@@ -60,6 +60,7 @@ report_html(){
 }
 
 report_mode(){
+	[[ -e $DUMP_PATH/$Host_MAC.key ]] || { error "Couldn't crack network"; return; }
     key=`cat $DUMP_PATH/$Host_MAC.key`
     echo -e "Network, Mac, Channel, Encription, Speed, key\n$Host_SSID, $Host_MAC, $Host_CHAN, $Host_ENC, $Host_SPEED, $key" > ${report_file}_standard.csv
 }

@@ -87,6 +87,7 @@ mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenue
 mkmenu(){
     if [ "$AUTO" == 2 ]; then return; fi
     [[ ${ERRORS} ]] && echo "${mark} Error: ${ERRORS[@]}"
+	ERRORS=""
     max=`getmaxlenfromlist "${@}"`
     max=$(( $max + 10 ))
     title=$1; shift; line=0;

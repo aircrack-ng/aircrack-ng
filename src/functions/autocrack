@@ -29,8 +29,8 @@ source $path/crack/main
 autopwn(){ func=$1; shift; autopwn_$func $@; }
 
 autopwn_setvars(){
-    attack_functions_wep=(wep_attacks_fakeauto wep_attacks_fakeinteractive wep_attacks_chopchop wep_attacks_caffelate wep_attacks_hirte wep_attacks_arpreplay_auto wep_attacks_arpreplay_interactive wep_attacks_fragmentation wep_attacks_chopchopclient wep_attacks_pskarp)
-    attack_functions_wpa=(wpa_attacks_handshake)
+    attack_functions_wep=(fakeauto fakeinteractive chopchop caffelate hirte arpreplay_auto arpreplay_interactive fragmentation chopchopclient pskarp)
+    attack_functions_wpa=(handshake)
 
     F=0; export AUTO=$1; export QUIET=1; export INTERACTIVE=0; next=0; count=0;
     export writekey="-l $DUMP_PATH/$Host_MAC.key"
@@ -109,13 +109,17 @@ autopwn_failed_cracking(){
 autopwn_network(){
     autopwn setvars 2
 
-    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && { attack_functions=${attack_functions_wpa[@]}; min_ivs=10; } || attack_functions=${attack_functions_wep}
+    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && { 
+		enc=wpa; attack_functions=${attack_functions_wpa[@]}; min_ivs=10; 
+	} || {
+		enc=wep; attack_functions=${attack_functions_wep}
+	}
 
     for i in ${attack_functions[@]}; do
         tag; echo "${mark}Attack $count. Using $i in $Host_MAC"
-        { $i & cleanp & get_min_ivs; } &> /dev/null
+        { ${enc}_attacks $i & cleanp & get_min_ivs; } &> /dev/null
 
-        [[ "$Host_ENC" =~ (.*)WPA(.*) ]] || {  
+        [[ $enc == wpa ]] || {  
             tag; warn "${mark}Needed ivs: $min_ivs"
         }
 

@@ -23,7 +23,7 @@ othersinjectmenu(){
         case $choice in 
             1) injectmenu frag; break;;
             2) injectmenu chopchop; break;;
-            3) execute "$AIREPLAY -8 -b $HOST_MAC -h $FAKE_MAC $iwifi"; break;;
+            3) execute "$AIREPLAY -8 -b $Host_MAC -h $FAKE_MAC $iwifi"; break;;
             *) $clear;
         esac
     done

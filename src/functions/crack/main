@@ -15,6 +15,7 @@
 
 #This is crack function, for WEP encryption:
 crack_wep(){
+
          if [ "$AUTO" == 1 ]; then
 	    	execute $'Cracking wep\n' "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap"
             return
@@ -23,8 +24,8 @@ crack_wep(){
 		while true; do
             [[ $1 ]] && choice=$1 || mkmenu "WEP Cracking Options" "aircrack-ng defaults" "aircrack-ng Korek" "aircrack-ng interactive" "Return to main menu"
 	        case $choice in
- 	    	    1 ) execute "Cracking wep, default options" crack "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap $crack_extra_opts $writekey"; $clear; break ;;
-	    	    2 ) execute "Cracking wep, Korek" crack "$AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap -K $crack_extra_opts $writekey" ; $clear; break ;;
+ 	    	    1 ) execute "Cracking wep, default options" crack "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-*.cap $crack_extra_opts $writekey"; $clear; break ;;
+	    	    2 ) execute "Cracking wep, Korek" crack "$AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-*.cap -K $crack_extra_opts $writekey" ; $clear; break ;;
 	            3 ) single_question "Insert Fudge Factor: ";  FUDGE_FACTOR="$ans";
                 single_question "`gettext 'Type encryption size (64,128...): '`"; ENC_SIZE="$ans";
 			    execute "Cracking wep, manual options" crack "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGE_FACTOR\

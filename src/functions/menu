@@ -40,6 +40,7 @@ menu_attack(){
 
 menu_crack(){
     check_function crack_wep || source $path/crack/main
+		[[ ! -e $DUMP_PATH/$Host_MAC-01.cap ]] && { error "You have no IVS, please scan first" ; return; }
 			while true; do
                 mkmenu "WEP/WPA Cracking Options" "Crack with manual dictionary" "Standard aircrack-ng" "Return to menu" 
                 case $choice in
