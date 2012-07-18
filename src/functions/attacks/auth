@@ -15,12 +15,12 @@
 
 authmenu(){
     while true; do
-        mkmenu "Autentication menu" "Fake autentication" "Deautentication" "Return to main menu"
+        mkmenu $"Autentication menu" $"Fake autentication" $"Deautentication" $"Return to main menu"
         case $choice in
             1  ) choose_fake    ; $clear; break;;
             2  ) choose_deauth  ; $clear; break;;
             3  ) $clear ; break;;
-            *  ) _ "Unknown response, try again"; sleep 1; $clear;;
+            *  ) echo $"Unknown response, try again"; sleep 1; $clear;;
         esac
     done
 }
@@ -30,16 +30,16 @@ choose_deauth(){
     [[ $AUTO == 2 ]] && { auth_attacks_deauth 1;return; }
     [[ $AUTO == 1 ]] && { auth_attacks_deauth 1;return; }
     while true; do
-		mkmenu "Who do you want to deauth?" "Everybody" "Myself (fake mac)" "Selected client"
-		auth_attacks_deauth $choice || echo "Unknown response. Try again" ;
+		mkmenu $"Who do you want to deauth?" $"Everybody" $"Myself (fake mac)" $"Selected client"
+		auth_attacks_deauth $choice || error $"Unknown response. Try again" ;
 	done
 }
 
 auth_attacks_deauth(){ attack=$1;
 	case $attack in
-		1) execute "Deauth All" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $wifi;;
-		2) execute "Deauth client" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $iwifi;; 
-		3) execute "Deautenticating" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $iwifi;;
+		1) execute $"Deauth All" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC $wifi;;
+		2) execute $"Deauth client" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $Client_MAC $iwifi;; 
+		3) execute $"Deautenticating" $AIREPLAY --deauth $DEAUTHTIME -a $Host_MAC -c $FAKE_MAC $iwifi;;
 	esac
 }
 
@@ -47,9 +47,9 @@ choose_fake(){
 	required "$Host_SSID" "You have to select a target first" || return;
 	[[ "$INTERACTIVE" != "1" ]] && { auth_attacks_fake 1; auth_attacks_fake 2; auth_attacks_fake 3; return; }
 	while true; do
-		mkmenu "Fake Auth Method" "Conservative" "Standard" "Progressive" "Xor Injection"
+		mkmenu $"Fake Auth Method" $"Conservative" $"Standard" $"Progressive" $"Xor Injection"
 		check_function "${auth_attacks_fake_$choice}" && { auth_attacks_fake $choice; break; }
-		echo "Unknown response. Try again" ;
+		error $"Unknown response. Try again" ;
 	done
 }
 

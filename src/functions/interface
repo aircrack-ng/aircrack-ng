@@ -22,12 +22,12 @@ _(){
 
 setps(){
     $clear
-    if [ "$1" != "" ]; then PS3=`_ "$1"`;
-    else PS3=`_ 'Input number: '`; fi
+    if [ "$1" != "" ]; then PS3=$"$1";
+    else PS3=$'Input number: '; fi
 }
 
 default_theme(){
-    _ '[WARN] : theme file does not exists, using defaults...'
+    markwarn $'Theme file does not exists, using defaults...\n'
 	DUMPING_COLOR="#FFFFFF"; INJECTION_COLOR="#1DFF00"
 	ASSOCIATION_COLOR="#FF0009"; DEAUTH_COLOR="#99CCFF"; BACKGROUND_COLOR="#000000"
 }
@@ -35,12 +35,12 @@ default_theme(){
 resolution() {
    { reso=$( awk '/\*/ {print $1}' <(xrandr) | head -n1; ); } &>/dev/null
     for i in ${!available_resos[@]}; do [[ ${available_resos[$i]} == $reso ]] && {  reson=$reso; pos=$i; }; done 
-    [[ $reson != "" ]] && { export resonset=1;  echo -e "${mark}Automatically setting resolution to $reso" ; }
-    xhost &>/dev/null || { echo -e "${mark}Error: Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
+    [[ $reson != "" ]] && { export resonset=1;  markwarn $"Automatically setting resolution to $reso" ; }
+    xhost &>/dev/null || { error $"Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
 	while true; do 
-		if [[ ${resonset} == "" ]]; then mkmenu "Resolution" ${available_resos[@]}; pos=$choice; fi
+		if [[ ${resonset} == "" ]]; then mkmenu $"Set resolution" ${available_resos[@]}; pos=$choice; fi
 	    set_resolution_data $pos
-		[[ $TLX == "" ]] && { $clear; echo "${mark}Unknown resolution, try again"; } || break;
+		[[ $TLX == "" ]] && { $clear; error $"Unknown resolution, try again"; } || break;
 	done
 }
 
@@ -82,11 +82,11 @@ mkmenuline(){ echo -en "$separator_x"; for i in $(seq 1 $1); do echo -en "$separ
 mkmenuheader(){ echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }
 getmaxlenfromlist(){ max=0; for i in "${@}"; do [[ ${#i} -gt $max ]] && max=${#i}; done; echo $max; }
 mkmenueline(){ echo -en "${separator_v}\033[${1}C${separator_v}\033[${1}D${white}${2}${red})${end} ${separator_v}";}
-mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; echo " $i"; done; }
+mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; echo "$i"; done; }
 
 mkmenu(){
     if [ "$AUTO" == 2 ]; then return; fi
-    [[ ${ERRORS} ]] && echo "${mark} Error: ${ERRORS[@]}"
+    [[ ${ERRORS} ]] && markwarn "Error:" "${ERRORS[@]}"
 	ERRORS=""
     max=`getmaxlenfromlist "${@}"`
     max=$(( $max + 10 ))
@@ -97,7 +97,7 @@ mkmenu(){
     mkmenulines $max "${@}"
     mkmenuline $max
 
-    echo -en "$mark`_ 'Select option:'`"
+    markwarn $"Select option:"
     set -a choice
     _read -a choice
 }
@@ -105,7 +105,6 @@ mkmenu(){
 
 
 getterminal(){
-    [[ "$TERMINAL" = "GUI" ]] && TERMINAL="airosperl"
     if [ -x $TERMBIN/$TERMINAL ]; then
 	    _debug "Using configured terminal"
 	else
@@ -123,7 +122,7 @@ getterminal(){
             if [ -x "$TERMBIN/xterm" ]; then
 				TERMINAL="xterm" && _debug "Using Xterm"
 			else
-			_   "I cant find any good terminal, please set one on your conffile
+			echo $"I cant find any good terminal, please set one on your conffile
 				Your TERMINAL var contains no valid temrinal
 				Your alternative against x-terminal-emulator contains no terminal
 				Xterm can\'t be found on your system, Maybe not in /usr/bin?"

@@ -42,14 +42,14 @@ Jazztel(){
         avail=1; 
         [[ $test == 1 ]] && return 
         [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {  min_ivs=10; return; }
-        warn "Encription is $Host_ENC"
+        warn $"Encription is" "$Host_ENC"
         digenpy_ Spanish Jazztel
         digenpy_ Spanish Jazztel crack  && cracked=1
     fi;
 }
 
 Crack_with_dictionary_generator(){ 
-    if [ "$Host_SSID" == "" ]; then $clear; echo -e "`gettext 'Error: You must select a target first'`\n"; return; fi
+    if [ "$Host_SSID" == "" ]; then $clear; echo -e $"Error: You must select a target first"; return; fi
 
     if [ "$1" == "return_ivs" ]; then
         for function in "Telefonica" "Jazztel" ; do test=1; $function; test=0; [[ "$avail" == "1" ]] && return 4; done

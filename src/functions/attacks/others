@@ -19,7 +19,7 @@ check_function injectmenu || source $path/attacks/injection # It depends on inje
 
 othertmenu(){
     while true; do
-         mkmenu "Other aircrack-ng tools" "Scanning" "Injection" "Autentication" "Package manipulation" "Create virtual interface with airtun-ng" "Diagnostics and reports" "Auto crack wep with wesside-ng" "Easside-ng" "Return to main menu"
+         mkmenu $"Other aircrack-ng tools" $"Scanning" $"Injection" $"Autentication" $"Package manipulation" $"Create virtual interface with airtun-ng" $"Diagnostics and reports" $"Auto crack wep with wesside-ng" "Easside-ng" $"Return to main menu"
         case $choice in
 			1  ) AUTO=0 menu_type; $clear; break;; 
             1  ) othersinjectmenu    ; $clear; break;;
@@ -30,7 +30,7 @@ othertmenu(){
             8  ) choosewesside ; $clear; break;;
             9  ) eassideng     ; $clear; break;;
             10 ) $clear        ; break ;;
-            *  ) _ "Unknown response, try again"; sleep 1; $clear;;
+            *  ) echo $"Unknown response, try again"; sleep 1; $clear;;
         esac
     done
 }
@@ -38,7 +38,7 @@ othertmenu(){
 
 generate_hcap(){
     wait_for_execute=1; execute $AIRCRACK $DUMP_PATH/$Host_MAC-01.cap -J $DUMP_PATH/$Host_MAC-01.hccap; wait_for_execute=0;
-    read -p "${mark}Your hccap file is in $DUMP_PATH/$Host_MAC-01.hccap . Press enter to continue"
+    read -p $"Your hccap file is in $DUMP_PATH/$Host_MAC-01.hccap . Press enter to continue"
     export HCCAPFILE=$DUMP_PATH/$Host_MAC-01.hccap
 }
 
@@ -85,25 +85,25 @@ cleanairtun() {
 package_menu(){
     while true; do
 		[[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
-			mkmenu "Package manipulation tools" "Merge all ivs from all sessions" "Decrypt current packages" "Decloack packages"\
-				"Generate hccap file for oclhashcat" "Return to main menu"
+			mkmenu $"Package manipulation tools" $"Merge all ivs from all sessions" $"Decrypt current packages" $"Decloack packages"\
+				$"Generate hccap file for oclhashcat" $"Return to main menu"
 		    case $choice in
 			    1) mergeallivs;$clear; break;;
 				2) decrypt; $clear; break;;
 				3) airdecmenu; $clear; break;; 
 		        4) generate_hcap ; $clear; break;;
 	            5) $clear;break ;;
-	            * ) _ "Unknown response. Try again" ;;
+	            * ) echo $"Unknown response. Try again" ;;
 	        esac
 		} || {
-			mkmenu "Package manipulation tools" "Merge all ivs from all sessions" "Decrypt current packages" "Decloack packages"\
-				"Return to main menu"
+			mkmenu $"Package manipulation tools" $"Merge all ivs from all sessions" $"Decrypt current packages" $"Decloack packages"\
+				$"Return to main menu"
 		    case $choice in
 			    1) mergeallivs;$clear; break;;
 				2) decrypt; $clear; break;;
 				3) airdecmenu; $clear; break;; 
 	            4) $clear;break ;;
-	            * ) _ "Unknown response. Try again" ;;
+	            * ) echo $"Unknown response. Try again" ;;
 	        esac
 		}
     done
@@ -120,7 +120,7 @@ mergeallivs(){ # TODO Untested
     newdir=`mktemp -d`
     for i in $TMPDIR/*/*.cap; do b=$(( $b + 1 )); $IVSTOOLS --convert $i $newdir/$b; done
     ivstools --merge $newdir/* $DUMP_PATH/merged.cap
-    read -p "`gettext 'Select merged data as target? (y/N): '`" ACP && [[ "$ACP" = "y" ]] && Host_MAC="merged"
+    read -p $"Select merged data as target? (y/N): " ACP && [[ "$ACP" = $"y" ]] && Host_MAC="merged"
 }
 
 
@@ -128,7 +128,7 @@ mergeallivs(){ # TODO Untested
 
 choosewesside(){
         while true; do
-            $clear; mkmenu "Choose Wesside-ng Options" "No args" "Selected target" "Sel. target max retrans" "Sel. target poor conection" "Select another target" "Return to main menu"
+            $clear; mkmenu $"Choose Wesside-ng Options" $"No args" $"Selected target" $"Sel. target max retrans" $"Sel. target poor conection" $"Select another target" $"Return to main menu"
             case $choice in
                 1 ) wesside ; break ;;
                 2 ) wessidetarget ; break ;;
@@ -136,7 +136,7 @@ choosewesside(){
                 4 ) wessidetargetpoor ; break ;;
                 5 ) wessidenewtarget ; break ;;
                 6 ) break ;;
-                * ) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+                * ) echo -e $"Unknown response. Try again" ;;
             esac
     done
 }
@@ -170,7 +170,7 @@ wessidenewtarget(){
 diagmenu(){
     check_function kstatsmenu || source $path/reporting
     while true; do
-        mkmenu "Diagnostic tools and reports" "Show kstats report" "Test injection" "Checks with airmon-ng" "Create graphs" "Update airoscript report" "Return to main menu"
+        mkmenu $"Diagnostic tools and reports" $"Show kstats report" $"Test injection" $"Checks with airmon-ng" $"Create graphs" $"Update airoscript report" $"Return to main menu"
         case $choice in
             1  ) kstatsmenu    ; $clear; break;;
             2  ) inject_test   ; $clear; break;;
@@ -179,7 +179,7 @@ diagmenu(){
             5  ) report_mode   ; $clear; break;;
             6  ) make_report   ; $clear; break;;
             7  )                 $clear; break;;
-            *  ) _ "Unknown response, try again"; sleep 1; $clear;;
+            *  ) $"Unknown response, try again"; sleep 1; $clear;;
         esac
     done
 }
@@ -203,9 +203,9 @@ decrypt(){
 
 menu_options(){
     while [ "1" ] ; do
-        mkmenu "Airoscript options"  "Select another interface" "Reset selected interface"\
-            "Change MAC of interface"  "Enable monitor mode" "Change DUMP_PATH"\
-            "Try to configure network" "Return to main menu"
+        mkmenu $"Airoscript options"  $"Select another interface" $"Reset selected interface"\
+            $"Change MAC of interface"  $"Enable monitor mode" $"Change DUMP_PATH"\
+            $"Try to configure network" $"Return to main menu"
 
         case $choice in
         1 ) setinterface 1 ; $clear; break ;;
@@ -215,14 +215,14 @@ menu_options(){
         5 ) changedumppath;$clear; break;;
         6 ) configure;$clear; break;;
         7 ) $clear;break ;;
-        * ) _ "Unknown response. Try again" ;;
+        * ) $"Unknown response. Try again" ;;
         esac
     done
 }
 
 cleanup(){
     while [ "1" ]; do
-        mkmenu "Interface cleanup" "Normal cleanup" "Reset driver" "Vmware fix for bt4" "Return to main menu"
+        mkmenu $"Interface cleanup" $"Normal cleanup" $"Reset driver" $"Vmware fix for bt4" $"Return to main menu"
         case $choice in 
             1 ) { killall -9 aireplay-ng airodump-ng &> /dev/null &
                 $AIRMON stop $wificard; ifconfig $wificard down;
@@ -241,24 +241,22 @@ cleanup(){
 
 changedumppath(){
     OLD_DUMP_PATH=$DUMP_PATH
-    read -p "`gettext 'Enter new path: '`" DUMP_PATH
-    read -p "`gettext 'Copy data into new folder? (y/N): '`" ACP && [[ "$ACP" = "y" ]] && cp -r $OLD_DUMP_PATH/* $DUMP_PATH/
-    read -p "`gettext 'Erase old folder? (y/N): '`" EPF && [[ "$EPF" = "y" ]] && rm -r $OLD_DUMP_PATH
+    read -p $"Enter new path: " DUMP_PATH
+    read -p $"Copy data into new folder? (y/N): " ACP && [[ "$ACP" = $"y" ]] && cp -r $OLD_DUMP_PATH/* $DUMP_PATH/
+    read -p $"Erase old folder? (y/N): " EPF && [[ "$EPF" = $"y" ]] && rm -r $OLD_DUMP_PATH
     mkdir -p $DUMP_PATH # If exists, it won't be created again, so we don't lose anything fot this :-)
     $olear
 }
 
-
-
 eassideng(){
      while true; do $clear
-        mkmenu "Easside-ng" "Create virtual interface" "Run buddy server" "Return to main menu"
+        mkmenu "Easside-ng" $"Create virtual interface" "Run buddy server" "Return to main menu"
         case $choice in
             1 )
                 while true; do $clear
-                    read -p "Select buddy IP" buddyip; $clear
-                    mkmenu "Choose ap mac " "Choose source mac " "Chosse Source IP " "Choose router ip " "Execute" "Return"; 
-                    read -p "Anser: " answer; echo
+                    read -p $"Select buddy IP" buddyip; $clear
+                    mkmenu $"Choose ap mac " $"Choose source mac" $"Chosse Source IP" $"Choose router ip" $"Execute" $"Return"; 
+                    read -p $"Anser: " answer; echo
                     case $choice in
                         1 ) opts=" $opts -v $answer " ;break ;;
                         2 ) opts=" $opts -m $answer " ;break ;;
@@ -270,7 +268,7 @@ eassideng(){
                 done ;;
             2 ) execute $BUDDY ;;
             3 ) $clear ; break ;;
-            * ) $clear; echo  _ "Unknow response, try again"; sleep 2 ;;
+            * ) $clear; echo  $"Unknow response, try again"; sleep 2 ;;
         esac
     done
 }
@@ -285,11 +283,11 @@ airbaseng(){
 
 
 setupairservng(){
-	single_question "Do you want to use airserv-ng? [y/N] "
-	if [ "$ans" == "y" ]; then
-		export wificard=$wifi && single_question "Start a local server? [y/N] "
-		if [ "$ans" == "y" ]; then export wifi="127.0.0.1:666" && $AIRSERV -d  $wificard >/dev/null 2>1 &
-		else read -p "Enter airserv-ng address [127.0.0.1:666]"
+	single_question $"Do you want to use airserv-ng? [y/N] "
+	if [ "$ans" == $"y" ]; then
+		export wificard=$wifi && single_question $"Start a local server? [y/N] "
+		if [ "$ans" == $"y" ]; then export wifi="127.0.0.1:666" && $AIRSERV -d  $wificard >/dev/null 2>1 &
+		else read -p $"Enter airserv-ng address [127.0.0.1:666]"
             wifi=$ans
 			if [ "$wifi" == "" ]; then export wifi="127.0.0.1:666";fi
 		fi

@@ -25,7 +25,7 @@ wpa_attacks(){
 }
 
 wpa_attacks_menu(){
-	help_fifo "${mark}${red}WPA attacks${end}\n"\
+	help_fifo $"${mark}${red}WPA attacks${end}\n"\
 		"You're seeing this menu because the network you selected has WPA encryption\n"\
 		"${red}Standard deauth attack${end}\n"\
 		"Deauths a client, then waits for the client to reconnect and tries to capture the 4-way handshake\n"\
@@ -35,7 +35,7 @@ wpa_attacks_menu(){
 		"This attack targets on Cisco Aironet routers, wich set both WPA and WEP encriptions on the same sssid\nIt listens for a wep-encapsulated arp packet and retransmits it (bitflipped to make it into an ARP coming from the attacker's MAC)"
 
     while true; do
-        $clear; mkmenu "Select WPA Attack" "Standard attack" "Standard attack with QoS (WMM)" "WPA migration mode"
+        $clear; mkmenu $"Select WPA Attack" $"Standard attack" $"Standard attack with QoS (WMM)" $"WPA migration mode"
         case $choice in
              1) wpa_attacks handshake; $clear; break;;
              2) wpa_attacks qos; $clear; break;;
@@ -53,7 +53,7 @@ wpa_attacks_handshake(){
 
 	[[ $Client_MAC != ""  ]] && { directed=1; }
 	clear=""
-    execute "Capturing data on channel: $Host_CHAN"  $AIRODUMP --ignore-negative-one  -w $DUMP_PATH/$Host_MAC --bssid $Host_MAC --channel $Host_CHAN -a $wifi 
+    execute $"Capturing data on channel: $Host_CHAN"  $AIRODUMP --ignore-negative-one  -w $DUMP_PATH/$Host_MAC --bssid $Host_MAC --channel $Host_CHAN -a $wifi 
 
 	[[ $directed == 1 ]] && choose_deauth 2
 	[[ $directed != 1 ]] && choose_deauth 3 
@@ -63,6 +63,6 @@ wpa_attacks_handshake(){
 
 wpa_attacks_qos(){
      iwconfig $wificard channel $Host_CHAN # Hope this is ok for all cards
-     execute "Executing tkiptun-ng for ap $Host_MAC"  $TKIPTUN -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL  $wifi 
+     execute $"Executing tkiptun-ng for ap $Host_MAC"  $TKIPTUN -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL  $wifi 
 }
 

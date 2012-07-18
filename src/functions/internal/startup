@@ -106,7 +106,7 @@ wichchangemac(){
                 [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
                 ifconfig $wifi up &>/dev/null; break ;;
 
-            * ) _ "Unknown response. Try again" ;;
+            * ) echo $"Unknown response. Try again" ;;
 
         esac
     done
@@ -153,8 +153,7 @@ selectAp(){
         $(valid_mac "$MAC") && {
             k=$(($k+1))
             if [ "$AUTO" != 2  ]; then
-                [[ "$k" == 1 ]] && ST="TRUE" || ST="FALSE"
-                res+=( "$ST" "$k" " $MAC " "$CHANNEL" "$PRIVACY" "$POWER" "$IDLENGTH" "$ESSID");
+                res+=( "$k" " $MAC " "$CHANNEL" "$PRIVACY" "$POWER" "$IDLENGTH" "$ESSID");
                 mkmenueline $max $k
                 echo -e " $MAC | $CHANNEL | $PRIVACY | $POWER | $IDLENGTH | $ESSID"
             fi
@@ -210,8 +209,8 @@ Scan(){
     rm -rf $DUMP_PATH/dump* &>/dev/null
     temporary_switch_clear
 
-    warn "$mark`gettext 'Interface used is'` : $wifi ($iwifi) for $wificard "
-    warn "$mark`gettext 'Interface type is'` : $TYPE ($DRIVER)"
+    markwarn $"Interface used is" ": $wifi ($iwifi) for $wificard "
+    markwarn $"Interface type is" ": $TYPE ($DRIVER)"
     export QUIET=1; export NOTITLE=1;
     execute "" $AIRODUMP --ignore-negative-one -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
     temporary_switch_clear
@@ -219,7 +218,7 @@ Scan(){
 }
 
 Host_ssidinput(){
-    single_question "Please enter Host SSID"; 
+    single_question $"Please enter Host SSID"; 
     Host_SSID="$ans";
     $clear
 }
@@ -244,7 +243,7 @@ setaircrackpaths(){
 }
 
 confwarn(){
-_ 'Youre going to use a config file on your home or current dir.
+$'Youre going to use a config file on your home or current dir.
 This may be harmfull, for example, if your user have been
 compromised, and youre getting rights trought sudo, someone
 can modify your config file to do something malicious as
@@ -257,8 +256,8 @@ Do you really want to do it (yes/No): '
 testmac(){
 	if [ "$TYPE" = "Atherosmadwifi-ng" ]; then
 		FAKE_MAC=`ifconfig $wificard | grep $wifi | awk '{print $5}' | cut -c -17  | sed -e "s/-/:/" | sed -e "s/\-/:/"  | sed -e "s/\-/:/" | sed -e "s/\-/:/" | sed -e "s/\-/:/"`
-		_ "Changed fake_mac :" " $FAKE_MAC"
+		$"Changed fake_mac :" " $FAKE_MAC"
         return
 	fi
-    [[ $auto_fake_mac == 1 ]] && { [[ $set_wifi_by_args != 1 ]] && { warn "${mark}Automatically setting fake mac";  wichchangemac 1 ; }; }
+    [[ $auto_fake_mac == 1 ]] && { [[ $set_wifi_by_args != 1 ]] && { markwarn $"Automatically setting fake mac";  wichchangemac 1 ; }; }
 }

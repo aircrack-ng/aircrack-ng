@@ -16,7 +16,7 @@
 
 mainmenu(){
 	$clear
-    mkmenu "Main Menu" "Attack - Attack target" "Crack  - Get target key"  "Select - Reselect target" "Others - Various utilities" "Autopwn- Automatic cracking" "Exit  - Quits"
+    mkmenu $"Main Menu" $"Attack - Attack target" $"Crack  - Get target key"  $"Select - Reselect target" $"Others - Various utilities" $"Autopwn- Automatic cracking" $"Exit  - Quits"
         for choix  in ${choice[*]}; do
             case "$choix" in
                 1) menu_attack;;
@@ -25,7 +25,7 @@ mainmenu(){
                 4) menu_extra;;
                 5) check_function autopwn || source $path/autocrack; autopwn runner;;
                 6) check_function doexit || source $path/internal/exit; doexit;;
-                *) $clear && _ "ERROR: Wrong number entered";;
+                *) $clear && markwarn $"ERROR: Wrong number entered";;
             esac
         done  
     mainmenu
@@ -40,14 +40,14 @@ menu_attack(){
 
 menu_crack(){
     check_function crack_wep || source $path/crack/main
-		[[ ! -e $DUMP_PATH/$Host_MAC-01.cap ]] && { error "You have no IVS, please scan first" ; return; }
+		[[ ! -e $DUMP_PATH/$Host_MAC-01.cap ]] && { error $"You have no IVS, please scan first" ; return; }
 			while true; do
-                mkmenu "WEP/WPA Cracking Options" "Crack with manual dictionary" "Standard aircrack-ng" "Return to menu" 
+                mkmenu $"WEP/WPA Cracking Options" $"Crack with manual dictionary" $"Standard aircrack-ng" $"Return to menu" 
                 case $choice in
 					1 ) export crack_extra_opts=" -w $WORDLIST"; selectcracking; break ;;
 					2 ) selectcracking ; break ;;
 					3 ) $clear; break;;
-					* ) echo "Unknown response. Try again" ;;
+					* ) echo $"Unknown response. Try again" ;;
 				esac
 			done
 }
@@ -57,7 +57,7 @@ menu_type(){
     if [ "$AUTO" == 2 ]; then ENCRYPT="$1"; choosescan; return; fi
 
     while true; do echo
-        mkmenu "Select encryption" "No filter" "OPN (open)" "WEP" "WPA" "WPA1" "WPA2" "Return to main menu"
+        mkmenu $"Select encryption" "No filter" "OPN (open)" "WEP" "WPA" "WPA1" "WPA2" $"Return to main menu"
         case $choice in
             1 ) ENCRYPT=""     ; choosescan; break ;;
             2 ) ENCRYPT="OPN"  ; choosescan; break ;;
@@ -66,7 +66,7 @@ menu_type(){
             5 ) ENCRYPT="WPA1" ; choosescan; break ;;
             6 ) ENCRYPT="WPA2" ; choosescan; break ;;
             7 ) break;;
-             * ) _ "Unknown response. Try again"   ;;
+             * ) echo $"Unknown response. Try again"   ;;
          esac
     done
 }
@@ -76,11 +76,11 @@ choosescan(){
     if [ "$AUTO" == 2 ]; then Scan; return; fi
 
     while true; do
-        mkmenu "Channel" "Channel Hoping" "Specific Channel"
+        mkmenu $"Channel" $"Channel Hoping" $"Specific Channel"
         case $choice in
             1 ) Scan;break;;
             2 ) Scanchan;break;;
-            * ) _ "Unknown response. Try again" ;;
+            * ) echo $"Unknown response. Try again" ;;
         esac
     done
 }
@@ -94,19 +94,19 @@ select_ap(){
 			if [ "$Host_SSID" = $'\r' ]; then blankssid;
 			elif [ "$Host_SSID" = "No SSID has been detected" ]; then blankssid; fi
 			select_target; target
-		else $clear && _ 'ERROR: You have to scan for targets first'; fi
+		else $clear && markwarn $'ERROR: You have to scan for targets first'; fi
 }
 
 menu_extra(){ 
     check_function menu_options || source $path/attacks/others
     while true; do
-        mkmenu "Extra tools" "Airoscript Options" "Advanced tools" "External plugins" "Return to main menu"
+        mkmenu $"Extra tools" $"Airoscript Options" $"Advanced tools" $"External plugins" $"Return to main menu"
         case $choice in
             1) menu_options; $clear; break;;
             2) othertmenu; $clear; break;;
             3) menu_plugins; $clear; break;;
             4) $clear;break ;;
-            * ) _ "Unknown response. Try again" ;;
+            * ) echo $"Unknown response. Try again" ;;
         esac
     done
 }

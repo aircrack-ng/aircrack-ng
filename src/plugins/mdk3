@@ -33,7 +33,7 @@ Mdk3_Attacks(){
                 3 ) mdknewtarget ; break ;;
                 4 ) mdkauth ; break ;;
                 5 ) break ;;
-                * ) _ "Unknown response. Try again" ;;
+                * ) echo $"Unknown response. Try again" ;;
             esac
         done
 

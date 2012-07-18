@@ -17,7 +17,7 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 required(){
-	check_function $1 ||  { echo "${warn}${2}"; return 1; }
+	check_function $1 ||  { specialwarn "${warn}${2}"; return 1; }
 }
 
 error(){
@@ -152,8 +152,7 @@ load_plugins(){
 }
 
 initial_warning(){
-	warn -en $mark;
-    _ "  Airoscript is provided under the gpl.
+    markwarn $"  Airoscript is provided under the gpl.
 I'm not responsible of the use anyone can give to airoscript.
 Written for educational purpose in mind.
 "
@@ -162,9 +161,12 @@ sleep $warn_time
 
 # Standard functions.
 
+markwarn(){
+	echo -e "${warn}${@}"
+}
 
 _debug(){
-    if [ "$debug" == 1 ]; then echo -en $mark; _ $1; fi
+    if [ "$debug" == 1 ]; then markwarn $1; fi
 }
 
 execute(){ 
@@ -175,7 +177,7 @@ execute(){
     if [  "$ADDOPTIONS" != "" ]; then
         printf -- "Executing $@"
         echo
-        read -p "Enter extra options to execute: " eopts
+        read -p $"Enter extra options to execute: " eopts
     fi
         if [ "$1" == "crack" ]; then HOLDA="-hold"; shift; fi # FIXME This will work just on xterm.
         if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
@@ -200,7 +202,7 @@ monmode(){ { ifconfig $1 up; $iwconfig $1 |grep "Monitor" && if [ $? != 0 ]; the
 # this function allows debugging, called from main menu.
 function debug {
 	if [ "$debug" == "1" ] || [ "$hold" == "1"  ]; then
-		export HOLD=$HOLDFLAG; _ "Debug Mode enabled, you'll have to manually close windows"
+		export HOLD=$HOLDFLAG; echo $"Debug Mode enabled, you'll have to manually close windows"
 	else export HOLD="" ;fi
 }
 
@@ -213,10 +215,10 @@ _read(){
 checkdir(){
     if [ -d $DUMP_PATH ]; then
         if [ "$DEBUG" == 1 ]; then
-            _ "[INFO] Output folder is" " $DUMP_PATH";
+            echo $"[INFO] Output folder is" " $DUMP_PATH";
         fi
     else
-        _ "[Error] Output folder does not exists or is a regular file."
+        echo $"[Error] Output folder does not exists or is a regular file."
         exit
     fi
 }
@@ -239,11 +241,7 @@ attack_wep(){
 }
 
 attack_opn(){ # If no encryption detected
-    if [ "$Host_SSID" = "" ]; then
-        $clear &&  echo  "`gettext 'ERROR: You have to select a target'`"
-    else
-        $clear && echo `gettext "ERROR: Network not encrypted or no network selected "`
-    fi
+	$clear && error "Network not encrypted or not network selected";
 }
 
 capture(){
@@ -266,7 +264,7 @@ yesno(){
 
 check_default_software(){
 	for program in ${required_software[@]}; do
-		[[ $(whereis $program) ]] || { echo "$program not found, quitting." ; exit ; } 
+		[[ $(whereis $program) ]] || { echo -en "$program"; warn "not found, quitting." ; exit ; } 
 	done
 }
 
