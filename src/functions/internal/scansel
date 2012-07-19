@@ -71,7 +71,9 @@ select_client(){
 	export Client_MAC=`echo ${HOST[$choice -1]} | awk '{split($1, info, "," );  print info[1]  }'`;
 	(( $choice == $(( ${#HOST[@]} + 1 )) )) && { $MACCHANGER $wificard $FAKE_MAC ; Client_MAC=""; directed=0; return; }
 	(( $choice == $(( ${#HOST[@]} + 2 )) )) && { auto_scan_clients; select_client; return; }
+	{ 
 	ifconfig $wifi down; $MACCHANGER $wifi --mac $Client_MAC; ifconfig $wifi up;
 	ifconfig $iwifi down; $MACCHANGER $iwifi --mac $Client_MAC; ifconfig $iwifi up;
 	ifconfig $wificard down; $MACCHANGER $wificard --mac $Client_MAC; ifconfig $wificard up
+	} &>/dev/null
 }
