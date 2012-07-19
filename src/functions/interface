@@ -22,12 +22,12 @@ _(){
 
 setps(){
     $clear
-    if [ "$1" != "" ]; then PS3=$"$1";
+    if [ "$1" != "" ]; then PS3="$1";
     else PS3=$'Input number: '; fi
 }
 
 default_theme(){
-    markwarn $'Theme file does not exists, using defaults...\n'
+    markwarn $'Theme file does not exists, using defaults...'
 	DUMPING_COLOR="#FFFFFF"; INJECTION_COLOR="#1DFF00"
 	ASSOCIATION_COLOR="#FF0009"; DEAUTH_COLOR="#99CCFF"; BACKGROUND_COLOR="#000000"
 }

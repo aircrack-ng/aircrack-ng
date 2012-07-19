@@ -65,7 +65,7 @@ checkforcemac() {
     else
         export mac=`$MACCHANGER -s $wificard|awk '/Current/ {print $3}'`
         if [ "$FAKE_MAC" != "$mac" ]; then
-            wichchangemac $@;
+            wichchangemac_startup &>/dev/null;
         fi
     fi
 }
@@ -79,6 +79,13 @@ guess_idata(){
     echo $DRIVER $TYPE
     if [[ "$tmpwifi" =~ (.*)[0-9] ]];  then wifi=$tmpwifi; else wifi=$wificard; fi 
 
+}
+
+wichchangemac_startup(){
+	ifconfig $wifi down; $MACCHANGER $wifi --mac $FAKE_MAC; ifconfig $wifi up;
+	ifconfig $iwifi down; $MACCHANGER $iwifi --mac $FAKE_MAC; ifconfig $iwifi up;
+	ifconfig $wificard down; $MACCHANGER $wificard --mac $FAKE_MAC; ifconfig $wificard up
+	return # Disabled =)
 }
 
 wichchangemac(){

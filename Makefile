@@ -22,9 +22,9 @@ install: installdirs\
 	 install-binary \
 	 install-docs \
 	 install-desktop \
+	 install-locale \
 	 install-config
 
-# install-locale \ # No locale available for this version right now
 
 
 installdirs:

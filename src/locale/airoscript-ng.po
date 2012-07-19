@@ -1,0 +1,614 @@
+#: src/plugins/mdk3:36
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/plugins/digenpy:45
+msgid "Encription is"
+msgstr ""
+#: src/plugins/digenpy:52
+msgid "Error: You must select a target first"
+msgstr ""
+#: src/functions/interface:38
+msgid "Automatically setting resolution to $reso"
+msgstr ""
+#: src/functions/interface:39
+msgid "Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"
+msgstr ""
+#: src/functions/interface:41
+msgid "Set resolution"
+msgstr ""
+#: src/functions/interface:43
+msgid "Unknown resolution, try again"
+msgstr ""
+#: src/functions/interface:100
+msgid "Select option:"
+msgstr ""
+#: src/functions/interface:125
+msgid ""
+"I cant find any good terminal, please set one on your conffile\n"
+"				Your TERMINAL var contains no valid temrinal\n"
+"				Your alternative against x-terminal-emulator contains no terminal\n"
+"				Xterm can\\'t be found on your system, Maybe not in /usr/bin?"
+msgstr ""
+#: src/functions/menu:19
+msgid "Main Menu"
+msgstr ""
+#: src/functions/menu:19
+msgid "Attack - Attack target"
+msgstr ""
+#: src/functions/menu:19
+msgid "Crack  - Get target key"
+msgstr ""
+#: src/functions/menu:19
+msgid "Select - Reselect target"
+msgstr ""
+#: src/functions/menu:19
+msgid "Others - Various utilities"
+msgstr ""
+#: src/functions/menu:19
+msgid "Autopwn- Automatic cracking"
+msgstr ""
+#: src/functions/menu:19
+msgid "Exit  - Quits"
+msgstr ""
+#: src/functions/menu:28
+msgid "ERROR: Wrong number entered"
+msgstr ""
+#: src/functions/menu:43
+msgid "You have no IVS, please scan first"
+msgstr ""
+#: src/functions/menu:45
+msgid "WEP/WPA Cracking Options"
+msgstr ""
+#: src/functions/menu:45
+msgid "Crack with manual dictionary"
+msgstr ""
+#: src/functions/menu:45
+msgid "Standard aircrack-ng"
+msgstr ""
+#: src/functions/menu:45
+msgid "Return to menu"
+msgstr ""
+#: src/functions/menu:50
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/menu:60
+msgid "Select encryption"
+msgstr ""
+#: src/functions/menu:60
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/menu:69
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/menu:79
+msgid "Channel"
+msgstr ""
+#: src/functions/menu:79
+msgid "Channel Hoping"
+msgstr ""
+#: src/functions/menu:79
+msgid "Specific Channel"
+msgstr ""
+#: src/functions/menu:83
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/menu:103
+msgid "Extra tools"
+msgstr ""
+#: src/functions/menu:103
+msgid "Airoscript Options"
+msgstr ""
+#: src/functions/menu:103
+msgid "Advanced tools"
+msgstr ""
+#: src/functions/menu:103
+msgid "External plugins"
+msgstr ""
+#: src/functions/menu:103
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/menu:109
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/internal/scansel:20
+msgid "Enter channel (single, range, or comma-separated): "
+msgstr ""
+#: src/functions/internal/scansel:23
+msgid "Scanning for targets on channel $channel_number"
+msgstr ""
+#: src/functions/internal/scansel:29
+msgid "${mark}${red}Select a client${end}\\n"
+msgstr ""
+#: src/functions/internal/scansel:37
+msgid "Client Selection"
+msgstr ""
+#: src/functions/internal/scansel:38
+msgid "Select client"
+msgstr ""
+#: src/functions/internal/scansel:39
+msgid "Enable dynamic mode (ask for client in each attack)"
+msgstr ""
+#: src/functions/internal/scansel:40
+msgid "Manually enter client MAC"
+msgstr ""
+#: src/functions/internal/scansel:45
+msgid "Type in client mac now"
+msgstr ""
+#: src/functions/internal/scansel:47
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/internal/scansel:67
+msgid "Select client"
+msgstr ""
+#: src/functions/internal/startup:116
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/internal/startup:219
+msgid "Interface used is"
+msgstr ""
+#: src/functions/internal/startup:220
+msgid "Interface type is"
+msgstr ""
+#: src/functions/internal/startup:228
+msgid "Please enter Host SSID"
+msgstr ""
+#: src/functions/internal/startup:266
+msgid "Changed fake_mac :"
+msgstr ""
+#: src/functions/internal/startup:269
+msgid "Automatically setting fake mac"
+msgstr ""
+#: src/functions/crack/main:25
+msgid "WEP Cracking Options"
+msgstr ""
+#: src/functions/crack/main:25
+msgid "aircrack-ng defaults"
+msgstr ""
+#: src/functions/crack/main:25
+msgid "aircrack-ng Korek"
+msgstr ""
+#: src/functions/crack/main:25
+msgid "aircrack-ng interactive"
+msgstr ""
+#: src/functions/crack/main:25
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/crack/main:27
+msgid "Cracking wep, default options"
+msgstr ""
+#: src/functions/crack/main:28
+msgid "Cracking wep, Korek"
+msgstr ""
+#: src/functions/crack/main:30
+msgid "Type encryption size (64,128...): "
+msgstr ""
+#: src/functions/crack/main:31
+msgid "Cracking wep, manual options"
+msgstr ""
+#: src/functions/crack/main:35
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/crack/main:42
+msgid "WPA Cracking Options"
+msgstr ""
+#: src/functions/crack/main:42
+msgid "Standard"
+msgstr ""
+#: src/functions/crack/main:42
+msgid "Use precomputed pmk database"
+msgstr ""
+#: src/functions/crack/main:42
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/crack/main:46
+msgid "Cracking with stdin entered data by $pipe"
+msgstr ""
+#: src/functions/crack/main:47
+msgid "Cracking WPA"
+msgstr ""
+#: src/functions/crack/main:52
+msgid "Sorry, you cant crack wpa without a dictionary on $WORDLIST"
+msgstr ""
+#: src/functions/crack/main:55
+msgid "Cracking WPA"
+msgstr ""
+#: src/functions/crack/main:62
+msgid "Enter Database location [$db_location]"
+msgstr ""
+#: src/functions/crack/main:64
+msgid "Cracking WPA with pmk database"
+msgstr ""
+#: src/functions/crack/main:66
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/crack/main:73
+msgid "Network not encrypted or no network selected "
+msgstr ""
+#: src/functions/reporting:76
+msgid "Enter format (CPG|CAPR) (CAPR by default): "
+msgstr ""
+#: src/functions/reporting:78
+msgid "Generating graphics"
+msgstr ""
+#: src/functions/reporting:79
+msgid "Do you want to launch a browser? [y|N] "
+msgstr ""
+#: src/functions/reporting:81
+msgid "Error: You have to scan for targets first"
+msgstr ""
+#: src/functions/attacks/wpa:28
+msgid "${mark}${red}WPA attacks${end}\\n"
+msgstr ""
+#: src/functions/attacks/wpa:38
+msgid "Select WPA Attack"
+msgstr ""
+#: src/functions/attacks/wpa:38
+msgid "Standard attack"
+msgstr ""
+#: src/functions/attacks/wpa:38
+msgid "Standard attack with QoS (WMM)"
+msgstr ""
+#: src/functions/attacks/wpa:38
+msgid "WPA migration mode"
+msgstr ""
+#: src/functions/attacks/wpa:56
+msgid "Capturing data on channel: $Host_CHAN"
+msgstr ""
+#: src/functions/attacks/wpa:66
+msgid "Executing tkiptun-ng for ap $Host_MAC"
+msgstr ""
+#: src/functions/attacks/others:22
+msgid "Other aircrack-ng tools"
+msgstr ""
+#: src/functions/attacks/others:22
+msgid "Scanning"
+msgstr ""
+#: src/functions/attacks/others:22
+msgid "Injection"
+msgstr ""
+#: src/functions/attacks/others:22
+msgid "Autentication"
+msgstr ""
+#: src/functions/attacks/others:22
+msgid "Package manipulation"
+msgstr ""
+#: src/functions/attacks/others:22
+msgid "Create virtual interface with airtun-ng"
+msgstr ""
+#: src/functions/attacks/others:22
+msgid "Diagnostics and reports"
+msgstr ""
+#: src/functions/attacks/others:22
+msgid "Auto crack wep with wesside-ng"
+msgstr ""
+#: src/functions/attacks/others:22
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/attacks/others:33
+msgid "Unknown response, try again"
+msgstr ""
+#: src/functions/attacks/others:41
+msgid "Your hccap file is in $DUMP_PATH/$Host_MAC-01.hccap . Press enter to continue"
+msgstr ""
+#: src/functions/attacks/others:88
+msgid "Package manipulation tools"
+msgstr ""
+#: src/functions/attacks/others:88
+msgid "Merge all ivs from all sessions"
+msgstr ""
+#: src/functions/attacks/others:88
+msgid "Decrypt current packages"
+msgstr ""
+#: src/functions/attacks/others:88
+msgid "Decloack packages"
+msgstr ""
+#: src/functions/attacks/others:89
+msgid "Generate hccap file for oclhashcat"
+msgstr ""
+#: src/functions/attacks/others:89
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/attacks/others:96
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/attacks/others:99
+msgid "Package manipulation tools"
+msgstr ""
+#: src/functions/attacks/others:99
+msgid "Merge all ivs from all sessions"
+msgstr ""
+#: src/functions/attacks/others:99
+msgid "Decrypt current packages"
+msgstr ""
+#: src/functions/attacks/others:99
+msgid "Decloack packages"
+msgstr ""
+#: src/functions/attacks/others:100
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/attacks/others:106
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/attacks/others:123
+msgid "Select merged data as target? (y/N): "
+msgstr ""
+#: src/functions/attacks/others:123
+msgid "y"
+msgstr ""
+#: src/functions/attacks/others:131
+msgid "Choose Wesside-ng Options"
+msgstr ""
+#: src/functions/attacks/others:131
+msgid "No args"
+msgstr ""
+#: src/functions/attacks/others:131
+msgid "Selected target"
+msgstr ""
+#: src/functions/attacks/others:131
+msgid "Sel. target max retrans"
+msgstr ""
+#: src/functions/attacks/others:131
+msgid "Sel. target poor conection"
+msgstr ""
+#: src/functions/attacks/others:131
+msgid "Select another target"
+msgstr ""
+#: src/functions/attacks/others:131
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/attacks/others:139
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/attacks/others:173
+msgid "Diagnostic tools and reports"
+msgstr ""
+#: src/functions/attacks/others:173
+msgid "Show kstats report"
+msgstr ""
+#: src/functions/attacks/others:173
+msgid "Test injection"
+msgstr ""
+#: src/functions/attacks/others:173
+msgid "Checks with airmon-ng"
+msgstr ""
+#: src/functions/attacks/others:173
+msgid "Create graphs"
+msgstr ""
+#: src/functions/attacks/others:173
+msgid "Update airoscript report"
+msgstr ""
+#: src/functions/attacks/others:173
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/attacks/others:182
+msgid "Unknown response, try again"
+msgstr ""
+#: src/functions/attacks/others:206
+msgid "Airoscript options"
+msgstr ""
+#: src/functions/attacks/others:206
+msgid "Select another interface"
+msgstr ""
+#: src/functions/attacks/others:206
+msgid "Reset selected interface"
+msgstr ""
+#: src/functions/attacks/others:207
+msgid "Change MAC of interface"
+msgstr ""
+#: src/functions/attacks/others:207
+msgid "Enable monitor mode"
+msgstr ""
+#: src/functions/attacks/others:207
+msgid "Change DUMP_PATH"
+msgstr ""
+#: src/functions/attacks/others:208
+msgid "Try to configure network"
+msgstr ""
+#: src/functions/attacks/others:208
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/attacks/others:218
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/attacks/others:225
+msgid "Interface cleanup"
+msgstr ""
+#: src/functions/attacks/others:225
+msgid "Normal cleanup"
+msgstr ""
+#: src/functions/attacks/others:225
+msgid "Reset driver"
+msgstr ""
+#: src/functions/attacks/others:225
+msgid "Vmware fix for bt4"
+msgstr ""
+#: src/functions/attacks/others:225
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/attacks/others:244
+msgid "Enter new path: "
+msgstr ""
+#: src/functions/attacks/others:245
+msgid "Copy data into new folder? (y/N): "
+msgstr ""
+#: src/functions/attacks/others:245
+msgid "y"
+msgstr ""
+#: src/functions/attacks/others:246
+msgid "Erase old folder? (y/N): "
+msgstr ""
+#: src/functions/attacks/others:246
+msgid "y"
+msgstr ""
+#: src/functions/attacks/others:253
+msgid "Create virtual interface"
+msgstr ""
+#: src/functions/attacks/others:257
+msgid "Select buddy IP"
+msgstr ""
+#: src/functions/attacks/others:258
+msgid "Choose ap mac "
+msgstr ""
+#: src/functions/attacks/others:258
+msgid "Choose source mac"
+msgstr ""
+#: src/functions/attacks/others:258
+msgid "Chosse Source IP"
+msgstr ""
+#: src/functions/attacks/others:258
+msgid "Choose router ip"
+msgstr ""
+#: src/functions/attacks/others:258
+msgid "Execute"
+msgstr ""
+#: src/functions/attacks/others:258
+msgid "Return"
+msgstr ""
+#: src/functions/attacks/others:259
+msgid "Anser: "
+msgstr ""
+#: src/functions/attacks/others:271
+msgid "Unknow response, try again"
+msgstr ""
+#: src/functions/attacks/others:286
+msgid "Do you want to use airserv-ng? [y/N] "
+msgstr ""
+#: src/functions/attacks/others:287
+msgid "y"
+msgstr ""
+#: src/functions/attacks/others:288
+msgid "Start a local server? [y/N] "
+msgstr ""
+#: src/functions/attacks/others:289
+msgid "y"
+msgstr ""
+#: src/functions/attacks/others:290
+msgid "Enter airserv-ng address [127.0.0.1:666]"
+msgstr ""
+#: src/functions/attacks/wep:34
+msgid "${mark}${red}Wep attacks${end}\\n"
+msgstr ""
+#: src/functions/attacks/wep:48
+msgid "Attacks using a client"
+msgstr ""
+#: src/functions/attacks/wep:49
+msgid "ARP replay"
+msgstr ""
+#: src/functions/attacks/wep:50
+msgid "Fragmentation attack"
+msgstr ""
+#: src/functions/attacks/wep:51
+msgid "Chopchop attack"
+msgstr ""
+#: src/functions/attacks/wep:52
+msgid "Caffe latte"
+msgstr ""
+#: src/functions/attacks/wep:53
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/attacks/wep:61
+msgid "Unknown response, try again"
+msgstr ""
+#: src/functions/attacks/wep:78
+msgid "Enter destination mac: (FF:FF:FF:FF:FF:FF)"
+msgstr ""
+#: src/functions/attacks/wep:80
+msgid "Set framecontrol word (hex): (0841) "
+msgstr ""
+#: src/functions/attacks/wep:87
+msgid "Cafe Latte Attack on: $Host_SSID "
+msgstr ""
+#: src/functions/attacks/wep:97
+msgid "Interactive Packet Sel on: $Host_SSID"
+msgstr ""
+#: src/functions/attacks/wep:100
+msgid "Interactive Packet Sel on: $Host_SSID"
+msgstr ""
+#: src/functions/attacks/wep:109
+msgid "Fragmentation w/o client"
+msgstr ""
+#: src/functions/attacks/wep:113
+msgid "Fragmentation attack"
+msgstr ""
+#: src/functions/attacks/wep:126
+msgid "Chopchoping at $Host_SSID"
+msgstr ""
+#: src/functions/attacks/wep:131
+msgid "Directed ChopChoping to $Client_MAC at $Host_SSID"
+msgstr ""
+#: src/functions/attacks/auth:18
+msgid "Autentication menu"
+msgstr ""
+#: src/functions/attacks/auth:18
+msgid "Fake autentication"
+msgstr ""
+#: src/functions/attacks/auth:18
+msgid "Deautentication"
+msgstr ""
+#: src/functions/attacks/auth:18
+msgid "Return to main menu"
+msgstr ""
+#: src/functions/attacks/auth:23
+msgid "Unknown response, try again"
+msgstr ""
+#: src/functions/attacks/auth:33
+msgid "Who do you want to deauth?"
+msgstr ""
+#: src/functions/attacks/auth:33
+msgid "Everybody"
+msgstr ""
+#: src/functions/attacks/auth:33
+msgid "Myself (fake mac)"
+msgstr ""
+#: src/functions/attacks/auth:33
+msgid "Selected client"
+msgstr ""
+#: src/functions/attacks/auth:34
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/attacks/auth:40
+msgid "Deauth All"
+msgstr ""
+#: src/functions/attacks/auth:41
+msgid "Deauth client"
+msgstr ""
+#: src/functions/attacks/auth:42
+msgid "Deautenticating"
+msgstr ""
+#: src/functions/attacks/auth:50
+msgid "Fake Auth Method"
+msgstr ""
+#: src/functions/attacks/auth:50
+msgid "Conservative"
+msgstr ""
+#: src/functions/attacks/auth:50
+msgid "Standard"
+msgstr ""
+#: src/functions/attacks/auth:50
+msgid "Progressive"
+msgstr ""
+#: src/functions/attacks/auth:50
+msgid "Xor Injection"
+msgstr ""
+#: src/functions/attacks/auth:52
+msgid "Unknown response. Try again"
+msgstr ""
+#: src/functions/_internal:155
+msgid ""
+"  Airoscript is provided under the gpl.\n"
+"I'm not responsible of the use anyone can give to airoscript.\n"
+"Written for educational purpose in mind.\n"
+""
+msgstr ""
+#: src/functions/_internal:180
+msgid "Enter extra options to execute: "
+msgstr ""
+#: src/functions/_internal:205
+msgid "Debug Mode enabled, you'll have to manually close windows"
+msgstr ""
+#: src/functions/_internal:218
+msgid "[INFO] Output folder is"
+msgstr ""
+#: src/functions/_internal:221
+msgid "[Error] Output folder does not exists or is a regular file."
+msgstr ""

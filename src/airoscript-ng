@@ -25,27 +25,25 @@ declare -a p_menu
 p_menu+=( "Enable plugin" )
 
 _source(){ for cfile in $@; do if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; else if [ "$debug" == 1 ]; then echo "Could not load $cfile"; sleep 0.2 ;fi; fi; done; }
-
-[[ ! $path ]] && {
-	[[ $(dirname ${BASH_SOURCE[0]}) =~ "local" ]] &&  {
-		path=/usr/local/share/airoscript-ng 
-	} || { 
-	    [[ -e /usr/share/airoscript-ng/ ]] && path=/usr/share/airoscript-ng 
-	}
-}
-
 Enable_plugin(){
     cd $path/plugins; available_plugins=(*); cd -; mkmenu "Enable plugin" "${available_plugins[@]}"
     _source $path/plugins/${available_plugins[$choice - 1 ]} || { warn "${mark}Unknown option or bad plugin, try again"; Enable_plugin; } #nodebug
- }
-
+}
 exit_trap(){ check_function doexit || source $path/internal/exit; echo; echo; doexit; }
 Return_to_main_menu(){ mainmenu; }
 if [ "$UID" != 0 ]; then echo -e "You Must be root to use airoscript"; exit 1; fi;
 
+[[ ! $path ]] && {
+	[[ $(dirname ${BASH_SOURCE[0]}) =~ "local" ]] &&  {
+		path=/usr/local/share/airoscript-ng 
+		_source "/usr/local/etc/airoscript-ng_advanced.conf /usr/local/etc/airoscript-ng.conf"
+	} || { 
+		_source "/usr/etc/airoscript-ng_advanced.conf /usr/etc/airoscript-ng.conf"
+	    [[ -e /usr/share/airoscript-ng/ ]] && path=/usr/share/airoscript-ng 
+	}
+}
+
 # We preload functions, configs and themes in a cool way.
-_source "./airoscript-ng.conf.devel ~/.airoscript-ng/airoscript-ng.conf /etc/airoscript-ng.conf /usr/local/etc/airoscript-ng.conf"
-_source "./airoscript-ng_advanced.conf.devel ~/.airoscript-ng_advanced/airoscript-ng_advanced.conf /etc/airoscript-ng_advanced.conf /usr/local/etc/airoscript-ng_advanced.conf"
 _source "$path/_internal $path/menu $path/interface" 
 _source  "$path/themes/$theme" || default_theme
 _source ${enabled_plugins[@]};
@@ -54,9 +52,7 @@ _source ${enabled_plugins[@]};
 [[ ! -e $DUMP_PATH/wordlist.txt ]] && { cp $WORDLIST $DUMP_PATH &>/dev/null; WORDLIST="$DUMP_PATH/`basename $WORDLIST`"; }
 
 trap exit_trap 1 2 3 4 5 6 7 8 10 12 13 14 15 20 # Set an exit trap to clean out all the interfaces
-
 setaircrackpaths # Set aircrack-ng paths
-
 setps # Set PS3 variable
 warn "${mark}Welcome to airoscript, have a nice day"
 check_default_software &
