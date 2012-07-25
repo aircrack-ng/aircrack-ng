@@ -1,0 +1,49 @@
+This tests are meant to ensure that all functions of aircrack-ng where
+OpenSSL code is used [1] perform exactly the same (same input=>same output)
+when running with OpenSSL or with the alternative crypto (Libgcrypt+sha1-git)
+
+
+To run the tests with OpenSSL (useful for ensuring that the tests are still valid):
+          make clean && make check
+
+To run the tests with Libgcrypt+sha1-git:
+          make clean && make check gcrypt=true
+
+To check for memory leaks:
+          cd test/cryptounittest; make clean && make valgrind gcrypt=true
+
+
+Return value: Each one of the tests, when successful return zero, and when failed
+              return the number of tests (>0) failed. The "make check" target will
+              fail if any of the tests return non-zero.
+
+
+[1] This are 4 functions of crypto.c {encrypt_wep,calc_pmk,calc_mic,calc_ptk}
+    And 1 function of sha1-see2.h {calc_4pmk}
+
+-----------------------------------------------------------------------------
+[TEST]                          file:testedfunction ->
+                                    usedbyfile:function
+
+[test-encrypt-wep.c]            crypto.c:encrypt_wep ->
+                                    airbase-ng.c:encrypt_data
+                                    airbase-ng.c:getCompleteFrag
+                                    airtun-ng.c:packet_xmit
+                                    airtun-ng.c:getCompleteFrag
+                                    tkiptun-ng.c:do_attack_tkipchop
+
+[test-calc-pmk.c]               crypto.c:calc_pmk ->
+                                    aircrack-ng.c:crack_wpa_thread
+
+[test-calc-mic.c]               crypto.c:calc_mic ->
+                                    aircrack-ng.c:sql_wpacallback
+
+[test-calc-ptk.c]               crypto.c:calc_ptk ->
+                                    airdecap-ng.c:main
+                                    tkiptun-ng.c:main
+
+[test-decrypt-ccmp.c]           crypto.c:decrypt_ccmp ->
+                                    airdecap-ng.c:main (wpa-v2)
+
+[test-calc-4pmk.c]              sha1-see2.h:calc_4pmk ->
+                                    aircrack-ng.c:crack_wpa_thread

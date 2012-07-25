@@ -46,9 +46,11 @@ doc:
 
 clean:
 	$(MAKE) -C src $(@)
+	$(MAKE) -C test/cryptounittest $(@)
 
 distclean: clean
 
 check: 
 	$(MAKE) -C src $(@)
+	$(MAKE) -C test/cryptounittest $(@)
 	
