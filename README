@@ -124,6 +124,14 @@ ptw.cap (http://dl.aircrack-ng.org/ptw.cap):
     This is a 64 bit WEP key file suitable for the PTW method.
     The key is '1F:1F:1F:1F:1F'.
 
+wpa-psk-linksys.cap:
+    This is a sample file with a WPA1 handshake along with some encrypted packets.
+    Useful for testing with airdecap-ng. The password is 'dictionary'.
+
+wpa2-psk-linksys.cap:
+    This is a sample file with a WPA2 handshake along with some encrypted packets.
+    Useful for testing with airdecap-ng. The password is 'dictionary'.
+
 password.lst
     This is a sample wordlist for WPA key cracking. More wordlists can be found at
     http://www.aircrack-ng.org/doku.php?id=faq#where_can_i_find_good_wordlists
