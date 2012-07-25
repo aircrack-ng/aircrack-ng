@@ -68,6 +68,10 @@
 #include "osdep/osdep.h"
 #include "osdep/common.h"
 
+#ifdef USE_GCRYPT
+    GCRY_THREAD_OPTION_PTHREAD_IMPL;
+#endif
+
 static struct wif *_wi_in, *_wi_out;
 
 #define CRYPT_NONE 0
@@ -3880,6 +3884,14 @@ int main( int argc, char *argv[] )
     rCF = (pCF_t) malloc(sizeof(struct CF_packet));
     memset(rCF, 0, sizeof(struct CF_packet));
 
+#ifdef USE_GCRYPT
+    // Register callback functions to ensure proper locking in the sensitive parts of libgcrypt.
+    gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+    // Disable secure memory.
+    gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+    // Tell Libgcrypt that initialization has completed.
+    gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
     pthread_mutex_init( &mx_cf, NULL );
     pthread_mutex_init( &mx_cap, NULL );
 

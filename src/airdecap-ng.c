@@ -215,6 +215,13 @@ int main( int argc, char *argv[] )
     struct pcap_file_header pfh;
     struct pcap_pkthdr pkh;
 
+    #ifdef USE_GCRYPT
+        // Disable secure memory.
+        gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+        // Tell Libgcrypt that initialization has completed.
+        gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+    #endif
+
     /* parse the arguments */
 
     memset( ZERO, 0, sizeof( ZERO ) );

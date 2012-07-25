@@ -1130,6 +1130,13 @@ int main( int argc, char *argv[] )
     char *s, buf[128];
     int caplen;
 
+    #ifdef USE_GCRYPT
+        // Disable secure memory.
+        gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+        // Tell Libgcrypt that initialization has completed.
+        gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+    #endif
+
     /* check the arguments */
 
     memset( &opt, 0, sizeof( opt ) );

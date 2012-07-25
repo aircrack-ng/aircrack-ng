@@ -1269,6 +1269,11 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
         offset += n;
     }
 
+    // We need to free the ctx when using gcrypt to avoid memory leaks
+    #ifdef USE_GCRYPT
+        gcry_cipher_close(aes_ctx);
+    #endif
+
     return( memcmp( h80211 + offset, MIC, 8 ) == 0 );
 }
 

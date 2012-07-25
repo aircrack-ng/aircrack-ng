@@ -904,6 +904,13 @@ int main(int argc, char **argv) {
 		{0,             0, 0,  0 }
 	};
 
+#ifdef USE_GCRYPT
+	// Disable secure memory.
+	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+	// Tell Libgcrypt that initialization has completed.
+	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
+
 	option = getopt_long( argc, argv, "bc:d:e:hi:s:t:v:", long_options, &option_index );
 
 	if( option > 0 )

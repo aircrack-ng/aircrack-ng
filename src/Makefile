@@ -106,6 +106,25 @@ endif
 LIBOSD		= $(OSD)/lib$(OSD).a
 
 LIBSSL		= -lssl -lcrypto
+ifeq ($(filter true, $(gcrypt) $(GCRYPT)), true)
+	LIBSSL		= -lgcrypt $(LDFLAGS)
+	CFLAGS 		+= -DUSE_GCRYPT
+	OBJS_AC		+= sha1-git.o
+	OBJS_AD		+= sha1-git.o
+	OBJS_PF		+= sha1-git.o
+	OBJS_IV		+= sha1-git.o
+	OBJS_AR		+= sha1-git.o
+	OBJS_ADU	+= sha1-git.o
+	OBJS_AT		+= sha1-git.o
+	OBJS_AB		+= sha1-git.o
+	OBJS_AL		+= sha1-git.o
+	OBJS_WS		+= sha1-git.o
+	OBJS_TT		+= sha1-git.o
+	OBJS_BS		+= sha1-git.o
+else
+	LIBSSL		= -lssl -lcrypto $(LDFLAGS)
+endif
+
 LIBSQL		=
 ifeq ($(SQLITE), true)
 	LIBSQL		= -L/usr/local/lib -lsqlite3

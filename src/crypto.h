@@ -43,11 +43,16 @@
 #define uint32 unsigned long int
 #endif
 
+#ifdef USE_GCRYPT
+#include "gcrypt-openssl-wrapper.h"
+#include "sha1-git.h"
+#else
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 // We don't use EVP. Bite me
 #include <openssl/rc4.h>
 #include <openssl/aes.h>
+#endif
 
 #define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
