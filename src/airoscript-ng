@@ -47,7 +47,7 @@ if [ "$UID" != 0 ]; then echo -e "You Must be root to use airoscript"; exit 1; f
 # We preload functions, configs and themes in a cool way.
 _source "$path/_internal $path/menu $path/interface" 
 _source  "$path/themes/$theme" || default_theme
-_source ${enabled_plugins[@]};
+for i in ${enabled_plugins[@]}; do _source $path/$i; done
 
 # Setup wordlist
 [[ ! -e $DUMP_PATH/wordlist.txt ]] && { cp $WORDLIST $DUMP_PATH &>/dev/null; WORDLIST="$DUMP_PATH/`basename $WORDLIST`"; }
