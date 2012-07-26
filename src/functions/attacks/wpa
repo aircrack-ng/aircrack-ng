@@ -17,6 +17,7 @@
 # Warning! at least generic, internal and interface must be loaded before this one!
 
 check_function auth_attacks_fake || source $path/attacks/auth # It depends on auth module ;)
+check_function wep_attacks || source $path/attacks/wep
 
 wpa_attacks(){
     hardclean && $clear 
