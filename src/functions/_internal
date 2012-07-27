@@ -188,10 +188,11 @@ execute(){
                 ${@} $eopts &> /dev/null &
             fi
         else
+			args="${@}"; args="${args/% //} ${eopts}" # Failsafe, this way if there's a trailing space it'll remove it before executing.
             [[ $wait_for_execute == 1 ]] && {
-                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts"
+                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "$args"
             } || {
-                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "${@} $eopts" &
+                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "$args" &
             }
         fi
     save_pids $!
