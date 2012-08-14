@@ -1,0 +1,20 @@
+#! /bin/bash
+declare -a -x enabled_plugins 
+declare -a p_menu
+
+_source(){ for cfile in $@; do if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; else if [ "$debug" == 1 ]; then echo "Could not load $cfile"; sleep 0.2 ;fi; fi; done; }
+
+[[ ! $path ]] && {
+	[[ $(dirname ${BASH_SOURCE[0]}) =~ "local" ]] &&  {
+		path=/usr/local/share/airoscript-ng 
+		_source "/usr/local/etc/airoscript-ng_advanced.conf /usr/local/etc/airoscript-ng.conf"
+	} || { 
+		_source "/usr/etc/airoscript-ng_advanced.conf /usr/etc/airoscript-ng.conf"
+		_source "/etc/airoscript-ng_advanced.conf /etc/airoscript-ng.conf"
+	    path=/usr/share/airoscript-ng 
+	}
+}
+
+_source "$path/_internal $path/menu $path/interface" 
+_source  "$path/themes/$theme" || default_theme
+
