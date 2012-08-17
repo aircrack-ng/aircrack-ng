@@ -29,8 +29,8 @@ crack_wep(){
 	            3 ) single_question "Insert Fudge Factor: ";  FUDGE_FACTOR="$ans";
                 single_question $"Type encryption size (64,128...): "; ENC_SIZE="$ans";
 			    execute $"Cracking wep, manual options" crack "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGE_FACTOR\
-                -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-*.cap -f $DUMP_PATH/$Host_MAC.key $crack_extra_opts $writekey" &  $clear; 
-                break ;;  
+                -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-*.cap -l $DUMP_PATH/$Host_MAC.key $crack_extra_opts $writekey" &  $clear; 
+                break ;;
                 4 ) break ;;
 	    	* ) echo $"Unknown response. Try again" ;;
 		    esac
@@ -45,7 +45,7 @@ crack_wpa(){
                             [[ $pipe ]] && {
                                 markwarn $"Cracking with stdin entered data by $pipe"
                                 execute $"Cracking WPA" crack "$pipe $AIRCRACK -a 2\
-                                    -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap \
+                                    -l $DUMP_PATH/$Host_MAC.key -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap \
                                     -w -"  ; 
                                 $clear;
                             } || {
@@ -54,14 +54,14 @@ crack_wpa(){
                         else
                             execute $"Cracking WPA" crack "$AIRCRACK -a 2\
                                 -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap\
-                                -w $WORDLIST $writekey"  ;
+                                -w $WORDLIST $writekey -l $DUMP_PATH/$Host_MAC.key"  ;
                             $clear;
                         fi
                         break
                         ;;
                     2)  $clear; read -p $"Enter Database location [$db_location]" db_location_;
                         [[ $db_location ]] && db_location=db_location_;
-                        execute $"Cracking WPA with pmk database" crack "$pipe $AIRCRACK -b $Host_MAC -s $DUMP_PATH/$Host_MAC-01.cap -r $db_location $writekey"; break;;
+                        execute $"Cracking WPA with pmk database" crack "$pipe $AIRCRACK -b $Host_MAC -s -l $DUMP_PATH/$Host_MAC.key $DUMP_PATH/$Host_MAC-01.cap -r $db_location $writekey"; break;;
                     3 ) break ;;
 	    	        * ) echo $"Unknown response. Try again" ;;
         		esac
@@ -77,4 +77,6 @@ selectcracking(){
 	fi 
     check_function report_mode || source $path/reporting
     report_mode # If cracking finished, will print out the key.
+    key=`cat $DUMP_PATH/$Host_MAC.key`
+	info "${mark}Network key:\"${key}\""
 }

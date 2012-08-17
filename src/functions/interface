@@ -88,6 +88,8 @@ mkmenu(){
     if [ "$AUTO" == 2 ]; then return; fi
     [[ ${ERRORS} ]] && markwarn "Error:" "${ERRORS[@]}"
 	ERRORS=""
+    [[ ${INFOS} ]] && markwarn "Info:" "${INFOS[@]}"
+	INFOS=""
     max=`getmaxlenfromlist "${@}"`
     max=$(( $max + 10 ))
     title=$1; shift; line=0;

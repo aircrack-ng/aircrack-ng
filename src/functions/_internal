@@ -23,6 +23,10 @@ required(){
 error(){
     export ERRORS="$@";
 }
+info(){
+    export INFOS="$@";
+}
+
 
 reload_config(){
 	return
