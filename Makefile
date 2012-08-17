@@ -40,7 +40,6 @@ install-config:
 	@$(INSTALLDATA) $(srcdir)/conf/airoscript-ng.conf $(etcdir)
 	@$(INSTALLDATA) $(srcdir)/conf/airoscript-ng_debug.conf $(etcdir)
 	@$(INSTALLDATA) $(srcdir)/conf/airoscript-ng_advanced.conf $(etcdir)
-	@$(INSTALLDATA) $(srcdir)/conf/screenrc.airoscript $(etcdir)
 ifeq ($(package),yes)
 	@$(INSTALLDATA) $(srcdir)/conf/airoscript-ng_packaged.conf $(etcdir)
 endif

