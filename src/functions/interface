@@ -33,10 +33,15 @@ default_theme(){
 }
 
 resolution() {
+   [[ ! $dont_check_x  ]] && return
    { reso=$( awk '/\*/ {print $1}' <(xrandr) | head -n1; ); } &>/dev/null
     for i in ${!available_resos[@]}; do [[ ${available_resos[$i]} == $reso ]] && {  reson=$reso; pos=$i; }; done 
     [[ $reson != "" ]] && { export resonset=1;  markwarn $"Automatically setting resolution to $reso" ; }
-    xhost &>/dev/null || { error $"Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;}
+
+		xhost &>/dev/null || { 
+			error $"Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;
+		} 
+	
 	while true; do 
 		if [[ ${resonset} == "" ]]; then mkmenu $"Set resolution" ${available_resos[@]}; pos=$choice; fi
 	    set_resolution_data $pos
@@ -112,7 +117,7 @@ getterminal(){
 	else
 		_debug "$TERMINAL was not used, not found on path"
 		_debug "Using default terminal"
-			TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1`;        
+			TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1` &>/dev/null;
 	fi
 
 	if [ -x "$TERMBIN/$TERMINAL" ] || [ -x "/usr/bin/$TERMINAL" ] || [ -x "/usr/sbin/$TERMINAL" ]; then D="1" 
@@ -171,9 +176,6 @@ function setterminal {
 			BACKGROUND_COLOR=""
 			BGC=""
             ;;
-
-		airosperl ) airosperl & exit ;;
-		gui ) airosperl & exit ;;
 	esac
     [[ "$debug" = "1" ]] && echo $TOPLEFT \
 				$TOPRIGHT \

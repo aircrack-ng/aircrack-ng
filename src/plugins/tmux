@@ -28,7 +28,7 @@ execute(){
 		fi
 }
 
-
+export dont_check_x=1
 
 [[ -e ~/.airoscript_tmux ]] || {
 	tmux new -s airoscript -n "Main" -d "airoscript-ng $main_args" &&
