@@ -62,7 +62,7 @@ warn "${mark}Welcome to airoscript, have a nice day"
 check_default_software &
 
 setargs $@ # Plugins are also loaded here, so be carefull
-resolution
+[[ ! $dont_check_x ]] && resolution
 check_cardctl; #debug
 
 launch_help_fifo &
