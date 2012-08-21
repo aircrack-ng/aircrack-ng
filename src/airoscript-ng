@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 # Depends: aircrack-ng, xterm|urxvt|gnome-terminal, awk, macchanger, grep, bash >= 4
 # Recommends: mdk3, wlandecrypter, jazzteldecrypter
 
@@ -50,7 +50,7 @@ if [ "$UID" != 0 ]; then echo -e "You Must be root to use airoscript"; exit 1; f
 # We preload functions, configs and themes in a cool way.
 _source "$path/_internal $path/menu $path/interface" 
 _source  "$path/themes/$theme" || default_theme
-for i in ${enabled_plugins[@]}; do _source $path/$i; done
+for i in ${enabled_plugins[@]}; do _source $i; done
 
 # Setup wordlist
 [[ ! -e $DUMP_PATH/wordlist.txt ]] && { cp $WORDLIST $DUMP_PATH &>/dev/null; WORDLIST="$DUMP_PATH/`basename $WORDLIST`"; }

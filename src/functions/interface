@@ -33,7 +33,7 @@ default_theme(){
 }
 
 resolution() {
-   [[ ! $dont_check_x  ]] && return
+   [[ $dont_check_x == 1  ]] && return
    { reso=$( awk '/\*/ {print $1}' <(xrandr) | head -n1; ); } &>/dev/null
     for i in ${!available_resos[@]}; do [[ ${available_resos[$i]} == $reso ]] && {  reson=$reso; pos=$i; }; done 
     [[ $reson != "" ]] && { export resonset=1;  markwarn $"Automatically setting resolution to $reso" ; }
