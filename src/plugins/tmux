@@ -22,8 +22,8 @@ execute(){
 			}
 			time=$(( time +1 ))
 
-			tmux list-windows | grep "Current attack" || { 
-				sleep $(( RANDOM % 2)) && tmux list-windows | grep "Current attack" || { 
+			tmux list-windows | grep "Current attack" &>/dev/null || { 
+				sleep $(( RANDOM % 2)) && tmux list-windows | grep "Current attack" &>/dev/null || { 
 					tmux neww -t airoscript -n "Current attack" "$args"; 
 					tmux select-window -t Main;
 					return; 
@@ -41,6 +41,8 @@ export dont_check_x=1
 
 [[ -e ~/.airoscript_tmux ]] || {
 	tmux new -s airoscript -n "Main" -d "airoscript-ng $main_args" &&
+	tmux bind -n S-left prev
+	tmux bind -n S-right next
 	tmux set mouse-select-pane on
 	tmux set mouse-select-window on
 	pid=$$
