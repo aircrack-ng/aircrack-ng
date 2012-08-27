@@ -1,0 +1,28 @@
+function get_mouse_position(){
+	_STTY=$(stty -g)
+	printf "\e[?9h"
+	stty -echo -icanon
+	x=$(dd bs=1 count=6 2>/dev/null) 
+	printf "\e[?9l"
+	stty "$_STTY"
+	m1=${x#???}
+	m2=${x#????}
+	m3=${x#?????}
+	eval "$(printf "mb=%d mx=%d my=%d" "'$m1" "'$m2" "'$m3")"
+	[ $mx -lt 0 ] && mx=$(( 255 + $mx ))
+	[ $my -lt 0 ] && my=$(( 255 + $my ))
+	BUTTON=$(( ($mb & 3) + 1 ))
+	MOUSEX=$(( $mx - 32 ))
+	MOUSEY=$(( $my - 32 ))
+	choice=$(($MOUSEY - $Y_OFFSET))
+}
+
+mkmenuheader(){ 
+stty -echo; echo -n $'\e[6n'; read -d R x; stty echo; a=$(( $(echo ${x#??} |cut -d\; -f1) + 1 ))
+Y_OFFSET=$a;
+echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }
+
+
+_read(){
+	get_mouse_position
+}
