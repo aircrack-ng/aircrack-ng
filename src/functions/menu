@@ -78,7 +78,7 @@ choosescan(){
     while true; do
         mkmenu $"Channel" $"Channel Hoping" $"Specific Channel"
         case $choice in
-            1 ) Scan;break;;
+            1 ) Scan 1 ;break;;
             2 ) Scanchan;break;;
             * ) echo $"Unknown response. Try again" ;;
         esac

@@ -39,7 +39,7 @@ resolution() {
     [[ $reson != "" ]] && { export resonset=1;  markwarn $"Automatically setting resolution to $reso" ; }
 
 		xhost &>/dev/null || { 
-			error $"Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; read ;
+			error $"Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; 
 		} 
 	
 	while true; do 
