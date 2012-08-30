@@ -3645,8 +3645,13 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 			fp = fopen(OUI_PATH0, "r");
 			if (fp == NULL) {
 				fp = fopen(OUI_PATH1, "r");
-				if (fp != NULL) {
-					oui_location = OUI_PATH1;
+				if (fp == NULL) {
+				    fp = fopen(OUI_PATH2, "r");
+				    if (fp != NULL) {
+					oui_location = OUI_PATH2;
+				    }
+				} else {
+				    oui_location = OUI_PATH1;
 				}
 			} else {
 				oui_location = OUI_PATH0;
