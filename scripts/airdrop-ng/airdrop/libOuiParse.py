@@ -33,8 +33,20 @@ class macOUI_lookup:
 		"""
 		generate the two dictionaries and return them
 		"""
+
+		OUI_PATH0="/etc/aircrack-ng/airodump-ng-oui.txt" 
+		OUI_PATH1="/usr/local/etc/aircrack-ng/airodump-ng-oui.txt" 
+		OUI_PATH2="/usr/share/aircrack-ng/airodump-ng-oui.txt" 
+		if os.path.isfile(OUI_PATH0):
+			aircrackOUI=OUI_PATH0
+		elif os.path.isfile(OUI_PATH1):
+			aircrackOUI=OUI_PATH1
+		elif os.path.isfile(OUI_PATH2):
+			aircrackOUI=OUI_PATH2
+		else:
+			# defaullt
+			aircrackOUI=OUI_PATH0
 		#a poor fix where if we have no file it trys to download it
-		aircrackOUI = '/usr/local/etc/aircrack-ng/airodump-ng-oui.txt'
 		self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
 		self.ouiUnPath   = install_dir#path to oui.txt if module is installed
 		self.ouiInPath   = install_dir + '/support/'         #path to oui.txt if module is not installed
