@@ -22,6 +22,10 @@ _askinterface(){
         askinterface && checkforcemac $startup_mac_set
 }
 
+bsd_interfaces(){
+	for i in $( ifconfig | awk '/flags/ { print $1}'|cut -d: -f1 ); do { ifconfig $i | grep "wlan" &>/dev/null && echo $i ; }  ; done
+}
+
 setinterface(){
     help_fifo "${mark} ${red}Welcome to airoscript-ng${end}, I'll be your guide from now on\n"\
         "First, we have to setup a wireless interface to work with.\n" \
@@ -32,7 +36,11 @@ setinterface(){
      [[ "$wifi" != "" ]] && [[ "$1" == "start" ]] && [[ "$set_wifi_by_args" == 1 ]] || { 
         if [ "$1" == "" ] || [[ "$1" == 1 ]] || [ "$1" == "start" ]  ; then
         if [ "$show_only_wireless_extensions" == 1 ]; then
-            INTERFACES=(`{ iwconfig|grep -v "no wireless extensions"|grep IEEE|grep -v mon|grep -v airoscript|awk '{print $1}';} 2>/dev/null`)
+			[[ -e /bsd ]] && {
+				INTERFACES=( $(bsd_interfaces) )
+			} || {
+				INTERFACES=(`{ iwconfig|grep -v "no wireless extensions"|grep IEEE|grep -v mon|grep -v airoscript|awk '{print $1}';} 2>/dev/null`)
+			}
         else
             INTERFACES=(`ip link|egrep "^[0-9]+"|awk '/: /{gsub(":"," "); print $2}' |grep -v lo`)
         fi
