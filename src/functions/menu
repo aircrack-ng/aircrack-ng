@@ -42,6 +42,7 @@ mainmenu(){
 
 menu_windows(){
 	cd $DUMP_PATH/Terminals
+	clear;
 	windows=(*)
 	mkmenu "Window list" * "Back to main menu"
 	[[ $choice == ${#windows} ]] && return;

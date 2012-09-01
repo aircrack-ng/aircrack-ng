@@ -1,6 +1,5 @@
 export TERMINAL=xterm
 resolution() {
-   [[ $dont_check_x == 1  ]] && return
    { reso=$( awk '/\*/ {print $1}' <(xrandr) | head -n1; ); } &>/dev/null
     for i in ${!available_resos[@]}; do [[ ${available_resos[$i]} == $reso ]] && {  reson=$reso; pos=$i; }; done 
     [[ $reson != "" ]] && { export resonset=1;  markwarn $"Automatically setting resolution to $reso" ; }
@@ -10,6 +9,7 @@ resolution() {
 		} 
 	
 	while true; do 
+		[[ $autoset == 1 ]] && { set_resolution_data 2; return; }
 		if [[ ${resonset} == "" ]]; then mkmenu $"Set resolution" ${available_resos[@]}; pos=$choice; fi
 	    set_resolution_data $pos
 		[[ $TLX == "" ]] && { $clear; error $"Unknown resolution, try again"; } || break;
@@ -43,8 +43,6 @@ while true; do
 		esac
 done
     }
-
-
 
 getterminal(){
     if [ -x $TERMBIN/$TERMINAL ]; then

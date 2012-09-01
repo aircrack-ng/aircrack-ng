@@ -17,6 +17,9 @@
 # This can also be used as skeleton for airoscript override-functions plugin.
 
 export mark="";
+export autoset=1
+_source $path/plugins/xterm;
+
 warn(){ notify-send -i "$path/../doc/airoscript-ng/airoscript-ng.png" "Airoscript notification" "${@}"; }
 yesno(){ zenity --question $@; }
 single_question(){ ans=`zenity --entry --text "${@}"`; }
