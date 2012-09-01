@@ -30,7 +30,7 @@ Enable_plugin(){
     cd $path/plugins; available_plugins=(*); cd -; mkmenu "Enable plugin" "${available_plugins[@]}"
     _source $path/plugins/${available_plugins[$choice - 1 ]} || { warn "${mark}Unknown option or bad plugin, try again"; Enable_plugin; } #nodebug
 }
-exit_trap(){ check_function doexit || source $path/internal/exit; echo; echo; doexit; }
+exit_trap(){ [[ $tail_launched != 0 ]] && { tail_launched=0; return; }; check_function doexit || source $path/internal/exit; echo; echo; doexit; }
 Return_to_main_menu(){ mainmenu; }
 if [ "$UID" != 0 ]; then echo -e "You Must be root to use airoscript"; exit 1; fi;
 
@@ -60,9 +60,8 @@ setaircrackpaths # Set aircrack-ng paths
 setps # Set PS3 variable
 warn "${mark}Welcome to airoscript, have a nice day"
 check_default_software &
-
 setargs $@ # Plugins are also loaded here, so be carefull
-[[ ! $dont_check_x ]] && resolution
+
 check_cardctl; #debug
 
 launch_help_fifo &

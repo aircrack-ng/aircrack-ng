@@ -125,7 +125,8 @@ is_number(){ return $(expr "$1 + 1" &> /dev/null); }
 selectap_wrapper(){
     while [ "1" ]; do
         mkmenueline $max r; echo " Rescan targets"; mkmenuline $max
-        single_question "Select Target: "; choice="$ans"
+        special_single_question "Select Target: "; 
+		choice=$ans;
         is_number $choice && break
     done
 }
@@ -198,6 +199,7 @@ launch_counter(){
         a=$(( ($i * 100) / $1 ))
         sleep 1; echo -ne "\r${mark}Scanning for $o: [$a/100 completed]";
     done
+	echo
 }
 
 autoscan(){

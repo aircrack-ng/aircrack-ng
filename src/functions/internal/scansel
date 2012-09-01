@@ -53,7 +53,7 @@ auto_scan_clients(){
 	rm $DUMP_PATH/Client_$Host_MAC* &>/dev/null
     launch_counter $time_to_scan "clients" &
 	INTERACTIVE=0; AUTO=2; QUIET=1; NOTITLE=1;
-
+	wait_for_execute=0
 	execute "" $AIRODUMP --ignore-negative-one --bssid $Host_MAC -w $DUMP_PATH/Client_$Host_MAC -c $Host_CHAN -a $wifi 
 	sleep $time_to_scan && killall -2 "airodump-ng"; 
     export SCAN=0; AUTO=0; QUIET=""; NOTITLE=0

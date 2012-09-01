@@ -23,6 +23,7 @@ wpa_attacks(){
     hardclean && $clear 
     attack=$1; shift;
     wpa_attacks_$attack $@
+	notification="Attack launched, see window menu"
 }
 
 wpa_attacks_menu(){

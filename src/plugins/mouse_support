@@ -16,6 +16,7 @@ function get_mouse_position(){
 	MOUSEX=$(( $mx - 32 ))
 	MOUSEY=$(( $my - 32 ))
 	choice=$(($MOUSEY - $Y_OFFSET))
+	ans=$choice;
 	echo $choice;
 }
 
@@ -28,5 +29,8 @@ $clear;
 
 
 _read(){
+	get_mouse_position
+}
+special_single_question(){
 	get_mouse_position
 }

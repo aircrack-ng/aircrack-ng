@@ -183,20 +183,20 @@ execute(){
         echo
         read -p $"Enter extra options to execute: " eopts
     fi
-        if [ "$1" == "crack" ]; then HOLDA="-hold"; shift; fi # FIXME This will work just on xterm.
+        if [ "$1" == "crack" ]; then shift; fi # FIXME This will not do anything. 
         if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
             [[ $NOTITLE ]] || warn "${mark}$title"
-            if [[ $wait_for_execute ]]; then
-                ${@} $eopts &> /dev/null
-            else
+            if [[ $wait_for_execute != 1 ]]; then
                 ${@} $eopts &> /dev/null &
+            else
+                ${@} $eopts &> /dev/null
             fi
         else
 			args="${@}"; args="${args/% /} ${eopts}" # Failsafe, this way if there's a trailing space it'll remove it before executing.
-            [[ $wait_for_execute == 1 ]] && {
-                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "$args"
+            [[ $wait_for_execute != 1 ]] && {
+                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $termargs  "$args" &
             } || {
-                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "$args" &
+                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $termargs "$args"
             }
         fi
 	[[ $debug == 1 ]] && { echo $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "$args"; read; }
@@ -261,6 +261,7 @@ tag(){ echo -ne "\t"; }
 hardclean(){ rm -rf $DUMP_PATH/$Host_MAC*; }
 
 single_question(){ read -p "${@}" ans; }
+special_single_question(){ single_question "${@}"; }
 warn(){ echo "${@}"; }
 specialwarn(){ echo -e -n "${@}"; }
 yesno(){

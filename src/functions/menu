@@ -16,7 +16,14 @@
 
 mainmenu(){
 	$clear
-    mkmenu $"Main Menu" $"Attack - Attack target" $"Crack  - Get target key"  $"Select - Reselect target" $"Others - Various utilities" $"Autopwn- Automatic cracking" $"Exit  - Quits"
+
+	[[ $TERMINAL == "airoscript_quiet" ]] && { 
+		[[ $notification != "" ]] && notify $notification;
+	    mkmenu $"Main Menu" $"Attack - Attack target" $"Crack  - Get target key"  $"Select - Reselect target" $"Others - Various utilities" $"Autopwn- Automatic cracking" "Window - Window list" $"Exit  - Quits"
+		window=1;
+	}  || {
+		mkmenu $"Main Menu" $"Attack - Attack target" $"Crack  - Get target key"  $"Select - Reselect target" $"Others - Various utilities" $"Autopwn- Automatic cracking" $"Exit  - Quits"
+	}
         for choix  in ${choice[*]}; do
             case "$choix" in
                 1) menu_attack;;
@@ -24,13 +31,25 @@ mainmenu(){
                 3) select_ap;;
                 4) menu_extra;;
                 5) check_function autopwn || source $path/autocrack; autopwn runner;;
-                6) check_function doexit || source $path/internal/exit; doexit;;
+                6) [[ $window ]] && { menu_windows; } || { check_function doexit || source $path/internal/exit; doexit; } ;;
+                7) check_function doexit || source $path/internal/exit; doexit;;
                 *) $clear && markwarn $"ERROR: Wrong number entered";;
             esac
         done  
     mainmenu
 }
 
+
+menu_windows(){
+	cd $DUMP_PATH/Terminals
+	windows=(*)
+	mkmenu "Window list" * "Back to main menu"
+	[[ $choice == ${#windows} ]] && return;
+	tail_launched=1;
+	tail -f "${windows[$choice - 1]}"
+	tail_launched=0;
+	cd -
+}
 menu_attack(){
     monmode &>/dev/null
     if [[ "$Host_ENC" =~ (.*)"WEP"(.*) ]]; then attack_wep

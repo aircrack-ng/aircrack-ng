@@ -1,3 +1,4 @@
+export TERMINAL=tmux
 execute(){ 
 	title=$1; shift;
 	if [  "$ADDOPTIONS" != "" ]; then
