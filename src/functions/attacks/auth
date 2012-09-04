@@ -54,6 +54,7 @@ choose_fake(){
 }
 
 auth_attacks_fake(){
+	export time_=2;
 	case $choice in
 		1 ) execute "Fake auth (1) " $AIREPLAY --fakeauth 6000 -o 1 -q 10\
 		   	-e "$Host_SSID" -a $Host_MAC -h $FAKE_MAC $iwifi;;

@@ -19,9 +19,10 @@ mainmenu(){
 
 	[[ $TERMINAL == "airoscript_quiet" ]] && { 
 		[[ $notification != "" ]] && notify $notification;
-	    mkmenu $"Main Menu" $"Attack - Attack target" $"Crack  - Get target key"  $"Select - Reselect target" $"Others - Various utilities" $"Autopwn- Automatic cracking" "Window - Window list" $"Exit  - Quits"
+	    mkmenu $"Main Menu" $"Attack - Attack target" $"Crack  - Get target key"  $"Select - Reselect target" $"Others - Various utilities" $"Autopwn- Automatic cracking" "Window - Window list" $"Exit   - Quits"
 		window=1;
 	}  || {
+		[[ $notification != "" ]] && notify $notification;
 		mkmenu $"Main Menu" $"Attack - Attack target" $"Crack  - Get target key"  $"Select - Reselect target" $"Others - Various utilities" $"Autopwn- Automatic cracking" $"Exit  - Quits"
 	}
         for choix  in ${choice[*]}; do
@@ -39,13 +40,14 @@ mainmenu(){
     mainmenu
 }
 
-
 menu_windows(){
 	cd $DUMP_PATH/Terminals
 	clear;
 	windows=(*)
 	mkmenu "Window list" * "Back to main menu"
 	[[ $choice == ${#windows} ]] && return;
+	echo; clear;
+	notify "Press ctrl + c to return to airoscript"
 	tail_launched=1;
 	tail -f "${windows[$choice - 1]}"
 	tail_launched=0;
@@ -120,15 +122,21 @@ select_ap(){
 menu_extra(){ 
     check_function menu_options || source $path/attacks/others
     while true; do
-        mkmenu $"Extra tools" $"Airoscript Options" $"Advanced tools" $"External plugins" $"Return to main menu"
+        mkmenu $"Extra tools" $"Airoscript Options" $"Advanced tools" $"External plugins" $'User interfaces' $"Return to main menu"
         case $choice in
             1) menu_options; $clear; break;;
             2) othertmenu; $clear; break;;
             3) menu_plugins; $clear; break;;
+			3) menu_interfaces; $clear; break;;
             4) $clear;break ;;
             * ) echo $"Unknown response. Try again" ;;
         esac
     done
+}
+
+menu_interfaces(){
+	mkmenu "User interfaces" "${interfaces[@]}"
+	_source $path/plugins/${interfaces[$choice - 1]}
 }
 
 menu_plugins(){

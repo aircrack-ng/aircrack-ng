@@ -1,58 +1,68 @@
 export TERMINAL=tmux
+interfaces+=("tmux");
+export attack_notification="Attack launched, see 'Current attack' window"
+time_=0;
 execute(){ 
-	title=$1; shift;
-	if [  "$ADDOPTIONS" != "" ]; then
-		printf -- "Executing $@"
-		echo
-		read -p $"Enter extra options to execute: " eopts
-	fi
-		[[ $1 == "crack" ]] && { AUTO=0; QUIET=""; shift; mode=crack; }
+    title=$1; shift;
 
-		if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
-			[[ $NOTITLE ]] || warn "${mark}$title"
-			${@} $eopts &> /dev/null &
-		else
-			args="${@}"; args="${args/% /} ${eopts}" # Failsafe, this way if there's a trailing space it'll remove it before executing.
-		[[ $debug == 1 ]] && echo $args
-			[[ $wait_for_execute == 1 ]] && args="${args} && read -p 'Press any key to continue'"
-			[[ $mode == "crack" ]] && { ${args}; read -p 'Press any key to continue'; return; }
-			[[ $title == "Help" ]] && {
-				tmux split-window -t airoscript -h -p30 "$args"
-				tmux select-pane -L
-				return
-			}
-			time=$(( time +1 ))
+    if [  "$ADDOPTIONS" != "" ]; then
+        printf -- "Executing $@"
+        echo
+        read -p $"Enter extra options to execute: " eopts
+    fi
+        [[ $1 == "crack" ]] && { AUTO=0; QUIET=""; shift; mode=crack; }
 
-			tmux list-windows | grep "Current attack" &>/dev/null || { 
-				sleep $(( RANDOM % 2)) && tmux list-windows | grep "Current attack" &>/dev/null || { 
-					tmux neww -t airoscript -n "Current attack" "$args"; 
-					tmux select-window -t Main;
-					return; 
-				}
-			}
-			case $time in 
-				1) tmux splitw -h -t "Current attack" "$args"; tmux select-window -t Main;;
-				2) tmux splitw -v -t "Current attack" "$args"; tmux select-window -t Main;;
-				3) tmux splitw -v -t "Current attack" "$args"; tmux select-window -t Main; time=0;;
-			esac
-		fi
+        if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
+            [[ $NOTITLE ]] || warn "${mark}$title"
+            ${@} $eopts &> /dev/null &
+        else
+            args="${@}"; args="${args/% /} ${eopts}" # Failsafe, this way if there's a trailing space it'll remove it before executing.
+
+            [[ $wait_for_execute == 1 ]] && mode=crack; 
+
+            [[ $mode == "crack" ]] && { ${args}; read -p 'Press any key to continue'; mode=""; return; }
+
+            [[ $title == "Help" ]] && {
+                tmux split-window -t airoscript -h -p30 "$args"
+                tmux select-pane -L
+                return
+            }
+
+            [[ $time_ == 0 ]] && {
+                tmux neww -t airoscript -n "Current attack" "$args"; 
+                tmux select-window -t Main;
+                return
+            } 
+            [[ $time_ == 1 ]] && {
+                tmux splitw -v -t "Current attack" "$args";
+                tmux select-window -t Main;
+                return
+            }
+            [[ $time_ == 2 ]] && {
+				tmux splitw -h -t "Current attack" "$args";
+                tmux select-window -t Main;
+                return
+            }
+            tmux splitw -h -t "Current attack" "$args";
+            tmux select-window -t Main;
+        fi
 }
 
 export dont_check_x=1
 
 [[ -e ~/.airoscript_tmux ]] || {
-	tmux new -s airoscript -n "Main" -d "airoscript-ng $main_args" &&
-	tmux bind -n S-left prev
-	tmux bind -n S-right next
-	tmux set mouse-select-pane on
-	tmux set mouse-select-window on
-	pid=$$
-	echo $pid >> ~/.airoscript_tmux
-	tmux at -t airoscript
-	rm ~/.airoscript_tmux
-	exit
+    tmux new -s airoscript -n "Main" -d "airoscript-ng $main_args" &&
+    tmux bind -n S-left prev
+    tmux bind -n S-right next
+    tmux set mouse-select-pane on
+    tmux set mouse-select-window on
+    pid=$$
+    echo $pid >> ~/.airoscript_tmux
+    tmux at -t airoscript
+    rm ~/.airoscript_tmux
+    exit
 } && {
-	rm ~/.airoscript_tmux
+    rm ~/.airoscript_tmux
 }
 
 

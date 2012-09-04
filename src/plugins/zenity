@@ -18,6 +18,7 @@
 
 export mark="";
 export autoset=1
+interfaces+=("zenity");
 _source $path/plugins/xterm;
 
 warn(){ notify-send -i "$path/../doc/airoscript-ng/airoscript-ng.png" "Airoscript notification" "${@}"; }

