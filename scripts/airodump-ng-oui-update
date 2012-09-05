@@ -4,9 +4,9 @@ CURL=`which curl 2>/dev/null`
 WGET=`which wget 2>/dev/null`
 OUI_DOWNLOAD_URL="http://standards.ieee.org/develop/regauth/oui/oui.txt"
 
-OUI_PATH0="/etc/aircrack-ng" 
-OUI_PATH1="/usr/local/etc/aircrack-ng" 
-OUI_PATH2="/usr/share/aircrack-ng" 
+OUI_PATH0="/etc/aircrack-ng"
+OUI_PATH1="/usr/local/etc/aircrack-ng"
+OUI_PATH2="/usr/share/aircrack-ng"
 if [ -d "$OUI_PATH0" ]; then
 	OUI_PATH="$OUI_PATH0"
 elif [ -d "$OUI_PATH1" ]; then
@@ -56,7 +56,7 @@ if [ ${CURL} ] || [ ${WGET} ]; then
 	else
 		${CURL} -L ${OUI_DOWNLOAD_URL} > ${OUI_IEEE} 2>/dev/null
 	fi
-	
+
 	if [ "${?}" -ne 0 ]; then
 		echo "[*] Error: Failed to download OUI list, aborting..."
 		exit 1
@@ -64,7 +64,7 @@ if [ ${CURL} ] || [ ${WGET} ]; then
 
 	# Parse the downloaded OUI list
 	echo "[*] Parsing OUI file..."
-		
+
 	# Keep the previous file
 	if [ -f "${OUI_DOWNLOADED}" ]; then
 		mv ${AIRODUMP_NG_OUI} ${OUI}-old
@@ -79,7 +79,7 @@ if [ ${CURL} ] || [ ${WGET} ]; then
 
 	# Cleanup
 	rm -f ${OUI_IEEE}
-		
+
 	echo "[*] Airodump-ng OUI file successfully updated"
 else
 	if [ -f "${OUI}" ]; then
