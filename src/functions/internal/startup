@@ -182,6 +182,7 @@ selectAp(){
     
     if [ "$AUTO" != 2 ]; then selectap_wrapper; fi
     if [ "$choice" != "r" ] ; then
+        [[ ${amac[$choice]} ]] || { echo "Wrong option, scanning for targets again"; autoscan; }
         idlenght=${aidlenght[$choice]}
         ssid=${assid[$choice]}
         channel=${achannel[$choice]}
