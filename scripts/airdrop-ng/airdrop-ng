@@ -929,13 +929,12 @@ if __name__ == "__main__":
     """
     usage()
     
-    parser = optparse.OptionParser("usage: %prog options [-i,-t,-r] -d -s -p -b -n")  #
+    parser = optparse.OptionParser("usage: %prog options [-i,-t,-r] -s -p -b -n")  #
     parser.add_option("-i", "--interface",  dest="card",nargs=1, 
                 help="Wireless card in monitor mode to inject from")
     parser.add_option("-t", "--dump", dest="data", nargs=1 ,
                 help="Airodump txt file in CSV format NOT the pcap")
     parser.add_option("-r", "--rule",dest="rule", nargs=1 ,help="Rule File for matched deauths")
-    parser.add_option("-u", "--update", dest="OUIupdate", action="store_true", help="Updates OUI list")
     parser.add_option("-s", "--sleep",dest="slept",default=0,nargs=1,type="int",help="Time to sleep between sending each packet")
     parser.add_option("-b", "--debug",dest="debug",action="store_true",default=False,help="Turn on Rule Debugging")
     parser.add_option("-l", "--logging",dest="log",action="store_true",default=False,help="Enable Logging to a file, if file path not provided airdrop will log to default location")
@@ -973,14 +972,6 @@ if __name__ == "__main__":
         "Please 'su' or 'sudo -i' and run again.\n","Exiting...\n\n"])
         sys.exit(-1)
     
-    if options.OUIupdate:
-        libOuiParse.macOUI_lookup(None)
-        sys.exit(0)
-    else:
-        if None in [options.card,options.rule,options.data]:
-            message.printMessage("You are missing either -i, -t, -u or -r.")
-            sys.exit(-1)
-
     #no longer need to import lorcon here instead we should just test opening up the card and check for errors
     liborcon2 = '/usr/local/lib/liborcon2.so'
     if os.path.isfile(liborcon2) is False:
@@ -988,7 +979,9 @@ if __name__ == "__main__":
     
     try:
         try:
-            #open card up for injection
+	        #import pdb
+            #pdb.set_trace()
+	        #open card up for injection
             try:
                 liblorcon = lorcon.Lorcon(liborcon2)
             except OSError:
@@ -1014,8 +1007,9 @@ if __name__ == "__main__":
                 except IOError:
                     ouiLookup = libOuiParse.macOUI_lookup(install_dir + "/support/oui.txt")
             except IOError:
-                message.printError(["oui.txt not found in " + install_dir +"/support","or ./support/"])
-                message.printError("Please run python airdrop-ng -u")
+                for path in libOuiParse.OUIPATH:
+                        message.printError(["oui.txt not found in " + path])
+                message.printError("Please run airodump-ng-oui-update")
                 sys.exit(-1)
 
         except ImportError,e:

@@ -24,173 +24,147 @@ __data__ = 'a class for dealing with the oui txt file'
 
 from airdrop import install_dir
 
-import re, urllib2, sys, os
+import re
+import urllib2
+import urllib
+import sys
+import os
+
+
 class macOUI_lookup:
-	"""
-	A class for deaing with OUIs and deterimining device type
-	"""
-	def __init__(self,oui=None):
-		"""
-		generate the two dictionaries and return them
-		"""
+    """
+    A class for deaing with OUIs and deterimining device type
+    """
+    def __init__(self,oui=None,GetFile=False):
+        """
+        generate the two dictionaries and return them
+        """
 
-		OUI_PATH0="/etc/aircrack-ng/airodump-ng-oui.txt" 
-		OUI_PATH1="/usr/local/etc/aircrack-ng/airodump-ng-oui.txt" 
-		OUI_PATH2="/usr/share/aircrack-ng/airodump-ng-oui.txt" 
-		if os.path.isfile(OUI_PATH0):
-			aircrackOUI=OUI_PATH0
-		elif os.path.isfile(OUI_PATH1):
-			aircrackOUI=OUI_PATH1
-		elif os.path.isfile(OUI_PATH2):
-			aircrackOUI=OUI_PATH2
-		else:
-			# defaullt
-			aircrackOUI=OUI_PATH0
-		#a poor fix where if we have no file it trys to download it
-		self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
-		self.ouiUnPath   = install_dir#path to oui.txt if module is installed
-		self.ouiInPath   = install_dir + '/support/'         #path to oui.txt if module is not installed
-		if oui == None:
-			"if the file name is not provided attempt to get it"
-			self.ouiTxt  = None
-			if os.path.isfile(aircrackOUI) is False:
-				self.ouiUpdate()
-			else:
-				print "Found aircrack-ng oui txt file, not getting a new one"
-				self.ouiTxt = aircrackOUI
-		else:
-			self.ouiTxt	 = oui 			#location of the oui txtfile on the hard drive
-	
-		self.ouiRaw      = self.ouiOpen()
-		self.oui_company = self.ouiParse() 	#dict where oui's are the keys to company names
-		self.company_oui = self.companyParse()	#dict where company name is the key to oui's
-	
-	def compKeyChk(self,name):
-		"""
-		check for valid company name key
-		"""
-		compMatch = re.compile(name,re.I)
-		if self.company_oui.has_key(name):
-			return True
-		for key in self.company_oui.keys():
-				if compMatch.search(key) is not None:	
-					return True
-		return False
+        aircrackOUI = None
+        self.OUI_PATH = ["/etc/aircrack-ng/airodump-ng-oui.txt",
+            "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt",
+            "/usr/share/aircrack-ng/airodump-ng-oui.txt",
+            "/var/lib/misc/oui.txt",
+            "/etc/manuf/oui.txt",
+            "/usr/share/wireshark/wireshark/manuf/oui.txt",
+            "/usr/share/wireshark/manuf/oui.txt"]
+        # append any oui paths provided by program using lib to list
+        if oui != None:
+            self.OUI_PATH.append(oui)
+        for PATH in self.OUI_PATH:
+            if os.path.isfile(PATH):
+                aircrackOUI=PATH
+        if aircrackOUI == None:
+            # default
+            aircrackOUI=self.OUI_PATH[1]
+        #a poor fix where if we have no file it trys to download it
+        self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
+        self.ouiUnPath   = install_dir#path to oui.txt if module is installed
+        self.ouiInPath   = install_dir + '/support/'         #path to oui.txt if module is not installed
+        self.ouiTxt = aircrackOUI
+        
+        self.ouiRaw      = self.ouiOpen()
+        self.oui_company = self.ouiParse()  #dict where oui's are the keys to company names
+        self.company_oui = self.companyParse()  #dict where company name is the key to oui's
+    
+    def compKeyChk(self,name):
+        """
+        check for valid company name key
+        """
+        compMatch = re.compile(name,re.I)
+        if self.company_oui.has_key(name):
+            return True
+        for key in self.company_oui.keys():
+                if compMatch.search(key) is not None:   
+                    return True
+        return False
 
-	def ouiKeyChk(self,name):
-		"""
-		check for a valid oui prefix
-		"""
+    def ouiKeyChk(self,name):
+        """
+        check for a valid oui prefix
+        """
 
-		if self.oui_company.has_key(name): 
-			return True
-		else: 
-			return False
+        if self.oui_company.has_key(name): 
+            return True
+        else: 
+            return False
 
-	def lookup_OUI(self,mac):
-		"""
-		Lookup a oui and return the company name
-		"""
-		if self.ouiKeyChk(mac) is not False:
-			return self.oui_company[mac][0]
-		else: 
-			return False
-	
-	def lookup_company(self,companyLst):
-		"""
-		look up a company name and return their OUI's
-		"""
-		oui = []
-		if type(companyLst).__name__ == "list":
-			for name in companyLst:
-				compMatch = re.compile(name,re.I)
-				if self.company_oui.has_key(name):
-					oui.extend(self.company_oui[name])
-				else:
-					for key in self.company_oui:
-						if compMatch.search(key) is not None:
-							oui.extend(self.company_oui[key])
 
-		elif type(companyLst).__name__ == "str":
-			if self.company_oui.has_key(companyLst):
-				oui = self.company_oui[companyLst]
-			else:
-				
-				compMatch = re.compile(companyLst,re.I)
-				for key in self.company_oui:
-					if compMatch.search(key) is not None:
-						oui.extend(self.company_oui[key]) #return the oui for that key
-		return oui
-				
-	def ouiOpen(self):
-		"""
-		open the file and read it in
-		"""
-		ouiFile = open(self.ouiTxt, "r")
-		text = ouiFile.read()
-		return text
-	
-	def ouiParse(self): 
-		"""
-		generate a oui to company lookup dict
-		"""
-		HexOui= {}
-		Hex = re.compile('.*(hex).*')
-		#matches the following example "00-00-00   (hex)\t\tXEROX CORPORATION" 
-		ouiLines = self.ouiRaw.split("\n\n") 
-		#split each company into a list one company per position
-		for line in ouiLines:
-			if Hex.search(line) != None: 
-				lineList = Hex.search(line).group().replace("\t"," ").split("  ") 
-				#return the matched text and build a list out of it
-				HexOui[lineList[0].replace("-",":")] = [lineList[2]] 
-				#build a dict in the format of mac:company name	
-		return HexOui
-	
-	def companyParse(self):
-		"""
-		generate a company to oui lookup dict
-		"""
-		company_oui = {}
-		for oui in self.oui_company:
-			if company_oui.has_key(self.oui_company[oui][0]):
-				company_oui[self.oui_company[oui][0]].append(oui)
-			else:
-				company_oui[self.oui_company[oui][0]] = [oui]
-		return company_oui
-		
+    def lookup_OUI(self,mac):
+        """
+        Lookup a oui and return the company name
+        """
+        if self.ouiKeyChk(mac) is not False:
+            return self.oui_company[mac][0]
+        else: 
+            return False
+    
+    def lookup_company(self,companyLst):
+        """
+        look up a company name and return their OUI's
+        """
+        oui = []
+        if type(companyLst).__name__ == "list":
+            for name in companyLst:
+                compMatch = re.compile(name,re.I)
+                if self.company_oui.has_key(name):
+                    oui.extend(self.company_oui[name])
+                else:
+                    for key in self.company_oui:
+                        if compMatch.search(key) is not None:
+                            oui.extend(self.company_oui[key])
 
-	def ouiUpdate(self):
-		"""
-		Grab the oui txt file off the ieee.org website
-		"""
-		if os.path.isdir (self.ouiInPath) == True:
-			print "Going to support/ to install new oui.txt..."
-			ouiDIR = self.ouiInPath
-		else:
-			print "Going to " +install_dir+ " to install new oui.txt..."
-			ouiDIR = self.ouiUnPath
-			try:
-				os.remove(ouiDIR+"oui.txt")
-			except OSError:
-				print "Unable to delete oui.txt"
-		try:
-			# Checks to see if it's running from a directory when not installed.
-			ouiOnline = urllib2.urlopen(self.ouiTxtUrl)
-			print "Writing OUI file"
-			#lFile = open (ouiDIR+"oui.txt", "w")
-			#lFile.writelines(ouiOnline)
-			#lFile.close()	
-			#ouiOnline.close()
-			#self.ouiTxt = ouiDIR+"oui.txt"
-			dire = ouiDIR + "oui.txt"
-			import urllib
-			urllib.urlretrieve(self.ouiTxtUrl, dire)
-			print "Completed Successfully"
-			sys.exit(0)
-		except Exception,e:
-			print e
-			print "Could not download file."
-			print "Exiting airdrop-ng. Card in monitor mode or not root?"
-			sys.exit(0)
+        elif type(companyLst).__name__ == "str":
+            if self.company_oui.has_key(companyLst):
+                oui = self.company_oui[companyLst]
+            else:
+                
+                compMatch = re.compile(companyLst,re.I)
+                for key in self.company_oui:
+                    if compMatch.search(key) is not None:
+                        oui.extend(self.company_oui[key]) #return the oui for that key
+        return oui
+                
+    def ouiOpen(self):
+        """
+        open the file and read it in
+        """
+        ouiFile = open(self.ouiTxt, "r")
+        text = ouiFile.readlines()
+        #text = ouiFile.read()
+        return text
+    
+    def ouiParse(self): 
+        """
+        generate a oui to company lookup dict
+        """
+        HexOui= {}
+        Hex = re.compile('.*(hex).*')
+        #matches the following example "00-00-00   (hex)\t\tXEROX CORPORATION" 
+        ouiLines = self.ouiRaw
+        for line in ouiLines:
+            if Hex.search(line) != None: 
+                #return the matched text and build a list out of it
+                lineList = Hex.search(line).group().replace("\t"," ").split("  ") 
+                #build a dict in the format of mac:company name 
+                HexOui[lineList[0].replace("-",":")] = [lineList[2]] 
+        return HexOui
+    
+    def companyParse(self):
+        """
+        generate a company to oui lookup dict
+        """
+        company_oui = {}
+        for oui in self.oui_company:
+            if company_oui.has_key(self.oui_company[oui][0]):
+                company_oui[self.oui_company[oui][0]].append(oui)
+            else:
+                company_oui[self.oui_company[oui][0]] = [oui]
+        return company_oui
+        
 
+if __name__ == "__main__":
+    import pdb
+    #  for testing
+    x = macOUI_lookup()
+    pdb.set_trace()
