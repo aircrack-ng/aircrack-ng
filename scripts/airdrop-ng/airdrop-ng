@@ -17,8 +17,15 @@ import pdb
 #sys.path.extend(["./lib","/usr/lib/airdrop-ng"])
 from time import sleep,localtime
 from airdrop import bcolors, install_dir
-from airdrop import libOuiParse, libDumpParse, lorcon
+from airdrop import libOuiParse, libDumpParse
 from binascii import a2b_hex
+try:
+    import PyLorcon2
+except ImportError, e:
+    print "Did you read the readme? You seem to be missing PyLorcon2"
+    print e
+
+
 class messages:
     """
     handle all printing 
@@ -815,16 +822,21 @@ def lorconTX(pktNum=5,packet=None, channel=1 ,slept=0):
     #pktNum is number each packet is sent
     count = 0
     try:
-        tx.channel=channel #set the channel to send packets on
-    except lorcon.LorconError,e:
-        e,message.printError(["\nError Message from lorcon:",str(e),
+        cchannel = tx.get_channel()
+    except PyLorcon2.Lorcon2Exception ,e:
+        message.printError(["\n Error Message from lorcon:",str(e),
+            "Unable to get channel the wireless card is on"])
+    try:
+        tx.set_channel(channel) #set the channel to send packets on
+    except PyLorcon2.Lorcon2Exception ,e:
+        message.printError(["\nError Message from lorcon:",str(e),
             "Unable to set channel card does not seem to support it",
             "Skipping packet"])
         return False
     while count != pktNum:
         try:
             tx.send_bytes(packet)
-        except lorcon.LorconError,e:
+        except PyLorcon2.Lorcon2Exception ,e:
             message.printMessage(['\nError Message from lorcon:',str(e),
             "Are you sure you are using the correct driver with the -d option?",
             "Or try ifconfig up on the card you provided and its vap."])
@@ -979,19 +991,20 @@ if __name__ == "__main__":
     
     try:
         try:
-	        #import pdb
-            #pdb.set_trace()
-	        #open card up for injection
+            """
+            # the following code is marked for removal
+            # more testing is needed
+
             try:
                 liblorcon = lorcon.Lorcon(liborcon2)
             except OSError:
                 message.printMessage(['\n',
                 'Unable to find liborcon2.so in /usr/local/lib or /usr/lib , is lorcon2 installed?'])
                 sys.exit(-1)
-            driver = liblorcon.auto_driver(options.card)
-            tx = liblorcon.create(options.card, driver)
-            tx.open_inject()
-        except lorcon.LorconError,e:
+            """
+            tx = PyLorcon2.Context(options.card)
+            tx.open_injmon()
+        except PyLorcon2.Lorcon2Exception ,e:
             message.printMessage(["\n",
                 e,"Interface %s does not exist" %(options.card)])
             sys.exit(-1)

@@ -20,12 +20,9 @@ Requires python 2.7 for the installer to work, unless you edit it and remove the
 
 Dependencies:
 
-[*] liblorcon
+[*] lorcon
+[*] Pylorcon2
 [*] A lorcon supported wireless card (mac80211 drivers) with monitor mode and injection
-
-Optional Dependencies:
-
-[*] pysco JIT
 
 **********************
 * Installing lorcon *
@@ -33,15 +30,25 @@ Optional Dependencies:
 
 You can get lorcon source from:
 
-[*] svn co http://802.11ninja.net/svn/lorcon/trunk 
+[*] svn checkout git clone https://code.google.com/p/lorcon/ trunk 
 
 Then you will have to compile it:
 
-[*] cd trunk && make && make install
+[*] cd trunk && ./configure &&make && make install
+
+Next compile Pylorcon2 source
+
+[*] wget http://pylorcon2.googlecode.com/files/PyLorcon2-0.1.tar.gz
+
+Untar the file
+[*] tar -xvaf PyLorcon2-0.1.tar.gz
+
+Build and install the souce
+[*] cd PyLorcon2-0.1 && python setup.py install
 
 If pylorcon reports import errors you need to run the following command:
 
-[*] ln -s /usr/local/lib/liborcon-1.0.0.so /usr/lib
+[*] ln -s /usr/local/lib/liborcon-2.0.0.so /usr/lib
 
 This will create a symlink to the directory that pylorcon looks in for 
 liborcon.
