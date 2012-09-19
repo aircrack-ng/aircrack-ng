@@ -30,7 +30,7 @@ Dependencies:
 
 You can get lorcon source from:
 
-[*] svn checkout git clone https://code.google.com/p/lorcon/ trunk 
+[*] git clone https://code.google.com/p/lorcon/ trunk 
 
 Then you will have to compile it:
 
