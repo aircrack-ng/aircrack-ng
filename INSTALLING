@@ -46,6 +46,8 @@ to compile and install the suite:
 * gcrypt:   Use libgcrypt crypto library instead of the default OpenSSL.
             And also use internal fast sha1 implementation (borrowed from GIT)
 
+* libnl:    Add support for netlink (nl80211).
+
 Example:
 
   * Compiling:

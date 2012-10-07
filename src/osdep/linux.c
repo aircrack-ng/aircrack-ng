@@ -41,6 +41,16 @@
 #include <sys/utsname.h>
 #include <net/if_arp.h>
 
+#ifdef CONFIG_LIBNL
+#include <linux/nl80211.h>
+#include <netlink/genl/genl.h>
+#include <netlink/genl/family.h>
+#include <netlink/genl/ctrl.h>  
+#include <netlink/msg.h>
+#include <netlink/attr.h>
+#include <linux/genetlink.h>
+#endif //CONFIG_LIBNL
+
 #include "radiotap/radiotap-parser.h"
         /* radiotap-parser defines types like u8 that
          * ieee80211_radiotap.h needs
@@ -56,6 +66,12 @@
 #include "crctable_osdep.h"
 #include "common.h"
 #include "byteorder.h"
+
+#ifdef CONFIG_LIBNL
+struct nl80211_state state;
+static int chan;
+#endif //CONFIG_LIBNL
+
 
 #define uchar unsigned char
 
@@ -257,6 +273,105 @@ static char * wiToolsPath(const char * tool)
 
         return NULL;
 }
+
+
+/* nl80211 */
+#ifdef CONFIG_LIBNL
+struct nl80211_state {
+#if !defined(CONFIG_LIBNL30) && !defined(CONFIG_LIBNL20)
+    struct nl_handle *nl_sock;
+#else
+    struct nl_sock *nl_sock;
+#endif
+    struct nl_cache *nl_cache;
+    struct genl_family *nl80211;
+};
+
+#if !defined(CONFIG_LIBNL30) && !defined(CONFIG_LIBNL20)
+static inline struct nl_handle *nl_socket_alloc(void)
+{
+    return nl_handle_alloc();
+}
+
+static inline void nl_socket_free(struct nl_handle *h)
+{
+        nl_handle_destroy(h);
+}
+
+static inline int __genl_ctrl_alloc_cache(struct nl_handle *h, struct nl_cache **cache)
+{
+    struct nl_cache *tmp = genl_ctrl_alloc_cache(h);
+    if (!tmp)
+        return -ENOMEM;
+    *cache = tmp;
+    return 0;
+}
+#define genl_ctrl_alloc_cache __genl_ctrl_alloc_cache
+#endif
+
+static int linux_nl80211_init(struct nl80211_state *state)
+{
+    int err;
+
+    state->nl_sock = nl_socket_alloc();
+
+    if (!state->nl_sock) {
+        fprintf(stderr, "Failed to allocate netlink socket.\n");
+        return -ENOMEM;
+    }
+
+    if (genl_connect(state->nl_sock)) {
+        fprintf(stderr, "Failed to connect to generic netlink.\n");
+        err = -ENOLINK;
+        goto out_handle_destroy;
+    }
+
+    if (genl_ctrl_alloc_cache(state->nl_sock, &state->nl_cache)) {
+        fprintf(stderr, "Failed to allocate generic netlink cache.\n");
+        err = -ENOMEM;
+        goto out_handle_destroy;
+    }
+
+    state->nl80211 = genl_ctrl_search_by_name(state->nl_cache, "nl80211");
+    if (!state->nl80211) {
+        fprintf(stderr, "nl80211 not found.\n");
+        err = -ENOENT;
+        goto out_cache_free;
+    }
+
+    return 0;
+
+ out_cache_free:
+    nl_cache_free(state->nl_cache);
+ out_handle_destroy:
+    nl_socket_free(state->nl_sock);
+    return err;
+}
+
+static void nl80211_cleanup(struct nl80211_state *state)
+{
+    genl_family_put(state->nl80211);
+    nl_cache_free(state->nl_cache);
+    nl_socket_free(state->nl_sock);
+}
+
+/* Callbacks */
+
+static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
+                     void *arg)
+{
+    printf("\n\n\nERROR");
+        int *ret = arg;
+            *ret = err->error;
+                return NL_STOP;
+}
+
+static void test_callback(struct nl_msg *msg, void *arg)
+{
+
+}
+#endif /* End nl80211 */
+
 
 static int linux_get_channel(struct wif *wi)
 {
@@ -806,6 +921,124 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     return( ret );
 }
 
+#ifdef CONFIG_LIBNL
+static int linux_set_channel_nl80211(struct wif *wi, int channel)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    char s[32];
+    int pid, status, unused;
+    struct iwreq wrq;
+
+    unsigned int devid;
+    struct nl_msg *msg;
+    unsigned int freq;
+    int err;
+    struct nl_cb *cb;
+    struct nl_cb *s_cb;
+    unsigned int htval = NL80211_CHAN_NO_HT;
+
+    memset( s, 0, sizeof( s ) );
+
+    switch (dev->drivertype) {
+    case DT_WLANNG:
+        snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
+
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
+            execl( dev->wlanctlng, "wlanctl-ng", wi_get_ifname(wi),
+                    "lnxreq_wlansniff", s, NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &status, 0 );
+
+        if( WIFEXITED(status) )
+        {
+            dev->channel=channel;
+            return( WEXITSTATUS(status) );
+        }
+        else
+            return( 1 );
+        break;
+
+    case DT_ORINOCO:
+        snprintf( s,  sizeof( s ) - 1, "%d", channel );
+
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
+            execlp( dev->iwpriv, "iwpriv", wi_get_ifname(wi),
+                    "monitor", "1", s, NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &status, 0 );
+        dev->channel = channel;
+        return 0;
+        break;  //yeah ;)
+
+    case DT_ZD1211RW:
+        snprintf( s,  sizeof( s ) - 1, "%d", channel );
+
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
+            execlp(dev->iwconfig, "iwconfig", wi_get_ifname(wi),
+                    "channel", s, NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &status, 0 );
+        dev->channel = channel;
+	    chan=channel;
+        return 0;
+        break; //yeah ;)
+
+    default:
+        break;
+    }
+
+/* libnl stuff */
+    chan=channel;
+
+    devid=if_nametoindex(wi->wi_interface);
+    freq=ieee80211_channel_to_frequency(channel);
+    msg=nlmsg_alloc();
+    if (!msg) {
+        fprintf(stderr, "failed to allocate netlink message\n");
+        return 2;
+    }
+    cb = nl_cb_alloc(NL_CB_DEFAULT);
+    s_cb = nl_cb_alloc(NL_CB_DEFAULT);
+    if (!cb || !s_cb) {
+        fprintf(stderr, "failed to allocate netlink callbacks\n");
+        err = 2;
+        goto out_free_msg;
+    }
+
+    //nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, test_callback, NULL);
+
+    genlmsg_put(msg, 0, 0, genl_family_get_id(state.nl80211), 0,
+            0, NL80211_CMD_SET_WIPHY, 0);
+
+    NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devid);
+    NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
+    NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, htval);
+
+    nl_send_auto_complete(state.nl_sock,msg);
+
+    dev->channel = channel;
+
+    return( 0 );
+ out_free_msg:
+    nlmsg_free(msg);
+    return err;
+ nla_put_failure:
+    return -ENOBUFS;
+}
+#endif //CONFIG_LIBNL
+
 static int linux_set_channel(struct wif *wi, int channel)
 {
     struct priv_linux *dev = wi_priv(wi);
@@ -893,6 +1126,18 @@ static int linux_set_channel(struct wif *wi, int channel)
     dev->channel = channel;
 
     return( 0 );
+}
+
+int ieee80211_channel_to_frequency(int chan)
+{
+    if (chan < 14)
+        return 2407 + chan * 5;
+
+    if (chan == 14)
+        return 2484;
+
+    /* FIXME: dot11ChannelStartingFactor (802.11-2007 17.3.8.3.2) */
+    return (chan + 1000) * 5;
 }
 
 static int linux_set_freq(struct wif *wi, int freq)
@@ -1394,7 +1639,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     }
 
         /* Check iwpriv existence */
-
+#ifndef CONFIG_LIBNL
     iwpriv = wiToolsPath("iwpriv");
     dev->iwpriv = iwpriv;
     dev->iwconfig = wiToolsPath("iwconfig");
@@ -1405,6 +1650,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         fprintf(stderr, "Can't find wireless tools, exiting.\n");
         goto close_in;
     }
+#endif
 
     /* Exit if ndiswrapper : check iwpriv ndis_reset */
 
@@ -1811,6 +2057,21 @@ static void linux_close(struct wif *wi)
 	do_free(wi);
 }
 
+#ifdef CONFIG_LIBNL
+static void linux_close_nl80211(struct wif *wi)
+{
+	struct priv_linux *pl = wi_priv(wi);
+    nl80211_cleanup(&state);
+
+	if (pl->fd_in)
+		close(pl->fd_in);
+	if (pl->fd_out)
+		close(pl->fd_out);
+
+	do_free(wi);
+}
+#endif
+
 static int linux_fd(struct wif *wi)
 {
 	struct priv_linux *pl = wi_priv(wi);
@@ -1915,11 +2176,20 @@ static struct wif *linux_open(char *iface)
 		return NULL;
         wi->wi_read             = linux_read;
         wi->wi_write            = linux_write;
+#ifdef CONFIG_LIBNL
+        linux_nl80211_init(&state);
+        wi->wi_set_channel      = linux_set_channel_nl80211;
+#else
         wi->wi_set_channel      = linux_set_channel;
+#endif
         wi->wi_get_channel      = linux_get_channel;
         wi->wi_set_freq		= linux_set_freq;
         wi->wi_get_freq		= linux_get_freq;
+#ifdef CONFIG_LIBNL
+        wi->wi_close            = linux_close_nl80211;
+#else
         wi->wi_close            = linux_close;
+#endif
 	wi->wi_fd		= linux_fd;
 	wi->wi_get_mac		= linux_get_mac;
 	wi->wi_set_mac		= linux_set_mac;
