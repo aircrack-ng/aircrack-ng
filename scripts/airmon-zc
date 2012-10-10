@@ -721,7 +721,7 @@ then
 	done
 	if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]
 	then
-		for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
+		for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_.]*\) .*/\1/')
 		do
 			iface_list="${iface_list}\n ${iface}"
 		done
@@ -832,7 +832,7 @@ do
 done
 if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]
 then
-	for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
+	for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_.]*\) .*/\1/')
 	do
 		iface_list="${iface_list}\n ${iface}"
 	done
