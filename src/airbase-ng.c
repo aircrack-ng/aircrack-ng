@@ -2948,11 +2948,10 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                     memcpy(essid, tag, len);
 
                     /* store probes */
-                    for( i = 0; i < len; i++ )
-                        if( essid[i] > 0 && essid[i] < ' ' )
+                    if (len > 0 && essid[0] == 0)
                             goto skip_probe;
 
-                    /* got a valid ASCII probed ESSID */
+                    /* got a valid probed ESSID */
 
                     /* add this to the beacon queue */
                     if(opt.beacon_cache)
