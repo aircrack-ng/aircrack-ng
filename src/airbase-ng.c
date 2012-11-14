@@ -3014,12 +3014,12 @@ skip_probe:
                     packet[length]   = 0x03;
                     packet[length+1] = 0x01;
                     temp_channel = wi_get_channel(_wi_in); //current channel
-                    if (temp_channel > 255 && !invalid_channel_displayed) {
+                    if ((temp_channel > 255 || temp_channel < 1) && !invalid_channel_displayed) {
                     	// Display error message once
                     	invalid_channel_displayed = 1;
                     	fprintf(stderr, "Error: Got channel %d, expected a value < 256. Please report.\n", temp_channel);
                     }
-                    packet[length+2] = (temp_channel > 255 && opt.channel != 0) ? opt.channel : temp_channel;
+                    packet[length+2] = ((temp_channel > 255 || temp_channel < 1) && opt.channel != 0) ? opt.channel : temp_channel;
 
                     length += 3;
 
@@ -3112,12 +3112,12 @@ skip_probe:
                     packet[length]   = 0x03;
                     packet[length+1] = 0x01;
                     temp_channel = wi_get_channel(_wi_in); //current channel
-                    if (temp_channel > 255 && !invalid_channel_displayed) {
+                    if ((temp_channel > 255 || temp_channel < 1) && !invalid_channel_displayed) {
                     	// Display error message once
                     	invalid_channel_displayed = 1;
                     	fprintf(stderr, "Error: Got channel %d, expected a value < 256. Please report.\n", temp_channel);
                     }
-                    packet[length+2] = (temp_channel > 255 && opt.channel != 0) ? opt.channel : temp_channel;
+                    packet[length+2] = ((temp_channel > 255 || temp_channel < 1) && opt.channel != 0) ? opt.channel : temp_channel;
 
                     length += 3;
 
@@ -3561,12 +3561,12 @@ void beacon_thread( void *arg )
             beacon[beacon_len] = 0x03; //channel tag
             beacon[beacon_len+1] = 0x01;
             temp_channel = wi_get_channel(_wi_in); //current channel
-            if (temp_channel > 255 && !invalid_channel_displayed) {
+            if ((temp_channel > 255 || temp_channel < 1) && !invalid_channel_displayed) {
             	// Display error message once
             	invalid_channel_displayed = 1;
             	fprintf(stderr, "Error: Got channel %d, expected a value < 256. Please report.\n", temp_channel);
             }
-            beacon[beacon_len+2] = (temp_channel > 255 && opt.channel != 0) ? opt.channel : temp_channel;
+            beacon[beacon_len+2] = ((temp_channel > 255 || temp_channel < 1) && opt.channel != 0) ? opt.channel : temp_channel;
 
             beacon_len+=3;
 
