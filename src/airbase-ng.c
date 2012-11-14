@@ -394,7 +394,7 @@ unsigned char tmpbuf[4096];
 unsigned char srcbuf[4096];
 char strbuf[512];
 
-int ctrl_c, alarmed;
+int ctrl_c, alarmed, invalid_channel_displayed;
 
 char * iwpriv;
 
@@ -2487,7 +2487,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
     int seqnum, fragnum, morefrag;
     int gotsource, gotbssid;
     int remaining, bytes2use;
-    int reasso, fixed, z;
+    int reasso, fixed, z, temp_channel;
 
     struct ST_info *st_cur = NULL;
     struct ST_info *st_prv = NULL;
@@ -3013,7 +3013,13 @@ skip_probe:
                     //add channel
                     packet[length]   = 0x03;
                     packet[length+1] = 0x01;
-                    packet[length+2] = wi_get_channel(_wi_in);
+                    temp_channel = wi_get_channel(_wi_in); //current channel
+                    if (temp_channel > 255 && !invalid_channel_displayed) {
+                    	// Display error message once
+                    	invalid_channel_displayed = 1;
+                    	fprintf(stderr, "Error: Got channel %d, expected a value < 256. Please report.\n", temp_channel);
+                    }
+                    packet[length+2] = (temp_channel > 255 && opt.channel != 0) ? opt.channel : temp_channel;
 
                     length += 3;
 
@@ -3105,7 +3111,13 @@ skip_probe:
                     //add channel
                     packet[length]   = 0x03;
                     packet[length+1] = 0x01;
-                    packet[length+2] = wi_get_channel(_wi_in);
+                    temp_channel = wi_get_channel(_wi_in); //current channel
+                    if (temp_channel > 255 && !invalid_channel_displayed) {
+                    	// Display error message once
+                    	invalid_channel_displayed = 1;
+                    	fprintf(stderr, "Error: Got channel %d, expected a value < 256. Please report.\n", temp_channel);
+                    }
+                    packet[length+2] = (temp_channel > 255 && opt.channel != 0) ? opt.channel : temp_channel;
 
                     length += 3;
 
@@ -3447,7 +3459,7 @@ void beacon_thread( void *arg )
     unsigned char beacon[512];
     int beacon_len=0;
     int seq=0, i=0, n=0;
-    int essid_len;
+    int essid_len, temp_channel;
     char *essid = "";
     pESSID_t cur_essid = rESSID;
     float f, ticks[3];
@@ -3548,7 +3560,14 @@ void beacon_thread( void *arg )
 
             beacon[beacon_len] = 0x03; //channel tag
             beacon[beacon_len+1] = 0x01;
-            beacon[beacon_len+2] = wi_get_channel(_wi_in); //current channel
+            temp_channel = wi_get_channel(_wi_in); //current channel
+            if (temp_channel > 255 && !invalid_channel_displayed) {
+            	// Display error message once
+            	invalid_channel_displayed = 1;
+            	fprintf(stderr, "Error: Got channel %d, expected a value < 256. Please report.\n", temp_channel);
+            }
+            beacon[beacon_len+2] = (temp_channel > 255 && opt.channel != 0) ? opt.channel : temp_channel;
+
             beacon_len+=3;
 
             if( opt.allwpa )
@@ -3903,9 +3922,11 @@ int main( int argc, char *argv[] )
     opt.nb_arp      = 0;
     opt.f_index     = 1;
     opt.interval    = 0x64;
+    opt.channel		= 0;
     opt.beacon_cache = 0; /* disable by default */
     opt.ti_mtu = TI_MTU;
     opt.wif_mtu = WIF_MTU;
+    invalid_channel_displayed = 0;
 
     srand( time( NULL ) );
 
@@ -3969,6 +3990,11 @@ int main( int argc, char *argv[] )
             case 'c' :
 
                 opt.channel = atoi(optarg);
+                if (opt.channel > 255 || opt.channel < 1)
+                {
+                	printf("Invalid channel value <%d>. It must be between 1 and 255.\n", opt.channel);
+                	return( 1 );
+                }
 
                 break;
 
