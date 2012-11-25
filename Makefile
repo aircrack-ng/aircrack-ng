@@ -24,7 +24,7 @@ aircrack-ng-opt-prof_gen: all
 aircrack-ng-opt-prof_use:
 	$(MAKE) -C src $(@)
 
-install:
+install: all
 	$(MAKE) -C src $(@)
 	$(MAKE) -C scripts $(@)
 	$(MAKE) -C manpages $(@)
