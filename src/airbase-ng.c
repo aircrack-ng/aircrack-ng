@@ -2940,7 +2940,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
         if( packet[0] == 0x40 )
         {
             tag = parse_tags(packet+z, 0, length-z, &len);
-            if(tag != NULL && tag[0] >= 32 && tag[0] < 127 && len <= 255) //directed probe
+            if(tag != NULL && tag[0] >= 32 && len <= 255) //directed probe
             {
                 if( opt.promiscuous || !opt.f_essid || gotESSID((char*)tag, len) == 1)
                 {
@@ -3263,7 +3263,7 @@ skip_probe:
             st_cur->wep = (packet[z] & 0x10) >> 4;
 
             tag = parse_tags(packet+z+fixed, 0, length-z-fixed, &len);
-            if(tag != NULL && tag[0] >= 32 && tag[0] < 127 && len < 256)
+            if(tag != NULL && tag[0] >= 32 && len < 256)
             {
                 memcpy(essid, tag, len);
                 essid[len] = 0x00;
