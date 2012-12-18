@@ -1,5 +1,4 @@
 AC_ROOT		= ..
-LIBPCAP		=
 include $(AC_ROOT)/common.mak
 
 TEST_DIR	= $(AC_ROOT)/test
@@ -38,8 +37,6 @@ else
 	endif
 endif
 
-
-LIBPCAP		=
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
 		  airtun-ng$(EXE) airbase-ng$(EXE) besside-ng$(EXE)
@@ -99,7 +96,7 @@ OBJS_TT		= tkiptun-ng.o common.o crypto.o
 OBJS_WC		= wpaclean.o
 
 OSD		= osdep
-LIBS		+= -L$(OSD) -l$(OSD) $(LIBPCAP)
+LIBS		+= -L$(OSD) -l$(OSD)
 ifeq ($(OSNAME), cygwin)
 LIBS		+= -liphlpapi -lsetupapi -luuid
 endif
@@ -180,7 +177,7 @@ airodump-ng$(EXE): $(OBJS_ADU) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL) -lpthread
 
 airserv-ng$(EXE): $(OBJS_AS) $(LIBOSD)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AS) -o $(@) $(LIBS) $(LIBPCAP)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AS) -o $(@) $(LIBS)
 
 airtun-ng$(EXE): $(OBJS_AT) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AT) -o $(@) $(LIBS) $(LIBSSL)
