@@ -96,7 +96,7 @@ OBJS_TT		= tkiptun-ng.o common.o crypto.o
 OBJS_WC		= wpaclean.o
 
 OSD		= osdep
-LIBS		= -L$(OSD) -l$(OSD) $(LIBS)
+LIBS		+= -L$(OSD) -l$(OSD)
 ifeq ($(OSNAME), cygwin)
 LIBS		+= -liphlpapi -lsetupapi -luuid
 endif
