@@ -1,5 +1,6 @@
 #!/bin/sh
 DEBUG="0"
+VERBOSE="0"
 USERID=""
 IFACE=""
 CH=$3; [ x$3 = "x" ] && CH=10
@@ -755,33 +756,35 @@ then
 fi
 
 #startup checks complete, headers then main
-printf "\nThis script is intended to replace airmon-ng in 1.3 and is functionally based on it.\n"
-printf "Please test and report bugs to Zero_Chaos on freenode in #aircrack-ng or on trac\n\n"
 
-uname -a
-
-checkvm
-if [ ${vm} ]
+if [ "$VERBOSE" = "1" ]
 then
-	printf "Detected VM using ${vm_from}\n"
-	printf "This appears to be a ${vm} Virtual Machine\n"
-	printf "If your system supports VT-d, it may be possible to use PCI devices\n"
-	printf "If your system does not support VT-d, you can only use USB wifi cards\n"
+	uname -a
+
+	checkvm
+	if [ ${vm} ]
+	then
+		printf "Detected VM using ${vm_from}\n"
+		printf "This appears to be a ${vm} Virtual Machine\n"
+		printf "If your system supports VT-d, it may be possible to use PCI devices\n"
+		printf "If your system does not support VT-d, you can only use USB wifi cards\n"
+	fi
+
+	printf "\nK indicates driver is from $(uname -r)\n"
+	if $(modinfo compat > /dev/null 2>&1)
+	then
+		modprobe compat
+	fi
+	if [ -f /sys/module/compat/parameters/compat_version ]
+	then
+		printf "C indicates driver is from $(cat /sys/module/compat/parameters/compat_version)\n"
+	fi
+	printf "V indicates driver comes directly from the vendor, almost certainly a bad thing\n"
+	printf "S indicates driver comes from the staging tree, these drivers are meant for reference not actual use, BEWARE\n"
+	printf "? indicates we do not know where the driver comes from... report this\n\n"
 fi
 
-printf "\nK indicates driver is from $(uname -r)\n"
-if $(modinfo compat > /dev/null 2>&1)
-then
-	modprobe compat
-fi
-if [ -f /sys/module/compat/parameters/compat_version ]
-then
-	printf "C indicates driver is from $(cat /sys/module/compat/parameters/compat_version)\n"
-fi
-printf "V indicates driver comes directly from the vendor, almost certainly a bad thing\n"
-printf "S indicates driver comes from the staging tree, these drivers are meant for reference not actual use, BEWARE\n"
-printf "? indicates we do not know where the driver comes from... report this\n"
-printf "\n\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
+printf "\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
 
 for iface in $(ifconfig -a 2> /dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
 do
