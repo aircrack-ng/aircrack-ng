@@ -33,7 +33,7 @@ fi
 #cleanup getDriver()
 #add band detection
 #change names to mimic hostapd or kismet
-
+#fix to not assume wifi drivers are modules
 
 if [ x"$(command -v id 2> /dev/null)" != "x" ]
 then
