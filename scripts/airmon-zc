@@ -288,7 +288,7 @@ getDriver() {
 
 getFrom() {
 	#from detection
-	if [ $(modinfo -n $DRIVER | grep 'kernel/drivers') ]
+	if [ $(modinfo -n $DRIVER 2>&1 | grep 'kernel/drivers') ]
 	then
 		FROM="K"
 		#we add special handling here because we hate the vendor drivers AND they install in the wrong place
@@ -302,10 +302,10 @@ getFrom() {
 		then
 			FROM="V"
 		fi
-	elif [ $(modinfo -n $DRIVER | grep 'updates/drivers') ]
+	elif [ $(modinfo -n $DRIVER 2>&1 | grep 'updates/drivers') ]
 	then
 		FROM="C"
-	elif [ $(modinfo -n $DRIVER | grep misc) ]
+	elif [ $(modinfo -n $DRIVER 2>&1 | grep misc) ]
 	then
 		FROM="M"
 		#add a yell at the user in here
@@ -314,7 +314,7 @@ getFrom() {
 	fi
 
 	#check for staging drivers seperately
-	if [ $(modinfo -n $DRIVER | grep staging) ]
+	if [ $(modinfo -n $DRIVER 2>&1 | grep staging) ]
 	then
 		FROM="S"
         fi
