@@ -271,7 +271,10 @@ getDriver() {
 	then
 		true
 	else
-		DRIVER="$(lspci -d $DEVICEID -k | awk '/modules/ {print $3}')"
+		if [ "${DEVICEID}" = "" ]
+		then
+			DRIVER="$(lspci -d $DEVICEID -k | awk '/modules/ {print $3}')"
+		fi
 		if [ "$DRIVER" = "" ]
 		then
 			DRIVER="??????"
