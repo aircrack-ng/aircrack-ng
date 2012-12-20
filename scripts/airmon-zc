@@ -272,7 +272,7 @@ getDriver() {
 	then
 		true
 	else
-		if [ "${DEVICEID}" != "" ]
+		if [ "${DEVICEID}" != "" ] && [ "$BUS" = "pci" ]
 		then
 			DRIVER="$(lspci -d $DEVICEID -k | awk '/modules/ {print $3}')"
 		fi
