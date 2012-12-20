@@ -211,17 +211,17 @@ stopDeprecatedIface() {
 
 getDriver() {
 	#standard detection path, this is all that is needed for proper drivers
-	DRIVER=$(printf "$ethtool_output" | awk '/driver/ {print $2}')
+	#DRIVER=$(printf "$ethtool_output" | awk '/driver/ {print $2}')
 
-	if $(modinfo -n ${DRIVER} > /dev/null 2>&1)
-	then
-		true
-	else
-		unset DRIVER
-	fi
+	#if $(modinfo -n ${DRIVER} > /dev/null 2>&1)
+	#then
+	#	true
+	#else
+	#	unset DRIVER
+	#fi
 
-	if [ "$DRIVER" = "" ]
-	then
+	#if [ "$DRIVER" = "" ]
+	#then
 		if [ -f /sys/class/net/$1/device/uevent ]
 		then
 			DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/uevent)"
@@ -229,11 +229,12 @@ getDriver() {
 			#DRIVER we put SOMETHING in DRIVER here if we are unable to find anything real
 			DRIVER="??????"
 		fi
-	fi
+	#fi
 
 	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
 	if [ "$DRIVER" = "usb" ]
 	then
+		echo "Warn ON: USB"
 		BUSADDR="$(printf "$ethtool_output" | awk '/bus-info/ {print $2}'):1.0"
 		if [ "$BUSADDR" != "" ]
 		then
