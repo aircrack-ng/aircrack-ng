@@ -21,10 +21,11 @@ OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o radiotap/radiotap-parser.o
 OBJS_DARWIN = $(OBJS) darwin.o darwin_tap.o radiotap/radiotap-parser.o
 
 # XXX make it a DLL, without polluting cygwin.c
-DOPCAP		=
-ifeq ($(AIRPCAP), true)
-OBJS_CYGWIN    += $(OBJS_APCAP)
-DOPCAP		= $(AR) x $(AC_ROOT)/../developers/Airpcap_Devpack/lib/libairpcap.a
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(airpcap) $(AIRPCAP))),true)
+	OBJS_CYGWIN    += $(OBJS_APCAP)
+	DOPCAP		= $(AR) x $(AC_ROOT)/../developers/Airpcap_Devpack/lib/libairpcap.a
+else
+	DOPCAP		=
 endif
 
 all:

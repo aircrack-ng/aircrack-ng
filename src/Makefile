@@ -21,20 +21,8 @@ ifneq ($(OSNAME), cygwin) #There is yet no libpcap support for windows, so we sk
 	endif
 endif
 
-ifeq ($(SQLITE), true)
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
 	BINFILES	+= airolib-ng$(EXE)
-else
-	ifeq ($(sqlite), true)
-		BINFILES        += airolib-ng$(EXE)
-	else
-		ifeq ($(SQLITE), TRUE)
-			BINFILES        += airolib-ng$(EXE)
-		else
-			ifeq ($(sqlite), TRUE)
-				BINFILES        += airolib-ng$(EXE)
-			endif
-		endif
-	endif
 endif
 
 
@@ -45,25 +33,9 @@ OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
 
-
-ifeq ($(UNSTABLE), true)
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(unstable) $(UNSTABLE))),true)
 	SBINFILES	+= wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
 	BINFILES	+= buddy-ng$(EXE)
-else
-	ifeq ($(unstable), true)
-		SBINFILES       += wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
-		BINFILES	+= buddy-ng$(EXE)
-	else
-		ifeq ($(UNSTABLE), TRUE)
-			SBINFILES       += wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
-			BINFILES	+= buddy-ng$(EXE)
-		else
-			ifeq ($(unstable), TRUE)
-				SBINFILES       += wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
-				BINFILES	+= buddy-ng$(EXE)
-			endif
-		endif
-	endif
 endif
 
 
@@ -103,7 +75,7 @@ endif
 LIBOSD		= $(OSD)/lib$(OSD).a
 
 LIBSSL		= -lssl -lcrypto
-ifeq ($(filter true, $(gcrypt) $(GCRYPT)), true)
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(gcrypt) $(GCRYPT))),true)
 	LIBSSL		= -lgcrypt $(LDFLAGS)
 	CFLAGS 		+= -DUSE_GCRYPT
 	OBJS_AC		+= sha1-git.o
@@ -122,21 +94,11 @@ else
 	LIBSSL		= -lssl -lcrypto $(LDFLAGS)
 endif
 
-LIBSQL		=
-ifeq ($(SQLITE), true)
+
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
 	LIBSQL		= -L/usr/local/lib -lsqlite3
 else
-	ifeq ($(sqlite), true)
-		LIBSQL          = -L/usr/local/lib -lsqlite3
-	else
-		ifeq ($(SQLITE), TRUE)
-			LIBSQL          = -L/usr/local/lib -lsqlite3
-		else
-			ifeq ($(sqlite), TRUE)
-				LIBSQL          = -L/usr/local/lib -lsqlite3
-			endif
-		endif
-	endif
+	LIBSQL		=
 endif
 
 all: userland $(SBINFILES)
@@ -267,6 +229,6 @@ check: aircrack-ng$(EXE)
 	./aircrack-ng$(EXE) -w $(TEST_DIR)/password.lst -a 2 -e linksys -q $(TEST_DIR)/wpa2-psk-linksys.cap | grep 'KEY FOUND! \[ dictionary \]'
 	./aircrack-ng$(EXE) -w $(TEST_DIR)/password.lst -a 2 -e linksys -q $(TEST_DIR)/wpa-psk-linksys.cap | grep 'KEY FOUND! \[ dictionary \]'
 	$(TEST_DIR)/test-airdecap-ng.sh $(CURDIR)
-ifeq ($(filter true, $(sqlite) $(SQLITE)), true)
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
 	$(TEST_DIR)/test-airolib-sqlite.sh $(CURDIR)
 endif

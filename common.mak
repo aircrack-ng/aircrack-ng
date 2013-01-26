@@ -30,20 +30,8 @@ COMMON_CFLAGS	=
 
 
 
-ifeq ($(SQLITE), true)
-    COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
-else
-    ifeq ($(sqlite), true)
-        COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
-    else
-        ifeq ($(SQLITE), TRUE)
-            COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
-        else
-            ifeq ($(sqlite), TRUE)
-                COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
-            endif
-        endif
-    endif
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
+	COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
 endif
 
 ifeq ($(OSNAME), cygwin)
@@ -64,7 +52,7 @@ else ifeq ($(libnl), true)
 		#COMMON_CFLAGS += -DCONFIG_LIBNL
 		#LIBS += -lnl-genl
 		NLLIBNAME = libnl-2.0
-        $(error libnl2 is not supported. install either libnl1 or libnl3)
+		$(error libnl2 is not supported. install either libnl1 or libnl3)
 	endif
 	
 	ifeq ($(NL3xFOUND),Y)
@@ -89,7 +77,7 @@ else ifeq ($(libnl), true)
 	endif
 	
 	ifeq ($NLLIBNAME,)
-        $(error Cannot find development files for any supported version of libnl)
+		$(error Cannot find development files for any supported version of libnl)
 	endif
 	
 	LIBS += $(shell $(PKG_CONFIG) --libs $(NLLIBNAME))
@@ -97,12 +85,8 @@ else ifeq ($(libnl), true)
 	NLVERSION :=$(shell $(PKG_CONFIG) --print-provides $(NLLIBNAME))
 endif
 
-ifeq ($(airpcap), true)
-AIRPCAP		= true
-endif
-
-ifeq ($(AIRPCAP), true)
-LIBAIRPCAP	= -DHAVE_AIRPCAP -I$(AC_ROOT)/../developers/Airpcap_Devpack/include
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(airpcap) $(AIRPCAP))),true)
+	LIBAIRPCAP = -DHAVE_AIRPCAP -I$(AC_ROOT)/../developers/Airpcap_Devpack/include
 endif
 
 ifeq ($(OSNAME), cygwin)

@@ -3,11 +3,11 @@ SRC_DIR		= $(AC_ROOT)/src
 include $(AC_ROOT)/common.mak
 CFLAGS          += -I$(SRC_DIR) -I$(SRC_DIR)/include
 
-ifeq ($(gcrypt), true)
-        LIBSSL          =  -lgcrypt $(LDFLAGS)
-        CFLAGS          += -DUSE_GCRYPT
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(gcrypt) $(GCRYPT))),true)
+	LIBSSL          =  -lgcrypt $(LDFLAGS)
+	CFLAGS          += -DUSE_GCRYPT
 else
-        LIBSSL          = -lssl -lcrypto $(LDFLAGS)
+	LIBSSL          = -lssl -lcrypto $(LDFLAGS)
 endif
 
 all:	check
