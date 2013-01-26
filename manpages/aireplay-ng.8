@@ -155,7 +155,7 @@ This attack, when successful, can decrypt a WEP data packet without knowing the 
 This attack, when successful, can obtain 1500 bytes of PRGA (pseudo random generation algorithm). This attack does not recover the WEP key itself, but merely obtains the PRGA. The PRGA can then be used to generate packets with packetforge-ng which are in turn used for various injection attacks. It requires at least one data packet to be received from the access point in order to initiate the attack.
 .TP
 .I -6, --caffe-latte
-In general, for an attack to work, the attacker has to be in the range of an AP and a connected client (fake or real). Caffe Latte attacks allows to gather enough packets to crack a WEP key without the need of an AP, it just need a client to be in range.
+In general, for an attack to work, the attacker has to be in the range of an AP and a connected client (fake or real). Caffe Latte attacks allows one to gather enough packets to crack a WEP key without the need of an AP, it just need a client to be in range.
 .TP
 .I -7, --cfrag
 This attack turns IP or ARP packets from a client into ARP request against the client. This attack works especially well against ad-hoc networks. As well it can be used against softAP clients and normal AP clients.
