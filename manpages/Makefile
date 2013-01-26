@@ -1,44 +1,21 @@
 AC_ROOT		= ..
 include		$(AC_ROOT)/common.mak
 
-MP_FILES        = aircrack-ng.1 airdecap-ng.1 airdriver-ng.1 aireplay-ng.1 \
-                  airmon-ng.1 airodump-ng.1 airserv-ng.1 airtun-ng.1 \
-                  ivstools.1 kstats.1 makeivs-ng.1 airbase-ng.1 \
-                  packetforge-ng.1 airdecloak-ng.1 airodump-ng-oui-update.1 \
-				  wpaclean.1 besside-ng.1 besside-ng-crawler.1
+MP_FILES	= aircrack-ng.1 airdecap-ng.1 ivstools.1 kstats.1 makeivs-ng.1 \
+		  packetforge-ng.1 airdecloak-ng.1 wpaclean.1 besside-ng-crawler.1
+
+SMP_FILES	= airdriver-ng.8 aireplay-ng.8 airmon-ng.8 airodump-ng.8 \
+		  airserv-ng.8 airtun-ng.8 airbase-ng.8 airodump-ng-oui-update.8 \
+		  besside-ng.8
 
 
-ifeq ($(SQLITE), true)
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
 	MP_FILES += airolib-ng.1
-else
-	ifeq ($(sqlite), true)
-		MP_FILES += airolib-ng.1
-	else
-		ifeq ($(SQLITE), TRUE)
-			MP_FILES += airolib-ng.1
-		else
-			ifeq ($(sqlite), TRUE)
-				MP_FILES += airolib-ng.1
-			endif
-		endif
-	endif
 endif
 
-
-ifeq ($(UNSTABLE), true)
-	MP_FILES	+= wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 airmon-zc.1 
-else
-	ifeq ($(unstable), true)
-		MP_FILES        += wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 airmon-zc.1
-	else
-		ifeq ($(UNSTABLE), TRUE)
-			MP_FILES        += wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 airmon-zc.1
-		else
-			ifeq ($(unstable), TRUE)
-				MP_FILES        += wesside-ng.1 tkiptun-ng.1 buddy-ng.1 easside-ng.1 airmon-zc.1
-			endif
-		endif
-	endif
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(unstable) $(UNSTABLE))),true)
+	MP_FILES  += buddy-ng.1
+	SMP_FILES += tkiptun-ng.8 easside-ng.8 wesside-ng.8 airmon-zc.8
 endif
 
 
@@ -46,15 +23,18 @@ default: all
 
 all:
 	@echo Nothing to do
-	
+
 install: uninstall
 	install -d $(DESTDIR)$(mandir)
+	install -d $(DESTDIR)$(smandir)
 	install -m 644 $(MP_FILES) $(DESTDIR)$(mandir)
+	install -m 644 $(SMP_FILES) $(DESTDIR)$(smandir)
 
+# Uninstall just calls cleanfiles with all possible switches enabled to
+# ensure all previously installed manpages are cleaned
 uninstall:
-	@-$(foreach CUR_MP,$(MP_FILES), rm -f $(DESTDIR)$(mandir)/$(CUR_MP); echo rm -f $(DESTDIR)$(mandir)/$(CUR_MP); ) 
-	-rm -f $(DESTDIR)$(mandir)/airolib-ng.1
-	-rm -f $(DESTDIR)$(mandir)/wesside-ng.1
-	-rm -f $(DESTDIR)$(mandir)/tkiptun-ng.1
-	-rm -f $(DESTDIR)$(mandir)/buddy-ng.1
-	-rm -f $(DESTDIR)$(mandir)/easside-ng.1
+	$(MAKE) cleanfiles sqlite=true unstable=true
+
+cleanfiles:
+	@-$(foreach CUR_MP,$(MP_FILES), rm -f $(DESTDIR)$(mandir)/$(CUR_MP); echo rm -f $(DESTDIR)$(mandir)/$(CUR_MP); )
+	@-$(foreach CUR_SMP,$(SMP_FILES), rm -f $(DESTDIR)$(smandir)/$(CUR_SMP); echo rm -f $(DESTDIR)$(smandir)/$(CUR_SMP); )

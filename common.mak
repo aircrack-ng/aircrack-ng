@@ -125,10 +125,11 @@ prefix          = /usr/local
 bindir          = $(prefix)/bin
 sbindir         = $(prefix)/sbin
 mandir          = $(prefix)/share/man/man1
+smandir         = $(prefix)/share/man/man8
 datadir         = $(prefix)/share
 docdir          = $(datadir)/doc/aircrack-ng
 libdir		= $(prefix)/lib
-etcdir		= $(prefix)/etc/aircrack-ng 
+etcdir		= $(prefix)/etc/aircrack-ng
 
 GCC_OVER45	= $(shell expr 45 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
 ifeq ($(GCC_OVER45), 1)
