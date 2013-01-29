@@ -162,6 +162,7 @@ startMac80211Iface() {
 		sleep 1s
 		ifconfig $1 down
 		sleep 1s
+		ifconfig ${1}mon up
 		if [ ! -z $3 ]
 		then
 			if [ $3 -lt 1000 ]
@@ -173,7 +174,6 @@ startMac80211Iface() {
 		else
 			iw dev ${1}mon set channel ${CH}
 		fi
-		ifconfig ${1}mon up
 		printf "\n\t\t(mac80211 monitor mode enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
 	else
 		printf "\n\nERROR: something went wrong with iw."
