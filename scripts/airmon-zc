@@ -32,8 +32,9 @@ fi
 
 #cleanup getDriver()
 #add band detection
-#change names to mimic hostapd or kismet
+#down station interface, wait 1 second make sure it's down
 #fix to not assume wifi drivers are modules
+#allow users to start the interface multiple times to change the channel
 
 if [ x"$(command -v id 2> /dev/null)" != "x" ]
 then
@@ -47,69 +48,73 @@ fi
 
 if [ x$USERID != "x" -a x$USERID != "x0" ]
 then
-	printf "Run it as root\n" ; exit ;
+	printf "Run it as root\n" ; exit 1;
 fi
 
 #check for all needed binaries
+if [ ! -x "$(command -v uname 2>&1)" ]
+then
+	printf "How in the world do you not have uname installed?\n"
+	printf "Please select a linux distro which has at least basic functionality (or install uname).\n"
+	exit 1
+else
+	echo
+	#write something in here to test uname for Darwin/Linux and set a variable
+fi
 if [ ! -x "$(command -v iw 2>&1)" ]
 then
 	printf "You don't have iw installed, please install it from your distro's package manager.\n"
 	printf "If your distro doesn't have a recent version you can download it from this link:\n"
 	printf "${IW_SOURCE}\n"
-	exit
+	exit 1
 fi
 
 if [ ! -x "$(command -v ethtool 2>&1)" ]
 then
 	printf "Please install the ethtool package for your distro.\n"
-	exit
+	exit 1
 fi
 
 if [ ! -x "$(command -v lsusb 2>&1)" ]
 then
 	printf "Please install lsusb from your distro's package manager.\n"
-	exit
+	exit 1
 fi
 
 if [ ! -x "$(command -v lspci 2>&1)" ]
 then
 	printf "Please install lspci from your distro's package manager.\n"
-	exit
+	exit 1
 fi
 
 if [ ! -x "$(command -v modprobe 2>&1)" ]
 then
 	printf "How in the world do you not have modprobe installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install modprobe).\n"
-	exit
+	exit 1
 fi
 
 if [ ! -x "$(command -v modinfo 2>&1)" ]
 then
 	printf "How in the world do you not have modinfo installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install modinfo).\n"
-	exit
+	exit 1
 fi
 
 if [ ! -x "$(command -v awk 2>&1)" ]
 then
 	printf "How in the world do you not have awk installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install awk).\n"
-	exit
+	exit 1
 fi
 
 if [ ! -x "$(command -v grep 2>&1)" ]
 then
 	printf "How in the world do you not have grep installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install grep).\n"
-	exit
+	exit 1
 fi
 #done checking for binaries
-
-if [ "x$MON_PREFIX" = "x" ]
-then
-	MON_PREFIX="mon"
-fi
 
 PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox"
 PS_ERROR="invalid"
@@ -151,26 +156,42 @@ startMac80211Iface() {
 		done
 	fi
 	#we didn't bail means we need a monitor interface
-	IW_ERROR=$(iw dev $1 interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found")
+	IW_ERROR=$(iw dev $1 interface add ${1}mon type monitor 2>&1 | grep "nl80211 not found")
 	if [ x$IW_ERROR = "x" ]
 	then
-		sleep 2s
+		sleep 1s
+		ifconfig $1 down
+		sleep 1s
 		if [ ! -z $3 ]
 		then
 			if [ $3 -lt 1000 ]
 			then
-				iw dev $MONDEV set channel $3
+				iw dev ${1}mon set channel $3
 			else
-				iw dev $MONDEV set freq "$3"
+				iw dev ${1}mon set freq "$3"
 			fi
 		else
-			iw dev ${MONDEV} set channel ${CH}
+			iw dev ${1}mon set channel ${CH}
 		fi
-		ifconfig $MONDEV up
-		printf "\n\t\t(mac80211 monitor mode enabled for [${PHYDEV}]${1} on [${PHYDEV}]$MONDEV)\n"
+		ifconfig ${1}mon up
+		printf "\n\t\t(mac80211 monitor mode enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
 	else
 		printf "\n\nERROR: something went wrong with iw."
 	fi
+}
+
+startDarwinIface() {
+	if [ -x /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport ]
+	then
+		/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport $1 sniff
+	fi
+}
+
+stopDeprecatedIface() {
+	ifconfig $1 down > /dev/null 2>&1
+	iwconfig $1 mode Managed > /dev/null 2>&1
+	ifconfig $1 down > /dev/null 2>&1
+	printf " (monitor mode disabled)"
 }
 
 stopMac80211Iface() {
@@ -200,13 +221,6 @@ stopMac80211Iface() {
 			fi
 		fi
 	fi
-}
-
-stopDeprecatedIface() {
-	ifconfig $1 down > /dev/null 2>&1
-	iwconfig $1 mode Managed > /dev/null 2>&1
-	ifconfig $1 down > /dev/null 2>&1
-	printf " (monitor mode disabled)"
 }
 
 getDriver() {
@@ -461,7 +475,7 @@ getExtendedInfo() {
 	        then
 			printf ${KVMAJOR} ${KVMINOR}
 		fi
-		exit
+		exit 1
 	fi
 
 	if [ "$DRIVER" = "rt2870sta" ]
@@ -600,18 +614,6 @@ getPhy() {
 	then
 		PHYDEV="$(ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/')"
 	fi
-}
-
-getNewMon() {
-	#XXX rewrite this crap to work like kismet or hostapd
-	i=0
-
-	while [ -d /sys/class/net/$MON_PREFIX$i/ ]
-	do
-		i=$(($i+1))
-	done
-
-	MONDEV="$MON_PREFIX$i"
 }
 
 checkvm() {
@@ -883,7 +885,7 @@ do
 		printf "Only mac80211 devices on kernel 2.6.33 or higher are officially supported by airmon-zc.\n"
 		printf "Running airmon-ng:"
 		airmon-ng $@
-		exit
+		exit 1
 	fi
 
 	#yes this really is the main output loop
@@ -891,7 +893,6 @@ do
 
 	if [ x$MAC80211 = "x1" ]
 	then
-		getNewMon
 		if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
 		then
 			startMac80211Iface $iface
