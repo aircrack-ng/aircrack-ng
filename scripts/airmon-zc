@@ -156,11 +156,10 @@ startMac80211Iface() {
 		done
 	fi
 	#we didn't bail means we need a monitor interface
+	ifconfig $1 down
 	IW_ERROR=$(iw dev $1 interface add ${1}mon type monitor 2>&1 | grep "nl80211 not found")
 	if [ x$IW_ERROR = "x" ]
 	then
-		sleep 1s
-		ifconfig $1 down
 		sleep 1s
 		ifconfig ${1}mon up
 		if [ ! -z $3 ]
@@ -177,6 +176,12 @@ startMac80211Iface() {
 		printf "\n\t\t(mac80211 monitor mode enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
 	else
 		printf "\n\nERROR: something went wrong with iw."
+	fi
+	#check if $1 is still down, warn if not
+	if $(ifconfig ${1} | grep -q UP)
+	then
+		printf "\nInterface ${1} is up, but it should be down. Something is interferring."
+		printf "\nPlease run \"airmon-zc check kill\" and/or kill your network manager."
 	fi
 }
 
