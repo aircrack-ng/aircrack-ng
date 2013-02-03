@@ -1,0 +1,22 @@
+diff -Naur linux/drivers/net/wireless/zd1211rw/zd_mac.c linux/drivers/net/wireless/zd1211rw/zd_mac.c
+--- linux/drivers/net/wireless/zd1211rw/zd_mac.c	2011-05-19 06:06:34.000000000 +0200
++++ linux/drivers/net/wireless/zd1211rw/zd_mac.c	2011-08-21 17:46:33.146013429 +0200
+@@ -983,7 +989,8 @@
+ 	stats.freq = zd_channels[_zd_chip_get_channel(&mac->chip) - 1].center_freq;
+ 	stats.band = IEEE80211_BAND_2GHZ;
+ 	stats.signal = status->signal_strength;
+-
++	stats.signal = stats.signal - 90;
++	
+ 	rate = zd_rx_rate(buffer, status);
+ 
+ 	/* todo: return index in the big switches in zd_rx_rate instead */
+@@ -1312,7 +1319,7 @@
+ 	hw->wiphy->bands[IEEE80211_BAND_2GHZ] = &mac->band;
+ 
+ 	hw->flags = IEEE80211_HW_RX_INCLUDES_FCS |
+-		    IEEE80211_HW_SIGNAL_UNSPEC |
++		    IEEE80211_HW_SIGNAL_DBM |
+ 		    IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING;
+ 
+ 	hw->wiphy->interface_modes =

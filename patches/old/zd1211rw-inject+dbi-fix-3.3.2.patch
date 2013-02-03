@@ -1,0 +1,53 @@
+--- linux/drivers/net/wireless/zd1211rw.bak/zd_mac.c	2012-03-19 00:15:34.000000000 +0100
++++ linux/drivers/net/wireless/zd1211rw/zd_mac.c	2012-04-17 14:07:20.962966310 +0200
+@@ -243,14 +243,19 @@
+ static int set_rx_filter(struct zd_mac *mac)
+ {
+ 	unsigned long flags;
+-	u32 filter = STA_RX_FILTER;
++	struct zd_ioreq32 ioreqs[] = {
++		{CR_RX_FILTER, STA_RX_FILTER},
++		{ CR_SNIFFER_ON, 0U },
++	};
+ 
+ 	spin_lock_irqsave(&mac->lock, flags);
+-	if (mac->pass_ctrl)
+-		filter |= RX_FILTER_CTRL;
++	if (mac->pass_ctrl) {
++		ioreqs[0].value |= 0xFFFFFFFF;
++		ioreqs[1].value = 0x1;
++	}
+ 	spin_unlock_irqrestore(&mac->lock, flags);
+ 
+-	return zd_iowrite32(&mac->chip, CR_RX_FILTER, filter);
++	return zd_iowrite32a(&mac->chip, ioreqs, ARRAY_SIZE(ioreqs));
+ }
+ 
+ static int set_mac_and_bssid(struct zd_mac *mac)
+@@ -1047,7 +1052,8 @@
+ 	/* Caller has to ensure that length >= sizeof(struct rx_status). */
+ 	status = (struct rx_status *)
+ 		(buffer + (length - sizeof(struct rx_status)));
+-	if (status->frame_status & ZD_RX_ERROR) {
++	if ((status->frame_status & ZD_RX_ERROR) || 
++		(status->frame_status & ~0x21)) {
+ 		if (mac->pass_failed_fcs &&
+ 				(status->frame_status & ZD_RX_CRC32_ERROR)) {
+ 			stats.flag |= RX_FLAG_FAILED_FCS_CRC;
+@@ -1060,6 +1066,7 @@
+ 	stats.freq = zd_channels[_zd_chip_get_channel(&mac->chip) - 1].center_freq;
+ 	stats.band = IEEE80211_BAND_2GHZ;
+ 	stats.signal = zd_check_signal(hw, status->signal_strength);
++	stats.signal = stats.signal - 90;
+ 
+ 	rate = zd_rx_rate(buffer, status);
+ 
+@@ -1388,7 +1395,7 @@
+ 	hw->wiphy->bands[IEEE80211_BAND_2GHZ] = &mac->band;
+ 
+ 	hw->flags = IEEE80211_HW_RX_INCLUDES_FCS |
+-		    IEEE80211_HW_SIGNAL_UNSPEC |
++		    IEEE80211_HW_SIGNAL_DBM |
+ 		    IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING;
+ 
+ 	hw->wiphy->interface_modes =
