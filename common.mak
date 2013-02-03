@@ -37,33 +37,30 @@ endif
 ifeq ($(OSNAME), cygwin)
 	COMMON_CFLAGS   += -DCYGWIN
 else ifeq ($(libnl), true)
-	NL1FOUND := $(shell $(PKG_CONFIG) --atleast-version=1 libnl-1 && echo Y)
-	NL2FOUND := $(shell $(PKG_CONFIG) --atleast-version=2 libnl-2.0 && echo Y)
-	NL3FOUND := $(shell $(PKG_CONFIG) --atleast-version=3 libnl-3.0 && echo Y)
-	NL31FOUND := $(shell $(PKG_CONFIG) --exact-version=3.1 libnl-3.1 && echo Y)
 	NL3xFOUND := $(shell $(PKG_CONFIG) --atleast-version=3.2 libnl-3.0 && echo Y)
+	ifneq ($(NL3xFOUND),Y)
+		NL31FOUND := $(shell $(PKG_CONFIG) --exact-version=3.1 libnl-3.1 && echo Y)
+			ifneq ($(NL31FOUND),Y)
+				NL3FOUND := $(shell $(PKG_CONFIG) --atleast-version=3 libnl-3.0 && echo Y)
+			ifneq ($(NL3FOUND),Y)
+				NL1FOUND := $(shell $(PKG_CONFIG) --atleast-version=1 libnl-1 && echo Y)
+			endif
+		endif
+	endif
+	
 	
 	ifeq ($(NL1FOUND),Y)
-		COMMON_CFLAGS += -DCONFIG_LIBNL
 		NLLIBNAME = libnl-1
 	endif
 	
-	ifeq ($(NL2FOUND),Y)
-		#COMMON_CFLAGS += -DCONFIG_LIBNL
-		#LIBS += -lnl-genl
-		NLLIBNAME = libnl-2.0
-		$(error libnl2 is not supported. install either libnl1 or libnl3)
-	endif
-	
 	ifeq ($(NL3xFOUND),Y)
-		NL3FOUND = N
 		COMMON_CFLAGS += -DCONFIG_LIBNL30
 		LIBS += -lnl-genl-3
 		NLLIBNAME = libnl-3.0
 	endif
 	
 	ifeq ($(NL3FOUND),Y)
-		COMMON_CFLAGS += -DCONFIG_LIBNL
+		COMMON_CFLAGS += -DCONFIG_LIBNL30
 		LIBS += -lnl-genl
 		NLLIBNAME = libnl-3.0
 	endif
@@ -76,13 +73,12 @@ else ifeq ($(libnl), true)
 		NLLIBNAME = libnl-3.1
 	endif
 	
-	ifeq ($NLLIBNAME,)
-		$(error Cannot find development files for any supported version of libnl)
+	ifeq ($(NLLIBNAME),)
+		$(error Cannot find development files for any supported version of libnl. install either libnl1 or libnl3.)
 	endif
 	
 	LIBS += $(shell $(PKG_CONFIG) --libs $(NLLIBNAME))
-	COMMON_CFLAGS += $(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
-	NLVERSION :=$(shell $(PKG_CONFIG) --print-provides $(NLLIBNAME))
+	COMMON_CFLAGS += -DCONFIG_LIBNL $(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
 endif
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(airpcap) $(AIRPCAP))),true)
