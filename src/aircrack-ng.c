@@ -5994,6 +5994,12 @@ __start:
 			}
 			else
 				{
+					if( opt.is_quiet )
+					{
+						printf( "Passphrase not in dictionary\n" );
+						return( FAILURE );
+					}
+
 					printf( "\nPassphrase not in dictionary \n" );
 					printf("\33[5;30H %lld",nb_tried);
 					printf("\33[32;0H\n");
