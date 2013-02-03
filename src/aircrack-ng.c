@@ -4008,6 +4008,16 @@ int crack_wpa_thread( void *arg )
 
 				memcpy(data->key, key[j], sizeof(data->key));
 
+				// Write the key to a file
+				if (opt.logKeyToFile != NULL) {
+					keyFile = fopen(opt.logKeyToFile, "w");
+					if (keyFile != NULL)
+					{
+						fprintf(keyFile, "%s", key[j]);
+						fclose(keyFile);
+					}
+				}
+
 				if (opt.is_quiet)
 					return SUCCESS;
 
@@ -4036,16 +4046,6 @@ int crack_wpa_thread( void *arg )
 
 				if (opt.l33t)
 					printf( "\33[32;22m" );
-
-				// Write the key to a file
-				if (opt.logKeyToFile != NULL) {
-					keyFile = fopen(opt.logKeyToFile, "w");
-					if (keyFile != NULL)
-					{
-						fprintf(keyFile, "%s", key[j]);
-						fclose(keyFile);
-					}
-				}
 
 				return SUCCESS;
 			}
