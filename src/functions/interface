@@ -25,8 +25,7 @@ notify(){
 }
 
 _(){
-   a=$1; shift
-   echo -en "`gettext \"$a\"` $@"
+   gettext "$@"
 }
 
 setps(){
@@ -86,7 +85,7 @@ mkmenuline(){ echo -en "$separator_x"; for i in $(seq 1 $1); do echo -en "$separ
 mkmenuheader(){ echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }
 getmaxlenfromlist(){ max=0; for i in "${@}"; do [[ ${#i} -gt $max ]] && max=${#i}; done; echo $max; }
 mkmenueline(){ echo -en "${separator_v}\033[${1}C${separator_v}\033[${1}D${white}${2}${red})${end} ${separator_v}";}
-mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; echo "$i"; done; }
+mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; _ $i; echo; done; }
 
 mkmenu(){
     if [ "$AUTO" == 2 ]; then return; fi
@@ -98,7 +97,7 @@ mkmenu(){
     max=$(( $max + 10 ))
     title=$1; shift; line=0;
     f=$((`tput cols` - 10)); 
-    mkmenuheader "$title" $max
+    mkmenuheader "$(_ $title)" $max
     mkmenuline $max
     mkmenulines $max "${@}"
     mkmenuline $max
