@@ -176,9 +176,6 @@ msgstr "Crackeando WPA"
 #: src/functions/crack/main:52
 msgid "Sorry, you cant crack wpa without a dictionary on $WORDLIST"
 msgstr "Lo siento, no puedes crackear wpa sin un diccionario en $WORDLIST"
-#: src/functions/crack/main:55
-msgid "Cracking WPA"
-msgstr "Crackeando wpa"
 #: src/functions/crack/main:62
 msgid "Enter Database location [$db_location]"
 msgstr "Introduzca la localizacion de la base de datos [$db_location]"
@@ -263,12 +260,6 @@ msgstr "Decloack packages"
 #: src/functions/attacks/others:89
 msgid "Generate hccap file for oclhashcat"
 msgstr "Generar archivo hccap para oclhashcat"
-#: src/functions/attacks/others:99
-msgid "Package manipulation tools"
-msgstr "Herramientas de manipulacion de paquetes"
-#: src/functions/attacks/others:99
-msgid "Merge all ivs from all sessions"
-msgstr "Unir todos los ivs de todas las sesiones"
 #: src/functions/attacks/others:123
 msgid "Select merged data as target? (y/N): "
 msgstr "Seleccionar datos unidos como objetivo? (y|N)"
@@ -376,7 +367,7 @@ msgid "Enter airserv-ng address [127.0.0.1:666]"
 msgstr "Introduzca ip de airserv-ng [127.0.0.1:666]"
 #: src/functions/attacks/wep:34
 msgid "${mark}${red}Wep attacks${end}\\n"
-msgid "${mark}${red}Attaques WEP${end}\\n"
+msgstr "${mark}${red}Attaques WEP${end}\\n"
 #: src/functions/attacks/wep:48
 msgid "Attacks using a client"
 msgstr "Usando un cliente"
@@ -398,9 +389,6 @@ msgstr "Seleccion interactiva de paquetes en $Host_SSID"
 #: src/functions/attacks/wep:109
 msgid "Fragmentation w/o client"
 msgstr "Fragmentacion sin cliente"
-#: src/functions/attacks/wep:113
-msgid "Fragmentation attack"
-msgstr "Ataque de fragmentacion"
 #: src/functions/attacks/wep:126
 msgid "Chopchoping at $Host_SSID"
 msgstr "Chopchopeando $Host_SSID"
@@ -443,9 +431,6 @@ msgstr "Metodo de autenticacion falsa"
 #: src/functions/attacks/auth:50
 msgid "Conservative"
 msgstr "Conservador"
-#: src/functions/attacks/auth:50
-msgid "Standard"
-msgstr "Normal"
 #: src/functions/attacks/auth:50
 msgid "Progressive"
 msgstr "Progresivo"
