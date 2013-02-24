@@ -453,6 +453,8 @@ struct globals
     uchar selected_bssid[6];	/* bssid that is selected */
 
     int ignore_negative_one;
+    u_int maxsize_essid_seen;
+    int show_manufacturer;
 }
 G;
 

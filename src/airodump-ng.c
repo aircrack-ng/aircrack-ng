@@ -612,6 +612,7 @@ char usage[] =
 "                              are received (Default: 120 seconds)\n"
 "      -r             <file> : Read packets from that file\n"
 "      -x            <msecs> : Active Scanning Simulation\n"
+"      --manufacturer        : Display manufacturer from IEEE OUI list\n"
 "      --output-format\n"
 "                  <formats> : Output format. Possible values:\n"
 "                              pcap, ivs, csv, gps, kismet, netxml\n"
@@ -2971,6 +2972,12 @@ void dump_print( int ws_row, int ws_col, int if_num )
 			    "    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID", columns_ap );
 	}
 
+	if ( G.show_manufacturer && ( ws_col > (columns_ap - 4) ) ) {
+		// write spaces (32).
+		memset(strbuf+columns_ap, 32, G.maxsize_essid_seen - 5 ); // 5 is the len of "ESSID"
+		snprintf(strbuf+columns_ap+G.maxsize_essid_seen-5, 15,"%s","  MANUFACTURER");
+	}
+
 	strbuf[ws_col - 1] = '\0';
 	fprintf( stderr, "%s\n", strbuf );
 
@@ -3133,14 +3140,33 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		if(ap_cur->essid[0] != 0x00)
 		{
 		    snprintf( strbuf,  sizeof( strbuf ) - 1,
-			    "%-256s", ap_cur->essid );
+			    "%s", ap_cur->essid );
 		}
 		else
 		{
 		    snprintf( strbuf,  sizeof( strbuf ) - 1,
-			    "<length:%3d>%-256s", ap_cur->ssid_length, "\x00" );
+			    "<length:%3d>%s", ap_cur->ssid_length, "\x00" );
 		}
+
+		if (G.show_manufacturer) {
+
+			if (G.maxsize_essid_seen <= strlen(strbuf))
+				G.maxsize_essid_seen = strlen(strbuf);
+			else // write spaces (32)
+				memset( strbuf+strlen(strbuf), 32,  (G.maxsize_essid_seen - strlen(strbuf))  );
+
+			if (ap_cur->manuf == NULL)
+				ap_cur->manuf = get_manufacturer(ap_cur->bssid[0], ap_cur->bssid[1], ap_cur->bssid[2]);
+
+			snprintf( strbuf + G.maxsize_essid_seen , sizeof(strbuf)-G.maxsize_essid_seen, "  %s", ap_cur->manuf );
+		}
+
+		// write spaces (32) until the end of column
+		memset( strbuf+strlen(strbuf), 32, ws_col - (columns_ap - 4 ) );
+
+		// end the string at the end of the column
 		strbuf[ws_col - (columns_ap - 4)] = '\0';
+
 		fprintf( stderr, "  %s", strbuf );
 	    }
 
@@ -5385,6 +5411,7 @@ int main( int argc, char *argv[] )
         {"detect-anomaly", 0, 0, 'E'},
         {"output-format",  1, 0, 'o'},
         {"ignore-negative-one", 0, &G.ignore_negative_one, 1},
+        {"manufacturer",  0, 0, 'M'},
         {0,          0, 0,  0 }
     };
 
@@ -5451,6 +5478,8 @@ int main( int argc, char *argv[] )
     G.show_sta     =  1;
     G.show_ack     =  0;
     G.hide_known   =  0;
+    G.maxsize_essid_seen  =  5; // Initial value: length of "ESSID"
+    G.show_manufacturer = 0;
     G.hopfreq      =  DEFAULT_HOPFREQ;
     G.s_file       =  NULL;
     G.s_iface      =  NULL;
@@ -5541,7 +5570,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:o:x:",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:o:x:M",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -5589,6 +5618,11 @@ int main( int argc, char *argv[] )
             case 'D':
 
                 G.decloak = 0;
+                break;
+
+	    case 'M':
+
+                G.show_manufacturer = 1;
                 break;
 
             case 'c' :
