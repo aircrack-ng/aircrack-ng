@@ -5,7 +5,12 @@ from scapy import *
 import pcapy
 from impacket.ImpactDecoder import *
 
-conf.verb=0
+try:
+    conf.verb=0
+except NameError:
+    # Scapy v2
+    from scapy.all import *
+    conf.verb=0
 
 if len(sys.argv) != 2:
     print "Usage: ./replay.py <iface>"
@@ -30,8 +35,12 @@ def recv_pkts(hdr, data):
     raw_header = data[:11] + "\xFF" + data[12:14]
     header = Ether(raw_header)
 
-    packet = Dot11(data[14:])
-    # end of separation
+    try:
+        # end of separation
+        packet = Dot11(data[14:])
+    except struct.error:
+        # Ignore unpack errors on short packages
+        return
 
     # manipulate/drop/insert dot11 packet
     print packet.summary()
