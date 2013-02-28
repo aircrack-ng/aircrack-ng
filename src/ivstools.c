@@ -882,8 +882,10 @@ int main( int argc, char *argv[] )
         if( fread( &pkh, 1, n, f_in ) != (size_t) n )
             break;
 
-        if( pfh.magic == TCPDUMP_CIGAM )
+        if( pfh.magic == TCPDUMP_CIGAM ) {
             SWAP32( pkh.caplen );
+            SWAP32( pkh.len );
+        }
 
         n = pkh.caplen;
 

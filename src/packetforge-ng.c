@@ -202,8 +202,10 @@ int capture_ask_packet( int *caplen )
             return( 1 );
         }
 
-        if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+        if( dev.pfh_in.magic == TCPDUMP_CIGAM ) {
             SWAP32( pkh.caplen );
+            SWAP32( pkh.len );
+        }
 
         tv.tv_sec  = pkh.tv_sec;
         tv.tv_usec = pkh.tv_usec;

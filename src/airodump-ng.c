@@ -6267,8 +6267,10 @@ usage:
                 continue;
             }
 
-            if( G.pfh_in.magic == TCPDUMP_CIGAM )
+            if( G.pfh_in.magic == TCPDUMP_CIGAM ) {
                 SWAP32( pkh.caplen );
+                SWAP32( pkh.len );
+            }
 
             n = caplen = pkh.caplen;
 

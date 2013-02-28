@@ -618,8 +618,10 @@ usage:
         if( fread( &pkh, 1, n, f_in ) != (size_t) n )
             break;
 
-        if( magic == TCPDUMP_CIGAM )
+        if( magic == TCPDUMP_CIGAM ) {
             SWAP32( pkh.caplen );
+            SWAP32( pkh.len );
+        }
 
         n = pkh.caplen;
 

@@ -4767,8 +4767,10 @@ usage:
                 continue;
             }
 
-            if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+            if( dev.pfh_in.magic == TCPDUMP_CIGAM ) {
                 SWAP32( pkh.caplen );
+                SWAP32( pkh.len );
+            }
 
             n = caplen = pkh.caplen;
 

@@ -910,8 +910,10 @@ void read_thread( void *arg )
 			if( close_aircrack )
 				break;
 
-			if( pfh.magic == TCPDUMP_CIGAM )
+			if( pfh.magic == TCPDUMP_CIGAM ) {
 				SWAP32( pkh.caplen );
+				SWAP32( pkh.len );
+			}
 
 			if( pkh.caplen <= 0 || pkh.caplen > 65535 )
 			{
@@ -1837,8 +1839,10 @@ void check_thread( void *arg )
 			while( ! atomic_read( &rb, fd, sizeof( pkh ), &pkh ) )
 				goto read_fail;
 
-			if( pfh.magic == TCPDUMP_CIGAM )
+			if( pfh.magic == TCPDUMP_CIGAM ) {
 				SWAP32( pkh.caplen );
+				SWAP32( pkh.len );
+			}
 
 			if( pkh.caplen <= 0 || pkh.caplen > 65535 )
 			{

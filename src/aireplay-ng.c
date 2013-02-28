@@ -895,8 +895,10 @@ int capture_ask_packet( int *caplen, int just_grab )
                 return( 1 );
             }
 
-            if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+            if( dev.pfh_in.magic == TCPDUMP_CIGAM ) {
                 SWAP32( pkh.caplen );
+                SWAP32( pkh.len );
+            }
 
             tv.tv_sec  = pkh.tv_sec;
             tv.tv_usec = pkh.tv_usec;
@@ -2526,8 +2528,10 @@ int do_attack_arp_resend( void )
                 continue;
             }
 
-            if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+            if( dev.pfh_in.magic == TCPDUMP_CIGAM ) {
                 SWAP32( pkh.caplen );
+                SWAP32( pkh.len );
+            }
 
             tv.tv_sec  = pkh.tv_sec;
             tv.tv_usec = pkh.tv_usec;
@@ -2937,8 +2941,10 @@ int do_attack_caffe_latte( void )
                 continue;
             }
 
-            if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+            if( dev.pfh_in.magic == TCPDUMP_CIGAM ) {
                 SWAP32( pkh.caplen );
+                SWAP32( pkh.len );
+            }
 
             tv.tv_sec  = pkh.tv_sec;
             tv.tv_usec = pkh.tv_usec;
@@ -3363,8 +3369,10 @@ int do_attack_migmode( void )
                 continue;
             }
 
-            if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+            if( dev.pfh_in.magic == TCPDUMP_CIGAM ) {
                 SWAP32( pkh.caplen );
+                SWAP32( pkh.len );
+            }
 
             tv.tv_sec  = pkh.tv_sec;
             tv.tv_usec = pkh.tv_usec;
