@@ -148,7 +148,7 @@ ivstools$(EXE): $(OBJS_IV)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_IV) -o $(@) $(LIBSSL)
 
 kstats$(EXE): kstats.o
-	$(CC) $(CFLAGS) $(LDFLAGS) kstats.o -o $(@)
+	$(CC) $(CFLAGS) $(LDFLAGS) kstats.o -o $(@) $(LDFLAGS)
 
 wesside-ng$(EXE): $(OBJS_WS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_WS) -o $(@) $(LIBS) $(LIBSSL) -lz
@@ -157,7 +157,7 @@ easside-ng$(EXE): $(OBJS_ES) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_ES) -o $(@) $(LIBS) -lz
 
 buddy-ng$(EXE): $(OBJS_BUDDY)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_BUDDY) -o $(@)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_BUDDY) -o $(@) $(LDFLAGS)
 
 besside-ng$(EXE): $(OBJS_BS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_BS) -o $(@) $(LIBS) $(LIBSSL) -lz
@@ -166,7 +166,7 @@ besside-ng-crawler$(EXE): $(OBJS_BC)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_BC) -o $(@) -lpcap
 
 makeivs-ng$(EXE): $(OBJS_MI)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_MI) -o $(@)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_MI) -o $(@) $(LDFLAGS)
 
 airolib-ng$(EXE): $(OBJS_AL)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AL) -o $(@) $(LIBSSL) -DHAVE_REGEXP $(LIBSQL)
@@ -175,7 +175,7 @@ airbase-ng$(EXE): $(OBJS_AB) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AB) -o $(@) $(LIBS) $(LIBSSL) -lpthread
 
 airdecloak-ng$(EXE): $(OBJS_AU)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AU) -o $(@)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AU) -o $(@) $(LDFLAGS)
 
 tkiptun-ng$(EXE): $(OBJS_TT) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_TT) -o $(@) $(LIBS) $(LIBSSL)
