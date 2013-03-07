@@ -50,6 +50,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <netdb.h>
+#include <unistd.h>
 
 #include "aircrack-ng.h"
 #include "version.h"
