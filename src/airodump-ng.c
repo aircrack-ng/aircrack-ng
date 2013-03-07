@@ -389,7 +389,9 @@ struct oui * load_oui_file(void) {
 
 	if (!(fp = fopen(OUI_PATH0, "r"))) {
 		if (!(fp = fopen(OUI_PATH1, "r"))) {
-			return NULL;
+			if (!(fp = fopen(OUI_PATH2, "r"))) {
+				return NULL;
+			}
 		}
 	}
 
