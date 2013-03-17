@@ -1,0 +1,462 @@
+#: src/plugins/mdk3:36
+msgid "Unknown response. Try again"
+msgstr "Respuesta incorrecta, pruebe de nuevo"
+#: src/plugins/digenpy:45
+msgid "Encription is"
+msgstr "La encriptacion es"
+#: src/plugins/digenpy:52
+msgid "Error: You must select a target first"
+msgstr "Error: debe seleccionar un objetivo"
+#: src/functions/interface:38
+msgid "Automatically setting resolution to $reso"
+msgstr "Configurando resolucion automaticamente a $reso"
+#: src/functions/interface:39
+msgid "Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"
+msgstr "El control de acceso a las X esta desactivado para root. Por favor, ejecuta 'xhost +' como tu usuario normal y pulsa enter"
+#: src/functions/interface:41
+msgid "Set resolution"
+msgstr "Configurar resolucion"
+#: src/functions/interface:43
+msgid "Unknown resolution, try again"
+msgstr "Resolucion desconocida, por favor, intentelo de nuevo"
+#: src/functions/interface:100
+msgid "Select option:"
+msgstr "Seleccionar: "
+#: src/functions/interface:125
+msgid ""
+"I cant find any good terminal, please set one on your conffile\n"
+"				Your TERMINAL var contains no valid temrinal\n"
+"				Your alternative against x-terminal-emulator contains no terminal\n"
+"				Xterm can\\'t be found on your system, Maybe not in /usr/bin?"
+msgstr "No puedo encontrar ningun terminal correcto, por favor, configure uno en airoscript-ng.conf"
+#: src/functions/menu:19
+msgid "Main Menu"
+msgstr "Menu principal"
+#: src/functions/menu:19
+msgid "Attack - Attack target"
+msgstr "Atacar - Atacar objetivo"
+#: src/functions/menu:19
+msgid "Crack  - Get target key"
+msgstr "Crackear - Crackear la clave del objetivo"
+#: src/functions/menu:19
+msgid "Select - Reselect target"
+msgstr "Seleccionar - Seleccionar otro objetivo"
+#: src/functions/menu:19
+msgid "Others - Various utilities"
+msgstr "Otros - Utilidades varias"
+#: src/functions/menu:19
+msgid "Autopwn- Automatic cracking"
+msgstr "Autopwn - Crackeo automatico"
+#: src/functions/menu:19
+msgid "Exit  - Quits"
+msgstr "Exit - Sale"
+#: src/functions/menu:28
+msgid "ERROR: Wrong number entered"
+msgstr "Error: Numero incorrecto"
+#: src/functions/menu:43
+msgid "You have no IVS, please scan first"
+msgstr "No tienes ivs, por favor escanea primero"
+#: src/functions/menu:45
+msgid "WEP/WPA Cracking Options"
+msgstr "Crackeo WEP/WPA"
+#: src/functions/menu:45
+msgid "Crack with manual dictionary"
+msgstr "Crackear con diccionario manual"
+#: src/functions/menu:45
+msgid "Standard aircrack-ng"
+msgstr "Aircrack-ng standard"
+#: src/functions/menu:45
+msgid "Return to menu"
+msgstr "Volver"
+#: src/functions/menu:60
+msgid "Select encryption"
+msgstr "Seleccionar encriptacion"
+#: src/functions/menu:60
+msgid "Return to main menu"
+msgstr "Volver al menu principal"
+#: src/functions/menu:79
+msgid "Channel"
+msgstr "Canal"
+#: src/functions/menu:79
+msgid "Channel Hoping"
+msgstr "Salto de canales"
+#: src/functions/menu:79
+msgid "Specific Channel"
+msgstr "Canal especifico"
+#: src/functions/menu:103
+msgid "Extra tools"
+msgstr "Herramientas extra"
+#: src/functions/menu:103
+msgid "Airoscript Options"
+msgstr "Opciones de airoscript"
+#: src/functions/menu:103
+msgid "Advanced tools"
+msgstr "Herramientas avanzadas"
+#: src/functions/menu:103
+msgid "External plugins"
+msgstr "Plugins externos"
+#: src/functions/internal/scansel:20
+msgid "Enter channel (single, range, or comma-separated): "
+msgstr "Introduzca el canal (un solo canal, un rango, o separados por comas)"
+#: src/functions/internal/scansel:23
+msgid "Scanning for targets on channel $channel_number"
+msgstr "Escanando objetivos en el canal $channel_number"
+#: src/functions/internal/scansel:29
+msgid "${mark}${red}Select a client${end}\\n"
+msgstr "${mark}${red}Seleccione un cliente${end}\\n"
+#: src/functions/internal/scansel:37
+msgid "Client Selection"
+msgstr "Seleccion de clientes"
+#: src/functions/internal/scansel:38
+msgid "Select client"
+msgstr "Selecciona un cliente"
+#: src/functions/internal/scansel:39
+msgid "Enable dynamic mode (ask for client in each attack)"
+msgstr "Activar modo dinamico (preguntar por el cliente en cada ataque)"
+#: src/functions/internal/scansel:40
+msgid "Manually enter client MAC"
+msgstr "Introducir mac de cliente a mano"
+#: src/functions/internal/scansel:45
+msgid "Type in client mac now"
+msgstr "Introduzca la mac del cliente"
+#: src/functions/internal/startup:219
+msgid "Interface used is"
+msgstr "La interfaz es"
+#: src/functions/internal/startup:220
+msgid "Interface type is"
+msgstr "El tipo de la interfaz es "
+#: src/functions/internal/startup:228
+msgid "Please enter Host SSID"
+msgstr "Por favor, introduzca la SSID"
+#: src/functions/internal/startup:266
+msgid "Changed fake_mac :"
+msgstr "Cambiada mac falsa"
+#: src/functions/internal/startup:269
+msgid "Automatically setting fake mac"
+msgstr "Configurando mac falsa automaticamente"
+#: src/functions/crack/main:25
+msgid "WEP Cracking Options"
+msgstr "Opciones de crackeo WEP"
+#: src/functions/crack/main:25
+msgid "aircrack-ng defaults"
+msgstr "Por defecto"
+#: src/functions/crack/main:25
+msgid "aircrack-ng Korek"
+msgstr "Korek"
+#: src/functions/crack/main:25
+msgid "aircrack-ng interactive"
+msgstr "Interactivas"
+#: src/functions/crack/main:27
+msgid "Cracking wep, default options"
+msgstr "Crackeando wep, opciones por defecto"
+#: src/functions/crack/main:28
+msgid "Cracking wep, Korek"
+msgstr "Crackeando wep, Korek"
+#: src/functions/crack/main:30
+msgid "Type encryption size (64,128...): "
+msgstr "Tamaño de la encriptacion (64,128...)"
+#: src/functions/crack/main:31
+msgid "Cracking wep, manual options"
+msgstr "Crackeando wep, opciones manuales"
+#: src/functions/crack/main:42
+msgid "WPA Cracking Options"
+msgstr "Opciones de crackeo wpa"
+#: src/functions/crack/main:42
+msgid "Standard"
+msgstr "Standard"
+#: src/functions/crack/main:42
+msgid "Use precomputed pmk database"
+msgstr "Base de datos precomputada pmk"
+#: src/functions/crack/main:46
+msgid "Cracking with stdin entered data by $pipe"
+msgstr "Crackeando con datos de stdin por $pipe"
+#: src/functions/crack/main:47
+msgid "Cracking WPA"
+msgstr "Crackeando WPA"
+#: src/functions/crack/main:52
+msgid "Sorry, you cant crack wpa without a dictionary on $WORDLIST"
+msgstr "Lo siento, no puedes crackear wpa sin un diccionario en $WORDLIST"
+#: src/functions/crack/main:62
+msgid "Enter Database location [$db_location]"
+msgstr "Introduzca la localizacion de la base de datos [$db_location]"
+#: src/functions/crack/main:64
+msgid "Cracking WPA with pmk database"
+msgstr "Crackeando WPA con base de datos pmk"
+#: src/functions/crack/main:73
+msgid "Network not encrypted or no network selected "
+msgstr "La red no esta encriptada o no ha seleccionado ninguna"
+#: src/functions/reporting:76
+msgid "Enter format (CPG|CAPR) (CAPR by default): "
+msgstr "Introduzca formato (CPG|CAPR) (por defecto es CAPR)"
+#: src/functions/reporting:78
+msgid "Generating graphics"
+msgstr "Generando graficos"
+#: src/functions/reporting:79
+msgid "Do you want to launch a browser? [y|N] "
+msgstr "¿Quieres lanzar un navegador? [y|N]"
+#: src/functions/reporting:81
+msgid "Error: You have to scan for targets first"
+msgstr "Error: Tienes que escanear objetivos antes"
+#: src/functions/attacks/wpa:28
+msgid "${mark}${red}WPA attacks${end}\\n"
+msgstr "${mark}${red}Attaques WPA${end}\\n"
+#: src/functions/attacks/wpa:38
+msgid "Select WPA Attack"
+msgstr "Selecciona ataque wpa"
+#: src/functions/attacks/wpa:38
+msgid "Standard attack"
+msgstr "Ataque standard"
+#: src/functions/attacks/wpa:38
+msgid "Standard attack with QoS (WMM)"
+msgstr "Ataque con QoS"
+#: src/functions/attacks/wpa:38
+msgid "WPA migration mode"
+msgstr "Ataque de modo de migracion WPA"
+#: src/functions/attacks/wpa:56
+msgid "Capturing data on channel: $Host_CHAN"
+msgstr "Capturando datos en el canal: $Host_CHAN"
+#: src/functions/attacks/wpa:66
+msgid "Executing tkiptun-ng for ap $Host_MAC"
+msgstr "Ejecutando tkiptun-ng para el punto de acceso $Host_MAC"
+#: src/functions/attacks/others:22
+msgid "Other aircrack-ng tools"
+msgstr "Otras herramientas de aircrack-ng"
+#: src/functions/attacks/others:22
+msgid "Scanning"
+msgstr "Escaneando"
+#: src/functions/attacks/others:22
+msgid "Injection"
+msgstr "Inyeccion"
+#: src/functions/attacks/others:22
+msgid "Autentication"
+msgstr "Autenticacion"
+#: src/functions/attacks/others:22
+msgid "Package manipulation"
+msgstr "Manipulacion de paquetes"
+#: src/functions/attacks/others:22
+msgid "Create virtual interface with airtun-ng"
+msgstr "Crear interfaz virtual con airtun-ng"
+#: src/functions/attacks/others:22
+msgid "Diagnostics and reports"
+msgstr "Diagnosticos e informes"
+#: src/functions/attacks/others:22
+msgid "Auto crack wep with wesside-ng"
+msgstr "Auto crackear wep con wesside-ng"
+#: src/functions/attacks/others:41
+msgid "Your hccap file is in $DUMP_PATH/$Host_MAC-01.hccap . Press enter to continue"
+msgstr "Tu fichero hccap esta en $DUMP_PATH/$Host_MAC-01.hccap. Pulsa enter para continuar"
+#: src/functions/attacks/others:88
+msgid "Package manipulation tools"
+msgstr "Manipulacion de paquetes"
+#: src/functions/attacks/others:88
+msgid "Merge all ivs from all sessions"
+msgstr "Unir todos los ivs de todas las sesiones"
+#: src/functions/attacks/others:88
+msgid "Decrypt current packages"
+msgstr "Desencriptar paquetes actuales"
+#: src/functions/attacks/others:88
+msgid "Decloack packages"
+msgstr "Decloack packages"
+#: src/functions/attacks/others:89
+msgid "Generate hccap file for oclhashcat"
+msgstr "Generar archivo hccap para oclhashcat"
+#: src/functions/attacks/others:123
+msgid "Select merged data as target? (y/N): "
+msgstr "Seleccionar datos unidos como objetivo? (y|N)"
+#: src/functions/attacks/others:123
+msgid "y"
+msgstr "y"
+#: src/functions/attacks/others:131
+msgid "Choose Wesside-ng Options"
+msgstr "Elije las opciones de wesside-ng"
+#: src/functions/attacks/others:131
+msgid "No args"
+msgstr "Sin argumentos"
+#: src/functions/attacks/others:131
+msgid "Selected target"
+msgstr "Objetivo seleccionado"
+#: src/functions/attacks/others:173
+msgid "Show kstats report"
+msgstr "Informe de kstats"
+#: src/functions/attacks/others:173
+msgid "Test injection"
+msgstr "Probar inyeccion"
+#: src/functions/attacks/others:173
+msgid "Checks with airmon-ng"
+msgstr "Pruebas con airmon"
+#: src/functions/attacks/others:173
+msgid "Create graphs"
+msgstr "Generar graficos"
+#: src/functions/attacks/others:173
+msgid "Update airoscript report"
+msgstr "Actualizar informe de airoscript-ng"
+#: src/functions/attacks/others:206
+msgid "Select another interface"
+msgstr "Cambiar interfaz"
+#: src/functions/attacks/others:206
+msgid "Reset selected interface"
+msgstr "Resetear interfaz"
+#: src/functions/attacks/others:207
+msgid "Change MAC of interface"
+msgstr "Cambiar MAC"
+#: src/functions/attacks/others:207
+msgid "Enable monitor mode"
+msgstr "Activar modo monitor"
+#: src/functions/attacks/others:207
+msgid "Change DUMP_PATH"
+msgstr "Cambiar DUMP_PATH"
+#: src/functions/attacks/others:208
+msgid "Try to configure network"
+msgstr "Intentar autoconfiguracion de red"
+#: src/functions/attacks/others:225
+msgid "Interface cleanup"
+msgstr "Limpieza de interfaz"
+#: src/functions/attacks/others:225
+msgid "Normal cleanup"
+msgstr "Limpieza normal"
+#: src/functions/attacks/others:225
+msgid "Reset driver"
+msgstr "Resetear driver"
+#: src/functions/attacks/others:225
+msgid "Vmware fix for bt4"
+msgstr "Fix de vmware para bt4"
+#: src/functions/attacks/others:244
+msgid "Enter new path: "
+msgstr "Introduzca path nuevo: "
+#: src/functions/attacks/others:245
+msgid "Copy data into new folder? (y/N): "
+msgstr "Copiar datos en el directorio nuevo? (y|N)"
+#: src/functions/attacks/others:246
+msgid "Erase old folder? (y/N): "
+msgstr "Borrar antiguo directorio? (y|N)"
+#: src/functions/attacks/others:253
+msgid "Create virtual interface"
+msgstr "Crear interfaz virtual"
+#: src/functions/attacks/others:257
+msgid "Select buddy IP"
+msgstr "Seleccionar buddy IP"
+#: src/functions/attacks/others:258
+msgid "Choose ap mac "
+msgstr "Elegir mac del punto de acceso "
+#: src/functions/attacks/others:258
+msgid "Choose source mac"
+msgstr "Elegir mac de origen "
+#: src/functions/attacks/others:258
+msgid "Chosse Source IP"
+msgstr "Elegir ip de origen"
+#: src/functions/attacks/others:258
+msgid "Choose router ip"
+msgstr "Elegir ip de router"
+#: src/functions/attacks/others:258
+msgid "Execute"
+msgstr "Ejecutar"
+#: src/functions/attacks/others:258
+msgid "Return"
+msgstr "Volver"
+#: src/functions/attacks/others:259
+msgid "Anser: "
+msgstr "Respuesta: "
+#: src/functions/attacks/others:286
+msgid "Do you want to use airserv-ng? [y/N] "
+msgstr "¿Quieres usar airserv-ng?"
+#: src/functions/attacks/others:288
+msgid "Start a local server? [y/N] "
+msgstr "Usar un servidor local? [y|N]"
+#: src/functions/attacks/others:290
+msgid "Enter airserv-ng address [127.0.0.1:666]"
+msgstr "Introduzca ip de airserv-ng [127.0.0.1:666]"
+#: src/functions/attacks/wep:34
+msgid "${mark}${red}Wep attacks${end}\\n"
+msgstr "${mark}${red}Attaques WEP${end}\\n"
+#: src/functions/attacks/wep:48
+msgid "Attacks using a client"
+msgstr "Usando un cliente"
+#: src/functions/attacks/wep:50
+msgid "Fragmentation attack"
+msgstr "Ataque de fragmentacion"
+#: src/functions/attacks/wep:51
+msgid "Chopchop attack"
+msgstr "Ataque chopchop"
+#: src/functions/attacks/wep:78
+msgid "Enter destination mac: (FF:FF:FF:FF:FF:FF)"
+msgstr "Introduzca mac de destino (FF:FF:FF:FF:FF:FF)"
+#: src/functions/attacks/wep:87
+msgid "Cafe Latte Attack on: $Host_SSID "
+msgstr "Ataque caffe latte en $Host_SSID"
+#: src/functions/attacks/wep:97
+msgid "Interactive Packet Sel on: $Host_SSID"
+msgstr "Seleccion interactiva de paquetes en $Host_SSID"
+#: src/functions/attacks/wep:109
+msgid "Fragmentation w/o client"
+msgstr "Fragmentacion sin cliente"
+#: src/functions/attacks/wep:126
+msgid "Chopchoping at $Host_SSID"
+msgstr "Chopchopeando $Host_SSID"
+#: src/functions/attacks/wep:131
+msgid "Directed ChopChoping to $Client_MAC at $Host_SSID"
+msgstr "Chopchop dirigido a $Client_MAC en $Host_SSID"
+#: src/functions/attacks/auth:18
+msgid "Autentication menu"
+msgstr "Menu de autenticacion"
+#: src/functions/attacks/auth:18
+msgid "Fake autentication"
+msgstr "Autenticacion falsa"
+#: src/functions/attacks/auth:18
+msgid "Deautentication"
+msgstr "Desautenticacion"
+#: src/functions/attacks/auth:33
+msgid "Who do you want to deauth?"
+msgstr "¿A quien quieres deautenticar?"
+#: src/functions/attacks/auth:33
+msgid "Everybody"
+msgstr "A todos"
+#: src/functions/attacks/auth:33
+msgid "Myself (fake mac)"
+msgstr "A mi mismo (mac falsa)"
+#: src/functions/attacks/auth:33
+msgid "Selected client"
+msgstr "Cliente seleccionado"
+#: src/functions/attacks/auth:40
+msgid "Deauth All"
+msgstr "Desautenticando a todos"
+#: src/functions/attacks/auth:41
+msgid "Deauth client"
+msgstr "Desautenticando al cliente"
+#: src/functions/attacks/auth:42
+msgid "Deautenticating"
+msgstr "Desautenticando"
+#: src/functions/attacks/auth:50
+msgid "Fake Auth Method"
+msgstr "Metodo de autenticacion falsa"
+#: src/functions/attacks/auth:50
+msgid "Conservative"
+msgstr "Conservador"
+#: src/functions/attacks/auth:50
+msgid "Progressive"
+msgstr "Progresivo"
+#: src/functions/attacks/auth:50
+msgid "Xor Injection"
+msgstr "Inyeccion XOR"
+#: src/functions/_internal:155
+msgid ""
+"  Airoscript is provided under the gpl.\n"
+"I'm not responsible of the use anyone can give to airoscript.\n"
+"Written for educational purpose in mind.\n"
+""
+msgstr ""
+"Airoscript se provee bajo la GPL\n"
+"No soy responsable del uso que nadie pueda darle a airoscript\n"
+"Airoscript ha sido escrito con objetivo educativo\n"
+""
+#: src/functions/_internal:180
+msgid "Enter extra options to execute: "
+msgstr "Introduzca opciones extra"
+#: src/functions/_internal:205
+msgid "Debug Mode enabled, you'll have to manually close windows"
+msgstr "Modo debug activado"
+#: src/functions/_internal:218
+msgid "[INFO] Output folder is"
+msgstr "[INFO] El directorio de salida es "
+#: src/functions/_internal:221
+msgid "[Error] Output folder does not exists or is a regular file."
+msgstr "[Error] El directorio de salida no existe o no es un directorio"
