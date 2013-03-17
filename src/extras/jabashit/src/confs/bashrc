@@ -32,4 +32,5 @@ PS1=${debchroot}${userhost}${workingdir}
 # Call external functions, DO NOT TOUCH
 for i in ${load_functions[@]}; do $i; done
 [[ -e /usr/local/share/airoscript-ng ]] && path="/usr/local/share/airoscript-ng" || path="/usr/share/airoscript-ng"
-source $path/completions/*
+source $path/completions/_airodump_ng
+source $path/completions/_aircrack_ng

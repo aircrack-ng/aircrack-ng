@@ -56,6 +56,7 @@ install-binary:
 	@$(INSTALLDATA) $(srcdir)/plugins/* $(datadir)/plugins
 	@echo "Installing extras"
 	@cp -r $(srcdir)/extras/* $(datadir)/extras
+	@cp -r $(srcdir)/extras/completions/* $(datadir)/extras/completions
 
 install-docs:
 	@echo "Installing documentation"
