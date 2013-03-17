@@ -149,9 +149,11 @@ options_auto(){
 
 load_plugins(){
     for i in ${@}; do 
-        if [[ -e $path/plugins/$i ]]; then
-            _source "${path}/plugins/${i}"
-        fi
+        [[ $i =~ (.*)bash(.*) ]] && export BASH_PLUGIN=1 || {
+            if [[ -e $path/plugins/$i ]]; then
+                _source "${path}/plugins/${i}"
+            fi
+        }
     done
 }
 

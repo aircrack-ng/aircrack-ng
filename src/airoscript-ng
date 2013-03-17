@@ -45,8 +45,6 @@ if [ "$UID" != 0 ]; then echo -e "You Must be root to use airoscript"; exit 1; f
 	}
 }
 
-
-
 # We preload functions, configs and themes in a cool way.
 _source "$path/_internal $path/menu $path/interface" 
 _source  "$path/themes/$theme" || default_theme
@@ -70,4 +68,15 @@ cleanautovars
 echo -n "${mark}Checking if interface can inject..." 
 $AIREPLAY -9 $wifi &>/dev/null && echo "${red}success${end}" 
 [[ "$noscan" != 1 ]] && autoscan
-mainmenu
+echo $BASH_PLUGIN
+[[ $BASH_PLUGIN == 1 ]] && {
+    export AIROSCRIPT_AP_CHAN=$Host_CHAN 
+    export AIROSCRIPT_AP_ENC=$Host_ENC
+    export AIROSCRIPT_AP_IDL=$Host_IDL   
+    export AIROSCRIPT_AP_IP=$Host_IP
+    export AIROSCRIPT_AP_MAC=$Host_MAC  
+    export AIROSCRIPT_AP_SPEED=$Host_SPEED 
+    export AIROSCRIPT_AP_SSID=$Host_SSID   
+    export AIROSCRIPT_AP_NAME=$Host_SSID   
+    bash -c ${PATH}/bashrc  
+} || mainmenu

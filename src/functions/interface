@@ -25,7 +25,7 @@ notify(){
 }
 
 _(){
-   gettext "$@"
+   gettext "${@}"
 }
 
 setps(){
@@ -76,8 +76,8 @@ temporary_switch_clear(){
 
 airoscript_quiet(){
 	mkdir -p $DUMP_PATH/Terminals/ &>/dev/null 
-	title=$1; shift;
-	$@ &> "$DUMP_PATH/Terminals/$title" &
+	title=$(echo $1| sed 's/ /_/g'); shift;
+	$@ &> "$DUMP_PATH/Terminals/${title}" &
 }
 
 vline(){ for i in `seq 0 $1`; do echo -n "-"; done; }
@@ -85,7 +85,7 @@ mkmenuline(){ echo -en "$separator_x"; for i in $(seq 1 $1); do echo -en "$separ
 mkmenuheader(){ echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }
 getmaxlenfromlist(){ max=0; for i in "${@}"; do [[ ${#i} -gt $max ]] && max=${#i}; done; echo $max; }
 mkmenueline(){ echo -en "${separator_v}\033[${1}C${separator_v}\033[${1}D${white}${2}${red})${end} ${separator_v}";}
-mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; _ $i; echo; done; }
+mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; _ "${i}"; echo; done; }
 
 mkmenu(){
     if [ "$AUTO" == 2 ]; then return; fi
@@ -97,7 +97,8 @@ mkmenu(){
     max=$(( $max + 10 ))
     title=$1; shift; line=0;
     f=$((`tput cols` - 10)); 
-    mkmenuheader "$(_ $title)" $max
+    title=($(_ "${title}"))
+    mkmenuheader "${title[@]}" $max
     mkmenuline $max
     mkmenulines $max "${@}"
     mkmenuline $max
