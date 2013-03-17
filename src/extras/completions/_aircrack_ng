@@ -1,0 +1,30 @@
+_aircrack-ng()
+{
+    local current previous commands help_options
+
+    previous=${COMP_WORDS[COMP_CWORD-1]}
+    current="${COMP_WORDS[COMP_CWORD]}"
+
+    commands="-w -l -C -q -p -b -e -a"
+    wpa_commands="-E -J -S -r"
+    wep_commands="$commands -c -t -h -d -m -n -i -f -k -x0 -x1 -x2 -y -K -s -M -D -P -1"
+    all_commands="$wep_commands $wpa_commands"
+    wpa_commands="$commands $wpa_commands"
+
+    [[ $AIROSCRIPT_AP_ENC =~ (.*)WPA(.*) ]] && {
+        COMPREPLY=( $(compgen -W "${wpa_commands}" -- ${current}) ) ;
+    } || {
+        [[ $AIROSCRIPT_AP_ENC =~ (.*)WEP(.*) ]] && {
+            COMPREPLY=( $(compgen -W "${wep_commands}" -- ${current}) ) ;
+        } || {
+            COMPREPLY=( $(compgen -W "${all_commands}" -- ${current}) ) ;
+        }
+    }
+
+    case "${previous}" in
+       -e) COMPREPLY=(\$AIROSCRIPT_AP_NAME);;
+       -b) COMPREPLY=(\$AIROSCRIPT_AP_MAC);;
+    esac
+}
+
+complete -o default -o bashdefault -F _aircrack-ng aircrack-ng

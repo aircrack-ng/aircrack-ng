@@ -7,6 +7,11 @@ _airodump-ng()
     commands="--help --ivs --gpsd --write --beacons --showack --update --berlin --channel --band --cswitch --output-format --ignore-negative-one --encrypt --bssid --netmask"
     help_options="setup new search show reply tag dump restore search-terms"
     COMPREPLY=( $(compgen -W "${commands}" -- ${current}) ) ;
+    case "${previous}" in
+       --bssid) COMPREPLY=(\$AIROSCRIPT_AP_MAC) ;;
+       --encrypt) COMPREPLY=(\$AIROSCRIPT_AP_ENC);;
+       --channel) COMPREPLY=(\$AIROSCRIPT_AP_CHAN);;
+    esac
 }
 
 complete -o default -o bashdefault -F _airodump-ng airodump-ng
