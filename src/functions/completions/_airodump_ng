@@ -1,51 +1,12 @@
-
-# abook(1) completion                                      -*- shell-script -*-
-
-_airodump_ng()
+_airodump-ng()
 {
-    local cur prev words cword
+    local current previous commands help_options
 
-    # abook only takes options, tabbing after command name adds a single dash
-    [[ $cword -eq 1 && -z "$cur" ]] &&
-    {
-        compopt -o nospace
-        COMPREPLY=( "-" )
-        return 0
-    }
+    previous=${COMP_WORDS[COMP_CWORD-1]}
+    current="${COMP_WORDS[COMP_CWORD]}"
+    commands="--help --ivs --gpsd --write --beacons --showack --update --berlin --channel --band --cswitch --output-format --ignore-negative-one --encrypt --bssid --netmask"
+    help_options="setup new search show reply tag dump restore search-terms"
+    COMPREPLY=( $(compgen -W "${commands}" -- ${current}) ) ;
+}
 
-    case $cur in
-        -*)
-            _longopt airodump-ng
-            return 0
-            ;;
-    esac
-
-    case $prev in
-        --informat)
-            COMPREPLY=( $( compgen -W "$(abook --formats | \
-                sed -n -e 's/^\t\([a-z]*\).*/\1/p' -e '/^$/q')" -- "$cur" ) )
-            return 0
-            ;;
-        --outformat)
-            COMPREPLY=( $( compgen -W "$(abook --formats | \
-                sed -n -e '/^$/,$s/^\t\([a-z]*\).*/\1/p')" -- "$cur" ) )
-            return 0
-            ;;
-        --infile)
-            COMPREPLY=( $( compgen -W stdin -- "$cur" ) )
-            _filedir
-            return 0
-            ;;
-        --outfile)
-            COMPREPLY=( $( compgen -W stdout -- "$cur" ) )
-            _filedir
-            return 0
-            ;;
-        --config|--datafile)
-            _filedir
-            return 0
-            ;;
-    esac
-} &&
-complete -F _airodump_ng airodump-ng
-
+complete -o default -o bashdefault -F _airodump-ng airodump-ng
