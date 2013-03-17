@@ -1,0 +1,106 @@
+Documentation for color
+	Colouring functions, easily customizable and themable colouring for your scripts
+
+colorize bg fg frase
+	Colorize bg and fg for a specific frase
+get_color colorname
+	Return a color, either a colorcode or one of the color list
+
+
+Documentation for device_utils
+	Device tools, handy functions to get all the power from your hardware
+
+battery_percentage 
+	Get battery percentage
+cdtool [save|write_iso|write_dir|erase_dev] [device] [destination]
+	Manipulate cdrom device
+
+
+Documentation for general
+color device_utils general git network screen_display time TUI
+
+jabashit_plugins 
+	Shows a list of available jabashit plugins
+jabashit_describe_plugin 
+	Shows an entire plugin documentation
+max_len_in_array array
+	Gets max lenght in array passed as argument
+jabashit_load file|pluginname
+	Load a specific file or a jabashit plugin
+_ TEXT
+	Calls gettext for translation
+split STRING SEPARATOR
+	Returns an array replacing \$2 in \$1
+jabashit_api 
+	Show all available functions and plugins for jabashit
+get_center number [string]
+	Gets the center , or, if specified a variable, where to start printing it to make it centered
+addone VAR_TO_INCREASE
+	Increases by one varname.
+
+
+Documentation for git
+	Git tools, to work with one of the bests cvs out there
+
+git_stats Git LOG OPTIONS
+	Return git statistics
+
+
+Documentation for network
+	Networking tools, manage your networking interfaces
+
+configure_opn INTERFACE NETWORK [ASCII_PASSWORD] [IP] [GATEWAY]
+	Configure a opn connection
+get_ip [IP] [GW]
+	If ip and gw provided, configures them, otherwise it tries to get one via dhcp
+get_encryption WIFI ESSID
+	Returns encription for a specific essid
+get_channel IFACE ESSID
+	Returns channel for a specific network on a specific interface
+configure_wep INTERFACE NETWORK [ASCII_PASSWORD] [IP] [GATEWAY]
+	Configure a wep connection
+configure_wpa INTERFACE NETWORK [ASCII_PASSWORD] [IP] [GATEWAY]
+	Configure a wpa connection
+stop_serving_directory 
+	Stop last simple server
+serve_directory 
+	Start a simple server here
+browse [source] [pipe] [edit] []
+	Launch browser-specific tasks
+configure_net INTERFACE NETWORK [ASCII_PASSWORD] [IP] [GATEWAY]
+	Configure network, autodetecting encription
+isdown URL
+	Check if a webpage is down using downforeveryoneorjustme
+
+
+Documentation for screen_display
+	Screen tools, allows you to get all the power from your terminal, and from your xserver.
+
+mkline CHAR [Cols]
+	Prints a line of a specified character during N times, or foreach column in current size
+screen_goto Column [Row] 
+	Put the cursor in a specific screen position
+set_auto_X11_reso 
+	Sets the best (according to xrandr) resolution to all active screen outputs
+print_at COLUMNxROW
+	Print text in a specific position
+auto_screensize 
+	Sets a bash trap to keep COLUMNS and LINES updated
+
+
+Documentation for time
+	Time manipulation in bash
+
+seconds [time][s|h|m|S|H|M]
+	Convert minutes or hours to (aproximated when s or h lowercase) seconds
+minutes [time][s|h|m|S|H|M]
+	Convert seconds or hours to (aproximated when s or h lowercase) minutes
+
+
+Documentation for TUI
+	Nice menu creation function not depending on ncurses, just pure bash
+
+mkmenu [-t title] [ -o options ] [ -f functions ]
+	Create a menu
+
+

@@ -1,0 +1,13 @@
+#!/bin/bash
+get_dchroot(){  [[ -z "$debian_chroot" ]] && [[ -r /etc/debian_chroot ]] && cat /etc/debian_chroot; }
+use_lesspipe(){ [[ -x /usr/bin/lesspipe ]] && eval "$(SHELL=/bin/sh lesspipe)"; }
+set_opts(){ for opt in ${options[@]}; do shopt -s $opt; done ; }
+
+export_project_locations(){
+    export devdir=~/devel/
+}
+
+get_last_status(){ # Thanks for the idea to Samuel F. Baggen A.K.A Thanatermesis
+    [[ "$?" != 0 ]] && { echo "\[\033[0;31$?\[\033[0m\]"; } 
+}
+

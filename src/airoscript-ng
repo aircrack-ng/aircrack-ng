@@ -68,8 +68,8 @@ cleanautovars
 echo -n "${mark}Checking if interface can inject..." 
 $AIREPLAY -9 $wifi &>/dev/null && echo "${red}success${end}" 
 [[ "$noscan" != 1 ]] && autoscan
-echo $BASH_PLUGIN
-[[ $BASH_PLUGIN == 1 ]] && {
+
+(( $BASH_PLUGIN > 0 )) && {
     export AIROSCRIPT_AP_CHAN=$Host_CHAN 
     export AIROSCRIPT_AP_ENC=$Host_ENC
     export AIROSCRIPT_AP_IDL=$Host_IDL   
@@ -78,5 +78,7 @@ echo $BASH_PLUGIN
     export AIROSCRIPT_AP_SPEED=$Host_SPEED 
     export AIROSCRIPT_AP_SSID=$Host_SSID   
     export AIROSCRIPT_AP_NAME=$Host_SSID   
-    bash -c ${PATH}/bashrc  
-} || mainmenu
+    source $path/plugins/bash
+} || {
+    mainmenu
+}

@@ -1,0 +1,5 @@
+#!/bin/bash
+source $(source_jabashit)
+load screen_display
+set_auto_X11_reso
+

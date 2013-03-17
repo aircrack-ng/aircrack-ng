@@ -1,0 +1,5 @@
+#!/bin/bash
+source $(source_jabashit)
+load device_utils TUI screen_display
+_cdtool(){ read -p "$(_ 'Enter device: ')" a; read -p "$(_ 'Enter destination or source file: ')" a; cdtool $1 $a $b; }
+mkmenu -t "Cd Utils" -o "Save a CD/DVD to disk" -f '_cdtool save' -o "Burn directory to CD/DVD" -f '_cdtool write_dir' -o "Burn iso image to CD/DVD" -f '_cdtool write_iso' 

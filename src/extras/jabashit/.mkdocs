@@ -1,0 +1,2 @@
+#!/bin/bash
+source $(source_jabashit); jabashit_api > doc/API

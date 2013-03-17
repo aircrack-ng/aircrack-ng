@@ -34,6 +34,7 @@ installdirs:
                     $(mandir)/man1 $(locale) \
 					$(datadir)/themes $(picdir) $(appdir) \
 					$(datadir)/plugins \
+					$(datadir)/extras \
 					$(datadir)/templates
 	
 install-config:
@@ -53,6 +54,8 @@ install-binary:
 	@$(INSTALLDATA) $(srcdir)/themes/*.theme $(datadir)/themes
 	@echo "Installing plugins"
 	@$(INSTALLDATA) $(srcdir)/plugins/* $(datadir)/plugins
+	@echo "Installing extras"
+	@cp -r $(srcdir)/extras/* $(datadir)/extras
 
 install-docs:
 	@echo "Installing documentation"

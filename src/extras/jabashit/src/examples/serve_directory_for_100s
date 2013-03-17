@@ -1,0 +1,7 @@
+#!/bin/bash
+source $(source_jabashit)
+load network
+serve_directory
+sleep 100s
+stop_serving_directory
+

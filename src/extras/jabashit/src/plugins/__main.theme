@@ -1,0 +1,5 @@
+#!/bin/bash
+declare -A colors highlights theme docs
+theme=([menu_number]=231 [normal]=90 [separator]='-' [menu_separator]="|"  [menu_separator_color]=40 [menu_edge]="+" )
+highlights=([standout]=0 [underline]=1 [reverse]=2 [blink]=3 [dim]=4 [bold]=5 [invis]=6 [protect]=7 [altcharset]=8 )
+colors=( [none]=0 [black]=1 [blue]=2 [green]=3 [cyan]=4 [magenta]=5 [yellow]=6 [white]=7 )

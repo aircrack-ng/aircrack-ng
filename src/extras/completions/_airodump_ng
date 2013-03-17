@@ -1,0 +1,12 @@
+_airodump-ng()
+{
+    local current previous commands help_options
+
+    previous=${COMP_WORDS[COMP_CWORD-1]}
+    current="${COMP_WORDS[COMP_CWORD]}"
+    commands="--help --ivs --gpsd --write --beacons --showack --update --berlin --channel --band --cswitch --output-format --ignore-negative-one --encrypt --bssid --netmask"
+    help_options="setup new search show reply tag dump restore search-terms"
+    COMPREPLY=( $(compgen -W "${commands}" -- ${current}) ) ;
+}
+
+complete -o default -o bashdefault -F _airodump-ng airodump-ng

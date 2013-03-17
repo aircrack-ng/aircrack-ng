@@ -1,0 +1,20 @@
+#!/bin/bash
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    eval "`dircolors -b`"
+    alias ls='ls --color=yes'
+    alias dir='dir --color=yes'
+    alias vdir='vdir --color=yes'
+
+    alias grep='grep --color=yes'
+    alias fgrep='fgrep --color=yes'
+    alias egrep='egrep --color=yes'
+fi
+
+# some more ls aliases
+alias ll='ls -l -v1'
+alias la='ls -A'
+
+alias l='ls -CF -v1'
+
+
