@@ -103,6 +103,7 @@ struct AP_info *ap_1st;			 /* first item in linked list    */
 pthread_mutex_t mx_apl;			 /* lock write access to ap LL   */
 pthread_mutex_t mx_eof;			 /* lock write access to nb_eof  */
 pthread_mutex_t mx_ivb;			 /* lock access to ivbuf array   */
+pthread_mutex_t mx_dic;			 /* lock access to opt.dict      */
 pthread_cond_t  cv_eof;			 /* read EOF condition variable  */
 int  nb_eof = 0;				 /* # of threads who reached eof */
 long nb_pkt = 0;				 /* # of packets read so far     */
@@ -3995,12 +3996,13 @@ int crack_wpa_thread( void *arg )
 			if (memcmp( mic[j], ap->wpa.keymic, 16 ) == 0)
 			{
 				// to stop do_wpa_crack, we close the dictionary
+				pthread_mutex_lock( &mx_dic );
 				if(opt.dict != NULL)
 				{
 					if (!opt.stdin_dict) fclose(opt.dict);
 					opt.dict = NULL;
 				}
-
+				pthread_mutex_unlock( &mx_dic );
 				for( i = 0; i < opt.nbcpu; i++ )
 				{
 					// we make sure do_wpa_crack doesn't block before exiting,
@@ -4085,6 +4087,8 @@ int crack_wpa_thread( void *arg )
  */
 int next_dict(int nb)
 {
+
+	pthread_mutex_lock( &mx_dic );
 	if(opt.dict != NULL)
 	{
 		if(!opt.stdin_dict) fclose(opt.dict);
@@ -4092,7 +4096,10 @@ int next_dict(int nb)
 	}
 	opt.nbdict = nb;
 	if(opt.dicts[opt.nbdict] == NULL)
+	{
+		pthread_mutex_unlock( &mx_dic );
 		return( FAILURE );
+	}
 
 	while(opt.nbdict < MAX_DICTS && opt.dicts[opt.nbdict] != NULL)
 	{
@@ -4134,6 +4141,8 @@ int next_dict(int nb)
 		}
 		break;
 	}
+
+	pthread_mutex_unlock( &mx_dic );
 
 	if(opt.nbdict >= MAX_DICTS || opt.dicts[opt.nbdict] == NULL)
 	    return( FAILURE );
@@ -4507,31 +4516,43 @@ int do_wpa_crack()
 	{
 		/* read a couple of keys (skip those < 8 chars) */
 
-		if(opt.dict == NULL)
-			return( FAILURE );
+		pthread_mutex_lock( &mx_dic );
 
+		if(opt.dict == NULL)
+		{
+			pthread_mutex_unlock( &mx_dic );
+			return( FAILURE );
+		}
+		else
+			pthread_mutex_unlock( &mx_dic );
 		do
 		{
 			memset(key1, 0, sizeof(key1));
 			if (_speed_test)
 				strcpy(key1, "sorbosorbo");
-			else if (fgets(key1, sizeof(key1), opt.dict) == NULL)
+			else
 			{
-				if( opt.l33t )
-					printf( "\33[32;22m" );
-
-				/* printf( "\nPassphrase not in dictionary %s \n", opt.dicts[opt.nbdict] );*/
-				if(next_dict(opt.nbdict+1) != 0)
+				pthread_mutex_lock( &mx_dic );
+				if (fgets(key1, sizeof(key1), opt.dict) == NULL)
 				{
-					/* no more words, but we still have to wait for the cracking threads */
-					num_cpus = cid;
-					//goto collect_and_test;
-					return( FAILURE );
+					pthread_mutex_unlock( &mx_dic );
+
+					if( opt.l33t )
+						printf( "\33[32;22m" );
+					/* printf( "\nPassphrase not in dictionary %s \n", opt.dicts[opt.nbdict] );*/
+					if(next_dict(opt.nbdict+1) != 0)
+					{
+						/* no more words, but we still have to wait for the cracking threads */
+						num_cpus = cid;
+						//goto collect_and_test;
+						return( FAILURE );
+					}
+					else
+						continue;
 				}
 				else
-					continue;
+					pthread_mutex_unlock( &mx_dic );
 			}
-
 			i = strlen( key1 );
 			if( i < 8 ) continue;
 			if( i > 64 ) i = 64;
@@ -4580,18 +4601,24 @@ int next_key( char **key, int keysize )
 	{
 		rtn = 0;
 		tmp = tmp2;
+		pthread_mutex_lock( &mx_dic );
 		if(opt.dict == NULL)
 		{
+			pthread_mutex_unlock( &mx_dic );
 			//printf( "\nPassphrase not in dictionary \n" );
 			free(tmp);
 			tmp = NULL;
 			return( FAILURE );
 		}
+		else
+			pthread_mutex_unlock( &mx_dic );
 
 		if( opt.hexdict[opt.nbdict] )
 		{
+			pthread_mutex_lock( &mx_dic );
 			if( fgets( tmp, ((keysize*2)+(keysize-1)), opt.dict ) == NULL )
 			{
+				pthread_mutex_unlock( &mx_dic );
 				if( opt.l33t )
 					printf( "\33[32;22m" );
 
@@ -4603,10 +4630,10 @@ int next_key( char **key, int keysize )
 					return( FAILURE );
 				}
 				else
-				{
 					continue;
-				}
 			}
+			else
+				pthread_mutex_unlock( &mx_dic );
 
 			i=strlen(tmp);
 
@@ -4644,8 +4671,10 @@ int next_key( char **key, int keysize )
 		}
 		else
 		{
+			pthread_mutex_lock( &mx_dic );
 			if( fgets( *key, keysize, opt.dict ) == NULL )
 			{
+				pthread_mutex_unlock( &mx_dic );
 				if( opt.l33t )
 					printf( "\33[32;22m" );
 
@@ -4657,10 +4686,10 @@ int next_key( char **key, int keysize )
 					return( FAILURE );
 				}
 				else
-				{
 					continue;
-				}
 			}
+			else
+				pthread_mutex_unlock( &mx_dic );
 
 			i=strlen(*key);
 
@@ -5453,6 +5482,7 @@ usage:
 	pthread_mutex_init( &mx_apl, NULL );
 	pthread_mutex_init( &mx_ivb, NULL );
 	pthread_mutex_init( &mx_eof, NULL );
+	pthread_mutex_init( &mx_dic, NULL );
 	pthread_cond_init(  &cv_eof, NULL );
 
 	ap_1st = NULL;
