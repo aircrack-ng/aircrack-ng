@@ -378,7 +378,8 @@ getChipset() {
 		then
 			BUSINFO=$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/')
 			CHIPSET=$(lsusb | grep -i "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')
-		elif [ "$BUS" = "pci" ]
+		#yes the below line looks insane, but broadcom appears to define all the internal buses so we have to detect them here
+		elif [ "${BUS}" = "pci" ] || [ "${BUS}" = "ssb" ] || [ "${BUS}"= "bcma" ] || [ "${BUS}" = "pcmcia" ]
 		then
 			if [ -f /sys/class/net/$1/device/vendor -a -f /sys/class/net/$1/device/device ]
 			then
@@ -406,7 +407,6 @@ getChipset() {
 		CHIPSET=$(lsusb | grep -i "$DEVICEID" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')
 	else
 		CHIPSET="non-mac80211 device? (report this!)"
-		#this seems to somehow trigger on b43's 4318 chip.... but it really shouldn't.
 	fi
 
 	if [ "$DEBUG" = "1" ]
