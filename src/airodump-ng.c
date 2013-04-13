@@ -617,6 +617,7 @@ char usage[] =
 "      -r             <file> : Read packets from that file\n"
 "      -x            <msecs> : Active Scanning Simulation\n"
 "      --manufacturer        : Display manufacturer from IEEE OUI list\n"
+"      --uptime              : Display AP Uptime from Beacon Timestamp\n"
 "      --output-format\n"
 "                  <formats> : Output format. Possible values:\n"
 "                              pcap, ivs, csv, gps, kismet, netxml\n"
@@ -1274,6 +1275,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
 
         ap_cur->ssid_length = 0;
         ap_cur->essid_stored = 0;
+        ap_cur->timestamp = 0;
 
         ap_cur->decloak_detect=G.decloak;
         ap_cur->is_decloak = 0;
@@ -1562,6 +1564,9 @@ skip_probe:
         }
 
         ap_cur->preamble = ( h80211[34] & 0x20 ) >> 5;
+
+        unsigned long long *tstamp = (unsigned long long *) (h80211 + 24);
+        ap_cur->timestamp = letoh64(*tstamp);
 
         p = h80211 + 36;
 
@@ -2823,6 +2828,29 @@ int get_sta_list_count() {
     return num_sta;
 }
 
+#define TSTP_SEC 1000000ULL /* It's a 1 MHz clock, so a million ticks per second! */
+#define TSTP_MIN (TSTP_SEC * 60ULL)
+#define TSTP_HOUR (TSTP_MIN * 60ULL)
+#define TSTP_DAY (TSTP_HOUR * 24ULL)
+
+static char *parse_timestamp(unsigned long long timestamp) {
+	static char s[15];
+	unsigned long long rem;
+	unsigned int days, hours, mins, secs;
+
+	days = timestamp / TSTP_DAY;
+	rem = timestamp % TSTP_DAY;
+	hours = rem / TSTP_HOUR;
+	rem %= TSTP_HOUR;
+	mins = rem / TSTP_MIN;
+	rem %= TSTP_MIN;
+	secs = rem / TSTP_SEC;
+
+	snprintf(s, 14, "%3dd %02d:%02d:%02d", days, hours, mins, secs);
+
+	return s;
+}
+
 void dump_print( int ws_row, int ws_col, int if_num )
 {
     time_t tt;
@@ -2842,6 +2870,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     int num_sta;
 
     if(!G.singlechan) columns_ap -= 4; //no RXQ in scan mode
+    if(G.show_uptime) columns_ap += 14; //show uptime needs more space
 
     nlines = 2;
 
@@ -2965,21 +2994,25 @@ void dump_print( int ws_row, int ws_col, int if_num )
     fprintf( stderr, "%s\n", strbuf );
 
     if(G.show_ap) {
-	if(G.singlechan)
-	{
-	    memcpy( strbuf, " BSSID              PWR RXQ  Beacons"
-			    "    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID", columns_ap );
-	}
-	else
-	{
-	    memcpy( strbuf, " BSSID              PWR  Beacons"
-			    "    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID", columns_ap );
-	}
+
+    strbuf[0] = 0;
+    strcat(strbuf, " BSSID              PWR ");
+
+    if(G.singlechan)
+    	strcat(strbuf, "RXQ ");
+
+    strcat(strbuf, " Beacons    #Data, #/s  CH  MB   ENC  CIPHER AUTH ");
+
+    if (G.show_uptime)
+    	strcat(strbuf, "       UPTIME  ");
+
+    strcat(strbuf, "ESSID");
 
 	if ( G.show_manufacturer && ( ws_col > (columns_ap - 4) ) ) {
 		// write spaces (32).
 		memset(strbuf+columns_ap, 32, G.maxsize_essid_seen - 5 ); // 5 is the len of "ESSID"
 		snprintf(strbuf+columns_ap+G.maxsize_essid_seen-5, 15,"%s","  MANUFACTURER");
+		columns_ap += 15;
 	}
 
 	strbuf[ws_col - 1] = '\0';
@@ -3111,6 +3144,11 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	    else if( ap_cur->security & AUTH_OPN   ) snprintf( strbuf+len, sizeof(strbuf)-len, "OPN");
 
 	    len = strlen(strbuf);
+
+	    if (G.show_uptime) {
+	    	snprintf(strbuf+len, sizeof(strbuf)-len, " %14s", parse_timestamp(ap_cur->timestamp));
+	    	len = strlen(strbuf);
+	    }
 
 	    strbuf[ws_col-1] = '\0';
 
@@ -5416,6 +5454,7 @@ int main( int argc, char *argv[] )
         {"output-format",  1, 0, 'o'},
         {"ignore-negative-one", 0, &G.ignore_negative_one, 1},
         {"manufacturer",  0, 0, 'M'},
+        {"uptime",   0, 0, 'U'},
         {0,          0, 0,  0 }
     };
 
@@ -5484,6 +5523,7 @@ int main( int argc, char *argv[] )
     G.hide_known   =  0;
     G.maxsize_essid_seen  =  5; // Initial value: length of "ESSID"
     G.show_manufacturer = 0;
+    G.show_uptime  = 0;
     G.hopfreq      =  DEFAULT_HOPFREQ;
     G.s_file       =  NULL;
     G.s_iface      =  NULL;
@@ -5628,6 +5668,10 @@ int main( int argc, char *argv[] )
 
                 G.show_manufacturer = 1;
                 break;
+
+	    case 'U' :
+	    		G.show_uptime = 1;
+	    		break;
 
             case 'c' :
 

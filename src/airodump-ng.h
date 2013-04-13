@@ -225,6 +225,8 @@ struct AP_info
     char *manuf;              /* the access point's manufacturer */
     unsigned char essid[MAX_IE_ELEMENT_SIZE];
                               /* ascii network identifier */
+    unsigned long long timestamp;
+    						  /* Timestamp to calculate uptime   */
 
     unsigned char lanip[4];   /* last detected ip address */
                               /* if non-encrypted network */
@@ -456,6 +458,7 @@ struct globals
     int ignore_negative_one;
     u_int maxsize_essid_seen;
     int show_manufacturer;
+    int show_uptime;
 }
 G;
 
