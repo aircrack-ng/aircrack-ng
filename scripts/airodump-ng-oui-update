@@ -71,7 +71,7 @@ if [ ${CURL} ] || [ ${WGET} ]; then
 	fi
 
 	# Parse it
-	grep "(hex)" ${OUI_IEEE} > ${AIRODUMP_NG_OUI}
+	grep "(hex)" ${OUI_IEEE} | sed 's/^[ \t]*//g;s/[ \t]*$//g' > ${AIRODUMP_NG_OUI}
 	if [ "${?}" -ne 0 ]; then
 		echo "[*] Error: Failed to parse OUI, aborting..."
 		exit 1
@@ -84,7 +84,7 @@ if [ ${CURL} ] || [ ${WGET} ]; then
 else
 	if [ -f "${OUI}" ]; then
 		echo "[*] Please install curl or wget to update OUI list"
-	else 
+	else
 		echo "[*] Please install curl or wget to install OUI list"
 	fi
 	exit 1
