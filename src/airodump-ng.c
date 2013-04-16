@@ -5614,7 +5614,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:o:x:M",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:o:x:MU",
                         long_options, &option_index );
 
         if( option < 0 ) break;
