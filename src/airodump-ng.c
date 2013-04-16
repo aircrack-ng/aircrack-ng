@@ -3012,7 +3012,6 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		// write spaces (32).
 		memset(strbuf+columns_ap, 32, G.maxsize_essid_seen - 5 ); // 5 is the len of "ESSID"
 		snprintf(strbuf+columns_ap+G.maxsize_essid_seen-5, 15,"%s","  MANUFACTURER");
-		columns_ap += 15;
 	}
 
 	strbuf[ws_col - 1] = '\0';
