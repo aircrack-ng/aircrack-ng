@@ -2870,7 +2870,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     int num_sta;
 
     if(!G.singlechan) columns_ap -= 4; //no RXQ in scan mode
-    if(G.show_uptime) columns_ap += 14; //show uptime needs more space
+    if(G.show_uptime) columns_ap += 15; //show uptime needs more space
 
     nlines = 2;
 
