@@ -145,7 +145,7 @@ static uchar ZERO[32] =
 #define OUI_PATH0 "/etc/aircrack-ng/airodump-ng-oui.txt"
 #define OUI_PATH1 "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt"
 #define OUI_PATH2 "/usr/share/aircrack-ng/airodump-ng-oui.txt"
-#define OUI_PATH3 "/var/lib/misc/oui.txt"
+#define OUI_PATH3 "/usr/share/misc/oui.txt"
 #define MIN_RAM_SIZE_LOAD_OUI_RAM 32768
 
 int read_pkts=0;

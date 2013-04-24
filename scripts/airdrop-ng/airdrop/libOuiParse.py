@@ -44,7 +44,7 @@ class macOUI_lookup:
         self.OUI_PATH = ["/etc/aircrack-ng/airodump-ng-oui.txt",
             "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt",
             "/usr/share/aircrack-ng/airodump-ng-oui.txt",
-            "/var/lib/misc/oui.txt",
+            "/usr/share/misc/oui.txt",
             "/etc/manuf/oui.txt",
             "/usr/share/wireshark/wireshark/manuf/oui.txt",
             "/usr/share/wireshark/manuf/oui.txt"]
