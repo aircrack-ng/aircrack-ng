@@ -475,7 +475,7 @@ def server():
 	httpd.serve_forever()
 
 def usage():
-	print("""dcrack v0.1
+	print("""dcrack v0.2
 
 	Usage: dcrack.py [MODE]
 	server                        Runs coordinator
@@ -511,8 +511,16 @@ def do_ping(speed):
 
 def pinger(speed):
 	while True:
-		interval = do_ping(speed)
+		interval = try_ping(speed)
 		time.sleep(interval)
+
+def try_ping(speed):
+	while True:
+		try:
+			return do_ping(speed)
+		except urllib.error.URLError:
+			print("Conn refused (pinger)")
+			time.sleep(60)
 
 def get_work():
 	global url, cid, cracker
@@ -626,17 +634,19 @@ def setup_dict(crack):
 def get_cap(crack):
 	global url, nets
 
-	bssid = crack['net'].upper()
-
 	fn = "dcrack-client.cap"
 
-	if not nets:
-		try:
-			f = open(fn, "rb")
-			f.close()
-			process_cap(fn)
-		except:
-			pass
+	bssid = crack['net'].upper()
+
+	if bssid in nets:
+		return fn
+
+	try:
+		f = open(fn, "rb")
+		f.close()
+		check_cap(fn, bssid)
+	except:
+		pass
 
 	if bssid in nets:
 		return fn
@@ -653,7 +663,11 @@ def get_cap(crack):
 	print("Uncompressing cap")
 	decompress(fn)
 
-	process_cap(fn)
+	nets = {}
+	check_cap(fn, bssid)
+
+	if bssid not in nets:
+		raise BaseException("Can't find net")
 
 	return fn
 
@@ -687,6 +701,18 @@ def process_cap(fn):
 	p.stdin.write(bytes("1\n", "utf-8"))
 	p.communicate()
 
+def check_cap(fn, bssid):
+	global nets
+
+	cmd = ["aircrack-ng", "-b", bssid, fn]
+	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+
+	res = p.communicate()[0]
+	res = str(res)
+
+	if "No matching network found" not in res:
+		nets[bssid] = True
+
 def worker():
 	while True:
 		interval = get_work()
@@ -719,15 +745,25 @@ def client():
 
 	print("CID", cid)
 
-	do_ping(speed)
+	try_ping(speed)
 	t = threading.Thread(target=pinger, args=(speed,))
 	t.start()
 
+	while True:
+		try:
+			do_client()
+			break
+		except urllib.error.URLError:
+			print("Conn refused")
+			time.sleep(60)
+
+def do_client():
 	try:
 		worker()
 	except KeyboardInterrupt:
 		if cracker:
 			cracker.kill()
+		print("one more time...")
 
 def upload_file(url, f):
 	x  = urllib.parse.urlparse(url)
