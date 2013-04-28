@@ -291,7 +291,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
 		p = path.split("/")
 
-		n = p[4]
+		n = p[4].upper()
 
 		c = con.cursor()
 		c.execute("INSERT into nets values (?, NULL, 1)", (n,))
