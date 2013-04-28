@@ -128,7 +128,25 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		if ("status" in path):
 			return s.get_status()
 
+		if ("remove" in path):
+			return s.remove(path)
+
 		return "error"
+
+	def remove(s, path):
+		global con
+
+		p = path.split("/")
+		n = p[4].upper()
+
+		c = con.cursor()
+		c.execute("DELETE from nets where bssid = ?", (n,))
+		con.commit()
+
+		c.execute("DELETE from work where net = ?", (n,))
+		con.commit()
+		
+		return "OK"
 
 	def get_status(s):
 		global con
@@ -225,10 +243,15 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
 		if "pass" in qs:
 			return s.do_result_pass(n, qs['pass'][0])
-		
+
 		wl = qs['wl'][0]
 
 		c = con.cursor()
+		c.execute("SELECT * from nets where bssid = ?", (n,))
+		r = c.fetchone()
+		if r and r['state'] == 2:
+			return "Already done"
+
 		c.execute("""UPDATE work set state = 2 where 
 			net = ? and dict = ? and start = ? and end = ?""",
 			(n, wl, qs['start'][0], qs['end'][0]))
@@ -486,6 +509,7 @@ def usage():
 			dict   <file>
 			cap    <file>
 			crack  <bssid>
+			remove <bssid>
 			status""")
 	exit(1)
 
@@ -841,6 +865,9 @@ def send_cap():
 	upload_file(u, cap + ".clean.gz")
 
 def cmd_crack():
+	net_cmd("crack")
+
+def net_cmd(op):
 	global url
 
 	if len(sys.argv) < 5:
@@ -849,9 +876,12 @@ def cmd_crack():
 
 	bssid = sys.argv[4]
 
-	print("Crack %s" % bssid)
-	u = "%snet/%s/crack" % (url, bssid)
+	print("%s %s" % (op, bssid))
+	u = "%snet/%s/%s" % (url, bssid, op)
 	stuff = urllib.request.urlopen(u).read()
+
+def cmd_remove():
+	net_cmd("remove")
 
 def cmd_status():
 	u = "%sstatus" % url
@@ -914,6 +944,8 @@ def do_cmd():
 		cmd_crack()
 	elif "status" in cmd:
 		cmd_status()
+	elif "remove" in cmd:
+		cmd_remove()
 	else:
 		print("Unknown cmd %s" % cmd)
 		usage()
