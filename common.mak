@@ -78,7 +78,7 @@ else ifeq ($(libnl), true)
 	endif
 
 	LIBS += $(shell $(PKG_CONFIG) --libs $(NLLIBNAME))
-	COMMON_CFLAGS += -DCONFIG_LIBNL $(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
+	COMMON_CFLAGS += $(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
 endif
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(airpcap) $(AIRPCAP))),true)
