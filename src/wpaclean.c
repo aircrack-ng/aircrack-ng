@@ -435,7 +435,7 @@ static void process_beacon(struct ieee80211_frame *wh, int totlen)
 		return;
 	}
 #endif
-	n = find_add_net(wh->i_addr2);
+	n = find_add_net(wh->i_addr3);
 
 	if (n->n_beaconlen)
 		return;
@@ -578,7 +578,8 @@ static void process_data(struct ieee80211_frame *wh, int len)
 	if (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS) {
 		bssid      = wh->i_addr2;
 		clientaddr = wh->i_addr1;
-	}
+	} else if (!(wh->i_fc[1] & IEEE80211_FC1_DIR_TODS))
+		bssid = wh->i_addr3; /* IBSS */
 
 	n = find_add_net(bssid);
 
@@ -653,15 +654,15 @@ static void process_packet(void *packet, int len)
 			break;
 
 		case IEEE80211_FC0_SUBTYPE_ASSOC_REQ:
-			grab_hidden_ssid(wh->i_addr1, wh, len, 2 + 2);
+			grab_hidden_ssid(wh->i_addr3, wh, len, 2 + 2);
 			break;
 
 		case IEEE80211_FC0_SUBTYPE_REASSOC_REQ:
-			grab_hidden_ssid(wh->i_addr1, wh, len, 2 + 2 + 6);
+			grab_hidden_ssid(wh->i_addr3, wh, len, 2 + 2 + 6);
 			break;
 
 		case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
-			grab_hidden_ssid(wh->i_addr2, wh, len, 8 + 2 + 2);
+			grab_hidden_ssid(wh->i_addr3, wh, len, 8 + 2 + 2);
 			break;
 		}
 		break;
