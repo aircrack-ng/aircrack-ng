@@ -1,29 +1,41 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 import sys
 import os
-import http.server
 import subprocess
-import urllib.request
 import random
 import time
-import urllib.parse
 import sqlite3
 import threading
 import hashlib
-import http.client
 import gzip
 import json
 import datetime
+import re
+
+if sys.version_info[0] >= 3:
+	from socketserver import ThreadingTCPServer
+	from urllib.request import urlopen, URLError
+	from urllib.parse import urlparse, parse_qs
+	from http.client import HTTPConnection
+	from http.server import SimpleHTTPRequestHandler
+else:
+	from SocketServer import ThreadingTCPServer
+	from urllib2 import urlopen, URLError
+	from urlparse import urlparse, parse_qs
+	from httplib import HTTPConnection
+	from SimpleHTTPServer import SimpleHTTPRequestHandler
+
+	bytes = lambda a, b : a
 
 port = 1337
 url = None
 cid = None
-con = None
+tls = threading.local()
 nets = {}
 cracker = None
 
-class ServerHandler(http.server.SimpleHTTPRequestHandler):
+class ServerHandler(SimpleHTTPRequestHandler):
 	def do_GET(s):
 		result = s.do_req(s.path)
 
@@ -48,7 +60,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		s.wfile.write(bytes("OK", "UTF-8"))
 
 	def do_upload_dict(s):
-		global con;
+		con = get_con()
 
 		f = "dcrack-dict"
 		c = f + ".gz"
@@ -91,7 +103,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		os.rename("dcrack.cap.tmp", "dcrack.cap")
 
 	def do_req(s, path):
-		global con
+		con = get_con()
 
 		c = con.cursor()
 
@@ -134,7 +146,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		return "error"
 
 	def remove(s, path):
-		global con
+		con = get_con()
 
 		p = path.split("/")
 		n = p[4].upper()
@@ -149,7 +161,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		return "OK"
 
 	def get_status(s):
-		global con
+		con = get_con()
 
 		c = con.cursor()
 		c.execute("SELECT * from clients")
@@ -191,7 +203,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		return json.dumps(d)
 
 	def do_result_pass(s, net, pw):
-		global con
+		con = get_con()
 
 		pf = "dcrack-pass.txt"
 
@@ -223,7 +235,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		return "OK"
 
 	def net_done(s, net):
-		global con
+		con = get_con()
 
 		c = con.cursor()
 		c.execute("UPDATE nets set state = 2 where bssid = ?",
@@ -233,13 +245,13 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		con.commit()
 
 	def do_result(s, path):
-		global con
+		con = get_con()
 
 		p = path.split("/")
 		n = p[4].upper()
 
-		x  = urllib.parse.urlparse(path)
-		qs = urllib.parse.parse_qs(x.query)
+		x  = urlparse(path)
+		qs = parse_qs(x.query)
 
 		if "pass" in qs:
 			return s.do_result_pass(n, qs['pass'][0])
@@ -310,7 +322,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		return None
 
 	def do_crack(s, path):
-		global con
+		con = get_con()
 
 		p = path.split("/")
 
@@ -323,7 +335,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		return "OK"
 
 	def do_dict_set(s, path):
-		global con
+		con = get_con()
 
 		p = path.split("/")
 
@@ -337,14 +349,14 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		return "OK"
 
 	def do_ping(s, path):
-		global con
+		con = get_con()
 
 		p = path.split("/")
 
 		cid = p[4]
 
-		x  = urllib.parse.urlparse(path)
-		qs = urllib.parse.parse_qs(x.query)
+		x  = urlparse(path)
+		qs = parse_qs(x.query)
 
 		speed = qs['speed'][0]
 
@@ -364,7 +376,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		return "60"
 
 	def try_network(s, net, d):
-		global con
+		con = get_con()
 
 		c = con.cursor()
 		c.execute("""SELECT * from work where net = ? and dict = ?
@@ -408,7 +420,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 		return j
 
 	def do_getwork(s, path):
-		global con
+		con = get_con()
 
 		c = con.cursor()
 
@@ -460,7 +472,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 			return "NO"
 
 def create_db():
-	global con
+	con = get_con()
 
 	c = con.cursor()
 	c.execute("""create table clients (id varchar(255),
@@ -475,12 +487,23 @@ def create_db():
 		net varchar(255), dict varchar(255),
 		start integer, end integer, last datetime, state integer)""")
 
-def init_db():
-	global con
-
+def connect_db():
 	con = sqlite3.connect('dcrack.db')
 	con.row_factory = sqlite3.Row
 
+	return con
+
+def get_con():
+	global tls
+
+	try:
+		return tls.con
+	except:
+		tls.con = connect_db()
+		return tls.con
+
+def init_db():
+	con = get_con()
 	c = con.cursor()
 
 	try:
@@ -491,14 +514,14 @@ def init_db():
 def server():
 	init_db()
 
-	server_class = http.server.HTTPServer
+	server_class = ThreadingTCPServer 
 	httpd = server_class(('', port), ServerHandler)
 
 	print("Starting server")
 	httpd.serve_forever()
 
 def usage():
-	print("""dcrack v0.2
+	print("""dcrack v0.3
 
 	Usage: dcrack.py [MODE]
 	server                        Runs coordinator
@@ -528,7 +551,7 @@ def do_ping(speed):
 	global url, cid
 
 	u = url + "client/" + str(cid) + "/ping?speed=" + str(speed)
-	stuff = urllib.request.urlopen(u).read()
+	stuff = urlopen(u).read()
 	interval = int(stuff)
 
 	return interval
@@ -542,7 +565,7 @@ def try_ping(speed):
 	while True:
 		try:
 			return do_ping(speed)
-		except urllib.error.URLError:
+		except URLError:
 			print("Conn refused (pinger)")
 			time.sleep(60)
 
@@ -550,7 +573,7 @@ def get_work():
 	global url, cid, cracker
 
 	u = url + "client/" + str(cid) + "/getwork"
-	stuff = urllib.request.urlopen(u).read()
+	stuff = urlopen(u).read()
 	stuff = stuff.decode("utf-8")
 
 	crack = json.loads(stuff)
@@ -582,13 +605,20 @@ def get_work():
 		    	(url, crack['net'], crack['dict'], \
 			crack['start'], crack['end'])
 
-		stuff = urllib.request.urlopen(u).read()
+		stuff = urlopen(u).read()
 	elif "KEY FOUND" in res:
-		pw = res[15:-5]
+		pw = re.sub("^.*\[ ", "", res)
+
+		i = pw.rfind(" ]")
+		if i == -1:
+			raise BaseException("Can't parse output")
+
+		pw = pw[:i]
+
 		print("Key for %s is %s" % (crack['net'], pw))
 
 		u = "%snet/%s/result?pass=%s" % (url, crack['net'], pw)
-		stuff = urllib.request.urlopen(u).read()
+		stuff = urlopen(u).read()
 
 	return 0
 
@@ -613,7 +643,7 @@ def setup_dict(crack):
 		print("Downloading dictionary %s" % d)
 
 		u = "%sdict/%s" % (url, d)
-		stuff = urllib.request.urlopen(u)
+		stuff = urlopen(u)
 
 		f = open(fn + ".gz", "wb")
 		f.write(stuff.read())
@@ -678,7 +708,7 @@ def get_cap(crack):
 	print("Downloading cap")
 	u = "%scap/%s" % (url, bssid)
 
-	stuff = urllib.request.urlopen(u)
+	stuff = urlopen(u)
 
 	f = open(fn + ".gz", "wb")
 	f.write(stuff.read())
@@ -691,7 +721,7 @@ def get_cap(crack):
 	check_cap(fn, bssid)
 
 	if bssid not in nets:
-		raise BaseException("Can't find net")
+		raise BaseException("Can't find net %s" % bssid)
 
 	return fn
 
@@ -777,7 +807,7 @@ def client():
 		try:
 			do_client()
 			break
-		except urllib.error.URLError:
+		except URLError:
 			print("Conn refused")
 			time.sleep(60)
 
@@ -790,8 +820,8 @@ def do_client():
 		print("one more time...")
 
 def upload_file(url, f):
-	x  = urllib.parse.urlparse(url)
-	c = http.client.HTTPConnection(x.netloc)
+	x  = urlparse(url)
+	c = HTTPConnection(x.netloc)
 
 	# XXX not quite HTTP form
 
@@ -832,7 +862,7 @@ def send_dict():
 	print("Hash is %s" % h)
 
 	u = url + "dict/" + h + "/status"
-	stuff = urllib.request.urlopen(u).read()
+	stuff = urlopen(u).read()
 
 	if "NO" in str(stuff):
 		u = url + "dict/create"
@@ -843,7 +873,7 @@ def send_dict():
 
 	print("Setting dictionary to %s" % d)
 	u = url + "dict/" + h + "/set"
-	stuff = urllib.request.urlopen(u).read()
+	stuff = urlopen(u).read()
 
 def send_cap():
 	global url
@@ -878,14 +908,14 @@ def net_cmd(op):
 
 	print("%s %s" % (op, bssid))
 	u = "%snet/%s/%s" % (url, bssid, op)
-	stuff = urllib.request.urlopen(u).read()
+	stuff = urlopen(u).read()
 
 def cmd_remove():
 	net_cmd("remove")
 
 def cmd_status():
 	u = "%sstatus" % url
-	stuff = urllib.request.urlopen(u).read()
+	stuff = urlopen(u).read()
 
 	stuff = json.loads(stuff.decode("utf-8"))
 
@@ -968,4 +998,5 @@ def main():
 
 	exit(0)
 
-main()
+if __name__ == "__main__":
+	main()
