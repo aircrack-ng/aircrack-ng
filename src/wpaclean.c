@@ -572,6 +572,17 @@ static void process_data(struct ieee80211_frame *wh, int len)
 	if (!eapol)
 		return;
 
+	if (len < 5)
+		return;
+
+	/* type == key */
+	if (p[1] != 0x03)
+		return;
+
+	/* desc == WPA or RSN */
+	if (p[4] != 0xFE && p[4] != 0x02)
+		return;
+
 	bssid      = wh->i_addr1;
 	clientaddr = wh->i_addr2;
 
