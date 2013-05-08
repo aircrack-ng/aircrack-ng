@@ -1,0 +1,4 @@
+language: c
+compiler:
+  - gcc
+script: make sqlite=true unstable=true && make check sqlite=true unstable=true && make clean && make sqlite=true unstable=true gcrypt=true && make check sqlite=true unstable=true gcrypt=true
