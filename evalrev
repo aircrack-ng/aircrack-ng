@@ -1,23 +1,29 @@
 #!/bin/sh
 
-if [ ! -d ".svn/" ]
+DIR=$1
+if [ x$DIR = "x" ]
+then
+	DIR="."
+fi
+
+if [ ! -d "${DIR}/.svn/" ]
 then
 	echo "0"
 	exit ;
 fi
 
-REVISION="`svnversion 2> /dev/null | sed 's/[^0-9]*//g'`"
+REVISION="`svnversion $DIR 2> /dev/null | sed 's/[^0-9]*//g'`"
 
 if [ x$REVISION = "x" ]
 then
-	REVISION="`svn info 2> /dev/null | grep -i revision | sed 's/[^0-9]*//g'`"
+	REVISION="`svn info $DIR 2> /dev/null | grep -i revision | sed 's/[^0-9]*//g'`"
 fi
 
 if [ x$REVISION = "x" ]
 then
-	if [ -f ".svn/entries" ]
+	if [ -f "${DIR}/.svn/entries" ]
 	then
-		REVISION="`cat .svn/entries | grep -i revision | head -n 1 | sed 's/[^0-9]*//g'`"
+		REVISION="`cat ${DIR}/.svn/entries | grep -i revision | head -n 1 | sed 's/[^0-9]*//g'`"
 	fi
 fi
 
