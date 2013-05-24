@@ -2937,7 +2937,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
         {
             memset( buffer, '\0', sizeof(buffer) );
             snprintf(buffer, sizeof(buffer) , ",%2d", G.channel[i]);
-            strncat(strbuf, buffer, (sizeof(strbuf)-strlen(strbuf)));
+            strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) -1);
         }
     }
     memset( buffer, '\0', sizeof(buffer) );
