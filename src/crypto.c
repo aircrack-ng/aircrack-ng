@@ -486,8 +486,9 @@ int is_qos_arp_tkip(void *wh, int len)
 
 int is_spantree(void *wh)
 {
-        if ( memcmp( wh +  4, SPANTREE, 6 ) == 0 ||
-             memcmp( wh + 16, SPANTREE, 6 ) == 0 )
+        if ( wh != NULL &&
+	     (memcmp( wh +  4, SPANTREE, 6 ) == 0 ||
+              memcmp( wh + 16, SPANTREE, 6 ) == 0 ))
             return 1;
 
         return 0;
