@@ -3117,7 +3117,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	    else if( ap_cur->security & STD_WEP  ) snprintf( strbuf+len, sizeof(strbuf)-len, "WEP " );
 	    else if( ap_cur->security & STD_OPN  ) snprintf( strbuf+len, sizeof(strbuf)-len, "OPN " );
 
-	    strncat( strbuf, " ", sizeof(strbuf)-1);
+	    strncat( strbuf, " ", sizeof(strbuf) - strlen(strbuf) - 1);
 
 	    len = strlen(strbuf);
 
