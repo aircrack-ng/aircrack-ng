@@ -215,7 +215,7 @@ FILE * open_existing_pcap(const char * filename) {
 }
 
 BOOLEAN initialize_linked_list() {
-	_packet_elt_head = (struct packet_elt_header *)malloc(sizeof(struct packet_elt_header *));
+	_packet_elt_head = (struct packet_elt_header *)malloc(sizeof(struct packet_elt_header));
 	_packet_elt_head->first = (	struct packet_elt *) malloc(sizeof(struct packet_elt));
 	_packet_elt_head->last = _packet_elt_head->first;
 	_packet_elt_head->current = _packet_elt_head->first;
