@@ -275,6 +275,7 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 	int cmd;
 	int sz = sizeof(*ri);
 	int l;
+	int ret;
 
 	/* try queue */
 	l = queue_get(pn, buf, sizeof(buf));
@@ -286,14 +287,17 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 		if (cmd == -1)
 			return -1;
 		if (cmd == NET_RC)
-			return ntohl(buf[0]);
+		{
+			ret = ntohl((buf[0]));
+			return ret;
+		}
 		assert(cmd == NET_PACKET);
 	}
 
 	/* XXX */
 	if (ri) {
 		// re-assemble 64-bit integer
-		ri->ri_mactime = __be64_to_cpu((uint64_t)buf[0] << 32 || buf[1] );
+		ri->ri_mactime = __be64_to_cpu(((uint64_t)buf[0] << 32 || buf[1] ));
 		ri->ri_power = __be32_to_cpu(buf[2]);
 		ri->ri_noise = __be32_to_cpu(buf[3]);
 		ri->ri_channel = __be32_to_cpu(buf[4]);
