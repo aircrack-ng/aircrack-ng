@@ -5168,12 +5168,17 @@ int init_cards(const char* cardstr, char *iface[], struct wif **wi)
     return if_count;
 }
 
+#if 0
 int get_if_num(const char* cardstr)
 {
     char *buffer;
     int if_count=0;
 
     buffer = (char*) malloc(sizeof(char)*1025);
+    if (buffer == NULL) {
+		return -1;
+	}
+
     strncpy(buffer, cardstr, 1025);
     buffer[1024] = '\0';
 
@@ -5182,8 +5187,11 @@ int get_if_num(const char* cardstr)
         if_count++;
     }
 
+    free(buffer)
+
     return if_count;
 }
+#endif
 
 int set_encryption_filter(const char* input)
 {
