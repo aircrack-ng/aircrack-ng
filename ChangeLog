@@ -1,3 +1,77 @@
+Version 1.2-beta1 (changes from aircrack-ng 1.1) - Released 25 May 2013:
+* Airmon-ng: Added chipset information for ar9170usb, wl, rt2800usb, ar9271, wl12xx, RT3070STA, ath9k_htc, r871x_usb_drv, ath5k, carl9170 and various Intel drivers.
+* Airmon-ng: Fixed chipset information ipw2200.
+* Airmon-ng: Fixed output for r8187 driver.
+* Airmon-ng: Improved chipset information for a few drivers.
+* Airmon-ng: Support for displaying information about ath9k.
+* Airmon-ng: Added 'check kill' to automatically kill services that could interfere.
+* Airmon-ng: Fixed issues with Intel chipsets detection.
+* Airmon-ng: Updated iw download link.
+* Airmon-ng: Better mac80211 handling
+* Airmon-ng: Added detection for WiLink TI driver, rtl819xU, iwlwifi.
+* Airmon-zc: Improved version of Airmon-ng with more detailled information.
+* Airdecap-ng: Fixed decoding QoS frames (Closes: #667 and #858).
+* Airgraph-ng: Use Aircrack-ng Makefile instead of its own.
+* Airbase-ng: Fixed bug using clients list.
+* Airbase-ng: Fixed issue with QoS (ticket #760).
+* Airbase-ng: Fixed sending beacons with null SSID.
+* Airbase-ng: Allow non ASCII ESSID
+* Airodump-ng: Fixed buffer overflow (ticket #728).
+* Airodump-ng: Fixed channel parsing.
+* Airodump-ng: Fixed FreeBSD battery reading.
+* Airodump-ng: Renamed "Packets" column to "Frames" ("Packets" was not correct).
+* Airodump-ng: Fixed XML bugs when outputting NetXML: ESSID containing '&' or chinese characters, when multiple encryption are used.
+* Airodump-ng: Add alternative paths for Airodump-ng OUI file.
+* Airodump-ng: Added GPSd 2.92+ support (JSON).
+* Airodump-ng: Add option --manufacturer to display manufacturer column on airodump-ng.
+* Airodump-ng: Add feature to show APs uptime (--uptime) based on the timestamp.
+* Airodump-ng-OUI-update: Fixed OUI URL and allow CURL redirect (ticket #829).
+* Airdrop-ng: removed .py from file names.
+* Airdrop-ng: Fixed bug in installer.
+* Airdrop-ng: Fixed OUI lookup.
+* Airdrop-ng: Fixed bug when several BSSID have the same ESSID.
+* Airdrop-ng: Doesn't constantly parse anymore, wait 5 seconds each time it parses.
+* Airdrop-ng: Fixed crash when failing to get channel or when rules file didn't exist.
+* Airdrop-ng: Fixed to use lorcon.py/lorcon2 libs.
+* Airdrop-ng: Updated README.
+* Airdrop-ng: Fixed error preventing update to work.
+* Versuck-ng: New script to do the same thing as the kismet autowep plugin from the CLI.
+* Aircrack-ng: Fixed counter display error when cracking WPA.
+* Aircrack-ng: Added output of the WPA handshake to EWSA project file.
+* Aircrack-ng: Added output of the WPA handshake to oclhashcat+ project file.
+* Aircrack-ng: Added benchmark option, -S.
+* Aircrack-ng: Fixed -u option.
+* Aircrack-ng: PIC fix for hardened systems from Francisco Blas Izquierdo Riera (klondike)
+* Aircrack-ng: Allow dictionaries larger than 2Gb.
+* Aircrack-ng: Give a better message when there's an error with the dictionary.
+* Aircrack-ng: Prevent a buffer overflow from happening (Wojciech Waga).
+* Aireplay-ng: Added migration mode attack from Leandro Meiners and Diego Sor from Core Security (BlackHat Las Vegas 2010)
+* Aireplay-ng, Airodump-ng: Added option to ignore issue with -1 channel.
+* Airserv-ng: Fixed crash when clients disconnect.
+* Besside-ng-crawler: Added EAPOL Crawler.
+* Airdecloak-ng: Fixed bug when using pcap files with PPI headers.
+* dcrack: Distributed cracking server/client
+* wifi-detect.sh: reference script for testing wifi card detection using iwconfig vs ls /sys/class/net
+* WPA Clean: Tool to merge and clean WPA capture files.
+* Wireless Panda: C# Library to parse Airodump-ng output files (and added example project).
+* OSdep (Linux): Setting fixed bitrates on mac80211 2.6.31 and up.
+* OSdep (Linux): Added support for nl80211 thanks to impulse32. Use 'make libnl=true' to add netlink support (Ticket #1004).
+* Manpages: Improvement and fixes for Airgraph-ng, Airodump-ng, packetforge-ng, Aircrack-ng
+* Manpages: Fixed various spelling issues and single quote issues.
+* Makefiles: Added tests for the different tools.
+* Makefiles: Various fixes and improvements.
+* Makefiles: Added support for libgrypt instead of OpenSSL via parameter.
+* Patches: Added a few patches.
+* Removed useless script: patchchk.
+* Finally fixed licensing issues.
+* Fixed endianness issues in most of the tools.
+* Fixed cppcheck errors (Ticket #957).
+* Fixed various compilation issues on Linux and Cygwin, GNU/Hurd, Darwin (OSX) and Sparc.
+* Fixed compilation on recent gcc versions on Linux, Cygwin.
+* Added instructions for Travis CI: Free Hosted Continuous Integration Platform for the Open Source Community.
+* Added Readme.Md for GitHub. Aircrack-ng subversion repository is synced on GitHub: http://github.com/aircrack-ng/aircrack-ng
+* Various other small bug fixes.
+
 Version 1.1 (changes from aircrack-ng 1.0) - Released 24 April 2010:
 * airdrop-ng: New tool by TheX1le.
 * airodump-ng, aircrack-ng, airdecap-ng, airbase-ng: Fixed buffer overflow in airodump-ng due to forged eapol frame.
