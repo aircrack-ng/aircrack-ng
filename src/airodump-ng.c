@@ -6062,7 +6062,10 @@ usage:
                         }
                     }
 
-                    setuid( getuid() );
+					/* Drop privileges */
+					if (setuid( getuid() ) == -1) {
+						perror("setuid");
+					}
 
                     frequency_hopper(wi, G.num_cards, freq_count);
                     exit( 1 );
@@ -6110,7 +6113,10 @@ usage:
                         }
                     }
 
-                    setuid( getuid() );
+					/* Drop privileges */
+					if (setuid( getuid() ) == -1) {
+						perror("setuid");
+					}
 
                     channel_hopper(wi, G.num_cards, chan_count);
                     exit( 1 );
@@ -6128,7 +6134,10 @@ usage:
         }
     }
 
-    setuid( getuid() );
+	/* Drop privileges */
+	if (setuid( getuid() ) == -1) {
+		perror("setuid");
+	}
 
     /* check if there is an input file */
     if( G.s_file != NULL )

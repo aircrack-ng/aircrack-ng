@@ -1487,8 +1487,9 @@ usage:
     }
 
     /* drop privileges */
-
-    setuid( getuid() );
+	if (setuid( getuid() ) == -1) {
+		perror("setuid");
+	}
 
     /* XXX */
     if( opt.r_nbpps == 0 )

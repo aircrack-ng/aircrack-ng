@@ -4527,6 +4527,9 @@ usage:
     }
 
     /* drop privileges */
+	if (setuid( getuid() ) == -1) {
+		perror("setuid");
+	}
 
     setuid( getuid() );
 
