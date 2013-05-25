@@ -89,12 +89,15 @@ Aircrack-ng
 	
 	Problem: On windows, it doesn't display a list of adapters like the old 0.X
 	Solution: It requires you to develop your own DLL.
-
-	Aircrack-ng
-	-----------
 	
-	Problem: Aircrack-ng can't use dictionnaries/wordlists bigger than 2GB
-	Solution: Split your files. Cleaning can also help because WPA only use passphrases of 8 to 63 characters.
+	Cygwin
+	------
+	
+	Problem: Aircrack-ng doesn't build on Cygwin64
+	Solution: None at this time. Build it using 32 bit cygwin.
+	
+	Problem: Aircrack-ng doesn't build with gcc 4.5
+	Solution: Use an older version of gcc such as 4.3 for now (will be fixed in stable release).
 	
 Sample files
 ============
