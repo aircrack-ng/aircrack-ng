@@ -29,7 +29,7 @@
  * do not wish to do so, delete this exception statement from your
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
- 
+
  */
 
 #include <string.h>
@@ -873,7 +873,7 @@ int michael_test(uchar key[8], uchar *message, int length, uchar out[8])
 
 int calc_tkip_mic_key(uchar* packet, int length, uchar key[8])
 {
-    int z, koffset=0, is_qos=0;
+    int z, is_qos=0;
     uchar smac[6], dmac[6], bssid[6];
     uchar prio[4];
     uchar message[4096];
@@ -910,13 +910,11 @@ int calc_tkip_mic_key(uchar* packet, int length, uchar key[8])
             memcpy( bssid, packet + 4, 6 );
             memcpy( dmac, packet + 16, 6 );
             memcpy( smac, packet + 10, 6 );
-            koffset = 48+8;
             break;
         case  2:
             memcpy( bssid, packet + 10, 6 );
             memcpy( dmac, packet + 4, 6 );
             memcpy( smac, packet + 16, 6 );
-            koffset = 48;
             break;
         default:
             memcpy( bssid, packet + 10, 6 );
