@@ -5,6 +5,7 @@ TOOL_PREFIX	=
 endif
 ifndef OSNAME
 OSNAME		= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g' -e 's,/,-,g')
+
 endif
 ifndef SQLITE
 SQLITE		= false
@@ -87,7 +88,12 @@ endif
 
 ifneq ($(origin CC),environment)
 	ifeq ($(OSNAME), cygwin)
-		CC	= $(TOOL_PREFIX)gcc-4
+		ARCHITECTURE	= $(shell uname -m)
+		ifeq ($(ARCHITECTURE), i686)
+			CC	= $(TOOL_PREFIX)gcc-4
+		else
+			CC	= $(TOOL_PREFIX)gcc
+		endif
 	else
 		CC	= $(TOOL_PREFIX)gcc
 	endif
