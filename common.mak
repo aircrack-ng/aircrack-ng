@@ -5,7 +5,6 @@ TOOL_PREFIX	=
 endif
 ifndef OSNAME
 OSNAME		= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g' -e 's,/,-,g')
-
 endif
 ifndef SQLITE
 SQLITE		= false
@@ -122,6 +121,10 @@ libdir		= $(prefix)/lib
 etcdir		= $(prefix)/etc/aircrack-ng
 
 GCC_OVER45	= $(shell expr 45 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
+ifeq ($(GCC_OVER45), 0)
+	GCC_OVER45	= $(shell expr 4.5 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
+endif
+
 ifeq ($(GCC_OVER45), 1)
-CFLAGS		+= -Wno-unused-but-set-variable -Wno-array-bounds
+	CFLAGS		+= -Wno-unused-but-set-variable -Wno-array-bounds
 endif
