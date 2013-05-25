@@ -138,6 +138,7 @@ static void client_kill(struct client *c)
 	c->c_next->c_prev = c->c_prev;
 	printf("Death from %s\n", c->c_ip);
 	free(c);
+	c = NULL;
 }
 
 static void card_open(struct sstate *ss, char *dev)
@@ -443,6 +444,7 @@ static void handle_card(struct sstate *ss)
 	c = ss->ss_clients.c_next;
 	while (c != &ss->ss_clients) {
 		client_send_packet(ss, c, buf, rd);
+		if (c == NULL) break;
 		c = c->c_next;
 	}
 }
@@ -452,7 +454,7 @@ static void serv(struct sstate *ss, char *dev, int port, int chan)
 	int max;
 	fd_set fds;
 	struct client *c;
-	struct client *next;	
+	struct client *next;
 	int card_fd;
 
 	open_card_and_sock(ss, dev, port, chan);
@@ -485,7 +487,7 @@ static void serv(struct sstate *ss, char *dev, int port, int chan)
 		/* handle clients */
 		c = ss->ss_clients.c_next;
 		while (c != &ss->ss_clients) {
-			next = c->c_next;	
+			next = c->c_next;
 			if (FD_ISSET(c->c_s, &fds))
 				handle_client(ss, c);
 
