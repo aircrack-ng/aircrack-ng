@@ -2357,11 +2357,6 @@ int do_attack_arp_resend( void )
     struct pcap_pkthdr pkh;
     struct ARP_req * arp;
 
-    if ( opt.ringbuffer )
-        arp = (struct ARP_req*) malloc( opt.ringbuffer * sizeof( struct ARP_req ) );
-    else
-        arp = (struct ARP_req*) malloc( sizeof( struct ARP_req ) );
-
     /* capture only WEP data to broadcast address */
 
     opt.f_type    = 2;
@@ -2428,6 +2423,11 @@ int do_attack_arp_resend( void )
             return( 1 );
         }
     }
+
+    if ( opt.ringbuffer )
+        arp = (struct ARP_req*) malloc( opt.ringbuffer * sizeof( struct ARP_req ) );
+    else
+        arp = (struct ARP_req*) malloc( sizeof( struct ARP_req ) );
 
     memset( ticks, 0, sizeof( ticks ) );
 
@@ -2772,11 +2772,6 @@ int do_attack_caffe_latte( void )
     struct pcap_pkthdr pkh;
     struct ARP_req * arp;
 
-    if ( opt.ringbuffer )
-        arp = (struct ARP_req*) malloc( opt.ringbuffer * sizeof( struct ARP_req ) );
-    else
-        arp = (struct ARP_req*) malloc( sizeof( struct ARP_req ) );
-
     /* capture only WEP data to broadcast address */
 
     opt.f_type    = 2;
@@ -2841,6 +2836,11 @@ int do_attack_caffe_latte( void )
             return( 1 );
         }
     }
+
+    if ( opt.ringbuffer )
+        arp = (struct ARP_req*) malloc( opt.ringbuffer * sizeof( struct ARP_req ) );
+    else
+        arp = (struct ARP_req*) malloc( sizeof( struct ARP_req ) );
 
     memset( ticks, 0, sizeof( ticks ) );
 

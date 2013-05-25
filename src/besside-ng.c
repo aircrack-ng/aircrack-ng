@@ -421,7 +421,7 @@ static inline void timer_print(void)
 			_state.s_now.tv_sec, _state.s_now.tv_usec);
 
 	while (t) {
-		
+
 		printf(
 				#ifndef __APPLE_CC__
 				"%d) %lu.%lu %p(%p)\n",
@@ -603,7 +603,7 @@ static struct network *network_add(struct ieee80211_frame *wh)
 
 	if (!bssid)
 		return NULL;
-	
+
 	n = network_new();
 
 	memcpy(n->n_bssid, bssid, sizeof(n->n_bssid));
@@ -1646,7 +1646,7 @@ static void found_ssid(struct network *n)
 	p = n->n_beacon.p_data + sizeof(struct ieee80211_frame) + 8 + 2 + 2;
 
 	ssidlen = strlen(n->n_ssid);
-	assert((n->n_beacon.p_len + ssidlen) <= 
+	assert((n->n_beacon.p_len + ssidlen) <=
 	       (int) sizeof(n->n_beacon.p_data));
 
 	assert(*p == IEEE80211_ELEMID_SSID);
@@ -2110,7 +2110,7 @@ static struct client *client_update(struct network *n,
 		c->c_next = n->n_clients.c_next;
 		n->n_clients.c_next = c;
 
-		if (n->n_have_beacon && 
+		if (n->n_have_beacon &&
 		    (n->n_crypto == CRYPTO_WPA || n->n_crypto == CRYPTO_WEP))
 			found_new_client(n, c);
 	}
@@ -2452,7 +2452,7 @@ static void wifi_data(struct network *n, struct ieee80211_frame *wh, int len)
 		c = client_get(n, wh);
 
 		/* c can be null if using our MAC (e.g., VAPs) */
-		if (c) 
+		if (c)
 			process_eapol(n, c, p, len, wh, orig);
 		return;
 	}
@@ -2620,7 +2620,7 @@ static void print_status(int advance)
 			       n->n_data_count,
 			       n->n_flood_in.s_speed,
 			       n->n_flood_out.s_speed,
-			       (int) (n->n_replay_len 
+			       (int) (n->n_replay_len
 			       	       - sizeof(struct ieee80211_frame) - 4 - 4)
 			       );
 			break;
@@ -2775,10 +2775,12 @@ static void resume_network(char *buf)
 {
 	char *p = buf, *p2;
 	int state = 0;
-	struct network *n = network_new();
+	struct network *n;
 
 	if (buf[0] == '#')
 		return;
+
+	n = network_new();
 
 	while (1) {
 		p2 = strchr(p, '|');
@@ -3080,7 +3082,7 @@ static void print_state(int UNUSED(x))
 		#endif
 		s->s_now.tv_sec, s->s_now.tv_usec);
 
-	
+
 	while (t) {
 		printf(
 		       #ifndef __APPLE_CC__

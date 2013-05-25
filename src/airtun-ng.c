@@ -488,10 +488,9 @@ unsigned char* getCompleteFrag(unsigned char* smac, int sequence, int *packetlen
 
             if(old->wep)
             {
-                packet = (unsigned char*) malloc(len+old->headerlen+8);
-
                 if( opt.crypt == CRYPT_WEP)
                 {
+					packet = (unsigned char*) malloc(len+old->headerlen+8);
                     K[0] = rand() & 0xFF;
                     K[1] = rand() & 0xFF;
                     K[2] = rand() & 0xFF;
