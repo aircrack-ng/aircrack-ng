@@ -1,4 +1,4 @@
-/* 
+/*
  * (c) 2010-2012 Thomas D'Otreppe <tdotreppe@aircrack-ng.org>
  *
  * This program is free software; you can redistribute it and/or
@@ -31,9 +31,9 @@
  */
 
 #define _MAJ 1
-#define _MIN 1
+#define _MIN 2
 #define _SUB_MIN 0
-#define _BETA 0
+#define _BETA 1
 #define _RC 0
 #define WEBSITE "http://www.aircrack-ng.org"
 
