@@ -2334,6 +2334,8 @@ int addarp(uchar* packet, int length)
     if(memcmp(bssid, opt.r_bssid, 6) != 0)
         return -1;
 
+    packet[21] ^= ((rand() % 255)+1); //Sohail:flip sender MAC address since few clients do not honor ARP from its own MAC
+
     if(opt.nb_arp >= opt.ringbuffer)
         return -1;
 
