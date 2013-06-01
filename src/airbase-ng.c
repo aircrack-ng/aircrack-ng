@@ -116,7 +116,10 @@ static struct wif *_wi_in, *_wi_out;
     "\xB4\x00\x4E\x04\xBB\xBB\xBB\xBB\xBB\xBB\xCC\xCC\xCC\xCC\xCC\xCC"
 
 #define RATES           \
-    "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
+    "\x01\x04\x02\x04\x0B\x16"
+
+#define EXTENDED_RATES           \
+    "\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 
 #define PROBE_REQ       \
     "\x40\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"  \
@@ -134,10 +137,12 @@ static struct wif *_wi_in, *_wi_out;
     "\x30\x14\x01\x00\x00\x0f\xac\x02\x01\x00\x00\x0f\xac\x01\x01\x00"  \
     "\x00\x0f\xac\x02\x01\x00"
 
-#define WPA_TAGS        \
+#define ALL_WPA2_TAGS        \
     "\x30\x28\x01\x00\x00\x0f\xac\x01\x05\x00\x00\x0f\xac\x01\x00\x0f"  \
     "\xac\x02\x00\x0f\xac\x03\x00\x0f\xac\x04\x00\x0f\xac\x05\x02\x00"  \
-    "\x00\x0f\xac\x01\x00\x0f\xac\x02\x03\x00"  \
+    "\x00\x0f\xac\x01\x00\x0f\xac\x02\x03\x00"
+
+#define ALL_WPA1_TAGS        \
     "\xdd\x2A\x00\x50\xf2\x01\x01\x00\x00\x50\xf2\x02\x05\x00\x00\x50"  \
     "\xf2\x01\x00\x50\xf2\x02\x00\x50\xf2\x03\x00\x50\xf2\x04\x00\x50"  \
     "\xf2\x05\x02\x00\x00\x50\xf2\x01\x00\x50\xf2\x02"
@@ -3028,27 +3033,32 @@ skip_probe:
                     memcpy(packet + 10, opt.r_bssid, 6);
                     memcpy(packet + 16, opt.r_bssid, 6);
 
+                    // TODO: See also about 100 lines below
                     if( opt.allwpa )
                     {
-                        memcpy(packet+length, WPA_TAGS, 0x56);
-                        length += 0x56;
+                        memcpy(packet+length, ALL_WPA2_TAGS, sizeof(ALL_WPA2_TAGS) -1);
+                        length += sizeof(ALL_WPA2_TAGS) -1;
+                        memcpy(packet+length, ALL_WPA1_TAGS, sizeof(ALL_WPA1_TAGS) -1);
+                        length += sizeof(ALL_WPA1_TAGS) -1;
                     }
-
-                    if(opt.wpa2type > 0)
+                    else 
                     {
-                        memcpy(packet+length, WPA2_TAG, 22);
-                        packet[length+7] = opt.wpa2type;
-                        packet[length+13] = opt.wpa2type;
-                        length += 22;
-                    }
+                    	if(opt.wpa2type > 0)
+						{
+							memcpy(packet+length, WPA2_TAG, 22);
+							packet[length+7] = opt.wpa2type;
+							packet[length+13] = opt.wpa2type;
+							length += 22;
+						}
 
-                    if(opt.wpa1type > 0)
-                    {
-                        memcpy(packet+length, WPA1_TAG, 24);
-                        packet[length+11] = opt.wpa1type;
-                        packet[length+17] = opt.wpa1type;
-                        length += 24;
-                    }
+                    	if(opt.wpa1type > 0)
+						{
+							memcpy(packet+length, WPA1_TAG, 24);
+							packet[length+11] = opt.wpa1type;
+							packet[length+17] = opt.wpa1type;
+							length += 24;
+						}	
+					}
 
                     send_packet(packet, length);
 
@@ -3126,26 +3136,31 @@ skip_probe:
                     memcpy(packet + 10, opt.r_bssid, 6);
                     memcpy(packet + 16, opt.r_bssid, 6);
 
+                    // TODO: See also around ~3500
                     if( opt.allwpa )
                     {
-                        memcpy(packet+length, WPA_TAGS, 0x56);
-                        length += 0x56;
+                        memcpy(packet+length, ALL_WPA2_TAGS, sizeof(ALL_WPA2_TAGS) -1);
+                        length += sizeof(ALL_WPA2_TAGS) -1;
+                        memcpy(packet+length, ALL_WPA1_TAGS, sizeof(ALL_WPA1_TAGS) -1);
+                        length += sizeof(ALL_WPA1_TAGS) -1;
                     }
-
-                    if(opt.wpa2type > 0)
+                    else 
                     {
-                        memcpy(packet+length, WPA2_TAG, 22);
-                        packet[length+7] = opt.wpa2type;
-                        packet[length+13] = opt.wpa2type;
-                        length += 22;
-                    }
+                    	if(opt.wpa2type > 0)
+						{
+							memcpy(packet+length, WPA2_TAG, 22);
+							packet[length+7] = opt.wpa2type;
+							packet[length+13] = opt.wpa2type;
+							length += 22;
+						}
 
-                    if(opt.wpa1type > 0)
-                    {
-                        memcpy(packet+length, WPA1_TAG, 24);
-                        packet[length+11] = opt.wpa1type;
-                        packet[length+17] = opt.wpa1type;
-                        length += 24;
+						if(opt.wpa1type > 0)
+						{
+							memcpy(packet+length, WPA1_TAG, 24);
+							packet[length+11] = opt.wpa1type;
+							packet[length+17] = opt.wpa1type;
+							length += 24;
+						}
                     }
 
                     send_packet(packet, length);
@@ -3556,8 +3571,8 @@ void beacon_thread( void *arg )
             memcpy(beacon+beacon_len, essid, essid_len); //actual essid
             beacon_len+=essid_len;
 
-            memcpy(beacon+beacon_len, RATES, 16); //rates+extended rates
-            beacon_len+=16;
+            memcpy(beacon+beacon_len, RATES, sizeof(RATES) -1); //rates
+            beacon_len += sizeof(RATES) -1;
 
             beacon[beacon_len] = 0x03; //channel tag
             beacon[beacon_len+1] = 0x01;
@@ -3573,11 +3588,10 @@ void beacon_thread( void *arg )
 
             if( opt.allwpa )
             {
-                memcpy(beacon+beacon_len, WPA_TAGS, 0x56);
-                beacon_len += 0x56;
+                memcpy(beacon+beacon_len, ALL_WPA2_TAGS, sizeof(ALL_WPA2_TAGS) -1);
+                beacon_len += sizeof(ALL_WPA2_TAGS) -1;
             }
-
-            if(opt.wpa2type > 0)
+            else if(opt.wpa2type > 0)
             {
                 memcpy(beacon+beacon_len, WPA2_TAG, 22);
                 beacon[beacon_len+7] = opt.wpa2type;
@@ -3585,7 +3599,16 @@ void beacon_thread( void *arg )
                 beacon_len += 22;
             }
 
-            if(opt.wpa1type > 0)
+            // Add extended rates
+            memcpy(beacon + beacon_len, EXTENDED_RATES, sizeof(EXTENDED_RATES) -1);
+            beacon_len += sizeof(EXTENDED_RATES) -1;
+
+            if( opt.allwpa )
+            {
+                memcpy(beacon+beacon_len, ALL_WPA1_TAGS, sizeof(ALL_WPA1_TAGS) -1);
+                beacon_len += sizeof(ALL_WPA1_TAGS) -1;
+            }
+            else if(opt.wpa1type > 0)
             {
                 memcpy(beacon+beacon_len, WPA1_TAG, 24);
                 beacon[beacon_len+11] = opt.wpa1type;
