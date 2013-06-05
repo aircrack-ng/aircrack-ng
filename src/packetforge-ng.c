@@ -77,7 +77,7 @@ extern int add_crc32(unsigned char* data, int length);
 char usage[] =
 "\n"
 "  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
-"  Original work: Christophe Devine and Martin Beck\n"
+"  Original work: Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  Usage: packetforge-ng <mode> <options>\n"

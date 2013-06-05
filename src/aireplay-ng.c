@@ -140,7 +140,6 @@ char usage[] =
 
 "\n"
 "  %s - (C) 2006-2010 Thomas d\'Otreppe\n"
-"  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: aireplay-ng <options> <replay interface>\n"
