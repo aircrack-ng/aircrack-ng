@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2006-2010 Thomas d'Otreppe
+ *  Copyright (C) 2006-2013 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  Advanced WEP attacks developed by KoreK
@@ -181,7 +181,7 @@ const uchar R[256] =
 
 char usage[] =
 "\n"
-"  %s - (C) 2006-2010 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2013 Thomas d\'Otreppe\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: aircrack-ng [options] <.cap / .ivs file(s)>\n"

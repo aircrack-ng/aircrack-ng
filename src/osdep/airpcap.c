@@ -1,5 +1,5 @@
   /*
-   *  Copyright (c) 2007, 2008, Thomas d'Otreppe
+   *  Copyright (c) 2007-2013 Thomas d'Otreppe
    *
    *  Airpcap stuff
    *

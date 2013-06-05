@@ -2,7 +2,7 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
- *  Copyright (C) 2008-2010 Thomas d'Otreppe
+ *  Copyright (C) 2008-2013 Thomas d'Otreppe
  *  Copyright (C) 2008, 2009 Martin Beck
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -155,7 +155,7 @@ extern const unsigned long int crc_tbl[256];
 
 char usage[] =
 "\n"
-"  %s - (C) 2008-2010 Thomas d'Otreppe\n"
+"  %s - (C) 2008-2013 Thomas d'Otreppe\n"
 "  Original work: Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -3041,7 +3041,7 @@ skip_probe:
                         memcpy(packet+length, ALL_WPA1_TAGS, sizeof(ALL_WPA1_TAGS) -1);
                         length += sizeof(ALL_WPA1_TAGS) -1;
                     }
-                    else 
+                    else
                     {
                     	if(opt.wpa2type > 0)
 						{
@@ -3057,7 +3057,7 @@ skip_probe:
 							packet[length+11] = opt.wpa1type;
 							packet[length+17] = opt.wpa1type;
 							length += 24;
-						}	
+						}
 					}
 
                     send_packet(packet, length);
@@ -3144,7 +3144,7 @@ skip_probe:
                         memcpy(packet+length, ALL_WPA1_TAGS, sizeof(ALL_WPA1_TAGS) -1);
                         length += sizeof(ALL_WPA1_TAGS) -1;
                     }
-                    else 
+                    else
                     {
                     	if(opt.wpa2type > 0)
 						{

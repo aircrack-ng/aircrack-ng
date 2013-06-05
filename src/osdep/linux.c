@@ -1,7 +1,7 @@
 /*
  *  OS dependent APIs for Linux
  *
- *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2006-2013 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@
 #include <linux/nl80211.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
-#include <netlink/genl/ctrl.h>  
+#include <netlink/genl/ctrl.h>
 #include <netlink/msg.h>
 #include <netlink/attr.h>
 #include <linux/genetlink.h>
@@ -492,7 +492,7 @@ static int linux_set_rate(struct wif *wi, int rate)
     case DT_MAC80211_RT:
 
         dev->rate = (rate/500000);
-        //return 0; 
+        //return 0;
         //Newer mac80211 stacks (2.6.31 and up)
         //don't care about Radiotap header anymore, so ioctl below must also be done!
         //[see Documentation/networking/mac80211-injection.txt]

@@ -1,5 +1,5 @@
   /*
-   *  Copyright (c) 2008, Thomas d'Otreppe
+   *  Copyright (c) 2008-2013, Thomas d'Otreppe
    *
    *  Common OSdep stuff
    *
