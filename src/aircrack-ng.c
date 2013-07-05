@@ -4589,17 +4589,16 @@ int do_wpa_crack()
 
 int next_key( char **key, int keysize )
 {
-	char *tmp, *tmp2;
+	char *tmp;
 	int i, rtn;
 	unsigned int dec;
 	char *hex;
 
-	tmp2 = tmp = (char*) malloc(1024);
+	tmp = (char*) malloc(1024);
 
 	while(1)
 	{
 		rtn = 0;
-		tmp = tmp2;
 		pthread_mutex_lock( &mx_dic );
 		if(opt.dict == NULL)
 		{
