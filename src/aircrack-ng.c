@@ -479,8 +479,9 @@ inline int wpa_receive_passphrase(char *key, struct WPA_data* data)
 int checkbssids(char *bssidlist)
 {
 	int first = 1;
+	int failed = 0;
 	int i = 0;
-	char *list, *tmp;
+	char *list, *frontlist, *tmp;
 	int nbBSSID = 0;
 
 	if(bssidlist == NULL) return -1;
@@ -489,7 +490,7 @@ int checkbssids(char *bssidlist)
 #define VALID_CHAR(x)   ((IS_X(x)) || hexCharToInt(x) > -1)
 
 #define VALID_SEP(arg)	( ((arg) == '_') || ((arg) == '-') || ((arg) == ':') )
-	list = strdup(bssidlist);
+	frontlist = list = strdup(bssidlist);
 	do
 	{
 		tmp = strsep(&list, ",");
@@ -499,42 +500,50 @@ int checkbssids(char *bssidlist)
 
 		++nbBSSID;
 
-		if(strlen(tmp) != 17) return -1;
+		if(strlen(tmp) != 17) failed = 1;
 
 		//first byte
-		if(!VALID_CHAR(tmp[ 0])) return -1;
-		if(!VALID_CHAR(tmp[ 1])) return -1;
-		if(!VALID_SEP( tmp[ 2])) return -1;
+		if(!VALID_CHAR(tmp[ 0])) failed = 1;
+		if(!VALID_CHAR(tmp[ 1])) failed = 1;
+		if(!VALID_SEP( tmp[ 2])) failed = 1;
 
 		//second byte
-		if(!VALID_CHAR(tmp[ 3])) return -1;
-		if(!VALID_CHAR(tmp[ 4])) return -1;
-		if(!VALID_SEP( tmp[ 5])) return -1;
+		if(!VALID_CHAR(tmp[ 3])) failed = 1;
+		if(!VALID_CHAR(tmp[ 4])) failed = 1;
+		if(!VALID_SEP( tmp[ 5])) failed = 1;
 
 		//third byte
-		if(!VALID_CHAR(tmp[ 6])) return -1;
-		if(!VALID_CHAR(tmp[ 7])) return -1;
-		if(!VALID_SEP( tmp[ 8])) return -1;
+		if(!VALID_CHAR(tmp[ 6])) failed = 1;
+		if(!VALID_CHAR(tmp[ 7])) failed = 1;
+		if(!VALID_SEP( tmp[ 8])) failed = 1;
 
 		//fourth byte
-		if(!VALID_CHAR(tmp[ 9])) return -1;
-		if(!VALID_CHAR(tmp[10])) return -1;
-		if(!VALID_SEP( tmp[11])) return -1;
+		if(!VALID_CHAR(tmp[ 9])) failed = 1;
+		if(!VALID_CHAR(tmp[10])) failed = 1;
+		if(!VALID_SEP( tmp[11])) failed = 1;
 
 		//fifth byte
-		if(!VALID_CHAR(tmp[12])) return -1;
-		if(!VALID_CHAR(tmp[13])) return -1;
-		if(!VALID_SEP( tmp[14])) return -1;
+		if(!VALID_CHAR(tmp[12])) failed = 1;
+		if(!VALID_CHAR(tmp[13])) failed = 1;
+		if(!VALID_SEP( tmp[14])) failed = 1;
 
 		//sixth byte
-		if(!VALID_CHAR(tmp[15])) return -1;
-		if(!VALID_CHAR(tmp[16])) return -1;
+		if(!VALID_CHAR(tmp[15])) failed = 1;
+		if(!VALID_CHAR(tmp[16])) failed = 1;
 
+		if(failed) {
+			free(frontlist);
+			return -1;
+		}
 
 		if(first)
 		{
-			for(i=0; i< 17; i++)
-				if( IS_X(tmp[i])) return -1;
+			for(i=0; i< 17; i++) {
+				if( IS_X(tmp[i])) {
+					free(frontlist);
+					return -1;
+				}
+			}
 
 			opt.firstbssid = (unsigned char *) malloc(sizeof(unsigned char));
 			getmac(tmp, 1, opt.firstbssid);
@@ -544,6 +553,7 @@ int checkbssids(char *bssidlist)
 	} while(list);
 
 	// Success
+	free(frontlist);
 	return nbBSSID;
 }
 
