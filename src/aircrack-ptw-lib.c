@@ -1,5 +1,6 @@
 /*
  *  Copyright (c) 2007, 2008, 2009 Erik Tews, Andrei Pychkine and Ralf-Philipp Weinmann.
+ *                2013 Ramiro Polla
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,9 +48,9 @@
 
 // Internal state of rc4
 typedef struct {
+	uint32_t s[n];
 	uint8_t i;
 	uint8_t j;
-	uint8_t s[n];
 } rc4state;
 
 
@@ -66,7 +67,7 @@ typedef struct {
 } doublesorthelper;
 
 // The rc4 initial state, the idendity permutation
-static const uint8_t rc4initial[] =
+static const uint32_t rc4initial[] =
 {0,1,2,3,4,5,6,7,8,9,10,
 11,12,13,14,15,16,17,18,19,20,
 21,22,23,24,25,26,27,28,29,30,
@@ -117,45 +118,173 @@ PTW_tableentry keytable[KEYHSBYTES][n];
 
 // For sorting
 static int compare(const void * ina, const void * inb) {
-        PTW_tableentry * a = (PTW_tableentry * )ina;
-        PTW_tableentry * b = (PTW_tableentry * )inb;
-        if (a->votes > b->votes) {
-                return -1;
-        } else if (a->votes == b->votes) {
-                return 0;
-        } else {
-                return 1;
-        }
+	PTW_tableentry * a = (PTW_tableentry * )ina;
+	PTW_tableentry * b = (PTW_tableentry * )inb;
+	return b->votes - a->votes;
 }
 
 // For sorting
 static int comparedoublesorthelper(const void * ina, const void * inb) {
-        doublesorthelper * a = (doublesorthelper * )ina;
-        doublesorthelper * b = (doublesorthelper * )inb;
-        if (a->difference > b->difference) {
-                return 1;
-        } else if (a->difference == b->difference) {
-                return 0;
-        } else {
-                return -1;
-        }
+	doublesorthelper * a = (doublesorthelper * )ina;
+	doublesorthelper * b = (doublesorthelper * )inb;
+	if (a->difference > b->difference) {
+		return 1;
+	} else if (a->difference == b->difference) {
+		return 0;
+	} else {
+		return -1;
+	}
 }
 
+
+#if defined(__amd64) && defined(__SSE2__)
+static const uint32_t __attribute__((used)) __attribute__((aligned (16))) x0123 [4] = { 0, 1, 2, 3 };
+static const uint32_t __attribute__((used)) __attribute__((aligned (16))) x4444 [4] = { 4, 4, 4, 4 };
+static int rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream)
+{
+	int idx, i, j;
+	int scratch1, scratch2;
+
+	__asm__ volatile(
+#define state      "%%rsp"
+#define keybuf     "0x400(%%rsp)"
+#define keystream_ "0x428(%%rsp)"
+		// setup stack
+		"movq  %%rsp, %q0             \n\t"
+		"subq $0x430, %%rsp           \n\t"
+		"andq   $-16, %%rsp           \n\t"
+		"movq    %q0, -8(%%rsp)       \n\t"
+
+		// save keystream variable
+		"movq %q6, "keystream_"       \n\t"
+
+		// keylen += IVBYTES
+		"addl    $3, %k4              \n\t"
+
+		// memcpy(keybuf, iv, IVBYTES);
+		"movl  (%q5), %k1             \n\t"
+		"movl   %k1 , "keybuf"        \n\t"
+		// memcpy(&keybuf[IVBYTES], key, keylen);
+		"movdqa   (%q3), %%xmm0       \n\t"
+		"cmpl    $16, %k4             \n\t"
+		"movdqu %%xmm0, 3+"keybuf"    \n\t"
+		"jng     .0                   \n\t"
+		"movdqa 16(%q3), %%xmm1       \n\t"
+		"movdqu %%xmm1,19+"keybuf"    \n\t"
+		".0:                          \n\t"
+
+		// key = keybuf
+		"lea  "keybuf", %q3           \n\t"
+		// load xmm registers
+		"movdqa (x0123), %%xmm0       \n\t"
+		"movdqa (x4444), %%xmm1       \n\t"
+		// clear some registers
+		"xorq      %q0, %q0           \n\t" // idx
+		"xorq      %q1, %q1           \n\t" // i
+		"xorq      %q2, %q2           \n\t" // j
+
+		// build identity array
+		".p2align 4                   \n\t"
+		".identity_loop:              \n\t"
+		"movdqa %%xmm0, ("state",%q1,4)\n\t"
+		"addb   $4, %b1               \n\t"
+		"paddd  %%xmm1, %%xmm0        \n\t"
+		"jnc  .identity_loop          \n\t"
+
+		// load state into register
+		"movq "state", %q1            \n\t"
+
+		// %q4 = and mask for idx
+		"movq %q4, %q8                \n\t"
+		"cmpq $16, %q8                \n\t"
+		"movq $15, %q4                \n\t"
+		"je    .7                     \n\t"
+		"shrq  $1, %q4                \n\t"
+		".7:                          \n\t"
+
+		// init array with key
+		".p2align 4                   \n\t"
+		".init_loop:                  \n\t"
+		"movl    %k0, %k8             \n\t" /* scratch2        = idx             */
+		"movl   (%q1), %k5            \n\t" /* s1              = state[i]        */
+		"leal  1(%q0,1), %k0          \n\t" /* idx++                             */
+		"movzbl (%q3,%q8,1), %k6      \n\t" /* key_n           = key[scratch2]   */
+		"leal   (%q5,%q6,1), %k8      \n\t" /* scratch2        = s1 + key_n      */
+		"addl    %k8, %k2             \n\t" /* j              += scratch2        */
+		"andl    %k4, %k0             \n\t" /* idx            &= mask            */
+		"movzbl  %b2, %k8             \n\t" /* scratch2        = j               */
+		"movl ("state",%q8,4), %k7    \n\t" /* s2              = state[scratch2] */
+		"movl    %k7, (%q1)           \n\t" /* state[i]        = s2              */
+		"addq     $4, %q1             \n\t" /* i++                               */
+		"movl    %k5, ("state",%q8,4) \n\t" /* state[scratch2] = s1              */
+		"cmpq    %q1, %q3             \n\t" /* state          == &state[0x100]   */
+		"jne .init_loop               \n\t"
+
+		// restore keystream variable
+		"movq "keystream_", %q6       \n\t"
+
+		// clear some registers
+		"xorq  %q2, %q2               \n\t" // j = 0
+		"xorq  %q0, %q0               \n\t" // result
+
+#define RC4TEST_LOOP(offset) \
+		"movl 4*"offset"("state"), %k5\n\t" /* s1 = state[i]         */ \
+		"leal (%q5,%q2,1), %k4        \n\t" /*                       */ \
+		"movzbl %b4, %k2              \n\t" /* j += s1               */ \
+		"movl ("state",%q2,4), %k1    \n\t" /* s2 = state[j]         */ \
+		"movl %k1, 4*"offset"("state")\n\t" /* state[i] = s2         */ \
+		"movl %k5, ("state",%q2,4)    \n\t" /* state[j] = s1         */ \
+		"addb %b1, %b5                \n\t" /* s1 += s2;             */ \
+		"movb ("state",%q5,4), %b3    \n\t" /* ret = state[s1]       */ \
+		"cmpb %b3, "offset"-1(%q6)    \n\t" /* ret == keystream[i-1] */ \
+		"jne .ret                     \n\t"
+
+		RC4TEST_LOOP("1")
+		RC4TEST_LOOP("2")
+		RC4TEST_LOOP("3")
+		RC4TEST_LOOP("4")
+		RC4TEST_LOOP("5")
+		RC4TEST_LOOP("6")
+
+#undef RC4TEST_LOOP
+
+		"addb $1, %b0                 \n\t"
+		".ret:                        \n\t"
+
+		// restore stack
+		"movq -8(%%rsp), %%rsp        \n\t"
+
+	: "=&r"(idx), "=&r"(i), "=&r"(j),
+	  "+r"(key), "+r"(keylen), "+r"(iv), "+r"(keystream),
+	  "=&r"(scratch1), "=&r"(scratch2)
+	:
+	: "xmm0", "xmm1"
+	);
+#undef state
+#undef keybuf
+#undef keystream_
+
+	return idx;
+}
+#endif
 
 // RC4 key setup
 static void rc4init ( uint8_t * key, int keylen, rc4state * state) {
 	int i;
 	unsigned char j;
 	uint8_t tmp;
-	memcpy(state->s, &rc4initial, n);
+	int idx = 0;
+	memcpy(state->s, &rc4initial, sizeof(rc4initial));
 	j = 0;
 	for (i = 0; i < n; i++) {
-                /*  this should be:
-                    j = (j + state->s[i] + key[i % keylen]) % n;
-                    but as "j" is declared as unsigned char and n equals 256,
-                    we can "optimize" it
-                */
-		j = (j + state->s[i] + key[i % keylen]);
+		/*  this should be:
+		    j = (j + state->s[i] + key[i % keylen]) % n;
+		    but as "j" is declared as unsigned char and n equals 256,
+		    we can "optimize" it
+		*/
+		j = (j + state->s[i] + key[idx]);
+		if (++idx == keylen)
+			idx = 0;
 		tmp = state->s[i];
 		state->s[i] = state->s[j];
 		state->s[j] = tmp;
@@ -178,17 +307,27 @@ static uint8_t rc4update(rc4state * state) {
 	return state->s[k];
 }
 
+static int rc4test(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream)
+{
+	uint8_t keybuf[PTW_KSBYTES];
+	rc4state rc4state;
+	int j;
+	memcpy(&keybuf[IVBYTES], key, keylen);
+	memcpy(keybuf, iv, IVBYTES);
+	rc4init(keybuf, keylen+IVBYTES, &rc4state);
+	for (j = 0; j < TESTBYTES; j++) {
+		if  ((rc4update(&rc4state) ^ keystream[j]) != 0) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 // For sorting
 static int comparesorthelper(const void * ina, const void * inb) {
 	sorthelper * a = (sorthelper * ) ina;
 	sorthelper * b = (sorthelper * ) inb;
-	if (a->distance > b->distance) {
-		return 1;
-	} else if (a->distance == b->distance) {
-		return 0;
-	} else {
-		return -1;
-	}
+	return a->distance - b->distance;
 }
 
 /*
@@ -200,32 +339,32 @@ static int comparesorthelper(const void * ina, const void * inb) {
  * kb - how many keybytes should be guessed
  */
 static void guesskeybytes(int ivlen, uint8_t * iv, uint8_t * keystream, uint8_t * result, int kb) {
-        uint8_t state[n];
-        uint8_t j = 0;
-        uint8_t tmp;
-        int i;
-        int jj = ivlen;
-        uint8_t ii;
-        uint8_t s = 0;
-        memcpy(state, rc4initial, n);
-        for (i = 0; i < ivlen; i++) {
-                j += state[i] + iv[i];
-                tmp = state[i];
-                state[i] = state[j];
-                state[j] = tmp;
-        }
-        for (i = 0; i < kb; i++) {
-                tmp = jj - keystream[jj-1];
-                ii = 0;
-                while(tmp != state[ii]) {
-                        ii++;
-                }
-                s += state[jj];
-                ii -= (j+s);
-                result[i] = ii;
-                jj++;
-        }
-        return;
+	uint32_t state[n];
+	uint8_t j = 0;
+	uint8_t tmp;
+	int i;
+	int jj = ivlen;
+	uint8_t ii;
+	uint8_t s = 0;
+	memcpy(state, &rc4initial, sizeof(rc4initial));
+	for (i = 0; i < ivlen; i++) {
+		j += state[i] + iv[i];
+		tmp = state[i];
+		state[i] = state[j];
+		state[j] = tmp;
+	}
+	for (i = 0; i < kb; i++) {
+		tmp = jj - keystream[jj-1];
+		ii = 0;
+		while(tmp != state[ii]) {
+			ii++;
+		}
+		s += state[jj];
+		ii -= (j+s);
+		result[i] = ii;
+		jj++;
+	}
+	return;
 }
 
 /*
@@ -233,49 +372,40 @@ static void guesskeybytes(int ivlen, uint8_t * iv, uint8_t * keystream, uint8_t 
  */
 static int correct(PTW_attackstate * state, uint8_t * key, int keylen) {
 	int i;
-        int j;
-        int k;
-        uint8_t keybuf[PTW_KSBYTES];
-        rc4state rc4state;
+	int k;
 
 	// We need at least 3 sessions to be somehow certain
 	if (state->sessions_collected < 3) {
 		return 0;
 	}
 
-        tried++;
+	tried++;
 
-        k = rand()%(state->sessions_collected-10);
-        for ( i=k; i < k+10; i++) {
-                memcpy(&keybuf[IVBYTES], key, keylen);
-                memcpy(keybuf, state->sessions[i].iv, IVBYTES);
-                rc4init(keybuf, keylen+IVBYTES, &rc4state);
-                for (j = 0; j < TESTBYTES; j++) {
-                        if  ((rc4update(&rc4state) ^ state->sessions[i].keystream[j]) != 0) {
-                                return 0;
-                        }
-                }
-        }
-        return 1;
+	k = rand()%(state->sessions_collected-10);
+	for ( i=k; i < k+10; i++) {
+		if (!state->rc4test(key, keylen, state->sessions[i].iv, state->sessions[i].keystream))
+			return 0;
+	}
+	return 1;
 }
 
 /*
  * Calculate the squaresum of the errors for both distributions
  */
 static void getdrv(PTW_tableentry orgtable[][n], int keylen, double * normal, double * ausreiser) {
-        int i,j;
+	int i,j;
 	int numvotes = 0;
-        double e;
+	double e;
 	double e2;
 	double emax;
-        double help = 0.0;
+	double help = 0.0;
 	double maxhelp = 0;
 	double maxi = 0;
-        for (i = 0; i < n; i++) {
-                numvotes += orgtable[0][i].votes;
-        }
-        e = numvotes/n;
-        for (i = 0; i < keylen; i++) {
+	for (i = 0; i < n; i++) {
+		numvotes += orgtable[0][i].votes;
+	}
+	e = numvotes/n;
+	for (i = 0; i < keylen; i++) {
 		emax = eval[i] * numvotes;
 		e2 = ((1.0 - eval[i])/255.0) * numvotes;
 		normal[i] = 0;
@@ -288,7 +418,7 @@ static void getdrv(PTW_tableentry orgtable[][n], int keylen, double * normal, do
 				maxi = j;
 			}
 		}
-                for (j = 0; j < n; j++) {
+		for (j = 0; j < n; j++) {
 			if (j == maxi) {
 				help = (1.0-orgtable[i][j].votes/emax);
 			} else {
@@ -299,8 +429,8 @@ static void getdrv(PTW_tableentry orgtable[][n], int keylen, double * normal, do
 			help = (1.0-orgtable[i][j].votes/e);
 			help = help*help;
 			normal[i] += help;
-                }
-        }
+		}
+	}
 }
 
 /*
@@ -327,9 +457,9 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
 			}
 		}
 		return 0;
-        } else if (keybyte == fixat) {
-                key[keybyte] = fixvalue-sum;
-                return doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, fixvalue, strongbytes, bf, validchars);
+	} else if (keybyte == fixat) {
+		key[keybyte] = fixvalue-sum;
+		return doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, fixvalue, strongbytes, bf, validchars);
 	} else if (strongbytes[keybyte] == 1) {
 		// printf("assuming byte %d to be strong\n", keybyte);
 		tmp = 3 + keybyte;
@@ -344,13 +474,13 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
 		return 0;
 	} else {
 		for (i = 0; i < searchborders[keybyte]; i++) {
-                    key[keybyte] = sortedtable[keybyte][i].b - sum;
-                    if(!opt.is_quiet)
-                    {
-                        depth[keybyte] = i;
-                        keytable[keybyte][i].b = key[keybyte];
-                    }
-                    if (doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, sortedtable[keybyte][i].b, strongbytes, bf, validchars)) {
+			key[keybyte] = sortedtable[keybyte][i].b - sum;
+			if(!opt.is_quiet)
+			{
+				depth[keybyte] = i;
+				keytable[keybyte][i].b = key[keybyte];
+			}
+			if (doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, sortedtable[keybyte][i].b, strongbytes, bf, validchars)) {
 				return 1;
 			}
 		}
@@ -368,8 +498,8 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	int fixat;
 	int fixvalue;
 
-        if(!opt.is_quiet)
-            memcpy(keytable, table, sizeof(PTW_tableentry) * n * keylen);
+	if(!opt.is_quiet)
+		memcpy(keytable, table, sizeof(PTW_tableentry) * n * keylen);
 
 	for (i = 0; i < keylen; i++) {
 		if (strongbytes[i] == 1) {
@@ -382,7 +512,7 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	prod = 0;
 	fixat = -1;
 	fixvalue = 0;
-        max_tries = keylimit;
+	max_tries = keylimit;
 
 	while(prod < keylimit) {
 		if (doRound(table, 0, fixat, fixvalue, choices, key, keylen, state, 0, strongbytes, bf, validchars) == 1) {
@@ -410,7 +540,7 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 			}
 		}
 
-                /*
+		/*
 		do {
 			i++;
 		} while (strongbytes[sh2[i].keybyte] == 1);
@@ -422,8 +552,8 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 
 	}
 	if(!opt.is_quiet)
-            show_wep_stats( keylen -1, 1, keytable, choices, depth, tried );
-    return 0;
+		show_wep_stats( keylen -1, 1, keytable, choices, depth, tried );
+	return 0;
 }
 
 
@@ -437,12 +567,32 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	doublesorthelper helper[KEYHSBYTES];
 	int simple, onestrong, twostrong;
 	int i,j;
+#if defined(__amd64) && defined(__SSE2__)
+	/*
+	 * The 64-bit SSE2-optimized rc4test() requires this buffer to be
+	 * aligned at 3 bytes.
+	 */
+	uint8_t fullkeybuf_unaligned[PTW_KSBYTES+13];
+	uint8_t *fullkeybuf = &fullkeybuf_unaligned[13];
+#else
 	uint8_t fullkeybuf[PTW_KSBYTES];
+#endif
 	uint8_t guessbuf[PTW_KSBYTES];
 	sorthelper(*sh)[n-1];
 	PTW_tableentry (*table)[n] = alloca(sizeof(PTW_tableentry) * n * keylen);
 
-        tried=0;
+#if defined(__amd64) && defined(__SSE2__)
+	/*
+	 * sse2-optimized rc4test() function for amd64 only works
+	 * for keylen == 5 or keylen == 13
+	 */
+	if (keylen == 5 || keylen == 13)
+		state->rc4test = rc4test_amd64_sse2;
+	else
+#endif
+		state->rc4test = rc4test;
+
+	tried=0;
 	sh = NULL;
 
 	if (table == NULL) {
@@ -565,9 +715,9 @@ int PTW_addsession(PTW_attackstate * state, uint8_t * iv, uint8_t * keystream, i
 		for (j = 0; j < total; j++) {
 			state->packets_collected++;
 			guesskeybytes(IVBYTES, iv, &keystream[KSBYTES*j], buf, PTW_KEYHSBYTES);
-	                for (i = 0; i < KEYHSBYTES; i++) {
-	                	state->table[i][buf[i]].votes += weight[j];
-	                }
+			for (i = 0; i < KEYHSBYTES; i++) {
+				state->table[i][buf[i]].votes += weight[j];
+			}
 			if (state->allsessions_size < state->packets_collected) {
 				state->allsessions_size = state->allsessions_size << 1;
 				state->allsessions = realloc(state->allsessions, state->allsessions_size * sizeof(PTW_session));
@@ -580,11 +730,11 @@ int PTW_addsession(PTW_attackstate * state, uint8_t * iv, uint8_t * keystream, i
 			memcpy(state->allsessions[state->packets_collected-1].keystream, &keystream[KSBYTES*j], KSBYTES);
 			state->allsessions[state->packets_collected-1].weight = weight[j];
 		}
-                if ((state->sessions_collected < CONTROLSESSIONS)) {
-                        memcpy(state->sessions[state->sessions_collected].iv, iv, IVBYTES);
-                        memcpy(state->sessions[state->sessions_collected].keystream, keystream, KSBYTES);
-                        state->sessions_collected++;
-                }
+		if ((state->sessions_collected < CONTROLSESSIONS)) {
+			memcpy(state->sessions[state->sessions_collected].iv, iv, IVBYTES);
+			memcpy(state->sessions[state->sessions_collected].keystream, keystream, KSBYTES);
+			state->sessions_collected++;
+		}
 
 		return 1;
 	} else {
@@ -604,10 +754,10 @@ PTW_attackstate * PTW_newattackstate() {
 	}
 	memset(state, 0, sizeof(PTW_attackstate));
 	for (i = 0; i < PTW_KEYHSBYTES; i++) {
-                for (k = 0; k < n; k++) {
-                        state->table[i][k].b = k;
-                }
-        }
+		for (k = 0; k < n; k++) {
+			state->table[i][k].b = k;
+		}
+	}
 	state->allsessions = malloc(4096 * sizeof(PTW_session));
 	state->allsessions_size = 4096;
 	if (state->allsessions == NULL) {
@@ -615,7 +765,7 @@ PTW_attackstate * PTW_newattackstate() {
 		exit(-1);
 	}
 
-        return state;
+	return state;
 }
 
 /*

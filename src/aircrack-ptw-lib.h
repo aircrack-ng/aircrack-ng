@@ -77,6 +77,8 @@ typedef struct {
 	int weight;
 } PTW_session;
 
+typedef int (*rc4test_func)(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream);
+
 // The state of an attack
 // You should usually never modify these values manually
 typedef struct {
@@ -93,6 +95,8 @@ typedef struct {
 	// Sessions for the original klein attack
 	PTW_session * allsessions;
 	int allsessions_size;
+	// rc4test function, optimized if available
+	rc4test_func rc4test;
 } PTW_attackstate;
 
 PTW_attackstate * PTW_newattackstate();
