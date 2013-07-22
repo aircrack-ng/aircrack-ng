@@ -4599,12 +4599,12 @@ int do_wpa_crack()
 
 int next_key( char **key, int keysize )
 {
-	char *tmp;
+	char *tmp, *tmpref;
 	int i, rtn;
 	unsigned int dec;
 	char *hex;
 
-	tmp = (char*) malloc(1024);
+	tmpref = tmp = (char*) malloc(1024);
 
 	while(1)
 	{
@@ -4614,7 +4614,7 @@ int next_key( char **key, int keysize )
 		{
 			pthread_mutex_unlock( &mx_dic );
 			//printf( "\nPassphrase not in dictionary \n" );
-			free(tmp);
+			free(tmpref);
 			tmp = NULL;
 			return( FAILURE );
 		}
@@ -4633,7 +4633,7 @@ int next_key( char **key, int keysize )
 //				printf( "\nPassphrase not in dictionary \"%s\" \n", opt.dicts[opt.nbdict] );
 				if(next_dict(opt.nbdict+1) != 0)
 				{
-					free(tmp);
+					free(tmpref);
 					tmp = NULL;
 					return( FAILURE );
 				}
@@ -4689,7 +4689,7 @@ int next_key( char **key, int keysize )
 //				printf( "\nPassphrase not in dictionary \"%s\" \n", opt.dicts[opt.nbdict] );
 				if(next_dict(opt.nbdict+1) != 0)
 				{
-					free(tmp);
+					free(tmpref);
 					tmp = NULL;
 					return( FAILURE );
 				}
@@ -4712,9 +4712,7 @@ int next_key( char **key, int keysize )
 		break;
 	}
 
-	free(tmp);
-	tmp = NULL;
-
+	free(tmpref);
 	return( SUCCESS );
 }
 
