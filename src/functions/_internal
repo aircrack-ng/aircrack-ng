@@ -20,6 +20,16 @@ required(){
     check_function $1 ||  { specialwarn "${warn}${2}"; return 1; }
 }
 
+change_mac(){
+    type macchanger && {
+        fail=$(ifconfig $1 down; $MACCHANGER $1 --mac $2 2>&1; ifconfig $1 up)
+    } || {
+        fail=$(ifconfig $1 down; ifconfig $1 $2 2>&1; ifconfig $1 up)
+    }
+
+    [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly $(FAKE_MAC)" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
+}
+
 error(){
     export ERRORS="$@";
 }
@@ -33,8 +43,8 @@ reload_config(){
 }
 
 cleanautovars(){
-    export AUTO=0; 
-    export QUIET=""; 
+    export AUTO=0;
+    export QUIET="";
     export INTERACTIVE=$OLDINTERACTIVE
     return
 }
@@ -117,7 +127,7 @@ setargs(){
         esac
     done
 
-    for i in ${opt_functions[@]}; do [[ $i == "usage" ]] && { usage; exit 1; }; done # Small hack to execute usage the first 
+    for i in ${opt_functions[@]}; do [[ $i == "usage" ]] && { usage; exit 1; }; done # Small hack to execute usage the first
     for i in ${opt_functions[@]}; do [[ $i != auto ]] && options_$i || execute_auto=1; done
     [[ $execute_auto ]] && options_auto; # Small hack to execute auto the lastest xD
 }
@@ -148,7 +158,7 @@ options_auto(){
 }
 
 load_plugins(){
-    for i in ${@}; do 
+    for i in ${@}; do
         [[ $i =~ (.*)bash(.*) ]] && export BASH_PLUGIN=1 || {
             if [[ -e $path/plugins/$i ]]; then
                 _source "${path}/plugins/${i}"
@@ -175,7 +185,7 @@ _debug(){
     if [ "$debug" == 1 ]; then markwarn $1; fi
 }
 
-execute(){ 
+execute(){
     check_function mkmenu || source $path/interface
     check_function save_pids || source $path/internal/childs
     title=$1; shift;
@@ -185,8 +195,8 @@ execute(){
         echo
         read -p $"Enter extra options to execute: " eopts
     fi
-        if [ "$1" == "crack" ]; then shift; fi # FIXME This will not do anything. 
-        if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
+        if [ "$1" == "crack" ]; then shift; fi # FIXME This will not do anything.
+        if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then
             [[ $NOTITLE ]] || warn "${mark}$title"
             if [[ $wait_for_execute != 1 ]]; then
                 ${@} $eopts &> /dev/null &
@@ -209,9 +219,9 @@ monmode(){
     {
         ifconfig $1 up
         [[ $iwconfig $1 =~ "Mode:Monitor" ]] && {
-            MON_PREFIX=$mon_prefix $AIRMON start $1 $2 
+            MON_PREFIX=$mon_prefix $AIRMON start $1 $2
         }
-    } &>/dev/null 
+    } &>/dev/null
 }
 
 # this function allows debugging, called from main menu.
@@ -223,7 +233,7 @@ function debug {
 
 _read(){
     # Read function so we can override it later, to add another interface.
-    read "${@}"; 
+    read "${@}";
 }
 
 # Various checks.
@@ -261,7 +271,7 @@ attack_opn(){ # If no encryption detected
 
 capture(){
     hardclean
-    execute "Capturing" $AIRODUMP --ignore-negative-one --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $wifi 
+    execute "Capturing" $AIRODUMP --ignore-negative-one --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $wifi
     echo
 }
 
@@ -280,7 +290,7 @@ yesno(){
 
 check_default_software(){
     for program in ${required_software[@]}; do
-        [[ $(whereis $program) ]] || { echo -en "$program"; warn "not found, quitting." ; exit ; } 
+        [[ $(whereis $program) ]] || { echo -en "$program"; warn "not found, quitting." ; exit ; }
     done
 }
 

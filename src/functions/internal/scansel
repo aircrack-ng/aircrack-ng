@@ -26,54 +26,72 @@ Scanchan(){
 
 select_target(){
     if [ "$AUTO" == 2 ]; then return; fi
-	help_fifo $"${mark}${red}Select a client${end}\n"\
-		"At this step, you have to choose how to look for target clients\n"\
-		"Target clients will be used later, to make attacks directed at them\n"\
-		"This step is not obligatory, but might come handy if the network has some clients on it"\
-		"${red} If you're about to attack, attacks will be performed differently if you choose not to select a client (most of the times with a fake auth), so, don't worry if there are none ${end}"
+    help_fifo $"${mark}${red}Select a client${end}\n"\
+        "At this step, you have to choose how to look for target clients\n"\
+        "Target clients will be used later, to make attacks directed at them\n"\
+        "This step is not obligatory, but might come handy if the network has some clients on it"\
+        "${red} If you're about to attack, attacks will be performed differently if you choose not to select a client (most of the times with a fake auth), so, don't worry if there are none ${end}"
     while true; do
         echo "Selecting client"
 
-			mkmenu $"Client Selection"\
-			 $"Select client"\
-			 $"Enable dynamic mode (ask for client in each attack)"\
-			 $"Manually enter client MAC" "No select client"
+            mkmenu $"Client Selection"\
+             $"Select client"\
+             $"Enable dynamic mode (ask for client in each attack)"\
+             $"Manually enter client MAC" "No select client"
 
-		case $choice in
-			1 ) auto_scan_clients; select_client; break;; 
-			2 ) dynamic_client_selection=1; break;;  
-			3 ) single_question $"Type in client mac now"; Client_MAC="$ans"; set -- ${Client_MAC} ; break ;;
-			4 ) Client_MAC=""; break ;;
-			* ) echo -e $"Unknown response. Try again";;
-		esac
-	done
+        case $choice in
+            1 ) auto_scan_clients; select_client; break;;
+            2 ) dynamic_client_selection=1; break;;
+            3 ) single_question $"Type in client mac now"; Client_MAC="$ans"; set -- ${Client_MAC} ; break ;;
+            4 ) Client_MAC=""; break ;;
+            * ) echo -e $"Unknown response. Try again";;
+        esac
+    done
 }
 
 auto_scan_clients(){
-	rm $DUMP_PATH/Client_$Host_MAC* &>/dev/null
+    rm $DUMP_PATH/Client_$Host_MAC* &>/dev/null
     launch_counter $time_to_scan "clients" &
-	INTERACTIVE=0; AUTO=2; QUIET=1; NOTITLE=1;
-	wait_for_execute=0
-	execute "" $AIRODUMP --ignore-negative-one --bssid $Host_MAC -w $DUMP_PATH/Client_$Host_MAC -c $Host_CHAN -a $wifi 
-	sleep $time_to_scan && killall -2 "airodump-ng"; 
+    INTERACTIVE=0; AUTO=2; QUIET=1; NOTITLE=1;
+    wait_for_execute=0
+    execute "" $AIRODUMP --ignore-negative-one --bssid $Host_MAC -w $DUMP_PATH/Client_$Host_MAC -c $Host_CHAN -a $wifi
+    sleep $time_to_scan && killall -2 "airodump-ng";
     export SCAN=0; AUTO=0; QUIET=""; NOTITLE=0
 }
 
+get_clients(){
+    rm $DUMP_PATH/Client_${Host_MAC}_all.csv
+    cat $DUMP_PATH/Client_${Host_MAC}*.csv > $DUMP_PATH/Client_${Host_MAC}_all.csv
+
+    while read line; do
+        IFS=',' read -a line_ <<< "$line"
+        [[ ${line[2]} =~ ${Host_MAC} ]] && [[ ${line[1]} != "00:00:00:00" ]] && echo ${line[1]}
+    done < $DUMP_PATH/Client_${Host_MAC}_all.csv
+
+    echo "None" "Rescan"
+}
+
+i_have_to_return() {
+    # TODO: Move this to internal
+    if [ "$AUTO" == "1" ]; then return 0; fi;
+    return 1;
+}
 
 select_client(){
-	if [ "$AUTO" == "1" ]; then return; fi;
-	HOST=(`cat $DUMP_PATH/Client_$Host_MAC* | grep -a $Host_MAC | awk '{ print $1 }'| grep -a -v 00:00:00:00| grep -a -v $Host_MAC|sed 's/,//'`);
-	while [ "1" ]; do
-		mkmenu $"Select client" ${HOST[@]} "None" "Rescan"
-		(( $choice < $(( ${#HOST[@]} + 3 )) )) && break
-	done
+    i_have_to_return && return
 
-	export Client_MAC=`echo ${HOST[$choice -1]} | awk '{split($1, info, "," );  print info[1]  }'`;
-	(( $choice == $(( ${#HOST[@]} + 1 )) )) && { $MACCHANGER $wificard $FAKE_MAC ; Client_MAC=""; directed=0; return; }
-	(( $choice == $(( ${#HOST[@]} + 2 )) )) && { auto_scan_clients; select_client; return; }
-	{ 
-	ifconfig $wifi down; $MACCHANGER $wifi --mac $Client_MAC; ifconfig $wifi up;
-	ifconfig $iwifi down; $MACCHANGER $iwifi --mac $Client_MAC; ifconfig $iwifi up;
-	ifconfig $wificard down; $MACCHANGER $wificard --mac $Client_MAC; ifconfig $wificard up
-	} &>/dev/null
+    while [ "1" ]; do
+        mkmenu $"Select client" $(get_clients)
+        (( $choice < $(( ${#HOST[@]} + 3 )) )) && break
+    done
+
+    IFS=, read -a elem <<< ${HOST[$choice-1]}; Client_MAC=${elem[1]};
+
+    (( $choice == $(( ${#HOST[@]} + 1 )) )) && { change_mac $wificard $FAKE_MAC; Client_MAC=""; directed=0; return; }
+    (( $choice == $(( ${#HOST[@]} + 2 )) )) && { auto_scan_clients; select_client; return; }
+    {
+        change_mac $wifi $Client_MAC
+        change_mac $iwifi $Client_MAC
+        change_mac $wificard $Client_MAC
+    } &>/dev/null
 }

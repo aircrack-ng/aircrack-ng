@@ -13,12 +13,19 @@
 #        You should have received a copy of the GNU General Public License
 #        along with this program; if not, write to the Free Software
 
-delete_vinterfaces(){ for i in $(awk "/$MON_PREFIX/ {print \$1}" <(airmon-ng)); do iw dev $i del; done; }
+delete_vinterfaces(){
+    while read interface; do
+        [[ $interface =~ ^$MON_PREFIX(.*)\S*(.*) ]] && {
+            iw dev ${MON_PREFIX}${BASH_REMATCH[1]} del
+        }
+    done < <($AIRMON)
+}
+
 deconfigure(){ airmon-ng stop $wifi &> /dev/null ; delete_vinterfaces &>/dev/null; }
-delete_dpath(){ grep "tmp" <<< $DUMP_PATH && rm -r $DUMP_PATH &>/dev/null;  } # First checks if there is tmp in dump_path, so dump_path will have to have tmp on it. That's because of some old trouble having dump_path as /home/xayon/ ... ¬¬ (Note: I've been asked more than twice so I clear it here: i didn't lost anything, I have all in sync with a git repository =) )
+delete_dpath(){ [[ $DUMP_PATH =~ /tmp/(.*) ]] && rm -r $DUMP_PATH &>/dev/null;  }
 
 doexit(){
-        check_function make_report || source $path/reporting 
+        check_function make_report || source $path/reporting
         [[ -e $DUMP_PATH/$Host_MAC.key ]] && {
             yesno "Create a full report?" && {
                 warn "${mark}Creating report"; make_report;

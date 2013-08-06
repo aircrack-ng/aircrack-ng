@@ -23,7 +23,7 @@ _askinterface(){
 }
 
 bsd_interfaces(){
-	for i in $( ifconfig | awk '/flags/ { print $1}'|cut -d: -f1 ); do { ifconfig $i | grep "wlan" &>/dev/null && echo $i ; }  ; done
+    for i in $( ifconfig | awk '/flags/ { print $1}'|cut -d: -f1 ); do { ifconfig $i | grep "wlan" &>/dev/null && echo $i ; }  ; done
 }
 
 linux_interfaces() {
@@ -41,7 +41,7 @@ setinterface(){
         "If you're using it to connect to the internet, you'll be most likely disconnected "
 
     declare -a INTERFACES
-     [[ "$wifi" != "" ]] && [[ "$1" == "start" ]] && [[ "$set_wifi_by_args" == 1 ]] || { 
+     [[ "$wifi" != "" ]] && [[ "$1" == "start" ]] && [[ "$set_wifi_by_args" == 1 ]] || {
         if [ "$1" == "" ] || [[ "$1" == 1 ]] || [ "$1" == "start" ]  ; then
             if [ "$show_only_wireless_extensions" == 1 ]; then
                 [[ -e /bsd ]] && {
@@ -59,7 +59,7 @@ setinterface(){
         [[ "$ans" != n ]] && ac="start" || ac="stop"
         }
         { guess_idata $ac; testmac; } &>/dev/null
-     }    
+     }
      export iwifi=$wifi
 
 
@@ -77,9 +77,9 @@ askinterface(){
 }
 
 checkforcemac() {
-    if [ "$force_mac_address" == "1" ]; then $clear && warn "${mark}Warn: Not checking mac" 
+    if [ "$force_mac_address" == "1" ]; then $clear && warn "${mark}Warn: Not checking mac"
     else
-        export mac=`$MACCHANGER -s $wificard|awk '/Current/ {print $3}'`
+        export mac=$(get_current_mac);
         if [ "$FAKE_MAC" != "$mac" ]; then
             wichchangemac_startup &>/dev/null;
         fi
@@ -87,22 +87,31 @@ checkforcemac() {
 }
 
 guess_idata(){
-    AIROUTPUT=$($AIRMON $1 $wificard|grep -v "running"|grep -A 1 $wificard);
-    [[ $AIROUTPUT  =~ (.*)-(.*)phy(.*)monitor\ mode\ enabled\ on(.*)\) ]]; tmpwifi="${BASH_REMATCH[4]}";
-    AIROUTPUT=( ${BASH_REMATCH[1]} ); # Messy, but works.
-    export DRIVER=${AIROUTPUT[@]: -1}; export TYPE="${a[1]} ${a[2]}"
-    export TYPE="${AIROUTPUT[1]} ${AIROUTPUT[2]}"
-    echo $DRIVER $TYPE
-    if [[ "$tmpwifi" =~ (.*)[0-9] ]];  then wifi=$tmpwifi; else wifi=$wificard; fi 
-
+    while read -a line; do
+        [[ ${line[0]} =~ ^$wificard ]] && {
+            [[ ${line[@]} =~ ^$wificard\S(.*)\S(.*)-(.*)phy(.*) ]] && {
+                [[ $line =~ ^wlan0\s*(.*)\s*(.*)\ -\ \[phy[0-9]+\]  ]] && a=(${BASH_REMATCH[1]})
+                export DRIVER=${a[-1]}
+                unset -v 'a[$((${a[@]}-1))]'
+                export TYPE=${a[@]}
+            }
+            next = 1
+        }
+        [[ $next == 1 ]] && [[ ${line[@]} =~ (.*)monitor\ mode\ enabled\ on\S+(.*)\)  ]] && {
+            next = 0
+            tmpwifi=${BASH_REMATCH[2]}
+            [[ "$tmpwifi" =~ (.*)[0-9] ]] && wifi=$tmpwifi || wifi=$wificard
+        }
+        echo $DRIVER $TYPE
+    done < <($AIRMON start $wificard)
 }
 
 wichchangemac_startup(){
-    ifconfig $wifi down; $MACCHANGER $wifi --mac $FAKE_MAC; ifconfig $wifi up;
-    ifconfig $iwifi down; $MACCHANGER $iwifi --mac $FAKE_MAC; ifconfig $iwifi up;
-    ifconfig $wificard down; $MACCHANGER $wificard --mac $FAKE_MAC; ifconfig $wificard up
-    return # Disabled =)
+    change_mac $wificard $FAKE_MAC
+    change_mac $wifi $FAKE_MAC
+    change_mac $iwifi $FAKE_MAC
 }
+
 
 wichchangemac(){
     while true; do
@@ -110,27 +119,13 @@ wichchangemac(){
             mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input"
         }
         case $choice in
-             1 ) ifconfig $wifi down &>/dev/null;fail=`$MACCHANGER -m  $FAKE_MAC $wifi 2>&1`
-                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
-                  ifconfig $wifi up &>/dev/null; break ;;
-            2 ) ifconfig $wifi down &>/dev/null; sleep 2
-                 fail=`$MACCHANGER -m  $Client_MAC $wifi 2>&1`
-                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
-                ifconfig $wifi up &>/dev/null ; break ;;
-            3)  export FAKE_MAC=$mac
-                warn "${mark}Using for $wificard $FAKE_MAC = $mac"
-                ifconfig $wifi down &>/dev/null; sleep 2;
-                $MACCHANGER -m $mac $wifi &>/dev/null
-                ifconfig $wifi up &>/dev/null;
-                break;;
-            4 ) single_question "MAC: "; Manual_MAC="$ans";
-                ifconfig $wifi down &>/dev/null
-                fail=`$MACCHANGER -m  $Manual_MAC $wifi &>/dev/null`
-                [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
-                ifconfig $wifi up &>/dev/null; break ;;
-
-            * ) echo $"Unknown response. Try again" ;;
-
+            1) change_mac $wifi $FAKE_MAC; break ;;
+            2) change_mac $wifi $Client_MAC; break ;;
+            3)  export FAKE_MAC=$(get_current_mac);
+                change_mac $wifi $FAKE_MAC; break ;;
+            4) single_question "MAC: "; Manual_MAC="$ans";
+                change_mac $wifi $Manual_MAC; break ;;
+            *) echo $"Unknown response. Try again" ;;
         esac
     done
 }
@@ -141,8 +136,8 @@ is_number(){ return $(expr "$1 + 1" &> /dev/null); }
 selectap_wrapper(){
     while [ "1" ]; do
         mkmenueline $max r; echo " Rescan targets"; mkmenuline $max
-        special_single_question "Select Target: "; 
-		choice=$ans;
+        special_single_question "Select Target: ";
+        choice=$ans;
         is_number $choice && break
     done
 }
@@ -153,13 +148,15 @@ valid_mac(){ (( ${#1} >= 17 )) && return 0 || return 1; }
 filter_ssid(){
     [[ -n "$filter_ssid_" ]] && { echo; echo;
         tag; warn "${mark}Filtering essid to $filter_ssid_ "
-        grep -a "$filter_ssid_" $DUMP_PATH/dump-01.csv > $DUMP_PATH/dump-02.csv;
-    } 
+        while read line; do
+            [[ $line =~ (.*)${filter_ssid_}(.*) ]] && echo $line >> $DUMP_PATH/dump-02.csv
+        done <<< $DUMP_PATH/dump-01.csv
+    }
 }
 
 # Some various functions that didn't know where to put them
 selectAp(){
-    k=0; i=0; 
+    k=0; i=0;
 
     if [ "$AUTO" == 2 ]; then
         choice=$CURRENT
@@ -171,7 +168,7 @@ selectAp(){
         echo
         mkmenuheader "Detected access points" $max
         mkmenuline $max
-    fi 
+    fi
 
     while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
         $(valid_mac "$MAC") && {
@@ -182,12 +179,12 @@ selectAp(){
                 echo -e " $MAC | $CHANNEL | $PRIVACY | $POWER | $IDLENGTH | $ESSID"
             fi
             aidlenght=$IDLENGTH
-            assid[$k]=$ESSID; achannel[$k]=$CHANNEL; 
+            assid[$k]=$ESSID; achannel[$k]=$CHANNEL;
             amac[$k]=$MAC; aprivacy[$k]=$PRIVACY;
             aspeed[$k]=$SPEED; apower[$k]=$POWER
         }
     done < $DUMP_PATH/dump-02.csv
-    
+
     if [ "$AUTO" != 2 ]; then selectap_wrapper; fi
     if [ "$choice" != "r" ] ; then
         [[ ${amac[$choice]} ]] || { echo "Wrong option, scanning for targets again"; autoscan; }
@@ -216,13 +213,13 @@ launch_counter(){
         a=$(( ($i * 100) / $1 ))
         sleep 1; echo -ne "\r${mark}Scanning for $o: [$a/100 completed]";
     done
-	echo
+    echo
 }
 
 autoscan(){
     launch_counter $time_to_scan &
     OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-    menu_type "" && sleep $time_to_scan && killall -2 "airodump-ng"; 
+    menu_type "" && sleep $time_to_scan && killall -2 "airodump-ng";
     [[ $AUTO != 2 ]] && select_ap
     cleanautovars
 }
@@ -230,7 +227,7 @@ autoscan(){
 Scan(){
     help_fifo "${mark}${red}Scanning${end}\nWe're scanning for near networks \n"\
         "You'll be asked to select one of them, ${red}they're ordered according to their signal strenght${end}"\
-        "The strongest is the lastest, your network should be near the end" 
+        "The strongest is the lastest, your network should be near the end"
     export SCAN=1
     rm -rf $DUMP_PATH/dump* &>/dev/null
     markwarn $"Interface used is" ": $wifi ($iwifi) for $wificard "
@@ -242,15 +239,15 @@ Scan(){
 }
 
 Host_ssidinput(){
-    single_question $"Please enter Host SSID"; 
+    single_question $"Please enter Host SSID";
     Host_SSID="$ans";
     $clear
 }
 
 setaircrackpaths(){
-    AIRMON="${SBINDIR}airmon-ng"        
+    AIRMON="${SBINDIR}airmon-ng"
     AIRODUMP="${SBINDIR}airodump-ng"
-    AIREPLAY="${SBINDIR}aireplay-ng --ignore-negative-one"  
+    AIREPLAY="${SBINDIR}aireplay-ng --ignore-negative-one"
     AIRCRACK="${BINDIR}aircrack-ng"
     ARPFORGE="${BINDIR}packetforge-ng"
     WESSIDE="${SBINDIR}wesside-ng"
@@ -276,10 +273,15 @@ Defaults on /etc/airoscript-ng.conf should be ok so you can
 safely remove your ~/.airoscript-ng.conf\n\n
 Do you really want to do it (yes/No): '
 }
-
+get_current_mac(){
+    while read line; do
+        [[ $line =~ ^wlan0\S*(.*)HWaddr\S*(.*) ]] &&
+        echo ${BASH_REMATCH[2]};
+    done < <( ifconfig )
+}
 testmac(){
     if [ "$TYPE" = "Atherosmadwifi-ng" ]; then
-        FAKE_MAC=`ifconfig $wificard | grep $wifi | awk '{print $5}' | cut -c -17  | sed -e "s/-/:/" | sed -e "s/\-/:/"  | sed -e "s/\-/:/" | sed -e "s/\-/:/" | sed -e "s/\-/:/"`
+        FAKE_MAC=$(get_current_mac)
         $"Changed fake_mac :" " $FAKE_MAC"
         return
     fi

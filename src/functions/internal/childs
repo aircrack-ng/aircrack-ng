@@ -13,12 +13,20 @@
 #        You should have received a copy of the GNU General Public License
 #        along with this program; if not, write to the Free Software
 
-get_childs(){ 
-    ps axo ppid,pid|awk "/$1/ {print \$2}"|grep -v "$pid" 
+get_childs(){
+    while read r; do
+        [[ $r =~ (.*)$1(.*) ]] && {
+            [[ $BASH_REMATCH[1] != $2 ]] && echo $BASH_REMATCH[1];
+        }
+    done < <(ps axo ppid, pid)
 }
 
-clean_processes(){ 
-    for i in `ls /var/run/airoscript/`; do kill -2 $i; rm /var/run/airoscript/$i; done; 
+clean_processes(){
+    for i in /var/run/airoscript/*; do
+        i=$(basename $i);
+        kill -2 $i;
+        rm /var/run/airoscript/$i;
+    done;
 }
 
 save_pids(){
