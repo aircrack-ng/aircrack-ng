@@ -17,7 +17,7 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 required(){
-	check_function $1 ||  { specialwarn "${warn}${2}"; return 1; }
+    check_function $1 ||  { specialwarn "${warn}${2}"; return 1; }
 }
 
 error(){
@@ -29,13 +29,13 @@ info(){
 
 
 reload_config(){
-	return
+    return
 }
 
 cleanautovars(){
     export AUTO=0; 
-	export QUIET=""; 
-	export INTERACTIVE=$OLDINTERACTIVE
+    export QUIET=""; 
+    export INTERACTIVE=$OLDINTERACTIVE
     return
 }
 
@@ -86,7 +86,7 @@ eof
 
 launch_help_fifo(){
     [[ -e $DUMP_PATH/help_fifo ]] || mkfifo $DUMP_PATH/help_fifo &>/dev/null
-	execute "Help"  "tail -f $DUMP_PATH/help_fifo"
+    execute "Help"  "tail -f $DUMP_PATH/help_fifo"
 }
 
 help_fifo(){
@@ -138,11 +138,11 @@ opts_wireless(){
 }
 
 options_auto(){
-	export noscan=1;
+    export noscan=1;
     temporary_switch_clear;
     export clear="";
-	check_function autopwn || source $path/autocrack;
-	check_function doexit || source $path/internal/exit;
+    check_function autopwn || source $path/autocrack;
+    check_function doexit || source $path/internal/exit;
     autopwn runner
     doexit;
 }
@@ -168,7 +168,7 @@ sleep $warn_time
 # Standard functions.
 
 markwarn(){
-	echo -e "${warn}${@}"
+    echo -e "${warn}${@}"
 }
 
 _debug(){
@@ -194,24 +194,31 @@ execute(){
                 ${@} $eopts &> /dev/null
             fi
         else
-			args="${@}"; args="${args/% /} ${eopts}" # Failsafe, this way if there's a trailing space it'll remove it before executing.
+            args="${@}"; args="${args/% /} ${eopts}" # Failsafe, this way if there's a trailing space it'll remove it before executing.
             [[ $wait_for_execute != 1 ]] && {
                 $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $termargs  "$args" &
             } || {
                 $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $termargs "$args"
             }
         fi
-	[[ $debug == 1 ]] && { echo $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "$args"; read; }
+    [[ $debug == 1 ]] && { echo $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "$args"; read; }
     save_pids $!
 }
 
-monmode(){ { ifconfig $1 up; $iwconfig $1 |grep "Monitor" && if [ $? != 0 ]; then MON_PREFIX=$mon_prefix $AIRMON start $1 $2; fi; } &>/dev/null ; }
+monmode(){
+    {
+        ifconfig $1 up
+        [[ $iwconfig $1 =~ "Mode:Monitor" ]] && {
+            MON_PREFIX=$mon_prefix $AIRMON start $1 $2 
+        }
+    } &>/dev/null 
+}
 
 # this function allows debugging, called from main menu.
 function debug {
-	if [ "$debug" == "1" ] || [ "$hold" == "1"  ]; then
-		export HOLD=$HOLDFLAG; echo $"Debug Mode enabled, you'll have to manually close windows"
-	else export HOLD="" ;fi
+    if [ "$debug" == "1" ] || [ "$hold" == "1"  ]; then
+        export HOLD=$HOLDFLAG; echo $"Debug Mode enabled, you'll have to manually close windows"
+    else export HOLD="" ;fi
 }
 
 _read(){
@@ -249,7 +256,7 @@ attack_wep(){
 }
 
 attack_opn(){ # If no encryption detected
-	$clear && error "Network not encrypted or not network selected";
+    $clear && error "Network not encrypted or not network selected";
 }
 
 capture(){
@@ -272,9 +279,9 @@ yesno(){
 }
 
 check_default_software(){
-	for program in ${required_software[@]}; do
-		[[ $(whereis $program) ]] || { echo -en "$program"; warn "not found, quitting." ; exit ; } 
-	done
+    for program in ${required_software[@]}; do
+        [[ $(whereis $program) ]] || { echo -en "$program"; warn "not found, quitting." ; exit ; } 
+    done
 }
 
 _source $path/internal/startup

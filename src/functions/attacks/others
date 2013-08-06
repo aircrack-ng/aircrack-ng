@@ -109,22 +109,12 @@ package_menu(){
     done
 }
 
-mergethisivs(){ # TODO Untested
-    for i in $DUMP_PATH/$Host_MAC*.cap; do 
-        cur=$( $cur + `$IVSTOOLS --convert $i /dev/null|grep IVs|awk '{print $2}'`)
-    done
-    return $cur
-}
-
 mergeallivs(){ # TODO Untested
     newdir=`mktemp -d`
     for i in $TMPDIR/*/*.cap; do b=$(( $b + 1 )); $IVSTOOLS --convert $i $newdir/$b; done
     ivstools --merge $newdir/* $DUMP_PATH/merged.cap
     read -p $"Select merged data as target? (y/N): " ACP && [[ "$ACP" = $"y" ]] && Host_MAC="merged"
 }
-
-
-
 
 choosewesside(){
         while true; do
