@@ -146,5 +146,5 @@ menu_interfaces(){
 
 menu_plugins(){
     a_menu=( "${p_menu[@]}" ); a_menu+=("Return to main menu"); mkmenu "External plugins" "${a_menu[@]}"
-    $(sed 's/ /_/g' <<< ${p_menu[$choice - 1]}) || { $clear; warn "Wrong option, try again"; menu_plugins; }
+    ${p_menu[$choice - 1]/ /_} || { $clear; warn "Wrong option, try again"; menu_plugins; }
 }
