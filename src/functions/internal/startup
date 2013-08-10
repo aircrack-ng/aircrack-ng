@@ -90,7 +90,7 @@ guess_idata(){
     while read -a line; do
         [[ ${line[0]} =~ ^$wificard ]] && {
             [[ ${line[@]} =~ ^$wificard\S(.*)\S(.*)-(.*)phy(.*) ]] && {
-                [[ $line =~ ^wlan0\s*(.*)\s*(.*)\ -\ \[phy[0-9]+\]  ]] && a=(${BASH_REMATCH[1]})
+                [[ $line =~ ^$wificard\s*(.*)\s*(.*)\ -\ \[phy[0-9]+\]  ]] && a=(${BASH_REMATCH[1]})
                 export DRIVER=${a[-1]}
                 unset -v 'a[$((${a[@]}-1))]'
                 export TYPE=${a[@]}
@@ -275,7 +275,7 @@ Do you really want to do it (yes/No): '
 }
 get_current_mac(){
     while read line; do
-        [[ $line =~ ^wlan0\S*(.*)HWaddr\S*(.*) ]] &&
+        [[ $line =~ ^$wificard\S*(.*)HWaddr\S*(.*) ]] &&
         echo ${BASH_REMATCH[2]};
     done < <( ifconfig )
 }
