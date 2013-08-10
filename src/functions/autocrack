@@ -16,8 +16,6 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # FUCKING UNPOLISHED, but... it seems to work.
 
-    #ap_array=`cat $DUMP_PATH/dump-02.csv | grep -a -n Station | awk -F : '{print $1}'`
-    #head -n $ap_array $DUMP_PATH/dump-01.csv &> $DUMP_PATH/dump-02.csv
 
 source $path/attacks/others
 source $path/attacks/injection

@@ -16,8 +16,6 @@ Deps:
 | mrxvt|xterm|gnome-terminal -> Preferibly xterm
 | aircrack-ng ( = airoscript-ng_version) )
 | bash ( >4.0 )
-| grep
-| macchanger
 | iproute ( /bin/ip )
 
 Recommended
@@ -25,4 +23,5 @@ Recommended
 
 | digenpy ( http://github.com/XayOn/Digenpy ) # Depends on python 2.6
 | mdk
+| macchanger
    
