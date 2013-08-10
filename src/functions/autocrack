@@ -36,21 +36,21 @@ autopwn_setvars(){
 }
 
 autopwn_scan(){
-    launch_counter $time_to_scan &  
+    launch_counter $time_to_scan &
         choosescan # Choose scan in auto auto auto mode.
-        sleep $time_to_scan && killall -2 "airodump-ng"; 
+        sleep $time_to_scan && killall -2 "airodump-ng";
     reload_config
     cat $DUMP_PATH/dump-01.csv|sed -e '1,/BSSID/ s/.*//' -e '/Station/,$ s/.*//'|tac > $DUMP_PATH/dump-02.csv 2>/dev/null
     filter_ssid
 }
-    
-autopwn_selectap(){    
+
+autopwn_selectap(){
     export AUTO=2; selectAp;  sleep 1
 }
 
 autopwn_crack(){
     check_function Crack_with_dictionary_generator && {
-        export wait_for_execute=1; AUTO=1; Crack_with_dictionary_generator autocrack 
+        export wait_for_execute=1; AUTO=1; Crack_with_dictionary_generator autocrack
     } || {
         export wait_for_execute=1; AUTO=1; selectcracking 1; AUTO=0; export wait_for_execute=0;
     }
@@ -66,7 +66,7 @@ autopwn_runner(){
 
     for i in `seq 1 $MAX_TARGETS`; do echo
         autopwn selectap
-        if [ "$Host_SSID" != "" ]; then autopwn network; 
+        if [ "$Host_SSID" != "" ]; then autopwn network;
         else tag; warn "${mark}Couldn't find essid, trying with next network."; fi
     done
 
@@ -83,14 +83,14 @@ autopwn_print_cracked_networks(){
 }
 
 autopwn_finish(){
-    check_function doexit || source $path/internal/exit; 
-    [[ $options_autoconfigure ]] && { 
-        configure; doexit killme; 
+    check_function doexit || source $path/internal/exit;
+    [[ $options_autoconfigure ]] && {
+        configure; doexit killme;
     } || {
         read -p "Press c to configure, q to quit, n to next network and any key to get back to main menu" -s -n1 ans
         [[ "$ans" == "c" ]] && { configure; return 1; }
     	[[ $ans == "n" ]] && return 0
-        [[ $ans == "q" ]] && { 
+        [[ $ans == "q" ]] && {
             warn "${mark}Exiting..."
             doexit killme ;
 		    exit; pkill -9 airoscript-ng; killall -9 airoscript-ng
@@ -107,8 +107,8 @@ autopwn_failed_cracking(){
 autopwn_network(){
     autopwn setvars 2
 
-    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && { 
-		enc=wpa; attack_functions=${attack_functions_wpa[@]}; min_ivs=10; 
+    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
+		enc=wpa; attack_functions=${attack_functions_wpa[@]}; min_ivs=10;
 	} || {
 		enc=wep; attack_functions=${attack_functions_wep}
 	}
@@ -117,13 +117,13 @@ autopwn_network(){
         tag; echo "${mark}Attack $count. Using $i in $Host_MAC"
         { ${enc}_attacks $i & cleanp & get_min_ivs; } &> /dev/null
 
-        [[ $enc == wpa ]] || {  
+        [[ $enc == wpa ]] || {
             tag; warn "${mark}Needed ivs: $min_ivs"
         }
 
-        while [ "1" ]; do 
+        while [ "1" ]; do
             sleep 5
-            autopwn finished && { 
+            autopwn finished && {
                 # We have enough ivs
                 echo; tag; warn "${mark}Trying to crack network, we have enough ivs or handshakes.";
                 autopwn crack && autopwn_print_crack_status
@@ -146,11 +146,11 @@ autopwn_network(){
 autopwn_print_crack_status(){
     [[ -e $DUMP_PATH/$Host_MAC.key ]] && \
         warn "${mark}Network cracked, password is `cat $DUMP_PATH/$Host_MAC.key`" || \
-        autopwn failed_cracking                   
+        autopwn failed_cracking
 }
 
 autopwn_print_capture_status(){
-    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {  
+    [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
         specialwarn "\r\t${mark}Current Handshakes: $handshakes. Press a to go to next attack, m for menu, for next network" ;
     } || {
         specialwarn "\r\t${mark}Current IVS: `check_all_ivs`. Press a to go to next attack, m for menu, n for next network"  ;
@@ -161,7 +161,11 @@ autopwn_print_capture_status(){
     [[ $ans == "k" ]] && return 20
     [[ $ans == "a" ]]
 }
-check_all_ivs(){  awk "/^$Host_MAC/ { gsub(/,/, \"\", \$14); print \$14; }" ${DUMP_PATH}/${Host_MAC}-01.csv; }
+check_all_ivs(){
+    while IFS=, read -a line; do
+        [[ ${line[0]} == "${Host_MAC}" ]] && echo ${line[10]} ;
+    done < ${DUMP_PATH}/${Host_MAC}-01.csv;
+}
 
 get_min_ivs(){
     [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {  min_ivs=10; return; }
@@ -174,8 +178,14 @@ get_min_ivs(){
     [[ "$a" == 255 ]] && min_ivs=$autopwn_min_ivs || min_ivs=$a
 }
 
-check_if_handshake(){ 
-    handshakes=$(awk '/handshake/ {gsub(/\(/, "", $5); print $5}' <( $AIRCRACK $DUMP_PATH/$Host_MAC-01.cap ) )
+get_handshake_number(){
+    while read -a line; do
+        [[ ${line[@]} =~ (.*)handshake(.*) ]] && echo ${line[-2]/(/};
+    done < <( aircrack-ng ${DUMP_PATH}/${Host_MAC}-01.cap & sleep 0.5 && kill $! )
+}
+
+check_if_handshake(){
+    export handshakes=$(get_handshake_number);
     [[ $handshakes == "" ]] && handshakes=0
     (( $handshakes > 0 )) && return 0 || return 1
 }
