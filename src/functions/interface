@@ -16,12 +16,12 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 notify(){
-	tput sc
-	msg="${@}"; x=$(( $(tput cols) - ( ${#msg} + 20 ) ));
-	tput cup 0 $x
-	echo $msg;
-	tput rc
-	notification="";
+    tput sc
+    msg="${@}"; x=$(( $(tput cols) - ( ${#msg} + 20 ) ));
+    tput cup 0 $x
+    echo $msg;
+    tput rc
+    notification="";
 }
 
 _(){
@@ -36,8 +36,8 @@ setps(){
 
 default_theme(){
     markwarn $'Theme file does not exists, using defaults...'
-	DUMPING_COLOR="#FFFFFF"; INJECTION_COLOR="#1DFF00"
-	ASSOCIATION_COLOR="#FF0009"; DEAUTH_COLOR="#99CCFF"; BACKGROUND_COLOR="#000000"
+    DUMPING_COLOR="#FFFFFF"; INJECTION_COLOR="#1DFF00"
+    ASSOCIATION_COLOR="#FF0009"; DEAUTH_COLOR="#99CCFF"; BACKGROUND_COLOR="#000000"
 }
 
 
@@ -54,7 +54,7 @@ help_fifo "${red}_______Target information______${end}\n"\
 }
 
 fill_menu(){
-    len=$(( $1 - $2 )); for i in `seq 0 $len`; do echo -n "$3"; done; 
+    len=$(( $1 - $2 )); for i in `seq 0 $len`; do echo -n "$3"; done;
 }
 
 fill(){
@@ -63,25 +63,25 @@ fill(){
     fill_menu $loop_times 1 "$separator";echo -n "$title";fill_menu $loop_times 1 "$separator"
 }
 
-function mkbox(){   
-     echo -n "+"; fill "$menu_t" "$separator_h" "$(( $max + ${#menu_t} ))" center; 
+function mkbox(){
+     echo -n "+"; fill "$menu_t" "$separator_h" "$(( $max + ${#menu_t} ))" center;
      echo "+"
 }
 
-temporary_switch_clear(){ 
+temporary_switch_clear(){
     temp="$oldclear"; oldclear=$clear; clear=$temp;
     $@ ;
     clear=$oldclear
-} 
+}
 
 airoscript_quiet(){
-	mkdir -p $DUMP_PATH/Terminals/ &>/dev/null 
-	title=$(echo $1| sed 's/ /_/g'); shift;
-	$@ &> "$DUMP_PATH/Terminals/${title}" &
+    mkdir -p $DUMP_PATH/Terminals/ &>/dev/null
+    title=${1/ /_}; shift
+    $@ &> "$DUMP_PATH/Terminals/${title}" &
 }
 
 vline(){ for i in `seq 0 $1`; do echo -n "-"; done; }
-mkmenuline(){ echo -en "$separator_x"; for i in $(seq 1 $1); do echo -en "$separator_h"; done; echo "$separator_x"; }   
+mkmenuline(){ echo -en "$separator_x"; for i in $(seq 1 $1); do echo -en "$separator_h"; done; echo "$separator_x"; }
 mkmenuheader(){ echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }
 getmaxlenfromlist(){ max=0; for i in "${@}"; do [[ ${#i} -gt $max ]] && max=${#i}; done; echo $max; }
 mkmenueline(){ echo -en "${separator_v}\033[${1}C${separator_v}\033[${1}D${white}${2}${red})${end} ${separator_v}";}
@@ -90,13 +90,13 @@ mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenue
 mkmenu(){
     if [ "$AUTO" == 2 ]; then return; fi
     [[ ${ERRORS} ]] && markwarn "Error:" "${ERRORS[@]}"
-	ERRORS=""
+    ERRORS=""
     [[ ${INFOS} ]] && markwarn "Info:" "${INFOS[@]}"
-	INFOS=""
+    INFOS=""
     max=`getmaxlenfromlist "${@}"`
     max=$(( $max + 10 ))
     title=$1; shift; line=0;
-    f=$((`tput cols` - 10)); 
+    f=$((`tput cols` - 10));
     title=($(_ "${title}"))
     mkmenuheader "${title[@]}" $max
     mkmenuline $max

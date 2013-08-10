@@ -39,8 +39,15 @@ autopwn_scan(){
     launch_counter $time_to_scan &
         choosescan # Choose scan in auto auto auto mode.
         sleep $time_to_scan && killall -2 "airodump-ng";
+
     reload_config
-    cat $DUMP_PATH/dump-01.csv|sed -e '1,/BSSID/ s/.*//' -e '/Station/,$ s/.*//'|tac > $DUMP_PATH/dump-02.csv 2>/dev/null
+
+    while read line; do                                                                                  ⮂ 17:43:43 ⮂ 2013-08-10
+        [[ $line =~ ^Station\ MAC,(.*) ]] && next=0;
+        [[ $next == 1 ]] && echo $line;
+        [[ $line =~ ^BSSID,(.*) ]] && next=1;
+    done < ${DUMP_PATH}/dump-01.csv > ${DUMP_PATH}/dump-02.csv
+
     filter_ssid
 }
 
