@@ -55,10 +55,10 @@ endif
 OBJS_AT		= airtun-ng.o common.o crypto.o osdep/radiotap/radiotap-parser.o
 OBJS_IV		= ivstools.o common.o crypto.o uniqueiv.o
 OBJS_AS		= airserv-ng.o common.o osdep/radiotap/radiotap-parser.o
-OBJS_WS		= wesside-ng.o crypto.c common.o osdep/radiotap/radiotap-parser.o $(OBJS_PTW)
-OBJS_BS		= besside-ng.o crypto.c common.o osdep/radiotap/radiotap-parser.o $(OBJS_PTW)
+OBJS_WS		= wesside-ng.o crypto.o common.o osdep/radiotap/radiotap-parser.o $(OBJS_PTW)
+OBJS_BS		= besside-ng.o crypto.o common.o osdep/radiotap/radiotap-parser.o $(OBJS_PTW)
 OBJS_BC		= besside-ng-crawler.o
-OBJS_AL		= airolib-ng.o crypto.c common.o
+OBJS_AL		= airolib-ng.o crypto.o common.o
 OBJS_ES		= easside-ng.o common.o osdep/radiotap/radiotap-parser.o
 OBJS_BUDDY	= buddy-ng.o common.o
 OBJS_MI		= makeivs-ng.o common.o uniqueiv.o
