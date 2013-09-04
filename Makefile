@@ -31,7 +31,7 @@ coverity-package: coverity-build
 	tar czvf $(COVERITY_TAR_GZ) $(COVERITY_DIR)
 
 coverity-upload: coverity-package
-	curl --form project=Aircrack-ng --form token=$(COVERITY_TOKEN) --form email=$(COVERITY/EMAIL) --form file=$(COVERITY_TAR_GZ) --form version=r$(REVISION) --form description="Aircrack-ng svn r$(REVISION)" http://scan5.coverity.com/cgi-bin/upload.py
+	curl --form project=Aircrack-ng --form token=$(COVERITY_TOKEN) --form email=$(COVERITY_EMAIL) --form file=@$(COVERITY_TAR_GZ) --form version=r$(REVISION) --form description="Aircrack-ng svn r$(REVISION)" http://scan5.coverity.com/cgi-bin/upload.py
 
 coverity-show-creds:
 	@echo "Token: $(COVERITY_TOKEN)"
