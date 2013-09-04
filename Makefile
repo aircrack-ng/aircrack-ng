@@ -11,11 +11,31 @@ include		$(AC_ROOT)/common.mak
 
 DOCFILES        = ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 
+COVERITY_BUILD	?= cov-build
+COVERITY_DIR	= cov-int
+
+COVERITY_TAR_GZ	= Aircrack-ng.tar.gz
+COVERITY_CREDS_DIR	= coverity
+COVERITY_TOKEN	= $(shell cat ${COVERITY_CREDS_DIR}/token)
+COVERITY_EMAIL	= $(shell cat ${COVERITY_CREDS_DIR}/email)
 
 default: all
 
 all:
 	$(MAKE) -C src $(@)
+
+coverity-build:
+	$(COVERITY_BUILD) --dir $(COVERITY_DIR) $(MAKE) sqlite=true unstable=true libnl=true
+
+coverity-package: coverity-build
+	tar czvf $(COVERITY_TAR_GZ) $(COVERITY_DIR)
+
+coverity-upload: coverity-package
+	curl --form project=Aircrack-ng --form token=$(COVERITY_TOKEN) --form email=$(COVERITY/EMAIL) --form file=$(COVERITY_TAR_GZ) --form version=r$(REVISION) --form description="Aircrack-ng svn r$(REVISION)" http://scan5.coverity.com/cgi-bin/upload.py
+
+coverity-show-creds:
+	@echo "Token: $(COVERITY_TOKEN)"
+	@echo "Email: $(COVERITY_EMAIL)"
 
 aircrack-ng-opt-prof_gen: all
 	mkdir -p prof
@@ -45,6 +65,7 @@ doc:
 	install -m 644 $(DOCFILES) $(DESTDIR)$(docdir)
 
 clean:
+	-rm -rf $(COVERITY_DIR)
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test/cryptounittest $(@)
 
