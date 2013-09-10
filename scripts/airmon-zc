@@ -6,7 +6,7 @@ IFACE=""
 CH=$3; [ x$3 = "x" ] && CH=10
 MADWIFI=0
 MAC80211=0
-IW_SOURCE="http://wireless.kernel.org/download/iw/iw-latest.tar.bz2"
+IW_SOURCE="https://www.kernel.org/pub/software/network/iw/iw-3.11.tar.bz2"
 IW_ERROR=""
 UDEV_ISSUE=0
 SYSFS=0
