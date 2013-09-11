@@ -176,8 +176,8 @@ static int rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *ke
 		// key = keybuf
 		"lea  "keybuf", %q3           \n\t"
 		// load xmm registers
-		"movdqa %q9, %%xmm0       \n\t"
-		"movdqa %q10, %%xmm1       \n\t"
+		"movdqa (x0123), %%xmm0       \n\t"
+		"movdqa (x4444), %%xmm1       \n\t"
 		// clear some registers
 		"xorq      %q0, %q0           \n\t" // idx
 		"xorq      %q1, %q1           \n\t" // i
@@ -257,7 +257,7 @@ static int rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *ke
 	: "=&r"(idx), "=&r"(i), "=&r"(j),
 	  "+r"(key), "+r"(keylen), "+r"(iv), "+r"(keystream),
 	  "=&r"(scratch1), "=&r"(scratch2)
-	: "m"(x0123), "m"(x4444)
+	:
 	: "xmm0", "xmm1"
 	);
 #undef state
