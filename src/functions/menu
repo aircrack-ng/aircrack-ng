@@ -110,7 +110,7 @@ choosescan(){
 select_ap(){
     check_function select_target || source $path/internal/scansel
         if [ -e $DUMP_PATH/dump-01.csv ]; then
-            while read line; do                                                                                  ⮂ 17:43:43 ⮂ 2013-08-10
+            while read line; do
                 [[ $line =~ ^Station\ MAC,(.*) ]] && next=0;
                 [[ $next == 1 ]] && echo $line;
                 [[ $line =~ ^BSSID,(.*) ]] && next=1;

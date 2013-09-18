@@ -18,7 +18,7 @@ get_childs(){
         [[ $r =~ (.*)$1(.*) ]] && {
             [[ $BASH_REMATCH[1] != $2 ]] && echo $BASH_REMATCH[1];
         }
-    done < <(ps axo ppid, pid)
+    done < <(ps -eo ppid,pid)
 }
 
 clean_processes(){

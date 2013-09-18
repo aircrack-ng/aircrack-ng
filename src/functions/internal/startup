@@ -27,7 +27,7 @@ bsd_interfaces(){
 }
 
 linux_interfaces() {
-    while read r; do [[ $r =~ (.*)IEEE\ 802.11(.*) ]] && echo ${BASH_REMATCH[1]}; done < <(iwconfig 2>/dev/null)
+    while read r; do [[ $r =~ (.*)IEEE\ 802.11(.*) ]] && { iw=${BASH_REMATCH[1]}; [[ $r =~ (.*)Mode:Monitor(.*) ]] || echo $iw; }; done < <(iwconfig 2>/dev/null)
 }
 
 all_interfaces() {
@@ -87,23 +87,26 @@ checkforcemac() {
 }
 
 guess_idata(){
+    declare -a monitorlines line
     while read -a line; do
-        [[ ${line[0]} =~ ^$wificard ]] && {
-            [[ ${line[@]} =~ ^$wificard\S(.*)\S(.*)-(.*)phy(.*) ]] && {
-                [[ $line =~ ^$wificard\s*(.*)\s*(.*)\ -\ \[phy[0-9]+\]  ]] && a=(${BASH_REMATCH[1]})
-                export DRIVER=${a[-1]}
-                unset -v 'a[$((${a[@]}-1))]'
-                export TYPE=${a[@]}
+        [[ ${line[@]} =~ ^$wificard ]] && {
+            phy=${line[-1]};
+            [[ ${line[@]} =~ "- ${phy}" ]] && {
+                monitorlines=("${line[@]}")
+                getNextLine=1
             }
-            next = 1
+        } || {
+            [[ $getNextLine == 1 ]] && {
+                export wifi=${line[-1]/)/}
+                getNextLine=0
+            }
         }
-        [[ $next == 1 ]] && [[ ${line[@]} =~ (.*)monitor\ mode\ enabled\ on\S+(.*)\)  ]] && {
-            next = 0
-            tmpwifi=${BASH_REMATCH[2]}
-            [[ "$tmpwifi" =~ (.*)[0-9] ]] && wifi=$tmpwifi || wifi=$wificard
-        }
-        echo $DRIVER $TYPE
-    done < <($AIRMON start $wificard)
+    done < <(airmon-ng start $wificard)
+
+    export iwifi=${wifi}
+    export fisical=${monitorlines[-1]}
+    export DRIVER=${monitorlines[-3]}
+    export TYPE=${monitorlines[1]}
 }
 
 wichchangemac_startup(){

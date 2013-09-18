@@ -165,6 +165,7 @@ load_plugins(){
             fi
         }
     done
+    [[ $BASH_PLUGIN ]] || BASH_PLUGIN=0
 }
 
 initial_warning(){
@@ -218,7 +219,7 @@ execute(){
 monmode(){
     {
         ifconfig $1 up
-        [[ $iwconfig $1 =~ "Mode:Monitor" ]] && {
+        [[ $($iwconfig $1) =~ (.*)Mode:Monitor(.*) ]] && {
             MON_PREFIX=$mon_prefix $AIRMON start $1 $2
         }
     } &>/dev/null
