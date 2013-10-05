@@ -162,7 +162,8 @@ int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, uchar *h80211 )
             pkh->len    -= 24 + qosh_offset + 6;
             pkh->caplen -= 24 + qosh_offset + 6;
 
-            memcpy( buffer + 12, h80211 + qosh_offset + 30, pkh->caplen );
+            /* can overlap */
+            memmove( buffer + 12, h80211 + qosh_offset + 30, pkh->caplen );
         }
         else
         {
@@ -874,7 +875,8 @@ usage:
                 /* WPA data packet was successfully decrypted, *
                  * remove the WPA Ext.IV & MIC, write the data */
 
-                memcpy( h80211 + z, h80211 + z + 8, pkh.caplen - z );
+                /* can overlap */
+                memmove( h80211 + z, h80211 + z + 8, pkh.caplen - z );
 
                 stats.nb_unwpa++;
 
