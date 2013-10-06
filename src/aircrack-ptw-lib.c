@@ -168,10 +168,10 @@ static int rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *ke
 		"movdqa   (%q3), %%xmm0       \n\t"
 		"cmpl    $16, %k4             \n\t"
 		"movdqu %%xmm0, 3+"keybuf"    \n\t"
-		"jng     .0                   \n\t"
+		"jng     .L0                  \n\t"
 		"movdqa 16(%q3), %%xmm1       \n\t"
 		"movdqu %%xmm1,19+"keybuf"    \n\t"
-		".0:                          \n\t"
+		".L0:                         \n\t"
 
 		// key = keybuf
 		"lea  "keybuf", %q3           \n\t"
@@ -185,11 +185,11 @@ static int rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *ke
 
 		// build identity array
 		".p2align 4                   \n\t"
-		".identity_loop:              \n\t"
+		".Lidentity_loop:             \n\t"
 		"movdqa %%xmm0, ("state",%q1,4)\n\t"
 		"addb   $4, %b1               \n\t"
 		"paddd  %%xmm1, %%xmm0        \n\t"
-		"jnc  .identity_loop          \n\t"
+		"jnc  .Lidentity_loop         \n\t"
 
 		// load state into register
 		"movq "state", %q1            \n\t"
@@ -198,9 +198,9 @@ static int rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *ke
 		"movq %q4, %q8                \n\t"
 		"cmpq $16, %q8                \n\t"
 		"movq $15, %q4                \n\t"
-		"je    .7                     \n\t"
+		"je    .L7                    \n\t"
 		"shrq  $1, %q4                \n\t"
-		".7:                          \n\t"
+		".L7:                         \n\t"
 
 		// init array with key
 		".p2align 4                   \n\t"
