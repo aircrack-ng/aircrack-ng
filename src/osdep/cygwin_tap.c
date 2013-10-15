@@ -25,13 +25,14 @@
 #include <pthread.h>
 #include <assert.h>
 
+#include "osdep.h"
+
 #include <windows.h>
 #include <winioctl.h>
 #include <iphlpapi.h>
 #include <setupapi.h>
 #include <devguid.h>
 
-#include "osdep.h"
 #include "network.h"
 #include "tap-win32/common.h"
 
