@@ -86,16 +86,7 @@ ifeq ($(subst TRUE,true,$(filter TRUE true,$(airpcap) $(AIRPCAP))),true)
 endif
 
 ifneq ($(origin CC),environment)
-	ifeq ($(OSNAME), cygwin)
-		ARCHITECTURE	= $(shell uname -m)
-		ifeq ($(ARCHITECTURE), i686)
-			CC	= $(TOOL_PREFIX)gcc-4
-		else
-			CC	= $(TOOL_PREFIX)gcc
-		endif
-	else
-		CC	= $(TOOL_PREFIX)gcc
-	endif
+	CC	= $(TOOL_PREFIX)gcc
 endif
 
 RANLIB		?= $(TOOL_PREFIX)ranlib
