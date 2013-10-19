@@ -616,7 +616,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
         break;
     }
 
-    memset( buf, 0, sizeof( buf ) );
+    memset( buf, 0, count );
 
     /* XXX */
     if (ri)
