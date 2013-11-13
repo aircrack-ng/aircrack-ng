@@ -1189,19 +1189,16 @@ static inline void XOR( uchar *dst, uchar *src, int len )
 
 int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
 {
-    int is_a4, i, n, z, blocks;
+    int is_a4, i, n, z, blocks, is_qos;
     int data_len, last, offset;
     uchar B0[16], B[16], MIC[16];
     uchar PN[6], AAD[32];
     AES_KEY aes_ctx;
 
     is_a4 = ( h80211[1] & 3 ) == 3;
-
+    is_qos = ( h80211[0] & 0x8C ) == 0x88;
     z = 24 + 6 * is_a4;
-    if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS )
-    {
-        z += 2;
-    }
+    z += 2 * is_qos;
 
     PN[0] = h80211[z + 7];
     PN[1] = h80211[z + 6];
@@ -1220,22 +1217,46 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
     B0[15] = ( data_len & 0xFF );
 
     memset( AAD, 0, sizeof( AAD ) );
-
-    if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS )
-    {
-        AAD[1] = 22+2 + 6 * is_a4;
-    }
-    else
-    {
-    	AAD[1] = 22 + 6 * is_a4;
-    }
-
+    
     AAD[2] = h80211[0] & 0x8F;
     AAD[3] = h80211[1] & 0xC7;
     memcpy( AAD + 4, h80211 + 4, 3 * 6 );
     AAD[22] = h80211[22] & 0x0F;
-    if( is_a4 )
+    
+    if( is_a4 ) 
+    {
         memcpy( AAD + 24, h80211 + 24, 6 );
+        
+        if( is_qos ) 
+        {
+            AAD[30] = h80211[z - 2] & 0x0F;
+            AAD[31] = 0;
+            B0[1] = AAD[30];
+            AAD[1] = 22 + 2 + 6;
+        } 
+        else 
+        {
+            memset(&AAD[30], 0, 2);
+            B0[1] = 0;
+            AAD[1] = 22 + 6;
+        }
+    } 
+    else 
+    {
+        if( is_qos ) 
+        {
+            AAD[24] = h80211[z - 2] & 0x0F;
+            AAD[25] = 0;
+            B0[1] = AAD[24];
+            AAD[1] = 22 + 2;
+        }
+        else
+        {
+            memset(&AAD[24], 0, 2);
+            B0[1] = 0;
+            AAD[1] = 22;
+        }
+    }
 
     AES_set_encrypt_key( TK1, 128, &aes_ctx );
     AES_encrypt( B0, MIC, &aes_ctx );
