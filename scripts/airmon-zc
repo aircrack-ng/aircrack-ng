@@ -44,32 +44,13 @@ fi
 
 CH=${3}; [ x${3} = "x" ] && CH=10
 
-#while [ "${1}" != "start" -a "${1}" != "stop" -a "${1}" != "check" ]; do
-#	case ${1} in
-#		"-v" | "--verbose")
-#			VERBOSE="1"
-#			shift
-#			;;
-#		"-d" | "--debug")
-#			DEBUG="1"
-#			VERBOSE="1"
-#			shift
-#			;;
-#		"-0" | "--elite")
-#			ELITE="1"
-#			shift
-#			;;
-#	esac
-#	shift
-#done
-
 #TODO LIST
 
 #cleanup getDriver()
 #add band detection
-#down station interface, wait 1 second make sure it's down
 #fix to not assume wifi drivers are modules
 #allow users to start the interface multiple times to change the channel
+#rewrite scanprocesses and checkprocessesiface to be sane
 
 if [ x"$(command -v id 2> /dev/null)" != "x" ]
 then
