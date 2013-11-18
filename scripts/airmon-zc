@@ -1,9 +1,9 @@
 #!/bin/sh
 DEBUG="0"
 VERBOSE="0"
+ELITE="0"
 USERID=""
 IFACE=""
-CH=$3; [ x$3 = "x" ] && CH=10
 MADWIFI=0
 MAC80211=0
 IW_SOURCE="https://www.kernel.org/pub/software/network/iw/iw-3.11.tar.bz2"
@@ -13,6 +13,12 @@ SYSFS=0
 if [ -d /sys/ ]
 then
 	SYSFS=1
+fi
+
+if [ "$1" = "--elite" ]
+then
+	shift
+	ELITE="1"
 fi
 
 if [ "$1" = "--verbose" ]
@@ -27,6 +33,35 @@ then
 	DEBUG="1"
 	VERBOSE="1"
 fi
+
+#yes, I know this is in here twice
+if [ "$1" = "--elite" ]
+then
+	shift
+	ELITE="1"
+fi
+
+
+CH=${3}; [ x${3} = "x" ] && CH=10
+
+#while [ "${1}" != "start" -a "${1}" != "stop" -a "${1}" != "check" ]; do
+#	case ${1} in
+#		"-v" | "--verbose")
+#			VERBOSE="1"
+#			shift
+#			;;
+#		"-d" | "--debug")
+#			DEBUG="1"
+#			VERBOSE="1"
+#			shift
+#			;;
+#		"-0" | "--elite")
+#			ELITE="1"
+#			shift
+#			;;
+#	esac
+#	shift
+#done
 
 #TODO LIST
 
@@ -156,32 +191,38 @@ startMac80211Iface() {
 		done
 	fi
 	#we didn't bail means we need a monitor interface
-	ifconfig $1 down
-	IW_ERROR=$(iw dev $1 interface add ${1}mon type monitor 2>&1 | grep "nl80211 not found")
-	if [ x$IW_ERROR = "x" ]
+	ifconfig ${1} down
+	IW_ERROR=$(iw dev ${1} interface add ${1}mon type monitor 2>&1 | grep "nl80211 not found")
+	if [ x${IW_ERROR} = "x" ]
 	then
 		sleep 1s
 		ifconfig ${1}mon up
-		if [ ! -z $3 ]
+		if [ ! -z ${3} ]
 		then
-			if [ $3 -lt 1000 ]
+			if [ ${3} -lt 1000 ]
 			then
-				iw dev ${1}mon set channel $3
+				iw dev ${1}mon set channel ${3}
 			else
-				iw dev ${1}mon set freq "$3"
+				iw dev ${1}mon set freq "${3}"
 			fi
 		else
 			iw dev ${1}mon set channel ${CH}
 		fi
-		printf "\n\t\t(mac80211 monitor mode enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
+		printf "\n\t\t(mac80211 monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
 	else
 		printf "\n\nERROR: something went wrong with iw."
 	fi
-	#check if $1 is still down, warn if not
-	if $(ifconfig ${1} | grep -q UP)
+	if [ ${ELITE} = "1" ]
 	then
-		printf "\nInterface ${1} is up, but it should be down. Something is interferring."
-		printf "\nPlease run \"airmon-zc check kill\" and/or kill your network manager."
+		#check if $1 is still down, warn if not
+		if $(ifconfig ${1} | grep -q UP)
+		then
+			printf "\nInterface ${1} is up, but it should be down. Something is interferring."
+			printf "\nPlease run \"airmon-zc check kill\" and/or kill your network manager."
+		fi
+	else
+		iw ${1} del
+		printf "\t\t(mac80211 station mode vif disabled for [${PHYDEV}]${1})\n"
 	fi
 }
 
@@ -200,26 +241,38 @@ stopDeprecatedIface() {
 }
 
 stopMac80211Iface() {
-	if [ -f /sys/class/net/$1/type ]
+	if [ -f /sys/class/net/${1}/type ]
 	then
-		if [ "$(cat /sys/class/net/$1/type)" != "803" ]
+		if [ "$(cat /sys/class/net/${1}/type)" != "803" ]
 		then
 			printf "\n\nYou are trying to stop a device that isn't in monitor mode.\n"
 			printf "Doing so is a terrible idea, if you really want to do it then you\n"
-			printf "need to type 'iw $1 del' yourself since it is a terrible idea.\n"
-			printf "Most likely you want to remove an interface called mon[0-9]\n"
+			printf "need to type 'iw ${1} del' yourself since it is a terrible idea.\n"
+			printf "Most likely you want to remove an interface called wlan[0-9]mon\n"
 			printf "If you feel you have reached this warning in error,\n"
-			printf "please report it following the directions above."
+			printf "please report it."
 		else
-			IW_ERROR=$(iw dev "$1" del 2>&1 | grep "nl80211 not found")
+			if [ "${ELITE}" = "0" ]
+			then
+				echo ${1%mon}
+				IW_ERROR=$(iw dev ${1} interface add ${1%mon} type station 2>&1)
+				if [ x${IW_ERROR} = "x" ]
+				then
+					printf "\t\t(mac80211 station mode vif enabled on [${PHYDEV}]${1%mon})\n"
+					unset IW_ERROR
+				else
+					printf "\n\n ERROR: iw command error"
+				fi
+			fi
+			IW_ERROR=$(iw dev "${1}" del 2>&1 | grep "nl80211 not found")
 			if [ x$IW_ERROR = "x" ]
 			then
-				printf " (mac80211 vif removed)"
+				printf "\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
 			else
-				if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
+				if [ -f /sys/class/ieee80211/"${PHYDEV}"/remove_iface ]
 				then
-					printf "$1" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
-					printf " (mac80211 vif removed)"
+					printf "${1}" > /sys/class/ieee80211/"${PHYDEV}"/remove_iface
+					printf "\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
 				else
 					printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
 				fi
