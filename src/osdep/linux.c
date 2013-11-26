@@ -2053,6 +2053,8 @@ static void linux_close(struct wif *wi)
 		close(pl->fd_in);
 	if (pl->fd_out)
 		close(pl->fd_out);
+	if (pl->fd_main)
+		close(pl->fd_main);
 
 	do_free(wi);
 }
