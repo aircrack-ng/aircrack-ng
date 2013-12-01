@@ -1,3 +1,16 @@
+Version 1.2-beta2 (changes from aircrack-ng 1.2-beta1) - Released 30 November 2013:
+* Airbase-ng: Fixed order of IE when creating soft Access Point.
+* Airbase-ng: Fixed Caffe Latte Attack not working for all clients.
+* Aircrack-ng: Improved PTW speed thanks to Ramiro Polla.
+* Airmon-zc: Fixed improper use of the interface.
+* Airdecap-ng: Fixed decoding captures with WMM enabled.
+* Various: Fixed memory leaks in Aircrack-ng, Aireplay-ng, OSdep.
+* Added support for static analysis using Coverity Scan.
+* Fixed compilation due to PIC unfriendly assembly on Gentoo hardened.
+* Fixed running tests using 'make check'.
+* Fixed building aircrack-ng with recent version of gcc and also on cygwin.
+* Various other small fixes.
+
 Version 1.2-beta1 (changes from aircrack-ng 1.1) - Released 25 May 2013:
 * Airmon-ng: Added chipset information for ar9170usb, wl, rt2800usb, ar9271, wl12xx, RT3070STA, ath9k_htc, r871x_usb_drv, ath5k, carl9170 and various Intel drivers.
 * Airmon-ng: Fixed chipset information ipw2200.
