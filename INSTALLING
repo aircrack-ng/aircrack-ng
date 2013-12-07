@@ -54,6 +54,9 @@ to compile and install the suite:
 		LibNL 1: libnl-dev 
 		LibNL 3: libnl-3-dev and libnl-genl-3-dev.
 
+* pcre:	    Add support for regular expression matching for ESSID in airodump-ng.
+            Dependencies (debian): libpcre3-dev
+
 Example:
 
   * Compiling:

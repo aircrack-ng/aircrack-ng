@@ -330,6 +330,11 @@ struct globals
     unsigned char prev_bssid[6];
     unsigned char f_bssid[6];
     unsigned char f_netmask[6];
+    char **f_essid;
+    int f_essid_count;
+#ifdef HAVE_PCRE
+    pcre *f_essid_regex;
+#endif
     char *dump_prefix;
     char *keyout;
     char *f_cap_name;

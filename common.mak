@@ -34,6 +34,14 @@ ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
 	COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
 endif
 
+ifeq ($(pcre), true)
+PCRE            = true
+endif
+
+ifeq ($(PCRE), true)
+COMMON_CFLAGS += $(shell pcre-config --cflags) -DHAVE_PCRE
+endif
+
 ifeq ($(OSNAME), cygwin)
 	COMMON_CFLAGS   += -DCYGWIN
 else ifneq ($(libnl), false)

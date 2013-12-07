@@ -14,6 +14,11 @@ BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
 		  ivstools$(EXE) kstats$(EXE) makeivs-ng$(EXE) \
 		  airdecloak-ng$(EXE) wpaclean$(EXE)
 
+LIBPCRE		=
+ifeq ($(PCRE), true)
+	LIBPCRE	= $(shell pcre-config --libs)
+endif
+
 ifneq ($(OSNAME), cygwin) #There is yet no libpcap support for windows, so we skip the crawler
 	HAVE_PCAP	= $(shell ld -lpcap 2> /dev/null && echo yes)
 	ifeq ($(HAVE_PCAP), yes) #cannot link with -lpcap, skip crawler
@@ -136,7 +141,7 @@ aireplay-ng$(EXE): $(OBJS_AR) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AR) -o $(@) $(LIBS) $(LIBSSL)
 
 airodump-ng$(EXE): $(OBJS_ADU) $(LIBOSD)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL) -lpthread
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_ADU) -o $(@) $(LIBS) $(LIBSSL) -lpthread $(LIBPCRE)
 
 airserv-ng$(EXE): $(OBJS_AS) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AS) -o $(@) $(LIBS)

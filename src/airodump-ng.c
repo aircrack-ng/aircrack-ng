@@ -60,6 +60,10 @@
 
 #include <sys/wait.h>
 
+#ifdef HAVE_PCRE
+#include <pcre.h>
+#endif
+
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.h"
@@ -627,6 +631,11 @@ char usage[] =
 "      --encrypt   <suite>   : Filter APs by cipher suite\n"
 "      --netmask <netmask>   : Filter APs by mask\n"
 "      --bssid     <bssid>   : Filter APs by BSSID\n"
+"      --essid     <essid>   : Filter APs by ESSID\n"
+#ifdef HAVE_PCRE
+"      --essid-regex <regex> : Filter APs by ESSID using a regular\n"
+"                              expression\n"
+#endif
 "      -a                    : Filter unassociated clients\n"
 "\n"
 "  By default, airodump-ng hop on 2.4GHz channels.\n"
@@ -661,6 +670,34 @@ int is_filtered_netmask(uchar *bssid)
     }
 
     return 0;
+}
+
+int is_filtered_essid(unsigned char *essid)
+{
+    int ret = 0;
+    int i;
+
+    if(G.f_essid)
+    {
+        for(i=0; i<G.f_essid_count; i++)
+        {
+            if(strncmp((char*)essid, G.f_essid[i], MAX_IE_ELEMENT_SIZE) == 0)
+            {
+                return 0;
+            }
+        }
+
+        ret = 1;
+    }
+
+#ifdef HAVE_PCRE
+    if(G.f_essid_regex)
+    {
+        return pcre_exec(G.f_essid_regex, NULL, (char*)essid, strnlen((char *)essid, MAX_IE_ELEMENT_SIZE), 0, 0, NULL, 0) < 0;
+    }
+#endif
+
+    return ret;
 }
 
 void update_rx_quality( )
@@ -2279,6 +2316,12 @@ write_packet:
         {
             return(1);
         }
+
+        if(is_filtered_essid(ap_cur->essid))
+        {
+            return(1);
+        }
+
     }
 
     /* this changes the local ap_cur, st_cur and na_cur variables and should be the last check befor the actual write */
@@ -2763,6 +2806,12 @@ int get_ap_list_count() {
             continue;
         }
 
+        if(is_filtered_essid(ap_cur->essid))
+        {
+            ap_cur = ap_cur->prev;
+            continue;
+        }
+
 	num_ap++;
 	ap_cur = ap_cur->prev;
     }
@@ -2795,6 +2844,13 @@ int get_sta_list_count() {
         }
 
         if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
+        {
+            ap_cur = ap_cur->prev;
+            continue;
+        }
+
+        // Don't filter unassociated clients by ESSID
+        if(memcmp(ap_cur->bssid, BROADCAST, 6) && is_filtered_essid(ap_cur->essid))
         {
             ap_cur = ap_cur->prev;
             continue;
@@ -3062,6 +3118,12 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		continue;
 	    }
 
+	    if(is_filtered_essid(ap_cur->essid))
+	    {
+		ap_cur = ap_cur->prev;
+		continue;
+	    }
+
 	    num_ap++;
 
 	    if(num_ap < G.start_print_ap) {
@@ -3260,6 +3322,13 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		continue;
 	    }
 
+	    // Don't filter unassociated clients by ESSID
+	    if(memcmp(ap_cur->bssid, BROADCAST, 6) && is_filtered_essid(ap_cur->essid))
+	    {
+		ap_cur = ap_cur->prev;
+		continue;
+	    }
+
 	    if( nlines >= (ws_row-1) )
 		return;
 
@@ -3452,7 +3521,7 @@ int dump_write_csv( void )
             continue;
         }
 
-        if( ap_cur->nb_pkt < 2 )
+        if(is_filtered_essid(ap_cur->essid) || ap_cur->nb_pkt < 2)
         {
             ap_cur = ap_cur->next;
             continue;
@@ -3817,8 +3886,7 @@ int dump_write_kismet_netxml( void )
             continue;
         }
 
-		/* XXX: Maybe this check should be removed */
-        if( ap_cur->nb_pkt < 2 )
+        if(is_filtered_essid(ap_cur->essid) || ap_cur->nb_pkt < 2 /* XXX: Maybe this last check should be removed */ )
         {
             ap_cur = ap_cur->next;
             continue;
@@ -4151,7 +4219,7 @@ int dump_write_kismet_csv( void )
             continue;
         }
 
-        if( ap_cur->nb_pkt < 2 )
+        if(is_filtered_essid(ap_cur->essid) || ap_cur->nb_pkt < 2)
         {
             ap_cur = ap_cur->next;
             continue;
@@ -5409,6 +5477,10 @@ int main( int argc, char *argv[] )
     int wi_read_failed=0;
     int n = 0;
     int output_format_first_time = 1;
+#ifdef HAVE_PCRE
+    const char *pcreerror;
+    int pcreerroffset;
+#endif
 
     struct AP_info *ap_cur, *ap_prv, *ap_next;
     struct ST_info *st_cur, *st_next;
@@ -5446,6 +5518,8 @@ int main( int argc, char *argv[] )
         {"cswitch",  1, 0, 's'},
         {"netmask",  1, 0, 'm'},
         {"bssid",    1, 0, 'd'},
+        {"essid",    1, 0, 'N'},
+        {"essid-regex", 1, 0, 'R'},
         {"channel",  1, 0, 'c'},
         {"gpsd",     0, 0, 'g'},
         {"ivs",      0, 0, 'i'},
@@ -5516,6 +5590,8 @@ int main( int argc, char *argv[] )
     G.prefix       =  NULL;
     G.f_encrypt    =  0;
     G.asso_client  =  0;
+    G.f_essid      =  NULL;
+    G.f_essid_count = 0;
     G.active_scan_sim  =  0;
     G.update_s     =  0;
     G.decloak      =  1;
@@ -5542,6 +5618,10 @@ int main( int argc, char *argv[] )
     G.output_format_csv = 1;
     G.output_format_kismet_csv = 1;
     G.output_format_kismet_netxml = 1;
+
+#ifdef HAVE_PCRE
+    G.f_essid_regex = NULL;
+#endif
 
 	// Default selection.
     resetSelection();
@@ -5620,7 +5700,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:o:x:MU",
+                        "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MU",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -5882,6 +5962,35 @@ int main( int argc, char *argv[] )
 
                     return( 1 );
                 }
+                break;
+
+            case 'N':
+
+                G.f_essid_count++;
+                G.f_essid = (char**)realloc(G.f_essid, G.f_essid_count * sizeof(char*));
+                G.f_essid[G.f_essid_count-1] = optarg;
+                break;
+
+	    case 'R':
+
+#ifdef HAVE_PCRE
+                if (G.f_essid_regex != NULL)
+                {
+			printf("Error: ESSID regular expression already given. Aborting\n");
+			exit(1);
+                }
+
+                G.f_essid_regex = pcre_compile(optarg, 0, &pcreerror, &pcreerroffset, NULL);
+
+                if (G.f_essid_regex == NULL)
+                {
+			printf("Error: regular expression compilation failed at offset %d: %s; aborting\n", pcreerroffset, pcreerror);
+			exit(1);
+		}
+#else
+                printf("Error: Airodump-ng wasn't compiled with pcre support; aborting\n");
+#endif
+
                 break;
 
             case 't':
@@ -6553,6 +6662,9 @@ usage:
 
     if(G.own_channels)
         free(G.own_channels);
+    
+    if(G.f_essid)
+        free(G.f_essid);
 
     if(G.prefix)
         free(G.prefix);
@@ -6562,6 +6674,11 @@ usage:
 
     if(G.keyout)
         free(G.keyout);
+
+#ifdef HAVE_PCRE
+    if(G.f_essid_regex)
+        pcre_free(G.f_essid_regex);
+#endif
 
     for(i=0; i<G.num_cards; i++)
         wi_close(wi[i]);
