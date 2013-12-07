@@ -2,6 +2,7 @@
 DEBUG="0"
 VERBOSE="0"
 ELITE="0"
+UGLY="1"
 USERID=""
 IFACE=""
 MADWIFI=0
@@ -173,7 +174,7 @@ startMac80211Iface() {
 	fi
 	#we didn't bail means we need a monitor interface
 	ifconfig ${1} down
-	IW_ERROR=$(iw dev ${1} interface add ${1}mon type monitor 2>&1 | grep "nl80211 not found")
+	IW_ERROR=$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1 | grep "nl80211 not found")
 	if [ x${IW_ERROR} = "x" ]
 	then
 		sleep 1s
@@ -232,30 +233,42 @@ stopMac80211Iface() {
 			printf "Most likely you want to remove an interface called wlan[0-9]mon\n"
 			printf "If you feel you have reached this warning in error,\n"
 			printf "please report it."
+			exit 1
 		else
-			if [ "${ELITE}" = "0" ]
-			then
-				echo ${1%mon}
-				IW_ERROR=$(iw dev ${1} interface add ${1%mon} type station 2>&1)
-				if [ x${IW_ERROR} = "x" ]
-				then
-					printf "\t\t(mac80211 station mode vif enabled on [${PHYDEV}]${1%mon})\n"
-					unset IW_ERROR
-				else
-					printf "\n\n ERROR: iw command error"
-				fi
-			fi
 			IW_ERROR=$(iw dev "${1}" del 2>&1 | grep "nl80211 not found")
 			if [ x$IW_ERROR = "x" ]
 			then
-				printf "\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
+				printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})"
 			else
 				if [ -f /sys/class/ieee80211/"${PHYDEV}"/remove_iface ]
 				then
 					printf "${1}" > /sys/class/ieee80211/"${PHYDEV}"/remove_iface
-					printf "\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
+					printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})"
 				else
 					printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
+				fi
+			fi
+			if [ "${ELITE}" = "0" ]
+			then
+				#check if $1 already has a sta interface on the same phy and bail if it does
+				if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]
+				then
+					for i in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/)
+					do
+						if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type)" = "1" ]
+						then
+							printf "\n\t\t(mac80211 station mode vif already available for [${PHYDEV}]${1} on [${PHYDEV}]${i})\n"
+							exit
+						fi
+					done
+				fi
+				IW_ERROR=$(iw phy ${PHYDEV} interface add ${1%mon} type station 2>&1)
+				if [ x${IW_ERROR} = "x" ]
+				then
+					printf "\n\t\t(mac80211 station mode vif enabled on [${PHYDEV}]${1%mon})"
+					unset IW_ERROR
+				else
+					printf "\n\n ERROR: iw command error"
 				fi
 			fi
 		fi
@@ -853,7 +866,12 @@ if [ ${VERBOSE} = "1" ]
 then
 	printf "\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
 else
-	printf "[PHY]Interface\tDriver[Stack]\t\tChipset\n\n"
+	if [ ${UGLY} = "1" ]
+	then
+		printf "Interface\tPHY\tDriver\t\tStack\t\tChipset\n\n"
+	else
+		printf "[PHY]Interface\tDriver[Stack]\t\tChipset\n\n"
+	fi
 fi
 
 for iface in $(ifconfig -a 2> /dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
@@ -912,7 +930,7 @@ then
 fi
 for iface in $(printf "${iface_list}" | sort -bu)
 do
-	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV 
+	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV
 	#add a RUNNING check here and up the device if it isn't already
 	ethtool_output="$(ethtool -i $iface 2>&1)"
 	if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]
@@ -920,15 +938,16 @@ do
 		getStack  $iface
 		getChipset $iface
 		getDriver   $iface
-		getFrom $iface
-		getFirmware $iface
+		if [ ${VERBOSE} = "1" ]
+		then
+			getFrom $iface
+			getFirmware $iface
+			getExtendedInfo $iface
+		fi
 		getPhy     $iface
-		getExtendedInfo $iface
 	else
- 		printf "\nethtool failed, fallback to old method...\n"
-		printf "Only mac80211 devices on kernel 2.6.33 or higher are officially supported by airmon-zc.\n"
-		printf "Running airmon-ng:"
-		airmon-ng $@
+ 		printf "\nethtool failed...\n"
+		printf "Only mac80211 devices on kernel 2.6.33 or higher are officially supported by airmon-ng.\n"
 		exit 1
 	fi
 
@@ -937,7 +956,12 @@ do
 	then
 		printf "${FROM}[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]-${FIRMWARE}\t${CHIPSET}\t${EXTENDED}"
 	else
-		printf "[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]\t${CHIPSET}"
+		if [ ${UGLY} = "1" ]
+		then
+			printf "${iface}\t\t${PHYDEV}\t${DRIVER}\t\t${STACK}\t${CHIPSET}"
+		else
+			printf "[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]\t${CHIPSET}"
+		fi
 	fi
 
 	if [ x$MAC80211 = "x1" ]
