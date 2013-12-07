@@ -6,6 +6,8 @@
    -  libsqlite3-devel
  * On windows, cygwin has to be used and it also requires w32api and gcc-4 package.
  * If you want to use Airpcap, the 'developer' directory from the CD is required.
+ * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
+          See Makefile flags below.
 
 === Compilating ===
 
