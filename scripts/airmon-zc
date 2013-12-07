@@ -849,7 +849,12 @@ then
 	printf "? indicates we do not know where the driver comes from... report this\n\n"
 fi
 
-printf "\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
+if [ ${VERBOSE} = "1" ]
+then
+	printf "\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
+else
+	printf "[PHY]Interface\tDriver[Stack]\t\tChipset\n\n"
+fi
 
 for iface in $(ifconfig -a 2> /dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
 do
@@ -928,7 +933,12 @@ do
 	fi
 
 	#yes this really is the main output loop
-	printf "${FROM}[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]-${FIRMWARE}\t${CHIPSET}\t${EXTENDED}"
+	if [ ${VERBOSE} = "1" ]
+	then
+		printf "${FROM}[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]-${FIRMWARE}\t${CHIPSET}\t${EXTENDED}"
+	else
+		printf "[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]\t${CHIPSET}"
+	fi
 
 	if [ x$MAC80211 = "x1" ]
 	then
