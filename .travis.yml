@@ -1,4 +1,8 @@
 language: c
 compiler:
   - gcc
+  - clang
+install:
+  - sudo apt-get update
+  - sudo apt-get install libnl-3-dev libgcrypt11-dev zlib1g-dev libsqlite3-dev libpcap-dev libssl-dev
 script: make sqlite=true unstable=true && make check sqlite=true unstable=true && make clean && make sqlite=true unstable=true gcrypt=true && make check sqlite=true unstable=true gcrypt=true
