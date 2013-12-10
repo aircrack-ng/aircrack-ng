@@ -33,7 +33,8 @@
 
 int main(int argc, char **argv)
 {
-    argc = argc; // remove warning not-used argc
+    if (argc < 1) return 1;
+
     int error=0;
     static unsigned char opmk[32] =     "\xee\x51\x88\x37\x93\xa6\xf6\x8e\x96\x15\xfe\x73\xc8\x0a\x3a\xa6"
                                         "\xf2\xdd\x0e\xa5\x37\xbc\xe6\x27\xb9\x29\x18\x3c\xc6\xe5\x79\x25";

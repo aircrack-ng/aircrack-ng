@@ -33,7 +33,8 @@
 
 int main(int argc, char **argv)
 {
-    argc = argc; // remove warning not-used argc
+    if (argc < 1) return 1;
+
     int error=0;
 
     int caplen1 = 81;
