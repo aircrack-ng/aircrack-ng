@@ -2,7 +2,6 @@
 DEBUG="0"
 VERBOSE="0"
 ELITE="0"
-UGLY="1"
 USERID=""
 IFACE=""
 MADWIFI=0
@@ -16,19 +15,19 @@ then
 	SYSFS=1
 fi
 
-if [ "$1" = "--elite" ]
+if [ "${1}" = "--elite" ]
 then
 	shift
 	ELITE="1"
 fi
 
-if [ "$1" = "--verbose" ]
+if [ "${1}" = "--verbose" ]
 then
 	shift
 	VERBOSE="1"
 fi
 
-if [ "$1" = "--debug" ]
+if [ "${1}" = "--debug" ]
 then
 	shift
 	DEBUG="1"
@@ -36,7 +35,7 @@ then
 fi
 
 #yes, I know this is in here twice
-if [ "$1" = "--elite" ]
+if [ "${1}" = "--elite" ]
 then
 	shift
 	ELITE="1"
@@ -58,12 +57,12 @@ then
 	USERID="$(id -u 2> /dev/null)"
 fi
 
-if [ x$USERID = "x" -a x$UID != "x" ]
+if [ x${USERID} = "x" -a x${UID} != "x" ]
 then
-	USERID=$UID
+	USERID=${UID}
 fi
 
-if [ x$USERID != "x" -a x$USERID != "x0" ]
+if [ x${USERID} != "x" -a x${USERID} != "x0" ]
 then
 	printf "Run it as root\n" ; exit 1;
 fi
@@ -173,6 +172,14 @@ startMac80211Iface() {
 		done
 	fi
 	#we didn't bail means we need a monitor interface
+	if [ -e /sys/class/net/${1}mon ]
+	then
+		printf "\nYou already have a ${1}mon device but it is NOT in monitor mode."
+		printf "\nWhatever you did, don't do it again."
+		printf "\nPlease run \"iw ${1}mon del\" before attempting to continue\n"
+		exit 1
+	fi
+	#we didn't bail means our target interface is available
 	ifconfig ${1} down
 	IW_ERROR=$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1 | grep "nl80211 not found")
 	if [ x${IW_ERROR} = "x" ]
@@ -235,19 +242,6 @@ stopMac80211Iface() {
 			printf "please report it."
 			exit 1
 		else
-			IW_ERROR=$(iw dev "${1}" del 2>&1 | grep "nl80211 not found")
-			if [ x$IW_ERROR = "x" ]
-			then
-				printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})"
-			else
-				if [ -f /sys/class/ieee80211/"${PHYDEV}"/remove_iface ]
-				then
-					printf "${1}" > /sys/class/ieee80211/"${PHYDEV}"/remove_iface
-					printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})"
-				else
-					printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
-				fi
-			fi
 			if [ "${ELITE}" = "0" ]
 			then
 				#check if $1 already has a sta interface on the same phy and bail if it does
@@ -262,6 +256,13 @@ stopMac80211Iface() {
 						fi
 					done
 				fi
+				if [ -e /sys/class/net/${1%mon} ]
+				then
+					printf "\nYou already have a ${1%mon} device but it is NOT in station mode."
+					printf "\nWhatever you did, don't do it again."
+					printf "\nPlease run \"iw ${1%mon} del\" before attempting to continue\n"
+					exit 1
+				fi
 				IW_ERROR=$(iw phy ${PHYDEV} interface add ${1%mon} type station 2>&1)
 				if [ x${IW_ERROR} = "x" ]
 				then
@@ -269,6 +270,19 @@ stopMac80211Iface() {
 					unset IW_ERROR
 				else
 					printf "\n\n ERROR: iw command error"
+				fi
+			fi
+			IW_ERROR=$(iw dev "${1}" del 2>&1 | grep "nl80211 not found")
+			if [ x$IW_ERROR = "x" ]
+			then
+				printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})"
+			else
+				if [ -f /sys/class/ieee80211/"${PHYDEV}"/remove_iface ]
+				then
+					printf "${1}" > /sys/class/ieee80211/"${PHYDEV}"/remove_iface
+					printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})"
+				else
+					printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
 				fi
 			fi
 		fi
@@ -452,6 +466,9 @@ getChipset() {
 	then
 		DEVICEID=$(cat /sys/class/net/$1/device/idVendor):$(cat /sys/class/net/$1/device/idProduct)
 		CHIPSET=$(lsusb | grep -i "$DEVICEID" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')
+	elif [ "${DRIVER}" = "mac80211_hwsim" ]
+	then
+		CHIPSET="Software simulator of 802.11 radio(s) for mac80211"
 	else
 		CHIPSET="non-mac80211 device? (report this!)"
 	fi
@@ -588,6 +605,7 @@ getExtendedInfo() {
 			EXTENDED="\t\tUpgrade to kernel 2.6.29 or install compat-wireless stable"
 		fi
 	fi
+	EXTENDED="We Todd Ed"
 }
 
 scanProcesses() {
@@ -864,14 +882,9 @@ fi
 
 if [ ${VERBOSE} = "1" ]
 then
-	printf "\nX[PHY]Interface\tDriver[Stack]-FirmwareRev\tChipset\t\t\t\t\t\t\tExtended Info\n\n"
+	printf "\nX[PHY]Interface\t\tDriver[Stack]-FirmwareRev\t\tChipset\t\t\t\t\t\t\t\t\t\tExtended Info\n\n"
 else
-	if [ ${UGLY} = "1" ]
-	then
-		printf "Interface\tPHY\tDriver\t\tStack\t\tChipset\n\n"
-	else
-		printf "[PHY]Interface\tDriver[Stack]\t\tChipset\n\n"
-	fi
+	printf "PHY\tInterface\tDriver\t\tChipset\n\n"
 fi
 
 for iface in $(ifconfig -a 2> /dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
@@ -907,7 +920,7 @@ do
 	fi
 done
 
-	if [ $MADWIFI -eq 1 ]
+	if [ ${MADWIFI} -eq 1 ]
 	then
 		sleep 1s
 	fi
@@ -930,14 +943,14 @@ then
 fi
 for iface in $(printf "${iface_list}" | sort -bu)
 do
-	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV
+	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV ifacet DRIVERt FIELD1 FIELD1t FIELD2 FIELD2t CHIPSETt
 	#add a RUNNING check here and up the device if it isn't already
 	ethtool_output="$(ethtool -i $iface 2>&1)"
 	if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]
 	then
 		getStack  $iface
-		getChipset $iface
 		getDriver   $iface
+		getChipset $iface
 		if [ ${VERBOSE} = "1" ]
 		then
 			getFrom $iface
@@ -954,14 +967,69 @@ do
 	#yes this really is the main output loop
 	if [ ${VERBOSE} = "1" ]
 	then
-		printf "${FROM}[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]-${FIRMWARE}\t${CHIPSET}\t${EXTENDED}"
-	else
-		if [ ${UGLY} = "1" ]
+		#beautify output spacing (within reason)
+		FIELD1="${FROM}[${PHYDEV}]${iface}"
+		if [ ${#FIELD1} -gt 15 ]
 		then
-			printf "${iface}\t\t${PHYDEV}\t${DRIVER}\t\t${STACK}\t${CHIPSET}"
+			FIELD1t="\t"
 		else
-			printf "[${PHYDEV}]${iface}\t${DRIVER}[${STACK}]\t${CHIPSET}"
+			FIELD1t="\t\t"
 		fi
+		FIELD2="${DRIVER}[${STACK}]-${FIRMWARE}"
+		if [ ${#FIELD2} -gt 27 ]
+		then
+			FIELD2t="\t"
+		else
+			FIELD2t="\t\t"
+		fi
+		if [ -n "${EXTENDED}" ]
+		then
+			CHIPSETt="\t\t\t\t\t\t\t\t\t\t"
+			if [ ${#CHIPSET} -gt 70 ]
+			then
+				CHIPSETt="\t"
+			elif [ ${#CHIPSET} -gt 63 ]
+			then
+				CHIPSETt="\t\t"
+			elif [ ${#CHIPSET} -gt 56 ]
+			then
+				CHIPSETt="\t\t\t"
+			elif [ ${#CHIPSET} -gt 49 ]
+			then
+				CHIPSETt="\t\t\t\t"
+			elif [ ${#CHIPSET} -gt 42 ]
+			then
+				CHIPSETt="\t\t\t\t\t"
+			elif [ ${#CHIPSET} -gt 35 ]
+			then
+				CHIPSETt="\t\t\t\t\t\t"
+			elif [ ${#CHIPSET} -gt 28 ]
+			then
+				CHIPSETt="\t\t\t\t\t\t\t"
+			elif [ ${#CHIPSET} -gt 21 ]
+			then
+				CHIPSETt="\t\t\t\t\t\t\t\t"
+			elif [ ${#CHIPSET} -gt 14 ]
+			then
+				CHIPSETt="\t\t\t\t\t\t\t\t\t"
+			fi
+		fi
+		printf "${FROM}[${PHYDEV}]${iface}${FIELD1t}${DRIVER}[${STACK}]-${FIRMWARE}${FIELD2t}${CHIPSET}${CHIPSETt}${EXTENDED}"
+	else
+		#beautify output spacing (within reason, interface/driver max length is 15 and phy max length is 7))
+		if [ ${#DRIVER} -gt 7 ]
+		then
+			DRIVERt="\t"
+		else
+			DRIVERt="\t\t"
+		fi
+		if [ ${#iface} -gt 7 ]
+		then
+			ifacet="\t"
+		else
+			ifacet="\t\t"
+		fi
+		printf "${PHYDEV}\t${iface}${ifacet}${DRIVER}${DRIVERt}${CHIPSET}"
 	fi
 
 	if [ x$MAC80211 = "x1" ]
