@@ -1,0 +1,9 @@
+p_menu+=("Crack with reaver")
+
+Crack_with_reaver(){
+    [[ $Host_MAC ]] && {
+        execute "Reaver" reaver -i $wifi -b $Host_MAC
+    } || {
+        echo "${mark} You have to select a network first"
+    }
+}
