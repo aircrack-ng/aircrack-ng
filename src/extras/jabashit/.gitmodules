@@ -1,3 +1,0 @@
-[submodule "src/confs/powerline"]
-	path = src/confs/powerline
-	url = https://github.com/milkbikis/powerline-shell

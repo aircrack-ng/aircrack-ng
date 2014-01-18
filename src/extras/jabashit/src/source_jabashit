@@ -1,2 +1,0 @@
-#!/bin/bash 
-echo `dirname $0`/../share/jabashit/general.plugin.bash
