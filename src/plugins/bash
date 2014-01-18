@@ -4,4 +4,4 @@ echo "You can check for Host_MAC Host_SSID and so on variables"
 echo "Have a look at the autocompletion features! (try airodump-ng --<tab> AIROSCRIPT_<tab>)"
 echo "To return to airoscript, write exit"
 
-bash --rcfile $path/extras/jabashit/src/confs/bashrc
+bash
