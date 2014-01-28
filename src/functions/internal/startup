@@ -138,7 +138,8 @@ is_number(){ return $(expr "$1 + 1" &> /dev/null); }
 # Wrapper to make interface creation easier.
 selectap_wrapper(){
     while [ "1" ]; do
-        mkmenueline $max r; echo " Rescan targets"; mkmenuline $max
+        mkmenueline $max r; echo " Rescan targets";
+        echo -en "$separator_bl"; for i in $(seq 1 $max); do echo -en "$separator_h"; done; echo "$separator_br";
         special_single_question "Select Target: ";
         choice=$ans;
         is_number $choice && break
@@ -147,19 +148,34 @@ selectap_wrapper(){
 
 valid_mac(){ (( ${#1} >= 17 )) && return 0 || return 1; }
 
-
-filter_ssid(){
-    [[ -n "$filter_ssid_" ]] && { echo; echo;
-        tag; warn "${mark}Filtering essid to $filter_ssid_ "
-        while read line; do
-            [[ $line =~ (.*)${filter_ssid_}(.*) ]] && echo $line >> $DUMP_PATH/dump-02.csv
-        done <<< $DUMP_PATH/dump-01.csv
-    }
+conn_crack(){
+    wpa_passphrase $Host_SSID $(cat $DUMP_PATH/digenpy__dic) | wpa_supplicant -i$wificard -c/dev/stdin -f $DUMP_PATH/wpa_sup.log
+    count=0;
+    while [ 1 ]; do
+        grep "completed" $DUMP_PATH/wpa_sup.log && break
+        sleep 1
+        count=$(( count + 1 ))
+        (( $count > 15 )) && break;
+    done
+    pkill -9 -f wpa
+    grep "completed" $DUMP_PATH/wpa_sup.log && return 0
+    return 1
 }
 
 # Some various functions that didn't know where to put them
+
+sort_aircrack_csv() {
+    sort -t, -k+9 -n <(sed -n "/Key/,/Station/p" $FILE|head -n-2|tail -n+2)|tac
+}
+
+get_aps_in_file(){
+    sort -t, -k+9 -n <(sed -n "/Key/,/Station/p" $1|head -n-2|tail -n+2)| wc -l
+}
+
 selectAp(){
     k=0; i=0;
+    DUMP_FILE=$DUMP_PATH/dump-02.csv
+    [[ $2 ]] && DUMP_FILE=${2}
 
     if [ "$AUTO" == 2 ]; then
         choice=$CURRENT
@@ -170,7 +186,7 @@ selectAp(){
         max=$((`tput cols` - 10));
         echo
         mkmenuheader "Detected access points" $max
-        mkmenuline $max
+        echo -en "$separator_tl"; for i in $(seq 1 $max); do echo -en "$separator_h"; done; echo "$separator_tr";
     fi
 
     while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
@@ -186,7 +202,7 @@ selectAp(){
             amac[$k]=$MAC; aprivacy[$k]=$PRIVACY;
             aspeed[$k]=$SPEED; apower[$k]=$POWER
         }
-    done < $DUMP_PATH/dump-02.csv
+    done < $DUMP_FILE
 
     if [ "$AUTO" != 2 ]; then selectap_wrapper; fi
     if [ "$choice" != "r" ] ; then
@@ -221,8 +237,10 @@ launch_counter(){
 
 autoscan(){
     launch_counter $time_to_scan &
+    export OLDAUTO=$AUTO
     OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
-    menu_type "" && sleep $time_to_scan && killall -2 "airodump-ng";
+    menu_type "${1}" && sleep $time_to_scan && killall -2 "airodump-ng";
+    AUTO=$OLDAUTO
     [[ $AUTO != 2 ]] && select_ap
     cleanautovars
 }
@@ -233,8 +251,10 @@ Scan(){
         "The strongest is the lastest, your network should be near the end"
     export SCAN=1
     rm -rf $DUMP_PATH/dump* &>/dev/null
-    markwarn $"Interface used is" ": $wifi ($iwifi) for $wificard "
-    markwarn $"Interface type is" ": $TYPE ($DRIVER)"
+    [[ $SILENT_SCAN != 1 ]] && {
+        markwarn $"Interface used is" ": $wifi ($iwifi) for $wificard "
+        markwarn $"Interface type is" ": $TYPE ($DRIVER)"
+    }
     [[ ! $1 ]] && { export QUIET=1; export NOTITLE=1; }
     execute "" $AIRODUMP --ignore-negative-one -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
     wait_for_execute=0
@@ -290,3 +310,14 @@ testmac(){
     fi
     [[ $auto_fake_mac == 1 ]] && { [[ $set_wifi_by_args != 1 ]] && { markwarn $"Automatically setting fake mac";  wichchangemac 1 ; }; }
 }
+
+filter_ssid(){
+    [[ -n "$filter_ssid_" ]] && { echo; echo;
+        tag; warn "${mark}Filtering essid to $filter_ssid_ "
+        while read line; do
+            [[ $line =~ (.*)${filter_ssid_}(.*) ]] && echo $line >> $DUMP_PATH/dump-02.csv
+        done <<< $DUMP_PATH/dump-01.csv
+    }
+}
+
+

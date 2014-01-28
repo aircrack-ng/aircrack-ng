@@ -1,5 +1,5 @@
 # Copyright (C)  2011 David Francos Cuartero
-        
+
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
 #        as published by the Free Software Foundation; either version 2
@@ -26,7 +26,7 @@ _get_report_data(){ kstatsmenu auto; _airgraph; report_proto_stats; }
 
 _make_report(){
 # Virtual function so I can easily override make_report while preserving this one.
-    cp $path/templates/start.html ${report_file}.html; 
+    cp $path/templates/start.html ${report_file}.html;
     echo "<h1 class=\"title\">Report for $Host_SSID : $Host_MAC </h1>" >> ${report_file}.html
     echo "<div id='network_data' class='section'>" >> ${report_file}.html
     report_html &>> ${report_file}.html
@@ -44,12 +44,14 @@ make_report(){ [[ -e $DUMP_PATH/$Host_MAC.key ]] && { _get_report_data; _make_re
 get_html_warnings(){ get_warnings; while read warning; do echo "<p class='warning'> ${warning} </p>"; done < ${report_file}.warns; }
 
 get_warnings(){
+    [[ -e $DUMP_PATH/$Host_MAC.key ]] || return
     key=`cat $DUMP_PATH/$Host_MAC.key`
     [[ "$Host_ENC" =~ (.*)"WEP"(.*) ]] && echo "WEP encription is unsecure and should not be used" >> ${report_file}.warns
     (( ${#key} < 104 )) && echo "Key lenght is less than 104 bytes" >> ${report_file}.warns
 }
 
 report_html(){
+    [[ -e $DUMP_PATH/$Host_MAC.key ]] || return
     key=`cat $DUMP_PATH/$Host_MAC.key`
     echo "<p><span style='font-weight:bolder'>Network SSID </span> $Host_SSID</p>"
     echo "<p><span style='font-weight:bolder'>Network MAC </span> $Host_MAC</p>"
@@ -60,14 +62,14 @@ report_html(){
 }
 
 report_mode(){
-	[[ -e $DUMP_PATH/$Host_MAC.key ]] || { error "Couldn't crack network"; return; }
+	[[ -e $DUMP_PATH/$Host_MAC.key ]] || { error "${mark} Couldn't crack network"; return; }
     key=`cat $DUMP_PATH/$Host_MAC.key`
     echo -e "Network, Mac, Channel, Encription, Speed, key\n$Host_SSID, $Host_MAC, $Host_CHAN, $Host_ENC, $Host_SPEED, $key" > ${report_file}_standard.csv
 }
 
 kstatsmenu(){
     $IVSTOOLS --convert $DUMP_PATH/$Host_MAC.cap $DUMP_PATH/$Host_MAC.ivs &> /dev/null &&
-    $KSTATS $DUMP_PATH/$Host_MAC.ivs `cat $DUMP_PATH/$Host_MAC.key` &> $DUMP_PATH/$Host_MAC.kstats 
+    $KSTATS $DUMP_PATH/$Host_MAC.ivs `cat $DUMP_PATH/$Host_MAC.key` &> $DUMP_PATH/$Host_MAC.kstats
     [[ $1 == "" ]] && less $DUMP_PATH/$Host_MAC.kstats
 }
 
@@ -75,7 +77,7 @@ _airgraph(){
     if [[ "$Host_MAC" != "" ]]; then
         read -p $"Enter format (CPG|CAPR) (CAPR by default): " g
 	[[ $g != "CPG" ]] && g="CAPR"
-        export wait_for_execute=1; AUTO=1; execute $"Generating graphics" $AIRGRAPH -i $DUMP_PATH/$Host_MAC-01.csv -o $DUMP_PATH/$Host_MAC.png -g $g; export wait_for_execute=0; AUTO=0; 
+        export wait_for_execute=1; AUTO=1; execute $"Generating graphics" $AIRGRAPH -i $DUMP_PATH/$Host_MAC-01.csv -o $DUMP_PATH/$Host_MAC.png -g $g; export wait_for_execute=0; AUTO=0;
         read -p $"Do you want to launch a browser? [y|N] " yn # Didn't like it.
         [[ $yn == "y" ]] && x-www-browser $DUMP_PATH/$Host_MAC.png
     else $clear; echo $"Error: You have to scan for targets first"; fi

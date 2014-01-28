@@ -80,12 +80,12 @@ airoscript_quiet(){
     $@ &> "$DUMP_PATH/Terminals/${title}" &
 }
 
-vline(){ for i in `seq 0 $1`; do echo -n "-"; done; }
-mkmenuline(){ echo -en "$separator_x"; for i in $(seq 1 $1); do echo -en "$separator_h"; done; echo "$separator_x"; }
+vline(){ for i in `seq 0 $1`; do echo -n ${separator_v}; done; }
 mkmenuheader(){ echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }
 getmaxlenfromlist(){ max=0; for i in "${@}"; do [[ ${#i} -gt $max ]] && max=${#i}; done; echo $max; }
-mkmenueline(){ echo -en "${separator_v}\033[${1}C${separator_v}\033[${1}D${white}${2}${red})${end} ${separator_v}";}
-mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; _ "${i}"; echo; done; }
+mkmenueline(){ echo -en "           ${separator_v}\033[${1}C${separator_v}\033[${1}D${white}${2}${red})${end} ${separator_v}";}
+tabulate() { for i in $(seq 0 $1); do echo -n " "; done; }
+mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; echo -n " "; _ "${i}"; echo; done; }
 
 mkmenu(){
     if [ "$AUTO" == 2 ]; then return; fi
@@ -96,16 +96,22 @@ mkmenu(){
     max=`getmaxlenfromlist "${@}"`
     max=$(( $max + 10 ))
     title=$1; shift; line=0;
+    tot=${#@}
     f=$((`tput cols` - 10));
     title=($(_ "${title}"))
+    tabulate 10
     mkmenuheader "${title[@]}" $max
-    mkmenuline $max
+    tabulate 10
+    echo -en "$separator_tl"; for i in $(seq 1 $max); do echo -en "$separator_h"; done; echo "$separator_tr";
     mkmenulines $max "${@}"
-    mkmenuline $max
+    [[ ${extra_menus[${title/\//_}]} ]] && mkmenulines ${extra_menus[${title/\//_}]};
+    tabulate 10
+    echo -en "$separator_bl"; for i in $(seq 1 $max); do echo -en "$separator_h"; done; echo "$separator_br";
 
     markwarn $"Select option:"
     set -a choice
     _read -a choice
+    (( $choice > $tot )) && { ${extra_menus[$title]/ /_}; echo "Ok, sorry, that was ${#@}"; }
 }
 
 

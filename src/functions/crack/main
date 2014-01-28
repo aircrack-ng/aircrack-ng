@@ -17,66 +17,83 @@
 crack_wep(){
 
          if [ "$AUTO" == 1 ]; then
-	    	execute $'Cracking wep\n' "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap"
+            execute $'Cracking wep\n' "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-01.cap"
             return
         fi
 
-		while true; do
+        while true; do
             [[ $1 ]] && choice=$1 || mkmenu $"WEP Cracking Options" $"aircrack-ng defaults" $"aircrack-ng Korek" $"aircrack-ng interactive" $"Return to main menu"
-	        case $choice in
- 	    	    1 ) execute $"Cracking wep, default options" crack "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-*.cap $crack_extra_opts $writekey"; $clear; break ;;
-	    	    2 ) execute $"Cracking wep, Korek" crack "$AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-*.cap -K $crack_extra_opts $writekey" ; $clear; break ;;
-	            3 ) single_question "Insert Fudge Factor: ";  FUDGE_FACTOR="$ans";
+            case $choice in
+                1 ) execute $"Cracking wep, default options" crack "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-*.cap $crack_extra_opts $writekey"; $clear; break ;;
+                2 ) execute $"Cracking wep, Korek" crack "$AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGEFACTOR -l $DUMP_PATH/$Host_MAC.key -0 -s $DUMP_PATH/$Host_MAC-*.cap -K $crack_extra_opts $writekey" ; $clear; break ;;
+                3 ) single_question "Insert Fudge Factor: ";  FUDGE_FACTOR="$ans";
                 single_question $"Type encryption size (64,128...): "; ENC_SIZE="$ans";
-			    execute $"Cracking wep, manual options" crack "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGE_FACTOR\
-                -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-*.cap -l $DUMP_PATH/$Host_MAC.key $crack_extra_opts $writekey" &  $clear; 
+                execute $"Cracking wep, manual options" crack "$pipe $AIRCRACK -0 -a 1 -b $Host_MAC -f $FUDGE_FACTOR\
+                -n $ENC_SIZE -0 -s $DUMP_PATH/$Host_MAC-*.cap -l $DUMP_PATH/$Host_MAC.key $crack_extra_opts $writekey" &  $clear;
                 break ;;
                 4 ) break ;;
-	    	* ) echo $"Unknown response. Try again" ;;
-		    esac
-  		done
+            * ) echo $"Unknown response. Try again" ;;
+            esac
+        done
 }
 
 crack_wpa(){
-		    while true; do 
-                [[ $1 ]] && choice=$1 || mkmenu $"WPA Cracking Options" $"Standard" $"Use precomputed pmk database" $"Return to main menu"
-                case $choice in
-                    1)  if [ ! -e $WORDLIST ]; then 
-                            [[ $pipe ]] && {
-                                markwarn $"Cracking with stdin entered data by $pipe"
-                                execute $"Cracking WPA" crack "$pipe $AIRCRACK -a 2\
-                                    -l $DUMP_PATH/$Host_MAC.key -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap \
-                                    -w -"  ; 
-                                $clear;
-                            } || {
-                                specialwarn $"Sorry, you cant crack wpa without a dictionary on $WORDLIST"; sleep 3; 
-                            }
-                        else
-                            execute $"Cracking WPA" crack "$AIRCRACK -a 2\
-                                -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap\
-                                -w $WORDLIST $writekey -l $DUMP_PATH/$Host_MAC.key"  ;
+    while true; do
+        [[ $1 ]] && {
+            choice=$1
+        } || {
+            mkmenu $"WPA Cracking Options" \
+                $"Standard" \
+                $"Use precomputed pmk database" \
+                $"Return to main menu"
+        }
+
+        case $choice in
+            1)  if [[ $2 ]]; then
+                    execute $"Cracking WPA" crack "$AIRCRACK -a 2\
+                        -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap\
+                        -w $2 $writekey -l $DUMP_PATH/$Host_MAC.key"  ;
+                    $clear;
+                else
+                    if [ ! -e $WORDLIST ]; then
+                        [[ $pipe ]] && {
+                            markwarn $"Cracking with stdin entered data by $pipe"
+                            execute $"Cracking WPA" crack "$pipe $AIRCRACK -a 2\
+                                -l $DUMP_PATH/$Host_MAC.key -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap \
+                                -w -"  ;
                             $clear;
-                        fi
-                        break
-                        ;;
-                    2)  $clear; read -p $"Enter Database location [$db_location]" db_location_;
-                        [[ $db_location ]] && db_location=db_location_;
-                        execute $"Cracking WPA with pmk database" crack "$pipe $AIRCRACK -b $Host_MAC -s -l $DUMP_PATH/$Host_MAC.key $DUMP_PATH/$Host_MAC-01.cap -r $db_location $writekey"; break;;
-                    3 ) break ;;
-	    	        * ) echo $"Unknown response. Try again" ;;
-        		esac
- 	      	done
-} 
+                        } || {
+                            specialwarn $"Sorry, you cant crack wpa without a dictionary on $WORDLIST"; sleep 3;
+                        }
+                    else
+                        execute $"Cracking WPA" crack "$AIRCRACK -a 2\
+                            -b $Host_MAC -0 -s $DUMP_PATH/$Host_MAC-01.cap\
+                            -w $WORDLIST $writekey -l $DUMP_PATH/$Host_MAC.key"  ;
+                        $clear;
+                    fi
+                fi
+                break
+                ;;
+            2)  $clear; read -p $"Enter Database location [$db_location]" db_location_;
+                [[ $db_location ]] && db_location=db_location_;
+                execute $"Cracking WPA with pmk database" crack "$pipe $AIRCRACK -b $Host_MAC -s -l $DUMP_PATH/$Host_MAC.key $DUMP_PATH/$Host_MAC-01.cap -r $db_location $writekey"; break;;
+            3 ) break ;;
+            * ) echo $"Unknown response. Try again" ;;
+        esac
+    done
+}
 
 selectcracking(){
-	if [ "$Host_ENC" = "OPN" ] || [ "$Host_ENC" = "" ] || [ "$Host_ENC" = " OPN " ]; then
-		$clear && error $"Network not encrypted or no network selected "
-	else
-		if [ "$Host_ENC" = " WEP " ] || [ "$Host_ENC" = "WEP" ]; then crack_wep $@
+    if [ "$Host_ENC" = "OPN" ] || [ "$Host_ENC" = "" ] || [ "$Host_ENC" = " OPN " ]; then
+        $clear && error $"Network not encrypted or no network selected "
+    else
+        if [ "$Host_ENC" = " WEP " ] || [ "$Host_ENC" = "WEP" ]; then crack_wep $@
         else crack_wpa $@; fi
-	fi 
+    fi
     check_function report_mode || source $path/reporting
     report_mode # If cracking finished, will print out the key.
-    key=`cat $DUMP_PATH/$Host_MAC.key`
-	info "${mark}Network key:\"${key}\""
+    [[ -e $DUMP_PATH/$Host_MAC.key ]] && {
+        key=`cat $DUMP_PATH/$Host_MAC.key`
+        info "${mark}Network key:\"${key}\""
+    }
 }

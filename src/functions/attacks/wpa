@@ -20,7 +20,7 @@ check_function auth_attacks_fake || source $path/attacks/auth # It depends on au
 check_function wep_attacks || source $path/attacks/wep
 
 wpa_attacks(){
-    hardclean && $clear 
+    hardclean && $clear
     attack=$1; shift;
     wpa_attacks_$attack $@
     notification=$attack_notification
@@ -41,16 +41,31 @@ wpa_attacks_menu(){
         case $choice in
              1) wpa_attacks handshake; $clear; break;;
              2) wpa_attacks qos; $clear; break;;
-             3) { Host_ENC="WEP"; { wep_attacks fakeauto & { AUTO=2; choice=3; othersinjectmenu; AUTO=0; }; $clear; } && Host_ENC="WPA"; } & echo ; break;;
+             3) wpa_attacks wpamm; $clear; break;;
         esac
     done
+}
+
+wpa_attacks_wpamm(){
+    {
+        Host_ENC="WEP";
+        wep_attacks fakeauto &
+        {
+            AUTO=2;
+            choice=3;
+            othersinjectmenu;
+            AUTO=0;
+            $clear;
+        }; $clear;
+    } && Host_ENC="WPA";
+    $clear; echo; $clear;
 }
 
 wpa_attacks_handshake(){
 
     [[ $dynamic_client_selection ]] && {
         auto_scan_clients;
-        select_client; 
+        select_client;
     }
 
     [[ $Client_MAC != ""  ]] && { directed=1; }
@@ -58,7 +73,7 @@ wpa_attacks_handshake(){
     execute $"Capturing data on channel: $Host_CHAN"  $AIRODUMP --ignore-negative-one  -w $DUMP_PATH/$Host_MAC --bssid $Host_MAC --channel $Host_CHAN -a $wifi
     export time_=1
     [[ $directed == 1 ]] && choose_deauth 2
-    [[ $directed != 1 ]] && choose_deauth 3 
+    [[ $directed != 1 ]] && choose_deauth 3
 
 
 }

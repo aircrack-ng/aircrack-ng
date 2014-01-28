@@ -20,8 +20,9 @@
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 main_args=$@;
-declare -a -x enabled_plugins 
+declare -a -x enabled_plugins
 declare -a p_menu
+declare -A extend_menu
 
 p_menu+=( "Enable plugin" )
 
@@ -35,20 +36,25 @@ Return_to_main_menu(){ mainmenu; }
 if [ "$UID" != 0 ]; then echo -e "You Must be root to use airoscript"; exit 1; fi;
 
 [[ ! $path ]] && {
-	[[ $(dirname ${BASH_SOURCE[0]}) =~ "local" ]] &&  {
-		path=/usr/local/share/airoscript-ng 
-		_source "/usr/local/etc/airoscript-ng_advanced.conf /usr/local/etc/airoscript-ng.conf"
-	} || { 
-		_source "/usr/etc/airoscript-ng_advanced.conf /usr/etc/airoscript-ng.conf"
-		_source "/etc/airoscript-ng_advanced.conf /etc/airoscript-ng.conf"
-	    path=/usr/share/airoscript-ng 
-	}
+    [[ $(dirname ${BASH_SOURCE[0]}) =~ "local" ]] &&  {
+        path=/usr/local/share/airoscript-ng
+        _source "/usr/local/etc/airoscript-ng_advanced.conf /usr/local/etc/airoscript-ng.conf"
+    } || {
+        _source "/usr/etc/airoscript-ng_advanced.conf /usr/etc/airoscript-ng.conf"
+        _source "/etc/airoscript-ng_advanced.conf /etc/airoscript-ng.conf"
+        path=/usr/share/airoscript-ng
+    }
 }
 
 # We preload functions, configs and themes in a cool way.
-_source "$path/_internal $path/menu $path/interface" 
+_source "$path/_internal $path/menu $path/interface"
 _source  "$path/themes/$theme" || default_theme
 for i in ${enabled_plugins[@]}; do _source $i; done
+
+check_injection() {
+    echo -n "${mark}Checking if interface can inject..."
+    $AIREPLAY -9 $wifi &>/dev/null && echo "${red}success${end}"
+}
 
 # Setup wordlist
 [[ ! -e $DUMP_PATH/wordlist.txt ]] && { cp $WORDLIST $DUMP_PATH &>/dev/null; WORDLIST="$DUMP_PATH/`basename $WORDLIST`"; }
@@ -65,19 +71,18 @@ check_cardctl; #debug
 launch_help_fifo &
 setinterface "start"
 cleanautovars
-echo -n "${mark}Checking if interface can inject..." 
-$AIREPLAY -9 $wifi &>/dev/null && echo "${red}success${end}" 
+check_injection
 [[ "$noscan" != 1 ]] && autoscan
 
 (( $BASH_PLUGIN > 0 )) && {
-    export AIROSCRIPT_AP_CHAN=$Host_CHAN 
+    export AIROSCRIPT_AP_CHAN=$Host_CHAN
     export AIROSCRIPT_AP_ENC=$Host_ENC
-    export AIROSCRIPT_AP_IDL=$Host_IDL   
+    export AIROSCRIPT_AP_IDL=$Host_IDL
     export AIROSCRIPT_AP_IP=$Host_IP
-    export AIROSCRIPT_AP_MAC=$Host_MAC  
-    export AIROSCRIPT_AP_SPEED=$Host_SPEED 
-    export AIROSCRIPT_AP_SSID=$Host_SSID   
-    export AIROSCRIPT_AP_NAME=$Host_SSID   
+    export AIROSCRIPT_AP_MAC=$Host_MAC
+    export AIROSCRIPT_AP_SPEED=$Host_SPEED
+    export AIROSCRIPT_AP_SSID=$Host_SSID
+    export AIROSCRIPT_AP_NAME=$Host_SSID
     source $path/plugins/bash
 } || {
     mainmenu

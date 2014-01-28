@@ -14,6 +14,7 @@
 #        You should have received a copy of the GNU General Public License
 #        along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 check_function fakeauth3 || source $path/attacks/auth # It depends on auth module ;)
 check_function injectmenu || source $path/attacks/injection # It depends on injection module ;)
 
@@ -21,15 +22,15 @@ othertmenu(){
     while true; do
          mkmenu $"Other aircrack-ng tools" $"Scanning" $"Injection" $"Autentication" $"Package manipulation" $"Create virtual interface with airtun-ng" $"Diagnostics and reports" $"Auto crack wep with wesside-ng" "Easside-ng" $"Return to main menu"
         case $choice in
-			1  ) AUTO=0 menu_type; $clear; break;; 
-            1  ) othersinjectmenu    ; $clear; break;;
-            2  ) authmenu      ; $clear; break;;
-			3  ) package_menu  ; $clear; break;;
-            6  ) airtunmenu    ; $clear; break;;
-            7  ) diagmenu      ; $clear; break;;
-            8  ) choosewesside ; $clear; break;;
-            9  ) eassideng     ; $clear; break;;
-            10 ) $clear        ; break ;;
+            1  ) AUTO=0 menu_type; $clear; break;;
+            2  ) othersinjectmenu    ; $clear; break;;
+            3  ) authmenu      ; $clear; break;;
+            4  ) package_menu  ; $clear; break;;
+            5  ) airtunmenu    ; $clear; break;;
+            6  ) diagmenu      ; $clear; break;;
+            7  ) choosewesside ; $clear; break;;
+            8  ) eassideng     ; $clear; break;;
+            9 ) $clear        ; break ;;
             *  ) echo $"Unknown response, try again"; sleep 1; $clear;;
         esac
     done
@@ -59,7 +60,7 @@ airdecmenu(){
                 if [ "$d_cloaked_null" == 1 ]; then opts="$opts --null-packets"; fi
                 if [ "$d_cloaked_base" == 1 ]; then opts="$opts --diable-base-filter"; fi
                 if [ "$d_cloaked_frag" == 1 ]; then opts="$opts --drop-frag"; fi
-                execute $AIRDECLOAK $opts --ssid $Host_SSID --bssid $Host_MAC --filters $d_cloaked_filters -i $DUMP_PATH/$Host_MAC-01.cap 
+                execute $AIRDECLOAK $opts --ssid $Host_SSID --bssid $Host_MAC --filters $d_cloaked_filters -i $DUMP_PATH/$Host_MAC-01.cap
                 $clear; break;;
             6) $clear; break;;
         esac
@@ -84,28 +85,28 @@ cleanairtun() {
 
 package_menu(){
     while true; do
-		[[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
-			mkmenu $"Package manipulation tools" $"Merge all ivs from all sessions" $"Decrypt current packages" $"Decloack packages"\
-				$"Generate hccap file for oclhashcat" $"Return to main menu"
-		    case $choice in
-			    1) mergeallivs;$clear; break;;
-				2) decrypt; $clear; break;;
-				3) airdecmenu; $clear; break;; 
-		        4) generate_hcap ; $clear; break;;
-	            5) $clear;break ;;
-	            * ) echo $"Unknown response. Try again" ;;
-	        esac
-		} || {
-			mkmenu $"Package manipulation tools" $"Merge all ivs from all sessions" $"Decrypt current packages" $"Decloack packages"\
-				$"Return to main menu"
-		    case $choice in
-			    1) mergeallivs;$clear; break;;
-				2) decrypt; $clear; break;;
-				3) airdecmenu; $clear; break;; 
-	            4) $clear;break ;;
-	            * ) echo $"Unknown response. Try again" ;;
-	        esac
-		}
+        [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
+            mkmenu $"Package manipulation tools" $"Merge all ivs from all sessions" $"Decrypt current packages" $"Decloack packages"\
+                $"Generate hccap file for oclhashcat" $"Return to main menu"
+            case $choice in
+                1) mergeallivs;$clear; break;;
+                2) decrypt; $clear; break;;
+                3) airdecmenu; $clear; break;;
+                4) generate_hcap ; $clear; break;;
+                5) $clear;break ;;
+                * ) echo $"Unknown response. Try again" ;;
+            esac
+        } || {
+            mkmenu $"Package manipulation tools" $"Merge all ivs from all sessions" $"Decrypt current packages" $"Decloack packages"\
+                $"Return to main menu"
+            case $choice in
+                1) mergeallivs;$clear; break;;
+                2) decrypt; $clear; break;;
+                3) airdecmenu; $clear; break;;
+                4) $clear;break ;;
+                * ) echo $"Unknown response. Try again" ;;
+            esac
+        }
     done
 }
 
@@ -138,23 +139,23 @@ wesside(){
 
 wessidetarget(){
     rm -rf prga.log wep.cap key.log
-    execute "Wesside-ng" $WESSIDE -v $Host_MAC -i $wifi & choosewesside
+    execute "Wesside-ng" $WESSIDE -v $Host_MAC -i $wifi & { [[ $1 ]] || choosewesside; }
 }
 
 wessidetargetmaxer(){
     rm -rf prga.log wep.cap key.log
-    execute "Wesside-ng" $WESSIDE -v $Host_MAC -k 1 -i $wifi & choosewesside
+    execute "Wesside-ng" $WESSIDE -v $Host_MAC -k 1 -i $wifi  & { [[ $1 ]] || choosewesside; }
 }
 
 wessidetargetpoor(){
     rm -rf prga.log wep.cap key.log
-    execute "Wesside-ng" $WESSIDE -v $Host_MAC -k 3 -i $wifi & choosewesside
+    execute "Wesside-ng" $WESSIDE -v $Host_MAC -k 3 -i $wifi & { [[ $1 ]] || choosewesside; }
 }
 
 wessidenewtarget(){
     rm -rf prga.log wep.cap  key.log
     selectAp
-    execute "Wesside" $WESSIDE -v $Host_MAC -i $wifi & choosewesside
+    execute "Wesside" $WESSIDE -v $Host_MAC -i $wifi & { [[ $1 ]] || choosewesside; }
 }
 
 diagmenu(){
@@ -177,7 +178,7 @@ diagmenu(){
 
 
 inject_test(){
-    execute "Test injection" $AIREPLAY $iwifi --test 
+    execute "Test injection" $AIREPLAY $iwifi --test
 }
 
 airmoncheck(){
@@ -213,7 +214,7 @@ menu_options(){
 cleanup(){
     while [ "1" ]; do
         mkmenu $"Interface cleanup" $"Normal cleanup" $"Reset driver" $"Vmware fix for bt4" $"Return to main menu"
-        case $choice in 
+        case $choice in
             1 ) { killall -9 aireplay-ng airodump-ng &> /dev/null &
                 $AIRMON stop $wificard; ifconfig $wificard down;
                 $clear; sleep 2; $CARDCTL eject; sleep 2; $CARDCTL insert;
@@ -224,7 +225,7 @@ cleanup(){
             3 ) { ifconfig $wificard down; rmmod $DRIVER; rfkill blockall; rfkill unblock all; modprobe $DRIVER; rfkill unblock all; ifconfig $wificard up; } &>/dev/null; break ;;
             4 ) $clear; break ;;
             * ) $clear;;
-        esac 
+        esac
     done
 }
 
@@ -245,7 +246,7 @@ eassideng(){
             1 )
                 while true; do $clear
                     read -p $"Select buddy IP" buddyip; $clear
-                    mkmenu $"Choose ap mac " $"Choose source mac" $"Chosse Source IP" $"Choose router ip" $"Execute" $"Return"; 
+                    mkmenu $"Choose ap mac " $"Choose source mac" $"Chosse Source IP" $"Choose router ip" $"Execute" $"Return";
                     read -p $"Anser: " answer; echo
                     case $choice in
                         1 ) opts=" $opts -v $answer " ;break ;;
@@ -273,13 +274,13 @@ airbaseng(){
 
 
 setupairservng(){
-	single_question $"Do you want to use airserv-ng? [y/N] "
-	if [ "$ans" == $"y" ]; then
-		export wificard=$wifi && single_question $"Start a local server? [y/N] "
-		if [ "$ans" == $"y" ]; then export wifi="127.0.0.1:666" && $AIRSERV -d  $wificard >/dev/null 2>1 &
-		else read -p $"Enter airserv-ng address [127.0.0.1:666]"
+    single_question $"Do you want to use airserv-ng? [y/N] "
+    if [ "$ans" == $"y" ]; then
+        export wificard=$wifi && single_question $"Start a local server? [y/N] "
+        if [ "$ans" == $"y" ]; then export wifi="127.0.0.1:666" && $AIRSERV -d  $wificard >/dev/null 2>1 &
+        else read -p $"Enter airserv-ng address [127.0.0.1:666]"
             wifi=$ans
-			if [ "$wifi" == "" ]; then export wifi="127.0.0.1:666";fi
-		fi
-	fi
+            if [ "$wifi" == "" ]; then export wifi="127.0.0.1:666";fi
+        fi
+    fi
 }
