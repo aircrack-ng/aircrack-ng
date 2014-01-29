@@ -1,8 +1,9 @@
+#DEPENDS: tmux
 export TERMINAL=tmux
 interfaces+=("tmux");
 export attack_notification="Attack launched, see 'Current attack' window"
 time_=0;
-execute(){ 
+execute(){
     title=$1; shift;
 
     if [  "$ADDOPTIONS" != "" ]; then
@@ -12,13 +13,13 @@ execute(){
     fi
         [[ $1 == "crack" ]] && { AUTO=0; QUIET=""; shift; mode=crack; }
 
-        if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then 
+        if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then
             [[ $NOTITLE ]] || warn "${mark}$title"
             ${@} $eopts &> /dev/null &
         else
             args="${@}"; args="${args/% /} ${eopts}" # Failsafe, this way if there's a trailing space it'll remove it before executing.
 
-            [[ $wait_for_execute == 1 ]] && mode=crack; 
+            [[ $wait_for_execute == 1 ]] && mode=crack;
 
             [[ $mode == "crack" ]] && { ${args}; read -p 'Press any key to continue'; mode=""; return; }
 
@@ -29,10 +30,10 @@ execute(){
             }
 
             [[ $time_ == 0 ]] && {
-                tmux neww -t airoscript -n "Current attack" "$args"; 
+                tmux neww -t airoscript -n "Current attack" "$args";
                 tmux select-window -t Main;
                 return
-            } 
+            }
             [[ $time_ == 1 ]] && {
                 tmux splitw -v -t "Current attack" "$args";
                 tmux select-window -t Main;
