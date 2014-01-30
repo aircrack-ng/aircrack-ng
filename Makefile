@@ -92,9 +92,9 @@ install-locale: generate-locale
 uninstall:
 	@rm -f $(bindir)/$(name)
 	@rm -f $(etcdir)/airoscript-ng*.conf
-	@rm -r $(datadir)
-	@rm -r $(docdir)
-	@rm $(mandir)/man1/airoscript-ng.1
+	@rm -rf $(datadir)
+	@rm -rf $(docdir)
+	@rm -f $(mandir)/man1/airoscript-ng.1
 	@rm -f $(picdir)/airoscript-ng.png $(picdir)/airoscript-ng.desktop $(picdir)/airoscript-ng_gtk.desktop
 	@for i in $(docdir)/*.1 ; do rm -rf $(mandir)/man1/$$i ; done
 	@for i in $(srcdir)/locale/* ; do \

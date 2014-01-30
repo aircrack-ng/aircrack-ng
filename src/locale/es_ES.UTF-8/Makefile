@@ -10,7 +10,7 @@ install:
 	@cp airoscript-ng.mo $(localedir)
 
 uninstall:
-	@rm $(localedir)/`basename \`pwd\``/airoscript-ng.mo
+	@rm -f $(localedir)/`basename \`pwd\``/airoscript-ng.mo
 
 clean:
-	@rm airoscript-ng.mo
+	@rm -f airoscript-ng.mo
