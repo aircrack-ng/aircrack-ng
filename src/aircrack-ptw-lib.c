@@ -168,10 +168,10 @@ static int rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *ke
 		"movdqa   (%q3), %%xmm0       \n\t"
 		"cmpl    $16, %k4             \n\t"
 		"movdqu %%xmm0, 3+"keybuf"    \n\t"
-		"jng     .L0                  \n\t"
+		"jng     .Lsmall_key1         \n\t"
 		"movdqa 16(%q3), %%xmm1       \n\t"
 		"movdqu %%xmm1,19+"keybuf"    \n\t"
-		".L0:                         \n\t"
+		".Lsmall_key1:                \n\t"
 
 		// key = keybuf
 		"lea  "keybuf", %q3           \n\t"
@@ -198,9 +198,9 @@ static int rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *ke
 		"movq %q4, %q8                \n\t"
 		"cmpq $16, %q8                \n\t"
 		"movq $15, %q4                \n\t"
-		"je    .L7                    \n\t"
+		"je    .Lsmall_key2           \n\t"
 		"shrq  $1, %q4                \n\t"
-		".L7:                         \n\t"
+		".Lsmall_key2:                \n\t"
 
 		// init array with key
 		".p2align 4                   \n\t"
