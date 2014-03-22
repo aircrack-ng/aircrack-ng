@@ -250,7 +250,7 @@ static char * searchInside(const char * dir, const char * filename)
 /* Search a wireless tool and return its path */
 static char * wiToolsPath(const char * tool)
 {
-        char * path;
+        char * path, *found, *env;
         int i, nbelems;
         static const char * paths [] = {
                 "/sbin",
@@ -262,14 +262,28 @@ static char * wiToolsPath(const char * tool)
                 "/tmp"
         };
 
-        nbelems = sizeof(paths) / sizeof(char *);
+	#define SEPARATOR ":"
 
-        for (i = 0; i < nbelems; i++)
-        {
-                path = searchInside(paths[i], tool);
-                if (path != NULL)
-                        return path;
-        }
+	env = getenv("PATH");
+	if (env) {
+		path = strtok(env, SEPARATOR);
+		while (path) {
+			found = searchInside(path, tool);
+	                if (found != NULL)
+	                        return found;
+			path = strtok(NULL, SEPARATOR);
+		}
+	}
+	#undef SEPARATOR
+
+	// Also search in other known location just in case we haven't found it yet
+	nbelems = sizeof(paths) / sizeof(char *);
+	for (i = 0; i < nbelems; i++)
+	{
+		path = searchInside(paths[i], tool);
+		if (path != NULL)
+			return path;
+	}
 
         return NULL;
 }
