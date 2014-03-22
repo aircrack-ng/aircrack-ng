@@ -64,6 +64,7 @@
 #include "pcap.h"
 #include "crypto.h"
 #include "common.h"
+#include "eapol.h"
 
 #include "osdep/osdep.h"
 #include "osdep/common.h"
@@ -337,18 +338,6 @@ struct Fragment_list
     struct timeval  access;
     char            wep;
     pFrag_t         next;
-};
-
-struct WPA_hdsk
-{
-    uchar stmac[6];				 /* supplicant MAC               */
-    uchar snonce[32];			 /* supplicant nonce             */
-    uchar anonce[32];			 /* authenticator nonce          */
-    uchar keymic[16];			 /* eapol frame MIC              */
-    uchar eapol[256];			 /* eapol frame contents         */
-    int eapol_size;				 /* eapol frame size             */
-    int keyver;					 /* key version (TKIP / AES)     */
-    int state;					 /* handshake completion         */
 };
 
 /* linked list of detected clients */
@@ -2493,7 +2482,8 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
     int seqnum, fragnum, morefrag;
     int gotsource, gotbssid;
     int remaining, bytes2use;
-    int reasso, fixed, z, temp_channel;
+    int reasso, fixed, temp_channel;
+    uint z;
 
     struct ST_info *st_cur = NULL;
     struct ST_info *st_prv = NULL;
@@ -2511,7 +2501,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 	if (packet[0] == 0x88)
 		z += 2; /* handle QoS field */
 
-    if(length < z)
+    if((uint)length < z)
     {
         return 1;
     }
@@ -2812,13 +2802,15 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
                 if(opt.sendeapol && memcmp(packet+z, "\xAA\xAA\x03\x00\x00\x00\x88\x8E\x01\x03", 10) == 0)
                 {
-					st_cur->wpa.eapol_size = ( packet[z + 8 + 2] << 8 ) + packet[z + 8 + 3] + 4;
+                     st_cur->wpa.eapol_size = ( packet[z + 8 + 2] << 8 ) + packet[z + 8 + 3] + 4;
 
-					if (length - z - 10 < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
-					{
-						// Ignore the packet trying to crash us.
-						return 1;
-                	}
+                     if ((uint)length - z - 10 < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0 ||
+                         st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
+                     {
+                         // Ignore the packet trying to crash us.
+                         st_cur->wpa.eapol_size = 0;
+                         return 1;
+                     }
 
                     /* got eapol frame num 2 */
                     memcpy( st_cur->wpa.snonce, &packet[z + 8 + 17], 32 );
@@ -2923,7 +2915,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
         memcpy( h80211+12, packet+z+6, 2);  //copy ether type
 
-        if( length <= z+8 )
+        if( (uint)length <= z+8 )
             return 1;
 
         memcpy( h80211+14, packet+z+8, length-z-8);

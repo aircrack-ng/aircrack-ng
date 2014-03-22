@@ -38,6 +38,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "aircrack-ptw-lib.h"
+#include "eapol.h"
 
 #define SUCCESS  0
 #define FAILURE  1
@@ -204,21 +205,7 @@ struct WEP_data
 	int fudge[64];				 /* bruteforce level (1 to 256)  */
 	int depth[64];				 /* how deep we are in the fudge */
 	vote poll[64][256];			 /* KoreK cryptanalysis results  */
-}
-
-wep;
-
-struct WPA_hdsk
-{
-	unsigned char stmac[6];				 /* supplicant MAC               */
-	unsigned char snonce[32];			 /* supplicant nonce             */
-	unsigned char anonce[32];			 /* authenticator nonce          */
-	unsigned char keymic[16];			 /* eapol frame MIC              */
-	unsigned char eapol[256];			 /* eapol frame contents         */
-	int eapol_size;				 /* eapol frame size             */
-	int keyver;					 /* key version (TKIP / AES)     */
-	int state;					 /* handshake completion         */
-};
+} wep;
 
 struct AP_info
 {

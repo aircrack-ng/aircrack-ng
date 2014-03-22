@@ -1166,7 +1166,8 @@ int remove_namac(unsigned char* mac)
 
 int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int cardnum )
 {
-    int i, n, z, seq, msd, dlen, offset, clen, o;
+    int i, n, seq, msd, dlen, offset, clen, o;
+    uint z;
     int type, length, numuni=0, numauth=0;
     struct pcap_pkthdr pkh;
     struct timeval tv;
@@ -1961,7 +1962,7 @@ skip_probe:
             }
         }
 
-        if( z + 26 > caplen )
+        if( z + 26 > (uint)caplen )
             goto write_packet;
 
         if( h80211[z] == h80211[z + 1] && h80211[z + 2] == 0x03 )
@@ -2010,7 +2011,7 @@ skip_probe:
             }
         }
 
-        if( z + 10 > caplen )
+        if( z + 10 > (uint)caplen )
             goto write_packet;
 
         if( ap_cur->security & STD_WEP )
@@ -2140,7 +2141,7 @@ skip_probe:
         /* Check if 802.11e (QoS) */
         if( (h80211[0] & 0x80) == 0x80) z+=2;
 
-        if( z + 26 > caplen )
+        if( z + 26 > (uint)caplen )
             goto write_packet;
 
         z += 6;     //skip LLC header
@@ -2169,7 +2170,7 @@ skip_probe:
 
             /* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
-            if( z+17+32 > caplen )
+            if( z+17+32 > (uint)caplen )
                 goto write_packet;
 
             if( ( h80211[z + 6] & 0x08 ) != 0 &&
@@ -2189,11 +2190,13 @@ skip_probe:
                     st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                             +   h80211[z + 3] + 4;
 
-                    if (caplen - z < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0 || caplen - z < 81 + 16 || st_cur->wpa.eapol_size > 256)
-					{
-						// Ignore the packet trying to crash us.
-                    	goto write_packet;
-					}
+                    if (caplen - z < st_cur->wpa.eapol_size || st_cur->wpa.eapol_size == 0 ||
+                        caplen - z < 81 + 16 || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
+                    {
+                        // Ignore the packet trying to crash us.
+                        st_cur->wpa.eapol_size = 0;
+                        goto write_packet;
+                    }
 
                     memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
                     memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
@@ -2221,11 +2224,13 @@ skip_probe:
                     st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                             +   h80211[z + 3] + 4;
 
-                    if (caplen - z < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0 || caplen - z < 81 + 16 || st_cur->wpa.eapol_size > 256)
-					{
-						// Ignore the packet trying to crash us.
-                    	goto write_packet;
-					}
+                    if (caplen - (uint)z < st_cur->wpa.eapol_size || st_cur->wpa.eapol_size == 0 ||
+                        caplen - (uint)z < 81 + 16 || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
+                    {
+                        // Ignore the packet trying to crash us.
+                        st_cur->wpa.eapol_size = 0;
+                        goto write_packet;
+                    }
 
                     memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
                     memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );

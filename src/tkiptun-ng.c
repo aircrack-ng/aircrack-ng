@@ -70,6 +70,7 @@
 #include "osdep/osdep.h"
 #include "crypto.h"
 #include "common.h"
+#include "eapol.h"
 
 #define RTC_RESOLUTION  8192
 
@@ -182,18 +183,6 @@ char usage[] =
 "\n"
 "      --help              : Displays this usage screen\n"
 "\n";
-
-struct WPA_hdsk
-{
-	unsigned char stmac[6];				 /* supplicant MAC               */
-	unsigned char snonce[32];			 /* supplicant nonce             */
-	unsigned char anonce[32];			 /* authenticator nonce          */
-	unsigned char keymic[16];			 /* eapol frame MIC              */
-	unsigned char eapol[256];			 /* eapol frame contents         */
-	int eapol_size;				 /* eapol frame size             */
-	int keyver;					 /* key version (TKIP / AES)     */
-	int state;					 /* handshake completion         */
-};
 
 struct options
 {
@@ -463,9 +452,9 @@ int set_bitrate(struct wif *wi, int rate)
     return 0;
 }
 
-int check_received(unsigned char *packet, int length)
+int check_received(unsigned char *packet, uint length)
 {
-    int z;
+    uint z;
     uchar bssid[6], smac[6], dmac[6];
     struct ivs2_pkthdr ivs2;
 
@@ -558,6 +547,13 @@ int check_received(unsigned char *packet, int length)
                         opt.wpa.eapol_size = ( packet[z + 2] << 8 )
                                 +   packet[z + 3] + 4;
 
+                        if (opt.wpa.eapol_size > sizeof(opt.wpa.eapol) ||
+                            length - z < opt.wpa.eapol_size) {
+                            // ignore packet trying to crash us
+                            opt.wpa.eapol_size = 0;
+                            return 0;
+                        }
+
                         memcpy( opt.wpa.keymic, &packet[z + 81], 16 );
                         memcpy( opt.wpa.eapol,  &packet[z], opt.wpa.eapol_size );
                         memset( opt.wpa.eapol + 81, 0, 16 );
@@ -583,6 +579,13 @@ int check_received(unsigned char *packet, int length)
                     {
                         opt.wpa.eapol_size = ( packet[z + 2] << 8 )
                                 +   packet[z + 3] + 4;
+
+                        if (opt.wpa.eapol_size > sizeof(opt.wpa.eapol) ||
+                            length - z < opt.wpa.eapol_size) {
+                            // ignore packet trying to crash us
+                            opt.wpa.eapol_size = 0;
+                            return 0;
+                        }
 
                         memcpy( opt.wpa.keymic, &packet[z + 81], 16 );
                         memcpy( opt.wpa.eapol,  &packet[z], opt.wpa.eapol_size );

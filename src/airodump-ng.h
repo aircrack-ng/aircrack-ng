@@ -32,6 +32,8 @@
 #ifndef _AIRODUMP_NG_H_
 #define _AIRODUMP_NG_H_
 
+#include "eapol.h"
+
 /* some constants */
 
 #define MAX_IE_ELEMENT_SIZE 256
@@ -259,18 +261,6 @@ struct AP_info
 					  
     int marked;
     int marked_color;
-};
-
-struct WPA_hdsk
-{
-    uchar stmac[6];				 /* supplicant MAC               */
-    uchar snonce[32];			 /* supplicant nonce             */
-    uchar anonce[32];			 /* authenticator nonce          */
-    uchar keymic[16];			 /* eapol frame MIC              */
-    uchar eapol[256];			 /* eapol frame contents         */
-    int eapol_size;				 /* eapol frame size             */
-    int keyver;					 /* key version (TKIP / AES)     */
-    int state;					 /* handshake completion         */
 };
 
 /* linked list of detected clients */

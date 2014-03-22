@@ -733,7 +733,8 @@ int atomic_read( read_buf *rb, int fd, int len, void *buf )
 
 void read_thread( void *arg )
 {
-	int fd, n, z, fmt;
+	int fd, n, fmt;
+	uint z;
 	int eof_notified = 0;
 	read_buf rb;
 // 	int ret=0;
@@ -1415,7 +1416,7 @@ void read_thread( void *arg )
 		if ( ( h80211[0] & 0x80 ) == 0x80 )
 			z+=2; /* 802.11e QoS */
 
-		if( z + 16 > (int) pkh.caplen )
+		if( z + 16 > pkh.caplen )
 			goto unlock_mx_apl;
 
 		/* check the SNAP header to see if data is encrypted */
@@ -1501,7 +1502,7 @@ void read_thread( void *arg )
 
 		z += 6;
 
-		if( z + 20 < (int) pkh.caplen )
+		if( z + 20 < pkh.caplen )
 		{
 			if( h80211[z] == 0x08 && h80211[z + 1] == 0x00 &&
 				( h80211[1] & 3 ) == 0x01 )
@@ -1571,10 +1572,12 @@ void read_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
-				if ((int)pkh.len - z < st_cur->wpa.eapol_size || st_cur->wpa.eapol_size == 0)
+				if (st_cur->wpa.eapol_size == 0 || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
+					|| pkh.len - z < st_cur->wpa.eapol_size)
 				{
 					// Ignore the packet trying to crash us.
-					continue;
+					st_cur->wpa.eapol_size = 0;
+					goto unlock_mx_apl;
 				}
 
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
@@ -1612,10 +1615,12 @@ void read_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
-				if ((int)pkh.len - z < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
+				if (st_cur->wpa.eapol_size == 0 || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
+					|| pkh.len - z < st_cur->wpa.eapol_size)
 				{
 					// Ignore the packet trying to crash us.
-					continue;
+					st_cur->wpa.eapol_size = 0;
+					goto unlock_mx_apl;
 				}
 
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
@@ -1684,7 +1689,8 @@ void read_thread( void *arg )
 
 void check_thread( void *arg )
 {
-	int fd, n, z, fmt;
+	int fd, n, fmt;
+	uint z;
 	read_buf rb;
 // 	int ret=0;
 
@@ -2245,7 +2251,7 @@ void check_thread( void *arg )
 		if ( ( h80211[0] & 0x80 ) == 0x80 )
 			z+=2; /* 802.11e QoS */
 
-		if( z + 16 > (int) pkh.caplen )
+		if( z + 16 > pkh.caplen )
 			goto unlock_mx_apl;
 
 		/* check the SNAP header to see if data is encrypted */
@@ -2300,7 +2306,7 @@ void check_thread( void *arg )
 
 		z += 6;
 
-		if( z + 20 < (int) pkh.caplen )
+		if( z + 20 < pkh.caplen )
 		{
 			if( h80211[z] == 0x08 && h80211[z + 1] == 0x00 &&
 				( h80211[1] & 3 ) == 0x01 )
@@ -2369,10 +2375,12 @@ void check_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
-				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				if (st_cur->wpa.eapol_size == 0 || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
+					|| pkh.len - z < st_cur->wpa.eapol_size)
 				{
 					// Ignore the packet trying to crash us.
-					continue;
+					st_cur->wpa.eapol_size = 0;
+					goto unlock_mx_apl;
 				}
 
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
@@ -2410,10 +2418,12 @@ void check_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
-				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				if (st_cur->wpa.eapol_size == 0 || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
+					|| pkh.len - z < st_cur->wpa.eapol_size)
 				{
 					// Ignore the packet trying to crash us.
-					continue;
+					st_cur->wpa.eapol_size = 0;
+					goto unlock_mx_apl;
 				}
 
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
@@ -4218,7 +4228,7 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 int do_make_wkp(struct AP_info *ap_cur)
 {
 	size_t elt_written;
-	int i = 0;
+	uint i = 0;
 
 	while( ap_cur != NULL )
 	{
@@ -4354,7 +4364,7 @@ int do_make_wkp(struct AP_info *ap_cur)
 	memcpy(&frametmp[0x68c], ptmp, 16);
 
 	elt_written = fwrite(frametmp, 1, WKP_FRAME_LENGTH, fp_wkp);
-	i = fclose(fp_wkp);
+	fclose(fp_wkp);
 
 
 	if ((int)elt_written == WKP_FRAME_LENGTH) {
@@ -4369,7 +4379,7 @@ int do_make_wkp(struct AP_info *ap_cur)
 int do_make_hccap(struct AP_info *ap_cur)
 {
 	size_t elt_written;
-	int i = 0;
+	uint i = 0;
 
 	while( ap_cur != NULL )
 	{
@@ -4485,7 +4495,7 @@ int do_make_hccap(struct AP_info *ap_cur)
 	memcpy (&hccap.keymic,     &ap_cur->wpa.keymic,     sizeof (ap_cur->wpa.keymic));
 
 	elt_written = fwrite(&hccap, sizeof (hccap_t), 1, fp_hccap);
-	i = fclose(fp_hccap);
+	fclose(fp_hccap);
 
 	if ((int)elt_written == 1) {
 		printf("\nSuccessfully written to %s\n", opt.hccap);

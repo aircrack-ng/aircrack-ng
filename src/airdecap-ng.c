@@ -205,7 +205,8 @@ int main( int argc, char *argv[] )
     char *s, buf[128];
     FILE *f_in, *f_out, *f_bad=NULL;
     unsigned long crc;
-    int i = 0, n, z, linktype;
+    int i = 0, n, linktype;
+    uint z;
     uchar ZERO[32], *h80211;
     uchar bssid[6], stmac[6];
 
@@ -706,7 +707,7 @@ usage:
 
         z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
 
-        if( z + 16 > (int) pkh.caplen )
+        if( z + 16 > pkh.caplen )
             continue;
 
         /* check QoS header */
@@ -944,10 +945,12 @@ usage:
                 st_cur->eapol_size = ( h80211[z + 2] << 8 )
                                    +   h80211[z + 3] + 4;
 
-                if ((int)pkh.len - z < st_cur->eapol_size  || st_cur->eapol_size == 0)
+                if (pkh.len - z < st_cur->eapol_size  || st_cur->eapol_size == 0 ||
+                    st_cur->eapol_size > sizeof(st_cur->eapol))
                 {
-                	// Ignore the packet trying to crash us.
-                	continue;
+                        // Ignore the packet trying to crash us.
+                        st_cur->eapol_size = 0;
+                        continue;
                 }
 
                 memcpy( st_cur->keymic, &h80211[z + 81], 16 );
@@ -978,11 +981,13 @@ usage:
                 st_cur->eapol_size = ( h80211[z + 2] << 8 )
                                    +   h80211[z + 3] + 4;
 
-                if ((int)pkh.len - z < st_cur->eapol_size  || st_cur->eapol_size == 0)
-				{
-					// Ignore the packet trying to crash us.
-					continue;
-				}
+                if (pkh.len - z < st_cur->eapol_size  || st_cur->eapol_size == 0 ||
+                    st_cur->eapol_size > sizeof(st_cur->eapol))
+                {
+                    // Ignore the packet trying to crash us.
+                    st_cur->eapol_size = 0;
+                    continue;
+                 }
 
                 memcpy( st_cur->keymic, &h80211[z + 81], 16 );
                 memcpy( st_cur->eapol, &h80211[z], st_cur->eapol_size );

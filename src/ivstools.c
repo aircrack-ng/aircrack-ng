@@ -43,6 +43,7 @@
 #include "uniqueiv.h"
 #include "osdep/byteorder.h"
 #include "common.h"
+#include "eapol.h"
 
 #define FAILURE -1
 #define IVS     1
@@ -66,18 +67,6 @@ struct AP_info
 
     int wpa_stored;           /* wpa stored in ivs file?   */
     int essid_stored;         /* essid stored in ivs file? */
-};
-
-struct WPA_hdsk
-{
-    uchar stmac[6];				 /* supplicant MAC               */
-    uchar snonce[32];			 /* supplicant nonce             */
-    uchar anonce[32];			 /* authenticator nonce          */
-    uchar keymic[16];			 /* eapol frame MIC              */
-    uchar eapol[256];			 /* eapol frame contents         */
-    int eapol_size;				 /* eapol frame size             */
-    int keyver;					 /* key version (TKIP / AES)     */
-    int state;					 /* handshake completion         */
 };
 
 /* linked list of detected clients */
@@ -225,9 +214,10 @@ int merge( int argc, char *argv[] )
     return( 0 );
 }
 
-int dump_add_packet( unsigned char *h80211, int caplen)
+int dump_add_packet( unsigned char *h80211, uint caplen)
 {
-    int i, n, z, seq, dlen, clen;
+    int i, n, seq, dlen, clen;
+    uint z;
     struct ivs2_pkthdr ivs2;
     unsigned char *p;
     unsigned char bssid[6];
@@ -708,13 +698,21 @@ skip_station:
                       ( h80211[z + 6] & 0x80 ) != 0 &&
                       ( h80211[z + 5] & 0x01 ) != 0 )
                 {
+                    st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
+                            +   h80211[z + 3] + 4;
+
+                    if (st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol_size) ||
+                        caplen - z < st_cur->wpa.eapol_size) {
+                        // ignore packet trying to crash us
+                        st_cur->wpa.eapol_size = 0;
+                        return 0;
+                    }
+
                     if( memcmp( &h80211[z + 17], ZERO, 32 ) != 0 )
                     {
                         memcpy( st_cur->wpa.anonce, &h80211[z + 17], 32 );
                         st_cur->wpa.state |= 4;
                     }
-                    st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
-                            +   h80211[z + 3] + 4;
 
                     memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
                     memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );

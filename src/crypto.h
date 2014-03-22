@@ -97,7 +97,7 @@ struct WPA_ST_info
     uchar keymic[20];           /* eapol frame MIC              */
     uchar eapol[256];           /* eapol frame contents         */
     uchar ptk[80];              /* pairwise transcient key      */
-    int eapol_size;             /* eapol frame size             */
+    uint eapol_size;            /* eapol frame size             */
     unsigned long t_crc;        /* last ToDS   frame CRC        */
     unsigned long f_crc;        /* last FromDS frame CRC        */
     int keyver, valid_ptk;
