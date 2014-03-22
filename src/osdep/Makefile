@@ -15,10 +15,10 @@ OBJS_APCAP	= airpcap.o
 OBJS_OBSD	= $(OBJS) openbsd.o openbsd_tap.o
 OBJS_NBSD	= $(OBJS) netbsd.o netbsd_tap.o
 OBJS_FBSD	= $(OBJS) freebsd.o freebsd_tap.o
-OBJS_LINUX	= $(OBJS) linux.o linux_tap.o radiotap/radiotap-parser.o common.o
+OBJS_LINUX	= $(OBJS) linux.o linux_tap.o radiotap/radiotap.o common.o
 OBJS_DUMMY	= $(OBJS) dummy.o dummy_tap.o
-OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o radiotap/radiotap-parser.o
-OBJS_DARWIN = $(OBJS) darwin.o darwin_tap.o radiotap/radiotap-parser.o
+OBJS_CYGWIN	= $(OBJS) cygwin.o cygwin_tap.o radiotap/radiotap.o
+OBJS_DARWIN = $(OBJS) darwin.o darwin_tap.o radiotap/radiotap.o
 
 # XXX make it a DLL, without polluting cygwin.c
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(airpcap) $(AIRPCAP))),true)
@@ -64,7 +64,7 @@ all:
 
 .os.cygwin: $(OBJS_CYGWIN) 
 	$(DOPCAP)
-	$(AR) cru $(LIB) *.o radiotap/radiotap-parser.o
+	$(AR) cru $(LIB) *.o radiotap/radiotap.o
 	$(RANLIB) $(LIB) 
 	touch $(@)
 

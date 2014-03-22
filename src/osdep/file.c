@@ -34,8 +34,7 @@
 
 #include "osdep.h"
 #include "pcap.h"
-#include "radiotap/radiotap-parser.h"
-#include "radiotap/ieee80211_radiotap.h"
+#include "radiotap/radiotap_iter.h"
 
 struct priv_file {
 	int		pf_fd;
@@ -83,7 +82,7 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
 		rh  = (struct ieee80211_radiotap_header*) buf;
 		off = le16_to_cpu(rh->it_len);
 
-        	if (ieee80211_radiotap_iterator_init(&iter, rh, rc) < 0)
+        	if (ieee80211_radiotap_iterator_init(&iter, rh, rc, NULL) < 0)
 			return -1;
 
 		while (ieee80211_radiotap_iterator_next(&iter) >= 0) {

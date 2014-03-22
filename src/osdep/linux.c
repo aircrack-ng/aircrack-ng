@@ -51,7 +51,8 @@
 #include <linux/genetlink.h>
 #endif //CONFIG_LIBNL
 
-#include "radiotap/radiotap-parser.h"
+#include "radiotap/radiotap.h"
+#include "radiotap/radiotap_iter.h"
         /* radiotap-parser defines types like u8 that
          * ieee80211_radiotap.h needs
          *
@@ -60,7 +61,6 @@
          * - since we can't support extensions we don't understand
          * - since linux does not include it in userspace headers
          */
-#include "radiotap/ieee80211_radiotap.h"
 #include "osdep.h"
 #include "pcap.h"
 #include "crctable_osdep.h"
@@ -675,7 +675,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
         rthdr = (struct ieee80211_radiotap_header *) tmpbuf;
 
-        if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen) < 0)
+        if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen, NULL) < 0)
             return (0);
 
         /* go through the radiotap arguments we have been given
@@ -739,7 +739,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                 break;
 
             case IEEE80211_RADIOTAP_CHANNEL:
-                ri->ri_channel = *iterator.this_arg;
+                ri->ri_channel = getChannelFromFrequency(le16toh(*(uint16_t*)iterator.this_arg));
                 got_channel = 1;
                 break;
 
@@ -759,7 +759,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                 }
 
                 if ( *iterator.this_arg &
-                    IEEE80211_RADIOTAP_F_RX_BADFCS )
+                    IEEE80211_RADIOTAP_F_BADFCS )
                     return( 0 );
 
                 break;

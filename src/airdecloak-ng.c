@@ -41,8 +41,7 @@
 #include <getopt.h>
 #include "airdecloak-ng.h"
 #include "version.h"
-#include "osdep/radiotap/radiotap-parser.h"
-#include "osdep/radiotap/ieee80211_radiotap.h"
+#include "osdep/radiotap/radiotap_iter.h"
 
 uchar buffer[65536];
 
@@ -315,7 +314,7 @@ int get_rtap_signal(int caplen)
 
 	rthdr = (struct ieee80211_radiotap_header *)buffer;
 
-	if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen) < 0)
+	if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen, NULL) < 0)
 	return 0;
 
 	while (ieee80211_radiotap_iterator_next(&iterator) >= 0) {
