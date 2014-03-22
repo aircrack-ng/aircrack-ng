@@ -1036,7 +1036,7 @@ int CFC_filter_consecutive_sn_ap() {
 
 	// Go to the first beacon or probe response.
 	while ( !(_packet_elt_head->current->version_type_subtype == BEACON_FRAME
-			&& _packet_elt_head->current->version_type_subtype == PROBE_RESPONSE) ) {
+			|| _packet_elt_head->current->version_type_subtype == PROBE_RESPONSE) ) {
 
 		next_packet_result = next_packet_pointer_same_fromToDS_and_source_as_current();
 		// Check if we didn't reach end of capture.
