@@ -1,3 +1,9 @@
+Version 1.2-beta3 (changes from aircrack-ng 1.2-beta2) - Released XX XXXXXXXX 2014:
+* Finally properly fixed the buffer overflow.
+* Fixed channel parsing (eg 108, 125) and updated radiotap parser.
+* Now when looking for wireless tools, scan $PATH first before our known location list.
+* Various other small fixes.
+
 Version 1.2-beta2 (changes from aircrack-ng 1.2-beta1) - Released 30 November 2013:
 * Airbase-ng: Fixed order of IE when creating soft Access Point.
 * Airbase-ng: Fixed Caffe Latte Attack not working for all clients.
