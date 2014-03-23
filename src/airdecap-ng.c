@@ -170,7 +170,7 @@ int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, uchar *h80211 )
             pkh->len    -= 30 + qosh_offset + 6;
             pkh->caplen -= 30 + qosh_offset + 6;
 
-            memcpy( buffer + 12, h80211 + qosh_offset + 36, pkh->caplen );
+            memmove( buffer + 12, h80211 + qosh_offset + 36, pkh->caplen );
         }
 
         memcpy( buffer, arphdr, 12 );
@@ -833,7 +833,7 @@ usage:
                 pkh.len    -= 8;
                 pkh.caplen -= 8;
 
-                memcpy( h80211 + z, h80211 + z + 4, pkh.caplen - z );
+                memmove( h80211 + z, h80211 + z + 4, pkh.caplen - z );
 
                 stats.nb_unwep++;
 
