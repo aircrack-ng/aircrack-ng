@@ -37,11 +37,12 @@ wpa_attacks_menu(){
         "This attack targets on Cisco Aironet routers, wich set both WPA and WEP encriptions on the same sssid\nIt listens for a wep-encapsulated arp packet and retransmits it (bitflipped to make it into an ARP coming from the attacker's MAC)"
 
     while true; do
-        $clear; mkmenu $"Select WPA Attack" $"Standard attack" $"Standard attack with QoS (WMM)" $"WPA migration mode"
+        $clear; mkmenu $"Select WPA Attack" $"Standard attack" $"Standard attack with QoS (WMM)" $"WPA migration mode" $"Return to main menu"
         case $choice in
              1) wpa_attacks handshake; $clear; break;;
              2) wpa_attacks qos; $clear; break;;
              3) wpa_attacks wpamm; $clear; break;;
+             4) $clear; break;;
         esac
     done
 }
