@@ -1216,9 +1216,10 @@ static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
     fd2 = open(buf, O_WRONLY);
 
     /* bcm43xx injection */
-    if (fd2 == -1)
-    snprintf(buf, 256, "/sys/class/net/%s/device/inject_nofcs", iface);
-    fd2 = open(buf, O_WRONLY);
+    if (fd2 == -1) {
+        snprintf(buf, 256, "/sys/class/net/%s/device/inject_nofcs", iface);
+        fd2 = open(buf, O_WRONLY);
+    }
 
     if (fd2 == -1)
         return -1;
