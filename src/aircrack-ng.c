@@ -40,7 +40,11 @@
 #define _GNU_SOURCE
 
 #include <sys/types.h>
-#include <sys/termios.h>
+#if defined(ANDROID) || defined(__ANDROID__)
+	#include <termios.h>
+#else
+	#include <sys/termios.h>
+#endif
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <sys/stat.h>

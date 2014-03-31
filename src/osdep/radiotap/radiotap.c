@@ -15,6 +15,9 @@
  */
 #include "radiotap_iter.h"
 #include "platform.h"
+#if defined(ANDROID) || defined(__ANDROID__)
+	#include "../byteorder.h"
+#endif
 
 /* function prototypes and related defs are in radiotap_iter.h */
 
