@@ -3712,7 +3712,7 @@ char * sanitize_xml(unsigned char * text, int length)
 	char * newpos;
 	char * newtext = NULL;
 	if (text != NULL && length > 0) {
-		len = 5 * length;
+		len = 6 * length;
 		newtext = (char *)calloc(1, (len + 1) * sizeof(char)); // Make sure we have enough space
 		pos = text;
 		for (i = 0; i < length; ++i, ++pos) {
@@ -3725,6 +3725,12 @@ char * sanitize_xml(unsigned char * text, int length)
 					break;
 				case '>':
 					strncat(newtext, "&gt;", len);
+					break;
+				case '\'':
+					strncat(newtext, "&apos;", len);
+					break;
+				case '"':
+					strncat(newtext, "&quot;", len);
 					break;
 				default:
 					if ( isprint((int)(*pos)) || (*pos)>127 ) {
