@@ -72,13 +72,6 @@ Aircrack-ng
 	Solution: Rename the directory or move the database into another directory.
 
 
-	Airbase-ng
-	----------
-
-	Problem: SSID are not displayed correctly (when scanning for networks) when using airbase-ng with r8187 driver.
-	Reason: Beacons are truncated (the beginning is missing) when sent in the air.
-	Solution: None at this time (we'll try to fix it for next release)
-
 	Airodump-ng
 	-----------
 
@@ -95,9 +88,7 @@ Aircrack-ng
 	
 	Problem: Aircrack-ng doesn't build on Cygwin64
 	Solution: None at this time. Build it using 32 bit cygwin.
-	
-	Problem: Aircrack-ng doesn't build with gcc 4.5
-	Solution: Use an older version of gcc such as 4.3 for now (will be fixed in stable release).
+
 	
 Sample files
 ============
