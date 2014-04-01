@@ -1,4 +1,4 @@
-Version 1.2-beta3 (changes from aircrack-ng 1.2-beta2) - Released XX XXXXXXXX 2014:
+Version 1.2-beta3 (changes from aircrack-ng 1.2-beta2) - Released 31 March 2014:
 * Finally properly fixed the buffer overflow.
 * Fixed channel parsing (eg 108, 125) and updated radiotap parser.
 * Various other small fixes.
