@@ -261,7 +261,7 @@ static char * wiToolsPath(const char * tool)
                 "/usr/local/bin",
                 "/tmp"
         };
-
+    /*
 	#define SEPARATOR ":"
 
 	env = getenv("PATH");
@@ -275,7 +275,8 @@ static char * wiToolsPath(const char * tool)
 		}
 	}
 	#undef SEPARATOR
-
+	*/
+	
 	// Also search in other known location just in case we haven't found it yet
 	nbelems = sizeof(paths) / sizeof(char *);
 	for (i = 0; i < nbelems; i++)
