@@ -1,5 +1,5 @@
-# Dict generators for airoscript
-# Depends on digenpy_
+#tcpdstats
+#DEPENDS: tcpdstat
 # Copyright (C) 2009-2011 David Francos Cuartero
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
@@ -23,6 +23,6 @@ Show_tcpdstats_report_on_cracked_network(){
 }
 
 _tcpdstat(){
-    airdecap-ng -w `cat $DUMP_PATH/$Host_MAC.key` $DUMP_PATH/$Host_MAC-01.cap 
-    tcpdstat $DUMP_PATH/$Host_MAC-01-dec.cap &> $DUMP_PATH/$Host_MAC.report_proto_stats 
+    airdecap-ng -w `cat $DUMP_PATH/$Host_MAC.key` $DUMP_PATH/$Host_MAC-01.cap
+    tcpdstat $DUMP_PATH/$Host_MAC-01-dec.cap &> $DUMP_PATH/$Host_MAC.report_proto_stats
 }

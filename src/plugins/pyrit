@@ -1,12 +1,27 @@
+# Copyright (2011) David Francos Cuartero, and some of the sources might be from other versions.
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 Crack_password_with_pyrit_error() { warn "${mark}You cannot crack this network. Packages not collected"; }
 p_menu+=("Crack password with pyrit")
 pyrit_attacks=(attack_batch attack_cowpatty attack_db attack_passthrough  batch benchmark create_essid  delete_essid eval export_passwords export_cowpatty export_hashdb import_passwords import_unique_passwords list_cores list_essids passthrough relay selftest serve strip stripLive verify )
 
 Crack_password_with_pyrit(){
     [[ ! -e $DUMP_PATH/$Host_MAC-01.cap ]] && Crack_password_with_pyrit_error || {
-        read -i "$default_pyrit_dictionary" -p "Enter dictionary " pyrit_dictionary 
+        read -i "$default_pyrit_dictionary" -p "Enter dictionary " pyrit_dictionary
         pyrit_opts="-b \"$Host_MAC\" -e \"$Host_SSID\" -i \"$pyrit_dictionary\" -o \"$DUMP_PATH/$Host_MAC.pyrit_key\" -r \"$DUMP_PATH/$Host_MAC-01.cap\" "
-        mkmenu "Select pyrit attack" ${pyrit_attacks[@]} 
+        mkmenu "Select pyrit attack" ${pyrit_attacks[@]}
         read -i "$custom_opts" "Add any custom pyrit opt you want (e.j, remote servers, relay stuffs...): " custom_opts
         execute "pyrit attack" pyrit $pyrit_opts ${pyrit_attacks[$choice - 1]} && cp $DUMP_PATH/$Host_MAC.pyrit_key $DUMP_PATH/$Host_MAC.key
     }

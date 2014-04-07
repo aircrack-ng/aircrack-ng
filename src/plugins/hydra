@@ -1,5 +1,5 @@
 # Dict generators for airoscript
-# Depends on digenpy_
+#DEPENDS: hydra
 # Copyright (C) 2009-2011 David Francos Cuartero
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
@@ -27,6 +27,6 @@ hydra_(){
     hydra  -L $DUMP_PATH/default_router_logins -P $DUMP_PATH/default_router_passwords -o $DUMP_PATH/router.key $router_ip https-head; }
 }
 
-Crack_default_router_passwords(){ 
+Crack_default_router_passwords(){
     configure && hydra_
 }

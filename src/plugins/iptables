@@ -1,4 +1,5 @@
 # Copyright (2011) David Francos Cuartero, and some of the sources might be from other versions.
+#DEPENDS: iptables
 # This is highly unmantained, as now is a plugin, you can easily modify it =)
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
@@ -14,7 +15,7 @@
 #        Along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 function enable_ip_forwarding(){
-    echo 1 > /proc/sys/net/ipv4/ip_forward 
+    echo 1 > /proc/sys/net/ipv4/ip_forward
 }
 
 function enable_traffic_redirect(){
@@ -27,6 +28,6 @@ function disable_traffic_redirect(){
 }
 
 function disable_ip_forwarding(){
-    echo 0 > /proc/sys/net/ipv4/ip_forward 
+    echo 0 > /proc/sys/net/ipv4/ip_forward
 }
 

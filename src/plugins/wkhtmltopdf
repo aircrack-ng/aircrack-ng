@@ -1,5 +1,5 @@
-# Dict generators for airoscript
-# Depends on wkhtmltopdf
+# pdf reports
+#DEPENDS: wkhtmltopdf
 # Copyright (C) 2009-2011 David Francos Cuartero
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License

@@ -1,5 +1,5 @@
-# Copyright (2011) Degenerated Labs
 # Copyright (2011) David Francos Cuartero
+#DEPENDS: yad
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
 #        as published by the Free Software Foundation; either version 2
@@ -25,11 +25,11 @@ mkmenuheader(){ return; }
 mkmenuline(){ return; }
 mkmenueline(){ return; }
 
-mkmenu(){ title=$1; shift; declare -a res; args=("${@}"); for i in ${!args[@]}; do res+=( "$i" "${args[$i]}" ); done ; 
+mkmenu(){ title=$1; shift; declare -a res; args=("${@}"); for i in ${!args[@]}; do res+=( "$i" "${args[$i]}" ); done ;
 	choice=$(yad --class="airoscript-ng" --window-icon="/usr/local/share/pixmaps/airoscript-ng.png" --separator=" " --list --width=450 --height=250 --title="$title" --text "Select an action:" --column=" " --column="n" --no-headers=1 "${res[@]}" --print-column=1;)
     [[ $? == 1 ]] && [[ $title == "Main Menu" ]] && exit
 }
-selectap_wrapper(){ 
+selectap_wrapper(){
 choice=$(yad --class="airoscript-ng" --window-icon="/usr/local/cal/share/pixmaps/airoscript-ng.png" --separator=" " --list --width=450 --height=250 --title="$title" --text "Select an action:" --column "position" --column "MAC" --column "Channel" --column "Privacy" --column "POWER" --column "LENGHT" --column "ESSID" --hide-column=1 "${res[@]}" --print-column=1;)
 }
 launch_counter(){  ( for i in $( seq 1 $1 ); do a=$(( ($i * 100) / $1 )); sleep 1; echo "$a"; done ) | zenity --text "Scanning for targets" --progress --auto-close --title="Scanning for targets"; }

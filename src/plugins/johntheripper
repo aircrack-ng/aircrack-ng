@@ -1,4 +1,5 @@
 # Copyright (2011) David Francos Cuartero, and some of the sources might be from other versions.
+#DEPENDS: john
 # This is highly unmantained, as now is a plugin, you can easily modify it =)
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License

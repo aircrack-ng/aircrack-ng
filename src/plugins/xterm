@@ -1,16 +1,17 @@
+#DEPENDS: xterm
 export TERMINAL=xterm
 interfaces+=("xterm");
 
 resolution() {
    { reso=$( awk '/\*/ {print $1}' <(xrandr) | head -n1; ); } &>/dev/null
-    for i in ${!available_resos[@]}; do [[ ${available_resos[$i]} == $reso ]] && {  reson=$reso; pos=$i; }; done 
+    for i in ${!available_resos[@]}; do [[ ${available_resos[$i]} == $reso ]] && {  reson=$reso; pos=$i; }; done
     [[ $reson != "" ]] && { export resonset=1;  markwarn $"Automatically setting resolution to $reso" ; }
 
-		xhost &>/dev/null || { 
-			error $"Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue"; 
-		} 
-	
-	while true; do 
+		xhost &>/dev/null || {
+			error $"Access control for X is disabled for root. Please, as your normal user execute 'xhost +`whoami`' and press enter to continue";
+		}
+
+	while true; do
 		[[ $autoset == 1 ]] && { set_resolution_data 2; return; }
 		if [[ ${resonset} == "" ]]; then mkmenu $"Set resolution" ${available_resos[@]}; pos=$choice; fi
 	    set_resolution_data $pos
@@ -41,7 +42,7 @@ while true; do
                BRX="99";BRY="30";bLX="110";bLY="72";bRX="99";bRY="40"; setterminal; break;;
 		10) TLX="130";TLY="40";TRX="68";TRY="25";BLX="130";BLY="40";
                BRX="132";BRY="35";bLX="130";bLY="85";bRX="132";bRY="48"; setterminal; break;;
-		* ) break;;  
+		* ) break;;
 		esac
 done
     }
@@ -55,9 +56,9 @@ getterminal(){
 			TERMINAL=`ls -l1 /etc/alternatives/x-terminal-emulator|cut -d ">" -f 2|cut -d " " -f 2|head -n1` &>/dev/null;
 	fi
 
-	if [ -x "$TERMBIN/$TERMINAL" ] || [ -x "/usr/bin/$TERMINAL" ] || [ -x "/usr/sbin/$TERMINAL" ]; then D="1" 
+	if [ -x "$TERMBIN/$TERMINAL" ] || [ -x "/usr/bin/$TERMINAL" ] || [ -x "/usr/sbin/$TERMINAL" ]; then D="1"
 	else
-        if [ -e $TERM ]; then 
+        if [ -e $TERM ]; then
 		    _debug "Using environment defined terminal ($TERM)"
 			TERMINAL=$TERM
 		else
@@ -70,7 +71,7 @@ getterminal(){
 				Xterm can\'t be found on your system, Maybe not in /usr/bin?"
 				exit
 			fi
-		fi     
+		fi
 	fi
 }
 
@@ -79,8 +80,8 @@ function setterminal {
 	getterminal
 	_debug "Im going to set terminal options for your terminal now"
 
-    case $TERMINAL in 
-		xterm|uxterm ) 
+    case $TERMINAL in
+		xterm|uxterm )
 			TOPLEFT="-geometry $TLX*$TLY+0+0 "
 			TOPRIGHT="-geometry $TRX*$TRY-0+0 "
 			BOTTOMLEFT="-geometry $BLX*$BLY+0-0 "
@@ -93,7 +94,7 @@ function setterminal {
 			BGC="-bg"
 			EXECFLAG="-e"
             ;;
-		gnome-terminal|gnome-terminal.wrapper ) 
+		gnome-terminal|gnome-terminal.wrapper )
 			TOPLEFT="-geometry=$TLX*$TLY+0+0 "
 			TOPRIGHT="-geometry=$TRX*$TRY-0+0 "
 			BOTTOMLEFT="-geometry=$BLX*$BLY+0-0 "
@@ -101,7 +102,7 @@ function setterminal {
 			TOPLEFTBIG="-geometry=$bLX*$bLY+0+0 "
 			TOPRIGHTBIG="-geometry=$bLX*$bLY+0-0 "
 			EXECFLAG="-e "
-			HOLDFLAG="" 
+			HOLDFLAG=""
 			TITLEFLAG="-t"
 			FGC=""
 			DUMPING_COLOR=""

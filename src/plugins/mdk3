@@ -1,4 +1,5 @@
 # Copyright (2011) David Francos Cuartero, and some of the sources might be from other versions.
+#DEPENDS: mdk3
 # This is highly unmantained, as now is a plugin, you can easily modify it =)
 #        This program is free software; you can redistribute it and/or
 #        modify it under the terms of the GNU General Public License
@@ -13,9 +14,6 @@
 #        You should have received a copy of the GNU General Public License
 #        Along with this program; if not, write to the Free Software
 #        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-# This can also be used as a menu-adding skeleton for airoscript plugin system
-# Just add to p_menu array the menu you want, and call the main plugin function MENU_NAME_SEPARATED_BY_SPACES
 
 MDK3=mdk3
 p_menu+=( "Mdk3 Attacks" );

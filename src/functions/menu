@@ -127,21 +127,15 @@ select_ap(){
 menu_extra(){
     check_function menu_options || source $path/attacks/others
     while true; do
-        mkmenu $"Extra tools" $"Airoscript Options" $"Advanced tools" $"External plugins" $'User interfaces' $"Return to main menu"
+        mkmenu $"Extra tools" $"Airoscript Options" $"Advanced tools" $"External plugins" $"Return to main menu"
         case $choice in
             1) menu_options; $clear; break;;
             2) othertmenu; $clear; break;;
             3) menu_plugins; $clear; break;;
-            3) menu_interfaces; $clear; break;;
             4) $clear;break ;;
             * ) echo $"Unknown response. Try again" ;;
         esac
     done
-}
-
-menu_interfaces(){
-    mkmenu "User interfaces" "${interfaces[@]}"
-    _source $path/plugins/${interfaces[$choice - 1]}
 }
 
 menu_plugins(){
