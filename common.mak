@@ -62,13 +62,13 @@ else ifneq ($(libnl), false)
 	endif
 
 	ifeq ($(NL3xFOUND),Y)
-		COMMON_CFLAGS += -DCONFIG_LIBNL30
+		COMMON_CFLAGS += -DCONFIG_LIBNL30 -DCONFIG_LIBNL
 		LIBS += -lnl-genl-3
 		NLLIBNAME = libnl-3.0
 	endif
 
 	ifeq ($(NL3FOUND),Y)
-		COMMON_CFLAGS += -DCONFIG_LIBNL30
+		COMMON_CFLAGS += -DCONFIG_LIBNL30 -DCONFIG_LIBNL
 		LIBS += -lnl-genl
 		NLLIBNAME = libnl-3.0
 	endif
@@ -76,7 +76,7 @@ else ifneq ($(libnl), false)
 	# nl-3.1 has a broken libnl-gnl-3.1.pc file
 	# as show by pkg-config --debug --libs --cflags --exact-version=3.1 libnl-genl-3.1;echo $?
 	ifeq ($(NL31FOUND),Y)
-		COMMON_CFLAGS += -DCONFIG_LIBNL30
+		COMMON_CFLAGS += -DCONFIG_LIBNL30 -DCONFIG_LIBNL
 		LIBS += -lnl-genl
 		NLLIBNAME = libnl-3.1
 	endif
