@@ -382,6 +382,20 @@ void input_thread( void *arg) {
     }
 }
 
+void trim(char *str)
+{
+    int i;
+    int begin = 0;
+    int end = strlen(str) - 1;
+
+    while (isspace(str[begin])) begin++;
+    while ((end >= begin) && isspace(str[end])) end--;
+    // Shift all characters back to the start of the string array.
+    for (i = begin; i <= end; i++)
+        str[i - begin] = str[i];
+    str[i - begin] = '\0'; // Null terminate string.
+}
+
 struct oui * load_oui_file(void) {
 	FILE *fp;
 	char * manuf;
@@ -409,6 +423,8 @@ struct oui * load_oui_file(void) {
 		memset(a, 0x00, sizeof(a));
 		memset(b, 0x00, sizeof(b));
 		memset(c, 0x00, sizeof(c));
+		// Remove leading/trailing whitespaces.
+		trim(buffer);
 		if (sscanf(buffer, "%2c-%2c-%2c", a, b, c) == 3) {
 			if (oui_ptr == NULL) {
 				if (!(oui_ptr = (struct oui *)malloc(sizeof(struct oui)))) {
