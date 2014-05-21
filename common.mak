@@ -44,49 +44,53 @@ endif
 
 ifeq ($(OSNAME), cygwin)
 	COMMON_CFLAGS   += -DCYGWIN
-else ifneq ($(libnl), false)
-	NL3xFOUND := $(shell $(PKG_CONFIG) --atleast-version=3.2 libnl-3.0 && echo Y)
-	ifneq ($(NL3xFOUND),Y)
-		NL31FOUND := $(shell $(PKG_CONFIG) --exact-version=3.1 libnl-3.1 && echo Y)
-			ifneq ($(NL31FOUND),Y)
-				NL3FOUND := $(shell $(PKG_CONFIG) --atleast-version=3 libnl-3.0 && echo Y)
-			ifneq ($(NL3FOUND),Y)
-				NL1FOUND := $(shell $(PKG_CONFIG) --atleast-version=1 libnl-1 && echo Y)
+endif
+
+ifeq ($(OSNAME), Linux)
+	ifneq ($(libnl), false)
+		NL3xFOUND := $(shell $(PKG_CONFIG) --atleast-version=3.2 libnl-3.0 && echo Y)
+		ifneq ($(NL3xFOUND),Y)
+			NL31FOUND := $(shell $(PKG_CONFIG) --exact-version=3.1 libnl-3.1 && echo Y)
+				ifneq ($(NL31FOUND),Y)
+					NL3FOUND := $(shell $(PKG_CONFIG) --atleast-version=3 libnl-3.0 && echo Y)
+				ifneq ($(NL3FOUND),Y)
+					NL1FOUND := $(shell $(PKG_CONFIG) --atleast-version=1 libnl-1 && echo Y)
+				endif
 			endif
 		endif
+
+
+		ifeq ($(NL1FOUND),Y)
+			NLLIBNAME = libnl-1
+		endif
+
+		ifeq ($(NL3xFOUND),Y)
+			COMMON_CFLAGS += -DCONFIG_LIBNL30 -DCONFIG_LIBNL
+			LIBS += -lnl-genl-3
+			NLLIBNAME = libnl-3.0
+		endif
+
+		ifeq ($(NL3FOUND),Y)
+			COMMON_CFLAGS += -DCONFIG_LIBNL30 -DCONFIG_LIBNL
+			LIBS += -lnl-genl
+			NLLIBNAME = libnl-3.0
+		endif
+
+		# nl-3.1 has a broken libnl-gnl-3.1.pc file
+		# as show by pkg-config --debug --libs --cflags --exact-version=3.1 libnl-genl-3.1;echo $?
+		ifeq ($(NL31FOUND),Y)
+			COMMON_CFLAGS += -DCONFIG_LIBNL30 -DCONFIG_LIBNL
+			LIBS += -lnl-genl
+			NLLIBNAME = libnl-3.1
+		endif
+
+		ifeq ($(NLLIBNAME),)
+			$(error Cannot find development files for any supported version of libnl. install either libnl1 or libnl3.)
+		endif
+
+		LIBS += $(shell $(PKG_CONFIG) --libs $(NLLIBNAME))
+		COMMON_CFLAGS += $(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
 	endif
-
-
-	ifeq ($(NL1FOUND),Y)
-		NLLIBNAME = libnl-1
-	endif
-
-	ifeq ($(NL3xFOUND),Y)
-		COMMON_CFLAGS += -DCONFIG_LIBNL30 -DCONFIG_LIBNL
-		LIBS += -lnl-genl-3
-		NLLIBNAME = libnl-3.0
-	endif
-
-	ifeq ($(NL3FOUND),Y)
-		COMMON_CFLAGS += -DCONFIG_LIBNL30 -DCONFIG_LIBNL
-		LIBS += -lnl-genl
-		NLLIBNAME = libnl-3.0
-	endif
-
-	# nl-3.1 has a broken libnl-gnl-3.1.pc file
-	# as show by pkg-config --debug --libs --cflags --exact-version=3.1 libnl-genl-3.1;echo $?
-	ifeq ($(NL31FOUND),Y)
-		COMMON_CFLAGS += -DCONFIG_LIBNL30 -DCONFIG_LIBNL
-		LIBS += -lnl-genl
-		NLLIBNAME = libnl-3.1
-	endif
-
-	ifeq ($(NLLIBNAME),)
-                $(error Cannot find development files for any supported version of libnl. install either libnl1 or libnl3.)
-	endif
-
-	LIBS += $(shell $(PKG_CONFIG) --libs $(NLLIBNAME))
-	COMMON_CFLAGS += $(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
 endif
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(airpcap) $(AIRPCAP))),true)
