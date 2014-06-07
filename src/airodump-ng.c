@@ -4632,7 +4632,7 @@ void sighandler( int signum)
         alarm( 1 );
         G.do_exit = 1;
         signal( SIGALRM, sighandler );
-        printf( "\n" );
+        dprintf( STDOUT_FILENO, "\n" );
     }
 
     if( signum == SIGSEGV )
@@ -4645,10 +4645,9 @@ void sighandler( int signum)
 
     if( signum == SIGALRM )
     {
-        fprintf( stderr, "Caught signal 14 (SIGALRM). Please"
+        dprintf( STDERR_FILENO, "Caught signal 14 (SIGALRM). Please"
                          " contact the author!\33[?25h\n\n" );
-        fflush( stdout );
-        exit( 1 );
+        _exit( 1 );
     }
 
     if( signum == SIGCHLD )
