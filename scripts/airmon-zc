@@ -605,7 +605,6 @@ getExtendedInfo() {
 			EXTENDED="\t\tUpgrade to kernel 2.6.29 or install compat-wireless stable"
 		fi
 	fi
-	EXTENDED="We Todd Ed"
 }
 
 scanProcesses() {
