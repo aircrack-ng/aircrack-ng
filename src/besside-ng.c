@@ -52,6 +52,10 @@
 #include <netdb.h>
 #include <unistd.h>
 
+#ifdef HAVE_PCRE
+#include <pcre.h>
+#endif
+
 #include "aircrack-ng.h"
 #include "version.h"
 #include "aircrack-ptw-lib.h"
@@ -68,6 +72,8 @@
 #else
 # define UNUSED(x) x
 #endif
+
+#define MAX_IE_ELEMENT_SIZE 256
 
 static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -148,6 +154,9 @@ struct conf {
 	int		cf_do_wep;
 	int		cf_do_wpa;
 	char		*cf_wpa_server;
+#ifdef HAVE_PCRE
+    pcre *cf_essid_regex;
+#endif
 } _conf;
 
 struct timer {
@@ -1127,6 +1136,20 @@ static void attack_ping(void *a)
 	timer_in(100 * 1000, attack_ping, n);
 }
 
+#ifdef HAVE_PCRE
+int is_filtered_essid(char *essid)
+{
+    int ret = 0;
+
+    if(_conf.cf_essid_regex)
+    {
+        return pcre_exec(_conf.cf_essid_regex, NULL, (char*)essid, strnlen((char *)essid, MAX_IE_ELEMENT_SIZE), 0, 0, NULL, 0) < 0;
+    }
+
+    return ret;
+}
+#endif
+
 // this should always return true -sorbo
 static int should_attack(struct network *n)
 {
@@ -1134,7 +1157,13 @@ static int should_attack(struct network *n)
 	    && memcmp(_conf.cf_bssid , n->n_bssid, 6) != 0)
 		return 0;
 
-	if (!n->n_have_beacon)
+#ifdef HAVE_PCRE
+    if (is_filtered_essid(n->n_ssid)) {
+        return 0;
+    }
+#endif
+
+    if (!n->n_have_beacon)
 		return 0;
 
 	switch (n->n_astate) {
@@ -2516,7 +2545,7 @@ static void wifi_read(void)
 	unsigned char buf[2048];
 	int rd;
 	struct rx_info ri;
-        struct ieee80211_frame* wh = (struct ieee80211_frame*) buf;
+    struct ieee80211_frame* wh = (struct ieee80211_frame*) buf;
 	struct network *n;
 
 	rd = wi_read(s->s_wi, buf, sizeof(buf), &ri);
@@ -3112,6 +3141,9 @@ static void usage(char *prog)
                 "  Options:\n"
                 "\n"
                 "       -b <victim mac> : Victim BSSID\n"
+#ifdef HAVE_PCRE
+                "       -R <victim ap regex> : Victim ESSID regex\n"
+#endif
 		"       -s <WPA server> : Upload wpa.cap for cracking\n"
 		"       -c       <chan> : chanlock\n"
 		"       -p       <pps>  : flood rate\n"
@@ -3128,10 +3160,14 @@ static void usage(char *prog)
 int main(int argc, char *argv[])
 {
 	int ch;
+#ifdef HAVE_PCRE
+    const char *pcreerror;
+    int pcreerroffset;
+#endif
 
 	init_conf();
 
-	while ((ch = getopt(argc, argv, "hb:vWs:c:p:")) != -1) {
+	while ((ch = getopt(argc, argv, "hb:vWs:c:p:R:")) != -1) {
 		switch (ch) {
 		case 's':
 			_conf.cf_wpa_server = optarg;
@@ -3162,6 +3198,22 @@ int main(int argc, char *argv[])
 			parse_hex(_conf.cf_bssid, optarg, 6);
 			break;
 
+#ifdef HAVE_PCRE
+        case 'R':
+            if (_conf.cf_essid_regex != NULL) {
+                printf("Error: ESSID regular expression already given. Aborting\n");
+                exit(1);
+            }
+
+            _conf.cf_essid_regex = pcre_compile(optarg, 0, &pcreerror, &pcreerroffset, NULL);
+
+            if (_conf.cf_essid_regex == NULL) {
+                printf("Error: regular expression compilation failed at offset %d: %s; aborting\n", pcreerroffset, pcreerror);
+                exit(1);
+            }
+            break;
+#endif
+
 		default:
 		case 'h':
 			usage(argv[0]);
@@ -3183,6 +3235,11 @@ int main(int argc, char *argv[])
 	signal(SIGCHLD, do_wait);
 
 	pwn();
+
+#ifdef HAVE_PCRE
+    if(_conf.cf_essid_regex)
+        pcre_free(_conf.cf_essid_regex);
+#endif
 
 	exit(0);
 }
