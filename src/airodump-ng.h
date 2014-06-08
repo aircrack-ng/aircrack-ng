@@ -36,8 +36,6 @@
 
 /* some constants */
 
-#define MAX_IE_ELEMENT_SIZE 256
-
 #define REFRESH_RATE 100000  /* default delay in us between updates */
 #define DEFAULT_HOPFREQ 250  /* default delay in ms between channel hopping */
 #define DEFAULT_CWIDTH  20 /* 20 MHz channels by default */

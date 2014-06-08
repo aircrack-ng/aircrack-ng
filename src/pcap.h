@@ -78,6 +78,9 @@
 //unencrypted packet
 #define IVS2_CLR        0x0020
 
+// Maximum length of an Information Element
+#define MAX_IE_ELEMENT_SIZE 256
+
 struct pcap_file_header
 {
     uint magic;

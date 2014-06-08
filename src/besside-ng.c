@@ -73,8 +73,6 @@
 # define UNUSED(x) x
 #endif
 
-#define MAX_IE_ELEMENT_SIZE 256
-
 static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
