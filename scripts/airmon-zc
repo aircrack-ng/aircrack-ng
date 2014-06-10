@@ -873,7 +873,6 @@ then
 		#but this seems entirely unreliable so just run generic
 		#scanProcesses "${2}"
 		scanProcesses
-		return
 	else
 		scanProcesses
 		exit
