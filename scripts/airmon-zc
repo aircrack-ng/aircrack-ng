@@ -48,7 +48,6 @@ CH=${3}; [ x${3} = "x" ] && CH=10
 
 #cleanup getDriver()
 #fix to not assume wifi drivers are modules
-#allow users to start the interface multiple times to change the channel
 
 if [ x"$(command -v id 2> /dev/null)" != "x" ]
 then
@@ -171,6 +170,7 @@ startMac80211Iface() {
 		do
 			if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type)" = "803" ]
 			then
+				setChannelMac80211 ${1}
 				printf "\n\t\t(mac80211 monitor mode already enabled for [${PHYDEV}]${1} on [${PHYDEV}]${i})\n"
 				exit
 			fi
@@ -190,18 +190,7 @@ startMac80211Iface() {
 	if [ x${IW_ERROR} = "x" ]
 	then
 		sleep 1s
-		ifconfig ${1}mon up
-		if [ ! -z ${3} ]
-		then
-			if [ ${3} -lt 1000 ]
-			then
-				iw dev ${1}mon set channel ${3}
-			else
-				iw dev ${1}mon set freq "${3}"
-			fi
-		else
-			iw dev ${1}mon set channel ${CH}
-		fi
+		setChannelMac80211 ${1}mon
 		printf "\n\t\t(mac80211 monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
 	else
 		printf "\n\nERROR: something went wrong with iw."
@@ -224,6 +213,21 @@ startDarwinIface() {
 	if [ -x /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport ]
 	then
 		/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport $1 sniff
+	fi
+}
+
+setChannelMac80211() {
+	ifconfig ${1} up
+	if [ ! -z ${3} ]
+	then
+		if [ ${3} -lt 1000 ]
+		then
+			iw dev ${1} set channel ${3}
+		else
+			iw dev ${1} set freq "${3}"
+		fi
+	else
+		iw dev ${1} set channel ${CH}
 	fi
 }
 
