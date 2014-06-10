@@ -47,10 +47,8 @@ CH=${3}; [ x${3} = "x" ] && CH=10
 #TODO LIST
 
 #cleanup getDriver()
-#add band detection
 #fix to not assume wifi drivers are modules
 #allow users to start the interface multiple times to change the channel
-#rewrite scanprocesses and checkprocessesiface to be sane
 
 if [ x"$(command -v id 2> /dev/null)" != "x" ]
 then
@@ -103,18 +101,28 @@ then
 	exit 1
 fi
 
-if [ ! -x "$(command -v modprobe 2>&1)" ]
+if [ -f /proc/modules ]
 then
-	printf "How in the world do you not have modprobe installed?\n"
-	printf "Please select a linux distro which has at least basic functionality (or install modprobe).\n"
-	exit 1
-fi
+	if [ ! -x "$(command -v modprobe 2>&1)" ]
+	then
+		printf "Your kernel has module support but you don't have modprobe installed.\n"
+		printf "It is highly recommended to install modprobe (typically from kmod).\n"
+		MODPROBE=0
+	else
+		MODPROBE=1
+	fi
+	if [ ! -x "$(command -v modinfo 2>&1)" ]
+	then
+		printf "Your kernel has module support but you don't have modinfo installed.\n"
+		printf "It is highly recommended to install modinfo (typically from kmod).\n"
+		printf "Warning: driver detection without modinfo may yield inaccurate results.\n"
+		MODINFO=0
+	else
+		MODINFO=1
+	fi
+else
+		printf "Warning: Monolithic kernel detected, driver detection may be inaccurate.\n"
 
-if [ ! -x "$(command -v modinfo 2>&1)" ]
-then
-	printf "How in the world do you not have modinfo installed?\n"
-	printf "Please select a linux distro which has at least basic functionality (or install modinfo).\n"
-	exit 1
 fi
 
 if [ ! -x "$(command -v awk 2>&1)" ]
@@ -131,9 +139,6 @@ then
 	exit 1
 fi
 #done checking for binaries
-
-PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox"
-PS_ERROR="invalid"
 
 usage() {
 	printf "usage: $(basename $0) <start|stop|check> <interface> [channel or frequency]\n\n"
@@ -369,37 +374,42 @@ getDriver() {
 
 getFrom() {
 	#from detection
-	if [ $(modinfo -n $DRIVER 2>&1 | grep 'kernel/drivers') ]
+	FROM="K"
+	if [ "${MODINFO}" = 1 ]
 	then
-		FROM="K"
-		#we add special handling here because we hate the vendor drivers AND they install in the wrong place
-		if [ "$DRIVER" = "r8187" ]
+		if [ $(modinfo -n $DRIVER 2>&1 | grep 'kernel/drivers') ]
+		then
+			FROM="K"
+			#we add special handling here because we hate the vendor drivers AND they install in the wrong place
+			if [ "$DRIVER" = "r8187" ]
+			then
+				FROM="V"
+			elif [ "$DRIVER" = "r8187l" ]
+			then
+				FROM="V"
+			elif [ "$DRIVER" = "rt5390sta" ]
+			then
+				FROM="V"
+			fi
+		elif [ $(modinfo -n $DRIVER 2>&1 | grep 'updates/drivers') ]
+		then
+			FROM="C"
+		elif [ $(modinfo -n $DRIVER 2>&1 | grep misc) ]
 		then
 			FROM="V"
-		elif [ "$DRIVER" = "r8187l" ]
-		then
-			FROM="V"
-		elif [ "$DRIVER" = "rt5390sta" ]
-		then
-			FROM="V"
+			#add a yell at the user in here
+		else
+			FROM="?"
 		fi
-	elif [ $(modinfo -n $DRIVER 2>&1 | grep 'updates/drivers') ]
-	then
-		FROM="C"
-	elif [ $(modinfo -n $DRIVER 2>&1 | grep misc) ]
-	then
-		FROM="M"
-		#add a yell at the user in here
+
+		#check for staging drivers seperately
+		if [ $(modinfo -n $DRIVER 2>&1 | grep staging) ]
+		then
+			FROM="S"
+	        fi
 	else
-		FROM="?"
+		FROM="K"
 	fi
-
-	#check for staging drivers seperately
-	if [ $(modinfo -n $DRIVER 2>&1 | grep staging) ]
-	then
-		FROM="S"
-        fi
-
 	if [ "$DEBUG" = "1" ]
 	then
 		printf "getFrom() $FROM\n"
@@ -608,63 +618,106 @@ getExtendedInfo() {
 }
 
 scanProcesses() {
+	PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox"
+	PS_ERROR="invalid\|illegal"
+
 	if [ -f "$(command -v service 2>&1)" ] && [ x"$1" = "xkill" ]
 	then
 		service network-manager stop 2> /dev/null > /dev/null
 		service avahi-daemon stop 2> /dev/null > /dev/null
 	fi
 
-	match=$(ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l)
-	if [ $match -gt 0 -a x"$1" != "xkill" ]
+	unset match
+	match=$(ps -A -o comm= | grep -c ${PROCESSES})
+	if [ ${match} -gt 0 -a x"${1}" != "xkill" -a x"${1}" = "x" ]
 	then
-		printf "\nFound $match processes that could cause trouble.\n"
+		printf "Found $match processes that could cause trouble.\n"
 		printf "If airodump-ng, aireplay-ng or airtun-ng stops working after\n"
-		printf "a short period of time, you may want to kill (some of) them!\n"
-		printf "\nPID\tName\n"
+		printf "a short period of time, you may want to kill (some of) them!\n\n"
+		#printf "\nPID\tName\n"
 	else
-		if [ x"$1" != "xkill" ]
+		if [ x"${1}" != "xkill" -a x"${1}" = "x" ]]
 		then
+			echo "No interfering processes found"
 			return
 		fi
 	fi
 
-	if [ $match -gt 0 -a x"$1" = "xkill" ]
+	#if [ $match -gt 0 -a x"$1" = "xkill" ]
+	#then
+	#	printf "Killing processes..."
+	#fi
+
+	if [ ${match} -gt 0 ]
 	then
-		printf "Killing all those processes..."
+		if [ x"${1}" = "xkill" ]
+		then
+			printf "Killing these processes:\n\n"
+		fi
+		ps -A -o pid=PID -o comm=Name | grep "${PROCESSES}\|PID"
+		if [ x"${1}" = "xkill" ]
+		then
+			for pid in $(ps -A -o pid= -o comm= | grep ${PROCESSES} | awk '{print $1}')
+			do
+				#we have to use signal 9 because things like nm actually respawn wpa_supplicant too quickly
+				kill -9 ${pid}
+			done
+		fi
 	fi
 
-	i=1
-	while [ $i -le $match ]
-	do
-		pid=$(ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}')
-		pname=$(ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}')
-		if [ x"$1" != "xkill" ]
-		then
-			printf "$pid\t$pname\n"
-		else
-			kill $pid
-		fi
-		i=$(($i+1))
-	done
+	#i=1
+	#while [ $i -le $match ]
+	#do
+	#	pid=$(ps -A -o pid= -o comm= | grep $PROCESSES | head -n $i | tail -n 1 | awk '{print $1}')
+	#	pname=$(ps -A -o pid= -o comm= | grep $PROCESSES | head -n $i | tail -n 1 | awk '{print $2}')
+	#	if [ x"$1" != "xkill" ]
+	#	then
+	#		printf "${pid}\t${pname}\n"
+	#	else
+	#		kill ${pid}
+	#	fi
+	#	i=$(($i+1))
+	#done
+
+	printf "\n"
+
+	#this stub is for checking against the interface name, but since it almost never hits why bother?
+	#if [ x"${1}" != "x" -a x"${1}" != "xkill" ]
+	#then
+	#	#the next line doesn't work on busybox ps because -p is unimplimented
+	#	match2=$(ps -o comm= -p 1 2>&1 | grep $PS_ERROR -c)
+	#	if [ ${match2} -gt 0 ]
+	#	then
+	#		return
+	#	fi
+	#
+	#	for i in $(ps auxw | grep ${1} | grep -v "grep" | grep -v "airmon-zc" | awk '{print $2}')
+	#	do
+	#		pname=$(ps -o comm= -p ${i})
+	#		printf "Process with PID ${i} ($pname) is running on interface ${1}\n"
+	#	done
+	#fi
 }
 
-checkProcessesIface() {
-	if [ x"$1" = "x" ]
-	then
-		return
-	fi
-
-	match2=$(ps -o comm= -p 1 2>&1 | grep $PS_ERROR | grep -v grep | wc -l)
-	if [ $match2 -gt 0 ]
-	then
-		return
-	fi
-
-	for i in $(ps auxw | grep $1 | grep -v "grep" | grep -v "airmon-zc" | awk '{print $2}')
+listInterfaces() {
+	unset iface_list
+	for iface in $(ls -1 /sys/class/net)
 	do
-		pname=$(ps -o comm= -p $i)
-		printf "Process with PID $i ($pname) is running on interface $1\n"
+		if [ -f /sys/class/net/${iface}/uevent ]; then
+			if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
+			then
+				iface_list="${iface_list}\n ${iface}"
+			fi
+		fi
 	done
+	if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]
+	then
+		for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_.]*\) .*/\1/')
+		do
+			iface_list="${iface_list}\n ${iface}"
+		done
+		iface_list="$(printf "${iface_list}" | sort -bu)"
+	fi
 }
 
 getPhy() {
@@ -801,38 +854,28 @@ checkvm() {
 	fi
 }
 
-#other startup checks
+#end function definitions
+#begin execution
 
-if [ x"$1" = "xcheck" ] || [ x"$1" = "xstart" ]
+listInterfaces
+
+#this should only run for start in elite mode? or should we have different warnings?
+if [ x"${1}" = "xcheck" ] || [ x"${1}" = "xstart" ]
 then
-	scanProcesses
-	for iface in $(ls -1 /sys/class/net)
-	do
-		if [ -f /sys/class/net/${iface}/uevent ]; then
-			if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
-			then
-				iface_list="${iface_list}\n ${iface}"
-			fi
-		fi
-	done
-	if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]
+	if [ x"${2}" = "xkill" ]
 	then
-		for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_.]*\) .*/\1/')
-		do
-			iface_list="${iface_list}\n ${iface}"
-		done
-	fi
-	for iface in $(printf "${iface_list}" | sort -bu)
-	do
-		checkProcessesIface ${iface}
-	done
-
-	if [ x"$2" = "xkill" ]
+		#if we are killing, tell scanProcesses that
+		scanProcesses "${2}"
+		return
+	elif [ x"${1}" = "xstart" ]
 	then
-		scanProcesses "$2"
-	fi
-	if [ x"$1" = "xcheck" ]
-	then
+		#this stub can send scanProcesses the interface name
+		#but this seems entirely unreliable so just run generic
+		#scanProcesses "${2}"
+		scanProcesses
+		return
+	else
+		scanProcesses
 		exit
 	fi
 fi
@@ -866,13 +909,14 @@ then
 	fi
 
 	printf "\nK indicates driver is from $(uname -r)\n"
-	if $(modinfo compat > /dev/null 2>&1)
+	if [ "${MODPROBE}" = 1 ]
 	then
-		modprobe compat
-	fi
-	if [ -f /sys/module/compat/parameters/compat_version ]
-	then
-		printf "C indicates driver is from $(cat /sys/module/compat/parameters/compat_version)\n"
+		modprobe compat > /dev/null 2>&1
+
+		if [ -f /sys/module/compat/parameters/compat_version ]
+		then
+			printf "C indicates driver is from $(cat /sys/module/compat/parameters/compat_version)\n"
+		fi
 	fi
 	printf "V indicates driver comes directly from the vendor, almost certainly a bad thing\n"
 	printf "S indicates driver comes from the staging tree, these drivers are meant for reference not actual use, BEWARE\n"
@@ -886,6 +930,7 @@ else
 	printf "PHY\tInterface\tDriver\t\tChipset\n\n"
 fi
 
+#this whole block of code shouldn't be here, it makes no sense
 for iface in $(ifconfig -a 2> /dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
 do
 
@@ -923,24 +968,9 @@ done
 	then
 		sleep 1s
 	fi
+#end random block of code that needs to die
 
-for iface in $(ls -1 /sys/class/net)
-do
-	if [ -f /sys/class/net/${iface}/uevent ]; then
-		if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
-		then
-			iface_list="${iface_list}\n ${iface}"
-		fi
-	fi
-done
-if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]
-then
-	for iface in $(iwconfig 2> /dev/null | sed 's/^\([a-zA-Z0-9_.]*\) .*/\1/')
-	do
-		iface_list="${iface_list}\n ${iface}"
-	done
-fi
-for iface in $(printf "${iface_list}" | sort -bu)
+for iface in $(printf "${iface_list}")
 do
 	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV ifacet DRIVERt FIELD1 FIELD1t FIELD2 FIELD2t CHIPSETt
 	#add a RUNNING check here and up the device if it isn't already
