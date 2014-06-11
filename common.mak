@@ -84,7 +84,7 @@ ifeq ($(OSNAME), Linux)
 			NLLIBNAME = libnl-3.1
 		endif
 
-		ifeq ($(NLLIBNAME),)
+		ifeq ($(NLLIBNAME),'')
 			$(error Cannot find development files for any supported version of libnl. install either libnl1 or libnl3.)
 		endif
 
