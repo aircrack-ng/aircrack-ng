@@ -70,9 +70,8 @@ then
 	printf "How in the world do you not have uname installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install uname).\n"
 	exit 1
-else
-	echo
-	#write something in here to test uname for Darwin/Linux and set a variable
+#else
+#	#write something in here to test uname for Darwin/Linux and set a variable
 fi
 if [ ! -x "$(command -v iw 2>&1)" ]
 then
@@ -119,9 +118,6 @@ then
 	else
 		MODINFO=1
 	fi
-else
-		printf "Warning: Monolithic kernel detected, driver detection may be inaccurate.\n"
-
 fi
 
 if [ ! -x "$(command -v awk 2>&1)" ]
@@ -379,7 +375,7 @@ getDriver() {
 getFrom() {
 	#from detection
 	FROM="K"
-	if [ "${MODINFO}" = 1 ]
+	if [ "${MODINFO}" = 1 ] && [ -f /proc/modules ]
 	then
 		if [ $(modinfo -n $DRIVER 2>&1 | grep 'kernel/drivers') ]
 		then
