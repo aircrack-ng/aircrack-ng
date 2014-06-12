@@ -1,6 +1,7 @@
 === Requirements ===
 
  * OpenSSL development package or libgcrypt development package
+ * pkg-config
  * If you want to use airolib-ng and '-r' option in aircrack-ng,
    SQLite development package >= 3.3.17 (3.6.X version or better is recommended):
    -  libsqlite3-devel
@@ -50,7 +51,7 @@ to compile and install the suite:
             And also use internal fast sha1 implementation (borrowed from GIT)
 
 * libnl:    Add support for netlink (nl80211). Linux only. Requires libnl1 OR libnl3.
-            Dependencies (debian):
+            Enabled by default. Dependencies (debian):
 		LibNL 1: libnl-dev 
 		LibNL 3: libnl-3-dev and libnl-genl-3-dev.
 
