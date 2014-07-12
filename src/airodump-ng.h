@@ -136,7 +136,7 @@ char *f_ext[NB_EXTENSIONS] = { AIRODUMP_NG_CSV_EXT, AIRODUMP_NG_GPS_EXT, AIRODUM
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
 
-static uchar ZERO[32] =
+static unsigned char ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -446,7 +446,7 @@ struct globals
     pthread_mutex_t mx_print;			 /* lock write access to ap LL   */
     pthread_mutex_t mx_sort;			 /* lock write access to ap LL   */
     
-    uchar selected_bssid[6];	/* bssid that is selected */
+    unsigned char selected_bssid[6];	/* bssid that is selected */
 
     int ignore_negative_one;
     u_int maxsize_essid_seen;

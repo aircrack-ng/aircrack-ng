@@ -40,11 +40,7 @@
 #define _GNU_SOURCE
 
 #include <sys/types.h>
-#if defined(ANDROID) || defined(__ANDROID__)
-	#include <termios.h>
-#else
-	#include <sys/termios.h>
-#endif
+#include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -86,7 +82,7 @@ sqlite3 *db;
 
 extern int get_nb_cpus();
 
-static uchar ZERO[32] =
+static unsigned char ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -115,7 +111,7 @@ int mc_pipe[256][2];			 /* master->child control pipe   */
 int cm_pipe[256][2];			 /* child->master results pipe   */
 int bf_pipe[256][2];			 /* bruteforcer 'queue' pipe	 */
 int bf_nkeys[256];
-uchar bf_wepkey[64];
+unsigned char bf_wepkey[64];
 int wepkey_crack_success = 0;
 int close_aircrack = 0;
 int id=0;
@@ -164,7 +160,7 @@ int K_COEFF[N_ATTACKS] =
 int PTW_DEFAULTWEIGHT[1] = { 256 };
 int PTW_DEFAULTBF[PTW_KEYHSBYTES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-const uchar R[256] =
+const unsigned char R[256] =
 {
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
 	, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40
@@ -738,17 +734,17 @@ int atomic_read( read_buf *rb, int fd, int len, void *buf )
 void read_thread( void *arg )
 {
 	int fd, n, fmt;
-	uint z;
+	unsigned z;
 	int eof_notified = 0;
 	read_buf rb;
 // 	int ret=0;
 
-	uchar bssid[6];
-	uchar dest[6];
-	uchar stmac[6];
-	uchar *buffer;
-	uchar *h80211;
-	uchar *p;
+	unsigned char bssid[6];
+	unsigned char dest[6];
+	unsigned char stmac[6];
+	unsigned char *buffer;
+	unsigned char *h80211;
+	unsigned char *p;
 	int weight[16];
 
 	struct ivs2_pkthdr ivs2;
@@ -765,7 +761,7 @@ void read_thread( void *arg )
 
 	memset(&pfh, 0, sizeof(struct pcap_file_header));
 
-	if( ( buffer = (uchar *) malloc( 65536 ) ) == NULL )
+	if( ( buffer = (unsigned char *) malloc( 65536 ) ) == NULL )
 	{
 		/* there is no buffer */
 
@@ -812,7 +808,7 @@ void read_thread( void *arg )
 
 		/* read the rest of the pcap file header */
 
-		if( ! atomic_read( &rb, fd, 20, (uchar *) &pfh + 4 ) )
+		if( ! atomic_read( &rb, fd, 20, (unsigned char *) &pfh + 4 ) )
 		{
 			perror( "read(file header) failed" );
 			goto read_fail;
@@ -844,7 +840,7 @@ void read_thread( void *arg )
 		{
 			fmt = FORMAT_IVS2;
 
-			if( ! atomic_read( &rb, fd, sizeof(struct ivs2_filehdr), (uchar *) &fivs2 ) )
+			if( ! atomic_read( &rb, fd, sizeof(struct ivs2_filehdr), (unsigned char *) &fivs2 ) )
 			{
 				perror( "read(file header) failed" );
 				goto read_fail;
@@ -1144,7 +1140,7 @@ void read_thread( void *arg )
 					/* enlarge the IVs buffer */
 
 					ap_cur->ivbuf_size += 131072;
-					ap_cur->ivbuf = (uchar *) realloc(
+					ap_cur->ivbuf = (unsigned char *) realloc(
 						ap_cur->ivbuf, ap_cur->ivbuf_size );
 
 					if( ap_cur->ivbuf == NULL )
@@ -1209,7 +1205,7 @@ void read_thread( void *arg )
 						/* enlarge the IVs buffer */
 
 						ap_cur->ivbuf_size += 131072;
-						ap_cur->ivbuf = (uchar *) realloc(
+						ap_cur->ivbuf = (unsigned char *) realloc(
 							ap_cur->ivbuf, ap_cur->ivbuf_size );
 
 						if( ap_cur->ivbuf == NULL )
@@ -1269,7 +1265,7 @@ void read_thread( void *arg )
 						/* enlarge the IVs buffer */
 
 						ap_cur->ivbuf_size += 131072;
-						ap_cur->ivbuf = (uchar *) realloc(
+						ap_cur->ivbuf = (unsigned char *) realloc(
 							ap_cur->ivbuf, ap_cur->ivbuf_size );
 
 						if( ap_cur->ivbuf == NULL )
@@ -1694,16 +1690,16 @@ void read_thread( void *arg )
 void check_thread( void *arg )
 {
 	int fd, n, fmt;
-	uint z;
+	unsigned z;
 	read_buf rb;
 // 	int ret=0;
 
-	uchar bssid[6];
-	uchar dest[6];
-	uchar stmac[6];
-	uchar *buffer;
-	uchar *h80211;
-	uchar *p;
+	unsigned char bssid[6];
+	unsigned char dest[6];
+	unsigned char stmac[6];
+	unsigned char *buffer;
+	unsigned char *h80211;
+	unsigned char *p;
 	int weight[16];
 
 	struct ivs2_pkthdr ivs2;
@@ -1716,7 +1712,7 @@ void check_thread( void *arg )
 	memset( &rb, 0, sizeof( rb ) );
 	ap_cur = NULL;
 
-	if( ( buffer = (uchar *) malloc( 65536 ) ) == NULL )
+	if( ( buffer = (unsigned char *) malloc( 65536 ) ) == NULL )
 	{
 		/* there is no buffer */
 
@@ -1763,7 +1759,7 @@ void check_thread( void *arg )
 
 		/* read the rest of the pcap file header */
 
-		if( ! atomic_read( &rb, fd, 20, (uchar *) &pfh + 4 ) )
+		if( ! atomic_read( &rb, fd, 20, (unsigned char *) &pfh + 4 ) )
 		{
 			perror( "read(file header) failed" );
 			goto read_fail;
@@ -1793,7 +1789,7 @@ void check_thread( void *arg )
 		{
 			fmt = FORMAT_IVS2;
 
-			if( ! atomic_read( &rb, fd, sizeof(struct ivs2_filehdr), (uchar *) &fivs2 ) )
+			if( ! atomic_read( &rb, fd, sizeof(struct ivs2_filehdr), (unsigned char *) &fivs2 ) )
 			{
 				perror( "read(file header) failed" );
 				goto read_fail;
@@ -2551,13 +2547,13 @@ int safe_write( int fd, void *buf, size_t len )
 int crack_wep_thread( void *arg )
 {
 	long xv, min, max;
-	uchar jj[256];
-	uchar S[256], Si[256];
-	uchar K[64];
+	unsigned char jj[256];
+	unsigned char S[256], Si[256];
+	unsigned char K[64];
 
-	uchar io1, o1, io2, o2;
-	uchar Sq, dq, Kq, jq, q;
-	uchar S1, S2, J2, t2;
+	unsigned char io1, o1, io2, o2;
+	unsigned char Sq, dq, Kq, jq, q;
+	unsigned char S1, S2, J2, t2;
 
 	int i, j, B, cid = (long) arg;
 	int votes[N_ATTACKS][256];
@@ -3039,14 +3035,14 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 
 /* test if the current WEP key is valid */
 
-int check_wep_key( uchar *wepkey, int B, int keylen )
+int check_wep_key( unsigned char *wepkey, int B, int keylen )
 {
-	uchar x1, x2;
+	unsigned char x1, x2;
 	unsigned long xv;
 	int i, j, n, bad, tests;
 
-	uchar K[64];
-	uchar S[256];
+	unsigned char K[64];
+	unsigned char S[256];
 
 	if (keylen<=0)
 		keylen = opt.keylen;
@@ -3714,7 +3710,7 @@ int inner_bruteforcer_thread(void *arg)
 {
 	int i, j, k, l, reduce=0;
 	size_t nthread = (size_t)arg;
-	uchar wepkey[64];
+	unsigned char wepkey[64];
 	int ret=0;
 
 	inner_bruteforcer_thread_start:
@@ -3821,8 +3817,8 @@ int inner_bruteforcer_thread(void *arg)
 
 /* display the current wpa key info, matrix-like */
 
-void show_wpa_stats( char *key, int keylen, uchar pmk[32], uchar ptk[64],
-uchar mic[16], int force )
+void show_wpa_stats( char *key, int keylen, unsigned char pmk[32], unsigned char ptk[64],
+unsigned char mic[16], int force )
 {
 	float delta;
 	int i, et_h, et_m, et_s;
@@ -3920,11 +3916,11 @@ int crack_wpa_thread( void *arg )
 	FILE * keyFile;
 	char  essid[36];
 	char  key[4][128];
-	uchar pmk[4][128];
+	unsigned char pmk[4][128];
 
-	uchar pke[100];
-	uchar ptk[4][80];
-	uchar mic[4][20];
+	unsigned char pke[100];
+	unsigned char ptk[4][80];
+	unsigned char mic[4][20];
 
 	struct WPA_data* data;
 	struct AP_info* ap;
@@ -4232,7 +4228,7 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 int do_make_wkp(struct AP_info *ap_cur)
 {
 	size_t elt_written;
-	uint i = 0;
+	unsigned i = 0;
 
 	while( ap_cur != NULL )
 	{
@@ -4383,7 +4379,7 @@ int do_make_wkp(struct AP_info *ap_cur)
 int do_make_hccap(struct AP_info *ap_cur)
 {
 	size_t elt_written;
-	uint i = 0;
+	unsigned i = 0;
 
 	while( ap_cur != NULL )
 	{
@@ -4824,7 +4820,7 @@ int crack_wep_dict()
 
 		for(i=0; i<=opt.keylen; i++)
 		{
-			wep.key[i] = (uchar)key[i];
+			wep.key[i] = (unsigned char)key[i];
 		}
 
 		if(check_wep_key(wep.key, opt.keylen, 0) == SUCCESS)

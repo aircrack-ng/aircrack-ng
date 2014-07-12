@@ -73,8 +73,6 @@ static int chan;
 #endif //CONFIG_LIBNL
 
 
-#define uchar unsigned char
-
 typedef enum {
         DT_NULL = 0,
         DT_WLANNG,
@@ -888,7 +886,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
         }
         /* fall thru */
     case DT_HOSTAP:
-        if( ( ((uchar *) buf)[1] & 3 ) == 2 )
+        if( ( ((unsigned char *) buf)[1] & 3 ) == 2 )
         {
             /* Prism2 firmware swaps the dmac and smac in FromDS packets */
 
@@ -937,6 +935,18 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
 }
 
 #ifdef CONFIG_LIBNL
+static int ieee80211_channel_to_frequency(int chan)
+{
+    if (chan < 14)
+        return 2407 + chan * 5;
+
+    if (chan == 14)
+        return 2484;
+
+    /* FIXME: dot11ChannelStartingFactor (802.11-2007 17.3.8.3.2) */
+    return (chan + 1000) * 5;
+}
+
 static int linux_set_channel_nl80211(struct wif *wi, int channel)
 {
     struct priv_linux *dev = wi_priv(wi);
@@ -1141,18 +1151,6 @@ static int linux_set_channel(struct wif *wi, int channel)
     dev->channel = channel;
 
     return( 0 );
-}
-
-int ieee80211_channel_to_frequency(int chan)
-{
-    if (chan < 14)
-        return 2407 + chan * 5;
-
-    if (chan == 14)
-        return 2484;
-
-    /* FIXME: dot11ChannelStartingFactor (802.11-2007 17.3.8.3.2) */
-    return (chan + 1000) * 5;
 }
 
 static int linux_set_freq(struct wif *wi, int freq)
@@ -1414,7 +1412,7 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
 
 
 static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
-		   uchar *mac)
+		   unsigned char *mac)
 {
     struct ifreq ifr;
     struct ifreq ifr2;

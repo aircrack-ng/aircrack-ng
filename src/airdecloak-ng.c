@@ -43,7 +43,7 @@
 #include "version.h"
 #include "osdep/radiotap/radiotap_iter.h"
 
-uchar buffer[65536];
+unsigned char buffer[65536];
 
 char * _essid;
 

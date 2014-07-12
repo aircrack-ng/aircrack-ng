@@ -36,16 +36,12 @@
 #include <string.h>
 #include <time.h>
 
-#ifndef uchar
-#define uchar unsigned char
-#endif
-
 #include "crypto.h"
 
 
 #if defined(__i386__) || defined(__x86_64__)
 
-void show_result(char* key, uchar* pmk)
+void show_result(char* key, unsigned char* pmk)
 {
 	int i;
 	printf("%-14s ", key);
@@ -55,19 +51,19 @@ void show_result(char* key, uchar* pmk)
 }
 
 
-extern int shasse2_init( uchar ctx[80] )
+extern int shasse2_init( unsigned char ctx[80] )
     __attribute__((regparm(1)));
 
-extern int shasse2_ends( uchar ctx[80], uchar digests[80] )
+extern int shasse2_ends( unsigned char ctx[80], unsigned char digests[80] )
     __attribute__((regparm(2)));
 
-extern int shasse2_data( uchar ctx[80], uchar data[256], uchar buf[1280] )
+extern int shasse2_data( unsigned char ctx[80], unsigned char data[256], unsigned char buf[1280] )
     __attribute__((regparm(3)));
 
 extern int shasse2_cpuid( void );
 
 
-void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid, uchar* _pmk1, uchar* _pmk2, uchar* _pmk3, uchar* _pmk4)
+void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid, unsigned char* _pmk1, unsigned char* _pmk2, unsigned char* _pmk3, unsigned char* _pmk4)
 {
 	int slen;
     char  essid[36] __attribute__ ((aligned (16)));
@@ -75,18 +71,18 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 	char  key2[128] __attribute__ ((aligned (16)));
     char  key3[128] __attribute__ ((aligned (16)));
 	char  key4[128] __attribute__ ((aligned (16)));
-    uchar pmks[128*4] __attribute__ ((aligned (16)));
+    unsigned char pmks[128*4] __attribute__ ((aligned (16)));
 
 	// All in double size
-    uchar k_ipad[256] __attribute__ ((aligned (16)));
-	uchar ctx_ipad[80] __attribute__ ((aligned (16)));
-    uchar k_opad[256] __attribute__ ((aligned (16)));
-	uchar ctx_opad[80] __attribute__ ((aligned (16)));
-    uchar buffer[256] __attribute__ ((aligned (16)));
-	uchar sha1_ctx[80] __attribute__ ((aligned (16)));
-    uchar wrkbuf[1280] __attribute__ ((aligned (16)));
-    uint i, *u, *v, *w, *u3, *v4;
-	uchar *pmk1, *pmk2, *pmk3, *pmk4;
+    unsigned char k_ipad[256] __attribute__ ((aligned (16)));
+	unsigned char ctx_ipad[80] __attribute__ ((aligned (16)));
+    unsigned char k_opad[256] __attribute__ ((aligned (16)));
+	unsigned char ctx_opad[80] __attribute__ ((aligned (16)));
+    unsigned char buffer[256] __attribute__ ((aligned (16)));
+	unsigned char sha1_ctx[80] __attribute__ ((aligned (16)));
+    unsigned char wrkbuf[1280] __attribute__ ((aligned (16)));
+    unsigned i, *u, *v, *w, *u3, *v4;
+	unsigned char *pmk1, *pmk2, *pmk3, *pmk4;
 
 	pmk1=pmks; pmk2=pmks+128; pmk3=pmks+128*2; pmk4=pmks+128*3;
 
@@ -118,11 +114,11 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
         memcpy( k_opad + 192, key4, strlen( key4 ) );
 
 
-        u = (uint *) ( k_ipad      );
-        v = (uint *) ( k_ipad + 64 );
-		u3 = (uint *) ( k_ipad + 128 );
-		v4 = (uint *) ( k_ipad + 192 );
-        w = (uint *) buffer;
+        u = (unsigned *) ( k_ipad      );
+        v = (unsigned *) ( k_ipad + 64 );
+		u3 = (unsigned *) ( k_ipad + 128 );
+		v4 = (unsigned *) ( k_ipad + 192 );
+        w = (unsigned *) buffer;
 
         for( i = 0; i < 16; i++ )
         {
@@ -137,11 +133,11 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 		shasse2_init( ctx_ipad );
         shasse2_data( ctx_ipad, buffer, wrkbuf );
 
-        u = (uint *) ( k_opad      );
-        v = (uint *) ( k_opad + 64 );
-        u3 = (uint *) ( k_opad + 128 );
-        v4 = (uint *) ( k_opad + 192 );
-        w = (uint *) buffer;
+        u = (unsigned *) ( k_opad      );
+        v = (unsigned *) ( k_opad + 64 );
+        u3 = (unsigned *) ( k_opad + 128 );
+        v4 = (unsigned *) ( k_opad + 192 );
+        w = (unsigned *) buffer;
 
         for( i = 0; i < 16; i++ )
         {
@@ -165,17 +161,17 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 		essid[slen - 1] = '\1';
 
 
-		HMAC(EVP_sha1(), (uchar *)key1, strlen(key1), (uchar*)essid, slen, pmk1, NULL);
-		HMAC(EVP_sha1(), (uchar *)key2, strlen(key2), (uchar*)essid, slen, pmk2, NULL);
-		HMAC(EVP_sha1(), (uchar *)key3, strlen(key3), (uchar*)essid, slen, pmk3, NULL);
-		HMAC(EVP_sha1(), (uchar *)key4, strlen(key4), (uchar*)essid, slen, pmk4, NULL);
+		HMAC(EVP_sha1(), (unsigned char *)key1, strlen(key1), (unsigned char*)essid, slen, pmk1, NULL);
+		HMAC(EVP_sha1(), (unsigned char *)key2, strlen(key2), (unsigned char*)essid, slen, pmk2, NULL);
+		HMAC(EVP_sha1(), (unsigned char *)key3, strlen(key3), (unsigned char*)essid, slen, pmk3, NULL);
+		HMAC(EVP_sha1(), (unsigned char *)key4, strlen(key4), (unsigned char*)essid, slen, pmk4, NULL);
 
 
-		u = (uint *) pmk1;
-        v = (uint *) pmk2;
-		u3 = (uint *) pmk3;
-        v4 = (uint *) pmk4;
-        w = (uint *) buffer;
+		u = (unsigned *) pmk1;
+        v = (unsigned *) pmk2;
+		u3 = (unsigned *) pmk3;
+        v4 = (unsigned *) pmk4;
+        w = (unsigned *) buffer;
 
         *w++ = *u++; *w++ = *v++;
 		*w++ = *u3++; *w++ = *v4++;
@@ -199,11 +195,11 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
             shasse2_data( sha1_ctx, buffer, wrkbuf );
             shasse2_ends( sha1_ctx, buffer );
 
-            u = (uint *) pmk1;
-            v = (uint *) pmk2;
-            u3 = (uint *) pmk3;
-            v4 = (uint *) pmk4;
-            w = (uint *) buffer;
+            u = (unsigned *) pmk1;
+            v = (unsigned *) pmk2;
+            u3 = (unsigned *) pmk3;
+            v4 = (unsigned *) pmk4;
+            w = (unsigned *) buffer;
 
             /* de-interleave the digests */
             *u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
@@ -216,16 +212,16 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 
 		essid[slen - 1] = '\2';
 
-		HMAC(EVP_sha1(), (uchar *)key1, strlen(key1), (uchar*)essid, slen, pmk1 + 20, NULL);
-		HMAC(EVP_sha1(), (uchar *)key2, strlen(key2), (uchar*)essid, slen, pmk2 + 20, NULL);
-		HMAC(EVP_sha1(), (uchar *)key3, strlen(key3), (uchar*)essid, slen, pmk3 + 20, NULL);
-		HMAC(EVP_sha1(), (uchar *)key4, strlen(key4), (uchar*)essid, slen, pmk4 + 20, NULL);
+		HMAC(EVP_sha1(), (unsigned char *)key1, strlen(key1), (unsigned char*)essid, slen, pmk1 + 20, NULL);
+		HMAC(EVP_sha1(), (unsigned char *)key2, strlen(key2), (unsigned char*)essid, slen, pmk2 + 20, NULL);
+		HMAC(EVP_sha1(), (unsigned char *)key3, strlen(key3), (unsigned char*)essid, slen, pmk3 + 20, NULL);
+		HMAC(EVP_sha1(), (unsigned char *)key4, strlen(key4), (unsigned char*)essid, slen, pmk4 + 20, NULL);
 
-        u = (uint *) ( pmk1 + 20 ); // eran 20
-        v = (uint *) ( pmk2 + 20 );
-        u3 = (uint *) ( pmk3 + 20 ); // eran 20
-        v4 = (uint *) ( pmk4 + 20 );
-        w = (uint *) buffer;
+        u = (unsigned *) ( pmk1 + 20 ); // eran 20
+        v = (unsigned *) ( pmk2 + 20 );
+        u3 = (unsigned *) ( pmk3 + 20 ); // eran 20
+        v4 = (unsigned *) ( pmk4 + 20 );
+        w = (unsigned *) buffer;
 
         *w++ = *u++; *w++ = *v++;
 		*w++ = *u3++; *w++ = *v4++;
@@ -248,11 +244,11 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
             shasse2_data( sha1_ctx, buffer, wrkbuf );
             shasse2_ends( sha1_ctx, buffer );
 
-            u = (uint *) ( pmk1 + 20 ); //eran 20
-            v = (uint *) ( pmk2 + 20 );
-            u3 = (uint *) ( pmk3 + 20 );
-            v4 = (uint *) ( pmk4 + 20 );
-            w = (uint *) buffer;
+            u = (unsigned *) ( pmk1 + 20 ); //eran 20
+            v = (unsigned *) ( pmk2 + 20 );
+            u3 = (unsigned *) ( pmk3 + 20 );
+            v4 = (unsigned *) ( pmk4 + 20 );
+            w = (unsigned *) buffer;
 
             *u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
             *u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
@@ -274,7 +270,7 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 }
 #else
 
-void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid, uchar* _pmk1, uchar* _pmk2, uchar* _pmk3, uchar* _pmk4)
+void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid, unsigned char* _pmk1, unsigned char* _pmk2, unsigned char* _pmk3, unsigned char* _pmk4)
 {
 	calc_pmk(_key1, _essid, _pmk1);
 	calc_pmk(_key2, _essid, _pmk2);

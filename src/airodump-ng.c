@@ -668,10 +668,10 @@ char usage[] =
 "      --help                : Displays this usage screen\n"
 "\n";
 
-int is_filtered_netmask(uchar *bssid)
+int is_filtered_netmask(unsigned char *bssid)
 {
-    uchar mac1[6];
-    uchar mac2[6];
+    unsigned char mac1[6];
+    unsigned char mac2[6];
     int i;
 
     for(i=0; i<6; i++)
@@ -1183,7 +1183,7 @@ int remove_namac(unsigned char* mac)
 int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int cardnum )
 {
     int i, n, seq, msd, dlen, offset, clen, o;
-    uint z;
+    unsigned z;
     int type, length, numuni=0, numauth=0;
     struct pcap_pkthdr pkh;
     struct timeval tv;
@@ -1978,7 +1978,7 @@ skip_probe:
             }
         }
 
-        if( z + 26 > (uint)caplen )
+        if( z + 26 > (unsigned)caplen )
             goto write_packet;
 
         if( h80211[z] == h80211[z + 1] && h80211[z + 2] == 0x03 )
@@ -2027,7 +2027,7 @@ skip_probe:
             }
         }
 
-        if( z + 10 > (uint)caplen )
+        if( z + 10 > (unsigned)caplen )
             goto write_packet;
 
         if( ap_cur->security & STD_WEP )
@@ -2157,7 +2157,7 @@ skip_probe:
         /* Check if 802.11e (QoS) */
         if( (h80211[0] & 0x80) == 0x80) z+=2;
 
-        if( z + 26 > (uint)caplen )
+        if( z + 26 > (unsigned)caplen )
             goto write_packet;
 
         z += 6;     //skip LLC header
@@ -2186,7 +2186,7 @@ skip_probe:
 
             /* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
-            if( z+17+32 > (uint)caplen )
+            if( z+17+32 > (unsigned)caplen )
                 goto write_packet;
 
             if( ( h80211[z + 6] & 0x08 ) != 0 &&
@@ -2240,8 +2240,8 @@ skip_probe:
                     st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
                             +   h80211[z + 3] + 4;
 
-                    if (caplen - (uint)z < st_cur->wpa.eapol_size || st_cur->wpa.eapol_size == 0 ||
-                        caplen - (uint)z < 81 + 16 || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
+                    if (caplen - (unsigned)z < st_cur->wpa.eapol_size || st_cur->wpa.eapol_size == 0 ||
+                        caplen - (unsigned)z < 81 + 16 || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
                     {
                         // Ignore the packet trying to crash us.
                         st_cur->wpa.eapol_size = 0;

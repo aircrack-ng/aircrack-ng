@@ -35,14 +35,6 @@
 #ifndef _CRYPTO_H
 #define _CRYPTO_H
 
-#ifndef uint8
-#define uint8  unsigned char
-#endif
-
-#ifndef uint32
-#define uint32 unsigned long int
-#endif
-
 #ifdef USE_GCRYPT
 #include "gcrypt-openssl-wrapper.h"
 #include "sha1-git.h"
@@ -65,10 +57,10 @@
 #define TYPE_ARP    0
 #define TYPE_IP     1
 
-#define NULL_MAC  (uchar*)"\x00\x00\x00\x00\x00\x00"
-#define BROADCAST (uchar*)"\xFF\xFF\xFF\xFF\xFF\xFF"
-#define SPANTREE  (uchar*)"\x01\x80\xC2\x00\x00\x00"
-#define CDP_VTP   (uchar*)"\x01\x00\x0C\xCC\xCC\xCC"
+#define NULL_MAC  (unsigned char*)"\x00\x00\x00\x00\x00\x00"
+#define BROADCAST (unsigned char*)"\xFF\xFF\xFF\xFF\xFF\xFF"
+#define SPANTREE  (unsigned char*)"\x01\x80\xC2\x00\x00\x00"
+#define CDP_VTP   (unsigned char*)"\x01\x00\x0C\xCC\xCC\xCC"
 
 #define	IEEE80211_FC0_SUBTYPE_MASK              0xf0
 #define	IEEE80211_FC0_SUBTYPE_SHIFT             4
@@ -81,8 +73,6 @@
     ( ( (fc) & IEEE80211_FC0_SUBTYPE_MASK ) >> IEEE80211_FC0_SUBTYPE_SHIFT ) \
         << IEEE80211_FC0_SUBTYPE_SHIFT
 
-#define uchar  unsigned char
-
 #define ROL32( A, n ) \
 	( ((A) << (n)) | ( ((A)>>(32-(n))) & ( (1UL << (n)) - 1 ) ) )
 #define ROR32( A, n ) ROL32( (A), 32-(n) )
@@ -90,14 +80,14 @@
 struct WPA_ST_info
 {
     struct WPA_ST_info *next;       /* next supplicant              */
-    uchar stmac[6];             /* supplicant MAC               */
-    uchar bssid[6];             /* authenticator MAC            */
-    uchar snonce[32];           /* supplicant nonce             */
-    uchar anonce[32];           /* authenticator nonce          */
-    uchar keymic[20];           /* eapol frame MIC              */
-    uchar eapol[256];           /* eapol frame contents         */
-    uchar ptk[80];              /* pairwise transcient key      */
-    uint eapol_size;            /* eapol frame size             */
+    unsigned char stmac[6];             /* supplicant MAC               */
+    unsigned char bssid[6];             /* authenticator MAC            */
+    unsigned char snonce[32];           /* supplicant nonce             */
+    unsigned char anonce[32];           /* authenticator nonce          */
+    unsigned char keymic[20];           /* eapol frame MIC              */
+    unsigned char eapol[256];           /* eapol frame contents         */
+    unsigned char ptk[80];              /* pairwise transcient key      */
+    unsigned eapol_size;            /* eapol frame size             */
     unsigned long t_crc;        /* last ToDS   frame CRC        */
     unsigned long f_crc;        /* last FromDS frame CRC        */
     int keyver, valid_ptk;
@@ -232,8 +222,8 @@ int is_qos_arp_tkip(void *wh, int len);
 int calc_tkip_ppk( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char key[16] );
 int decrypt_tkip( unsigned char *h80211, int caplen, unsigned char TK1[16] );
 int decrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16] );
-int calc_ptk( struct WPA_ST_info *wpa, uchar pmk[32] );
-int calc_tkip_mic(uchar* packet, int length, uchar ptk[80], uchar value[8]);
-int michael_test(uchar key[8], uchar *message, int length, uchar out[8]);
-int calc_tkip_mic_key(uchar* packet, int length, uchar key[8]);
+int calc_ptk( struct WPA_ST_info *wpa, unsigned char pmk[32] );
+int calc_tkip_mic(unsigned char* packet, int length, unsigned char ptk[80], unsigned char value[8]);
+int michael_test(unsigned char key[8], unsigned char *message, int length, unsigned char out[8]);
+int calc_tkip_mic_key(unsigned char* packet, int length, unsigned char key[8]);
 #endif /* crypto.h */

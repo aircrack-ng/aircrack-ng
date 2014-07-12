@@ -256,7 +256,7 @@ struct options
     char *iface_out;
     char *s_face;
     char *s_file;
-    uchar *prga;
+    unsigned char *prga;
 
     int a_mode;
     int a_count;
@@ -331,10 +331,10 @@ unsigned char tmpbuf[4096];
 unsigned char srcbuf[4096];
 char strbuf[512];
 
-uchar ska_auth1[]     = "\xb0\x00\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+unsigned char ska_auth1[]     = "\xb0\x00\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
                         "\x00\x00\x00\x00\x00\x00\xb0\x01\x01\x00\x01\x00\x00\x00";
 
-uchar ska_auth3[4096] = "\xb0\x40\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+unsigned char ska_auth3[4096] = "\xb0\x40\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
                         "\x00\x00\x00\x00\x00\x00\xc0\x01";
 
 
@@ -606,10 +606,10 @@ int filter_packet( unsigned char *h80211, int caplen )
     return( 0 );
 }
 
-int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
+int wait_for_beacon(unsigned char *bssid, unsigned char *capa, char *essid)
 {
     int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
-    uchar pkt_sniff[4096];
+    unsigned char pkt_sniff[4096];
     struct timeval tv,tv2;
     char essid2[33];
 
@@ -718,7 +718,7 @@ int wait_for_beacon(uchar *bssid, uchar *capa, char *essid)
 /**
     if bssid != NULL its looking for a beacon frame
 */
-int attack_check(uchar* bssid, char* essid, uchar* capa, struct wif *wi)
+int attack_check(unsigned char* bssid, char* essid, unsigned char* capa, struct wif *wi)
 {
     int ap_chan=0, iface_chan=0;
 
@@ -749,7 +749,7 @@ int attack_check(uchar* bssid, char* essid, uchar* capa, struct wif *wi)
     return 0;
 }
 
-int getnet( uchar* capa, int filter, int force)
+int getnet( unsigned char* capa, int filter, int force)
 {
     unsigned char *bssid;
 
@@ -810,7 +810,7 @@ int getnet( uchar* capa, int filter, int force)
     return 0;
 }
 
-int xor_keystream(uchar *ph80211, uchar *keystream, int len)
+int xor_keystream(unsigned char *ph80211, unsigned char *keystream, int len)
 {
     int i=0;
 
@@ -1190,7 +1190,7 @@ int read_prga(unsigned char **dest, char *file)
     return( 0 );
 }
 
-void add_icv(uchar *input, int len, int offset)
+void add_icv(unsigned char *input, int len, int offset)
 {
     unsigned long crc = 0xFFFFFFFF;
     int n=0;
@@ -1208,11 +1208,11 @@ void add_icv(uchar *input, int len, int offset)
     return;
 }
 
-void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, int fragsize, int ska)
+void send_fragments(unsigned char *packet, int packet_len, unsigned char *iv, unsigned char *keystream, int fragsize, int ska)
 {
     int t, u;
     int data_size;
-    uchar frag[32+fragsize];
+    unsigned char frag[32+fragsize];
     int pack_size;
     int header_size=24;
 
@@ -1421,7 +1421,7 @@ int do_attack_fake_auth( void )
     int retry = 0;
     int abort;
     int gotack = 0;
-    uchar capa[2];
+    unsigned char capa[2];
     int deauth_wait=3;
     int ska=0;
     int keystreamlen=0;
@@ -2758,7 +2758,7 @@ int do_attack_caffe_latte( void )
     int arp_off1, arp_off2;
     int i, n, caplen, nb_arp, z;
     long nb_pkt_read, nb_arp_tot, nb_ack_pkt;
-    uchar flip[4096];
+    unsigned char flip[4096];
 
     time_t tc;
     float f, ticks[3];
@@ -3182,8 +3182,8 @@ int do_attack_migmode( void )
     int arp_off1, arp_off2;
     int i, n, caplen, nb_arp, z;
     long nb_pkt_read, nb_arp_tot, nb_ack_pkt;
-    uchar flip[4096];
-    uchar senderMAC[6];
+    unsigned char flip[4096];
+    unsigned char senderMAC[6];
 
     time_t tc;
     float f, ticks[3];
@@ -3595,7 +3595,7 @@ add_arp:
     return( 0 );
 }
 
-int set_clear_arp(uchar *buf, uchar *smac, uchar *dmac) //set first 22 bytes
+int set_clear_arp(unsigned char *buf, unsigned char *smac, unsigned char *dmac) //set first 22 bytes
 {
     if(buf == NULL)
         return -1;
@@ -3617,7 +3617,7 @@ int set_clear_arp(uchar *buf, uchar *smac, uchar *dmac) //set first 22 bytes
     return 0;
 }
 
-int set_final_arp(uchar *buf, uchar *mymac)
+int set_final_arp(unsigned char *buf, unsigned char *mymac)
 {
     if(buf == NULL)
         return -1;
@@ -3639,7 +3639,7 @@ int set_final_arp(uchar *buf, uchar *mymac)
     return 0;
 }
 
-int set_clear_ip(uchar *buf, int ip_len) //set first 9 bytes
+int set_clear_ip(unsigned char *buf, int ip_len) //set first 9 bytes
 {
     if(buf == NULL)
         return -1;
@@ -3652,7 +3652,7 @@ int set_clear_ip(uchar *buf, int ip_len) //set first 9 bytes
     return 0;
 }
 
-int set_final_ip(uchar *buf, uchar *mymac)
+int set_final_ip(unsigned char *buf, unsigned char *mymac)
 {
     if(buf == NULL)
         return -1;
@@ -3679,9 +3679,9 @@ int do_attack_cfrag( void )
     unsigned char bssid[6];
     unsigned char smac[6];
     unsigned char dmac[6];
-    uchar keystream[128];
-    uchar frag1[128], frag2[128], frag3[128];
-    uchar clear[4096], final[4096], flip[4096];
+    unsigned char keystream[128];
+    unsigned char frag1[128], frag2[128], frag3[128];
+    unsigned char clear[4096], final[4096], flip[4096];
     int isarp;
     int z, i;
 
@@ -3993,7 +3993,7 @@ int do_attack_chopchop( void )
     unsigned long crc_mask;
     unsigned char *chopped;
 
-    uchar packet[4096];
+    unsigned char packet[4096];
 
     time_t tt;
     struct tm *lt;
@@ -4623,10 +4623,10 @@ int do_attack_chopchop( void )
     return( 0 );
 }
 
-int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac, uchar *src_ip, uchar *dst_ip, int size)
+int make_arp_request(unsigned char *h80211, unsigned char *bssid, unsigned char *src_mac, unsigned char *dst_mac, unsigned char *src_ip, unsigned char *dst_ip, int size)
 {
-	uchar *arp_header = (unsigned char*)"\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01";
-	uchar *header80211 = (unsigned char*)"\x08\x41\x95\x00";
+	unsigned char *arp_header = (unsigned char*)"\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01";
+	unsigned char *header80211 = (unsigned char*)"\x08\x41\x95\x00";
 
     // 802.11 part
     memcpy(h80211,    header80211, 4);
@@ -4649,7 +4649,7 @@ int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac
     return 0;
 }
 
-void save_prga(char *filename, uchar *iv, uchar *prga, int prgalen)
+void save_prga(char *filename, unsigned char *iv, unsigned char *prga, int prgalen)
 {
     FILE *xorfile;
     size_t unused;
@@ -4661,12 +4661,12 @@ void save_prga(char *filename, uchar *iv, uchar *prga, int prgalen)
 
 int do_attack_fragment()
 {
-    uchar packet[4096];
-    uchar packet2[4096];
-    uchar prga[4096];
-    uchar iv[4];
+    unsigned char packet[4096];
+    unsigned char packet2[4096];
+    unsigned char prga[4096];
+    unsigned char iv[4];
 
-//    uchar ack[14] = "\xd4";
+//    unsigned char ack[14] = "\xd4";
 
     char strbuf[256];
 
@@ -4688,7 +4688,7 @@ int do_attack_fragment()
     int packets;
     int z;
 
-    uchar *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
+    unsigned char *snap_header = (unsigned char*)"\xAA\xAA\x03\x00\x00\x00\x08\x00";
 
     done = caplen = caplen2 = arplen = round = 0;
     prga_len = isrelay = gotit = again = length = 0;
@@ -4877,7 +4877,7 @@ int do_attack_fragment()
         if (! isrelay)
         {
             //Building expected cleartext
-            uchar ct[4096] = "\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x02";
+            unsigned char ct[4096] = "\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x02";
             //Ethernet & ARP header
 
             //Followed by the senders MAC and IP:
@@ -5176,10 +5176,10 @@ int do_attack_fragment()
     return( 0 );
 }
 
-int grab_essid(uchar* packet, int len)
+int grab_essid(unsigned char* packet, int len)
 {
     int i=0, j=0, pos=0, tagtype=0, taglen=0, chan=0;
-    uchar bssid[6];
+    unsigned char bssid[6];
 
     memcpy(bssid, packet+16, 6);
     taglen = 22;    //initial value to get the fixed tags parsing started
@@ -5509,7 +5509,7 @@ int tcp_test(const char* ip_str, const short port)
 
 int do_attack_test()
 {
-    uchar packet[4096];
+    unsigned char packet[4096];
     struct timeval tv, tv2, tv3;
     int len=0, i=0, j=0, k=0;
     int gotit=0, answers=0, found=0;

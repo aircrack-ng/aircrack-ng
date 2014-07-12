@@ -125,14 +125,14 @@ struct options
 
     char *s_face;
     char *s_file;
-    uchar *prga;
+    unsigned char *prga;
 
     int r_nbpps;
     int prgalen;
     int tods;
     int bidir;
 
-    uchar wepkey[64];
+    unsigned char wepkey[64];
     int weplen, crypt;
 
     int repeat;
@@ -547,10 +547,10 @@ unsigned char* getCompleteFrag(unsigned char* smac, int sequence, int *packetlen
     return packet;
 }
 
-int is_filtered_netmask(uchar *bssid)
+int is_filtered_netmask(unsigned char *bssid)
 {
-    uchar mac1[6];
-    uchar mac2[6];
+    unsigned char mac1[6];
+    unsigned char mac2[6];
     int i;
 
     for(i=0; i<6; i++)
@@ -686,7 +686,7 @@ int read_prga(unsigned char **dest, char *file)
     return( 0 );
 }
 
-void add_icv(uchar *input, int len, int offset)
+void add_icv(unsigned char *input, int len, int offset)
 {
     unsigned long crc = 0xFFFFFFFF;
     int n=0;
@@ -704,7 +704,7 @@ void add_icv(uchar *input, int len, int offset)
     return;
 }
 
-int xor_keystream(uchar *ph80211, uchar *keystream, int len)
+int xor_keystream(unsigned char *ph80211, unsigned char *keystream, int len)
 {
     int i=0;
 
@@ -715,7 +715,7 @@ int xor_keystream(uchar *ph80211, uchar *keystream, int len)
     return 0;
 }
 
-void print_packet ( uchar h80211[], int caplen )
+void print_packet ( unsigned char h80211[], int caplen )
 {
 	int i,j;
 	int key_index_offset=0;
@@ -856,10 +856,10 @@ int create_wep_packet(unsigned char* packet, int *length, int data_begin)
     return 0;
 }
 
-int packet_xmit(uchar* packet, int length)
+int packet_xmit(unsigned char* packet, int length)
 {
-    uchar K[64];
-    uchar buf[4096];
+    unsigned char K[64];
+    unsigned char buf[4096];
     int data_begin = 24;
     int dest_net;
 
@@ -953,11 +953,11 @@ int packet_xmit(uchar* packet, int length)
     return 0;
 }
 
-int packet_recv(uchar* packet, int length)
+int packet_recv(unsigned char* packet, int length)
 {
-    uchar K[64];
-    uchar bssid[6], smac[6], dmac[6];
-    uchar *buffer;
+    unsigned char K[64];
+    unsigned char bssid[6], smac[6], dmac[6];
+    unsigned char *buffer;
 
     int len;
     int z;

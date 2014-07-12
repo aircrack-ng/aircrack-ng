@@ -92,7 +92,7 @@ struct globals
 }
 G;
 
-static uchar ZERO[32] =
+static unsigned char ZERO[32] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -214,10 +214,10 @@ int merge( int argc, char *argv[] )
     return( 0 );
 }
 
-int dump_add_packet( unsigned char *h80211, uint caplen)
+int dump_add_packet( unsigned char *h80211, unsigned caplen)
 {
     int i, n, seq, dlen, clen;
-    uint z;
+    unsigned z;
     struct ivs2_pkthdr ivs2;
     unsigned char *p;
     unsigned char bssid[6];

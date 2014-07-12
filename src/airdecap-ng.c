@@ -95,23 +95,23 @@ struct options
     int no_convert;
     char essid[36];
     char passphrase[65];
-    uchar bssid[6];
-    uchar pmk[40];
-    uchar wepkey[64];
+    unsigned char bssid[6];
+    unsigned char pmk[40];
+    unsigned char wepkey[64];
     int weplen, crypt;
     int store_bad;
 }
 opt;
 
-uchar buffer[65536];
-uchar buffer2[65536];
+unsigned char buffer[65536];
+unsigned char buffer2[65536];
 
 /* this routine handles to 802.11 to Ethernet translation */
 
-int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, uchar *h80211 )
+int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, unsigned char *h80211 )
 {
     int n;
-    uchar arphdr[12];
+    unsigned char arphdr[12];
     int qosh_offset = 0;
 
     if( opt.no_convert )
@@ -201,14 +201,14 @@ int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, uchar *h80211 )
 int main( int argc, char *argv[] )
 {
     time_t tt;
-    uint magic;
+    unsigned magic;
     char *s, buf[128];
     FILE *f_in, *f_out, *f_bad=NULL;
     unsigned long crc;
     int i = 0, n, linktype;
-    uint z;
-    uchar ZERO[32], *h80211;
-    uchar bssid[6], stmac[6];
+    unsigned z;
+    unsigned char ZERO[32], *h80211;
+    unsigned char bssid[6], stmac[6];
 
     struct WPA_ST_info *st_1st;
     struct WPA_ST_info *st_cur;
@@ -801,7 +801,7 @@ usage:
 
             if( ( h80211[z + 3] & 0x20 ) == 0 )
             {
-                uchar K[64];
+                unsigned char K[64];
 
                 stats.nb_wep++;
 

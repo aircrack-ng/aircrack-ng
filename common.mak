@@ -4,7 +4,7 @@ ifndef TOOL_PREFIX
 TOOL_PREFIX	=
 endif
 ifndef OSNAME
-OSNAME		= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g' -e 's,/,-,g')
+OSNAME		:= $(shell uname -s | sed -e 's/.*CYGWIN.*/cygwin/g' -e 's,/,-,g')
 endif
 ifndef SQLITE
 SQLITE		= false
@@ -31,7 +31,7 @@ COMMON_CFLAGS	=
 
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
-	COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
+	COMMON_CFLAGS	+= -DHAVE_SQLITE
 endif
 
 ifeq ($(pcre), true)
@@ -51,17 +51,26 @@ ifeq ($(OSNAME), Linux)
 		NL3xFOUND := $(shell $(PKG_CONFIG) --atleast-version=3.2 libnl-3.0 && echo Y)
 		ifneq ($(NL3xFOUND),Y)
 			NL31FOUND := $(shell $(PKG_CONFIG) --exact-version=3.1 libnl-3.1 && echo Y)
-				ifneq ($(NL31FOUND),Y)
-					NL3FOUND := $(shell $(PKG_CONFIG) --atleast-version=3 libnl-3.0 && echo Y)
-				ifneq ($(NL3FOUND),Y)
-					NL1FOUND := $(shell $(PKG_CONFIG) --atleast-version=1 libnl-1 && echo Y)
-				endif
+			ifneq ($(NL31FOUND),Y)
+				NL3FOUND := $(shell $(PKG_CONFIG) --atleast-version=3 libnl-3.0 && echo Y)
+			endif
+			ifneq ($(NL3FOUND),Y)
+				NL1FOUND := $(shell $(PKG_CONFIG) --atleast-version=1 libnl-1 && echo Y)
+			endif
+			ifneq ($(NL1FOUND),Y)
+				NLTFOUND := $(shell $(PKG_CONFIG) --atleast-version=1 libnl-tiny && echo Y)
 			endif
 		endif
 
 
 		ifeq ($(NL1FOUND),Y)
 			NLLIBNAME = libnl-1
+			COMMON_CFLAGS += -DCONFIG_LIBNL
+		endif
+
+		ifeq ($(NLTFOUND),Y)
+			NLLIBNAME = libnl-tiny
+			COMMON_CFLAGS += -DCONFIG_LIBNL -DCONFIG_LIBNL20
 		endif
 
 		ifeq ($(NL3xFOUND),Y)
@@ -84,12 +93,11 @@ ifeq ($(OSNAME), Linux)
 			NLLIBNAME = libnl-3.1
 		endif
 
-		ifeq ($(NLLIBNAME),'')
-			$(error Cannot find development files for any supported version of libnl. install either libnl1 or libnl3.)
-		endif
+		NLLIBNAME ?= $(error Cannot find development files for any supported version of libnl. install either libnl1 or libnl3.)
 
 		LIBS += $(shell $(PKG_CONFIG) --libs $(NLLIBNAME))
-		COMMON_CFLAGS += $(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
+		COMMON_CFLAGS +=$(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
+		COMMON_CFLAGS := $(COMMON_CFLAGS)
 	endif
 endif
 

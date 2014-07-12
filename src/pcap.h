@@ -33,6 +33,8 @@
 #ifndef _AIRCRACK_NG_PCAP_H_
 #define _AIRCRACK_NG_PCAP_H_
 
+#include <stdint.h>
+
 #define FORMAT_CAP      1
 #define FORMAT_IVS      2
 #define FORMAT_IVS2     3
@@ -52,11 +54,6 @@
 #define LINKTYPE_PRISM_HEADER   119
 #define LINKTYPE_RADIOTAP_HDR   127
 #define LINKTYPE_PPI_HDR		192
-
-#define uchar  unsigned char
-#define ushort unsigned short
-#define uint   unsigned int
-#define ulong  unsigned long
 
 //BSSID const. length of 6 bytes; can be together with all the other types
 #define IVS2_BSSID	0x0001
@@ -83,32 +80,32 @@
 
 struct pcap_file_header
 {
-    uint magic;
-    ushort version_major;
-    ushort version_minor;
-    int thiszone;
-    uint sigfigs;
-    uint snaplen;
-    uint linktype;
+    uint32_t magic;
+    uint16_t version_major;
+    uint16_t version_minor;
+    int32_t thiszone;
+    uint32_t sigfigs;
+    uint32_t snaplen;
+    uint32_t linktype;
 };
 
 struct pcap_pkthdr
 {
-    int tv_sec;
-    int tv_usec;
-    uint caplen;
-    uint len;
+    int32_t tv_sec;
+    int32_t tv_usec;
+    uint32_t caplen;
+    uint32_t len;
 };
 
 struct ivs2_filehdr
 {
-    unsigned short version;
+    uint16_t version;
 };
 
 struct ivs2_pkthdr
 {
-    unsigned short  flags;
-    unsigned short  len;
+    uint16_t  flags;
+    uint16_t  len;
 };
 
 #endif /* common.h */

@@ -71,7 +71,7 @@ struct priv_cygwin {
 char *stristr(const char *String, const char *Pattern)
 {
       char *pptr, *sptr, *start;
-      uint  slen, plen;
+      unsigned  slen, plen;
 
       for (start = (char *)String,
            pptr  = (char *)Pattern,
