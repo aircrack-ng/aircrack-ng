@@ -461,7 +461,7 @@ getChipset() {
 				CHIPSET=$(lspci | grep "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')
 				DEVICEID=$(lspci -nn | grep "$BUSINFO" | grep '[[0-9][0-9][0-9][0-9]:[0-9][0-9][0-9][0-9]' -o)
 			fi
-		elif [ "$BUS" = "sdio" ]
+		elif [ "${BUS}" = "sdio" ]
 		then
 			if [ -f /sys/class/net/$1/device/vendor -a -f /sys/class/net/$1/device/device ]
 			then
