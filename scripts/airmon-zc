@@ -4,7 +4,6 @@ VERBOSE="0"
 ELITE="0"
 USERID=""
 IFACE=""
-MADWIFI=0
 MAC80211=0
 IW_SOURCE="https://www.kernel.org/pub/software/network/iw/iw-3.11.tar.bz2"
 IW_ERROR=""
@@ -73,6 +72,14 @@ then
 #else
 #	#write something in here to test uname for Darwin/Linux and set a variable
 fi
+
+if [ ! -x "$(command -v ip 2>&1)" ] && [ ! -x "$(command -v ifconfig 2>&1)" ]
+then
+	printf "You have neither ip (iproute2) nor ifconfig installed.\n"
+	printf "Please install one of them from your distro's package manager.\n"
+	exit 1
+fi
+
 if [ ! -x "$(command -v iw 2>&1)" ]
 then
 	printf "You don't have iw installed, please install it from your distro's package manager.\n"
@@ -140,21 +147,58 @@ usage() {
 	exit
 }
 
-startDeprecatedIface() {
-	iwconfig $1 mode monitor > /dev/null 2>&1
-	if [ ! -z $2 ]
+setLink() {
+	if [ -x "$(command -v ip 2>&1)" ]
 	then
-		if [ $2 -lt 1000 ]
+		ip link set dev ${1} ${2} || printf "Failed to set ${1} ${2} using ip"
+	elif [ -x "$(command -v ifconfig 2>&1)" ]
+	then
+		ifconfig ${1} ${2} || printf "Failed to set ${1} ${2} using ifconfig"
+	fi
+	return
+}
+
+ifaceIsUp() {
+	if [ -x "$(command -v ip 2>&1)" ]
+	then
+		ifaceIsUpCmd="ip link show dev"
+	elif [ -x "$(command -v ifconfig 2>&1)" ]
+	then
+		ifaceIsUpCmd="ifconfig"
+	fi
+	if ${ifaceIsUpCmd} ${1} | grep -q UP
+	then
+		return
+	else
+		return 1
+	fi
+}
+
+listIfaceUnspec() {
+	if [ -x "$(command -v ip 2>&1)" ]
+	then
+		ip link 2>/dev/null | awk -F"[: ]+" '/UNSPEC/ {print $2}'
+	elif [ -x "$(command -v ifconfig 2>&1)" ]
+	then
+		ifconfig -a 2>/dev/null | awk -F"[: ]+" '/UNSPEC/ {print $1}'
+	fi
+}
+
+startDeprecatedIface() {
+	iwconfig ${1} mode monitor > /dev/null 2>&1
+	if [ ! -z ${2} ]
+	then
+		if [ ${2} -lt 1000 ]
 		then
-			iwconfig $1 channel $2 > /dev/null 2>&1
+			iwconfig ${1} channel ${2} > /dev/null 2>&1
 		else
-			iwconfig $1 freq "$2"000000 > /dev/null 2>&1
+			iwconfig ${1} freq ${2}000000 > /dev/null 2>&1
 		fi
 	else
-		iwconfig $1 channel ${CH} > /dev/null 2>&1
+		iwconfig ${1} channel ${CH} > /dev/null 2>&1
 	fi
-	iwconfig $1 key off > /dev/null 2>&1
-	ifconfig $1 up
+	iwconfig ${1} key off > /dev/null 2>&1
+	setLink ${1} up
 	printf " (monitor mode enabled)"
 }
 
@@ -181,7 +225,7 @@ startMac80211Iface() {
 		exit 1
 	fi
 	#we didn't bail means our target interface is available
-	ifconfig ${1} down
+	setLink ${1} down
 	IW_ERROR=$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1 | grep "nl80211 not found")
 	if [ x${IW_ERROR} = "x" ]
 	then
@@ -194,7 +238,7 @@ startMac80211Iface() {
 	if [ ${ELITE} = "1" ]
 	then
 		#check if $1 is still down, warn if not
-		if $(ifconfig ${1} | grep -q UP)
+		if ifaceIsUp ${1}
 		then
 			printf "\nInterface ${1} is up, but it should be down. Something is interferring."
 			printf "\nPlease run \"airmon-zc check kill\" and/or kill your network manager."
@@ -213,7 +257,7 @@ startDarwinIface() {
 }
 
 setChannelMac80211() {
-	ifconfig ${1} up
+	setLink ${1} up
 	if [ ! -z ${3} ]
 	then
 		if [ ${3} -lt 1000 ]
@@ -228,9 +272,9 @@ setChannelMac80211() {
 }
 
 stopDeprecatedIface() {
-	ifconfig $1 down > /dev/null 2>&1
+	setLink $1 down
 	iwconfig $1 mode Managed > /dev/null 2>&1
-	ifconfig $1 down > /dev/null 2>&1
+	setLink $1 up
 	printf " (monitor mode disabled)"
 }
 
@@ -930,25 +974,24 @@ else
 fi
 
 #this whole block of code shouldn't be here, it makes no sense
-for iface in $(ifconfig -a 2> /dev/null | egrep UNSPEC | sed 's/^\([a-zA-Z0-9_]*\) .*/\1/')
+for iface in listIfaceUnspec
 do
 
 	if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
 	then
-		MADWIFI=1
-		ifconfig $iface up
+		setLink ${iface} up
 		printf "$iface\t\tAtheros\t\tmadwifi-ng"
 		if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
 		then
 			IFACE=$(wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath)
-			ifconfig $iface up 2> /dev/null > /dev/null
+			setLink ${iface} up
 			if [ $CH -lt 1000 ]
 			then
 				iwconfig $IFACE channel $CH 2> /dev/null > /dev/null
 			else
 				iwconfig $IFACE freq "$CH"000000 2> /dev/null > /dev/null
 			fi
-		ifconfig $IFACE up 2> /dev/null > /dev/null
+		setLink ${IFACE} up
 		UDEV_ISSUE=$?
 		fi
 
@@ -959,14 +1002,10 @@ do
 
 		#why, dear god why is there a random newline here?
 		printf "\n"
+		sleep 1s
 		continue
 	fi
 done
-
-	if [ ${MADWIFI} -eq 1 ]
-	then
-		sleep 1s
-	fi
 #end random block of code that needs to die
 
 for iface in $(printf "${iface_list}")
@@ -976,16 +1015,16 @@ do
 	ethtool_output="$(ethtool -i $iface 2>&1)"
 	if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]
 	then
-		getStack  $iface
-		getDriver   $iface
-		getChipset $iface
+		getStack  ${iface}
+		getDriver   ${iface}
+		getChipset ${iface}
 		if [ ${VERBOSE} = "1" ]
 		then
-			getFrom $iface
-			getFirmware $iface
-			getExtendedInfo $iface
+			getFrom ${iface}
+			getFirmware ${iface}
+			getExtendedInfo ${iface}
 		fi
-		getPhy     $iface
+		getPhy     ${iface}
 	else
  		printf "\nethtool failed...\n"
 		printf "Only mac80211 devices on kernel 2.6.33 or higher are officially supported by airmon-ng.\n"
