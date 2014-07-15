@@ -100,10 +100,17 @@ then
 	exit 1
 fi
 
-if [ ! -x "$(command -v lspci 2>&1)" ]
+if [ -d /proc/bus/pci ]
 then
-	printf "Please install lspci from your distro's package manager.\n"
-	exit 1
+	if [ ! -x "$(command -v lspci 2>&1)" ]
+	then
+		printf "Please install lspci from your distro's package manager.\n"
+		exit 1
+	else
+		LSPCI=1
+	fi
+else
+	LSPCI=0
 fi
 
 if [ -f /proc/modules ]
@@ -504,7 +511,7 @@ getChipset() {
 			BUSINFO=$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/')
 			CHIPSET=$(lsusb | grep -i "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')
 		#yes the below line looks insane, but broadcom appears to define all the internal buses so we have to detect them here
-		elif [ "${BUS}" = "pci" ] || [ "${BUS}" = "pcmcia" ]
+		elif [ "${BUS}" = "pci" -o "${BUS}" = "pcmcia" ] && [ "${LSPCI}" = "1" ]
 		then
 			if [ -f /sys/class/net/$1/device/vendor -a -f /sys/class/net/$1/device/device ]
 			then
@@ -863,7 +870,7 @@ checkvm() {
 	fi
 
 	# Check using lspci
-	if [ -z ${vm} ]
+	if [ -z ${vm} ] && [ "${LSPCI}" = "1" ]
 	then
 			lspci_data=$(lspci)
 			echo ${lspci_data} | grep -iq "vmware" 2> /dev/null && vm="VMware"
