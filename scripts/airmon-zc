@@ -504,7 +504,7 @@ getChipset() {
 			BUSINFO=$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/')
 			CHIPSET=$(lsusb | grep -i "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')
 		#yes the below line looks insane, but broadcom appears to define all the internal buses so we have to detect them here
-		elif [ "${BUS}" = "pci" ] || [ "${BUS}" = "ssb" ] || [ "${BUS}"= "bcma" ] || [ "${BUS}" = "pcmcia" ]
+		elif [ "${BUS}" = "pci" ] || [ "${BUS}" = "pcmcia" ]
 		then
 			if [ -f /sys/class/net/$1/device/vendor -a -f /sys/class/net/$1/device/device ]
 			then
@@ -533,7 +533,7 @@ getChipset() {
 	elif [ "${DRIVER}" = "mac80211_hwsim" ]
 	then
 		CHIPSET="Software simulator of 802.11 radio(s) for mac80211"
-	elif $(printf "$ethtool_output" | awk '/bus-info/ {print $2}' | grep -q bcma) 
+	elif $(printf "$ethtool_output" | awk '/bus-info/ {print $2}' | grep -q bcma)
 	then
 		BUS="bcma"
 
