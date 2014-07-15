@@ -365,6 +365,13 @@ getDriver() {
 	then
 		echo "Warn ON: USB"
 		BUSADDR="$(printf "$ethtool_output" | awk '/bus-info/ {print $2}'):1.0"
+
+		if [ "$DEBUG" = "1" ]
+		then
+			printf "${BUSADDR}\n"
+
+		fi
+
 		if [ "$BUSADDR" != "" ]
 		then
 			if [ -f /sys/class/net/$1/device/$BUSADDR/uevent ]
@@ -397,17 +404,20 @@ getDriver() {
 
 	#Here we will catch the broken lying drivers not caught above
 	#currently this only functions for pci devices and not usb since lsusb has no -k option
-	if $(modinfo -n $DRIVER  > /dev/null 2>&1)
+	if [ "${MODINFO}" = 1 ]
 	then
-		true
-	else
-		if [ "${DEVICEID}" != "" ] && [ "$BUS" = "pci" ]
+		if $(modinfo -n $DRIVER  > /dev/null 2>&1)
 		then
-			DRIVER="$(lspci -d $DEVICEID -k | awk '/modules/ {print $3}')"
-		fi
-		if [ "$DRIVER" = "" ]
-		then
-			DRIVER="??????"
+			true
+		else
+			if [ "${DEVICEID}" != "" ] && [ "$BUS" = "pci" ]
+			then
+				DRIVER="$(lspci -d $DEVICEID -k | awk '/modules/ {print $3}')"
+			fi
+			if [ "$DRIVER" = "" ]
+			then
+				DRIVER="??????"
+			fi
 		fi
 	fi
 	if [ "$DEBUG" = "1" ]
@@ -513,7 +523,7 @@ getChipset() {
 			fi
 			CHIPSET="unable to detect for sdio $DEVICEID"
 		else
-			CHIPSET="Not pci or usb"
+			CHIPSET="Not pci, usb, or sdio"
 		fi
 	#we don't do a check for usb here but it is obviously only going to work for usb
 	elif [ -f /sys/class/net/$1/device/idVendor -a -f /sys/class/net/$1/device/idProduct ]
@@ -523,6 +533,16 @@ getChipset() {
 	elif [ "${DRIVER}" = "mac80211_hwsim" ]
 	then
 		CHIPSET="Software simulator of 802.11 radio(s) for mac80211"
+	elif $(printf "$ethtool_output" | awk '/bus-info/ {print $2}' | grep -q bcma) 
+	then
+		BUS="bcma"
+
+		if [ "${DRIVER}" = "brcmsmac" ] || [ "${DRIVER}" = "brcmfmac" ] || [ "${DRIVER}" = "b43" ]
+		then
+			CHIPSET="Broadcom on bcma bus, information limited"
+		else
+			CHIPSET="Unrecognized driver \"${DRIVER}\" on bcma bus"
+		fi
 	else
 		CHIPSET="non-mac80211 device? (report this!)"
 	fi
