@@ -707,7 +707,7 @@ scanProcesses() {
 		printf "a short period of time, you may want to kill (some of) them!\n\n"
 		#printf "\nPID\tName\n"
 	else
-		if [ x"${1}" != "xkill" -a x"${1}" = "x" ]]
+		if [ x"${1}" != "xkill" -a x"${1}" = "x" ]
 		then
 			echo "No interfering processes found"
 			return
