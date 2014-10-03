@@ -83,6 +83,8 @@ int handle(int s, unsigned char* data, int len, struct sockaddr_in *s_in)
 	*cmd++ = htons(S_CMD_PACKET);
 	*cmd++ = *pid;
 	plen = len - 2;
+    if (plen < 0)
+        return 0;
 
 	last_id = ntohs(*pid);
 	if (last_id > 20000)
