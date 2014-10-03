@@ -1,0 +1,9 @@
+src/*-ng
+src/besside-ng-crawler
+src/ivstools
+src/kstats
+src/wpaclean
+src/osdep/.os.Linux
+src/osdep/libosdep.a
+*.o
+*.exe
