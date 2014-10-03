@@ -5398,6 +5398,8 @@ int tcp_test(const char* ip_str, const short port)
         if( (unsigned)caplen == sizeof(nh))
         {
             len = ntohl(nh.nh_len);
+            if (len > 1024 || len < 0)
+                continue;
             if( nh.nh_type == 1 && i==0 )
             {
                 i=1;
