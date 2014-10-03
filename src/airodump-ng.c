@@ -4497,7 +4497,7 @@ void gps_tracker( void )
         	}
 
         	// New version, JSON
-        	if( recv( gpsd_sock, line + pos, sizeof( line ) - 1, 0 ) <= 0 )
+        	if( recv( gpsd_sock, line + pos, sizeof( line ) - pos - 1, 0 ) <= 0 )
         		return;
 
         	// search for TPV class: {"class":"TPV"
