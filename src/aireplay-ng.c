@@ -5396,28 +5396,29 @@ int tcp_test(const char* ip_str, const short port)
             }
         }
 
-        if( (unsigned)caplen == sizeof(nh))
+        if(caplen > 0 && (unsigned)caplen == sizeof(nh))
         {
             len = ntohl(nh.nh_len);
-            if (len > packetsize || len < 0)
-                continue;
-            if( nh.nh_type == 1 && i==0 )
+            if (len <= packetsize && len > 0)
             {
-                i=1;
-                caplen = read(sock, packet, len);
-                if(caplen == len)
+                if( nh.nh_type == 1 && i==0 )
                 {
-                    i=2;
-                    break;
+                    i=1;
+                    caplen = read(sock, packet, len);
+                    if(caplen == len)
+                    {
+                        i=2;
+                        break;
+                    }
+                    else
+                    {
+                        i=0;
+                    }
                 }
                 else
                 {
-                    i=0;
+                    caplen = read(sock, packet, len);
                 }
-            }
-            else
-            {
-                caplen = read(sock, packet, len);
             }
         }
 
