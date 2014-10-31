@@ -1,3 +1,24 @@
+Version 1.2-beta4 (changes from aircrack-ng 1.2-beta3) - Released 31 October 2014:
+* Airodump-ng should be able to parse the canonical oui file.
+* Airodump-ng: Fixed GPS stack overflow.
+* Airodump-ng: Fixed stopping cleanly with Ctrl-C.
+* Airmon-zc: better handling for when modules are not available (incomplete)
+* Airmon-zc: users can now start the monitor interface again to change channels
+* Airmon-zc: update to use ip instead of ifconfig if available.
+* Airmon-zc: better handling of devices without pci bus
+* Aireplay-ng: Fixed tcp_test stack overflow.
+* OSdep: Fixed libnl detection. Also avoid detection on non Linux systems.
+* OSdep: Fixed segmentation fault that happens with a malicious server.
+* Besside-ng: Add regular expression matching for the SSID.
+* Buddy-ng: Fixed segmentation fault.
+* Makefile: Fixed 'commands commence before first target' error when building Aircrack-ng.
+* Fixed segfault when changing the optimization when compiling with gcc thanks to Ramiro Polla.
+* Removed airdriver-ng (outdated and not meant for today's kernels)
+* Added gitignore file.
+* Fixed build issues on other compilers by using stdint.h types.
+* Updating installation file and added pkg-config as a requirement.
+* Various small fixes and improvements.
+
 Version 1.2-beta3 (changes from aircrack-ng 1.2-beta2) - Released 31 March 2014:
 * Finally properly fixed the buffer overflow.
 * Fixed channel parsing (eg 108, 125) and updated radiotap parser.
