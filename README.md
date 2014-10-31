@@ -71,7 +71,7 @@ to compile and install the suite:
 * **libnl**:    Add support for netlink (nl80211). Linux only.
     - Requires `libnl1` OR `libnl3`.
     - Dependencies (debian):
-        +  LibNL 1: `libnl-dev`
+        + LibNL 1: `libnl-dev`
         + LibNL 3: `libnl-3-dev` and `libnl-genl-3-dev`.
 
 #### Examples:
