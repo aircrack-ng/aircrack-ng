@@ -61,16 +61,16 @@ to compile and install the suite:
 Example:
 
   * Compiling:
-    make sqlite=true experimental=true
+    make sqlite=true experimental=true pcre=true
 
   * Compiling with gcrypt
     make gcrypt=true
 
   * Installing:
-    make sqlite=true experimental=true install
+    make sqlite=true pcre=true experimental=true install
 
   * Installing, with external scripts:
-    make sqlite=true experimental=true ext_scripts=true
+    make sqlite=true pcre=true experimental=true ext_scripts=true
 
 === Using precompiled binaries ===
 

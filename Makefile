@@ -25,7 +25,7 @@ all:
 	$(MAKE) -C src $(@)
 
 coverity-build:
-	$(COVERITY_BUILD) --dir $(COVERITY_DIR) $(MAKE) sqlite=true experimental=true libnl=true
+	$(COVERITY_BUILD) --dir $(COVERITY_DIR) $(MAKE) sqlite=true experimental=true pcre=true
 
 coverity-package: coverity-build
 	tar czvf $(COVERITY_TAR_GZ) $(COVERITY_DIR)
