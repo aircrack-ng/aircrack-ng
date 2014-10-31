@@ -1,4 +1,4 @@
-Version 1.2-beta4 (changes from aircrack-ng 1.2-beta3) - Released 31 October 2014:
+Version 1.2-rc1 (changes from aircrack-ng 1.2-beta3) - Released 31 October 2014:
 * Airodump-ng should be able to parse the canonical oui file.
 * Airodump-ng: Fixed GPS stack overflow.
 * Airodump-ng: Fixed stopping cleanly with Ctrl-C.
