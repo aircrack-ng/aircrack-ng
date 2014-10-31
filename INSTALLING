@@ -39,8 +39,8 @@ to compile and install the suite:
                          level below this INSTALLING file
             Note: Not working yet.
 
-* unstable: needed to compile tkiptun-ng, easside-ng (and buddy-ng) and
-            wesside-ng
+* experimental: needed to compile tkiptun-ng, easside-ng (and buddy-ng) and
+                wesside-ng
 
 * ext_scripts: needed to build airoscript-ng, versuck-ng, airgraph-ng and 
             airdrop-ng. 
@@ -61,16 +61,16 @@ to compile and install the suite:
 Example:
 
   * Compiling:
-    make sqlite=true unstable=true
+    make sqlite=true experimental=true
 
   * Compiling with gcrypt
     make gcrypt=true
 
   * Installing:
-    make sqlite=true unstable=true install
+    make sqlite=true experimental=true install
 
   * Installing, with external scripts:
-    make sqlite=true unstable=true ext_scripts=true
+    make sqlite=true experimental=true ext_scripts=true
 
 === Using precompiled binaries ===
 

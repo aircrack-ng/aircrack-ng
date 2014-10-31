@@ -1,3 +1,6 @@
+Version 1.2-rc2 (changes from aircrack-ng 1.2-rc1) - Released XX YYYYY ZZZZ:
+* Makefile: Renamed 'unstable' to 'experimental'.
+
 Version 1.2-rc1 (changes from aircrack-ng 1.2-beta3) - Released 31 October 2014:
 * Airodump-ng should be able to parse the canonical oui file.
 * Airodump-ng: Fixed GPS stack overflow.

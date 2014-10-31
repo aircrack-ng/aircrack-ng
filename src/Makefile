@@ -38,7 +38,7 @@ OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
 
-ifeq ($(subst TRUE,true,$(filter TRUE true,$(unstable) $(UNSTABLE))),true)
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(experimental) $(EXPERIMENTAL))),true)
 	SBINFILES	+= wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
 	BINFILES	+= buddy-ng$(EXE)
 endif

@@ -13,7 +13,7 @@ ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
 	MP_FILES += airolib-ng.1
 endif
 
-ifeq ($(subst TRUE,true,$(filter TRUE true,$(unstable) $(UNSTABLE))),true)
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(experimental) $(EXPERIMENTAL))),true)
 	MP_FILES  += buddy-ng.1
 	SMP_FILES += tkiptun-ng.8 easside-ng.8 wesside-ng.8 airmon-zc.8
 endif
@@ -33,7 +33,7 @@ install: uninstall
 # Uninstall just calls cleanfiles with all possible switches enabled to
 # ensure all previously installed manpages are cleaned
 uninstall:
-	$(MAKE) cleanfiles sqlite=true unstable=true
+	$(MAKE) cleanfiles sqlite=true experimental=true
 
 cleanfiles:
 	@-$(foreach CUR_MP,$(MP_FILES), rm -f $(DESTDIR)$(mandir)/$(CUR_MP); echo rm -f $(DESTDIR)$(mandir)/$(CUR_MP); )

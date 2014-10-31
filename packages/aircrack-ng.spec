@@ -118,13 +118,13 @@ etc.).
 %setup -q
 
 %build
-make %{?_smp_mflags} sqlite=true unstable=true
+make %{?_smp_mflags} sqlite=true experimental=true
 
 %install
 
 rm -rf $RPM_BUILD_ROOT
 mkdir $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT prefix=%{_prefix} mandir=%{_mandir}/man1 sqlite=true unstable=true
+make install DESTDIR=$RPM_BUILD_ROOT prefix=%{_prefix} mandir=%{_mandir}/man1 sqlite=true experimental=true
 
 cd $RPM_BUILD_ROOT
 find . -type d | sed '1,2d;s,^\.,\%attr(-\,root\,root) \%dir ,' > %{_builddir}/file.list.%{name}
