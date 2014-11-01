@@ -1,7 +1,7 @@
  /*
   * Server for osdep network driver.  Uses osdep itself!  [ph33r teh recursion]
   *
-  *  Copyright (C) 2006-2013 Thomas d'Otreppe
+  *  Copyright (C) 2006-2014 Thomas d'Otreppe
   *  Copyright (C) 2004, 2005 Christophe Devine
   *
   *  This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@ extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac
 char usage[] =
 
 "\n"
-"  %s - (C) 2006-2013 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2014 Thomas d\'Otreppe\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: makeivs-ng [options]\n"

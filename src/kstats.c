@@ -1,7 +1,7 @@
 /*
  *  Kstat: displays the votes of the korek attack for each keybyte
  *
- *  Copyright (C) 2006-2013 Thomas d'Otreppe
+ *  Copyright (C) 2006-2014 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify

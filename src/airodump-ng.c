@@ -1,7 +1,7 @@
 /*
  *  pcap-compatible 802.11 packet sniffer
  *
- *  Copyright (C) 2006-2013 Thomas d'Otreppe
+ *  Copyright (C) 2006-2014 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -615,7 +615,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
 char usage[] =
 
 "\n"
-"  %s - (C) 2006-2013 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2014 Thomas d\'Otreppe\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: airodump-ng <options> <interface>[,<interface>,...]\n"

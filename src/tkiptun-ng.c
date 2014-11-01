@@ -143,7 +143,7 @@ extern int hexStringToHex(char* in, int length, unsigned char* out);
 char usage[] =
 
 "\n"
-"  %s - (C) 2008-2013 Thomas d\'Otreppe\n"
+"  %s - (C) 2008-2014 Thomas d\'Otreppe\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: tkiptun-ng <options> <replay interface>\n"
