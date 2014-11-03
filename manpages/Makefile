@@ -4,10 +4,8 @@ include		$(AC_ROOT)/common.mak
 MP_FILES	= aircrack-ng.1 airdecap-ng.1 ivstools.1 kstats.1 makeivs-ng.1 \
 		  packetforge-ng.1 airdecloak-ng.1 wpaclean.1 besside-ng-crawler.1
 
-SMP_FILES	= airdriver-ng.8 aireplay-ng.8 airmon-ng.8 airodump-ng.8 \
+SMP_FILES	= aireplay-ng.8 airmon-ng.8 airodump-ng.8 besside-ng.8 \
 		  airserv-ng.8 airtun-ng.8 airbase-ng.8 airodump-ng-oui-update.8 \
-		  besside-ng.8
-
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
 	MP_FILES += airolib-ng.1
