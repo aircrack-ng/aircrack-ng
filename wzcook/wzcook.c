@@ -151,7 +151,7 @@ void WINAPI ServiceMain( DWORD dwArgc, LPTSTR *lpszArgv )
 
         while( 1 )
         {
-            sprintf( keystr, "Static#%04d", keyidx2 );
+            sprintf( keystr, "Static#%04x", keyidx2 );
 
             length = sizeof( buffer );
             memset( buffer, 0, length );
