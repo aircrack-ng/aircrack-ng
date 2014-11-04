@@ -1,3 +1,4 @@
+/*	$NetBSD: ieee80211.h,v 1.26 2013/03/30 14:14:31 christos Exp $	*/
 /*-
  * Copyright (c) 2001 Atsushi Onoe
  * Copyright (c) 2002-2005 Sam Leffler, Errno Consulting
@@ -29,7 +30,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $FreeBSD: src/sys/net80211/ieee80211.h,v 1.12 2006/12/01 18:40:51 imp Exp $
+ * $FreeBSD: src/sys/net80211/ieee80211.h,v 1.10 2005/07/22 16:55:27 sam Exp $
  */
 #ifndef _NET80211_IEEE80211_H_
 #define _NET80211_IEEE80211_H_
@@ -51,7 +52,7 @@ struct ieee80211_plcp_hdr {
 	u_int16_t	i_crc;
 } __packed;
 
-#define IEEE80211_PLCP_SFD      0xF3A0 
+#define IEEE80211_PLCP_SFD      0xF3A0
 #define IEEE80211_PLCP_SERVICE  0x00
 
 /*
@@ -148,6 +149,21 @@ struct ieee80211_qosframe_addr4 {
 #define	IEEE80211_FC0_SUBTYPE_QOS		0x80
 #define	IEEE80211_FC0_SUBTYPE_QOS_NULL		0xc0
 
+/*
+ * DS bit usage
+ *
+ * TA = transmitter address
+ * RA = receiver address
+ * DA = destination address
+ * SA = source address
+ *
+ * ToDS    FromDS  A1(RA)  A2(TA)  A3      A4      Use
+ * -----------------------------------------------------------------
+ *  0       0       DA      SA      BSSID   -       IBSS/DLS
+ *  0       1       DA      BSSID   SA      -       AP -> STA
+ *  1       0       BSSID   SA      DA      -       AP <- STA
+ *  1       1       RA      TA      DA      SA      unspecified (WDS)
+ */
 #define	IEEE80211_FC1_DIR_MASK			0x03
 #define	IEEE80211_FC1_DIR_NODS			0x00	/* STA->STA */
 #define	IEEE80211_FC1_DIR_TODS			0x01	/* STA->AP  */
@@ -158,7 +174,8 @@ struct ieee80211_qosframe_addr4 {
 #define	IEEE80211_FC1_RETRY			0x08
 #define	IEEE80211_FC1_PWR_MGT			0x10
 #define	IEEE80211_FC1_MORE_DATA			0x20
-#define	IEEE80211_FC1_WEP			0x40
+#define	IEEE80211_FC1_PROTECTED			0x40
+#define	IEEE80211_FC1_WEP			0x40	/* pre-RSNA compat */
 #define	IEEE80211_FC1_ORDER			0x80
 
 #define	IEEE80211_SEQ_FRAG_MASK			0x000f
@@ -168,19 +185,22 @@ struct ieee80211_qosframe_addr4 {
 
 #define	IEEE80211_NWID_LEN			32
 
-#define	IEEE80211_QOS_TXOP			0x00ff
+/*
+ * QoS Control field (see 7.1.3.5).
+ */
 /* bit 8 is reserved */
-#define	IEEE80211_QOS_ACKPOLICY			0x60
+#define	IEEE80211_QOS_TXOP			0xff00
+#define	IEEE80211_QOS_AMSDU			0x0080  /* 11n */
+#define	IEEE80211_QOS_ACKPOLICY_NORMAL          0x0000
+#define	IEEE80211_QOS_ACKPOLICY_NOACK           0x0020
+#define	IEEE80211_QOS_ACKPOLICY_NOEXPLACK       0x0040
+#define	IEEE80211_QOS_ACKPOLICY			0x0060
 #define	IEEE80211_QOS_ACKPOLICY_S		5
-#define	IEEE80211_QOS_ESOP			0x10
+#define	IEEE80211_QOS_ACKPOLICY_MASK		0x0060
+#define	IEEE80211_QOS_ACKPOLICY_BA		0x0060
+#define	IEEE80211_QOS_ESOP			0x0010
 #define	IEEE80211_QOS_ESOP_S			4
-#define	IEEE80211_QOS_TID			0x0f
-
-/* does frame have QoS sequence control data */
-#define	IEEE80211_QOS_HAS_SEQ(wh) \
-	(((wh)->i_fc[0] & \
-	  (IEEE80211_FC0_TYPE_MASK | IEEE80211_FC0_SUBTYPE_QOS)) == \
-	  (IEEE80211_FC0_TYPE_DATA | IEEE80211_FC0_SUBTYPE_QOS))
+#define	IEEE80211_QOS_TID			0x000f
 
 /*
  * WME/802.11e information element.
@@ -232,7 +252,14 @@ struct ieee80211_wme_acparams {
 	u_int16_t	acp_txop;
 } __packed;
 
-#define WME_NUM_AC		4	/* 4 AC categories */
+/* WME stream classes */
+enum ieee80211_wme_ac {
+	WME_AC_BE	= 0,		/* best effort */
+	WME_AC_BK	= 1,		/* background */
+	WME_AC_VI	= 2,		/* video */
+	WME_AC_VO	= 3,		/* voice */
+};
+#define WME_NUM_AC	4		/* 4 AC categories */
 
 #define WME_PARAM_ACI		0x60	/* Mask for ACI field */
 #define WME_PARAM_ACI_S		5	/* Shift for ACI field */
@@ -335,6 +362,50 @@ struct ieee80211_frame_cfend {		/* NB: also CF-End+CF-Ack */
 	/* FCS */
 } __packed;
 
+static __inline int
+ieee80211_has_seq(const struct ieee80211_frame *wh)
+{
+	return (wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK) !=
+	    IEEE80211_FC0_TYPE_CTL;
+}
+
+static __inline int
+ieee80211_has_addr4(const struct ieee80211_frame *wh)
+{
+	return (wh->i_fc[1] & IEEE80211_FC1_DIR_MASK) ==
+	    IEEE80211_FC1_DIR_DSTODS;
+}
+
+static __inline int
+ieee80211_has_qos(const struct ieee80211_frame *wh)
+{
+	return (wh->i_fc[0] &
+	    (IEEE80211_FC0_TYPE_MASK | IEEE80211_FC0_SUBTYPE_QOS)) ==
+	    (IEEE80211_FC0_TYPE_DATA | IEEE80211_FC0_SUBTYPE_QOS);
+}
+
+static __inline int
+ieee80211_has_htc(const struct ieee80211_frame *wh)
+{
+	return (wh->i_fc[1] & IEEE80211_FC1_ORDER) &&
+	    (ieee80211_has_qos(wh) ||
+	     (wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK) ==
+	     IEEE80211_FC0_TYPE_MGT);
+}
+
+static __inline u_int16_t
+ieee80211_get_qos(const struct ieee80211_frame *wh)
+{
+	const u_int8_t *frm;
+
+	if (ieee80211_has_addr4(wh))
+		frm = ((const struct ieee80211_qosframe_addr4 *)wh)->i_qos;
+	else
+		frm = ((const struct ieee80211_qosframe *)wh)->i_qos;
+
+	return le16toh(*(const u_int16_t *)frm);
+}
+
 /*
  * BEACON management packets
  *
@@ -401,14 +472,30 @@ enum {
 	IEEE80211_ELEMID_TIM		= 5,
 	IEEE80211_ELEMID_IBSSPARMS	= 6,
 	IEEE80211_ELEMID_COUNTRY	= 7,
+	IEEE80211_ELEMID_EDCAPARMS	= 12,
 	IEEE80211_ELEMID_CHALLENGE	= 16,
 	/* 17-31 reserved for challenge text extension */
+	IEEE80211_ELEMID_PWRCNSTR	= 32,
+	IEEE80211_ELEMID_PWRCAP		= 33,
+	IEEE80211_ELEMID_TPCREQ		= 34,
+	IEEE80211_ELEMID_TPCREP		= 35,
+	IEEE80211_ELEMID_SUPPCHAN	= 36,
+	IEEE80211_ELEMID_CHANSWITCHANN	= 37,
+	IEEE80211_ELEMID_MEASREQ	= 38,
+	IEEE80211_ELEMID_MEASREP	= 39,
+	IEEE80211_ELEMID_QUIET		= 40,
+	IEEE80211_ELEMID_IBSSDFS	= 41,
 	IEEE80211_ELEMID_ERP		= 42,
+	IEEE80211_ELEMID_HTCAP		= 45,	/* 11n */
+	IEEE80211_ELEMID_QOS_CAP	= 46,
 	IEEE80211_ELEMID_RSN		= 48,
 	IEEE80211_ELEMID_XRATES		= 50,
+	IEEE80211_ELEMID_TIE		= 56,	/* 11r */
+	IEEE80211_ELEMID_HTINFO		= 61,	/* 11n */
+	IEEE80211_ELEMID_MMIE		= 76,	/* 11w */
 	IEEE80211_ELEMID_TPC		= 150,
 	IEEE80211_ELEMID_CCKM		= 156,
-	IEEE80211_ELEMID_VENDOR		= 221,	/* vendor private */
+	IEEE80211_ELEMID_VENDOR		= 221	/* vendor private */
 };
 
 struct ieee80211_tim_ie {
@@ -420,15 +507,17 @@ struct ieee80211_tim_ie {
 	u_int8_t	tim_bitmap[1];		/* variable-length bitmap */
 } __packed;
 
+struct ieee80211_band {
+	u_int8_t schan;			/* starting channel */
+	u_int8_t nchan;			/* number channels */
+	u_int8_t maxtxpwr;		/* tx power cap */
+} __packed;
+
 struct ieee80211_country_ie {
 	u_int8_t	ie;			/* IEEE80211_ELEMID_COUNTRY */
 	u_int8_t	len;
 	u_int8_t	cc[3];			/* ISO CC+(I)ndoor/(O)utdoor */
-	struct {
-		u_int8_t schan;			/* starting channel */
-		u_int8_t nchan;			/* number channels */
-		u_int8_t maxtxpwr;		/* tx power cap */
-	} __packed band[4];			/* up to 4 sub bands */
+	struct ieee80211_band band[4];		/* up to 4 sub bands */
 } __packed;
 
 #define IEEE80211_CHALLENGE_LEN		128
@@ -488,12 +577,6 @@ struct ieee80211_country_ie {
 #define	WME_PARAM_OUI_SUBTYPE	0x01
 #define	WME_VERSION		1
 
-/* WME stream classes */
-#define	WME_AC_BE	0		/* best effort */
-#define	WME_AC_BK	1		/* background */
-#define	WME_AC_VI	2		/* video */
-#define	WME_AC_VO	3		/* voice */
-
 /*
  * AUTH management packets
  *
@@ -520,14 +603,14 @@ typedef u_int8_t *ieee80211_mgt_auth_t;
 
 enum {
 	IEEE80211_AUTH_OPEN_REQUEST		= 1,
-	IEEE80211_AUTH_OPEN_RESPONSE		= 2,
+	IEEE80211_AUTH_OPEN_RESPONSE		= 2
 };
 
 enum {
 	IEEE80211_AUTH_SHARED_REQUEST		= 1,
 	IEEE80211_AUTH_SHARED_CHALLENGE		= 2,
 	IEEE80211_AUTH_SHARED_RESPONSE		= 3,
-	IEEE80211_AUTH_SHARED_PASS		= 4,
+	IEEE80211_AUTH_SHARED_PASS		= 4
 };
 
 /*
@@ -569,13 +652,16 @@ enum {
 	IEEE80211_STATUS_TOO_MANY_STATIONS	= 22,
 	IEEE80211_STATUS_RATES			= 23,
 	IEEE80211_STATUS_SHORTSLOT_REQUIRED	= 25,
-	IEEE80211_STATUS_DSSSOFDM_REQUIRED	= 26,
+	IEEE80211_STATUS_DSSSOFDM_REQUIRED	= 26
 };
 
 #define	IEEE80211_WEP_KEYLEN		5	/* 40bit */
 #define	IEEE80211_WEP_IVLEN		3	/* 24bit */
 #define	IEEE80211_WEP_KIDLEN		1	/* 1 octet */
 #define	IEEE80211_WEP_CRCLEN		4	/* CRC-32 */
+#define	IEEE80211_WEP_TOTLEN		(IEEE80211_WEP_IVLEN + \
+					 IEEE80211_WEP_KIDLEN + \
+					 IEEE80211_WEP_CRCLEN)
 #define	IEEE80211_WEP_NKID		4	/* number of key ids */
 
 /*
@@ -620,7 +706,7 @@ enum {
 
 #define	IEEE80211_AID(b)	((b) &~ 0xc000)
 
-/* 
+/*
  * RTS frame length parameters.  The default is specified in
  * the 802.11 spec as 512; we treat it as implementation-dependent
  * so it's defined in ieee80211_var.h.  The max may be wrong
@@ -629,7 +715,7 @@ enum {
 #define	IEEE80211_RTS_MIN		1
 #define	IEEE80211_RTS_MAX		2346
 
-/* 
+/*
  * TX fragmentation parameters.  As above for RTS, we treat
  * default as implementation-dependent so define it elsewhere.
  */
@@ -637,27 +723,40 @@ enum {
 #define	IEEE80211_FRAG_MAX		2346
 
 /*
- * Beacon interval (TU's).  Min+max come from WiFi requirements.
- * As above, we treat default as implementation-dependent so
- * define it elsewhere.
+ * 802.11 frame duration definitions.
  */
-#define	IEEE80211_BINTVAL_MAX	1000	/* max beacon interval (TU's) */
-#define	IEEE80211_BINTVAL_MIN	25	/* min beacon interval (TU's) */
 
-/*
- * DTIM period (beacons).  Min+max are not really defined
- * by the protocol but we want them publicly visible so
- * define them here.
- */
-#define	IEEE80211_DTIM_MAX	15	/* max DTIM period */
-#define	IEEE80211_DTIM_MIN	1	/* min DTIM period */
+struct ieee80211_duration {
+	uint16_t	d_rts_dur;
+	uint16_t	d_data_dur;
+	uint16_t	d_plcp_len;
+	uint8_t		d_residue;	/* unused octets in time slot */
+};
 
-/*
- * Beacon miss threshold (beacons).  As for DTIM, we define
- * them here to be publicly visible.  Note the max may be
- * clamped depending on device capabilities.
- */
-#define	IEEE80211_HWBMISS_MIN 	1
-#define	IEEE80211_HWBMISS_MAX 	255
+/* One Time Unit (TU) is 1Kus = 1024 microseconds. */
+#define IEEE80211_DUR_TU		1024
 
-#endif /* _NET80211_IEEE80211_H_ */
+/* IEEE 802.11b durations for DSSS PHY in microseconds */
+#define IEEE80211_DUR_DS_LONG_PREAMBLE	144
+#define IEEE80211_DUR_DS_SHORT_PREAMBLE	72
+
+#define IEEE80211_DUR_DS_SLOW_PLCPHDR	48
+#define IEEE80211_DUR_DS_FAST_PLCPHDR	24
+#define IEEE80211_DUR_DS_SLOW_ACK	112
+#define IEEE80211_DUR_DS_FAST_ACK	56
+#define IEEE80211_DUR_DS_SLOW_CTS	112
+#define IEEE80211_DUR_DS_FAST_CTS	56
+
+#define IEEE80211_DUR_DS_SLOT		20
+#define IEEE80211_DUR_DS_SIFS		10
+#define IEEE80211_DUR_DS_PIFS	(IEEE80211_DUR_DS_SIFS + IEEE80211_DUR_DS_SLOT)
+#define IEEE80211_DUR_DS_DIFS	(IEEE80211_DUR_DS_SIFS + \
+				 2 * IEEE80211_DUR_DS_SLOT)
+#define IEEE80211_DUR_DS_EIFS	(IEEE80211_DUR_DS_SIFS + \
+				 IEEE80211_DUR_DS_SLOW_ACK + \
+				 IEEE80211_DUR_DS_LONG_PREAMBLE + \
+				 IEEE80211_DUR_DS_SLOW_PLCPHDR + \
+				 IEEE80211_DUR_DS_DIFS)
+
+
+#endif /* !_NET80211_IEEE80211_H_ */
