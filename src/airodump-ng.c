@@ -3723,12 +3723,11 @@ int dump_write_csv( void )
 char * sanitize_xml(unsigned char * text, int length)
 {
 	int i;
-	size_t len;
+	size_t len, current_text_len;
 	unsigned char * pos;
-	char * newpos;
 	char * newtext = NULL;
 	if (text != NULL && length > 0) {
-		len = 6 * length;
+		len = 8 * length;
 		newtext = (char *)calloc(1, (len + 1) * sizeof(char)); // Make sure we have enough space
 		pos = text;
 		for (i = 0; i < length; ++i, ++pos) {
@@ -3748,13 +3747,20 @@ char * sanitize_xml(unsigned char * text, int length)
 				case '"':
 					strncat(newtext, "&quot;", len);
 					break;
+				case '\r':
+					strncat(newtext, "&#xD;", len);
+					break;
+				case '\n':
+					strncat(newtext, "&#xA;", len);
+					break;
 				default:
-					if ( isprint((int)(*pos)) || (*pos)>127 ) {
+					if ( isprint((int)(*pos)) ) {
 						newtext[strlen(newtext)] = *pos;
 					} else {
-						newtext[strlen(newtext)] = '\\';
-						newpos = newtext + strlen(newtext);
-						snprintf(newpos, strlen(newpos) + 1, "%3u", *pos);
+						strncat(newtext, "&#x", len);
+						current_text_len = strlen(newtext);
+						snprintf(newtext + current_text_len, len - current_text_len + 1, "%4x", *pos);
+						strncat(newtext, ";", len);
 					}
 					break;
 			}
