@@ -400,7 +400,7 @@ int timeoutFrag()
     while(cur->next != NULL)
     {
         old = cur->next;
-        timediff = (tv.tv_sec - old->access.tv_sec)*1000000 + (tv.tv_usec - old->access.tv_usec);
+        timediff = (tv.tv_sec - old->access.tv_sec)*1000000UL + (tv.tv_usec - old->access.tv_usec);
         if(timediff > FRAG_TIMEOUT)
         {
             //remove captured fragments

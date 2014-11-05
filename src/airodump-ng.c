@@ -732,7 +732,7 @@ void update_rx_quality( )
     /* accesspoints */
     while( ap_cur != NULL )
     {
-        time_diff = 1000000 * (cur_time.tv_sec  - ap_cur->ftimer.tv_sec )
+        time_diff = 1000000UL * (cur_time.tv_sec  - ap_cur->ftimer.tv_sec )
                             + (cur_time.tv_usec - ap_cur->ftimer.tv_usec);
 
         /* update every `QLT_TIME`seconds if the rate is low, or every 500ms otherwise */
@@ -741,12 +741,12 @@ void update_rx_quality( )
             /* at least one frame captured */
             if(ap_cur->fcapt > 1)
             {
-                capt_time =   ( 1000000 * (ap_cur->ftimel.tv_sec  - ap_cur->ftimef.tv_sec )    //time between first and last captured frame
+                capt_time =   ( 1000000UL * (ap_cur->ftimel.tv_sec  - ap_cur->ftimef.tv_sec )    //time between first and last captured frame
                                         + (ap_cur->ftimel.tv_usec - ap_cur->ftimef.tv_usec) );
 
-                miss_time =   ( 1000000 * (ap_cur->ftimef.tv_sec  - ap_cur->ftimer.tv_sec )    //time between timer reset and first frame
+                miss_time =   ( 1000000UL * (ap_cur->ftimef.tv_sec  - ap_cur->ftimer.tv_sec )    //time between timer reset and first frame
                                         + (ap_cur->ftimef.tv_usec - ap_cur->ftimer.tv_usec) )
-                            + ( 1000000 * (cur_time.tv_sec  - ap_cur->ftimel.tv_sec )          //time between last frame and this moment
+                            + ( 1000000UL * (cur_time.tv_sec  - ap_cur->ftimel.tv_sec )          //time between last frame and this moment
                                         + (cur_time.tv_usec - ap_cur->ftimel.tv_usec) );
 
                 //number of frames missed at the time where no frames were captured; extrapolated by assuming a constant framerate
@@ -775,7 +775,7 @@ void update_rx_quality( )
     /* stations */
     while( st_cur != NULL )
     {
-        time_diff = 1000000 * (cur_time.tv_sec  - st_cur->ftimer.tv_sec )
+        time_diff = 1000000UL * (cur_time.tv_sec  - st_cur->ftimer.tv_sec )
                             + (cur_time.tv_usec - st_cur->ftimer.tv_usec);
 
         if( time_diff > 10000000 )
@@ -1089,7 +1089,7 @@ int list_check_decloak(struct pkt_buf **list, int length, unsigned char* packet)
 
     gettimeofday(&tv1, NULL);
 
-    timediff = (((tv1.tv_sec - ((*list)->ctime.tv_sec)) * 1000000) + (tv1.tv_usec - ((*list)->ctime.tv_usec))) / 1000;
+    timediff = (((tv1.tv_sec - ((*list)->ctime.tv_sec)) * 1000000UL) + (tv1.tv_usec - ((*list)->ctime.tv_usec))) / 1000;
     if( timediff > BUFFER_TIME )
     {
         list_tail_free(list);
@@ -1100,7 +1100,7 @@ int list_check_decloak(struct pkt_buf **list, int length, unsigned char* packet)
     {
         if(next->next != NULL)
         {
-            timediff = (((tv1.tv_sec - (next->next->ctime.tv_sec)) * 1000000) + (tv1.tv_usec - (next->next->ctime.tv_usec))) / 1000;
+            timediff = (((tv1.tv_sec - (next->next->ctime.tv_sec)) * 1000000UL) + (tv1.tv_usec - (next->next->ctime.tv_usec))) / 1000;
             if( timediff > BUFFER_TIME )
             {
                 list_tail_free(&(next->next));
@@ -6426,10 +6426,10 @@ usage:
 
         gettimeofday( &tv1, NULL );
 
-        cycle_time = 1000000 * ( tv1.tv_sec  - tv3.tv_sec  )
+        cycle_time = 1000000UL * ( tv1.tv_sec  - tv3.tv_sec  )
                              + ( tv1.tv_usec - tv3.tv_usec );
 
-        cycle_time2 = 1000000 * ( tv1.tv_sec  - tv4.tv_sec  )
+        cycle_time2 = 1000000UL * ( tv1.tv_sec  - tv4.tv_sec  )
                               + ( tv1.tv_usec - tv4.tv_usec );
 
         if( G.active_scan_sim > 0 && cycle_time2 > G.active_scan_sim*1000 )
@@ -6567,7 +6567,7 @@ usage:
                 {
                     gettimeofday( &tv2, NULL );
 
-                    time_slept += 1000000 * ( tv2.tv_sec  - tv1.tv_sec  )
+                    time_slept += 1000000UL * ( tv2.tv_sec  - tv1.tv_sec  )
                                         + ( tv2.tv_usec - tv1.tv_usec );
 
                     continue;
@@ -6586,7 +6586,7 @@ usage:
 
         gettimeofday( &tv2, NULL );
 
-        time_slept += 1000000 * ( tv2.tv_sec  - tv1.tv_sec  )
+        time_slept += 1000000UL * ( tv2.tv_sec  - tv1.tv_sec  )
                               + ( tv2.tv_usec - tv1.tv_usec );
 
         if( time_slept > REFRESH_RATE && time_slept > G.update_s * 1000000)
@@ -6688,7 +6688,7 @@ usage:
 
     if(G.own_channels)
         free(G.own_channels);
-    
+
     if(G.f_essid)
         free(G.f_essid);
 

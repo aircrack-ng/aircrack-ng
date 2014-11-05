@@ -722,7 +722,7 @@ int timeoutFrag()
     while(cur->next != NULL)
     {
         old = cur->next;
-        timediff = (tv.tv_sec - old->access.tv_sec)*1000000 + (tv.tv_usec - old->access.tv_usec);
+        timediff = (tv.tv_sec - old->access.tv_sec)*1000000UL + (tv.tv_usec - old->access.tv_usec);
         if(timediff > FRAG_TIMEOUT)
         {
             //remove captured fragments
@@ -2994,7 +2994,7 @@ skip_probe:
 
                     //set timestamp
                     gettimeofday( &tv1,  NULL );
-                    timestamp=tv1.tv_sec*1000000 + tv1.tv_usec;
+                    timestamp=tv1.tv_sec*1000000UL + tv1.tv_usec;
 
                     //copy timestamp into response; a mod 2^64 counter incremented each microsecond
                     for(i=0; i<8; i++)
@@ -3089,7 +3089,7 @@ skip_probe:
 
                     //set timestamp
                     gettimeofday( &tv1,  NULL );
-                    timestamp=tv1.tv_sec*1000000 + tv1.tv_usec;
+                    timestamp=tv1.tv_sec*1000000UL + tv1.tv_usec;
 
                     //copy timestamp into response; a mod 2^64 counter incremented each microsecond
                     for(i=0; i<8; i++)
@@ -3523,7 +3523,7 @@ void beacon_thread( void *arg )
 //             ticks[2] = 0;
             fflush(stdout);
             gettimeofday( &tv1,  NULL );
-            timestamp=tv1.tv_sec*1000000 + tv1.tv_usec;
+            timestamp=tv1.tv_sec*1000000UL + tv1.tv_usec;
             fflush(stdout);
 
 

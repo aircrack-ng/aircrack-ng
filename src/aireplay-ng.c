@@ -507,7 +507,7 @@ int read_packet(void *buf, size_t count, struct rx_info *ri)
 	return rc;
 }
 
-void read_sleep( int usec )
+void read_sleep( unsigned long usec )
 {
     struct timeval tv, tv2, tv3;
     int caplen;
@@ -519,7 +519,7 @@ void read_sleep( int usec )
     tv3.tv_sec=0;
     tv3.tv_usec=10000;
 
-    while( ((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) < (usec) )
+    while( ((tv2.tv_sec*1000000UL - tv.tv_sec*1000000UL) + (tv2.tv_usec - tv.tv_usec)) < (usec) )
     {
         FD_ZERO( &rfds );
         FD_SET( dev.fd_in, &rfds );
@@ -623,7 +623,7 @@ int wait_for_beacon(unsigned char *bssid, unsigned char *capa, char *essid)
             len = read_packet(pkt_sniff, sizeof(pkt_sniff), NULL);
 
             gettimeofday(&tv2, NULL);
-            if(((tv2.tv_sec-tv.tv_sec)*1000000) + (tv2.tv_usec-tv.tv_usec) > 10000*1000) //wait 10sec for beacon frame
+            if(((tv2.tv_sec-tv.tv_sec)*1000000UL) + (tv2.tv_usec-tv.tv_usec) > 10000*1000) //wait 10sec for beacon frame
             {
                 return -1;
             }
@@ -1968,7 +1968,7 @@ int do_attack_fake_auth( void )
                 if(opt.npackets == -1) x_send = 4;
                 state = 0;
                 challengelen = 0;
-                read_sleep( deauth_wait * 1000000 );
+                read_sleep( deauth_wait * 1000000UL );
                 deauth_wait += 2;
                 continue;
             }
@@ -4838,14 +4838,14 @@ int do_attack_fragment()
                 }
 
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (100*1000) && acksgot >0 && acksgot < packets  )//wait 100ms for acks
+                if (((tv2.tv_sec*1000000UL - tv.tv_sec*1000000UL) + (tv2.tv_usec - tv.tv_usec)) > (100*1000) && acksgot >0 && acksgot < packets  )//wait 100ms for acks
                 {
                     PCT; printf("Not enough acks, repeating...\n");
                     again = RETRY;
                     break;
                 }
 
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 1500ms for an answer
+                if (((tv2.tv_sec*1000000UL - tv.tv_sec*1000000UL) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 1500ms for an answer
                 {
                     PCT; printf("No answer, repeating...\n");
                     round++;
@@ -4981,14 +4981,14 @@ int do_attack_fragment()
                 }
 
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (100*1000) && acksgot >0 && acksgot < packets  )//wait 100ms for acks
+                if (((tv2.tv_sec*1000000UL - tv.tv_sec*1000000UL) + (tv2.tv_usec - tv.tv_usec)) > (100*1000) && acksgot >0 && acksgot < packets  )//wait 100ms for acks
                 {
                     PCT; printf("Not enough acks, repeating...\n");
                     again = RETRY;
                     break;
                 }
 
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 1500ms for an answer
+                if (((tv2.tv_sec*1000000UL - tv.tv_sec*1000000UL) + (tv2.tv_usec - tv.tv_usec)) > (1500*1000) && !gotit) //wait 1500ms for an answer
                 {
                     PCT; printf("No answer, repeating...\n");
                     round++;
@@ -5488,7 +5488,7 @@ int tcp_test(const char* ip_str, const short port)
             //simple "high-precision" usleep
             select(1, NULL, NULL, NULL, &tv3);
         }
-        times[i] = ((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec));
+        times[i] = ((tv2.tv_sec*1000000UL - tv.tv_sec*1000000UL) + (tv2.tv_usec - tv.tv_usec));
         printf( "\r%d/%d\r", i, REQUESTS);
         fflush(stdout);
         close(sock);
@@ -5522,7 +5522,7 @@ int do_attack_test()
     int ret=0;
     float avg2;
     struct rx_info ri;
-    int atime=200;  //time in ms to wait for answer packet (needs to be higher for airserv)
+    unsigned long atime=200;  //time in ms to wait for answer packet (needs to be higher for airserv)
     unsigned char nulldata[1024];
 
     if(opt.port_out > 0)
@@ -5683,7 +5683,7 @@ int do_attack_test()
             }
 
             gettimeofday( &tv2, NULL );
-            if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (3*atime*1000)) //wait 'atime'ms for an answer
+            if (((tv2.tv_sec*1000000UL - tv.tv_sec*1000000UL) + (tv2.tv_usec - tv.tv_usec)) > (3*atime*1000)) //wait 'atime'ms for an answer
             {
                 break;
             }
@@ -5884,7 +5884,7 @@ int do_attack_test()
                 }
 
                 gettimeofday( &tv2, NULL );
-                if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (atime*1000)) //wait 'atime'ms for an answer
+                if (((tv2.tv_sec*1000000UL - tv.tv_sec*1000000UL) + (tv2.tv_usec - tv.tv_usec)) > (atime*1000)) //wait 'atime'ms for an answer
                 {
                     break;
                 }
@@ -6004,7 +6004,7 @@ int do_attack_test()
                         }
 
                         gettimeofday( &tv2, NULL );
-                        if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (100*1000)) //wait 300ms for an answer
+                        if (((tv2.tv_sec*1000000UL - tv.tv_sec*1000000UL) + (tv2.tv_usec - tv.tv_usec)) > (100*1000)) //wait 300ms for an answer
                         {
                             break;
                         }
@@ -6220,7 +6220,7 @@ int do_attack_test()
                     }
 
                     gettimeofday( &tv2, NULL );
-                    if (((tv2.tv_sec*1000000 - tv.tv_sec*1000000) + (tv2.tv_usec - tv.tv_usec)) > (3*atime*1000)) //wait 3*'atime' ms for an answer
+                    if (((tv2.tv_sec*1000000UL - tv.tv_sec*1000000UL) + (tv2.tv_usec - tv.tv_usec)) > (3*atime*1000)) //wait 3*'atime' ms for an answer
                     {
                         break;
                     }
