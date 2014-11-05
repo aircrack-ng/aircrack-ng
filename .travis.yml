@@ -5,4 +5,4 @@ compiler:
 install:
   - sudo apt-get update
   - sudo apt-get install libnl-3-dev libgcrypt11-dev zlib1g-dev libsqlite3-dev libpcap-dev libssl-dev libnl-genl-3-dev
-script: make sqlite=true unstable=true && make check sqlite=true unstable=true && make clean && make sqlite=true unstable=true gcrypt=true && make check sqlite=true unstable=true gcrypt=true
+script: make sqlite=true experimental=true && make check sqlite=true experimental=true && make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
