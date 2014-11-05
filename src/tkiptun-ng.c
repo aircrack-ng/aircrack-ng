@@ -693,7 +693,7 @@ int read_packet(void *buf, size_t count, struct rx_info *ri)
     return rc;
 }
 
-void read_sleep( int usec )
+void read_sleep( unsigned long usec )
 {
     struct timeval tv, tv2, tv3;
     int caplen;
