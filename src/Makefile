@@ -16,7 +16,7 @@ BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
 
 LIBPCRE		=
 ifeq ($(PCRE), true)
-	LIBPCRE	= $(shell pcre-config --libs)
+	LIBPCRE = $(shell $(PKG_CONFIG) --libs libpcre)
 endif
 
 ifneq ($(OSNAME), cygwin) #There is yet no libpcap support for windows, so we skip the crawler

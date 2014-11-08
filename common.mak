@@ -39,7 +39,7 @@ PCRE            = true
 endif
 
 ifeq ($(PCRE), true)
-COMMON_CFLAGS += $(shell pcre-config --cflags) -DHAVE_PCRE
+COMMON_CFLAGS += $(shell $(PKG_CONFIG) --cflags libpcre) -DHAVE_PCRE
 endif
 
 ifeq ($(OSNAME), cygwin)
