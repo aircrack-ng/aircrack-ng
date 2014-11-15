@@ -1,7 +1,15 @@
 Version 1.2-rc2 (changes from aircrack-ng 1.2-rc1) - Released XX YYYYY ZZZZ:
 * Makefile: Renamed 'unstable' to 'experimental'.
+* Airodump-ng: Fixed XML sanitizing.
 * Airmon-ng: Airmon-zc is now stable enough to replace airmon-ng.
-* Manpages: Forgot to remove airdriver-ng manpage and references to it.
+* Manpages: Removed airdriver-ng manpage and references to it (forgot to do it before the previous release).
+* Manpages: Updated 'see also' references in all manpages.
+* PCRE: Added it in various places and docs.
+* WZCook: Fixed processing values stored in register.
+* Fixed 64 bit promotion issues.
+* Updated a few headers files (if_llc, ieee80211, ethernet and if_arp).
+* Travis CI: updated make parameter and add testing with pcre.
+* Compilation: de-hardcode -lpcap to allow specifying pcap libraries.
 
 Version 1.2-rc1 (changes from aircrack-ng 1.2-beta3) - Released 31 October 2014:
 * Airodump-ng should be able to parse the canonical oui file.
