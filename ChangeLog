@@ -15,10 +15,10 @@ Version 1.2-rc1 (changes from aircrack-ng 1.2-beta3) - Released 31 October 2014:
 * Airodump-ng should be able to parse the canonical oui file.
 * Airodump-ng: Fixed GPS stack overflow.
 * Airodump-ng: Fixed stopping cleanly with Ctrl-C.
-* Airmon-zc: better handling for when modules are not available (incomplete)
-* Airmon-zc: users can now start the monitor interface again to change channels
+* Airmon-zc: better handling for when modules are not available (incomplete).
+* Airmon-zc: users can now start the monitor interface again to change channels.
 * Airmon-zc: update to use ip instead of ifconfig if available.
-* Airmon-zc: better handling of devices without pci bus
+* Airmon-zc: better handling of devices without pci bus.
 * Aireplay-ng: Fixed tcp_test stack overflow.
 * OSdep: Fixed libnl detection. Also avoid detection on non Linux systems.
 * OSdep: Fixed segmentation fault that happens with a malicious server.
@@ -26,10 +26,10 @@ Version 1.2-rc1 (changes from aircrack-ng 1.2-beta3) - Released 31 October 2014:
 * Buddy-ng: Fixed segmentation fault.
 * Makefile: Fixed 'commands commence before first target' error when building Aircrack-ng.
 * Fixed segfault when changing the optimization when compiling with gcc thanks to Ramiro Polla.
-* Removed airdriver-ng (outdated and not meant for today's kernels)
+* Removed airdriver-ng (outdated and not meant for today's kernels).
 * Added gitignore file.
 * Fixed build issues on other compilers by using stdint.h types.
-* Fixed CVE-2014-8321, CVE-2014-8322, CVE-2014-8323 and CVE-2014-8324 across multiple tools
+* Fixed CVE-2014-8321, CVE-2014-8322, CVE-2014-8323 and CVE-2014-8324 across multiple tools.
 * Updating installation file and added pkg-config as a requirement.
 * Various small fixes and improvements.
 
@@ -60,7 +60,7 @@ Version 1.2-beta1 (changes from aircrack-ng 1.1) - Released 25 May 2013:
 * Airmon-ng: Added 'check kill' to automatically kill services that could interfere.
 * Airmon-ng: Fixed issues with Intel chipsets detection.
 * Airmon-ng: Updated iw download link.
-* Airmon-ng: Better mac80211 handling
+* Airmon-ng: Better mac80211 handling.
 * Airmon-ng: Added detection for WiLink TI driver, rtl819xU, iwlwifi.
 * Airmon-zc: Improved version of Airmon-ng with more detailled information.
 * Airdecap-ng: Fixed decoding QoS frames (Closes: #667 and #858).
@@ -68,7 +68,7 @@ Version 1.2-beta1 (changes from aircrack-ng 1.1) - Released 25 May 2013:
 * Airbase-ng: Fixed bug using clients list.
 * Airbase-ng: Fixed issue with QoS (ticket #760).
 * Airbase-ng: Fixed sending beacons with null SSID.
-* Airbase-ng: Allow non ASCII ESSID
+* Airbase-ng: Allow non ASCII ESSID.
 * Airodump-ng: Fixed buffer overflow (ticket #728).
 * Airodump-ng: Fixed channel parsing.
 * Airodump-ng: Fixed FreeBSD battery reading.
@@ -103,7 +103,7 @@ Version 1.2-beta1 (changes from aircrack-ng 1.1) - Released 25 May 2013:
 * Airserv-ng: Fixed crash when clients disconnect.
 * Besside-ng-crawler: Added EAPOL Crawler.
 * Airdecloak-ng: Fixed bug when using pcap files with PPI headers.
-* dcrack: Distributed cracking server/client
+* dcrack: Distributed cracking server/client.
 * wifi-detect.sh: reference script for testing wifi card detection using iwconfig vs ls /sys/class/net
 * WPA Clean: Tool to merge and clean WPA capture files.
 * Wireless Panda: C# Library to parse Airodump-ng output files (and added example project).
