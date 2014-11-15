@@ -21,6 +21,7 @@ Version 1.2-rc1 (changes from aircrack-ng 1.2-beta3) - Released 31 October 2014:
 * Removed airdriver-ng (outdated and not meant for today's kernels)
 * Added gitignore file.
 * Fixed build issues on other compilers by using stdint.h types.
+* Fixed CVE-2014-8321, CVE-2014-8322, CVE-2014-8323 and CVE-2014-8324 across multiple tools
 * Updating installation file and added pkg-config as a requirement.
 * Various small fixes and improvements.
 
