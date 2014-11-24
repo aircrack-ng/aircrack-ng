@@ -99,7 +99,7 @@ uninstall:
 	@for i in $(docdir)/*.1 ; do rm -rf $(mandir)/man1/$$i ; done
 	@for i in $(srcdir)/locale/* ; do \
 		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
-			make -s -C $$i uninstall localedir=$(locale) ; \
+			make -s -C $$i uninstall localedir="$(locale)" ; \
 		fi ; \
 	done
 	@echo "Uninstalled succesfully"
