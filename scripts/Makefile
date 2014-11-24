@@ -30,6 +30,10 @@ uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/airmon-ng
 	-rm -f $(DESTDIR)$(sbindir)/airdriver-ng
 	-rm -f $(DESTDIR)$(sbindir)/airodump-ng-oui-update
+	$(MAKE) -C airdrop-ng $(@)
+	$(MAKE) -C airgraph-ng $(@)
+	$(MAKE) -C airoscript-ng $(@)
+	$(MAKE) -C versuck-ng $(@)
 
 clean:
 	@echo Nothing to do
