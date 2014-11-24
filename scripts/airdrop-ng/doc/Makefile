@@ -1,3 +1,5 @@
+AC_ROOT		= ../../../
+include		$(AC_ROOT)/common.mak
 DOCFILES = Apple.sample.txt dropRules.conf.example
 default: all
 
