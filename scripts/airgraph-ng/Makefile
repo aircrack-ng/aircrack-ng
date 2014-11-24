@@ -5,7 +5,7 @@ include		$(AC_ROOT)/common.mak
 default: all
 
 all:
-	@echo Nothing to do. Run make install
+	@echo "Nothing to do. Run make install"
 
 install: doc
 	python setup.py install --prefix="$(prefix)" --record files.txt

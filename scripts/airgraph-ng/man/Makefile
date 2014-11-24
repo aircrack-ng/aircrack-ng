@@ -7,7 +7,7 @@ MP_FILES        = airgraph-ng.1 dump-join.1
 default: all
 
 all:
-	@echo Nothing to do. Run make install
+	@echo "Nothing to do. Run make install"
 	
 install: uninstall
 	install -d $(DESTDIR)$(mandir)
