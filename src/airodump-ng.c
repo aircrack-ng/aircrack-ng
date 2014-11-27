@@ -396,6 +396,20 @@ void trim(char *str)
     str[i - begin] = '\0'; // Null terminate string.
 }
 
+FILE *open_oui_file(void) {
+	FILE *fp;
+	int i;
+
+	for (i=0; OUI_PATHS[i] != NULL; i++) {
+		fp = fopen(OUI_PATHS[i], "r");
+		if ( fp != NULL ) {
+			break;
+		}
+	}
+
+	return fp;
+}
+
 struct oui * load_oui_file(void) {
 	FILE *fp;
 	char * manuf;
@@ -405,14 +419,8 @@ struct oui * load_oui_file(void) {
 	unsigned char c[2];
 	struct oui *oui_ptr = NULL, *oui_head = NULL;
 
-	if (!(fp = fopen(OUI_PATH0, "r"))) {
-		if (!(fp = fopen(OUI_PATH1, "r"))) {
-			if (!(fp = fopen(OUI_PATH2, "r"))) {
-				if (!(fp = fopen(OUI_PATH3, "r"))) {
-					return NULL;
-				}
-			}
-		}
+	if (!(fp = open_oui_file())) {
+		return NULL;
 	}
 
 	memset(buffer, 0x00, sizeof(buffer));
@@ -3775,7 +3783,6 @@ char * sanitize_xml(unsigned char * text, int length)
 #define OUI_STR_SIZE 8
 #define MANUF_SIZE 128
 char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2) {
-	static char * oui_location = NULL;
 	char oui[OUI_STR_SIZE + 1];
 	char *manuf;
 	//char *buffer_manuf;
@@ -3809,24 +3816,7 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 		}
 	} else {
 		// If the file exist, then query it each time we need to get a manufacturer.
-		if (oui_location == NULL) {
-			fp = fopen(OUI_PATH0, "r");
-			if (fp == NULL) {
-				fp = fopen(OUI_PATH1, "r");
-				if (fp == NULL) {
-				    fp = fopen(OUI_PATH2, "r");
-				    if (fp != NULL) {
-					oui_location = OUI_PATH2;
-				    }
-				} else {
-				    oui_location = OUI_PATH1;
-				}
-			} else {
-				oui_location = OUI_PATH0;
-			}
-		} else {
-			fp = fopen(oui_location, "r");
-		}
+		fp = open_oui_file();
 
 		if (fp != NULL) {
 

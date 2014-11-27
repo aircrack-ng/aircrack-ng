@@ -142,10 +142,20 @@ static unsigned char ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00";
 
-#define OUI_PATH0 "/etc/aircrack-ng/airodump-ng-oui.txt"
-#define OUI_PATH1 "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt"
-#define OUI_PATH2 "/usr/share/aircrack-ng/airodump-ng-oui.txt"
-#define OUI_PATH3 "/usr/share/misc/oui.txt"
+const char *OUI_PATHS[] = {
+    "/etc/aircrack-ng/airodump-ng-oui.txt",
+    "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt",
+    "/usr/share/aircrack-ng/airodump-ng-oui.txt",
+    "/var/lib/misc/oui.txt",
+    "/usr/share/misc/oui.txt",
+    "/var/lib/ieee-data/oui.txt",
+    "/usr/share/ieee-data/oui.txt",
+    "/etc/manuf/oui.txt",
+    "/usr/share/wireshark/wireshark/manuf/oui.txt",
+    "/usr/share/wireshark/manuf/oui.txt",
+    NULL
+};
+
 #define MIN_RAM_SIZE_LOAD_OUI_RAM 32768
 
 int read_pkts=0;
