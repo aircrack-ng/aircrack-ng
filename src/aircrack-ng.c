@@ -5026,21 +5026,6 @@ int main( int argc, char *argv[] )
 		{
 			case 'S':
 				_speed_test = 1;
-				opt.amode = 2;
-				opt.dict = stdin;
-				opt.bssid_set = 1;
-
-				ap_1st = ap_cur = malloc(sizeof(*ap_cur));
-				if (!ap_cur)
-					err(1, "malloc()");
-
-				memset(ap_cur, 0, sizeof(*ap_cur));
-
-				ap_cur->target = 1;
-				ap_cur->wpa.state = 7;
-				strcpy(ap_cur->essid, "sorbo");
-
-				goto __start;
 				break;
 
 			case ':' :
@@ -5432,6 +5417,24 @@ int main( int argc, char *argv[] )
 
 			default : goto usage;
 		}
+	}
+
+	if (_speed_test) {
+		opt.amode = 2;
+		opt.dict = stdin;
+		opt.bssid_set = 1;
+		
+		ap_1st = ap_cur = malloc(sizeof(*ap_cur));
+		if (!ap_cur)
+			err(1, "malloc()");
+		
+		memset(ap_cur, 0, sizeof(*ap_cur));
+		
+		ap_cur->target = 1;
+		ap_cur->wpa.state = 7;
+		strcpy(ap_cur->essid, "sorbo");
+		
+		goto __start;
 	}
 
 	if( argc - optind < 1 )
