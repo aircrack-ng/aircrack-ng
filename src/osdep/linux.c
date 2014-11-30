@@ -373,6 +373,7 @@ static void nl80211_cleanup(struct nl80211_state *state)
 static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
                      void *arg)
 {
+	if (nla) { }
     printf("\n\n\nERROR");
         int *ret = arg;
             *ret = err->error;
@@ -381,7 +382,7 @@ static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
 
 static void test_callback(struct nl_msg *msg, void *arg)
 {
-
+	if (msg || arg) { }
 }
 #endif /* End nl80211 */
 
@@ -952,7 +953,6 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
     struct priv_linux *dev = wi_priv(wi);
     char s[32];
     int pid, status, unused;
-    struct iwreq wrq;
 
     unsigned int devid;
     struct nl_msg *msg;
