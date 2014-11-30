@@ -374,10 +374,10 @@ static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
                      void *arg)
 {
 	if (nla) { }
-    printf("\n\n\nERROR");
-        int *ret = arg;
-            *ret = err->error;
-                return NL_STOP;
+	printf("\n\n\nERROR");
+	int *ret = arg;
+	*ret = err->error;
+	return NL_STOP;
 }
 
 static void test_callback(struct nl_msg *msg, void *arg)
