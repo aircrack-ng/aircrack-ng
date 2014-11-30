@@ -397,8 +397,8 @@ void trim(char *str)
 }
 
 FILE *open_oui_file(void) {
-	FILE *fp;
 	int i;
+	FILE *fp = NULL;
 
 	for (i=0; OUI_PATHS[i] != NULL; i++) {
 		fp = fopen(OUI_PATHS[i], "r");
@@ -418,8 +418,9 @@ struct oui * load_oui_file(void) {
 	unsigned char b[2];
 	unsigned char c[2];
 	struct oui *oui_ptr = NULL, *oui_head = NULL;
-
-	if (!(fp = open_oui_file())) {
+	
+	fp = open_oui_file();
+	if (!fp) {
 		return NULL;
 	}
 
