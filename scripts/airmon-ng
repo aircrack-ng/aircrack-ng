@@ -689,8 +689,24 @@ getExtendedInfo() {
 }
 
 scanProcesses() {
-	PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox"
-	PS_ERROR="invalid\|illegal"
+	#this test means it errored and said it was busybox since busybox doesn't print without error
+	if (ps -A 2>&1 | grep -q BusyBox)
+	then
+		#busybox in openwrt cannot handle -A but its output by default is -A
+		psopts=""
+	else
+		psopts="-A"
+	fi
+	if ( ps -o comm= 2>&1 | grep -q BusyBox )
+	then
+		#busybox in openwrt cannot handle -o
+		pso=0
+	else
+		pso=1
+	fi
+
+	PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|udhcpc\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox"
+	#PS_ERROR="invalid\|illegal"
 
 	if [ -f "$(command -v service 2>&1)" ] && [ x"$1" = "xkill" ]
 	then
@@ -699,7 +715,14 @@ scanProcesses() {
 	fi
 
 	unset match
-	match=$(ps -A -o comm= | grep -c ${PROCESSES})
+	if [ ${pso} = 1 ]
+	then
+		match=$(ps ${psopts} -o comm= | grep -c ${PROCESSES})
+	elif [ ${pso} = 0 ]
+	then
+		#openwrt busybox grep hits on itself so we -v it out
+		match=$(ps ${psopts} | grep -c ${PROCESSES} | grep -v grep) 
+	fi
 	if [ ${match} -gt 0 -a x"${1}" != "xkill" -a x"${1}" = "x" ]
 	then
 		printf "Found $match processes that could cause trouble.\n"
@@ -714,33 +737,43 @@ scanProcesses() {
 		fi
 	fi
 
-	#if [ $match -gt 0 -a x"$1" = "xkill" ]
-	#then
-	#	printf "Killing processes..."
-	#fi
-
 	if [ ${match} -gt 0 ]
 	then
 		if [ x"${1}" = "xkill" ]
 		then
 			printf "Killing these processes:\n\n"
 		fi
-		ps -A -o pid=PID -o comm=Name | grep "${PROCESSES}\|PID"
+		if [ ${pso} = 1 ]
+		then
+			ps ${psopts} -o pid=PID -o comm=Name | grep "${PROCESSES}\|PID"
+		else
+			#openwrt busybox grep hits on itself so we -v it out
+			ps ${psopts} | grep "${PROCESSES}\|PID | grep -v grep"
+		fi
 		if [ x"${1}" = "xkill" ]
 		then
-			for pid in $(ps -A -o pid= -o comm= | grep ${PROCESSES} | awk '{print $1}')
-			do
-				#we have to use signal 9 because things like nm actually respawn wpa_supplicant too quickly
-				kill -9 ${pid}
-			done
+			#we have to use signal 9 because things like nm actually respawn wpa_supplicant too quickly
+			if [ ${pso} = 1 ]
+			then
+				for pid in $(ps ${psopts} -o pid= -o comm= | grep ${PROCESSES} | awk '{print $1}')
+				do
+					kill -9 ${pid}
+				done
+			else
+				#openwrt busybox grep hits on itself so we -v it out
+				for pid in $(ps ${psopts} | grep ${PROCESSES} | grep -v grep | awk '{print $1}')
+				do
+					kill -9 ${pid}
+				done
+			fi
 		fi
 	fi
 
 	#i=1
 	#while [ $i -le $match ]
 	#do
-	#	pid=$(ps -A -o pid= -o comm= | grep $PROCESSES | head -n $i | tail -n 1 | awk '{print $1}')
-	#	pname=$(ps -A -o pid= -o comm= | grep $PROCESSES | head -n $i | tail -n 1 | awk '{print $2}')
+	#	pid=$(ps ${psopts} -o pid= -o comm= | grep $PROCESSES | head -n $i | tail -n 1 | awk '{print $1}')
+	#	pname=$(ps ${psopts} -o pid= -o comm= | grep $PROCESSES | head -n $i | tail -n 1 | awk '{print $2}')
 	#	if [ x"$1" != "xkill" ]
 	#	then
 	#		printf "${pid}\t${pname}\n"
