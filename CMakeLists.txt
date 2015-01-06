@@ -8,6 +8,7 @@ set_target_properties(radiotap PROPERTIES
 		      COMPILE_FLAGS "-Wall -Wextra")
 
 install(TARGETS radiotap DESTINATION lib)
+install(FILES radiotap.h radiotap_iter.h DESTINATION include)
 
 add_executable(parse parse.c)
 set_target_properties(parse PROPERTIES
