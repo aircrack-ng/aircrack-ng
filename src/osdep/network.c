@@ -131,7 +131,7 @@ int net_get(int s, void *arg, int *len)
 	if (!(plen <= *len))
 		printf("PLEN %d type %d len %d\n",
 			plen, nh.nh_type, *len);
-	assert(plen <= *len && plen > 0); /* XXX */
+	assert(plen <= *len && plen >= 0);
 
 	*len = plen;
 	if ((*len) && (net_read_exact(s, arg, *len) == -1))
