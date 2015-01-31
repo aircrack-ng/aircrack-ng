@@ -29,12 +29,17 @@
 
 #include <windows.h>
 #include <winioctl.h>
-#include <iphlpapi.h>
+#include <ipexport.h>
+#include <iptypes.h>
 #include <setupapi.h>
 #include <devguid.h>
 
 #include "network.h"
 #include "tap-win32/common.h"
+
+extern DWORD WINAPI GetAdaptersInfo(PIP_ADAPTER_INFO pAdapterInfo,PULONG pOutBufLen);
+extern DWORD WINAPI AddIPAddress(IPAddr Address,IPMask IpMask,DWORD IfIndex,PULONG NTEContext,PULONG NTEInstance);
+extern DWORD WINAPI DeleteIPAddress(ULONG NTEContext);
 
 extern int cygwin_read_reader(int fd, int plen, void *dst, int len);
 static void *ti_reader(void *arg);
