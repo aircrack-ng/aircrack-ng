@@ -131,9 +131,28 @@ docdir          = $(datadir)/doc/aircrack-ng
 libdir		= $(prefix)/lib
 etcdir		= $(prefix)/etc/aircrack-ng
 
+GCC_OVER41	= $(shell expr 41 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
 GCC_OVER45	= $(shell expr 45 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
+GCC_OVER49	= $(shell expr 49 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
+ifeq ($(GCC_OVER41), 0)
+	GCC_OVER41	= $(shell expr 4.1 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
+endif
 ifeq ($(GCC_OVER45), 0)
 	GCC_OVER45	= $(shell expr 4.5 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
+endif
+ifeq ($(GCC_OVER49), 0)
+	GCC_OVER45	= $(shell expr 4.9 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
+endif
+
+
+ifeq ($(GCC_OVER49), 0)
+	ifeq ($(GCC_OVER41), 1)
+		COMMON_CFLAGS += -fstack-protector
+	endif
+endif
+
+ifeq ($(GCC_OVER49), 1)
+	COMMON_CFLAGS += -fstack-protector-strong
 endif
 
 ifeq ($(GCC_OVER45), 1)
