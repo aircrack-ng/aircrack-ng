@@ -3894,9 +3894,10 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 	last_time[strlen(last_time) - 1] = 0; // remove new line
 
 	fprintf(G.f_kis_xml, "\t\t<wireless-client number=\"%d\" "
-				 "type=\"established\" first-time=\"%s\""
+				 "type=\"%s\" first-time=\"%s\""
 				 " last-time=\"%s\">\n",
-				 client_no, first_time, last_time );
+				 client_no, (st_cur->base == NULL) ? "tods" : "established",
+				 first_time, last_time );
 
 	fprintf( G.f_kis_xml, "\t\t\t<client-mac>%02X:%02X:%02X:%02X:%02X:%02X</client-mac>\n",
 				 client->stmac[0], client->stmac[1],
