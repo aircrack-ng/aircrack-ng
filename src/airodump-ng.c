@@ -3916,6 +3916,10 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 	client_max_rate = ( client->rate_from > client->rate_to ) ? client->rate_from : client->rate_to ;
 	fprintf(G.f_kis_xml, "\t\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate / 1000000.0 );
 
+	/* Those 2 lines always stays the same */
+	fprintf(G.f_kis_xml, "\t\t\t<carrier>IEEE 802.11b+</carrier>\n");
+	fprintf(G.f_kis_xml, "\t\t\t<encoding>CCK</encoding>\n");
+
 	/* Packets */
 	fprintf(G.f_kis_xml, "\t\t\t<packets>\n"
 				"\t\t\t\t<LLC>0</LLC>\n"
@@ -4101,6 +4105,10 @@ int dump_write_kismet_netxml( void )
 
 		/* XXX: What about 5.5Mbit */
 		fprintf(G.f_kis_xml, "\t\t<maxseenrate>%d</maxseenrate>\n", ap_cur->max_speed * 1000);
+
+		/* Those 2 lines always stays the same */
+		fprintf(G.f_kis_xml, "\t\t<carrier>IEEE 802.11b+</carrier>\n");
+		fprintf(G.f_kis_xml, "\t\t<encoding>CCK</encoding>\n");
 
 		/* Packets */
 		fprintf(G.f_kis_xml, "\t\t<packets>\n"
