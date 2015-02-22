@@ -295,6 +295,8 @@ struct ST_info
     struct WPA_hdsk wpa;     /* WPA handshake data        */
     int qos_to_ds;           /* does it use 802.11e to ds */
     int qos_fr_ds;           /* does it receive 802.11e   */
+    int channel;             /* Channel station is seen   */
+                             /*  Not used yet		  */
 };
 
 /* linked list of detected macs through ack, cts or rts frames */

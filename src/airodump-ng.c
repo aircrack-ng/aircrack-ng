@@ -1520,6 +1520,8 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         st_cur->lastseq = 0;
         st_cur->qos_fr_ds = 0;
         st_cur->qos_to_ds = 0;
+	st_cur->channel = 0;
+
         gettimeofday( &(st_cur->ftimer), NULL);
 
         for( i = 0; i < NB_PRB; i++ )
@@ -1554,6 +1556,10 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
     {
         st_cur->power = ri->ri_power;
         st_cur->rate_from = ri->ri_rate;
+	if(ri->ri_channel > 0 && ri->ri_channel < 167)
+		st_cur->channel = ri->ri_channel;
+	else
+		st_cur->channel = G.channel[cardnum];
 
         if(st_cur->lastseq != 0)
         {
@@ -3870,7 +3876,7 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 #define KISMET_NETXML_TRAILER "</detection-run>"
 
 #define TIME_STR_LENGTH 255
-int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no, int ap_channel)
+int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 {
 	char first_time[TIME_STR_LENGTH];
 	char last_time[TIME_STR_LENGTH];
@@ -3904,7 +3910,7 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no, 
 
 	/* Channel
 	   FIXME: Take G.freqoption in account */
-	fprintf(G.f_kis_xml, "\t\t\t<channel>%d</channel>\n", ap_channel);
+	fprintf(G.f_kis_xml, "\t\t\t<channel>%d</channel>\n", client->channel);
 
 	/* Rate: inaccurate because it's the latest rate seen */
 	client_max_rate = ( client->rate_from > client->rate_to ) ? client->rate_from : client->rate_to ;
@@ -4127,7 +4133,7 @@ int dump_write_kismet_netxml( void )
 				st_cur->base != NULL &&
 				memcmp( st_cur->base->bssid, ap_cur->bssid, 6 ) == 0 )
 			{
-				dump_write_kismet_netxml_client_info(st_cur, ++client_nbr, ap_cur->channel);
+				dump_write_kismet_netxml_client_info(st_cur, ++client_nbr);
 			}
 
 			/* Next client */
