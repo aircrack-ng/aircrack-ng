@@ -4168,6 +4168,8 @@ int dump_write_kismet_netxml( void )
 					 average_power, average_power, average_power,
 					 average_power, average_power );
 
+		fprintf(G.f_kis_xml, "\t\t<bsstimestamp>%llu</bsstimestamp>\n", ap_cur->timestamp);
+
 		/* GPS Coordinates */
 		if (G.usegpsd)
 		{
