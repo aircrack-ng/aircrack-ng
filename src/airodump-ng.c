@@ -3881,12 +3881,14 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 	char first_time[TIME_STR_LENGTH];
 	char last_time[TIME_STR_LENGTH];
 	char * manuf;
-	int client_max_rate, average_power, i, nb_probes_written;
+	int client_max_rate, average_power, i, nb_probes_written, is_unassociated;
 	char * essid = NULL;
 
 	if (client == NULL || client_no < 1) {
 		return 1;
 	}
+
+	is_unassociated = (client->base == NULL || memcmp(client->base->bssid, BROADCAST, 6) == 0);
 
 	strncpy(first_time, ctime(&client->tinit), TIME_STR_LENGTH - 1);
 	first_time[strlen(first_time) - 1] = 0; // remove new line
@@ -3897,7 +3899,7 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 	fprintf(G.f_kis_xml, "\t\t<wireless-client number=\"%d\" "
 				 "type=\"%s\" first-time=\"%s\""
 				 " last-time=\"%s\">\n",
-				 client_no, (client->base == NULL) ? "tods" : "established",
+				 client_no, (is_unassociated) ? "tods" : "established",
 				 first_time, last_time );
 
 	fprintf( G.f_kis_xml, "\t\t\t<client-mac>%02X:%02X:%02X:%02X:%02X:%02X</client-mac>\n",
@@ -3935,7 +3937,7 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
         }
 
 	// Unassociated client with broadcast probes
-	if (client->base == NULL && nb_probes_written == 0)
+	if (is_unassociated && nb_probes_written == 0)
 	{
 		fprintf( G.f_kis_xml, "\t\t\t<SSID first-time=\"%s\" last-time=\"%s\">\n",
 					first_time, last_time);
@@ -4247,6 +4249,126 @@ int dump_write_kismet_netxml( void )
 
         ap_cur = ap_cur->next;
     }
+
+	/* Write all unassociated stations */
+	st_cur = G.st_1st;
+	while (st_cur != NULL) {
+		/* If not associated and not Broadcast Mac */
+		if ( st_cur->base == NULL || memcmp(st_cur->base->bssid, BROADCAST, 6) == 0 )
+		{
+			++network_number; // Network Number
+
+			/* Write new network information */
+			strncpy(first_time, ctime(&st_cur->tinit), TIME_STR_LENGTH - 1);
+			first_time[strlen(first_time) - 1] = 0; // remove new line
+			
+			strncpy(last_time, ctime(&st_cur->tlast), TIME_STR_LENGTH - 1);
+			last_time[strlen(last_time) - 1] = 0; // remove new line
+			
+			fprintf(G.f_kis_xml, "\t<wireless-network number=\"%d\" type=\"probe\" ",
+				network_number);
+			fprintf(G.f_kis_xml, "first-time=\"%s\" last-time=\"%s\">\n", first_time, last_time);
+
+			/* BSSID */
+			fprintf( G.f_kis_xml, "\t\t<BSSID>%02X:%02X:%02X:%02X:%02X:%02X</BSSID>\n",
+					 st_cur->stmac[0], st_cur->stmac[1],
+					 st_cur->stmac[2], st_cur->stmac[3],
+					 st_cur->stmac[4], st_cur->stmac[5] );
+
+			/* Manufacturer, if set using standard oui list */
+			manuf = sanitize_xml((unsigned char *)st_cur->manuf, strlen(st_cur->manuf));
+			fprintf(G.f_kis_xml, "\t\t<manuf>%s</manuf>\n", (manuf != NULL) ? manuf : "Unknown");
+			free(manuf);
+
+			/* Channel
+			   FIXME: Take G.freqoption in account */
+			fprintf(G.f_kis_xml, "\t\t<channel>%d</channel>\n", st_cur->channel);
+
+			/* Freq (in Mhz) and total number of packet on that frequency
+			   FIXME: Take G.freqoption in account */
+			fprintf(G.f_kis_xml, "\t\t<freqmhz>%d %ld</freqmhz>\n",
+						getFrequencyFromChannel(st_cur->channel),
+						st_cur->nb_pkt );
+
+			/* Rate: inaccurate because it's the latest rate seen */
+			client_max_rate = ( st_cur->rate_from > st_cur->rate_to ) ? st_cur->rate_from : st_cur->rate_to ;
+			fprintf(G.f_kis_xml, "\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate / 1000000.0 );
+
+			fprintf(G.f_kis_xml, "\t\t<carrier>IEEE 802.11b+</carrier>\n");
+			fprintf(G.f_kis_xml, "\t\t<encoding>CCK</encoding>\n");
+
+			/* Packets */
+			fprintf(G.f_kis_xml, "\t\t<packets>\n"
+					"\t\t\t<LLC>0</LLC>\n"
+					"\t\t\t<data>0</data>\n"
+					"\t\t\t<crypt>0</crypt>\n"
+					"\t\t\t<total>%ld</total>\n"
+					"\t\t\t<fragments>0</fragments>\n"
+					"\t\t\t<retries>0</retries>\n"
+					"\t\t</packets>\n",
+					st_cur->nb_pkt);
+
+			/* XXX: What does that field mean? Is it the total size of data? */
+			fprintf(G.f_kis_xml, "\t\t<datasize>0</datasize>\n");
+	
+			/* SNR information */
+			average_power = (st_cur->power == -1) ? 0 : st_cur->power;
+			fprintf(G.f_kis_xml, "\t\t<snr-info>\n"
+						"\t\t\t<last_signal_dbm>%d</last_signal_dbm>\n"
+						"\t\t\t<last_noise_dbm>0</last_noise_dbm>\n"
+						"\t\t\t<last_signal_rssi>%d</last_signal_rssi>\n"
+						"\t\t\t<last_noise_rssi>0</last_noise_rssi>\n"
+						"\t\t\t<min_signal_dbm>%d</min_signal_dbm>\n"
+						"\t\t\t<min_noise_dbm>0</min_noise_dbm>\n"
+						"\t\t\t<min_signal_rssi>1024</min_signal_rssi>\n"
+						"\t\t\t<min_noise_rssi>1024</min_noise_rssi>\n"
+						"\t\t\t<max_signal_dbm>%d</max_signal_dbm>\n"
+						"\t\t\t<max_noise_dbm>0</max_noise_dbm>\n"
+						"\t\t\t<max_signal_rssi>%d</max_signal_rssi>\n"
+						"\t\t\t<max_noise_rssi>0</max_noise_rssi>\n"
+						 "\t\t</snr-info>\n",
+						 average_power, average_power, average_power,
+						 average_power, average_power );
+
+			/* GPS Coordinates
+			   XXX: We don't have GPS coordinates for clients */
+			if (G.usegpsd)
+			{
+				fprintf(G.f_kis_xml, "\t\t<gps-info>\n"
+							"\t\t\t<min-lat>%.6f</min-lat>\n"
+							"\t\t\t<min-lon>%.6f</min-lon>\n"
+							"\t\t\t<min-alt>%.6f</min-alt>\n"
+							"\t\t\t<min-spd>%.6f</min-spd>\n"
+							"\t\t\t<max-lat>%.6f</max-lat>\n"
+							"\t\t\t<max-lon>%.6f</max-lon>\n"
+							"\t\t\t<max-alt>%.6f</max-alt>\n"
+							"\t\t\t<max-spd>%.6f</max-spd>\n"
+							"\t\t\t<peak-lat>%.6f</peak-lat>\n"
+							"\t\t\t<peak-lon>%.6f</peak-lon>\n"
+							"\t\t\t<peak-alt>%.6f</peak-alt>\n"
+							"\t\t\t<avg-lat>%.6f</avg-lat>\n"
+							"\t\t\t<avg-lon>%.6f</avg-lon>\n"
+							"\t\t\t<avg-alt>%.6f</avg-alt>\n"
+							 "\t\t</gps-info>\n",
+							 0.0, 0.0, 0.0, 0.0,
+							 0.0, 0.0, 0.0, 0.0,
+							 0.0, 0.0, 0.0,
+							 0.0, 0.0, 0.0 );
+			}
+
+			fprintf(G.f_kis_xml, "\t\t<bsstimestamp>0</bsstimestamp>\n");
+
+			/* CDP information */
+			fprintf(G.f_kis_xml, "\t\t<cdp-device></cdp-device>\n"
+					 	"\t\t<cdp-portid></cdp-portid>\n");
+
+
+			/* Write client information */
+			dump_write_kismet_netxml_client_info(st_cur, 1);
+		}
+		st_cur = st_cur->next;
+	}
+	/* TODO: Also go through na_1st */
 
 	/* Trailing */
     fprintf( G.f_kis_xml, "%s\n", KISMET_NETXML_TRAILER );
