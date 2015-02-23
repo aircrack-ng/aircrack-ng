@@ -3988,7 +3988,7 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 
 int dump_write_kismet_netxml( void )
 {
-    int network_number, average_power, client_nbr, unused;
+    int network_number, average_power, max_power, client_nbr, unused;
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
     char first_time[TIME_STR_LENGTH];
@@ -4151,6 +4151,7 @@ int dump_write_kismet_netxml( void )
 
 		/* SNR information */
 		average_power = (ap_cur->avg_power == -1) ? 0 : ap_cur->avg_power;
+		max_power = (ap_cur->best_power == -1) ? average_power : ap_cur->best_power;
 		fprintf(G.f_kis_xml, "\t\t<snr-info>\n"
 					"\t\t\t<last_signal_dbm>%d</last_signal_dbm>\n"
 					"\t\t\t<last_noise_dbm>0</last_noise_dbm>\n"
@@ -4166,7 +4167,7 @@ int dump_write_kismet_netxml( void )
 					"\t\t\t<max_noise_rssi>0</max_noise_rssi>\n"
 					 "\t\t</snr-info>\n",
 					 average_power, average_power, average_power,
-					 average_power, average_power );
+					 max_power, max_power );
 
 		fprintf(G.f_kis_xml, "\t\t<bsstimestamp>%llu</bsstimestamp>\n", ap_cur->timestamp);
 
