@@ -4120,7 +4120,7 @@ int dump_write_kismet_netxml( void )
 					"\t\t\t<fragments>0</fragments>\n"
 					"\t\t\t<retries>0</retries>\n"
 					"\t\t</packets>\n",
-					ap_cur->nb_bcn, ap_cur->nb_data,
+					ap_cur->nb_data, ap_cur->nb_data,
 					//ap_cur->nb_data + ap_cur->nb_bcn );
 					ap_cur->nb_pkt );
 
