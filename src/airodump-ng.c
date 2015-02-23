@@ -3881,7 +3881,8 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 	char first_time[TIME_STR_LENGTH];
 	char last_time[TIME_STR_LENGTH];
 	char * manuf;
-	int client_max_rate, average_power;
+	int client_max_rate, average_power, i, nb_probes_written;
+	char * essid = NULL;
 
 	if (client == NULL || client_no < 1) {
 		return 1;
@@ -3908,6 +3909,42 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 	manuf = sanitize_xml((unsigned char *)client->manuf, strlen(client->manuf));
 	fprintf(G.f_kis_xml, "\t\t\t<client-manuf>%s</client-manuf>\n", (manuf != NULL) ? manuf : "Unknown");
 	free(manuf);
+
+	/* SSID item, aka Probes */
+	nb_probes_written = 0;
+	for( i = 0; i < NB_PRB; i++ )
+        {
+		if( client->probes[i][0] == '\0' )
+			continue;
+
+		fprintf( G.f_kis_xml, "\t\t\t<SSID first-time=\"%s\" last-time=\"%s\">\n",
+					first_time, last_time);
+		fprintf( G.f_kis_xml, "\t\t\t\t<type>Probe Request</type>\n"
+					"\t\t\t\t<max-rate>54.000000</max-rate>\n"
+					"\t\t\t\t<packets>1</packets>\n"
+					"\t\t\t\t<encryption>None</encryption>\n");
+		essid = sanitize_xml(client->probes[i], client->ssid_length[i]);
+		if (essid != NULL) {
+			fprintf( G.f_kis_xml, "\t\t\t\t<ssid>%s</ssid>\n", essid);
+			free(essid);
+		}
+		
+		fprintf( G.f_kis_xml, "\t\t\t</SSID>\n");
+
+		++nb_probes_written;
+        }
+
+	// Unassociated client with broadcast probes
+	if (client->base == NULL && nb_probes_written == 0)
+	{
+		fprintf( G.f_kis_xml, "\t\t\t<SSID first-time=\"%s\" last-time=\"%s\">\n",
+					first_time, last_time);
+		fprintf( G.f_kis_xml, "\t\t\t\t<type>Probe Request</type>\n"
+					"\t\t\t\t<max-rate>54.000000</max-rate>\n"
+					"\t\t\t\t<packets>1</packets>\n"
+					"\t\t\t\t<encryption>None</encryption>\n");
+		fprintf( G.f_kis_xml, "\t\t\t</SSID>\n");
+	}
 
 	/* Channel
 	   FIXME: Take G.freqoption in account */
