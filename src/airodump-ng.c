@@ -3955,22 +3955,22 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 	   XXX: We don't have GPS coordinates for clients */
 	if (G.usegpsd)
 	{
-		fprintf(G.f_kis_xml, "\t\t<gps-info>\n"
-					"\t\t\t<min-lat>%.6f</min-lat>\n"
-					"\t\t\t<min-lon>%.6f</min-lon>\n"
-					"\t\t\t<min-alt>%.6f</min-alt>\n"
-					"\t\t\t<min-spd>%.6f</min-spd>\n"
-					"\t\t\t<max-lat>%.6f</max-lat>\n"
-					"\t\t\t<max-lon>%.6f</max-lon>\n"
-					"\t\t\t<max-alt>%.6f</max-alt>\n"
-					"\t\t\t<max-spd>%.6f</max-spd>\n"
-					"\t\t\t<peak-lat>%.6f</peak-lat>\n"
-					"\t\t\t<peak-lon>%.6f</peak-lon>\n"
-					"\t\t\t<peak-alt>%.6f</peak-alt>\n"
-					"\t\t\t<avg-lat>%.6f</avg-lat>\n"
-					"\t\t\t<avg-lon>%.6f</avg-lon>\n"
-					"\t\t\t<avg-alt>%.6f</avg-alt>\n"
-					 "\t\t</gps-info>\n",
+		fprintf(G.f_kis_xml, "\t\t\t<gps-info>\n"
+					"\t\t\t\t<min-lat>%.6f</min-lat>\n"
+					"\t\t\t\t<min-lon>%.6f</min-lon>\n"
+					"\t\t\t\t<min-alt>%.6f</min-alt>\n"
+					"\t\t\t\t<min-spd>%.6f</min-spd>\n"
+					"\t\t\t\t<max-lat>%.6f</max-lat>\n"
+					"\t\t\t\t<max-lon>%.6f</max-lon>\n"
+					"\t\t\t\t<max-alt>%.6f</max-alt>\n"
+					"\t\t\t\t<max-spd>%.6f</max-spd>\n"
+					"\t\t\t\t<peak-lat>%.6f</peak-lat>\n"
+					"\t\t\t\t<peak-lon>%.6f</peak-lon>\n"
+					"\t\t\t\t<peak-alt>%.6f</peak-alt>\n"
+					"\t\t\t\t<avg-lat>%.6f</avg-lat>\n"
+					"\t\t\t\t<avg-lon>%.6f</avg-lon>\n"
+					"\t\t\t\t<avg-alt>%.6f</avg-alt>\n"
+					 "\t\t\t</gps-info>\n",
 					 0.0, 0.0, 0.0, 0.0,
 					 0.0, 0.0, 0.0, 0.0,
 					 0.0, 0.0, 0.0,
