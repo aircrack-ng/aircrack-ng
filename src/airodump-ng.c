@@ -4015,11 +4015,6 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 					 0.0, 0.0, 0.0,
 					 0.0, 0.0, 0.0 );
 	}
-
-
-	/* Trailing information */
-	fprintf(G.f_kis_xml, "\t\t\t<cdp-device></cdp-device>\n"
-				"\t\t\t<cdp-portid></cdp-portid>\n");
 	fprintf(G.f_kis_xml, "\t\t</wireless-client>\n" );
 
 	return 0;
