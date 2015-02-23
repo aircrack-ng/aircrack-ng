@@ -3986,6 +3986,7 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 	return 0;
 }
 
+#define NETXML_ENCRYPTION_TAG "%s<encryption>%s</encryption>\n"
 int dump_write_kismet_netxml( void )
 {
     int network_number, average_power, max_power, client_nbr, unused;
@@ -4048,26 +4049,20 @@ int dump_write_kismet_netxml( void )
 		fprintf(G.f_kis_xml, "\t\t\t<max-rate>%d.000000</max-rate>\n", ap_cur->max_speed );
 		fprintf(G.f_kis_xml, "\t\t\t<packets>%ld</packets>\n", ap_cur->nb_bcn );
 		fprintf(G.f_kis_xml, "\t\t\t<beaconrate>%d</beaconrate>\n", 10 );
-		fprintf(G.f_kis_xml, "\t\t\t<encryption>");
-		//Encryption
-		if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) != 0)
-		{
-			if( ap_cur->security & STD_WPA2 ) fprintf( G.f_kis_xml, "WPA2 " );
-			if( ap_cur->security & STD_WPA  ) fprintf( G.f_kis_xml, "WPA " );
-			if( ap_cur->security & STD_WEP  ) fprintf( G.f_kis_xml, "WEP " );
-			if( ap_cur->security & STD_OPN  ) fprintf( G.f_kis_xml, "OPN " );
-		}
 
-		if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) != 0 )
+		// Encryption
+		if( ap_cur->security & STD_OPN  ) fprintf( G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "None" );
+		else if( ap_cur->security & STD_WEP  ) fprintf( G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WEP" );
+		else if( ap_cur->security & STD_WPA2 || ap_cur->security & STD_WPA  )
 		{
-			if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_kis_xml, "AES-CCM ");
-			if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis_xml, "WRAP ");
-			if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis_xml, "TKIP ");
-			if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_kis_xml, "WEP104 ");
-			if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis_xml, "WEP40 ");
-/*      	if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis_xml, "WEP ");*/
+			if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+TKIP" );
+			if( ap_cur->security & AUTH_MGT   ) fprintf( G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+MGT" ); // Not a valid value: NetXML does not have a value for WPA Enterprise
+			if( ap_cur->security & AUTH_PSK   ) fprintf( G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+PSK" );
+			if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+AES-CCM" );
+			if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+AES-OCB" );
 		}
-		fprintf(G.f_kis_xml, "</encryption>\n");
+		else if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WEP104" );
+		else if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WEP40" );
 
 		/* ESSID */
 		fprintf(G.f_kis_xml, "\t\t\t<essid cloaked=\"%s\">",
