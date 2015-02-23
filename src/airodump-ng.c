@@ -4120,10 +4120,7 @@ int dump_write_kismet_netxml( void )
 					ap_cur->nb_pkt );
 
 
-		/*
-		 * XXX: What does that field mean? Is it the total size of data?
-		 *      It seems that 'd' is appended at the end for clients, why?
-		 */
+		/* XXX: What does that field mean? Is it the total size of data? */
 		fprintf(G.f_kis_xml, "\t\t<datasize>0</datasize>\n");
 
 		/* Client information */
