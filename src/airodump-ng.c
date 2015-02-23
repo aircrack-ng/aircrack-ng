@@ -4060,7 +4060,7 @@ int dump_write_kismet_netxml( void )
             continue;
         }
 
-        if(is_filtered_essid(ap_cur->essid) || ap_cur->nb_pkt < 2 /* XXX: Maybe this last check should be removed */ )
+        if(is_filtered_essid(ap_cur->essid))
         {
             ap_cur = ap_cur->next;
             continue;
