@@ -3989,7 +3989,7 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 #define NETXML_ENCRYPTION_TAG "%s<encryption>%s</encryption>\n"
 int dump_write_kismet_netxml( void )
 {
-    int network_number, average_power, max_power, client_nbr, unused;
+    int network_number, average_power, client_max_rate, max_power, client_nbr, unused;
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
     char first_time[TIME_STR_LENGTH];
@@ -4090,17 +4090,17 @@ int dump_write_kismet_netxml( void )
 
 		/* Channel
 		   FIXME: Take G.freqoption in account */
-		fprintf(G.f_kis_xml, "\t\t<channel>%d</channel>\n", ap_cur->channel);
+		fprintf(G.f_kis_xml, "\t\t<channel>%d</channel>\n", (ap_cur->channel) == -1 ? 0 : ap_cur->channel);
 
 		/* Freq (in Mhz) and total number of packet on that frequency
 		   FIXME: Take G.freqoption in account */
 		fprintf(G.f_kis_xml, "\t\t<freqmhz>%d %ld</freqmhz>\n",
-					getFrequencyFromChannel(ap_cur->channel),
+					(ap_cur->channel) == -1 ? 0 : getFrequencyFromChannel(ap_cur->channel),
 					//ap_cur->nb_data + ap_cur->nb_bcn );
 					ap_cur->nb_pkt );
 
 		/* XXX: What about 5.5Mbit */
-		fprintf(G.f_kis_xml, "\t\t<maxseenrate>%d</maxseenrate>\n", ap_cur->max_speed * 1000);
+		fprintf(G.f_kis_xml, "\t\t<maxseenrate>%d</maxseenrate>\n", (ap_cur->max_speed == -1) ? 0 : ap_cur->max_speed * 1000);
 
 		/* Those 2 lines always stays the same */
 		fprintf(G.f_kis_xml, "\t\t<carrier>IEEE 802.11b+</carrier>\n");
