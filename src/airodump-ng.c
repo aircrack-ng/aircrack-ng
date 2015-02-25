@@ -3557,7 +3557,7 @@ int dump_write_csv( void )
             continue;
         }
 
-        if(is_filtered_essid(ap_cur->essid) || ap_cur->nb_pkt < 2)
+        if(is_filtered_essid(ap_cur->essid))
         {
             ap_cur = ap_cur->next;
             continue;
