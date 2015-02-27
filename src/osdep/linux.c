@@ -178,6 +178,8 @@ int check_crc_buf_osdep( unsigned char *buf, int len )
 static int is_ndiswrapper(const char * iface, const char * path)
 {
     int n, pid, unused;
+    if (!path)
+	return 0;
     if ((pid=fork())==0)
     {
         close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
@@ -1654,8 +1656,9 @@ static int do_linux_open(struct wif *wi, char *iface)
     }
 
         /* Check iwpriv existence */
+	iwpriv = wiToolsPath("iwpriv");
+
 #ifndef CONFIG_LIBNL
-    iwpriv = wiToolsPath("iwpriv");
     dev->iwpriv = iwpriv;
     dev->iwconfig = wiToolsPath("iwconfig");
     dev->ifconfig = wiToolsPath("ifconfig");
