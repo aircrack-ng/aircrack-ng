@@ -1560,6 +1560,8 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
     {
         st_cur->power = ri->ri_power;
         st_cur->rate_from = ri->ri_rate;
+	// XXX: Why 'ri->ri_channel < 167'?
+	// TODO: Also addd explanation
 	if(ri->ri_channel > 0 && ri->ri_channel < 167)
 		st_cur->channel = ri->ri_channel;
 	else
