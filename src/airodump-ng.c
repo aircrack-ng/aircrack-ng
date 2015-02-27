@@ -3653,17 +3653,17 @@ int dump_write_csv( void )
                  ltime->tm_mday, ltime->tm_hour,
                  ltime->tm_min,  ltime->tm_sec );
 
-        fprintf( G.f_txt, "%2d, %3d, ",
+        fprintf( G.f_txt, "%2d, %3d,",
                  ap_cur->channel,
                  ap_cur->max_speed );
 
-        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) fprintf( G.f_txt, "    " );
+        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) fprintf( G.f_txt, "     " );
         else
         {
-            if( ap_cur->security & STD_WPA2 ) fprintf( G.f_txt, "WPA2" );
-            if( ap_cur->security & STD_WPA  ) fprintf( G.f_txt, "WPA " );
-            if( ap_cur->security & STD_WEP  ) fprintf( G.f_txt, "WEP " );
-            if( ap_cur->security & STD_OPN  ) fprintf( G.f_txt, "OPN " );
+            if( ap_cur->security & STD_WPA2 ) fprintf( G.f_txt, " WPA2" );
+            if( ap_cur->security & STD_WPA  ) fprintf( G.f_txt, " WPA" );
+            if( ap_cur->security & STD_WEP  ) fprintf( G.f_txt, " WEP" );
+            if( ap_cur->security & STD_OPN  ) fprintf( G.f_txt, " OPN" );
         }
 
         fprintf( G.f_txt, ",");
