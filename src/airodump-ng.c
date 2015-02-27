@@ -3657,7 +3657,7 @@ int dump_write_csv( void )
                  ap_cur->channel,
                  ap_cur->max_speed );
 
-        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) fprintf( G.f_txt, "     " );
+        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) fprintf( G.f_txt, " " );
         else
         {
             if( ap_cur->security & STD_WPA2 ) fprintf( G.f_txt, " WPA2" );
@@ -3668,7 +3668,7 @@ int dump_write_csv( void )
 
         fprintf( G.f_txt, ",");
 
-        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( G.f_txt, "       ");
+        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( G.f_txt, " ");
         else
         {
             if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_txt, " CCMP");
