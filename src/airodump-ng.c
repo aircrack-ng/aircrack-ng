@@ -3524,13 +3524,78 @@ void dump_print( int ws_row, int ws_col, int if_num )
     }
 }
 
+char * format_text_for_csv( const unsigned char * input, int len)
+{
+	// Unix style encoding
+	char * ret;
+	int i, pos, contains_space_end;
+	const char * hex_table = "0123456789ABCDEF";
+
+	if (len < 0)
+	{
+		return NULL;
+	}
+
+	if (len == 0 || input == NULL)
+	{
+		ret = (char*)malloc(1);
+		ret[0] = 0;
+		return ret;
+	}
+
+	pos = 0;
+	contains_space_end = (input[0] == ' ') || input[len-1] == ' ';
+
+	// Make sure to have enough memory for all that stuff
+	ret = (char *)malloc((len*4)+1+2);
+
+	if (contains_space_end)
+	{
+		ret[pos++] = '"';
+	}
+
+	for (i=0; i < len; i++)
+	{
+		if (!isprint(input[i]) || input[i] == ',' || input[i] == '\\' || input[i] == '"')
+		{
+			ret[pos++] = '\\';
+		}
+
+		if (isprint(input[i]))
+		{
+			ret[pos++] = input[i];
+		}
+		else if (input[i] == '\n' || input[i] == '\r' || input[i] == '\t')
+		{
+			ret[pos++] = (input[i] == '\n') ? 'n' : (input[i] == '\t') ? 't' : 'r';
+		}
+		else
+		{
+			ret[pos++] = 'x';
+			ret[pos++] = hex_table[input[i]/16];
+			ret[pos++] = hex_table[input[i]%16];
+		}
+	}
+
+	if (contains_space_end)
+	{
+		ret[pos++] = '"';
+	}
+
+	ret[pos++] = '\0';
+
+	ret = realloc(ret, pos);
+
+	return ret;
+}
+
 int dump_write_csv( void )
 {
-    int i, j, n;
+    int i, n, probes_written;
     struct tm *ltime;
-    char ssid_list[512];
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
+    char * temp;
 
     if (! G.record_data || !G.output_format_csv)
     	return 0;
@@ -3635,12 +3700,9 @@ int dump_write_csv( void )
 
         fprintf( G.f_txt, "%3d, ", ap_cur->ssid_length);
 
-        for(i=0; i<ap_cur->ssid_length; i++)
-        {
-            fprintf( G.f_txt, "%c", ap_cur->essid[i] );
-        }
-        fprintf( G.f_txt, ", " );
-
+	temp = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
+        fprintf( G.f_txt, "%s, ", temp );
+	free(temp);
 
         if(ap_cur->key != NULL)
         {
@@ -3704,28 +3766,30 @@ int dump_write_csv( void )
                      ap_cur->bssid[2], ap_cur->bssid[3],
                      ap_cur->bssid[4], ap_cur->bssid[5] );
 
-        memset( ssid_list, 0, sizeof( ssid_list ) );
+	
 
+	probes_written = 0;
         for( i = 0, n = 0; i < NB_PRB; i++ )
         {
-            if( st_cur->probes[i][0] == '\0' )
+            if( st_cur->ssid_length[i] == 0 )
                 continue;
 
-            snprintf( ssid_list + n, sizeof( ssid_list ) - n - 1,
-                      "%c", ( i > 0 ) ? ',' : ' ' );
+	    temp = format_text_for_csv(st_cur->probes[i], st_cur->ssid_length[i]);
 
-            for(j=0; j<st_cur->ssid_length[i]; j++)
-            {
-                snprintf( ssid_list + n + 1 + j, sizeof( ssid_list ) - n - 2 - j,
-                          "%c", st_cur->probes[i][j]);
-            }
+	    if( probes_written == 0)
+	    {
+		fprintf( G.f_txt, "%s", temp);
+		probes_written = 1;
+	    }
+	    else
+	    {
+		fprintf( G.f_txt, ",%s", temp);
+	    }
 
-            n += ( 1 + st_cur->ssid_length[i] );
-            if( n >= (int) sizeof( ssid_list ) )
-                break;
+	    free(temp);
         }
 
-        fprintf( G.f_txt, "%s\r\n", ssid_list );
+        fprintf( G.f_txt, "\r\n" );
 
         st_cur = st_cur->next;
     }
