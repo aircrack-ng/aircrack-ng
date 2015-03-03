@@ -1339,6 +1339,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
 
         ap_cur->ssid_length = 0;
         ap_cur->essid_stored = 0;
+        memset( ap_cur->essid, 0, MAX_IE_ELEMENT_SIZE );
         ap_cur->timestamp = 0;
 
         ap_cur->decloak_detect=G.decloak;
