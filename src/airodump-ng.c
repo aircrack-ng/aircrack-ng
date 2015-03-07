@@ -4646,13 +4646,195 @@ int dump_write_kismet_csv( void )
     return 0;
 }
 
+/* See if a string contains a character in the first "n" bytes.
+ * 
+ * Returns a pointer to the first occurrence of the character, or NULL
+ * if the character is not present in the string.
+ * 
+ * Breaks the str* naming convention to avoid a name collision if we're
+ * compiling on a system that has strnchr()
+ */
+static char *strchr_n(char *str, int c, size_t n)
+{
+	size_t count = 0;
+	while(*str != c && *str != '\0' && count < n)
+	{
+		str++;
+		count++;
+	}
+	if(*str == c)
+	{
+		return str;
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+/* Read at least one full line from the network.
+ * 
+ * Returns the amount of data in the buffer on success, 0 on connection
+ * closed, or a negative value on error.
+ * 
+ * If the return value is >0, the buffer contains at least one newline
+ * character.  If the return value is <= 0, the contents of the buffer
+ * are undefined.
+ */
+static int read_line(int sock, char *buffer, int pos, int size)
+{
+	int status = 1;
+	if (pos < 0 || size < 1 || pos >= size || buffer == NULL || sock < 0)
+	{
+		return NULL;
+	}
+	while(strchr_n(buffer, 0x0A, pos) == NULL && status > 0  && pos < size )
+	{
+		status = recv(sock, buffer+pos, size-pos, 0);
+		if(status > 0)
+		{
+			pos += status;
+		}
+	}
+
+	if(status <= 0)
+	{
+		return status;
+	}
+	else if(pos == size && strchr_n(buffer, 0x0A, pos) == NULL)
+	{
+		return -1;
+	}
+	
+	return pos;
+}
+
+/* Remove a newline-terminated block of data from a buffer, replacing 
+ * the newline with a '\0'.
+ * 
+ * Returns the number of characters left in the buffer, or -1 if the 
+ * buffer did not contain a newline.
+ */
+static int get_line_from_buffer(char *buffer, int size, char *line)
+{
+	char *cursor = strchr_n(buffer, 0x0A, size);
+	if(NULL != cursor)
+	{
+		*cursor = '\0';
+		cursor++;
+		strcpy(line, buffer);
+		memmove(buffer, cursor, size - (strlen(line) + 1));
+		return size - (strlen(line) + 1);
+	}
+	
+	return -1;
+} 
+
+/* Extract a name:value pair from a null-terminated line of JSON.
+ * 
+ * Returns 1 if the name was found, or 0 otherwise. 
+ * 
+ * The string in "value" is null-terminated if the name was found.  If
+ * the name was not found, the contents of "value" are undefined. 
+ */
+static int json_get_value_for_name( char *buffer, char *name, char *value )
+{
+	char to_find[1537];
+	char *cursor;
+	char *vcursor = value;
+	int ret = 0;
+	
+	if (buffer == NULL || strlen(buffer) == 0 || name == NULL || strlen(name) == 0 || value == NULL)
+	{
+		return 0;
+	}
+	
+	snprintf(to_find, sizeof(to_find), "\"%s\"", name);
+	if((cursor = strcasestr(buffer, to_find)) != NULL)
+	{
+		cursor += strlen(to_find);
+		while(*cursor != ':' && *cursor != '\0')
+		{
+			cursor++;
+		}
+		if(*cursor != '\0')
+		{
+			cursor++;
+			while(isspace(*cursor) && *cursor != '\0')
+			{
+				cursor++;
+			}
+		}
+		if('\0' == *cursor)
+		{
+			return 0;
+		}
+
+		if('"' == *cursor)
+		{
+			/* Quoted string */
+			cursor++;
+			while(*cursor != '"' && *cursor != '\0')
+			{
+				if('\\' == *cursor && '"' == *(cursor+1))
+				{
+					/* Escaped quote */
+					*vcursor = '"';
+					cursor++;
+				}
+				else
+				{
+					*vcursor = *cursor;
+				}
+				vcursor++;
+				cursor++;
+			}
+			*vcursor = '\0';
+			ret = 1;
+		}
+		else if(strncmp(cursor, "true", 4) == 0)
+		{
+			/* Boolean */
+			strcpy(value, "true");
+			ret = 1;
+		}
+		else if(strncmp(cursor, "false", 5) == 0)
+		{
+			/* Boolean */
+			strcpy(value, "false");
+			ret = 1;
+		}
+		else if('{' == *cursor || '[' == *cursor)
+		{
+			/* Object or array.  Too hard to handle and not needed for
+			 * getting coords from GPSD, so pretend we didn't see anything.
+			 */
+			ret = 0;
+		}
+		else
+		{
+			/* Number, supposedly.  Copy as-is. */
+			while(*cursor != ',' && *cursor != '}' && !isspace(*cursor))
+			{
+				*vcursor = *cursor;
+				cursor++; vcursor++;
+			}
+			*vcursor = '\0';
+			ret = 1;
+		}
+	}
+	return ret;
+}
+
 void gps_tracker( void )
 {
 	ssize_t unused;
     int gpsd_sock;
-    char line[256], *temp;
+    char line[1537], buffer[1537], data[1537];
+    char *temp;
     struct sockaddr_in gpsd_addr;
     int ret, is_json, pos;
+    int mode;
     fd_set read_fd;
     struct timeval timeout;
 
@@ -4675,50 +4857,54 @@ void gps_tracker( void )
     }
 
     // Check if it's GPSd < 2.92 or the new one
-    // 2.92+ immediately send stuff
+    // 2.92+ immediately sends version information
     // < 2.92 requires to send PVTAD command
     FD_ZERO(&read_fd);
     FD_SET(gpsd_sock, &read_fd);
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
     is_json = select(gpsd_sock + 1, &read_fd, NULL, NULL, &timeout);
-    if (is_json) {
-    	/*
-			{"class":"VERSION","release":"2.95","rev":"2010-11-16T21:12:35","proto_major":3,"proto_minor":3}
-			?WATCH={"json":true};
-			{"class":"DEVICES","devices":[]}
-    	 */
+    
+    if (is_json > 0) {
+		/* Probably JSON.  Read the first line and verify it's a version of the protocol we speak. */
 
-
-    	// Get the crap and ignore it: {"class":"VERSION","release":"2.95","rev":"2010-11-16T21:12:35","proto_major":3,"proto_minor":3}
-    	if( recv( gpsd_sock, line, sizeof( line ) - 1, 0 ) <= 0 )
+    	if((pos = read_line(gpsd_sock, buffer, 0, sizeof(buffer))) <= 0)
     		return;
+    	
+    	pos = get_line_from_buffer(buffer, pos, line);
 
-    	is_json = (line[0] == '{');
+    	is_json = (json_get_value_for_name(line, "class", data) &&
+    			   strncmp(data, "VERSION", 7) == 0);
+		
     	if (is_json) {
-			// Send ?WATCH={"json":true};
-			memset( line, 0, sizeof( line ) );
-			strcpy(line, "?WATCH={\"json\":true};\n");
-			if( send( gpsd_sock, line, 22, 0 ) != 22 )
+			/* Verify it's a version of the protocol we speak */
+			if(json_get_value_for_name(line, "proto_major", data) && data[0] != '3')
+			{
+				/* It's an unknown version of the protocol.  Bail out. */
 				return;
-
-			// Check that we have devices
-			memset(line, 0, sizeof(line));
-			if( recv( gpsd_sock, line, sizeof( line ) - 1, 0 ) <= 0 )
-				return;
-
-			// Stop processing if there is no device
-			if (strncmp(line, "{\"class\":\"DEVICES\",\"devices\":[]}", 32) == 0) {
-				close(gpsd_sock);
-				return;
-			} else {
-				pos = strlen(line);
 			}
+			
+			// Send ?WATCH={"json":true};
+			memset(line, 0, sizeof(line));
+			strcpy(line, "?WATCH={\"json\":true};\n");
+			if(send(gpsd_sock, line, 22, 0) != 22)
+			{
+				return;
+			}
+			// Device check removed -- if there isn't a device, just
+			// read and discard lines until the user plugs one in, at
+			// which point GPSD will start emitting coordinates.
     	}
     }
+    else if(is_json < 0)
+    {
+		/* An error occurred while we were waiting for data */
+		return;
+	}
+	/* Else select() returned zero (timeout expired) and we assume we're
+	 * connected to an old-style gpsd. */
 
     /* loop reading the GPS coordinates */
-
     while( G.do_exit == 0 )
     {
         usleep( 500000 );
@@ -4728,78 +4914,91 @@ void gps_tracker( void )
         if (is_json) {
         	// Format definition: http://catb.org/gpsd/gpsd_json.html
 
-        	if (pos == sizeof( line )) {
-        		memset(line, 0, sizeof(line));
-        		pos = 0;
-        	}
+		if( (pos = read_line(gpsd_sock, buffer, pos, sizeof(buffer))) <= 0 )
+		{
+			return;
+		}
+		pos = get_line_from_buffer(buffer, pos, line);
 
-        	// New version, JSON
-        	if( recv( gpsd_sock, line + pos, sizeof( line ) - pos - 1, 0 ) <= 0 )
-        		return;
+		// See if we got a TPV report
+		if(!json_get_value_for_name(line, "class", data) ||
+			strncmp(data, "TPV", 3) != 0)
+		{
+			/* Not a TPV report.  Get another line. */
 
-        	// search for TPV class: {"class":"TPV"
-        	temp = strstr(line, "{\"class\":\"TPV\"");
-        	if (temp == NULL) {
         		continue;
         	}
 
-        	// Make sure the data we have is complete
-        	if (strchr(temp, '}') == NULL) {
-        		// Move the data at the beginning of the buffer;
-        		pos = strlen(temp);
-        		if (temp != line) {
-        			memmove(line, temp, pos);
-        			memset(line + pos, 0, sizeof(line) - pos);
-        		}
-        	}
+		/* See what sort of GPS fix we got.  Possibilities are:
+		* 0: No data
+		* 1: No fix
+		* 2: Lat/Lon, but no alt
+		* 3: Lat/Lon/Alt
+		* Either 2 or 3 may also have speed and heading data.
+		*/
+		if(!json_get_value_for_name(line, "mode", data) ||
+			(mode = atoi(data)) < 2)
+		{
+			/* No GPS fix, so there are no coordinates to extract. */
+			continue;
+		}
 
-			// Example line: {"class":"TPV","tag":"MID2","device":"/dev/ttyUSB0","time":1350957517.000,"ept":0.005,"lat":46.878936576,"lon":-115.832602964,"alt":1968.382,"track":0.0000,"speed":0.000,"climb":0.000,"mode":3}
+		/* Extract the available data from the TPV report.  If we're
+		* in mode 2, latitude and longitude are mandatory, altitude
+		* is set to 0, and speed and heading are optional.
+		* In mode 3, latitude, longitude, and altitude are mandatory,
+		* while speed and heading are optional.
+		* If we can't get a mandatory value, the line is discarded
+		* as fragmentary or malformed.  If we can't get an optional
+		* value, we default it to 0.
+		*/
 
         	// Latitude
-        	temp = strstr(temp, "\"lat\":");
-			if (temp == NULL) {
+        	if(!json_get_value_for_name(line, "lat", data))
+			continue;
+		if(1 != sscanf(data, "%f", &G.gps_loc[0]))
+			continue;
+
+		// Longitude
+		if(!json_get_value_for_name(line, "lon", data))
+			continue;
+		if(1 != sscanf(data, "%f", &G.gps_loc[1]))
+			continue;
+
+		// Altitude
+		if(3 == mode)
+		{
+			if(!json_get_value_for_name(line, "alt", data))
 				continue;
-			}
-
-			ret = sscanf(temp + 6, "%f", &G.gps_loc[0]);
-
-			// Longitude
-			temp = strstr(temp, "\"lon\":");
-			if (temp == NULL) {
+			if(1 != sscanf(data, "%f", &G.gps_loc[4]))
 				continue;
-			}
+		}
+		else
+		{
+			G.gps_loc[4] = 0;
+		}
 
-			ret = sscanf(temp + 6, "%f", &G.gps_loc[1]);
+		// Speed
+		if(!json_get_value_for_name(line, "speed", data))
+		{
+			G.gps_loc[2] = 0;
+		}
+		else
+		{
+			if(1 != sscanf(data, "%f", &G.gps_loc[2]))
+				G.gps_loc[2] = 0;
+		}
 
-			// Altitude
-			temp = strstr(temp, "\"alt\":");
-			if (temp == NULL) {
-				continue;
-			}
-
-			ret = sscanf(temp + 6, "%f", &G.gps_loc[4]);
-
-			// Speed
-			temp = strstr(temp, "\"speed\":");
-			if (temp == NULL) {
-				continue;
-			}
-
-			ret = sscanf(temp + 6, "%f", &G.gps_loc[2]);
-
-			// No more heading
-
-			// Get the next TPV class
-			temp = strstr(temp, "{\"class\":\"TPV\"");
-			if (temp == NULL) {
-				memset( line, 0, sizeof( line ) );
-				pos = 0;
-			} else {
-				pos = strlen(temp);
-				memmove(line, temp, pos);
-				memset(line + pos, 0, sizeof(line) - pos);
-			}
-
+		// Heading
+		if(!json_get_value_for_name(line, "track", data))
+		{
+			G.gps_loc[3] = 0;
+		}
+		else
+		{
+			if(1 != sscanf(data, "%f", &G.gps_loc[3]))
+				G.gps_loc[3] = 0;
+		}
         } else {
         	memset( line, 0, sizeof( line ) );
 
