@@ -464,6 +464,7 @@ struct globals
     u_int maxsize_essid_seen;
     int show_manufacturer;
     int show_uptime;
+    int file_write_interval;
 }
 G;
 

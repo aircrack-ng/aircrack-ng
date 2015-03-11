@@ -651,6 +651,8 @@ char usage[] =
 "                              pcap, ivs, csv, gps, kismet, netxml\n"
 "      --ignore-negative-one : Removes the message that says\n"
 "                              fixed channel <interface>: -1\n"
+"      --write-interval\n"
+"                  <seconds> : Output file(s) write interval in seconds\n"
 "\n"
 "  Filter options:\n"
 "      --encrypt   <suite>   : Filter APs by cipher suite\n"
@@ -5997,6 +5999,7 @@ int main( int argc, char *argv[] )
         {"ignore-negative-one", 0, &G.ignore_negative_one, 1},
         {"manufacturer",  0, 0, 'M'},
         {"uptime",   0, 0, 'U'},
+		{"write-interval", 1, 0, 'W'},
         {0,          0, 0,  0 }
     };
 
@@ -6080,6 +6083,7 @@ int main( int argc, char *argv[] )
     G.output_format_csv = 1;
     G.output_format_kismet_csv = 1;
     G.output_format_kismet_netxml = 1;
+    G.file_write_interval = 5; // Write file every 5 seconds by default
 
 #ifdef HAVE_PCRE
     G.f_essid_regex = NULL;
@@ -6162,7 +6166,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MU",
+                        "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUW:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -6183,6 +6187,21 @@ int main( int argc, char *argv[] )
                 printf("\"%s --help\" for help.\n", argv[0]);
                 return( 1 );
 
+            case 'W':
+
+            	if (!is_string_number(optarg)) {
+            		printf("Error: Write interval is not a number (>0). Aborting.\n");
+            		exit ( 1 );
+            	}
+            	
+            	G.file_write_interval = atoi(optarg);
+            	
+            	if (G.file_write_interval <= 0) {
+            		printf("Error: Write interval must be greater than 0. Aborting.\n");
+            		exit ( 1 );
+            	}
+            	break;
+                
 			case 'E':
 				G.detect_anomaly = 1;
 				break;
@@ -6819,26 +6838,25 @@ usage:
             break;
         }
 
-        if( time( NULL ) - tt1 >= 5 )
+        if( time( NULL ) - tt1 >= G.file_write_interval )
         {
-            /* update the csv stats file */
+            /* update the text output files */
 
             tt1 = time( NULL );
             if (G. output_format_csv)  dump_write_csv();
             if (G.output_format_kismet_csv) dump_write_kismet_csv();
             if (G.output_format_kismet_netxml) dump_write_kismet_netxml();
-
-            /* sort the APs by power */
-
-	    if(G.sort_by != SORT_BY_NOTHING) {
-		pthread_mutex_lock( &(G.mx_sort) );
-		    dump_sort();
-		pthread_mutex_unlock( &(G.mx_sort) );
-	    }
         }
 
-        if( time( NULL ) - tt2 > 3 )
+        if( time( NULL ) - tt2 > 5 )
         {
+        	if( G.sort_by != SORT_BY_NOTHING) {
+				/* sort the APs by power */
+				pthread_mutex_lock( &(G.mx_sort) );
+				dump_sort();
+				pthread_mutex_unlock( &(G.mx_sort) );
+        	}
+
             /* update the battery state */
             free(G.batt);
             G.batt = NULL;

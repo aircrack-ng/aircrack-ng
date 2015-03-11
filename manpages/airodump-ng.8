@@ -65,6 +65,9 @@ Define the formats to use (separated by a comma). Possible values are: pcap, ivs
 .br
 Theses values can be combined with the exception of ivs and pcap.
 .TP
+.I -W <seconds>, --write-interval <seconds>
+Output file(s) write interval for CSV, Kismet CSV and Kismet NetXML in seconds (minimum: 1 second). By default: 5 seconds. Note that an interval too small might slow down airodump\-ng.
+.TP
 .I --ignore-negative-one
 Removes the message that says \(aqfixed channel <interface>: -1\(aq.
 .PP
