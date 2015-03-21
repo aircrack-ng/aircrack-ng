@@ -301,8 +301,9 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 		ri->ri_power = __be32_to_cpu(buf[2]);
 		ri->ri_noise = __be32_to_cpu(buf[3]);
 		ri->ri_channel = __be32_to_cpu(buf[4]);
-		ri->ri_rate = __be32_to_cpu(buf[5]);
-		ri->ri_antenna = __be32_to_cpu(buf[6]);
+		ri->ri_freq = __be32_to_cpu(buf[5]);
+		ri->ri_rate = __be32_to_cpu(buf[6]);
+		ri->ri_antenna = __be32_to_cpu(buf[7]);
 	}
 	l -= sz;
 	assert(l > 0);
