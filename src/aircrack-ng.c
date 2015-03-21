@@ -4484,6 +4484,8 @@ int do_make_hccap(struct AP_info *ap_cur)
 
 	hccap_t hccap;
 
+	memset (&hccap, 0, sizeof (hccap));
+
 	memcpy (&hccap.essid,      &ap_cur->essid,          sizeof (ap_cur->essid));
 	memcpy (&hccap.mac1,       &ap_cur->bssid,          sizeof (ap_cur->bssid));
 	memcpy (&hccap.mac2,       &ap_cur->wpa.stmac,      sizeof (ap_cur->wpa.stmac));
