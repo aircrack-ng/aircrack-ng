@@ -1,4 +1,5 @@
 Version 1.2-rc2 (changes from aircrack-ng 1.2-rc1) - Released XX YYYYY ZZZZ:
+
 * Makefile: Renamed 'unstable' to 'experimental'.
 * Airodump-ng: Fixed XML sanitizing.
 * Airmon-ng: Airmon-zc is now stable enough to replace airmon-ng.
@@ -6,10 +7,26 @@ Version 1.2-rc2 (changes from aircrack-ng 1.2-rc1) - Released XX YYYYY ZZZZ:
 * Manpages: Updated 'see also' references in all manpages.
 * PCRE: Added it in various places and docs.
 * WZCook: Fixed processing values stored in register.
-* Fixed 64 bit promotion issues.
 * Updated a few headers files (if_llc, ieee80211, ethernet and if_arp).
 * Travis CI: updated make parameter and add testing with pcre.
 * Compilation: de-hardcode -lpcap to allow specifying pcap libraries.
+* Makefile: Fixed installing/uninstalling Airdrop-ng documentation files.
+* Makefile: Fixed uninstalling ext_scripts.
+* Airodump-ng: Added new paths (and removed one) for OUI files and simplified logic to find the OUI file.
+* Aircrack-ng: Fixed ignoring -p when specified after -S.
+* Airmon-ng: fixes for openwrt busybox ps/grep issues which do not seem present in other versions of busybox
+* Airmon-ng: fix vm detection.
+* Airserv-ng: Fixed channel setting (and assert call).
+* Airodump-ng: Fixes to NetXML (unassociated clients missing and various other small bugs) and update the code to match current NetXML output.
+* Airodump-ng: Removed requirement for 2 packets before AP is written to output (text) files.
+* Airodump-ng: Fixed formatting of ESSID and display of WPA/WPA2 (as well as a bunch of other small fixes) in CSV file.
+* Airodump-ng: Fixed GPSd.
+* Airodump-ng: Allow to specify write interval for CSV, kismet CSV and NetXML files.
+* Airserv-ng: Fixed wrong station data displayed in Airodump-ng.
+* General: Fixed 64 bit promotion issues.
+* General: Fixed a bunch of uninitialized values and non-zeroed structures (upon allocating them).
+* General: Added Stack protection.
+* Various other small fixes and improvements.
 
 Version 1.2-rc1 (changes from aircrack-ng 1.2-beta3) - Released 31 October 2014:
 * Airodump-ng should be able to parse the canonical oui file.
