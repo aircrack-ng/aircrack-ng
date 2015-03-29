@@ -1003,9 +1003,23 @@ fi
 
 #startup checks complete, headers then main
 
+if [ "$DEBUG" = "1" ]
+then
+	if [ -x "$(command -v readlink 2>&1)" ]
+	then
+		printf "/bin/sh -> $(readlink -f /bin/sh)\n"
+	else
+		ls -l /bin/sh
+	fi
+	if [ $SHELL ]
+	then
+		printf "SHELL is $SHELL\n\n"
+	fi
+fi
 if [ "$VERBOSE" = "1" ]
 then
 	lsb_release -a
+	printf "\n"
 	uname -a
 
 	checkvm
