@@ -1005,8 +1005,8 @@ fi
 
 if [ "$VERBOSE" = "1" ]
 then
-	uname -a
 	lsb_release -a
+	uname -a
 
 	checkvm
 	if [ ${vm} ]
