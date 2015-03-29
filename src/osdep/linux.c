@@ -72,6 +72,9 @@ struct nl80211_state state;
 static int chan;
 #endif //CONFIG_LIBNL
 
+/* if_nametoindex is defined in net/if.h but that conflicts with linux/if.h */
+extern unsigned int if_nametoindex (const char *__ifname);
+extern char *if_indextoname (unsigned int __ifindex, char *__ifname);
 
 typedef enum {
         DT_NULL = 0,
