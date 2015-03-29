@@ -1008,12 +1008,25 @@ then
 	if [ -x "$(command -v readlink 2>&1)" ]
 	then
 		printf "/bin/sh -> $(readlink -f /bin/sh)\n"
+		if $(readlink -f /bin/sh) --version > /dev/null 2>&1
+		then
+			printf "$($(readlink -f /bin/sh) --version)\n"
+		fi
 	else
 		ls -l /bin/sh
+		if /bin/sh --version > /dev/null 2>&1
+		then
+			/bin/sh --version
+		fi
 	fi
 	if [ $SHELL ]
 	then
-		printf "SHELL is $SHELL\n\n"
+		if $SHELL --version > /dev/null 2>&1
+		then
+			printf "\nSHELL is $($SHELL --version)\n\n"
+		else
+			printf "\nSHELL is $SHELL\n\n"
+		fi
 	fi
 fi
 if [ "$VERBOSE" = "1" ]
