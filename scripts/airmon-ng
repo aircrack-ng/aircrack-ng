@@ -157,10 +157,10 @@ usage() {
 setLink() {
 	if [ -x "$(command -v ip 2>&1)" ]
 	then
-		ip link set dev ${1} ${2} || printf "Failed to set ${1} ${2} using ip"
+		ip link set dev ${1} ${2} > /dev/null 2>&1 || printf "\nFailed to set ${1} ${2} using ip\n"
 	elif [ -x "$(command -v ifconfig 2>&1)" ]
 	then
-		ifconfig ${1} ${2} || printf "Failed to set ${1} ${2} using ifconfig"
+		ifconfig ${1} ${2} > /dev/null 2>&1 || printf "\nFailed to set ${1} ${2} using ifconfig\n"
 	fi
 	return
 }
@@ -173,7 +173,7 @@ ifaceIsUp() {
 	then
 		ifaceIsUpCmd="ifconfig"
 	fi
-	if ${ifaceIsUpCmd} ${1} | grep -q UP
+	if ${ifaceIsUpCmd} ${1} 2>&1 | grep -q UP
 	then
 		return
 	else
@@ -836,8 +836,13 @@ getPhy() {
 		return
 	fi
 
-	if [ -d /sys/class/net/$1/phy80211/ ]
+	if [ -d /sys/class/net/$1/phy80211/name ]
 	then
+		PHYDEV="$(cat /sys/class/net/$1/phy80211/name)"
+	fi
+	if [ -d /sys/class/net/$1/phy80211/ ] && [ -z ${PHYDEV} ]
+	then
+
 		PHYDEV="$(ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/')"
 	fi
 }
