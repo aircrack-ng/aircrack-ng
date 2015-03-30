@@ -200,6 +200,14 @@ struct oui {
 	struct oui *next;
 };
 
+/* WPS_info struct */
+struct WPS_info {
+    unsigned char version;    /* WPS Version */
+    unsigned char state;      /* Current WPS state */
+    unsigned char ap_setup_locked; /* AP setup locked */
+    unsigned int meth;        /* WPS Config Methods */
+};
+
 /* linked list of detected access points */
 struct AP_info
 {
@@ -269,6 +277,7 @@ struct AP_info
 					  
     int marked;
     int marked_color;
+    struct WPS_info wps;
 };
 
 /* linked list of detected clients */
@@ -465,6 +474,8 @@ struct globals
     int show_manufacturer;
     int show_uptime;
     int file_write_interval;
+    u_int maxsize_wps_seen;
+    int show_wps;
 }
 G;
 
