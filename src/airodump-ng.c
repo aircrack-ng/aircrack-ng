@@ -5999,7 +5999,7 @@ int main( int argc, char *argv[] )
         {"ignore-negative-one", 0, &G.ignore_negative_one, 1},
         {"manufacturer",  0, 0, 'M'},
         {"uptime",   0, 0, 'U'},
-		{"write-interval", 1, 0, 'W'},
+        {"write-interval", 1, 0, 'I'},
         {0,          0, 0,  0 }
     };
 
@@ -6166,7 +6166,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUW:",
+                        "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -6187,7 +6187,7 @@ int main( int argc, char *argv[] )
                 printf("\"%s --help\" for help.\n", argv[0]);
                 return( 1 );
 
-            case 'W':
+            case 'I':
 
             	if (!is_string_number(optarg)) {
             		printf("Error: Write interval is not a number (>0). Aborting.\n");
