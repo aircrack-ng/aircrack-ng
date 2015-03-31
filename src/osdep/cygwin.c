@@ -47,6 +47,7 @@ struct priv_cygwin {
 	volatile int	pc_running;
 	int		pc_pipe[2]; /* reader -> parent */
 	int		pc_channel;
+	int		pc_frequency;
 	struct wif	*pc_wi;
 	int		pc_did_init;
 
@@ -55,6 +56,7 @@ struct priv_cygwin {
 
 	int		(*pc_init)(char *param);
 	int		(*pc_set_chan)(int chan);
+	int		(*pc_set_freq)(int freq);
 	int		(*pc_inject)(void *buf, int len, struct tx_info *ti);
 	int		(*pc_sniff)(void *buf, int len, struct rx_info *ri);
 	int		(*pc_get_mac)(void *mac);
@@ -157,6 +159,7 @@ static int do_cygwin_open(struct wif *wi, char *iface)
 
 		priv->pc_init		= dlsym(lib, xstr(CYGWIN_DLL_INIT));
 		priv->pc_set_chan	= dlsym(lib, xstr(CYGWIN_DLL_SET_CHAN));
+		priv->pc_set_freq	= dlsym(lib, xstr(CYGWIN_DLL_SET_FREQ));
 		priv->pc_get_mac	= dlsym(lib, xstr(CYGWIN_DLL_GET_MAC));
 		priv->pc_set_mac	= dlsym(lib, xstr(CYGWIN_DLL_SET_MAC));
 		priv->pc_close		= dlsym(lib, xstr(CYGWIN_DLL_CLOSE));
@@ -248,6 +251,23 @@ static int cygwin_set_channel(struct wif *wi, int chan)
 }
 
 /**
+ * Change frequency
+ * @param freq Frequency
+ * @return 0 if successful, -1 if it failed
+ */
+static int cygwin_set_freq(struct wif *wi, int freq)
+{
+	struct priv_cygwin *priv = wi_priv(wi);
+
+	if (!priv->pc_set_freq || priv->pc_set_freq(freq) == -1)
+		return -1;
+
+	priv->pc_frequency = freq;
+	return 0;
+}
+
+
+/**
  * Capture a packet
  * @param buf Buffer for the packet (has to be already allocated)
  * @param len Length of the buffer
@@ -299,6 +319,13 @@ static int cygwin_get_channel(struct wif *wi)
 	struct priv_cygwin *pc = wi_priv(wi);
 
 	return pc->pc_channel;
+}
+
+static int cygwin_get_freq(struct wif *wi)
+{
+	struct priv_cygwin *pc = wi_priv(wi);
+
+	return pc->pc_frequency;
 }
 
 int cygwin_read_reader(int fd, int plen, void *dst, int len)
@@ -465,6 +492,11 @@ static void *cygwin_reader(void *arg)
 
 	while (priv->pc_running) {
 		/* read one packet */
+
+		/* a potential problem: the cygwin_read_packet will never return
+		 * if there no packet sniffered, so the thread cannot be closed
+		 * correctly.
+		 */
 		len = cygwin_read_packet(priv, buf, sizeof(buf), &ri);
 		if (len == -1)
 			break;
@@ -501,6 +533,8 @@ static struct wif *cygwin_open(char *iface)
 	wi->wi_write		= cygwin_write;
 	wi->wi_set_channel	= cygwin_set_channel;
 	wi->wi_get_channel	= cygwin_get_channel;
+	wi->wi_set_freq		= cygwin_set_freq;
+	wi->wi_get_freq		= cygwin_get_freq;
 	wi->wi_close		= cygwin_close;
 	wi->wi_fd		= cygwin_fd;
 	wi->wi_get_mac		= cygwin_get_mac;

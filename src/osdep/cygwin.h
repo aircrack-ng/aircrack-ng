@@ -22,6 +22,7 @@
 // DLL function that have to be exported
 #define CYGWIN_DLL_INIT		cygwin_init
 #define CYGWIN_DLL_SET_CHAN	cygwin_set_chan
+#define CYGWIN_DLL_SET_FREQ   cygwin_set_freq
 #define CYGWIN_DLL_INJECT	cygwin_inject
 #define CYGWIN_DLL_SNIFF	cygwin_sniff
 #define CYGWIN_DLL_GET_MAC	cygwin_get_mac
