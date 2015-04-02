@@ -44,7 +44,7 @@ int getFrequencyFromChannel(int channel)
 		6050, 6055, 6060, 6065, 6070, 6075, 6080, 6085, 6090, 6095, 6100
 	};
 
-	return (channel > 0 && channel <= 221) ? frequencies[channel] : -1;
+	return (channel > 0 && channel <= 221) ? frequencies[channel] : (channel >= -16 && channel <= -4) ? 5000 - (channel * 5) : -1 ;
 }
 
 /**
@@ -56,7 +56,8 @@ int getChannelFromFrequency(int frequency)
 		return (frequency - 2407) / 5;
 	else if (frequency == 2484)
 		return 14;
-	else if (frequency >= 5000 && frequency <= 6100)
+
+	else if (frequency >= 4920 && frequency <= 6100)
 		return (frequency - 5000) / 5;
 	else
 		return -1;
