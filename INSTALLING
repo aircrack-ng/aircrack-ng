@@ -32,15 +32,14 @@ to compile and install the suite:
 
 * sqlite:   needed to compile airolib-ng and add support for airolib-ng
             databases in aircrack-ng.
-            On cygwin: SQLite has to be compiled manually. See next section.
 
 * airpcap:  needed for supporting airpcap devices on windows (cygwin only)
             REQUIREMENT: Copy 'developers' directory from Airpcap CD one 
                          level below this INSTALLING file
             Note: Not working yet.
 
-* experimental: needed to compile tkiptun-ng, easside-ng (and buddy-ng) and
-                wesside-ng
+* experimental: needed to compile tkiptun-ng, easside-ng (and buddy-ng),
+                wesside-ng and besside-ng
 
 * ext_scripts: needed to build airoscript-ng, versuck-ng, airgraph-ng and 
             airdrop-ng. 
