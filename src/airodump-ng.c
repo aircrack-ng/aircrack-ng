@@ -47,6 +47,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
+#define _GNU_SOURCE
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -4813,7 +4814,7 @@ static int read_line(int sock, char *buffer, int pos, int size)
 	int status = 1;
 	if (pos < 0 || size < 1 || pos >= size || buffer == NULL || sock < 0)
 	{
-		return NULL;
+		return -1;
 	}
 	while(strchr_n(buffer, 0x0A, pos) == NULL && status > 0  && pos < size )
 	{
