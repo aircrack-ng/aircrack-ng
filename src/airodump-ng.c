@@ -77,6 +77,9 @@
 	GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 
+// in common.c
+extern int is_string_number(const char * str);
+
 void dump_sort( void );
 void dump_print( int ws_row, int ws_col, int if_num );
 
