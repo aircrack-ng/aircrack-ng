@@ -33,14 +33,14 @@ endif
 
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE) airbase-ng$(EXE) besside-ng$(EXE)
+		  airtun-ng$(EXE) airbase-ng$(EXE)
 		  
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(experimental) $(EXPERIMENTAL))),true)
-	SBINFILES	+= wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
+	SBINFILES	+= wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE) besside-ng$(EXE)
 	BINFILES	+= buddy-ng$(EXE)
 endif
 
