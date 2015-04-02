@@ -1,5 +1,5 @@
 Version 1.2-rc2 (changes from aircrack-ng 1.2-rc1) - Released XX YYYYY ZZZZ:
-
+* Compilation: Added support for DUMA.
 * Makefile: Renamed 'unstable' to 'experimental'.
 * Airodump-ng: Fixed XML sanitizing.
 * Airmon-ng: Airmon-zc is now stable enough to replace airmon-ng.

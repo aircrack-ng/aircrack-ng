@@ -58,6 +58,9 @@ to compile and install the suite:
 * pcre:	    Add support for regular expression matching for ESSID in airodump-ng and besside-ng.
             Dependencies (debian): libpcre3-dev
 
+* duma:     Compile with DUMA support. DUMA is a library to detect buffer overruns and under-runs.
+            Dependencies (debian): duma
+
 Example:
 
   * Compiling:

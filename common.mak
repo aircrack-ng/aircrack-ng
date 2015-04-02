@@ -158,3 +158,7 @@ endif
 ifeq ($(GCC_OVER45), 1)
 	CFLAGS		+= -Wno-unused-but-set-variable -Wno-array-bounds
 endif
+
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(duma) $(DUMA))),true)
+	LIBS += -lduma
+endif
