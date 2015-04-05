@@ -4563,8 +4563,6 @@ usage:
 		perror("setuid");
 	}
 
-    setuid( getuid() );
-
     /* XXX */
     if( opt.r_nbpps == 0 )
     {
