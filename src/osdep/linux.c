@@ -224,6 +224,7 @@ static char * searchInside(const char * dir, const char * filename)
         if ((int)strlen( ep->d_name) == len && !strcmp(ep->d_name, filename))
         {
             (void)closedir(dp);
+            free( curfile );
             return curfile;
         }
         lstat(curfile, &sb);
@@ -1042,6 +1043,12 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
     cb = nl_cb_alloc(NL_CB_DEFAULT);
     s_cb = nl_cb_alloc(NL_CB_DEFAULT);
     if (!cb || !s_cb) {
+	if (cb) {
+		free(cb);
+	}
+	if (s_cb) {
+		free(s_cb);
+	}
         fprintf(stderr, "failed to allocate netlink callbacks\n");
         err = 2;
         goto out_free_msg;
