@@ -4878,7 +4878,9 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 	to_find_len = strlen(name) + 3;
 	to_find = (char*) malloc(to_find_len);
 	snprintf(to_find, sizeof(to_find), "\"%s\"", name);
-	if((cursor = strcasestr(buffer, to_find)) != NULL)
+	cursor = strcasestr(buffer, to_find);
+	free(to_find);
+	if(cursor != NULL)
 	{
 		cursor += to_find_len -1;
 		while(*cursor != ':' && *cursor != '\0')
@@ -4895,7 +4897,6 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 		}
 		if('\0' == *cursor)
 		{
-			free(to_find);
 			return 0;
 		}
 
@@ -4953,7 +4954,6 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 		}
 	}
 
-	free(to_find);
 	return ret;
 }
 
