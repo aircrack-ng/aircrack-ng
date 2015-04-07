@@ -1031,6 +1031,7 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
     NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, htval);
 
     nl_send_auto_complete(state.nl_sock,msg);
+    nlmsg_free(msg);
 
     dev->channel = channel;
 
