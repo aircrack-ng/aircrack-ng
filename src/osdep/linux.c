@@ -224,7 +224,6 @@ static char * searchInside(const char * dir, const char * filename)
         if ((int)strlen( ep->d_name) == len && !strcmp(ep->d_name, filename))
         {
             (void)closedir(dp);
-            free( curfile );
             return curfile;
         }
         lstat(curfile, &sb);
