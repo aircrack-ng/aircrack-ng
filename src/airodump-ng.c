@@ -4864,10 +4864,11 @@ static int get_line_from_buffer(char *buffer, int size, char *line)
  * The string in "value" is null-terminated if the name was found.  If
  * the name was not found, the contents of "value" are undefined. 
  */
-static int json_get_value_for_name( char *buffer, char *name, char *value )
+static int json_get_value_for_name( const char *buffer, const char *name, char *value )
 {
-	char to_find[1537];
+	char * to_find;
 	char *cursor;
+	size_t to_find_len;
 	char *vcursor = value;
 	int ret = 0;
 	
@@ -4875,11 +4876,13 @@ static int json_get_value_for_name( char *buffer, char *name, char *value )
 	{
 		return 0;
 	}
-	
+
+	to_find_len = strlen(name) + 3;
+	to_find = (char*) malloc(to_find_len);
 	snprintf(to_find, sizeof(to_find), "\"%s\"", name);
 	if((cursor = strcasestr(buffer, to_find)) != NULL)
 	{
-		cursor += strlen(to_find);
+		cursor += to_find_len;
 		while(*cursor != ':' && *cursor != '\0')
 		{
 			cursor++;
@@ -4895,6 +4898,7 @@ static int json_get_value_for_name( char *buffer, char *name, char *value )
 		if('\0' == *cursor)
 		{
 			return 0;
+			free(to_find);
 		}
 
 		if('"' == *cursor)
@@ -4950,6 +4954,8 @@ static int json_get_value_for_name( char *buffer, char *name, char *value )
 			ret = 1;
 		}
 	}
+
+	free(to_find);
 	return ret;
 }
 
