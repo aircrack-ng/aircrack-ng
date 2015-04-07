@@ -4968,6 +4968,9 @@ void gps_tracker( void )
     int mode;
     fd_set read_fd;
     struct timeval timeout;
+    memset(line, 0, 1537);
+    memset(buffer, 0, 1537);
+    memset(data, 0, 1537);
 
     /* attempt to connect to localhost, port 2947 */
 
