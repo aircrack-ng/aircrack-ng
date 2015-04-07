@@ -1668,12 +1668,6 @@ static int do_linux_open(struct wif *wi, char *iface)
         goto close_in;
     }
 
-#ifdef CONFIG_LIBNL
-	if (iwpriv) {
-		free(iwpriv);
-	}
-#endif
-
     if( ( dev->fd_out = socket( PF_PACKET, SOCK_RAW,
                                htons( ETH_P_ALL ) ) ) < 0 )
     {
