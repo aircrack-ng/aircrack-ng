@@ -4556,6 +4556,8 @@ int dump_write_kismet_netxml( void )
 
 			/* Write client information */
 			dump_write_kismet_netxml_client_info(st_cur, 1);
+
+			fprintf(G.f_kis_xml, "\t</wireless-network>");
 		}
 		st_cur = st_cur->next;
 	}
