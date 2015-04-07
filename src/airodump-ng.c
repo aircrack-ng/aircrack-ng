@@ -4784,19 +4784,17 @@ int dump_write_kismet_csv( void )
 static char *strchr_n(char *str, int c, size_t n)
 {
 	size_t count = 0;
+	if (str == NULL || n == 0)
+	{
+		return NULL;
+	}
 	while(*str != c && *str != '\0' && count < n)
 	{
 		str++;
 		count++;
 	}
-	if(*str == c)
-	{
-		return str;
-	}
-	else
-	{
-		return NULL;
-	}
+
+	return (*str == c) ? str : NULL;
 }
 
 /* Read at least one full line from the network.
