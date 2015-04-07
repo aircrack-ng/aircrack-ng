@@ -4882,7 +4882,7 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 	snprintf(to_find, sizeof(to_find), "\"%s\"", name);
 	if((cursor = strcasestr(buffer, to_find)) != NULL)
 	{
-		cursor += to_find_len;
+		cursor += to_find_len -1;
 		while(*cursor != ':' && *cursor != '\0')
 		{
 			cursor++;
@@ -4897,8 +4897,8 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 		}
 		if('\0' == *cursor)
 		{
-			return 0;
 			free(to_find);
+			return 0;
 		}
 
 		if('"' == *cursor)
@@ -4911,11 +4911,13 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 				{
 					/* Escaped quote */
 					*vcursor = '"';
+					printf("vcursor: %s\n", vcursor);
 					cursor++;
 				}
 				else
 				{
 					*vcursor = *cursor;
+					printf("vcursor: %s\n", vcursor);
 				}
 				vcursor++;
 				cursor++;
@@ -5006,8 +5008,12 @@ void gps_tracker( void )
     	
     	pos = get_line_from_buffer(buffer, pos, line);
 
+	printf("2\n");
+	printf("Line: <%s>\n", line);
+	printf("3\n");
     	is_json = (json_get_value_for_name(line, "class", data) &&
     			   strncmp(data, "VERSION", 7) == 0);
+	printf("4\n");
 		
     	if (is_json) {
 			/* Verify it's a version of the protocol we speak */
@@ -6944,6 +6950,8 @@ usage:
         usleep( 50000 );
         waitpid( -1, NULL, WNOHANG );
     }
+
+    while(1) sleep(1000000);
 
     fprintf( stderr, "\33[?25l\33[2J\n" );
 
