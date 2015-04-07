@@ -181,7 +181,7 @@ int check_crc_buf_osdep( unsigned char *buf, int len )
 static int is_ndiswrapper(const char * iface, const char * path)
 {
     int n, pid, unused;
-    if (!path)
+    if (!path || !iface)
 	return 0;
     if ((pid=fork())==0)
     {
