@@ -964,8 +964,6 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
     struct nl_msg *msg;
     unsigned int freq;
     int err;
-    struct nl_cb *cb;
-    struct nl_cb *s_cb;
     unsigned int htval = NL80211_CHAN_NO_HT;
 
     memset( s, 0, sizeof( s ) );
@@ -1040,21 +1038,6 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
         fprintf(stderr, "failed to allocate netlink message\n");
         return 2;
     }
-    cb = nl_cb_alloc(NL_CB_DEFAULT);
-    s_cb = nl_cb_alloc(NL_CB_DEFAULT);
-    if (!cb || !s_cb) {
-	if (cb) {
-		free(cb);
-	}
-	if (s_cb) {
-		free(s_cb);
-	}
-        fprintf(stderr, "failed to allocate netlink callbacks\n");
-        err = 2;
-        goto out_free_msg;
-    }
-
-    //nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, test_callback, NULL);
 
     genlmsg_put(msg, 0, 0, genl_family_get_id(state.nl80211), 0,
             0, NL80211_CMD_SET_WIPHY, 0);
@@ -1068,9 +1051,6 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
     dev->channel = channel;
 
     return( 0 );
- out_free_msg:
-    nlmsg_free(msg);
-    return err;
  nla_put_failure:
     return -ENOBUFS;
 }
