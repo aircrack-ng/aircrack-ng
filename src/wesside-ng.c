@@ -33,7 +33,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/termios.h>
+#include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
