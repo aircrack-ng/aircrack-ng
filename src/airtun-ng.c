@@ -69,6 +69,7 @@ static struct wif *_wi_in, *_wi_out;
 
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
+#define CRYPT_WPA  2
 
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
@@ -95,6 +96,9 @@ char usage[] =
 "      -i iface         : capture packets from this interface\n"
 "      -y file          : read PRGA from this file\n"
 "      -w wepkey        : use this WEP-KEY to encrypt packets\n"
+"      -p pass          : use this WPA passphrase to decrypt packets\n"
+"                       : (use with -a and -e)\n"
+"      -e essid         : target network SSID (use with -p)\n"
 "      -t tods          : send frames to AP (1) or to client (0)\n"
 "                       : or tunnel them into a WDS/Bridge (2)\n"
 "      -r file          : read frames out of pcap file\n"
@@ -131,6 +135,10 @@ struct options
     int prgalen;
     int tods;
     int bidir;
+
+    char essid[36];
+    char passphrase[65];
+    unsigned char pmk[40];
 
     unsigned char wepkey[64];
     int weplen, crypt;
@@ -192,6 +200,8 @@ unsigned char tmpbuf[4096];
 unsigned char srcbuf[4096];
 char strbuf[512];
 struct net_entry *nets = NULL;
+struct WPA_ST_info *st_1st = NULL;
+unsigned char ZERO[32];
 
 int ctrl_c, alarmed;
 
@@ -860,6 +870,7 @@ int packet_xmit(unsigned char* packet, int length)
 {
     unsigned char K[64];
     unsigned char buf[4096];
+    struct WPA_ST_info *st_cur;
     int data_begin = 24;
     int dest_net;
 
@@ -929,6 +940,45 @@ int packet_xmit(unsigned char* packet, int length)
 
         h80211[1] = h80211[1] | 0x40;
     }
+    else if( opt.crypt == CRYPT_WPA )
+    {
+        /* Add QoS */
+        /*   Doesn't seem to be needed -> commented out */
+        // memmove( h80211 + data_begin + 2, h80211 + data_begin, length - data_begin );
+        // memset( h80211 + data_begin, 0, 2 );
+        // data_begin += 2;
+        // length += 2;
+        // h80211[0] |= 0x80; // Set QoS
+
+        /* Find station */
+        st_cur = st_1st;
+        while( st_cur != NULL )
+        {
+            // STA -> AP
+            if( opt.tods == 1 && memcmp( st_cur->stmac, packet+6, 6 ) == 0 )
+                break;
+
+            // AP -> STA
+            if( opt.tods == 0 && memcmp( st_cur->stmac, packet, 6 ) == 0 )
+                break;
+
+            st_cur = st_cur->next;
+        }
+        if( st_cur == NULL )
+        {
+            printf( "Cannot inject: handshake not captured yet.\n" );
+            return 1;
+        }
+
+        // Todo: overflow to higher bits (pn is 6 bytes wide)
+        st_cur->pn[5] += 1;
+
+        h80211[1] = h80211[1] | 0x40; // Set Protected Frame flag
+
+        encrypt_ccmp( h80211, length, st_cur->ptk + 32, st_cur->pn );
+        length += 16;
+        data_begin += 8;
+    }
     else if( opt.prgalen > 0 )
     {
         if(create_wep_packet(h80211, &length, data_begin) != 0) return 1;
@@ -953,16 +1003,21 @@ int packet_xmit(unsigned char* packet, int length)
     return 0;
 }
 
+
 int packet_recv(unsigned char* packet, int length)
 {
     unsigned char K[64];
-    unsigned char bssid[6], smac[6], dmac[6];
+    unsigned char bssid[6], smac[6], dmac[6], stmac[6];
     unsigned char *buffer;
+    unsigned long crc;
 
     int len;
     int z;
     int fragnum, seqnum, morefrag;
     int process_packet;
+
+    struct WPA_ST_info *st_cur;
+    struct WPA_ST_info *st_prv;
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
     if ( ( packet[0] & 0x80 ) == 0x80 ) /* QoS */
@@ -984,16 +1039,19 @@ int packet_recv(unsigned char* packet, int length)
             memcpy( bssid, packet + 4, 6 );
             memcpy( dmac, packet + 16, 6 );
             memcpy( smac, packet + 10, 6 );
+            memcpy( stmac, packet + 10, 6 );
             break;
         case  2:
             memcpy( bssid, packet + 10, 6 );
             memcpy( dmac, packet + 4, 6 );
             memcpy( smac, packet + 16, 6 );
+            memcpy( stmac, packet + 4, 6 );
             break;
         default:
             memcpy( bssid, packet + 10, 6 );
             memcpy( dmac, packet + 16, 6 );
             memcpy( smac, packet + 24, 6 );
+            memcpy( stmac, packet + 4, 6 );
             break;
     }
 
@@ -1032,12 +1090,77 @@ int packet_recv(unsigned char* packet, int length)
 
     if( process_packet )
     {
-        if( (packet[z] != packet[z + 1] || packet[z + 2] != 0x03) && opt.crypt == CRYPT_WEP )
+        /* find station */
+
+        st_prv = NULL;
+        st_cur = st_1st;
+
+        while( st_cur != NULL )
+        {
+            if( ! memcmp( st_cur->stmac, stmac, 6 ) )
+                break;
+
+            st_prv = st_cur;
+            st_cur = st_cur->next;
+        }
+
+        /* if it's a new station, add it */
+
+        if( st_cur == NULL )
+        {
+            if( ! ( st_cur = (struct WPA_ST_info *) malloc(
+                             sizeof( struct WPA_ST_info ) ) ) )
+            {
+                perror( "malloc failed" );
+                return 1;
+            }
+
+            memset( st_cur, 0, sizeof( struct WPA_ST_info ) );
+
+            if( st_1st == NULL )
+                st_1st = st_cur;
+            else
+                st_prv->next = st_cur;
+
+            memcpy( st_cur->stmac, stmac, 6 );
+            memcpy( st_cur->bssid, bssid, 6 );
+        }
+
+        /* check if we haven't already processed this packet */
+
+        crc = calc_crc_buf( packet + z, length - z );
+
+        if( ( packet[1] & 3 ) == 2 )
+        {
+            if( st_cur->t_crc == crc )
+            {
+                return 1;
+            }
+
+            st_cur->t_crc = crc;
+        }
+        else
+        {
+            if( st_cur->f_crc == crc )
+            {
+                return 1;
+            }
+
+            st_cur->f_crc = crc;
+        }
+
+        /* check the SNAP header to see if data is encrypted *
+         * as unencrypted data begins with AA AA 03 00 00 00 */
+
+        if( packet[z] != packet[z + 1] || packet[z + 2] != 0x03 )
         {
             /* check the extended IV flag */
 
             if( ( packet[z + 3] & 0x20 ) == 0 )
             {
+                if( opt.crypt != CRYPT_WEP )
+                    return 1;
+
                 memcpy( K, packet + z, 3 );
                 memcpy( K + 3, opt.wepkey, opt.weplen );
 
@@ -1053,9 +1176,176 @@ int packet_recv(unsigned char* packet, int length)
 
                 length -= 8;
 
-                memcpy( packet + z, packet + z + 4, length - z );
+                /* can overlap */
+                memmove( packet + z, packet + z + 4, length - z );
 
                 packet[1] &= 0xBF;
+            }
+            else
+            {
+                if( opt.crypt != CRYPT_WPA )
+                    return 1;
+
+                /* if the PTK is valid, try to decrypt */
+
+                if( st_cur == NULL || ! st_cur->valid_ptk )
+                    return 1;
+
+                if( st_cur->keyver == 1 )
+                {
+                    if( decrypt_tkip( packet, length,
+                                      st_cur->ptk + 32 ) == 0 )
+                    {
+                        printf("ICV check failed (WPA-TKIP)!\n");
+                        return 1;
+                    }
+
+                    length -= 20;
+                }
+                else
+                {
+                    buffer = malloc( length );
+                    memcpy( buffer, packet, length );
+                    if ( memcmp( smac, st_cur->stmac, 6 ) == 0 ) {
+                        st_cur->pn[0] = packet[z + 7];
+                        st_cur->pn[1] = packet[z + 6];
+                        st_cur->pn[2] = packet[z + 5];
+                        st_cur->pn[3] = packet[z + 4];
+                        st_cur->pn[4] = packet[z + 1];
+                        st_cur->pn[5] = packet[z + 0];
+                    }
+
+                    if( decrypt_ccmp( packet, length,
+                                      st_cur->ptk + 32 ) == 0 )
+                    {
+                        printf("ICV check failed (WPA-CCMP)!\n");
+                        return 1;
+                    }
+
+                    length -= 16;
+                }
+
+                /* WPA data packet was successfully decrypted, *
+                 * remove the WPA Ext.IV & MIC, write the data */
+
+                /* can overlap */
+                memmove( packet + z, packet + z + 8, length - z );
+
+                packet[1] &= 0xBF;
+            }
+        }
+        else if ( opt.crypt == CRYPT_WPA )
+        {
+            /* check ethertype == EAPOL */
+
+            z += 6;
+
+            if( packet[z] != 0x88 || packet[z + 1] != 0x8E )
+            {
+                return 1;
+            }
+
+            z += 2;
+
+            /* type == 3 (key), desc. == 254 (WPA) or 2 (RSN) */
+
+            if( packet[z + 1] != 0x03 ||
+                ( packet[z + 4] != 0xFE && packet[z + 4] != 0x02 ) )
+                return 1;
+
+            /* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
+
+            if( ( packet[z + 6] & 0x08 ) != 0 &&
+                ( packet[z + 6] & 0x40 ) == 0 &&
+                ( packet[z + 6] & 0x80 ) != 0 &&
+                ( packet[z + 5] & 0x01 ) == 0 )
+            {
+                /* set authenticator nonce */
+
+                memcpy( st_cur->anonce, &packet[z + 17], 32 );
+            }
+
+            /* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
+
+            if( ( packet[z + 6] & 0x08 ) != 0 &&
+                ( packet[z + 6] & 0x40 ) == 0 &&
+                ( packet[z + 6] & 0x80 ) == 0 &&
+                ( packet[z + 5] & 0x01 ) != 0 )
+            {
+                if( memcmp( &packet[z + 17], ZERO, 32 ) != 0 )
+                {
+                    /* set supplicant nonce */
+
+                    memcpy( st_cur->snonce, &packet[z + 17], 32 );
+                }
+
+                /* copy the MIC & eapol frame */
+
+                st_cur->eapol_size = ( packet[z + 2] << 8 )
+                                   +   packet[z + 3] + 4;
+
+                if (length - z < (int)st_cur->eapol_size  || st_cur->eapol_size == 0 ||
+                    st_cur->eapol_size > sizeof(st_cur->eapol))
+                {
+                        // Ignore the packet trying to crash us.
+                        st_cur->eapol_size = 0;
+                        return 1;
+                }
+
+                memcpy( st_cur->keymic, &packet[z + 81], 16 );
+                memcpy( st_cur->eapol, &packet[z], st_cur->eapol_size );
+                memset( st_cur->eapol + 81, 0, 16 );
+
+                /* copy the key descriptor version */
+
+                st_cur->keyver = packet[z + 6] & 7;
+            }
+
+            /* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
+
+            if( ( packet[z + 6] & 0x08 ) != 0 &&
+                ( packet[z + 6] & 0x40 ) != 0 &&
+                ( packet[z + 6] & 0x80 ) != 0 &&
+                ( packet[z + 5] & 0x01 ) != 0 )
+            {
+                if( memcmp( &packet[z + 17], ZERO, 32 ) != 0 )
+                {
+                    /* set authenticator nonce */
+
+                    memcpy( st_cur->anonce, &packet[z + 17], 32 );
+                }
+
+                /* copy the MIC & eapol frame */
+
+                st_cur->eapol_size = ( packet[z + 2] << 8 )
+                                   +   packet[z + 3] + 4;
+
+                if (length - z < (int)st_cur->eapol_size  || st_cur->eapol_size == 0 ||
+                    st_cur->eapol_size > sizeof(st_cur->eapol))
+                {
+                    // Ignore the packet trying to crash us.
+                    st_cur->eapol_size = 0;
+                    return 1; //continue;
+                 }
+
+                memcpy( st_cur->keymic, &packet[z + 81], 16 );
+                memcpy( st_cur->eapol, &packet[z], st_cur->eapol_size );
+                memset( st_cur->eapol + 81, 0, 16 );
+
+                /* copy the key descriptor version */
+
+                st_cur->keyver = packet[z + 6] & 7;
+            }
+
+            st_cur->valid_ptk = calc_ptk( st_cur, opt.pmk );
+
+            if ( st_cur->valid_ptk )
+            {
+                printf("WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                       st_cur->stmac[0], st_cur->stmac[1],
+                       st_cur->stmac[2], st_cur->stmac[3],
+                       st_cur->stmac[4], st_cur->stmac[5]
+                );
             }
         }
 
@@ -1138,6 +1428,7 @@ int main( int argc, char *argv[] )
 
     /* check the arguments */
 
+    memset( ZERO, 0, sizeof( ZERO ) );
     memset( &opt, 0, sizeof( opt ) );
     memset( &dev, 0, sizeof( dev ) );
 
@@ -1162,7 +1453,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "x:a:h:i:r:y:t:s:bw:m:d:fH",
+                        "x:a:h:i:r:y:t:s:bw:p:e:m:d:fH",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -1327,7 +1618,47 @@ int main( int argc, char *argv[] )
                 opt.weplen = i;
 
                 break;
+
+            case 'e' :
+
+                if ( opt.essid[0])
+                {
+                    printf( "ESSID already specified.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+
+                opt.crypt = CRYPT_WPA;
+
+                memset(  opt.essid, 0, sizeof( opt.essid ) );
+                strncpy( opt.essid, optarg, sizeof( opt.essid ) - 1 );
+                break;
+
+
+            case 'p' :
+
+                if( opt.prga != NULL )
+                {
+                    printf( "PRGA file already specified.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+                if( opt.crypt != CRYPT_NONE )
+                {
+                    printf( "Encryption key already specified.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+
+                opt.crypt = CRYPT_WPA;
+
+                memset(  opt.passphrase, 0, sizeof( opt.passphrase ) );
+                strncpy( opt.passphrase, optarg, sizeof( opt.passphrase ) - 1 );
+
+                break;
+
             case 'm':
+
                 if ( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 )
                 {
                     printf("Notice: netmask already given\n");
@@ -1415,6 +1746,23 @@ usage:
         printf( "Please specify a Transmitter (-s).\n" );
    		printf("\"%s --help\" for help.\n", argv[0]);
         return 1;
+    }
+
+    if( opt.crypt == CRYPT_WPA )
+    {
+        if( opt.passphrase[0] != '\0' )
+        {
+            /* compute the Pairwise Master Key */
+
+            if( opt.essid[0] == '\0' )
+            {
+                printf( "You must also specify the ESSID (-e).\n" );
+                printf("\"%s --help\" for help.\n", argv[0]);
+                return( 1 );
+            }
+
+            calc_pmk( opt.passphrase, opt.essid, opt.pmk );
+        }
     }
 
     dev.fd_rtc = -1;
@@ -1552,7 +1900,11 @@ usage:
     {
         printf( "No encryption specified. Sending and receiving frames through %s.\n", argv[optind]);
     }
-    else if(opt.crypt != CRYPT_NONE)
+    else if(opt.crypt == CRYPT_WPA)
+    {
+        printf( "WPA encryption specified. Sending and receiving frames through %s.\n", argv[optind] );
+    }
+    else if(opt.crypt == CRYPT_WEP)
     {
         printf( "WEP encryption specified. Sending and receiving frames through %s.\n", argv[optind] );
     }
@@ -1685,7 +2037,6 @@ usage:
                 }
                 send_packet(h80211, caplen);
             }
-
 
             packet_recv( h80211, caplen);
             msleep( 1000/opt.r_nbpps );

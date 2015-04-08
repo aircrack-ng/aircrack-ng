@@ -91,6 +91,7 @@ struct WPA_ST_info
     unsigned long t_crc;        /* last ToDS   frame CRC        */
     unsigned long f_crc;        /* last FromDS frame CRC        */
     int keyver, valid_ptk;
+    unsigned char pn[6];                /* Packet Number (WPA-CCMP) */
 };
 
 struct Michael
@@ -221,6 +222,7 @@ int is_dhcp_discover(void *wh, int len);
 int is_qos_arp_tkip(void *wh, int len);
 int calc_tkip_ppk( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char key[16] );
 int decrypt_tkip( unsigned char *h80211, int caplen, unsigned char TK1[16] );
+int encrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char PN[6] );
 int decrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16] );
 int calc_ptk( struct WPA_ST_info *wpa, unsigned char pmk[32] );
 int calc_tkip_mic(unsigned char* packet, int length, unsigned char ptk[80], unsigned char value[8]);

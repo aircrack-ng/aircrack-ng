@@ -14,8 +14,7 @@ all:	check
 
 SRC_CRYPTO	  = $(AC_ROOT)/src/crypto.c $(AC_ROOT)/src/sha1-git.c
 
-TESTFILES        = test-encrypt-wep$(EXE) test-calc-pmk$(EXE) test-calc-mic$(EXE) test-calc-ptk$(EXE) test-decrypt-ccmp$(EXE) test-calc-4pmk$(EXE)
-
+TESTFILES        = test-encrypt-wep$(EXE) test-calc-pmk$(EXE) test-calc-mic$(EXE) test-calc-ptk$(EX) test-encrypt-ccmp$(EXE) test-decrypt-ccmp$(EXE) test-calc-4pmk$(EXE)
 
 OBJS_TEST_EWEP  = test-encrypt-wep.c $(SRC_CRYPTO)
 OBJS_TEST_CPMK  = test-calc-pmk.c $(SRC_CRYPTO)
@@ -23,6 +22,7 @@ OBJS_TEST_4PMK  = test-calc-4pmk.c $(SRC_CRYPTO)
 OBJS_TEST_CMIC  = test-calc-mic.c $(SRC_CRYPTO)
 OBJS_TEST_CPTK  = test-calc-ptk.c $(SRC_CRYPTO)
 OBJS_TEST_DCMP  = test-decrypt-ccmp.c $(SRC_CRYPTO)
+OBJS_TEST_ECMP  = test-encrypt-ccmp.c $(SRC_CRYPTO)
 
 test-encrypt-wep$(EXE): $(OBJS_TEST_EWEP)
 	$(CC) $(CFLAGS) $(OBJS_TEST_EWEP) -o $(@) $(LIBSSL)
@@ -38,6 +38,9 @@ test-calc-mic$(EXE): $(OBJS_TEST_CMIC)
 
 test-calc-ptk$(EXE): $(OBJS_TEST_CPTK)
 	$(CC) $(CFLAGS) $(OBJS_TEST_CPTK) -o $(@) $(LIBSSL)
+
+test-encrypt-ccmp$(EXE): $(OBJS_TEST_ECMP)
+	$(CC) $(CFLAGS) $(OBJS_TEST_ECMP) -o $(@) $(LIBSSL)
 
 test-decrypt-ccmp$(EXE): $(OBJS_TEST_DCMP)
 	$(CC) $(CFLAGS) $(OBJS_TEST_DCMP) -o $(@) $(LIBSSL)
