@@ -1,7 +1,7 @@
  /*
   *  Server for osdep network driver.  Uses osdep itself!  [ph33r teh recursion]
   *
-  *  Copyright (c) 2007, 2008, 2009  Andrea Bittau <a.bittau@cs.ucl.ac.uk>
+  *  Copyright (c) 2007-2009  Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  Advanced WEP attacks developed by KoreK
   *  WPA-PSK  attack code developed by Joshua Wright

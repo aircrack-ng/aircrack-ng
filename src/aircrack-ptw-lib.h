@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2007, 2008, 2009 Erik Tews, Andrei Pychkine and Ralf-Philipp Weinmann.
+ *  Copyright (c) 2007-2009 Erik Tews, Andrei Pychkine and Ralf-Philipp Weinmann.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

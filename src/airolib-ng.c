@@ -1,7 +1,7 @@
 /*
  *  A tool to compute and manage PBKDF2 values as used in WPA-PSK and WPA2-PSK
  *
- *  Copyright (C) 2007; 2008, 2009 ebfe
+ *  Copyright (C) 2007-2009 ebfe
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
