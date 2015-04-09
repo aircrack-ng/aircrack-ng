@@ -1,4 +1,4 @@
-/*-
+/*
  * Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
  *
  * Networking structures.
