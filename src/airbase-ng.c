@@ -2,7 +2,7 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
- *  Copyright (C) 2008-2014 Thomas d'Otreppe
+ *  Copyright (C) 2008-2015 Thomas d'Otreppe
  *  Copyright (C) 2008, 2009 Martin Beck
  *
  *  This program is free software; you can redistribute it and/or modify

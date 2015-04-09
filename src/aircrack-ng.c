@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2006-2014 Thomas d'Otreppe
+ *  Copyright (C) 2006-2015 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  Advanced WEP attacks developed by KoreK

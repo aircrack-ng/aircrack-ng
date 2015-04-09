@@ -1,7 +1,7 @@
 /*
  *  WEP Cloaking filtering
  *
- *  Copyright (C) 2008-2014 Thomas d'Otreppe
+ *  Copyright (C) 2008-2015 Thomas d'Otreppe
  *
  *  Thanks to Alex Hernandez aka alt3kx for the hardware.
  *
