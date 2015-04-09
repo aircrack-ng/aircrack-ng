@@ -1,7 +1,7 @@
 /*
  *  802.11 WPA replay & injection attacks
  *
- *  Copyright (C) 2008, 2009 Martin Beck
+ *  Copyright (C) 2008, 2009 Martin Beck <hirte@aircrack-ng.org>
  *
  *  WEP decryption attack (chopchop) developed by KoreK
  *
