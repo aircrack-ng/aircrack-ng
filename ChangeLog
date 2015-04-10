@@ -1,4 +1,4 @@
-Version 1.2-rc2 (changes from aircrack-ng 1.2-rc1) - Released XX YYYYY ZZZZ:
+Version 1.2-rc2 (changes from aircrack-ng 1.2-rc1) - Released 10 April 2015:
 * Airtun-ng: Adds WPA CCMP and TKIP decryption and CCMP encryption
 * Compilation: Added support for DUMA.
 * Makefile: Renamed 'unstable' to 'experimental'.
