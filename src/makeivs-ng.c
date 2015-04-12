@@ -38,7 +38,7 @@ extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac
 char usage[] =
 
 "\n"
-"  %s - (C) 2006-2014 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: makeivs-ng [options]\n"

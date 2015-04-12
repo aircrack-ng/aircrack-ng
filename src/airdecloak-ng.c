@@ -1318,7 +1318,7 @@ BOOLEAN print_statistics() {
 
 void usage() {
 	printf("\n"
-			"  %s - (C) 2008-2014 Thomas d\'Otreppe\n"
+			"  %s - (C) 2008-2015 Thomas d\'Otreppe\n"
 			"  http://www.aircrack-ng.org\n"
 			"\n"
 			"  usage: airdecloak-ng [options]\n"

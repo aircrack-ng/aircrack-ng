@@ -156,7 +156,7 @@ extern const unsigned long int crc_tbl[256];
 
 char usage[] =
 "\n"
-"  %s - (C) 2008-2014 Thomas d'Otreppe\n"
+"  %s - (C) 2008-2015 Thomas d'Otreppe\n"
 "  Original work: Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"

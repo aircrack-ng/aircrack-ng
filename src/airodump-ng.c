@@ -627,7 +627,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
 char usage[] =
 
 "\n"
-"  %s - (C) 2006-2014 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: airodump-ng <options> <interface>[,<interface>,...]\n"
