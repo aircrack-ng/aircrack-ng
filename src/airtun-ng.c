@@ -102,6 +102,7 @@ char usage[] =
 "      -t tods          : send frames to AP (1) or to client (0)\n"
 "                       : or tunnel them into a WDS/Bridge (2)\n"
 "      -r file          : read frames out of pcap file\n"
+"      -h MAC           : source MAC address\n"
 "\n"
 "  WDS/Bridge Mode options:\n"
 "      -s transmitter   : set Transmitter MAC address for WDS Mode\n"
