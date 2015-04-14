@@ -236,7 +236,7 @@ startMac80211Iface() {
 	IW_ERROR=$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1 | grep "nl80211 not found")
 	if [ x${IW_ERROR} = "x" ]
 	then
-		sleep 1s
+		sleep 1
 		setChannelMac80211 ${1}mon
 		printf "\n\t\t(mac80211 monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
 	else
