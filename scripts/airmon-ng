@@ -1095,7 +1095,7 @@ do
 
 		#why, dear god why is there a random newline here?
 		printf "\n"
-		sleep 1s
+		sleep 1
 		continue
 	fi
 done
