@@ -4956,6 +4956,11 @@ int main( int argc, char *argv[] )
 	ret = FAILURE;
 	showhelp = 0;
 
+	if(!isatty(STDIN_FILENO)) {
+		fprintf(stderr, "Piped input to aircrack-ng is not allowed.\n");
+		exit(1);
+	}
+
 	// Start a new process group, we are perhaps going to call kill(0, ...) later
 	setsid();
 
