@@ -39,7 +39,10 @@ to compile and install the suite:
             Note: Not working yet.
 
 * experimental: needed to compile tkiptun-ng, easside-ng (and buddy-ng),
-                wesside-ng and besside-ng
+                wesside-ng and besside-ng.
+                If you want to build besside-ng-crawler, you will need
+                LibPCAP (development package). On Debian based
+                distributions: libpcap-dev
 
 * ext_scripts: needed to build airoscript-ng, versuck-ng, airgraph-ng and 
             airdrop-ng. 
