@@ -3,7 +3,11 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
-#include <endian.h>
+#ifdef __FreeBSD__
+	#include <sys/endian.h>
+#else
+	#include <endian.h>
+#endif
 
 #define le16_to_cpu		le16toh
 #define le32_to_cpu		le32toh
