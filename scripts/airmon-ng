@@ -975,7 +975,7 @@ then
 	then
 		#if we are killing, tell scanProcesses that
 		scanProcesses "${2}"
-		return
+		exit
 	elif [ x"${1}" = "xstart" ]
 	then
 		#this stub can send scanProcesses the interface name
