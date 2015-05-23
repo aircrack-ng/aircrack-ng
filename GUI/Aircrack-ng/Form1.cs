@@ -323,12 +323,12 @@ namespace Aircrack_ng
             }
             
 
-            // Do we have to use a dictionnary?
+            // Do we have to use a dictionary?
             if (this.rbWPA.Checked || (this.rbWEP.Checked && this.cbUseWordlist.Checked && !this.cbPTW.Checked))
             {
                 if (checkFileExist(this.tbWPADico.Text,
                         "Please specify a wordlist and/or\n"
-                        + "check that dictionnary file exist") == false)
+                        + "check that dictionary file exist") == false)
                 {
                     return;
                 }
