@@ -234,7 +234,7 @@ startMac80211Iface() {
 	#we didn't bail means our target interface is available
 	setLink ${1} down
 	IW_ERROR=$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1 | grep "nl80211 not found")
-	if [ x${IW_ERROR} = "x" ]
+	if [ -n "${IW_ERROR}" ]
 	then
 		sleep 1
 		setChannelMac80211 ${1}mon
@@ -314,13 +314,70 @@ stopMac80211Iface() {
 				fi
 				if [ -e /sys/class/net/${1%mon} ]
 				then
-					printf "\nYou already have a ${1%mon} device but it is NOT in station mode."
-					printf "\nWhatever you did, don't do it again."
-					printf "\nPlease run \"iw ${1%mon} del\" before attempting to continue\n"
-					exit 1
+					if [ -e /sys/class/net/${1%mon}/phy80211/name ]
+					then
+						if [ "$(cat /sys/class/net/${1%mon}/phy80211/name)" = "${PHYDEV}" ]
+						then
+							printf "\nYou already have a ${1%mon} device but it is NOT in station mode."
+							printf "\nWhatever you did, don't do it again."
+							printf "\nPlease run \"iw ${1%mon} del\" before attempting to continue\n"
+							exit 1
+						else
+							printf "\nYou already have a ${1%mon} device, but is is not on the same phy as ${1}."
+							printf "\nAttemping to pick a new name..."
+							for i in $(seq 0 100)
+							do
+								if [ "$i" = 100 ]
+								then
+									printf "\nUnable to find a free name between wlan0 and wlan99, you are on your own from here."
+									exit 1
+								fi
+								if [ "$DEBUG" = "1" ]
+								then
+									printf "\nChecking candidate wlan${i}"
+								fi
+								if [ ! -e /sys/class/net/wlan${i} ]
+								then
+									if [ "$DEBUG" = "1" ]
+									then
+										printf "\nCandidate wlan${i} is not in use"
+									fi
+									if [ ! -e /sys/class/net/wlan${i}mon ]
+									then
+										if [ "$DEBUG" = "1" ]
+										then
+											printf "\nCandidate wlan${i} and wlan${i}mon are both clear, creating wlan${i}"
+										fi
+										IW_ERROR=$(iw phy ${PHYDEV} interface add wlan${i} type station 2>&1)
+										if [ -n "${IW_ERROR}" ]
+										then
+											printf "\n\t\t(mac80211 station mode vif enabled on [${PHYDEV}]wlan${i})"
+											unset IW_ERROR
+											break
+										else
+											printf "\n\n ERROR: iw command error"
+										fi
+									else
+										if [ "$DEBUG" = "1" ]
+										then
+											printf "\nCandidate wlan${i} does not exist, but wlan${i} does, skipping..."
+										fi
+									fi
+								else
+									if [ "$DEBUG" = "1" ]
+									then
+										printf "\nCandidate wlan${i} is in use already."
+									fi
+								fi
+							done
+						fi
+					else
+						printf "\n/sys/class/net/${1%mon}/phy80211/name file is missing, dazed and confused...\n"
+						exit 1
+					fi
 				fi
 				IW_ERROR=$(iw phy ${PHYDEV} interface add ${1%mon} type station 2>&1)
-				if [ x${IW_ERROR} = "x" ]
+				if [ -n "${IW_ERROR}" ]
 				then
 					printf "\n\t\t(mac80211 station mode vif enabled on [${PHYDEV}]${1%mon})"
 					unset IW_ERROR
@@ -329,7 +386,7 @@ stopMac80211Iface() {
 				fi
 			fi
 			IW_ERROR=$(iw dev "${1}" del 2>&1 | grep "nl80211 not found")
-			if [ x$IW_ERROR = "x" ]
+			if [ -n "$IW_ERROR" ]
 			then
 				printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})"
 			else
