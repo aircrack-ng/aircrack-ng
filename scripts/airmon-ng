@@ -385,6 +385,7 @@ stopMac80211Iface() {
 					printf "\n\n ERROR: iw command error"
 				fi
 			fi
+			setLink ${1} down
 			IW_ERROR=$(iw dev "${1}" del 2>&1 | grep "nl80211 not found")
 			if [ -n "$IW_ERROR" ]
 			then
