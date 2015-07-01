@@ -99,7 +99,7 @@ else
 	LSUSB=0
 fi
 
-if [ -d /sys/bus/pci ] || [ -d /proc/bus/pci ]; then
+if [ -d /sys/bus/pci ] || [ -d /sys/bus/pci_express ] || [ -d /proc/bus/pci ]; then
 	if [ ! -x "$(command -v lspci 2>&1)" ]; then
 		printf "Please install lspci from your distro's package manager.\n"
 		exit 1
@@ -497,7 +497,7 @@ getChipset() {
 			if [ "${LSUSB}" = "1" ]; then
 				BUSINFO="$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/')"
 				CHIPSET="$(lsusb | grep -i "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
-			elif [ "${LSUSB}" = "0"
+			elif [ "${LSUSB}" = "0" ]; then
 				printf "Your system doesn't seem to support usb but we found usb hardware, please report this.\n"
 				exit 1
 			fi
@@ -796,12 +796,12 @@ checkvm() {
 	if [ -x "$(command -v dmidecode 2>&1)" ]; then
 		dmi_info=$(dmidecode)
 		if [ -n "${dmi_info}" ]; then
-			printf ${dmi_info} | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
-			printf ${dmi_info} | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf ${dmi_info} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
-			printf ${dmi_info} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
-			printf ${dmi_info} | grep -iq "domu" 2> /dev/null && vm="Xen"
-			vm_from="dmi_info"
+			printf "${dmi_info}" | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
+			printf "${dmi_info}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			printf "${dmi_info}" | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+			printf "${dmi_info}" | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
+			printf "${dmi_info}" | grep -iq "domu" 2> /dev/null && vm="Xen"
+			[ -n "${vm}" ] && vm_from="dmi_info"
 		fi
 	fi
 
@@ -810,12 +810,12 @@ checkvm() {
 		if [ -x "$(command -v lsmod 2>&1)" ]; then
 			lsmod_data="$(lsmod)"
 			if [ -n "${lsmod}" ]; then
-				printf ${lsmod_data} | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
-				printf ${lsmod_data} | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
-				printf ${lsmod_data} | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
-				printf ${lsmod_data} | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
-				printf ${lsmod_data} | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
-				vm_from="lsmod"
+				printf "${lsmod_data}" | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
+				printf "${lsmod_data}" | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
+				printf "${lsmod_data}" | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
+				printf "${lsmod_data}" | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
+				printf "${lsmod_data}" | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
+				[ -n "${vm}" ] && vm_from="lsmod"
 			fi
 		fi
 	fi
@@ -825,7 +825,7 @@ checkvm() {
 		if [ -r /proc/scsi/scsi ]; then
 			grep -iq "vmware" /proc/scsi/scsi 2> /dev/null && vm="VMware"
 			grep -iq "vbox" /proc/scsi/scsi 2> /dev/null && vm="VirtualBox"
-			vm_from="/pro/scsi/scsi"
+			[ -n "${vm}" ] && vm_from="/pro/scsi/scsi"
 		fi
 	fi
 
@@ -833,20 +833,20 @@ checkvm() {
 	if [ -z "${vm_from}" ];	then
 		if [ -d /proc/ide ]; then
 			ide_model="$(cat /proc/ide/hd*/model)"
-			printf ${ide_model} | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
-			printf ${ide_model} | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf ${ide_model} | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
-			printf ${ide_model} | grep -iqE "virtual (hd|cd)" 2> /dev/null && vm="Hyper-V/Virtual PC"
-			vm_from="ide_model"
+			printf "${ide_model}" | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
+			printf "${ide_model}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			printf "${ide_model}" | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
+			printf "${ide_model}" | grep -iqE "virtual (hd|cd)" 2> /dev/null && vm="Hyper-V/Virtual PC"
+			[ -n "${vm}" ] && vm_from="ide_model"
 		fi
 	fi
 
 	# Check using lspci
 	if [ -z "${vm_from}" ] && [ "${LSPCI}" = "1" ]; then
 			lspci_data="$(lspci)"
-			printf ${lspci_data} | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf ${lspci_data} | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
-			vm_from="lspci"
+			printf "${lspci_data}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			printf "${lspci_data}" | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+			[ -n "${vm}" ] && vm_from="lspci"
 	fi
 
 	# Xen bus check
@@ -862,10 +862,10 @@ checkvm() {
 	if [ -z "${vm_from}" ]; then
 		if [ -x "$(command -v lscpu 2>&1)" ]; then
                         lscpu_data="$(lscpu)"
-			printf ${lscpu_data} | grep -iq "Xen" 2> /dev/null && vm="Xen"
-			printf ${lscpu_data} | grep -iq "KVM" 2> /dev/null && vm="KVM"
-			printf ${lscpu_data} | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
-			vm_from="lscpu"
+			printf "${lscpu_data}" | grep -iq "Xen" 2> /dev/null && vm="Xen"
+			printf "${lscpu_data}" | grep -iq "KVM" 2> /dev/null && vm="KVM"
+			printf "${lscpu_data}" | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
+			[ -n "${vm}" ] && vm_from="lscpu"
 		fi
 	fi
 
@@ -880,12 +880,11 @@ checkvm() {
 	# Check dmesg Output
 	if [ -z "${vm_from}" ]; then
 		if [ -x "$(command -v dmesg 2>&1)" ]; then
-			dmesg_output="$(dmesg)"
-			printf ${dmesg_output} | grep -iqE "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)" && vm="VirtualBox"
-			printf ${dmesg_output} | grep -iqE "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)" && vm="VMware"
-			printf ${dmesg_output} | grep -iqE "(xen_mem)|(xen-vbd)" && vm="Xen"
-			printf ${dmesg_output} | grep -iqE "(qemu virtual cpu version)" && vm="Qemu/KVM"
-			vm_from="dmesg"
+			dmesg | grep -iqE "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)" && vm="VirtualBox"
+			dmesg | grep -iqE "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)" && vm="VMware"
+			dmesg | grep -iqE "(xen_mem)|(xen-vbd)" && vm="Xen"
+			dmesg | grep -iqE "(qemu virtual cpu version)" && vm="Qemu/KVM"
+			[ -n "${vm}" ] && vm_from="dmesg"
 		fi
 	fi
 }
