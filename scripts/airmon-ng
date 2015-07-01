@@ -88,12 +88,18 @@ if [ ! -x "$(command -v ethtool 2>&1)" ]; then
 	exit 1
 fi
 
-if [ ! -x "$(command -v lsusb 2>&1)" ]; then
-	printf "Please install lsusb from your distro's package manager.\n"
-	exit 1
+if [ -d /sys/bus/usb ]; then
+	if [ ! -x "$(command -v lsusb 2>&1)" ]; then
+		printf "Please install lsusb from your distro's package manager.\n"
+		exit 1
+	else
+		LSUSB=1
+	fi
+else
+	LSUSB=0
 fi
 
-if [ -d /proc/bus/pci ]; then
+if [ -d /sys/bus/pci ] || [ -d /proc/bus/pci ]; then
 	if [ ! -x "$(command -v lspci 2>&1)" ]; then
 		printf "Please install lspci from your distro's package manager.\n"
 		exit 1
@@ -104,7 +110,7 @@ else
 	LSPCI=0
 fi
 
-if [ -f /proc/modules ]; then
+if [ -f /proc/modules ] || [ -d /sys/module ]; then
 	if [ ! -x "$(command -v modprobe 2>&1)" ]
 	then
 		printf "Your kernel has module support but you don't have modprobe installed.\n"
@@ -488,8 +494,13 @@ getChipset() {
 	if [ -f /sys/class/net/$1/device/modalias ]; then
 		BUS="$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1)"
 		if [ "$BUS" = "usb" ]; then
-			BUSINFO="$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/')"
-			CHIPSET="$(lsusb | grep -i "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
+			if [ "${LSUSB}" = "1" ]; then
+				BUSINFO="$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/')"
+				CHIPSET="$(lsusb | grep -i "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
+			elif [ "${LSUSB}" = "0"
+				printf "Your system doesn't seem to support usb but we found usb hardware, please report this.\n"
+				exit 1
+			fi
 		#yes the below line looks insane, but broadcom appears to define all the internal buses so we have to detect them here
 		elif [ "${BUS}" = "pci" -o "${BUS}" = "pcmcia" ] && [ "${LSPCI}" = "1" ]; then
 			if [ -f /sys/class/net/$1/device/vendor ] && [ -f /sys/class/net/$1/device/device ]; then
@@ -511,7 +522,11 @@ getChipset() {
 	#we don't do a check for usb here but it is obviously only going to work for usb
 	elif [ -f /sys/class/net/$1/device/idVendor ] && [ -f /sys/class/net/$1/device/idProduct ]; then
 		DEVICEID="$(cat /sys/class/net/$1/device/idVendor):$(cat /sys/class/net/$1/device/idProduct)"
-		CHIPSET="$(lsusb | grep -i "$DEVICEID" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
+		if [ "${LSUSB}" = "1" ]; then
+			CHIPSET="$(lsusb | grep -i "$DEVICEID" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
+		elif [ "${LSUSB}" = "0" ]; then
+			CHIPSET="idVendor and idProduct found on non-usb device, please report this."
+		fi
 	elif [ "${DRIVER}" = "mac80211_hwsim" ]; then
 		CHIPSET="Software simulator of 802.11 radio(s) for mac80211"
 	elif $(printf "$ethtool_output" | awk '/bus-info/ {print $2}' | grep -q bcma)
