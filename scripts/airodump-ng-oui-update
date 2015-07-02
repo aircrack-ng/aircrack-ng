@@ -2,7 +2,7 @@
 
 CURL=`which curl 2>/dev/null`
 WGET=`which wget 2>/dev/null`
-OUI_DOWNLOAD_URL="http://standards.ieee.org/develop/regauth/oui/oui.txt"
+OUI_DOWNLOAD_URL="http://standards-oui.ieee.org/oui.txt"
 
 OUI_PATH0="/etc/aircrack-ng"
 OUI_PATH1="/usr/local/etc/aircrack-ng"
