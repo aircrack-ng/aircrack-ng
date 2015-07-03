@@ -2718,6 +2718,7 @@ add_arp:
 
                 if( ( arp[nb_arp].buf = malloc( 128 ) ) == NULL ) {
                     perror( "malloc failed" );
+                    free(arp);
                     return( 1 );
                 }
 
@@ -3131,6 +3132,7 @@ add_arp:
 
                 if( ( arp[nb_arp].buf = malloc( 128 ) ) == NULL ) {
                     perror( "malloc failed" );
+                    free(arp);
                     return( 1 );
                 }
 
@@ -3550,6 +3552,7 @@ add_arp:
 
                 if( ( arp[nb_arp].buf = malloc( 128 ) ) == NULL ) {
                     perror( "malloc failed" );
+                    free(arp);
                     return( 1 );
                 }
 
