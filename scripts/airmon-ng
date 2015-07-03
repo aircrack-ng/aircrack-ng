@@ -495,8 +495,8 @@ getChipset() {
 		BUS="$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1)"
 		if [ "$BUS" = "usb" ]; then
 			if [ "${LSUSB}" = "1" ]; then
-				BUSINFO="$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 2 | cut -b 1-10 | sed 's/^.//;s/p/:/')"
-				CHIPSET="$(lsusb | grep -i "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
+				BUSINFO="$(cut -d ":" -f 2 /sys/class/net/$1/device/modalias | cut -b 1-10 | sed 's/^.//;s/p/:/')"
+				CHIPSET="$(lsusb -d "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
 			elif [ "${LSUSB}" = "0" ]; then
 				printf "Your system doesn't seem to support usb but we found usb hardware, please report this.\n"
 				exit 1
