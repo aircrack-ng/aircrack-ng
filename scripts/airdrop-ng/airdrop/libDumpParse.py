@@ -21,6 +21,8 @@ class airDumpParse:
 		"""
 		try:
 			openedFile = open(file, "r")
+		except TypeError:
+			print "Missing Airodump-ng file"
 		except IOError:
 			print "Error Airodump File",file,"does not exist"
 			Exit(1)
