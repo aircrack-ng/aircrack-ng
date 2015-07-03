@@ -337,10 +337,7 @@ void clean_exit(int ret)
 	while( ap_cur != NULL )
 	{
 		ap_next = ap_cur->next;
-
-		if( ap_cur != NULL )
-			free(ap_cur);
-
+		free(ap_cur);
 		ap_cur = ap_next;
 	}
 
