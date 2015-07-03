@@ -4837,7 +4837,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
     opt.ap = ap_cur;
 
-    all = malloc(256*32*sizeof(int));
+    all = malloc(32*sizeof(int [256]));
     if (all == NULL) {
     	return FAILURE;
     }
