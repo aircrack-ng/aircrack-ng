@@ -1205,8 +1205,6 @@ int packet_recv(unsigned char* packet, int length)
                 }
                 else
                 {
-                    buffer = malloc( length );
-                    memcpy( buffer, packet, length );
                     if ( memcmp( smac, st_cur->stmac, 6 ) == 0 ) {
                         st_cur->pn[0] = packet[z + 7];
                         st_cur->pn[1] = packet[z + 6];
