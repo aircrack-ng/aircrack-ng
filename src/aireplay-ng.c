@@ -3202,6 +3202,9 @@ int do_attack_migmode( void )
     else
         arp = (struct ARP_req*) malloc( sizeof( struct ARP_req ) );
 
+    if (arp == NULL)
+        return 1;
+
     /* capture only WEP data to broadcast address */
 
     opt.f_type    = 2;
@@ -3209,12 +3212,15 @@ int do_attack_migmode( void )
     opt.f_iswep   = 1;
     opt.f_fromds  = 1;
 
-    if(getnet(NULL, 1, 1) != 0)
+    if(getnet(NULL, 1, 1) != 0){
+        free(arp);
         return 1;
+    }
 
     if( memcmp( opt.f_bssid, NULL_MAC, 6 ) == 0 )
     {
         printf( "Please specify a BSSID (-b).\n" );
+        free(arp);
         return( 1 );
     }
     /* create and write the output pcap header */
