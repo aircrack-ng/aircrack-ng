@@ -113,7 +113,7 @@ int uniqueiv_mark( unsigned char **uiv_root, unsigned char IV[3] )
 
         uiv_lvl2 = (unsigned char *) malloc( 32 * sizeof( unsigned char ) );
 
-        if( uiv_lvl1 == NULL )
+        if( uiv_lvl2 == NULL )
             return( 1 );
 
         /* setup initial state as empty */
