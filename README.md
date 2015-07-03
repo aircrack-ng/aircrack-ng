@@ -25,7 +25,7 @@ to speed up the cracking process.
  * If you want to use Airpcap, the 'developer' directory from the CD is required.
  * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
           See Makefile flags below.
- * Linux: pkg-config
+ * pkg-config
 
 ## Compilating
 
