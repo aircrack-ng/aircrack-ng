@@ -20,9 +20,12 @@ to speed up the cracking process.
  * OpenSSL development package or libgcrypt development package
  * If you want to use `airolib-ng` and `-r` option in aircrack-ng,
    SQLite development package `>= 3.3.17` (3.6.X version or better is recommended):
-   `libsqlite3-devel`
+   `libsqlite3-dev` on Debian based distro.
  * On windows, cygwin has to be used and it also requires w32api and gcc-4 package.
  * If you want to use Airpcap, the 'developer' directory from the CD is required.
+ * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
+          See Makefile flags below.
+ * Linux: pkg-config
 
 ## Compilating
 
@@ -74,24 +77,28 @@ to compile and install the suite:
         + LibNL 1: `libnl-dev`
         + LibNL 3: `libnl-3-dev` and `libnl-genl-3-dev`.
 
+* **pcre**:	Add support for regular expression matching for ESSID in airodump-ng and besside-ng.
+            	Dependencies (debian): libpcre3-dev
+
+* **duma**:	Compile with DUMA support. DUMA is a library to detect buffer overruns and under-runs.
+            	Dependencies (debian): duma
+
 #### Examples:
 
-  * Compiling with sqlite and enabling experimental:
+  * Compiling:
 
-    `make sqlite=true experimental=true`
+    `make sqlite=true experimental=true pcre=true`
+
+  * Compiling wth gcrypt:
+    `make gcrypt=true`
 
   * Installing:
 
-    `make sqlite=true experimental=true install`
+    `make sqlite=true pcre=true experimental=true install`
 
   * Installing, with external scripts:
 
     `make sqlite=true experimental=true ext_scripts=true`
-
-  * Compiling with gcrypt:
-
-    `make gcrypt=true`
-
 
 # Using precompiled binaries
 
