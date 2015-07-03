@@ -4877,7 +4877,7 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 
 	to_find_len = strlen(name) + 3;
 	to_find = (char*) malloc(to_find_len);
-	snprintf(to_find, sizeof(to_find), "\"%s\"", name);
+	snprintf(to_find, to_find_len, "\"%s\"", name);
 	cursor = strstr(buffer, to_find);
 	free(to_find);
 	if(cursor != NULL)
