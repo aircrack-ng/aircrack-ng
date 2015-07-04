@@ -217,8 +217,8 @@ static int net_get_nopacket(struct priv_net *pn, void *arg, int *len)
 		if (c != NET_PACKET && c > 0)
 			break;
 
-                if(c > 0)
-                    net_enque(pn, buf, l);
+		if(c > 0)
+			net_enque(pn, buf, l);
 	}
 
 	assert(l <= *len);
