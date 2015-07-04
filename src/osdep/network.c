@@ -211,6 +211,8 @@ static int net_get_nopacket(struct priv_net *pn, void *arg, int *len)
 	while (1) {
 		l = sizeof(buf);
 		c = net_get(pn->pn_s, buf, &l);
+		if (c < 0)
+			return c;
 
 		if (c != NET_PACKET && c > 0)
 			break;
