@@ -980,6 +980,10 @@ int dump_initialize( char *prefix, int ivs_only )
             return( 1 );
         }
     }
+    else
+    {
+        free( ofn );
+    }
 
     return( 0 );
 }
