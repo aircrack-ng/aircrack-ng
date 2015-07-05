@@ -4789,12 +4789,19 @@ int crack_wep_dict()
 	}
 
 	key = (char*) malloc(sizeof(char) * (opt.keylen + 1));
+	if (key == NULL)
+		return( FAILURE );
+
 	gettimeofday( &t_last, NULL );
 	t_last.tv_sec--;
 
 	while(1)
 	{
-		if( next_key( &key, keysize ) != SUCCESS) return( FAILURE );
+		if( next_key( &key, keysize ) != SUCCESS) 
+		{
+			free(key);
+			return( FAILURE );
+		}
 
 		i = strlen( key );
 
