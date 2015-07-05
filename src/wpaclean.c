@@ -443,7 +443,7 @@ static void process_beacon(struct ieee80211_frame *wh, int totlen)
 	n->n_beaconlen = len;
 	assert(n->n_beaconlen <= (int) sizeof(n->n_beacon));
 	memcpy(n->n_beacon, wh, n->n_beaconlen);
-	strcpy(n->n_ssid, ssid);
+	strncpy(n->n_ssid, ssid, sizeof(n->n_ssid));
 
 #if 0
 	printf("got beacon [%s]\n", n->n_ssid);
