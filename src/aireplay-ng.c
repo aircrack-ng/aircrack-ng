@@ -2907,13 +2907,18 @@ int do_attack_caffe_latte( void )
 
                 if( send_packet( arp[arp_off1].buf,
                                  arp[arp_off1].len ) < 0 )
-                    return( 1 );
-
+                    {
+                        free( arp );
+                        return( 1 );
+                    }
                 if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent  )
                 {
                     if( send_packet( arp[arp_off1].buf,
                                     arp[arp_off1].len ) < 0 )
+                    {
+                        free( arp );
                         return( 1 );
+                    }
                 }
 
                 if( ++arp_off1 >= nb_arp )
@@ -2929,7 +2934,11 @@ int do_attack_caffe_latte( void )
 
             caplen = read_packet( h80211, sizeof( h80211 ), NULL );
 
-            if( caplen  < 0 ) return( 1 );
+            if( caplen  < 0 )
+            {
+                free( arp );
+                return( 1 );
+            }
             if( caplen == 0 ) continue;
         }
         else
