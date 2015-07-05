@@ -4594,6 +4594,7 @@ int do_attack_chopchop( void )
     {
         perror( "fwrite failed\n" );
         free(chopped);
+        fclose( f_cap_out );
         return( 1 );
     }
 
@@ -4603,6 +4604,7 @@ int do_attack_chopchop( void )
     {
         perror( "fwrite failed" );
         free(chopped);
+        fclose( f_cap_out );
         return( 1 );
     }
 
@@ -4612,6 +4614,7 @@ int do_attack_chopchop( void )
     {
         perror( "fwrite failed" );
         free(chopped);
+        fclose( f_cap_out );
         return( 1 );
     }
 
@@ -4640,6 +4643,7 @@ int do_attack_chopchop( void )
     {
         perror( "fwrite failed" );
         free(chopped);
+        fclose( f_cap_out );
         return( 1 );
     }
 
