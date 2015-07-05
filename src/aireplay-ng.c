@@ -4179,6 +4179,7 @@ int do_attack_chopchop( void )
         if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
         {
             perror( "fcntl(O_NONBLOCK) failed" );
+            free(chopped);
             return( 1 );
         }
     }
@@ -4205,6 +4206,7 @@ int do_attack_chopchop( void )
 "      Try running another aireplay-ng to fake authentication (attack \"-1\").\n"
 "    * The AP isn't vulnerable when operating in authenticated mode.\n"
 "      Try aireplay-ng in non-authenticated mode instead (no -h option).\n\n" );
+            free(chopped);
             return( 1 );
         }
 
@@ -4215,6 +4217,7 @@ int do_attack_chopchop( void )
             if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
             {
                 perror( "\nread(/dev/rtc) failed" );
+                free(chopped);
                 return( 1 );
             }
 
@@ -4365,7 +4368,10 @@ int do_attack_chopchop( void )
             errno = 0;
 
             if( send_packet( h80211, data_end -1 ) != 0 )
+            {
+                free(chopped);
                 return( 1 );
+            }
 
             if( errno != EAGAIN )
             {
@@ -4380,8 +4386,14 @@ int do_attack_chopchop( void )
 
         n = read_packet( h80211, sizeof( h80211 ), NULL );
 
-        if( n  < 0 ) return( 1 );
-        if( n == 0 ) continue;
+        if( n  < 0 )
+        {
+            free(chopped);
+            return( 1 );
+        }
+
+        if( n == 0 )
+            continue;
 
         nb_pkt_read++;
 
@@ -4419,6 +4431,7 @@ int do_attack_chopchop( void )
                 printf( "\n\nFailure: the access point does not properly "
                         "discard frames with an\ninvalid ICV - try running "
                         "aireplay-ng in authenticated mode (-h) instead.\n\n" );
+                free(chopped);
                 return( 1 );
             }
         }
@@ -4459,6 +4472,7 @@ int do_attack_chopchop( void )
                 printf( "\n\nFailure: the access point does not properly "
                         "discard frames with an\ninvalid ICV - try running "
                         "aireplay-ng in non-authenticated mode instead.\n\n" );
+                free(chopped);
                 return( 1 );
             }
         }
@@ -4570,6 +4584,7 @@ int do_attack_chopchop( void )
     if( ( f_cap_out = fopen( strbuf, "wb+" ) ) == NULL )
     {
         perror( "fopen failed" );
+        free(chopped);
         return( 1 );
     }
 
@@ -4578,6 +4593,7 @@ int do_attack_chopchop( void )
     if( fwrite( &pfh_out, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed\n" );
+        free(chopped);
         return( 1 );
     }
 
@@ -4586,6 +4602,7 @@ int do_attack_chopchop( void )
     if( fwrite( &pkh, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed" );
+        free(chopped);
         return( 1 );
     }
 
@@ -4594,6 +4611,7 @@ int do_attack_chopchop( void )
     if( fwrite( h80211, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed" );
+        free(chopped);
         return( 1 );
     }
 
@@ -4612,6 +4630,7 @@ int do_attack_chopchop( void )
     if( ( f_cap_out = fopen( strbuf, "wb+" ) ) == NULL )
     {
         perror( "fopen failed" );
+        free(chopped);
         return( 1 );
     }
 
@@ -4620,6 +4639,7 @@ int do_attack_chopchop( void )
     if( fwrite( chopped + 24, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed" );
+        free(chopped);
         return( 1 );
     }
 
