@@ -2224,24 +2224,29 @@ int get_battery_state(void)
 
     if (linux_apm == 1)
     {
+        char *battery_data = NULL;
+
         if ((apm = fopen("/proc/apm", "r")) != NULL ) {
-            if ( fgets(buf, 128,apm) != NULL ) {
-                int charging, ac;
-                fclose(apm);
+            battery_data = fgets(buf, 128, apm);
+            fclose(apm);
+        }
 
-                ret = sscanf(buf, "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n", &ac,
-                                                        &charging, &flag, &batteryTime, units);
+        if ( battery_data != NULL ) {
+            int charging, ac;
 
-                                if(!ret) return 0;
+            ret = sscanf(battery_data, "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n", &ac,
+                                                    &charging, &flag, &batteryTime, units);
+            if(!ret)
+                return 0;
 
-                if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1 && batteryTime != -1) {
-                    if (!strncmp(units, "min", 32))
-                        batteryTime *= 60;
-                }
-                else return 0;
-                linux_acpi = 0;
-                return batteryTime;
+            if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1 && batteryTime != -1) {
+                if (!strncmp(units, "min", 32))
+                    batteryTime *= 60;
             }
+            else
+                return 0;
+            linux_acpi = 0;
+            return batteryTime;
         }
         linux_apm = 0;
     }
