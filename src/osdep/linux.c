@@ -2321,6 +2321,7 @@ int get_battery_state(void)
                 else if (strncmp(buf, "charging state:", 15) == 0) {
                                 /* the space makes it different than discharging */
                     if (strstr(buf, " charging" )) {
+                        closedir(batteries);
                         fclose( acpi );
                         return 0;
                     }
