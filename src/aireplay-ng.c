@@ -2821,6 +2821,7 @@ int do_attack_caffe_latte( void )
     if( fwrite( &pfh_out, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed\n" );
+        fclose( f_cap_out );
         return( 1 );
     }
 
@@ -2834,6 +2835,7 @@ int do_attack_caffe_latte( void )
         if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
         {
             perror( "fcntl(O_NONBLOCK) failed" );
+            fclose( f_cap_out );
             return( 1 );
         }
     }
@@ -2864,6 +2866,8 @@ int do_attack_caffe_latte( void )
             if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
             {
                 perror( "read(/dev/rtc) failed" );
+                free( arp );
+                fclose( f_cap_out );
                 return( 1 );
             }
 
@@ -2909,6 +2913,7 @@ int do_attack_caffe_latte( void )
                                  arp[arp_off1].len ) < 0 )
                     {
                         free( arp );
+                        fclose( f_cap_out );
                         return( 1 );
                     }
                 if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent  )
@@ -2917,6 +2922,7 @@ int do_attack_caffe_latte( void )
                                     arp[arp_off1].len ) < 0 )
                     {
                         free( arp );
+                        fclose( f_cap_out );
                         return( 1 );
                     }
                 }
@@ -2937,9 +2943,12 @@ int do_attack_caffe_latte( void )
             if( caplen  < 0 )
             {
                 free( arp );
+                fclose( f_cap_out );
                 return( 1 );
             }
-            if( caplen == 0 ) continue;
+            
+            if( caplen == 0 ) 
+               continue;
         }
         else
         {
@@ -3142,6 +3151,7 @@ add_arp:
                 if( ( arp[nb_arp].buf = malloc( 128 ) ) == NULL ) {
                     perror( "malloc failed" );
                     free(arp);
+                    fclose( f_cap_out );
                     return( 1 );
                 }
 
@@ -3170,6 +3180,7 @@ add_arp:
 
                 if( fwrite( &pkh, n, 1, f_cap_out ) != 1 ) {
                     perror( "fwrite failed" );
+                    fclose( f_cap_out );
                     return( 1 );
                 }
 
@@ -3177,6 +3188,7 @@ add_arp:
 
                 if( fwrite( h80211, n, 1, f_cap_out ) != 1 ) {
                     perror( "fwrite failed" );
+                    fclose( f_cap_out );
                     return( 1 );
                 }
 
@@ -3184,7 +3196,7 @@ add_arp:
             }
         }
     }
-
+    fclose( f_cap_out );
     return( 0 );
 }
 
