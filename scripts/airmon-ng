@@ -111,8 +111,7 @@ else
 fi
 
 if [ -f /proc/modules ] || [ -d /sys/module ]; then
-	if [ ! -x "$(command -v modprobe 2>&1)" ]
-	then
+	if [ ! -x "$(command -v modprobe 2>&1)" ]; then
 		printf "Your kernel has module support but you don't have modprobe installed.\n"
 		printf "It is highly recommended to install modprobe (typically from kmod).\n"
 		MODPROBE=0
@@ -127,6 +126,20 @@ if [ -f /proc/modules ] || [ -d /sys/module ]; then
 	else
 		MODINFO=1
 	fi
+else
+	MODINFO=0
+fi
+
+if [ -c /dev/rfkill ]; then
+	if [ ! -x "$(command -v rfkill 2>&1)" ];then
+		printf "Your kernel supports rfkill but you don't have rfkill installed.\n"
+		printf "To ensure devices are unblocked you must install rfkill.\n"
+		RFKILL=0
+	else
+		RFKILL=1
+	fi
+else
+	RFKILL=0
 fi
 
 if [ ! -x "$(command -v awk 2>&1)" ]; then
@@ -145,6 +158,16 @@ fi
 usage() {
 	printf "usage: $(basename $0) <start|stop|check> <interface> [channel or frequency]\n\n"
 	exit 0
+}
+
+rfkill_check() {
+	#take phy and check blocks
+	true
+}
+
+rfkill_unblock() {
+	#attempt unblock and CHECK SUCCESS
+	true
 }
 
 setLink() {
