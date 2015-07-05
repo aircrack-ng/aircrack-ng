@@ -1653,6 +1653,7 @@ void read_thread( void *arg )
 			    ( ap_cur->nb_ivs_vague >= opt.max_ivs ) )
 			{
 				eof_wait( &eof_notified );
+				free(buffer);
 				return;
 			}
 		}
