@@ -174,15 +174,15 @@ rfkill_check() {
 		soft="$(printf ${rfkill_status} | grep -i soft | awk '{print $3}')"
 		hard="$(printf ${rfkill_status} | grep -i hard | awk '{print $3}')"
 		if [ "${soft}" = "yes" ] && [ "${hard}" = "no" ]; then
-			printf "${1} is soft blocked, please run \"rfkill unblock ${1#phy}\" to use this interface.\n"
+			printf "\t${1} is soft blocked, please run \"rfkill unblock ${1#phy}\" to use this interface.\n"
 			return 1
 		elif [ "${soft}" = "no" ] && [ "${hard}" = "yes" ]; then
-			printf "${1} is hard blocked, please flip the hardware wifi switch to on.\n"
-			printf "It may also be possible to unblock with \"rfkill unblock ${1#phy}\"\n"
+			printf "\t${1} is hard blocked, please flip the hardware wifi switch to on.\n"
+			printf "\tIt may also be possible to unblock with \"rfkill unblock ${1#phy}\"\n"
 			return 2
 		elif [ "${soft}" = "yes" ] && [ "${hard}" = "yes" ]; then
-			printf "${1} is hard and soft blocked, please flip the hardware wifi switch to on.\n"
-			printf "It may also be needed to unblock with \"rfkill unblock ${1#phy}\"\n"
+			printf "\t${1} is hard and soft blocked, please flip the hardware wifi switch to on.\n"
+			printf "\tIt may also be needed to unblock with \"rfkill unblock ${1#phy}\"\n"
 			return 3
 		fi
 	fi
