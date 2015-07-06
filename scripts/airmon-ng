@@ -162,12 +162,48 @@ usage() {
 
 rfkill_check() {
 	#take phy and check blocks
-	true
+	if [ "${RFKILL}" = 0 ]; then
+		#immediatly return if rfkill isn't supported
+		return 0
+	fi
+	rfkill_status="$(rfkill list ${1#phy} 2>&1)"
+	if [ $? != 0 ]; then
+		printf "rfkill error: ${rfkill_status}\n"
+		return 187
+	else
+		soft="$(printf ${rfkill_status} | grep -i soft | awk '{print $3}')"
+		hard="$(printf ${rfkill_status} | grep -i hard | awk '{print $3}')"
+		if [ "${soft}" = "yes" ] && [ "${hard}" = "no" ]; then
+			printf "${1} is soft blocked, please run \"rfkill unblock ${1#phy}\" to use this interface.\n"
+			return 1
+		elif [ "${soft}" = "no" ] && [ "${hard}" = "yes" ]; then
+			printf "${1} is hard blocked, please flip the hardware wifi switch to on.\n"
+			printf "It may also be possible to unblock with \"rfkill unblock ${1#phy}\"\n"
+			return 2
+		elif [ "${soft}" = "yes" ] && [ "${hard}" = "yes" ]; then
+			printf "${1} is hard and soft blocked, please flip the hardware wifi switch to on.\n"
+			printf "It may also be needed to unblock with \"rfkill unblock ${1#phy}\"\n"
+			return 3
+		fi
+	fi
+	return 0
 }
 
 rfkill_unblock() {
 	#attempt unblock and CHECK SUCCESS
-	true
+	if [ "${RFKILL}" = 0 ]; then
+		#immediatly return if rfkill isn't supported
+		return 0
+	fi
+	rfkill_status="$(rfkill unblock ${1#phy} 2>&1)"
+	if [ $? != 0 ]; then
+		printf "rfkill error: ${rfkill_status}\n"
+		printf "Unable to unblock.\n"
+		return 1
+	else
+		sleep 1
+		return 0
+	fi
 }
 
 setLink() {
@@ -217,7 +253,32 @@ startDeprecatedIface() {
 	printf " (monitor mode enabled)"
 }
 
+yesorno() {
+	read input
+	case $input in
+		y) return 0 ;;
+		yes) return 0 ;;
+		n) return 1 ;;
+		no) return 1 ;;
+		*) printf "\nInvalid input. Yes, or no? [y/n] "
+		   yesorno;;
+	esac
+}
+
 startMac80211Iface() {
+	#check if rfkill is set and cry if it is
+	rfkill_check ${PHYDEV}
+	if [ $? != 0 ]; then
+		printf "rfkill error, unable to start ${1}\n\n"
+		printf "Would you like to try and automatically resolve this? [y/n] "
+		yesorno
+		retcode="$?"
+		if [ "${retcode}" = "1" ]; then
+			return 1
+		elif [ "${retcode}" = "0" ]; then
+			rfkill_unblock ${PHYDEV}
+		fi
+	fi
 	#check if $1 already has a mon interface on the same phy and bail if it does
 	if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
 		for i in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
