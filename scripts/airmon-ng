@@ -166,23 +166,31 @@ rfkill_check() {
 		#immediatly return if rfkill isn't supported
 		return 0
 	fi
-	rfkill_status="$(rfkill list ${1#phy} 2>&1)"
+	if [ -z "${1}" ]; then
+		printf "Fatal, rfkill_check requires a phy to be passed in\n"
+		exit 1
+	fi
+	#first we have to find the rfkill index
+	#this is available as /sys/class/net/wlan0/phy80211/rfkill## but that's a bit difficult to parse
+	index="$(rfkill list | grep ${1} | awk -F: '{print $1}')"
+	if [ -z "$index" ]; then
+		return 187
+	fi
+	rfkill_status="$(rfkill list ${index} 2>&1)"
 	if [ $? != 0 ]; then
 		printf "rfkill error: ${rfkill_status}\n"
 		return 187
+	elif [ -z "${rfkill_status}" ]; then
+		printf "rfkill had no output, something went wrong.\n"
+		exit 1
 	else
 		soft="$(printf ${rfkill_status} | grep -i soft | awk '{print $3}')"
 		hard="$(printf ${rfkill_status} | grep -i hard | awk '{print $3}')"
 		if [ "${soft}" = "yes" ] && [ "${hard}" = "no" ]; then
-			printf "\t${1} is soft blocked, please run \"rfkill unblock ${1#phy}\" to use this interface.\n"
 			return 1
 		elif [ "${soft}" = "no" ] && [ "${hard}" = "yes" ]; then
-			printf "\t${1} is hard blocked, please flip the hardware wifi switch to on.\n"
-			printf "\tIt may also be possible to unblock with \"rfkill unblock ${1#phy}\"\n"
 			return 2
 		elif [ "${soft}" = "yes" ] && [ "${hard}" = "yes" ]; then
-			printf "\t${1} is hard and soft blocked, please flip the hardware wifi switch to on.\n"
-			printf "\tIt may also be needed to unblock with \"rfkill unblock ${1#phy}\"\n"
 			return 3
 		fi
 	fi
@@ -268,7 +276,15 @@ yesorno() {
 startMac80211Iface() {
 	#check if rfkill is set and cry if it is
 	rfkill_check ${PHYDEV}
-	if [ $? != 0 ]; then
+	rfkill_retcode="$?"
+	case ${rfkill_retcode} in
+		1) printf "\t${1} is soft blocked, please run \"rfkill unblock ${1#phy}\" to use this interface.\n" ;;
+		2) printf "\t${1} is hard blocked, please flip the hardware wifi switch to on.\n"
+		   printf "\tIt may also be possible to unblock with \"rfkill unblock ${1#phy}\"\n" ;;
+		3) printf "\t${1} is hard and soft blocked, please flip the hardware wifi switch to on.\n"
+		   printf "\tIt may also be needed to unblock with \"rfkill unblock ${1#phy}\"\n" ;;
+	esac
+	if [ "${rfkill_retcode}" != 0 ]; then
 		printf "rfkill error, unable to start ${1}\n\n"
 		printf "Would you like to try and automatically resolve this? [y/n] "
 		yesorno
@@ -658,6 +674,17 @@ getStack() {
 }
 
 getExtendedInfo() {
+	#stuff rfkill info into extended if nothing else is there
+	rfkill_check ${PHYDEV}
+	rfkill_retcode="$?"
+	if [ "${rfkill_retcode}" = "1" ]; then
+		EXTENDED="rfkill soft blocked"
+	elif [ "${rfkill_retcode}" = "2" ]; then
+		EXTENDED="rfkill hard blocked"
+	elif [ "${rfkill_redcode}" = "3" ]; then
+		EXTENDED="rfkill hard and soft blocked"
+	fi
+
 	if [ "$DRIVER" = "??????" ]; then
 		EXTENDED="\t Failure detecting driver properly please report"
 	fi
@@ -1103,6 +1130,7 @@ for iface in $(printf "${iface_list}"); do
 	ethtool_output="$(ethtool -i $iface 2>&1)"
 	if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]; then
 		getStack  ${iface}
+		getPhy     ${iface}
 		getDriver   ${iface}
 		getChipset ${iface}
 		if [ "${VERBOSE}" = "1" ]; then
@@ -1110,7 +1138,6 @@ for iface in $(printf "${iface_list}"); do
 			getFirmware ${iface}
 			getExtendedInfo ${iface}
 		fi
-		getPhy     ${iface}
 	else
  		printf "\nethtool failed...\n"
 		printf "Only mac80211 devices on kernel 2.6.33 or higher are officially supported by airmon-ng.\n"
