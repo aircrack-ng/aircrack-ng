@@ -2509,6 +2509,7 @@ int do_attack_arp_resend( void )
                                     arp[arp_off1].len ) < 0 )
                     {
                         free( arp );
+                        fclose( f_cap_out );
                         return( 1 );
                     }
                 }
@@ -3322,6 +3323,7 @@ int do_attack_migmode( void )
         {
             perror( "fcntl(O_NONBLOCK) failed" );
             free(arp);
+            fclose( f_cap_out );
             return( 1 );
         }
     }
