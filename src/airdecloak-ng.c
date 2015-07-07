@@ -1317,6 +1317,7 @@ BOOLEAN print_statistics() {
 }
 
 void usage() {
+	char *version_info = getVersion("Airdecloak-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 			"  %s - (C) 2008-2015 Thomas d\'Otreppe\n"
 			"  http://www.aircrack-ng.org\n"
@@ -1354,7 +1355,8 @@ void usage() {
 			"\n"
 			"     --help                : Displays this usage screen\n"
 			"\n",
-			getVersion("Airdecloak-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
+			version_info );
+	free(version_info);
 }
 
 int main( int argc, char *argv[] )

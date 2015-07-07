@@ -69,7 +69,7 @@ static struct sstate *get_ss()
 static void usage(char *p)
 {
 	if (p) {}
-
+	char *version_info = getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
 		"  http://www.aircrack-ng.org\n"
@@ -84,7 +84,7 @@ static void usage(char *p)
 		"       -c  <chan> : Channel to use\n"
 		"       -v <level> : Debug level (1 to 3; default: 1)\n"
 		"\n",
-		getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
+		version_info);
 	exit(1);
 }
 
