@@ -429,6 +429,7 @@ static void handle_card(struct sstate *ss)
 	int rd;
 	struct rx_info *ri = (struct rx_info*) buf;
 	struct client *c;
+	struct client *next_c;
 
 	rd = card_read(ss, ri + 1, sizeof(buf) - sizeof(*ri), ri);
     if (rd >= 0)
@@ -444,9 +445,9 @@ static void handle_card(struct sstate *ss)
 
 	c = ss->ss_clients.c_next;
 	while (c != &ss->ss_clients) {
+		next_c = c->c_next;
 		client_send_packet(ss, c, buf, rd);
-		if (c == NULL) break;
-		c = c->c_next;
+		c = next_c;
 	}
 }
 
