@@ -950,6 +950,7 @@ int read_prga(unsigned char **dest, char *file)
         if( (unsigned) size < sizeof(struct ivs2_filehdr) + 4)
         {
             fprintf( stderr, "No valid %s file.", IVS2_EXTENSION);
+            fclose( f );
             return( 1 );
         }
         memcpy( &fivs2, (*dest) + 4, sizeof(struct ivs2_filehdr));
@@ -1104,7 +1105,9 @@ int forge_custom()
 
 void print_usage(void)
 {
-    printf(usage, getVersion("Packetforge-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC) );
+    char *version_info = getVersion("Packetforge-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+    printf(usage, version_info);
+    free(version_info);
 }
 
 int main(int argc, char* argv[])
