@@ -448,6 +448,13 @@ struct oui * load_oui_file(void) {
 				if (!(oui_ptr->next = (struct oui *)malloc(sizeof(struct oui)))) {
 					fclose(fp);
 					perror("malloc failed");
+					
+					while(oui_head != NULL)
+					{
+						oui_ptr = oui_head->next;
+						free(oui_head);
+						oui_head = oui_ptr;
+					}
 					return NULL;
 				}
 				oui_ptr = oui_ptr->next;
@@ -4991,6 +4998,7 @@ void gps_tracker( void )
 
     if( connect( gpsd_sock, (struct sockaddr *) &gpsd_addr,
                  sizeof( gpsd_addr ) ) < 0 ) {
+        close(gpsd_sock);
         return;
     }
 
