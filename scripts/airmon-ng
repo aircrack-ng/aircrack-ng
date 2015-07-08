@@ -436,11 +436,10 @@ stopMac80211Iface() {
 					fi
 				fi
 				IW_ERROR="$(iw phy ${PHYDEV} interface add ${1%mon} type station 2>&1)"
-				if [ -n "${IW_ERROR}" ]; then
+				if [ -z "${IW_ERROR}" ]; then
 					printf "\n\t\t(mac80211 station mode vif enabled on [${PHYDEV}]${1%mon})"
-					unset IW_ERROR
 				else
-					printf "\n\n ERROR adding station mode interface: iw command error"
+					printf "\n\n ERROR adding station mode interface: ${IW_ERROR}"
 				fi
 			fi
 			setLink ${1} down
