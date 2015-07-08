@@ -434,9 +434,6 @@ stopMac80211Iface() {
 							fi
 						done
 					fi
-				else
-					printf "\n/sys/class/net/${1%mon}/phy80211/name file is missing, dazed and confused...\n"
-					exit 1
 				fi
 				IW_ERROR="$(iw phy ${PHYDEV} interface add ${1%mon} type station 2>&1)"
 				if [ -n "${IW_ERROR}" ]; then
