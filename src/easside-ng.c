@@ -2373,7 +2373,7 @@ void own(struct east_state *es)
 void usage(char *p)
 {
 	if (p) {}
-
+    char *version_info = getVersion("Easside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
 		"  http://www.aircrack-ng.org\n"
@@ -2392,7 +2392,8 @@ void usage(char *p)
 		"       -c      <channel> : Lock card to this channel\n"
 		"       -n                : Determine Internet IP only\n"
 		"\n",
-		getVersion("Easside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
+		version_info);
+	free(version_info);
 }
 
 void load_prga(struct east_state *es)

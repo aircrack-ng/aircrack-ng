@@ -2655,7 +2655,10 @@ int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
             errno = 0;
 
             if( send_packet( h80211, data_end -1 ) != 0 )
+            {
+                free(chopped);
                 return( 1 );
+            }
 
             if( errno != EAGAIN )
             {
@@ -2698,7 +2701,10 @@ int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
 
         n = read_packet( h80211, sizeof( h80211 ), NULL );
 
-        if( n  < 0 ) return( 1 );
+        if( n  < 0 ){
+            free(chopped);
+            return( 1 );
+        }
         if( n == 0 ) continue;
 
         nb_pkt_read++;
@@ -2717,6 +2723,7 @@ int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
                 "\n\nFailure: got several deauthentication packets "
                 "from the AP - you need to start the whole process "
                 "all over again, as the client got disconnected.\n\n" );
+                    free(chopped);
                     return( 1 );
                 }
 
@@ -2738,6 +2745,7 @@ int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
                 printf( "\n\nFailure: the access point does not properly "
                         "discard frames with an\ninvalid ICV - try running "
                         "aireplay-ng in authenticated mode (-h) instead.\n\n" );
+                free(chopped);
                 return( 1 );
 //             }
         }

@@ -59,6 +59,7 @@
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
 void print_help(const char * msg) {
+	char *version_info = getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 ebfe\n"
 		"  http://www.aircrack-ng.org\n"
@@ -84,7 +85,8 @@ void print_help(const char * msg) {
 		"       --export cowpatty <essid> <file> :\n"
 		"                        Export to a cowpatty file.\n"
 		"\n",
-		getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
+		version_info);
+	free(version_info);
 
 	if (msg && strlen(msg) > 0) {
 		printf("%s", msg);
@@ -496,6 +498,8 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	f = fopen(filename, "w");
 	if (f == NULL || fwrite(&filehead, sizeof(filehead), 1, f) != 1) {
 		printf("Couldn't open the export file for writing.\n");
+		if (f != NULL)
+			fclose(f);
 		return;
 	}
 
@@ -531,6 +535,8 @@ int import_cowpatty(sqlite3* db, char* filename) {
 	}
 	if (f == NULL || fread(&filehead, sizeof(filehead),1,f) != 1) {
 		printf("Couldn't open the import file for reading.\n");
+		if (f != NULL)
+			fclose(f);
 		return 0;
 	} else if (filehead.magic != GENPMKMAGIC) {
 		printf("File doesn't seem to be a cowpatty file.\n");

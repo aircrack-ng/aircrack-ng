@@ -191,6 +191,7 @@ void drop_privs()
 
 void usage()
 {
+    char *version_info = getVersion("Buddy-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007,2008 Andrea Bittau\n"
 		"  http://www.aircrack-ng.org\n"
@@ -202,7 +203,8 @@ void usage()
 		"       -h        : This help screen\n"
 		"       -p        : Don't drop privileges\n"
 		"\n",
-		getVersion("Buddy-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
+		version_info);
+	free(version_info);
 
 	exit(1);
 }

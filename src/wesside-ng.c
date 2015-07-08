@@ -2035,7 +2035,7 @@ static void start(struct wstate *ws, char *dev)
 static void usage(char* pname)
 {
 	if (pname) {}
-
+    char *version_info = getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
 		"  http://www.aircrack-ng.org\n"
@@ -2056,8 +2056,8 @@ static void usage(char* pname)
 		"       -f   <max chan> : Highest scanned chan (default: 11)\n"
 		"       -k      <txnum> : Ignore acks and tx txnum times\n"
 		"\n",
-		getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
-
+		version_info);
+    free(version_info);
 	exit(0);
 }
 
