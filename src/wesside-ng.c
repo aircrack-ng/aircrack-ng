@@ -1613,7 +1613,7 @@ static int do_crack(struct wstate *ws)
         int (* all)[256];
         int i,j;
 
-        all = malloc(256*32*sizeof(int));
+        all = malloc(32*sizeof(int [256]));
         if (all == NULL) {
             return 1;
         }
