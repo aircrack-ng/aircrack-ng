@@ -4213,8 +4213,10 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 		return 1;
 	}
 
+	pthread_mutex_lock(&mx_nb);
 	nb_tried++;
 	nb_kprev++;
+	pthread_mutex_unlock(&mx_nb);
 
 	if( ! opt.is_quiet )
 		show_wpa_stats( values[1], strlen(values[1]), (unsigned char*)(values[0]), ptk, mic, 0 );
@@ -5779,8 +5781,10 @@ usage:
 __start:
 	/* launch the attack */
 
+	pthread_mutex_lock(&mx_nb);
 	nb_tried = 0;
 	nb_kprev = 0;
+	pthread_mutex_unlock(&mx_nb);
 
 	chrono( &t_begin, 1 );
 	chrono( &t_stats, 1 );
