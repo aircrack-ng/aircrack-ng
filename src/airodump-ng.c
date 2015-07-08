@@ -1450,16 +1450,6 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
 
     ap_cur->nb_pkt++;
 
-    /* find wpa handshake */
-    if( h80211[0] == 0x10 )
-    {
-        /* reset the WPA handshake state */
-
-        if( st_cur != NULL && st_cur->wpa.state != 0xFF )
-            st_cur->wpa.state = 0;
-//        printf("initial auth %d\n", ap_cur->wpa_state);
-    }
-
     /* locate the station MAC in the 802.11 header */
 
     switch( h80211[1] & 3 )
