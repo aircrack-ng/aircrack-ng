@@ -4126,7 +4126,7 @@ int next_dict(int nb)
 
 			if( ( opt.dict = fdopen( fileno(stdin) , "r" ) ) == NULL )
 			{
-				perror( "fopen(dictionary) failed" );
+				perror( "fdopen(stdin) failed" );
 				opt.nbdict++;
 				continue;
 			}
