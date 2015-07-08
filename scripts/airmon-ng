@@ -445,7 +445,7 @@ stopMac80211Iface() {
 			setLink ${1} down
 			IW_ERROR="$(iw dev "${1}" del 2>&1 | grep "nl80211 not found")"
 			if [ -z "$IW_ERROR" ]; then
-				printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})"
+				printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
 			else
 				if [ -f /sys/class/ieee80211/${PHYDEV}/remove_iface ]; then
 					printf "${1}" > /sys/class/ieee80211/${PHYDEV}/remove_iface
