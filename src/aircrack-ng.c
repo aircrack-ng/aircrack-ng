@@ -3045,7 +3045,10 @@ int check_wep_key( unsigned char *wepkey, int B, int keylen )
 	if (keylen<=0)
 		keylen = opt.keylen;
 
+	pthread_mutex_lock(&mx_nb);
 	nb_tried++;
+	pthread_mutex_unlock(&mx_nb);
+	
 	bad = 0;
 
 	memcpy( K + 3, wepkey, keylen );
