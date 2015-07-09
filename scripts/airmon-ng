@@ -46,6 +46,8 @@ fi
 
 #cleanup getDriver()
 #fix to not assume wifi drivers are modules
+#rewrite to not have two devices at any one time
+#add feature to detect lost phys
 
 if [ -n "$(command -v id 2> /dev/null)" ]; then
 	USERID="$(id -u 2> /dev/null)"
@@ -416,11 +418,20 @@ stopMac80211Iface() {
 									fi
 									IW_ERROR="$(iw phy ${PHYDEV} interface add wlan${i} type station 2>&1)"
 									if [ -z "${IW_ERROR}" ]; then
+										if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
+											for j in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
+												if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${j}/type)" = "1" ]; then
+													#here is where we catch udev renaming our interface
+													i=${j}
+												fi
+											done
+										fi
 										printf "\n\t\t(mac80211 station mode vif enabled on [${PHYDEV}]wlan${i})\n"
 										unset IW_ERROR
 										break
 									else
 										printf "\n\n ERROR adding station mode interface: ${IW_ERROR}\n"
+										break
 									fi
 								else
 									if [ "$DEBUG" = "1" ]; then
@@ -437,7 +448,16 @@ stopMac80211Iface() {
 				fi
 				IW_ERROR="$(iw phy ${PHYDEV} interface add ${1%mon} type station 2>&1)"
 				if [ -z "${IW_ERROR}" ]; then
-					printf "\n\t\t(mac80211 station mode vif enabled on [${PHYDEV}]${1%mon})\n"
+					interface="${1%mon}"
+					if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
+						for i in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
+							if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type)" = "1" ]; then
+								#here is where we catch udev renaming our interface
+								interface="${i}"
+							fi
+						done
+					fi
+					printf "\n\t\t(mac80211 station mode vif enabled on [${PHYDEV}]${interface})\n"
 				else
 					printf "\n\n ERROR adding station mode interface: ${IW_ERROR}\n"
 				fi
