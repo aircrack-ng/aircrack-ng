@@ -177,6 +177,8 @@ handleLostPhys() {
                 elif [ "${retcode}" = "0" ]; then
 			for PHYDEV in ${MISSING_INTERFACES}; do
 				findFreeInterface monitor
+				#add some spacing so this doesn't make the display hard to read
+				printf "\n\n"
 			done
                 fi
 	fi
@@ -325,13 +327,13 @@ ifaceIsUp() {
 	fi
 }
 
-listIfaceUnspec() {
-	if [ -x "$(command -v ip 2>&1)" ]; then
-		ip link 2>/dev/null | awk -F"[: ]+" '/UNSPEC/ {print $2}'
-	elif [ -x "$(command -v ifconfig 2>&1)" ]; then
-		ifconfig -a 2>/dev/null | awk -F"[: ]+" '/UNSPEC/ {print $1}'
-	fi
-}
+#listIfaceUnspec() {
+#	if [ -x "$(command -v ip 2>&1)" ]; then
+#		ip link 2>/dev/null | awk -F"[: ]+" '/UNSPEC/ {print $2}'
+#	elif [ -x "$(command -v ifconfig 2>&1)" ]; then
+#		ifconfig -a 2>/dev/null | awk -F"[: ]+" '/UNSPEC/ {print $1}'
+#	fi
+#}
 
 startDeprecatedIface() {
 	iwconfig ${1} mode monitor > /dev/null 2>&1
@@ -651,7 +653,7 @@ getChipset() {
 	#this needs cleanup, we shouldn't have multiple lines assigning chipset per bus
 	#fix this to be one line per bus
 	if [ -f /sys/class/net/$1/device/modalias ]; then
-		BUS="$(cat /sys/class/net/$1/device/modalias | cut -d ":" -f 1)"
+		BUS="$(cut -d ":" -f 1 /sys/class/net/$1/device/modalias)"
 		if [ "$BUS" = "usb" ]; then
 			if [ "${LSUSB}" = "1" ]; then
 				BUSINFO="$(cut -d ":" -f 2 /sys/class/net/$1/device/modalias | cut -b 1-10 | sed 's/^.//;s/p/:/')"
@@ -1151,38 +1153,38 @@ else
 fi
 
 #this whole block of code shouldn't be here, it makes no sense
-#XXX
-for iface in listIfaceUnspec; do
-
-	if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
-	then
-		setLink ${iface} up
-		printf "$iface\t\tAtheros\t\tmadwifi-ng"
-		if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
-		then
-			IFACE=$(wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath)
-			setLink ${iface} up
-			if [ $CH -lt 1000 ]
-			then
-				iwconfig $IFACE channel $CH 2> /dev/null > /dev/null
-			else
-				iwconfig $IFACE freq "$CH"000000 2> /dev/null > /dev/null
-			fi
-		setLink ${IFACE} up
-		UDEV_ISSUE=$?
-		fi
-
-		if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
-		then
-			printf "$iface does not support 'stop', do it on ath interface\n"
-		fi
-
-		#why, dear god why is there a random newline here?
-		printf "\n"
-		sleep 1
-		continue
-	fi
-done
+#per shellcheck, this block is broken as it runs the loops once with iface=listIfaceUnspec instead of the output of listIFaceUnspec
+#for iface in listIfaceUnspec; do
+#
+#	if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
+#	then
+#		setLink ${iface} up
+#		printf "$iface\t\tAtheros\t\tmadwifi-ng"
+#		if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
+#		then
+#			IFACE=$(wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath)
+#			setLink ${iface} up
+#			if [ $CH -lt 1000 ]
+#			then
+#				iwconfig $IFACE channel $CH 2> /dev/null > /dev/null
+#			else
+#				iwconfig $IFACE freq "$CH"000000 2> /dev/null > /dev/null
+#			fi
+#		setLink ${IFACE} up
+#		UDEV_ISSUE=$?
+#		fi
+#
+#		if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+#		then
+#			printf "$iface does not support 'stop', do it on ath interface\n"
+#		fi
+#
+#		#why, dear god why is there a random newline here?
+#		printf "\n"
+#		sleep 1
+#		continue
+#	fi
+#done
 #end random block of code that needs to die
 
 for iface in $(printf "${iface_list}"); do
