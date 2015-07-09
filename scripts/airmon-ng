@@ -8,9 +8,8 @@ MAC80211=0
 IW_SOURCE="https://www.kernel.org/pub/software/network/iw/iw-4.0.tar.gz"
 IW_ERROR=""
 UDEV_ISSUE=0
-SYSFS=0
-if [ -d /sys/ ]; then
-	SYSFS=1
+if [ ! -d /sys/ ]; then
+	printf "CONFIG_SYSFS is disabled in your kernel, this program will almost certainly not work.\n"
 fi
 
 if [ "${1}" = "--elite" ]; then
@@ -47,7 +46,6 @@ fi
 #cleanup getDriver()
 #fix to not assume wifi drivers are modules
 #rewrite to not have two devices at any one time
-#add feature to detect lost phys
 
 if [ -n "$(command -v id 2> /dev/null)" ]; then
 	USERID="$(id -u 2> /dev/null)"
@@ -160,6 +158,94 @@ fi
 usage() {
 	printf "usage: $(basename $0) <start|stop|check> <interface> [channel or frequency]\n\n"
 	exit 0
+}
+
+handleLostPhys() {
+	MISSING_INTERFACES=""
+	for i in $(ls /sys/class/ieee80211/); do
+		if [ ! -d /sys/class/ieee80211/${i}/device/net ]; then
+			MISSING_INTERFACES="${MISSING_INTERFACES} ${i}"
+		fi
+	done
+	if [ -n "${MISSING_INTERFACES}" ]; then
+		printf "The following phy(s) have no interfaces assigned: ${MISSING_INTERFACES}\n"
+		printf "\nWould you like to create an interface? [y/n] "
+		yesorno
+		retcode=$?
+                if [ "${retcode}" = "1" ]; then
+                        printf "PHY(s) ${MISSING_INTERFACES} will remain lost.\n\n"
+                elif [ "${retcode}" = "0" ]; then
+			for PHYDEV in ${MISSING_INTERFACES}; do
+				findFreeInterface monitor
+			done
+                fi
+	fi
+}
+
+findFreeInterface() {
+	if [ -z "${1}" ]; then
+		printf "findFreeInterface needs a target mode.\n"
+		exit 1
+	fi
+	if [ "${1}" != "monitor" ] && [ "${1}" != "station" ]; then
+		printf "findFreeInterface only supports monitor and station for target mode.\n"
+		exit 1
+	fi
+	target_mode="${1}"
+	if [ "$target_mode" = "monitor" ]; then
+		target_suffix="mon"
+		target_type="803"
+	else
+		target_suffix=""
+		target_type="1"
+	fi
+	for i in $(seq 0 100); do
+		if [ "$i" = "100" ]; then
+			printf "\n\tUnable to find a free name between wlan0 and wlan99, you are on your own from here.\n"
+			return 1
+		fi
+		if [ "$DEBUG" = "1" ]; then
+			printf "\nChecking candidate wlan${i}\n"
+		fi
+		if [ ! -e /sys/class/net/wlan${i} ]; then
+			if [ "$DEBUG" = "1" ]; then
+				printf "\nCandidate wlan${i} is not in use\n"
+			fi
+			if [ ! -e /sys/class/net/wlan${i}mon ]; then
+				if [ "$DEBUG" = "1" ]; then
+					printf "\nCandidate wlan${i} and wlan${i}mon are both clear, creating wlan${i}${target_suffix}\n"
+				fi
+				IW_ERROR="$(iw phy ${PHYDEV} interface add wlan${i}${target_suffix} type ${target_mode} 2>&1)"
+				if [ -z "${IW_ERROR}" ]; then
+					if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
+						for j in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
+							if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${j}/type)" = "${target_type}" ]; then
+								#here is where we catch udev renaming our interface
+								i=${j}
+							fi
+						done
+					else
+						printf "Unable to create wlan${i}${target_suffix} and no error recieved.\n"
+						return 1
+					fi
+					printf "\n\t\t(mac80211 ${target_mode} mode vif enabled on [${PHYDEV}]wlan${i}${target_suffix}\n"
+					unset IW_ERROR
+					break
+				else
+					printf "\n\n ERROR adding ${target_mode} mode interface: ${IW_ERROR}\n"
+					break
+				fi
+			else
+				if [ "$DEBUG" = "1" ]; then
+					printf "\nCandidate wlan${i} does not exist, but wlan${i}mon does, skipping...\n"
+				fi
+			fi
+		else
+			if [ "$DEBUG" = "1" ]; then
+				printf "\nCandidate wlan${i} is in use already.\n"
+			fi
+		fi
+	done
 }
 
 rfkill_check() {
@@ -400,50 +486,7 @@ stopMac80211Iface() {
 					else
 						printf "\nYou already have a ${1%mon} device, but is is not on the same phy as ${1}.\n"
 						printf "\nAttemping to pick a new name...\n"
-						for i in $(seq 0 100); do
-							if [ "$i" = "100" ]; then
-								printf "\nUnable to find a free name between wlan0 and wlan99, you are on your own from here.\n"
-								exit 1
-							fi
-							if [ "$DEBUG" = "1" ]; then
-								printf "\nChecking candidate wlan${i}\n"
-							fi
-							if [ ! -e /sys/class/net/wlan${i} ]; then
-								if [ "$DEBUG" = "1" ]; then
-									printf "\nCandidate wlan${i} is not in use\n"
-								fi
-								if [ ! -e /sys/class/net/wlan${i}mon ]; then
-									if [ "$DEBUG" = "1" ]; then
-										printf "\nCandidate wlan${i} and wlan${i}mon are both clear, creating wlan${i}\n"
-									fi
-									IW_ERROR="$(iw phy ${PHYDEV} interface add wlan${i} type station 2>&1)"
-									if [ -z "${IW_ERROR}" ]; then
-										if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
-											for j in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
-												if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${j}/type)" = "1" ]; then
-													#here is where we catch udev renaming our interface
-													i=${j}
-												fi
-											done
-										fi
-										printf "\n\t\t(mac80211 station mode vif enabled on [${PHYDEV}]wlan${i})\n"
-										unset IW_ERROR
-										break
-									else
-										printf "\n\n ERROR adding station mode interface: ${IW_ERROR}\n"
-										break
-									fi
-								else
-									if [ "$DEBUG" = "1" ]; then
-										printf "\nCandidate wlan${i} does not exist, but wlan${i}mon does, skipping...\n"
-									fi
-								fi
-							else
-								if [ "$DEBUG" = "1" ]; then
-									printf "\nCandidate wlan${i} is in use already.\n"
-								fi
-							fi
-						done
+						findFreeInterface station
 					fi
 				fi
 				IW_ERROR="$(iw phy ${PHYDEV} interface add ${1%mon} type station 2>&1)"
@@ -1019,6 +1062,9 @@ checkvm() {
 #end function definitions
 #begin execution
 
+#here we check for any phys that have no interfaces to pick up The Lost Phys
+handleLostPhys
+
 listInterfaces
 
 if [ "${1}" = "check" ] || [ "${1}" = "start" ]; then
@@ -1037,8 +1083,7 @@ if [ "${1}" = "check" ] || [ "${1}" = "start" ]; then
 	fi
 fi
 
-if [ "$#" != "0" ]
-then
+if [ "$#" != "0" ]; then
 	if [ "$1" != "start" ] && [ "$1" != "stop" ]; then
 		usage
 	fi
