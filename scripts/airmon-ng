@@ -184,8 +184,8 @@ rfkill_check() {
 		printf "rfkill had no output, something went wrong.\n"
 		exit 1
 	else
-		soft="$(printf ${rfkill_status} | grep -i soft | awk '{print $3}')"
-		hard="$(printf ${rfkill_status} | grep -i hard | awk '{print $3}')"
+		soft="$(printf \"${rfkill_status}\" | grep -i soft | awk '{print $3}')"
+		hard="$(printf \"${rfkill_status}\" | grep -i hard | awk '{print $3}')"
 		if [ "${soft}" = "yes" ] && [ "${hard}" = "no" ]; then
 			return 1
 		elif [ "${soft}" = "no" ] && [ "${hard}" = "yes" ]; then
