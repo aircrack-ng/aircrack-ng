@@ -2007,6 +2007,7 @@ void check_thread( void *arg )
 				sizeof( struct AP_info ) ) ) )
 			{
 				perror( "malloc failed" );
+				pthread_mutex_unlock( &mx_apl );
 				break;
 			}
 
