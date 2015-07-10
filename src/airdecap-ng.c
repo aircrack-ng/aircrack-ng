@@ -1040,6 +1040,13 @@ usage:
             st_cur->valid_ptk = calc_ptk( st_cur, opt.pmk );
         }
     }
+    
+    while (st_1st != NULL)
+    {
+        st_cur = st_1st->next;
+        free(st_1st);
+        st_1st = st_cur;
+    }
 
     fclose( f_in  );
     fclose( f_out );
