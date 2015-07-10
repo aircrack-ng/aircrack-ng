@@ -841,6 +841,7 @@ scanProcesses() {
 
 	if [ -x "$(command -v service 2>&1)" ] && [ "$1" = "kill" ]; then
 		service network-manager stop 2> /dev/null > /dev/null
+		service NetworkManager stop 2> /dev/null > /dev/null
 		service avahi-daemon stop 2> /dev/null > /dev/null
 	fi
 
