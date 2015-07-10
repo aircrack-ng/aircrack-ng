@@ -1,0 +1,20 @@
+#include <tunables/global>
+
+/usr/bin/aircrack-ng flags=(complain) {
+  #include <abstractions/base>
+
+  # No need to access dot files
+  deny /home/*/.* rw,
+
+  # For reading pcap files (and sqldb)
+  @{HOME}/** r,
+  /tmp/** r,
+
+  # For -l (and writing sqldb)
+  @{HOME}/** w,
+  /tmp/** w,
+
+  # Needed for ptrace/core dumps
+  /usr/bin/aircrack-ng rm,
+
+}
