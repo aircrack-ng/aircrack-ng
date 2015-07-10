@@ -1594,7 +1594,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     int kver, unused;
     struct utsname checklinuxversion;
     struct priv_linux *dev = wi_priv(wi);
-    char *iwpriv;
+    char *iwpriv = NULL;
     char strbuf[512];
     FILE *f;
     char athXraw[] = "athXraw";
@@ -2012,6 +2012,7 @@ close_out:
 close_in:
     close(dev->fd_in);
     if(iface_malloced) free(iface);
+    if(iwpriv) free(iwpriv);
     return 1;
 }
 
