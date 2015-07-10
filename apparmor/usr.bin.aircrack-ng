@@ -11,8 +11,8 @@
   /tmp/** r,
 
   # For -l (and writing sqldb)
-  @{HOME}/** w,
-  /tmp/** w,
+  owner @{HOME}/** w,
+  owner /tmp/** w,
 
   # Needed for ptrace/core dumps
   /usr/bin/aircrack-ng rm,
