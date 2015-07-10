@@ -66,9 +66,11 @@ char usage[] =
 "      -l         : don't remove the 802.11 header\n"
 "      -b <bssid> : access point MAC address filter\n"
 "      -e <essid> : target network SSID\n"
+"      -o <fname> : output file for decrypted packets (default <src>-dec)\n"
 "\n"
 "  WEP specific option:\n"
 "      -w <key>   : target network WEP key in hex\n"
+"      -c <fname> : output file for corrupted WEP packets (default <src>-bad)\n"
 "\n"
 "  WPA specific options:\n"
 "      -p <pass>  : target network WPA passphrase\n"
@@ -100,6 +102,8 @@ struct options
     unsigned char wepkey[64];
     int weplen, crypt;
     int store_bad;
+    char decrypted_fpath[65536];
+    char corrupted_fpath[65536];
 }
 opt;
 
@@ -239,7 +243,7 @@ int main( int argc, char *argv[] )
             {0,         0, 0,  0 }
         };
 
-        int option = getopt_long( argc, argv, "lb:k:e:p:w:H",
+        int option = getopt_long( argc, argv, "lb:k:e:o:p:w:c:H",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -358,6 +362,30 @@ int main( int argc, char *argv[] )
                 strncpy( opt.essid, optarg, sizeof( opt.essid ) - 1 );
                 break;
 
+            case 'o' :
+
+                if ( opt.decrypted_fpath[0])
+                {
+                    printf( "filename for decrypted packets already specified.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+
+                strncpy( opt.decrypted_fpath, optarg, sizeof( opt.decrypted_fpath ) - 1 );
+                break;
+                
+            case 'c' :
+
+                if ( opt.corrupted_fpath[0])
+                {
+                    printf( "filename for corrupted packets already specified.\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+
+                strncpy( opt.corrupted_fpath, optarg, sizeof( opt.corrupted_fpath ) - 1 );
+                break;
+                
             case 'p' :
 
                 if( opt.crypt != CRYPT_NONE )
@@ -551,7 +579,13 @@ usage:
         opt.store_bad=1;
     }
 
-    if( ( f_out = fopen( (char *) buffer, "wb+" ) ) == NULL )
+    /* Support manually-configured output files*/
+    if ( opt.decrypted_fpath[0])
+        f_out = fopen( opt.decrypted_fpath, "wb+");
+    else
+        f_out = fopen( (char *) buffer, "wb+");
+    
+    if( f_out == NULL )
     {
         perror( "fopen failed" );
         printf( "Could not create \"%s\".\n", buffer );
@@ -560,7 +594,12 @@ usage:
 
     if(opt.store_bad)
     {
-        if( ( f_bad = fopen( (char *) buffer2, "wb+" ) ) == NULL )
+        if ( opt.corrupted_fpath[0])
+            f_bad = fopen( opt.corrupted_fpath, "wb+" );
+        else
+            f_bad = fopen( (char *) buffer2, "wb+" );
+
+        if( f_bad == NULL )
         {
             perror( "fopen failed" );
             printf( "Could not create \"%s\".\n", buffer2 );
