@@ -1260,7 +1260,13 @@ BOOLEAN check_for_cloaking() {
 // Return 1 on success
 BOOLEAN write_packets() {
 	// Open files ...
-	FILE * invalid_status_file = init_new_pcap("invalid_status.pcap");
+	FILE * invalid_status_file;
+	
+	if (_filename_output_invalid != NULL)
+		invalid_status_file = init_new_pcap(_filename_output_invalid);
+	else
+		invalid_status_file = init_new_pcap("invalid_status.pcap");
+
 	_output_cloaked_packets_file = init_new_pcap(_filename_output_cloaked);
 	_output_clean_capture_file = init_new_pcap(_filename_output_filtered);
 
@@ -1333,6 +1339,9 @@ void usage() {
 			"     --bssid <BSSID>       : BSSID of the network to filter\n"
 			"\n"
 			"   Optional:\n"
+			"     -o <file>             : Output packets (valid) file (default: <src>-filtered.pcap)\n"
+			"     -c <file>             : Output packets (cloaked) file (default: <src>-cloaked.pcap)\n"
+			"     -u <file>             : Output packets (unknown/ignored) file (default: invalid_status.pcap)\n"
 			"     --filters <filters>   : Apply filters (separated by a comma). Filters:\n"
 			"           signal:               Try to filter based on signal.\n"
 			"           duplicate_sn:         Remove all duplicate sequence numbers\n"
@@ -1362,6 +1371,7 @@ void usage() {
 int main( int argc, char *argv[] )
 {
     int temp, option;
+    int manual_cloaked_fname=0, manual_filtered_fname=0;
     BOOLEAN tempBool;
     char * input_filename;
     char * input_bssid;
@@ -1377,6 +1387,7 @@ int main( int argc, char *argv[] )
 	memset(_bssid, 0, 6);
 	_filters = 0;
 
+    _filename_output_invalid = NULL;
 
 	// Parse options
 	while( 1 )
@@ -1400,11 +1411,13 @@ int main( int argc, char *argv[] )
             //{"disable-retry",		0, 0, 'r'},
             {"drop-frag",			0, 0, 'd'},
             {"input",				1, 0, 'i'},
+            {"cloaked",				1, 0, 'c'},
+            {"filtered",			1, 0, 'f'},
             {0,						0, 0,  0 }
         };
 
 		//option = getopt_long( argc, argv, "e:b:hf:nbrdi:",
-		option = getopt_long( argc, argv, "e:b:hf:nbdi:",
+		option = getopt_long( argc, argv, "e:b:hf:nbdi:c:o:u:",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -1427,7 +1440,24 @@ int main( int argc, char *argv[] )
 			case 'i':
 				input_filename = optarg;
 				break;
-
+			case 'c':
+				if (optarg != NULL)
+				{
+					_filename_output_cloaked = optarg;
+					manual_cloaked_fname = 1;
+				}
+				break;
+			case 'o':
+				if (optarg != NULL)
+				{
+    				_filename_output_filtered = optarg;
+	    			manual_filtered_fname = 1;
+    			}
+				break;
+			case 'u':
+				if (optarg != NULL)
+					_filename_output_invalid = optarg;
+				break;
 			case 'b':
 				if (getmac(optarg, 1, _bssid)) {
 					puts("Failed to parse MAC address");
@@ -1513,6 +1543,9 @@ int main( int argc, char *argv[] )
 			--ssid ESSID (or --essid or --ssid) or -b BSSID (or --bssid or --ap)
 
 		Optional:
+			-o <file>             : Output packets (valid) file (default: <src>-filtered.pcap)
+			-c <file>             : Output packets (cloaked) file (default: <src>-cloaked.pcap)
+			-u <file>             : Output packets (unknown/ignored) file (default: invalid_status.pcap)
 			-f (--filters/--filter)
 				Available filters:
 					* signal: Tries to filter based on the signal (AP never/is not supposed to moves thus ...)
@@ -1541,30 +1574,42 @@ int main( int argc, char *argv[] )
 	}
 
 	// Create output filenames
-    temp = strlen( input_filename );
-
-    _filename_output_cloaked = (char *) calloc(temp + 9 + 5, 1);
-    _filename_output_filtered = (char *) calloc(temp + 10 + 5, 1);
-
-	while (--temp > 0)
+	if (manual_cloaked_fname == 0 || manual_filtered_fname == 0)
 	{
-		if (input_filename[temp] == '.')
-			break;
-	}
+        temp = strlen( input_filename );
+        if (!manual_cloaked_fname)
+            _filename_output_cloaked = (char *) calloc(temp + 9 + 5, 1);
+            
+        if (!manual_filtered_fname)
+            _filename_output_filtered = (char *) calloc(temp + 10 + 5, 1);
 
-	// No extension
-	if (temp == 0) {
-		snprintf(_filename_output_cloaked, strlen( input_filename ) + 9 + 5, "%s-cloaked.pcap", input_filename);
-		snprintf(_filename_output_filtered, strlen( input_filename ) + 10 + 5, "%s-filtered.pcap", input_filename);
-	}
-	else {
-		strncpy(_filename_output_cloaked, input_filename, strlen( input_filename ) + 9 + 5 - 1);
-		strncpy(_filename_output_filtered, input_filename, strlen( input_filename ) + 10 + 5 - 1);
-		strncat(_filename_output_cloaked, "-cloaked.pcap", 14);
-		strncat(_filename_output_filtered, "-filtered.pcap", 15);
-	}
+	    while (--temp > 0)
+	    {
+		    if (input_filename[temp] == '.')
+			    break;
+	    }
 
-
+	    // No extension
+        if (temp == 0) {
+            if (!manual_cloaked_fname)
+                snprintf(_filename_output_cloaked, strlen( input_filename ) + 9 + 5, "%s-cloaked.pcap", input_filename);
+            if (!manual_filtered_fname)
+                snprintf(_filename_output_filtered, strlen( input_filename ) + 10 + 5, "%s-filtered.pcap", input_filename);
+        }
+        else {
+            if (!manual_cloaked_fname)
+            {
+                strncpy(_filename_output_cloaked, input_filename, strlen( input_filename ) + 9 + 5 - 1);
+                strncat(_filename_output_cloaked, "-cloaked.pcap", 14);	        
+            }
+            if (!manual_filtered_fname)
+            {
+                strncpy(_filename_output_filtered, input_filename, strlen( input_filename ) + 10 + 5 - 1);
+                strncat(_filename_output_filtered, "-filtered.pcap", 15);
+            }
+        }
+    }
+    
 	printf("Output packets (valids) filename: %s\n",  _filename_output_filtered);
 	printf("Output packets (cloaked) filename: %s\n",  _filename_output_cloaked);
 
