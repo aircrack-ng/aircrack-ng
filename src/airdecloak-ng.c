@@ -1517,6 +1517,9 @@ int main( int argc, char *argv[] )
 				break;
 			case 'r':
 				_options_disable_retry = 1;
+				printf("'%c' option not yet implemented\n", option);
+				exit(0);
+				break;
 			case 'e':
 				printf("'%c' option not yet implemented\n", option);
 				exit(0);
