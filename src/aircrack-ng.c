@@ -2153,6 +2153,7 @@ void check_thread( void *arg )
 				sizeof( struct ST_info ) ) ) )
 			{
 				perror( "malloc failed" );
+				pthread_mutex_unlock( &mx_apl );
 				break;
 			}
 
