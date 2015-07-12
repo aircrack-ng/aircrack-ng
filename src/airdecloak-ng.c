@@ -164,6 +164,12 @@ FILE * open_existing_pcap(const char * filename) {
 
 	f = fopen(filename, "rb");
 
+    if( f == NULL )
+    {
+        perror( "Unable to open pcap" );
+        return NULL;
+    }
+    
     temp_sizet = (size_t) sizeof( _pfh_in );
 
     if( fread( &_pfh_in, 1, temp_sizet, f ) !=  temp_sizet )
