@@ -1,0 +1,20 @@
+#include <tunables/global>
+
+/usr/bin/airolib-ng flags=(complain) {
+  #include <abstractions/base>
+
+  # No need to access dot files
+  deny /home/*/.* rw,
+
+  # For reading database files
+  @{HOME}/** r,
+  /tmp/** r,
+
+  # For writing database files and exporting cowpatty files
+  owner @{HOME}/** w,
+  owner /tmp/** w,
+
+  # Needed for ptrace/core dumps
+  /usr/bin/airolib-ng rm,
+
+}
