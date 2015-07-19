@@ -218,7 +218,7 @@ if __name__ == "__main__":
         "--dump", 
         dest="input", 
         nargs=1 
-        ,help="Airodump txt file in CSV format NOT the pcap")
+        ,help="Airodump txt file in CSV format. NOT the pcap")
     parser.add_option("-g", 
         "--graph",
         dest="graph_type", 
