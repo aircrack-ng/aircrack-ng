@@ -240,11 +240,11 @@ if __name__ == "__main__":
         sys.exit(1)
     if outFile == None: 
         outFile = options.input.replace('.txt', '.png')
-    if graphType.upper() not in ['CAPR','CPG','ZKS']:
-        print("Error Invalid Graph Type\nVaild types are CAPR or CPG")
-        sys.exit(1)
     if graphType == None:
         print("Error No Graph Type Defined")
+        sys.exit(1)
+    if graphType.upper() not in ['CAPR','CPG','ZKS']:
+        print("Error Invalid Graph Type\nVaild types are CAPR or CPG")
         sys.exit(1)
     dot = dotCreate(inFile)
     if graphType.upper() == 'CPG':
