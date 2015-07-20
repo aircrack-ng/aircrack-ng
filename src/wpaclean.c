@@ -444,6 +444,7 @@ static void process_beacon(struct ieee80211_frame *wh, int totlen)
 	assert(n->n_beaconlen <= (int) sizeof(n->n_beacon));
 	memcpy(n->n_beacon, wh, n->n_beaconlen);
 	strncpy(n->n_ssid, ssid, sizeof(n->n_ssid));
+	(n->n_ssid)[sizeof(n->n_ssid)-1] = '\0';
 
 #if 0
 	printf("got beacon [%s]\n", n->n_ssid);
