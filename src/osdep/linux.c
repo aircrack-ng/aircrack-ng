@@ -390,7 +390,7 @@ static int linux_get_channel(struct wif *wi)
         strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
     else
         strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
-
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     fd = dev->fd_in;
     if(dev->drivertype == DT_IPW2200)
@@ -424,7 +424,7 @@ static int linux_get_freq(struct wif *wi)
         strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
     else
         strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
-
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     fd = dev->fd_in;
     if(dev->drivertype == DT_IPW2200)
@@ -514,7 +514,8 @@ static int linux_set_rate(struct wif *wi, int rate)
         strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
     else
         strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
-
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
+		
     wrq.u.bitrate.value = rate;
     wrq.u.bitrate.fixed = 1;
 
@@ -540,6 +541,7 @@ static int linux_get_rate(struct wif *wi)
         strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
     else
         strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     if( ioctl( dev->fd_in, SIOCGIWRATE, &wrq ) < 0 )
     {
@@ -1111,6 +1113,8 @@ static int linux_set_channel(struct wif *wi, int channel)
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
+    
     wrq.u.freq.m = (double) channel;
     wrq.u.freq.e = (double) 0;
 
@@ -1164,6 +1168,8 @@ static int linux_set_freq(struct wif *wi, int freq)
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
+    
     wrq.u.freq.m = (double) freq*100000;
     wrq.u.freq.e = (double) 1;
 
@@ -1240,6 +1246,7 @@ int linux_get_monitor(struct wif *wi)
     /* lookup iw mode */
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     if( ioctl( wi_fd(wi), SIOCGIWMODE, &wrq ) < 0 )
     {
@@ -1344,6 +1351,7 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
 
         memset( &wrq, 0, sizeof( struct iwreq ) );
         strncpy( wrq.ifr_name, iface, IFNAMSIZ );
+        wrq.ifr_name[IFNAMSIZ-1] = 0;
         wrq.u.mode = IW_MODE_MONITOR;
 
         if( ioctl( fd, SIOCSIWMODE, &wrq ) < 0 )
@@ -1432,6 +1440,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
         /* set iw mode to managed on main interface */
         memset( &wrq2, 0, sizeof( struct iwreq ) );
         strncpy( wrq2.ifr_name, dev->main_if, IFNAMSIZ );
+        wrq2.ifr_name[IFNAMSIZ-1] = 0;
 
         if( ioctl( dev->fd_main, SIOCGIWMODE, &wrq2 ) < 0 )
         {
@@ -1485,6 +1494,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     /* lookup iw mode */
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, iface, IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     if( ioctl( fd, SIOCGIWMODE, &wrq ) < 0 )
     {
