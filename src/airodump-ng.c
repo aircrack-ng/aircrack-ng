@@ -6960,7 +6960,13 @@ usage:
     G.batt     = getBatteryString();
 
     G.elapsed_time = (char *) calloc( 1, 4 );
+    if(G.elapsed_time == NULL)
+    {
+        perror( "Error allocating memory" );
+        return 1;
+    }
     strncpy(G.elapsed_time, "0 s", 4 - 1);
+    G.elapsed_time[strlen(G.elapsed_time)] = 0;
 
 	/* Create start time string for kismet netxml file */
     G.airodump_start_time = (char *) calloc( 1, 1000 * sizeof(char) );
