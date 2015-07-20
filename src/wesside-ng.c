@@ -1072,6 +1072,7 @@ static void got_ip(struct wstate *ws)
 	strncpy(ws->ws_netip, inet_ntoa(*in), 16-1);
 
 	time_print("Got IP=(%s)\n", ws->ws_netip);
+	memset(ws->ws_myip, 0, sizeof(ws->ws_myip));
 	strncpy(ws->ws_myip, ws->ws_netip, sizeof(ws->ws_myip)-1);
 
 	ptr = strchr(ws->ws_myip, '.');
