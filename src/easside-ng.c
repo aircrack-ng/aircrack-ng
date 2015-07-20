@@ -1921,7 +1921,7 @@ void check_inet(struct east_state *es, struct timeval *tv)
 	/* data */
 	data = (unsigned char*) (uh+1);
 
-	strncpy((char*)data, "sorbo", 5);
+	memcpy(data, "sorbo", 5);
 	seq = (unsigned short*) (data+5);
 	*seq = htons(++es->es_rpacket_id);
 	data += S_HELLO_LEN;
