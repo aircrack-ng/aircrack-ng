@@ -234,7 +234,7 @@ check: all
 	./aircrack-ng$(EXE) -w $(TEST_DIR)/password.lst -a 2 -e test -q $(TEST_DIR)/wpa.cap | grep 'KEY FOUND! \[ biscotte \]'
 	./aircrack-ng$(EXE) -w $(TEST_DIR)/password.lst -a 2 -e linksys -q $(TEST_DIR)/wpa2-psk-linksys.cap | grep 'KEY FOUND! \[ dictionary \]'
 	./aircrack-ng$(EXE) -w $(TEST_DIR)/password.lst -a 2 -e linksys -q $(TEST_DIR)/wpa-psk-linksys.cap | grep 'KEY FOUND! \[ dictionary \]'
-	./aircrack-ng$(EXE) $(TEST_DIR)/wep_64_ptw.cap  | grep "KEY FOUND" | grep "1F:1F:1F:1F:1F"
+	./aircrack-ng$(EXE) $(TEST_DIR)/wep_64_ptw.cap -l /dev/null | grep "KEY FOUND" | grep "1F:1F:1F:1F:1F"
 	./airdecap-ng$(EXE) -e linksys -p dictionary $(TEST_DIR)/wpa2-psk-linksys.cap -o /dev/null -c /dev/null | grep "decrypted WPA" | grep 25
 	./airdecap-ng$(EXE) -e linksys -p dictionary $(TEST_DIR)/wpa-psk-linksys.cap -o /dev/null -c /dev/null | grep "decrypted WPA" | grep 53
 	./airdecap-ng$(EXE) -e test -p biscotte $(TEST_DIR)/wpa.cap -o /dev/null -c /dev/null | grep "decrypted WPA" | grep 2

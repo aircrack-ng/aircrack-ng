@@ -1,0 +1,51 @@
+#include <tunables/global>
+
+/usr/sbin/airodump-ng {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/private-files-strict>
+
+  /usr/sbin/airodump-ng mr,
+  
+  capability dac_override,
+  capability setuid,
+  capability net_raw,
+  capability net_admin,
+
+  network packet raw,
+
+  deny @{HOME}/.** rw,
+
+  @{HOME}/** r,
+  
+  owner @{HOME}/**.cap w,
+  owner @{HOME}/**.csv w,
+  owner @{HOME}/**.kismet.netxml w,
+  owner @{HOME}/**.gps w,
+  
+  /proc/*/net/psched r,
+  /proc/acpi/ac_adapter/ r,
+  /proc/acpi/battery/ r,
+  
+  /usr/share/aircrack-ng/airodump-ng-oui.txt r,
+ 
+  /sbin/ r,
+  /sbin/iwpriv rCx,
+      
+  profile /sbin/iwpriv {
+    #include <abstractions/base>
+    network dgram,
+    /sbin/iwpriv mr,
+  } 
+ 
+  /bin/*sh rCx,
+  
+  profile /bin/*sh {
+    #include <abstractions/base>
+    /bin/*sh mr,
+    
+    /bin/ls mrix,
+    /sys/class/ieee80211/ r,
+  }
+
+}
