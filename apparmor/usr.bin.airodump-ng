@@ -1,11 +1,11 @@
 #include <tunables/global>
 
-/usr/sbin/airodump-ng {
+/usr/bin/airodump-ng {
   #include <abstractions/base>
   #include <abstractions/nameservice>
   #include <abstractions/private-files-strict>
 
-  /usr/sbin/airodump-ng mr,
+  /usr/bin/airodump-ng mr,
   
   capability dac_override,
   capability setuid,

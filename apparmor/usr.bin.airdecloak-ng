@@ -2,9 +2,10 @@
 
 /usr/bin/airdecloak-ng flags=(complain) {
   #include <abstractions/base>
-
+  #include <abstractions/private-files-strict>
+  
   # No need to access dot files
-  deny /home/*/.* rw,
+  deny @{HOME}/.** rw,
 
   # For reading pcap files
   @{HOME}/** r,
