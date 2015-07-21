@@ -473,6 +473,10 @@ inline int wpa_receive_passphrase(char *key, struct WPA_data* data)
 	return 1;
 }
 
+/* Returns number of BSSIDs.
+
+    Return value is negative for failures
+*/
 int checkbssids(char *bssidlist)
 {
 	int first = 1;
@@ -543,6 +547,10 @@ int checkbssids(char *bssidlist)
 			}
 
 			opt.firstbssid = (unsigned char *) malloc(sizeof(unsigned char));
+			if (opt.firstbssid == NULL){
+				free(frontlist);
+				return -1;
+			}
 			getmac(tmp, 1, opt.firstbssid);
 			first = 0;
 		}
