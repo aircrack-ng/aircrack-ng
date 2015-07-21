@@ -193,8 +193,7 @@ int main( int argc, char *argv[] )
             case 'd':
 
 				paramUsed = 1;
-                sscanf(optarg, "%f", &dupe);
-                if (dupe < 0.0f || dupe > 100.0f) {
+                if (sscanf(optarg, "%f", &dupe) != 1 || dupe < 0.0f || dupe > 100.0f) {
 					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
 
                     printf( "Specified dupe is invalid. [0-100]" );
