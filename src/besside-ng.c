@@ -2826,7 +2826,7 @@ static void resume_network(char *buf)
 		/* ssid */
 		case 0:
 			strncpy(n->n_ssid, p, sizeof(n->n_ssid));
-			(n->n_ssid)[sizeof(n->n_ssid)] = '\0';
+			(n->n_ssid)[sizeof(n->n_ssid) -1] = '\0';
 			break;
 
 		/* key */
