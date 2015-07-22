@@ -26,25 +26,25 @@
   profile /bin/ps {
     #include <abstractions/base>
 
-	  /bin/ps mr,
+    /bin/ps mr,
 
-		capability sys_ptrace,
-  	capability dac_override,
-  	
+    capability sys_ptrace,
+    capability dac_override,
+    
     ptrace (trace),
     ptrace (read),
-	
+  
     /proc/ r,
-  	/proc/*/ r,
-		/proc/*/maps r,
-		/proc/*/net/dev r,
-  	/proc/*/net/psched r,
-		/proc/*/stat r,
-		/proc/*/status r,
-		/proc/*/task/ r,
-	  /proc/sys/kernel/pid_max r,
+    /proc/*/ r,
+    /proc/*/maps r,
+    /proc/*/net/dev r,
+    /proc/*/net/psched r,
+    /proc/*/stat r,
+    /proc/*/status r,
+    /proc/*/task/ r,
+    /proc/sys/kernel/pid_max r,
     /proc/tty/drivers r,
-	  /proc/uptime r,
+    /proc/uptime r,
   }
   
   /bin/readlink rix,
