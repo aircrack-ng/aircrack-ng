@@ -1,0 +1,98 @@
+#include <tunables/global>
+
+# Use this if the binary can be in more than one location
+@{BIN_DIRS}=/usr/bin /usr/local/bin
+@{SBIN_DIRS}=/usr/sbinn /usr/local/sbin
+  
+/usr/bin/airmon-ng {
+  #include <abstractions/base>
+  #include <abstractions/bash>
+  #include <abstractions/nameservice>
+  #include <abstractions/ubuntu-konsole>
+
+  capability net_admin,
+  capability sys_ptrace,
+
+  /usr/bin/airmon-ng r,
+  
+  /bin/cat rix,
+  /bin/dmesg rix,
+  /bin/dash ix,
+  /bin/grep rix,
+  /bin/ip rix,
+  /bin/kmod rix,
+  /bin/ps rCx,
+  
+  profile /bin/ps {
+    #include <abstractions/base>
+
+	  /bin/ps mr,
+
+		capability sys_ptrace,
+  	capability dac_override,
+  	
+    ptrace (trace),
+    ptrace (read),
+	
+    /proc/ r,
+  	/proc/*/ r,
+		/proc/*/maps r,
+		/proc/*/net/dev r,
+  	/proc/*/net/psched r,
+		/proc/*/stat r,
+		/proc/*/status r,
+		/proc/*/task/ r,
+	  /proc/sys/kernel/pid_max r,
+    /proc/tty/drivers r,
+	  /proc/uptime r,
+  }
+  
+  /bin/readlink rix,
+  /bin/sed rix,
+  /bin/sleep rix,
+  /bin/uname rix,
+  /dev/bus/usb/ r,
+  /dev/rfkill rix,
+  /dev/tty* r,
+  /dev/vmnet r,
+  /etc/udev/udev.conf r,
+  /proc/*/net/dev r,
+  /proc/*/net/psched r,
+  /proc/bus/pci/ r,
+  /proc/cmdline r,
+  /proc/ide/hd*/model r,
+  /proc/filesystems r,
+  /proc/meminfo r,
+  /proc/scsi/scsi/ r,
+  /proc/sys/dev/*/fftxqmin r,
+  /sbin/ethtool rix,
+  /sbin/ifconfig rix,
+  /sbin/iw rix,
+  /sbin/iwconfig rix,
+  /sbin/modinfo rix,
+  /sbin/modprobe rix,
+  /sys/bus/ r,
+  /sys/bus/pci r,
+  /sys/bus/pci_express r,
+  /sys/bus/usb/devices/ r,
+  /sys/class/ r,
+  /sys/class/ieee80211/ r,
+  /sys/class/ieee80211/** r,
+  /sys/class/net/ r,
+  /sys/class/net/** r,
+  /sys/devices/** r,
+  /sys/module/ r,
+  /usr/bin/basename rix,
+  /usr/bin/cut rix,
+  /usr/bin/*awk rix,
+  /usr/bin/head rix,
+  /usr/bin/id rix,
+  /usr/bin/lspci rix,
+  /usr/bin/lscpu rix,
+  /usr/bin/lsusb rix,
+  /usr/bin/sort rix,
+  /usr/sbin/dmidecode rix,
+  /usr/sbin/rfkill rix,
+  /var/lib/usbutils/usb.ids r,
+
+}
