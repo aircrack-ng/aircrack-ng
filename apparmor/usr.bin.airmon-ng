@@ -2,7 +2,7 @@
 
 # Use this if the binary can be in more than one location
 @{BIN_DIRS}=/usr/bin /usr/local/bin
-@{SBIN_DIRS}=/usr/sbinn /usr/local/sbin
+@{SBIN_DIRS}=/usr/sbin /usr/local/sbin
   
 /usr/bin/airmon-ng {
   #include <abstractions/base>
