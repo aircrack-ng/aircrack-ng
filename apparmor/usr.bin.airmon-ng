@@ -94,5 +94,4 @@
   /usr/sbin/dmidecode rix,
   /usr/sbin/rfkill rix,
   /var/lib/usbutils/usb.ids r,
-
 }
