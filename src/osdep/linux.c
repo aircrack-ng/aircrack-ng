@@ -226,10 +226,9 @@ static char * searchInside(const char * dir, const char * filename)
             (void)closedir(dp);
             return curfile;
         }
-        lstat(curfile, &sb);
 
         //If it's a directory and not a link, try to go inside to search
-        if (S_ISDIR(sb.st_mode) && !S_ISLNK(sb.st_mode))
+        if ( lstat(curfile, &sb)==0 && S_ISDIR(sb.st_mode) && !S_ISLNK(sb.st_mode))
         {
             //Check if the directory isn't "." or ".."
             if (strcmp(".", ep->d_name) && strcmp("..", ep->d_name))
