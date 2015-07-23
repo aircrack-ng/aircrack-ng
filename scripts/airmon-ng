@@ -407,7 +407,7 @@ startMac80211Iface() {
 		setChannelMac80211 ${1}mon
 		printf "\n\t\t(mac80211 monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
 	else
-		printf "\n\nERROR adding monitor mode interface: ${IW_ERROR}"
+		printf "\n\nERROR adding monitor mode interface: ${IW_ERROR}\n"
 		exit 1
 	fi
 	if [ "${ELITE}" = "1" ]; then
