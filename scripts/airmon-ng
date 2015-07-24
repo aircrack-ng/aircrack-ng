@@ -332,21 +332,21 @@ ifaceIsUp() {
 #	fi
 #}
 
-startDeprecatedIface() {
-	iwconfig ${1} mode monitor > /dev/null 2>&1
-	if [ -n "${2}" ]; then
-		if [ ${2} -lt 1000 ]; then
-			iwconfig ${1} channel ${2} > /dev/null 2>&1
-		else
-			iwconfig ${1} freq ${2}000000 > /dev/null 2>&1
-		fi
-	else
-		iwconfig ${1} channel ${CH} > /dev/null 2>&1
-	fi
-	iwconfig ${1} key off > /dev/null 2>&1
-	setLink ${1} up
-	printf " (monitor mode enabled)"
-}
+#startDeprecatedIface() {
+#	iwconfig ${1} mode monitor > /dev/null 2>&1
+#	if [ -n "${2}" ]; then
+#		if [ ${2} -lt 1000 ]; then
+#			iwconfig ${1} channel ${2} > /dev/null 2>&1
+#		else
+#			iwconfig ${1} freq ${2}000000 > /dev/null 2>&1
+#		fi
+#	else
+#		iwconfig ${1} channel ${CH} > /dev/null 2>&1
+#	fi
+#	iwconfig ${1} key off > /dev/null 2>&1
+#	setLink ${1} up
+#	printf " (monitor mode enabled)"
+#}
 
 yesorno() {
 	read input
@@ -423,11 +423,11 @@ startMac80211Iface() {
 	fi
 }
 
-startDarwinIface() {
-	if [ -x /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport ]; then
-		/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport $1 sniff
-	fi
-}
+#startDarwinIface() {
+#	if [ -x /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport ]; then
+#		/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport $1 sniff
+#	fi
+#}
 
 setChannelMac80211() {
 	setLink ${1} up
@@ -448,12 +448,12 @@ setChannelMac80211() {
 	fi
 }
 
-stopDeprecatedIface() {
-	setLink $1 down
-	iwconfig $1 mode Managed > /dev/null 2>&1
-	setLink $1 up
-	printf " (monitor mode disabled)"
-}
+#stopDeprecatedIface() {
+#	setLink $1 down
+#	iwconfig $1 mode Managed > /dev/null 2>&1
+#	setLink $1 up
+#	printf " (monitor mode disabled)"
+#}
 
 stopMac80211Iface() {
 	if [ -f /sys/class/net/${1}/type ]; then
