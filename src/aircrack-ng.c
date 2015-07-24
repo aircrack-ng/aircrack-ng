@@ -4786,6 +4786,12 @@ int set_dicts(char* optargs)
 	return 0;
 }
 
+/*
+Uses the specified dictionary to crack the WEP key.
+
+Return: SUCCESS if it cracked the key,
+        FAILURE if it could not.
+*/
 int crack_wep_dict()
 {
 	struct timeval t_last;
@@ -4853,6 +4859,12 @@ int crack_wep_dict()
 	}
 }
 
+/*
+Uses the PTW attack to crack the WEP key.
+
+Return: SUCCESS if it cracked the key,
+        FAILURE if it could not.
+*/
 static int crack_wep_ptw(struct AP_info *ap_cur)
 {
     int (* all)[256];
