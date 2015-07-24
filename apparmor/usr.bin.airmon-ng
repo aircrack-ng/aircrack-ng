@@ -1,28 +1,43 @@
 #include <tunables/global>
 
-# Use this if the binary can be in more than one location
-@{BIN_DIRS}=/usr/bin /usr/local/bin
-@{SBIN_DIRS}=/usr/sbin /usr/local/sbin
-  
 /usr/bin/airmon-ng {
   #include <abstractions/base>
   #include <abstractions/bash>
-  #include <abstractions/nameservice>
-  #include <abstractions/ubuntu-konsole>
+  #include <abstractions/private-files-strict>
 
-  capability net_admin,
-  capability sys_ptrace,
-
-  /usr/bin/airmon-ng r,
+  /usr/bin/airmon-ng rix,
   
   /bin/cat rix,
-  /bin/dmesg rix,
+  
+  /bin/dmesg rCx,
+  profile /bin/dmesg {
+    #include <abstractions/base>
+
+    /bin/dmesg mr,
+  }
+  
   /bin/dash ix,
   /bin/grep rix,
-  /bin/ip rix,
-  /bin/kmod rix,
-  /bin/ps rCx,
+
+  /bin/ip rCx,  
+  profile /bin/ip {
+    #include <abstractions/base>
+
+    /bin/ip mr,
+    
+    capability net_admin,
+  }
   
+  /bin/kmod rCx,
+  profile /bin/kmod {
+    #include <abstractions/base>
+
+    /bin/kmod mr,
+
+    /proc/cmdline r,
+  }
+  
+  /bin/ps rCx,
   profile /bin/ps {
     #include <abstractions/base>
 
@@ -38,7 +53,6 @@
     /proc/*/ r,
     /proc/*/maps r,
     /proc/*/net/dev r,
-    /proc/*/net/psched r,
     /proc/*/stat r,
     /proc/*/status r,
     /proc/*/task/ r,
@@ -59,18 +73,79 @@
   /proc/*/net/dev r,
   /proc/*/net/psched r,
   /proc/bus/pci/ r,
-  /proc/cmdline r,
   /proc/ide/hd*/model r,
   /proc/filesystems r,
   /proc/meminfo r,
   /proc/scsi/scsi/ r,
   /proc/sys/dev/*/fftxqmin r,
-  /sbin/ethtool rix,
-  /sbin/ifconfig rix,
-  /sbin/iw rix,
-  /sbin/iwconfig rix,
-  /sbin/modinfo rix,
-  /sbin/modprobe rix,
+  
+  /sbin/ethtool rCx,
+  profile /sbin/ethtool {
+    #include <abstractions/base>
+
+    /sbin/ethtool mr,
+    
+      capability net_admin,
+      capability net_raw,
+      
+      network,
+  }
+  
+  /sbin/ifconfig rCx,
+  profile /sbin/ifconfig {
+    #include <abstractions/base>
+
+    /sbin/ifconfig mr,
+  }
+  
+  
+  /sbin/iw rCx,
+  profile /sbin/iw {
+    #include <abstractions/base>
+
+    /sbin/iw mr,
+    
+    capability net_admin,
+    
+    /proc/net/psched r,
+    /sys/class/ieee80211/ r,
+    /sys/class/ieee80211/** r,
+    /sys/devices/** r,
+    /proc/*/net/psched r,
+  }
+  
+  /sbin/iwconfig rCx,
+  profile /sbin/iwconfig {
+    #include <abstractions/base>
+
+    /sbin/iwconfig mr,
+      
+      capability net_admin,
+      capability net_raw,
+      
+      network inet dgram,
+      
+      /proc/filesystems r,
+      /proc/*/net/dev r,
+  }
+  
+  /sbin/modinfo rCx,
+  profile /sbin/modinfo {
+    #include <abstractions/base>
+
+    /sbin/modinfo mr,
+    
+    /proc/cmdline r,
+  }
+  
+  /sbin/modprobe rCx,
+  profile /sbin/modprobe {
+    #include <abstractions/base>
+
+    /sbin/modprobe mr,
+  }
+  
+  
   /sys/bus/ r,
   /sys/bus/pci r,
   /sys/bus/pci_express r,
@@ -91,7 +166,14 @@
   /usr/bin/lscpu rix,
   /usr/bin/lsusb rix,
   /usr/bin/sort rix,
-  /usr/sbin/dmidecode rix,
+  
+  /usr/sbin/dmidecode rCx,
+  profile /usr/sbin/dmidecode {
+    #include <abstractions/base>
+
+    /usr/sbin/dmidecode mr,
+  }
+
   /usr/sbin/rfkill rix,
   /var/lib/usbutils/usb.ids r,
 }
