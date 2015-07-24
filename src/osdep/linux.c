@@ -359,6 +359,7 @@ static void nl80211_cleanup(struct nl80211_state *state)
 
 /* Callbacks */
 
+/*
 static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
                      void *arg)
 {
@@ -368,11 +369,14 @@ static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
 	*ret = err->error;
 	return NL_STOP;
 }
+*/
 
+/*
 static void test_callback(struct nl_msg *msg, void *arg)
 {
 	if (msg || arg) { }
 }
+*/
 #endif /* End nl80211 */
 
 
@@ -948,7 +952,6 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
     unsigned int devid;
     struct nl_msg *msg;
     unsigned int freq;
-    int err;
     unsigned int htval = NL80211_CHAN_NO_HT;
 
     memset( s, 0, sizeof( s ) );
