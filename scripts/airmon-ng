@@ -36,7 +36,12 @@ fi
 
 
 if [ -n "${3}" ];then
-	CH="${3}"
+	if [ "${3}" -gt 0 ] > /dev/null 2>&1; then
+		CH="${3}"
+	else
+		printf "You have entered an invalid channel \"${3}\" which will be ignored\n"
+		CH=3
+	fi
 else
 	CH=10
 fi
@@ -431,11 +436,11 @@ startMac80211Iface() {
 
 setChannelMac80211() {
 	setLink ${1} up
-	if [ -n "${3}" ]; then
-		if [ ${3} -lt 1000 ]; then
-			IW_ERROR="$(iw dev ${1} set channel ${3} 2>&1)"
+	if [ -n "${CH}" ]; then
+		if [ ${CH} -lt 1000 ]; then
+			IW_ERROR="$(iw dev ${1} set channel ${CH} 2>&1)"
 		else
-			IW_ERROR="$(iw dev ${1} set freq "${3}" 2>&1)"
+			IW_ERROR="$(iw dev ${1} set freq "${CH}" 2>&1)"
 		fi
 	else
 		IW_ERROR="$(iw dev ${1} set channel ${CH} 2>&1)"
