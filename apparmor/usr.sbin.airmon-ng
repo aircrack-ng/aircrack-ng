@@ -1,11 +1,11 @@
 #include <tunables/global>
 
-/usr/bin/airmon-ng {
+/usr/sbin/airmon-ng {
   #include <abstractions/base>
   #include <abstractions/bash>
   #include <abstractions/private-files-strict>
 
-  /usr/bin/airmon-ng rix,
+  /usr/sbin/airmon-ng rix,
   
   /bin/cat rix,
   
