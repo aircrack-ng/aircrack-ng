@@ -765,7 +765,7 @@ getExtendedInfo() {
 		EXTENDED="\t\t\t\tNo monitor or injection support\n"
 	fi
 
-	#lastly we detect all the broken drivers which have working alturnatives
+	#lastly we detect all the broken drivers which have working alternatives
 	KV="$(uname -r | awk -F'-' '{print $1}')"
 	KVMAJOR="$(printf ${KV} | awk -F'.' '{print $1$2}')"
 	KVMINOR="$(printf ${KV} | awk -F'.' '{print $3}')"
