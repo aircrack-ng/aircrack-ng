@@ -5109,7 +5109,7 @@ int main( int argc, char *argv[] )
 				else if ( strcasecmp( optarg, "wpa" ) == 0 )
 					opt.amode = 2;
 
-				if( opt.amode != 1 && opt.amode != 2 )
+				if( ret1 !=1 || (opt.amode != 1 && opt.amode != 2) )
 				{
 					printf( "Invalid attack mode. [1,2] or [wep,wpa]\n" );
 					printf("\"%s --help\" for help.\n", argv[0]);
