@@ -4065,7 +4065,7 @@ int main( int argc, char *argv[] )
             case 'M' :
 
                 ret = sscanf( optarg, "%d", &opt.mic_failure_interval );
-                if( opt.mic_failure_interval < 0 )
+                if( ret != 1 || opt.mic_failure_interval < 0 )
                 {
                     printf( "Invalid MIC error timeout. [>=0]\n" );
                     printf("\"%s --help\" for help.\n", argv[0]);
