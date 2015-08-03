@@ -1,7 +1,6 @@
 === Requirements ===
 
  * OpenSSL development package or libgcrypt development package
- * pkg-config
  * If you want to use airolib-ng and '-r' option in aircrack-ng,
    SQLite development package >= 3.3.17 (3.6.X version or better is recommended):
    -  libsqlite3-dev on a Debian based distro
