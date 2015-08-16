@@ -135,10 +135,12 @@ int main(int argc, char *argv[])
 		return 3;
 	}
 
+#ifdef RADIOTAP_SUPPORT_OVERRIDES
 	if (fcshdr) {
 		iter.overrides = overrides;
 		iter.n_overrides = sizeof(overrides)/sizeof(overrides[0]);
 	}
+#endif
 
 	while (!(err = ieee80211_radiotap_iterator_next(&iter))) {
 		if (iter.this_arg_index == IEEE80211_RADIOTAP_VENDOR_NAMESPACE) {
