@@ -385,20 +385,22 @@ struct mbuf  *ether_vlanencap(struct mbuf *, uint16_t);
 
 #else /* _KERNEL */
 
-#include <sys/cdefs.h>
-
 /*
  * Ethernet address conversion/parsing routines.
  */
-__BEGIN_DECLS
-struct	ether_addr *ether_aton(const char *);
-struct	ether_addr *ether_aton_r(const char *, struct ether_addr *);
-int	ether_hostton(const char *, struct ether_addr *);
-int	ether_line(const char *, struct ether_addr *, char *);
-char 	*ether_ntoa(const struct ether_addr *);
-char 	*ether_ntoa_r(const struct ether_addr *, char *);
-int	ether_ntohost(char *, const struct ether_addr *);
-__END_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
+	struct	ether_addr *ether_aton(const char *);
+	struct	ether_addr *ether_aton_r(const char *, struct ether_addr *);
+	int	ether_hostton(const char *, struct ether_addr *);
+	int	ether_line(const char *, struct ether_addr *, char *);
+	char 	*ether_ntoa(const struct ether_addr *);
+	char 	*ether_ntoa_r(const struct ether_addr *, char *);
+	int	ether_ntohost(char *, const struct ether_addr *);
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* !_KERNEL */
 
