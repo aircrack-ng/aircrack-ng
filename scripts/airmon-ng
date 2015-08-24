@@ -391,7 +391,7 @@ startMac80211Iface() {
 	if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
 		for i in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
 			if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type)" = "803" ]; then
-				setChannelMac80211 ${1}
+				setChannelMac80211 ${i}
 				printf "\n\t\t(mac80211 monitor mode already enabled for [${PHYDEV}]${1} on [${PHYDEV}]${i})\n"
 				exit
 			fi
