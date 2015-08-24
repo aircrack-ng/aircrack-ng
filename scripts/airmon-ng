@@ -39,7 +39,7 @@ if [ -n "${3}" ];then
 	if [ "${3}" -gt 0 ] > /dev/null 2>&1; then
 		CH="${3}"
 	else
-		printf "You have entered an invalid channel \"${3}\" which will be ignored\n"
+		printf "\nYou have entered an invalid channel \"${3}\" which will be ignored\n"
 		CH=3
 	fi
 else
@@ -438,17 +438,52 @@ setChannelMac80211() {
 	setLink ${1} up
 	if [ -n "${CH}" ]; then
 		if [ ${CH} -lt 1000 ]; then
+			#mac80211 specific check to see if hardware supports the channel number being assigned (requires grep with pcre)
+			if [ -r "/sys/class/net/$1/phy80211/name" ]; then
+		                channel_list="$(iw phy $(cat /sys/class/net/$1/phy80211/name) info 2>&1 | grep -oP '\[\K[^\]]+')"
+				local hardware_valid_channel=1
+	        	        for i in $channel_list; do
+	                	        if [ "${CH}" = "${i}" ]; then
+	                        	        hardware_valid_channel=0
+		                                break
+		                        fi
+		                done
+				if [ "${hardware_valid_channel}" = "1" ]; then
+	        	                printf "Channel ${CH} does not appear to be supported by ${1} hardware, defaulting to channel 3.\n\n"
+					CH=3
+				fi
+			fi
 			IW_ERROR="$(iw dev ${1} set channel ${CH} 2>&1)"
 		else
+			#mac80211 specific check to see if hardware supports the frequency number being assigned (requires grep with pcre)
+			if [ -r "/sys/class/net/$1/phy80211/name" ]; then
+				frequency_list="$(iw phy $(cat /sys/class/net/$1/phy80211/name) info 2>&1 | grep -oP '\*\ \K[\d]+\ MHz')"
+				local hardware_valid_freq=1
+				for i in $frequency_list; do
+					if [ "${CH}" = "${i}" ]; then
+						hardware_valid_freq=0
+						break
+					fi
+					print
+				done
+				if [ "${hardware_valid_freq}" = "1" ]; then
+					printf "Frequency ${CH} does not appear to be supported by ${1} hardware, defaulting to 2422 Mhz.\n\n"
+					CH="2422"
+				fi
+			fi
 			IW_ERROR="$(iw dev ${1} set freq "${CH}" 2>&1)"
 		fi
 	else
-		IW_ERROR="$(iw dev ${1} set channel ${CH} 2>&1)"
+		printf "CH is unset, this should not be possible.\n"
+		exit 1
 	fi
 	if [ -n "${IW_ERROR}" ]; then
 		printf "\nError setting channel: ${IW_ERROR}\n"
 		if printf "${IW_ERROR}" | grep -q "(-16)"; then
 			printf "This likely means your card was set back to station mode, run airmon-ng check kill\n\n"
+		fi
+		if printf "${IW_ERROR}" | grep -q "(-22)"; then
+			printf "Unable to set channel/frequency ${CH}, most likely it is outside of regulatory domain\n\n"
 		fi
 	fi
 }
