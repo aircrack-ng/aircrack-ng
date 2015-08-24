@@ -409,7 +409,14 @@ startMac80211Iface() {
 	IW_ERROR="$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1)"
 	if [ -z "${IW_ERROR}" ]; then
 		sleep 1
-		setChannelMac80211 ${1}mon
+		if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type)" = "803" ]; then
+			setChannelMac80211 ${1}mon
+		else
+			printf "\nNewly created monitor mode interface ${1}mon is *NOT* in monitor mode.\n"
+			printf "Removing non-monitor ${1}mon interface...\n"
+			stopMac80211Iface ${1}mon abort
+			exit 1
+		fi
 		printf "\n\t\t(mac80211 monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
 	else
 		printf "\n\nERROR adding monitor mode interface: ${IW_ERROR}\n"
@@ -481,7 +488,7 @@ setChannelMac80211() {
 		printf "\nError setting channel: ${IW_ERROR}\n"
 		if printf "${IW_ERROR}" | grep -q "(-16)"; then
 			printf "Error -16 likely means your card was set back to station mode by something.\n"
-			printf "Removing non-monitor interface...\n"
+			printf "Removing non-monitor ${1} interface...\n"
 			stopMac80211Iface "${1}" abort
 			exit 1
 		fi
