@@ -31,8 +31,9 @@
 #include <winioctl.h>
 #include <ipexport.h>
 #include <iptypes.h>
-#include <setupapi.h>
+#include <initguid.h>
 #include <devguid.h>
+#include <setupapi.h>
 
 #include "network.h"
 #include "tap-win32/common.h"
