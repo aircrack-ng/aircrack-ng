@@ -1,6 +1,6 @@
 #include <tunables/global>
 
-/usr/bin/aircrack-ng flags=(complain) {
+/usr/bin/aircrack-ng {
   #include <abstractions/base>
   #include <abstractions/private-files-strict>
   

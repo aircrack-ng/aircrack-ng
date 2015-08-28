@@ -1,6 +1,6 @@
 #include <tunables/global>
 
-/usr/bin/airolib-ng flags=(complain) {
+/usr/bin/airolib-ng {
   #include <abstractions/base>
   #include <abstractions/private-files-strict>
   

@@ -16,7 +16,7 @@
     /bin/dmesg mr,
   }
   
-  /bin/dash ix,
+  /bin/*sh ix,
   /bin/grep rix,
 
   /bin/ip rCx,  

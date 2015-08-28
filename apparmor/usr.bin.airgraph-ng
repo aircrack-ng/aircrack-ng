@@ -1,6 +1,6 @@
 #include <tunables/global>
 
-/usr/bin/airgraph-ng flags=(complain) {
+/usr/bin/airgraph-ng {
   #include <abstractions/base>
   #include <abstractions/private-files-strict>
   

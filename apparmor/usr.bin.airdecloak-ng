@@ -1,6 +1,6 @@
 #include <tunables/global>
 
-/usr/bin/airdecloak-ng flags=(complain) {
+/usr/bin/airdecloak-ng {
   #include <abstractions/base>
   #include <abstractions/private-files-strict>
   

@@ -11,6 +11,7 @@
   capability setuid,
   capability net_raw,
   capability net_admin,
+  capability sys_module,
 
   network packet raw,
 
