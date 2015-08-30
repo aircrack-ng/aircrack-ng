@@ -3,7 +3,6 @@
 /usr/sbin/airodump-ng {
   #include <abstractions/base>
   #include <abstractions/nameservice>
-  #include <abstractions/private-files-strict>
 
   /usr/sbin/airodump-ng mr,
   
@@ -35,9 +34,11 @@
       
   profile /sbin/iwpriv {
     #include <abstractions/base>
+
     network dgram,
+
     /sbin/iwpriv mr,
-  } 
+  }
  
   /bin/*sh rCx,
   
