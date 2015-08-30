@@ -1,0 +1,13 @@
+#include <tunables/global>
+
+/usr/bin/packetforge-ng {
+  #include <abstractions/base>
+  #include <abstractions/private-files-strict>
+  
+  deny @{HOME}/.** rw,
+  @{HOME}/** r,
+  owner @{HOME}/** w,
+  
+  /usr/bin/packetforge-ng mr,
+
+}

@@ -1,0 +1,51 @@
+#include <tunables/global>
+
+/usr/sbin/airtun-ng {
+  #include <abstractions/base>
+  #include <abstractions/private-files-strict>
+  
+  capability net_admin,
+  capability net_raw,
+  capability setuid,
+
+  network inet dgram,
+  network packet raw,
+
+
+  deny @{HOME}/.** rw,
+  @{HOME}/** r,
+  
+  
+  /bin/ r,
+  /bin/*sh Cx,
+  /dev/net/tun rw,
+  /proc/*/net/psched r,
+  /sbin/ r,
+  /sbin/iwpriv Cx,
+  /tmp/ r,
+  /usr/bin/ r,
+  /usr/local/bin/ r,
+  /usr/local/sbin/ r,
+  /usr/sbin/ r,
+  /usr/sbin/airtun-ng mr,
+
+
+  profile /bin/*sh {
+    #include <abstractions/base>
+
+    /bin/*sh mr,
+    /bin/ls rix,
+    /proc/filesystems r,
+    /sys/class/ieee80211/ r,
+
+  }
+
+  profile /sbin/iwpriv {
+    #include <abstractions/base>
+
+    network dgram,
+
+    /sbin/iwpriv mr,
+
+  }
+}

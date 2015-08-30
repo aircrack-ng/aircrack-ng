@@ -1,0 +1,11 @@
+#include <tunables/global>
+
+/usr/bin/kstats {
+  #include <abstractions/base>
+  #include <abstractions/private-files-strict>
+
+  deny @{HOME}/.** rw,
+  @{HOME}/** r,
+  /usr/bin/kstats mr,
+
+}

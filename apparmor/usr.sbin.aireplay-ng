@@ -1,0 +1,41 @@
+#include <tunables/global>
+
+/usr/sbin/aireplay-ng {
+  #include <abstractions/base>
+  #include <abstractions/private-files-strict>
+
+  capability net_admin,
+  capability net_raw,
+  capability setuid,
+
+  network packet raw,
+
+  deny @{HOME}/.** rw,
+  @{HOME}/** r,
+  owner @{HOME}/** w,
+  
+  /bin/*sh rCx,
+  /usr/sbin/aireplay-ng mr,
+  /proc/*/net/psched r,
+  /sbin/ r,
+  /sbin/iwpriv rCx,
+
+
+  profile /bin/*sh {
+    #include <abstractions/base>
+
+    /bin/*sh mr,
+    /bin/ls rix,
+    /sys/class/ieee80211/ r,
+
+  }
+
+  profile /sbin/iwpriv {
+    #include <abstractions/base>
+
+    network inet dgram,
+
+    /sbin/iwpriv mr,
+
+  }
+}

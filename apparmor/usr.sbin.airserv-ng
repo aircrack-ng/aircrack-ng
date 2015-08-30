@@ -1,0 +1,48 @@
+#include <tunables/global>
+
+/usr/sbin/airserv-ng {
+  #include <abstractions/base>
+
+  capability net_admin,
+  capability net_bind_service,
+  capability net_raw,
+
+  network inet stream,
+  network packet raw,
+
+  /usr/sbin/airserv-ng mr,
+  
+  /bin/ r,
+  /bin/*sh Cx,
+
+  /proc/*/net/psched r,
+
+  /tmp/ r,
+
+  /sbin/ r,
+  /sbin/iwpriv Cx,
+  /usr/bin/ r,
+  /usr/local/bin/ r,
+  /usr/local/sbin/ r,
+  /usr/sbin/ r,
+
+
+  profile /bin/*sh {
+    #include <abstractions/base>
+
+    /bin/*sh mr,
+    /bin/ls r,
+    /proc/filesystems r,
+    /sys/class/ieee80211/ r,
+
+  }
+
+  profile /sbin/iwpriv {
+    #include <abstractions/base>
+
+    network inet dgram,
+
+    /sbin/iwpriv mr,
+
+  }
+}

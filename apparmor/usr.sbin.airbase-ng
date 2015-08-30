@@ -1,0 +1,53 @@
+#include <tunables/global>
+
+/usr/sbin/airbase-ng {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/private-files-strict>
+
+  capability net_admin,
+  capability net_raw,
+  capability setuid,
+
+  network inet dgram,
+  network packet raw,
+
+  deny @{HOME}/.** rw,
+  @{HOME}/** r,
+  owner @{HOME}/** w,
+
+
+  /bin/ r,
+  /bin/*sh rCx,
+  /bin/ls r,
+  /dev/net/tun rw,
+  /usr/sbin/airbase-ng mr,
+  /proc/*/net/psched r,
+  /tmp/ r,
+  
+  /sbin/ r,
+  /sbin/iwpriv rCx,
+  /usr/bin/ r,
+  /usr/local/bin/ r,
+  /usr/local/sbin/ r,
+  /usr/sbin/ r,
+
+
+  profile /bin/*sh {
+    #include <abstractions/base>
+
+    /bin/*sh mr,
+    /bin/ls mrix,
+
+    /sys/class/ieee80211/ r,
+  }
+
+
+  profile /sbin/iwpriv {
+    #include <abstractions/base>
+
+    network dgram,
+
+    /sbin/iwpriv mr,
+  }
+}

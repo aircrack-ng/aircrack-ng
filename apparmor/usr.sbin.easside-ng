@@ -1,0 +1,49 @@
+#include <tunables/global>
+
+/usr/sbin/easside-ng {
+  #include <abstractions/base>
+
+  capability net_admin,
+  capability net_raw,
+
+  network inet dgram,
+  network packet raw,
+
+
+  deny @{HOME}/.** rw,
+  @{HOME}/**/prga.log w,
+  
+  /bin/ r,
+  /bin/*sh Cx,
+  /dev/net/tun rw,
+
+  /usr/sbin/easside-ng mr,
+  /proc/*/net/psched r,
+  /sbin/ r,
+  /sbin/iwpriv Cx,
+  /tmp/ r,
+  /usr/bin/ r,
+  /usr/local/bin/ r,
+  /usr/local/sbin/ r,
+  /usr/sbin/ r,
+
+
+  profile /bin/*sh {
+    #include <abstractions/base>
+
+    /bin/*sh mr,
+    /bin/ls r,
+    /proc/filesystems r,
+    /sys/class/ieee80211/ r,
+
+  }
+
+  profile /sbin/iwpriv {
+    #include <abstractions/base>
+
+    network inet dgram,
+
+    /sbin/iwpriv mr,
+
+  }
+}

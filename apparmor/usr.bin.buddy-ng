@@ -1,0 +1,15 @@
+#include <tunables/global>
+
+/usr/bin/buddy-ng {
+  #include <abstractions/base>
+
+  capability setgid,
+  capability setuid,
+  capability sys_chroot,
+
+  network inet dgram,
+  network inet stream,
+
+  /usr/bin/buddy-ng mr,
+
+}

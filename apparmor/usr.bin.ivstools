@@ -1,0 +1,16 @@
+#include <tunables/global>
+
+/usr/bin/ivstools {
+  #include <abstractions/base>
+  #include <abstractions/private-files-strict>
+  
+  capability dac_override,
+
+  deny @{HOME}/.** rw,
+  @{HOME}/** r,
+  
+  owner @{HOME}/** w,
+  
+  /usr/bin/ivstools mr,
+
+}

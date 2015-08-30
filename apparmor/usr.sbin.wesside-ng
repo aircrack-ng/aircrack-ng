@@ -1,0 +1,48 @@
+#include <tunables/global>
+
+/usr/sbin/wesside-ng {
+  #include <abstractions/base>
+  #include <abstractions/private-files-strict>
+
+  capability dac_override,
+  capability net_admin,
+  capability net_raw,
+
+  network packet raw,
+
+  /bin/ r,
+  /bin/*sh Cx,
+
+  deny @{HOME}/.** rw,
+  owner @{HOME}/**/wep.cap rw,
+
+  /usr/sbin/wesside-ng mr,
+  /proc/*/net/psched r,
+  /sbin/ r,
+  /sbin/iwpriv Cx,
+  /tmp/ r,
+  /usr/bin/ r,
+  /usr/local/bin/ r,
+  /usr/local/sbin/ r,
+  /usr/sbin/ r,
+
+
+  profile /bin/*sh {
+    #include <abstractions/base>
+
+    /bin/*sh mr,
+    /bin/ls rix,
+    /proc/filesystems r,
+    /sys/class/ieee80211/ r,
+
+  }
+
+  profile /sbin/iwpriv {
+    #include <abstractions/base>
+
+    network inet dgram,
+
+    /sbin/iwpriv mr,
+
+  }
+}

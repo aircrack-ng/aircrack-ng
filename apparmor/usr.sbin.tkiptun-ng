@@ -1,0 +1,51 @@
+#include <tunables/global>
+
+/usr/sbin/tkiptun-ng {
+  #include <abstractions/base>
+  #include <abstractions/private-files-strict>
+  
+  capability net_admin,
+  capability net_raw,
+  capability setuid,
+  capability sys_module,
+
+  network packet raw,
+
+  deny @{HOME}/.** rw,
+  @{HOME}/** r,
+  
+  /bin/ r,
+  /bin/*sh Cx,
+  /usr/sbin/tkiptun-ng mr,
+  /proc/*/net/psched r,
+  /sbin/ r,
+  /sbin/iwpriv Cx,
+  /tmp/ r,
+  /usr/bin/ r,
+  /usr/local/bin/ r,
+  /usr/local/sbin/ r,
+  /usr/sbin/ r,
+
+
+  profile /bin/*sh {
+    #include <abstractions/base>
+
+    /bin/*sh mr,
+    /bin/ls rix,
+    /proc/filesystems r,
+    /sys/class/ieee80211/ r,
+
+  }
+
+  profile /sbin/iwpriv {
+    #include <abstractions/base>
+
+    capability net_admin,
+    capability sys_module,
+
+    network inet dgram,
+
+    /sbin/iwpriv mr,
+
+  }
+}
