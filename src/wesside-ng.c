@@ -199,7 +199,7 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
     static int is_cleared = 0;
 
     return;
-
+    /*
     if( ioctl( 0, TIOCGWINSZ, &ws ) < 0 )
     {
         ws.ws_row = 25;
@@ -255,6 +255,7 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 //        printf( "\33[J" );
 
     printf( "\n" );
+    */
 }
 
 static struct wstate *get_ws(void)

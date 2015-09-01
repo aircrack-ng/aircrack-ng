@@ -642,8 +642,6 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 
                 return num;
         }
-        *clen=0;
-        return 1;
 }
 
 /* derive the pairwise transcient keys from a bunch of stuff */

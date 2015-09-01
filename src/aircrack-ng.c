@@ -1874,7 +1874,6 @@ void check_thread( void *arg )
 				fprintf( stderr, "\nInvalid packet capture length %d - "
 					"corrupted file?\n", pkh.caplen );
 				goto read_fail;
-				_exit( FAILURE );
 			}
 
 			while( ! atomic_read( &rb, fd, pkh.caplen, buffer ) )
