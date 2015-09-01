@@ -7,7 +7,6 @@ IFACE=""
 MAC80211=0
 IW_SOURCE="https://www.kernel.org/pub/software/network/iw/iw-4.0.tar.gz"
 IW_ERROR=""
-UDEV_ISSUE=0
 if [ ! -d /sys/ ]; then
 	printf "CONFIG_SYSFS is disabled in your kernel, this program will almost certainly not work.\n"
 fi
@@ -435,6 +434,30 @@ startMac80211Iface() {
 	fi
 }
 
+startwlIface() {
+	if [ -f "/proc/brcm_monitor0" ]; then
+		if [ -r "/proc/brcm_monitor0" ]; then
+			local brcm_monitor="$(cat /proc/brcm_monitor0)"
+			if [ "$brcm_monitor" = "1" ]; then
+				printf "\n\t\t(experimental wl monitor mode vif already enabled for [${PHYDEV}]${1} on [${PHYDEV}]prism0)\n"
+				return 0
+			fi
+		fi
+		if [ -w "/proc/brcm_monitor0" ]; then
+			printf "1" > /proc/brcm_monitor0
+			if [ "$?" = "0" ]; then
+				printf "\n\t\t(experimental wl monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]prism0)\n"
+			else
+				printf "\n\t\t(failed to enable experimental wl monitor mode for [${PHYDEV}${1})\n"
+			fi
+		else
+			printf "\n\tUnable to write to /proc/brcm_monitor0, cannot enable monitor mode.\n"
+		fi
+	else
+		printf "\n\tThis version of wl does not appear to suport monitor mode.\n"
+	fi
+}
+
 #startDarwinIface() {
 #	if [ -x /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport ]; then
 #		/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport $1 sniff
@@ -573,6 +596,30 @@ stopMac80211Iface() {
 				fi
 			fi
 		fi
+	fi
+}
+
+stopwlIface() {
+	if [ -f "/proc/brcm_monitor0" ]; then
+		if [ -r "/proc/brcm_monitor0" ]; then
+			local brcm_monitor="$(cat /proc/brcm_monitor0)"
+			if [ "$brcm_monitor" = "0" ]; then
+				printf "\n\t\t(experimental wl monitor mode vif already disabled for [${PHYDEV}]${1})\n"
+				return 0
+			fi
+		fi
+		if [ -w "/proc/brcm_monitor0" ]; then
+			printf "0" > /proc/brcm_monitor0
+			if [ "$?" = "0" ]; then
+				printf "\n\t\t(experimental wl monitor mode vif disabled for [${PHYDEV}]${1})\n"
+			else
+				printf "\n\t\t(failed to disable experimental wl monitor mode for [${PHYDEV}${1})\n"
+			fi
+		else
+			printf "\n\tUnable to write to /proc/brcm_monitor0, cannot disable monitor mode.\n"
+		fi
+	else
+		printf "\n\tThis version of wl does not appear to suport monitor mode.\n"
 	fi
 }
 
@@ -809,11 +856,18 @@ getExtendedInfo() {
 	fi
 
 	#then we sweep for known broken drivers with no available better drivers
+	if [ "$DRIVER" = "wl" ]; then
+		if [ -f "/proc/brcm_monitor0" ]; then
+			EXTENDED="Experimental monitor mode support"
+		else
+			EXTENDED="No known monitor support, try a newer version or b43"
+		fi
+	fi
 	if [ "$DRIVER" = "brcmsmac" ]; then
 		EXTENDED="Driver commonly referred to as brcm80211 (no injection yet)"
 	fi
 	if [ "$DRIVER" = "r8712u" ]; then
-		EXTENDED="\t\t\t\tNo monitor or injection support\n"
+		EXTENDED="\t\t\t\tNo monitor or injection support"
 	fi
 
 	#lastly we detect all the broken drivers which have working alternatives
@@ -1020,7 +1074,7 @@ checkvm() {
 	#this entire section of code is completely stolen from Carlos Perez's work in checkvm.rb for metasploit and rewritten (poorly) in sh
 	#Check dmi info
 	if [ -x "$(command -v dmidecode 2>&1)" ]; then
-		dmi_info=$(dmidecode)
+		dmi_info=$(dmidecode 2>&1)
 		if [ -n "${dmi_info}" ]; then
 			printf "${dmi_info}" | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
 			printf "${dmi_info}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
@@ -1034,7 +1088,7 @@ checkvm() {
 	#check loaded modules
 	if [ -z "${vm_from}" ]; then
 		if [ -x "$(command -v lsmod 2>&1)" ]; then
-			lsmod_data="$(lsmod)"
+			lsmod_data="$(lsmod 2>&1)"
 			if [ -n "${lsmod}" ]; then
 				printf "${lsmod_data}" | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
 				printf "${lsmod_data}" | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
@@ -1069,7 +1123,7 @@ checkvm() {
 
 	# Check using lspci
 	if [ -z "${vm_from}" ] && [ "${LSPCI}" = "1" ]; then
-			lspci_data="$(lspci)"
+			lspci_data="$(lspci 2>&1)"
 			printf "${lspci_data}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
 			printf "${lspci_data}" | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
 			[ -n "${vm}" ] && vm_from="lspci"
@@ -1087,7 +1141,7 @@ checkvm() {
 	# Check using lscpu
 	if [ -z "${vm_from}" ]; then
 		if [ -x "$(command -v lscpu 2>&1)" ]; then
-                        lscpu_data="$(lscpu)"
+                        lscpu_data="$(lscpu 2>&1)"
 			printf "${lscpu_data}" | grep -iq "Xen" 2> /dev/null && vm="Xen"
 			printf "${lscpu_data}" | grep -iq "KVM" 2> /dev/null && vm="KVM"
 			printf "${lscpu_data}" | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
@@ -1286,7 +1340,7 @@ for iface in $(printf "${iface_list}"); do
 				CHIPSETt="\t\t\t"
 			elif [ ${#CHIPSET} -gt 49 ]; then
 				CHIPSETt="\t\t\t\t"
-			elif [ ${#CHIPSET} -gt 42 ]; then
+			elif [ ${#CHIPSET} -gt 39 ]; then
 				CHIPSETt="\t\t\t\t\t"
 			elif [ ${#CHIPSET} -gt 35 ]; then
 				CHIPSETt="\t\t\t\t\t\t"
@@ -1314,7 +1368,14 @@ for iface in $(printf "${iface_list}"); do
 		printf "${PHYDEV}\t${iface}${ifacet}${DRIVER}${DRIVERt}${CHIPSET}\n"
 	fi
 
-	if [ "$MAC80211" = "1" ]; then
+	if [ "$DRIVER" = "wl" ]; then
+		if [ "$1" = "start" ] && [ "$2" = "$iface" ]; then
+			startwlIface $iface
+		fi
+		if [ "$1" = "stop" ] && [ "$2" = "$iface" ]; then
+			stopwlIface $iface
+		fi
+	elif [ "$MAC80211" = "1" ]; then
 		if [ "$1" = "start" ] && [ "$2" = "$iface" ]; then
 			startMac80211Iface $iface
 		fi
@@ -1322,15 +1383,8 @@ for iface in $(printf "${iface_list}"); do
 		if [ "$1" = "stop" ] && [ "$2" = "$iface" ]; then
 			stopMac80211Iface $iface
 		fi
-		continue
 	fi
 done
 
-#why, dear god why is there a random newline here?
+#end with some space
 printf "\n"
-
-if [ $UDEV_ISSUE != 0 ]
-then
-	printf "udev renamed the interface. Read the following for a solution:\n"
-	printf "http://www.aircrack-ng.org/doku.php?id=airmon-ng#interface_athx_number_rising_ath0_ath1_ath2...._ath45\n\n"
-fi
