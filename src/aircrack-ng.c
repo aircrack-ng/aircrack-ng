@@ -5837,7 +5837,7 @@ __start:
 
 		if(j + opt.do_brute > 4)
 		{
-			printf( "Bruteforcing more then 4 bytes will take too long, aborting!" );
+			printf( "Bruteforcing more than 4 bytes will take too long, aborting!" );
 			goto exit_main;
 		}
 
