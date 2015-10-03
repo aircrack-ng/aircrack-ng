@@ -292,10 +292,7 @@ int hexStringToHex(char* in, int length, unsigned char* out)
     char *input=in;
     unsigned char *output=out;
 
-    if(length < 1)
-        return 1;
-
-    if (input == NULL || output == NULL)
+    if (length < 1 || input == NULL || output == NULL)
     	return -1;
     
     for(i=0; i<in_length; i+=2)
