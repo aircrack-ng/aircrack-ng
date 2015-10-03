@@ -68,10 +68,12 @@ clean:
 	-rm -rf $(COVERITY_DIR)
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test/cryptounittest $(@)
+	$(MAKE) -C test $(@)
 
 distclean: clean
 
 check: 
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test/cryptounittest $(@)
+	$(MAKE) -C test $(@)
 	
