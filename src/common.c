@@ -317,7 +317,7 @@ int hexStringToIntArray(char* in, int in_length, unsigned char* out, int out_len
         if(chars[0] < 0 || chars[0] > 15)
         	return -1;
 
-        chars[1] = hexCharToInt(input[i++]);
+        chars[1] = hexCharToInt(input[++i]);
         // It should always be a multiple of 2 hex characters with or without separator
         if(chars[1] < 0 || chars[1] > 15)
             return -1;
