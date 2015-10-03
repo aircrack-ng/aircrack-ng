@@ -157,6 +157,8 @@ extern int add_crc32(unsigned char* data, int length);
 
 extern const unsigned long int crc_tbl[256];
 
+extern int hexStringToArray(char* in, int in_length, unsigned char* out, int out_length);
+
 char usage[] =
 "\n"
 "  %s - (C) 2008-2015 Thomas d'Otreppe\n"
@@ -197,6 +199,7 @@ char usage[] =
 "      -P               : respond to all probes, even when specifying ESSIDs\n"
 "      -I interval      : sets the beacon interval value in ms\n"
 "      -C seconds       : enables beaconing of probed ESSID values (requires -P)\n"
+"      -n hex           : User specified ANonce when doing the 4-way handshake\n"
 "\n"
 "  Filter options:\n"
 "      --bssid MAC      : BSSID to filter/use\n"
@@ -274,6 +277,10 @@ struct options
 
     int ti_mtu;         //MTU of tun/tap interface
     int wif_mtu;        //MTU of wireless interface
+
+    // Fixed nonce
+    int use_fixed_nonce;
+    unsigned char fixed_nonce[32];
 }
 opt;
 
@@ -2720,9 +2727,12 @@ int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int exte
                     }
                     st_cur->wpa.state = 0;
 
-                    for(i=0; i<32; i++)
-                        st_cur->wpa.anonce[i] = rand()&0xFF;
-
+                    if (opt.use_fixed_nonce) {
+                    	memcpy(st_cur->wpa.anonce, opt.fixed_nonce, 32);
+                    } else {
+                    	for(i=0; i<32; i++)
+                    		st_cur->wpa.anonce[i] = rand()&0xFF;
+                    }
                     st_cur->wpa.state |= 1;
 
                     /* build first eapol frame */
@@ -3381,8 +3391,12 @@ skip_probe:
             {
                 st_cur->wpa.state = 0;
 
-                for(i=0; i<32; i++)
-                    st_cur->wpa.anonce[i] = rand()&0xFF;
+                if (opt.use_fixed_nonce) {
+					memcpy(st_cur->wpa.anonce, opt.fixed_nonce, 32);
+				} else {
+					for(i=0; i<32; i++)
+						st_cur->wpa.anonce[i] = rand()&0xFF;
+				}
 
                 st_cur->wpa.state |= 1;
 
@@ -3960,6 +3974,7 @@ int main( int argc, char *argv[] )
     opt.interval    = 0x64;
     opt.channel		= 0;
     opt.beacon_cache = 0; /* disable by default */
+    opt.use_fixed_nonce = 0;
     opt.ti_mtu = TI_MTU;
     opt.wif_mtu = WIF_MTU;
     invalid_channel_displayed = 0;
@@ -3992,7 +4007,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:C:I:r:w:HPe:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0NF:",
+                        "a:h:i:C:I:r:w:HPe:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0NF:n:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -4012,6 +4027,17 @@ int main( int argc, char *argv[] )
 
                 printf("\"%s --help\" for help.\n", argv[0]);
                 return( 1 );
+
+            case 'n' :
+
+		// Check the value is 32 bytes, in hex (64 hex)
+		if (hexStringToArray(optarg, strlen(optarg), opt.fixed_nonce, 32) != 32) {
+			printf("Invalid fixed nonce. It must be 64 hexadecimal chars.\n");
+			printf("\"%s --help\" for help.\n", argv[0]);
+			return( 1 );
+		}
+		opt.use_fixed_nonce = 1;
+		break;
 
             case 'a' :
 
