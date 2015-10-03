@@ -284,35 +284,46 @@ int hexCharToInt(unsigned char c)
 	return table[c];
 }
 
-int hexStringToHex(char* in, int length, unsigned char* out)
+// in: input string
+// in_length: length of the string
+// out: output string (needs to be already allocated).
+// out_length: length of the array
+// returns amount of bytes saved to 'out' or -1 if an error happened
+int hexStringToIntArray(char* in, int in_length, unsigned char* out, int out_length)
 {
-    int i=0;
-    int char1, char2;
+    int i, out_pos;
+    int chars[2];
 
     char *input=in;
     unsigned char *output=out;
 
-    if (length < 1 || input == NULL || output == NULL)
+    if (in_length < 2 || out_length < (in_length / 3) + 1 || input == NULL || output == NULL)
     	return -1;
     
-    for(i=0; i<in_length; i+=2)
+    out_pos = 0;
+    for (i = 0; i < in_length - 1; ++i)
     {
-    	if(input[i] == '\0')
-    	{
-    		return -1;
-    	}
-        if(input[i] == '-' || input[i] == ':' || input[i] == '_' || input[i] == ' ')
-        {
-            input++;
-            length--;
-        }
-        char1 = hexCharToInt(input[i]);
-        char2 = hexCharToInt(input[i+1]);
-        if(char1 < 0 || char1 > 15)
+		if(input[i] == '-' || input[i] == ':' || input[i] == '_' || input[i] == ' ' || input[i] == '.')
+		{
+			continue;
+		}
+		// Check output array is big enough
+    	if(out_pos >= out_length)
+		{
+			return -1;
+		}
+    	chars[0] = hexCharToInt(input[i]);
+        // If first char is invalid (or '\0'), don't bother continuing (and you really shouldn't).
+        if(chars[0] < 0 || chars[0] > 15)
+        	return -1;
+
+        chars[1] = hexCharToInt(input[i+1]);
+        // It should always be a multiple of 2 hex characters with or without separator
+        if(chars[1] < 0 || chars[1] > 15)
             return -1;
-        output[i/2] = ((char1 << 4) + char2) & 0xFF;
+        output[out_pos++] = ((chars[0] << 4) + chars[1]) & 0xFF;
     }
-    return (i/2);
+    return out_pos;
 }
 
 //Return the mac address bytes (or null if it's not a mac address)
