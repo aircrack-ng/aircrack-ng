@@ -295,7 +295,10 @@ int hexStringToHex(char* in, int length, unsigned char* out)
     if(length < 1)
         return 1;
 
-    for(i=0; i<length; i+=2)
+    if (input == NULL || output == NULL)
+    	return -1;
+    
+    for(i=0; i<in_length; i+=2)
     {
     	if(input[i] == '\0')
     	{
