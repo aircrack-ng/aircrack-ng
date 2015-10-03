@@ -289,7 +289,7 @@ int hexCharToInt(unsigned char c)
 // out: output string (needs to be already allocated).
 // out_length: length of the array
 // returns amount of bytes saved to 'out' or -1 if an error happened
-int hexStringToIntArray(char* in, int in_length, unsigned char* out, int out_length)
+int hexStringToArray(char* in, int in_length, unsigned char* out, int out_length)
 {
     int i, out_pos;
     int chars[2];

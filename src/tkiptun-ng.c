@@ -138,7 +138,7 @@ extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac
 extern int check_crc_buf( unsigned char *buf, int len );
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
-extern int hexStringToIntArray(char* in, int in_length, unsigned char* out, int out_length);
+extern int hexStringToArray(char* in, int in_length, unsigned char* out, int out_length);
 
 char usage[] =
 
@@ -4045,7 +4045,7 @@ int main( int argc, char *argv[] )
             case 'P' :
 
                 memset(  opt.pmk, 0, sizeof( opt.pmk ) );
-                i = hexStringToIntArray(optarg, strlen(optarg), opt.pmk, 128);
+                i = hexStringToArray(optarg, strlen(optarg), opt.pmk, 128);
                 if (i == -1)
                 {
                 	printf("Invalid value. It requires 128 bytes of PMK in hexadecimal.\n");
