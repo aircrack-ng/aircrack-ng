@@ -17,7 +17,7 @@ int main(int nbarg, char *argv[])
 	for (i = 0; i < OUT_LEN; ++i)
 		out[i] = 0;
 
-	out_bytes = hexStringToIntArray(argv[1], strlen(argv[1]), out, OUT_LEN);
+	out_bytes = hexStringToArray(argv[1], strlen(argv[1]), out, OUT_LEN);
 	if (out_bytes == -1) {
 		printf("Invalid\n");
 		return 2;
