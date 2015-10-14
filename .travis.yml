@@ -1,8 +1,17 @@
 language: c
+sudo: false
+addons:
+  apt:
+    packages:
+    - libnl-3-dev
+    - libgcrypt11-dev
+    - zlib1g-dev
+    - libsqlite3-dev
+    - libpcap-dev
+    - libssl-dev
+    - libnl-genl-3-dev
+    - libpcre3-dev
 compiler:
   - gcc
   - clang
-install:
-  - sudo apt-get update
-  - sudo apt-get install libnl-3-dev libgcrypt11-dev zlib1g-dev libsqlite3-dev libpcap-dev libssl-dev libnl-genl-3-dev libpcre3-dev
 script: make sqlite=true experimental=true && make check sqlite=true experimental=true && make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true && make pcre=true && make check pcre=true
