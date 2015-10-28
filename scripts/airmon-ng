@@ -4,6 +4,7 @@ VERBOSE="0"
 ELITE="0"
 USERID=""
 IFACE=""
+checkvm_status=""
 MAC80211=0
 IW_SOURCE="https://www.kernel.org/pub/software/network/iw/iw-4.0.tar.gz"
 IW_ERROR=""
@@ -371,7 +372,18 @@ startMac80211Iface() {
 	case ${rfkill_retcode} in
 		1) printf "\t${1} is soft blocked, please run \"rfkill unblock ${1#phy}\" to use this interface.\n" ;;
 		2) printf "\t${1} is hard blocked, please flip the hardware wifi switch to on.\n"
-		   printf "\tIt may also be possible to unblock with \"rfkill unblock ${1#phy}\"\n" ;;
+		   printf "\tIt may also be possible to unblock with \"rfkill unblock ${1#phy}\"\n"
+		   if [ "${checkvm_status}" != "run" ]; then
+		   	checkvm
+		   fi
+		   if [ -n "${vm}" ]; then
+		   	printf "Detected VM using ${vm_from}\n"
+		   	printf "This appears to be a ${vm} Virtual Machine\n"
+		   	printf "Some distributions have bugs causing rfkill hard block to be forced on in a VM.\n"
+		   	printf "If toggling the rfkill hardware switch and \"rfkill unblock ${1#phy}\" both fail\n"
+		   	printf "to fix this, please try not running in a VM.\n"
+		   fi
+		   ;;
 		3) printf "\t${1} is hard and soft blocked, please flip the hardware wifi switch to on.\n"
 		   printf "\tIt may also be needed to unblock with \"rfkill unblock ${1#phy}\"\n" ;;
 	esac
@@ -1167,6 +1179,7 @@ checkvm() {
 			[ -n "${vm}" ] && vm_from="dmesg"
 		fi
 	fi
+	checkvm_status="run"
 }
 
 #end function definitions
