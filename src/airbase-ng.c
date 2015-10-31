@@ -409,6 +409,7 @@ pthread_t caffelattepid;
 pthread_t cfragpid;
 
 pESSID_t    rESSID;
+pthread_mutex_t	rESSIDmutex;
 pMAC_t      rBSSID;
 pMAC_t      rClient;
 pFrag_t     rFragment;
@@ -426,17 +427,21 @@ void sighandler( int signum )
 int addESSID(char* essid, int len, int expiration)
 {
     pESSID_t tmp;
-	pESSID_t cur = rESSID;
+	pESSID_t cur;
 	time_t now;
-
     if(essid == NULL)
         return -1;
 
     if(len <= 0 || len > 255)
         return -1;
+    
+    pthread_mutex_lock(&rESSIDmutex);
+    cur = rESSID;
 
-    if(rESSID == NULL)
+    if(rESSID == NULL) {
+        pthread_mutex_unlock(&rESSIDmutex);
         return -1;
+    }
 
     while(cur->next != NULL) {
         // if it already exists, just update the expiration time
@@ -445,6 +450,7 @@ int addESSID(char* essid, int len, int expiration)
                 time(&now);
                 cur->expire = now + expiration;
             }
+            pthread_mutex_unlock(&rESSIDmutex);
             return 0;
         }
         cur = cur->next;
@@ -470,6 +476,7 @@ int addESSID(char* essid, int len, int expiration)
     tmp->next = NULL;
 	cur->next = tmp;
 
+    pthread_mutex_unlock(&rESSIDmutex);
     return 0;
 }
 
@@ -906,7 +913,7 @@ int addMAC(pMAC_t pMAC, unsigned char* mac)
 
 int delESSID(char* essid, int len)
 {
-    pESSID_t old, cur = rESSID;
+    pESSID_t old, cur;
 
     if(essid == NULL)
         return -1;
@@ -914,8 +921,13 @@ int delESSID(char* essid, int len)
     if(len <= 0 || len > 255)
         return -1;
 
-    if(rESSID == NULL)
+    pthread_mutex_lock(&rESSIDmutex);
+    cur = rESSID;
+
+    if(rESSID == NULL) {
+        pthread_mutex_unlock(&rESSIDmutex);
         return -1;
+    }
 
     while(cur->next != NULL)
     {
@@ -932,12 +944,14 @@ int delESSID(char* essid, int len)
                 old->next = NULL;
                 old->len = 0;
                 free(old);
+                pthread_mutex_unlock(&rESSIDmutex);
                 return 0;
             }
         }
         cur = cur->next;
     }
 
+    pthread_mutex_unlock(&rESSIDmutex);
     return -1;
 }
 
@@ -945,11 +959,16 @@ int delESSID(char* essid, int len)
 void flushESSID(void)
 {
     pESSID_t old;
-	pESSID_t cur = rESSID;
+	pESSID_t cur;
 	time_t now;
 
-    if(rESSID == NULL)
+    pthread_mutex_lock(&rESSIDmutex);
+    cur = rESSID;
+
+    if(rESSID == NULL) {
+        pthread_mutex_unlock(&rESSIDmutex);
         return;
+    }
 
     while(cur->next != NULL)
     {
@@ -967,11 +986,13 @@ void flushESSID(void)
                 old->next = NULL;
                 old->len = 0;
                 free(old);
+                pthread_mutex_unlock(&rESSIDmutex);
                 return;
             }
         }
         cur = cur->next;
     }
+    pthread_mutex_unlock(&rESSIDmutex);
 }
 
 
@@ -1005,7 +1026,7 @@ int delMAC(pMAC_t pMAC, char* mac)
 
 int gotESSID(char* essid, int len)
 {
-    pESSID_t old, cur = rESSID;
+    pESSID_t old, cur;
 
     if(essid == NULL)
         return -1;
@@ -1013,8 +1034,13 @@ int gotESSID(char* essid, int len)
     if(len <= 0 || len > 255)
         return -1;
 
-    if(rESSID == NULL)
+    pthread_mutex_lock(&rESSIDmutex);
+    cur = rESSID;
+
+    if(rESSID == NULL) {
+        pthread_mutex_unlock(&rESSIDmutex);
         return -1;
+    }
 
     while(cur->next != NULL)
     {
@@ -1023,12 +1049,14 @@ int gotESSID(char* essid, int len)
         {
             if(memcmp(old->essid, essid, len) == 0)
             {
+                pthread_mutex_unlock(&rESSIDmutex);
                 return 1;
             }
         }
         cur = cur->next;
     }
 
+    pthread_mutex_unlock(&rESSIDmutex);
     return 0;
 }
 
@@ -1055,26 +1083,63 @@ int gotMAC(pMAC_t pMAC, unsigned char* mac)
     return 0;
 }
 
-char* getESSID(int *len)
+int getESSID(char *essid)
 {
-    if(rESSID == NULL)
-        return NULL;
+    int len;
+    pthread_mutex_lock(&rESSIDmutex);
 
-    if(rESSID->next == NULL)
-        return NULL;
+    if(rESSID == NULL || rESSID->next == NULL) {
+        pthread_mutex_unlock(&rESSIDmutex);
+        return 0;
+    }
 
-    *len = rESSID->next->len;
+    memcpy(essid, rESSID->next->essid, rESSID->next->len + 1);
+    len = rESSID->next->len;
+    pthread_mutex_unlock(&rESSIDmutex);
 
-    return rESSID->next->essid;
+    return len;
+}
+
+int getNextESSID(char *essid)
+{
+    int len;
+    pESSID_t cur;
+
+    pthread_mutex_lock(&rESSIDmutex);
+    cur = rESSID;
+
+    if(rESSID == NULL || rESSID->next == NULL) {
+        pthread_mutex_unlock(&rESSIDmutex);
+        return 0;
+    }
+    len = strlen(essid);
+    while (cur->len != len || strcmp(essid, cur->essid)) {
+        cur = cur->next;
+        if (cur->next == NULL) {
+            pthread_mutex_unlock(&rESSIDmutex);
+            return 0;
+        }
+    }
+
+    memcpy(essid, cur->next->essid, cur->next->len + 1);
+    len = cur->next->len;
+    pthread_mutex_unlock(&rESSIDmutex);
+
+    return len;
 }
 
 int getESSIDcount()
 {
-    pESSID_t cur = rESSID;
+    pESSID_t cur;
     int count=0;
 
-    if(rESSID == NULL)
+    pthread_mutex_lock(&rESSIDmutex);
+    cur = rESSID;
+
+    if(rESSID == NULL) {
+        pthread_mutex_unlock(&rESSIDmutex);
         return -1;
+    }
 
     while(cur->next != NULL)
     {
@@ -1082,6 +1147,7 @@ int getESSIDcount()
         count++;
     }
 
+    pthread_mutex_unlock(&rESSIDmutex);
     return count;
 }
 
@@ -2488,7 +2554,7 @@ int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int exte
     char essid[256];
     struct timeval tv1;
     u_int64_t timestamp;
-    char *fessid;
+    char fessid[MAX_IE_ELEMENT_SIZE+1];
     int seqnum, fragnum, morefrag;
     int gotsource, gotbssid;
     int remaining, bytes2use;
@@ -3111,10 +3177,10 @@ skip_probe:
                     }
 
                     //insert essid
-                    fessid = getESSID(&len);
-                    if(fessid == NULL)
+                    len = getESSID(fessid);
+                    if(!len)
                     {
-                        fessid = "default";
+                        strcpy(fessid, "default");
                         len = strlen(fessid);
                     }
                     packet[z+12] = 0x00;
@@ -3495,8 +3561,7 @@ void beacon_thread( void *arg )
     int beacon_len=0;
     int seq=0, i=0, n=0;
     int essid_len, temp_channel;
-    char *essid = "";
-    pESSID_t cur_essid = rESSID;
+    char essid[MAX_IE_ELEMENT_SIZE+1];
     float f, ticks[3];
 
     memcpy(&apc, arg, sizeof(struct AP_conf));
@@ -3543,22 +3608,11 @@ void beacon_thread( void *arg )
             timestamp=tv1.tv_sec*1000000UL + tv1.tv_usec;
             fflush(stdout);
 
-
-            if(cur_essid == NULL) {
-            	cur_essid = rESSID;
-            	cur_essid = cur_essid->next;
-            }
-            if(cur_essid == NULL) {
-	            essid = "default";
-	            essid_len = strlen(essid);
-            } else {
-
-                /* flush expired ESSID entries */
-                flushESSID();
-
-	            essid     = cur_essid->essid;
-	            essid_len = cur_essid->len;
-	            cur_essid = cur_essid->next;
+            /* flush expired ESSID entries */
+            flushESSID();
+            if (!getNextESSID(essid)) {
+                strcpy(essid, "default");
+                essid_len = strlen("default");
             }
 
             beacon_len = 0;
@@ -3924,7 +3978,7 @@ int main( int argc, char *argv[] )
     struct pcap_pkthdr pkh;
     fd_set read_fds;
     unsigned char buffer[4096];
-    char *s, buf[128], *fessid;
+    char *s, buf[128];
     int caplen;
     struct AP_conf apc;
     unsigned char mac[6];
@@ -3935,6 +3989,7 @@ int main( int argc, char *argv[] )
     memset( &dev, 0, sizeof( dev ) );
     memset( &apc, 0, sizeof( struct AP_conf ));
 
+    pthread_mutex_init(&rESSIDmutex, NULL);
     rESSID = (pESSID_t) malloc(sizeof(struct ESSID_list));
     memset(rESSID, 0, sizeof(struct ESSID_list));
 
@@ -4738,9 +4793,9 @@ usage:
     memcpy(apc.bssid, opt.r_bssid, 6);
     if( getESSIDcount() == 1 && opt.hidden != 1)
     {
-        fessid = getESSID(&(apc.essid_len));
-        apc.essid = (char*) malloc(apc.essid_len + 1);
-        memcpy(apc.essid, fessid, apc.essid_len);
+        apc.essid = (char*) malloc(MAX_IE_ELEMENT_SIZE+1);
+        apc.essid_len = getESSID(apc.essid);
+        apc.essid = (char*) realloc((void *)apc.essid, apc.essid_len + 1);
         apc.essid[apc.essid_len] = 0x00;
     }
     else
