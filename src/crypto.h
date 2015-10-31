@@ -34,6 +34,7 @@
 
 #ifndef _CRYPTO_H
 #define _CRYPTO_H
+#include <sys/types.h>
 
 #ifdef USE_GCRYPT
 #include "gcrypt-openssl-wrapper.h"
