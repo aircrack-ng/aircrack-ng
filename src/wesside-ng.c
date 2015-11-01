@@ -189,6 +189,75 @@ float chrono( struct timeval *start, int reset )
     return( delta );
 }
 
+/* display the current votes */
+
+void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit )
+{
+    float delta;
+    struct winsize ws;
+    int i, et_h, et_m, et_s;
+    static int is_cleared = 0;
+
+    return;
+    /*
+    if( ioctl( 0, TIOCGWINSZ, &ws ) < 0 )
+    {
+        ws.ws_row = 25;
+        ws.ws_col = 80;
+    }
+
+    if( (chrono( &t_stats, 0 ) < 1.51) && force == 0 )
+        return;
+
+    chrono( &t_stats, 1 );
+
+    delta = chrono( &t_begin, 0 );
+
+    et_h =   delta / 3600;
+    et_m = ( delta - et_h * 3600 ) / 60;
+    et_s =   delta - et_h * 3600 - et_m * 60;
+
+    if( is_cleared == 0 )
+    {
+        is_cleared++;
+
+        printf( "\33[2J" );
+    }
+
+    if(table)
+        printf( "\33[5;%dH[%02d:%02d:%02d] Tested %d/%d keys\33[K",
+                (ws.ws_col - 44) / 2, et_h, et_m, et_s, prod, keylimit );
+
+    printf( "\33[7;4HKB    depth   byte(vote)\n" );
+
+    for( i = 0; i <= B; i++ )
+    {
+        int j, k = ( ws.ws_col - 20 ) / 9;
+
+        if(table)
+            printf( "   %2d  %3d/%3d   ",
+                    i, depth[i], choices[i] );
+
+        if(table)
+        {
+            for( j = depth[i]; j < k + depth[i]; j++ )
+            {
+                if( j >= 256 ) break;
+
+                printf( "%02X(%4d) ",  table[i][j].b,
+                        table[i][j].votes );
+            }
+        }
+        printf( "\n" );
+    }
+
+//    if( B < opt.keylen - 1 )
+//        printf( "\33[J" );
+
+    printf( "\n" );
+    */
+}
+
 static struct wstate *get_ws(void)
 {
 	return &_wstate;
