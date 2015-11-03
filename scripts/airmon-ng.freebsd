@@ -1,12 +1,30 @@
 #!/bin/sh
 
-cat << EOF
-On $(uname), it is not necessary to use airmon-ng to enable the monitor
-mode of your wireless card. Instead, you need to specify this mode when
-creating your wlan device. For example:
+printf "\nInterface\t\tDriver\t\tChipset\n"
 
-        ifconfig wlan0 create wlandev ath0 wlanmode monitor
+# XXX: Any way to get the driver? And chipset info?
+for IFACE in $(ifconfig -a | grep -E '^ath[0-9]+' | awk '{print $1}' )
+do
+	# XXX: What is the behavior of airmon-ng in this case?
+	if [[ ${IFACE} =~ ^ath[0-9]+$ ]]; then
+		printf "${IFACE}\t\tath\Atheros\n"
+		if [ -n "$1" ] && [ -n "$2" ] && [ "$2" = "${IFACE}" ] && [ "$1" = 'start' ]; then
+			ifconfig ${IFACE}mon create wlandev ${IFACE} wlanmode monitor
+			printf "\tCreated monitor mode interface ${IFACE}mon from ${IFACE}\n"
+		fi
+	else
+		printf "${IFACE}\t\tath\Atheros\n"
+		printf "\t(monitor)\n"
+		if [ -n "$1" ] && [ -n "$2" ] && [ "$2" = "${IFACE}" ] && [ "$1" = 'stop' ]; then
+			# Is there any better way to find its parent?
+			ifconfig ${IFACE} destroy 2>/dev/null
+			if [ $? -ne 0 ]; then
+				printf "\tFailed to remove monitor mode interface ${IFACE}\n"
+			fi
+		fi
+	fi
+done
 
-EOF
+printf "\n\n"
 
 exit 0
