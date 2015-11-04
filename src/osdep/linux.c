@@ -1043,7 +1043,7 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
  nla_put_failure:
     return -ENOBUFS;
 }
-#endif //CONFIG_LIBNL
+#else //CONFIG_LIBNL
 
 static int linux_set_channel(struct wif *wi, int channel)
 {
@@ -1135,6 +1135,7 @@ static int linux_set_channel(struct wif *wi, int channel)
 
     return( 0 );
 }
+#endif
 
 static int linux_set_freq(struct wif *wi, int freq)
 {
@@ -2054,6 +2055,7 @@ static void do_free(struct wif *wi)
 	free(wi);
 }
 
+#ifndef CONFIG_LIBNL
 static void linux_close(struct wif *wi)
 {
 	struct priv_linux *pl = wi_priv(wi);
@@ -2068,7 +2070,8 @@ static void linux_close(struct wif *wi)
 	do_free(wi);
 }
 
-#ifdef CONFIG_LIBNL
+#else
+
 static void linux_close_nl80211(struct wif *wi)
 {
 	struct priv_linux *pl = wi_priv(wi);
