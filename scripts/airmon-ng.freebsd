@@ -44,7 +44,7 @@ do
 	get_interface_info ${IFACE}
 	printf "${IFACE}\t\t${DRIVER}\t\t${CHIPSET}\n"
 	if [ -n "${PARENT}" ]; then
-		printf "\t(monitor mode interface. Parent: ${PARENT}))\n"
+		printf "\t(monitor mode interface. Parent: ${PARENT})\n"
 	fi
 	if [ -n "$1" ] && [ -n "$2" ] && [ "$2" = "${IFACE}" ]; then
 		if [ "$1" = 'start' ] && [ -z "${PARENT}" ]; then
