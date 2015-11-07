@@ -1,27 +1,79 @@
 #!/bin/sh
 
+CHIPSET=""
+DRIVER=""
+PARENT=""
+IFACE_IDX=""
+
+get_interface_info() {
+	CHIPSET=""
+	DRIVER=""
+	PARENT=""
+	IFACE_IDX=""
+	[ -z "$1" ] && return
+	if [ -n "$(echo $1 | grep -E ^ath[0-9]+$)" ]; then
+		DRIVER="ath"
+	elif [ -n "$(echo ${IFACE} | grep -E ^wlan[0-9]+$)" ]; then
+		IFACE_IDX=$(echo "$1" | sed 's/wlan//')
+		PARENT=ath${IFACE_IDX}
+		# Check if both MAC are identical. If they are, athX is the parent
+		if [ "$(ifconfig ${PARENT} | grep ether | awk '{print $2}')" = "$(ifconfig $1 | grep ether | awk '{print $2}')" ]; then
+			DRIVER=ath
+		else
+			PARENT=""
+		fi
+	fi	
+
+	IFACE_TO_CHECK=${PARENT}
+	[ -z "${IFACE_TO_CHECK}" ] && IFACE_TO_CHECK=$1
+
+	if [ "${DRIVER}" = "ath" ]; then
+		CHIPSET=$(dmesg | grep -E "^${IFACE_TO_CHECK}: <" | tail -n 1 | awk -F\< '{print $2}' | awk -F\> '{print $1}' )
+	else
+		CHIPSET="Unknown"
+		[ -z "${DRIVER}" ] && DRIVER="Unknown"
+	fi
+}
+
 printf "\nInterface\tDriver\t\tChipset\n"
 
 # XXX: Any way to get the driver? And chipset info?
 for IFACE in $(ifconfig -a | grep -E '^(wlan|ath)[0-9]+' | awk -F: '{print $1}' )
 do
 	# XXX: What is the behavior of airmon-ng in this case?
-	CHIPSET=$(dmesg | grep -E "^${IFACE}: <" | tail -n 1 | awk -F\< '{print $2}' | awk -F\> '{print $1}' )
-	IFACE_IDX=$(echo "${IFACE}" | sed 's/ath//')
-	printf "${IFACE}\t\tath\t\t${CHIPSET}\n"
-	if [ -n "$(echo ${IFACE} | grep -E ^ath[0-9]+$)" ]; then
-		if [ -n "$1" ] && [ -n "$2" ] && [ "$2" = "${IFACE}" ] && [ "$1" = 'start' ]; then
-			ifconfig wlan${IFACE_IDX} create wlandev ${IFACE} wlanmode monitor >/dev/null 2>/dev/null
-			printf "\tCreated monitor mode interface wlan${IFACE_IDX} from ${IFACE}\n"
-		fi
-	else
-		printf "\t(monitor)\n"
-		if [ -n "$1" ] && [ -n "$2" ] && [ "$2" = "${IFACE}" ] && [ "$1" = 'stop' ]; then
-			# Is there any better way to find its parent?
-			ifconfig ${IFACE} destroy 2>/dev/null
-			if [ $? -ne 0 ]; then
+	get_interface_info ${IFACE}
+	printf "${IFACE}\t\t${DRIVER}\t\t${CHIPSET}\n"
+	if [ -n "${PARENT}" ]; then
+		printf "\t(monitor mode interface. Parent: ${PARENT}))\n"
+	fi
+	if [ -n "$1" ] && [ -n "$2" ] && [ "$2" = "${IFACE}" ]; then
+		if [ "$1" = 'start' ] && [ -z "${PARENT}" ]; then
+			MONITOR_IFACE=""
+			if [ ${DRIVER} = "ath" ]; then
+				# TODO: Check if it does not exist yet
+				MONITOR_IFACE=wlan${IFACE_IDX}
+                        	ifconfig ${MONITOR_IFACE} create wlandev ${IFACE} wlanmode monitor >/dev/null 2>/dev/null
+			fi
+
+			if [ -n "${MONITOR_IFACE}" ]; then
+				ifconfig ${MONITOR_IFACE} 2>/dev/null >/dev/null
+				if [ $? -eq 0 ]; then
+					printf "\tCreated monitor mode interface ${MONITOR_IFACE} from ${IFACE}\n"
+				else
+					printf "\tFailed creating monitor interface\n"
+				fi
+			fi
+		elif [ "$1" = 'stop' ] && [ -n "${PARENT}" ]; then
+			RET=1
+			if [ ${DRIVER} = "ath" ]; then
+				ifconfig ${IFACE} destroy 2>/dev/null
+				RET=$?
+			fi
+			if [ $RET -ne 0 ]; then
 				printf "\tFailed to remove monitor mode interface ${IFACE}\n"
 			fi
+		else
+			printf "\tInvalid command"
 		fi
 	fi
 done
