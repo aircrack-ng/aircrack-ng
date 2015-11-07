@@ -49,8 +49,8 @@ get_interface_info() {
 		USB_INFO=$(dmesg | grep -E "^$1: <" | tail -n 1 | tr ',' '\n' | tail -n 1 | tr '>' ' ')
 		USB_ADDR=$(echo ${USB_INFO} | awk '{print $2}')
 		USB_BUS=$(echo ${USB_INFO} | awk '{print $4}' | sed 's/[^0-9]*//g')
-		VENDOR_ID=$(usbconfig -u ${USB_BUS} -a ${USB_ADDR} dump_device_desc | grep idVendor | awk '{print $2}')
-		PRODUCT_ID=$(usbconfig -u ${USB_BUS} -a ${USB_ADDR} dump_device_desc | grep idProduct | awk '{print $2}')
+		VENDOR_ID=$(usbconfig -u ${USB_BUS} -a ${USB_ADDR} dump_device_desc | grep idVendor | awk '{print $3}')
+		PRODUCT_ID=$(usbconfig -u ${USB_BUS} -a ${USB_ADDR} dump_device_desc | grep idProduct | awk '{print $3}')
 		if [ "${VENDOR_ID}" = "0x0bda" ]; then
 			[ "${PRODUCT_ID}" = "0x8171" ] && CHIPSET="RTL8188SU"
 			[ "${PRODUCT_ID}" = "0x8172" ] && CHIPSET="RTL8191SU"
