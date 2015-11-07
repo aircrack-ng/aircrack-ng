@@ -1,19 +1,20 @@
 #!/bin/sh
 
-printf "\nInterface\t\tDriver\t\tChipset\n"
+printf "\nInterface\tDriver\t\tChipset\n"
 
 # XXX: Any way to get the driver? And chipset info?
-for IFACE in $(ifconfig -a | grep -E '^ath[0-9]+' | awk '{print $1}' )
+for IFACE in $(ifconfig -a | grep -E '^(wlan|ath)[0-9]+' | awk -F: '{print $1}' )
 do
 	# XXX: What is the behavior of airmon-ng in this case?
-	if [[ ${IFACE} =~ ^ath[0-9]+$ ]]; then
-		printf "${IFACE}\t\tath\Atheros\n"
+	CHIPSET=$(dmesg | grep -E "^${IFACE}: <" | tail -n 1 | awk -F\< '{print $2}' | awk -F\> '{print $1}' )
+	IFACE_IDX=$(echo "${IFACE} | sed 's/ath//')
+	printf "${IFACE}\t\tath\t\t${CHIPSET}\n"
+	if [ -n "$(echo ${IFACE} | grep -E ^ath[0-9]+$)" ]; then
 		if [ -n "$1" ] && [ -n "$2" ] && [ "$2" = "${IFACE}" ] && [ "$1" = 'start' ]; then
-			ifconfig ${IFACE}mon create wlandev ${IFACE} wlanmode monitor
-			printf "\tCreated monitor mode interface ${IFACE}mon from ${IFACE}\n"
+			ifconfig wlan${IFACE_IDX} create wlandev ${IFACE} wlanmode monitor >/dev/null 2>/dev/null
+			printf "\tCreated monitor mode interface wlan${IFACE_IDX} from ${IFACE}\n"
 		fi
 	else
-		printf "${IFACE}\t\tath\Atheros\n"
 		printf "\t(monitor)\n"
 		if [ -n "$1" ] && [ -n "$2" ] && [ "$2" = "${IFACE}" ] && [ "$1" = 'stop' ]; then
 			# Is there any better way to find its parent?
