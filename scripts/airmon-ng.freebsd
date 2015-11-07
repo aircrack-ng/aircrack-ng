@@ -1,34 +1,50 @@
 #!/bin/sh
 
+
+
+if [ -n "$1" ] && [ -z "$2" ]; then
+	echo "Invalid command. Valid commands: [start|stop] INTERFACE."
+	exit 1
+fi
+
+if [ -n "$1" ]; then
+	if [ "$1" != 'stop' ] && [ "$1" != 'start' ]; then
+		echo "Invalid command. Valid commands: [start|stop] INTERFACE."
+		exit 1
+	fi
+fi
+
+if [ -n "$2" ]; then
+	ifconfig $2 >/dev/null 2>/dev/null
+	if [ $? -ne 0 ]; then
+		echo "Error: Interface $2 does not exist."
+		exit 1
+	fi
+fi
+
+COMMAND=$1
+INTERFACE_TO_USE=$2
+
 CHIPSET=""
 DRIVER=""
 PARENT=""
-IFACE_IDX=""
 
 get_interface_info() {
-	CHIPSET=""
-	DRIVER=""
-	PARENT=""
-	IFACE_IDX=""
 	[ -z "$1" ] && return
-	if [ -n "$(echo $1 | grep -E ^ath[0-9]+$)" ]; then
-		DRIVER="ath"
-	elif [ -n "$(echo ${IFACE} | grep -E ^wlan[0-9]+$)" ]; then
-		IFACE_IDX=$(echo "$1" | sed 's/wlan//')
-		PARENT=ath${IFACE_IDX}
-		# Check if both MAC are identical. If they are, athX is the parent
-		if [ "$(ifconfig ${PARENT} | grep ether | awk '{print $2}')" = "$(ifconfig $1 | grep ether | awk '{print $2}')" ]; then
-			DRIVER=ath
-		else
-			PARENT=""
+	if [ -n "$(echo $1 | grep -E '^(ath|otus|urtwn)[0-9]+$' )" ]; then
+		DRIVER="$(echo $1 | sed 's/[0-9]*//g')"
+	elif [ -n "$(echo $1 | grep -E ^wlan[0-9]+$)" ]; then
+		# It most likely is a monitor interface.
+		IFACE_IDX=$(echo $1 | sed 's/[^0-9]*//g')
+		PARENT=$(sysctl net.wlan.${IFACE_IDX}.%parent | awk '{print $2}')
+		if [ -n "${PARENT}" ]; then
+			get_interface_info ${PARENT}
+			return
 		fi
 	fi	
 
-	IFACE_TO_CHECK=${PARENT}
-	[ -z "${IFACE_TO_CHECK}" ] && IFACE_TO_CHECK=$1
-
 	if [ "${DRIVER}" = "ath" ]; then
-		CHIPSET=$(dmesg | grep -E "^${IFACE_TO_CHECK}: <" | tail -n 1 | awk -F\< '{print $2}' | awk -F\> '{print $1}' )
+		CHIPSET=$(dmesg | grep -E "^$1: <" | tail -n 1 | awk -F\< '{print $2}' | awk -F\> '{print $1}' )
 	else
 		CHIPSET="Unknown"
 		[ -z "${DRIVER}" ] && DRIVER="Unknown"
@@ -37,45 +53,35 @@ get_interface_info() {
 
 printf "\nInterface\tDriver\t\tChipset\n"
 
-# XXX: Any way to get the driver? And chipset info?
-for IFACE in $(ifconfig -a | grep -E '^(wlan|ath)[0-9]+' | awk -F: '{print $1}' )
+for IFACE in $(ifconfig -a | grep -E '^(wlan|ath|otus|urtwn)[0-9]+' | awk -F: '{print $1}' )
 do
-	# XXX: What is the behavior of airmon-ng in this case?
 	get_interface_info ${IFACE}
 	printf "${IFACE}\t\t${DRIVER}\t\t${CHIPSET}\n"
 	if [ -n "${PARENT}" ]; then
 		printf "\t(monitor mode interface. Parent: ${PARENT})\n"
 	fi
-	if [ -n "$1" ] && [ -n "$2" ] && [ "$2" = "${IFACE}" ]; then
-		if [ "$1" = 'start' ] && [ -z "${PARENT}" ]; then
-			MONITOR_IFACE=""
-			if [ ${DRIVER} = "ath" ]; then
-				# TODO: Check if it does not exist yet
-				MONITOR_IFACE=wlan${IFACE_IDX}
-                        	ifconfig ${MONITOR_IFACE} create wlandev ${IFACE} wlanmode monitor >/dev/null 2>/dev/null
-			fi
 
-			if [ -n "${MONITOR_IFACE}" ]; then
-				ifconfig ${MONITOR_IFACE} 2>/dev/null >/dev/null
+	if [ "${INTERFACE_TO_USE}" = "${IFACE}" ]; then
+		if [ "${COMMAND}" = 'start' ]; then
+			if [ -n "${PARENT}" ]; then
+				printf "\t Interface is already in monitor mode, ignoring\n"
+			else
+				MONITOR_IFACE=$(ifconfig wlan create wlandev ${IFACE} wlanmode monitor)
 				if [ $? -eq 0 ]; then
-					printf "\tCreated monitor mode interface ${MONITOR_IFACE} from ${IFACE}\n"
+					 printf "\tCreated monitor mode interface ${MONITOR_IFACE} from ${IFACE}\n"
 				else
 					printf "\tFailed creating monitor interface\n"
 				fi
 			fi
-		elif [ "$1" = 'stop' ] && [ -n "${PARENT}" ]; then
-			RET=1
-			if [ ${DRIVER} = "ath" ]; then
-				ifconfig ${IFACE} destroy 2>/dev/null
-				RET=$?
-			fi
-			if [ $RET -ne 0 ]; then
+		elif [ "${COMMAND}" = 'stop' ]; then
+			ifconfig ${IFACE} destroy 2>/dev/null
+			if [ $? -ne 0 ]; then
 				printf "\tFailed to remove monitor mode interface ${IFACE}\n"
+			else
+				printf "\tDestroyed monitor interface ${IFACE}\n"
 			fi
-		else
-			printf "\tInvalid command"
 		fi
-	fi
+	fi 
 done
 
 printf "\n\n"
