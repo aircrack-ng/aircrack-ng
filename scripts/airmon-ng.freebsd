@@ -45,6 +45,28 @@ get_interface_info() {
 
 	if [ "${DRIVER}" = "ath" ]; then
 		CHIPSET=$(dmesg | grep -E "^$1: <" | tail -n 1 | awk -F\< '{print $2}' | awk -F\> '{print $1}' )
+	elif [ "${DRIVER}" = "urtwn" ]; then
+		USB_INFO=$(dmesg | grep -E "^$1: <" | tail -n 1 | tr ',' '\n' | tail -n 1 | tr '>' ' ')
+		USB_ADDR=$(echo ${USB_INFO} | awk '{print $2}')
+		USB_BUS=$(echo ${USB_INFO} | awk '{print $4}' | sed 's/[^0-9]*//g')
+		VENDOR_ID=$(usbconfig -u ${USB_BUS} -a ${USB_ADDR} dump_device_desc | grep idVendor | awk '{print $2}')
+		PRODUCT_ID=$(usbconfig -u ${USB_BUS} -a ${USB_ADDR} dump_device_desc | grep idProduct | awk '{print $2}')
+		if [ "${VENDOR_ID}" = "0x0bda" ]; then
+			[ "${PRODUCT_ID}" = "0x8171" ] && CHIPSET="RTL8188SU"
+			[ "${PRODUCT_ID}" = "0x8172" ] && CHIPSET="RTL8191SU"
+			[ "${PRODUCT_ID}" = "0x8174" ] && CHIPSET="RTL8192SU"
+			[ "${PRODUCT_ID}" = "0x8176" ] && CHIPSET="RTL8188CUS"
+			[ "${PRODUCT_ID}" = "0x8178" ] && CHIPSET="RTL8192CU"
+			[ "${PRODUCT_ID}" = "0x8179" ] && CHIPSET="RTL8188EUS"
+			[ "${PRODUCT_ID}" = "0x817f" ] && CHIPSET="RTL8188RU"
+			[ "${PRODUCT_ID}" = "0x8192" ] && CHIPSET="RTL8191SU"
+			[ "${PRODUCT_ID}" = "0x8193" ] && CHIPSET="RTL8192DU"
+			[ "${PRODUCT_ID}" = "0x8199" ] && CHIPSET="RTL8187SU"
+			[ "${PRODUCT_ID}" = "0x8812" ] && CHIPSET="RTL8812AU"
+		fi
+		[ -z "${CHIPSET}" ] && CHIPSET="Report dmesg and usbconfig (dump commands) to http://trac.aircrack-ng.org" 
+	elif [ -n "${DRIVER}" ]; then
+		CHIPSET="Report dmesg and usbconfig (dump commands) to http://trac.aircrack-ng.org"
 	else
 		CHIPSET="Unknown"
 		[ -z "${DRIVER}" ] && DRIVER="Unknown"
