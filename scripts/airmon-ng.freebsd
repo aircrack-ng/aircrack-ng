@@ -7,7 +7,7 @@ for IFACE in $(ifconfig -a | grep -E '^(wlan|ath)[0-9]+' | awk -F: '{print $1}' 
 do
 	# XXX: What is the behavior of airmon-ng in this case?
 	CHIPSET=$(dmesg | grep -E "^${IFACE}: <" | tail -n 1 | awk -F\< '{print $2}' | awk -F\> '{print $1}' )
-	IFACE_IDX=$(echo "${IFACE} | sed 's/ath//')
+	IFACE_IDX=$(echo "${IFACE}" | sed 's/ath//')
 	printf "${IFACE}\t\tath\t\t${CHIPSET}\n"
 	if [ -n "$(echo ${IFACE} | grep -E ^ath[0-9]+$)" ]; then
 		if [ -n "$1" ] && [ -n "$2" ] && [ "$2" = "${IFACE}" ] && [ "$1" = 'start' ]; then
