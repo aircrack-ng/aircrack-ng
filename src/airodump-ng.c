@@ -4962,7 +4962,7 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 	return ret;
 }
 
-void gps_tracker( void )
+void gps_tracker(pid_t parent)
 {
 	ssize_t unused;
     int gpsd_sock;
@@ -5178,7 +5178,7 @@ void gps_tracker( void )
         if (G.do_exit == 0)
 		{
 			unused = write( G.gc_pipe[1], G.gps_loc, sizeof( float ) * 5 );
-			kill( getppid(), SIGUSR2 );
+			kill( parent, SIGUSR2 );
 		}
     }
 }
@@ -5318,13 +5318,13 @@ int getfreqcount(int valid)
     return i;
 }
 
-void channel_hopper(struct wif *wi[], int if_num, int chan_count )
+void channel_hopper(struct wif *wi[], int if_num, int chan_count, pid_t parent)
 {
 	ssize_t unused;
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
     int dropped=0;
 
-    while( getppid() != 1 )
+    while( 0 == kill(parent, 0) )
     {
         for( j = 0; j < if_num; j++ )
         {
@@ -5371,7 +5371,7 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
                     G.channel[card] = ch;
                     unused = write( G.cd_pipe[1], &card, sizeof(int) );
                     unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
-                    kill( getppid(), SIGUSR1 );
+                    kill( parent, SIGUSR1 );
                     usleep(1000);
                 }
                 continue;
@@ -5388,7 +5388,7 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
                 unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
                 if(G.active_scan_sim > 0)
                     send_probe_request(wi[card]);
-                kill( getppid(), SIGUSR1 );
+                kill( parent, SIGUSR1 );
                 usleep(1000);
             }
             else
@@ -5416,13 +5416,13 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
     exit( 0 );
 }
 
-void frequency_hopper(struct wif *wi[], int if_num, int chan_count )
+void frequency_hopper(struct wif *wi[], int if_num, int chan_count, pid_t parent)
 {
 	ssize_t unused;
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
     int dropped=0;
 
-    while( getppid() != 1 )
+    while( 0 == kill(parent, 0) )
     {
         for( j = 0; j < if_num; j++ )
         {
@@ -5469,7 +5469,7 @@ void frequency_hopper(struct wif *wi[], int if_num, int chan_count )
                     G.frequency[card] = ch;
                     unused = write( G.cd_pipe[1], &card, sizeof(int) );
                     unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
-                    kill( getppid(), SIGUSR1 );
+                    kill( parent, SIGUSR1 );
                     usleep(1000);
                 }
                 continue;
@@ -5484,7 +5484,7 @@ void frequency_hopper(struct wif *wi[], int if_num, int chan_count )
                 G.frequency[card] = ch;
                 unused = write( G.cd_pipe[1], &card, sizeof(int) );
                 unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
-                kill( getppid(), SIGUSR1 );
+                kill( parent, SIGUSR1 );
                 usleep(1000);
             }
             else
@@ -6141,6 +6141,8 @@ int main( int argc, char *argv[] )
         {"wps",  0, 0, 'W'},
         {0,          0, 0,  0 }
     };
+
+    pid_t main_pid = getpid();
 
 
 #ifdef USE_GCRYPT
@@ -6806,7 +6808,7 @@ usage:
 						perror("setuid");
 					}
 
-                    frequency_hopper(wi, G.num_cards, freq_count);
+                    frequency_hopper(wi, G.num_cards, freq_count, main_pid);
                     exit( 1 );
                 }
             }
@@ -6857,7 +6859,7 @@ usage:
 						perror("setuid");
 					}
 
-                    channel_hopper(wi, G.num_cards, chan_count);
+                    channel_hopper(wi, G.num_cards, chan_count, main_pid);
                     exit( 1 );
                 }
             }
@@ -6946,7 +6948,7 @@ usage:
 
         if( ! fork() )
         {
-            gps_tracker();
+            gps_tracker(main_pid);
             exit( 1 );
         }
 
