@@ -52,12 +52,12 @@ int is_string_number(const char * str)
 		return 0;
 	}
 	
-	if (*str != '-' && !(isdigit(*str))) {
+	if (*str != '-' && !(isdigit((int)(*str)))) {
 		return 0;
 	}
 	
 	for (i = 1; str[i] != 0; i++) {
-		if (!isdigit(str[i])) {
+		if (!isdigit((int)(str[i]))) {
 			return 0;
 		}
 	}
