@@ -1511,7 +1511,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
           ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL) ||
         ( wrq.u.mode != IW_MODE_MONITOR) )
     {
-        if (set_monitor( dev, iface, fd ) && !dev->drivertype == DT_ORINOCO )
+        if (set_monitor( dev, iface, fd ) && dev->drivertype != DT_ORINOCO )
         {
             ifr.ifr_flags &= ~(IFF_UP | IFF_BROADCAST | IFF_RUNNING);
 
@@ -1521,7 +1521,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
                 return( 1 );
             }
 
-            if (set_monitor( dev, iface, fd ) && !dev->drivertype == DT_ORINOCO )
+            if (set_monitor( dev, iface, fd ) )
             {
                 printf("Error setting monitor mode on %s\n",iface);
                 return( 1 );
