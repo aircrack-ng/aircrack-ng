@@ -27,7 +27,7 @@ to speed up the cracking process.
           See Makefile flags below.
  * pkg-config
 
-## Compilating
+## Compiling
 
  * Compilation:
 

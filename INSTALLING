@@ -10,7 +10,7 @@
           See Makefile flags below.
  * pkg-config
 
-=== Compilating ===
+=== Compiling ===
 
  * Compilation:
     make
