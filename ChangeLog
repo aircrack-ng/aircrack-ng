@@ -1,3 +1,46 @@
+Version 1.2-rc3 (changes from aircrack-ng 1.2-rc2) - Released XX YYY ZZZZ:
+* Airodump-ng: Prevent sending signal to init which caused the system to reboot/shutdown.
+* Airbase-ng: Allow to use a user-specified ANonce instead of a randomized one when doing the 4-way handshake
+* Aircrack-ng: Fixed compilation warnings.
+* Aircrack-ng: Removed redundant NULL check and fixed typo in another one.
+* Aircrack-ng: Workaround for segfault when compiling aircrack-ng with clang and gcrypt and running a check.
+* Airmon-ng: Created version for FreeBSD.
+* Airmon-ng: Prevent passing invalid values as channel.
+* Airmon-ng: Handle udev renaming interfaces.
+* Airmon-ng: Better handling of rfkill.
+* Airmon-ng: Updated OUI URL.
+* Airmon-ng: Fix VM detection.
+* Airmon-ng: Make lsusb optional if there doesn't seem to be a usb bus.  Improve pci detection slightly.
+* Airmon-ng: Various cleanup and fixes (including wording and typos).
+* Airmon-ng: Display iw errors.
+* Airmon-ng: Improved handling of non-monitor interfaces.
+* Airmon-ng: Fixed error when running 'check kill'.
+* Airdrop-ng: Display error instead of stack trace.
+* Airmon-ng: Fixed bashism.
+* Airdecap-ng: Allow specifying output file names.
+* Airtun-ng: Added missing parameter to help screen.
+* Besside-ng-crawler: Removed reference to darkircop.org (non-existent subdomain).
+* Airgraph-ng: Display error when no graph type is specified.
+* Airgraph-ng: Fixed make install.
+* Manpages: Fixed, updated and improved airodump-ng, airmon-ng, aircrack-ng, airbase-ng and aireplay-ng manpages.
+* OSdep: Add missing RADIOTAP_SUPPORT_OVERRIDES check.
+* OSdep: Fix possible infinite loop.
+* OSdep: Use a default MTU of 1500 (Linux only).
+* OSdep: Fixed compilation on OSX.
+* AppArmor: Improved and added profiles.
+* General: Fixed warnings reported by clang.
+* General: Updated TravisCI configuration file
+* General: Fixed typos in various tools.
+* General: Fixed clang warning about 'gcry_thread_cbs()' being deprecated with gcrypt > 1.6.0.
+* General: Fixed compilation on cygwin due to undefined reference to GUID_DEVCLASS_NET
+* General: Fixed compilation with musl libc.
+* General: Improved testing and added test cases (make check).
+* General: Improved mutexes handling in various tools.
+* General: Fixed memory leaks, use afer free, null termination and return values in various tools and OSdep.
+* General: Fixed compilation on FreeBSD.
+* General: Various fixes and improvements to README (wording, compilation, etc).
+* General: Updated copyrights in help screen.
+
 Version 1.2-rc2 (changes from aircrack-ng 1.2-rc1) - Released 10 April 2015:
 * Airtun-ng: Adds WPA CCMP and TKIP decryption and CCMP encryption
 * Compilation: Added support for DUMA.
