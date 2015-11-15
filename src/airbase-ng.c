@@ -1113,7 +1113,7 @@ int getNextESSID(char *essid)
         return 0;
     }
     len = strlen(essid);
-    while (cur->len != len || strcmp(essid, cur->essid)) {
+    while (cur->len != len || cur->essid == NULL || strcmp(essid, cur->essid)) {
         cur = cur->next;
         if (cur->next == NULL) {
             pthread_mutex_unlock(&rESSIDmutex);
@@ -3564,6 +3564,7 @@ void beacon_thread( void *arg )
     char essid[MAX_IE_ELEMENT_SIZE+1];
     float f, ticks[3];
 
+    memset(essid, 0, MAX_IE_ELEMENT_SIZE+1);
     memcpy(&apc, arg, sizeof(struct AP_conf));
 
     ticks[0]=0;
