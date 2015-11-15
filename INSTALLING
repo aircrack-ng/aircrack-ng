@@ -1,19 +1,25 @@
 === Requirements ===
 
  * OpenSSL development package or libgcrypt development package
+ * If you want SSID filtering with regular expression  in airodump-ng,
+   pcre development package is required (pcre on FreeBSD).
  * If you want to use airolib-ng and '-r' option in aircrack-ng,
    SQLite development package >= 3.3.17 (3.6.X version or better is recommended):
-   -  libsqlite3-dev on a Debian based distro
- * On windows, cygwin has to be used and it also requires w32api and gcc-4 package.
+   -  libsqlite3-dev on a Debian based distro (sqlite3 on FreeBSD)
+ * On windows, cygwin has to be used and it also requires w32api.
  * If you want to use Airpcap, the 'developer' directory from the CD is required.
  * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
           See Makefile flags below.
- * pkg-config
+ * pkg-config (pkgconf on FreeBSD)
+ * FreeBSD: gmake
 
 === Compiling ===
 
  * Compilation:
     make
+
+ * Compilation on FreeBSD:
+    gmake CC=cc
 
  * Strip debugging symbols:
     make strip
