@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Aircrack-ng")]
-[assembly: AssemblyCopyright("Copyright © Thomas d'Otreppe 2006, 2007, 2008")]
+[assembly: AssemblyCopyright("Copyright © Thomas d'Otreppe 2006, 2007, 2008, 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

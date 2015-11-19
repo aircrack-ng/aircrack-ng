@@ -45,7 +45,10 @@ namespace Aircrack_ng
         private StreamWriter debugStream = null;
 
         private string Changelog =
-                  "v1.0.0.6\n"
+                  "v1.0.0.7\n"
+                + "    - Updated project to VS 2015 and .NET 3.5\n"
+                + "\n"
+                + "v1.0.0.6\n"
                 + "    - Fixed \"Choose\" button (airdecap-ng)\n"
                 + "\n"
                 + "v1.0.0.5\n"
@@ -132,7 +135,7 @@ namespace Aircrack_ng
 
             // ... and copyright
             this.lblCopyright.Text =
-                "Copyright © 2006, 2007, 2008 Thomas d'Otreppe";
+                "Copyright © 2006, 2007, 2008, 2015 Thomas d'Otreppe";
 
             this.lblCopyright.Left = (this.tAboutBox.Width - this.lblCopyright.Width) / 2;
             //End about box
