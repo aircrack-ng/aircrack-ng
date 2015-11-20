@@ -134,8 +134,9 @@ namespace Aircrack_ng
             this.rtbChangelog.Text = this.Changelog;
 
             // ... and copyright
-            this.lblCopyright.Text =
-                "Copyright © 2006, 2007, 2008, 2015 Thomas d'Otreppe";
+            FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(Assembly.GetEntryAssembly().Location);
+            
+            this.lblCopyright.Text = versionInfo.LegalCopyright;
 
             this.lblCopyright.Left = (this.tAboutBox.Width - this.lblCopyright.Width) / 2;
             //End about box
