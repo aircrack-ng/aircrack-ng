@@ -464,7 +464,7 @@ namespace Aircrack_ng
 
         private void btOpenDico_Click(object sender, EventArgs e)
         {
-            this.tbWPADico.Text += "," + this.FileDialog("Wordlist|*.*", 0, true, ",").Trim();
+            this.tbWPADico.Text += this.FileDialog("Wordlist|*.*", 0, true, ",").Trim();
 
             this.tbWPADico.Text = this.tbWPADico.Text.Trim(',').Trim('\"');
         }
