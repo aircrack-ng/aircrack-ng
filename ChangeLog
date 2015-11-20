@@ -23,6 +23,7 @@ Version 1.2-rc3 (changes from aircrack-ng 1.2-rc2) - Released XX YYY ZZZZ:
 * Airgraph-ng: Display error when no graph type is specified.
 * Airgraph-ng: Fixed make install.
 * Manpages: Fixed, updated and improved airodump-ng, airmon-ng, aircrack-ng, airbase-ng and aireplay-ng manpages.
+* Aircrack-ng GUI: Fixes issues with wordlists selection.
 * OSdep: Add missing RADIOTAP_SUPPORT_OVERRIDES check.
 * OSdep: Fix possible infinite loop.
 * OSdep: Use a default MTU of 1500 (Linux only).
