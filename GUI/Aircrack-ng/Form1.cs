@@ -1,7 +1,7 @@
 /*
  *  Aircrack-ng GUI
  *
- *  Copyright (C) 2006,2007  Thomas d'Otreppe
+ *  Copyright (C) 2006-2008, 2015  Thomas d'Otreppe
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
