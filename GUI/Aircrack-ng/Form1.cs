@@ -437,7 +437,7 @@ namespace Aircrack_ng
 
             // Checking if file exist
             if (string.IsNullOrEmpty(path) == false)
-                ret = File.Exists(path);
+                ret = File.Exists(path.Trim('"'));
 
             if (ret == false)
             {
