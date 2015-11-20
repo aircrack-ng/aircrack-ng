@@ -325,7 +325,19 @@ namespace Aircrack_ng
             // Do we have to use a dictionary?
             if (this.rbWPA.Checked || (this.rbWEP.Checked && this.cbUseWordlist.Checked && !this.cbPTW.Checked))
             {
-                if (checkFileExist(this.tbWPADico.Text,
+                if (this.tbWPADico.Text.Contains(","))
+                {
+                    string [] files = this.tbWPADico.Text.Split(',');
+                    foreach(string file in files)
+                    {
+                        if (checkFileExist(file,"File " + file + "\n"
+                                                + "does not exist") == false)
+                        {
+                            return;
+                        }
+                    }
+                }
+                else if (checkFileExist(this.tbWPADico.Text,
                         "Please specify a wordlist and/or\n"
                         + "check that dictionary file exist") == false)
                 {
