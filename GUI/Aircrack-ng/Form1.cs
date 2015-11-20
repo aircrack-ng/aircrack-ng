@@ -42,6 +42,9 @@ namespace Aircrack_ng
         private string Changelog =
                   "v1.0.0.7\n"
                 + "    - Updated project to VS 2015 and .NET 3.5\n"
+                + "    - Fixed duplicate comma when using multiple wordlists\n"
+                + "    - Fixed failure to use multiple wordlists (#1583)\n"
+                + "    - Fixed using double quotes in wordlists path\n"
                 + "\n"
                 + "v1.0.0.6\n"
                 + "    - Fixed \"Choose\" button (airdecap-ng)\n"
