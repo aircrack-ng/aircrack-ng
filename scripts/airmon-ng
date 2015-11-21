@@ -6,7 +6,7 @@ USERID=""
 IFACE=""
 checkvm_status=""
 MAC80211=0
-IW_SOURCE="https://www.kernel.org/pub/software/network/iw/iw-4.0.tar.gz"
+IW_SOURCE="https://www.kernel.org/pub/software/network/iw/iw-4.3.tar.gz"
 IW_ERROR=""
 if [ ! -d /sys/ ]; then
 	printf "CONFIG_SYSFS is disabled in your kernel, this program will almost certainly not work.\n"
