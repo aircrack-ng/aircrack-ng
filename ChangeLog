@@ -1,4 +1,4 @@
-Version 1.2-rc3 (changes from aircrack-ng 1.2-rc2) - Released XX YYY ZZZZ:
+Version 1.2-rc3 (changes from aircrack-ng 1.2-rc2) - Released 21 Nov 2015:
 * Airodump-ng: Prevent sending signal to init which caused the system to reboot/shutdown.
 * Airbase-ng: Allow to use a user-specified ANonce instead of a randomized one when doing the 4-way handshake
 * Aircrack-ng: Fixed compilation warnings.
