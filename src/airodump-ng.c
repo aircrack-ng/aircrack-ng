@@ -7211,8 +7211,8 @@ usage:
 
             if( ioctl( 0, TIOCGWINSZ, &(G.ws) ) < 0 )
             {
-                G.ws.ws_row = 25;
-                G.ws.ws_col = 80;
+                G.ws.ws_row = 50;
+                G.ws.ws_col = 120;
             }
 
             if( G.ws.ws_col <   1 ) G.ws.ws_col =   1;
