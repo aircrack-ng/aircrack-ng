@@ -18,7 +18,7 @@
  * Compilation:
     make
 
- * Compilation on FreeBSD:
+ * Compilation on FreeBSD or Solaris:
     gmake
 
  * Strip debugging symbols:
