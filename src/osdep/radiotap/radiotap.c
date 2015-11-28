@@ -21,8 +21,10 @@
 
 #ifdef _BSD_SOURCE
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+#if !defined(__FreeBSD__)
 #define le16toh(x) (x)
 #define le32toh(x) (x)
+#endif
 #else
 #define le32toh(x) bswap_32 (x)
 #endif

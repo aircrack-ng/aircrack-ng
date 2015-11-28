@@ -1376,7 +1376,7 @@ void usage() {
 
 int main( int argc, char *argv[] )
 {
-    int temp, option;
+    int temp = 0, option;
     int manual_cloaked_fname=0, manual_filtered_fname=0;
     BOOLEAN tempBool;
     char * input_filename;

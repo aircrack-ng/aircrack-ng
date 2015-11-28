@@ -3903,15 +3903,13 @@ int dump_write_csv( void )
                      ap_cur->bssid[2], ap_cur->bssid[3],
                      ap_cur->bssid[4], ap_cur->bssid[5] );
 
-	
-
 	probes_written = 0;
         for( i = 0, n = 0; i < NB_PRB; i++ )
         {
             if( st_cur->ssid_length[i] == 0 )
                 continue;
 
-	    temp = format_text_for_csv(st_cur->probes[i], st_cur->ssid_length[i]);
+	    temp = format_text_for_csv((unsigned char *)st_cur->probes[i], st_cur->ssid_length[i]);
 
 	    if( probes_written == 0)
 	    {
@@ -4126,12 +4124,12 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 					"\t\t\t\t<max-rate>54.000000</max-rate>\n"
 					"\t\t\t\t<packets>1</packets>\n"
 					"\t\t\t\t<encryption>None</encryption>\n");
-		essid = sanitize_xml(client->probes[i], client->ssid_length[i]);
+		essid = sanitize_xml((unsigned char *)client->probes[i], client->ssid_length[i]);
 		if (essid != NULL) {
 			fprintf( G.f_kis_xml, "\t\t\t\t<ssid>%s</ssid>\n", essid);
 			free(essid);
 		}
-		
+
 		fprintf( G.f_kis_xml, "\t\t\t</SSID>\n");
 
 		++nb_probes_written;

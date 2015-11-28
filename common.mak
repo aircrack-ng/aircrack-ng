@@ -106,7 +106,11 @@ ifeq ($(subst TRUE,true,$(filter TRUE true,$(airpcap) $(AIRPCAP))),true)
 endif
 
 ifneq ($(origin CC),environment)
+ifeq ($(OSNAME), FreeBSD)
+	CC	= $(TOOL_PREFIX)cc
+else
 	CC	= $(TOOL_PREFIX)gcc
+endif
 endif
 
 RANLIB		?= $(TOOL_PREFIX)ranlib
