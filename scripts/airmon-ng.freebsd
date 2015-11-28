@@ -78,7 +78,7 @@ printf "\nInterface\tDriver\t\tChipset\n"
 for IFACE in $(ifconfig -a | grep -E '^(wlan|ath|otus|urtwn)[0-9]+' | awk -F: '{print $1}' )
 do
 	get_interface_info ${IFACE}
-	printf "${IFACE}\t\t${DRIVER}\t\t${CHIPSET}\n"
+	printf "${IFACE}\t\t${DRIVER}\t\t${CHIPSET}\n\n"
 	if [ -n "${PARENT}" ]; then
 		printf "\t(monitor mode interface. Parent: ${PARENT})\n"
 	fi
@@ -106,6 +106,6 @@ do
 	fi 
 done
 
-printf "\n\n"
+printf "\n"
 
 exit 0
