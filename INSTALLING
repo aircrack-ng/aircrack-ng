@@ -19,7 +19,7 @@
     make
 
  * Compilation on FreeBSD:
-    gmake CC=cc
+    gmake
 
  * Strip debugging symbols:
     make strip
