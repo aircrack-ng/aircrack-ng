@@ -11,7 +11,7 @@
  * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
           See Makefile flags below.
  * pkg-config (pkgconf on FreeBSD)
- * FreeBSD: gmake
+ * FreeBSD and Solaris: gmake
 
 === Compiling ===
 
