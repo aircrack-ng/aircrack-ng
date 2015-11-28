@@ -35,6 +35,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#if defined(__sun__)
+#include <alloca.h>
+#endif
 #include "pcap.h"
 #include "aircrack-ptw-lib.h"
 #include "aircrack-ng.h"

@@ -181,11 +181,17 @@
 	 * Solaris
 	 * -------
 	 */
-	#if defined(__sparc__) && defined(__SVR4) && defined(__sun__)
+	#if defined(__SVR4) && defined(__sun__)
 	#include <sys/byteorder.h>
 	#include <sys/types.h>
 	#include <unistd.h>
 
+	typedef uint64_t u_int64_t;
+	typedef uint32_t u_int32_t;
+	typedef uint16_t u_int16_t;
+	typedef uint8_t  u_int8_t;
+
+	#if defined(__sparc__)
 		#define __be64_to_cpu(x) (x)
 		#define __be32_to_cpu(x) (x)
 		#define __be16_to_cpu(x) (x)
@@ -199,13 +205,11 @@
 		#define __cpu_to_le32(x) ___my_swab32(x)
 		#define __cpu_to_le16(x) ___my_swab16(x)
 
-		typedef uint64_t u_int64_t;
-		typedef uint32_t u_int32_t;
-		typedef uint16_t u_int16_t;
-		typedef uint8_t  u_int8_t;
-
 		#define AIRCRACK_NG_BYTE_ORDER_DEFINED
-
+	#else
+		#define AIRCRACK_NG_BYTE_ORDER 1
+		#define LITTLE_ENDIAN 1
+	#endif
 	#endif
 
 	/*
@@ -217,9 +221,7 @@
 		#define __cpu_to_be32(x) = OSSwapHostToBigInt32(x)
 
 		#define AIRCRACK_NG_BYTE_ORDER_DEFINED
-
 	#endif
-
 
 	// FreeBSD
 	#ifdef __FreeBSD__

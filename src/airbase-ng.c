@@ -57,7 +57,8 @@
 #include <time.h>
 #include <getopt.h>
 #include <sys/file.h>
-#include <fcntl.h>
+#include <fcntl.h> 
+
 #include <ctype.h>
 
 #include "version.h"
@@ -484,8 +485,13 @@ int capture_packet(unsigned char* packet, int length)
 {
     struct pcap_pkthdr pkh;
     struct timeval tv;
-
     int n;
+#if defined(__sun__)
+	struct flock fl;
+	fl.l_start = 0;
+	fl.l_len = 0;
+	fl.l_whence = SEEK_SET;
+#endif
 
     if( opt.f_cap != NULL && length >= 10)
     {
@@ -498,13 +504,23 @@ int capture_packet(unsigned char* packet, int length)
 
         n = sizeof( pkh );
 
-        flock(fileno(opt.f_cap), LOCK_EX);
+#if defined(__sun__)
+	fl.l_type = F_WRLCK;
+	fcntl(fileno(opt.f_cap), F_SETLKW, &fl);
+#else
+	flock(fileno(opt.f_cap), LOCK_EX);
+#endif
         if( fwrite( &pkh, 1, n, opt.f_cap ) != (size_t) n )
         {
-            perror( "fwrite(packet header) failed" );
-            flock(fileno(opt.f_cap), LOCK_UN);
-            return( 1 );
-        }
+		perror( "fwrite(packet header) failed" );
+#if defined(__sun__)
+		fl.l_type = F_UNLCK;
+		fcntl(fileno(opt.f_cap), F_GETLK, &fl);
+#else
+		flock(fileno(opt.f_cap), LOCK_UN);
+#endif
+		return( 1 );
+	}
 
         fflush( stdout );
 
@@ -512,15 +528,25 @@ int capture_packet(unsigned char* packet, int length)
 
         if( fwrite( packet, 1, n, opt.f_cap ) != (size_t) n )
         {
-            perror( "fwrite(packet data) failed" );
-            flock(fileno(opt.f_cap), LOCK_UN);
-            return( 1 );
+		perror( "fwrite(packet data) failed" );
+#if defined(__sun__)
+		fl.l_type = F_UNLCK;
+		fcntl(fileno(opt.f_cap), F_GETLK, &fl);
+#else
+		flock(fileno(opt.f_cap), LOCK_UN);
+#endif
+		return( 1 );
         }
 
         fflush( stdout );
 
         fflush( opt.f_cap );
-        flock(fileno(opt.f_cap), LOCK_UN);
+#if defined(__sun__)
+	fl.l_type = F_UNLCK;
+	fcntl(fileno(opt.f_cap), F_GETLK, &fl);
+#else
+	flock(fileno(opt.f_cap), LOCK_UN);
+#endif
     }
     return 0;
 }

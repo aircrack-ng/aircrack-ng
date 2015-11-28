@@ -20,7 +20,12 @@ PIC		=
 SQLITE		= false
 else
 EXE		=
+ifeq ($(OSNAME), SunOS)
+PIC		=
+LDFLAGS		+= -lsocket -lnsl
+else
 PIC		= -fPIC
+endif
 ifndef SQLITE
 SQLITE		= true
 endif

@@ -3944,8 +3944,8 @@ int crack_wpa_thread( void *arg )
 
 #if defined(__i386__) || defined(__x86_64__)
 	// Check for SSE2, with SSE2 the algorithm works with 4 keys
-	if (shasse2_cpuid()>=2)
-		nparallel = 4;
+//	if (shasse2_cpuid()>=2)
+//		nparallel = 4;
 #endif
 
 	data = (struct WPA_data*)arg;
