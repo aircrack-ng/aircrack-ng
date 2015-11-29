@@ -3060,7 +3060,7 @@ int check_wep_key( unsigned char *wepkey, int B, int keylen )
 	pthread_mutex_lock(&mx_nb);
 	nb_tried++;
 	pthread_mutex_unlock(&mx_nb);
-	
+
 	bad = 0;
 
 	memcpy( K + 3, wepkey, keylen );
@@ -3944,8 +3944,8 @@ int crack_wpa_thread( void *arg )
 
 #if defined(__i386__) || defined(__x86_64__)
 	// Check for SSE2, with SSE2 the algorithm works with 4 keys
-//	if (shasse2_cpuid()>=2)
-//		nparallel = 4;
+	if (shasse2_cpuid()>=2)
+		nparallel = 4;
 #endif
 
 	data = (struct WPA_data*)arg;
@@ -4820,7 +4820,7 @@ int crack_wep_dict()
 
 	while(1)
 	{
-		if( next_key( &key, keysize ) != SUCCESS) 
+		if( next_key( &key, keysize ) != SUCCESS)
 		{
 			free(key);
 			return( FAILURE );
@@ -5461,17 +5461,17 @@ int main( int argc, char *argv[] )
 		opt.amode = 2;
 		opt.dict = stdin;
 		opt.bssid_set = 1;
-		
+
 		ap_1st = ap_cur = malloc(sizeof(*ap_cur));
 		if (!ap_cur)
 			err(1, "malloc()");
-		
+
 		memset(ap_cur, 0, sizeof(*ap_cur));
-		
+
 		ap_cur->target = 1;
 		ap_cur->wpa.state = 7;
 		strcpy(ap_cur->essid, "sorbo");
-		
+
 		goto __start;
 	}
 
