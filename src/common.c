@@ -178,6 +178,16 @@ int get_nb_cpus()
 
 		fclose(f);
         }
+#elif defined(__FreeBSD__)
+	int mib[] = { CTL_HW, HW_NCPU };
+	size_t len;
+	unsigned long nbcpu;
+
+	len     = sizeof(nbcpu);
+
+	if (!sysctl(mib, 2, &nbcpu, &len, NULL, 0)) {
+		number = (int)nbcpu;
+	}
 #endif
 
         #ifdef _SC_NPROCESSORS_ONLN
