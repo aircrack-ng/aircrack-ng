@@ -41,6 +41,10 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <ctype.h>
+#if defined(__FreeBSD__)
+#include <sys/sysctl.h>
+#include <sys/user.h>
+#endif
 
 #define isHex(c) (hexToInt(c) != -1)
 #define HEX_BASE 16
@@ -51,28 +55,38 @@ int is_string_number(const char * str)
 	if (str == NULL) {
 		return 0;
 	}
-	
+
 	if (*str != '-' && !(isdigit((int)(*str)))) {
 		return 0;
 	}
-	
+
 	for (i = 1; str[i] != 0; i++) {
 		if (!isdigit((int)(str[i]))) {
 			return 0;
 		}
 	}
-	
+
 	return 1;
 }
 
 int get_ram_size(void) {
+	int ret = -1;
+#if defined(__FreeBSD__)
+	int mib[] = { CTL_HW, HW_PHYSMEM };
+	size_t len;
+	unsigned long physmem;
+
+	len	= sizeof(physmem);
+
+	if (!sysctl(mib, 2, &physmem, &len, NULL, 0))
+		ret = (physmem/1024);	// Linux returns memory size in kB, so we want to as well.
+#else
 	FILE *fp;
 	char str[256];
 	int val = 0;
-	int ret = -1;
 
 	if (!(fp = fopen("/proc/meminfo", "r"))) {
-		perror("fopen fails");
+		perror("fopen fails on /proc/meminfo");
 		return ret;
 	}
 
@@ -84,6 +98,7 @@ int get_ram_size(void) {
 	}
 
 	fclose(fp);
+#endif
 	return ret;
 }
 
@@ -128,43 +143,51 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int
 // Return the number of cpu. If detection fails, it will return -1;
 int get_nb_cpus()
 {
-		// Optmization for windows: use GetSystemInfo()
-        char * s, * pos;
-        FILE * f;
+	// Optmization for windows: use GetSystemInfo()
         int number = -1;
 
-		// Reading /proc/cpuinfo is more reliable on current CPUs,
-		// so put it first and try the old method if this one fails
+	// This will only work on Linux or Cygwin as other OS's do not have /proc/cpuinfo
+#if defined(__linux__) || defined(__CYGWIN__)
+        char * s, * pos;
+        FILE * f;
+	// Reading /proc/cpuinfo is more reliable on current CPUs,
+	// so put it first and try the old method if this one fails
         f = fopen("/proc/cpuinfo", "r");
+
         if (f != NULL) {
-				s = (char *)calloc(1, 81);
-				if (s != NULL) {
-					// Get the latest value of "processor" element
-					// and increment it by 1 and it that value
-					// will be the number of CPU.
-					number = -2;
-					while (fgets(s, 80, f) != NULL) {
-							pos = strstr(s, "processor");
-							if (pos == s) {
-									pos = strchr(s, ':');
-									number = atoi(pos + 1);
-							}
-					}
-					++number;
-					free(s);
+		s = (char *)calloc(1, 81);
+
+		if (s != NULL) {
+			// Get the latest value of "processor" element
+			// and increment it by 1 and it that value
+			// will be the number of CPU.
+			number = -2;
+
+			while (fgets(s, 80, f) != NULL) {
+				pos = strstr(s, "processor");
+
+				if (pos == s) {
+					pos = strchr(s, ':');
+					number = atoi(pos + 1);
 				}
-				fclose(f);
+			}
+
+			++number;
+			free(s);
+		}
+
+		fclose(f);
         }
+#endif
 
         #ifdef _SC_NPROCESSORS_ONLN
         // Try the usual method if _SC_NPROCESSORS_ONLN exist
         if (number == -1) {
-
-			number   = sysconf(_SC_NPROCESSORS_ONLN);
-			/* Fails on some archs */
-			if (number < 1) {
-				number = -1;
-			}
+		number   = sysconf(_SC_NPROCESSORS_ONLN);
+		/* Fails on some archs */
+		if (number < 1) {
+			number = -1;
+		}
         }
         #endif
 
