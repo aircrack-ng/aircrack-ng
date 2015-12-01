@@ -179,6 +179,7 @@ int get_nb_cpus()
 		fclose(f);
         }
 #elif defined(__FreeBSD__)
+// Not sure about defined(__DragonFly__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
 	int mib[] = { CTL_HW, HW_NCPU };
 	size_t len;
 	unsigned long nbcpu;
