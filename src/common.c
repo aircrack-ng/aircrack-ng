@@ -45,7 +45,9 @@
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
-
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#endif
 #define isHex(c) (hexToInt(c) != -1)
 #define HEX_BASE 16
 
@@ -80,6 +82,12 @@ int get_ram_size(void) {
 
 	if (!sysctl(mib, 2, &physmem, &len, NULL, 0))
 		ret = (physmem/1024);	// Linux returns memory size in kB, so we want to as well.
+#elif defined(_WIN32) || defined(_WIN64)
+	MEMORYSTATUSEX statex;
+	statex.dwLength = sizeof(statex);
+
+	GlobalMemoryStatusEx(&statex);
+	ret = (int)(statex.ullTotalPhys/1024);
 #else
 	FILE *fp;
 	char str[256];
@@ -143,11 +151,15 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int
 // Return the number of cpu. If detection fails, it will return -1;
 int get_nb_cpus()
 {
-	// Optmization for windows: use GetSystemInfo()
         int number = -1;
 
-	// This will only work on Linux or Cygwin as other OS's do not have /proc/cpuinfo
-#if defined(__linux__) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(_WIN64)
+	SYSTEM_INFO sysinfo = {0};
+
+	GetSystemInfo(&sysinfo);
+
+	number = sysinfo.dwNumberOfProcessors;
+#elif defined(__linux__)
         char * s, * pos;
         FILE * f;
 	// Reading /proc/cpuinfo is more reliable on current CPUs,
