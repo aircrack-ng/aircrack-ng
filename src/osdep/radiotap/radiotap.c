@@ -21,7 +21,7 @@
 
 #ifdef _BSD_SOURCE
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-#if !defined(__FreeBSD__)
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__)
 #define le16toh(x) (x)
 #define le32toh(x) (x)
 #endif

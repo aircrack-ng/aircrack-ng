@@ -41,7 +41,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <ctype.h>
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
@@ -178,7 +178,7 @@ int get_nb_cpus()
 
 		fclose(f);
         }
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
 // Not sure about defined(__DragonFly__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
 	int mib[] = { CTL_HW, HW_NCPU };
 	size_t len;

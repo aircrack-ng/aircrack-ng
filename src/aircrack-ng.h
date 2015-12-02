@@ -40,6 +40,10 @@
 #include "aircrack-ptw-lib.h"
 #include "eapol.h"
 
+#ifdef __OpenBSD__
+	#include <pthread.h>
+#endif
+
 #define SUCCESS  0
 #define FAILURE  1
 #define RESTART  2

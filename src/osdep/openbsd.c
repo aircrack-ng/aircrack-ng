@@ -29,6 +29,7 @@
 #include <net/if_media.h>
 #include <sys/ioctl.h>
 #include <net/if_dl.h>
+#include <sys/queue.h>
 #include <net80211/ieee80211.h>
 #include <net80211/ieee80211_crypto.h>
 #include <net80211/ieee80211_ioctl.h>
