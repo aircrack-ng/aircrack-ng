@@ -4721,7 +4721,7 @@ int do_attack_chopchop( void )
     fclose( f_cap_out );
 
     printf( "\nCompleted in %lds (%0.2f bytes/s)\n\n",
-            (long) time( NULL ) - tt,
+            (long) (time( NULL ) - tt),
             (float) ( pkh.caplen - 6 - 24 ) /
             (float) ( time( NULL ) - tt  ) );
 
