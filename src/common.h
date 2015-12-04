@@ -30,6 +30,13 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#undef rand
+#define rand lrand48
+#undef srand
+#define srand srand48
+#endif
+
 #define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
 
 #define SWAP32(x)       \
