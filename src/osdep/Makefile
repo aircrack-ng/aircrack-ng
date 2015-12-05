@@ -37,6 +37,11 @@ all:
 	$(RANLIB) $(LIB)
 	touch $(@)
 
+.os.DragonFly: $(OBJS_FBSD)
+	$(AR) cru $(LIB) $(OBJS_FBSD)
+	$(RANLIB) $(LIB)
+	touch $(@)
+
 .os.FreeBSD: $(OBJS_FBSD)
 	$(AR) cru $(LIB) $(OBJS_FBSD)
 	$(RANLIB) $(LIB)

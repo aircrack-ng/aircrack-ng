@@ -29,9 +29,15 @@
 #include <net/if_media.h>
 #include <sys/ioctl.h>
 #include <net/if_dl.h>
-#include <net80211/ieee80211_ioctl.h>
-#include <net80211/ieee80211_radiotap.h>
-#include <net80211/ieee80211_freebsd.h>
+#ifdef __DragonFly__
+	#include <netproto/802_11/ieee80211_ioctl.h>
+	#include <netproto/802_11/ieee80211_radiotap.h>	
+	#include <netproto/802_11/ieee80211_dragonfly.h>
+#else
+	#include <net80211/ieee80211_ioctl.h>
+	#include <net80211/ieee80211_radiotap.h>
+	#include <net80211/ieee80211_freebsd.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
