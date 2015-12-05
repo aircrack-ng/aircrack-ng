@@ -1438,6 +1438,7 @@ int do_attack_fake_auth( void )
     unsigned char challenge[2048];
     unsigned char keystream[2048];
 
+    memset(iv, 0, sizeof(iv));
 
     if( memcmp( opt.r_smac,  NULL_MAC, 6 ) == 0 )
     {
