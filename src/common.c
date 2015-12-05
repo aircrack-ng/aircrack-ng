@@ -51,6 +51,38 @@
 #define isHex(c) (hexToInt(c) != -1)
 #define HEX_BASE 16
 
+/*
+ * Print the time and percentage in readable format
+ */
+void calctime(time_t t, float perc) {
+	int days = 0, hours = 0, mins = 0, secs = 0, remain = 0, printed = 0;
+	char buf[8];
+
+	days    = t / 86400;
+	remain  = t % 86400;
+
+	hours   = remain / 3600;
+	remain  = remain % 3600;
+
+	mins    = remain / 60;
+	secs    = remain % 60;
+
+	if (days)
+		printed += printf("%d day%s, ", days, (days>1?"s":""));
+
+	if (hours)
+		printed += printf("%d hour%s, ", hours, (hours>1?"s":""));
+
+	if (mins)
+		printed += printf("%d minute%s, ", mins, (mins>1?"s":""));
+
+	snprintf(buf, sizeof(buf), "%3.2f%%", perc);
+
+	printed += printf("%d second%s", secs, (secs!=1?"s":""));
+
+	printf("%*s %s\n", (int)(47-(printed+strlen(buf)%5))," ", buf);
+}
+
 int is_string_number(const char * str)
 {
 	int i;

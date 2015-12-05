@@ -113,8 +113,10 @@ endif
 ifneq ($(origin CC),environment)
 ifeq ($(OSNAME), FreeBSD)
 	CC	= $(TOOL_PREFIX)cc
+	CXX	= $(TOOL_PREFIX)c++
 else
 	CC	= $(TOOL_PREFIX)gcc
+	CXX	= $(TOOL_PREFIX)g++
 endif
 endif
 
@@ -128,6 +130,16 @@ REVFLAGS	?= -D_REVISION=$(REVISION)
 
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 CFLAGS          ?= -g -W -Wall -O3
+ifeq ($(OSNAME), FreeBSD)
+	CXXFLAGS	= $(CFLAGS) -fdata-sections -ffunction-sections
+else
+ifeq ($(OSNAME), OpenBSD)
+	CXXFLAGS	= $(CFLAGS) -fdata-sections -ffunction-sections
+else
+	CXXFLAGS	= $(CFLAGS) -masm=intel -fdata-sections -ffunction-sections
+endif
+endif
+
 CFLAGS          += $(OPTFLAGS) $(REVFLAGS) $(COMMON_CFLAGS)
 
 prefix          = /usr/local

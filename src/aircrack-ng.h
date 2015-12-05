@@ -37,6 +37,10 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h>
+#if defined(__FreeBSD__)
+#include <unistd.h>
+#endif
 #include "aircrack-ptw-lib.h"
 #include "eapol.h"
 
@@ -84,7 +88,10 @@ struct hashdb_rec {
 	uint8_t pmk[32];
 } __attribute__ ((packed));
 
-
+#ifdef __CYGWIN__
+	#include <sys/time.h>
+#endif
+float chrono(struct timeval *start, int reset);
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
@@ -122,6 +129,13 @@ enum KoreK_attacks
 	A_neg						 /* helps reject false positives */
 };
 
+struct dictfiles {
+	off_t	dictsize;			/* Total file size */
+	off_t	dictpos;			/* Current position of dictionary */
+	off_t	wordcount;			/* Total amount of words in dict file */
+	int	loaded;				/* Have finished processing? */
+} dicts;
+
 struct options
 {
 	int amode;					 /* attack mode          */
@@ -156,7 +170,10 @@ struct options
 	int nbdict;				 /* current dict number  */
 	int no_stdin;				 /* if dict == stdin     */
 	int hexdict[MAX_DICTS];			 /* if dict in hex       */
-
+	long long int wordcount;		/* Total wordcount for all dicts*/
+	struct dictfiles dictidx[MAX_DICTS];	/* Dictionary structure		*/
+	int totaldicts;				/* total loaded dictionaries	*/
+	int dictfinish;				/* finished processing all dicts*/
 	int showASCII;				 /* Show ASCII version of*/
 								 /* the wepkey           */
 
@@ -190,7 +207,7 @@ struct options
         int forced_amode;	/* signals disregarding automatic detection of encryption type */
 
 	char * wkp;					 /* EWSA Project file */
-	char * hccap;				         /* Hashcat capture file */                  
+	char * hccap;				         /* Hashcat capture file */
 
 }
 
@@ -265,5 +282,8 @@ struct WPA_data {
 
 void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod );
 
+#if defined(__clang__) || defined(__llvm__)
+extern inline int wpa_send_passphrase(char *key, struct WPA_data* data, int lock);
+#endif
 
 #endif /* _AIRCRACK_NG_H */

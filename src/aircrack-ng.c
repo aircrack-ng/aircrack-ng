@@ -70,6 +70,7 @@
 #include "osdep/byteorder.h"
 #include "common.h"
 #include "wkp-frame.h"
+#include "linecount.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -97,6 +98,7 @@ static int _speed_test;
 struct timeval t_begin;			 /* time at start of attack      */
 struct timeval t_stats;			 /* time since last update       */
 struct timeval t_kprev;			 /* time at start of window      */
+struct timeval t_dictup;		/* next dictionary total read   */
 long long int nb_kprev;			 /* last  # of keys tried        */
 long long int nb_tried;			 /* total # of keys tried        */
 
@@ -429,7 +431,41 @@ void eof_wait( int *eof_notified )
 
 inline int wpa_send_passphrase(char *key, struct WPA_data* data, int lock)
 {
+	int delta = 0, i = 0, fincnt = 0;
+	off_t tmpword = 0;
+
 	pthread_mutex_lock(&data->mutex);
+
+	if (!opt.dictfinish) {
+		delta = chrono(&t_dictup, 0);
+
+		if ((int)delta >= 2) {
+			for (; i < opt.totaldicts; i++) {
+				if (opt.dictidx[i].loaded) {
+					fincnt++;
+					continue;
+				}
+
+				if (opt.dictidx[i].dictsize > READBUF_BLKSIZE) {
+					tmpword			= (long double)linecount(opt.dicts[i], opt.dictidx[i].dictpos, 32);
+					opt.dictidx[i].wordcount+= tmpword;
+					opt.wordcount		+= tmpword;
+					opt.dictidx[i].dictpos	+= (READBUF_BLKSIZE*32);
+
+					if (opt.dictidx[i].dictpos >= opt.dictidx[i].dictsize)
+						opt.dictidx[i].loaded = 1;
+
+					// Only process a chunk then come back later for more.
+					break;
+				}
+			}
+
+			if (fincnt == opt.totaldicts)
+				opt.dictfinish	= 1;
+			else
+				delta		= chrono(&t_dictup, 1);
+		}
+	}
 
 	if ((data->back+1) % data->nkeys == data->front)
 	{
@@ -3833,9 +3869,10 @@ int inner_bruteforcer_thread(void *arg)
 void show_wpa_stats( char *key, int keylen, unsigned char pmk[32], unsigned char ptk[64],
 unsigned char mic[16], int force )
 {
-	float delta;
+	float delta, calc, ksec;
 	int i, et_h, et_m, et_s;
 	char tmpbuf[28];
+	long long int remain, eta;
 
 	if (chrono( &t_stats, 0 ) < 0.15 && force == 0)
 		return;
@@ -3879,10 +3916,26 @@ unsigned char mic[16], int force )
 		goto __out;
 	}
 
+	ksec = (float) nb_kprev / delta;
+
 	if( opt.l33t ) printf( "\33[33;1m" );
-	printf( "\33[5;20H[%02d:%02d:%02d] %lld keys tested "
-		"(%2.2f k/s)", et_h, et_m, et_s,
-		nb_tried, (float) nb_kprev / delta);
+
+	if (opt.stdin_dict) {
+		printf( "\33[5;20H[%02d:%02d:%02d] %lld keys tested "
+			"(%2.2f k/s)", et_h, et_m, et_s,
+			nb_tried, (float) nb_kprev / delta);
+	} else {
+		calc = ((float)nb_tried / (float)opt.wordcount)*100;
+		remain = (opt.wordcount - nb_tried);
+		eta = (remain / (long long int)ksec);
+
+		printf( "\33[4;7H[%02d:%02d:%02d] %lld/%lld keys tested "
+			"(%2.2f k/s)", et_h, et_m, et_s,
+			nb_tried, opt.wordcount, (float) nb_kprev / delta);
+
+		printf( "\33[6;7HTime left: ");
+		calctime(eta, calc);
+	}
 
 	memset( tmpbuf, ' ', sizeof( tmpbuf ) );
 	memcpy( tmpbuf, key, keylen > 27 ? 27 : keylen );
@@ -4119,6 +4172,7 @@ int crack_wpa_thread( void *arg )
  */
 int next_dict(int nb)
 {
+	off_t tmpword = 0;
 
 	pthread_mutex_lock( &mx_dic );
 	if(opt.dict != NULL)
@@ -4138,6 +4192,7 @@ int next_dict(int nb)
 		if( strcmp( opt.dicts[opt.nbdict], "-" ) == 0 )
 		{
 			opt.stdin_dict = 1;
+			opt.dictfinish = 1; // no ETA stats on stdin
 
 			if( ( opt.dict = fdopen( fileno(stdin) , "r" ) ) == NULL )
 			{
@@ -4153,7 +4208,7 @@ int next_dict(int nb)
 			opt.stdin_dict = 0;
 			if( ( opt.dict = fopen( opt.dicts[opt.nbdict], "r" ) ) == NULL )
 			{
-				perror( "fopen(dictionary) failed" );
+				printf("ERROR: Opening dictionary %s failed (%s)\n", opt.dicts[opt.nbdict], strerror(errno));
 				opt.nbdict++;
 				continue;
 			}
@@ -4162,11 +4217,23 @@ int next_dict(int nb)
 
 			if ( ftello( opt.dict ) <= 0L )
 			{
-				printf("ERROR: %s\n", strerror(errno));
+				printf("ERROR: Processing dictionary file %s (%s)\n", opt.dicts[opt.nbdict], strerror(errno));
 				fclose( opt.dict );
 				opt.dict = NULL;
 				opt.nbdict++;
 				continue;
+			}
+
+			if (!opt.dictfinish) {
+				chrono(&t_dictup, 1);
+				opt.dictidx[opt.nbdict].dictsize	= ftello(opt.dict);
+
+				if (!opt.dictidx[opt.nbdict].dictpos || (opt.dictidx[opt.nbdict].dictpos > opt.dictidx[opt.nbdict].dictsize)) {
+					tmpword					= (long double)linecount(opt.dicts[opt.nbdict], (opt.dictidx[opt.nbdict].dictpos ? opt.dictidx[opt.nbdict].dictpos : 0), 32);
+					opt.dictidx[opt.nbdict].wordcount	+= tmpword;
+					opt.wordcount				+= tmpword;
+					opt.dictidx[opt.nbdict].dictpos		= (READBUF_BLKSIZE*32);
+				}
 			}
 
 			rewind( opt.dict );
@@ -4748,36 +4815,27 @@ int set_dicts(char* optargs)
 	int len;
 	char *optarg;
 
-	opt.nbdict = 0;
-	optarg = strsep(&optargs, ",");
+	opt.dictfinish = opt.totaldicts = opt.nbdict = 0;
 
-	for(len=0; len<MAX_DICTS; len++)
-	{
-		opt.dicts[len] = NULL;
-	}
-
-	while(optarg != NULL && opt.nbdict<MAX_DICTS)
-	{
-		len = strlen(optarg)+1;
-		opt.dicts[opt.nbdict] = (char*)malloc(len * sizeof(char));
-		if(opt.dicts[opt.nbdict] == NULL)
-		{
-			perror("allocation failed!");
-			return( FAILURE );
-		}
-		if(strncasecmp(optarg, "h:", 2) == 0)
-		{
-			strncpy(opt.dicts[opt.nbdict], optarg+2, len-2);
+	while ((opt.nbdict < MAX_DICTS) && (optarg = strsep(&optargs, ",")) != NULL)  {
+		if (!strncasecmp(optarg, "h:", 2)) {
+			optarg += 2;
 			opt.hexdict[opt.nbdict] = 1;
-		}
-		else
-		{
-			strncpy(opt.dicts[opt.nbdict], optarg, len);
+		} else {
 			opt.hexdict[opt.nbdict] = 0;
 		}
-		optarg = strsep(&optargs, ",");
+
+		if (!(opt.dicts[opt.nbdict] = strdup(optarg))) {
+			perror("Failed to allocate memory for dictionary");
+			return( FAILURE );
+		}
+
 		opt.nbdict++;
+		opt.totaldicts++;
 	}
+
+	for (len = opt.nbdict; len < MAX_DICTS; len++)
+		opt.dicts[len] = NULL;
 
 	next_dict(0);
 

@@ -44,11 +44,13 @@ ifeq ($(subst TRUE,true,$(filter TRUE true,$(experimental) $(EXPERIMENTAL))),tru
 	BINFILES	+= buddy-ng$(EXE)
 endif
 
+SRC_LINECOUNT	= linecount.o
+LIBLINECOUNT	= liblinecount.a
 
 SRC_PTW		= aircrack-ptw-lib.c
 SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
 OBJS_PTW	= aircrack-ptw-lib.o
-OBJS_AC		= aircrack-ng.o crypto.o common.o uniqueiv.o $(OBJS_PTW)
+OBJS_AC		= aircrack-ng.o crypto.o common.o uniqueiv.o $(OBJS_PTW) $(LIBLINECOUNT)
 ASM_AC		= sha1-sse2.S
 
 OBJS_AD		= airdecap-ng.o crypto.o common.o
@@ -81,6 +83,8 @@ endif
 LIBOSD		= $(OSD)/lib$(OSD).a
 
 LIBSSL		= -lssl -lcrypto
+LIBSTDCXX	= -lstdc++
+
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(gcrypt) $(GCRYPT))),true)
 	LIBSSL		= -lgcrypt $(LDFLAGS)
 	CFLAGS 		+= -DUSE_GCRYPT
@@ -111,6 +115,11 @@ all: userland $(SBINFILES)
 
 userland: $(BINFILES)
 
+$(LIBLINECOUNT): $(SRC_LINECOUNT)
+	$(AR) cru $(LIBLINECOUNT) $(SRC_LINECOUNT)
+	$(RANLIB) $(LIBLINECOUNT)
+	touch $(@)
+
 $(LIBOSD):
 	$(MAKE) -C $(OSD)
 
@@ -130,7 +139,7 @@ aircrack-ng-opt-prof_use: $(SRC_AC)
 	aircrack-ng-opt-prof -lpthread $(LIBSQL)
 
 aircrack-ng$(EXE): $(OBJS_AC)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AC) $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AC) $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL) $(LIBSTDCXX)
 
 airdecap-ng$(EXE): $(OBJS_AD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AD) -o $(@) $(LIBSSL)
@@ -194,7 +203,7 @@ strip: $(BINFILES) $(SBINFILES)
 
 clean:
 	$(MAKE) -C $(OSD) clean
-	-rm -f $(SBINFILES) $(BINFILES) $(OPTFILES) airolib-ng$(EXE) *.o wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE) buddy-ng$(EXE) besside-ng$(EXE) a.out
+	-rm -f $(SBINFILES) $(BINFILES) $(OPTFILES) airolib-ng$(EXE) *.o wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE) buddy-ng$(EXE) besside-ng$(EXE) a.out $(LIBLINECOUNT)
 
 distclean: clean
 

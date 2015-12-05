@@ -37,6 +37,8 @@
 #define srand srand48
 #endif
 
+#include <time.h>
+
 #define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
 
 #define SWAP32(x)       \
@@ -71,5 +73,7 @@
 #else
 	#define CPUID() CPUID_NOTHING_AVAILABLE
 #endif
+
+void calctime(time_t t, float calc);
 
 #endif
