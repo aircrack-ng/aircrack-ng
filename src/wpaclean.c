@@ -721,7 +721,11 @@ int main(int argc, char *argv[])
 	for (i = 2; i < argc; i++) {
 		char *in = argv[i];
 		int prog = (int) (((double) (i - 1)) / ((double)(argc - 2)) 
+#if defined(__x86_64__) && defined(__CYGWIN__)
+				   * (0.0f + 100));
+#else
 				   * 100.0);
+#endif
 
 		printf("Pwning %s (%d/%d %d%%)\n", in, i - 1, argc - 2, prog);
 		fflush(stdout);

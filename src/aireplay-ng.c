@@ -441,7 +441,19 @@ int set_bitrate(struct wif *wi, int rate)
             {
                 if(bitrates[i-1] >= newrate)
                 {
-                    printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
+                    printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/
+#if defined(__x86_64__) && defined(__CYGWIN__)
+			(0.0f + 1000000)),
+#else
+			1000000.0),
+#endif
+			(wi_get_rate(wi)/
+#if defined(__x86_64__) && defined(__CYGWIN__)
+			(0.0f + 1000000)
+#else
+			1000000.0
+#endif
+			));
                     return 1;
                 }
             }
@@ -449,13 +461,36 @@ int set_bitrate(struct wif *wi, int rate)
             {
                 if(bitrates[i+1] <= newrate)
                 {
-                    printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
+                    printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/
+#if defined(__x86_64__) && defined(__CYGWIN__)
+			(0.0f + 1000000)),
+#else
+			1000000.0),
+#endif
+			 (wi_get_rate(wi)/
+#if defined(__x86_64__) && defined(__CYGWIN__)
+			(0.0f + 1000000)));
+#else
+			1000000.0));
+#endif
                     return 1;
                 }
             }
             return 0;
         }
-        printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/1000000.0), (wi_get_rate(wi)/1000000.0));
+        printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n", (rate/
+#if defined(__x86_64__) && defined(__CYGWIN__)
+		(0.0f + 1000000)),
+#else
+		1000000.0),
+#endif
+		(wi_get_rate(wi)/
+#if defined(__x86_64__) && defined(__CYGWIN__)
+		(0.0f + 1000000)));
+#else
+		1000000.0));
+#endif
+
         return 1;
     }
     return 0;
@@ -2969,8 +3004,8 @@ int do_attack_caffe_latte( void )
                 fclose( f_cap_out );
                 return( 1 );
             }
-            
-            if( caplen == 0 ) 
+
+            if( caplen == 0 )
                continue;
         }
         else
@@ -5615,7 +5650,12 @@ int tcp_test(const char* ip_str, const short port)
     }
     avg /= REQUESTS;
 
-    PCT; printf("ping %s:%d (min/avg/max): %.3fms/%.3fms/%.3fms\n", ip_str, port, min/1000.0, avg/1000.0, max/1000.0);
+    PCT; printf("ping %s:%d (min/avg/max): %.3fms/%.3fms/%.3fms\n", ip_str, port, min/
+#if defined(__x86_64__) && defined(__CYGWIN__)
+	(0.0f + 1000), avg/(0.0f + 1000), max/(0.0f + 1000));
+#else
+	1000.0, avg/1000.0, max/1000.0);
+#endif
 
     return 0;
 }
@@ -6016,7 +6056,12 @@ int do_attack_test()
         {
             avg /= ap[i].found;
             avg2 /= ap[i].found;
-            PCT; printf("Ping (min/avg/max): %.3fms/%.3fms/%.3fms Power: %.2f\n", (min/1000.0), (avg/1000.0), (max/1000.0), avg2);
+            PCT; printf("Ping (min/avg/max): %.3fms/%.3fms/%.3fms Power: %.2f\n",
+#if defined(__x86_64__) && defined(__CYGWIN__)
+	(min/(0.0f + 1000)), (avg/(0.0f + 1000)), (max/(0.0f + 1000)), avg2);
+#else
+	(min/1000.0), (avg/1000.0), (max/1000.0), avg2);
+#endif
         }
         PCT; printf("%2d/%2d: %3d%%\n\n", ap[i].found, REQUESTS, ((ap[i].found*100)/REQUESTS));
 
@@ -6126,7 +6171,12 @@ int do_attack_test()
                     avg2 += ap[i].pwr[j];
                 if(ap[i].found > 0)
                     avg2 /= ap[i].found;
-                PCT; printf("Probing at %2.1f Mbps:\t%2d/%2d: %3d%%\n", wi_get_rate(_wi_out)/1000000.0,
+                PCT; printf("Probing at %2.1f Mbps:\t%2d/%2d: %3d%%\n", wi_get_rate(_wi_out)/
+#if defined(__x86_64__) && defined(__CYGWIN__)
+	(0.0f + 1000000),
+#else
+	1000000.0,
+#endif
                             ap[i].found, REQUESTS, ((ap[i].found*100)/REQUESTS));
             }
 

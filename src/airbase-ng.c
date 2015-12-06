@@ -3618,7 +3618,12 @@ void beacon_thread( void *arg )
             usleep( 1000000/RTC_RESOLUTION );
             gettimeofday( &tv2, NULL );
 
-            f = 1000000.0 * (float) ( tv2.tv_sec  - tv.tv_sec  )
+#if defined(__x86_64__) && defined(__CYGWIN__)
+        	f = (0.0f + 1000000)
+#else
+		f = 1000000.0
+#endif
+			 * (float) ( tv2.tv_sec  - tv.tv_sec  )
                         + (float) ( tv2.tv_usec - tv.tv_usec );
 
             ticks[0] += f / ( 1000000/RTC_RESOLUTION );
@@ -3626,7 +3631,12 @@ void beacon_thread( void *arg )
             ticks[2] += f / ( 1000000/RTC_RESOLUTION );
         }
 
-        if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)apc.interval/1000.0)*(double)seq )
+        if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)apc.interval/
+#if defined(__x86_64__) && defined(__CYGWIN__)
+		(0.0f + 1000))*(double)seq )
+#else
+		1000.0)*(double)seq )
+#endif
         {
             /* threshold reach, send one frame */
 //             ticks[2] = 0;
@@ -3764,14 +3774,25 @@ void caffelatte_thread( void )
         usleep( 1000000/RTC_RESOLUTION );
         gettimeofday( &tv2, NULL );
 
-        f = 1000000.0 * (float) ( tv2.tv_sec  - tv.tv_sec  )
+#if defined(__x86_64__) && defined(__CYGWIN__)
+        f = (0.0f + 1000000)
+#else
+	f = 1000000.0
+#endif
+		 * (float) ( tv2.tv_sec  - tv.tv_sec  )
                     + (float) ( tv2.tv_usec - tv.tv_usec );
 
         ticks[0] += f / ( 1000000/RTC_RESOLUTION );
         ticks[1] += f / ( 1000000/RTC_RESOLUTION );
         ticks[2] += f / ( 1000000/RTC_RESOLUTION );
 
-        if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)1000.0/(double)opt.r_nbpps)*(double)seq )
+        if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)
+#if defined(__x86_64__) && defined(__CYGWIN__)
+		(0.0f + 1000)
+#else
+		1000.0
+#endif
+		/(double)opt.r_nbpps)*(double)seq )
         {
             /* threshold reach, send one frame */
 //            ticks[2] = 0;
@@ -3902,14 +3923,25 @@ void cfrag_thread( void )
         usleep( 1000000/RTC_RESOLUTION );
         gettimeofday( &tv2, NULL );
 
-        f = 1000000.0 * (float) ( tv2.tv_sec  - tv.tv_sec  )
+#if defined(__x86_64__) && defined(__CYGWIN__)
+        f = (0.0f + 1000000)
+#else
+	f = 1000000.0
+#endif
+		* (float) ( tv2.tv_sec  - tv.tv_sec  )
                     + (float) ( tv2.tv_usec - tv.tv_usec );
 
         ticks[0] += f / ( 1000000/RTC_RESOLUTION );
         ticks[1] += f / ( 1000000/RTC_RESOLUTION );
         ticks[2] += f / ( 1000000/RTC_RESOLUTION );
 
-        if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)1000.0/(double)opt.r_nbpps)*(double)seq )
+        if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)
+#if defined(__x86_64__) && defined(__CYGWIN__)
+		(0.0f + 1000)
+#else
+		1000.0
+#endif
+		/(double)opt.r_nbpps)*(double)seq )
         {
             /* threshold reach, send one frame */
 //            ticks[2] = 0;

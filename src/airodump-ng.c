@@ -782,7 +782,12 @@ void update_rx_quality( )
                     ap_cur->fmiss += missed_frames;
                 }
 
-                ap_cur->rx_quality = ((float)((float)ap_cur->fcapt / ((float)ap_cur->fcapt + (float)ap_cur->fmiss)) * 100.0);
+                ap_cur->rx_quality = ((float)((float)ap_cur->fcapt / ((float)ap_cur->fcapt + (float)ap_cur->fmiss)) * 
+#if defined(__x86_64__) && defined(__CYGWIN__)
+			(0.0f + 100));
+#else
+			100.0f);
+#endif
             }
             else ap_cur->rx_quality = 0; /* no packets -> zero quality */
 
@@ -1015,7 +1020,11 @@ int update_dataps()
     {
         sec = (tv.tv_sec - ap_cur->tv.tv_sec);
         usec = (tv.tv_usec - ap_cur->tv.tv_usec);
-        pause = (((float)(sec*1000000.0f + usec))/(1000000.0f));
+#if defined(__x86_64__) && defined(__CYGWIN__)
+        pause = (((float)(sec*(0.0f + 1000000) + usec))/((0.0f + 1000000)));
+#else
+	pause = (((float)(sec*1000000.0f + usec))/(1000000.0f));	
+#endif
         if( pause > 2.0f )
         {
             diff = ap_cur->nb_data - ap_cur->nb_data_old;
@@ -1033,7 +1042,11 @@ int update_dataps()
     {
         sec = (tv.tv_sec - na_cur->tv.tv_sec);
         usec = (tv.tv_usec - na_cur->tv.tv_usec);
-        pause = (((float)(sec*1000000.0f + usec))/(1000000.0f));
+#if defined(__x86_64__) && defined(__CYGWIN__)
+        pause = (((float)(sec*(0.0f + 1000000) + usec))/((0.0f + 1000000)));
+#else
+	pause = (((float)(sec*1000000.0f + usec))/(1000000.0f));
+#endif
         if( pause > 2.0f )
         {
             diff = na_cur->ack - na_cur->ack_old;
@@ -4153,7 +4166,12 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 
 	/* Rate: inaccurate because it's the latest rate seen */
 	client_max_rate = ( client->rate_from > client->rate_to ) ? client->rate_from : client->rate_to ;
-	fprintf(G.f_kis_xml, "\t\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate / 1000000.0 );
+	fprintf(G.f_kis_xml, "\t\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate / 
+#if defined(__x86_64__) && defined(__CYGWIN__)
+		(0.0f + 1000000) );
+#else
+		1000000.0 );
+#endif
 
 	/* Those 2 lines always stays the same */
 	fprintf(G.f_kis_xml, "\t\t\t<carrier>IEEE 802.11b+</carrier>\n");
@@ -4486,7 +4504,12 @@ int dump_write_kismet_netxml( void )
 
 			/* Rate: inaccurate because it's the latest rate seen */
 			client_max_rate = ( st_cur->rate_from > st_cur->rate_to ) ? st_cur->rate_from : st_cur->rate_to ;
-			fprintf(G.f_kis_xml, "\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate / 1000000.0 );
+			fprintf(G.f_kis_xml, "\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate / 
+#if defined(__x86_64__) && defined(__CYGWIN__)
+				(0.0f + 1000000) );
+#else
+				1000000.0 );
+#endif
 
 			fprintf(G.f_kis_xml, "\t\t<carrier>IEEE 802.11b+</carrier>\n");
 			fprintf(G.f_kis_xml, "\t\t<encoding>CCK</encoding>\n");
