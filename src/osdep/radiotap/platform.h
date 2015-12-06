@@ -3,7 +3,7 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__NetBSD__)
 	#include <sys/endian.h>
 #elif defined(__APPLE__)
 	#include <machine/endian.h>

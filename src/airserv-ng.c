@@ -34,6 +34,10 @@
 #include <stdarg.h>
 #include <signal.h>
 
+#ifdef __NetBSD__
+	#include <sys/select.h>
+#endif
+
 #include "osdep/osdep.h"
 #include "osdep/network.h"
 #include "version.h"

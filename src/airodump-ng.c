@@ -4893,7 +4893,7 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 		if(*cursor != '\0')
 		{
 			cursor++;
-			while(isspace(*cursor) && *cursor != '\0')
+			while(isspace((int)(*cursor)) && *cursor != '\0')
 			{
 				cursor++;
 			}
@@ -4947,7 +4947,7 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 		else
 		{
 			/* Number, supposedly.  Copy as-is. */
-			while(*cursor != ',' && *cursor != '}' && !isspace(*cursor))
+			while(*cursor != ',' && *cursor != '}' && !isspace((int)(*cursor)))
 			{
 				*vcursor = *cursor;
 				cursor++; vcursor++;
