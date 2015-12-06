@@ -33,6 +33,10 @@
 #include <grp.h>
 #include <sys/utsname.h>
 
+#ifdef __NetBSD__
+	#include <sys/select.h>
+#endif
+
 #include "easside.h"
 #include "version.h"
 
