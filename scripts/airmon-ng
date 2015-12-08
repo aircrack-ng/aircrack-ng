@@ -409,29 +409,34 @@ startMac80211Iface() {
 		done
 	fi
 	#we didn't bail means we need a monitor interface
-	if [ -e /sys/class/net/${1}mon ]; then
-		printf "\nYou already have a ${1}mon device but it is NOT in monitor mode."
-		printf "\nWhatever you did, don't do it again."
-		printf "\nPlease run \"iw ${1}mon del\" before attempting to continue\n"
-		exit 1
-	fi
-	#we didn't bail means our target interface is available
-	setLink ${1} down
-	IW_ERROR="$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1)"
-	if [ -z "${IW_ERROR}" ]; then
-		sleep 1
-		if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type)" = "803" ]; then
-			setChannelMac80211 ${1}mon
-		else
-			printf "\nNewly created monitor mode interface ${1}mon is *NOT* in monitor mode.\n"
-			printf "Removing non-monitor ${1}mon interface...\n"
-			stopMac80211Iface ${1}mon abort
+        if [ ${#1} -gt 13 ]; then
+		printf "Interface ${#1}mon is too long for linux so it will be renamed to the old style (wlan#) name.\n"
+		findFreeInterface monitor
+	else
+		if [ -e /sys/class/net/${1}mon ]; then
+			printf "\nYou already have a ${1}mon device but it is NOT in monitor mode."
+			printf "\nWhatever you did, don't do it again."
+			printf "\nPlease run \"iw ${1}mon del\" before attempting to continue\n"
 			exit 1
 		fi
-		printf "\n\t\t(mac80211 monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
-	else
-		printf "\n\nERROR adding monitor mode interface: ${IW_ERROR}\n"
-		exit 1
+		#we didn't bail means our target interface is available
+		setLink ${1} down
+		IW_ERROR="$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1)"
+		if [ -z "${IW_ERROR}" ]; then
+			sleep 1
+			if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type)" = "803" ]; then
+				setChannelMac80211 ${1}mon
+			else
+				printf "\nNewly created monitor mode interface ${1}mon is *NOT* in monitor mode.\n"
+				printf "Removing non-monitor ${1}mon interface...\n"
+				stopMac80211Iface ${1}mon abort
+				exit 1
+			fi
+			printf "\n\t\t(mac80211 monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
+		else
+			printf "\n\nERROR adding monitor mode interface: ${IW_ERROR}\n"
+			exit 1
+		fi
 	fi
 	if [ "${ELITE}" = "1" ]; then
 		#check if $1 is still down, warn if not
