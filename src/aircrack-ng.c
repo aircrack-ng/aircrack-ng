@@ -3922,7 +3922,7 @@ unsigned char mic[16], int force )
 
 	if (opt.stdin_dict) {
 		printf( "\33[5;20H[%02d:%02d:%02d] %lld keys tested "
-			"(%2.2f k/s)", et_h, et_m, et_s,
+			"(%2.2f k/s) ", et_h, et_m, et_s,
 			nb_tried, (float) nb_kprev / delta);
 	} else {
 		calc = ((float)nb_tried / (float)opt.wordcount)*100;
@@ -3930,7 +3930,7 @@ unsigned char mic[16], int force )
 		eta = (remain / (long long int)ksec);
 
 		printf( "\33[4;7H[%02d:%02d:%02d] %lld/%lld keys tested "
-			"(%2.2f k/s)", et_h, et_m, et_s,
+			"(%2.2f k/s) ", et_h, et_m, et_s,
 			nb_tried, opt.wordcount, (float) nb_kprev / delta);
 
 		printf( "\33[6;7HTime left: ");
@@ -6138,19 +6138,22 @@ __start:
 					printf( "\33[32;22m" );
 
 				return( SUCCESS );
-			}
-			else
-				{
-					if( opt.is_quiet )
-					{
-						printf( "Passphrase not in dictionary\n" );
-						return( FAILURE );
-					}
+			} else {
+				printf("%sPassphrase not in dictionary\n", (opt.is_quiet?"":"\n"));
 
-					printf( "\nPassphrase not in dictionary \n" );
+				if (opt.is_quiet)
+					return( FAILURE );
+
+				if (opt.stdin_dict)
 					printf("\33[5;30H %lld",nb_tried);
-					printf("\33[32;0H\n");
+				else {
+					printf("\33[4;18H%lld/%lld keys tested ", nb_tried, opt.wordcount);
+					printf("\33[6;7HTime left: ");
+					calctime(0, ((float)nb_tried / (float)opt.wordcount)*100);
 				}
+
+				printf("\33[32;0H\n");
+			}
 
 			printf("\n");
 
