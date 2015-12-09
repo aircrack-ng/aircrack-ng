@@ -245,7 +245,7 @@ char usage[] =
 "\n";
 
 
-char * progname;
+char * progname = NULL;
 int intr_read = 0;
 
 int safe_write( int fd, void *buf, size_t len );
@@ -362,6 +362,11 @@ void clean_exit(int ret)
 //
 // 	printf("%d unused IVs\n", j);
 // 	printf("%d used IVs for %d\n", k, attack);
+
+	if (progname != NULL) {
+		free(progname);
+		progname = NULL;
+	}
 
 	child_pid=fork();
 

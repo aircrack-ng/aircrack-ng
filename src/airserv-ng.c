@@ -89,6 +89,7 @@ static void usage(char *p)
 		"       -v <level> : Debug level (1 to 3; default: 1)\n"
 		"\n",
 		version_info);
+	free(version_info);
 	exit(1);
 }
 
