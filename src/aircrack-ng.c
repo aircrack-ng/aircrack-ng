@@ -104,6 +104,7 @@ long long int nb_tried;			 /* total # of keys tried        */
 
 /* IPC global data */
 
+unsigned char *buffer = NULL;			/* from read_thread */
 struct AP_info *ap_1st;			 /* first item in linked list    */
 pthread_mutex_t mx_apl;			 /* lock write access to ap LL   */
 pthread_mutex_t mx_eof;			 /* lock write access to nb_eof  */
@@ -292,6 +293,11 @@ void clean_exit(int ret)
 
 	}
 
+	if (buffer != NULL) {
+		free(buffer);
+		buffer = NULL;
+	}
+
 	if(wep.ivbuf != NULL)
 	{
 		free(wep.ivbuf);
@@ -307,6 +313,11 @@ void clean_exit(int ret)
 		{
 			free(ap_cur->ivbuf);
 			ap_cur->ivbuf = NULL;
+		}
+
+		if (ap_cur->st_1st != NULL) {
+			free(ap_cur->st_1st);
+			ap_cur->st_1st = NULL;
 		}
 
 		uniqueiv_wipe( ap_cur->uiv_root );
@@ -797,7 +808,6 @@ void read_thread( void *arg )
 	unsigned char bssid[6];
 	unsigned char dest[6];
 	unsigned char stmac[6];
-	unsigned char *buffer;
 	unsigned char *h80211;
 	unsigned char *p;
 	int weight[16];
