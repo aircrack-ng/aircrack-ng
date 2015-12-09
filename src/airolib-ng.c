@@ -575,7 +575,7 @@ int import_cowpatty(sqlite3* db, char* filename) {
 
 	printf("Reading...\n");
 	while ((rc = fread(&rec.rec_size, sizeof(rec.rec_size), 1, f)) == 1) {
-		wordlength = abs(rec.rec_size) - (sizeof(rec.pmk) + sizeof(rec.rec_size));
+		wordlength = rec.rec_size - (sizeof(rec.pmk) + sizeof(rec.rec_size));
 		//prevent out of bounds writing (sigsegv guaranteed) but don't skip the whole file if wordlength < 8
 		if (wordlength > 0 && wordlength < (int) sizeof(passwd)) {
 			passwd[wordlength] = 0;
