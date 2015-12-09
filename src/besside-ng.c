@@ -379,6 +379,7 @@ static void do_wait(int UNUSED(x))
 	wait(NULL);
 }
 
+#if 0
 static inline void hexdump(void *p, int len)
 {
 	unsigned char *x = p;
@@ -388,6 +389,7 @@ static inline void hexdump(void *p, int len)
 
 	printf("\n");
 }
+#endif
 
 static void *xmalloc(size_t sz)
 {
@@ -414,6 +416,7 @@ static int time_diff(struct timeval *past, struct timeval *now)
 	return n - p;
 }
 
+#if 0
 static inline void timer_print(void)
 {
 	int i = 0;
@@ -444,6 +447,7 @@ static inline void timer_print(void)
 		t = t->t_next;
 	}
 }
+#endif
 
 static void timer_next(struct timeval *tv)
 {
