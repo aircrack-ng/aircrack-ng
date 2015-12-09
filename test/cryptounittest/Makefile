@@ -14,7 +14,7 @@ all:	check
 
 SRC_CRYPTO	  = $(AC_ROOT)/src/crypto.c $(AC_ROOT)/src/sha1-git.c
 
-TESTFILES        = test-encrypt-wep$(EXE) test-calc-pmk$(EXE) test-calc-mic$(EXE) test-calc-ptk$(EX) test-encrypt-ccmp$(EXE) test-decrypt-ccmp$(EXE) test-calc-4pmk$(EXE)
+TESTFILES        = test-encrypt-wep$(EXE) test-calc-pmk$(EXE) test-calc-mic$(EXE) test-calc-ptk$(EXE) test-encrypt-ccmp$(EXE) test-decrypt-ccmp$(EXE) test-calc-4pmk$(EXE)
 
 OBJS_TEST_EWEP  = test-encrypt-wep.c $(SRC_CRYPTO)
 OBJS_TEST_CPMK  = test-calc-pmk.c $(SRC_CRYPTO)
