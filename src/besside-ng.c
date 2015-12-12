@@ -423,7 +423,7 @@ static inline void timer_print(void)
 	struct timer *t = _state.s_timers.t_next;
 
 	printf(
-			#if !defined( __APPLE_CC__) && !defined(__NetBSD__)
+			#if !defined( __APPLE_CC__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
 			"\nNow %lu.%lu\n",
 			#else
 			"\nNow %lu.%d\n",
@@ -433,7 +433,7 @@ static inline void timer_print(void)
 	while (t) {
 
 		printf(
-				#if !defined( __APPLE_CC__) && !defined(__NetBSD__)
+				#if !defined( __APPLE_CC__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
 				"%d) %lu.%lu %p(%p)\n",
 				#else
 				"%d) %lu.%d %p(%p)\n",
@@ -3107,7 +3107,7 @@ static void print_state(int UNUSED(x))
 	printf("\n");
 
 	printf(
-		#if !defined( __APPLE_CC__) && !defined(__NetBSD__)
+		#if !defined( __APPLE_CC__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
 		"Now: %lu.%lu\n",
 		#else
 		"Now: %lu.%d\n",
@@ -3117,7 +3117,7 @@ static void print_state(int UNUSED(x))
 
 	while (t) {
 		printf(
-		       #if !defined( __APPLE_CC__) && !defined(__NetBSD__)
+		       #if !defined( __APPLE_CC__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
 		       "Timer: %lu.%lu %p[%s](%p)\n",
 		       #else
 		       "Timer: %lu.%d %p[%s](%p)\n",
