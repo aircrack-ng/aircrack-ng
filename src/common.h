@@ -30,6 +30,15 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#if defined (__CYGWIN32__) && !defined(__CYGWIN64__)
+int fseeko64(FILE* fp, int64_t offset, int whence);
+int64_t ftello64(FILE * fp);
+#undef fseek
+#define fseek fseeko64
+#undef ftello
+#define ftello ftello64
+#endif
+
 #if defined(__FreeBSD__) || defined(__OpenBSD__)
 #undef rand
 #define rand lrand48
