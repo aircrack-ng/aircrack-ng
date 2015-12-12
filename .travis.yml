@@ -14,4 +14,4 @@ addons:
 compiler:
   - gcc
   - clang
-script: make sqlite=true experimental=true && make check sqlite=true experimental=true && make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true && make pcre=true && make check pcre=true
+script: make sqlite=true experimental=true && make check sqlite=true experimental=true && make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true && make pcre=true && make check pcre=true && CFLAGS="-g -W -Wall -O0" make sqlite=true experimental=true && CFLAGS="-g -W -Wall -O0" make check sqlite=true experimental=true && make clean && CFLAGS="-g -W -Wall -O0" make sqlite=true experimental=true gcrypt=true && CFLAGS="-g -W -Wall -O0" make check sqlite=true experimental=true gcrypt=true && CFLAGS="-g -W -Wall -O0" make pcre=true && CFLAGS="-g -W -Wall -O0" make check pcre=true
