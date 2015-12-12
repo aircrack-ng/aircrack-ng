@@ -444,9 +444,7 @@ void eof_wait( int *eof_notified )
 	usleep( 100000 );
 }
 
-#ifdef __clang__
 int wpa_send_passphrase(char *key, struct WPA_data* data, int lock);
-#endif
 
 inline int wpa_send_passphrase(char *key, struct WPA_data* data, int lock)
 {
@@ -509,9 +507,7 @@ inline int wpa_send_passphrase(char *key, struct WPA_data* data, int lock)
 	return 1;
 }
 
-#ifdef __clang__
 int wpa_receive_passphrase(char *key, struct WPA_data* data);
-#endif
 
 inline int wpa_receive_passphrase(char *key, struct WPA_data* data)
 {
