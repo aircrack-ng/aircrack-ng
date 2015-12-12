@@ -91,7 +91,7 @@ get_interface_info() {
 	fi
 }
 
-printf "\nInterface\tDriver\t\tChipset\n"
+printf "\nInterface\tDriver\t\tChipset\n\n"
 
 for IFACE in $(ifconfig -a | grep -E '^(wlan|ath|otus|urtwn)[0-9]+' | awk -F: '{print $1}' )
 do
@@ -123,7 +123,5 @@ do
 		fi
 	fi 
 done
-
-printf "\n"
 
 exit 0
