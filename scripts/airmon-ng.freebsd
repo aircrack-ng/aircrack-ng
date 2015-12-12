@@ -63,6 +63,24 @@ get_interface_info() {
 			[ "${PRODUCT_ID}" = "0x8193" ] && CHIPSET="RTL8192DU"
 			[ "${PRODUCT_ID}" = "0x8199" ] && CHIPSET="RTL8187SU"
 			[ "${PRODUCT_ID}" = "0x8812" ] && CHIPSET="RTL8812AU"
+		elif [ "${VENDOR_ID}" = "0x06f8" ] && [ "${PRODUCT_ID}" = "0xe033" ]; then
+			CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x2001" ] && [ "${PRODUCT_ID}" = "0x3308" ]; then
+			CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x20f4" ] && [ "${PRODUCT_ID}" = "0x648b" ]; then
+			CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x7392" ] && [ "${PRODUCT_ID}" = "0x7811" ]; then
+			CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x2019" ]; then
+			[ "${PRODUCT_ID}" = "0xab2a" ] && CHIPSET="RTL8188CUS"
+			[ "${PRODUCT_ID}" = "0xed17" ] && CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x050d" ]; then
+			[ "${PRODUCT_ID}" = "0x1102" ] && CHIPSET="RTL8188CUS"
+			[ "${PRODUCT_ID}" = "0x11f2" ] && CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x0846" ]; then
+			[ "${PRODUCT_ID}" = "0x9041" ] && CHIPSET="RTL8188CUS"
+			[ "${PRODUCT_ID}" = "0x9042" ] && CHIPSET="RTL8188CUS"
+			[ "${PRODUCT_ID}" = "0x9043" ] && CHIPSET="RTL8188CUS"
 		fi
 		[ -z "${CHIPSET}" ] && CHIPSET="Report dmesg and usbconfig (dump commands) to http://trac.aircrack-ng.org" 
 	elif [ -n "${DRIVER}" ]; then
