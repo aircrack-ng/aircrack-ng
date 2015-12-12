@@ -282,8 +282,4 @@ struct WPA_data {
 
 void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod );
 
-#if defined(__clang__) || defined(__llvm__)
-extern inline int wpa_send_passphrase(char *key, struct WPA_data* data, int lock);
-#endif
-
 #endif /* _AIRCRACK_NG_H */

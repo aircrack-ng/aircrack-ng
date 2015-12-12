@@ -41,6 +41,12 @@
 
 EXTERNC unsigned int linecount(const char *file, off_t offset, size_t blksize);
 
+// wpa_*() are here because of undefined references and because linecount() is
+// the cause of them (external calls)
+
+extern inline int wpa_send_passphrase(char *key, struct WPA_data* data, int lock);
+extern inline int wpa_receive_passphrase(char *key, struct WPA_data* data);
+
 #define READBUF_BLKSIZE (1024*1024*3)
 
 #endif /* LINECOUNT_H */
