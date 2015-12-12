@@ -1923,7 +1923,8 @@ void check_inet(struct east_state *es, struct timeval *tv)
 
 	memcpy(data, "sorbo", 5);
 	seq = (unsigned short*) (data+5);
-	*seq = htons(++es->es_rpacket_id);
+	es->es_rpacket_id += 1;
+	*seq = htons(es->es_rpacket_id);
 	data += S_HELLO_LEN;
 
 	dlen = data - datas;
