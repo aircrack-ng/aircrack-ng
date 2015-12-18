@@ -130,16 +130,10 @@ REVFLAGS	?= -D_REVISION=$(REVISION)
 
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 CFLAGS          ?= -g -W -Wall -O3
-ifeq ($(OSNAME), FreeBSD)
-	CXXFLAGS	= $(CFLAGS) -fdata-sections -ffunction-sections
-endif
-ifeq ($(OSNAME), OpenBSD)
-	CXXFLAGS	= $(CFLAGS) -fdata-sections -ffunction-sections
-endif
 
 INTEL_ASM	= $(shell echo | $(CC) -fsyntax-only -masm=intel -xc - 2>/dev/null && echo Y)
 ifeq ($(INTEL_ASM), Y)
-	ASM_FLAG	= -masm=intel
+	ASMFLAG	= -masm=intel
 endif
 
 CXXFLAGS	= $(CFLAGS) $(ASMFLAG) -fdata-sections -ffunction-sections
