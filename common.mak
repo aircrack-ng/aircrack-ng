@@ -132,17 +132,17 @@ OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 CFLAGS          ?= -g -W -Wall -O3
 ifeq ($(OSNAME), FreeBSD)
 	CXXFLAGS	= $(CFLAGS) -fdata-sections -ffunction-sections
-else
+endif
 ifeq ($(OSNAME), OpenBSD)
 	CXXFLAGS	= $(CFLAGS) -fdata-sections -ffunction-sections
-else
-	INTEL_ASM	= $(shell echo | gcc -fsyntax-only -masm=intel -xc - 2>/dev/null && echo Y)
+endif
+
+INTEL_ASM	= $(shell echo | $(CC) -fsyntax-only -masm=intel -xc - 2>/dev/null && echo Y)
 ifeq ($(INTEL_ASM), Y)
 	ASM_FLAG	= -masm=intel
 endif
-	CXXFLAGS	= $(CFLAGS) $(ASMFLAG) -fdata-sections -ffunction-sections
-endif
-endif
+
+CXXFLAGS	= $(CFLAGS) $(ASMFLAG) -fdata-sections -ffunction-sections
 
 CFLAGS          += $(OPTFLAGS) $(REVFLAGS) $(COMMON_CFLAGS)
 
