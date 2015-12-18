@@ -137,7 +137,7 @@ ifeq ($(OSNAME), OpenBSD)
 	CXXFLAGS	= $(CFLAGS) -fdata-sections -ffunction-sections
 else
 	INTEL_ASM	= $(shell echo | gcc -fsyntax-only -masm=intel -xc - 2>/dev/null && echo Y)
-ifeq ($INTEL_ASM), Y)
+ifeq ($(INTEL_ASM), Y)
 	ASM_FLAG	= -masm=intel
 endif
 	CXXFLAGS	= $(CFLAGS) $(ASMFLAG) -fdata-sections -ffunction-sections
