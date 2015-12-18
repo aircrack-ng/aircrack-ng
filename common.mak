@@ -131,7 +131,7 @@ REVFLAGS	?= -D_REVISION=$(REVISION)
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 CFLAGS          ?= -g -W -Wall -O3
 
-INTEL_ASM	= $(shell echo | $(CC) -fsyntax-only -masm=intel -xc - 2>/dev/null && echo Y)
+INTEL_ASM	= $(shell echo | $(CXX) -fsyntax-only -masm=intel -xc - 2>/dev/null && echo Y)
 ifeq ($(INTEL_ASM), Y)
 	ASMFLAG	= -masm=intel
 endif
