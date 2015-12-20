@@ -400,7 +400,12 @@ void sighandler( int signum )
 	#if ((defined(__INTEL_COMPILER) || defined(__ICC)) && defined(DO_PGO_DUMP))
 	_PGOPTI_Prof_Dump();
 	#endif
-	signal( signum, sighandler );
+#if !defined(__CYGWIN__)
+        // We can't call this on cygwin or we will sometimes end up
+        // having all our threads die with exit code 35584 fairly reproducable
+        // at around 2.5-3% of runs
+        signal( signum, sighandler );
+#endif
 
 	if( signum == SIGQUIT )
 		clean_exit( SUCCESS );
