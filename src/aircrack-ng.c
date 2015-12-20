@@ -5468,6 +5468,8 @@ int main( int argc, char *argv[] )
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
 				}
+
+				opt.do_ptw = 0;
 				break;
 
 			case 'r' :
