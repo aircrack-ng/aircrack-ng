@@ -157,6 +157,7 @@ typedef struct
 }
 read_buf;
 
+read_buf rb;
 
 int K_COEFF[N_ATTACKS] =
 {
@@ -291,6 +292,27 @@ void clean_exit(int ret)
 			}
 		}
 
+	}
+
+	if (opt.totaldicts) {
+		for (i = 0; i < opt.totaldicts; i++) {
+			if (opt.dicts[i] != NULL) {
+				free(opt.dicts[i]);
+				opt.dicts[i] = NULL;
+			}
+		}
+	}
+
+	if (rb.buf1 != NULL)
+	{
+		free(rb.buf1);
+		rb.buf1=NULL;
+	}
+
+	if (rb.buf2 != NULL)
+	{
+		free(rb.buf2);
+		rb.buf2=NULL;
 	}
 
 	if (buffer != NULL) {
@@ -803,7 +825,6 @@ void read_thread( void *arg )
 	int fd, n, fmt;
 	unsigned z;
 	int eof_notified = 0;
-	read_buf rb;
 // 	int ret=0;
 
 	unsigned char bssid[6];
