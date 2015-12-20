@@ -6100,6 +6100,12 @@ __start:
 
 			for( i = 0; i < opt.nbcpu; i++ )
 			{
+				if (ap_cur->ivbuf_size) {
+					free(ap_cur->ivbuf);
+					ap_cur->ivbuf		= NULL;
+					ap_cur->ivbuf_size	= 0;
+				}
+
 				/* start one thread per cpu */
 				wpa_data[i].ap = ap_cur;
 				wpa_data[i].thread = i;
