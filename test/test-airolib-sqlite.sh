@@ -9,7 +9,7 @@
 set -e
 set -o pipefail
 TESTDIR="$(dirname $0)"
-tmpfile="$(mktemp -u)"
+tmpfile="$(mktemp -d -t acng.XXXX)"
 # Clean on exit
 trap "rm -f "${tmpfile}"" SIGINT SIGKILL SIGQUIT SIGSEGV SIGPIPE SIGALRM SIGTERM EXIT
 echo Harkonen | ./airolib-ng "${tmpfile}" --import essid -

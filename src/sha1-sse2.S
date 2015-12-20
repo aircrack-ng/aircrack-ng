@@ -523,10 +523,17 @@ cpuid_exit:
 		ret
 #ifdef __i386__
 #ifdef __PIC__
+#ifndef __APPLE__
 	.section .gnu.linkonce.t.__i686.get_pc_thunk.bx,"ax",@progbits
+#endif
 .globl __i686.get_pc_thunk.bx
+
+#ifdef __APPLE__
+    .private_extern  __i686.get_pc_thunk.bx
+#else
 	.hidden  __i686.get_pc_thunk.bx
 	.type    __i686.get_pc_thunk.bx,@function
+#endif
 __i686.get_pc_thunk.bx:
 	movl (%esp), %ebx
 	ret

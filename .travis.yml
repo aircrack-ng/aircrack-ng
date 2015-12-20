@@ -1,5 +1,14 @@
+os:
+    - linux
+    - osx
+
 language: c
+
 sudo: false
+
+before_install:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install libgcrypt sqlite3); fi
+
 addons:
   apt:
     packages:
@@ -11,7 +20,16 @@ addons:
     - libssl-dev
     - libnl-genl-3-dev
     - libpcre3-dev
+
 compiler:
   - gcc
   - clang
-script: make sqlite=true experimental=true && make check sqlite=true experimental=true && make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true && make pcre=true && make check pcre=true && CFLAGS="-g -W -Wall -O0" make sqlite=true experimental=true && CFLAGS="-g -W -Wall -O0" make check sqlite=true experimental=true && make clean && CFLAGS="-g -W -Wall -O0" make sqlite=true experimental=true gcrypt=true && CFLAGS="-g -W -Wall -O0" make check sqlite=true experimental=true gcrypt=true && CFLAGS="-g -W -Wall -O0" make pcre=true && CFLAGS="-g -W -Wall -O0" make check pcre=true
+
+script:
+    - make sqlite=true experimental=true && make check sqlite=true experimental=true && make clean
+    - make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
+    - make pcre=true && make check pcre=true
+    - export CFLAGS="-g -W -Wall -O0"
+    - make sqlite=true experimental=true && make check sqlite=true experimental=true && make clean
+    - make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
+    - make pcre=true && make check pcre=true
