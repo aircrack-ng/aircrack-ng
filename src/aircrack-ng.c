@@ -157,7 +157,7 @@ typedef struct
 }
 read_buf;
 
-read_buf rb;
+read_buf rb, crb;
 
 int K_COEFF[N_ATTACKS] =
 {
@@ -257,6 +257,7 @@ void clean_exit(int ret)
 	struct AP_info *ap_cur;
 	struct AP_info *ap_prv;
 	struct AP_info *ap_next;
+	struct ST_info *st_tmp;
 	int i=0;
 // 	int j=0, k=0, attack=0;
 	int child_pid;
@@ -315,6 +316,18 @@ void clean_exit(int ret)
 		rb.buf2=NULL;
 	}
 
+	if (crb.buf1 != NULL)
+	{
+		free(crb.buf1);
+		crb.buf1=NULL;
+	}
+
+	if (crb.buf2 != NULL)
+	{
+		free(crb.buf2);
+		crb.buf2=NULL;
+	}
+
 	if (buffer != NULL) {
 		free(buffer);
 		buffer = NULL;
@@ -337,12 +350,16 @@ void clean_exit(int ret)
 			ap_cur->ivbuf = NULL;
 		}
 
-		if (ap_cur->st_1st != NULL) {
-			free(ap_cur->st_1st);
-			ap_cur->st_1st = NULL;
+
+		while (ap_cur->st_1st != NULL) {
+			st_tmp = ap_cur->st_1st;
+			ap_cur->st_1st = ap_cur->st_1st->next;
+			free(st_tmp);
+			st_tmp = NULL;
 		}
 
 		uniqueiv_wipe( ap_cur->uiv_root );
+		ap_cur->uiv_root = NULL;
 
 		if( ap_cur->ptw_clean != NULL )
 		{
@@ -1779,7 +1796,6 @@ void check_thread( void *arg )
 {
 	int fd, n, fmt;
 	unsigned z;
-	read_buf rb;
 // 	int ret=0;
 
 	unsigned char bssid[6];
@@ -1797,7 +1813,7 @@ void check_thread( void *arg )
 	struct AP_info *ap_prv, *ap_cur;
 	struct ST_info *st_prv, *st_cur;
 
-	memset( &rb, 0, sizeof( rb ) );
+	memset( &crb, 0, sizeof( crb ) );
 	ap_cur = NULL;
 
 	if( ( buffer = (unsigned char *) malloc( 65536 ) ) == NULL )
@@ -1824,7 +1840,7 @@ void check_thread( void *arg )
 		}
 	}
 
-	if( ! atomic_read( &rb, fd, 4, &pfh ) )
+	if( ! atomic_read( &crb, fd, 4, &pfh ) )
 	{
 		perror( "read(file header) failed" );
 		goto read_fail;
@@ -1847,7 +1863,7 @@ void check_thread( void *arg )
 
 		/* read the rest of the pcap file header */
 
-		if( ! atomic_read( &rb, fd, 20, (unsigned char *) &pfh + 4 ) )
+		if( ! atomic_read( &crb, fd, 20, (unsigned char *) &pfh + 4 ) )
 		{
 			perror( "read(file header) failed" );
 			goto read_fail;
@@ -1877,7 +1893,7 @@ void check_thread( void *arg )
 		{
 			fmt = FORMAT_IVS2;
 
-			if( ! atomic_read( &rb, fd, sizeof(struct ivs2_filehdr), (unsigned char *) &fivs2 ) )
+			if( ! atomic_read( &crb, fd, sizeof(struct ivs2_filehdr), (unsigned char *) &fivs2 ) )
 			{
 				perror( "read(file header) failed" );
 				goto read_fail;
@@ -1907,7 +1923,7 @@ void check_thread( void *arg )
 		{
 			/* read one IV */
 
-			while( ! atomic_read( &rb, fd, 1, buffer ) )
+			while( ! atomic_read( &crb, fd, 1, buffer ) )
 				goto read_fail;
 
 			if( buffer[0] != 0xFF )
@@ -1916,31 +1932,31 @@ void check_thread( void *arg )
 
 				bssid[0] = buffer[0];
 
-				while( ! atomic_read( &rb, fd, 5, bssid + 1 ) )
+				while( ! atomic_read( &crb, fd, 5, bssid + 1 ) )
 					goto read_fail;
 			}
 
-			while( ! atomic_read( &rb, fd, 5, buffer ) )
+			while( ! atomic_read( &crb, fd, 5, buffer ) )
 				goto read_fail;
 		}
 		else if( fmt == FORMAT_IVS2 )
 		{
-			while( ! atomic_read( &rb, fd, sizeof( struct ivs2_pkthdr ), &ivs2 ) )
+			while( ! atomic_read( &crb, fd, sizeof( struct ivs2_pkthdr ), &ivs2 ) )
 				goto read_fail;
 
 			if(ivs2.flags & IVS2_BSSID)
 			{
-				while( ! atomic_read( &rb, fd, 6, bssid ) )
+				while( ! atomic_read( &crb, fd, 6, bssid ) )
 					goto read_fail;
 				ivs2.len -= 6;
 			}
 
-			while( ! atomic_read( &rb, fd, ivs2.len, buffer ) )
+			while( ! atomic_read( &crb, fd, ivs2.len, buffer ) )
 				goto read_fail;
 		}
 		else
 		{
-			while( ! atomic_read( &rb, fd, sizeof( pkh ), &pkh ) )
+			while( ! atomic_read( &crb, fd, sizeof( pkh ), &pkh ) )
 				goto read_fail;
 
 			if( pfh.magic == TCPDUMP_CIGAM ) {
@@ -1955,7 +1971,7 @@ void check_thread( void *arg )
 				goto read_fail;
 			}
 
-			while( ! atomic_read( &rb, fd, pkh.caplen, buffer ) )
+			while( ! atomic_read( &crb, fd, pkh.caplen, buffer ) )
 				goto read_fail;
 
 			h80211 = buffer;
@@ -2549,15 +2565,15 @@ void check_thread( void *arg )
 
 	read_fail:
 
-	if(rb.buf1 != NULL)
+	if(crb.buf1 != NULL)
 	{
-		free(rb.buf1);
-		rb.buf1 = NULL;
+		free(crb.buf1);
+		crb.buf1 = NULL;
 	}
-	if(rb.buf2 != NULL)
+	if(crb.buf2 != NULL)
 	{
-		free(rb.buf2);
-		rb.buf2 = NULL;
+		free(crb.buf2);
+		crb.buf2 = NULL;
 	}
 	if(buffer != NULL)
 	{
