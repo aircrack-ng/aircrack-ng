@@ -202,6 +202,7 @@ void uniqueiv_wipe( unsigned char **uiv_root )
     }
 
     free( uiv_root );
+    uiv_root = NULL;
 
     return;
 }
