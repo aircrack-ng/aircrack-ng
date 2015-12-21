@@ -28,7 +28,7 @@ to speed up the cracking process.
  * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
           See Makefile flags below.
  * pkg-config (pkgconf on FreeBSD)
- * FreeBSD: gmake
+ * FreeBSD, OpenBSD, NetBSD and Solaris: gmake
 
 ## Compiling
 
@@ -36,9 +36,9 @@ to speed up the cracking process.
 
     `make`
 
- * Compilation on FreeBSD:
+ * Compilation on *BSD or Solaris:
  
-    `gmake CC=cc`
+    `gmake`
 
  * Strip debugging symbols:
 
@@ -106,6 +106,11 @@ to compile and install the suite:
   * Installing, with external scripts:
 
     `make sqlite=true experimental=true ext_scripts=true`
+
+  * Testing (with sqlite, experimental and pcre)
+
+    `make sqlite=true experimental=true pcre=true check`
+  
 
 # Using precompiled binaries
 

@@ -18,7 +18,7 @@
  * Compilation:
     make
 
- * Compilation on FreeBSD or Solaris:
+ * Compilation on *BSD or Solaris:
     gmake
 
  * Strip debugging symbols:
@@ -81,6 +81,9 @@ Example:
 
   * Installing, with external scripts:
     make sqlite=true pcre=true experimental=true ext_scripts=true
+
+  * Testing (with sqlite, experimental and pcre)
+    make sqlite=true experimental=true pcre=true check
 
 === Using precompiled binaries ===
 
