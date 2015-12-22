@@ -29,6 +29,8 @@ to speed up the cracking process.
           See Makefile flags below.
  * pkg-config (pkgconf on FreeBSD)
  * FreeBSD, OpenBSD, NetBSD and Solaris: gmake
+ * Mac OS X with Xcode 7+: make xcode=true
+ * Mac OS X with macports: gmake macport=true
 
 ## Compiling
 

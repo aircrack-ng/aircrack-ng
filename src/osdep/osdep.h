@@ -40,6 +40,22 @@
 #include "byteorder.h"
 #include "packed.h"
 
+#if defined(__APPLE_CC__) && defined(_XCODE)
+#include <pcap/bpf.h>
+#undef	LINKTYPE_RADIOTAP_HDR
+#define LINKTYPE_RADIOTAP_HDR   DLT_IEEE802_11_RADIO
+#undef	LINKTYPE_IEEE802_11
+#define LINKTYPE_IEEE802_11     DLT_IEEE802_11
+#undef	LINKTYPE_PRISM_HEADER
+#define LINKTYPE_PRISM_HEADER   DLT_PRISM_HEADER
+#undef	LINKTYPE_ETHERNET
+#define LINKTYPE_ETHERNET       DLT_ERF_ETH
+#undef	LINKTYPE_PPI_HDR
+#define LINKTYPE_PPI_HDR        DLT_PPI
+#undef	TCPDUMP_MAGIC
+#define TCPDUMP_MAGIC           0xa1b2c3d4
+#endif
+
 /* For all structures, when adding new fields, always append them to the end.
  * This way legacy binary code does not need to be recompiled.  This is
  * particularly useful for DLLs.  -sorbo
