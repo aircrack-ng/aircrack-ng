@@ -19,6 +19,10 @@
 	#include "../byteorder.h"
 #endif
 
+#ifdef __mips__
+#include <byteswap.h>
+#endif
+
 #ifdef _BSD_SOURCE
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__DragonFly__) && !defined(__NetBSD__)
@@ -26,6 +30,9 @@
 #define le32toh(x) (x)
 #endif
 #else
+#ifdef __mips__
+#define le16toh(x) (x)
+#endif
 #define le32toh(x) bswap_32 (x)
 #endif
 #endif

@@ -29,6 +29,8 @@ to speed up the cracking process.
           See Makefile flags below.
  * pkg-config (pkgconf on FreeBSD)
  * FreeBSD, OpenBSD, NetBSD and Solaris: gmake
+ * For best performance on FreeBSD (50-70% more), please install gcc5 via: pkg install gcc5
+	  Then compile with: gmake CC=gcc5 CXX=g++5
  * Mac OS X with Xcode 7+: make xcode=true
  * Mac OS X with macports: gmake macport=true
 

@@ -44,13 +44,39 @@ ifeq ($(subst TRUE,true,$(filter TRUE true,$(experimental) $(EXPERIMENTAL))),tru
 	BINFILES	+= buddy-ng$(EXE)
 endif
 
+SRC_SSE_COMMON	= memory.c wpapsk.c
+OBJS_SSE_COMMON = memory.o wpapsk.o
+OBJ_MEMORY	= memory.o
+SRC_SSE_CORE	= sse-intrinsics.c
+OBJ_SSE_CORE	= sse-intrinsics.o
+SRC_SIMD_CORE	= simd-intrinsics.c
+OBJ_SIMD_CORE	= simd-intrinsics.o
+SIMDOUT		= wpapsk-simd.o
+
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(multibin) $(MULTIBIN))),true)
+SSESIMD_BIN	= wpapsk-simd.o wpapsk-sse.o aircrack-ng-core.o aircrack-ng-simd$(EXE) aircrack-ng-sse$(EXE)
+CFLAGS		+= -DOLD_SSE_CORE
+else
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(newsse) $(NEWSSE))),true)
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(simdcore) $(SIMDCORE))),true)
+CFLAGS		+= -DSIMD_CORE
+SSEC_INT	= simd-intrinsics.c $(SRC_SSE_COMMON)
+SSEO_INT	= simd-intrinsics.o $(OBJS_SSE_COMMON)
+else
+SSEC_INT	= sse-intrinsics.c $(SRC_SSE_COMMON)
+SSEO_INT	= sse-intrinsics.o $(OBJS_SSE_COMMON)
+endif
+endif
+endif
+
 SRC_LINECOUNT	= linecount.o
 LIBLINECOUNT	= liblinecount.a
 
 SRC_PTW		= aircrack-ptw-lib.c
-SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
+SRC_AC		= aircrack-ng.c crypto.c common.c $(SSEC_INT) $(SRC_PTW)
 OBJS_PTW	= aircrack-ptw-lib.o
-OBJS_AC		= aircrack-ng.o crypto.o common.o uniqueiv.o $(OBJS_PTW) $(LIBLINECOUNT)
+OBJS_AC		= aircrack-ng.o cpuid.o crypto.o common.o $(SSEO_INT) uniqueiv.o $(OBJS_PTW) $(LIBLINECOUNT)
+OBJS_AC_MULTI	= crypto.o common.o uniqueiv.o $(OBJS_PTW)
 ASM_AC		= sha1-sse2.S
 
 OBJS_AD		= airdecap-ng.o crypto.o common.o
@@ -111,9 +137,14 @@ else
 	LIBSQL		=
 endif
 
-all: userland $(SBINFILES)
+all: config userland $(SBINFILES) $(SSESIMD_BIN)
 
 userland: $(BINFILES)
+
+config: $(AC_ROOT)/common.cfg
+
+$(AC_ROOT)/common.cfg:
+	sh $(AC_ROOT)/autocfg $(CC) $(AC_ROOT)
 
 $(LIBLINECOUNT): $(SRC_LINECOUNT)
 	$(AR) cru $(LIBLINECOUNT) $(SRC_LINECOUNT)
@@ -140,6 +171,23 @@ aircrack-ng-opt-prof_use: $(SRC_AC)
 
 aircrack-ng$(EXE): $(OBJS_AC)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AC) $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL) $(LIBSTDCXX)
+
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(multibin) $(MULTIBIN))),true)
+wpapsk-simd.o: wpapsk.c
+	$(CC) $(filter-out -DOLD_SSE_CORE,$(CFLAGS)) -DSIMD_CORE -c -o $(@) wpapsk.c
+
+aircrack-ng-core.o: aircrack-ng.c
+	$(CC) $(filter-out -DOLD_SSE_CORE,$(CFLAGS)) -c -o $(@) aircrack-ng.c
+
+wpapsk-sse.o: wpapsk.c
+	$(CC) $(filter-out -DOLD_SSE_CORE,$(CFLAGS)) -c -o $(@) wpapsk.c
+
+aircrack-ng-simd$(EXE): $(OBJS_AC_MULTI) wpapsk-simd.o $(OBJ_MEMORY) $(OBJ_SIMD_CORE)
+	$(CC) $(filter-out -DOLD_SSE_CORE,$(CFLAGS)) $(LDFLAGS) $(OBJS_AC_MULTI) $(OBJ_MEMORY) $(OBJ_SIMD_CORE) aircrack-ng-core.o wpapsk-simd.o $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL) $(LIBSTDCXX) $(LIBLINECOUNT)
+
+aircrack-ng-sse$(EXE): $(OBJS_AC_MULTI) wpapsk-sse.o $(OBJ_MEMORY) $(OBJ_SSE_CORE)
+	$(CC) $(filter-out -DOLD_SSE_CORE,$(CFLAGS)) $(LDFLAGS) $(OBJS_AC_MULTI) $(OBJ_MEMORY) $(OBJ_SSE_CORE) aircrack-ng-core.o wpapsk-sse.o $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL) $(LIBSTDCXX) $(LIBLINECOUNT)
+endif
 
 airdecap-ng$(EXE): $(OBJS_AD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AD) -o $(@) $(LIBSSL)
@@ -203,7 +251,7 @@ strip: $(BINFILES) $(SBINFILES)
 
 clean:
 	$(MAKE) -C $(OSD) clean
-	-rm -f $(SBINFILES) $(BINFILES) $(OPTFILES) airolib-ng$(EXE) *.o wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE) buddy-ng$(EXE) besside-ng$(EXE) a.out $(LIBLINECOUNT)
+	-rm -f $(SBINFILES) $(BINFILES) $(OPTFILES) airolib-ng$(EXE) *.o wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE) buddy-ng$(EXE) besside-ng$(EXE) a.out $(LIBLINECOUNT) $(SSESIMD_BIN)
 
 distclean: clean
 

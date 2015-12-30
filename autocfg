@@ -1,0 +1,166 @@
+#!/bin/sh
+#
+# aircrack-ng build config generation script by Len White <lwhite@nrw.ca>
+#
+# The purpose of this is to generate a file to be included by common.mak that defines
+# compile time configuration, granting us more flexibility in tests and speeding build process
+# by not running the tests every time we compile a single file.
+#
+# NOTES: * common.cfg is automatically regenerated on make clean
+#        * common.cfg is NOT required to build aircrack, but is required for autoconfiguration of the new crypto cores.
+#
+
+CC=$1
+IS_X86=0
+IS_ARM=0
+IS_CROSS=0
+SIMDSIZE=0
+SIMDFLAG=""
+
+if [ ! $1 ]; then
+	echo "Usage: $0 <compiler> [cfgpath]"
+	exit 127
+fi
+
+if [ ! $2 ]; then
+	CURDIR=$(pwd)
+else
+	CURDIR=$2
+fi
+
+CFGFILE="${CURDIR}/common.cfg"
+
+clean_exit () {
+	if [ -n "$tmpdir" ]; then
+		if [ -d "${tmpdir}" ]; then
+			rm -rf "${tmpdir}"
+		fi
+	fi
+}
+
+trap clean_exit SIGINT SIGKILL SIGQUIT SIGSEGV SIGPIPE SIGALRM SIGTERM EXIT
+
+# $1 flag $2 variable
+test_compile_flag () {
+	FLAGTEST=$(echo | $CC -fsyntax-only ${1} -xc -Werror - 2>/dev/null && echo Y)
+
+	if [ "$FLAGTEST" = "Y" ]; then
+		echo "${2}=${FLAGTEST}" >> $CFGFILE
+	fi
+}
+
+cpuid_test () {
+	tmpdir="$(mktemp -d -t acng.XXXX)"
+
+cat >${tmpdir}/cpuidtest.c <<EOF
+#include <cpuid.h>
+#include <stdio.h>
+int main() {
+	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
+	unsigned int max_level = __get_cpuid_max(0, NULL);
+
+	if (max_level >= 7) {
+		__cpuid_count(7, 0, eax, ebx, ecx, edx);
+
+		if (ebx & (1 << 5)) // AVX2
+			return 16;
+	}
+
+	__cpuid(1, eax, ebx, ecx, edx);
+
+	if (ecx & (1 << 28)) // AVX1
+		return 8;
+
+	if (edx & (1 << 26)) // SSE2
+		return 4;
+
+	return 1;
+}
+EOF
+
+	$($CC -o ${tmpdir}/cpuidtest ${tmpdir}/cpuidtest.c 2>/dev/null)
+
+	if [ -x "${tmpdir}/cpuidtest" ]; then
+		${tmpdir}/cpuidtest
+
+		SIMDSIZE=$?
+	fi
+
+	if [ $SIMDSIZE -gt 0 ]; then
+		case $SIMDSIZE in
+			16)
+				SIMDTYPE="AVX2"
+			;;
+			8)
+				SIMDTYPE="AVX"
+			;;
+			4)
+				SIMDTYPE="SSE2"
+			;;
+			1)
+				SIMDTYPE="MMX"
+			;;
+		esac
+	fi
+}
+
+case "$CC" in
+	mips-* | arm-*)
+		IS_CROSS=1
+		IS_X86=0
+	;;
+	*);;
+esac
+
+UARCH=$(uname -m)
+
+case "$UARCH" in
+	x86_64 | amd64 | i*86*)
+		IS_X86=1
+	;;
+	*arm*)
+		IS_ARM=1
+	;;
+	*)
+	;;
+esac
+
+if [ $IS_X86 = 1 ]; then
+	cpuid_test
+
+	if [ $SIMDSIZE -gt 0 ]; then
+		if [ $SIMDSIZE = 16 ]; then
+			echo "AVX2FLAG=Y" > $CFGFILE
+			echo "SIMDCORE=true" >> $CFGFILE
+		elif [ $SIMDSIZE = 8 ]; then
+			echo "AVX1FLAG=Y" > $CFGFILE
+			echo "SIMDCORE=true" >> $CFGFILE
+		elif [ $SIMDSIZE = 4 ]; then
+			echo "SSEFLAG=Y" > $CFGFILE
+		fi
+	fi
+elif [ $IS_ARM = 1 ]; then
+	if [ -f "/proc/cpuinfo" ]; then
+		NEON_FLAG=$(grep -c neon /proc/cpuinfo)
+
+		if [ $NEON_FLAG -eq 1 ]; then
+			test_compile_flag -mfpu=neon HAS_NEON
+		else
+			IS_CROSS=1
+		fi
+	else
+		IS_CROSS=1
+	fi
+fi
+
+test_compile_flag -pthread PTHREAD
+test_compile_flag -masm=intel INTEL_ASM
+
+if [ $IS_CROSS -eq 1 ]; then
+	echo "NEWSSE=false" >>$CFGFILE
+fi
+
+# If we fall thru all the tests and still haven't created a config, create an empty one.
+if [ ! -f "$CFGFILE" ]; then
+	echo >$CFGFILE
+fi

@@ -66,6 +66,7 @@ doc:
 
 clean:
 	-rm -rf $(COVERITY_DIR)
+	-rm -f common.cfg
 	$(MAKE) -C src $(@)
 	$(MAKE) -C test/cryptounittest $(@)
 	$(MAKE) -C test $(@)

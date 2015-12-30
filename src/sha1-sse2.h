@@ -41,6 +41,7 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 
+#ifdef OLD_SSE_CORE
 void show_result(char* key, unsigned char* pmk)
 {
 	int i;
@@ -50,7 +51,7 @@ void show_result(char* key, unsigned char* pmk)
 	printf("\n");
 }
 
-
+#endif
 extern int shasse2_init( unsigned char ctx[80] )
     __attribute__((regparm(1)));
 
@@ -62,7 +63,7 @@ extern int shasse2_data( unsigned char ctx[80], unsigned char data[256], unsigne
 
 extern int shasse2_cpuid( void );
 
-
+#ifdef OLD_SSE_CORE
 void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid, unsigned char* _pmk1, unsigned char* _pmk2, unsigned char* _pmk3, unsigned char* _pmk4)
 {
 	int slen;
@@ -268,8 +269,9 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 	fflush(stdout);*/
 
 }
+#endif
 #else
-
+#ifdef OLD_SSE_CORE
 void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid, unsigned char* _pmk1, unsigned char* _pmk2, unsigned char* _pmk3, unsigned char* _pmk4)
 {
 	calc_pmk(_key1, _essid, _pmk1);
@@ -277,5 +279,5 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 	calc_pmk(_key3, _essid, _pmk3);
 	calc_pmk(_key4, _essid, _pmk4);
 }
-
+#endif
 #endif

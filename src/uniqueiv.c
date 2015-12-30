@@ -193,11 +193,14 @@ void uniqueiv_wipe( unsigned char **uiv_root )
             {
                 uiv_lvl2 = (unsigned char *) uiv_lvl1[j];
 
-                if( uiv_lvl2 != NULL )
+                if( uiv_lvl2 != NULL ) {
                     free( uiv_lvl2 );
+		    uiv_lvl2 = NULL;
+                }
             }
 
             free( uiv_lvl1 );
+	    uiv_lvl1 = NULL;
         }
     }
 

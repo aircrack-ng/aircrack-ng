@@ -71,6 +71,7 @@
 #include "common.h"
 #include "wkp-frame.h"
 #include "linecount.h"
+#include "wpapsk.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -83,8 +84,6 @@ sqlite3 *db;
 		GCRY_THREAD_OPTION_PTHREAD_IMPL;
 	#endif
 #endif
-
-extern int get_nb_cpus();
 
 static unsigned char ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -283,17 +282,16 @@ void clean_exit(int ret)
             #endif
         }
 
-	if( opt.amode != 2 )
-	{
-		for(i=0; i<id; i++)
-		{
-			if(pthread_join(tid[i], NULL) != 0)
-			{
+	for (i = 0; i < id; i++) {
+		if (pthread_join(tid[i], NULL) != 0) {
 //	 			printf("Can't join thread %d\n", i);
-			}
 		}
-
 	}
+
+#ifndef OLD_SSE_CORE
+	for (i = 0; i < MAX_THREADS; i++)
+		free_ssecore(i);
+#endif
 
 	if (opt.totaldicts) {
 		for (i = 0; i < opt.totaldicts; i++) {
@@ -391,10 +389,13 @@ void clean_exit(int ret)
 
 	while( ap_cur != NULL )
 	{
-		ap_next = ap_cur->next;
-		free(ap_cur);
-		ap_cur = ap_next;
+		ap_next = ap_cur;
+		ap_cur = ap_cur->next;
+		free(ap_next);
+		ap_next = NULL;
 	}
+
+	ap_prv = NULL;
 
 // 	attack = A_s5_1;
 // 	printf("Please wait for evaluation...\n");
@@ -4040,30 +4041,40 @@ int crack_wpa_thread( void *arg )
 {
 	FILE * keyFile;
 	char  essid[36];
-	char  key[4][128];
-	unsigned char pmk[4][128];
+	char  key[8][128];
+	unsigned char pmk[8][128];
 
 	unsigned char pke[100];
-	unsigned char ptk[4][80];
-	unsigned char mic[4][20];
+	unsigned char ptk[8][80];
+	unsigned char mic[8][20];
 
 	struct WPA_data* data;
 	struct AP_info* ap;
 	int thread;
+	int threadid=0;
 	int ret=0;
 	int i, j, len, slen;
-	int nparallel = 1;
+//	int nparallel = 1;
 
 #if defined(__i386__) || defined(__x86_64__)
-	// Check for SSE2, with SSE2 the algorithm works with 4 keys
-	if (shasse2_cpuid()>=2)
-		nparallel = 4;
+	// Set SIMD size to match what we can support, 1/4/8 (MMX/SSE2/AVX2)
+	cpuinfo.simdsize = cpuid_simdsize(0);
+
+//	if (shasse2_cpuid()>=2)
+//		nparallel = 4;
+#else
+	cpuinfo.simdsize = 1;
 #endif
 
 	data = (struct WPA_data*)arg;
 	ap = data->ap;
 	thread = data->thread;
+	threadid = data->threadid;
 	strncpy(essid, ap->essid, 36);
+
+#ifndef OLD_SSE_CORE
+	init_ssecore(threadid);
+#endif
 
 	/* pre-compute the key expansion buffer */
 	memcpy( pke, "Pairwise key expansion", 23 );
@@ -4086,14 +4097,22 @@ int crack_wpa_thread( void *arg )
 
 	slen = strlen(essid) + 4;
 
+#ifndef OLD_SSE_CORE
+	init_atoi();
+#endif
+
 	while( 1 )
 	{
-		if (close_aircrack)
+		if (close_aircrack) {
+#ifndef OLD_SSE_CORE
+			free_ssecore(threadid);
+#endif
 			pthread_exit(&ret);
+		}
 
 		/* receive passphrases */
 
-		for(j=0; j<nparallel; ++j)
+		for(j=0; j < cpuinfo.simdsize; ++j)
 		{
 			key[j][0]=0;
 
@@ -4114,15 +4133,29 @@ int crack_wpa_thread( void *arg )
 			key[j][127]=0;
 		}
 
-
 		// PMK calculation
-		if (nparallel==4)
+		if (cpuinfo.simdsize >= 4) {
+#ifndef OLD_SSE_CORE
+			init_wpapsk(key, essid, threadid);
+//			init_wpapsk(key[0], key[1], key[2], key[3], essid, threadid);
+			memcpy(pmk[0], xpmk1[threadid], 32);
+			memcpy(pmk[1], xpmk2[threadid], 32);
+			memcpy(pmk[2], xpmk3[threadid], 32);
+			memcpy(pmk[3], xpmk4[threadid], 32);
+			if (cpuinfo.simdsize == 8) {
+				memcpy(pmk[4], xpmk5[threadid], 32);
+				memcpy(pmk[5], xpmk6[threadid], 32);
+				memcpy(pmk[6], xpmk7[threadid], 32);
+				memcpy(pmk[7], xpmk8[threadid], 32);
+			}
+#else
 			calc_4pmk(key[0], key[1], key[2], key[3], essid, pmk[0], pmk[1], pmk[2], pmk[3]);
-		else
-			for(j=0; j<nparallel; ++j)
+#endif
+		} else
+			for(j=0; j < cpuinfo.simdsize; ++j)
 				calc_pmk( key[j], essid, pmk[j] );
 
-		for(j=0; j<nparallel; ++j)
+		for(j=0; j < cpuinfo.simdsize; ++j)
 		{
 			/* compute the pairwise transient key and the frame MIC */
 
@@ -4168,12 +4201,18 @@ int crack_wpa_thread( void *arg )
 					}
 				}
 
-				if (opt.is_quiet)
+				if (opt.is_quiet) {
+#ifndef OLD_SSE_CORE
+					ret = SUCCESS;
+					goto crack_wpa_cleanup;
+#else
 					return SUCCESS;
+#endif
+				}
 
 				pthread_mutex_lock(&mx_nb);
 
-				for (i = 0; i < nparallel; i++)
+				for (i = 0; i < cpuinfo.simdsize; i++)
 					if (key[i][0] != 0) {
 						nb_tried++;
 						nb_kprev++;
@@ -4195,13 +4234,18 @@ int crack_wpa_thread( void *arg )
 				if (opt.l33t)
 					printf( "\33[32;22m" );
 
+#ifndef OLD_SSE_CORE
+				ret = SUCCESS;
+				goto crack_wpa_cleanup;
+#else
 				return SUCCESS;
+#endif
 			}
 		}
 
 		pthread_mutex_lock(&mx_nb);
 
-		for (i = 0; i < nparallel; i++)
+		for (i = 0; i < cpuinfo.simdsize; i++)
 			if (key[i][0] != 0) {
 				nb_tried++;
 				nb_kprev++;
@@ -4218,6 +4262,12 @@ int crack_wpa_thread( void *arg )
 			show_wpa_stats(key[0], len, pmk[0], ptk[0], mic[0], 0);
 		}
 	}
+
+#ifndef OLD_SSE_CORE
+	crack_wpa_cleanup:
+	free_ssecore(threadid);
+	return ret;
+#endif
 }
 
 /**
@@ -5190,18 +5240,11 @@ int main( int argc, char *argv[] )
 				return( 1 );
 
 			case 'u' :
-				printf("Nb CPU detected: %d ", cpu_count);
 #if defined(__i386__) || defined(__x86_64__)
-				unused = shasse2_cpuid();
-
-				if (unused == 1) {
-					printf(" (MMX available)");
-				}
-				if (unused >= 2) {
-					printf(" (SSE2 available)");
-				}
+				cpuid_getinfo();
+#else
+				printf("Nb CPU detected: %d\n", cpu_count);
 #endif
-				printf("\n");
 				return( 0 );
 
 			case 'V' :
@@ -5340,6 +5383,8 @@ int main( int argc, char *argv[] )
 					buf[0] = s[0];
 					buf[1] = s[1];
 				}
+
+				opt.do_ptw = 0;
 				break;
 
 
@@ -6143,9 +6188,14 @@ __start:
 					ap_cur->ivbuf_size	= 0;
 				}
 
+				uniqueiv_wipe( ap_cur->uiv_root );
+				ap_cur->uiv_root = NULL;
+				ap_cur->nb_ivs = 0;
+
 				/* start one thread per cpu */
 				wpa_data[i].ap = ap_cur;
 				wpa_data[i].thread = i;
+				wpa_data[i].threadid = id;
 				wpa_data[i].nkeys = 17;
 				wpa_data[i].key_buffer = (char*) malloc(wpa_data[i].nkeys * 128);
 				wpa_data[i].front = 0;
@@ -6192,7 +6242,7 @@ __start:
 				if( opt.is_quiet )
 				{
 					printf( "KEY FOUND! [ %s ]\n", wpa_data[i].key );
-					return( SUCCESS );
+					clean_exit( SUCCESS );
 				}
 
 				if( opt.l33t )
@@ -6204,12 +6254,12 @@ __start:
 				if( opt.l33t )
 					printf( "\33[32;22m" );
 
-				return( SUCCESS );
+				clean_exit( SUCCESS );
 			} else {
 				printf("%sPassphrase not in dictionary\n", (opt.is_quiet?"":"\n"));
 
 				if (opt.is_quiet)
-					return( FAILURE );
+					clean_exit( FAILURE );
 
 				if (opt.stdin_dict)
 					printf("\33[5;30H %lld",nb_tried);

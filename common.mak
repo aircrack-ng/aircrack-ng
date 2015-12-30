@@ -1,5 +1,13 @@
 PKG_CONFIG ?= pkg-config
 
+NEWSSE		= true
+# Newer version of the core can be enabled via SIMDCORE
+# but should be automatically flipped on thru autodetection
+SIMDCORE	= false
+
+# Multibin will compile a seperate binary for each core: original, SSE and SIMD.
+MULTIBIN	= false
+
 ifndef TOOL_PREFIX
 TOOL_PREFIX	=
 endif
@@ -126,6 +134,9 @@ else
 endif
 endif
 
+# This is for autodetection of processor features in the new crypto cores.
+-include	$(AC_ROOT)/common.cfg
+
 RANLIB		?= $(TOOL_PREFIX)ranlib
 ifneq ($(origin AR),environment)
 	AR	= $(TOOL_PREFIX)ar
@@ -134,12 +145,41 @@ endif
 REVISION	= $(shell $(AC_ROOT)/evalrev $(AC_ROOT))
 REVFLAGS	?= -D_REVISION=$(REVISION)
 
-OPTFLAGS        = -D_FILE_OFFSET_BITS=64
-CFLAGS          ?= -g -W -Wall -O3
+OPTFLAGS	= -D_FILE_OFFSET_BITS=64
+CFLAGS		?= -g -W -Wall -O3 
 
-INTEL_ASM	= $(shell echo | $(CXX) -fsyntax-only -masm=intel -xc - 2>/dev/null && echo Y)
+# If we're building multibin make sure simd is disabled
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(multibin) $(MULTIBIN))),true)
+	SIMDCORE = false
+endif
+
+ifeq ($(HAS_NEON), Y)
+	CFLAGS	+= -mfpu=neon
+endif
+
+ifeq ($(subst FALSE,false,$(filter FALSE false,$(newsse) $(NEWSSE))),false)
+	CFLAGS  += -DOLD_SSE_CORE=1
+else
+ifeq ($(AVX2FLAG), Y)
+	CFLAGS	+= -mavx2 -DJOHN_AVX2
+else
+ifeq ($(AVX1FLAG), Y)
+	CFLAGS	+= -mavx -DJOHN_AVX
+else
+ifeq ($(SSEFLAG), Y)
+	CFLAGS  += -msse2
+endif
+endif # AVX1FLAG
+endif # AVX2FLAG
+endif # NEWSSE
+
 ifeq ($(INTEL_ASM), Y)
 	ASMFLAG	= -masm=intel
+endif
+
+# This will enable -D_REENTRANT if compatible so we have thread-safe functions available to us via -pthread.
+ifeq ($(PTHREAD), Y)
+	CFLAGS	+= -pthread
 endif
 
 CXXFLAGS	= $(CFLAGS) $(ASMFLAG) -fdata-sections -ffunction-sections

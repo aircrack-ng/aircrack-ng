@@ -44,7 +44,7 @@
 #include "aircrack-ptw-lib.h"
 #include "eapol.h"
 
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__) || defined(__APPLE__)
 	#include <pthread.h>
 #endif
 
@@ -88,6 +88,17 @@ struct hashdb_rec {
 	uint8_t pmk[32];
 } __attribute__ ((packed));
 
+struct _cpuinfo {
+	int simdsize;				/* SIMD size		*/
+	char *flags;				/* Feature Flags	*/
+	char *model;				/* CPU Model		*/
+	int cores;				/* Real CPU cores       */
+	int coreperid;				/* Max cores per id     */
+	int htt;				/* Hyper-Threading      */
+	int maxlogic;				/* Max addressible lCPU */
+	int hv;					/* Hypervisor detected  */
+};
+
 #ifdef __CYGWIN__
 	#include <sys/time.h>
 #endif
@@ -98,7 +109,10 @@ extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern int readLine(char line[], int maxlength);
 extern int hexToInt(char s[], int len);
 extern int hexCharToInt(unsigned char c);
-
+extern int cpuid_simdsize();
+extern int cpuid_getinfo();
+extern struct _cpuinfo cpuinfo;
+extern int get_nb_cpus();
 
 #define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
@@ -270,6 +284,7 @@ struct mergeBSSID
 struct WPA_data {
 	struct AP_info* ap;				/* AP information */
 	int	thread;						/* number of this thread */
+	int	threadid;						/* id of this thread */
 	int nkeys;						/* buffer capacity */
 	char *key_buffer;				/* queue as a circular buffer for feeding and consuming keys */
 	int front;						/* front marker for the circular buffers */
