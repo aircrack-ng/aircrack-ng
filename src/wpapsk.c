@@ -50,7 +50,11 @@
  *   Also removed oSSL code: HMAC(EVP_sha1(), ....), and coded what it does
  * (which is simple), inline.
  */
+#ifndef USE_GCRYPT
 #include <openssl/sha.h>
+#else
+#include "sha1-git.h"
+#endif
 #include <string.h>
 #include <stdint.h>
 #ifdef SIMD_CORE

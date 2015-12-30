@@ -52,7 +52,11 @@
 
 #include <string.h>
 #include <assert.h>
+#ifdef USE_GCRYPT
+#include "gcrypt-openssl-wrapper.h"
+#else
 #include <openssl/hmac.h>
+#endif
 #include <stdint.h>
 #include "arch.h"
 #include "jcommon.h"

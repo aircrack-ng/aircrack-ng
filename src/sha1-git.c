@@ -151,11 +151,11 @@ static void blk_SHA1_Block(blk_SHA_CTX *ctx, const unsigned int *data)
 	unsigned int A,B,C,D,E;
 	unsigned int array[16];
 
-	A = ctx->H[0];
-	B = ctx->H[1];
-	C = ctx->H[2];
-	D = ctx->H[3];
-	E = ctx->H[4];
+	A = ctx->h0;
+	B = ctx->h1;
+	C = ctx->h2;
+	D = ctx->h3;
+	E = ctx->h4;
 
 	/* Round 1 - iterations 0-16 take their input from 'data' */
 	T_0_15( 0, A, B, C, D, E);
@@ -247,11 +247,11 @@ static void blk_SHA1_Block(blk_SHA_CTX *ctx, const unsigned int *data)
 	T_60_79(78, C, D, E, A, B);
 	T_60_79(79, B, C, D, E, A);
 
-	ctx->H[0] += A;
-	ctx->H[1] += B;
-	ctx->H[2] += C;
-	ctx->H[3] += D;
-	ctx->H[4] += E;
+	ctx->h0 += A;
+	ctx->h1 += B;
+	ctx->h2 += C;
+	ctx->h3 += D;
+	ctx->h4 += E;
 }
 
 void blk_SHA1_Init(blk_SHA_CTX *ctx)
@@ -259,11 +259,11 @@ void blk_SHA1_Init(blk_SHA_CTX *ctx)
 	ctx->size = 0;
 
 	/* Initialize H with the magic constants (see FIPS180 for constants) */
-	ctx->H[0] = 0x67452301;
-	ctx->H[1] = 0xefcdab89;
-	ctx->H[2] = 0x98badcfe;
-	ctx->H[3] = 0x10325476;
-	ctx->H[4] = 0xc3d2e1f0;
+	ctx->h0 = 0x67452301;
+	ctx->h1 = 0xefcdab89;
+	ctx->h2 = 0x98badcfe;
+	ctx->h3 = 0x10325476;
+	ctx->h4 = 0xc3d2e1f0;
 }
 
 void blk_SHA1_Update(blk_SHA_CTX *ctx, const void *data, unsigned long len)
@@ -309,8 +309,11 @@ void blk_SHA1_Final(unsigned char hashout[20], blk_SHA_CTX *ctx)
 	blk_SHA1_Update(ctx, padlen, 8);
 
 	/* Output hash */
-	for (i = 0; i < 5; i++)
-		put_be32(hashout + i*4, ctx->H[i]);
+	put_be32(hashout + 0*4, ctx->h0);
+	put_be32(hashout + 1*4, ctx->h1);
+	put_be32(hashout + 2*4, ctx->h2);
+	put_be32(hashout + 3*4, ctx->h3);
+	put_be32(hashout + 4*4, ctx->h4);
 }
 #define _SHA1_GIT
 #endif
