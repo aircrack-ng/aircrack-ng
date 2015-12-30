@@ -3968,7 +3968,7 @@ unsigned char mic[16], int force )
 		printf("%d k/s\r", ks);
 		fflush(stdout);
 
-		if (et_s >= 5) {
+		if (et_s >= 15) {
 			printf("\n");
 			exit(0);
 		}
