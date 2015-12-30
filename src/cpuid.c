@@ -206,7 +206,6 @@ char* cpuid_modelinfo() {
 	// Clean up the empty spaces in the model name on some intel's because they let their engineers fall asleep on the space bar
 	if (*pm == ' ')
 		while (*pm == ' ') {
-			if (*pm == ' ')
 				pm++;
 		}
 
@@ -214,6 +213,7 @@ char* cpuid_modelinfo() {
 
 	if (model == NULL) {
 		fprintf(stderr, "ERROR: strdup() failed to allocate memory for cpuid_modelinfo(): %s\n", strerror(errno));
+	  free(tmpmodel);
 		return "Unknown";
 	}
 
