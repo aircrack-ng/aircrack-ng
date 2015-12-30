@@ -148,6 +148,14 @@ REVFLAGS	?= -D_REVISION=$(REVISION)
 OPTFLAGS	= -D_FILE_OFFSET_BITS=64
 CFLAGS		?= -g -W -Wall -O3 
 
+ifeq ($(subst TRUE,true,$(filter TRUE true,$(icc) $(ICC))),true)
+	ICCMODE	= Y
+	CC	= icc
+	CXX	= icpc
+	AR	= xiar
+	CFLAGS	+= -no-prec-div
+endif
+
 # If we're building multibin make sure simd is disabled
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(multibin) $(MULTIBIN))),true)
 	SIMDCORE = false
@@ -161,13 +169,25 @@ ifeq ($(subst FALSE,false,$(filter FALSE false,$(newsse) $(NEWSSE))),false)
 	CFLAGS  += -DOLD_SSE_CORE=1
 else
 ifeq ($(AVX2FLAG), Y)
+ifeq ($(ICCMODE), Y)
+	CFLAGS	+= -march=core-avx2 -DJOHN_AVX2
+else
 	CFLAGS	+= -mavx2 -DJOHN_AVX2
+endif
 else
 ifeq ($(AVX1FLAG), Y)
+ifeq ($(ICCMODE), Y)
+	CFLAGS	+= -march=corei7-avx -DJOHN_AVX
+else
 	CFLAGS	+= -mavx -DJOHN_AVX
+endif
 else
 ifeq ($(SSEFLAG), Y)
+ifeq ($(ICCMODE), Y)
+	CFLAGS	+= -march=corei7
+else
 	CFLAGS  += -msse2
+endif
 endif
 endif # AVX1FLAG
 endif # AVX2FLAG
@@ -196,6 +216,7 @@ docdir          = $(datadir)/doc/aircrack-ng
 libdir		= $(prefix)/lib
 etcdir		= $(prefix)/etc/aircrack-ng
 
+ifneq ($(ICCMODE), Y)
 GCC_OVER41	= $(shell expr 41 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
 GCC_OVER45	= $(shell expr 45 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
 GCC_OVER49	= $(shell expr 49 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
@@ -209,7 +230,6 @@ ifeq ($(GCC_OVER49), 0)
 	GCC_OVER49	= $(shell expr 4.9 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
 endif
 
-
 ifeq ($(GCC_OVER49), 0)
 	ifeq ($(GCC_OVER41), 1)
 		COMMON_CFLAGS += -fstack-protector
@@ -222,6 +242,7 @@ endif
 
 ifeq ($(GCC_OVER45), 1)
 	CFLAGS		+= -Wno-unused-but-set-variable -Wno-array-bounds
+endif
 endif
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(duma) $(DUMA))),true)

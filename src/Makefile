@@ -5,9 +5,9 @@ TEST_DIR	= $(AC_ROOT)/test
 
 CFLAGS		+= -Iinclude
 
-iCC             = $(shell find /opt/intel/cc/*/bin/icc)
-iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro $(COMMON_CFLAGS)
-iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
+iCC		= /opt/intel/bin/icc
+iCFLAGS		= -w -xHOST $(COMMON_CFLAGS)
+iOPTFLAGS	= -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
