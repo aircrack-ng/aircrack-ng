@@ -47,6 +47,7 @@ endif
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(macport) $(MACPORT))),true)
 	COMMON_CFLAGS	+= -I/opt/local/include -I../..
+	LDFLAGS		+= -L/opt/local/lib
 endif
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)

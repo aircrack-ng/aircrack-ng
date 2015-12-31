@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <unistd.h>
 #if defined(__i386__) || defined(__x86_64__)
+#define _X86 1
 #include <cpuid.h>
 #endif
 #include "aircrack-ng.h"
@@ -33,7 +34,7 @@ struct _cpuinfo cpuinfo = { 0, NULL, NULL, 0, 0, 0, 0, 0 };
 //
 // Until better support for other arch's is added an ifdef is needed
 //
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef _X86
 unsigned long getRegister(const unsigned int val, const char from, const char to) {
 	unsigned long mask = (1<<(to+1)) - 1;
 
@@ -61,8 +62,6 @@ int cpuid_simdsize(int viewmax) {
 			// return the maximum the processor supports, otherwise fallback to avoid
 			// a performance regression from overfilling the buffers.
 			if (viewmax == 1)
-#else
-			if (viewmax) {}
 #endif
 				return 8;
 		}
@@ -72,6 +71,8 @@ int cpuid_simdsize(int viewmax) {
 
 	if (edx & (1 << 26)) // SSE2
 		return 4;
+
+	(void)viewmax;
 
 	// MMX or CPU Fallback
 	return 1;
@@ -206,14 +207,15 @@ char* cpuid_modelinfo() {
 	// Clean up the empty spaces in the model name on some intel's because they let their engineers fall asleep on the space bar
 	if (*pm == ' ')
 		while (*pm == ' ') {
-				pm++;
+			pm++;
 		}
 
 	model = strdup(pm);
 
 	if (model == NULL) {
 		fprintf(stderr, "ERROR: strdup() failed to allocate memory for cpuid_modelinfo(): %s\n", strerror(errno));
-	  free(tmpmodel);
+		free(tmpmodel);
+		tmpmodel = NULL;
 		return "Unknown";
 	}
 

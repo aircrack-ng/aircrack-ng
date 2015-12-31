@@ -1,7 +1,7 @@
 AC_ROOT         = ../..
 SRC_DIR		= $(AC_ROOT)/src
 include $(AC_ROOT)/common.mak
-CFLAGS          += -I$(SRC_DIR) -I$(SRC_DIR)/include
+CFLAGS          += -I$(SRC_DIR) -I$(SRC_DIR)/include $(COMMON_CFLAGS)
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(simdcore) $(SIMDCORE))),true)
 	SSEO_INT	= $(AC_ROOT)/src/simd-intrinsics.o $(AC_ROOT)/src/memory.o $(AC_ROOT)/src/wpapsk.o
