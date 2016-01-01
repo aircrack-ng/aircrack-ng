@@ -205,22 +205,19 @@ char* cpuid_modelinfo() {
 	pm = tmpmodel;
 
 	// Clean up the empty spaces in the model name on some intel's because they let their engineers fall asleep on the space bar
-	if (*pm == ' ')
-		while (*pm == ' ') {
-			pm++;
-		}
+	while (*pm == ' ') {
+		pm++;
+	}
 
 	model = strdup(pm);
 
-	if (model == NULL) {
-		fprintf(stderr, "ERROR: strdup() failed to allocate memory for cpuid_modelinfo(): %s\n", strerror(errno));
-		free(tmpmodel);
-		tmpmodel = NULL;
-		return "Unknown";
-	}
-
 	free(tmpmodel);
 	tmpmodel = NULL;
+
+	if (model == NULL) {
+		fprintf(stderr, "ERROR: strdup() failed to allocate memory for cpuid_modelinfo(): %s\n", strerror(errno));
+		return "Unknown";
+	}
 
 	return model;
 }
