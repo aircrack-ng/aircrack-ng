@@ -1130,25 +1130,37 @@ int getNextESSID(char *essid)
 {
     int len;
     pESSID_t cur;
-
+    
     pthread_mutex_lock(&rESSIDmutex);
-    cur = rESSID;
 
     if(rESSID == NULL || rESSID->next == NULL) {
         pthread_mutex_unlock(&rESSIDmutex);
         return 0;
     }
-    len = strlen(essid);
-    while (cur->len != len || cur->essid == NULL || strcmp(essid, cur->essid)) {
-        cur = cur->next;
-        if (cur->next == NULL) {
-            pthread_mutex_unlock(&rESSIDmutex);
-            return 0;
-        }
-    }
 
-    memcpy(essid, cur->next->essid, cur->next->len + 1);
-    len = cur->next->len;
+    len = strlen(essid);
+    for (cur = rESSID->next; cur != NULL; cur = cur->next)
+    {
+    	if (*essid == 0) {
+    		break;
+    	}
+    	// Check if current SSID.
+    	if (cur->len == len && cur->essid != NULL && strcmp(essid, cur->essid) == 0) {
+        	// SSID found, get next one
+        	cur = cur->next;
+        	if (cur == NULL) {
+        		cur = rESSID->next;
+        	}
+        	break;
+    	}
+    }
+    len = 0;
+
+    if (cur != NULL) {
+        memcpy(essid, cur->essid, cur->len + 1);
+        len = cur->len;
+        
+    }
     pthread_mutex_unlock(&rESSIDmutex);
 
     return len;
@@ -3647,7 +3659,8 @@ void beacon_thread( void *arg )
 
             /* flush expired ESSID entries */
             flushESSID();
-            if (!getNextESSID(essid)) {
+            essid_len = getNextESSID(essid);
+            if (!essid_len) {
                 strcpy(essid, "default");
                 essid_len = strlen("default");
             }
