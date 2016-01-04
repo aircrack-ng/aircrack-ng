@@ -1619,7 +1619,7 @@ int main( int argc, char *argv[] )
         }
     }
     
-	printf("Output packets (valids) filename: %s\n",  _filename_output_filtered);
+	printf("Output packets (valid) filename: %s\n",  _filename_output_filtered);
 	printf("Output packets (cloaked) filename: %s\n",  _filename_output_cloaked);
 
 	// 1. Read all packets and put the following in a linked list:
