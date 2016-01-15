@@ -982,7 +982,7 @@ scanProcesses() {
 	if [ ${match} -gt 0 ] && [ "${1}" != "kill" ]; then
 		printf "Found $match processes that could cause trouble.\n"
 		printf "If airodump-ng, aireplay-ng or airtun-ng stops working after\n"
-		printf "a short period of time, you may want to kill (some of) them!\n\n"
+		printf "a short period of time, you may want to run 'airmon-ng check kill'\n\n"
 	else
 		if [ "${1}" != "kill" ] && [ -n "${1}" ]; then
 			printf "No interfering processes found\n"
