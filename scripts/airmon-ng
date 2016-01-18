@@ -793,7 +793,33 @@ getChipset() {
 			if [ -f /sys/class/net/$1/device/vendor ] && [ -f /sys/class/net/$1/device/device ]; then
 				DEVICEID="$(cat /sys/class/net/$1/device/vendor):$(cat /sys/class/net/$1/device/device)"
 			fi
-			CHIPSET="unable to detect for sdio $DEVICEID"
+			if [ "${DEVICEID}" = '0x02d0:0x4330' ]; then
+				CHIPSET='Broadcom 4330'
+			elif [ "${DEVICEID}" = '0x02d0:0x4329' ]; then
+				CHIPSET='Broadcom 4329'
+			elif [ "${DEVICEID}" = '0x02d0:0x4334' ]; then
+				CHIPSET='Broadcom 4334'
+			elif [ "${DEVICEID}" = '0x02d0:0xa94c' ]; then
+				CHIPSET='Broadcom 43340'
+			elif [ "${DEVICEID}" = '0x02d0:0xa94d' ]; then
+				CHIPSET='Broadcom 43341'
+			elif [ "${DEVICEID}" = '0x02d0:0x4324' ]; then
+				CHIPSET='Broadcom 43241'
+			elif [ "${DEVICEID}" = '0x02d0:0x4335' ]; then
+				CHIPSET='Broadcom 4335/4339'
+			elif [ "${DEVICEID}" = '0x02d0:0xa962' ]; then
+				CHIPSET='Broadcom 43362'
+			elif [ "${DEVICEID}" = '0x02d0:0xa9a6' ]; then
+				CHIPSET='Broadcom 43430'
+			elif [ "${DEVICEID}" = '0x02d0:0x4345' ]; then
+				CHIPSET='Broadcom 43455'
+			elif [ "${DEVICEID}" = '0x02d0:0x4354' ]; then
+				CHIPSET='Broadcom 4354'
+			elif [ "${DEVICEID}" = '0x02d0:0xa887' ]; then
+				CHIPSET='Broadcom 43143'
+			else
+				CHIPSET="unable to detect for sdio $DEVICEID"
+			fi
 		else
 			CHIPSET="Not pci, usb, or sdio"
 		fi
