@@ -121,6 +121,9 @@ case "$UARCH" in
 	*arm*)
 		IS_ARM=1
 	;;
+	*mips*)
+		IS_CROSS=1
+	;;
 	*)
 	;;
 esac

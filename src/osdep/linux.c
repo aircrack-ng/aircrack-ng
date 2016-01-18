@@ -930,7 +930,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     return( ret );
 }
 
-#if defined(CONFIG_LIBNL) && !defined(__mips__)
+#if defined(CONFIG_LIBNL)
 static int ieee80211_channel_to_frequency(int chan)
 {
     if (chan < 14)

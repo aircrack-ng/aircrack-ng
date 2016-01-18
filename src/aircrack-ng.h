@@ -44,7 +44,7 @@
 #include "aircrack-ptw-lib.h"
 #include "eapol.h"
 
-#if defined(__OpenBSD__) || defined(__APPLE__)
+#if defined(__OpenBSD__) || defined(__APPLE__) || defined(__mips__)
 	#include <pthread.h>
 #endif
 
