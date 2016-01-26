@@ -18,6 +18,7 @@ to speed up the cracking process.
 ## Requirements
 
  * OpenSSL development package or libgcrypt development package.
+ * Airmon-ng (Linux) requires ethtool.
  * On windows, cygwin has to be used and it also requires w32api package.
  * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
  * pkg-config (pkgconf on FreeBSD)
@@ -33,6 +34,7 @@ to speed up the cracking process.
  * If you want to use Airpcap, the 'developer' directory from the CD is required.
  * For best performance on FreeBSD (50-70% more), install gcc5 via: pkg install gcc5
           Then compile with: gmake CC=gcc5 CXX=g++5
+ * rfkill
 
 ## Compiling
 
