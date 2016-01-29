@@ -477,7 +477,11 @@ startwlIface() {
 
 #startDarwinIface() {
 #	if [ -x /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport ]; then
-#		/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport $1 sniff
+#		if [ -n "${CH}" ] && [ ${CH} -lt 220 ]; then
+#			/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport $1 sniff ${CH}
+#		else
+#			printf "Channel is set to none channel value of ${CH}
+#		fi
 #	fi
 #}
 
