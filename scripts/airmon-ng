@@ -71,8 +71,9 @@ if [ ! -x "$(command -v uname 2>&1)" ]; then
 	printf "How in the world do you not have uname installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install uname).\n"
 	exit 1
-#else
-#	#write something in here to test uname for Darwin/Linux and set a variable
+else
+        OS=$(uname -s)
+	#Recognized values are Linux and Darwin
 fi
 
 if [ ! -x "$(command -v ip 2>&1)" ] && [ ! -x "$(command -v ifconfig 2>&1)" ]; then
