@@ -1,3 +1,22 @@
+Version 1.2-rc4 (changes from aircrack-ng 1.2-rc3) - Released XX YYY 2016:
+* Airodump-ng: Increase console window size.
+* Aircrack-ng: Added time remaining and percentage done when doing WPA cracking with a dictionary (file).
+* Aircrack-ng: Make benchmark last 15 seconds for a more accurate value.
+* Aircrack-ng: Fixed compilation on Cygwin 64 and drastically improve cracking speed for all CPUs (up to +175% performance).
+* Airmon-ng: Improved chipset detection on FreeBSD.
+* Airmon-ng: Display chipset for some Broadcom SDIO.
+* Airbase-ng: Fixed broadcasting 'default'.
+* General: Updated and cleanup TravisCI file to test compilation and testing on OSX.
+* General: Fixed reading large files on Cygwin.
+* General: Fixed a bunch of compilation warnings with gcc and clang.
+* General: Fixed compilation on Solaris, OpenBSD, DragonFlyBSD 4.4, NetBSD, OSX.
+* General: Fixed compilation on MIPS.
+* General: Improved compatibility on FreeBSD and Cygwin (RAM and CPU detection).
+* General: Fixed gcc segfault on cygwin.
+* General: Memory cleanups, fixed memory leaks and fix other issues reported by Valgrind.
+* Testing: Fixes on various OSes.
+* INSTALLING: Updated installation instructions for different OS.
+
 Version 1.2-rc3 (changes from aircrack-ng 1.2-rc2) - Released 21 Nov 2015:
 * Airodump-ng: Prevent sending signal to init which caused the system to reboot/shutdown.
 * Airbase-ng: Allow to use a user-specified ANonce instead of a randomized one when doing the 4-way handshake
