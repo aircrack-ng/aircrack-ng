@@ -454,33 +454,26 @@ char* cpuid_modelinfo() {
 
 	model = strdup(pm);
 
+#ifdef _X86
 	free(tmpmodel);
 	tmpmodel = NULL;
+#endif
 
 	if (model == NULL) {
 		fprintf(stderr, "ERROR: strdup() failed to allocate memory for cpuid_modelinfo(): %s\n", strerror(errno));
-#ifdef _X86
-        free(tmpmodel);
-        tmpmodel = NULL;
-#endif
 		return "Unknown";
 	}
-
-#ifdef _X86
-	free(tmpmodel);
-	tmpmodel = NULL;
-#endif
 
 	return model;
 }
 
 int cpuid_getinfo() {
 	int cpu_count = get_nb_cpus();
+	float cpu_temp;
 #ifdef _X86
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 	unsigned int max_level = __get_cpuid_max(0, NULL);
 	int topologyLevel = 0, topologyType;
-	float cpu_temp;
 #ifdef DEBUG
 	int topologyShift;
 #endif
