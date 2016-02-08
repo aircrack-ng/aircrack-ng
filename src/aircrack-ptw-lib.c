@@ -584,8 +584,6 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	sorthelper(*sh)[n-1];
 	PTW_tableentry (*table)[n] = alloca(sizeof(PTW_tableentry) * n * keylen);
 
-// XXX: rc4test_amd64_sse2() segfaults when running a check after compiling with clang when using gcrypt - Fix it (#1615).
-#if defined(__amd64) && defined(__SSE2__) && ! (defined(__clang__) && defined(USE_GCRYPT))
 	/*
 	 * sse2-optimized rc4test() function for amd64 only works
 	 * for keylen == 5 or keylen == 13
@@ -593,8 +591,6 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	if (keylen == 5 || keylen == 13)
 		state->rc4test = rc4test_amd64_sse2;
 	else
-#endif
-
 		state->rc4test = rc4test;
 
 	tried=0;
