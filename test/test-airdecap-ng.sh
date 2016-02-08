@@ -3,7 +3,11 @@
 # Carlos Alberto Lopez Perez <clopez@igalia.com>
 # Thomas d'Otreppe <tdotreppe@aircrack-ng.org> - Support for sha1 and sh
 TESTDIR="$(dirname $0)"
-tmpdir="$(mktemp -d -t acng.XXXX)"
+if [ "$(uname -s)" = 'OpenBSD' ]; then
+	tmpdir="$(mktemp -d -t acng.XXXXXX)"
+else
+	tmpdir="$(mktemp -d -t acng.XXXX)"
+fi
 
 compute_sha1() {
     if type "sha1sum" > /dev/null 2>/dev/null ; then
@@ -20,7 +24,11 @@ compute_sha1() {
 
 
 # Clean on exit
-trap "rm -fr "${tmpdir}"" SIGINT SIGKILL SIGQUIT SIGSEGV SIGPIPE SIGALRM SIGTERM EXIT
+if [ "$(uname -s)" = 'OpenBSD' ]; then
+	trap "rm -rf "${tmpdir}"" EXIT
+else
+	trap "rm -fr "${tmpdir}"" SIGINT SIGKILL SIGQUIT SIGSEGV SIGPIPE SIGALRM SIGTERM EXIT
+fi
 # Test1
 cp -f "${TESTDIR}/wpa.cap" "${tmpdir}"
 ./airdecap-ng -e test -p biscotte "${tmpdir}/wpa.cap" | \
