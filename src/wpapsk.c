@@ -516,66 +516,14 @@ int init_wpapsk(char (*key)[128], char *essid, int threadid) {
 		inbuffer[i].length = 0;
 	}
 
-	if (key[0][0] != 0) {
-		set_key(key[0], 0, inbuffer);
+	for (i = 0; i < 8; ++i) {
+		if (key[i][0] != 0) {
+			set_key(key[i], i, inbuffer);
 #ifdef XDEBUG
-		printf("key1 (inbuffer) = %s\n", inbuffer[0].v);
+			printf("key%d (inbuffer) = %s\n", i+1, inbuffer[i].v);
 #endif
-		count = 1;
-	}
-
-	if (key[1][0] != 0) {
-		set_key(key[1], 1, inbuffer);
-#ifdef XDEBUG
-		printf("key2 (inbuffer) = %s\n", inbuffer[1].v);
-#endif
-		count = 2;
-	}
-
-	if (key[2][0] != 0) {
-		set_key(key[2], 2, inbuffer);
-#ifdef XDEBUG
-		printf("key3 (inbuffer) = %s\n", inbuffer[2].v);
-#endif
-		count = 3;
-	}
-
-	if (key[3][0] != 0) {
-		set_key(key[3], 3, inbuffer);
-#ifdef XDEBUG
-		printf("key4 (inbuffer) = %s\n", inbuffer[3].v);
-#endif
-		count = 4;
-	}
-
-	if (key[4][0] != 0) {
-		set_key(key[4], 4, inbuffer);
-#ifdef XDEBUG
-		printf("key5 (inbuffer) = %s\n", inbuffer[4].v);
-#endif
-		count = 5;
-	}
-
-	if (key[5][0] != 0) {
-		set_key(key[5], 5, inbuffer);
-#ifdef XDEBUG
-		printf("key6 (inbuffer) = %s\n", inbuffer[5].v);
-#endif
-		count = 6;
-	}
-	if (key[6][0] != 0) {
-		set_key(key[6], 6, inbuffer);
-#ifdef XDEBUG
-		printf("key7 (inbuffer) = %s\n", inbuffer[6].v);
-#endif
-		count = 7;
-	}
-	if (key[7][0] != 0) {
-		set_key(key[7], 7, inbuffer);
-#ifdef XDEBUG
-		printf("key8 (inbuffer) = %s\n", inbuffer[7].v);
-#endif
-		count = 8;
+			count = i + 1;
+		}
 	}
 
 #ifdef XDEBUG
