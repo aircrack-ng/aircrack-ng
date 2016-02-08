@@ -85,6 +85,7 @@ to compile and install the suite:
 
 * **gcrypt**:   Use libgcrypt crypto library instead of the default OpenSSL.
                 And also use internal fast sha1 implementation (borrowed from GIT)
+                Dependency (Debian): libgcrypt20-dev
 
 * **libnl**:    Add support for netlink (nl80211). Linux only.
     - Requires `libnl1` OR `libnl3`.
