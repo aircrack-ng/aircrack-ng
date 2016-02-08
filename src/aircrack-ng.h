@@ -96,6 +96,10 @@ struct _cpuinfo {
 	int htt;				/* Hyper-Threading      */
 	int maxlogic;				/* Max addressible lCPU */
 	int hv;					/* Hypervisor detected  */
+	int cpufreq_cur;			/* CPUfreq Current	*/
+	int cpufreq_max;			/* CPUfreq Maximum	*/
+	float coretemp;				/* CPU Temperature	*/
+	char *cputemppath;			/* Linux CPU Sensor Path*/
 };
 
 extern float chrono(struct timeval *start, int reset);

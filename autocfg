@@ -49,6 +49,12 @@ test_compile_flag () {
 	fi
 }
 
+test_header_file () {
+	if [ -f "$1" ]; then
+		echo "${2}=Y" >> $CFGFILE
+	fi
+}
+
 cpuid_test () {
 	tmpdir="$(mktemp -d -t acng.XXXX)"
 
@@ -142,12 +148,22 @@ if [ $IS_X86 = 1 ]; then
 			echo "SSEFLAG=Y" > $CFGFILE
 		fi
 	fi
+
+	test_compile_flag -masm=intel INTEL_ASM
 elif [ $IS_ARM = 1 ]; then
+	>$CFGFILE
+
 	if [ -f "/proc/cpuinfo" ]; then
 		NEON_FLAG=$(grep -c neon /proc/cpuinfo)
 
 		if [ $NEON_FLAG -eq 1 ]; then
 			test_compile_flag -mfpu=neon HAS_NEON
+
+			if [ "$FLAGTEST" = "Y" ]; then
+				echo "SIMDCORE=true" >>$CFGFILE
+			else
+				IS_CROSS=1
+			fi
 		else
 			IS_CROSS=1
 		fi
@@ -157,7 +173,11 @@ elif [ $IS_ARM = 1 ]; then
 fi
 
 test_compile_flag -pthread PTHREAD
-test_compile_flag -masm=intel INTEL_ASM
+
+if [ $IS_X86 -eq 0 ]; then
+	# If we're on non-x86 platform, we need to check for auxv for cpuid since it's broken on some debian vers
+	test_header_file sys/auxv.h HAS_AUXV
+fi
 
 if [ $IS_CROSS -eq 1 ]; then
 	echo "NEWSSE=false" >>$CFGFILE
