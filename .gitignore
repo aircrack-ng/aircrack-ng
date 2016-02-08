@@ -7,3 +7,4 @@ src/osdep/.os.Linux
 src/osdep/libosdep.a
 *.o
 *.exe
+common.cfg
