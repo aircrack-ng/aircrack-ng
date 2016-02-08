@@ -48,7 +48,7 @@ fi
 test_compile_flag () {
 	FLAGTEST=$(echo | $CC -fsyntax-only ${1} -xc -Werror - 2>/dev/null && echo Y)
 
-	if [ "$FLAGTEST" = "Y" ]; then
+	if [ "$FLAGTEST" = "Y" ] && [ $2 ]; then
 		echo "${2}=${FLAGTEST}" >> $CFGFILE
 	fi
 }
@@ -143,13 +143,27 @@ if [ $IS_X86 = 1 ]; then
 
 	if [ $SIMDSIZE -gt 0 ]; then
 		if [ $SIMDSIZE = 16 ]; then
-			echo "AVX2FLAG=Y" > $CFGFILE
+			test_compile_flag -mavx2
+
+			if [ "$FLAGTEST" = "Y" ]; then
+				echo "AVX2FLAG=Y" > $CFGFILE
+			fi
+
 			echo "SIMDCORE=true" >> $CFGFILE
 		elif [ $SIMDSIZE = 8 ]; then
-			echo "AVX1FLAG=Y" > $CFGFILE
+			test_compile_flag -mavx
+
+			if [ "$FLAGTEST" = "Y" ]; then
+				echo "AVX1FLAG=Y" > $CFGFILE
+			fi
+
 			echo "SIMDCORE=true" >> $CFGFILE
 		elif [ $SIMDSIZE = 4 ]; then
-			echo "SSEFLAG=Y" > $CFGFILE
+			test_compile_flag -msse2
+
+			if [ "$FLAGTEST" = "Y" ]; then
+				echo "SSEFLAG=Y" > $CFGFILE
+			fi
 		fi
 	fi
 
