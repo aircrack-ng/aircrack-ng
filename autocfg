@@ -39,6 +39,7 @@ clean_exit () {
 }
 
 if [ "$(uname -s)" = 'OpenBSD' ]; then
+	OPENBSD=1
 	trap clean_exit EXIT
 else
 	trap clean_exit SIGINT SIGKILL SIGQUIT SIGSEGV SIGPIPE SIGALRM SIGTERM EXIT
@@ -167,7 +168,9 @@ if [ $IS_X86 = 1 ]; then
 		fi
 	fi
 
-	test_compile_flag -masm=intel INTEL_ASM
+	if [ ! $OPENBSD ]; then
+		test_compile_flag -masm=intel INTEL_ASM
+	fi
 elif [ $IS_ARM = 1 ]; then
 	>$CFGFILE
 
