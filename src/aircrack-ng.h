@@ -38,6 +38,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include <sys/time.h>
 #if defined(__FreeBSD__)
 #include <unistd.h>
 #endif
@@ -97,10 +98,7 @@ struct _cpuinfo {
 	int hv;					/* Hypervisor detected  */
 };
 
-#ifdef __CYGWIN__
-	#include <sys/time.h>
-#endif
-float chrono(struct timeval *start, int reset);
+extern float chrono(struct timeval *start, int reset);
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
