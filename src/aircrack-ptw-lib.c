@@ -119,6 +119,11 @@ int tried, max_tries;
 int depth[KEYHSBYTES];
 PTW_tableentry keytable[KEYHSBYTES][n];
 
+// Check if optmizied RC4 for AMD64 has to be compiled
+#if defined(__amd64) && defined(__SSE2__) && ! (defined(__clang__) && defined(USE_GCRYPT)) 
+	#define USE_AMD64_RC4_OPTIMIZED
+#endif
+
 // For sorting
 static int compare(const void * ina, const void * inb) {
 	PTW_tableentry * a = (PTW_tableentry * )ina;
@@ -140,7 +145,7 @@ static int comparedoublesorthelper(const void * ina, const void * inb) {
 }
 
 
-#if defined(__amd64) && defined(__SSE2__) && !defined(__clang__)
+#ifdef USE_AMD64_RC4_OPTIMIZED
 static const uint32_t __attribute__((used)) __attribute__((aligned (16))) x0123 [4] = { 0, 1, 2, 3 };
 static const uint32_t __attribute__((used)) __attribute__((aligned (16))) x4444 [4] = { 4, 4, 4, 4 };
 static int rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream)
@@ -570,7 +575,7 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	doublesorthelper helper[KEYHSBYTES];
 	int simple, onestrong, twostrong;
 	int i,j;
-#if defined(__amd64) && defined(__SSE2__) && !defined(__clang__)
+#ifdef USE_AMD64_RC4_OPTIMIZED
 	/*
 	 * The 64-bit SSE2-optimized rc4test() requires this buffer to be
 	 * aligned at 3 bytes.
@@ -584,7 +589,7 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	sorthelper(*sh)[n-1];
 	PTW_tableentry (*table)[n] = alloca(sizeof(PTW_tableentry) * n * keylen);
 
-#if defined(__amd64) && defined(__SSE2__) && !defined(__clang__)
+#ifdef USE_AMD64_RC4_OPTIMIZED
 	/*
 	 * sse2-optimized rc4test() function for amd64 only works
 	 * for keylen == 5 or keylen == 13
