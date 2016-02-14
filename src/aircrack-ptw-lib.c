@@ -120,7 +120,7 @@ int depth[KEYHSBYTES];
 PTW_tableentry keytable[KEYHSBYTES][n];
 
 // Check if optmizied RC4 for AMD64 has to be compiled
-#if defined(__amd64) && defined(__SSE2__) && ! (defined(__clang__) && defined(USE_GCRYPT)) 
+#if defined(__amd64) && defined(__SSE2__) && ! (defined(__clang__)
 	#define USE_AMD64_RC4_OPTIMIZED
 #endif
 
