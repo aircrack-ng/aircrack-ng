@@ -1,7 +1,7 @@
  /*
   * Server for osdep network driver.  Uses osdep itself!  [ph33r teh recursion]
   *
-  *  Copyright (C) 2006-2015 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+  *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
   *  Copyright (C) 2004, 2005 Christophe Devine
   *
   *  This program is free software; you can redistribute it and/or modify
@@ -197,7 +197,7 @@ int main( int argc, char *argv[] )
             case 'd':
 
 				paramUsed = 1;
-                if (sscanf(optarg, "%f", &dupe) != 1 || dupe < 0.0f || dupe > 
+                if (sscanf(optarg, "%f", &dupe) != 1 || dupe < 0.0f || dupe >
 #if defined(__x86_64__) && defined(__CYGWIN__)
 			(0.0f + 100)) {
 #else

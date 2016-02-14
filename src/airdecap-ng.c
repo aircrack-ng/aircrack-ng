@@ -1,7 +1,7 @@
 /*
  *  802.11 to Ethernet pcap translator
  *
- *  Copyright (C) 2006-2015 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -373,7 +373,7 @@ int main( int argc, char *argv[] )
 
                 strncpy( opt.decrypted_fpath, optarg, sizeof( opt.decrypted_fpath ) - 1 );
                 break;
-                
+
             case 'c' :
 
                 if ( opt.corrupted_fpath[0])
@@ -385,7 +385,7 @@ int main( int argc, char *argv[] )
 
                 strncpy( opt.corrupted_fpath, optarg, sizeof( opt.corrupted_fpath ) - 1 );
                 break;
-                
+
             case 'p' :
 
                 if( opt.crypt != CRYPT_NONE )
@@ -584,7 +584,7 @@ usage:
         f_out = fopen( opt.decrypted_fpath, "wb+");
     else
         f_out = fopen( (char *) buffer, "wb+");
-    
+
     if( f_out == NULL )
     {
         perror( "fopen failed" );
@@ -1040,7 +1040,7 @@ usage:
             st_cur->valid_ptk = calc_ptk( st_cur, opt.pmk );
         }
     }
-    
+
     while (st_1st != NULL)
     {
         st_cur = st_1st->next;

@@ -1,7 +1,7 @@
 /*
  *  pcap-compatible 802.11 packet sniffer
  *
- *  Copyright (C) 2006-2015 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -425,7 +425,7 @@ struct oui * load_oui_file(void) {
 	unsigned char b[2];
 	unsigned char c[2];
 	struct oui *oui_ptr = NULL, *oui_head = NULL;
-	
+
 	fp = open_oui_file();
 	if (!fp) {
 		return NULL;
@@ -452,7 +452,7 @@ struct oui * load_oui_file(void) {
 				if (!(oui_ptr->next = (struct oui *)malloc(sizeof(struct oui)))) {
 					fclose(fp);
 					perror("malloc failed");
-					
+
 					while(oui_head != NULL)
 					{
 						oui_ptr = oui_head->next;
@@ -782,7 +782,7 @@ void update_rx_quality( )
                     ap_cur->fmiss += missed_frames;
                 }
 
-                ap_cur->rx_quality = ((float)((float)ap_cur->fcapt / ((float)ap_cur->fcapt + (float)ap_cur->fmiss)) * 
+                ap_cur->rx_quality = ((float)((float)ap_cur->fcapt / ((float)ap_cur->fcapt + (float)ap_cur->fmiss)) *
 #if defined(__x86_64__) && defined(__CYGWIN__)
 			(0.0f + 100));
 #else
@@ -1023,7 +1023,7 @@ int update_dataps()
 #if defined(__x86_64__) && defined(__CYGWIN__)
         pause = (((float)(sec*(0.0f + 1000000) + usec))/((0.0f + 1000000)));
 #else
-	pause = (((float)(sec*1000000.0f + usec))/(1000000.0f));	
+	pause = (((float)(sec*1000000.0f + usec))/(1000000.0f));
 #endif
         if( pause > 2.0f )
         {
@@ -4166,7 +4166,7 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 
 	/* Rate: inaccurate because it's the latest rate seen */
 	client_max_rate = ( client->rate_from > client->rate_to ) ? client->rate_from : client->rate_to ;
-	fprintf(G.f_kis_xml, "\t\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate / 
+	fprintf(G.f_kis_xml, "\t\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate /
 #if defined(__x86_64__) && defined(__CYGWIN__)
 		(0.0f + 1000000) );
 #else
@@ -4473,10 +4473,10 @@ int dump_write_kismet_netxml( void )
 			/* Write new network information */
 			strncpy(first_time, ctime(&st_cur->tinit), TIME_STR_LENGTH - 1);
 			first_time[strlen(first_time) - 1] = 0; // remove new line
-			
+
 			strncpy(last_time, ctime(&st_cur->tlast), TIME_STR_LENGTH - 1);
 			last_time[strlen(last_time) - 1] = 0; // remove new line
-			
+
 			fprintf(G.f_kis_xml, "\t<wireless-network number=\"%d\" type=\"probe\" ",
 				network_number);
 			fprintf(G.f_kis_xml, "first-time=\"%s\" last-time=\"%s\">\n", first_time, last_time);
@@ -4504,7 +4504,7 @@ int dump_write_kismet_netxml( void )
 
 			/* Rate: inaccurate because it's the latest rate seen */
 			client_max_rate = ( st_cur->rate_from > st_cur->rate_to ) ? st_cur->rate_from : st_cur->rate_to ;
-			fprintf(G.f_kis_xml, "\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate / 
+			fprintf(G.f_kis_xml, "\t\t<maxseenrate>%.6f</maxseenrate>\n", client_max_rate /
 #if defined(__x86_64__) && defined(__CYGWIN__)
 				(0.0f + 1000000) );
 #else
@@ -4527,7 +4527,7 @@ int dump_write_kismet_netxml( void )
 
 			/* XXX: What does that field mean? Is it the total size of data? */
 			fprintf(G.f_kis_xml, "\t\t<datasize>0</datasize>\n");
-	
+
 			/* SNR information */
 			average_power = (st_cur->power == -1) ? 0 : st_cur->power;
 			fprintf(G.f_kis_xml, "\t\t<snr-info>\n"
@@ -4800,10 +4800,10 @@ int dump_write_kismet_csv( void )
 }
 
 /* See if a string contains a character in the first "n" bytes.
- * 
+ *
  * Returns a pointer to the first occurrence of the character, or NULL
  * if the character is not present in the string.
- * 
+ *
  * Breaks the str* naming convention to avoid a name collision if we're
  * compiling on a system that has strnchr()
  */
@@ -4824,10 +4824,10 @@ static char *strchr_n(char *str, int c, size_t n)
 }
 
 /* Read at least one full line from the network.
- * 
+ *
  * Returns the amount of data in the buffer on success, 0 on connection
  * closed, or a negative value on error.
- * 
+ *
  * If the return value is >0, the buffer contains at least one newline
  * character.  If the return value is <= 0, the contents of the buffer
  * are undefined.
@@ -4856,14 +4856,14 @@ static int read_line(int sock, char *buffer, int pos, int size)
 	{
 		return -1;
 	}
-	
+
 	return pos;
 }
 
-/* Remove a newline-terminated block of data from a buffer, replacing 
+/* Remove a newline-terminated block of data from a buffer, replacing
  * the newline with a '\0'.
- * 
- * Returns the number of characters left in the buffer, or -1 if the 
+ *
+ * Returns the number of characters left in the buffer, or -1 if the
  * buffer did not contain a newline.
  */
 static int get_line_from_buffer(char *buffer, int size, char *line)
@@ -4877,16 +4877,16 @@ static int get_line_from_buffer(char *buffer, int size, char *line)
 		memmove(buffer, cursor, size - (strlen(line) + 1));
 		return size - (strlen(line) + 1);
 	}
-	
+
 	return -1;
-} 
+}
 
 /* Extract a name:value pair from a null-terminated line of JSON.
- * 
- * Returns 1 if the name was found, or 0 otherwise. 
- * 
+ *
+ * Returns 1 if the name was found, or 0 otherwise.
+ *
  * The string in "value" is null-terminated if the name was found.  If
- * the name was not found, the contents of "value" are undefined. 
+ * the name was not found, the contents of "value" are undefined.
  */
 static int json_get_value_for_name( const char *buffer, const char *name, char *value )
 {
@@ -4895,7 +4895,7 @@ static int json_get_value_for_name( const char *buffer, const char *name, char *
 	size_t to_find_len;
 	char *vcursor = value;
 	int ret = 0;
-	
+
 	if (buffer == NULL || strlen(buffer) == 0 || name == NULL || strlen(name) == 0 || value == NULL)
 	{
 		return 0;
@@ -5025,18 +5025,18 @@ void gps_tracker(pid_t parent)
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
     is_json = select(gpsd_sock + 1, &read_fd, NULL, NULL, &timeout);
-    
+
     if (is_json > 0) {
 		/* Probably JSON.  Read the first line and verify it's a version of the protocol we speak. */
 
     	if((pos = read_line(gpsd_sock, buffer, 0, sizeof(buffer))) <= 0)
     		return;
-    	
+
     	pos = get_line_from_buffer(buffer, pos, line);
 
     	is_json = (json_get_value_for_name(line, "class", data) &&
     			   strncmp(data, "VERSION", 7) == 0);
-		
+
     	if (is_json) {
 			/* Verify it's a version of the protocol we speak */
 			if(json_get_value_for_name(line, "proto_major", data) && data[0] != '3')
@@ -5044,7 +5044,7 @@ void gps_tracker(pid_t parent)
 				/* It's an unknown version of the protocol.  Bail out. */
 				return;
 			}
-			
+
 			// Send ?WATCH={"json":true};
 			memset(line, 0, sizeof(line));
 			strcpy(line, "?WATCH={\"json\":true};\n");
@@ -6367,15 +6367,15 @@ int main( int argc, char *argv[] )
             		printf("Error: Write interval is not a number (>0). Aborting.\n");
             		exit ( 1 );
             	}
-            	
+
             	G.file_write_interval = atoi(optarg);
-            	
+
             	if (G.file_write_interval <= 0) {
             		printf("Error: Write interval must be greater than 0. Aborting.\n");
             		exit ( 1 );
             	}
             	break;
-                
+
 			case 'E':
 				G.detect_anomaly = 1;
 				break;

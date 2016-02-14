@@ -1,7 +1,7 @@
 /*
  *  WEP Cloaking filtering
  *
- *  Copyright (C) 2008-2015 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2008-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  Thanks to Alex Hernandez aka alt3kx for the hardware.
  *
@@ -169,7 +169,7 @@ FILE * open_existing_pcap(const char * filename) {
         perror( "Unable to open pcap" );
         return NULL;
     }
-    
+
     temp_sizet = (size_t) sizeof( _pfh_in );
 
     if( fread( &_pfh_in, 1, temp_sizet, f ) !=  temp_sizet )
@@ -1267,7 +1267,7 @@ BOOLEAN check_for_cloaking() {
 BOOLEAN write_packets() {
 	// Open files ...
 	FILE * invalid_status_file;
-	
+
 	if (_filename_output_invalid != NULL)
 		invalid_status_file = init_new_pcap(_filename_output_invalid);
 	else
@@ -1588,7 +1588,7 @@ int main( int argc, char *argv[] )
         temp = strlen( input_filename );
         if (!manual_cloaked_fname)
             _filename_output_cloaked = (char *) calloc(temp + 9 + 5, 1);
-            
+
         if (!manual_filtered_fname)
             _filename_output_filtered = (char *) calloc(temp + 10 + 5, 1);
 
@@ -1609,7 +1609,7 @@ int main( int argc, char *argv[] )
             if (!manual_cloaked_fname)
             {
                 strncpy(_filename_output_cloaked, input_filename, strlen( input_filename ) + 9 + 5 - 1);
-                strncat(_filename_output_cloaked, "-cloaked.pcap", 14);	        
+                strncat(_filename_output_cloaked, "-cloaked.pcap", 14);
             }
             if (!manual_filtered_fname)
             {
@@ -1618,7 +1618,7 @@ int main( int argc, char *argv[] )
             }
         }
     }
-    
+
 	printf("Output packets (valid) filename: %s\n",  _filename_output_filtered);
 	printf("Output packets (cloaked) filename: %s\n",  _filename_output_cloaked);
 

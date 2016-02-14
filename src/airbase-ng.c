@@ -2,7 +2,7 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
- *  Copyright (C) 2008-2015 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2008-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2008, 2009 Martin Beck <hirte@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,7 @@
 #include <time.h>
 #include <getopt.h>
 #include <sys/file.h>
-#include <fcntl.h> 
+#include <fcntl.h>
 
 #include <ctype.h>
 
@@ -435,7 +435,7 @@ int addESSID(char* essid, int len, int expiration)
 
     if(len <= 0 || len > 255)
         return -1;
-    
+
     pthread_mutex_lock(&rESSIDmutex);
     cur = rESSID;
 
@@ -1130,7 +1130,7 @@ int getNextESSID(char *essid)
 {
     int len;
     pESSID_t cur;
-    
+
     pthread_mutex_lock(&rESSIDmutex);
 
     if(rESSID == NULL || rESSID->next == NULL) {
@@ -1159,7 +1159,7 @@ int getNextESSID(char *essid)
     if (cur != NULL) {
         memcpy(essid, cur->essid, cur->len + 1);
         len = cur->len;
-        
+
     }
     pthread_mutex_unlock(&rESSIDmutex);
 

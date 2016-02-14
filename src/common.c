@@ -1,7 +1,7 @@
 /*
  *  Common functions for all aircrack-ng tools
  *
- *  Copyright (C) 2006-2015 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,9 +58,9 @@
  * It has the following license:
  *
  * This file is Copyright (c) 2013-2014 magnum, Lukasz and JimF,
- * and is hereby released to the general public under the 
+ * and is hereby released to the general public under the
 following terms:
- * Redistribution and use in source and binary forms, with or 
+ * Redistribution and use in source and binary forms, with or
 without
  * modifications, are permitted.
 */
@@ -428,7 +428,7 @@ int hexStringToArray(char* in, int in_length, unsigned char* out, int out_length
 
     if (in_length < 2 || out_length < (in_length / 3) + 1 || input == NULL || output == NULL)
     	return -1;
-    
+
     out_pos = 0;
     for (i = 0; i < in_length - 1; ++i)
     {
