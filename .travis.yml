@@ -26,10 +26,10 @@ compiler:
   - clang
 
 script:
-    - make sqlite=true experimental=true && make check sqlite=true experimental=true && make clean
-    - make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
-    - make pcre=true && make check pcre=true
+    - make sqlite=true experimental=true && make check sqlite=true experimental=true
+    - make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
+    - make clean && make pcre=true && make check pcre=true
     - export CFLAGS="-g -W -Wall -O0"
-    - make sqlite=true experimental=true && make check sqlite=true experimental=true && make clean
-    - make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
-    - make pcre=true && make check pcre=true
+    - make clean && make sqlite=true experimental=true && make check sqlite=true experimental=true
+    - make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
+    - make clean && make pcre=true && make check pcre=true
