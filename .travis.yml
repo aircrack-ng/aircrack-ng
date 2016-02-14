@@ -31,7 +31,7 @@ script:
     - make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
     - make clean && make pcre=true && make check pcre=true
     - export CFLAGS="-g -W -Wall -O0"
-    - if [ "$TRAVIS_OS_NAME" != "osx" ]; then (make clean && make libnl=false && make check libnl=false); fie
+    - if [ "$TRAVIS_OS_NAME" != "osx" ]; then (make clean && make libnl=false && make check libnl=false); fi
     - make clean && make sqlite=true experimental=true && make check sqlite=true experimental=true
     - make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
     - make clean && make pcre=true && make check pcre=true
