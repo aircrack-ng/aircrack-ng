@@ -116,7 +116,7 @@ EOF
 }
 
 case "$CC" in
-	mips-* | arm-*)
+	mips-* | arm-* | aarch64-*)
 		IS_CROSS=1
 		IS_X86=0
 	;;
@@ -129,7 +129,7 @@ case "$UARCH" in
 	x86_64 | amd64 | i*86*)
 		IS_X86=1
 	;;
-	*arm*)
+	*arm* | aarch64)
 		IS_ARM=1
 	;;
 	*mips*)
