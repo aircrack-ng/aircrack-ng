@@ -1592,11 +1592,11 @@ int main( int argc, char *argv[] )
         if (!manual_filtered_fname)
             _filename_output_filtered = (char *) calloc(temp + 10 + 5, 1);
 
-	    while (--temp > 0)
-	    {
-		    if (input_filename[temp] == '.')
-			    break;
-	    }
+	while (--temp > 0)
+	{
+	    if (input_filename[temp] == '.')
+		break;
+	}
 
 	    // No extension
         if (temp == 0) {

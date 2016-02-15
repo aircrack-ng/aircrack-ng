@@ -437,8 +437,8 @@ static void handle_card(struct sstate *ss)
 	struct client *next_c;
 
 	rd = card_read(ss, ri + 1, sizeof(buf) - sizeof(*ri), ri);
-    if (rd >= 0)
-    	rd += sizeof(*ri);
+	if (rd >= 0)
+	    rd += sizeof(*ri);
 
 	ri->ri_mactime = __cpu_to_be64(ri->ri_mactime);
 	ri->ri_power = __cpu_to_be32(ri->ri_power);

@@ -929,8 +929,9 @@ int calc_tkip_mic_key(unsigned char* packet, int length, unsigned char key[8])
     memcpy(ptr, packet+z, length-z-8);  ptr+=length-z-8;
     memcpy(ptr, "\x5a", 1);             ptr+=1;
     memcpy(ptr, ZERO, 4);               ptr+=4;
-    if((ptr-message) % 4 > 0)
+    if((ptr-message) % 4 > 0){
         memcpy(ptr, ZERO, 4-((ptr-message)%4)); ptr+=4-((ptr-message)%4);
+    }
 
     init_michael(&mic, packet+length-8);
     michael_remove(&mic, message, (ptr-message));

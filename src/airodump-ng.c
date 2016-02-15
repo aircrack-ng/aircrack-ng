@@ -3409,13 +3409,14 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		            }
 		        }
 		    }
-		    else
+		    else {
 		        snprintf(strbuf, sizeof(strbuf)-1, " ");
 
 			if (G.maxsize_wps_seen <= strlen(strbuf))
 				G.maxsize_wps_seen = strlen(strbuf);
 			else // write spaces (32)
 				memset( strbuf+strlen(strbuf), 32,  (G.maxsize_wps_seen - strlen(strbuf))  );
+		    }
 		}
 		if(ap_cur->essid[0] != 0x00)
 		{
