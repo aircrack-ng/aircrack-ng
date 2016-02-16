@@ -61,7 +61,11 @@ test_header_file () {
 }
 
 cpuid_test () {
-	tmpdir="$(mktemp -d -t acng.XXXX)"
+	if [ ${OPENBSD} -eq 0 ]; then
+		tmpdir="$(mktemp -d -t acng.XXXX)"
+	else
+		tmpdir="$(mktemp -d -t acng.XXXXXX)"
+	fi
 
 cat >${tmpdir}/cpuidtest.c <<EOF
 #include <cpuid.h>
