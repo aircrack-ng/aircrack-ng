@@ -1120,31 +1120,16 @@ getPhy() {
 
 checkvm() {
 	#this entire section of code is completely stolen from Carlos Perez's work in checkvm.rb for metasploit and rewritten (poorly) in sh
-	#Check dmi info
-	if [ -x "$(command -v dmidecode 2>&1)" ]; then
-		dmi_info=$(dmidecode 2>&1)
-		if [ -n "${dmi_info}" ]; then
-			printf "${dmi_info}" | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
-			printf "${dmi_info}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf "${dmi_info}" | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
-			printf "${dmi_info}" | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
-			printf "${dmi_info}" | grep -iq "domu" 2> /dev/null && vm="Xen"
-			[ -n "${vm}" ] && vm_from="dmi_info"
-		fi
-	fi
-
 	#check loaded modules
-	if [ -z "${vm_from}" ]; then
-		if [ -x "$(command -v lsmod 2>&1)" ]; then
-			lsmod_data="$(lsmod 2>&1)"
-			if [ -n "${lsmod}" ]; then
-				printf "${lsmod_data}" | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
-				printf "${lsmod_data}" | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
-				printf "${lsmod_data}" | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
-				printf "${lsmod_data}" | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
-				printf "${lsmod_data}" | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
-				[ -n "${vm}" ] && vm_from="lsmod"
-			fi
+	if [ -x "$(command -v lsmod 2>&1)" ]; then
+		lsmod_data="$(lsmod 2>&1)"
+		if [ -n "${lsmod}" ]; then
+			printf "${lsmod_data}" | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
+			printf "${lsmod_data}" | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
+			printf "${lsmod_data}" | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
+			printf "${lsmod_data}" | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
+			printf "${lsmod_data}" | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
+			[ -n "${vm}" ] && vm_from="lsmod"
 		fi
 	fi
 
@@ -1202,6 +1187,18 @@ checkvm() {
 		if [ -e /dev/vmnet ]; then
 			vm="VMware"
 			vm_from="/dev/vmnet"
+		fi
+	fi
+
+	#Check dmi info
+	if [ -z "${vm_from}" ]; then
+		if [ -x "$(command -v dmidecode 2>&1)" ]; then
+			dmidecode 2>&1 | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
+			dmidecode 2>&1 | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			dmidecode 2>&1 | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+			dmidecode 2>&1 | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
+			dmidecode 2>&1 | grep -iq "domu" 2> /dev/null && vm="Xen"
+			[ -n "${vm}" ] && vm_from="dmi_info"
 		fi
 	fi
 
