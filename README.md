@@ -23,7 +23,7 @@ to speed up the cracking process.
  * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
  * pkg-config (pkgconf on FreeBSD)
  * FreeBSD, OpenBSD, NetBSD, Solaris and OS X with macports: gmake
- * Linux/Cygwin: make
+ * Linux/Cygwin: make and Standard C++ Library development package (Debian: libstdc++-dev)
 
 ## Optional stuff
 
