@@ -134,6 +134,19 @@ to compile and install the suite:
 
     `gmake CC=gcc5 CXX=g++5`
 
+# Packaging
+
+Automatic detection of CPU optimization is done at compile time. This behavior
+is not desirable when packaging Aircrack-ng (for a Linux distribution).
+
+It can be overriden by creating common.cfg in the same directory as this file
+with the following settings when compiling on x86 (32 or 64 bit):
+```
+NEWSSE=false
+SIMDCORE=false
+PTHREAD=Y
+```
+
 # Using precompiled binaries
 
 Linux/BSD:
