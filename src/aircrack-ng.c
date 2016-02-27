@@ -3432,13 +3432,11 @@ int remove_votes(int keybyte, unsigned char value)
 
 int do_wep_crack1( int B )
 {
-	int i, j, l, m, tsel, charread, askchange;
+	int i, j, l, m, tsel, charread;
 	int remove_keybyte_nr, remove_keybyte_value;
 	//int a,b;
 	static int k = 0;
 	char user_guess[4];
-
-	askchange = 1;
 
 	get_ivs:
 
@@ -4045,10 +4043,9 @@ int crack_wpa_thread( void *arg )
 
 	struct WPA_data* data;
 	struct AP_info* ap;
-	int thread;
 	int threadid=0;
 	int ret=0;
-	int i, j, len, slen;
+	int i, j, len;
 //	int nparallel = 1;
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -4063,7 +4060,6 @@ int crack_wpa_thread( void *arg )
 
 	data = (struct WPA_data*)arg;
 	ap = data->ap;
-	thread = data->thread;
 	threadid = data->threadid;
 	strncpy(essid, ap->essid, 36);
 
@@ -4089,9 +4085,6 @@ int crack_wpa_thread( void *arg )
 	}
 
 	/* receive the essid */
-
-	slen = strlen(essid) + 4;
-
 #ifndef OLD_SSE_CORE
 	init_atoi();
 #endif
