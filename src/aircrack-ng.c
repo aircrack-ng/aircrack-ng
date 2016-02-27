@@ -254,7 +254,6 @@ int safe_write( int fd, void *buf, size_t len );
 void clean_exit(int ret)
 {
 	struct AP_info *ap_cur;
-	struct AP_info *ap_prv;
 	struct AP_info *ap_next;
 	struct ST_info *st_tmp;
 	int i=0;
@@ -337,7 +336,6 @@ void clean_exit(int ret)
 		wep.ivbuf = NULL;
 	}
 
-	ap_prv = NULL;
 	ap_cur = ap_1st;
 
 	while( ap_cur != NULL )
@@ -381,7 +379,6 @@ void clean_exit(int ret)
 			ap_cur->ptw_vague = NULL;
 		}
 
-		ap_prv = ap_cur;
 		ap_cur = ap_cur->next;
 	}
 
@@ -394,8 +391,6 @@ void clean_exit(int ret)
 		free(ap_next);
 		ap_next = NULL;
 	}
-
-	ap_prv = NULL;
 
 // 	attack = A_s5_1;
 // 	printf("Please wait for evaluation...\n");
