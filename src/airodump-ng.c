@@ -1751,6 +1751,10 @@ skip_probe:
 
             if( p[0] == 0x03 )
                 ap_cur->channel = p[2];
+            /* also get the channel from ht information->primary channel */
+            else if (p[0] == 0x3d){
+		ap_cur->channel = p[2];
+            }
 
             p += 2 + p[1];
         }
