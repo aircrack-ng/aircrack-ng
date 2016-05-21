@@ -2551,7 +2551,7 @@ static void wifi_read(void)
 	struct network *n;
 
 	rd = wi_read(s->s_wi, buf, sizeof(buf), &ri);
-	if (rd <= 0)
+	if (rd < 0)
 		err(1, "wi_read()");
 
 	s->s_ri = &ri;
