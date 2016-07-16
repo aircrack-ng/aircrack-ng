@@ -168,7 +168,7 @@ usage() {
 
 handleLostPhys() {
 	MISSING_INTERFACE=""
-	for i in $(ls /sys/class/ieee80211/); do
+	for i in $(ls /sys/class/ieee80211/ 2>/dev/null); do
 		if [ ! -d /sys/class/ieee80211/${i}/device/net ]; then
 			MISSING_INTERFACE="${i}"
 			printf "\nFound ${MISSING_INTERFACE} with no interfaces assigned, would you like to assign one to it? [y/n] "
