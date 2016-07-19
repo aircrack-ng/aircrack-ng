@@ -168,20 +168,22 @@ usage() {
 
 handleLostPhys() {
 	MISSING_INTERFACE=""
-	for i in $(ls /sys/class/ieee80211/ 2>/dev/null); do
-		if [ ! -d /sys/class/ieee80211/${i}/device/net ]; then
-			MISSING_INTERFACE="${i}"
-			printf "\nFound ${MISSING_INTERFACE} with no interfaces assigned, would you like to assign one to it? [y/n] "
-			yesorno
-			retcode=$?
-               		if [ "${retcode}" = "1" ]; then
-				printf "PHY ${MISSING_INTERFACE} will remain lost.\n"
-			elif [ "${retcode}" = "0" ]; then
-				PHYDEV=${MISSING_INTERFACE}
-				findFreeInterface monitor
-               		fi
-		fi
-	done
+        if [ -d /sys/class/ieee80211 ]; then
+		for i in $(ls /sys/class/ieee80211/); do
+			if [ ! -d /sys/class/ieee80211/${i}/device/net ]; then
+				MISSING_INTERFACE="${i}"
+				printf "\nFound ${MISSING_INTERFACE} with no interfaces assigned, would you like to assign one to it? [y/n] "
+				yesorno
+				retcode=$?
+	               		if [ "${retcode}" = "1" ]; then
+					printf "PHY ${MISSING_INTERFACE} will remain lost.\n"
+				elif [ "${retcode}" = "0" ]; then
+					PHYDEV=${MISSING_INTERFACE}
+					findFreeInterface monitor
+	               		fi
+			fi
+		done
+	fi
 				#add some spacing so this doesn't make the display hard to read
 				printf "\n"
 }
