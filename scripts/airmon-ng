@@ -1124,7 +1124,7 @@ checkvm() {
 	#this entire section of code is completely stolen from Carlos Perez's work in checkvm.rb for metasploit and rewritten (poorly) in sh
 	#check loaded modules
 	if [ -x "$(command -v lsmod 2>&1)" ]; then
-		lsmod_data="$(lsmod 2>&1)"
+		lsmod_data="$(lsmod 2>&1 | awk '{print $1}')"
 		if [ -n "${lsmod}" ]; then
 			printf "${lsmod_data}" | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
 			printf "${lsmod_data}" | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
