@@ -29,9 +29,9 @@ then
 	USERID="`id -u 2> /dev/null`"
 fi
 
-if [ x$USERID = "x" -a x$UID != "x" ]
+if [ x$USERID = "x" -a x$(id -ru) != "x" ]
 then
-	USERID=$UID
+	USERID=$(id -ru)
 fi
 
 if [ x$USERID != "x" -a x$USERID != "x0" ]
