@@ -974,7 +974,7 @@ int main(int argc, char **argv) {
 				// Import
 
 				if (argc < 5) {
-					print_help("You must specifiy an import format and a file.");
+					print_help("You must specify an import format and a file.");
 				} else if (strcasecmp(argv[3], IMPORT_COWPATTY) == 0) {
 					if ( check_for_db(&db, argv[1], 1, 0) ) {
 						return 1;

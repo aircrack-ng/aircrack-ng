@@ -166,7 +166,7 @@ char usage[] =
 "      -c dmac   : set Destination  MAC address\n"
 "      -h smac   : set Source       MAC address\n"
 "      -e essid  : set target AP SSID\n"
-"      -M sec    : MIC error timout in seconds [60]\n"
+"      -M sec    : MIC error timeout in seconds [60]\n"
 "\n"
 "  Debug options:\n"
 "\n"

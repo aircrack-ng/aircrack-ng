@@ -524,7 +524,7 @@ void read_auth(struct east_state *es, struct ieee80211_frame *wh, int len)
 
 	sp++;
 	if (le16toh(*sp) != 0) {
-		printf("Auth unsuccesful %d\n", le16toh(*sp));
+		printf("Auth unsuccessful %d\n", le16toh(*sp));
 		exit(1);
 	}
 
