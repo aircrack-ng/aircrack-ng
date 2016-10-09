@@ -181,7 +181,7 @@ char usage[] =
 "      -i iface  : capture packets from this interface\n"
 "      -r file   : extract packets from this pcap file\n"
 "\n"
-"      --help              : Displays this usage screen\n"
+"      --help    : Displays this usage screen\n"
 "\n";
 
 struct options
@@ -3796,7 +3796,6 @@ int main( int argc, char *argv[] )
 
         static struct option long_options[] = {
             {"help",        0, 0, 'H'},
-            {"fast",        0, 0, 'F'},
             {"pmk",         1, 0, 'P'},
             {"psk",         1, 0, 'p'},
             {0,             0, 0,  0 }
