@@ -183,6 +183,10 @@ struct ieee80211_radiotap_header {
  * IEEE80211_RADIOTAP_AMPDU_STATUS	u32, u16, u8, u8	unitlesss
  *
  *	Contains the AMPDU information for the subframe.
+ *
+ * IEEE80211_RADIOTAP_TIMESTAMP		u64, u16, u8, u8	(various)
+ *
+ *	Timestamp information.
  */
 enum ieee80211_radiotap_type {
 	IEEE80211_RADIOTAP_TSFT = 0,
@@ -206,6 +210,7 @@ enum ieee80211_radiotap_type {
 
 	IEEE80211_RADIOTAP_MCS = 19,
 	IEEE80211_RADIOTAP_AMPDU_STATUS = 20,
+	IEEE80211_RADIOTAP_TIMESTAMP = 22,
 
 	/* valid in every it_present bitmap, even vendor namespaces */
 	IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE = 29,
