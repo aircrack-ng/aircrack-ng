@@ -6267,7 +6267,7 @@ __start:
 			if( ! opt.is_quiet && !_speed_test) {
 				if( opt.l33t )
 					printf( "\33[37;40m" );
-					printf( "\33[2J" );
+				printf( "\33[2J" );
 				if( opt.l33t )
 					printf( "\33[34;1m" );
 			printf("\33[2;34H%s",progname);
