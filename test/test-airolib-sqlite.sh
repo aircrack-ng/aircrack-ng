@@ -5,7 +5,7 @@
 TESTDIR="$(dirname $0)"
 tmpfile="$(mktemp -u -t acng.XXXX)"
 # Clean on exit
-trap "rm -fr "${tmpdir}"" SIGINT SIGKILL SIGQUIT SIGSEGV SIGPIPE SIGALRM SIGTERM EXIT
+trap "rm -fr "${tmpdir}"" INT QUIT SEGV PIPE ALRM TERM EXIT
 
 echo Harkonen | ./airolib-ng "${tmpfile}" --import essid -
 [ $? -ne 0 ] && exit 1

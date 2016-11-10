@@ -43,7 +43,7 @@ if [ "$(uname -s)" = 'OpenBSD' ]; then
 	trap clean_exit EXIT
 else
 	OPENBSD=0
-	trap clean_exit SIGINT SIGKILL SIGQUIT SIGSEGV SIGPIPE SIGALRM SIGTERM EXIT
+	trap clean_exit INT QUIT SEGV PIPE ALRM TERM EXIT
 fi
 
 # $1 flag $2 variable

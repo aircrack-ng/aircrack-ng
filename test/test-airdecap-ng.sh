@@ -27,7 +27,7 @@ compute_sha1() {
 if [ "$(uname -s)" = 'OpenBSD' ]; then
 	trap "rm -rf "${tmpdir}"" EXIT
 else
-	trap "rm -fr "${tmpdir}"" SIGINT SIGKILL SIGQUIT SIGSEGV SIGPIPE SIGALRM SIGTERM EXIT
+	trap "rm -fr "${tmpdir}"" INT QUIT SEGV PIPE ALRM TERM EXIT
 fi
 # Test1
 cp -f "${TESTDIR}/wpa.cap" "${tmpdir}"
