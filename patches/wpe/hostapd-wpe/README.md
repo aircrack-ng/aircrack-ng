@@ -1,27 +1,22 @@
 # About
 
-hostapd-wpe is the replacement for FreeRADIUS-WPE 
-(http://www.willhackforsushi.com/?page_id=37).
+hostapd-wpe is the replacement for [FreeRADIUS-WPE](http://www.willhackforsushi.com/?page_id=37).
 
 It implements IEEE 802.1x Authenticator and Authentication Server impersonation attacks to obtain client credentials, establish connectivity to the client, and launch other attacks where applicable. 
 
 hostapd-wpe supports the following EAP types for impersonation:
-    1. EAP-FAST/MSCHAPv2 (Phase 0)
-    2. PEAP/MSCHAPv2
-    3. EAP-TTLS/MSCHAPv2
-    4. EAP-TTLS/MSCHAP
-    5. EAP-TTLS/CHAP
-    6. EAP-TTLS/PAP
+1. EAP-FAST/MSCHAPv2 (Phase 0)
+2. PEAP/MSCHAPv2
+3. EAP-TTLS/MSCHAPv2
+4. EAP-TTLS/MSCHAP
+5. EAP-TTLS/CHAP
+6. EAP-TTLS/PAP
 
 Once impersonation is underway, hostapd-wpe will return an EAP-Success message so that the client believes they are connected to their legitimate authenticator.
 
-For 802.11 clients, hostapd-wpe also implements Karma-style gratuitous probe responses. Inspiration for this was provided by JoMo-Kun's patch for older versions of hostapd.
+For 802.11 clients, hostapd-wpe also implements Karma-style gratuitous probe responses. Inspiration for this was provided by [JoMo-Kun's patch](http://www.foofus.net/?page_id=115) for older versions of hostapd.
 
-        http://www.foofus.net/?page_id=115
-
-hostapd-wpe also implements CVE-2014-0160 (Heartbleed) attacks against vulnerable clients. Inspiration for this was provided by the Cupid PoC:
-
-        https://github.com/lgrangeia/cupid
+hostapd-wpe also implements CVE-2014-0160 (Heartbleed) attacks against vulnerable clients. Inspiration for this was provided by the [Cupid](https://github.com/lgrangeia/cupid) PoC.
 
 hostapd-wpe logs all data to stdout and hostapd-wpe.log
 
