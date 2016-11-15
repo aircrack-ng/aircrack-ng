@@ -1,6 +1,6 @@
 # FreeRadius Wireless Pawn Edition
 
-Updated patch for FreeRadius 2.2.8 (and 2.2.9)
+Updated patch for FreeRadius 3.0.12
 
 More information about WPE can be found:
 http://www.willhackforsushi.com/?page_id=37
@@ -18,7 +18,7 @@ Supported and tested EAP Types/Inner Authentication Methods (others may also wor
 ### Dependencies
 
 ```
-apt-get install libssl-dev build-essential
+apt-get install libssl-dev build-essential libtalloc-dev libpcre3-dev
 ```
 
 ### Compilation
@@ -26,21 +26,14 @@ apt-get install libssl-dev build-essential
 Assuming the patch is downloaded in the current directory, run the following commands:
 
 ```
-wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-2.2.9.tar.bz2
-tar -xvf freeradius-server-2.2.9.tar.bz2
-cd freeradius-server-2.2.9
-patch -Np1 -i ../freeradius-server-2.2.8-2.2.9-wpe.patch
+wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.12.tar.bz2
+tar -xvf freeradius-server-3.0.12.tar.bz2
+cd freeradius-server-3.0.12
+patch -Np1 -i ../freeradius-server-wpe.patch
 ./configure
 make
 make install
 ldconfig
-```
-
-### Create certificates
-
-```
-cd /usr/local/etc/raddb/certs
-./bootstrap
 ```
 
 ## Running
@@ -50,6 +43,8 @@ Start ```radiusd``` in a terminal:
 ```
 radiusd -s -X
 ```
+
+If it fails running and complains about OpenSSL being vulnerable, make sure OpenSSL is up to date. If you are using a recent distribution, most likely OpenSSL is patched, and you can safely allow it. In order to do so, edit /usr/local/etc/raddb/radiusd.conf and change ```allow_vulnerable_openssl``` from ```no``` to ```'CVE-2016-6304'``` (with the single quotes).
 
 Now, connect a client. Once a username/password is entered and the certificate accepted, information regarding that session will be stored in ```/usr/local/var/log/radius/freeradius-server-wpe.log```.
 
