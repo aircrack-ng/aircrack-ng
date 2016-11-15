@@ -187,9 +187,7 @@ static void set_key(char *key, int index, wpapsk_password *in)
 	if (length > PLAINTEXT_LENGTH)
 		length = PLAINTEXT_LENGTH;
 	in[index].length = length;
-//      inbuffer[index].length = length;
-	memcpy(in[index].v, key, length);
-//      count = index+1;
+	memcpy(in[index].v, key, length+1);
 }
 
 static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_password * in)
@@ -204,13 +202,11 @@ static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_
 	uint8_t tmpbuf[32];
 	char xsalt[32+4];
 
-	static unsigned char *sse_hash1	 = NULL;
-	static unsigned char *sse_crypt1 = NULL;
-	static unsigned char *sse_crypt2 = NULL;
-	static wpapsk_password	*inbuffer;     	//table for candidate passwords (pointer to threads copy)
+	unsigned char *sse_hash1	 = NULL;
+	unsigned char *sse_crypt1 = NULL;
+	unsigned char *sse_crypt2 = NULL;
 	unsigned char essid[32 + 4];
 
-	inbuffer	= wpapass[threadid];
 	sse_hash1 	= xsse_hash1[threadid];
 	sse_crypt1	= xsse_crypt1[threadid];
 	sse_crypt2	= xsse_crypt2[threadid];
@@ -263,7 +259,6 @@ static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_
 		o1 = (unsigned int*)t_sse_hash1;
 
 		for (j = 0; j < NBKEYS; ++j) {
-			memset(buffer[j].c, 0, 64);
 			memcpy(buffer[j].c, in[t*NBKEYS+j].v, in[t*NBKEYS+j].length);
 			memset(&buffer[j].c[in[t*NBKEYS+j].length], 0, 64-in[t*NBKEYS+j].length);
 			SHA1_Init(&ctx_ipad[j]);
@@ -422,7 +417,7 @@ static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_
 				printf("\n");
 #endif
 
-				alter_endianity_to_BE(xpmk1[threadid],32);
+				alter_endianity_to_BE(xpmk1[threadid],8);
 
 			}
 			if (j == 1) {
@@ -434,7 +429,7 @@ static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_
 				printf("\n");
 #endif
 
-				alter_endianity_to_BE(xpmk2[threadid],32);
+				alter_endianity_to_BE(xpmk2[threadid],8);
 			}
 			if (j == 2) {
 				memcpy(xpmk3[threadid], tmpbuf, 32);
@@ -445,7 +440,7 @@ static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_
 				printf("\n");
 #endif
 
-				alter_endianity_to_BE(xpmk3[threadid],32);
+				alter_endianity_to_BE(xpmk3[threadid],8);
 			}
 
 			if (j == 3) {
@@ -457,23 +452,23 @@ static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_
 				printf("\n");
 #endif
 
-				alter_endianity_to_BE(xpmk4[threadid],32);
+				alter_endianity_to_BE(xpmk4[threadid],8);
 			}
 			if (j == 4) {
 				memcpy(xpmk5[threadid], tmpbuf, 32);
-				alter_endianity_to_BE(xpmk5[threadid],32);
+				alter_endianity_to_BE(xpmk5[threadid],8);
 			}
 			if (j == 5) {
 				memcpy(xpmk6[threadid], tmpbuf, 32);
-				alter_endianity_to_BE(xpmk6[threadid],32);
+				alter_endianity_to_BE(xpmk6[threadid],8);
 			}
 			if (j == 6) {
 				memcpy(xpmk7[threadid], tmpbuf, 32);
-				alter_endianity_to_BE(xpmk7[threadid],32);
+				alter_endianity_to_BE(xpmk7[threadid],8);
 			}
 			if (j == 7) {
 				memcpy(xpmk8[threadid], tmpbuf, 32);
-				alter_endianity_to_BE(xpmk8[threadid],32);
+				alter_endianity_to_BE(xpmk8[threadid],8);
 			}
 		}
 	}
@@ -496,10 +491,10 @@ int init_wpapsk(char (*key)[128], char *essid, int threadid) {
 	int prloop = 0;
 #endif
 	int i = 0;
-	static int count = 0;
-	static unsigned char *lpmk1 = NULL, *lpmk2 = NULL, *lpmk3 = NULL, *lpmk4 = NULL;
-	static unsigned char *lpmk5 = NULL, *lpmk6 = NULL, *lpmk7 = NULL, *lpmk8 = NULL;
-	static wpapsk_password	*inbuffer;	//table for candidate passwords (pointer to threads copy)
+	int count = 0;
+	unsigned char *lpmk1 = NULL, *lpmk2 = NULL, *lpmk3 = NULL, *lpmk4 = NULL;
+	unsigned char *lpmk5 = NULL, *lpmk6 = NULL, *lpmk7 = NULL, *lpmk8 = NULL;
+	wpapsk_password	*inbuffer;	//table for candidate passwords (pointer to threads copy)
 
 	lpmk1		= xpmk1[threadid];
 	lpmk2		= xpmk2[threadid];
@@ -510,6 +505,15 @@ int init_wpapsk(char (*key)[128], char *essid, int threadid) {
 	lpmk7		= xpmk7[threadid];
 	lpmk8		= xpmk8[threadid];
 	inbuffer	= wpapass[threadid];
+
+	memset(lpmk1, 0, 32);
+	memset(lpmk2, 0, 32);
+	memset(lpmk3, 0, 32);
+	memset(lpmk4, 0, 32);
+	memset(lpmk5, 0, 32);
+	memset(lpmk6, 0, 32);
+	memset(lpmk7, 0, 32);
+	memset(lpmk8, 0, 32);
 
 	for (; i < cpuinfo.simdsize; i++) {
 		memset(inbuffer[i].v, 0, sizeof(inbuffer[i].v));
@@ -529,15 +533,6 @@ int init_wpapsk(char (*key)[128], char *essid, int threadid) {
 #ifdef XDEBUG
 //	printf("%d key (%s) (%s) (%s) (%s)\n",threadid, key1,key2,key3,key4);
 #endif
-
-	memset(&lpmk1[threadid], 0, 32);
-	memset(&lpmk2[threadid], 0, 32);
-	memset(&lpmk3[threadid], 0, 32);
-	memset(&lpmk4[threadid], 0, 32);
-	memset(&lpmk5[threadid], 0, 32);
-	memset(&lpmk6[threadid], 0, 32);
-	memset(&lpmk7[threadid], 0, 32);
-	memset(&lpmk8[threadid], 0, 32);
 
 	wpapsk_sse(threadid, count, essid, inbuffer);
 
