@@ -7404,10 +7404,7 @@ usage:
     {
 		// Freeing AP List
         ap_next = ap_cur->next;
-
-        if( ap_cur != NULL )
-            free(ap_cur);
-
+        free(ap_cur);
         ap_cur = ap_next;
     }
 
