@@ -5604,7 +5604,7 @@ int getchannels(const char *optarg)
                 //are there any illegal characters?
                 for(i=0; i<strlen(token); i++)
                 {
-                    if( (token[i] < '0') && (token[i] > '9') && (token[i] != '-'))
+                    if( ((token[i] < '0') || (token[i] > '9')) && (token[i] != '-') )
                     {
                         free(tmp_channels);
                         free(optc);
@@ -5649,7 +5649,7 @@ int getchannels(const char *optarg)
             //are there any illegal characters?
             for(i=0; i<strlen(token); i++)
             {
-                if( (token[i] < '0') && (token[i] > '9') )
+                if( (token[i] < '0') || (token[i] > '9') )
                 {
                     free(tmp_channels);
                     free(optc);
@@ -5770,7 +5770,7 @@ int getfrequencies(const char *optarg)
             //are there any illegal characters?
             for(i=0; i<strlen(token); i++)
             {
-                if( (token[i] < '0') && (token[i] > '9') )
+                if( (token[i] < '0') || (token[i] > '9') )
                 {
                     free(tmp_frequencies);
                     free(optc);
