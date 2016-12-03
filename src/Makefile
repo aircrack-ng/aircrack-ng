@@ -127,9 +127,15 @@ ifeq ($(subst TRUE,true,$(filter TRUE true,$(gcrypt) $(GCRYPT))),true)
 	OBJS_TT		+= sha1-git.o
 	OBJS_BS		+= sha1-git.o
 else
+	ifeq ($(OSNAME), Darwin)
+		ifneq ($(OSX_ALT_FLAGS), true)
+			CFLAGS		+= -I/usr/local/opt/openssl/include
+			LDFLAGS		+= -L/usr/local/opt/openssl/lib
+		endif
+	endif
+
 	LIBSSL		= -lssl -lcrypto $(LDFLAGS)
 endif
-
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
 	LIBSQL		= -L/usr/local/lib -lsqlite3

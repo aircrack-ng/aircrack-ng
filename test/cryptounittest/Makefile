@@ -15,6 +15,13 @@ ifeq ($(subst TRUE,true,$(filter TRUE true,$(gcrypt) $(GCRYPT))),true)
 	LIBSSL          =  -lgcrypt $(LDFLAGS)
 	CFLAGS          += -DUSE_GCRYPT
 else
+	ifeq ($(OSNAME), Darwin)
+		ifneq ($(OSX_ALT_FLAGS), true)
+			CFLAGS      += -I/usr/local/opt/openssl/include
+			LDFLAGS     += -L/usr/local/opt/openssl/lib
+		endif
+	endif
+
 	LIBSSL          = -lssl -lcrypto $(LDFLAGS)
 endif
 

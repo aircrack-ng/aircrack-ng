@@ -40,14 +40,17 @@ endif
 endif
 
 COMMON_CFLAGS	=
+OSX_ALT_FLAGS	=
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(xcode) $(XCODE))),true)
 	COMMON_CFLAGS	+= -I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-migrator/sdk/MacOSX.sdk/usr/include/ -D_XCODE -I../..
+	OSX_ALT_FLAGS	= true
 endif
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(macport) $(MACPORT))),true)
 	COMMON_CFLAGS	+= -I/opt/local/include -I../..
 	LDFLAGS		+= -L/opt/local/lib
+	OSX_ALT_FLAGS	= true
 endif
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(sqlite) $(SQLITE))),true)
