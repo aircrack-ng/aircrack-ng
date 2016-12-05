@@ -383,7 +383,7 @@ BOOLEAN read_packets(void)
 			puts("PPI");
 			break;
 		default:
-			printf("Unknown (%d)\n", _pfh_in.linktype);
+			printf("Unknown (%lu)\n", (unsigned long) _pfh_in.linktype);
 			break;
 	}
 
@@ -396,7 +396,7 @@ BOOLEAN read_packets(void)
         {
             // update the status line every second
 
-            printf( "\33[KRead %ld packets...\r", stats.nb_read );
+            printf( "\33[KRead %lu packets...\r", stats.nb_read );
             fflush( stdout );
             tt = time( NULL );
         }
@@ -427,7 +427,7 @@ BOOLEAN read_packets(void)
 
         if( _packet_elt_head->current->header.caplen <= 0 || _packet_elt_head->current->header.caplen > 65535 )
         {
-            printf( "Corrupted file? Invalid packet length %d.\n", _packet_elt_head->current->header.caplen );
+            printf( "Corrupted file? Invalid packet length %lu.\n", (unsigned long) _packet_elt_head->current->header.caplen );
             break;
         }
 
@@ -440,9 +440,9 @@ BOOLEAN read_packets(void)
 
         if( bytes_read != (size_t) _packet_elt_head->current->header.caplen )
         {
-			printf("Error reading the file: read %lu bytes out of %d.\n",
+			printf("Error reading the file: read %lu bytes out of %lu.\n",
 						(unsigned long) bytes_read,
-						_packet_elt_head->current->header.caplen);
+						(unsigned long) _packet_elt_head->current->header.caplen);
 
             break;
 		}

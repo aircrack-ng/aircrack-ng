@@ -1028,8 +1028,8 @@ void read_thread( void *arg )
 
 			if( pkh.caplen <= 0 || pkh.caplen > 65535 )
 			{
-				fprintf( stderr, "\nInvalid packet capture length %d - "
-					"corrupted file?\n", pkh.caplen );
+				fprintf( stderr, "\nInvalid packet capture length %lu - "
+					"corrupted file?\n", (unsigned long) pkh.caplen );
 				eof_wait( &eof_notified );
 				_exit( FAILURE );
 			}
@@ -1962,8 +1962,8 @@ void check_thread( void *arg )
 
 			if( pkh.caplen <= 0 || pkh.caplen > 65535 )
 			{
-				fprintf( stderr, "\nInvalid packet capture length %d - "
-					"corrupted file?\n", pkh.caplen );
+				fprintf( stderr, "\nInvalid packet capture length %lu - "
+					"corrupted file?\n", (unsigned long) pkh.caplen );
 				goto read_fail;
 			}
 

@@ -60,7 +60,7 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
 		return -1;
 
 	if (pkh.caplen > sizeof(buf)) {
-		printf("Bad caplen %d\n", pkh.caplen);
+		printf("Bad caplen %lu\n", (unsigned long) pkh.caplen);
 		return 0;
 	}
 

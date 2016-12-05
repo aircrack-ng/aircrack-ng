@@ -646,7 +646,7 @@ usage:
         {
             /* update the status line every second */
 
-            printf( "\33[KRead %ld packets...\r", stats.nb_read );
+            printf( "\33[KRead %lu packets...\r", stats.nb_read );
             fflush( stdout );
             tt = time( NULL );
         }
@@ -1055,13 +1055,13 @@ usage:
 
     /* write some statistics */
 
-    printf( "\33[KTotal number of packets read      % 8ld\n"
-                 "Total number of WEP data packets  % 8ld\n"
-                 "Total number of WPA data packets  % 8ld\n"
-                 "Number of plaintext data packets  % 8ld\n"
-                 "Number of decrypted WEP  packets  % 8ld\n"
-                 "Number of corrupted WEP  packets  % 8ld\n"
-                 "Number of decrypted WPA  packets  % 8ld\n",
+    printf( "\33[KTotal number of packets read      %8lu\n"
+                 "Total number of WEP data packets  %8lu\n"
+                 "Total number of WPA data packets  %8lu\n"
+                 "Number of plaintext data packets  %8lu\n"
+                 "Number of decrypted WEP  packets  %8lu\n"
+                 "Number of corrupted WEP  packets  %8lu\n"
+                 "Number of decrypted WPA  packets  %8lu\n",
             stats.nb_read, stats.nb_wep, stats.nb_wpa,
             stats.nb_plain, stats.nb_unwep, stats.nb_bad, stats.nb_unwpa );
 

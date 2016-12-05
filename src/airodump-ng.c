@@ -3024,7 +3024,7 @@ static char *parse_timestamp(unsigned long long timestamp) {
 	rem %= TSTP_MIN;
 	secs = rem / TSTP_SEC;
 
-	snprintf(s, 14, "%3dd %02d:%02d:%02d", days, hours, mins, secs);
+	snprintf(s, 14, "%3ud %02u:%02u:%02u", days, hours, mins, secs);
 
 	return s;
 }
@@ -3286,7 +3286,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
 	    if(G.singlechan)
 	    {
-		snprintf( strbuf+len, sizeof(strbuf)-len, "  %3d %3d %8ld %8ld %4d",
+		snprintf( strbuf+len, sizeof(strbuf)-len, "  %3d %3d %8lu %8lu %4d",
 			ap_cur->avg_power,
 			ap_cur->rx_quality,
 			ap_cur->nb_bcn,
@@ -3295,7 +3295,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	    }
 	    else
 	    {
-		snprintf( strbuf+len, sizeof(strbuf)-len, "  %3d %8ld %8ld %4d",
+		snprintf( strbuf+len, sizeof(strbuf)-len, "  %3d %8lu %8lu %4d",
 			ap_cur->avg_power,
 			ap_cur->nb_bcn,
 			ap_cur->nb_data,
@@ -3576,7 +3576,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		fprintf( stderr,  "-%2d", st_cur->rate_from/1000000);
 		fprintf( stderr,  "%c", (st_cur->qos_to_ds) ? 'e' : ' ');
 		fprintf( stderr, "  %4d", st_cur->missed   );
-		fprintf( stderr, " %8ld", st_cur->nb_pkt   );
+		fprintf( stderr, " %8lu", st_cur->nb_pkt   );
 
 		if( ws_col > (columns_sta - 6) )
 		{
@@ -3843,7 +3843,7 @@ int dump_write_csv( void )
             if( ap_cur->security & AUTH_OPN   ) fprintf( G.f_txt, " OPN");
         }
 
-        fprintf( G.f_txt, ", %3d, %8ld, %8ld, ",
+        fprintf( G.f_txt, ", %3d, %8lu, %8lu, ",
                  ap_cur->avg_power,
                  ap_cur->nb_bcn,
                  ap_cur->nb_data );
@@ -3908,7 +3908,7 @@ int dump_write_csv( void )
                  ltime->tm_mday, ltime->tm_hour,
                  ltime->tm_min,  ltime->tm_sec );
 
-        fprintf( G.f_txt, "%3d, %8ld, ",
+        fprintf( G.f_txt, "%3d, %8lu, ",
                  st_cur->power,
                  st_cur->nb_pkt );
 
@@ -4186,7 +4186,7 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 				"\t\t\t\t<LLC>0</LLC>\n"
 				"\t\t\t\t<data>0</data>\n"
 				"\t\t\t\t<crypt>0</crypt>\n"
-				"\t\t\t\t<total>%ld</total>\n"
+				"\t\t\t\t<total>%lu</total>\n"
 				"\t\t\t\t<fragments>0</fragments>\n"
 				"\t\t\t\t<retries>0</retries>\n"
 				"\t\t\t</packets>\n",
@@ -4302,7 +4302,7 @@ int dump_write_kismet_netxml( void )
 				first_time, last_time);
 		fprintf(G.f_kis_xml, "\t\t\t<type>Beacon</type>\n" );
 		fprintf(G.f_kis_xml, "\t\t\t<max-rate>%d.000000</max-rate>\n", ap_cur->max_speed );
-		fprintf(G.f_kis_xml, "\t\t\t<packets>%ld</packets>\n", ap_cur->nb_bcn );
+		fprintf(G.f_kis_xml, "\t\t\t<packets>%lu</packets>\n", ap_cur->nb_bcn );
 		fprintf(G.f_kis_xml, "\t\t\t<beaconrate>%d</beaconrate>\n", 10 );
 
 		// Encryption
@@ -4349,7 +4349,7 @@ int dump_write_kismet_netxml( void )
 
 		/* Freq (in Mhz) and total number of packet on that frequency
 		   FIXME: Take G.freqoption in account */
-		fprintf(G.f_kis_xml, "\t\t<freqmhz>%d %ld</freqmhz>\n",
+		fprintf(G.f_kis_xml, "\t\t<freqmhz>%d %lu</freqmhz>\n",
 					(ap_cur->channel) == -1 ? 0 : getFrequencyFromChannel(ap_cur->channel),
 					//ap_cur->nb_data + ap_cur->nb_bcn );
 					ap_cur->nb_pkt );
@@ -4363,10 +4363,10 @@ int dump_write_kismet_netxml( void )
 
 		/* Packets */
 		fprintf(G.f_kis_xml, "\t\t<packets>\n"
-					"\t\t\t<LLC>%ld</LLC>\n"
-					"\t\t\t<data>%ld</data>\n"
+					"\t\t\t<LLC>%lu</LLC>\n"
+					"\t\t\t<data>%lu</data>\n"
 					"\t\t\t<crypt>0</crypt>\n"
-					"\t\t\t<total>%ld</total>\n"
+					"\t\t\t<total>%lu</total>\n"
 					"\t\t\t<fragments>0</fragments>\n"
 					"\t\t\t<retries>0</retries>\n"
 					"\t\t</packets>\n",
@@ -4502,7 +4502,7 @@ int dump_write_kismet_netxml( void )
 
 			/* Freq (in Mhz) and total number of packet on that frequency
 			   FIXME: Take G.freqoption in account */
-			fprintf(G.f_kis_xml, "\t\t<freqmhz>%d %ld</freqmhz>\n",
+			fprintf(G.f_kis_xml, "\t\t<freqmhz>%d %lu</freqmhz>\n",
 						getFrequencyFromChannel(st_cur->channel),
 						st_cur->nb_pkt );
 
@@ -4523,7 +4523,7 @@ int dump_write_kismet_netxml( void )
 					"\t\t\t<LLC>0</LLC>\n"
 					"\t\t\t<data>0</data>\n"
 					"\t\t\t<crypt>0</crypt>\n"
-					"\t\t\t<total>%ld</total>\n"
+					"\t\t\t<total>%lu</total>\n"
 					"\t\t\t<fragments>0</fragments>\n"
 					"\t\t\t<retries>0</retries>\n"
 					"\t\t</packets>\n",
@@ -4707,13 +4707,13 @@ int dump_write_kismet_csv( void )
         fprintf( G.f_kis, "0;");
 
         //Beacon
-        fprintf( G.f_kis, "%ld;", ap_cur->nb_bcn);
+        fprintf( G.f_kis, "%lu;", ap_cur->nb_bcn);
 
         //LLC
         fprintf( G.f_kis, "0;");
 
         //Data
-        fprintf( G.f_kis, "%ld;", ap_cur->nb_data );
+        fprintf( G.f_kis, "%lu;", ap_cur->nb_data );
 
         //Crypt
         fprintf( G.f_kis, "0;");
@@ -4722,7 +4722,7 @@ int dump_write_kismet_csv( void )
         fprintf( G.f_kis, "0;");
 
         //Total
-        fprintf( G.f_kis, "%ld;", ap_cur->nb_data );
+        fprintf( G.f_kis, "%lu;", ap_cur->nb_data );
 
         //Carrier
         fprintf( G.f_kis, ";");

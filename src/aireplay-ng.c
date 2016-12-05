@@ -2348,7 +2348,7 @@ read_packets:
         if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
-            printf( "\rSent %ld packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
+            printf( "\rSent %lu packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
             fflush( stdout );
         }
 
@@ -2515,7 +2515,7 @@ int do_attack_arp_resend( void )
         {
             ticks[1] = 0;
             printf( "\rRead %ld packets (got %ld ARP requests and %ld ACKs), "
-                    "sent %ld packets...(%d pps)\r",
+                    "sent %lu packets...(%d pps)\r",
                     nb_pkt_read, nb_arp_tot, nb_ack_pkt, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
             fflush( stdout );
         }
@@ -2951,7 +2951,7 @@ int do_attack_caffe_latte( void )
         {
             ticks[1] = 0;
             printf( "\rRead %ld packets (%ld ARPs, %ld ACKs), "
-                    "sent %ld packets...(%d pps)\r",
+                    "sent %lu packets...(%d pps)\r",
                     nb_pkt_read, nb_arp_tot, nb_ack_pkt, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
             fflush( stdout );
         }
@@ -3412,7 +3412,7 @@ int do_attack_migmode( void )
         {
             ticks[1] = 0;
             printf( "\rRead %ld packets (%ld ARPs, %ld ACKs), "
-                    "sent %ld packets...(%d pps)\r",
+                    "sent %lu packets...(%d pps)\r",
                     nb_pkt_read, nb_arp_tot, nb_ack_pkt, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
             fflush( stdout );
         }
@@ -4055,7 +4055,7 @@ read_packets:
         if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
-            printf( "\rSent %ld packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
+            printf( "\rSent %lu packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
             fflush( stdout );
         }
 
@@ -4354,7 +4354,7 @@ int do_attack_chopchop( void )
         if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
-            printf( "\rSent %3ld packets, current guess: %02X...\33[K",
+            printf( "\rSent %3lu packets, current guess: %02X...\33[K",
                     nb_pkt_sent, guess );
             fflush( stdout );
         }
@@ -4596,7 +4596,7 @@ int do_attack_chopchop( void )
         n = caplen - data_start;
 
         printf( "\rOffset %4d (%2d%% done) | xor = %02X | pt = %02X | "
-                "%4ld frames written in %5.0fms\n", data_end - 1,
+                "%4lu frames written in %5.0fms\n", data_end - 1,
                 100 * ( caplen - data_end ) / n,
                 chopped[data_end - 1],
                 chopped[data_end - 1] ^ srcbuf[data_end + srcdiff - 1],

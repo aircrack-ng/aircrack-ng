@@ -2647,7 +2647,7 @@ static void print_status(int advance)
 			speed_calculate(&n->n_flood_in);
 			speed_calculate(&n->n_flood_out);
 
-			printf(" - %d IVs rate %d [%d PPS out] len %d",
+			printf(" - %d IVs rate %u [%u PPS out] len %d",
 			       n->n_data_count,
 			       n->n_flood_in.s_speed,
 			       n->n_flood_out.s_speed,
@@ -3095,7 +3095,7 @@ static void print_state(int UNUSED(x))
 	}
 
 	printf("Current chan: %d\n", s->s_chan);
-	printf("Hop cycle %d chans:", s->s_hopcycles);
+	printf("Hop cycle %u chans:", s->s_hopcycles);
 	do {
 		printf(" %d", c->c_num);
 		c = c->c_next;

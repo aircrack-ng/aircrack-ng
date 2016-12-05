@@ -203,7 +203,7 @@ int merge( int argc, char *argv[] )
         {
             nbw += n;
             unused = fwrite( buffer, 1, n, f_out );
-            printf( "%ld bytes written\r", nbw );
+            printf( "%lu bytes written\r", nbw );
         }
 
         fclose( f_in );
@@ -869,7 +869,7 @@ int main( int argc, char *argv[] )
     {
         if( time( NULL ) - tt > 0 )
         {
-            printf( "\33[KRead %ld packets...\r", nbr );
+            printf( "\33[KRead %lu packets...\r", nbr );
             fflush( stdout );
             tt = time( NULL );
         }
@@ -957,10 +957,10 @@ int main( int argc, char *argv[] )
     fclose( f_in );
     fclose( G.f_ivs );
 
-    printf( "\33[2KRead %ld packets.\n", nbr );
+    printf( "\33[2KRead %lu packets.\n", nbr );
 
     if ( nbivs > 0 )
-        printf( "Written %ld IVs.\n", nbivs);
+        printf( "Written %lu IVs.\n", nbivs);
     else
     {
         remove ( argv[3] );
