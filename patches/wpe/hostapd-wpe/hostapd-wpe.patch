@@ -3661,8 +3661,8 @@ diff -rupN hostapd-2.6/src/eap_server/eap_server.c hostapd-2.6-wpe/src/eap_serve
  				       identity_len, phase2, user) != 0) {
  		eap_user_free(user);
 diff -rupN hostapd-2.6/src/eap_server/eap_server_mschapv2.c hostapd-2.6-wpe/src/eap_server/eap_server_mschapv2.c
---- hostapd-2.6/src/eap_server/eap_server_mschapv2.c	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/src/eap_server/eap_server_mschapv2.c	2016-11-06 18:19:15.675651156 -0500
+--- hostapd-2.6/src/eap_server/eap_server_mschapv2.c	2016-10-02 20:51:11.000000000 +0200
++++ hostapd-2.6-wpe/src/eap_server/eap_server_mschapv2.c	2016-12-07 15:49:05.525550618 +0100
 @@ -12,7 +12,7 @@
  #include "crypto/ms_funcs.h"
  #include "crypto/random.h"
@@ -3681,15 +3681,15 @@ diff -rupN hostapd-2.6/src/eap_server/eap_server_mschapv2.c hostapd-2.6-wpe/src/
  	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, respData,
  			       &len);
  	if (pos == NULL || len < 1)
-@@ -329,6 +329,8 @@ static void eap_mschapv2_process_respons
- 	wpa_hexdump(MSG_MSGDUMP, "EAP-MSCHAPV2: NT-Response", nt_response, 24);
- 	wpa_printf(MSG_MSGDUMP, "EAP-MSCHAPV2: Flags 0x%x", flags);
- 	wpa_hexdump_ascii(MSG_MSGDUMP, "EAP-MSCHAPV2: Name", name, name_len);
-+	challenge_hash(peer_challenge, data->auth_challenge, name, name_len, wpe_challenge_hash);
+@@ -372,6 +372,8 @@ static void eap_mschapv2_process_respons
+ 		}
+ 	}
+ #endif /* CONFIG_TESTING_OPTIONS */
++	challenge_hash(peer_challenge, data->auth_challenge, username, username_len, wpe_challenge_hash);
 +	wpe_log_chalresp("mschapv2", name, name_len, wpe_challenge_hash, 8, nt_response, 24);
  
- 	buf = os_malloc(name_len * 4 + 1);
- 	if (buf) {
+ 	if (username_len != user_len ||
+ 	    os_memcmp(username, user, username_len) != 0) {
 @@ -406,6 +408,11 @@ static void eap_mschapv2_process_respons
  		return;
  	}
