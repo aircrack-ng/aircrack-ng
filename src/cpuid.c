@@ -604,7 +604,7 @@ int cpuid_getinfo() {
 #ifndef JOHN_AVX2
 	if (cpuinfo.simdsize == 8) {
 		printf("NOTE: Your processor is capable of AVX2 but AVX2 support was not compiled in!\n");
-		printf("Please send a copy of this output to the aircrack team to improve autodetection.\n");
+		printf("Please send a copy of this output to the aircrack-ng team to improve autodetection only if it was installed from sources.\n");
 	}
 #endif
 
