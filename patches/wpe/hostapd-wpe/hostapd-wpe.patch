@@ -1,6 +1,6 @@
 diff -rupN hostapd-2.6/hostapd/certs/bootstrap hostapd-2.6-wpe/hostapd/certs/bootstrap
 --- hostapd-2.6/hostapd/certs/bootstrap	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/certs/bootstrap	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/certs/bootstrap	2016-12-11 17:30:32.603942719 -0500
 @@ -0,0 +1,82 @@
 +#!/bin/sh
 +#
@@ -86,7 +86,7 @@ diff -rupN hostapd-2.6/hostapd/certs/bootstrap hostapd-2.6-wpe/hostapd/certs/boo
 +fi
 diff -rupN hostapd-2.6/hostapd/certs/ca.cnf hostapd-2.6-wpe/hostapd/certs/ca.cnf
 --- hostapd-2.6/hostapd/certs/ca.cnf	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/certs/ca.cnf	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/certs/ca.cnf	2016-12-11 17:30:32.603942719 -0500
 @@ -0,0 +1,59 @@
 +[ ca ]
 +default_ca		= CA_default
@@ -149,7 +149,7 @@ diff -rupN hostapd-2.6/hostapd/certs/ca.cnf hostapd-2.6-wpe/hostapd/certs/ca.cnf
 +basicConstraints	= CA:true
 diff -rupN hostapd-2.6/hostapd/certs/client.cnf hostapd-2.6-wpe/hostapd/certs/client.cnf
 --- hostapd-2.6/hostapd/certs/client.cnf	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/certs/client.cnf	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/certs/client.cnf	2016-12-11 17:30:32.603942719 -0500
 @@ -0,0 +1,53 @@
 +[ ca ]
 +default_ca		= CA_default
@@ -206,7 +206,7 @@ diff -rupN hostapd-2.6/hostapd/certs/client.cnf hostapd-2.6-wpe/hostapd/certs/cl
 +commonName		= user@example.com
 diff -rupN hostapd-2.6/hostapd/certs/demoCA/cacert.pem hostapd-2.6-wpe/hostapd/certs/demoCA/cacert.pem
 --- hostapd-2.6/hostapd/certs/demoCA/cacert.pem	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/certs/demoCA/cacert.pem	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/certs/demoCA/cacert.pem	2016-12-11 17:30:32.603942719 -0500
 @@ -0,0 +1,22 @@
 +-----BEGIN CERTIFICATE-----
 +MIIDtjCCAx+gAwIBAgIBADANBgkqhkiG9w0BAQQFADCBnzELMAkGA1UEBhMCQ0Ex
@@ -232,7 +232,7 @@ diff -rupN hostapd-2.6/hostapd/certs/demoCA/cacert.pem hostapd-2.6-wpe/hostapd/c
 +-----END CERTIFICATE-----
 diff -rupN hostapd-2.6/hostapd/certs/Makefile hostapd-2.6-wpe/hostapd/certs/Makefile
 --- hostapd-2.6/hostapd/certs/Makefile	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/certs/Makefile	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/certs/Makefile	2016-12-11 17:30:32.603942719 -0500
 @@ -0,0 +1,145 @@
 +######################################################################
 +#
@@ -381,7 +381,7 @@ diff -rupN hostapd-2.6/hostapd/certs/Makefile hostapd-2.6-wpe/hostapd/certs/Make
 +			serial* random *\.0 *\.1
 diff -rupN hostapd-2.6/hostapd/certs/README hostapd-2.6-wpe/hostapd/certs/README
 --- hostapd-2.6/hostapd/certs/README	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/certs/README	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/certs/README	2016-12-11 17:30:32.603942719 -0500
 @@ -0,0 +1,216 @@
 +  This directory contains scripts to create the server certificates.
 +To make a set of default (i.e. test) certificates, simply type:
@@ -601,7 +601,7 @@ diff -rupN hostapd-2.6/hostapd/certs/README hostapd-2.6-wpe/hostapd/certs/README
 +'default_md' entry in those files from 'md5' to 'sha1'.
 diff -rupN hostapd-2.6/hostapd/certs/README.wpe hostapd-2.6-wpe/hostapd/certs/README.wpe
 --- hostapd-2.6/hostapd/certs/README.wpe	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/certs/README.wpe	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/certs/README.wpe	2016-12-11 17:30:32.603942719 -0500
 @@ -0,0 +1,8 @@
 +# Certificate creation for Hostapd-WPE #
 +########################################
@@ -613,7 +613,7 @@ diff -rupN hostapd-2.6/hostapd/certs/README.wpe hostapd-2.6-wpe/hostapd/certs/RE
 +make install
 diff -rupN hostapd-2.6/hostapd/certs/server.cnf hostapd-2.6-wpe/hostapd/certs/server.cnf
 --- hostapd-2.6/hostapd/certs/server.cnf	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/certs/server.cnf	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/certs/server.cnf	2016-12-11 17:30:32.603942719 -0500
 @@ -0,0 +1,54 @@
 +[ ca ]
 +default_ca		= CA_default
@@ -671,7 +671,7 @@ diff -rupN hostapd-2.6/hostapd/certs/server.cnf hostapd-2.6-wpe/hostapd/certs/se
 +
 diff -rupN hostapd-2.6/hostapd/certs/xpextensions hostapd-2.6-wpe/hostapd/certs/xpextensions
 --- hostapd-2.6/hostapd/certs/xpextensions	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/certs/xpextensions	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/certs/xpextensions	2016-12-11 17:30:32.603942719 -0500
 @@ -0,0 +1,22 @@
 +#
 +#  File containing the OID's required for Windows.
@@ -697,7 +697,7 @@ diff -rupN hostapd-2.6/hostapd/certs/xpextensions hostapd-2.6-wpe/hostapd/certs/
 +# 1.3.6.1.4.1.311.17.2 
 diff -rupN hostapd-2.6/hostapd/.config hostapd-2.6-wpe/hostapd/.config
 --- hostapd-2.6/hostapd/.config	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/.config	2016-11-06 18:19:15.659651156 -0500
++++ hostapd-2.6-wpe/hostapd/.config	2016-12-11 17:30:32.603942719 -0500
 @@ -0,0 +1,345 @@
 +# Wireless Pawn Edition HostAPd configuration file
 +#
@@ -1046,7 +1046,7 @@ diff -rupN hostapd-2.6/hostapd/.config hostapd-2.6-wpe/hostapd/.config
 +CONFIG_TAXONOMY=y
 diff -rupN hostapd-2.6/hostapd/config_file.c hostapd-2.6-wpe/hostapd/config_file.c
 --- hostapd-2.6/hostapd/config_file.c	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/hostapd/config_file.c	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/config_file.c	2016-12-11 17:30:32.603942719 -0500
 @@ -20,7 +20,7 @@
  #include "ap/wpa_auth.h"
  #include "ap/ap_config.h"
@@ -1079,7 +1079,7 @@ diff -rupN hostapd-2.6/hostapd/config_file.c hostapd-2.6-wpe/hostapd/config_file
  		bss->eap_server = atoi(pos);
 diff -rupN hostapd-2.6/hostapd/defconfig hostapd-2.6-wpe/hostapd/defconfig
 --- hostapd-2.6/hostapd/defconfig	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/hostapd/defconfig	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/defconfig	2016-12-11 17:30:32.603942719 -0500
 @@ -148,14 +148,14 @@ CONFIG_IPV6=y
  #CONFIG_DRIVER_RADIUS_ACL=y
  
@@ -1099,8 +1099,8 @@ diff -rupN hostapd-2.6/hostapd/defconfig hostapd-2.6-wpe/hostapd/defconfig
  # This can be used to reduce the size of the hostapd considerably if debugging
 diff -rupN hostapd-2.6/hostapd/hostapd-wpe.conf hostapd-2.6-wpe/hostapd/hostapd-wpe.conf
 --- hostapd-2.6/hostapd/hostapd-wpe.conf	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/hostapd-wpe.conf	2016-11-06 18:19:15.663651156 -0500
-@@ -0,0 +1,2043 @@
++++ hostapd-2.6-wpe/hostapd/hostapd-wpe.conf	2016-12-11 17:38:28.799933705 -0500
+@@ -0,0 +1,2042 @@
 +# Configuration file for hostapd-wpe
 +
 +# Interface - Probably wlan0 for 802.11, eth0 for wired
@@ -1116,7 +1116,6 @@ diff -rupN hostapd-2.6/hostapd/hostapd-wpe.conf hostapd-2.6-wpe/hostapd/hostapd-
 +
 +# 802.11 Options
 +ssid=hostapd-wpe
-+hw_mode=g
 +channel=1
 +
 +# WPE Options - Dont need to change these to make it all work 
@@ -1295,7 +1294,7 @@ diff -rupN hostapd-2.6/hostapd/hostapd-wpe.conf hostapd-2.6-wpe/hostapd/hostapd-
 +# If CONFIG_ACS build option is enabled, the channel can be selected
 +# automatically at run time by setting channel=acs_survey or channel=0, both of
 +# which will enable the ACS survey based algorithm.
-+channel=1
++#channel=1
 +
 +# ACS tuning - Automatic Channel Selection
 +# See: http://wireless.kernel.org/en/users/Documentation/acs
@@ -3146,7 +3145,7 @@ diff -rupN hostapd-2.6/hostapd/hostapd-wpe.conf hostapd-2.6-wpe/hostapd/hostapd-
 +# ...
 diff -rupN hostapd-2.6/hostapd/hostapd-wpe.eap_user hostapd-2.6-wpe/hostapd/hostapd-wpe.eap_user
 --- hostapd-2.6/hostapd/hostapd-wpe.eap_user	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/hostapd-wpe.eap_user	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/hostapd-wpe.eap_user	2016-12-11 17:30:32.607942719 -0500
 @@ -0,0 +1,107 @@
 +# hostapd user database for integrated EAP server
 +
@@ -3257,7 +3256,7 @@ diff -rupN hostapd-2.6/hostapd/hostapd-wpe.eap_user hostapd-2.6-wpe/hostapd/host
 +"t"	    TTLS-PAP,TTLS-CHAP,TTLS-MSCHAP,MSCHAPV2,MD5,GTC,TTLS,TTLS-MSCHAPV2  "t"	[2]
 diff -rupN hostapd-2.6/hostapd/main.c hostapd-2.6-wpe/hostapd/main.c
 --- hostapd-2.6/hostapd/main.c	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/hostapd/main.c	2016-11-06 18:19:15.663651156 -0500
++++ hostapd-2.6-wpe/hostapd/main.c	2016-12-11 17:30:32.607942719 -0500
 @@ -28,7 +28,7 @@
  #include "config_file.h"
  #include "eap_register.h"
@@ -3336,7 +3335,7 @@ diff -rupN hostapd-2.6/hostapd/main.c hostapd-2.6-wpe/hostapd/main.c
  							&if_names_size, optarg))
 diff -rupN hostapd-2.6/hostapd/Makefile hostapd-2.6-wpe/hostapd/Makefile
 --- hostapd-2.6/hostapd/Makefile	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/hostapd/Makefile	2016-11-07 10:24:01.315971856 -0500
++++ hostapd-2.6-wpe/hostapd/Makefile	2016-12-11 17:30:32.607942719 -0500
 @@ -86,6 +86,7 @@ OBJS += ../src/ap/beacon.o
  OBJS += ../src/ap/bss_load.o
  OBJS += ../src/ap/neighbor_db.o
@@ -3401,7 +3400,7 @@ diff -rupN hostapd-2.6/hostapd/Makefile hostapd-2.6-wpe/hostapd/Makefile
  	rm -rf lcov-html
 diff -rupN hostapd-2.6/src/ap/beacon.c hostapd-2.6-wpe/src/ap/beacon.c
 --- hostapd-2.6/src/ap/beacon.c	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/src/ap/beacon.c	2016-11-06 18:19:15.667651156 -0500
++++ hostapd-2.6-wpe/src/ap/beacon.c	2016-12-11 17:30:32.607942719 -0500
 @@ -30,7 +30,7 @@
  #include "hs20.h"
  #include "dfs.h"
@@ -3427,7 +3426,7 @@ diff -rupN hostapd-2.6/src/ap/beacon.c hostapd-2.6-wpe/src/ap/beacon.c
  	if (res == NO_SSID_MATCH) {
 diff -rupN hostapd-2.6/src/ap/ieee802_11.c hostapd-2.6-wpe/src/ap/ieee802_11.c
 --- hostapd-2.6/src/ap/ieee802_11.c	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/src/ap/ieee802_11.c	2016-11-06 18:19:15.667651156 -0500
++++ hostapd-2.6-wpe/src/ap/ieee802_11.c	2016-12-11 17:30:32.607942719 -0500
 @@ -45,7 +45,7 @@
  #include "mbo_ap.h"
  #include "rrm.h"
@@ -3450,7 +3449,7 @@ diff -rupN hostapd-2.6/src/ap/ieee802_11.c hostapd-2.6-wpe/src/ap/ieee802_11.c
  			       "Station tried to associate with unknown SSID "
 diff -rupN hostapd-2.6/src/crypto/ms_funcs.h hostapd-2.6-wpe/src/crypto/ms_funcs.h
 --- hostapd-2.6/src/crypto/ms_funcs.h	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/src/crypto/ms_funcs.h	2016-11-06 18:19:15.671651156 -0500
++++ hostapd-2.6-wpe/src/crypto/ms_funcs.h	2016-12-11 17:30:32.607942719 -0500
 @@ -9,6 +9,10 @@
  #ifndef MS_FUNCS_H
  #define MS_FUNCS_H
@@ -3464,7 +3463,7 @@ diff -rupN hostapd-2.6/src/crypto/ms_funcs.h hostapd-2.6-wpe/src/crypto/ms_funcs
  			 const u8 *password, size_t password_len,
 diff -rupN hostapd-2.6/src/crypto/tls_openssl.c hostapd-2.6-wpe/src/crypto/tls_openssl.c
 --- hostapd-2.6/src/crypto/tls_openssl.c	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/src/crypto/tls_openssl.c	2016-11-06 18:19:15.667651156 -0500
++++ hostapd-2.6-wpe/src/crypto/tls_openssl.c	2016-12-11 17:30:32.607942719 -0500
 @@ -21,6 +21,7 @@
  #include <openssl/opensslv.h>
  #include <openssl/pkcs12.h>
@@ -3628,7 +3627,7 @@ diff -rupN hostapd-2.6/src/crypto/tls_openssl.c hostapd-2.6-wpe/src/crypto/tls_o
 +
 diff -rupN hostapd-2.6/src/eap_server/eap_server.c hostapd-2.6-wpe/src/eap_server/eap_server.c
 --- hostapd-2.6/src/eap_server/eap_server.c	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/src/eap_server/eap_server.c	2016-11-06 18:19:15.675651156 -0500
++++ hostapd-2.6-wpe/src/eap_server/eap_server.c	2016-12-11 17:30:32.607942719 -0500
 @@ -23,7 +23,8 @@
  #define STATE_MACHINE_DATA struct eap_sm
  #define STATE_MACHINE_DEBUG_PREFIX "EAP"
@@ -3661,8 +3660,8 @@ diff -rupN hostapd-2.6/src/eap_server/eap_server.c hostapd-2.6-wpe/src/eap_serve
  				       identity_len, phase2, user) != 0) {
  		eap_user_free(user);
 diff -rupN hostapd-2.6/src/eap_server/eap_server_mschapv2.c hostapd-2.6-wpe/src/eap_server/eap_server_mschapv2.c
---- hostapd-2.6/src/eap_server/eap_server_mschapv2.c	2016-10-02 20:51:11.000000000 +0200
-+++ hostapd-2.6-wpe/src/eap_server/eap_server_mschapv2.c	2016-12-07 15:49:05.525550618 +0100
+--- hostapd-2.6/src/eap_server/eap_server_mschapv2.c	2016-10-02 14:51:11.000000000 -0400
++++ hostapd-2.6-wpe/src/eap_server/eap_server_mschapv2.c	2016-12-11 17:30:32.607942719 -0500
 @@ -12,7 +12,7 @@
  #include "crypto/ms_funcs.h"
  #include "crypto/random.h"
@@ -3713,7 +3712,7 @@ diff -rupN hostapd-2.6/src/eap_server/eap_server_mschapv2.c hostapd-2.6-wpe/src/
  
 diff -rupN hostapd-2.6/src/eap_server/eap_server_peap.c hostapd-2.6-wpe/src/eap_server/eap_server_peap.c
 --- hostapd-2.6/src/eap_server/eap_server_peap.c	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/src/eap_server/eap_server_peap.c	2016-11-06 18:19:15.675651156 -0500
++++ hostapd-2.6-wpe/src/eap_server/eap_server_peap.c	2016-12-11 17:30:32.611942719 -0500
 @@ -17,7 +17,7 @@
  #include "eap_common/eap_tlv_common.h"
  #include "eap_common/eap_peap_common.h"
@@ -3725,7 +3724,7 @@ diff -rupN hostapd-2.6/src/eap_server/eap_server_peap.c hostapd-2.6-wpe/src/eap_
   * 0 = Microsoft's PEAP version 0; draft-kamath-pppext-peapv0-00.txt
 diff -rupN hostapd-2.6/src/eap_server/eap_server_ttls.c hostapd-2.6-wpe/src/eap_server/eap_server_ttls.c
 --- hostapd-2.6/src/eap_server/eap_server_ttls.c	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/src/eap_server/eap_server_ttls.c	2016-11-06 18:19:15.675651156 -0500
++++ hostapd-2.6-wpe/src/eap_server/eap_server_ttls.c	2016-12-11 17:30:32.611942719 -0500
 @@ -16,7 +16,7 @@
  #include "eap_server/eap_tls_common.h"
  #include "eap_common/chap.h"
@@ -3793,7 +3792,7 @@ diff -rupN hostapd-2.6/src/eap_server/eap_server_ttls.c hostapd-2.6-wpe/src/eap_
  		u8 challenge2[8];
 diff -rupN hostapd-2.6/src/Makefile hostapd-2.6-wpe/src/Makefile
 --- hostapd-2.6/src/Makefile	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/src/Makefile	2016-11-06 18:19:15.671651156 -0500
++++ hostapd-2.6-wpe/src/Makefile	2016-12-11 17:30:32.611942719 -0500
 @@ -1,5 +1,5 @@
  SUBDIRS=ap common crypto drivers eapol_auth eapol_supp eap_common eap_peer eap_server l2_packet p2p pae radius rsn_supp tls utils wps
 -SUBDIRS += fst
@@ -3803,7 +3802,7 @@ diff -rupN hostapd-2.6/src/Makefile hostapd-2.6-wpe/src/Makefile
  	for d in $(SUBDIRS); do [ -d $$d ] && $(MAKE) -C $$d; done
 diff -rupN hostapd-2.6/src/utils/wpa_debug.c hostapd-2.6-wpe/src/utils/wpa_debug.c
 --- hostapd-2.6/src/utils/wpa_debug.c	2016-10-02 14:51:11.000000000 -0400
-+++ hostapd-2.6-wpe/src/utils/wpa_debug.c	2016-11-06 18:19:15.691651156 -0500
++++ hostapd-2.6-wpe/src/utils/wpa_debug.c	2016-12-11 17:30:32.611942719 -0500
 @@ -30,7 +30,7 @@ static FILE *wpa_debug_tracing_file = NU
  
  
@@ -3815,7 +3814,7 @@ diff -rupN hostapd-2.6/src/utils/wpa_debug.c hostapd-2.6-wpe/src/utils/wpa_debug
  
 diff -rupN hostapd-2.6/src/wpe/Makefile hostapd-2.6-wpe/src/wpe/Makefile
 --- hostapd-2.6/src/wpe/Makefile	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/src/wpe/Makefile	2016-11-06 18:19:15.691651156 -0500
++++ hostapd-2.6-wpe/src/wpe/Makefile	2016-12-11 17:30:32.611942719 -0500
 @@ -0,0 +1,8 @@
 +all:
 +	@echo Nothing to be made.
@@ -3827,7 +3826,7 @@ diff -rupN hostapd-2.6/src/wpe/Makefile hostapd-2.6-wpe/src/wpe/Makefile
 +	@echo Nothing to be made.
 diff -rupN hostapd-2.6/src/wpe/wpe.c hostapd-2.6-wpe/src/wpe/wpe.c
 --- hostapd-2.6/src/wpe/wpe.c	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/src/wpe/wpe.c	2016-11-06 18:19:15.691651156 -0500
++++ hostapd-2.6-wpe/src/wpe/wpe.c	2016-12-11 17:30:32.611942719 -0500
 @@ -0,0 +1,209 @@
 +/*
 +    wpe.c - 
@@ -4040,7 +4039,7 @@ diff -rupN hostapd-2.6/src/wpe/wpe.c hostapd-2.6-wpe/src/wpe/wpe.c
 +
 diff -rupN hostapd-2.6/src/wpe/wpe.h hostapd-2.6-wpe/src/wpe/wpe.h
 --- hostapd-2.6/src/wpe/wpe.h	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/src/wpe/wpe.h	2016-11-06 18:19:15.691651156 -0500
++++ hostapd-2.6-wpe/src/wpe/wpe.h	2016-12-11 17:30:32.611942719 -0500
 @@ -0,0 +1,50 @@
 +/*
 +    wpe.h - 
