@@ -44,15 +44,21 @@ Additional WPE command line options are:
 ## Dependencies
 
 - pkg-config
-- libssl
+- libssl 1.0
 - libnl3 (and genl)
 - sqlite3
 
 ## Debian-based distro
 
 ```
-apt-get install libssl-dev libnl-genl-3-dev libnl-3-dev pkg-config
+apt-get install libssl1.0-dev libnl-genl-3-dev libnl-3-dev pkg-config
 ``` 
+
+### Ubuntu
+
+```
+apt-get install libssl-dev libnl-genl-3-dev libnl-3-dev pkg-config
+```
 
 ## General
 
