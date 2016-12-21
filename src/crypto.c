@@ -288,7 +288,15 @@ void calc_pmk( char *key, char *essid_pre, unsigned char pmk[40] )
 void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80], unsigned char mic[20]) {
 	int i;
 	unsigned char pke[100];
+	#if defined(USE_GCRYPT) || OPENSSL_VERSION_NUMBER < 0x10100000L
+		#define HMAC_USE_NO_PTR
+	#endif
+
+	#ifdef HMAC_USE_NO_PTR
 	HMAC_CTX ctx;
+	#else
+	HMAC_CTX * ctx;
+	#endif
 
 	memcpy( pke, "Pairwise key expansion", 23 );
 
@@ -314,6 +322,7 @@ void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80],
 		memcpy( pke + 67, ap->wpa.snonce, 32 );
 	}
 
+	#ifdef HMAC_USE_NO_PTR
 	HMAC_CTX_init(&ctx);
 	HMAC_Init_ex(&ctx, pmk, 32, EVP_sha1(), NULL);
 	for(i = 0; i < 4; i++ )
@@ -325,6 +334,20 @@ void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80],
 		HMAC_Final(&ctx, ptk + i*20, NULL);
 	}
 	HMAC_CTX_cleanup(&ctx);
+	#else
+	ctx = HMAC_CTX_new();
+	HMAC_Init_ex(ctx, pmk, 32, EVP_sha1(), NULL);
+	for(i = 0; i < 4; i++ )
+	{
+		pke[99] = i;
+		//HMAC(EVP_sha1(), values[0], 32, pke, 100, ptk + i * 20, NULL);
+		HMAC_Init_ex(ctx, 0, 0, 0, 0);
+		HMAC_Update(ctx, pke, 100);
+		HMAC_Final(ctx, ptk + i*20, NULL);
+	}
+	HMAC_CTX_free(ctx);
+	#endif
+	#undef HMAC_USE_NO_PTR
 
 	if( ap->wpa.keyver == 1 )
 	{
