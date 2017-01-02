@@ -4,6 +4,7 @@ include $(AC_ROOT)/common.mak
 TEST_DIR	= $(AC_ROOT)/test
 
 CFLAGS		+= -Iinclude
+ASFLAGS		+= $(CFLAGS)
 
 iCC		= /opt/intel/bin/icc
 iCFLAGS		= -w -xHOST $(COMMON_CFLAGS)
@@ -75,7 +76,7 @@ LIBLINECOUNT	= liblinecount.a
 SRC_PTW		= aircrack-ptw-lib.c
 SRC_AC		= aircrack-ng.c crypto.c common.c $(SSEC_INT) $(SRC_PTW)
 OBJS_PTW	= aircrack-ptw-lib.o
-OBJS_AC		= aircrack-ng.o cpuid.o crypto.o common.o $(SSEO_INT) uniqueiv.o $(OBJS_PTW) $(LIBLINECOUNT)
+OBJS_AC		= aircrack-ng.o cpuid.o crypto.o common.o $(SSEO_INT) uniqueiv.o sha1-sse2.o $(OBJS_PTW) $(LIBLINECOUNT)
 OBJS_AC_MULTI	= crypto.o common.o uniqueiv.o $(OBJS_PTW)
 ASM_AC		= sha1-sse2.S
 
@@ -176,7 +177,7 @@ aircrack-ng-opt-prof_use: $(SRC_AC)
 	aircrack-ng-opt-prof -lpthread $(LIBSQL)
 
 aircrack-ng$(EXE): $(OBJS_AC)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AC) $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL) $(LIBSTDCXX)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL) $(LIBSTDCXX)
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(multibin) $(MULTIBIN))),true)
 wpapsk-simd.o: wpapsk.c
