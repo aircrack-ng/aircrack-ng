@@ -1,5 +1,5 @@
   /*
-   *  Copyright (c) 2008-2016, Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+   *  Copyright (c) 2008-2017, Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
    *
    *  Common OSdep stuff
    *
