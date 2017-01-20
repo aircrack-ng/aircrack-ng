@@ -711,7 +711,9 @@ getDriver() {
 				DRIVER="$(lspci -d $DEVICEID -k | awk '/modules/ {print $3}')"
 			fi
 			if [ -n "$DRIVER" ]; then
-				DRIVER="??????"
+				if [ -z "${BUS}" ] || [ "${BUS}" != 'sdio' ]; then
+					DRIVER="??????"
+				fi
 			fi
 		fi
 	fi
@@ -777,7 +779,6 @@ getChipset() {
 	#this needs cleanup, we shouldn't have multiple lines assigning chipset per bus
 	#fix this to be one line per bus
 	if [ -f /sys/class/net/$1/device/modalias ]; then
-		BUS="$(cut -d ":" -f 1 /sys/class/net/$1/device/modalias)"
 		if [ "$BUS" = "usb" ]; then
 			if [ "${LSUSB}" = "1" ]; then
 				BUSINFO="$(cut -d ":" -f 2 /sys/class/net/$1/device/modalias | cut -b 1-10 | sed 's/^.//;s/p/:/')"
@@ -858,6 +859,15 @@ getChipset() {
 		printf "BUS = $BUS\n"
 		printf "BUSINFO = $BUSINFO\n"
 		printf "DEVICEID = $DEVICEID\n"
+	fi
+}
+
+getBus() {
+	if [ -f /sys/class/net/$1/device/modalias ]; then
+		BUS="$(cut -d ":" -f 1 /sys/class/net/$1/device/modalias)"
+	fi
+	if [ "$DEBUG" = "1" ]; then
+		printf "getBus $BUS\n"
 	fi
 }
 
@@ -1349,6 +1359,7 @@ for iface in $(printf "${iface_list}"); do
 	ethtool_output="$(ethtool -i $iface 2>&1)"
 	if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]; then
 		getStack  ${iface}
+		getBus ${iface}
 		getPhy     ${iface}
 		getDriver   ${iface}
 		getChipset ${iface}
