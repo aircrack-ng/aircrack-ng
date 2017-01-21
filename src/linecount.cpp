@@ -59,6 +59,7 @@
 #include <vector>
 #include <ctime>
 #include <string.h>
+#include <sys/types.h>
 #include "linecount.h"
 
 using namespace std;
