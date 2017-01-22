@@ -65,6 +65,15 @@ ifeq ($(PCRE), true)
 COMMON_CFLAGS += $(shell $(PKG_CONFIG) --cflags libpcre) -DHAVE_PCRE
 endif
 
+STACK_PROTECTOR	= true
+ifeq ($(stackprotector), false)
+	STACK_PROTECTOR	= false
+endif
+
+ifeq ($(STACKPROTECTOR), false)
+	STACK_PROTECTOR	= false
+endif
+
 ifeq ($(OSNAME), cygwin)
 	COMMON_CFLAGS   += -DCYGWIN
 endif
@@ -234,14 +243,16 @@ ifeq ($(GCC_OVER49), 0)
 	GCC_OVER49	= $(shell expr 4.9 \<= `$(CC) -dumpversion | awk -F. '{ print $1$2 }'`)
 endif
 
-ifeq ($(GCC_OVER49), 0)
-	ifeq ($(GCC_OVER41), 1)
-		COMMON_CFLAGS += -fstack-protector
+ifeq ($(STACK_PROTECTOR), true)
+	ifeq ($(GCC_OVER49), 0)
+		ifeq ($(GCC_OVER41), 1)
+			COMMON_CFLAGS += -fstack-protector
+		endif
 	endif
-endif
 
-ifeq ($(GCC_OVER49), 1)
-	COMMON_CFLAGS += -fstack-protector-strong
+	ifeq ($(GCC_OVER49), 1)
+		COMMON_CFLAGS += -fstack-protector-strong
+	endif
 endif
 
 ifeq ($(GCC_OVER45), 1)

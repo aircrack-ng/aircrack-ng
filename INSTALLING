@@ -82,6 +82,8 @@ to compile and install the suite (by setting them to true):
 
 * macport:  Set this flag to true to compile on OS X with macports.
 
+* stackprotector: Allows to enable/disable auto-detection of stack-protector support in gcc
+
 Example:
 
   * Compiling:
