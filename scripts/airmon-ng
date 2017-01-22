@@ -454,6 +454,36 @@ startMac80211Iface() {
 	fi
 }
 
+NEXMON_FIRMWARE_DIR=/opt
+NEXMON_DRIVER_DIR=/opt
+
+isNexmonFirmwarePresent() {
+	[ ! -f "${NEXMON_FIRMWARE_DIR}/brcmfmac43430-sdio.bin" ] && return 0
+	[ ! -f "${NEXMON_FIRMWARE_DIR}/brcmfmac43430-sdio.orig.bin" ] && return 0
+	return 1
+}
+
+isNexmonDriverPresent() {
+	[ -f "${NEXMON_DRIVER_DIR}/brcmfmac.ko" ] && return 1
+	return 0
+}
+
+startNexmonIface() {
+	[ -z $1 ] && return
+
+	if [ -n "$(iwconfig wlan0 | grep 'Mode:Monitor')" ]; then
+		printf "\n\tInterface $1 is already in monitor mode"
+	else
+		ifconfig $1 down
+		rmmod brcmfmac
+		modprobe brcmutil
+		cp ${NEXMON_FIRMWARE_DIR}/brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
+		insmod ${NEXMON_DRIVER_DIR}/brcmfmac.ko
+		sleep 1s
+		ifconfig $1 up 2> /dev/null
+	fi
+}
+
 startwlIface() {
 	if [ -f "/proc/brcm_monitor0" ]; then
 		if [ -r "/proc/brcm_monitor0" ]; then
@@ -621,6 +651,16 @@ stopMac80211Iface() {
 			fi
 		fi
 	fi
+}
+
+stopNexmonIface() {
+	[ -z $1 ] && return
+	ifconfig $1 down
+	cp ${NEXMON_FIRMWARE_DIR}/brcmfmac43430-sdio.orig.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
+	rmmod brcmfmac
+	sleep 1
+	modprobe brcmfmac
+	ifconfig $1 up 2> /dev/null
 }
 
 stopwlIface() {
@@ -1433,6 +1473,23 @@ for iface in $(printf "${iface_list}"); do
 		fi
 		if [ "$1" = "stop" ] && [ "$2" = "$iface" ]; then
 			stopwlIface $iface
+		fi
+	elif [ "${CHIPSET}" = 'Broadcom 43430' ]; then
+		isNexmonFirmwarePresent
+		if [ $? -eq 0 ]; then
+			printf "\n\tMissing nexmon firmware, cannot switch to monitor mode.\n"
+		else
+			isNexmonDriverPresent
+			if [ $? -eq 0 ]; then
+				printf "\n\tMissing nexmon driver module, cannot switch to monitor mode.\n"
+			else
+				if [ "$1" = "start" ] && [ "$2" = "$iface" ]; then
+					startNexmonIface $iface
+				fi
+				if [ "$1" = "stop" ] && [ "$2" = "$iface" ]; then
+					stopNexmonIface $iface
+				fi
+			fi
 		fi
 	elif [ "$MAC80211" = "1" ]; then
 		if [ "$1" = "start" ] && [ "$2" = "$iface" ]; then
