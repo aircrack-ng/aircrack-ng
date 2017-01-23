@@ -481,6 +481,7 @@ startNexmonIface() {
 		insmod ${NEXMON_DRIVER_DIR}/brcmfmac.ko
 		sleep 1s
 		ifconfig $1 up 2> /dev/null
+		printf "\n\t\t(monitor mode enabled for [${PHYDEV}]${1})\n"
 	fi
 }
 
@@ -661,6 +662,7 @@ stopNexmonIface() {
 	sleep 1
 	modprobe brcmfmac
 	ifconfig $1 up 2> /dev/null
+	printf "\n\t\t(monitor mode enabled for [${PHYDEV}]${1})\n"
 }
 
 stopwlIface() {
