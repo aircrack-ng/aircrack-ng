@@ -8,10 +8,8 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See COPYING for more details.
+ * Alternatively, this software may be distributed under the terms of ISC
+ * license, see COPYING for more details.
  */
 #include "radiotap_iter.h"
 #include "platform.h"
