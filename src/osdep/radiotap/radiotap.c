@@ -8,17 +8,11 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See COPYING for more details.
+ * Alternatively, this software may be distributed under the terms of ISC
+ * license, see COPYING for more details.
  */
 #include "radiotap_iter.h"
 #include "platform.h"
-#if defined(ANDROID) || defined(__ANDROID__) || (defined(__sun) && defined(__SVR4))
-	#include "../byteorder.h"
-#endif
-
 
 /* function prototypes and related defs are in radiotap_iter.h */
 
@@ -43,6 +37,8 @@ static const struct radiotap_align_size rtap_namespace_sizes[] = {
 	[IEEE80211_RADIOTAP_DATA_RETRIES] = { .align = 1, .size = 1, },
 	[IEEE80211_RADIOTAP_MCS] = { .align = 1, .size = 3, },
 	[IEEE80211_RADIOTAP_AMPDU_STATUS] = { .align = 4, .size = 8, },
+	[IEEE80211_RADIOTAP_VHT] = { .align = 2, .size = 12, },
+	[IEEE80211_RADIOTAP_TIMESTAMP] = { .align = 8, .size = 12, },
 	/*
 	 * add more here as they are defined in radiotap.h
 	 */
