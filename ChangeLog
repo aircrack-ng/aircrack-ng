@@ -307,7 +307,7 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * aircrack-ng: Fixed detection of the number of CPU (especially with recent CPUs).
 * aircrack-ng: Fixed long lasting WPA bugs: cannot find the key with SMP computers,
   wasn't exiting correctly, ...
-* aircrack-ng: Fixed usage of a dictionnary with WEP.
+* aircrack-ng: Fixed usage of a dictionary with WEP.
 * aircrack-ng: Now only display ASCII WEP keys when 100% of the hex key can be converted to ASCII.
 * aircrack-ng: You can now specify the number of threads for cracking even if you have a non-SMP computer.
 * aircrack-ng: Now output an error message if using -r and it wasn't compiled with sqlite support.
@@ -326,7 +326,7 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * tkip-tun: New tool to inject on WPA1 with QoS enabled networks. Full description:
   decrypt packets comming from the AP in a TKIP network, which uses QoS (ieee802.11e).
   It also breaks the MIC Key for sending packets towards the Client correctly encrypted and signed.
-  Stores plaintext packet and keystream in seperate files.
+  Stores plaintext packet and keystream in separate files.
 * airbase-ng: Several improvments ( See http://trac.aircrack-ng.org/ticket/466 ).
 * airbase-ng: Added compatibility with some clients. added random source IPs and MACs for cfrag attack (-N) to evade simple flood protection.
 * airmon-ng: Fixed some 'unary operator expected' errors.
@@ -359,7 +359,7 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * patches: Added Defcon 16 patch (more frequencies than the usuals) for ath5k called frequency Chaos.
 * patches: Added injection patch for rtl8187 (mac80211).
 * patches: Added a universal mac80211 fragmentation and injection speed patch.
-* GUI (windows): Fixed: Windows GUI gives "please specify dictionnary".
+* GUI (windows): Fixed: Windows GUI gives "please specify dictionary".
 
 Version 1.0-rc1 (changes from aircrack-ng 1.0-beta2) - Released 09 Jun 2008:
 * airbase-ng: Multi-purpose tool aimed at attacking clients as opposed to the AP.
@@ -586,7 +586,7 @@ Version 0.7 (changes from aircrack-ng 0.6.2) - Released 20 January 2007:
 * aireplay-ng: Added shared key authentication
 * airmon-ng: Now detect the shell when installing
 * airmon-ng: Added support for rtl8187
-* aircrack-ng: Added WEP dictionnary attack
+* aircrack-ng: Added WEP dictionary attack
 * aircrack-ng: Works with 802.11e QoS packets
 * airodump-ng: Added MAC filtering
 * airodump-ng: Now use the flaw in shared-key authentication

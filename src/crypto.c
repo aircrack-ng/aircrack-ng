@@ -1481,7 +1481,7 @@ int decrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16] )
     #endif
 
     // T := X_n[ 0.. 7]
-    // Note: Decryption is succesful if calculated T is the same as the one
+    // Note: Decryption is successful if calculated T is the same as the one
     //       that was sent with the message.
     return( memcmp( h80211 + offset, MIC, 8 ) == 0 );
 }

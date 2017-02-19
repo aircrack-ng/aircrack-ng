@@ -756,7 +756,7 @@ int initDataBase(const char * filename, sqlite3 ** db)
 		sql_error(*db);
 		sqlite3_close(*db);
 
-		// May be usefull later
+		// May be useful later
 		return rc;
 	}
 

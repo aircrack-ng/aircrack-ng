@@ -137,7 +137,7 @@ class airDumpParse:
         apClient = {} #dict that stores bssid and clients as a nested list
         for key in (clients):
             mac = clients[key] #mac is the MAC address of the client
-            if mac["bssid"] != ' (notassociated) ': #one line of of our dictionary of clients
+            if mac["bssid"] != ' (notassociated) ': #one line of our dictionary of clients
                 if AP.has_key(mac["bssid"]): # if it is check to see its an AP we can see and have info on
                     if apClient.has_key(mac["bssid"]): 
                         apClient[mac["bssid"]].extend([key]) #if key exists append new client

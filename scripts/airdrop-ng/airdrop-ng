@@ -252,7 +252,7 @@ class parseFiles:
                             "clients":clientList,
                             "raw":ruleRaw}
         elif len(bssidList) > 1:
-                #if more then one bssid nest each rule dict in a list
+                #if more than one bssid nest each rule dict in a list
                 ruleDict = []
                 for bssid in bssidList:
                     if clientList == [] and postion.upper() != 'ANY':
@@ -362,7 +362,7 @@ class ruleMatch:
         
     def locate_key(self):
         """
-        take a client and locate its coresponding bssid
+        take a client and locate its corresponding bssid
         iterate though capr and find unknown bssid a client is 
         associated with
         """
@@ -393,7 +393,7 @@ class ruleMatch:
         """
         for num in sorted(self.rulesDB.keys()):
             #make sure the rules are called in order
-            #it stops iterating at one less then we need so add +1
+            #it stops iterating at one less than we need so add +1
             if type(self.rulesDB[num]).__name__ == "list":
                 for rule in self.rulesDB[num]:
                     self.bssid    = rule["bssid"]

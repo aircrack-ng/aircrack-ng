@@ -5,7 +5,7 @@ NEWSSE		= true
 # but should be automatically flipped on thru autodetection
 SIMDCORE	= false
 
-# Multibin will compile a seperate binary for each core: original, SSE and SIMD.
+# Multibin will compile a separate binary for each core: original, SSE and SIMD.
 MULTIBIN	= false
 
 ifndef TOOL_PREFIX

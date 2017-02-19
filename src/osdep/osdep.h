@@ -142,7 +142,7 @@ extern int get_battery_state(void);
 
 /* Client code can create a tap interface */
 /* XXX we can unify the tap & wi stuff in the future, but for now, lets keep
- * them seperate until we learn something.
+ * them separate until we learn something.
  */
 struct tif {
 	int	(*ti_read)(struct tif *ti, void *buf, int len);

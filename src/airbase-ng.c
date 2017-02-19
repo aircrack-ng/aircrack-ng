@@ -4417,7 +4417,7 @@ int main( int argc, char *argv[] )
 
                 if( strncasecmp(optarg, "in", 2) == 0 )
                 {
-                    opt.external |= EXT_IN; //process incomming frames
+                    opt.external |= EXT_IN; //process incoming frames
                 }
                 else if( strncasecmp(optarg, "out", 3) == 0)
                 {

@@ -510,7 +510,7 @@ BOOLEAN read_packets(void)
 		#endif
         /*------------------------------- drop if control frame (does not contains SN) ----------------------*/
 		// TODO: We should care about control frames since they are not cloaked
-		//       and they can be usefull for signal filtering (have a better average).
+		//       and they can be useful for signal filtering (have a better average).
 
         /* check the BSSID */
         switch( h80211[1] & 3 )
@@ -814,7 +814,7 @@ int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked() {
 
 	puts("Cloaking - Marking all duplicate SN cloaked if frame is valid or uncloaked");
 
-	// Start from the begining (useful comment)
+	// Start from the beginning (useful comment)
 	reset_current_packet_pointer();
 
 	nb_marked = 0;
@@ -862,7 +862,7 @@ int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked() {
 	} while (next_packet_pointer() == 1);
 
 	// Reset packet pointer so that next usages of current packet
-	// will start from the begining (in case it's forgotten).
+	// will start from the beginning (in case it's forgotten).
 	reset_current_packet_pointer();
 
 	printf("%d frames marked\n", nb_marked);

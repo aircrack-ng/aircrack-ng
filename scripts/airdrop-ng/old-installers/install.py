@@ -4,7 +4,7 @@ __author__  = "Marfi"
 
 '''
 This is the installer file for airdrop-ng. It first checks for 
-different dependancies, such as make, svn, etc. 
+different dependencies, such as make, svn, etc. 
 '''
 import os, sys
 from shutil import rmtree
@@ -17,7 +17,7 @@ class checkDepend:
 	def __init__ (self):
 		clear = "\n" *100
 		print clear
-		print "Checking for dependancies used by the installer..."
+		print "Checking for dependencies used by the installer..."
 		self.a = 0
 		self.deps = ["make", "svn", "tar", "gcc"]
 
@@ -29,10 +29,10 @@ class checkDepend:
 				print depends + " not installed."
 
 		if self.a == 0:
-			print "All dependancies installed! Continuing...\n"
+			print "All dependencies installed! Continuing...\n"
 			print "#### NOTE: For Ubuntu based distro's, \npython2.6-dev must be installed. Please \nmake sure it is installed before continuing!\n"
 		else:
-			print "Please install dependancies. Exiting...\n\n"
+			print "Please install dependencies. Exiting...\n\n"
 			exit()
 
 class installAirdrop:

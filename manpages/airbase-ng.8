@@ -80,7 +80,7 @@ In ad-hoc mode airbase-ng also sends beacons, but doesn\(aqt need any authentica
 .I -Y <in|out|both>
 The parameter "-Y" enables the "external processing" Mode. This creates a second interface "atX", which is used to replay/modify/drop or inject packets at will. This interface must also be brought up with ifconfig and an external tool is needed to create a loop on that interface. 
 
-The packet structure is rather simple: the ethernet header (14 bytes) is ignored and right after that follows the complete ieee80211 frame the same way it is going to be processed by airbase-ng (for incoming packets) or before the packets will be sent out of the wireless card (outgoing packets). This mode intercepts all data packets and loops them through an external application, which decides what happens with them. The MAC and IP of the second tap interface doesn\(aqt matter, as real ethernet frames on this interface are dropped dropped anyway. 
+The packet structure is rather simple: the ethernet header (14 bytes) is ignored and right after that follows the complete ieee80211 frame the same way it is going to be processed by airbase-ng (for incoming packets) or before the packets will be sent out of the wireless card (outgoing packets). This mode intercepts all data packets and loops them through an external application, which decides what happens with them. The MAC and IP of the second tap interface doesn\(aqt matter, as real ethernet frames on this interface are dropped anyway. 
 
 There are 3 arguments for "-Y": "in", "out" and "both", which specify the direction of frames to loop through the external application. Obviously "in" redirects only incoming (through the wireless NIC) frames, while outgoing frames aren\(aqt touched. "out" does the opposite, it only loops outgoing packets and "both" sends all both directions through the second tap interface. 
 
@@ -116,7 +116,7 @@ This attack works especially well against ad-hoc networks. As well it can be use
 This sets the number of packets per second that packets will be sent (default: 100).
 .TP
 .I -y
-When using this option, the fake AP will not respond to broadcast probes. A broadcast probe is where the the specific AP is not identified uniquely. Typically, most APs will respond with probe responses to a broadcast probe. This flag will prevent this happening. It will only respond when the specific AP is uniquely requested.
+When using this option, the fake AP will not respond to broadcast probes. A broadcast probe is where the specific AP is not identified uniquely. Typically, most APs will respond with probe responses to a broadcast probe. This flag will prevent this happening. It will only respond when the specific AP is uniquely requested.
 .TP
 .I -0
 This enables all WPA/WPA2/WEP Tags to be enabled in the beacons sent. It cannot be specified when also using -z or -Z.

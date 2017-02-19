@@ -232,7 +232,7 @@ findFreeInterface() {
 							fi
 						done
 					else
-						printf "Unable to create wlan${i}${target_suffix} and no error recieved.\n"
+						printf "Unable to create wlan${i}${target_suffix} and no error received.\n"
 						return 1
 					fi
 					printf "\n\t\t(mac80211 ${target_mode} mode vif enabled on [${PHYDEV}]wlan${i}${target_suffix}\n"
@@ -505,7 +505,7 @@ startwlIface() {
 			printf "\n\tUnable to write to /proc/brcm_monitor0, cannot enable monitor mode.\n"
 		fi
 	else
-		printf "\n\tThis version of wl does not appear to suport monitor mode.\n"
+		printf "\n\tThis version of wl does not appear to support monitor mode.\n"
 	fi
 }
 
@@ -611,7 +611,7 @@ stopMac80211Iface() {
 						printf "\nPlease run \"iw ${1%mon} del\" before attempting to continue\n"
 						exit 1
 					else
-						printf "\nYou already have a ${1%mon} device, but is is not on the same phy as ${1}.\n"
+						printf "\nYou already have a ${1%mon} device, but it is not on the same phy as ${1}.\n"
 						printf "\nAttemping to pick a new name...\n"
 						findFreeInterface station
 					fi
@@ -685,7 +685,7 @@ stopwlIface() {
 			printf "\n\tUnable to write to /proc/brcm_monitor0, cannot disable monitor mode.\n"
 		fi
 	else
-		printf "\n\tThis version of wl does not appear to suport monitor mode.\n"
+		printf "\n\tThis version of wl does not appear to support monitor mode.\n"
 	fi
 }
 

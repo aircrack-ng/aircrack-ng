@@ -62,7 +62,7 @@ class dotCreate:
             time = [self.Ap[bssid]['lts'],self.Ap[bssid]['fts']]
             priv = self.Ap[bssid]['privacy']
             if priv == '':
-                priv = "Unkown"
+                priv = "Unknown"
             Color = self.encColor(priv)
             tclient += len(self.capr[bssid])
             for client in self.capr[bssid]:
