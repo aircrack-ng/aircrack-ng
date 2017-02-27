@@ -20,7 +20,7 @@ Additionally, the program offers a dictionary method for determining the WEP key
 Force the attack mode, 1 or wep for WEP and 2 or wpa for WPA-PSK.
 .TP
 .I -e <essid>
-Select the target network based on the ESSID. This option is also required for WPA cracking if the SSID is cloacked. For SSID containing special characters, see http://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc._in_ap_names
+Select the target network based on the ESSID. This option is also required for WPA cracking if the SSID is cloaked. For SSID containing special characters, see http://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc._in_ap_names
 .TP
 .I -b <bssid> or --bssid <bssid>
 Select the target network based on the access point MAC address.
@@ -59,7 +59,7 @@ Only keep the IVs coming from packets that match this MAC address. Alternatively
 Specify the length of the key: 64 for 40-bit WEP, 128 for 104-bit WEP, etc., until 512 bits of length. The default value is 128.
 .TP
 .I -i <index>
-Only keep the IVs that have this key index (1 to 4). The default behaviour is to ignore the key index in the packet, and use the IV regardless.
+Only keep the IVs that have this key index (1 to 4). The default behavior is to ignore the key index in the packet, and use the IV regardless.
 .TP
 .I -f <fudge>
 By default, this parameter is set to 2. Use a higher value to increase the bruteforce level: cracking will take more time, but with a higher likelihood of success.

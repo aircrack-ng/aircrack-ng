@@ -47,7 +47,7 @@ typedef enum {
 	WEIRD_FRAME_TYPE
 } CLOAKING_STATUS;
 */
-// How far should we check for cloacked packets (backward and forward)
+// How far should we check for cloaked packets (backward and forward)
 #define PACKET_CHECKING_LENGTH 10
 
 

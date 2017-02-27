@@ -43,7 +43,7 @@ Drivers
 		  
 	
 	Problem 4: When creating a new VAP airodump-ng takes up to 10-15 seconds to see the first packet
-	Solution 4: It's the behaviour of madwifi-ng, don't worry (... be happy ;)).
+	Solution 4: It's the behavior of madwifi-ng, don't worry (... be happy ;)).
 
 
 	Orinoco
