@@ -48,4 +48,4 @@ If it fails running and complains about OpenSSL being vulnerable, make sure Open
 
 Now, connect a client. Once a username/password is entered and the certificate accepted, information regarding that session will be stored in ```/usr/local/var/log/radius/freeradius-server-wpe.log```.
 
-**Note**: This file won't be created until the first client connects and authenticate to the access point.
+**Note**: This file won't be created until the first client connects and authenticates to the access point.
