@@ -1,6 +1,6 @@
 # FreeRadius Wireless Pawn Edition
 
-Updated patch for FreeRadius 3.0.12
+Updated patch for FreeRadius 3.0.13
 
 More information about WPE can be found:
 http://www.willhackforsushi.com/?page_id=37
@@ -26,9 +26,9 @@ apt-get install libssl-dev build-essential libtalloc-dev libpcre3-dev
 Assuming the patch is downloaded in the current directory, run the following commands:
 
 ```
-wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.12.tar.bz2
-tar -xvf freeradius-server-3.0.12.tar.bz2
-cd freeradius-server-3.0.12
+wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.13.tar.bz2
+tar -xvf freeradius-server-3.0.13.tar.bz2
+cd freeradius-server-3.0.13
 patch -Np1 -i ../freeradius-server-wpe.patch
 ./configure
 make
