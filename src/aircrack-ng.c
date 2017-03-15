@@ -200,7 +200,7 @@ char usage[] =
 "      -p <nbcpu> : # of CPU to use  (default: all CPUs)\n"
 "      -q         : enable quiet mode (no status output)\n"
 "      -C <macs>  : merge the given APs to a virtual one\n"
-"      -l <file>  : write key to file\n"
+"      -l <file>  : write key to file. Overwrites file.\n"
 "\n"
 "  Static WEP cracking options:\n"
 "\n"
