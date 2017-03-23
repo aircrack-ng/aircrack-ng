@@ -457,30 +457,34 @@ startMac80211Iface() {
 NEXMON_FIRMWARE_DIR=/opt
 NEXMON_DRIVER_DIR=/opt
 
-isNexmonFirmwarePresent() {
-	[ ! -f "${NEXMON_FIRMWARE_DIR}/brcmfmac43430-sdio.bin" ] && return 0
-	[ ! -f "${NEXMON_FIRMWARE_DIR}/brcmfmac43430-sdio.orig.bin" ] && return 0
-	return 1
+isRpi3() {
+	local HW_REV=$(grep Revision /proc/cpuinfo | awk '{print $3}')
+	[ -z "${HW_REV}" ] && return 0
+	# http://www.raspberrypi-spy.co.uk/2012/09/checking-your-raspberry-pi-board-version/
+	[ "${HW_REV}" = 'a22082' ] && return 1
+	[ "${HW_REV}" = 'a02082' ] && return 1
+	[ "${HW_REV}" = '0x9000C1' ] && return 1
+	return 0
 }
 
-isNexmonDriverPresent() {
-	[ -f "${NEXMON_DRIVER_DIR}/brcmfmac.ko" ] && return 1
+isNexutilPresent() {
+	type nexutil >/dev/null 2>/dev/null
+	if [ $? -eq 0 ]; then
+		return 1
+	fi
 	return 0
 }
 
 startNexmonIface() {
 	[ -z $1 ] && return
 
-	if [ -n "$(iwconfig wlan0 | grep 'Mode:Monitor')" ]; then
+	if [ -n "$(iwconfig $1 | grep 'Mode:Monitor')" ]; then
 		printf "\n\tInterface $1 is already in monitor mode"
 	else
 		ifconfig $1 down
-		rmmod brcmfmac
-		modprobe brcmutil
-		cp ${NEXMON_FIRMWARE_DIR}/brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
-		insmod ${NEXMON_DRIVER_DIR}/brcmfmac.ko
-		sleep 1s
-		ifconfig $1 up 2> /dev/null
+		nexutil -m2
+		ifconfig $1 up 2>/dev/null
+		iwconfig $1 channel ${CH}
 		printf "\n\t\t(monitor mode enabled for [${PHYDEV}]${1})\n"
 	fi
 }
@@ -657,10 +661,7 @@ stopMac80211Iface() {
 stopNexmonIface() {
 	[ -z $1 ] && return
 	ifconfig $1 down
-	cp ${NEXMON_FIRMWARE_DIR}/brcmfmac43430-sdio.orig.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
-	rmmod brcmfmac
-	sleep 1
-	modprobe brcmfmac
+	nexutil -m0
 	ifconfig $1 up 2> /dev/null
 	printf "\n\t\t(monitor mode enabled for [${PHYDEV}]${1})\n"
 }
@@ -1477,13 +1478,13 @@ for iface in $(printf "${iface_list}"); do
 			stopwlIface $iface
 		fi
 	elif [ "${CHIPSET}" = 'Broadcom 43430' ]; then
-		isNexmonFirmwarePresent
+		isRpi3
 		if [ $? -eq 0 ]; then
-			printf "\n\tMissing nexmon firmware, cannot switch to monitor mode.\n"
+			printf "\n\tNot a Raspberry Pi 3 or Zero Wireless, cannot put in monitor mode.\n"
 		else
-			isNexmonDriverPresent
+			isNexutilPresent
 			if [ $? -eq 0 ]; then
-				printf "\n\tMissing nexmon driver module, cannot switch to monitor mode.\n"
+				printf "\n\tMissing nexutil, cannot switch to monitor mode.\n"
 			else
 				if [ "$1" = "start" ] && [ "$2" = "$iface" ]; then
 					startNexmonIface $iface
