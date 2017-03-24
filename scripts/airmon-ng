@@ -463,7 +463,7 @@ isRpi3() {
 	# http://www.raspberrypi-spy.co.uk/2012/09/checking-your-raspberry-pi-board-version/
 	[ "${HW_REV}" = 'a22082' ] && return 1
 	[ "${HW_REV}" = 'a02082' ] && return 1
-	[ "${HW_REV}" = '0x9000C1' ] && return 1
+	[ "${HW_REV}" = '9000c1' ] && return 1
 	return 0
 }
 
