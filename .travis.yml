@@ -7,7 +7,7 @@ language: c
 sudo: false
 
 before_install:
-    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install libgcrypt sqlite3 pcre); fi
+    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install libgcrypt sqlite3); fi
 
 addons:
   apt:
