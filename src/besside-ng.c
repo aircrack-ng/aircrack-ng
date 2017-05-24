@@ -2550,9 +2550,15 @@ static void wifi_read(void)
     struct ieee80211_frame* wh = (struct ieee80211_frame*) buf;
 	struct network *n;
 
+	memset(buf, 0, sizeof(buf));
+
 	rd = wi_read(s->s_wi, buf, sizeof(buf), &ri);
 	if (rd < 0)
 		err(1, "wi_read()");
+
+	if (rd < sizeof(struct ieee80211_frame)) {
+		return;
+	}
 
 	s->s_ri = &ri;
 
