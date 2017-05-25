@@ -120,7 +120,7 @@ EOF
 	fi
 }
 
-case "$CC" in
+case "$(basename $CC)" in
 	mips-* | arm-* | aarch64-*)
 		IS_CROSS=1
 		IS_X86=0
