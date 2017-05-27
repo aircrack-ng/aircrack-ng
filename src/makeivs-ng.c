@@ -39,7 +39,7 @@ char usage[] =
 
 "\n"
 "  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
-"  http://www.aircrack-ng.org\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: makeivs-ng [options]\n"
 "\n"

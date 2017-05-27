@@ -208,7 +208,7 @@ int CFC_filter_signal_duplicate_and_consecutive_sn();
 const char usage[] =
 "\n"
 "  %s - (C) 2008 Thomas d\'Otreppe\n"
-"  http://www.aircrack-ng.org\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: airundefense-ng <filename> <BSSID>\n"
 "\n";

@@ -62,7 +62,7 @@ void print_help(const char * msg) {
 	char *version_info = getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 ebfe\n"
-		"  http://www.aircrack-ng.org\n"
+		"  https://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: airolib-ng <database> <operation> [options]\n"
 		"\n"

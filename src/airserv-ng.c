@@ -76,7 +76,7 @@ static void usage(char *p)
 	char *version_info = getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
-		"  http://www.aircrack-ng.org\n"
+		"  https://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: airserv-ng <options>\n"
 		"\n"

@@ -9,7 +9,7 @@ setup(name='airgraph-ng',
       description='Aircrack-ng network grapher',
       author='TheX1le',
       console = [{"script": "airgraph-ng" }],
-      url='http://aircrack-ng.org',
+      url='https://aircrack-ng.org',
       license='GPL2',
       classifiers=[
           'Development Status :: 4 - Beta',

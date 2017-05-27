@@ -164,7 +164,7 @@ char usage[] =
 "\n"
 "  %s - (C) 2008-2015 Thomas d'Otreppe\n"
 "  Original work: Martin Beck\n"
-"  http://www.aircrack-ng.org\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: airbase-ng <options> <replay interface>\n"
 "\n"

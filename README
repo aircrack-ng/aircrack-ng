@@ -1,4 +1,4 @@
-Documentation, tutorials, ... can be found on http://www.aircrack-ng.org
+Documentation, tutorials, ... can be found on https://www.aircrack-ng.org
 See also manpages and the forum.
 
 Installing
@@ -139,7 +139,7 @@ wpa2-psk-linksys.cap:
 
 password.lst
     This is a sample wordlist for WPA key cracking. More wordlists can be found at
-    http://www.aircrack-ng.org/doku.php?id=faq#where_can_i_find_good_wordlists
+    https://www.aircrack-ng.org/doku.php?id=faq#where_can_i_find_good_wordlists
 
 password.db
     This is a sample airolib-ng database for WPA key cracking.

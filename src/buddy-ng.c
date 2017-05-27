@@ -198,7 +198,7 @@ void usage()
     char *version_info = getVersion("Buddy-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007,2008 Andrea Bittau\n"
-		"  http://www.aircrack-ng.org\n"
+		"  https://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: buddy-ng <options>\n"
 		"\n"

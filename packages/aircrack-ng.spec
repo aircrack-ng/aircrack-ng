@@ -7,7 +7,7 @@ Version:        1.2-rc2
 Summary:        Reliable 802.11 (wireless) sniffer and WEP/WPA-PSK key cracker
 License:        GPL
 Source:         http://dl.aircrack-ng.org/%{name}-%{version}.tar.gz
-URL:            http://www.aircrack-ng.org/
+URL:            https://www.aircrack-ng.org/
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Packager:       David Bolt <davjam@davjam.org>
 Requires: openssl-devel glibc >= 2

@@ -146,7 +146,7 @@ char * progname = NULL;
 char usage[] =
 "\n"
 "  %s - (C) 2015 Tim de Waal\n"
-"  http://www.aircrack-ng.org\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: airventriloquist-ng [options]\n"
 "\n"

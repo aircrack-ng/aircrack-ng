@@ -162,7 +162,7 @@ Windows:
 # Documentation
 
 
-Documentation, tutorials, ... can be found on http://www.aircrack-ng.org
+Documentation, tutorials, ... can be found on https://www.aircrack-ng.org
 
 See also manpages and the forum.
 

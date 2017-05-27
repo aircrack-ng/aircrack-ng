@@ -188,7 +188,7 @@ const unsigned char R[256] =
 char usage[] =
 "\n"
 "  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
-"  http://www.aircrack-ng.org\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: aircrack-ng [options] <.cap / .ivs file(s)>\n"
 "\n"

@@ -313,7 +313,7 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * aircrack-ng: Now output an error message if using -r and it wasn't compiled with sqlite support.
   It was a problem on some ubuntu.
 * airdecloak-ng: New tool to remove wep cloaked frames from a pcap file.
-  For more details see http://www.aircrack-ng.org/doku.php?id=airdecloak-ng
+  For more details see https://www.aircrack-ng.org/doku.php?id=airdecloak-ng
 * airodump-ng: Added kismet csv output support.
 * airodump-ng: Fixed power value display (for ath interface with a high number, more than 99).
 * airodump-ng: Can work on the new frequencies (allowed by frequency Chaos patch).

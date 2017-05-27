@@ -3144,7 +3144,7 @@ static void usage(char *prog)
     char *version_info = getVersion("Besside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
         printf("\n"
                 "  %s - (C) 2010 Andrea Bittau\n"
-                "  http://www.aircrack-ng.org\n"
+                "  https://www.aircrack-ng.org\n"
                 "\n"
                 "  Usage: %s [options] <interface>\n"
                 "\n"
