@@ -1186,6 +1186,111 @@ int calc_tkip_ppk( unsigned char *h80211, int caplen, unsigned char TK1[16], uns
     return 0;
 }
 
+int calc_tkip_mic_skip_eiv(unsigned char* packet, int length, unsigned char ptk[80], unsigned char value[8])
+{
+    int z, koffset=0, is_qos=0;
+    unsigned char smac[6], dmac[6], bssid[6];
+    unsigned char prio[4] = {0};
+    struct Michael mic;
+
+    z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+
+    if(length < z) return 0;
+
+    /* Check if 802.11e (QoS) */
+    if( (packet[0] & 0x80) == 0x80)
+    {
+        z+=2;
+        is_qos = 1;
+    }
+
+    switch( packet[1] & 3 )
+    {
+        case  0:
+            memcpy( bssid, packet + 16, 6 );
+            memcpy( dmac, packet + 4, 6 );
+            memcpy( smac, packet + 10, 6 );
+            break;
+        case  1:
+            memcpy( bssid, packet + 4, 6 );
+            memcpy( dmac, packet + 16, 6 );
+            memcpy( smac, packet + 10, 6 );
+            koffset = 48+8;
+            break;
+        case  2:
+            memcpy( bssid, packet + 10, 6 );
+            memcpy( dmac, packet + 4, 6 );
+            memcpy( smac, packet + 16, 6 );
+            koffset = 48;
+            break;
+        default:
+            memcpy( bssid, packet + 10, 6 );
+            memcpy( dmac, packet + 16, 6 );
+            memcpy( smac, packet + 24, 6 );
+            break;
+    }
+
+    if(koffset != 48 && koffset != 48+8)
+        return 1;
+
+    init_michael(&mic, ptk+koffset);
+
+    michael_append(&mic, dmac, 6);
+    michael_append(&mic, smac, 6);
+
+    //memset(prio, 0, 4);
+    if(is_qos)
+    {
+        prio[0] = packet[z-2] & 0x0f;
+    }
+    michael_append(&mic, prio, 4);
+
+    michael_append(&mic, packet+z+8, length - z -8);
+
+    michael_finalize(&mic);
+
+    memcpy(value, mic.mic, 8);
+
+    return 0;
+}
+
+
+
+void encrypt_tkip( unsigned char *h80211, int caplen, unsigned char ptk[80] )
+{
+    unsigned char *TK1 = ptk +32;
+    unsigned char K[16];
+    int z;
+
+    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS ) {
+        z += 2;
+    }
+    //Update the MIC in the frame...
+    // Had to mod calc_tkip_mic to skip extended IV to aviod memmoves
+    unsigned char micval[8] = {0};
+    calc_tkip_mic_skip_eiv(h80211, caplen - 12 , ptk, micval);
+    //hexDump("MICVALafter", micval, 8);
+    unsigned char *mic_in_packet = h80211 + caplen -12;
+    //hexDump("MIC in packet", mic_in_packet, 8);
+    memcpy(mic_in_packet, micval, 8);
+    //hexDump("MIC in packet(updated)", mic_in_packet, 8);
+
+    //Update the CRC in the frame before encrypting
+    uint32_t crc = calc_crc(h80211 + z + 8, caplen - z - 8 - 4);
+
+    unsigned char *buf = h80211 + z + 8;
+    buf += caplen - z - 8 - 4;
+    buf[0] = ( ( crc       ) & 0xFF );
+    buf[2] = ( ( crc >> 16 ) & 0xFF );
+    buf[1] = ( ( crc >>  8 ) & 0xFF );
+    buf[3] = ( ( crc >> 24 ) & 0xFF );
+
+    calc_tkip_ppk( h80211, caplen, TK1, K );
+
+    decrypt_wep( h80211 + z + 8, caplen - z - 8, K, 16 );
+}
+
 int decrypt_tkip( unsigned char *h80211, int caplen, unsigned char TK1[16] )
 {
     unsigned char K[16];

@@ -13,7 +13,7 @@ endif
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(experimental) $(EXPERIMENTAL))),true)
 	MP_FILES  += buddy-ng.1
-	SMP_FILES += tkiptun-ng.8 easside-ng.8 wesside-ng.8
+	SMP_FILES += tkiptun-ng.8 easside-ng.8 wesside-ng.8 airventriloquist.8
 endif
 
 

@@ -222,6 +222,7 @@ int is_ipv6(void *wh);
 int is_dhcp_discover(void *wh, int len);
 int is_qos_arp_tkip(void *wh, int len);
 int calc_tkip_ppk( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char key[16] );
+void encrypt_tkip( unsigned char *h80211, int caplen, unsigned char PTK[80] );
 int decrypt_tkip( unsigned char *h80211, int caplen, unsigned char TK1[16] );
 int encrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char PN[6] );
 int decrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16] );

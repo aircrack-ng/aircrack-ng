@@ -13,7 +13,7 @@ PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
 		  ivstools$(EXE) kstats$(EXE) makeivs-ng$(EXE) \
-		  airdecloak-ng$(EXE) wpaclean$(EXE)
+		  airdecloak-ng$(EXE) wpaclean$(EXE) airventriloquist-ng$(EXE)
 
 LIBPCRE		=
 ifeq ($(PCRE), true)
@@ -34,14 +34,14 @@ endif
 
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE) airbase-ng$(EXE)
+		  airtun-ng$(EXE) airbase-ng$(EXE) 
 
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
 
 ifeq ($(subst TRUE,true,$(filter TRUE true,$(experimental) $(EXPERIMENTAL))),true)
-	SBINFILES	+= wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE) besside-ng$(EXE)
+	SBINFILES	+= wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE) besside-ng$(EXE) airventriloquist-ng$(EXE)
 	BINFILES	+= buddy-ng$(EXE)
 endif
 
@@ -101,6 +101,7 @@ OBJS_AB		= airbase-ng.o common.o crypto.o osdep/radiotap/radiotap.o
 OBJS_AU		= airdecloak-ng.o common.o osdep/radiotap/radiotap.o
 OBJS_TT		= tkiptun-ng.o common.o crypto.o osdep/radiotap/radiotap.o
 OBJS_WC		= wpaclean.o osdep/radiotap/radiotap.o
+OBJS_AV         = airventriloquist-ng.o common.o crypto.o osdep/radiotap/radiotap.o
 
 OSD		= osdep
 LIBS		:= -L$(OSD) -l$(OSD) $(LIBS)
@@ -127,6 +128,7 @@ ifeq ($(subst TRUE,true,$(filter TRUE true,$(gcrypt) $(GCRYPT))),true)
 	OBJS_WS		+= sha1-git.o
 	OBJS_TT		+= sha1-git.o
 	OBJS_BS		+= sha1-git.o
+	OBJS_AV		+= sha1-git.o
 else
 	ifeq ($(OSNAME), Darwin)
 		ifneq ($(OSX_ALT_FLAGS), true)
@@ -253,6 +255,9 @@ tkiptun-ng$(EXE): $(OBJS_TT) $(LIBOSD)
 wpaclean$(EXE): $(OBJS_WC) $(LIBOSD)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_WC) -o $(@) $(LIBS)
 
+airventriloquist-ng$(EXE): $(OBJS_AV) $(LIBOSD)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_AV) -o $(@) $(LIBS) $(LIBSSL)
+
 strip: $(BINFILES) $(SBINFILES)
 	strip $(BINFILES) $(SBINFILES)
 
@@ -291,6 +296,7 @@ uninstall:
 	-rm -f $(DESTDIR)$(bindir)/makeivs-ng$(EXE)
 	-rm -f $(DESTDIR)$(bindir)/airdecloak-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/tkiptun-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/airventriloquist-ng$(EXE)
 	-rm -rf $(DESTDIR)$(etcdir)
 
 check: all
