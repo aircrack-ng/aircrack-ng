@@ -11,7 +11,7 @@ Here airoscript will send a deauth attack, so we can get the handshake, and laun
 
 It will ask you for the kind of deauth attack you want to use (have a look at Authentication) TODO: ADD LINK
 
-You can read more about it on: http://www.aircrack-ng.org/doku.php?id=cracking_wpa&s[]=wpa
+You can read more about it on: https://www.aircrack-ng.org/doku.php?id=cracking_wpa&s[]=wpa
 
 WMM Attack
 ==========
@@ -38,4 +38,4 @@ Got from the aircrack-ng wiki:
     you can create new packets and inject them. The creation and injection are
     done using the other aircrack-ng suite tools. 
 
-You can read more here: http://www.aircrack-ng.org/doku.php?id=tkiptun-ng
+You can read more here: https://www.aircrack-ng.org/doku.php?id=tkiptun-ng

@@ -43,14 +43,14 @@ That is, fake auth and arp replay attacks. Basically, according to aircrack-ng w
 
 In interactive mode, you'll be asked for the "f" (from-to destination bit), making you able to make it into a t, and the destmac (wich, by default, is FF:FF:FF:FF:FF:FF)
 
-Have a look at _Fake auth at aircrack-ng wiki: http://www.aircrack-ng.org/doku.php?id=fake_authentication 
-and _ARP replay at: http://www.aircrack-ng.org/doku.php?id=arp-request_reinjection
+Have a look at _Fake auth at aircrack-ng wiki: https://www.aircrack-ng.org/doku.php?id=fake_authentication 
+and _ARP replay at: https://www.aircrack-ng.org/doku.php?id=arp-request_reinjection
 
 Fake auth (Interactive)
 +++++++++++++++++++++++
 Almost same as fake auth, automatic, except for aireplay being called in interactive mode, wich will force the user to select a packet instead of injecting the first that it gets.
 
-Have a look at _Fake auth at aircrack-ng wiki: http://www.aircrack-ng.org/doku.php?id=fake_authentication
+Have a look at _Fake auth at aircrack-ng wiki: https://www.aircrack-ng.org/doku.php?id=fake_authentication
 
 Fragmentation attack
 +++++++++++++++++++++++
@@ -92,7 +92,7 @@ According to aircrack-ng wiki:
     is correct after guessing the missing parts of it. This attack requires at
     least one WEP data packet. 
 
-Have a look at its aircrack-ng docs at _aircrack-ng wiki: http://www.aircrack-ng.org/doku.php?id=korek_chopchop
+Have a look at its aircrack-ng docs at _aircrack-ng wiki: https://www.aircrack-ng.org/doku.php?id=korek_chopchop
 
 Attacks using a client
 ======================
@@ -155,4 +155,4 @@ According to aircrack-ng wiki:
     which can be captured by airodump-ng. Subsequently, aircrack-ng can be used
     to determine the WEP key.
 
-Have a look at its aircrack-ng docs at _aircrack-ng wiki: http://www.aircrack-ng.org/doku.php?id=caffe-lat
+Have a look at its aircrack-ng docs at _aircrack-ng wiki: https://www.aircrack-ng.org/doku.php?id=caffe-lat
