@@ -988,17 +988,12 @@ int CFC_filter_signal() {
 						++nb_packets;
 						break;
 					}
-
-
-					if (_packet_elt_head->current->signal_quality - average_signal == 0) {
-						// If there's no variation, I'm sure it's not a cloaked packet
-						_packet_elt_head->current->is_cloaked = VALID_FRAME_UNCLOAKED;
-					}
-					else {
-						// We could play with POTENTIALLY_CLOAKED frame depending on the variation
-						// but currently, it's unloacked if inferior to the max allowed signal
-						_packet_elt_head->current->is_cloaked = VALID_FRAME_UNCLOAKED;
-					}
+					// If the signal quality is the same as the average signal,
+					// we're sure it's not a cloaked packet.
+					// Regarding any other signal difference compared to the average signal
+					// We could play with POTENTIALLY_CLOAKED frame depending on the variation
+					// but currently, it's unloacked if inferior to the max allowed signal
+					_packet_elt_head->current->is_cloaked = VALID_FRAME_UNCLOAKED;
 					break;
 				case VALID_FRAME_UNCLOAKED:
 					break;
