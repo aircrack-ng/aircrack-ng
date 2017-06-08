@@ -152,3 +152,7 @@ Chinese-SSID-Name.pcap
 
 verify_inject.py
     Testing DNS requests using airtun-ng.
+
+
+More sample pcap are available from Wireshark: 
+    https://wiki.wireshark.org/SampleCaptures#Wifi_.2F_Wireless_LAN_captures_.2F_802.11
