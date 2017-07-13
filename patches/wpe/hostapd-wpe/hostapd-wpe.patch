@@ -3243,10 +3243,10 @@ diff -rupN hostapd-2.6/hostapd/hostapd-wpe.eap_user hostapd-2.6-wpe/hostapd/host
 +#"2"*		AKA,TTLS,TLS,PEAP,SIM
 +#"3"*		SIM,TTLS,TLS,PEAP,AKA
 +#"4"*		AKA,TTLS,TLS,PEAP,SIM
-+"5"*		SIM,TTLS,TLS,PEAP,AKA
-+"6"*		AKA'
-+"7"*		AKA'
-+"8"*		AKA'
++#"5"*		SIM,TTLS,TLS,PEAP,AKA
++#"6"*		AKA'
++#"7"*		AKA'
++#"8"*		AKA'
 +
 +# Wildcard for all other identities
 +#*		PEAP,TTLS,TLS,SIM,AKA
