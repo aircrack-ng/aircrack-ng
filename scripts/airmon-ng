@@ -663,7 +663,7 @@ stopNexmonIface() {
 	ifconfig $1 down
 	nexutil -m0
 	ifconfig $1 up 2> /dev/null
-	printf "\n\t\t(monitor mode enabled for [${PHYDEV}]${1})\n"
+	printf "\n\t\t(monitor mode disabled for [${PHYDEV}]${1})\n"
 }
 
 stopwlIface() {
