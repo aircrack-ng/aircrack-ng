@@ -63,6 +63,7 @@ get_interface_info() {
 			[ "${PRODUCT_ID}" = "0x8193" ] && CHIPSET="RTL8192DU"
 			[ "${PRODUCT_ID}" = "0x8199" ] && CHIPSET="RTL8187SU"
 			[ "${PRODUCT_ID}" = "0x8812" ] && CHIPSET="RTL8812AU"
+			[ "${PRODUCT_ID}" = "0x8187" ] && CHIPSET="RTL8187L"
 		elif [ "${VENDOR_ID}" = "0x06f8" ] && [ "${PRODUCT_ID}" = "0xe033" ]; then
 			CHIPSET="RTL8188CUS"
 		elif [ "${VENDOR_ID}" = "0x2001" ] && [ "${PRODUCT_ID}" = "0x3308" ]; then
@@ -83,6 +84,8 @@ get_interface_info() {
 			[ "${PRODUCT_ID}" = "0x9043" ] && CHIPSET="RTL8188CUS"
 		fi
 		[ -z "${CHIPSET}" ] && CHIPSET="Report dmesg and usbconfig (dump commands) to http://trac.aircrack-ng.org" 
+	elif [ "${DRIVER}" = "run" ]; then
+		CHIPSET="Ralink/Mediatek"
 	elif [ -n "${DRIVER}" ]; then
 		CHIPSET="Report dmesg and usbconfig (dump commands) to http://trac.aircrack-ng.org"
 	else
