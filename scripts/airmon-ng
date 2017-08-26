@@ -300,13 +300,20 @@ rfkill_unblock() {
 	fi
 	rfkill_status="$(rfkill unblock ${1#phy} 2>&1)"
 	if [ $? != 0 ]; then
-		printf "rfkill error: ${rfkill_status}\n"
-		printf "Unable to unblock.\n"
-		return 1
-	else
-		sleep 1
-		return 0
+		rfkill_status="$(rfkill unblock $index 2>&1)"
+		if [ $? != 0 ]; then
+			if [ `echo "$blah" | grep "Usage" | wc -l` -eq 1 ]; then
+				printf "Missing parameters in rfkill! Report this"
+			else
+				printf "rfkill error: ${rfkill_status}\n"
+			fi
+			printf "Unable to unblock.\n"
+			return 1
+		fi
 	fi
+
+	sleep 1
+	return 0
 }
 
 setLink() {
@@ -373,9 +380,9 @@ startMac80211Iface() {
 	rfkill_check ${PHYDEV}
 	rfkill_retcode="$?"
 	case ${rfkill_retcode} in
-		1) printf "\t${1} is soft blocked, please run \"rfkill unblock ${1#phy}\" to use this interface.\n" ;;
-		2) printf "\t${1} is hard blocked, please flip the hardware wifi switch to on.\n"
-		   printf "\tIt may also be possible to unblock with \"rfkill unblock ${1#phy}\"\n"
+		1) printf "\t${1} is soft blocked, please run \"rfkill unblock ${index}\" to use this interface.\n" ;;
+		2) printf "\t${1} is hard blocked, please flip the hardware wifi switch (or in BIOS) to on.\n"
+		   printf "\tIt may also be possible to unblock with \"rfkill unblock ${index}\"\n"
 		   if [ "${checkvm_status}" != "run" ]; then
 		   	checkvm
 		   fi
@@ -383,12 +390,12 @@ startMac80211Iface() {
 		   	printf "Detected VM using ${vm_from}\n"
 		   	printf "This appears to be a ${vm} Virtual Machine\n"
 		   	printf "Some distributions have bugs causing rfkill hard block to be forced on in a VM.\n"
-		   	printf "If toggling the rfkill hardware switch and \"rfkill unblock ${1#phy}\" both fail\n"
+		   	printf "If toggling the rfkill hardware switch and \"rfkill unblock ${index}\" both fail\n"
 		   	printf "to fix this, please try not running in a VM.\n"
 		   fi
 		   ;;
 		3) printf "\t${1} is hard and soft blocked, please flip the hardware wifi switch to on.\n"
-		   printf "\tIt may also be needed to unblock with \"rfkill unblock ${1#phy}\"\n" ;;
+		   printf "\tIt may also be needed to unblock with \"rfkill unblock ${index}\"\n" ;;
 	esac
 	if [ "${rfkill_retcode}" != 0 ]; then
 		printf "rfkill error, unable to start ${1}\n\n"
