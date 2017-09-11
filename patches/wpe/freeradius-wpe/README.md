@@ -1,6 +1,6 @@
 # FreeRadius Wireless Pawn Edition
 
-Updated patch for FreeRadius 3.0.13
+Updated patch for FreeRadius 3.0.13-3.0.15
 
 More information about WPE can be found:
 http://www.willhackforsushi.com/?page_id=37
@@ -26,9 +26,9 @@ apt-get install libssl-dev build-essential libtalloc-dev libpcre3-dev
 Assuming the patch is downloaded in the current directory, run the following commands:
 
 ```
-wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.13.tar.bz2
-tar -xvf freeradius-server-3.0.13.tar.bz2
-cd freeradius-server-3.0.13
+wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.15.tar.bz2
+tar -xvf freeradius-server-3.0.15.tar.bz2
+cd freeradius-server-3.0.15
 patch -Np1 -i ../freeradius-server-wpe.patch
 ./configure
 make
@@ -49,3 +49,7 @@ If it fails running and complains about OpenSSL being vulnerable, make sure Open
 Now, connect a client. Once a username/password is entered and the certificate accepted, information regarding that session will be stored in ```/usr/local/var/log/radius/freeradius-server-wpe.log```.
 
 **Note**: This file won't be created until the first client connects and authenticates to the access point.
+
+## Note
+
+Debian testing disabled TLS 1.0 and TLS 1.1 which break FreeRADIUS-WPE. A bug has been reported to Debian to enable TLS 1.0/1.1 and FreeRADIUS is working on a solution.
