@@ -2285,13 +2285,15 @@ int get_battery_state(void)
             return 0;
 
         while (ac_adapters != NULL && ((this_adapter = readdir(ac_adapters)) != NULL)) {
-            if (this_adapter->d_name[0] == '.')
+            if (this_adapter->d_name[0] == '.') {
                 continue;
+	    }
             /* safe overloaded use of battery_state path var */
             snprintf(battery_state, sizeof(battery_state),
                 "/proc/acpi/ac_adapter/%s/state", this_adapter->d_name);
-            if ((acpi = fopen(battery_state, "r")) == NULL)
+            if ((acpi = fopen(battery_state, "r")) == NULL) {
                 continue;
+	    }
             if (acpi != NULL) {
                 while(fgets(buf, 128, acpi)) {
                     if (strstr(buf, "on-line") != NULL) {
@@ -2304,13 +2306,12 @@ int get_battery_state(void)
                 fclose(acpi);
             }
         }
-        if (ac_adapters != NULL)
+        if (ac_adapters != NULL) {
             closedir(ac_adapters);
+	}
 
         batteries = opendir("/proc/acpi/battery");
-
         if (batteries == NULL) {
-            closedir(batteries);
             return 0;
         }
 
