@@ -701,7 +701,7 @@ getDriver() {
 	#standard detection path, this is all that is needed for proper drivers
 	#DRIVER=$(printf "$ethtool_output" | awk '/driver/ {print $2}')
 
-	#if $(modinfo -n ${DRIVER} > /dev/null 2>&1)
+	#if $(modinfo -F filename ${DRIVER} > /dev/null 2>&1)
 	#then
 	#	true
 	#else
@@ -753,7 +753,7 @@ getDriver() {
 	#Here we will catch the broken lying drivers not caught above
 	#currently this only functions for pci devices and not usb since lsusb has no -k option
 	if [ "${MODINFO}" = "1" ]; then
-		if $(modinfo -n $DRIVER  > /dev/null 2>&1)
+		if $(modinfo -F filename $DRIVER  > /dev/null 2>&1)
 		then
 			true
 		else
@@ -776,7 +776,7 @@ getFrom() {
 	#from detection
 	FROM="K"
 	if [ "${MODINFO}" = "1" ] && [ -f /proc/modules ]; then
-		if modinfo -n $DRIVER 2>&1 | grep -q 'kernel/drivers'
+		if modinfo -F filename $DRIVER 2>&1 | grep -q 'kernel/drivers'
 		then
 			FROM="K"
 			#we add special handling here because we hate the vendor drivers AND they install in the wrong place
@@ -787,13 +787,13 @@ getFrom() {
 			elif [ "$DRIVER" = "rt5390sta" ]; then
 				FROM="V"
 			fi
-		elif modinfo -n $DRIVER 2>&1 | grep -q 'updates/drivers'
+		elif modinfo -F filename $DRIVER 2>&1 | grep -q 'updates/drivers'
 		then
 			FROM="C"
-		elif modinfo -n $DRIVER 2>&1 | grep -q misc
+		elif modinfo -F filename $DRIVER 2>&1 | grep -q misc
 		then
 			FROM="V"
-		elif modinfo -n $DRIVER 2>&1 | grep -q staging
+		elif modinfo -F filename $DRIVER 2>&1 | grep -q staging
 		then
 			FROM="S"
 		else
