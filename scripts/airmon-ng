@@ -696,6 +696,7 @@ stopwlIface() {
 }
 
 getDriver() {
+	unset DRIVER
 	#standard detection path, this is all that is needed for proper drivers
 	#DRIVER=$(printf "$ethtool_output" | awk '/driver/ {print $2}')
 
@@ -710,9 +711,6 @@ getDriver() {
 	#then
 		if [ -f /sys/class/net/$1/device/uevent ]; then
 			DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/uevent)"
-		else
-			#DRIVER we put SOMETHING in DRIVER here if we are unable to find anything real
-			DRIVER="??????"
 		fi
 	#fi
 
@@ -755,15 +753,22 @@ getDriver() {
 		then
 			true
 		else
+			save="$DRIVER"
+
 			if [ -n "${DEVICEID}" ] && [ "$BUS" = "pci" ]; then
 				DRIVER="$(lspci -d $DEVICEID -k | awk '/modules/ {print $3}')"
 			fi
-			if [ -n "$DRIVER" ]; then
-				if [ -z "${BUS}" ] || [ "${BUS}" != 'sdio' ]; then
-					DRIVER="??????"
-				fi
+			if [ -z "${BUS}" ] || [ "${BUS}" != 'sdio' ]; then
+					unset DRIVER
+			fi
+
+			if [ -n "$save" ] && [ -z "$DRIVER" ] ; then
+				DRIVER="$save"
 			fi
 		fi
+	fi
+	if [ -z "$DRIVER" ] ; then
+		DRIVER="??????"
 	fi
 	if [ "$DEBUG" = "1" ]; then
 		printf "getdriver() $DRIVER\n"
