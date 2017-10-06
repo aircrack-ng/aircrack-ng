@@ -534,7 +534,6 @@ setChannelMac80211() {
 	setLink ${1} up
 	if [ -n "${CH}" ]; then
 		if [ ${CH} -lt 1000 ]; then
-			#mac80211 specific check to see if hardware supports the channel number being assigned (requires grep with pcre)
 			if [ -r "/sys/class/net/$1/phy80211/name" ]; then
 		                channel_list="$(iw phy $(cat /sys/class/net/$1/phy80211/name) info 2>&1 | awk -F'[][]' '$2{print $2}')"
 				local hardware_valid_channel=1
@@ -551,7 +550,6 @@ setChannelMac80211() {
 			fi
 			IW_ERROR="$(iw dev ${1} set channel ${CH} 2>&1)"
 		else
-			#mac80211 specific check to see if hardware supports the frequency number being assigned (requires grep with pcre)
 			if [ -r "/sys/class/net/$1/phy80211/name" ]; then
 				frequency_list="$(iw phy $(cat /sys/class/net/$1/phy80211/name) info 2>&1 | sed -nr 's/.*( |^)([0-9]+) MHz .*/\2/p')"
 				local hardware_valid_freq=1
