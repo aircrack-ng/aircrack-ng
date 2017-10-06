@@ -536,7 +536,7 @@ setChannelMac80211() {
 		if [ ${CH} -lt 1000 ]; then
 			#mac80211 specific check to see if hardware supports the channel number being assigned (requires grep with pcre)
 			if [ -r "/sys/class/net/$1/phy80211/name" ]; then
-		                channel_list="$(iw phy $(cat /sys/class/net/$1/phy80211/name) info 2>&1 | grep -oP '\[\K[^\]]+')"
+		                channel_list="$(iw phy $(cat /sys/class/net/$1/phy80211/name) info 2>&1 | awk -F'[][]' '$2{print $2}')"
 				local hardware_valid_channel=1
 	        	        for i in $channel_list; do
 	                	        if [ "${CH}" = "${i}" ]; then
@@ -553,7 +553,7 @@ setChannelMac80211() {
 		else
 			#mac80211 specific check to see if hardware supports the frequency number being assigned (requires grep with pcre)
 			if [ -r "/sys/class/net/$1/phy80211/name" ]; then
-				frequency_list="$(iw phy $(cat /sys/class/net/$1/phy80211/name) info 2>&1 | grep -oP '\*\ \K[\d]+\ ')"
+				frequency_list="$(iw phy $(cat /sys/class/net/$1/phy80211/name) info 2>&1 | sed -nr 's/.*( |^)([0-9]+) MHz .*/\2/p')"
 				local hardware_valid_freq=1
 				for i in $frequency_list; do
 					if [ "${CH}" = "${i}" ]; then
