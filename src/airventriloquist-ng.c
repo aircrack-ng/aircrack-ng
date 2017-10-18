@@ -62,7 +62,6 @@
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
-#include <sys/queue.h>
 #include <arpa/inet.h>
 
 #include <fnmatch.h>
