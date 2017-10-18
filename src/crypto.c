@@ -288,7 +288,7 @@ void calc_pmk( char *key, char *essid_pre, unsigned char pmk[40] )
 void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80], unsigned char mic[20]) {
 	int i;
 	unsigned char pke[100];
-	#if defined(USE_GCRYPT) || OPENSSL_VERSION_NUMBER < 0x10100000L
+	#if defined(USE_GCRYPT) || OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 		#define HMAC_USE_NO_PTR
 	#endif
 
