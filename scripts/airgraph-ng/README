@@ -17,10 +17,6 @@ Airgraph-ng depends are as follows:
 * airodump-ng
 * python > 2.7
 
-!!! Please note due to a lack of PNG support in Graphviz under BackTrack 3
-Airgraph-ng is not currently supported here. I am aware of the issue i just
-havent had time to fix it!!!!!!
-
 The program usage is as follows
 
     airgraph-ng -i [your txt file] -o [the output file in png format] -g [CAPR|CPG]
