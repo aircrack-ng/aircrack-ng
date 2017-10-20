@@ -923,7 +923,7 @@ def usage():
 
 def commandUsage():
     print "\nSample command line arguments:"
-    print "\npython airdrop-ng -i mon0 -t airodump.csv -r rulefile.txt\n"   
+    print "\npython airdrop-ng -i wlan0mon -t airodump.csv -r rulefile.txt\n"
 
 def OUIupdate():
     """
