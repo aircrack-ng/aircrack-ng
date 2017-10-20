@@ -5,10 +5,10 @@ Airgraph-ng's purpose is to graph the txt file that is created when you run
 airodump with the -w option
 
 The idea is that we are showing the relationships of the clients to the AP's
-so dont be shocked if you see only one mapping as you may only have captured
+so don't be shocked if you see only one mapping as you may only have captured
 one client.
 
-Instalation 
+Instalation
 -------------
 
 Airgraph-ng depends are as follows:
@@ -17,7 +17,7 @@ Airgraph-ng depends are as follows:
 * airodump-ng
 * python > 2.7
 
-!!! Please note due to a lack of PNG support in Graphviz under BackTrack 3 
+!!! Please note due to a lack of PNG support in Graphviz under BackTrack 3
 Airgraph-ng is not currently supported here. I am aware of the issue i just
 havent had time to fix it!!!!!!
 
@@ -36,15 +36,15 @@ CPR or Client Prob Graph
     the same ESSID's
 	;-) Fake AP any one?
 
-Once you have airgraph-ng set up and installed i have included some test data 
+Once you have airgraph-ng set up and installed i have included some test data
 to allow you to quickly see if airgraph-ng is working. This data can be found
-in the test directory inside the libs directory	
+in the test directory inside the libs directory
 
 Airgraph-ng sets graphviz to use the latin character set if this is a problem
 for you please let me know. I did this to clear up a bug i had with the CPG
 graphs
 
-dumpjoin is a short support script that will allow you to join two airodump 
+dumpjoin is a short support script that will allow you to join two airodump
 CSV files into one. Run the program with no arugments to see the usage
 
 This is still a work in progress if you have questions contact TheX1le
