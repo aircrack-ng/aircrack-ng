@@ -1155,7 +1155,7 @@ u_int16_t calcsum_tcp(u_int16_t *buf, u_int32_t len, u_int32_t src_addr, u_int32
         }
 
         if ( len & 1 )
-            // Add the padding if the packet lenght is odd         
+            // Add the padding if the packet length is odd         
             chksum += *((u_int8_t *)buf);
 
 
@@ -1194,7 +1194,7 @@ u_int16_t calcsum_udp(u_int16_t *buf, u_int32_t len, u_int32_t src_addr, u_int32
         }
 
         if ( len & 1 )
-                // Add the padding if the packet lenght is odd         
+                // Add the padding if the packet length is odd         
                 chksum += *((u_int8_t *)buf);
 
 
@@ -1444,7 +1444,7 @@ void process_unencrypted_data_packet(u_int8_t* packet, u_int32_t length, u_int32
     // We should have a data packet. Check for LLC 
     if(p_llc->i_dsap == 0xAA && p_llc->i_ssap == 0xAA)
     { 
-        // If its an EAPOL frame lets capture the handshake
+        // If it's an EAPOL frame, let's capture the handshake
         if(ETHTYPE_8021x == p_llc->i_ethtype)
         {
             struct dot1x_hdr* p_d1x = (struct dot1x_hdr*) packet;
@@ -1710,7 +1710,7 @@ void process_unencrypted_data_packet(u_int8_t* packet, u_int32_t length, u_int32
                     u_int8_t *p_dns = packet_start + dns_offset;
                     u_int8_t *p_resdns = pkt + dns_offset;
 
-                    // Copy the begining part of the packet
+                    // Copy the beginning part of the packet
                     memcpy(p_resdns, DNS_RESP_PCKT_1, sizeof(DNS_RESP_PCKT_1));
                     struct dns_query *p_dnsq = (struct dns_query *)p_dns;
                     int dns_qlen = dns_name_end((u_int8_t*)&p_dnsq->qdata, packet_start_length);

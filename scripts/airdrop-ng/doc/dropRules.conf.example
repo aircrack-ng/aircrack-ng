@@ -8,7 +8,7 @@
 
 #it is not wise to mix rule types for example
 #d/any|00:17:AB:5C:DE:3A,00:1B:63:00:60:C4,apple
-#While i may work i have no idea result it will have and at this time is not recomended
+#While it may work I have no idea what result it will have and is not recommended at this time
 
 #EX d/bssid|mac1,mac2  #note this is not a valid rule just shows format the / and | placement do matter
 
@@ -26,7 +26,7 @@
 #an allow rule with multiple clients
 
 #D/00-1E-58-00-FF-5E|00:19:7E:9A:66:96
-#another deny rule with a differnt mac format
+#another deny rule with a different mac format
 
 #d/12:02:DC:02:10:00|any
 #a bssid deny any client rule

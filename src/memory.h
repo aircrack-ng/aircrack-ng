@@ -293,7 +293,7 @@ void dump_out_shammx64_msg(const void *msg, void *buf, unsigned int size, unsign
 #endif
 
 #if defined (SIMD_PARA_MD5)
-// these functions help debug arrays of contigious MD5 prepared PARA buffers. Seen in sunmd5 at the current time.
+// these functions help debug arrays of contiguous MD5 prepared PARA buffers. Seen in sunmd5 at the current time.
 void dump_stuff_mpara_mmx(void *x, unsigned int size, unsigned int index);
 void dump_stuff_mpara_mmx_noeol(void *x, unsigned int size, unsigned int index);
 void dump_stuff_mpara_mmx_msg(const void *msg, void *buf, unsigned int size, unsigned int index);

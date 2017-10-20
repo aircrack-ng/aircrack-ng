@@ -61,7 +61,7 @@
 
 // We use this to keep track of the outputs of A_i
 typedef struct {
-	// How often the value b appeard as an output of A_i
+	// How often the value b appeared as an output of A_i
 	int votes;
 
 	uint8_t b;

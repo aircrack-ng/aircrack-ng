@@ -536,7 +536,7 @@ int cpuid_getinfo() {
 #endif
 
 	if ((cpuinfo.cores == 0) && (cpuinfo.coreperid != 0)) {
-		// On lower topology processors we have to caclulate the cores from max cores per id (pkg/socket) by max addressable
+		// On lower topology processors we have to calculate the cores from max cores per id (pkg/socket) by max addressable
 		cpuinfo.cores = (cpuinfo.maxlogic / cpuinfo.coreperid);
 	}
 #endif

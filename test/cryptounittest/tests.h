@@ -50,12 +50,12 @@ int test (unsigned char *computed, unsigned char *expected, int length, char* na
                 {
                 printf ("[%s][Test %d] ERROR: The output don't match. I got:\n",name,ntest++);
                 hexdump (computed,length);
-                printf ("And i was expecting:\n");
+                printf ("And I was expecting:\n");
                 hexdump (expected,length);
                 }
         else
                 {
-                printf("[%s][Test %d] OK: Output matchs :)\n",name,ntest++);
+                printf("[%s][Test %d] OK: Output matches :)\n",name,ntest++);
                 }
         return error;
 }

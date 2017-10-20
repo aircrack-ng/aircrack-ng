@@ -41,7 +41,7 @@
  *  in native Win32 code which helped slightly but was still far slower than
  *  even normal read().
  *
- *  With some people using massive dictionarys 20-25GB in size, it's important
+ *  With some people using massive dictionaries 20-25GB in size, it's important
  *  that this function be as efficient, and as portable as possible.  I used
  *  the time command to compare runtime between all my tests; ifstream ifs()
  *  and ifs.read() were at least 30-50% faster than the next best solution

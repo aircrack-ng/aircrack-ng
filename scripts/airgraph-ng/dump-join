@@ -1,6 +1,6 @@
 
 #!/usr/bin/python
-# this script is a total hack it works and ill clean it up later
+# this script is a total hack it works and I'll clean it up later
 import sys,getopt, optparse, pdb, re
 def raw_lines(file):
         try:
@@ -30,7 +30,7 @@ def parse_file(file,file_name):
         	sys.exit(1)
 	Clients = cleanup[stationStart:] #splits off the clients into their own list
 	stationStart = stationStart - 1 #ulgy hack to make sure the heading gets deleted from end of the APs List
-	del cleanup[stationStart:]#removed all of the client info leaving only the info on available target AP's in ardump maby i should create a new list for APs?
+	del cleanup[stationStart:]#removed all of the client info leaving only the info on available target AP's in ardump maybe I should create a new list for APs?
 	lines = [cleanup,Clients]
 	return lines
 def join_write(data,name):

@@ -736,7 +736,7 @@ void print_packet ( unsigned char h80211[], int caplen )
 
 	if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
 	{
-	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC adress
+	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC address
 		else key_index_offset = 27;
 
 	    if( ( h80211[key_index_offset] & 0x20 ) == 0 )

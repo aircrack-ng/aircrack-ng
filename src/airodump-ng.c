@@ -5823,7 +5823,7 @@ int getfrequencies(const char *optarg)
     free(tmp_frequencies);
     free(optc);
     if(i==1) return G.own_frequencies[0];   //exactly 1 frequency given
-    if(i==0) return -1;                     //error occured
+    if(i==0) return -1;                     //error occurred
     return 0;                               //frequency hopping
 }
 

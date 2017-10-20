@@ -1813,7 +1813,7 @@ void SSESHA256body(__m128i *data, ARCH_WORD_32 *out, ARCH_WORD_32 *reload_state,
 		SWAP_ENDIAN (h);
 	}
 	/* We store the MMX_mixed values.  This will be in proper 'mixed' format, in BE
-	 * format (i.e. correct to reload on a subsquent call), UNLESS, swapped in the prior
+	 * format (i.e. correct to reload on a subsequent call), UNLESS, swapped in the prior
 	 * if statement (the SHA256_SWAP_FINAL) */
 	if (SSEi_flags & SSEi_OUTPUT_AS_INP_FMT)
 	{
@@ -2174,7 +2174,7 @@ void SSESHA512body(__m128i* data, ARCH_WORD_64 *out, ARCH_WORD_64 *reload_state,
 	}
 
 	/* We store the MMX_mixed values.  This will be in proper 'mixed' format, in BE
-	 * format (i.e. correct to reload on a subsquent call), UNLESS, swapped in the prior
+	 * format (i.e. correct to reload on a subsequent call), UNLESS, swapped in the prior
 	 * if statement (the SHA512_SWAP_FINAL) */
 	if (SSEi_flags & SSEi_OUTPUT_AS_INP_FMT)
 	{

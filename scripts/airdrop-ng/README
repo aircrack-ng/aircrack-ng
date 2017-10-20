@@ -43,7 +43,7 @@ Next compile Pylorcon2 source
 Untar the file
 [*] tar -xvaf PyLorcon2-0.1.tar.gz
 
-Build and install the souce
+Build and install the source
 [*] cd PyLorcon2-0.1 && python setup.py install
 
 If pylorcon reports import errors you need to run the following command:
@@ -166,7 +166,7 @@ The regular expression function is NOT case sensitive. This option while
 much faster only works well with companies that support proprietary 
 hardware
 
-like Apple or Sony. This is not to say it wont work with others but it 
+like Apple or Sony. This is not to say it won't work with others but it 
 works
 
 best on proprietary hardware.

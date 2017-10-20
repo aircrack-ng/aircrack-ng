@@ -120,7 +120,7 @@ def subGraph(items,graphName,graphType,tracked,parse): #OLDNAME subgraph
 			clientMAC = line[0]
 			probe_req = ', '.join(line[6:])
 			for bssid in tracked:
-				if clientMAC not in tracked[bssid]:#check to make sure were not creating a node for a client that has an association allready
+				if clientMAC not in tracked[bssid]:#check to make sure were not creating a node for a client that has an association already
 					subgraph.extend(['\tnode [label="',clientMAC,' \\nProbe Requests: ',probe_req,'" ] "',clientMAC,'";\n'])
 		subgraph.extend(['\t}\n'])
 	elif parse == "n":

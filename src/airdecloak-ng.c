@@ -889,7 +889,7 @@ int CFC_filter_duplicate_sn_client() {
 }
 
 int CFC_filter_duplicate_sn() {
-	// This will remove a lot of legitimate packets unfortunatly
+	// This will remove a lot of legitimate packets unfortunately
 	return CFC_filter_duplicate_sn_ap() + CFC_filter_duplicate_sn_client();
 }
 
@@ -1093,7 +1093,7 @@ int CFC_filter_duplicate_iv() {
 		if (_packet_elt_head->current->frame_type == FRAME_TYPE_DATA) {
 			// In the array, there's as much elements as the number of possible IVs
 			// For each IV, increase by 1 the value of the IV position so that we can
-			// know if it was used AND the number of occurences.
+			// know if it was used AND the number of occurrences.
 			*(ivs_table + get_iv(_packet_elt_head->current)) += 1;
 		}
 	} while (next_packet_pointer() == true);

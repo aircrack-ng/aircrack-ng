@@ -23,7 +23,7 @@ def createKey(essid,bssid):
 	returndict = {}
 	output = 0 #key decimal value
 	multiplier = 1 #up by 36 each time
-	#remove formating of bssid
+	#remove formatting of bssid
 	bssid = bssid.replace(":","").replace("-","")
 	for char in essid.upper():
 		output += int(char,36)*multiplier
@@ -38,8 +38,8 @@ def createKey(essid,bssid):
 		returndict["alt"+str(counter)] = oui[2:6]+key
 		counter += 1
 	return returndict
-	#return the key postions 34 and 56 of the bssid 
-	#are appended to the calulated key
+	#return the key positions 34 and 56 of the bssid 
+	#are appended to the calculated key
 
 def banner():
 	print "\n"+"#"*16

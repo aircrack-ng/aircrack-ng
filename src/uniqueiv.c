@@ -80,7 +80,7 @@ int uniqueiv_mark( unsigned char **uiv_root, unsigned char IV[3] )
 
     uiv_lvl1 = (unsigned char **) uiv_root[IV[2]];
 
-    /* create if it doesn't exists */
+    /* create if it doesn't exist */
 
     if( uiv_lvl1 == NULL )
     {
@@ -105,7 +105,7 @@ int uniqueiv_mark( unsigned char **uiv_root, unsigned char IV[3] )
 
     uiv_lvl2 = (unsigned char *) uiv_lvl1[IV[1]];
 
-    /* create if it doesn't exists */
+    /* create if it doesn't exist */
 
     if( uiv_lvl2 == NULL )
     {

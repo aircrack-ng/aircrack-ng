@@ -442,7 +442,7 @@ static int linux_get_freq(struct wif *wi)
     else if (frequency > 1000000)
         frequency/=1000;
 
-    if (frequency < 500) //its not a freq, but the actual channel
+    if (frequency < 500) //it's not a freq, but the actual channel
         frequency = getFrequencyFromChannel(frequency);
 
     return frequency;

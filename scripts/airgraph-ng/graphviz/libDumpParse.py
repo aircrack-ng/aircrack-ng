@@ -69,7 +69,7 @@ class airDumpParse:
         for entry in devices:
             ap = {}
             string_list = entry.split(',')
-            #sorry for the clusterfuck but i swear it all makse sense this is builiding a dic from our list so we dont have to do postion calls later
+            #sorry for the clusterfuck but I swear it all makes sense, this is building a dic from our list so we don't have to do position calls later
             len(string_list)
             if len(string_list) == 15:
                 ap = {"bssid":string_list[0].replace(' ',''),
@@ -130,20 +130,20 @@ class airDumpParse:
         """
         clients = self.clientDict
         AP = self.apDict
-        NA = [] #create a var to keep the not associdated clients mac's
-        NAP = [] #create a var to keep track of associated clients mac's to AP's we cant see
+        NA = [] #create a var to keep the not associated clients mac's
+        NAP = [] #create a var to keep track of associated clients mac's to AP's we can't see
         apCount = {} #count number of Aps dict is faster the list stored as BSSID:number of essids
         apClient = {} #dict that stores bssid and clients as a nested list
         for key in (clients):
             mac = clients[key] #mac is the MAC address of the client
             if mac["bssid"] != ' (notassociated) ': #one line of our dictionary of clients
-                if AP.has_key(mac["bssid"]): # if it is check to see its an AP we can see and have info on
+                if AP.has_key(mac["bssid"]): # if it is check to see it's an AP we can see and have info on
                     if apClient.has_key(mac["bssid"]): 
                         apClient[mac["bssid"]].extend([key]) #if key exists append new client
                     else: 
                         apClient[mac["bssid"]] = [key] #create new key and append the client
-                else: NAP.append(key) # stores the clients that are talking to an access point we cant see
-            else: NA.append(key) #stores the lines of the not assocated AP's in a list
+                else: NAP.append(key) # stores the clients that are talking to an access point we can't see
+            else: NA.append(key) #stores the lines of the not associated AP's in a list
         self.NAP = NAP
         self.NA  = NA
         self.capr = apClient

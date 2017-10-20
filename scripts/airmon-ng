@@ -258,7 +258,7 @@ findFreeInterface() {
 rfkill_check() {
 	#take phy and check blocks
 	if [ "${RFKILL}" = 0 ]; then
-		#immediatly return if rfkill isn't supported
+		#immediately return if rfkill isn't supported
 		return 0
 	fi
 	if [ -z "${1}" ]; then
@@ -295,7 +295,7 @@ rfkill_check() {
 rfkill_unblock() {
 	#attempt unblock and CHECK SUCCESS
 	if [ "${RFKILL}" = 0 ]; then
-		#immediatly return if rfkill isn't supported
+		#immediately return if rfkill isn't supported
 		return 0
 	fi
 	rfkill_status="$(rfkill unblock ${1#phy} 2>&1)"
@@ -452,7 +452,7 @@ startMac80211Iface() {
 		#check if $1 is still down, warn if not
 		if ifaceIsUp ${1}
 		then
-			printf "\nInterface ${1} is up, but it should be down. Something is interferring."
+			printf "\nInterface ${1} is up, but it should be down. Something is interfering."
 			printf "\nPlease run \"airmon-ng check kill\" and/or kill your network manager."
 		fi
 	else

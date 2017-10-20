@@ -437,7 +437,7 @@ void sighandler( int signum )
 	#endif
 #if !defined(__CYGWIN__)
         // We can't call this on cygwin or we will sometimes end up
-        // having all our threads die with exit code 35584 fairly reproducable
+        // having all our threads die with exit code 35584 fairly reproducible
         // at around 2.5-3% of runs
         signal( signum, sighandler );
 #endif
@@ -3479,12 +3479,12 @@ int do_wep_crack1( int B )
 		return( check_wep_key( wep.key, B, 0 ) );
 	}
 
-	/* now compute the poll resultst for keybyte B */
+	/* now compute the poll results for keybyte B */
 
 	if( calc_poll( B ) != SUCCESS )
 		return( FAILURE );
 
-	/* fudge threshold = higest vote divided by fudge factor */
+	/* fudge threshold = highest vote divided by fudge factor */
 
 	for( wep.fudge[B] = 1; wep.fudge[B] < 256; wep.fudge[B]++ )
 		if( (float) wep.poll[B][wep.fudge[B]].val <
@@ -5080,7 +5080,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
     if(!len)
     {
         ap_cur->nb_ivs = ap_cur->nb_ivs_vague;
-        //in case its not found, try bruteforcing the id field and include "vague" keystreams
+        //in case it's not found, try bruteforcing the id field and include "vague" keystreams
         PTW_DEFAULTBF[10]=1;
         PTW_DEFAULTBF[11]=1;
 //        PTW_DEFAULTBF[12]=1;

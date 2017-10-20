@@ -1616,7 +1616,7 @@ void print_packet ( unsigned char h80211[], int caplen )
 
 	if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
 	{
-	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC adress
+	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC address
 		else key_index_offset = 27;
 
 	    if( ( h80211[key_index_offset] & 0x20 ) == 0 )
@@ -2814,7 +2814,7 @@ int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int exte
                         return 0;
                     }
 
-                    /* its a packet for us, but we either don't have the key or its WPA -> throw it away */
+                    /* it's a packet for us, but we either don't have the key or its WPA -> throw it away */
                     return 0;
                 }
             }
@@ -3015,7 +3015,7 @@ int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int exte
                     {
                         addCF(packet, length);
                     }
-                    /* its a packet we can't decrypt -> just replay it through the wireless interface */
+                    /* it's a packet we can't decrypt -> just replay it through the wireless interface */
                     return 0;
                 }
             }
@@ -3038,7 +3038,7 @@ int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int exte
         memcpy( h80211+14, packet+z+8, length-z-8);
         length = length -z-8+14;
 
-        //ethernet frame must be atleast 60 bytes without fcs
+        //ethernet frame must be at least 60 bytes without fcs
         if(length < 60)
         {
             trailer = 60 - length;
@@ -3297,7 +3297,7 @@ skip_probe:
         {
             if(packet[z] == 0x00) //open system auth
             {
-                //make sure its an auth request
+                //make sure it's an auth request
                 if(packet[z+2] == 0x01)
                 {
                     if(opt.verbose)

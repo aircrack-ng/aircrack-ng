@@ -317,7 +317,7 @@ void *mem_alloc_align_func(size_t size, size_t align
 		perror("aligned_malloc");
 
 #elif AC_BUILT
-#error No suitable alligned alloc found, please report to john-dev mailing list (state your OS details).
+#error No suitable aligned alloc found, please report to john-dev mailing list (state your OS details).
 
 /* we need an aligned alloc function for legacy builds */
 #elif _ISOC11_SOURCE
