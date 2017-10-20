@@ -105,9 +105,8 @@ def dotWrite(data): #OLDNAME dot_write
 		subprocess.Popen(["rm","-rf","airGconfig.dot"]) #Delete the file if it already exists
 	except Exception:
 		pass
-	file = open('airGconfig.dot','a')
-	file.writelines(data)
-	file.close()
+	with open('airGconfig.dot','a') as fid:
+		fid.writelines(data)
 
 def subGraph(items,graphName,graphType,tracked,parse): #OLDNAME subgraph
 	"""

@@ -3,6 +3,7 @@
 #returns in an array of client and Ap information
 #part of the airdrop-ng project
 from sys import exit as Exit
+
 class airDumpParse:
 	def parser(self,file):
 		"""
@@ -28,9 +29,7 @@ class airDumpParse:
 			print "Error Airodump File",file,"does not exist"
 			Exit(1)
 		data = openedFile.xreadlines()
-		cleanedData = []
-		for line in data:
-			cleanedData.append(line.rstrip())
+		cleanedData = [line.rstrip() for line in data]
 		openedFile.close()
 		return cleanedData
 	

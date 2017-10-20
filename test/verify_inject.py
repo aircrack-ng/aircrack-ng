@@ -2,6 +2,7 @@
 # Usage: https://github.com/aircrack-ng/aircrack-ng/pull/21
 
 from scapy.all import *
+
 conf.verbf = 1
 
 interface = "at0"

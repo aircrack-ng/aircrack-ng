@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import sys
-from scapy import *
 import pcapy
+from scapy import *
 from impacket.ImpactDecoder import *
 
 try:

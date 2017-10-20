@@ -4,6 +4,7 @@ __version__ = "?"
 
 from os import system, geteuid
 from sys import exit
+
 if geteuid() != 0:
 	print "airdrop-ng must be root. Please \n'su' or 'sudo -i' and run again. \nExiting..."
 	exit(1)

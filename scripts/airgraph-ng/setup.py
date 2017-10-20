@@ -2,7 +2,6 @@
 # This file is Copyright David Francos Cuartero, licensed under the GPL2 license.
 
 from distutils.core import setup
-import os
 
 setup(name='airgraph-ng',
       version='1.1',

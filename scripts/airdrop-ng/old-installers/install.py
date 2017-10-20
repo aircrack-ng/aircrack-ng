@@ -6,7 +6,8 @@ __author__  = "Marfi"
 This is the installer file for airdrop-ng. It first checks for 
 different dependencies, such as make, svn, etc. 
 '''
-import os, sys
+import os
+import sys
 from shutil import rmtree
 
 if os.geteuid() != 0:

@@ -22,14 +22,10 @@ __data__ = 'a class for dealing with the oui txt file'
 #########################################
 """
 
-from airdrop import install_dir
-
 import re
-import urllib2
-import urllib
-import sys
 import os
 
+from airdrop import install_dir
 
 class macOUI_lookup:
     """
@@ -52,12 +48,12 @@ class macOUI_lookup:
             "/usr/share/wireshark/wireshark/manuf/oui.txt",
             "/usr/share/wireshark/manuf/oui.txt"]
         # append any oui paths provided by program using lib to list
-        if oui != None:
+        if oui is not None:
             self.OUI_PATH.append(oui)
         for PATH in self.OUI_PATH:
             if os.path.isfile(PATH):
                 aircrackOUI=PATH
-        if aircrackOUI == None:
+        if aircrackOUI is None:
             # default
             aircrackOUI=self.OUI_PATH[1]
         #a poor fix where if we have no file it trys to download it
@@ -107,7 +103,7 @@ class macOUI_lookup:
         look up a company name and return their OUI's
         """
         oui = []
-        if type(companyLst).__name__ == "list":
+        if type(companyLst) is list:
             for name in companyLst:
                 compMatch = re.compile(name,re.I)
                 if self.company_oui.has_key(name):
@@ -117,7 +113,7 @@ class macOUI_lookup:
                         if compMatch.search(key) is not None:
                             oui.extend(self.company_oui[key])
 
-        elif type(companyLst).__name__ == "str":
+        elif type(companyLst) is str:
             if self.company_oui.has_key(companyLst):
                 oui = self.company_oui[companyLst]
             else:
@@ -132,8 +128,8 @@ class macOUI_lookup:
         """
         open the file and read it in
         """
-        ouiFile = open(self.ouiTxt, "r")
-        text = ouiFile.readlines()
+        with open(self.ouiTxt, "r") as fid:
+            text = fid.readlines()
         #text = ouiFile.read()
         return text
     
@@ -146,7 +142,7 @@ class macOUI_lookup:
         #matches the following example "00-00-00   (hex)\t\tXEROX CORPORATION" 
         ouiLines = self.ouiRaw
         for line in ouiLines:
-            if Hex.search(line) != None: 
+            if Hex.search(line) is not None: 
                 #return the matched text and build a list out of it
                 lineList = Hex.search(line).group().replace("\t"," ").split("  ") 
                 #build a dict in the format of mac:company name 

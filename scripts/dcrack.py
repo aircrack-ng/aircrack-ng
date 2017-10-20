@@ -64,25 +64,20 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
 		f = "dcrack-dict"
 		c = f + ".gz"
-		o = open(c, "wb")
-		cl = int(s.headers['Content-Length'])
-		o.write(s.rfile.read(cl))
-		o.close()
+		with open(c, "wb") as fid:
+			cl = int(s.headers['Content-Length'])
+			fid.write(s.rfile.read(cl))
 
 		decompress(f)
 	
 		sha1 = hashlib.sha1()
-		x = open(f, "rb")
-		sha1.update(x.read())
-		x.close()
+		with open(f, "rb") as fid:
+			sha1.update(fid.read())
 		h = sha1.hexdigest()
 
-		x = open(f, "rb")
-		for i, l in enumerate(x):
-			pass
-
-		i = i + 1
-		x.close()
+		with open(f, "rb") as fid:
+			for i, l in enumerate(x):	pass
+			i += 1
 
 		n = "%s-%s.txt" % (f, h)
 		os.rename(f, n)
@@ -94,9 +89,8 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
 	def do_upload_cap(s):
 		cl = int(s.headers['Content-Length'])
-		f = open("dcrack.cap.tmp.gz", "wb")
-		f.write(s.rfile.read(cl))
-		f.close()
+		with open("dcrack.cap.tmp.gz", "wb") as fid:
+			fid.write(s.rfile.read(cl))
 
 		decompress("dcrack.cap.tmp")
 		os.rename("dcrack.cap.tmp.gz", "dcrack.cap.gz")
@@ -166,10 +160,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		c = con.cursor()
 		c.execute("SELECT * from clients")
 	
-		clients = []
-
-		for r in c.fetchall():
-			clients.append(r['speed'])
+		clients = [r['speed'] for r in c.fetchall()]
 
 		nets = []
 
@@ -207,10 +198,9 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
 		pf = "dcrack-pass.txt"
 
-		f = open(pf, "w")
-		f.write(pw)
-		f.write("\n")
-		f.close()
+		with open(pf, "w") as fid:
+            fid.write(pw)
+            fid.write("\n")
 
 		cmd = ["aircrack-ng", "-w", pf, "-b", net, "-q", "dcrack.cap"]
 		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, \
@@ -315,9 +305,8 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		s.end_headers()
 
 		# XXX openat
-		f = open(fn, "rb")
-		s.wfile.write(f.read())
-		f.close()
+		with open(fn, "rb") as fid:
+			s.wfile.write(fid.read())
 
 		return None
 
@@ -394,7 +383,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
 					s = row['start'] - i
 				break
 
-			if (i >= row['start'] and i <= row['end']):
+			if (row['start'] <= i <= row['end']):
 				i = row['end']
 			else:
 				found = True
@@ -464,9 +453,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		d = p[4]
 
 		try:
-			f = open("dcrack-dict-%s.txt" % d)
-			f.close()
-
+			with open("dcrack-dict-%s.txt" % d): pass
 			return "OK"
 		except:
 			return "NO"
@@ -623,11 +610,9 @@ def get_work():
 	return 0
 
 def decompress(fn):
-	f = gzip.open(fn + ".gz")
-	o = open(fn, "wb")
-	o.writelines(f)
-	o.close()
-	f.close()
+	with gzip.open(fn + ".gz") as fid1:
+		with open(fn, "wb") as fid2:
+			fid2.writelines(fid1)
 
 def setup_dict(crack):
 	global url
@@ -637,25 +622,23 @@ def setup_dict(crack):
 	fn = "dcrack-client-dict-%s.txt" % d
 
 	try:
-		f = open(fn)
-		f.close()
+		with open(fn): pass
 	except:
 		print("Downloading dictionary %s" % d)
 
 		u = "%sdict/%s" % (url, d)
 		stuff = urlopen(u)
 
-		f = open(fn + ".gz", "wb")
-		f.write(stuff.read())
-		f.close()
+		with open(fn + ".gz", "wb") as fid:
+			fid.write(stuff.read())
 
 		print("Uncompressing dictionary")
 		decompress(fn)
 	
 		sha1 = hashlib.sha1()
-		f = open(fn, "rb")
-		sha1.update(f.read())
-		f.close()
+		with open(fn, "rb") as fid:
+			sha1.update(fid.read())
+
 		h = sha1.hexdigest()
 
 		if h != d:
@@ -666,23 +649,16 @@ def setup_dict(crack):
 		% (d, crack['start'], crack['end']) 
 
 	try:
-		f = open(s)
-		f.close()
+		with open(s): pass
 	except:
 		print("Splitting dict %s" % s)
-		f = open(fn, "rb")
-		o = open(s, "wb")
-
-		for i, l in enumerate(f):
-			if i >= crack['end']:
-				break
-
-			if i >= crack['start']:
-				o.write(l)
-
-		f.close()
-		o.close()
-
+		with open(fn, "rb") as fid1:
+			with open(s, "wb") as fid2:
+				for i, l in enumerate(fid1):
+					if i >= crack['end']:
+						break
+					if i >= crack['start']:
+						fid2.write(l)
 	return s
 
 def get_cap(crack):
@@ -696,8 +672,7 @@ def get_cap(crack):
 		return fn
 
 	try:
-		f = open(fn, "rb")
-		f.close()
+		with open(fn, "rb"): pass
 		check_cap(fn, bssid)
 	except:
 		pass
@@ -710,9 +685,8 @@ def get_cap(crack):
 
 	stuff = urlopen(u)
 
-	f = open(fn + ".gz", "wb")
-	f.write(stuff.read())
-	f.close()
+	with open(fn + ".gz", "wb") as fid:
+		fid.write(stuff.read())
 
 	print("Uncompressing cap")
 	decompress(fn)
@@ -825,21 +799,18 @@ def upload_file(url, f):
 
 	# XXX not quite HTTP form
 
-	f = open(f, "rb")
-	c.request("POST", x.path, f)
-	res = c.getresponse()
-	stuff = res.read()
-	c.close()
-	f.close()
+	with open(f, "rb") as fid:
+		c.request("POST", x.path, fid)
+		res = c.getresponse()
+		stuff = res.read()
+		c.close()
 
 	return stuff
 
 def compress_file(f):
-	i = open(f, "rb")
-	o = gzip.open(f + ".gz", "wb")
-	o.writelines(i)
-	o.close()
-	i.close()
+	with open(f, "rb") as fid1:
+		with gzip.open(f + ".gz", "wb") as fid2:
+			fid2.writelines(fid1)
 
 def send_dict():
 	global url
@@ -853,9 +824,8 @@ def send_dict():
 	print("Calculating dictionary hash for %s" % d)
 
 	sha1 = hashlib.sha1()
-	f = open(d, "rb")
-	sha1.update(f.read())
-	f.close()
+	with open(d, "rb") as fid:
+		sha1.update(fid.read())
 
 	h = sha1.hexdigest()
 
@@ -922,13 +892,11 @@ def cmd_status():
 #	print(stuff)
 #	print("=============")
 
-	i = 0
 	speed = 0
-	for c in stuff['clients']:
-		i += 1
+	for idx, c in enumerate(stuff['clients'], start=1):
 		speed += c
 
-	print("Clients\t%d\nSpeed\t%d\n" % (i, speed))
+	print("Clients\t%d\nSpeed\t%d\n" % (idx, speed))
 
 	need = 0
 
