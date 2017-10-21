@@ -207,6 +207,7 @@ char usage[] =
 "      -R                    : disable /dev/rtc usage\n"
 "      --ignore-negative-one : if the interface's channel can't be determined,\n"
 "                              ignore the mismatch, needed for unpatched cfg80211\n"
+"      -Z                    : Deauthentication code [0-254], default 7\n"
 "\n"
 "  Attack modes (numbers can still be used):\n"
 "\n"
@@ -238,6 +239,7 @@ struct options
     int f_fromds;
     int f_iswep;
 
+    unsigned char deauthreason;
     int r_nbpps;
     int r_fctrl;
     unsigned char r_bssid[6];
@@ -1341,14 +1343,18 @@ int do_attack_deauth( void )
             memcpy( h80211, DEAUTH_REQ, 26 );
             memcpy( h80211 + 16, opt.r_bssid, 6 );
 
+            /* add the deauth code */
+	    h80211[24] = opt.deauthreason;
+
             aacks = 0;
             sacks = 0;
             for( i = 0; i < 64; i++ )
             {
                 if(i == 0)
                 {
-                    PCT; printf( "Sending 64 directed DeAuth. STMAC:"
+                    PCT; printf( "Sending 64 directed DeAuth (code %i). STMAC:"
                                 " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
+                                opt.deauthreason,
                                 opt.r_dmac[0],  opt.r_dmac[1],
                                 opt.r_dmac[2],  opt.r_dmac[3],
                                 opt.r_dmac[4],  opt.r_dmac[5],
@@ -1403,8 +1409,9 @@ int do_attack_deauth( void )
                         {
                             sacks++;
                         }
-                        PCT; printf( "Sending 64 directed DeAuth. STMAC:"
+                        PCT; printf( "Sending 64 directed DeAuth (code %i). STMAC:"
                                     " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
+                                    opt.deauthreason,
                                     opt.r_dmac[0],  opt.r_dmac[1],
                                     opt.r_dmac[2],  opt.r_dmac[3],
                                     opt.r_dmac[4],  opt.r_dmac[5],
@@ -1418,13 +1425,15 @@ int do_attack_deauth( void )
         {
             /* deauthenticate all stations */
 
-            PCT; printf( "Sending DeAuth to broadcast -- BSSID:"
+    	    PCT; printf( "Sending DeAuth (code %i) to broadcast -- BSSID:"
                          " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
+                         opt.deauthreason,
                          opt.r_bssid[0], opt.r_bssid[1],
                          opt.r_bssid[2], opt.r_bssid[3],
                          opt.r_bssid[4], opt.r_bssid[5] );
 
             memcpy( h80211, DEAUTH_REQ, 26 );
+	    h80211[24] = opt.deauthreason;
 
             memcpy( h80211 +  4, BROADCAST,   6 );
             memcpy( h80211 + 10, opt.r_bssid, 6 );
@@ -6466,6 +6475,7 @@ int main( int argc, char *argv[] )
     opt.npackets  =  1; opt.nodetect    =  0;
     opt.rtc       =  1; opt.f_retry	=  0;
     opt.reassoc   =  0;
+    opt.deauthreason = 7; /* By default deauth reason is Class 3 frame recived from nonassociated STA */
 
 /* XXX */
 #if 0
@@ -6506,7 +6516,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:T:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:Q0:1:23456789HFBDR",
+                        "b:d:s:m:n:u:v:t:Z:T:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:Q0:1:23456789HFBDR",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -6654,6 +6664,17 @@ int main( int argc, char *argv[] )
                 }
                 break;
 
+            case 'Z' :
+
+                ret = sscanf( optarg, "%hhu", &opt.deauthreason );
+                if( ret != 1 )
+                {
+                    printf( "Invalid deauth reason. [0-254]\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+                break;
+            
             case 'o' :
 
                 ret = sscanf( optarg, "%d", &opt.npackets );
