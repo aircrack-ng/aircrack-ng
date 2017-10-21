@@ -76,7 +76,7 @@
 #define RTC_RESOLUTION  8192
 
 #define REQUESTS    30
-#define MAX_APS     20
+#define MAX_APS     50
 
 #define NEW_IV  1
 #define RETRY   2
@@ -5362,7 +5362,7 @@ int grab_essid(unsigned char* packet, int len)
     if(taglen > 250) taglen = 250;
     if(pos+2+taglen > len) return -1;
 
-    for(i=0; i<20; i++)
+    for(i=0; i<MAX_APS; i++)
     {
         if( ap[i].set)
         {
@@ -5756,7 +5756,7 @@ int do_attack_test()
 
     srand( time( NULL ) );
 
-    memset(ap, '\0', 20*sizeof(struct APt));
+    memset(ap, '\0', sizeof(ap));
 
     essidlen = strlen(opt.r_essid);
     if( essidlen > 250) essidlen = 250;
