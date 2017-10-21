@@ -129,6 +129,9 @@ disable /dev/rtc usage.
 .I --ignore-negative-one
 if the interface\(aqs channel can\(aqt be determined ignore the mismatch, needed for unpatched cfg80211
 .PP
+.I --deauth-rc <rc>, -Z <rc>
+Provide a reason code when doing deauthication (between 0 and 255). By default, 7 is used: Class 3 frame received from unassociated STA. 0 is a reserved value. Reason codes explanations can be found in the IEEE802.11 standard or in https://mrncciew.com/2014/10/11/802-11-mgmt-deauth-disassociation-frames/
+.PP
 .TP
 .B Attack modes:          
 .TP
