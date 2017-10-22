@@ -137,6 +137,9 @@ wpa2-psk-linksys.cap:
     This is a sample file with a WPA2 handshake along with some encrypted packets.
     Useful for testing with airdecap-ng. The password is 'dictionary'.
 
+wps2.0.pcap:
+    This is a test file with WPS 2.0 beacon.
+
 password.lst
     This is a sample wordlist for WPA key cracking. More wordlists can be found at
     https://www.aircrack-ng.org/doku.php?id=faq#where_can_i_find_good_wordlists
