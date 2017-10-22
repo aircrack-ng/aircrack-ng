@@ -1906,6 +1906,19 @@ skip_probe:
                         break;
                     case 0x1047: // UUID Enrollee
                     case 0x1049: // Vendor Extension
+                        if (memcmp(&p[4], "\x00\x37\x2A", 3) == 0) {
+                            unsigned char *pwfa = &p[7];
+                            int wfa_len = ntohs(*((short *)&p[2]));
+                            while( wfa_len > 0 ) {
+                                if (*pwfa == 0) { // Version2
+                                    ap_cur->wps.version = pwfa[2];
+                                    break;
+                                }
+                                wfa_len -= pwfa[1] + 2;
+                                pwfa += pwfa[1] + 2;
+                            }
+                        }
+                        break;
                     case 0x1054: // Primary Device Type
                         break;
                     case 0x1057: // AP Setup Locked
