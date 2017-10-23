@@ -156,8 +156,6 @@ typedef struct
 }
 read_buf;
 
-read_buf rb, crb;
-
 int K_COEFF[N_ATTACKS] =
 {
 	15, 13, 12, 12, 12, 5, 5, 5, 3, 4, 3, 4, 3, 13, 4, 4, -20
@@ -301,29 +299,6 @@ void clean_exit(int ret)
 		}
 	}
 
-	if (rb.buf1 != NULL)
-	{
-		free(rb.buf1);
-		rb.buf1=NULL;
-	}
-
-	if (rb.buf2 != NULL)
-	{
-		free(rb.buf2);
-		rb.buf2=NULL;
-	}
-
-	if (crb.buf1 != NULL)
-	{
-		free(crb.buf1);
-		crb.buf1=NULL;
-	}
-
-	if (crb.buf2 != NULL)
-	{
-		free(crb.buf2);
-		crb.buf2=NULL;
-	}
 
 	if (buffer != NULL) {
 		free(buffer);
@@ -835,6 +810,14 @@ int atomic_read( read_buf *rb, int fd, int len, void *buf )
 
 void read_thread( void *arg )
 {
+	/* we dont care if the buffers allocated here are not freed
+	 * since those threads are only created once, and the memory
+	 * is released to the OS automatically when the program exits.
+	 * there's no point in trying to mute valgrind but breaking
+	 * the multithreaded code at the same time. */
+
+	read_buf rb = {0};
+
 	int fd, n, fmt;
 	unsigned z;
 	int eof_notified = 0;
@@ -856,7 +839,6 @@ void read_thread( void *arg )
 
 	signal( SIGINT, sighandler);
 
-	memset( &rb, 0, sizeof( rb ) );
 	ap_cur = NULL;
 
 	memset(&pfh, 0, sizeof(struct pcap_file_header));
@@ -1790,6 +1772,10 @@ void read_thread( void *arg )
 
 void check_thread( void *arg )
 {
+	/* in case you see valgrind warnings, read the comment on top
+	 * of read_thread() */
+	read_buf crb = {0};
+
 	int fd, n, fmt;
 	unsigned z;
 // 	int ret=0;
@@ -1809,7 +1795,6 @@ void check_thread( void *arg )
 	struct AP_info *ap_prv, *ap_cur;
 	struct ST_info *st_prv, *st_cur;
 
-	memset( &crb, 0, sizeof( crb ) );
 	ap_cur = NULL;
 
 	if( ( buffer = (unsigned char *) malloc( 65536 ) ) == NULL )
