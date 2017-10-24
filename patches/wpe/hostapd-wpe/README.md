@@ -44,9 +44,11 @@ Additional WPE command line options are:
 ## Dependencies
 
 - pkg-config
-- libssl 1.0
+- libssl 1.0 ideally
 - libnl3 (and genl)
 - sqlite3
+
+Note: If libssl 1.1 is used, Heartbleed is not present due to issue #2122 in openssl GitHub repository
 
 ## Debian-based distro
 
