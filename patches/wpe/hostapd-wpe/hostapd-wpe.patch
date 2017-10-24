@@ -235,7 +235,7 @@ diff -rupN hostapd-2.6/hostapd/certs/demoCA/cacert.pem hostapd-2.6-wpe/hostapd/c
 +-----END CERTIFICATE-----
 diff -rupN hostapd-2.6/hostapd/certs/Makefile hostapd-2.6-wpe/hostapd/certs/Makefile
 --- hostapd-2.6/hostapd/certs/Makefile	1969-12-31 19:00:00.000000000 -0500
-+++ hostapd-2.6-wpe/hostapd/certs/Makefile	2017-10-24 16:17:56.454312164 -0400
++++ hostapd-2.6-wpe/hostapd/certs/Makefile	2017-10-24 17:42:31.517743371 -0400
 @@ -0,0 +1,145 @@
 +######################################################################
 +#
@@ -288,7 +288,7 @@ diff -rupN hostapd-2.6/hostapd/certs/Makefile hostapd-2.6-wpe/hostapd/certs/Make
 +#
 +######################################################################
 +dh:
-+	openssl gendh -out dh -2 $(DH_KEY_SIZE)
++	openssl dhparam -out dh -2 $(DH_KEY_SIZE)
 +
 +######################################################################
 +#
