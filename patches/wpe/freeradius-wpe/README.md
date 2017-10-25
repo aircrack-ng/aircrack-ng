@@ -23,13 +23,16 @@ apt-get install libssl-dev build-essential libtalloc-dev libpcre3-dev
 
 ### Compilation
 
-Assuming the patch is downloaded in the current directory, run the following commands:
+Run the following commands:
 
 ```
 wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.15.tar.bz2
 tar -xvf freeradius-server-3.0.15.tar.bz2
 cd freeradius-server-3.0.15
-patch -Np1 -i ../freeradius-server-wpe.patch
+wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius-wpe.patch
+patch -Np1 -i freeradius-server-wpe.patch
+wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius_3_0_15_openssl_1_1_tls_version_fix.diff
+patch -Np1 -i freeradius_3_0_15_openssl_1_1_tls_version_fix.diff
 ./configure
 make
 make install
