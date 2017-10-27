@@ -485,7 +485,7 @@ struct oui * load_oui_file(void) {
 
 int check_shared_key(unsigned char *h80211, int caplen)
 {
-    int m_bmac, m_smac, m_dmac, n, textlen;
+    int m_bmac, m_smac, m_dmac, n, textlen, maybe_broken;
     char ofn[1024];
     char text[4096];
     char prga[4096];
@@ -500,7 +500,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
     if( time(NULL) - G.sk_start > 5)
     {
         /* timeout(5sec) - remove all packets, restart timer */
-        memset(G.sharedkey, '\x00', 4096*3);
+        memset(G.sharedkey, '\x00', sizeof(G.sharedkey));
         G.sk_start = time(NULL);
     }
 
@@ -561,12 +561,22 @@ int check_shared_key(unsigned char *h80211, int caplen)
 
     textlen = G.sk_len;
 
+    maybe_broken = 0;
+
+    /* this check is probably either broken or not very reliable,
+       since there are known cases when it is hit with valid data.
+       rather than doing a hard exit here, we now set a flag so
+       the .xor file is only written if not already existing, in
+       order to make sure we don't overwrite a good .xor file with
+       a potentially broken one; but on the other hand if none exist
+       already, we do want it being written. */
     if(textlen+4 != G.sk_len2)
     {
-        snprintf(G.message, sizeof(G.message), "][ Broken SKA: %02X:%02X:%02X:%02X:%02X:%02X ",
+        snprintf(G.message, sizeof(G.message), "][ Broken SKA?: %02X:%02X:%02X:%02X:%02X:%02X ",
                     *(G.sharedkey[0]+m_bmac), *(G.sharedkey[0]+m_bmac+1), *(G.sharedkey[0]+m_bmac+2),
                 *(G.sharedkey[0]+m_bmac+3), *(G.sharedkey[0]+m_bmac+4), *(G.sharedkey[0]+m_bmac+5));
-        return 1;
+
+        maybe_broken = 1;
     }
 
     if((unsigned)textlen > sizeof(text) - 4) return 1;
@@ -611,6 +621,13 @@ int check_shared_key(unsigned char *h80211, int caplen)
               *(G.sharedkey[0]+m_bmac), *(G.sharedkey[0]+m_bmac+1), *(G.sharedkey[0]+m_bmac+2),
               *(G.sharedkey[0]+m_bmac+3), *(G.sharedkey[0]+m_bmac+4), *(G.sharedkey[0]+m_bmac+5), "xor" );
 
+    if(maybe_broken && (G.f_xor = fopen( ofn, "r"))) {
+        /* do not overwrite existing .xor file with maybe broken one */
+        fclose(G.f_xor);
+        G.f_xor = NULL;
+        return 1;
+    }
+
     G.f_xor = fopen( ofn, "w");
     if(G.f_xor == NULL)
         return 1;
@@ -630,7 +647,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
                 textlen+4, *(G.sharedkey[0]+m_bmac), *(G.sharedkey[0]+m_bmac+1), *(G.sharedkey[0]+m_bmac+2),
               *(G.sharedkey[0]+m_bmac+3), *(G.sharedkey[0]+m_bmac+4), *(G.sharedkey[0]+m_bmac+5));
 
-    memset(G.sharedkey, '\x00', 512*3);
+    memset(G.sharedkey, '\x00', sizeof(G.sharedkey));
     /* ok, keystream saved */
     return 0;
 }
@@ -6283,7 +6300,7 @@ int main( int argc, char *argv[] )
 	// Default selection.
     resetSelection();
 
-    memset(G.sharedkey, '\x00', 512*3);
+    memset(G.sharedkey, '\x00', sizeof(G.sharedkey));
     memset(G.message, '\x00', sizeof(G.message));
     memset(&G.pfh_in, '\x00', sizeof(struct pcap_file_header));
 
