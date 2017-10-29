@@ -65,11 +65,11 @@ apt-get install libssl-dev libnl-genl-3-dev libnl-3-dev pkg-config
 ## General
 
 ```
-git clone https://github.com/aircrack-ng/hostapd-wpe
+wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/hostapd-wpe/hostapd-wpe.patch
 wget http://hostap.epitest.fi/releases/hostapd-2.6.tar.gz
 tar -zxf hostapd-2.6.tar.gz
 cd hostapd-2.6
-patch -p1 < ../hostapd-wpe/hostapd-wpe.patch 
+patch -p1 < ../hostapd-wpe.patch 
 cd hostapd
 ```
 
