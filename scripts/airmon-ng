@@ -1070,10 +1070,10 @@ scanProcesses() {
 
 	unset match
 	if [ "${pso}" = 1 ]; then
-		match="$(ps ${psopts} -o comm= | grep -c ${PROCESSES})"
+		match="$(ps ${psopts} -o comm= | grep ${PROCESSES} | grep -v grep | wc -l)"
 	elif [ "${pso}" = 0 ]; then
 		#openwrt busybox grep hits on itself so we -v it out
-		match="$(ps ${psopts} | grep -c ${PROCESSES} | grep -v grep)"
+		match="$(ps ${psopts} | grep ${PROCESSES} | grep -v grep | wc -l)"
 	fi
 	if [ ${match} -gt 0 ] && [ "${1}" != "kill" ]; then
 		printf "Found $match processes that could cause trouble.\n"
