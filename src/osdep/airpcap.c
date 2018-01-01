@@ -1,5 +1,5 @@
   /*
-   *  Copyright (c) 2007-2017 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+   *  Copyright (c) 2007-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
    *
    *  Airpcap stuff
    *

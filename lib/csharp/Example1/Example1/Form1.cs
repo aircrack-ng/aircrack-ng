@@ -1,5 +1,5 @@
 ﻿// License: BSD
-// Copyright (C) 2011 Thomas d'Otreppe
+// Copyright (C) 2011-2018 Thomas d'Otreppe
 using System;
 using System.Windows.Forms;
 using WirelessPanda.Readers;

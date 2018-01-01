@@ -1,5 +1,5 @@
 /*
- * (c) 2010-2017 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ * Copyright (c) 2010-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as

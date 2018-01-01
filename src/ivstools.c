@@ -1,7 +1,7 @@
  /*
   *  IVS Tools - Convert or merge IVs
   *
-  *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+  *  Copyright (C) 2006-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
   *  Copyright (C) 2004, 2005  Christophe Devine (pcap2ivs and mergeivs)
   *
   *  This program is free software; you can redistribute it and/or modify

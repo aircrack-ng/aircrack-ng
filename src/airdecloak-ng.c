@@ -1,7 +1,7 @@
 /*
  *  WEP Cloaking filtering
  *
- *  Copyright (C) 2008-2017 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2008-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  Thanks to Alex Hernandez aka alt3kx for the hardware.
  *
