@@ -86,6 +86,7 @@ IS_X86=0
 IS_ARM=0
 IS_PPC=0
 IS_CROSS=0
+NEON_FLAG=0
 SIMDSIZE=0
 SIMDFLAG=""
 NEWSSE=true
@@ -185,6 +186,9 @@ then
                 with_simd=neon
                 ;;
         esac
+    else
+        with_simd=no
+        NEWSSE=false
     fi
 fi
 
