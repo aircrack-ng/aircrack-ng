@@ -31,7 +31,7 @@ else
 fi
 # Test1
 cp -f "${TESTDIR}/wpa.cap" "${tmpdir}"
-./airdecap-ng -e test -p biscotte "${tmpdir}/wpa.cap" | \
+"${top_builddir}/src/airdecap-ng${EXEEXT}" -e test -p biscotte "${tmpdir}/wpa.cap" | \
         grep "Number of decrypted WPA  packets         2" || exit 1
 [ $? -ne 0 ] && exit 1
 result=$(compute_sha1 "${tmpdir}/wpa-dec.cap")
@@ -43,7 +43,7 @@ fi
 
 # Test 2
 cp -f "${TESTDIR}/wpa-psk-linksys.cap" "${tmpdir}"
-./airdecap-ng -e linksys -p dictionary "${tmpdir}/wpa-psk-linksys.cap" | \
+"${top_builddir}/src/airdecap-ng${EXEEXT}" -e linksys -p dictionary "${tmpdir}/wpa-psk-linksys.cap" | \
         grep "Number of decrypted WPA  packets        53"
 [ $? -ne 0 ] && exit 1
 result=$(compute_sha1 "${tmpdir}/wpa-psk-linksys-dec.cap")
@@ -55,7 +55,7 @@ fi
 
 # Test 3
 cp -f "${TESTDIR}/wpa2-psk-linksys.cap" "${tmpdir}"
-./airdecap-ng -e linksys -p dictionary "${tmpdir}/wpa2-psk-linksys.cap" | \
+"${top_builddir}/src/airdecap-ng${EXEEXT}" -e linksys -p dictionary "${tmpdir}/wpa2-psk-linksys.cap" | \
         grep "Number of decrypted WPA  packets        25"
 [ $? -ne 0 ] && exit 1
 result=$(compute_sha1 "${tmpdir}/wpa2-psk-linksys-dec.cap")

@@ -57,6 +57,14 @@
 #ifndef _ARCH_H
 #define _ARCH_H
 
+#if (defined (__ARM_NEON) && !defined (__ARM_NEON__)) || defined (__aarch64) || defined (__aarch64__)
+#define __ARM_NEON__ 1
+#endif
+
+#if (defined (__ARM_NEON__) && !defined (__ARM_NEON)) || defined (__aarch64) || defined (__aarch64__)
+#define __ARM_NEON 1
+#endif
+
 #ifdef __ARM_NEON__
 #define SHA_BUF_SIZ		16
 #define SIMD_COEF_32            4

@@ -38,6 +38,22 @@ to speed up the cracking process.
 
 ## Compiling
 
+To build `aircrack-ng`, the Autotools build system is utilized. Autotools replaces
+the older method of compilation.
+
+**NOTE**: If utilizing a developer version, eg: one checked out from source control,
+you will need to run a pre-`configure` script. The script to use is one of the
+following: `autoreconf -i` or `env NOCONFIGURE=1 ./autogen.sh`.
+
+First, `./configure` the project for building with the appropriate options specified
+for your environment:
+
+    `./configure <options>`
+
+**TIP**: If the above fails, please see above about developer source control versions.
+
+Next, compile the project (respecting if `make` or `gmake` is needed):
+
  * Compilation:
 
     `make`
@@ -45,6 +61,8 @@ to speed up the cracking process.
  * Compilation on *BSD or Solaris:
  
     `gmake`
+
+Finally, the additional targets listed below may be of use in your environment:
 
  * Strip debugging symbols:
 
@@ -59,93 +77,113 @@ to speed up the cracking process.
     `make uninstall`
 
 
-###  Makefile flags
+###  `./configure` flags
 
-When compile and installing, the following flags can be used and combined
-to compile and install the suite:
+When configuring, the following flags can be used and combined to adjust the suite
+to your choosing:
 
-* **sqlite**:   Compile airolib-ng and add support for airolib-ng databases
-                in aircrack-ng:
-    - Debian based distro: libsqlite3-dev
-    - FreeBSD: sqlite3
+* **with-airpcap=DIR**:  needed for supporting airpcap devices on windows (cygwin or msys2 only)
+                Replace DIR above with the absolute location to the root of the
+                extracted source code from the Airpcap CD or downloaded SDK available
+                online.
 
-* **airpcap**:  needed for supporting airpcap devices on windows (cygwin only)
-                REQUIREMENT: Copy 'developers' directory from Airpcap CD one 
-                level below this INSTALLING file
-                Note: Not working yet.
-
-* **experimental**: needed to compile `tkiptun-ng`, `easside-ng` (and `buddy-ng`) and
+* **with-experimental**: needed to compile `tkiptun-ng`, `easside-ng` (and `buddy-ng`) and
                     `wesside-ng`. Building besside-ng-crawler requires LibPCAP 
                     (development package). On debian based distro, install libpcap-dev
 
-* **ext_scripts**: needed to build `airoscript-ng`, `versuck-ng`, `airgraph-ng` and 
+* **with-ext-scripts**: needed to build `airoscript-ng`, `versuck-ng`, `airgraph-ng` and 
                    `airdrop-ng`. 
                    Note: Experimental. Each script has its own dependences.
                    Note: It's only required in install phase.
 
-* **gcrypt**:   Use libgcrypt crypto library instead of the default OpenSSL.
+* **with-gcrypt**:   Use libgcrypt crypto library instead of the default OpenSSL.
                 And also use internal fast sha1 implementation (borrowed from GIT)
                 Dependency (Debian): libgcrypt20-dev
 
-* **libnl**:    Add support for netlink (nl80211). Linux only.
-    - Requires `libnl1` OR `libnl3`.
-    - Dependencies (debian):
-        + LibNL 1: `libnl-dev`
-        + LibNL 3: `libnl-3-dev` and `libnl-genl-3-dev`.
-
-* **pcre**:	Add support for regular expression matching for ESSID in airodump-ng and besside-ng.
-            	Dependencies (debian): libpcre3-dev
-    - Debian based distro: libpcre3-dev
-    - FreeBSD: pcre
-
-* **duma**:	Compile with DUMA support. DUMA is a library to detect buffer overruns and under-runs.
+* **with-duma**:	Compile with DUMA support. DUMA is a library to detect buffer overruns and under-runs.
             	Dependencies (debian): duma
 
-* **xcode**:    Set this flag to true to compile on OS X with Xcode 7+.
+* **with-xcode**:    Set this flag to true to compile on OS X with Xcode 7+.
 
-* **macport**:  Set this flag to true to compile on OS X with macports.
+* **with-simd**:  Compile with SIMD optimizations. This is an auto-detected feature that
+                  probably does not need changed, unless wishing to disable SIMD
+                  optimizations using `--without-simd`.
 
 #### Examples:
 
-  * Compiling:
+  * Configure and compiling:
 
-    `make sqlite=true experimental=true pcre=true`
+    `./configure --with-experimental`
+    `make`
 
   * Compiling wth gcrypt:
-    `make gcrypt=true`
+
+    `./configure --with-gcrypt`
+    `make`
 
   * Installing:
 
-    `make sqlite=true pcre=true experimental=true install`
+    `make install`
 
   * Installing, with external scripts:
 
-    `make sqlite=true experimental=true ext_scripts=true`
+    `./configure --with-experimental --with-ext-scripts`
+    `make`
+    `make install`
 
   * Testing (with sqlite, experimental and pcre)
 
-    `make sqlite=true experimental=true pcre=true check`
+    `./configure --with-experimental`
+    `make`
+    `make check`
 
   * Compiling on OS X with macports (and all options):
 
-    `gmake macport=true sqlite=true experimental=true pcre=true`
+    `./configure --with-experimental`
+    `gmake`
+
+  * Compiling on OS X 10.10 with XCode 7.1 and Homebrew:
+
+    `env CC=gcc-4.9 CXX=g++-4.9 ./configure`
+    `make`
+    `make check`
+
+    *NOTE*: Older XCode ships with a version of LLVM that does not support CPU feature
+    detection; which causes the `./configure` to fail. To work around this older LLVM,
+    it is required that a different compile suite is used, such as GCC or a newer LLVM
+    from Homebrew.
+
+    If you wish to use OpenSSL from Homebrew, you may need to specify the location
+    to its' installation. To figure out where OpenSSL lives, run:
+
+    `brew --prefix openssl`
+
+    Use the output above as the DIR for `--with-openssl=DIR` in the `./configure` line:
+
+    `env CC=gcc-4.9 CXX=g++-4.9 ./configure --with-openssl=DIR`
+    `make`
+    `make check`
 
   * Compiling on FreeBSD with better performance
 
-    `gmake CC=gcc5 CXX=g++5`
+    `env CC=gcc5 CXX=g++5 ./configure`
+    `gmake`
 
 # Packaging
 
 Automatic detection of CPU optimization is done at compile time. This behavior
 is not desirable when packaging Aircrack-ng (for a Linux distribution).
 
-It can be overridden by creating common.cfg in the same directory as this file
-with the following settings when compiling on x86 (32 or 64 bit):
-```
-NEWSSE=false
-SIMDCORE=false
-PTHREAD=Y
-```
+It can be overridden by configuring the build to not utilize the auto-detection
+feature:
+
+`./configure --without-simd`
+
+Also, in some cases it may be desired to provide your own flags completely and
+not having the suite auto-detect a number of optimizations. To do this, add
+the additional flag `--without-opt` to the `./configure` line:
+
+`./configure --without-simd --without-opt`
 
 # Using precompiled binaries
 

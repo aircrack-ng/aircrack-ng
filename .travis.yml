@@ -7,7 +7,7 @@ language: c
 sudo: false
 
 before_install:
-    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install libgcrypt sqlite3); fi
+    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install openssl libgcrypt sqlite3 libpcap pcre || echo -e "\e[1;31m Skipping Homebrew... \e[0m"); fi
 
 addons:
   apt:
@@ -26,12 +26,7 @@ compiler:
   - clang
 
 script:
-    - if [ "$TRAVIS_OS_NAME" != "osx" ]; then (make libnl=false && make check libnl=false); fi
-    - make clean && make sqlite=true experimental=true && make check sqlite=true experimental=true
-    - make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
-    - make clean && make pcre=true && make check pcre=true
-    - export CFLAGS="-g -W -Wall -O0"
-    - if [ "$TRAVIS_OS_NAME" != "osx" ]; then (make clean && make libnl=false && make check libnl=false); fi
-    - make clean && make sqlite=true experimental=true && make check sqlite=true experimental=true
-    - make clean && make sqlite=true experimental=true gcrypt=true && make check sqlite=true experimental=true gcrypt=true
-    - make clean && make pcre=true && make check pcre=true
+    - ./build/travis-format.sh GCrypt "Building with GCrypt..." ./build/gcrypt.sh
+    - ./build/travis-format.sh OpenSSL "Building with OpenSSL..." ./build/openssl.sh
+    - ./build/travis-format.sh NoSIMD "Building without SIMD vectorizations..." ./build/nosimd.sh
+    - ./build/travis-format.sh Dist "Creating a dist tarball and then building from it..." ./build/dist_check.sh

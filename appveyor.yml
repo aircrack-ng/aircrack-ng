@@ -1,0 +1,31 @@
+version: 1.0.{build}
+
+pull_requests:
+  do_not_increment_build_number: true
+
+image: Visual Studio 2017
+
+configuration: Release
+
+platform: x64
+
+clone_depth: 10
+
+environment:
+  CHERE_INVOKING: 1
+  MSYSTEM: MSYS
+
+install:
+- ps: c:\cygwin\setup-x86.exe -qnNdO -R C:/cygwin -s http://cygwin.mirror.constant.com -l C:/cygwin/var/cache/setup -P autoconf -P automake -P bison -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P pkg-config -P git -P wget -P curl -P libpcre-devel -P openssl-devel -P libsqlite3-devel
+
+build_script:
+- cmd: >-
+    C:\cygwin\bin\bash -e -l -c "curl -RLO http://benden.us/vagrant/AirPcap_Devpack_4_1_1_1838.zip"
+
+    C:\cygwin\bin\bash -e -l -c "7z x AirPcap_Devpack_4_1_1_1838.zip"
+
+    C:\cygwin\bin\bash -e -l -c "./autogen.sh --with-experimental --with-airpcap=`pwd`"
+
+    C:\cygwin\bin\bash -e -l -c "make"
+
+    C:\cygwin\bin\bash -e -l -c "make check"

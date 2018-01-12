@@ -34,7 +34,7 @@
 #include "cygwin.h"
 
 #ifdef HAVE_AIRPCAP
-	#include "airpcap.h"
+	#include "aircrack_ng_airpcap.h"
 #endif
 
 #define xstr(s) str(s)
