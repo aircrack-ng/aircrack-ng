@@ -67,19 +67,7 @@ if CYGWIN
 if AIRPCAP
 libosdep_la_SOURCES = $(SRCS_CYGWIN)
 libosdep_la_CFLAGS = $(AM_CPPFLAGS) $(AIRPCAP_CFLAGS)
-
-libosdep.la: $(libosdep_la_OBJECTS) $(libosdep_la_DEPENDENCIES) $(EXTRA_libosdep_la_DEPENDENCIES) extract_airpcap
-	$(AM_V_CCLD)$(libosdep_la_LINK)  $(libosdep_la_OBJECTS) $(libosdep_la_LIBADD) $(LIBS)
-	$(AR) -qc $(abs_builddir)/.libs/libosdep.a $(abs_builddir)/.libs/libosdep.a $(abs_builddir)/d0*.o
-	$(RANLIB) $(abs_builddir)/.libs/libosdep.a
-
-extract_airpcap: $(AIRPCAP_LIBS)
-	cd $(abs_builddir) && $(AR) -x $(AIRPCAP_LIBS)
-
-.PHONY: extract_airpcap
-
-CLEANFILES = d0*.o
-
+libosdep_la_LIBADD = $(AIRPCAP_LIBS) $(LIBRADIOTAP_LIBS)
 else
 libosdep_la_SOURCES = $(SRCS_CYGWIN)
 endif
@@ -109,7 +97,9 @@ if OPENBSD
 libosdep_la_SOURCES = $(SRCS_OBSD)
 endif
 
+if !AIRPCAP
 libosdep_la_LIBADD = $(LIBRADIOTAP_LIBS)
+endif
 
 noinst_LTLIBRARIES = libosdep.la
 
