@@ -162,7 +162,7 @@ endif
 endif
 
 aircrack_ng_SOURCES = trampoline.c trampoline.h
-aircrack_ng_CFLAGS = "-DAIRCRACK_LIBEXEC_PATH=\"$(pkglibexecdir)\"" "-DEXEEXT=$(EXEEXT)"
+aircrack_ng_CFLAGS = "-DAIRCRACK_LIBEXEC_PATH=\"$(pkglibexecdir)\"" "-DEXEEXT=\".$(EXEEXT)\""
 if ARM
 aircrack_ng_SOURCES += trampoline_arm.c
 endif
