@@ -43,20 +43,6 @@ AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src/include \
               $(CRYPTO_INCLUDES)
 
-NEWSSE=""
-SIMDCORE=""
-
-SRC_SSE_COMMON	= memory.c wpapsk.c
-
-if NEWSSE
-if SIMDCORE
-CFLAGS		+= -DSIMD_CORE
-SSEC_INT	= simd-intrinsics.c $(SRC_SSE_COMMON)
-else
-SSEC_INT	= sse-intrinsics.c $(SRC_SSE_COMMON)
-endif
-endif
-
 SRC_LINECOUNT	= linecount.cpp
 LIBLINECOUNT_LIBS = liblinecount.la
 
@@ -88,9 +74,14 @@ SRC_TT		= tkiptun-ng.c
 SRC_WC		= wpaclean.c
 SRC_AV		= airventriloquist-ng.c
 
+SRC_SSE_COMMON	= memory.c wpapsk.c
+SSEC_INT	= sse-intrinsics.c $(SRC_SSE_COMMON)
 SRC_ACLIB	= cpuid.c crypto.c common.c $(SSEC_INT) uniqueiv.c $(ASM_AC)
 LIBAC	= libaclib.la
+LIBAC_CFLAGS = -DOLD_SSE_CORE=1
 LIBAC_LIBS = libaclib.la
+
+AC_COMMON = cpuid.c crypto.c common.c $(SRC_SSE_COMMON) uniqueiv.c $(ASM_AC)
 
 if LIBGCRYPT
 SRC_AC		+= sha1-git.c
@@ -114,6 +105,25 @@ LIBOSD		= osdep/libosdep.la
 LIBOSD_LIBS	= -Losdep -losdep
 if CYGWIN
 LIBOSD_LIBS	+= -liphlpapi -lsetupapi -luuid
+endif
+
+libexec_PROGRAMS = aircrack-ng--generic
+
+if ARM
+libexec_PROGRAMS += aircrack-ng--neon \
+                    aircrack-ng--asimd
+endif
+
+#if PPC
+#libexec_PROGRAMS += aircrack-ng--altivec \
+#                    aircrack-ng--power8
+#endif
+
+if X86
+libexec_PROGRAMS += aircrack-ng--avx2 \
+                    aircrack-ng--avx \
+                    aircrack-ng--sse2 \
+                    aircrack-ng--mmx
 endif
 
 bin_PROGRAMS = aircrack-ng \
@@ -152,88 +162,131 @@ sbin_PROGRAMS += besside-ng \
 endif
 endif
 
-aircrack_ng_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT)
-aircrack_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
-aircrack_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBAC_LIBS) $(LIBPTW_LIBS)
+aircrack_ng_SOURCES = trampoline.c trampoline.h
+aircrack_ng_CFLAGS = "-DAIRCRACK_LIBEXEC_PATH=\"$(pkglibexecdir)\"" "-DEXEEXT=$(EXEEXT)"
+if X86
+aircrack_ng_SOURCES += trampoline_x86.c
+endif
+
+aircrack_ng__generic_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT)
+aircrack_ng__generic_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
+aircrack_ng__generic_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBAC_LIBS) $(LIBPTW_LIBS)
+
+#
+# Intel/AMD
+#
+aircrack_ng__avx2_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__avx2_CFLAGS = $(x86_avx2_cflags) -DSIMD_CORE -DJOHN_AVX2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
+aircrack_ng__avx2_CPPFLAGS = -I. $(AM_CPPFLAGS)
+aircrack_ng__avx2_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+
+aircrack_ng__avx_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__avx_CFLAGS = $(x86_avx_cflags) -DSIMD_CORE -DJOHN_AVX $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
+aircrack_ng__avx_CPPFLAGS = -I. $(AM_CPPFLAGS)
+aircrack_ng__avx_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+
+aircrack_ng__sse2_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__sse2_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
+aircrack_ng__sse2_CPPFLAGS = -I. $(AM_CPPFLAGS)
+aircrack_ng__sse2_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+
+aircrack_ng__mmx_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__mmx_CFLAGS = $(x86_mmx_cflags) -DSIMD_CORE $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
+aircrack_ng__mmx_CPPFLAGS = -I. $(AM_CPPFLAGS)
+aircrack_ng__mmx_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+
+#
+# ARM/AARCH64
+#
+aircrack_ng__neon_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__neon_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
+aircrack_ng__neon_CPPFLAGS = -I. $(AM_CPPFLAGS)
+aircrack_ng__neon_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+
+aircrack_ng__asimd_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__asimd_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
+aircrack_ng__asimd_CPPFLAGS = -I. $(AM_CPPFLAGS)
+aircrack_ng__asimd_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+
 
 airdecap_ng_SOURCES = $(SRC_AD)
-airdecap_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
+airdecap_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
 airdecap_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS)
 
 packetforge_ng_SOURCES = $(SRC_PF)
-packetforge_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
+packetforge_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
 packetforge_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS)
 
 aireplay_ng_SOURCES = $(SRC_AR) $(LIBOSD)
-aireplay_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
+aireplay_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
 aireplay_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS)
 
 airodump_ng_SOURCES = $(SRC_ADU) $(LIBOSD)
-airodump_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
+airodump_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
 airodump_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(PCRE_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS)
 
 airserv_ng_SOURCES = $(SRC_AS) $(LIBOSD)
-airserv_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
+airserv_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
 airserv_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS)
 
 airtun_ng_SOURCES = $(SRC_AT) $(LIBOSD)
-airtun_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
+airtun_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
 airtun_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS)
 
 ivstools_SOURCES = $(SRC_IV)
-ivstools_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
+ivstools_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
 ivstools_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS)
 
 kstats_SOURCES = kstats.c
-kstats_CFLAGS = $(PTHREAD_CFLAGS)
+kstats_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
 kstats_LDADD = $(PTHREAD_LIBS) $(LIBAC_LIBS)
 
 wesside_ng_SOURCES = $(SRC_WS) $(LIBOSD)
-wesside_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(LIBNL_CFLAGS)
+wesside_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(LIBNL_CFLAGS)
 wesside_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $(LIBPTW_LIBS)
 
 easside_ng_SOURCES = $(SRC_ES) $(LIBOSD)
-easside_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(LIBNL_CFLAGS)
+easside_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(LIBNL_CFLAGS)
 easside_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS)
 
 buddy_ng_SOURCES = $(SRC_BUDDY)
-buddy_ng_CFLAGS = $(PTHREAD_CFLAGS)
+buddy_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
 buddy_ng_LDADD = $(PTHREAD_LIBS) $(LIBAC_LIBS)
 
 besside_ng_SOURCES = $(SRC_BS) $(LIBOSD)
-besside_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
+besside_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
 besside_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(PCRE_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $(LIBPTW_LIBS)
 
 besside_ng_crawler_SOURCES = $(SRC_BC)
-besside_ng_crawler_CFLAGS = $(PTHREAD_CFLAGS) $(PCAP_CFLAGS)
+besside_ng_crawler_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(PCAP_CFLAGS)
 besside_ng_crawler_LDADD = $(PTHREAD_LIBS) $(PCAP_LIBS) $(LIBAC_LIBS)
 
 makeivs_ng_SOURCES = $(SRC_MI)
-makeivs_ng_CFLAGS = $(PTHREAD_CFLAGS)
+makeivs_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
 makeivs_ng_LDADD = $(PTHREAD_LIBS) $(LIBAC_LIBS)
 
 airolib_ng_SOURCES = $(SRC_AL)
-airolib_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
+airolib_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
 airolib_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(SQLITE3_LDFLAGS) $(LIBAC_LIBS)
 
 airbase_ng_SOURCES = $(SRC_AB) $(LIBOSD)
-airbase_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
+airbase_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
 airbase_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS)
 
 airdecloak_ng_SOURCES = $(SRC_AU) $(LIBOSD)
-airdecloak_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
+airdecloak_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
 airdecloak_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBAC_LIBS)
 
 tkiptun_ng_SOURCES = $(SRC_TT) $(LIBOSD)
-tkiptun_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
+tkiptun_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
 tkiptun_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS)
 
 wpaclean_SOURCES = $(SRC_WC) $(LIBOSD)
-wpaclean_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
+wpaclean_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
 wpaclean_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS)
 
 airventriloquist_ng_SOURCES = $(SRC_AV) $(LIBOSD)
-airventriloquist_ng_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
+airventriloquist_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
 airventriloquist_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS)
 
 libaclib_la_SOURCES = $(SRC_ACLIB)
@@ -308,7 +361,10 @@ EXTRA_DIST = wpaclean.c \
              aircrack-ptw-lib.c \
              jcommon.h \
              memory.c \
-             crypto.h 
+             crypto.h \
+             trampoline.c \
+             trampoline.h \
+             trampoline_x86.c
 
 
 @CODE_COVERAGE_RULES@
