@@ -69,7 +69,7 @@
 
 #define KEYHSBYTES PTW_KEYHSBYTES
 
-#define MAX_THREADS 128
+#define MAX_THREADS 256
 
 #define CLOSE_IT	100000
 
