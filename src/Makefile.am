@@ -121,8 +121,7 @@ endif
 if X86
 libexec_PROGRAMS += aircrack-ng--avx2 \
                     aircrack-ng--avx \
-                    aircrack-ng--sse2 \
-                    aircrack-ng--mmx
+                    aircrack-ng--sse2
 endif
 
 bin_PROGRAMS = aircrack-ng \
@@ -196,11 +195,6 @@ aircrack_ng__sse2_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(A
 aircrack_ng__sse2_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
 aircrack_ng__sse2_CPPFLAGS = -I. $(AM_CPPFLAGS)
 aircrack_ng__sse2_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
-
-aircrack_ng__mmx_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
-aircrack_ng__mmx_CFLAGS = $(x86_mmx_cflags) -DSIMD_CORE $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
-aircrack_ng__mmx_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__mmx_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
 
 #
 # ARM/AARCH64

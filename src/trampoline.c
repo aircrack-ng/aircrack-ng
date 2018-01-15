@@ -78,10 +78,12 @@ simd_select_best_binary (char * buffer, size_t buffer_remaining, int simd_featur
   {
     strncat (buffer, TRAMPOLINE_TARGET "--sse2" EXEEXT, buffer_remaining);
   }
+  /*
   else if (simd_features & SIMD_SUPPORTS_MMX)
   {
     strncat (buffer, TRAMPOLINE_TARGET "--mmx" EXEEXT, buffer_remaining);
   }
+  */
   else if (simd_features & SIMD_SUPPORTS_ASIMD)
   {
     strncat (buffer, TRAMPOLINE_TARGET "--asimd" EXEEXT, buffer_remaining);
