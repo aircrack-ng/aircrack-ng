@@ -7,4 +7,4 @@ top_srcdir="@top_srcdir@"; export top_srcdir
 
 EXEEXT="@EXEEXT@"; export EXEEXT
 
-AIRCRACK_LIBEXEC_PATH="@top_builddir@/src"; export AIRCRACK_LIBEXEC_PATH
+AIRCRACK_LIBEXEC_PATH="@abs_top_builddir@/src"; export AIRCRACK_LIBEXEC_PATH
