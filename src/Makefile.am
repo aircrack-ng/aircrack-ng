@@ -75,10 +75,9 @@ SRC_WC		= wpaclean.c
 SRC_AV		= airventriloquist-ng.c
 
 SRC_SSE_COMMON	= memory.c wpapsk.c
-SSEC_INT	= sse-intrinsics.c $(SRC_SSE_COMMON)
+LIBAC_CFLAGS = -DOLD_SSE_CORE=1
 SRC_ACLIB	= cpuid.c crypto.c common.c $(SSEC_INT) uniqueiv.c $(ASM_AC)
 LIBAC	= libaclib.la
-LIBAC_CFLAGS = -DOLD_SSE_CORE=1
 LIBAC_LIBS = libaclib.la
 
 AC_COMMON = cpuid.c crypto.c common.c $(SRC_SSE_COMMON) uniqueiv.c $(ASM_AC)
@@ -164,6 +163,9 @@ endif
 
 aircrack_ng_SOURCES = trampoline.c trampoline.h
 aircrack_ng_CFLAGS = "-DAIRCRACK_LIBEXEC_PATH=\"$(pkglibexecdir)\"" "-DEXEEXT=$(EXEEXT)"
+if ARM
+aircrack_ng_SOURCES += trampoline_arm.c
+endif
 if X86
 aircrack_ng_SOURCES += trampoline_x86.c
 endif
@@ -290,7 +292,7 @@ airventriloquist_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) 
 airventriloquist_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS)
 
 libaclib_la_SOURCES = $(SRC_ACLIB)
-libaclib_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
+libaclib_la_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
 libaclib_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS)
 
 libptw_la_SOURCES = $(SRC_PTW)

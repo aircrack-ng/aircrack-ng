@@ -220,7 +220,6 @@ ${PACKAGE} ${VERSION}
 
   Target Environment:
     OS:                          ${OS}
-    SIMD:                        ${with_simd}
     ASAN:                        ${asan}
 
   Crypto Libraries:
