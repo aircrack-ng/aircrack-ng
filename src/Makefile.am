@@ -169,6 +169,11 @@ endif
 if X86
 aircrack_ng_SOURCES += trampoline_x86.c
 endif
+if !ARM
+if !X86
+aircrack_ng_SOURCES += trampoline_stubs.c
+endif
+endif
 
 aircrack_ng__generic_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT)
 aircrack_ng__generic_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
