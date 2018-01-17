@@ -78,7 +78,8 @@ case "$_aircrack_ng_enable_libnl" in
                                     LIBNL_LIBS="$LIBNLT_LIBS"
                                     NLLIBNAME="libnl-tiny"
                                 ], [
-                                    AC_MSG_ERROR([cannot find development files for any supported version of libnl. install either libnl1 or libnl3.])
+                                    AC_MSG_RESULT([could not find development files for any supported version of libnl. install either libnl1 or libnl3.])
+                                    NLLIBNAME=""
                                 ])
                             ])
                         ])
@@ -89,7 +90,11 @@ case "$_aircrack_ng_enable_libnl" in
                 AC_SUBST([LIBNL_LIBS])
                 AC_SUBST([NLLIBNAME])
 
-                NLLIBNAME_FOUND="yes, found $NLLIBNAME"
+                if test "x$NLLIBNAME" = x; then
+                    NLLIBNAME_FOUND="no"
+                else
+                    NLLIBNAME_FOUND="yes, found $NLLIBNAME"
+                fi
                 ;;
             *)
                 NLLIBNAME_FOUND="not enabled"

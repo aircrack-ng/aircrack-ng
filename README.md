@@ -17,6 +17,9 @@ to speed up the cracking process.
 
 ## Requirements
 
+ * Autoconf
+ * Automake
+ * Libtool
  * OpenSSL development package or libgcrypt development package.
  * Airmon-ng (Linux) requires ethtool.
  * On windows, cygwin has to be used and it also requires w32api package.
@@ -35,6 +38,35 @@ to speed up the cracking process.
  * For best performance on FreeBSD (50-70% more), install gcc5 via: pkg install gcc5
           Then compile with: gmake CC=gcc5 CXX=g++5
  * rfkill
+
+## Resolving the basic requirements
+
+Below are instructions for installing the basic requirements to build
+`aircrack-ng` for a number of operating systems.
+
+### Cygwin (Windows)
+
+Cygwin requires the full path to the `setup.exe` utility, in order to
+automate the installation of the necessary packages. In addition, it
+requires the location of your installation, a path to the cached
+packages download location, and a mirror URL.
+
+An example of automatically installing all the required dependencies
+is as follows:
+
+    `c:\cygwin\setup-x86.exe -qnNdO -R C:/cygwin -s http://cygwin.mirror.constant.com -l C:/cygwin/var/cache/setup -P autoconf -P automake -P bison -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P pkg-config -P git -P wget -P curl -P libpcre-devel -P openssl-devel -P libsqlite3-devel`
+
+### Debian/Ubuntu
+
+    `sudo apt install build-essential autoconf automake libtool pkg-config libnl-3-dev libssl-dev libpcre3-dev`
+
+### FreeBSD using PKG
+
+    `pkg install autoconf automake libtool pkgconf sqlite3 git python3`
+
+### MSYS2 (Windows)
+
+    `pacman -Sy autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel gcc binutils make pcre-devel libsqlite-devel`
 
 ## Compiling
 
