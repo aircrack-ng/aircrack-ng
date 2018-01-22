@@ -107,6 +107,23 @@ simd_select_best_binary (char * buffer, size_t buffer_remaining, int simd_featur
 }
 
 static void
+determine_path_envvar (char * binary_path)
+{
+  assert (binary_path != NULL);
+
+  strncpy (binary_path, "PATH=", MAX_PATH);
+
+  if (getenv ("PATH"))
+  {
+    strncat (binary_path, getenv ("PATH"), MAX_PATH - strlen(binary_path) - 1);
+  }
+  else
+  {
+    strncat (binary_path, "/bin:/usr/bin:/usr/local/bin", MAX_PATH - strlen(binary_path) - 1);
+  }
+}
+
+static void
 initialize_full_path (char * binary_path)
 {
   assert (binary_path != NULL);
@@ -145,10 +162,12 @@ main (int argc, char * argv[])
   int rc = 0;
   int simd_features;
   char binary_path[MAX_PATH + 1];
+  char path_env[MAX_PATH + 1];
   char ** args = NULL;
   char ** environment = NULL;
 
   memset (binary_path, 0, MAX_PATH + 1);
+  memset (path_env, 0, MAX_PATH + 1);
 
   initialize_full_path (binary_path);
 
@@ -156,6 +175,9 @@ main (int argc, char * argv[])
 
   // select the best binary, based on the CPU features detected
   simd_select_best_binary (binary_path, MAX_PATH - strlen (binary_path) - 1, simd_features);
+
+  // set-up PATH environment variable
+  determine_path_envvar (path_env);
 
   // prepare arguments
   args = calloc (argc + 1, sizeof (char *));
@@ -202,7 +224,7 @@ main (int argc, char * argv[])
     goto out;
   }
 
-  environment[n_envs] = strdup ("PATH=/bin:/usr/bin:/usr/local/bin");
+  environment[n_envs] = strdup (path_env);
   if (!environment[n_envs])
   {
     (void) fprintf (stderr, "F: Memory allocation failure: %s\n", strerror (errno));
