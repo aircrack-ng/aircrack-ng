@@ -114,8 +114,8 @@ pkglibexec_PROGRAMS += aircrack-ng--neon \
 endif
 
 if PPC
-libexec_PROGRAMS += aircrack-ng--altivec \
-                    aircrack-ng--power8
+pkglibexec_PROGRAMS += aircrack-ng--altivec \
+                       aircrack-ng--power8
 endif
 
 if X86
