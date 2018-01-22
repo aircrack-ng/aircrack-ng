@@ -42,7 +42,7 @@
 AC_PREREQ(2.52)
 AC_INIT([aircrack-ng],
     [m4_translit(m4_esyscmd([cat $(pwd)/VERSION]),m4_newline)],
-    [tdotreppe@aircrack-ng.org])
+    [https://forum.aircrack-ng.org])
 
 #
 # Cross-Compilation
