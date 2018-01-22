@@ -106,11 +106,11 @@ if CYGWIN
 LIBOSD_LIBS	+= -liphlpapi -lsetupapi -luuid
 endif
 
-libexec_PROGRAMS = aircrack-ng--generic
+pkglibexec_PROGRAMS = aircrack-ng--generic
 
 if ARM
-libexec_PROGRAMS += aircrack-ng--neon \
-                    aircrack-ng--asimd
+pkglibexec_PROGRAMS += aircrack-ng--neon \
+                       aircrack-ng--asimd
 endif
 
 if PPC
@@ -119,9 +119,9 @@ libexec_PROGRAMS += aircrack-ng--altivec \
 endif
 
 if X86
-libexec_PROGRAMS += aircrack-ng--avx2 \
-                    aircrack-ng--avx \
-                    aircrack-ng--sse2
+pkglibexec_PROGRAMS += aircrack-ng--avx2 \
+                       aircrack-ng--avx \
+                       aircrack-ng--sse2
 endif
 
 bin_PROGRAMS = aircrack-ng \
