@@ -177,7 +177,7 @@ main (int argc, char * argv[])
   simd_select_best_binary (binary_path, MAX_PATH - strlen (binary_path) - 1, simd_features);
 
   // set-up PATH environment variable
-  determine_path_envvar (path_env, MAX_PATH - strlen (path_env) - 1);
+  determine_path_envvar (path_env);
 
   // prepare arguments
   args = calloc (argc + 1, sizeof (char *));
