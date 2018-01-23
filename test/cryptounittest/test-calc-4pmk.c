@@ -42,9 +42,9 @@ int main(int argc, char **argv)
     if (argc < 1) return 1;
 
     int error=0, j;
-    char key[8][128];
-    unsigned char pmk[8][128];
-    unsigned char epmk[8][128];
+    char key[8][128] __attribute__((aligned(16)));
+    unsigned char pmk[8][128] __attribute__((aligned(16)));
+    unsigned char epmk[8][128] __attribute__((aligned(16)));
     cpuinfo.simdsize = cpuid_simdsize(0);
     bzero(&pmk,sizeof(pmk));
     bzero(&epmk,sizeof(epmk));
