@@ -9,11 +9,13 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     exit 0
 fi
 
+find . -name .deps -o -name '*.la' -o -name .libs -o -name Makefile -print0 | xargs -0 rm -vfr
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     ./autogen.sh --with-openssl=/usr/local/Cellar/openssl/1.0.2l --with-experimental --with-ext-scripts
 else
     ./autogen.sh
 fi
+make
 make dist
 
 V=$(cat VERSION)
