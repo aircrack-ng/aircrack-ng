@@ -91,10 +91,14 @@ Next, compile the project (respecting if `make` or `gmake` is needed):
     `make`
 
  * Compilation on *BSD or Solaris:
- 
+
     `gmake`
 
 Finally, the additional targets listed below may be of use in your environment:
+
+ * Execute all unit testing:
+
+    `make check`
 
  * Strip debugging symbols:
 
@@ -136,10 +140,6 @@ to your choosing:
             	Dependencies (debian): duma
 
 * **with-xcode**:    Set this flag to true to compile on OS X with Xcode 7+.
-
-* **with-simd**:  Compile with SIMD optimizations. This is an auto-detected feature that
-                  probably does not need changed, unless wishing to disable SIMD
-                  optimizations using `--without-simd`.
 
 #### Examples:
 
@@ -203,19 +203,26 @@ to your choosing:
 
 # Packaging
 
-Automatic detection of CPU optimization is done at compile time. This behavior
-is not desirable when packaging Aircrack-ng (for a Linux distribution).
-
-It can be overridden by configuring the build to not utilize the auto-detection
-feature:
-
-`./configure --without-simd`
+Automatic detection of CPU optimization is done at run time. This behavior
+**is** desirable when packaging Aircrack-ng (for a Linux or other distribution.)
 
 Also, in some cases it may be desired to provide your own flags completely and
 not having the suite auto-detect a number of optimizations. To do this, add
 the additional flag `--without-opt` to the `./configure` line:
 
-`./configure --without-simd --without-opt`
+`./configure --without-opt`
+
+# Run-time location of SIMD binaries
+
+Typically, the full path that is compiled in to the `aircrack-ng` binary is
+`/usr/libexec/aircrack-ng`. However, during development and/or packaging, it
+may be of use to specify a path that is dynamic in nature.
+
+The environment variable `AIRCRACK_LIBEXEC_PATH` may be used to specify the
+location of the SIMD-optimized binaries. An example of such use is as
+follows:
+
+`env AIRCRACK_LIBEXEC_PATH=/home/user/dev/aircrack-ng/src ./src/aircrack-ng`
 
 # Using precompiled binaries
 
