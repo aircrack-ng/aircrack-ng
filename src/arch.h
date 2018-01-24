@@ -86,6 +86,29 @@
 #endif
 #endif
 
+#if defined(JOHN_ALTIVEC)
+#define SHA_BUF_SIZ             16
+#define SIMD_COEF_32            4
+#define SIMD_COEF_64            2
+
+#ifndef SIMD_PARA_MD4
+#define SIMD_PARA_MD4           1
+#endif
+#ifndef SIMD_PARA_MD5
+#define SIMD_PARA_MD5           1
+#endif
+#ifndef SIMD_PARA_SHA1
+#define SIMD_PARA_SHA1          1
+#endif
+#ifndef SIMD_PARA_SHA256
+#define SIMD_PARA_SHA256        1
+#endif
+#ifndef SIMD_PARA_SHA512
+#define SIMD_PARA_SHA512        1
+#endif
+
+#endif
+
 #if AC_BUILT
 #include "autoconfig.h"
 #else

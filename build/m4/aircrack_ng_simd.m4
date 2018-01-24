@@ -97,6 +97,44 @@ then
     ])
 fi
 
+if test $IS_PPC -eq 1
+then
+    AX_CHECK_COMPILE_FLAG([-finline-functions], [
+        AX_APPEND_FLAG(-finline-functions, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-finline-limit=4000], [
+        AX_APPEND_FLAG(-finline-limit=4000, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing], [
+        AX_APPEND_FLAG(-fno-strict-aliasing, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-maltivec], [
+        AX_APPEND_FLAG(-maltivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-mabi=altivec], [
+        AX_APPEND_FLAG(-mabi=altivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-mvsx], [
+        AX_APPEND_FLAG(-mvsx, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-mpower8-vector], [
+        AX_APPEND_FLAG(-mpower8-vector, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+fi
+
 if test $IS_X86 -eq 0
 then
     AC_CHECK_HEADERS([sys/auxv.h], [

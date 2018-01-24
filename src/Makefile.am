@@ -113,10 +113,10 @@ pkglibexec_PROGRAMS += aircrack-ng--neon \
                        aircrack-ng--asimd
 endif
 
-#if PPC
-#libexec_PROGRAMS += aircrack-ng--altivec \
-#                    aircrack-ng--power8
-#endif
+if PPC
+pkglibexec_PROGRAMS += aircrack-ng--altivec \
+                       aircrack-ng--power8
+endif
 
 if X86
 pkglibexec_PROGRAMS += aircrack-ng--avx2 \
@@ -165,12 +165,17 @@ aircrack_ng_CFLAGS = "-DAIRCRACK_LIBEXEC_PATH=\"$(pkglibexecdir)\"" "-DEXEEXT=\"
 if ARM
 aircrack_ng_SOURCES += trampoline_arm.c
 endif
+if PPC
+aircrack_ng_SOURCES += trampoline_ppc.c
+endif
 if X86
 aircrack_ng_SOURCES += trampoline_x86.c
 endif
 if !ARM
+if !PPC
 if !X86
 aircrack_ng_SOURCES += trampoline_stubs.c
+endif
 endif
 endif
 
@@ -209,6 +214,18 @@ aircrack_ng__asimd_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_
 aircrack_ng__asimd_CPPFLAGS = -I. $(AM_CPPFLAGS)
 aircrack_ng__asimd_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
 
+#
+# PowerPC
+#
+aircrack_ng__altivec_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__altivec_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
+aircrack_ng__altivec_CPPFLAGS = -I. $(AM_CPPFLAGS)
+aircrack_ng__altivec_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+
+aircrack_ng__power8_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__power8_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
+aircrack_ng__power8_CPPFLAGS = -I. $(AM_CPPFLAGS)
+aircrack_ng__power8_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
 
 airdecap_ng_SOURCES = $(SRC_AD)
 airdecap_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
