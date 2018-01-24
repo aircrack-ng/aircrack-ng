@@ -49,19 +49,22 @@ case $with_airpcap in
         AC_MSG_CHECKING([for 32-bit environment])
         case "$(uname -m)" in
             x86_64* | amd64*)
-                AC_MSG_ERROR([Airpcap currently supports 32-bit builds, only.])
+                AC_MSG_RESULT([no])
+                AIRPCAP_LIB="bin/x64/airpcap.dll"
                 ;;
             *)
                 AC_MSG_RESULT([yes])
+                AIRPCAP_LIB="bin/x86/airpcap.dll"
                 ;;
         esac
 
         AC_MSG_CHECKING([for airpcap.h])
         if test -r "$with_airpcap/Airpcap_Devpack/include/airpcap.h" ; then
-            AIRPCAP_CFLAGS="-DHAVE_AIRPCAP -I $with_airpcap/Airpcap_Devpack/include"
-            AIRPCAP_LIBS="$with_airpcap/Airpcap_Devpack/lib/libairpcap.a"
+            AIRPCAP_CFLAGS="-I$with_airpcap/Airpcap_Devpack/include"
+            AIRPCAP_LIBS="$with_airpcap/Airpcap_Devpack/${AIRPCAP_LIB}"
             AC_SUBST(AIRPCAP_CFLAGS)
             AC_SUBST(AIRPCAP_LIBS)
+            AC_DEFINE([HAVE_AIRPCAP], [1], [Define if you have AirPcap.])
             AC_MSG_RESULT([yes])
             AIRPCAP=yes
         else
