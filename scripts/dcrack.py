@@ -199,8 +199,8 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		pf = "dcrack-pass.txt"
 
 		with open(pf, "w") as fid:
-            fid.write(pw)
-            fid.write("\n")
+			fid.write(pw)
+			fid.write("\n")
 
 		cmd = ["aircrack-ng", "-w", pf, "-b", net, "-q", "dcrack.cap"]
 		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, \

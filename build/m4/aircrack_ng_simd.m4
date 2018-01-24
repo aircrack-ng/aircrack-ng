@@ -37,41 +37,6 @@ dnl
 dnl If you delete this exception statement from all source files in the
 dnl program, then also delete it here.
 
-AC_DEFUN([AIRCRACK_NG_SIMD_AUTODETECT], [
-case "$host_cpu" in
-    x86_64 | amd64 | i*86*)
-        AX_GCC_X86_CPU_SUPPORTS([avx], [
-            AVX1FLAG=Y
-            SIMDCORE=true
-        ]) # SIMDSIZE=8
-
-        AX_GCC_X86_CPU_SUPPORTS([avx2], [
-            AVX2FLAG=Y
-            SIMDCORE=true
-        ]) # SIMDSIZE=16
-
-        AX_GCC_X86_CPU_SUPPORTS([sse2], [
-            SSEFLAG=Y
-        ]) # SIMDSIZE=4
-
-        AX_GCC_X86_CPU_SUPPORTS([mmx], [
-            MMXFLAG=Y
-        ]) # SIMDSIZE=1
-
-        IS_X86=1
-        ;;
-
-    *arm* | *aarch64*)
-        IS_ARM=1
-        NEON_FLAG=$(grep -cE '(neon|asimd)' /proc/cpuinfo)
-        ;;
-
-    *)
-        NEWSSE=false
-        ;;
-esac
-])
-
 AC_DEFUN([AIRCRACK_NG_SIMD], [
 AX_REQUIRE_DEFINED([AX_COMPILER_VENDOR])
 AX_REQUIRE_DEFINED([AX_COMPILER_VERSION])
@@ -86,11 +51,6 @@ IS_X86=0
 IS_ARM=0
 IS_PPC=0
 IS_CROSS=0
-NEON_FLAG=0
-SIMDSIZE=0
-SIMDFLAG=""
-NEWSSE=true
-SIMDCORE=false
 
 if test "$cross_compiling" != yes
 then
@@ -120,44 +80,6 @@ case "$host_os" in
         ;;
 esac
 
-AC_ARG_WITH(simd,
-    [AS_HELP_STRING([--with-simd[[=auto|sse2|avx|avx2|mmx|neon]]],
-        [use SIMD extensions, [default=auto]])])
-
-case $with_simd in
-    neon)
-        IS_ARM=1
-        NEON_FLAG=1
-        SIMDCORE=true
-        with_simd=neon
-        ;;
-    avx2)
-        IS_X86=1
-        AVX2FLAG=Y
-        SIMDCORE=true
-        ;;
-    avx | avx1)
-        IS_X86=1
-        AVX1FLAG=Y
-        SIMDCORE=true
-        ;;
-    sse2)
-        IS_X86=1
-        SSEFLAG=Y
-        ;;
-    mmx)
-        IS_X86=1
-        MMXFLAG=Y
-        ;;
-    "" | auto)
-        AS_IF([test "$cross_compiling" = no], [
-            AIRCRACK_NG_SIMD_AUTODETECT
-        ], [
-            AC_MSG_ERROR([Cannot auto-detect SIMD extensions when cross-compiling, please disable or set to a valid option.])
-        ])
-        ;;
-esac
-
 AS_IF([test $OPENBSD -eq 0], [
     AC_LANG_CASE([C++], [
         AX_CHECK_COMPILE_FLAG([-masm=intel], [
@@ -169,27 +91,48 @@ AS_IF([test $OPENBSD -eq 0], [
 
 if test $IS_ARM -eq 1
 then
-    if test $NEON_FLAG -eq 1
-    then
-        case "$host_cpu" in
-            *arm*)
-                AX_CHECK_COMPILE_FLAG([-mfpu=neon], [
-                    AX_APPEND_FLAG(-mfpu=neon, [opt_[]_AC_LANG_ABBREV[]flags])
-                    AC_DEFINE([HAS_NEON], [1], [Define if neon instructions are supported])
-                    SIMDCORE=true
-                    with_simd=neon
-                ])
-                ;;
-            aarch64*)
-                AC_DEFINE([HAS_NEON], [1], [Define if ASIMD/NEON instructions are supported])
-                SIMDCORE=true
-                with_simd=neon
-                ;;
-        esac
-    else
-        with_simd=no
-        NEWSSE=false
-    fi
+    AX_CHECK_COMPILE_FLAG([-mfpu=neon], [
+        AX_APPEND_FLAG(-mfpu=neon, [arm_neon_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(arm_neon_[]_AC_LANG_ABBREV[]flags)
+    ])
+fi
+
+if test $IS_PPC -eq 1
+then
+    AX_CHECK_COMPILE_FLAG([-finline-functions], [
+        AX_APPEND_FLAG(-finline-functions, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-finline-limit=4000], [
+        AX_APPEND_FLAG(-finline-limit=4000, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing], [
+        AX_APPEND_FLAG(-fno-strict-aliasing, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-maltivec], [
+        AX_APPEND_FLAG(-maltivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-mabi=altivec], [
+        AX_APPEND_FLAG(-mabi=altivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-mvsx], [
+        AX_APPEND_FLAG(-mvsx, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-mpower8-vector], [
+        AX_APPEND_FLAG(-mpower8-vector, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    ])
 fi
 
 if test $IS_X86 -eq 0
@@ -199,73 +142,49 @@ then
     ])
 fi
 
-if test "$cross_compiling" != no
+if test $IS_X86 -eq 1
 then
-    case "$with_simd" in
-        no)
-            NEWSSE=false
-            ;;
-    esac
-fi
-
-if test "$NEWSSE" = false ; then
-    AX_APPEND_FLAG(-DOLD_SSE_CORE=1, [opt_cppflags])
-fi
-
-if test "$AVX2FLAG" = Y ; then
-    with_simd=avx2
     case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
         intel)
-            AX_APPEND_FLAG(-march=core-avx2, [opt_[]_AC_LANG_ABBREV[]flags])
-            AX_APPEND_FLAG(-DJOHN_AVX2, [opt_cppflags])
+            AX_APPEND_FLAG(-march=core-avx2, [x86_avx2_[]_AC_LANG_ABBREV[]flags])
+            AC_SUBST(x86_avx2_[]_AC_LANG_ABBREV[]flags)
+
+            AX_APPEND_FLAG(-march=corei7-avx, [x86_avx_[]_AC_LANG_ABBREV[]flags])
+            AC_SUBST(x86_avx_[]_AC_LANG_ABBREV[]flags)
+
+            AX_APPEND_FLAG(-march=corei7, [x86_sse2_[]_AC_LANG_ABBREV[]flags])
+            AC_SUBST(x86_sse2_[]_AC_LANG_ABBREV[]flags)
+
+            AX_APPEND_FLAG(-march=pentiumii, [x86_mmx_[]_AC_LANG_ABBREV[]flags])
+            AC_SUBST(x86_mmx_[]_AC_LANG_ABBREV[]flags)
             ;;
         *)
-            AX_APPEND_FLAG(-mavx2, [opt_[]_AC_LANG_ABBREV[]flags])
-            AX_APPEND_FLAG(-DJOHN_AVX2, [opt_cppflags])
+            AX_CHECK_COMPILE_FLAG([-mavx2], [
+                AX_APPEND_FLAG(-mavx2, [x86_avx2_[]_AC_LANG_ABBREV[]flags])
+                AC_SUBST(x86_avx2_[]_AC_LANG_ABBREV[]flags)
+            ])
+
+            AX_CHECK_COMPILE_FLAG([-mavx], [
+                AX_APPEND_FLAG(-mavx, [x86_avx_[]_AC_LANG_ABBREV[]flags])
+                AC_SUBST(x86_avx_[]_AC_LANG_ABBREV[]flags)
+            ])
+
+            AX_CHECK_COMPILE_FLAG([-msse2], [
+                AX_APPEND_FLAG(-msse2, [x86_sse2_[]_AC_LANG_ABBREV[]flags])
+                AC_SUBST(x86_sse2_[]_AC_LANG_ABBREV[]flags)
+            ])
+
+            AX_CHECK_COMPILE_FLAG([-mmmx], [
+                AX_APPEND_FLAG(-mmmx, [x86_mmx_[]_AC_LANG_ABBREV[]flags])
+                AC_SUBST(x86_mmx_[]_AC_LANG_ABBREV[]flags)
+            ])
             ;;
     esac
-else
-    if test "$AVX1FLAG" = Y ; then
-        with_simd=avx
-        case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
-            intel)
-                AX_APPEND_FLAG(-march=corei7-avx, [opt_[]_AC_LANG_ABBREV[]flags])
-                AX_APPEND_FLAG(-DJOHN_AVX, [opt_cppflags])
-                ;;
-            *)
-                AX_APPEND_FLAG(-mavx, [opt_[]_AC_LANG_ABBREV[]flags])
-                AX_APPEND_FLAG(-DJOHN_AVX, [opt_cppflags])
-                ;;
-        esac
-    else
-        if test "$SSEFLAG" = Y ; then
-            with_simd=sse2
-            case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
-                intel)
-                    AX_APPEND_FLAG(-march=corei7, [opt_[]_AC_LANG_ABBREV[]flags])
-                    ;;
-                *)
-                    AX_APPEND_FLAG(-msse2, [opt_[]_AC_LANG_ABBREV[]flags])
-                    ;;
-            esac
-        else
-            if test "$MMXFLAG" = Y ; then
-                with_simd=mmx
-                case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
-                    intel)
-                        AX_APPEND_FLAG(-march=pentiumii, [opt_[]_AC_LANG_ABBREV[]flags])
-                        ;;
-                    *)
-                        AX_APPEND_FLAG(-mmmx, [opt_[]_AC_LANG_ABBREV[]flags])
-                        ;;
-                esac
-            fi
-        fi
-    fi
 fi
 
-AM_CONDITIONAL([NEWSSE], [test "$NEWSSE" = true])
-AM_CONDITIONAL([SIMDCORE], [test "$SIMDCORE" = true])
+AM_CONDITIONAL([X86], [test "$IS_X86" = 1])
+AM_CONDITIONAL([ARM], [test "$IS_ARM" = 1])
+AM_CONDITIONAL([PPC], [test "$IS_PPC" = 1])
 ])
 
 AC_DEFUN([AIRCRACK_NG_SIMD_C], [

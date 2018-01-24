@@ -20,7 +20,7 @@
 //  version. *  If you delete this exception statement from all source
 //  files in the program, then also delete it here.
 
-#if defined(__x86_64__) && defined(__APPLE__)
+#if defined(__x86_64__) && (defined(__APPLE__) || defined(__CYGWIN__))
 #define PRELOAD(x)
 #define MANGLE(x) x(%rip)
 #define INIT_PIC()
@@ -138,7 +138,11 @@ const_00ff:
 #define tmp4 ctxa
 #define tmp5 ctxb
 
-#ifdef __x86_64__
+#if defined(__x86_64__) && defined(__CYGWIN__)
+ #define edx_rsi %rdx
+ #define ecx_rdx %r8
+ #define eax_rdi %rcx
+#elif defined(__x86_64__)
  #define edx_rsi %rsi
  #define ecx_rdx %rdx
  #define eax_rdi %rdi
