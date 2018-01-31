@@ -1,4 +1,8 @@
 # Aircrack-ng
+
+[![Linux/Mac Build Status](https://travis-ci.org/aircrack-ng/aircrack-ng.svg?branch=master)](https://travis-ci.org/aircrack-ng/aircrack-ng)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/aircrack-ng/aircrack-ng?branch=master&svg=true)](https://ci.appveyor.com/project/aircrack-ng/aircrack-ng)
+
 Aircrack-ng is an 802.11 WEP and WPA-PSK keys cracking program that can recover
 keys once enough data packets have been captured. It implements the standard FMS
 attack along with some optimizations like KoreK attacks, as well as the
@@ -8,10 +12,6 @@ cracking tools.
 It can attack WPA1/2 networks with some advanced methods or simply by brute force.
 It can also fully use a multiprocessor system to its full power in order
 to speed up the cracking process.
-
-
-[![Build Status](https://api.travis-ci.org/aircrack-ng/aircrack-ng.png)](https://travis-ci.org/aircrack-ng/aircrack-ng)
-
 
 # Building
 
