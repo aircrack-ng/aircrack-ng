@@ -706,7 +706,7 @@ static void wifi_send(void *p, int len)
 
 	rc = wi_write(_state.s_wi, p, len, &tx);
 	if (rc == -1)
-		err(1, "wi_wirte()");
+		err(1, "wi_write()");
 }
 
 static void deauth_send(struct network *n, unsigned char *mac)
