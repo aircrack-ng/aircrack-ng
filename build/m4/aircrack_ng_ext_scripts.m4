@@ -39,8 +39,11 @@ dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_EXT_SCRIPTS], [
 
-PC_INIT([2.7])
-PC_PYTHON_SITE_PACKAGE_DIR
+if test "$cross_compiling" = no;
+then
+    PC_INIT([2.7])
+    PC_PYTHON_SITE_PACKAGE_DIR
+fi
 
 AC_CHECK_PROGS([READLINK], [greadlink readlink])
 
