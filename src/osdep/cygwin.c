@@ -217,13 +217,6 @@ errdll:
 			else
 				fprintf(stderr,"Error initializing <%s>\n", iface);
 		}
-
-		if (priv->pc_did_init) {
-			/* set initial chan */
-			tempret = wi_set_channel(wi, 1);
-			if (tempret)
-				rc = tempret;
-		}
 	}
 	else
 	{
