@@ -130,7 +130,6 @@ static int do_cygwin_open(struct wif *wi, char *iface)
 	char *file;
 	char *parm;
 	int rc = -1;
-	int tempret = 0;
 
 	if (!iface)
 		return -1;
