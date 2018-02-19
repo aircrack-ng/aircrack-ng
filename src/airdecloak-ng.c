@@ -259,7 +259,9 @@ void remove_last_uncomplete_node() {
 	if (_packet_elt_head->current->complete == 0) {
 		packet = _packet_elt_head->current;
 		_packet_elt_head->nb_packets -=1;
-		_packet_elt_head->current->prev->next = NULL;
+		if (_packet_elt_head->current->prev) {
+			_packet_elt_head->current->prev->next = NULL;
+		}
 		free(packet);
 	}
 }
