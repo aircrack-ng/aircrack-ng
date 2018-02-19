@@ -76,7 +76,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		h = sha1.hexdigest()
 
 		with open(f, "rb") as fid:
-			for i, l in enumerate(x):	pass
+			for i, l in enumerate(fid):	pass
 			i += 1
 
 		n = "%s-%s.txt" % (f, h)
