@@ -143,6 +143,7 @@ static unsigned char ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00";
 
 const char *OUI_PATHS[] = {
+    "./airodump-ng-oui.txt",
     "/etc/aircrack-ng/airodump-ng-oui.txt",
     "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt",
     "/usr/share/aircrack-ng/airodump-ng-oui.txt",
