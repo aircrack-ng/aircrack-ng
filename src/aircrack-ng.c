@@ -4385,17 +4385,9 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 }
 #endif
 
-int do_make_wkp(struct AP_info *ap_cur)
+static int display_wpa_hash_information(struct AP_info *ap_cur)
 {
-	size_t elt_written;
 	unsigned i = 0;
-
-	while( ap_cur != NULL )
-	{
-		if( ap_cur->target && ap_cur->wpa.state == 7 )
-			break;
-		ap_cur = ap_cur->next;
-	}
 
 	if( ap_cur == NULL )
 	{
@@ -4415,7 +4407,7 @@ int do_make_wkp(struct AP_info *ap_cur)
 		strncpy( ap_cur->essid, opt.essid, sizeof( ap_cur->essid ) - 1 );
 	}
 
-	printf("\n\nBuilding WKP (3.02) file...\n\n");
+	printf("\n\nBuilding Hashcat (3.60+) file...\n\n");
 
 	printf("[*] ESSID (length: %d): %s\n", (int)strlen(ap_cur->essid), ap_cur->essid);
 
@@ -4456,10 +4448,27 @@ int do_make_wkp(struct AP_info *ap_cur)
 	for( i = 0; i < ap_cur->wpa.eapol_size; i++)
 	{
 		if( i % 16 == 0 ) printf("\n    ");
-		printf("%02X ",ap_cur->wpa.eapol[i]);
-
+		printf("%02X ", ap_cur->wpa.eapol[i]);
 	}
 
+	return( 1 );
+}
+
+int do_make_wkp(struct AP_info *ap_cur)
+{
+	size_t elt_written;
+
+	while( ap_cur != NULL )
+	{
+		if( ap_cur->target && ap_cur->wpa.state == 7 )
+			break;
+		ap_cur = ap_cur->next;
+	}
+
+	if (display_wpa_hash_information(ap_cur) == 0)
+	{
+		return ( 0 );
+	}
 	printf("\n");
 
 	// write file
@@ -4539,7 +4548,6 @@ int do_make_wkp(struct AP_info *ap_cur)
 int do_make_hccap(struct AP_info *ap_cur)
 {
 	size_t elt_written;
-	unsigned i = 0;
 
 	while( ap_cur != NULL )
 	{
@@ -4548,69 +4556,10 @@ int do_make_hccap(struct AP_info *ap_cur)
 		ap_cur = ap_cur->next;
 	}
 
-	if( ap_cur == NULL )
+	if (display_wpa_hash_information(ap_cur) == 0)
 	{
-		printf( "No valid WPA handshakes found.\n" );
-		return( 0 );
+		return ( 0 );
 	}
-
-	if( memcmp( ap_cur->essid, ZERO, 32 ) == 0 && ! opt.essid_set )
-	{
-		printf( "An ESSID is required. Try option -e.\n" );
-		return( 0 );
-	}
-
-	if( opt.essid_set && ap_cur->essid[0] == '\0' )
-	{
-		memset(  ap_cur->essid, 0, sizeof( ap_cur->essid ) );
-		strncpy( ap_cur->essid, opt.essid, sizeof( ap_cur->essid ) - 1 );
-	}
-
-	printf("\n\nBuilding Hashcat (1.00) file...\n\n");
-
-	printf("[*] ESSID (length: %d): %s\n", (int)strlen(ap_cur->essid), ap_cur->essid);
-
-	printf("[*] Key version: %d\n", ap_cur->wpa.keyver);
-
-	printf("[*] BSSID: %02X:%02X:%02X:%02X:%02X:%02X\n",
-		ap_cur->bssid[0], ap_cur->bssid[1],
-		ap_cur->bssid[2], ap_cur->bssid[3],
-		ap_cur->bssid[4], ap_cur->bssid[5]
-		);
-	printf("[*] STA: %02X:%02X:%02X:%02X:%02X:%02X",
-		ap_cur->wpa.stmac[0], ap_cur->wpa.stmac[1],
-		ap_cur->wpa.stmac[2], ap_cur->wpa.stmac[3],
-		ap_cur->wpa.stmac[4], ap_cur->wpa.stmac[5]
-		);
-
-	printf("\n[*] anonce:");
-	for(i = 0; i < 32; i++)
-	{
-		if(i % 16 == 0) printf("\n    ");
-		printf("%02X ", ap_cur->wpa.anonce[i]);
-	}
-
-	printf("\n[*] snonce:");
-	for(i = 0; i < 32; i++)
-	{
-		if(i % 16 == 0) printf("\n    ");
-		printf("%02X ", ap_cur->wpa.snonce[i]);
-	}
-
-	printf("\n[*] Key MIC:\n   ");
-	for(i = 0; i < 16; i++)
-	{
-		printf(" %02X", ap_cur->wpa.keymic[i]);
-	}
-
-	printf("\n[*] eapol:");
-	for( i = 0; i < ap_cur->wpa.eapol_size; i++)
-	{
-		if( i % 16 == 0 ) printf("\n    ");
-		printf("%02X ",ap_cur->wpa.eapol[i]);
-
-	}
-
 	printf("\n");
 
 	// write file
