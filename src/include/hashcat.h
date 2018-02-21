@@ -37,6 +37,25 @@
 
 #include <stdint.h>
 
+// Hashcat v3.5 and lower
+typedef struct
+{
+	char          essid[36];
+
+	unsigned char mac1[6];
+	unsigned char mac2[6];
+	unsigned char nonce1[32];
+	unsigned char nonce2[32];
+
+	unsigned char eapol[256];
+	int           eapol_size;
+
+	int           keyver;
+	unsigned char keymic[16];
+
+} hccap_t;
+
+
 // Docs: https://hashcat.net/wiki/doku.php?id=hccapx
 
 #define HCCAPX_SIGNATURE 0x58504348 // HCPX
