@@ -222,7 +222,7 @@ struct options
 
 	char * wkp;					 /* EWSA Project file */
 	char * hccap;				         /* Hashcat capture file */
-
+	char * hccapx;				/* Hashcat X (3.6+) capture file */
 }
 
 opt;
