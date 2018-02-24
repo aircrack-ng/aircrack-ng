@@ -30,21 +30,15 @@ Dependencies:
 
 You can get lorcon source from:
 
-[*] git clone https://code.google.com/p/lorcon/ trunk 
+[*] git clone https://github.com/kismetwireless/lorcon
 
 Then you will have to compile it:
 
-[*] cd trunk && ./configure &&make && make install
+[*] cd lorcon && ./configure && make && make install
 
 Next compile Pylorcon2 source
 
-[*] wget http://pylorcon2.googlecode.com/files/PyLorcon2-0.1.tar.gz
-
-Untar the file
-[*] tar -xvaf PyLorcon2-0.1.tar.gz
-
-Build and install the source
-[*] cd PyLorcon2-0.1 && python setup.py install
+[*] cd pylorcon2 && python setup.py install
 
 If pylorcon reports import errors you need to run the following command:
 
