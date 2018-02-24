@@ -231,7 +231,8 @@ char usage[] =
 "  WPA-PSK options:\n"
 "\n"
 "      -E <file>  : create EWSA Project file v3\n"
-"      -J <file>  : create Hashcat Capture file (HCCAP)\n"
+"      -j <file>  : create Hashcat v3.6+ file (HCCAPX)\n"
+"      -J <file>  : create Hashcat file (HCCAP)\n"
 "      -S         : WPA cracking speed test\n"
 #ifdef HAVE_SQLITE
 "      -r <DB>    : path to airolib-ng database\n"
@@ -4612,11 +4613,6 @@ int do_make_hccapx(struct AP_info *ap_cur)
 		if( ap_cur->target && ap_cur->wpa.state == 7 )
 			break;
 		ap_cur = ap_cur->next;
-	}
-	if (strlen(ap_cur->essid) > 32) {
-		// Max SSID length
-		printf( "SSID too long (max length: 32): %lu\n", strlen(ap_cur->essid));
-		return ( 0 );
 	}
 
 	printf("\n\nBuilding Hashcat (3.60+) file...\n\n");
