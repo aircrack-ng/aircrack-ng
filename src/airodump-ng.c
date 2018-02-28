@@ -1994,6 +1994,7 @@ skip_probe:
 
                 memset( ap_cur->essid, 0, 33 );
                 memcpy( ap_cur->essid, p + 2, n );
+                ap_cur->ssid_length = n;
 
                 if( G.f_ivs != NULL && !ap_cur->essid_stored )
                 {
