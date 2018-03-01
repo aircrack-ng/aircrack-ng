@@ -1,3 +1,52 @@
+Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
+* General: Switching to autotools which allows compiling on more plateforms and updated README to reflect it.
+* General: Fixed compilation on a lot of platforms.
+* General: Fixed compilation warnings across platforms and compilers.
+* General: Fixed typos in the tools and in manpages.
+* General: Replace %d/ld with %u/lu for unsigned printf parameters.
+* General: Added option to disable stack protector.
+* General: Improved makefile to get reproducible builds.
+* General: Fixed compilation with OpenSSL 1.1.0.
+* General: Updated radiotap parsing code.
+* General: Updated all URLs to use HTTPS.
+* General: Fixed compilation with libreSSL.
+* General: Added WPS 2.0 test PCAP.
+* General: Do not use stackguard on Windows.
+* Aircrack-ng: Use trampoline binary to automatically select fastest executable depending on the CPU
+* Aircrack-ng: Fixed missing include for linecount.
+* Aircrack-ng: Fixed concurrency issues when reading multiple WEP PCAP.
+* Aircrack-ng: Added support for creating HCCAPx file format.
+* Airodump-ng: Get the channel from HT information.
+* Airodump-ng: Detect WPS 2.x.
+* Airodump-ng: Also check current directory for OUI file.
+* Airodump-ng: Fixed writing ESSID to CSV, Kismet CSV and Kismet NetXML files when ESSID gets decloaked and cloaked length was 1.
+* Aireplay-ng: Added deauthentication reason code option.
+* Aireplay-ng: Increase amount of AP to test when running injection test.
+* Airodump-ng: Fixed 802.11a channel hopping list.* Besside-ng: Fixed 'wi_read(): No child processes' error.
+* Airodump-ng: Fix creation of .xor files.
+* Airmon-ng: Fixed checking for processes.
+* Airmon-ng: Fixed display of "cannot access '/sys/class/ieee80211/': No such file or directory".
+* Airmon-ng: Fixed bashisms.
+* Airmon-ng: Fixed display of specific drivers.
+* Airmon-ng: Fixed display of cards on the sdio bus.
+* Airmon-ng: Now supports nexmon driver on RPi 3 (and 0 Wireless) using Kali Linux.
+* Airmon-ng: Added identification for another realtek chipset and generic Ralink/MT.
+* Airmon-ng: Handle 2 types of rfkill commands and updated unblock text.
+* Airmon-ng: more portable modinfo usage.
+* Airmon-ng: remove grep -P references upon request.
+* Airmon-ng: Do not replace driver name by ?????? when driver is valid. 
+* Airgraph-ng: Removed irrelevant comment in README.
+* Airdrop-ng: Updated lorcon2 installation instructions.
+* Airdecloak-ng: Fixed segfault due to NULL pointer dereference.
+* osdep: Remove wi_set_channel(1) on open wifi interface (cygwin).
+* Patches: Created WPE patches and documentation for current HostAPd and Freeradius versions.
+* Airodump-ng: Fix incorrect if conditions which always are false.
+* Airodump-ng: Remove useless not NULL check.
+* Airventriloquist: New tool from https://github.com/Caesurus/airventriloquist/
+* dcrack: Fixed indentation.
+* TravisCI: Fixed compilation on OSX.
+* AppVeyor: Added support for AppVeyor, CI for cygwin builds.
+
 Version 1.2-rc4 (changes from aircrack-ng 1.2-rc3) - Released 14 Feb 2016:
 * Airodump-ng: Increase console window size.
 * Aircrack-ng: Added time remaining and percentage done when doing WPA cracking with a dictionary (file).
