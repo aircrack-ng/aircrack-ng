@@ -1995,10 +1995,6 @@ static int do_linux_open(struct wif *wi, char *iface)
         }
     }
 
-    if(0)
-    fprintf(stderr, "Interface %s -> driver: %s\n", iface,
-        szaDriverTypes[dev->drivertype]);
-
     if (openraw(dev, iface, dev->fd_out, &dev->arptype_out, dev->pl_mac) != 0) {
         goto close_out;
     }
