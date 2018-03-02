@@ -2002,10 +2002,10 @@ static int do_linux_open(struct wif *wi, char *iface)
     /* don't use the same file descriptor for in and out on bcm43xx,
        as you read from the interface, but write into a file in /sys/...
      */
-    if(!(dev->drivertype == DT_BCM43XX) && !(dev->drivertype == DT_IPW2200))
+    if(!(dev->drivertype == DT_BCM43XX) && !(dev->drivertype == DT_IPW2200)) {
+		close(dev->fd_in);
         dev->fd_in = dev->fd_out;
-    else
-    {
+    } else {
         /* if bcm43xx or ipw2200, swap both fds */
         n=dev->fd_out;
         dev->fd_out=dev->fd_in;
@@ -2056,10 +2056,15 @@ static void linux_close(struct wif *wi)
 {
 	struct priv_linux *pl = wi_priv(wi);
 
-	if (pl->fd_in)
+	if (pl->fd_in && pl->fd_out && pl->fd_in == pl_fd_out) {
+		// Only close one if both are the same
 		close(pl->fd_in);
-	if (pl->fd_out)
-		close(pl->fd_out);
+	} else {
+		if (pl->fd_in)
+			close(pl->fd_in);
+		if (pl->fd_out)
+			close(pl->fd_out);
+	}
 	if (pl->fd_main)
 		close(pl->fd_main);
 

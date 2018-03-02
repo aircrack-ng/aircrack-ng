@@ -39,6 +39,7 @@ Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
 * Airdrop-ng: Updated lorcon2 installation instructions.
 * Airdecloak-ng: Fixed segfault due to NULL pointer dereference.
 * osdep: Remove wi_set_channel(1) on open wifi interface (cygwin).
+* osdep: Fixed RAW socket resource leak.
 * Patches: Created WPE patches and documentation for current HostAPd and Freeradius versions.
 * Airodump-ng: Fix incorrect if conditions which always are false.
 * Airodump-ng: Remove useless not NULL check.
