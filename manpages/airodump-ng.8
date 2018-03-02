@@ -47,6 +47,15 @@ Indicate the band on which airodump-ng should hop. It can be a combination of \(
 .I -s <method>, --cswitch <method>
 Defines the way airodump-ng sets the channels when using more than one card. Valid values: 0 (FIFO, default value), 1 (Round Robin) or 2 (Hop on last).
 .TP
+.I -2, --ht20
+Set the channel to be in HT20 (802.11n).
+.TP
+.I -3, --ht40+
+Set the channel to be in HT40+ (802.11n). It requires the frequency 20MHz above to be available (4 channels above) and thus some channels are not usable in HT40+. Only channels up to 7 are available in HT40+ in the US (and 9 in most of Europe).
+.TP
+.I -5, --ht40-
+Set the channel to be in HT40- (802.11n). It requires the frequency 20MHz below to be available (4 channels be)low and thus some channels are not usable in HT40-. In 2.4GHz, HT40- channels start at channel 5.
+.TP
 .I -r <file>
 Reads packet from a file.
 .TP

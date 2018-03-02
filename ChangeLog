@@ -24,6 +24,7 @@ Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
 * Aireplay-ng: Increase amount of AP to test when running injection test.
 * Airodump-ng: Fixed 802.11a channel hopping list.* Besside-ng: Fixed 'wi_read(): No child processes' error.
 * Airodump-ng: Fix creation of .xor files.
+* Airodump-ng: Added support for HT channels (HT20/HT40-/HT40+).
 * Airmon-ng: Fixed checking for processes.
 * Airmon-ng: Fixed display of "cannot access '/sys/class/ieee80211/': No such file or directory".
 * Airmon-ng: Fixed bashisms.

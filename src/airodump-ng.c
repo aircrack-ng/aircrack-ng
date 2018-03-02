@@ -69,6 +69,7 @@
 #include "pcap.h"
 #include "uniqueiv.h"
 #include "crypto.h"
+#include "osdep/channel.h"
 #include "osdep/osdep.h"
 #include "airodump-ng.h"
 #include "osdep/common.h"
@@ -699,6 +700,9 @@ char usage[] =
 "\n"
 "  By default, airodump-ng hop on 2.4GHz channels.\n"
 "  You can make it capture on other/specific channel(s) by using:\n"
+"      --ht20                : Set channel to HT20 (802.11n)\n"
+"      --ht40-               : Set channel to HT40- (802.11n)\n"
+"      --ht40+               : Set channel to HT40+ (802.11n)\n"
 "      --channel <channels>  : Capture on specific channels\n"
 "      --band <abg>          : Band on which airodump-ng should hop\n"
 "      -C    <frequencies>   : Uses these frequencies in MHz to hop\n"
@@ -5446,7 +5450,11 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count, pid_t parent)
 
             ch = G.channels[ch_idx];
 
+#ifdef CONFIG_LIBNL
+            if(wi_set_ht_channel(wi[card], ch, G.htval) == 0 )
+#else
             if(wi_set_channel(wi[card], ch ) == 0 )
+#endif
             {
                 G.channel[card] = ch;
                 unused = write( G.cd_pipe[1], &card, sizeof(int) );
@@ -5997,7 +6005,11 @@ int check_channel(struct wif *wi[], int cards)
         {
             memset(G.message, '\x00', sizeof(G.message));
             snprintf(G.message, sizeof(G.message), "][ fixed channel %s: %d ", wi_get_ifname(wi[i]), chan);
+#ifdef CONFIG_LIBNL
+            wi_set_ht_channel(wi[i], G.channel[i], G.htval);
+#else
             wi_set_channel(wi[i], G.channel[i]);
+#endif
         }
     }
     return 0;
@@ -6179,6 +6191,9 @@ int main( int argc, char *argv[] )
     fd_set             rfds;
 
     static struct option long_options[] = {
+        {"ht20",     0, 0, '2'},
+        {"ht40-",    0, 0, '3'},
+        {"ht40+",    0, 0, '5'},
         {"band",     1, 0, 'b'},
         {"beacon",   0, 0, 'e'},
         {"beacons",  0, 0, 'e'},
@@ -6294,6 +6309,9 @@ int main( int argc, char *argv[] )
     G.file_write_interval = 5; // Write file every 5 seconds by default
     G.maxsize_wps_seen  =  6;
     G.show_wps     = 0;
+#ifdef CONFIG_LIBNL
+    G.htval        = CHANNEL_NO_HT;
+#endif
 #ifdef HAVE_PCRE
     G.f_essid_regex = NULL;
 #endif
@@ -6775,6 +6793,31 @@ int main( int argc, char *argv[] )
                     G.active_scan_sim = 0;
                 break;
 
+            case '2':
+            	#ifndef CONFIG_LIBNL
+            		printf("HT Channel unsupported\n");
+            		return EXIT_FAILURE;
+            	#else
+	                G.htval = CHANNEL_HT20;
+	        #endif
+                break;
+            case '3':
+            	#ifndef CONFIG_LIBNL
+            		printf("HT Channel unsupported\n");
+            		return EXIT_FAILURE;
+            	#else
+                	G.htval = CHANNEL_HT40_MINUS;
+                #endif
+                break;
+            case '5':
+            	#ifndef CONFIG_LIBNL
+            		printf("HT Channel unsupported\n");
+            		return EXIT_FAILURE;
+            	#else
+                	G.htval = CHANNEL_HT40_PLUS;
+                #endif
+                break;
+
             default : goto usage;
         }
     } while ( 1 );
@@ -6932,7 +6975,11 @@ usage:
             {
                 for( i=0; i<G.num_cards; i++ )
                 {
+#ifdef CONFIG_LIBNL
+                    wi_set_ht_channel(wi[i], G.channel[0], G.htval);
+#else
                     wi_set_channel(wi[i], G.channel[0]);
+#endif
                     G.channel[i] = G.channel[0];
                 }
                 G.singlechan = 1;

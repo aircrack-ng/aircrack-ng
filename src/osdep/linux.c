@@ -66,6 +66,7 @@
 #include "crctable_osdep.h"
 #include "common.h"
 #include "byteorder.h"
+#include "channel.h"
 
 #ifdef CONFIG_LIBNL
 struct nl80211_state state;
@@ -943,7 +944,7 @@ static int ieee80211_channel_to_frequency(int chan)
     return (chan + 1000) * 5;
 }
 
-static int linux_set_channel_nl80211(struct wif *wi, int channel)
+static int linux_set_ht_channel_nl80211(struct wif *wi, int channel, unsigned int htval)
 {
     struct priv_linux *dev = wi_priv(wi);
     char s[32];
@@ -952,7 +953,6 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
     unsigned int devid;
     struct nl_msg *msg;
     unsigned int freq;
-    unsigned int htval = NL80211_CHAN_NO_HT;
 
     memset( s, 0, sizeof( s ) );
 
@@ -1032,7 +1032,20 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
 
     NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devid);
     NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
-    NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, htval);
+
+    unsigned ht = NL80211_CHAN_NO_HT;
+    switch (htval) {
+        case CHANNEL_HT20:
+            ht = NL80211_CHAN_HT20;
+            break;
+        case CHANNEL_HT40_PLUS:
+            ht = NL80211_CHAN_HT40PLUS;
+            break;
+        case CHANNEL_HT40_MINUS:
+            ht = NL80211_CHAN_HT40MINUS;
+            break;
+    }
+    NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, ht);
 
     nl_send_auto_complete(state.nl_sock,msg);
     nlmsg_free(msg);
@@ -1042,6 +1055,11 @@ static int linux_set_channel_nl80211(struct wif *wi, int channel)
     return( 0 );
  nla_put_failure:
     return -ENOBUFS;
+}
+
+static int linux_set_channel_nl80211(struct wif *wi, int channel)
+{
+    return linux_set_ht_channel_nl80211(wi, channel, CHANNEL_NO_HT);
 }
 #else //CONFIG_LIBNL
 
@@ -2193,10 +2211,11 @@ static struct wif *linux_open(char *iface)
         wi->wi_write            = linux_write;
 #ifdef CONFIG_LIBNL
         linux_nl80211_init(&state);
+        wi->wi_set_ht_channel   = linux_set_ht_channel_nl80211;
         wi->wi_set_channel      = linux_set_channel_nl80211;
 #else
         wi->wi_set_channel      = linux_set_channel;
-#endif
+#endif //CONFIG_LIBNL
         wi->wi_get_channel      = linux_get_channel;
         wi->wi_set_freq		= linux_set_freq;
         wi->wi_get_freq		= linux_get_freq;
