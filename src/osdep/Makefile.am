@@ -129,7 +129,8 @@ EXTRA_DIST = openbsd.c \
              dummy.c \
              netbsd_tap.c \
              network.c \
-             cygwin_tap.c
+             cygwin_tap.c \
+             channel.h
 
 
 @CODE_COVERAGE_RULES@
