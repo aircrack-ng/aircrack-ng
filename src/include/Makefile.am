@@ -46,7 +46,8 @@ EXTRA_DIST = ieee80211.h \
              if_arp.h \
              eapol.h \
              ethernet.h \
-             if_llc.h 
+             if_llc.h \
+             hashcat.h
 
 
 @CODE_COVERAGE_RULES@
