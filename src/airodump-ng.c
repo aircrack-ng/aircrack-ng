@@ -74,6 +74,7 @@
 #include "airodump-ng.h"
 #include "osdep/common.h"
 #include "common.h"
+#include "mcs_index_rates.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
 #ifdef USE_GCRYPT
@@ -1409,6 +1410,26 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         memcpy(ap_cur->gps_loc_min, G.gps_loc, sizeof(float)*5);
         memcpy(ap_cur->gps_loc_max, G.gps_loc, sizeof(float)*5);
         memcpy(ap_cur->gps_loc_best, G.gps_loc, sizeof(float)*5);
+
+        /* 802.11n and ac */
+        ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
+        memset(ap_cur->standard, 0, 3);
+
+        ap_cur->n_channel.sec_channel = -1;
+        ap_cur->n_channel.short_gi_20 = 0;
+        ap_cur->n_channel.short_gi_40 = 0;
+        ap_cur->n_channel.any_chan_width = 0;
+        ap_cur->n_channel.mcs_index = 0;
+
+        ap_cur->ac_channel.center_sgmt[0] = 0;
+        ap_cur->ac_channel.center_sgmt[1] = 0;
+        ap_cur->ac_channel.mu_mimo = 0;
+        ap_cur->ac_channel.short_gi_80 = 0;
+        ap_cur->ac_channel.short_gi_160 = 0;
+        ap_cur->ac_channel.split_chan = 0;
+        ap_cur->ac_channel.mhz_160_chan = 0;
+        ap_cur->ac_channel.wave_2 = 0;
+        memset(ap_cur->ac_channel.mcs_index, 0, MAX_AC_MCS_INDEX);
     }
 
     /* update the last time seen */
@@ -1770,19 +1791,209 @@ skip_probe:
                     ap_cur->max_speed = ( p[1 + p[1]] & 0x7F ) / 2;
             }
 
-            if( p[0] == 0x03 )
+            if( p[0] == 0x03 ) {
                 ap_cur->channel = p[2];
-            /* also get the channel from ht information->primary channel */
-            else if (p[0] == 0x3d){
-		ap_cur->channel = p[2];
+            } else if (p[0] == 0x3d) {
+				if (ap_cur->standard[0] != '\0') {
+					ap_cur->standard[0] = 'n';
+				}
+				
+				/* also get the channel from ht information->primary channel */
+				ap_cur->channel = p[2];
+
+				// Get channel width and secondary channel
+				switch (p[3] % 4) {
+					case 0:
+						// 20MHz
+						ap_cur->channel_width = CHANNEL_20MHZ;
+						break;
+					case 1:
+						// Above
+						ap_cur->n_channel.sec_channel = 1;
+						switch (ap_cur->channel_width) {
+							case CHANNEL_UNKNOWN_WIDTH:
+							case CHANNEL_3MHZ:
+							case CHANNEL_5MHZ:
+							case CHANNEL_10MHZ:
+							case CHANNEL_20MHZ:
+							case CHANNEL_22MHZ:
+							case CHANNEL_30MHZ:
+							case CHANNEL_20_OR_40MHZ:
+								ap_cur->channel_width = CHANNEL_40MHZ;
+								break;
+							default:
+								break;
+						}
+						break;
+					case 2:
+						// Reserved
+						break;
+					case 3:
+						// Below
+						ap_cur->n_channel.sec_channel = -1;
+						switch (ap_cur->channel_width) {
+							case CHANNEL_UNKNOWN_WIDTH:
+							case CHANNEL_3MHZ:
+							case CHANNEL_5MHZ:
+							case CHANNEL_10MHZ:
+							case CHANNEL_20MHZ:
+							case CHANNEL_22MHZ:
+							case CHANNEL_30MHZ:
+							case CHANNEL_20_OR_40MHZ:
+								ap_cur->channel_width = CHANNEL_40MHZ;
+								break;
+							default:
+								break;
+						}
+						break;
+				}
+
+				ap_cur->n_channel.any_chan_width = ((p[3] / 4) %2);
             }
 
+			// HT capabilities
+			if (p[0] == 0x2d && p[1] > 1) {
+				if (ap_cur->standard[0] != '\0') {
+					ap_cur->standard[0] = 'n';
+				}
+				/* XXX: Maximum MCS rate and the amount of streams is indicated
+				 * in this IE, however, it is fairly complex to parse for now. */
+
+				ap_cur->n_channel.short_gi_20 = (p[3] / 32) %2;
+				ap_cur->n_channel.short_gi_40 = (p[3] / 64) %2;
+			}
+
+			// VHT Capabilities
+			if (p[0] == 0xbf && p[1] >= 12) {
+				// Standard is AC
+				strcpy(ap_cur->standard, "ac");
+				
+				ap_cur->ac_channel.split_chan = (p[3] / 4) %4;
+				
+				ap_cur->ac_channel.short_gi_80 = (p[3] / 32) %2;
+				ap_cur->ac_channel.short_gi_160 = (p[3] / 64) %2;
+				
+				ap_cur->ac_channel.mu_mimo = ((p[3] / 524288) %2) || ((p[3] / 1048576) %2);
+
+				// A few things indicate Wave 2: MU-MIMO, 80+80 Channels
+				ap_cur->ac_channel.wave_2 = ap_cur->ac_channel.mu_mimo || ap_cur->ac_channel.split_chan;
+
+				// Maximum rates (16 bit)
+				uint16_t tx_mcs = 0;
+				memcpy(&tx_mcs, p+10, sizeof(uint16_t));
+				
+				// Maximum of 8 SS, each uses 2 bits
+				for (uint8_t stream_idx = 0; stream_idx < MAX_AC_MCS_INDEX; ++stream_idx) {
+					uint8_t mcs = (uint8_t)(tx_mcs % 4);
+					
+					// Unsupported -> No more spatial stream
+					if (mcs == 3) {
+						break;
+					}
+					switch (mcs) {
+						case 0:
+							// support of MCS 0-7
+							ap_cur->ac_channel.mcs_index[stream_idx] = 7;
+							break;
+						case 1:
+							// support of MCS 0-8
+							ap_cur->ac_channel.mcs_index[stream_idx] = 8;
+							break;
+						case 2:
+							// support of MCS 0-9
+							ap_cur->ac_channel.mcs_index[stream_idx] = 9;
+							break;
+					}
+
+					// Next spatial stream
+					tx_mcs /= 4;
+				}
+			}
+
+			// VHT Operations
+			if (p[0] == 0xc0 && p[1] >= 3) {
+				// Standard is AC
+				strcpy(ap_cur->standard, "ac");
+
+				// Channel width
+				switch (p[2]) {
+					case 0:
+						// 20 or 40MHz
+						ap_cur->channel_width = CHANNEL_20_OR_40MHZ;
+						break;
+					case 1:
+						ap_cur->channel_width = CHANNEL_80MHZ;
+						break;
+					case 2:
+						ap_cur->channel_width = CHANNEL_160MHZ;
+						break;
+					case 3:
+						// 80+80MHz
+						ap_cur->channel_width = CHANNEL_80_80MHZ;
+						ap_cur->ac_channel.split_chan = 1;
+						break;
+				}
+
+				// 802.11ac channel center segments
+				ap_cur->ac_channel.center_sgmt[0] = p[3];
+				ap_cur->ac_channel.center_sgmt[1] = p[4];
+			}
+
+			// Next
             p += 2 + p[1];
         }
+
+		// Now get max rate
+		if (ap_cur->standard[0] == 'n' || strcmp(ap_cur->standard, "ac") == 0) {
+			int sgi = 0;
+			int width = 0;
+
+			switch(ap_cur->channel_width) {
+				case CHANNEL_20MHZ:
+					width = 20;
+					sgi = ap_cur->n_channel.short_gi_20;
+					break;
+				case CHANNEL_20_OR_40MHZ:
+				case CHANNEL_40MHZ:
+					width = 40;
+					sgi = ap_cur->n_channel.short_gi_40;
+					break;
+				case CHANNEL_80MHZ:
+					width = 80;
+					sgi = ap_cur->ac_channel.short_gi_80;
+					break;
+				case CHANNEL_80_80MHZ:
+				case CHANNEL_160MHZ:
+					width = 160;
+					sgi = ap_cur->ac_channel.short_gi_160;
+					break;
+				default:
+					break;
+			}
+
+			if (width != 0) {
+				// In case of ac, get the amount of spatial streams
+				int amount_ss = 1;
+				if (ap_cur->standard[0] != 'n') {
+					for (amount_ss = 0; amount_ss < MAX_AC_MCS_INDEX && ap_cur->ac_channel.mcs_index[amount_ss] != 0; ++amount_ss);
+				}
+
+				// Get rate
+				float max_rate = (ap_cur->standard[0] == 'n') ? 
+					get_80211n_rate(width, sgi, ap_cur->n_channel.mcs_index) :
+					get_80211ac_rate(width, sgi, ap_cur->ac_channel.mcs_index[amount_ss - 1], amount_ss);
+
+				// If no error, update rate
+				if (max_rate > 0) {
+					ap_cur->max_speed = (int)max_rate;
+				}
+			}
+		}
+		
     }
 
     /* packet parsing: Beacon & Probe response */
-
+	/* TODO: Merge this if and the one above */
     if( (h80211[0] == 0x80 || h80211[0] == 0x50) && caplen > 38)
     {
         p=h80211+36;         //ignore hdr + fixed params
@@ -3339,10 +3550,17 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
 	    len = strlen(strbuf);
 
-	    snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %3d%c%c ",
-		    ap_cur->channel, ap_cur->max_speed,
-		    ( ap_cur->security & STD_QOS ) ? 'e' : ' ',
-		    ( ap_cur->preamble ) ? '.' : ' ');
+		if (ap_cur->standard[0]) {
+			// In case of 802.11n or 802.11ac, QoS is pretty much implied
+			// Short or long preamble is not that useful anymore.
+			snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %3d ",
+						ap_cur->channel, ap_cur->max_speed);
+		} else {
+			snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %3d%c%c ",
+						ap_cur->channel, ap_cur->max_speed,
+						( ap_cur->security & STD_QOS ) ? 'e' : ' ',
+						( ap_cur->preamble ) ? '.' : ' ');
+		}
 
 	    len = strlen(strbuf);
 

@@ -58,6 +58,9 @@ SRC_PF		= packetforge-ng.c
 SRC_AR		= aireplay-ng.c
 SRC_ADU		= airodump-ng.c
 
+LIBMCS_LIBS	= libmcs.la
+SRC_MCS		= mcs_index_rates.c
+
 SRC_AT		= airtun-ng.c
 SRC_IV		= ivstools.c
 SRC_AS		= airserv-ng.c
@@ -239,9 +242,9 @@ aireplay_ng_SOURCES = $(SRC_AR) $(LIBOSD)
 aireplay_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
 aireplay_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS)
 
-airodump_ng_SOURCES = $(SRC_ADU) $(LIBOSD)
+airodump_ng_SOURCES = $(SRC_ADU) $(LIBOSD) $(LIBMCS)
 airodump_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
-airodump_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(PCRE_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS)
+airodump_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(PCRE_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBMCS_LIBS)
 
 airserv_ng_SOURCES = $(SRC_AS) $(LIBOSD)
 airserv_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
@@ -311,11 +314,15 @@ libaclib_la_SOURCES = $(SRC_ACLIB)
 libaclib_la_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
 libaclib_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS)
 
+libmcs_la_SOURCES = $(SRC_MCS)
+libmcs_la_CFLAGS = $(LIBMCS_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
+libmcs_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS)
+
 libptw_la_SOURCES = $(SRC_PTW)
 libptw_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
 libptw_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS)
 
-noinst_LTLIBRARIES = libaclib.la libptw.la
+noinst_LTLIBRARIES = libaclib.la libptw.la libmcs.la
 
 EXTRA_DIST = wpaclean.c \
              buddy-ng.c \
@@ -382,7 +389,9 @@ EXTRA_DIST = wpaclean.c \
              crypto.h \
              trampoline.c \
              trampoline.h \
-             trampoline_x86.c
+             trampoline_x86.c \
+             mcs_index_rates.c \
+             mcs_index_rates.h
 
 
 @CODE_COVERAGE_RULES@
