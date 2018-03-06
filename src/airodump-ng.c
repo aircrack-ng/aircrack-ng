@@ -2027,6 +2027,7 @@ skip_probe:
                 break;
             }
 
+			// Find WPA and RSN tags
             if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x01\x01\x00", 6) == 0)) || (type == 0x30) )
             {
                 ap_cur->security &= ~(STD_WEP|ENC_WEP|STD_WPA);
@@ -2041,6 +2042,7 @@ skip_probe:
                     offset = 4;
                 }
 
+				// RSN => WPA2
                 if(type == 0x30)
                 {
                     ap_cur->security |= STD_WPA2;
@@ -2053,10 +2055,12 @@ skip_probe:
                     continue;
                 }
 
+				// Number of pairwise cipher suites
                 if( p+9+offset > h80211+caplen )
                     break;
                 numuni  = p[8+offset] + (p[9+offset]<<8);
 
+				// Number of Authentication Key Managament suites
                 if( p+ (11+offset) + 4*numuni > h80211+caplen)
                     break;
                 numauth = p[(10+offset) + 4*numuni] + (p[(11+offset) + 4*numuni]<<8);
@@ -2074,6 +2078,7 @@ skip_probe:
                         break;
                 }
 
+				// Get the list of cipher suites
                 for(i=0; i<numuni; i++)
                 {
                     switch(p[i*4+3])
@@ -2100,6 +2105,7 @@ skip_probe:
 
                 p += 2+4*numuni;
 
+				// Get the AKM suites
                 for(i=0; i<numauth; i++)
                 {
                     switch(p[i*4+3])
@@ -2123,6 +2129,7 @@ skip_probe:
             }
             else if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x02\x01\x01", 6) == 0)))
             {
+				// QoS IE
                 ap_cur->security |= STD_QOS;
                 p += length+2;
             }
