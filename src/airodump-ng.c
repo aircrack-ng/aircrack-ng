@@ -1500,6 +1500,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
     {
         case  0x80:
             ap_cur->nb_bcn++;
+            break;
         case  0x50:
             /* reset the WPS state */
             ap_cur->wps.state = 0xFF;
@@ -1535,7 +1536,8 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
             /* FromDS packet, reject broadcast MACs */
 
             if( (h80211[4]%2) != 0 ) goto skip_station;
-            memcpy( stmac, h80211 +  4, 6 ); break;
+            memcpy( stmac, h80211 +  4, 6 ); 
+            break;
 
         default: goto skip_station;
     }

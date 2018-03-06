@@ -2002,6 +2002,7 @@ static void wifi_mgt(struct network *n, struct ieee80211_frame *wh, int len)
 	switch (wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) {
 	case IEEE80211_FC0_SUBTYPE_BEACON:
 		wifi_beacon(n, wh, len);
+		break;
 
 	case IEEE80211_FC0_SUBTYPE_AUTH:
 		wifi_auth(n, wh, len);
