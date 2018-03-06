@@ -1437,7 +1437,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
     ap_cur->tlast = time( NULL );
 
     /* only update power if packets comes from
-     * the AP: either type == mgmt and SA != BSSID,
+     * the AP: either type == mgmt and SA == BSSID,
      * or FromDS == 1 and ToDS == 0 */
 
     if( ( ( h80211[1] & 3 ) == 0 &&
