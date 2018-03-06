@@ -2135,6 +2135,7 @@ skip_probe:
             }
             else if( (type == 0xDD && (length >= 4) && (memcmp(p+2, "\x00\x50\xF2\x04", 4) == 0)))
             {
+				// WPS IE
                 org_p = p;
                 p+=6;
                 int len = length, subtype = 0, sublen = 0;
