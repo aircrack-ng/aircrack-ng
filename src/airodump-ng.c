@@ -1419,7 +1419,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         ap_cur->n_channel.short_gi_20 = 0;
         ap_cur->n_channel.short_gi_40 = 0;
         ap_cur->n_channel.any_chan_width = 0;
-        ap_cur->n_channel.mcs_index = 0;
+        ap_cur->n_channel.mcs_index = -1;
 
         ap_cur->ac_channel.center_sgmt[0] = 0;
         ap_cur->ac_channel.center_sgmt[1] = 0;
@@ -1796,7 +1796,7 @@ skip_probe:
             if( p[0] == 0x03 ) {
                 ap_cur->channel = p[2];
             } else if (p[0] == 0x3d) {
-				if (ap_cur->standard[0] != '\0') {
+				if (ap_cur->standard[0] == '\0') {
 					ap_cur->standard[0] = 'n';
 				}
 				
@@ -1854,15 +1854,32 @@ skip_probe:
             }
 
 			// HT capabilities
-			if (p[0] == 0x2d && p[1] > 1) {
-				if (ap_cur->standard[0] != '\0') {
+			if (p[0] == 0x2d && p[1] > 18) {
+				if (ap_cur->standard[0] == '\0') {
 					ap_cur->standard[0] = 'n';
 				}
-				/* XXX: Maximum MCS rate and the amount of streams is indicated
-				 * in this IE, however, it is fairly complex to parse for now. */
 
+				// Short GI for 20/40MHz
 				ap_cur->n_channel.short_gi_20 = (p[3] / 32) %2;
 				ap_cur->n_channel.short_gi_40 = (p[3] / 64) %2;
+				
+				// Parse MCS rate
+				/* 
+				 * XXX: Sometimes TX and RX spatial stream # differ and none of the beacon
+				 * have that. If someone happens to have such AP, open an issue with it.
+				 * Ref: https://www.wireshark.org/lists/wireshark-bugs/201307/msg00098.html
+				 * See IEEE standard 802.11-2012 table 8.126
+				 * 
+				 * For now, just figure out the highest MCS rate.
+				 */
+				if (ap_cur->n_channel.mcs_index == -1) {
+					uint32_t rx_mcs_bitmask = 0;
+					memcpy(&rx_mcs_bitmask, p + 5, sizeof(uint32_t));
+					while (rx_mcs_bitmask) {
+						++(ap_cur->n_channel.mcs_index);
+						rx_mcs_bitmask /= 2;
+					}
+				}
 			}
 
 			// VHT Capabilities

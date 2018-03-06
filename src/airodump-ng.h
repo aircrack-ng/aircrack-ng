@@ -215,7 +215,7 @@ struct WPS_info {
 
 /* 802.11n channel information */
 struct n_channel_info {
-	unsigned char mcs_index;     /* Maximum MCS TX index     */
+	char mcs_index;     /* Maximum MCS TX index     */
     char sec_channel;            /* 802.11n secondary channel*/
     unsigned char short_gi_20;   /* Short GI for 20MHz       */
     unsigned char short_gi_40;   /* Short GI for 40MHz       */
