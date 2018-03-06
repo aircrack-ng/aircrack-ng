@@ -3572,7 +3572,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		if (ap_cur->standard[0]) {
 			// In case of 802.11n or 802.11ac, QoS is pretty much implied
 			// Short or long preamble is not that useful anymore.
-			snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %3d ",
+			snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %4d  ",
 						ap_cur->channel, ap_cur->max_speed);
 		} else {
 			snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %3d%c%c ",
