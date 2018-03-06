@@ -140,13 +140,13 @@ class macOUI_lookup:
         HexOui= {}
         Hex = re.compile('.*(hex).*')
         #matches the following example "00-00-00   (hex)\t\tXEROX CORPORATION" 
-        ouiLines = self.ouiRaw.split("\n\n") 
+        ouiLines = self.ouiRaw.split("\n") 
         #split each company into a list one company per position
         for line in ouiLines:
             if Hex.search(line) is not None: 
                 lineList = Hex.search(line).group().replace("\t"," ").split("  ") 
                 #return the matched text and build a list out of it
-                HexOui[lineList[0].replace("-",":")] = lineList[2] 
+                HexOui[lineList[0].replace("-",":")] = lineList[2].strip()
                 #build a dict in the format of mac:company name 
         return HexOui
     
@@ -156,10 +156,10 @@ class macOUI_lookup:
         """
         company_oui = {}
         for oui in self.oui_company:
-            if company_oui.has_key(self.oui_company[oui][0]):
-                company_oui[self.oui_company[oui][0]].append(oui)
+            if company_oui.has_key(self.oui_company[oui]):
+                company_oui[self.oui_company[oui]].append(oui)
             else:
-                company_oui[self.oui_company[oui][0]] = [oui]
+                company_oui[self.oui_company[oui]] = [oui]
         return company_oui
         
 
