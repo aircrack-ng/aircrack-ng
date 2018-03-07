@@ -2966,11 +2966,11 @@ void dump_sort( void )
 			    ap_min = ap_cur;
 			break;
 		    case SORT_BY_BEACON:
-			if( (ap_cur->nb_bcn < ap_min->nb_bcn)*G.sort_inv )
+			if( (ap_cur->nb_bcn < ap_min->nb_bcn) && G.sort_inv )
 			    ap_min = ap_cur;
 			break;
 		    case SORT_BY_DATA:
-			if( (ap_cur->nb_data < ap_min->nb_data)*G.sort_inv )
+			if( (ap_cur->nb_data < ap_min->nb_data) && G.sort_inv )
 			    ap_min = ap_cur;
 			break;
 		    case SORT_BY_PRATE:
@@ -3285,19 +3285,25 @@ int get_sta_list_count() {
 #define TSTP_DAY (TSTP_HOUR * 24ULL)
 
 static char *parse_timestamp(unsigned long long timestamp) {
-	static char s[15];
+	#define TSTP_LEN 15
+	static char s[TSTP_LEN];
 	unsigned long long rem;
-	unsigned int days, hours, mins, secs;
+	unsigned char days, hours, mins, secs;
 
+	// Initialize array
+	memset(s, 0, TSTP_LEN);
+
+	// Calculate days, hours, mins and secs
 	days = timestamp / TSTP_DAY;
 	rem = timestamp % TSTP_DAY;
-	hours = rem / TSTP_HOUR;
+	hours = (unsigned char)(rem / TSTP_HOUR);
 	rem %= TSTP_HOUR;
-	mins = rem / TSTP_MIN;
+	mins = (unsigned char)(rem / TSTP_MIN);
 	rem %= TSTP_MIN;
-	secs = rem / TSTP_SEC;
+	secs = (unsigned char)(rem / TSTP_SEC);
 
-	snprintf(s, 14, "%3ud %02u:%02u:%02u", days, hours, mins, secs);
+	snprintf(s, TSTP_LEN, "%3ud %02u:%02u:%02u", days, hours, mins, secs);
+	#undef TSTP_LEN
 
 	return s;
 }
