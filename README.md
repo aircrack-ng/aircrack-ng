@@ -3,15 +3,15 @@
 [![Linux/Mac Build Status](https://travis-ci.org/aircrack-ng/aircrack-ng.svg?branch=master)](https://travis-ci.org/aircrack-ng/aircrack-ng)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/aircrack-ng/aircrack-ng?branch=master&svg=true)](https://ci.appveyor.com/project/aircrack-ng/aircrack-ng)
 
-Aircrack-ng is an 802.11 WEP and WPA-PSK keys cracking program that can recover
-keys once enough data packets have been captured. It implements the standard FMS
-attack along with some optimizations like KoreK attacks, as well as the
-all-new PTW attack, thus making the attack much faster compared to other WEP
-cracking tools.
+Aircrack-ng is a complete suite of tools to assess WiFi network security.
 
-It can attack WPA1/2 networks with some advanced methods or simply by brute force.
-It can also fully use a multiprocessor system to its full power in order
-to speed up the cracking process.
+It focuses on different areas of WiFi security:
+ * Monitoring: Packet capture and export of data to text files for further processing by third party tools.
+ * Attacking: Replay attacks, deauthentication, fake access points and others via packet injection.
+ * Testing: Checking WiFi cards and driver capabilities (capture and injection).
+ * Cracking: WEP and WPA PSK (WPA 1 and 2).
+
+All tools are command line which allows for heavy scripting. A lot of GUIs have taken advantage of this feature. It works primarily Linux but also Windows, OS X, FreeBSD, OpenBSD, NetBSD, as well as Solaris and even eComStation 2. 
 
 # Building
 
