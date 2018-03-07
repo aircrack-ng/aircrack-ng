@@ -1,5 +1,6 @@
 Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
-* General: Switching to autotools which allows compiling on more plateforms and updated README to reflect it.
+* General: Switching to autotools which allows compiling on more plateforms.
+* General: Updated README.md and INSTALLING files.
 * General: Fixed compilation on a lot of platforms.
 * General: Fixed compilation warnings across platforms and compilers.
 * General: Fixed typos in the tools and in manpages.
@@ -12,6 +13,7 @@ Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
 * General: Fixed compilation with libreSSL.
 * General: Added WPS 2.0 test PCAP.
 * General: Do not use stackguard on Windows.
+* General: Fixed warnings on GCC7.
 * Aircrack-ng: Use trampoline binary to automatically select fastest executable depending on the CPU
 * Aircrack-ng: Fixed missing include for linecount.
 * Aircrack-ng: Fixed concurrency issues when reading multiple WEP PCAP.
@@ -25,6 +27,7 @@ Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
 * Airodump-ng: Fixed 802.11a channel hopping list.* Besside-ng: Fixed 'wi_read(): No child processes' error.
 * Airodump-ng: Fix creation of .xor files.
 * Airodump-ng: Added support for HT channels (HT20/HT40-/HT40+).
+* Airodump-ng: Now displaying correct rate for 802.11n or 802.11ac AP.
 * Airmon-ng: Fixed checking for processes.
 * Airmon-ng: Fixed display of "cannot access '/sys/class/ieee80211/': No such file or directory".
 * Airmon-ng: Fixed bashisms.
@@ -37,6 +40,8 @@ Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
 * Airmon-ng: remove grep -P references upon request.
 * Airmon-ng: Do not replace driver name by ?????? when driver is valid. 
 * Airgraph-ng: Removed irrelevant comment in README.
+* Airgraph-ng: Handle SSID with double quotes.
+* Airgraph-ng: Fixed parsing OUI file.
 * Airdrop-ng: Updated lorcon2 installation instructions.
 * Airdecloak-ng: Fixed segfault due to NULL pointer dereference.
 * osdep: Remove wi_set_channel(1) on open wifi interface (cygwin).
