@@ -1,5 +1,10 @@
+== Building ==
+
 === Requirements ===
 
+ * Autoconf
+ * Automake
+ * Libtool
  * OpenSSL development package or libgcrypt development package.
  * Airmon-ng (Linux) requires ethtool.
  * On windows, cygwin has to be used and it also requires w32api package.
@@ -19,113 +24,207 @@
           Then compile with: gmake CC=gcc5 CXX=g++5
  * rfkill
 
+=== Resolving the basic requirements ===
+
+Below are instructions for installing the basic requirements to build
+`aircrack-ng` for a number of operating systems.
+
+==== Cygwin (Windows) ====
+
+Cygwin requires the full path to the `setup.exe` utility, in order to
+automate the installation of the necessary packages. In addition, it
+requires the location of your installation, a path to the cached
+packages download location, and a mirror URL.
+
+An example of automatically installing all the required dependencies
+is as follows:
+
+    `c:\cygwin\setup-x86.exe -qnNdO -R C:/cygwin -s http://cygwin.mirror.constant.com -l C:/cygwin/var/cache/setup -P autoconf -P automake -P bison -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P pkg-config -P git -P wget -P curl -P libpcre-devel -P openssl-devel -P libsqlite3-devel`
+
+==== Debian/Ubuntu ====
+
+    `sudo apt install build-essential autoconf automake libtool pkg-config libnl-3-dev libssl-dev libpcre3-dev`
+
+==== FreeBSD using PKG ====
+
+    `pkg install autoconf automake libtool pkgconf sqlite3 git python3`
+
+==== MSYS2 (Windows) ====
+
+    `pacman -Sy autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel gcc binutils make pcre-devel libsqlite-devel`
+
 === Compiling ===
 
+To build `aircrack-ng`, the Autotools build system is utilized. Autotools replaces
+the older method of compilation.
+
+NOTE: If utilizing a developer version, eg: one checked out from source control,
+you will need to run a pre-`configure` script. The script to use is one of the
+following: `autoreconf -i` or `env NOCONFIGURE=1 ./autogen.sh`.
+
+First, `./configure` the project for building with the appropriate options specified
+for your environment:
+
+    `./configure <options>`
+
+TIP: If the above fails, please see above about developer source control versions.
+
+Next, compile the project (respecting if `make` or `gmake` is needed):
+
  * Compilation:
-    make
+
+    `make`
 
  * Compilation on *BSD or Solaris:
-    gmake
+
+    `gmake`
+
+Finally, the additional targets listed below may be of use in your environment:
+
+ * Execute all unit testing:
+
+    `make check`
 
  * Strip debugging symbols:
-    make strip
+
+    `make strip`
 
  * Installing:
-    make install
+
+    `make install`
 
  * Uninstall:
-    make uninstall
 
-==== Makefile flags ====
+    `make uninstall`
 
-When compile and installing, the following flags can be used and combined
-to compile and install the suite (by setting them to true):
 
-* sqlite:   Compile airolib-ng and add support for airolib-ng databases
-            in aircrack-ng:
-            - Debian based distro: libsqlite3-dev
-            - FreeBSD: sqlite3
+====  `./configure` flags ====
 
-* airpcap:  needed for supporting airpcap devices on windows (cygwin only)
-            REQUIREMENT: Copy 'developers' directory from Airpcap CD one 
-                         level below this INSTALLING file
-            Note: Not working yet.
+When configuring, the following flags can be used and combined to adjust the suite
+to your choosing:
 
-* experimental: needed to compile tkiptun-ng, easside-ng (and buddy-ng),
-                wesside-ng and besside-ng.
-                Building besside-ng-crawler requires LibPCAP (development package).
-                On Debian based distributions: libpcap-dev
+* with-airpcap=DIR:  needed for supporting airpcap devices on windows (cygwin or msys2 only)
+                Replace DIR above with the absolute location to the root of the
+                extracted source code from the Airpcap CD or downloaded SDK available
+                online.
 
-* ext_scripts: needed to build airoscript-ng, versuck-ng, airgraph-ng and 
-            airdrop-ng. 
-            Note: Experimental. Each script has its own dependences.
-            Note: It's only required in install phase.
+* with-experimental: needed to compile `tkiptun-ng`, `easside-ng` (and `buddy-ng`) and
+                    `wesside-ng`. Building besside-ng-crawler requires LibPCAP 
+                    (development package). On debian based distro, install libpcap-dev
 
-* gcrypt:   Use libgcrypt crypto library instead of the default OpenSSL.
-            And also use internal fast sha1 implementation (borrowed from GIT)
-            Dependency (Debian): libgcrypt20-dev
+* with-ext-scripts: needed to build `airoscript-ng`, `versuck-ng`, `airgraph-ng` and 
+                   `airdrop-ng`. 
+                   Note: Experimental. Each script has its own dependences.
+                   Note: It's only required in install phase.
 
-* libnl:    Add support for netlink (nl80211). Linux only. Requires libnl1 OR libnl3.
-            Enabled by default. Dependencies (debian):
-		LibNL 1: libnl-dev 
-		LibNL 3: libnl-3-dev and libnl-genl-3-dev.
+* with-gcrypt:   Use libgcrypt crypto library instead of the default OpenSSL.
+                And also use internal fast sha1 implementation (borrowed from GIT)
+                Dependency (Debian): libgcrypt20-dev
 
-* pcre:	    Add support for regular expression matching for ESSID in airodump-ng and besside-ng.
-            Dependencies:
-            - Debian based distro: libpcre3-dev
-            - FreeBSD: pcre
+* with-duma:	Compile with DUMA support. DUMA is a library to detect buffer overruns and under-runs.
+            	Dependencies (debian): duma
 
-* duma:     Compile with DUMA support. DUMA is a library to detect buffer overruns and under-runs.
-            Dependencies (debian): duma
+* with-xcode:    Set this flag to true to compile on OS X with Xcode 7+.
 
-* xcode:    Set this flag to true to compile on OS X with Xcode 7+.
+===== Examples =====
 
-* macport:  Set this flag to true to compile on OS X with macports.
+  * Configure and compiling:
 
-* stackprotector: Allows to enable/disable auto-detection of stack-protector support in gcc
+    `./configure --with-experimental`
+    `make`
 
-Example:
+  * Compiling wth gcrypt:
 
-  * Compiling:
-    make sqlite=true experimental=true pcre=true
-
-  * Compiling with gcrypt
-    make gcrypt=true
+    `./configure --with-gcrypt`
+    `make`
 
   * Installing:
-    make sqlite=true pcre=true experimental=true install
+
+    `make install`
 
   * Installing, with external scripts:
-    make sqlite=true pcre=true experimental=true ext_scripts=true
+
+    `./configure --with-experimental --with-ext-scripts`
+    `make`
+    `make install`
 
   * Testing (with sqlite, experimental and pcre)
-    make sqlite=true experimental=true pcre=true check
+
+    `./configure --with-experimental`
+    `make`
+    `make check`
 
   * Compiling on OS X with macports (and all options):
-    gmake macport=true sqlite=true experimental=true pcre=true
+
+    `./configure --with-experimental`
+    `gmake`
+
+  * Compiling on OS X 10.10 with XCode 7.1 and Homebrew:
+
+    `env CC=gcc-4.9 CXX=g++-4.9 ./configure`
+    `make`
+    `make check`
+
+    *NOTE*: Older XCode ships with a version of LLVM that does not support CPU feature
+    detection; which causes the `./configure` to fail. To work around this older LLVM,
+    it is required that a different compile suite is used, such as GCC or a newer LLVM
+    from Homebrew.
+
+    If you wish to use OpenSSL from Homebrew, you may need to specify the location
+    to its' installation. To figure out where OpenSSL lives, run:
+
+    `brew --prefix openssl`
+
+    Use the output above as the DIR for `--with-openssl=DIR` in the `./configure` line:
+
+    `env CC=gcc-4.9 CXX=g++-4.9 ./configure --with-openssl=DIR`
+    `make`
+    `make check`
 
   * Compiling on FreeBSD with better performance
-    gmake CC=gcc5 CXX=g++5
 
-=== Packaging ===
+    `env CC=gcc5 CXX=g++5 ./configure`
+    `gmake`
 
-Automatic detection of CPU optimization is done at compile time. This behavior
-is not desirable when packaging Aircrack-ng (for a Linux distribution).
+== Packaging ==
 
-It can be overridden by creating common.cfg in the same directory as this file
-with the following settings when compiling on x86 (32 or 64 bit):
-NEWSSE=false
-SIMDCORE=false
-PTHREAD=Y
+Automatic detection of CPU optimization is done at run time. This behavior
+**is** desirable when packaging Aircrack-ng (for a Linux or other distribution.)
 
-=== Using precompiled binaries ===
+Also, in some cases it may be desired to provide your own flags completely and
+not having the suite auto-detect a number of optimizations. To do this, add
+the additional flag `--without-opt` to the `./configure` line:
 
-Linux/BSD:
- * Use your package manager to download aircrack-ng
- * In most cases, they have an old version.
- 
-Windows:
+`./configure --without-opt`
+
+== Run-time location of SIMD binaries ==
+
+Typically, the full path that is compiled in to the `aircrack-ng` binary is
+`/usr/libexec/aircrack-ng`. However, during development and/or packaging, it
+may be of use to specify a path that is dynamic in nature.
+
+The environment variable `AIRCRACK_LIBEXEC_PATH` may be used to specify the
+location of the SIMD-optimized binaries. An example of such use is as
+follows:
+
+`env AIRCRACK_LIBEXEC_PATH=/home/user/dev/aircrack-ng/src ./src/aircrack-ng`
+
+== Using precompiled binaries ==
+
+=== Linux/BSD ===
+
+* Use your package manager to download aircrack-ng
+* In most cases, they have an old version.
+
+=== Windows ===
+
  * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data).
  * aircrack-ng suite is command line tools. So, you have to open a commandline
-   (Start menu -> Run... -> cmd.exe) then use them
+   `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
+
+== Documentation ==
+
+Documentation, tutorials, ... can be found on https://www.aircrack-ng.org
+
+See also manpages and the forum.
