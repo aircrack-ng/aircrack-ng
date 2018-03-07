@@ -2074,7 +2074,7 @@ static void linux_close(struct wif *wi)
 {
 	struct priv_linux *pl = wi_priv(wi);
 
-	if (pl->fd_in && pl->fd_out && pl->fd_in == pl_fd_out) {
+	if (pl->fd_in && pl->fd_out && pl->fd_in == pl->fd_out) {
 		// Only close one if both are the same
 		close(pl->fd_in);
 	} else {
