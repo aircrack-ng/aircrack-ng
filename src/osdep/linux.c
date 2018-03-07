@@ -1634,7 +1634,8 @@ static int do_linux_open(struct wif *wi, char *iface)
     DIR *net_ifaces;
     struct dirent *this_iface;
     FILE *acpi;
-    char r_file[128], buf[128];
+	char buf[128];
+    char * r_file = NULL;
     struct ifreq ifr;
     char * unused_str;
     int iface_malloced = 0;
@@ -1896,8 +1897,13 @@ static int do_linux_open(struct wif *wi, char *iface)
 
     if( dev->drivertype == DT_IPW2200 )
     {
-        snprintf(r_file, sizeof(r_file),
+        r_file = (char *)calloc(33 + strlen(iface) + 1, sizeof(char));
+        if (!r_file) {
+            goto close_out;
+        }
+        snprintf(r_file, 33 + strlen(iface) + 1,
             "/sys/class/net/%s/device/rtap_iface", iface);
+
         if ((acpi = fopen(r_file, "r")) == NULL)
             goto close_out;
         memset(buf, 0, 128);
@@ -1952,8 +1958,14 @@ static int do_linux_open(struct wif *wi, char *iface)
                 if (this_iface->d_name[0] == '.')
                     continue;
 
-                snprintf(r_file, sizeof(r_file),
+                char * new_r_file = (char *)realloc(r_file, (33 + strlen(this_iface->d_name) + 1) * sizeof(char));
+                if (!r_file) {
+                    continue;
+                }
+                r_file = new_r_file;
+                snprintf(r_file, 33 + strlen(this_iface->d_name) + 1,
                     "/sys/class/net/%s/device/rtap_iface", this_iface->d_name);
+
                 if ((acpi = fopen(r_file, "r")) == NULL)
                     continue;
                 if (acpi != NULL)
@@ -2036,6 +2048,9 @@ static int do_linux_open(struct wif *wi, char *iface)
     return 0;
 close_out:
     close(dev->fd_out);
+	if (r_file) {
+		free(r_file);
+	}
 close_in:
     close(dev->fd_in);
     if(iface_malloced) free(iface);
@@ -2291,8 +2306,8 @@ int get_battery_state(void)
         DIR *batteries, *ac_adapters;
         struct dirent *this_battery, *this_adapter;
         FILE *acpi, *info;
-        char battery_state[128];
-        char battery_info[128];
+        char battery_state[28 + sizeof (this_adapter->d_name) + 1];
+        char battery_info[24 + sizeof (this_battery->d_name) + 1];
         int rate = 1, remain = 0, current = 0;
         static int total_remain = 0, total_cap = 0;
         int batno = 0;
