@@ -240,7 +240,7 @@ struct WEP_data
 	int fudge[64];				 /* bruteforce level (1 to 256)  */
 	int depth[64];				 /* how deep we are in the fudge */
 	vote poll[64][256];			 /* KoreK cryptanalysis results  */
-} wep;
+} wep __attribute__((aligned(64)));
 
 struct AP_info
 {
