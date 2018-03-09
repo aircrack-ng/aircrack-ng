@@ -73,10 +73,13 @@
 #include "linecount.h"
 #include "wpapsk.h"
 #include "hashcat.h"
+#include "cowpatty.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
 sqlite3 *db;
+#else
+char * db;
 #endif
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
@@ -5146,7 +5149,8 @@ int main( int argc, char *argv[] )
 		opt.nbcpu = cpu_count;
 	}
 
-	j=0;
+	db = NULL;
+	j = 0;
 	/* check the arguments */
 
 	opt.nbdict		= 0;
@@ -6136,12 +6140,9 @@ __start:
 	{
 		crack_wpa:
 
-#ifdef HAVE_SQLITE
-		if (opt.dict == NULL && db == NULL) goto nodict;
-#else
-		if ( opt.dict == NULL )
+		if (opt.dict == NULL && db == NULL) {
 			goto nodict;
-#endif
+		}
 
 		ap_cur = ap_1st;
 
@@ -6170,9 +6171,7 @@ __start:
 			memset(  ap_cur->essid, 0, sizeof( ap_cur->essid ) );
 			strncpy( ap_cur->essid, opt.essid, sizeof( ap_cur->essid ) - 1 );
 		}
-#ifdef HAVE_SQLITE
 		if (db == NULL) {
-#endif
 
 			for( i = 0; i < opt.nbcpu; i++ )
 			{
@@ -6268,8 +6267,9 @@ __start:
 
 			printf("\n");
 
-#ifdef HAVE_SQLITE
-		} else {
+		}
+	#ifdef HAVE_SQLITE
+		else {
 			if( ! opt.is_quiet && !_speed_test) {
 				if( opt.l33t )
 					printf( "\33[37;40m" );
