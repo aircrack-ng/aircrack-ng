@@ -97,6 +97,11 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * 
 
 		// Copy SSID
 		memcpy(ret->ssid, filehead.ssid, sizeof(filehead.ssid));
+		if (filehead.ssidlen > 32 || filehead.ssidlen == 0) {
+			snprintf(ret->error, sizeof(ret->error), "Advertised SSID length is %u (Max length: 32)", filehead.ssidlen);
+			fclose(ret->fp);
+			ret->fp = NULL;
+		}
 	} else {
 		// Write not supported yet
 		strcpy(ret->error, "Write and other modes not supported yet");
