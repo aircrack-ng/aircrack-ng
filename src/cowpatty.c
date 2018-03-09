@@ -86,13 +86,13 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * 
 			strcpy(ret->error, "Header magic doesn't match");
 			fclose(ret->fp);
 			ret->fp = NULL;
-			return NULL;
+			return ret;
 		}
 		if (filehead.ssid[0] == 0) {
 			strcpy(ret->error, "SSID is NULL");
 			fclose(ret->fp);
 			ret->fp = NULL;
-			return NULL;
+			return ret;
 		}
 
 		// Copy SSID
@@ -105,7 +105,6 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * 
 	} else {
 		// Write not supported yet
 		strcpy(ret->error, "Write and other modes not supported yet");
-		return NULL;
 	}
 
 	return ret;
