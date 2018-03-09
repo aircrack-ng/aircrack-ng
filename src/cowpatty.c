@@ -37,6 +37,16 @@
 #include <stdlib.h>
 #include "cowpatty.h"
 
+void close_free_cowpatty_hashdb(struct cowpatty_file * cf)
+{
+	if (cf != NULL) {
+		if (cf->fp) {
+			fclose(cf->fp);
+		}
+		free(cf);
+	}
+}
+
 struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * mode)
 {
 	struct hashdb_head filehead;

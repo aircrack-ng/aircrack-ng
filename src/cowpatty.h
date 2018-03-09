@@ -59,6 +59,7 @@ struct cowpatty_file {
 	char error[256 - sizeof(FILE *) - 33];
 };
 
+void close_free_cowpatty_hashdb(struct cowpatty_file * cf);
 struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * mode);
 struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf);
 
