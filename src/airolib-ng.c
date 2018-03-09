@@ -586,9 +586,6 @@ int import_cowpatty(sqlite3* db, char* filename) {
 
 	// Finalize
 	sqlite3_finalize(stmt);
-	if (hashdb->fp) {
-		fclose(hashdb->fp);
-	}
 	if (rec) {
 		free(rec->word);
 		free(rec);
@@ -598,10 +595,10 @@ int import_cowpatty(sqlite3* db, char* filename) {
 	if (hashdb->error[0]) {
 		printf("Error: %s, rolling back\n", hashdb->error);
 		sql_exec(db, "ROLLBACK;");
-		free(hashdb);
+		close_free_cowpatty_hashdb(hashdb);
 		return 1;
 	}
-	free(hashdb);
+	close_free_cowpatty_hashdb(hashdb);
 
 	printf("Updating references...\n");
 	sql_exec(db, "INSERT OR IGNORE INTO passwd (passwd) SELECT passwd FROM import;");
