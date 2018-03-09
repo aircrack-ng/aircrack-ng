@@ -88,7 +88,7 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * 
 			ret->fp = NULL;
 			return NULL;
 		}
-		if (filehead.ssid == NULL || filehead.ssid[0] == 0) {
+		if (filehead.ssid[0] == 0) {
 			strcpy(ret->error, "SSID is NULL");
 			fclose(ret->fp);
 			ret->fp = NULL;
