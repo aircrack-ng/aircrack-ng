@@ -45,7 +45,7 @@
 #include <getopt.h>
 
 
-#include "aircrack-ng.h"
+#include "cowpatty.h"
 #include "crypto.h"
 #ifdef HAVE_REGEXP
 #include <regex.h>
@@ -518,51 +518,35 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 
 // import a cowpatty file
 int import_cowpatty(sqlite3* db, char* filename) {
-	struct hashdb_head filehead;
-	struct hashdb_rec rec;
-	FILE *f = NULL;
-	int rc;
+	struct hashdb_rec * rec = NULL;
+	struct cowpatty_file * hashdb;
 	sqlite3_stmt *stmt;
 	char* sql;
 	int essid_id;
-	int wordlength;
-	char passwd[63+1];
 
-	if (strcmp(filename,"-") == 0) {
-		f = stdin;
-	} else {
-		f = fopen(filename, "r");
-	}
-	if (f == NULL || fread(&filehead, sizeof(filehead),1,f) != 1) {
-		printf("Couldn't open the import file for reading.\n");
-		if (f != NULL)
-			fclose(f);
+	hashdb = open_cowpatty_hashdb(filename, "r");
+	if (hashdb == NULL) {
+		printf("Failed opening file\n");
 		return 0;
-	} else if (filehead.magic != GENPMKMAGIC) {
-		printf("File doesn't seem to be a cowpatty file.\n");
-		fclose(f);
-		return 0;
-	} else if (verify_essid((char *)filehead.ssid) != 0) {
-		printf("The file's ESSID is invalid.\n");
-		fclose(f);
+	} else if (hashdb->error[0]) {
+		printf("Failed opening file: %s\n", hashdb->error);
 		return 0;
 	}
-
-	printf("Reading header...\n");
 
 	//We need protection so concurrent transactions can't smash the ID-references
 	sql_exec(db,"BEGIN;");
 
-	sql = sqlite3_mprintf("INSERT OR IGNORE INTO essid (essid) VALUES ('%q');",filehead.ssid);
+	sql = sqlite3_mprintf("INSERT OR IGNORE INTO essid (essid) VALUES ('%q');", hashdb->ssid);
 	sql_exec(db,sql);
 	sqlite3_free(sql);
 
 	//since there is only one essid per file, we can determine it's ID now
-	sql = sqlite3_mprintf("SELECT essid_id FROM essid WHERE essid = '%q'", filehead.ssid);
+	sql = sqlite3_mprintf("SELECT essid_id FROM essid WHERE essid = '%q'", hashdb->ssid);
 	essid_id = query_int(db,sql);
 	sqlite3_free(sql);
 	if (essid_id == 0) {
-		fclose(f);
+		fclose(hashdb->fp);
+		free(hashdb);
 		sql_exec(db,"ROLLBACK;");
 		printf("ESSID couldn't be inserted. I've given up.\n");
 		return 0;
@@ -574,50 +558,50 @@ int import_cowpatty(sqlite3* db, char* filename) {
 	sql_prepare(db,"INSERT INTO import (passwd,pmk) VALUES (@pw,@pmk)",&stmt,-1);
 
 	printf("Reading...\n");
-	while ((rc = fread(&rec.rec_size, sizeof(rec.rec_size), 1, f)) == 1) {
-		wordlength = rec.rec_size - (sizeof(rec.pmk) + sizeof(rec.rec_size));
-		//prevent out of bounds writing (sigsegv guaranteed) but don't skip the whole file if wordlength < 8
-		if (wordlength > 0 && wordlength < (int) sizeof(passwd)) {
-			passwd[wordlength] = 0;
-			rc += fread(passwd, wordlength, 1, f);
-			if (rc == 2) rc += fread(&rec.pmk, sizeof(rec.pmk), 1, f);
-		}
-		if (rc != 3) {
-			fprintf(stdout,"Error while reading record (%i).\n",rc);
-			sqlite3_finalize(stmt);
-			if (db == NULL) {
-				printf("omg");
-				fflush(stdout);
-			}
-			sql_exec(db, "ROLLBACK;");
-			fclose(f);
-			return 1;
-		}
-
-		if (verify_passwd(passwd) == 0) {
-			sqlite3_bind_text(stmt,1,passwd, strlen(passwd),SQLITE_TRANSIENT);
-			sqlite3_bind_blob(stmt,2,&rec.pmk, sizeof(rec.pmk),SQLITE_TRANSIENT);
+	
+	while ((rec = read_next_cowpatty_record(hashdb))) {
+		if (verify_passwd(rec->word) == 0) {
+			sqlite3_bind_text(stmt, 1, rec->word, strlen(rec->word), SQLITE_TRANSIENT);
+			sqlite3_bind_blob(stmt, 2, &rec->pmk, sizeof(rec->pmk), SQLITE_TRANSIENT);
 			if (sql_step(stmt,-1) == SQLITE_DONE) {
 				sqlite3_reset(stmt);
 			} else {
 				printf("Error while inserting record into database.\n");
 				sqlite3_finalize(stmt);
 				sql_exec(db, "ROLLBACK;");
-				fclose(f);
+				fclose(hashdb->fp);
+				free(hashdb);
+				free(rec->word);
+				free(rec);
 				return 1;
 			}
 		} else {
-			fprintf(stdout,"Invalid password %s will not be imported.\n",passwd);
+			fprintf(stdout,"Invalid password %s will not be imported.\n",rec->word);
+		}
+		if (rec) {
+			free(rec->word);
+			free(rec);
 		}
 	}
-	sqlite3_finalize(stmt);
 
-	if (!feof(f)) {
-		printf("Error while reading file.\n");
-		sql_exec(db,"ROLLBACK;");
-		fclose(f);
+	// Finalize
+	sqlite3_finalize(stmt);
+	if (hashdb->fp) {
+		fclose(hashdb->fp);
+	}
+	if (rec) {
+		free(rec->word);
+		free(rec);
+	}
+
+	// Rollback if any error happened.
+	if (hashdb->error[0]) {
+		printf("Error: %s, rolling back\n", hashdb->error);
+		sql_exec(db, "ROLLBACK;");
+		free(hashdb);
 		return 1;
 	}
+	free(hashdb);
 
 	printf("Updating references...\n");
 	sql_exec(db, "INSERT OR IGNORE INTO passwd (passwd) SELECT passwd FROM import;");
@@ -630,7 +614,6 @@ int import_cowpatty(sqlite3* db, char* filename) {
 
 	sql_exec(db,"COMMIT;");
 
-	fclose(f);
 	return 1;
 }
 

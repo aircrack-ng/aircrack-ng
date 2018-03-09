@@ -68,6 +68,10 @@ SRC_WS		= wesside-ng.c
 SRC_BS		= besside-ng.c
 SRC_BC		= besside-ng-crawler.c
 SRC_AL		= airolib-ng.c
+
+LIBCOW_LIBS	= libcow.la
+SRC_COW		= cowpatty.c
+
 SRC_ES		= easside-ng.c
 SRC_BUDDY	= buddy-ng.c
 SRC_MI		= makeivs-ng.c
@@ -286,9 +290,9 @@ makeivs_ng_SOURCES = $(SRC_MI)
 makeivs_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
 makeivs_ng_LDADD = $(PTHREAD_LIBS) $(LIBAC_LIBS)
 
-airolib_ng_SOURCES = $(SRC_AL)
+airolib_ng_SOURCES = $(SRC_AL) $(LIBCOW)
 airolib_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
-airolib_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(SQLITE3_LDFLAGS) $(LIBAC_LIBS)
+airolib_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(SQLITE3_LDFLAGS) $(LIBAC_LIBS) $(LIBCOW_LIBS)
 
 airbase_ng_SOURCES = $(SRC_AB) $(LIBOSD)
 airbase_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
@@ -318,11 +322,15 @@ libmcs_la_SOURCES = $(SRC_MCS)
 libmcs_la_CFLAGS = $(LIBMCS_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
 libmcs_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS)
 
+libcow_la_SOURCES = $(SRC_COW)
+libcow_la_CFLAGS = $(LIBCOW_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
+libcow_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS)
+
 libptw_la_SOURCES = $(SRC_PTW)
 libptw_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
 libptw_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS)
 
-noinst_LTLIBRARIES = libaclib.la libptw.la libmcs.la
+noinst_LTLIBRARIES = libaclib.la libptw.la libmcs.la libcow.la
 
 EXTRA_DIST = wpaclean.c \
              buddy-ng.c \
@@ -391,7 +399,9 @@ EXTRA_DIST = wpaclean.c \
              trampoline.h \
              trampoline_x86.c \
              mcs_index_rates.c \
-             mcs_index_rates.h
+             mcs_index_rates.h \
+             cowpatty.c \
+             cowpatty.h 
 
 
 @CODE_COVERAGE_RULES@

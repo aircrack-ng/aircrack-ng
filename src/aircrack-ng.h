@@ -73,20 +73,6 @@
 
 #define CLOSE_IT	100000
 
-#define GENPMKMAGIC 0x43575041
-struct hashdb_head {
-	uint32_t magic;
-	uint8_t reserved1[3];
-	uint8_t ssidlen;
-	uint8_t ssid[32];
-};
-
-struct hashdb_rec {
-	uint8_t rec_size;
-	char *word;
-	uint8_t pmk[32];
-} __attribute__ ((packed));
-
 struct _cpuinfo {
 	int simdsize;				/* SIMD size		*/
 	char *flags;				/* Feature Flags	*/
