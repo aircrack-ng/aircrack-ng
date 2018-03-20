@@ -1959,7 +1959,7 @@ static int do_linux_open(struct wif *wi, char *iface)
                     continue;
 
                 char * new_r_file = (char *)realloc(r_file, (33 + strlen(this_iface->d_name) + 1) * sizeof(char));
-                if (!r_file) {
+                if (!new_r_file) {
                     continue;
                 }
                 r_file = new_r_file;
