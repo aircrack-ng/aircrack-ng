@@ -88,11 +88,20 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 	pmk1=pmks; pmk2=pmks+128; pmk3=pmks+128*2; pmk4=pmks+128*3;
 
 
-	strncpy(essid, _essid, 35);
-	strncpy(key1, _key1, 127);
-	strncpy(key2, _key2, 127);
-	strncpy(key3, _key3, 127);
-	strncpy(key4, _key4, 127);
+	memset(key1, 0, sizeof(key1));
+	memset(key2, 0, sizeof(key2));
+	memset(key3, 0, sizeof(key3));
+	memset(key4, 0, sizeof(key4));
+	memset(essid, 0, sizeof(essid));
+	memset(pmks, 0, sizeof(pmks));
+	memset(buffer, 0, sizeof(buffer));
+	memset(wrkbuf, 0, sizeof(wrkbuf));
+
+	strncpy(essid, _essid, sizeof(essid));
+	strncpy(key1, _key1, sizeof(key1));
+	strncpy(key2, _key2, sizeof(key2));
+	strncpy(key3, _key3, sizeof(key3));
+	strncpy(key4, _key4, sizeof(key4));
 
     slen = strlen( essid ) + 4;
 
