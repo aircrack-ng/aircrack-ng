@@ -43,7 +43,7 @@ is as follows:
 
 ==== Debian/Ubuntu ====
 
-    `sudo apt install build-essential autoconf automake libtool pkg-config libnl-3-dev libssl-dev libpcre3-dev`
+    `sudo apt install build-essential autoconf automake libtool pkg-config libnl-3-dev libssl-dev libpcre3-dev ethtool shtool`
 
 ==== FreeBSD using PKG ====
 
