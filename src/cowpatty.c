@@ -58,7 +58,7 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * 
 	memset(ret->error, 0, sizeof(ret->error));
 	ret->fp = NULL;
 
-	if (filename == NULL) {
+	if (filename == NULL || filename[0] == 0) {
 		strcpy(ret->error, "No filename specified");
 		return ret;
 	}
