@@ -455,6 +455,7 @@ static int do_net_open(char *iface)
 	if (port == -1)
 		return -1;
 
+	memset(&s_in, 0, sizeof(struct sockaddr_in));
 	s_in.sin_family = PF_INET;
 	s_in.sin_port = htons(port);
 	if (!inet_aton(ip, &s_in.sin_addr))
