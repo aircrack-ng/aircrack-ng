@@ -4024,8 +4024,8 @@ int crack_wpa_thread( void *arg )
 {
 	FILE * keyFile;
 	char  essid[36];
-	char  key[8][128];
-	unsigned char pmk[8][128];
+	char  key[8][MAX_THREADS];
+	unsigned char pmk[8][MAX_THREADS];
 
 	unsigned char pke[100];
 	unsigned char ptk[8][80];

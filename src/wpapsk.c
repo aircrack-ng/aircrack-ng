@@ -126,18 +126,18 @@
 char itoa64[64] = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 char atoi64[0x100];
 
-wpapsk_password *wpapass[128]	= { 0 };
-unsigned char *xpmk1[128]	= { NULL };
-unsigned char *xpmk2[128]	= { NULL };
-unsigned char *xpmk3[128]	= { NULL };
-unsigned char *xpmk4[128]	= { NULL };
-unsigned char *xpmk5[128]	= { NULL };
-unsigned char *xpmk6[128]	= { NULL };
-unsigned char *xpmk7[128]	= { NULL };
-unsigned char *xpmk8[128]	= { NULL };
-unsigned char *xsse_hash1[128]	= { NULL };
-unsigned char *xsse_crypt1[128] = { NULL };
-unsigned char *xsse_crypt2[128] = { NULL };
+wpapsk_password *wpapass[MAX_THREADS]	= { 0 };
+unsigned char *xpmk1[MAX_THREADS]	= { NULL };
+unsigned char *xpmk2[MAX_THREADS]	= { NULL };
+unsigned char *xpmk3[MAX_THREADS]	= { NULL };
+unsigned char *xpmk4[MAX_THREADS]	= { NULL };
+unsigned char *xpmk5[MAX_THREADS]	= { NULL };
+unsigned char *xpmk6[MAX_THREADS]	= { NULL };
+unsigned char *xpmk7[MAX_THREADS]	= { NULL };
+unsigned char *xpmk8[MAX_THREADS]	= { NULL };
+unsigned char *xsse_hash1[MAX_THREADS]	= { NULL };
+unsigned char *xsse_crypt1[MAX_THREADS] = { NULL };
+unsigned char *xsse_crypt2[MAX_THREADS] = { NULL };
 
 /* for endianity conversion */
 #ifdef SIMD_CORE
@@ -486,7 +486,7 @@ void init_atoi() {
 
 //#define XDEBUG 1
 //#define ODEBUG 1
-int init_wpapsk(char (*key)[128], char *essid, int threadid) {
+int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int threadid) {
 #ifdef ODEBUG
 	int prloop = 0;
 #endif

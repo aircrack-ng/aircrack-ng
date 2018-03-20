@@ -61,18 +61,19 @@
 #include "arch.h"
 #include "jcommon.h"
 #include "johnswap.h"
+#include "aircrack-ng.h"
 
-extern unsigned char *xpmk1[128];
-extern unsigned char *xpmk2[128];
-extern unsigned char *xpmk3[128];
-extern unsigned char *xpmk4[128];
-extern unsigned char *xpmk5[128];
-extern unsigned char *xpmk6[128];
-extern unsigned char *xpmk7[128];
-extern unsigned char *xpmk8[128];
-extern unsigned char *xsse_hash1[128];
-extern unsigned char *xsse_crypt1[128];
-extern unsigned char *xsse_crypt2[128];
+extern unsigned char *xpmk1[MAX_THREADS];
+extern unsigned char *xpmk2[MAX_THREADS];
+extern unsigned char *xpmk3[MAX_THREADS];
+extern unsigned char *xpmk4[MAX_THREADS];
+extern unsigned char *xpmk5[MAX_THREADS];
+extern unsigned char *xpmk6[MAX_THREADS];
+extern unsigned char *xpmk7[MAX_THREADS];
+extern unsigned char *xpmk8[MAX_THREADS];
+extern unsigned char *xsse_hash1[MAX_THREADS];
+extern unsigned char *xsse_crypt1[MAX_THREADS];
+extern unsigned char *xsse_crypt2[MAX_THREADS];
 
 #define PLAINTEXT_LENGTH	63 /* We can do 64 but spec. says 63 */
 
@@ -80,7 +81,7 @@ int threadxnt;
 void init_atoi();
 void init_ssecore(int);
 void free_ssecore(int);
-int init_wpapsk(char (*key)[128], char *essid, int threadid);
+int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int threadid);
 
 struct wpapsk_password {
 	uint32_t length;
@@ -92,7 +93,7 @@ typedef struct {
 	uint8_t  v[PLAINTEXT_LENGTH + 1];
 } wpapsk_password;
 
-extern wpapsk_password *wpapass[128];
+extern wpapsk_password *wpapass[MAX_THREADS];
 
 int count;
 
