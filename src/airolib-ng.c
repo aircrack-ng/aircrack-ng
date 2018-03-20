@@ -477,6 +477,11 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	memset(&filehead, 0, sizeof(filehead));
 	FILE *f = NULL;
 
+	if (essid == NULL || strlen(essid) == 0 || strlen(essid) > sizeof(filehead.ssid)) {
+		printf("Invalid SSID (NULL or > %lu chars).\n", sizeof(filehead.ssid));
+		return;
+	}
+
 	if (access(filename, F_OK)==0) {
 		printf("The file already exists and I won't overwrite it.\n");
 		return;
