@@ -1065,7 +1065,6 @@ int deauth_station( struct WPA_ST_info *st_cur )
             // to capturing packets to get the EAPOL 4 way handshake
         }
         return (0);
-        printf("\n");
     }
 
     return( 0 );
