@@ -535,6 +535,7 @@ int import_cowpatty(sqlite3* db, char* filename) {
 		return 0;
 	} else if (hashdb->error[0]) {
 		printf("Failed opening file: %s\n", hashdb->error);
+		close_free_cowpatty_hashdb(hashdb);
 		return 0;
 	}
 
