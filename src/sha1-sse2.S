@@ -295,23 +295,23 @@ const_00ff:
 _shasse2_init:
 
         INIT_PIC()
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
+#if !defined(__APPLE__) && !defined(__CYGWIN__)
         PRELOAD(const_init_a)
 #endif
         movdqa   MANGLE(const_init_a), ctxa
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
+#if !defined(__APPLE__) && !defined(__CYGWIN__)
         PRELOAD(const_init_b)
 #endif
         movdqa   MANGLE(const_init_b), ctxb
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
+#if !defined(__APPLE__) && !defined(__CYGWIN__)
         PRELOAD(const_init_c)
 #endif
         movdqa   MANGLE(const_init_c), ctxc
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
+#if !defined(__APPLE__) && !defined(__CYGWIN__)
         PRELOAD(const_init_d)
 #endif
         movdqa   MANGLE(const_init_d), ctxd
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
+#if !defined(__APPLE__) && !defined(__CYGWIN__)
         PRELOAD(const_init_e)
 #endif
         movdqa   MANGLE(const_init_e), ctxe
@@ -338,7 +338,7 @@ _shasse2_ends:
         movdqa   48(eax_rdi), ctxd
         movdqa   64(eax_rdi), ctxe
 
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
+#if !defined(__APPLE__) && !defined(__CYGWIN__)
         PRELOAD(const_ff00)
 #endif
         movdqa   MANGLE(const_ff00), tmp3
@@ -346,7 +346,7 @@ _shasse2_ends:
         movdqa   ctxb, tmp2
         pand   tmp3, ctxa
         pand   tmp3, ctxb
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
+#if !defined(__APPLE__) && !defined(__CYGWIN__)
         PRELOAD(const_00ff)
 #endif
         movdqa   MANGLE(const_00ff), tmp3
@@ -369,7 +369,7 @@ _shasse2_ends:
         movdqa   ctxa,  0(edx_rsi)
         movdqa   ctxb,  16(edx_rsi)
 
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
+#if !defined(__APPLE__) && !defined(__CYGWIN__)
         PRELOAD(const_ff00)
 #endif
         movdqa   MANGLE(const_ff00), tmp5
@@ -379,7 +379,7 @@ _shasse2_ends:
         pand   tmp5, ctxc
         pand   tmp5, ctxd
         pand   tmp5, ctxe
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
+#if !defined(__APPLE__) && !defined(__CYGWIN__)
         PRELOAD(const_00ff)
 #endif
         movdqa   MANGLE(const_00ff), tmp5
