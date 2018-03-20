@@ -60,7 +60,7 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * 
 
 	if (filename == NULL) {
 		strcpy(ret->error, "No filename specified");
-		return NULL;
+		return ret;
 	}
 
 	if (mode == NULL || strncmp(mode, "r", 1) == 0) {
