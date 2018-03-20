@@ -551,8 +551,7 @@ int import_cowpatty(sqlite3* db, char* filename) {
 	essid_id = query_int(db,sql);
 	sqlite3_free(sql);
 	if (essid_id == 0) {
-		fclose(hashdb->fp);
-		free(hashdb);
+		close_free_cowpatty_hashdb(hashdb);
 		sql_exec(db,"ROLLBACK;");
 		printf("ESSID couldn't be inserted. I've given up.\n");
 		return 0;
@@ -575,8 +574,7 @@ int import_cowpatty(sqlite3* db, char* filename) {
 				printf("Error while inserting record into database.\n");
 				sqlite3_finalize(stmt);
 				sql_exec(db, "ROLLBACK;");
-				fclose(hashdb->fp);
-				free(hashdb);
+				close_free_cowpatty_hashdb(hashdb);
 				free(rec->word);
 				free(rec);
 				return 1;
