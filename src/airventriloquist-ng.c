@@ -846,6 +846,7 @@ int tcp_test(const char* ip_str, const short port)
     if( fcntl( sock, F_SETFL, O_NONBLOCK ) < 0 )
     {
         perror( "fcntl(O_NONBLOCK) failed" );
+        close(sock);
         return( 1 );
     }
 
@@ -893,6 +894,7 @@ int tcp_test(const char* ip_str, const short port)
     if (send(sock, &nh, sizeof(nh), 0) != sizeof(nh))
     {
         perror("send");
+        close(sock);
         return -1;
     }
 
@@ -908,6 +910,7 @@ int tcp_test(const char* ip_str, const short port)
             if( errno != EAGAIN )
             {
                 perror("read");
+                close(sock);
                 return -1;
             }
         }
@@ -965,6 +968,7 @@ int tcp_test(const char* ip_str, const short port)
         if( fcntl( sock, F_SETFL, O_NONBLOCK ) < 0 )
         {
             perror( "fcntl(O_NONBLOCK) failed" );
+            close(sock);
             return( 1 );
         }
 
