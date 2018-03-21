@@ -118,9 +118,13 @@ case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
 esac
 
 AS_IF([test "x$gcc_over45" = "xyes"], [
-    AX_CHECK_COMPILE_FLAG([-Wno-unused-but-set-variable], [
-        AX_APPEND_FLAG(-Wno-unused-but-set-variable, [opt_[]_AC_LANG_ABBREV[]flags])
-    ])
+    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        gnu|intel)
+            AX_CHECK_COMPILE_FLAG([-Wno-unused-but-set-variable], [
+                AX_APPEND_FLAG(-Wno-unused-but-set-variable, [opt_[]_AC_LANG_ABBREV[]flags])
+            ])
+            ;;
+    esac
     AX_CHECK_COMPILE_FLAG([-Wno-array-bounds], [
         AX_APPEND_FLAG(-Wno-array-bounds, [opt_[]_AC_LANG_ABBREV[]flags])
     ])
