@@ -820,6 +820,7 @@ int main( int argc, char *argv[] )
     if( fread( &pfh, 1, n, f_in ) != (size_t) n )
     {
         perror( "fread(pcap file header) failed" );
+        fclose( f_in );
         return( 1 );
     }
 
@@ -828,6 +829,7 @@ int main( int argc, char *argv[] )
     {
         printf( "\"%s\" isn't a pcap file (expected "
                 "TCPDUMP_MAGIC).\n", argv[2] );
+        fclose( f_in );
         return( 1 );
     }
 
@@ -841,6 +843,7 @@ int main( int argc, char *argv[] )
     {
         printf( "\"%s\" isn't a regular 802.11 "
                 "(wireless) capture.\n", argv[2] );
+        fclose( f_in );
         return( 1 );
     }
 
@@ -851,6 +854,7 @@ int main( int argc, char *argv[] )
     if( ( G.f_ivs = fopen( argv[3], "wb+" ) ) == NULL )
     {
         perror( "fopen failed" );
+        fclose( f_in );
         return( 1 );
     }
 
