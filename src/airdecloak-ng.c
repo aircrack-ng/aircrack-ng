@@ -1142,6 +1142,7 @@ int CFC_filter_duplicate_iv() {
 char * status_format(int status) {
 	size_t len = 19;
 	char * ret = (char *) calloc(1, (len + 1) * sizeof(char));
+	char * rret;
 
 	switch (status) {
 		case VALID_FRAME_UNCLOAKED:
@@ -1161,8 +1162,8 @@ char * status_format(int status) {
 			break;
 	}
 
-	ret = (char *)realloc(ret, strlen(ret) +1);
-	return ret;
+	rret = (char *)realloc(ret, strlen(ret) +1);
+	return (rret) ? rret : ret;
 }
 
 int CFC_mark_all_frames_with_status_to(int original_status, int new_status) {

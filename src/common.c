@@ -197,7 +197,7 @@ int get_ram_size(void) {
 char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc)
 {
 	int len;
-	char * temp;
+	char * temp, *rtemp;
 	char * provis = calloc(1,20);
 	len = strlen(progname) + 200;
 	temp = (char *) calloc(1,len);
@@ -227,8 +227,8 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int
 	}
 
 	free(provis);
-	temp = realloc(temp, strlen(temp)+1);
-	return temp;
+	rtemp = realloc(temp, strlen(temp)+1);
+	return (rtemp) ? rtemp : temp;
 }
 
 // Return the number of cpu. If detection fails, it will return -1;

@@ -3967,7 +3967,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 char * format_text_for_csv( const unsigned char * input, int len)
 {
 	// Unix style encoding
-	char * ret;
+	char * ret, *rret;
 	int i, pos, contains_space_end;
 	const char * hex_table = "0123456789ABCDEF";
 
@@ -4024,9 +4024,9 @@ char * format_text_for_csv( const unsigned char * input, int len)
 
 	ret[pos++] = '\0';
 
-	ret = realloc(ret, pos);
+	rret = realloc(ret, pos);
 
-	return ret;
+	return (rret) ? rret : ret;
 }
 
 int dump_write_csv( void )
@@ -4293,7 +4293,7 @@ char * sanitize_xml(unsigned char * text, int length)
 #define MANUF_SIZE 128
 char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2) {
 	char oui[OUI_STR_SIZE + 1];
-	char *manuf;
+	char *manuf, *rmanuf;
 	//char *buffer_manuf;
 	char * manuf_str;
 	struct oui *ptr;
@@ -4364,9 +4364,10 @@ char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac
 		manuf[strlen(manuf)] = '\0';
 	}
 
-	manuf = (char *)realloc(manuf, (strlen(manuf) + 1) * sizeof(char));
+	// Going in a smaller buffer
+	rmanuf = (char *)realloc(manuf, (strlen(manuf) + 1) * sizeof(char));
 
-	return manuf;
+	return (rmanuf) ? rmanuf : manuf;
 }
 #undef OUI_STR_SIZE
 #undef MANUF_SIZE
