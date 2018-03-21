@@ -1286,6 +1286,7 @@ BOOLEAN write_packets() {
 		if (_output_cloaked_packets_file != NULL) {
 			fclose(_output_cloaked_packets_file);
 		}
+		fclose(invalid_status_file);
 		return false;
 	}
 
@@ -1293,6 +1294,7 @@ BOOLEAN write_packets() {
 	if (_output_cloaked_packets_file == NULL) {
 		printf("FATAL ERROR: Failed to open pcap for cloaked packets\n");
 		fclose(_output_clean_capture_file);
+		fclose(invalid_status_file);
 		return false;
 	}
 
