@@ -124,7 +124,6 @@ int merge( int argc, char *argv[] )
     unsigned char buffer[1024];
     FILE *f_in, *f_out;
     struct ivs2_filehdr fivs2;
-    struct ivs2_pkthdr ivs2;
 
     if( argc < 5 )
     {
@@ -196,7 +195,7 @@ int merge( int argc, char *argv[] )
         if( i == 2 )
         {
             unused = fwrite( buffer, 1, 4, f_out );
-            unused = fwrite( &ivs2, 1, sizeof(struct ivs2_filehdr), f_out );
+            unused = fwrite( &fivs2, 1, sizeof(struct ivs2_filehdr), f_out );
         }
 
         while( ( n = fread( buffer, 1, 1024, f_in ) ) > 0 )
