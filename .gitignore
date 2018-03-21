@@ -48,3 +48,4 @@ test/cryptounittest/test-encrypt-ccmp
 test/cryptounittest/test-encrypt-wep
 test/test-hex_string_to_array
 /build/m4/stubs/*
+!/build/m4/stubs/.gitkeep
