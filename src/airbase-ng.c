@@ -1680,6 +1680,7 @@ void print_packet ( unsigned char h80211[], int caplen )
 int set_IVidx(unsigned char* packet)
 {
     unsigned char ividx[4];
+    memset(ividx, 0, 4);
 
     if(packet == NULL) return 1;
 
