@@ -478,7 +478,7 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	FILE *f = NULL;
 
 	if (essid == NULL || strlen(essid) == 0 || strlen(essid) > sizeof(filehead.ssid)) {
-		printf("Invalid SSID (NULL or > %lu chars).\n", sizeof(filehead.ssid));
+		printf("Invalid SSID (NULL or > %zu chars).\n", sizeof(filehead.ssid));
 		return;
 	}
 
