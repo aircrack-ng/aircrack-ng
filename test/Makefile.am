@@ -50,6 +50,8 @@ AM_TESTS_ENVIRONMENT = \
 	  PATH=/usr/xpg4/bin:$$PATH; export PATH; \
 	fi;
 
+TESTS_ENVIRONMENT ?= $(AM_TESTS_ENVIRONMENT)
+
 LIBAC	= ../src/libaclib.la
 LIBAC_LIBS = -L../src -laclib
 
