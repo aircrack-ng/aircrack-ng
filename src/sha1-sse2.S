@@ -1,4 +1,4 @@
-
+// Cygwin, Apple, Clang, (C) 2018 Joseph Benden (joe@benden.us)
 // SHA-1 SSE2 implementation, (C) 2008 Alvaro Salmador (naplam33@msn.com), ported from Simon Marechal's SHA-1 MMX - License: GPLv2
 // SHA-1 MMX implementation, (C) 2005 Simon Marechal (simon@banquise.net) - License: Public Domain
 
@@ -20,7 +20,17 @@
 //  version. *  If you delete this exception statement from all source
 //  files in the program, then also delete it here.
 
-#if defined(__x86_64__) && (defined(__APPLE__) || defined(__CYGWIN__))
+#if defined(__x86_64__)
+#if defined(__APPLE__) || defined(__CYGWIN__)
+#define USE_PIC 1
+#else
+#undef USE_PIC
+#endif
+#else
+#undef USE_PIC
+#endif
+
+#if defined(USE_PIC)
 #define PRELOAD(x)
 #define MANGLE(x) x(%rip)
 #define INIT_PIC()
@@ -139,13 +149,13 @@ const_00ff:
 #define tmp5 ctxb
 
 #if defined(__x86_64__) && defined(__CYGWIN__)
- #define edx_rsi %rdx
- #define ecx_rdx %r8
- #define eax_rdi %rcx
+ #define edx_rsi %rdx     // arg2
+ #define ecx_rdx %r8      // arg3
+ #define eax_rdi %rcx     // arg1
 #elif defined(__x86_64__)
- #define edx_rsi %rsi
- #define ecx_rdx %rdx
- #define eax_rdi %rdi
+ #define edx_rsi %rsi     // arg2
+ #define ecx_rdx %rdx     // arg3
+ #define eax_rdi %rdi     // arg1
 #else
  #define edx_rsi %edx
  #define ecx_rdx %ecx
@@ -174,7 +184,7 @@ const_00ff:
         pand   z, tmp2; \
         por    tmp2, tmp1;
         
-#if defined(__x86_64__) && defined(__CYGWIN__)
+#if defined(__x86_64__) && (defined(__CYGWIN__) && !defined(__clang__))
 #define subRoundX(a, b, c, d, e, f, k, data)    \
         f(b,c,d);                               \
         movdqa   a, tmp2;                       \
@@ -235,7 +245,7 @@ const_00ff:
         paddd  tmp1, e;
 #endif
 
-#if defined(__x86_64__) && defined(__CYGWIN__)
+#if defined(__x86_64__) && (defined(__CYGWIN__) && !defined(__clang__))
 #define subRoundY(a, b, c, d, e, f, k, data)    \
 	movdqa ((data- 3)*16)(ecx_rdx), tmp1;   \
         pxor   ((data- 8)*16)(ecx_rdx), tmp1;   \
@@ -295,23 +305,23 @@ const_00ff:
 _shasse2_init:
 
         INIT_PIC()
-#if !defined(__APPLE__) && !defined(__CYGWIN__)
+#if defined(USE_PIC)
         PRELOAD(const_init_a)
 #endif
         movdqa   MANGLE(const_init_a), ctxa
-#if !defined(__APPLE__) && !defined(__CYGWIN__)
+#if defined(USE_PIC)
         PRELOAD(const_init_b)
 #endif
         movdqa   MANGLE(const_init_b), ctxb
-#if !defined(__APPLE__) && !defined(__CYGWIN__)
+#if defined(USE_PIC)
         PRELOAD(const_init_c)
 #endif
         movdqa   MANGLE(const_init_c), ctxc
-#if !defined(__APPLE__) && !defined(__CYGWIN__)
+#if defined(USE_PIC)
         PRELOAD(const_init_d)
 #endif
         movdqa   MANGLE(const_init_d), ctxd
-#if !defined(__APPLE__) && !defined(__CYGWIN__)
+#if defined(USE_PIC)
         PRELOAD(const_init_e)
 #endif
         movdqa   MANGLE(const_init_e), ctxe
@@ -338,7 +348,7 @@ _shasse2_ends:
         movdqa   48(eax_rdi), ctxd
         movdqa   64(eax_rdi), ctxe
 
-#if !defined(__APPLE__) && !defined(__CYGWIN__)
+#if defined(USE_PIC)
         PRELOAD(const_ff00)
 #endif
         movdqa   MANGLE(const_ff00), tmp3
@@ -346,7 +356,7 @@ _shasse2_ends:
         movdqa   ctxb, tmp2
         pand   tmp3, ctxa
         pand   tmp3, ctxb
-#if !defined(__APPLE__) && !defined(__CYGWIN__)
+#if defined(USE_PIC)
         PRELOAD(const_00ff)
 #endif
         movdqa   MANGLE(const_00ff), tmp3
@@ -369,7 +379,7 @@ _shasse2_ends:
         movdqa   ctxa,  0(edx_rsi)
         movdqa   ctxb,  16(edx_rsi)
 
-#if !defined(__APPLE__) && !defined(__CYGWIN__)
+#if defined(USE_PIC)
         PRELOAD(const_ff00)
 #endif
         movdqa   MANGLE(const_ff00), tmp5
@@ -379,7 +389,7 @@ _shasse2_ends:
         pand   tmp5, ctxc
         pand   tmp5, ctxd
         pand   tmp5, ctxe
-#if !defined(__APPLE__) && !defined(__CYGWIN__)
+#if defined(USE_PIC)
         PRELOAD(const_00ff)
 #endif
         movdqa   MANGLE(const_00ff), tmp5
