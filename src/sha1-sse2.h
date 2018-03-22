@@ -39,7 +39,7 @@
 #include "crypto.h"
 
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || ((defined(__x86_64__) && !defined(__CYGWIN__)) || (defined(__x86_64__) && defined(__CYGWIN__) && !defined(__clang__)))
 
 #ifdef OLD_SSE_CORE
 void show_result(char* key, unsigned char* pmk)
