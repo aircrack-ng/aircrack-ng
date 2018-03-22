@@ -61,6 +61,15 @@ AX_CXXFLAGS_WARN_ALL
 AX_APPEND_FLAG($CXXFLAGS, [opt_cxxflags])
 CXXFLAGS="$saved_cxxflags"
 
+case "$ax_cv_c_compiler_vendor" in
+    clang)
+        AX_APPEND_FLAG(-Wno-unused-command-line-argument, [opt_cppflags])
+        AX_APPEND_FLAG(-Wno-unused-command-line-argument, [opt_cflags])
+        AX_APPEND_FLAG(-Wno-unused-command-line-argument, [opt_cxxflags])
+        AX_APPEND_FLAG(-Wno-unused-command-line-argument, [opt_ldflags])
+        ;;
+esac
+
 AC_ARG_WITH(opt,
     [AS_HELP_STRING([--without-opt],
         [disable -O3 optimizations])])
