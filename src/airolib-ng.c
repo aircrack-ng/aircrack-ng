@@ -590,10 +590,6 @@ int import_cowpatty(sqlite3* db, char* filename) {
 
 	// Finalize
 	sqlite3_finalize(stmt);
-	if (rec) {
-		free(rec->word);
-		free(rec);
-	}
 
 	// Rollback if any error happened.
 	if (hashdb->error[0]) {
