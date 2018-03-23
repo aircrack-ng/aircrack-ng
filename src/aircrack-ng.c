@@ -4882,8 +4882,6 @@ int next_key( char **key, int keysize )
 
 			if( (*key)[i - 1] == '\n' ) (*key)[--i] = '\0';
 			if( (*key)[i - 1] == '\r' ) (*key)[--i] = '\0';
-
-			if( i <= 0 ) continue;
 		}
 
 		break;
