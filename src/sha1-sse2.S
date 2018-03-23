@@ -305,25 +305,15 @@ const_00ff:
 _shasse2_init:
 
         INIT_PIC()
-#if defined(USE_PIC)
         PRELOAD(const_init_a)
-#endif
         movdqa   MANGLE(const_init_a), ctxa
-#if defined(USE_PIC)
         PRELOAD(const_init_b)
-#endif
         movdqa   MANGLE(const_init_b), ctxb
-#if defined(USE_PIC)
         PRELOAD(const_init_c)
-#endif
         movdqa   MANGLE(const_init_c), ctxc
-#if defined(USE_PIC)
         PRELOAD(const_init_d)
-#endif
         movdqa   MANGLE(const_init_d), ctxd
-#if defined(USE_PIC)
         PRELOAD(const_init_e)
-#endif
         movdqa   MANGLE(const_init_e), ctxe
 
         movdqa   ctxa, 0(eax_rdi)
@@ -348,17 +338,13 @@ _shasse2_ends:
         movdqa   48(eax_rdi), ctxd
         movdqa   64(eax_rdi), ctxe
 
-#if defined(USE_PIC)
         PRELOAD(const_ff00)
-#endif
         movdqa   MANGLE(const_ff00), tmp3
         movdqa   ctxa, tmp1
         movdqa   ctxb, tmp2
         pand   tmp3, ctxa
         pand   tmp3, ctxb
-#if defined(USE_PIC)
         PRELOAD(const_00ff)
-#endif
         movdqa   MANGLE(const_00ff), tmp3
         pand   tmp3, tmp1
         pand   tmp3, tmp2
@@ -379,9 +365,7 @@ _shasse2_ends:
         movdqa   ctxa,  0(edx_rsi)
         movdqa   ctxb,  16(edx_rsi)
 
-#if defined(USE_PIC)
         PRELOAD(const_ff00)
-#endif
         movdqa   MANGLE(const_ff00), tmp5
         movdqa   ctxc, tmp1
         movdqa   ctxd, tmp2
@@ -389,9 +373,7 @@ _shasse2_ends:
         pand   tmp5, ctxc
         pand   tmp5, ctxd
         pand   tmp5, ctxe
-#if defined(USE_PIC)
         PRELOAD(const_00ff)
-#endif
         movdqa   MANGLE(const_00ff), tmp5
         pand   tmp5, tmp1
         pand   tmp5, tmp2
