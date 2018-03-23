@@ -205,6 +205,7 @@ static void open_sock(struct sstate *ss, int port)
 	int s;
 	struct sockaddr_in s_in;
 	int one = 1;
+	memset(&s_in, 0, sizeof(struct sockaddr_in));
 
 	s_in.sin_family = PF_INET;
 	s_in.sin_port = htons(port);
