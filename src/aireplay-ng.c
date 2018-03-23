@@ -5469,6 +5469,7 @@ int tcp_test(const char* ip_str, const short port)
     tv3.tv_sec=0;
     tv3.tv_usec=1;
 
+    memset(&s_in, 0, sizeof(struct sockaddr_in));
     s_in.sin_family = PF_INET;
     s_in.sin_port = htons(port);
     if (!inet_aton(ip_str, &s_in.sin_addr))
