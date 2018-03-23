@@ -42,7 +42,7 @@ int getChannelFromFrequency(int frequency);
 #endif
 */
 
-#define HIGHEST_CHANNEL 221
+#define HIGHEST_CHANNEL 220
 #define LOWEST_CHANNEL -16
 
 #endif
