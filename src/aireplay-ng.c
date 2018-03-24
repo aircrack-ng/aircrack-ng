@@ -2347,14 +2347,14 @@ read_packets:
             f = 1000000 * (float) ( tv2.tv_sec  - tv.tv_sec  )
                         + (float) ( tv2.tv_usec - tv.tv_usec );
 
-            ticks[0] += f / ( 1000000/RTC_RESOLUTION );
-            ticks[1] += f / ( 1000000/RTC_RESOLUTION );
-            ticks[2] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[0] += f / ((float)( 1000000/RTC_RESOLUTION ));
+            ticks[1] += f / ((float)( 1000000/RTC_RESOLUTION ));
+            ticks[2] += f / ((float)( 1000000/RTC_RESOLUTION ));
         }
 
         /* update the status line */
 
-        if( ticks[1] > (RTC_RESOLUTION/10) )
+        if( ticks[1] > ((float)(RTC_RESOLUTION/10)) )
         {
             ticks[1] = 0;
             printf( "\rSent %lu packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
