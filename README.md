@@ -20,9 +20,11 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * Autoconf
  * Automake
  * Libtool
+ * shtool
  * OpenSSL development package or libgcrypt development package.
  * Airmon-ng (Linux) requires ethtool.
  * On windows, cygwin has to be used and it also requires w32api package.
+ * On Windows, if using clang, libiconv and libiconv-devel
  * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
  * pkg-config (pkgconf on FreeBSD)
  * FreeBSD, OpenBSD, NetBSD, Solaris and OS X with macports: gmake
