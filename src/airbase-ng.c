@@ -3639,9 +3639,9 @@ void beacon_thread( void *arg )
 			 * (float) ( tv2.tv_sec  - tv.tv_sec  )
                         + (float) ( tv2.tv_usec - tv.tv_usec );
 
-            ticks[0] += f / ( 1000000/RTC_RESOLUTION );
-            ticks[1] += f / ( 1000000/RTC_RESOLUTION );
-            ticks[2] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[0] += f / ((float)( 1000000/RTC_RESOLUTION ));
+            ticks[1] += f / ((float)( 1000000/RTC_RESOLUTION ));
+            ticks[2] += f / ((float)( 1000000/RTC_RESOLUTION ));
         }
 
         if( ( (double)ticks[2] / (double)RTC_RESOLUTION )  >= ((double)apc.interval/
