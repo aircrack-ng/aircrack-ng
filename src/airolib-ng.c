@@ -476,14 +476,16 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	struct hashdb_head filehead;
 	memset(&filehead, 0, sizeof(filehead));
 	FILE *f = NULL;
+    size_t essid_len;
 
-	if (essid == NULL || strlen(essid) == 0 || strlen(essid) > sizeof(filehead.ssid)) {
-		printf("Invalid SSID (NULL or > %zu chars).\n", sizeof(filehead.ssid));
+	if (essid == NULL) {
+		printf("Invalid SSID (NULL).\n");
 		return;
 	}
 
-	if (access(filename, F_OK)==0) {
-		printf("The file already exists and I won't overwrite it.\n");
+	essid_len = strlen(essid);
+	if (essid_len == 0 || essid_len > sizeof(filehead.ssid)) {
+		printf("Invalid SSID (NULL or > %zu chars).\n", sizeof(filehead.ssid));
 		return;
 	}
 
@@ -496,15 +498,22 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 		return;
 	}
 
-	memcpy(filehead.ssid, essid,strlen(essid));
-	filehead.ssidlen = strlen(essid);
-	filehead.magic = GENPMKMAGIC;
+	if (access(filename, F_OK) == 0) {
+		printf("The file already exists and I won't overwrite it.\n");
+		return;
+	}
 
 	f = fopen(filename, "w");
-	if (f == NULL || fwrite(&filehead, sizeof(filehead), 1, f) != 1) {
-		printf("Couldn't open the export file for writing.\n");
-		if (f != NULL)
-			fclose(f);
+	if (f == NULL) {
+		printf("Failed to open export file for writing.\n");
+		return;
+	}
+    
+	memcpy(filehead.ssid, essid, essid_len);
+	filehead.ssidlen = essid_len;
+	filehead.magic = GENPMKMAGIC;
+	if (fwrite(&filehead, sizeof(filehead), 1, f) != 1) {
+		printf("Failed to write header to coWPAtty hash DB file.\n");
 		return;
 	}
 
@@ -514,7 +523,7 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	rc = sql_exec_cb(db,sql,&sql_exportcow,f);
 	sqlite3_free(sql);
 	if (rc != SQLITE_OK) {
-		printf("There was an error while exporting.\n");
+		printf("There was an error while exporting to coWPAtty hash DB.\n");
 	}
 
 	fclose(f);
