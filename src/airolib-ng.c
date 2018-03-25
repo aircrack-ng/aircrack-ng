@@ -519,6 +519,7 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	filehead.magic = GENPMKMAGIC;
 	if (fwrite(&filehead, sizeof(filehead), 1, f) != 1) {
 		printf("Failed to write header to coWPAtty hash DB file.\n");
+		fclose(f);
 		return;
 	}
 
