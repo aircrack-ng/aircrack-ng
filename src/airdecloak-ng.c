@@ -1146,16 +1146,16 @@ char * status_format(int status) {
 
 	switch (status) {
 		case VALID_FRAME_UNCLOAKED:
-			strncpy(ret, "uncloacked", len);
+			strncpy(ret, "uncloacked", len + 1);
 			break;
 		case CLOAKED_FRAME:
-			strncpy(ret, "cloaked", len);
+			strncpy(ret, "cloaked", len + 1);
 			break;
 		case POTENTIALLY_CLOAKED_FRAME:
-			strncpy(ret, "potentially cloaked", len);
+			strncpy(ret, "potentially cloaked", len + 1);
 			break;
 		case UKNOWN_FRAME_CLOAKING_STATUS:
-			strncpy(ret, "unknown cloaking", len);
+			strncpy(ret, "unknown cloaking", len + 1);
 			break;
 		default:
 			snprintf(ret, len + 1,"type %d", status);
