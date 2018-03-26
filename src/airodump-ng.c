@@ -4531,7 +4531,7 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 #define NETXML_ENCRYPTION_TAG "%s<encryption>%s</encryption>\n"
 int dump_write_kismet_netxml( void )
 {
-    int network_number, average_power, client_max_rate, max_power, client_nbr, unused;
+    int network_number, average_power, client_max_rate, max_power, client_nbr, fp, fpos, unused;
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
     char first_time[TIME_STR_LENGTH];
@@ -4542,7 +4542,9 @@ int dump_write_kismet_netxml( void )
     if (! G.record_data || !G.output_format_kismet_netxml)
     	return 0;
 
-    fseek( G.f_kis_xml, 0, SEEK_SET );
+    if (fseek( G.f_kis_xml, 0, SEEK_SET ) == -1) {
+        return 0;
+    }
 
 	/* Header and airodump-ng start time */
     fprintf( G.f_kis_xml, "%s%s%s",
@@ -4887,7 +4889,12 @@ int dump_write_kismet_netxml( void )
 
     /* Sometimes there can be crap at the end of the file, so truncating is a good idea.
        XXX: Is this really correct, I hope fileno() won't have any side effect */
-	unused = ftruncate(fileno(G.f_kis_xml), ftell( G.f_kis_xml ) );
+	fp = fileno(G.f_kis_xml);
+	fpos = ftell( G.f_kis_xml );
+	if (fp == -1 || fpos == -1) {
+		return 0;
+	}
+	unused = ftruncate(fp, fpos);
 
     return 0;
 }
@@ -4906,7 +4913,9 @@ int dump_write_kismet_csv( void )
     if (! G.record_data || !G.output_format_kismet_csv)
     	return 0;
 
-    fseek( G.f_kis, 0, SEEK_SET );
+    if (fseek( G.f_kis, 0, SEEK_SET ) == -1) {
+        return 0;
+    }
 
     fprintf( G.f_kis, KISMET_HEADER );
 
