@@ -4051,7 +4051,7 @@ int main( int argc, char *argv[] )
     struct pcap_pkthdr pkh;
     fd_set read_fds;
     unsigned char buffer[4096];
-    char *s, buf[128];
+    char *s, buf[128], *tempstr;
     int caplen;
     struct AP_conf apc;
     unsigned char mac[6];
@@ -4698,7 +4698,12 @@ usage:
 #endif /* __i386__ */
 
     /* open the replay interface */
-    _wi_out = wi_open(argv[optind]);
+    tempstr = strdup(argv[optind]);
+    if (!tempstr) {
+        return 1;
+    }
+    _wi_out = wi_open(tempstr);
+    free(tempstr);
     if (!_wi_out)
         return 1;
     dev.fd_out = wi_fd(_wi_out);
