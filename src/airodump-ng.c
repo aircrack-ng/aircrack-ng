@@ -1144,7 +1144,7 @@ int list_add_packet(struct pkt_buf **list, int length, unsigned char* packet)
  */
 int list_check_decloak(struct pkt_buf **list, int length, unsigned char* packet)
 {
-    struct pkt_buf *next = *list;
+    struct pkt_buf *next;
     struct timeval tv1;
     int timediff;
     int i, correct;
@@ -1153,6 +1153,7 @@ int list_check_decloak(struct pkt_buf **list, int length, unsigned char* packet)
     if( list == NULL ) return 1;
     if( *list == NULL ) return 1;
     if( length <= 0) return 1;
+    next = *list;
 
     gettimeofday(&tv1, NULL);
 
