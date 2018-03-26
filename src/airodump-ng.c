@@ -5310,6 +5310,7 @@ void gps_tracker(pid_t parent)
         return;
     }
 
+    memset(&gpsd_addr, 0, sizeof(struct sockaddr_in));
     gpsd_addr.sin_family      = AF_INET;
     gpsd_addr.sin_port        = htons( 2947 );
     gpsd_addr.sin_addr.s_addr = inet_addr( "127.0.0.1" );
