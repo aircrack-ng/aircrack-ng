@@ -3170,7 +3170,7 @@ static void usage(char *prog)
 
 int main(int argc, char *argv[])
 {
-	int ch;
+	int ch, temp;
 #ifdef HAVE_PCRE
     const char *pcreerror;
     int pcreerroffset;
@@ -3189,7 +3189,12 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'p':
-			_conf.cf_floodfreq = (int) (1.0 / (double) atoi(optarg)
+			temp = atoi(optarg);
+			if (temp <= 0) {
+				printf("Invalid flood rate value, must be > 0");
+				exit(1);
+			}
+			_conf.cf_floodfreq = (int) (1.0 / (double) temp
 					      * 1000.0 * 1000.0);
 			break;
 
