@@ -720,7 +720,9 @@ int next_keystream(unsigned char *dest, int size, unsigned char *bssid, int minl
 
     if(feof( opt.ivs2 ))
     {
-        fseek( opt.ivs2, sizeof(IVS2_MAGIC)+sizeof(struct ivs2_filehdr) -1, SEEK_SET);
+        if (fseek( opt.ivs2, sizeof(IVS2_MAGIC)+sizeof(struct ivs2_filehdr) -1, SEEK_SET) == -1) {
+            return -1;
+        }
         return 1;
     }
     return -1;
