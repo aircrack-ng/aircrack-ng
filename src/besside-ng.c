@@ -3201,7 +3201,12 @@ int main(int argc, char *argv[])
 		case 'c':
 			// XXX leak
 			_conf.cf_channels.c_next = &_conf.cf_channels;
-			channel_add(atoi(optarg));
+			temp = atoi(optarg);
+			if (temp <= 0) {
+				printf("Invalid channel, must be > 0\n");
+				exit(1);
+			}
+			channel_add(temp);
 			_state.s_hopchan = _conf.cf_channels.c_next;
 			break;
 
