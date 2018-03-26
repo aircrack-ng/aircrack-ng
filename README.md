@@ -2,6 +2,7 @@
 
 [![Linux/Mac Build Status](https://travis-ci.org/aircrack-ng/aircrack-ng.svg?branch=master)](https://travis-ci.org/aircrack-ng/aircrack-ng)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/aircrack-ng/aircrack-ng?branch=master&svg=true)](https://ci.appveyor.com/project/aircrack-ng/aircrack-ng)
+[![Intel Compiler Build Status](https://buildbot.benden.us/badges/aircrack-ng.png?left_text=Intel Compiler Build)](https://buildbot.benden.us/)
 
 Aircrack-ng is a complete suite of tools to assess WiFi network security.
 
