@@ -680,7 +680,7 @@ int next_keystream(unsigned char *dest, int size, unsigned char *bssid, int minl
             ivs2.len -= 6;
         }
 
-        if(ivs2.len == 0)
+        if(ivs2.len <= 0)
             continue;
 
         buffer = (char*) malloc( ivs2.len );
