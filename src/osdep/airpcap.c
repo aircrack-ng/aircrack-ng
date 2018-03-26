@@ -295,7 +295,7 @@ int printErrorCloseAndReturn(const char * err, int retValue)
 			if (airpcap_handle)
 				fprintf( stderr, err, AirpcapGetLastError(airpcap_handle));
 			else
-				fprintf( stderr, err);
+				fprintf( stderr, "%s", err);
 		}
 	}
 
