@@ -79,7 +79,7 @@ struct network {
 
 static int _outfd;
 
-static int open_pcap(char *fname)
+static int open_pcap(const char *fname)
 {       
         int fd;
         struct pcap_file_header pfh;
@@ -685,7 +685,7 @@ static void process_packet(void *packet, int len)
 	}
 }
 
-static void pwn(char *fname)
+static void pwn(const char *fname)
 {
 	struct wif *wi;
 	char crap[2048];
@@ -707,19 +707,16 @@ static void pwn(char *fname)
 
 int main(int argc, char *argv[])
 {
-	char *out;
-	int i;
-
 	if (argc < 3) {
 		printf("Usage: %s <out.cap> <in.cap> [in2.cap] [...]\n", argv[0]);
 		exit(1);
 	}
 
-	out = argv[1];
+	const char * out = argv[1];
 	_outfd = open_pcap(out);
 
-	for (i = 2; i < argc; i++) {
-		char *in = argv[i];
+	for (int i = 2; i < argc; i++) {
+		const char *in = argv[i];
 		int prog = (int) (((double) (i - 1)) / ((double)(argc - 2)) 
 #if defined(__x86_64__) && defined(__CYGWIN__)
 				   * (0.0f + 100));
