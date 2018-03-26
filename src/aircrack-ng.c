@@ -639,7 +639,7 @@ int checkbssids(char *bssidlist)
 	return nbBSSID;
 }
 
-int mergebssids(char * bssidlist, unsigned char * bssid)
+int mergebssids(const char * bssidlist, unsigned char * bssid)
 {
 	struct mergeBSSID * list_prev;
 	struct mergeBSSID * list_cur;
@@ -648,6 +648,10 @@ int mergebssids(char * bssidlist, unsigned char * bssid)
 	char * tmp = NULL;
 	char * tmp2 = NULL;
 	int next, i, found;
+
+    if (bssid == NULL || bssidlist == NULL || bssidlist[0] == 0) {
+        return -1;
+    }
 
 	// Do not convert if equal to first bssid
 	if (memcmp(opt.firstbssid, bssid, 6) == 0)
