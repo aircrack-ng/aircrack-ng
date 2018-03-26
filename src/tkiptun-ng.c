@@ -1542,10 +1542,7 @@ int build_arp_request(unsigned char* packet, int *length, int toDS)
     else
         memcpy(packet+26+22, opt.ip_ap, 4);
 
-    if(toDS)
-        memcpy(packet+26+26, BROADCAST, 6);
-    else
-        memcpy(packet+26+26, BROADCAST, 6);
+    memcpy(packet+26+26, BROADCAST, 6);
 
     if(toDS)
         memcpy(packet+26+32, opt.ip_ap, 4);
