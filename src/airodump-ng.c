@@ -1115,11 +1115,13 @@ int list_tail_free(struct pkt_buf **list)
 
 int list_add_packet(struct pkt_buf **list, int length, unsigned char* packet)
 {
-    struct pkt_buf *next = *list;
+    struct pkt_buf *next;
 
     if(length <= 0) return 1;
     if(packet == NULL) return 1;
     if(list == NULL) return 1;
+
+    next = *list;
 
     *list = (struct pkt_buf*) malloc(sizeof(struct pkt_buf));
     if( *list == NULL ) return 1;
