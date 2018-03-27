@@ -4811,9 +4811,12 @@ void save_prga(char *filename, unsigned char *iv, unsigned char *prga, int prgal
     FILE *xorfile;
     size_t unused;
     xorfile = fopen(filename, "wb");
-    unused = fwrite (iv, 1, 4, xorfile);
-    unused = fwrite (prga, 1, prgalen, xorfile);
-    fclose (xorfile);
+    if (xorfile) {
+        if (fwrite (iv, 1, 4, xorfile) != -1) {
+            unused = fwrite (prga, 1, prgalen, xorfile);
+        }
+        fclose (xorfile);
+    }
 }
 
 int do_attack_fragment()
