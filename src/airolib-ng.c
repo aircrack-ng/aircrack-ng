@@ -43,7 +43,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <getopt.h>
-
+#include <fcntl.h>
 
 #include "cowpatty.h"
 #include "crypto.h"
@@ -477,6 +477,7 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	memset(&filehead, 0, sizeof(filehead));
 	FILE *f = NULL;
     size_t essid_len;
+    int fd;
 
 	if (essid == NULL) {
 		printf("Invalid SSID (NULL).\n");
@@ -503,12 +504,13 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 		return;
 	}
 
-	if (access(filename, F_OK) == 0) {
-		printf("The file already exists and I won't overwrite it.\n");
-		return;
-	}
+    if ((fd = open(filename, O_WRONLY | O_CREAT | O_EXCL, 0666)) >= 0) {
+        f = fdopen(fd, "w");
+    } else {
+        printf("The file already exists and I won't overwrite it.\n");
+        return;
+    }
 
-	f = fopen(filename, "w");
 	if (f == NULL) {
 		printf("Failed to open export file for writing.\n");
 		return;
