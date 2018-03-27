@@ -150,7 +150,7 @@ to your choosing:
   * Configure and compiling:
 
     ```
-    ./configure --with-experimental`
+    ./configure --with-experimental
     make
     ```
 
