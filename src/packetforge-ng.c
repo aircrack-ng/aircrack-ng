@@ -924,7 +924,7 @@ int write_cap_packet(unsigned char* packet, const int length)
 int read_prga(unsigned char **dest, const char *file)
 {
     FILE *f;
-    int size;
+    size_t size;
     struct ivs2_filehdr fivs2;
 
     if(file == NULL) return( 1 );
@@ -944,7 +944,12 @@ int read_prga(unsigned char **dest, const char *file)
     }
 
     fseek(f, 0, SEEK_END);
-    size = (int)ftell(f);
+    size = ftell(f);
+    if (size == -1) {
+        printf("Error getting file position %s\n", file);
+        fclose(f);
+        return ( 1 );
+    }
     rewind(f);
 
     if(size > 1500) size = 1500;
@@ -958,7 +963,7 @@ int read_prga(unsigned char **dest, const char *file)
 
     if( memcmp((*dest), IVS2_MAGIC, 4 ) == 0 )
     {
-        if( (unsigned) size < sizeof(struct ivs2_filehdr) + 4)
+        if( size < sizeof(struct ivs2_filehdr) + 4)
         {
             fprintf( stderr, "No valid %s file.", IVS2_EXTENSION);
             fclose( f );
@@ -981,7 +986,7 @@ int read_prga(unsigned char **dest, const char *file)
             printf("Are you really sure that this is a valid keystream? Because the index is out of range (0-3): %02X\n", (*dest)[3] );
         }
 
-        opt.prgalen = size;
+        opt.prgalen = (int)size;
         fclose( f );
     }
     return( 0 );
