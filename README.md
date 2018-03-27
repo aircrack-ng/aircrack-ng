@@ -149,17 +149,17 @@ to your choosing:
 
   * Configure and compiling:
 
-```
-./configure --with-experimental`
-make
-```
+    ```
+    ./configure --with-experimental`
+    make
+    ```
 
   * Compiling wth gcrypt:
 
-```
-./configure --with-gcrypt
-make
-```
+    ```
+    ./configure --with-gcrypt
+    make
+    ```
 
   * Installing:
 
@@ -167,61 +167,59 @@ make
 
   * Installing, with external scripts:
 
-```
-./configure --with-experimental --with-ext-scripts
-make
-make install
-```
+    ```
+    ./configure --with-experimental --with-ext-scripts
+    make
+    make install
+    ```
 
   * Testing (with sqlite, experimental and pcre)
 
-```
-./configure --with-experimental
-make
-make check
-```
+    ```
+    ./configure --with-experimental
+    make
+    make check
+    ```
 
   * Compiling on OS X with macports (and all options):
 
-```
-./configure --with-experimental
-gmake
-```
+    ```
+    ./configure --with-experimental
+    gmake
+    ```
 
   * Compiling on OS X 10.10 with XCode 7.1 and Homebrew:
 
-```
-env CC=gcc-4.9 CXX=g++-4.9 ./configure
-make
-make check
-```
+    ```
+    env CC=gcc-4.9 CXX=g++-4.9 ./configure
+    make
+    make check
+    ```
 
-*NOTE*: Older XCode ships with a version of LLVM that does not support CPU feature
-detection; which causes the `./configure` to fail. To work around this older LLVM,
-it is required that a different compile suite is used, such as GCC or a newer LLVM
-from Homebrew.
+    *NOTE*: Older XCode ships with a version of LLVM that does not support CPU feature
+    detection; which causes the `./configure` to fail. To work around this older LLVM,
+    it is required that a different compile suite is used, such as GCC or a newer LLVM
+    from Homebrew.
 
-If you wish to use OpenSSL from Homebrew, you may need to specify the location
-to its' installation. To figure out where OpenSSL lives, run:
+    If you wish to use OpenSSL from Homebrew, you may need to specify the location
+    to its' installation. To figure out where OpenSSL lives, run:
 
-```
-brew --prefix openssl
-```
+    `brew --prefix openssl`
 
-Use the output above as the DIR for `--with-openssl=DIR` in the `./configure` line:
+    Use the output above as the DIR for `--with-openssl=DIR` in the `./configure` line:
 
-```
-env CC=gcc-4.9 CXX=g++-4.9 ./configure --with-openssl=DIR
-make
-make check
-```
+    ```
+    env CC=gcc-4.9 CXX=g++-4.9 ./configure --with-openssl=DIR
+    make
+    make check
+    ```
 
   * Compiling on FreeBSD with better performance
 
-```
-env CC=gcc5 CXX=g++5 ./configure
-gmake
-```
+    ```
+    env CC=gcc5 CXX=g++5 ./configure
+    gmake
+    ```
 
 # Packaging
 
