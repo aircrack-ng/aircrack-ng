@@ -58,19 +58,19 @@ packages download location, and a mirror URL.
 An example of automatically installing all the required dependencies
 is as follows:
 
-    `c:\cygwin\setup-x86.exe -qnNdO -R C:/cygwin -s http://cygwin.mirror.constant.com -l C:/cygwin/var/cache/setup -P autoconf -P automake -P bison -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P pkg-config -P git -P wget -P curl -P libpcre-devel -P openssl-devel -P libsqlite3-devel`
+    c:\cygwin\setup-x86.exe -qnNdO -R C:/cygwin -s http://cygwin.mirror.constant.com -l C:/cygwin/var/cache/setup -P autoconf -P automake -P bison -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P pkg-config -P git -P wget -P curl -P libpcre-devel -P openssl-devel -P libsqlite3-devel
 
 ### Debian/Ubuntu
 
-    `sudo apt install build-essential autoconf automake libtool pkg-config libnl-3-dev libssl-dev libpcre3-dev ethtool shtool`
+    sudo apt install build-essential autoconf automake libtool pkg-config libnl-3-dev libssl-dev libpcre3-dev ethtool shtool
 
 ### FreeBSD using PKG
 
-    `pkg install autoconf automake libtool pkgconf sqlite3 git python3`
+    pkg install autoconf automake libtool pkgconf sqlite3 git python3`
 
 ### MSYS2 (Windows)
 
-    `pacman -Sy autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel gcc binutils make pcre-devel libsqlite-devel`
+    pacman -Sy autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel gcc binutils make pcre-devel libsqlite-devel
 
 ## Compiling
 
@@ -84,7 +84,7 @@ following: `autoreconf -i` or `env NOCONFIGURE=1 ./autogen.sh`.
 First, `./configure` the project for building with the appropriate options specified
 for your environment:
 
-    `./configure <options>`
+    ./configure <options>
 
 **TIP**: If the above fails, please see above about developer source control versions.
 
@@ -149,13 +149,17 @@ to your choosing:
 
   * Configure and compiling:
 
-    `./configure --with-experimental`
-    `make`
+```
+./configure --with-experimental`
+make
+```
 
   * Compiling wth gcrypt:
 
-    `./configure --with-gcrypt`
-    `make`
+```
+./configure --with-gcrypt
+make
+```
 
   * Installing:
 
@@ -163,47 +167,61 @@ to your choosing:
 
   * Installing, with external scripts:
 
-    `./configure --with-experimental --with-ext-scripts`
-    `make`
-    `make install`
+```
+./configure --with-experimental --with-ext-scripts
+make
+make install
+```
 
   * Testing (with sqlite, experimental and pcre)
 
-    `./configure --with-experimental`
-    `make`
-    `make check`
+```
+./configure --with-experimental
+make
+make check
+```
 
   * Compiling on OS X with macports (and all options):
 
-    `./configure --with-experimental`
-    `gmake`
+```
+./configure --with-experimental
+gmake
+```
 
   * Compiling on OS X 10.10 with XCode 7.1 and Homebrew:
 
-    `env CC=gcc-4.9 CXX=g++-4.9 ./configure`
-    `make`
-    `make check`
+```
+env CC=gcc-4.9 CXX=g++-4.9 ./configure
+make
+make check
+```
 
-    *NOTE*: Older XCode ships with a version of LLVM that does not support CPU feature
-    detection; which causes the `./configure` to fail. To work around this older LLVM,
-    it is required that a different compile suite is used, such as GCC or a newer LLVM
-    from Homebrew.
+*NOTE*: Older XCode ships with a version of LLVM that does not support CPU feature
+detection; which causes the `./configure` to fail. To work around this older LLVM,
+it is required that a different compile suite is used, such as GCC or a newer LLVM
+from Homebrew.
 
-    If you wish to use OpenSSL from Homebrew, you may need to specify the location
-    to its' installation. To figure out where OpenSSL lives, run:
+If you wish to use OpenSSL from Homebrew, you may need to specify the location
+to its' installation. To figure out where OpenSSL lives, run:
 
-    `brew --prefix openssl`
+```
+brew --prefix openssl
+```
 
-    Use the output above as the DIR for `--with-openssl=DIR` in the `./configure` line:
+Use the output above as the DIR for `--with-openssl=DIR` in the `./configure` line:
 
-    `env CC=gcc-4.9 CXX=g++-4.9 ./configure --with-openssl=DIR`
-    `make`
-    `make check`
+```
+env CC=gcc-4.9 CXX=g++-4.9 ./configure --with-openssl=DIR
+make
+make check
+```
 
   * Compiling on FreeBSD with better performance
 
-    `env CC=gcc5 CXX=g++5 ./configure`
-    `gmake`
+```
+env CC=gcc5 CXX=g++5 ./configure
+gmake
+```
 
 # Packaging
 
@@ -230,11 +248,11 @@ follows:
 
 # Using precompiled binaries
 
-Linux/BSD:
+## Linux/BSD
  * Use your package manager to download aircrack-ng
  * In most cases, they have an old version.
 
-Windows:
+## Windows
  * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data).
  * aircrack-ng suite is command line tools. So, you have to open a commandline
    `Start menu -> Run... -> cmd.exe` then use them
@@ -243,7 +261,7 @@ Windows:
 # Documentation
 
 
-Documentation, tutorials, ... can be found on https://www.aircrack-ng.org
+Documentation, tutorials, ... can be found on https://aircrack-ng.org
 
 See also manpages and the forum.
 
