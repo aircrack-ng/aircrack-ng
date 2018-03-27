@@ -373,7 +373,7 @@ int capture_ask_packet( int *caplen )
     return( 0 );
 }
 
-int packet_dump(unsigned char* packet, int length)
+int packet_dump(unsigned char* packet, const int length)
 {
     int i;
 
@@ -561,7 +561,7 @@ int set_smac(unsigned char* packet)
 }
 
 /* offset for ip&&udp = 48, for arp = 56 */
-int set_dip(unsigned char* packet, int offset)
+int set_dip(unsigned char* packet, const int offset)
 {
     if(packet == NULL) return 1;
     if(offset < 0 || offset > 2046) return 1;
@@ -579,7 +579,7 @@ int set_dip(unsigned char* packet, int offset)
 }
 
 /* offset for ip&&udp = 44, for arp = 46 */
-int set_sip(unsigned char* packet, int offset)
+int set_sip(unsigned char* packet, const int offset)
 {
     if(packet == NULL) return 1;
     if(offset < 0 || offset > 2046) return 1;
@@ -596,7 +596,7 @@ int set_sip(unsigned char* packet, int offset)
     return 0;
 }
 
-int set_ipid(unsigned char* packet, int offset)
+int set_ipid(unsigned char* packet, const int offset)
 {
     unsigned short id;
 
@@ -662,7 +662,7 @@ int set_IVidx(unsigned char* packet)
     return 0;
 }
 
-int next_keystream(unsigned char *dest, int size, unsigned char *bssid, int minlen)
+int next_keystream(unsigned char *dest, const int size, unsigned char *bssid, const int minlen)
 {
     struct ivs2_pkthdr ivs2;
     char *buffer;
@@ -728,7 +728,7 @@ int next_keystream(unsigned char *dest, int size, unsigned char *bssid, int minl
     return -1;
 }
 
-int encrypt_data(unsigned char *dest, unsigned char* data, int length)
+int encrypt_data(unsigned char *dest, const unsigned char* data, const int length)
 {
     unsigned char cipher[2048];
     int n;
@@ -802,7 +802,7 @@ int create_wep_packet(unsigned char* packet, int *length)
     return 0;
 }
 
-int read_raw_packet(unsigned char* dest, char* srcfile, int length)
+int read_raw_packet(unsigned char* dest, const char* srcfile, const int length)
 {
     size_t readblock;
     FILE *f;
@@ -831,7 +831,7 @@ int read_raw_packet(unsigned char* dest, char* srcfile, int length)
     return 0;
 }
 
-int write_cap_packet(unsigned char* packet, int length)
+int write_cap_packet(unsigned char* packet, const int length)
 {
     FILE *f;
     struct pcap_file_header pfh;
@@ -919,7 +919,7 @@ int write_cap_packet(unsigned char* packet, int length)
     return 0;
 }
 
-int read_prga(unsigned char **dest, char *file)
+int read_prga(unsigned char **dest, const char *file)
 {
     FILE *f;
     int size;
