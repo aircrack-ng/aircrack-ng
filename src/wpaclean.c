@@ -716,7 +716,11 @@ int main(int argc, char *argv[])
 	_outfd = open_pcap(out);
 
 	for (int i = 2; i < argc; i++) {
-		const char *in = argv[i];
+		char *in = strdup(argv[i]);
+		if (in == NULL) {
+			perror("strdup()");
+			return EXIT_FAILURE;
+		}
 		int prog = (int) (((double) (i - 1)) / ((double)(argc - 2)) 
 #if defined(__x86_64__) && defined(__CYGWIN__)
 				   * (0.0f + 100));
