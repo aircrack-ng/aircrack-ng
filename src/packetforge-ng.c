@@ -839,6 +839,13 @@ int write_cap_packet(unsigned char* packet, int length)
     struct timeval tv;
     int n;
 
+    if( length <= 0 )
+    {
+        printf("Invalid length, must be > 0.\n");
+        printf("Please report.\n");
+        return 1;
+    }
+
     if( opt.cap_out == NULL )
     {
         printf("Please specify an output file (-w).\n");
