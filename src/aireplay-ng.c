@@ -1211,6 +1211,11 @@ int read_prga(unsigned char **dest, char *file)
 
     fseek(f, 0, SEEK_END);
     size = ftell(f);
+    if (size == -1) {
+        fclose(f);
+        fprintf( stderr, "ftell failed\n");
+        return ( 1 );
+    }
     rewind(f);
 
     if(size > 1500) size = 1500;
