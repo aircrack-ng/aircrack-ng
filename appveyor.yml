@@ -46,7 +46,7 @@ build_script:
 
     C:\cygwin\bin\bash -e -l -c "make clean"
 
-    C:\cygwin\bin\bash -e -l -c "env CC=clang-5.0 CXX=clang++-5.0 ./autogen.sh --with-experimental --with-airpcap=`pwd`"
+    C:\cygwin\bin\bash -e -l -c "env CC=clang-5.0 CXX=clang++-5.0 LIBS='-liconv' ./autogen.sh --with-experimental --with-airpcap=`pwd`"
 
     C:\cygwin\bin\bash -e -l -c "make"
 
@@ -71,7 +71,7 @@ build_script:
 
     C:\cygwin64\bin\bash -e -l -c "make clean"
 
-    C:\cygwin64\bin\bash -e -l -c "env CC=clang-5.0 CXX=clang++-5.0 ./autogen.sh --with-experimental --with-airpcap=`pwd`"
+    C:\cygwin64\bin\bash -e -l -c "env CC=clang-5.0 CXX=clang++-5.0 LIBS='-liconv' ./autogen.sh --with-experimental --with-airpcap=`pwd`"
 
     C:\cygwin64\bin\bash -e -l -c "make"
 
