@@ -691,6 +691,12 @@ static void pwn(const char *fname)
 	char crap[2048];
 	int rc;
 
+	if (strlen(fname) + 7 >= sizeof(crap)) {
+		printf("Filename too long, aborting\n");
+		return;
+	}
+
+	memset(crap, 0, sizeof(crap));
 	snprintf(crap, sizeof(crap), "file://%s", fname);
 
 	wi = wi_open(crap);
@@ -716,11 +722,7 @@ int main(int argc, char *argv[])
 	_outfd = open_pcap(out);
 
 	for (int i = 2; i < argc; i++) {
-		char *in = strdup(argv[i]);
-		if (in == NULL) {
-			perror("strdup()");
-			return EXIT_FAILURE;
-		}
+		const char *in = argv[i];
 		int prog = (int) (((double) (i - 1)) / ((double)(argc - 2)) 
 #if defined(__x86_64__) && defined(__CYGWIN__)
 				   * (0.0f + 100));
