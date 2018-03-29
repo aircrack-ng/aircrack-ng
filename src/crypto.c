@@ -182,10 +182,15 @@ void calc_pmk( char *key, char *essid_pre, unsigned char pmk[40] )
 	SHA_CTX ctx_ipad;
 	SHA_CTX ctx_opad;
 	SHA_CTX sha1_ctx;
+	size_t essid_pre_len;
+
+	if (essid_pre == NULL || essid_pre[0] == 0 || (essid_pre_len = strlen(essid_pre)) > 32 ) {
+		return;
+	}
 
 	memset(essid, 0, sizeof(essid));
-	memcpy(essid, essid_pre, strlen(essid_pre));
-	slen = strlen( essid ) + 4;
+	memcpy(essid, essid_pre, essid_pre_len);
+	slen = essid_pre_len + 4;
 
 	/* setup the inner and outer contexts */
 
