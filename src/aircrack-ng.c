@@ -253,6 +253,26 @@ char * progname = NULL;
 int intr_read = 0;
 
 int safe_write( int fd, void *buf, size_t len );
+struct AP_info* hccapx_to_ap(struct hccapx *hx);
+
+struct AP_info* load_hccapx_file(int fd) {
+	hccapx_t hx;
+	struct AP_info* local_aps_1st = NULL;
+	struct AP_info* local_aps_cur = NULL;
+
+	lseek(fd, 0, SEEK_SET);
+
+	while(read(fd, &hx, sizeof(hccapx_t))) {
+		nb_pkt++;
+		if (local_aps_1st == NULL)
+			local_aps_1st = local_aps_cur = hccapx_to_ap(&hx);
+		else {
+			local_aps_cur->next = hccapx_to_ap(&hx);
+			local_aps_cur = local_aps_cur->next;
+		}
+	}
+	return local_aps_1st;
+}
 
 void clean_exit(int ret)
 {
@@ -883,8 +903,11 @@ void read_thread( void *arg )
 	}
 
 	fmt = FORMAT_IVS;
-
-	if( memcmp( &pfh, IVSONLY_MAGIC, 4 ) != 0 &&
+	if (memcmp( &pfh, HCCAPX_MAGIC, 4) == 0)
+	{
+		fmt = FORMAT_HCCAPX;
+	}
+	else if( memcmp( &pfh, IVSONLY_MAGIC, 4 ) != 0 &&
             memcmp( &pfh, IVS2_MAGIC, 4 ) != 0)
 	{
 		fmt = FORMAT_CAP;
@@ -1004,6 +1027,15 @@ void read_thread( void *arg )
 				eof_wait( &eof_notified );
 			if( close_aircrack )
 				break;
+		}
+		else if ( fmt == FORMAT_HCCAPX ) {
+			printf("read: I am a hashcat file\n");
+			if( close_aircrack )
+				break;
+
+			ap_1st = load_hccapx_file(fd);
+			eof_wait( &eof_notified );
+			return;
 		}
 		else
 		{
@@ -1837,8 +1869,10 @@ void check_thread( void *arg )
 	}
 
 	fmt = FORMAT_IVS;
-
-	if( memcmp( &pfh, IVSONLY_MAGIC, 4 ) != 0 &&
+	if (memcmp( &pfh, HCCAPX_MAGIC, 4) == 0)
+	{
+		fmt = FORMAT_HCCAPX;
+	} else if( memcmp( &pfh, IVSONLY_MAGIC, 4 ) != 0 &&
             memcmp( &pfh, IVS2_MAGIC, 4 ) != 0)
 	{
 		fmt = FORMAT_CAP;
@@ -1909,7 +1943,16 @@ void check_thread( void *arg )
 		if(close_aircrack)
 			break;
 
-		if( fmt == FORMAT_IVS )
+		if ( fmt == FORMAT_HCCAPX ) {
+			printf("check: I am a hashcat file\n");
+			struct AP_info* hccap_aps = load_hccapx_file(fd);
+			if (ap_1st == NULL)
+				ap_1st = hccap_aps;
+			else
+				ap_cur->next = hccap_aps;
+			goto read_fail; // not really, but we want to clean up our memory and get out of here
+		}
+		else if( fmt == FORMAT_IVS )
 		{
 			/* read one IV */
 
@@ -4553,6 +4596,44 @@ int do_make_wkp(struct AP_info *ap_cur)
 	return( 1 );
 }
 
+// return by value because it is the simplest interface and we call this infrequently
+hccap_t ap_to_hccap(struct AP_info *ap) {
+	hccap_t hccap;
+
+	memset (&hccap, 0, sizeof (hccap));
+	ap->wpa.state = 7;
+	ap->crypt = 3;
+
+	memcpy (&hccap.essid,      &ap->essid,          sizeof (ap->essid));
+	memcpy (&hccap.mac1,       &ap->bssid,          sizeof (ap->bssid));
+	memcpy (&hccap.mac2,       &ap->wpa.stmac,      sizeof (ap->wpa.stmac));
+	memcpy (&hccap.nonce1,     &ap->wpa.snonce,     sizeof (ap->wpa.snonce));
+	memcpy (&hccap.nonce2,     &ap->wpa.anonce,     sizeof (ap->wpa.anonce));
+	memcpy (&hccap.eapol,      &ap->wpa.eapol,      sizeof (ap->wpa.eapol));
+	memcpy (&hccap.eapol_size, &ap->wpa.eapol_size, sizeof (ap->wpa.eapol_size));
+	memcpy (&hccap.keyver,     &ap->wpa.keyver,     sizeof (ap->wpa.keyver));
+	memcpy (&hccap.keymic,     &ap->wpa.keymic,     sizeof (ap->wpa.keymic));
+	return hccap;
+}
+
+// Caller must free
+struct AP_info* hccap_to_ap(hccap_t* hccap) {
+	struct AP_info* ap = malloc(sizeof(struct AP_info));
+	memset (&ap, 0, sizeof(ap));
+
+	memcpy (&ap->essid,          &hccap->essid,      sizeof (hccap->essid));
+	memcpy (&ap->bssid,          &hccap->mac1,       sizeof (hccap->mac1));
+	memcpy (&ap->wpa.stmac,      &hccap->mac2,       sizeof (hccap->mac2));
+	memcpy (&ap->wpa.snonce,     &hccap->nonce1,     sizeof (hccap->nonce1));
+	memcpy (&ap->wpa.anonce,     &hccap->nonce2,     sizeof (hccap->nonce2));
+	memcpy (&ap->wpa.eapol,      &hccap->eapol,      sizeof (hccap->eapol));
+        memcpy (&ap->wpa.eapol_size, &hccap->eapol_size, sizeof (hccap->eapol_size));
+	memcpy (&ap->wpa.keyver,     &hccap->keyver,     sizeof (hccap->keyver));
+       	memcpy (&ap->wpa.keymic,     &hccap->keymic,     sizeof (hccap->keymic));
+
+	return ap;
+}
+
 int do_make_hccap(struct AP_info *ap_cur)
 {
 	size_t elt_written;
@@ -4583,19 +4664,7 @@ int do_make_hccap(struct AP_info *ap_cur)
 		return 0;
 	}
 
-	hccap_t hccap;
-
-	memset (&hccap, 0, sizeof (hccap));
-
-	memcpy (&hccap.essid,      &ap_cur->essid,          sizeof (ap_cur->essid));
-	memcpy (&hccap.mac1,       &ap_cur->bssid,          sizeof (ap_cur->bssid));
-	memcpy (&hccap.mac2,       &ap_cur->wpa.stmac,      sizeof (ap_cur->wpa.stmac));
-	memcpy (&hccap.nonce1,     &ap_cur->wpa.snonce,     sizeof (ap_cur->wpa.snonce));
-	memcpy (&hccap.nonce2,     &ap_cur->wpa.anonce,     sizeof (ap_cur->wpa.anonce));
-	memcpy (&hccap.eapol,      &ap_cur->wpa.eapol,      sizeof (ap_cur->wpa.eapol));
-	memcpy (&hccap.eapol_size, &ap_cur->wpa.eapol_size, sizeof (ap_cur->wpa.eapol_size));
-	memcpy (&hccap.keyver,     &ap_cur->wpa.keyver,     sizeof (ap_cur->wpa.keyver));
-	memcpy (&hccap.keymic,     &ap_cur->wpa.keymic,     sizeof (ap_cur->wpa.keymic));
+	hccap_t hccap = ap_to_hccap(ap_cur);
 
 	elt_written = fwrite(&hccap, sizeof (hccap_t), 1, fp_hccap);
 	fclose(fp_hccap);
@@ -4609,11 +4678,63 @@ int do_make_hccap(struct AP_info *ap_cur)
 	return( 1 );
 }
 
+
+// Caller must free
+struct AP_info* hccapx_to_ap(struct hccapx *hx) {
+	struct AP_info* ap = malloc(sizeof(struct AP_info));
+	if(ap == NULL) {
+		printf("Malloc Failed: everything will break\n");
+		return NULL;
+	}
+	memset (ap, 0, sizeof(struct AP_info));
+	ap->wpa.state = 7;
+	ap->crypt = 3;
+
+	memcpy (&ap->essid,          &hx->essid,      MIN(sizeof (hx->essid), sizeof (ap->essid)) - 1);
+	memcpy (&ap->bssid,          &hx->mac_ap,     sizeof (hx->mac_ap));
+	memcpy (&ap->wpa.stmac,      &hx->mac_sta,    sizeof (hx->mac_sta));
+	memcpy (&ap->wpa.snonce,     &hx->nonce_sta,  sizeof (hx->nonce_sta));
+	memcpy (&ap->wpa.anonce,     &hx->nonce_ap,   sizeof (hx->nonce_ap));
+	memcpy (&ap->wpa.eapol,      &hx->eapol,      sizeof (hx->eapol));
+        memcpy (&ap->wpa.eapol_size, &hx->eapol_len,  sizeof (hx->eapol_len));
+	memcpy (&ap->wpa.keyver,     &hx->keyver,     sizeof (hx->keyver));
+       	memcpy (&ap->wpa.keymic,     &hx->keymic,     sizeof (hx->keymic));
+
+	return ap;
+}
+
+hccapx_t ap_to_hccapx(struct AP_info *ap) {
+	struct hccapx hx;
+	uint32_t temp;
+	uint8_t ssid_len;
+
+	memset (&hx, 0, sizeof (hx));
+
+	temp = HCCAPX_SIGNATURE;
+	memcpy (&hx.signature,  &temp,                   sizeof(temp));
+	temp = HCCAPX_CURRENT_VERSION;
+	memcpy (&hx.version,    &temp,                   sizeof(temp));
+	hx.message_pair = 0; // Temporary (see docs)
+
+
+	ssid_len = (uint8_t)strlen(ap->essid);
+	memcpy (&hx.essid_len,  &ssid_len,               sizeof (ssid_len));
+	
+	memcpy (&hx.essid,      &ap->essid,          sizeof (ap->essid) - 1);
+	memcpy (&hx.mac_ap,     &ap->bssid,          sizeof (ap->bssid));
+	memcpy (&hx.mac_sta,    &ap->wpa.stmac,      sizeof (ap->wpa.stmac));
+	memcpy (&hx.keyver,     &ap->wpa.keyver,     sizeof (ap->wpa.keyver));
+	memcpy (&hx.keymic,     &ap->wpa.keymic,     sizeof (ap->wpa.keymic));
+	memcpy (&hx.nonce_sta,  &ap->wpa.snonce,     sizeof (ap->wpa.snonce));
+	memcpy (&hx.nonce_ap,   &ap->wpa.anonce,     sizeof (ap->wpa.anonce));
+	memcpy (&hx.eapol_len,  &ap->wpa.eapol_size, sizeof (ap->wpa.eapol_size));
+	memcpy (&hx.eapol,      &ap->wpa.eapol,      sizeof (ap->wpa.eapol));
+	return hx;
+}
+
 int do_make_hccapx(struct AP_info *ap_cur)
 {
 	size_t elt_written;
-	uint32_t temp;
-	uint8_t ssid_len;
 
 	while( ap_cur != NULL )
 	{
@@ -4641,29 +4762,7 @@ int do_make_hccapx(struct AP_info *ap_cur)
 		return 0;
 	}
 
-	struct hccapx hx;
-
-	memset (&hx, 0, sizeof (hx));
-
-	temp = HCCAPX_SIGNATURE;
-	memcpy (&hx.signature,  &temp,                   sizeof(temp));
-	temp = HCCAPX_CURRENT_VERSION;
-	memcpy (&hx.version,    &temp,                   sizeof(temp));
-	hx.message_pair = 0; // Temporary (see docs)
-
-
-	ssid_len = (uint8_t)strlen(ap_cur->essid);
-	memcpy (&hx.essid_len,  &ssid_len,               sizeof (ssid_len));
-	
-	memcpy (&hx.essid,      &ap_cur->essid,          sizeof (ap_cur->essid) - 1);
-	memcpy (&hx.keyver,     &ap_cur->wpa.keyver,     sizeof (ap_cur->wpa.keyver));
-	memcpy (&hx.keymic,     &ap_cur->wpa.keymic,     sizeof (ap_cur->wpa.keymic));
-	memcpy (&hx.mac_ap,     &ap_cur->bssid,          sizeof (ap_cur->bssid));
-	memcpy (&hx.nonce_ap,   &ap_cur->wpa.anonce,     sizeof (ap_cur->wpa.anonce));
-	memcpy (&hx.mac_sta,    &ap_cur->wpa.stmac,      sizeof (ap_cur->wpa.stmac));
-	memcpy (&hx.nonce_sta,  &ap_cur->wpa.snonce,     sizeof (ap_cur->wpa.snonce));
-	memcpy (&hx.eapol_len,  &ap_cur->wpa.eapol_size, sizeof (ap_cur->wpa.eapol_size));
-	memcpy (&hx.eapol,      &ap_cur->wpa.eapol,      sizeof (ap_cur->wpa.eapol));
+	struct hccapx hx = ap_to_hccapx(ap_cur);
 
 	elt_written = fwrite(&hx, sizeof (struct hccapx), 1, fp_hccapx);
 	fclose(fp_hccapx);

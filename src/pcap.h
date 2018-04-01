@@ -38,7 +38,10 @@
 #define FORMAT_CAP      1
 #define FORMAT_IVS      2
 #define FORMAT_IVS2     3
+#define FORMAT_HCCAP    4
+#define FORMAT_HCCAPX   5
 
+#define HCCAPX_MAGIC            "HCPX"
 #define TCPDUMP_MAGIC           0xA1B2C3D4
 #define TCPDUMP_CIGAM           0xD4C3B2A1
 #define IVSONLY_MAGIC           "\xBF\xCA\x84\xD4"
