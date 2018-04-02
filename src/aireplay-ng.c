@@ -281,6 +281,7 @@ struct options
     int rtc;
 
     int reassoc;
+    int channel;
 }
 opt;
 
@@ -6487,6 +6488,7 @@ int main( int argc, char *argv[] )
     opt.rtc       =  1; opt.f_retry	=  0;
     opt.reassoc   =  0;
     opt.deauth_rc = 7; /* By default deauth reason code is Class 3 frame recived from nonassociated STA */
+    opt.channel = -1;
 
 /* XXX */
 #if 0
@@ -6521,6 +6523,7 @@ int main( int argc, char *argv[] )
             {"help",        0, 0, 'H'},
             {"fast",        0, 0, 'F'},
             {"bittest",     0, 0, 'B'},
+	    {"channel",     1, 0, 'C'},
             {"migmode",     0, 0, '8'},
             {"ignore-negative-one", 0, &opt.ignore_negative_one, 1},
 	    {"deauth-rc",   1, 0, 'Z'},
@@ -6528,7 +6531,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:Z:T:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:Q0:1:23456789HFBDR",
+                        "C:b:d:s:m:n:u:v:t:Z:T:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:Q0:1:23456789HFBDR",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -6835,6 +6838,10 @@ int main( int argc, char *argv[] )
                 opt.ghost = 1;
 
                 break;
+	    case 'C' :
+		opt.channel = atoi(optarg);
+
+		break;
 
             case '0' :
 
@@ -7126,6 +7133,8 @@ usage:
 
         wi_get_mac(_wi_out, dev.mac_out);
     }
+    if (opt.channel > 0)
+	    wi_set_channel(_wi_out, opt.channel);
 
     /* drop privileges */
     if (setuid( getuid() ) == -1) {
