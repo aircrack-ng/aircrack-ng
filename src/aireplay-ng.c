@@ -1122,7 +1122,7 @@ int capture_ask_packet( int *caplen, int just_grab )
         printf( "\n\nUse this packet ? " );
         fflush( stdout );
         ret=0;
-        while(!ret) ret = scanf( "%s", tmpbuf );
+        while(!ret) ret = scanf( "%1s", tmpbuf );
         printf( "\n" );
 
         if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
@@ -5278,7 +5278,7 @@ int do_attack_fragment()
                         printf("Still nothing, quitting with 384 bytes? [y/n] \n");
                         fflush( stdout );
                         ret=0;
-                        while(!ret) ret = scanf( "%s", tmpbuf );
+                        while(!ret) ret = scanf( "%1s", tmpbuf );
 
                         printf( "\n" );
 
