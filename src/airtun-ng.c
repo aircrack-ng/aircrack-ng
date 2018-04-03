@@ -84,7 +84,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 char usage[] =
 "\n"
-"  %s - (C) 2006-2015 Thomas d'Otreppe\n"
+"  %s - (C) 2006-2018 Thomas d'Otreppe\n"
 "  Original work: Martin Beck\n"
 "  https://www.aircrack-ng.org\n"
 "\n"
@@ -1029,12 +1029,14 @@ int packet_recv(unsigned char* packet, int length)
         return 1;
     }
 
+    // FromDS/ToDS fields
     switch( packet[1] & 3 )
     {
         case  0:
             memcpy( bssid, packet + 16, 6 );
             memcpy( dmac, packet + 4, 6 );
             memcpy( smac, packet + 10, 6 );
+            memset( stmac, 0, 6);
             break;
         case  1:
             memcpy( bssid, packet + 4, 6 );

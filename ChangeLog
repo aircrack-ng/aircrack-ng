@@ -14,6 +14,8 @@ Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
 * General: Added WPS 2.0 test PCAP.
 * General: Do not use stackguard on Windows.
 * General: Fixed warnings on GCC7.
+* General: Improved code quality using Coverity Scan.
+* General: Added badges for Coverity scan and Intel compiler buildbot
 * Aircrack-ng: Use trampoline binary to automatically select fastest executable depending on the CPU
 * Aircrack-ng: Fixed missing include for linecount.
 * Aircrack-ng: Fixed concurrency issues when reading multiple WEP PCAP.
