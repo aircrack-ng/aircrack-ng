@@ -76,7 +76,7 @@ extern int add_crc32(unsigned char* data, int length);
 
 char usage[] =
 "\n"
-"  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
 "  Original work: Martin Beck\n"
 "  https://www.aircrack-ng.org\n"
 "\n"

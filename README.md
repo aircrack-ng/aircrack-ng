@@ -27,7 +27,7 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * Airmon-ng (Linux) requires ethtool.
  * On windows, cygwin has to be used and it also requires w32api package.
  * On Windows, if using clang, libiconv and libiconv-devel
- * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
+ * Linux: LibNetlink 1 or 3. It can be disabled by passing --disable-libnl with configure.
  * pkg-config (pkgconf on FreeBSD)
  * FreeBSD, OpenBSD, NetBSD, Solaris and OS X with macports: gmake
  * Linux/Cygwin: make and Standard C++ Library development package (Debian: libstdc++-dev)
@@ -144,6 +144,8 @@ to your choosing:
             	Dependencies (debian): duma
 
 * **with-xcode**:    Set this flag to true to compile on OS X with Xcode 7+.
+
+* **disable-libnl**:  Set-up the project to be compiled without libnl (1 or 3). Linux option only.
 
 #### Examples:
 

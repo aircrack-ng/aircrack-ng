@@ -162,7 +162,7 @@ extern int hexStringToArray(char* in, int in_length, unsigned char* out, int out
 
 char usage[] =
 "\n"
-"  %s - (C) 2008-2015 Thomas d'Otreppe\n"
+"  %s - (C) 2008-2018 Thomas d'Otreppe\n"
 "  Original work: Martin Beck\n"
 "  https://www.aircrack-ng.org\n"
 "\n"

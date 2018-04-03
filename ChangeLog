@@ -1,4 +1,4 @@
-Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
+Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released 03 Apr 2018:
 * General: Switching to autotools which allows compiling on more plateforms.
 * General: Updated README.md and INSTALLING files.
 * General: Fixed compilation on a lot of platforms.

@@ -140,7 +140,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 char usage[] =
 
 "\n"
-"  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
 "  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: aireplay-ng <options> <replay interface>\n"
