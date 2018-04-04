@@ -2249,7 +2249,7 @@ int do_attack_fake_auth( void )
 
 int do_attack_interactive( void )
 {
-    int caplen, n, z;
+    int caplen, n;
     int mi_b, mi_s, mi_d;
     struct timeval tv;
     struct timeval tv2;
@@ -2262,10 +2262,6 @@ read_packets:
 
     if( capture_ask_packet( &caplen, 0 ) != 0 )
         return( 1 );
-
-    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
-    if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
-        z+=2;
 
     /* rewrite the frame control & MAC addresses */
 
