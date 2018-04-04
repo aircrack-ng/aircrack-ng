@@ -43,7 +43,7 @@ AC_ARG_WITH(libpcap-include,
         [use PCAP includes in DIR, [default=auto]])
     ],[
     	if test -d "$withval" ; then
-    		CPPFLAGS="$CPPFLAGS -I $withval"
+    		CPPFLAGS="$CPPFLAGS -I$withval"
     	fi
     ])
 
@@ -52,14 +52,14 @@ AC_ARG_WITH(libpcap-lib,
         [use PCAP libraries in DIR, [default=auto]])
     ],[
     	if test -d "$withval" ; then
-    		LDFLAGS="$LDFLAGS -L $withval"
+    		LDFLAGS="$LDFLAGS -L$withval"
     	fi
     ])
 
 dnl
 dnl Search for headers
 dnl
-if test "${with_libpcap_includes+set}" != set; then
+if test "${with_libpcap_include+set}" != set; then
 	AC_MSG_CHECKING(pcap header directories)
 
 	found_pcap_dir=""
