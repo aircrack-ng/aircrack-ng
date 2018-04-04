@@ -67,7 +67,7 @@ Aircrack-ng
 	----------
 
 	Problem: On windows only, opening/creating a database doesn't work when airolib-ng is in directories containing
-	         special characters like 'ç', 'é', 'è', 'à', ... (directories containing spaces are not affected).
+	         special characters like 'Ã§', 'Ã©', 'Ã¨', 'Ã ', ... (directories containing spaces are not affected).
 	Reason: It's a SQLite issue.
 	Solution: Rename the directory or move the database into another directory.
 
@@ -94,9 +94,6 @@ Aircrack-ng
 
 	Cygwin
 	------
-	
-	Problem: Aircrack-ng doesn't build on Cygwin64
-	Solution: None at this time. Build it using 32 bit cygwin.
 
 	Problem: /usr/include/sys/reent.h:14:20: fatal error: stddef.h: No such file or directory
 	Solution: It happens because the gcc and g++ version are different. Make sure they are the same.

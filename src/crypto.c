@@ -660,7 +660,7 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
                 len = ptr - ((unsigned char*)clear);
                 *clen = len;
 
-                memcpy(clear+32, clear, len);
+                memmove(clear+32, clear, len);
                 memcpy(clear+32+14, "\x00\x00", 2); //ip flags=none
 
                 num=2;

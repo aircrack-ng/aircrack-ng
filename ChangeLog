@@ -1,4 +1,4 @@
-Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
+Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released 03 Apr 2018:
 * General: Switching to autotools which allows compiling on more plateforms.
 * General: Updated README.md and INSTALLING files.
 * General: Fixed compilation on a lot of platforms.
@@ -14,6 +14,8 @@ Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
 * General: Added WPS 2.0 test PCAP.
 * General: Do not use stackguard on Windows.
 * General: Fixed warnings on GCC7.
+* General: Improved code quality using Coverity Scan.
+* General: Added badges for Coverity scan and Intel compiler buildbot
 * Aircrack-ng: Use trampoline binary to automatically select fastest executable depending on the CPU
 * Aircrack-ng: Fixed missing include for linecount.
 * Aircrack-ng: Fixed concurrency issues when reading multiple WEP PCAP.
@@ -24,7 +26,7 @@ Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
 * Airodump-ng: Fixed writing ESSID to CSV, Kismet CSV and Kismet NetXML files when ESSID gets decloaked and cloaked length was 1.
 * Aireplay-ng: Added deauthentication reason code option.
 * Aireplay-ng: Increase amount of AP to test when running injection test.
-* Airodump-ng: Fixed 802.11a channel hopping list.* Besside-ng: Fixed 'wi_read(): No child processes' error.
+* Airodump-ng: Fixed 802.11a channel hopping list.
 * Airodump-ng: Fix creation of .xor files.
 * Airodump-ng: Added support for HT channels (HT20/HT40-/HT40+).
 * Airodump-ng: Now displaying correct rate for 802.11n or 802.11ac AP.
@@ -43,6 +45,7 @@ Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released XX XXX 2018:
 * Airgraph-ng: Handle SSID with double quotes.
 * Airgraph-ng: Fixed parsing OUI file.
 * Airdrop-ng: Updated lorcon2 installation instructions.
+* Besside-ng: Fixed 'wi_read(): No child processes' error.
 * Airdecloak-ng: Fixed segfault due to NULL pointer dereference.
 * osdep: Remove wi_set_channel(1) on open wifi interface (cygwin).
 * osdep: Fixed RAW socket resource leak.

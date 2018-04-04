@@ -103,7 +103,7 @@ extern char * getVersion(char * progname, int maj, int min, int submin, int svnr
 void usage(int what)
 {
     char *version_info = getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
-    printf("\n  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
+    printf("\n  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
             "  https://www.aircrack-ng.org\n"
             "\n   usage: ", version_info);
     free(version_info);

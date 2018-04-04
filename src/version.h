@@ -34,7 +34,7 @@
 #define _MIN 2
 #define _SUB_MIN 0
 #define _BETA 0
-#define _RC 4
+#define _RC 5
 #define WEBSITE "https://www.aircrack-ng.org"
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int

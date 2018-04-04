@@ -140,7 +140,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 char usage[] =
 
 "\n"
-"  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
 "  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: aireplay-ng <options> <replay interface>\n"
@@ -1122,7 +1122,7 @@ int capture_ask_packet( int *caplen, int just_grab )
         printf( "\n\nUse this packet ? " );
         fflush( stdout );
         ret=0;
-        while(!ret) ret = scanf( "%s", tmpbuf );
+        while(!ret) ret = scanf( "%1s", tmpbuf );
         printf( "\n" );
 
         if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
@@ -2249,7 +2249,7 @@ int do_attack_fake_auth( void )
 
 int do_attack_interactive( void )
 {
-    int caplen, n, z;
+    int caplen, n;
     int mi_b, mi_s, mi_d;
     struct timeval tv;
     struct timeval tv2;
@@ -2262,10 +2262,6 @@ read_packets:
 
     if( capture_ask_packet( &caplen, 0 ) != 0 )
         return( 1 );
-
-    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
-    if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
-        z+=2;
 
     /* rewrite the frame control & MAC addresses */
 
@@ -5278,7 +5274,7 @@ int do_attack_fragment()
                         printf("Still nothing, quitting with 384 bytes? [y/n] \n");
                         fflush( stdout );
                         ret=0;
-                        while(!ret) ret = scanf( "%s", tmpbuf );
+                        while(!ret) ret = scanf( "%1s", tmpbuf );
 
                         printf( "\n" );
 

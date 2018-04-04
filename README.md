@@ -3,6 +3,8 @@
 [![Linux/Mac Build Status](https://travis-ci.org/aircrack-ng/aircrack-ng.svg?branch=master)](https://travis-ci.org/aircrack-ng/aircrack-ng)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/aircrack-ng/aircrack-ng?branch=master&svg=true)](https://ci.appveyor.com/project/aircrack-ng/aircrack-ng)
 [![Intel Compiler Build Status](https://buildbot.benden.us/badges/aircrack-ng.png?left_text=Intel%20Compiler%20Build)](https://buildbot.benden.us/)
+[![Alpine Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-alpine.png?left_text=Alpine%20Linux%20Build)](https://buildbot.benden.us/)
+[![Kali Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-kali.png?left_text=Kali%20Linux%20Build)](https://buildbot.benden.us/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/aircrack-ng/badge.svg)](https://scan.coverity.com/projects/aircrack-ng)
 
 Aircrack-ng is a complete suite of tools to assess WiFi network security.
@@ -27,7 +29,7 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * Airmon-ng (Linux) requires ethtool.
  * On windows, cygwin has to be used and it also requires w32api package.
  * On Windows, if using clang, libiconv and libiconv-devel
- * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
+ * Linux: LibNetlink 1 or 3. It can be disabled by passing --disable-libnl to configure.
  * pkg-config (pkgconf on FreeBSD)
  * FreeBSD, OpenBSD, NetBSD, Solaris and OS X with macports: gmake
  * Linux/Cygwin: make and Standard C++ Library development package (Debian: libstdc++-dev)
@@ -144,6 +146,8 @@ to your choosing:
             	Dependencies (debian): duma
 
 * **with-xcode**:    Set this flag to true to compile on OS X with Xcode 7+.
+
+* **disable-libnl**:  Set-up the project to be compiled without libnl (1 or 3). Linux option only.
 
 #### Examples:
 
