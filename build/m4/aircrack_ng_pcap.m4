@@ -43,7 +43,7 @@ AC_ARG_WITH(libpcap-include,
         [use PCAP includes in DIR, [default=auto]])
     ],[
     	if test -d "$withval" ; then
-    		CPPFLAGS="$CPPFLAGS -I $withval"
+    		CPPFLAGS="$CPPFLAGS -I$withval"
     	fi
     ])
 
@@ -52,7 +52,7 @@ AC_ARG_WITH(libpcap-lib,
         [use PCAP libraries in DIR, [default=auto]])
     ],[
     	if test -d "$withval" ; then
-    		LDFLAGS="$LDFLAGS -L $withval"
+    		LDFLAGS="$LDFLAGS -L$withval"
     	fi
     ])
 
