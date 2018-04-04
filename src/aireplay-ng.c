@@ -204,6 +204,7 @@ char usage[] =
 "\n"
 "  Miscellaneous options:\n"
 "\n"
+"      -C channel_number     : set interface to channel_number before attacking\n"
 "      -R                    : disable /dev/rtc usage\n"
 "      --ignore-negative-one : if the interface's channel can't be determined,\n"
 "                              ignore the mismatch, needed for unpatched cfg80211\n"
@@ -6523,10 +6524,10 @@ int main( int argc, char *argv[] )
             {"help",        0, 0, 'H'},
             {"fast",        0, 0, 'F'},
             {"bittest",     0, 0, 'B'},
-	    {"channel",     1, 0, 'C'},
+            {"channel",     1, 0, 'C'},
             {"migmode",     0, 0, '8'},
             {"ignore-negative-one", 0, &opt.ignore_negative_one, 1},
-	    {"deauth-rc",   1, 0, 'Z'},
+            {"deauth-rc",   1, 0, 'Z'},
             {0,             0, 0,  0 }
         };
 
