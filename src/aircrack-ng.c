@@ -1029,7 +1029,6 @@ void read_thread( void *arg )
 				break;
 		}
 		else if ( fmt == FORMAT_HCCAPX ) {
-			printf("read: I am a hashcat file\n");
 			if( close_aircrack )
 				break;
 
@@ -4627,9 +4626,9 @@ struct AP_info* hccap_to_ap(hccap_t* hccap) {
 	memcpy (&ap->wpa.snonce,     &hccap->nonce1,     sizeof (hccap->nonce1));
 	memcpy (&ap->wpa.anonce,     &hccap->nonce2,     sizeof (hccap->nonce2));
 	memcpy (&ap->wpa.eapol,      &hccap->eapol,      sizeof (hccap->eapol));
-        memcpy (&ap->wpa.eapol_size, &hccap->eapol_size, sizeof (hccap->eapol_size));
+	memcpy (&ap->wpa.eapol_size, &hccap->eapol_size, sizeof (hccap->eapol_size));
 	memcpy (&ap->wpa.keyver,     &hccap->keyver,     sizeof (hccap->keyver));
-       	memcpy (&ap->wpa.keymic,     &hccap->keymic,     sizeof (hccap->keymic));
+	memcpy (&ap->wpa.keymic,     &hccap->keymic,     sizeof (hccap->keymic));
 
 	return ap;
 }
@@ -4696,9 +4695,9 @@ struct AP_info* hccapx_to_ap(struct hccapx *hx) {
 	memcpy (&ap->wpa.snonce,     &hx->nonce_sta,  sizeof (hx->nonce_sta));
 	memcpy (&ap->wpa.anonce,     &hx->nonce_ap,   sizeof (hx->nonce_ap));
 	memcpy (&ap->wpa.eapol,      &hx->eapol,      sizeof (hx->eapol));
-        memcpy (&ap->wpa.eapol_size, &hx->eapol_len,  sizeof (hx->eapol_len));
+	memcpy (&ap->wpa.eapol_size, &hx->eapol_len,  sizeof (hx->eapol_len));
 	memcpy (&ap->wpa.keyver,     &hx->keyver,     sizeof (hx->keyver));
-       	memcpy (&ap->wpa.keymic,     &hx->keymic,     sizeof (hx->keymic));
+	memcpy (&ap->wpa.keymic,     &hx->keymic,     sizeof (hx->keymic));
 
 	return ap;
 }
@@ -4719,7 +4718,7 @@ hccapx_t ap_to_hccapx(struct AP_info *ap) {
 
 	ssid_len = (uint8_t)strlen(ap->essid);
 	memcpy (&hx.essid_len,  &ssid_len,               sizeof (ssid_len));
-	
+
 	memcpy (&hx.essid,      &ap->essid,          sizeof (ap->essid) - 1);
 	memcpy (&hx.mac_ap,     &ap->bssid,          sizeof (ap->bssid));
 	memcpy (&hx.mac_sta,    &ap->wpa.stmac,      sizeof (ap->wpa.stmac));
