@@ -3,7 +3,11 @@
 # Carlos Alberto Lopez Perez <clopez@igalia.com>
 #
 TESTDIR="$(dirname $0)"
-tmpfile="$(mktemp -u -t acng.XXXX)"
+if test -f /etc/alpine-release; then
+    tmpfile="$(mktemp -u -t acng.XXXXXX)"
+else
+    tmpfile="$(mktemp -u -t acng.XXXX)"
+fi
 # Clean on exit
 trap "rm -fr "${tmpdir}"" INT QUIT SEGV PIPE ALRM TERM EXIT
 

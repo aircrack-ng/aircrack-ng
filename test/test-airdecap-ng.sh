@@ -6,7 +6,11 @@ TESTDIR="$(dirname $0)"
 if [ "$(uname -s)" = 'OpenBSD' ]; then
 	tmpdir="$(mktemp -d -t acng.XXXXXX)"
 else
+    if test -f /etc/alpine-release; then
+        tmpdir="$(mktemp -d -t acng.XXXXXX)"
+    else
 	tmpdir="$(mktemp -d -t acng.XXXX)"
+    fi
 fi
 
 compute_sha1() {
