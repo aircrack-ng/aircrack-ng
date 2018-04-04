@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Aircrack-ng GUI")]
 [assembly: AssemblyDescription("Aircrack-ng GUI")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Aircrack-ng")]
 [assembly: AssemblyProduct("Aircrack-ng")]
-[assembly: AssemblyCopyright("Copyright © Thomas d'Otreppe 2006, 2007, 2008, 2015")]
+[assembly: AssemblyCopyright("Copyright © Aircrack-ng team 2006-2008, 2015, 2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
