@@ -274,6 +274,32 @@ struct AP_info* load_hccapx_file(int fd) {
 	return local_aps_1st;
 }
 
+// Returns the new tail of the list
+struct AP_info* append_aps(struct AP_info* new_aps) {
+    pthread_mutex_lock( &mx_apl );
+    struct AP_info* new_tail = new_aps;
+
+    // Find the tail of the new sublist
+    while(new_tail && new_tail->next)
+        new_tail = new_tail->next;
+
+    if(ap_1st == NULL) {
+        // List is empty, we are the list now.
+        ap_1st = new_aps;
+    } else {
+        // We have an existing list, and want to append.
+        struct AP_info* ap_cur = ap_1st;
+        // seek to the end of our list
+        while(ap_cur && ap_cur->next) {
+            ap_cur = ap_cur->next;
+        }
+        ap_cur->next = new_aps;
+    }
+
+    pthread_mutex_unlock( &mx_apl );
+    return new_tail;
+}
+
 void clean_exit(int ret)
 {
 	struct AP_info *ap_cur;
@@ -1032,7 +1058,7 @@ void read_thread( void *arg )
 			if( close_aircrack )
 				break;
 
-			ap_1st = load_hccapx_file(fd);
+			append_aps(load_hccapx_file(fd));
 			eof_wait( &eof_notified );
 			return;
 		}
@@ -1943,12 +1969,7 @@ void check_thread( void *arg )
 			break;
 
 		if ( fmt == FORMAT_HCCAPX ) {
-			printf("check: I am a hashcat file\n");
-			struct AP_info* hccap_aps = load_hccapx_file(fd);
-			if (ap_1st == NULL)
-				ap_1st = hccap_aps;
-			else
-				ap_cur->next = hccap_aps;
+			append_aps(load_hccapx_file(fd));
 			goto read_fail; // not really, but we want to clean up our memory and get out of here
 		}
 		else if( fmt == FORMAT_IVS )
