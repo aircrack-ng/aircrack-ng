@@ -43,12 +43,12 @@ case "$target" in
 AC_ARG_VAR([ETHTOOL],[Use this ethtool for Airmon-ng.])
 dnl Allow env override but do not be fooled by 'ETHTOOL=t'.
 test t = "$ETHTOOL" && unset ETHTOOL
-AC_CHECK_PROG([ETHTOOL], [ethtool], [yes])
-AS_IF([test "x$ETHTOOL" != "xyes"],[
+AC_CHECK_PROG([ETHTOOL], [ethtool], [$as_dir/$ac_word$ac_exec_ext], [], [$ETHTOOL_PATH$PATH_SEPARATOR$PATH$PATH_SEPARATOR/sbin$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/usr/local/sbin])
+AS_IF([test "x$ETHTOOL" = "x"],[
     AC_MSG_WARN([ethtool not found; cannot build Airmon-ng])
     ETHTOOL_FOUND="not found, skipping Airmon-ng"
 ], [
-    ETHTOOL_FOUND="yes"
+    ETHTOOL_FOUND="yes, found $ETHTOOL"
 ])
   ;;
   *)
