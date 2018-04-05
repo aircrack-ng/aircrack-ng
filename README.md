@@ -248,6 +248,15 @@ follows:
 
 `env AIRCRACK_LIBEXEC_PATH=/home/user/dev/aircrack-ng/src ./src/aircrack-ng`
 
+The look up path can be set at compilation time. Append `pkglibexecdir`
+parameter to `make` (or `gmake`). The following will set it to the
+same/current directory:
+
+`pkglibexecdir=.`
+
+It is particularly useful for Windows, when all binaries are in
+the same directory.
+
 # Using precompiled binaries
 
 ## Linux/BSD
