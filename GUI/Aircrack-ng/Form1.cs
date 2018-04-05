@@ -1,7 +1,7 @@
 /*
  *  Aircrack-ng GUI
  *
- *  Copyright (C) 2006-2008, 2015  Thomas d'Otreppe
+ *  Copyright (C) 2006-2008, 2015, 2018  Thomas d'Otreppe
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,7 +40,11 @@ namespace Aircrack_ng
         private StreamWriter debugStream = null;
 
         private string Changelog =
-                  "v1.0.0.7\n"
+
+                  "v1.0.0.8\n"
+                + "    - Fixed using Aircrack-ng trampoline binary\n"
+                + "\n"
+                + "v1.0.0.7\n"
                 + "    - Updated project to VS 2015 and .NET 3.5\n"
                 + "    - Fixed duplicate comma when using multiple wordlists\n"
                 + "    - Fixed failure to use multiple wordlists (#1583)\n"
@@ -90,7 +94,9 @@ namespace Aircrack_ng
                 this.nbCpu = 1;
             }
             this.cbAdvancedOptions_CheckedChanged(null, null);
-            this.currentDir = Directory.GetCurrentDirectory();
+            // Current directory might not be the right one, it might come from a shortcut or started from a different one,
+            // we need the executable directory.
+            this.currentDir = Path.GetDirectoryName(Application.ExecutablePath);
             this.clbKorek.CheckOnClick = true;
             this.cbPMKDecap_CheckedChanged(null, null);
             this.ShowHideEssidBssidDecap(this.cbBssidDecap, null);
@@ -418,9 +424,17 @@ namespace Aircrack_ng
             {
                 try
                 {
-                    Process.Start(cmd_exe, "/k \" " + launch + " \"");
+                    // Add environment variable for trampoline binary so it looks in current 
+                    // directory for other CPU-optimized executables
+                    ProcessStartInfo startInfo = new ProcessStartInfo();
+                    startInfo.UseShellExecute = false;
+                    startInfo.EnvironmentVariables["AIRCRACK_LIBEXEC_PATH"] = currentDir;
+                    startInfo.FileName = cmd_exe;
+                    startInfo.Arguments = "/k \" " + launch + " \"";
+
+                    Process.Start(startInfo);
                 }
-                catch
+                catch (Exception ex)
                 {
                     this.writeLog("Failed to start Aircrack-ng process");
                     MessageBox.Show("Failed to start Aircrack-ng", this.Text);
