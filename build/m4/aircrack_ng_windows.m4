@@ -47,9 +47,9 @@ case "$host_os" in
         AC_CHECK_LIB(w32api, WinMain, [ LIBS="$LIBS -lw32api" ])
         AC_CHECK_HEADER(windows.h, [], [AC_MSG_ERROR([windows.h was not found])])
         CPPFLAGS="$CPPFLAGS -DCYGWIN"
-        CFLAGS="$CFLAGS -mwindows"
-        CXXFLAGS="$CXXFLAGS -mwindows"
-        LDFLAGS="$LDFLAGS -mwindows"
+        CFLAGS="$CFLAGS -mconsole -mwindows"
+        CXXFLAGS="$CXXFLAGS -mconsole -mwindows"
+        LDFLAGS="$LDFLAGS -mconsole -mwindows"
 
         case "$ax_cv_c_compiler_vendor" in
             clang)
