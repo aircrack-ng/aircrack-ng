@@ -31,18 +31,18 @@
 #endif
 
 #if defined(USE_PIC)
-#define PRELOAD(x)
-#define MANGLE(x) x(%rip)
-#define INIT_PIC()
-#define END_PIC()
+#define PRELOAD(x,f)
+#define MANGLE(x,f) x(%rip)
+#define INIT_PIC(f)
+#define END_PIC(f)
 #else
 #ifdef __PIC__
 
 #ifdef __x86_64__
-#define PRELOAD(x)  movq x@GOTPCREL(%rip), %rbx;
-#define MANGLE(x)   (%rbx)
-#define INIT_PIC()  pushq %rbx
-#define END_PIC()   popq  %rbx
+#define PRELOAD(x,f)  movq x@GOTPCREL(%rip), %rbx;
+#define MANGLE(x,f)   (%rbx)
+#define INIT_PIC(f)  pushq %rbx
+#define END_PIC(f)   popq  %rbx
 #else
 
 #if __APPLE__
@@ -56,22 +56,22 @@
 #define END_PIC(x)    pop %ebx
 #else
 #undef __i686 /* gcc builtin define gets in our way */
-#define PRELOAD(x)  
-#define MANGLE(x)   x ## @GOTOFF(%ebx)
-#define INIT_PIC() \
+#define PRELOAD(x,f)  
+#define MANGLE(x,f)   x ## @GOTOFF(%ebx)
+#define INIT_PIC(f) \
 	call __i686.get_pc_thunk.bx ; \
 	addl $_GLOBAL_OFFSET_TABLE_, %ebx
-#define END_PIC()
+#define END_PIC(f)
 #endif
 
 #endif
 
 #else
 
-#define PRELOAD(x)  
-#define MANGLE(x) x
-#define INIT_PIC()
-#define END_PIC()
+#define PRELOAD(x,f)  
+#define MANGLE(x,f) x
+#define INIT_PIC(f)
+#define END_PIC(f)
 
 #endif
 #endif
