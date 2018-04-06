@@ -383,16 +383,20 @@ int reset_ifaces()
 
     /* open the replay interface */
     _wi_out = wi_open(opt.iface_out);
-    if (!_wi_out)
+    if (!_wi_out) {
+        fprintf(stderr, "Failed to open output interface: %s", opt.iface_out);
         return 1;
+    }
     dev.fd_out = wi_fd(_wi_out);
 
     /* open the packet source */
     if( opt.s_face != NULL )
     {
         _wi_in = wi_open(opt.s_face);
-        if (!_wi_in)
+        if (!_wi_in) {
+            fprintf(stderr, "Failed to open input interface: %s", opt.s_face);
             return 1;
+        }
         dev.fd_in = wi_fd(_wi_in);
         wi_get_mac(_wi_in, dev.mac_in);
     }
