@@ -1,3 +1,12 @@
+Version 1.2-XXX (changes from aircrack-ng 1.2-rc5) - Released XX XXX XXXX:
+* General: Fixed compiling Windows binaries and updated README.md/INSTALLING.
+* General: Removed packages/ directory.
+* General: Added Alpine Linux and Kali Linux buildbots.
+* General: Fixed configure with --with-libpcap-include=/somewhere/include and --with-libpcap-lib=/somewhere/lib.
+* General: Fixed search for ethtool when running as a non-root user.
+* General: Various fixes.
+* Airmon-ng: Fixed mktemp on Alpine Linux.
+
 Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released 03 Apr 2018:
 * General: Switching to autotools which allows compiling on more plateforms.
 * General: Updated README.md and INSTALLING files.
