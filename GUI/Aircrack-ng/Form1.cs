@@ -43,6 +43,8 @@ namespace Aircrack_ng
 
                   "v1.0.0.8\n"
                 + "    - Fixed using Aircrack-ng trampoline binary\n"
+                + "    - Fixed adding dictionaries with space characters\n"
+                + "      in filename\n"
                 + "\n"
                 + "v1.0.0.7\n"
                 + "    - Updated project to VS 2015 and .NET 3.5\n"
@@ -493,9 +495,12 @@ namespace Aircrack_ng
 
         private void btOpenDico_Click(object sender, EventArgs e)
         {
-            this.tbWPADico.Text += this.FileDialog("Wordlist|*.*", 0, true, ",").Trim();
-
-            this.tbWPADico.Text = this.tbWPADico.Text.Trim(',').Trim('\"');
+            string newfile = this.FileDialog("Wordlist|*.*", 0, true, " ").Trim();
+            if (this.tbWPADico.Text.Length > 0)
+            {
+                this.tbWPADico.Text += ",";
+            }
+            this.tbWPADico.Text += newfile;
         }
 
         private void cbPMKDecap_CheckedChanged(object sender, EventArgs e)
