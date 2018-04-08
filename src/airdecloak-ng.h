@@ -151,7 +151,6 @@ struct decloak_stats
     unsigned long nb_cloak_wep; /* # of cloaked WEP pkt  */
 };
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern char * mac2string(unsigned char * mac);
 extern int maccmp(unsigned char *mac1, unsigned char *mac2);

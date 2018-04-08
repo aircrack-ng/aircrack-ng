@@ -90,7 +90,7 @@ struct _cpuinfo {
 
 extern float chrono(struct timeval *start, int reset);
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
+extern char * getVersion(char * progname, int maj, int min, int submin, const char * svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern int readLine(char line[], int maxlength);
 extern int hexToInt(char s[], int len);

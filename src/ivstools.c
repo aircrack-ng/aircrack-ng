@@ -98,8 +98,6 @@ static unsigned char ZERO[32] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00";
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-
 void usage(int what)
 {
     char *version_info = getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);

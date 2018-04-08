@@ -194,7 +194,7 @@ int get_ram_size(void) {
 }
 
 /* Return the version number */
-char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc)
+char * getVersion(char * progname, int maj, int min, int submin, const char* svnrev, int beta, int rc)
 {
 	int len;
 	char * temp, *rtemp;
@@ -220,8 +220,9 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int
 		memset(provis, 0, 20);
 	}
 
-	if (svnrev > 0) {
-		snprintf(provis, 20," r%d",svnrev);
+	if (svnrev) {
+    const char *search = strstr(svnrev, "dev-");
+		snprintf(provis, 20," %s", search ? search : svnrev);
 		strncat(temp, provis, len - strlen(temp));
 		memset(provis, 0, 20);
 	}

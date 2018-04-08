@@ -152,7 +152,6 @@ static struct wif *_wi_in, *_wi_out;
     "\xf2\x01\x00\x50\xf2\x02\x00\x50\xf2\x03\x00\x50\xf2\x04\x00\x50"  \
     "\xf2\x05\x02\x00\x00\x50\xf2\x01\x00\x50\xf2\x02"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int add_crc32(unsigned char* data, int length);
 
