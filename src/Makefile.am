@@ -109,6 +109,10 @@ endif
 
 LIBOSD		= osdep/libosdep.la
 LIBOSD_LIBS	= -Losdep -losdep
+if HAVE_PCAP
+LIBOSD_LIBS	+= -lpcap
+endif
+
 if CYGWIN
 LIBOSD_LIBS	+= -liphlpapi -lsetupapi -luuid
 endif
@@ -401,7 +405,7 @@ EXTRA_DIST = wpaclean.c \
              mcs_index_rates.c \
              mcs_index_rates.h \
              cowpatty.c \
-             cowpatty.h 
+             cowpatty.h
 
 
 @CODE_COVERAGE_RULES@
