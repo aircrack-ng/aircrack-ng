@@ -27,6 +27,7 @@
 #include <sys/param.h> // MIN
 
 #include "osdep.h"
+#include "radiotap/radiotap.h"
 
 int darwin_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri) {
     pcap_t *handle = NULL;/* Session handle */
@@ -75,22 +76,30 @@ int darwin_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *
         pcap_perror(handle, "%s\n");
         return -1;
     }
+
+    //printf("data link type: %d\n", pcap_datalink(handle));
+    // TODO if pcap_datalink != 127 we don't have a radiotap header
     /* Grab a packet */
     packet = pcap_next(handle, &header);
 
     int min_len = 0;
     if (packet) {
-        /* Print its length */
+
+        struct ieee80211_radiotap_header *rthdr = (struct ieee80211_radiotap_header*) packet;
+        packet = packet + rthdr->it_len;
+
+        /* packet debug
         printf("Jacked a packet with length of [%d]\n", header.len);
         for(int i = 0; i < header.len; i++) {
             printf("%02X", packet[i]);
 
         }
         printf("\n");
-        min_len = MIN(len,header.len); // drop the MAC header
+        */
 
+        min_len = MIN(len,header.len) - rthdr->it_len;
         if(h80211 && packet)
-            memcpy(h80211, packet, min_len); // drop the MAC header
+            memcpy(h80211, packet, min_len);
     }
 
     /* And close the session */
