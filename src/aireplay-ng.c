@@ -72,6 +72,7 @@
 #include "osdep/osdep.h"
 #include "crypto.h"
 #include "common.h"
+#include "verifyssid.h"
 
 #define RTC_RESOLUTION  8192
 
@@ -829,7 +830,7 @@ int getnet( unsigned char* capa, int filter, int force)
     {
         if(memcmp(bssid, NULL_MAC, 6))
         {
-            if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
+            if( verifyssid((const unsigned char *)opt.r_essid) == 0 )
             {
                 printf( "Please specify an ESSID (-e).\n" );
             }
@@ -1498,7 +1499,7 @@ int do_attack_fake_auth( void )
     if(getnet(capa, 0, 1) != 0)
         return 1;
 
-    if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
+    if( verifyssid((const unsigned char *)opt.r_essid) == 0 )
     {
         printf( "Please specify an ESSID (-e).\n" );
         return 1;

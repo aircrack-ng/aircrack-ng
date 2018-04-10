@@ -83,11 +83,11 @@ SRC_AV		= airventriloquist-ng.c
 
 SRC_SSE_COMMON	= memory.c wpapsk.c
 LIBAC_CFLAGS = -DOLD_SSE_CORE=1
-SRC_ACLIB	= cpuid.c crypto.c common.c $(SSEC_INT) uniqueiv.c $(ASM_AC)
+SRC_ACLIB	= cpuid.c crypto.c common.c $(SSEC_INT) uniqueiv.c $(ASM_AC) verifyssid.c
 LIBAC	= libaclib.la
 LIBAC_LIBS = libaclib.la
 
-AC_COMMON = cpuid.c crypto.c common.c $(SRC_SSE_COMMON) uniqueiv.c $(ASM_AC)
+AC_COMMON = cpuid.c crypto.c common.c $(SRC_SSE_COMMON) uniqueiv.c $(ASM_AC) verifyssid.c
 
 if LIBGCRYPT
 SRC_AC		+= sha1-git.c
@@ -401,7 +401,9 @@ EXTRA_DIST = wpaclean.c \
              mcs_index_rates.c \
              mcs_index_rates.h \
              cowpatty.c \
-             cowpatty.h 
+             cowpatty.h \
+             verifyssid.c \
+             verifyssid.h 
 
 
 @CODE_COVERAGE_RULES@

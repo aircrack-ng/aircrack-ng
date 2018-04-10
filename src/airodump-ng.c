@@ -75,6 +75,7 @@
 #include "osdep/common.h"
 #include "common.h"
 #include "mcs_index_rates.h"
+#include "verifyssid.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
 #ifdef USE_GCRYPT
@@ -1689,12 +1690,13 @@ skip_station:
                 memcpy( st_cur->probes[st_cur->probe_index], p + 2, n ); //twice?!
                 st_cur->ssid_length[st_cur->probe_index] = n;
 
-                for( i = 0; i < n; i++ )
-                {
-                    c = p[2 + i];
-                    if( c == 0 || ( c > 126 && c < 160 ) ) c = '.';  //could also check ||(c>0 && c<32)
-                    st_cur->probes[st_cur->probe_index][i] = c;
-                }
+                if( verifyssid( (const unsigned char *)st_cur->probes[st_cur->probe_index] ) == 0 )
+                    for( i = 0; i < n; i++ )
+                    {
+                        c = p[2 + i];
+                        if( c == 0 || ( c > 0 && c < 32 ) || ( c > 126 && c < 160 ) ) c = '.';
+                        st_cur->probes[st_cur->probe_index][i] = c;
+                    }
             }
 
             p += 2 + p[1];
@@ -1782,10 +1784,11 @@ skip_probe:
                     ap_cur->essid_stored = 1;
                 }
 
-                for( i = 0; i < n; i++ )
-                    if( ( ap_cur->essid[i] >   0 && ap_cur->essid[i] <  32 ) ||
-                        ( ap_cur->essid[i] > 126 && ap_cur->essid[i] < 160 ) )
-                        ap_cur->essid[i] = '.';
+                if ( verifyssid( ap_cur->essid ) == 0 )
+                    for( i = 0; i < n; i++ )
+                        if( ( ap_cur->essid[i] >   0 && ap_cur->essid[i] <  32 ) ||
+                            ( ap_cur->essid[i] > 126 && ap_cur->essid[i] < 160 ) )
+                              ap_cur->essid[i] = '.';
             }
 
             /* get the maximum speed in Mb and the AP's channel */
@@ -2284,10 +2287,11 @@ skip_probe:
                     ap_cur->essid_stored = 1;
                 }
 
-                for( i = 0; i < n; i++ )
-                    if( ap_cur->essid[i] < 32 ||
-                      ( ap_cur->essid[i] > 126 && ap_cur->essid[i] < 160 ) )
-                        ap_cur->essid[i] = '.';
+                if ( verifyssid( ap_cur->essid ) == 0 )
+                    for( i = 0; i < n; i++ )
+                        if( ( ap_cur->essid[i] >   0 && ap_cur->essid[i] <  32 ) ||
+                            ( ap_cur->essid[i] > 126 && ap_cur->essid[i] < 160 ) )
+                              ap_cur->essid[i] = '.';
             }
 
             p += 2 + p[1];
@@ -4143,9 +4147,14 @@ int dump_write_csv( void )
 
         fprintf( G.f_txt, "%3d, ", ap_cur->ssid_length);
 
-	temp = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
+	if( verifyssid( ap_cur->essid ) )
+	    fprintf( G.f_txt, "%s, ", ap_cur->essid );
+	else
+	{
+        temp = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
         fprintf( G.f_txt, "%s, ", temp );
-	free(temp);
+        free(temp);
+	}
 
         if(ap_cur->key != NULL)
         {
@@ -4215,7 +4224,15 @@ int dump_write_csv( void )
             if( st_cur->ssid_length[i] == 0 )
                 continue;
 
-	    temp = format_text_for_csv((unsigned char *)st_cur->probes[i], st_cur->ssid_length[i]);
+        if( verifyssid( (const unsigned char *)st_cur->probes[i] ) )
+        {
+            temp = (char *)calloc(1, (st_cur->ssid_length[i] + 1) * sizeof(char));
+            memcpy(temp, st_cur->probes[i], st_cur->ssid_length[i] + 1);
+        }
+        else
+        {
+            temp = format_text_for_csv((unsigned char *)st_cur->probes[i], st_cur->ssid_length[i]);
+        }
 
 	    if( probes_written == 0)
 	    {
