@@ -42,7 +42,7 @@ elif test -d "${DIR}/.svn"; then
         REVISION="_r1"
     fi
 else
-    exit 1
+    REVISION="$(cat ${DIR}/VERSION)"
 fi
 
 if test "x$CMD" = "xquoted"; then
