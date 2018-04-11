@@ -50,7 +50,6 @@
 #define CRYPT_WEP  1
 #define CRYPT_WPA  2
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern int calc_crc_buf( unsigned char *buf, int len );
 

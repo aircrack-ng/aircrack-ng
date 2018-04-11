@@ -1,35 +1,52 @@
 #!/bin/sh
 
-DIR=$1
+set -euf
+
+DIR=${1:-}
+CMD=${2:-}
+
 if [ x$DIR = "x" ]
 then
 	DIR="."
 fi
 
-if [ ! -d "${DIR}/.svn/" ]
-then
-	echo "0"
-	exit ;
+if test -d "${DIR}/.git"; then
+    #
+    # Locate the closest annotated tag
+    #
+    REVISION="$(git describe --abbrev=0 --tags 2>/dev/null || echo unknown)"
+
+    #
+    # Determine if we are a development branch, if so then append the
+    # short SHA1.
+    #
+    EXACTLY="$(git describe --abbrev=0 --tags --exact-match 2>/dev/null || echo)"
+
+    if test -z "$EXACTLY"; then
+        REVISION="${REVISION}_rev-$(git rev-parse --verify --short HEAD)"
+    fi
+elif test -d "${DIR}/.svn"; then
+    REVISION="_r$(svnversion $DIR 2> /dev/null | sed 's/[^0-9]*//g')"
+
+    if test x$REVISION = "x"; then
+        REVISION="_r$(svn info $DIR 2> /dev/null | grep -i revision | sed 's/[^0-9]*//g')"
+    fi
+
+    if test x$REVISION = "x"; then
+        if test -f "${DIR}/.svn/entries"; then
+            REVISION="_r$(cat ${DIR}/.svn/entries | grep -i revision | head -n 1 | sed 's/[^0-9]*//g')"
+        fi
+    fi
+
+    if test x$REVISION = "x"; then
+        REVISION="_r1"
+    fi
+else
+    exit 1
 fi
 
-REVISION="`svnversion $DIR 2> /dev/null | sed 's/[^0-9]*//g'`"
-
-if [ x$REVISION = "x" ]
-then
-	REVISION="`svn info $DIR 2> /dev/null | grep -i revision | sed 's/[^0-9]*//g'`"
+if test "x$CMD" = "xquoted"; then
+    echo \"$REVISION\"
+else
+    echo $REVISION
 fi
-
-if [ x$REVISION = "x" ]
-then
-	if [ -f "${DIR}/.svn/entries" ]
-	then
-		REVISION="`cat ${DIR}/.svn/entries | grep -i revision | head -n 1 | sed 's/[^0-9]*//g'`"
-	fi
-fi
-
-if [ x$REVISION = "x" ]
-then
-	REVISION="-1"
-fi
-
-echo $REVISION

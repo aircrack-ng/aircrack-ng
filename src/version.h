@@ -37,5 +37,5 @@
 #define _RC 5
 #define WEBSITE "https://www.aircrack-ng.org"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int
-			 svnrev, int beta, int rc);
+extern char * getVersion(char * progname, int maj, int min, int submin, const
+       char * rev, int beta, int rc);

@@ -74,7 +74,6 @@ static struct wif *_wi_in, *_wi_out;
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int add_crc32(unsigned char* data, int length);
 

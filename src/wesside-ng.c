@@ -90,8 +90,6 @@
 #define PRGA_FILE "prga.log"
 #define KEYLIMIT 1000000
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-
 struct frag_state {
 	struct ieee80211_frame	fs_wh;
 	unsigned char		*fs_data;

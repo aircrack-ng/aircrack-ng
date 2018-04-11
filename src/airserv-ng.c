@@ -42,8 +42,6 @@
 #include "osdep/network.h"
 #include "version.h"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-
 void sighandler( int signum )
 {
     if( signum == SIGPIPE )
