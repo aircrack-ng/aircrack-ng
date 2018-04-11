@@ -27,7 +27,7 @@ REVISION="$(git describe --abbrev=0 --tags)"
 EXACTLY="$(git describe --abbrev=0 --tags --exact-match 2>/dev/null || echo)"
 
 if test -z "$EXACTLY"; then
-    REVISION="${REVISION}-dev-$(git rev-parse --verify --short HEAD)"
+    REVISION="${REVISION}_rev-$(git rev-parse --verify --short HEAD)"
 fi
 
 if test "x$CMD" = "xquoted"; then

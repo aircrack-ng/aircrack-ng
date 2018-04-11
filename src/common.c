@@ -221,10 +221,28 @@ char * getVersion(char * progname, int maj, int min, int submin, const char* svn
 	}
 
 	if (svnrev) {
-    const char *search = strstr(svnrev, "dev-");
-		snprintf(provis, 20," %s", search ? search : svnrev);
+		char *tmp = strdup(svnrev);
+
+		char *sep = strstr(tmp, "_");
+		if (sep)
+		{
+			++sep;
+		}
+		else
+		{
+			sep = "";
+		}
+
+    	char *search = strstr(sep, "rev-");
+		if (search)
+		{
+			search[3] = ' ';
+		}
+
+		snprintf(provis, 20," %s", search ? search : sep);
 		strncat(temp, provis, len - strlen(temp));
 		memset(provis, 0, 20);
+		free(tmp);
 	}
 
 	free(provis);
