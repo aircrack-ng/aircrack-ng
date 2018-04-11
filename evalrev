@@ -14,7 +14,7 @@ if test -d "${DIR}/.git"; then
     #
     # Locate the closest annotated tag
     #
-    REVISION="$(git describe --abbrev=0 --tags)"
+    REVISION="$(git describe --abbrev=0 --tags 2>/dev/null || echo unknown)"
 
     #
     # Determine if we are a development branch, if so then append the
