@@ -38,4 +38,4 @@
 #define WEBSITE "https://www.aircrack-ng.org"
 
 extern char * getVersion(char * progname, int maj, int min, int submin, const
-       char * svnrev, int beta, int rc);
+       char * rev, int beta, int rc);

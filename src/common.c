@@ -194,7 +194,7 @@ int get_ram_size(void) {
 }
 
 /* Return the version number */
-char * getVersion(char * progname, int maj, int min, int submin, const char* svnrev, int beta, int rc)
+char * getVersion(char * progname, int maj, int min, int submin, const char* rev, int beta, int rc)
 {
 	int len;
 	char * temp, *rtemp;
@@ -220,8 +220,8 @@ char * getVersion(char * progname, int maj, int min, int submin, const char* svn
 		memset(provis, 0, 20);
 	}
 
-	if (svnrev) {
-		char *tmp = strdup(svnrev);
+	if (rev) {
+		char *tmp = strdup(rev);
 
 		char *sep = strstr(tmp, "_");
 		if (sep)
