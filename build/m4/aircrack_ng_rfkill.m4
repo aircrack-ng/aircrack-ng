@@ -41,5 +41,5 @@ AC_DEFUN([AIRCRACK_NG_RFKILL],[
 AC_ARG_VAR([RFKILL],[Use this rfkill tool.])
 dnl Allow env override but do not be fooled by 'ETHTOOL=t'.
 test t = "$RFKILL" && unset RFKILL
-AC_CHECK_PROG([RFKILL], [rfkill], [yes])
+AC_CHECK_PROG([RFKILL], [rfkill], [$as_dir/$ac_word$ac_exec_ext], [], [$RFKILL_PATH$PATH_SEPARATOR$PATH$PATH_SEPARATOR/sbin$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/usr/local/sbin])
 ])
