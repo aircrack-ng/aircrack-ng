@@ -1,5 +1,6 @@
 Version 1.2-XXX (changes from aircrack-ng 1.2-rc5) - Released XX XXX XXXX:
 * General: Fixed compiling Windows binaries and updated README.md/INSTALLING.
+* General: Fixed commands to install dependencies on Debian/Ubuntu and FreeBSD.
 * General: Removed packages/ directory.
 * General: Added Alpine Linux and Kali Linux buildbots.
 * General: Fixed configure with --with-libpcap-include=/somewhere/include and --with-libpcap-lib=/somewhere/lib.
