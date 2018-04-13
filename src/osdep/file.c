@@ -216,7 +216,7 @@ struct wif *file_open(char *iface)
         struct pcap_file_header pfh;
 	int rc;
 
-	if (strncmp(iface, "file://", 7) != 0)
+	if (iface == NULL || strncmp(iface, "file://", 7) != 0)
 		return NULL;
 
 	/* setup wi struct */
