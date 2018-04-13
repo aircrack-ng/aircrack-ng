@@ -182,8 +182,9 @@ int check_crc_buf_osdep( unsigned char *buf, int len )
 static int is_ndiswrapper(const char * iface, const char * path)
 {
     int n, pid, unused;
-    if (!path || !iface)
-	return 0;
+    if (!path || !iface || strlen(iface) >= IFNAMSIZ) {
+        return 0;
+    }
     if ((pid=fork())==0)
     {
         close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
@@ -1214,6 +1215,10 @@ static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
     int fd2;
     char buf[256];
 
+    if (iface == NULL || strlen(iface) >= IFNAMSIZ ) {
+        return 1;
+    }
+
     /* ipw2200 injection */
     snprintf(buf, 256, "/sys/class/net/%s/device/inject", iface);
     fd2 = open(buf, O_WRONLY);
@@ -1291,6 +1296,10 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
 {
     int pid, status, unused;
     struct iwreq wrq;
+    
+    if (iface == NULL || strlen(iface) >= IFNAMSIZ) {
+        return ( 1 );
+    }
 
     if( strcmp(iface,"prism0") == 0 )
     {
@@ -1428,8 +1437,12 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     struct sockaddr_ll sll;
     struct sockaddr_ll sll2;
 
-    /* find the interface index */
+    if (iface == NULL || strlen(iface) >= sizeof( ifr.ifr_name )) {
+        printf("Interface name too long: %s\n", iface);
+        return ( 1 );
+    }
 
+    /* find the interface index */
     memset( &ifr, 0, sizeof( ifr ) );
     strncpy( ifr.ifr_name, iface, sizeof( ifr.ifr_name ) - 1 );
 
@@ -1639,6 +1652,10 @@ static int do_linux_open(struct wif *wi, char *iface)
     struct ifreq ifr;
     char * unused_str;
     int iface_malloced = 0;
+
+    if (iface == NULL || strlen(iface) >= IFNAMSIZ) {
+        return ( 1 );
+    }
 
     dev->inject_wlanng = 1;
     dev->rate = 2; /* default to 1Mbps if nothing is set */
@@ -2221,6 +2238,10 @@ static struct wif *linux_open(char *iface)
 {
 	struct wif *wi;
 	struct priv_linux *pl;
+
+	if (iface == NULL || strlen(iface) >= IFNAMSIZ) {
+		return NULL;
+	}
 
 	wi = wi_alloc(sizeof(*pl));
 	if (!wi)
