@@ -63,7 +63,7 @@ is as follows:
 
 ### Debian/Ubuntu
 
-    sudo apt install build-essential autoconf automake libtool pkg-config libnl-3-dev libssl-dev libsqlite3-dev libpcre3-dev ethtool shtool
+    sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev libsqlite3-dev libpcre3-dev ethtool shtool rfkill
 
 ### FreeBSD using PKG
 
