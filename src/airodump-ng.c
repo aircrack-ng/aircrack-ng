@@ -6166,10 +6166,16 @@ int init_cards(const char* cardstr, char *iface[], struct wif **wi)
     char *buf;
     int if_count=0;
     int i=0, again=0;
+    
+    // Check card string is valid
+    if (cardstr == NULL || cardstr[0] == 0) {
+        return -1;
+    }
 
-    buf = buffer = (char*) malloc( sizeof(char) * 1025 );
-    strncpy( buffer, cardstr, 1025 );
-    buffer[1024] = '\0';
+    buf = buffer = strdup(cardstr);
+    if (buf == NULL) {
+        return -1;
+    }
 
     while( ((iface[if_count]=strsep(&buffer, ",")) != NULL) && (if_count < MAX_CARDS) )
     {
@@ -7140,8 +7146,10 @@ usage:
         /* initialize cards */
         G.num_cards = init_cards(G.s_iface, iface, wi);
 
-        if(G.num_cards <= 0)
-            return( 1 );
+        if(G.num_cards <= 0) {
+            printf("Failed initializing wireless card(s): %s\n", G.s_iface);
+            return EXIT_FAILURE;
+        }
 
         for (i = 0; i < G.num_cards; i++) {
             fd_raw[i] = wi_fd(wi[i]);
