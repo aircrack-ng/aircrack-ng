@@ -41,8 +41,7 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * If you want to use airolib-ng and '-r' option in aircrack-ng,
    SQLite development package >= 3.3.17 (3.6.X version or better is recommended)
  * If you want to use Airpcap, the 'developer' directory from the CD is required.
- * For best performance on FreeBSD (50-70% more), install gcc5 via: pkg install gcc5
-          Then compile with: gmake CC=gcc5 CXX=g++5
+ * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc7
  * rfkill
 
 ## Resolving the basic requirements
@@ -64,11 +63,11 @@ is as follows:
 
 ### Debian/Ubuntu
 
-    sudo apt install build-essential autoconf automake libtool pkg-config libnl-3-dev libssl-dev libpcre3-dev ethtool shtool
+    sudo apt install build-essential autoconf automake libtool pkg-config libnl-3-dev libssl-dev libsqlite3-dev libpcre3-dev ethtool shtool
 
 ### FreeBSD using PKG
 
-    pkg install autoconf automake libtool pkgconf sqlite3 git python3`
+    pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 openssl gmake
 
 ### MSYS2 (Windows)
 
@@ -221,7 +220,7 @@ to your choosing:
   * Compiling on FreeBSD with better performance
 
     ```
-    env CC=gcc5 CXX=g++5 ./configure
+    env CC=gcc7 CXX=g++7 ./configure
     gmake
     ```
 
