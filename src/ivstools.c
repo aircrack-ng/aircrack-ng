@@ -129,6 +129,14 @@ int merge( int argc, char *argv[] )
         return( 1 );
     }
 
+    // Check filenames are not empty
+    for (i = 2; i < argc - 1; ++i) {
+        if (argv[i][0] == 0) {
+            printf("Filename #%d is empty, aborting\n", i - 1);
+            return ( 1 );
+        }
+    }
+
     printf( "Creating %s\n", argv[argc - 1] );
 
     if( ( f_out = fopen( argv[argc - 1], "wb+" ) ) == NULL )
@@ -798,6 +806,17 @@ int main( int argc, char *argv[] )
     if (strcmp(argv[1],"--convert")) {
         usage(1);
         return( 1 );
+    }
+
+    // Check filenames are not empty
+    if (argv[2][0] == 0) {
+        printf("Invalid pcap file\n");
+        return ( 1 );
+    }
+
+    if (argv[3][0] == 0) {
+        printf("Invalid output file\n");
+        return ( 1 );
     }
 
     memset( bssid_cur, 0, 6 );
