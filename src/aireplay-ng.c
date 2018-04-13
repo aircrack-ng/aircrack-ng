@@ -5413,7 +5413,7 @@ static int get_ip_port(char *iface, char *ip, const int ip_size)
 	struct in_addr addr;
     
 	if (iface == NULL || iface[0] == 0) {
-		return -1
+		return -1;
 	}
 
 	host = strdup(iface);
