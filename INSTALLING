@@ -48,7 +48,7 @@ is as follows:
 
 ==== Fedora/CentOS/RHEL ====
 
-    `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc ethtool`
+    `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool`
 
 ==== FreeBSD using PKG ====
 
