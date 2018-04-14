@@ -46,6 +46,10 @@ is as follows:
 
     `sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev libsqlite3-dev libpcre3-dev ethtool shtool rfkill`
 
+==== Fedora/CentOS/RHEL ====
+
+    `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc ethtool`
+
 ==== FreeBSD using PKG ====
 
     `pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 openssl gmake`
