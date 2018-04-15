@@ -1,5 +1,5 @@
 /*
- * (c) 2010-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ * (c) 2010-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
 #define _MIN 2
 #define _SUB_MIN 0
 #define _BETA 0
-#define _RC 5
+#define _RC 0
 #define WEBSITE "https://www.aircrack-ng.org"
 
 extern char * getVersion(char * progname, int maj, int min, int submin, const

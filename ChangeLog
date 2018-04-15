@@ -1,4 +1,4 @@
-Version 1.2-XXX (changes from aircrack-ng 1.2-rc5) - Released XX XXX XXXX:
+Version 1.2 (changes from aircrack-ng 1.2-rc5) - Released 15 Apr 2018:
 * General: Fixed compiling Windows binaries and updated README.md/INSTALLING.
 * General: Fixed commands to install dependencies on Debian/Ubuntu and FreeBSD.
 * General: Added command to install dependencies on Fedora/CentOS/RHEL.
