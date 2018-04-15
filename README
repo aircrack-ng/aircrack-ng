@@ -4,7 +4,7 @@ See also manpages and the forum.
 Installing
 ==========
 
-This version now requires more libraries than 0.X versions to be compiled. 
+This version has more dependencies/libraries required than previous versions to be compiled. 
 See INSTALLING file for more information
 
 OpenWrt Devices
