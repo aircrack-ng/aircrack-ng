@@ -34,7 +34,7 @@ build_script:
 
     C:\cygwin\bin\bash -e -l -c "make"
 
-    C:\cygwin\bin\bash -e -l -c "make check"
+    C:\cygwin\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin\bin\bash -e -l -c "make clean"
 
@@ -42,7 +42,7 @@ build_script:
 
     C:\cygwin\bin\bash -e -l -c "make"
 
-    C:\cygwin\bin\bash -e -l -c "make check"
+    C:\cygwin\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin\bin\bash -e -l -c "make clean"
 
@@ -50,7 +50,7 @@ build_script:
 
     C:\cygwin\bin\bash -e -l -c "make"
 
-    C:\cygwin\bin\bash -e -l -c "make check"
+    C:\cygwin\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin\bin\bash -e -l -c "make clean"
 
@@ -59,7 +59,7 @@ build_script:
 
     C:\cygwin64\bin\bash -e -l -c "make"
 
-    C:\cygwin64\bin\bash -e -l -c "make check"
+    C:\cygwin64\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin64\bin\bash -e -l -c "make clean"
 
@@ -67,7 +67,7 @@ build_script:
 
     C:\cygwin64\bin\bash -e -l -c "make"
 
-    C:\cygwin64\bin\bash -e -l -c "make check"
+    C:\cygwin64\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin64\bin\bash -e -l -c "make clean"
 
@@ -75,7 +75,7 @@ build_script:
 
     C:\cygwin64\bin\bash -e -l -c "make"
 
-    C:\cygwin64\bin\bash -e -l -c "make check"
+    C:\cygwin64\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin64\bin\bash -e -l -c "make clean"
 
@@ -84,7 +84,7 @@ build_script:
 
     C:\msys64\usr\bin\bash -e -l -c "make"
 
-    C:\msys64\usr\bin\bash -e -l -c "make check"
+    C:\msys64\usr\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\msys64\usr\bin\bash -e -l -c "make clean"
 
@@ -92,4 +92,4 @@ build_script:
 
     C:\msys64\usr\bin\bash -e -l -c "make"
 
-    C:\msys64\usr\bin\bash -e -l -c "make check"
+    C:\msys64\usr\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
