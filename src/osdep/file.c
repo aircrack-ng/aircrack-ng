@@ -96,8 +96,8 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
 		break;
 
 	case LINKTYPE_PRISM_HEADER:
-    if (buf[7] == 0x40)
-      off = 0x40;
+        	if (buf[7] == 0x40)
+          		off = 0x40;
 		else
 			off = le32_to_cpu(*(unsigned int *)(buf + 4));
 
@@ -108,9 +108,9 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
 		off = le16_to_cpu(*(unsigned short *)(buf + 2));
 
 		/* for a while Kismet logged broken PPI headers */
-    if (off == 24 && le16_to_cpu(*(unsigned short *)(buf + 8)) == 2 )
+                if (off == 24 && le16_to_cpu(*(unsigned short *)(buf + 8)) == 2 )
 			off = 32;
-
+		
 		break;
 
 	case LINKTYPE_ETHERNET:
