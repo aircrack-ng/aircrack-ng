@@ -69,7 +69,8 @@ TESTS = test-hex_string_to_array.sh \
 		test-airdecap-ng-0001.sh \
 		test-airdecap-ng-0002.sh \
 		test-airdecap-ng-0003.sh \
-		test-airdecap-ng-0004.sh
+		test-airdecap-ng-0004.sh \
+		test-wpaclean-0001.sh
 
 if HAVE_SQLITE3
 TESTS += test-airolib-ng-0001.sh
