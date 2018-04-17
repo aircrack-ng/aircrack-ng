@@ -90,6 +90,23 @@ extern int is_string_number(const char * str);
 void dump_sort( void );
 void dump_print( int ws_row, int ws_col, int if_num );
 
+static int is_background()
+{
+	pid_t grp = tcgetpgrp(STDIN_FILENO);
+	if(grp == -1) {
+		// Piped
+		return 0;
+	}
+    
+	if (grp == getpgrp()) {
+		// Foreground
+		return 0;
+	}
+    
+	// Background
+	return 1;
+}
+
 char * get_manufacturer_from_string(char * buffer) {
 	char * manuf = NULL;
 	char * buffer_manuf;
@@ -7384,11 +7401,13 @@ usage:
     G.airodump_start_time[strlen(G.airodump_start_time) - 1] = 0; // remove new line
     G.airodump_start_time = (char *) realloc( G.airodump_start_time, sizeof(char) * (strlen(G.airodump_start_time) + 1) );
 
-    if( pthread_create( &(G.input_tid), NULL, (void *) input_thread, NULL ) != 0 )
-    {
-	perror( "pthread_create failed" );
-	return 1;
-    }
+	// Do not start the interactive mode input thread if running in the background
+	int is_bg = is_background();
+	if(!is_bg && pthread_create( &(G.input_tid), NULL, (void *) input_thread, NULL ) != 0 )
+	{
+		perror( "pthread_create failed" );
+		return 1;
+	}
 
 
     while( 1 )
@@ -7622,7 +7641,7 @@ usage:
 
             /* display the list of access points we have */
 
-	    if(!G.do_pause) {
+	    if(!G.do_pause && !is_bg) {
 		pthread_mutex_lock( &(G.mx_print) );
 
 		    fprintf( stderr, "\33[1;1H" );
