@@ -821,6 +821,15 @@ def send_dict():
 
 	d = sys.argv[4]
 
+	# Check if file exists
+	try:
+		if os.stat(d).st_size == 0:
+			print("Empty dictionary file!")
+			return
+	except:
+		print("Dictionary does not exists!")
+		return;
+
 	print("Calculating dictionary hash for %s" % d)
 
 	sha1 = hashlib.sha1()
@@ -853,10 +862,25 @@ def send_cap():
 		usage()
 
 	cap = sys.argv[4]
+    
+	# Check if file exists
+	try:
+		if os.stat(cap).st_size <= 24:
+			# It may exists but contain no packets.
+			print("Empty capture file!")
+			return
+	except:
+		print("Capture file does not exists!")
+		return;
 
 	print("Cleaning cap %s" % cap)
 	subprocess.Popen(["wpaclean", cap + ".clean", cap], \
 	   stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
+
+	# Check cleaned file size (24 bytes -> 0 packets in file)
+	if os.stat(cap + ".clean").st_size <= 24:
+		print("Empty cleaned PCAP file, something's wrong with the original PCAP!")
+		return
 
 	print("Compressing cap")
 	compress_file(cap + ".clean")

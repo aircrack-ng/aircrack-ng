@@ -1,5 +1,6 @@
 Version 1.3 beta 1 (changes from aircrack-ng 1.2) - Released XX XXX XXXX:
 * Airodump-ng: Fixed running in the background.
+* dcrack: Check if dictionary and capture file exists before uploading them.
 * FreeRADIUS-WPE: Updated instructions for v3.0.17
 * WPAClean: Fixed crash with invalid prism2 header PCAP and added tests.
 * General: Added --without-opt to disable stack protector when using GCC >= 4.9
