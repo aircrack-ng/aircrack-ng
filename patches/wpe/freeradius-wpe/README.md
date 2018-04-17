@@ -1,6 +1,6 @@
 # FreeRadius Wireless Pawn Edition
 
-Updated patch for FreeRadius 3.0.13-3.0.15
+Updated patch for FreeRadius 3.0.13-3.0.17
 
 More information about WPE can be found:
 http://www.willhackforsushi.com/?page_id=37
@@ -26,13 +26,11 @@ apt-get install libssl-dev build-essential libtalloc-dev libpcre3-dev
 Run the following commands:
 
 ```
-wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.15.tar.bz2
-tar -xvf freeradius-server-3.0.15.tar.bz2
-cd freeradius-server-3.0.15
+wget https://github.com/FreeRADIUS/freeradius-server/archive/release_3_0_17.tar.gz
+tar -xzf release_3_0_17.tar.gz
+cd freeradius-server-release_3_0_17/
 wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius-wpe.patch
 patch -Np1 -i freeradius-server-wpe.patch
-wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius_3_0_15_openssl_1_1_tls_version_fix.diff
-patch -Np1 -i freeradius_3_0_15_openssl_1_1_tls_version_fix.diff
 ./configure
 make
 make install
@@ -55,4 +53,9 @@ Now, connect a client. Once a username/password is entered and the certificate a
 
 ## Note
 
-Debian testing disabled TLS 1.0 and TLS 1.1 which break FreeRADIUS-WPE. A bug has been reported to Debian to enable TLS 1.0/1.1 and FreeRADIUS is working on a solution.
+Debian testing disabled TLS 1.0 and TLS 1.1 which break FreeRADIUS-WPE <= 3.0.15. Although not recommended to use an older version, if compiling FreeRADIUS <= 3.0.15, run the following commands before running `./configure`:
+
+```
+wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius_3_0_15_openssl_1_1_tls_version_fix.diff
+patch -Np1 -i freeradius_3_0_15_openssl_1_1_tls_version_fix.diff
+```
