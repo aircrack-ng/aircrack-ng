@@ -126,7 +126,7 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
 	assert(rc >= 0);
 
   if (off < 0 || rc < 0)
-    return 0;
+    return -1;
 
 	if (rc > len)
 		rc = len;
