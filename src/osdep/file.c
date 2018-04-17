@@ -99,7 +99,7 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
         	if (buf[7] == 0x40)
           		off = 0x40;
 		else
-			off = *((int *)(buf + 4));
+			off = le32_to_cpu(*(unsigned int *)(buf + 4));
 
 		rc -= 4;
 		break;
@@ -124,6 +124,9 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
 
 	rc -= off;
 	assert(rc >= 0);
+
+  if (off < 0 || rc < 0)
+    return -1;
 
 	if (rc > len)
 		rc = len;
