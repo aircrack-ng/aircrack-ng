@@ -21,7 +21,9 @@
    (-essid-regex) pcre development package is required.
  * If you want to use airolib-ng and '-r' option in aircrack-ng,
    SQLite development package >= 3.3.17 (3.6.X version or better is recommended)
- * If you want to use Airpcap, the 'developer' directory from the CD is required.
+ * If you want to use Airpcap, the 'developer' directory from the CD/ISO/SDK is required.
+ * In order to build besside-ng, besside-ng-crawler, easside-ng, tkiptun-ng and wesside-ng,
+   libpcap development package is required (on Cygwin, use the Aircap SDK instead; see above)
  * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc7
  * rfkill
 
@@ -111,11 +113,15 @@ to your choosing:
 * with-airpcap=DIR:  needed for supporting airpcap devices on windows (cygwin or msys2 only)
                 Replace DIR above with the absolute location to the root of the
                 extracted source code from the Airpcap CD or downloaded SDK available
-                online.
+                online. Required on Windows to build besside-ng, besside-ng-crawler, 
+                easside-ng, tkiptun-ng and wesside-ng when building experimental tools
 
-* with-experimental: needed to compile `tkiptun-ng`, `easside-ng` (and `buddy-ng`) and
-                    `wesside-ng`. Building besside-ng-crawler requires LibPCAP 
-                    (development package). On debian based distro, install libpcap-dev
+* with-experimental: needed to compile tkiptun-ng, easside-ng, buddy-ng, buddy-ng-crawler,
+                    airventriloquist and wesside-ng. libpcap development package is also
+                    required to compile most of the tools.
+                    If not present, not all experimental tools will be built.
+                    On Cygwin, libpcap is not present and the Airpcap SDK replaces it.
+                    See --with-airpcap option above.
 
 * with-ext-scripts: needed to build `airoscript-ng`, `versuck-ng`, `airgraph-ng` and 
                    `airdrop-ng`. 
