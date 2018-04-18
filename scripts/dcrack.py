@@ -12,6 +12,7 @@ import gzip
 import json
 import datetime
 import re
+import socket
 
 if sys.version_info[0] >= 3:
 	from socketserver import ThreadingTCPServer
@@ -501,8 +502,12 @@ def init_db():
 def server():
 	init_db()
 
-	server_class = ThreadingTCPServer 
-	httpd = server_class(('', port), ServerHandler)
+	server_class = ThreadingTCPServer
+	try:
+		httpd = server_class(('', port), ServerHandler)
+	except socket.error, exc:
+		print("Failed listening on port %d" % port)
+		return
 
 	print("Starting server")
 	try:
