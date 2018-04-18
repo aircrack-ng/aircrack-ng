@@ -775,6 +775,7 @@ def client():
 
 	try_ping(speed)
 	t = threading.Thread(target=pinger, args=(speed,))
+	t.daemon = True
 	t.start()
 
 	while True:
@@ -791,7 +792,6 @@ def do_client():
 	except KeyboardInterrupt:
 		if cracker:
 			cracker.kill()
-		print("one more time...")
 
 def upload_file(url, f):
 	x  = urlparse(url)
