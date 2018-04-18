@@ -139,14 +139,15 @@ bin_PROGRAMS = aircrack-ng \
                makeivs-ng \
                airdecloak-ng
 
+if EXPERIMENTAL
 if HAVE_PCAP
 bin_PROGRAMS += besside-ng-crawler
+endif
 endif
 
 bin_PROGRAMS += wpaclean
 
-sbin_PROGRAMS = airventriloquist-ng \
-                airbase-ng \
+sbin_PROGRAMS = airbase-ng \
                 aireplay-ng \
                 airodump-ng \
                 airserv-ng \
@@ -158,6 +159,8 @@ endif
 
 if EXPERIMENTAL
 bin_PROGRAMS += buddy-ng
+
+sbin_PROGRAMS += airventriloquist-ng
 
 if HAVE_AIRPCAP_OR_PCAP
 sbin_PROGRAMS += besside-ng \
