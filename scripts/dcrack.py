@@ -505,7 +505,11 @@ def server():
 	httpd = server_class(('', port), ServerHandler)
 
 	print("Starting server")
-	httpd.serve_forever()
+	try:
+		httpd.serve_forever()
+	except KeyboardInterrupt:
+		print("Bye!")
+	httpd.server_close()
 
 def usage():
 	print("""dcrack v0.3
