@@ -830,10 +830,24 @@ def send_dict():
 		print("Dictionary does not exists!")
 		return;
 
-	print("Calculating dictionary hash for %s" % d)
+	print("Cleaning up dictionary")
+	new_dict = d + "-clean"
+	with open(new_dict, 'w') as fout:
+		with open(d) as fid:
+			for line in fid:
+				cleaned_line = line.rstrip("\n")
+				if len(cleaned_line) >= 8 and len(cleaned_line) <= 63:
+					fout.write(cleaned_line + "\n")
+
+	if os.stat(new_dict).st_size == 0:
+		os.remove(new_dict)
+		print("No valid passphrase in dictionary")
+		return
+
+	print("Calculating dictionary hash for cleaned up %s" % d)
 
 	sha1 = hashlib.sha1()
-	with open(d, "rb") as fid:
+	with open(new_dict, "rb") as fid:
 		sha1.update(fid.read())
 
 	h = sha1.hexdigest()
@@ -846,9 +860,9 @@ def send_dict():
 	if "NO" in str(stuff):
 		u = url + "dict/create"
 		print("Compressing dictionary")
-		compress_file(d)
+		compress_file(new_dict)
 		print("Uploading dictionary")
-		upload_file(u, d + ".gz")
+		upload_file(u, new_dict + ".gz")
 
 	print("Setting dictionary to %s" % d)
 	u = url + "dict/" + h + "/set"
