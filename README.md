@@ -144,8 +144,7 @@ to your choosing:
 
 * **with-ext-scripts**: needed to build `airoscript-ng`, `versuck-ng`, `airgraph-ng` and 
                    `airdrop-ng`. 
-                   Note: Experimental. Each script has its own dependences.
-                   Note: It's only required in install phase.
+                   Note: Each script has its own dependencies.
 
 * **with-gcrypt**:   Use libgcrypt crypto library instead of the default OpenSSL.
                 And also use internal fast sha1 implementation (borrowed from GIT)
