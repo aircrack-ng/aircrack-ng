@@ -26,9 +26,9 @@ apt-get install libssl-dev build-essential libtalloc-dev libpcre3-dev
 Run the following commands:
 
 ```
-wget https://github.com/FreeRADIUS/freeradius-server/archive/release_3_0_17.tar.gz
-tar -xzf release_3_0_17.tar.gz
-cd freeradius-server-release_3_0_17/
+wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.17.tar.bz2
+tar -xjf freeradius-server-3.0.17.tar.bz2
+cd freeradius-server-3.0.17/
 wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius-wpe.patch
 patch -Np1 -i freeradius-server-wpe.patch
 ./configure
