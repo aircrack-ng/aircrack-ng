@@ -575,8 +575,16 @@ def get_work():
 	crack = json.loads(stuff)
 
 	if "interval" in crack:
-		print("Waiting")
-		return int(crack['interval'])
+		# Validate value
+		try:
+			interval = int(crack['interval'])
+			if (interval < 0):
+				raise ValueError('Interval must be above or equal to 0')
+		except:
+			# In case of failure, default to 60 sec
+			interval = 60
+		print("Waiting %d sec" % interval)
+		return interval
 
 	wl  = setup_dict(crack)
 	cap = get_cap(crack)
@@ -627,6 +635,9 @@ def setup_dict(crack):
 	global url
 
 	d = crack['dict']
+	if not re.compile("^[a-f0-9]{5,40}").match(d):
+		print("Invalid dictionary: %s" % d)
+		return
 
 	fn = "dcrack-client-dict-%s.txt" % d
 
