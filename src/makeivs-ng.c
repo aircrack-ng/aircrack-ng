@@ -32,7 +32,6 @@
 
 #define NULL_MAC "\x00\x00\x00\x00\x00\x00"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 
 char usage[] =

@@ -40,8 +40,6 @@
 #include "easside.h"
 #include "version.h"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-
 unsigned char ids[8192];
 unsigned short last_id;
 int wrap;

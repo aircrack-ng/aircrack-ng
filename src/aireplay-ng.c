@@ -72,6 +72,7 @@
 #include "osdep/osdep.h"
 #include "crypto.h"
 #include "common.h"
+#include "verifyssid.h"
 
 #define RTC_RESOLUTION  8192
 
@@ -130,7 +131,6 @@
 
 int bitrates[RATE_NUM]={RATE_1M, RATE_2M, RATE_5_5M, RATE_6M, RATE_9M, RATE_11M, RATE_12M, RATE_18M, RATE_24M, RATE_36M, RATE_48M, RATE_54M};
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int maccmp(unsigned char *mac1, unsigned char *mac2);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
@@ -833,7 +833,7 @@ int getnet( unsigned char* capa, int filter, int force)
     {
         if(memcmp(bssid, NULL_MAC, 6))
         {
-            if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
+            if( verifyssid((const unsigned char *)opt.r_essid) == 0 )
             {
                 printf( "Please specify an ESSID (-e).\n" );
             }
@@ -1502,7 +1502,7 @@ int do_attack_fake_auth( void )
     if(getnet(capa, 0, 1) != 0)
         return 1;
 
-    if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
+    if( verifyssid((const unsigned char *)opt.r_essid) == 0 )
     {
         printf( "Please specify an ESSID (-e).\n" );
         return 1;
@@ -5415,6 +5415,10 @@ static int get_ip_port(char *iface, char *ip, const int ip_size)
 	char *ptr;
 	int port = -1;
 	struct in_addr addr;
+    
+	if (iface == NULL || iface[0] == 0) {
+		return -1;
+	}
 
 	host = strdup(iface);
 	if (!host)

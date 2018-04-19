@@ -18,7 +18,7 @@ fi
 make
 make dist
 
-V=$(cat VERSION)
+V=$(./evalrev)
 BN="aircrack-ng-$V"
 
 [ -d dist_build ] && rm -fr dist_build

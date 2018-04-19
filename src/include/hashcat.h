@@ -63,7 +63,7 @@ typedef struct
 #define HCCAPX_CURRENT_VERSION 4
 
 // https://hashcat.net/wiki/doku.php?id=hccapx
-struct hccapx
+typedef struct hccapx
 {
   uint32_t signature;		/* signature (file magic) of .hccapx files, it is always the string HCPX */
   uint32_t version;			/* version number of the .hccapx file format */
@@ -124,6 +124,6 @@ struct hccapx
   uint16_t eapol_len;		/* length of the EAPOL */
   uint8_t  eapol[256];		/* EAPOL (max 256 bytes) */
 
-} __attribute__((packed));
+} __attribute__((packed)) hccapx_t;
 
 #endif

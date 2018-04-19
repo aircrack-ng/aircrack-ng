@@ -21,9 +21,10 @@
    (-essid-regex) pcre development package is required.
  * If you want to use airolib-ng and '-r' option in aircrack-ng,
    SQLite development package >= 3.3.17 (3.6.X version or better is recommended)
- * If you want to use Airpcap, the 'developer' directory from the CD is required.
- * For best performance on FreeBSD (50-70% more), install gcc5 via: pkg install gcc5
-          Then compile with: gmake CC=gcc5 CXX=g++5
+ * If you want to use Airpcap, the 'developer' directory from the CD/ISO/SDK is required.
+ * In order to build besside-ng, besside-ng-crawler, easside-ng, tkiptun-ng and wesside-ng,
+   libpcap development package is required (on Cygwin, use the Aircap SDK instead; see above)
+ * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc7
  * rfkill
 
 === Resolving the basic requirements ===
@@ -45,11 +46,15 @@ is as follows:
 
 ==== Debian/Ubuntu ====
 
-    `sudo apt install build-essential autoconf automake libtool pkg-config libnl-3-dev libssl-dev libpcre3-dev ethtool shtool`
+    `sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev libsqlite3-dev libpcre3-dev ethtool shtool rfkill`
+
+==== Fedora/CentOS/RHEL ====
+
+    `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool`
 
 ==== FreeBSD using PKG ====
 
-    `pkg install autoconf automake libtool pkgconf sqlite3 git python3`
+    `pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 openssl gmake`
 
 ==== MSYS2 (Windows) ====
 
@@ -108,16 +113,19 @@ to your choosing:
 * with-airpcap=DIR:  needed for supporting airpcap devices on windows (cygwin or msys2 only)
                 Replace DIR above with the absolute location to the root of the
                 extracted source code from the Airpcap CD or downloaded SDK available
-                online.
+                online. Required on Windows to build besside-ng, besside-ng-crawler, 
+                easside-ng, tkiptun-ng and wesside-ng when building experimental tools
 
-* with-experimental: needed to compile `tkiptun-ng`, `easside-ng` (and `buddy-ng`) and
-                    `wesside-ng`. Building besside-ng-crawler requires LibPCAP 
-                    (development package). On debian based distro, install libpcap-dev
+* with-experimental: needed to compile tkiptun-ng, easside-ng, buddy-ng, buddy-ng-crawler,
+                    airventriloquist and wesside-ng. libpcap development package is also
+                    required to compile most of the tools.
+                    If not present, not all experimental tools will be built.
+                    On Cygwin, libpcap is not present and the Airpcap SDK replaces it.
+                    See --with-airpcap option above.
 
 * with-ext-scripts: needed to build `airoscript-ng`, `versuck-ng`, `airgraph-ng` and 
                    `airdrop-ng`. 
-                   Note: Experimental. Each script has its own dependences.
-                   Note: It's only required in install phase.
+                   Note: Each script has its own dependencies.
 
 * with-gcrypt:   Use libgcrypt crypto library instead of the default OpenSSL.
                 And also use internal fast sha1 implementation (borrowed from GIT)
@@ -129,6 +137,8 @@ to your choosing:
 * with-xcode:    Set this flag to true to compile on OS X with Xcode 7+.
 
 * disable-libnl:  Set-up the project to be compiled without libnl (1 or 3). Linux option only.
+
+* without-opt:  Do not enable stack protector (on GCC 4.9 and above).
 
 ===== Examples =====
 
@@ -187,7 +197,7 @@ to your choosing:
 
   * Compiling on FreeBSD with better performance
 
-    `env CC=gcc5 CXX=g++5 ./configure`
+    `env CC=gcc7 CXX=g++7 ./configure`
     `gmake`
 
 == Packaging ==

@@ -160,6 +160,10 @@ struct wif *wi_open(char *iface)
 {
 	struct wif *wi;
 
+	if (iface == NULL || iface[0] == 0) {
+		return NULL;
+	}
+
 	wi = file_open(iface);
 	if (wi == (struct wif*) -1)
 		return NULL;

@@ -194,41 +194,70 @@ int get_ram_size(void) {
 }
 
 /* Return the version number */
-char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc)
+char * getVersion(const char * progname, const unsigned int maj, const unsigned int min, const unsigned int submin, const char* rev, const unsigned int beta, const unsigned int rc)
 {
-	int len;
-	char * temp, *rtemp;
-	char * provis = calloc(1,20);
-	len = strlen(progname) + 200;
-	temp = (char *) calloc(1,len);
+	if (progname == NULL || progname[0] == 0) {
+		fprintf(stderr, "Invalid program name, cannot be NULL or empty\n");
+		exit(1);
+	}
+	if (rc != 0 && beta != 0) {
+		fprintf(stderr, "RC and beta cannot be both used\n");
+		exit(1);
+	}
 
-	snprintf(temp, len, "%s %d.%d", progname, maj, min);
+	// Calculate and allocate buffer
+	size_t len = 100 + strlen(progname);
+	if (rev) {
+		len += strlen(rev);
+	}
+	char * ret = (char *) calloc(1, len);
+	if (ret == NULL) {
+		perror("calloc()");
+		exit(1);
+	}
 
+	// Major, minor version
+	snprintf(ret, len, "%s %u.%u", progname, maj, min);
+
+	// Sub-minor
 	if (submin > 0) {
-		snprintf(provis, 20,".%d",submin);
-		strncat(temp, provis, len - strlen(temp));
-		memset(provis,0,20);
+		snprintf(ret + strlen(ret), len - strlen(ret), ".%u", submin);
 	}
 
+	// Release candidate ...
 	if (rc > 0) {
-		snprintf(provis, 20, " rc%d", rc);
-		strncat(temp, provis, len - strlen(temp));
-		memset(provis, 0, 20);
-	} else if (beta > 0) {
-		snprintf(provis, 20, " beta%d", beta);
-		strncat(temp, provis, len - strlen(temp));
-		memset(provis, 0, 20);
+		snprintf(ret + strlen(ret), len - strlen(ret), " rc%u", rc);
+	} else if (beta > 0) { // ... Or beta
+		snprintf(ret + strlen(ret), len - strlen(ret), " beta%u", beta);
 	}
 
-	if (svnrev > 0) {
-		snprintf(provis, 20," r%d",svnrev);
-		strncat(temp, provis, len - strlen(temp));
-		memset(provis, 0, 20);
+	// Add revision if it comes from subversion or git
+	if (rev) {
+		char *tmp = strdup(rev);
+
+		char *sep = strstr(tmp, "_");
+		if (sep)
+		{
+			++sep;
+		}
+		else
+		{
+			sep = "";
+		}
+
+		char *search = strstr(sep, "rev-");
+		if (search)
+		{
+			search[3] = ' ';
+		}
+
+		snprintf(ret + strlen(ret), len - strlen(ret)," %s", search ? search : sep);
+		free(tmp);
 	}
 
-	free(provis);
-	rtemp = realloc(temp, strlen(temp)+1);
-	return (rtemp) ? rtemp : temp;
+	// Shorten buffer if possible
+	char  *  r_ret = realloc(ret, strlen(ret) + 1);
+	return (r_ret) ? r_ret : ret;
 }
 
 // Return the number of cpu. If detection fails, it will return -1;

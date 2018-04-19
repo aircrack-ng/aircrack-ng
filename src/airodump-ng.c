@@ -75,6 +75,7 @@
 #include "osdep/common.h"
 #include "common.h"
 #include "mcs_index_rates.h"
+#include "verifyssid.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
 #ifdef USE_GCRYPT
@@ -88,6 +89,23 @@ extern int is_string_number(const char * str);
 
 void dump_sort( void );
 void dump_print( int ws_row, int ws_col, int if_num );
+
+static int is_background()
+{
+	pid_t grp = tcgetpgrp(STDIN_FILENO);
+	if(grp == -1) {
+		// Piped
+		return 0;
+	}
+    
+	if (grp == getpgrp()) {
+		// Foreground
+		return 0;
+	}
+    
+	// Background
+	return 1;
+}
 
 char * get_manufacturer_from_string(char * buffer) {
 	char * manuf = NULL;
@@ -1689,12 +1707,13 @@ skip_station:
                 memcpy( st_cur->probes[st_cur->probe_index], p + 2, n ); //twice?!
                 st_cur->ssid_length[st_cur->probe_index] = n;
 
-                for( i = 0; i < n; i++ )
-                {
-                    c = p[2 + i];
-                    if( c == 0 || ( c > 126 && c < 160 ) ) c = '.';  //could also check ||(c>0 && c<32)
-                    st_cur->probes[st_cur->probe_index][i] = c;
-                }
+                if( verifyssid( (const unsigned char *)st_cur->probes[st_cur->probe_index] ) == 0 )
+                    for( i = 0; i < n; i++ )
+                    {
+                        c = p[2 + i];
+                        if( c == 0 || ( c > 0 && c < 32 ) || ( c > 126 && c < 160 ) ) c = '.';
+                        st_cur->probes[st_cur->probe_index][i] = c;
+                    }
             }
 
             p += 2 + p[1];
@@ -1782,10 +1801,11 @@ skip_probe:
                     ap_cur->essid_stored = 1;
                 }
 
-                for( i = 0; i < n; i++ )
-                    if( ( ap_cur->essid[i] >   0 && ap_cur->essid[i] <  32 ) ||
-                        ( ap_cur->essid[i] > 126 && ap_cur->essid[i] < 160 ) )
-                        ap_cur->essid[i] = '.';
+                if ( verifyssid( ap_cur->essid ) == 0 )
+                    for( i = 0; i < n; i++ )
+                        if( ( ap_cur->essid[i] >   0 && ap_cur->essid[i] <  32 ) ||
+                            ( ap_cur->essid[i] > 126 && ap_cur->essid[i] < 160 ) )
+                              ap_cur->essid[i] = '.';
             }
 
             /* get the maximum speed in Mb and the AP's channel */
@@ -2284,10 +2304,11 @@ skip_probe:
                     ap_cur->essid_stored = 1;
                 }
 
-                for( i = 0; i < n; i++ )
-                    if( ap_cur->essid[i] < 32 ||
-                      ( ap_cur->essid[i] > 126 && ap_cur->essid[i] < 160 ) )
-                        ap_cur->essid[i] = '.';
+                if ( verifyssid( ap_cur->essid ) == 0 )
+                    for( i = 0; i < n; i++ )
+                        if( ( ap_cur->essid[i] >   0 && ap_cur->essid[i] <  32 ) ||
+                            ( ap_cur->essid[i] > 126 && ap_cur->essid[i] < 160 ) )
+                              ap_cur->essid[i] = '.';
             }
 
             p += 2 + p[1];
@@ -4143,9 +4164,14 @@ int dump_write_csv( void )
 
         fprintf( G.f_txt, "%3d, ", ap_cur->ssid_length);
 
-	temp = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
+	if( verifyssid( ap_cur->essid ) )
+	    fprintf( G.f_txt, "%s, ", ap_cur->essid );
+	else
+	{
+        temp = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
         fprintf( G.f_txt, "%s, ", temp );
-	free(temp);
+        free(temp);
+	}
 
         if(ap_cur->key != NULL)
         {
@@ -4215,7 +4241,15 @@ int dump_write_csv( void )
             if( st_cur->ssid_length[i] == 0 )
                 continue;
 
-	    temp = format_text_for_csv((unsigned char *)st_cur->probes[i], st_cur->ssid_length[i]);
+        if( verifyssid( (const unsigned char *)st_cur->probes[i] ) )
+        {
+            temp = (char *)calloc(1, (st_cur->ssid_length[i] + 1) * sizeof(char));
+            memcpy(temp, st_cur->probes[i], st_cur->ssid_length[i] + 1);
+        }
+        else
+        {
+            temp = format_text_for_csv((unsigned char *)st_cur->probes[i], st_cur->ssid_length[i]);
+        }
 
 	    if( probes_written == 0)
 	    {
@@ -6149,10 +6183,16 @@ int init_cards(const char* cardstr, char *iface[], struct wif **wi)
     char *buf;
     int if_count=0;
     int i=0, again=0;
+    
+    // Check card string is valid
+    if (cardstr == NULL || cardstr[0] == 0) {
+        return -1;
+    }
 
-    buf = buffer = (char*) malloc( sizeof(char) * 1025 );
-    strncpy( buffer, cardstr, 1025 );
-    buffer[1024] = '\0';
+    buf = buffer = strdup(cardstr);
+    if (buf == NULL) {
+        return -1;
+    }
 
     while( ((iface[if_count]=strsep(&buffer, ",")) != NULL) && (if_count < MAX_CARDS) )
     {
@@ -7123,8 +7163,10 @@ usage:
         /* initialize cards */
         G.num_cards = init_cards(G.s_iface, iface, wi);
 
-        if(G.num_cards <= 0)
-            return( 1 );
+        if(G.num_cards <= 0) {
+            printf("Failed initializing wireless card(s): %s\n", G.s_iface);
+            return EXIT_FAILURE;
+        }
 
         for (i = 0; i < G.num_cards; i++) {
             fd_raw[i] = wi_fd(wi[i]);
@@ -7359,11 +7401,13 @@ usage:
     G.airodump_start_time[strlen(G.airodump_start_time) - 1] = 0; // remove new line
     G.airodump_start_time = (char *) realloc( G.airodump_start_time, sizeof(char) * (strlen(G.airodump_start_time) + 1) );
 
-    if( pthread_create( &(G.input_tid), NULL, (void *) input_thread, NULL ) != 0 )
-    {
-	perror( "pthread_create failed" );
-	return 1;
-    }
+	// Do not start the interactive mode input thread if running in the background
+	int is_bg = is_background();
+	if(!is_bg && pthread_create( &(G.input_tid), NULL, (void *) input_thread, NULL ) != 0 )
+	{
+		perror( "pthread_create failed" );
+		return 1;
+	}
 
 
     while( 1 )
@@ -7597,7 +7641,7 @@ usage:
 
             /* display the list of access points we have */
 
-	    if(!G.do_pause) {
+	    if(!G.do_pause && !is_bg) {
 		pthread_mutex_lock( &(G.mx_print) );
 
 		    fprintf( stderr, "\33[1;1H" );

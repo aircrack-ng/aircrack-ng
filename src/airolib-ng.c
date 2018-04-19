@@ -56,8 +56,6 @@
 #define IMPORT_PASSWD "passwd"
 #define IMPORT_COWPATTY "cowpatty"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-
 void print_help(const char * msg) {
 	char *version_info = getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"

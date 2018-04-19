@@ -30,11 +30,13 @@ build_script:
 
     C:\cygwin\bin\bash -e -l -c "7z x AirPcap_Devpack_4_1_1_1838.zip"
 
+    C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src"
+
     C:\cygwin\bin\bash -e -l -c "./autogen.sh --with-experimental --with-airpcap=`pwd`"
 
     C:\cygwin\bin\bash -e -l -c "make"
 
-    C:\cygwin\bin\bash -e -l -c "make check"
+    C:\cygwin\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin\bin\bash -e -l -c "make clean"
 
@@ -42,7 +44,7 @@ build_script:
 
     C:\cygwin\bin\bash -e -l -c "make"
 
-    C:\cygwin\bin\bash -e -l -c "make check"
+    C:\cygwin\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin\bin\bash -e -l -c "make clean"
 
@@ -50,16 +52,18 @@ build_script:
 
     C:\cygwin\bin\bash -e -l -c "make"
 
-    C:\cygwin\bin\bash -e -l -c "make check"
+    C:\cygwin\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin\bin\bash -e -l -c "make clean"
 
+
+    C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"
 
     C:\cygwin64\bin\bash -e -l -c "./autogen.sh --with-experimental --with-airpcap=`pwd`"
 
     C:\cygwin64\bin\bash -e -l -c "make"
 
-    C:\cygwin64\bin\bash -e -l -c "make check"
+    C:\cygwin64\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin64\bin\bash -e -l -c "make clean"
 
@@ -67,7 +71,7 @@ build_script:
 
     C:\cygwin64\bin\bash -e -l -c "make"
 
-    C:\cygwin64\bin\bash -e -l -c "make check"
+    C:\cygwin64\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin64\bin\bash -e -l -c "make clean"
 
@@ -75,16 +79,18 @@ build_script:
 
     C:\cygwin64\bin\bash -e -l -c "make"
 
-    C:\cygwin64\bin\bash -e -l -c "make check"
+    C:\cygwin64\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\cygwin64\bin\bash -e -l -c "make clean"
 
+
+    C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"
 
     C:\msys64\usr\bin\bash -e -l -c "./autogen.sh --with-experimental --with-airpcap=`pwd`"
 
     C:\msys64\usr\bin\bash -e -l -c "make"
 
-    C:\msys64\usr\bin\bash -e -l -c "make check"
+    C:\msys64\usr\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"
 
     C:\msys64\usr\bin\bash -e -l -c "make clean"
 
@@ -92,4 +98,4 @@ build_script:
 
     C:\msys64\usr\bin\bash -e -l -c "make"
 
-    C:\msys64\usr\bin\bash -e -l -c "make check"
+    C:\msys64\usr\bin\bash -e -l -c "make check || { cat test/test-suite.log && exit 1; }"

@@ -12,6 +12,7 @@ import gzip
 import json
 import datetime
 import re
+import socket
 
 if sys.version_info[0] >= 3:
 	from socketserver import ThreadingTCPServer
@@ -501,11 +502,19 @@ def init_db():
 def server():
 	init_db()
 
-	server_class = ThreadingTCPServer 
-	httpd = server_class(('', port), ServerHandler)
+	server_class = ThreadingTCPServer
+	try:
+		httpd = server_class(('', port), ServerHandler)
+	except socket.error, exc:
+		print("Failed listening on port %d" % port)
+		return
 
 	print("Starting server")
-	httpd.serve_forever()
+	try:
+		httpd.serve_forever()
+	except KeyboardInterrupt:
+		print("Bye!")
+	httpd.server_close()
 
 def usage():
 	print("""dcrack v0.3
@@ -566,8 +575,16 @@ def get_work():
 	crack = json.loads(stuff)
 
 	if "interval" in crack:
-		print("Waiting")
-		return int(crack['interval'])
+		# Validate value
+		try:
+			interval = int(crack['interval'])
+			if (interval < 0):
+				raise ValueError('Interval must be above or equal to 0')
+		except:
+			# In case of failure, default to 60 sec
+			interval = 60
+		print("Waiting %d sec" % interval)
+		return interval
 
 	wl  = setup_dict(crack)
 	cap = get_cap(crack)
@@ -618,6 +635,9 @@ def setup_dict(crack):
 	global url
 
 	d = crack['dict']
+	if not re.compile("^[a-f0-9]{5,40}").match(d):
+		print("Invalid dictionary: %s" % d)
+		return
 
 	fn = "dcrack-client-dict-%s.txt" % d
 
@@ -775,6 +795,7 @@ def client():
 
 	try_ping(speed)
 	t = threading.Thread(target=pinger, args=(speed,))
+	t.daemon = True
 	t.start()
 
 	while True:
@@ -791,7 +812,6 @@ def do_client():
 	except KeyboardInterrupt:
 		if cracker:
 			cracker.kill()
-		print("one more time...")
 
 def upload_file(url, f):
 	x  = urlparse(url)
@@ -821,10 +841,33 @@ def send_dict():
 
 	d = sys.argv[4]
 
-	print("Calculating dictionary hash for %s" % d)
+	# Check if file exists
+	try:
+		if os.stat(d).st_size == 0:
+			print("Empty dictionary file!")
+			return
+	except:
+		print("Dictionary does not exists!")
+		return;
+
+	print("Cleaning up dictionary")
+	new_dict = d + "-clean"
+	with open(new_dict, 'w') as fout:
+		with open(d) as fid:
+			for line in fid:
+				cleaned_line = line.rstrip("\n")
+				if len(cleaned_line) >= 8 and len(cleaned_line) <= 63:
+					fout.write(cleaned_line + "\n")
+
+	if os.stat(new_dict).st_size == 0:
+		os.remove(new_dict)
+		print("No valid passphrase in dictionary")
+		return
+
+	print("Calculating dictionary hash for cleaned up %s" % d)
 
 	sha1 = hashlib.sha1()
-	with open(d, "rb") as fid:
+	with open(new_dict, "rb") as fid:
 		sha1.update(fid.read())
 
 	h = sha1.hexdigest()
@@ -837,9 +880,9 @@ def send_dict():
 	if "NO" in str(stuff):
 		u = url + "dict/create"
 		print("Compressing dictionary")
-		compress_file(d)
+		compress_file(new_dict)
 		print("Uploading dictionary")
-		upload_file(u, d + ".gz")
+		upload_file(u, new_dict + ".gz")
 
 	print("Setting dictionary to %s" % d)
 	u = url + "dict/" + h + "/set"
@@ -853,10 +896,25 @@ def send_cap():
 		usage()
 
 	cap = sys.argv[4]
+    
+	# Check if file exists
+	try:
+		if os.stat(cap).st_size <= 24:
+			# It may exists but contain no packets.
+			print("Empty capture file!")
+			return
+	except:
+		print("Capture file does not exists!")
+		return;
 
 	print("Cleaning cap %s" % cap)
 	subprocess.Popen(["wpaclean", cap + ".clean", cap], \
 	   stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
+
+	# Check cleaned file size (24 bytes -> 0 packets in file)
+	if os.stat(cap + ".clean").st_size <= 24:
+		print("Empty cleaned PCAP file, something's wrong with the original PCAP!")
+		return
 
 	print("Compressing cap")
 	compress_file(cap + ".clean")
