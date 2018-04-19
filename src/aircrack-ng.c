@@ -192,7 +192,7 @@ char usage[] =
 "  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
 "  https://www.aircrack-ng.org\n"
 "\n"
-"  usage: aircrack-ng [options] <.cap / .ivs file(s)>\n"
+"  usage: aircrack-ng [options] <input file(s)>\n"
 "\n"
 "  Common options:\n"
 "\n"
