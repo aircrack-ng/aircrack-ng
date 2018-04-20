@@ -200,6 +200,9 @@ static void file_close(struct wif *wi)
 
 	if (pn->pf_fd)
 		close(pn->pf_fd);
+	if (pn) {
+		free(pn);
+	}
 
 	free(wi);
 }
