@@ -21,6 +21,12 @@ Supported and tested EAP Types/Inner Authentication Methods (others may also wor
 apt-get install libssl-dev build-essential libtalloc-dev libpcre3-dev
 ```
 
+### Optional dependencies
+
+```
+apt-get install libsqlite3-dev libhiredis-dev libykclient-dev libyubikey-dev default-libmysqlclient-dev libcurl4-openssl-dev libperl-dev libpam0g-dev libcap-dev libmemcached-dev libgdbm-dev libiodbc2-dev libpq-dev libwbclient-dev libkrb5-dev libjson-c-dev freetds-dev libwbclient-sssd-dev samba-dev libiodbc2-dev unixodbc-dev
+```
+
 ### Compilation
 
 Run the following commands:
