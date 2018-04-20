@@ -146,6 +146,10 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		p = path.split("/")
 		n = p[4].upper()
 
+		# Validate BSSID
+		if not is_bssid_value(n):
+			return "NO"
+
 		c = con.cursor()
 		c.execute("DELETE from nets where bssid = ?", (n,))
 		con.commit()
@@ -240,10 +244,13 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
 		p = path.split("/")
 		n = p[4].upper()
+		if not is_bssid_value(n):
+			return "NO"
 
 		x  = urlparse(path)
 		qs = parse_qs(x.query)
 
+		# TODO: Verify client ID sending it
 		if "pass" in qs:
 			return s.do_result_pass(n, qs['pass'][0])
 
@@ -317,6 +324,10 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		p = path.split("/")
 
 		n = p[4].upper()
+		# Validate BSSID
+		if not is_bssid_value(n):
+			return "NO"
+
 
 		c = con.cursor()
 		c.execute("INSERT into nets values (?, NULL, 1)", (n,))
@@ -330,6 +341,9 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		p = path.split("/")
 
 		h = p[4]
+		# Validate hash
+		if not is_sha1sum(h):
+			return "NO"
 
 		c = con.cursor()
 		c.execute("UPDATE dict set current = 0")
@@ -589,6 +603,10 @@ def get_work():
 	wl  = setup_dict(crack)
 	cap = get_cap(crack)
 
+	# If there's anything wrong with it, skip cracking
+	if wl == None or cap == None:
+		return
+
 	print("Cracking")
 
 	cmd = ["aircrack-ng", "-w", wl, "-b", crack['net'], "-q", cap]
@@ -637,7 +655,15 @@ def setup_dict(crack):
 	d = crack['dict']
 	if not re.compile("^[a-f0-9]{5,40}").match(d):
 		print("Invalid dictionary: %s" % d)
-		return
+		return None
+
+	#if not re.match("^[0-9]+$", d['start']) or not re.match("^[0-9]+$", d['end']):
+	if crack['start'] < 0 or crack['end'] < 0:
+		print("Wordlist: Invalid start or end line positions")
+		return None
+	if crack['end'] <= crack['start']:
+		print("Wordlist: End line position must be greater than start position")
+		return None
 
 	fn = "dcrack-client-dict-%s.txt" % d
 
@@ -654,7 +680,7 @@ def setup_dict(crack):
 
 		print("Uncompressing dictionary")
 		decompress(fn)
-	
+
 		sha1 = hashlib.sha1()
 		with open(fn, "rb") as fid:
 			sha1.update(fid.read())
@@ -662,9 +688,10 @@ def setup_dict(crack):
 		h = sha1.hexdigest()
 
 		if h != d:
-			print("bad dictionary")
-			exit(1)
+			print("Bad dictionary, SHA1 don't match")
+			return None
 
+	# Split wordlist
 	s = "dcrack-client-dict-%s-%d:%d.txt" \
 		% (d, crack['start'], crack['end']) 
 
@@ -679,6 +706,16 @@ def setup_dict(crack):
 						break
 					if i >= crack['start']:
 						fid2.write(l)
+
+	# Verify wordlist isn't empty
+	try:
+		if os.stat(s).st_size == 0:
+			print("Empty dictionary file!")
+			return None
+	except:
+		print("Dictionary does not exists!")
+		return None;
+
 	return s
 
 def get_cap(crack):
@@ -715,7 +752,8 @@ def get_cap(crack):
 	check_cap(fn, bssid)
 
 	if bssid not in nets:
-		raise BaseException("Can't find net %s" % bssid)
+		printf("Can't find net %s" % bssid)
+		return None
 
 	return fn
 
@@ -1010,6 +1048,16 @@ def do_cmd():
 	else:
 		print("Unknown cmd %s" % cmd)
 		usage()
+
+def is_sha1sum(h):
+	if re.match("[0-9a-fA-F]{40}", h):
+		return True
+	return False
+
+def is_bssid_value(b):
+	if re.match("([A-Fa-f0-9]{2}:){5}[A-Fa-f0-9]{2}", b):
+		return True
+	return False
 
 def main():
 	if len(sys.argv) < 2:
