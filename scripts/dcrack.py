@@ -954,7 +954,7 @@ def send_cap():
 	   stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
 
 	# Check cleaned file size (24 bytes -> 0 packets in file)
-	if os.stat(cap + ".clean").st_size <= 24:
+	if os.stat(clean_cap).st_size <= 24:
 		print("Empty cleaned PCAP file, something's wrong with the original PCAP!")
 		return
 
