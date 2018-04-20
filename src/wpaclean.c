@@ -713,6 +713,27 @@ static void pwn(const char *fname)
 	wi_close(wi);
 }
 
+void free_data()
+{
+	struct network * nets = _networks.n_next;
+	while (nets) {
+		// Free clients
+		struct client * clients = nets->n_handshake;
+		while (clients) {
+			struct client * client_prev = clients;
+			clients = clients->c_next;
+			free(client_prev);
+		}
+        
+		// Free net
+		struct network * net_prev = nets;
+		nets = nets->n_next;
+		free(net_prev);
+	}
+
+	free(_outfilename);
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc < 3) {
@@ -741,7 +762,9 @@ int main(int argc, char *argv[])
 		pwn(in);
 	}
 
-	free(_outfilename);
+	// Cleanup
+	free_data();
+
 	printf("Done\n");
 	exit(0);
 }
