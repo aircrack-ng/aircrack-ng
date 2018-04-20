@@ -13,6 +13,7 @@ import json
 import datetime
 import re
 import socket
+import tempfile
 
 if sys.version_info[0] >= 3:
 	from socketserver import ThreadingTCPServer
@@ -889,7 +890,7 @@ def send_dict():
 		return;
 
 	print("Cleaning up dictionary")
-	new_dict = "/tmp/" + d + "-clean"
+	new_dict = "/tmp/" + next(tempfile._get_candidate_names()) + ".txt"
 	with open(new_dict, 'w') as fout:
 		with open(d) as fid:
 			for line in fid:
@@ -948,7 +949,7 @@ def send_cap():
 		return;
 
 	print("Cleaning cap %s" % cap)
-	clean_cap = "/tmp/" + cap + ".clean"
+	clean_cap = "/tmp/" + next(tempfile._get_candidate_names()) + ".cap"
 	subprocess.Popen(["wpaclean", clean_cap, cap], \
 	   stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
 
