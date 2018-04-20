@@ -105,7 +105,7 @@ static int open_pcap(const char *fname)
         return fd;
 }
 
-static void write_pcap(int fd, void *p, int len)
+static void write_pcap(int fd, const void *p, const int len)
 {       
         struct pcap_pkthdr pkh;                                                                              
 
@@ -122,12 +122,12 @@ static void write_pcap(int fd, void *p, int len)
                 err(1, "write()");
 }
 
-static void packet_write_pcap(int fd, struct packet *p)
+static void packet_write_pcap(int fd, const struct packet *p)
 {
         write_pcap(fd, p->p_data, p->p_len);
 }
 
-static void print_network(struct network *n)
+static void print_network(const struct network *n)
 {
 	printf("Net %.2x:%.2x:%.2x:%.2x:%.2x:%.2x %s\n",
 		n->n_bssid[0],
@@ -139,7 +139,7 @@ static void print_network(struct network *n)
 		n->n_ssid);
 }
 
-static void save_network(struct network *n)
+static void save_network(const struct network *n)
 {
 	int i;
 
@@ -197,7 +197,7 @@ static void check_network(struct network *n)
 	save_network(n);
 }
 
-static struct network *find_net(unsigned char *b)
+static struct network *find_net(const unsigned char *b)
 {
 	struct network *n = _networks.n_next;
 
@@ -211,7 +211,7 @@ static struct network *find_net(unsigned char *b)
 	return NULL;
 }
 
-static struct network *net_add(unsigned char *bssid)
+static struct network *net_add(const unsigned char *bssid)
 {
 	struct network *n = malloc(sizeof(*n));
 
@@ -228,7 +228,7 @@ static struct network *net_add(unsigned char *bssid)
 	return n;
 }
 
-static struct network *find_add_net(unsigned char *bssid)
+static struct network *find_add_net(const unsigned char *bssid)
 {
 	struct network *n;
 
@@ -239,7 +239,7 @@ static struct network *find_add_net(unsigned char *bssid)
 	return net_add(bssid);
 }
 
-static struct client *find_client(struct network *n, unsigned char *mac)
+static struct client *find_client(const struct network *n, const unsigned char *mac)
 {
 	struct client *c = n->n_clients.c_next;
 
@@ -253,7 +253,7 @@ static struct client *find_client(struct network *n, unsigned char *mac)
 	return NULL;
 }
 
-static struct client *find_add_client(struct network *n, unsigned char *mac)
+static struct client *find_add_client(struct network *n, const unsigned char *mac)
 {
 	struct client *c;
 
@@ -287,10 +287,10 @@ static void hexdump(void *p, int len)
 }
 #endif
 
-static int parse_rsn(unsigned char *p, int l, int rsn)
+static int parse_rsn(const unsigned char *p, const int l, const int rsn)
 {
         int c;
-        unsigned char *start = p;
+        const unsigned char *start = p;
         int psk = 0;
 	int wpa = 0;
            
@@ -342,9 +342,9 @@ static int parse_rsn(unsigned char *p, int l, int rsn)
 }                                                                                                            
 
 
-static int parse_elem_vendor(unsigned char *e, int l)
+static int parse_elem_vendor(const unsigned char *e, const int l)
 {       
-        struct ieee80211_ie_wpa *wpa = (struct ieee80211_ie_wpa*) e;
+        const struct ieee80211_ie_wpa *wpa = (const struct ieee80211_ie_wpa*) e;
 
         if (l < 5)
                 return 0;
@@ -458,7 +458,7 @@ __bad:
 	printf("bad beacon\n");
 }
 
-static int eapol_handshake_step(unsigned char *eapol, int len)
+static int eapol_handshake_step(const unsigned char *eapol, const int len)
 {       
         int eapol_size = 4 + 1 + 2 + 2 + 8 + 32 + 16 + 8 + 8 + 16 + 2;
 
@@ -483,7 +483,7 @@ static int eapol_handshake_step(unsigned char *eapol, int len)
         return 2;
 }
 
-static void packet_copy(struct packet *p, void *d, int len)
+static void packet_copy(struct packet *p, const void *d, const int len)
 {       
         assert(len <= (int) sizeof(p->p_data));
 
@@ -491,8 +491,8 @@ static void packet_copy(struct packet *p, void *d, int len)
         memcpy(p->p_data, d, len);
 }
 
-static void process_eapol(struct network *n, struct client *c, unsigned char *p,
-                          int len, struct ieee80211_frame *wh, int totlen)
+static void process_eapol(struct network *n, struct client *c, const unsigned char *p,
+                          const int len, struct ieee80211_frame *wh, const int totlen)
 {       
         int num, i;
 
@@ -608,8 +608,8 @@ static void process_data(struct ieee80211_frame *wh, int len)
 		check_network(n);
 }
 
-static void grab_hidden_ssid(unsigned char *bssid, struct ieee80211_frame *wh,
-                             int len, int off)
+static void grab_hidden_ssid(const unsigned char *bssid, struct ieee80211_frame *wh,
+                             int len, const int off)
 {
 	struct network *n;
         unsigned char *p = ((unsigned char *)(wh + 1)) + off;
@@ -648,7 +648,7 @@ __bad:
 	return;
 }
 
-static void process_packet(void *packet, int len)
+static void process_packet(void *packet, const int len)
 {
         struct ieee80211_frame *wh = (struct ieee80211_frame*) packet;
 
