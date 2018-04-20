@@ -851,7 +851,7 @@ def send_dict():
 		return;
 
 	print("Cleaning up dictionary")
-	new_dict = d + "-clean"
+	new_dict = "/tmp/" + d + "-clean"
 	with open(new_dict, 'w') as fout:
 		with open(d) as fid:
 			for line in fid:
@@ -881,8 +881,10 @@ def send_dict():
 		u = url + "dict/create"
 		print("Compressing dictionary")
 		compress_file(new_dict)
+		os.remove(new_dict)
 		print("Uploading dictionary")
 		upload_file(u, new_dict + ".gz")
+		os.remove(new_dict + ".gz")
 
 	print("Setting dictionary to %s" % d)
 	u = url + "dict/" + h + "/set"
@@ -896,7 +898,7 @@ def send_cap():
 		usage()
 
 	cap = sys.argv[4]
-    
+
 	# Check if file exists
 	try:
 		if os.stat(cap).st_size <= 24:
@@ -908,7 +910,8 @@ def send_cap():
 		return;
 
 	print("Cleaning cap %s" % cap)
-	subprocess.Popen(["wpaclean", cap + ".clean", cap], \
+	clean_cap = "/tmp/" + cap + ".clean"
+	subprocess.Popen(["wpaclean", clean_cap, cap], \
 	   stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
 
 	# Check cleaned file size (24 bytes -> 0 packets in file)
@@ -917,10 +920,14 @@ def send_cap():
 		return
 
 	print("Compressing cap")
-	compress_file(cap + ".clean")
+	compress_file(clean_cap)
+	os.remove(clean_cap)
 
 	u = url + "cap/create"
-	upload_file(u, cap + ".clean.gz")
+	upload_file(u, clean_cap + ".gz")
+
+	# Delete temporary file
+	os.remove(clean_cap + ".gz")
 
 def cmd_crack():
 	net_cmd("crack")
