@@ -77,6 +77,7 @@ struct network {
 	struct network	*n_next;
 } _networks;
 
+static char * _outfilename;
 static int _outfd;
 
 static int open_pcap(const char *fname)
@@ -142,6 +143,7 @@ static void save_network(struct network *n)
 {
 	int i;
 
+	_outfd = open_pcap(_outfilename);
 	write_pcap(_outfd, n->n_beacon, n->n_beaconlen);
 
         for (i = 0; i < 4; i++) {
@@ -718,8 +720,11 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	const char * out = argv[1];
-	_outfd = open_pcap(out);
+	_outfilename = strdup(argv[1]);
+	if (_outfilename == NULL) {
+		perror("strdup()");
+		return EXIT_FAILURE;
+	}
 
 	for (int i = 2; i < argc; i++) {
 		const char *in = argv[i];
@@ -736,6 +741,7 @@ int main(int argc, char *argv[])
 		pwn(in);
 	}
 
+	free(_outfilename);
 	printf("Done\n");
 	exit(0);
 }
