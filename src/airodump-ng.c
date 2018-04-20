@@ -4116,42 +4116,33 @@ int dump_write_csv( void )
                  ap_cur->max_speed );
 
         if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) fprintf( G.f_txt, " " );
-        else
-        {
-            if( ap_cur->security & STD_WPA2 ) fprintf( G.f_txt, " WPA2" );
-            if( ap_cur->security & STD_WPA  ) fprintf( G.f_txt, " WPA" );
-            if( ap_cur->security & STD_WEP  ) fprintf( G.f_txt, " WEP" );
-            if( ap_cur->security & STD_OPN  ) fprintf( G.f_txt, " OPN" );
-        }
+        else if( ap_cur->security & STD_WPA2 ) fprintf( G.f_txt, " WPA2" );
+        else if( ap_cur->security & STD_WPA  ) fprintf( G.f_txt, " WPA" );
+        else if( ap_cur->security & STD_WEP  ) fprintf( G.f_txt, " WEP" );
+        else if( ap_cur->security & STD_OPN  ) fprintf( G.f_txt, " OPN" );
 
         fprintf( G.f_txt, ",");
 
         if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( G.f_txt, " ");
-        else
-        {
-            if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_txt, " CCMP");
-            if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_txt, " WRAP");
-            if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_txt, " TKIP");
-            if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_txt, " WEP104");
-            if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_txt, " WEP40");
-            if( ap_cur->security & ENC_WEP    ) fprintf( G.f_txt, " WEP");
-        }
+        else if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_txt, " CCMP");
+        else if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_txt, " WRAP");
+        else if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_txt, " TKIP");
+        else if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_txt, " WEP104");
+        else if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_txt, " WEP40");
+        else if( ap_cur->security & ENC_WEP    ) fprintf( G.f_txt, " WEP");
 
         fprintf( G.f_txt, ",");
 
         if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) fprintf( G.f_txt, "   ");
-        else
+        else if ( ap_cur->security & AUTH_MGT ) fprintf( G.f_txt, " MGT");
+        else if ( ap_cur->security & AUTH_PSK )
         {
-            if( ap_cur->security & AUTH_MGT   ) fprintf( G.f_txt, " MGT");
-            if( ap_cur->security & AUTH_PSK   )
-			{
-				if( ap_cur->security & STD_WEP )
-					fprintf( G.f_txt, "SKA");
-				else
-					fprintf( G.f_txt, "PSK");
-			}
-            if( ap_cur->security & AUTH_OPN   ) fprintf( G.f_txt, " OPN");
+            if( ap_cur->security & STD_WEP )
+                fprintf( G.f_txt, "SKA");
+            else
+                fprintf( G.f_txt, "PSK");
         }
+        else if( ap_cur->security & AUTH_OPN ) fprintf( G.f_txt, " OPN");
 
         fprintf( G.f_txt, ", %3d, %8lu, %8lu, ",
                  ap_cur->avg_power,
@@ -5011,19 +5002,19 @@ int dump_write_kismet_csv( void )
         if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) != 0)
         {
             if( ap_cur->security & STD_WPA2 ) fprintf( G.f_kis, "WPA2," );
-            if( ap_cur->security & STD_WPA  ) fprintf( G.f_kis, "WPA," );
-            if( ap_cur->security & STD_WEP  ) fprintf( G.f_kis, "WEP," );
-            if( ap_cur->security & STD_OPN  ) fprintf( G.f_kis, "OPN," );
+            else if( ap_cur->security & STD_WPA  ) fprintf( G.f_kis, "WPA," );
+            else if( ap_cur->security & STD_WEP  ) fprintf( G.f_kis, "WEP," );
+            else if( ap_cur->security & STD_OPN  ) fprintf( G.f_kis, "OPN," );
         }
 
         if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( G.f_kis, "None,");
         else
         {
             if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_kis, "AES-CCM,");
-            if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis, "WRAP,");
-            if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis, "TKIP,");
-            if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_kis, "WEP104,");
-            if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis, "WEP40,");
+            else if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis, "WRAP,");
+            else if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis, "TKIP,");
+            else if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_kis, "WEP104,");
+            else if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis, "WEP40,");
 /*            if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis, " WEP,");*/
         }
 
