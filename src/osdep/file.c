@@ -198,9 +198,10 @@ static void file_close(struct wif *wi)
 {
 	struct priv_file *pn = wi_priv(wi);
 
-	if (pn->pf_fd)
-		close(pn->pf_fd);
 	if (pn) {
+		if (pn->pf_fd) {
+			close(pn->pf_fd);
+		}
 		free(pn);
 	}
 
