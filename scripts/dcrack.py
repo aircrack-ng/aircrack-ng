@@ -954,10 +954,8 @@ def cmd_status():
 
 	stuff = json.loads(stuff.decode("utf-8"))
 
-#	print(stuff)
-#	print("=============")
-
 	speed = 0
+	idx = 0
 	for idx, c in enumerate(stuff['clients'], start=1):
 		speed += c
 
