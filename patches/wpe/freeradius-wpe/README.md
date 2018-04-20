@@ -30,7 +30,7 @@ wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.17.tar.bz2
 tar -xjf freeradius-server-3.0.17.tar.bz2
 cd freeradius-server-3.0.17/
 wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius-wpe.patch
-patch -Np1 -i freeradius-server-wpe.patch
+patch -Np1 -i freeradius-wpe.patch
 ./configure
 make
 make install
