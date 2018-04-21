@@ -159,22 +159,43 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		return "error"
 
 	def remove(s, path):
-		con = get_con()
-
 		p = path.split("/")
 		n = p[4].upper()
+		not_found = 0
 
 		# Validate BSSID
 		if not is_bssid_value(n):
 			return "NO"
 
+		con = get_con()
+
+		# Delete from nets
 		c = con.cursor()
-		c.execute("DELETE from nets where bssid = ?", (n,))
+		c.execute("SELECT * from nets where bssid = ?", (n,))
+		r = c.fetchall()
+		if r:
+			con.commit()
+			not_found += 1
+			c = con.cursor()
+			c.execute("DELETE from nets where bssid = ?", (n,))
 		con.commit()
 
-		c.execute("DELETE from work where net = ?", (n,))
+		# Delete from works
+		c = con.cursor()
+		c.execute("SELECT * from work where net = ?", (n,))
+		r = c.fetchall()
+		if r:
+			con.commit()
+			not_found += 1
+			c = con.cursor()
+			c.execute("DELETE from work where net = ?", (n,))
 		con.commit()
-		
+
+		# If both failed, return NO.
+		if not_found == 2:
+			return "NO"
+
+		# Otherwise, return OK
 		return "OK"
 
 	def get_status(s):
