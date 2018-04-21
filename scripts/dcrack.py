@@ -91,12 +91,29 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
 	def do_upload_cap(s):
 		cl = int(s.headers['Content-Length'])
-		with open("dcrack.cap.tmp.gz", "wb") as fid:
+		tmp_cap = "/tmp/" + next(tempfile._get_candidate_names()) + ".cap"
+		with open(tmp_cap + ".gz", "wb") as fid:
 			fid.write(s.rfile.read(cl))
 
-		decompress("dcrack.cap.tmp")
-		os.rename("dcrack.cap.tmp.gz", "dcrack.cap.gz")
-		os.rename("dcrack.cap.tmp", "dcrack.cap")
+		decompress(tmp_cap)
+        
+		# Check file is valid
+		output = subprocess.check_output(['wpaclean', tmp_cap + ".tmp", tmp_cap])
+		try:
+			os.remove(tmp_cap + ".tmp")
+		except:
+			pass
+
+		output_split = output.splitlines()
+		if len(output_split) > 2:
+			# We got more than 2 lines, which means there is a network
+			#  in there with a WPA/2 PSK handshake
+			os.rename(tmp_cap + ".gz", "dcrack.cap.gz")
+			os.rename(tmp_cap, "dcrack.cap")
+		else:
+			 # If nothing in the file, just delete it
+			os.remove(tmp_cap)
+			os.remove(tmp_cap + ".gz")
 
 	def do_req(s, path):
 		con = get_con()
