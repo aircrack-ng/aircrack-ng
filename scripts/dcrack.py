@@ -1117,7 +1117,10 @@ def main():
 	if cmd == "server":
 		server()
 	elif cmd == "client":
-		client()
+		try:
+			client()
+		except KeyboardInterrupt:
+			pass
 	elif cmd == "cmd":
 		try:
 			do_cmd()
