@@ -71,11 +71,8 @@ class ServerHandler(SimpleHTTPRequestHandler):
 			fid.write(s.rfile.read(cl))
 
 		decompress(f)
-	
-		sha1 = hashlib.sha1()
-		with open(f, "rb") as fid:
-			sha1.update(fid.read())
-		h = sha1.hexdigest()
+
+		h = get_sha1sum_string(f)
 
 		with open(f, "rb") as fid:
 			for i, l in enumerate(fid):	pass
@@ -720,11 +717,7 @@ def setup_dict(crack):
 		print("Uncompressing dictionary")
 		decompress(fn)
 
-		sha1 = hashlib.sha1()
-		with open(fn, "rb") as fid:
-			sha1.update(fid.read())
-
-		h = sha1.hexdigest()
+		h = get_sha1sum_string(fn)
 
 		if h != d:
 			print("Bad dictionary, SHA1 don't match")
@@ -942,12 +935,7 @@ def send_dict():
 		return
 
 	print("Calculating dictionary hash for cleaned up %s" % d)
-
-	sha1 = hashlib.sha1()
-	with open(new_dict, "rb") as fid:
-		sha1.update(fid.read())
-
-	h = sha1.hexdigest()
+	h = get_sha1sum_string(new_dict)
 
 	print("Hash is %s" % h)
 
@@ -1087,6 +1075,12 @@ def do_cmd():
 	else:
 		print("Unknown cmd %s" % cmd)
 		usage()
+
+def get_sha1sum_string(f):
+		sha1 = hashlib.sha1()
+		with open(f, "rb") as fid:
+			sha1.update(fid.read())
+		return sha1.hexdigest()
 
 def is_sha1sum(h):
 	if re.match("[0-9a-fA-F]{40}", h):
