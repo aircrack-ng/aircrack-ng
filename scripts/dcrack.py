@@ -14,6 +14,7 @@ import datetime
 import re
 import socket
 import tempfile
+import errno
 
 if sys.version_info[0] >= 3:
 	from socketserver import ThreadingTCPServer
@@ -1103,7 +1104,18 @@ def main():
 	elif cmd == "client":
 		client()
 	elif cmd == "cmd":
-		do_cmd()
+		try:
+			do_cmd()
+		except URLError, ue:
+			if "Connection refused" in ue.reason:
+				print("Connection to %s refused" % (sys.argv[2],))
+			else:
+				print(ue.reason)
+		except socket.error, se:
+			if se.errno == errno.ECONNREFUSED:
+				print("Connection refused")
+			else:
+				print(se)
 	else:
 		print("Unknown cmd", cmd)
 		usage()
