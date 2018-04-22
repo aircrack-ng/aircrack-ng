@@ -365,12 +365,27 @@ class ServerHandler(SimpleHTTPRequestHandler):
 		if not is_bssid_value(n):
 			return "NO"
 
-
+		# Only add network if it isn't already in there
+		# Update it if it failed cracking only
 		c = con.cursor()
-		c.execute("INSERT into nets values (?, NULL, 1)", (n,))
-		con.commit()
+		c.execute("SELECT * from nets where bssid = ?", (n,))
+		r = c.fetchone()
+		if r == None:
+			# Not in there, add it
+			c.execute("INSERT into nets values (?, NULL, 1)", (n,))
+			con.commit()
+			return "OK"
 
-		return "OK"
+		# Network already exists but has failed cracking
+		if r['state'] == 2 and r['pass'] == None:
+			c.execute("UPDATE nets SET state = 1 WHERE bssid = ?", (n,))
+			con.commit()
+			return "OK"
+
+        # State == 1: Just added or being worked on
+        # State == 2 and Pass exists: Already successfully cracked
+		con.commit()
+		return "NO"
 
 	def do_dict_set(s, path):
 		con = get_con()
