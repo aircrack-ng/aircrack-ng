@@ -556,7 +556,7 @@ def server():
 	server_class = ThreadingTCPServer
 	try:
 		httpd = server_class(('', port), ServerHandler)
-	except socket.error, exc:
+	except socket.error as exc:
 		print("Failed listening on port %d" % port)
 		return
 
@@ -1106,12 +1106,12 @@ def main():
 	elif cmd == "cmd":
 		try:
 			do_cmd()
-		except URLError, ue:
+		except URLError as ue:
 			if "Connection refused" in ue.reason:
 				print("Connection to %s refused" % (sys.argv[2],))
 			else:
 				print(ue.reason)
-		except socket.error, se:
+		except socket.error as se:
 			if se.errno == errno.ECONNREFUSED:
 				print("Connection refused")
 			else:
