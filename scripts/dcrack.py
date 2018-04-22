@@ -1017,7 +1017,13 @@ def send_cap():
 	os.remove(clean_cap + ".gz")
 
 def cmd_crack():
-	net_cmd("crack")
+	ret = net_cmd("crack")
+	if ret == "OK":
+		print("Cracking job successfully added")
+	elif ret == "NO":
+		print("Failed adding cracking job!")
+	else:
+		print("Unknown return value from server: %s" % (ret,))
 
 def net_cmd(op):
 	global url
@@ -1030,7 +1036,7 @@ def net_cmd(op):
 
 	print("%s %s" % (op, bssid))
 	u = "%snet/%s/%s" % (url, bssid, op)
-	stuff = urlopen(u).read()
+	return urlopen(u).read()
 
 def cmd_remove():
 	net_cmd("remove")
