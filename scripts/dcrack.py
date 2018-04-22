@@ -1005,7 +1005,13 @@ def send_cap():
 	os.remove(clean_cap)
 
 	u = url + "cap/create"
-	upload_file(u, clean_cap + ".gz")
+	ret = upload_file(u, clean_cap + ".gz")
+	if ret == "OK":
+		print("Upload successful")
+	elif ret == "NO":
+		print("Failed uploading wordlist")
+	else:
+		print("Unknown return value from server: %s" % (ret,))
 
 	# Delete temporary file
 	os.remove(clean_cap + ".gz")
