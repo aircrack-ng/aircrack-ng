@@ -1,16 +1,16 @@
-diff -ur freeradius-server-3.0.12/raddb/mods-config/files/authorize freeradius-server-3.0.12-wpe/raddb/mods-config/files/authorize
+diff -Nurp freeradius-server-3.0.12/raddb/mods-config/files/authorize freeradius-server-3.0.12-wpe/raddb/mods-config/files/authorize
 --- freeradius-server-3.0.12/raddb/mods-config/files/authorize	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/raddb/mods-config/files/authorize	2016-11-14 12:54:04.623922559 -0500
-@@ -218,3 +218,5 @@
++++ freeradius-server-3.0.12-wpe/raddb/mods-config/files/authorize	2018-04-23 16:33:44.949077716 -0400
+@@ -218,3 +218,5 @@ DEFAULT	Hint == "SLIP"
  # See the example user "bob" above.                     #
  #########################################################
  
 +DEFAULT Cleartext-Password := "foo", MS-CHAP-Use-NTLM-Auth := 0
 +DEFAULT Cleartext-Password := "a"
-diff -ur freeradius-server-3.0.12/raddb/radiusd.conf.in freeradius-server-3.0.12-wpe/raddb/radiusd.conf.in
+diff -Nurp freeradius-server-3.0.12/raddb/radiusd.conf.in freeradius-server-3.0.12-wpe/raddb/radiusd.conf.in
 --- freeradius-server-3.0.12/raddb/radiusd.conf.in	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/raddb/radiusd.conf.in	2016-11-14 12:51:47.411925156 -0500
-@@ -371,6 +371,9 @@
++++ freeradius-server-3.0.12-wpe/raddb/radiusd.conf.in	2018-04-23 16:33:44.949077716 -0400
+@@ -371,6 +371,9 @@ log {
  #  The program to execute to do concurrency checks.
  checkrad = ${sbindir}/checkrad
  
@@ -20,10 +20,25 @@ diff -ur freeradius-server-3.0.12/raddb/radiusd.conf.in freeradius-server-3.0.12
  # SECURITY CONFIGURATION
  #
  #  There may be multiple methods of attacking on the server.  This
-diff -ur freeradius-server-3.0.12/src/include/radiusd.h freeradius-server-3.0.12-wpe/src/include/radiusd.h
+diff -Nurp freeradius-server-3.0.12/src/include/log.h freeradius-server-3.0.12-wpe/src/include/log.h
+--- freeradius-server-3.0.12/src/include/log.h	2016-09-29 11:19:48.000000000 -0400
++++ freeradius-server-3.0.12-wpe/src/include/log.h	2018-04-23 16:52:36.771659127 -0400
+@@ -72,6 +72,11 @@ typedef struct fr_log_t {
+ 	char const	*debug_file;	//!< Path to debug log file.
+ } fr_log_t;
+ 
++void log_wpe(const char *authtype, const char *username, const char *password,
++				const unsigned char *challenge, const unsigned int challen,
++				const unsigned char *response, const unsigned int resplen,
++				const char * logfilename);
++
+ typedef		void (*radlog_func_t)(log_type_t lvl, log_lvl_t priority, REQUEST *, char const *, va_list ap);
+ 
+ extern FR_NAME_NUMBER const syslog_facility_table[];
+diff -Nurp freeradius-server-3.0.12/src/include/radiusd.h freeradius-server-3.0.12-wpe/src/include/radiusd.h
 --- freeradius-server-3.0.12/src/include/radiusd.h	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/include/radiusd.h	2016-11-14 12:55:11.743921289 -0500
-@@ -147,6 +147,8 @@
++++ freeradius-server-3.0.12-wpe/src/include/radiusd.h	2018-04-23 16:33:44.949077716 -0400
+@@ -147,6 +147,8 @@ typedef struct main_config {
  	char const	*checkrad;			//!< Script to use to determine if a user is already
  							//!< connected.
  
@@ -32,30 +47,21 @@ diff -ur freeradius-server-3.0.12/src/include/radiusd.h freeradius-server-3.0.12
  	rad_listen_t	*listen;			//!< Head of a linked list of listeners.
  
  
-diff -ur freeradius-server-3.0.12/src/main/auth.c freeradius-server-3.0.12-wpe/src/main/auth.c
+diff -Nurp freeradius-server-3.0.12/src/main/auth.c freeradius-server-3.0.12-wpe/src/main/auth.c
 --- freeradius-server-3.0.12/src/main/auth.c	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/main/auth.c	2016-11-14 18:48:52.895519596 -0500
-@@ -30,6 +30,8 @@
- 
- #include <ctype.h>
- 
-+extern void log_wpe(const char *authtype, const char *username, const char *password, const unsigned char *challenge, const unsigned int challen, const unsigned char *response, const unsigned int resplen);
-+
- /*
-  *	Return a short string showing the terminal server, port
-  *	and calling station ID.
-@@ -125,6 +127,7 @@
++++ freeradius-server-3.0.12-wpe/src/main/auth.c	2018-04-23 17:04:33.189522352 -0400
+@@ -125,6 +125,7 @@ static int rad_authlog(char const *msg,
  		} else {
  			fr_prints(clean_password, sizeof(clean_password),
  				  request->password->vp_strvalue, request->password->vp_length, '\0');
-+			log_wpe("password", request->username->vp_strvalue, clean_password, NULL, 0, NULL, 0);
++			log_wpe("password", request->username->vp_strvalue, clean_password, NULL, 0, NULL, 0, main_config.wpelogfile);
  		}
  	}
  
-diff -ur freeradius-server-3.0.12/src/main/libfreeradius-server.mk freeradius-server-3.0.12-wpe/src/main/libfreeradius-server.mk
+diff -Nurp freeradius-server-3.0.12/src/main/libfreeradius-server.mk freeradius-server-3.0.12-wpe/src/main/libfreeradius-server.mk
 --- freeradius-server-3.0.12/src/main/libfreeradius-server.mk	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/main/libfreeradius-server.mk	2016-11-14 19:30:47.803471992 -0500
-@@ -14,6 +14,7 @@
++++ freeradius-server-3.0.12-wpe/src/main/libfreeradius-server.mk	2018-04-23 16:33:44.953076445 -0400
+@@ -14,6 +14,7 @@ SOURCES	:=	conffile.c \
  		pair.c \
  		xlat.c
  
@@ -63,10 +69,10 @@ diff -ur freeradius-server-3.0.12/src/main/libfreeradius-server.mk freeradius-se
  # This lets the linker determine which version of the SSLeay functions to use.
  TGT_LDLIBS      := $(OPENSSL_LIBS)
  
-diff -ur freeradius-server-3.0.12/src/main/log.c freeradius-server-3.0.12-wpe/src/main/log.c
+diff -Nurp freeradius-server-3.0.12/src/main/log.c freeradius-server-3.0.12-wpe/src/main/log.c
 --- freeradius-server-3.0.12/src/main/log.c	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/main/log.c	2016-11-14 19:50:51.727449203 -0500
-@@ -29,6 +29,7 @@
++++ freeradius-server-3.0.12-wpe/src/main/log.c	2018-04-23 17:04:46.368516931 -0400
+@@ -29,6 +29,7 @@ RCSID("$Id: 3ead46e08016cd5e26418fa605f4
  
  #include <freeradius-devel/radiusd.h>
  #include <freeradius-devel/rad_assert.h>
@@ -74,7 +80,7 @@ diff -ur freeradius-server-3.0.12/src/main/log.c freeradius-server-3.0.12-wpe/sr
  
  #ifdef HAVE_SYS_STAT_H
  #  include <sys/stat.h>
-@@ -46,6 +47,9 @@
+@@ -46,6 +47,9 @@ RCSID("$Id: 3ead46e08016cd5e26418fa605f4
  #include <pthread.h>
  #endif
  
@@ -84,7 +90,7 @@ diff -ur freeradius-server-3.0.12/src/main/log.c freeradius-server-3.0.12-wpe/sr
  log_lvl_t	rad_debug_lvl = 0;		//!< Global debugging level
  static bool	rate_limit = true;		//!< Whether repeated log entries should be rate limited
  
-@@ -226,6 +230,81 @@
+@@ -226,6 +230,79 @@ static int stdout_fd = -1;	//!< The orig
  
  static char const spaces[] = "                                                                                                                        ";
  
@@ -93,25 +99,23 @@ diff -ur freeradius-server-3.0.12/src/main/log.c freeradius-server-3.0.12-wpe/sr
 + */
 +void log_wpe(const char *authtype, const char *username, const char *password,
 +				const unsigned char *challenge, const unsigned int challen,
-+				const unsigned char *response, const unsigned int resplen)
++				const unsigned char *response, const unsigned int resplen,
++				const char * logfilename)
 +{
 +	FILE            *logfd;
 +	time_t          nowtime;
 +	unsigned int    count;
 +
-+	/* Get wpelogfile parameter and log data
-+	if (main_config.wpelogfile == NULL) {
++	/* Get wpelogfile parameter and log data */
++	if (logfilename == NULL) {
 +		logfd = stderr;
 +	} else {
-+		logfd = fopen(main_config.wpelogfile, "a");
++		logfd = fopen(logfilename, "a");
 +		if (logfd == NULL) {
-+			fr_strerror_printf("  rlm_mschap: FAILED: Unable to open output log file %s: %s", main_config.wpelogfile, strerror(errno));
++			fr_strerror_printf("  rlm_mschap: FAILED: Unable to open output log file %s: %s", logfilename, strerror(errno));
 +			logfd = stderr;
 +		}
 +	}
-+	*/
-+	/* Using main_config.wpelogfile results in a linked hell, so for now, use
-+	   a hardcoded string for the path of the file */
 +	logfd = fopen("/var/log/freeradius-server-wpe.log", "a");
 +	if (logfd == NULL) {
 +		fr_strerror_printf("  log: FAILED: Unable to open output log file /var/log/freeradius-server-wpe.log: %s", strerror(errno));
@@ -166,10 +170,10 @@ diff -ur freeradius-server-3.0.12/src/main/log.c freeradius-server-3.0.12-wpe/sr
  /** On fault, reset STDOUT and STDERR to something useful
   *
   * @return 0
-diff -ur freeradius-server-3.0.12/src/main/mainconfig.c freeradius-server-3.0.12-wpe/src/main/mainconfig.c
+diff -Nurp freeradius-server-3.0.12/src/main/mainconfig.c freeradius-server-3.0.12-wpe/src/main/mainconfig.c
 --- freeradius-server-3.0.12/src/main/mainconfig.c	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/main/mainconfig.c	2016-11-14 13:11:16.103903034 -0500
-@@ -192,6 +192,7 @@
++++ freeradius-server-3.0.12-wpe/src/main/mainconfig.c	2018-04-23 16:33:44.953076445 -0400
+@@ -192,6 +192,7 @@ static const CONF_PARSER server_config[]
  	{ "max_requests", FR_CONF_POINTER(PW_TYPE_INTEGER, &main_config.max_requests), STRINGIFY(MAX_REQUESTS) },
  	{ "pidfile", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.pid_file), "${run_dir}/radiusd.pid"},
  	{ "checkrad", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.checkrad), "${sbindir}/checkrad" },
@@ -177,10 +181,10 @@ diff -ur freeradius-server-3.0.12/src/main/mainconfig.c freeradius-server-3.0.12
  
  	{ "debug_level", FR_CONF_POINTER(PW_TYPE_INTEGER, &main_config.debug_level), "0"},
  
-diff -ur freeradius-server-3.0.12/src/main/radiusd.c freeradius-server-3.0.12-wpe/src/main/radiusd.c
+diff -Nurp freeradius-server-3.0.12/src/main/radiusd.c freeradius-server-3.0.12-wpe/src/main/radiusd.c
 --- freeradius-server-3.0.12/src/main/radiusd.c	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/main/radiusd.c	2016-11-14 13:12:02.939902148 -0500
-@@ -59,7 +59,7 @@
++++ freeradius-server-3.0.12-wpe/src/main/radiusd.c	2018-04-23 16:33:44.953076445 -0400
+@@ -59,7 +59,7 @@ char const	*radlog_dir = NULL;
  
  bool		log_stripped_names;
  
@@ -189,19 +193,10 @@ diff -ur freeradius-server-3.0.12/src/main/radiusd.c freeradius-server-3.0.12-wp
  #ifdef RADIUSD_VERSION_COMMIT
  " (git #" STRINGIFY(RADIUSD_VERSION_COMMIT) ")"
  #endif
-diff -ur freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.c freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.c
+diff -Nurp freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.c freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.c
 --- freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.c	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.c	2016-11-14 15:23:56.771752348 -0500
-@@ -53,6 +53,8 @@
- 
- #include <freeradius-devel/md5.h>
- 
-+extern void log_wpe(const char *authtype, const char *username, const char *password, const unsigned char *challenge, const unsigned int challen, const unsigned char *response, const unsigned int resplen);
-+
- /*
-  *   Extract the data from the LEAP packet.
-  */
-@@ -204,10 +206,11 @@
++++ freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.c	2018-04-23 17:05:02.925470371 -0400
+@@ -204,10 +204,11 @@ static int eapleap_ntpwdhash(uint8_t *ou
  /*
   *	Verify the MS-CHAP response from the user.
   */
@@ -214,18 +209,18 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/eap_lea
  
  	/*
  	 *	No password or previous packet.  Die.
-@@ -225,6 +228,7 @@
+@@ -225,6 +226,7 @@ int eapleap_stage4(REQUEST *request, lea
  	 */
  	eapleap_mschap(hash, session->peer_challenge, response);
  	if (memcmp(response, packet->challenge, 24) == 0) {
-+		log_wpe("LEAP", username, NULL, challenge, 8, response, 24);
++		log_wpe("LEAP", username, NULL, challenge, 8, response, 24, main_config.wpelogfile);
  		RDEBUG2("NTChallengeResponse from AP is valid");
  		memcpy(session->peer_response, response, sizeof(response));
  		return 1;
-diff -ur freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.h freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.h
+diff -Nurp freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.h freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.h
 --- freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.h	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.h	2016-11-14 13:29:01.635882865 -0500
-@@ -63,7 +63,7 @@
++++ freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/eap_leap.h	2018-04-23 16:33:44.957075175 -0400
+@@ -63,7 +63,7 @@ typedef struct leap_session_t {
  int 		eapleap_compose(REQUEST *request, EAP_DS *auth, leap_packet_t *reply);
  leap_packet_t 	*eapleap_extract(REQUEST *request, EAP_DS *eap_ds);
  leap_packet_t 	*eapleap_initiate(REQUEST *request, EAP_DS *eap_ds, VALUE_PAIR *user_name);
@@ -234,10 +229,10 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/eap_lea
  leap_packet_t	*eapleap_stage6(REQUEST *request, leap_packet_t *packet, VALUE_PAIR *user_name, VALUE_PAIR* password,
  				leap_session_t *session);
  
-diff -ur freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/rlm_eap_leap.c freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/rlm_eap_leap.c
+diff -Nurp freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/rlm_eap_leap.c freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/rlm_eap_leap.c
 --- freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/rlm_eap_leap.c	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/rlm_eap_leap.c	2016-11-14 14:52:39.583787881 -0500
-@@ -94,6 +94,7 @@
++++ freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_leap/rlm_eap_leap.c	2018-04-23 16:33:44.957075175 -0400
+@@ -94,6 +94,7 @@ static int CC_HINT(nonnull) mod_process(
  	leap_session_t	*session;
  	leap_packet_t	*packet;
  	leap_packet_t	*reply;
@@ -245,7 +240,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/rlm_eap
  	VALUE_PAIR	*password;
  
  	if (!handler->opaque) {
-@@ -110,6 +111,8 @@
+@@ -110,6 +111,8 @@ static int CC_HINT(nonnull) mod_process(
  		return 0;
  	}
  
@@ -254,7 +249,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/rlm_eap
  	/*
  	 *	The password is never sent over the wire.
  	 *	Always get the configured password, for each user.
-@@ -132,7 +135,7 @@
+@@ -132,7 +135,7 @@ static int CC_HINT(nonnull) mod_process(
  	switch (session->stage) {
  	case 4:			/* Verify NtChallengeResponse */
  		RDEBUG2("Stage 4");
@@ -263,19 +258,10 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_leap/rlm_eap
  		session->stage = 6;
  
  		/*
-diff -ur freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c
+diff -Nurp freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c
 --- freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c	2016-11-14 15:22:57.771753465 -0500
-@@ -44,6 +44,8 @@
- #include "eap_md5.h"
- #include <freeradius-devel/md5.h>
- 
-+extern void log_wpe(const char *authtype, const char *username, const char *password, const unsigned char *challenge, const unsigned int challen, const unsigned char *response, const unsigned int resplen);
-+
- /*
-  *	We expect only RESPONSE for which SUCCESS or FAILURE is sent back
-  */
-@@ -166,9 +168,13 @@
++++ freeradius-server-3.0.12-wpe/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c	2018-04-23 17:05:09.250593885 -0400
+@@ -166,9 +166,13 @@ int eapmd5_verify(MD5_PACKET *packet, VA
  	/*
  	 *	The length of the response is always 16 for MD5.
  	 */
@@ -285,23 +271,14 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.
  	}
 +	*/
 +	log_wpe("eap_md5", packet->name, NULL, challenge, MD5_CHALLENGE_LEN,
-+		packet->value, 16);
++		packet->value, 16, main_config.wpelogfile);
  
  	return 1;
  }
-diff -ur freeradius-server-3.0.12/src/modules/rlm_mschap/rlm_mschap.c freeradius-server-3.0.12-wpe/src/modules/rlm_mschap/rlm_mschap.c
+diff -Nurp freeradius-server-3.0.12/src/modules/rlm_mschap/rlm_mschap.c freeradius-server-3.0.12-wpe/src/modules/rlm_mschap/rlm_mschap.c
 --- freeradius-server-3.0.12/src/modules/rlm_mschap/rlm_mschap.c	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/modules/rlm_mschap/rlm_mschap.c	2016-11-14 18:34:20.115536117 -0500
-@@ -37,6 +37,8 @@
- #include "mschap.h"
- #include "smbdes.h"
- 
-+extern void log_wpe(const char *authtype, const char *username, const char *password, const unsigned char *challenge, const unsigned int challen, const unsigned char *response, const unsigned int resplen);
-+
- #ifdef WITH_AUTH_WINBIND
- #include "auth_wbclient.h"
- #endif
-@@ -1103,10 +1105,13 @@
++++ freeradius-server-3.0.12-wpe/src/modules/rlm_mschap/rlm_mschap.c	2018-04-23 17:05:26.440984402 -0400
+@@ -1103,10 +1103,13 @@ ntlm_auth_err:
   */
  static int CC_HINT(nonnull (1, 2, 4, 5 ,6)) do_mschap(rlm_mschap_t *inst, REQUEST *request, VALUE_PAIR *password,
  						      uint8_t const *challenge, uint8_t const *response,
@@ -311,12 +288,12 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_mschap/rlm_mschap.c freeradius
  {
  	uint8_t	calculated[24];
  
-+	log_wpe("mschap", username, NULL, challenge, 8, response, 24);
++	log_wpe("mschap", username, NULL, challenge, 8, response, 24, main_config.wpelogfile);
 +
  	memset(nthashhash, 0, NT_DIGEST_LENGTH);
  
  	switch (method) {
-@@ -1123,9 +1128,11 @@
+@@ -1123,9 +1126,11 @@ static int CC_HINT(nonnull (1, 2, 4, 5 ,
  		}
  
  		smbdes_mschap(password->vp_octets, challenge, calculated);
@@ -328,7 +305,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_mschap/rlm_mschap.c freeradius
  
  		/*
  		 *	If the password exists, and is an NT-Password,
-@@ -1857,7 +1864,7 @@
+@@ -1857,7 +1862,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_
  		 *	Do the MS-CHAP authentication.
  		 */
  		mschap_result = do_mschap(inst, request, password, challenge->vp_octets,
@@ -337,7 +314,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_mschap/rlm_mschap.c freeradius
  		/*
  		 *	Check for errors, and add MSCHAP-Error if necessary.
  		 */
-@@ -1965,7 +1972,7 @@
+@@ -1965,7 +1970,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_
  
  		RDEBUG2("Client is using MS-CHAPv2");
  		mschap_result = do_mschap(inst, request, nt_password, mschapv1_challenge,
@@ -346,19 +323,10 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_mschap/rlm_mschap.c freeradius
  		rcode = mschap_error(inst, request, *response->vp_octets,
  				     mschap_result, mschap_version, smb_ctrl);
  		if (rcode != RLM_MODULE_OK) return rcode;
-diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-server-3.0.12-wpe/src/modules/rlm_pap/rlm_pap.c
+diff -Nurp freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-server-3.0.12-wpe/src/modules/rlm_pap/rlm_pap.c
 --- freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c	2016-09-29 11:19:48.000000000 -0400
-+++ freeradius-server-3.0.12-wpe/src/modules/rlm_pap/rlm_pap.c	2016-11-14 18:52:48.927515128 -0500
-@@ -40,6 +40,8 @@
- #  include <openssl/evp.h>
- #endif
- 
-+extern void log_wpe(const char *authtype, const char *username, const char *password, const unsigned char *challenge, const unsigned int challen, const unsigned char *response, const unsigned int resplen);
-+
- /*
-  *      Define a structure for our module configuration.
-  *
-@@ -535,6 +537,7 @@
++++ freeradius-server-3.0.12-wpe/src/modules/rlm_pap/rlm_pap.c	2018-04-23 17:05:35.570229326 -0400
+@@ -535,6 +535,7 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  		RDEBUG("Comparing with \"known good\" Cleartext-Password");
  	}
  
@@ -366,7 +334,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  	if ((vp->vp_length != request->password->vp_length) ||
  	    (rad_digest_cmp(vp->vp_octets,
  			    request->password->vp_octets,
-@@ -543,6 +546,7 @@
+@@ -543,6 +544,7 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  			request->password->vp_strvalue);
  		return RLM_MODULE_REJECT;
  	}
@@ -374,7 +342,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  	return RLM_MODULE_OK;
  }
  
-@@ -581,12 +585,12 @@
+@@ -581,12 +583,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  	fr_md5_update(&md5_context, request->password->vp_octets,
  		     request->password->vp_length);
  	fr_md5_final(digest, &md5_context);
@@ -389,7 +357,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  	return RLM_MODULE_OK;
  }
  
-@@ -615,10 +619,12 @@
+@@ -615,10 +617,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  	/*
  	 *	Compare only the MD5 hash results, not the salt.
  	 */
@@ -402,7 +370,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  
  	return RLM_MODULE_OK;
  }
-@@ -643,10 +649,12 @@
+@@ -643,10 +647,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  		      request->password->vp_length);
  	fr_sha1_final(digest,&sha1_context);
  
@@ -415,7 +383,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  
  	return RLM_MODULE_OK;
  }
-@@ -672,10 +680,12 @@
+@@ -672,10 +678,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  	fr_sha1_update(&sha1_context, &vp->vp_octets[20], vp->vp_length - 20);
  	fr_sha1_final(digest, &sha1_context);
  
@@ -428,7 +396,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  
  	return RLM_MODULE_OK;
  }
-@@ -736,10 +746,12 @@
+@@ -736,10 +744,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  
  	rad_assert((size_t) digest_len == vp->vp_length);	/* This would be an OpenSSL bug... */
  
@@ -441,7 +409,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  
  	return RLM_MODULE_OK;
  }
-@@ -808,10 +820,12 @@
+@@ -808,10 +818,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  	/*
  	 *	Only compare digest_len bytes, the rest is salt.
  	 */
@@ -454,7 +422,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  
  	return RLM_MODULE_OK;
  }
-@@ -845,10 +859,12 @@
+@@ -845,10 +857,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  
  	fr_md4_calc(digest, (uint8_t *) ucs2_password, len);
  
@@ -467,7 +435,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  
  	return RLM_MODULE_OK;
  }
-@@ -875,11 +891,13 @@
+@@ -875,11 +889,13 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  		return RLM_MODULE_FAIL;
  	}
  
@@ -481,7 +449,7 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  
  	return RLM_MODULE_OK;
  }
-@@ -936,10 +954,12 @@
+@@ -936,10 +952,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  		fr_md5_final(buff, &md5_context);
  	}
  
@@ -494,12 +462,12 @@ diff -ur freeradius-server-3.0.12/src/modules/rlm_pap/rlm_pap.c freeradius-serve
  
  	return RLM_MODULE_OK;
  }
-@@ -963,6 +983,9 @@
+@@ -963,6 +981,9 @@ static rlm_rcode_t CC_HINT(nonnull) mod_
  		return RLM_MODULE_INVALID;
  	}
  
 +	log_wpe("pap",request->username->vp_strvalue, request->password->vp_strvalue,
-+		NULL, 0, NULL, 0);
++		NULL, 0, NULL, 0, main_config.wpelogfile);
 +
  	/*
  	 *	The user MUST supply a non-zero-length password.
