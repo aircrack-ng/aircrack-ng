@@ -1,6 +1,6 @@
 # FreeRadius Wireless Pawn Edition
 
-Updated patch for FreeRadius 3.0.13-3.0.17
+Updated patch for FreeRadius 3.0.12-3.0.17
 
 More information about WPE can be found:
 http://www.willhackforsushi.com/?page_id=37
