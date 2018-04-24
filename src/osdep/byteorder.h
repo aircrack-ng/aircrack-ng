@@ -424,16 +424,16 @@
 
 
 	#ifndef htons
-		#define htons be16_to_cpu
+		#define htons cpu_to_be16
 	#endif
 	#ifndef htonl
-		#define htonl cpu_to_be16
+		#define htonl cpu_to_be32
 	#endif
 	#ifndef ntohs
-		#define ntohs cpu_to_be16
+		#define ntohs be16_to_cpu
 	#endif
 	#ifndef ntohl
-		#define ntohl cpu_to_be32
+		#define ntohl be32_to_cpu
 	#endif
 
 #endif
