@@ -471,6 +471,7 @@ isRpi3() {
 	[ "${HW_REV}" = 'a22082' ] && return 1
 	[ "${HW_REV}" = 'a02082' ] && return 1
 	[ "${HW_REV}" = '9000c1' ] && return 1
+	[ "${HW_REV}" = 'a020d3' ] && return 1
 	return 0
 }
 
