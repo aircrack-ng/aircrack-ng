@@ -464,7 +464,7 @@ startMac80211Iface() {
 NEXMON_FIRMWARE_DIR=/opt
 NEXMON_DRIVER_DIR=/opt
 
-isRpi3() {
+hasRPiWireless() {
 	local HW_REV=$(grep Revision /proc/cpuinfo | awk '{print $3}')
 	[ -z "${HW_REV}" ] && return 0
 	# http://www.raspberrypi-spy.co.uk/2012/09/checking-your-raspberry-pi-board-version/
@@ -1493,10 +1493,10 @@ for iface in $(printf "${iface_list}"); do
 		if [ "$1" = "stop" ] && [ "$2" = "$iface" ]; then
 			stopwlIface $iface
 		fi
-	elif [ "${CHIPSET}" = 'Broadcom 43430' ]; then
-		isRpi3
+	elif [ "${CHIPSET}" = 'Broadcom 43430' ] || [ "${CHIPSET}" = 'Broadcom 43455' ]; then
+		hasRPiWireless
 		if [ $? -eq 0 ]; then
-			printf "\n\tNot a Raspberry Pi 3 or Zero Wireless, cannot put in monitor mode.\n"
+			printf "\n\tNot a Raspberry Pi 3, 3B+ or Zero Wireless, cannot put in monitor mode.\n"
 		else
 			isNexutilPresent
 			if [ $? -eq 0 ]; then
