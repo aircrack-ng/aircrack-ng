@@ -56,6 +56,12 @@ int net_send(int s, int command, void *arg, int len)
 	char *pktbuf;
 	size_t pktlen;
 
+	// Validate command value
+    assert(command >= NET_RC || command <= HIGHEST_NET_COMMAND);
+	if (command < NET_RC || command > HIGHEST_NET_COMMAND) {
+		return -1;
+	}
+
 	pktlen = sizeof(struct net_hdr) + len;
 
 	pktbuf = (char*)calloc(sizeof(char), pktlen);

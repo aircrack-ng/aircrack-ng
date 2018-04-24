@@ -26,6 +26,8 @@ enum {
 	NET_SET_RATE,
 };
 
+#define HIGHEST_NET_COMMAND NET_SET_RATE
+
 struct net_hdr {
 	uint8_t		nh_type;
 	uint32_t	nh_len;
