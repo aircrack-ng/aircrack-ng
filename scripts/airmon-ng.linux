@@ -485,12 +485,13 @@ isNexutilPresent() {
 startNexmonIface() {
 	[ -z $1 ] && return
 
-	if [ -n "$(iwconfig $1 | grep 'Mode:Monitor')" ]; then
+	if [ -n "$(iwconfig $1 | grep 'Mode:Monitor')" ] && [ -n "$(nexutil -m | grep 'monitor: 2')" ]; then
 		printf "\n\tInterface $1 is already in monitor mode"
 	else
-		ifconfig $1 down
-		nexutil -m2
 		ifconfig $1 up 2>/dev/null
+		iwconfig $1 mode monitor 2>/dev/null
+		[ "$1" = "wlan0" ] && nexutil -m2
+		[ "$1" = "wlan0" ] || nexutil -m2 -I $1
 		iwconfig $1 channel ${CH}
 		printf "\n\t\t(monitor mode enabled for [${PHYDEV}]${1})\n"
 	fi
@@ -666,8 +667,12 @@ stopMac80211Iface() {
 stopNexmonIface() {
 	[ -z $1 ] && return
 	ifconfig $1 down
-	nexutil -m0
+	# Running nexutil is not necessary, it gets reset when putting interface down
+	[ "$1" = "wlan0" ] && nexutil -m0
+	[ "$1" = "wlan0" ] || nexutil -m0 -I $1
+	ifconfig $1 down
 	ifconfig $1 up 2> /dev/null
+	iwconfig $1 mode managed 2> /dev/null
 	printf "\n\t\t(monitor mode disabled for [${PHYDEV}]${1})\n"
 }
 
