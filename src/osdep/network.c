@@ -128,9 +128,6 @@ int net_get(int s, void *arg, int *len)
         }
 
 	plen = ntohl(nh.nh_len);
-	if (!(plen <= *len))
-		printf("PLEN %d type %d len %d\n",
-			plen, nh.nh_type, *len);
 	assert(plen <= *len && plen >= 0);
 
 	*len = plen;
