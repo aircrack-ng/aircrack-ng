@@ -1241,6 +1241,32 @@ static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
     return 0;
 }
 
+static int get_nexutil_monitor_mode(const char * iface)
+{
+    char * str = NULL;
+    char * cmd_args[5] = { "nexutil", "-m", "-I", (char*)iface, NULL };
+    int ret = exec_get_output(&str, cmd_args);
+    // Should return something like: "monitor: 2"
+    if (str == NULL) {
+        return -1;
+    }
+    size_t len = strlen(str);
+    if (len == 11 && str[10] == '\n') {
+        str[10] = 0;
+        --len;
+    }
+    if (ret || len != 10 || strncmp(str, "monitor: ", 9)
+        || str[9] < '0' || str[9] > '9') {
+        free(str);
+        return -1;
+    }
+
+    // Return the value
+    ret = (str[9] - '0');
+    free(str);
+    return ret;
+}
+
 int linux_get_monitor(struct wif *wi)
 {
     struct priv_linux *dev = wi_priv(wi);
@@ -1509,28 +1535,7 @@ static int is_nexmon(const char * iface)
     */
 
     // Get current monitor mode value from nexutil
-    char * mon_value_str = NULL;
-    char * cmd_args[5] = { "nexutil", "-m", "-I", (char*)iface, NULL };
-    int ret = exec_get_output(&mon_value_str, cmd_args);
-    // Should return something like: "monitor: 2"
-    if (mon_value_str == NULL) {
-        return -1;
-    }
-    size_t len = strlen(mon_value_str);
-    if (len == 11 && mon_value_str[10] == '\n') {
-        mon_value_str[10] = 0;
-        --len;
-    }
-    if (ret || len != 10 || strncmp(mon_value_str, "monitor: ", 9)
-        || mon_value_str[9] < '0' || mon_value_str[9] > '9') {
-        free(mon_value_str);
-        return -1;
-    }
-
-    // Return the value
-    ret = (mon_value_str[9] - '0');
-    free(mon_value_str);
-    return ret;
+    return get_nexutil_monitor_mode(iface);
 }
 
 static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
