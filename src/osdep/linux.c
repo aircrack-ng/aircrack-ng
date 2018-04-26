@@ -138,6 +138,7 @@ struct priv_linux {
     char *main_if;
     unsigned char pl_mac[6];
     int inject_wlanng;
+    int nexmon;
 };
 
 #ifndef ETH_P_80211_RAW
@@ -1732,12 +1733,14 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
             switch (is_nexmon_ret) { 
                 case 1:
                 {
+                    dev->nexmon = 1;
                     // Just regular frames, no info
                     *arptype = ARPHRD_IEEE80211;
                     return 0;
                 }
                 case 2:
                 {
+                    dev->nexmon = 1;
                     // Radiotap headers
                     *arptype = ARPHRD_IEEE80211_FULL;
                     return 0;
@@ -1816,6 +1819,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         return ( 1 );
     }
 
+    dev->nexmon = 0;
     dev->inject_wlanng = 1;
     dev->rate = 2; /* default to 1Mbps if nothing is set */
 
