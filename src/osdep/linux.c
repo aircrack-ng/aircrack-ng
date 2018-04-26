@@ -1495,6 +1495,7 @@ static int is_nexmon(const char * iface)
         }
         return -1;
     }
+    free(tmp);
 
     /*
     // Check if nexutil is installed
@@ -1522,11 +1523,14 @@ static int is_nexmon(const char * iface)
     }
     if (ret || len != 10 || strncmp(mon_value_str, "monitor: ", 9)
         || mon_value_str[9] < '0' || mon_value_str[9] > '9') {
+        free(mon_value_str);
         return -1;
     }
 
     // Return the value
-    return (mon_value_str[9] - '0');
+    ret = (mon_value_str[9] - '0');
+    free(mon_value_str);
+    return ret;
 }
 
 static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
