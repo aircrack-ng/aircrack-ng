@@ -40,7 +40,6 @@
 #include <dirent.h>
 #include <sys/utsname.h>
 #include <net/if_arp.h>
-#include <linux/limits.h>
 
 #ifdef CONFIG_LIBNL
 #include <linux/nl80211.h>
@@ -68,6 +67,7 @@
 #include "common.h"
 #include "byteorder.h"
 #include "channel.h"
+#include "nexmon.h"
 
 #ifdef CONFIG_LIBNL
 struct nl80211_state state;
@@ -1242,31 +1242,7 @@ static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
     return 0;
 }
 
-static int get_nexutil_monitor_mode(const char * iface)
-{
-    char * str = NULL;
-    char * cmd_args[5] = { "nexutil", "-m", "-I", (char*)iface, NULL };
-    int ret = exec_get_output(&str, cmd_args);
-    // Should return something like: "monitor: 2"
-    if (str == NULL) {
-        return -1;
-    }
-    size_t len = strlen(str);
-    if (len == 11 && str[10] == '\n') {
-        str[10] = 0;
-        --len;
-    }
-    if (ret || len != 10 || strncmp(str, "monitor: ", 9)
-        || str[9] < '0' || str[9] > '9') {
-        free(str);
-        return -1;
-    }
 
-    // Return the value
-    ret = (str[9] - '0');
-    free(str);
-    return ret;
-}
 
 int linux_get_monitor(struct wif *wi)
 {
@@ -1452,91 +1428,6 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
     wait( NULL );
 
     return( 0 );
-}
-
-static int is_nexmon(const char * iface)
-{
-    /*
-     * First we need to check for nexutil presence.
-     * Looking at the BUS the device is on (SDIO), finding the
-     * vendor Broadcom (0x02d0) and then checking device ID
-     * and comparing to the available device list that can do
-     * monitor mode: https://github.com/seemoo-lab/nexmon/
-     * (Supported devices) and matching with Linux-wireless:
-     * https://wireless.wiki.kernel.org/en/users/Drivers/brcm80211
-     * (SDIO).
-     * And finally, we can check if nexutil is present
-     * 
-     * Relying on nexutil only is not a good idea because it can
-     * set the monitor flags on other interfaces and then the interface
-     * has to be unplugged or changed back to managed mode with iw
-     * tools
-     */
-
-    const char * sys_base_format = "/sys/class/net/%s/device/%s";
-    char * sys, *tmp;
-    // Interface name starts with wlan
-    if (iface == NULL || strlen(iface) >= IFNAMSIZ || strncmp(iface, "wlan", 4)) {
-        return 0;
-    }
-    
-    sys = (char *)calloc(1, PATH_MAX);
-    if (sys == NULL) {
-        return -1;
-    }
-    
-    // Check if it's on SDIO
-    sprintf(sys, sys_base_format, iface, "modalias");
-    tmp = get_text_file_content(sys);
-    if (tmp == NULL || strncmp(tmp, "sdio", 4)) {
-        if (tmp) {
-            free(tmp);
-        }
-        free(sys);
-        return -1;
-    }
-    free(tmp);
-    memset(sys, 0, PATH_MAX);
-
-    // Check if it's Broadcom
-    sprintf(sys, sys_base_format, iface, "vendor");
-    tmp = get_text_file_content(sys);
-    if (tmp == NULL || strncmp(tmp, "0x02d0", 6)) {
-        if (tmp) {
-            free(tmp);
-        }
-        free(sys);
-        return -1;
-    }
-    free(tmp);
-    memset(sys, 0, PATH_MAX);
-
-    // Check if it's one of the devices supported
-    sprintf(sys, sys_base_format, iface, "device");
-    tmp = get_text_file_content(sys);
-    free(sys);
-    if (tmp == NULL || ! (strncmp(tmp, "0x4330", 6) == 0 || strncmp(tmp, "0x4335", 6) == 0 
-        || strncmp(tmp, "0xa9a6", 6) == 0 || strncmp(tmp, "0x4345", 6) == 0)) {
-        if (tmp) {
-            free(tmp);
-        }
-        return -1;
-    }
-    free(tmp);
-
-    /*
-    // Check if nexutil is installed
-    char * nexutil_path = NULL;
-    int ret = exec_get_output("which", "nexutil", &nexutil_path);
-    if (ret) {
-        // if return is not 0, then there won't be any output
-        return 0;
-    }
-    free(nexutil_path);
-    */
-
-    // Get current monitor mode value from nexutil
-    return get_nexutil_monitor_mode(iface);
 }
 
 static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
@@ -1731,26 +1622,26 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
         if( ifr.ifr_hwaddr.sa_family == ARPHRD_ETHERNET ) {
             int is_nexmon_ret = is_nexmon(iface); // It also return the monitor value of "nexutil -m -I $iface
             switch (is_nexmon_ret) { 
-                case 1:
+                case NEXUTIL_80211_HEADERS:
                 {
                     dev->nexmon = 1;
                     // Just regular frames, no info
                     *arptype = ARPHRD_IEEE80211;
                     return 0;
                 }
-                case 2:
+                case NEXUTIL_RADIOTAP_HEADERS:
                 {
                     dev->nexmon = 1;
                     // Radiotap headers
                     *arptype = ARPHRD_IEEE80211_FULL;
                     return 0;
                 }
-                case -1:
+                case NEXUTIL_ERROR:
                 {
                     fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
                     break;
                 }
-                case 0:
+                case NEXUTIL_NO_MONITOR_MODE:
                 {
                     fprintf( stderr, "\nMonitor mode not set or headers"
                                      "not set on nexmon device %s\n", iface);

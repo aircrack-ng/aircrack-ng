@@ -52,7 +52,7 @@ SRCS_APCAP = airpcap.c
 SRCS_OBSD = $(SRCS) openbsd.c openbsd_tap.c common.c
 SRCS_NBSD	= $(SRCS) netbsd.c netbsd_tap.c common.c
 SRCS_FBSD	= $(SRCS) freebsd.c freebsd_tap.c common.c
-SRCS_LINUX	= $(SRCS) linux.c linux_tap.c common.c
+SRCS_LINUX	= $(SRCS) linux.c linux_tap.c common.c nexmon.c
 SRCS_DUMMY	= $(SRCS) dummy.c dummy_tap.c common.c
 SRCS_CYGWIN	= $(SRCS) cygwin.c cygwin_tap.c common.c
 SRCS_DARWIN = $(SRCS) darwin.c darwin_tap.c common.c
@@ -130,6 +130,8 @@ EXTRA_DIST = openbsd.c \
              netbsd_tap.c \
              network.c \
              cygwin_tap.c \
+             nexmon.c \
+             nexmon.h \
              channel.h
 
 

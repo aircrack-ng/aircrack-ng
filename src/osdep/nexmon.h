@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ * Copyright (c) 2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,20 +29,16 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#ifndef _OSDEP_COMMON_H_
-#define _OSDEP_COMMON_H_
 
-int getFrequencyFromChannel(int channel);
-int getChannelFromFrequency(int frequency);
+#ifndef _OSDEP_NEXMON_H_
+#define _OSDEP_NEXMON_H_
 
-/*
-// For later use, because aircrack-ng doesn't compile with MS compilers
-#if defined(WIN32) || defined(__WIN__)
-#define ftruncate(a, b) _chsize(a,b)
-#endif
-*/
+#define NEXUTIL_ERROR -1
+#define NEXUTIL_NO_MONITOR_MODE 0
+#define NEXUTIL_80211_HEADERS 1
+#define NEXUTIL_RADIOTAP_HEADERS 2
 
-#define HIGHEST_CHANNEL 220
-#define LOWEST_CHANNEL -16
+int get_nexutil_mon_value(const char * iface);
+int is_nexmon(const char * iface);
 
-#endif
+#endif /* _OSDEP_NEXMON_H_ */
