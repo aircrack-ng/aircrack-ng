@@ -1738,9 +1738,15 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
                     fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
                     break;
                 }
+                case 0:
+                {
+                    fprintf( stderr, "\nMonitor mode not set or headers"
+                                     "not set on nexmon device %s\n", iface);
+                    return ( 1 );
+                }
                 default:
                 {
-                    fprintf( stderr, "\nUnknown nexmon monitor mode value: %d", is_nexmon_ret);
+                    fprintf( stderr, "\nUnknown nexmon monitor mode value: %d\n", is_nexmon_ret);
                     return ( 1 );
                 }
             }
