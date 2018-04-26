@@ -19,6 +19,11 @@
    */
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "common.h"
 
 /**
@@ -61,4 +66,88 @@ int getChannelFromFrequency(int frequency)
 		return (frequency - 5000) / 5;
 	else
 		return -1;
+}
+
+
+char * get_text_file_content(const char * filename)
+{
+    if (filename == NULL || strlen(filename) == 0) {
+        return NULL;
+    }
+
+    FILE * f = fopen(filename, "r");
+    if (!f) {
+        return NULL;
+    }
+
+    fseek(f, 0, SEEK_END);
+    long length = ftell(f);
+    if (length < 0) {
+        fclose(f);
+        return NULL;
+    }
+    rewind(f);
+
+    char * buffer = (char *)calloc(1, length + 1);
+    if (buffer == NULL) {
+        fclose(f);
+        return NULL;
+    }
+
+    // There isn't much we can do if it fails or reads part of it
+    fread(buffer, 1, length, f);
+    fclose(f);
+    return buffer;
+}
+
+int exec_get_output(char ** output, char * const cmd_args[])
+{
+    int link[2];
+    pid_t pid;
+    char buffer[256];
+    char * rea = NULL; // For reallocation
+    char * tmp = NULL; // temporary buffer for the whole output
+
+    if (cmd_args == NULL || cmd_args[0] == NULL || pipe(link) == -1 || (pid = fork()) == -1) {
+        return -1;
+    }
+
+    if (pid == 0) {
+        dup2 (link[1], STDOUT_FILENO);
+        close(link[0]);
+        close(link[1]);
+        execvp(cmd_args[0], cmd_args);
+        exit(1);
+    }
+
+    close(link[1]);
+    if (output) {
+        ssize_t count = 0;
+        size_t total = 0;
+        memset(buffer, 0, sizeof(buffer));
+
+        // Get output and append to buffer
+        while ( (count = read(link[0], buffer, sizeof(buffer))) > 0 ) {
+            rea = (char *)realloc(tmp, total + count + 1);
+            if (rea) {
+                tmp = rea;
+                memcpy(tmp + total, buffer, count);
+                total += count;
+                tmp[total] = 0;
+            } else {
+                break;
+            }
+            memset(buffer, 0, sizeof(buffer));
+        }
+
+        // Give it back to output
+        *output = tmp;
+    } else {
+        close(2);
+    }
+
+    // Get return value
+    int waitstatus;
+    wait(&waitstatus);
+    return WEXITSTATUS(waitstatus);
 }

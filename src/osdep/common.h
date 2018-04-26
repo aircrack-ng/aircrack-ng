@@ -34,6 +34,8 @@
 
 int getFrequencyFromChannel(int channel);
 int getChannelFromFrequency(int frequency);
+char * get_text_file_content(const char * filename);
+int exec_get_output(char ** output, char * const cmd_args[]);
 
 /*
 // For later use, because aircrack-ng doesn't compile with MS compilers

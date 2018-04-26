@@ -40,6 +40,7 @@
 #include <dirent.h>
 #include <sys/utsname.h>
 #include <net/if_arp.h>
+#include <linux/limits.h>
 
 #ifdef CONFIG_LIBNL
 #include <linux/nl80211.h>
@@ -143,6 +144,7 @@ struct priv_linux {
 #define ETH_P_80211_RAW 25
 #endif
 
+#define ARPHRD_ETHERNET           1
 #define ARPHRD_IEEE80211        801
 #define ARPHRD_IEEE80211_PRISM  802
 #define ARPHRD_IEEE80211_FULL   803
@@ -1425,6 +1427,107 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
     return( 0 );
 }
 
+static int is_nexmon(const char * iface)
+{
+    /*
+     * First we need to check for nexutil presence.
+     * Looking at the BUS the device is on (SDIO), finding the
+     * vendor Broadcom (0x02d0) and then checking device ID
+     * and comparing to the available device list that can do
+     * monitor mode: https://github.com/seemoo-lab/nexmon/
+     * (Supported devices) and matching with Linux-wireless:
+     * https://wireless.wiki.kernel.org/en/users/Drivers/brcm80211
+     * (SDIO).
+     * And finally, we can check if nexutil is present
+     * 
+     * Relying on nexutil only is not a good idea because it can
+     * set the monitor flags on other interfaces and then the interface
+     * has to be unplugged or changed back to managed mode with iw
+     * tools
+     */
+
+    const char * sys_base_format = "/sys/class/net/%s/device/%s";
+    char * sys, *tmp;
+    // Interface name starts with wlan
+    if (iface == NULL || strlen(iface) >= IFNAMSIZ || strncmp(iface, "wlan", 4)) {
+        return 0;
+    }
+    
+    sys = (char *)calloc(1, PATH_MAX);
+    if (sys == NULL) {
+        return -1;
+    }
+    
+    // Check if it's on SDIO
+    sprintf(sys, sys_base_format, iface, "modalias");
+    tmp = get_text_file_content(sys);
+    if (tmp == NULL || strncmp(tmp, "sdio", 4)) {
+        if (tmp) {
+            free(tmp);
+        }
+        free(sys);
+        return -1;
+    }
+    free(tmp);
+    memset(sys, 0, PATH_MAX);
+
+    // Check if it's Broadcom
+    sprintf(sys, sys_base_format, iface, "vendor");
+    tmp = get_text_file_content(sys);
+    if (tmp == NULL || strncmp(tmp, "0x02d0", 6)) {
+        if (tmp) {
+            free(tmp);
+        }
+        free(sys);
+        return -1;
+    }
+    free(tmp);
+    memset(sys, 0, PATH_MAX);
+
+    // Check if it's one of the devices supported
+    sprintf(sys, sys_base_format, iface, "device");
+    tmp = get_text_file_content(sys);
+    free(sys);
+    if (tmp == NULL || ! (strncmp(tmp, "0x4330", 6) == 0 || strncmp(tmp, "0x4335", 6) == 0 
+        || strncmp(tmp, "0xa9a6", 6) == 0 || strncmp(tmp, "0x4345", 6) == 0)) {
+        if (tmp) {
+            free(tmp);
+        }
+        return -1;
+    }
+
+    /*
+    // Check if nexutil is installed
+    char * nexutil_path = NULL;
+    int ret = exec_get_output("which", "nexutil", &nexutil_path);
+    if (ret) {
+        // if return is not 0, then there won't be any output
+        return 0;
+    }
+    free(nexutil_path);
+    */
+
+    // Get current monitor mode value from nexutil
+    char * mon_value_str = NULL;
+    char * cmd_args[5] = { "nexutil", "-m", "-I", (char*)iface, NULL };
+    int ret = exec_get_output(&mon_value_str, cmd_args);
+    // Should return something like: "monitor: 2"
+    if (mon_value_str == NULL) {
+        return -1;
+    }
+    size_t len = strlen(mon_value_str);
+    if (len == 11 && mon_value_str[10] == '\n') {
+        mon_value_str[10] = 0;
+        --len;
+    }
+    if (ret || len != 10 || strncmp(mon_value_str, "monitor: ", 9)
+        || mon_value_str[9] < '0' || mon_value_str[9] > '9') {
+        return -1;
+    }
+
+    // Return the value
+    return (mon_value_str[9] - '0');
+}
 
 static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
 		   unsigned char *mac)
@@ -1599,11 +1702,52 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL )
     {
-        if( ifr.ifr_hwaddr.sa_family == 1 )
-            fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
-        else
+        /* On Nexmon-based devices, as of April 2018,
+         * this test will be true and it is marked as Ethernet (1)
+         * They tell to use "LD_PRELOAD=libfakeioctl.so EXECUTABLE"
+         * to fake ioctl and make the tool believe it has the right
+         * type of headers (and does the same for promiscuous) so
+         * tools don't complain and fail.
+         * 
+         * However, running a capture on this device without 
+         * LD_PRELOAD using something like tcpdump will work just
+         * fine but frames won't be decoded due to link-layer being
+         * marked as Ethernet.
+         * Based on nexutil -m output (1 -> ARPHRD_IEEE80211 and 
+         * 2 -> ARPHRD_IEEE80211_FULL), we know what kind of header
+         * is in the frames captured.
+         */
+        
+        if( ifr.ifr_hwaddr.sa_family == ARPHRD_ETHERNET ) {
+            int is_nexmon_ret = is_nexmon(iface); // It also return the monitor value of "nexutil -m -I $iface
+            switch (is_nexmon_ret) { 
+                case 1:
+                {
+                    // Just regular frames, no info
+                    *arptype = ARPHRD_IEEE80211;
+                    return 0;
+                }
+                case 2:
+                {
+                    // Radiotap headers
+                    *arptype = ARPHRD_IEEE80211_FULL;
+                    return 0;
+                }
+                case -1:
+                {
+                    fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
+                    break;
+                }
+                default:
+                {
+                    fprintf( stderr, "\nUnknown nexmon monitor mode value: %d", is_nexmon_ret);
+                    return ( 1 );
+                }
+            }
+        } else {
             fprintf( stderr, "\nUnsupported hardware link type %4d ",
                      ifr.ifr_hwaddr.sa_family );
+        }
 
         fprintf( stderr, "- expected ARPHRD_IEEE80211,\nARPHRD_IEEE80211_"
                          "FULL or ARPHRD_IEEE80211_PRISM instead.  Make\n"
