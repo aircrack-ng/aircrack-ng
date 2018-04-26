@@ -487,7 +487,7 @@ startNexmonIface() {
 	[ -z $1 ] && return
 
 	if [ -n "$(iwconfig $1 | grep 'Mode:Monitor')" ] && [ -n "$(nexutil -m | grep 'monitor: 2')" ]; then
-		printf "\n\tInterface $1 is already in monitor mode"
+		printf "\n\tInterface $1 is already in monitor mode\n"
 	else
 		ifconfig $1 up 2>/dev/null
 		iwconfig $1 mode monitor 2>/dev/null
