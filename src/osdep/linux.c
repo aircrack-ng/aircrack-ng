@@ -1297,6 +1297,44 @@ int linux_get_monitor(struct wif *wi)
     return( 0 );
 }
 
+char * get_linux_driver(const char * iface)
+{
+    char path[PATH_MAX];
+    char link[PATH_MAX];
+    if (iface == NULL || strlen(iface) >= IFNAMSIZ) {
+        return NULL;
+    }
+
+    // Read the link path
+    memset(path, 0, sizeof(path));
+    snprintf(path, sizeof(path), "/sys/class/net/%s/device/driver", iface);
+
+    // Read the link path
+    memset(link, 0, sizeof(link));
+    ssize_t len = readlink(path, link, sizeof(link));
+    if (len < 1) {
+        return NULL;
+    }
+
+    // Get driver name
+    const char * drv_idx = strrchr(link, '/');
+    if (drv_idx == NULL) {
+        return NULL;
+    }
+
+    // Copy it to a new char * and return
+    ssize_t drv_len = len - (drv_idx - link);
+    if (drv_len <= 1) {
+        return NULL;
+    }
+    char * ret = (char *)calloc(1, drv_len); // includes /
+    if (ret == NULL) {
+        return NULL;
+    }
+    memcpy(ret, drv_idx + 1, drv_len - 1);
+    return ret;
+}
+
 int set_monitor( struct priv_linux *dev, char *iface, int fd )
 {
     int pid, status, unused;
