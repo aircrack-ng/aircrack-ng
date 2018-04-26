@@ -58,8 +58,7 @@ int get_nexutil_mon_value(const char * iface)
         str[10] = 0;
         --len;
     }
-    if (ret || len != 10 || strncmp(str, "monitor: ", 9)
-        || str[9] < '0' || str[9] > '2') {
+    if (ret || len != 10 || strncmp(str, "monitor: ", 9)) {
         free(str);
         return -1;
     }
@@ -67,6 +66,10 @@ int get_nexutil_mon_value(const char * iface)
     // Return the value
     ret = (str[9] - '0');
     free(str);
+    if (ret < NEXUTIL_MIN_RET_VALUE || ret > NEXUTIL_MAX_RET_VALUE) {
+        return -1;
+    }
+    
     return ret;
 }
 

@@ -38,6 +38,9 @@
 #define NEXUTIL_80211_HEADERS 1
 #define NEXUTIL_RADIOTAP_HEADERS 2
 
+#define NEXUTIL_MIN_RET_VALUE 0
+#define NEXUTIL_MAX_RET_VALUE NEXUTIL_RADIOTAP_HEADERS
+
 int get_nexutil_mon_value(const char * iface);
 int is_nexmon(const char * iface);
 
