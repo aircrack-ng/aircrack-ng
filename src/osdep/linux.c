@@ -1310,11 +1310,11 @@ char * get_linux_driver(const char * iface)
     snprintf(path, sizeof(path), "/sys/class/net/%s/device/driver", iface);
 
     // Read the link path
-    memset(link, 0, sizeof(link));
     ssize_t len = readlink(path, link, sizeof(link));
     if (len < 1) {
         return NULL;
     }
+    memset(link + len, 0, sizeof(link) - len);
 
     // Get driver name
     const char * drv_idx = strrchr(link, '/');
