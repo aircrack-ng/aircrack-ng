@@ -145,13 +145,11 @@ int is_nexmon(const char * iface)
 
     /*
     // Check if nexutil is installed
-    char * nexutil_path = NULL;
-    int ret = exec_get_output("which", "nexutil", &nexutil_path);
-    if (ret) {
+    char * cmd_args[3] = { "which", "nexutil", NULL };
+    if (exec_get_output(NULL, cmd_args) != 0) {
         // if return is not 0, then there won't be any output
         return 0;
     }
-    free(nexutil_path);
     */
 
     // Get current monitor mode value from nexutil
