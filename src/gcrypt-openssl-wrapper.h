@@ -82,5 +82,18 @@
                                                                 gcry_md_get_algo_dlen (algo));  \
                                                             gcry_md_close(mdh); \
                                                         } while (0)
+// MD5
+#define MD5_CTX                                         gcry_md_hd_t
+#define MD5_Init(ctx)                                   gcry_md_open(ctx, GCRY_MD_MD5, 0)
+#define MD5_Update(ctx, data, len)                      gcry_md_write(*ctx, data, len)
+    // HMAC_Update(ctx, data, len)
+#define MD5_Final(ctx, md)                              do  { \
+                                                            memcpy(   md,  \
+                                                                gcry_md_read(*(gcry_md_hd_t*)ctx, GCRY_MD_MD5), \
+                                                                gcry_md_get_algo_dlen(gcry_md_get_algo(*(gcry_md_hd_t*)ctx)) \
+                                                            ); \
+                                                            gcry_md_close(*(gcry_md_hd_t*)ctx); \
+                                                        } while (0)
+
 // http://tumblr.spantz.org/post/214737529/the-use-of-do-while-0-in-c-macros
 #endif // _GCRYPT_OPENSSL_WRAPPER_H
