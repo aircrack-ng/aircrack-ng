@@ -1682,7 +1682,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
                 case NEXUTIL_NO_MONITOR_MODE:
                 {
                     fprintf( stderr, "\nMonitor mode not set or headers"
-                                     "not set on nexmon device %s\n", iface);
+                                     " not set on nexmon device %s\n", iface);
                     return ( 1 );
                 }
                 default:
