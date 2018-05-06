@@ -58,7 +58,7 @@
 #include <getopt.h>
 #include <sys/file.h>
 #include <fcntl.h>
-#include <limits.h>
+
 #include <ctype.h>
 
 #include "version.h"
@@ -553,27 +553,23 @@ int dump_initialize( char *prefix )
 {
     const size_t ADDED_LENGTH = 7;
     FILE *f;
-    char ofn[PATH_MAX];
+    char * ofn;
+    size_t ofn_len;
     struct pcap_file_header pfh;
 
     if ( prefix == NULL) {
         return( 0 );
     }
 
-    /* check not to overflow the ofn buffer */
+    ofn_len = strlen(prefix) + ADDED_LENGTH + 1;
+    ofn = (char *)calloc(1, ofn_len);
 
-    if( strlen( prefix ) >= sizeof( ofn ) - ADDED_LENGTH)
-        prefix[sizeof( ofn ) - (ADDED_LENGTH + 1)] = '\0';
-
-    /* make sure not to overwrite any existing file */
-
-    memset( ofn, 0, sizeof( ofn ) );
-
+    /* Get the index for the filename so we don't overwrite an existing file */
     opt.f_index = 1;
 
     do
     {
-        snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.%s",
+        snprintf( ofn,  ofn_len, "%s-%02d.%s",
                     prefix, opt.f_index, "cap" );
 
         if( ( f = fopen( ofn, "rb+" ) ) != NULL )
@@ -591,18 +587,18 @@ int dump_initialize( char *prefix )
 
     /* create the output packet capture file */
 
-    snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.cap",
+    snprintf( ofn,  ofn_len, "%s-%02d.cap",
                 prefix, opt.f_index );
 
     if( ( opt.f_cap = fopen( ofn, "wb+" ) ) == NULL )
     {
         perror( "fopen failed" );
         fprintf( stderr, "Could not create \"%s\".\n", ofn );
+        free(ofn);
         return( 1 );
     }
 
-    opt.f_cap_name = (char*) calloc(1, strlen(ofn) + 1);
-    memcpy(opt.f_cap_name, ofn, strlen(ofn));
+    opt.f_cap_name = ofn;
 
     pfh.magic           = TCPDUMP_MAGIC;
     pfh.version_major   = PCAP_VERSION_MAJOR;
