@@ -41,7 +41,7 @@
 
 AC_PREREQ(2.52)
 AC_INIT([aircrack-ng],
-    [m4_translit(m4_esyscmd([$(pwd)/evalrev || cat $(pwd)/VERSION]),m4_newline)],
+    [m4_translit(m4_esyscmd([./evalrev || cat ./VERSION]),m4_newline)],
     [https://forum.aircrack-ng.org])
 
 #
