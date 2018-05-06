@@ -40,6 +40,7 @@
 #include <dirent.h>
 #include <sys/utsname.h>
 #include <net/if_arp.h>
+#include <limits.h>
 
 #ifdef CONFIG_LIBNL
 #include <linux/nl80211.h>
