@@ -58,7 +58,7 @@
 #include <getopt.h>
 #include <sys/file.h>
 #include <fcntl.h>
-
+#include <limits.h>
 #include <ctype.h>
 
 #include "version.h"
