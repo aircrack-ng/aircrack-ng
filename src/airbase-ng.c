@@ -551,9 +551,9 @@ int capture_packet(unsigned char* packet, int length)
 }
 int dump_initialize( char *prefix )
 {
-    int i=0;
+    const size_t ADDED_LENGTH = 7;
     FILE *f;
-    char ofn[1024];
+    char ofn[PATH_MAX];
     struct pcap_file_header pfh;
 
     if ( prefix == NULL) {
@@ -562,8 +562,8 @@ int dump_initialize( char *prefix )
 
     /* check not to overflow the ofn buffer */
 
-    if( strlen( prefix ) >= sizeof( ofn ) - 10 )
-        prefix[sizeof( ofn ) - 10] = '\0';
+    if( strlen( prefix ) >= sizeof( ofn ) - ADDED_LENGTH)
+        prefix[sizeof( ofn ) - (ADDED_LENGTH + 1)] = '\0';
 
     /* make sure not to overwrite any existing file */
 
@@ -582,12 +582,12 @@ int dump_initialize( char *prefix )
             opt.f_index++;
             continue;
         }
-        i++;
+        break;
     }
-    while( i < 1 );
+    while( 1 );
 
-    opt.prefix = (char*) malloc(strlen(prefix)+2);
-    snprintf(opt.prefix, strlen(prefix)+1, "%s", prefix);
+    opt.prefix = (char*) calloc(1, strlen(prefix)+1);
+    memcpy(opt.prefix, prefix, strlen(prefix));
 
     /* create the output packet capture file */
 
@@ -601,8 +601,8 @@ int dump_initialize( char *prefix )
         return( 1 );
     }
 
-    opt.f_cap_name = (char*) malloc(128);
-    snprintf(opt.f_cap_name, 127, "%s",ofn);
+    opt.f_cap_name = (char*) calloc(1, strlen(ofn) + 1);
+    memcpy(opt.f_cap_name, ofn, strlen(ofn));
 
     pfh.magic           = TCPDUMP_MAGIC;
     pfh.version_major   = PCAP_VERSION_MAJOR;
