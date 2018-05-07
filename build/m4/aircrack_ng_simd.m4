@@ -95,6 +95,13 @@ then
         AX_APPEND_FLAG(-mfpu=neon, [arm_neon_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(arm_neon_[]_AC_LANG_ABBREV[]flags)
     ])
+
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if !defined(__ARM_NEON) && !defined(__ARM_NEON__)
+#error macro not defined
+#endif
+    ]])], [NEON_FOUND=1], [NEON_FOUND=0])
+    AC_SUBST(NEON_FOUND)
 fi
 
 if test $IS_PPC -eq 1
@@ -185,6 +192,7 @@ fi
 AM_CONDITIONAL([X86], [test "$IS_X86" = 1])
 AM_CONDITIONAL([ARM], [test "$IS_ARM" = 1])
 AM_CONDITIONAL([PPC], [test "$IS_PPC" = 1])
+AM_CONDITIONAL([NEON], [test "$NEON_FOUND" = 1])
 ])
 
 AC_DEFUN([AIRCRACK_NG_SIMD_C], [
