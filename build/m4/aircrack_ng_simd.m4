@@ -97,7 +97,7 @@ then
     ])
 
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-#if !defined(__ARM_NEON) && !defined(__ARM_NEON__)
+#if !defined(__ARM_NEON) && !defined(__ARM_NEON__) && !defined(__aarch64) && !defined(__aarch64__)
 #error macro not defined
 #endif
     ]])], [NEON_FOUND=1], [NEON_FOUND=0])
