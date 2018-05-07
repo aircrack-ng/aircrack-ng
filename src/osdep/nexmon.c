@@ -180,9 +180,15 @@ static char * get_text_file_content(const char * filename)
         fclose(f);
         return NULL;
     }
+    if (length == 0) {
+        return buffer;
+    }
 
     // There isn't much we can do if it fails or reads part of it
-    fread(buffer, 1, length, f);
+    if (fread(buffer, 1, length, f) <= 0) {
+        free(buffer);
+        buffer = NULL;
+    }
     fclose(f);
     return buffer;
 }
