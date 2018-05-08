@@ -95,6 +95,21 @@ then
         AX_APPEND_FLAG(-mfpu=neon, [arm_neon_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(arm_neon_[]_AC_LANG_ABBREV[]flags)
     ])
+
+    AS_VAR_PUSHDEF([CACHEVAR], [ax_cv_neon_[]_AC_LANG_ABBREV[]flags])
+    AC_CACHE_CHECK([whether _AC_LANG compiler supports NEON instructions], CACHEVAR, [
+        ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
+        _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS $arm_neon_[]_AC_LANG_ABBREV[]flags"
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if !defined(__ARM_NEON) && !defined(__ARM_NEON__) && !defined(__aarch64) && !defined(__aarch64__)
+#error macro not defined
+#endif
+        ]])], [AS_VAR_SET(CACHEVAR,[yes])], [AS_VAR_SET(CACHEVAR,[no])])
+        _AC_LANG_PREFIX[]FLAGS=$ax_check_save_flags
+    ])
+    AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],
+        [NEON_FOUND=1], [NEON_FOUND=0])
+    AS_VAR_POPDEF([CACHEVAR])
 fi
 
 if test $IS_PPC -eq 1
@@ -185,6 +200,7 @@ fi
 AM_CONDITIONAL([X86], [test "$IS_X86" = 1])
 AM_CONDITIONAL([ARM], [test "$IS_ARM" = 1])
 AM_CONDITIONAL([PPC], [test "$IS_PPC" = 1])
+AM_CONDITIONAL([NEON], [test "$NEON_FOUND" = 1])
 ])
 
 AC_DEFUN([AIRCRACK_NG_SIMD_C], [

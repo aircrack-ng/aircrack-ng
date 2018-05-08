@@ -116,8 +116,10 @@ endif
 pkglibexec_PROGRAMS = aircrack-ng--generic
 
 if ARM
+if NEON
 pkglibexec_PROGRAMS += aircrack-ng--neon \
                        aircrack-ng--asimd
+endif
 endif
 
 if PPC
