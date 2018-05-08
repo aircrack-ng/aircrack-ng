@@ -96,12 +96,20 @@ then
         AC_SUBST(arm_neon_[]_AC_LANG_ABBREV[]flags)
     ])
 
-    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+    AS_VAR_PUSHDEF([CACHEVAR], [ax_cv_neon_[]_AC_LANG_ABBREV[]flags])
+    AC_CACHE_CHECK([whether _AC_LANG compiler supports NEON instructions], CACHEVAR, [
+        ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
+        _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS -mfpu=neon"
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #if !defined(__ARM_NEON) && !defined(__ARM_NEON__) && !defined(__aarch64) && !defined(__aarch64__)
 #error macro not defined
 #endif
-    ]])], [NEON_FOUND=1], [NEON_FOUND=0])
-    AC_SUBST(NEON_FOUND)
+        ]])], [AS_VAR_SET(CACHEVAR,[yes])], [AS_VAR_SET(CACHEVAR,[no])])
+        _AC_LANG_PREFIX[]FLAGS=$ax_check_save_flags
+    ])
+    AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],
+        [NEON_FOUND=1], [NEON_FOUND=0])
+    AS_VAR_POPDEF([CACHEVAR])
 fi
 
 if test $IS_PPC -eq 1
