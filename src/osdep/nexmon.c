@@ -176,11 +176,8 @@ static char * get_text_file_content(const char * filename)
     rewind(f);
 
     char * buffer = (char *)calloc(1, length + 1);
-    if (buffer == NULL) {
+    if (buffer == NULL || length == 0) {
         fclose(f);
-        return NULL;
-    }
-    if (length == 0) {
         return buffer;
     }
 
