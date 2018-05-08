@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <limits.h>
+#include <sys/time.h>
 
 static int nexmon_send_command(struct nexio *nexio, struct nex_ioctl *ioc);
 
