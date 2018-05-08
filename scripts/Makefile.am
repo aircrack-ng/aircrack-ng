@@ -48,8 +48,8 @@ if LINUX
 dist_sbin_SCRIPTS += airmon-ng
 
 airmon-ng: airmon-ng.linux Makefile
-	cp $(abs_srcdir)/airmon-ng.linux $(abs_builddir)/airmon-ng
-	chmod +x $(abs_builddir)/airmon-ng
+	cp "$(abs_srcdir)/airmon-ng.linux" "$(abs_builddir)/airmon-ng"
+	chmod +x "$(abs_builddir)/airmon-ng"
 
 endif
 
@@ -57,8 +57,8 @@ if FREEBSD
 dist_sbin_SCRIPTS += airmon-ng
 
 airmon-ng: airmon-ng.freebsd Makefile
-	cp $(abs_srcdir)/airmon-ng.freebsd $(abs_builddir)/airmon-ng
-	chmod +x $(abs_builddir)/airmon-ng
+	cp "$(abs_srcdir)/airmon-ng.freebsd" "$(abs_builddir)/airmon-ng"
+	chmod +x "$(abs_builddir)/airmon-ng"
 
 endif
 
