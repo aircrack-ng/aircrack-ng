@@ -40,6 +40,7 @@
 #include <linux/limits.h>
 
 #include "nexmon.h"
+#include "nexmon_control.h"
 
 static char * get_text_file_content(const char * filename);
 static int exec_get_output(char ** output, char * const cmd_args[]);
@@ -153,7 +154,7 @@ int is_nexmon(const char * iface)
     */
 
     // Get current monitor mode value from nexutil
-    return get_nexutil_mon_value(iface);
+    return is_nexmon_monitor_enabled(iface);
 }
 
 static char * get_text_file_content(const char * filename)
