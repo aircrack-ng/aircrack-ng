@@ -96,8 +96,8 @@ int is_nexmon(const char * iface)
     const char * sys_base_format = "/sys/class/net/%s/device/%s";
     char * sys, *tmp;
     // Interface name starts with wlan
-    if (iface == NULL || strlen(iface) >= IFNAMSIZ || strncmp(iface, "wlan", 4)) {
-        return 0;
+    if (iface == NULL || strlen(iface) >= IFNAMSIZ) {
+        return -1;
     }
     
     sys = (char *)calloc(1, PATH_MAX);
@@ -109,11 +109,9 @@ int is_nexmon(const char * iface)
     sprintf(sys, sys_base_format, iface, "modalias");
     tmp = get_text_file_content(sys);
     if (tmp == NULL || strncmp(tmp, "sdio", 4)) {
-        if (tmp) {
-            free(tmp);
-        }
+        if (tmp) free(tmp);
         free(sys);
-        return -1;
+        return 0;
     }
     free(tmp);
     memset(sys, 0, PATH_MAX);
@@ -122,11 +120,9 @@ int is_nexmon(const char * iface)
     sprintf(sys, sys_base_format, iface, "vendor");
     tmp = get_text_file_content(sys);
     if (tmp == NULL || strncmp(tmp, "0x02d0", 6)) {
-        if (tmp) {
-            free(tmp);
-        }
+        if (tmp) free(tmp);
         free(sys);
-        return -1;
+        return 0;
     }
     free(tmp);
     memset(sys, 0, PATH_MAX);
@@ -135,12 +131,10 @@ int is_nexmon(const char * iface)
     sprintf(sys, sys_base_format, iface, "device");
     tmp = get_text_file_content(sys);
     free(sys);
-    if (tmp == NULL || ! (strncmp(tmp, "0x4330", 6) == 0 || strncmp(tmp, "0x4335", 6) == 0 
-        || strncmp(tmp, "0xa9a6", 6) == 0 || strncmp(tmp, "0x4345", 6) == 0)) {
-        if (tmp) {
-            free(tmp);
-        }
-        return -1;
+    if (tmp == NULL || (! (strncmp(tmp, "0x4330", 6) == 0 || strncmp(tmp, "0x4335", 6) == 0 
+        || strncmp(tmp, "0xa9a6", 6) == 0 || strncmp(tmp, "0x4345", 6) == 0))) {
+        if (tmp) free(tmp);
+        return 0;
     }
     free(tmp);
 
@@ -154,7 +148,8 @@ int is_nexmon(const char * iface)
     */
 
     // Get current monitor mode value from nexutil
-    return is_nexmon_monitor_enabled(iface);
+    //return is_nexmon_monitor_enabled(iface);
+    return 1;
 }
 
 static char * get_text_file_content(const char * filename)

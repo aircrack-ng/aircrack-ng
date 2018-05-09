@@ -69,6 +69,7 @@
 #include "byteorder.h"
 #include "channel.h"
 #include "nexmon.h"
+#include "nexmon_control.h"
 
 #ifdef CONFIG_LIBNL
 struct nl80211_state state;
@@ -1659,44 +1660,52 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
          */
         
         if( ifr.ifr_hwaddr.sa_family == ARPHRD_ETHERNET ) {
-            int is_nexmon_ret = is_nexmon(iface); // It also return the monitor value of "nexutil -m -I $iface
-            switch (is_nexmon_ret) { 
-                case NEXUTIL_80211_HEADERS:
-                {
-                    dev->nexmon = 1;
-                    // Just regular frames, no info
-                    *arptype = ARPHRD_IEEE80211;
-                    return 0;
+            if (dev->nexmon == -1) {
+                dev->nexmon = is_nexmon(iface);
+            }
+            
+            if (dev->nexmon == 1) {
+                //int nexmon_mon_value = get_nexutil_mon_value(iface);
+                int nexmon_mon_value = is_nexmon_monitor_enabled(iface);
+                switch (nexmon_mon_value) { 
+                    case NEXUTIL_80211_HEADERS:
+                    {
+                        // Just regular frames, no info
+                        *arptype = ARPHRD_IEEE80211;
+                        return 0;
+                    }
+                    case NEXUTIL_RADIOTAP_HEADERS:
+                    {
+                        // Radiotap headers
+                        *arptype = ARPHRD_IEEE80211_FULL;
+                        return 0;
+                    }
+                    case NEXUTIL_ERROR:
+                    {
+                        fprintf( stderr, "\nNexutil failure\n" );
+                        return ( 1 );
+                    }
+                    case NEXUTIL_NO_MONITOR_MODE:
+                    {
+                        fprintf( stderr, "\nMonitor mode not set or headers"
+                                         " not set on nexmon device %s\n", iface);
+                        return ( 1 );
+                    }
+                    default:
+                    {
+                        fprintf( stderr, "\nUnknown nexmon monitor mode value: %d\n", nexmon_mon_value);
+                        return ( 1 );
+                    }
                 }
-                case NEXUTIL_RADIOTAP_HEADERS:
-                {
-                    dev->nexmon = 1;
-                    // Radiotap headers
-                    *arptype = ARPHRD_IEEE80211_FULL;
-                    return 0;
-                }
-                case NEXUTIL_ERROR:
-                {
-                    fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
-                    break;
-                }
-                case NEXUTIL_NO_MONITOR_MODE:
-                {
-                    fprintf( stderr, "\nMonitor mode not set or headers"
-                                     " not set on nexmon device %s\n", iface);
-                    return ( 1 );
-                }
-                default:
-                {
-                    fprintf( stderr, "\nUnknown nexmon monitor mode value: %d\n", is_nexmon_ret);
-                    return ( 1 );
-                }
+            } else {
+                // Device is not nexmon or some checks failed or memory allocation failed.
+                fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
             }
         } else {
             fprintf( stderr, "\nUnsupported hardware link type %4d ",
                      ifr.ifr_hwaddr.sa_family );
         }
-
+        
         fprintf( stderr, "- expected ARPHRD_IEEE80211,\nARPHRD_IEEE80211_"
                          "FULL or ARPHRD_IEEE80211_PRISM instead.  Make\n"
                          "sure RFMON is enabled: run 'airmon-ng start %s"
@@ -1749,7 +1758,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         return ( 1 );
     }
 
-    dev->nexmon = 0;
+    dev->nexmon = -1;
     dev->inject_wlanng = 1;
     dev->rate = 2; /* default to 1Mbps if nothing is set */
 
