@@ -420,7 +420,7 @@ startMac80211Iface() {
 	fi
 	#we didn't bail means we need a monitor interface
         if [ ${#1} -gt 12 ]; then
-		printf "Interface ${#1}mon is too long for linux so it will be renamed to the old style (wlan#) name.\n"
+		printf "Interface ${1}mon is too long for linux so it will be renamed to the old style (wlan#) name.\n"
 		findFreeInterface monitor
 	else
 		if [ -e /sys/class/net/${1}mon ]; then
