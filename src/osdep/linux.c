@@ -1293,7 +1293,9 @@ int linux_get_monitor(struct wif *wi)
           ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL) ||
         ( wrq.u.mode != IW_MODE_MONITOR && (dev->drivertype != DT_ORINOCO)) )
     {
-        return( 1 );
+        if (!(dev->nexmon == 1 && is_nexmon_monitor_enabled(wi_get_ifname(wi)) > 0)) {
+            return( 1 );
+        }
     }
 
     return( 0 );
