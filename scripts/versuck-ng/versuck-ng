@@ -59,7 +59,7 @@ if __name__ == "__main__":
 	data = createKey(options.essid,options.mac)
 	print "Key is most likely"
 	print data["best"]
-	print "Key May also be one of these"
+	print "Key may also be one of these"
 	for key in data.keys():
 		if key is not "best":
 			print data[key]
