@@ -68,7 +68,6 @@
 #include "common.h"
 #include "byteorder.h"
 #include "channel.h"
-#include "nexmon.h"
 
 #ifdef CONFIG_LIBNL
 struct nl80211_state state;
@@ -139,7 +138,6 @@ struct priv_linux {
     char *main_if;
     unsigned char pl_mac[6];
     int inject_wlanng;
-    int nexmon;
 };
 
 #ifndef ETH_P_80211_RAW
@@ -1642,60 +1640,11 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
         ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL )
     {
-        /* On Nexmon-based devices, as of April 2018,
-         * this test will be true and it is marked as Ethernet (1)
-         * They tell to use "LD_PRELOAD=libfakeioctl.so EXECUTABLE"
-         * to fake ioctl and make the tool believe it has the right
-         * type of headers (and does the same for promiscuous) so
-         * tools don't complain and fail.
-         * 
-         * However, running a capture on this device without 
-         * LD_PRELOAD using something like tcpdump will work just
-         * fine but frames won't be decoded due to link-layer being
-         * marked as Ethernet.
-         * Based on nexutil -m output (1 -> ARPHRD_IEEE80211 and 
-         * 2 -> ARPHRD_IEEE80211_FULL), we know what kind of header
-         * is in the frames captured.
-         */
-        
-        if( ifr.ifr_hwaddr.sa_family == ARPHRD_ETHERNET ) {
-            int is_nexmon_ret = is_nexmon(iface); // It also return the monitor value of "nexutil -m -I $iface
-            switch (is_nexmon_ret) { 
-                case NEXUTIL_80211_HEADERS:
-                {
-                    dev->nexmon = 1;
-                    // Just regular frames, no info
-                    *arptype = ARPHRD_IEEE80211;
-                    return 0;
-                }
-                case NEXUTIL_RADIOTAP_HEADERS:
-                {
-                    dev->nexmon = 1;
-                    // Radiotap headers
-                    *arptype = ARPHRD_IEEE80211_FULL;
-                    return 0;
-                }
-                case NEXUTIL_ERROR:
-                {
-                    fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
-                    break;
-                }
-                case NEXUTIL_NO_MONITOR_MODE:
-                {
-                    fprintf( stderr, "\nMonitor mode not set or headers"
-                                     " not set on nexmon device %s\n", iface);
-                    return ( 1 );
-                }
-                default:
-                {
-                    fprintf( stderr, "\nUnknown nexmon monitor mode value: %d\n", is_nexmon_ret);
-                    return ( 1 );
-                }
-            }
-        } else {
+        if( ifr.ifr_hwaddr.sa_family == ARPHRD_ETHERNET )
+            fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
+        else
             fprintf( stderr, "\nUnsupported hardware link type %4d ",
-                     ifr.ifr_hwaddr.sa_family );
-        }
+                      ifr.ifr_hwaddr.sa_family );
 
         fprintf( stderr, "- expected ARPHRD_IEEE80211,\nARPHRD_IEEE80211_"
                          "FULL or ARPHRD_IEEE80211_PRISM instead.  Make\n"
@@ -1749,7 +1698,6 @@ static int do_linux_open(struct wif *wi, char *iface)
         return ( 1 );
     }
 
-    dev->nexmon = 0;
     dev->inject_wlanng = 1;
     dev->rate = 2; /* default to 1Mbps if nothing is set */
 
