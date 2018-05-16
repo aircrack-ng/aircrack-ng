@@ -178,7 +178,7 @@ struct session * load_session_file(const char * filename)
     return ret;
 }
 
-struct session * new_struct_session(const int argc, const char ** argv, const char * filename)
+struct session * new_struct_session(const int argc, char ** argv, const char * filename)
 {
     if (filename == NULL || filename[0] == 0 || argc <= 3 || argv == NULL) {
         // If it only has this parameter, then there is something wrong
