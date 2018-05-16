@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <inttypes.h>
 #include <errno.h>
 
 void free_struct_session(struct session * s)
@@ -60,7 +61,7 @@ void free_struct_session(struct session * s)
 }
 
 
-#define SESSION_ARGUMENTS_LINE 3
+#define SESSION_ARGUMENTS_LINE 4
 struct session * load_session_file(const char * filename)
 {
     // Check if file exists
@@ -113,9 +114,30 @@ struct session * load_session_file(const char * filename)
                 
                 break;
             }
-            case 1: // Position in file
+            case 1: // BSSID
             {
-                if (sscanf(line, "%jd", &(ret->pos)) == 0 || ret->pos < 0) {
+                // Parse BSSID
+                unsigned int bssid[6];
+                int count = sscanf(line, "%02X:%02X:%02X:%02X:%02X:%02X", &bssid[0], &bssid[1],
+                                            &bssid[2], &bssid[3], &bssid[4], &bssid[5]);
+                free(line);
+
+                // Verify all parsed correctly
+                if (count < 6) {
+                    fclose(f);
+                    free_struct_session(ret);
+                    return NULL;
+                }
+                
+                // Copy it back to the structure
+                for (int i = 0; i < 6; ++i) {
+                    ret->bssid[i] = (uint8_t)bssid[i];
+                }
+                break;
+            }
+            case 2: // Position in file
+            {
+                if (sscanf(line, "%" PRId64, &(ret->pos)) == 0 || ret->pos < 0) {
                     free(line);
                     fclose(f);
                     free_struct_session(ret);
@@ -123,7 +145,7 @@ struct session * load_session_file(const char * filename)
                 }
                 break;
             }
-            case 2: // Number of arguments
+            case 3: // Number of arguments
             {
                 if (sscanf(line, "%d", &(ret->argc)) == 0 || ret->argc <= 0) {
                     free(line);
@@ -156,7 +178,7 @@ struct session * load_session_file(const char * filename)
     return ret;
 }
 
-struct session * create_new_session(const int argc, const char ** argv, const char * filename)
+struct session * new_struct_session(const int argc, const char ** argv, const char * filename)
 {
     if (filename == NULL || filename[0] == 0 || argc <= 3 || argv == NULL) {
         // If it only has this parameter, then there is something wrong
@@ -234,7 +256,7 @@ struct session * create_new_session(const int argc, const char ** argv, const ch
     return ret;
 }
 
-int update_session(struct session * s, off_t pos)
+int save_session_to_file(struct session * s, int64_t pos)
 {
     if (s == NULL || s->filename == NULL || s->working_dir == NULL
         || s->argc == 0 || s->argv == NULL) {
@@ -251,7 +273,8 @@ int update_session(struct session * s, off_t pos)
 
     // Write it
     fprintf(f, "%s\n", s->working_dir);
-    fprintf(f, "%jd\n", s->pos);
+    fprintf(f, "%02X:%02X:%02X:%02X:%02X:%02X", s->bssid[0], s->bssid[1], s->bssid[2], s->bssid[3], s->bssid[4], s->bssid[5]);
+    fprintf(f, "%" PRId64 "\n", s->pos);
     fprintf(f, "%d\n", s->argc);
     for (int i = 0; i < s->argc; ++i) {
         fprintf(f, "%s\n", s->argv[i]);
