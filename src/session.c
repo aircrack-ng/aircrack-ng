@@ -82,16 +82,22 @@ struct session * load_session_file(const char * filename)
 
     ret->filename = strdup(filename);
     
-    char * line = NULL;
+    char * line;
     int line_nr = 0;
+    size_t n;
     while (1) {
-        ssize_t line_len = getline(&line, 0, f);
+        line = NULL;
+        n = 0;
+        ssize_t line_len = getline(&line, &n, f);
+        
+        // Basic checks and trimming
         if (line_len == -1) break;
         if (line[0] == '#') continue;
         if (strlen(line) > 0) {
             if (line[strlen(line) - 1] == '\n') line[strlen(line) - 1] = 0;
             if (line[strlen(line) - 1] == '\r') line[strlen(line) - 1] = 0;
         }
+
         // The first 3 parameters cannot be empty
         if (line_nr < SESSION_ARGUMENTS_LINE && strlen(line) == 0) {
             free(line);
@@ -147,15 +153,14 @@ struct session * load_session_file(const char * filename)
             }
             case 3: // Number of arguments
             {
-                if (sscanf(line, "%d", &(ret->argc)) == 0 || ret->argc <= 0) {
-                    free(line);
+                int sscanf_ret = sscanf(line, "%d", &(ret->argc));
+                free(line);
+                if (sscanf_ret != 1 || ret->argc < 2) {
                     fclose(f);
                     free_struct_session(ret);
                     return NULL;
                 }
-                
-                free(line);
-                
+
                 // Allocate memory for all the arguments
                 ret->argv = (char **)calloc(ret->argc, sizeof(char *));
                 if (ret->argv == NULL) {
@@ -173,6 +178,12 @@ struct session * load_session_file(const char * filename)
             }
         }
         ++line_nr;
+    }
+    
+    fclose(f);
+    if (line_nr < SESSION_ARGUMENTS_LINE + 1) {
+        free_struct_session(ret);
+        return NULL;
     }
     
     return ret;
@@ -205,7 +216,7 @@ struct session * new_struct_session(const int argc, char ** argv, const char * f
     // Get working directory and copy filename
     size_t wd_size = 0;
     char * wd_ret;
-    while (1) {
+    do {
         wd_size += PATH_MAX;
         char * wd_realloc = (char *)realloc(ret->working_dir, wd_size);
         if (wd_realloc == NULL) {
@@ -227,13 +238,13 @@ struct session * new_struct_session(const int argc, char ** argv, const char * f
         return NULL;
     }
 
-    // Copy argc and argv, except argv[0] and the 2 specifying session filename location
-    ret->argv = (char **)calloc(argc - 3, sizeof(char *));
+    // Copy argc and argv, except the 2 specifying session filename location
+    ret->argv = (char **)calloc(argc - 2, sizeof(char *));
     if (ret->argv == NULL) {
         free_struct_session(ret);
         return NULL;
     }
-    for (int i = 1; i < argc; ++i) {
+    for (int i = 0; i < argc; ++i) {
         if (strcmp(argv[i], filename) == 0) {
             // Found the filename, now remove the previously copied argument
             ret->argc--;
@@ -256,7 +267,7 @@ struct session * new_struct_session(const int argc, char ** argv, const char * f
     return ret;
 }
 
-int save_session_to_file(struct session * s, int64_t pos)
+int save_session_to_file(struct session * s, const int64_t pos)
 {
     if (s == NULL || s->filename == NULL || s->working_dir == NULL
         || s->argc == 0 || s->argv == NULL) {
@@ -273,7 +284,7 @@ int save_session_to_file(struct session * s, int64_t pos)
 
     // Write it
     fprintf(f, "%s\n", s->working_dir);
-    fprintf(f, "%02X:%02X:%02X:%02X:%02X:%02X", s->bssid[0], s->bssid[1], s->bssid[2], s->bssid[3], s->bssid[4], s->bssid[5]);
+    fprintf(f, "%02X:%02X:%02X:%02X:%02X:%02X\n", s->bssid[0], s->bssid[1], s->bssid[2], s->bssid[3], s->bssid[4], s->bssid[5]);
     fprintf(f, "%" PRId64 "\n", s->pos);
     fprintf(f, "%d\n", s->argc);
     for (int i = 0; i < s->argc; ++i) {
