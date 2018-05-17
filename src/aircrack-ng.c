@@ -74,6 +74,7 @@
 #include "wpapsk.h"
 #include "hashcat.h"
 #include "cowpatty.h"
+#include "session.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -230,6 +231,8 @@ char usage[] =
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
 "      -w <words> : path to wordlist(s) filename(s)\n"
+"      -N <file>  : path to new session filename\n"
+"      -R <file>  : path to existing session filename\n"
 "\n"
 "  WPA-PSK options:\n"
 "\n"
@@ -5230,6 +5233,9 @@ int main( int argc, char *argv[] )
 	struct AP_info *ap_cur;
 	int old=0;
 	char essid[33];
+    struct session * cracking_session = NULL;
+    int restore_session = 0;
+    int nbarg = argc;
 
 #ifdef HAVE_SQLITE
 	int rc;
@@ -5301,6 +5307,22 @@ int main( int argc, char *argv[] )
 
 	forceptw = 0;
 
+    // Check if we are restoring from a session
+    if (nbarg == 3 && (strcmp(argv[1], "--restore-session") == 0 || strcmp(argv[1], "-R") == 0)) {
+        cracking_session = load_session_file(argv[2]);
+        if (cracking_session == NULL) {
+            fprintf(stderr, "Failed loading session file: %s\n", argv[2]);
+            return EXIT_FAILURE;
+        }
+        nbarg = cracking_session->argc;
+        printf("Restoring session\n");
+//        printf("nbarg: %d\nArguments:\n", nbarg);
+//        for (int i = 0; i < nbarg; ++i) {
+//            printf("- %s\n", cracking_session->argv[i]);
+//        }
+        restore_session = 1;
+    }
+
 	while( 1 )
 	{
 
@@ -5316,16 +5338,36 @@ int main( int argc, char *argv[] )
             {"visual-inspection", 0, 0, 'V'},
             {"oneshot",           0, 0, '1'},
             {"cpu-detect",        0, 0, 'u'},
+            {"new-session",       1, 0, 'N'},
+// Handled above -> does not allow any other parameter
+//            {"restore-session",   1, 0, 'R'},
             {0,                   0, 0,  0 }
         };
 
-		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1Suj:",
-                        long_options, &option_index );
+        // Load argc/argv either from the cracking session or from arguments
+		option = getopt_long( nbarg,
+                              ((restore_session) ? cracking_session->argv : argv), 
+                                "r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1Suj:N:R:",
+                                long_options, &option_index );
 
 		if( option < 0 ) break;
 
 		switch( option )
 		{
+            case 'N':
+                // New session
+                if (cracking_session == NULL) {
+                    // Ignore if there is a cracking session (which means it was loaded from it)
+                    cracking_session = new_struct_session(nbarg, argv, optarg);
+                    if (cracking_session == NULL) {
+                        return EXIT_FAILURE;
+                    }
+                }
+                break;
+            case 'R':
+                // Restore and continue session
+                fprintf(stderr, "This option must be used without any other option!\n");
+                return EXIT_FAILURE;
 			case 'S':
 				_speed_test = 1;
 				break;
@@ -5749,13 +5791,16 @@ int main( int argc, char *argv[] )
 		goto __start;
 	}
 
-	if( argc - optind < 1 )
+	if( nbarg - optind < 1 )
 	{
-		if(argc == 1)
+		if(nbarg == 1)
 		{
 usage:
 			printf (usage, progname,
 				( cpu_count > 1 || cpu_count == -1) ? "\n      -X         : disable  bruteforce   multithreading\n" : "\n");
+            
+            free_struct_session(cracking_session);
+            cracking_session = NULL;
 
 			// If the user requested help, exit directly.
 			if (showhelp == 1)
@@ -5763,14 +5808,15 @@ usage:
 		}
 
 		// Missing parameters
-		if( argc - optind == 0)
+		if( nbarg - optind == 0)
 	    {
 	    	printf("No file to crack specified.\n");
 	    }
-	    if(argc > 1)
+	    if(nbarg > 1)
 	    {
     		printf("\"%s --help\" for help.\n", argv[0]);
 	    }
+        free_struct_session(cracking_session);
 		return( ret );
 	}
 
@@ -5824,18 +5870,19 @@ usage:
 	ap_1st = NULL;
 
 	old = optind;
-	n = argc - optind;
+	n = nbarg - optind;
 	id = 0;
 
 	if( !opt.bssid_set )
 	{
 		do
 		{
-			if( strcmp( argv[optind], "-" ) == 0 )
+            char * optind_arg = (restore_session) ? cracking_session->argv[optind] : argv[optind];
+			if( strcmp( optind_arg, "-" ) == 0 )
 				opt.no_stdin = 1;
 
 			if( pthread_create( &(tid[id]), NULL, (void *) check_thread,
-				(void *) argv[optind] ) != 0 )
+				(void *) optind_arg ) != 0 )
 			{
 				perror( "pthread_create failed" );
 				goto exit_main;
@@ -5850,7 +5897,7 @@ usage:
 				break;
 			}
 		}
-		while( ++optind < argc );
+		while( ++optind < nbarg );
 
 		/* wait until each thread reaches EOF */
 
@@ -5879,8 +5926,23 @@ usage:
 			goto exit_main;
 		}
 
-		if( ! opt.essid_set && ! opt.bssid_set )
-		{
+        
+        if (cracking_session && restore_session) {
+            // If cracking session present (and it is a restore), auto-load it
+            for (ap_cur = ap_1st;
+                ap_cur != NULL && memcmp(ap_cur->bssid, cracking_session->bssid, 6) != 0;
+                ap_cur = ap_cur->next);
+
+            if (ap_cur == NULL) {
+                fprintf(stderr, "Failed to find BSSID from restore session.\n");
+                free_struct_session(cracking_session);
+                return EXIT_FAILURE;
+            }
+
+            memcpy( opt.bssid, ap_cur->bssid,  6 );
+            opt.bssid_set = 1;
+            
+        } else if( ! opt.essid_set && ! opt.bssid_set) {
 			/* ask the user which network is to be cracked */
 
 			printf( "   #  BSSID%14sESSID%21sEncryption\n\n", "", "" );
@@ -5964,6 +6026,12 @@ usage:
 			memcpy( opt.bssid, ap_cur->bssid,  6 );
 			opt.bssid_set = 1;
 
+            // Copy BSSID to the cracking session and save it
+            if (cracking_session) {
+                memcpy(cracking_session->bssid, ap_cur->bssid, 6);
+                save_session_to_file(cracking_session, 0);
+            }
+
 			/* Disable PTW if dictionary used in WEP */
 			if (ap_cur->crypt == 2 && opt.dict != NULL)
 			{
@@ -5981,11 +6049,12 @@ usage:
 
 	do
 	{
-		if( strcmp( argv[optind], "-" ) == 0 )
+        char * optind_arg = (restore_session) ? cracking_session->argv[optind] : argv[optind];
+		if( strcmp( optind_arg, "-" ) == 0 )
 			opt.no_stdin = 1;
 
 		if( pthread_create( &(tid[id]), NULL, (void *) read_thread,
-			(void *) argv[optind] ) != 0 )
+			(void *) optind_arg ) != 0 )
 		{
 			perror( "pthread_create failed" );
 			goto exit_main;
@@ -5996,7 +6065,7 @@ usage:
 		if(id >= MAX_THREADS)
 			break;
 	}
-	while( ++optind < argc );
+	while( ++optind < nbarg );
 
 	nb_pkt=0;
 
@@ -6423,6 +6492,12 @@ __start:
 	}
 
 	exit_main:
+
+    // Cleanup session
+    if (cracking_session) {
+        free_struct_session(cracking_session);
+        // TODO: Delete if not interrupted
+    }
 
 #ifdef HAVE_SQLITE
 	if (db != NULL) {
