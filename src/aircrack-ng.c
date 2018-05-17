@@ -502,8 +502,8 @@ void eof_wait( int *eof_notified )
 
 		pthread_mutex_lock( &mx_eof );
 		nb_eof++;
-		pthread_cond_broadcast( &cv_eof );
 		pthread_mutex_unlock( &mx_eof );
+		pthread_cond_broadcast( &cv_eof );
 	}
 
 	usleep( 100000 );
