@@ -3295,13 +3295,13 @@ int do_attack_fragment()
         make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 60);
         if (caplen-z == 68-24)
         {
-            //Thats the ARP packet!
-//             PCT; printf("Thats our ARP packet!\n");
+            //That's the ARP packet!
+//             PCT; printf("That's our ARP packet!\n");
         }
         if (caplen-z == 71-24)
         {
-            //Thats the LLC NULL packet!
-//             PCT; printf("Thats our LLC Null packet!\n");
+            //That's the LLC NULL packet!
+//             PCT; printf("That's our LLC Null packet!\n");
             memset(h80211+24, '\x00', 39);
         }
 
@@ -3438,13 +3438,13 @@ int do_attack_fragment()
         make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, 408);
         if (caplen-z == 416-24)
         {
-            //Thats the ARP packet!
-//             PCT; printf("Thats our ARP packet!\n");
+            //That's the ARP packet!
+//             PCT; printf("That's our ARP packet!\n");
         }
         if (caplen-z == 448-24)
         {
-            //Thats the LLC NULL packet!
-//             PCT; printf("Thats our LLC Null packet!\n");
+            //That's the LLC NULL packet!
+//             PCT; printf("That's our LLC Null packet!\n");
             memset(h80211+24, '\x00', 416);
         }
 
@@ -3571,13 +3571,13 @@ int do_attack_fragment()
         make_arp_request(h80211, opt.f_bssid, opt.r_smac, opt.r_dmac, opt.r_sip, opt.r_dip, length);
         if (caplen == length+8+z)
         {
-            //Thats the ARP packet!
-//             PCT; printf("Thats our ARP packet!\n");
+            //That's the ARP packet!
+//             PCT; printf("That's our ARP packet!\n");
         }
         if (caplen == length+16+z)
         {
-            //Thats the LLC NULL packet!
-//             PCT; printf("Thats our LLC Null packet!\n");
+            //That's the LLC NULL packet!
+//             PCT; printf("That's our LLC Null packet!\n");
             memset(h80211+24, '\x00', length+8);
         }
 

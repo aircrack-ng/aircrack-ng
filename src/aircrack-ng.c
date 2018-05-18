@@ -865,7 +865,7 @@ int atomic_read( read_buf *rb, int fd, int len, void *buf )
 
 void read_thread( void *arg )
 {
-	/* we dont care if the buffers allocated here are not freed
+	/* we don't care if the buffers allocated here are not freed
 	 * since those threads are only created once, and the memory
 	 * is released to the OS automatically when the program exits.
 	 * there's no point in trying to mute valgrind but breaking

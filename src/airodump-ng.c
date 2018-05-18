@@ -2744,7 +2744,7 @@ write_packet:
 
     }
 
-    /* this changes the local ap_cur, st_cur and na_cur variables and should be the last check befor the actual write */
+    /* this changes the local ap_cur, st_cur and na_cur variables and should be the last check before the actual write */
     if(caplen < 24 && caplen >= 10 && h80211[0])
     {
         /* RTS || CTS || ACK || CF-END || CF-END&CF-ACK*/
@@ -3463,7 +3463,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
-    /* print some informations about each detected AP */
+    /* print some information about each detected AP */
 
     nlines += 3;
 
@@ -3781,7 +3781,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	    ap_cur = ap_cur->prev;
 	}
 
-	/* print some informations about each detected station */
+	/* print some information about each detected station */
 
 	nlines += 3;
 
@@ -3929,7 +3929,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
     if(G.show_ack)
     {
-        /* print some informations about each unknown station */
+        /* print some information about each unknown station */
 
         nlines += 3;
 
