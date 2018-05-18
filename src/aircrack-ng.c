@@ -4033,18 +4033,20 @@ unsigned char mic[16], int force )
 	if (opt.stdin_dict) {
 		printf( "\33[5;20H[%02d:%02d:%02d] %lld keys tested "
 			"(%2.2f k/s) ", et_h, et_m, et_s,
-			nb_tried, (float) nb_kprev / delta);
+			nb_tried, (delta == 0) ? 0 : (float) nb_kprev / delta);
 	} else {
-		calc = ((float)nb_tried / (float)opt.wordcount)*100;
-		remain = (opt.wordcount - nb_tried);
-		eta = (remain / (long long int)ksec);
-
 		printf( "\33[4;7H[%02d:%02d:%02d] %lld/%lld keys tested "
 			"(%2.2f k/s) ", et_h, et_m, et_s,
-			nb_tried, opt.wordcount, (float) nb_kprev / delta);
+			nb_tried, opt.wordcount, (delta == 0) ? 0 : (float) nb_kprev / delta);
 
 		printf( "\33[6;7HTime left: ");
-		calctime(eta, calc);
+        if (opt.wordcount != 0 && ksec != 0) {
+            calc = ((float)nb_tried / (float)opt.wordcount)*100;
+            remain = (opt.wordcount - nb_tried);
+            eta = (remain / (long long int)ksec);
+
+            calctime(eta, calc);        
+        }
 	}
 
 	memset( tmpbuf, ' ', sizeof( tmpbuf ) );
