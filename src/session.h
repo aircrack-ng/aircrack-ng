@@ -46,7 +46,8 @@ struct session {
     unsigned char bssid[6];
 };
 
-void free_struct_session(struct session * s, int delete_file);
+int delete_session_file(struct session * s);
+void free_struct_session(struct session * s);
 struct session * load_session_file(const char * filename);
 
 struct session * new_struct_session(const int argc, char ** argv, const char * filename);

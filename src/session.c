@@ -44,22 +44,28 @@
 #include <inttypes.h>
 #include <errno.h>
 
-void free_struct_session(struct session * s, int delete_file)
+int delete_session_file(struct session * s)
+{
+    if (s == NULL || s->filename == NULL) {
+        return 0;
+    }
+
+    FILE * f = fopen(s->filename, "r");
+    if (!f) {
+        return 0;
+    }
+    
+    fclose(f);
+    return remove(s->filename) == 0;
+}
+
+void free_struct_session(struct session * s)
 {
     if (s == NULL) {
         return;
     }
     
-    if (s->filename) {
-        if (delete_file) {
-            FILE * f = fopen(s->filename, "r");
-            if (f) {
-                fclose(f);
-                remove(s->filename);
-            }
-        }
-        free(s->filename);
-    }
+    if (s->filename) free(s->filename);
     if (s->argv) {
         for (int i = 0; i < s->argc; ++i) {
             free(s->argv[i]);
@@ -111,7 +117,7 @@ struct session * load_session_file(const char * filename)
         if (line_nr < SESSION_ARGUMENTS_LINE && strlen(line) == 0) {
             free(line);
             fclose(f);
-            free_struct_session(ret, 0);
+            free_struct_session(ret);
             return NULL;
         }
         
@@ -122,7 +128,7 @@ struct session * load_session_file(const char * filename)
                 if (chdir(line) == -1) {
                     free(line);
                     fclose(f);
-                    free_struct_session(ret, 0);
+                    free_struct_session(ret);
                     return NULL;
                 }
                 ret->working_dir = line;
@@ -140,7 +146,7 @@ struct session * load_session_file(const char * filename)
                 // Verify all parsed correctly
                 if (count < 6) {
                     fclose(f);
-                    free_struct_session(ret, 0);
+                    free_struct_session(ret);
                     return NULL;
                 }
                 
@@ -155,7 +161,7 @@ struct session * load_session_file(const char * filename)
                 if (sscanf(line, "%" PRId64, &(ret->pos)) == 0 || ret->pos < 0) {
                     free(line);
                     fclose(f);
-                    free_struct_session(ret, 0);
+                    free_struct_session(ret);
                     return NULL;
                 }
                 break;
@@ -166,7 +172,7 @@ struct session * load_session_file(const char * filename)
                 free(line);
                 if (sscanf_ret != 1 || ret->argc < 2) {
                     fclose(f);
-                    free_struct_session(ret, 0);
+                    free_struct_session(ret);
                     return NULL;
                 }
 
@@ -174,7 +180,7 @@ struct session * load_session_file(const char * filename)
                 ret->argv = (char **)calloc(ret->argc, sizeof(char *));
                 if (ret->argv == NULL) {
                     fclose(f);
-                    free_struct_session(ret, 0);
+                    free_struct_session(ret);
                     return NULL;
                 }
 
@@ -191,7 +197,7 @@ struct session * load_session_file(const char * filename)
     
     fclose(f);
     if (line_nr < SESSION_ARGUMENTS_LINE + 1) {
-        free_struct_session(ret, 0);
+        free_struct_session(ret);
         return NULL;
     }
     
@@ -229,13 +235,15 @@ struct session * new_struct_session(const int argc, char ** argv, const char * f
         wd_size += PATH_MAX;
         char * wd_realloc = (char *)realloc(ret->working_dir, wd_size);
         if (wd_realloc == NULL) {
-            free_struct_session(ret, 1);
+            delete_session_file(ret);
+            free_struct_session(ret);
             return NULL;
         }
         ret->working_dir = wd_realloc;
         wd_ret = getcwd(ret->working_dir, wd_size);
         if (wd_ret == NULL && errno != ERANGE) {
-            free_struct_session(ret, 1);
+            delete_session_file(ret);
+            free_struct_session(ret);
             return NULL;
         }
     } while (wd_ret == NULL && errno == ERANGE);
@@ -243,14 +251,16 @@ struct session * new_struct_session(const int argc, char ** argv, const char * f
     // Copy filename
     ret->filename = strdup(filename);
     if (ret->filename == NULL) {
-        free_struct_session(ret, 1);
+        delete_session_file(ret);
+        free_struct_session(ret);
         return NULL;
     }
 
     // Copy argc and argv, except the 2 specifying session filename location
     ret->argv = (char **)calloc(argc - 2, sizeof(char *));
     if (ret->argv == NULL) {
-        free_struct_session(ret, 1);
+        delete_session_file(ret);
+        free_struct_session(ret);
         return NULL;
     }
     for (int i = 0; i < argc; ++i) {
@@ -265,7 +275,8 @@ struct session * new_struct_session(const int argc, char ** argv, const char * f
         // Copy argument
         ret->argv[ret->argc] = strdup(argv[i]);
         if (ret->argv[ret->argc] == NULL) {
-            free_struct_session(ret, 1);
+            delete_session_file(ret);
+            free_struct_session(ret);
             return NULL;
         }
 

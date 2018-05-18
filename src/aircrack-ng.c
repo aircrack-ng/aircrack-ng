@@ -444,7 +444,7 @@ void clean_exit(int ret)
 	}
 
     if (cracking_session) {
-        free_struct_session(cracking_session, (ret == SUCCESS || ret == EXIT_SUCCESS || ret == 0));
+        free_struct_session(cracking_session);
         cracking_session = NULL;    
     }
 
