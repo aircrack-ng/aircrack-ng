@@ -443,9 +443,10 @@ void clean_exit(int ret)
 		progname = NULL;
 	}
 
-    // TODO: Delete session if it is a success
-    free_struct_session(cracking_session);
-    cracking_session = NULL;
+    if (cracking_session) {
+        free_struct_session(cracking_session, (ret == SUCCESS || ret == EXIT_SUCCESS || ret == 0));
+        cracking_session = NULL;    
+    }
 
 	child_pid=fork();
 
