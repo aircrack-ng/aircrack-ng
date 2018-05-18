@@ -251,7 +251,7 @@ char usage[] =
 "      --help     : Displays this usage screen\n"
 "\n";
 
-
+struct session * cracking_session = NULL;
 char * progname = NULL;
 int intr_read = 0;
 
@@ -442,6 +442,10 @@ void clean_exit(int ret)
 		free(progname);
 		progname = NULL;
 	}
+
+    // TODO: Delete session if it is a success
+    free_struct_session(cracking_session);
+    cracking_session = NULL;
 
 	child_pid=fork();
 
@@ -5233,7 +5237,6 @@ int main( int argc, char *argv[] )
 	struct AP_info *ap_cur;
 	int old=0;
 	char essid[33];
-    struct session * cracking_session = NULL;
     int restore_session = 0;
     int nbarg = argc;
 
@@ -5798,9 +5801,6 @@ int main( int argc, char *argv[] )
 usage:
 			printf (usage, progname,
 				( cpu_count > 1 || cpu_count == -1) ? "\n      -X         : disable  bruteforce   multithreading\n" : "\n");
-            
-            free_struct_session(cracking_session);
-            cracking_session = NULL;
 
 			// If the user requested help, exit directly.
 			if (showhelp == 1)
@@ -5816,7 +5816,6 @@ usage:
 	    {
     		printf("\"%s --help\" for help.\n", argv[0]);
 	    }
-        free_struct_session(cracking_session);
 		return( ret );
 	}
 
@@ -5935,8 +5934,7 @@ usage:
 
             if (ap_cur == NULL) {
                 fprintf(stderr, "Failed to find BSSID from restore session.\n");
-                free_struct_session(cracking_session);
-                return EXIT_FAILURE;
+                clean_exit(EXIT_FAILURE);
             }
 
             memcpy( opt.bssid, ap_cur->bssid,  6 );
@@ -6492,12 +6490,6 @@ __start:
 	}
 
 	exit_main:
-
-    // Cleanup session
-    if (cracking_session) {
-        free_struct_session(cracking_session);
-        // TODO: Delete if not interrupted
-    }
 
 #ifdef HAVE_SQLITE
 	if (db != NULL) {
