@@ -147,7 +147,7 @@ to your choosing:
     `./configure --with-experimental`
     `make`
 
-  * Compiling wth gcrypt:
+  * Compiling with gcrypt:
 
     `./configure --with-gcrypt`
     `make`

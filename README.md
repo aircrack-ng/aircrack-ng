@@ -168,7 +168,7 @@ to your choosing:
     make
     ```
 
-  * Compiling wth gcrypt:
+  * Compiling with gcrypt:
 
     ```
     ./configure --with-gcrypt
