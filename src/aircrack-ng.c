@@ -435,6 +435,13 @@ void clean_exit(int ret)
 // 	printf("%d unused IVs\n", j);
 // 	printf("%d used IVs for %d\n", k, attack);
 
+#ifdef HAVE_SQLITE
+	if (db != NULL) {
+		sqlite3_close(db);
+        db = NULL;
+	}
+#endif
+
 	if (progname != NULL) {
 		free(progname);
 		progname = NULL;
@@ -5761,7 +5768,7 @@ usage:
 
 			// If the user requested help, exit directly.
 			if (showhelp == 1)
-				exit(0);
+				clean_exit(SUCCESS);
 		}
 
 		// Missing parameters
@@ -5773,7 +5780,7 @@ usage:
 	    {
     		printf("\"%s --help\" for help.\n", argv[0]);
 	    }
-		return( ret );
+		clean_exit( ret );
 	}
 
 	if( opt.amode == 2 && opt.dict == NULL )
@@ -6425,12 +6432,6 @@ __start:
 	}
 
 	exit_main:
-
-#ifdef HAVE_SQLITE
-	if (db != NULL) {
-		sqlite3_close(db);
-	}
-#endif
 
 	#if ((defined(__INTEL_COMPILER) || defined(__ICC)) && defined(DO_PGO_DUMP))
 	_PGOPTI_Prof_Dump();
