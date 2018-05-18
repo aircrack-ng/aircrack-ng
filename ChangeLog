@@ -406,7 +406,7 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
   decrypt packets coming from the AP in a TKIP network, which uses QoS (ieee802.11e).
   It also breaks the MIC Key for sending packets towards the Client correctly encrypted and signed.
   Stores plaintext packet and keystream in separate files.
-* airbase-ng: Several improvements ( See http://trac.aircrack-ng.org/ticket/466 ).
+* airbase-ng: Several improvements ( See https://github.com/aircrack-ng/aircrack-ng/issues/466 ).
 * airbase-ng: Added compatibility with some clients. added random source IPs and MACs for cfrag attack (-N) to evade simple flood protection.
 * airmon-ng: Fixed some 'unary operator expected' errors.
 * airmon-ng: Fixed channel number setting with mac80211 drivers.
