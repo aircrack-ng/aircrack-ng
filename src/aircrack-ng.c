@@ -127,7 +127,6 @@ int id=0;
 pthread_t tid[MAX_THREADS];
 struct WPA_data wpa_data[MAX_THREADS];
 int wpa_wordlists_done = 0;
-static pthread_mutex_t mx_nb = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mx_wpastats = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -510,8 +509,8 @@ void eof_wait( int *eof_notified )
 
 		pthread_mutex_lock( &mx_eof );
 		nb_eof++;
-		pthread_cond_broadcast( &cv_eof );
 		pthread_mutex_unlock( &mx_eof );
+		pthread_cond_broadcast( &cv_eof );
 	}
 
 	usleep( 100000 );
@@ -597,8 +596,8 @@ inline int wpa_receive_passphrase(char *key, struct WPA_data* data)
 	data->front = (data->front+1) % data->nkeys;
 
 	// signal that there's now room in the queue for more keys
-	pthread_cond_signal(&data->cond);
 	pthread_mutex_unlock(&data->mutex);
+	pthread_cond_signal(&data->cond);
 
 	return 1;
 }
@@ -3212,9 +3211,7 @@ int check_wep_key( unsigned char *wepkey, int B, int keylen )
 	if (keylen<=0)
 		keylen = opt.keylen;
 
-	pthread_mutex_lock(&mx_nb);
-	nb_tried++;
-	pthread_mutex_unlock(&mx_nb);
+	__sync_add_and_fetch(&nb_tried, 1);
 
 	bad = 0;
 
@@ -4264,15 +4261,11 @@ int crack_wpa_thread( void *arg )
 #endif
 				}
 
-				pthread_mutex_lock(&mx_nb);
-
 				for (i = 0; i < cpuinfo.simdsize; i++)
 					if (key[i][0] != 0) {
-						nb_tried++;
-						nb_kprev++;
+						__sync_add_and_fetch(&nb_tried, 1);
+						__sync_add_and_fetch(&nb_kprev, 1);
 					}
-
-				pthread_mutex_unlock(&mx_nb);
 
 				len = strlen(key[j]);
 				if (len > 64 ) len = 64;
@@ -4297,15 +4290,11 @@ int crack_wpa_thread( void *arg )
 			}
 		}
 
-		pthread_mutex_lock(&mx_nb);
-
 		for (i = 0; i < cpuinfo.simdsize; i++)
 			if (key[i][0] != 0) {
-				nb_tried++;
-				nb_kprev++;
+				__sync_add_and_fetch(&nb_tried, 1);
+				__sync_add_and_fetch(&nb_kprev, 1);
 			}
-
-		pthread_mutex_unlock(&mx_nb);
 
 		if (!opt.is_quiet)
 		{
@@ -4454,10 +4443,8 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 		return 1;
 	}
 
-	pthread_mutex_lock(&mx_nb);
-	nb_tried++;
-	nb_kprev++;
-	pthread_mutex_unlock(&mx_nb);
+	__sync_add_and_fetch(&nb_tried, 1);
+	__sync_add_and_fetch(&nb_kprev, 1);
 
 	if( ! opt.is_quiet )
 		show_wpa_stats( values[1], strlen(values[1]), (unsigned char*)(values[0]), ptk, mic, 0 );
@@ -6098,10 +6085,9 @@ usage:
 __start:
 	/* launch the attack */
 
-	pthread_mutex_lock(&mx_nb);
 	nb_tried = 0;
 	nb_kprev = 0;
-	pthread_mutex_unlock(&mx_nb);
+	__sync_synchronize();
 
 	chrono( &t_begin, 1 );
 	chrono( &t_stats, 1 );
