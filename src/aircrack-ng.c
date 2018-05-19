@@ -5938,9 +5938,21 @@ usage:
                 clean_exit(EXIT_FAILURE);
             }
 
+            // Set BSSID
             memcpy( opt.bssid, ap_cur->bssid,  6 );
             opt.bssid_set = 1;
-            
+
+            // Set wordlist
+            if (next_dict(cracking_session->wordlist_id)) {
+                fprintf(stderr, "Failed setting wordlist ID from restore session.\n");
+                clean_exit(EXIT_FAILURE);
+            }
+
+            // Move into position in the wordlist
+            if (fseeko64(opt.dict, cracking_session->pos, SEEK_SET) != 0 || ftello64(opt.dict) != cracking_session->pos) {
+                fprintf(stderr, "Failed setting position in wordlist from restore session.\n");
+                clean_exit(EXIT_FAILURE);
+            }
         } else if( ! opt.essid_set && ! opt.bssid_set) {
 			/* ask the user which network is to be cracked */
 
@@ -6025,10 +6037,9 @@ usage:
 			memcpy( opt.bssid, ap_cur->bssid,  6 );
 			opt.bssid_set = 1;
 
-            // Copy BSSID to the cracking session and save it
-            if (cracking_session) {
+            // Copy BSSID to the cracking session
+            if (cracking_session && opt.dict != NULL) {
                 memcpy(cracking_session->bssid, ap_cur->bssid, 6);
-                save_session_to_file(cracking_session, 0, 0);
             }
 
 			/* Disable PTW if dictionary used in WEP */
