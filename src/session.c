@@ -171,7 +171,7 @@ struct session * load_session_file(const char * filename)
             }
             case 2: // Position in file
             {
-                if (sscanf(line, "%d %" PRId64, &(ret->wordlist_id), &(ret->pos)) != 2 || ret->pos < 0) {
+                if (sscanf(line, "%hhu %" PRId64, &(ret->wordlist_id), &(ret->pos)) != 2 || ret->pos < 0) {
                     free(line);
                     fclose(f);
                     free_struct_session(ret);
