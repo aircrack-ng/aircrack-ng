@@ -6028,7 +6028,7 @@ usage:
             // Copy BSSID to the cracking session and save it
             if (cracking_session) {
                 memcpy(cracking_session->bssid, ap_cur->bssid, 6);
-                save_session_to_file(cracking_session, 0);
+                save_session_to_file(cracking_session, 0, 0);
             }
 
 			/* Disable PTW if dictionary used in WEP */
