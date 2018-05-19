@@ -81,7 +81,7 @@ void free_struct_session(struct session * s)
  * Line 1: Working directory
  * Line 2: BSSID
  * Line 3: Wordlist ID followed by a space then position in file
- * Line 4: Amount of arguments (indicated how many lines will follow this one)
+ * Line 4: Amount of arguments (indicates how many lines will follow this one)
  * 
  * Notes:
  * - Any line starting with # is ignored
