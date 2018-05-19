@@ -43,6 +43,7 @@ struct session {
     int argc;
     char * working_dir;
     int64_t pos;
+    unsigned char wordlist_id;
     unsigned char bssid[6];
 };
 

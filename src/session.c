@@ -113,7 +113,7 @@ struct session * load_session_file(const char * filename)
             if (line[strlen(line) - 1] == '\r') line[strlen(line) - 1] = 0;
         }
 
-        // The first 3 parameters cannot be empty
+        // The first 4 parameters cannot be empty
         if (line_nr < SESSION_ARGUMENTS_LINE && strlen(line) == 0) {
             free(line);
             fclose(f);
@@ -158,7 +158,7 @@ struct session * load_session_file(const char * filename)
             }
             case 2: // Position in file
             {
-                if (sscanf(line, "%" PRId64, &(ret->pos)) == 0 || ret->pos < 0) {
+                if (sscanf(line, "%d %" PRId64, &(ret->wordlist_id), &(ret->pos)) != 2 || ret->pos < 0) {
                     free(line);
                     fclose(f);
                     free_struct_session(ret);
@@ -287,7 +287,7 @@ struct session * new_struct_session(const int argc, char ** argv, const char * f
     return ret;
 }
 
-int save_session_to_file(struct session * s, const int64_t pos)
+int save_session_to_file(struct session * s, const unsigned char wordlist_id, const int64_t pos)
 {
     if (s == NULL || s->filename == NULL || s->working_dir == NULL
         || s->argc == 0 || s->argv == NULL) {
@@ -299,13 +299,14 @@ int save_session_to_file(struct session * s, const int64_t pos)
         return -1;
     }
 
-    // Update position in structure
+    // Update wordlist position and ID in structure
     s->pos = pos;
+    s->wordlist_id = wordlist_id;
 
     // Write it
     fprintf(f, "%s\n", s->working_dir);
     fprintf(f, "%02X:%02X:%02X:%02X:%02X:%02X\n", s->bssid[0], s->bssid[1], s->bssid[2], s->bssid[3], s->bssid[4], s->bssid[5]);
-    fprintf(f, "%" PRId64 "\n", s->pos);
+    fprintf(f, "%d %" PRId64 "\n", s->wordlist_id, s->pos);
     fprintf(f, "%d\n", s->argc);
     for (int i = 0; i < s->argc; ++i) {
         fprintf(f, "%s\n", s->argv[i]);
