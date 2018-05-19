@@ -444,6 +444,9 @@ void clean_exit(int ret)
 	}
 
     if (cracking_session) {
+        if (opt.dictfinish || wepkey_crack_success || wpa_wordlists_done) {
+            delete_session_file(cracking_session);
+        }
         free_struct_session(cracking_session);
         cracking_session = NULL;    
     }
@@ -6492,6 +6495,7 @@ __start:
 						sqlite3_free(zErrMsg);
 					}
 					if (waited != 0) printf("\n\n");
+					wpa_wordlists_done = 1;
 					break;
 				}
 			}
