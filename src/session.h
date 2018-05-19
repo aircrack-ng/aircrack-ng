@@ -39,12 +39,13 @@
 
 struct session {
     char * filename;
-    char ** argv;
-    int argc;
-    char * working_dir;
-    int64_t pos;
-    unsigned char wordlist_id;
-    unsigned char bssid[6];
+
+    char * working_dir; // Line 1
+    unsigned char bssid[6]; // Line 2
+    unsigned char wordlist_id; // Line 3
+    int64_t pos; // Line 3
+    int argc; // Line 4
+    char ** argv; // Arguments
 };
 
 int delete_session_file(struct session * s);
