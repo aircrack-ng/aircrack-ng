@@ -5958,7 +5958,7 @@ usage:
             }
 
             // Move into position in the wordlist
-            if (fseeko64(opt.dict, cracking_session->pos, SEEK_SET) != 0 || ftello64(opt.dict) != cracking_session->pos) {
+            if (fseeko(opt.dict, cracking_session->pos, SEEK_SET) != 0 || ftello(opt.dict) != cracking_session->pos) {
                 fprintf(stderr, "Failed setting position in wordlist from restore session.\n");
                 clean_exit(EXIT_FAILURE);
             }
