@@ -5798,6 +5798,12 @@ int main( int argc, char *argv[] )
 		goto __start;
 	}
 
+    // Cracking session is only for when one or more wordlists are used or stdin is used
+    if ((opt.dict == NULL || no_stdin) && cracking_session) {
+        fprintf(stderr, "Cannot save/restore cracking session when there is no wordlist.\n");
+        goto usage;
+    }
+
 	if( nbarg - optind < 1 )
 	{
 		if(nbarg == 1)
