@@ -5962,6 +5962,8 @@ usage:
                 fprintf(stderr, "Failed setting position in wordlist from restore session.\n");
                 clean_exit(EXIT_FAILURE);
             }
+            
+            // Set amount of keys tried -> Done later
         } else if( ! opt.essid_set && ! opt.bssid_set) {
 			/* ask the user which network is to be cracked */
 
@@ -6178,7 +6180,8 @@ __start:
 	/* launch the attack */
 
 	pthread_mutex_lock(&mx_nb);
-	nb_tried = 0;
+    // Set the amount of keys tried
+	nb_tried = (cracking_session && restore_session) ? cracking_session->nb_keys_tried : 0;
 	nb_kprev = 0;
 	pthread_mutex_unlock(&mx_nb);
 

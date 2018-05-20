@@ -80,7 +80,9 @@ void free_struct_session(struct session * s)
  * File format:
  * Line 1: Working directory
  * Line 2: BSSID
- * Line 3: Wordlist ID followed by a space then position in file
+ * Line 3: Wordlist ID followed by a space then 
+ *          position in file followed by a space then
+ *          amount of keys tried
  * Line 4: Amount of arguments (indicates how many lines will follow this one)
  * 
  * Notes:
@@ -169,9 +171,10 @@ struct session * load_session_file(const char * filename)
                 }
                 break;
             }
-            case 2: // Position in file
+            case 2: // Wordlist ID, position in wordlist and amount of keys tried
             {
-                if (sscanf(line, "%hhu %" PRId64, &(ret->wordlist_id), &(ret->pos)) != 2 || ret->pos < 0) {
+                if (sscanf(line, "%hhu %" PRId64 " %lld", &(ret->wordlist_id), &(ret->pos), &(ret->nb_keys_tried)) != 3 
+                    || ret->pos < 0 || ret->nb_keys_tried < 0) {
                     free(line);
                     fclose(f);
                     free_struct_session(ret);
@@ -300,7 +303,7 @@ struct session * new_struct_session(const int argc, char ** argv, const char * f
     return ret;
 }
 
-int save_session_to_file(struct session * s, const unsigned char wordlist_id, const int64_t pos)
+int save_session_to_file(struct session * s, const unsigned char wordlist_id, const int64_t pos, long long int nb_keys_tried)
 {
     if (s == NULL || s->filename == NULL || s->working_dir == NULL
         || s->argc == 0 || s->argv == NULL) {
@@ -312,14 +315,15 @@ int save_session_to_file(struct session * s, const unsigned char wordlist_id, co
         return -1;
     }
 
-    // Update wordlist position and ID in structure
+    // Update wordlist position, wordlist ID and amount of keys tried in structure
     s->pos = pos;
     s->wordlist_id = wordlist_id;
+    s->nb_keys_tried = nb_keys_tried;
 
     // Write it
     fprintf(f, "%s\n", s->working_dir);
     fprintf(f, "%02X:%02X:%02X:%02X:%02X:%02X\n", s->bssid[0], s->bssid[1], s->bssid[2], s->bssid[3], s->bssid[4], s->bssid[5]);
-    fprintf(f, "%d %" PRId64 "\n", s->wordlist_id, s->pos);
+    fprintf(f, "%d %" PRId64 " %lld\n", s->wordlist_id, s->pos, s->nb_keys_tried);
     fprintf(f, "%d\n", s->argc);
     for (int i = 0; i < s->argc; ++i) {
         fprintf(f, "%s\n", s->argv[i]);
