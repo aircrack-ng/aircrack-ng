@@ -5174,6 +5174,7 @@ int crack_wep_dict()
 		if(check_wep_key(wep.key, opt.keylen, 0) == SUCCESS)
 		{
 			free(key);
+			wepkey_crack_success = 1;
 			return( SUCCESS );
 		}
 	}
