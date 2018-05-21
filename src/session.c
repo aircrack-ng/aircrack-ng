@@ -163,6 +163,14 @@ struct session * load_session_file(const char * filename)
             }
             case 1: // BSSID
             {
+                // Check length
+                if (strlen(line) != 17) {
+                    free(line);
+                    fclose(f);
+                    free_struct_session(ret);
+                    return NULL;
+                }
+
                 // Parse BSSID
                 unsigned int bssid[6];
                 int count = sscanf(line, "%02X:%02X:%02X:%02X:%02X:%02X", &bssid[0], &bssid[1],
