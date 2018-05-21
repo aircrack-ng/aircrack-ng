@@ -303,7 +303,7 @@ struct session * new_struct_session(const int argc, char ** argv, const char * f
     return ret;
 }
 
-int save_session_to_file(struct session * s, const unsigned char wordlist_id, const int64_t pos, long long int nb_keys_tried)
+int save_session_to_file(struct session * s, long long int nb_keys_tried)
 {
     if (s == NULL || s->filename == NULL || s->working_dir == NULL
         || s->argc == 0 || s->argv == NULL) {
@@ -315,9 +315,7 @@ int save_session_to_file(struct session * s, const unsigned char wordlist_id, co
         return -1;
     }
 
-    // Update wordlist position, wordlist ID and amount of keys tried in structure
-    s->pos = pos;
-    s->wordlist_id = wordlist_id;
+    // Update amount of keys tried in structure
     s->nb_keys_tried = nb_keys_tried;
 
     // Write it

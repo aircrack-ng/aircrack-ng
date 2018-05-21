@@ -54,6 +54,6 @@ void free_struct_session(struct session * s);
 struct session * load_session_file(const char * filename);
 
 struct session * new_struct_session(const int argc, char ** argv, const char * filename);
-int save_session_to_file(struct session * s, const unsigned char wordlist_id, const int64_t pos, long long int nb_keys_tried);
+int save_session_to_file(struct session * s, long long int nb_keys_tried);
 
 #endif // _AIRCRACK_NG_SESSION_H
