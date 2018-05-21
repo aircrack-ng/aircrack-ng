@@ -445,6 +445,7 @@ void clean_exit(int ret)
 	}
 
     if (cracking_session) {
+        // TODO: Delete file when cracking fails
         if (opt.dictfinish || wepkey_crack_success || wpa_wordlists_done) {
             delete_session_file(cracking_session);
         }
@@ -5842,10 +5843,12 @@ int main( int argc, char *argv[] )
 		goto __start;
 	}
 
-    // Cracking session is only for when one or more wordlists are used or stdin is used
-    if ((opt.dict == NULL || opt.no_stdin) && cracking_session) {
-        fprintf(stderr, "Cannot save/restore cracking session when there is no wordlist.\n");
-        goto usage;
+    // Cracking session is only for when one or more wordlists are used.
+    // Airolib-ng not supported and stdin not allowed.
+    if ((opt.dict == NULL || opt.no_stdin || db) && cracking_session) {
+        fprintf(stderr, "Cannot save/restore cracking session when there is no wordlist,"
+                        " when using stdin or when using airolib-ng database.");
+        goto exit_main;
     }
 
 	if( nbarg - optind < 1 )
