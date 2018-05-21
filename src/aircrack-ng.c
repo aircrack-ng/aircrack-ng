@@ -446,7 +446,7 @@ void clean_exit(int ret)
 
     if (cracking_session) {
         // TODO: Delete file when cracking fails
-        if (opt.dictfinish || wepkey_crack_success || wpa_wordlists_done) {
+        if (opt.dictfinish || wepkey_crack_success || wpa_wordlists_done || nb_tried == opt.wordcount) {
             delete_session_file(cracking_session);
         }
         free_struct_session(cracking_session);
