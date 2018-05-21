@@ -65,7 +65,18 @@ void free_struct_session(struct session * s)
         return;
     }
     
-    if (s->filename) free(s->filename);
+    
+    if (s->filename) {
+        
+        // Delete 0 byte file
+        struct stat scs;
+        memset(&scs, 0, sizeof(struct stat));
+        if (stat(s->filename, &scs) == 0 && scs.st_size == 0) {
+            delete_session_file(s);
+        }
+        
+        free(s->filename);
+    }
     if (s->argv) {
         for (int i = 0; i < s->argc; ++i) {
             free(s->argv[i]);
