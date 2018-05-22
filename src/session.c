@@ -344,27 +344,23 @@ struct session * ac_session_from_argv(const int argc, char ** argv, const char *
 
     // Get working directory and copy filename
     ret->working_dir = get_current_working_directory();
-    if (ret->working_dir == NULL) {
-        ac_session_free(&ret);
-        return NULL;
-    }
 
     // Copy filename
     ret->filename = strdup(filename);
-    if (ret->filename == NULL) {
-        ac_session_free(&ret);
-        return NULL;
-    }
 
     // Copy argc and argv, except the 2 specifying session filename location
     ret->argv = (char **)calloc(argc - AMOUNT_ARGUMENTS_IGNORE, sizeof(char *));
-    if (ret->argv == NULL) {
+    
+    // Check values are properly set
+    if (ret->filename == NULL || ret->working_dir == NULL || ret->argv == NULL) {
         ac_session_free(&ret);
         return NULL;
     }
+    
+    // Copy all the arguments
     for (int i = 0; i < argc; ++i) {
         if (strcmp(argv[i], filename) == 0) {
-            // Found the filename, now remove the previously copied argument
+            // Found the session filename, now remove the previously copied argument
             ret->argc--;
             free(ret->argv[ret->argc]);
             ret->argv[ret->argc] = NULL;
