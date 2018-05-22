@@ -134,7 +134,11 @@ struct session * ac_session_load(const char * filename)
     }
     
     // Check size isn't 0
-    uint64_t fsize = fseeko(f, 0, SEEK_END);
+    if (fseeko(f, 0, SEEK_END)) {
+        fclose(f);
+        return NULL;
+    }
+    uint64_t fsize = ftello(f);
     if (fsize == 0) {
         fclose(f);
         return NULL;
