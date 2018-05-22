@@ -170,7 +170,7 @@ struct session * ac_session_load(const char * filename)
                 if (chdir(line) == -1) {
                     free(line);
                     fclose(f);
-                    ac_session_destroy(ret);
+                    ac_session_free(&ret);
                     return NULL;
                 }
                 ret->working_dir = line;
@@ -183,7 +183,7 @@ struct session * ac_session_load(const char * filename)
                 if (strlen(line) != 17) {
                     free(line);
                     fclose(f);
-                    ac_session_destroy(ret);
+                    ac_session_free(&ret);
                     return NULL;
                 }
 
@@ -196,7 +196,7 @@ struct session * ac_session_load(const char * filename)
                 // Verify all parsed correctly
                 if (count < 6) {
                     fclose(f);
-                    ac_session_destroy(ret);
+                    ac_session_free(&ret);
                     return NULL;
                 }
                 
@@ -212,7 +212,7 @@ struct session * ac_session_load(const char * filename)
                     || ret->pos < 0 || ret->nb_keys_tried < 0) {
                     free(line);
                     fclose(f);
-                    ac_session_destroy(ret);
+                    ac_session_free(&ret);
                     return NULL;
                 }
                 break;
@@ -223,7 +223,7 @@ struct session * ac_session_load(const char * filename)
                 free(line);
                 if (sscanf_ret != 1 || ret->argc < 2) {
                     fclose(f);
-                    ac_session_destroy(ret);
+                    ac_session_free(&ret);
                     return NULL;
                 }
 
@@ -231,7 +231,7 @@ struct session * ac_session_load(const char * filename)
                 ret->argv = (char **)calloc(ret->argc, sizeof(char *));
                 if (ret->argv == NULL) {
                     fclose(f);
-                    ac_session_destroy(ret);
+                    ac_session_free(&ret);
                     return NULL;
                 }
 
@@ -248,7 +248,7 @@ struct session * ac_session_load(const char * filename)
     
     fclose(f);
     if (line_nr < SESSION_ARGUMENTS_LINE + 1) {
-        ac_session_destroy(ret);
+        ac_session_free(&ret);
         return NULL;
     }
     
