@@ -106,6 +106,95 @@ int ac_session_init(struct session * s)
     return EXIT_SUCCESS;
 }
 
+int ac_session_set_working_directory(struct session * session, const char * str)
+{
+    if (session == NULL || str == NULL || str[0] == 0 || chdir(str) == -1) {
+        return EXIT_FAILURE;
+    }
+
+    session->working_dir = strdup(str);
+    
+    return (session->working_dir) ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+int ac_session_set_bssid(struct session * session, const char * str)
+{
+    if (session == NULL || str == NULL || strlen(str) != 17) {
+        return EXIT_FAILURE;
+    }
+
+    // Parse BSSID
+    unsigned int bssid[6];
+    int count = sscanf(str, "%02X:%02X:%02X:%02X:%02X:%02X", &bssid[0], &bssid[1],
+                                &bssid[2], &bssid[3], &bssid[4], &bssid[5]);
+
+    // Verify all parsed correctly
+    if (count < 6) {
+        return EXIT_FAILURE;
+    }
+    
+    // Copy it back to the structure
+    for (int i = 0; i < 6; ++i) {
+        session->bssid[i] = (uint8_t)bssid[i];
+    }
+    
+    return EXIT_SUCCESS;
+}
+
+int ac_session_set_wordlist_settings(struct session * session, const char * str)
+{
+    if (session == NULL || str == NULL) {
+        return EXIT_FAILURE;
+    }
+
+    int nb_input_scanned = sscanf(str,
+                                    "%hhu %" PRId64 " %lld", 
+                                    &(session->wordlist_id),
+                                    &(session->pos),
+                                    &(session->nb_keys_tried));
+    
+    if (nb_input_scanned != 3 || session->pos < 0 || session->nb_keys_tried < 0) {
+        return EXIT_FAILURE;
+    }
+    
+    return EXIT_SUCCESS;
+}
+
+int ac_session_set_amount_arguments(struct session * session, const char * str)
+{
+    if (session == NULL || str == NULL) {
+        return EXIT_FAILURE;
+    }
+
+    // Parse amount of arguments
+    int nb_input_scanned = sscanf(str, "%d", &(session->argc));
+    if (nb_input_scanned != 1 || session->argc < 2) { // There should be at least 2 arguments
+        return EXIT_FAILURE;
+    }
+
+    // Allocate memory for all the arguments
+    session->argv = (char **)calloc(session->argc, sizeof(char *));
+    
+    return (session->argv) ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+static char * ac_session_getline(FILE * f)
+{
+    if (f == NULL) {
+        return NULL;
+    }
+
+    char * ret = NULL;
+    size_t n = 0;
+    ssize_t line_len = getline(&ret, &n, f);
+    
+    if (line_len == -1) {
+        return NULL;
+    }
+    
+    return ret;
+}
+
 /*
  * File format:
  * Line 1: Working directory
@@ -122,8 +211,14 @@ int ac_session_init(struct session * s)
  */
 
 #define SESSION_ARGUMENTS_LINE 4
+#define AC_SESSION_CWD_LINE 0
+#define AC_SESSION_BSSID_LINE 1
+#define AC_SESSION_WL_SETTINGS_LINE 2
+#define AC_SESSION_ARGC_LINE 3
 struct session * ac_session_load(const char * filename)
 {
+    int temp;
+
     // Check if file exists
     if (filename == NULL || filename[0] == 0) {
         return NULL;
@@ -158,108 +253,56 @@ struct session * ac_session_load(const char * filename)
     
     char * line;
     int line_nr = 0;
-    size_t n;
     while (1) {
-        line = NULL;
-        n = 0;
-        ssize_t line_len = getline(&line, &n, f);
+        line = ac_session_getline(f);
         
         // Basic checks and trimming
-        if (line_len == -1) break;
+        if (line == NULL) break;
         if (line[0] == '#') continue;
-        if (strlen(line) > 0) {
-            if (line[strlen(line) - 1] == '\n') line[strlen(line) - 1] = 0;
-            if (line[strlen(line) - 1] == '\r') line[strlen(line) - 1] = 0;
-        }
-
-        // The first 4 parameters cannot be empty
-        if (line_nr < SESSION_ARGUMENTS_LINE && strlen(line) == 0) {
-            free(line);
-            fclose(f);
-            ac_session_free(&ret);
-            return NULL;
-        }
+        rtrim(line);
         
         // Check the parameters
         switch (line_nr) {
-            case 0: // Working directory
+            case AC_SESSION_CWD_LINE: // Working directory
             {
-                if (chdir(line) == -1) {
-                    free(line);
-                    fclose(f);
-                    ac_session_free(&ret);
-                    return NULL;
-                }
-                ret->working_dir = line;
-                
+                temp = ac_session_set_working_directory(ret, line);
                 break;
             }
-            case 1: // BSSID
+            case AC_SESSION_BSSID_LINE: // BSSID
             {
-                // Check length
-                if (strlen(line) != 17) {
-                    free(line);
-                    fclose(f);
-                    ac_session_free(&ret);
-                    return NULL;
-                }
-
-                // Parse BSSID
-                unsigned int bssid[6];
-                int count = sscanf(line, "%02X:%02X:%02X:%02X:%02X:%02X", &bssid[0], &bssid[1],
-                                            &bssid[2], &bssid[3], &bssid[4], &bssid[5]);
-                free(line);
-
-                // Verify all parsed correctly
-                if (count < 6) {
-                    fclose(f);
-                    ac_session_free(&ret);
-                    return NULL;
-                }
-                
-                // Copy it back to the structure
-                for (int i = 0; i < 6; ++i) {
-                    ret->bssid[i] = (uint8_t)bssid[i];
-                }
+                temp = ac_session_set_bssid(ret, line);
                 break;
             }
-            case 2: // Wordlist ID, position in wordlist and amount of keys tried
+            case AC_SESSION_WL_SETTINGS_LINE: // Wordlist ID, position in wordlist and amount of keys tried
             {
-                if (sscanf(line, "%hhu %" PRId64 " %lld", &(ret->wordlist_id), &(ret->pos), &(ret->nb_keys_tried)) != 3 
-                    || ret->pos < 0 || ret->nb_keys_tried < 0) {
-                    free(line);
-                    fclose(f);
-                    ac_session_free(&ret);
-                    return NULL;
-                }
+                temp = ac_session_set_wordlist_settings(ret, line);
                 break;
             }
-            case 3: // Number of arguments
+            case AC_SESSION_ARGC_LINE: // Number of arguments
             {
-                int sscanf_ret = sscanf(line, "%d", &(ret->argc));
-                free(line);
-                if (sscanf_ret != 1 || ret->argc < 2) {
-                    fclose(f);
-                    ac_session_free(&ret);
-                    return NULL;
-                }
-
-                // Allocate memory for all the arguments
-                ret->argv = (char **)calloc(ret->argc, sizeof(char *));
-                if (ret->argv == NULL) {
-                    fclose(f);
-                    ac_session_free(&ret);
-                    return NULL;
-                }
-
+                temp = ac_session_set_amount_arguments(ret, line);
                 break;
             }
             default: // All the arguments
             {
                 ret->argv[line_nr - SESSION_ARGUMENTS_LINE] = line;
+                temp = EXIT_SUCCESS;
                 break;
             }
         }
+        
+        // Cleanup
+        if (line_nr < SESSION_ARGUMENTS_LINE) {
+            free(line);
+        }
+        
+        // Check for success/failure
+        if (temp == EXIT_FAILURE) {
+            fclose(f);
+            ac_session_free(&ret);
+            return NULL;
+        }
+        
         ++line_nr;
     }
     

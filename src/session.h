@@ -55,7 +55,16 @@ int ac_session_destroy(struct session * s);
 void ac_session_free(struct session ** s);
 int ac_session_init(struct session * s);
 
+// Validate and set the different values in the session structure
+int ac_session_set_working_directory(struct session * session, const char * str);
+int ac_session_set_bssid(struct session * session, const char * str);
+int ac_session_set_wordlist_settings(struct session * session, const char * str);
+int ac_session_set_amount_arguments(struct session * session, const char * str);
+
+// Load from file
 struct session * ac_session_load(const char * filename);
+
+// Save to file
 int ac_session_save(struct session * s, long long int nb_keys_tried);
 
 struct session * ac_session_from_argv(const int argc, char ** argv, const char * filename);

@@ -599,6 +599,14 @@ int hexToInt(char s[], int len)
 	return value;
 }
 
+void rtrim(char * line)
+{
+    if (line && strlen(line) > 0) {
+        if (line[strlen(line) - 1] == '\n') line[strlen(line) - 1] = 0;
+        if (line[strlen(line) - 1] == '\r') line[strlen(line) - 1] = 0;
+    }
+}
+
 char * get_current_working_directory()
 {
     char * ret = NULL;

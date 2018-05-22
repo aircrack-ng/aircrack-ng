@@ -85,5 +85,6 @@ int64_t ftello64(FILE * fp);
 
 void calctime(time_t t, float calc);
 char * get_current_working_directory();
+void rtrim(char * line);
 
 #endif
