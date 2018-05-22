@@ -272,6 +272,8 @@ struct session * ac_session_load(const char * filename)
     return ret;
 }
 
+// Two arguments will be ignored: Session creation parameter and its argument
+#define AMOUNT_ARGUMENTS_IGNORE 2
 struct session * ac_session_from_argv(const int argc, char ** argv, const char * filename)
 {
     if (filename == NULL || filename[0] == 0 || argc <= 3 || argv == NULL) {
@@ -312,7 +314,7 @@ struct session * ac_session_from_argv(const int argc, char ** argv, const char *
     }
 
     // Copy argc and argv, except the 2 specifying session filename location
-    ret->argv = (char **)calloc(argc - 2, sizeof(char *));
+    ret->argv = (char **)calloc(argc - AMOUNT_ARGUMENTS_IGNORE, sizeof(char *));
     if (ret->argv == NULL) {
         ac_session_free(&ret);
         return NULL;
