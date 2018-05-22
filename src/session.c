@@ -40,9 +40,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <limits.h>
 #include <inttypes.h>
-#include <errno.h>
+
+#include "common.h"
 
 int ac_session_destroy(struct session * s)
 {
@@ -298,22 +298,11 @@ struct session * ac_session_from_argv(const int argc, char ** argv, const char *
     ac_session_init(ret);
 
     // Get working directory and copy filename
-    size_t wd_size = 0;
-    char * wd_ret;
-    do {
-        wd_size += PATH_MAX;
-        char * wd_realloc = (char *)realloc(ret->working_dir, wd_size);
-        if (wd_realloc == NULL) {
-            ac_session_free(&ret);
-            return NULL;
-        }
-        ret->working_dir = wd_realloc;
-        wd_ret = getcwd(ret->working_dir, wd_size);
-        if (wd_ret == NULL && errno != ERANGE) {
-            ac_session_free(&ret);
-            return NULL;
-        }
-    } while (wd_ret == NULL && errno == ERANGE);
+    ret->working_dir = get_current_working_directory();
+    if (ret->working_dir == NULL) {
+        ac_session_free(&ret);
+        return NULL;
+    }
 
     // Copy filename
     ret->filename = strdup(filename);
