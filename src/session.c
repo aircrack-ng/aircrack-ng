@@ -95,6 +95,17 @@ struct session * ac_session_new()
     return (struct session *)calloc(1, sizeof(struct session));
 }
 
+int ac_session_init(struct session * s)
+{
+    if (s == NULL) {
+        return EXIT_FAILURE;
+    }
+    
+    memset(s, 0, sizeof(struct session));
+    
+    return EXIT_SUCCESS;
+}
+
 /*
  * File format:
  * Line 1: Working directory
@@ -137,6 +148,8 @@ struct session * ac_session_load(const char * filename)
         return NULL;
     }
 
+    // Initialize
+    ac_session_init(ret);
     ret->filename = strdup(filename);
     
     char * line;
@@ -273,11 +286,12 @@ struct session * ac_session_from_argv(const int argc, char ** argv, const char *
         return NULL;
     }
         
-    // Prepare structure
+    // Initialize structure
     struct session * ret = ac_session_new();
     if (ret == NULL) {
         return NULL;
     }
+    ac_session_init(ret);
 
     // Get working directory and copy filename
     size_t wd_size = 0;

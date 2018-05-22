@@ -52,7 +52,7 @@ struct session {
 struct session * ac_session_new();
 int ac_session_destroy(struct session * s);
 void ac_session_free(struct session ** s);
-
+int ac_session_init(struct session * s);
 
 struct session * ac_session_load(const char * filename);
 int ac_session_save(struct session * s, long long int nb_keys_tried);
