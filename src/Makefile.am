@@ -109,6 +109,10 @@ endif
 
 LIBOSD		= osdep/libosdep.la
 LIBOSD_LIBS	= -Losdep -losdep
+if HAVE_PCAP
+LIBOSD_LIBS	+= -lpcap
+endif
+
 if CYGWIN
 LIBOSD_LIBS	+= -liphlpapi -lsetupapi -luuid
 endif
