@@ -447,10 +447,9 @@ void clean_exit(int ret)
     if (cracking_session) {
         // TODO: Delete file when cracking fails
         if (opt.dictfinish || wepkey_crack_success || wpa_wordlists_done || nb_tried == opt.wordcount) {
-            delete_session_file(cracking_session);
+            ac_session_destroy(cracking_session);
         }
-        free_struct_session(cracking_session);
-        cracking_session = NULL;    
+        ac_session_free(&cracking_session);
     }
 
 	child_pid=fork();
@@ -3026,7 +3025,7 @@ void save_cracking_session()
     // Update amount of keys tried and save it
     if (wordlist) {
         pthread_mutex_lock( &mx_ses );
-        save_session_to_file(cracking_session, nb_tried);
+        ac_session_save(cracking_session, nb_tried);
         pthread_mutex_unlock( &mx_ses );        
     }
 }
@@ -5362,7 +5361,7 @@ int main( int argc, char *argv[] )
 
     // Check if we are restoring from a session
     if (nbarg == 3 && (strcmp(argv[1], "--restore-session") == 0 || strcmp(argv[1], "-R") == 0)) {
-        cracking_session = load_session_file(argv[2]);
+        cracking_session = ac_session_load(argv[2]);
         if (cracking_session == NULL) {
             fprintf(stderr, "Failed loading session file: %s\n", argv[2]);
             return EXIT_FAILURE;
@@ -5411,7 +5410,7 @@ int main( int argc, char *argv[] )
                 // New session
                 if (cracking_session == NULL) {
                     // Ignore if there is a cracking session (which means it was loaded from it)
-                    cracking_session = new_struct_session(nbarg, argv, optarg);
+                    cracking_session = ac_session_from_argv(nbarg, argv, optarg);
                     if (cracking_session == NULL) {
                         return EXIT_FAILURE;
                     }

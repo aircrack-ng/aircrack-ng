@@ -49,11 +49,15 @@ struct session {
     char ** argv; // Arguments
 };
 
-int delete_session_file(struct session * s);
-void free_struct_session(struct session * s);
-struct session * load_session_file(const char * filename);
+struct session * ac_session_new();
+int ac_session_destroy(struct session * s);
+void ac_session_free(struct session ** s);
 
-struct session * new_struct_session(const int argc, char ** argv, const char * filename);
-int save_session_to_file(struct session * s, long long int nb_keys_tried);
+
+struct session * ac_session_load(const char * filename);
+int ac_session_save(struct session * s, long long int nb_keys_tried);
+
+struct session * ac_session_from_argv(const int argc, char ** argv, const char * filename);
+
 
 #endif // _AIRCRACK_NG_SESSION_H
