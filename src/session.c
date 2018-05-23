@@ -196,6 +196,9 @@ static char * ac_session_getline(FILE * f)
 }
 
 /*
+ * MT-Unsafe: Caller must not permit multiple threads to call 
+ * the function with the same session object.
+ * 
  * File format:
  * Line 1: Working directory
  * Line 2: BSSID
@@ -381,6 +384,10 @@ struct session * ac_session_from_argv(const int argc, char ** argv, const char *
     return ret;
 }
 
+/* 
+ * MT-Unsafe: Caller must not permit multiple threads to call 
+ * the function with the same session object.
+ */
 int ac_session_save(struct session * s, long long int nb_keys_tried)
 {
     if (s == NULL || s->filename == NULL || s->working_dir == NULL
