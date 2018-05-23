@@ -36,6 +36,7 @@
 #define _AIRCRACK_NG_SESSION_H
 
 #include <inttypes.h>
+#include <pthread.h>
 
 struct session {
     char * filename; // Session filename
@@ -48,6 +49,7 @@ struct session {
     long long int nb_keys_tried; // Line 3: Amount of keys already tried, purely for stats
     int argc; // Line 4: amount of arguments
     char ** argv; // Line 5 and further: Arguments (1 per line)
+    pthread_mutex_t mutex; // Locking for when updating wordlist settings and saving file
 };
 
 struct session * ac_session_new();
@@ -65,7 +67,7 @@ int ac_session_set_amount_arguments(struct session * session, const char * str);
 struct session * ac_session_load(const char * filename);
 
 // Save to file
-int ac_session_save(struct session * s, long long int nb_keys_tried);
+int ac_session_save(struct session * s, uint64_t pos, long long int nb_keys_tried);
 
 struct session * ac_session_from_argv(const int argc, char ** argv, const char * filename);
 

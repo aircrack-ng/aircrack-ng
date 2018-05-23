@@ -114,7 +114,6 @@ pthread_mutex_t mx_apl;			 /* lock write access to ap LL   */
 pthread_mutex_t mx_eof;			 /* lock write access to nb_eof  */
 pthread_mutex_t mx_ivb;			 /* lock access to ivbuf array   */
 pthread_mutex_t mx_dic;			 /* lock access to opt.dict      */
-pthread_mutex_t mx_ses;			 /* lock access to session       */
 pthread_cond_t  cv_eof;			 /* read EOF condition variable  */
 int  nb_eof = 0;				 /* # of threads who reached eof */
 long nb_pkt = 0;				 /* # of packets read so far     */
@@ -127,6 +126,7 @@ int wepkey_crack_success = 0;
 int close_aircrack = 0;
 int id=0;
 pthread_t tid[MAX_THREADS];
+pthread_t cracking_session_tid;
 struct WPA_data wpa_data[MAX_THREADS];
 int wpa_wordlists_done = 0;
 static pthread_mutex_t mx_nb = PTHREAD_MUTEX_INITIALIZER;
@@ -333,6 +333,11 @@ void clean_exit(int ret)
             safe_write( bf_pipe[i][1], (void *) tmpbuf, 64 );
             #endif
         }
+
+	// Stop cracking session thread
+	if (cracking_session) {
+		pthread_join(cracking_session_tid, NULL);
+	}
 
 	for (i = 0; i < id; i++) {
 		if (pthread_join(tid[i], NULL) != 0) {
@@ -695,6 +700,54 @@ int checkbssids(char *bssidlist)
 	// Success
 	free(frontlist);
 	return nbBSSID;
+}
+
+void session_save_thread(void * arg)
+{
+    struct timeval start, stop;
+
+    int8_t wordlist = 0;
+    uint64_t pos;
+    if (!cracking_session || opt.stdin_dict) {
+        return;
+    }
+    if (arg) { }
+
+    // Start chrono
+    gettimeofday( & start, NULL);
+
+    while (!close_aircrack) {
+        
+        // Check if we're over the 10 minutes mark
+        gettimeofday( & stop, NULL);
+        if (stop.tv_sec - start.tv_sec < 10 * 60) {
+            // Wait 100ms
+            if (usleep (100000) == -1) {
+                break; // Got a signal
+            }
+            continue;
+        }
+        // Reset chrono
+        start.tv_sec = stop.tv_sec;
+        
+        pos = wordlist = 0;
+        // Get position in file
+        pthread_mutex_lock( &mx_dic );
+        if (opt.dict) {
+            wordlist = 1;
+            pos = ftello(opt.dict);
+        }
+        pthread_mutex_unlock( &mx_dic );
+        
+        // If there is no wordlist, that means it's the end
+        // (either forced closing and wordlist was closed or
+        //  we've tried all wordlists).
+        if (wordlist == 0) {
+            break;
+        }
+        // Update amount of keys tried and save it
+        ac_session_save(cracking_session, pos, nb_tried);
+    }
 }
 
 int mergebssids(const char * bssidlist, unsigned char * bssid)
@@ -3007,29 +3060,6 @@ int crack_wep_thread( void *arg )
 	return( 0 );
 }
 
-void save_cracking_session()
-{
-    if (!cracking_session || opt.stdin_dict) {
-        return;
-    }
-
-    // Get position in file
-    int8_t wordlist = 0;
-    pthread_mutex_lock( &mx_dic );
-    if (opt.dict) {
-        wordlist = 1;
-        cracking_session->pos = ftello(opt.dict);
-    }
-    pthread_mutex_unlock( &mx_dic );
-    
-    // Update amount of keys tried and save it
-    if (wordlist) {
-        pthread_mutex_lock( &mx_ses );
-        ac_session_save(cracking_session, nb_tried);
-        pthread_mutex_unlock( &mx_ses );        
-    }
-}
-
 /* display the current votes */
 
 void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod )
@@ -3055,11 +3085,6 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 	et_h =   delta / 3600;
 	et_m = ( delta - et_h * 3600 ) / 60;
 	et_s =   delta - et_h * 3600 - et_m * 60;
-
-    // Save cracking session every 10 minutes
-    if (et_s == 0 && ((et_m == 0 && et_h != 0) || (et_m != 0 && et_m % 10 == 0))) {
-        save_cracking_session();
-    }
 
 	if( is_cleared == 0 )
 	{
@@ -4041,11 +4066,6 @@ unsigned char mic[16], int force )
 	et_m = ( delta - et_h * 3600 ) / 60;
 	et_s =   delta - et_h * 3600 - et_m * 60;
 
-    // Save cracking session every 10 minutes
-    if (et_s == 0 && ((et_m == 0 && et_h != 0) || (et_m != 0 && et_m % 10 == 0))) {
-        save_cracking_session();
-    }
-
 	if( ( delta = chrono( &t_kprev, 0 ) ) >= 6 )
 	{
 		int delta0;
@@ -4443,12 +4463,12 @@ int next_dict(int nb)
 
     // Update wordlist ID and position in session
     if (cracking_session) {
-        pthread_mutex_lock(&mx_ses);
+        pthread_mutex_lock(&(cracking_session->mutex));
 
         cracking_session->pos = 0;
         cracking_session->wordlist_id = opt.nbdict;
 
-        pthread_mutex_unlock(&mx_ses);
+        pthread_mutex_unlock(&(cracking_session->mutex));
     }
 
 	return( 0 );
@@ -5921,7 +5941,6 @@ usage:
 	pthread_mutex_init( &mx_ivb, NULL );
 	pthread_mutex_init( &mx_eof, NULL );
 	pthread_mutex_init( &mx_dic, NULL );
-	pthread_mutex_init( &mx_ses, NULL );
 	pthread_cond_init(  &cv_eof, NULL );
 
 	ap_1st = NULL;
@@ -6226,6 +6245,16 @@ usage:
 
 __start:
 	/* launch the attack */
+    
+    // Start cracking session
+	if (cracking_session) {
+		if( pthread_create( &cracking_session_tid, NULL, (void *) session_save_thread,
+			(void *) NULL ) != 0 )
+		{
+			perror( "pthread_create failed" );
+			goto exit_main;
+		}
+    }
 
 	pthread_mutex_lock(&mx_nb);
     // Set the amount of keys tried

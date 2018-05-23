@@ -50,13 +50,17 @@ int ac_session_destroy(struct session * s)
         return 0;
     }
 
+    pthread_mutex_lock(&(s->mutex));
     FILE * f = fopen(s->filename, "r");
     if (!f) {
         return 0;
     }
-    
+
     fclose(f);
-    return remove(s->filename) == 0;
+    int ret = remove(s->filename);
+    pthread_mutex_unlock(&(s->mutex));
+
+    return ret == 0;
 }
 
 void ac_session_free(struct session ** s)
@@ -67,14 +71,16 @@ void ac_session_free(struct session ** s)
     
     
     if ((*s)->filename) {
-        
+
         // Delete 0 byte file
         struct stat scs;
         memset(&scs, 0, sizeof(struct stat));
+        pthread_mutex_lock(&((*s)->mutex));
         if (stat((*s)->filename, &scs) == 0 && scs.st_size == 0) {
+            pthread_mutex_unlock(&((*s)->mutex));
             ac_session_destroy(*s);
         }
-        
+
         free((*s)->filename);
     }
     if ((*s)->argv) {
@@ -102,6 +108,7 @@ int ac_session_init(struct session * s)
     }
     
     memset(s, 0, sizeof(struct session));
+    pthread_mutex_init( &(s->mutex), NULL );
     
     return EXIT_SUCCESS;
 }
@@ -197,7 +204,7 @@ static char * ac_session_getline(FILE * f)
 
 /*
  * MT-Unsafe: Caller must not permit multiple threads to call 
- * the function with the same session object.
+ * the function with the same filename.
  * 
  * File format:
  * Line 1: Working directory
@@ -384,24 +391,26 @@ struct session * ac_session_from_argv(const int argc, char ** argv, const char *
     return ret;
 }
 
-/* 
- * MT-Unsafe: Caller must not permit multiple threads to call 
- * the function with the same session object.
- */
-int ac_session_save(struct session * s, long long int nb_keys_tried)
+int ac_session_save(struct session * s, uint64_t pos, long long int nb_keys_tried)
 {
     if (s == NULL || s->filename == NULL || s->working_dir == NULL
         || s->argc == 0 || s->argv == NULL) {
         return -1;
     }
 
-    FILE * f = fopen(s->filename, "w");
-    if (f == NULL) {
-        return -1;
-    }
-
     // Update amount of keys tried in structure
     s->nb_keys_tried = nb_keys_tried;
+
+    // Open file for writing
+    pthread_mutex_lock( &(s->mutex) );
+    FILE * f = fopen(s->filename, "w");
+    if (f == NULL) {
+        pthread_mutex_unlock( &(s->mutex) );
+        return -1;
+    }
+    
+    // Update position in wordlist
+    s->pos = pos;
 
     // Write it
     fprintf(f, "%s\n", s->working_dir);
@@ -412,6 +421,7 @@ int ac_session_save(struct session * s, long long int nb_keys_tried)
         fprintf(f, "%s\n", s->argv[i]);
     }
     fclose(f);
+    pthread_mutex_unlock( &(s->mutex) );
     
     return 0;
 }
