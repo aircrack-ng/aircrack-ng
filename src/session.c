@@ -167,6 +167,7 @@ int ac_session_set_wordlist_settings(struct session * session, const char * str)
     return EXIT_SUCCESS;
 }
 
+#define SESSION_MIN_NBARG 4
 int ac_session_set_amount_arguments(struct session * session, const char * str)
 {
     if (session == NULL || str == NULL) {
@@ -175,7 +176,12 @@ int ac_session_set_amount_arguments(struct session * session, const char * str)
 
     // Parse amount of arguments
     int nb_input_scanned = sscanf(str, "%d", &(session->argc));
-    if (nb_input_scanned != 1 || session->argc < 2) { // There should be at least 2 arguments
+    if (nb_input_scanned != 1 || session->argc < SESSION_MIN_NBARG) {
+        // There should be at least 4 arguments:
+        // - Executable path (argv[0])
+        // - -w
+        // - Wordlist
+        // - capture file
         return EXIT_FAILURE;
     }
 
