@@ -1,6 +1,10 @@
 #include <stddef.h>
 #include <errno.h>
+#if defined(__APPLE__)
+#include <machine/endian.h>
+#else
 #include <endian.h>
+#endif
 
 #define le16_to_cpu		le16toh
 #define le32_to_cpu		le32toh
