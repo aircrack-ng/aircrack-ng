@@ -2655,7 +2655,7 @@ skip_probe:
                 }
             }
 
-            if( st_cur->wpa.state == 7)
+            if( st_cur->wpa.state == 7 && !is_filtered_essid(ap_cur->essid) )
             {
                 memcpy( st_cur->wpa.stmac, st_cur->stmac, 6 );
                 memcpy( G.wpa_bssid, ap_cur->bssid, 6 );
