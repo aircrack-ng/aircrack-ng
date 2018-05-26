@@ -17,8 +17,10 @@
  */
 
 #if defined(__ppc__) || defined(__PPC__)
+#ifdef HAS_AUXV
 #include <sys/auxv.h>
 #include <bits/hwcap.h>
+#endif
 #else
 #error "The wrong CPU architecture file has been included."
 #endif
@@ -39,6 +41,7 @@ int
 simd_get_supported_features (void)
 {
   int result = 0;
+#ifdef HAS_AUXV
   long hwcaps = getauxval (AT_HWCAP2);
 
 #if defined(PPC_FEATURE2_ARCH_2_07)
@@ -46,6 +49,7 @@ simd_get_supported_features (void)
   {
     result |= SIMD_SUPPORTS_POWER8;
   }
+#endif
 #endif
 
   return (result);
