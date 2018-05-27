@@ -17,8 +17,10 @@
  */
 
 #if defined(__arm__) || defined(__aarch64__)
+#ifdef HAS_AUXV
 #include <sys/auxv.h>
 #include <asm/hwcap.h>
+#endif
 #else
 #error "The wrong CPU architecture file has been included."
 #endif
@@ -39,6 +41,7 @@ int
 simd_get_supported_features (void)
 {
   int result = 0;
+#ifdef HAS_AUXV
   long hwcaps = getauxval (AT_HWCAP);
 
 #if defined(HWCAP_ASIMD)
@@ -53,6 +56,7 @@ simd_get_supported_features (void)
   {
     result |= SIMD_SUPPORTS_NEON;
   }
+#endif
 #endif
 
   return (result);
