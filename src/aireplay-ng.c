@@ -161,13 +161,14 @@ char usage[] =
 "\n"
 "  Replay options:\n"
 "\n"
-"      -x nbpps  : number of packets per second\n"
-"      -p fctrl  : set frame control word (hex)\n"
-"      -a bssid  : set Access Point MAC address\n"
-"      -c dmac   : set Destination  MAC address\n"
-"      -h smac   : set Source       MAC address\n"
-"      -g value  : change ring buffer size (default: 8)\n"
-"      -F        : choose first matching packet\n"
+"      -x nbpps               : number of packets per second\n"
+"      -p fctrl               : set frame control word (hex)\n"
+"      -a bssid               : set Access Point MAC address\n"
+"      -a bssid1,bssid2,...   : set multiple AP MAC addresses\n (Pass them as a single string)"
+"      -c dmac                : set Destination  MAC address\n"
+"      -h smac                : set Source       MAC address\n"
+"      -g value               : change ring buffer size (default: 8)\n"
+"      -F                     : choose first matching packet\n"
 "\n"
 "      Fakeauth attack options:\n"
 "\n"
@@ -283,6 +284,14 @@ struct options
     int reassoc;
 }
 opt;
+
+struct multimode{
+
+    char* final[16];
+    unsigned char bssid[16][6];
+    int indicator;
+
+}mult;
 
 struct devices
 {
@@ -789,60 +798,77 @@ int attack_check(unsigned char* bssid, char* essid, unsigned char* capa, struct 
 
 int getnet( unsigned char* capa, int filter, int force)
 {
-    unsigned char *bssid;
 
-    if(opt.nodetect)
-        return 0;
+    /**
+    if only one AP bssid is specified continue with usual operation
+    */
+    if (mult.indicator < 1) {
 
-    if(filter)
-        bssid = opt.f_bssid;
-    else
-        bssid = opt.r_bssid;
+        unsigned char *bssid;
 
+        if(opt.nodetect)
+            return 0;
 
-    if( memcmp(bssid, NULL_MAC, 6) )
-    {
-        PCT; printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X) on channel %d\n",
-                    bssid[0],bssid[1],bssid[2],bssid[3],bssid[4],bssid[5],wi_get_channel(_wi_in));
-    }
-    else if(strlen(opt.r_essid) > 0)
-    {
-        PCT; printf("Waiting for beacon frame (ESSID: %s) on channel %d\n", opt.r_essid,wi_get_channel(_wi_in));
-    }
-    else if(force)
-    {
-        PCT;
-        if(filter)
-        {
-            printf("Please specify at least a BSSID (-b) or an ESSID (-e)\n");
-        }
+        if (filter)
+            bssid = opt.f_bssid;
         else
-        {
-            printf("Please specify at least a BSSID (-a) or an ESSID (-e)\n");
-        }
-        return( 1 );
-    }
-    else
-        return 0;
+            bssid = opt.r_bssid;
 
-    if( attack_check(bssid, opt.r_essid, capa, _wi_in) != 0)
-    {
-        if(memcmp(bssid, NULL_MAC, 6))
-        {
-            if( verifyssid((const unsigned char *)opt.r_essid) == 0 )
-            {
-                printf( "Please specify an ESSID (-e).\n" );
+
+
+        if (memcmp(bssid, NULL_MAC, 6)) {
+            PCT;
+            printf("Waiting for beacon frame (BSSID: %02X:%02X:%02X:%02X:%02X:%02X) on channel %d\n",
+                   bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5], wi_get_channel(_wi_in));
+        } else if (strlen(opt.r_essid) > 0) {
+            PCT;
+            printf("Waiting for beacon frame (ESSID: %s) on channel %d\n", opt.r_essid, wi_get_channel(_wi_in));
+        } else if (force) {
+            PCT;
+            if (filter) {
+                printf("Please specify at least a BSSID (-b) or an ESSID (-e)\n");
+            } else {
+                printf("Please specify at least a BSSID (-a) or an ESSID (-e)\n");
             }
+            return (1);
+        } else
+            return 0;
+
+        if (attack_check(bssid, opt.r_essid, capa, _wi_in) != 0) {
+            if (memcmp(bssid, NULL_MAC, 6)) {
+                if (verifyssid((const unsigned char *) opt.r_essid) == 0) {
+                    printf("Please specify an ESSID (-e).\n");
+                }
+            }
+
+            if (!memcmp(bssid, NULL_MAC, 6)) {
+                if (strlen(opt.r_essid) > 0) {
+                    printf("Please specify a BSSID (-a).\n");
+                }
+            }
+            return (1);
+        }
+        /**
+        if more than one AP bssid is specified check memcmp and print the line for each bssid
+        */
+    }else{
+
+        unsigned char *bssid;
+        printf("Waiting for multiple beacon frames on channel %d\n", wi_get_channel(_wi_in));
+        for (int i = 0; i < mult.indicator; i++){
+            bssid = mult.bssid[i];
+
+            if (memcmp(bssid, NULL_MAC, 6)) {
+                PCT;
+                printf("(BSSID: %02X:%02X:%02X:%02X:%02X:%02X)\n",
+                       bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
+            }
+            /**
+            No other checks are needed, because -c is omitted, and this block executes only when MORE than
+            one bssid is specified
+            */
         }
 
-        if(!memcmp(bssid, NULL_MAC, 6))
-        {
-            if(strlen(opt.r_essid) > 0)
-            {
-                printf( "Please specify a BSSID (-a).\n" );
-            }
-        }
-        return( 1 );
     }
 
     return 0;
@@ -1320,6 +1346,7 @@ void send_fragments(unsigned char *packet, int packet_len, unsigned char *iv, un
 
 int do_attack_deauth( void )
 {
+
     int i, n;
     int aacks, sacks, caplen;
     struct timeval tv;
@@ -1328,9 +1355,19 @@ int do_attack_deauth( void )
     if(getnet(NULL, 0, 1) != 0)
         return 1;
 
-    if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
-        printf( "NB: this attack is more effective when targeting\n"
-                "a connected wireless client (-c <client's mac>).\n" );
+    /**
+    Different print statement and not checking r_d,mac because -c is omitted
+    */
+    if(mult.indicator != 0){
+        printf( "NB: this is beta version for multiple target support\n"
+                "it does not support -c (-c <client's mac>).\n\n" );
+    }
+    else{
+
+        if( memcmp( opt.r_dmac, NULL_MAC, 6 ) == 0 )
+            printf( "NB: this attack is more effective when targeting\n"
+                    "a connected wireless client (-c <client's mac>).\n" );}
+
 
     n = 0;
 
@@ -1349,7 +1386,7 @@ int do_attack_deauth( void )
             memcpy( h80211 + 16, opt.r_bssid, 6 );
 
             /* add the deauth reason code */
-	    h80211[24] = opt.deauth_rc;
+            h80211[24] = opt.deauth_rc;
 
             aacks = 0;
             sacks = 0;
@@ -1358,12 +1395,12 @@ int do_attack_deauth( void )
                 if(i == 0)
                 {
                     PCT; printf( "Sending 64 directed DeAuth (code %i). STMAC:"
-                                " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
-                                opt.deauth_rc,
-                                opt.r_dmac[0],  opt.r_dmac[1],
-                                opt.r_dmac[2],  opt.r_dmac[3],
-                                opt.r_dmac[4],  opt.r_dmac[5],
-                                sacks, aacks );
+                                 " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
+                                 opt.deauth_rc,
+                                 opt.r_dmac[0],  opt.r_dmac[1],
+                                 opt.r_dmac[2],  opt.r_dmac[3],
+                                 opt.r_dmac[4],  opt.r_dmac[5],
+                                 sacks, aacks );
                 }
 
                 memcpy( h80211 +  4, opt.r_dmac,  6 );
@@ -1415,12 +1452,12 @@ int do_attack_deauth( void )
                             sacks++;
                         }
                         PCT; printf( "Sending 64 directed DeAuth (code %i). STMAC:"
-                                    " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
-                                    opt.deauth_rc,
-                                    opt.r_dmac[0],  opt.r_dmac[1],
-                                    opt.r_dmac[2],  opt.r_dmac[3],
-                                    opt.r_dmac[4],  opt.r_dmac[5],
-                                    sacks, aacks );
+                                     " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
+                                     opt.deauth_rc,
+                                     opt.r_dmac[0],  opt.r_dmac[1],
+                                     opt.r_dmac[2],  opt.r_dmac[3],
+                                     opt.r_dmac[4],  opt.r_dmac[5],
+                                     sacks, aacks );
                     }
                 }
             }
@@ -1428,28 +1465,67 @@ int do_attack_deauth( void )
         }
         else
         {
+
             /* deauthenticate all stations */
 
-    	    PCT; printf( "Sending DeAuth (code %i) to broadcast -- BSSID:"
-                         " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
-                         opt.deauth_rc,
-                         opt.r_bssid[0], opt.r_bssid[1],
-                         opt.r_bssid[2], opt.r_bssid[3],
-                         opt.r_bssid[4], opt.r_bssid[5] );
+            /**
+            if only one AP bssid is specified continue with usual process
+            */
+            if(mult.indicator < 1) {
+                PCT;
+                printf("Sending DeAuth (code %i) to broadcast -- BSSID:"
+                       " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
+                       opt.deauth_rc,
+                       opt.r_bssid[0], opt.r_bssid[1],
+                       opt.r_bssid[2], opt.r_bssid[3],
+                       opt.r_bssid[4], opt.r_bssid[5]);
 
-            memcpy( h80211, DEAUTH_REQ, 26 );
-	    h80211[24] = opt.deauth_rc;
+                memcpy(h80211, DEAUTH_REQ, 26);
+                h80211[24] = opt.deauth_rc;
 
-            memcpy( h80211 +  4, BROADCAST,   6 );
-            memcpy( h80211 + 10, opt.r_bssid, 6 );
-            memcpy( h80211 + 16, opt.r_bssid, 6 );
+                memcpy(h80211 + 4, BROADCAST, 6);
+                memcpy(h80211 + 10, opt.r_bssid, 6);
+                memcpy(h80211 + 16, opt.r_bssid, 6);
 
-            for( i = 0; i < 128; i++ )
-            {
-                if( send_packet( h80211, 26 ) < 0 )
-                    return( 1 );
+                for (i = 0; i < 128; i++) {
+                    if (send_packet(h80211, 26) < 0)
+                        return (1);
 
-                usleep( 2000 );
+                    usleep(2000);
+                }
+
+            }
+                /**
+                Else, send deauth's to all BSSIDS in turn
+                */
+            else{
+
+                for (int x = 0; x < mult.indicator; x++){
+
+                    PCT;
+                    printf("Sending DeAuth (code %i) to broadcast -- %d BSSID:"
+                           " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
+                           opt.deauth_rc, x+1,
+                           mult.bssid[x][0], mult.bssid[x][1],
+                           mult.bssid[x][2], mult.bssid[x][3],
+                           mult.bssid[x][4], mult.bssid[x][5]);
+
+                    memcpy(h80211, DEAUTH_REQ, 26);
+                    h80211[24] = opt.deauth_rc;
+
+                    memcpy(h80211 + 4, BROADCAST, 6);
+                    memcpy(h80211 + 10, mult.bssid[x], 6);
+                    memcpy(h80211 + 16, mult.bssid[x], 6);
+
+                    for (i = 0; i < 128; i++) {
+                        if (send_packet(h80211, 26) < 0)
+                            return (1);
+
+                        usleep(2000);
+                    }
+                }
+                printf("\n");
+
             }
         }
     }
@@ -6727,15 +6803,55 @@ int main( int argc, char *argv[] )
 
             case 'a' :
 
-                if( getmac( optarg, 1, opt.r_bssid ) != 0 )
-                {
-                    printf( "Invalid AP MAC address.\n" );
-                    printf("\"%s --help\" for help.\n", argv[0]);
-                    return( 1 );
+                mult.indicator = 0;
+
+                int ind = 0;
+                char *token;
+                const char del[] = ",";
+
+                /**
+                check whether passed string has comma, if it does, separate AP MAC's at the comma
+                store them into array, and then check validity of sepcific AP
+                */
+
+                if(optarg[17] == ','){
+                    token = strtok(optarg, del);
+                    while(token != NULL){
+                        if(mult.indicator > 15){
+                            break;}
+                        mult.final[ind] = malloc(strlen(token) + 1);
+                        strcpy(mult.final[ind], token);
+                        token = strtok(NULL, del);
+                        if (getmac(mult.final[ind], 1, mult.bssid[ind]) != 0) {
+                            printf("%d AP MAC is incorrect!\n", ind+1);
+                            printf("\"%s --help\" for help.\n", argv[0]);
+                            return (1);
+                        }
+                        ind++;
+                        mult.indicator++;
+                    }
+                }
+                else{
+                    if (getmac(optarg, 1, opt.r_bssid) != 0) {
+                        printf("AP MAC is incorrect!\n");
+                        printf("\"%s --help\" for help.\n", argv[0]);
+                        return (1);
+                    }
                 }
                 break;
 
             case 'c' :
+
+                /**
+                -c is omitted in multimode, because of sintax
+                */
+
+                if (mult.indicator > 0){
+                    printf( "Cant DeAuth specific stations in -a Multimode!\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+
 
                 if( getmac( optarg, 1, opt.r_dmac ) != 0 )
                 {
