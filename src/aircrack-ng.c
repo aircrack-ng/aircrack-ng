@@ -5089,10 +5089,16 @@ int next_key( char **key, int keysize )
 	return( SUCCESS );
 }
 
-int set_dicts(char* optargs)
+int set_dicts(const char* args)
 {
 	int len;
+	char * optargs = strdup(args);
 	char *optarg;
+
+	if (optargs == NULL) {
+		perror("Failed to allocate memory for arguments");
+		return( FAILURE );
+	}
 
 	opt.dictfinish = opt.totaldicts = opt.nbdict = 0;
 
@@ -5105,6 +5111,7 @@ int set_dicts(char* optargs)
 		}
 
 		if (!(opt.dicts[opt.nbdict] = strdup(optarg))) {
+			free(optargs);
 			perror("Failed to allocate memory for dictionary");
 			return( FAILURE );
 		}
@@ -5112,6 +5119,7 @@ int set_dicts(char* optargs)
 		opt.nbdict++;
 		opt.totaldicts++;
 	}
+	free(optargs);
 
 	for (len = opt.nbdict; len < MAX_DICTS; len++)
 		opt.dicts[len] = NULL;
