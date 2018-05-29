@@ -607,7 +607,7 @@ inline int wpa_receive_passphrase(char *key, struct WPA_data* data)
 
     Return value is negative for failures
 */
-int checkbssids(char *bssidlist)
+int checkbssids(const char *bssidlist)
 {
 	int first = 1;
 	int failed = 0;

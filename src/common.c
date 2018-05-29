@@ -485,7 +485,7 @@ int hexStringToArray(char* in, int in_length, unsigned char* out, int out_length
 }
 
 //Return the mac address bytes (or null if it's not a mac address)
-int getmac(char * macAddress, int strict, unsigned char * mac)
+int getmac(const char * macAddress, const int strict, unsigned char * mac)
 {
 	char byte[3];
 	int i, nbElem, n;
