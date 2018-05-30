@@ -166,7 +166,7 @@ AC_DEFUN([AX_CODE_COVERAGE],[
 ']
     [CODE_COVERAGE_RULES_JOIN='
 	find $(builddir) -size +0c -a -name "$(PACKAGE_NAME)-$(PACKAGE_VERSION)-coverage.info.tmp" -exec echo "\"{}\"" ";" | \
-	xargs -L 1 $(code_coverage_v_lcov_cap)$(LCOV) $(code_coverage_quiet) $(addprefix --directory ,$(CODE_COVERAGE_DIRECTORY)) --no-recursion --output-file "$(CODE_COVERAGE_OUTPUT_FILE).join" --test-name "$(call code_coverage_sanitize,$(PACKAGE_NAME)-$(PACKAGE_VERSION))" --no-checksum --compat-libtool $(CODE_COVERAGE_LCOV_SHOPTS) $(CODE_COVERAGE_LCOV_OPTIONS) --ignore-errors source -a "$(CODE_COVERAGE_OUTPUT_FILE).join" -a
+	xargs -L 1 $(LCOV) $(code_coverage_quiet) $(addprefix --directory ,$(CODE_COVERAGE_DIRECTORY)) --no-recursion --output-file "$(CODE_COVERAGE_OUTPUT_FILE).join" --test-name "$(call code_coverage_sanitize,$(PACKAGE_NAME)-$(PACKAGE_VERSION))" --no-checksum --compat-libtool $(CODE_COVERAGE_LCOV_SHOPTS) $(CODE_COVERAGE_LCOV_OPTIONS) --ignore-errors source -a "$(CODE_COVERAGE_OUTPUT_FILE).join" -a
 ']
 	  [CODE_COVERAGE_RULES_REMOVE='
 	$(code_coverage_v_lcov_ign)$(LCOV) $(code_coverage_quiet) $(addprefix --directory ,$(CODE_COVERAGE_DIRECTORY)) --no-recursion --remove "$(CODE_COVERAGE_OUTPUT_FILE).join" "/tmp/*" $(CODE_COVERAGE_IGNORE_PATTERN) --output-file "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_LCOV_SHOPTS) $(CODE_COVERAGE_LCOV_RMOPTS)
@@ -255,15 +255,15 @@ GITIGNOREFILES += $(CODE_COVERAGE_OUTPUT_FILE) $(CODE_COVERAGE_OUTPUT_DIRECTORY)
 
 code_coverage_v_lcov_cap = $(code_coverage_v_lcov_cap_$(V))
 code_coverage_v_lcov_cap_ = $(code_coverage_v_lcov_cap_$(AM_DEFAULT_VERBOSITY))
-code_coverage_v_lcov_cap_0 = @echo "  LCOV   --capture"\
+code_coverage_v_lcov_cap_0 = echo "  LCOV   --capture"\
  $(CODE_COVERAGE_OUTPUT_FILE);
 code_coverage_v_lcov_ign = $(code_coverage_v_lcov_ign_$(V))
 code_coverage_v_lcov_ign_ = $(code_coverage_v_lcov_ign_$(AM_DEFAULT_VERBOSITY))
-code_coverage_v_lcov_ign_0 = @echo "  LCOV   --remove /tmp/*"\
+code_coverage_v_lcov_ign_0 = echo "  LCOV   --remove /tmp/*"\
  $(CODE_COVERAGE_IGNORE_PATTERN);
 code_coverage_v_genhtml = $(code_coverage_v_genhtml_$(V))
 code_coverage_v_genhtml_ = $(code_coverage_v_genhtml_$(AM_DEFAULT_VERBOSITY))
-code_coverage_v_genhtml_0 = @echo "  GEN   " $(CODE_COVERAGE_OUTPUT_DIRECTORY);
+code_coverage_v_genhtml_0 = echo "  GEN   " $(CODE_COVERAGE_OUTPUT_DIRECTORY);
 code_coverage_quiet = $(code_coverage_quiet_$(V))
 code_coverage_quiet_ = $(code_coverage_quiet_$(AM_DEFAULT_VERBOSITY))
 code_coverage_quiet_0 = --quiet
