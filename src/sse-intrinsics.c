@@ -61,7 +61,7 @@
  *
  * JimF, 2013:
  * Rewrote SHA-256 function code These improvements over original code found in
- * rawSHA256_ng_fmt.c (copywrite epixoip) are:
+ * rawSHA256_ng_fmt.c (copyright epixoip) are:
  *    SHA256 and SHA224 support.
  *    Multi block support (reload state from prior crypt)
  *    handle either flat, and SSE interleaved input buffers.

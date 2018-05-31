@@ -83,7 +83,7 @@ void init_ssecore(int);
 void free_ssecore(int);
 int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int threadid);
 
-struct wpapsk_password {
+struct _wpapsk_password {
 	uint32_t length;
 	uint8_t  v[PLAINTEXT_LENGTH + 1];
 };

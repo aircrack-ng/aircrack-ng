@@ -1272,7 +1272,7 @@ void encrypt_tkip( unsigned char *h80211, int caplen, unsigned char ptk[80] )
         z += 2;
     }
     //Update the MIC in the frame...
-    // Had to mod calc_tkip_mic to skip extended IV to aviod memmoves
+    // Had to mod calc_tkip_mic to skip extended IV to avoid memmoves
     unsigned char micval[8] = {0};
     calc_tkip_mic_skip_eiv(h80211, caplen - 12 , ptk, micval);
     //hexDump("MICVALafter", micval, 8);
@@ -1329,7 +1329,7 @@ static inline void XOR( unsigned char *dst, unsigned char *src, int len )
 //  * IEEE 802.11(TM)-2012
 //    http://standards.ieee.org/about/get/802/802.11.html
 //
-// Note: RFC uses the abbriviation MAC (Message Authentication Code, or
+// Note: RFC uses the abbreviation MAC (Message Authentication Code, or
 //       value U in the RFC). It is the same as IEEE's MIC (Message
 //       Integrity Code)
 

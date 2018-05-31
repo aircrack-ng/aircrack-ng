@@ -884,7 +884,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
 
             buf = tmpbuf;
         }
-        /* fall thru */
+        /* fall through */
     case DT_HOSTAP:
         if( ( ((unsigned char *) buf)[1] & 3 ) == 2 )
         {

@@ -444,6 +444,13 @@ void clean_exit(int ret)
 // 	printf("%d unused IVs\n", j);
 // 	printf("%d used IVs for %d\n", k, attack);
 
+#ifdef HAVE_SQLITE
+	if (db != NULL) {
+		sqlite3_close(db);
+        db = NULL;
+	}
+#endif
+
 	if (progname != NULL) {
 		free(progname);
 		progname = NULL;
@@ -617,7 +624,7 @@ inline int wpa_receive_passphrase(char *key, struct WPA_data* data)
 
     Return value is negative for failures
 */
-int checkbssids(char *bssidlist)
+int checkbssids(const char *bssidlist)
 {
 	int first = 1;
 	int failed = 0;
@@ -930,7 +937,7 @@ int atomic_read( read_buf *rb, int fd, int len, void *buf )
 
 void read_thread( void *arg )
 {
-	/* we dont care if the buffers allocated here are not freed
+	/* we don't care if the buffers allocated here are not freed
 	 * since those threads are only created once, and the memory
 	 * is released to the OS automatically when the program exits.
 	 * there's no point in trying to mute valgrind but breaking
@@ -4098,18 +4105,20 @@ unsigned char mic[16], int force )
 	if (opt.stdin_dict) {
 		printf( "\33[5;20H[%02d:%02d:%02d] %lld keys tested "
 			"(%2.2f k/s) ", et_h, et_m, et_s,
-			nb_tried, (float) nb_kprev / delta);
+			nb_tried, (delta == 0) ? 0 : (float) nb_kprev / delta);
 	} else {
-		calc = ((float)nb_tried / (float)opt.wordcount)*100;
-		remain = (opt.wordcount - nb_tried);
-		eta = (remain / (long long int)ksec);
-
 		printf( "\33[4;7H[%02d:%02d:%02d] %lld/%lld keys tested "
 			"(%2.2f k/s) ", et_h, et_m, et_s,
-			nb_tried, opt.wordcount, (float) nb_kprev / delta);
+			nb_tried, opt.wordcount, (delta == 0) ? 0 : (float) nb_kprev / delta);
 
 		printf( "\33[6;7HTime left: ");
-		calctime(eta, calc);
+        if (opt.wordcount != 0 && ksec != 0) {
+            calc = ((float)nb_tried / (float)opt.wordcount)*100;
+            remain = (opt.wordcount - nb_tried);
+            eta = (remain / (long long int)ksec);
+
+            calctime(eta, calc);        
+        }
 	}
 
 	memset( tmpbuf, ' ', sizeof( tmpbuf ) );
@@ -5343,8 +5352,6 @@ int main( int argc, char *argv[] )
 	// Start a new process group, we are perhaps going to call kill(0, ...) later
 	setsid();
 
-	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
-
 	memset( &opt, 0, sizeof( opt ) );
 
 	srand( time( NULL ) );
@@ -5879,7 +5886,9 @@ int main( int argc, char *argv[] )
         goto exit_main;
     }
 
-	if( nbarg - optind < 1 )
+	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+
+	if( argc - optind < 1 )
 	{
 		if(nbarg == 1)
 		{
@@ -5889,7 +5898,7 @@ usage:
 
 			// If the user requested help, exit directly.
 			if (showhelp == 1)
-				exit(0);
+				clean_exit(SUCCESS);
 		}
 
 		// Missing parameters
@@ -5901,7 +5910,7 @@ usage:
 	    {
     		printf("\"%s --help\" for help.\n", argv[0]);
 	    }
-		return( ret );
+		clean_exit( ret );
 	}
 
 	if( opt.amode == 2 && opt.dict == NULL )
@@ -6600,12 +6609,6 @@ __start:
 	}
 
 	exit_main:
-
-#ifdef HAVE_SQLITE
-	if (db != NULL) {
-		sqlite3_close(db);
-	}
-#endif
 
 	#if ((defined(__INTEL_COMPILER) || defined(__ICC)) && defined(DO_PGO_DUMP))
 	_PGOPTI_Prof_Dump();

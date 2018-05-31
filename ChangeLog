@@ -136,7 +136,7 @@ Version 1.2-rc3 (changes from aircrack-ng 1.2-rc2) - Released 21 Nov 2015:
 * General: Fixed compilation with musl libc.
 * General: Improved testing and added test cases (make check).
 * General: Improved mutexes handling in various tools.
-* General: Fixed memory leaks, use afer free, null termination and return values in various tools and OSdep.
+* General: Fixed memory leaks, use after free, null termination and return values in various tools and OSdep.
 * General: Fixed compilation on FreeBSD.
 * General: Various fixes and improvements to README (wording, compilation, etc).
 * General: Updated copyrights in help screen.
@@ -223,7 +223,7 @@ Version 1.2-beta1 (changes from aircrack-ng 1.1) - Released 25 May 2013:
 * Airmon-ng: Updated iw download link.
 * Airmon-ng: Better mac80211 handling.
 * Airmon-ng: Added detection for WiLink TI driver, rtl819xU, iwlwifi.
-* Airmon-zc: Improved version of Airmon-ng with more detailled information.
+* Airmon-zc: Improved version of Airmon-ng with more detailed information.
 * Airdecap-ng: Fixed decoding QoS frames (Closes: #667 and #858).
 * Airgraph-ng: Use Aircrack-ng Makefile instead of its own.
 * Airbase-ng: Fixed bug using clients list.
@@ -340,7 +340,7 @@ Version 1.0-rc4 (changes from aircrack-ng 1.0-rc3) - Released 27 July 2009:
 * airdriver-ng: Updated r8187 patch.
 * aircrack-ng, airdecap-ng, ivstools, airodump-ng, airbase-ng, aireplay-ng, airtun-ng, packetforge-ng, tkiptun-ng: Added support for PPI captures support (Thanks to dragorn).
 * airdecap-ng: Fixed segfault on some capture files.
-* wesside-ng, easside-ng: "ERROR: Packet length changed while transmitting (XX instead of YY)" should finaly be fixed.
+* wesside-ng, easside-ng: "ERROR: Packet length changed while transmitting (XX instead of YY)" should finally be fixed.
 * All: Added compatibility file for functions like cpu_to_le32. That should fix compilation on a lot of OSes.
 * All: Temporary fix to allow compilation with recent gcc (Error message: "dereferencing type-punned pointer will break strict-aliasing rules"). I hope it doesn't break anything. A cleaner fix will be applied later.
 * INSTALLING: OSX patch for Intel CPU isn't required anymore
@@ -403,10 +403,10 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * airtun-ng: Fixed STP conversion.
 * airolib-ng: Added sample database in test/ directory.
 * tkip-tun: New tool to inject on WPA1 with QoS enabled networks. Full description:
-  decrypt packets comming from the AP in a TKIP network, which uses QoS (ieee802.11e).
+  decrypt packets coming from the AP in a TKIP network, which uses QoS (ieee802.11e).
   It also breaks the MIC Key for sending packets towards the Client correctly encrypted and signed.
   Stores plaintext packet and keystream in separate files.
-* airbase-ng: Several improvments ( See http://trac.aircrack-ng.org/ticket/466 ).
+* airbase-ng: Several improvements ( See https://github.com/aircrack-ng/aircrack-ng/issues/466 ).
 * airbase-ng: Added compatibility with some clients. added random source IPs and MACs for cfrag attack (-N) to evade simple flood protection.
 * airmon-ng: Fixed some 'unary operator expected' errors.
 * airmon-ng: Fixed channel number setting with mac80211 drivers.
@@ -520,7 +520,7 @@ Version 1.0-beta1 (changes from aircrack-ng 0.9.2) - Released 01 October 2007:
 * aircrack-ng: Added --ptw-debug to allow klein or ptw disabling
 * aircrack-ng: PTW: Starts a new process group
 * aircrack-ng: Increased PTW key checking speed by 20%
-* aircrack-ng: Try 1000 40bit keys befor starting 104bit cracking, to get the key "instantly" without waiting for 104 bit to fail
+* aircrack-ng: Try 1000 40bit keys before starting 104bit cracking, to get the key "instantly" without waiting for 104 bit to fail
 * aircrack-ng: Fixed not shown ascii keys, when found key was shorter than expected
 * aircrack-ng: Added visual inspection of the different keybytes (--visual-inspection).
 * airdecap-ng: Fixed bug in calc_pmk() function causes wrong PMK to be computed
@@ -536,7 +536,7 @@ Version 1.0-beta1 (changes from aircrack-ng 0.9.2) - Released 01 October 2007:
 * aireplay-ng: Fixed seq field for fragment attack
 * aireplay-ng: Now works with rtc_cmos
 * aireplay-ng: Added automatic channel changing in --test to AP channel
-* aireplay-ng: Added channel synchonisation for --test between cards
+* aireplay-ng: Added channel synchronization for --test between cards
 * aireplay-ng: Added possibility to limit injection test to one AP "-a" or "-e"
 * aireplay-ng: Added BSSID/ESSID detection, so it can be enough to specify one option
 * makeivs-ng: Added parameters to set length, number and first IV of generated IVs
@@ -707,7 +707,7 @@ Version 0.6.1 (changes from aircrack-ng 0.6) - Released 27 August 2006:
 * airmon-ng: Fixed: show newly created madwifi-ng VAP
 * airmon-ng: Should now works with 'ash' shell (Zaurus, OpenWRT, ...)
 * INSTALL: Added a note about warnings when compiling sources
-* INSTALL: Added more informations about installing aircrack-ng on windows
+* INSTALL: Added more information about installing aircrack-ng on windows
 * updated spec file
 * some other bugfixes
 * cygwin1.dll and msvcr70.dll are now included in windows package
@@ -787,7 +787,7 @@ Version 0.3 (changes from aircrack-ng 0.2.1) - Released 30 march 2006:
 * aireplay-ng: typo fixed
 * aireplay-ng: Madwifi-ng is now supported
 * airodump-ng: disabled GPS coordinates if connection to gpsd fail
-* airodump-ng: Battery informations fixed (hacked kismet code)
+* airodump-ng: Battery information fixed (hacked kismet code)
 * airodump-ng: Madwifi-ng is now supported
 * aircrack-ng: corrrected title (when cracking a key)
 * aircrack-ng: uses by default all CPU for cracking (Debian bug report #352877)
