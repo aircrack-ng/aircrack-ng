@@ -53,6 +53,7 @@ int ac_session_destroy(struct session * s)
     pthread_mutex_lock(&(s->mutex));
     FILE * f = fopen(s->filename, "r");
     if (!f) {
+        pthread_mutex_unlock(&(s->mutex));
         return 0;
     }
 
