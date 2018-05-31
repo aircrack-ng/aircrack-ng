@@ -2,7 +2,7 @@
 
 set -ef
 
-echo "asciipsk" > 1word
+echo "asciipsk" > ${abs_srcdir}/1word
 
 cat > session << EOF
 ${abs_srcdir}
@@ -12,7 +12,7 @@ ${abs_srcdir}
 ${top_builddir}/src/aircrack-ng${EXEEXT}
 ${abs_srcdir}/wpa.cap
 -w
-1word,${abs_srcdir}/password.lst
+${abs_srcdir}/1word,${abs_srcdir}/password.lst
 EOF
 
 "${top_builddir}/src/aircrack-ng${EXEEXT}" \
