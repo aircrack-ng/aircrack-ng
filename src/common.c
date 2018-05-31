@@ -41,6 +41,8 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <limits.h>
+#include <errno.h>
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -595,4 +597,36 @@ int hexToInt(char s[], int len)
 
 
 	return value;
+}
+
+void rtrim(char * line)
+{
+    if (line && strlen(line) > 0) {
+        if (line[strlen(line) - 1] == '\n') line[strlen(line) - 1] = 0;
+        if (line[strlen(line) - 1] == '\r') line[strlen(line) - 1] = 0;
+    }
+}
+
+char * get_current_working_directory()
+{
+    char * ret = NULL;
+    char * wd_realloc = NULL;
+    size_t wd_size = 0;
+
+    do {
+        wd_size += PATH_MAX;
+        char * wd_realloc = (char *)realloc(ret, wd_size);
+        if (wd_realloc == NULL) {
+            if (ret) free(ret);
+            return NULL;
+        }
+        ret = wd_realloc;
+        wd_realloc = getcwd(ret, wd_size);
+        if (wd_realloc == NULL && errno != ERANGE) {
+            if (ret) free(ret);
+            return NULL;
+        }
+    } while (wd_realloc == NULL && errno == ERANGE);
+    
+    return ret;
 }

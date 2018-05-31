@@ -74,6 +74,7 @@
 #include "wpapsk.h"
 #include "hashcat.h"
 #include "cowpatty.h"
+#include "session.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -125,6 +126,7 @@ int wepkey_crack_success = 0;
 int close_aircrack = 0;
 int id=0;
 pthread_t tid[MAX_THREADS];
+pthread_t cracking_session_tid;
 struct WPA_data wpa_data[MAX_THREADS];
 int wpa_wordlists_done = 0;
 static pthread_mutex_t mx_nb = PTHREAD_MUTEX_INITIALIZER;
@@ -230,6 +232,8 @@ char usage[] =
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
 "      -w <words> : path to wordlist(s) filename(s)\n"
+"      -N <file>  : path to new session filename\n"
+"      -R <file>  : path to existing session filename\n"
 "\n"
 "  WPA-PSK options:\n"
 "\n"
@@ -248,7 +252,7 @@ char usage[] =
 "      --help     : Displays this usage screen\n"
 "\n";
 
-
+struct session * cracking_session = NULL;
 char * progname = NULL;
 int intr_read = 0;
 
@@ -329,6 +333,11 @@ void clean_exit(int ret)
             safe_write( bf_pipe[i][1], (void *) tmpbuf, 64 );
             #endif
         }
+
+	// Stop cracking session thread
+	if (cracking_session) {
+		pthread_join(cracking_session_tid, NULL);
+	}
 
 	for (i = 0; i < id; i++) {
 		if (pthread_join(tid[i], NULL) != 0) {
@@ -446,6 +455,14 @@ void clean_exit(int ret)
 		free(progname);
 		progname = NULL;
 	}
+
+    if (cracking_session) {
+        // TODO: Delete file when cracking fails
+        if (opt.dictfinish || wepkey_crack_success || wpa_wordlists_done || nb_tried == opt.wordcount) {
+            ac_session_destroy(cracking_session);
+        }
+        ac_session_free(&cracking_session);
+    }
 
 	child_pid=fork();
 
@@ -690,6 +707,54 @@ int checkbssids(const char *bssidlist)
 	// Success
 	free(frontlist);
 	return nbBSSID;
+}
+
+void session_save_thread(void * arg)
+{
+    struct timeval start, stop;
+
+    int8_t wordlist = 0;
+    uint64_t pos;
+    if (!cracking_session || opt.stdin_dict) {
+        return;
+    }
+    if (arg) { }
+
+    // Start chrono
+    gettimeofday( & start, NULL);
+
+    while (!close_aircrack) {
+        
+        // Check if we're over the 10 minutes mark
+        gettimeofday( & stop, NULL);
+        if (stop.tv_sec - start.tv_sec < 10 * 60) {
+            // Wait 100ms
+            if (usleep (100000) == -1) {
+                break; // Got a signal
+            }
+            continue;
+        }
+        // Reset chrono
+        start.tv_sec = stop.tv_sec;
+        
+        pos = wordlist = 0;
+        // Get position in file
+        pthread_mutex_lock( &mx_dic );
+        if (opt.dict) {
+            wordlist = 1;
+            pos = ftello(opt.dict);
+        }
+        pthread_mutex_unlock( &mx_dic );
+        
+        // If there is no wordlist, that means it's the end
+        // (either forced closing and wordlist was closed or
+        //  we've tried all wordlists).
+        if (wordlist == 0) {
+            break;
+        }
+        // Update amount of keys tried and save it
+        ac_session_save(cracking_session, pos, nb_tried);
+    }
 }
 
 int mergebssids(const char * bssidlist, unsigned char * bssid)
@@ -4405,6 +4470,16 @@ int next_dict(int nb)
 	if(opt.nbdict >= MAX_DICTS || opt.dicts[opt.nbdict] == NULL)
 	    return( FAILURE );
 
+    // Update wordlist ID and position in session
+    if (cracking_session) {
+        pthread_mutex_lock(&(cracking_session->mutex));
+
+        cracking_session->pos = 0;
+        cracking_session->wordlist_id = opt.nbdict;
+
+        pthread_mutex_unlock(&(cracking_session->mutex));
+    }
+
 	return( 0 );
 }
 
@@ -5023,10 +5098,16 @@ int next_key( char **key, int keysize )
 	return( SUCCESS );
 }
 
-int set_dicts(char* optargs)
+int set_dicts(const char* args)
 {
 	int len;
+	char * optargs = strdup(args);
 	char *optarg;
+
+	if (optargs == NULL) {
+		perror("Failed to allocate memory for arguments");
+		return( FAILURE );
+	}
 
 	opt.dictfinish = opt.totaldicts = opt.nbdict = 0;
 
@@ -5039,6 +5120,7 @@ int set_dicts(char* optargs)
 		}
 
 		if (!(opt.dicts[opt.nbdict] = strdup(optarg))) {
+			free(optargs);
 			perror("Failed to allocate memory for dictionary");
 			return( FAILURE );
 		}
@@ -5046,6 +5128,7 @@ int set_dicts(char* optargs)
 		opt.nbdict++;
 		opt.totaldicts++;
 	}
+	free(optargs);
 
 	for (len = opt.nbdict; len < MAX_DICTS; len++)
 		opt.dicts[len] = NULL;
@@ -5127,6 +5210,7 @@ int crack_wep_dict()
 		if(check_wep_key(wep.key, opt.keylen, 0) == SUCCESS)
 		{
 			free(key);
+			wepkey_crack_success = 1;
 			return( SUCCESS );
 		}
 	}
@@ -5239,6 +5323,8 @@ int main( int argc, char *argv[] )
 	struct AP_info *ap_cur;
 	int old=0;
 	char essid[33];
+    int restore_session = 0;
+    int nbarg = argc;
 
 #ifdef HAVE_SQLITE
 	int rc;
@@ -5308,6 +5394,22 @@ int main( int argc, char *argv[] )
 
 	forceptw = 0;
 
+    // Check if we are restoring from a session
+    if (nbarg == 3 && (strcmp(argv[1], "--restore-session") == 0 || strcmp(argv[1], "-R") == 0)) {
+        cracking_session = ac_session_load(argv[2]);
+        if (cracking_session == NULL) {
+            fprintf(stderr, "Failed loading session file: %s\n", argv[2]);
+            return EXIT_FAILURE;
+        }
+        nbarg = cracking_session->argc;
+        printf("Restoring session\n");
+//        printf("nbarg: %d\nArguments:\n", nbarg);
+//        for (int i = 0; i < nbarg; ++i) {
+//            printf("- %s\n", cracking_session->argv[i]);
+//        }
+        restore_session = 1;
+    }
+
 	while( 1 )
 	{
 
@@ -5323,16 +5425,36 @@ int main( int argc, char *argv[] )
             {"visual-inspection", 0, 0, 'V'},
             {"oneshot",           0, 0, '1'},
             {"cpu-detect",        0, 0, 'u'},
+            {"new-session",       1, 0, 'N'},
+// Handled above -> does not allow any other parameter
+//            {"restore-session",   1, 0, 'R'},
             {0,                   0, 0,  0 }
         };
 
-		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1Suj:",
-                        long_options, &option_index );
+        // Load argc/argv either from the cracking session or from arguments
+		option = getopt_long( nbarg,
+                              ((restore_session) ? cracking_session->argv : argv), 
+                                "r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1Suj:N:R:",
+                                long_options, &option_index );
 
 		if( option < 0 ) break;
 
 		switch( option )
 		{
+            case 'N':
+                // New session
+                if (cracking_session == NULL) {
+                    // Ignore if there is a cracking session (which means it was loaded from it)
+                    cracking_session = ac_session_from_argv(nbarg, argv, optarg);
+                    if (cracking_session == NULL) {
+                        return EXIT_FAILURE;
+                    }
+                }
+                break;
+            case 'R':
+                // Restore and continue session
+                fprintf(stderr, "This option must be used without any other option!\n");
+                return EXIT_FAILURE;
 			case 'S':
 				_speed_test = 1;
 				break;
@@ -5756,11 +5878,19 @@ int main( int argc, char *argv[] )
 		goto __start;
 	}
 
+    // Cracking session is only for when one or more wordlists are used.
+    // Airolib-ng not supported and stdin not allowed.
+    if ((opt.dict == NULL || opt.no_stdin || db) && cracking_session) {
+        fprintf(stderr, "Cannot save/restore cracking session when there is no wordlist,"
+                        " when using stdin or when using airolib-ng database.");
+        goto exit_main;
+    }
+
 	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 
-	if( argc - optind < 1 )
+	if ((cracking_session && cracking_session->argc - optind < 1) || ( !cracking_session && argc - optind < 1 ))
 	{
-		if(argc == 1)
+		if(nbarg == 1)
 		{
 usage:
 			printf (usage, progname,
@@ -5772,11 +5902,11 @@ usage:
 		}
 
 		// Missing parameters
-		if( argc - optind == 0)
+		if( nbarg - optind == 0)
 	    {
 	    	printf("No file to crack specified.\n");
 	    }
-	    if(argc > 1)
+	    if(nbarg > 1)
 	    {
     		printf("\"%s --help\" for help.\n", argv[0]);
 	    }
@@ -5833,18 +5963,19 @@ usage:
 	ap_1st = NULL;
 
 	old = optind;
-	n = argc - optind;
+	n = nbarg - optind;
 	id = 0;
 
 	if( !opt.bssid_set )
 	{
 		do
 		{
-			if( strcmp( argv[optind], "-" ) == 0 )
+            char * optind_arg = (restore_session) ? cracking_session->argv[optind] : argv[optind];
+			if( strcmp( optind_arg, "-" ) == 0 )
 				opt.no_stdin = 1;
 
 			if( pthread_create( &(tid[id]), NULL, (void *) check_thread,
-				(void *) argv[optind] ) != 0 )
+				(void *) optind_arg ) != 0 )
 			{
 				perror( "pthread_create failed" );
 				goto exit_main;
@@ -5859,7 +5990,7 @@ usage:
 				break;
 			}
 		}
-		while( ++optind < argc );
+		while( ++optind < nbarg );
 
 		/* wait until each thread reaches EOF */
 
@@ -5888,8 +6019,36 @@ usage:
 			goto exit_main;
 		}
 
-		if( ! opt.essid_set && ! opt.bssid_set )
-		{
+        
+        if (cracking_session && restore_session) {
+            // If cracking session present (and it is a restore), auto-load it
+            for (ap_cur = ap_1st;
+                ap_cur != NULL && memcmp(ap_cur->bssid, cracking_session->bssid, 6) != 0;
+                ap_cur = ap_cur->next);
+
+            if (ap_cur == NULL) {
+                fprintf(stderr, "Failed to find BSSID from restore session.\n");
+                clean_exit(EXIT_FAILURE);
+            }
+
+            // Set BSSID
+            memcpy( opt.bssid, ap_cur->bssid,  6 );
+            opt.bssid_set = 1;
+
+            // Set wordlist
+            if (next_dict(cracking_session->wordlist_id)) {
+                fprintf(stderr, "Failed setting wordlist ID from restore session.\n");
+                clean_exit(EXIT_FAILURE);
+            }
+
+            // Move into position in the wordlist
+            if (fseeko(opt.dict, cracking_session->pos, SEEK_SET) != 0 || ftello(opt.dict) != cracking_session->pos) {
+                fprintf(stderr, "Failed setting position in wordlist from restore session.\n");
+                clean_exit(EXIT_FAILURE);
+            }
+            
+            // Set amount of keys tried -> Done later
+        } else if( ! opt.essid_set && ! opt.bssid_set) {
 			/* ask the user which network is to be cracked */
 
 			printf( "   #  BSSID%14sESSID%21sEncryption\n\n", "", "" );
@@ -5973,6 +6132,11 @@ usage:
 			memcpy( opt.bssid, ap_cur->bssid,  6 );
 			opt.bssid_set = 1;
 
+            // Copy BSSID to the cracking session
+            if (cracking_session && opt.dict != NULL) {
+                memcpy(cracking_session->bssid, ap_cur->bssid, 6);
+            }
+
 			/* Disable PTW if dictionary used in WEP */
 			if (ap_cur->crypt == 2 && opt.dict != NULL)
 			{
@@ -5990,11 +6154,12 @@ usage:
 
 	do
 	{
-		if( strcmp( argv[optind], "-" ) == 0 )
+        char * optind_arg = (restore_session) ? cracking_session->argv[optind] : argv[optind];
+		if( strcmp( optind_arg, "-" ) == 0 )
 			opt.no_stdin = 1;
 
 		if( pthread_create( &(tid[id]), NULL, (void *) read_thread,
-			(void *) argv[optind] ) != 0 )
+			(void *) optind_arg ) != 0 )
 		{
 			perror( "pthread_create failed" );
 			goto exit_main;
@@ -6005,7 +6170,7 @@ usage:
 		if(id >= MAX_THREADS)
 			break;
 	}
-	while( ++optind < argc );
+	while( ++optind < nbarg );
 
 	nb_pkt=0;
 
@@ -6097,9 +6262,20 @@ usage:
 
 __start:
 	/* launch the attack */
+    
+    // Start cracking session
+	if (cracking_session) {
+		if( pthread_create( &cracking_session_tid, NULL, (void *) session_save_thread,
+			(void *) NULL ) != 0 )
+		{
+			perror( "pthread_create failed" );
+			goto exit_main;
+		}
+    }
 
 	pthread_mutex_lock(&mx_nb);
-	nb_tried = 0;
+    // Set the amount of keys tried
+	nb_tried = (cracking_session && restore_session) ? cracking_session->nb_keys_tried : 0;
 	nb_kprev = 0;
 	pthread_mutex_unlock(&mx_nb);
 
@@ -6422,6 +6598,7 @@ __start:
 						sqlite3_free(zErrMsg);
 					}
 					if (waited != 0) printf("\n\n");
+					wpa_wordlists_done = 1;
 					break;
 				}
 			}
