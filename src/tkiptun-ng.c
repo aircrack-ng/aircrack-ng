@@ -71,6 +71,7 @@
 #include "crypto.h"
 #include "common.h"
 #include "eapol.h"
+#include "aircrack-util/console.h"
 
 #define RTC_RESOLUTION  8192
 
@@ -1096,7 +1097,9 @@ int capture_ask_packet( int *caplen, int just_grab )
 
             if( fread( &pkh, n, 1, dev.f_cap_in ) != 1 )
             {
-                printf( "\r\33[KEnd of file.\n" );
+                printf( "\r" );
+                erase_line(0);
+                printf( "End of file.\n" );
                 return( 1 );
             }
 
@@ -1112,13 +1115,17 @@ int capture_ask_packet( int *caplen, int just_grab )
 
             if( n <= 0 || n > (int) sizeof( h80211 ) || n > (int) sizeof( tmpbuf ) )
             {
-                printf( "\r\33[KInvalid packet length %d.\n", n );
+                printf( "\r" );
+                erase_line(0);
+                printf( "Invalid packet length %d.\n", n );
                 return( 1 );
             }
 
             if( fread( h80211, n, 1, dev.f_cap_in ) != 1 )
             {
-                printf( "\r\33[KEnd of file.\n" );
+                printf( "\r" );
+                erase_line(0);
+                printf( "End of file.\n" );
                 return( 1 );
             }
 
@@ -2531,9 +2538,10 @@ int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
         if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
-            printf( "\rSent %3lu packets, current guess: %02X...\33[K",
+            printf( "\rSent %3lu packets, current guess: %02X...",
                     nb_pkt_sent, guess );
             fflush( stdout );
+            erase_line(0);
         }
 
 /*        if( data_end < 47 && ticks[3] > 8 * ( ticks[0] - ticks[3] ) /
