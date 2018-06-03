@@ -49,3 +49,7 @@ test/cryptounittest/test-encrypt-wep
 test/test-hex_string_to_array
 /build/m4/stubs/*
 !/build/m4/stubs/.gitkeep
+/test/test-env.sh
+/.idea
+CMakeLists.txt
+/cmake-build-*
