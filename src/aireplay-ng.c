@@ -73,6 +73,7 @@
 #include "crypto.h"
 #include "common.h"
 #include "verifyssid.h"
+#include "aircrack-util/console.h"
 
 #define RTC_RESOLUTION  8192
 
@@ -928,7 +929,9 @@ int capture_ask_packet( int *caplen, int just_grab )
 
             if( fread( &pkh, n, 1, dev.f_cap_in ) != 1 )
             {
-                printf( "\r\33[KEnd of file.\n" );
+                printf( "\r" );
+                erase_line(0);
+                printf( "End of file.\n" );
                 return( 1 );
             }
 
@@ -944,13 +947,17 @@ int capture_ask_packet( int *caplen, int just_grab )
 
             if( n <= 0 || n > (int) sizeof( h80211 ) || n > (int) sizeof( tmpbuf ) )
             {
-                printf( "\r\33[KInvalid packet length %d.\n", n );
+                printf( "\r" );
+                erase_line(0);
+                printf( "Invalid packet length %d.\n", n );
                 return( 1 );
             }
 
             if( fread( h80211, n, 1, dev.f_cap_in ) != 1 )
             {
-                printf( "\r\33[KEnd of file.\n" );
+                printf( "\r" );
+                erase_line(0);
+                printf( "End of file.\n" );
                 return( 1 );
             }
 
@@ -2358,8 +2365,10 @@ read_packets:
         if( ticks[1] > RTC_RESOLUTION/10 )
         {
             ticks[1] = 0;
-            printf( "\rSent %lu packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
+            printf( "\rSent %lu packets...(%d pps)", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
             fflush( stdout );
+            erase_line(0);
+            printf( "\r" );
         }
 
         if( ( ticks[2] * opt.r_nbpps ) / RTC_RESOLUTION < 1 )
@@ -2603,7 +2612,9 @@ int do_attack_arp_resend( void )
 
             if( n <= 0 || n > (int) sizeof( h80211 ) || n > (int) sizeof( tmpbuf ) )
             {
-                printf( "\r\33[KInvalid packet length %d.\n", n );
+                printf( "\r" );
+                erase_line(0);
+                printf( "Invalid packet length %d.\n", n );
                 opt.s_file = NULL;
                 continue;
             }
@@ -2678,7 +2689,8 @@ int do_attack_arp_resend( void )
 
             if( nb_bad_pkt > 64 && time( NULL ) - tc >= 10 )
             {
-                printf( "\33[KNotice: got a deauth/disassoc packet. Is the "
+                erase_line(0);
+                printf( "Notice: got a deauth/disassoc packet. Is the "
                         "source MAC associated ?\n" );
 
                 tc = time( NULL );
@@ -3042,7 +3054,9 @@ int do_attack_caffe_latte( void )
 
             if( n <= 0 || n > (int) sizeof( h80211 ) || n > (int) sizeof( tmpbuf ) )
             {
-                printf( "\r\33[KInvalid packet length %d.\n", n );
+                printf( "\r" );
+                erase_line(0);
+                printf( "Invalid packet length %d.\n", n );
                 opt.s_file = NULL;
                 continue;
             }
@@ -3117,7 +3131,8 @@ int do_attack_caffe_latte( void )
 
             if( nb_bad_pkt > 64 && time( NULL ) - tc >= 10 )
             {
-                printf( "\33[KNotice: got a deauth/disassoc packet. Is the "
+                erase_line(0);
+                printf( "Notice: got a deauth/disassoc packet. Is the "
                         "source MAC associated ?\n" );
 
                 tc = time( NULL );
@@ -3502,7 +3517,9 @@ int do_attack_migmode( void )
 
             if( n <= 0 || n > (int) sizeof( h80211 ) || n > (int) sizeof( tmpbuf ) )
             {
-                printf( "\r\33[KInvalid packet length %d.\n", n );
+                printf( "\r" );
+                erase_line(0);
+                printf( "Invalid packet length %d.\n", n );
                 opt.s_file = NULL;
                 continue;
             }
@@ -3577,7 +3594,8 @@ int do_attack_migmode( void )
 
             if( nb_bad_pkt > 64 && time( NULL ) - tc >= 10 )
             {
-                printf( "\33[KNotice: got a deauth/disassoc packet. Is the "
+                erase_line(0);
+                printf( "Notice: got a deauth/disassoc packet. Is the "
                         "source MAC associated ?\n" );
 
                 tc = time( NULL );
@@ -4067,8 +4085,10 @@ read_packets:
         if( ticks[1] > RTC_RESOLUTION/10 )
         {
             ticks[1] = 0;
-            printf( "\rSent %lu packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
+            printf( "\rSent %lu packets...(%d pps)", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
             fflush( stdout );
+            erase_line(0);
+            printf( "\r" );
         }
 
         if( ( ticks[2] * opt.r_nbpps ) / RTC_RESOLUTION < 1 )
@@ -4366,9 +4386,10 @@ int do_attack_chopchop( void )
         if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
-            printf( "\rSent %3lu packets, current guess: %02X...\33[K",
+            printf( "\rSent %3lu packets, current guess: %02X...",
                     nb_pkt_sent, guess );
             fflush( stdout );
+            erase_line(0);
         }
 
         if( data_end < 41 && ticks[3] > 8 * ( ticks[0] - ticks[3] ) /
