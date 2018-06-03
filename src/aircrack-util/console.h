@@ -35,13 +35,13 @@
 /**
  * Styling attributes for \a textstyle function.
  */
-#define TEXT_RESET	0
+#define TEXT_RESET	    0
 #define TEXT_BRIGHT 	1
-#define TEXT_DIM	2
+#define TEXT_DIM	    2
 #define TEXT_UNDERLINE 	3
-#define TEXT_BLINK	4
+#define TEXT_BLINK	    4
 #define TEXT_REVERSE	7
-#define TEXT_HIDDEN	8
+#define TEXT_HIDDEN	    8
 #define TEXT_MAX_STYLE	8
 
 /**
