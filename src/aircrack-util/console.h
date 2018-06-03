@@ -32,6 +32,9 @@
 #ifndef AIRCRACK_NG_CONSOLE_H
 #define AIRCRACK_NG_CONSOLE_H
 
+/**
+ * Styling attributes for \a textstyle function.
+ */
 #define TEXT_RESET	0
 #define TEXT_BRIGHT 	1
 #define TEXT_DIM	2
@@ -39,9 +42,11 @@
 #define TEXT_BLINK	4
 #define TEXT_REVERSE	7
 #define TEXT_HIDDEN	8
-
 #define TEXT_MAX_STYLE	8
 
+/**
+ * Color definitions for \a textcolor functions.
+ */
 #define TEXT_BLACK 	0
 #define TEXT_RED	1
 #define TEXT_GREEN	2
@@ -50,9 +55,11 @@
 #define TEXT_MAGENTA	5
 #define TEXT_CYAN	6
 #define	TEXT_WHITE	7
-
 #define TEXT_MAX_COLOR	7
 
+/**
+ * Character codes for common keyboard keys.
+ */
 #define KEY_TAB		    0x09	//switch between APs/clients for scrolling
 #define KEY_SPACE	    0x20	//pause/resume output
 #define KEY_ARROW_UP	0x41	//scroll
@@ -68,13 +75,44 @@
 #define KEY_r		    0x72	//realtime sort (de)activate
 #define KEY_s		    0x73	//cycle through sorting
 
+/// Changes the styling, foreground, and background
+/// character color, as shown in the user's terminal
+/// console.
 void textcolor(int attr, int fg, int bg);
+
+/// Changes the foreground character color, as shown in the
+/// user's terminal console.
 void textcolor_fg(int fg);
+
+/// Changes the background character color, as shown in the
+/// user's terminal console.
 void textcolor_bg(int bg);
+
+/// Switches the styling applied to future written characters to
+/// the user's terminal console.
 void textstyle(int attr);
+
+/// Moves the cursor to specified column and row, 1-based.
 void moveto(int x, int y);
+
+/// \brief Erase a subset of the terminal console.
+/**
+ * From Wikipedia:
+ *
+ * Clears part of the screen. If n {\displaystyle n} n is 0 (or missing),
+ * clear from cursor to end of screen. If n {\displaystyle n} n is 1,
+ * clear from cursor to beginning of the screen. If n {\displaystyle n} n
+ * is 2, clear entire screen (and moves cursor to upper left on DOS
+ * ANSI.SYS). If n {\displaystyle n} n is 3, clear entire screen and
+ * delete all lines saved in the scrollback buffer (this feature was
+ * added for xterm and is supported by other terminal applications).
+ */
 void erase_display(int n);
+
+/// Hide the cursor within the terminal console.
 void hide_cursor(void);
+
+/// Show the cursor within the terminal console.
 void show_cursor(void);
 
 /// Reset the terminal console display back to a known working state.
