@@ -58,6 +58,14 @@
 #define TEXT_MAX_COLOR	7
 
 /**
+ * Movement direction definitions for \a move function.
+ */
+#define CURSOR_UP       0
+#define CURSOR_DOWN     1
+#define CURSOR_FORWARD  2
+#define CURSOR_BACK     3
+
+/**
  * Character codes for common keyboard keys.
  */
 #define KEY_TAB		    0x09
@@ -88,12 +96,20 @@ void textcolor_fg(int fg);
 /// user's terminal console.
 void textcolor_bg(int bg);
 
+/// Switch to normal color or intensity, as shown in the
+/// user's terminal console.
+void textcolor_normal(void);
+
 /// Switches the styling applied to future written characters to
 /// the user's terminal console.
 void textstyle(int attr);
 
 /// Moves the cursor to specified column and row, 1-based.
 void moveto(int x, int y);
+
+/// Move the cursor a specified number of positions, in the specified
+/// direction.
+void move(int which, int n);
 
 /// \brief Erase a subset of the terminal console.
 /**
@@ -108,6 +124,9 @@ void moveto(int x, int y);
  * added for xterm and is supported by other terminal applications).
  */
 void erase_display(int n);
+
+/// \brief Erase part of the line; of the user's terminal console.
+void erase_line(int n);
 
 /// Hide the cursor within the terminal console.
 void hide_cursor(void);

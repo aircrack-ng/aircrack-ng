@@ -94,10 +94,36 @@ void moveto(int x, int y) {
   fflush(stderr);
 }
 
+void move(int which, int n) {
+  char command[13];
+  static const char movement[] = { 'A', 'B', 'C', 'D' };
+
+  assert(which >= 0 && which < 4 && "Invalid cursor movement");
+  snprintf(command, sizeof(command), "%c[%d%c", 0x1B, n, movement[which]);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
 void erase_display(int n) {
   char command[13];
 
   snprintf(command, sizeof(command), "%c[%dJ", 0x1B, n);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
+void erase_line(int n) {
+  char command[13];
+
+  snprintf(command, sizeof(command), "%c[%dK", 0x1B, n);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
+void textcolor_normal(void) {
+  char command[13];
+
+  snprintf(command, sizeof(command), "%c[22m", 0x1B);
   fprintf(stderr, "%s", command);
   fflush(stderr);
 }

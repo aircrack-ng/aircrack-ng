@@ -75,6 +75,7 @@
 #include "hashcat.h"
 #include "cowpatty.h"
 #include "session.h"
+#include "aircrack-util/console.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -514,7 +515,7 @@ void sighandler( int signum )
 	}
 
 	if( signum == SIGWINCH )
-		printf( "\33[2J\n" );
+		erase_display(2);
 }
 
 void eof_wait( int *eof_notified )
@@ -3098,31 +3099,37 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 		is_cleared++;
 
 		if( opt.l33t )
-			printf( "\33[40m" );
+			textcolor_bg(TEXT_BLACK);
 
-		printf( "\33[2J" );
+		erase_display(2);
 	}
 
 	if( opt.l33t )
-		printf( "\33[34;1m" );
+		textcolor(TEXT_BRIGHT, TEXT_BLUE, TEXT_BLACK);
 
-	printf( "\33[2;%dH%s\n\n", (ws.ws_col - 12) / 2,
-		progname );
+	moveto((ws.ws_col - 12) / 2, 2);
+	printf("%s\n\n", progname);
 
 	if( opt.l33t )
-		printf( "\33[33;1m" );
+		textcolor(TEXT_BRIGHT, TEXT_YELLOW, TEXT_BLACK);
 
+    moveto((ws.ws_col - 44) / 2, 5);
 	if(table)
-		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %d keys (got %ld IVs)\33[K",
-			(ws.ws_col - 44) / 2, et_h, et_m, et_s, prod, opt.ap->nb_ivs );
+		printf( "[%02d:%02d:%02d] Tested %d keys (got %ld IVs)",
+			et_h, et_m, et_s, prod, opt.ap->nb_ivs );
 	else
-		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %lld keys (got %ld IVs)\33[K",
-			(ws.ws_col - 44) / 2, et_h, et_m, et_s, nb_tried, wep.nb_ivs_now );
+		printf( "[%02d:%02d:%02d] Tested %lld keys (got %ld IVs)",
+			et_h, et_m, et_s, nb_tried, wep.nb_ivs_now );
+	erase_line(0);
 
 	if( opt.l33t )
-		printf( "\33[32;22m" );
+	{
+		textcolor_fg(TEXT_GREEN);
+		textcolor_normal();
+	}
 
-	printf( "\33[7;4HKB    depth   byte(vote)\n" );
+	moveto(4, 7);
+	printf("KB    depth   byte(vote)\n");
 
 	for( i = 0; i <= B; i++ )
 	{
@@ -3131,9 +3138,14 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 		if(!table)
 		{
 			if( opt.l33t )
-				printf( "   %2d  \33[1m%3d\33[22m/%3d   ",
-					i, wep.depth[i], wep.fudge[i] );
-			else
+            {
+              printf("   %2d  ", i);
+              textstyle(TEXT_BRIGHT);
+              printf("%3d", wep.depth[i]);
+              textcolor_fg(TEXT_GREEN);
+              printf("/%3d   ", wep.fudge[i]);
+            }
+            else
 				printf( "   %2d  %3d/%3d   ",
 					i, wep.depth[i], wep.fudge[i] );
 		}
@@ -3148,10 +3160,13 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 				if( j >= 256 ) break;
 
 				if( opt.l33t )
-					printf( "\33[1m%02X\33[22m(%4d) ",
-						table[i][j].b,
-						table[i][j].votes );
-				else
+                {
+				  textstyle(TEXT_BRIGHT);
+                  printf("%02X", table[i][j].b);
+				  textcolor_fg(TEXT_GREEN);
+                  printf("(%4d) ", table[i][j].votes);
+                }
+                else
 					printf( "%02X(%4d) ",  table[i][j].b,
 						table[i][j].votes );
 			}
@@ -3165,18 +3180,25 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 				if( wep.poll[i][j].val == 32767 )
 				{
 					if( opt.l33t )
-						printf( "\33[1m%02X\33[22m(+inf) ",
-							wep.poll[i][j].idx );
-					else
+                    {
+					  textstyle(TEXT_BRIGHT);
+                      printf("%02X", wep.poll[i][j].idx);
+                      textcolor_normal();
+                      printf("(+inf) ");
+                    }
+                    else
 						printf( "%02X(+inf) ", wep.poll[i][j].idx );
 				}
 				else
 				{
 					if( opt.l33t )
-						printf( "\33[1m%02X\33[22m(%4d) ",
-							wep.poll[i][j].idx,
-							wep.poll[i][j].val );
-					else
+                    {
+					  textstyle(TEXT_BRIGHT);
+                      printf("%02X", wep.poll[i][j].idx);
+                      textcolor_normal();
+                      printf("(%4d) ", wep.poll[i][j].val);
+                    }
+                    else
 						printf( "%02X(%4d) ",  wep.poll[i][j].idx,
 							wep.poll[i][j].val );
 				}
@@ -3191,7 +3213,7 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 	}
 
 	if( B < opt.keylen - 1 )
-		printf( "\33[J" );
+		erase_display(0);
 
 	printf( "\n" );
 }
@@ -3218,7 +3240,10 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 			show_wep_stats( B - 1, 1, NULL, NULL, NULL, 0 );
 
 		if( opt.l33t )
-			printf( "\33[31;1m" );
+        {
+          textstyle(TEXT_BRIGHT);
+          textcolor_fg(TEXT_RED);
+        }
 
 		n = ( 80 - 14 - keylen * 3 ) / 2;
 
@@ -3227,7 +3252,9 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 
 		if( n <= 0 ) n = 0;
 
-		printf( "\33[K\33[%dCKEY FOUND! [ ", n );
+		erase_line(0);
+		move(CURSOR_FORWARD, n);
+		printf( "KEY FOUND! [ " );
 	}
 
 	for( i = 0; i < keylen - 1; i++ )
@@ -3246,7 +3273,10 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 	}
 
 	if( opt.l33t )
-		printf( "\33[32;22m" );
+	{
+		textcolor_fg(TEXT_GREEN);
+		textcolor_normal();
+	}
 
 	printf( "\n\tDecrypted correctly: %d%%\n", opt.probability );
 	printf( "\n" );
@@ -4100,18 +4130,25 @@ unsigned char mic[16], int force )
 
 	ksec = (float) nb_kprev / delta;
 
-	if( opt.l33t ) printf( "\33[33;1m" );
+	if( opt.l33t )
+	{
+		textstyle(TEXT_BRIGHT);
+		textcolor_fg(TEXT_YELLOW);
+	}
 
 	if (opt.stdin_dict) {
-		printf( "\33[5;20H[%02d:%02d:%02d] %lld keys tested "
+		moveto(20, 5);
+		printf( "[%02d:%02d:%02d] %lld keys tested "
 			"(%2.2f k/s) ", et_h, et_m, et_s,
 			nb_tried, (delta == 0) ? 0 : (float) nb_kprev / delta);
 	} else {
-		printf( "\33[4;7H[%02d:%02d:%02d] %lld/%lld keys tested "
+		moveto(7, 4);
+		printf( "[%02d:%02d:%02d] %lld/%lld keys tested "
 			"(%2.2f k/s) ", et_h, et_m, et_s,
 			nb_tried, opt.wordcount, (delta == 0) ? 0 : (float) nb_kprev / delta);
 
-		printf( "\33[6;7HTime left: ");
+		moveto(7, 6);
+		printf( "Time left: ");
         if (opt.wordcount != 0 && ksec != 0) {
             calc = ((float)nb_tried / (float)opt.wordcount)*100;
             remain = (opt.wordcount - nb_tried);
@@ -4125,33 +4162,75 @@ unsigned char mic[16], int force )
 	memcpy( tmpbuf, key, keylen > 27 ? 27 : keylen );
 	tmpbuf[27] = '\0';
 
-	if( opt.l33t ) printf( "\33[37;1m" );
-	printf( "\33[8;24HCurrent passphrase: %s\n", tmpbuf );
+	if( opt.l33t )
+	{
+		textstyle(TEXT_BRIGHT);
+		textcolor_fg(TEXT_WHITE);
+	}
 
-	if( opt.l33t ) printf( "\33[32;22m" );
-	printf( "\33[11;7HMaster Key     : " );
+	moveto(24, 8);
+	printf( "Current passphrase: %s\n", tmpbuf );
 
-	if( opt.l33t ) printf( "\33[32;1m" );
+	if( opt.l33t )
+	{
+		textcolor_normal();
+		textcolor_fg(TEXT_GREEN);
+	}
+
+	moveto(7, 11);
+	printf( "Master Key     : " );
+
+	if( opt.l33t )
+	{
+		textstyle(TEXT_BRIGHT);
+		textcolor_fg(TEXT_GREEN);
+	}
+
 	for( i = 0; i < 32; i++ )
 	{
-		if( i == 16 ) printf( "\n\33[23C" );
+		if( i == 16 ) move(CURSOR_FORWARD, 23);
 		printf( "%02X ", pmk[i] );
 	}
 
-	if( opt.l33t ) printf( "\33[32;22m" );
-	printf( "\33[14;7HTransient Key  : " );
+	if( opt.l33t )
+	{
+		textcolor_normal();
+		textcolor_fg(TEXT_GREEN);
+	}
 
-	if( opt.l33t ) printf( "\33[32;1m" );
+	moveto(7, 14);
+	printf( "Transient Key  : " );
+
+	if( opt.l33t )
+	{
+		textstyle(TEXT_BRIGHT);
+		textcolor_fg(TEXT_GREEN);
+	}
+
 	for( i = 0; i < 64; i++ )
 	{
-		if( i > 0 && i % 16 == 0 ) printf( "\n\33[23C" );
+		if( i > 0 && i % 16 == 0 )
+		{
+			printf( "\n" );
+			move(CURSOR_FORWARD, 23);
+		}
 		printf( "%02X ", ptk[i] );
 	}
 
-	if( opt.l33t ) printf( "\33[32;22m" );
-	printf( "\33[19;7HEAPOL HMAC     : " );
+	if( opt.l33t )
+	{
+		textcolor_normal();
+		textcolor_fg(TEXT_GREEN);
+	}
 
-	if( opt.l33t ) printf( "\33[32;1m" );
+	moveto(7, 19);
+	printf( "EAPOL HMAC     : " );
+
+	if( opt.l33t )
+	{
+		textstyle(TEXT_BRIGHT);
+		textcolor_fg(TEXT_GREEN);
+	}
 	for( i = 0; i < 16; i++ )
 		printf( "%02X ", mic[i] );
 
@@ -4345,13 +4424,21 @@ int crack_wpa_thread( void *arg )
 				show_wpa_stats( key[j], len, pmk[j], ptk[j], mic[j], 1 );
 
 				if (opt.l33t)
-					printf( "\33[31;1m" );
+				{
+					textstyle(TEXT_BRIGHT);
+					textcolor_fg(TEXT_RED);
+				}
 
-				printf("\33[8;%dH\33[2KKEY FOUND! [ %s ]\33[11B\n",
-					( 80 - 15 - (int) len ) / 2, key[j] );
+				moveto(( 80 - 15 - (int) len ) / 2, 8);
+				erase_line(2);
+				printf("KEY FOUND! [ %s ]\n", key[j]);
+				move(CURSOR_DOWN, 11);
 
 				if (opt.l33t)
-					printf( "\33[32;22m" );
+				{
+					textcolor_normal();
+					textcolor_fg(TEXT_GREEN);
+				}
 
 #ifndef OLD_SSE_CORE
 				ret = SUCCESS;
@@ -4517,13 +4604,21 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 		show_wpa_stats( values[1], strlen(values[1]), (unsigned char*)(values[0]), ptk, mic, 1 );
 
 		if( opt.l33t )
-			printf( "\33[31;1m" );
+		{
+			textstyle(TEXT_BRIGHT);
+			textcolor_fg(TEXT_RED);
+		}
 
-		printf( "\33[8;%dH\33[2KKEY FOUND! [ %s ]\33[11B\n",
-				( 80 - 15 - (int) strlen(values[1])) / 2, values[1] );
+		moveto(( 80 - 15 - (int) strlen(values[1])) / 2, 8);
+		erase_line(2);
+		printf("KEY FOUND! [ %s ]\n", values[1]);
+		move(CURSOR_DOWN, 11);
 
 		if( opt.l33t )
-			printf( "\33[32;22m" );
+		{
+			textcolor_normal();
+			textcolor_fg(TEXT_GREEN);
+		}
 
 		// abort the query
 		return 1;
@@ -4894,14 +4989,18 @@ int do_wpa_crack()
 	if( ! opt.is_quiet && !_speed_test)
 	{
 		if( opt.l33t )
-			printf( "\33[37;40m" );
+			textcolor(TEXT_RESET, TEXT_WHITE, TEXT_BLACK);
 
-		printf( "\33[2J" );
+		erase_line(2);
 
 		if( opt.l33t )
-			printf( "\33[34;1m" );
+        {
+          textstyle(TEXT_BRIGHT);
+          textcolor_fg(TEXT_BLUE);
+        }
 
-		printf("\33[2;34H%s",progname);
+        moveto(34, 2);
+		printf("%s", progname);
 	}
 
 	cid = 0;
@@ -4931,7 +5030,10 @@ int do_wpa_crack()
 					pthread_mutex_unlock( &mx_dic );
 
 					if( opt.l33t )
-						printf( "\33[32;22m" );
+                    {
+					    textcolor_normal();
+                        textcolor_fg(TEXT_GREEN);
+                    }
 					/* printf( "\nPassphrase not in dictionary %s \n", opt.dicts[opt.nbdict] );*/
 					if(next_dict(opt.nbdict+1) != 0)
 					{
@@ -5012,7 +5114,10 @@ int next_key( char **key, int keysize )
 			{
 				pthread_mutex_unlock( &mx_dic );
 				if( opt.l33t )
-					printf( "\33[32;22m" );
+                {
+                  textcolor_normal();
+                  textcolor_fg(TEXT_GREEN);
+                }
 
 //				printf( "\nPassphrase not in dictionary \"%s\" \n", opt.dicts[opt.nbdict] );
 				if(next_dict(opt.nbdict+1) != 0)
@@ -5068,7 +5173,10 @@ int next_key( char **key, int keysize )
 			{
 				pthread_mutex_unlock( &mx_dic );
 				if( opt.l33t )
-					printf( "\33[32;22m" );
+                {
+                  textcolor_normal();
+                  textcolor_fg(TEXT_GREEN);
+                }
 
 //				printf( "\nPassphrase not in dictionary \"%s\" \n", opt.dicts[opt.nbdict] );
 				if(next_dict(opt.nbdict+1) != 0)
@@ -6011,7 +6119,10 @@ usage:
 		id=0;
 
 		if( ! opt.is_quiet && ! opt.no_stdin )
-			printf( "\33[KRead %ld packets.\n\n", nb_pkt );
+        {
+		  erase_line(0);
+          printf("Read %ld packets.\n\n", nb_pkt);
+        }
 
 		if( ap_1st == NULL )
 		{
@@ -6545,13 +6656,21 @@ __start:
 				}
 
 				if( opt.l33t )
-					printf( "\33[31;1m" );
+                {
+				  textstyle(TEXT_BRIGHT);
+				  textcolor_fg(TEXT_RED);
+                }
 
-				printf( "\33[8;%dH\33[2KKEY FOUND! [ %s ]\33[11B\n",
-					( 80 - 15 - (int) strlen(wpa_data[i].key) ) / 2, wpa_data[i].key );
+                moveto(( 80 - 15 - (int) strlen(wpa_data[i].key) ) / 2, 8);
+				erase_line(2);
+				printf( "KEY FOUND! [ %s ]\n", wpa_data[i].key );
+				move(CURSOR_DOWN, 11);
 
 				if( opt.l33t )
-					printf( "\33[32;22m" );
+                {
+				  textcolor_normal();
+				  textcolor_fg(TEXT_GREEN);
+                }
 
 				clean_exit( SUCCESS );
 			} else {
@@ -6561,14 +6680,18 @@ __start:
 					clean_exit( FAILURE );
 
 				if (opt.stdin_dict)
-					printf("\33[5;30H %lld",nb_tried);
-				else {
-					printf("\33[4;18H%lld/%lld keys tested ", nb_tried, opt.wordcount);
-					printf("\33[6;7HTime left: ");
+                {
+				  moveto(30, 5);
+                  printf(" %lld", nb_tried);
+                } else {
+				    moveto(18, 4);
+					printf("%lld/%lld keys tested ", nb_tried, opt.wordcount);
+					moveto(7, 6);
+					printf("Time left: ");
 					calctime(0, ((float)nb_tried / (float)opt.wordcount)*100);
 				}
 
-				printf("\33[32;0H\n");
+				moveto(1, 32);
 			}
 
 			printf("\n");
@@ -6578,11 +6701,12 @@ __start:
 		else {
 			if( ! opt.is_quiet && !_speed_test) {
 				if( opt.l33t )
-					printf( "\33[37;40m" );
-				printf( "\33[2J" );
+					textcolor(TEXT_RESET, TEXT_WHITE, TEXT_BLACK);
+				erase_line(2);
 				if( opt.l33t )
-					printf( "\33[34;1m" );
-			printf("\33[2;34H%s",progname);
+					textcolor(TEXT_BRIGHT, TEXT_BLUE, TEXT_BLACK);
+				moveto(34, 2);
+			    printf("%s", progname);
 			}
 			sql = sqlite3_mprintf(sqlformat,ap_cur->essid);
 			while (1) {

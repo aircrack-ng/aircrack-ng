@@ -194,53 +194,53 @@ endif
 endif
 endif
 
-aircrack_ng__generic_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT)
+aircrack_ng__generic_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) $(LIBAIRCRACK_UTIL)
 aircrack_ng__generic_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
-aircrack_ng__generic_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBAC_LIBS) $(LIBPTW_LIBS)
+aircrack_ng__generic_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBAC_LIBS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
 #
 # Intel/AMD
 #
-aircrack_ng__avx2_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__avx2_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
 aircrack_ng__avx2_CFLAGS = $(x86_avx2_cflags) -DSIMD_CORE -DJOHN_AVX2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
 aircrack_ng__avx2_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__avx2_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+aircrack_ng__avx2_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
-aircrack_ng__avx_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__avx_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
 aircrack_ng__avx_CFLAGS = $(x86_avx_cflags) -DSIMD_CORE -DJOHN_AVX $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
 aircrack_ng__avx_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__avx_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+aircrack_ng__avx_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
-aircrack_ng__sse2_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__sse2_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
 aircrack_ng__sse2_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
 aircrack_ng__sse2_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__sse2_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+aircrack_ng__sse2_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
 #
 # ARM/AARCH64
 #
-aircrack_ng__neon_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__neon_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
 aircrack_ng__neon_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
 aircrack_ng__neon_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__neon_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+aircrack_ng__neon_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
-aircrack_ng__asimd_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__asimd_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
 aircrack_ng__asimd_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
 aircrack_ng__asimd_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__asimd_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+aircrack_ng__asimd_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
 #
 # PowerPC
 #
-aircrack_ng__altivec_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__altivec_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
 aircrack_ng__altivec_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
 aircrack_ng__altivec_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__altivec_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+aircrack_ng__altivec_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
-aircrack_ng__power8_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON)
+aircrack_ng__power8_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
 aircrack_ng__power8_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
 aircrack_ng__power8_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__power8_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
+aircrack_ng__power8_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
 airdecap_ng_SOURCES = $(SRC_AD)
 airdecap_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
