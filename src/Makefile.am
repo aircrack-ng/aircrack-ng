@@ -37,7 +37,7 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-SUBDIRS = include osdep
+SUBDIRS = aircrack-util include osdep
 
 AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src/include \
@@ -106,6 +106,9 @@ SRC_TT		+= sha1-git.c
 SRC_BS		+= sha1-git.c
 SRC_AV		+= sha1-git.c
 endif
+
+LIBAIRCRACK_UTIL = aircrack-util/libaircrack-util.la
+LIBAIRCRACK_UTIL_LIBS = -Laircrack-util -laircrack-util
 
 LIBOSD		= osdep/libosdep.la
 LIBOSD_LIBS	= -Losdep -losdep
@@ -251,9 +254,9 @@ aireplay_ng_SOURCES = $(SRC_AR) $(LIBOSD)
 aireplay_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)
 aireplay_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS)
 
-airodump_ng_SOURCES = $(SRC_ADU) $(LIBOSD) $(LIBMCS)
+airodump_ng_SOURCES = $(SRC_ADU) $(LIBOSD) $(LIBMCS) $(LIBAIRCRACK_UTIL)
 airodump_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
-airodump_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(PCRE_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBMCS_LIBS)
+airodump_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(PCRE_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBMCS_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
 airserv_ng_SOURCES = $(SRC_AS) $(LIBOSD)
 airserv_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(LIBNL_CFLAGS)

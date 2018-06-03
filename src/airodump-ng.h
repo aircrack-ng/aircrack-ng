@@ -86,27 +86,6 @@
 #define SORT_BY_ESSID	11
 #define MAX_SORT	11
 
-#define TEXT_RESET	0
-#define TEXT_BRIGHT 	1
-#define TEXT_DIM	2
-#define TEXT_UNDERLINE 	3
-#define TEXT_BLINK	4
-#define TEXT_REVERSE	7
-#define TEXT_HIDDEN	8
-
-#define TEXT_MAX_STYLE	8
-
-#define TEXT_BLACK 	0
-#define TEXT_RED	1
-#define TEXT_GREEN	2
-#define TEXT_YELLOW	3
-#define TEXT_BLUE	4
-#define TEXT_MAGENTA	5
-#define TEXT_CYAN	6
-#define	TEXT_WHITE	7
-
-#define TEXT_MAX_COLOR	7
-
 #define RATES           \
     "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 

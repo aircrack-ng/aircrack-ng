@@ -179,6 +179,7 @@ scripts/airgraph-ng/man/Makefile
 scripts/versuck-ng/Makefile
 
 src/Makefile
+src/aircrack-util/Makefile
 src/include/Makefile
 src/osdep/Makefile
 src/osdep/radiotap/Makefile

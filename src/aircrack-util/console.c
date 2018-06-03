@@ -1,0 +1,133 @@
+/*
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * is provided AS IS, WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, and
+ * NON-INFRINGEMENT.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+ * MA 02111-1307, USA.
+ *
+ * In addition, as a special exception, the copyright holders give
+ * permission to link the code of portions of this program with the
+ * OpenSSL library under certain conditions as described in each
+ * individual source file, and distribute linked combinations
+ * including the two.
+ * You must obey the GNU General Public License in all respects
+ * for all of the code used other than OpenSSL.  If you modify
+ * file(s) with this exception, you may extend this exception to your
+ * version of the file(s), but you are not obligated to do so.  If you
+ * do not wish to do so, delete this exception statement from your
+ * version.  If you delete this exception statement from all source
+ * files in the program, then also delete it here.
+ */
+
+#include <assert.h>
+#include <stdio.h>
+#ifndef TIOCGWINSZ
+#include <sys/termios.h>
+#endif
+#include <termios.h>
+#include <unistd.h>
+
+#include "console.h"
+
+void textcolor(int attr, int fg, int bg) {
+  char command[13];
+
+  /* Command is the control command to the terminal */
+  snprintf(command, sizeof(command), "%c[%d;%d;%dm", 0x1B, attr, fg + 30,
+           bg + 40);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
+void textcolor_fg(int fg) {
+  char command[13];
+
+  /* Command is the control command to the terminal */
+  snprintf(command, sizeof(command), "\033[%dm", fg + 30);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
+void textcolor_bg(int bg) {
+  char command[13];
+
+  /* Command is the control command to the terminal */
+  snprintf(command, sizeof(command), "\033[%dm", bg + 40);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
+void textstyle(int attr) {
+  char command[13];
+
+  /* Command is the control command to the terminal */
+  snprintf(command, sizeof(command), "\033[%im", attr);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
+void reset_term() {
+  struct termios oldt, newt;
+
+  tcgetattr(STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag |= (ICANON | ECHO);
+  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+}
+
+void moveto(int x, int y) {
+  char command[13];
+
+  assert(x > 0 && y > 0 && "Coordinates are 1-based");
+  snprintf(command, sizeof(command), "%c[%d;%dH", 0x1B, y, x);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
+void erase_display(int n) {
+  char command[13];
+
+  snprintf(command, sizeof(command), "%c[%dJ", 0x1B, n);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
+void hide_cursor(void) {
+  char command[13];
+
+  snprintf(command, sizeof(command), "%c[?25l", 0x1B);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
+void show_cursor(void) {
+  char command[13];
+
+  snprintf(command, sizeof(command), "%c[?25h", 0x1B);
+  fprintf(stderr, "%s", command);
+  fflush(stderr);
+}
+
+int mygetch(void) {
+  struct termios oldt, newt;
+  int ch;
+
+  tcgetattr(STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag &= ~(ICANON | ECHO);
+  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+  ch = getchar();
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+
+  return ch;
+}

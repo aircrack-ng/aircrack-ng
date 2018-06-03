@@ -76,6 +76,7 @@
 #include "common.h"
 #include "mcs_index_rates.h"
 #include "verifyssid.h"
+#include "aircrack-util/console.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
 #ifdef USE_GCRYPT
@@ -142,64 +143,6 @@ char * get_manufacturer_from_string(char * buffer) {
 	return manuf;
 }
 
-void textcolor(int attr, int fg, int bg)
-{	char command[13];
-
-	/* Command is the control command to the terminal */
-	snprintf(command, sizeof(command), "%c[%d;%d;%dm", 0x1B, attr, fg + 30, bg + 40);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
-}
-
-void textcolor_fg(int fg)
-{	char command[13];
-
-	/* Command is the control command to the terminal */
-	snprintf(command, sizeof(command), "\033[%dm", fg + 30);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
-}
-
-void textcolor_bg(int bg)
-{	char command[13];
-
-	/* Command is the control command to the terminal */
-	snprintf(command, sizeof(command), "\033[%dm", bg + 40);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
-}
-
-void textstyle(int attr)
-{	char command[13];
-
-	/* Command is the control command to the terminal */
-	snprintf(command, sizeof(command), "\033[%im", attr);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
-}
-
-void reset_term() {
-  struct termios oldt,
-                 newt;
-  tcgetattr( STDIN_FILENO, &oldt );
-  newt = oldt;
-  newt.c_lflag |= ( ICANON | ECHO );
-  tcsetattr( STDIN_FILENO, TCSANOW, &newt );
-}
-
-int mygetch( ) {
-  struct termios oldt,
-                 newt;
-  int            ch;
-  tcgetattr( STDIN_FILENO, &oldt );
-  newt = oldt;
-  newt.c_lflag &= ~( ICANON | ECHO );
-  tcsetattr( STDIN_FILENO, TCSANOW, &newt );
-  ch = getchar();
-  tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
-  return ch;
-}
-
 void resetSelection()
 {
     G.sort_by = SORT_BY_POWER;
@@ -217,21 +160,6 @@ void resetSelection()
     G.do_sort_always=0;
     memset(G.selected_bssid, '\x00', 6);
 }
-
-#define KEY_TAB		0x09	//switch between APs/clients for scrolling
-#define KEY_SPACE	0x20	//pause/resume output
-#define KEY_ARROW_UP	0x41	//scroll
-#define KEY_ARROW_DOWN	0x42	//scroll
-#define KEY_ARROW_RIGHT 0x43	//scroll
-#define KEY_ARROW_LEFT	0x44	//scroll
-#define KEY_a		0x61	//cycle through active information (ap/sta/ap+sta/ap+sta+ack)
-#define KEY_c		0x63	//cycle through channels
-#define KEY_d		0x64	//default mode
-#define KEY_i		0x69	//inverse sorting
-#define KEY_m		0x6D	//mark current AP
-#define KEY_n		0x6E	//?
-#define KEY_r		0x72	//realtime sort (de)activate
-#define KEY_s		0x73	//cycle through sorting
 
 void input_thread( void *arg) {
 
@@ -301,10 +229,9 @@ void input_thread( void *arg) {
 				snprintf(G.message, sizeof(G.message), "][ paused output");
 				pthread_mutex_lock( &(G.mx_print) );
 
-					fprintf( stderr, "\33[1;1H" );
+					moveto(1, 1);
 					dump_print( G.ws.ws_row, G.ws.ws_col, G.num_cards );
-					fprintf( stderr, "\33[J" );
-					fflush(stderr);
+					erase_display(0);
 
 				pthread_mutex_unlock( &(G.mx_print) );
 			}
@@ -399,10 +326,9 @@ void input_thread( void *arg) {
 		if(G.do_exit == 0 && !G.do_pause) {
 			pthread_mutex_lock( &(G.mx_print) );
 
-			fprintf( stderr, "\33[1;1H" );
+			moveto(1, 1);
 			dump_print( G.ws.ws_row, G.ws.ws_col, G.num_cards );
-			fprintf( stderr, "\33[J" );
-			fflush(stderr);
+			erase_display(0);
 
 			pthread_mutex_unlock( &(G.mx_print) );
 		}
@@ -5577,7 +5503,8 @@ void sighandler( int signum)
 	if( signum == SIGSEGV )
 	{
 		fprintf( stderr, "Caught signal 11 (SIGSEGV). Please"
-				" contact the author!\33[?25h\n\n" );
+				" contact the author!\n\n" );
+		show_cursor();
 		fflush( stdout );
 		exit( 1 );
 	}
@@ -5590,7 +5517,8 @@ void sighandler( int signum)
 		dprintf( STDERR_FILENO,
 #endif
 			 "Caught signal 14 (SIGALRM). Please"
-                         " contact the author!\33[?25h\n\n" );
+                         " contact the author!\n\n" );
+		show_cursor();
 		_exit( 1 );
 	}
 
@@ -5599,7 +5527,7 @@ void sighandler( int signum)
 
 	if( signum == SIGWINCH )
 	{
-		fprintf( stderr, "\33[2J" );
+		erase_display(0);
 		fflush( stdout );
 	}
 }
@@ -7375,7 +7303,8 @@ usage:
         waitpid( -1, NULL, WNOHANG );
     }
 
-    fprintf( stderr, "\33[?25l\33[2J\n" );
+    hide_cursor();
+    erase_display(2);
 
     start_time = time( NULL );
     tt1        = time( NULL );
@@ -7608,8 +7537,7 @@ usage:
                 perror( "select failed" );
 
                 /* Restore terminal */
-                fprintf( stderr, "\33[?25h" );
-                fflush( stdout );
+                show_cursor();
 
                 return( 1 );
             }
@@ -7644,10 +7572,9 @@ usage:
 	    if(!G.do_pause && !is_bg) {
 		pthread_mutex_lock( &(G.mx_print) );
 
-		    fprintf( stderr, "\33[1;1H" );
+		    moveto(1, 1);
 		    dump_print( G.ws.ws_row, G.ws.ws_col, G.num_cards );
-		    fprintf( stderr, "\33[J" );
-		    fflush( stdout );
+		    erase_display(0);
 
 		pthread_mutex_unlock( &(G.mx_print) );
 	    }
@@ -7686,8 +7613,7 @@ usage:
                             printf("Can't reopen %s\n", ifnam);
 
                             /* Restore terminal */
-                            fprintf( stderr, "\33[?25h" );
-                            fflush( stdout );
+                            show_cursor();
 
                             exit(1);
                         }
@@ -7826,8 +7752,7 @@ usage:
         }
     }
 
-    fprintf( stderr, "\33[?25h" );
-    fflush( stdout );
+    show_cursor();
 
     return( 0 );
 }
