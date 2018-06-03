@@ -60,20 +60,20 @@
 /**
  * Character codes for common keyboard keys.
  */
-#define KEY_TAB		    0x09	//switch between APs/clients for scrolling
-#define KEY_SPACE	    0x20	//pause/resume output
-#define KEY_ARROW_UP	0x41	//scroll
-#define KEY_ARROW_DOWN	0x42	//scroll
-#define KEY_ARROW_RIGHT 0x43	//scroll
-#define KEY_ARROW_LEFT	0x44	//scroll
-#define KEY_a		    0x61	//cycle through active information (ap/sta/ap+sta/ap+sta+ack)
-#define KEY_c		    0x63	//cycle through channels
-#define KEY_d		    0x64	//default mode
-#define KEY_i		    0x69	//inverse sorting
-#define KEY_m		    0x6D	//mark current AP
-#define KEY_n		    0x6E	//?
-#define KEY_r		    0x72	//realtime sort (de)activate
-#define KEY_s		    0x73	//cycle through sorting
+#define KEY_TAB		    0x09
+#define KEY_SPACE	    0x20
+#define KEY_ARROW_UP	0x41
+#define KEY_ARROW_DOWN	0x42
+#define KEY_ARROW_RIGHT 0x43
+#define KEY_ARROW_LEFT	0x44
+#define KEY_a		    0x61
+#define KEY_c		    0x63
+#define KEY_d		    0x64
+#define KEY_i		    0x69
+#define KEY_m		    0x6D
+#define KEY_n		    0x6E
+#define KEY_r		    0x72
+#define KEY_s		    0x73
 
 /// Changes the styling, foreground, and background
 /// character color, as shown in the user's terminal
