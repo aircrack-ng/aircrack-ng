@@ -45,6 +45,7 @@
 #include "crypto.h"
 #include "osdep/byteorder.h"
 #include "common.h"
+#include "aircrack-util/console.h"
 
 #define ARP_REQ \
     "\x08\x00\x02\x01\xBB\xBB\xBB\xBB\xBB\xBB\xCC\xCC\xCC\xCC\xCC\xCC" \
@@ -197,7 +198,9 @@ int capture_ask_packet( int *caplen )
 
         if( fread( &pkh, n, 1, dev.f_cap_in ) != 1 )
         {
-            printf( "\r\33[KEnd of file.\n" );
+            printf( "\r" );
+            erase_line(0);
+            printf( "End of file.\n" );
             return( 1 );
         }
 
@@ -213,13 +216,17 @@ int capture_ask_packet( int *caplen )
 
         if( n <= 0 || n > (int) sizeof( h80211 ) )
         {
-            printf( "\r\33[KInvalid packet length %d.\n", n );
+            printf( "\r" );
+            erase_line(0);
+            printf( "Invalid packet length %d.\n", n );
             return( 1 );
         }
 
         if( fread( h80211, n, 1, dev.f_cap_in ) != 1 )
         {
-            printf( "\r\33[KEnd of file.\n" );
+            printf( "\r" );
+            erase_line(0);
+            printf( "End of file.\n" );
             return( 1 );
         }
 
