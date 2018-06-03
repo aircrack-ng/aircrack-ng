@@ -45,6 +45,8 @@
 #include "common.h"
 #include "eapol.h"
 
+#include "aircrack-util/console.h"
+
 #define FAILURE -1
 #define IVS     1
 #define WPA     2
@@ -889,7 +891,8 @@ int main( int argc, char *argv[] )
     {
         if( time( NULL ) - tt > 0 )
         {
-            printf( "\33[KRead %lu packets...\r", nbr );
+            erase_line(0);
+            printf( "Read %lu packets...\r", nbr );
             fflush( stdout );
             tt = time( NULL );
         }
@@ -977,7 +980,8 @@ int main( int argc, char *argv[] )
     fclose( f_in );
     fclose( G.f_ivs );
 
-    printf( "\33[2KRead %lu packets.\n", nbr );
+    erase_line(2);
+    printf( "Read %lu packets.\n", nbr );
 
     if ( nbivs > 0 )
         printf( "Written %lu IVs.\n", nbivs);
