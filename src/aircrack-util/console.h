@@ -47,14 +47,14 @@
 /**
  * Color definitions for \a textcolor functions.
  */
-#define TEXT_BLACK 	0
-#define TEXT_RED	1
-#define TEXT_GREEN	2
-#define TEXT_YELLOW	3
-#define TEXT_BLUE	4
+#define TEXT_BLACK 	    0
+#define TEXT_RED	    1
+#define TEXT_GREEN	    2
+#define TEXT_YELLOW	    3
+#define TEXT_BLUE	    4
 #define TEXT_MAGENTA	5
-#define TEXT_CYAN	6
-#define	TEXT_WHITE	7
+#define TEXT_CYAN	    6
+#define	TEXT_WHITE	    7
 #define TEXT_MAX_COLOR	7
 
 /**
