@@ -42,6 +42,7 @@
 #include "airdecloak-ng.h"
 #include "version.h"
 #include "osdep/radiotap/radiotap_iter.h"
+#include "aircrack-util/console.h"
 
 unsigned char buffer[65536];
 
@@ -398,7 +399,8 @@ BOOLEAN read_packets(void)
         {
             // update the status line every second
 
-            printf( "\33[KRead %lu packets...\r", stats.nb_read );
+            erase_line(0);
+            printf( "Read %lu packets...\r", stats.nb_read );
             fflush( stdout );
             tt = time( NULL );
         }
