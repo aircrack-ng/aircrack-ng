@@ -88,7 +88,19 @@ void reset_term() {
 void moveto(int x, int y) {
   char command[13];
 
-  assert(x > 0 && y > 0 && "Coordinates are 1-based");
+  // clamp the X coordinate.
+  if (x < 0)
+  {
+    x = 0;
+  }
+
+  // clamp the Y coordinate.
+  if (y < 0)
+  {
+    y = 0;
+  }
+
+  // send ANSI sequence to move the cursor.
   snprintf(command, sizeof(command), "%c[%d;%dH", 0x1B, y, x);
   fprintf(stderr, "%s", command);
   fflush(stderr);
