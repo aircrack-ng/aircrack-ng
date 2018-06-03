@@ -242,9 +242,9 @@ aircrack_ng__power8_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -
 aircrack_ng__power8_CPPFLAGS = -I. $(AM_CPPFLAGS)
 aircrack_ng__power8_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
-airdecap_ng_SOURCES = $(SRC_AD)
+airdecap_ng_SOURCES = $(SRC_AD) $(LIBAIRCRACK_UTIL)
 airdecap_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
-airdecap_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS)
+airdecap_ng_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
 packetforge_ng_SOURCES = $(SRC_PF)
 packetforge_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
