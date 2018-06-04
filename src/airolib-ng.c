@@ -384,7 +384,7 @@ void batch_process(sqlite3* db) {
 					rowcount += rc;
 					gettimeofday(&curtime,NULL);
 					int timediff = curtime.tv_sec - starttime.tv_sec;
-					fprintf(stdout,"\rComputed %i PMK in %i seconds (%i PMK/s, %i in buffer). ",rowcount,timediff, timediff > 0 ? rowcount / timediff : rowcount, query_int(db,"SELECT COUNT(*) FROM workbench;"));
+					fprintf(stdout,"\rComputed %i PMK in %i seconds (%i PMK/s, %i in buffer)\n",rowcount,timediff, timediff > 0 ? rowcount / timediff : rowcount, query_int(db,"SELECT COUNT(*) FROM workbench;"));
 					fflush(stdout);
 				}
 			} while (rc > 0 && !exit_airolib);
