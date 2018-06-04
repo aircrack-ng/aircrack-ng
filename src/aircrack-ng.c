@@ -5534,8 +5534,10 @@ int main( int argc, char *argv[] )
             {"oneshot",           0, 0, '1'},
             {"cpu-detect",        0, 0, 'u'},
             {"new-session",       1, 0, 'N'},
-// Handled above -> does not allow any other parameter
-//            {"restore-session",   1, 0, 'R'},
+// Even though it's taken care of above, we need to
+// handle the case where it's used along with other
+// parameters.
+            {"restore-session",   1, 0, 'R'},
             {0,                   0, 0,  0 }
         };
 
