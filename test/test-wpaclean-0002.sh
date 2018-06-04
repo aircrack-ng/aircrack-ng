@@ -8,7 +8,7 @@ if test ! -e "${top_builddir}/src/wpaclean${EXEEXT}"; then
 fi
 
 "${top_builddir}/src/wpaclean${EXEEXT}" \
-    -nvr \
+    "$(basename $0).out.log" \
     "${abs_srcdir}/wpa.cap" | \
         grep 'Net 00:0d:93:eb:b0:8c test'
 

@@ -8,7 +8,7 @@ if test ! -e "${top_builddir}/src/wpaclean${EXEEXT}"; then
 fi
 
 "${top_builddir}/src/wpaclean${EXEEXT}" \
-    -nvr \
+    "$(basename $0).out.log" \
     "${abs_srcdir}/wpaclean_crash.pcap"
 
 exit 0
