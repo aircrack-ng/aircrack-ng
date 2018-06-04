@@ -55,3 +55,10 @@ CMakeLists.txt
 /cmake-build-*
 *.gcda
 *.gcno
+Makefile
+!/contrib/commview/Makefile
+!/contrib/airpcap/Makefile
+!/contrib/peek/Makefile
+!/scripts/airgraph-ng/lib/Makefile
+/scripts/airmon-ng
+/src/aircrack-ng--*
