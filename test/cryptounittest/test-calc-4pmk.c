@@ -31,6 +31,7 @@
 #include "sha1-sse2.h"
 #include "tests.h"
 #include "aircrack-ng.h"
+#include "aircrack-util/simd_cpuid.h"
 #ifndef OLD_SSE_CORE
 #include "wpapsk.h"
 #endif

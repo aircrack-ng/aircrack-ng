@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 
-extern int hexStringToArray(char* in, int in_length, unsigned char* out, int out_length);
+#include "aircrack-util/common.h"
 
 int main(int nbarg, char *argv[])
 {
