@@ -66,6 +66,7 @@
 #include "wpapsk.h"
 #include "johnswap.h"
 #include "memory.h"
+#include "aircrack-util/simd_cpuid.h"
 
 //#define XDEBUG
 

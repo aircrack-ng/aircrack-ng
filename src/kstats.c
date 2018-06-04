@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "common.h"
+#include "aircrack-util/common.h"
 
 #define N_ATTACKS 17
 

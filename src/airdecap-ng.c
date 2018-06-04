@@ -44,7 +44,7 @@
 #include "crypto.h"
 #include "pcap.h"
 #include "osdep/byteorder.h"
-#include "common.h"
+#include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 
 #define CRYPT_NONE 0

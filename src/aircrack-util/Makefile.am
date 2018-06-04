@@ -42,12 +42,16 @@ AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src \
               $(LIBNL_CFLAGS)
 
-libaircrack_util_la_SOURCES = console.c
+libaircrack_util_la_SOURCES = common.c console.c simd_cpuid.c
 
 noinst_LTLIBRARIES = libaircrack-util.la
 
-EXTRA_DIST = console.c \
-             console.h
+EXTRA_DIST = common.c \
+             common.h \
+             console.c \
+             console.h \
+             simd_cpuid.c \
+             simd_cpuid.h
 
 
 @CODE_COVERAGE_RULES@

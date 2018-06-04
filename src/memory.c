@@ -60,7 +60,7 @@
 #include "arch.h"
 #include "misc.h"
 #include "memory.h"
-#include "common.h"
+#include "jcommon.h"
 #include "johnswap.h"
 #include "memdbg.h"
 

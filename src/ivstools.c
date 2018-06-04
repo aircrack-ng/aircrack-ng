@@ -42,7 +42,7 @@
 #include "pcap.h"
 #include "uniqueiv.h"
 #include "osdep/byteorder.h"
-#include "common.h"
+#include "aircrack-util/common.h"
 #include "eapol.h"
 
 #include "aircrack-util/console.h"

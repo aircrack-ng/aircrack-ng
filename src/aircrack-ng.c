@@ -68,7 +68,7 @@
 #include "aircrack-ng.h"
 #include "sha1-sse2.h"
 #include "osdep/byteorder.h"
-#include "common.h"
+#include "aircrack-util/common.h"
 #include "wkp-frame.h"
 #include "linecount.h"
 #include "wpapsk.h"
@@ -76,6 +76,7 @@
 #include "cowpatty.h"
 #include "session.h"
 #include "aircrack-util/console.h"
+#include "aircrack-util/simd_cpuid.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>

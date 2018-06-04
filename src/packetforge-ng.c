@@ -44,7 +44,7 @@
 #include "pcap.h"
 #include "crypto.h"
 #include "osdep/byteorder.h"
-#include "common.h"
+#include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 
 #define ARP_REQ \
@@ -70,7 +70,6 @@
     "\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"  \
     "\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32"
 
-extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern int add_crc32(unsigned char* data, int length);
 
 

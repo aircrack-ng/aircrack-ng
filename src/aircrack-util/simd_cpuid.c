@@ -18,6 +18,7 @@
  */
 
 #define _GNU_SOURCE
+#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
@@ -43,7 +44,9 @@
 	#include <sys/sysctl.h>
 #endif
 #include <dirent.h>
-#include "aircrack-ng.h"
+
+#include "simd_cpuid.h"
+#include "common.h"
 
 #ifdef __linux__
 	#define CPUFREQ_CPU0C   "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
@@ -107,12 +110,6 @@ int cpuid_simdsize(int viewmax) {
 		__cpuid_count(7, 0, eax, ebx, ecx, edx);
 
 		if (ebx & (1 << 5)) { // AVX2
-	#ifndef JOHN_AVX2
-			// If we're not compiled for AVX2, and we're simply displaying CPU capabilities
-			// return the maximum the processor supports, otherwise fallback to avoid
-			// a performance regression from overfilling the buffers.
-			if (viewmax == 1)
-	#endif
 				return 8;
 		}
 	}
@@ -600,14 +597,6 @@ int cpuid_getinfo() {
 		printf("(128 bit)\n");
 	else
 		printf("(256 bit)\n");
-
-#ifndef JOHN_AVX2
-	if (cpuinfo.simdsize == 8) {
-		printf("NOTE: Your processor is capable of AVX2 but AVX2.\n");
-		printf("If using the 'aircrack-ng' executable and not --sse2, --generic or --avx,\n");
-		printf("please report it on Aircrack-ng GitHub to to improve autodetection.\n");
-	}
-#endif
 
 	free(cpuinfo.flags);
 	cpuinfo.flags = NULL;

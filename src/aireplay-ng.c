@@ -71,7 +71,7 @@
 #include "pcap.h"
 #include "osdep/osdep.h"
 #include "crypto.h"
-#include "common.h"
+#include "aircrack-util/common.h"
 #include "verifyssid.h"
 #include "aircrack-util/console.h"
 
@@ -132,8 +132,6 @@
 
 int bitrates[RATE_NUM]={RATE_1M, RATE_2M, RATE_5_5M, RATE_6M, RATE_9M, RATE_11M, RATE_12M, RATE_18M, RATE_24M, RATE_36M, RATE_48M, RATE_54M};
 
-extern int maccmp(unsigned char *mac1, unsigned char *mac2);
-extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];

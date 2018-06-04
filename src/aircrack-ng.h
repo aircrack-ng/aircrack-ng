@@ -73,32 +73,7 @@
 
 #define CLOSE_IT	100000
 
-struct _cpuinfo {
-	int simdsize;				/* SIMD size		*/
-	char *flags;				/* Feature Flags	*/
-	char *model;				/* CPU Model		*/
-	int cores;				/* Real CPU cores       */
-	int coreperid;				/* Max cores per id     */
-	int htt;				/* Hyper-Threading      */
-	int maxlogic;				/* Max addressible lCPU */
-	int hv;					/* Hypervisor detected  */
-	int cpufreq_cur;			/* CPUfreq Current	*/
-	int cpufreq_max;			/* CPUfreq Maximum	*/
-	float coretemp;				/* CPU Temperature	*/
-	char *cputemppath;			/* Linux CPU Sensor Path*/
-};
-
 extern float chrono(struct timeval *start, int reset);
-
-extern char * getVersion(char * progname, int maj, int min, int submin, const char * svnrev, int beta, int rc);
-extern int getmac(char * macAddress, int strict, unsigned char * mac);
-extern int readLine(char line[], int maxlength);
-extern int hexToInt(char s[], int len);
-extern int hexCharToInt(unsigned char c);
-extern int cpuid_simdsize();
-extern int cpuid_getinfo();
-extern struct _cpuinfo cpuinfo;
-extern int get_nb_cpus();
 
 #define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")

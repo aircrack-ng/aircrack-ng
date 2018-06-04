@@ -33,7 +33,7 @@
 #define _AIRUNDEFENSE_H_
 
 #include "pcap.h"
-#include "common.h"
+#include "aircrack-util/common.h"
 
 typedef enum {false, true} BOOLEAN;
 
@@ -150,10 +150,6 @@ struct decloak_stats
     unsigned long nb_filt_wep;  /* # of filtered WEP pkt  */
     unsigned long nb_cloak_wep; /* # of cloaked WEP pkt  */
 };
-
-extern int getmac(char * macAddress, int strict, unsigned char * mac);
-extern char * mac2string(unsigned char * mac);
-extern int maccmp(unsigned char *mac1, unsigned char *mac2);
 
 void usage();
 int getBits(unsigned char b, int from, int length);

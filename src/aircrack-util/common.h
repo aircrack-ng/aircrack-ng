@@ -72,8 +72,59 @@ int64_t ftello64(FILE * fp);
 	#define ABS(a)          ((a)>=0?(a):(-(a)))
 #endif
 
-void calctime(time_t t, float calc);
-char * get_current_working_directory();
-void rtrim(char * line);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern void calctime(time_t t, float calc);
+
+/// Retrieves the working directory.
+extern char *get_current_working_directory();
+
+/// Trim excess whitespace from the right-most of \a line.
+extern void rtrim(char *line);
+
+extern int is_string_number(const char *str);
+
+extern int get_ram_size(void);
+
+extern char *getVersion(const char *progname,
+						const unsigned int maj,
+						const unsigned int min,
+						const unsigned int submin,
+						const char *rev,
+						const unsigned int beta,
+						const unsigned int rc);
+
+
+/// Returns the number of CPU/cores available and online.
+extern int get_nb_cpus();
+
+extern int maccmp(unsigned char *mac1, unsigned char *mac2);
+
+extern char *mac2string(unsigned char *mac_address);
+
+extern int hexCharToInt(unsigned char c);
+
+extern int hexStringToArray(char *in,
+							int in_length,
+							unsigned char *out,
+							int out_length);
+
+/// Return the mac address bytes (or null if it's not a mac address)
+extern int getmac(const char *macAddress, const int strict, unsigned char *mac);
+
+/// Read a line of characters inputted by the user
+extern int readLine(char line[], int maxlength);
+
+extern int hexToInt(char s[], int len);
+
+extern void rtrim(char *line);
+
+extern char *get_current_working_directory();
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif

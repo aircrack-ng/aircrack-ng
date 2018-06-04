@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "common.h"
+#include "aircrack-util/common.h"
 
 int ac_session_destroy(struct session * s)
 {

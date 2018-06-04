@@ -28,11 +28,9 @@
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.h"
-#include "common.h"
+#include "aircrack-util/common.h"
 
 #define NULL_MAC "\x00\x00\x00\x00\x00\x00"
-
-extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 
 char usage[] =
 

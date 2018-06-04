@@ -73,7 +73,7 @@
 #include "osdep/osdep.h"
 #include "airodump-ng.h"
 #include "osdep/common.h"
-#include "common.h"
+#include "aircrack-util/common.h"
 #include "mcs_index_rates.h"
 #include "verifyssid.h"
 #include "aircrack-util/console.h"
@@ -84,9 +84,6 @@
 		GCRY_THREAD_OPTION_PTHREAD_IMPL;
 	#endif
 #endif
-
-// in common.c
-extern int is_string_number(const char * str);
 
 void dump_sort( void );
 void dump_print( int ws_row, int ws_col, int if_num );

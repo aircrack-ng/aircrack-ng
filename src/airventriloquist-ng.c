@@ -71,7 +71,7 @@
 #include "pcap.h"
 #include "osdep/osdep.h"
 #include "crypto.h"
-#include "common.h"
+#include "aircrack-util/common.h"
 #include "ieee80211.h"
 #include "osdep/radiotap/radiotap_iter.h"
 #include "airventriloquist-ng.h"
@@ -133,8 +133,6 @@
 
 int bitrates[RATE_NUM]={RATE_1M, RATE_2M, RATE_5_5M, RATE_6M, RATE_9M, RATE_11M, RATE_12M, RATE_18M, RATE_24M, RATE_36M, RATE_48M, RATE_54M};
 
-extern int maccmp(u_int8_t *mac1, u_int8_t *mac2);
-extern u_int8_t * getmac(char * macAddress, int strict, u_int8_t * mac);
 extern int check_crc_buf( u_int8_t *buf, int len );
 extern const unsigned long int crc_tbl[256];
 extern const u_int8_t crc_chop_tbl[256][4];

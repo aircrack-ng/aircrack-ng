@@ -1,5 +1,4 @@
 /*
- * (c) 2010-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -30,12 +29,49 @@
  * files in the program, then also delete it here.
  */
 
-#define _MAJ 1
-#define _MIN 2
-#define _SUB_MIN 0
-#define _BETA 0
-#define _RC 0
-#define WEBSITE "https://www.aircrack-ng.org"
+#ifndef AIRCRACK_NG_CPUID_H
+#define AIRCRACK_NG_CPUID_H
 
-extern char * getVersion(const char * progname, const unsigned int maj, const unsigned int min, const unsigned int submin, const
-       char * rev, const unsigned int beta, const unsigned int rc);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct _cpuinfo {
+  int simdsize;				/* SIMD size		*/
+  char *flags;				/* Feature Flags	*/
+  char *model;				/* CPU Model		*/
+  int cores;				/* Real CPU cores       */
+  int coreperid;			/* Max cores per id     */
+  int htt;					/* Hyper-Threading      */
+  int maxlogic;				/* Max addressible lCPU */
+  int hv;					/* Hypervisor detected  */
+  int cpufreq_cur;			/* CPUfreq Current	*/
+  int cpufreq_max;			/* CPUfreq Maximum	*/
+  float coretemp;			/* CPU Temperature	*/
+  char *cputemppath;		/* Linux CPU Sensor Path */
+};
+
+/**
+ * Retrieve the number of 32-bit integers able to be packed into a single
+ * vector register.
+ *
+ * This value is dependent on the running machine, and may not reflect what
+ * the source code is able to process. PROGRAMMER BEWARE!
+ *
+ * @return int Number of 32-bit integers able to pack in one vector register.
+ */
+extern int cpuid_simdsize();
+
+/// Populates the \a cpuinfo with detected information about the running
+/// machine.
+extern int cpuid_getinfo();
+
+/// Structure containing information about the running machine. The
+/// function \a cpuid_getinfo must be called first!
+extern struct _cpuinfo cpuinfo;
+
+#ifdef __cplusplus
+};
+#endif
+
+#endif //AIRCRACK_NG_CPUID_H

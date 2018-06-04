@@ -64,7 +64,7 @@
 #include "version.h"
 #include "pcap.h"
 #include "crypto.h"
-#include "common.h"
+#include "aircrack-util/common.h"
 #include "eapol.h"
 
 #include "osdep/osdep.h"
@@ -152,12 +152,9 @@ static struct wif *_wi_in, *_wi_out;
     "\xf2\x01\x00\x50\xf2\x02\x00\x50\xf2\x03\x00\x50\xf2\x04\x00\x50"  \
     "\xf2\x05\x02\x00\x00\x50\xf2\x01\x00\x50\xf2\x02"
 
-extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int add_crc32(unsigned char* data, int length);
 
 extern const unsigned long int crc_tbl[256];
-
-extern int hexStringToArray(char* in, int in_length, unsigned char* out, int out_length);
 
 char usage[] =
 "\n"
