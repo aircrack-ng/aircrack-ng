@@ -4259,14 +4259,14 @@ int crack_wpa_thread( void *arg )
 	int i, j, len;
 //	int nparallel = 1;
 
-#if defined(__i386__) || defined(__x86_64__)
-	// Set SIMD size to match what we can support, 1/4/8 (MMX/SSE2/AVX2)
-	cpuinfo.simdsize = cpuid_simdsize(0);
-
-//	if (shasse2_cpuid()>=2)
-//		nparallel = 4;
+	// Set SIMD size to match what we can support, 1/4/8 32-bit numbers in
+	// a single vector register.
+	//
+	// Use the compiled size, if exists, first. If not, attempt auto-detect.
+#ifdef SIMD_COEF_32
+	cpuinfo.simdsize = SIMD_COEF_32;
 #else
-	cpuinfo.simdsize = 1;
+	cpuinfo.simdsize = cpuid_simdsize(0);
 #endif
 
 	data = (struct WPA_data*)arg;
