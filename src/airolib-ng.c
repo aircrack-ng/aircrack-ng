@@ -62,7 +62,7 @@
 
 int exit_airolib;
 
-void print_help(const char * msg) {
+static void print_help(const char * msg) {
 	char *version_info = getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 ebfe\n"
@@ -103,7 +103,7 @@ void print_help(const char * msg) {
 	}
 }
 
-void sighandler( int signum )
+static void sighandler( int signum )
 {
 	#if ((defined(__INTEL_COMPILER) || defined(__ICC)) && defined(DO_PGO_DUMP))
 	_PGOPTI_Prof_Dump();
@@ -125,11 +125,11 @@ void sighandler( int signum )
 		exit_airolib = 1;
 }
 
-void sql_error(sqlite3* db) {
+static void sql_error(sqlite3* db) {
 	fprintf(stderr, "Database error: %s\n", sqlite3_errmsg(db));
 }
 
-int sql_exec_cb(sqlite3* db, const char *sql, void* callback, void* cb_arg) {
+static int sql_exec_cb(sqlite3* db, const char *sql, void* callback, void* cb_arg) {
 #ifdef SQL_DEBUG
 	printf(sql);
 	printf("\n");
@@ -158,12 +158,12 @@ int sql_exec_cb(sqlite3* db, const char *sql, void* callback, void* cb_arg) {
 }
 
 // execute sql fast and hard.
-int sql_exec(sqlite3* db, const char *sql) {
+static int sql_exec(sqlite3* db, const char *sql) {
 	return sql_exec_cb(db,sql,0,0);
 }
 
 // wrapper for sqlite3_step which retries executing statements if the db returns SQLITE_BUSY or SQLITE_LOCKED
-int sql_step(sqlite3_stmt* stmt, int wait) {
+static int sql_step(sqlite3_stmt* stmt, int wait) {
 	int rc;
 	char looper[4] = {'|','/','-','\\'};
 	int looperc = 0;
@@ -189,7 +189,7 @@ int sql_step(sqlite3_stmt* stmt, int wait) {
 }
 
 // wrapper for sqlite3_prepare_v2 which retries creating statements if the db returns SQLITE_BUSY or SQLITE_LOCKED
-int sql_prepare(sqlite3 *db, const char *sql, sqlite3_stmt **ppStmt, int wait) {
+static int sql_prepare(sqlite3 *db, const char *sql, sqlite3_stmt **ppStmt, int wait) {
 #ifdef SQL_DEBUG
 	printf(sql);
 	printf("\n");
@@ -220,7 +220,7 @@ int sql_prepare(sqlite3 *db, const char *sql, sqlite3_stmt **ppStmt, int wait) {
 }
 
 // generic function to dump a resultset including column names to stdout
-int stmt_stdout(sqlite3_stmt* stmt, int* rowcount) {
+static int stmt_stdout(sqlite3_stmt* stmt, int* rowcount) {
 	int ccount;
 	int rcount = 0;
 	int rc;
@@ -252,7 +252,7 @@ int stmt_stdout(sqlite3_stmt* stmt, int* rowcount) {
 
 // generic function to dump the output of a sql statement to stdout.
 // will return sqlite error codes but also handle (read: ignore) them itself
-int sql_stdout(sqlite3* db, const char* sql, int* rowcount) {
+static int sql_stdout(sqlite3* db, const char* sql, int* rowcount) {
 	int rc;
 	sqlite3_stmt *stmt;
 
@@ -277,7 +277,7 @@ int sql_stdout(sqlite3* db, const char* sql, int* rowcount) {
 
 // retrieve a single int value using a sql query.
 // returns 0 if something goes wrong. beware! create your own statement if you need error handling.
-int query_int(sqlite3* db, const char* sql) {
+static int query_int(sqlite3* db, const char* sql) {
 	sqlite3_stmt *stmt;
 	int rc;
 	int ret;
@@ -305,7 +305,7 @@ int query_int(sqlite3* db, const char* sql) {
 
 // throw some statistics about the db to stdout.
 // if precise!=0 the stats will be queried nail by nail which can be slow
-void show_stats(sqlite3* db, int precise) {
+static void show_stats(sqlite3* db, int precise) {
 
 	sql_exec(db,"BEGIN;");
 
@@ -335,7 +335,7 @@ batch-process all combinations of ESSIDs and PASSWDs. this function may be calle
 only once per db at the same time, yet multiple processes can batch-process a single db.
 don't modify this function's layout or it's queries without carefully considering speed, efficiency and concurrency.
 */
-void batch_process(sqlite3* db) {
+static void batch_process(sqlite3* db) {
 	int rc;
 	int cur_essid = 0;
 	struct timeval starttime;
@@ -417,12 +417,12 @@ void batch_process(sqlite3* db) {
 
 // Verify an ESSID. Returns 1 if ESSID is invalid.
 //TODO More things to verify? Invalid chars?
-int verify_essid(char* essid) {
+static int verify_essid(char* essid) {
 	return essid == NULL || strlen(essid) < 1 || strlen(essid) > 32;
 }
 
 // sql function which checks a given ESSID
-void sql_verify_essid(sqlite3_context* context, int argc, sqlite3_value** values) {
+static void sql_verify_essid(sqlite3_context* context, int argc, sqlite3_value** values) {
 	char* essid = (char*)sqlite3_value_text(values[0]);
 	if (argc != 1 || essid == 0) {
 		fprintf(stderr,"SQL function VERIFY_ESSID called with invalid arguments");
@@ -431,11 +431,11 @@ void sql_verify_essid(sqlite3_context* context, int argc, sqlite3_value** values
 	sqlite3_result_int(context,verify_essid(essid));
 }
 
-int verify_passwd(char* passwd) {
+static int verify_passwd(char* passwd) {
 	return passwd == NULL || strlen(passwd) < 8 || strlen(passwd) > 63;
 }
 
-void sql_verify_passwd(sqlite3_context* context, int argc, sqlite3_value** values) {
+static void sql_verify_passwd(sqlite3_context* context, int argc, sqlite3_value** values) {
 	char* passwd = (char*)sqlite3_value_text(values[0]);
 	if (argc != 1 || passwd == 0) {
 		fprintf(stderr,"SQL function VERIFY_PASSWD called with invalid arguments");
@@ -446,7 +446,7 @@ void sql_verify_passwd(sqlite3_context* context, int argc, sqlite3_value** value
 
 
 // clean the db, analyze, maybe vacuum and check
-void vacuum(sqlite3* db, int deep) {
+static void vacuum(sqlite3* db, int deep) {
 	printf("Deleting invalid ESSIDs and passwords...\n");
 	sql_exec(db, "DELETE FROM essid WHERE VERIFY_ESSID(essid) != 0;");
 	sql_exec(db, "DELETE FROM passwd WHERE VERIFY_PASSWD(passwd) != 0");
@@ -467,7 +467,7 @@ void vacuum(sqlite3* db, int deep) {
 
 // verify PMKs. If complete==1 we check all PMKs
 // returns 0 if ok, !=0 otherwise
-void verify(sqlite3* db, int complete) {
+static void verify(sqlite3* db, int complete) {
 	if (complete != 1) {
 		printf("Checking ~10 000 randomly chosen PMKs...\n");
 		// this is faster than 'order by random()'. we need the subquery to trick the optimizer...
@@ -479,7 +479,7 @@ void verify(sqlite3* db, int complete) {
 }
 
 // callback for export_cowpatty. takes the passwd and pmk from the query and writes another fileentry.
-int sql_exportcow(void* arg, int ccount, char** values, char** columnnames) {
+static int sql_exportcow(void* arg, int ccount, char** values, char** columnnames) {
 	FILE *f = (FILE*)arg;
 	struct hashdb_rec rec;
 	if (ccount != 2 || values[0] == NULL || values[1] == NULL || fileno(f) == -1) {
@@ -505,7 +505,7 @@ int sql_exportcow(void* arg, int ccount, char** values, char** columnnames) {
 }
 
 // export to a cowpatty file
-void export_cowpatty(sqlite3* db, char* essid, char* filename) {
+static void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	struct hashdb_head filehead;
 	memset(&filehead, 0, sizeof(filehead));
 	FILE *f = NULL;
@@ -572,7 +572,7 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 }
 
 // import a cowpatty file
-int import_cowpatty(sqlite3* db, char* filename) {
+static int import_cowpatty(sqlite3* db, char* filename) {
 	struct hashdb_rec * rec = NULL;
 	struct cowpatty_file * hashdb;
 	sqlite3_stmt *stmt;
@@ -664,7 +664,7 @@ int import_cowpatty(sqlite3* db, char* filename) {
 	return 1;
 }
 
-int import_ascii(sqlite3* db, const char* mode, const char* filename) {
+static int import_ascii(sqlite3* db, const char* mode, const char* filename) {
 	FILE *f = NULL;
 	sqlite3_stmt *stmt;
 	char buffer[63+1];
@@ -740,7 +740,7 @@ int import_ascii(sqlite3* db, const char* mode, const char* filename) {
 }
 
 // sql function. takes ESSID and PASSWD, gives PMK
-void sql_calcpmk(sqlite3_context* context, int argc, sqlite3_value** values) {
+static void sql_calcpmk(sqlite3_context* context, int argc, sqlite3_value** values) {
 	unsigned char pmk[40];
 	char* passwd = (char*)sqlite3_value_blob(values[1]);
 	char* essid = (char*)sqlite3_value_blob(values[0]);
@@ -753,7 +753,7 @@ void sql_calcpmk(sqlite3_context* context, int argc, sqlite3_value** values) {
 }
 
 #ifdef HAVE_REGEXP
-void sqlite_regexp(sqlite3_context* context, int argc, sqlite3_value** values) {
+static void sqlite_regexp(sqlite3_context* context, int argc, sqlite3_value** values) {
 	int ret;
 	regex_t regex;
 	char* reg = (char*)sqlite3_value_text(values[0]);
@@ -777,7 +777,7 @@ void sqlite_regexp(sqlite3_context* context, int argc, sqlite3_value** values) {
 }
 #endif
 
-int initDataBase(const char * filename, sqlite3 ** db)
+static int initDataBase(const char * filename, sqlite3 ** db)
 {
 	//int rc = sqlite3_open_v2(filename, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
 	int rc = sqlite3_open(filename, &(*db));
@@ -826,7 +826,7 @@ int initDataBase(const char * filename, sqlite3 ** db)
 	return 0;
 }
 
-int check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
+static int check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
 {
 	struct stat dbfile;
 	int rc;
