@@ -72,7 +72,7 @@
 #include "osdep/osdep.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
-#include "verifyssid.h"
+#include "aircrack-util/verifyssid.h"
 #include "aircrack-util/console.h"
 
 #define RTC_RESOLUTION  8192

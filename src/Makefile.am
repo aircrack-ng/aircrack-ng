@@ -83,11 +83,11 @@ SRC_AV		= airventriloquist-ng.c
 
 SRC_SSE_COMMON	= memory.c wpapsk.c
 LIBAC_CFLAGS = -DOLD_SSE_CORE=1
-SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c $(ASM_AC) verifyssid.c session.c
+SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c $(ASM_AC) session.c
 LIBAC	= libaclib.la
 LIBAC_LIBS = libaclib.la
 
-AC_COMMON = crypto.c $(SRC_SSE_COMMON) uniqueiv.c $(ASM_AC) verifyssid.c session.c
+AC_COMMON = crypto.c $(SRC_SSE_COMMON) uniqueiv.c $(ASM_AC) session.c
 
 if LIBGCRYPT
 SRC_AC		+= sha1-git.c
@@ -350,7 +350,6 @@ EXTRA_DIST = wpaclean.c \
              airdecloak-ng.h \
              wpapsk.c \
              airserv-ng.c \
-             common.c \
              simd-intrinsics-load-flags.h \
              besside-ng.c \
              wkp-frame.h \
@@ -369,7 +368,6 @@ EXTRA_DIST = wpaclean.c \
              airdecap-ng.c \
              airodump-ng.h \
              airbase-ng.c \
-             common.h \
              besside-ng-crawler.c \
              tkiptun-ng.c \
              kstats.c \
@@ -409,8 +407,6 @@ EXTRA_DIST = wpaclean.c \
              mcs_index_rates.h \
              cowpatty.c \
              cowpatty.h \
-             verifyssid.c \
-             verifyssid.h \
              session.c \
              session.h
 

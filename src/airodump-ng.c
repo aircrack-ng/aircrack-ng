@@ -75,7 +75,7 @@
 #include "osdep/common.h"
 #include "aircrack-util/common.h"
 #include "mcs_index_rates.h"
-#include "verifyssid.h"
+#include "aircrack-util/verifyssid.h"
 #include "aircrack-util/console.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
