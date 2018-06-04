@@ -55,6 +55,7 @@
 
 #define IMPORT_ESSID "essid"
 #define IMPORT_PASSWD "passwd"
+#define IMPORT_PASSWD_ALT "password"
 #define IMPORT_COWPATTY "cowpatty"
 
 int exit_airolib;
@@ -1010,7 +1011,7 @@ int main(int argc, char **argv) {
 						return 1;
 					}
 					import_ascii(db, IMPORT_ESSID,argv[4]);
-				} else if (strcasecmp(argv[3], IMPORT_PASSWD) == 0 || strcasecmp(argv[3],"password") == 0) {
+				} else if (strcasecmp(argv[3], IMPORT_PASSWD) == 0 || strcasecmp(argv[3], IMPORT_PASSWD_ALT) == 0) {
 					if ( check_for_db(&db, argv[1], 1, 0) ) {
 						return 1;
 					}
