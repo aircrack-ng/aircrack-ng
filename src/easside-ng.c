@@ -155,7 +155,7 @@ struct east_state {
 
 static struct east_state _es;
 
-void printf_time(char *fmt, ...)
+static void printf_time(char *fmt, ...)
 {
 	va_list ap;
 	struct timeval now;
@@ -179,7 +179,8 @@ void printf_time(char *fmt, ...)
 	va_end(ap);
 }
 
-void hexdump(void *x, int len)
+/*
+static void hexdump(void *x, int len)
 {
 	unsigned char *p = x;
 
@@ -187,14 +188,15 @@ void hexdump(void *x, int len)
 		printf("%.2X ", *p++);
 	printf("\n");
 }
+*/
 
-void mac2str(char *str, unsigned char* m, int macsize)
+static void mac2str(char *str, unsigned char* m, int macsize)
 {
         snprintf(str, macsize, "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
                 m[0], m[1], m[2], m[3], m[4], m[5]);
 }
 
-int str2mac(unsigned char *mac, char *str)
+static int str2mac(unsigned char *mac, char *str)
 {
         unsigned int macf[6];
         int i;
@@ -210,7 +212,7 @@ int str2mac(unsigned char *mac, char *str)
         return 0;
 }
 
-void init_defaults(struct east_state *es)
+static void init_defaults(struct east_state *es)
 {
 	memset(es, 0, sizeof(*es));
 
@@ -236,7 +238,7 @@ void init_defaults(struct east_state *es)
 	es->es_udp_port = S_DEFAULT_UDP_PORT;
 }
 
-void reset(struct east_state *es)
+static void reset(struct east_state *es)
 {
 	int sz;
 	void *ptr;
@@ -286,7 +288,7 @@ void reset(struct east_state *es)
 
 /********** RIPPED
 ************/
-unsigned short in_cksum (unsigned short *ptr, int nbytes) {
+static unsigned short in_cksum (unsigned short *ptr, int nbytes) {
   register long sum;
   u_short oddbyte;
   register u_short answer;
@@ -313,7 +315,7 @@ unsigned short in_cksum (unsigned short *ptr, int nbytes) {
 /**************
 ************/
 
-void open_wifi(struct east_state *es)
+static void open_wifi(struct east_state *es)
 {
 	struct wif *wi;
 
@@ -325,7 +327,7 @@ void open_wifi(struct east_state *es)
 	es->es_wi = wi;
 }
 
-void open_tap(struct east_state *es) {
+static void open_tap(struct east_state *es) {
 	struct tif *ti;
 	char *iface = NULL;
 
@@ -346,7 +348,7 @@ void open_tap(struct east_state *es) {
 	es->es_ti = ti;
 }
 
-void set_mac(struct east_state *es)
+static void set_mac(struct east_state *es)
 {
 	printf("Sorting out wifi MAC\n");
 	if (!es->es_setmac) {
@@ -365,13 +367,13 @@ void set_mac(struct east_state *es)
 		err(1, "ti_set_mac()");
 }
 
-void set_tap_ip(struct east_state *es)
+static void set_tap_ip(struct east_state *es)
 {
 	if (ti_set_ip(es->es_ti, &es->es_myip) == -1)
 		err(1, "ti_set_ip()");
 }
 
-void die(char *m)
+static void die(char *m)
 {
 	struct east_state *es = &_es;
 
@@ -384,13 +386,13 @@ void die(char *m)
 	exit(0);
 }
 
-void sighand(int sig)
+static void sighand(int sig)
 {
 	if (sig) {} /* XXX unused */
 	die("signal");
 }
 
-void set_chan(struct east_state *es)
+static void set_chan(struct east_state *es)
 {
 	int chan = es->es_chanlock ? es->es_chanlock : es->es_apchan;
 
@@ -398,12 +400,12 @@ void set_chan(struct east_state *es)
 		err(1, "wi_set_channel");
 }
 
-void clear_timeout(struct east_state *es)
+static void clear_timeout(struct east_state *es)
 {
 	memset(&es->es_txlast, 0, sizeof(es->es_txlast));
 }
 
-void read_beacon(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void read_beacon(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	ieee80211_mgt_beacon_t b = (ieee80211_mgt_beacon_t) (wh+1);
 	u_int16_t capa;
@@ -486,7 +488,7 @@ void read_beacon(struct east_state *es, struct ieee80211_frame *wh, int len)
 	}
 }
 
-int for_me_and_from_ap(struct east_state *es, struct ieee80211_frame *wh)
+static int for_me_and_from_ap(struct east_state *es, struct ieee80211_frame *wh)
 {
 	if (memcmp(wh->i_addr1, es->es_mymac, 6) != 0)
 		return 0;
@@ -497,7 +499,7 @@ int for_me_and_from_ap(struct east_state *es, struct ieee80211_frame *wh)
 	return 1;
 }
 
-void read_auth(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void read_auth(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	unsigned short *sp = (unsigned short*) (wh+1);
 
@@ -530,7 +532,7 @@ void read_auth(struct east_state *es, struct ieee80211_frame *wh, int len)
 	es->es_state = S_SENDASSOC;
 }
 
-int is_dup(struct east_state *es, struct ieee80211_frame *wh)
+static int is_dup(struct east_state *es, struct ieee80211_frame *wh)
 {
 	unsigned short *sn = (unsigned short*) &wh->i_seq[0];
 	unsigned short s;
@@ -544,7 +546,7 @@ int is_dup(struct east_state *es, struct ieee80211_frame *wh)
 	return 0;
 }
 
-void read_deauth(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void read_deauth(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	unsigned short *sp = (unsigned short*) (wh+1);
 
@@ -560,7 +562,7 @@ void read_deauth(struct east_state *es, struct ieee80211_frame *wh, int len)
 	es->es_state = S_SENDAUTH;
 }
 
-void read_disassoc(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void read_disassoc(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	unsigned short *sp = (unsigned short*) (wh+1);
 
@@ -576,7 +578,7 @@ void read_disassoc(struct east_state *es, struct ieee80211_frame *wh, int len)
 	es->es_state = S_SENDASSOC;
 }
 
-void read_assoc_resp(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void read_assoc_resp(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	unsigned short *sp = (unsigned short*) (wh+1);
 
@@ -603,7 +605,7 @@ void read_assoc_resp(struct east_state *es, struct ieee80211_frame *wh, int len)
 	es->es_expand_num = -1;
 }
 
-void read_mgt(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void read_mgt(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	if (len < (int) sizeof(*wh)) {
 		printf("Short mgt %d\n", len);
@@ -643,7 +645,7 @@ void read_mgt(struct east_state *es, struct ieee80211_frame *wh, int len)
 	}
 }
 
-void read_ack(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void read_ack(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	if (len) {} /* XXX unused */
 
@@ -654,7 +656,7 @@ void read_ack(struct east_state *es, struct ieee80211_frame *wh, int len)
 //	printf("Ack\n");
 }
 
-void read_ctl(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void read_ctl(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	switch (wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) {
 	case IEEE80211_FC0_SUBTYPE_ACK:
@@ -674,7 +676,7 @@ void read_ctl(struct east_state *es, struct ieee80211_frame *wh, int len)
 	}
 }
 
-int our_network(struct east_state *es, struct ieee80211_frame *wh)
+static int our_network(struct east_state *es, struct ieee80211_frame *wh)
 {
 	void *bssid = (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS) ?
 			wh->i_addr2 : wh->i_addr1;
@@ -682,7 +684,7 @@ int our_network(struct east_state *es, struct ieee80211_frame *wh)
 	return memcmp(es->es_apmac, bssid, sizeof(es->es_apmac)) == 0;
 }
 
-void xor(void *out, void *clear, void *cipher, int len)
+static void xor(void *out, void *clear, void *cipher, int len)
 {
 	unsigned char *cl = (unsigned char*) clear;
 	unsigned char *ci = (unsigned char*) cipher;
@@ -692,7 +694,7 @@ void xor(void *out, void *clear, void *cipher, int len)
 		*o++ = *cl++ ^ *ci++;
 }
 
-void save_prga(struct east_state *es)
+static void save_prga(struct east_state *es)
 {
 	int fd, rc;
 
@@ -724,7 +726,7 @@ void save_prga(struct east_state *es)
 	close(fd);
 }
 
-int is_arp(struct ieee80211_frame *wh, int len)
+static int is_arp(struct ieee80211_frame *wh, int len)
 {
 	int arpsize = 8 + sizeof(struct arphdr) + 10*2;
 
@@ -736,7 +738,7 @@ int is_arp(struct ieee80211_frame *wh, int len)
 	return 0;
 }
 
-void *get_sa(struct ieee80211_frame *wh)
+static void *get_sa(struct ieee80211_frame *wh)
 {
 	if (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 		return wh->i_addr3;
@@ -744,7 +746,7 @@ void *get_sa(struct ieee80211_frame *wh)
 		return wh->i_addr2;
 }
 
-void *get_da(struct ieee80211_frame *wh)
+static void *get_da(struct ieee80211_frame *wh)
 {
 	if (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 		return wh->i_addr1;
@@ -752,7 +754,7 @@ void *get_da(struct ieee80211_frame *wh)
 		return wh->i_addr3;
 }
 
-int known_clear(void *clear, struct ieee80211_frame *wh, int len)
+static int known_clear(void *clear, struct ieee80211_frame *wh, int len)
 {
 	unsigned char *ptr = clear;
 
@@ -805,7 +807,7 @@ int known_clear(void *clear, struct ieee80211_frame *wh, int len)
 	return len;
 }
 
-void base_prga(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void base_prga(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	unsigned char ct[1024];
 	unsigned char *data = (unsigned char*) (wh+1);
@@ -827,7 +829,7 @@ void base_prga(struct east_state *es, struct ieee80211_frame *wh, int len)
 	save_prga(es);
 }
 
-unsigned int get_crc32(void *data, int len)
+static unsigned int get_crc32(void *data, int len)
 {
 	uLong crc;
 
@@ -836,7 +838,7 @@ unsigned int get_crc32(void *data, int len)
 	return crc;
 }
 
-void check_expand(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void check_expand(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	int elen;
 	unsigned long crc;
@@ -881,18 +883,18 @@ void check_expand(struct east_state *es, struct ieee80211_frame *wh, int len)
 		es->es_astate = AS_FIND_IP;
 }
 
-int to_me(struct east_state *es, struct ieee80211_frame *wh)
+static int to_me(struct east_state *es, struct ieee80211_frame *wh)
 {
 	return (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS) &&
 	       memcmp(es->es_mymac, get_da(wh), 6) == 0;
 }
 
-int from_me(struct east_state *es, struct ieee80211_frame *wh)
+static int from_me(struct east_state *es, struct ieee80211_frame *wh)
 {
 	return memcmp(es->es_mymac, get_sa(wh), 6) == 0;
 }
 
-int check_decrypt(struct east_state *es, struct ieee80211_frame *wh, int len)
+static int check_decrypt(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	int elen;
 
@@ -918,7 +920,7 @@ int check_decrypt(struct east_state *es, struct ieee80211_frame *wh, int len)
 	return 1;
 }
 
-void decrypt_ip_addr(struct east_state *es, void *dst, int *len,
+static void decrypt_ip_addr(struct east_state *es, void *dst, int *len,
 		     void *cipher, int off)
 {
 	unsigned char *c = cipher;
@@ -930,7 +932,7 @@ void decrypt_ip_addr(struct east_state *es, void *dst, int *len,
 	xor(dst, c + off, es->es_prga_d + off, *len);
 }
 
-void found_net_addr(struct east_state *es, unsigned char *a)
+static void found_net_addr(struct east_state *es, unsigned char *a)
 {
 	unsigned char ip[4];
 
@@ -951,7 +953,7 @@ void found_net_addr(struct east_state *es, unsigned char *a)
 	es->es_astate = AS_FIND_RTR_MAC;
 }
 
-void check_decrypt_arp(struct east_state *es, struct ieee80211_frame *wh,
+static void check_decrypt_arp(struct east_state *es, struct ieee80211_frame *wh,
 		       int len)
 {
 	unsigned char ip[4];
@@ -982,7 +984,7 @@ void check_decrypt_arp(struct east_state *es, struct ieee80211_frame *wh,
 		found_net_addr(es, ip);
 }
 
-void check_decrypt_ip(struct east_state *es, struct ieee80211_frame *wh,
+static void check_decrypt_ip(struct east_state *es, struct ieee80211_frame *wh,
 		      int len)
 {
 	int off_ip = 8;
@@ -1074,7 +1076,7 @@ void check_decrypt_ip(struct east_state *es, struct ieee80211_frame *wh,
 
 }
 
-void setup_internet(struct east_state *es)
+static void setup_internet(struct east_state *es)
 {
 	struct sockaddr_in s_in;
 	char buf[16];
@@ -1112,7 +1114,7 @@ void setup_internet(struct east_state *es)
 	printf("Handshake compl33t\n");
 }
 
-void check_rtr_mac(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void check_rtr_mac(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	void *sa;
 	char str[18];
@@ -1131,7 +1133,7 @@ void check_rtr_mac(struct east_state *es, struct ieee80211_frame *wh, int len)
 	setup_internet(es);
 }
 
-struct rpacket *get_slot(struct east_state *es)
+static struct rpacket *get_slot(struct east_state *es)
 {
 	struct rpacket *slot = es->es_rqueue;
 	struct rpacket *p = es->es_rqueue;
@@ -1159,7 +1161,7 @@ struct rpacket *get_slot(struct east_state *es)
 	return slot;
 }
 
-struct rpacket *get_head(struct east_state *es)
+static struct rpacket *get_head(struct east_state *es)
 {
 	struct rpacket *rp = es->es_rqueue;
 
@@ -1172,7 +1174,7 @@ struct rpacket *get_head(struct east_state *es)
 	return rp;
 }
 
-struct rpacket *get_packet(struct east_state *es, int id)
+static struct rpacket *get_packet(struct east_state *es, int id)
 {
 	struct rpacket *rp = es->es_rqueue;
 
@@ -1189,7 +1191,7 @@ struct rpacket *get_packet(struct east_state *es, int id)
 	return NULL;
 }
 
-void remove_packet(struct east_state *es, int id)
+static void remove_packet(struct east_state *es, int id)
 {
 	struct rpacket *rp = es->es_rqueue;
 	struct rpacket **prevn;
@@ -1235,7 +1237,7 @@ void remove_packet(struct east_state *es, int id)
 	*prevn = rp;
 }
 
-int queue_len(struct east_state *es)
+static int queue_len(struct east_state *es)
 {
 	int len = 0;
 	struct rpacket *slot = es->es_rqueue;
@@ -1250,7 +1252,7 @@ int queue_len(struct east_state *es)
 	return len;
 }
 
-void redirect_enque(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void redirect_enque(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	char s[18];
 	char d[18];
@@ -1270,7 +1272,7 @@ void redirect_enque(struct east_state *es, struct ieee80211_frame *wh, int len)
 	       	    slot->rp_id, s, d, len - sizeof(*wh) - 4- 4, queue_len(es));
 }
 
-void check_redirect(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void check_redirect(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	if (!for_me_and_from_ap(es, wh))
 		return;
@@ -1281,7 +1283,7 @@ void check_redirect(struct east_state *es, struct ieee80211_frame *wh, int len)
 	redirect_enque(es, wh, sizeof(*wh) + len);
 }
 
-void read_data(struct east_state *es, struct ieee80211_frame *wh, int len)
+static void read_data(struct east_state *es, struct ieee80211_frame *wh, int len)
 {
 	if ((wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) !=
 	     IEEE80211_FC0_SUBTYPE_DATA)
@@ -1356,7 +1358,7 @@ void read_data(struct east_state *es, struct ieee80211_frame *wh, int len)
 	}
 }
 
-void read_wifi(struct east_state *es)
+static void read_wifi(struct east_state *es)
 {
 	unsigned char buf[4096];
 	int len;
@@ -1392,7 +1394,7 @@ void read_wifi(struct east_state *es)
 	}
 }
 
-unsigned int msec_diff(struct timeval *after, struct timeval *before)
+static unsigned int msec_diff(struct timeval *after, struct timeval *before)
 {
 	unsigned int diff;
 
@@ -1412,13 +1414,13 @@ unsigned int msec_diff(struct timeval *after, struct timeval *before)
 	return diff;
 }
 
-void msec_to_tv(int msec, struct timeval *tv)
+static void msec_to_tv(int msec, struct timeval *tv)
 {
 	tv->tv_sec = msec/1000;
 	tv->tv_usec = (msec - tv->tv_sec*1000)*1000;
 }
 
-void chan_hop(struct east_state *es, struct timeval *tv)
+static void chan_hop(struct east_state *es, struct timeval *tv)
 {
 	struct timeval now;
 	unsigned int elapsed;
@@ -1443,7 +1445,7 @@ void chan_hop(struct east_state *es, struct timeval *tv)
 		msec_to_tv(es->es_hopfreq - elapsed, tv);
 }
 
-unsigned short fnseq(unsigned short fn, unsigned short seq) {
+static unsigned short fnseq(unsigned short fn, unsigned short seq) {
         unsigned short r = 0;
 
 	assert(fn < 16);
@@ -1453,7 +1455,7 @@ unsigned short fnseq(unsigned short fn, unsigned short seq) {
         return r;
 }
 
-void fill_basic(struct east_state *es, struct ieee80211_frame *wh)
+static void fill_basic(struct east_state *es, struct ieee80211_frame *wh)
 {
         unsigned short* sp;
 
@@ -1472,7 +1474,7 @@ void fill_basic(struct east_state *es, struct ieee80211_frame *wh)
 	*sp = fnseq(0, es->es_txseq);
 }
 
-void send_frame(struct east_state *es, void *buf, int len)
+static void send_frame(struct east_state *es, void *buf, int len)
 {
         int rc;
 
@@ -1488,7 +1490,7 @@ void send_frame(struct east_state *es, void *buf, int len)
 		err(1, "gettimeofday()");
 }
 
-int too_early(struct timeval *tv, int to, struct timeval *last_sent)
+static int too_early(struct timeval *tv, int to, struct timeval *last_sent)
 {
 	struct timeval now;
 	unsigned int elapsed;
@@ -1507,7 +1509,7 @@ int too_early(struct timeval *tv, int to, struct timeval *last_sent)
 	return 0;
 }
 
-void send_auth(struct east_state *es, struct timeval *tv)
+static void send_auth(struct east_state *es, struct timeval *tv)
 {
 	unsigned char buf[4096];
 	struct ieee80211_frame *wh = (struct ieee80211_frame*) buf;
@@ -1533,7 +1535,7 @@ void send_auth(struct east_state *es, struct timeval *tv)
 	send_frame(es, wh, len);
 }
 
-void send_assoc(struct east_state *es, struct timeval *tv)
+static void send_assoc(struct east_state *es, struct timeval *tv)
 {
 	unsigned char buf[4096];
 	struct ieee80211_frame *wh = (struct ieee80211_frame*) buf;
@@ -1589,14 +1591,14 @@ void send_assoc(struct east_state *es, struct timeval *tv)
 	send_frame(es, wh, len);
 }
 
-void put_crc32(void *data, int len)
+static void put_crc32(void *data, int len)
 {
 	unsigned int *ptr = (unsigned int*) ((char*)data+len);
 
 	*ptr = get_crc32(data, len);
 }
 
-void expand_prga(struct east_state *es, struct timeval *tv)
+static void expand_prga(struct east_state *es, struct timeval *tv)
 {
 	unsigned char buf[2048];
 	struct ieee80211_frame *wh = (struct ieee80211_frame*) buf;
@@ -1686,7 +1688,7 @@ void expand_prga(struct east_state *es, struct timeval *tv)
 	send_frame(es, wh, data - buf + dlen + 4);
 }
 
-void decrypt_packet(struct east_state *es, struct timeval *tv)
+static void decrypt_packet(struct east_state *es, struct timeval *tv)
 {
 	unsigned char buf[2048];
 	struct ieee80211_frame *wh = (struct ieee80211_frame*) buf;
@@ -1722,7 +1724,7 @@ void decrypt_packet(struct east_state *es, struct timeval *tv)
 	es->es_prga_d[es->es_prga_dlen]++;
 }
 
-void decrypt_arp(struct east_state *es, struct timeval *tv)
+static void decrypt_arp(struct east_state *es, struct timeval *tv)
 {
 	/* init */
 	if (es->es_astate != AS_DECRYPT_ARP) {
@@ -1749,7 +1751,7 @@ void decrypt_arp(struct east_state *es, struct timeval *tv)
 	decrypt_packet(es, tv);
 }
 
-void decrypt_ip(struct east_state *es, struct timeval *tv)
+static void decrypt_ip(struct east_state *es, struct timeval *tv)
 {
 	/* init */
 	if (es->es_astate != AS_DECRYPT_IP) {
@@ -1793,7 +1795,7 @@ void decrypt_ip(struct east_state *es, struct timeval *tv)
 	decrypt_packet(es, tv);
 }
 
-void find_ip(struct east_state *es, struct timeval *tv)
+static void find_ip(struct east_state *es, struct timeval *tv)
 {
 	if (es->es_rtrip.s_addr && es->es_myip.s_addr) {
 		set_tap_ip(es);
@@ -1808,7 +1810,7 @@ void find_ip(struct east_state *es, struct timeval *tv)
 		decrypt_ip(es, tv);
 }
 
-void send_whohas(struct east_state *es, struct timeval *tv)
+static void send_whohas(struct east_state *es, struct timeval *tv)
 {
 	unsigned char buf[2048];
 	struct ieee80211_frame *wh = (struct ieee80211_frame*) buf;
@@ -1865,7 +1867,7 @@ void send_whohas(struct east_state *es, struct timeval *tv)
 	send_frame(es, wh, data - buf + 4);
 }
 
-void check_inet(struct east_state *es, struct timeval *tv)
+static void check_inet(struct east_state *es, struct timeval *tv)
 {
 	unsigned char buf[2048];
 	struct ieee80211_frame *wh = (struct ieee80211_frame*) buf;
@@ -1936,7 +1938,7 @@ void check_inet(struct east_state *es, struct timeval *tv)
 		err(1, "gettimeofday()");
 }
 
-void redirect_sendip(struct east_state *es, struct rpacket *rp)
+static void redirect_sendip(struct east_state *es, struct rpacket *rp)
 {
 	unsigned char buf[2048];
 	struct ieee80211_frame *wh = (struct ieee80211_frame*) buf;
@@ -2004,7 +2006,7 @@ void redirect_sendip(struct east_state *es, struct rpacket *rp)
 	send_frame(es, wh, data - buf + 4);
 }
 
-void redirect_sendfrag(struct east_state *es, struct rpacket *rp)
+static void redirect_sendfrag(struct east_state *es, struct rpacket *rp)
 {
 	unsigned char buf[2048];
 	struct ieee80211_frame *wh = (struct ieee80211_frame*) buf;
@@ -2033,7 +2035,7 @@ void redirect_sendfrag(struct east_state *es, struct rpacket *rp)
 }
 
 
-void redirect(struct east_state *es, struct timeval *tv)
+static void redirect(struct east_state *es, struct timeval *tv)
 {
 	struct rpacket *rp = get_head(es);
 
@@ -2060,7 +2062,7 @@ void redirect(struct east_state *es, struct timeval *tv)
 	redirect_sendfrag(es, rp);
 }
 
-void associated(struct east_state *es, struct timeval *tv)
+static void associated(struct east_state *es, struct timeval *tv)
 {
 	switch (es->es_astate) {
 	case AS_NOPRGA:
@@ -2100,7 +2102,7 @@ void associated(struct east_state *es, struct timeval *tv)
 	}
 }
 
-void buddy_inet_check(struct east_state *es)
+static void buddy_inet_check(struct east_state *es)
 {
 	struct {
 		struct in_addr addr;
@@ -2138,7 +2140,7 @@ void buddy_inet_check(struct east_state *es)
 		reset(es);
 }
 
-void buddy_packet(struct east_state *es)
+static void buddy_packet(struct east_state *es)
 {
 	unsigned char buf[2048];
 	unsigned short *p = (unsigned short*) buf;
@@ -2224,7 +2226,7 @@ void buddy_packet(struct east_state *es)
 	clear_timeout(es);
 }
 
-void read_buddy(struct east_state *es)
+static void read_buddy(struct east_state *es)
 {
 	unsigned short cmd;
 	int rc;
@@ -2250,7 +2252,7 @@ void read_buddy(struct east_state *es)
 	}
 }
 
-void read_tap(struct east_state *es)
+static void read_tap(struct east_state *es)
 {
 	unsigned char buf[2048];
 	struct ieee80211_frame *wh = (struct ieee80211_frame*) buf;
@@ -2295,7 +2297,7 @@ void read_tap(struct east_state *es)
 	es->es_txlast = old;
 }
 
-void own(struct east_state *es)
+static void own(struct east_state *es)
 {
 	fd_set rfds;
 	struct timeval tv, *tvp;
@@ -2369,7 +2371,7 @@ void own(struct east_state *es)
 	}
 }
 
-void usage(char *p)
+static void usage(char *p)
 {
 	if (p) {}
     char *version_info = getVersion("Easside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
@@ -2395,7 +2397,7 @@ void usage(char *p)
 	free(version_info);
 }
 
-void load_prga(struct east_state *es)
+static void load_prga(struct east_state *es)
 {
 	int fd;
 	int rc;
