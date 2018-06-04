@@ -349,6 +349,8 @@ void batch_process(sqlite3* db) {
 		return;
 	}
 
+	printf("Batch processing ...\n");
+
 	// may fail - that's ok
 	cur_essid = query_int(db,"SELECT essid_id FROM workbench LIMIT 1;");
 
