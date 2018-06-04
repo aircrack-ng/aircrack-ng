@@ -54,9 +54,11 @@
 #include "version.h"
 
 #define IMPORT_ESSID "essid"
+#define EXPORT_ESSID IMPORT_ESSID
 #define IMPORT_PASSWD "passwd"
 #define IMPORT_PASSWD_ALT "password"
 #define IMPORT_COWPATTY "cowpatty"
+#define EXPORT_COWPATTY IMPORT_COWPATTY
 
 int exit_airolib;
 
@@ -79,15 +81,20 @@ void print_help(const char * msg) {
 		"       --verify [all] : Verify a set of randomly chosen PMKs.\n"
 		"                        If 'all' is given, all invalid PMK will be deleted.\n"
 		"\n"
-		"       --import [essid|passwd] <file>   :\n"
+		"       --import [%s|%s] <file>   :\n"
 		"                        Import a text file as a list of ESSIDs or passwords.\n"
-		"       --import cowpatty <file>         :\n"
+		"       --import %s <file>         :\n"
 		"                        Import a cowpatty file.\n"
 		"\n"
-		"       --export cowpatty <essid> <file> :\n"
+		"       --export %s <%s> <file> :\n"
 		"                        Export to a cowpatty file.\n"
 		"\n",
-		version_info);
+		version_info,
+		IMPORT_ESSID,
+		IMPORT_PASSWD,
+		IMPORT_COWPATTY,
+		EXPORT_COWPATTY,
+		EXPORT_ESSID);
 	free(version_info);
 
 	if (msg && strlen(msg) > 0) {
@@ -972,7 +979,7 @@ int main(int argc, char **argv) {
 
 				if (argc < 4) {
 					print_help("You must specify an export format.");
-				} else if (strcmp(argv[3],"cowpatty")==0) {
+				} else if (strcmp(argv[3], EXPORT_COWPATTY)==0) {
 					if (argc < 6) {
 						print_help("You must specify essid and output file.");
 					} else {
