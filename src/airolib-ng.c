@@ -44,6 +44,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include "cowpatty.h"
 #include "crypto.h"
@@ -55,6 +56,8 @@
 #define IMPORT_ESSID "essid"
 #define IMPORT_PASSWD "passwd"
 #define IMPORT_COWPATTY "cowpatty"
+
+int exit_airolib;
 
 void print_help(const char * msg) {
 	char *version_info = getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
@@ -90,6 +93,28 @@ void print_help(const char * msg) {
 		printf("%s", msg);
 		puts("");
 	}
+}
+
+void sighandler( int signum )
+{
+	#if ((defined(__INTEL_COMPILER) || defined(__ICC)) && defined(DO_PGO_DUMP))
+	_PGOPTI_Prof_Dump();
+	#endif
+#if !defined(__CYGWIN__)
+    // We can't call this on cygwin or we will sometimes end up
+    // having all our threads die with exit code 35584 fairly reproducible
+    // at around 2.5-3% of runs
+    signal( signum, sighandler );
+#endif
+
+	if( signum == SIGQUIT )
+		exit_airolib = 1;
+
+	if( signum == SIGTERM )
+		exit_airolib = 1;
+
+	if( signum == SIGINT )
+		exit_airolib = 1;
 }
 
 void sql_error(sqlite3* db) {
@@ -320,7 +345,7 @@ void batch_process(sqlite3* db) {
 	cur_essid = query_int(db,"SELECT essid_id FROM workbench LIMIT 1;");
 
 
-	while(1) {
+	while (!exit_airolib) {
 		//loop over everything
 		do {
 			//loop over ESSID
@@ -330,7 +355,7 @@ void batch_process(sqlite3* db) {
 				// select some work from the workbench into our own buffer
 				// move lockid ahead so other clients won't get those rows any time soon
 				sql_exec(db,"BEGIN EXCLUSIVE;");
-				sql_exec(db,"INSERT INTO temp.buffer (wb_id,essid_id,passwd_id,essid,passwd) SELECT wb_id, essid.essid_id,passwd.passwd_id,essid,passwd FROM workbench CROSS JOIN essid ON essid.essid_id = workbench.essid_id CROSS JOIN passwd ON passwd.passwd_id = workbench.passwd_id ORDER BY lockid LIMIT 25000;");
+				sql_exec(db,"INSERT INTO temp.buffer (wb_id,essid_id,passwd_id,essid,passwd) SELECT wb_id, essid.essid_id,passwd.passwd_id,essid,passwd FROM workbench CROSS JOIN essid ON essid.essid_id = workbench.essid_id CROSS JOIN passwd ON passwd.passwd_id = workbench.passwd_id ORDER BY lockid LIMIT 5000;");
 				sql_exec(db,"UPDATE workbench SET lockid=lockid+1 WHERE wb_id IN (SELECT wb_id FROM buffer);");
 				sql_exec(db,"COMMIT;");
 
@@ -352,11 +377,11 @@ void batch_process(sqlite3* db) {
 					fprintf(stdout,"\rComputed %i PMK in %i seconds (%i PMK/s, %i in buffer). ",rowcount,timediff, timediff > 0 ? rowcount / timediff : rowcount, query_int(db,"SELECT COUNT(*) FROM workbench;"));
 					fflush(stdout);
 				}
-			} while (rc > 0);
+			} while (rc > 0 && !exit_airolib);
 			sql = sqlite3_mprintf("INSERT OR IGNORE INTO workbench (essid_id,passwd_id) SELECT essid.essid_id,passwd.passwd_id FROM passwd CROSS JOIN essid LEFT JOIN pmk ON pmk.essid_id = essid.essid_id AND pmk.passwd_id = passwd.passwd_id WHERE essid.essid_id = %i AND pmk.essid_id IS NULL LIMIT 250000;",cur_essid);
 			sql_exec(db,sql);
 			sqlite3_free(sql);
-		} while (query_int(db,"SELECT COUNT(*) FROM workbench INNER JOIN essid ON essid.essid_id = workbench.essid_id INNER JOIN passwd ON passwd.passwd_id = workbench.passwd_id;") > 0);
+		} while (!exit_airolib && query_int(db,"SELECT COUNT(*) FROM workbench INNER JOIN essid ON essid.essid_id = workbench.essid_id INNER JOIN passwd ON passwd.passwd_id = workbench.passwd_id;") > 0);
 
 		cur_essid = query_int(db,"SELECT essid.essid_id FROM essid LEFT JOIN pmk USING (essid_id) WHERE VERIFY_ESSID(essid.essid) == 0 GROUP BY essid.essid_id HAVING COUNT(pmk.essid_id) < (SELECT COUNT(*) FROM passwd) ORDER BY essid.prio,COUNT(pmk.essid_id),RANDOM() LIMIT 1;");
 		if (cur_essid == 0) {
@@ -579,7 +604,7 @@ int import_cowpatty(sqlite3* db, char* filename) {
 
 	printf("Reading...\n");
 	
-	while ((rec = read_next_cowpatty_record(hashdb))) {
+	while (!exit_airolib && (rec = read_next_cowpatty_record(hashdb))) {
 		if (verify_passwd(rec->word) == 0) {
 			sqlite3_bind_text(stmt, 1, rec->word, strlen(rec->word), SQLITE_TRANSIENT);
 			sqlite3_bind_blob(stmt, 2, &rec->pmk, sizeof(rec->pmk), SQLITE_TRANSIENT);
@@ -662,7 +687,7 @@ int import_ascii(sqlite3* db, const char* mode, const char* filename) {
 
 	sql_exec(db, "BEGIN;");
 	printf("Reading file...\n");
-	while (fgets(buffer, sizeof(buffer), f) != 0) {
+	while (!exit_airolib && fgets(buffer, sizeof(buffer), f) != 0) {
 		int i = strlen(buffer);
 		if (buffer[i-1] == '\n') buffer[--i] = '\0';
 		if (buffer[i-1] == '\r') buffer[--i] = '\0';
@@ -688,7 +713,7 @@ int import_ascii(sqlite3* db, const char* mode, const char* filename) {
 	}
 	sqlite3_finalize(stmt);
 
-	if (!feof(f)) {
+	if (!feof(f) && !exit_airolib) {
 		printf("Error while reading file.\n");
 		sql_exec(db,"ROLLBACK;");
 		fclose(f);
@@ -877,6 +902,7 @@ int check_for_db(sqlite3 ** db, const char * filename, int can_create, int reado
 int main(int argc, char **argv) {
 	sqlite3 *db;
 	int option_index, option;
+    exit_airolib = 0;
 
 	if( argc < 3 ){
 		print_help(NULL);
@@ -911,6 +937,10 @@ int main(int argc, char **argv) {
 	// Tell Libgcrypt that initialization has completed.
 	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
+
+	signal( SIGINT,  sighandler );
+	signal( SIGQUIT, sighandler );
+	signal( SIGTERM, sighandler );
 
 	option = getopt_long( argc, argv, "bc:d:e:hi:s:t:v:", long_options, &option_index );
 
