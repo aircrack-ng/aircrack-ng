@@ -97,7 +97,7 @@ void ac_session_free(struct session ** s)
 }
 
 
-struct session * ac_session_new()
+struct session * ac_session_new(void)
 {
     return (struct session *)calloc(1, sizeof(struct session));
 }

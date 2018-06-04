@@ -52,7 +52,7 @@ struct session {
     pthread_mutex_t mutex; // Locking for when updating wordlist settings and saving file
 };
 
-struct session * ac_session_new();
+struct session * ac_session_new(void);
 int ac_session_destroy(struct session * s);
 void ac_session_free(struct session ** s);
 int ac_session_init(struct session * s);
