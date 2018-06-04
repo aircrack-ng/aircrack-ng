@@ -93,6 +93,11 @@ void dump_print( int ws_row, int ws_col, int if_num );
 
 static int is_background()
 {
+	// Allows to force background/foreground mode
+	if (G.background_mode != -1) {
+		return G.background_mode;
+	}
+
 	pid_t grp = tcgetpgrp(STDIN_FILENO);
 	if(grp == -1) {
 		// Piped
@@ -631,6 +636,7 @@ char usage[] =
 "                              fixed channel <interface>: -1\n"
 "      --write-interval\n"
 "                  <seconds> : Output file(s) write interval in seconds\n"
+"      --background <enable> : Override background detection.\n"
 "\n"
 "  Filter options:\n"
 "      --encrypt   <suite>   : Filter APs by cipher suite\n"
@@ -6452,6 +6458,7 @@ int main( int argc, char *argv[] )
         {"uptime",   0, 0, 'U'},
         {"write-interval", 1, 0, 'I'},
         {"wps",  0, 0, 'W'},
+        {"background", 1, 0, 'K'},
         {0,          0, 0,  0 }
     };
 
@@ -6542,6 +6549,7 @@ int main( int argc, char *argv[] )
     G.file_write_interval = 5; // Write file every 5 seconds by default
     G.maxsize_wps_seen  =  6;
     G.show_wps     = 0;
+    G.background_mode = -1;
 #ifdef CONFIG_LIBNL
     G.htval        = CHANNEL_NO_HT;
 #endif
@@ -6626,7 +6634,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:W",
+                        "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -6647,6 +6655,17 @@ int main( int argc, char *argv[] )
                 printf("\"%s --help\" for help.\n", argv[0]);
                 return( 1 );
 
+            case 'K':
+            {
+                char * invalid_str = NULL;
+                long int bg_mode = strtol(optarg, &invalid_str, 10);
+                if ((invalid_str && *invalid_str != 0) || !(bg_mode == 0 || bg_mode == 1)) {
+                    printf("Invalid background mode. Must be '0' or '1'\n");
+                    exit ( 1 );
+                }
+                G.background_mode = (char)bg_mode;
+                break;
+            }   
             case 'I':
 
             	if (!is_string_number(optarg)) {

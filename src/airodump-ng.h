@@ -509,6 +509,7 @@ struct globals
 #ifdef CONFIG_LIBNL
     int htval;
 #endif
+	char background_mode;
 }
 G;
 
