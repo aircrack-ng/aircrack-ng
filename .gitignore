@@ -53,3 +53,5 @@ test/test-hex_string_to_array
 /.idea
 CMakeLists.txt
 /cmake-build-*
+*.gcda
+*.gcno
