@@ -63,14 +63,10 @@
 #include "johnswap.h"
 #include "aircrack-ng.h"
 
-extern unsigned char *xpmk1[MAX_THREADS];
-extern unsigned char *xpmk2[MAX_THREADS];
-extern unsigned char *xpmk3[MAX_THREADS];
-extern unsigned char *xpmk4[MAX_THREADS];
-extern unsigned char *xpmk5[MAX_THREADS];
-extern unsigned char *xpmk6[MAX_THREADS];
-extern unsigned char *xpmk7[MAX_THREADS];
-extern unsigned char *xpmk8[MAX_THREADS];
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern unsigned char *xsse_hash1[MAX_THREADS];
 extern unsigned char *xsse_crypt1[MAX_THREADS];
 extern unsigned char *xsse_crypt2[MAX_THREADS];
@@ -88,7 +84,17 @@ typedef struct {
 	uint8_t  v[PLAINTEXT_LENGTH + 1];
 } wpapsk_password;
 
-extern wpapsk_password *wpapass[MAX_THREADS];
+typedef struct
+{
+  uint32_t v[8];
+} wpapsk_hash;
+
+#ifdef SIMD_CORE
+extern unsigned char *pmk[MAX_THREADS];
+#endif
+
+// inbuffer
+extern wpapsk_password *wpapass[MAX_THREADS];  /// Table for candidate passwords
 
 int count;
 
@@ -107,6 +113,10 @@ static MAYBE_INLINE void prf_512(uint32_t * key, uint8_t * data, uint32_t * ret)
 	HMAC_Update(&ctx, buff, 100);
 	HMAC_Final(&ctx, (unsigned char *) ret, NULL);
 	HMAC_CTX_cleanup(&ctx);
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif
 

@@ -4246,7 +4246,9 @@ int crack_wpa_thread( void *arg )
 	FILE * keyFile;
 	char  essid[36];
 	char  key[8][MAX_THREADS];
-	unsigned char pmk[8][MAX_THREADS];
+#ifdef OLD_SSE_CORE
+unsigned char pmk[MAX_THREADS][64][8];
+#endif
 
 	unsigned char pke[100];
 	unsigned char ptk[8][80];
@@ -4336,23 +4338,19 @@ int crack_wpa_thread( void *arg )
 		if (cpuinfo.simdsize >= 4) {
 #ifndef OLD_SSE_CORE
 			init_wpapsk(key, essid, threadid);
-//			init_wpapsk(key[0], key[1], key[2], key[3], essid, threadid);
-			memcpy(pmk[0], xpmk1[threadid], 32);
-			memcpy(pmk[1], xpmk2[threadid], 32);
-			memcpy(pmk[2], xpmk3[threadid], 32);
-			memcpy(pmk[3], xpmk4[threadid], 32);
-			if (cpuinfo.simdsize == 8) {
-				memcpy(pmk[4], xpmk5[threadid], 32);
-				memcpy(pmk[5], xpmk6[threadid], 32);
-				memcpy(pmk[6], xpmk7[threadid], 32);
-				memcpy(pmk[7], xpmk8[threadid], 32);
-			}
 #else
-			calc_4pmk(key[0], key[1], key[2], key[3], essid, pmk[0], pmk[1], pmk[2], pmk[3]);
+			calc_4pmk(key[0], key[1], key[2], key[3], essid,
+					(unsigned char *) pmk[threadid],
+					(unsigned char *)(pmk[threadid] +
+									  (sizeof(wpapsk_hash) * 1)),
+					(unsigned char *)(pmk[threadid] +
+									  (sizeof(wpapsk_hash) * 2)),
+					(unsigned char *)(pmk[threadid] +
+									  (sizeof(wpapsk_hash) * 3)));
 #endif
-		} else
+                } else
 			for(j=0; j < cpuinfo.simdsize; ++j)
-				calc_pmk( key[j], essid, pmk[j] );
+				calc_pmk( key[j], essid, (unsigned char*) (pmk[threadid] + (sizeof(wpapsk_hash) * j)) );
 
 		for(j=0; j < cpuinfo.simdsize; ++j)
 		{
@@ -4361,7 +4359,7 @@ int crack_wpa_thread( void *arg )
 			for (i = 0; i < 4; i++)
 			{
 				pke[99] = i;
-				HMAC(EVP_sha1(), pmk[j], 32, pke, 100, ptk[j] + i * 20, NULL);
+				HMAC(EVP_sha1(), pmk[threadid] + (sizeof(wpapsk_hash) * j), 32, pke, 100, ptk[j] + i * 20, NULL);
 			}
 
 			if (ap->wpa.keyver == 1)
@@ -4422,7 +4420,7 @@ int crack_wpa_thread( void *arg )
 				len = strlen(key[j]);
 				if (len > 64 ) len = 64;
 				if (len < 8) len = 8;
-				show_wpa_stats( key[j], len, pmk[j], ptk[j], mic[j], 1 );
+				show_wpa_stats( key[j], len, (unsigned char*)(pmk[threadid] + (sizeof(wpapsk_hash) * j)), ptk[j], mic[j], 1 );
 
 				if (opt.l33t)
 				{
@@ -4466,7 +4464,7 @@ int crack_wpa_thread( void *arg )
 			if (len > 64 ) len = 64;
 			if (len < 8) len = 8;
 
-			show_wpa_stats(key[0], len, pmk[0], ptk[0], mic[0], 0);
+			show_wpa_stats(key[0], len, (unsigned char*)(pmk[threadid]), ptk[0], mic[0], 0);
 		}
 	}
 

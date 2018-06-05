@@ -128,14 +128,8 @@ char itoa64[64] = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvw
 char atoi64[0x100];
 
 wpapsk_password *wpapass[MAX_THREADS]	= { 0 };
-unsigned char *xpmk1[MAX_THREADS]	= { NULL };
-unsigned char *xpmk2[MAX_THREADS]	= { NULL };
-unsigned char *xpmk3[MAX_THREADS]	= { NULL };
-unsigned char *xpmk4[MAX_THREADS]	= { NULL };
-unsigned char *xpmk5[MAX_THREADS]	= { NULL };
-unsigned char *xpmk6[MAX_THREADS]	= { NULL };
-unsigned char *xpmk7[MAX_THREADS]	= { NULL };
-unsigned char *xpmk8[MAX_THREADS]	= { NULL };
+
+unsigned char *pmk[MAX_THREADS] = { NULL };
 unsigned char *xsse_hash1[MAX_THREADS]	= { NULL };
 unsigned char *xsse_crypt1[MAX_THREADS] = { NULL };
 unsigned char *xsse_crypt2[MAX_THREADS] = { NULL };
@@ -153,14 +147,7 @@ void init_ssecore(int threadid) {
 		xsse_hash1[threadid]    = mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
 		xsse_crypt1[threadid]   = mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
 		xsse_crypt2[threadid]   = mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
-		xpmk1[threadid]		= mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
-		xpmk2[threadid]		= mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
-		xpmk3[threadid]		= mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
-		xpmk4[threadid]		= mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
-		xpmk5[threadid]		= mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
-		xpmk6[threadid]		= mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
-		xpmk7[threadid]		= mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
-		xpmk8[threadid]		= mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
+		pmk[threadid]		=  mem_calloc_align(MAX_KEYS_PER_CRYPT, sizeof(wpapsk_hash), MEM_ALIGN_SIMD);
 		wpapass[threadid]	= mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
 	}
 }
@@ -170,14 +157,7 @@ void free_ssecore(int threadid) {
 		MEM_FREE(xsse_hash1[threadid]);
 		MEM_FREE(xsse_crypt1[threadid]);
 		MEM_FREE(xsse_crypt2[threadid]);
-		MEM_FREE(xpmk1[threadid]);
-		MEM_FREE(xpmk2[threadid]);
-		MEM_FREE(xpmk3[threadid]);
-		MEM_FREE(xpmk4[threadid]);
-		MEM_FREE(xpmk5[threadid]);
-		MEM_FREE(xpmk6[threadid]);
-		MEM_FREE(xpmk7[threadid]);
-		MEM_FREE(xpmk8[threadid]);
+		MEM_FREE(pmk[threadid]);
 		MEM_FREE(wpapass[threadid]);
 	}
 }
@@ -200,7 +180,6 @@ static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_
 	int salt_length = strlen(salt);
 	int slen = salt_length + 4;
 	int loops = (count+NBKEYS-1) / NBKEYS;
-	uint8_t tmpbuf[32];
 	char xsalt[32+4];
 
 	unsigned char *sse_hash1	 = NULL;
@@ -397,80 +376,10 @@ static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_
 		}
 
 		for (j = 0; j < NBKEYS; ++j) {
-			// the BE() convert should be done in binary, BUT since we use 'common' code for
-			// binary(), which is shared between CPU and CUDA/OPenCL, we have to do it here.
-			memset(tmpbuf, 0, 32);
-			memcpy(tmpbuf, outbuf[j].c, 32);
+			//printf("pmk[threadid][%u] = %p\n", j, (void*) (pmk[threadid] + (64*j)));
 
-#ifdef XDEBUG
-			printf("%d tmpbuf = ", threadid);
-			for (prloop = 0; prloop < 32; prloop++)
-				printf( "%02X:", tmpbuf[prloop] );
-			printf("\n");
-#endif
-
-			if (j == 0) {
-				memcpy(xpmk1[threadid], tmpbuf, 32);
-#ifdef XDEBUG
-				printf("xpmk1[%d] = ", threadid);
-				for (prloop = 0; prloop < 32; prloop++)
-					printf( "%02X:", xpmk1[threadid][prloop] );
-				printf("\n");
-#endif
-
-				alter_endianity_to_BE(xpmk1[threadid],8);
-
-			}
-			if (j == 1) {
-				memcpy(xpmk2[threadid], tmpbuf, 32);
-#ifdef XDEBUG
-				printf("xpmk2[%d] = ", threadid);
-				for (prloop = 0; prloop < 32; prloop++)
-					printf( "%02X:", xpmk2[threadid][prloop] );
-				printf("\n");
-#endif
-
-				alter_endianity_to_BE(xpmk2[threadid],8);
-			}
-			if (j == 2) {
-				memcpy(xpmk3[threadid], tmpbuf, 32);
-#ifdef XDEBUG
-				printf("xpmk3[%d] = ", threadid);
-				for (prloop = 0; prloop < 32; prloop++)
-					printf( "%02X:", xpmk3[threadid][prloop] );
-				printf("\n");
-#endif
-
-				alter_endianity_to_BE(xpmk3[threadid],8);
-			}
-
-			if (j == 3) {
-				memcpy(xpmk4[threadid], tmpbuf, 32);
-#ifdef XDEBUG
-				printf("xpmk4[%d] = ", threadid);
-				for (prloop = 0; prloop < 32; prloop++)
-					printf( "%02X:", xpmk4[threadid][prloop] );
-				printf("\n");
-#endif
-
-				alter_endianity_to_BE(xpmk4[threadid],8);
-			}
-			if (j == 4) {
-				memcpy(xpmk5[threadid], tmpbuf, 32);
-				alter_endianity_to_BE(xpmk5[threadid],8);
-			}
-			if (j == 5) {
-				memcpy(xpmk6[threadid], tmpbuf, 32);
-				alter_endianity_to_BE(xpmk6[threadid],8);
-			}
-			if (j == 6) {
-				memcpy(xpmk7[threadid], tmpbuf, 32);
-				alter_endianity_to_BE(xpmk7[threadid],8);
-			}
-			if (j == 7) {
-				memcpy(xpmk8[threadid], tmpbuf, 32);
-				alter_endianity_to_BE(xpmk8[threadid],8);
-			}
+			memcpy(pmk[threadid] + (sizeof(wpapsk_hash) * j), outbuf[j].c, 32);
+			alter_endianity_to_BE((pmk[threadid] + (sizeof(wpapsk_hash) * j)), 8);
 		}
 	}
 
@@ -493,30 +402,14 @@ int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int threadid) {
 #endif
 	int i = 0;
 	int count = 0;
-	unsigned char *lpmk1 = NULL, *lpmk2 = NULL, *lpmk3 = NULL, *lpmk4 = NULL;
-	unsigned char *lpmk5 = NULL, *lpmk6 = NULL, *lpmk7 = NULL, *lpmk8 = NULL;
 	wpapsk_password	*inbuffer;	//table for candidate passwords (pointer to threads copy)
 
-	lpmk1		= xpmk1[threadid];
-	lpmk2		= xpmk2[threadid];
-	lpmk3		= xpmk3[threadid];
-	lpmk4		= xpmk4[threadid];
-	lpmk5		= xpmk5[threadid];
-	lpmk6		= xpmk6[threadid];
-	lpmk7		= xpmk7[threadid];
-	lpmk8		= xpmk8[threadid];
 	inbuffer	= wpapass[threadid];
 
-	memset(lpmk1, 0, 32);
-	memset(lpmk2, 0, 32);
-	memset(lpmk3, 0, 32);
-	memset(lpmk4, 0, 32);
-	memset(lpmk5, 0, 32);
-	memset(lpmk6, 0, 32);
-	memset(lpmk7, 0, 32);
-	memset(lpmk8, 0, 32);
+	// clear entire output table
+	memset(pmk[threadid], 0, (sizeof(wpapsk_hash) * (cpuinfo.simdsize)));
 
-	for (; i < cpuinfo.simdsize; i++) {
+	for (i = 0; i < cpuinfo.simdsize; i++) {
 		memset(inbuffer[i].v, 0, sizeof(inbuffer[i].v));
 		inbuffer[i].length = 0;
 	}
