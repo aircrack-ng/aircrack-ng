@@ -147,7 +147,7 @@ void init_ssecore(int threadid) {
 		xsse_hash1[threadid]    = mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
 		xsse_crypt1[threadid]   = mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
 		xsse_crypt2[threadid]   = mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
-		pmk[threadid]		=  mem_calloc_align(MAX_KEYS_PER_CRYPT, sizeof(wpapsk_hash), MEM_ALIGN_SIMD);
+		pmk[threadid]		=  mem_calloc_align(NBKEYS, sizeof(wpapsk_hash), MEM_ALIGN_SIMD);
 		wpapass[threadid]	= mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
 	}
 }
