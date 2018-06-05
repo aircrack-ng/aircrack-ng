@@ -44,7 +44,7 @@ unsigned char ids[8192];
 unsigned short last_id;
 int wrap;
 
-int is_dup(unsigned short id)
+static int is_dup(unsigned short id)
 {
 	int idx = id/8;
 	int bit = id % 8;
@@ -57,7 +57,7 @@ int is_dup(unsigned short id)
 	return 0;
 }
 
-int handle(int s, unsigned char* data, int len, struct sockaddr_in *s_in)
+static int handle(int s, unsigned char* data, int len, struct sockaddr_in *s_in)
 {
 	char buf[2048];
 	unsigned short *cmd = (unsigned short *)buf;
@@ -114,7 +114,7 @@ int handle(int s, unsigned char* data, int len, struct sockaddr_in *s_in)
 	return 0;
 }
 
-void handle_dude(int dude, int udp)
+static void handle_dude(int dude, int udp)
 {
 	unsigned char buf[2048];
 	int rc;
@@ -176,7 +176,7 @@ void handle_dude(int dude, int udp)
 	close(dude);
 }
 
-void drop_privs()
+static void drop_privs(void)
 {
 	if (chroot(".") == -1)
 		err(1, "chroot()");
@@ -191,7 +191,7 @@ void drop_privs()
 		err(1, "setuid()");
 }
 
-void usage()
+static void usage(void)
 {
     char *version_info = getVersion("Buddy-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
