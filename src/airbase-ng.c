@@ -1547,6 +1547,12 @@ int read_prga(unsigned char **dest, char *file)
 
     fseek(f, 0, SEEK_END);
     size = ftell(f);
+    if (size <= 0) {
+        printf("File %s empty or failed to get size\n", file);
+        fclose(f);
+        return ( 1 );
+    }
+
     rewind(f);
 
     if(size > 1500) size = 1500;
