@@ -62,3 +62,6 @@ Makefile
 !/scripts/airgraph-ng/lib/Makefile
 /scripts/airmon-ng
 /src/aircrack-ng--*
+/benchmark.csv
+/.cccc
+/cccc.opt
