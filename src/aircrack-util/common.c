@@ -184,7 +184,7 @@ int get_ram_size(void) {
 	}
 
 	memset(str, 0x00, sizeof(str));
-	while ((fscanf(fp, "%s %d", str, &val)) != 0 && ret == -1) {
+	while (ret == -1 && !feof(fp) && fscanf(fp, "%s %d", str, &val) != 0) {
 		if (!(strncmp(str, "MemTotal", 8))) {
 			ret = val;
 		}
