@@ -306,11 +306,68 @@ struct AP_info* append_aps(struct AP_info* new_aps) {
     return new_tail;
 }
 
+void ac_aplist_free(struct AP_info *ap_1st)
+{
+	struct AP_info *ap_cur = ap_1st, *ap_next = NULL;
+	struct ST_info *st_tmp = NULL;
+
+	while( ap_cur != NULL )
+	{
+		if( ap_cur->ivbuf != NULL )
+		{
+			free(ap_cur->ivbuf);
+			ap_cur->ivbuf = NULL;
+		}
+
+
+		while (ap_cur->st_1st != NULL) {
+			st_tmp = ap_cur->st_1st;
+			ap_cur->st_1st = ap_cur->st_1st->next;
+			free(st_tmp);
+			st_tmp = NULL;
+		}
+
+		uniqueiv_wipe( ap_cur->uiv_root );
+		ap_cur->uiv_root = NULL;
+
+		if( ap_cur->ptw_clean != NULL )
+		{
+			if( ap_cur->ptw_clean->allsessions != NULL )
+			{
+				free(ap_cur->ptw_clean->allsessions);
+				ap_cur->ptw_clean->allsessions=NULL;
+			}
+			free(ap_cur->ptw_clean);
+			ap_cur->ptw_clean = NULL;
+		}
+
+		if( ap_cur->ptw_vague != NULL )
+		{
+			if( ap_cur->ptw_vague->allsessions != NULL )
+			{
+				free(ap_cur->ptw_vague->allsessions);
+				ap_cur->ptw_vague->allsessions = NULL;
+			}
+			free(ap_cur->ptw_vague);
+			ap_cur->ptw_vague = NULL;
+		}
+
+		ap_cur = ap_cur->next;
+	}
+
+	ap_cur = ap_1st;
+
+	while( ap_cur != NULL )
+	{
+		ap_next = ap_cur;
+		ap_cur = ap_cur->next;
+		free(ap_next);
+		ap_next = NULL;
+	}
+}
+
 void clean_exit(int ret)
 {
-	struct AP_info *ap_cur;
-	struct AP_info *ap_next;
-	struct ST_info *st_tmp;
 	int i=0;
 // 	int j=0, k=0, attack=0;
 	int child_pid;
@@ -373,61 +430,8 @@ void clean_exit(int ret)
 		wep.ivbuf = NULL;
 	}
 
-	ap_cur = ap_1st;
-
-	while( ap_cur != NULL )
-	{
-		if( ap_cur->ivbuf != NULL )
-		{
-			free(ap_cur->ivbuf);
-			ap_cur->ivbuf = NULL;
-		}
-
-
-		while (ap_cur->st_1st != NULL) {
-			st_tmp = ap_cur->st_1st;
-			ap_cur->st_1st = ap_cur->st_1st->next;
-			free(st_tmp);
-			st_tmp = NULL;
-		}
-
-		uniqueiv_wipe( ap_cur->uiv_root );
-		ap_cur->uiv_root = NULL;
-
-		if( ap_cur->ptw_clean != NULL )
-		{
-			if( ap_cur->ptw_clean->allsessions != NULL )
-			{
-				free(ap_cur->ptw_clean->allsessions);
-				ap_cur->ptw_clean->allsessions=NULL;
-			}
-			free(ap_cur->ptw_clean);
-			ap_cur->ptw_clean = NULL;
-		}
-
-		if( ap_cur->ptw_vague != NULL )
-		{
-			if( ap_cur->ptw_vague->allsessions != NULL )
-			{
-				free(ap_cur->ptw_vague->allsessions);
-				ap_cur->ptw_vague->allsessions = NULL;
-			}
-			free(ap_cur->ptw_vague);
-			ap_cur->ptw_vague = NULL;
-		}
-
-		ap_cur = ap_cur->next;
-	}
-
-	ap_cur = ap_1st;
-
-	while( ap_cur != NULL )
-	{
-		ap_next = ap_cur;
-		ap_cur = ap_cur->next;
-		free(ap_next);
-		ap_next = NULL;
-	}
+	ac_aplist_free(ap_1st);
+	ap_1st = NULL;
 
 // 	attack = A_s5_1;
 // 	printf("Please wait for evaluation...\n");
@@ -1908,66 +1912,6 @@ void read_thread( void *arg )
 	//everything is going down
 	kill( 0, SIGTERM );
 	_exit( FAILURE );
-}
-
-void ac_aplist_free(struct AP_info *ap_1st)
-{
-	struct AP_info *ap_cur = ap_1st, *ap_next = NULL;
-	struct ST_info *st_tmp = NULL;
-
-	while( ap_cur != NULL )
-	{
-		if( ap_cur->ivbuf != NULL )
-		{
-			free(ap_cur->ivbuf);
-			ap_cur->ivbuf = NULL;
-		}
-
-
-		while (ap_cur->st_1st != NULL) {
-			st_tmp = ap_cur->st_1st;
-			ap_cur->st_1st = ap_cur->st_1st->next;
-			free(st_tmp);
-			st_tmp = NULL;
-		}
-
-		uniqueiv_wipe( ap_cur->uiv_root );
-		ap_cur->uiv_root = NULL;
-
-		if( ap_cur->ptw_clean != NULL )
-		{
-			if( ap_cur->ptw_clean->allsessions != NULL )
-			{
-				free(ap_cur->ptw_clean->allsessions);
-				ap_cur->ptw_clean->allsessions=NULL;
-			}
-			free(ap_cur->ptw_clean);
-			ap_cur->ptw_clean = NULL;
-		}
-
-		if( ap_cur->ptw_vague != NULL )
-		{
-			if( ap_cur->ptw_vague->allsessions != NULL )
-			{
-				free(ap_cur->ptw_vague->allsessions);
-				ap_cur->ptw_vague->allsessions = NULL;
-			}
-			free(ap_cur->ptw_vague);
-			ap_cur->ptw_vague = NULL;
-		}
-
-		ap_cur = ap_cur->next;
-	}
-
-	ap_cur = ap_1st;
-
-	while( ap_cur != NULL )
-	{
-		ap_next = ap_cur;
-		ap_cur = ap_cur->next;
-		free(ap_next);
-		ap_next = NULL;
-	}
 }
 
 void check_thread( void *arg )
