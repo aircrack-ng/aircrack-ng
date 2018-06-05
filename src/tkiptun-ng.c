@@ -3085,14 +3085,19 @@ int make_arp_request(unsigned char *h80211, unsigned char *bssid, unsigned char 
     return 0;
 }
 
-void save_prga(char *filename, unsigned char *iv, unsigned char *prga, int prgalen)
+int save_prga(char *filename, unsigned char *iv, unsigned char *prga, int prgalen)
 {
 	size_t unused;
     FILE *xorfile;
     xorfile = fopen(filename, "wb");
+    if (xorfile == NULL) {
+        return 1;
+    }
     unused = fwrite (iv, 1, 4, xorfile);
     unused = fwrite (prga, 1, prgalen, xorfile);
     fclose (xorfile);
+
+    return 0;
 }
 
 int do_attack_fragment()
@@ -3600,11 +3605,12 @@ int do_attack_fragment()
                   "fragment-%02d%02d-%02d%02d%02d.xor",
                   lt->tm_mon + 1, lt->tm_mday,
                   lt->tm_hour, lt->tm_min, lt->tm_sec );
-        save_prga(strbuf, iv, prga, length);
-
         printf( "Saving keystream in %s\n", strbuf );
-        printf("Now you can build a packet with packetforge-ng out of that %d bytes keystream\n", length);
-
+        if (save_prga(strbuf, iv, prga, length)) {
+            printf("Failed saving keystream to file\n");
+        } else {
+            printf("Now you can build a packet with packetforge-ng out of that %d bytes keystream\n", length);
+        }
         done=1;
 
     }
