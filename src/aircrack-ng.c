@@ -2714,9 +2714,6 @@ void check_thread( void *arg )
 		buffer = NULL;
 	}
 
-	ac_aplist_free(ap_cur);
-	ap_cur = NULL;
-
 	return;
 }
 
@@ -5424,6 +5421,8 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
         }
     }
 
+    free(all);
+
     if (!len)
             return FAILURE;
 
@@ -5438,7 +5437,7 @@ int main( int argc, char *argv[] )
 	int i, n, ret, option, j, ret1, nbMergeBSSID, unused;
 	int cpu_count, showhelp, z, zz, forceptw;
 	char *s, buf[128];
-	struct AP_info *ap_cur;
+	struct AP_info *ap_cur = NULL;
 	int old=0;
 	char essid[33];
     int restore_session = 0;
@@ -6267,6 +6266,7 @@ usage:
 			}
 		}
 
+		ac_aplist_free(ap_1st);
 		ap_1st = NULL;
 		optind = old;
 		id=0;
