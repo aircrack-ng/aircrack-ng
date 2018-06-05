@@ -1910,6 +1910,66 @@ void read_thread( void *arg )
 	_exit( FAILURE );
 }
 
+void ac_aplist_free(struct AP_info *ap_1st)
+{
+	struct AP_info *ap_cur = ap_1st, *ap_next = NULL;
+	struct ST_info *st_tmp = NULL;
+
+	while( ap_cur != NULL )
+	{
+		if( ap_cur->ivbuf != NULL )
+		{
+			free(ap_cur->ivbuf);
+			ap_cur->ivbuf = NULL;
+		}
+
+
+		while (ap_cur->st_1st != NULL) {
+			st_tmp = ap_cur->st_1st;
+			ap_cur->st_1st = ap_cur->st_1st->next;
+			free(st_tmp);
+			st_tmp = NULL;
+		}
+
+		uniqueiv_wipe( ap_cur->uiv_root );
+		ap_cur->uiv_root = NULL;
+
+		if( ap_cur->ptw_clean != NULL )
+		{
+			if( ap_cur->ptw_clean->allsessions != NULL )
+			{
+				free(ap_cur->ptw_clean->allsessions);
+				ap_cur->ptw_clean->allsessions=NULL;
+			}
+			free(ap_cur->ptw_clean);
+			ap_cur->ptw_clean = NULL;
+		}
+
+		if( ap_cur->ptw_vague != NULL )
+		{
+			if( ap_cur->ptw_vague->allsessions != NULL )
+			{
+				free(ap_cur->ptw_vague->allsessions);
+				ap_cur->ptw_vague->allsessions = NULL;
+			}
+			free(ap_cur->ptw_vague);
+			ap_cur->ptw_vague = NULL;
+		}
+
+		ap_cur = ap_cur->next;
+	}
+
+	ap_cur = ap_1st;
+
+	while( ap_cur != NULL )
+	{
+		ap_next = ap_cur;
+		ap_cur = ap_cur->next;
+		free(ap_next);
+		ap_next = NULL;
+	}
+}
+
 void check_thread( void *arg )
 {
 	/* in case you see valgrind warnings, read the comment on top
@@ -1932,8 +1992,8 @@ void check_thread( void *arg )
 	struct ivs2_filehdr fivs2;
 	struct pcap_pkthdr pkh;
 	struct pcap_file_header pfh;
-	struct AP_info *ap_prv, *ap_cur;
-	struct ST_info *st_prv, *st_cur;
+	struct AP_info *ap_prv, *ap_cur = NULL;
+	struct ST_info *st_prv, *st_cur = NULL;
 
 	ap_cur = NULL;
 
@@ -2569,6 +2629,8 @@ void check_thread( void *arg )
 		if( st_cur == NULL )
 		{
 			pthread_mutex_unlock( &mx_apl );
+			ac_aplist_free(ap_cur);
+			ap_cur = NULL;
 			continue;
 		}
 
@@ -2707,6 +2769,9 @@ void check_thread( void *arg )
 		free(buffer);
 		buffer = NULL;
 	}
+
+	ac_aplist_free(ap_cur);
+	ap_cur = NULL;
 
 	return;
 }
@@ -5209,6 +5274,7 @@ int set_dicts(const char* args)
 {
 	int len;
 	char * optargs = strdup(args);
+	char * poptargs = optargs;
 	char *optarg;
 
 	if (optargs == NULL) {
@@ -5218,7 +5284,8 @@ int set_dicts(const char* args)
 
 	opt.dictfinish = opt.totaldicts = opt.nbdict = 0;
 
-	while ((opt.nbdict < MAX_DICTS) && (optarg = strsep(&optargs, ",")) != NULL)  {
+	// Use a temporary poptargs var because \a strsep trashes the value.
+	while ((opt.nbdict < MAX_DICTS) && (optarg = strsep(&poptargs, ",")) != NULL)  {
 		if (!strncasecmp(optarg, "h:", 2)) {
 			optarg += 2;
 			opt.hexdict[opt.nbdict] = 1;
