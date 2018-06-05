@@ -1310,7 +1310,7 @@ char * get_linux_driver(const char * iface)
 
     // Read the link path
     ssize_t len = readlink(path, link, sizeof(link));
-    if (len < 1) {
+    if (len < 1 || len >= PATH_MAX) {
         return NULL;
     }
     memset(link + len, 0, sizeof(link) - len);
