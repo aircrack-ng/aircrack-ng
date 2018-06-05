@@ -171,8 +171,9 @@ int get_ram_size(void) {
 	MEMORYSTATUSEX statex;
 	statex.dwLength = sizeof(statex);
 
-	GlobalMemoryStatusEx(&statex);
-	ret = (int)(statex.ullTotalPhys/1024);
+	if (GlobalMemoryStatusEx(&statex)) {
+		ret = (int)(statex.ullTotalPhys/1024);
+	}
 #else
 	FILE *fp;
 	char str[100+1];
