@@ -175,7 +175,7 @@ int get_ram_size(void) {
 	ret = (int)(statex.ullTotalPhys/1024);
 #else
 	FILE *fp;
-	char str[256];
+	char str[100+1];
 	int val = 0;
 
 	if (!(fp = fopen("/proc/meminfo", "r"))) {
@@ -184,7 +184,7 @@ int get_ram_size(void) {
 	}
 
 	memset(str, 0x00, sizeof(str));
-	while (ret == -1 && !feof(fp) && fscanf(fp, "%s %d", str, &val) != 0) {
+	while (ret == -1 && !feof(fp) && fscanf(fp, "%100s %d", str, &val) != 0) {
 		if (!(strncmp(str, "MemTotal", 8))) {
 			ret = val;
 		}
