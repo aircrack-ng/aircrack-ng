@@ -99,7 +99,7 @@ then
     AS_VAR_PUSHDEF([CACHEVAR], [ax_cv_neon_[]_AC_LANG_ABBREV[]flags])
     AC_CACHE_CHECK([whether _AC_LANG compiler supports NEON instructions], CACHEVAR, [
         ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
-        _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS $arm_neon_[]_AC_LANG_ABBREV[]flags"
+        _AC_LANG_PREFIX[]FLAGS="$arm_neon_[]_AC_LANG_ABBREV[]flags $[]_AC_LANG_PREFIX[]FLAGS"
         AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #if !defined(__ARM_NEON) && !defined(__ARM_NEON__) && !defined(__aarch64) && !defined(__aarch64__)
 #error macro not defined
