@@ -3,16 +3,6 @@ version: 1.0.{build}
 pull_requests:
   do_not_increment_build_number: true
 
-
-notifications:
-  - provider: Email
-    to:
-      - z47hKB5UyxxOoso13EBTQw==
-      - eQogshAIokWFCAXh723hIr0IyL9aTRJrbEzzLlpi5vI
-    on_build_success: false
-    on_build_failure: true
-    on_build_status_changed: false
-
 image: Visual Studio 2017
 
 configuration: Release
