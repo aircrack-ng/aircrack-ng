@@ -412,7 +412,13 @@ pMAC_t      rClient;
 pFrag_t     rFragment;
 pCF_t       rCF;
 
-void sighandler( int signum )
+// Threads
+void beacon_thread( void *arg );
+void caffelatte_thread( void );
+void cfrag_thread( void );
+
+/*
+static void sighandler( int signum )
 {
     if( signum == SIGINT )
         ctrl_c++;
@@ -420,8 +426,9 @@ void sighandler( int signum )
     if( signum == SIGALRM )
         alarmed++;
 }
+*/
 
-int addESSID(char* essid, int len, int expiration)
+static int addESSID(char* essid, int len, int expiration)
 {
     pESSID_t tmp;
 	pESSID_t cur;
@@ -477,7 +484,7 @@ int addESSID(char* essid, int len, int expiration)
     return 0;
 }
 
-int capture_packet(unsigned char* packet, int length)
+static int capture_packet(unsigned char* packet, int length)
 {
     struct pcap_pkthdr pkh;
     struct timeval tv;
@@ -546,7 +553,8 @@ int capture_packet(unsigned char* packet, int length)
     }
     return 0;
 }
-int dump_initialize( char *prefix )
+
+static int dump_initialize( char *prefix )
 {
     const size_t ADDED_LENGTH = 7;
     FILE *f;
@@ -620,7 +628,7 @@ int dump_initialize( char *prefix )
     return( 0 );
 }
 
-int addFrag(unsigned char* packet, unsigned char* smac, int len)
+static int addFrag(unsigned char* packet, unsigned char* smac, int len)
 {
     pFrag_t cur = rFragment;
     int seq, frag, wep, z, i;
@@ -742,7 +750,7 @@ int addFrag(unsigned char* packet, unsigned char* smac, int len)
     return 0;
 }
 
-int timeoutFrag()
+static int timeoutFrag(void)
 {
     pFrag_t old, cur = rFragment;
     struct timeval tv;
@@ -775,7 +783,7 @@ int timeoutFrag()
     return 0;
 }
 
-int delFrag(unsigned char* smac, int sequence)
+static int delFrag(unsigned char* smac, int sequence)
 {
     pFrag_t old, cur = rFragment;
     int i;
@@ -810,7 +818,7 @@ int delFrag(unsigned char* smac, int sequence)
     return 0;
 }
 
-unsigned char* getCompleteFrag(unsigned char* smac, int sequence, int *packetlen)
+static unsigned char* getCompleteFrag(unsigned char* smac, int sequence, int *packetlen)
 {
     pFrag_t old, cur = rFragment;
     int i, len=0;
@@ -904,7 +912,7 @@ unsigned char* getCompleteFrag(unsigned char* smac, int sequence, int *packetlen
     return packet;
 }
 
-int addMAC(pMAC_t pMAC, unsigned char* mac)
+static int addMAC(pMAC_t pMAC, unsigned char* mac)
 {
     pMAC_t cur = pMAC;
 
@@ -929,7 +937,8 @@ int addMAC(pMAC_t pMAC, unsigned char* mac)
     return 0;
 }
 
-int delESSID(char* essid, int len)
+/*
+static int delESSID(char* essid, int len)
 {
     pESSID_t old, cur;
 
@@ -972,9 +981,9 @@ int delESSID(char* essid, int len)
     pthread_mutex_unlock(&rESSIDmutex);
     return -1;
 }
+*/
 
-
-void flushESSID(void)
+static void flushESSID(void)
 {
     pESSID_t old;
 	pESSID_t cur;
@@ -1013,8 +1022,8 @@ void flushESSID(void)
     pthread_mutex_unlock(&rESSIDmutex);
 }
 
-
-int delMAC(pMAC_t pMAC, char* mac)
+/*
+static int delMAC(pMAC_t pMAC, char* mac)
 {
     pMAC_t old, cur = pMAC;
 
@@ -1041,8 +1050,9 @@ int delMAC(pMAC_t pMAC, char* mac)
 
     return -1;
 }
+*/
 
-int gotESSID(char* essid, int len)
+static int gotESSID(char* essid, int len)
 {
     pESSID_t old, cur;
 
@@ -1078,7 +1088,7 @@ int gotESSID(char* essid, int len)
     return 0;
 }
 
-int gotMAC(pMAC_t pMAC, unsigned char* mac)
+static int gotMAC(pMAC_t pMAC, unsigned char* mac)
 {
     pMAC_t cur = pMAC;
 
@@ -1101,7 +1111,7 @@ int gotMAC(pMAC_t pMAC, unsigned char* mac)
     return 0;
 }
 
-int getESSID(char *essid)
+static int getESSID(char *essid)
 {
     int len;
     pthread_mutex_lock(&rESSIDmutex);
@@ -1118,7 +1128,7 @@ int getESSID(char *essid)
     return len;
 }
 
-int getNextESSID(char *essid)
+static int getNextESSID(char *essid)
 {
     int len;
     pESSID_t cur;
@@ -1158,7 +1168,7 @@ int getNextESSID(char *essid)
     return len;
 }
 
-int getESSIDcount()
+static int getESSIDcount(void)
 {
     pESSID_t cur;
     int count=0;
@@ -1181,7 +1191,7 @@ int getESSIDcount()
     return count;
 }
 
-int getMACcount(pMAC_t pMAC)
+static int getMACcount(pMAC_t pMAC)
 {
     pMAC_t cur = pMAC;
     int count=0;
@@ -1198,7 +1208,8 @@ int getMACcount(pMAC_t pMAC)
     return count;
 }
 
-unsigned char* getMAC(pMAC_t pMAC)
+/*
+static unsigned char* getMAC(pMAC_t pMAC)
 {
     pMAC_t cur = pMAC;
 
@@ -1210,8 +1221,9 @@ unsigned char* getMAC(pMAC_t pMAC)
 
     return NULL;
 }
+*/
 
-int addESSIDfile(char* filename)
+static int addESSIDfile(char* filename)
 {
     FILE *list;
     char essid[256];
@@ -1240,7 +1252,7 @@ int addESSIDfile(char* filename)
     return 0;
 }
 
-int addMACfile(pMAC_t pMAC, char* filename)
+static int addMACfile(pMAC_t pMAC, char* filename)
 {
     FILE *list;
     unsigned char mac[6];
@@ -1264,7 +1276,8 @@ int addMACfile(pMAC_t pMAC, char* filename)
     return 0;
 }
 
-int is_filtered_netmask(unsigned char *bssid)
+/*
+static int is_filtered_netmask(unsigned char *bssid)
 {
     unsigned char mac1[6];
     unsigned char mac2[6];
@@ -1283,8 +1296,9 @@ int is_filtered_netmask(unsigned char *bssid)
 
     return 0;
 }
+*/
 
-int send_packet(void *buf, size_t count)
+static int send_packet(void *buf, size_t count)
 {
         struct wif *wi = _wi_out; /* XXX globals suck */
         if (wi_write(wi, buf, count, NULL) == -1) {
@@ -1301,7 +1315,7 @@ int send_packet(void *buf, size_t count)
         return 0;
 }
 
-int read_packet(void *buf, size_t count)
+static int read_packet(void *buf, size_t count)
 {
         struct wif *wi = _wi_in; /* XXX */
         int rc;
@@ -1315,7 +1329,7 @@ int read_packet(void *buf, size_t count)
         return rc;
 }
 
-int msleep( int msec )
+static int msleep( int msec )
 {
     struct timeval tv, tv2;
     float f, ticks;
@@ -1363,7 +1377,7 @@ int msleep( int msec )
     return 0;
 }
 
-int check_shared_key(unsigned char *h80211, int caplen)
+static int check_shared_key(unsigned char *h80211, int caplen)
 {
     int m_bmac, m_smac, m_dmac, n, textlen;
     char ofn[1024];
@@ -1523,8 +1537,8 @@ int check_shared_key(unsigned char *h80211, int caplen)
     /* ok, keystream saved */
     return 0;
 }
-
-int read_prga(unsigned char **dest, char *file)
+/*
+static int read_prga(unsigned char **dest, char *file)
 {
     FILE *f;
     int size;
@@ -1569,7 +1583,7 @@ int read_prga(unsigned char **dest, char *file)
     return( 0 );
 }
 
-void add_icv(unsigned char *input, int len, int offset)
+static void add_icv(unsigned char *input, int len, int offset)
 {
     unsigned long crc = 0xFFFFFFFF;
     int n=0;
@@ -1587,7 +1601,7 @@ void add_icv(unsigned char *input, int len, int offset)
     return;
 }
 
-int xor_keystream(unsigned char *ph80211, unsigned char *keystream, int len)
+static int xor_keystream(unsigned char *ph80211, unsigned char *keystream, int len)
 {
     int i=0;
 
@@ -1598,7 +1612,7 @@ int xor_keystream(unsigned char *ph80211, unsigned char *keystream, int len)
     return 0;
 }
 
-void print_packet ( unsigned char h80211[], int caplen )
+static void print_packet ( unsigned char h80211[], int caplen )
 {
 	int i,j;
 	int key_index_offset=0;
@@ -1664,12 +1678,13 @@ void print_packet ( unsigned char h80211[], int caplen )
 	}
 	printf("\n");
 }
+*/
 
 #define IEEE80211_LLC_SNAP      \
     "\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"  \
     "\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32\xAA\xAA\x03\x00\x00\x00\x08\x00"
-
-int set_IVidx(unsigned char* packet)
+/*
+static int set_IVidx(unsigned char* packet)
 {
     unsigned char ividx[4];
     memset(ividx, 0, 4);
@@ -1694,13 +1709,14 @@ int set_IVidx(unsigned char* packet)
         memcpy(ividx, opt.prga, 4);
     }
 
-    /* insert IV+index */
+    // insert IV+index
     memcpy(packet+24, ividx, 4);
 
     return 0;
 }
+*/
 
-int encrypt_data(unsigned char* data, int length)
+static int encrypt_data(unsigned char* data, int length)
 {
     unsigned char cipher[4096];
     unsigned char K[128];
@@ -1738,7 +1754,7 @@ int encrypt_data(unsigned char* data, int length)
     return 0;
 }
 
-int create_wep_packet(unsigned char* packet, int *length, int hdrlen)
+static int create_wep_packet(unsigned char* packet, int *length, int hdrlen)
 {
     if(packet == NULL) return 1;
 
@@ -1760,7 +1776,7 @@ int create_wep_packet(unsigned char* packet, int *length, int hdrlen)
     return 0;
 }
 
-int intercept(unsigned char* packet, int length)
+static int intercept(unsigned char* packet, int length)
 {
     unsigned char buf[4096];
     unsigned char K[128];
@@ -1801,7 +1817,7 @@ int intercept(unsigned char* packet, int length)
     return 0;
 }
 
-int packet_xmit(unsigned char* packet, int length)
+static int packet_xmit(unsigned char* packet, int length)
 {
     unsigned char buf[4096];
     int fragments=1, i;
@@ -1891,9 +1907,9 @@ int packet_xmit(unsigned char* packet, int length)
     return 0;
 }
 
-int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int external);
+static int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int external);
 
-int packet_xmit_external(unsigned char* packet, int length, struct AP_conf *apc)
+static int packet_xmit_external(unsigned char* packet, int length, struct AP_conf *apc)
 {
     unsigned char buf[4096];
     int z=0;
@@ -1935,7 +1951,7 @@ int packet_xmit_external(unsigned char* packet, int length, struct AP_conf *apc)
     return 0;
 }
 
-int remove_tag(unsigned char *flags, unsigned char type, int *length)
+static int remove_tag(unsigned char *flags, unsigned char type, int *length)
 {
     int cur_type=0, cur_len=0, len=0;
     unsigned char *pos;
@@ -1977,7 +1993,7 @@ int remove_tag(unsigned char *flags, unsigned char type, int *length)
     return 0;
 }
 
-unsigned char* parse_tags(unsigned char *flags, unsigned char type, int length, int *taglen)
+static unsigned char* parse_tags(unsigned char *flags, unsigned char type, int length, int *taglen)
 {
     int cur_type=0, cur_len=0, len=0;
     unsigned char *pos;
@@ -2014,7 +2030,7 @@ unsigned char* parse_tags(unsigned char *flags, unsigned char type, int length, 
     return(NULL);
 }
 
-int wpa_client(struct ST_info *st_cur,unsigned char* tag, int length)
+static int wpa_client(struct ST_info *st_cur,unsigned char* tag, int length)
 {
     if(tag == NULL)
         return 1;
@@ -2066,7 +2082,7 @@ int wpa_client(struct ST_info *st_cur,unsigned char* tag, int length)
     return 0;
 }
 
-int set_clear_arp(unsigned char *buf, unsigned char *smac, unsigned char *dmac) //set first 22 bytes
+static int set_clear_arp(unsigned char *buf, unsigned char *smac, unsigned char *dmac) //set first 22 bytes
 {
     if(buf == NULL)
         return -1;
@@ -2088,7 +2104,7 @@ int set_clear_arp(unsigned char *buf, unsigned char *smac, unsigned char *dmac) 
     return 0;
 }
 
-int set_final_arp(unsigned char *buf, unsigned char *mymac)
+static int set_final_arp(unsigned char *buf, unsigned char *mymac)
 {
     if(buf == NULL)
         return -1;
@@ -2110,7 +2126,7 @@ int set_final_arp(unsigned char *buf, unsigned char *mymac)
     return 0;
 }
 
-int set_clear_ip(unsigned char *buf, int ip_len) //set first 9 bytes
+static int set_clear_ip(unsigned char *buf, int ip_len) //set first 9 bytes
 {
     if(buf == NULL)
         return -1;
@@ -2123,7 +2139,7 @@ int set_clear_ip(unsigned char *buf, int ip_len) //set first 9 bytes
     return 0;
 }
 
-int set_final_ip(unsigned char *buf, unsigned char *mymac)
+static int set_final_ip(unsigned char *buf, unsigned char *mymac)
 {
     if(buf == NULL)
         return -1;
@@ -2144,7 +2160,7 @@ int set_final_ip(unsigned char *buf, unsigned char *mymac)
 }
 
 //add packet for client fragmentation attack
-int addCF(unsigned char* packet, int length)
+static int addCF(unsigned char* packet, int length)
 {
     pCF_t   curCF = rCF;
     unsigned char bssid[6];
@@ -2402,7 +2418,7 @@ int addCF(unsigned char* packet, int length)
 }
 
 //add packet for caffe latte attack
-int addarp(unsigned char* packet, int length)
+static int addarp(unsigned char* packet, int length)
 {
     unsigned char bssid[6], smac[6], dmac[6];
     unsigned char flip[4096];
@@ -2468,7 +2484,7 @@ int addarp(unsigned char* packet, int length)
     return 0;
 }
 
-int store_wpa_handshake(struct ST_info *st_cur)
+static int store_wpa_handshake(struct ST_info *st_cur)
 {
     FILE *f_ivs;
     struct ivs2_filehdr fivs2;
@@ -2572,7 +2588,7 @@ int store_wpa_handshake(struct ST_info *st_cur)
     return 0;
 }
 
-int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int external)
+static int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int external)
 {
     unsigned char K[64];
     unsigned char bssid[6];
@@ -3831,7 +3847,7 @@ void caffelatte_thread( void )
     }
 }
 
-int del_next_CF(pCF_t curCF)
+static int del_next_CF(pCF_t curCF)
 {
     pCF_t tmp;
 
@@ -3849,7 +3865,7 @@ int del_next_CF(pCF_t curCF)
     return 0;
 }
 
-int cfrag_fuzz(unsigned char *packet, int frags, int frag_num, int length, unsigned char rnd[2])
+static int cfrag_fuzz(unsigned char *packet, int frags, int frag_num, int length, unsigned char rnd[2])
 {
     int z, i;
     unsigned char overlay[4096];
