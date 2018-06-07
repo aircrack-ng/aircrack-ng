@@ -53,7 +53,7 @@ int K_COEFF[N_ATTACKS] =
         15, 13, 12, 12, 12, 5, 5, 5, 3, 4, 3, 4, 3, 13, 4, 4, -20
 };
 
-void calc_votes( unsigned char *ivbuf, long nb_ivs,
+static void calc_votes( unsigned char *ivbuf, long nb_ivs,
                  unsigned char *key, int B,
                  int votes[N_ATTACKS][256] )
 {
@@ -243,7 +243,7 @@ void calc_votes( unsigned char *ivbuf, long nb_ivs,
 
 typedef struct { int idx, val; } vote;
 
-int cmp_votes( const void *bs1, const void *bs2 )
+static int cmp_votes( const void *bs1, const void *bs2 )
 {
     if( ((vote *) bs1)->val < ((vote *) bs2)->val )
         return(  1 );
