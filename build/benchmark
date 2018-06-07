@@ -11,6 +11,8 @@ case "$(uname -m)" in
 esac
 
 BENCHMARKS=benchmark.csv
+TOP=$(dirname "$0")/../..
+REV=$("$TOP/evalrev")
 
 touch "$BENCHMARKS"
 
@@ -19,7 +21,7 @@ for T in $TESTS; do
 
     while [ $NCPU -le $(nproc) ]; do
         RESULT=$(./src/aircrack-ng--$T -p $NCPU -S | tail -n1 | awk '{ print $1 }')
-        echo "$(uname -m),$T,$NCPU,$RESULT" | tee -a "$BENCHMARKS"
+        echo "$REV,$(uname -m),$T,$NCPU,$RESULT" | tee -a "$BENCHMARKS"
 
         NCPU=$(($NCPU + $NCPU))
     done
