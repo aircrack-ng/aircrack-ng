@@ -713,7 +713,7 @@ static void pwn(const char *fname)
 	wi_close(wi);
 }
 
-void free_data()
+static void free_data(void)
 {
 	struct network * nets = _networks.n_next;
 	while (nets) {

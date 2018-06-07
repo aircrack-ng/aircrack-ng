@@ -1139,7 +1139,7 @@ static void attack_ping(void *a)
 }
 
 #ifdef HAVE_PCRE
-int is_filtered_essid(char *essid)
+static int is_filtered_essid(char *essid)
 {
     int ret = 0;
 

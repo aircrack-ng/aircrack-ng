@@ -112,7 +112,7 @@ unsigned char buffer2[65536];
 
 /* this routine handles to 802.11 to Ethernet translation */
 
-int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, unsigned char *h80211 )
+static int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, unsigned char *h80211 )
 {
     int n;
     unsigned char arphdr[12];

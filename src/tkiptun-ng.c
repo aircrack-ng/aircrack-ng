@@ -332,8 +332,8 @@ int ctrl_c, alarmed;
 
 char * iwpriv;
 
-
-void sighandler( int signum )
+/*
+static void sighandler( int signum )
 {
     if( signum == SIGINT )
         ctrl_c++;
@@ -341,7 +341,9 @@ void sighandler( int signum )
     if( signum == SIGALRM )
         alarmed++;
 }
+*/
 
+#if 0
 int reset_ifaces()
 {
     //close interfaces
@@ -397,7 +399,9 @@ int reset_ifaces()
 
     return 0;
 }
+#endif
 
+/*
 int set_bitrate(struct wif *wi, int rate)
 {
     int i, newrate;
@@ -449,8 +453,9 @@ int set_bitrate(struct wif *wi, int rate)
     }
     return 0;
 }
+*/
 
-int check_received(unsigned char *packet, unsigned length)
+static int check_received(unsigned char *packet, unsigned length)
 {
     unsigned z;
     unsigned char bssid[6], smac[6], dmac[6];
@@ -645,7 +650,7 @@ int check_received(unsigned char *packet, unsigned length)
     return 0;
 }
 
-int send_packet(void *buf, size_t count)
+static int send_packet(void *buf, size_t count)
 {
 	struct wif *wi = _wi_out; /* XXX globals suck */
 // 	unsigned char *pkt = (unsigned char*) buf;
@@ -672,7 +677,7 @@ int send_packet(void *buf, size_t count)
 	return 0;
 }
 
-int read_packet(void *buf, size_t count, struct rx_info *ri)
+static int read_packet(void *buf, size_t count, struct rx_info *ri)
 {
     struct wif *wi = _wi_in; /* XXX */
     int rc;
@@ -691,7 +696,7 @@ int read_packet(void *buf, size_t count, struct rx_info *ri)
     return rc;
 }
 
-void read_sleep( unsigned long usec )
+static void read_sleep( unsigned long usec )
 {
     struct timeval tv, tv2, tv3;
     int caplen;
@@ -724,7 +729,7 @@ void read_sleep( unsigned long usec )
     }
 }
 
-int filter_packet( unsigned char *h80211, int caplen )
+static int filter_packet( unsigned char *h80211, int caplen )
 {
     int z, mi_b, mi_s, mi_d, ext=0, qos=0;
 
@@ -817,7 +822,7 @@ int filter_packet( unsigned char *h80211, int caplen )
     return( 0 );
 }
 
-int wait_for_beacon(unsigned char *bssid, unsigned char *capa, char *essid)
+static int wait_for_beacon(unsigned char *bssid, unsigned char *capa, char *essid)
 {
     int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
     unsigned char pkt_sniff[4096];
@@ -929,7 +934,7 @@ int wait_for_beacon(unsigned char *bssid, unsigned char *capa, char *essid)
 /*
     if bssid != NULL its looking for a beacon frame
 */
-int attack_check(unsigned char* bssid, char* essid, unsigned char* capa, struct wif *wi)
+static int attack_check(unsigned char* bssid, char* essid, unsigned char* capa, struct wif *wi)
 {
     int ap_chan=0, iface_chan=0;
 
@@ -953,7 +958,7 @@ int attack_check(unsigned char* bssid, char* essid, unsigned char* capa, struct 
     return 0;
 }
 
-int getnet( unsigned char* capa, int filter, int force)
+static int getnet( unsigned char* capa, int filter, int force)
 {
     unsigned char *bssid;
 
@@ -1014,6 +1019,7 @@ int getnet( unsigned char* capa, int filter, int force)
     return 0;
 }
 
+/*
 int xor_keystream(unsigned char *ph80211, unsigned char *keystream, int len)
 {
     int i=0;
@@ -1024,8 +1030,9 @@ int xor_keystream(unsigned char *ph80211, unsigned char *keystream, int len)
 
     return 0;
 }
+*/
 
-int capture_ask_packet( int *caplen, int just_grab )
+static int capture_ask_packet( int *caplen, int just_grab )
 {
     time_t tr;
     struct timeval tv;
@@ -1363,7 +1370,7 @@ int capture_ask_packet( int *caplen, int just_grab )
     return( 0 );
 }
 
-int read_prga(unsigned char **dest, char *file)
+static int read_prga(unsigned char **dest, char *file)
 {
     FILE *f;
     int size;
@@ -1398,7 +1405,7 @@ int read_prga(unsigned char **dest, char *file)
     return( 0 );
 }
 
-void add_icv(unsigned char *input, int len, int offset)
+static void add_icv(unsigned char *input, int len, int offset)
 {
     unsigned long crc = 0xFFFFFFFF;
     int n=0;
@@ -1416,6 +1423,7 @@ void add_icv(unsigned char *input, int len, int offset)
     return;
 }
 
+/*
 void send_fragments(unsigned char *packet, int packet_len, unsigned char *iv, unsigned char *keystream, int fragsize, int ska)
 {
     int t, u;
@@ -1482,8 +1490,9 @@ void send_fragments(unsigned char *packet, int packet_len, unsigned char *iv, un
     }
 
 }
+*/
 
-int set_clear_arp(unsigned char *buf, unsigned char *smac, unsigned char *dmac) //set first 22 bytes
+static int set_clear_arp(unsigned char *buf, unsigned char *smac, unsigned char *dmac) //set first 22 bytes
 {
     if(buf == NULL)
         return -1;
@@ -1505,7 +1514,7 @@ int set_clear_arp(unsigned char *buf, unsigned char *smac, unsigned char *dmac) 
     return 0;
 }
 
-int build_arp_request(unsigned char* packet, int *length, int toDS)
+static int build_arp_request(unsigned char* packet, int *length, int toDS)
 {
     int i;
     unsigned char buf[128];
@@ -1592,6 +1601,7 @@ int build_arp_request(unsigned char* packet, int *length, int toDS)
     return 0;
 }
 
+/*
 int set_clear_ip(unsigned char *buf, int ip_len) //set first 9 bytes
 {
     if(buf == NULL)
@@ -1617,8 +1627,9 @@ void dump_packet(unsigned char* packet, int len)
     }
     printf("\n\n");
 }
+*/
 
-int check_guess(unsigned char *srcbuf, unsigned char *chopped, int caplen, int clearlen, unsigned char *arp, unsigned char *dmac)
+static int check_guess(unsigned char *srcbuf, unsigned char *chopped, int caplen, int clearlen, unsigned char *arp, unsigned char *dmac)
 {
     int i, j, z, pos;
 
@@ -1674,7 +1685,7 @@ int check_guess(unsigned char *srcbuf, unsigned char *chopped, int caplen, int c
     return 0;
 }
 
-int guess_packet(unsigned char *srcbuf, unsigned char *chopped, int caplen, int clearlen)
+static int guess_packet(unsigned char *srcbuf, unsigned char *chopped, int caplen, int clearlen)
 {
     int i,j,k,l,z, len;
     unsigned char smac[6], dmac[6], bssid[6];
@@ -2173,7 +2184,7 @@ int guess_packet(unsigned char *srcbuf, unsigned char *chopped, int caplen, int 
     return 1;
 }
 
-int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
+static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
 {
     float f, ticks[4];
     int i, j, n, z, caplen, srcz, srclen;
@@ -3059,6 +3070,7 @@ int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
     return( 0 );
 }
 
+/*
 int make_arp_request(unsigned char *h80211, unsigned char *bssid, unsigned char *src_mac, unsigned char *dst_mac, unsigned char *src_ip, unsigned char *dst_ip, int size)
 {
 	unsigned char *arp_header = (unsigned char*)"\xaa\xaa\x03\x00\x00\x00\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01";
@@ -3099,7 +3111,9 @@ int save_prga(char *filename, unsigned char *iv, unsigned char *prga, int prgale
 
     return 0;
 }
+*/
 
+#if 0
 int do_attack_fragment()
 {
     unsigned char packet[4096];
@@ -3617,6 +3631,7 @@ int do_attack_fragment()
 
     return( 0 );
 }
+#endif
 
 static int get_ip_port(char *iface, char *ip, const int ip_size)
 {
@@ -3652,7 +3667,7 @@ out:
 	return port;
 }
 
-int getHDSK()
+static int getHDSK(void)
 {
     int i, n;
     int aacks, sacks, caplen;

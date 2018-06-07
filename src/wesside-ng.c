@@ -171,7 +171,12 @@ int PTW_DEFAULTBF[PTW_KEYHSBYTES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 struct timeval t_begin;			 /* time at start of attack      */
 struct timeval t_stats;			 /* time since last update       */
 
-float chrono( struct timeval *start, int reset )
+
+static void cleanup(int x);
+void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit );
+
+/*
+static float chrono( struct timeval *start, int reset )
 {
     float delta;
     struct timeval current;
@@ -186,6 +191,7 @@ float chrono( struct timeval *start, int reset )
 
     return( delta );
 }
+*/
 
 /* display the current votes */
 
@@ -260,9 +266,6 @@ static struct wstate *get_ws(void)
 {
 	return &_wstate;
 }
-
-static void cleanup(int x);
-static void sigchild(int x);
 
 static void time_print(char* fmt, ...)
 {

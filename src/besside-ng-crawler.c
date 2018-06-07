@@ -64,7 +64,7 @@ struct bsslist {
 };
 
 
-struct bsslist *is_in_list(struct bsslist *bsl, const u_char *bssid) {
+static struct bsslist *is_in_list(struct bsslist *bsl, const u_char *bssid) {
 
   while (bsl != NULL) {
     if (! memcmp(bsl->bssid, bssid, 6)) return bsl;
@@ -75,7 +75,7 @@ struct bsslist *is_in_list(struct bsslist *bsl, const u_char *bssid) {
 }
 
 
-struct bsslist *add_to_list(struct bsslist *bsl, const u_char *bssid) {
+static struct bsslist *add_to_list(struct bsslist *bsl, const u_char *bssid) {
   struct bsslist *new, *search;
   
   new= malloc(sizeof(struct bsslist));
@@ -96,7 +96,7 @@ struct bsslist *add_to_list(struct bsslist *bsl, const u_char *bssid) {
 }
 
 
-void free_bsslist(struct bsslist *bsl) {
+static void free_bsslist(struct bsslist *bsl) {
   if (! bsl) return;
   
   if (bsl->next) free_bsslist(bsl->next);
@@ -106,7 +106,7 @@ void free_bsslist(struct bsslist *bsl) {
 }
 
 
-struct bsslist *get_eapol_bssids(pcap_t *handle) {
+static struct bsslist *get_eapol_bssids(pcap_t *handle) {
   struct pcap_pkthdr header;
   const u_char *pkt, *llc, *bssid, *offset = NULL;
   struct bsslist *bsl = NULL;
@@ -163,7 +163,7 @@ struct bsslist *get_eapol_bssids(pcap_t *handle) {
 }
 
 
-void process_eapol_networks(pcap_t *handle, struct bsslist *bsl) {
+static void process_eapol_networks(pcap_t *handle, struct bsslist *bsl) {
   struct pcap_pkthdr header;
   const u_char *pkt, *llc, *bssid, *offset = 0;
   struct bsslist *known;
@@ -226,7 +226,7 @@ void process_eapol_networks(pcap_t *handle, struct bsslist *bsl) {
 }
 
 
-void process_file(const char *file) {
+static void process_file(const char *file) {
   pcap_t *handle;
   char errbuf[PCAP_ERRBUF_SIZE];
   struct bsslist *eapol_networks = NULL;
@@ -263,7 +263,7 @@ void process_file(const char *file) {
 }
 
 
-void process_directory(const char *dir, time_t begin) {
+static void process_directory(const char *dir, time_t begin) {
   DIR *curdir;
   struct dirent *curent;
   struct stat curstat;

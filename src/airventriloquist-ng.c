@@ -286,8 +286,8 @@ int ctrl_c, alarmed;
 
 char * iwpriv;
 
-
-void sighandler( int signum )
+/*
+static void sighandler( int signum )
 {
     if( signum == SIGINT )
         ctrl_c++;
@@ -295,8 +295,10 @@ void sighandler( int signum )
     if( signum == SIGALRM )
         alarmed++;
 }
+*/
 
-int reset_ifaces()
+#if 0
+int reset_ifaces(void)
 {
     //close interfaces
     if(_wi_in != _wi_out)
@@ -351,8 +353,9 @@ int reset_ifaces()
 
     return 0;
 }
+#endif
 
-int set_bitrate(struct wif *wi, int rate)
+static int set_bitrate(struct wif *wi, int rate)
 {
     int i, newrate;
 
@@ -404,6 +407,7 @@ int set_bitrate(struct wif *wi, int rate)
     return 0;
 }
 
+/*
 uint32_t calc_fcs(const uint8_t *buf, uint32_t len)
 {
   uint i;
@@ -414,9 +418,9 @@ uint32_t calc_fcs(const uint8_t *buf, uint32_t len)
  
   return ( ~crc32 );
 }
+*/
 
-
-int send_packet(void *buf, u_int32_t count)
+static int send_packet(void *buf, u_int32_t count)
 {
     struct wif *wi = _wi_out; /* XXX globals suck */
     u_int8_t *pkt = (u_int8_t*) buf;
@@ -461,7 +465,7 @@ int send_packet(void *buf, u_int32_t count)
     return 0;
 }
 
-int read_packet(void *buf, u_int32_t count, struct rx_info *ri)
+static int read_packet(void *buf, u_int32_t count, struct rx_info *ri)
 {
     struct wif *wi = _wi_in; /* XXX */
     int rc;
@@ -480,6 +484,7 @@ int read_packet(void *buf, u_int32_t count, struct rx_info *ri)
     return rc;
 }
 
+/*
 void read_sleep( int usec )
 {
     struct timeval tv, tv2, tv3;
@@ -509,7 +514,6 @@ void read_sleep( int usec )
     }
 }
 
-/*
 int filter_packet( u_int8_t *h80211, int caplen )
 {
     int z, mi_b, mi_s, mi_d, ext=0, qos;
@@ -581,7 +585,7 @@ int filter_packet( u_int8_t *h80211, int caplen )
 }
 */
 
-int wait_for_beacon(uint8_t *bssid, uint8_t *capa, char *essid)
+static int wait_for_beacon(uint8_t *bssid, uint8_t *capa, char *essid)
 {
     int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
     uint8_t pkt_sniff[4096];
@@ -693,7 +697,7 @@ int wait_for_beacon(uint8_t *bssid, uint8_t *capa, char *essid)
 /**
     if bssid != NULL its looking for a beacon frame
 */
-int attack_check(uint8_t* bssid, char* essid, uint8_t* capa, struct wif *wi)
+static int attack_check(uint8_t* bssid, char* essid, uint8_t* capa, struct wif *wi)
 {
     int ap_chan=0, iface_chan=0;
 
@@ -724,7 +728,7 @@ int attack_check(uint8_t* bssid, char* essid, uint8_t* capa, struct wif *wi)
     return 0;
 }
 
-int getnet( uint8_t* capa, int filter, int force)
+static int getnet( uint8_t* capa, int filter, int force)
 {
     u_int8_t *bssid;
 
@@ -816,7 +820,7 @@ out:
     return port;
 }
 
-int tcp_test(const char* ip_str, const short port)
+static int tcp_test(const char* ip_str, const short port)
 {
     int sock, i;
     struct sockaddr_in s_in;
@@ -1030,7 +1034,7 @@ int tcp_test(const char* ip_str, const short port)
 
 //TODO: this function is hacked together, It should be cleaned up
 // Need to use wfrm (ieee80211_frame struct instead of just a buffer)
-int deauth_station( struct WPA_ST_info *st_cur )
+static int deauth_station( struct WPA_ST_info *st_cur )
 {
     if( memcmp( st_cur->stmac, NULL_MAC, 6 ) != 0 )
     {
@@ -1074,7 +1078,7 @@ int deauth_station( struct WPA_ST_info *st_cur )
 
 
 //Shameless copy from tshark/wireshark?
-void hexDump (char* desc, void *addr, int len) {
+static void hexDump (char* desc, void *addr, int len) {
     int i;
     u_int8_t buff[17];
     u_int8_t *pc = (u_int8_t*)addr;
@@ -1120,7 +1124,7 @@ void hexDump (char* desc, void *addr, int len) {
 /* calcsum - used to calculate IP and ICMP header checksums using
  * one's compliment of the one's compliment sum of 16 bit words of the header
  */
-u_int16_t calcsum(u_int16_t *buffer, u_int32_t length)
+static u_int16_t calcsum(u_int16_t *buffer, u_int32_t length)
 {
     u_int32_t sum;  
 
@@ -1138,7 +1142,7 @@ u_int16_t calcsum(u_int16_t *buffer, u_int32_t length)
 }
 //This needs to be cleaned up so that we can do UDP/TCP in one function. Don't want to do that now and risk
 // breaking UDP checksums right now
-u_int16_t calcsum_tcp(u_int16_t *buf, u_int32_t len, u_int32_t src_addr, u_int32_t dest_addr)
+static u_int16_t calcsum_tcp(u_int16_t *buf, u_int32_t len, u_int32_t src_addr, u_int32_t dest_addr)
 {
         u_int32_t chksum;
         u_int32_t length=len;
@@ -1177,7 +1181,7 @@ u_int16_t calcsum_tcp(u_int16_t *buf, u_int32_t len, u_int32_t src_addr, u_int32
         return ((u_int16_t)(~chksum));
 }
 
-u_int16_t calcsum_udp(u_int16_t *buf, u_int32_t len, u_int32_t src_addr, u_int32_t dest_addr)
+static u_int16_t calcsum_udp(u_int16_t *buf, u_int32_t len, u_int32_t src_addr, u_int32_t dest_addr)
 {
         u_int32_t chksum;
         u_int32_t length=len;
@@ -1252,7 +1256,7 @@ static inline u_int8_t* packet_get_bssid_80211( u_int8_t* pkt )
     return NULL;
 }
 
-void packet_turnaround_80211( u_int8_t* pkt )
+static void packet_turnaround_80211( u_int8_t* pkt )
 {
     struct ieee80211_frame *p_res802 = (struct ieee80211_frame *)pkt;
     u_int8_t tmp_mac[IEEE80211_ADDR_LEN] = {0};
@@ -1278,7 +1282,7 @@ void packet_turnaround_80211( u_int8_t* pkt )
     return;
 }
 
-void packet_turnaround_ip( struct ip_frame *p_resip )
+static void packet_turnaround_ip( struct ip_frame *p_resip )
 { 
     //Switch the IP source and destination addresses
     u_int32_t tmp_addr = p_resip->saddr;
@@ -1287,7 +1291,7 @@ void packet_turnaround_ip( struct ip_frame *p_resip )
     p_resip->ttl = 63;
 }
 
-void packet_turnaround_ip_udp( struct udp_hdr *p_resudp )
+static void packet_turnaround_ip_udp( struct udp_hdr *p_resudp )
 { 
     //Switch the UDP source and destination Ports
     u_int16_t tmp_port = p_resudp->sport;
@@ -1295,7 +1299,7 @@ void packet_turnaround_ip_udp( struct udp_hdr *p_resudp )
     p_resudp->dport = tmp_port;
 }
 
-void packet_turnaround_ip_tcp( struct tcp_hdr *p_restcp, u_int32_t next_seq_hint )
+static void packet_turnaround_ip_tcp( struct tcp_hdr *p_restcp, u_int32_t next_seq_hint )
 { 
     //Switch the TCP source and destination Ports
     u_int16_t tmp_port = p_restcp->sport;
@@ -1312,7 +1316,7 @@ void packet_turnaround_ip_tcp( struct tcp_hdr *p_restcp, u_int32_t next_seq_hint
     p_restcp->ack_seq = htonl(tmp_num);
 }
 
-u_int16_t dns_name_end( u_int8_t* buff, u_int16_t maxlen )
+static u_int16_t dns_name_end( u_int8_t* buff, u_int16_t maxlen )
 {
     u_int8_t *ptr = buff;
     u_int8_t count = 0;
@@ -1331,7 +1335,7 @@ u_int16_t dns_name_end( u_int8_t* buff, u_int16_t maxlen )
     return offset;
 }
 
-int strip_ccmp_header(u_int8_t* h80211, int caplen, unsigned char PN[6])
+static int strip_ccmp_header(u_int8_t* h80211, int caplen, unsigned char PN[6])
 {
     int is_a4, z, is_qos;
 
@@ -1355,7 +1359,7 @@ int strip_ccmp_header(u_int8_t* h80211, int caplen, unsigned char PN[6])
     return caplen - 16;
 }
 
-void encrypt_data_packet(u_int8_t* packet, int length, struct WPA_ST_info* sta_cur )
+static void encrypt_data_packet(u_int8_t* packet, int length, struct WPA_ST_info* sta_cur )
 {
     if ( (NULL == sta_cur) || (! sta_cur->valid_ptk) )  { return; }
     else
@@ -1384,7 +1388,7 @@ void encrypt_data_packet(u_int8_t* packet, int length, struct WPA_ST_info* sta_c
 //Global packet buffer for use in building response packets
 uint8_t pkt[2048] = {0};
 
-void process_unencrypted_data_packet(u_int8_t* packet, u_int32_t length, u_int32_t debug)
+static void process_unencrypted_data_packet(u_int8_t* packet, u_int32_t length, u_int32_t debug)
 {
     if (debug) hexDump("full", packet, length);
     
@@ -1824,7 +1828,7 @@ void process_unencrypted_data_packet(u_int8_t* packet, u_int32_t length, u_int32
 }
 
 
-bool is_adhoc_frame(u_int8_t* packet)
+static bool is_adhoc_frame(u_int8_t* packet)
 {
     u_int8_t *p_stmac = packet_get_sta_80211(packet);
 
@@ -1832,7 +1836,7 @@ bool is_adhoc_frame(u_int8_t* packet)
     else                 { return FALSE; }
 }
 
-bool find_station_in_db(u_int8_t *p_stmac)
+static bool find_station_in_db(u_int8_t *p_stmac)
 {
     opt.st_prv = NULL;
     opt.st_cur = opt.st_1st;
@@ -1854,7 +1858,7 @@ bool find_station_in_db(u_int8_t *p_stmac)
         return TRUE;
 }
 
-bool alloc_new_station_in_db()
+static bool alloc_new_station_in_db(void)
 {
     opt.st_cur = (struct WPA_ST_info *)malloc( sizeof(struct WPA_ST_info) );
 
@@ -1885,7 +1889,7 @@ static inline bool mac_is_multi_broadcast(unsigned char stmac[6])
     return FALSE;
 }
 
-void process_station_data(u_int8_t* packet, int length)
+static void process_station_data(u_int8_t* packet, int length)
 {
     if (is_length_lt_wfrm(length)) return;
 
@@ -1945,7 +1949,7 @@ static inline bool is_wfrm_qos(struct ieee80211_frame* wfrm)
     return (IEEE80211_FC0_SUBTYPE_QOS & wfrm->i_fc[0]);
 }
 
-bool is_wfrm_already_processed(u_int8_t* packet, int length)
+static bool is_wfrm_already_processed(u_int8_t* packet, int length)
 {
     struct ieee80211_frame* wfrm = (struct ieee80211_frame*)packet;
 
@@ -1969,7 +1973,7 @@ bool is_wfrm_already_processed(u_int8_t* packet, int length)
     return FALSE;
 }
 
-struct llc_frame* find_llc_frm_ptr(u_int8_t* packet, int length)
+static struct llc_frame* find_llc_frm_ptr(u_int8_t* packet, int length)
 {
     if (is_length_lt_wfrm(length)) return NULL;
 
@@ -1980,7 +1984,7 @@ struct llc_frame* find_llc_frm_ptr(u_int8_t* packet, int length)
     return p_llc;
 }
 
-void process_wireless_data_packet(u_int8_t* packet, int length)
+static void process_wireless_data_packet(u_int8_t* packet, int length)
 {
     u_int8_t* packet_start = packet;
     int packet_start_length = length;
@@ -2063,7 +2067,7 @@ void process_wireless_data_packet(u_int8_t* packet, int length)
 
 }
 
-void process_wireless_packet(u_int8_t* packet, int length)
+static void process_wireless_packet(u_int8_t* packet, int length)
 {
     struct ieee80211_frame* wfrm = (struct ieee80211_frame*)packet;
     short fc =  *wfrm->i_fc;
@@ -2075,7 +2079,7 @@ void process_wireless_packet(u_int8_t* packet, int length)
     return;
 }
 
-int do_active_injection()
+static int do_active_injection(void)
 {
     struct timeval tv;
     fd_set rfds;

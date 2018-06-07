@@ -264,7 +264,7 @@ char * getVersion(const char * progname, const unsigned int maj, const unsigned 
 }
 
 // Return the number of cpu. If detection fails, it will return -1;
-int get_nb_cpus()
+int get_nb_cpus(void)
 {
         int number = -1;
 
@@ -608,7 +608,7 @@ void rtrim(char * line)
     }
 }
 
-char * get_current_working_directory()
+char * get_current_working_directory(void)
 {
     char * ret = NULL;
     char * wd_realloc = NULL;

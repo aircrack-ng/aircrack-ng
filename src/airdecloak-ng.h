@@ -151,53 +151,53 @@ struct decloak_stats
     unsigned long nb_cloak_wep; /* # of cloaked WEP pkt  */
 };
 
-void usage();
-int getBits(unsigned char b, int from, int length);
-FILE * openfile(const char * filename, const char * mode, int fatal);
-BOOLEAN write_packet(FILE * file, struct packet_elt * packet);
-FILE * init_new_pcap(const char * filename);
-FILE * open_existing_pcap(const char * filename);
-BOOLEAN read_packets(void);
-BOOLEAN initialize_linked_list();
-BOOLEAN add_node_if_not_complete();
-void set_node_complete();
-void remove_last_uncomplete_node();
-struct packet_elt * getPacketNr(int position);
-char * iv2string(unsigned char * iv);
-char * icv2string(unsigned char * icv);
-void print_packet(struct packet_elt * packet);
-void reset_current_packet_pointer();
-BOOLEAN reset_current_packet_pointer_to_ap_packet();
-BOOLEAN reset_current_packet_pointer_to_client_packet();
-BOOLEAN next_packet_pointer();
-BOOLEAN next_packet_pointer_from_ap();
-BOOLEAN next_packet_pointer_from_client();
-BOOLEAN prev_packet_pointer();
-int compare_SN_to_current_packet(struct packet_elt * packet);
-BOOLEAN current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
-BOOLEAN prev_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
-BOOLEAN next_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
-BOOLEAN prev_packet_pointer_same_fromToDS_and_source_as_current();
-BOOLEAN next_packet_pointer_same_fromToDS_and_source_as_current();
-BOOLEAN write_packets();
-BOOLEAN print_statistics();
-char * status_format(int status);
-int get_average_signal_ap();
+static void usage(void);
+static int getBits(unsigned char b, int from, int length);
+static FILE * openfile(const char * filename, const char * mode, int fatal);
+static BOOLEAN write_packet(FILE * file, struct packet_elt * packet);
+static FILE * init_new_pcap(const char * filename);
+static FILE * open_existing_pcap(const char * filename);
+static BOOLEAN read_packets(void);
+static BOOLEAN initialize_linked_list(void);
+static BOOLEAN add_node_if_not_complete(void);
+static void set_node_complete(void);
+static void remove_last_uncomplete_node(void);
+//static struct packet_elt * getPacketNr(int position);
+//static char * iv2string(unsigned char * iv);
+//static char * icv2string(unsigned char * icv);
+//static void print_packet(struct packet_elt * packet);
+static void reset_current_packet_pointer(void);
+static BOOLEAN reset_current_packet_pointer_to_ap_packet(void);
+static BOOLEAN reset_current_packet_pointer_to_client_packet(void);
+static BOOLEAN next_packet_pointer(void);
+static BOOLEAN next_packet_pointer_from_ap(void);
+static BOOLEAN next_packet_pointer_from_client(void);
+//static BOOLEAN prev_packet_pointer(void);
+static int compare_SN_to_current_packet(struct packet_elt * packet);
+static BOOLEAN current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
+//static BOOLEAN prev_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
+static BOOLEAN next_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
+//static BOOLEAN prev_packet_pointer_same_fromToDS_and_source_as_current(void);
+static BOOLEAN next_packet_pointer_same_fromToDS_and_source_as_current(void);
+static BOOLEAN write_packets(void);
+static BOOLEAN print_statistics(void);
+static char * status_format(int status);
+static int get_average_signal_ap(void);
 
 // Check for cloaking functions
-BOOLEAN check_for_cloaking(); // Main cloaking check function
+static BOOLEAN check_for_cloaking(void); // Main cloaking check function
 #define CFC_base_filter() CFC_with_valid_packets_mark_others_with_identical_sn_cloaked()
-int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked();
-int CFC_mark_all_frames_with_status_to(int original_status, int new_status);
-int CFC_filter_signal();
-int CFC_filter_duplicate_sn_ap();
-int CFC_filter_duplicate_sn_client();
-int CFC_filter_duplicate_sn();
-int CFC_filter_consecutive_sn();
-int CFC_filter_consecutive_sn_ap();
-int CFC_filter_consecutive_sn_client();
-int CFC_filter_duplicate_iv();
-int CFC_filter_signal_duplicate_and_consecutive_sn();
+static int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked(void);
+static int CFC_mark_all_frames_with_status_to(int original_status, int new_status);
+static int CFC_filter_signal(void);
+static int CFC_filter_duplicate_sn_ap(void);
+static int CFC_filter_duplicate_sn_client(void);
+static int CFC_filter_duplicate_sn(void);
+static int CFC_filter_consecutive_sn(void);
+static int CFC_filter_consecutive_sn_ap(void);
+static int CFC_filter_consecutive_sn_client(void);
+static int CFC_filter_duplicate_iv(void);
+static int CFC_filter_signal_duplicate_and_consecutive_sn(void);
 
 /*
 const char usage[] =
