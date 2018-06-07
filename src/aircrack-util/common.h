@@ -79,7 +79,7 @@ extern "C" {
 extern void calctime(time_t t, float calc);
 
 /// Retrieves the working directory.
-extern char *get_current_working_directory();
+extern char *get_current_working_directory(void);
 
 /// Trim excess whitespace from the right-most of \a line.
 extern void rtrim(char *line);
@@ -98,7 +98,7 @@ extern char *getVersion(const char *progname,
 
 
 /// Returns the number of CPU/cores available and online.
-extern int get_nb_cpus();
+extern int get_nb_cpus(void);
 
 extern int maccmp(unsigned char *mac1, unsigned char *mac2);
 
@@ -120,8 +120,6 @@ extern int readLine(char line[], int maxlength);
 extern int hexToInt(char s[], int len);
 
 extern void rtrim(char *line);
-
-extern char *get_current_working_directory();
 
 #ifdef __cplusplus
 };
