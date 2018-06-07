@@ -71,7 +71,7 @@ int _options_assume_null_packets_uncloaked = 0;
 
 struct decloak_stats stats;
 
-int getBits(unsigned char b, int from, int nb_bits)
+static int getBits(unsigned char b, int from, int nb_bits)
 {
 	unsigned int value = (unsigned int)b;
 	unsigned int and_1st = 0;
@@ -93,7 +93,7 @@ int getBits(unsigned char b, int from, int nb_bits)
 }
 
 
-FILE * openfile(const char * filename, const char * mode, int fatal)
+static FILE * openfile(const char * filename, const char * mode, int fatal)
 {
 	FILE * f;
 
@@ -112,7 +112,7 @@ FILE * openfile(const char * filename, const char * mode, int fatal)
 
 
 // Return 1 on success, 0 on failure
-BOOLEAN write_packet(FILE * file, struct packet_elt * packet)
+static BOOLEAN write_packet(FILE * file, struct packet_elt * packet)
 {
 	// TODO: Do not forget to swap what has to be swapped if needed (caplen, ...)
 	int result;
@@ -141,7 +141,7 @@ BOOLEAN write_packet(FILE * file, struct packet_elt * packet)
 }
 
 
-FILE * init_new_pcap(const char * filename)
+static FILE * init_new_pcap(const char * filename)
 {
 	FILE * f;
 
@@ -159,7 +159,7 @@ FILE * init_new_pcap(const char * filename)
 	return f;
 }
 
-FILE * open_existing_pcap(const char * filename) {
+static FILE * open_existing_pcap(const char * filename) {
 	FILE * f;
 	size_t temp_sizet;
 
@@ -220,7 +220,7 @@ FILE * open_existing_pcap(const char * filename) {
 	return f;
 }
 
-BOOLEAN initialize_linked_list() {
+static BOOLEAN initialize_linked_list() {
 	_packet_elt_head = (struct packet_elt_header *)malloc(sizeof(struct packet_elt_header));
 	_packet_elt_head->first = (	struct packet_elt *) malloc(sizeof(struct packet_elt));
 	_packet_elt_head->last = _packet_elt_head->first;
@@ -232,7 +232,7 @@ BOOLEAN initialize_linked_list() {
 	return true;
 }
 
-BOOLEAN add_node_if_not_complete() {
+static BOOLEAN add_node_if_not_complete() {
 	if (_packet_elt_head->current->complete == 1) {
 		// Allocate new packet
 		_packet_elt_head->current->next = (struct packet_elt *) malloc(sizeof(struct packet_elt));
@@ -250,12 +250,12 @@ BOOLEAN add_node_if_not_complete() {
 	return true;
 }
 
-void set_node_complete() {
+static void set_node_complete(void) {
 	_packet_elt_head->current->complete = 1;
 	_packet_elt_head->last = _packet_elt_head->current;
 }
 
-void remove_last_uncomplete_node() {
+static void remove_last_uncomplete_node(void) {
 	struct packet_elt * packet;
 	if (_packet_elt_head->current->complete == 0) {
 		packet = _packet_elt_head->current;
@@ -267,8 +267,9 @@ void remove_last_uncomplete_node() {
 	}
 }
 
+/*
 // Requirement: initialize_linked_list() called
-struct packet_elt * getPacketNr(int position) {
+static struct packet_elt * getPacketNr(int position) {
 	struct packet_elt * packet = _packet_elt_head->first;
 	int i = 0;
 	while (i < position) {
@@ -280,19 +281,19 @@ struct packet_elt * getPacketNr(int position) {
 	return packet;
 }
 
-char * iv2string(unsigned char * iv) {
+static char * iv2string(unsigned char * iv) {
 	char * string = (char *)malloc(9);
 	snprintf(string, 9, "%02X %02X %02X", iv[0], iv[1], iv[2]);
 	return string;
 }
 
-char * icv2string(unsigned char * icv) {
+static char * icv2string(unsigned char * icv) {
 	char * string = (char *)malloc(12);
 	snprintf(string, 12, "%02X %02X %02X %02X", icv[0], icv[1], icv[2], icv[3]);
 	return string;
 }
 
-void print_packet(struct packet_elt * packet) {
+static void print_packet(struct packet_elt * packet) {
 	char * temp;
 	printf("Packet length: %d\n", packet->length);
 	printf("Frame type: %d (subtype: %d) - First byte: %d\n", packet->frame_type, packet->frame_subtype, packet->version_type_subtype);
@@ -315,8 +316,9 @@ void print_packet(struct packet_elt * packet) {
 
 	printf("Signal: %d - Retry bit: %d - is cloaked: %d\n", packet->signal_quality, packet->retry_bit, packet->is_cloaked);
 }
+*/
 
-int get_rtap_signal(int caplen)
+static int get_rtap_signal(int caplen)
 {
 	struct ieee80211_radiotap_iterator iterator;
 	struct ieee80211_radiotap_header *rthdr;
@@ -338,7 +340,7 @@ int get_rtap_signal(int caplen)
 }
 
 // !!!! WDS not yet implemented
-BOOLEAN read_packets(void)
+static BOOLEAN read_packets(void)
 {
 	int i, start;
     time_t tt;
@@ -676,21 +678,21 @@ BOOLEAN read_packets(void)
     return true;
 }
 
-void reset_current_packet_pointer() {
+static void reset_current_packet_pointer(void) {
 	_packet_elt_head->current = _packet_elt_head->first;
 }
 
-BOOLEAN reset_current_packet_pointer_to_ap_packet() {
+static BOOLEAN reset_current_packet_pointer_to_ap_packet(void) {
 	reset_current_packet_pointer();
 	return next_packet_pointer_from_ap();
 }
 
-BOOLEAN reset_current_packet_pointer_to_client_packet() {
+static BOOLEAN reset_current_packet_pointer_to_client_packet(void) {
 	reset_current_packet_pointer();
 	return next_packet_pointer_from_client();
 }
 
-BOOLEAN next_packet_pointer_from_ap() {
+static BOOLEAN next_packet_pointer_from_ap(void) {
 	while (_packet_elt_head->current->toDS != 0) {
 		if (next_packet_pointer() == false) {
 			return false;
@@ -704,7 +706,7 @@ BOOLEAN next_packet_pointer_from_ap() {
 	}
 }
 
-BOOLEAN next_packet_pointer_from_client() {
+static BOOLEAN next_packet_pointer_from_client(void) {
 	while (_packet_elt_head->current->toDS == 0) {
 		if (next_packet_pointer() == false) {
 			return false;
@@ -718,7 +720,7 @@ BOOLEAN next_packet_pointer_from_client() {
 	}
 }
 
-BOOLEAN next_packet_pointer() {
+static BOOLEAN next_packet_pointer(void) {
 	BOOLEAN success = false;
 	// Go to next packet if not the last one
 	if (_packet_elt_head->current != _packet_elt_head->last) {
@@ -729,7 +731,8 @@ BOOLEAN next_packet_pointer() {
 	return success;
 }
 
-BOOLEAN prev_packet_pointer() {
+/*
+static BOOLEAN prev_packet_pointer(void) {
 	BOOLEAN success = false;
 	// Go to next packet if not the last one
 	if (_packet_elt_head->current != _packet_elt_head->first) {
@@ -739,9 +742,9 @@ BOOLEAN prev_packet_pointer() {
 
 	return success;
 }
+*/
 
-
-int compare_SN_to_current_packet(struct packet_elt * packet) {
+static int compare_SN_to_current_packet(struct packet_elt * packet) {
 	if (_packet_elt_head->current->sequence_number > packet->sequence_number) {
 		// Current packet SN is superior to packet SN
 		return 1;
@@ -754,7 +757,7 @@ int compare_SN_to_current_packet(struct packet_elt * packet) {
 	return 0;
 }
 
-BOOLEAN current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet) {
+static BOOLEAN current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet) {
 	BOOLEAN success = false;
 
 	if (_packet_elt_head->current->fromDS == packet->fromDS
@@ -781,8 +784,8 @@ BOOLEAN current_packet_pointer_same_fromToDS_and_source(struct packet_elt * pack
 	return success;
 }
 
-
-BOOLEAN prev_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet) {
+/*
+static BOOLEAN prev_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet) {
 	BOOLEAN success = false;
 
 	while (success == false && prev_packet_pointer()) {
@@ -790,8 +793,9 @@ BOOLEAN prev_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet)
 	}
 	return success;
 }
+*/
 
-BOOLEAN next_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet) {
+static BOOLEAN next_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet) {
 	BOOLEAN success = false;
 
 	// !!! Now we only have the packets from the BSSID.
@@ -802,15 +806,17 @@ BOOLEAN next_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet)
 	return success;
 }
 
-BOOLEAN prev_packet_pointer_same_fromToDS_and_source_as_current() {
+/*
+static BOOLEAN prev_packet_pointer_same_fromToDS_and_source_as_current(void) {
 	return prev_packet_pointer_same_fromToDS_and_source(_packet_elt_head->current);
 }
+*/
 
-BOOLEAN next_packet_pointer_same_fromToDS_and_source_as_current() {
+static BOOLEAN next_packet_pointer_same_fromToDS_and_source_as_current(void) {
 	return next_packet_pointer_same_fromToDS_and_source(_packet_elt_head->current);
 }
 
-int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked() {
+static int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked(void) {
 	// This filtered 1148 packets on a 300-350K capture (~150K were cloaked)
 	// Filtering was done correctly, all packets marked as cloaked were really cloaked).
 	struct packet_elt * current_packet;
@@ -874,7 +880,7 @@ int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked() {
 	return nb_marked;
 }
 
-int CFC_filter_duplicate_sn_ap() {
+static int CFC_filter_duplicate_sn_ap(void) {
 	int nb_packets = 0;
 	puts("Cloaking - Removing the duplicate SN for the AP");
 
@@ -883,7 +889,7 @@ int CFC_filter_duplicate_sn_ap() {
 	return nb_packets;
 }
 
-int CFC_filter_duplicate_sn_client() {
+static int CFC_filter_duplicate_sn_client(void) {
 	int nb_packets = 0;
 	puts("Cloaking - Removing the duplicate SN for the client");
 
@@ -892,12 +898,12 @@ int CFC_filter_duplicate_sn_client() {
 	return nb_packets;
 }
 
-int CFC_filter_duplicate_sn() {
+static int CFC_filter_duplicate_sn(void) {
 	// This will remove a lot of legitimate packets unfortunately
 	return CFC_filter_duplicate_sn_ap() + CFC_filter_duplicate_sn_client();
 }
 
-int get_average_signal_ap() {
+static int get_average_signal_ap(void) {
 	long all_signals;
 	long nb_packet_used;
 	int average_signal;
@@ -955,7 +961,7 @@ int get_average_signal_ap() {
  *
  * @return Number of frames marked cloaked.
  */
-int CFC_filter_signal() {
+static int CFC_filter_signal(void) {
 
 	// Maximum variation of the signal for unknown status frame and potentially cloaked frames (up & down)
 	#define MAX_SIGNAL_VARIATION 3
@@ -1021,7 +1027,7 @@ int CFC_filter_signal() {
 	return nb_packets;
 }
 
-int CFC_filter_consecutive_sn() {
+static int CFC_filter_consecutive_sn(void) {
 	int nb_packets = 0;
 	puts("Cloaking - Consecutive SN filtering");
 
@@ -1030,7 +1036,7 @@ int CFC_filter_consecutive_sn() {
 	return nb_packets;
 }
 
-int CFC_filter_consecutive_sn_ap() {
+static int CFC_filter_consecutive_sn_ap(void) {
 	int nb_packets = 0;
 	BOOLEAN next_packet_result = false;
 	puts("Cloaking - Consecutive SN filtering (AP)");
@@ -1066,7 +1072,7 @@ int CFC_filter_consecutive_sn_ap() {
 	return nb_packets;
 }
 
-int CFC_filter_consecutive_sn_client() {
+static int CFC_filter_consecutive_sn_client(void) {
 	int nb_packets = 0;
 
 	puts("Cloaking - Consecutive SN filtering (Client)");
@@ -1082,7 +1088,7 @@ int CFC_filter_consecutive_sn_client() {
 	return nb_packets;
 }
 
-int CFC_filter_duplicate_iv() {
+static int CFC_filter_duplicate_iv(void) {
 	unsigned char * ivs_table;
 	int nb_packets = 0;
 	puts("Cloaking - Duplicate IV filtering");
@@ -1141,7 +1147,7 @@ int CFC_filter_duplicate_iv() {
 	return nb_packets;
 }
 
-char * status_format(int status) {
+static char * status_format(int status) {
 	size_t len = 19;
 	char * ret = (char *) calloc(1, (len + 1) * sizeof(char));
 	char * rret;
@@ -1168,7 +1174,7 @@ char * status_format(int status) {
 	return (rret) ? rret : ret;
 }
 
-int CFC_mark_all_frames_with_status_to(int original_status, int new_status) {
+static int CFC_mark_all_frames_with_status_to(int original_status, int new_status) {
 	int nb_marked = 0;
 	char * from, *to;
 	from = status_format(original_status);
@@ -1193,7 +1199,7 @@ int CFC_mark_all_frames_with_status_to(int original_status, int new_status) {
 }
 
 
-int CFC_filter_signal_duplicate_and_consecutive_sn() {
+static int CFC_filter_signal_duplicate_and_consecutive_sn(void) {
 	int nb_marked = 0;
 	// This filter does not call all other filters but does a lot of checks
 	// and depending on these check decide if a packet is cloaked or not
@@ -1209,7 +1215,7 @@ int CFC_filter_signal_duplicate_and_consecutive_sn() {
 /**
  * Check for cloaking and mark the status all packets (Cloaked or uncloaked).
  */
-BOOLEAN check_for_cloaking() {
+static BOOLEAN check_for_cloaking(void) {
 	int cur_filter;
 	int cur_filters = _filters;
 
@@ -1270,7 +1276,7 @@ BOOLEAN check_for_cloaking() {
 }
 
 // Return 1 on success
-BOOLEAN write_packets() {
+static BOOLEAN write_packets(void) {
 	// Open files ...
 	FILE * invalid_status_file;
 
@@ -1332,11 +1338,11 @@ BOOLEAN write_packets() {
 }
 
 // Return 1 on success
-BOOLEAN print_statistics() {
+static BOOLEAN print_statistics(void) {
 	return true;
 }
 
-void usage() {
+static void usage(void) {
 	char *version_info = getVersion("Airdecloak-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 			"  %s - (C) 2008-2018 Thomas d\'Otreppe\n"
