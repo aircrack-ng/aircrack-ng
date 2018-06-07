@@ -20,6 +20,10 @@ addons:
     - libssl-dev
     - libnl-genl-3-dev
     - libpcre3-dev
+    - libglib2.0-0
+    - libjson-glib-dev
+    - libglib2.0-dev
+    - libglib2.0-bin
 
 compiler:
   - gcc
