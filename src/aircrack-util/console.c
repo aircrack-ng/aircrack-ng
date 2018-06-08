@@ -31,10 +31,10 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <termios.h>
 #ifndef TIOCGWINSZ
 #include <sys/termios.h>
 #endif
-#include <termios.h>
 #include <unistd.h>
 
 #include "console.h"
