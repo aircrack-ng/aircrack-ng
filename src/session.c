@@ -32,6 +32,7 @@
  *  files in the program, then also delete it here.
  */
 
+#define _GNU_SOURCE
 #include "session.h"
 #include <sys/types.h>
 #include <sys/stat.h>
