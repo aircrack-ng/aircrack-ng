@@ -974,6 +974,7 @@ void read_thread( void *arg )
 
 	ap_cur = NULL;
 
+	memset(&pkh, 0, sizeof(struct pcap_pkthdr));
 	memset(&pfh, 0, sizeof(struct pcap_file_header));
 
 	if( ( buffer = (unsigned char *) malloc( 65536 ) ) == NULL )

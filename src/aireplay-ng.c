@@ -2178,7 +2178,7 @@ int do_attack_fake_auth( void )
                     continue;
                 }
 
-                aid=( ( (h80211[29] << 8) || (h80211[28]) ) & 0x3FFF);
+                aid=( ( (h80211[29] << 8) != 0 || (h80211[28]) ) & 0x3FFF);
                 printf( "Association successful :-) (AID: %d)\n", aid );
                 deauth_wait = 3;
                 fflush( stdout );
@@ -2232,7 +2232,7 @@ int do_attack_fake_auth( void )
                     continue;
                 }
 
-                aid=( ( (h80211[29] << 8) || (h80211[28]) ) & 0x3FFF);
+                aid=( ( (h80211[29] << 8) != 0 || (h80211[28]) ) & 0x3FFF);
                 printf( "Reassociation successful :-) (AID: %d)\n", aid );
                 deauth_wait = 3;
                 fflush( stdout );
