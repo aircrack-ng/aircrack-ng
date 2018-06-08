@@ -159,6 +159,9 @@ to your choosing:
 
 * **without-opt**:  Do not enable stack protector (on GCC 4.9 and above).
 
+* **enable-shared**:   Make a OSdep a shared library. Not yet supported on Windows, because the project 
+                   is not 100% DLL "safe" - per the Autotools documentation.
+
 #### Examples:
 
   * Configure and compiling:
