@@ -132,10 +132,6 @@
 
 int bitrates[RATE_NUM]={RATE_1M, RATE_2M, RATE_5_5M, RATE_6M, RATE_9M, RATE_11M, RATE_12M, RATE_18M, RATE_24M, RATE_36M, RATE_48M, RATE_54M};
 
-extern int check_crc_buf( unsigned char *buf, int len );
-extern const unsigned long int crc_tbl[256];
-extern const unsigned char crc_chop_tbl[256][4];
-
 char usage[] =
 
 "\n"

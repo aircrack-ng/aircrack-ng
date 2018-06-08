@@ -70,9 +70,6 @@
     "\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"  \
     "\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32"
 
-extern int add_crc32(unsigned char* data, int length);
-
-
 char usage[] =
 "\n"
 "  %s - (C) 2006-2018 Thomas d\'Otreppe\n"

@@ -51,9 +51,6 @@
 #define CRYPT_WEP  1
 #define CRYPT_WPA  2
 
-extern int check_crc_buf( unsigned char *buf, int len );
-extern int calc_crc_buf( unsigned char *buf, int len );
-
 char usage[] =
 
 "\n"

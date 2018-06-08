@@ -74,12 +74,6 @@ static struct wif *_wi_in, *_wi_out;
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
 
-extern int add_crc32(unsigned char* data, int length);
-
-extern const unsigned long int crc_tbl[256];
-extern const unsigned char crc_chop_tbl[256][4];
-
-
 char usage[] =
 "\n"
 "  %s - (C) 2006-2018 Thomas d'Otreppe\n"

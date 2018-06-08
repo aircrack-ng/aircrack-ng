@@ -230,4 +230,8 @@ int calc_ptk( struct WPA_ST_info *wpa, unsigned char pmk[32] );
 int calc_tkip_mic(unsigned char* packet, int length, unsigned char ptk[80], unsigned char value[8]);
 int michael_test(unsigned char key[8], unsigned char *message, int length, unsigned char out[8]);
 int calc_tkip_mic_key(unsigned char* packet, int length, unsigned char key[8]);
+
+extern const unsigned long int crc_tbl[256];
+extern const unsigned char crc_chop_tbl[256][4];
+
 #endif /* crypto.h */

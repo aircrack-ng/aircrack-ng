@@ -152,10 +152,6 @@ static struct wif *_wi_in, *_wi_out;
     "\xf2\x01\x00\x50\xf2\x02\x00\x50\xf2\x03\x00\x50\xf2\x04\x00\x50"  \
     "\xf2\x05\x02\x00\x00\x50\xf2\x01\x00\x50\xf2\x02"
 
-extern int add_crc32(unsigned char* data, int length);
-
-extern const unsigned long int crc_tbl[256];
-
 char usage[] =
 "\n"
 "  %s - (C) 2008-2018 Thomas d'Otreppe\n"
