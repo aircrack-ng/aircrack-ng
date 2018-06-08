@@ -94,21 +94,6 @@ typedef enum {
 
 } DRIVER_TYPE;
 
-static const char * szaDriverTypes[] = {
-        [DT_NULL] = "Unknown",
-        [DT_WLANNG] = "Wlan-NG",
-        [DT_HOSTAP] = "HostAP",
-        [DT_MADWIFI] = "Madwifi",
-        [DT_MADWIFING] = "Madwifi-NG",
-        [DT_BCM43XX] = "BCM43xx",
-        [DT_ORINOCO] = "Orinoco",
-        [DT_ZD1211RW] = "ZD1211RW",
-        [DT_ACX] = "ACX",
-        [DT_MAC80211_RT] = "Mac80211-Radiotap",
-        [DT_AT76USB] = "Atmel 76_usb",
-        [DT_IPW2200] = "ipw2200"
-};
-
 /*
  * XXX need to have a different read/write/open function for each Linux driver.
  */

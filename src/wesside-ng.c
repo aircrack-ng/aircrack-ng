@@ -202,6 +202,22 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
     int i, et_h, et_m, et_s;
     static int is_cleared = 0;
 
+	(void) B;
+	(void) force;
+	(void) table;
+	(void) choices;
+	(void) depth;
+	(void) prod;
+	(void) keylimit;
+
+	(void) delta;
+	(void) ws;
+	(void) i;
+	(void) et_h;
+	(void) et_m;
+	(void) et_s;
+	(void) is_cleared;
+
     return;
     /*
     if( ioctl( 0, TIOCGWINSZ, &ws ) < 0 )
