@@ -58,9 +58,6 @@ SRC_PF		= packetforge-ng.c
 SRC_AR		= aireplay-ng.c
 SRC_ADU		= airodump-ng.c
 
-LIBMCS_LIBS	= libmcs.la
-SRC_MCS		= mcs_index_rates.c
-
 SRC_AT		= airtun-ng.c
 SRC_IV		= ivstools.c
 SRC_AS		= airserv-ng.c
@@ -263,7 +260,7 @@ aireplay_ng_LDADD = $(COMMON_LDADD) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $
 
 airodump_ng_SOURCES = $(SRC_ADU) $(LIBOSD) $(LIBMCS) $(LIBAIRCRACK_UTIL)
 airodump_ng_CFLAGS = $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
-airodump_ng_LDADD = $(COMMON_LDADD) $(PCRE_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBMCS_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
+airodump_ng_LDADD = $(COMMON_LDADD) $(PCRE_LIBS) $(LIBOSD_LIBS) $(LIBNL_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
 airserv_ng_SOURCES = $(SRC_AS) $(LIBOSD) $(LIBAIRCRACK_UTIL)
 airserv_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
@@ -333,10 +330,6 @@ libaclib_la_SOURCES = $(SRC_ACLIB)
 libaclib_la_CFLAGS = $(COMMON_CFLAGS)
 libaclib_la_LIBADD = $(COMMON_LDADD)
 
-libmcs_la_SOURCES = $(SRC_MCS)
-libmcs_la_CFLAGS = $(COMMON_CFLAGS) $(LIBMCS_CFLAGS)
-libmcs_la_LIBADD = $(COMMON_LDADD)
-
 libcow_la_SOURCES = $(SRC_COW)
 libcow_la_CFLAGS = $(COMMON_CFLAGS) $(LIBCOW_CFLAGS)
 libcow_la_LIBADD = $(COMMON_LDADD)
@@ -345,7 +338,7 @@ libptw_la_SOURCES = $(SRC_PTW)
 libptw_la_CFLAGS = $(COMMON_CFLAGS)
 libptw_la_LIBADD = $(COMMON_LDADD)
 
-noinst_LTLIBRARIES = libaclib.la libptw.la libmcs.la libcow.la
+noinst_LTLIBRARIES = libaclib.la libptw.la libcow.la
 
 EXTRA_DIST = wpaclean.c \
              buddy-ng.c \
@@ -410,8 +403,6 @@ EXTRA_DIST = wpaclean.c \
              trampoline.c \
              trampoline.h \
              trampoline_x86.c \
-             mcs_index_rates.c \
-             mcs_index_rates.h \
              cowpatty.c \
              cowpatty.h \
              session.c \

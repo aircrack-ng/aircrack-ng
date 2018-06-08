@@ -74,7 +74,7 @@
 #include "airodump-ng.h"
 #include "osdep/common.h"
 #include "aircrack-util/common.h"
-#include "mcs_index_rates.h"
+#include "aircrack-util/mcs_index_rates.h"
 #include "aircrack-util/verifyssid.h"
 #include "aircrack-util/console.h"
 

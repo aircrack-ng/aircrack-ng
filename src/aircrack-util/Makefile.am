@@ -42,7 +42,7 @@ AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src \
               $(LIBNL_CFLAGS)
 
-libaircrack_util_la_SOURCES = common.c console.c simd_cpuid.c verifyssid.c
+libaircrack_util_la_SOURCES = common.c console.c mcs_index_rates.c simd_cpuid.c verifyssid.c
 
 noinst_LTLIBRARIES = libaircrack-util.la
 
@@ -50,6 +50,8 @@ EXTRA_DIST = common.c \
              common.h \
              console.c \
              console.h \
+             mcs_index_rates.c \
+             mcs_index_rates.h \
              simd_cpuid.c \
              simd_cpuid.h \
              verifyssid.c \
