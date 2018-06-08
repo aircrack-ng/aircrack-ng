@@ -87,6 +87,7 @@ endif
 
 if LINUX
 libaircrack_osdep_la_SOURCES = $(SRCS_LINUX)
+libaircrack_osdep_la_LIBADD = $(LIBNL_LIBS) $(LIBRADIOTAP_LIBS)
 endif
 
 if NETBSD
@@ -101,7 +102,8 @@ if !AIRPCAP
 libaircrack_osdep_la_LIBADD = $(LIBRADIOTAP_LIBS)
 endif
 
-noinst_LTLIBRARIES = libaircrack-osdep.la
+lib_LTLIBRARIES = libaircrack-osdep.la
+libaircrack_osdep_la_LDFLAGS = -version-info 0:0:0
 
 EXTRA_DIST = openbsd.c \
              darwin.c \
