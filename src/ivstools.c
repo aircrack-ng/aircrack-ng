@@ -41,7 +41,7 @@
 #include "crypto.h"
 #include "pcap.h"
 #include "uniqueiv.h"
-#include "osdep/byteorder.h"
+#include "aircrack-osdep/byteorder.h"
 #include "aircrack-util/common.h"
 #include "eapol.h"
 

@@ -181,8 +181,8 @@ scripts/versuck-ng/Makefile
 src/Makefile
 src/aircrack-util/Makefile
 src/include/Makefile
-src/osdep/Makefile
-src/osdep/radiotap/Makefile
+src/aircrack-osdep/Makefile
+src/aircrack-osdep/radiotap/Makefile
 
 test/Makefile
 test/test-env.sh

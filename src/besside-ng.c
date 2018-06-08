@@ -59,7 +59,7 @@
 #include "aircrack-ng.h"
 #include "version.h"
 #include "aircrack-ptw-lib.h"
-#include "osdep/osdep.h"
+#include "aircrack-osdep/osdep.h"
 #include "ieee80211.h"
 #include "crypto.h"
 #include "pcap.h"

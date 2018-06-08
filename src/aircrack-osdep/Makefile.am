@@ -1,6 +1,6 @@
 # Aircrack-ng
 #
-# Copyright (C) 2017 Joseph Benden <joe@benden.us>
+# Copyright (C) 2018 Joseph Benden <joe@benden.us>
 #
 # Autotool support was written by: Joseph Benden <joe@benden.us>
 #
@@ -65,43 +65,43 @@ endif
 
 if CYGWIN
 if AIRPCAP
-libosdep_la_SOURCES = $(SRCS_CYGWIN)
-libosdep_la_CFLAGS = $(AM_CPPFLAGS) $(AIRPCAP_CFLAGS)
-libosdep_la_LIBADD = $(AIRPCAP_LIBS) $(LIBRADIOTAP_LIBS)
+libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
+libaircrack_osdep_la_CFLAGS = $(AM_CPPFLAGS) $(AIRPCAP_CFLAGS)
+libaircrack_osdep_la_LIBADD = $(AIRPCAP_LIBS) $(LIBRADIOTAP_LIBS)
 else
-libosdep_la_SOURCES = $(SRCS_CYGWIN)
+libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
 endif
 endif
 
 if DARWIN
-libosdep_la_SOURCES = $(SRCS_DARWIN)
+libaircrack_osdep_la_SOURCES = $(SRCS_DARWIN)
 endif
 
 if DUMMY
-libosdep_la_SOURCES = $(SRCS_DUMMY)
+libaircrack_osdep_la_SOURCES = $(SRCS_DUMMY)
 endif
 
 if FREEBSD
-libosdep_la_SOURCES = $(SRCS_FBSD)
+libaircrack_osdep_la_SOURCES = $(SRCS_FBSD)
 endif
 
 if LINUX
-libosdep_la_SOURCES = $(SRCS_LINUX)
+libaircrack_osdep_la_SOURCES = $(SRCS_LINUX)
 endif
 
 if NETBSD
-libosdep_la_SOURCES = $(SRCS_NBSD)
+libaircrack_osdep_la_SOURCES = $(SRCS_NBSD)
 endif
 
 if OPENBSD
-libosdep_la_SOURCES = $(SRCS_OBSD)
+libaircrack_osdep_la_SOURCES = $(SRCS_OBSD)
 endif
 
 if !AIRPCAP
-libosdep_la_LIBADD = $(LIBRADIOTAP_LIBS)
+libaircrack_osdep_la_LIBADD = $(LIBRADIOTAP_LIBS)
 endif
 
-noinst_LTLIBRARIES = libosdep.la
+noinst_LTLIBRARIES = libaircrack-osdep.la
 
 EXTRA_DIST = openbsd.c \
              darwin.c \

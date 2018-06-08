@@ -43,13 +43,13 @@
 #include <netinet/udp.h>
 #undef __FAVOR_BSD
 
-#include "osdep/osdep.h"
+#include "aircrack-osdep/osdep.h"
 #include "ieee80211.h"
 #include "easside.h"
 #include "if_arp.h"
 #include "ethernet.h"
 #include "version.h"
-#include "osdep/byteorder.h"
+#include "aircrack-osdep/byteorder.h"
 
 
 #define S_MTU		1500

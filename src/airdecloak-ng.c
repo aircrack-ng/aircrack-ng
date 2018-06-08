@@ -41,7 +41,7 @@
 #include <getopt.h>
 #include "airdecloak-ng.h"
 #include "version.h"
-#include "osdep/radiotap/radiotap_iter.h"
+#include "aircrack-osdep/radiotap/radiotap_iter.h"
 #include "aircrack-util/console.h"
 
 unsigned char buffer[65536];

@@ -67,8 +67,8 @@
 #include "aircrack-util/common.h"
 #include "eapol.h"
 
-#include "osdep/osdep.h"
-#include "osdep/common.h"
+#include "aircrack-osdep/osdep.h"
+#include "aircrack-util/common.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
 #ifdef USE_GCRYPT

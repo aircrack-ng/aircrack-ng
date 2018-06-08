@@ -56,7 +56,7 @@
 #include <stdarg.h>
 #include <err.h>
 
-#include "osdep/osdep.h"
+#include "aircrack-osdep/osdep.h"
 #include "pcap.h"
 #include "aircrack-ptw-lib.h"
 #include "ieee80211.h"
@@ -65,7 +65,7 @@
 #include "if_llc.h"
 #include "crypto.h"
 #include "version.h"
-#include "osdep/byteorder.h"
+#include "aircrack-osdep/byteorder.h"
 
 #define FIND_VICTIM		0
 #define FOUND_VICTIM		1

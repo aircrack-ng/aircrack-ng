@@ -43,7 +43,7 @@
 #include "version.h"
 #include "pcap.h"
 #include "crypto.h"
-#include "osdep/byteorder.h"
+#include "aircrack-osdep/byteorder.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 

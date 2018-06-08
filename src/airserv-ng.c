@@ -38,8 +38,8 @@
 	#include <sys/select.h>
 #endif
 
-#include "osdep/osdep.h"
-#include "osdep/network.h"
+#include "aircrack-osdep/osdep.h"
+#include "aircrack-osdep/network.h"
 #include "version.h"
 
 static void sighandler( int signum )

@@ -67,7 +67,7 @@
 #include "uniqueiv.h"
 #include "aircrack-ng.h"
 #include "sha1-sse2.h"
-#include "osdep/byteorder.h"
+#include "aircrack-osdep/byteorder.h"
 #include "aircrack-util/common.h"
 #include "wkp-frame.h"
 #include "linecount.h"

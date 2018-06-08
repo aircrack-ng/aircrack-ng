@@ -69,11 +69,11 @@
 
 #include "version.h"
 #include "pcap.h"
-#include "osdep/osdep.h"
+#include "aircrack-osdep/osdep.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
 #include "ieee80211.h"
-#include "osdep/radiotap/radiotap_iter.h"
+#include "aircrack-osdep/radiotap/radiotap_iter.h"
 #include "airventriloquist-ng.h"
 
 #define RTC_RESOLUTION  8192

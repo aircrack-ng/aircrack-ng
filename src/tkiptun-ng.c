@@ -67,7 +67,7 @@
 
 #include "version.h"
 #include "pcap.h"
-#include "osdep/osdep.h"
+#include "aircrack-osdep/osdep.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
 #include "eapol.h"

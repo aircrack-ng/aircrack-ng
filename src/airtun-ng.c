@@ -63,7 +63,7 @@
 #include "crypto.h"
 #include "aircrack-util/common.h"
 
-#include "osdep/osdep.h"
+#include "aircrack-osdep/osdep.h"
 
 static struct wif *_wi_in, *_wi_out;
 
