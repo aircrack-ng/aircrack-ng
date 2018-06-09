@@ -2516,15 +2516,15 @@ int do_attack_arp_resend( void )
             usleep( 1000000/RTC_RESOLUTION );
             gettimeofday( &tv2, NULL );
 
-            f = 1000000 * (float) ( tv2.tv_sec  - tv.tv_sec  )
-                        + (float) ( tv2.tv_usec - tv.tv_usec );
+            f = 1000000.f * (float) ( tv2.tv_sec  - tv.tv_sec  )
+                          + (float) ( tv2.tv_usec - tv.tv_usec );
 
-            ticks[0] += f / ( 1000000/RTC_RESOLUTION );
-            ticks[1] += f / ( 1000000/RTC_RESOLUTION );
-            ticks[2] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[0] += f / ( 1000000.f/RTC_RESOLUTION );
+            ticks[1] += f / ( 1000000.f/RTC_RESOLUTION );
+            ticks[2] += f / ( 1000000.f/RTC_RESOLUTION );
         }
 
-        if( ticks[1] > (RTC_RESOLUTION/10) )
+        if( ticks[1] > (RTC_RESOLUTION/10.f) )
         {
             ticks[1] = 0;
             printf( "\rRead %ld packets (got %ld ARP requests and %ld ACKs), "
@@ -2960,12 +2960,12 @@ int do_attack_caffe_latte( void )
             f = 1000000 * (float) ( tv2.tv_sec  - tv.tv_sec  )
                         + (float) ( tv2.tv_usec - tv.tv_usec );
 
-            ticks[0] += f / ( 1000000/RTC_RESOLUTION );
-            ticks[1] += f / ( 1000000/RTC_RESOLUTION );
-            ticks[2] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[0] += f / ( 1000000.f/RTC_RESOLUTION );
+            ticks[1] += f / ( 1000000.f/RTC_RESOLUTION );
+            ticks[2] += f / ( 1000000.f/RTC_RESOLUTION );
         }
 
-        if( ticks[1] > (RTC_RESOLUTION/10) )
+        if( ticks[1] > (RTC_RESOLUTION/10.f) )
         {
             ticks[1] = 0;
             printf( "\rRead %ld packets (%ld ARPs, %ld ACKs), "
@@ -3421,15 +3421,15 @@ int do_attack_migmode( void )
             usleep( 1000000/RTC_RESOLUTION );
             gettimeofday( &tv2, NULL );
 
-            f = 1000000 * (float) ( tv2.tv_sec  - tv.tv_sec  )
-                        + (float) ( tv2.tv_usec - tv.tv_usec );
+            f = 1000000.f * (float) ( tv2.tv_sec  - tv.tv_sec  )
+                          + (float) ( tv2.tv_usec - tv.tv_usec );
 
-            ticks[0] += f / ( 1000000/RTC_RESOLUTION );
-            ticks[1] += f / ( 1000000/RTC_RESOLUTION );
-            ticks[2] += f / ( 1000000/RTC_RESOLUTION );
+            ticks[0] += f / ( 1000000.f/RTC_RESOLUTION );
+            ticks[1] += f / ( 1000000.f/RTC_RESOLUTION );
+            ticks[2] += f / ( 1000000.f/RTC_RESOLUTION );
         }
 
-        if( ticks[1] > (RTC_RESOLUTION/10) )
+        if( ticks[1] > (RTC_RESOLUTION/10.f) )
         {
             ticks[1] = 0;
             printf( "\rRead %ld packets (%ld ARPs, %ld ACKs), "
@@ -4377,7 +4377,7 @@ int do_attack_chopchop( void )
 
         /* update the status line */
 
-        if( ticks[1] > (RTC_RESOLUTION/10) )
+        if( ticks[1] > (RTC_RESOLUTION/10.f) )
         {
             ticks[1] = 0;
             printf( "\rSent %3lu packets, current guess: %02X...",
