@@ -734,23 +734,23 @@ int init_michael(struct Michael *mic, unsigned char key[8])
 
 int michael_append_byte(struct Michael *mic, unsigned char byte)
 {
-    mic->message |= (byte << (8*mic->nBytesInM));
+    mic->message |= (byte << (8UL * mic->nBytesInM));
     mic->nBytesInM++;
     // Process the word if it is full.
-    if( mic->nBytesInM >= 4 )
+    if( mic->nBytesInM >= 4UL )
     {
         mic->left ^= mic->message;
         mic->right ^= ROL32( mic->left, 17 );
         mic->left += mic->right;
-        mic->right ^= ((mic->left & 0xff00ff00) >> 8) | ((mic->left & 0x00ff00ff) << 8);
+        mic->right ^= ((mic->left & 0xff00ff00) >> 8UL) | ((mic->left & 0x00ff00ff) << 8UL);
         mic->left += mic->right;
         mic->right ^= ROL32( mic->left, 3 );
         mic->left += mic->right;
         mic->right ^= ROR32( mic->left, 2 );
         mic->left += mic->right;
         // Clear the buffer
-        mic->message = 0;
-        mic->nBytesInM = 0;
+        mic->message = 0UL;
+        mic->nBytesInM = 0UL;
     }
     return 0;
 }
