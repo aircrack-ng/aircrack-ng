@@ -275,9 +275,9 @@ int main( int argc, char *argv[] )
                         return( 1 );
                     }
 
-                    K[3+i++] = n;
+                    if (3+i >= 32) break;
 
-                    if( i >= 32 ) break;
+                    K[3+i++] = n;
 
                     s += 2;
 
