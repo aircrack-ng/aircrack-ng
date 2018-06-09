@@ -7,7 +7,7 @@ language: c
 sudo: false
 
 before_install:
-    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install openssl libgcrypt sqlite3 libpcap pcre || echo -e "\e[1;31m Skipping Homebrew... \e[0m"); fi
+    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install glib openssl libgcrypt sqlite3 libpcap pcre || echo -e "\e[1;31m Skipping Homebrew... \e[0m"); fi
 
 addons:
   apt:
