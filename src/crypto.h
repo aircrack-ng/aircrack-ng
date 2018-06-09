@@ -215,11 +215,11 @@ int check_crc_buf( unsigned char *buf, int len );
 int calc_crc_buf( unsigned char *buf, int len );
 void calc_mic(struct AP_info *ap, unsigned char *pmk, unsigned char *ptk,
 	      unsigned char *mic);
-int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len);
+int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, size_t len);
 int add_crc32(unsigned char* data, int length);
 int add_crc32_plain(unsigned char* data, int length);
 int is_ipv6(void *wh);
-int is_dhcp_discover(void *wh, int len);
+int is_dhcp_discover(void *wh, size_t len);
 int is_qos_arp_tkip(void *wh, int len);
 int calc_tkip_ppk( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char key[16] );
 void encrypt_tkip( unsigned char *h80211, int caplen, unsigned char PTK[80] );
