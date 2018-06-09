@@ -1609,7 +1609,7 @@ skip_station:
     {
         p = h80211 + 24;
 
-        while( p < h80211 + caplen )
+        while( p + 2 < h80211 + caplen )
         {
             if( p + 2 + p[1] > h80211 + caplen )
                 break;
@@ -1653,7 +1653,7 @@ skip_probe:
 
     /* packet parsing: Beacon or Probe Response */
 
-    if( h80211[0] == 0x80 || h80211[0] == 0x50 )
+    if( (h80211[0] == 0x80 || h80211[0] == 0x50) && caplen > 34 )
     {
         if( !(ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) )
         {
@@ -1668,10 +1668,8 @@ skip_probe:
 
         p = h80211 + 36;
 
-        while( p < h80211 + caplen )
+        while( p + 2 < h80211 + caplen )
         {
-            if( p + 2 + p[1] > h80211 + caplen )
-                break;
 
             //only update the essid length if the new length is > the old one
             if( p[0] == 0x00 && (ap_cur->ssid_length < p[1]) ) ap_cur->ssid_length = p[1];
@@ -1683,6 +1681,9 @@ skip_probe:
 
 //                n = ( p[1] > 32 ) ? 32 : p[1];
                 n = p[1];
+
+                if (p + 2 + n > h80211 + caplen)
+                    break;
 
                 memset( ap_cur->essid, 0, 256 );
                 memcpy( ap_cur->essid, p + 2, n );
@@ -1741,6 +1742,8 @@ skip_probe:
 
             if( p[0] == 0x01 || p[0] == 0x32 )
             {
+                if (p + 1 + p[1] >= h80211 + caplen)
+                    break;
                 if(ap_cur->max_speed < ( p[1 + p[1]] & 0x7F ) / 2)
                     ap_cur->max_speed = ( p[1 + p[1]] & 0x7F ) / 2;
             }
@@ -1969,7 +1972,7 @@ skip_probe:
     {
         p=h80211+36;         //ignore hdr + fixed params
 
-        while( p < h80211 + caplen )
+        while( p + 2 < h80211 + caplen )
         {
             type = p[0];
             length = p[1];
@@ -2013,7 +2016,7 @@ skip_probe:
                 numuni  = p[8+offset] + (p[9+offset]<<8);
 
 				// Number of Authentication Key Managament suites
-                if( p+ (11+offset) + 4*numuni > h80211+caplen)
+                if( p+ (11+offset) + 4*numuni >= h80211+caplen)
                     break;
                 numauth = p[(10+offset) + 4*numuni] + (p[(11+offset) + 4*numuni]<<8);
 
@@ -2091,7 +2094,7 @@ skip_probe:
                 org_p = p;
                 p+=6;
                 int len = length, subtype = 0, sublen = 0;
-                while(len >= 4)
+                while(p + 5 < h80211 + caplen && len >= 4)
                 {
                     subtype = (p[0] << 8) + p[1];
                     sublen = (p[2] << 8) + p[3];
@@ -2174,17 +2177,17 @@ skip_probe:
     {
         p = h80211 + 28;
 
-        while( p < h80211 + caplen )
+        while( p + 2 < h80211 + caplen)
         {
-            if( p + 2 + p[1] > h80211 + caplen )
-                break;
-
             if( p[0] == 0x00 && p[1] > 0 && p[2] != '\0' &&
                 ( p[1] > 1 || p[2] != ' ' ) )
             {
                 /* found a non-cloaked ESSID */
 
                 n = ( p[1] > 32 ) ? 32 : p[1];
+
+                if ( p + 2 + n > h80211 + caplen )
+                    break;
 
                 memset( ap_cur->essid, 0, 33 );
                 memcpy( ap_cur->essid, p + 2, n );
@@ -2507,6 +2510,8 @@ skip_probe:
                   ( h80211[z + 6] & 0x80 ) != 0 &&
                   ( h80211[z + 5] & 0x01 ) == 0 )
             {
+                if (z + 17 + 32 > caplen)
+                    goto write_packet;
                 memcpy( st_cur->wpa.anonce, &h80211[z + 17], 32 );
                 st_cur->wpa.state = 1;
             }
@@ -2683,7 +2688,7 @@ write_packet:
         if(h80211[0] & 0x04)
         {
             p=h80211+4;
-            while(p <= h80211+16 && p<=h80211+caplen)
+            while(p <= h80211+16 && p<=h80211+caplen-6)
             {
                 memcpy(namac, p, 6);
 
