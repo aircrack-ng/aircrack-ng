@@ -29,6 +29,7 @@ do
 
 	echo "W: failed to run autogen.sh, will retry..."
 	RETRY=$(($RETRY + 1))
+	sleep $((10 * $RETRY))
 done
 
 if [ $RETRY -ge 3 ];
