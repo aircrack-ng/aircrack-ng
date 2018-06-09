@@ -722,13 +722,13 @@ int calc_ptk( struct WPA_ST_info *wpa, unsigned char pmk[32] )
 
 int init_michael(struct Michael *mic, unsigned char key[8])
 {
-    mic->key0 = key[0]<<0 | key[1]<<8 | key[2]<<16 | key[3]<<24;
-    mic->key1 = key[4]<<0 | key[5]<<8 | key[6]<<16 | key[7]<<24;
+    mic->key0 = key[0]<<0UL | key[1]<<8UL | key[2]<<16UL | key[3]<<24UL;
+    mic->key1 = key[4]<<0UL | key[5]<<8UL | key[6]<<16UL | key[7]<<24UL;
     // and reset the message
     mic->left  = mic->key0;
     mic->right = mic->key1;
-    mic->nBytesInM = 0;
-    mic->message = 0;
+    mic->nBytesInM = 0UL;
+    mic->message = 0UL;
     return 0;
 }
 
