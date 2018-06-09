@@ -65,6 +65,8 @@
 #include <pcre.h>
 #endif
 
+#include <glib-2.0/glib.h>
+
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.h"
@@ -5480,6 +5482,25 @@ void sighandler( int signum)
 	if( signum == SIGUSR1 )
 	{
 		unused = read( G.cd_pipe[0], &card, sizeof(int) );
+		if (unused < 1)
+		{
+			// error occurred
+			perror("read");
+			return;
+		}
+		else if (unused == 0)
+		{
+			// EOF
+			perror("EOF encountered read(G.cd_pipe[0])");
+			return;
+		}
+
+		if (card < 0 || card > G_N_ELEMENTS(G.frequency))
+		{
+			// invalid received data
+			fprintf(stderr, "Invalid data received for read(G.cd_pipe[0]), got %d\n", card);
+			return;
+		}
 
 		if(G.freqoption)
 			unused = read( G.ch_pipe[0], &(G.frequency[card]), sizeof( int ) );
