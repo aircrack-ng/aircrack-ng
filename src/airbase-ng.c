@@ -3612,6 +3612,7 @@ void beacon_thread( void *arg )
     int essid_len, temp_channel;
     char essid[MAX_IE_ELEMENT_SIZE+1];
     float f, ticks[3];
+    ssize_t rc;
 
     memset(essid, 0, MAX_IE_ELEMENT_SIZE+1);
     memcpy(&apc, arg, sizeof(struct AP_conf));
@@ -3625,11 +3626,17 @@ void beacon_thread( void *arg )
         /* sleep until the next clock tick */
         if( dev.fd_rtc >= 0 )
         {
-            if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
+            if( (rc = read( dev.fd_rtc, &n, sizeof( n ) )) < 0 )
             {
                 perror( "read(/dev/rtc) failed" );
                 return;
             }
+
+            if (rc == 0)
+			{
+            	perror( "EOF encountered on /dev/rtc" );
+            	return;
+			}
 
             ticks[0]++;
             ticks[1]++;
