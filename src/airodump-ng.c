@@ -3267,7 +3267,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 {
     time_t tt;
     struct tm *lt;
-    int nlines, i, n, len;
+    int nlines, i, n;
     char strbuf[512];
     char buffer[512];
     char ssid_list[512];
@@ -3277,6 +3277,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     int columns_ap = 83;
     int columns_sta = 74;
     int columns_na = 68;
+    ssize_t len;
 
     int num_ap;
     int num_sta;
@@ -3583,12 +3584,15 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	    }
 	    else if( ap_cur->security & AUTH_OPN   ) snprintf( strbuf+len, sizeof(strbuf)-len, "OPN");
 
-	    len = strlen(strbuf);
 
 	    if (G.show_uptime) {
 	    	snprintf(strbuf+len, sizeof(strbuf)-len, " %14s", parse_timestamp(ap_cur->timestamp));
 	    	len = strlen(strbuf);
 	    }
+	    else
+		{
+			len = strlen(strbuf);
+		}
 
 	    strbuf[ws_col-1] = '\0';
 
@@ -3627,18 +3631,18 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		            snprintf(strbuf, sizeof(strbuf)-1, "Locked");
 		        else
 		        {
-		            snprintf(strbuf, sizeof(strbuf)-1, "%d.%d", ap_cur->wps.version >> 4, ap_cur->wps.version & 0xF); // Version
+		            snprintf(strbuf, sizeof(strbuf)-1, "%u.%d", ap_cur->wps.version >> 4, ap_cur->wps.version & 0xF); // Version
 		            if (ap_cur->wps.meth) // WPS Config Methods
 		            {
 		                char tbuf[64];
 		                memset( tbuf, '\0', sizeof(tbuf) );
 		                int sep = 0;
 #define T(bit, name) do {                       \
-    if (ap_cur->wps.meth & (1<<bit)) {          \
+    if (ap_cur->wps.meth & (1<<(bit))) {          \
         if (sep)                                \
             strcat(tbuf, ",");                  \
         sep = 1;                                \
-        strncat(tbuf, name, (64-strlen(tbuf))); \
+        strncat(tbuf, (name), (64-strlen(tbuf))); \
     } } while (0)
 		                T(0, "USB");     // USB method
 		                T(1, "ETHER");   // Ethernet
@@ -3658,7 +3662,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		        snprintf(strbuf, sizeof(strbuf)-1, " ");
 		    }
 		    if (G.maxsize_wps_seen <= strlen(strbuf))
-			G.maxsize_wps_seen = strlen(strbuf);
+			G.maxsize_wps_seen = (u_int) strlen(strbuf);
 		    else // write spaces (32)
 			memset( strbuf+strlen(strbuf), 32,  (G.maxsize_wps_seen - strlen(strbuf))  );
 		}
@@ -3684,9 +3688,9 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		if (G.show_manufacturer) {
 
 			if (G.maxsize_essid_seen <= strlen(strbuf))
-				G.maxsize_essid_seen = strlen(strbuf);
+				G.maxsize_essid_seen = (u_int) strlen(strbuf);
 			else // write spaces (32)
-				memset( strbuf+strlen(strbuf), 32,  (G.maxsize_essid_seen - strlen(strbuf))  );
+				memset( strbuf+strlen(strbuf), 32, (size_t) (G.maxsize_essid_seen - strlen(strbuf))  );
 
 			if (ap_cur->manuf == NULL)
 				ap_cur->manuf = get_manufacturer(ap_cur->bssid[0], ap_cur->bssid[1], ap_cur->bssid[2]);
@@ -3695,7 +3699,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 		}
 
 		// write spaces (32) until the end of column
-		memset( strbuf+strlen(strbuf), 32, ws_col - (columns_ap - 4 ) );
+		memset( strbuf+strlen(strbuf), 32, (size_t) ws_col - (columns_ap - 4 ) );
 
 		// end the string at the end of the column
 		strbuf[ws_col - (columns_ap - 4)] = '\0';
@@ -3719,7 +3723,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	if( nlines >= (ws_row-1) )
 	    return;
 
-	memset( strbuf, ' ', ws_col - 1 );
+	memset( strbuf, ' ', (size_t) ws_col - 1 );
 	strbuf[ws_col - 1] = '\0';
 	fprintf( stderr, "%s\n", strbuf );
     }
@@ -3730,7 +3734,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	strbuf[ws_col - 1] = '\0';
 	fprintf( stderr, "%s\n", strbuf );
 
-	memset( strbuf, ' ', ws_col - 1 );
+	memset( strbuf, ' ', (size_t) ws_col - 1 );
 	strbuf[ws_col - 1] = '\0';
 	fprintf( stderr, "%s\n", strbuf );
 
@@ -3754,7 +3758,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 	    }
 
 	    // Don't filter unassociated clients by ESSID
-	    if(memcmp(ap_cur->bssid, BROADCAST, 6) && is_filtered_essid(ap_cur->essid))
+	    if(memcmp(ap_cur->bssid, BROADCAST, 6) != 0 && is_filtered_essid(ap_cur->essid))
 	    {
 		ap_cur = ap_cur->prev;
 		continue;
@@ -3867,16 +3871,16 @@ void dump_print( int ws_row, int ws_col, int if_num )
         if( nlines >= (ws_row-1) )
             return;
 
-        memset( strbuf, ' ', ws_col - 1 );
+        memset( strbuf, ' ', (size_t) ws_col - 1 );
         strbuf[ws_col - 1] = '\0';
         fprintf( stderr, "%s\n", strbuf );
 
         memcpy( strbuf, " MAC       "
-                "          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER", columns_na );
+                "          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER", (size_t) columns_na );
         strbuf[ws_col - 1] = '\0';
         fprintf( stderr, "%s\n", strbuf );
 
-        memset( strbuf, ' ', ws_col - 1 );
+        memset( strbuf, ' ', (size_t) ws_col - 1 );
         strbuf[ws_col - 1] = '\0';
         fprintf( stderr, "%s\n", strbuf );
 
