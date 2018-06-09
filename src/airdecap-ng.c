@@ -913,8 +913,16 @@ usage:
                 /* WPA data packet was successfully decrypted, *
                  * remove the WPA Ext.IV & MIC, write the data */
 
-                /* can overlap */
-                memmove( h80211 + z, h80211 + z + 8, pkh.caplen - z );
+				if (pkh.caplen > z)
+				{
+					/* can overlap */
+					memmove(h80211 + z, h80211 + z + 8, pkh.caplen - z);
+				}
+				else
+				{
+					/* overflow */
+					continue;
+				}
 
                 stats.nb_unwpa++;
 
