@@ -22,7 +22,7 @@ install:
 - cmd: c:\msys64\usr\bin\bash -e -l -c "pacman -Rdd --noconfirm libcatgets || true"
 - cmd: c:\msys64\usr\bin\bash -e -l -c "pacman -Syu --noconfirm"
 - cmd: c:\msys64\usr\bin\bash -e -l -c "pacman -Su --noconfirm"
-- cmd: c:\msys64\usr\bin\bash -e -l -c "pacman -Sy --noconfirm autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel glib2"
+- cmd: c:\msys64\usr\bin\bash -e -l -c "pacman -Sy --noconfirm autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel glib2 glib2-devel"
 
 build_script:
 - cmd: >-
