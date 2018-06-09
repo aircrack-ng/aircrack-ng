@@ -25,6 +25,7 @@
 
 #include "aircrack-util/common.h"
 
+#define IVBUF_SIZE (5UL * 0xFFFFFF)
 #define N_ATTACKS 17
 
 enum KoreK_attacks
@@ -310,11 +311,13 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
-    if( ( ivbuf = (unsigned char *) malloc( 5 * 0xFFFFFF ) ) == NULL )
+    if( ( ivbuf = (unsigned char *) malloc( IVBUF_SIZE ) ) == NULL )
     {
         perror( "malloc" );
         return( 1 );
     }
+
+    memset(ivbuf, 0, IVBUF_SIZE);
 
     if( ( f = fopen( argv[1], "rb" ) ) == NULL )
     {
