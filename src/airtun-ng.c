@@ -603,6 +603,7 @@ static int msleep( int msec )
     struct timeval tv, tv2;
     float f, ticks;
     int n;
+    ssize_t rc;
 
     if(msec == 0) msec = 1;
 
@@ -614,13 +615,18 @@ static int msleep( int msec )
 
         if( dev.fd_rtc >= 0 )
         {
-            if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
-            {
-                perror( "read(/dev/rtc) failed" );
-                return( 1 );
-            }
-
-            ticks++;
+			if( (rc = read( dev.fd_rtc, &n, sizeof( n ) )) < 0 )
+			{
+				perror( "read(/dev/rtc) failed" );
+			}
+			else if (rc == 0)
+			{
+				perror( "EOF encountered on /dev/rtc" );
+			}
+			else
+			{
+				ticks++;
+			}
         }
         else
         {
