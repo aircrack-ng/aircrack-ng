@@ -5,6 +5,9 @@
 [![Intel Compiler Build Status](https://buildbot.benden.us/badges/aircrack-ng.png?left_text=Intel%20Compiler%20Build)](https://buildbot.benden.us/)
 [![Alpine Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-alpine.png?left_text=Alpine%20Linux%20Build)](https://buildbot.benden.us/)
 [![Kali Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-kali.png?left_text=Kali%20Linux%20Build)](https://buildbot.benden.us/)
+[![Armel Kali Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-armel.png?left_text=Armel%20Kali%20Linux%20Build)](https://buildbot.benden.us/)
+[![Armhf Kali Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-armhf.png?left_text=Armhf%20Kali%20Linux%20Build)](https://buildbot.benden.us/)
+[![FreeBSD Build Status](https://buildbot.benden.us/badges/aircrack-ng-bsd.png?left_text=FreeBSD%20Build)](https://buildbot.benden.us/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/aircrack-ng/badge.svg)](https://scan.coverity.com/projects/aircrack-ng)
 
 Aircrack-ng is a complete suite of tools to assess WiFi network security.
