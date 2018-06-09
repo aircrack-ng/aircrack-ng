@@ -1487,6 +1487,12 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     case DT_IPW2200:
         /* find the interface index */
 
+        if (dev->main_if == NULL)
+		{
+        	perror("Missing interface name");
+        	return 1;
+		}
+
         memset( &ifr2, 0, sizeof( ifr ) );
         strncpy( ifr2.ifr_name, dev->main_if, sizeof( ifr2.ifr_name ) - 1 );
 
