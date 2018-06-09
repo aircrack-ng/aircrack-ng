@@ -34,10 +34,10 @@ struct net_hdr {
 	uint8_t		nh_data[0];
 } __packed;
 
-extern struct wif *net_open(char *iface);
-extern int net_send(int s, int command, void *arg, int len);
-extern int net_read_exact(int s, void *arg, int len);
-extern int net_get(int s, void *arg, int *len);
+IMPORT struct wif *net_open(char *iface);
+IMPORT int net_send(int s, int command, void *arg, int len);
+IMPORT int net_read_exact(int s, void *arg, int len);
+IMPORT int net_get(int s, void *arg, int *len);
 
 
 

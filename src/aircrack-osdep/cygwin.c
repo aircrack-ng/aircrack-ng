@@ -567,7 +567,7 @@ struct wif *wi_open_osdep(char *iface)
  * Return remaining battery time in seconds.
  * @return Battery time in seconds or 0 if no battery (or connected to power)
  */
-int get_battery_state(void)
+EXPORT int get_battery_state(void)
 {
 	SYSTEM_POWER_STATUS powerStatus;
 	int batteryTime = 0;

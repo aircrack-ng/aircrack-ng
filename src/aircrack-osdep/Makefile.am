@@ -42,7 +42,8 @@ SUBDIRS = radiotap
 AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src/include \
               -I$(top_srcdir)/src \
-              $(LIBNL_CFLAGS)
+              $(LIBNL_CFLAGS) \
+              $(GLIB_CFLAGS)
 
 SRCS_COMMON = network.c file.c
 SRCS = osdep.c $(SRCS_COMMON)
@@ -103,7 +104,7 @@ libaircrack_osdep_la_LIBADD = $(LIBRADIOTAP_LIBS)
 endif
 
 lib_LTLIBRARIES = libaircrack-osdep.la
-libaircrack_osdep_la_LDFLAGS = -version-info 0:0:0
+libaircrack_osdep_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
 EXTRA_DIST = openbsd.c \
              darwin.c \

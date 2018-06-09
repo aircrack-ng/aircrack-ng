@@ -217,7 +217,7 @@ static struct tif *ti_open_nbsd(char *iface)
 	return ti;
 }
 
-struct tif *ti_open(char *iface)
+EXPORT struct tif *ti_open(char *iface)
 {
 	return ti_open_nbsd(iface);
 }

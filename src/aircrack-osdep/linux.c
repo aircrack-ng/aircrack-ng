@@ -2312,7 +2312,7 @@ struct wif *wi_open_osdep(char *iface)
         return linux_open(iface);
 }
 
-int get_battery_state(void)
+EXPORT int get_battery_state(void)
 {
     char buf[128];
     int batteryTime = 0;

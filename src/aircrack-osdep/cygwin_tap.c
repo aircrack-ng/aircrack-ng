@@ -653,7 +653,7 @@ err:
 	return NULL;
 }
 
-struct tif *ti_open(char *iface)
+EXPORT struct tif *ti_open(char *iface)
 {
 	return ti_open_cygwin(iface);
 }

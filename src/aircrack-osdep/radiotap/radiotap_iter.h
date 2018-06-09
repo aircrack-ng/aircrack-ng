@@ -4,6 +4,20 @@
 #include <stdint.h>
 #include "radiotap.h"
 
+#if defined(_MSC_VER)
+//  Microsoft
+#define EXPORT __declspec(dllexport)
+#define IMPORT __declspec(dllimport)
+#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#define EXPORT __attribute__((visibility("default")))
+#define IMPORT
+#else
+//  do nothing and hope for the best?
+#define EXPORT
+#define IMPORT
+#pragma warning Unknown dynamic link import/export semantics.
+#endif
+
 /* Radiotap header iteration
  *   implemented in radiotap.c
  */
@@ -83,12 +97,12 @@ struct ieee80211_radiotap_iterator {
 	int _reset_on_ext;
 };
 
-extern int ieee80211_radiotap_iterator_init(
+IMPORT int ieee80211_radiotap_iterator_init(
 	struct ieee80211_radiotap_iterator *iterator,
 	struct ieee80211_radiotap_header *radiotap_header,
 	int max_length, const struct ieee80211_radiotap_vendor_namespaces *vns);
 
-extern int ieee80211_radiotap_iterator_next(
+IMPORT int ieee80211_radiotap_iterator_next(
 	struct ieee80211_radiotap_iterator *iterator);
 
 #endif /* __RADIOTAP_ITER_H */

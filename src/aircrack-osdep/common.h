@@ -32,8 +32,22 @@
 #ifndef _OSDEP_COMMON_H_
 #define _OSDEP_COMMON_H_
 
-int getFrequencyFromChannel(int channel);
-int getChannelFromFrequency(int frequency);
+#if defined(_MSC_VER)
+//  Microsoft
+#define EXPORT __declspec(dllexport)
+#define IMPORT __declspec(dllimport)
+#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#define EXPORT __attribute__((visibility("default")))
+#define IMPORT
+#else
+//  do nothing and hope for the best?
+#define EXPORT
+#define IMPORT
+#pragma warning Unknown dynamic link import/export semantics.
+#endif
+
+IMPORT int getFrequencyFromChannel(int channel);
+IMPORT int getChannelFromFrequency(int frequency);
 
 /*
 // For later use, because aircrack-ng doesn't compile with MS compilers

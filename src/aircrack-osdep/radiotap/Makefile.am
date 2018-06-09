@@ -40,9 +40,11 @@
 AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src/include \
               -I$(top_srcdir)/src \
-              $(LIBNL_CFLAGS)
+              $(LIBNL_CFLAGS) \
+              $(GLIB_CFLAGS)
 
 libradiotap_la_SOURCES = radiotap.c
+libradiotap_la_LDFLAGS = -no-undefined
 
 noinst_LTLIBRARIES = libradiotap.la
 

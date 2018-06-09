@@ -50,7 +50,7 @@ struct priv_net {
 	int		pn_queue_len;
 };
 
-int net_send(int s, int command, void *arg, int len)
+EXPORT int net_send(int s, int command, void *arg, int len)
 {
 	struct net_hdr *pnh;
 	char *pktbuf;
@@ -99,7 +99,7 @@ net_send_error:
 	return -1;
 }
 
-int net_read_exact(int s, void *arg, int len)
+EXPORT int net_read_exact(int s, void *arg, int len)
 {
 	ssize_t rc;
 	int rlen = 0;
@@ -123,7 +123,7 @@ int net_read_exact(int s, void *arg, int len)
 	return 0;
 }
 
-int net_get(int s, void *arg, int *len)
+EXPORT int net_get(int s, void *arg, int *len)
 {
 	struct net_hdr nh;
 	int plen;
@@ -497,7 +497,7 @@ static int net_fd(struct wif *wi)
 	return pn->pn_s;
 }
 
-struct wif *net_open(char *iface)
+EXPORT struct wif *net_open(char *iface)
 {
 	struct wif *wi;
 	struct priv_net *pn;

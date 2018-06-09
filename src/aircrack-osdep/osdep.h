@@ -56,6 +56,20 @@
 #define TCPDUMP_MAGIC           0xa1b2c3d4
 #endif
 
+#if defined(_MSC_VER)
+//  Microsoft
+#define EXPORT __declspec(dllexport)
+#define IMPORT __declspec(dllimport)
+#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#define EXPORT __attribute__((visibility("default")))
+#define IMPORT
+#else
+//  do nothing and hope for the best?
+#define EXPORT
+#define IMPORT
+#pragma warning Unknown dynamic link import/export semantics.
+#endif
+
 /* For all structures, when adding new fields, always append them to the end.
  * This way legacy binary code does not need to be recompiled.  This is
  * particularly useful for DLLs.  -sorbo
@@ -105,25 +119,25 @@ struct wif {
 };
 
 /* Routines to be used by client code */
-extern struct wif *wi_open(char *iface);
-extern int wi_read(struct wif *wi, unsigned char *h80211, int len,
+IMPORT struct wif *wi_open(char *iface);
+IMPORT int wi_read(struct wif *wi, unsigned char *h80211, int len,
 		   struct rx_info *ri);
-extern int wi_write(struct wif *wi, unsigned char *h80211, int len,
+IMPORT int wi_write(struct wif *wi, unsigned char *h80211, int len,
 		    struct tx_info *ti);
-extern int wi_set_channel(struct wif *wi, int chan);
-extern int wi_set_ht_channel(struct wif *wi, int chan, unsigned int htval);
-extern int wi_get_channel(struct wif *wi);
-extern int wi_set_freq(struct wif *wi, int freq);
-extern int wi_get_freq(struct wif *wi);
-extern void wi_close(struct wif *wi);
-extern char *wi_get_ifname(struct wif *wi);
-extern int wi_get_mac(struct wif *wi, unsigned char *mac);
-extern int wi_set_mac(struct wif *wi, unsigned char *mac);
-extern int wi_get_rate(struct wif *wi);
-extern int wi_set_rate(struct wif *wi, int rate);
-extern int wi_get_monitor(struct wif *wi);
-extern int wi_get_mtu(struct wif *wi);
-extern int wi_set_mtu(struct wif *wi, int mtu);
+IMPORT int wi_set_channel(struct wif *wi, int chan);
+IMPORT int wi_set_ht_channel(struct wif *wi, int chan, unsigned int htval);
+IMPORT int wi_get_channel(struct wif *wi);
+IMPORT int wi_set_freq(struct wif *wi, int freq);
+IMPORT int wi_get_freq(struct wif *wi);
+IMPORT void wi_close(struct wif *wi);
+IMPORT char *wi_get_ifname(struct wif *wi);
+IMPORT int wi_get_mac(struct wif *wi, unsigned char *mac);
+IMPORT int wi_set_mac(struct wif *wi, unsigned char *mac);
+IMPORT int wi_get_rate(struct wif *wi);
+IMPORT int wi_set_rate(struct wif *wi, int rate);
+IMPORT int wi_get_monitor(struct wif *wi);
+IMPORT int wi_get_mtu(struct wif *wi);
+IMPORT int wi_set_mtu(struct wif *wi, int mtu);
 
 /* wi_open_osdep should determine the type of card and setup the wif structure
  * appropriately.  There is one per OS.  Called by wi_open.
@@ -133,14 +147,14 @@ extern struct wif *wi_open_osdep(char *iface);
 /* This will return the FD used for reading.  This is required for using select
  * on it.
  */
-extern int wi_fd(struct wif *wi);
+IMPORT int wi_fd(struct wif *wi);
 
 /* Helper routines for osdep code.  */
 extern struct wif *wi_alloc(int sz);
 extern void *wi_priv(struct wif *wi);
 
 /* Client code can use this to determine the battery state.  One per OS. */
-extern int get_battery_state(void);
+IMPORT int get_battery_state(void);
 
 /* Client code can create a tap interface */
 /* XXX we can unify the tap & wi stuff in the future, but for now, lets keep
@@ -160,21 +174,21 @@ struct tif {
 	void	*ti_priv;
 };
 /* one per OS */
-extern struct tif *ti_open(char *iface);
+IMPORT struct tif *ti_open(char *iface);
 
 /* osdep routines */
 extern struct tif *ti_alloc(int sz);
 extern void *ti_priv(struct tif *ti);
 
 /* client routines */
-extern char *ti_name(struct tif *ti);
-extern int ti_set_mtu(struct tif *ti, int mtu);
-extern int ti_get_mtu(struct tif *ti);
-extern void ti_close(struct tif *ti);
-extern int ti_fd(struct tif *ti);
-extern int ti_read(struct tif *ti, void *buf, int len);
-extern int ti_write(struct tif *ti, void *buf, int len);
-extern int ti_set_mac(struct tif *ti, unsigned char *mac);
-extern int ti_set_ip(struct tif *ti, struct in_addr *ip);
+IMPORT char *ti_name(struct tif *ti);
+IMPORT int ti_set_mtu(struct tif *ti, int mtu);
+IMPORT int ti_get_mtu(struct tif *ti);
+IMPORT void ti_close(struct tif *ti);
+IMPORT int ti_fd(struct tif *ti);
+IMPORT int ti_read(struct tif *ti, void *buf, int len);
+IMPORT int ti_write(struct tif *ti, void *buf, int len);
+IMPORT int ti_set_mac(struct tif *ti, unsigned char *mac);
+IMPORT int ti_set_ip(struct tif *ti, struct in_addr *ip);
 
 #endif /* __AIRCRACK_NG_OSEDEP_H__ */

@@ -202,7 +202,7 @@ static struct tif *ti_open_linux(char *iface)
 	return ti;
 }
 
-struct tif *ti_open(char *iface)
+EXPORT struct tif *ti_open(char *iface)
 {
 	return ti_open_linux(iface);
 }
