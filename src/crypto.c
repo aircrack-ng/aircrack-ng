@@ -760,20 +760,20 @@ int michael_remove_byte(struct Michael *mic, unsigned char bytes[4])
     if( mic->nBytesInM == 0 )
     {
         // Clear the buffer
-        mic->message = bytes[0] << 0 | bytes[1] << 8 | bytes[2] << 16 | bytes[3] << 24;
+        mic->message = bytes[0] << 0UL | bytes[1] << 8UL | bytes[2] << 16UL | bytes[3] << 24UL;
         mic->nBytesInM = 4;
         mic->left -= mic->right;
         mic->right ^= ROR32( mic->left, 2 );
         mic->left -= mic->right;
         mic->right ^= ROL32( mic->left, 3 );
         mic->left -= mic->right;
-        mic->right ^= ((mic->left & 0xff00ff00) >> 8) | ((mic->left & 0x00ff00ff) << 8);
+        mic->right ^= ((mic->left & 0xff00ff00) >> 8UL) | ((mic->left & 0x00ff00ff) << 8UL);
         mic->left -= mic->right;
         mic->right ^= ROL32( mic->left, 17 );
         mic->left ^= mic->message;
     }
     mic->nBytesInM--;
-    mic->message &= ~(0xFF << (8*mic->nBytesInM));
+    mic->message &= ~(0xFF << (8UL * mic->nBytesInM));
 
     return 0;
 }
