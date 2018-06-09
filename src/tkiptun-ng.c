@@ -233,7 +233,7 @@ struct options
 
     int nodetect;
 
-    unsigned char oldkeystream[2048];   /* user-defined old keystream */
+    unsigned char oldkeystream[4096];   /* user-defined old keystream */
     int oldkeystreamlen;    /* user-defined old keystream length */
     char  wpa_essid[256];   /* essid used for calculating the pmk out of the psk */
     char  psk[128];         /* shared passphrase among the clients */
