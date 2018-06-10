@@ -310,7 +310,8 @@ struct AP_info* append_aps(struct AP_info* new_aps) {
 
 void ac_aplist_free(struct AP_info *ap_1st)
 {
-	struct AP_info *ap_cur = ap_1st, *ap_next = NULL;
+	struct AP_info *ap_cur = ap_1st;
+	struct AP_info *ap_next = NULL;
 	struct ST_info *st_tmp = NULL;
 
 	while( ap_cur != NULL )
