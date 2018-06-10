@@ -5486,7 +5486,7 @@ void sighandler( int signum)
 	if( signum == SIGUSR1 )
 	{
 		unused = read( G.cd_pipe[0], &card, sizeof(int) );
-		if (unused < 1)
+		if (unused < 0)
 		{
 			// error occurred
 			perror("read");
