@@ -8,7 +8,7 @@ sudo: false
 
 before_install:
     - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install glib openssl libgcrypt sqlite3 libpcap pcre || echo -e "\e[1;31m Skipping Homebrew... \e[0m"); fi
-    - pip install --user cpp-coveralls
+    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then echo -e "\e[1;31m Skipping Code Coverage... \e[0m"; else pip install --user cpp-coveralls; fi
 
 addons:
   apt:
