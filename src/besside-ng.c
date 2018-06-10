@@ -63,6 +63,7 @@
 #include "ieee80211.h"
 #include "crypto.h"
 #include "pcap.h"
+#include "aircrack-util/console.h"
 
 #ifdef UNUSED
 #elif defined(__GNUC__)
@@ -268,7 +269,7 @@ static void time_printf(int verb, char *fmt, ...)
 	if (!t)
 		err(1, "localtime()");
 
-	printf("\e[K");
+	erase_line(0);
         printf("[%.2d:%.2d:%.2d] ", t->tm_hour, t->tm_min, t->tm_sec);
 
 	va_start(ap, fmt);
