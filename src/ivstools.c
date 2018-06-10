@@ -94,12 +94,6 @@ struct globals
 }
 G;
 
-static unsigned char ZERO[32] =
-        "\x00\x00\x00\x00\x00\x00\x00\x00"
-        "\x00\x00\x00\x00\x00\x00\x00\x00"
-        "\x00\x00\x00\x00\x00\x00\x00\x00"
-        "\x00\x00\x00\x00\x00\x00\x00\x00";
-
 static void usage(int what)
 {
     char *version_info = getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);

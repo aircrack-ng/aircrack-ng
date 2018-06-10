@@ -208,7 +208,7 @@ int main( int argc, char *argv[] )
     unsigned long crc;
     int i = 0, n, linktype;
     unsigned z;
-    unsigned char ZERO[32], *h80211;
+    unsigned char *h80211;
     unsigned char bssid[6], stmac[6];
 
     struct WPA_ST_info *st_1st;
@@ -226,7 +226,6 @@ int main( int argc, char *argv[] )
 
     /* parse the arguments */
 
-    memset( ZERO, 0, sizeof( ZERO ) );
     memset( &opt, 0, sizeof( opt  ) );
 
     while( 1 )

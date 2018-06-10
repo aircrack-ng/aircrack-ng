@@ -205,8 +205,6 @@ struct dns_query
   u_int8_t  qdata;
 };
 
-u_int8_t ZERO[32] = {0};
-
 struct dot1x_hdr
 {
   u_int8_t  code;

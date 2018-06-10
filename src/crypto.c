@@ -40,14 +40,9 @@
 #include "crypto.h"
 #include "crctable.h"
 #include "aircrack-ng.h"
+#include "aircrack-util/common.h"
 
 #define UBTOUL(b) ((unsigned long) (b))
-
-static unsigned char ZERO[33] =
-        "\x00\x00\x00\x00\x00\x00\x00\x00"
-        "\x00\x00\x00\x00\x00\x00\x00\x00"
-        "\x00\x00\x00\x00\x00\x00\x00\x00"
-        "\x00\x00\x00\x00\x00\x00\x00\x00";
 
 /* RC4 encryption/ WEP decryption check */
 

@@ -113,12 +113,6 @@ char *f_ext[NB_EXTENSIONS] = { AIRODUMP_NG_CSV_EXT, AIRODUMP_NG_GPS_EXT, AIRODUM
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
 
-static unsigned char ZERO[32] =
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00";
-
 const char *OUI_PATHS[] = {
     "./airodump-ng-oui.txt",
     "/etc/aircrack-ng/airodump-ng-oui.txt",

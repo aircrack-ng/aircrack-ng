@@ -64,6 +64,7 @@
 #include "crypto.h"
 #include "pcap.h"
 #include "aircrack-util/console.h"
+#include "aircrack-util/common.h"
 
 #ifdef UNUSED
 #elif defined(__GNUC__)
@@ -73,12 +74,6 @@
 #else
 # define UNUSED(x) x
 #endif
-
-static unsigned char ZERO[32] =
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00";
 
 int PTW_DEFAULTBF[PTW_KEYHSBYTES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };

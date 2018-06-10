@@ -47,12 +47,7 @@
 #include "ieee80211.h"
 #include "crypto.h"
 #include "pcap.h"
-
-static unsigned char ZERO[32] =
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00";
+#include "aircrack-util/common.h"
 
 struct packet {
         unsigned char   p_data[2048];

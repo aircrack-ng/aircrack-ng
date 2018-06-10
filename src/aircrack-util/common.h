@@ -72,9 +72,12 @@ int64_t ftello64(FILE * fp);
 	#define ABS(a)          ((a)>=0?(a):(-(a)))
 #endif
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern const unsigned char ZERO[33];
 
 extern void calctime(time_t t, float calc);
 

@@ -194,7 +194,6 @@ unsigned char srcbuf[4096];
 char strbuf[512];
 struct net_entry *nets = NULL;
 struct WPA_ST_info *st_1st = NULL;
-unsigned char ZERO[32];
 
 int ctrl_c, alarmed;
 
@@ -1431,7 +1430,6 @@ int main( int argc, char *argv[] )
 
     /* check the arguments */
 
-    memset( ZERO, 0, sizeof( ZERO ) );
     memset( &opt, 0, sizeof( opt ) );
     memset( &dev, 0, sizeof( dev ) );
 

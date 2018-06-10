@@ -77,6 +77,7 @@
 #include "hashcat.h"
 #include "cowpatty.h"
 #include "session.h"
+#include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 #include "aircrack-util/simd_cpuid.h"
 
@@ -93,12 +94,6 @@ char * db;
 		GCRY_THREAD_OPTION_PTHREAD_IMPL;
 	#endif
 #endif
-
-static unsigned char ZERO[32] =
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00"
-"\x00\x00\x00\x00\x00\x00\x00\x00";
 
 /* stats global data */
 
