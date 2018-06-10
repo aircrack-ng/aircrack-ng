@@ -1647,13 +1647,16 @@ static int do_crack(struct wstate *ws)
 
 	if(PTW_computeKey(ws->ws_ptw, key, 13, KEYLIMIT, PTW_DEFAULTBF, all, 0) == 1) {
 		save_key(key, 13);
+		free(all);
 		return 1;
 	}
 	if(PTW_computeKey(ws->ws_ptw, key, 5, KEYLIMIT/10, PTW_DEFAULTBF, all, 0) == 1) {
 		save_key(key, 5);
+		free(all);
 		return 1;
 	}
 
+	free(all);
 	return 0;
 }
 
