@@ -2466,6 +2466,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
         if( fcntl( dev.fd_in, F_SETFL, O_NONBLOCK ) < 0 )
         {
             perror( "fcntl(O_NONBLOCK) failed" );
+            free(chopped);
             return( 1 );
         }
     }
@@ -2492,6 +2493,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
 "      Try running another aireplay-ng to fake authentication (attack \"-1\").\n"
 "    * The AP isn't vulnerable when operating in authenticated mode.\n"
 "      Try aireplay-ng in non-authenticated mode instead (no -h option).\n\n" );
+			free(chopped);
             return( 1 );
         }
 
@@ -2512,6 +2514,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
             if( read( dev.fd_rtc, &n, sizeof( n ) ) < 0 )
             {
                 perror( "\nread(/dev/rtc) failed" );
+				free(chopped);
                 return( 1 );
             }
 
@@ -3003,6 +3006,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
     if( ( f_cap_out = fopen( strbuf, "wb+" ) ) == NULL )
     {
         perror( "fopen failed" );
+		free(chopped);
         return( 1 );
     }
 
@@ -3011,6 +3015,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
     if( fwrite( &pfh_out, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed\n" );
+		free(chopped);
         return( 1 );
     }
 
@@ -3019,6 +3024,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
     if( fwrite( &pkh, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed" );
+		free(chopped);
         return( 1 );
     }
 
@@ -3027,6 +3033,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
     if( fwrite( h80211, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed" );
+		free(chopped);
         return( 1 );
     }
 
@@ -3045,6 +3052,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
     if( ( f_cap_out = fopen( strbuf, "wb+" ) ) == NULL )
     {
         perror( "fopen failed" );
+		free(chopped);
         return( 1 );
     }
 
@@ -3053,6 +3061,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
     if( fwrite( chopped + 26 + 8, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed" );
+		free(chopped);
         return( 1 );
     }
 
@@ -3063,6 +3072,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
             (float) ( pkh.caplen - 6 - 26 ) /
             (float) ( time( NULL ) - tt  ) );
 
+	free(chopped);
     return( 0 );
 }
 
