@@ -365,7 +365,7 @@ static int capture_ask_packet( int *caplen )
         printf( "\n\nUse this packet ? " );
         fflush( stdout );
         ret=0;
-        while(!ret) ret = scanf( "%s", tmpbuf );
+        while(!ret) ret = scanf( "%1s", tmpbuf );
         printf( "\n" );
 
         if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
