@@ -5499,7 +5499,7 @@ void sighandler( int signum)
 			return;
 		}
 
-		if (card < 0 || card > G_N_ELEMENTS(G.frequency))
+		if (card < 0 || card >= G_N_ELEMENTS(G.frequency))
 		{
 			// invalid received data
 			fprintf(stderr, "Invalid data received for read(G.cd_pipe[0]), got %d\n", card);
