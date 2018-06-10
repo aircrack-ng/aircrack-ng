@@ -3229,7 +3229,7 @@ skip_probe:
                     len = getESSID(fessid);
                     if(!len)
                     {
-                        strcpy(fessid, "default");
+                        strncpy(fessid, "default", sizeof(fessid) - 1);
                         len = strlen(fessid);
                     }
                     packet[z+12] = 0x00;
@@ -3670,7 +3670,7 @@ void beacon_thread( void *arg )
             flushESSID();
             essid_len = getNextESSID(essid);
             if (!essid_len) {
-                strcpy(essid, "default");
+                strncpy(essid, "default", sizeof(essid) - 1);
                 essid_len = strlen("default");
             }
 
