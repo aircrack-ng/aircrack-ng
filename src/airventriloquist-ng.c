@@ -636,14 +636,14 @@ static int wait_for_beacon(uint8_t *bssid, uint8_t *capa, char *essid)
                 if(tagtype != 0) continue;
                 if(taglen <= 1)
                 {
-                    if (memcmp(bssid, pkt_sniff+10, 6) == 0) break;
+                    if (bssid != NULL && memcmp(bssid, pkt_sniff+10, 6) == 0) break;
                     else continue;
                 }
                 if(pos+2+taglen > len) continue;
 
                 if(taglen > 32)taglen = 32;
 
-                if((pkt_sniff+pos+2)[0] < 32 && memcmp(bssid, pkt_sniff+10, 6) == 0)
+                if((pkt_sniff+pos+2)[0] < 32 && bssid != NULL && memcmp(bssid, pkt_sniff+10, 6) == 0)
                 {
                     break;
                 }
