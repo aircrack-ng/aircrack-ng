@@ -9,6 +9,13 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     exit 0
 fi
 
+#
+# Only works with GCC.
+#
+case "$CC" in
+    clang*|llvm*) exit 0;;
+esac
+
 find . -name .deps -o -name '*.la' -o -name .libs -o -name Makefile -print0 | xargs -0 rm -vfr
 
 autoreconf -vi
