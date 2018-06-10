@@ -4066,7 +4066,6 @@ int main( int argc, char *argv[] )
                     }
                     opt.oldkeystream[opt.oldkeystreamlen] = n ;
                     opt.oldkeystreamlen++;
-                    if( i >= 64 ) break;
                     s += 2;
                     buf[0] = s[0];
                     buf[1] = s[1];
