@@ -268,6 +268,7 @@ static void process_directory(const char *dir, time_t begin) {
   struct dirent *curent;
   struct stat curstat;
   char *fullname;
+  size_t fullname_size;
   
   stats_dirs++;
   
@@ -286,10 +287,12 @@ static void process_directory(const char *dir, time_t begin) {
       curent = readdir(curdir);
       continue;
     }
-    
-    fullname = malloc(strlen(dir) + strlen(curent->d_name) + 2);
+
+    fullname_size = strlen(dir) + strlen(curent->d_name) + 2;
+    fullname = malloc(fullname_size);
     memcpy(fullname, dir, strlen(dir) + 1);
-    strcat(fullname, "/"); strcat(fullname, curent->d_name);
+    strncat(fullname, "/", fullname_size - 1);
+    strncat(fullname, curent->d_name, fullname_size - 1);
     
     if (stat(fullname, &curstat)) {
       printf("Statting %s ", fullname); perror("failed");
