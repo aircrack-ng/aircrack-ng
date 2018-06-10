@@ -159,7 +159,7 @@ AC_DEFUN([AX_CODE_COVERAGE],[
 ']
 		[CODE_COVERAGE_RULES_CAPTURE='
 	-$(A''M_V_at)$(MAKE) $(AM_MAKEFLAGS) check-am
-	find $(builddir) -size +0c -a \( -name "*.c" -o -name "*.cpp" \) -exec $(GCOV) -i -b -a {} ";"; \
+	find $(builddir) \( -name "*.c" -o -name "*.cpp" \) -exec $(GCOV) -i -b -a -p -s $(top_absdir) {} ";" >/dev/null 2>/dev/null; \
 	$(code_coverage_v_lcov_cap)$(LCOV) $(code_coverage_quiet) $(addprefix --directory ,$(CODE_COVERAGE_DIRECTORY)) --no-recursion --capture --output-file "$(CODE_COVERAGE_OUTPUT_FILE).tmp" --test-name "$(call code_coverage_sanitize,$(PACKAGE_NAME)-$(PACKAGE_VERSION))" --no-checksum --compat-libtool $(CODE_COVERAGE_LCOV_SHOPTS) $(CODE_COVERAGE_LCOV_OPTIONS) --ignore-errors source
 	if test ! -e "$(TOP_CODE_COVERAGE_OUTPUT_FILE).join" -a -s "$(CODE_COVERAGE_OUTPUT_FILE).tmp"; then \
 		cp -v "$(CODE_COVERAGE_OUTPUT_FILE).tmp" "$(TOP_CODE_COVERAGE_OUTPUT_FILE).join"; \
@@ -174,7 +174,7 @@ AC_DEFUN([AX_CODE_COVERAGE],[
 ']
     [CODE_COVERAGE_RULES_GENHTML='
 	-@rm -f $(CODE_COVERAGE_OUTPUT_FILE).tmp
-	find $(top_builddir) -size +0c -a -name "*.gcov" -delete
+	find $(top_builddir) -size 0c -a -name "*.gcov" -delete
 	$(code_coverage_v_genhtml)LANG=C $(GENHTML) $(code_coverage_quiet) $(addprefix --prefix ,$(CODE_COVERAGE_DIRECTORY)) --output-directory "$(CODE_COVERAGE_OUTPUT_DIRECTORY)" --title "$(PACKAGE_NAME)-$(PACKAGE_VERSION) Code Coverage" --legend --show-details "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_GENHTML_OPTIONS) --ignore-errors source
 	@echo "file://$(CODE_COVERAGE_OUTPUT_DIRECTORY)/index.html"
 ']
