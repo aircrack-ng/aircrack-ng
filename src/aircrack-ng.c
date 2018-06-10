@@ -61,6 +61,8 @@
 #include <math.h>
 #include <limits.h>
 
+#include <glib-2.0/glib.h>
+
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
@@ -717,31 +719,31 @@ int checkbssids(const char *bssidlist)
 
 void session_save_thread(void * arg)
 {
-    struct timeval start, stop;
-
     int8_t wordlist = 0;
     uint64_t pos;
+
+	(void) arg;
+
     if (!cracking_session || opt.stdin_dict) {
         return;
     }
-    if (arg) { }
 
     // Start chrono
-    gettimeofday( & start, NULL);
+    GTimer * timer = g_timer_new();
 
     while (!close_aircrack) {
         
         // Check if we're over the 10 minutes mark
-        gettimeofday( & stop, NULL);
-        if (stop.tv_sec - start.tv_sec < 10 * 60) {
+        if (g_timer_elapsed(timer, NULL) < 10. * 60.) {
             // Wait 100ms
             if (usleep (100000) == -1) {
                 break; // Got a signal
             }
             continue;
         }
+
         // Reset chrono
-        start.tv_sec = stop.tv_sec;
+        g_timer_start(timer);
         
         pos = wordlist = 0;
         // Get position in file
@@ -758,9 +760,12 @@ void session_save_thread(void * arg)
         if (wordlist == 0) {
             break;
         }
+
         // Update amount of keys tried and save it
         ac_session_save(cracking_session, pos, nb_tried);
     }
+
+    g_timer_destroy(timer);
 }
 
 int mergebssids(const char * bssidlist, unsigned char * bssid)
