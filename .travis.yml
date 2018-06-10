@@ -8,6 +8,7 @@ sudo: false
 
 before_install:
     - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install glib openssl libgcrypt sqlite3 libpcap pcre || echo -e "\e[1;31m Skipping Homebrew... \e[0m"); fi
+    - pip install --user cpp-coveralls
 
 addons:
   apt:
@@ -24,6 +25,7 @@ addons:
     - libjson-glib-dev
     - libglib2.0-dev
     - libglib2.0-bin
+    - lcov
 
 compiler:
   - gcc
@@ -33,3 +35,4 @@ script:
     - ./build/travis-format.sh GCrypt "Building with GCrypt..." ./build/gcrypt.sh
     - ./build/travis-format.sh OpenSSL "Building with OpenSSL..." ./build/openssl.sh
     - ./build/travis-format.sh Dist "Creating a dist tarball and then building from it..." ./build/dist_check.sh
+    - ./build/travis-format.sh Coverage "Reporting code coverage..." ./build/code_coverage.sh
