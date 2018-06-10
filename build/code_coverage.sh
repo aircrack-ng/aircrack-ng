@@ -21,6 +21,7 @@ find . -name .deps -o -name '*.la' -o -name .libs -o -name Makefile -print0 | xa
 autoreconf -vi
 env CFLAGS="-Og -g3 -Werror" CXXFLAGS="-Og -g3 -Werror" \
     ./configure --enable-shared --with-experimental --enable-code-coverage
+make clean
 make
 make check
 
