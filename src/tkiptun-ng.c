@@ -3015,6 +3015,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
     if( fwrite( &pfh_out, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed\n" );
+		fclose( f_cap_out );
 		free(chopped);
         return( 1 );
     }
@@ -3024,6 +3025,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
     if( fwrite( &pkh, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed" );
+		fclose( f_cap_out );
 		free(chopped);
         return( 1 );
     }
@@ -3033,6 +3035,7 @@ static int do_attack_tkipchop( unsigned char* src_packet, int src_packet_len )
     if( fwrite( h80211, n, 1, f_cap_out ) != 1 )
     {
         perror( "fwrite failed" );
+		fclose( f_cap_out );
 		free(chopped);
         return( 1 );
     }
