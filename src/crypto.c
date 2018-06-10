@@ -41,6 +41,8 @@
 #include "crctable.h"
 #include "aircrack-ng.h"
 
+#define UBTOUL(b) ((unsigned long) (b))
+
 static unsigned char ZERO[33] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -692,8 +694,8 @@ int calc_ptk( struct WPA_ST_info *wpa, unsigned char pmk[32] )
 
 int init_michael(struct Michael *mic, const unsigned char key[8])
 {
-    mic->key0 = key[0]<<0UL | key[1]<<8UL | key[2]<<16UL | key[3]<<24UL;
-    mic->key1 = key[4]<<0UL | key[5]<<8UL | key[6]<<16UL | key[7]<<24UL;
+    mic->key0 = UBTOUL(key[0])<<0UL | UBTOUL(key[1])<<8UL | UBTOUL(key[2])<<16UL | UBTOUL(key[3]<<24UL);
+    mic->key1 = UBTOUL(key[4])<<0UL | UBTOUL(key[5])<<8UL | UBTOUL(key[6])<<16UL | UBTOUL(key[7]<<24UL);
     // and reset the message
     mic->left  = mic->key0;
     mic->right = mic->key1;
@@ -704,7 +706,7 @@ int init_michael(struct Michael *mic, const unsigned char key[8])
 
 int michael_append_byte(struct Michael *mic, unsigned char byte)
 {
-    mic->message |= (byte << (8UL * mic->nBytesInM));
+    mic->message |= (UBTOUL(byte) << (8UL * mic->nBytesInM));
     mic->nBytesInM++;
     // Process the word if it is full.
     if( mic->nBytesInM >= 4UL )
@@ -730,7 +732,7 @@ int michael_remove_byte(struct Michael *mic, const unsigned char bytes[4])
     if( mic->nBytesInM == 0 )
     {
         // Clear the buffer
-        mic->message = bytes[0] << 0UL | bytes[1] << 8UL | bytes[2] << 16UL | bytes[3] << 24UL;
+        mic->message = UBTOUL(bytes[0]) << 0UL | UBTOUL(bytes[1]) << 8UL | UBTOUL(bytes[2]) << 16UL | UBTOUL(bytes[3]) << 24UL;
         mic->nBytesInM = 4;
         mic->left -= mic->right;
         mic->right ^= ROR32( mic->left, 2 );
