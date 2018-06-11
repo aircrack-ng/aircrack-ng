@@ -47,65 +47,63 @@
 #include <openssl/aes.h>
 #endif
 
-#define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
-#define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
-#define S_LLC_SNAP_WLCCP      "\xAA\xAA\x03\x00\x40\x96\x00\x00"
-#define S_LLC_SNAP_IP   (S_LLC_SNAP "\x08\x00")
-#define S_LLC_SNAP_SPANTREE   "\x42\x42\x03\x00\x00\x00\x00\x00"
-#define S_LLC_SNAP_CDP  "\xAA\xAA\x03\x00\x00\x0C\x20"
-#define IEEE80211_FC1_DIR_FROMDS                0x02    /* AP ->STA */
+#define S_LLC_SNAP "\xAA\xAA\x03\x00\x00\x00"
+#define S_LLC_SNAP_ARP (S_LLC_SNAP "\x08\x06")
+#define S_LLC_SNAP_WLCCP "\xAA\xAA\x03\x00\x40\x96\x00\x00"
+#define S_LLC_SNAP_IP (S_LLC_SNAP "\x08\x00")
+#define S_LLC_SNAP_SPANTREE "\x42\x42\x03\x00\x00\x00\x00\x00"
+#define S_LLC_SNAP_CDP "\xAA\xAA\x03\x00\x00\x0C\x20"
+#define IEEE80211_FC1_DIR_FROMDS 0x02 /* AP ->STA */
 
-#define TYPE_ARP    0
-#define TYPE_IP     1
+#define TYPE_ARP 0
+#define TYPE_IP 1
 
-#define NULL_MAC  (unsigned char*)"\x00\x00\x00\x00\x00\x00"
-#define BROADCAST (unsigned char*)"\xFF\xFF\xFF\xFF\xFF\xFF"
-#define SPANTREE  (unsigned char*)"\x01\x80\xC2\x00\x00\x00"
-#define CDP_VTP   (unsigned char*)"\x01\x00\x0C\xCC\xCC\xCC"
+#define NULL_MAC (unsigned char *) "\x00\x00\x00\x00\x00\x00"
+#define BROADCAST (unsigned char *) "\xFF\xFF\xFF\xFF\xFF\xFF"
+#define SPANTREE (unsigned char *) "\x01\x80\xC2\x00\x00\x00"
+#define CDP_VTP (unsigned char *) "\x01\x00\x0C\xCC\xCC\xCC"
 
-#define	IEEE80211_FC0_SUBTYPE_MASK              0xf0
-#define	IEEE80211_FC0_SUBTYPE_SHIFT             4
+#define IEEE80211_FC0_SUBTYPE_MASK 0xf0
+#define IEEE80211_FC0_SUBTYPE_SHIFT 4
 
 /* for TYPE_DATA (bit combination) */
-#define	IEEE80211_FC0_SUBTYPE_QOS               0x80
-#define	IEEE80211_FC0_SUBTYPE_QOS_NULL          0xc0
+#define IEEE80211_FC0_SUBTYPE_QOS 0x80
+#define IEEE80211_FC0_SUBTYPE_QOS_NULL 0xc0
 
-#define GET_SUBTYPE(fc) \
-    ( ( (fc) & IEEE80211_FC0_SUBTYPE_MASK ) >> IEEE80211_FC0_SUBTYPE_SHIFT ) \
-        << IEEE80211_FC0_SUBTYPE_SHIFT
+#define GET_SUBTYPE(fc)                                                        \
+	(((fc) &IEEE80211_FC0_SUBTYPE_MASK) >> IEEE80211_FC0_SUBTYPE_SHIFT)        \
+		<< IEEE80211_FC0_SUBTYPE_SHIFT
 
-#define ROL32( A, n ) \
-	( ((A) << (n)) | ( ((A)>>(32-(n))) & ( (1UL << (n)) - 1 ) ) )
-#define ROR32( A, n ) ROL32( (A), 32-(n) )
+#define ROL32(A, n) (((A) << (n)) | (((A) >> (32 - (n))) & ((1UL << (n)) - 1)))
+#define ROR32(A, n) ROL32((A), 32 - (n))
 
 struct WPA_ST_info
 {
-    struct WPA_ST_info *next;       /* next supplicant              */
-    unsigned char stmac[6];             /* supplicant MAC               */
-    unsigned char bssid[6];             /* authenticator MAC            */
-    unsigned char snonce[32];           /* supplicant nonce             */
-    unsigned char anonce[32];           /* authenticator nonce          */
-    unsigned char keymic[20];           /* eapol frame MIC              */
-    unsigned char eapol[256];           /* eapol frame contents         */
-    unsigned char ptk[80];              /* pairwise transcient key      */
-    unsigned eapol_size;            /* eapol frame size             */
-    unsigned long t_crc;        /* last ToDS   frame CRC        */
-    unsigned long f_crc;        /* last FromDS frame CRC        */
-    int keyver, valid_ptk;
-    unsigned char pn[6];                /* Packet Number (WPA-CCMP) */
+	struct WPA_ST_info *next; /* next supplicant              */
+	unsigned char stmac[6]; /* supplicant MAC               */
+	unsigned char bssid[6]; /* authenticator MAC            */
+	unsigned char snonce[32]; /* supplicant nonce             */
+	unsigned char anonce[32]; /* authenticator nonce          */
+	unsigned char keymic[20]; /* eapol frame MIC              */
+	unsigned char eapol[256]; /* eapol frame contents         */
+	unsigned char ptk[80]; /* pairwise transcient key      */
+	unsigned eapol_size; /* eapol frame size             */
+	unsigned long t_crc; /* last ToDS   frame CRC        */
+	unsigned long f_crc; /* last FromDS frame CRC        */
+	int keyver, valid_ptk;
+	unsigned char pn[6]; /* Packet Number (WPA-CCMP) */
 };
 
 struct Michael
 {
-    unsigned long key0;
-    unsigned long key1;
-    unsigned long left;
-    unsigned long right;
-    unsigned long nBytesInM;
-    unsigned long message;
-    unsigned char mic[8];
+	unsigned long key0;
+	unsigned long key1;
+	unsigned long left;
+	unsigned long right;
+	unsigned long nBytesInM;
+	unsigned long message;
+	unsigned char mic[8];
 };
-
 
 // typedef unsigned char byte;    /* 8-bit byte (octet) */
 // typedef unsigned short u16b;   /* 16-bit unsigned word */
@@ -127,7 +125,6 @@ struct Michael
 // #define TK_SIZE          16    /* 128-bit Temporal Key                          */
 // #define P1K_SIZE         10    /* 80-bit Phase1 key                             */
 // #define RC4_KEY_SIZE     16    /* 128-bit RC4KEY (104 bits unknown)             */
-
 
 /* 2-byte by 2-byte subset of the full AES S-box table */
 // const u16b TkipSbox[2][256]=            /* Sbox for hash (can be in ROM)       */
@@ -203,33 +200,48 @@ struct Michael
 /* Used for own RC4 implementation */
 struct rc4_state
 {
-    int x, y, m[256];
+	int x, y, m[256];
 };
 
 struct AP_info;
 
-void calc_pmk( char *key, char *essid, unsigned char pmk[40] );
-int decrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen );
-int encrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen );
-int check_crc_buf( unsigned char *buf, int len );
-int calc_crc_buf( unsigned char *buf, int len );
-void calc_mic(struct AP_info *ap, unsigned char *pmk, unsigned char *ptk,
-	      unsigned char *mic);
-int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, size_t len);
-int add_crc32(unsigned char* data, int length);
-int add_crc32_plain(unsigned char* data, int length);
+void calc_pmk(char *key, char *essid, unsigned char pmk[40]);
+int decrypt_wep(unsigned char *data, int len, unsigned char *key, int keylen);
+int encrypt_wep(unsigned char *data, int len, unsigned char *key, int keylen);
+int check_crc_buf(unsigned char *buf, int len);
+int calc_crc_buf(unsigned char *buf, int len);
+void calc_mic(struct AP_info *ap,
+			  unsigned char *pmk,
+			  unsigned char *ptk,
+			  unsigned char *mic);
+int known_clear(
+	void *clear, int *clen, int *weight, unsigned char *wh, size_t len);
+int add_crc32(unsigned char *data, int length);
+int add_crc32_plain(unsigned char *data, int length);
 int is_ipv6(void *wh);
 int is_dhcp_discover(void *wh, size_t len);
 int is_qos_arp_tkip(void *wh, int len);
-int calc_tkip_ppk( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char key[16] );
-void encrypt_tkip( unsigned char *h80211, int caplen, unsigned char PTK[80] );
-int decrypt_tkip( unsigned char *h80211, int caplen, unsigned char TK1[16] );
-int encrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char PN[6] );
-int decrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16] );
-int calc_ptk( struct WPA_ST_info *wpa, unsigned char pmk[32] );
-int calc_tkip_mic(unsigned char* packet, int length, unsigned char ptk[80], unsigned char value[8]);
-int michael_test(unsigned char key[8], unsigned char *message, int length, unsigned char out[8]);
-int calc_tkip_mic_key(unsigned char* packet, int length, unsigned char key[8]);
+int calc_tkip_ppk(unsigned char *h80211,
+				  int caplen,
+				  unsigned char TK1[16],
+				  unsigned char key[16]);
+void encrypt_tkip(unsigned char *h80211, int caplen, unsigned char PTK[80]);
+int decrypt_tkip(unsigned char *h80211, int caplen, unsigned char TK1[16]);
+int encrypt_ccmp(unsigned char *h80211,
+				 int caplen,
+				 unsigned char TK1[16],
+				 unsigned char PN[6]);
+int decrypt_ccmp(unsigned char *h80211, int caplen, unsigned char TK1[16]);
+int calc_ptk(struct WPA_ST_info *wpa, unsigned char pmk[32]);
+int calc_tkip_mic(unsigned char *packet,
+				  int length,
+				  unsigned char ptk[80],
+				  unsigned char value[8]);
+int michael_test(unsigned char key[8],
+				 unsigned char *message,
+				 int length,
+				 unsigned char out[8]);
+int calc_tkip_mic_key(unsigned char *packet, int length, unsigned char key[8]);
 
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];

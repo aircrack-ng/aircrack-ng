@@ -71,7 +71,7 @@ extern unsigned char *xsse_hash1[MAX_THREADS];
 extern unsigned char *xsse_crypt1[MAX_THREADS];
 extern unsigned char *xsse_crypt2[MAX_THREADS];
 
-#define PLAINTEXT_LENGTH	63 /* We can do 64 but spec. says 63 */
+#define PLAINTEXT_LENGTH 63 /* We can do 64 but spec. says 63 */
 
 int threadxnt;
 void init_atoi();
@@ -79,14 +79,15 @@ void init_ssecore(int);
 void free_ssecore(int);
 int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int threadid);
 
-typedef struct {
+typedef struct
+{
 	uint32_t length;
-	uint8_t  v[PLAINTEXT_LENGTH + 1];
+	uint8_t v[PLAINTEXT_LENGTH + 1];
 } wpapsk_password;
 
 typedef struct
 {
-  uint32_t v[8];
+	uint32_t v[8];
 } wpapsk_hash;
 
 #ifdef SIMD_CORE
@@ -94,7 +95,7 @@ extern unsigned char *pmk[MAX_THREADS];
 #endif
 
 // inbuffer
-extern wpapsk_password *wpapass[MAX_THREADS];  /// Table for candidate passwords
+extern wpapsk_password *wpapass[MAX_THREADS]; /// Table for candidate passwords
 
 int count;
 

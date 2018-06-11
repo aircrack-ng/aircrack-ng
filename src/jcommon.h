@@ -68,10 +68,12 @@ typedef unsigned long long ARCH_WORD_64;
 
 /* ONLY use this to check alignments of even power of 2 (2, 4, 8, 16, etc) byte counts (CNT).
    The cast to void* MUST be done, due to C spec. http://stackoverflow.com/a/1898487 */
-#define is_aligned(PTR, CNT) ((((ARCH_WORD)(const void *)(PTR))&(CNT-1))==0)
+#define is_aligned(PTR, CNT)                                                   \
+	((((ARCH_WORD)(const void *) (PTR)) & (CNT - 1)) == 0)
 
 #ifdef __GNUC__
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || defined(__INTEL_COMPILER)
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)                     \
+	|| defined(__INTEL_COMPILER)
 #define MAYBE_INLINE __attribute__((always_inline)) inline
 #elif __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
 #define MAYBE_INLINE __attribute__((always_inline))
@@ -85,10 +87,9 @@ typedef unsigned long long ARCH_WORD_64;
 #endif
 
 #if ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 7)) || (__GNUC__ > 2)
-#define CC_CACHE_ALIGN \
-	__attribute__ ((aligned (MEM_ALIGN_CACHE)))
+#define CC_CACHE_ALIGN __attribute__((aligned(MEM_ALIGN_CACHE)))
 #else
-#define CC_CACHE_ALIGN			/* nothing */
+#define CC_CACHE_ALIGN /* nothing */
 #endif
 
 /*
@@ -99,7 +100,7 @@ typedef unsigned long long ARCH_WORD_64;
  * simultaneously.  This number should be a multiple of the machine's word size
  * but smaller than cache line size.
  */
-#define CACHE_BANK_SHIFT		ARCH_SIZE
+#define CACHE_BANK_SHIFT ARCH_SIZE
 
 /*
  * ASCII <-> binary conversion tables.

@@ -1,4 +1,4 @@
- /*
+/*
   *  Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  OS dependent API for unsupported APIs.
@@ -25,7 +25,9 @@
 
 struct wif *wi_open_osdep(char *iface)
 {
-	if (iface) {} /* XXX unused parameter */
+	if (iface)
+	{
+	} /* XXX unused parameter */
 
 	errno = EOPNOTSUPP;
 	return NULL;

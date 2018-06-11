@@ -37,58 +37,73 @@
 #include <stdlib.h>
 #include "cowpatty.h"
 
-void close_free_cowpatty_hashdb(struct cowpatty_file * cf)
+void close_free_cowpatty_hashdb(struct cowpatty_file *cf)
 {
-	if (cf != NULL) {
-		if (cf->fp) {
+	if (cf != NULL)
+	{
+		if (cf->fp)
+		{
 			fclose(cf->fp);
 		}
 		free(cf);
 	}
 }
 
-struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * mode)
+struct cowpatty_file *open_cowpatty_hashdb(const char *filename,
+										   const char *mode)
 {
 	struct hashdb_head filehead;
 
 	// Initialize structure
-	struct cowpatty_file * ret =
-			(struct cowpatty_file *)malloc(sizeof(struct cowpatty_file));
+	struct cowpatty_file *ret =
+		(struct cowpatty_file *) malloc(sizeof(struct cowpatty_file));
 	memset(ret->ssid, 0, sizeof(ret->ssid));
 	memset(ret->error, 0, sizeof(ret->error));
 	ret->fp = NULL;
 
-	if (filename == NULL || filename[0] == 0) {
+	if (filename == NULL || filename[0] == 0)
+	{
 		strcpy(ret->error, "No filename specified");
 		return ret;
 	}
 
-	if (mode == NULL || strncmp(mode, "r", 1) == 0) {
-		if (strcmp(filename,"-") == 0) {
+	if (mode == NULL || strncmp(mode, "r", 1) == 0)
+	{
+		if (strcmp(filename, "-") == 0)
+		{
 			ret->fp = stdin;
-		} else {
+		}
+		else
+		{
 			ret->fp = fopen(filename, "r");
-			if (ret->fp == NULL) {
-				snprintf(ret->error, sizeof(ret->error), "File <%s> cannot be opened", filename);
+			if (ret->fp == NULL)
+			{
+				snprintf(ret->error,
+						 sizeof(ret->error),
+						 "File <%s> cannot be opened",
+						 filename);
 				return ret;
 			}
 		}
-		
+
 		// Check headers
-		if (fread(&filehead, sizeof(struct hashdb_head), 1, ret->fp) != 1) {
+		if (fread(&filehead, sizeof(struct hashdb_head), 1, ret->fp) != 1)
+		{
 			strcpy(ret->error, "Failed reading hash DB header");
 			fclose(ret->fp);
 			ret->fp = NULL;
 			return ret;
 		}
-		
-		if (filehead.magic != GENPMKMAGIC) { // Verify header magic
+
+		if (filehead.magic != GENPMKMAGIC)
+		{ // Verify header magic
 			strcpy(ret->error, "Header magic doesn't match");
 			fclose(ret->fp);
 			ret->fp = NULL;
 			return ret;
 		}
-		if (filehead.ssid[0] == 0) {
+		if (filehead.ssid[0] == 0)
+		{
 			strcpy(ret->error, "SSID is NULL");
 			fclose(ret->fp);
 			ret->fp = NULL;
@@ -97,12 +112,18 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * 
 
 		// Copy SSID
 		memcpy(ret->ssid, filehead.ssid, sizeof(filehead.ssid));
-		if (filehead.ssidlen > 32 || filehead.ssidlen == 0) {
-			snprintf(ret->error, sizeof(ret->error), "Advertised SSID length is %u (Max length: 32)", filehead.ssidlen);
+		if (filehead.ssidlen > 32 || filehead.ssidlen == 0)
+		{
+			snprintf(ret->error,
+					 sizeof(ret->error),
+					 "Advertised SSID length is %u (Max length: 32)",
+					 filehead.ssidlen);
 			fclose(ret->fp);
 			ret->fp = NULL;
 		}
-	} else {
+	}
+	else
+	{
 		// Write not supported yet
 		strcpy(ret->error, "Write and other modes not supported yet");
 	}
@@ -110,23 +131,26 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename, const char * 
 	return ret;
 }
 
-struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf)
+struct hashdb_rec *read_next_cowpatty_record(struct cowpatty_file *cf)
 {
 	int rc, wordlength;
-	struct hashdb_rec * ret = NULL;
-	
-	if (cf == NULL || cf->error[0]) {
+	struct hashdb_rec *ret = NULL;
+
+	if (cf == NULL || cf->error[0])
+	{
 		return NULL;
 	}
 
-	if (cf->fp == NULL) {
+	if (cf->fp == NULL)
+	{
 		strcpy(cf->error, "File pointer is NULL");
 		return NULL;
 	}
 
 	// Allocate memory
-	ret = (struct hashdb_rec *)malloc(sizeof(struct hashdb_rec));
-	if (ret == NULL) {
+	ret = (struct hashdb_rec *) malloc(sizeof(struct hashdb_rec));
+	if (ret == NULL)
+	{
 		strcpy(cf->error, "Failed allocating memory for coWPAtty record");
 		return NULL;
 	}
@@ -135,7 +159,8 @@ struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf)
 	rc = fread(&(ret->rec_size), sizeof(ret->rec_size), 1, cf->fp);
 
 	// Close and exit if failed
-	if (rc != 1 && feof(cf->fp)) {
+	if (rc != 1 && feof(cf->fp))
+	{
 		free(ret);
 		fclose(cf->fp);
 		cf->fp = NULL;
@@ -146,27 +171,39 @@ struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf)
 	ret->word = NULL;
 	wordlength = ret->rec_size - (sizeof(ret->pmk) + sizeof(ret->rec_size));
 
-	if (wordlength > 0 && wordlength <= MAX_PASSPHRASE_LENGTH) {
-		ret->word = (char *)calloc(wordlength + 1, sizeof(char));
+	if (wordlength > 0 && wordlength <= MAX_PASSPHRASE_LENGTH)
+	{
+		ret->word = (char *) calloc(wordlength + 1, sizeof(char));
 
 		// Read passphrase
 		rc += fread(ret->word, wordlength, 1, cf->fp);
-		if (rc == 2) {
+		if (rc == 2)
+		{
 			// And the PMK
 			rc += fread(&ret->pmk, sizeof(ret->pmk), 1, cf->fp);
 		}
 	}
 
 	// Check if everything went well
-	if (rc != 3 || ret->word == NULL || ret->word[0] == 0) {
-		if (rc == 1) {
-			snprintf(cf->error, sizeof(cf->error), "Error while reading record, failed to read passphrase invalid word length: %i", wordlength);
-		} else if (rc == 2) {
+	if (rc != 3 || ret->word == NULL || ret->word[0] == 0)
+	{
+		if (rc == 1)
+		{
+			snprintf(cf->error,
+					 sizeof(cf->error),
+					 "Error while reading record, failed to read passphrase "
+					 "invalid word length: %i",
+					 wordlength);
+		}
+		else if (rc == 2)
+		{
 			strcpy(cf->error, "Error while reading record, failed reading PMK");
-		} else {
+		}
+		else
+		{
 			strcpy(cf->error, "NULL or empty passphrase");
 		}
-		
+
 		// Cleanup and close file
 		fclose(cf->fp);
 		free(ret->word);

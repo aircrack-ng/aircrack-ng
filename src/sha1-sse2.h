@@ -30,7 +30,6 @@
  * files in the program, then also delete it here.
  */
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,55 +37,65 @@
 
 #include "crypto.h"
 
-
-#if defined(__i386__) || ((defined(__x86_64__) && !defined(__CYGWIN__)) || (defined(__x86_64__) && defined(__CYGWIN__) && !defined(__clang__)))
+#if defined(__i386__) || ((defined(__x86_64__) && !defined(__CYGWIN__))        \
+						  || (defined(__x86_64__) && defined(__CYGWIN__)       \
+							  && !defined(__clang__)))
 
 #ifdef OLD_SSE_CORE
-void show_result(char* key, unsigned char* pmk)
+void show_result(char *key, unsigned char *pmk)
 {
 	int i;
 	printf("%-14s ", key);
-	for (i=0; i<32; i++)
-		printf("%.2X", pmk[i]);
+	for (i = 0; i < 32; i++) printf("%.2X", pmk[i]);
 	printf("\n");
 }
 
 #endif
-extern int shasse2_init( unsigned char ctx[80] )
-    __attribute__((regparm(1)));
+extern int shasse2_init(unsigned char ctx[80]) __attribute__((regparm(1)));
 
-extern int shasse2_ends( unsigned char ctx[80], unsigned char digests[80] )
-    __attribute__((regparm(2)));
+extern int shasse2_ends(unsigned char ctx[80], unsigned char digests[80])
+	__attribute__((regparm(2)));
 
-extern int shasse2_data( unsigned char ctx[80], unsigned char data[256], unsigned char buf[1280] )
-    __attribute__((regparm(3)));
+extern int shasse2_data(unsigned char ctx[80],
+						unsigned char data[256],
+						unsigned char buf[1280]) __attribute__((regparm(3)));
 
-extern int shasse2_cpuid( void );
+extern int shasse2_cpuid(void);
 
 #ifdef OLD_SSE_CORE
-void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid, unsigned char* _pmk1, unsigned char* _pmk2, unsigned char* _pmk3, unsigned char* _pmk4)
+void calc_4pmk(char *_key1,
+			   char *_key2,
+			   char *_key3,
+			   char *_key4,
+			   char *_essid,
+			   unsigned char *_pmk1,
+			   unsigned char *_pmk2,
+			   unsigned char *_pmk3,
+			   unsigned char *_pmk4)
 {
 	int slen;
-    char  essid[36] __attribute__ ((aligned (16)));
-    char  key1[128] __attribute__ ((aligned (16)));
-	char  key2[128] __attribute__ ((aligned (16)));
-    char  key3[128] __attribute__ ((aligned (16)));
-	char  key4[128] __attribute__ ((aligned (16)));
-    unsigned char pmks[128*4] __attribute__ ((aligned (16)));
+	char essid[36] __attribute__((aligned(16)));
+	char key1[128] __attribute__((aligned(16)));
+	char key2[128] __attribute__((aligned(16)));
+	char key3[128] __attribute__((aligned(16)));
+	char key4[128] __attribute__((aligned(16)));
+	unsigned char pmks[128 * 4] __attribute__((aligned(16)));
 
 	// All in double size
-    unsigned char k_ipad[256] __attribute__ ((aligned (16)));
-	unsigned char ctx_ipad[80] __attribute__ ((aligned (16)));
-    unsigned char k_opad[256] __attribute__ ((aligned (16)));
-	unsigned char ctx_opad[80] __attribute__ ((aligned (16)));
-    unsigned char buffer[256] __attribute__ ((aligned (16)));
-	unsigned char sha1_ctx[80] __attribute__ ((aligned (16)));
-    unsigned char wrkbuf[1280] __attribute__ ((aligned (16)));
-    unsigned i, *u, *v, *w, *u3, *v4;
+	unsigned char k_ipad[256] __attribute__((aligned(16)));
+	unsigned char ctx_ipad[80] __attribute__((aligned(16)));
+	unsigned char k_opad[256] __attribute__((aligned(16)));
+	unsigned char ctx_opad[80] __attribute__((aligned(16)));
+	unsigned char buffer[256] __attribute__((aligned(16)));
+	unsigned char sha1_ctx[80] __attribute__((aligned(16)));
+	unsigned char wrkbuf[1280] __attribute__((aligned(16)));
+	unsigned i, *u, *v, *w, *u3, *v4;
 	unsigned char *pmk1, *pmk2, *pmk3, *pmk4;
 
-	pmk1=pmks; pmk2=pmks+128; pmk3=pmks+128*2; pmk4=pmks+128*3;
-
+	pmk1 = pmks;
+	pmk2 = pmks + 128;
+	pmk3 = pmks + 128 * 2;
+	pmk4 = pmks + 128 * 3;
 
 	memset(key1, 0, sizeof(key1));
 	memset(key2, 0, sizeof(key2));
@@ -103,167 +112,251 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 	memccpy(key3, _key3, 0, sizeof(key3));
 	memccpy(key4, _key4, 0, sizeof(key4));
 
-    slen = strlen( essid ) + 4;
+	slen = strlen(essid) + 4;
 
+	/* SSE2 available, so compute four PMKs in a single row */
 
-		/* SSE2 available, so compute four PMKs in a single row */
+	memset(k_ipad, 0, sizeof(k_ipad));
+	memset(k_opad, 0, sizeof(k_opad));
 
-        memset( k_ipad, 0, sizeof( k_ipad ) );
-        memset( k_opad, 0, sizeof( k_opad ) );
+	memcpy(k_ipad, key1, strlen(key1));
+	memcpy(k_opad, key1, strlen(key1));
 
-        memcpy( k_ipad, key1, strlen( key1 ) );
-        memcpy( k_opad, key1, strlen( key1 ) );
+	memcpy(k_ipad + 64, key2, strlen(key2));
+	memcpy(k_opad + 64, key2, strlen(key2));
 
-        memcpy( k_ipad + 64, key2, strlen( key2 ) );
-        memcpy( k_opad + 64, key2, strlen( key2 ) );
+	memcpy(k_ipad + 128, key3, strlen(key3));
+	memcpy(k_opad + 128, key3, strlen(key3));
 
-        memcpy( k_ipad + 128, key3, strlen( key3 ) );
-        memcpy( k_opad + 128, key3, strlen( key3 ) );
+	memcpy(k_ipad + 192, key4, strlen(key4));
+	memcpy(k_opad + 192, key4, strlen(key4));
 
-		memcpy( k_ipad + 192, key4, strlen( key4 ) );
-        memcpy( k_opad + 192, key4, strlen( key4 ) );
+	u = (unsigned *) (k_ipad);
+	v = (unsigned *) (k_ipad + 64);
+	u3 = (unsigned *) (k_ipad + 128);
+	v4 = (unsigned *) (k_ipad + 192);
+	w = (unsigned *) buffer;
 
+	for (i = 0; i < 16; i++)
+	{
+		/* interleave the data */
 
-        u = (unsigned *) ( k_ipad      );
-        v = (unsigned *) ( k_ipad + 64 );
-		u3 = (unsigned *) ( k_ipad + 128 );
-		v4 = (unsigned *) ( k_ipad + 192 );
-        w = (unsigned *) buffer;
+		*w++ = *u++ ^ 0x36363636;
+		*w++ = *v++ ^ 0x36363636;
+		*w++ = *u3++ ^ 0x36363636;
+		*w++ = *v4++ ^ 0x36363636;
+	}
 
-        for( i = 0; i < 16; i++ )
-        {
-            /* interleave the data */
+	shasse2_init(ctx_ipad);
+	shasse2_data(ctx_ipad, buffer, wrkbuf);
 
-            *w++ = *u++ ^ 0x36363636;
-            *w++ = *v++ ^ 0x36363636;
-            *w++ = *u3++ ^ 0x36363636;
-            *w++ = *v4++ ^ 0x36363636;
-        }
+	u = (unsigned *) (k_opad);
+	v = (unsigned *) (k_opad + 64);
+	u3 = (unsigned *) (k_opad + 128);
+	v4 = (unsigned *) (k_opad + 192);
+	w = (unsigned *) buffer;
 
-		shasse2_init( ctx_ipad );
-        shasse2_data( ctx_ipad, buffer, wrkbuf );
+	for (i = 0; i < 16; i++)
+	{
+		*w++ = *u++ ^ 0x5C5C5C5C;
+		*w++ = *v++ ^ 0x5C5C5C5C;
+		*w++ = *u3++ ^ 0x5C5C5C5C;
+		*w++ = *v4++ ^ 0x5C5C5C5C;
+	}
 
-        u = (unsigned *) ( k_opad      );
-        v = (unsigned *) ( k_opad + 64 );
-        u3 = (unsigned *) ( k_opad + 128 );
-        v4 = (unsigned *) ( k_opad + 192 );
-        w = (unsigned *) buffer;
+	shasse2_init(ctx_opad);
+	shasse2_data(ctx_opad, buffer, wrkbuf);
 
-        for( i = 0; i < 16; i++ )
-        {
-            *w++ = *u++ ^ 0x5C5C5C5C;
-            *w++ = *v++ ^ 0x5C5C5C5C;
-            *w++ = *u3++ ^ 0x5C5C5C5C;
-            *w++ = *v4++ ^ 0x5C5C5C5C;
-        }
+	memset(buffer, 0, sizeof(buffer));
 
-        shasse2_init( ctx_opad );
-        shasse2_data( ctx_opad, buffer, wrkbuf );
+	buffer[80] = buffer[84] = buffer[88] = buffer[92] = 0x80;
+	buffer[242] = buffer[246] = buffer[250] = buffer[254] = 0x02;
+	buffer[243] = buffer[247] = buffer[251] = buffer[255] = 0xA0;
 
-        memset( buffer, 0, sizeof( buffer ) );
+	essid[slen - 1] = '\1';
 
+	HMAC(EVP_sha1(),
+		 (unsigned char *) key1,
+		 strlen(key1),
+		 (unsigned char *) essid,
+		 slen,
+		 pmk1,
+		 NULL);
+	HMAC(EVP_sha1(),
+		 (unsigned char *) key2,
+		 strlen(key2),
+		 (unsigned char *) essid,
+		 slen,
+		 pmk2,
+		 NULL);
+	HMAC(EVP_sha1(),
+		 (unsigned char *) key3,
+		 strlen(key3),
+		 (unsigned char *) essid,
+		 slen,
+		 pmk3,
+		 NULL);
+	HMAC(EVP_sha1(),
+		 (unsigned char *) key4,
+		 strlen(key4),
+		 (unsigned char *) essid,
+		 slen,
+		 pmk4,
+		 NULL);
 
-		buffer[ 80] = buffer[ 84] = buffer[ 88] = buffer[ 92] = 0x80;
-        buffer[242] = buffer[246] = buffer[250] = buffer[254] = 0x02;
-        buffer[243] = buffer[247] = buffer[251] = buffer[255] = 0xA0;
+	u = (unsigned *) pmk1;
+	v = (unsigned *) pmk2;
+	u3 = (unsigned *) pmk3;
+	v4 = (unsigned *) pmk4;
+	w = (unsigned *) buffer;
 
+	*w++ = *u++;
+	*w++ = *v++;
+	*w++ = *u3++;
+	*w++ = *v4++;
+	*w++ = *u++;
+	*w++ = *v++;
+	*w++ = *u3++;
+	*w++ = *v4++;
+	*w++ = *u++;
+	*w++ = *v++;
+	*w++ = *u3++;
+	*w++ = *v4++;
+	*w++ = *u++;
+	*w++ = *v++;
+	*w++ = *u3++;
+	*w++ = *v4++;
+	*w++ = *u++;
+	*w++ = *v++;
+	*w++ = *u3++;
+	*w++ = *v4++;
 
-		essid[slen - 1] = '\1';
+	for (i = 1; i < 4096; i++)
+	{
+		memcpy(sha1_ctx, ctx_ipad, 80); //eran 40
+		shasse2_data(sha1_ctx, buffer, wrkbuf);
+		shasse2_ends(sha1_ctx, buffer);
 
-
-		HMAC(EVP_sha1(), (unsigned char *)key1, strlen(key1), (unsigned char*)essid, slen, pmk1, NULL);
-		HMAC(EVP_sha1(), (unsigned char *)key2, strlen(key2), (unsigned char*)essid, slen, pmk2, NULL);
-		HMAC(EVP_sha1(), (unsigned char *)key3, strlen(key3), (unsigned char*)essid, slen, pmk3, NULL);
-		HMAC(EVP_sha1(), (unsigned char *)key4, strlen(key4), (unsigned char*)essid, slen, pmk4, NULL);
-
+		memcpy(sha1_ctx, ctx_opad, 80);
+		shasse2_data(sha1_ctx, buffer, wrkbuf);
+		shasse2_ends(sha1_ctx, buffer);
 
 		u = (unsigned *) pmk1;
-        v = (unsigned *) pmk2;
+		v = (unsigned *) pmk2;
 		u3 = (unsigned *) pmk3;
-        v4 = (unsigned *) pmk4;
-        w = (unsigned *) buffer;
+		v4 = (unsigned *) pmk4;
+		w = (unsigned *) buffer;
 
-        *w++ = *u++; *w++ = *v++;
-		*w++ = *u3++; *w++ = *v4++;
-        *w++ = *u++; *w++ = *v++;
-		*w++ = *u3++; *w++ = *v4++;
-        *w++ = *u++; *w++ = *v++;
-		*w++ = *u3++; *w++ = *v4++;
-        *w++ = *u++; *w++ = *v++;
-		*w++ = *u3++; *w++ = *v4++;
-        *w++ = *u++; *w++ = *v++;
-		*w++ = *u3++; *w++ = *v4++;
+		/* de-interleave the digests */
+		*u++ ^= *w++;
+		*v++ ^= *w++;
+		*u3++ ^= *w++;
+		*v4++ ^= *w++;
+		*u++ ^= *w++;
+		*v++ ^= *w++;
+		*u3++ ^= *w++;
+		*v4++ ^= *w++;
+		*u++ ^= *w++;
+		*v++ ^= *w++;
+		*u3++ ^= *w++;
+		*v4++ ^= *w++;
+		*u++ ^= *w++;
+		*v++ ^= *w++;
+		*u3++ ^= *w++;
+		*v4++ ^= *w++;
+		*u++ ^= *w++;
+		*v++ ^= *w++;
+		*u3++ ^= *w++;
+		*v4++ ^= *w++;
+	}
 
+	essid[slen - 1] = '\2';
 
-        for( i = 1; i < 4096; i++ )
-        {
-            memcpy( sha1_ctx, ctx_ipad, 80 );  //eran 40
-            shasse2_data( sha1_ctx, buffer, wrkbuf );
-            shasse2_ends( sha1_ctx, buffer );
+	HMAC(EVP_sha1(),
+		 (unsigned char *) key1,
+		 strlen(key1),
+		 (unsigned char *) essid,
+		 slen,
+		 pmk1 + 20,
+		 NULL);
+	HMAC(EVP_sha1(),
+		 (unsigned char *) key2,
+		 strlen(key2),
+		 (unsigned char *) essid,
+		 slen,
+		 pmk2 + 20,
+		 NULL);
+	HMAC(EVP_sha1(),
+		 (unsigned char *) key3,
+		 strlen(key3),
+		 (unsigned char *) essid,
+		 slen,
+		 pmk3 + 20,
+		 NULL);
+	HMAC(EVP_sha1(),
+		 (unsigned char *) key4,
+		 strlen(key4),
+		 (unsigned char *) essid,
+		 slen,
+		 pmk4 + 20,
+		 NULL);
 
-            memcpy( sha1_ctx, ctx_opad, 80 );
-            shasse2_data( sha1_ctx, buffer, wrkbuf );
-            shasse2_ends( sha1_ctx, buffer );
+	u = (unsigned *) (pmk1 + 20); // eran 20
+	v = (unsigned *) (pmk2 + 20);
+	u3 = (unsigned *) (pmk3 + 20); // eran 20
+	v4 = (unsigned *) (pmk4 + 20);
+	w = (unsigned *) buffer;
 
-            u = (unsigned *) pmk1;
-            v = (unsigned *) pmk2;
-            u3 = (unsigned *) pmk3;
-            v4 = (unsigned *) pmk4;
-            w = (unsigned *) buffer;
+	*w++ = *u++;
+	*w++ = *v++;
+	*w++ = *u3++;
+	*w++ = *v4++;
+	*w++ = *u++;
+	*w++ = *v++;
+	*w++ = *u3++;
+	*w++ = *v4++;
+	*w++ = *u++;
+	*w++ = *v++;
+	*w++ = *u3++;
+	*w++ = *v4++;
+	*w++ = *u++;
+	*w++ = *v++;
+	*w++ = *u3++;
+	*w++ = *v4++;
+	*w++ = *u++;
+	*w++ = *v++;
+	*w++ = *u3++;
+	*w++ = *v4++;
 
-            /* de-interleave the digests */
-            *u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
-            *u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
-            *u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
-			*u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
-            *u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
-        }
+	for (i = 1; i < 4096; i++)
+	{
+		memcpy(sha1_ctx, ctx_ipad, 80); //eran 40
+		shasse2_data(sha1_ctx, buffer, wrkbuf);
+		shasse2_ends(sha1_ctx, buffer);
 
+		memcpy(sha1_ctx, ctx_opad, 80);
+		shasse2_data(sha1_ctx, buffer, wrkbuf);
+		shasse2_ends(sha1_ctx, buffer);
 
-		essid[slen - 1] = '\2';
+		u = (unsigned *) (pmk1 + 20); //eran 20
+		v = (unsigned *) (pmk2 + 20);
+		u3 = (unsigned *) (pmk3 + 20);
+		v4 = (unsigned *) (pmk4 + 20);
+		w = (unsigned *) buffer;
 
-		HMAC(EVP_sha1(), (unsigned char *)key1, strlen(key1), (unsigned char*)essid, slen, pmk1 + 20, NULL);
-		HMAC(EVP_sha1(), (unsigned char *)key2, strlen(key2), (unsigned char*)essid, slen, pmk2 + 20, NULL);
-		HMAC(EVP_sha1(), (unsigned char *)key3, strlen(key3), (unsigned char*)essid, slen, pmk3 + 20, NULL);
-		HMAC(EVP_sha1(), (unsigned char *)key4, strlen(key4), (unsigned char*)essid, slen, pmk4 + 20, NULL);
-
-        u = (unsigned *) ( pmk1 + 20 ); // eran 20
-        v = (unsigned *) ( pmk2 + 20 );
-        u3 = (unsigned *) ( pmk3 + 20 ); // eran 20
-        v4 = (unsigned *) ( pmk4 + 20 );
-        w = (unsigned *) buffer;
-
-        *w++ = *u++; *w++ = *v++;
-		*w++ = *u3++; *w++ = *v4++;
-        *w++ = *u++; *w++ = *v++;
-		*w++ = *u3++; *w++ = *v4++;
-        *w++ = *u++; *w++ = *v++;
-		*w++ = *u3++; *w++ = *v4++;
-        *w++ = *u++; *w++ = *v++;
-		*w++ = *u3++; *w++ = *v4++;
-        *w++ = *u++; *w++ = *v++;
-		*w++ = *u3++; *w++ = *v4++;
-
-        for( i = 1; i < 4096; i++ )
-        {
-            memcpy( sha1_ctx, ctx_ipad, 80 ); //eran 40
-            shasse2_data( sha1_ctx, buffer, wrkbuf );
-            shasse2_ends( sha1_ctx, buffer );
-
-            memcpy( sha1_ctx, ctx_opad, 80 );
-            shasse2_data( sha1_ctx, buffer, wrkbuf );
-            shasse2_ends( sha1_ctx, buffer );
-
-            u = (unsigned *) ( pmk1 + 20 ); //eran 20
-            v = (unsigned *) ( pmk2 + 20 );
-            u3 = (unsigned *) ( pmk3 + 20 );
-            v4 = (unsigned *) ( pmk4 + 20 );
-            w = (unsigned *) buffer;
-
-            *u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
-            *u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
-            *u++ ^= *w++; *v++ ^= *w++;			*u3++ ^= *w++; *v4++ ^= *w++;
-        }
+		*u++ ^= *w++;
+		*v++ ^= *w++;
+		*u3++ ^= *w++;
+		*v4++ ^= *w++;
+		*u++ ^= *w++;
+		*v++ ^= *w++;
+		*u3++ ^= *w++;
+		*v4++ ^= *w++;
+		*u++ ^= *w++;
+		*v++ ^= *w++;
+		*u3++ ^= *w++;
+		*v4++ ^= *w++;
+	}
 
 	memcpy(_pmk3, pmk3, 32);
 	memcpy(_pmk4, pmk4, 32);
@@ -276,12 +369,19 @@ void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid,
 	show_result(_key3, _pmk3);
 	show_result(_key4, _pmk4);
 	fflush(stdout);*/
-
 }
 #endif
 #else
 #ifdef OLD_SSE_CORE
-void calc_4pmk(char* _key1, char* _key2, char* _key3, char* _key4, char* _essid, unsigned char* _pmk1, unsigned char* _pmk2, unsigned char* _pmk3, unsigned char* _pmk4)
+void calc_4pmk(char *_key1,
+			   char *_key2,
+			   char *_key3,
+			   char *_key4,
+			   char *_essid,
+			   unsigned char *_pmk1,
+			   unsigned char *_pmk2,
+			   unsigned char *_pmk3,
+			   unsigned char *_pmk4)
 {
 	calc_pmk(_key1, _essid, _pmk1);
 	calc_pmk(_key2, _essid, _pmk2);

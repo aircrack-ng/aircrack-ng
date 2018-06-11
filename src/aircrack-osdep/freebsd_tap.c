@@ -1,4 +1,4 @@
- /*
+/*
   *  Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  OS dependent API for FreeBSD. TAP routines
@@ -18,7 +18,6 @@
   *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
   */
 
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -33,12 +32,13 @@
 
 #include "osdep.h"
 
-struct tip_fbsd {
-	int		tf_fd;
-	int		tf_ioctls;
-	struct ifreq	tf_ifr;
-	char		tf_name[MAX_IFACE_NAME];
-	int		tf_destroy;
+struct tip_fbsd
+{
+	int tf_fd;
+	int tf_ioctls;
+	struct ifreq tf_ifr;
+	char tf_name[MAX_IFACE_NAME];
+	int tf_destroy;
 };
 
 static int ti_do_open_fbsd(struct tif *ti, char *name)
@@ -58,35 +58,32 @@ static int ti_do_open_fbsd(struct tif *ti, char *name)
 		priv->tf_destroy = 1; /* we create, we destroy */
 
 	fd = open(iface, O_RDWR);
-	if (fd == -1)
-		return -1;
+	if (fd == -1) return -1;
 
 	/* get name */
-	if(fstat(fd, &st) == -1)
-		goto err;
-	snprintf(priv->tf_name, sizeof(priv->tf_name)-1, "%s",
-		 devname(st.st_rdev, S_IFCHR));
+	if (fstat(fd, &st) == -1) goto err;
+	snprintf(priv->tf_name,
+			 sizeof(priv->tf_name) - 1,
+			 "%s",
+			 devname(st.st_rdev, S_IFCHR));
 
 	/* bring iface up */
 	s = socket(PF_INET, SOCK_DGRAM, 0);
-	if (s == -1)
-		goto err;
+	if (s == -1) goto err;
 	priv->tf_ioctls = s;
 
 	/* get flags */
 	ifr = &priv->tf_ifr;
 	memset(ifr, 0, sizeof(*ifr));
-	snprintf(ifr->ifr_name, sizeof(ifr->ifr_name)-1, "%s", priv->tf_name);
-	if (ioctl(s, SIOCGIFFLAGS, ifr) == -1)
-		goto err2;
+	snprintf(ifr->ifr_name, sizeof(ifr->ifr_name) - 1, "%s", priv->tf_name);
+	if (ioctl(s, SIOCGIFFLAGS, ifr) == -1) goto err2;
 	flags = (ifr->ifr_flags & 0xffff) | (ifr->ifr_flagshigh << 16);
 
 	/* set flags */
 	flags |= IFF_UP;
 	ifr->ifr_flags = flags & 0xffff;
 	ifr->ifr_flagshigh = flags >> 16;
-	if (ioctl(s, SIOCSIFFLAGS, ifr) == -1)
-		goto err2;
+	if (ioctl(s, SIOCSIFFLAGS, ifr) == -1) goto err2;
 
 	return fd;
 err:
@@ -115,8 +112,7 @@ static void ti_close_fbsd(struct tif *ti)
 {
 	struct tip_fbsd *priv = ti_priv(ti);
 
-	if (priv->tf_destroy)
-		ti_destroy(priv);
+	if (priv->tf_destroy) ti_destroy(priv);
 
 	close(priv->tf_fd);
 	close(priv->tf_ioctls);
@@ -194,20 +190,20 @@ static struct tif *ti_open_fbsd(char *iface)
 
 	/* setup ti struct */
 	ti = ti_alloc(sizeof(*priv));
-	if (!ti)
-		return NULL;
-	ti->ti_name	= ti_name_fbsd;
-	ti->ti_set_mtu	= ti_set_mtu_fbsd;
-	ti->ti_close	= ti_close_fbsd;
-	ti->ti_fd	= ti_fd_fbsd;
-	ti->ti_read	= ti_read_fbsd;
-	ti->ti_write	= ti_write_fbsd;
-	ti->ti_set_mac	= ti_set_mac_fbsd;
-	ti->ti_set_ip	= ti_set_ip_fbsd;
+	if (!ti) return NULL;
+	ti->ti_name = ti_name_fbsd;
+	ti->ti_set_mtu = ti_set_mtu_fbsd;
+	ti->ti_close = ti_close_fbsd;
+	ti->ti_fd = ti_fd_fbsd;
+	ti->ti_read = ti_read_fbsd;
+	ti->ti_write = ti_write_fbsd;
+	ti->ti_set_mac = ti_set_mac_fbsd;
+	ti->ti_set_ip = ti_set_ip_fbsd;
 
 	/* setup iface */
 	fd = ti_do_open_fbsd(ti, iface);
-	if (fd == -1) {
+	if (fd == -1)
+	{
 		ti_do_free(ti);
 		return NULL;
 	}
@@ -219,7 +215,4 @@ static struct tif *ti_open_fbsd(char *iface)
 	return ti;
 }
 
-EXPORT struct tif *ti_open(char *iface)
-{
-	return ti_open_fbsd(iface);
-}
+EXPORT struct tif *ti_open(char *iface) { return ti_open_fbsd(iface); }

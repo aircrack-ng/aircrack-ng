@@ -13,12 +13,13 @@
 
 #include "osdep.h"
 
-enum {
+enum
+{
 	NET_RC = 1,
 	NET_GET_CHAN,
 	NET_SET_CHAN,
 	NET_WRITE,
-	NET_PACKET,		/* 5 */
+	NET_PACKET, /* 5 */
 	NET_GET_MAC,
 	NET_MAC,
 	NET_GET_MONITOR,
@@ -28,18 +29,16 @@ enum {
 
 #define HIGHEST_NET_COMMAND NET_SET_RATE
 
-struct net_hdr {
-	uint8_t		nh_type;
-	uint32_t	nh_len;
-	uint8_t		nh_data[0];
+struct net_hdr
+{
+	uint8_t nh_type;
+	uint32_t nh_len;
+	uint8_t nh_data[0];
 } __packed;
 
 IMPORT struct wif *net_open(char *iface);
 IMPORT int net_send(int s, int command, void *arg, int len);
 IMPORT int net_read_exact(int s, void *arg, int len);
 IMPORT int net_get(int s, void *arg, int *len);
-
-
-
 
 #endif /* __AIRCRACK_NG_OSEDEP_NETWORK_H__ */

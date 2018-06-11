@@ -35,7 +35,7 @@
 #include "pcap.h"
 #include "aircrack-util/common.h"
 
-typedef enum {false, true} BOOLEAN;
+typedef enum { false, true } BOOLEAN;
 
 /*
 typedef enum {
@@ -50,11 +50,8 @@ typedef enum {
 // How far should we check for cloaked packets (backward and forward)
 #define PACKET_CHECKING_LENGTH 10
 
-
 #define DIRECTION_BACKWARD 0
 #define DIRECTION_FORWARD 1
-
-
 
 #define UKNOWN_FRAME_CLOAKING_STATUS -1
 #define VALID_FRAME_UNCLOAKED 0
@@ -64,7 +61,6 @@ typedef enum {
 
 // Weird frames are rejected before being checked atm
 #define WEIRD_FRAME_TYPE 100
-
 
 #define FRAME_TYPE_MANAGEMENT 0
 #define FRAME_TYPE_CONTROL 1
@@ -77,7 +73,6 @@ typedef enum {
 #define ASSOCIATION_RESPONSE 0x10
 #define NULL_FRAME 0x48
 
-
 #define FILTER_SIGNAL 1
 #define FILTER_DUPLICATE_SN 2
 #define FILTER_DUPLICATE_SN_AP 3
@@ -86,77 +81,79 @@ typedef enum {
 #define FILTER_DUPLICATE_IV 6
 #define FILTER_SIGNAL_DUPLICATE_AND_CONSECUTIVE_SN 7
 
-
 #define getBit(pckt, startbit) getBits(pckt, startbit, 1)
-#define get_iv(packet) ((packet)->iv[0]+((packet)->iv[1] * 256)+((packet)->iv[2] *256*256))
+#define get_iv(packet)                                                         \
+	((packet)->iv[0] + ((packet)->iv[1] * 256) + ((packet)->iv[2] * 256 * 256))
 
-const int PACKET_HEADER_SIZE = sizeof( struct pcap_pkthdr );
+const int PACKET_HEADER_SIZE = sizeof(struct pcap_pkthdr);
 
-struct packet_elt_header {
+struct packet_elt_header
+{
 	struct packet_elt *first;
 	struct packet_elt *current;
 	struct packet_elt *last;
 	int nb_packets;
 	int average_signal; // Calculate the average signal (for later)
-						// Currently do it on management frames (or control frames); may change in the future.
+	// Currently do it on management frames (or control frames); may change in the future.
 } * _packet_elt_head;
 
 struct packet_elt
 {
-    struct pcap_pkthdr header;  /* packet header */
-    unsigned char   *packet;    /* packet */
-    unsigned short  length;     /* packet length, just to know how much to write to the file */
+	struct pcap_pkthdr header; /* packet header */
+	unsigned char *packet; /* packet */
+	unsigned short
+		length; /* packet length, just to know how much to write to the file */
 
-    // A few interesting stuff coming from the packets
-    int fromDS;
-    int toDS;
+	// A few interesting stuff coming from the packets
+	int fromDS;
+	int toDS;
 
-    int frame_type; 			/* MGMT, CTRL, DATA */
-    int frame_subtype; // Not yet filled but will do
-    unsigned char version_type_subtype; // First byte
+	int frame_type; /* MGMT, CTRL, DATA */
+	int frame_subtype; // Not yet filled but will do
+	unsigned char version_type_subtype; // First byte
 
-    unsigned char  source[6];
-    unsigned char  destination[6];
-    unsigned char  bssid[6];
+	unsigned char source[6];
+	unsigned char destination[6];
+	unsigned char bssid[6];
 
-    int sequence_number;
-    int fragment_number;
-    unsigned char iv[3];
-    unsigned char key_index;
-    unsigned char icv[4];
-    int signal_quality;
-    int retry_bit;
-    int more_fragments_bit;
+	int sequence_number;
+	int fragment_number;
+	unsigned char iv[3];
+	unsigned char key_index;
+	unsigned char icv[4];
+	int signal_quality;
+	int retry_bit;
+	int more_fragments_bit;
 
-    //int packet_number;			/* packet number */
+	//int packet_number;			/* packet number */
 
-    int is_cloaked;
-    int is_dropped; // Do we have to drop this frame?
+	int is_cloaked;
+	int is_dropped; // Do we have to drop this frame?
 
 	int complete; // 0: no, 1: yes
 
-    struct packet_elt * next;
-    struct packet_elt * prev;
+	struct packet_elt *next;
+	struct packet_elt *prev;
 };
 
 // Not already used (partially maybe)
 struct decloak_stats
 {
-    unsigned long nb_read;      /* # of packets read       */
-    unsigned long nb_wep;       /* # of WEP data packets   */
-    unsigned long nb_bad;       /* # of bad data packets   */
-    unsigned long nb_wpa;       /* # of WPA data packets   */
-    unsigned long nb_plain;     /* # of plaintext packets  */
-    unsigned long nb_filt_wep;  /* # of filtered WEP pkt  */
-    unsigned long nb_cloak_wep; /* # of cloaked WEP pkt  */
+	unsigned long nb_read; /* # of packets read       */
+	unsigned long nb_wep; /* # of WEP data packets   */
+	unsigned long nb_bad; /* # of bad data packets   */
+	unsigned long nb_wpa; /* # of WPA data packets   */
+	unsigned long nb_plain; /* # of plaintext packets  */
+	unsigned long nb_filt_wep; /* # of filtered WEP pkt  */
+	unsigned long nb_cloak_wep; /* # of cloaked WEP pkt  */
 };
 
 static void usage(void);
 static int getBits(unsigned char b, int from, int length);
-static FILE * openfile(const char * filename, const char * mode, int fatal);
-static BOOLEAN write_packet(FILE * file, struct packet_elt * packet);
-static FILE * init_new_pcap(const char * filename);
-static FILE * open_existing_pcap(const char * filename);
+static FILE *openfile(const char *filename, const char *mode, int fatal);
+static BOOLEAN write_packet(FILE *file, struct packet_elt *packet);
+static FILE *init_new_pcap(const char *filename);
+static FILE *open_existing_pcap(const char *filename);
 static BOOLEAN read_packets(void);
 static BOOLEAN initialize_linked_list(void);
 static BOOLEAN add_node_if_not_complete(void);
@@ -173,22 +170,26 @@ static BOOLEAN next_packet_pointer(void);
 static BOOLEAN next_packet_pointer_from_ap(void);
 static BOOLEAN next_packet_pointer_from_client(void);
 //static BOOLEAN prev_packet_pointer(void);
-static int compare_SN_to_current_packet(struct packet_elt * packet);
-static BOOLEAN current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
+static int compare_SN_to_current_packet(struct packet_elt *packet);
+static BOOLEAN
+current_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet);
 //static BOOLEAN prev_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
-static BOOLEAN next_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
+static BOOLEAN
+next_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet);
 //static BOOLEAN prev_packet_pointer_same_fromToDS_and_source_as_current(void);
 static BOOLEAN next_packet_pointer_same_fromToDS_and_source_as_current(void);
 static BOOLEAN write_packets(void);
 static BOOLEAN print_statistics(void);
-static char * status_format(int status);
+static char *status_format(int status);
 static int get_average_signal_ap(void);
 
 // Check for cloaking functions
 static BOOLEAN check_for_cloaking(void); // Main cloaking check function
-#define CFC_base_filter() CFC_with_valid_packets_mark_others_with_identical_sn_cloaked()
+#define CFC_base_filter()                                                      \
+	CFC_with_valid_packets_mark_others_with_identical_sn_cloaked()
 static int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked(void);
-static int CFC_mark_all_frames_with_status_to(int original_status, int new_status);
+static int CFC_mark_all_frames_with_status_to(int original_status,
+											  int new_status);
 static int CFC_filter_signal(void);
 static int CFC_filter_duplicate_sn_ap(void);
 static int CFC_filter_duplicate_sn_client(void);

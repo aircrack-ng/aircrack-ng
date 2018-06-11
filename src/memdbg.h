@@ -46,13 +46,13 @@
  *  .c file.
  *  ****** NOTE *****
  */
-#if !defined (__MEM_DBG_H_)
+#if !defined(__MEM_DBG_H_)
 #define __MEM_DBG_H_
 
 // values to use within the MemDbg_Validate() function.
-#define MEMDBG_VALIDATE_MIN     0
-#define MEMDBG_VALIDATE_DEEP    1
-#define MEMDBG_VALIDATE_DEEPER  2
+#define MEMDBG_VALIDATE_MIN 0
+#define MEMDBG_VALIDATE_DEEP 1
+#define MEMDBG_VALIDATE_DEEPER 2
 #define MEMDBG_VALIDATE_DEEPEST 3
 
 #include <stdio.h>
@@ -63,7 +63,7 @@
 #endif
 #include <string.h>
 
-#if defined (MEMDBG_ON)
+#if defined(MEMDBG_ON)
 
 /*
  * This software was written by Jim Fougeron jfoug AT cox dot net
@@ -113,11 +113,11 @@
  *  self test code, etc, and not within OMP.  But this warning is here, so that
  *  it is known NOT to call within OMP.
  */
-extern size_t	MemDbg_Used(int show_freed);
-extern void		MemDbg_Display(FILE *);
-extern void		MemDbg_Validate(int level);
-extern void		MemDbg_Validate_msg(int level, const char *pMsg);
-extern void		MemDbg_Validate_msg2(int level, const char *pMsg, int bShowExData);
+extern size_t MemDbg_Used(int show_freed);
+extern void MemDbg_Display(FILE *);
+extern void MemDbg_Validate(int level);
+extern void MemDbg_Validate_msg(int level, const char *pMsg);
+extern void MemDbg_Validate_msg2(int level, const char *pMsg, int bShowExData);
 
 /* these functions should almost NEVER be called by any client code. They
  * are listed here, because the macros need to know their names. Client code
@@ -145,24 +145,38 @@ extern char *MEMDBG_strdup(const char *, char *, int);
 #undef libc_free
 #undef libc_calloc
 #undef libc_malloc
-#define libc_free(a)    do {if(a) MEMDBG_libc_free(a); a=0; } while(0)
-#define libc_malloc(a)   MEMDBG_libc_alloc(a)
-#define libc_calloc(a)   MEMDBG_libc_calloc(a)
-#define malloc(a)     MEMDBG_alloc((a),__FILE__,__LINE__)
-#define calloc(a)     MEMDBG_calloc((a),__FILE__,__LINE__)
-#define realloc(a,b)  MEMDBG_realloc((a),(b),__FILE__,__LINE__)
+#define libc_free(a)                                                           \
+	do                                                                         \
+	{                                                                          \
+		if (a) MEMDBG_libc_free(a);                                            \
+		a = 0;                                                                 \
+	} while (0)
+#define libc_malloc(a) MEMDBG_libc_alloc(a)
+#define libc_calloc(a) MEMDBG_libc_calloc(a)
+#define malloc(a) MEMDBG_alloc((a), __FILE__, __LINE__)
+#define calloc(a) MEMDBG_calloc((a), __FILE__, __LINE__)
+#define realloc(a, b) MEMDBG_realloc((a), (b), __FILE__, __LINE__)
 /* this code mimics JtR's FREE_MEM(a) but does it for any MEMDBG_free(a,F,L) call (a hooked free(a) call) */
-#define free(a)       do { if (a) MEMDBG_free((a),__FILE__,__LINE__); a=0; } while(0)
-#define strdup(a)     MEMDBG_strdup((a),__FILE__,__LINE__)
+#define free(a)                                                                \
+	do                                                                         \
+	{                                                                          \
+		if (a) MEMDBG_free((a), __FILE__, __LINE__);                           \
+		a = 0;                                                                 \
+	} while (0)
+#define strdup(a) MEMDBG_strdup((a), __FILE__, __LINE__)
 
 #endif
 
 /* pass the file handle to write to (normally stderr) */
-#define MEMDBG_PROGRAM_EXIT_CHECKS(a) do { \
-    if (MemDbg_Used(0) > 0) MemDbg_Display(a); \
-    MemDbg_Validate_msg2(MEMDBG_VALIDATE_DEEPEST, "At Program Exit", 1); } while(0)
+#define MEMDBG_PROGRAM_EXIT_CHECKS(a)                                          \
+	do                                                                         \
+	{                                                                          \
+		if (MemDbg_Used(0) > 0) MemDbg_Display(a);                             \
+		MemDbg_Validate_msg2(MEMDBG_VALIDATE_DEEPEST, "At Program Exit", 1);   \
+	} while (0)
 
-typedef struct MEMDBG_HANDLE_t {
+typedef struct MEMDBG_HANDLE_t
+{
 	unsigned id;
 	unsigned alloc_cnt;
 	size_t mem_size;
@@ -180,7 +194,8 @@ MEMDBG_HANDLE MEMDBG_getSnapshot(int id);
 /* will not exit on leaks.  Does exit, on memory overwrite corruption. */
 void MEMDBG_checkSnapshot(MEMDBG_HANDLE);
 /* same as MEMDBG_checkSnapshot() but if exit_on_any_leaks is true, will also exit if leaks found. */
-void MEMDBG_checkSnapshot_possible_exit_on_error(MEMDBG_HANDLE, int exit_on_any_leaks);
+void MEMDBG_checkSnapshot_possible_exit_on_error(MEMDBG_HANDLE,
+												 int exit_on_any_leaks);
 /*
  * the allocations from mem_alloc_tiny() must call this function to flag the memory they allocate
  * so it is not flagged as a leak, by these HANDLE snapshot functions. 'tiny' memory is expected
@@ -203,9 +218,14 @@ void MEMDBG_tag_mem_from_alloc_tiny(void *);
 #undef libc_free
 #undef libc_calloc
 #undef libc_malloc
-#define libc_free(a)  do {if(a) MEMDBG_libc_free(a); a=0; } while(0)
-#define libc_malloc(a)   MEMDBG_libc_alloc(a)
-#define libc_calloc(a)   MEMDBG_libc_calloc(a)
+#define libc_free(a)                                                           \
+	do                                                                         \
+	{                                                                          \
+		if (a) MEMDBG_libc_free(a);                                            \
+		a = 0;                                                                 \
+	} while (0)
+#define libc_malloc(a) MEMDBG_libc_alloc(a)
+#define libc_calloc(a) MEMDBG_libc_calloc(a)
 
 #if !defined(__MEMDBG__)
 /* this code mimics JtR's FREE_MEM(a) but does it for any normal free(a) call */
@@ -215,15 +235,17 @@ void MEMDBG_tag_mem_from_alloc_tiny(void *);
 #define MemDbg_Used(a) 0
 #define MemDbg_Display(a)
 #define MemDbg_Validate(a)
-#define MemDbg_Validate_msg(a,b)
-#define MemDbg_Validate_msg2(a,b,c)
+#define MemDbg_Validate_msg(a, b)
+#define MemDbg_Validate_msg2(a, b, c)
 #define MEMDBG_PROGRAM_EXIT_CHECKS(a)
 #define MEMDBG_tag_mem_from_alloc_tiny(a)
 
 #define MEMDBG_HANDLE int
 #define MEMDBG_getSnapshot(a) 0
-#define MEMDBG_checkSnapshot(a) if(a) printf(" \b")
-#define MEMDBG_checkSnapshot_possible_exit_on_error(a, b) if(a) printf(" \b")
+#define MEMDBG_checkSnapshot(a)                                                \
+	if (a) printf(" \b")
+#define MEMDBG_checkSnapshot_possible_exit_on_error(a, b)                      \
+	if (a) printf(" \b")
 
 #endif /* MEMDBG_ON */
 

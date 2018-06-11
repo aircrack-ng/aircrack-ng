@@ -25,54 +25,47 @@
 
 #include "trampoline.h"
 
-void
-simd_init (void)
+void simd_init(void) {}
+
+void simd_destroy(void) {}
+
+int simd_get_supported_features(void)
 {
-}
+	int result = 0;
+	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
+	unsigned int max_level = __get_cpuid_max(0, 0);
 
-void
-simd_destroy (void)
-{
-}
+	__cpuid(0, eax, ebx, ecx, edx);
 
-int
-simd_get_supported_features (void)
-{
-  int result = 0;
-  unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
-  unsigned int max_level = __get_cpuid_max (0, 0);
+	if (eax >= 1)
+	{
+		__cpuid(1, eax, ebx, ecx, edx);
+	}
 
-  __cpuid (0, eax, ebx, ecx, edx);
+	if (edx & (1 << 23))
+	{
+		result |= SIMD_SUPPORTS_MMX;
+	}
 
-  if (eax >= 1)
-  {
-    __cpuid (1, eax, ebx, ecx, edx);
-  }
+	if (edx & (1 << 26))
+	{
+		result |= SIMD_SUPPORTS_SSE2;
+	}
 
-  if (edx & (1 << 23))
-  {
-    result |= SIMD_SUPPORTS_MMX;
-  }
+	if (ecx & (1 << 28))
+	{
+		result |= SIMD_SUPPORTS_AVX;
+	}
 
-  if (edx & (1 << 26))
-  {
-    result |= SIMD_SUPPORTS_SSE2;
-  }
+	if (max_level >= 7)
+	{
+		__cpuid_count(7, 0, eax, ebx, ecx, edx);
 
-  if (ecx & (1 << 28))
-  {
-    result |= SIMD_SUPPORTS_AVX;
-  }
+		if (ebx & (1 << 5))
+		{
+			result |= SIMD_SUPPORTS_AVX2;
+		}
+	}
 
-  if (max_level >= 7)
-  {
-    __cpuid_count (7, 0, eax, ebx, ecx, edx);
-
-    if (ebx & (1 << 5))
-    {
-      result |= SIMD_SUPPORTS_AVX2;
-    }
-  }
-
-  return (result);
+	return (result);
 }

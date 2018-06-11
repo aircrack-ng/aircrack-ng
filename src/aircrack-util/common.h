@@ -30,9 +30,9 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-#if defined (__CYGWIN32__) && !defined(__CYGWIN64__)
-int fseeko64(FILE* fp, int64_t offset, int whence);
-int64_t ftello64(FILE * fp);
+#if defined(__CYGWIN32__) && !defined(__CYGWIN64__)
+int fseeko64(FILE *fp, int64_t offset, int whence);
+int64_t ftello64(FILE *fp);
 #undef fseek
 #define fseek fseeko64
 #undef ftello
@@ -48,30 +48,37 @@ int64_t ftello64(FILE * fp);
 
 #include <time.h>
 
-#define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
+#define SWAP(x, y)                                                             \
+	{                                                                          \
+		unsigned char tmp = x;                                                 \
+		x = y;                                                                 \
+		y = tmp;                                                               \
+	}
 
-#define SWAP32(x)       \
-    x = ( ( ( x >> 24 ) & 0x000000FF ) | \
-          ( ( x >>  8 ) & 0x0000FF00 ) | \
-          ( ( x <<  8 ) & 0x00FF0000 ) | \
-          ( ( x << 24 ) & 0xFF000000 ) );
+#define SWAP32(x)                                                              \
+	x = (((x >> 24) & 0x000000FF) | ((x >> 8) & 0x0000FF00)                    \
+		 | ((x << 8) & 0x00FF0000)                                             \
+		 | ((x << 24) & 0xFF000000));
 
-#define PCT { struct tm *lt; time_t tc = time( NULL ); \
-              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
-              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
+#define PCT                                                                    \
+	{                                                                          \
+		struct tm *lt;                                                         \
+		time_t tc = time(NULL);                                                \
+		lt = localtime(&tc);                                                   \
+		printf("%02d:%02d:%02d  ", lt->tm_hour, lt->tm_min, lt->tm_sec);       \
+	}
 
 #ifndef MAX
-	#define MAX(x,y) ( (x)>(y) ? (x) : (y) )
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
 #ifndef MIN
-	#define MIN(x,y) ( (x)>(y) ? (y) : (x) )
+#define MIN(x, y) ((x) > (y) ? (y) : (x))
 #endif
 
 #ifndef ABS
-	#define ABS(a)          ((a)>=0?(a):(-(a)))
+#define ABS(a) ((a) >= 0 ? (a) : (-(a)))
 #endif
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -99,7 +106,6 @@ extern char *getVersion(const char *progname,
 						const unsigned int beta,
 						const unsigned int rc);
 
-
 /// Returns the number of CPU/cores available and online.
 extern int get_nb_cpus(void);
 
@@ -109,10 +115,8 @@ extern char *mac2string(unsigned char *mac_address);
 
 extern int hexCharToInt(unsigned char c);
 
-extern int hexStringToArray(char *in,
-							int in_length,
-							unsigned char *out,
-							int out_length);
+extern int
+hexStringToArray(char *in, int in_length, unsigned char *out, int out_length);
 
 /// Return the mac address bytes (or null if it's not a mac address)
 extern int getmac(const char *macAddress, const int strict, unsigned char *mac);

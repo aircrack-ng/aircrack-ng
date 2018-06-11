@@ -32,7 +32,6 @@
  *  files in the program, then also delete it here.
  */
 
-
 /*
  *  Each IV byte is stored in corresponding "level". We have 3 levels with
  *  IV[2] as root index (level 0), IV[1] and IV[2] as level 2 and level 1
@@ -45,176 +44,165 @@
 
 /* allocate root structure */
 
-unsigned char **uniqueiv_init( void )
+unsigned char **uniqueiv_init(void)
 {
-    int i;
+	int i;
 
-    /* allocate root bucket (level 0) as vector of pointers */
+	/* allocate root bucket (level 0) as vector of pointers */
 
-    unsigned char **uiv_root = (unsigned char **)
-        malloc( 256 * sizeof( unsigned char * ) );
+	unsigned char **uiv_root =
+		(unsigned char **) malloc(256 * sizeof(unsigned char *));
 
-    if( uiv_root == NULL )
-        return( NULL );
+	if (uiv_root == NULL) return (NULL);
 
-    /* setup initial state as empty */
+	/* setup initial state as empty */
 
-    for( i = 0; i < 256; ++i )
-        uiv_root[i] = NULL;
+	for (i = 0; i < 256; ++i) uiv_root[i] = NULL;
 
-    return( uiv_root );
+	return (uiv_root);
 }
 
 /* update records with new IV */
 
-int uniqueiv_mark( unsigned char **uiv_root, unsigned char IV[3] )
+int uniqueiv_mark(unsigned char **uiv_root, unsigned char IV[3])
 {
-    unsigned char **uiv_lvl1;
-    unsigned char  *uiv_lvl2;
-    short i;
+	unsigned char **uiv_lvl1;
+	unsigned char *uiv_lvl2;
+	short i;
 
-    if( uiv_root == NULL )
-        return( 0 );
+	if (uiv_root == NULL) return (0);
 
-    /* select bucket from level 1 */
+	/* select bucket from level 1 */
 
-    uiv_lvl1 = (unsigned char **) uiv_root[IV[2]];
+	uiv_lvl1 = (unsigned char **) uiv_root[IV[2]];
 
-    /* create if it doesn't exist */
+	/* create if it doesn't exist */
 
-    if( uiv_lvl1 == NULL )
-    {
-        /* allocate level 2 bucket being a vector of bits */
+	if (uiv_lvl1 == NULL)
+	{
+		/* allocate level 2 bucket being a vector of bits */
 
-        uiv_lvl1 = (unsigned char **) malloc( 256 * sizeof( unsigned char * ) );
+		uiv_lvl1 = (unsigned char **) malloc(256 * sizeof(unsigned char *));
 
-        if( uiv_lvl1 == NULL )
-            return( 1 );
+		if (uiv_lvl1 == NULL) return (1);
 
-        /* setup initial state as empty */
+		/* setup initial state as empty */
 
-        for( i = 0; i < 256; i++ )
-            uiv_lvl1[i] = NULL;
+		for (i = 0; i < 256; i++) uiv_lvl1[i] = NULL;
 
-        /* link to parent bucket */
+		/* link to parent bucket */
 
-        uiv_root[IV[2]] = (unsigned char *) uiv_lvl1;
-    }
+		uiv_root[IV[2]] = (unsigned char *) uiv_lvl1;
+	}
 
-    /* select bucket from level 2 */
+	/* select bucket from level 2 */
 
-    uiv_lvl2 = (unsigned char *) uiv_lvl1[IV[1]];
+	uiv_lvl2 = (unsigned char *) uiv_lvl1[IV[1]];
 
-    /* create if it doesn't exist */
+	/* create if it doesn't exist */
 
-    if( uiv_lvl2 == NULL )
-    {
-        /* allocate level 2 bucket as a vector of pointers */
+	if (uiv_lvl2 == NULL)
+	{
+		/* allocate level 2 bucket as a vector of pointers */
 
-        uiv_lvl2 = (unsigned char *) malloc( 32 * sizeof( unsigned char ) );
+		uiv_lvl2 = (unsigned char *) malloc(32 * sizeof(unsigned char));
 
-        if( uiv_lvl2 == NULL )
-            return( 1 );
+		if (uiv_lvl2 == NULL) return (1);
 
-        /* setup initial state as empty */
+		/* setup initial state as empty */
 
-        for( i = 0; i < 32; i++ )
-            uiv_lvl2[i] = 0;
+		for (i = 0; i < 32; i++) uiv_lvl2[i] = 0;
 
-        /* link to parent bucket */
+		/* link to parent bucket */
 
-        uiv_lvl1[IV[1]] = uiv_lvl2;
-    }
+		uiv_lvl1[IV[1]] = uiv_lvl2;
+	}
 
-    /* place single bit into level 2 bucket */
+	/* place single bit into level 2 bucket */
 
-    uiv_lvl2[BITWISE_OFFT( IV[0] )] |= BITWISE_MASK( IV[0] );
+	uiv_lvl2[BITWISE_OFFT(IV[0])] |= BITWISE_MASK(IV[0]);
 
-    return( 0 );
+	return (0);
 }
 
 /* check if already seen IV */
 
-int uniqueiv_check( unsigned char **uiv_root, unsigned char IV[3] )
+int uniqueiv_check(unsigned char **uiv_root, unsigned char IV[3])
 {
-    unsigned char **uiv_lvl1;
-    unsigned char  *uiv_lvl2;
+	unsigned char **uiv_lvl1;
+	unsigned char *uiv_lvl2;
 
-    if( uiv_root == NULL )
-        return( IV_NOTHERE );
+	if (uiv_root == NULL) return (IV_NOTHERE);
 
-    /* select bucket from level 1 */
+	/* select bucket from level 1 */
 
-    uiv_lvl1 = (unsigned char **) uiv_root[IV[2]];
+	uiv_lvl1 = (unsigned char **) uiv_root[IV[2]];
 
-    /* stop here if not even allocated */
+	/* stop here if not even allocated */
 
-    if( uiv_lvl1 == NULL )
-        return( IV_NOTHERE );
+	if (uiv_lvl1 == NULL) return (IV_NOTHERE);
 
-    /* select bucket from level 2 */
+	/* select bucket from level 2 */
 
-    uiv_lvl2 = (unsigned char *) uiv_lvl1[IV[1]];
+	uiv_lvl2 = (unsigned char *) uiv_lvl1[IV[1]];
 
-    /* stop here if not even allocated */
+	/* stop here if not even allocated */
 
-    if( uiv_lvl2 == NULL )
-        return( IV_NOTHERE );
+	if (uiv_lvl2 == NULL) return (IV_NOTHERE);
 
-    /* check single bit from level 2 bucket */
+	/* check single bit from level 2 bucket */
 
-    if( ( uiv_lvl2[ BITWISE_OFFT( IV[0] ) ]
-                  & BITWISE_MASK( IV[0] ) ) == 0 )
-        return( IV_NOTHERE );
-    else
-        return( IV_PRESENT );
+	if ((uiv_lvl2[BITWISE_OFFT(IV[0])] & BITWISE_MASK(IV[0])) == 0)
+		return (IV_NOTHERE);
+	else
+		return (IV_PRESENT);
 }
 
 /* unallocate everything */
 
-void uniqueiv_wipe( unsigned char **uiv_root )
+void uniqueiv_wipe(unsigned char **uiv_root)
 {
-    int i, j;
-    unsigned char **uiv_lvl1;
-    unsigned char  *uiv_lvl2;
+	int i, j;
+	unsigned char **uiv_lvl1;
+	unsigned char *uiv_lvl2;
 
-    if( uiv_root == NULL )
-        return;
+	if (uiv_root == NULL) return;
 
-    /* recursively wipe out allocated buckets */
+	/* recursively wipe out allocated buckets */
 
-    for( i = 0; i < 256; ++i )
-    {
-        uiv_lvl1 = (unsigned char **) uiv_root[i];
+	for (i = 0; i < 256; ++i)
+	{
+		uiv_lvl1 = (unsigned char **) uiv_root[i];
 
-        if( uiv_lvl1 != NULL )
-        {
-            for( j = 0; j < 256; ++j )
-            {
-                uiv_lvl2 = (unsigned char *) uiv_lvl1[j];
+		if (uiv_lvl1 != NULL)
+		{
+			for (j = 0; j < 256; ++j)
+			{
+				uiv_lvl2 = (unsigned char *) uiv_lvl1[j];
 
-                if( uiv_lvl2 != NULL ) {
-                    free( uiv_lvl2 );
-		    uiv_lvl2 = NULL;
-                }
-            }
+				if (uiv_lvl2 != NULL)
+				{
+					free(uiv_lvl2);
+					uiv_lvl2 = NULL;
+				}
+			}
 
-            free( uiv_lvl1 );
-	    uiv_lvl1 = NULL;
-        }
-    }
+			free(uiv_lvl1);
+			uiv_lvl1 = NULL;
+		}
+	}
 
-    free( uiv_root );
-    uiv_root = NULL;
+	free(uiv_root);
+	uiv_root = NULL;
 
-    return;
+	return;
 }
 
-
-unsigned char *data_init( void )
+unsigned char *data_init(void)
 {
 	// It could eat up to (256*256*256) * 3 bytes = 48Mb :/
-	unsigned char * IVs = (unsigned char *) calloc(256*256*256 * 3, sizeof(unsigned char));
+	unsigned char *IVs =
+		(unsigned char *) calloc(256 * 256 * 256 * 3, sizeof(unsigned char));
 	return IVs;
 }
 
@@ -224,7 +212,9 @@ unsigned char *data_init( void )
  * AA AA
  */
 
-int data_check(unsigned char *data_root, unsigned char IV[3], unsigned char data[2])
+int data_check(unsigned char *data_root,
+			   unsigned char IV[3],
+			   unsigned char data[2])
 {
 	int IV_position, cloaking;
 
@@ -239,7 +229,7 @@ int data_check(unsigned char *data_root, unsigned char IV[3], unsigned char data
 		IV_position *= 3;
 
 		// Check if existing
-		if ( *(data_root + IV_position) == 0)
+		if (*(data_root + IV_position) == 0)
 		{
 			// Not existing
 			*(data_root + IV_position) = 1;
@@ -247,26 +237,23 @@ int data_check(unsigned char *data_root, unsigned char IV[3], unsigned char data
 			// Add it
 			*(data_root + IV_position + 1) = data[0];
 			*(data_root + IV_position + 2) = data[1];
-
 		}
 		else
 		{
 			// Good, we found it, so check it now
-			if ( *(data_root + IV_position + 1) != data[0] ||
-				*(data_root + IV_position + 2) != data[1])
+			if (*(data_root + IV_position + 1) != data[0]
+				|| *(data_root + IV_position + 2) != data[1])
 			{
 				cloaking = CLOAKING;
 			}
 		}
-
 	}
 	// else, cannot detect since it is not started
 
 	return cloaking;
 }
 
-void data_wipe(unsigned char * data)
+void data_wipe(unsigned char *data)
 {
-	if (data)
-		free(data);
+	if (data) free(data);
 }
