@@ -41,6 +41,6 @@
 
 EXTERNC unsigned int linecount(const char *file, off_t offset, size_t blksize);
 
-#define READBUF_BLKSIZE (1024 * 1024 * 3)
+#define READBUF_BLKSIZE (1024*1024*3)
 
 #endif /* LINECOUNT_H */

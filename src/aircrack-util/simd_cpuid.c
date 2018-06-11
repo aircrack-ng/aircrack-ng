@@ -26,22 +26,22 @@
 #include <sys/stat.h>
 #include <string.h>
 #if defined(__i386__) || defined(__x86_64__)
-#define _X86 1
-#include <cpuid.h>
+	#define _X86           1
+	#include <cpuid.h>
 #elif defined(__arm__)
-#ifdef HAS_AUXV
-#include <sys/auxv.h>
-#include <asm/hwcap.h>
-#endif
+	#ifdef HAS_AUXV
+		#include <sys/auxv.h>
+		#include <asm/hwcap.h>
+	#endif
 #endif /* __arm__ */
 #ifdef __linux__
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <linux/sysctl.h>
+	#include <fcntl.h>
+	#include <sys/stat.h>
+	#include <linux/sysctl.h>
 #endif
 #if defined(__FreeBSD__) || defined(__OpenBSD__)
-#include <sys/user.h>
-#include <sys/sysctl.h>
+	#include <sys/user.h>
+	#include <sys/sysctl.h>
 #endif
 #include <dirent.h>
 
@@ -49,52 +49,50 @@
 #include "common.h"
 
 #ifdef __linux__
-#define CPUFREQ_CPU0C "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
-#define CPUFREQ_CPU0M "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"
-#define CORETEMP_PATH "/sys/devices/platform/coretemp.0/"
-int cpuid_readsysfs(const char *file);
-int cpuid_findcpusensorpath(const char *path);
+	#define CPUFREQ_CPU0C   "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
+	#define CPUFREQ_CPU0M   "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"
+	#define CORETEMP_PATH  "/sys/devices/platform/coretemp.0/"
+	int cpuid_readsysfs(const char *file);
+	int cpuid_findcpusensorpath(const char *path);
 #endif
 
-struct _cpuinfo cpuinfo = {0, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0.0, NULL};
+struct _cpuinfo cpuinfo = { 0, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0.0, NULL };
 
 //
 // Until better support for other arch's is added an ifdef is needed
 //
-unsigned long
-getRegister(const unsigned int val, const char from, const char to)
-{
-	unsigned long mask = (1 << (to + 1)) - 1;
+unsigned long getRegister(const unsigned int val, const char from, const char to) {
+	unsigned long mask = (1<<(to+1)) - 1;
 
-	if (to == 31) return val >> from;
+	if (to == 31)
+		return val >> from;
 
 	return (val & mask) >> from;
 }
 
-void sprintcat(char *dest, const char *src, size_t len)
-{
-	if (strlen(dest)) (void) strncat(dest, ",", len);
+void sprintcat(char *dest, const char *src, size_t len) {
+	if (strlen(dest))
+		(void)strncat(dest, ",", len);
 
-	(void) strncat(dest, src, len);
+	(void)strncat(dest, src, len);
 }
 
-int is_dir(const char *dir)
-{
+int is_dir(const char *dir) {
 	struct stat sb;
 
-	if (!stat(dir, &sb)) return S_ISDIR(sb.st_mode);
+	if (!stat(dir, &sb))
+		return S_ISDIR(sb.st_mode);
 
 	return 0;
 }
 
-unsigned long GetCacheTotalLize(unsigned ebx, unsigned ecx)
-{
-	unsigned long LnSz, SectorSz, WaySz, SetSz;
-	LnSz = getRegister(ebx, 0, 11) + 1;
-	SectorSz = getRegister(ebx, 12, 21) + 1;
-	WaySz = getRegister(ebx, 22, 31) + 1;
-	SetSz = getRegister(ecx, 0, 31) + 1;
-	return (SetSz * WaySz * SectorSz * LnSz);
+unsigned long GetCacheTotalLize(unsigned ebx, unsigned ecx) {
+	unsigned long  LnSz, SectorSz, WaySz, SetSz;
+        LnSz = getRegister(ebx, 0, 11 ) + 1;
+        SectorSz = getRegister(ebx, 12, 21 ) + 1;
+        WaySz = getRegister(ebx, 22, 31 ) + 1;
+        SetSz = getRegister(ecx, 0, 31 )  + 1;
+        return (SetSz*WaySz*SectorSz*LnSz);
 }
 
 //
@@ -103,19 +101,16 @@ unsigned long GetCacheTotalLize(unsigned ebx, unsigned ecx)
 // SSE2-4.2 + AVX / NEON	= 4 / 128 bit
 // MMX / CPU Fallback		= 1 /  64 bit
 //
-int cpuid_simdsize(int viewmax)
-{
+int cpuid_simdsize(int viewmax) {
 #ifdef _X86
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 	unsigned int max_level = __get_cpuid_max(0, NULL);
 
-	if (max_level >= 7)
-	{
+	if (max_level >= 7) {
 		__cpuid_count(7, 0, eax, ebx, ecx, edx);
 
-		if (ebx & (1 << 5))
-		{ // AVX2
-			return 8;
+		if (ebx & (1 << 5)) { // AVX2
+				return 8;
 		}
 	}
 
@@ -130,15 +125,14 @@ int cpuid_simdsize(int viewmax)
 	if (hwcaps & (1 << 12)) // NEON
 		return 4;
 #endif
-	(void) viewmax;
+	(void)viewmax;
 
 	// MMX or CPU Fallback
 	return 1;
 }
 
 #ifdef _X86
-char *cpuid_vendor()
-{
+char* cpuid_vendor() {
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 
 	__cpuid(0, eax, ebx, ecx, edx);
@@ -151,8 +145,7 @@ char *cpuid_vendor()
 		return "Centaur (VIA)";
 	else if (ebx == 0x69727943)
 		return "Cyrix";
-	else if ((ebx == 0x6E617254)
-			 || ((ebx == 0x756E6547) && (edx == 0x54656E69)))
+	else if ((ebx == 0x6E617254) || ((ebx == 0x756E6547) && (edx == 0x54656E69)))
 		return "Transmeta";
 	else if (ebx == 0x646F6547)
 		return "Geode by NSC (AMD)";
@@ -183,8 +176,7 @@ char *cpuid_vendor()
 }
 #endif
 
-char *cpuid_featureflags()
-{
+char* cpuid_featureflags() {
 	char flags[64] = {0};
 #ifdef _X86
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
@@ -192,76 +184,89 @@ char *cpuid_featureflags()
 
 	__cpuid(1, eax, ebx, ecx, edx);
 
-	if (edx & (1 << 23)) sprintcat((char *) &flags, "MMX", sizeof(flags));
+	if (edx & (1 << 23))
+		sprintcat((char *)&flags, "MMX", sizeof(flags));
 
-	if (edx & (1 << 25)) sprintcat((char *) &flags, "SSE", sizeof(flags));
+	if (edx & (1 << 25))
+		sprintcat((char *)&flags, "SSE", sizeof(flags));
 
-	if (edx & (1 << 26)) sprintcat((char *) &flags, "SSE2", sizeof(flags));
+	if (edx & (1 << 26))
+		sprintcat((char *)&flags, "SSE2", sizeof(flags));
 
-	if (ecx & (1 << 0)) sprintcat((char *) &flags, "SSE3", sizeof(flags));
+	if (ecx & (1 << 0))
+		sprintcat((char *)&flags, "SSE3", sizeof(flags));
 
-	if (ecx & (1 << 9)) sprintcat((char *) &flags, "SSSE3", sizeof(flags));
+	if (ecx & (1 << 9))
+		sprintcat((char *)&flags, "SSSE3", sizeof(flags));
 
-	if (ecx & (1 << 19)) sprintcat((char *) &flags, "SSE4.1", sizeof(flags));
+	if (ecx & (1 << 19))
+		sprintcat((char *)&flags, "SSE4.1", sizeof(flags));
 
-	if (ecx & (1 << 20)) sprintcat((char *) &flags, "SSE4.2", sizeof(flags));
+	if (ecx & (1 << 20))
+		sprintcat((char *)&flags, "SSE4.2", sizeof(flags));
 
-	if (ecx & (1 << 25)) sprintcat((char *) &flags, "AES-NI", sizeof(flags));
+	if (ecx & (1 << 25))
+		sprintcat((char *)&flags, "AES-NI", sizeof(flags));
 
 	// Don't set this if we got it from a higher topology previously.
-	if (cpuinfo.maxlogic
-		== 0) // Maximum addressable logical CPUs per pkg/socket.
+	if (cpuinfo.maxlogic == 0)	// Maximum addressable logical CPUs per pkg/socket.
 		cpuinfo.maxlogic = (ebx >> 16) & 0xFF;
 
-	if (edx & (1 << 28)) // Hyper-threading
+	if (edx & (1 << 28))		// Hyper-threading
 		cpuinfo.htt = 1;
 
-	if (ecx & (1 << 28)) // AVX
-		sprintcat((char *) &flags, "AVX", sizeof(flags));
+	if (ecx & (1 << 28))		// AVX
+		sprintcat((char *)&flags, "AVX", sizeof(flags));
 
-	if (ecx & (1 << 31)) // Hypervisor
+	if (ecx & (1 << 31))		// Hypervisor
 		cpuinfo.hv = 1;
 
-	if (max_level >= 7)
-	{
+	if (max_level >= 7) {
 		__cpuid_count(7, 0, eax, ebx, ecx, edx);
 
-		if (ebx & (1 << 5)) // AVX2
-			sprintcat((char *) &flags, "AVX2", sizeof(flags));
+		if (ebx & (1 << 5))	// AVX2
+			sprintcat((char *)&flags, "AVX2", sizeof(flags));
 	}
 #elif defined(__arm__) && defined(HAS_AUXV)
 	long hwcaps = getauxval(AT_HWCAP);
 
-	if (hwcaps & (1 << 12)) sprintcat((char *) &flags, "NEON", sizeof(flags));
+	if (hwcaps & (1 << 12))
+		sprintcat((char *)&flags, "NEON", sizeof(flags));
 
-	if (hwcaps & (1 << 1)) sprintcat((char *) &flags, "HALF", sizeof(flags));
+	if (hwcaps & (1 << 1))
+		sprintcat((char *)&flags, "HALF", sizeof(flags));
 
-	if (hwcaps & (1 << 2)) sprintcat((char *) &flags, "THUMB", sizeof(flags));
+	if (hwcaps & (1 << 2))
+		sprintcat((char *)&flags, "THUMB", sizeof(flags));
 
 	if (hwcaps & (1 << 11))
-		sprintcat((char *) &flags, "THUMBEE", sizeof(flags));
+		sprintcat((char *)&flags, "THUMBEE", sizeof(flags));
 
-	if (hwcaps & (1 << 6)) sprintcat((char *) &flags, "VFP", sizeof(flags));
+	if (hwcaps & (1 << 6))
+		sprintcat((char *)&flags, "VFP", sizeof(flags));
 
 	if ((hwcaps & (1 << 13)) || (hwcaps & (1 << 14)))
-		sprintcat((char *) &flags, "VFPv3", sizeof(flags));
+		sprintcat((char *)&flags, "VFPv3", sizeof(flags));
 
-	if (hwcaps & (1 << 16)) sprintcat((char *) &flags, "VFPv4", sizeof(flags));
+	if (hwcaps & (1 << 16))
+		sprintcat((char *)&flags, "VFPv4", sizeof(flags));
 
-	if (hwcaps & (1 << 15)) sprintcat((char *) &flags, "TLS", sizeof(flags));
+	if (hwcaps & (1 << 15))
+		sprintcat((char *)&flags, "TLS", sizeof(flags));
 
-	if (hwcaps & (1 << 10)) sprintcat((char *) &flags, "CRUNCH", sizeof(flags));
+	if (hwcaps & (1 << 10))
+		sprintcat((char *)&flags, "CRUNCH", sizeof(flags));
 
-	if (hwcaps & (1 << 9)) sprintcat((char *) &flags, "iwMMXt", sizeof(flags));
+	if (hwcaps & (1 << 9))
+		sprintcat((char *)&flags, "iwMMXt", sizeof(flags));
 
 	if ((hwcaps & (1 << 17)) || (hwcaps & (1 << 18)))
-		sprintcat((char *) &flags, "IDIV", sizeof(flags));
+		sprintcat((char *)&flags, "IDIV", sizeof(flags));
 #endif
 	return strdup(flags);
 }
 
-float cpuid_getcoretemp()
-{
+float cpuid_getcoretemp() {
 #ifdef __FreeBSD__
 	int tempval = 0;
 	size_t len = sizeof(tempval);
@@ -269,12 +274,10 @@ float cpuid_getcoretemp()
 	if (sysctlbyname("dev.cpu.0.temperature", &tempval, &len, NULL, 0) == -1)
 		return 0;
 
-	cpuinfo.coretemp = (tempval - 2732) / 10;
+	cpuinfo.coretemp = (tempval-2732)/10;
 #elif __linux__
-	if (cpuinfo.cputemppath != NULL)
-	{
-		cpuinfo.coretemp =
-			cpuid_readsysfs((const char *) cpuinfo.cputemppath) / 1000;
+	if (cpuinfo.cputemppath != NULL) {
+		cpuinfo.coretemp = cpuid_readsysfs((const char *)cpuinfo.cputemppath)/1000;
 	}
 #else
 	return 0;
@@ -286,8 +289,7 @@ float cpuid_getcoretemp()
 //
 // Locate the primary temp input on the coretemp sysfs
 //
-int cpuid_findcpusensorpath(const char *path)
-{
+int cpuid_findcpusensorpath(const char *path) {
 	DIR *dirp;
 	struct dirent *dp;
 	char tbuf[16][32] = {{0}};
@@ -296,46 +298,32 @@ int cpuid_findcpusensorpath(const char *path)
 
 	dirp = opendir(path);
 
-	if (dirp == NULL) return -1;
+	if (dirp == NULL)
+		return -1;
 
 	snprintf(sensor, sizeof(sensor), "temp%d", sensorx);
 
-	while ((dp = readdir(dirp)) != NULL)
-	{
-		if (!strncmp(dp->d_name, sensor, 5))
-		{
-			(void) closedir(dirp);
-			if (asprintf(&cpuinfo.cputemppath,
-						 "%stemp%d_input",
-						 CORETEMP_PATH,
-						 sensorx)
-				== -1)
-			{
+	while ((dp = readdir(dirp)) != NULL) {
+		if (!strncmp(dp->d_name, sensor, 5)) {
+			(void)closedir(dirp);
+			if (asprintf(&cpuinfo.cputemppath, "%stemp%d_input", CORETEMP_PATH, sensorx) == -1) {
 				perror("asprintf");
 			}
 			return sensorx;
-		}
-		else if (!strncmp(dp->d_name, "temp", 4))
+		} else if (!strncmp(dp->d_name, "temp", 4))
 			sprintf(tbuf[cnt++], "%s", dp->d_name);
 	}
 
-	(void) closedir(dirp);
+	(void)closedir(dirp);
 
 	// Hopefully we found the ID on the first pass, but Linux is its infinite wisdom
 	// sometimes starts the sensors at 2-6+
 	for (sensorx = 1; sensorx < 8; sensorx++)
-		for (i = 0; i < cnt; i++)
-		{
+		for (i = 0; i < cnt; i++) {
 			snprintf(sensor, sizeof(sensor), "temp%d", sensorx);
 
-			if (!strncasecmp(tbuf[i], sensor, strlen(sensor)))
-			{
-				if (asprintf(&cpuinfo.cputemppath,
-							 "%stemp%d_input",
-							 CORETEMP_PATH,
-							 sensorx)
-					== -1)
-				{
+			if (!strncasecmp(tbuf[i], sensor, strlen(sensor))) {
+				if (asprintf(&cpuinfo.cputemppath, "%stemp%d_input", CORETEMP_PATH, sensorx) == -1) {
 					perror("asprintf");
 				}
 				return sensorx;
@@ -345,20 +333,20 @@ int cpuid_findcpusensorpath(const char *path)
 	return -1;
 }
 
-int cpuid_readsysfs(const char *file)
-{
+int cpuid_readsysfs(const char *file) {
 	int fd, ival = 0;
 	struct stat sf;
 	char buf[16] = {0};
 
-	if (stat(file, &sf)) return -1;
+	if (stat(file, &sf))
+		return -1;
 
 	fd = open(file, O_RDONLY);
 
-	if (fd == -1) return -1;
+	if (fd == -1)
+		return -1;
 
-	if (read(fd, &buf, sizeof(buf)))
-	{
+	if (read(fd, &buf, sizeof(buf))) {
 		ival = atoi(buf);
 	}
 
@@ -370,21 +358,23 @@ int cpuid_readsysfs(const char *file)
 //
 // Return CPU frequency from scaling governor when supported
 //
-int cpuid_getfreq(int type)
-{
+int cpuid_getfreq(int type) {
 	int fd, ifreq = 0;
 	struct stat sf;
 	char freq[16] = {0}, *fptr;
 
 	fptr = (type == 1 ? CPUFREQ_CPU0C : CPUFREQ_CPU0M);
 
-	if (stat(fptr, &sf)) return 0;
+	if (stat(fptr, &sf))
+		return 0;
 
 	fd = open(fptr, O_RDONLY);
 
-	if (fd == -1) return 0;
+	if (fd == -1)
+		return 0;
 
-	if (read(fd, &freq, sizeof(freq))) ifreq = atoi(freq) / 1000;
+	if (read(fd, &freq, sizeof(freq)))
+		ifreq = atoi(freq)/1000;
 
 	close(fd);
 
@@ -392,8 +382,7 @@ int cpuid_getfreq(int type)
 }
 #endif
 
-char *cpuid_modelinfo()
-{
+char* cpuid_modelinfo() {
 #ifdef _X86
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 	int bi = 2, broff = 0;
@@ -404,30 +393,25 @@ char *cpuid_modelinfo()
 	size_t linecap = 0;
 	ssize_t linelen;
 #elif __FreeBSD__ /* ARM support for FreeBSD */
-	int mib[] = {CTL_HW, HW_MODEL};
+	int mib[] = { CTL_HW, HW_MODEL };
 	char modelbuf[64];
 	size_t len = sizeof(modelbuf);
 #endif
 	char *pm = NULL, *model = NULL;
 
 #ifdef _X86
-	if (tmpmodel == NULL)
-	{
-		fprintf(stderr,
-				"ERROR: calloc() failed to allocate memory for "
-				"cpuid_modelinfo(): %s\n",
-				strerror(errno));
+	if (tmpmodel == NULL) {
+		fprintf(stderr, "ERROR: calloc() failed to allocate memory for cpuid_modelinfo(): %s\n", strerror(errno));
 		return "Unknown";
 	}
 
-	for (; bi < 5; bi++, broff += 16)
-	{
-		__cpuid(0x80000000 + bi, eax, ebx, ecx, edx);
+	for (; bi < 5; bi++, broff += 16) {
+		__cpuid(0x80000000+bi, eax, ebx, ecx, edx);
 
-		memcpy(tmpmodel + broff, &eax, sizeof(unsigned));
-		memcpy(tmpmodel + broff + 4, &ebx, sizeof(unsigned));
-		memcpy(tmpmodel + broff + 8, &ecx, sizeof(unsigned));
-		memcpy(tmpmodel + broff + 12, &edx, sizeof(unsigned));
+       		memcpy(tmpmodel+broff, &eax, sizeof(unsigned));
+	        memcpy(tmpmodel+broff+4, &ebx, sizeof(unsigned));
+        	memcpy(tmpmodel+broff+8, &ecx, sizeof(unsigned));
+	        memcpy(tmpmodel+broff+12, &edx, sizeof(unsigned));
 	}
 
 	pm = tmpmodel;
@@ -435,23 +419,18 @@ char *cpuid_modelinfo()
 #elif __linux__
 	cfd = fopen("/proc/cpuinfo", "r");
 
-	if (cfd == NULL)
-	{
-		fprintf(stderr,
-				"ERROR: Failed opening /proc/cpuinfo: %s\n",
-				strerror(errno));
+	if (cfd == NULL) {
+		fprintf(stderr, "ERROR: Failed opening /proc/cpuinfo: %s\n", strerror(errno));
 		return "Unknown";
 	}
 
-	while ((linelen = getline(&line, &linecap, cfd)) > 0)
-	{
-		if (!strncasecmp(line, "model", 5))
-		{
+	while ((linelen = getline(&line, &linecap, cfd)) > 0) {
+		if (!strncasecmp(line, "model", 5)) {
 			token = strsep(&line, ":");
 			token = strsep(&line, ":");
 
-			token[strlen(token) - 1] = 0;
-			(void) *token++;
+			token[strlen(token)-1] = 0;
+			(void)*token++;
 
 			pm = token;
 			break;
@@ -464,14 +443,13 @@ char *cpuid_modelinfo()
 	fclose(cfd);
 #elif __FreeBSD__
 	if (sysctl(mib, 2, modelbuf, &len, NULL, 0))
-		snprintf(modelbuf, sizeof(modelbuf), "Unknown");
+		snprintf(modelbuf,sizeof(modelbuf), "Unknown");
 
 	pm = modelbuf;
 #endif
 
 	// Clean up the empty spaces in the model name on some intel's because they let their engineers fall asleep on the space bar
-	while (*pm == ' ')
-	{
+	while (*pm == ' ') {
 		pm++;
 	}
 
@@ -482,20 +460,15 @@ char *cpuid_modelinfo()
 	tmpmodel = NULL;
 #endif
 
-	if (model == NULL)
-	{
-		fprintf(stderr,
-				"ERROR: strdup() failed to allocate memory for "
-				"cpuid_modelinfo(): %s\n",
-				strerror(errno));
+	if (model == NULL) {
+		fprintf(stderr, "ERROR: strdup() failed to allocate memory for cpuid_modelinfo(): %s\n", strerror(errno));
 		return "Unknown";
 	}
 
 	return model;
 }
 
-int cpuid_getinfo()
-{
+int cpuid_getinfo() {
 	int cpu_count = get_nb_cpus();
 	float cpu_temp;
 #ifdef _X86
@@ -507,25 +480,24 @@ int cpuid_getinfo()
 #endif
 
 	// Attempt higher level topology scan first.
-	do
-	{
+	do {
 		__cpuid_count(11, topologyLevel, eax, ebx, ecx, edx);
 
 		// if EBX ==0 then this subleaf is not valid, and the processor doesn't support this.
-		if (ebx == 0) break;
+		if (ebx == 0)
+			break;
 
-		topologyType = getRegister(ecx, 8, 15);
+		topologyType = getRegister(ecx,8,15);
 #ifdef DEBUG
-		topologyShift = getRegister(eax, 0, 4);
+		topologyShift = getRegister(eax,0,4);
 #endif
 
-		if ((topologyType == 2) && ((int) eax != 0 && (int) ebx != 0))
-		{
-			cpuinfo.cores = (int) eax;
-			cpuinfo.maxlogic = (int) ebx;
+		if ((topologyType == 2) && ((int)eax != 0 && (int)ebx != 0)) {
+			cpuinfo.cores		= (int)eax;
+			cpuinfo.maxlogic	= (int)ebx;
 		}
 #ifdef DEBUG
-		printf("%u %u %u %u\n", eax, ebx, ecx, edx);
+		printf("%u %u %u %u\n",eax,ebx,ecx,edx);
 		printf("type %d, shift = %d\n", topologyType, topologyShift);
 #endif
 		topologyLevel++;
@@ -544,32 +516,23 @@ int cpuid_getinfo()
 
 	printf("Vendor          = %s\n", cpuid_vendor());
 
-	if (max_level >= 4)
-	{
+	if (max_level >= 4) {
 		__cpuid(4, eax, ebx, ecx, edx);
 
-		if (topologyLevel == 0)
-		{
+		if (topologyLevel == 0) {
 			if (eax >> 26)
 				cpuinfo.coreperid = (eax >> 26) + 1;
-			else // This processor only supports level1 topology. :'(
+			else	// This processor only supports level1 topology. :'(
 				cpuinfo.coreperid = 1;
 		}
-	}
-	else
+	} else
 		cpuinfo.coreperid = 1;
 
 #ifdef DEBUG
-	printf("cpuinfo.coreperid = %d, cpuinfo.cores = %d, maxlogic = %d (tlevel "
-		   "%d)\n",
-		   cpuinfo.coreperid,
-		   cpuinfo.cores,
-		   cpuinfo.maxlogic,
-		   topologyLevel);
+	printf("cpuinfo.coreperid = %d, cpuinfo.cores = %d, maxlogic = %d (tlevel %d)\n", cpuinfo.coreperid, cpuinfo.cores, cpuinfo.maxlogic, topologyLevel);
 #endif
 
-	if ((cpuinfo.cores == 0) && (cpuinfo.coreperid != 0))
-	{
+	if ((cpuinfo.cores == 0) && (cpuinfo.coreperid != 0)) {
 		// On lower topology processors we have to calculate the cores from max cores per id (pkg/socket) by max addressable
 		cpuinfo.cores = (cpuinfo.maxlogic / cpuinfo.coreperid);
 	}
@@ -587,38 +550,39 @@ int cpuid_getinfo()
 	printf("Features        = %s\n", cpuinfo.flags);
 
 	// this shouldn't happen but prepare for the worst.
-	if (cpuinfo.cores == 0) cpuinfo.cores = cpu_count;
+	if (cpuinfo.cores == 0)
+		cpuinfo.cores = cpu_count;
 
 	// If our max logic matches our cores, we don't have HT even if the proc says otherwise.
-	if (cpuinfo.cores == cpuinfo.maxlogic) cpuinfo.htt = 0;
+	if (cpuinfo.cores == cpuinfo.maxlogic)
+		cpuinfo.htt = 0;
 
 #ifdef _X86
-	printf("Hyper-Threading = %s\n", cpuinfo.htt ? "Yes" : "No");
+	printf("Hyper-Threading = %s\n", cpuinfo.htt?"Yes":"No");
 #endif
 
-	if (cpuinfo.hv) printf("Hypervisor      = Yes (Virtualization detected)\n");
+	if (cpuinfo.hv)
+		printf("Hypervisor      = Yes (Virtualization detected)\n");
 
 	// This inaccuracy can happen when running under a hypervisor, correct it.
-	if (cpuinfo.cores > cpuinfo.maxlogic) cpuinfo.maxlogic = cpuinfo.cores;
+	if (cpuinfo.cores > cpuinfo.maxlogic)
+		cpuinfo.maxlogic = cpuinfo.cores;
 
 	if (cpuinfo.cpufreq_cur)
-		printf("CPU frequency   = %d MHz (Max: %d MHz)\n",
-			   cpuinfo.cpufreq_cur,
-			   cpuinfo.cpufreq_max);
+		printf("CPU frequency   = %d MHz (Max: %d MHz)\n", cpuinfo.cpufreq_cur, cpuinfo.cpufreq_max);
 
 	cpu_temp = cpuid_getcoretemp();
-	if (cpu_temp != 0.0) printf("CPU temperature = %2.2f C\n", cpu_temp);
+	if (cpu_temp != 0.0)
+		printf("CPU temperature = %2.2f C\n", cpu_temp);
 
-	if (cpuinfo.htt) printf("Logical CPUs    = %d\n", cpuinfo.maxlogic);
+	if (cpuinfo.htt)
+		printf("Logical CPUs    = %d\n", cpuinfo.maxlogic);
 
 	printf("CPU cores       = %d", cpuinfo.cores);
 
-	if (cpuinfo.maxlogic != cpu_count)
-	{
+	if (cpuinfo.maxlogic != cpu_count) {
 		if (cpu_count > cpuinfo.maxlogic)
-			printf(" (%d total, %d sockets)",
-				   cpu_count,
-				   (cpu_count / cpuinfo.maxlogic));
+			printf(" (%d total, %d sockets)", cpu_count, (cpu_count / cpuinfo.maxlogic));
 		else
 			printf(" (%d total)", cpu_count);
 	}
@@ -639,8 +603,7 @@ int cpuid_getinfo()
 	free(cpuinfo.model);
 	cpuinfo.model = NULL;
 
-	if (cpuinfo.cputemppath != NULL)
-	{
+	if (cpuinfo.cputemppath != NULL) {
 		free(cpuinfo.cputemppath);
 		cpuinfo.cputemppath = NULL;
 	}

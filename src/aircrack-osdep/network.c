@@ -1,4 +1,4 @@
-/*
+ /*
   *  Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  OS dependent API for using card via network.
@@ -35,21 +35,19 @@
 
 #define QUEUE_MAX 666
 
-struct netqueue
-{
-	unsigned char q_buf[2048];
-	int q_len;
+struct netqueue {
+	unsigned char	q_buf[2048];
+	int		q_len;
 
-	struct netqueue *q_next;
-	struct netqueue *q_prev;
+	struct netqueue	*q_next;
+	struct netqueue	*q_prev;
 };
 
-struct priv_net
-{
-	int pn_s;
-	struct netqueue pn_queue;
-	struct netqueue pn_queue_free;
-	int pn_queue_len;
+struct priv_net {
+	int		pn_s;
+	struct netqueue	pn_queue;
+	struct netqueue	pn_queue_free;
+	int		pn_queue_len;
 };
 
 EXPORT int net_send(int s, int command, void *arg, int len)
@@ -59,34 +57,33 @@ EXPORT int net_send(int s, int command, void *arg, int len)
 	size_t pktlen;
 
 	// Validate command value
-	assert(command >= NET_RC || command <= HIGHEST_NET_COMMAND);
-	if (command < NET_RC || command > HIGHEST_NET_COMMAND)
-	{
+    assert(command >= NET_RC || command <= HIGHEST_NET_COMMAND);
+	if (command < NET_RC || command > HIGHEST_NET_COMMAND) {
 		return -1;
 	}
 
 	pktlen = sizeof(struct net_hdr) + len;
 
-	pktbuf = (char *) calloc(sizeof(char), pktlen);
-	if (pktbuf == NULL)
-	{
+	pktbuf = (char*)calloc(sizeof(char), pktlen);
+	if (pktbuf == NULL) {
 		perror("calloc");
 		goto net_send_error;
 	}
 
-	pnh = (struct net_hdr *) pktbuf;
+	pnh = (struct net_hdr*)pktbuf;
 	pnh->nh_type = command;
 	pnh->nh_len = htonl(len);
 
 	memcpy(pktbuf + sizeof(struct net_hdr), arg, len);
 
-	for (;;)
-	{
+	for (;;) {
 		ssize_t rc = send(s, pktbuf, pktlen, 0);
 
-		if ((size_t) rc == pktlen) break;
+		if ((size_t)rc == pktlen)
+			break;
 
-		if (rc == EAGAIN || rc == EWOULDBLOCK || rc == EINTR) continue;
+		if (rc == EAGAIN || rc == EWOULDBLOCK || rc == EINTR)
+			continue;
 
 		if (rc == ECONNRESET)
 			printf("Connection reset while sending packet!\n");
@@ -106,15 +103,12 @@ EXPORT int net_read_exact(int s, void *arg, int len)
 {
 	ssize_t rc;
 	int rlen = 0;
-	char *buf = (char *) arg;
-	while (rlen < len)
-	{
+	char *buf = (char*)arg;
+	while (rlen < len) {
 		rc = recv(s, buf, (len - rlen), 0);
 
-		if (rc < 1)
-		{
-			if (rc == -1 && (errno == EAGAIN || errno == EINTR))
-			{
+		if (rc < 1) {
+			if (rc == -1 && (errno == EAGAIN || errno == EINTR)) {
 				usleep(100);
 				continue;
 			}
@@ -135,18 +129,18 @@ EXPORT int net_get(int s, void *arg, int *len)
 	int plen;
 
 	if (net_read_exact(s, &nh, sizeof(nh)) == -1)
-	{
+        {
 		return -1;
-	}
+        }
 
 	plen = ntohl(nh.nh_len);
 	assert(plen <= *len && plen >= 0);
 
 	*len = plen;
 	if ((*len) && (net_read_exact(s, arg, *len) == -1))
-	{
-		return -1;
-	}
+        {
+            return -1;
+        }
 
 	return nh.nh_type;
 }
@@ -186,13 +180,13 @@ static struct netqueue *queue_get_slot(struct priv_net *pn)
 {
 	struct netqueue *q = pn->pn_queue_free.q_next;
 
-	if (q != &pn->pn_queue_free)
-	{
+	if (q != &pn->pn_queue_free) {
 		queue_del(q);
 		return q;
 	}
 
-	if (pn->pn_queue_len++ > QUEUE_MAX) return NULL;
+	if (pn->pn_queue_len++ > QUEUE_MAX)
+		return NULL;
 
 	return malloc(sizeof(*q));
 }
@@ -202,7 +196,8 @@ static void net_enque(struct priv_net *pn, void *buf, int len)
 	struct netqueue *q;
 
 	q = queue_get_slot(pn);
-	if (!q) return;
+	if (!q)
+		return;
 
 	q->q_len = len;
 	assert((int) sizeof(q->q_buf) >= q->q_len);
@@ -216,15 +211,17 @@ static int net_get_nopacket(struct priv_net *pn, void *arg, int *len)
 	int l = sizeof(buf);
 	int c;
 
-	while (1)
-	{
+	while (1) {
 		l = sizeof(buf);
 		c = net_get(pn->pn_s, buf, &l);
-		if (c < 0) return c;
+		if (c < 0)
+			return c;
 
-		if (c != NET_PACKET && c > 0) break;
+		if (c != NET_PACKET && c > 0)
+			break;
 
-		if (c > 0) net_enque(pn, buf, l);
+		if(c > 0)
+			net_enque(pn, buf, l);
 	}
 
 	assert(l <= *len);
@@ -241,16 +238,16 @@ static int net_cmd(struct priv_net *pn, int command, void *arg, int alen)
 	int cmd;
 
 	if (net_send(pn->pn_s, command, arg, alen) == -1)
-	{
+        {
 		return -1;
-	}
+        }
 
 	len = sizeof(rc);
 	cmd = net_get_nopacket(pn, &rc, &len);
 	if (cmd == -1)
-	{
+        {
 		return -1;
-	}
+        }
 	assert(cmd == NET_RC);
 	assert(len == sizeof(rc));
 
@@ -262,7 +259,8 @@ static int queue_get(struct priv_net *pn, void *buf, int len)
 	struct netqueue *head = &pn->pn_queue;
 	struct netqueue *q = head->q_next;
 
-	if (q == head) return 0;
+	if (q == head)
+		return 0;
 
 	assert(q->q_len <= len);
 	memcpy(buf, q->q_buf, q->q_len);
@@ -273,12 +271,12 @@ static int queue_get(struct priv_net *pn, void *buf, int len)
 	return q->q_len;
 }
 
-static int
-net_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
+static int net_read(struct wif *wi, unsigned char *h80211, int len,
+		    struct rx_info *ri)
 {
 	struct priv_net *pn = wi_priv(wi);
 	uint32_t buf[512]; // 512 * 4 = 2048
-	unsigned char *bufc = (unsigned char *) buf;
+	unsigned char *bufc = (unsigned char*)buf;
 	int cmd;
 	int sz = sizeof(*ri);
 	int l;
@@ -286,13 +284,13 @@ net_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 
 	/* try queue */
 	l = queue_get(pn, buf, sizeof(buf));
-	if (!l)
-	{
+	if (!l) {
 		/* try reading form net */
 		l = sizeof(buf);
 		cmd = net_get(pn->pn_s, buf, &l);
 
-		if (cmd == -1) return -1;
+		if (cmd == -1)
+			return -1;
 		if (cmd == NET_RC)
 		{
 			ret = ntohl((buf[0]));
@@ -302,10 +300,9 @@ net_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 	}
 
 	/* XXX */
-	if (ri)
-	{
+	if (ri) {
 		// re-assemble 64-bit integer
-		ri->ri_mactime = __be64_to_cpu(((uint64_t) buf[0] << 32 || buf[1]));
+		ri->ri_mactime = __be64_to_cpu(((uint64_t)buf[0] << 32 || buf[1] ));
 		ri->ri_power = __be32_to_cpu(buf[2]);
 		ri->ri_noise = __be32_to_cpu(buf[3]);
 		ri->ri_channel = __be32_to_cpu(buf[4]);
@@ -315,7 +312,8 @@ net_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 	}
 	l -= sz;
 	assert(l > 0);
-	if (l > len) l = len;
+	if (l > len)
+		l = len;
 	memcpy(h80211, &bufc[sz], l);
 
 	return l;
@@ -328,11 +326,14 @@ static int net_get_mac(struct wif *wi, unsigned char *mac)
 	int cmd;
 	int sz = 6;
 
-	if (net_send(pn->pn_s, NET_GET_MAC, NULL, 0) == -1) return -1;
+	if (net_send(pn->pn_s, NET_GET_MAC, NULL, 0) == -1)
+		return -1;
 
 	cmd = net_get_nopacket(pn, buf, &sz);
-	if (cmd == -1) return -1;
-	if (cmd == NET_RC) return ntohl(buf[0]);
+	if (cmd == -1)
+		return -1;
+	if (cmd == NET_RC)
+		return ntohl(buf[0]);
 	assert(cmd == NET_MAC);
 	assert(sz == 6);
 
@@ -341,8 +342,8 @@ static int net_get_mac(struct wif *wi, unsigned char *mac)
 	return 0;
 }
 
-static int
-net_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
+static int net_write(struct wif *wi, unsigned char *h80211, int len,
+		     struct tx_info *ti)
 {
 	struct priv_net *pn = wi_priv(wi);
 	int sz = sizeof(*ti);
@@ -419,14 +420,17 @@ static int get_ip_port(char *iface, char *ip, const int ipsize)
 	struct in_addr addr;
 
 	host = strdup(iface);
-	if (!host) return -1;
+	if (!host)
+		return -1;
 
 	ptr = strchr(host, ':');
-	if (!ptr) goto out;
+	if (!ptr)
+		goto out;
 
 	*ptr++ = 0;
 
-	if (!inet_aton(host, &addr)) goto out; /* XXX resolve hostname */
+	if (!inet_aton(host, &addr))
+		goto out; /* XXX resolve hostname */
 
 	assert(strlen(host) <= 15);
 	strncpy(ip, host, ipsize);
@@ -439,9 +443,7 @@ out:
 
 static int handshake(int s)
 {
-	if (s)
-	{
-	} /* XXX unused */
+	if (s) {} /* XXX unused */
 	/* XXX do a handshake */
 	return 0;
 }
@@ -452,21 +454,22 @@ static int do_net_open(char *iface)
 	char ip[16];
 	struct sockaddr_in s_in;
 
-	port = get_ip_port(iface, ip, sizeof(ip) - 1);
-	if (port == -1) return -1;
+	port = get_ip_port(iface, ip, sizeof(ip)-1);
+	if (port == -1)
+		return -1;
 
 	memset(&s_in, 0, sizeof(struct sockaddr_in));
 	s_in.sin_family = PF_INET;
 	s_in.sin_port = htons(port);
-	if (!inet_aton(ip, &s_in.sin_addr)) return -1;
+	if (!inet_aton(ip, &s_in.sin_addr))
+		return -1;
 
 	if ((s = socket(s_in.sin_family, SOCK_STREAM, IPPROTO_TCP)) == -1)
 		return -1;
 
 	printf("Connecting to %s port %d...\n", ip, port);
 
-	if (connect(s, (struct sockaddr *) &s_in, sizeof(s_in)) == -1)
-	{
+	if (connect(s, (struct sockaddr*) &s_in, sizeof(s_in)) == -1) {
 		close(s);
 
 		printf("Failed to connect\n");
@@ -474,8 +477,7 @@ static int do_net_open(char *iface)
 		return -1;
 	}
 
-	if (handshake(s) == -1)
-	{
+	if (handshake(s) == -1) {
 		close(s);
 
 		printf("Failed to connect - handshake failed\n");
@@ -503,22 +505,22 @@ EXPORT struct wif *net_open(char *iface)
 
 	/* setup wi struct */
 	wi = wi_alloc(sizeof(*pn));
-	if (!wi) return NULL;
-	wi->wi_read = net_read;
-	wi->wi_write = net_write;
-	wi->wi_set_channel = net_set_channel;
-	wi->wi_get_channel = net_get_channel;
-	wi->wi_set_rate = net_set_rate;
-	wi->wi_get_rate = net_get_rate;
-	wi->wi_close = net_close;
-	wi->wi_fd = net_fd;
-	wi->wi_get_mac = net_get_mac;
-	wi->wi_get_monitor = net_get_monitor;
+	if (!wi)
+		return NULL;
+	wi->wi_read		= net_read;
+	wi->wi_write		= net_write;
+	wi->wi_set_channel	= net_set_channel;
+	wi->wi_get_channel	= net_get_channel;
+        wi->wi_set_rate    	= net_set_rate;
+	wi->wi_get_rate    	= net_get_rate;
+	wi->wi_close		= net_close;
+	wi->wi_fd		= net_fd;
+	wi->wi_get_mac		= net_get_mac;
+	wi->wi_get_monitor	= net_get_monitor;
 
 	/* setup iface */
 	s = do_net_open(iface);
-	if (s == -1)
-	{
+	if (s == -1) {
 		do_net_free(wi);
 		return NULL;
 	}
@@ -527,7 +529,8 @@ EXPORT struct wif *net_open(char *iface)
 	pn = wi_priv(wi);
 	pn->pn_s = s;
 	pn->pn_queue.q_next = pn->pn_queue.q_prev = &pn->pn_queue;
-	pn->pn_queue_free.q_next = pn->pn_queue_free.q_prev = &pn->pn_queue_free;
+	pn->pn_queue_free.q_next = pn->pn_queue_free.q_prev
+					= &pn->pn_queue_free;
 
 	return wi;
 }

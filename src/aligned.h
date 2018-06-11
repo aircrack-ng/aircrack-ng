@@ -53,7 +53,7 @@
 #define _ALIGNED_H_
 
 #if defined(__GNUC__)
-#define JTR_ALIGN(n) __attribute__((aligned(n)))
+#define JTR_ALIGN(n) __attribute__ ((aligned(n)))
 #elif defined(_MSC_VER)
 #define JTR_ALIGN(n) __declspec(align(n))
 #else

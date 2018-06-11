@@ -51,20 +51,15 @@
  * rotate with a loop.
  */
 
-#define SHA_ASM(op, x, n)                                                      \
-	({                                                                         \
-		unsigned int __res;                                                    \
-		__asm__(op " %1,%0" : "=r"(__res) : "i"(n), "0"(x));                   \
-		__res;                                                                 \
-	})
-#define SHA_ROL(x, n) SHA_ASM("rol", x, n)
-#define SHA_ROR(x, n) SHA_ASM("ror", x, n)
+#define SHA_ASM(op, x, n) ({ unsigned int __res; __asm__(op " %1,%0":"=r" (__res):"i" (n), "0" (x)); __res; })
+#define SHA_ROL(x,n)	SHA_ASM("rol", x, n)
+#define SHA_ROR(x,n)	SHA_ASM("ror", x, n)
 
 #else
 
-#define SHA_ROT(X, l, r) (((X) << (l)) | ((X) >> (r)))
-#define SHA_ROL(X, n) SHA_ROT(X, n, 32 - (n))
-#define SHA_ROR(X, n) SHA_ROT(X, 32 - (n), n)
+#define SHA_ROT(X,l,r)	(((X) << (l)) | ((X) >> (r)))
+#define SHA_ROL(X,n)	SHA_ROT(X,n,32-(n))
+#define SHA_ROR(X,n)	SHA_ROT(X,32-(n),n)
 
 #endif
 
@@ -91,16 +86,11 @@
  */
 
 #if defined(__i386__) || defined(__x86_64__)
-#define setW(x, val) (*(volatile unsigned int *) &W(x) = (val))
+  #define setW(x, val) (*(volatile unsigned int *)&W(x) = (val))
 #elif defined(__GNUC__) && defined(__arm__)
-#define setW(x, val)                                                           \
-	do                                                                         \
-	{                                                                          \
-		W(x) = (val);                                                          \
-		__asm__("" ::: "memory");                                              \
-	} while (0)
+  #define setW(x, val) do { W(x) = (val); __asm__("":::"memory"); } while (0)
 #else
-#define setW(x, val) (W(x) = (val))
+  #define setW(x, val) (W(x) = (val))
 #endif
 
 /*
@@ -110,70 +100,55 @@
  * and is faster on architectures with memory alignment issues.
  */
 
-#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86)               \
-	|| defined(_M_X64) || defined(__ppc__) || defined(__ppc64__)               \
-	|| defined(__powerpc__) || defined(__powerpc64__) || defined(__s390__)     \
-	|| defined(__s390x__)
+#if defined(__i386__) || defined(__x86_64__) || \
+    defined(_M_IX86) || defined(_M_X64) || \
+    defined(__ppc__) || defined(__ppc64__) || \
+    defined(__powerpc__) || defined(__powerpc64__) || \
+    defined(__s390__) || defined(__s390x__)
 
-#define get_be32(p) ntohl(*(unsigned int *) (p))
-#define put_be32(p, v)                                                         \
-	do                                                                         \
-	{                                                                          \
-		*(unsigned int *) (p) = htonl(v);                                      \
-	} while (0)
+#define get_be32(p)	ntohl(*(unsigned int *)(p))
+#define put_be32(p, v)	do { *(unsigned int *)(p) = htonl(v); } while (0)
 
 #else
 
-#define get_be32(p)                                                            \
-	((*((unsigned char *) (p) + 0) << 24)                                      \
-	 | (*((unsigned char *) (p) + 1) << 16)                                    \
-	 | (*((unsigned char *) (p) + 2) << 8)                                     \
-	 | (*((unsigned char *) (p) + 3) << 0))
-#define put_be32(p, v)                                                         \
-	do                                                                         \
-	{                                                                          \
-		unsigned int __v = (v);                                                \
-		*((unsigned char *) (p) + 0) = __v >> 24;                              \
-		*((unsigned char *) (p) + 1) = __v >> 16;                              \
-		*((unsigned char *) (p) + 2) = __v >> 8;                               \
-		*((unsigned char *) (p) + 3) = __v >> 0;                               \
-	} while (0)
+#define get_be32(p)	( \
+	(*((unsigned char *)(p) + 0) << 24) | \
+	(*((unsigned char *)(p) + 1) << 16) | \
+	(*((unsigned char *)(p) + 2) <<  8) | \
+	(*((unsigned char *)(p) + 3) <<  0) )
+#define put_be32(p, v)	do { \
+	unsigned int __v = (v); \
+	*((unsigned char *)(p) + 0) = __v >> 24; \
+	*((unsigned char *)(p) + 1) = __v >> 16; \
+	*((unsigned char *)(p) + 2) = __v >>  8; \
+	*((unsigned char *)(p) + 3) = __v >>  0; } while (0)
 
 #endif
 
 /* This "rolls" over the 512-bit array */
-#define W(x) (array[(x) &15])
+#define W(x) (array[(x)&15])
 
 /*
  * Where do we get the source from? The first 16 iterations get it from
  * the input data, the next mix it from the 512-bit array.
  */
 #define SHA_SRC(t) get_be32(data + t)
-#define SHA_MIX(t) SHA_ROL(W(t + 13) ^ W(t + 8) ^ W(t + 2) ^ W(t), 1)
+#define SHA_MIX(t) SHA_ROL(W(t+13) ^ W(t+8) ^ W(t+2) ^ W(t), 1)
 
-#define SHA_ROUND(t, input, fn, constant, A, B, C, D, E)                       \
-	do                                                                         \
-	{                                                                          \
-		unsigned int TEMP = input(t);                                          \
-		setW(t, TEMP);                                                         \
-		E += TEMP + SHA_ROL(A, 5) + (fn) + (constant);                         \
-		B = SHA_ROR(B, 2);                                                     \
-	} while (0)
+#define SHA_ROUND(t, input, fn, constant, A, B, C, D, E) do { \
+	unsigned int TEMP = input(t); setW(t, TEMP); \
+	E += TEMP + SHA_ROL(A,5) + (fn) + (constant); \
+	B = SHA_ROR(B, 2); } while (0)
 
-#define T_0_15(t, A, B, C, D, E)                                               \
-	SHA_ROUND(t, SHA_SRC, (((C ^ D) & B) ^ D), 0x5a827999, A, B, C, D, E)
-#define T_16_19(t, A, B, C, D, E)                                              \
-	SHA_ROUND(t, SHA_MIX, (((C ^ D) & B) ^ D), 0x5a827999, A, B, C, D, E)
-#define T_20_39(t, A, B, C, D, E)                                              \
-	SHA_ROUND(t, SHA_MIX, (B ^ C ^ D), 0x6ed9eba1, A, B, C, D, E)
-#define T_40_59(t, A, B, C, D, E)                                              \
-	SHA_ROUND(t, SHA_MIX, ((B & C) + (D & (B ^ C))), 0x8f1bbcdc, A, B, C, D, E)
-#define T_60_79(t, A, B, C, D, E)                                              \
-	SHA_ROUND(t, SHA_MIX, (B ^ C ^ D), 0xca62c1d6, A, B, C, D, E)
+#define T_0_15(t, A, B, C, D, E)  SHA_ROUND(t, SHA_SRC, (((C^D)&B)^D) , 0x5a827999, A, B, C, D, E )
+#define T_16_19(t, A, B, C, D, E) SHA_ROUND(t, SHA_MIX, (((C^D)&B)^D) , 0x5a827999, A, B, C, D, E )
+#define T_20_39(t, A, B, C, D, E) SHA_ROUND(t, SHA_MIX, (B^C^D) , 0x6ed9eba1, A, B, C, D, E )
+#define T_40_59(t, A, B, C, D, E) SHA_ROUND(t, SHA_MIX, ((B&C)+(D&(B^C))) , 0x8f1bbcdc, A, B, C, D, E )
+#define T_60_79(t, A, B, C, D, E) SHA_ROUND(t, SHA_MIX, (B^C^D) ,  0xca62c1d6, A, B, C, D, E )
 
 static void blk_SHA1_Block(blk_SHA_CTX *ctx, const unsigned int *data)
 {
-	unsigned int A, B, C, D, E;
+	unsigned int A,B,C,D,E;
 	unsigned int array[16];
 
 	A = ctx->h0;
@@ -183,16 +158,16 @@ static void blk_SHA1_Block(blk_SHA_CTX *ctx, const unsigned int *data)
 	E = ctx->h4;
 
 	/* Round 1 - iterations 0-16 take their input from 'data' */
-	T_0_15(0, A, B, C, D, E);
-	T_0_15(1, E, A, B, C, D);
-	T_0_15(2, D, E, A, B, C);
-	T_0_15(3, C, D, E, A, B);
-	T_0_15(4, B, C, D, E, A);
-	T_0_15(5, A, B, C, D, E);
-	T_0_15(6, E, A, B, C, D);
-	T_0_15(7, D, E, A, B, C);
-	T_0_15(8, C, D, E, A, B);
-	T_0_15(9, B, C, D, E, A);
+	T_0_15( 0, A, B, C, D, E);
+	T_0_15( 1, E, A, B, C, D);
+	T_0_15( 2, D, E, A, B, C);
+	T_0_15( 3, C, D, E, A, B);
+	T_0_15( 4, B, C, D, E, A);
+	T_0_15( 5, A, B, C, D, E);
+	T_0_15( 6, E, A, B, C, D);
+	T_0_15( 7, D, E, A, B, C);
+	T_0_15( 8, C, D, E, A, B);
+	T_0_15( 9, B, C, D, E, A);
 	T_0_15(10, A, B, C, D, E);
 	T_0_15(11, E, A, B, C, D);
 	T_0_15(12, D, E, A, B, C);
@@ -298,29 +273,30 @@ void blk_SHA1_Update(blk_SHA_CTX *ctx, const void *data, unsigned long len)
 	ctx->size += len;
 
 	/* Read the data into W and process blocks as they get full */
-	if (lenW)
-	{
+	if (lenW) {
 		unsigned int left = 64 - lenW;
-		if (len < left) left = len;
-		memcpy(lenW + (char *) ctx->W, data, left);
+		if (len < left)
+			left = len;
+		memcpy(lenW + (char *)ctx->W, data, left);
 		lenW = (lenW + left) & 63;
 		len -= left;
-		data = ((const char *) data + left);
-		if (lenW) return;
+		data = ((const char *)data + left);
+		if (lenW)
+			return;
 		blk_SHA1_Block(ctx, ctx->W);
 	}
-	while (len >= 64)
-	{
+	while (len >= 64) {
 		blk_SHA1_Block(ctx, data);
-		data = ((const char *) data + 64);
+		data = ((const char *)data + 64);
 		len -= 64;
 	}
-	if (len) memcpy(ctx->W, data, len);
+	if (len)
+		memcpy(ctx->W, data, len);
 }
 
 void blk_SHA1_Final(unsigned char hashout[20], blk_SHA_CTX *ctx)
 {
-	static const unsigned char pad[64] = {0x80};
+	static const unsigned char pad[64] = { 0x80 };
 	unsigned int padlen[2];
 	int i;
 
@@ -329,15 +305,15 @@ void blk_SHA1_Final(unsigned char hashout[20], blk_SHA_CTX *ctx)
 	padlen[1] = htonl((uint32_t)(ctx->size << 3));
 
 	i = ctx->size & 63;
-	blk_SHA1_Update(ctx, pad, 1 + (63 & (55 - i)));
+	blk_SHA1_Update(ctx, pad, 1+ (63 & (55 - i)));
 	blk_SHA1_Update(ctx, padlen, 8);
 
 	/* Output hash */
-	put_be32(hashout + 0 * 4, ctx->h0);
-	put_be32(hashout + 1 * 4, ctx->h1);
-	put_be32(hashout + 2 * 4, ctx->h2);
-	put_be32(hashout + 3 * 4, ctx->h3);
-	put_be32(hashout + 4 * 4, ctx->h4);
+	put_be32(hashout + 0*4, ctx->h0);
+	put_be32(hashout + 1*4, ctx->h1);
+	put_be32(hashout + 2*4, ctx->h2);
+	put_be32(hashout + 3*4, ctx->h3);
+	put_be32(hashout + 4*4, ctx->h4);
 }
 #define _SHA1_GIT
 #endif

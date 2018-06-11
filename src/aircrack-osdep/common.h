@@ -36,15 +36,14 @@
 //  Microsoft
 #define EXPORT __declspec(dllexport)
 #define IMPORT __declspec(dllimport)
-#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__)             \
-	|| defined(__INTEL_COMPILER)
+#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__) || defined(__INTEL_COMPILER)
 #define EXPORT __attribute__((visibility("default")))
 #define IMPORT
 #else
 //  do nothing and hope for the best?
 #define EXPORT
 #define IMPORT
-#pragma warning Unknown dynamic link import / export semantics.
+#pragma warning Unknown dynamic link import/export semantics.
 #endif
 
 IMPORT int getFrequencyFromChannel(int channel);

@@ -64,30 +64,27 @@
 
 using namespace std;
 
-unsigned int FileRead(istream &is, vector<char> &buff)
-{
+unsigned int FileRead(istream &is, vector <char> &buff) {
 	is.read(&buff[0], buff.size());
 	return is.gcount();
 }
 
-unsigned int countBuffer(const vector<char> &buff, int bufsize)
-{
+unsigned int countBuffer(const vector <char> &buff, int bufsize) {
 	int lines = 0, i = 4;
-	const char *p = &buff[0];
+	const char * p = &buff[0];
 	unsigned short charct = 0;
 
 	bufsize--;
 
-	while (i++ < bufsize)
-	{
-		if (p[i] == '\n')
-		{
-			if (charct > 7) lines++;
+	while (i++ < bufsize) {
+	    	if (p[i] == '\n') {
+			if (charct > 7)
+				lines++;
 
-			i += 1;
-			charct = 1;
+			i	+= 1;
+			charct	= 1;
 			continue;
-		}
+	    	}
 
 		charct++;
 	}
@@ -95,34 +92,30 @@ unsigned int countBuffer(const vector<char> &buff, int bufsize)
 	return lines;
 }
 
-unsigned int linecount(const char *file, off_t offset, size_t offsetmax)
-{
+unsigned int linecount(const char *file, off_t offset, size_t offsetmax) {
 	const int SZ = READBUF_BLKSIZE;
-	std::vector<char> buff(SZ);
+	std::vector <char> buff(SZ);
 	ifstream ifs(file);
 	unsigned int n = 0;
 	int cc = 0;
 	size_t blkcnt = 0;
 
-	if (offset) ifs.seekg(offset, ifs.beg);
+	if (offset)
+		ifs.seekg(offset, ifs.beg);
 
 	// I know doing a redundant loop looks dirty but it's so we don't get a performance penalty
 	// inside the loop if we're not using offsetmax, since some files could be 20+ GB this is important.
-	if (offsetmax)
-	{
-		while ((cc = FileRead(ifs, buff)))
-		{
+	if (offsetmax) {
+		while ((cc = FileRead(ifs, buff))) {
 			n += countBuffer(buff, cc);
 
-			if (blkcnt >= offsetmax) return n;
+			if (blkcnt >= offsetmax)
+				return n;
 
 			blkcnt++;
 		}
-	}
-	else
-	{
-		while ((cc = FileRead(ifs, buff)))
-		{
+	} else {
+		while ((cc = FileRead(ifs, buff))) {
 			n += countBuffer(buff, cc);
 		}
 	}

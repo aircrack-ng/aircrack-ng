@@ -7,6 +7,8 @@ int airpcap_inject(void *buf, int len, struct tx_info *ti);
 int airpcap_init(char *param);
 int airpcap_set_chan(int chan);
 
-int isAirpcapDevice(const char *iface);
+int isAirpcapDevice(const char * iface);
+
 
 //int printErrorCloseAndReturn(const char * err, int retValue);
+

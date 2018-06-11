@@ -66,31 +66,31 @@
 #define LLu "%I64u"
 #define LLd "%I64d"
 #define LLx "%I64x"
-#define Zu "%u"
-#define Zd "%d"
+#define Zu  "%u"
+#define Zd  "%d"
 #else
 #define LLu "%llu"
 #define LLd "%lld"
 #define LLx "%llx"
-#define Zu "%zu"
-#define Zd "%zd"
+#define Zu  "%zu"
+#define Zd  "%zd"
 #endif
 
 #if !AC_BUILT
-#include <string.h>
-#ifndef _MSC_VER
-#include <strings.h>
-#endif
+# include <string.h>
+# ifndef _MSC_VER
+#  include <strings.h>
+# endif
 #else
-#include "autoconfig.h"
-#if STRING_WITH_STRINGS
-#include <string.h>
-#include <strings.h>
-#elif HAVE_STRING_H
-#include <string.h>
-#elif HAVE_STRINGS_H
-#include <strings.h>
-#endif
+# include "autoconfig.h"
+# if STRING_WITH_STRINGS
+#  include <string.h>
+#  include <strings.h>
+# elif HAVE_STRING_H
+#  include <string.h>
+# elif HAVE_STRINGS_H
+#  include <strings.h>
+# endif
 #endif
 
 /*
@@ -99,7 +99,7 @@
  */
 extern void real_error(char *file, int line)
 #ifdef __GNUC__
-	__attribute__((__noreturn__));
+	__attribute__ ((__noreturn__));
 #else
 	;
 #endif
@@ -112,7 +112,8 @@ extern void real_error(char *file, int line)
  */
 extern void real_error_msg(char *file, int line, char *format, ...)
 #ifdef __GNUC__
-	__attribute__((__noreturn__)) __attribute__((format(printf, 3, 4)));
+	__attribute__ ((__noreturn__))
+	__attribute__ ((format (printf, 3, 4)));
 #else
 	;
 #endif
@@ -124,16 +125,17 @@ extern void real_error_msg(char *file, int line, char *format, ...)
  */
 extern void real_pexit(char *file, int line, char *format, ...)
 #ifdef __GNUC__
-	__attribute__((__noreturn__)) __attribute__((format(printf, 3, 4)));
+	__attribute__ ((__noreturn__))
+	__attribute__ ((format (printf, 3, 4)));
 #else
 	;
 #endif
 
-#define pexit(...)                                                             \
-	{                                                                          \
-		perror(__VA_ARGS__);                                                   \
-		clean_exit(FAILURE);                                                   \
-	}
+#define pexit(...) \
+{ \
+	perror(__VA_ARGS__); \
+	clean_exit(FAILURE); \
+}
 
 /*
  * Attempts to write all the supplied data. Returns the number of bytes
@@ -186,17 +188,18 @@ extern unsigned atou(const char *src);
 char *strtokm(char *s1, const char *delimit);
 
 #ifndef __has_feature
-#define __has_feature(x) 0
+# define __has_feature(x) 0
 #endif
 
-#if /* is ASAN enabled? */                                                     \
-	__has_feature(address_sanitizer) /* Clang */                               \
-	|| defined(__SANITIZE_ADDRESS__) /* GCC 4.8.x */
-#define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS                                   \
-	__attribute__((no_address_safety_analysis)) __attribute__((noinline))
-#define WITH_ASAN
+#if /* is ASAN enabled? */ \
+    __has_feature(address_sanitizer) /* Clang */ || \
+    defined(__SANITIZE_ADDRESS__)  /* GCC 4.8.x */
+  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS \
+        __attribute__((no_address_safety_analysis)) \
+        __attribute__((noinline))
+  #define WITH_ASAN
 #else
-#define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 #endif
 
 #endif

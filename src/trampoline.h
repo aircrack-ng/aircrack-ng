@@ -23,19 +23,19 @@
 extern "C" {
 #endif
 
-#define SIMD_SUPPORTS_NONE (1 << 0)
-#define SIMD_SUPPORTS_MMX (1 << 1)
-#define SIMD_SUPPORTS_SSE2 (1 << 2)
-#define SIMD_SUPPORTS_AVX (1 << 3)
-#define SIMD_SUPPORTS_AVX2 (1 << 4)
-#define SIMD_SUPPORTS_NEON (1 << 5)
-#define SIMD_SUPPORTS_ASIMD (1 << 6)
-#define SIMD_SUPPORTS_ALTIVEC (1 << 7)
-#define SIMD_SUPPORTS_POWER8 (1 << 8)
+#define SIMD_SUPPORTS_NONE                (1 << 0)
+#define SIMD_SUPPORTS_MMX                 (1 << 1)
+#define SIMD_SUPPORTS_SSE2                (1 << 2)
+#define SIMD_SUPPORTS_AVX                 (1 << 3)
+#define SIMD_SUPPORTS_AVX2                (1 << 4)
+#define SIMD_SUPPORTS_NEON                (1 << 5)
+#define SIMD_SUPPORTS_ASIMD               (1 << 6)
+#define SIMD_SUPPORTS_ALTIVEC             (1 << 7)
+#define SIMD_SUPPORTS_POWER8              (1 << 8)
 
-void simd_init(void);
-int simd_get_supported_features(void);
-void simd_destroy(void);
+void simd_init (void);
+int simd_get_supported_features (void);
+void simd_destroy (void);
 
 #ifdef __cplusplus
 };

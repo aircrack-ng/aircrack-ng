@@ -1,4 +1,4 @@
-/*
+ /*
   *  Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  OS dependent API for OpenBSD. TAP routines
@@ -32,13 +32,12 @@
 
 #include "osdep.h"
 
-struct tip_obsd
-{
-	int to_fd;
-	int to_ioctls;
-	struct ifreq to_ifr;
-	char to_name[MAX_IFACE_NAME];
-	int to_destroy;
+struct tip_obsd {
+	int		to_fd;
+	int		to_ioctls;
+	struct ifreq	to_ifr;
+	char		to_name[MAX_IFACE_NAME];
+	int		to_destroy;
 };
 
 static int ti_do_open_obsd(struct tif *ti, char *name)
@@ -58,31 +57,34 @@ static int ti_do_open_obsd(struct tif *ti, char *name)
 		priv->to_destroy = 1; /* we create, we destroy */
 
 	fd = open(iface, O_RDWR);
-	if (fd == -1) return -1;
+	if (fd == -1)
+		return -1;
 
 	/* get name */
-	if (fstat(fd, &st) == -1) goto err;
-	snprintf(priv->to_name,
-			 sizeof(priv->to_name) - 1,
-			 "%s",
-			 devname(st.st_rdev, S_IFCHR));
+	if(fstat(fd, &st) == -1)
+		goto err;
+	snprintf(priv->to_name, sizeof(priv->to_name)-1, "%s",
+		 devname(st.st_rdev, S_IFCHR));
 
 	/* bring iface up */
 	s = socket(PF_INET, SOCK_DGRAM, 0);
-	if (s == -1) goto err;
+	if (s == -1)
+		goto err;
 	priv->to_ioctls = s;
 
 	/* get flags */
 	ifr = &priv->to_ifr;
 	memset(ifr, 0, sizeof(*ifr));
-	snprintf(ifr->ifr_name, sizeof(ifr->ifr_name) - 1, "%s", priv->to_name);
-	if (ioctl(s, SIOCGIFFLAGS, ifr) == -1) goto err2;
+	snprintf(ifr->ifr_name, sizeof(ifr->ifr_name)-1, "%s", priv->to_name);
+	if (ioctl(s, SIOCGIFFLAGS, ifr) == -1)
+		goto err2;
 	flags = ifr->ifr_flags;
 
 	/* set flags */
 	flags |= IFF_UP;
 	ifr->ifr_flags = flags & 0xffff;
-	if (ioctl(s, SIOCSIFFLAGS, ifr) == -1) goto err2;
+	if (ioctl(s, SIOCSIFFLAGS, ifr) == -1)
+		goto err2;
 
 	return fd;
 err:
@@ -111,7 +113,8 @@ static void ti_close_obsd(struct tif *ti)
 {
 	struct tip_obsd *priv = ti_priv(ti);
 
-	if (priv->to_destroy) ti_destroy(priv);
+	if (priv->to_destroy)
+		ti_destroy(priv);
 
 	close(priv->to_fd);
 	close(priv->to_ioctls);
@@ -189,20 +192,20 @@ static struct tif *ti_open_obsd(char *iface)
 
 	/* setup ti struct */
 	ti = ti_alloc(sizeof(*priv));
-	if (!ti) return NULL;
-	ti->ti_name = ti_name_obsd;
-	ti->ti_set_mtu = ti_set_mtu_obsd;
-	ti->ti_close = ti_close_obsd;
-	ti->ti_fd = ti_fd_obsd;
-	ti->ti_read = ti_read_obsd;
-	ti->ti_write = ti_write_obsd;
-	ti->ti_set_mac = ti_set_mac_obsd;
-	ti->ti_set_ip = ti_set_ip_obsd;
+	if (!ti)
+		return NULL;
+	ti->ti_name	= ti_name_obsd;
+	ti->ti_set_mtu	= ti_set_mtu_obsd;
+	ti->ti_close	= ti_close_obsd;
+	ti->ti_fd	= ti_fd_obsd;
+	ti->ti_read	= ti_read_obsd;
+	ti->ti_write	= ti_write_obsd;
+	ti->ti_set_mac	= ti_set_mac_obsd;
+	ti->ti_set_ip	= ti_set_ip_obsd;
 
 	/* setup iface */
 	fd = ti_do_open_obsd(ti, iface);
-	if (fd == -1)
-	{
+	if (fd == -1) {
 		ti_do_free(ti);
 		return NULL;
 	}
@@ -214,4 +217,7 @@ static struct tif *ti_open_obsd(char *iface)
 	return ti;
 }
 
-EXPORT struct tif *ti_open(char *iface) { return ti_open_obsd(iface); }
+EXPORT struct tif *ti_open(char *iface)
+{
+	return ti_open_obsd(iface);
+}

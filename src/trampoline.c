@@ -62,232 +62,224 @@
 #define TRAMPOLINE_TARGET "aircrack-ng"
 #endif
 
-static void simd_select_best_binary(char *buffer,
-									size_t buffer_remaining,
-									int simd_features)
+static void
+simd_select_best_binary (char * buffer, size_t buffer_remaining, int simd_features)
 {
-	assert(buffer != NULL);
-	assert(buffer_remaining > 0);
+  assert (buffer != NULL);
+  assert (buffer_remaining > 0);
 
-	if (simd_features & SIMD_SUPPORTS_AVX2)
-	{
-		strncat(buffer, TRAMPOLINE_TARGET "--avx2" EXEEXT, buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_AVX)
-	{
-		strncat(buffer, TRAMPOLINE_TARGET "--avx" EXEEXT, buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_SSE2)
-	{
-		strncat(buffer, TRAMPOLINE_TARGET "--sse2" EXEEXT, buffer_remaining);
-	}
-	/*
+  if (simd_features & SIMD_SUPPORTS_AVX2)
+  {
+    strncat (buffer, TRAMPOLINE_TARGET "--avx2" EXEEXT, buffer_remaining);
+  }
+  else if (simd_features & SIMD_SUPPORTS_AVX)
+  {
+    strncat (buffer, TRAMPOLINE_TARGET "--avx" EXEEXT, buffer_remaining);
+  }
+  else if (simd_features & SIMD_SUPPORTS_SSE2)
+  {
+    strncat (buffer, TRAMPOLINE_TARGET "--sse2" EXEEXT, buffer_remaining);
+  }
+  /*
   else if (simd_features & SIMD_SUPPORTS_MMX)
   {
     strncat (buffer, TRAMPOLINE_TARGET "--mmx" EXEEXT, buffer_remaining);
   }
   */
-	else if (simd_features & SIMD_SUPPORTS_ASIMD)
-	{
-		strncat(buffer, TRAMPOLINE_TARGET "--asimd" EXEEXT, buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_NEON)
-	{
-		strncat(buffer, TRAMPOLINE_TARGET "--neon" EXEEXT, buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_POWER8)
-	{
-		strncat(buffer, TRAMPOLINE_TARGET "--power8" EXEEXT, buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_ALTIVEC)
-	{
-		strncat(buffer, TRAMPOLINE_TARGET "--altivec" EXEEXT, buffer_remaining);
-	}
-	else
-	{
-		strncat(buffer, TRAMPOLINE_TARGET "--generic" EXEEXT, buffer_remaining);
-	}
+  else if (simd_features & SIMD_SUPPORTS_ASIMD)
+  {
+    strncat (buffer, TRAMPOLINE_TARGET "--asimd" EXEEXT, buffer_remaining);
+  }
+  else if (simd_features & SIMD_SUPPORTS_NEON)
+  {
+    strncat (buffer, TRAMPOLINE_TARGET "--neon" EXEEXT, buffer_remaining);
+  }
+  else if (simd_features & SIMD_SUPPORTS_POWER8)
+  {
+    strncat (buffer, TRAMPOLINE_TARGET "--power8" EXEEXT, buffer_remaining);
+  }
+  else if (simd_features & SIMD_SUPPORTS_ALTIVEC)
+  {
+    strncat (buffer, TRAMPOLINE_TARGET "--altivec" EXEEXT, buffer_remaining);
+  }
+  else
+  {
+    strncat (buffer, TRAMPOLINE_TARGET "--generic" EXEEXT, buffer_remaining);
+  }
 }
 
-static void determine_path_envvar(char *binary_path)
+static void
+determine_path_envvar (char * binary_path)
 {
-	assert(binary_path != NULL);
+  assert (binary_path != NULL);
 
-	strncpy(binary_path, "PATH=", MAX_PATH);
+  strncpy (binary_path, "PATH=", MAX_PATH);
 
-	if (getenv("PATH"))
-	{
-		strncat(
-			binary_path, getenv("PATH"), MAX_PATH - strlen(binary_path) - 1);
-	}
-	else
-	{
-		strncat(binary_path,
-				"/bin:/usr/bin:/usr/local/bin",
-				MAX_PATH - strlen(binary_path) - 1);
-	}
+  if (getenv ("PATH"))
+  {
+    strncat (binary_path, getenv ("PATH"), MAX_PATH - strlen(binary_path) - 1);
+  }
+  else
+  {
+    strncat (binary_path, "/bin:/usr/bin:/usr/local/bin", MAX_PATH - strlen(binary_path) - 1);
+  }
 }
 
-static void initialize_full_path(char *binary_path)
+static void
+initialize_full_path (char * binary_path)
 {
-	assert(binary_path != NULL);
+  assert (binary_path != NULL);
 
-	strncpy(binary_path, AIRCRACK_LIBEXEC_PATH, MAX_PATH);
+  strncpy (binary_path, AIRCRACK_LIBEXEC_PATH, MAX_PATH);
 
-	if (getenv("AIRCRACK_LIBEXEC_PATH"))
-	{
-		strncpy(binary_path, getenv("AIRCRACK_LIBEXEC_PATH"), MAX_PATH);
-	}
+  if (getenv ("AIRCRACK_LIBEXEC_PATH"))
+  {
+    strncpy (binary_path, getenv ("AIRCRACK_LIBEXEC_PATH"), MAX_PATH);
+  }
 
-	strncat(binary_path, "/", MAX_PATH - strlen(binary_path) - 1);
+  strncat (binary_path, "/", MAX_PATH - strlen (binary_path) - 1);
 }
 
-static int perform_simd_detection(void)
+static int
+perform_simd_detection (void)
 {
-	int result;
+  int result;
 
-	simd_init();
+  simd_init ();
 
-	result = simd_get_supported_features();
+  result = simd_get_supported_features ();
 
 #ifndef NDEBUG
-	(void) printf("D: simd_features=%d\n", result);
+  (void) printf ("D: simd_features=%d\n", result);
 #endif
 
-	simd_destroy();
+  simd_destroy ();
 
-	return (result);
+  return (result);
 }
 
-int main(int argc, char *argv[])
+int
+main (int argc, char * argv[])
 {
-	int rc = 0;
-	int simd_features;
-	char binary_path[MAX_PATH + 1];
-	char path_env[MAX_PATH + 1];
-	char **args = NULL;
-	char **environment = NULL;
+  int rc = 0;
+  int simd_features;
+  char binary_path[MAX_PATH + 1];
+  char path_env[MAX_PATH + 1];
+  char ** args = NULL;
+  char ** environment = NULL;
 
-	memset(binary_path, 0, MAX_PATH + 1);
-	memset(path_env, 0, MAX_PATH + 1);
+  memset (binary_path, 0, MAX_PATH + 1);
+  memset (path_env, 0, MAX_PATH + 1);
 
-	initialize_full_path(binary_path);
+  initialize_full_path (binary_path);
 
-	simd_features = perform_simd_detection();
+  simd_features = perform_simd_detection ();
 
-	// select the best binary, based on the CPU features detected
-	simd_select_best_binary(
-		binary_path, MAX_PATH - strlen(binary_path) - 1, simd_features);
+  // select the best binary, based on the CPU features detected
+  simd_select_best_binary (binary_path, MAX_PATH - strlen (binary_path) - 1, simd_features);
 
-	// set-up PATH environment variable
-	determine_path_envvar(path_env);
+  // set-up PATH environment variable
+  determine_path_envvar (path_env);
 
-	// prepare arguments
-	args = calloc(argc + 1, sizeof(char *));
-	size_t n_args = 0;
+  // prepare arguments
+  args = calloc (argc + 1, sizeof (char *));
+  size_t n_args = 0;
 
-	if (!args)
-	{
-		(void) fprintf(
-			stderr, "F: Memory allocation failure: %s\n", strerror(errno));
-		goto out;
-	}
+  if (!args)
+  {
+    (void) fprintf (stderr, "F: Memory allocation failure: %s\n", strerror (errno));
+    goto out;
+  }
 
-	// add the binary as the first parameter
-	args[n_args] = strdup(binary_path);
+  // add the binary as the first parameter
+  args[n_args] = strdup (binary_path);
 
-	if (!args[n_args])
-	{
-		(void) fprintf(
-			stderr, "F: Memory allocation failure: %s\n", strerror(errno));
-		goto out;
-	}
+  if (!args[n_args])
+  {
+    (void) fprintf (stderr, "F: Memory allocation failure: %s\n", strerror (errno));
+    goto out;
+  }
 
-	++n_args;
+  ++n_args;
 
-	// add in all passed parameters
-	for (size_t idx = 1; idx < (size_t) argc; ++idx)
-	{
-		args[n_args] = strdup(argv[idx]);
+  // add in all passed parameters
+  for (size_t idx = 1; idx < (size_t) argc; ++idx)
+  {
+    args[n_args] = strdup (argv[idx]);
 
-		if (!args[n_args])
-		{
-			(void) fprintf(
-				stderr, "F: Memory allocation failure: %s\n", strerror(errno));
-			goto out;
-		}
+    if (!args[n_args])
+    {
+      (void) fprintf (stderr, "F: Memory allocation failure: %s\n", strerror (errno));
+      goto out;
+    }
 
-		++n_args;
-	}
+    ++n_args;
+  }
 
-	// prepare sanitized environment variables
-	environment = calloc(2, sizeof(char *));
-	size_t n_envs = 0;
+  // prepare sanitized environment variables
+  environment = calloc (2, sizeof (char *));
+  size_t n_envs = 0;
 
-	if (!environment)
-	{
-		(void) fprintf(
-			stderr, "F: Memory allocation failure: %s\n", strerror(errno));
-		goto out;
-	}
+  if (!environment)
+  {
+    (void) fprintf (stderr, "F: Memory allocation failure: %s\n", strerror (errno));
+    goto out;
+  }
 
-	environment[n_envs] = strdup(path_env);
-	if (!environment[n_envs])
-	{
-		(void) fprintf(
-			stderr, "F: Memory allocation failure: %s\n", strerror(errno));
-		goto out;
-	}
-	++n_envs;
+  environment[n_envs] = strdup (path_env);
+  if (!environment[n_envs])
+  {
+    (void) fprintf (stderr, "F: Memory allocation failure: %s\n", strerror (errno));
+    goto out;
+  }
+  ++n_envs;
 
 #ifndef NDEBUG
-	(void) printf("D: Launching %s\n", binary_path);
-	for (size_t idx = 0; idx < n_args; ++idx)
-	{
-		(void) printf("D: Arg %lu: %s\n", (unsigned long) idx, args[idx]);
-	}
-	for (size_t idx = 0; idx < n_envs; ++idx)
-	{
-		(void) printf(
-			"D: Env %lu: %s\n", (unsigned long) idx, environment[idx]);
-	}
+  (void) printf ("D: Launching %s\n", binary_path);
+  for (size_t idx = 0; idx < n_args; ++idx)
+  {
+    (void) printf ("D: Arg %lu: %s\n", (unsigned long) idx, args[idx]);
+  }
+  for (size_t idx = 0; idx < n_envs; ++idx)
+  {
+    (void) printf ("D: Env %lu: %s\n", (unsigned long) idx, environment[idx]);
+  }
 #endif
 
-	rc = execve(binary_path, (char *const *) args, (char *const *) environment);
-	if (rc == -1)
-	{
-		(void) fprintf(
-			stderr, "F: Failed to spawn binary: %s\n", strerror(errno));
-	}
+  rc = execve (binary_path, (char * const *) args, (char * const *) environment);
+  if (rc == -1)
+  {
+    (void) fprintf (stderr, "F: Failed to spawn binary: %s\n", strerror (errno));
+  }
 
-out:
-	if (args)
-	{
-		// release arguments
-		for (size_t idx = 0; idx < n_args; ++idx)
-		{
-			if (args[idx])
-			{
-				free(args[idx]);
-			}
-		}
+ out:
+  if (args)
+  {
+    // release arguments
+    for (size_t idx = 0; idx < n_args; ++idx)
+    {
+      if (args[idx])
+      {
+        free (args[idx]);
+      }
+    }
 
-		free(args);
-	}
+    free (args);
+  }
 
-	if (environment)
-	{
-		// release environment variables
-		for (size_t idx = 0; idx < n_envs; ++idx)
-		{
-			if (environment[idx])
-			{
-				free(environment[idx]);
-			}
-		}
+  if (environment)
+  {
+    // release environment variables
+    for (size_t idx = 0; idx < n_envs; ++idx)
+    {
+      if (environment[idx])
+      {
+        free (environment[idx]);
+      }
+    }
 
-		free(environment);
-	}
+    free (environment);
+  }
 
-	return (rc);
+  return (rc);
 }

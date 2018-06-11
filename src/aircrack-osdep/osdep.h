@@ -42,33 +42,32 @@
 
 #if defined(__APPLE_CC__) && defined(_XCODE)
 #include <pcap/bpf.h>
-#undef LINKTYPE_RADIOTAP_HDR
-#define LINKTYPE_RADIOTAP_HDR DLT_IEEE802_11_RADIO
-#undef LINKTYPE_IEEE802_11
-#define LINKTYPE_IEEE802_11 DLT_IEEE802_11
-#undef LINKTYPE_PRISM_HEADER
-#define LINKTYPE_PRISM_HEADER DLT_PRISM_HEADER
-#undef LINKTYPE_ETHERNET
-#define LINKTYPE_ETHERNET DLT_ERF_ETH
-#undef LINKTYPE_PPI_HDR
-#define LINKTYPE_PPI_HDR DLT_PPI
-#undef TCPDUMP_MAGIC
-#define TCPDUMP_MAGIC 0xa1b2c3d4
+#undef	LINKTYPE_RADIOTAP_HDR
+#define LINKTYPE_RADIOTAP_HDR   DLT_IEEE802_11_RADIO
+#undef	LINKTYPE_IEEE802_11
+#define LINKTYPE_IEEE802_11     DLT_IEEE802_11
+#undef	LINKTYPE_PRISM_HEADER
+#define LINKTYPE_PRISM_HEADER   DLT_PRISM_HEADER
+#undef	LINKTYPE_ETHERNET
+#define LINKTYPE_ETHERNET       DLT_ERF_ETH
+#undef	LINKTYPE_PPI_HDR
+#define LINKTYPE_PPI_HDR        DLT_PPI
+#undef	TCPDUMP_MAGIC
+#define TCPDUMP_MAGIC           0xa1b2c3d4
 #endif
 
 #if defined(_MSC_VER)
 //  Microsoft
 #define EXPORT __declspec(dllexport)
 #define IMPORT __declspec(dllimport)
-#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__)             \
-	|| defined(__INTEL_COMPILER)
+#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__) || defined(__INTEL_COMPILER)
 #define EXPORT __attribute__((visibility("default")))
 #define IMPORT
 #else
 //  do nothing and hope for the best?
 #define EXPORT
 #define IMPORT
-#pragma warning Unknown dynamic link import / export semantics.
+#pragma warning Unknown dynamic link import/export semantics.
 #endif
 
 /* For all structures, when adding new fields, always append them to the end.
@@ -76,62 +75,55 @@
  * particularly useful for DLLs.  -sorbo
  */
 
-struct tx_info
-{
-	unsigned int ti_rate;
+struct tx_info {
+        unsigned int     ti_rate;
 };
 
-struct rx_info
-{
-	uint64_t ri_mactime;
-	int32_t ri_power;
-	int32_t ri_noise;
-	uint32_t ri_channel;
-	uint32_t ri_freq;
-	uint32_t ri_rate;
-	uint32_t ri_antenna;
+struct rx_info {
+        uint64_t ri_mactime;
+        int32_t ri_power;
+        int32_t ri_noise;
+        uint32_t ri_channel;
+        uint32_t ri_freq;
+        uint32_t ri_rate;
+        uint32_t ri_antenna;
 } __packed;
 
 /* Normal code should not access this directly.  Only osdep.
  * This structure represents a single interface.  It should be created with
  * wi_open and destroyed with wi_close.
  */
-#define MAX_IFACE_NAME 64
-struct wif
-{
-	int (*wi_read)(struct wif *wi,
-				   unsigned char *h80211,
-				   int len,
-				   struct rx_info *ri);
-	int (*wi_write)(struct wif *wi,
-					unsigned char *h80211,
-					int len,
-					struct tx_info *ti);
-	int (*wi_set_ht_channel)(struct wif *wi, int chan, unsigned int htval);
-	int (*wi_set_channel)(struct wif *wi, int chan);
-	int (*wi_get_channel)(struct wif *wi);
-	int (*wi_set_freq)(struct wif *wi, int freq);
-	int (*wi_get_freq)(struct wif *wi);
-	void (*wi_close)(struct wif *wi);
-	int (*wi_fd)(struct wif *wi);
-	int (*wi_get_mac)(struct wif *wi, unsigned char *mac);
-	int (*wi_set_mac)(struct wif *wi, unsigned char *mac);
-	int (*wi_set_rate)(struct wif *wi, int rate);
-	int (*wi_get_rate)(struct wif *wi);
-	int (*wi_set_mtu)(struct wif *wi, int mtu);
-	int (*wi_get_mtu)(struct wif *wi);
-	int (*wi_get_monitor)(struct wif *wi);
+#define MAX_IFACE_NAME	64
+struct wif {
+        int     (*wi_read)(struct wif *wi, unsigned char *h80211, int len,
+                           struct rx_info *ri);
+        int     (*wi_write)(struct wif *wi, unsigned char *h80211, int len,
+                            struct tx_info *ti);
+        int     (*wi_set_ht_channel)(struct wif *wi, int chan, unsigned int htval);
+        int     (*wi_set_channel)(struct wif *wi, int chan);
+        int     (*wi_get_channel)(struct wif *wi);
+        int     (*wi_set_freq)(struct wif *wi, int freq);
+        int     (*wi_get_freq)(struct wif *wi);
+	void	(*wi_close)(struct wif *wi);
+	int	(*wi_fd)(struct wif *wi);
+	int	(*wi_get_mac)(struct wif *wi, unsigned char *mac);
+	int	(*wi_set_mac)(struct wif *wi, unsigned char *mac);
+	int	(*wi_set_rate)(struct wif *wi, int rate);
+	int	(*wi_get_rate)(struct wif *wi);
+	int	(*wi_set_mtu)(struct wif *wi, int mtu);
+	int	(*wi_get_mtu)(struct wif *wi);
+        int     (*wi_get_monitor)(struct wif *wi);
 
-	void *wi_priv;
-	char wi_interface[MAX_IFACE_NAME];
+        void	*wi_priv;
+        char	wi_interface[MAX_IFACE_NAME];
 };
 
 /* Routines to be used by client code */
 IMPORT struct wif *wi_open(char *iface);
-IMPORT int
-wi_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri);
-IMPORT int
-wi_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti);
+IMPORT int wi_read(struct wif *wi, unsigned char *h80211, int len,
+		   struct rx_info *ri);
+IMPORT int wi_write(struct wif *wi, unsigned char *h80211, int len,
+		    struct tx_info *ti);
 IMPORT int wi_set_channel(struct wif *wi, int chan);
 IMPORT int wi_set_ht_channel(struct wif *wi, int chan, unsigned int htval);
 IMPORT int wi_get_channel(struct wif *wi);
@@ -168,19 +160,18 @@ IMPORT int get_battery_state(void);
 /* XXX we can unify the tap & wi stuff in the future, but for now, lets keep
  * them separate until we learn something.
  */
-struct tif
-{
-	int (*ti_read)(struct tif *ti, void *buf, int len);
-	int (*ti_write)(struct tif *ti, void *buf, int len);
-	int (*ti_fd)(struct tif *ti);
-	char *(*ti_name)(struct tif *ti);
-	int (*ti_set_mtu)(struct tif *ti, int mtu);
-	int (*ti_get_mtu)(struct tif *ti);
-	int (*ti_set_ip)(struct tif *ti, struct in_addr *ip);
-	int (*ti_set_mac)(struct tif *ti, unsigned char *mac);
-	void (*ti_close)(struct tif *ti);
+struct tif {
+	int	(*ti_read)(struct tif *ti, void *buf, int len);
+	int	(*ti_write)(struct tif *ti, void *buf, int len);
+	int	(*ti_fd)(struct tif *ti);
+	char	*(*ti_name)(struct tif *ti);
+	int	(*ti_set_mtu)(struct tif *ti, int mtu);
+	int	(*ti_get_mtu)(struct tif *ti);
+	int	(*ti_set_ip)(struct tif *ti, struct in_addr *ip);
+	int	(*ti_set_mac)(struct tif *ti, unsigned char *mac);
+	void	(*ti_close)(struct tif *ti);
 
-	void *ti_priv;
+	void	*ti_priv;
 };
 /* one per OS */
 IMPORT struct tif *ti_open(char *iface);

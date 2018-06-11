@@ -36,49 +36,33 @@
 
 int verifyssid(const unsigned char *s)
 {
-	int i;
-	unsigned char c;
+    int i;
+    unsigned char c;
 
-	if (!s || strlen((const char *) s) > 32)
-	{ //32 characters
-		return 0;
-	}
+    if( !s || strlen((const char*)s) > 32 ){//32 characters
+        return 0;
+    }
 
-	for (i = 0; (c = s[i++]);)
-	{
-		if ((c & 0x80) == 0)
-		{ //ascii flag
-			if (c < 0x20 || c == 0x7f)
-			{
-				return 0;
-			}
-		}
-		else if ((c & 0xe0) == 0xc0)
-		{ //utf8 flag
-			if ((s[i++] & 0xc0) != 0x80)
-			{
-				return 0;
-			}
-		}
-		else if ((c & 0xf0) == 0xe0)
-		{ //utf8 flag
-			if ((s[i++] & 0xc0) != 0x80 || (s[i++] & 0xc0) != 0x80)
-			{
-				return 0;
-			}
-		}
-		else if ((c & 0xf8) == 0xf0)
-		{ //utf8 flag
-			if ((s[i++] & 0xc0) != 0x80 || (s[i++] & 0xc0) != 0x80
-				|| (s[i++] & 0xc0) != 0x80)
-			{
-				return 0;
-			}
-		}
-		else
-		{
-			return 0;
-		}
-	}
-	return 1;
+    for (i = 0; (c = s[i++]);) {
+        if ((c & 0x80) == 0) {//ascii flag
+            if(c < 0x20 || c == 0x7f){
+                return 0;
+            }
+        } else if ((c & 0xe0) == 0xc0) {//utf8 flag
+            if ((s[i++] & 0xc0) != 0x80) {
+                return 0;
+            }
+        } else if ((c & 0xf0) == 0xe0) {//utf8 flag
+            if ((s[i++] & 0xc0) != 0x80 || (s[i++] & 0xc0) != 0x80) {
+                return 0;
+            }
+        } else if ((c & 0xf8) == 0xf0) {//utf8 flag
+            if ((s[i++] & 0xc0) != 0x80 || (s[i++] & 0xc0) != 0x80 || (s[i++] & 0xc0) != 0x80) {
+                return 0;
+            }
+        } else {
+            return 0;
+        }
+    }
+    return 1;
 }

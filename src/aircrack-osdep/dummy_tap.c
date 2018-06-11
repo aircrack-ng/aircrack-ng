@@ -1,4 +1,4 @@
-/*
+ /*
   *  Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  OS dependent API for unsupported APIs. TAP routines
@@ -25,11 +25,12 @@
 
 static struct tif *ti_open_dummy(char *iface)
 {
-	if (iface)
-	{
-	} /* XXX unused parameter */
+	if (iface) {} /* XXX unused parameter */
 
 	return NULL;
 }
 
-EXPORT struct tif *ti_open(char *iface) { return ti_open_dummy(iface); }
+EXPORT struct tif *ti_open(char *iface)
+{
+	return ti_open_dummy(iface);
+}

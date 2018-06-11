@@ -43,12 +43,7 @@
 // MCS index
 extern const float MCS_index_rates[4][2][8][10];
 
-float get_80211n_rate(const int width,
-					  const int is_short_GI,
-					  const int mcs_index);
-float get_80211ac_rate(const int width,
-					   const int is_short_GI,
-					   const int mcs_idx,
-					   const int amount_ss);
+float get_80211n_rate(const int width, const int is_short_GI, const int mcs_index);
+float get_80211ac_rate(const int width, const int is_short_GI, const int mcs_idx, const int amount_ss);
 
 #endif // MCS_INDEX_RATES_H

@@ -18,13 +18,20 @@
 
 #include "trampoline.h"
 
-void simd_init(void) {}
-
-void simd_destroy(void) {}
-
-int simd_get_supported_features(void)
+void
+simd_init (void)
 {
-	int result = 0;
+}
 
-	return (result);
+void
+simd_destroy (void)
+{
+}
+
+int
+simd_get_supported_features (void)
+{
+  int result = 0;
+
+  return (result);
 }

@@ -1,4 +1,4 @@
-/*
+ /*
   *  Copyright (c) 2009, Kyle Fuller <inbox@kylefuller.co.uk>, based upon 
   *  freebsd.c by Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
@@ -26,9 +26,7 @@
 
 struct wif *wi_open_osdep(char *iface)
 {
-	if (iface)
-	{
-	} /* XXX unused parameter */
+	if (iface) {} /* XXX unused parameter */
 
 	errno = EOPNOTSUPP;
 	return NULL;

@@ -36,7 +36,7 @@
 #define __AIRCRACK_NG_OSDEP_PACKED_H__
 
 #ifndef __packed
-#define __packed __attribute__((__packed__))
+#define __packed __attribute__ ((__packed__))
 #endif /* __packed */
 
 #ifndef __aligned

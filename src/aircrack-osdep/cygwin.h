@@ -1,4 +1,4 @@
-/*
+  /*
    *  Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
    *
    *  OS dependent API for cygwin. It relies on an external
@@ -20,14 +20,14 @@
    */
 
 // DLL function that have to be exported
-#define CYGWIN_DLL_INIT cygwin_init
-#define CYGWIN_DLL_SET_CHAN cygwin_set_chan
-#define CYGWIN_DLL_SET_FREQ cygwin_set_freq
-#define CYGWIN_DLL_INJECT cygwin_inject
-#define CYGWIN_DLL_SNIFF cygwin_sniff
-#define CYGWIN_DLL_GET_MAC cygwin_get_mac
-#define CYGWIN_DLL_SET_MAC cygwin_set_mac
-#define CYGWIN_DLL_CLOSE cygwin_close
+#define CYGWIN_DLL_INIT		cygwin_init
+#define CYGWIN_DLL_SET_CHAN	cygwin_set_chan
+#define CYGWIN_DLL_SET_FREQ   cygwin_set_freq
+#define CYGWIN_DLL_INJECT	cygwin_inject
+#define CYGWIN_DLL_SNIFF	cygwin_sniff
+#define CYGWIN_DLL_GET_MAC	cygwin_get_mac
+#define CYGWIN_DLL_SET_MAC	cygwin_set_mac
+#define CYGWIN_DLL_CLOSE	cygwin_close
 
 /*
  * Prototypes:
