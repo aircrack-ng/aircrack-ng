@@ -4334,7 +4334,7 @@ int crack_wpa_thread(void *arg)
 {
 	FILE *keyFile;
 	char essid[36];
-	char key[8][MAX_THREADS];
+	char key[128][MAX_THREADS];
 #ifdef OLD_SSE_CORE
 	unsigned char pmk[MAX_THREADS][64][8];
 #endif
