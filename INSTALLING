@@ -61,6 +61,12 @@ is as follows:
 
     `pacman -Sy autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel gcc binutils make pcre-devel libsqlite-devel glib2 glib2-devel`
 
+==== OSX ====
+
+XCode, Xcode command line tools and HomeBrew are required.
+
+    `brew install autoconf automake libtool openssl shtool pkg-config glib`
+
 === Compiling ===
 
 To build `aircrack-ng`, the Autotools build system is utilized. Autotools replaces
