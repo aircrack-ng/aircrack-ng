@@ -87,7 +87,7 @@ is as follows:
 
 XCode, Xcode command line tools and HomeBrew are required.
 
-    `brew install autoconf automake libtool openssl shtool pkg-config glib`
+    brew install autoconf automake libtool openssl shtool pkg-config glib
 
 ## Compiling
 
