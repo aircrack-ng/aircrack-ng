@@ -27,30 +27,23 @@
 
 #include "trampoline.h"
 
-void
-simd_init (void)
-{
-}
+void simd_init(void) {}
 
-void
-simd_destroy (void)
-{
-}
+void simd_destroy(void) {}
 
-int
-simd_get_supported_features (void)
+int simd_get_supported_features(void)
 {
-  int result = 0;
+	int result = 0;
 #ifdef HAS_AUXV
-  long hwcaps = getauxval (AT_HWCAP2);
+	long hwcaps = getauxval(AT_HWCAP2);
 
 #if defined(PPC_FEATURE2_ARCH_2_07)
-  if (hwcaps & PPC_FEATURE2_ARCH_2_07)
-  {
-    result |= SIMD_SUPPORTS_POWER8;
-  }
+	if (hwcaps & PPC_FEATURE2_ARCH_2_07)
+	{
+		result |= SIMD_SUPPORTS_POWER8;
+	}
 #endif
 #endif
 
-  return (result);
+	return (result);
 }

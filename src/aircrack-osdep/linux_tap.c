@@ -1,4 +1,4 @@
- /*
+/*
   *  Copyright (c) 2007, 2008, Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  OS dependent API for Linux. TAP routines
@@ -37,48 +37,51 @@
 
 #include "osdep.h"
 
-struct tip_linux {
-	int		tl_fd;
-	struct ifreq	tl_ifr;
-	int		tl_ioctls;
-	char		tl_name[MAX_IFACE_NAME];
+struct tip_linux
+{
+	int tl_fd;
+	struct ifreq tl_ifr;
+	int tl_ioctls;
+	char tl_name[MAX_IFACE_NAME];
 };
 
 static int ti_do_open_linux(struct tif *ti, char *name)
 {
-    int fd_tap;
-    struct ifreq if_request;
-    struct tip_linux *priv = ti_priv(ti);
+	int fd_tap;
+	struct ifreq if_request;
+	struct tip_linux *priv = ti_priv(ti);
 
-    fd_tap = open( name ? name : "/dev/net/tun", O_RDWR );
-    if(fd_tap < 0 )
-    {
-        printf( "error opening tap device: %s\n", strerror( errno ) );
-        printf( "try \"modprobe tun\"\n");
-        return -1;
-    }
+	fd_tap = open(name ? name : "/dev/net/tun", O_RDWR);
+	if (fd_tap < 0)
+	{
+		printf("error opening tap device: %s\n", strerror(errno));
+		printf("try \"modprobe tun\"\n");
+		return -1;
+	}
 
-    memset( &if_request, 0, sizeof( if_request ) );
-    if_request.ifr_flags = IFF_TAP | IFF_NO_PI;
-    strncpy( if_request.ifr_name, "at%d", IFNAMSIZ );
-    if( ioctl( fd_tap, TUNSETIFF, (void *)&if_request ) < 0 )
-    {
-        printf( "error creating tap interface: %s\n", strerror( errno ) );
-        close( fd_tap );
-        return -1;
-    }
+	memset(&if_request, 0, sizeof(if_request));
+	if_request.ifr_flags = IFF_TAP | IFF_NO_PI;
+	strncpy(if_request.ifr_name, "at%d", IFNAMSIZ);
+	if (ioctl(fd_tap, TUNSETIFF, (void *) &if_request) < 0)
+	{
+		printf("error creating tap interface: %s\n", strerror(errno));
+		close(fd_tap);
+		return -1;
+	}
 
-    strncpy( priv->tl_name, if_request.ifr_name, MAX_IFACE_NAME );
-    strncpy(priv->tl_ifr.ifr_name, priv->tl_name,
-    	    sizeof(priv->tl_ifr.ifr_name) - 1);
+	strncpy(priv->tl_name, if_request.ifr_name, MAX_IFACE_NAME);
+	strncpy(priv->tl_ifr.ifr_name,
+			priv->tl_name,
+			sizeof(priv->tl_ifr.ifr_name) - 1);
 
-    if ((priv->tl_ioctls = socket(PF_INET, SOCK_DGRAM, 0)) == -1) {
-        priv->tl_ioctls = 0;
-    	close(fd_tap);
-	return -1;
-    }
+	if ((priv->tl_ioctls = socket(PF_INET, SOCK_DGRAM, 0)) == -1)
+	{
+		priv->tl_ioctls = 0;
+		close(fd_tap);
+		return -1;
+	}
 
-    return fd_tap;
+	return fd_tap;
 }
 
 static void ti_do_free(struct tif *ti)
@@ -119,13 +122,15 @@ static int ti_get_mtu_linux(struct tif *ti)
 	int mtu;
 	struct tip_linux *priv = ti_priv(ti);
 
-	if (ioctl(priv->tl_ioctls, SIOCSIFMTU, &priv->tl_ifr) != -1){
+	if (ioctl(priv->tl_ioctls, SIOCSIFMTU, &priv->tl_ifr) != -1)
+	{
 		mtu = priv->tl_ifr.ifr_mtu;
 	}
-	else{
-		mtu = 1500;	
+	else
+	{
+		mtu = 1500;
 	}
-	
+
 	return mtu;
 }
 
@@ -133,7 +138,7 @@ static int ti_set_mac_linux(struct tif *ti, unsigned char *mac)
 {
 	struct tip_linux *priv = ti_priv(ti);
 
-        memcpy(priv->tl_ifr.ifr_hwaddr.sa_data, mac, 6);
+	memcpy(priv->tl_ifr.ifr_hwaddr.sa_data, mac, 6);
 	priv->tl_ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 
 	return ioctl(priv->tl_ioctls, SIOCSIFHWADDR, &priv->tl_ifr);
@@ -141,14 +146,14 @@ static int ti_set_mac_linux(struct tif *ti, unsigned char *mac)
 
 static int ti_set_ip_linux(struct tif *ti, struct in_addr *ip)
 {
-        struct tip_linux *priv = ti_priv(ti);
-        struct sockaddr_in *s_in;
+	struct tip_linux *priv = ti_priv(ti);
+	struct sockaddr_in *s_in;
 
-        s_in = (struct sockaddr_in*) &priv->tl_ifr.ifr_addr;
-        s_in->sin_family = AF_INET;
-        s_in->sin_addr = *ip;
+	s_in = (struct sockaddr_in *) &priv->tl_ifr.ifr_addr;
+	s_in->sin_family = AF_INET;
+	s_in->sin_addr = *ip;
 
-        return ioctl(priv->tl_ioctls, SIOCSIFADDR, &priv->tl_ifr);
+	return ioctl(priv->tl_ioctls, SIOCSIFADDR, &priv->tl_ifr);
 }
 
 static int ti_fd_linux(struct tif *ti)
@@ -176,21 +181,21 @@ static struct tif *ti_open_linux(char *iface)
 
 	/* setup ti struct */
 	ti = ti_alloc(sizeof(*priv));
-	if (!ti)
-		return NULL;
-	ti->ti_name	= ti_name_linux;
-	ti->ti_set_mtu	= ti_set_mtu_linux;
-	ti->ti_get_mtu	= ti_get_mtu_linux;
-	ti->ti_close	= ti_close_linux;
-	ti->ti_fd	= ti_fd_linux;
-	ti->ti_read	= ti_read_linux;
-	ti->ti_write	= ti_write_linux;
-	ti->ti_set_mac	= ti_set_mac_linux;
-	ti->ti_set_ip	= ti_set_ip_linux;
+	if (!ti) return NULL;
+	ti->ti_name = ti_name_linux;
+	ti->ti_set_mtu = ti_set_mtu_linux;
+	ti->ti_get_mtu = ti_get_mtu_linux;
+	ti->ti_close = ti_close_linux;
+	ti->ti_fd = ti_fd_linux;
+	ti->ti_read = ti_read_linux;
+	ti->ti_write = ti_write_linux;
+	ti->ti_set_mac = ti_set_mac_linux;
+	ti->ti_set_ip = ti_set_ip_linux;
 
 	/* setup iface */
 	fd = ti_do_open_linux(ti, iface);
-	if (fd == -1) {
+	if (fd == -1)
+	{
 		ti_do_free(ti);
 		return NULL;
 	}
@@ -202,7 +207,4 @@ static struct tif *ti_open_linux(char *iface)
 	return ti;
 }
 
-EXPORT struct tif *ti_open(char *iface)
-{
-	return ti_open_linux(iface);
-}
+EXPORT struct tif *ti_open(char *iface) { return ti_open_linux(iface); }

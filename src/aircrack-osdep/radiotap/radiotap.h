@@ -19,7 +19,8 @@
 /**
  * struct ieee82011_radiotap_header - base radiotap header
  */
-struct ieee80211_radiotap_header {
+struct ieee80211_radiotap_header
+{
 	/**
 	 * @it_version: radiotap version, always 0
 	 */
@@ -42,10 +43,11 @@ struct ieee80211_radiotap_header {
 } __packed;
 
 /* version is always 0 */
-#define PKTHDR_RADIOTAP_VERSION	0
+#define PKTHDR_RADIOTAP_VERSION 0
 
 /* see the radiotap website for the descriptions */
-enum ieee80211_radiotap_presence {
+enum ieee80211_radiotap_presence
+{
 	IEEE80211_RADIOTAP_TSFT = 0,
 	IEEE80211_RADIOTAP_FLAGS = 1,
 	IEEE80211_RADIOTAP_RATE = 2,
@@ -77,7 +79,8 @@ enum ieee80211_radiotap_presence {
 };
 
 /* for IEEE80211_RADIOTAP_FLAGS */
-enum ieee80211_radiotap_flags {
+enum ieee80211_radiotap_flags
+{
 	IEEE80211_RADIOTAP_F_CFP = 0x01,
 	IEEE80211_RADIOTAP_F_SHORTPRE = 0x02,
 	IEEE80211_RADIOTAP_F_WEP = 0x04,
@@ -88,7 +91,8 @@ enum ieee80211_radiotap_flags {
 };
 
 /* for IEEE80211_RADIOTAP_CHANNEL */
-enum ieee80211_radiotap_channel_flags {
+enum ieee80211_radiotap_channel_flags
+{
 	IEEE80211_CHAN_CCK = 0x0020,
 	IEEE80211_CHAN_OFDM = 0x0040,
 	IEEE80211_CHAN_2GHZ = 0x0080,
@@ -99,12 +103,14 @@ enum ieee80211_radiotap_channel_flags {
 };
 
 /* for IEEE80211_RADIOTAP_RX_FLAGS */
-enum ieee80211_radiotap_rx_flags {
+enum ieee80211_radiotap_rx_flags
+{
 	IEEE80211_RADIOTAP_F_RX_BADPLCP = 0x0002,
 };
 
 /* for IEEE80211_RADIOTAP_TX_FLAGS */
-enum ieee80211_radiotap_tx_flags {
+enum ieee80211_radiotap_tx_flags
+{
 	IEEE80211_RADIOTAP_F_TX_FAIL = 0x0001,
 	IEEE80211_RADIOTAP_F_TX_CTS = 0x0002,
 	IEEE80211_RADIOTAP_F_TX_RTS = 0x0004,
@@ -112,7 +118,8 @@ enum ieee80211_radiotap_tx_flags {
 };
 
 /* for IEEE80211_RADIOTAP_MCS "have" flags */
-enum ieee80211_radiotap_mcs_have {
+enum ieee80211_radiotap_mcs_have
+{
 	IEEE80211_RADIOTAP_MCS_HAVE_BW = 0x01,
 	IEEE80211_RADIOTAP_MCS_HAVE_MCS = 0x02,
 	IEEE80211_RADIOTAP_MCS_HAVE_GI = 0x04,
@@ -121,7 +128,8 @@ enum ieee80211_radiotap_mcs_have {
 	IEEE80211_RADIOTAP_MCS_HAVE_STBC = 0x20,
 };
 
-enum ieee80211_radiotap_mcs_flags {
+enum ieee80211_radiotap_mcs_flags
+{
 	IEEE80211_RADIOTAP_MCS_BW_MASK = 0x03,
 	IEEE80211_RADIOTAP_MCS_BW_20 = 0,
 	IEEE80211_RADIOTAP_MCS_BW_40 = 1,
@@ -139,7 +147,8 @@ enum ieee80211_radiotap_mcs_flags {
 };
 
 /* for IEEE80211_RADIOTAP_AMPDU_STATUS */
-enum ieee80211_radiotap_ampdu_flags {
+enum ieee80211_radiotap_ampdu_flags
+{
 	IEEE80211_RADIOTAP_AMPDU_REPORT_ZEROLEN = 0x0001,
 	IEEE80211_RADIOTAP_AMPDU_IS_ZEROLEN = 0x0002,
 	IEEE80211_RADIOTAP_AMPDU_LAST_KNOWN = 0x0004,
@@ -149,7 +158,8 @@ enum ieee80211_radiotap_ampdu_flags {
 };
 
 /* for IEEE80211_RADIOTAP_VHT */
-enum ieee80211_radiotap_vht_known {
+enum ieee80211_radiotap_vht_known
+{
 	IEEE80211_RADIOTAP_VHT_KNOWN_STBC = 0x0001,
 	IEEE80211_RADIOTAP_VHT_KNOWN_TXOP_PS_NA = 0x0002,
 	IEEE80211_RADIOTAP_VHT_KNOWN_GI = 0x0004,
@@ -161,7 +171,8 @@ enum ieee80211_radiotap_vht_known {
 	IEEE80211_RADIOTAP_VHT_KNOWN_PARTIAL_AID = 0x0100,
 };
 
-enum ieee80211_radiotap_vht_flags {
+enum ieee80211_radiotap_vht_flags
+{
 	IEEE80211_RADIOTAP_VHT_FLAG_STBC = 0x01,
 	IEEE80211_RADIOTAP_VHT_FLAG_TXOP_PS_NA = 0x02,
 	IEEE80211_RADIOTAP_VHT_FLAG_SGI = 0x04,
@@ -170,7 +181,8 @@ enum ieee80211_radiotap_vht_flags {
 	IEEE80211_RADIOTAP_VHT_FLAG_BEAMFORMED = 0x20,
 };
 
-enum ieee80211_radiotap_vht_coding {
+enum ieee80211_radiotap_vht_coding
+{
 	IEEE80211_RADIOTAP_CODING_LDPC_USER0 = 0x01,
 	IEEE80211_RADIOTAP_CODING_LDPC_USER1 = 0x02,
 	IEEE80211_RADIOTAP_CODING_LDPC_USER2 = 0x04,
@@ -178,7 +190,8 @@ enum ieee80211_radiotap_vht_coding {
 };
 
 /* for IEEE80211_RADIOTAP_TIMESTAMP */
-enum ieee80211_radiotap_timestamp_unit_spos {
+enum ieee80211_radiotap_timestamp_unit_spos
+{
 	IEEE80211_RADIOTAP_TIMESTAMP_UNIT_MASK = 0x000F,
 	IEEE80211_RADIOTAP_TIMESTAMP_UNIT_MS = 0x0000,
 	IEEE80211_RADIOTAP_TIMESTAMP_UNIT_US = 0x0001,
@@ -191,7 +204,8 @@ enum ieee80211_radiotap_timestamp_unit_spos {
 	IEEE80211_RADIOTAP_TIMESTAMP_SPOS_UNKNOWN = 0x00F0,
 };
 
-enum ieee80211_radiotap_timestamp_flags {
+enum ieee80211_radiotap_timestamp_flags
+{
 	IEEE80211_RADIOTAP_TIMESTAMP_FLAG_64BIT = 0x00,
 	IEEE80211_RADIOTAP_TIMESTAMP_FLAG_32BIT = 0x01,
 	IEEE80211_RADIOTAP_TIMESTAMP_FLAG_ACCURACY = 0x02,

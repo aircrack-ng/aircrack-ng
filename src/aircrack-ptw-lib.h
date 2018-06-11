@@ -57,10 +57,11 @@
 
 // distinguish klein and ptw
 #define NO_KLEIN 0x01
-#define NO_PTW   0x02
+#define NO_PTW 0x02
 
 // We use this to keep track of the outputs of A_i
-typedef struct {
+typedef struct
+{
 	// How often the value b appeared as an output of A_i
 	int votes;
 
@@ -68,40 +69,46 @@ typedef struct {
 } PTW_tableentry;
 
 // A recovered session
-typedef struct {
+typedef struct
+{
 	// The IV used in this session
-        uint8_t iv[PTW_IVBYTES];
+	uint8_t iv[PTW_IVBYTES];
 	// The keystream used in this session
-        uint8_t keystream[PTW_KSBYTES];
+	uint8_t keystream[PTW_KSBYTES];
 	// Weight for this session
 	int weight;
 } PTW_session;
 
-typedef int (*rc4test_func)(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream);
+typedef int (*rc4test_func)(uint8_t *key,
+							int keylen,
+							uint8_t *iv,
+							uint8_t *keystream);
 
 // The state of an attack
 // You should usually never modify these values manually
-typedef struct {
+typedef struct
+{
 	// How many unique packets or IVs have been collected
-        int packets_collected;
+	int packets_collected;
 	// Table to check for duplicate IVs
-        uint8_t seen_iv[PTW_IVTABLELEN];
+	uint8_t seen_iv[PTW_IVTABLELEN];
 	// How many sessions for checking a guessed key have been collected
-        int sessions_collected;
+	int sessions_collected;
 	// The actual recovered sessions
-        PTW_session sessions[PTW_CONTROLSESSIONS];
+	PTW_session sessions[PTW_CONTROLSESSIONS];
 	// The table with votes for the keybytesums
-        PTW_tableentry table[PTW_KEYHSBYTES][PTW_n];
+	PTW_tableentry table[PTW_KEYHSBYTES][PTW_n];
 	// Sessions for the original klein attack
-	PTW_session * allsessions;
+	PTW_session *allsessions;
 	int allsessions_size;
 	// rc4test function, optimized if available
 	rc4test_func rc4test;
 } PTW_attackstate;
 
-PTW_attackstate * PTW_newattackstate();
+PTW_attackstate *PTW_newattackstate();
 void PTW_freeattackstate(PTW_attackstate *);
 int PTW_addsession(PTW_attackstate *, uint8_t *, uint8_t *, int *, int);
-int PTW_computeKey(PTW_attackstate *, uint8_t *, int, int, int *, int [][PTW_n], int attacks);
+int PTW_computeKey(
+	PTW_attackstate *, uint8_t *, int, int, int *, int[][PTW_n], int attacks);
 
 #endif

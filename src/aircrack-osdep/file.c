@@ -1,4 +1,4 @@
- /*
+/*
   *  Copyright (c) 2010 Andrea Bittau <bittau@cs.stanford.edu>
   *
   *  OS dependent API for using card via a pcap file.
@@ -36,19 +36,20 @@
 #include "pcap.h"
 #include "radiotap/radiotap_iter.h"
 
-struct priv_file {
-	int		pf_fd;
-	int		pf_chan;
-	int		pf_rate;
-	int		pf_dtl;
-	unsigned char	pf_mac[6];
+struct priv_file
+{
+	int pf_fd;
+	int pf_chan;
+	int pf_rate;
+	int pf_dtl;
+	unsigned char pf_mac[6];
 };
 
-static int file_read(struct wif *wi, unsigned char *h80211, int len,
-		    struct rx_info *ri)
+static int
+file_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 {
 	struct priv_file *pf = wi_priv(wi);
-        struct pcap_pkthdr pkh;
+	struct pcap_pkthdr pkh;
 	int rc;
 	unsigned char buf[4096];
 	int off = 0;
@@ -56,10 +57,10 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
 	struct ieee80211_radiotap_iterator iter;
 
 	rc = read(pf->pf_fd, &pkh, sizeof(pkh));
-	if (rc != sizeof(pkh))
-		return -1;
+	if (rc != sizeof(pkh)) return -1;
 
-	if (pkh.caplen > sizeof(buf)) {
+	if (pkh.caplen > sizeof(buf))
+	{
 		printf("Bad caplen %lu\n", (unsigned long) pkh.caplen);
 		return 0;
 	}
@@ -67,69 +68,67 @@ static int file_read(struct wif *wi, unsigned char *h80211, int len,
 	assert(pkh.caplen <= sizeof(buf));
 
 	rc = read(pf->pf_fd, buf, pkh.caplen);
-	if (rc != (int) pkh.caplen)
-		return -1;
+	if (rc != (int) pkh.caplen) return -1;
 
-	if (ri)
-		memset(ri, 0, sizeof(*ri));
+	if (ri) memset(ri, 0, sizeof(*ri));
 
-	switch (pf->pf_dtl) {
-	case LINKTYPE_IEEE802_11:
-		off = 0;
-		break;
+	switch (pf->pf_dtl)
+	{
+		case LINKTYPE_IEEE802_11:
+			off = 0;
+			break;
 
-	case LINKTYPE_RADIOTAP_HDR:
-		rh  = (struct ieee80211_radiotap_header*) buf;
-		off = le16_to_cpu(rh->it_len);
+		case LINKTYPE_RADIOTAP_HDR:
+			rh = (struct ieee80211_radiotap_header *) buf;
+			off = le16_to_cpu(rh->it_len);
 
-        	if (ieee80211_radiotap_iterator_init(&iter, rh, rc, NULL) < 0)
-			return -1;
+			if (ieee80211_radiotap_iterator_init(&iter, rh, rc, NULL) < 0)
+				return -1;
 
-		while (ieee80211_radiotap_iterator_next(&iter) >= 0) {
-			switch (iter.this_arg_index) {
-			case IEEE80211_RADIOTAP_FLAGS:
-				if (*iter.this_arg & IEEE80211_RADIOTAP_F_FCS)
-					rc -= 4;
-				break;
+			while (ieee80211_radiotap_iterator_next(&iter) >= 0)
+			{
+				switch (iter.this_arg_index)
+				{
+					case IEEE80211_RADIOTAP_FLAGS:
+						if (*iter.this_arg & IEEE80211_RADIOTAP_F_FCS) rc -= 4;
+						break;
+				}
 			}
-		}
-		break;
+			break;
 
-	case LINKTYPE_PRISM_HEADER:
-        	if (buf[7] == 0x40)
-          		off = 0x40;
-		else
-			off = le32_to_cpu(*(unsigned int *)(buf + 4));
+		case LINKTYPE_PRISM_HEADER:
+			if (buf[7] == 0x40)
+				off = 0x40;
+			else
+				off = le32_to_cpu(*(unsigned int *) (buf + 4));
 
-		rc -= 4;
-		break;
+			rc -= 4;
+			break;
 
-	case LINKTYPE_PPI_HDR:
-		off = le16_to_cpu(*(unsigned short *)(buf + 2));
+		case LINKTYPE_PPI_HDR:
+			off = le16_to_cpu(*(unsigned short *) (buf + 2));
 
-		/* for a while Kismet logged broken PPI headers */
-                if (off == 24 && le16_to_cpu(*(unsigned short *)(buf + 8)) == 2 )
-			off = 32;
-		
-		break;
+			/* for a while Kismet logged broken PPI headers */
+			if (off == 24 && le16_to_cpu(*(unsigned short *) (buf + 8)) == 2)
+				off = 32;
 
-	case LINKTYPE_ETHERNET:
-		printf("Ethernet packets\n");
-		return 0;
+			break;
 
-	default:
-		errx(1, "Unknown DTL %d", pf->pf_dtl);
-		break;
+		case LINKTYPE_ETHERNET:
+			printf("Ethernet packets\n");
+			return 0;
+
+		default:
+			errx(1, "Unknown DTL %d", pf->pf_dtl);
+			break;
 	}
 
 	rc -= off;
 	assert(rc >= 0);
 
-  if (off < 0 || rc < 0)
-    return -1;
+	if (off < 0 || rc < 0) return -1;
 
-	if (rc > len)
-		rc = len;
+	if (rc > len) rc = len;
 
 	memcpy(h80211, &buf[off], rc);
 
@@ -145,12 +144,14 @@ static int file_get_mac(struct wif *wi, unsigned char *mac)
 	return 0;
 }
 
-static int file_write(struct wif *wi, unsigned char *h80211, int len,
-		     struct tx_info *ti)
+static int
+file_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
 {
 	struct priv_file *pn = wi_priv(wi);
 
-	if (h80211 && ti && pn) {}
+	if (h80211 && ti && pn)
+	{
+	}
 
 	return len;
 }
@@ -189,7 +190,9 @@ static int file_get_rate(struct wif *wi)
 
 static int file_get_monitor(struct wif *wi)
 {
-	if (wi) {}
+	if (wi)
+	{
+	}
 
 	return 1;
 }
@@ -198,8 +201,10 @@ static void file_close(struct wif *wi)
 {
 	struct priv_file *pn = wi_priv(wi);
 
-	if (pn) {
-		if (pn->pf_fd) {
+	if (pn)
+	{
+		if (pn->pf_fd)
+		{
 			close(pn->pf_fd);
 		}
 		free(pn);
@@ -220,44 +225,39 @@ struct wif *file_open(char *iface)
 	struct wif *wi;
 	struct priv_file *pf;
 	int fd;
-        struct pcap_file_header pfh;
+	struct pcap_file_header pfh;
 	int rc;
 
-	if (iface == NULL || strncmp(iface, "file://", 7) != 0)
-		return NULL;
+	if (iface == NULL || strncmp(iface, "file://", 7) != 0) return NULL;
 
 	/* setup wi struct */
 	wi = wi_alloc(sizeof(*pf));
-	if (!wi)
-		return NULL;
+	if (!wi) return NULL;
 
-	wi->wi_read		= file_read;
-	wi->wi_write		= file_write;
-	wi->wi_set_channel	= file_set_channel;
-	wi->wi_get_channel	= file_get_channel;
-        wi->wi_set_rate    	= file_set_rate;
-	wi->wi_get_rate    	= file_get_rate;
-	wi->wi_close		= file_close;
-	wi->wi_fd		= file_fd;
-	wi->wi_get_mac		= file_get_mac;
-	wi->wi_get_monitor	= file_get_monitor;
+	wi->wi_read = file_read;
+	wi->wi_write = file_write;
+	wi->wi_set_channel = file_set_channel;
+	wi->wi_get_channel = file_get_channel;
+	wi->wi_set_rate = file_set_rate;
+	wi->wi_get_rate = file_get_rate;
+	wi->wi_close = file_close;
+	wi->wi_fd = file_fd;
+	wi->wi_get_mac = file_get_mac;
+	wi->wi_get_monitor = file_get_monitor;
 
-        pf = wi_priv(wi);
+	pf = wi_priv(wi);
 
 	fd = open(iface + 7, O_RDONLY);
-	if (fd == -1)
-		err(1, "open()");
+	if (fd == -1) err(1, "open()");
 
 	pf->pf_fd = fd;
 
-	if ((rc = read(fd, &pfh, sizeof(pfh))) != sizeof(pfh))
-		goto __err;
+	if ((rc = read(fd, &pfh, sizeof(pfh))) != sizeof(pfh)) goto __err;
 
-	if (pfh.magic != TCPDUMP_MAGIC)
-		goto __err;
+	if (pfh.magic != TCPDUMP_MAGIC) goto __err;
 
 	if (pfh.version_major != PCAP_VERSION_MAJOR
-	    || pfh.version_minor != PCAP_VERSION_MINOR)
+		|| pfh.version_minor != PCAP_VERSION_MINOR)
 		goto __err;
 
 	pf->pf_dtl = pfh.linktype;
@@ -266,5 +266,5 @@ struct wif *file_open(char *iface)
 
 __err:
 	wi_close(wi);
-	return (struct wif*) -1;
+	return (struct wif *) -1;
 }

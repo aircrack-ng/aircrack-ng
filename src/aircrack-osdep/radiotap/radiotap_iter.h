@@ -8,37 +8,42 @@
 //  Microsoft
 #define EXPORT __declspec(dllexport)
 #define IMPORT __declspec(dllimport)
-#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__)             \
+	|| defined(__INTEL_COMPILER)
 #define EXPORT __attribute__((visibility("default")))
 #define IMPORT
 #else
 //  do nothing and hope for the best?
 #define EXPORT
 #define IMPORT
-#pragma warning Unknown dynamic link import/export semantics.
+#pragma warning Unknown dynamic link import / export semantics.
 #endif
 
 /* Radiotap header iteration
  *   implemented in radiotap.c
  */
 
-struct radiotap_override {
+struct radiotap_override
+{
 	uint8_t field;
-	uint8_t align:4, size:4;
+	uint8_t align : 4, size : 4;
 };
 
-struct radiotap_align_size {
-	uint8_t align:4, size:4;
+struct radiotap_align_size
+{
+	uint8_t align : 4, size : 4;
 };
 
-struct ieee80211_radiotap_namespace {
+struct ieee80211_radiotap_namespace
+{
 	const struct radiotap_align_size *align_size;
 	int n_bits;
 	uint32_t oui;
 	uint8_t subns;
 };
 
-struct ieee80211_radiotap_vendor_namespaces {
+struct ieee80211_radiotap_vendor_namespaces
+{
 	const struct ieee80211_radiotap_namespace *ns;
 	int n_ns;
 };
@@ -75,7 +80,8 @@ struct ieee80211_radiotap_vendor_namespaces {
  * must not be used by users of the parser, only by the parser internally.
  */
 
-struct ieee80211_radiotap_iterator {
+struct ieee80211_radiotap_iterator
+{
 	struct ieee80211_radiotap_header *_rtheader;
 	const struct ieee80211_radiotap_vendor_namespaces *_vns;
 	const struct ieee80211_radiotap_namespace *current_namespace;
@@ -84,8 +90,9 @@ struct ieee80211_radiotap_iterator {
 	uint32_t *_next_bitmap;
 
 	unsigned char *this_arg;
-	const struct radiotap_override *overrides;	/* Only for RADIOTAP_SUPPORT_OVERRIDES */
-	int n_overrides;				/* Only for RADIOTAP_SUPPORT_OVERRIDES */
+	const struct radiotap_override
+		*overrides; /* Only for RADIOTAP_SUPPORT_OVERRIDES */
+	int n_overrides; /* Only for RADIOTAP_SUPPORT_OVERRIDES */
 	int this_arg_index;
 	int this_arg_size;
 
@@ -100,9 +107,10 @@ struct ieee80211_radiotap_iterator {
 IMPORT int ieee80211_radiotap_iterator_init(
 	struct ieee80211_radiotap_iterator *iterator,
 	struct ieee80211_radiotap_header *radiotap_header,
-	int max_length, const struct ieee80211_radiotap_vendor_namespaces *vns);
+	int max_length,
+	const struct ieee80211_radiotap_vendor_namespaces *vns);
 
-IMPORT int ieee80211_radiotap_iterator_next(
-	struct ieee80211_radiotap_iterator *iterator);
+IMPORT int
+ieee80211_radiotap_iterator_next(struct ieee80211_radiotap_iterator *iterator);
 
 #endif /* __RADIOTAP_ITER_H */

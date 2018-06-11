@@ -27,37 +27,30 @@
 
 #include "trampoline.h"
 
-void
-simd_init (void)
-{
-}
+void simd_init(void) {}
 
-void
-simd_destroy (void)
-{
-}
+void simd_destroy(void) {}
 
-int
-simd_get_supported_features (void)
+int simd_get_supported_features(void)
 {
-  int result = 0;
+	int result = 0;
 #ifdef HAS_AUXV
-  long hwcaps = getauxval (AT_HWCAP);
+	long hwcaps = getauxval(AT_HWCAP);
 
 #if defined(HWCAP_ASIMD)
-  if (hwcaps & HWCAP_ASIMD)
-  {
-    result |= SIMD_SUPPORTS_ASIMD;
-  }
+	if (hwcaps & HWCAP_ASIMD)
+	{
+		result |= SIMD_SUPPORTS_ASIMD;
+	}
 #endif
 
 #if defined(HWCAP_NEON)
-  if (hwcaps & HWCAP_NEON)
-  {
-    result |= SIMD_SUPPORTS_NEON;
-  }
+	if (hwcaps & HWCAP_NEON)
+	{
+		result |= SIMD_SUPPORTS_NEON;
+	}
 #endif
 #endif
 
-  return (result);
+	return (result);
 }
