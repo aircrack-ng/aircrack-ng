@@ -4352,8 +4352,6 @@ int crack_wpa_thread(void *arg)
 	threadid = data->threadid;
 	strncpy(essid, ap->essid, 36);
 
-	ac_crypto_engine_set_essid(&engine, ap->essid);
-
 	ac_crypto_engine_thread_init(&engine, threadid);
 
 	/* pre-compute the key expansion buffer */
@@ -6869,6 +6867,9 @@ __start:
 			memset(ap_cur->essid, 0, sizeof(ap_cur->essid));
 			strncpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid) - 1);
 		}
+
+		ac_crypto_engine_set_essid(&engine, ap_cur->essid);
+
 		if (db == NULL)
 		{
 
