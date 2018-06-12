@@ -37,7 +37,7 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-SUBDIRS = aircrack-util include aircrack-osdep
+SUBDIRS = aircrack-crypto aircrack-util include aircrack-osdep
 
 AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src/include \
@@ -50,8 +50,7 @@ SRC_PTW		= aircrack-ptw-lib.c
 LIBPTW_LIBS	= libptw.la
 
 SRC_AC		= aircrack-ng.c
-SRC_AC_ALL  = aircrack-ng.c crypto_engine.c
-ASM_AC		= sha1-sse2.S
+SRC_AC_ALL  = aircrack-ng.c
 
 SRC_AD		= airdecap-ng.c
 SRC_PF		= packetforge-ng.c
@@ -78,13 +77,11 @@ SRC_TT		= tkiptun-ng.c
 SRC_WC		= wpaclean.c
 SRC_AV		= airventriloquist-ng.c
 
-SRC_SSE_COMMON	= memory.c wpapsk.c
-# LIBAC_CFLAGS = -DOLD_SSE_CORE=1
-SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c $(ASM_AC) session.c wpapsk.c memory.c sse-intrinsics.c
+SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c session.c
 LIBAC	= libaclib.la
 LIBAC_LIBS = libaclib.la
 
-AC_COMMON = crypto.c $(SRC_SSE_COMMON) uniqueiv.c $(ASM_AC) session.c
+AC_COMMON = crypto.c uniqueiv.c session.c
 
 if LIBGCRYPT
 SRC_AC		+= sha1-git.c
@@ -104,6 +101,18 @@ SRC_BS		+= sha1-git.c
 SRC_AV		+= sha1-git.c
 endif
 
+LIBAIRCRACK_CRYPTO = aircrack-crypto/libaircrack-crypto.la
+LIBAIRCRACK_CRYPTO_LIBS = -Laircrack-crypto -laircrack-crypto
+
+LIBAIRCRACK_CRYPTO_X86_AVX2 = aircrack-crypto/libaircrack-crypto-x86-avx2.la
+LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = -Laircrack-crypto -laircrack-crypto-x86-avx2
+
+LIBAIRCRACK_CRYPTO_X86_AVX = aircrack-crypto/libaircrack-crypto-x86-avx.la
+LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = -Laircrack-crypto -laircrack-crypto-x86-avx
+
+LIBAIRCRACK_CRYPTO_X86_SSE2 = aircrack-crypto/libaircrack-crypto-x86-sse2.la
+LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = -Laircrack-crypto -laircrack-crypto-x86-sse2
+
 LIBAIRCRACK_UTIL = aircrack-util/libaircrack-util.la
 LIBAIRCRACK_UTIL_LIBS = -Laircrack-util -laircrack-util
 
@@ -116,29 +125,10 @@ endif
 COMMON_CFLAGS = $(GLIB_CFLAGS) $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 COMMON_LDADD = $(GLIB_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 
-AIRCRACK_COMMON_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
-AIRCRACK_COMMON_CFLAGS = -DSIMD_CORE $(GLIB_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(SQLITE3_CFLAGS)
-AIRCRACK_COMMON_LDADD = $(COMMON_LDADD) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
+#AIRCRACK_COMMON_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
+#AIRCRACK_COMMON_CFLAGS = -DSIMD_CORE $(GLIB_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(SQLITE3_CFLAGS)
+#AIRCRACK_COMMON_LDADD = $(COMMON_LDADD) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
-pkglibexec_PROGRAMS = aircrack-ng--generic
-
-if ARM
-if NEON
-pkglibexec_PROGRAMS += aircrack-ng--neon \
-                       aircrack-ng--asimd
-endif
-endif
-
-if PPC
-pkglibexec_PROGRAMS += aircrack-ng--altivec \
-                       aircrack-ng--power8
-endif
-
-if X86
-pkglibexec_PROGRAMS += aircrack-ng--avx2 \
-                       aircrack-ng--avx \
-                       aircrack-ng--sse2
-endif
 
 bin_PROGRAMS = aircrack-ng \
                airdecap-ng \
@@ -179,72 +169,9 @@ sbin_PROGRAMS += besside-ng \
 endif
 endif
 
-aircrack_ng_SOURCES = trampoline.c trampoline.h
-aircrack_ng_CFLAGS = "-DAIRCRACK_LIBEXEC_PATH=\"$(pkglibexecdir)\"" "-DEXEEXT=\"$(EXEEXT)\""
-if ARM
-aircrack_ng_SOURCES += trampoline_arm.c
-endif
-if PPC
-aircrack_ng_SOURCES += trampoline_ppc.c
-endif
-if X86
-aircrack_ng_SOURCES += trampoline_x86.c
-endif
-if !ARM
-if !PPC
-if !X86
-aircrack_ng_SOURCES += trampoline_stubs.c
-endif
-endif
-endif
-
-aircrack_ng__generic_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) $(LIBAIRCRACK_UTIL)
-aircrack_ng__generic_CFLAGS = $(COMMON_CFLAGS) $(SQLITE3_CFLAGS)
-aircrack_ng__generic_LDADD = $(COMMON_LDADD) $(AIRCRACK_COMMON_LDADD) $(LIBAC_LIBS)
-
-#
-# Intel/AMD
-#
-aircrack_ng__avx2_SOURCES = $(AIRCRACK_COMMON_SOURCES)
-aircrack_ng__avx2_CFLAGS = $(x86_avx2_cflags) -DJOHN_AVX2 $(AIRCRACK_COMMON_CFLAGS)
-aircrack_ng__avx2_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__avx2_LDADD = $(AIRCRACK_COMMON_LDADD)
-
-aircrack_ng__avx_SOURCES = $(AIRCRACK_COMMON_SOURCES)
-aircrack_ng__avx_CFLAGS = $(x86_avx_cflags) -DJOHN_AVX $(AIRCRACK_COMMON_CFLAGS)
-aircrack_ng__avx_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__avx_LDADD = $(AIRCRACK_COMMON_LDADD)
-
-aircrack_ng__sse2_SOURCES = $(AIRCRACK_COMMON_SOURCES)
-aircrack_ng__sse2_CFLAGS = $(x86_sse2_cflags) $(AIRCRACK_COMMON_CFLAGS)
-aircrack_ng__sse2_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__sse2_LDADD = $(AIRCRACK_COMMON_LDADD)
-
-#
-# ARM/AARCH64
-#
-aircrack_ng__neon_SOURCES = $(AIRCRACK_COMMON_SOURCES)
-aircrack_ng__neon_CFLAGS = $(arm_neon_cflags) -DHAS_NEON $(AIRCRACK_COMMON_CFLAGS)
-aircrack_ng__neon_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__neon_LDADD = $(AIRCRACK_COMMON_LDADD)
-
-aircrack_ng__asimd_SOURCES = $(AIRCRACK_COMMON_SOURCES)
-aircrack_ng__asimd_CFLAGS = $(arm_neon_cflags) -DHAS_NEON $(AIRCRACK_COMMON_CFLAGS)
-aircrack_ng__asimd_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__asimd_LDADD = $(AIRCRACK_COMMON_LDADD)
-
-#
-# PowerPC
-#
-aircrack_ng__altivec_SOURCES = $(AIRCRACK_COMMON_SOURCES)
-aircrack_ng__altivec_CFLAGS = $(ppc_altivec_cflags) -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(AIRCRACK_COMMON_CFLAGS)
-aircrack_ng__altivec_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__altivec_LDADD = $(AIRCRACK_COMMON_LDADD)
-
-aircrack_ng__power8_SOURCES = $(AIRCRACK_COMMON_SOURCES)
-aircrack_ng__power8_CFLAGS = $(ppc_altivec_cflags) -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(AIRCRACK_COMMON_CFLAGS)
-aircrack_ng__power8_CPPFLAGS = -I. $(AM_CPPFLAGS)
-aircrack_ng__power8_LDADD = $(AIRCRACK_COMMON_LDADD)
+aircrack_ng_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) $(LIBAIRCRACK_UTIL) $(LIBAIRCRACK_CRYPTO)
+aircrack_ng_CFLAGS = $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) $(LIBPTW_CFLAGS)
+aircrack_ng_LDADD = $(COMMON_LDADD) $(AIRCRACK_COMMON_LDADD) $(LIBAC_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_CRYPTO_LIBS)
 
 airdecap_ng_SOURCES = $(SRC_AD) $(LIBAIRCRACK_UTIL)
 airdecap_ng_CFLAGS = $(COMMON_CFLAGS)

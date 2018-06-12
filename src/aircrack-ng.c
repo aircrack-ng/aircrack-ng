@@ -68,12 +68,12 @@
 #include "pcap.h"
 #include "uniqueiv.h"
 #include "aircrack-ng.h"
-#include "sha1-sse2.h"
+#include "aircrack-crypto/sha1-sse2.h"
 #include "aircrack-osdep/byteorder.h"
 #include "aircrack-util/common.h"
 #include "wkp-frame.h"
 #include "linecount.h"
-#include "wpapsk.h"
+#include "aircrack-crypto/wpapsk.h"
 #include "hashcat.h"
 #include "cowpatty.h"
 #include "session.h"
@@ -4326,8 +4326,6 @@ void show_wpa_stats(char *key,
 __out:
 	pthread_mutex_unlock(&mx_wpastats);
 }
-
-#include "crypto_engine.h"
 
 int crack_wpa_thread(void *arg)
 {

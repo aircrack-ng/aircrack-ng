@@ -44,7 +44,7 @@
 #endif
 #include "aircrack-ptw-lib.h"
 #include "eapol.h"
-#include "crypto_engine.h"
+#include "aircrack-crypto/crypto_engine.h"
 
 #include <pthread.h>
 

@@ -28,7 +28,7 @@
 #include <strings.h>
 #include <stdlib.h>
 #include "crypto.h"
-#include "sha1-sse2.h"
+#include "aircrack-crypto/sha1-sse2.h"
 #include "tests.h"
 #include "aircrack-ng.h"
 #include "aircrack-util/simd_cpuid.h"

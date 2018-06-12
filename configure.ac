@@ -180,6 +180,7 @@ scripts/airgraph-ng/man/Makefile
 scripts/versuck-ng/Makefile
 
 src/Makefile
+src/aircrack-crypto/Makefile
 src/aircrack-util/Makefile
 src/include/Makefile
 src/aircrack-osdep/Makefile
