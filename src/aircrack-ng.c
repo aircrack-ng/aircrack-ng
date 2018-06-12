@@ -4413,20 +4413,8 @@ int crack_wpa_thread(void *arg)
 			key[j][127] = 0;
 		}
 
-		// PMK calculation
-		ac_crypto_engine_calc_pmk(&engine, key, pmk, nparallel, threadid);
-
-		for (j = 0; j < nparallel; ++j)
+		if ((j = ac_crypto_engine_wpa_crack(&engine, key, pmk, pke, ap->wpa.eapol, ap->wpa.eapol_size, ptk, mic, ap->wpa.keyver, ap->wpa.keymic, nparallel, threadid)) >= 0)
 		{
-			/* compute the pairwise transient key and the frame MIC */
-
-			ac_crypto_engine_calc_ptk(&engine, pmk, pke, ptk, j, threadid);
-
-			ac_crypto_engine_calc_mic(&engine, ap->wpa.eapol, ap->wpa.eapol_size, ptk, mic, ap->wpa.keyver, j);
-
-			/* did we successfully crack it? */
-			if (memcmp(mic[j], ap->wpa.keymic, 16) == 0)
-			{
 				// to stop do_wpa_crack, we close the dictionary
 				pthread_mutex_lock(&mx_dic);
 				if (opt.dict != NULL)
@@ -4504,7 +4492,6 @@ int crack_wpa_thread(void *arg)
 
 				ret = SUCCESS;
 				goto crack_wpa_cleanup;
-			}
 		}
 
 		pthread_mutex_lock(&mx_nb);

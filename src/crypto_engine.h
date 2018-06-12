@@ -83,6 +83,8 @@ IMPORT void ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine, char (*key)[MA
 IMPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine, unsigned char *pmk[MAX_THREADS], unsigned char (pke)[100], unsigned char (ptk)[8][80], int vectorIdx, int threadid);
 IMPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine, uint8_t eapol[256], uint32_t eapol_size, unsigned char (ptk)[8][80], uint8_t mic[8][20], uint8_t keyver, int vectorIdx);
 
+IMPORT int ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine, char (*key)[MAX_THREADS], unsigned char *pmk[MAX_THREADS], unsigned char (pke)[100], uint8_t eapol[256], uint32_t eapol_size, unsigned char (ptk)[8][80], uint8_t mic[8][20], uint8_t keyver, const uint8_t cmpmic[20], int nparallel, int threadid);
+
 #ifdef __cplusplus
 }
 #endif

@@ -138,3 +138,31 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine, uint8_t eapol[
 			 mic[vectorIdx],
 			 NULL);
 }
+
+EXPORT int ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine, char (*key)[MAX_THREADS], unsigned char *pmk[MAX_THREADS], unsigned char (pke)[100], uint8_t eapol[256], uint32_t eapol_size, unsigned char (ptk)[8][80], uint8_t mic[8][20], uint8_t keyver, const uint8_t cmpmic[20], int nparallel, int threadid)
+{
+	ac_crypto_engine_calc_pmk(engine, key, pmk, nparallel, threadid);
+
+	for (int j = 0; j < nparallel; ++j)
+	{
+		/* compute the pairwise transient key and the frame MIC */
+
+		ac_crypto_engine_calc_ptk(engine, pmk, pke, ptk, j, threadid);
+
+		ac_crypto_engine_calc_mic(engine,
+								  eapol,
+								  eapol_size,
+								  ptk,
+								  mic,
+								  keyver,
+								  j);
+
+		/* did we successfully crack it? */
+		if (memcmp(mic[j], cmpmic, 16) == 0)
+		{
+			return j;
+		}
+	}
+
+	return -1;
+}
