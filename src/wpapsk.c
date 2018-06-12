@@ -210,29 +210,6 @@ wpapsk_sse(int threadid, int count, char *salt, wpapsk_password *in)
 
 	sprintf(xsalt, "%s", salt);
 
-	{
-		int index;
-		for (index = 0; index < cpuinfo.simdsize; ++index)
-		{
-// set the length of all hash1 SSE buffer to 64+20 * 8 bits. The 64 is for the ipad/opad,
-// the 20 is for the length of the SHA1 buffer that also gets into each crypt.
-// Works for SSE2i and SSE2
-#ifdef SIMD_CORE
-			((unsigned int *)
-				 sse_hash1)[15 * SIMD_COEF_32 + (index & (SIMD_COEF_32 - 1))
-							+ (unsigned int) index / SIMD_COEF_32 * SHA_BUF_SIZ
-								  * SIMD_COEF_32] =
-				(84 << 3); // all encrypts are 64+20 bytes.
-#else
-			((unsigned int *)
-				 sse_hash1)[15 * MMX_COEF + (index & (MMX_COEF - 1))
-							+ (index >> (MMX_COEF >> 1)) * SHA_BUF_SIZ
-								  * MMX_COEF] =
-				(84 << 3); // all encrypts are 64+20 bytes.
-#endif
-			sse_hash1[GETPOS(20, index)] = 0x80;
-		}
-	}
 
 	//	printf("t = %d, nbkeys = %d, loops = %d, essid = %s\n", count, NBKEYS, loops, xsalt);
 
@@ -506,7 +483,7 @@ void init_atoi()
 
 //#define XDEBUG 1
 //#define ODEBUG 1
-int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int threadid)
+int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int nparallel, int threadid)
 {
 #ifdef ODEBUG
 	int prloop = 0;
@@ -519,15 +496,41 @@ int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int threadid)
 	inbuffer = wpapass[threadid];
 
 	// clear entire output table
-	memset(pmk[threadid], 0, (sizeof(wpapsk_hash) * (cpuinfo.simdsize)));
+	memset(pmk[threadid], 0, (sizeof(wpapsk_hash) * (nparallel)));
 
-	for (i = 0; i < cpuinfo.simdsize; i++)
+	for (i = 0; i < nparallel; i++)
 	{
 		memset(inbuffer[i].v, 0, sizeof(inbuffer[i].v));
 		inbuffer[i].length = 0;
 	}
 
-	for (i = 0; i < 8; ++i)
+	{
+		unsigned char *sse_hash1 = xsse_hash1[threadid];
+
+		int index;
+		for (index = 0; index < nparallel; ++index)
+		{
+// set the length of all hash1 SSE buffer to 64+20 * 8 bits. The 64 is for the ipad/opad,
+// the 20 is for the length of the SHA1 buffer that also gets into each crypt.
+// Works for SSE2i and SSE2
+#ifdef SIMD_CORE
+			((unsigned int *)
+				sse_hash1)[15 * SIMD_COEF_32 + (index & (SIMD_COEF_32 - 1))
+				+ (unsigned int) index / SIMD_COEF_32 * SHA_BUF_SIZ
+					* SIMD_COEF_32] =
+				(84 << 3); // all encrypts are 64+20 bytes.
+#else
+			((unsigned int *)
+				 sse_hash1)[15 * MMX_COEF + (index & (MMX_COEF - 1))
+							+ (index >> (MMX_COEF >> 1)) * SHA_BUF_SIZ
+								  * MMX_COEF] =
+				(84 << 3); // all encrypts are 64+20 bytes.
+#endif
+			sse_hash1[GETPOS(20, index)] = 0x80;
+		}
+	}
+
+	for (i = 0; i < nparallel; ++i)
 	{
 		if (key[i][0] != 0)
 		{

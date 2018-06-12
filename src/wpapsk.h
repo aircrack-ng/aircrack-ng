@@ -77,7 +77,7 @@ int threadxnt;
 void init_atoi();
 void init_ssecore(int);
 void free_ssecore(int);
-int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int threadid);
+int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int nparallel, int threadid);
 
 typedef struct
 {
@@ -90,9 +90,7 @@ typedef struct
 	uint32_t v[8];
 } wpapsk_hash;
 
-#ifdef SIMD_CORE
 extern unsigned char *pmk[MAX_THREADS];
-#endif
 
 // inbuffer
 extern wpapsk_password *wpapass[MAX_THREADS]; /// Table for candidate passwords

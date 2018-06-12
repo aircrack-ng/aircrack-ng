@@ -104,6 +104,7 @@ struct timeval t_kprev; /* time at start of window      */
 struct timeval t_dictup; /* next dictionary total read   */
 long long int nb_kprev; /* last  # of keys tried        */
 long long int nb_tried; /* total # of keys tried        */
+static ac_crypto_engine_t engine; /* crypto engine */
 
 /* IPC global data */
 
@@ -410,9 +411,7 @@ void clean_exit(int ret)
 		}
 	}
 
-#ifndef OLD_SSE_CORE
-	for (i = 0; i < MAX_THREADS; i++) free_ssecore(i);
-#endif
+	ac_crypto_engine_destroy(&engine);
 
 	if (opt.totaldicts)
 	{
@@ -4328,14 +4327,13 @@ __out:
 	pthread_mutex_unlock(&mx_wpastats);
 }
 
+#include "crypto_engine.h"
+
 int crack_wpa_thread(void *arg)
 {
 	FILE *keyFile;
 	char essid[36];
 	char key[128][MAX_THREADS];
-#ifdef OLD_SSE_CORE
-	unsigned char pmk[MAX_THREADS][64][8];
-#endif
 
 	unsigned char pke[100];
 	unsigned char ptk[8][80];
@@ -4346,26 +4344,17 @@ int crack_wpa_thread(void *arg)
 	int threadid = 0;
 	int ret = 0;
 	int i, j, len;
-//	int nparallel = 1;
 
-// Set SIMD size to match what we can support, 1/4/8 32-bit numbers in
-// a single vector register.
-//
-// Use the compiled size, if exists, first. If not, attempt auto-detect.
-#ifdef SIMD_COEF_32
-	cpuinfo.simdsize = SIMD_COEF_32;
-#else
-	cpuinfo.simdsize = cpuid_simdsize(0);
-#endif
+	int nparallel = ac_crypto_engine_simd_width();
 
 	data = (struct WPA_data *) arg;
 	ap = data->ap;
 	threadid = data->threadid;
 	strncpy(essid, ap->essid, 36);
 
-#ifndef OLD_SSE_CORE
-	init_ssecore(threadid);
-#endif
+	ac_crypto_engine_set_essid(&engine, ap->essid);
+
+	ac_crypto_engine_thread_init(&engine, threadid);
 
 	/* pre-compute the key expansion buffer */
 	memcpy(pke, "Pairwise key expansion", 23);
@@ -4390,24 +4379,17 @@ int crack_wpa_thread(void *arg)
 		memcpy(pke + 67, ap->wpa.snonce, 32);
 	}
 
-/* receive the essid */
-#ifndef OLD_SSE_CORE
-	init_atoi();
-#endif
-
 	while (1)
 	{
 		if (close_aircrack)
 		{
-#ifndef OLD_SSE_CORE
-			free_ssecore(threadid);
-#endif
+			ac_crypto_engine_thread_destroy(&engine, threadid);
 			pthread_exit(&ret);
 		}
 
 		/* receive passphrases */
 
-		for (j = 0; j < cpuinfo.simdsize; ++j)
+		for (j = 0; j < nparallel; ++j)
 		{
 			key[j][0] = 0;
 
@@ -4417,8 +4399,11 @@ int crack_wpa_thread(void *arg)
 					== 1) // if no more words will arrive and...
 				{
 					if (j
-						== 0) // ...this is the first key in this loop: there's nothing else to do
+						== 0)
+					{// ...this is the first key in this loop: there's nothing else to do
+						ac_crypto_engine_thread_destroy(&engine, threadid);
 						return 0;
+					}
 					else // ...we have some key pending in this loop: keep working
 						break;
 				}
@@ -4431,63 +4416,17 @@ int crack_wpa_thread(void *arg)
 		}
 
 		// PMK calculation
-		if (cpuinfo.simdsize >= 4)
-		{
-#ifndef OLD_SSE_CORE
-			init_wpapsk(key, essid, threadid);
-#else
-			calc_4pmk(
-				key[0],
-				key[1],
-				key[2],
-				key[3],
-				essid,
-				(unsigned char *) pmk[threadid],
-				(unsigned char *) (pmk[threadid] + (sizeof(wpapsk_hash) * 1)),
-				(unsigned char *) (pmk[threadid] + (sizeof(wpapsk_hash) * 2)),
-				(unsigned char *) (pmk[threadid] + (sizeof(wpapsk_hash) * 3)));
-#endif
-		}
-		else
-			for (j = 0; j < cpuinfo.simdsize; ++j)
-				calc_pmk(key[j],
-						 essid,
-						 (unsigned char *) (pmk[threadid]
-											+ (sizeof(wpapsk_hash) * j)));
+		ac_crypto_engine_calc_pmk(&engine, key, pmk, nparallel, threadid);
 
-		for (j = 0; j < cpuinfo.simdsize; ++j)
+		for (j = 0; j < nparallel; ++j)
 		{
 			/* compute the pairwise transient key and the frame MIC */
 
-			for (i = 0; i < 4; i++)
-			{
-				pke[99] = i;
-				HMAC(EVP_sha1(),
-					 pmk[threadid] + (sizeof(wpapsk_hash) * j),
-					 32,
-					 pke,
-					 100,
-					 ptk[j] + i * 20,
-					 NULL);
-			}
+			ac_crypto_engine_calc_ptk(&engine, pmk, pke, ptk, j, threadid);
 
-			if (ap->wpa.keyver == 1)
-				HMAC(EVP_md5(),
-					 ptk[j],
-					 16,
-					 ap->wpa.eapol,
-					 ap->wpa.eapol_size,
-					 mic[j],
-					 NULL);
-			else
-				HMAC(EVP_sha1(),
-					 ptk[j],
-					 16,
-					 ap->wpa.eapol,
-					 ap->wpa.eapol_size,
-					 mic[j],
-					 NULL);
+			ac_crypto_engine_calc_mic(&engine, ap->wpa.eapol, ap->wpa.eapol_size, ptk, mic, ap->wpa.keyver, j);
 
+			/* did we successfully crack it? */
 			if (memcmp(mic[j], ap->wpa.keymic, 16) == 0)
 			{
 				// to stop do_wpa_crack, we close the dictionary
@@ -4522,17 +4461,13 @@ int crack_wpa_thread(void *arg)
 
 				if (opt.is_quiet)
 				{
-#ifndef OLD_SSE_CORE
 					ret = SUCCESS;
 					goto crack_wpa_cleanup;
-#else
-					return SUCCESS;
-#endif
 				}
 
 				pthread_mutex_lock(&mx_nb);
 
-				for (i = 0; i < cpuinfo.simdsize; i++)
+				for (i = 0; i < nparallel; i++)
 					if (key[i][0] != 0)
 					{
 						nb_tried++;
@@ -4569,18 +4504,14 @@ int crack_wpa_thread(void *arg)
 					textcolor_fg(TEXT_GREEN);
 				}
 
-#ifndef OLD_SSE_CORE
 				ret = SUCCESS;
 				goto crack_wpa_cleanup;
-#else
-				return SUCCESS;
-#endif
 			}
 		}
 
 		pthread_mutex_lock(&mx_nb);
 
-		for (i = 0; i < cpuinfo.simdsize; i++)
+		for (i = 0; i < nparallel; i++)
 			if (key[i][0] != 0)
 			{
 				nb_tried++;
@@ -4604,11 +4535,10 @@ int crack_wpa_thread(void *arg)
 		}
 	}
 
-#ifndef OLD_SSE_CORE
 crack_wpa_cleanup:
-	free_ssecore(threadid);
+	ac_crypto_engine_thread_destroy(&engine, threadid);
+
 	return ret;
-#endif
 }
 
 /**
@@ -6906,6 +6836,7 @@ __start:
 	if (ap_cur->crypt == 3)
 	{
 	crack_wpa:
+		ac_crypto_engine_init(&engine);
 
 		if (opt.dict == NULL && db == NULL)
 		{

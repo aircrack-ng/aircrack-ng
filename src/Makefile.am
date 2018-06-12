@@ -50,7 +50,7 @@ SRC_PTW		= aircrack-ptw-lib.c
 LIBPTW_LIBS	= libptw.la
 
 SRC_AC		= aircrack-ng.c
-SRC_AC_ALL  = aircrack-ng.c
+SRC_AC_ALL  = aircrack-ng.c crypto_engine.c
 ASM_AC		= sha1-sse2.S
 
 SRC_AD		= airdecap-ng.c
@@ -79,8 +79,8 @@ SRC_WC		= wpaclean.c
 SRC_AV		= airventriloquist-ng.c
 
 SRC_SSE_COMMON	= memory.c wpapsk.c
-LIBAC_CFLAGS = -DOLD_SSE_CORE=1
-SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c $(ASM_AC) session.c
+# LIBAC_CFLAGS = -DOLD_SSE_CORE=1
+SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c $(ASM_AC) session.c wpapsk.c memory.c sse-intrinsics.c
 LIBAC	= libaclib.la
 LIBAC_LIBS = libaclib.la
 

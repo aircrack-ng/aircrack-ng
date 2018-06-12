@@ -44,6 +44,7 @@
 #endif
 #include "aircrack-ptw-lib.h"
 #include "eapol.h"
+#include "crypto_engine.h"
 
 #include <pthread.h>
 
@@ -246,6 +247,7 @@ struct mergeBSSID
 
 struct WPA_data
 {
+	ac_crypto_engine_t engine;
 	struct AP_info *ap; /* AP information */
 	int thread; /* number of this thread */
 	int threadid; /* id of this thread */
