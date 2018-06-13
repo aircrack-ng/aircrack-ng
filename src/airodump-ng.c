@@ -4450,9 +4450,9 @@ int dump_write_csv(void)
 			if (ap_cur->security & AUTH_PSK)
 			{
 				if (ap_cur->security & STD_WEP)
-					fprintf(G.f_txt, "SKA");
+					fprintf(G.f_txt, " SKA");
 				else
-					fprintf(G.f_txt, "PSK");
+					fprintf(G.f_txt, " PSK");
 			}
 			if (ap_cur->security & AUTH_OPN) fprintf(G.f_txt, " OPN");
 		}
