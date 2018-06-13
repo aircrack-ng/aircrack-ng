@@ -91,7 +91,7 @@ AIRCRACK_NG_REVISION
 AIRCRACK_NG_CRYPTO
 AIRCRACK_NG_ETHTOOL
 AIRCRACK_NG_LIBNL
-PKG_CHECK_MODULES([GLIB], [glib-2.0 gmodule-2.0 gthread-2.0], [GLIB_FOUND=yes], [GLIB_FOUND=no])
+PKG_CHECK_MODULES([GLIB], [glib-2.0 gmodule-2.0 gthread-2.0], [GLIB_FOUND=yes], AC_MSG_ERROR([Glib 2 was not found. Please see README.md]))
 
 #
 # Optional
