@@ -159,7 +159,7 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 	unsigned char *sse_hash1 = NULL;
 	unsigned char *sse_crypt1 = NULL;
 	unsigned char *sse_crypt2 = NULL;
-	unsigned char essid[32 + 4];
+	unsigned char essid[ESSID_LENGTH + 4];
 
 	sse_hash1 = engine->xsse_hash1[threadid];
 	sse_crypt1 = engine->xsse_crypt1[threadid];
