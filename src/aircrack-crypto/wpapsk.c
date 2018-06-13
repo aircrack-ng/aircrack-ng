@@ -63,12 +63,13 @@
 #include "sse-intrinsics.h"
 #endif
 #include "aircrack-ng.h"
+#include "arch.h"
 #include "wpapsk.h"
 #include "johnswap.h"
 #include "memory.h"
 #include "aircrack-util/simd_cpuid.h"
 
-//#define XDEBUG
+// #define XDEBUG
 
 #if defined(__INTEL_COMPILER)
 #define SIMD_PARA_SHA1 1
@@ -135,6 +136,7 @@ char atoi64[0x100];
 	 + (index >> (MMX_COEF >> 1)) * SHA_BUF_SIZ * MMX_COEF * 4)
 #endif
 
+#ifdef SIMD_CORE
 static void set_key(char *key, int index, wpapsk_password *in)
 {
 	uint8_t length = strlen(key);
@@ -142,16 +144,15 @@ static void set_key(char *key, int index, wpapsk_password *in)
 	in[index].length = length;
 	memcpy(in[index].v, key, length + 1);
 }
+#endif
 
+#ifdef SIMD_CORE
 static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 									int threadid,
 									int count,
 									wpapsk_password *in)
 {
 	int t; // thread count
-#ifdef XDEBUG
-	int prloop = 0;
-#endif
 	int salt_length = engine->essid_length;
 	int slen = salt_length + 4;
 	int loops = (count + NBKEYS - 1) / NBKEYS;
@@ -415,6 +416,7 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 
 	return;
 }
+#endif
 
 void init_atoi()
 {
@@ -425,6 +427,7 @@ void init_atoi()
 		atoi64[ARCH_INDEX(*pos)] = pos - itoa64;
 }
 
+#ifdef SIMD_CORE
 //#define XDEBUG 1
 //#define ODEBUG 1
 int init_wpapsk(ac_crypto_engine_t *engine,
@@ -472,9 +475,10 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 
 	for (i = 0; i < nparallel; ++i)
 	{
-		if (key[i][0] != 0)
+		char * tkey = key[threadid] + (128 * i);
+		if (*tkey != 0)
 		{
-			set_key(key[i], i, inbuffer);
+			set_key(tkey, i, inbuffer);
 #ifdef XDEBUG
 			printf("key%d (inbuffer) = %s\n", i + 1, inbuffer[i].v);
 #endif
@@ -482,11 +486,8 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 		}
 	}
 
-#ifdef XDEBUG
-	//	printf("%d key (%s) (%s) (%s) (%s)\n",threadid, key1,key2,key3,key4);
-#endif
-
 	wpapsk_sse(engine, threadid, count, inbuffer);
 
 	return 0;
 }
+#endif

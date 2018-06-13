@@ -110,7 +110,7 @@ EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
 
 	// allocate pairwise master key buffer, for ourselves (a thread.)
 	engine->pmk[threadid] = mem_calloc_align(
-		MAX_KEYS_PER_CRYPT, sizeof(wpapsk_hash), MEM_ALIGN_SIMD);
+		MAX_KEYS_PER_CRYPT, sizeof(wpapsk_hash) + 4, MEM_ALIGN_SIMD);
 
 	return 0;
 }
@@ -245,19 +245,26 @@ EXPORT void ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 									  int threadid)
 {
 	// PMK calculation
+#ifdef SIMD_CORE
 	if (nparallel >= 4)
 	{
 		init_wpapsk(
 			engine, key, nparallel, threadid);
 	}
 	else
+#endif
 		for (int j = 0; j < nparallel; ++j)
+		{
+#ifdef XDEBUG
+			printf("Trying: %s\n", key[threadid] + (128 * j));
+#endif
 			ac_crypto_engine_calc_one_pmk(
-				key[j],
+				key[threadid] + (128 * j),
 				engine->essid,
 				engine->essid_length,
 				(unsigned char *) (engine->pmk[threadid]
-								   + (sizeof(wpapsk_hash) * j)));
+				                   + (sizeof(wpapsk_hash) * j)));
+		}
 }
 
 EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,

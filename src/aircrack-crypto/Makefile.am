@@ -86,8 +86,12 @@ libaircrack_crypto_ppc_power8_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
 #
 # Generic library
+ARCH_FILES =
+if X86
+ARCH_FILES += sha1-sse2.S sse-intrinsics.c
+endif
 libaircrack_crypto_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_crypto_la_SOURCES = memory.c sha1-git.c sha1-sse2.S sse-intrinsics.c wpapsk.c crypto_engine.c
+libaircrack_crypto_la_SOURCES = memory.c sha1-git.c wpapsk.c crypto_engine.c $(ARCH_FILES)
 libaircrack_crypto_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
