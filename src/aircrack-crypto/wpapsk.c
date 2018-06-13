@@ -146,8 +146,7 @@ static void set_key(char *key, int index, wpapsk_password *in)
 static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 									int threadid,
 									int count,
-									wpapsk_password *in,
-									unsigned char *pmk[MAX_THREADS])
+									wpapsk_password *in)
 {
 	int t; // thread count
 #ifdef XDEBUG
@@ -421,8 +420,8 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 		{
 			//printf("pmk[threadid][%u] = %p\n", j, (void*) (pmk[threadid] + (64*j)));
 
-			memcpy(pmk[threadid] + (sizeof(wpapsk_hash) * j), outbuf[j].c, 32);
-			alter_endianity_to_BE((pmk[threadid] + (sizeof(wpapsk_hash) * j)),
+			memcpy(engine->pmk[threadid] + (sizeof(wpapsk_hash) * j), outbuf[j].c, 32);
+			alter_endianity_to_BE((engine->pmk[threadid] + (sizeof(wpapsk_hash) * j)),
 								  8);
 		}
 	}
@@ -443,8 +442,6 @@ void init_atoi()
 //#define ODEBUG 1
 int init_wpapsk(ac_crypto_engine_t *engine,
 				char (*key)[MAX_THREADS],
-				char *essid,
-				unsigned char *pmk[MAX_THREADS],
 				int nparallel,
 				int threadid)
 {
@@ -459,7 +456,7 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 	inbuffer = engine->wpapass[threadid];
 
 	// clear entire output table
-	memset(pmk[threadid], 0, (sizeof(wpapsk_hash) * (nparallel)));
+	memset(engine->pmk[threadid], 0, (sizeof(wpapsk_hash) * (nparallel)));
 	memset(
 		engine->wpapass[threadid], 0, (sizeof(wpapsk_password) * (nparallel)));
 
@@ -505,7 +502,7 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 //	printf("%d key (%s) (%s) (%s) (%s)\n",threadid, key1,key2,key3,key4);
 #endif
 
-	wpapsk_sse(engine, threadid, count, inbuffer, pmk);
+	wpapsk_sse(engine, threadid, count, inbuffer);
 
 	return 0;
 }

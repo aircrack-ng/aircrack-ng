@@ -236,7 +236,7 @@ EXPORT void ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 	if (nparallel >= 4)
 	{
 		init_wpapsk(
-			engine, key, engine->essid, engine->pmk, nparallel, threadid);
+			engine, key, nparallel, threadid);
 	}
 	else
 		for (int j = 0; j < nparallel; ++j)
