@@ -130,7 +130,6 @@ char atoi64[0x100];
 
 wpapsk_password *wpapass[MAX_THREADS] = {0};
 
-unsigned char *pmk[MAX_THREADS] = {NULL};
 unsigned char *xsse_hash1[MAX_THREADS] = {NULL};
 unsigned char *xsse_crypt1[MAX_THREADS] = {NULL};
 unsigned char *xsse_crypt2[MAX_THREADS] = {NULL};
@@ -160,8 +159,8 @@ void init_ssecore(int threadid)
 			mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
 		xsse_crypt2[threadid] =
 			mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
-		pmk[threadid] =
-			mem_calloc_align(NBKEYS, sizeof(wpapsk_hash), MEM_ALIGN_SIMD);
+//		pmk[threadid] =
+//			mem_calloc_align(NBKEYS, sizeof(wpapsk_hash), MEM_ALIGN_SIMD);
 		wpapass[threadid] =
 			mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
 	}
@@ -174,7 +173,7 @@ void free_ssecore(int threadid)
 		MEM_FREE(xsse_hash1[threadid]);
 		MEM_FREE(xsse_crypt1[threadid]);
 		MEM_FREE(xsse_crypt2[threadid]);
-		MEM_FREE(pmk[threadid]);
+//		MEM_FREE(pmk[threadid]);
 		MEM_FREE(wpapass[threadid]);
 	}
 }
@@ -188,7 +187,7 @@ static void set_key(char *key, int index, wpapsk_password *in)
 }
 
 static MAYBE_INLINE void
-wpapsk_sse(int threadid, int count, char *salt, wpapsk_password *in)
+wpapsk_sse(int threadid, int count, char *salt, wpapsk_password *in, unsigned char *pmk[MAX_THREADS])
 {
 	int t; // thread count
 #ifdef XDEBUG
@@ -483,7 +482,7 @@ void init_atoi()
 
 //#define XDEBUG 1
 //#define ODEBUG 1
-int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int nparallel, int threadid)
+int init_wpapsk(char (*key)[MAX_THREADS], char *essid, unsigned char *pmk[MAX_THREADS], int nparallel, int threadid)
 {
 #ifdef ODEBUG
 	int prloop = 0;
@@ -546,7 +545,7 @@ int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int nparallel, int thread
 //	printf("%d key (%s) (%s) (%s) (%s)\n",threadid, key1,key2,key3,key4);
 #endif
 
-	wpapsk_sse(threadid, count, essid, inbuffer);
+	wpapsk_sse(threadid, count, essid, inbuffer, pmk);
 
 	return 0;
 }

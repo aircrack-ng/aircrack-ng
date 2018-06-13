@@ -50,19 +50,19 @@ LIBAIRCRACK_CRYPTO_SRCS = memory.c sha1-git.c sha1-sse2.S simd-intrinsics.c wpap
 #
 libaircrack_crypto_x86_avx2_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_avx2_la_CFLAGS = $(x86_avx2_cflags) -DSIMD_CORE -DJOHN_AVX2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_crypto_x86_avx2_la_CPPFLAGS = -I. $(AM_CPPFLAGS)
+#libaircrack_crypto_x86_avx2_la_CPPFLAGS = -I. $(AM_CPPFLAGS)
 libaircrack_crypto_x86_avx2_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_x86_avx2_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
 libaircrack_crypto_x86_avx_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_avx_la_CFLAGS = $(x86_avx_cflags) -DSIMD_CORE -DJOHN_AVX $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_crypto_x86_avx_la_CPPFLAGS = -I. $(AM_CPPFLAGS)
+#libaircrack_crypto_x86_avx_la_CPPFLAGS = -I. $(AM_CPPFLAGS)
 libaircrack_crypto_x86_avx_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_x86_avx_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
 libaircrack_crypto_x86_sse2_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_sse2_la_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_crypto_x86_sse2_la_CPPFLAGS = -I. $(AM_CPPFLAGS)
+#libaircrack_crypto_x86_sse2_la_CPPFLAGS = -I. $(AM_CPPFLAGS)
 libaircrack_crypto_x86_sse2_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_x86_sse2_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 

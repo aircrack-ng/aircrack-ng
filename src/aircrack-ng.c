@@ -4411,7 +4411,7 @@ int crack_wpa_thread(void *arg)
 			key[j][127] = 0;
 		}
 
-		if ((j = ac_crypto_engine_wpa_crack(&engine, key, pmk, pke, ap->wpa.eapol, ap->wpa.eapol_size, ptk, mic, ap->wpa.keyver, ap->wpa.keymic, nparallel, threadid)) >= 0)
+		if ((j = ac_crypto_engine_wpa_crack(&engine, key, pke, ap->wpa.eapol, ap->wpa.eapol_size, ptk, mic, ap->wpa.keyver, ap->wpa.keymic, nparallel, threadid)) >= 0)
 		{
 				// to stop do_wpa_crack, we close the dictionary
 				pthread_mutex_lock(&mx_dic);
@@ -4465,8 +4465,7 @@ int crack_wpa_thread(void *arg)
 				if (len < 8) len = 8;
 				show_wpa_stats(key[j],
 							   len,
-							   (unsigned char *) (pmk[threadid]
-												  + (sizeof(wpapsk_hash) * j)),
+							   ac_crypto_engine_get_pmk(&engine, threadid) + (sizeof(wpapsk_hash) * j),
 							   ptk[j],
 							   mic[j],
 							   1);
@@ -4511,7 +4510,7 @@ int crack_wpa_thread(void *arg)
 
 			show_wpa_stats(key[0],
 						   len,
-						   (unsigned char *) (pmk[threadid]),
+						   ac_crypto_engine_get_pmk(&engine, threadid),
 						   ptk[0],
 						   mic[0],
 						   0);
