@@ -37,7 +37,7 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-SUBDIRS = cryptounittest
+SUBDIRS = cryptounittest glib
 
 AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src/include \
