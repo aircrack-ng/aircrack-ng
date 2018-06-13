@@ -70,7 +70,12 @@ extern "C" {
 #endif
 
 void init_atoi();
-int init_wpapsk(ac_crypto_engine_t *engine, char (*key)[MAX_THREADS], char *essid, unsigned char *pmk[MAX_THREADS], int nparallel, int threadid);
+int init_wpapsk(ac_crypto_engine_t *engine,
+				char (*key)[MAX_THREADS],
+				char *essid,
+				unsigned char *pmk[MAX_THREADS],
+				int nparallel,
+				int threadid);
 
 #if 0
 static MAYBE_INLINE void prf_512(uint32_t * key, uint8_t * data, uint32_t * ret)

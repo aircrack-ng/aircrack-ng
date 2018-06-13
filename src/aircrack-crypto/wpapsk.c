@@ -143,8 +143,12 @@ static void set_key(char *key, int index, wpapsk_password *in)
 	memcpy(in[index].v, key, length + 1);
 }
 
-static MAYBE_INLINE void
-wpapsk_sse(ac_crypto_engine_t *engine, int threadid, int count, char *salt, wpapsk_password *in, unsigned char *pmk[MAX_THREADS])
+static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
+									int threadid,
+									int count,
+									char *salt,
+									wpapsk_password *in,
+									unsigned char *pmk[MAX_THREADS])
 {
 	int t; // thread count
 #ifdef XDEBUG
@@ -165,7 +169,6 @@ wpapsk_sse(ac_crypto_engine_t *engine, int threadid, int count, char *salt, wpap
 	sse_crypt2 = engine->xsse_crypt2[threadid];
 
 	sprintf(xsalt, "%s", salt);
-
 
 	//	printf("t = %d, nbkeys = %d, loops = %d, essid = %s\n", count, NBKEYS, loops, xsalt);
 
@@ -439,7 +442,12 @@ void init_atoi()
 
 //#define XDEBUG 1
 //#define ODEBUG 1
-int init_wpapsk(ac_crypto_engine_t *engine, char (*key)[MAX_THREADS], char *essid, unsigned char *pmk[MAX_THREADS], int nparallel, int threadid)
+int init_wpapsk(ac_crypto_engine_t *engine,
+				char (*key)[MAX_THREADS],
+				char *essid,
+				unsigned char *pmk[MAX_THREADS],
+				int nparallel,
+				int threadid)
 {
 #ifdef ODEBUG
 	int prloop = 0;
@@ -449,14 +457,20 @@ int init_wpapsk(ac_crypto_engine_t *engine, char (*key)[MAX_THREADS], char *essi
 	wpapsk_password
 		*inbuffer; //table for candidate passwords (pointer to threads copy)
 
-
-	fprintf(stderr, "init_wpapsk(%p,%p,%p,%d,%d)\n", key, essid, pmk, nparallel, threadid);
+	fprintf(stderr,
+			"init_wpapsk(%p,%p,%p,%d,%d)\n",
+			key,
+			essid,
+			pmk,
+			nparallel,
+			threadid);
 
 	inbuffer = engine->wpapass[threadid];
 
 	// clear entire output table
 	memset(pmk[threadid], 0, (sizeof(wpapsk_hash) * (nparallel)));
-	memset(engine->wpapass[threadid], 0, (sizeof(wpapsk_password) * (nparallel)));
+	memset(
+		engine->wpapass[threadid], 0, (sizeof(wpapsk_password) * (nparallel)));
 
 	{
 		unsigned char *sse_hash1 = engine->xsse_hash1[threadid];
@@ -469,9 +483,9 @@ int init_wpapsk(ac_crypto_engine_t *engine, char (*key)[MAX_THREADS], char *essi
 // Works for SSE2i and SSE2
 #ifdef SIMD_CORE
 			((unsigned int *)
-				sse_hash1)[15 * SIMD_COEF_32 + (index & (SIMD_COEF_32 - 1))
-				+ (unsigned int) index / SIMD_COEF_32 * SHA_BUF_SIZ
-					* SIMD_COEF_32] =
+				 sse_hash1)[15 * SIMD_COEF_32 + (index & (SIMD_COEF_32 - 1))
+							+ (unsigned int) index / SIMD_COEF_32 * SHA_BUF_SIZ
+								  * SIMD_COEF_32] =
 				(84 << 3); // all encrypts are 64+20 bytes.
 #else
 			((unsigned int *)

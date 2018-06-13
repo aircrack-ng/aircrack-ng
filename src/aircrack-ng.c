@@ -1101,8 +1101,9 @@ void read_thread(void *arg)
 			}
 		}
 		else if (opt.do_ptw)
-			errx(1, "Can't do PTW with old IVS files, recapture without --ivs "
-					"or use airodump-ng >= 1.0\n"); /* XXX */
+			errx(1,
+				 "Can't do PTW with old IVS files, recapture without --ivs "
+				 "or use airodump-ng >= 1.0\n"); /* XXX */
 	}
 	/* avoid blocking on reading the file */
 
@@ -2074,8 +2075,9 @@ void check_thread(void *arg)
 			}
 		}
 		else if (opt.do_ptw)
-			errx(1, "Can't do PTW with old IVS files, recapture without --ivs "
-					"or use airodump-ng >= 1.0\n"); /* XXX */
+			errx(1,
+				 "Can't do PTW with old IVS files, recapture without --ivs "
+				 "or use airodump-ng >= 1.0\n"); /* XXX */
 	}
 	/* avoid blocking on reading the file */
 
@@ -4353,9 +4355,12 @@ int crack_wpa_thread(void *arg)
 	ac_crypto_engine_thread_init(&engine, threadid);
 
 	if (nparallel > 1)
-		fprintf(stderr, "The Crypto Engine will crack %d in parallel.\n", nparallel);
+		fprintf(stderr,
+				"The Crypto Engine will crack %d in parallel.\n",
+				nparallel);
 	else
-		fprintf(stderr, "WARNING: The Crypto Engine is unable to crack in parallel.\n");
+		fprintf(stderr,
+				"WARNING: The Crypto Engine is unable to crack in parallel.\n");
 
 	/* pre-compute the key expansion buffer */
 	memcpy(pke, "Pairwise key expansion", 23);
@@ -4399,9 +4404,8 @@ int crack_wpa_thread(void *arg)
 				if (wpa_wordlists_done
 					== 1) // if no more words will arrive and...
 				{
-					if (j
-						== 0)
-					{// ...this is the first key in this loop: there's nothing else to do
+					if (j == 0)
+					{ // ...this is the first key in this loop: there's nothing else to do
 						ac_crypto_engine_thread_destroy(&engine, threadid);
 						return 0;
 					}
@@ -4416,84 +4420,96 @@ int crack_wpa_thread(void *arg)
 			key[j][127] = 0;
 		}
 
-		if ((j = ac_crypto_engine_wpa_crack(&engine, key, pke, ap->wpa.eapol, ap->wpa.eapol_size, ptk, mic, ap->wpa.keyver, ap->wpa.keymic, nparallel, threadid)) >= 0)
+		if ((j = ac_crypto_engine_wpa_crack(&engine,
+											key,
+											pke,
+											ap->wpa.eapol,
+											ap->wpa.eapol_size,
+											ptk,
+											mic,
+											ap->wpa.keyver,
+											ap->wpa.keymic,
+											nparallel,
+											threadid))
+			>= 0)
 		{
-				// to stop do_wpa_crack, we close the dictionary
-				pthread_mutex_lock(&mx_dic);
-				if (opt.dict != NULL)
+			// to stop do_wpa_crack, we close the dictionary
+			pthread_mutex_lock(&mx_dic);
+			if (opt.dict != NULL)
+			{
+				if (!opt.stdin_dict) fclose(opt.dict);
+				opt.dict = NULL;
+			}
+			pthread_mutex_unlock(&mx_dic);
+			for (i = 0; i < opt.nbcpu; i++)
+			{
+				// we make sure do_wpa_crack doesn't block before exiting,
+				// now that we're not consuming passphrases here any longer
+				pthread_mutex_lock(&wpa_data[i].mutex);
+				pthread_cond_signal(&wpa_data[i].cond);
+				pthread_mutex_unlock(&wpa_data[i].mutex);
+			}
+
+			memcpy(data->key, key[j], sizeof(data->key));
+
+			// Write the key to a file
+			if (opt.logKeyToFile != NULL)
+			{
+				keyFile = fopen(opt.logKeyToFile, "w");
+				if (keyFile != NULL)
 				{
-					if (!opt.stdin_dict) fclose(opt.dict);
-					opt.dict = NULL;
+					fprintf(keyFile, "%s", key[j]);
+					fclose(keyFile);
 				}
-				pthread_mutex_unlock(&mx_dic);
-				for (i = 0; i < opt.nbcpu; i++)
-				{
-					// we make sure do_wpa_crack doesn't block before exiting,
-					// now that we're not consuming passphrases here any longer
-					pthread_mutex_lock(&wpa_data[i].mutex);
-					pthread_cond_signal(&wpa_data[i].cond);
-					pthread_mutex_unlock(&wpa_data[i].mutex);
-				}
+			}
 
-				memcpy(data->key, key[j], sizeof(data->key));
-
-				// Write the key to a file
-				if (opt.logKeyToFile != NULL)
-				{
-					keyFile = fopen(opt.logKeyToFile, "w");
-					if (keyFile != NULL)
-					{
-						fprintf(keyFile, "%s", key[j]);
-						fclose(keyFile);
-					}
-				}
-
-				if (opt.is_quiet)
-				{
-					ret = SUCCESS;
-					goto crack_wpa_cleanup;
-				}
-
-				pthread_mutex_lock(&mx_nb);
-
-				for (i = 0; i < nparallel; i++)
-					if (key[i][0] != 0)
-					{
-						nb_tried++;
-						nb_kprev++;
-					}
-
-				pthread_mutex_unlock(&mx_nb);
-
-				len = strlen(key[j]);
-				if (len > 64) len = 64;
-				if (len < 8) len = 8;
-				show_wpa_stats(key[j],
-							   len,
-							   ac_crypto_engine_get_pmk(&engine, threadid) + (sizeof(wpapsk_hash) * j),
-							   ptk[j],
-							   mic[j],
-							   1);
-
-				if (opt.l33t)
-				{
-					textstyle(TEXT_BRIGHT);
-					textcolor_fg(TEXT_RED);
-				}
-
-				moveto((80 - 15 - (int) len) / 2, 8);
-				erase_line(2);
-				printf("KEY FOUND! [ %s ]\n", key[j]);
-				move(CURSOR_DOWN, 11);
-
-				if (opt.l33t)
-				{
-					textcolor_normal();
-					textcolor_fg(TEXT_GREEN);
-				}
-
+			if (opt.is_quiet)
+			{
 				ret = SUCCESS;
 				goto crack_wpa_cleanup;
+			}
+
+			pthread_mutex_lock(&mx_nb);
+
+			for (i = 0; i < nparallel; i++)
+				if (key[i][0] != 0)
+				{
+					nb_tried++;
+					nb_kprev++;
+				}
+
+			pthread_mutex_unlock(&mx_nb);
+
+			len = strlen(key[j]);
+			if (len > 64) len = 64;
+			if (len < 8) len = 8;
+			show_wpa_stats(key[j],
+						   len,
+						   ac_crypto_engine_get_pmk(&engine, threadid)
+							   + (sizeof(wpapsk_hash) * j),
+						   ptk[j],
+						   mic[j],
+						   1);
+
+			if (opt.l33t)
+			{
+				textstyle(TEXT_BRIGHT);
+				textcolor_fg(TEXT_RED);
+			}
+
+			moveto((80 - 15 - (int) len) / 2, 8);
+			erase_line(2);
+			printf("KEY FOUND! [ %s ]\n", key[j]);
+			move(CURSOR_DOWN, 11);
+
+			if (opt.l33t)
+			{
+				textcolor_normal();
+				textcolor_fg(TEXT_GREEN);
+			}
+
+			ret = SUCCESS;
+			goto crack_wpa_cleanup;
 		}
 
 		pthread_mutex_lock(&mx_nb);
@@ -6374,8 +6390,9 @@ int main(int argc, char *argv[])
 			if (fseeko(opt.dict, cracking_session->pos, SEEK_SET) != 0
 				|| ftello(opt.dict) != cracking_session->pos)
 			{
-				fprintf(stderr, "Failed setting position in wordlist from "
-								"restore session.\n");
+				fprintf(stderr,
+						"Failed setting position in wordlist from "
+						"restore session.\n");
 				clean_exit(EXIT_FAILURE);
 			}
 
