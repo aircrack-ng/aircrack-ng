@@ -84,8 +84,8 @@ typedef struct
 
 struct ac_crypto_engine
 {
-	//	char essid[64];
 	char *essid;
+	uint32_t essid_length;
 
 	//	struct ac_crypto_engine_thread_priv priv[MAX_THREADS];
 
@@ -156,7 +156,7 @@ IMPORT int ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
 
 /// Calculate one pairwise master key, from the \a essid and \a key.
 IMPORT void
-ac_crypto_engine_calc_one_pmk(char *key, char *essid, unsigned char pmk[40]);
+ac_crypto_engine_calc_one_pmk(char *key, char *essid, uint32_t essid_length, unsigned char pmk[40]);
 
 #ifdef __cplusplus
 }

@@ -76,6 +76,7 @@ EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
 	assert(engine != NULL && "Engine is NULL");
 	fprintf(stderr, "ac_crypto_engine_set_essid(%p, %s)\n", engine, essid);
 	memccpy(engine->essid, essid, 0, sizeof(engine->essid));
+	engine->essid_length = strlen(essid);
 }
 
 EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
@@ -143,7 +144,7 @@ EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
 
 /* derive the PMK from the passphrase and the essid */
 EXPORT void
-ac_crypto_engine_calc_one_pmk(char *key, char *essid_pre, unsigned char pmk[40])
+ac_crypto_engine_calc_one_pmk(char *key, char *essid_pre, uint32_t essid_pre_len, unsigned char pmk[40])
 {
 	int i, j, slen;
 	unsigned char buffer[65];
@@ -151,10 +152,8 @@ ac_crypto_engine_calc_one_pmk(char *key, char *essid_pre, unsigned char pmk[40])
 	SHA_CTX ctx_ipad;
 	SHA_CTX ctx_opad;
 	SHA_CTX sha1_ctx;
-	size_t essid_pre_len;
 
-	if (essid_pre == NULL || essid_pre[0] == 0
-		|| (essid_pre_len = strlen(essid_pre)) > 32)
+	if (essid_pre == NULL || essid_pre[0] == 0 || essid_pre_len > 32)
 	{
 		return;
 	}
@@ -243,6 +242,7 @@ EXPORT void ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 			ac_crypto_engine_calc_one_pmk(
 				key[j],
 				engine->essid,
+				engine->essid_length,
 				(unsigned char *) (engine->pmk[threadid]
 								   + (sizeof(wpapsk_hash) * j)));
 }

@@ -22,7 +22,7 @@ static void test_calc_one_pmk(void)
 							0x31, 0x83, 0x94, 0x12, 0x36, 0x89, 0x8e, 0xf7};
 
 	memset(pmk, 0, sizeof(pmk));
-	ac_crypto_engine_calc_one_pmk(key, essid, pmk);
+	ac_crypto_engine_calc_one_pmk(key, essid, strlen(essid), pmk);
 
 	g_assert_cmpint(sizeof(pmk), ==, sizeof(expected));
 	g_assert_cmpmem(pmk, sizeof(pmk), expected, sizeof(expected));

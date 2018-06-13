@@ -152,7 +152,7 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 #ifdef XDEBUG
 	int prloop = 0;
 #endif
-	int salt_length = strlen(engine->essid);
+	int salt_length = engine->essid_length;
 	int slen = salt_length + 4;
 	int loops = (count + NBKEYS - 1) / NBKEYS;
 
