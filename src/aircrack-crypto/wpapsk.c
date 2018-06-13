@@ -146,7 +146,6 @@ static void set_key(char *key, int index, wpapsk_password *in)
 static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 									int threadid,
 									int count,
-									char *salt,
 									wpapsk_password *in,
 									unsigned char *pmk[MAX_THREADS])
 {
@@ -154,7 +153,7 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 #ifdef XDEBUG
 	int prloop = 0;
 #endif
-	int salt_length = strlen(salt);
+	int salt_length = strlen(engine->essid);
 	int slen = salt_length + 4;
 	int loops = (count + NBKEYS - 1) / NBKEYS;
 	char xsalt[32 + 4];
@@ -168,7 +167,7 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 	sse_crypt1 = engine->xsse_crypt1[threadid];
 	sse_crypt2 = engine->xsse_crypt2[threadid];
 
-	sprintf(xsalt, "%s", salt);
+	sprintf(xsalt, "%s", engine->essid);
 
 	//	printf("t = %d, nbkeys = %d, loops = %d, essid = %s\n", count, NBKEYS, loops, xsalt);
 
@@ -506,7 +505,7 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 //	printf("%d key (%s) (%s) (%s) (%s)\n",threadid, key1,key2,key3,key4);
 #endif
 
-	wpapsk_sse(engine, threadid, count, essid, inbuffer, pmk);
+	wpapsk_sse(engine, threadid, count, inbuffer, pmk);
 
 	return 0;
 }
