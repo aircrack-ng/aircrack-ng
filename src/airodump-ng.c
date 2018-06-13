@@ -4356,7 +4356,7 @@ char *format_text_for_csv(const unsigned char *input, int len)
 	return (rret) ? rret : ret;
 }
 
-int dump_write_json( void )
+int dump_write_json(void)
 {
 				int i, n, probes_written;
 				struct tm *ltime;
