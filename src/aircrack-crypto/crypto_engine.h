@@ -56,6 +56,26 @@
 extern "C" {
 #endif
 
+#define PLAINTEXT_LENGTH 63 /* We can do 64 but spec. says 63 */
+
+#define MIN_KEYS_PER_CRYPT 1
+#ifdef JOHN_AVX2
+#define MAX_KEYS_PER_CRYPT 8
+#else
+#define MAX_KEYS_PER_CRYPT 4
+#endif
+
+typedef struct
+{
+  uint32_t length;
+  uint8_t v[PLAINTEXT_LENGTH + 1];
+} wpapsk_password;
+
+typedef struct
+{
+  uint32_t v[8];
+} wpapsk_hash;
+
 //struct ac_crypto_engine_thread_priv
 //{
 //  unsigned char *pmk[MAX_THREADS];
@@ -69,6 +89,12 @@ struct ac_crypto_engine
 //	struct ac_crypto_engine_thread_priv priv[MAX_THREADS];
 
 	unsigned char *pmk[MAX_THREADS];
+
+  	wpapsk_password *wpapass[MAX_THREADS];
+
+  	unsigned char *xsse_hash1[MAX_THREADS];
+  	unsigned char *xsse_crypt1[MAX_THREADS];
+  	unsigned char *xsse_crypt2[MAX_THREADS];
 };
 
 typedef struct ac_crypto_engine ac_crypto_engine_t;

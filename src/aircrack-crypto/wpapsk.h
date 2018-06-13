@@ -63,37 +63,14 @@
 #include "johnswap.h"
 #include "aircrack-ng.h"
 
+#include "crypto_engine.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern unsigned char *xsse_hash1[MAX_THREADS];
-extern unsigned char *xsse_crypt1[MAX_THREADS];
-extern unsigned char *xsse_crypt2[MAX_THREADS];
-
-#define PLAINTEXT_LENGTH 63 /* We can do 64 but spec. says 63 */
-
-int threadxnt;
 void init_atoi();
-void init_ssecore(int);
-void free_ssecore(int);
-int init_wpapsk(char (*key)[MAX_THREADS], char *essid, unsigned char *pmk[MAX_THREADS], int nparallel, int threadid);
-
-typedef struct
-{
-	uint32_t length;
-	uint8_t v[PLAINTEXT_LENGTH + 1];
-} wpapsk_password;
-
-typedef struct
-{
-	uint32_t v[8];
-} wpapsk_hash;
-
-// inbuffer
-extern wpapsk_password *wpapass[MAX_THREADS]; /// Table for candidate passwords
-
-int count;
+int init_wpapsk(ac_crypto_engine_t *engine, char (*key)[MAX_THREADS], char *essid, unsigned char *pmk[MAX_THREADS], int nparallel, int threadid);
 
 #if 0
 static MAYBE_INLINE void prf_512(uint32_t * key, uint8_t * data, uint32_t * ret)

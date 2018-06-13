@@ -45,6 +45,8 @@ AM_CPPFLAGS = -I$(top_srcdir) \
 
 include $(top_srcdir)/test/glib/glib-tap.mk
 
+LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/src/aircrack-crypto/
+
 LIBAC	= ../../src/libaclib.la
 LIBAC_LIBS = -L../../src -laclib
 
@@ -55,6 +57,7 @@ LIBAIRCRACK_UTIL	= ../../src/aircrack-util/libaircrack-util.la
 LIBAIRCRACK_UTIL_LIBS = -L../../src/aircrack-util -laircrack-util
 
 test_wpapsk_SOURCES = test-wpapsk.c $(LIBAIRCRACK_CRYPTO)
+test_wpapsk_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\""
 test_wpapsk_LDADD = $(GLIB_LIBS) $(LIBAIRCRACK_CRYPTO_LIBS)
 
 test_programs = test-wpapsk

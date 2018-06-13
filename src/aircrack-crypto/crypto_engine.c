@@ -83,11 +83,21 @@ EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine, int threadid
 	assert(engine != NULL && "Engine is NULL");
 	fprintf(stderr, "ac_crypto_engine_thread_init(%p, %d)\n", engine, threadid);
 
-	init_ssecore(threadid);
+	engine->xsse_hash1[threadid] =
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
+
+	engine->xsse_crypt1[threadid] =
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
+
+	engine->xsse_crypt2[threadid] =
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
+
+	engine->wpapass[threadid] =
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, 2048, MEM_ALIGN_SIMD);
 
 	// allocate pairwise master key buffer, for ourselves (a thread.)
 	engine->pmk[threadid] =
-		mem_calloc_align(16, sizeof(wpapsk_hash), MEM_ALIGN_SIMD);
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, sizeof(wpapsk_hash), MEM_ALIGN_SIMD);
 
 	return 0;
 }
@@ -97,13 +107,35 @@ EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine, int thre
 	assert(engine != NULL && "Engine is NULL");
 	fprintf(stderr, "ac_crypto_engine_thread_destroy(%p, %d)\n", engine, threadid);
 
+	if (engine->xsse_hash1[threadid] != NULL)
+	{
+		MEM_FREE(engine->xsse_hash1[threadid]);
+		engine->xsse_hash1[threadid] = NULL;
+	}
+
+	if (engine->xsse_crypt1[threadid] != NULL)
+	{
+		MEM_FREE(engine->xsse_crypt1[threadid]);
+		engine->xsse_crypt1[threadid] = NULL;
+	}
+
+	if (engine->xsse_crypt2[threadid] != NULL)
+	{
+		MEM_FREE(engine->xsse_crypt2[threadid]);
+		engine->xsse_crypt2[threadid] = NULL;
+	}
+
+	if (engine->wpapass[threadid] != NULL)
+	{
+		MEM_FREE(engine->wpapass[threadid]);
+		engine->wpapass[threadid] = NULL;
+	}
+
 	if (engine->pmk[threadid] != NULL)
 	{
 		MEM_FREE(engine->pmk[threadid]);
 		engine->pmk[threadid] = NULL;
 	}
-
-	free_ssecore(threadid);
 }
 
 /* derive the PMK from the passphrase and the essid */
@@ -196,7 +228,7 @@ EXPORT void ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine, char (*key)[MA
 	// PMK calculation
 	if (nparallel >= 4)
 	{
-		init_wpapsk(key, engine->essid, engine->pmk, nparallel, threadid);
+		init_wpapsk(engine, key, engine->essid, engine->pmk, nparallel, threadid);
 	}
 	else
 		for (int j = 0; j < nparallel; ++j)

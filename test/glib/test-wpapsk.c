@@ -1,5 +1,10 @@
 #include <glib.h>
+#include <gmodule.h>
 #include <locale.h>
+
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "aircrack-crypto/crypto_engine.h"
 
@@ -25,7 +30,56 @@ static void test_calc_one_pmk(void)
 
 static void test_simd_can_crack(gconstpointer test_data)
 {
-	int expected_nparallel = (int) ((intptr_t) test_data);
+	char *entry = (char*) ((void*) test_data);
+
+	// open it
+	gchar *filename = g_strdup_printf("%s%s/%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR, entry);
+	GModule *module = g_module_open (filename, G_MODULE_BIND_LOCAL);
+	assert(module != NULL && "failed to open module");
+
+	int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine);
+	void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine);
+	void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine, const char *essid);
+	int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t *engine, int threadid);
+	void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine, int threadid);
+	int (*dso_ac_crypto_engine_simd_width)();
+
+	int (*dso_ac_crypto_engine_wpa_crack)(ac_crypto_engine_t *engine, char (*key)[MAX_THREADS], unsigned char (pke)[100], uint8_t eapol[256], uint32_t eapol_size, unsigned char (ptk)[8][80], uint8_t mic[8][20], uint8_t keyver, const uint8_t cmpmic[20], int nparallel, int threadid);
+
+	// resolve symbols needed
+	struct _dso_symbols
+	{
+	  char const *sym;
+	  gpointer *addr;
+	} dso_symbols[] = {
+		{ "ac_crypto_engine_init", (gpointer *)&dso_ac_crypto_engine_init },
+		{ "ac_crypto_engine_destroy", (gpointer *)&dso_ac_crypto_engine_destroy },
+		{ "ac_crypto_engine_thread_init", (gpointer *)&dso_ac_crypto_engine_thread_init },
+		{ "ac_crypto_engine_thread_destroy", (gpointer *)&dso_ac_crypto_engine_thread_destroy },
+		{ "ac_crypto_engine_set_essid", (gpointer *)&dso_ac_crypto_engine_set_essid },
+		{ "ac_crypto_engine_simd_width", (gpointer *)&dso_ac_crypto_engine_simd_width },
+		{ "ac_crypto_engine_wpa_crack", (gpointer *)&dso_ac_crypto_engine_wpa_crack },
+
+		{ NULL, NULL }
+	};
+
+	struct _dso_symbols *cur = &dso_symbols[0];
+
+	for (; cur->addr != NULL; ++cur)
+	{
+		fprintf(stdout, "Locating sym: %s\n", cur->sym);
+		if (!g_module_symbol(module,
+							 cur->sym,
+							 cur->addr))
+		{
+			g_warning("%s: %s", filename, g_module_error());
+			abort();
+		}
+	}
+
+	g_assert_true(*dso_ac_crypto_engine_init);
+
+
 	char key[128][MAX_THREADS];
 	uint8_t pke[100];
 	uint8_t ptk[8][80];
@@ -60,7 +114,7 @@ static void test_simd_can_crack(gconstpointer test_data)
 	ac_crypto_engine_t engine;
 	uint8_t bssid[6] = "\x00\x14\x6c\x7e\x40\x80";
 	uint8_t essid[33] = "Harkonen";
-	int nparallel = ac_crypto_engine_simd_width();
+	int nparallel = dso_ac_crypto_engine_simd_width();
 
 	/* pre-compute the key expansion buffer */
 	memcpy(pke, "Pairwise key expansion", 23);
@@ -85,19 +139,19 @@ static void test_simd_can_crack(gconstpointer test_data)
 		memcpy(pke + 67, snonce, 32);
 	}
 
-	ac_crypto_engine_init(&engine);
-	ac_crypto_engine_set_essid(&engine, (char *) essid);
-	ac_crypto_engine_thread_init(&engine, 0);
-
-	g_assert_cmpint(nparallel, ==, expected_nparallel);
+	dso_ac_crypto_engine_init(&engine);
+	dso_ac_crypto_engine_set_essid(&engine, (char *) essid);
+	dso_ac_crypto_engine_thread_init(&engine, 1);
 
 	for (int i = 0; i < nparallel; ++i)
 	{
+		int rc = -1;
+
 		memset(key, 0, sizeof(key));
 
 		strcpy(key[i], "12345678");
-
-		if (ac_crypto_engine_wpa_crack(&engine,
+#if 1
+		if ((rc = dso_ac_crypto_engine_wpa_crack(&engine,
 									   key,
 									   pke,
 									   eapol,
@@ -107,15 +161,30 @@ static void test_simd_can_crack(gconstpointer test_data)
 									   2,
 									   expected_mic,
 									   nparallel,
-									   0)
+									   1))
 			< 0)
 		{
-			g_assert_true(0);
+			// does the returned SIMD lane equal where we placed the key?
+			g_assert_cmpint(rc, ==, i);
 		}
+#else
+		(void) eapol;
+		(void) eapol_size;
+		(void) expected_mic;
+		(void) mic;
+		(void) ptk;
+#endif
 	}
 
-	ac_crypto_engine_thread_destroy(&engine, 0);
-	ac_crypto_engine_destroy(&engine);
+	dso_ac_crypto_engine_thread_destroy(&engine, 1);
+	dso_ac_crypto_engine_destroy(&engine);
+
+
+	// close it
+	g_module_close(module);
+
+	g_free(filename);
+	g_free(entry);
 }
 
 int main(int argc, char *argv[])
@@ -128,7 +197,36 @@ int main(int argc, char *argv[])
 	// Define the tests.
 	g_test_add_func("/sanity/test1", test_my_sanity);
 	g_test_add_func("/scalar/calculates_one_pmk", test_calc_one_pmk);
-	g_test_add_data_func("/simd/can_crack/4", (gconstpointer) 4, test_simd_can_crack);
+
+	// need passed in where DSO are.
+	fprintf(stdout, "Lib path: %s%s\n", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+
+	// enumerate all DSOs in folder, opening, searching symbols, and testing them.
+	GDir *dsos = g_dir_open(LIBAIRCRACK_CRYPTO_PATH LT_OBJDIR, 0, NULL);
+	g_assert_true(dsos);
+
+	gchar const *entry = NULL;
+	while ((entry = g_dir_read_name(dsos)) != NULL)
+	{
+#if defined(__APPLE__)
+		if (g_str_has_suffix(entry, ".dylib"))
+#elif defined(WIN32) || defined(_WIN32)
+		if (g_str_has_suffix(entry, ".dll"))
+#else
+		if (g_str_has_suffix(entry, ".so"))
+#endif
+		{
+			// got an entry
+			fprintf(stdout, "Got: %s\n", entry);
+
+			// test it
+			gchar *test_case = g_strdup_printf("/simd/can_crack/%s", entry);
+			g_test_add_data_func(test_case, (gconstpointer) ((void*) g_strdup(entry)), test_simd_can_crack);
+			g_free(test_case);
+		}
+	}
+
+	g_dir_close(dsos);
 
 	return g_test_run();
 }
