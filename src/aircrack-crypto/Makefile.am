@@ -50,51 +50,42 @@ LIBAIRCRACK_CRYPTO_SRCS = memory.c sha1-git.c sha1-sse2.S simd-intrinsics.c wpap
 #
 libaircrack_crypto_x86_avx2_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_avx2_la_CFLAGS = $(x86_avx2_cflags) -DSIMD_CORE -DJOHN_AVX2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-#libaircrack_crypto_x86_avx2_la_CPPFLAGS = -I. $(AM_CPPFLAGS)
 libaircrack_crypto_x86_avx2_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_x86_avx2_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
 libaircrack_crypto_x86_avx_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_avx_la_CFLAGS = $(x86_avx_cflags) -DSIMD_CORE -DJOHN_AVX $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-#libaircrack_crypto_x86_avx_la_CPPFLAGS = -I. $(AM_CPPFLAGS)
 libaircrack_crypto_x86_avx_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_x86_avx_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
 libaircrack_crypto_x86_sse2_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_sse2_la_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-#libaircrack_crypto_x86_sse2_la_CPPFLAGS = -I. $(AM_CPPFLAGS)
 libaircrack_crypto_x86_sse2_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_x86_sse2_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
 ##
 ## ARM/AARCH64
 ##
-#aircrack_ng__neon_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
-#aircrack_ng__neon_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
-#aircrack_ng__neon_CPPFLAGS = -I. $(AM_CPPFLAGS)
-#aircrack_ng__neon_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
-#
-#aircrack_ng__asimd_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
-#aircrack_ng__asimd_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
-#aircrack_ng__asimd_CPPFLAGS = -I. $(AM_CPPFLAGS)
-#aircrack_ng__asimd_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
-#
+libaircrack_crypto_arm_neon_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
+libaircrack_crypto_arm_neon_la_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
+libaircrack_crypto_arm_neon_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_arm_neon_la_LDFLAGS = -version-info 0:0:0 -no-undefined
+
 ##
 ## PowerPC
 ##
-#aircrack_ng__altivec_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
-#aircrack_ng__altivec_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
-#aircrack_ng__altivec_CPPFLAGS = -I. $(AM_CPPFLAGS)
-#aircrack_ng__altivec_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
-#
-#aircrack_ng__power8_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) simd-intrinsics.c $(AC_COMMON) $(LIBAIRCRACK_UTIL)
-#aircrack_ng__power8_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(SQLITE3_CFLAGS)
-#aircrack_ng__power8_CPPFLAGS = -I. $(AM_CPPFLAGS)
-#aircrack_ng__power8_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
+libaircrack_crypto_ppc_altivec_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
+libaircrack_crypto_ppc_altivec_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
+libaircrack_crypto_ppc_altivec_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_ppc_altivec_la_LDFLAGS = -version-info 0:0:0 -no-undefined
+
+libaircrack_crypto_ppc_power8_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
+libaircrack_crypto_ppc_power8_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
+libaircrack_crypto_ppc_power8_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_ppc_power8_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
 #
 # Generic library
-# -DOLD_SSE_CORE=1
 libaircrack_crypto_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_la_SOURCES = memory.c sha1-git.c sha1-sse2.S sse-intrinsics.c wpapsk.c crypto_engine.c
 libaircrack_crypto_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
@@ -105,12 +96,12 @@ libaircrack_crypto_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 #
 lib_LTLIBRARIES = libaircrack-crypto.la
 
-#if ARM
-#lib_LTLIBRARIES += trampoline_arm.c
-#endif
-#if PPC
-#lib_LTLIBRARIES += trampoline_ppc.c
-#endif
+if ARM
+lib_LTLIBRARIES += libaircrack-crypto-arm-neon.la
+endif
+if PPC
+lib_LTLIBRARIES += libaircrack-crypto-ppc-altivec.la libaircrack-crypto-ppc-power8.la
+endif
 if X86
 lib_LTLIBRARIES += libaircrack-crypto-x86-avx2.la libaircrack-crypto-x86-avx.la libaircrack-crypto-x86-sse2.la
 endif
