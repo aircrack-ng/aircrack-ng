@@ -457,14 +457,6 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 	wpapsk_password
 		*inbuffer; //table for candidate passwords (pointer to threads copy)
 
-	fprintf(stderr,
-			"init_wpapsk(%p,%p,%p,%d,%d)\n",
-			key,
-			essid,
-			pmk,
-			nparallel,
-			threadid);
-
 	inbuffer = engine->wpapass[threadid];
 
 	// clear entire output table
