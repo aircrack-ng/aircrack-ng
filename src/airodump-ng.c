@@ -752,7 +752,7 @@ char usage[] =
 	"      --wps                 : Display WPS information (if any)\n"
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
-	"                              pcap, ivs, csv, gps, kismet, netxml\n"
+	"                              pcap, ivs, csv, json, gps, kismet, netxml\n"
 	"      --ignore-negative-one : Removes the message that says\n"
 	"                              fixed channel <interface>: -1\n"
 	"      --write-interval\n"
@@ -991,12 +991,28 @@ int dump_initialize(char *prefix, int ivs_only)
 		snprintf(
 			ofn, ofn_len, "%s-%02d.%s", prefix, G.f_index, AIRODUMP_NG_CSV_EXT);
 
-		if ((G.f_txt = fopen(ofn, "wb+")) == NULL)
+    if ((G.f_txt = fopen(ofn, "wb+")) == NULL)
 		{
 			perror("fopen failed");
 			fprintf(stderr, "Could not create \"%s\".\n", ofn);
 			free(ofn);
 			return (1);
+		}
+	}
+
+    /* create the output JSON file */
+  if (G.output_format_json)
+	{
+		memset(ofn,0,ofn_len);
+		snprintf(
+			ofn,  ofn_len, "%s-%02d.%s", prefix, G.f_index, AIRODUMP_NG_JSON_EXT);
+
+		if( ( G.f_json= fopen( ofn, "wb+" ) ) == NULL )
+		{
+			perror( "fopen failed" );
+			fprintf( stderr, "Could not create \"%s\".\n", ofn );
+			free( ofn );
+			return(1);
 		}
 	}
 
@@ -1987,12 +2003,12 @@ skip_probe:
 				ap_cur->n_channel.short_gi_40 = (p[3] / 64) % 2;
 
 				// Parse MCS rate
-				/* 
+				/*
 				 * XXX: Sometimes TX and RX spatial stream # differ and none of the beacon
 				 * have that. If someone happens to have such AP, open an issue with it.
 				 * Ref: https://www.wireshark.org/lists/wireshark-bugs/201307/msg00098.html
 				 * See IEEE standard 802.11-2012 table 8.126
-				 * 
+				 *
 				 * For now, just figure out the highest MCS rate.
 				 */
 				if (ap_cur->n_channel.mcs_index == -1)
@@ -4338,6 +4354,253 @@ char *format_text_for_csv(const unsigned char *input, int len)
 	rret = realloc(ret, pos);
 
 	return (rret) ? rret : ret;
+}
+
+int dump_write_json( void )
+{
+				int i, n, probes_written;
+				struct tm *ltime;
+				struct AP_info *ap_cur;
+				struct ST_info *st_cur;
+				char * temp;
+
+				if (! G.record_data || !G.output_format_json)
+							return 0;
+
+				//append
+				fseek( G.f_json, 0, SEEK_END );
+
+				//append AP info
+				ap_cur = G.ap_1st;
+				while( ap_cur != NULL )
+				{
+								if (time( NULL ) - ap_cur->tlast > G.berlin )
+								{
+												ap_cur = ap_cur->next;
+												continue;
+								}
+
+								if( memcmp( ap_cur->bssid, BROADCAST, 6 ) == 0 )
+								{
+												ap_cur = ap_cur->next;
+												continue;
+								}
+
+								if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
+								{
+												ap_cur = ap_cur->next;
+												continue;
+								}
+
+								if(is_filtered_essid(ap_cur->essid))
+								{
+												ap_cur = ap_cur->next;
+												continue;
+								}
+
+					fprintf( G.f_json, "{\"BSSID\":\"%02X:%02X:%02X:%02X:%02X:%02X\", ",
+												ap_cur->bssid[0], ap_cur->bssid[1],
+												ap_cur->bssid[2], ap_cur->bssid[3],
+												ap_cur->bssid[4], ap_cur->bssid[5] );
+
+					ltime = localtime( &ap_cur->tinit );
+					fprintf( G.f_json, "\"FirstTimeSeen\":\"%04d-%02d-%02d %02d:%02d:%02d\", ",
+												1900 + ltime->tm_year, 1 + ltime->tm_mon,
+												ltime->tm_mday, ltime->tm_hour,
+												ltime->tm_min,  ltime->tm_sec );
+
+					ltime = localtime( &ap_cur->tlast );
+
+								fprintf( G.f_json, "\"LastTimeSeen\":\"%04d-%02d-%02d %02d:%02d:%02d\", ",
+												1900 + ltime->tm_year, 1 + ltime->tm_mon,
+												ltime->tm_mday, ltime->tm_hour,
+												ltime->tm_min,  ltime->tm_sec );
+
+					fprintf( G.f_json, "\"channel\":%2d, \"max_speed\":\"%3d\",",
+												ap_cur->channel,
+												ap_cur->max_speed );
+
+								fprintf( G.f_json, "\"Privacy\":");
+
+					if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) == 0) fprintf( G.f_json, "\"\"" );
+								else
+								{
+												fprintf( G.f_json, "\"" );
+												if( ap_cur->security & STD_WPA2 ) fprintf( G.f_json, "WPA2" );
+												if( ap_cur->security & STD_WPA  ) fprintf( G.f_json, "WPA" );
+												if( ap_cur->security & STD_WEP  ) fprintf( G.f_json, "WEP" );
+												if( ap_cur->security & STD_OPN  ) fprintf( G.f_json, "OPN" );
+												fprintf( G.f_json, "\"" );
+								}
+								fprintf( G.f_json, ",");
+
+					if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( G.f_json, "\"Cipher\":\"\" ");
+								else
+								{
+												fprintf( G.f_json, " \"Cipher\":\"" );
+												if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_json, "CCMP ");
+												if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_json, "WRAP ");
+												if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_json, "TKIP ");
+												if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_json, "WEP104 ");
+												if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_json, "WEP40 ");
+												if( ap_cur->security & ENC_WEP    ) fprintf( G.f_json, "WEP ");
+												fprintf( G.f_json, "\"");
+								}
+								fprintf( G.f_json, ",");
+
+
+								if( (ap_cur->security & (AUTH_OPN|AUTH_PSK|AUTH_MGT)) == 0 ) fprintf( G.f_json, " \"Authentication\":\"\"");
+								else
+								{
+												if( ap_cur->security & AUTH_MGT   ) fprintf( G.f_json, " \"Authentication\":\"MGT\"");
+												if( ap_cur->security & AUTH_PSK   )
+									{
+																if( ap_cur->security & STD_WEP )
+											fprintf( G.f_json, "\"Authentication\":\"SKA\"");
+							else
+														fprintf( G.f_json, "\"Authentication\":\"PSK\"");
+						}
+												if( ap_cur->security & AUTH_OPN   ) fprintf( G.f_json, " \"Authentication\":\"OPN\"");
+								}
+
+								fprintf( G.f_json, ", \"Power\":%3d, \"#beacons\":%8ld,\"#IV\":%8ld, ",
+												ap_cur->avg_power,
+												ap_cur->nb_bcn,
+												ap_cur->nb_data );
+
+								fprintf( G.f_json, "\"LANIP\":\"%3d.%3d.%3d.%3d\", ",
+												ap_cur->lanip[0], ap_cur->lanip[1],
+												ap_cur->lanip[2], ap_cur->lanip[3] );
+
+								fprintf( G.f_json, "\"ID-length\":%3d, ", ap_cur->ssid_length);
+
+					temp = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
+								fprintf( G.f_json, "\"ESSID\":\"%s\", ", temp );
+					free(temp);
+
+								if(ap_cur->key != NULL)
+								{
+												fprintf( G.f_json, "\"Key\":\"");
+												for(i=0; i<(int)strlen(ap_cur->key); i++)
+												{
+																fprintf( G.f_json, "%02X", ap_cur->key[i]);
+																if(i<(int)(strlen(ap_cur->key)-1))
+																				fprintf( G.f_json, ":");
+												}
+												fprintf(G.f_json, "\",");
+								}
+
+								if ( G.show_manufacturer)
+								{
+									fprintf(G.f_json,"\"Manufacturer\":\"%s\", ",ap_cur->manuf);
+					}
+
+								//terminate json AP data
+								fprintf(G.f_json,"\"wlan_type\":\"AP\",\"timestamp\":\"%d\"}",(int)time(NULL));
+					fprintf(G.f_json, "\r\n");
+								fflush( G.f_json);
+								ap_cur = ap_cur->next;
+				}
+
+				//append STA info
+				st_cur = G.st_1st;
+				while( st_cur != NULL )
+				{
+								ap_cur = st_cur->base;
+
+								if( ap_cur->nb_pkt < 2 )
+								{
+												st_cur = st_cur->next;
+												continue;
+								}
+
+								if (time( NULL ) - st_cur->tlast > G.berlin )
+								{
+												st_cur = st_cur->next;
+												continue;
+								}
+
+								fprintf( G.f_json, "{\"StationMAC\":\"%02X:%02X:%02X:%02X:%02X:%02X\", ",
+												st_cur->stmac[0], st_cur->stmac[1],
+												st_cur->stmac[2], st_cur->stmac[3],
+												st_cur->stmac[4], st_cur->stmac[5] );
+
+								ltime = localtime( &st_cur->tinit );
+
+								fprintf( G.f_json, "\"FirstTimeSeen\":\"%04d-%02d-%02d %02d:%02d:%02d\", ",
+												1900 + ltime->tm_year, 1 + ltime->tm_mon,
+												ltime->tm_mday, ltime->tm_hour,
+												ltime->tm_min,  ltime->tm_sec );
+
+								ltime = localtime( &st_cur->tlast );
+
+								fprintf( G.f_json, "\"LastTimeSeen\":\"%04d-%02d-%02d %02d:%02d:%02d\", ",
+												1900 + ltime->tm_year, 1 + ltime->tm_mon,
+												ltime->tm_mday, ltime->tm_hour,
+												ltime->tm_min,  ltime->tm_sec );
+
+								fprintf( G.f_json, "\"Power\":%3d, \"#packets\":%8ld, ",
+												st_cur->power,
+												st_cur->nb_pkt );
+
+								if( ! memcmp( ap_cur->bssid, BROADCAST, 6 ) )
+												fprintf( G.f_json, "\"BSSID\":\"(not associated)\" ," );
+								else
+												fprintf( G.f_json, "\"BSSID\":\"%02X:%02X:%02X:%02X:%02X:%02X\",",
+																ap_cur->bssid[0], ap_cur->bssid[1],
+																ap_cur->bssid[2], ap_cur->bssid[3],
+																ap_cur->bssid[4], ap_cur->bssid[5] );
+
+								//add ESSID
+								fprintf(G.f_json,"\"ESSID\":\"%s\", ",ap_cur->essid);
+
+
+					probes_written = 0;
+								fprintf( G.f_json, "\"ProbedESSIDs\":\"");
+								int pnum = 0;
+								for( i = 0, n = 0; i < NB_PRB; i++ )
+								{
+												if( st_cur->ssid_length[i] == 0 )
+																continue;
+
+									temp = format_text_for_csv(st_cur->probes[i], st_cur->ssid_length[i]);
+
+									if( probes_written == 0)
+									{
+										fprintf( G.f_json, "%s", temp);
+										probes_written = 1;
+									}
+									else
+									{
+										fprintf( G.f_json, ",%s", temp);
+									}
+												pnum=pnum+1;
+									free(temp);
+								}
+								fprintf(G.f_json, "\",");
+								//add number of probes
+								fprintf(G.f_json, "\"#probes\":%d,",pnum);
+
+
+
+								//add manufacturer for STA
+								if ( G.show_manufacturer)
+					{
+
+									fprintf(G.f_json,"\"Manufacturer\":\"%s\", ",st_cur->manuf);
+					}
+
+
+
+								//terminate json client data
+								fprintf(G.f_json,"\"wlan_type\":\"CL\",\"timestamp\":\"%d\"}",(int)time(NULL));
+								fprintf( G.f_json, "\r\n" );
+								fflush( G.f_json);
+								st_cur = st_cur->next;
+				}
+				fflush( G.f_json);
+
+				return 0;
 }
 
 int dump_write_csv(void)
@@ -7141,6 +7404,7 @@ int main(int argc, char *argv[])
 
 	G.output_format_pcap = 1;
 	G.output_format_csv = 1;
+	G.output_format_json = 1;
 	G.output_format_kismet_csv = 1;
 	G.output_format_kismet_netxml = 1;
 	G.file_write_interval = 5; // Write file every 5 seconds by default
@@ -7435,6 +7699,7 @@ int main(int argc, char *argv[])
 
 					G.output_format_pcap = 0;
 					G.output_format_csv = 0;
+					G.output_format_json = 0;
 					G.output_format_kismet_csv = 0;
 					G.output_format_kismet_netxml = 0;
 				}
@@ -7628,6 +7893,10 @@ int main(int argc, char *argv[])
 							|| strncasecmp(output_format_string, "txt", 3) == 0)
 						{
 							G.output_format_csv = 1;
+					  }
+					  else if (strncasecmp(output_format_string,"json",4) == 0)
+						{
+							G.output_format_json=1;
 						}
 						else if (strncasecmp(output_format_string, "pcap", 4)
 									 == 0
@@ -7708,6 +7977,7 @@ int main(int argc, char *argv[])
 						{
 							G.output_format_pcap = 1;
 							G.output_format_csv = 1;
+							G.output_format_json = 1;
 							G.output_format_kismet_csv = 1;
 							G.output_format_kismet_netxml = 1;
 						}
@@ -7716,6 +7986,7 @@ int main(int argc, char *argv[])
 						{
 							G.output_format_pcap = 0;
 							G.output_format_csv = 0;
+							G.output_format_json = 0;
 							G.output_format_kismet_csv = 0;
 							G.output_format_kismet_netxml = 0;
 
@@ -8102,6 +8373,7 @@ int main(int argc, char *argv[])
 
 			tt1 = time(NULL);
 			if (G.output_format_csv) dump_write_csv();
+			if (G.output_format_json) dump_write_json();
 			if (G.output_format_kismet_csv) dump_write_kismet_csv();
 			if (G.output_format_kismet_netxml) dump_write_kismet_netxml();
 		}
@@ -8421,10 +8693,12 @@ int main(int argc, char *argv[])
 	if (G.record_data)
 	{
 		if (G.output_format_csv) dump_write_csv();
+		if (G.output_format_json) dump_write_json();
 		if (G.output_format_kismet_csv) dump_write_kismet_csv();
 		if (G.output_format_kismet_netxml) dump_write_kismet_netxml();
 
 		if (G.output_format_csv || G.f_txt != NULL) fclose(G.f_txt);
+		if (G.output_format_json || G.f_json!= NULL ) fclose( G.f_json);
 		if (G.output_format_kismet_csv || G.f_kis != NULL) fclose(G.f_kis);
 		if (G.output_format_kismet_netxml || G.f_kis_xml != NULL)
 		{

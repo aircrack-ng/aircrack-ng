@@ -1,4 +1,4 @@
-/* 
+/*
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -41,7 +41,7 @@
 #define DEFAULT_CWIDTH 20 /* 20 MHz channels by default */
 
 #define NB_PWR 5 /* size of signal power ring buffer */
-#define NB_PRB 10 /* size of probed ESSID ring buffer */
+#define NB_PRB 1000 /* size of probed ESSID ring buffer */
 
 #define MAX_CARDS 8 /* maximum number of cards to capture from */
 
@@ -101,15 +101,17 @@ char *
 get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
 
 #define AIRODUMP_NG_CSV_EXT "csv"
+#define AIRODUMP_NG_JSON_EXT "json"
 #define KISMET_CSV_EXT "kismet.csv"
 #define KISMET_NETXML_EXT "kismet.netxml"
 #define AIRODUMP_NG_GPS_EXT "gps"
 #define AIRODUMP_NG_CAP_EXT "cap"
 
-#define NB_EXTENSIONS 6
+#define NB_EXTENSIONS 7
 
 const unsigned char llcnull[4] = {0, 0, 0, 0};
 char *f_ext[NB_EXTENSIONS] = {AIRODUMP_NG_CSV_EXT,
+								AIRODUMP_NG_JSON_EXT,
 							  AIRODUMP_NG_GPS_EXT,
 							  AIRODUMP_NG_CAP_EXT,
 							  IVS2_EXTENSION,
@@ -189,8 +191,8 @@ struct n_channel_info
 	char sec_channel; /* 802.11n secondary channel*/
 	unsigned char short_gi_20; /* Short GI for 20MHz       */
 	unsigned char short_gi_40; /* Short GI for 40MHz       */
-	unsigned char any_chan_width; /* Support for 20 or 40MHz  
-                                    as opposed to only 20 or 
+	unsigned char any_chan_width; /* Support for 20 or 40MHz
+                                    as opposed to only 20 or
                                     only 40MHz               */
 };
 
@@ -370,6 +372,7 @@ struct globals
 
 	int f_index; /* outfiles index       */
 	FILE *f_txt; /* output csv file      */
+	FILE *f_json;           /* output json file     */
 	FILE *f_kis; /* output kismet csv file      */
 	FILE *f_kis_xml; /* output kismet netxml file */
 	FILE *f_gps; /* output gps file      */
@@ -467,6 +470,7 @@ struct globals
 
 	int output_format_pcap;
 	int output_format_csv;
+	int output_format_json;
 	int output_format_kismet_csv;
 	int output_format_kismet_netxml;
 	pthread_t input_tid;
