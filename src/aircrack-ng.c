@@ -4354,6 +4354,7 @@ int crack_wpa_thread(void *arg)
 
 	ac_crypto_engine_thread_init(&engine, threadid);
 
+#ifdef XDEBUG
 	if (nparallel > 1)
 		fprintf(stderr,
 				"The Crypto Engine will crack %d in parallel.\n",
@@ -4361,6 +4362,7 @@ int crack_wpa_thread(void *arg)
 	else
 		fprintf(stderr,
 				"WARNING: The Crypto Engine is unable to crack in parallel.\n");
+#endif
 
 	/* pre-compute the key expansion buffer */
 	memcpy(pke, "Pairwise key expansion", 23);

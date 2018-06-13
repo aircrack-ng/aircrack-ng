@@ -41,6 +41,8 @@
 
 #include "crypto_engine.h"
 
+// #define XDEBUG
+
 EXPORT int ac_crypto_engine_simd_width()
 {
 #ifdef SIMD_COEF_32
@@ -53,7 +55,10 @@ EXPORT int ac_crypto_engine_simd_width()
 EXPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine)
 {
 	assert(engine != NULL && "Engine is NULL");
+#ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_init(%p)\n", engine);
+#endif
+
 	init_atoi();
 
 	engine->essid = mem_calloc_align(64, sizeof(char), MEM_ALIGN_SIMD);
@@ -65,7 +70,9 @@ EXPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine)
 EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine)
 {
 	assert(engine != NULL && "Engine is NULL");
+#ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_destroy(%p)\n", engine);
+#endif
 
 	MEM_FREE(engine->essid);
 }
@@ -74,7 +81,9 @@ EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
 									   const char *essid)
 {
 	assert(engine != NULL && "Engine is NULL");
+#ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_set_essid(%p, %s)\n", engine, essid);
+#endif
 	memccpy(engine->essid, essid, 0, sizeof(engine->essid));
 	engine->essid_length = strlen(essid);
 }
@@ -83,7 +92,9 @@ EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
 										int threadid)
 {
 	assert(engine != NULL && "Engine is NULL");
+#ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_thread_init(%p, %d)\n", engine, threadid);
+#endif
 
 	engine->xsse_hash1[threadid] =
 		mem_calloc_align(MAX_KEYS_PER_CRYPT, 84 << 3, MEM_ALIGN_SIMD);
@@ -108,8 +119,10 @@ EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
 											int threadid)
 {
 	assert(engine != NULL && "Engine is NULL");
+#ifdef XDEBUG
 	fprintf(
 		stderr, "ac_crypto_engine_thread_destroy(%p, %d)\n", engine, threadid);
+#endif
 
 	if (engine->xsse_hash1[threadid] != NULL)
 	{
