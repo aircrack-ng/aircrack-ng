@@ -155,7 +155,6 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 	int salt_length = strlen(engine->essid);
 	int slen = salt_length + 4;
 	int loops = (count + NBKEYS - 1) / NBKEYS;
-	char xsalt[32 + 4];
 
 	unsigned char *sse_hash1 = NULL;
 	unsigned char *sse_crypt1 = NULL;
@@ -166,10 +165,8 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 	sse_crypt1 = engine->xsse_crypt1[threadid];
 	sse_crypt2 = engine->xsse_crypt2[threadid];
 
-	sprintf(xsalt, "%s", engine->essid);
-
-	memset(essid, 0, 32 + 4);
-	memcpy(essid, xsalt, salt_length);
+	memset(essid, 0, sizeof(essid));
+	memccpy(essid, engine->essid, 0, sizeof(essid));
 
 	for (t = 0; t < loops; t++)
 	{
