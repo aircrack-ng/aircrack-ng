@@ -4352,6 +4352,11 @@ int crack_wpa_thread(void *arg)
 
 	ac_crypto_engine_thread_init(&engine, threadid);
 
+	if (nparallel > 1)
+		fprintf(stderr, "The Crypto Engine will crack %d in parallel.\n", nparallel);
+	else
+		fprintf(stderr, "WARNING: The Crypto Engine is unable to crack in parallel.\n");
+
 	/* pre-compute the key expansion buffer */
 	memcpy(pke, "Pairwise key expansion", 23);
 	if (memcmp(ap->wpa.stmac, ap->bssid, 6) < 0)
