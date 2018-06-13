@@ -168,8 +168,6 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 
 	sprintf(xsalt, "%s", engine->essid);
 
-	//	printf("t = %d, nbkeys = %d, loops = %d, essid = %s\n", count, NBKEYS, loops, xsalt);
-
 	memset(essid, 0, 32 + 4);
 	memcpy(essid, xsalt, salt_length);
 
@@ -215,8 +213,8 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 			for (i = 0; i < 16; i++) buffer[j].i[i] ^= 0x6a6a6a6a;
 			SHA1_Update(&ctx_opad[j], buffer[j].c, 64);
 
-// we memcopy from flat into MMX_COEF output buffer's (our 'temp' ctx buffer).
-// This data will NOT need to be BE swapped (it already IS BE swapped).
+			// we memcopy from flat into MMX_COEF output buffer's (our 'temp' ctx buffer).
+			// This data will NOT need to be BE swapped (it already IS BE swapped).
 #ifdef SIMD_CORE
 			i1[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
 			   + 0 * SIMD_COEF_32] = ctx_ipad[j].h0;
@@ -262,12 +260,9 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 			i2[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))
 			   + (MMX_COEF << 2)] = ctx_opad[j].h4;
 #endif
+
 			essid[slen - 1] = 1;
-
-			//			HMAC(EVP_sha1(), in[j].v, in[j].length, essid, slen, outbuf[j].c, NULL);
-			//			memcpy(&buffer[j], &outbuf[j].c, 20);
-
-			// This code does the HMAC(EVP_....) call.  NOTE, we already have essid
+			// This code does the HMAC(EVP_....) call.  We already have essid
 			// appended with BE((int)1) so we simply call a single SHA1_Update
 			memcpy(&sha1_ctx, &ctx_ipad[j], sizeof(sha1_ctx));
 			SHA1_Update(&sha1_ctx, essid, slen);
@@ -276,9 +271,9 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 			SHA1_Update(&sha1_ctx, outbuf[j].c, SHA_DIGEST_LENGTH);
 			SHA1_Final(outbuf[j].c, &sha1_ctx);
 
-// now convert this from flat into MMX_COEF buffers.   (same as the memcpy() commented out in the last line)
-// Also, perform the 'first' ^= into the crypt buffer.  NOTE, we are doing that in BE format
-// so we will need to 'undo' that in the end.
+			// now convert this from flat into MMX_COEF buffers.   (same as the memcpy() commented out in the last line)
+			// Also, perform the 'first' ^= into the crypt buffer.  We are doing that in BE format
+			// so we will need to 'undo' that in the end.
 #ifdef SIMD_CORE
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
@@ -338,14 +333,11 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 #endif
 			}
 		}
-		essid[slen - 1] = 2;
 
+		essid[slen - 1] = 2;
 		for (j = 0; j < NBKEYS; ++j)
 		{
-			//			HMAC(EVP_sha1(), in[j].v, in[j].length, essid, slen, &outbuf[j].c[20], NULL);
-			//			memcpy(&buffer[j], &outbuf[j].c[20], 20);
-
-			// This code does the HMAC(EVP_....) call.  NOTE, we already have essid
+			// This code does the HMAC(EVP_....) call. We already have essid
 			// appended with BE((int)1) so we simply call a single SHA1_Update
 			memcpy(&sha1_ctx, &ctx_ipad[j], sizeof(sha1_ctx));
 			SHA1_Update(&sha1_ctx, essid, slen);
@@ -354,9 +346,9 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 			SHA1_Update(&sha1_ctx, &outbuf[j].c[20], 20);
 			SHA1_Final(&outbuf[j].c[20], &sha1_ctx);
 
-// now convert this from flat into MMX_COEF buffers.  (same as the memcpy() commented out in the last line)
-// Also, perform the 'first' ^= into the crypt buffer.  NOTE, we are doing that in BE format
-// so we will need to 'undo' that in the end. (only 3 dwords of the 2nd block outbuf are worked with).
+			// now convert this from flat into MMX_COEF buffers.  (same as the memcpy() commented out in the last line)
+			// Also, perform the 'first' ^= into the crypt buffer.  We are doing that in BE format
+			// so we will need to 'undo' that in the end. (only 3 dwords of the 2nd block outbuf are worked with).
 #ifdef SIMD_CORE
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
@@ -418,8 +410,6 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 
 		for (j = 0; j < NBKEYS; ++j)
 		{
-			//printf("pmk[threadid][%u] = %p\n", j, (void*) (pmk[threadid] + (64*j)));
-
 			memcpy(engine->pmk[threadid] + (sizeof(wpapsk_hash) * j), outbuf[j].c, 32);
 			alter_endianity_to_BE((engine->pmk[threadid] + (sizeof(wpapsk_hash) * j)),
 								  8);
@@ -445,9 +435,6 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 				int nparallel,
 				int threadid)
 {
-#ifdef ODEBUG
-	int prloop = 0;
-#endif
 	int i = 0;
 	int count = 0;
 	wpapsk_password
@@ -466,9 +453,9 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 		int index;
 		for (index = 0; index < nparallel; ++index)
 		{
-// set the length of all hash1 SSE buffer to 64+20 * 8 bits. The 64 is for the ipad/opad,
-// the 20 is for the length of the SHA1 buffer that also gets into each crypt.
-// Works for SSE2i and SSE2
+			// set the length of all hash1 SSE buffer to 64+20 * 8 bits. The 64 is for the ipad/opad,
+			// the 20 is for the length of the SHA1 buffer that also gets into each crypt.
+			// Works for SSE2i and SSE2
 #ifdef SIMD_CORE
 			((unsigned int *)
 				 sse_hash1)[15 * SIMD_COEF_32 + (index & (SIMD_COEF_32 - 1))
@@ -499,7 +486,7 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 	}
 
 #ifdef XDEBUG
-//	printf("%d key (%s) (%s) (%s) (%s)\n",threadid, key1,key2,key3,key4);
+	//	printf("%d key (%s) (%s) (%s) (%s)\n",threadid, key1,key2,key3,key4);
 #endif
 
 	wpapsk_sse(engine, threadid, count, inbuffer);
