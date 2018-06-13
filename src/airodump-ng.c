@@ -4609,7 +4609,7 @@ int dump_write_csv(void)
 	struct tm *ltime;
 	struct AP_info *ap_cur;
 	struct ST_info *st_cur;
-	char *temp;
+	char * temp;
 
 	if (!G.record_data || !G.output_format_csv) return 0;
 
