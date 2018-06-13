@@ -201,9 +201,26 @@ int main(int argc, char *argv[])
 	// need passed in where DSO are.
 	fprintf(stdout, "Lib path: %s%s\n", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
 
+	// are we inside of the build path?
+	gchar *working_directory = g_get_current_dir(); // or the binary's path?
+
+	gchar *library_path = NULL;
+	if (g_str_has_prefix(working_directory, ABS_TOP_BUILDDIR)
+		|| g_str_has_prefix(working_directory, ABS_TOP_SRCDIR))
+	{
+		// use development paths
+		library_path = g_strdup_printf("%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+	}
+	else
+	{
+		// use installation paths
+		library_path = g_strdup_printf("%s", LIBDIR);
+	}
+
 	// enumerate all DSOs in folder, opening, searching symbols, and testing them.
-	GDir *dsos = g_dir_open(LIBAIRCRACK_CRYPTO_PATH LT_OBJDIR, 0, NULL);
+	GDir *dsos = g_dir_open(library_path, 0, NULL);
 	g_assert_true(dsos);
+	g_free(library_path);
 
 	gchar const *entry = NULL;
 	while ((entry = g_dir_read_name(dsos)) != NULL)
