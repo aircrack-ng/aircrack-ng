@@ -149,7 +149,7 @@ static void test_simd_can_crack(gconstpointer test_data)
 
 		memset(key, 0, sizeof(key));
 
-		strcpy(key[i], "12345678");
+		strcpy(key[1] + (128 * i), "12345678");
 #if 1
 		if ((rc = dso_ac_crypto_engine_wpa_crack(&engine,
 									   key,
@@ -165,7 +165,7 @@ static void test_simd_can_crack(gconstpointer test_data)
 			>= 0)
 		{
 			// does the returned SIMD lane equal where we placed the key?
-			g_assert_cmpint(rc, >=, 0);
+			g_assert_cmpint(rc, ==, i);
 		}
 #else
 		(void) eapol;
