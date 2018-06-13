@@ -23,8 +23,9 @@ static void test_calc_one_pmk(void)
 	g_assert_cmpmem(pmk, sizeof(pmk), expected, sizeof(expected));
 }
 
-static void test_simd_can_crack(void)
+static void test_simd_can_crack(gconstpointer test_data)
 {
+	int expected_nparallel = (int) ((intptr_t) test_data);
 	char key[128][MAX_THREADS];
 	uint8_t pke[100];
 	uint8_t ptk[8][80];
@@ -59,6 +60,7 @@ static void test_simd_can_crack(void)
 	ac_crypto_engine_t engine;
 	uint8_t bssid[6] = "\x00\x14\x6c\x7e\x40\x80";
 	uint8_t essid[33] = "Harkonen";
+	int nparallel = ac_crypto_engine_simd_width();
 
 	/* pre-compute the key expansion buffer */
 	memcpy(pke, "Pairwise key expansion", 23);
@@ -87,22 +89,29 @@ static void test_simd_can_crack(void)
 	ac_crypto_engine_set_essid(&engine, (char *) essid);
 	ac_crypto_engine_thread_init(&engine, 0);
 
-	strcpy(key[0], "12345678");
+	g_assert_cmpint(nparallel, ==, expected_nparallel);
 
-	if (ac_crypto_engine_wpa_crack(&engine,
-								   key,
-								   pke,
-								   eapol,
-								   eapol_size,
-								   ptk,
-								   mic,
-								   2,
-								   expected_mic,
-								   4,
-								   0)
-		< 0)
+	for (int i = 0; i < nparallel; ++i)
 	{
-		g_assert_true(0);
+		memset(key, 0, sizeof(key));
+
+		strcpy(key[i], "12345678");
+
+		if (ac_crypto_engine_wpa_crack(&engine,
+									   key,
+									   pke,
+									   eapol,
+									   eapol_size,
+									   ptk,
+									   mic,
+									   2,
+									   expected_mic,
+									   nparallel,
+									   0)
+			< 0)
+		{
+			g_assert_true(0);
+		}
 	}
 
 	ac_crypto_engine_thread_destroy(&engine, 0);
@@ -119,7 +128,7 @@ int main(int argc, char *argv[])
 	// Define the tests.
 	g_test_add_func("/sanity/test1", test_my_sanity);
 	g_test_add_func("/scalar/calculates_one_pmk", test_calc_one_pmk);
-	g_test_add_func("/simd/can_crack", test_simd_can_crack);
+	g_test_add_data_func("/simd/can_crack/4", (gconstpointer) 4, test_simd_can_crack);
 
 	return g_test_run();
 }
