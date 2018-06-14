@@ -56,11 +56,14 @@ LIBAIRCRACK_CRYPTO_LIBS = -L../../src/aircrack-crypto -laircrack-crypto
 LIBAIRCRACK_UTIL	= ../../src/aircrack-util/libaircrack-util.la
 LIBAIRCRACK_UTIL_LIBS = -L../../src/aircrack-util -laircrack-util
 
+test_calc_one_pmk_SOURCES = test-calc-one-pmk.c $(LIBAIRCRACK_CRYPTO)
+test_calc_one_pmk_LDADD = $(GLIB_LIBS) $(LIBAIRCRACK_CRYPTO_LIBS)
+
 test_wpapsk_SOURCES = test-wpapsk.c
 test_wpapsk_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" "-DLIBDIR=\"$(libdir)\""
 test_wpapsk_LDADD = $(GLIB_LIBS)
 
-test_programs = test-wpapsk
+test_programs = test-wpapsk test-calc-one-pmk
 
 
 @CODE_COVERAGE_RULES@
