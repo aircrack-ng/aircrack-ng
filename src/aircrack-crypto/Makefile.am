@@ -79,7 +79,7 @@ libaircrack_crypto_arm_neon_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 ## PowerPC
 ##
 libaircrack_crypto_ppc_altivec_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
-libaircrack_crypto_ppc_altivec_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
+libaircrack_crypto_ppc_altivec_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_ppc_altivec_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_ppc_altivec_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
