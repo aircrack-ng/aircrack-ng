@@ -43,7 +43,11 @@ AM_CPPFLAGS = -I$(top_srcdir) \
               $(CRYPTO_INCLUDES) \
               $(GLIB_CFLAGS)
 
-LIBAIRCRACK_CRYPTO_SRCS = memory.c sha1-git.c sha1-sse2.S simd-intrinsics.c wpapsk.c crypto_engine.c
+COMMON_ARCH_FILES =
+if X86
+COMMON_ARCH_FILES += sha1-sse2.S
+endif
+LIBAIRCRACK_CRYPTO_SRCS = memory.c sha1-git.c $(COMMON_ARCH_FILES) simd-intrinsics.c wpapsk.c crypto_engine.c
 
 #
 # Intel/AMD
