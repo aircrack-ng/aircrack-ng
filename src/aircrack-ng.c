@@ -99,6 +99,9 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 #endif
 
+#define DYNAMIC 1
+
+#if DYNAMIC
 /* Shared library imported symbols */
 int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine);
 void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine);
@@ -114,6 +117,7 @@ void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine, uint8_t bssid[
 /* Shared library global data */
 GModule *module = NULL;
 gchar *module_filename = NULL;
+#endif
 
 /* stats global data */
 
@@ -431,7 +435,11 @@ void clean_exit(int ret)
 		}
 	}
 
+#if DYNAMIC
 	dso_ac_crypto_engine_destroy(&engine);
+#else
+	ac_crypto_engine_destroy(&engine);
+#endif
 
 	if (opt.totaldicts)
 	{
@@ -4357,7 +4365,7 @@ int crack_wpa_thread(void *arg)
 	FILE *keyFile;
 
 	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20];
-	wpapsk_password keys[MAX_KEYS_PER_CRYPT_SUPPORTED];
+	wpapsk_password keys[MAX_KEYS_PER_CRYPT_SUPPORTED] __attribute__((aligned(64)));
 	char essid[128];
 
 	struct WPA_data *data;
@@ -4366,14 +4374,22 @@ int crack_wpa_thread(void *arg)
 	int ret = 0;
 	int i, j, len;
 
+#if DYNAMIC
 	int nparallel = dso_ac_crypto_engine_simd_width();
+#else
+	int nparallel = ac_crypto_engine_simd_width();
+#endif
 
 	data = (struct WPA_data *) arg;
 	ap = data->ap;
 	threadid = data->threadid;
 	strncpy(essid, ap->essid, ESSID_LENGTH);
 
+#if DYNAMIC
 	dso_ac_crypto_engine_thread_init(&engine, threadid);
+#else
+	ac_crypto_engine_thread_init(&engine, threadid);
+#endif
 
 #ifdef XDEBUG
 	if (nparallel > 1)
@@ -4385,7 +4401,11 @@ int crack_wpa_thread(void *arg)
 				"WARNING: The Crypto Engine is unable to crack in parallel.\n");
 #endif
 
+#if DYNAMIC
 	dso_ac_crypto_engine_calc_pke(&engine, ap->bssid, ap->wpa.stmac, ap->wpa.anonce, ap->wpa.snonce, threadid);
+#else
+	ac_crypto_engine_calc_pke(&engine, ap->bssid, ap->wpa.stmac, ap->wpa.anonce, ap->wpa.snonce, threadid);
+#endif
 
 #ifdef XDEBUG
 	printf("Thread # %d starting...\n", threadid);
@@ -4395,7 +4415,11 @@ int crack_wpa_thread(void *arg)
 	{
 		if (close_aircrack)
 		{
+#if DYNAMIC
 			dso_ac_crypto_engine_thread_destroy(&engine, threadid);
+#else
+			ac_crypto_engine_thread_destroy(&engine, threadid);
+#endif
 			pthread_exit(&ret);
 		}
 
@@ -4413,7 +4437,11 @@ int crack_wpa_thread(void *arg)
 				{
 					if (j == 0)
 					{
+#if DYNAMIC
 						dso_ac_crypto_engine_thread_destroy(&engine, threadid);
+#else
+						ac_crypto_engine_thread_destroy(&engine, threadid);
+#endif
 						return 0;
 					}
 					else // ...we have some key pending in this loop: keep working
@@ -4430,6 +4458,7 @@ int crack_wpa_thread(void *arg)
 #endif
 		}
 
+#if DYNAMIC
 		if ((j = dso_ac_crypto_engine_wpa_crack(&engine,
 											keys,
 											ap->wpa.eapol,
@@ -4439,6 +4468,17 @@ int crack_wpa_thread(void *arg)
 											ap->wpa.keymic,
 											nparallel,
 											threadid))
+#else
+		if ((j = ac_crypto_engine_wpa_crack(&engine,
+		                                        keys,
+		                                        ap->wpa.eapol,
+		                                        ap->wpa.eapol_size,
+		                                        mic,
+		                                        ap->wpa.keyver,
+		                                        ap->wpa.keymic,
+		                                        nparallel,
+		                                        threadid))
+#endif
 			>= 0)
 		{
 #ifdef XDEBUG
@@ -4551,7 +4591,11 @@ int crack_wpa_thread(void *arg)
 	}
 
 crack_wpa_cleanup:
+#if DYNAMIC
 	dso_ac_crypto_engine_thread_destroy(&engine, threadid);
+#else
+	ac_crypto_engine_thread_destroy(&engine, threadid);
+#endif
 
 	return ret;
 }
@@ -5622,6 +5666,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 	return SUCCESS;
 }
 
+#if DYNAMIC
 void load_aircrack_crypto_dso(void)
 {
 	char buffer[8192];
@@ -5722,6 +5767,7 @@ void load_aircrack_crypto_dso(void)
 
 	simd_destroy();
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -5767,8 +5813,10 @@ int main(int argc, char *argv[])
 
 	srand(time(NULL));
 
+#if DYNAMIC
 	// Load the best available shared library.
 	load_aircrack_crypto_dso();
+#endif
 
 	// Get number of CPU (return -1 if failed).
 	cpu_count = get_nb_cpus();
@@ -6956,7 +7004,11 @@ __start:
 	if (ap_cur->crypt == 3)
 	{
 	crack_wpa:
+#if DYNAMIC
 		dso_ac_crypto_engine_init(&engine);
+#else
+		ac_crypto_engine_init(&engine);
+#endif
 
 		if (opt.dict == NULL && db == NULL)
 		{
@@ -6990,7 +7042,11 @@ __start:
 			strncpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid) - 1);
 		}
 
+#if DYNAMIC
 		dso_ac_crypto_engine_set_essid(&engine, (uint8_t*) ap_cur->essid);
+#else
+		ac_crypto_engine_set_essid(&engine, (uint8_t*) ap_cur->essid);
+#endif
 
 		if (db == NULL)
 		{
@@ -7165,8 +7221,10 @@ exit_main:
 
 	fflush(stdout);
 
+#if DYNAMIC
 	g_module_close(module);
 	g_free(module_filename);
+#endif
 
 	// 	if( ret == SUCCESS ) kill( 0, SIGQUIT );
 	// 	if( ret == FAILURE ) kill( 0, SIGTERM );
