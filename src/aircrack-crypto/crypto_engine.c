@@ -61,7 +61,7 @@ EXPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine)
 
 	init_atoi();
 
-	engine->essid = mem_calloc_align(64, sizeof(char), MEM_ALIGN_SIMD);
+	engine->essid = mem_calloc_align(ESSID_LENGTH, sizeof(char), MEM_ALIGN_SIMD);
 
 	return 0;
 }
@@ -84,7 +84,7 @@ EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
 #ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_set_essid(%p, %s)\n", engine, essid);
 #endif
-	memccpy(engine->essid, essid, 0, sizeof(engine->essid));
+	memccpy(engine->essid, essid, 0, ESSID_LENGTH);
 	engine->essid_length = strlen(essid);
 }
 
