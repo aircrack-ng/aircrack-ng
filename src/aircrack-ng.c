@@ -4339,7 +4339,6 @@ int crack_wpa_thread(void *arg)
 	FILE *keyFile;
 	char essid[36];
 
-	unsigned char pke[100];
 	unsigned char ptk[8][80];
 	unsigned char mic[8][20];
 
@@ -4370,28 +4369,7 @@ int crack_wpa_thread(void *arg)
 				"WARNING: The Crypto Engine is unable to crack in parallel.\n");
 #endif
 
-	/* pre-compute the key expansion buffer */
-	memcpy(pke, "Pairwise key expansion", 23);
-	if (memcmp(ap->wpa.stmac, ap->bssid, 6) < 0)
-	{
-		memcpy(pke + 23, ap->wpa.stmac, 6);
-		memcpy(pke + 29, ap->bssid, 6);
-	}
-	else
-	{
-		memcpy(pke + 23, ap->bssid, 6);
-		memcpy(pke + 29, ap->wpa.stmac, 6);
-	}
-	if (memcmp(ap->wpa.snonce, ap->wpa.anonce, 32) < 0)
-	{
-		memcpy(pke + 35, ap->wpa.snonce, 32);
-		memcpy(pke + 67, ap->wpa.anonce, 32);
-	}
-	else
-	{
-		memcpy(pke + 35, ap->wpa.anonce, 32);
-		memcpy(pke + 67, ap->wpa.snonce, 32);
-	}
+	ac_crypto_engine_calc_pke(&engine, ap->bssid, ap->wpa.stmac, ap->wpa.anonce, ap->wpa.snonce, threadid);
 
 #ifdef XDEBUG
 	printf("Thread # %d starting...\n", threadid);
@@ -4438,7 +4416,6 @@ int crack_wpa_thread(void *arg)
 
 		if ((j = ac_crypto_engine_wpa_crack(&engine,
 											keys,
-											pke,
 											ap->wpa.eapol,
 											ap->wpa.eapol_size,
 											ptk,

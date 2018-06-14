@@ -46,7 +46,9 @@ static void test_simd_can_crack(gconstpointer test_data)
 	void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine, int threadid);
 	int (*dso_ac_crypto_engine_simd_width)();
 
-	int (*dso_ac_crypto_engine_wpa_crack)(ac_crypto_engine_t *engine, wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED], unsigned char (pke)[100], uint8_t eapol[256], uint32_t eapol_size, unsigned char (ptk)[8][80], uint8_t mic[8][20], uint8_t keyver, const uint8_t cmpmic[20], int nparallel, int threadid);
+	int (*dso_ac_crypto_engine_wpa_crack)(ac_crypto_engine_t *engine, wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED], uint8_t eapol[256], uint32_t eapol_size, unsigned char (ptk)[8][80], uint8_t mic[8][20], uint8_t keyver, const uint8_t cmpmic[20], int nparallel, int threadid);
+
+	void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine, uint8_t bssid[6], uint8_t stmac[6], uint8_t anonce[32], uint8_t snonce[32], int threadid);
 
 	// resolve symbols needed
 	struct _dso_symbols
@@ -61,6 +63,7 @@ static void test_simd_can_crack(gconstpointer test_data)
 		{ "ac_crypto_engine_set_essid", (gpointer *)&dso_ac_crypto_engine_set_essid },
 		{ "ac_crypto_engine_simd_width", (gpointer *)&dso_ac_crypto_engine_simd_width },
 		{ "ac_crypto_engine_wpa_crack", (gpointer *)&dso_ac_crypto_engine_wpa_crack },
+		{ "ac_crypto_engine_calc_pke", (gpointer *)&dso_ac_crypto_engine_calc_pke },
 
 		{ NULL, NULL }
 	};
@@ -83,7 +86,6 @@ static void test_simd_can_crack(gconstpointer test_data)
 
 
 	wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED];
-	uint8_t pke[100];
 	uint8_t ptk[8][80];
 	uint8_t mic[8][20];
 	uint8_t expected_mic[20] =
@@ -118,33 +120,11 @@ static void test_simd_can_crack(gconstpointer test_data)
 	uint8_t essid[33] = "Harkonen";
 	int nparallel = dso_ac_crypto_engine_simd_width();
 
-	/* pre-compute the key expansion buffer */
-	memcpy(pke, "Pairwise key expansion", 23);
-	if (memcmp(stmac, bssid, 6) < 0)
-	{
-		memcpy(pke + 23, stmac, 6);
-		memcpy(pke + 29, bssid, 6);
-	}
-	else
-	{
-		memcpy(pke + 23, bssid, 6);
-		memcpy(pke + 29, stmac, 6);
-	}
-	if (memcmp(snonce, anonce, 32) < 0)
-	{
-		memcpy(pke + 35, snonce, 32);
-		memcpy(pke + 67, anonce, 32);
-	}
-	else
-	{
-		memcpy(pke + 35, anonce, 32);
-		memcpy(pke + 67, snonce, 32);
-	}
-
 	memset(&engine, 0, sizeof(engine));
 	dso_ac_crypto_engine_init(&engine);
 	dso_ac_crypto_engine_set_essid(&engine, (char *) &essid[0]);
 	dso_ac_crypto_engine_thread_init(&engine, 1);
+	dso_ac_crypto_engine_calc_pke(&engine, bssid, stmac, anonce, snonce, 1);
 
 	for (int i = 0; i < nparallel; ++i)
 	{
@@ -157,7 +137,6 @@ static void test_simd_can_crack(gconstpointer test_data)
 #if 1
 		if ((rc = dso_ac_crypto_engine_wpa_crack(&engine,
 									   key,
-									   pke,
 									   eapol,
 									   eapol_size,
 									   ptk,
