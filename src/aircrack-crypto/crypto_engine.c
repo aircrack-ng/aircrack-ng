@@ -62,7 +62,6 @@ EXPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine)
 	init_atoi();
 
 	engine->essid = mem_calloc_align(64, sizeof(char), MEM_ALIGN_SIMD);
-	memset(engine->pmk, 0, sizeof(engine->pmk));
 
 	return 0;
 }
@@ -75,6 +74,7 @@ EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine)
 #endif
 
 	MEM_FREE(engine->essid);
+	engine->essid = NULL;
 }
 
 EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
@@ -157,7 +157,7 @@ EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
 
 /* derive the PMK from the passphrase and the essid */
 EXPORT void
-ac_crypto_engine_calc_one_pmk(char *key, char *essid_pre, uint32_t essid_pre_len, unsigned char pmk[40])
+ac_crypto_engine_calc_one_pmk(char *key, const char *essid_pre, uint32_t essid_pre_len, unsigned char pmk[40])
 {
 	int i, j, slen;
 	unsigned char buffer[65];
@@ -240,7 +240,7 @@ ac_crypto_engine_calc_one_pmk(char *key, char *essid_pre, uint32_t essid_pre_len
 }
 
 EXPORT void ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
-									  char (*key)[MAX_THREADS],
+                                      wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 									  int nparallel,
 									  int threadid)
 {
@@ -256,11 +256,11 @@ EXPORT void ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 		for (int j = 0; j < nparallel; ++j)
 		{
 #ifdef XDEBUG
-			printf("Trying: %s\n", key[threadid] + (128 * j));
+			printf("%lu: Trying: %s\n", pthread_self(), (char*) key[j].v);
 #endif
 			ac_crypto_engine_calc_one_pmk(
-				key[threadid] + (128 * j),
-				engine->essid,
+				(char*) key[j].v,
+				(char*) engine->essid,
 				engine->essid_length,
 				(unsigned char *) (engine->pmk[threadid]
 				                   + (sizeof(wpapsk_hash) * j)));
@@ -293,7 +293,8 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 									  unsigned char(ptk)[8][80],
 									  uint8_t mic[8][20],
 									  uint8_t keyver,
-									  int vectorIdx)
+									  int vectorIdx,
+									  int threadid)
 {
 
 	if (keyver == 1)
@@ -315,7 +316,7 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 }
 
 EXPORT int ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
-									  char (*key)[MAX_THREADS],
+                                      wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 									  unsigned char(pke)[100],
 									  uint8_t eapol[256],
 									  uint32_t eapol_size,
@@ -335,7 +336,7 @@ EXPORT int ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
 		ac_crypto_engine_calc_ptk(engine, pke, ptk, j, threadid);
 
 		ac_crypto_engine_calc_mic(
-			engine, eapol, eapol_size, ptk, mic, keyver, j);
+			engine, eapol, eapol_size, ptk, mic, keyver, j, threadid);
 
 		/* did we successfully crack it? */
 		if (memcmp(mic[j], cmpmic, 16) == 0)

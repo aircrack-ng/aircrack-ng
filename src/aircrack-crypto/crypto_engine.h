@@ -65,6 +65,7 @@ extern "C" {
 #else
 #define MAX_KEYS_PER_CRYPT 4
 #endif
+#define MAX_KEYS_PER_CRYPT_SUPPORTED 8
 
 typedef struct
 {
@@ -84,7 +85,7 @@ typedef struct
 
 struct ac_crypto_engine
 {
-	char *essid;
+	char **essid;
 	uint32_t essid_length;
 
 	//	struct ac_crypto_engine_thread_priv priv[MAX_THREADS];
@@ -123,7 +124,7 @@ IMPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
 IMPORT int ac_crypto_engine_simd_width();
 
 IMPORT void ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
-									  char (*key)[MAX_THREADS],
+                                      wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 									  int nparallel,
 									  int threadid);
 
@@ -132,16 +133,18 @@ IMPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
 									  unsigned char(ptk)[8][80],
 									  int vectorIdx,
 									  int threadid);
+
 IMPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 									  uint8_t eapol[256],
 									  uint32_t eapol_size,
 									  unsigned char(ptk)[8][80],
 									  uint8_t mic[8][20],
 									  uint8_t keyver,
-									  int vectorIdx);
+									  int vectorIdx,
+									  int threadid);
 
 IMPORT int ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
-									  char (*key)[MAX_THREADS],
+                                      wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 									  unsigned char(pke)[100],
 									  uint8_t eapol[256],
 									  uint32_t eapol_size,
@@ -156,7 +159,7 @@ IMPORT int ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
 
 /// Calculate one pairwise master key, from the \a essid and \a key.
 IMPORT void
-ac_crypto_engine_calc_one_pmk(char *key, char *essid, uint32_t essid_length, unsigned char pmk[40]);
+ac_crypto_engine_calc_one_pmk(char *key, const char *essid, uint32_t essid_length, unsigned char pmk[40]);
 
 #ifdef __cplusplus
 }

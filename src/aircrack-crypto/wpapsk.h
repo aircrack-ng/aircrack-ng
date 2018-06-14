@@ -71,7 +71,7 @@ extern "C" {
 
 void init_atoi();
 int init_wpapsk(ac_crypto_engine_t *engine,
-				char (*key)[MAX_THREADS],
+                wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 				int nparallel,
 				int threadid);
 

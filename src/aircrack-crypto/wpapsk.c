@@ -167,7 +167,7 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 	sse_crypt2 = engine->xsse_crypt2[threadid];
 
 	memset(essid, 0, sizeof(essid));
-	memccpy(essid, engine->essid, 0, sizeof(essid));
+	strncpy((char*)essid, (const char*) engine->essid, (size_t) engine->essid_length);
 
 	for (t = 0; t < loops; t++)
 	{
@@ -431,7 +431,7 @@ void init_atoi()
 //#define XDEBUG 1
 //#define ODEBUG 1
 int init_wpapsk(ac_crypto_engine_t *engine,
-				char (*key)[MAX_THREADS],
+				wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 				int nparallel,
 				int threadid)
 {
@@ -475,12 +475,15 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 
 	for (i = 0; i < nparallel; ++i)
 	{
-		char * tkey = key[threadid] + (128 * i);
+		char * tkey = (char*) key[i].v;
+
+		printf("key%d (inbuffer) = (%p) %s\n", i + 1, tkey, inbuffer[i].v);
+
 		if (*tkey != 0)
 		{
 			set_key(tkey, i, inbuffer);
 #ifdef XDEBUG
-			printf("key%d (inbuffer) = %s\n", i + 1, inbuffer[i].v);
+			printf("key%d (inbuffer) = (%p) %s  VALID\n", i + 1, tkey, inbuffer[i].v);
 #endif
 			count = i + 1;
 		}
