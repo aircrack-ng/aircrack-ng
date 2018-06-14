@@ -194,6 +194,7 @@ int main(int argc, char *argv[])
 		// use installation paths
 		library_path = g_strdup_printf("%s", LIBDIR);
 	}
+	g_free(working_directory);
 
 	// enumerate all DSOs in folder, opening, searching symbols, and testing them.
 	GDir *dsos = g_dir_open(library_path, 0, NULL);
