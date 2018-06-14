@@ -6869,7 +6869,7 @@ __start:
 			strncpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid) - 1);
 		}
 
-		ac_crypto_engine_set_essid(&engine, ap_cur->essid);
+		ac_crypto_engine_set_essid(&engine, (uint8_t*) ap_cur->essid);
 
 		if (db == NULL)
 		{

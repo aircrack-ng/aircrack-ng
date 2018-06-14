@@ -79,14 +79,14 @@ EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine)
 }
 
 EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
-									   const char *essid)
+									   const uint8_t *essid)
 {
 	assert(engine != NULL && "Engine is NULL");
 #ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_set_essid(%p, %s)\n", engine, essid);
 #endif
 	memccpy(engine->essid, essid, 0, ESSID_LENGTH);
-	engine->essid_length = strlen(essid);
+	engine->essid_length = strlen((char*) essid);
 }
 
 EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
@@ -166,10 +166,10 @@ EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
 }
 
 EXPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
-									  uint8_t bssid[6],
-									  uint8_t stmac[6],
-									  uint8_t anonce[32],
-									  uint8_t snonce[32],
+									  const uint8_t bssid[6],
+									  const uint8_t stmac[6],
+									  const uint8_t anonce[32],
+									  const uint8_t snonce[32],
 									  int threadid)
 {
 	uint8_t *pke = engine->pke[threadid];
@@ -201,10 +201,10 @@ EXPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
 }
 
 /* derive the PMK from the passphrase and the essid */
-EXPORT void ac_crypto_engine_calc_one_pmk(char *key,
-										  const char *essid_pre,
+EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t *key,
+										  const uint8_t *essid_pre,
 										  uint32_t essid_pre_len,
-										  unsigned char pmk[40])
+										  uint8_t pmk[40])
 {
 	int i, j, slen;
 	unsigned char buffer[65];
@@ -225,7 +225,7 @@ EXPORT void ac_crypto_engine_calc_one_pmk(char *key,
 	/* setup the inner and outer contexts */
 
 	memset(buffer, 0, sizeof(buffer));
-	strncpy((char *) buffer, key, sizeof(buffer) - 1);
+	strncpy((char *) buffer, (char*) key, sizeof(buffer) - 1);
 
 	for (i = 0; i < 64; i++) buffer[i] ^= 0x36;
 
@@ -241,8 +241,8 @@ EXPORT void ac_crypto_engine_calc_one_pmk(char *key,
 
 	essid[slen - 1] = '\1';
 	HMAC(EVP_sha1(),
-		 (unsigned char *) key,
-		 (int) strlen(key),
+		 key,
+		 (int) strlen((char*) key),
 		 (unsigned char *) essid,
 		 (size_t) slen,
 		 pmk,
@@ -265,7 +265,7 @@ EXPORT void ac_crypto_engine_calc_one_pmk(char *key,
 	essid[slen - 1] = '\2';
 	HMAC(EVP_sha1(),
 		 (unsigned char *) key,
-		 (int) strlen(key),
+		 (int) strlen((char*) key),
 		 (unsigned char *) essid,
 		 (size_t) slen,
 		 pmk + 20,
@@ -288,9 +288,9 @@ EXPORT void ac_crypto_engine_calc_one_pmk(char *key,
 
 EXPORT void
 ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
-						  wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
-						  int nparallel,
-						  int threadid)
+						  const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+						  const int nparallel,
+						  const int threadid)
 {
 // PMK calculation
 #ifdef SIMD_CORE
@@ -306,8 +306,8 @@ ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 			printf("%lu: Trying: %s\n", pthread_self(), (char *) key[j].v);
 #endif
 			ac_crypto_engine_calc_one_pmk(
-				(char *) key[j].v,
-				(char *) engine->essid,
+				key[j].v,
+				(uint8_t*) engine->essid,
 				engine->essid_length,
 				(unsigned char *) (engine->pmk[threadid]
 								   + (sizeof(wpapsk_hash) * j)));
@@ -335,12 +335,12 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
 }
 
 EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
-									  uint8_t eapol[256],
-									  uint32_t eapol_size,
+									  const uint8_t eapol[256],
+									  const uint32_t eapol_size,
 									  uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
-									  uint8_t keyver,
-									  int vectorIdx,
-									  int threadid)
+									  const uint8_t keyver,
+									  const int vectorIdx,
+									  const int threadid)
 {
 	uint8_t *ptk = engine->ptk[threadid];
 
@@ -364,14 +364,14 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 
 EXPORT int
 ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
-						   wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
-						   uint8_t eapol[256],
-						   uint32_t eapol_size,
+						   const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+						   const uint8_t eapol[256],
+						   const uint32_t eapol_size,
 						   uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
-						   uint8_t keyver,
+						   const uint8_t keyver,
 						   const uint8_t cmpmic[20],
-						   int nparallel,
-						   int threadid)
+						   const int nparallel,
+						   const int threadid)
 {
 	ac_crypto_engine_calc_pmk(engine, key, nparallel, threadid);
 

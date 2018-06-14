@@ -41,7 +41,7 @@ static void test_simd_can_crack(gconstpointer test_data)
 
 	int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine);
 	void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine);
-	void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine, const char *essid);
+	void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine, const uint8_t *essid);
 	int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t *engine, int threadid);
 	void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine, int threadid);
 	int (*dso_ac_crypto_engine_simd_width)();
@@ -121,7 +121,7 @@ static void test_simd_can_crack(gconstpointer test_data)
 
 	memset(&engine, 0, sizeof(engine));
 	dso_ac_crypto_engine_init(&engine);
-	dso_ac_crypto_engine_set_essid(&engine, (char *) &essid[0]);
+	dso_ac_crypto_engine_set_essid(&engine, &essid[0]);
 	dso_ac_crypto_engine_thread_init(&engine, 1);
 	dso_ac_crypto_engine_calc_pke(&engine, bssid, stmac, anonce, snonce, 1);
 

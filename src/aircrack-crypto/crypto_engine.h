@@ -78,25 +78,17 @@ typedef struct
 	uint32_t v[8];
 } wpapsk_hash;
 
-//struct ac_crypto_engine_thread_priv
-//{
-//  unsigned char *pmk[MAX_THREADS];
-//};
-
 struct ac_crypto_engine
 {
-	char **essid;
+	uint8_t **essid;
 	uint32_t essid_length;
 
-	//	struct ac_crypto_engine_thread_priv priv[MAX_THREADS];
-
-	unsigned char *pmk[MAX_THREADS];
-
+	uint8_t *pmk[MAX_THREADS];
 	uint8_t *ptk[MAX_THREADS];
 	uint8_t *pke[MAX_THREADS];
-	unsigned char *xsse_hash1[MAX_THREADS];
-	unsigned char *xsse_crypt1[MAX_THREADS];
-	unsigned char *xsse_crypt2[MAX_THREADS];
+	uint8_t *xsse_hash1[MAX_THREADS];
+	uint8_t *xsse_crypt1[MAX_THREADS];
+	uint8_t *xsse_crypt2[MAX_THREADS];
 };
 
 typedef struct ac_crypto_engine ac_crypto_engine_t;
@@ -106,7 +98,7 @@ IMPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine);
 IMPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine);
 
 IMPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
-									   const char *essid);
+									   const uint8_t *essid);
 
 static inline unsigned char *
 ac_crypto_engine_get_pmk(ac_crypto_engine_t *engine, int threadid)
@@ -115,10 +107,10 @@ ac_crypto_engine_get_pmk(ac_crypto_engine_t *engine, int threadid)
 }
 
 IMPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
-									  uint8_t bssid[6],
-									  uint8_t stmac[6],
-									  uint8_t anonce[32],
-									  uint8_t snonce[32],
+									  const uint8_t bssid[6],
+									  const uint8_t stmac[6],
+									  const uint8_t anonce[32],
+									  const uint8_t snonce[32],
 									  int threadid);
 
 /// per-thread-in-use init. separate to allow (possible) NUMA-local allocation.
@@ -132,7 +124,7 @@ IMPORT int ac_crypto_engine_simd_width();
 
 IMPORT void
 ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
-						  wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+						  const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 						  int nparallel,
 						  int threadid);
 
@@ -141,7 +133,7 @@ IMPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
 									  int threadid);
 
 IMPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
-									  uint8_t eapol[256],
+                                      const uint8_t eapol[256],
 									  uint32_t eapol_size,
 									  uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
 									  uint8_t keyver,
@@ -150,8 +142,8 @@ IMPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 
 IMPORT int
 ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
-						   wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
-						   uint8_t eapol[256],
+						   const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+						   const uint8_t eapol[256],
 						   uint32_t eapol_size,
 						   uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
 						   uint8_t keyver,
@@ -162,10 +154,10 @@ ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
 // Quick Utilities.
 
 /// Calculate one pairwise master key, from the \a essid and \a key.
-IMPORT void ac_crypto_engine_calc_one_pmk(char *key,
-										  const char *essid,
+IMPORT void ac_crypto_engine_calc_one_pmk(const uint8_t *key,
+										  const uint8_t *essid,
 										  uint32_t essid_length,
-										  unsigned char pmk[40]);
+										  uint8_t pmk[40]);
 
 #ifdef __cplusplus
 }

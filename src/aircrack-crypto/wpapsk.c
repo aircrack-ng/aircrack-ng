@@ -140,7 +140,7 @@ char atoi64[0x100];
 static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 									int threadid,
 									int count,
-									wpapsk_password *in)
+									const wpapsk_password *in)
 {
 	int t; // thread count
 	int salt_length = engine->essid_length;
@@ -421,7 +421,7 @@ void init_atoi()
 //#define XDEBUG 1
 //#define ODEBUG 1
 int init_wpapsk(ac_crypto_engine_t *engine,
-				wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+				const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 				int nparallel,
 				int threadid)
 {

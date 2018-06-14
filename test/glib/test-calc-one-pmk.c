@@ -10,8 +10,8 @@
 
 static void test_calc_one_pmk(void)
 {
-	char essid[] = "linksys";
-	char key[] = "password";
+	uint8_t essid[] = "linksys";
+	uint8_t key[] = "password";
 	uint8_t pmk[40] = {0};
 	uint8_t expected[40] = {0xec, 0xc9, 0x99, 0x1e, 0x3c, 0xfb, 0x1b, 0x11,
 							0x7b, 0xdb, 0xbd, 0x0,  0xde, 0xb4, 0x7,  0xf0,
@@ -20,7 +20,7 @@ static void test_calc_one_pmk(void)
 							0x31, 0x83, 0x94, 0x12, 0x36, 0x89, 0x8e, 0xf7};
 
 	memset(pmk, 0, sizeof(pmk));
-	ac_crypto_engine_calc_one_pmk(key, essid, strlen(essid), pmk);
+	ac_crypto_engine_calc_one_pmk(key, essid, strlen((char*) essid), pmk);
 
 	g_assert_cmpint(sizeof(pmk), ==, sizeof(expected));
 	g_assert_cmpmem(pmk, sizeof(pmk), expected, sizeof(expected));
@@ -34,7 +34,7 @@ static void test_calc_pmk(void)
 
 	memset(&engine, 0, sizeof(engine));
 	ac_crypto_engine_init(&engine);
-	ac_crypto_engine_set_essid(&engine, (char *) &essid[0]);
+	ac_crypto_engine_set_essid(&engine, &essid[0]);
 	ac_crypto_engine_thread_init(&engine, 1);
 
 	memset(key, 0, sizeof(key));
