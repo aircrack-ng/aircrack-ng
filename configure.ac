@@ -71,7 +71,7 @@ AIRCRACK_NG_PROG_CXX
 AC_PROG_INSTALL
 AM_PROG_AS
 
-LT_INIT([win32-dll disable-shared])
+LT_INIT([win32-dll disable-static shared])
 
 #
 # Operating Systems
