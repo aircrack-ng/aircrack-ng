@@ -106,6 +106,9 @@ EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
 	engine->xsse_crypt2[threadid] =
 		mem_calloc_align(MAX_KEYS_PER_CRYPT, 20, MEM_ALIGN_SIMD);
 
+	engine->ptk[threadid] =
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, 80, MEM_ALIGN_SIMD);
+
 	engine->pke[threadid] =
 		mem_calloc_align(MAX_KEYS_PER_CRYPT, 100, MEM_ALIGN_SIMD);
 
@@ -141,6 +144,12 @@ EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
 	{
 		MEM_FREE(engine->xsse_crypt2[threadid]);
 		engine->xsse_crypt2[threadid] = NULL;
+	}
+
+	if (engine->ptk[threadid] != NULL)
+	{
+		MEM_FREE(engine->ptk[threadid]);
+		engine->ptk[threadid] = NULL;
 	}
 
 	if (engine->pke[threadid] != NULL)
@@ -306,10 +315,11 @@ ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 }
 
 EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
-									  unsigned char(ptk)[8][80],
 									  int vectorIdx,
 									  int threadid)
 {
+	uint8_t *ptk = engine->ptk[threadid];
+
 	for (int i = 0; i < 4; i++)
 	{
 		*(engine->pke[threadid] + 99) = (unsigned char) i;
@@ -319,7 +329,7 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
 			 32,
 			 engine->pke[threadid],
 			 100,
-			 ptk[vectorIdx] + i * 20,
+			 &ptk[vectorIdx] + i * 20,
 			 NULL);
 	}
 }
@@ -327,16 +337,16 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
 EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 									  uint8_t eapol[256],
 									  uint32_t eapol_size,
-									  unsigned char(ptk)[8][80],
 									  uint8_t mic[8][20],
 									  uint8_t keyver,
 									  int vectorIdx,
 									  int threadid)
 {
+	uint8_t *ptk = engine->ptk[threadid];
 
 	if (keyver == 1)
 		HMAC(EVP_md5(),
-			 ptk[vectorIdx],
+			 &ptk[vectorIdx],
 			 16,
 			 eapol,
 			 eapol_size,
@@ -344,7 +354,7 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 			 NULL);
 	else
 		HMAC(EVP_sha1(),
-			 ptk[vectorIdx],
+			 &ptk[vectorIdx],
 			 16,
 			 eapol,
 			 eapol_size,
@@ -357,7 +367,6 @@ ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
 						   wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 						   uint8_t eapol[256],
 						   uint32_t eapol_size,
-						   unsigned char(ptk)[8][80],
 						   uint8_t mic[8][20],
 						   uint8_t keyver,
 						   const uint8_t cmpmic[20],
@@ -370,10 +379,10 @@ ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
 	{
 		/* compute the pairwise transient key and the frame MIC */
 
-		ac_crypto_engine_calc_ptk(engine, ptk, j, threadid);
+		ac_crypto_engine_calc_ptk(engine, j, threadid);
 
 		ac_crypto_engine_calc_mic(
-			engine, eapol, eapol_size, ptk, mic, keyver, j, threadid);
+			engine, eapol, eapol_size, mic, keyver, j, threadid);
 
 		/* did we successfully crack it? */
 		if (memcmp(mic[j], cmpmic, 16) == 0)

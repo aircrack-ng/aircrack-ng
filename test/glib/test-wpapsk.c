@@ -46,7 +46,7 @@ static void test_simd_can_crack(gconstpointer test_data)
 	void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine, int threadid);
 	int (*dso_ac_crypto_engine_simd_width)();
 
-	int (*dso_ac_crypto_engine_wpa_crack)(ac_crypto_engine_t *engine, wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED], uint8_t eapol[256], uint32_t eapol_size, unsigned char (ptk)[8][80], uint8_t mic[8][20], uint8_t keyver, const uint8_t cmpmic[20], int nparallel, int threadid);
+	int (*dso_ac_crypto_engine_wpa_crack)(ac_crypto_engine_t *engine, wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED], uint8_t eapol[256], uint32_t eapol_size, uint8_t mic[8][20], uint8_t keyver, const uint8_t cmpmic[20], int nparallel, int threadid);
 
 	void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine, uint8_t bssid[6], uint8_t stmac[6], uint8_t anonce[32], uint8_t snonce[32], int threadid);
 
@@ -86,7 +86,6 @@ static void test_simd_can_crack(gconstpointer test_data)
 
 
 	wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED];
-	uint8_t ptk[8][80];
 	uint8_t mic[8][20];
 	uint8_t expected_mic[20] =
 		"\xd5\x35\x53\x82\xb8\xa9\xb8\x06\xdc\xaf\x99\xcd\xaf\x56\x4e\xb6";
@@ -139,7 +138,6 @@ static void test_simd_can_crack(gconstpointer test_data)
 									   key,
 									   eapol,
 									   eapol_size,
-									   ptk,
 									   mic,
 									   2,
 									   expected_mic,

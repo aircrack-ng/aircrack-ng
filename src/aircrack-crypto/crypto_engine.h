@@ -92,6 +92,7 @@ struct ac_crypto_engine
 
 	unsigned char *pmk[MAX_THREADS];
 
+	uint8_t *ptk[MAX_THREADS];
 	uint8_t *pke[MAX_THREADS];
 	unsigned char *xsse_hash1[MAX_THREADS];
 	unsigned char *xsse_crypt1[MAX_THREADS];
@@ -136,14 +137,12 @@ ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 						  int threadid);
 
 IMPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
-									  unsigned char(ptk)[8][80],
 									  int vectorIdx,
 									  int threadid);
 
 IMPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 									  uint8_t eapol[256],
 									  uint32_t eapol_size,
-									  unsigned char(ptk)[8][80],
 									  uint8_t mic[8][20],
 									  uint8_t keyver,
 									  int vectorIdx,
@@ -154,7 +153,6 @@ ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
 						   wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 						   uint8_t eapol[256],
 						   uint32_t eapol_size,
-						   unsigned char(ptk)[8][80],
 						   uint8_t mic[8][20],
 						   uint8_t keyver,
 						   const uint8_t cmpmic[20],
