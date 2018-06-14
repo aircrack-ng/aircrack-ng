@@ -4329,11 +4329,12 @@ __out:
 	pthread_mutex_unlock(&mx_wpastats);
 }
 
+static char key[128][MAX_THREADS];
+
 int crack_wpa_thread(void *arg)
 {
 	FILE *keyFile;
 	char essid[36];
-	char key[128][MAX_THREADS];
 
 	unsigned char pke[100];
 	unsigned char ptk[8][80];
