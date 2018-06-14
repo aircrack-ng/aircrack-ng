@@ -97,24 +97,24 @@ EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
 	fprintf(stderr, "ac_crypto_engine_thread_init(%p, %d)\n", engine, threadid);
 #endif
 
-	engine->xsse_hash1[threadid] =
-		mem_calloc_align(MAX_KEYS_PER_CRYPT, 1 + (84 << 3), MEM_ALIGN_SIMD);
-
-	engine->xsse_crypt1[threadid] =
-		mem_calloc_align(MAX_KEYS_PER_CRYPT, 20 + 4, MEM_ALIGN_SIMD);
-
-	engine->xsse_crypt2[threadid] =
-		mem_calloc_align(MAX_KEYS_PER_CRYPT, 20 + 4, MEM_ALIGN_SIMD);
-
-	engine->ptk[threadid] =
-		mem_calloc_align(MAX_KEYS_PER_CRYPT, 80 + 4, MEM_ALIGN_SIMD);
-
-	engine->pke[threadid] =
-		mem_calloc_align(MAX_KEYS_PER_CRYPT, 100 + 4, MEM_ALIGN_SIMD);
-
 	// allocate pairwise master key buffer, for ourselves (a thread.)
 	engine->pmk[threadid] = mem_calloc_align(
 		MAX_KEYS_PER_CRYPT, sizeof(wpapsk_hash) + 4, MEM_ALIGN_SIMD);
+
+	engine->xsse_hash1[threadid] =
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, (84 << 3), MEM_ALIGN_SIMD);
+
+	engine->xsse_crypt1[threadid] =
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, 20, MEM_ALIGN_SIMD);
+
+	engine->xsse_crypt2[threadid] =
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, 20, MEM_ALIGN_SIMD);
+
+	engine->ptk[threadid] =
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, 80 + 64, MEM_ALIGN_SIMD);
+
+	engine->pke[threadid] =
+		mem_calloc_align(MAX_KEYS_PER_CRYPT, 100 + 64, MEM_ALIGN_SIMD);
 
 	return 0;
 }

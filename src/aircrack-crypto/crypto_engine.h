@@ -69,8 +69,8 @@ extern "C" {
 
 typedef struct
 {
-	uint32_t length;
 	uint8_t v[PLAINTEXT_LENGTH + 1];
+	uint32_t length;
 } wpapsk_password;
 
 typedef struct
