@@ -133,7 +133,7 @@ static void test_simd_can_crack(gconstpointer test_data)
 
 		strcpy((char*) (key[i].v), "12345678");
 		key[i].length = 8;
-#if 1
+
 		if ((rc = dso_ac_crypto_engine_wpa_crack(&engine,
 									   key,
 									   eapol,
@@ -152,13 +152,6 @@ static void test_simd_can_crack(gconstpointer test_data)
 		{
 			g_assert_true(rc >= 0);
 		}
-#else
-		(void) eapol;
-		(void) eapol_size;
-		(void) expected_mic;
-		(void) mic;
-		(void) ptk;
-#endif
 	}
 
 	dso_ac_crypto_engine_thread_destroy(&engine, 1);
