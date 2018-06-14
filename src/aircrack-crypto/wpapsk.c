@@ -461,8 +461,6 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 	{
 		char * tkey = (char*) key[i].v;
 
-		printf("key%d (inbuffer) = (%p) %s\n", i + 1, tkey, key[i].v);
-
 		if (*tkey != 0)
 		{
 //			set_key(tkey, i, inbuffer);
