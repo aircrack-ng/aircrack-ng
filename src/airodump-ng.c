@@ -4288,7 +4288,7 @@ void dump_print(int ws_row, int ws_col, int if_num)
 		}
 	}
 }
-
+//unsigned char *format_text_for_csv(unsigned char *input, int len)
 char *format_text_for_csv(const unsigned char *input, int len)
 {
 	// Unix style encoding
@@ -4356,13 +4356,14 @@ char *format_text_for_csv(const unsigned char *input, int len)
 	return (rret) ? rret : ret;
 }
 
-int dump_write_json(void)
+int dump_write_json( void )
 {
 				int i, n, probes_written;
 				struct tm *ltime;
 				struct AP_info *ap_cur;
 				struct ST_info *st_cur;
-				char * temp;
+				char *temp;
+				//const unsigned char * temp;
 
 				if (! G.record_data || !G.output_format_json)
 							return 0;
@@ -4487,17 +4488,18 @@ int dump_write_json(void)
 																if(i<(int)(strlen(ap_cur->key)-1))
 																				fprintf( G.f_json, ":");
 												}
-												fprintf(G.f_json, "\",");
+												fprintf( G.f_json, "\",");
 								}
-
-								if ( G.show_manufacturer)
+								if (G.show_manufacturer)
 								{
-									fprintf(G.f_json,"\"Manufacturer\":\"%s\", ",ap_cur->manuf);
-					}
-
-								//terminate json AP data
-								fprintf(G.f_json,"\"wlan_type\":\"AP\",\"timestamp\":\"%d\"}",(int)time(NULL));
-					fprintf(G.f_json, "\r\n");
+									fprintf(G.f_json, "\"Manufacturer\":\"%s\", ",ap_cur->manuf);
+								}
+								fprintf( G.f_json, "\"wlan_type\": \"AP\",\"timestamp\": \"%d\", ",(int)time(NULL));
+								if (G.usegpsd)
+								{
+								fprintf(G.f_json, "\"latitude\": \"%.6f\", \"longitude\": \"%.6f\", \"altitude\": \"%.6f\"}",ap_cur->gps_loc_max[0],ap_cur->gps_loc_max[1],ap_cur->gps_loc_max[2]);
+						}
+						fprintf( G.f_json, "\r\n");
 								fflush( G.f_json);
 								ap_cur = ap_cur->next;
 				}
@@ -4519,7 +4521,6 @@ int dump_write_json(void)
 												st_cur = st_cur->next;
 												continue;
 								}
-
 								fprintf( G.f_json, "{\"StationMAC\":\"%02X:%02X:%02X:%02X:%02X:%02X\", ",
 												st_cur->stmac[0], st_cur->stmac[1],
 												st_cur->stmac[2], st_cur->stmac[3],
@@ -4552,7 +4553,7 @@ int dump_write_json(void)
 																ap_cur->bssid[4], ap_cur->bssid[5] );
 
 								//add ESSID
-								fprintf(G.f_json,"\"ESSID\":\"%s\", ",ap_cur->essid);
+								fprintf(G.f_json,"\"ESSID\": \"%s\", ",ap_cur->essid);
 
 
 					probes_written = 0;
@@ -4579,37 +4580,34 @@ int dump_write_json(void)
 								}
 								fprintf(G.f_json, "\",");
 								//add number of probes
-								fprintf(G.f_json, "\"#probes\":%d,",pnum);
+								fprintf(G.f_json, "\"#probes\": %d,",pnum);
 
-
-
-								//add manufacturer for STA
-								if ( G.show_manufacturer)
-					{
-
-									fprintf(G.f_json,"\"Manufacturer\":\"%s\", ",st_cur->manuf);
-					}
-
-
-
-								//terminate json client data
-								fprintf(G.f_json,"\"wlan_type\":\"CL\",\"timestamp\":\"%d\"}",(int)time(NULL));
-								fprintf( G.f_json, "\r\n" );
-								fflush( G.f_json);
+											//add manufacturer for STA
+								if (G.show_manufacturer)
+								{
+								fprintf( G.f_json, "\"Manufacturer\": \"%s\",",st_cur->manuf);
+								}
+								fprintf( G.f_json, "\"wlan_type\": \"CL\",\"timestamp\": \"%d\", ",(int)time(NULL));
+								if ( G.usegpsd)
+								{
+								fprintf( G.f_json, "\"latitude\": \"%.6f\", \"longitude\": \"%.6f\", \"altitude\": \"%.6f\"}",ap_cur->gps_loc_max[0],ap_cur->gps_loc_max[1],ap_cur->gps_loc_max[2]);
+								}
+								fprintf( G.f_json, "\r\n");
+								//fprintf(G.f_json,"\n");
+								fflush(G.f_json);
 								st_cur = st_cur->next;
 				}
 				fflush( G.f_json);
 
 				return 0;
 }
-
 int dump_write_csv(void)
 {
 	int i, n, probes_written;
 	struct tm *ltime;
 	struct AP_info *ap_cur;
 	struct ST_info *st_cur;
-	char * temp;
+	char *temp;
 
 	if (!G.record_data || !G.output_format_csv) return 0;
 
