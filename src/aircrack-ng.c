@@ -4339,7 +4339,7 @@ int crack_wpa_thread(void *arg)
 	FILE *keyFile;
 	char essid[36];
 
-	unsigned char mic[8][20];
+	unsigned char mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20];
 
 	wpapsk_password keys[MAX_KEYS_PER_CRYPT_SUPPORTED];
 
