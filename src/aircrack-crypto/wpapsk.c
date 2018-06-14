@@ -137,16 +137,6 @@ char atoi64[0x100];
 #endif
 
 #ifdef SIMD_CORE
-static void set_key(char *key, int index, wpapsk_password *in)
-{
-	uint8_t length = strlen(key);
-	if (length > PLAINTEXT_LENGTH) length = PLAINTEXT_LENGTH;
-	in[index].length = length;
-	memcpy(in[index].v, key, length + 1);
-}
-#endif
-
-#ifdef SIMD_CORE
 static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 									int threadid,
 									int count,
@@ -437,15 +427,9 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 {
 	int i = 0;
 	int count = 0;
-	wpapsk_password
-		*inbuffer; //table for candidate passwords (pointer to threads copy)
-
-	inbuffer = engine->wpapass[threadid];
 
 	// clear entire output table
 	memset(engine->pmk[threadid], 0, (sizeof(wpapsk_hash) * (nparallel)));
-	memset(
-		engine->wpapass[threadid], 0, (sizeof(wpapsk_password) * (nparallel)));
 
 	{
 		unsigned char *sse_hash1 = engine->xsse_hash1[threadid];
@@ -477,19 +461,19 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 	{
 		char * tkey = (char*) key[i].v;
 
-		printf("key%d (inbuffer) = (%p) %s\n", i + 1, tkey, inbuffer[i].v);
+		printf("key%d (inbuffer) = (%p) %s\n", i + 1, tkey, key[i].v);
 
 		if (*tkey != 0)
 		{
-			set_key(tkey, i, inbuffer);
+//			set_key(tkey, i, inbuffer);
 #ifdef XDEBUG
-			printf("key%d (inbuffer) = (%p) %s  VALID\n", i + 1, tkey, inbuffer[i].v);
+			printf("key%d (inbuffer) = (%p) %s  VALID\n", i + 1, tkey, key[i].v);
 #endif
 			count = i + 1;
 		}
 	}
 
-	wpapsk_sse(engine, threadid, count, inbuffer);
+	wpapsk_sse(engine, threadid, count, key);
 
 	return 0;
 }

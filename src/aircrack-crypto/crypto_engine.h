@@ -92,8 +92,6 @@ struct ac_crypto_engine
 
 	unsigned char *pmk[MAX_THREADS];
 
-	wpapsk_password *wpapass[MAX_THREADS];
-
 	unsigned char *xsse_hash1[MAX_THREADS];
 	unsigned char *xsse_crypt1[MAX_THREADS];
 	unsigned char *xsse_crypt2[MAX_THREADS];
