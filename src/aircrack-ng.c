@@ -62,6 +62,7 @@
 #include <limits.h>
 
 #include <glib-2.0/glib.h>
+#include <gmodule.h>
 
 #include "version.h"
 #include "crypto.h"
@@ -80,10 +81,11 @@
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 #include "aircrack-util/simd_cpuid.h"
+#include "trampoline.h"
+#include <aircrack-crypto/crypto_engine.h>
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
-#include <aircrack-crypto/crypto_engine.h>
 
 sqlite3 *db;
 #else
@@ -96,6 +98,22 @@ char *db;
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 #endif
+
+/* Shared library imported symbols */
+int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine);
+void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine);
+void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine, const uint8_t *essid);
+int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t *engine, int threadid);
+void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine, int threadid);
+int (*dso_ac_crypto_engine_simd_width)();
+
+int (*dso_ac_crypto_engine_wpa_crack)(ac_crypto_engine_t *engine, wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED], uint8_t eapol[256], uint32_t eapol_size, uint8_t mic[8][20], uint8_t keyver, const uint8_t cmpmic[20], int nparallel, int threadid);
+
+void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine, uint8_t bssid[6], uint8_t stmac[6], uint8_t anonce[32], uint8_t snonce[32], int threadid);
+
+/* Shared library global data */
+GModule *module = NULL;
+gchar *module_filename = NULL;
 
 /* stats global data */
 
@@ -413,7 +431,7 @@ void clean_exit(int ret)
 		}
 	}
 
-	ac_crypto_engine_destroy(&engine);
+	dso_ac_crypto_engine_destroy(&engine);
 
 	if (opt.totaldicts)
 	{
@@ -4337,11 +4355,10 @@ __out:
 int crack_wpa_thread(void *arg)
 {
 	FILE *keyFile;
-	char essid[36];
 
-	unsigned char mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20];
-
+	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20];
 	wpapsk_password keys[MAX_KEYS_PER_CRYPT_SUPPORTED];
+	char essid[128];
 
 	struct WPA_data *data;
 	struct AP_info *ap;
@@ -4349,14 +4366,14 @@ int crack_wpa_thread(void *arg)
 	int ret = 0;
 	int i, j, len;
 
-	int nparallel = ac_crypto_engine_simd_width();
+	int nparallel = dso_ac_crypto_engine_simd_width();
 
 	data = (struct WPA_data *) arg;
 	ap = data->ap;
 	threadid = data->threadid;
-	strncpy(essid, ap->essid, 36);
+	strncpy(essid, ap->essid, ESSID_LENGTH);
 
-	ac_crypto_engine_thread_init(&engine, threadid);
+	dso_ac_crypto_engine_thread_init(&engine, threadid);
 
 #ifdef XDEBUG
 	if (nparallel > 1)
@@ -4368,7 +4385,7 @@ int crack_wpa_thread(void *arg)
 				"WARNING: The Crypto Engine is unable to crack in parallel.\n");
 #endif
 
-	ac_crypto_engine_calc_pke(&engine, ap->bssid, ap->wpa.stmac, ap->wpa.anonce, ap->wpa.snonce, threadid);
+	dso_ac_crypto_engine_calc_pke(&engine, ap->bssid, ap->wpa.stmac, ap->wpa.anonce, ap->wpa.snonce, threadid);
 
 #ifdef XDEBUG
 	printf("Thread # %d starting...\n", threadid);
@@ -4378,7 +4395,7 @@ int crack_wpa_thread(void *arg)
 	{
 		if (close_aircrack)
 		{
-			ac_crypto_engine_thread_destroy(&engine, threadid);
+			dso_ac_crypto_engine_thread_destroy(&engine, threadid);
 			pthread_exit(&ret);
 		}
 
@@ -4396,7 +4413,7 @@ int crack_wpa_thread(void *arg)
 				{
 					if (j == 0)
 					{
-						ac_crypto_engine_thread_destroy(&engine, threadid);
+						dso_ac_crypto_engine_thread_destroy(&engine, threadid);
 						return 0;
 					}
 					else // ...we have some key pending in this loop: keep working
@@ -4413,7 +4430,7 @@ int crack_wpa_thread(void *arg)
 #endif
 		}
 
-		if ((j = ac_crypto_engine_wpa_crack(&engine,
+		if ((j = dso_ac_crypto_engine_wpa_crack(&engine,
 											keys,
 											ap->wpa.eapol,
 											ap->wpa.eapol_size,
@@ -4445,7 +4462,8 @@ int crack_wpa_thread(void *arg)
 				pthread_mutex_unlock(&wpa_data[i].mutex);
 			}
 
-			memcpy(data->key, keys[j].v, sizeof(data->key));
+			memset(data->key, 0, sizeof(data->key));
+			memcpy(data->key, keys[j].v, sizeof(keys[0].v));
 
 			// Write the key to a file
 			if (opt.logKeyToFile != NULL)
@@ -4480,8 +4498,7 @@ int crack_wpa_thread(void *arg)
 			if (len < 8) len = 8;
 			show_wpa_stats((char*) keys[j].v,
 						   len,
-						   ac_crypto_engine_get_pmk(&engine, threadid)
-							   + (sizeof(wpapsk_hash) * j),
+						   engine.pmk[threadid] + (sizeof(wpapsk_hash) * j),
 						   engine.ptk[threadid] + j * 20,
 						   mic[j],
 						   1);
@@ -4526,7 +4543,7 @@ int crack_wpa_thread(void *arg)
 
 			show_wpa_stats((char*) keys[0].v,
 						   len,
-						   ac_crypto_engine_get_pmk(&engine, threadid),
+						   engine.pmk[threadid],
 						   engine.ptk[threadid],
 						   mic[0],
 						   0);
@@ -4534,7 +4551,7 @@ int crack_wpa_thread(void *arg)
 	}
 
 crack_wpa_cleanup:
-	ac_crypto_engine_thread_destroy(&engine, threadid);
+	dso_ac_crypto_engine_thread_destroy(&engine, threadid);
 
 	return ret;
 }
@@ -5605,6 +5622,107 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 	return SUCCESS;
 }
 
+void load_aircrack_crypto_dso(void)
+{
+	char buffer[8192];
+	size_t buffer_remaining = 8192;
+
+	simd_init();
+
+	int simd_features = simd_get_supported_features();
+
+	strcpy(buffer, "aircrack-crypto");
+
+	if (simd_features & SIMD_SUPPORTS_AVX2)
+	{
+		strncat(buffer, "-x86-avx2", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_AVX)
+	{
+		strncat(buffer, "-x86-avx", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_SSE2)
+	{
+		strncat(buffer, "-x86-sse2", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_ASIMD)
+	{
+		strncat(buffer, "-arm-neon", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_NEON)
+	{
+		strncat(buffer, "-arm-neon", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_POWER8)
+	{
+		strncat(buffer, "-ppc-power8", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_ALTIVEC)
+	{
+		strncat(buffer, "-ppc-altivec", buffer_remaining);
+	}
+
+	gchar *working_directory = g_get_current_dir(); // or the binary's path?
+
+	gchar *library_path = NULL;
+	if (g_str_has_prefix(working_directory, ABS_TOP_BUILDDIR)
+	    || g_str_has_prefix(working_directory, ABS_TOP_SRCDIR))
+	{
+		// use development paths
+		library_path = g_strdup_printf("%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+	}
+	else
+	{
+		// use installation paths
+		library_path = g_strdup_printf("%s", LIBDIR);
+	}
+	g_free(working_directory);
+
+	module_filename = g_module_build_path(library_path, buffer);
+	GModule *module = g_module_open (module_filename, G_MODULE_BIND_LAZY);
+	if (!module)
+	{
+		perror("dlopen");
+		g_free(library_path);
+		exit(1);
+	}
+
+	g_free(library_path);
+
+	// resolve symbols needed
+	struct _dso_symbols
+	{
+		char const *sym;
+		gpointer *addr;
+	} dso_symbols[] = {
+		{ "ac_crypto_engine_init", (gpointer *)&dso_ac_crypto_engine_init },
+		{ "ac_crypto_engine_destroy", (gpointer *)&dso_ac_crypto_engine_destroy },
+		{ "ac_crypto_engine_thread_init", (gpointer *)&dso_ac_crypto_engine_thread_init },
+		{ "ac_crypto_engine_thread_destroy", (gpointer *)&dso_ac_crypto_engine_thread_destroy },
+		{ "ac_crypto_engine_set_essid", (gpointer *)&dso_ac_crypto_engine_set_essid },
+		{ "ac_crypto_engine_simd_width", (gpointer *)&dso_ac_crypto_engine_simd_width },
+		{ "ac_crypto_engine_wpa_crack", (gpointer *)&dso_ac_crypto_engine_wpa_crack },
+		{ "ac_crypto_engine_calc_pke", (gpointer *)&dso_ac_crypto_engine_calc_pke },
+
+		{ NULL, NULL }
+	};
+
+	struct _dso_symbols *cur = &dso_symbols[0];
+
+	for (; cur->addr != NULL; ++cur)
+	{
+		if (!g_module_symbol(module,
+		                     cur->sym,
+		                     cur->addr))
+		{
+			g_warning("%s: %s", g_module_name(module), g_module_error());
+			exit(1);
+		}
+	}
+
+	simd_destroy();
+}
+
 int main(int argc, char *argv[])
 {
 	int i, n, ret, option, j, ret1, nbMergeBSSID, unused;
@@ -5648,6 +5766,9 @@ int main(int argc, char *argv[])
 	memset(&opt, 0, sizeof(opt));
 
 	srand(time(NULL));
+
+	// Load the best available shared library.
+	load_aircrack_crypto_dso();
 
 	// Get number of CPU (return -1 if failed).
 	cpu_count = get_nb_cpus();
@@ -6835,7 +6956,7 @@ __start:
 	if (ap_cur->crypt == 3)
 	{
 	crack_wpa:
-		ac_crypto_engine_init(&engine);
+		dso_ac_crypto_engine_init(&engine);
 
 		if (opt.dict == NULL && db == NULL)
 		{
@@ -6869,7 +6990,7 @@ __start:
 			strncpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid) - 1);
 		}
 
-		ac_crypto_engine_set_essid(&engine, (uint8_t*) ap_cur->essid);
+		dso_ac_crypto_engine_set_essid(&engine, (uint8_t*) ap_cur->essid);
 
 		if (db == NULL)
 		{
@@ -7043,6 +7164,9 @@ exit_main:
 	if (!opt.is_quiet) printf("\n");
 
 	fflush(stdout);
+
+	g_module_close(module);
+	g_free(module_filename);
 
 	// 	if( ret == SUCCESS ) kill( 0, SIGQUIT );
 	// 	if( ret == FAILURE ) kill( 0, SIGTERM );
