@@ -289,28 +289,17 @@ noinst_LTLIBRARIES = libaclib.la libptw.la libcow.la
 
 EXTRA_DIST = wpaclean.c \
              buddy-ng.c \
-             wpapsk.h \
-             arch.h \
              aircrack-ng.h \
              version.h \
              airventriloquist-ng.h \
              airdecloak-ng.h \
-             wpapsk.c \
              airserv-ng.c \
-             simd-intrinsics-load-flags.h \
              besside-ng.c \
              wkp-frame.h \
              airolib-ng.c \
-             simd-intrinsics.c \
-             misc.h \
              aircrack-ptw-lib.h \
-             simd-intrinsics.h \
-             sha1-git.h \
              makeivs-ng.c \
              easside-ng.c \
-             sse-intrinsics-load-flags.h \
-             sha1-sse2.h \
-             pseudo_intrinsics.h \
              crctable.h \
              airdecap-ng.c \
              airodump-ng.h \
@@ -318,9 +307,6 @@ EXTRA_DIST = wpaclean.c \
              besside-ng-crawler.c \
              tkiptun-ng.c \
              kstats.c \
-             md5.h \
-             MD5_std.h \
-             sse-intrinsics.h \
              easside.h \
              aireplay-ng.c \
              ivstools.c \
@@ -329,7 +315,6 @@ EXTRA_DIST = wpaclean.c \
              airodump-ng.c \
              crypto.c \
              airdecloak-ng.c \
-             memory.h \
              packetforge-ng.c \
              airventriloquist-ng.c \
              uniqueiv.c \
@@ -337,19 +322,15 @@ EXTRA_DIST = wpaclean.c \
              uniqueiv.h \
              wesside-ng.c \
              airtun-ng.c \
-             aligned.h \
-             johnswap.h \
-             sha1-git.c \
              linecount.h \
-             memdbg.h \
-             sse-intrinsics.c \
              aircrack-ptw-lib.c \
-             jcommon.h \
-             memory.c \
              crypto.h \
              trampoline.c \
              trampoline.h \
              trampoline_x86.c \
+             trampoline_arm.c \
+             trampoline_ppc.c \
+             trampoline_stubs.c \
              cowpatty.c \
              cowpatty.h \
              session.c \
