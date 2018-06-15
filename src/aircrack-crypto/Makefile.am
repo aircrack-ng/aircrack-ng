@@ -47,7 +47,7 @@ COMMON_ARCH_FILES =
 if X86
 COMMON_ARCH_FILES += sha1-sse2.S
 endif
-LIBAIRCRACK_CRYPTO_SRCS = memory.c sha1-git.c $(COMMON_ARCH_FILES) simd-intrinsics.c wpapsk.c crypto_engine.c
+LIBAIRCRACK_CRYPTO_SRCS = memory.c $(COMMON_ARCH_FILES) simd-intrinsics.c wpapsk.c crypto_engine.c
 
 #
 # Intel/AMD
@@ -95,7 +95,7 @@ if X86
 ARCH_FILES += sha1-sse2.S sse-intrinsics.c
 endif
 libaircrack_crypto_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_crypto_la_SOURCES = memory.c sha1-git.c wpapsk.c crypto_engine.c $(ARCH_FILES)
+libaircrack_crypto_la_SOURCES = memory.c wpapsk.c crypto_engine.c $(ARCH_FILES)
 libaircrack_crypto_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
@@ -127,8 +127,6 @@ EXTRA_DIST =	aligned.h \
 				memory.h \
 				misc.h \
 				pseudo_intrinsics.h \
-				sha1-git.c \
-				sha1-git.h \
 				sha1-sse2.h \
 				sha1-sse2.S \
 				simd-intrinsics.c \
