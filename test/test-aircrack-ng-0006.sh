@@ -4,7 +4,7 @@ set -ef
 
 echo "asciipsk" > ${abs_srcdir}/1word
 
-cat > session << EOF
+cat > ${abs_srcdir}/session << EOF
 ${abs_srcdir}
 00:0D:93:EB:B0:8C
 1 0 0
@@ -19,10 +19,10 @@ EOF
     -R ${abs_srcdir}/session | \
         grep 'KEY FOUND! \[ biscotte \]'
 
-rm -f 1word
+rm -f ${abs_srcdir}/1word
 
-if [ -f session ]; then
-	rm session
+if [ -f ${abs_srcdir}/session ]; then
+	rm ${abs_srcdir}/session
 	exit 1
 fi
 
