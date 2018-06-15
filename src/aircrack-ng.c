@@ -83,6 +83,7 @@
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
+#include <dlfcn.h>
 
 sqlite3 *db;
 #else
@@ -111,9 +112,7 @@ int (*dso_ac_crypto_engine_wpa_crack)(ac_crypto_engine_t *engine, wpapsk_passwor
 
 void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine, uint8_t bssid[6], uint8_t stmac[6], uint8_t anonce[32], uint8_t snonce[32], int threadid);
 
-/* Shared library global data */
-GModule *module = NULL;
-gchar *module_filename = NULL;
+void *module; /* Handle to opened crypto shared library. */
 #endif
 
 /* stats global data */
@@ -5668,6 +5667,8 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 void load_aircrack_crypto_dso(void)
 {
 	char buffer[8192];
+	char library_path[8192];
+	char module_filename[8192];
 	size_t buffer_remaining = 8192;
 
 	simd_init();
@@ -5705,47 +5706,58 @@ void load_aircrack_crypto_dso(void)
 		strncat(buffer, "-ppc-altivec", buffer_remaining);
 	}
 
-	gchar *working_directory = g_get_current_dir(); // or the binary's path?
+	char *working_directory = get_current_working_directory(); // or the binary's path?
 
-	gchar *library_path = NULL;
-	if (g_str_has_prefix(working_directory, ABS_TOP_BUILDDIR)
-	    || g_str_has_prefix(working_directory, ABS_TOP_SRCDIR))
+	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR)) == 0
+	    || strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR)) == 0)
 	{
 		// use development paths
-		library_path = g_strdup_printf("%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
 	}
 	else
 	{
 		// use installation paths
-		library_path = g_strdup_printf("%s", LIBDIR);
+		snprintf(library_path, sizeof(library_path) - 1, "%s", LIBDIR);
 	}
-	g_free(working_directory);
+	free(working_directory);
 
-	module_filename = g_module_build_path(library_path, buffer);
-	GModule *module = g_module_open (module_filename, G_MODULE_BIND_LAZY);
+	snprintf(module_filename, sizeof(module_filename) - 1, "%s/%s%s.%s", library_path,
+#if _WIN32
+	"",
+#else
+	"lib",
+#endif
+	buffer,
+#ifdef _WIN32
+	"dll"
+#elif __APPLE__
+	"dylib"
+#else
+	"so"
+#endif
+		);
+
+	module = dlopen (module_filename, RTLD_LAZY);
 	if (!module)
 	{
 		perror("dlopen");
-		g_free(library_path);
 		exit(1);
 	}
-
-	g_free(library_path);
 
 	// resolve symbols needed
 	struct _dso_symbols
 	{
 		char const *sym;
-		gpointer *addr;
+		void *addr;
 	} dso_symbols[] = {
-		{ "ac_crypto_engine_init", (gpointer *)&dso_ac_crypto_engine_init },
-		{ "ac_crypto_engine_destroy", (gpointer *)&dso_ac_crypto_engine_destroy },
-		{ "ac_crypto_engine_thread_init", (gpointer *)&dso_ac_crypto_engine_thread_init },
-		{ "ac_crypto_engine_thread_destroy", (gpointer *)&dso_ac_crypto_engine_thread_destroy },
-		{ "ac_crypto_engine_set_essid", (gpointer *)&dso_ac_crypto_engine_set_essid },
-		{ "ac_crypto_engine_simd_width", (gpointer *)&dso_ac_crypto_engine_simd_width },
-		{ "ac_crypto_engine_wpa_crack", (gpointer *)&dso_ac_crypto_engine_wpa_crack },
-		{ "ac_crypto_engine_calc_pke", (gpointer *)&dso_ac_crypto_engine_calc_pke },
+		{ "ac_crypto_engine_init", (void *)&dso_ac_crypto_engine_init },
+		{ "ac_crypto_engine_destroy", (void *)&dso_ac_crypto_engine_destroy },
+		{ "ac_crypto_engine_thread_init", (void *)&dso_ac_crypto_engine_thread_init },
+		{ "ac_crypto_engine_thread_destroy", (void *)&dso_ac_crypto_engine_thread_destroy },
+		{ "ac_crypto_engine_set_essid", (void *)&dso_ac_crypto_engine_set_essid },
+		{ "ac_crypto_engine_simd_width", (void *)&dso_ac_crypto_engine_simd_width },
+		{ "ac_crypto_engine_wpa_crack", (void *)&dso_ac_crypto_engine_wpa_crack },
+		{ "ac_crypto_engine_calc_pke", (void *)&dso_ac_crypto_engine_calc_pke },
 
 		{ NULL, NULL }
 	};
@@ -5754,11 +5766,9 @@ void load_aircrack_crypto_dso(void)
 
 	for (; cur->addr != NULL; ++cur)
 	{
-		if (!g_module_symbol(module,
-		                     cur->sym,
-		                     cur->addr))
+		if (!(*((void**)cur->addr) = dlsym(module, cur->sym)))
 		{
-			g_warning("%s: %s", g_module_name(module), g_module_error());
+			fprintf(stderr, "Could not find symbol %s in %s.\n", cur->sym, module_filename);
 			exit(1);
 		}
 	}
@@ -7220,8 +7230,7 @@ exit_main:
 	fflush(stdout);
 
 #if DYNAMIC
-	g_module_close(module);
-	g_free(module_filename);
+	dlclose(module);
 #endif
 
 	// 	if( ret == SUCCESS ) kill( 0, SIGQUIT );
