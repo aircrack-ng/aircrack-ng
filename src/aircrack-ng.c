@@ -97,7 +97,9 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 #endif
 
+#ifndef DYNAMIC
 #define DYNAMIC 1
+#endif
 
 #if DYNAMIC
 /* Shared library imported symbols */

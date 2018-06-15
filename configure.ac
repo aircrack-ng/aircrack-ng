@@ -149,6 +149,7 @@ AM_CONDITIONAL([HAVE_AIRPCAP_OR_PCAP], [test "$AIRPCAP" = yes -o "$PCAP_FOUND" =
 AM_CONDITIONAL([MULTIBIN], [test "$with_multibin" = yes])
 AM_CONDITIONAL([ENABLE_INSTALLED_TESTS], [test "nope" = yes]) # for glib tests
 AM_CONDITIONAL([CMOCKA], [test "$CMOCKA_FOUND" = yes])
+AM_CONDITIONAL([STATIC_BUILD], [test "$enable_static" = yes])
 
 #
 # Save flags for build summary
