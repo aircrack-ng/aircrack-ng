@@ -61,7 +61,6 @@
 #include "arch.h"
 #include "jcommon.h"
 #include "johnswap.h"
-#include "aircrack-ng.h"
 
 #include "crypto_engine.h"
 
