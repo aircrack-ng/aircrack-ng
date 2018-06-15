@@ -1,6 +1,7 @@
-#include <glib.h>
-#include <gmodule.h>
-#include <locale.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <setjmp.h>
+#include <cmocka.h>
 
 #include <assert.h>
 #include <stdio.h>
@@ -8,7 +9,7 @@
 
 #include "aircrack-crypto/crypto_engine.h"
 
-static void test_calc_one_pmk(void)
+static void test_calc_one_pmk(void **state)
 {
 	uint8_t essid[] = "linksys";
 	uint8_t key[] = "password";
@@ -22,11 +23,11 @@ static void test_calc_one_pmk(void)
 	memset(pmk, 0, sizeof(pmk));
 	ac_crypto_engine_calc_one_pmk(key, essid, strlen((char*) essid), pmk);
 
-	g_assert_cmpint(sizeof(pmk), ==, sizeof(expected));
-	g_assert_cmpmem(pmk, sizeof(pmk), expected, sizeof(expected));
+	assert_int_equal(sizeof(pmk), sizeof(expected));
+	assert_memory_equal(pmk, expected, sizeof(expected));
 }
 
-static void test_calc_pmk(void)
+static void test_calc_pmk(void **state)
 {
 	uint8_t essid[33] = "linksys";
 	wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED];
@@ -50,8 +51,8 @@ static void test_calc_pmk(void)
 							0x23, 0x49, 0x13, 0x9d, 0x2,  0xfd, 0x2b, 0xfb,
 							0x31, 0x83, 0x94, 0x12, 0x36, 0x89, 0x8e, 0xf7};
 
-	g_assert_cmpmem(
-		(unsigned char*) (engine.pmk[1] + (sizeof(wpapsk_hash) * 0)), 40, expected, sizeof(expected));
+	assert_memory_equal(
+		(unsigned char*) (engine.pmk[1] + (sizeof(wpapsk_hash) * 0)), expected, sizeof(expected));
 
 	ac_crypto_engine_thread_destroy(&engine, 1);
 	ac_crypto_engine_destroy(&engine);
@@ -59,14 +60,9 @@ static void test_calc_pmk(void)
 
 int main(int argc, char *argv[])
 {
-	setlocale(LC_ALL, "");
-
-	g_test_init(&argc, &argv, NULL);
-	g_test_bug_base("https://github.com/aircrack-ng/aircrack-ng/issues/");
-
-	// Define the tests.
-	g_test_add_func("/crypto/calculates_one_pmk", test_calc_one_pmk);
-	g_test_add_func("/crypto/calculates_pmk", test_calc_pmk);
-
-	return g_test_run();
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_calc_one_pmk),
+		cmocka_unit_test(test_calc_pmk),
+	};
+	return cmocka_run_group_tests(tests, NULL, NULL);
 }

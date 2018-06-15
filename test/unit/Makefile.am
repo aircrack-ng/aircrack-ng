@@ -40,10 +40,12 @@
 AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src/include \
               -I$(top_srcdir)/src \
-              $(CRYPTO_INCLUDES) \
-              $(GLIB_CFLAGS)
+              $(CRYPTO_INCLUDES)
 
-include $(top_srcdir)/test/glib/glib-tap.mk
+AM_TESTS_ENVIRONMENT= \
+	TEST_SRCDIR="$(abs_srcdir)" 		\
+	TEST_BUILDDIR="$(abs_builddir)" 	\
+	CMOCKA_MESSAGE_OUTPUT=TAP
 
 LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/src/aircrack-crypto/
 
@@ -57,13 +59,15 @@ LIBAIRCRACK_UTIL	= ../../src/aircrack-util/libaircrack-util.la
 LIBAIRCRACK_UTIL_LIBS = -L../../src/aircrack-util -laircrack-util
 
 test_calc_one_pmk_SOURCES = test-calc-one-pmk.c $(LIBAIRCRACK_CRYPTO)
-test_calc_one_pmk_LDADD = $(GLIB_LIBS) $(LIBAIRCRACK_CRYPTO_LIBS)
+test_calc_one_pmk_LDADD = $(CMOCKA_LIBS) $(LIBAIRCRACK_CRYPTO_LIBS)
 
-test_wpapsk_SOURCES = test-wpapsk.c
+test_wpapsk_SOURCES = test-wpapsk.c $(LIBAIRCRACK_UTIL)
 test_wpapsk_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" "-DLIBDIR=\"$(libdir)\""
-test_wpapsk_LDADD = $(GLIB_LIBS)
+test_wpapsk_LDADD = $(CMOCKA_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
-test_programs = test-wpapsk test-calc-one-pmk
+TESTS = test-calc-one-pmk test-wpapsk
+
+check_PROGRAMS = test-calc-one-pmk test-wpapsk
 
 
 @CODE_COVERAGE_RULES@

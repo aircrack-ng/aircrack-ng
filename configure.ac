@@ -105,6 +105,7 @@ AIRCRACK_NG_PCRE
 AIRCRACK_NG_RFKILL
 AIRCRACK_NG_SQLITE
 AIRCRACK_NG_ZLIB
+PKG_CHECK_MODULES([CMOCKA], [cmocka], [CMOCKA_FOUND=yes], [CMOCKA_FOUND=no])
 
 #
 # Extras, but needed
@@ -147,6 +148,7 @@ AIRCRACK_NG_SIMD_CXX
 AM_CONDITIONAL([HAVE_AIRPCAP_OR_PCAP], [test "$AIRPCAP" = yes -o "$PCAP_FOUND" = yes])
 AM_CONDITIONAL([MULTIBIN], [test "$with_multibin" = yes])
 AM_CONDITIONAL([ENABLE_INSTALLED_TESTS], [test "nope" = yes]) # for glib tests
+AM_CONDITIONAL([CMOCKA], [test "$CMOCKA_FOUND" = yes])
 
 #
 # Save flags for build summary
@@ -189,7 +191,7 @@ src/aircrack-osdep/radiotap/Makefile
 test/Makefile
 test/test-env.sh
 test/cryptounittest/Makefile
-test/glib/Makefile
+test/unit/Makefile
 ])
 
 #
@@ -236,6 +238,7 @@ ${PACKAGE} ${VERSION}
 
   Optional Libraries:
     Airpcap:                     ${AIRPCAP}
+    Cmocka:                      ${CMOCKA_FOUND}
     DUMA:                        ${DUMA}
     Pcap:                        ${PCAP_FOUND}
     Pcre:                        ${HAVE_PCRE}

@@ -1,43 +1,23 @@
-#include <glib.h>
-#include <gmodule.h>
-#include <locale.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <setjmp.h>
+#include <cmocka.h>
 
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <dlfcn.h>
 
+#include "aircrack-util/common.h"
 #include "aircrack-crypto/crypto_engine.h"
 
-static void test_my_sanity(void) { g_assert_cmpint(1, ==, 1); }
-
-#if 0
-static void test_calc_one_pmk(void)
+static void test_simd_can_crack(void* test_data)
 {
-	char essid[] = "linksys";
-	char key[] = "password";
-	uint8_t pmk[40] = {0};
-	uint8_t expected[40] = {0xec, 0xc9, 0x99, 0x1e, 0x3c, 0xfb, 0x1b, 0x11,
-							0x7b, 0xdb, 0xbd, 0x0,  0xde, 0xb4, 0x7,  0xf0,
-							0x23, 0x29, 0x44, 0xb5, 0x68, 0x21, 0x64, 0x7e,
-							0x23, 0x49, 0x13, 0x9d, 0x2,  0xfd, 0x2b, 0xfb,
-							0x31, 0x83, 0x94, 0x12, 0x36, 0x89, 0x8e, 0xf7};
-
-	memset(pmk, 0, sizeof(pmk));
-	ac_crypto_engine_calc_one_pmk(key, essid, strlen(essid), pmk);
-
-	g_assert_cmpint(sizeof(pmk), ==, sizeof(expected));
-	g_assert_cmpmem(pmk, sizeof(pmk), expected, sizeof(expected));
-}
-#endif
-
-static void test_simd_can_crack(gconstpointer test_data)
-{
-	char *entry = (char*) ((void*) test_data);
-
-	// open it
-	gchar *filename = g_strdup_printf("%s%s/%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR, entry);
-	GModule *module = g_module_open (filename, G_MODULE_BIND_LAZY);
-	assert(module != NULL && "failed to open module");
+	char library_path[8192];
+	char module_filename[8192];
+	char *entry = (char*) (test_data);
 
 	int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine);
 	void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine);
@@ -50,20 +30,40 @@ static void test_simd_can_crack(gconstpointer test_data)
 
 	void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine, uint8_t bssid[6], uint8_t stmac[6], uint8_t anonce[32], uint8_t snonce[32], int threadid);
 
+	char *working_directory = get_current_working_directory();
+
+	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR)) == 0
+	    || strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR)) == 0)
+	{
+		// use development paths
+		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+	}
+	else
+	{
+		// use installation paths
+		snprintf(library_path, sizeof(library_path) - 1, "%s", LIBDIR);
+	}
+	free(working_directory);
+
+	snprintf(module_filename, sizeof(module_filename) - 1, "%s/%s", library_path, entry);
+
+	void *module = dlopen (module_filename, RTLD_LAZY);
+	assert_non_null(module);
+
 	// resolve symbols needed
 	struct _dso_symbols
 	{
-	  char const *sym;
-	  gpointer *addr;
+		char const *sym;
+		void *addr;
 	} dso_symbols[] = {
-		{ "ac_crypto_engine_init", (gpointer *)&dso_ac_crypto_engine_init },
-		{ "ac_crypto_engine_destroy", (gpointer *)&dso_ac_crypto_engine_destroy },
-		{ "ac_crypto_engine_thread_init", (gpointer *)&dso_ac_crypto_engine_thread_init },
-		{ "ac_crypto_engine_thread_destroy", (gpointer *)&dso_ac_crypto_engine_thread_destroy },
-		{ "ac_crypto_engine_set_essid", (gpointer *)&dso_ac_crypto_engine_set_essid },
-		{ "ac_crypto_engine_simd_width", (gpointer *)&dso_ac_crypto_engine_simd_width },
-		{ "ac_crypto_engine_wpa_crack", (gpointer *)&dso_ac_crypto_engine_wpa_crack },
-		{ "ac_crypto_engine_calc_pke", (gpointer *)&dso_ac_crypto_engine_calc_pke },
+		{ "ac_crypto_engine_init", (void *)&dso_ac_crypto_engine_init },
+		{ "ac_crypto_engine_destroy", (void *)&dso_ac_crypto_engine_destroy },
+		{ "ac_crypto_engine_thread_init", (void *)&dso_ac_crypto_engine_thread_init },
+		{ "ac_crypto_engine_thread_destroy", (void *)&dso_ac_crypto_engine_thread_destroy },
+		{ "ac_crypto_engine_set_essid", (void *)&dso_ac_crypto_engine_set_essid },
+		{ "ac_crypto_engine_simd_width", (void *)&dso_ac_crypto_engine_simd_width },
+		{ "ac_crypto_engine_wpa_crack", (void *)&dso_ac_crypto_engine_wpa_crack },
+		{ "ac_crypto_engine_calc_pke", (void *)&dso_ac_crypto_engine_calc_pke },
 
 		{ NULL, NULL }
 	};
@@ -72,17 +72,14 @@ static void test_simd_can_crack(gconstpointer test_data)
 
 	for (; cur->addr != NULL; ++cur)
 	{
-		// fprintf(stdout, "Locating sym: %s\n", cur->sym);
-		if (!g_module_symbol(module,
-							 cur->sym,
-							 cur->addr))
+		if (!(*((void**)cur->addr) = dlsym(module, cur->sym)))
 		{
-			g_warning("%s: %s", filename, g_module_error());
-			abort();
+			fprintf(stderr, "Could not find symbol %s in %s.\n", cur->sym, module_filename);
+			exit(1);
 		}
 	}
 
-	g_assert_true(*dso_ac_crypto_engine_init);
+	assert_non_null(*dso_ac_crypto_engine_init);
 
 
 	wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED];
@@ -146,11 +143,11 @@ static void test_simd_can_crack(gconstpointer test_data)
 			>= 0)
 		{
 			// does the returned SIMD lane equal where we placed the key?
-			g_assert_cmpint(rc, ==, i);
+			assert_int_equal(rc, i);
 		}
 		else
 		{
-			g_assert_true(rc >= 0);
+			assert_true(rc >= 0);
 		}
 	}
 
@@ -159,70 +156,72 @@ static void test_simd_can_crack(gconstpointer test_data)
 
 
 	// close it
-	g_module_close(module);
+	dlclose(module);
 
-	g_free(filename);
-	g_free(entry);
+	free(entry);
 }
 
-int main(int argc, char *argv[])
+int string_has_suffix(const char *str, const char *suf)
 {
-	setlocale(LC_ALL, "");
+	assert(str && suf);
 
-	g_test_init(&argc, &argv, NULL);
-	g_test_bug_base("https://github.com/aircrack-ng/aircrack-ng/issues/");
+	const char *a = str + strlen(str);
+	const char *b = suf + strlen(suf);
 
-	// Define the tests.
-	g_test_add_func("/sanity/test1", test_my_sanity);
-	// g_test_add_func("/scalar/calculates_one_pmk", test_calc_one_pmk);
+	while (a != str && b != suf) {
+		if (*--a != *--b) break;
+	}
+	return b == suf && *a == *b;
+}
 
-	// need passed in where DSO are.
-	// fprintf(stdout, "Lib path: %s%s\n", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+static void test_shared_library_can_crack(void **state)
+{
+	char library_path[8192];
 
 	// are we inside of the build path?
-	gchar *working_directory = g_get_current_dir(); // or the binary's path?
+	char *working_directory = get_current_working_directory();
 
-	gchar *library_path = NULL;
-	if (g_str_has_prefix(working_directory, ABS_TOP_BUILDDIR)
-		|| g_str_has_prefix(working_directory, ABS_TOP_SRCDIR))
+	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR)) == 0
+	    || strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR)) == 0)
 	{
 		// use development paths
-		library_path = g_strdup_printf("%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
 	}
 	else
 	{
 		// use installation paths
-		library_path = g_strdup_printf("%s", LIBDIR);
+		snprintf(library_path, sizeof(library_path) - 1, "%s", LIBDIR);
 	}
-	g_free(working_directory);
+	free(working_directory);
+
 
 	// enumerate all DSOs in folder, opening, searching symbols, and testing them.
-	GDir *dsos = g_dir_open(library_path, 0, NULL);
-	g_assert_true(dsos);
-	g_free(library_path);
+	DIR *dsos = opendir(library_path);
+	assert_non_null(dsos);
 
-	gchar const *entry = NULL;
-	while ((entry = g_dir_read_name(dsos)) != NULL)
+	struct dirent *entry = NULL;
+	while ((entry = readdir(dsos)) != NULL)
 	{
 #if defined(__APPLE__)
 		if (g_str_has_suffix(entry, ".dylib"))
 #elif defined(WIN32) || defined(_WIN32)
 		if (g_str_has_suffix(entry, ".dll"))
 #else
-		if (g_str_has_suffix(entry, ".so"))
+		if (string_has_suffix((char*) entry, ".so"))
 #endif
 		{
-			// got an entry
-			// fprintf(stdout, "Got: %s\n", entry);
-
 			// test it
-			gchar *test_case = g_strdup_printf("/simd/can_crack/%s", entry);
-			g_test_add_data_func(test_case, (gconstpointer) ((void*) g_strdup(entry)), test_simd_can_crack);
-			g_free(test_case);
+			test_simd_can_crack(strdup(entry->d_name));
 		}
 	}
 
-	g_dir_close(dsos);
+	closedir(dsos);
+}
 
-	return g_test_run();
+int main(int argc, char *argv[])
+{
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_shared_library_can_crack),
+	};
+	return cmocka_run_group_tests(tests, NULL, NULL);
 }
