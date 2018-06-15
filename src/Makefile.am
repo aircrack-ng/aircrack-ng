@@ -83,6 +83,24 @@ LIBAC_LIBS = libaclib.la
 
 AC_COMMON = crypto.c uniqueiv.c session.c
 
+if LIBGCRYPT
+SRC_AC          += sha1-git.c
+SRC_AC_ALL              += sha1-git.c
+SRC_ACLIB               += sha1-git.c
+SRC_AD          += sha1-git.c
+SRC_PF          += sha1-git.c
+SRC_IV          += sha1-git.c
+SRC_AR          += sha1-git.c
+SRC_ADU         += sha1-git.c
+SRC_AT          += sha1-git.c
+SRC_AB          += sha1-git.c
+SRC_AL          += sha1-git.c
+SRC_WS          += sha1-git.c
+SRC_TT          += sha1-git.c
+SRC_BS          += sha1-git.c
+SRC_AV          += sha1-git.c
+endif
+
 LIBAIRCRACK_CRYPTO = aircrack-crypto/libaircrack-crypto.la
 LIBAIRCRACK_CRYPTO_LIBS = -Laircrack-crypto -laircrack-crypto
 
