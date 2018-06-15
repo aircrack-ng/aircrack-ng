@@ -11,7 +11,7 @@ case "$(uname -m)" in
 esac
 
 BENCHMARKS=benchmark.csv
-TOP=$(dirname "$0")/../..
+TOP=$(dirname "$0")/..
 REV=$("$TOP/evalrev")
 
 touch "$BENCHMARKS"
