@@ -61,13 +61,16 @@ LIBAIRCRACK_UTIL_LIBS = -L../../src/aircrack-util -laircrack-util
 test_calc_one_pmk_SOURCES = test-calc-one-pmk.c $(LIBAIRCRACK_CRYPTO)
 test_calc_one_pmk_LDADD = $(CMOCKA_LIBS) $(LIBAIRCRACK_CRYPTO_LIBS)
 
+test_string_has_suffix_SOURCES = test-string-has-suffix.c $(LIBAIRCRACK_UTIL)
+test_string_has_suffix_LDADD = $(CMOCKA_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
+
 test_wpapsk_SOURCES = test-wpapsk.c $(LIBAIRCRACK_UTIL)
 test_wpapsk_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" "-DLIBDIR=\"$(libdir)\""
 test_wpapsk_LDADD = $(CMOCKA_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
-TESTS = test-calc-one-pmk test-wpapsk
+TESTS = test-calc-one-pmk test-string-has-suffix test-wpapsk
 
-check_PROGRAMS = test-calc-one-pmk test-wpapsk
+check_PROGRAMS = test-calc-one-pmk test-string-has-suffix test-wpapsk
 
 
 @CODE_COVERAGE_RULES@
