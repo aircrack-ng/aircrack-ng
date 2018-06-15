@@ -5740,7 +5740,7 @@ void load_aircrack_crypto_dso(void)
 	module = dlopen (module_filename, RTLD_LAZY);
 	if (!module)
 	{
-		perror("dlopen");
+		fprintf(stderr, "Unable to load aircrack-crypto library.\n\nIt must be installed or ran within the build directory.\n");
 		exit(1);
 	}
 
