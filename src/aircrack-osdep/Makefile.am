@@ -42,8 +42,7 @@ SUBDIRS = radiotap
 AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src/include \
               -I$(top_srcdir)/src \
-              $(LIBNL_CFLAGS) \
-              $(GLIB_CFLAGS)
+              $(LIBNL_CFLAGS)
 
 SRCS_COMMON = network.c file.c
 SRCS = osdep.c $(SRCS_COMMON)
