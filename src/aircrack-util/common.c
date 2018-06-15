@@ -43,6 +43,8 @@
 #include <ctype.h>
 #include <limits.h>
 #include <errno.h>
+#include <assert.h>
+
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -669,4 +671,17 @@ char *get_current_working_directory(void)
 	} while (wd_realloc == NULL && errno == ERANGE);
 
 	return ret;
+}
+
+int string_has_suffix(const char *str, const char *suf)
+{
+	assert(str && suf);
+
+	const char *a = str + strlen(str);
+	const char *b = suf + strlen(suf);
+
+	while (a != str && b != suf) {
+		if (*--a != *--b) break;
+	}
+	return b == suf && *a == *b;
 }

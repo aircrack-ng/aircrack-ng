@@ -128,6 +128,8 @@ extern int hexToInt(char s[], int len);
 
 extern void rtrim(char *line);
 
+extern int string_has_suffix(const char *str, const char *suf);
+
 #ifdef __cplusplus
 };
 #endif

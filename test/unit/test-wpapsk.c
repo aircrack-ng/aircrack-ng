@@ -161,19 +161,6 @@ static void test_simd_can_crack(void* test_data)
 	free(entry);
 }
 
-int string_has_suffix(const char *str, const char *suf)
-{
-	assert(str && suf);
-
-	const char *a = str + strlen(str);
-	const char *b = suf + strlen(suf);
-
-	while (a != str && b != suf) {
-		if (*--a != *--b) break;
-	}
-	return b == suf && *a == *b;
-}
-
 static void test_shared_library_can_crack(void **state)
 {
 	char library_path[8192];
