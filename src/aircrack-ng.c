@@ -5722,15 +5722,15 @@ void load_aircrack_crypto_dso(void)
 	free(working_directory);
 
 	snprintf(module_filename, sizeof(module_filename) - 1, "%s/%s%s.%s", library_path,
-#if _WIN32
+#if defined(WIN32) || defined(_WIN32)
 	"",
 #else
 	"lib",
 #endif
 	buffer,
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32)
 	"dll"
-#elif __APPLE__
+#elif defined(__APPLE__)
 	"dylib"
 #else
 	"so"
