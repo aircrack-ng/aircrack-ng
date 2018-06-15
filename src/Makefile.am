@@ -325,6 +325,8 @@ EXTRA_DIST = wpaclean.c \
              linecount.h \
              aircrack-ptw-lib.c \
              crypto.h \
+             sha1-git.c \
+             sha1-git.h \
              trampoline.c \
              trampoline.h \
              trampoline_x86.c \
