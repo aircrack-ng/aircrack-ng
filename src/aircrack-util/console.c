@@ -117,7 +117,7 @@ void move(int which, int n)
 	char command[13];
 	static const char movement[] = {'A', 'B', 'C', 'D'};
 
-	assert(which >= 0 && which < 4 && "Invalid cursor movement");
+	assert(which >= 0 && which < 4);
 	snprintf(command, sizeof(command), "%c[%d%c", 0x1B, n, movement[which]);
 	fprintf(stderr, "%s", command);
 	fflush(stderr);

@@ -36,8 +36,17 @@
 #else
 #include "sse-intrinsics.h"
 #endif
-#include "crypto.h"
 #include "wpapsk.h"
+#ifdef USE_GCRYPT
+#include "gcrypt-openssl-wrapper.h"
+#include "sha1-git.h"
+#else
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+// We don't use EVP. Bite me
+#include <openssl/rc4.h>
+#include <openssl/aes.h>
+#endif
 
 #include "crypto_engine.h"
 
