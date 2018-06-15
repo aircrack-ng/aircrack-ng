@@ -21,7 +21,6 @@ addons:
     - libssl-dev
     - libnl-genl-3-dev
     - libpcre3-dev
-    - libcmocka-dev
     - lcov
 
 compiler:
