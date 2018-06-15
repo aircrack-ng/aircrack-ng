@@ -65,8 +65,6 @@
 #include <pcre.h>
 #endif
 
-#include <glib-2.0/glib.h>
-
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.h"
@@ -86,6 +84,8 @@
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 #endif
+
+#define ArrayCount(a) (sizeof((a)) / sizeof((a)[0]))
 
 void dump_sort(void);
 void dump_print(int ws_row, int ws_col, int if_num);
@@ -6066,7 +6066,7 @@ void sighandler(int signum)
 			return;
 		}
 
-		if (card < 0 || card >= G_N_ELEMENTS(G.frequency))
+		if (card < 0 || card >= ArrayCount(G.frequency))
 		{
 			// invalid received data
 			fprintf(stderr,

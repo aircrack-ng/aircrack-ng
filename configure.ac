@@ -91,7 +91,6 @@ AIRCRACK_NG_REVISION
 AIRCRACK_NG_CRYPTO
 AIRCRACK_NG_ETHTOOL
 AIRCRACK_NG_LIBNL
-PKG_CHECK_MODULES([GLIB], [glib-2.0 gmodule-2.0 gthread-2.0], [GLIB_FOUND=yes], AC_MSG_ERROR([Glib 2 was not found. Please see README.md]))
 
 #
 # Optional
@@ -231,7 +230,6 @@ ${PACKAGE} ${VERSION}
   Required Libraries:
     Ethtool:                     ${ETHTOOL_FOUND}
     Libnl:                       ${NLLIBNAME_FOUND}
-    Glib 2.0:                    ${GLIB_FOUND}
 
   Optional Libraries:
     Airpcap:                     ${AIRPCAP}
