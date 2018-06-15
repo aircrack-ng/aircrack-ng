@@ -60,6 +60,7 @@
 #include <err.h>
 #include <math.h>
 #include <limits.h>
+#include <dlfcn.h>
 
 #include "version.h"
 #include "crypto.h"
@@ -83,7 +84,6 @@
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
-#include <dlfcn.h>
 
 sqlite3 *db;
 #else
