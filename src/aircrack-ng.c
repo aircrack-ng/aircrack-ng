@@ -5708,8 +5708,8 @@ void load_aircrack_crypto_dso(void)
 
 	char *working_directory = get_current_working_directory(); // or the binary's path?
 
-	if (string_has_suffix(working_directory, ABS_TOP_BUILDDIR)
-	    || string_has_suffix(working_directory, ABS_TOP_SRCDIR))
+	if (strncmp(working_directory, ABS_TOP_BUILDDIR, sizeof(ABS_TOP_BUILDDIR) - 1) == 0
+	    || strncmp(working_directory, ABS_TOP_SRCDIR, sizeof(ABS_TOP_SRCDIR) - 1) == 0)
 	{
 		// use development paths
 		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
