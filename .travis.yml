@@ -7,7 +7,7 @@ language: c
 sudo: false
 
 before_install:
-    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install glib openssl libgcrypt sqlite3 libpcap pcre || echo -e "\e[1;31m Skipping Homebrew... \e[0m"); fi
+    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install cmocka openssl libgcrypt sqlite3 libpcap pcre || echo -e "\e[1;31m Skipping Homebrew... \e[0m"); fi
     - if [ "$TRAVIS_OS_NAME" == "osx" ]; then echo -e "\e[1;31m Skipping Code Coverage... \e[0m"; else pip install --user cpp-coveralls; fi
 
 addons:
@@ -21,10 +21,7 @@ addons:
     - libssl-dev
     - libnl-genl-3-dev
     - libpcre3-dev
-    - libglib2.0-0
-    - libjson-glib-dev
-    - libglib2.0-dev
-    - libglib2.0-bin
+    - libcmocka-dev
     - lcov
 
 compiler:
