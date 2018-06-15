@@ -38,7 +38,7 @@
 
 #ifdef USE_GCRYPT
 #include "gcrypt-openssl-wrapper.h"
-#include "aircrack-crypto/sha1-git.h"
+#include "sha1-git.h"
 #else
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
