@@ -5708,8 +5708,8 @@ void load_aircrack_crypto_dso(void)
 
 	char *working_directory = get_current_working_directory(); // or the binary's path?
 
-	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR)) == 0
-	    || strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR)) == 0)
+	if (string_has_suffix(working_directory, ABS_TOP_BUILDDIR)
+	    || string_has_suffix(working_directory, ABS_TOP_SRCDIR))
 	{
 		// use development paths
 		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
@@ -5740,7 +5740,7 @@ void load_aircrack_crypto_dso(void)
 	module = dlopen (module_filename, RTLD_LAZY);
 	if (!module)
 	{
-		fprintf(stderr, "Unable to load aircrack-crypto library.\n\nIt must be installed or ran within the build directory.\n");
+		fprintf(stderr, "Unable to load aircrack-crypto library.\n\nIt must be installed or ran within the build directory.\n%s", module_filename);
 		exit(1);
 	}
 
