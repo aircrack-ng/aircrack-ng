@@ -5666,7 +5666,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 }
 
 #if DYNAMIC
-void load_aircrack_crypto_dso(void)
+void load_aircrack_crypto_dso(int simd_features)
 {
 	char buffer[8192];
 	char library_path[8192];
@@ -5675,7 +5675,10 @@ void load_aircrack_crypto_dso(void)
 
 	simd_init();
 
-	int simd_features = simd_get_supported_features();
+	if (simd_features == -1)
+	{
+		simd_features = simd_get_supported_features();
+	}
 
 	strcpy(buffer, "aircrack-crypto");
 
@@ -5824,8 +5827,32 @@ int main(int argc, char *argv[])
 	srand(time(NULL));
 
 #if DYNAMIC
-	// Load the best available shared library.
-	load_aircrack_crypto_dso();
+	// Load the best available shared library, or the user specified one.
+	if (argc == 2 && strncmp(argv[1], "--simd=", 7) == 0)
+	{
+		const char *simd = &argv[1][7];
+		int simd_features = SIMD_SUPPORTS_NONE;
+
+		if (strncmp(simd, "avx2", 4) == 0)         simd_features = SIMD_SUPPORTS_AVX2;
+		else if (strncmp(simd, "avx", 3) == 0)     simd_features = SIMD_SUPPORTS_AVX;
+		else if (strncmp(simd, "sse2", 4) == 0)    simd_features = SIMD_SUPPORTS_SSE2;
+		else if (strncmp(simd, "neon", 4) == 0)    simd_features = SIMD_SUPPORTS_NEON;
+		else if (strncmp(simd, "asimd", 5) == 0)   simd_features = SIMD_SUPPORTS_ASIMD;
+		else if (strncmp(simd, "altivec", 7) == 0) simd_features = SIMD_SUPPORTS_ALTIVEC;
+		else if (strncmp(simd, "power8", 6) == 0)  simd_features = SIMD_SUPPORTS_POWER8;
+		else if (strncmp(simd, "generic", 7) == 0) simd_features = SIMD_SUPPORTS_NONE;
+		else
+		{
+			fprintf(stderr, "Unknown SIMD architecture.\n");
+			exit(1);
+		}
+
+		load_aircrack_crypto_dso(simd_features);
+	}
+	else
+	{
+		load_aircrack_crypto_dso(-1);
+	}
 #endif
 
 	// Get number of CPU (return -1 if failed).
@@ -5906,6 +5933,7 @@ int main(int argc, char *argv[])
 			// handle the case where it's used along with other
 			// parameters.
 			{"restore-session", 1, 0, 'R'},
+			{"simd", 1, 0, 'W'},
 			{0, 0, 0, 0}};
 
 		// Load argc/argv either from the cracking session or from arguments
@@ -5938,6 +5966,10 @@ int main(int argc, char *argv[])
 				fprintf(stderr,
 						"This option must be used without any other option!\n");
 				return EXIT_FAILURE;
+
+			case 'W':
+				break;
+
 			case 'S':
 				_speed_test = 1;
 				break;
