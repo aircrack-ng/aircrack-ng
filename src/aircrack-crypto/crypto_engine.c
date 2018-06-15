@@ -63,7 +63,7 @@ EXPORT int ac_crypto_engine_simd_width()
 
 EXPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine)
 {
-	assert(engine != NULL && "Engine is NULL");
+	assert(engine != NULL);
 #ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_init(%p)\n", engine);
 #endif
@@ -78,7 +78,7 @@ EXPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine)
 
 EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine)
 {
-	assert(engine != NULL && "Engine is NULL");
+	assert(engine != NULL);
 #ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_destroy(%p)\n", engine);
 #endif
@@ -90,7 +90,7 @@ EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine)
 EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
 									   const uint8_t *essid)
 {
-	assert(engine != NULL && "Engine is NULL");
+	assert(engine != NULL);
 #ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_set_essid(%p, %s)\n", engine, essid);
 #endif
@@ -101,7 +101,7 @@ EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
 EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
 										int threadid)
 {
-	assert(engine != NULL && "Engine is NULL");
+	assert(engine != NULL);
 #ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_thread_init(%p, %d)\n", engine, threadid);
 #endif
@@ -131,7 +131,7 @@ EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
 EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
 											int threadid)
 {
-	assert(engine != NULL && "Engine is NULL");
+	assert(engine != NULL);
 #ifdef XDEBUG
 	fprintf(
 		stderr, "ac_crypto_engine_thread_destroy(%p, %d)\n", engine, threadid);
@@ -183,7 +183,7 @@ EXPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
 {
 	uint8_t *pke = engine->pke[threadid];
 
-	assert(pke != NULL && "Forget to initialize thread?");
+	assert(pke != NULL);
 
 	/* pre-compute the key expansion buffer */
 	memcpy(pke, "Pairwise key expansion", 23);
