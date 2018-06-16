@@ -65,3 +65,12 @@ Makefile
 /benchmark.csv
 /.cccc
 /cccc.opt
+/.scannerwork
+benchmark*.csv
+/bw-output
+compile_commands.json
+coverage*.info
+/test/cryptounittest/default.profraw
+/test/unit/test-calc-one-pmk
+/test/unit/test-string-has-suffix
+/test/unit/test-wpapsk
