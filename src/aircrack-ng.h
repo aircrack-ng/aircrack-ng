@@ -105,7 +105,7 @@ enum KoreK_attacks
 	A_neg /* helps reject false positives */
 };
 
-struct dictfiles
+static struct dictfiles
 {
 	off_t dictsize; /* Total file size */
 	off_t dictpos; /* Current position of dictionary */
@@ -113,7 +113,7 @@ struct dictfiles
 	int loaded; /* Have finished processing? */
 } dicts;
 
-struct options
+static struct options
 {
 	int amode; /* attack mode          */
 	int essid_set; /* essid set flag       */
@@ -195,7 +195,7 @@ typedef struct
 	int idx, val;
 } vote;
 
-struct WEP_data
+static struct WEP_data
 {
 	unsigned char key[64]; /* the current chosen WEP key   */
 	unsigned char *ivbuf; /* buffer holding all the IVs   */
