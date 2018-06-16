@@ -105,7 +105,9 @@ libaircrack_crypto_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 lib_LTLIBRARIES = libaircrack-crypto.la
 
 if ARM
+if NEON
 lib_LTLIBRARIES += libaircrack-crypto-arm-neon.la
+endif
 endif
 if PPC
 lib_LTLIBRARIES += libaircrack-crypto-ppc-altivec.la libaircrack-crypto-ppc-power8.la
