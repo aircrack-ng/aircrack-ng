@@ -19,7 +19,7 @@ esac
 find . -name .deps -o -name '*.la' -o -name .libs -o -name Makefile -print0 | xargs -0 rm -vfr
 
 autoreconf -vi
-env CFLAGS="-Og -g3 -Werror" CXXFLAGS="-Og -g3 -Werror" \
+env CFLAGS="-Og -g3 -Werror" CXXFLAGS="-Og -g3" \
     ./configure --enable-shared --with-experimental --enable-code-coverage
 make clean
 make
