@@ -222,9 +222,11 @@ EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t *key,
 	SHA_CTX ctx_opad;
 	SHA_CTX sha1_ctx;
 
-	if (essid_pre == NULL || essid_pre[0] == 0 || essid_pre_len > 32)
+	assert(essid_pre != NULL);
+
+	if (essid_pre_len > 32)
 	{
-		return;
+		essid_pre_len = 32;
 	}
 
 	memset(essid, 0, sizeof(essid));
