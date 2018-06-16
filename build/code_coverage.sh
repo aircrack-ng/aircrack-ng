@@ -5,7 +5,7 @@ set -eufx
 #
 # Bail on OS X for testing this functionality.
 #
-if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     exit 0
 fi
 
