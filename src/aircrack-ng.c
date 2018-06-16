@@ -5686,7 +5686,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 #if DYNAMIC
 void load_aircrack_crypto_dso(int simd_features)
 {
-	char buffer[8192];
+	char buffer[8192] = {"aircrack-crypto"};
 	char library_path[8192];
 	char module_filename[8192];
 	size_t buffer_remaining = 8192;
@@ -5697,8 +5697,6 @@ void load_aircrack_crypto_dso(int simd_features)
 	{
 		simd_features = simd_get_supported_features();
 	}
-
-	strcpy(buffer, "aircrack-crypto");
 
 	if (simd_features & SIMD_SUPPORTS_AVX2)
 	{
