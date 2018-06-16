@@ -8,7 +8,7 @@ sudo: false
 
 before_install:
     - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install cmocka openssl libgcrypt sqlite3 libpcap pcre || echo -e "\e[1;31m Skipping Homebrew... \e[0m"); fi
-    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (sudo sudo python -m ensurepip && pip install https://files.pythonhosted.org/packages/c2/cd/f76ef6eabea3e3a8a61237abb2d7f4faa6a2108cc8dff8ef4ab046f70284/cpp-coveralls-0.4.0.tar.gz --user); else echo -e "\e[1;31m Skipping Code Coverage... \e[0m" ; fi
+    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (sudo python -m ensurepip && sudo pip --upgrade pip && pip install https://files.pythonhosted.org/packages/c2/cd/f76ef6eabea3e3a8a61237abb2d7f4faa6a2108cc8dff8ef4ab046f70284/cpp-coveralls-0.4.0.tar.gz --user); else echo -e "\e[1;31m Skipping Code Coverage... \e[0m" ; fi
 
 addons:
   apt:
