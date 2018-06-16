@@ -42,7 +42,25 @@ AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src \
               $(LIBNL_CFLAGS)
 
-libaircrack_util_la_SOURCES = common.c console.c mcs_index_rates.c simd_cpuid.c verifyssid.c
+if ARM
+TRAMPOLINE = trampoline_arm.c
+endif
+if PPC
+TRAMPOLINE = trampoline_ppc.c
+endif
+if X86
+TRAMPOLINE = trampoline_x86.c
+endif
+
+if !ARM
+if !PPC
+if !X86
+TRAMPOLINE = trampoline_stubs.c
+endif
+endif
+endif
+
+libaircrack_util_la_SOURCES = common.c console.c mcs_index_rates.c simd_cpuid.c $(TRAMPOLINE) verifyssid.c
 
 noinst_LTLIBRARIES = libaircrack-util.la
 
@@ -54,6 +72,12 @@ EXTRA_DIST = common.c \
              mcs_index_rates.h \
              simd_cpuid.c \
              simd_cpuid.h \
+             trampoline.c \
+             trampoline.h \
+             trampoline_x86.c \
+             trampoline_arm.c \
+             trampoline_ppc.c \
+             trampoline_stubs.c \
              verifyssid.c \
              verifyssid.h
 

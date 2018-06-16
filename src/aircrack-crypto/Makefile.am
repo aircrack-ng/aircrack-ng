@@ -63,7 +63,7 @@ libaircrack_crypto_x86_avx_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIB
 libaircrack_crypto_x86_avx_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
 libaircrack_crypto_x86_sse2_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
-libaircrack_crypto_x86_sse2_la_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
+libaircrack_crypto_x86_sse2_la_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE -DJOHN_SSE2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_x86_sse2_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_x86_sse2_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
@@ -84,7 +84,7 @@ libaircrack_crypto_ppc_altivec_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB
 libaircrack_crypto_ppc_altivec_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 
 libaircrack_crypto_ppc_power8_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
-libaircrack_crypto_ppc_power8_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
+libaircrack_crypto_ppc_power8_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC -DJOHN_POWER8 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_ppc_power8_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 libaircrack_crypto_ppc_power8_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 

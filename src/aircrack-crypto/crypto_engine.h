@@ -93,6 +93,9 @@ struct ac_crypto_engine
 
 typedef struct ac_crypto_engine ac_crypto_engine_t;
 
+/// The compiled-in features required to correctly execute on host.
+IMPORT int ac_crypto_engine_supported_features(void);
+
 /// global init. this could initialize threadid 1, but...
 IMPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine);
 IMPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine);

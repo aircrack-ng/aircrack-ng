@@ -48,9 +48,32 @@
 #include <openssl/aes.h>
 #endif
 
+#include "aircrack-util/trampoline.h"
+
 #include "crypto_engine.h"
 
 // #define XDEBUG
+
+EXPORT int ac_crypto_engine_supported_features(void)
+{
+#if defined(JOHN_AVX2)
+	return SIMD_SUPPORTS_AVX2;
+#elif defined(JOHN_AVX)
+	return SIMD_SUPPORTS_AVX;
+#elif defined(JOHN_SSE2)
+	return SIMD_SUPPORTS_SSE2;
+#elif defined(JOHN_NEON)
+	return SIMD_SUPPORTS_NEON;
+#elif defined(JOHN_ASIMD)
+	return SIMD_SUPPORTS_ASIMD;
+#elif defined(JOHN_POWER8)
+	return SIMD_SUPPORTS_POWER8;
+#elif defined(JOHN_ALTIVEC)
+	return SIMD_SUPPORTS_ALTIVEC;
+#else
+	return SIMD_SUPPORTS_NONE;
+#endif
+}
 
 EXPORT int ac_crypto_engine_simd_width()
 {

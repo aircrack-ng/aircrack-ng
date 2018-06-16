@@ -166,25 +166,7 @@ endif
 
 LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/src/aircrack-crypto/
 
-if ARM
-TRAMPOLINE = trampoline_arm.c
-endif
-if PPC
-TRAMPOLINE = trampoline_ppc.c
-endif
-if X86
-TRAMPOLINE = trampoline_x86.c
-endif
-
-if !ARM
-if !PPC
-if !X86
-TRAMPOLINE = trampoline_stubs.c
-endif
-endif
-endif
-
-aircrack_ng_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) $(TRAMPOLINE) $(LIBAIRCRACK_UTIL)
+aircrack_ng_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) $(LIBAIRCRACK_UTIL)
 aircrack_ng_CFLAGS = $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) $(LIBPTW_CFLAGS) "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" "-DLIBDIR=\"$(libdir)\""
 aircrack_ng_LDADD = $(COMMON_LDADD) $(AIRCRACK_COMMON_LDADD) $(LIBAC_LIBS) $(SQLITE3_LDFLAGS) $(LIBPTW_LIBS)
 
@@ -327,12 +309,6 @@ EXTRA_DIST = wpaclean.c \
              crypto.h \
              sha1-git.c \
              sha1-git.h \
-             trampoline.c \
-             trampoline.h \
-             trampoline_x86.c \
-             trampoline_arm.c \
-             trampoline_ppc.c \
-             trampoline_stubs.c \
              cowpatty.c \
              cowpatty.h \
              session.c \

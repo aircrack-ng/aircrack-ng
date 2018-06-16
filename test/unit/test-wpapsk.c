@@ -11,6 +11,7 @@
 #include <dlfcn.h>
 
 #include "aircrack-util/common.h"
+#include "aircrack-util/trampoline.h"
 #include "aircrack-crypto/crypto_engine.h"
 
 static void test_simd_can_crack(void* test_data)
@@ -29,6 +30,8 @@ static void test_simd_can_crack(void* test_data)
 	int (*dso_ac_crypto_engine_wpa_crack)(ac_crypto_engine_t *engine, wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED], uint8_t eapol[256], uint32_t eapol_size, uint8_t mic[8][20], uint8_t keyver, const uint8_t cmpmic[20], int nparallel, int threadid);
 
 	void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine, uint8_t bssid[6], uint8_t stmac[6], uint8_t anonce[32], uint8_t snonce[32], int threadid);
+
+	int (*dso_ac_crypto_engine_supported_features)();
 
 	char *working_directory = get_current_working_directory();
 
@@ -64,6 +67,7 @@ static void test_simd_can_crack(void* test_data)
 		{ "ac_crypto_engine_simd_width", (void *)&dso_ac_crypto_engine_simd_width },
 		{ "ac_crypto_engine_wpa_crack", (void *)&dso_ac_crypto_engine_wpa_crack },
 		{ "ac_crypto_engine_calc_pke", (void *)&dso_ac_crypto_engine_calc_pke },
+		{ "ac_crypto_engine_supported_features", (void*)&dso_ac_crypto_engine_supported_features },
 
 		{ NULL, NULL }
 	};
@@ -81,6 +85,13 @@ static void test_simd_can_crack(void* test_data)
 
 	assert_non_null(*dso_ac_crypto_engine_init);
 
+	// Check if this shared library CAN run on the machine, if not; skip testing it.
+	if (simd_get_supported_features() < dso_ac_crypto_engine_supported_features())
+	{
+		// unit-test cannot run without an illegal instruction.
+		fprintf(stderr, "Skipping test because host does not support instructions.\n");
+		goto out;
+	}
 
 	wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED];
 	uint8_t mic[8][20];
@@ -154,7 +165,7 @@ static void test_simd_can_crack(void* test_data)
 	dso_ac_crypto_engine_thread_destroy(&engine, 1);
 	dso_ac_crypto_engine_destroy(&engine);
 
-
+out:
 	// close it
 	dlclose(module);
 
@@ -190,15 +201,20 @@ static void test_shared_library_can_crack(void **state)
 	while ((entry = readdir(dsos)) != NULL)
 	{
 #if defined(__APPLE__)
-		if (g_str_has_suffix(entry, ".dylib"))
+		if (g_str_has_suffix((char*) entry->d_name, ".dylib"))
 #elif defined(WIN32) || defined(_WIN32)
-		if (g_str_has_suffix(entry, ".dll"))
+		if (g_str_has_suffix((char*) entry->d_name, ".dll"))
 #else
-		if (string_has_suffix((char*) entry, ".so"))
+		if (string_has_suffix((char*) entry->d_name, ".so"))
 #endif
 		{
 			// test it
+			fprintf(stderr, "Testing: %s\n", entry->d_name);
 			test_simd_can_crack(strdup(entry->d_name));
+		}
+		else
+		{
+			fprintf(stderr, "Skipping: %s\n", entry->d_name);
 		}
 	}
 

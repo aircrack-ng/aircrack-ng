@@ -79,7 +79,7 @@
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 #include "aircrack-util/simd_cpuid.h"
-#include "trampoline.h"
+#include "aircrack-util/trampoline.h"
 #include <aircrack-crypto/crypto_engine.h>
 
 #ifdef HAVE_SQLITE
