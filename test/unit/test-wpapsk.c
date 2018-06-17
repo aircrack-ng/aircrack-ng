@@ -201,9 +201,9 @@ static void test_shared_library_can_crack(void **state)
 	while ((entry = readdir(dsos)) != NULL)
 	{
 #if defined(__APPLE__)
-		if (g_str_has_suffix((char*) entry->d_name, ".dylib"))
+		if (string_has_suffix((char*) entry->d_name, ".dylib"))
 #elif defined(WIN32) || defined(_WIN32)
-		if (g_str_has_suffix((char*) entry->d_name, ".dll"))
+		if (string_has_suffix((char*) entry->d_name, ".dll"))
 #else
 		if (string_has_suffix((char*) entry->d_name, ".so"))
 #endif
