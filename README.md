@@ -171,6 +171,8 @@ to your choosing:
 
 * **enable-shared**:   Make OSdep a shared library.
 
+* **disable-shared**: When combined with **enable-static**, it will statically compile Aircrack-ng.
+
 #### Examples:
 
   * Configure and compiling:
