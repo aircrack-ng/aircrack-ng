@@ -2,7 +2,12 @@
 
 set -e
 
-./autogen.sh --with-experimental --with-gcrypt
+EXTRA=
+case "${CC:=}" in
+    clang*|llvm*) EXTRA="--with-asan";;
+esac
+
+./autogen.sh --with-experimental --with-gcrypt ${EXTRA}
 make
 make check || { cat test/test-suite.log && exit 1; }
 make clean
