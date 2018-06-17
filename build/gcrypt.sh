@@ -9,6 +9,6 @@ esac
 
 ./autogen.sh --with-experimental --with-gcrypt ${EXTRA}
 make
-make check || { cat test/test-suite.log && exit 1; }
+make check || { find test -name 'test-suite.log' -exec cat {} ';' && exit 1; }
 make clean
 exit 0
