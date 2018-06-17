@@ -5844,10 +5844,10 @@ int main(int argc, char *argv[])
 
 #if DYNAMIC
 	// Load the best available shared library, or the user specified one.
+	int simd_features = -1;
 	if (argc >= 2 && strncmp(argv[1], "--simd=", 7) == 0)
 	{
 		const char *simd = &argv[1][7];
-		int simd_features = SIMD_SUPPORTS_NONE;
 
 		if (strncmp(simd, "avx2", 4) == 0)         simd_features = SIMD_SUPPORTS_AVX2;
 		else if (strncmp(simd, "avx", 3) == 0)     simd_features = SIMD_SUPPORTS_AVX;
@@ -5862,13 +5862,9 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Unknown SIMD architecture.\n");
 			exit(1);
 		}
+	}
 
-		load_aircrack_crypto_dso(simd_features);
-	}
-	else
-	{
-		load_aircrack_crypto_dso(-1);
-	}
+	load_aircrack_crypto_dso(simd_features);
 #endif
 
 	// Get number of CPU (return -1 if failed).
