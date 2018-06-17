@@ -5844,7 +5844,7 @@ int main(int argc, char *argv[])
 
 #if DYNAMIC
 	// Load the best available shared library, or the user specified one.
-	if (argc == 2 && strncmp(argv[1], "--simd=", 7) == 0)
+	if (argc >= 2 && strncmp(argv[1], "--simd=", 7) == 0)
 	{
 		const char *simd = &argv[1][7];
 		int simd_features = SIMD_SUPPORTS_NONE;
