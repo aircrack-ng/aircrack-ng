@@ -17,13 +17,13 @@ The aim of is tools is to provide a way to create dumps with a known encryption 
 Set the BSSID (Access Point MAC)
 .TP
 .I -f <num> or --first <num>
-Value for the first IV generated. May be used in combination with \-p or \-\-prng.
+Value for the first IV generated.
 .TP
 .I -k <key> or --key <key>
 Target network WEP key in hex. Separator between bytes is accepted but not necessary.
 .TP
 .I -s <num> or --seed <num>
-Seed used to setup random generator.
+Seed used to setup random generator. May be used in combination with \-p or \-\-prng.
 .TP
 .I -w <file> or --write <file>
 Filename to write IVs into.
