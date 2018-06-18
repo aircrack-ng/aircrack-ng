@@ -4542,7 +4542,7 @@ int crack_wpa_thread(void *arg)
 			pthread_mutex_lock(&mx_nb);
 
 			for (i = 0; i < nparallel; i++)
-				if (keys[i].v[0] != 0)
+				if (keys[i].length > 0)
 				{
 					nb_tried++;
 					nb_kprev++;
@@ -4581,14 +4581,17 @@ int crack_wpa_thread(void *arg)
 			goto crack_wpa_cleanup;
 		}
 
+		int nbkeys = 0;
+		for (i = 0; i < nparallel; i++)
+			if (keys[i].length > 0)
+			{
+				++nbkeys;
+			}
+
 		pthread_mutex_lock(&mx_nb);
 
-		for (i = 0; i < nparallel; i++)
-			if (keys[i].v[0] != 0)
-			{
-				nb_tried++;
-				nb_kprev++;
-			}
+		nb_tried += nbkeys;
+		nb_kprev += nbkeys;
 
 		pthread_mutex_unlock(&mx_nb);
 
