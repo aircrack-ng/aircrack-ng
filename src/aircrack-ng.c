@@ -4592,7 +4592,7 @@ int crack_wpa_thread(void *arg)
 
 		pthread_mutex_unlock(&mx_nb);
 
-		if (!opt.is_quiet)
+		if (threadid == 0 && !opt.is_quiet)
 		{
 			len = keys[0].length;
 			if (len > 64) len = 64;
