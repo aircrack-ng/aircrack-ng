@@ -20,7 +20,7 @@ for T in $TESTS; do
     NCPU=1
 
     while [ $NCPU -le $(nproc) ]; do
-        RESULT=$(./src/aircrack-ng --simd=$T -p $NCPU -S | tail -n1 | awk '{ print $1 }')
+        RESULT=$(./src/aircrack-ng --simd=$T -p $NCPU -S | tr '\r' '\n' | awk -v max=0 '{if($1>max){max=$1}}END{print max}')
         echo "$REV,$(uname -m),$T,$NCPU,$RESULT" | tee -a "$BENCHMARKS"
 
         NCPU=$(($NCPU + $NCPU))
