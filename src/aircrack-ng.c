@@ -4210,7 +4210,7 @@ void show_wpa_stats(char *key,
 	float delta, calc, ksec;
 	int i, et_h, et_m, et_s;
 	char tmpbuf[28];
-	long long int remain, eta;
+	long long int remain, eta, cur_nb_kprev;
 
 	if (chrono(&t_stats, 0) < 0.15 && force == 0) return;
 
@@ -4235,12 +4235,20 @@ void show_wpa_stats(char *key,
 
 		t_kprev.tv_sec += 3;
 		delta = chrono(&t_kprev, 0);
+
+		pthread_mutex_lock(&mx_nb);
 		nb_kprev *= delta / delta0;
+		cur_nb_kprev = nb_kprev;
+		pthread_mutex_unlock(&mx_nb);
+	} else {
+		pthread_mutex_lock(&mx_nb);
+		cur_nb_kprev = nb_kprev;
+		pthread_mutex_unlock(&mx_nb);
 	}
 
 	if (_speed_test)
 	{
-		int ks = (int) ((float) nb_kprev / delta);
+		int ks = (int) ((float) cur_nb_kprev / delta);
 
 		printf("%d k/s\r", ks);
 		fflush(stdout);
@@ -4254,7 +4262,7 @@ void show_wpa_stats(char *key,
 		goto __out;
 	}
 
-	ksec = (float) nb_kprev / delta;
+	ksec = (float) cur_nb_kprev / delta;
 
 	if (opt.l33t)
 	{
@@ -4271,7 +4279,7 @@ void show_wpa_stats(char *key,
 			   et_m,
 			   et_s,
 			   nb_tried,
-			   (delta == 0) ? 0 : (float) nb_kprev / delta);
+			   (delta == 0) ? 0 : (float) cur_nb_kprev / delta);
 	}
 	else
 	{
@@ -4283,7 +4291,7 @@ void show_wpa_stats(char *key,
 			   et_s,
 			   nb_tried,
 			   opt.wordcount,
-			   (delta == 0) ? 0 : (float) nb_kprev / delta);
+			   (delta == 0) ? 0 : (float) cur_nb_kprev / delta);
 
 		moveto(7, 6);
 		printf("Time left: ");
