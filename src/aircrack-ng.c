@@ -7107,19 +7107,6 @@ __start:
 
 		if (db == NULL)
 		{
-#if defined(HAVE_PTHREAD_AFFINITY_NP) && HAVE_PTHREAD_AFFINITY_NP
-			int cpuMultiplier = 1;
-			int cpus = get_nb_cpus();
-
-			if (cpus > 1)
-			{
-				cpuMultiplier = cpus / opt.nbcpu;
-
-				if (cpuMultiplier < 1) cpuMultiplier = 1;
-				if (cpuMultiplier > cpus) cpuMultiplier = cpus;
-			}
-#endif
-
 			for (i = 0; i < opt.nbcpu; i++)
 			{
 				if (ap_cur->ivbuf_size)
@@ -7160,10 +7147,7 @@ __start:
 				// set affinity to one processor
 				cpu_set_t cpuset;
 				CPU_ZERO(&cpuset);
-				CPU_SET(i * cpuMultiplier, &cpuset);
-#ifdef XDEBUG
-				printf("Placed threadid %d on CPU # %d.\n", i, i * cpuMultiplier);
-#endif
+				CPU_SET(i, &cpuset);
 				pthread_setaffinity_np(tid[id], sizeof(cpu_set_t), &cpuset);
 #endif
 
