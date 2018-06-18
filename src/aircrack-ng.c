@@ -7141,7 +7141,7 @@ __start:
 					goto exit_main;
 				}
 
-#ifdef pthread_setaffinity_np
+#if defined(HAVE_PTHREAD_AFFINITY_NP) && HAVE_PTHREAD_AFFINITY_NP
 				// set affinity to one processor
 				cpu_set_t cpuset;
 				CPU_ZERO(&cpuset);

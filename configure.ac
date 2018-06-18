@@ -112,10 +112,7 @@ PKG_CHECK_MODULES([CMOCKA], [cmocka], [CMOCKA_FOUND=yes], [CMOCKA_FOUND=no])
 #
 AIRCRACK_NG_LARGEFILE
 AX_ADD_FORTIFY_SOURCE
-AX_PTHREAD([
-    AC_CHECK_LIB([pthread], [pthread_create], [ PTHREAD_LIBS="-lpthread" ])
-    AC_DEFINE([_REENTRANT])
-])
+AIRCRACK_NG_PTHREAD
 AX_LIB_SOCKET_NSL
 AC_CHECK_LIB([dl], [dlopen], [ LIBS="$LIBS -ldl" ], [:])
 AC_CHECK_LIB([m], [sin], [ LIBS="$LIBS -lm" ], [:])
