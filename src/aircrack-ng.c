@@ -4381,9 +4381,9 @@ int crack_wpa_thread(void *arg)
 {
 	FILE *keyFile;
 
-	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20];
+	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20] __attribute__((aligned(32)));
 	wpapsk_password keys[MAX_KEYS_PER_CRYPT_SUPPORTED] __attribute__((aligned(64)));
-	char essid[128];
+	char essid[128] __attribute__((aligned(16)));
 
 	struct WPA_data *data;
 	struct AP_info *ap;
