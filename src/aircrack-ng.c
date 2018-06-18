@@ -586,8 +586,8 @@ void eof_wait(int *eof_notified)
 
 		pthread_mutex_lock(&mx_eof);
 		nb_eof++;
-		pthread_cond_broadcast(&cv_eof);
 		pthread_mutex_unlock(&mx_eof);
+		pthread_cond_broadcast(&cv_eof);
 	}
 
 	usleep(100000);
@@ -682,8 +682,8 @@ inline int wpa_receive_passphrase(char *key, struct WPA_data *data)
 	data->front = (data->front + 1) % data->nkeys;
 
 	// signal that there's now room in the queue for more keys
-	pthread_cond_signal(&data->cond);
 	pthread_mutex_unlock(&data->mutex);
+	pthread_cond_signal(&data->cond);
 
 	return 1;
 }
