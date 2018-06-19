@@ -57,11 +57,7 @@
 #endif
 #include <string.h>
 #include <stdint.h>
-#ifdef SIMD_CORE
 #include "simd-intrinsics.h"
-#else
-#include "sse-intrinsics.h"
-#endif
 #include "aircrack-ng.h"
 #include "arch.h"
 #include "wpapsk.h"

@@ -92,7 +92,7 @@ libaircrack_crypto_ppc_power8_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 # Generic library
 ARCH_FILES =
 if X86
-ARCH_FILES += sha1-sse2.S sse-intrinsics.c
+ARCH_FILES += sha1-sse2.S
 endif
 libaircrack_crypto_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_la_SOURCES = memory.c sha1-git.c wpapsk.c crypto_engine.c $(ARCH_FILES)
@@ -136,9 +136,6 @@ EXTRA_DIST =	aligned.h \
 				simd-intrinsics.c \
 				simd-intrinsics.h \
 				simd-intrinsics-load-flags.h \
-				sse-intrinsics.c \
-				sse-intrinsics.h \
-				sse-intrinsics-load-flags.h \
 				wpapsk.c \
 				wpapsk.h
 

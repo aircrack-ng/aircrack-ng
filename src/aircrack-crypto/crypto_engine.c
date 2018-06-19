@@ -31,11 +31,7 @@
 
 #include <string.h>
 #include <stdint.h>
-#ifdef SIMD_CORE
 #include "simd-intrinsics.h"
-#else
-#include "sse-intrinsics.h"
-#endif
 #include "wpapsk.h"
 #ifdef USE_GCRYPT
 #include "gcrypt-openssl-wrapper.h"
