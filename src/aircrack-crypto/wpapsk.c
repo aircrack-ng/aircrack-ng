@@ -152,9 +152,9 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 	unsigned char *sse_crypt2 = NULL;
 	unsigned char essid[ESSID_LENGTH + 4];
 
-	sse_hash1 = engine->xsse_hash1[threadid];
-	sse_crypt1 = engine->xsse_crypt1[threadid];
-	sse_crypt2 = engine->xsse_crypt2[threadid];
+	sse_hash1 = engine->thread_data[threadid]->hash1;
+	sse_crypt1 = engine->thread_data[threadid]->crypt1;
+	sse_crypt2 = engine->thread_data[threadid]->crypt2;
 
 	memset(essid, 0, sizeof(essid));
 	strncpy((char*)essid, (const char*) engine->essid, (size_t) engine->essid_length);
@@ -398,8 +398,8 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 
 		for (j = 0; j < NBKEYS; ++j)
 		{
-			memcpy(engine->pmk[threadid] + (sizeof(wpapsk_hash) * j), outbuf[j].c, 32);
-			alter_endianity_to_BE((engine->pmk[threadid] + (sizeof(wpapsk_hash) * j)),
+			memcpy(engine->thread_data[threadid]->pmk + (sizeof(wpapsk_hash) * j), outbuf[j].c, 32);
+			alter_endianity_to_BE((engine->thread_data[threadid]->pmk + (sizeof(wpapsk_hash) * j)),
 								  8);
 		}
 	}
@@ -429,10 +429,10 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 	int count = 0;
 
 	// clear entire output table
-	memset(engine->pmk[threadid], 0, (sizeof(wpapsk_hash) * (nparallel)));
+	memset(engine->thread_data[threadid]->pmk, 0, (sizeof(wpapsk_hash) * (nparallel)));
 
 	{
-		unsigned char *sse_hash1 = engine->xsse_hash1[threadid];
+		unsigned char *sse_hash1 = engine->thread_data[threadid]->hash1;
 
 		int index;
 		for (index = 0; index < nparallel; ++index)

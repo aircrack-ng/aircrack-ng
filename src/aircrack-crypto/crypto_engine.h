@@ -34,6 +34,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #define MAX_THREADS 256
 
@@ -51,6 +52,12 @@
 #define IMPORT
 #pragma warning Unknown dynamic link import / export semantics.
 #endif
+
+#define STATIC_ASSERT(COND,MSG) typedef char static_assertion_##MSG[(!!(COND))*2-1]
+// token pasting madness:
+#define COMPILE_TIME_ASSERT3(X,L) STATIC_ASSERT(X,static_assertion_at_line_##L)
+#define COMPILE_TIME_ASSERT2(X,L) COMPILE_TIME_ASSERT3(X,L)
+#define COMPILE_TIME_ASSERT(X)    COMPILE_TIME_ASSERT2(X,__LINE__)
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,17 +85,39 @@ typedef struct
 	uint32_t v[8];
 } wpapsk_hash;
 
+#pragma pack(push, 1)
+struct ac_crypto_engine_perthread {
+	wpapsk_hash pmk[MAX_KEYS_PER_CRYPT_SUPPORTED];
+	char pad1[32 * MAX_KEYS_PER_CRYPT_SUPPORTED];
+
+	uint8_t hash1[(84 << 3) * MAX_KEYS_PER_CRYPT_SUPPORTED];
+	char pad2[((84 << 3) * MAX_KEYS_PER_CRYPT_SUPPORTED) % 64];
+
+	uint8_t crypt1[20 * MAX_KEYS_PER_CRYPT_SUPPORTED];
+	char pad3[12 * MAX_KEYS_PER_CRYPT_SUPPORTED];
+
+	uint8_t crypt2[20 * MAX_KEYS_PER_CRYPT_SUPPORTED];
+	char pad4[12 * MAX_KEYS_PER_CRYPT_SUPPORTED];
+
+	uint8_t ptk[80 * MAX_KEYS_PER_CRYPT_SUPPORTED];
+	char pad5[(128 - 80) * MAX_KEYS_PER_CRYPT_SUPPORTED];
+
+	uint8_t pke[100 * MAX_KEYS_PER_CRYPT_SUPPORTED];
+};
+#pragma pack(pop)
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, pmk)) == 0);
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, hash1) % 64) == 0);
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, crypt1) % 64) == 0);
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, crypt2) % 32) == 0);
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, ptk) % 64) == 0);
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, pke) % 64) == 0);
+
 struct ac_crypto_engine
 {
 	uint8_t **essid;
 	uint32_t essid_length;
 
-	uint8_t *pmk[MAX_THREADS];
-	uint8_t *ptk[MAX_THREADS];
-	uint8_t *pke[MAX_THREADS];
-	uint8_t *xsse_hash1[MAX_THREADS];
-	uint8_t *xsse_crypt1[MAX_THREADS];
-	uint8_t *xsse_crypt2[MAX_THREADS];
+	struct ac_crypto_engine_perthread *thread_data[MAX_THREADS];
 };
 
 typedef struct ac_crypto_engine ac_crypto_engine_t;
@@ -106,7 +135,7 @@ IMPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
 static inline unsigned char *
 ac_crypto_engine_get_pmk(ac_crypto_engine_t *engine, int threadid)
 {
-	return engine->pmk[threadid];
+	return (uint8_t*) engine->thread_data[threadid]->pmk;
 }
 
 IMPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
