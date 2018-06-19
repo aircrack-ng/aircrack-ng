@@ -4484,27 +4484,28 @@ int crack_wpa_thread(void *arg)
 		}
 
 #if DYNAMIC
-		if ((j = dso_ac_crypto_engine_wpa_crack(&engine,
-											keys,
-											ap->wpa.eapol,
-											ap->wpa.eapol_size,
-											mic,
-											ap->wpa.keyver,
-											ap->wpa.keymic,
-											nparallel,
-											threadid))
+		if ((int) unlikely(
+				(j = dso_ac_crypto_engine_wpa_crack(&engine,
+													keys,
+													ap->wpa.eapol,
+													ap->wpa.eapol_size,
+													mic,
+													ap->wpa.keyver,
+													ap->wpa.keymic,
+													nparallel,
+													threadid))
 #else
-		if ((j = ac_crypto_engine_wpa_crack(&engine,
-		                                        keys,
-		                                        ap->wpa.eapol,
-		                                        ap->wpa.eapol_size,
-		                                        mic,
-		                                        ap->wpa.keyver,
-		                                        ap->wpa.keymic,
-		                                        nparallel,
-		                                        threadid))
+		if ((int) unlikely((j = ac_crypto_engine_wpa_crack(&engine,
+														   keys,
+														   ap->wpa.eapol,
+														   ap->wpa.eapol_size,
+														   mic,
+														   ap->wpa.keyver,
+														   ap->wpa.keymic,
+														   nparallel,
+														   threadid))
 #endif
-			>= 0)
+				>= 0))
 		{
 #ifdef XDEBUG
 			printf("%d - %lu FOUND IT AT %d %p !\n", threadid, pthread_self(), j, keys[j].v);

@@ -59,6 +59,15 @@
 #define COMPILE_TIME_ASSERT2(X,L) COMPILE_TIME_ASSERT3(X,L)
 #define COMPILE_TIME_ASSERT(X)    COMPILE_TIME_ASSERT2(X,__LINE__)
 
+#if defined(__GNUC__) || defined(__llvm__) || defined(__clang__)             \
+	|| defined(__INTEL_COMPILER)
+#define likely(x)      __builtin_expect(!!(x), 1)
+#define unlikely(x)    __builtin_expect(!!(x), 0)
+#else
+#define likely(x)      (x)
+#define unlikely(x)    (x)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
