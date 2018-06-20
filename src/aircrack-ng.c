@@ -6011,6 +6011,19 @@ int main(int argc, char *argv[])
 			case 'u':
 #if defined(__i386__) || defined(__x86_64__) || defined(__arm__)
 				cpuid_getinfo();
+#if DYNAMIC
+				int in_use_simdsize = dso_ac_crypto_engine_simd_width();
+#else
+				int in_use_simdsize = ac_crypto_engine_simd_width();
+#endif
+				printf("SIMD size in use= %d ", in_use_simdsize);
+
+				if (in_use_simdsize == 1)
+					printf("(64 bit)\n");
+				else if (in_use_simdsize == 4)
+					printf("(128 bit)\n");
+				else
+					printf("(256 bit)\n");
 #else
 				printf("Nb CPU detected: %d\n", cpu_count);
 #endif
