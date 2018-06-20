@@ -15,13 +15,20 @@ TOP=$(dirname "$0")/..
 REV=$(cd "$TOP" && "./evalrev")
 
 touch "$BENCHMARKS"
+echo "revision,processor,simd,nbcpus,kps" | tee -a "$BENCHMARKS"
 
 for T in $TESTS; do
     NCPU=1
 
     while [ $NCPU -le $(nproc) ]; do
-        RESULT=$(./src/aircrack-ng --simd=$T -p $NCPU -S | tr '\r' '\n' | awk -v max=0 '{if($1>max){max=$1}}END{print max}')
-        echo "$REV,$(uname -m),$T,$NCPU,$RESULT" | tee -a "$BENCHMARKS"
+    	LOOPS=1
+
+    	while [ $LOOPS -le 5 ]; do
+        	RESULT=$(./src/aircrack-ng --simd=$T -p $NCPU -S | tr '\r' '\n' | awk -v max=0 '{if($1>max){max=$1}}END{print max}')
+        	echo "$REV,$(uname -m),$T,$NCPU,$RESULT" | tee -a "$BENCHMARKS"
+
+        	LOOPS=$(($LOOPS + 1))
+        done
 
         NCPU=$(($NCPU + $NCPU))
     done
