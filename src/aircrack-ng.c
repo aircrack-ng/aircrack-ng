@@ -6009,7 +6009,7 @@ int main(int argc, char *argv[])
 				return (1);
 
 			case 'u':
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || defined(__arm__)
 				cpuid_getinfo();
 #else
 				printf("Nb CPU detected: %d\n", cpu_count);
