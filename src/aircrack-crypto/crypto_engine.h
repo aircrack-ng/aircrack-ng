@@ -81,7 +81,11 @@ extern "C" {
 #else
 #define MAX_KEYS_PER_CRYPT 4
 #endif
+#if defined(__INTEL_COMPILER)
+#define MAX_KEYS_PER_CRYPT_SUPPORTED 16
+#else
 #define MAX_KEYS_PER_CRYPT_SUPPORTED 8
+#endif
 
 typedef struct
 {
