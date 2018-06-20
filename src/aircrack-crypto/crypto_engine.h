@@ -91,13 +91,15 @@ typedef struct
 
 typedef struct
 {
-	uint32_t v[8];
+	union {
+		uint32_t v[8];
+		uint8_t c[32];
+	};
 } wpapsk_hash;
 
 #pragma pack(push, 1)
 struct ac_crypto_engine_perthread {
 	wpapsk_hash pmk[MAX_KEYS_PER_CRYPT_SUPPORTED];
-	char pad1[32 * MAX_KEYS_PER_CRYPT_SUPPORTED];
 
 	uint8_t hash1[(84 << 3) * MAX_KEYS_PER_CRYPT_SUPPORTED];
 	char pad2[((84 << 3) * MAX_KEYS_PER_CRYPT_SUPPORTED) % 64];

@@ -394,9 +394,8 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 
 		for (j = 0; j < NBKEYS; ++j)
 		{
-			memcpy(engine->thread_data[threadid]->pmk + (sizeof(wpapsk_hash) * j), outbuf[j].c, 32);
-			alter_endianity_to_BE((engine->thread_data[threadid]->pmk + (sizeof(wpapsk_hash) * j)),
-								  8);
+			memcpy(&engine->thread_data[threadid]->pmk[j], outbuf[j].c, 32);
+			alter_endianity_to_BE((&engine->thread_data[threadid]->pmk[j]), 8);
 		}
 	}
 

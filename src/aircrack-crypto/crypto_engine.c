@@ -276,7 +276,9 @@ ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 						  const int nparallel,
 						  const int threadid)
 {
-// PMK calculation
+	wpapsk_hash *pmk = engine->thread_data[threadid]->pmk;
+
+	// PMK calculation
 #ifdef SIMD_CORE
 	if (nparallel >= 4)
 	{
@@ -293,8 +295,7 @@ ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 				key[j].v,
 				(uint8_t*) engine->essid,
 				engine->essid_length,
-				(unsigned char *) (engine->thread_data[threadid]->pmk
-								   + (sizeof(wpapsk_hash) * j)));
+				(uint8_t*) (&pmk[j]));
 		}
 }
 
@@ -303,13 +304,14 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
 									  int threadid)
 {
 	uint8_t *ptk = engine->thread_data[threadid]->ptk;
+	wpapsk_hash *pmk = engine->thread_data[threadid]->pmk;
 
 	for (int i = 0; i < 4; i++)
 	{
 		*(engine->thread_data[threadid]->pke + 99) = (unsigned char) i;
 
 		HMAC(EVP_sha1(),
-		     engine->thread_data[threadid]->pmk + (sizeof(wpapsk_hash) * vectorIdx),
+		     (&pmk[vectorIdx]),
 			 32,
 			 engine->thread_data[threadid]->pke,
 			 100,
