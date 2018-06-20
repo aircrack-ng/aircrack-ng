@@ -90,7 +90,7 @@ EXPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine)
 	init_atoi();
 
 	engine->essid =
-		mem_calloc_align(ESSID_LENGTH + 1, sizeof(char), MEM_ALIGN_SIMD);
+		mem_calloc_align(1, ESSID_LENGTH + 1, MEM_ALIGN_SIMD);
 
 	return 0;
 }
