@@ -51,6 +51,7 @@ test/test-hex_string_to_array
 !/build/m4/stubs/.gitkeep
 /test/test-env.sh
 /.idea
+/.vscode
 CMakeLists.txt
 /cmake-build-*
 *.gcda
