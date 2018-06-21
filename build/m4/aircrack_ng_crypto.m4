@@ -38,7 +38,21 @@ dnl If you delete this exception statement from all source files in the
 dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_CRYPTO],[
-AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
+
+AC_CHECK_LIB([crypto], [OPENSSL_init], [
+    OPENSSL_LIBS="-lcrypto"
+    OPENSSL_LDFLAGS=""
+
+    AC_CHECK_HEADERS([openssl/crypto.h], [
+        OPENSSL_FOUND=yes
+        OPENSSL_INCLUDES=""
+    ], [
+        AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
+    ])
+], [
+    AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
+])
+
 AX_LIB_GCRYPT
 
 CRYPTO_CFLAGS=
