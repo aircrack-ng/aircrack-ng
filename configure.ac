@@ -100,6 +100,7 @@ AIRCRACK_NG_ASAN
 AIRCRACK_NG_DUMA
 AIRCRACK_NG_EXPERIMENTAL
 AIRCRACK_NG_EXT_SCRIPTS
+AIRCRACK_NG_JEMALLOC
 AIRCRACK_NG_PCAP
 AIRCRACK_NG_PCRE
 AIRCRACK_NG_RFKILL
@@ -242,6 +243,7 @@ ${PACKAGE} ${VERSION}
     Airpcap:                     ${AIRPCAP}
     Cmocka:                      ${CMOCKA_FOUND}
     DUMA:                        ${DUMA}
+    Jemalloc:                    ${JEMALLOC}
     Pcap:                        ${PCAP_FOUND}
     Pcre:                        ${HAVE_PCRE}
     Sqlite:                      ${HAVE_SQLITE3}
