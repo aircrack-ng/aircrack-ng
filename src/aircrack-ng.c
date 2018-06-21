@@ -61,6 +61,7 @@
 #include <math.h>
 #include <limits.h>
 #include <dlfcn.h>
+#include <float.h>
 
 #include "version.h"
 #include "crypto.h"
@@ -4236,6 +4237,9 @@ void show_wpa_stats(char *key,
 		t_kprev.tv_sec += 3;
 		delta = chrono(&t_kprev, 0);
 
+		if (delta0 <= FLT_EPSILON)
+			goto __out;
+
 		pthread_mutex_lock(&mx_nb);
 		nb_kprev *= delta / delta0;
 		cur_nb_kprev = nb_kprev;
@@ -4245,6 +4249,9 @@ void show_wpa_stats(char *key,
 		cur_nb_kprev = nb_kprev;
 		pthread_mutex_unlock(&mx_nb);
 	}
+
+	if (delta <= FLT_EPSILON)
+		goto __out;
 
 	if (_speed_test)
 	{
@@ -4279,7 +4286,7 @@ void show_wpa_stats(char *key,
 			   et_m,
 			   et_s,
 			   nb_tried,
-			   (delta == 0) ? 0 : (float) cur_nb_kprev / delta);
+			   (float) cur_nb_kprev / delta);
 	}
 	else
 	{
@@ -4291,7 +4298,7 @@ void show_wpa_stats(char *key,
 			   et_s,
 			   nb_tried,
 			   opt.wordcount,
-			   (delta == 0) ? 0 : (float) cur_nb_kprev / delta);
+			   (float) cur_nb_kprev / delta);
 
 		moveto(7, 6);
 		printf("Time left: ");
