@@ -812,7 +812,7 @@ encrypt_data(unsigned char *dest, const unsigned char *data, const int length)
 				return 1;
 			}
 			else
-				n = next_keystream(opt.prga, 1500, opt.bssid, length);
+				next_keystream(opt.prga, 1500, opt.bssid, length);
 		}
 	}
 
