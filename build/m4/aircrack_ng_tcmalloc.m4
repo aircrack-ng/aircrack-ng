@@ -44,10 +44,10 @@ AX_REQUIRE_DEFINED([AC_CHECK_LIB])
 AX_COMPILER_VENDOR
 
 AC_ARG_WITH(tcmalloc,
-    [AS_HELP_STRING([--with-tcmalloc[[=auto|yes|no]]], [use tcmalloc library, [default=auto]])])
+    [AS_HELP_STRING([--with-tcmalloc[[=yes|no]]], [use tcmalloc library, [default=no]])])
 
 case $with_tcmalloc in
-    yes | "" | auto)
+    yes)
         AC_CHECK_LIB([tcmalloc], [TCMallocGetenvSafe], [
             LIBS="$LIBS -ltcmalloc"
             TCMALLOC=yes

@@ -41,10 +41,10 @@ AC_DEFUN([AIRCRACK_NG_JEMALLOC], [
 AX_REQUIRE_DEFINED([AC_CHECK_LIB])
 
 AC_ARG_WITH(jemalloc,
-    [AS_HELP_STRING([--with-jemalloc[[=auto|yes|no]]], [use jemalloc library, [default=auto]])])
+    [AS_HELP_STRING([--with-jemalloc[[=yes|no]]], [use jemalloc library, [default=no]])])
 
 case $with_jemalloc in
-    yes | "" | auto)
+    yes)
         AC_CHECK_LIB([jemalloc], [mallocx], [
             LIBS="$LIBS -ljemalloc"
             JEMALLOC=yes
