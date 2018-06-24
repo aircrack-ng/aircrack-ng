@@ -52,6 +52,7 @@ test/test-hex_string_to_array
 /test/test-env.sh
 /.idea
 /.vscode
+/.clang_complete
 CMakeLists.txt
 /cmake-build-*
 *.gcda
