@@ -121,6 +121,7 @@ void *module; /* Handle to opened crypto shared library. */
 /* stats global data */
 
 static int _speed_test;
+static long _speed_test_length = 15;
 struct timeval t_begin; /* time at start of attack      */
 struct timeval t_stats; /* time since last update       */
 struct timeval t_kprev; /* time at start of window      */
@@ -4260,7 +4261,7 @@ void show_wpa_stats(char *key,
 		printf("%d k/s\r", ks);
 		fflush(stdout);
 
-		if (et_s >= 15)
+		if (_speed_test_length > 0 && et_s >= _speed_test_length)
 		{
 			printf("\n");
 			exit(0);
@@ -5971,7 +5972,7 @@ int main(int argc, char *argv[])
 		option = getopt_long(
 			nbarg,
 			((restore_session) ? cracking_session->argv : argv),
-			"r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1Suj:N:R:",
+			"r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::XysZ:w:0HKC:M:DP:zV1Suj:N:R:",
 			long_options,
 			&option_index);
 
@@ -6003,6 +6004,15 @@ int main(int argc, char *argv[])
 
 			case 'S':
 				_speed_test = 1;
+				break;
+
+			case 'Z':
+				_speed_test_length = strtol(optarg, NULL, 10);
+				if (errno == ERANGE)
+				{
+					fprintf(stderr, "Invalid speed test length given.\n");
+					return EXIT_FAILURE;
+				}
 				break;
 
 			case ':':
