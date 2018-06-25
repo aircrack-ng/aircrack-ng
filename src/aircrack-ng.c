@@ -263,6 +263,8 @@ char usage[] = "\n"
 			   "      -j <file>  : create Hashcat v3.6+ file (HCCAPX)\n"
 			   "      -J <file>  : create Hashcat file (HCCAP)\n"
 			   "      -S         : WPA cracking speed test\n"
+			   "      -Z <sec>   : WPA cracking speed test length of\n"
+			   "                   execution.\n"
 #ifdef HAVE_SQLITE
 			   "      -r <DB>    : path to airolib-ng database\n"
 			   "                   (Cannot be used with -w)\n"
