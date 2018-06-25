@@ -121,10 +121,6 @@ Finally, the additional targets listed below may be of use in your environment:
 
     `make check`
 
- * Strip debugging symbols:
-
-    `make strip`
-
  * Installing:
 
     `make install`
@@ -192,6 +188,10 @@ to your choosing:
   * Installing:
 
     `make install`
+
+  * Installing (strip binaries):
+  
+    `make install-strip`
 
   * Installing, with external scripts:
 
