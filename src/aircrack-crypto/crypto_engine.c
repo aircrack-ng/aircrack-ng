@@ -52,7 +52,9 @@
 
 EXPORT int ac_crypto_engine_supported_features(void)
 {
-#if defined(JOHN_AVX2)
+#if defined(JOHN_AVX512F)
+	return SIMD_SUPPORTS_AVX512F;
+#elif defined(JOHN_AVX2)
 	return SIMD_SUPPORTS_AVX2;
 #elif defined(JOHN_AVX)
 	return SIMD_SUPPORTS_AVX;

@@ -61,6 +61,11 @@ int simd_get_supported_features(void)
 	{
 		__cpuid_count(7, 0, eax, ebx, ecx, edx);
 
+		if (ebx & (1 << 16))
+		{
+			result |= SIMD_SUPPORTS_AVX512F;
+		}
+
 		if (ebx & (1 << 5))
 		{
 			result |= SIMD_SUPPORTS_AVX2;

@@ -76,15 +76,26 @@ extern "C" {
 #define PLAINTEXT_LENGTH 63 /* We can do 64 but spec. says 63 */
 
 #define MIN_KEYS_PER_CRYPT 1
-#ifdef JOHN_AVX2
+#if defined(JOHN_AVX512F)
+#define MAX_KEYS_PER_CRYPT 16
+#elif defined(JOHN_AVX2)
 #define MAX_KEYS_PER_CRYPT 8
 #else
 #define MAX_KEYS_PER_CRYPT 4
 #endif
+
+#if defined(AVX512F_FOUND)
+#if defined(__INTEL_COMPILER)
+#define MAX_KEYS_PER_CRYPT_SUPPORTED 32
+#else
+#define MAX_KEYS_PER_CRYPT_SUPPORTED 16
+#endif
+#else
 #if defined(__INTEL_COMPILER)
 #define MAX_KEYS_PER_CRYPT_SUPPORTED 16
 #else
 #define MAX_KEYS_PER_CRYPT_SUPPORTED 8
+#endif
 #endif
 
 typedef struct

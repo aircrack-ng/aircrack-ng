@@ -52,6 +52,11 @@ LIBAIRCRACK_CRYPTO_SRCS = memory.c sha1-git.c $(COMMON_ARCH_FILES) simd-intrinsi
 #
 # Intel/AMD
 #
+libaircrack_crypto_x86_avx512_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
+libaircrack_crypto_x86_avx512_la_CFLAGS = $(x86_avx512_cflags) -DSIMD_CORE -DJOHN_AVX512F $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
+libaircrack_crypto_x86_avx512_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_x86_avx512_la_LDFLAGS = -version-info 0:0:0 -no-undefined
+
 libaircrack_crypto_x86_avx2_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_avx2_la_CFLAGS = $(x86_avx2_cflags) -DSIMD_CORE -DJOHN_AVX2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_x86_avx2_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
@@ -113,6 +118,9 @@ if PPC
 lib_LTLIBRARIES += libaircrack-crypto-ppc-altivec.la libaircrack-crypto-ppc-power8.la
 endif
 if X86
+if AVX512F
+lib_LTLIBRARIES += libaircrack-crypto-x86-avx512.la
+endif
 lib_LTLIBRARIES += libaircrack-crypto-x86-avx2.la libaircrack-crypto-x86-avx.la libaircrack-crypto-x86-sse2.la
 endif
 

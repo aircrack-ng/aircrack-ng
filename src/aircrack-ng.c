@@ -5720,7 +5720,11 @@ void load_aircrack_crypto_dso(int simd_features)
 		simd_features = simd_get_supported_features();
 	}
 
-	if (simd_features & SIMD_SUPPORTS_AVX2)
+	if (simd_features & SIMD_SUPPORTS_AVX512F)
+	{
+		strncat(buffer, "-x86-avx512", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_AVX2)
 	{
 		strncat(buffer, "-x86-avx2", buffer_remaining);
 	}
@@ -5871,7 +5875,8 @@ int main(int argc, char *argv[])
 	{
 		const char *simd = &argv[1][7];
 
-		if (strncmp(simd, "avx2", 4) == 0)         simd_features = SIMD_SUPPORTS_AVX2;
+		if (strncmp(simd, "avx512", 4) == 0)       simd_features = SIMD_SUPPORTS_AVX512F;
+		else if (strncmp(simd, "avx2", 4) == 0)    simd_features = SIMD_SUPPORTS_AVX2;
 		else if (strncmp(simd, "avx", 3) == 0)     simd_features = SIMD_SUPPORTS_AVX;
 		else if (strncmp(simd, "sse2", 4) == 0)    simd_features = SIMD_SUPPORTS_SSE2;
 		else if (strncmp(simd, "neon", 4) == 0)    simd_features = SIMD_SUPPORTS_NEON;
@@ -6041,8 +6046,12 @@ int main(int argc, char *argv[])
 					printf("(64 bit)\n");
 				else if (in_use_simdsize == 4)
 					printf("(128 bit)\n");
-				else
+				else if (in_use_simdsize == 8)
 					printf("(256 bit)\n");
+				else if (in_use_simdsize == 16)
+					printf("(512 bit)\n");
+				else
+					printf("(unknown)\n");
 #else
 				printf("Nb CPU detected: %d\n", cpu_count);
 #endif

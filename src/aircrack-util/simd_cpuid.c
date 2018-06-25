@@ -99,6 +99,7 @@ unsigned long GetCacheTotalLize(unsigned ebx, unsigned ecx)
 
 //
 // Return maximum SIMD size for the CPU.
+// AVX512F		  		= 16 / 512 bit
 // AVX2		  		= 8 / 256 bit
 // SSE2-4.2 + AVX / NEON	= 4 / 128 bit
 // MMX / CPU Fallback		= 1 /  64 bit
@@ -113,7 +114,11 @@ int cpuid_simdsize(int viewmax)
 	{
 		__cpuid_count(7, 0, eax, ebx, ecx, edx);
 
-		if (ebx & (1 << 5))
+		if (ebx & (1 << 16))
+		{ // AVX512F
+			return 16;
+		}
+		else if (ebx & (1 << 5))
 		{ // AVX2
 			return 8;
 		}
@@ -631,8 +636,12 @@ int cpuid_getinfo()
 		printf("(64 bit)\n");
 	else if (cpuinfo.simdsize == 4)
 		printf("(128 bit)\n");
-	else
+	else if (cpuinfo.simdsize == 8)
 		printf("(256 bit)\n");
+	else if (cpuinfo.simdsize == 16)
+		printf("(512 bit)\n");
+	else
+		printf("(unknown)\n");
 
 	free(cpuinfo.flags);
 	cpuinfo.flags = NULL;

@@ -32,6 +32,7 @@ extern "C" {
 #define SIMD_SUPPORTS_ASIMD (1 << 6)
 #define SIMD_SUPPORTS_ALTIVEC (1 << 7)
 #define SIMD_SUPPORTS_POWER8 (1 << 8)
+#define SIMD_SUPPORTS_AVX512F (1 << 9)
 
 void simd_init(void);
 int simd_get_supported_features(void);

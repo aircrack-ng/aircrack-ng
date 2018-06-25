@@ -157,8 +157,32 @@ then
     ])
 fi
 
+AC_ARG_WITH(avx512,
+    [AS_HELP_STRING([--with-avx512[[=yes|no]]], [use AVX-512F instruction set, [default=no]])])
+
 if test $IS_X86 -eq 1
 then
+	case $with_avx512 in
+		yes)
+			case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+				intel)
+					AX_APPEND_FLAG(-march=skylake-avx512, [x86_avx512_[]_AC_LANG_ABBREV[]flags])
+					AC_SUBST(x86_avx512_[]_AC_LANG_ABBREV[]flags)
+					AVX512F_FOUND=1
+					AC_SUBST([AVX512F_FOUND], [1], [Define if your system supports AVX-512F])
+					;;
+				*)
+					AX_CHECK_COMPILE_FLAG([-mavx512f], [
+						AX_APPEND_FLAG(-mavx512f, [x86_avx512_[]_AC_LANG_ABBREV[]flags])
+						AC_SUBST(x86_avx512_[]_AC_LANG_ABBREV[]flags)
+						AVX512F_FOUND=1
+						AC_SUBST([AVX512F_FOUND], [1], [Define if your system supports AVX-512F])
+					])
+					;;
+			esac
+			;;
+	esac
+
     case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
         intel)
             AX_APPEND_FLAG(-march=core-avx2, [x86_avx2_[]_AC_LANG_ABBREV[]flags])
@@ -201,6 +225,7 @@ AM_CONDITIONAL([X86], [test "$IS_X86" = 1])
 AM_CONDITIONAL([ARM], [test "$IS_ARM" = 1])
 AM_CONDITIONAL([PPC], [test "$IS_PPC" = 1])
 AM_CONDITIONAL([NEON], [test "$NEON_FOUND" = 1])
+AM_CONDITIONAL([AVX512F], [test "$AVX512F_FOUND" = 1])
 ])
 
 AC_DEFUN([AIRCRACK_NG_SIMD_C], [
