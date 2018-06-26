@@ -2224,6 +2224,10 @@ skip_probe:
 						case 0x05:
 							ap_cur->security |= ENC_WEP104;
 							break;
+						case 0x08:
+						case 0x09:
+							ap_cur->security |= ENC_GCMP;
+							break;
 						default:
 							break;
 					}
@@ -3819,7 +3823,7 @@ void dump_print(int ws_row, int ws_col, int if_num)
 
 			if ((ap_cur->security
 				 & (ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP104
-					| ENC_WEP40))
+					| ENC_WEP40 | ENC_GCMP))
 				== 0)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "       ");
 			else if (ap_cur->security & ENC_CCMP)
@@ -3834,6 +3838,8 @@ void dump_print(int ws_row, int ws_col, int if_num)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "WEP40  ");
 			else if (ap_cur->security & ENC_WEP)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "WEP    ");
+			else if (ap_cur->security & ENC_GCMP)
+				snprintf(strbuf + len, sizeof(strbuf) - len, "GCMP   ");
 
 			len = strlen(strbuf);
 
@@ -4402,7 +4408,7 @@ int dump_write_csv(void)
 
 		if ((ap_cur->security
 			 & (ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP104
-				| ENC_WEP40))
+				| ENC_WEP40 | ENC_GCMP))
 			== 0)
 			fprintf(G.f_txt, " ");
 		else
@@ -4413,6 +4419,7 @@ int dump_write_csv(void)
 			if (ap_cur->security & ENC_WEP104) fprintf(G.f_txt, " WEP104");
 			if (ap_cur->security & ENC_WEP40) fprintf(G.f_txt, " WEP40");
 			if (ap_cur->security & ENC_WEP) fprintf(G.f_txt, " WEP");
+			if (ap_cur->security & ENC_WEP) fprintf(G.f_txt, " GCMP");
 		}
 
 		fprintf(G.f_txt, ",");
@@ -5040,6 +5047,11 @@ int dump_write_kismet_netxml(void)
 						NETXML_ENCRYPTION_TAG,
 						"\t\t\t",
 						"WPA+AES-OCB");
+			if (ap_cur->security & ENC_GCMP)
+				fprintf(G.f_kis_xml,
+						NETXML_ENCRYPTION_TAG,
+						"\t\t\t",
+						"WPA+GCMP");
 		}
 		else if (ap_cur->security & ENC_WEP104)
 			fprintf(G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WEP104");
@@ -5488,7 +5500,7 @@ int dump_write_kismet_csv(void)
 
 		if ((ap_cur->security
 			 & (ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP104
-				| ENC_WEP40))
+				| ENC_WEP40 | ENC_GCMP))
 			== 0)
 			fprintf(G.f_kis, "None,");
 		else
@@ -5499,6 +5511,7 @@ int dump_write_kismet_csv(void)
 			if (ap_cur->security & ENC_WEP104) fprintf(G.f_kis, "WEP104,");
 			if (ap_cur->security & ENC_WEP40) fprintf(G.f_kis, "WEP40,");
 			/*            if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis, " WEP,");*/
+			if (ap_cur->security & ENC_WEP40) fprintf(G.f_kis, "GCMP,");
 		}
 
 		fseek(G.f_kis, -1, SEEK_CUR);

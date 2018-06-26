@@ -58,6 +58,7 @@
 #define ENC_CCMP 0x0080
 #define ENC_WEP40 0x1000
 #define ENC_WEP104 0x0100
+#define ENC_GCMP 0x4000
 
 #define ENC_FIELD                                                              \
 	(ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP40 | ENC_WEP104)
