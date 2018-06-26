@@ -685,3 +685,22 @@ int string_has_suffix(const char *str, const char *suf)
 	}
 	return b == suf && *a == *b;
 }
+
+int is_background(void)
+{
+	pid_t grp = tcgetpgrp(STDIN_FILENO);
+	if (grp == -1)
+	{
+		// Piped
+		return 0;
+	}
+
+	if (grp == getpgrp())
+	{
+		// Foreground
+		return 0;
+	}
+
+	// Background
+	return 1;
+}

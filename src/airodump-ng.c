@@ -90,31 +90,6 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 void dump_sort(void);
 void dump_print(int ws_row, int ws_col, int if_num);
 
-static int is_background()
-{
-	// Allows to force background/foreground mode
-	if (G.background_mode != -1)
-	{
-		return G.background_mode;
-	}
-
-	pid_t grp = tcgetpgrp(STDIN_FILENO);
-	if (grp == -1)
-	{
-		// Piped
-		return 0;
-	}
-
-	if (grp == getpgrp())
-	{
-		// Foreground
-		return 0;
-	}
-
-	// Background
-	return 1;
-}
-
 char *get_manufacturer_from_string(char *buffer)
 {
 	char *manuf = NULL;
@@ -8080,8 +8055,9 @@ int main(int argc, char *argv[])
 						 sizeof(char) * (strlen(G.airodump_start_time) + 1));
 
 	// Do not start the interactive mode input thread if running in the background
-	int is_bg = is_background();
-	if (!is_bg
+	if (G.background_mode == -1) G.background_mode = is_background();
+
+	if (!G.background_mode
 		&& pthread_create(&(G.input_tid), NULL, (void *) input_thread, NULL)
 			   != 0)
 	{
@@ -8322,7 +8298,7 @@ int main(int argc, char *argv[])
 
 			/* display the list of access points we have */
 
-			if (!G.do_pause && !is_bg)
+			if (!G.do_pause && !G.background_mode)
 			{
 				pthread_mutex_lock(&(G.mx_print));
 
