@@ -2218,6 +2218,7 @@ skip_probe:
 						case 0x03:
 							ap_cur->security |= ENC_WRAP;
 							break;
+						case 0x0A:
 						case 0x04:
 							ap_cur->security |= ENC_CCMP;
 							break;
