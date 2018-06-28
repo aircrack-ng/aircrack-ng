@@ -52,7 +52,7 @@ static void test_calc_pmk(void **state)
 							0x31, 0x83, 0x94, 0x12, 0x36, 0x89, 0x8e, 0xf7};
 
 	assert_memory_equal(
-		(unsigned char*) (engine.thread_data[1]->pmk + (sizeof(wpapsk_hash) * 0)), expected, sizeof(expected));
+		(unsigned char*) (engine.thread_data[1]->pmk), expected, sizeof(expected));
 
 	ac_crypto_engine_thread_destroy(&engine, 1);
 	ac_crypto_engine_destroy(&engine);
