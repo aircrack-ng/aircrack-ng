@@ -74,9 +74,8 @@ IMPORT char *ac_crypto_engine_loader_best_library_for(int simd_features);
 
 IMPORT int ac_crypto_engine_loader_string_to_flag(const char *const str);
 
-/// Caller must NOT deallocate the returned pointer!
-/// Caller must NOT use this function simultaneously between threads!
-IMPORT const char *ac_crypto_engine_loader_flags_to_string(int flags);
+/// Caller must deallocate the returned pointer!
+IMPORT char *ac_crypto_engine_loader_flags_to_string(int flags);
 
 /// dlopen's and populates all DSO variables, but if not DYNAMIC these should be the addresses via static init.
 IMPORT int ac_crypto_engine_loader_load(int flags);

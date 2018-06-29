@@ -194,7 +194,7 @@ EXPORT int ac_crypto_engine_loader_string_to_flag(const char *const str)
 
 /// Caller must NOT deallocate the returned pointer!
 /// Caller must NOT use this function simultaneously between threads!
-EXPORT const char *ac_crypto_engine_loader_flags_to_string(int flags)
+EXPORT char *ac_crypto_engine_loader_flags_to_string(int flags)
 {
 	char buffer[8192] = {0};
 
