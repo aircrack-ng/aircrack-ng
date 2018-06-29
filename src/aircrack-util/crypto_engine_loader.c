@@ -32,6 +32,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <dlfcn.h>
 
 #include "crypto_engine_loader.h"
 #include "common.h"
@@ -40,7 +43,54 @@
 // It must read the disk searching for the availables ones.
 EXPORT int ac_crypto_engine_loader_get_available(void)
 {
-	return 0;
+	int simd_flags = SIMD_SUPPORTS_NONE;
+	char library_path[8192];
+
+	// are we inside of the build path?
+	char *working_directory = get_current_working_directory();
+
+	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR)) == 0
+	    || strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR)) == 0)
+	{
+		// use development paths
+		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+	}
+	else
+	{
+		// use installation paths
+		snprintf(library_path, sizeof(library_path) - 1, "%s", LIBDIR);
+	}
+	free(working_directory);
+
+	// enumerate all DSOs in folder, opening, searching symbols, and testing them.
+	DIR *dsos = opendir(library_path);
+	if (!dsos) goto out;
+
+	struct dirent *entry = NULL;
+	while ((entry = readdir(dsos)) != NULL)
+	{
+#if defined(__APPLE__)
+		if (string_has_suffix((char*) entry->d_name, ".dylib"))
+#elif defined(WIN32) || defined(_WIN32)
+		if (string_has_suffix((char*) entry->d_name, ".dll"))
+#else
+		if (string_has_suffix((char*) entry->d_name, ".so"))
+#endif
+		{
+			char *search = strstr(entry->d_name, "aircrack-crypto-");
+
+			if (search)
+			{
+				search += 16;
+				simd_flags |= ac_crypto_engine_loader_string_to_flag(search);
+			}
+		}
+	}
+
+	closedir(dsos);
+
+out:
+	return simd_flags;
 }
 
 /// Caller must deallocate the returned pointer!
