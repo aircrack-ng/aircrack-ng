@@ -30,8 +30,12 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "crypto_engine_loader.h"
+#include "common.h"
+#include "trampoline.h"
 
 // It must read the disk searching for the availables ones.
 EXPORT int ac_crypto_engine_loader_get_available(void)
@@ -40,9 +44,78 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 }
 
 /// Caller must deallocate the returned pointer!
-EXPORT char *ac_crypto_engine_loader_best_library_for(int flags)
+EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 {
-	return NULL;
+	char buffer[8192] = {"aircrack-crypto"};
+	char library_path[8192];
+	char module_filename[8192];
+	size_t buffer_remaining = 8192;
+
+	if (simd_features & SIMD_SUPPORTS_AVX512F)
+	{
+		strncat(buffer, "-x86-avx512", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_AVX2)
+	{
+		strncat(buffer, "-x86-avx2", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_AVX)
+	{
+		strncat(buffer, "-x86-avx", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_SSE2)
+	{
+		strncat(buffer, "-x86-sse2", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_ASIMD)
+	{
+		strncat(buffer, "-arm-neon", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_NEON)
+	{
+		strncat(buffer, "-arm-neon", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_POWER8)
+	{
+		strncat(buffer, "-ppc-power8", buffer_remaining);
+	}
+	else if (simd_features & SIMD_SUPPORTS_ALTIVEC)
+	{
+		strncat(buffer, "-ppc-altivec", buffer_remaining);
+	}
+
+	char *working_directory = get_current_working_directory(); // or the binary's path?
+
+	if (strncmp(working_directory, ABS_TOP_BUILDDIR, sizeof(ABS_TOP_BUILDDIR) - 1) == 0
+	    || strncmp(working_directory, ABS_TOP_SRCDIR, sizeof(ABS_TOP_SRCDIR) - 1) == 0)
+	{
+		// use development paths
+		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+	}
+	else
+	{
+		// use installation paths
+		snprintf(library_path, sizeof(library_path) - 1, "%s", LIBDIR);
+	}
+	free(working_directory);
+
+	snprintf(module_filename, sizeof(module_filename) - 1, "%s/%s%s.%s", library_path,
+#if defined(WIN32) || defined(_WIN32)
+		"",
+#else
+             "lib",
+#endif
+             buffer,
+#if defined(WIN32) || defined(_WIN32)
+		"dll"
+#elif defined(__APPLE__)
+		"dylib"
+#else
+             "so"
+#endif
+	);
+
+	return strdup(module_filename);
 }
 
 EXPORT int ac_crypto_engine_loader_string_to_flags(const char *const str, size_t length)

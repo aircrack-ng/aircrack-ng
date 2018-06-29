@@ -42,6 +42,8 @@ AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src \
               $(LIBNL_CFLAGS)
 
+LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/src/aircrack-crypto/
+
 if ARM
 TRAMPOLINE = trampoline_arm.c
 endif
@@ -61,6 +63,14 @@ endif
 endif
 
 libaircrack_util_la_SOURCES = common.c console.c crypto_engine_loader.c mcs_index_rates.c simd_cpuid.c $(TRAMPOLINE) verifyssid.c
+libaircrack_util_la_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
+                             "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
+                             "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
+                             "-DLIBDIR=\"$(libdir)\""
+
+if STATIC_BUILD
+libaircrack_util_la_CFLAGS += -DSTATIC_BUILD
+endif
 
 noinst_LTLIBRARIES = libaircrack-util.la
 

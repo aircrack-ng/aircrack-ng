@@ -82,6 +82,7 @@
 #include "aircrack-util/simd_cpuid.h"
 #include "aircrack-util/trampoline.h"
 #include <aircrack-crypto/crypto_engine.h>
+#include "aircrack-util/crypto_engine_loader.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -5709,10 +5710,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 #if DYNAMIC
 void load_aircrack_crypto_dso(int simd_features)
 {
-	char buffer[8192] = {"aircrack-crypto"};
-	char library_path[8192];
-	char module_filename[8192];
-	size_t buffer_remaining = 8192;
+	char *module_filename = NULL;
 
 	simd_init();
 
@@ -5721,76 +5719,17 @@ void load_aircrack_crypto_dso(int simd_features)
 		simd_features = simd_get_supported_features();
 	}
 
-	if (simd_features & SIMD_SUPPORTS_AVX512F)
-	{
-		strncat(buffer, "-x86-avx512", buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_AVX2)
-	{
-		strncat(buffer, "-x86-avx2", buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_AVX)
-	{
-		strncat(buffer, "-x86-avx", buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_SSE2)
-	{
-		strncat(buffer, "-x86-sse2", buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_ASIMD)
-	{
-		strncat(buffer, "-arm-neon", buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_NEON)
-	{
-		strncat(buffer, "-arm-neon", buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_POWER8)
-	{
-		strncat(buffer, "-ppc-power8", buffer_remaining);
-	}
-	else if (simd_features & SIMD_SUPPORTS_ALTIVEC)
-	{
-		strncat(buffer, "-ppc-altivec", buffer_remaining);
-	}
-
-	char *working_directory = get_current_working_directory(); // or the binary's path?
-
-	if (strncmp(working_directory, ABS_TOP_BUILDDIR, sizeof(ABS_TOP_BUILDDIR) - 1) == 0
-	    || strncmp(working_directory, ABS_TOP_SRCDIR, sizeof(ABS_TOP_SRCDIR) - 1) == 0)
-	{
-		// use development paths
-		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
-	}
-	else
-	{
-		// use installation paths
-		snprintf(library_path, sizeof(library_path) - 1, "%s", LIBDIR);
-	}
-	free(working_directory);
-
-	snprintf(module_filename, sizeof(module_filename) - 1, "%s/%s%s.%s", library_path,
-#if defined(WIN32) || defined(_WIN32)
-	"",
-#else
-	"lib",
-#endif
-	buffer,
-#if defined(WIN32) || defined(_WIN32)
-	"dll"
-#elif defined(__APPLE__)
-	"dylib"
-#else
-	"so"
-#endif
-		);
+	module_filename = ac_crypto_engine_loader_best_library_for(simd_features);
 
 	module = dlopen (module_filename, RTLD_LAZY);
 	if (!module)
 	{
 		fprintf(stderr, "Unable to load aircrack-crypto library.\n\nIt must be installed or ran within the build directory.\n%s", module_filename);
+		free(module_filename);
 		exit(1);
 	}
+
+	free(module_filename);
 
 	// resolve symbols needed
 	struct _dso_symbols

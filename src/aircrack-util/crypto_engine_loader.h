@@ -70,7 +70,7 @@ extern "C" {
 IMPORT int ac_crypto_engine_loader_get_available(void);
 
 /// Caller must deallocate the returned pointer!
-IMPORT char *ac_crypto_engine_loader_best_library_for(int flags);
+IMPORT char *ac_crypto_engine_loader_best_library_for(int simd_features);
 
 IMPORT int ac_crypto_engine_loader_string_to_flags(const char *const str, size_t length);
 
