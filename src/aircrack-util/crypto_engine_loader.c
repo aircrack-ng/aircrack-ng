@@ -118,9 +118,28 @@ EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 	return strdup(module_filename);
 }
 
-EXPORT int ac_crypto_engine_loader_string_to_flags(const char *const str, size_t length)
+EXPORT int ac_crypto_engine_loader_string_to_flag(const char *const str)
 {
-	return 0;
+	int simd_features = SIMD_SUPPORTS_NONE;
+
+	if (strncmp(str, "avx512", 6) == 0 || strncmp(str, "x86-avx512", 10) == 0)
+		simd_features = SIMD_SUPPORTS_AVX512F;
+	else if (strncmp(str, "avx2", 4) == 0 || strncmp(str, "x86-avx2", 8) == 0)
+		simd_features = SIMD_SUPPORTS_AVX2;
+	else if (strncmp(str, "avx", 3) == 0 || strncmp(str, "x86-avx", 7) == 0)
+		simd_features = SIMD_SUPPORTS_AVX;
+	else if (strncmp(str, "sse2", 4) == 0 || strncmp(str, "x86-sse2", 8) == 0)
+		simd_features = SIMD_SUPPORTS_SSE2;
+	else if (strncmp(str, "neon", 4) == 0 || strncmp(str, "arm-neon", 8) == 0)
+		simd_features = SIMD_SUPPORTS_NEON;
+	else if (strncmp(str, "asimd", 5) == 0 || strncmp(str, "arm-asimd", 9) == 0)
+		simd_features = SIMD_SUPPORTS_ASIMD;
+	else if (strncmp(str, "altivec", 7) == 0 || strncmp(str, "ppc-altivec", 11) == 0)
+		simd_features = SIMD_SUPPORTS_ALTIVEC;
+	else if (strncmp(str, "power8", 6) == 0 || strncmp(str, "ppc-power8", 10) == 0)
+		simd_features = SIMD_SUPPORTS_POWER8;
+
+	return simd_features;
 }
 
 /// Caller must NOT deallocate the returned pointer!

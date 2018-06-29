@@ -5815,16 +5815,9 @@ int main(int argc, char *argv[])
 	{
 		const char *simd = &argv[1][7];
 
-		if (strncmp(simd, "avx512", 4) == 0)       simd_features = SIMD_SUPPORTS_AVX512F;
-		else if (strncmp(simd, "avx2", 4) == 0)    simd_features = SIMD_SUPPORTS_AVX2;
-		else if (strncmp(simd, "avx", 3) == 0)     simd_features = SIMD_SUPPORTS_AVX;
-		else if (strncmp(simd, "sse2", 4) == 0)    simd_features = SIMD_SUPPORTS_SSE2;
-		else if (strncmp(simd, "neon", 4) == 0)    simd_features = SIMD_SUPPORTS_NEON;
-		else if (strncmp(simd, "asimd", 5) == 0)   simd_features = SIMD_SUPPORTS_ASIMD;
-		else if (strncmp(simd, "altivec", 7) == 0) simd_features = SIMD_SUPPORTS_ALTIVEC;
-		else if (strncmp(simd, "power8", 6) == 0)  simd_features = SIMD_SUPPORTS_POWER8;
-		else if (strncmp(simd, "generic", 7) == 0) simd_features = SIMD_SUPPORTS_NONE;
-		else
+		simd_features = ac_crypto_engine_loader_string_to_flag(simd);
+
+		if (simd_features == SIMD_SUPPORTS_NONE)
 		{
 			fprintf(stderr, "Unknown SIMD architecture.\n");
 			exit(1);
