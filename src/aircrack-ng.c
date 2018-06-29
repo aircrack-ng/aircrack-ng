@@ -5906,6 +5906,7 @@ int main(int argc, char *argv[])
 			// parameters.
 			{"restore-session", 1, 0, 'R'},
 			{"simd", 1, 0, 'W'},
+			{"simd-list", 0, 0, 0},
 			{0, 0, 0, 0}};
 
 		// Load argc/argv either from the cracking session or from arguments
@@ -5917,6 +5918,21 @@ int main(int argc, char *argv[])
 			&option_index);
 
 		if (option < 0) break;
+
+		if (option_index >= 0)
+		{
+			if (strncmp(long_options[option_index].name, "simd-list", 9) == 0)
+			{
+				int  simd_found = ac_crypto_engine_loader_get_available();
+				char *simd_list = ac_crypto_engine_loader_flags_to_string(simd_found);
+
+				printf("%s\n", simd_list);
+
+				free(simd_list);
+
+				exit(0);
+			}
+		}
 
 		switch (option)
 		{
