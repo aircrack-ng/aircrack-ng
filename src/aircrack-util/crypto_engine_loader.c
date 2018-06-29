@@ -146,7 +146,20 @@ EXPORT int ac_crypto_engine_loader_string_to_flag(const char *const str)
 /// Caller must NOT use this function simultaneously between threads!
 EXPORT const char *ac_crypto_engine_loader_flags_to_string(int flags)
 {
-	return NULL;
+	char buffer[8192] = {0};
+
+	if (flags & SIMD_SUPPORTS_AVX512F) strncat(buffer, "avx512 ", 7);
+	if (flags & SIMD_SUPPORTS_AVX2) strncat(buffer, "avx2 ", 5);
+	if (flags & SIMD_SUPPORTS_AVX) strncat(buffer, "avx ", 4);
+	if (flags & SIMD_SUPPORTS_SSE2) strncat(buffer, "sse2 ", 5);
+	if (flags & SIMD_SUPPORTS_NEON) strncat(buffer, "neon ", 5);
+	if (flags & SIMD_SUPPORTS_ASIMD) strncat(buffer, "asimd ", 6);
+	if (flags & SIMD_SUPPORTS_ALTIVEC) strncat(buffer, "altivec ", 8);
+	if (flags & SIMD_SUPPORTS_POWER8) strncat(buffer, "power8 ", 7);
+
+	strncat(buffer, "generic", 7);
+
+	return strdup(buffer);
 }
 
 /// dlopen's and populates all DSO variables, but if not DYNAMIC these should be the addresses via static init.
