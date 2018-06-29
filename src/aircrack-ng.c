@@ -7328,13 +7328,13 @@ exit_main:
 
 	fflush(stdout);
 
-#if DYNAMIC
-	dlclose(module);
-#endif
-
 	// 	if( ret == SUCCESS ) kill( 0, SIGQUIT );
 	// 	if( ret == FAILURE ) kill( 0, SIGTERM );
 	clean_exit(ret);
+
+#if DYNAMIC
+	dlclose(module);
+#endif
 
 	_exit(ret);
 }
