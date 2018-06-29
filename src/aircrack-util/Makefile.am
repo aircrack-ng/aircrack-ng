@@ -60,7 +60,7 @@ endif
 endif
 endif
 
-libaircrack_util_la_SOURCES = common.c console.c mcs_index_rates.c simd_cpuid.c $(TRAMPOLINE) verifyssid.c
+libaircrack_util_la_SOURCES = common.c console.c crypto_engine_loader.c mcs_index_rates.c simd_cpuid.c $(TRAMPOLINE) verifyssid.c
 
 noinst_LTLIBRARIES = libaircrack-util.la
 
@@ -68,6 +68,8 @@ EXTRA_DIST = common.c \
              common.h \
              console.c \
              console.h \
+             crypto_engine_loader.c \
+             crypto_engine_loader.h \
              mcs_index_rates.c \
              mcs_index_rates.h \
              simd_cpuid.c \
