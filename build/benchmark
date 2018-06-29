@@ -13,6 +13,7 @@ esac
 BENCHMARKS=benchmark.csv
 TOP=$(dirname "$0")/..
 REV=$(cd "$TOP" && "./evalrev")
+NPROCS=$(nproc)
 
 touch "$BENCHMARKS"
 echo "revision,processor,simd,nbcpus,kps" | tee -a "$BENCHMARKS"
@@ -20,7 +21,7 @@ echo "revision,processor,simd,nbcpus,kps" | tee -a "$BENCHMARKS"
 for T in $TESTS; do
     NCPU=1
 
-    while [ $NCPU -le $(nproc) ]; do
+    while [ $NCPU -le $NPROCS ]; do
     	LOOPS=1
 
     	while [ $LOOPS -le 5 ]; do
@@ -30,7 +31,12 @@ for T in $TESTS; do
         	LOOPS=$(($LOOPS + 1))
         done
 
-        NCPU=$(($NCPU + $NCPU))
+        NEXT_NCPU=$(($NCPU + $NCPU))
+		if [ ${NCPU} -lt ${NPROCS} ] && [ ${NPROCS} -lt ${NEXT_NCPU} ]; then
+			NCPU=${NPROCS}
+		else
+			NCPU=${NEXT_NCPU}
+		fi
     done
 done
 
