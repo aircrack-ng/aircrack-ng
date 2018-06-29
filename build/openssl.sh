@@ -4,7 +4,7 @@ set -e
 
 EXTRA=
 case "${CC:=}" in
-    clang*|llvm*) EXTRA="--with-asan";;
+    clang*|llvm*) EXTRA="--enable-asan";;
 esac
 
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./autogen.sh --with-experimental --with-openssl=/usr/local/Cellar/openssl/1.0.2l ${EXTRA}; else ./autogen.sh --with-experimental ${EXTRA}; fi

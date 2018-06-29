@@ -4,7 +4,7 @@ set -e
 
 EXTRA=
 case "${CC:=}" in
-    clang*|llvm*) EXTRA="--with-asan";;
+    clang*|llvm*) EXTRA="--enable-asan";;
 esac
 
 ./autogen.sh --with-experimental --with-gcrypt ${EXTRA}
