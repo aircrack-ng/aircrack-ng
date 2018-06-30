@@ -94,6 +94,11 @@ EXPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine)
 	engine->essid =
 		mem_calloc_align(1, ESSID_LENGTH + 1, MEM_ALIGN_SIMD);
 
+	engine->essid_length = 0;
+
+	for (int i = 0; i < MAX_THREADS; ++i)
+		engine->thread_data[i] = NULL;
+
 	return 0;
 }
 
