@@ -105,11 +105,14 @@ IMPORT int ac_crypto_engine_loader_string_to_flag(const char *const str);
  */
 IMPORT char *ac_crypto_engine_loader_flags_to_string(int flags);
 
-/// dlopen's and populates all DSO variables, but if not DYNAMIC these should be the addresses via static init.
+/// Loads the specified Aircrack-ng Crypto Engine specified by \a flags.
+/// Does nothing in a static build.
 IMPORT int ac_crypto_engine_loader_load(int flags);
 
-/// dlclose's and free's memory used
+/// Unloads the Aircrack-ng Crypto Engine. Does nothing in a static build.
 IMPORT void ac_crypto_engine_loader_unload(void);
+
+// Symbols defined by the loader.
 
 IMPORT int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine);
 IMPORT void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine);
@@ -137,6 +140,8 @@ IMPORT void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
                                              const uint8_t snonce[32],
 											 int threadid);
 IMPORT int (*dso_ac_crypto_engine_supported_features)();
+
+// End symbols defined by the loader.
 
 #ifdef __cplusplus
 }
