@@ -105,7 +105,6 @@ void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
 int (*dso_ac_crypto_engine_supported_features)() = NULL;
 #endif
 
-// It must read the disk searching for the availables ones.
 EXPORT int ac_crypto_engine_loader_get_available(void)
 {
 	int simd_flags = SIMD_SUPPORTS_NONE;
@@ -158,7 +157,6 @@ out:
 	return simd_flags;
 }
 
-/// Caller must deallocate the returned pointer!
 EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 {
 	char buffer[8192] = {"aircrack-crypto"};
@@ -257,8 +255,6 @@ EXPORT int ac_crypto_engine_loader_string_to_flag(const char *const str)
 	return simd_features;
 }
 
-/// Caller must NOT deallocate the returned pointer!
-/// Caller must NOT use this function simultaneously between threads!
 EXPORT char *ac_crypto_engine_loader_flags_to_string(int flags)
 {
 	char buffer[8192] = {0};
@@ -277,7 +273,6 @@ EXPORT char *ac_crypto_engine_loader_flags_to_string(int flags)
 	return strdup(buffer);
 }
 
-/// dlopen's and populates all DSO variables, but if not DYNAMIC these should be the addresses via static init.
 EXPORT int ac_crypto_engine_loader_load(int flags)
 {
 #ifndef STATIC_BUILD
@@ -330,7 +325,6 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 	return 0;
 }
 
-/// dlclose's and free's memory used
 EXPORT void ac_crypto_engine_loader_unload(void)
 {
 #ifndef STATIC_BUILD
