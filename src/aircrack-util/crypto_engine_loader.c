@@ -330,5 +330,15 @@ EXPORT void ac_crypto_engine_loader_unload(void)
 #ifndef STATIC_BUILD
 	dlclose(module);
 	module = NULL;
+
+	dso_ac_crypto_engine_init = NULL;
+	dso_ac_crypto_engine_destroy = NULL;
+	dso_ac_crypto_engine_thread_init = NULL;
+	dso_ac_crypto_engine_thread_destroy = NULL;
+	dso_ac_crypto_engine_set_essid = NULL;
+	dso_ac_crypto_engine_simd_width = NULL;
+	dso_ac_crypto_engine_wpa_crack = NULL;
+	dso_ac_crypto_engine_calc_pke = NULL;
+	dso_ac_crypto_engine_supported_features = NULL;
 #endif
 }
