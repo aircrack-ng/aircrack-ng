@@ -116,7 +116,7 @@ EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
 	fprintf(stderr, "ac_crypto_engine_set_essid(%p, %s)\n", engine, essid);
 #endif
 	memccpy(engine->essid, essid, 0, ESSID_LENGTH);
-	engine->essid_length = strlen((char*) essid);
+	engine->essid_length = (uint32_t) strlen((char*) essid);
 }
 
 EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
