@@ -84,7 +84,7 @@ fi
 dnl
 dnl Verify that required headers are useable
 dnl
-save_cflags="$CFLAGS"
+saved_cflags="$CFLAGS"
 CFLAGS="$PCAP_INCLUDES $CFLAGS"
 AC_CHECK_HEADERS([pcap.h], [
 	PCAP_FOUND=yes
