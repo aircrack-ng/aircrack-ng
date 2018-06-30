@@ -34,11 +34,76 @@
 #include <string.h>
 #include <sys/types.h>
 #include <dirent.h>
+#ifndef STATIC_BUILD
 #include <dlfcn.h>
+#endif
 
+#include "aircrack-crypto/crypto_engine.h"
 #include "crypto_engine_loader.h"
 #include "common.h"
 #include "trampoline.h"
+
+static void *module = NULL;
+
+#ifdef STATIC_BUILD
+int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine) =
+	&ac_crypto_engine_init;
+void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine) =
+	&ac_crypto_engine_destroy;
+void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine,
+									   const uint8_t *essid) =
+	&ac_crypto_engine_set_essid;
+int (*dso_ac_crypto_engine_thread_init)(
+	ac_crypto_engine_t *engine, int threadid) = &ac_crypto_engine_thread_init;
+void (*dso_ac_crypto_engine_thread_destroy)(
+	ac_crypto_engine_t *engine, int threadid) = &ac_crypto_engine_thread_destroy;
+int (*dso_ac_crypto_engine_simd_width)() = &ac_crypto_engine_simd_width;
+int (*dso_ac_crypto_engine_wpa_crack)(
+	ac_crypto_engine_t *engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	const uint8_t eapol[256],
+	uint32_t eapol_size,
+	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
+	uint8_t keyver,
+	const uint8_t cmpmic[20],
+	int nparallel,
+	int threadid) = &ac_crypto_engine_wpa_crack;
+void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
+									  const uint8_t bssid[6],
+									  const uint8_t stmac[6],
+									  const uint8_t anonce[32],
+									  const uint8_t snonce[32],
+									  int threadid) = &ac_crypto_engine_calc_pke;
+int (*dso_ac_crypto_engine_supported_features)() =
+	&ac_crypto_engine_supported_features;
+#else
+int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine) = NULL;
+void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine) = NULL;
+void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine,
+                                       const uint8_t *essid) = NULL;
+int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t *engine,
+                                        int threadid) = NULL;
+void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine,
+                                            int threadid) = NULL;
+int (*dso_ac_crypto_engine_simd_width)() = NULL;
+int (*dso_ac_crypto_engine_wpa_crack)(
+	ac_crypto_engine_t *engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	const uint8_t eapol[256],
+	uint32_t eapol_size,
+	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
+	uint8_t keyver,
+	const uint8_t cmpmic[20],
+	int nparallel,
+	int threadid) = NULL;
+void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
+                                      const uint8_t bssid[6],
+                                      const uint8_t stmac[6],
+                                      const uint8_t anonce[32],
+                                      const uint8_t snonce[32],
+                                      int threadid) = NULL;
+int (*dso_ac_crypto_engine_supported_features)() = NULL;
+#endif
 
 // It must read the disk searching for the availables ones.
 EXPORT int ac_crypto_engine_loader_get_available(void)
@@ -215,10 +280,61 @@ EXPORT char *ac_crypto_engine_loader_flags_to_string(int flags)
 /// dlopen's and populates all DSO variables, but if not DYNAMIC these should be the addresses via static init.
 EXPORT int ac_crypto_engine_loader_load(int flags)
 {
+#ifndef STATIC_BUILD
+	if (flags == -1)
+		flags = ac_crypto_engine_loader_get_available();
+
+	char *module_filename = ac_crypto_engine_loader_best_library_for(flags);
+
+	module = dlopen (module_filename, RTLD_LAZY);
+	if (!module)
+	{
+		fprintf(stderr, "Could not open '%s'.\n", module_filename);
+		free(module_filename);
+		return 1;
+	}
+	free(module_filename);
+
+	// resolve symbols needed
+	struct _dso_symbols
+	{
+		char const *sym;
+		void *addr;
+	} dso_symbols[] = {
+		{ "ac_crypto_engine_init", (void *)&dso_ac_crypto_engine_init },
+		{ "ac_crypto_engine_destroy", (void *)&dso_ac_crypto_engine_destroy },
+		{ "ac_crypto_engine_thread_init", (void *)&dso_ac_crypto_engine_thread_init },
+		{ "ac_crypto_engine_thread_destroy", (void *)&dso_ac_crypto_engine_thread_destroy },
+		{ "ac_crypto_engine_set_essid", (void *)&dso_ac_crypto_engine_set_essid },
+		{ "ac_crypto_engine_simd_width", (void *)&dso_ac_crypto_engine_simd_width },
+		{ "ac_crypto_engine_wpa_crack", (void *)&dso_ac_crypto_engine_wpa_crack },
+		{ "ac_crypto_engine_calc_pke", (void *)&dso_ac_crypto_engine_calc_pke },
+		{ "ac_crypto_engine_supported_features", (void*)&dso_ac_crypto_engine_supported_features },
+
+		{ NULL, NULL }
+	};
+
+	struct _dso_symbols *cur = &dso_symbols[0];
+
+	for (; cur->addr != NULL; ++cur)
+	{
+		if (!(*((void**)cur->addr) = dlsym(module, cur->sym)))
+		{
+			fprintf(stderr, "Could not find symbol %s in %s.\n", cur->sym, module_filename);
+			dlclose(module);
+			return 1;
+		}
+	}
+#endif
+
 	return 0;
 }
 
 /// dlclose's and free's memory used
 EXPORT void ac_crypto_engine_loader_unload(void)
 {
+#ifndef STATIC_BUILD
+	dlclose(module);
+	module = NULL;
+#endif
 }

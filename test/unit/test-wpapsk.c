@@ -7,92 +7,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <dirent.h>
-#include <dlfcn.h>
 
 #include "aircrack-util/common.h"
 #include "aircrack-util/trampoline.h"
 #include "aircrack-crypto/crypto_engine.h"
+#include "aircrack-util/crypto_engine_loader.h"
 
-static void test_simd_can_crack(void* test_data)
+void perform_unit_testing(void **state)
 {
-	char library_path[8192];
-	char module_filename[8192];
-	char *entry = (char*) (test_data);
-
-	int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine);
-	void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine);
-	void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine, const uint8_t *essid);
-	int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t *engine, int threadid);
-	void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine, int threadid);
-	int (*dso_ac_crypto_engine_simd_width)();
-
-	int (*dso_ac_crypto_engine_wpa_crack)(ac_crypto_engine_t *engine, wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED], uint8_t eapol[256], uint32_t eapol_size, uint8_t mic[8][20], uint8_t keyver, const uint8_t cmpmic[20], int nparallel, int threadid);
-
-	void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine, uint8_t bssid[6], uint8_t stmac[6], uint8_t anonce[32], uint8_t snonce[32], int threadid);
-
-	int (*dso_ac_crypto_engine_supported_features)();
-
-	char *working_directory = get_current_working_directory();
-
-	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR)) == 0
-	    || strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR)) == 0)
-	{
-		// use development paths
-		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
-	}
-	else
-	{
-		// use installation paths
-		snprintf(library_path, sizeof(library_path) - 1, "%s", LIBDIR);
-	}
-	free(working_directory);
-
-	snprintf(module_filename, sizeof(module_filename) - 1, "%s/%s", library_path, entry);
-
-	void *module = dlopen (module_filename, RTLD_LAZY);
-	assert_non_null(module);
-
-	// resolve symbols needed
-	struct _dso_symbols
-	{
-		char const *sym;
-		void *addr;
-	} dso_symbols[] = {
-		{ "ac_crypto_engine_init", (void *)&dso_ac_crypto_engine_init },
-		{ "ac_crypto_engine_destroy", (void *)&dso_ac_crypto_engine_destroy },
-		{ "ac_crypto_engine_thread_init", (void *)&dso_ac_crypto_engine_thread_init },
-		{ "ac_crypto_engine_thread_destroy", (void *)&dso_ac_crypto_engine_thread_destroy },
-		{ "ac_crypto_engine_set_essid", (void *)&dso_ac_crypto_engine_set_essid },
-		{ "ac_crypto_engine_simd_width", (void *)&dso_ac_crypto_engine_simd_width },
-		{ "ac_crypto_engine_wpa_crack", (void *)&dso_ac_crypto_engine_wpa_crack },
-		{ "ac_crypto_engine_calc_pke", (void *)&dso_ac_crypto_engine_calc_pke },
-		{ "ac_crypto_engine_supported_features", (void*)&dso_ac_crypto_engine_supported_features },
-
-		{ NULL, NULL }
-	};
-
-	struct _dso_symbols *cur = &dso_symbols[0];
-
-	for (; cur->addr != NULL; ++cur)
-	{
-		if (!(*((void**)cur->addr) = dlsym(module, cur->sym)))
-		{
-			fprintf(stderr, "Could not find symbol %s in %s.\n", cur->sym, module_filename);
-			exit(1);
-		}
-	}
-
-	assert_non_null(*dso_ac_crypto_engine_init);
-
-	// Check if this shared library CAN run on the machine, if not; skip testing it.
-	if (simd_get_supported_features() < dso_ac_crypto_engine_supported_features())
-	{
-		// unit-test cannot run without an illegal instruction.
-		fprintf(stderr, "Skipping test because host does not support instructions.\n");
-		goto out;
-	}
-
 	wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED];
 	uint8_t mic[8][20];
 	uint8_t expected_mic[20] =
@@ -143,88 +65,114 @@ static void test_simd_can_crack(void* test_data)
 		key[i].length = 8;
 
 		if ((rc = dso_ac_crypto_engine_wpa_crack(&engine,
-									   key,
-									   eapol,
-									   eapol_size,
-									   mic,
-									   2,
-									   expected_mic,
-									   nparallel,
-									   1))
-			>= 0)
+		                                         key,
+		                                         eapol,
+		                                         eapol_size,
+		                                         mic,
+		                                         2,
+		                                         expected_mic,
+		                                         nparallel,
+		                                         1))
+		    >= 0)
 		{
 			// does the returned SIMD lane equal where we placed the key?
 			assert_int_equal(rc, i);
 		}
 		else
 		{
-			assert_true(rc >= 0);
+			fail();
 		}
 	}
 
 	dso_ac_crypto_engine_thread_destroy(&engine, 1);
 	dso_ac_crypto_engine_destroy(&engine);
-
-out:
-	// close it
-	dlclose(module);
-
-	free(entry);
 }
 
-static void test_shared_library_can_crack(void **state)
+void perform_unit_testing_for(void **state, int simd_flag)
 {
-	char library_path[8192];
+	int simd_features = (int) ((uintptr_t) *state);
 
-	// are we inside of the build path?
-	char *working_directory = get_current_working_directory();
+	// load the DSO
+	ac_crypto_engine_loader_load(simd_flag);
 
-	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR)) == 0
-	    || strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR)) == 0)
+	// Check if this shared library CAN run on the machine, if not; skip testing it.
+	if (simd_features < dso_ac_crypto_engine_supported_features())
 	{
-		// use development paths
-		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+		// unit-test cannot run without an illegal instruction.
+		skip();
 	}
 	else
 	{
-		// use installation paths
-		snprintf(library_path, sizeof(library_path) - 1, "%s", LIBDIR);
-	}
-	free(working_directory);
-
-
-	// enumerate all DSOs in folder, opening, searching symbols, and testing them.
-	DIR *dsos = opendir(library_path);
-	assert_non_null(dsos);
-
-	struct dirent *entry = NULL;
-	while ((entry = readdir(dsos)) != NULL)
-	{
-#if defined(__APPLE__)
-		if (string_has_suffix((char*) entry->d_name, ".dylib"))
-#elif defined(WIN32) || defined(_WIN32)
-		if (string_has_suffix((char*) entry->d_name, ".dll"))
-#else
-		if (string_has_suffix((char*) entry->d_name, ".so"))
-#endif
-		{
-			// test it
-			fprintf(stderr, "Testing: %s\n", entry->d_name);
-			test_simd_can_crack(strdup(entry->d_name));
-		}
-		else
-		{
-			fprintf(stderr, "Skipping: %s\n", entry->d_name);
-		}
+		// Perform the unit-testing; we can run without an illegal instruction exception.
+		perform_unit_testing(state);
 	}
 
-	closedir(dsos);
+	ac_crypto_engine_loader_unload();
+}
+
+void test_crypto_engine_x86_avx512f(void **state)
+{
+	perform_unit_testing_for(state, SIMD_SUPPORTS_AVX512F);
+}
+
+void test_crypto_engine_x86_avx2(void **state)
+{
+	perform_unit_testing_for(state, SIMD_SUPPORTS_AVX2);
+}
+
+void test_crypto_engine_x86_avx(void **state)
+{
+	perform_unit_testing_for(state, SIMD_SUPPORTS_AVX);
+}
+
+void test_crypto_engine_x86_sse2(void **state)
+{
+	perform_unit_testing_for(state, SIMD_SUPPORTS_SSE2);
+}
+
+void test_crypto_engine_arm_neon(void **state)
+{
+	perform_unit_testing_for(state, SIMD_SUPPORTS_NEON);
+}
+
+void test_crypto_engine_ppc_altivec(void **state)
+{
+	perform_unit_testing_for(state, SIMD_SUPPORTS_ALTIVEC);
+}
+
+void test_crypto_engine_ppc_power8(void **state)
+{
+	perform_unit_testing_for(state, SIMD_SUPPORTS_POWER8);
+}
+
+void test_crypto_engine_generic(void **state)
+{
+	perform_unit_testing_for(state, SIMD_SUPPORTS_NONE);
+}
+
+int group_setup(void **state)
+{
+	*state = (void*) ((uintptr_t) simd_get_supported_features());
+
+	return 0;
 }
 
 int main(int argc, char *argv[])
 {
 	const struct CMUnitTest tests[] = {
-		cmocka_unit_test(test_shared_library_can_crack),
+		cmocka_unit_test(test_crypto_engine_generic),
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86)
+		cmocka_unit_test(test_crypto_engine_x86_avx2),
+		cmocka_unit_test(test_crypto_engine_x86_avx),
+		cmocka_unit_test(test_crypto_engine_x86_sse2),
+#elif defined(__arm) || defined(__aarch64) || defined(__aarch64__)
+		cmocka_unit_test(test_crypto_engine_arm_neon),
+#elif defined(__ppc__) || defined(__ppc64__)
+		cmocka_unit_test(test_crypto_engine_ppc_altivec),
+		cmocka_unit_test(test_crypto_engine_ppc_power8),
+#else
+#warning "SIMD not available."
+#endif
 	};
-	return cmocka_run_group_tests(tests, NULL, NULL);
+	return cmocka_run_group_tests(tests, group_setup, NULL);
 }
