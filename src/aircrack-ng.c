@@ -643,7 +643,7 @@ inline int wpa_send_passphrase(char *key, struct WPA_data *data, int lock)
 	}
 
 	// put one key in the buffer:
-	memcpy(data->key_buffer + data->back * 128, key, 128);
+	memcpy(data->key_buffer + data->back * WPA_DATA_KEY_BUFFER_LENGTH, key, MAX_PASSPHRASE_LENGTH + 1);
 	data->back = (data->back + 1) % data->nkeys;
 
 	pthread_mutex_unlock(&data->mutex);
@@ -667,7 +667,7 @@ inline int wpa_receive_passphrase(char *key, struct WPA_data *data)
 #ifdef XDEBUG
 	printf("%lu: Sending: %s\n", pthread_self(), (data->key_buffer + data->front * 128));
 #endif
-	memcpy(key, data->key_buffer + data->front * 128, 128);
+	memcpy(key, data->key_buffer + data->front * WPA_DATA_KEY_BUFFER_LENGTH, MAX_PASSPHRASE_LENGTH + 1);
 	data->front = (data->front + 1) % data->nkeys;
 
 	// signal that there's now room in the queue for more keys

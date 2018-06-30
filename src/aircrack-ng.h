@@ -245,6 +245,8 @@ struct mergeBSSID
 	struct mergeBSSID *next;
 };
 
+#define WPA_DATA_KEY_BUFFER_LENGTH 128
+
 struct WPA_data
 {
 	ac_crypto_engine_t engine;
@@ -256,7 +258,7 @@ struct WPA_data
 		key_buffer; /* queue as a circular buffer for feeding and consuming keys */
 	int front; /* front marker for the circular buffers */
 	int back; /* back marker for the circular buffers */
-	char key[128]; /* cracked key (0 while not found) */
+	char key[WPA_DATA_KEY_BUFFER_LENGTH]; /* cracked key (0 while not found) */
 	pthread_cond_t
 		cond; /* condition for waiting when buffer is full until keys are tried and new keys can be written */
 	pthread_mutex_t mutex;
