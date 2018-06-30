@@ -47,17 +47,11 @@ if test "x$asan" != "xno"; then
     # Assume both C and C++ compiler either support ASAN or not.
     LDFLAGS_saved="$LDFLAGS"
     LDFLAGS="$LDFLAGS -fsanitize=address"
-    ASAN=0
     AX_CHECK_COMPILE_FLAG([-fsanitize=address],
         [
-            CFLAGS="$CFLAGS -fsanitize=address"
-            CXXFLAGS="$CXXFLAGS -fsanitize=address"
-            ASAN=1
+            CFLAGS="$CFLAGS -fsanitize=address -DSANITIZE_ADDRESS=1"
+            CXXFLAGS="$CXXFLAGS -fsanitize=address -DSANITIZE_ADDRESS=1"
         ],
         [LDFLAGS="$LDFLAGS_saved"])
-    AX_CHECK_COMPILE_FLAG([-D__SANITIZE_ADDRESS__=1], [
-        CFLAGS="$CFLAGS -D__SANITIZE_ADDRESS__=1"
-        CXXFLAGS="$CXXFLAGS -D__SANITIZE_ADDRESS__=1"
-    ])
 fi
 ])

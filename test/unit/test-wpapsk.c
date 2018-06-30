@@ -107,7 +107,7 @@ void perform_unit_testing_for(void **state, int simd_flag)
 		perform_unit_testing(state);
 	}
 
-#if !defined(__SANITIZE_ADDRESS__)
+#if !defined(SANITIZE_ADDRESS)
 	ac_crypto_engine_loader_unload();
 #endif
 }
