@@ -114,16 +114,16 @@ IMPORT void ac_crypto_engine_loader_unload(void);
 
 // Symbols defined by the loader.
 
-IMPORT int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine);
-IMPORT void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine);
-IMPORT void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine,
+extern int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine);
+extern void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine);
+extern void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine,
 											  const uint8_t *essid);
-IMPORT int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t *engine,
+extern int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t *engine,
 											   int threadid);
-IMPORT void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine,
+extern void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine,
 												   int threadid);
-IMPORT int (*dso_ac_crypto_engine_simd_width)();
-IMPORT int (*dso_ac_crypto_engine_wpa_crack)(
+extern int (*dso_ac_crypto_engine_simd_width)();
+extern int (*dso_ac_crypto_engine_wpa_crack)(
 	ac_crypto_engine_t *engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	const uint8_t eapol[256],
@@ -133,13 +133,13 @@ IMPORT int (*dso_ac_crypto_engine_wpa_crack)(
 	const uint8_t cmpmic[20],
 	int nparallel,
 	int threadid);
-IMPORT void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
+extern void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
                                              const uint8_t bssid[6],
                                              const uint8_t stmac[6],
                                              const uint8_t anonce[32],
                                              const uint8_t snonce[32],
 											 int threadid);
-IMPORT int (*dso_ac_crypto_engine_supported_features)();
+extern int (*dso_ac_crypto_engine_supported_features)();
 
 // End symbols defined by the loader.
 
