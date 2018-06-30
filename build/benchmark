@@ -2,15 +2,7 @@
 
 set -euf
 
-case "$(uname -m)" in
-    x86_64)    TESTS="generic sse2 avx avx2";;
-    ppc64le)   TESTS="generic altivec power8";;
-    ppc64)     TESTS="generic altivec";;
-    armv7l)    TESTS="generic neon asimd";;
-    aarch64)   TESTS="generic neon asimd";;
-    *)         TESTS="generic";;
-esac
-
+TESTS=$(./src/aircrack-ng --simd-list)
 BENCHMARKS=benchmark.csv
 TOP=$(dirname "$0")/..
 REV=$(cd "$TOP" && "./evalrev")
