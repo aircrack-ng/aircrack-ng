@@ -66,15 +66,38 @@
 extern "C" {
 #endif
 
-// It must read the disk searching for the availables ones.
+/**
+ * Returns an integer bit representation of the available SIMD
+ * Aircrack-ng Crypto Engine modules for the runtime machine.
+ *
+ * @return Integer bit representation of SIMD flags.
+ */
 IMPORT int ac_crypto_engine_loader_get_available(void);
 
-/// Caller must deallocate the returned pointer!
+/**
+ * Returns an absolute path to the best Aircrack-ng Crypto
+ * library to load. The caller \b MUST deallocate the
+ * returned memory using \a free!
+ *
+ * @param simd_features Integer bit representation of SIMD flags.
+ * @return character sequence that must be deallocated by caller.
+ */
 IMPORT char *ac_crypto_engine_loader_best_library_for(int simd_features);
 
+/// Produces an integer bit representation of a SIMD character sequence.
 IMPORT int ac_crypto_engine_loader_string_to_flag(const char *const str);
 
-/// Caller must deallocate the returned pointer!
+/**
+ * Produces a character representation of the SIMD integer flags.
+ *
+ * All selected bits of \a flags are converted; producing a space
+ * separated string representation.
+ *
+ * Caller \b MUST deallocate the returned value using \a free
+ *
+ * @param flags Integer bit representation of SIMD flags.
+ * @return character sequence that must be deallocated by caller.
+ */
 IMPORT char *ac_crypto_engine_loader_flags_to_string(int flags);
 
 /// dlopen's and populates all DSO variables, but if not DYNAMIC these should be the addresses via static init.
