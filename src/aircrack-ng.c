@@ -134,7 +134,7 @@ unsigned char bf_wepkey[64];
 int wepkey_crack_success = 0;
 int close_aircrack = 0;
 int id = 0;
-pthread_t tid[MAX_THREADS];
+pthread_t tid[MAX_THREADS] = {0};
 pthread_t cracking_session_tid;
 struct WPA_data wpa_data[MAX_THREADS];
 int wpa_wordlists_done = 0;
@@ -436,13 +436,13 @@ void clean_exit(int ret)
 		pthread_join(cracking_session_tid, NULL);
 	}
 
-	for (i = 0; i < id; i++)
-	{
-		if (pthread_join(tid[i], NULL) != 0)
+	for (i = 0; i < opt.nbcpu; i++)
+		if (tid[i] != 0)
 		{
-			//	 			printf("Can't join thread %d\n", i);
+			if (pthread_join(tid[i], NULL) != 0)
+				perror("pthread_join");
+			tid[i] = 0;
 		}
-	}
 
 	dso_ac_crypto_engine_destroy(&engine);
 
@@ -4424,7 +4424,7 @@ int crack_wpa_thread(void *arg)
 		if (close_aircrack)
 		{
 			dso_ac_crypto_engine_thread_destroy(&engine, threadid);
-			pthread_exit(&ret);
+			return SUCCESS;
 		}
 
 		/* receive passphrases */
@@ -4442,7 +4442,7 @@ int crack_wpa_thread(void *arg)
 					if (j == 0)
 					{
 						dso_ac_crypto_engine_thread_destroy(&engine, threadid);
-						return 0;
+						return SUCCESS;
 					}
 					else // ...we have some key pending in this loop: keep working
 						break;
@@ -4482,13 +4482,12 @@ int crack_wpa_thread(void *arg)
 				opt.dict = NULL;
 			}
 			pthread_mutex_unlock(&mx_dic);
+
 			for (i = 0; i < opt.nbcpu; i++)
 			{
 				// we make sure do_wpa_crack doesn't block before exiting,
 				// now that we're not consuming passphrases here any longer
-				pthread_mutex_lock(&wpa_data[i].mutex);
-				pthread_cond_signal(&wpa_data[i].cond);
-				pthread_mutex_unlock(&wpa_data[i].mutex);
+				pthread_cond_broadcast(&wpa_data[i].cond);
 			}
 
 			memset(data->key, 0, sizeof(data->key));
@@ -7000,6 +6999,8 @@ __start:
 
 		if (db == NULL)
 		{
+			int starting_thread_id = id;
+
 			for (i = 0; i < opt.nbcpu; i++)
 			{
 				if (ap_cur->ivbuf_size)
@@ -7051,9 +7052,14 @@ __start:
 			wpa_wordlists_done =
 				1; // we tell the threads that they shouldn't expect more words (don't wait for parallel crack)
 
-			for (i = 0; i < opt.nbcpu;
-				 i++) // we wait for the cracking threads to end
-				pthread_join(tid[--id], NULL);
+			// we wait for the cracking threads to end
+			for (i = starting_thread_id; i < opt.nbcpu; i++)
+				if (tid[i] != 0)
+				{
+					if (pthread_join(tid[i], NULL) != 0)
+						perror("pthread_join");
+					tid[i] = 0;
+				}
 
 			for (i = 0; i < opt.nbcpu; i++)
 			{
