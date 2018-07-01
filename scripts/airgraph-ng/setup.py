@@ -14,5 +14,5 @@ setup(name='airgraph-ng',
           'Development Status :: 4 - Beta',
       ],
       packages=['graphviz'],
-      scripts=['dump-join', 'airgraph-ng'],
+      scripts=['airodump-join', 'airgraph-ng'],
      )

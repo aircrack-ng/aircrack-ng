@@ -1,4 +1,3 @@
-
 #!/usr/bin/python
 # this script is a total hack it works and I'll clean it up later
 import sys,getopt, optparse, pdb, re

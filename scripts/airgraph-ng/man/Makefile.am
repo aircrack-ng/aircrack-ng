@@ -37,4 +37,4 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-dist_man1_MANS = airgraph-ng.1 dump-join.1
+dist_man1_MANS = airgraph-ng.1 airodump-join.1

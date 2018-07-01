@@ -60,7 +60,7 @@ clean-local:
 	rm -fr $(shell $(READLINK) -f $(builddir))/build
 
 EXTRA_DIST = airgraph-ng \
-			 dump-join \
+			 airodump-join \
 			 lib \
 			 setup.py \
 			 graphviz \
