@@ -4419,14 +4419,8 @@ int crack_wpa_thread(void *arg)
 	printf("Thread # %d starting...\n", threadid);
 #endif
 
-	while (1)
+	while (!close_aircrack)
 	{
-		if (close_aircrack)
-		{
-			dso_ac_crypto_engine_thread_destroy(&engine, threadid);
-			return SUCCESS;
-		}
-
 		/* receive passphrases */
 		memset(keys, 0, sizeof(keys));
 
