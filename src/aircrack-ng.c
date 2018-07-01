@@ -7053,7 +7053,7 @@ __start:
 				1; // we tell the threads that they shouldn't expect more words (don't wait for parallel crack)
 
 			// we wait for the cracking threads to end
-			for (i = starting_thread_id; i < opt.nbcpu; i++)
+			for (i = starting_thread_id; i < opt.nbcpu + starting_thread_id; i++)
 				if (tid[i] != 0)
 				{
 					if (pthread_join(tid[i], NULL) != 0)
