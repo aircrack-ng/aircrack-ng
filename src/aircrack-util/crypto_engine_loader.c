@@ -288,7 +288,6 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 		free(module_filename);
 		return 1;
 	}
-	free(module_filename);
 
 	// resolve symbols needed
 	struct _dso_symbols
@@ -317,9 +316,12 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 		{
 			fprintf(stderr, "Could not find symbol %s in %s.\n", cur->sym, module_filename);
 			dlclose(module);
+			free(module_filename);
 			return 1;
 		}
 	}
+
+	free(module_filename);
 #endif
 
 	return 0;
