@@ -162,7 +162,7 @@ EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 	char buffer[8192] = {"aircrack-crypto"};
 	char library_path[8192];
 	char module_filename[8192];
-	size_t buffer_remaining = 8192;
+	size_t buffer_remaining = 8192 - 1;
 
 	if (simd_features & SIMD_SUPPORTS_AVX512F)
 	{
