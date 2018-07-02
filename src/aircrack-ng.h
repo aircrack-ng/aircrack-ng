@@ -105,15 +105,15 @@ enum KoreK_attacks
 	A_neg /* helps reject false positives */
 };
 
-static struct dictfiles
+struct dictfiles
 {
 	off_t dictsize; /* Total file size */
 	off_t dictpos; /* Current position of dictionary */
 	off_t wordcount; /* Total amount of words in dict file */
 	int loaded; /* Have finished processing? */
-} dicts;
+};
 
-static struct options
+struct options
 {
 	int amode; /* attack mode          */
 	int essid_set; /* essid set flag       */
@@ -186,16 +186,14 @@ static struct options
 	char *wkp; /* EWSA Project file */
 	char *hccap; /* Hashcat capture file */
 	char *hccapx; /* Hashcat X (3.6+) capture file */
-}
-
-opt;
+};
 
 typedef struct
 {
 	int idx, val;
 } vote;
 
-static struct WEP_data
+struct WEP_data
 {
 	unsigned char key[64]; /* the current chosen WEP key   */
 	unsigned char *ivbuf; /* buffer holding all the IVs   */
@@ -205,7 +203,7 @@ static struct WEP_data
 	int fudge[64]; /* bruteforce level (1 to 256)  */
 	int depth[64]; /* how deep we are in the fudge */
 	vote poll[64][256]; /* KoreK cryptanalysis results  */
-} wep __attribute__((aligned(64)));
+};
 
 struct AP_info
 {

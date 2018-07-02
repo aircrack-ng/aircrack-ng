@@ -51,6 +51,8 @@
 #define IVBYTES PTW_IVBYTES
 #define TESTBYTES 6
 
+static struct options opt;
+
 // Internal state of rc4
 typedef struct
 {

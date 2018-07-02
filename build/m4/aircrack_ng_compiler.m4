@@ -95,10 +95,6 @@ AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [
 	AX_APPEND_FLAG(-fvisibility=hidden, [opt_[]_AC_LANG_ABBREV[]flags])
 ])
 
-AX_CHECK_COMPILE_FLAG([-Wno-unused-variable], [
-	AX_APPEND_FLAG(-Wno-unused-variable, [opt_[]_AC_LANG_ABBREV[]flags])
-])
-
 case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
     gnu|clang|intel)
         AX_COMPARE_VERSION([$ax_cv_[]_AC_LANG_ABBREV[]_compiler_version], [ge], [4.1], [gcc_over41=yes], [gcc_over41=x])

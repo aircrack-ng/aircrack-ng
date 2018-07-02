@@ -117,6 +117,8 @@ static ac_crypto_engine_t engine; /* crypto engine */
 
 /* IPC global data */
 
+static struct options opt;
+static struct WEP_data wep __attribute__((aligned(64)));
 unsigned char *buffer = NULL; /* from read_thread */
 struct AP_info *ap_1st; /* first item in linked list    */
 pthread_mutex_t mx_apl; /* lock write access to ap LL   */
