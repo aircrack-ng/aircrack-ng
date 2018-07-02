@@ -43,7 +43,9 @@
 #include "common.h"
 #include "trampoline.h"
 
+#ifndef STATIC_BUILD
 static void *module = NULL;
+#endif
 
 #ifdef STATIC_BUILD
 int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine) =
