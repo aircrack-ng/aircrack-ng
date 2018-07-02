@@ -95,7 +95,7 @@ uninstall:
 	@rm -rf $(datadir)
 	@rm -rf $(docdir)
 	@rm -f $(mandir)/man1/airoscript-ng.1
-	@rm -f $(picdir)/airoscript-ng.png $(picdir)/airoscript-ng.desktop $(picdir)/airoscript-ng_gtk.desktop
+	@rm -f $(picdir)/airoscript-ng.png $(appdir)/airoscript-ng.desktop $(appdir)/airoscript-ng_gtk.desktop
 	@for i in $(docdir)/*.1 ; do rm -rf $(mandir)/man1/$$i ; done
 	@for i in $(srcdir)/locale/* ; do \
 		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
