@@ -18,18 +18,29 @@ environment:
   CHERE_INVOKING: 1
   MSYSTEM: MSYS
 
+  matrix:
+  - TARGET: cygwin
+  - TARGET: cygwin64
+  - TARGET: msys64
+
 install:
-- ps: c:\cygwin\setup-x86.exe -qnNdO -R C:/cygwin -s http://cygwin.mirror.constant.com -l C:/cygwin/var/cache/setup -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P libcurl4 -P cmocka
-- ps: c:\cygwin64\setup-x86_64.exe -qnNdO -R C:/cygwin64 -s http://cygwin.mirror.constant.com -l C:/cygwin64/var/cache/setup -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka
-- cmd: c:\msys64\usr\bin\bash -e -l -c "pacman -Syu --noconfirm"
-- cmd: c:\msys64\usr\bin\bash -e -l -c "pacman -Su --noconfirm"
-- cmd: c:\msys64\usr\bin\bash -e -l -c "pacman -Sy --noconfirm autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel"
+- cmd: if [%TARGET%]==[cygwin] (
+    c:\cygwin\setup-x86.exe -qnNdO -R C:/cygwin -s http://cygwin.mirror.constant.com -l C:/cygwin/var/cache/setup -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P libcurl4 -P cmocka )
+- cmd: if [%TARGET%]==[cygwin64] (
+    c:\cygwin64\setup-x86_64.exe -qnNdO -R C:/cygwin64 -s http://cygwin.mirror.constant.com -l C:/cygwin64/var/cache/setup -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka )
+- cmd: if [%TARGET%]==[msys64] (
+    c:\msys64\usr\bin\bash -e -l -c "pacman -Syu --noconfirm" )
+- cmd: if [%TARGET%]==[msys64] (
+    c:\msys64\usr\bin\bash -e -l -c "pacman -Su --noconfirm" )
+- cmd: if [%TARGET%]==[msys64] (
+    c:\msys64\usr\bin\bash -e -l -c "pacman -Sy --noconfirm autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel" )
 
 build_script:
 - cmd: |
     C:\cygwin\bin\bash -e -l -c "curl -RLO http://benden.us/vagrant/AirPcap_Devpack_4_1_1_1838.zip"
     C:\cygwin\bin\bash -e -l -c "7z x AirPcap_Devpack_4_1_1_1838.zip"
 - cmd: |
+    if [%TARGET]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src"
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"
@@ -38,7 +49,9 @@ build_script:
     C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
     C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"
     C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=`pwd`"
+    )
 - cmd: |
+    if [%TARGET]==[cygwin64] (
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"
@@ -47,7 +60,9 @@ build_script:
     C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
     C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"
     C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=`pwd`"
+    )
 - cmd: |
+    if [%TARGET%]==[msys64] (
     C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"
     C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"
     C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"
@@ -55,3 +70,4 @@ build_script:
     C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"
     C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
     C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"
+    )
