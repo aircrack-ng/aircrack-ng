@@ -25,7 +25,7 @@ RETRY=0
 
 while [ $RETRY -lt 3 ];
 do
-	./autogen.sh --enable-static --disable-shared "$@" && break
+	./autogen.sh "$@" && break
 
 	echo "W: failed to run autogen.sh, will retry..."
 	RETRY=$(($RETRY + 1))

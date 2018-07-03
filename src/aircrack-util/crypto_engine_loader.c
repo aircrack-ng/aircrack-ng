@@ -137,7 +137,7 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 	{
 #if defined(__APPLE__)
 		if (string_has_suffix((char*) entry->d_name, ".dylib"))
-#elif defined(WIN32) || defined(_WIN32)
+#elif defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
 		if (string_has_suffix((char*) entry->d_name, ".dll"))
 #else
 		if (string_has_suffix((char*) entry->d_name, ".so"))
@@ -214,19 +214,20 @@ EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 	}
 	free(working_directory);
 
-	snprintf(module_filename, sizeof(module_filename) - 1, "%s/%s%s.%s", library_path,
-#if defined(WIN32) || defined(_WIN32)
-		"",
+	snprintf(module_filename, sizeof(module_filename) - 1, "%s/%s%s%s",
+		library_path,
+#if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
+		"cyg",
 #else
-             "lib",
+		"lib",
 #endif
-             buffer,
-#if defined(WIN32) || defined(_WIN32)
-		"dll"
+		buffer,
+#if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
+		"-0.dll"
 #elif defined(__APPLE__)
-		"dylib"
+		".dylib"
 #else
-             "so"
+		".so"
 #endif
 	);
 

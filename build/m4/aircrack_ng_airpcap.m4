@@ -50,18 +50,18 @@ case $with_airpcap in
         case "$(uname -m)" in
             x86_64* | amd64*)
                 AC_MSG_RESULT([no])
-                AIRPCAP_LIB="bin/x64/airpcap.dll"
+                AIRPCAP_LIB="bin/x64"
                 ;;
             *)
                 AC_MSG_RESULT([yes])
-                AIRPCAP_LIB="bin/x86/airpcap.dll"
+                AIRPCAP_LIB="bin/x86"
                 ;;
         esac
 
         AC_MSG_CHECKING([for airpcap.h])
         if test -r "$with_airpcap/Airpcap_Devpack/include/airpcap.h" ; then
             AIRPCAP_CFLAGS="-I$with_airpcap/Airpcap_Devpack/include"
-            AIRPCAP_LIBS="$with_airpcap/Airpcap_Devpack/${AIRPCAP_LIB}"
+            AIRPCAP_LIBS="-L$with_airpcap/Airpcap_Devpack/${AIRPCAP_LIB} -lairpcap"
             AC_SUBST(AIRPCAP_CFLAGS)
             AC_SUBST(AIRPCAP_LIBS)
             AC_DEFINE([HAVE_AIRPCAP], [1], [Define if you have AirPcap.])

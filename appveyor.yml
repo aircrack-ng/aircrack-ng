@@ -34,6 +34,7 @@ build_script:
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util"
+    C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"
 
     C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
 
@@ -46,6 +47,7 @@ build_script:
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util"
+    C:\cygwin64\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"
 
     C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
 
@@ -58,6 +60,7 @@ build_script:
     C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"
     C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"
     C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util"
+    C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"
 
     C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
 
