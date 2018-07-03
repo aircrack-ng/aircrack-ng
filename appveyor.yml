@@ -40,7 +40,7 @@ build_script:
     C:\cygwin\bin\bash -e -l -c "curl -RLO http://benden.us/vagrant/AirPcap_Devpack_4_1_1_1838.zip"
     C:\cygwin\bin\bash -e -l -c "7z x AirPcap_Devpack_4_1_1_1838.zip"
 - cmd: |
-    if [%TARGET]==[cygwin] (
+    if [%TARGET%]==[cygwin] (
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src"
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"
@@ -51,7 +51,7 @@ build_script:
     C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=`pwd`"
     )
 - cmd: |
-    if [%TARGET]==[cygwin64] (
+    if [%TARGET%]==[cygwin64] (
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"
