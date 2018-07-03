@@ -39,7 +39,7 @@ install:
       param(
         [Parameter(Position=0,Mandatory=1)][scriptblock] $command
       )
-      & $command
+      & $command 2>&1 | %{ "$_" }
       if ($LASTEXITCODE -ne 0) {
         throw ("Command returned non-zero error-code ${LASTEXITCODE}: $command")
       }
