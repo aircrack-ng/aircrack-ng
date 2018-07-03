@@ -20,7 +20,11 @@ environment:
 
   matrix:
   - TARGET: cygwin
+    APPVEYOR_CACHE_SKIP_RESTORE: true
+    APPVEYOR_CACHE_SKIP_SAVE: true
   - TARGET: cygwin64
+    APPVEYOR_CACHE_SKIP_RESTORE: true
+    APPVEYOR_CACHE_SKIP_SAVE: true
   - TARGET: msys64
 
 install:
