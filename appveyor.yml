@@ -12,6 +12,8 @@ platform: x64
 clone_depth: 10
 
 cache:
+- C:\cygwin -> appveyor.yml
+- C:\cygwin64 -> appveyor.yml
 - C:\msys64 -> appveyor.yml
 
 environment:
