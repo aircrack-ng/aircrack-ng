@@ -25,43 +25,31 @@ install:
 - cmd: c:\msys64\usr\bin\bash -e -l -c "pacman -Sy --noconfirm autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel"
 
 build_script:
-- cmd: >-
+- cmd: |
     C:\cygwin\bin\bash -e -l -c "curl -RLO http://benden.us/vagrant/AirPcap_Devpack_4_1_1_1838.zip"
-
     C:\cygwin\bin\bash -e -l -c "7z x AirPcap_Devpack_4_1_1_1838.zip"
-
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src"
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"
     C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util"
     C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"
-
     C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
-
     C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"
-
     C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=`pwd`"
-
-
+- cmd: |
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"
     C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util"
     C:\cygwin64\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"
-
     C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
-
     C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"
-
     C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=`pwd`"
-
-
+- cmd: |
     C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"
     C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"
     C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"
     C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util"
     C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"
-
     C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
-
     C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"
