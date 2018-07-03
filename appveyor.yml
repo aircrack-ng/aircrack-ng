@@ -34,40 +34,50 @@ install:
     c:\msys64\usr\bin\bash -e -l -c "pacman -Su --noconfirm" )
 - cmd: if [%TARGET%]==[msys64] (
     c:\msys64\usr\bin\bash -e -l -c "pacman -Sy --noconfirm autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel" )
+- ps: |
+    function Exec-External {
+      param(
+        [Parameter(Position=0,Mandatory=1)][scriptblock] $command
+      )
+      & $command
+      if ($LASTEXITCODE -ne 0) {
+        throw ("Command returned non-zero error-code ${LASTEXITCODE}: $command")
+      }
+    }
 
 build_script:
 - cmd: |
     C:\cygwin\bin\bash -e -l -c "curl -RLO http://benden.us/vagrant/AirPcap_Devpack_4_1_1_1838.zip"
     C:\cygwin\bin\bash -e -l -c "7z x AirPcap_Devpack_4_1_1_1838.zip"
-- cmd: |
-    if [%TARGET%]==[cygwin] (
-    C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src"
-    C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"
-    C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"
-    C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util"
-    C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"
-    C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
-    C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"
-    C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=`pwd`"
-    )
-- cmd: |
-    if [%TARGET%]==[cygwin64] (
-    C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"
-    C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"
-    C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"
-    C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"
-    C:\cygwin64\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"
-    C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
-    C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"
-    C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=`pwd`"
-    )
-- cmd: |
-    if [%TARGET%]==[msys64] (
-    C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"
-    C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"
-    C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"
-    C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"
-    C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"
-    C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=`pwd`"
-    C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"
-    )
+- ps: |
+    if ($env:TARGET -eq "cygwin") {
+      Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src"}
+      Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"}
+      Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"}
+      Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util"}
+      Exec-External {& C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"}
+      Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=$env:APPVEYOR_BUILD_FOLDER"}
+      Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+      Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=$env:APPVEYOR_BUILD_FOLDER"}
+    }
+- ps: |
+    if ($env:TARGET -eq "cygwin64") {
+    Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"}
+    Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"}
+    Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"}
+    Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"}
+    Exec-External {& C:\cygwin64\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
+    Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=$env:APPVEYOR_BUILD_FOLDER"}
+    Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+    Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=$env:APPVEYOR_BUILD_FOLDER"}
+    }
+- ps: |
+    if ($env:TARGET -eq "msys64") {
+    Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"}
+    Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"}
+    Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"}
+    Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"}
+    Exec-External {& C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
+    Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=$env:APPVEYOR_BUILD_FOLDER"}
+    Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+    }
