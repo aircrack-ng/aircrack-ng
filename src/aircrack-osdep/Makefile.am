@@ -70,7 +70,6 @@ libaircrack_osdep_la_CFLAGS = $(AM_CPPFLAGS) $(AIRPCAP_CFLAGS)
 libaircrack_osdep_la_LIBADD = $(AIRPCAP_LIBS) $(LIBRADIOTAP_LIBS) -lsetupapi -liphlpapi
 else
 libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
-libaircrack_osdep_la_LIBADD = -lsetupapi -liphlpapi
 endif
 endif
 
@@ -101,6 +100,9 @@ endif
 
 if !AIRPCAP
 libaircrack_osdep_la_LIBADD = $(LIBRADIOTAP_LIBS)
+if CYGWIN
+libaircrack_osdep_la_LIBADD += -lsetupapi -liphlpapi
+endif
 endif
 
 lib_LTLIBRARIES = libaircrack-osdep.la
