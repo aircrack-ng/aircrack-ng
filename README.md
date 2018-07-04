@@ -140,6 +140,8 @@ to your choosing:
                 extracted source code from the Airpcap CD or downloaded SDK available
                 online. Required on Windows to build `besside-ng`, `besside-ng-crawler`, 
                 `easside-ng`, `tkiptun-ng` and `wesside-ng` when building experimental tools
+                The developer pack (Compatible with version 4.1.1 and 4.1.3) can be downloaded at
+                https://support.riverbed.com/content/support/software/steelcentral-npm/airpcap.html
 
 * **with-experimental**: needed to compile `tkiptun-ng`, `easside-ng`, `buddy-ng`,
                     `buddy-ng-crawler`, `airventriloquist` and `wesside-ng`.
@@ -247,6 +249,19 @@ to your choosing:
     ```
     env CC=gcc7 CXX=g++7 ./configure
     gmake
+    ```
+
+  * Compiling on Cygwin with Airpcap (assuming Airpcap devpack is unpacked in Aircrack-ng directory)
+
+    ```
+    cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src
+    cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep
+    cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto
+    cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util
+    dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a
+    autoreconf -i
+    ./configure --with-experimental --with-airpcap=$(pwd)
+    make
     ```
 
 # Packaging
