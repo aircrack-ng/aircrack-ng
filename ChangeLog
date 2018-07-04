@@ -3,9 +3,17 @@ Version 1.3 beta 1 (changes from aircrack-ng 1.2) - Released XX XXX XXXX:
 * Aircrack-ng: Fixed floating point exception due to division by 0 when displaying stats.
 * Aircrack-ng: Updated manpage regarding hex wordlist usage.
 * Aircrack-ng: Added save/restore session when cracking using wordlists (-N and -R).
-* Aircrack-ng: Add --background 0/1 to force disable/enable background settings and override autodetection of background.
+* Aircrack-ng: Moved crypto to its own library, aircrack-crypto/ (aka crypto engine).
+* Aircrack-ng: Now back to a single binary thanks to crypto-engine.
+* Aircrack-ng: Performance improvements of the crypto engine across various CPU architectures.
+* Aircrack-ng: Added support for AVX512 in the crypto-engine (and build).
+* Aircrack-ng: Improved building crypto-engine across CPU architectures and compilers (gcc, clang and ICC).
+* Aircrack-ng: Allow to list available SIMD optimizations.
+* Aircrack-ng: Improved benchmark tool for unusual CPU/cores count.
 * Airodump-ng: Fixed running in the background.
 * Airodump-ng: Don't show WPA handshake capture notice for out-of-scope ESSIDs.
+* Airodump-ng: Add --background 0/1 to force disable/enable background settings and override autodetection of background.
+* Airodump-ng: Added support for GCMP, GCMP-256 and CCMP-256.
 * Airolib-ng: Fixed importing data when interrupting process using Ctrl-C. 
 * dcrack: Check if dictionary and capture file exists before uploading them.
 * dcrack: Clean up dictionary before uploading it to the server.
@@ -20,15 +28,27 @@ Version 1.3 beta 1 (changes from aircrack-ng 1.2) - Released XX XXX XXXX:
 * Airmon-ng: Fixed display of interface name if name is too long.
 * OSdep: Fixed memory leak and null pointer dereference.
 * OSdep: Fixed byteorder macros and other tools crashing.
+* OSdep: Added support to build as a shared library.
 * FreeRADIUS-WPE: Updated instructions for v3.0.17.
 * HostAPd-wpe: Added Response-Identity logging and displaying NETNTLM hash in hashcat format.
+* Airgraph-ng: Renamed dump-join to airodump-join.
+* General: Added coveralls.io badge.
 * General: Added --without-opt to disable stack protector when using GCC >= 4.9
 * General: Various improvements and fixes, some from Coverity Scan and Valgrind.
 * General: Fixed typos reported by codespell.
 * General: Extracted console functions and moved to aircrack-util/.
+* General: Renamed osdep/ to aircrack-osdep/.
+* General: Fixed and added functions prototypes and commented out unused functions.
+* General: Reformat source code using clang-format and added .clang-format file for IDE.
+* General: Improvements to AppVeyor and TravisCI builds
 * Building: Added NEON intrinsic support.
 * Building: Support paths containing spaces, during autoreconf.
 * Building: Fix compilation without getauxval in the trampoline binary.
+* Building: Fixed compiler warnings on Windows, FreeBSD.
+* Building: Fixes and documentation for OSX.
+* Building: Added support for tcmalloc and jemalloc.
+* Building: Added instruction to build Windows binaries with Airpcap.
+* Unit test: Using CMocka for some tests
 * Documentation: Updated explanations regarding building some experimental tools. 
 
 Version 1.2 (changes from aircrack-ng 1.2-rc5) - Released 15 Apr 2018:
