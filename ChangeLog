@@ -833,7 +833,7 @@ Version 0.3 (changes from aircrack-ng 0.2.1) - Released 30 march 2006:
 * airodump-ng: disabled GPS coordinates if connection to gpsd fail
 * airodump-ng: Battery information fixed (hacked kismet code)
 * airodump-ng: Madwifi-ng is now supported
-* aircrack-ng: corrrected title (when cracking a key)
+* aircrack-ng: corrected title (when cracking a key)
 * aircrack-ng: uses by default all CPU for cracking (Debian bug report #352877)
 * manpages: Fixed some errors (Debian bug report #356551)
 * manpages: created ivstools manpage
