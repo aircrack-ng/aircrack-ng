@@ -78,6 +78,10 @@ void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
 									  int threadid) = &ac_crypto_engine_calc_pke;
 int (*dso_ac_crypto_engine_supported_features)() =
 	&ac_crypto_engine_supported_features;
+uint8_t* (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t *engine, int threadid, int index) =
+	&ac_crypto_engine_get_pmk;
+uint8_t* (*dso_ac_crypto_engine_get_ptk)(ac_crypto_engine_t *engine, int threadid, int index) =
+	&ac_crypto_engine_get_ptk;
 #else
 int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine) = NULL;
 void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine) = NULL;
@@ -105,6 +109,10 @@ void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
                                       const uint8_t snonce[32],
                                       int threadid) = NULL;
 int (*dso_ac_crypto_engine_supported_features)() = NULL;
+uint8_t* (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t *engine, int threadid, int index) =
+	NULL;
+uint8_t* (*dso_ac_crypto_engine_get_ptk)(ac_crypto_engine_t *engine, int threadid, int index) =
+	NULL;
 #endif
 
 EXPORT int ac_crypto_engine_loader_get_available(void)
@@ -307,6 +315,8 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 		{ "ac_crypto_engine_wpa_crack", (void *)&dso_ac_crypto_engine_wpa_crack },
 		{ "ac_crypto_engine_calc_pke", (void *)&dso_ac_crypto_engine_calc_pke },
 		{ "ac_crypto_engine_supported_features", (void*)&dso_ac_crypto_engine_supported_features },
+		{ "ac_crypto_engine_get_pmk", (void*)&dso_ac_crypto_engine_get_pmk },
+		{ "ac_crypto_engine_get_ptk", (void*)&dso_ac_crypto_engine_get_ptk },
 
 		{ NULL, NULL }
 	};

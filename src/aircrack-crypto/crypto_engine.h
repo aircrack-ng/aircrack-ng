@@ -158,11 +158,9 @@ IMPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine);
 IMPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
 									   const uint8_t *essid);
 
-static inline unsigned char *
-ac_crypto_engine_get_pmk(ac_crypto_engine_t *engine, int threadid)
-{
-	return (uint8_t*) engine->thread_data[threadid]->pmk;
-}
+IMPORT uint8_t* ac_crypto_engine_get_pmk(ac_crypto_engine_t *engine, int threadid, int index);
+
+IMPORT uint8_t* ac_crypto_engine_get_ptk(ac_crypto_engine_t *engine, int threadid, int index);
 
 IMPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
 									  const uint8_t bssid[6],

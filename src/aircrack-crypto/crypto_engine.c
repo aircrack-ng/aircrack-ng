@@ -154,6 +154,16 @@ EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
 	}
 }
 
+EXPORT uint8_t* ac_crypto_engine_get_pmk(ac_crypto_engine_t *engine, int threadid, int index)
+{
+	return (uint8_t*) engine->thread_data[threadid]->pmk + (sizeof(wpapsk_hash) * index);
+}
+
+EXPORT uint8_t* ac_crypto_engine_get_ptk(ac_crypto_engine_t *engine, int threadid, int index)
+{
+	return (uint8_t*) engine->thread_data[threadid]->ptk + (20 * index);
+}
+
 EXPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
 									  const uint8_t bssid[6],
 									  const uint8_t stmac[6],

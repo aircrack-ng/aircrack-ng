@@ -140,6 +140,9 @@ extern void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
                                              const uint8_t snonce[32],
 											 int threadid);
 extern int (*dso_ac_crypto_engine_supported_features)();
+extern uint8_t* (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t *engine, int threadid, int index);
+extern uint8_t* (*dso_ac_crypto_engine_get_ptk)(ac_crypto_engine_t *engine, int threadid, int index);
+
 
 // End symbols defined by the loader.
 

@@ -4522,8 +4522,8 @@ int crack_wpa_thread(void *arg)
 			if (len < 8) len = 8;
 			show_wpa_stats((char*) keys[j].v,
 						   len,
-						   (uint8_t*) engine.thread_data[threadid]->pmk + (sizeof(wpapsk_hash) * j),
-						   engine.thread_data[threadid]->ptk + j * 20,
+						   dso_ac_crypto_engine_get_pmk(&engine, threadid, j),
+						   dso_ac_crypto_engine_get_ptk(&engine, threadid, j),
 						   mic[j],
 						   1);
 
@@ -4570,8 +4570,8 @@ int crack_wpa_thread(void *arg)
 
 			show_wpa_stats((char*) keys[0].v,
 						   len,
-						   (uint8_t*) engine.thread_data[threadid]->pmk,
-						   engine.thread_data[threadid]->ptk,
+						   dso_ac_crypto_engine_get_pmk(&engine, threadid, 0),
+						   dso_ac_crypto_engine_get_ptk(&engine, threadid, 0),
 						   mic[0],
 						   0);
 		}
