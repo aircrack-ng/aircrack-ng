@@ -29,6 +29,7 @@
  * files in the program, then also delete it here.
  */
 
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
