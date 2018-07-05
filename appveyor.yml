@@ -21,17 +21,24 @@ environment:
 
   matrix:
   - TARGET: cygwin
-    APPVEYOR_CACHE_SKIP_RESTORE: true
-    APPVEYOR_CACHE_SKIP_SAVE: true
   - TARGET: cygwin64
-    APPVEYOR_CACHE_SKIP_RESTORE: true
-    APPVEYOR_CACHE_SKIP_SAVE: true
   - TARGET: msys64
 
 cache:
 - '%AIRCRACK_CI_CACHE% -> appveyor.yml'
 
 install:
+- ps: |
+    function Exec-External {
+      param(
+        [Parameter(Position=0,Mandatory=1)][scriptblock] $command
+      )
+      & $command 2>&1 | %{ "$_" }
+      if ($LASTEXITCODE -ne 0) {
+        throw ("Command returned non-zero error-code ${LASTEXITCODE}: $command")
+      }
+    }
+
 - ps: |
     function downloadIfOlderThanDays($url, $path, $days) {
       if ( !(Test-Path $path -NewerThan (Get-Date).AddDays(-$days)) ) {
@@ -50,6 +57,8 @@ install:
 
 - ps: |
     if ($env:TARGET -eq "cygwin") {
+      New-Item -Force -Type Directory $env:CYG_CACHE
+
       downloadIfOlderThanDays "https://cygwin.com/setup-x86.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86.exe" 7
       
       updateCygwin "${env:AIRCRACK_CI_CACHE}\setup-x86.exe" C:/cygwin $env:CYG_CACHE
@@ -57,6 +66,8 @@ install:
 
 - ps: |
     if ($env:TARGET -eq "cygwin64") {
+      New-Item -Force -Type Directory $env:CYG_CACHE
+
       downloadIfOlderThanDays "https://cygwin.com/setup-x86_64.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86_64.exe" 7
       
       updateCygwin "${env:AIRCRACK_CI_CACHE}\setup-x86_64.exe" C:/cygwin64 $env:CYG_CACHE
@@ -78,17 +89,6 @@ install:
       bash "pacman -Syu --noconfirm --cache `"$unix_msys2_cache`""
       # install Aircrack-ng build dependencies
       bash "pacman --sync --noconfirm --cache `"$unix_msys2_cache`" autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel"
-    }
-
-- ps: |
-    function Exec-External {
-      param(
-        [Parameter(Position=0,Mandatory=1)][scriptblock] $command
-      )
-      & $command 2>&1 | %{ "$_" }
-      if ($LASTEXITCODE -ne 0) {
-        throw ("Command returned non-zero error-code ${LASTEXITCODE}: $command")
-      }
     }
 
 build_script:
