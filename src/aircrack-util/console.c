@@ -39,6 +39,8 @@
 
 #include "console.h"
 
+#define channel stdout
+
 void textcolor(int attr, int fg, int bg)
 {
 	char command[13];
@@ -46,8 +48,8 @@ void textcolor(int attr, int fg, int bg)
 	/* Command is the control command to the terminal */
 	snprintf(
 		command, sizeof(command), "%c[%d;%d;%dm", 0x1B, attr, fg + 30, bg + 40);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 void textcolor_fg(int fg)
@@ -56,8 +58,8 @@ void textcolor_fg(int fg)
 
 	/* Command is the control command to the terminal */
 	snprintf(command, sizeof(command), "\033[%dm", fg + 30);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 void textcolor_bg(int bg)
@@ -66,8 +68,8 @@ void textcolor_bg(int bg)
 
 	/* Command is the control command to the terminal */
 	snprintf(command, sizeof(command), "\033[%dm", bg + 40);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 void textstyle(int attr)
@@ -76,8 +78,8 @@ void textstyle(int attr)
 
 	/* Command is the control command to the terminal */
 	snprintf(command, sizeof(command), "\033[%im", attr);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 void reset_term()
@@ -108,8 +110,8 @@ void moveto(int x, int y)
 
 	// send ANSI sequence to move the cursor.
 	snprintf(command, sizeof(command), "%c[%d;%dH", 0x1B, y, x);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 void move(int which, int n)
@@ -119,8 +121,8 @@ void move(int which, int n)
 
 	assert(which >= 0 && which < 4);
 	snprintf(command, sizeof(command), "%c[%d%c", 0x1B, n, movement[which]);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 void erase_display(int n)
@@ -128,8 +130,8 @@ void erase_display(int n)
 	char command[13];
 
 	snprintf(command, sizeof(command), "%c[%dJ", 0x1B, n);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 void erase_line(int n)
@@ -137,8 +139,8 @@ void erase_line(int n)
 	char command[13];
 
 	snprintf(command, sizeof(command), "%c[%dK", 0x1B, n);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 void textcolor_normal(void)
@@ -146,8 +148,8 @@ void textcolor_normal(void)
 	char command[13];
 
 	snprintf(command, sizeof(command), "%c[22m", 0x1B);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 void hide_cursor(void)
@@ -155,8 +157,8 @@ void hide_cursor(void)
 	char command[13];
 
 	snprintf(command, sizeof(command), "%c[?25l", 0x1B);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 void show_cursor(void)
@@ -164,8 +166,8 @@ void show_cursor(void)
 	char command[13];
 
 	snprintf(command, sizeof(command), "%c[?25h", 0x1B);
-	fprintf(stderr, "%s", command);
-	fflush(stderr);
+	fprintf(channel, "%s", command);
+	fflush(channel);
 }
 
 int mygetch(void)
