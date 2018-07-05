@@ -5725,7 +5725,7 @@ int main(int argc, char *argv[])
 
 		simd_features = ac_crypto_engine_loader_string_to_flag(simd);
 
-		if (simd_features == SIMD_SUPPORTS_NONE)
+		if (simd_features < SIMD_SUPPORTS_NONE)
 		{
 			fprintf(stderr, "Unknown SIMD architecture.\n");
 			exit(1);

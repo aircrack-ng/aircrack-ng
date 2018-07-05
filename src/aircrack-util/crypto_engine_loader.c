@@ -245,7 +245,7 @@ EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 
 EXPORT int ac_crypto_engine_loader_string_to_flag(const char *const str)
 {
-	int simd_features = SIMD_SUPPORTS_NONE;
+	int simd_features = -1;
 
 	if (strncmp(str, "avx512", 6) == 0 || strncmp(str, "x86-avx512", 10) == 0)
 		simd_features = SIMD_SUPPORTS_AVX512F;
@@ -263,6 +263,8 @@ EXPORT int ac_crypto_engine_loader_string_to_flag(const char *const str)
 		simd_features = SIMD_SUPPORTS_ALTIVEC;
 	else if (strncmp(str, "power8", 6) == 0 || strncmp(str, "ppc-power8", 10) == 0)
 		simd_features = SIMD_SUPPORTS_POWER8;
+	else if (strncmp(str, "generic", 7) == 0)
+		simd_features = SIMD_SUPPORTS_NONE;
 
 	return simd_features;
 }
