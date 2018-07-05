@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 		cmocka_unit_test(test_crypto_engine_x86_sse2),
 #elif defined(__arm) || defined(__aarch64) || defined(__aarch64__)
 		cmocka_unit_test(test_crypto_engine_arm_neon),
-#elif defined(__ppc__) || defined(__ppc64__)
+#elif defined(__PPC__) || defined(__PPC64__)
 		cmocka_unit_test(test_crypto_engine_ppc_altivec),
 		cmocka_unit_test(test_crypto_engine_ppc_power8),
 #else
