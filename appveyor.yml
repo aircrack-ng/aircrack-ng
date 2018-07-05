@@ -11,12 +11,13 @@ platform: x64
 
 clone_depth: 10
 
-cache:
-- C:\msys64 -> appveyor.yml
-
 environment:
-  CHERE_INVOKING: 1
-  MSYSTEM: MSYS
+  global:
+    AIRCRACK_CI_CACHE: C:\aircrack_ci_cache
+    CYG_CACHE: '%DOKAN_CI_CACHE%\cygwin'
+    MSYS2_CACHE: '%DOKAN_CI_CACHE%\msys2'
+    CHERE_INVOKING: 1
+    MSYSTEM: MSYS
 
   matrix:
   - TARGET: cygwin
@@ -27,17 +28,58 @@ environment:
     APPVEYOR_CACHE_SKIP_SAVE: true
   - TARGET: msys64
 
+cache:
+- '%AIRCRACK_CI_CACHE% -> appveyor.yml'
+
 install:
-- cmd: if [%TARGET%]==[cygwin] (
-    c:\cygwin\setup-x86.exe -qnNdO -R C:/cygwin -s http://cygwin.mirror.constant.com -l C:/cygwin/var/cache/setup -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P libcurl4 -P cmocka )
-- cmd: if [%TARGET%]==[cygwin64] (
-    c:\cygwin64\setup-x86_64.exe -qnNdO -R C:/cygwin64 -s http://cygwin.mirror.constant.com -l C:/cygwin64/var/cache/setup -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka )
-- cmd: if [%TARGET%]==[msys64] (
-    c:\msys64\usr\bin\bash -e -l -c "pacman -Syu --noconfirm" )
-- cmd: if [%TARGET%]==[msys64] (
-    c:\msys64\usr\bin\bash -e -l -c "pacman -Su --noconfirm" )
-- cmd: if [%TARGET%]==[msys64] (
-    c:\msys64\usr\bin\bash -e -l -c "pacman -Sy --noconfirm autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel" )
+- ps: |
+    function downloadIfOlderThanDays($url, $path, $days) {
+      if ( !(Test-Path $path -NewerThan (Get-Date).AddDays(-$days)) ) {
+        Write-Host "$path does not exist or is older than $days days, downloading from $url"
+        Invoke-WebRequest $url -OutFile $path
+      }
+    }
+
+- ps: |
+    function updateCygwin($cygwinexe, $installFolder, $cacheFolder) {
+      Write-Host "Update Cygwin: $cygwinexe"
+      Exec-External {& cmd /c $cygwinexe -gqnNdO -R $installFolder -s http://mirrors.kernel.org/sourceware/cygwin/ -l $cacheFolder -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka}
+      Write-Host "Update Cygwin: $cygwinexe " -NoNewLine
+      Write-Host "[ OK ]" -ForegroundColor Green
+    }
+
+- ps: |
+    if ($env:TARGET -eq "cygwin") {
+      downloadIfOlderThanDays "https://cygwin.com/setup-x86.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86.exe" 7
+      
+      updateCygwin "${env:AIRCRACK_CI_CACHE}\setup-x86.exe" C:/cygwin $env:CYG_CACHE
+    }
+
+- ps: |
+    if ($env:TARGET -eq "cygwin64") {
+      downloadIfOlderThanDays "https://cygwin.com/setup-x86_64.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86_64.exe" 7
+      
+      updateCygwin "${env:AIRCRACK_CI_CACHE}\setup-x86_64.exe" C:/cygwin64 $env:CYG_CACHE
+    }
+
+- ps: |
+    if ($env:TARGET -eq "msys64") {
+      function bash($bash_command) {
+        Write-Host "MSYS2-Bash: $bash_command"
+        Exec-External {& C:\msys64\usr\bin\bash.exe --login -e -c $bash_command }
+        Write-Host "MSYS2-Bash $bash_command " -NoNewLine
+        Write-Host "[ OK ]" -ForegroundColor Green
+      }
+      New-Item -Force -Type Directory $env:MSYS2_CACHE
+      $unix_msys2_cache = (Exec-External {& C:\msys64\usr\bin\bash.exe --login -e -c "cygpath '${env:MSYS2_CACHE}'"})
+      # install latest pacman
+      bash "pacman -Sy --noconfirm --cache `"$unix_msys2_cache`" pacman pacman-mirrors"
+      # update core packages
+      bash "pacman -Syu --noconfirm --cache `"$unix_msys2_cache`""
+      # install Aircrack-ng build dependencies
+      bash "pacman --sync --noconfirm --cache `"$unix_msys2_cache`" autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel"
+    }
+
 - ps: |
     function Exec-External {
       param(
