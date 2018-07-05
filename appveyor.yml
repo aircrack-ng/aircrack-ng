@@ -14,8 +14,8 @@ clone_depth: 10
 environment:
   global:
     AIRCRACK_CI_CACHE: C:\aircrack_ci_cache
-    CYG_CACHE: '%DOKAN_CI_CACHE%\cygwin'
-    MSYS2_CACHE: '%DOKAN_CI_CACHE%\msys2'
+    CYG_CACHE: '%AIRCRACK_CI_CACHE%\cygwin'
+    MSYS2_CACHE: '%AIRCRACK_CI_CACHE%\msys2'
     CHERE_INVOKING: 1
     MSYSTEM: MSYS
 
