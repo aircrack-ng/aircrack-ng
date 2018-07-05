@@ -4261,6 +4261,9 @@ void show_wpa_stats(char *key,
 
 	ksec = (float) cur_nb_kprev / delta;
 
+    moveto(0, 0);
+    erase_display(0);
+
 	if (opt.l33t)
 	{
 		textstyle(TEXT_BRIGHT);
@@ -4332,7 +4335,11 @@ void show_wpa_stats(char *key,
 
 	for (i = 0; i < 32; i++)
 	{
-		if (i == 16) move(CURSOR_FORWARD, 23);
+		if (i == 16)
+        {
+            move(CURSOR_BACK, 32 + 16);
+            move(CURSOR_DOWN, 1);
+        }
 		printf("%02X ", pmk[i]);
 	}
 
