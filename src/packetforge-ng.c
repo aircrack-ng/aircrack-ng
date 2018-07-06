@@ -396,25 +396,6 @@ static int capture_ask_packet(int *caplen)
 	return (0);
 }
 
-/*
-static int packet_dump(unsigned char* packet, const int length)
-{
-    int i;
-
-    if(packet == NULL) return 1;
-    if(length <= 0 || length > 2048) return 1;
-
-    for(i=0; i<length; i++)
-    {
-        if(i%16 == 0) printf("\n");
-        printf("%02X ", packet[i]);
-    }
-    printf("\n");
-
-    return 0;
-}
-*/
-
 /* IP address parsing routine */
 static int getip(char *s, unsigned char *ip, unsigned short *port)
 {
@@ -655,32 +636,6 @@ static int set_ipid(unsigned char *packet, const int offset)
 	return 0;
 }
 
-/*
-static int set_dport(unsigned char* packet)
-{
-    unsigned short port;
-
-    if(packet == NULL) return 1;
-
-    port = ((opt.dport >> 8) & 0xFF) + ((opt.dport << 8) & 0xFF00);
-    memcpy(packet+54, &port, 2);
-
-    return 0;
-}
-
-static int set_sport(unsigned char* packet)
-{
-    unsigned short port;
-
-    if(packet == NULL) return 1;
-
-    port = ((opt.sport >> 8) & 0xFF) + ((opt.sport << 8) & 0xFF00);
-    memcpy(packet+52, &port, 2);
-
-    return 0;
-}
-*/
-
 static int set_ip_ttl(unsigned char *packet)
 {
 	unsigned char ttl;
@@ -856,37 +811,6 @@ static int create_wep_packet(unsigned char *packet, int *length)
 
 	return 0;
 }
-
-/*
-static int read_raw_packet(unsigned char* dest, const char* srcfile, const int length)
-{
-    size_t readblock;
-    FILE *f;
-
-    if(dest    == NULL) return 1;
-    if(srcfile == NULL) return 1;
-    if(length  <= 0   ) return 1;
-    if(length  >= 2048) return 1;
-
-    f = fopen(srcfile, "rb");
-    if(f == NULL)
-    {
-        perror("fopen failed.");
-        return 1;
-    }
-
-    readblock = fread(dest, (size_t)1, (size_t)length, f);
-    if(readblock != (size_t)length)
-    {
-        perror("fread failed");
-        fclose(f);
-        return 1;
-    }
-
-    fclose(f);
-    return 0;
-}
-*/
 
 static int write_cap_packet(unsigned char *packet, const int length)
 {

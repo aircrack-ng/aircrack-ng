@@ -412,20 +412,9 @@ pFrag_t rFragment;
 pCF_t rCF;
 
 // Threads
-void beacon_thread(void *arg);
-void caffelatte_thread(void);
-void cfrag_thread(void);
-
-/*
-static void sighandler( int signum )
-{
-    if( signum == SIGINT )
-        ctrl_c++;
-
-    if( signum == SIGALRM )
-        alarmed++;
-}
-*/
+static void beacon_thread(void *arg);
+static void caffelatte_thread(void);
+static void cfrag_thread(void);
 
 static int addESSID(char *essid, int len, int expiration)
 {
@@ -926,52 +915,6 @@ static int addMAC(pMAC_t pMAC, unsigned char *mac)
 	return 0;
 }
 
-/*
-static int delESSID(char* essid, int len)
-{
-    pESSID_t old, cur;
-
-    if(essid == NULL)
-        return -1;
-
-    if(len <= 0 || len > 255)
-        return -1;
-
-    pthread_mutex_lock(&rESSIDmutex);
-    cur = rESSID;
-
-    if(rESSID == NULL) {
-        pthread_mutex_unlock(&rESSIDmutex);
-        return -1;
-    }
-
-    while(cur->next != NULL)
-    {
-        old = cur->next;
-        if(old->len == len)
-        {
-            if(memcmp(old->essid, essid, len) == 0)
-            {
-                //got it
-                cur->next = old->next;
-
-                free(old->essid);
-                old->essid = NULL;
-                old->next = NULL;
-                old->len = 0;
-                free(old);
-                pthread_mutex_unlock(&rESSIDmutex);
-                return 0;
-            }
-        }
-        cur = cur->next;
-    }
-
-    pthread_mutex_unlock(&rESSIDmutex);
-    return -1;
-}
-*/
-
 static void flushESSID(void)
 {
 	pESSID_t old;
@@ -1011,36 +954,6 @@ static void flushESSID(void)
 	}
 	pthread_mutex_unlock(&rESSIDmutex);
 }
-
-/*
-static int delMAC(pMAC_t pMAC, char* mac)
-{
-    pMAC_t old, cur = pMAC;
-
-    if(mac == NULL)
-        return -1;
-
-    if(pMAC == NULL)
-        return -1;
-
-    while(cur->next != NULL)
-    {
-        old = cur->next;
-        if(memcmp(old->mac, mac, 6) == 0)
-        {
-            //got it
-            cur->next = old->next;
-
-            old->next = NULL;
-            free(old);
-            return 0;
-        }
-        cur = cur->next;
-    }
-
-    return -1;
-}
-*/
 
 static int gotESSID(char *essid, int len)
 {
@@ -1201,21 +1114,6 @@ static int getMACcount(pMAC_t pMAC)
 	return count;
 }
 
-/*
-static unsigned char* getMAC(pMAC_t pMAC)
-{
-    pMAC_t cur = pMAC;
-
-    if(pMAC == NULL)
-        return NULL;
-
-    if(cur->next != NULL)
-        return cur->next->mac;
-
-    return NULL;
-}
-*/
-
 static int addESSIDfile(char *filename)
 {
 	FILE *list;
@@ -1265,28 +1163,6 @@ static int addMACfile(pMAC_t pMAC, char *filename)
 
 	return 0;
 }
-
-/*
-static int is_filtered_netmask(unsigned char *bssid)
-{
-    unsigned char mac1[6];
-    unsigned char mac2[6];
-    int i;
-
-    for(i=0; i<6; i++)
-    {
-        mac1[i] = bssid[i]     & opt.f_netmask[i];
-        mac2[i] = opt.f_bssid[i] & opt.f_netmask[i];
-    }
-
-    if( memcmp(mac1, mac2, 6) != 0 )
-    {
-        return( 1 );
-    }
-
-    return 0;
-}
-*/
 
 static int send_packet(void *buf, size_t count)
 {
@@ -1551,190 +1427,10 @@ static int check_shared_key(unsigned char *h80211, int caplen)
 	/* ok, keystream saved */
 	return 0;
 }
-/*
-static int read_prga(unsigned char **dest, char *file)
-{
-    FILE *f;
-    int size;
-
-    if(file == NULL) return( 1 );
-    if(*dest == NULL) *dest = (unsigned char*) malloc(1501);
-
-    if( memcmp( file+(strlen(file)-4), ".xor", 4 ) != 0 )
-    {
-        printf("Is this really a PRGA file: %s?\n", file);
-    }
-
-    f = fopen(file, "r");
-
-    if(f == NULL)
-    {
-         printf("Error opening %s\n", file);
-         return( 1 );
-    }
-
-    fseek(f, 0, SEEK_END);
-    size = ftell(f);
-    if (size <= 0) {
-        printf("File %s empty or failed to get size\n", file);
-        fclose(f);
-        return ( 1 );
-    }
-
-    rewind(f);
-
-    if(size > 1500) size = 1500;
-
-    if( fread( (*dest), size, 1, f ) != 1 )
-    {
-    	fclose(f);
-        fprintf( stderr, "fread failed\n" );
-        return( 1 );
-    }
-
-    if( (*dest)[3] > 0x03 )
-    {
-        printf("Are you really sure that this is a valid keystream? Because the index is out of range (0-3): %02X\n", (*dest)[3] );
-    }
-
-    opt.prgalen = size;
-
-    fclose(f);
-    return( 0 );
-}
-
-static void add_icv(unsigned char *input, int len, int offset)
-{
-    unsigned long crc = 0xFFFFFFFF;
-    int n=0;
-
-    for( n = offset; n < len; n++ )
-        crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
-
-    crc = ~crc;
-
-    input[len]   = (crc      ) & 0xFF;
-    input[len+1] = (crc >>  8) & 0xFF;
-    input[len+2] = (crc >> 16) & 0xFF;
-    input[len+3] = (crc >> 24) & 0xFF;
-
-    return;
-}
-
-static int xor_keystream(unsigned char *ph80211, unsigned char *keystream, int len)
-{
-    int i=0;
-
-    for (i=0; i<len; i++) {
-        ph80211[i] = ph80211[i] ^ keystream[i];
-    }
-
-    return 0;
-}
-
-static void print_packet ( unsigned char h80211[], int caplen )
-{
-	int i,j;
-	int key_index_offset=0;
-
-	printf( "        Size: %d, FromDS: %d, ToDS: %d",
-		caplen, ( h80211[1] & 2 ) >> 1, ( h80211[1] & 1 ) );
-
-	if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
-	{
-	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC address
-		else key_index_offset = 27;
-
-	    if( ( h80211[key_index_offset] & 0x20 ) == 0 )
-		printf( " (WEP)" );
-	    else
-		printf( " (WPA)" );
-	}
-
-	for( i = 0; i < caplen; i++ )
-	{
-	if( ( i & 15 ) == 0 )
-	{
-		if( i == 224 )
-		{
-		printf( "\n        --- CUT ---" );
-		break;
-		}
-
-		printf( "\n        0x%04x:  ", i );
-	}
-
-	printf( "%02x", h80211[i] );
-
-	if( ( i & 1 ) != 0 )
-		printf( " " );
-
-	if( i == caplen - 1 && ( ( i + 1 ) & 15 ) != 0 )
-	{
-		for( j = ( ( i + 1 ) & 15 ); j < 16; j++ )
-		{
-		printf( "  " );
-		if( ( j & 1 ) != 0 )
-			printf( " " );
-		}
-
-		printf( " " );
-
-		for( j = 16 - ( ( i + 1 ) & 15 ); j < 16; j++ )
-		printf( "%c", ( h80211[i - 15 + j] <  32 ||
-				h80211[i - 15 + j] > 126 )
-				? '.' : h80211[i - 15 + j] );
-	}
-
-	if( i > 0 && ( ( i + 1 ) & 15 ) == 0 )
-	{
-		printf( " " );
-
-		for( j = 0; j < 16; j++ )
-		printf( "%c", ( h80211[i - 15 + j] <  32 ||
-				h80211[i - 15 + j] > 127 )
-				? '.' : h80211[i - 15 + j] );
-	}
-	}
-	printf("\n");
-}
-*/
 
 #define IEEE80211_LLC_SNAP                                                     \
 	"\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"         \
 	"\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32\xAA\xAA\x03\x00\x00\x00\x08\x00"
-/*
-static int set_IVidx(unsigned char* packet)
-{
-    unsigned char ividx[4];
-    memset(ividx, 0, 4);
-
-    if(packet == NULL) return 1;
-
-    if(opt.prga == NULL && opt.crypt != CRYPT_WEP)
-    {
-        printf("Please specify a WEP key (-w).\n");
-        return 1;
-    }
-
-    if( opt.crypt == CRYPT_WEP )
-    {
-        ividx[0] = rand() & 0xFF;
-        ividx[1] = rand() & 0xFF;
-        ividx[2] = rand() & 0xFF;
-        ividx[3] = 0x00;
-    }
-    else if(opt.prga != NULL)
-    {
-        memcpy(ividx, opt.prga, 4);
-    }
-
-    // insert IV+index
-    memcpy(packet+24, ividx, 4);
-
-    return 0;
-}
-*/
 
 static int encrypt_data(unsigned char *data, int length)
 {
@@ -3749,7 +3445,7 @@ static int packet_recv(unsigned char *packet,
 	return 0;
 }
 
-void beacon_thread(void *arg)
+static void beacon_thread(void *arg)
 {
 	struct AP_conf apc;
 	struct timeval tv, tv1, tv2;
@@ -3947,7 +3643,7 @@ void beacon_thread(void *arg)
 	}
 }
 
-void caffelatte_thread(void)
+static void caffelatte_thread(void)
 {
 	struct timeval tv, tv2;
 	float f, ticks[3];
@@ -4078,7 +3774,7 @@ static int cfrag_fuzz(unsigned char *packet,
 	return 0;
 }
 
-void cfrag_thread(void)
+static void cfrag_thread(void)
 {
 	struct timeval tv, tv2;
 	float f, ticks[3];

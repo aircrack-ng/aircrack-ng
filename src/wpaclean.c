@@ -265,18 +265,6 @@ static struct client *find_add_client(struct network *n,
 	return c;
 }
 
-#if 0
-static void hexdump(void *p, int len)
-{
-	unsigned char *x = p;
-	
-	while (len--)
-		printf("%.2x ", *x++);
-
-	printf("\n");
-}
-#endif
-
 static int parse_rsn(const unsigned char *p, const int l, const int rsn)
 {
 	int c;

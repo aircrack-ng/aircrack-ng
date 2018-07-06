@@ -105,7 +105,7 @@ typedef struct
 	rc4test_func rc4test;
 } PTW_attackstate;
 
-PTW_attackstate *PTW_newattackstate();
+PTW_attackstate *PTW_newattackstate(void);
 void PTW_freeattackstate(PTW_attackstate *);
 int PTW_addsession(PTW_attackstate *, uint8_t *, uint8_t *, int *, int);
 int PTW_computeKey(

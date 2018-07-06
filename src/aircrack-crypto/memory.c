@@ -102,7 +102,7 @@ static void add_memory_link(void *v)
 	MEMDBG_tag_mem_from_alloc_tiny((void *) p);
 }
 // call at program exit.
-void cleanup_tiny_memory()
+void cleanup_tiny_memory(void)
 {
 	struct rm_list *p = mem_alloc_tiny_memory, *p2;
 	for (;;)

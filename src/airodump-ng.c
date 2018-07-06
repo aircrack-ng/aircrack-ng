@@ -87,10 +87,10 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 #define ArrayCount(a) (sizeof((a)) / sizeof((a)[0]))
 
-void dump_sort(void);
-void dump_print(int ws_row, int ws_col, int if_num);
+static void dump_sort(void);
+static void dump_print(int ws_row, int ws_col, int if_num);
 
-char *get_manufacturer_from_string(char *buffer)
+static char *get_manufacturer_from_string(char *buffer)
 {
 	char *manuf = NULL;
 	char *buffer_manuf;
@@ -141,7 +141,7 @@ char *get_manufacturer_from_string(char *buffer)
 	return manuf;
 }
 
-void resetSelection()
+static void resetSelection(void)
 {
 	G.sort_by = SORT_BY_POWER;
 	G.sort_inv = 1;
@@ -159,7 +159,7 @@ void resetSelection()
 	memset(G.selected_bssid, '\x00', 6);
 }
 
-void input_thread(void *arg)
+static void input_thread(void *arg)
 {
 
 	if (!arg)
@@ -389,7 +389,7 @@ void input_thread(void *arg)
 	}
 }
 
-void trim(char *str)
+static void trim(char *str)
 {
 	int i;
 	int begin = 0;
@@ -402,7 +402,7 @@ void trim(char *str)
 	str[i - begin] = '\0'; // Null terminate string.
 }
 
-FILE *open_oui_file(void)
+static FILE *open_oui_file(void)
 {
 	int i;
 	FILE *fp = NULL;
@@ -419,7 +419,7 @@ FILE *open_oui_file(void)
 	return fp;
 }
 
-struct oui *load_oui_file(void)
+static struct oui *load_oui_file(void)
 {
 	FILE *fp;
 	char *manuf;
@@ -504,7 +504,7 @@ struct oui *load_oui_file(void)
 	return oui_head;
 }
 
-int check_shared_key(unsigned char *h80211, int caplen)
+static int check_shared_key(unsigned char *h80211, int caplen)
 {
 	int m_bmac, m_smac, m_dmac, n, textlen, maybe_broken;
 	char ofn[1024];
@@ -762,7 +762,7 @@ char usage[] =
 	"      --help                : Displays this usage screen\n"
 	"\n";
 
-int is_filtered_netmask(unsigned char *bssid)
+static int is_filtered_netmask(unsigned char *bssid)
 {
 	unsigned char mac1[6];
 	unsigned char mac2[6];
@@ -782,7 +782,7 @@ int is_filtered_netmask(unsigned char *bssid)
 	return 0;
 }
 
-int is_filtered_essid(unsigned char *essid)
+static int is_filtered_essid(unsigned char *essid)
 {
 	int ret = 0;
 	int i;
@@ -818,7 +818,7 @@ int is_filtered_essid(unsigned char *essid)
 	return ret;
 }
 
-void update_rx_quality()
+static void update_rx_quality(void)
 {
 	unsigned int time_diff, capt_time, miss_time;
 	int missed_frames;
@@ -915,7 +915,7 @@ void update_rx_quality()
 
 /* setup the output files */
 
-int dump_initialize(char *prefix, int ivs_only)
+static int dump_initialize(char *prefix, int ivs_only)
 {
 	int i, ofn_len;
 	FILE *f;
@@ -1098,7 +1098,7 @@ int dump_initialize(char *prefix, int ivs_only)
 	return (0);
 }
 
-int update_dataps()
+static int update_dataps(void)
 {
 	struct timeval tv;
 	struct AP_info *ap_cur;
@@ -1156,7 +1156,7 @@ int update_dataps()
 	return (0);
 }
 
-int list_tail_free(struct pkt_buf **list)
+static int list_tail_free(struct pkt_buf **list)
 {
 	struct pkt_buf **pkts;
 	struct pkt_buf *next;
@@ -1187,7 +1187,7 @@ int list_tail_free(struct pkt_buf **list)
 	return 0;
 }
 
-int list_add_packet(struct pkt_buf **list, int length, unsigned char *packet)
+static int list_add_packet(struct pkt_buf **list, int length, unsigned char *packet)
 {
 	struct pkt_buf *next;
 
@@ -1216,7 +1216,7 @@ int list_add_packet(struct pkt_buf **list, int length, unsigned char *packet)
  * The reason is that the first two bytes unencrypted are 'aa'
  * so with the same IV it should always be encrypted to the same thing.
  */
-int list_check_decloak(struct pkt_buf **list, int length, unsigned char *packet)
+static int list_check_decloak(struct pkt_buf **list, int length, unsigned char *packet)
 {
 	struct pkt_buf *next;
 	struct timeval tv1;
@@ -1290,7 +1290,7 @@ int list_check_decloak(struct pkt_buf **list, int length, unsigned char *packet)
 	return 1; //didn't find decloak
 }
 
-int remove_namac(unsigned char *mac)
+static int remove_namac(unsigned char *mac)
 {
 	struct NA_info *na_cur = NULL;
 	struct NA_info *na_prv = NULL;
@@ -1327,10 +1327,10 @@ int remove_namac(unsigned char *mac)
 	return (0);
 }
 
-int dump_add_packet(unsigned char *h80211,
-					int caplen,
-					struct rx_info *ri,
-					int cardnum)
+static int dump_add_packet(unsigned char *h80211,
+						   int caplen,
+						   struct rx_info *ri,
+						   int cardnum)
 {
 	int i, n, seq, msd, dlen, offset, clen, o;
 	unsigned z;
@@ -3055,7 +3055,7 @@ write_packet:
 	return (0);
 }
 
-void dump_sort(void)
+static void dump_sort(void)
 {
 	time_t tt = time(NULL);
 
@@ -3252,9 +3252,9 @@ void dump_sort(void)
 	G.st_end = new_st_end;
 }
 
-int getBatteryState() { return get_battery_state(); }
+static int getBatteryState(void) { return get_battery_state(); }
 
-char *getStringTimeFromSec(double seconds)
+static char *getStringTimeFromSec(double seconds)
 {
 	int hour[3];
 	char *ret;
@@ -3297,7 +3297,7 @@ char *getStringTimeFromSec(double seconds)
 	return ret;
 }
 
-char *getBatteryString(void)
+static char *getBatteryString(void)
 {
 	int batt_time;
 	char *ret;
@@ -3323,7 +3323,7 @@ char *getBatteryString(void)
 	return ret;
 }
 
-int get_ap_list_count()
+static int get_ap_list_count(void)
 {
 	time_t tt;
 	struct tm *lt;
@@ -3370,7 +3370,7 @@ int get_ap_list_count()
 	return num_ap;
 }
 
-int get_sta_list_count()
+static int get_sta_list_count(void)
 {
 	time_t tt;
 	struct tm *lt;
@@ -3466,7 +3466,7 @@ static char *parse_timestamp(unsigned long long timestamp)
 	return s;
 }
 
-void dump_print(int ws_row, int ws_col, int if_num)
+static void dump_print(int ws_row, int ws_col, int if_num)
 {
 	time_t tt;
 	struct tm *lt;
@@ -4255,7 +4255,7 @@ void dump_print(int ws_row, int ws_col, int if_num)
 	}
 }
 
-char *format_text_for_csv(const unsigned char *input, int len)
+static char *format_text_for_csv(const unsigned char *input, int len)
 {
 	// Unix style encoding
 	char *ret, *rret;
@@ -4322,7 +4322,7 @@ char *format_text_for_csv(const unsigned char *input, int len)
 	return (rret) ? rret : ret;
 }
 
-int dump_write_csv(void)
+static int dump_write_csv(void)
 {
 	int i, n, probes_written;
 	struct tm *ltime;
@@ -4579,7 +4579,7 @@ int dump_write_csv(void)
 	return 0;
 }
 
-char *sanitize_xml(unsigned char *text, int length)
+static char *sanitize_xml(unsigned char *text, int length)
 {
 	int i;
 	size_t len, current_text_len;
@@ -4756,7 +4756,7 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 #define KISMET_NETXML_TRAILER "</detection-run>"
 
 #define TIME_STR_LENGTH 255
-int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
+static int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 {
 	char first_time[TIME_STR_LENGTH];
 	char last_time[TIME_STR_LENGTH];
@@ -4944,7 +4944,7 @@ int dump_write_kismet_netxml_client_info(struct ST_info *client, int client_no)
 }
 
 #define NETXML_ENCRYPTION_TAG "%s<encryption>%s</encryption>\n"
-int dump_write_kismet_netxml(void)
+static int dump_write_kismet_netxml(void)
 {
 	int network_number, average_power, client_max_rate, max_power, client_nbr,
 		fp, fpos, unused;
@@ -5418,7 +5418,7 @@ int dump_write_kismet_netxml(void)
 	"GPSMinAlt;GPSMinSpd;GPSMaxLat;GPSMaxLon;GPSMaxAlt;GPSMaxSpd;GPSBestLat;"  \
 	"GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n"
 
-int dump_write_kismet_csv(void)
+static int dump_write_kismet_csv(void)
 {
 	int i, k;
 	//     struct tm *ltime;
@@ -5816,7 +5816,7 @@ json_get_value_for_name(const char *buffer, const char *name, char *value)
 	return ret;
 }
 
-void gps_tracker(pid_t parent)
+static void gps_tracker(pid_t parent)
 {
 	ssize_t unused;
 	int gpsd_sock;
@@ -6033,7 +6033,7 @@ void gps_tracker(pid_t parent)
 	}
 }
 
-void sighandler(int signum)
+static void sighandler(int signum)
 {
 	ssize_t unused;
 	int card = 0;
@@ -6118,7 +6118,7 @@ void sighandler(int signum)
 	}
 }
 
-int send_probe_request(struct wif *wi)
+static int send_probe_request(struct wif *wi)
 {
 	int len;
 	unsigned char p[4096], r_smac[6];
@@ -6162,7 +6162,7 @@ int send_probe_request(struct wif *wi)
 	return 0;
 }
 
-int send_probe_requests(struct wif *wi[], int cards)
+static int send_probe_requests(struct wif *wi[], int cards)
 {
 	int i = 0;
 	for (i = 0; i < cards; i++)
@@ -6172,7 +6172,7 @@ int send_probe_requests(struct wif *wi[], int cards)
 	return 0;
 }
 
-int getchancount(int valid)
+static int getchancount(int valid)
 {
 	int i = 0, chan_count = 0;
 
@@ -6186,7 +6186,7 @@ int getchancount(int valid)
 	return i;
 }
 
-int getfreqcount(int valid)
+static int getfreqcount(int valid)
 {
 	int i = 0, freq_count = 0;
 
@@ -6200,7 +6200,7 @@ int getfreqcount(int valid)
 	return i;
 }
 
-void channel_hopper(struct wif *wi[], int if_num, int chan_count, pid_t parent)
+static void channel_hopper(struct wif *wi[], int if_num, int chan_count, pid_t parent)
 {
 	ssize_t unused;
 	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
@@ -6302,10 +6302,10 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count, pid_t parent)
 	exit(0);
 }
 
-void frequency_hopper(struct wif *wi[],
-					  int if_num,
-					  int chan_count,
-					  pid_t parent)
+static void frequency_hopper(struct wif *wi[],
+							 int if_num,
+							 int chan_count,
+							 pid_t parent)
 {
 	ssize_t unused;
 	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
@@ -6402,7 +6402,7 @@ void frequency_hopper(struct wif *wi[],
 	exit(0);
 }
 
-int invalid_channel(int chan)
+static int invalid_channel(int chan)
 {
 	int i = 0;
 
@@ -6413,7 +6413,7 @@ int invalid_channel(int chan)
 	return 1;
 }
 
-int invalid_frequency(int freq)
+static int invalid_frequency(int freq)
 {
 	int i = 0;
 
@@ -6426,7 +6426,7 @@ int invalid_frequency(int freq)
 
 /* parse a string, for example "1,2,3-7,11" */
 
-int getchannels(const char *optarg)
+static int getchannels(const char *optarg)
 {
 	unsigned int i = 0, chan_cur = 0, chan_first = 0, chan_last = 0,
 				 chan_max = 128, chan_remain = 0;
@@ -6546,7 +6546,7 @@ int getchannels(const char *optarg)
 
 /* parse a string, for example "1,2,3-7,11" */
 
-int getfrequencies(const char *optarg)
+static int getfrequencies(const char *optarg)
 {
 	unsigned int i = 0, freq_cur = 0, freq_first = 0, freq_last = 0,
 				 freq_max = 10000, freq_remain = 0;
@@ -6679,7 +6679,7 @@ int getfrequencies(const char *optarg)
 	return 0; //frequency hopping
 }
 
-int setup_card(char *iface, struct wif **wis)
+static int setup_card(char *iface, struct wif **wis)
 {
 	struct wif *wi;
 
@@ -6690,7 +6690,7 @@ int setup_card(char *iface, struct wif **wis)
 	return 0;
 }
 
-int init_cards(const char *cardstr, char *iface[], struct wif **wi)
+static int init_cards(const char *cardstr, char *iface[], struct wif **wi)
 {
 	char *buffer;
 	char *buf;
@@ -6730,32 +6730,7 @@ int init_cards(const char *cardstr, char *iface[], struct wif **wi)
 	return if_count;
 }
 
-#if 0
-int get_if_num(const char* cardstr)
-{
-    char *buffer;
-    int if_count=0;
-
-    buffer = (char*) malloc(sizeof(char)*1025);
-    if (buffer == NULL) {
-		return -1;
-	}
-
-    strncpy(buffer, cardstr, 1025);
-    buffer[1024] = '\0';
-
-    while( (strsep(&buffer, ",") != NULL) && (if_count < MAX_CARDS) )
-    {
-        if_count++;
-    }
-
-    free(buffer)
-
-    return if_count;
-}
-#endif
-
-int set_encryption_filter(const char *input)
+static int set_encryption_filter(const char *input)
 {
 	if (input == NULL) return 1;
 
@@ -6778,7 +6753,7 @@ int set_encryption_filter(const char *input)
 	return 0;
 }
 
-int check_monitor(struct wif *wi[], int *fd_raw, int *fdh, int cards)
+static int check_monitor(struct wif *wi[], int *fd_raw, int *fdh, int cards)
 {
 	int i, monitor;
 	char ifname[64];
@@ -6813,7 +6788,7 @@ int check_monitor(struct wif *wi[], int *fd_raw, int *fdh, int cards)
 	return 0;
 }
 
-int check_channel(struct wif *wi[], int cards)
+static int check_channel(struct wif *wi[], int cards)
 {
 	int i, chan;
 	for (i = 0; i < cards; i++)
@@ -6838,7 +6813,7 @@ int check_channel(struct wif *wi[], int cards)
 	return 0;
 }
 
-int check_frequency(struct wif *wi[], int cards)
+static int check_frequency(struct wif *wi[], int cards)
 {
 	int i, freq;
 	for (i = 0; i < cards; i++)
@@ -6859,7 +6834,7 @@ int check_frequency(struct wif *wi[], int cards)
 	return 0;
 }
 
-int detect_frequencies(struct wif *wi)
+static int detect_frequencies(struct wif *wi)
 {
 	int start_freq = 2192;
 	int end_freq = 2732;
@@ -6907,7 +6882,7 @@ int detect_frequencies(struct wif *wi)
 	return 0;
 }
 
-int array_contains(int *array, int length, int value)
+static int array_contains(int *array, int length, int value)
 {
 	int i;
 	for (i = 0; i < length; i++)
@@ -6916,7 +6891,7 @@ int array_contains(int *array, int length, int value)
 	return 0;
 }
 
-int rearrange_frequencies()
+static int rearrange_frequencies(void)
 {
 	int *freqs;
 	int count, left, pos;

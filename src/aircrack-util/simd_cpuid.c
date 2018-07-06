@@ -142,7 +142,7 @@ int cpuid_simdsize(int viewmax)
 }
 
 #ifdef _X86
-char *cpuid_vendor()
+char *cpuid_vendor(void)
 {
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 
@@ -188,7 +188,7 @@ char *cpuid_vendor()
 }
 #endif
 
-char *cpuid_featureflags()
+char *cpuid_featureflags(void)
 {
 	char flags[64] = {0};
 #ifdef _X86
@@ -265,7 +265,7 @@ char *cpuid_featureflags()
 	return strdup(flags);
 }
 
-float cpuid_getcoretemp()
+float cpuid_getcoretemp(void)
 {
 #ifdef __FreeBSD__
 	int tempval = 0;
@@ -397,7 +397,7 @@ int cpuid_getfreq(int type)
 }
 #endif
 
-char *cpuid_modelinfo()
+char *cpuid_modelinfo(void)
 {
 #ifdef _X86
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;

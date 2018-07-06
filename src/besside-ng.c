@@ -390,18 +390,6 @@ static void save_log(void)
 
 static void do_wait(int UNUSED(x)) { wait(NULL); }
 
-#if 0
-static inline void hexdump(void *p, int len)
-{
-	unsigned char *x = p;
-
-	while (len--)
-		printf("%.2x ", *x++);
-
-	printf("\n");
-}
-#endif
-
 static void *xmalloc(size_t sz)
 {
 	void *p = malloc(sz);
@@ -425,39 +413,6 @@ static int time_diff(struct timeval *past, struct timeval *now)
 
 	return n - p;
 }
-
-#if 0
-static inline void timer_print(void)
-{
-	int i = 0;
-	struct timer *t = _state.s_timers.t_next;
-
-	printf(
-#if !defined(__APPLE_CC__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
-			"\nNow %lu.%lu\n",
-#else
-			"\nNow %lu.%d\n",
-#endif
-			_state.s_now.tv_sec, _state.s_now.tv_usec);
-
-	while (t) {
-
-		printf(
-#if !defined(__APPLE_CC__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
-				"%d) %lu.%lu %p(%p)\n",
-#else
-				"%d) %lu.%d %p(%p)\n",
-#endif
-		       i++,
-		       t->t_tv.tv_sec,
-		       t->t_tv.tv_usec,
-		       t->t_cb,
-		       t->t_arg);
-
-		t = t->t_next;
-	}
-}
-#endif
 
 static void timer_next(struct timeval *tv)
 {

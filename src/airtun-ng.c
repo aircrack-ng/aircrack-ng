@@ -267,17 +267,6 @@ static void swap_ra_ta(unsigned char *h80211)
 	memcpy(h80211 + 10, mbuf, 6);
 }
 
-/*
-static void sighandler( int signum )
-{
-    if( signum == SIGINT )
-        ctrl_c++;
-
-    if( signum == SIGALRM )
-        alarmed++;
-}
-*/
-
 static int addFrag(unsigned char *packet, unsigned char *smac, int len)
 {
 	pFrag_t cur = rFragment;
@@ -699,104 +688,6 @@ static int read_prga(unsigned char **dest, char *file)
 	fclose(f);
 	return (0);
 }
-
-/*
-static void add_icv(unsigned char *input, int len, int offset)
-{
-    unsigned long crc = 0xFFFFFFFF;
-    int n=0;
-
-    for( n = offset; n < len; n++ )
-        crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
-
-    crc = ~crc;
-
-    input[len]   = (crc      ) & 0xFF;
-    input[len+1] = (crc >>  8) & 0xFF;
-    input[len+2] = (crc >> 16) & 0xFF;
-    input[len+3] = (crc >> 24) & 0xFF;
-
-    return;
-}
-
-static int xor_keystream(unsigned char *ph80211, unsigned char *keystream, int len)
-{
-    int i=0;
-
-    for (i=0; i<len; i++) {
-        ph80211[i] = ph80211[i] ^ keystream[i];
-    }
-
-    return 0;
-}
-
-static void print_packet ( unsigned char h80211[], int caplen )
-{
-	int i,j;
-	int key_index_offset=0;
-
-	printf( "        Size: %d, FromDS: %d, ToDS: %d",
-		caplen, ( h80211[1] & 2 ) >> 1, ( h80211[1] & 1 ) );
-
-	if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
-	{
-	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC address
-		else key_index_offset = 27;
-
-	    if( ( h80211[key_index_offset] & 0x20 ) == 0 )
-		printf( " (WEP)" );
-	    else
-		printf( " (WPA)" );
-	}
-
-	for( i = 0; i < caplen; i++ )
-	{
-	if( ( i & 15 ) == 0 )
-	{
-		if( i == 224 )
-		{
-		printf( "\n        --- CUT ---" );
-		break;
-		}
-
-		printf( "\n        0x%04x:  ", i );
-	}
-
-	printf( "%02x", h80211[i] );
-
-	if( ( i & 1 ) != 0 )
-		printf( " " );
-
-	if( i == caplen - 1 && ( ( i + 1 ) & 15 ) != 0 )
-	{
-		for( j = ( ( i + 1 ) & 15 ); j < 16; j++ )
-		{
-		printf( "  " );
-		if( ( j & 1 ) != 0 )
-			printf( " " );
-		}
-
-		printf( " " );
-
-		for( j = 16 - ( ( i + 1 ) & 15 ); j < 16; j++ )
-		printf( "%c", ( h80211[i - 15 + j] <  32 ||
-				h80211[i - 15 + j] > 126 )
-				? '.' : h80211[i - 15 + j] );
-	}
-
-	if( i > 0 && ( ( i + 1 ) & 15 ) == 0 )
-	{
-		printf( " " );
-
-		for( j = 0; j < 16; j++ )
-		printf( "%c", ( h80211[i - 15 + j] <  32 ||
-				h80211[i - 15 + j] > 127 )
-				? '.' : h80211[i - 15 + j] );
-	}
-	}
-	printf("\n");
-}
-*/
 
 #define IEEE80211_LLC_SNAP                                                     \
 	"\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"         \

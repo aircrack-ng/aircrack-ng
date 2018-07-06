@@ -122,7 +122,7 @@ extern int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t *engine,
 											   int threadid);
 extern void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine,
 												   int threadid);
-extern int (*dso_ac_crypto_engine_simd_width)();
+extern int (*dso_ac_crypto_engine_simd_width)(void);
 extern int (*dso_ac_crypto_engine_wpa_crack)(
 	ac_crypto_engine_t *engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
@@ -139,7 +139,7 @@ extern void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
                                              const uint8_t anonce[32],
                                              const uint8_t snonce[32],
 											 int threadid);
-extern int (*dso_ac_crypto_engine_supported_features)();
+extern int (*dso_ac_crypto_engine_supported_features)(void);
 extern uint8_t* (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t *engine, int threadid, int index);
 extern uint8_t* (*dso_ac_crypto_engine_get_ptk)(ac_crypto_engine_t *engine, int threadid, int index);
 

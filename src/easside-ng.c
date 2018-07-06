@@ -183,17 +183,6 @@ static void printf_time(char *fmt, ...)
 	va_end(ap);
 }
 
-/*
-static void hexdump(void *x, int len)
-{
-	unsigned char *p = x;
-
-	while (len--)
-		printf("%.2X ", *p++);
-	printf("\n");
-}
-*/
-
 static void mac2str(char *str, unsigned char *m, int macsize)
 {
 	snprintf(str,

@@ -104,20 +104,6 @@ static void debug(struct sstate *ss, struct client *c, int l, char *fmt, ...)
 	va_end(ap);
 }
 
-#if 0
-static void print_clients(struct sstate *ss)
-{
-	struct client *c = ss->ss_clients.c_next;
-	int i = 1;
-
-	while (c != &ss->ss_clients) {
-		printf("Client %d fd %d\n", i++, c->c_s);
-
-		c = c->c_next;
-	}
-}
-#endif
-
 static void client_add(struct sstate *ss, int s, struct sockaddr_in *s_in)
 {
 	struct client *c;

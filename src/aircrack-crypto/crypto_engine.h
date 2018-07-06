@@ -176,7 +176,7 @@ IMPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
 											int threadid);
 
 /// acquire the width of simd we're compiled for.
-IMPORT int ac_crypto_engine_simd_width();
+IMPORT int ac_crypto_engine_simd_width(void);
 
 IMPORT void
 ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,

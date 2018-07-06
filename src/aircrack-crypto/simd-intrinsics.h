@@ -165,7 +165,7 @@ void SIMDSHA256body(vtype *data,
 void sha224_reverse(uint32_t *hash);
 void sha224_unreverse(uint32_t *hash);
 void sha256_reverse(uint32_t *hash);
-void sha256_unreverse();
+void sha256_unreverse(void);
 #endif
 
 #ifdef SIMD_COEF_64
@@ -177,7 +177,7 @@ void SIMDSHA512body(vtype *data,
 void sha384_reverse(ARCH_WORD_64 *hash);
 void sha384_unreverse(ARCH_WORD_64 *hash);
 void sha512_reverse(ARCH_WORD_64 *hash);
-void sha512_unreverse();
+void sha512_unreverse(void);
 #endif
 
 #else

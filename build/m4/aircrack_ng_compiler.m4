@@ -97,6 +97,8 @@ AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [
 
 case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
     gnu|clang|intel)
+	    AX_APPEND_FLAG(-Wstrict-prototypes, [opt_[]_AC_LANG_ABBREV[]flags])
+
         AX_COMPARE_VERSION([$ax_cv_[]_AC_LANG_ABBREV[]_compiler_version], [ge], [4.1], [gcc_over41=yes], [gcc_over41=x])
         AX_COMPARE_VERSION([$ax_cv_[]_AC_LANG_ABBREV[]_compiler_version], [ge], [4.5], [gcc_over45=yes], [gcc_over45=x])
         AX_COMPARE_VERSION([$ax_cv_[]_AC_LANG_ABBREV[]_compiler_version], [ge], [4.9], [gcc_over49=yes], [gcc_over49=x])

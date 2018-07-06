@@ -285,7 +285,7 @@ extern char *str_alloc_copy_func(char *src
  * of that memory was 'blindly' allocated, and not freed up during
  * the run of john.  Now, it is 'cleaned' up.
  */
-extern void cleanup_tiny_memory();
+extern void cleanup_tiny_memory(void);
 
 void dump_text(void *in, int len);
 void dump_stuff(void *x, unsigned int size);

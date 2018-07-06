@@ -277,57 +277,6 @@ static void remove_last_uncomplete_node(void)
 	}
 }
 
-/*
-// Requirement: initialize_linked_list() called
-static struct packet_elt * getPacketNr(int position) {
-	struct packet_elt * packet = _packet_elt_head->first;
-	int i = 0;
-	while (i < position) {
-		if (packet->next == NULL) {
-			return NULL;
-		}
-		packet = packet->next;
-	}
-	return packet;
-}
-
-static char * iv2string(unsigned char * iv) {
-	char * string = (char *)malloc(9);
-	snprintf(string, 9, "%02X %02X %02X", iv[0], iv[1], iv[2]);
-	return string;
-}
-
-static char * icv2string(unsigned char * icv) {
-	char * string = (char *)malloc(12);
-	snprintf(string, 12, "%02X %02X %02X %02X", icv[0], icv[1], icv[2], icv[3]);
-	return string;
-}
-
-static void print_packet(struct packet_elt * packet) {
-	char * temp;
-	printf("Packet length: %d\n", packet->length);
-	printf("Frame type: %d (subtype: %d) - First byte: %d\n", packet->frame_type, packet->frame_subtype, packet->version_type_subtype);
-	temp = mac2string(packet->bssid);
-	printf("BSSID: %s\n",temp);
-	free(temp);
-	temp = mac2string(packet->source);
-	printf("Source: %s\n",temp);
-	free(temp);
-	temp = mac2string(packet->destination);
-	printf("Destination: %s\n",temp);
-	free(temp);
-	printf("Sequence number: %d (Fragment #: %d)\n", packet->sequence_number, packet->fragment_number);
-	temp = iv2string(packet->iv);
-	printf("IV: %s (Key index: %d)\n", temp, packet->key_index);
-	free(temp);
-	temp = icv2string(packet->icv);
-	printf("ICV: %s\n", temp);
-	free(temp);
-
-	printf("Signal: %d - Retry bit: %d - is cloaked: %d\n", packet->signal_quality, packet->retry_bit, packet->is_cloaked);
-}
-*/
-
 static int get_rtap_signal(int caplen)
 {
 	struct ieee80211_radiotap_iterator iterator;
@@ -815,19 +764,6 @@ static BOOLEAN next_packet_pointer(void)
 	return success;
 }
 
-/*
-static BOOLEAN prev_packet_pointer(void) {
-	BOOLEAN success = false;
-	// Go to next packet if not the last one
-	if (_packet_elt_head->current != _packet_elt_head->first) {
-		_packet_elt_head->current = _packet_elt_head->current->prev;
-		success = true;
-	}
-
-	return success;
-}
-*/
-
 static int compare_SN_to_current_packet(struct packet_elt *packet)
 {
 	if (_packet_elt_head->current->sequence_number > packet->sequence_number)
@@ -882,17 +818,6 @@ current_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet)
 	return success;
 }
 
-/*
-static BOOLEAN prev_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet) {
-	BOOLEAN success = false;
-
-	while (success == false && prev_packet_pointer()) {
-		success = current_packet_pointer_same_fromToDS_and_source(packet);
-	}
-	return success;
-}
-*/
-
 static BOOLEAN
 next_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet)
 {
@@ -906,12 +831,6 @@ next_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet)
 	}
 	return success;
 }
-
-/*
-static BOOLEAN prev_packet_pointer_same_fromToDS_and_source_as_current(void) {
-	return prev_packet_pointer_same_fromToDS_and_source(_packet_elt_head->current);
-}
-*/
 
 static BOOLEAN next_packet_pointer_same_fromToDS_and_source_as_current(void)
 {

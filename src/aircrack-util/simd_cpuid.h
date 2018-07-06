@@ -61,11 +61,11 @@ struct _cpuinfo
  *
  * @return int Number of 32-bit integers able to pack in one vector register.
  */
-extern int cpuid_simdsize();
+extern int cpuid_simdsize(int);
 
 /// Populates the \a cpuinfo with detected information about the running
 /// machine.
-extern int cpuid_getinfo();
+extern int cpuid_getinfo(void);
 
 /// Structure containing information about the running machine. The
 /// function \a cpuid_getinfo must be called first!

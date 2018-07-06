@@ -182,24 +182,6 @@ void show_wep_stats(int B,
 					int prod,
 					int keylimit);
 
-/*
-static float chrono( struct timeval *start, int reset )
-{
-    float delta;
-    struct timeval current;
-
-    gettimeofday( &current, NULL );
-
-    delta = ( current.tv_sec  - start->tv_sec  ) + (float)
-            ( current.tv_usec - start->tv_usec ) / 1000000;
-
-    if( reset )
-        gettimeofday( start, NULL );
-
-    return( delta );
-}
-*/
-
 /* display the current votes */
 
 void show_wep_stats(int B,
