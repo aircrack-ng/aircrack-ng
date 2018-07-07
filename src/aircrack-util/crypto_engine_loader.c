@@ -157,7 +157,10 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 			if (search)
 			{
 				search += 16;
-				simd_flags |= ac_crypto_engine_loader_string_to_flag(search);
+
+				int flag;
+				if ((flag = ac_crypto_engine_loader_string_to_flag(search)) != -1)
+					simd_flags |= flag;
 			}
 		}
 	}
