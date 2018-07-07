@@ -88,7 +88,7 @@ install:
       # update core packages
       bash "pacman -Syu --noconfirm --cache `"$unix_msys2_cache`""
       # install Aircrack-ng build dependencies
-      bash "pacman --sync --noconfirm --cache `"$unix_msys2_cache`" autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel"
+      bash "pacman --sync --noconfirm --cache `"$unix_msys2_cache`" autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime gcc pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel"
     }
 
 build_script:
