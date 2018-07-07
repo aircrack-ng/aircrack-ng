@@ -124,6 +124,6 @@ build_script:
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --disable-shared --enable-static --with-experimental --with-airpcap=/c/projects/aircrack-ng"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --disable-shared --enable-static --with-experimental"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/c/projects/aircrack-ng"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
     }

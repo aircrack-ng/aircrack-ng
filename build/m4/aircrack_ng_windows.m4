@@ -51,6 +51,14 @@ case "$host_os" in
         CXXFLAGS="$CXXFLAGS -mconsole -mwindows"
         LDFLAGS="$LDFLAGS -mconsole -mwindows"
 
+        case "$host_os" in
+            MSYS*|msys*)
+                CPPFLAGS="$CPPFLAGS -DMSYS2"
+                CFLAGS="$CFLAGS -DMSYS2"
+                CXXFLAGS="$CXXFLAGS -DMSYS2"
+                ;;
+        esac
+
         case "$ax_cv_c_compiler_vendor" in
             clang)
                 LIBS="$LIBS -liconv"

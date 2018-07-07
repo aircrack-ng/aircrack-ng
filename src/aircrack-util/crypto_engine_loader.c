@@ -226,7 +226,11 @@ EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 	snprintf(module_filename, sizeof(module_filename) - 1, "%s/%s%s%s",
 		library_path,
 #if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
+#if defined(MSYS2)
+		"msys-",
+#else
 		"cyg",
+#endif
 #else
 		"lib",
 #endif
