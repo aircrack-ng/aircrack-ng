@@ -94,7 +94,7 @@ install:
 build_script:
 - cmd: |
     C:\cygwin\bin\bash -e -l -c "curl -RLO http://benden.us/vagrant/AirPcap_Devpack_4_1_1_1838.zip"
-    C:\cygwin\bin\bash -e -l -c "7z x AirPcap_Devpack_4_1_1_1838.zip"
+    C:\cygwin\bin\bash -e -l -c "7z -y x AirPcap_Devpack_4_1_1_1838.zip"
 - ps: |
     if ($env:TARGET -eq "cygwin") {
       Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src"}
