@@ -58,7 +58,7 @@ is as follows:
 
 ==== MSYS2 (Windows) ====
 
-    `pacman -Sy autoconf automake-wrapper libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel gcc binutils make pcre-devel libsqlite-devel`
+    `pacman -Sy autoconf automake-wrapper libtool msys2-w32api-headers msys2-w32api-runtime gcc pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel gcc binutils make pcre-devel libsqlite-devel`
 
 ==== OSX ====
 
