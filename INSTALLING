@@ -148,7 +148,8 @@ to your choosing:
 
 * disable-shared: When combined with enable-static, it will statically compile Aircrack-ng.
 
-* with-avx512:  On x86, add support for AVX512 instructions in aircrack-ng.
+* with-avx512:  On x86, add support for AVX512 instructions in aircrack-ng. Only use it when
+                the current CPU supports AVX512.
 
 ===== Examples =====
 
@@ -237,11 +238,6 @@ not having the suite auto-detect a number of optimizations. To do this, add
 the additional flag `--without-opt` to the `./configure` line:
 
 `./configure --without-opt`
-
-AVX512 compilation is disabled by default, very few CPUs support this instruction
-set. To enable it, run configure with --with-avx512:
-
-`./configure --with-avx512`
 
 == Run-time location of SIMD binaries ==
 
