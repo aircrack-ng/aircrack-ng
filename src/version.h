@@ -31,7 +31,7 @@
  */
 
 #define _MAJ 1
-#define _MIN 2
+#define _MIN 3
 #define _SUB_MIN 0
 #define _BETA 0
 #define _RC 0
