@@ -80,6 +80,7 @@ char usage[] =
 
 struct decap_stats
 {
+	unsigned long nb_stations; /* # of stations seen */
 	unsigned long nb_read; /* # of packets read       */
 	unsigned long nb_wep; /* # of WEP data packets   */
 	unsigned long nb_bad; /* # of bad data packets   */
@@ -199,9 +200,9 @@ write_packet(FILE *f_out, struct pcap_pkthdr *pkh, unsigned char *h80211)
 	return (0);
 }
 
-static int station_compare(const void* a, const void* b)
+static int station_compare(const void *a, const void *b)
 {
-    return memcmp(a, b, 6);
+	return memcmp(a, b, 6);
 }
 
 int main(int argc, char *argv[])
@@ -216,7 +217,7 @@ int main(int argc, char *argv[])
 	unsigned char *h80211;
 	unsigned char bssid[6], stmac[6];
 
-    c_avl_tree_t* stations = c_avl_create(station_compare);
+	c_avl_tree_t *stations = c_avl_create(station_compare);
 	struct WPA_ST_info *st_cur;
 	struct pcap_file_header pfh;
 	struct pcap_pkthdr pkh;
@@ -816,8 +817,9 @@ int main(int argc, char *argv[])
 
 			memcpy(st_cur->stmac, stmac, 6);
 			memcpy(st_cur->bssid, bssid, 6);
-            c_avl_insert(stations, st_cur->stmac, st_cur);
-        }
+			c_avl_insert(stations, st_cur->stmac, st_cur);
+			stats.nb_stations++;
+		}
 
 		/* check if we haven't already processed this packet */
 
@@ -960,8 +962,7 @@ int main(int argc, char *argv[])
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) == 0)
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
 			{
 				/* set authenticator nonce */
 
@@ -971,8 +972,7 @@ int main(int argc, char *argv[])
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) == 0
-				&& (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -1005,8 +1005,7 @@ int main(int argc, char *argv[])
 			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -1040,7 +1039,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
-    //TODO cleanup avl tree
+	/* cleanup avl tree */
+	while (c_avl_pick(stations, &stmac, &st_cur) == 0)
+	{
+		free(st_cur);
+	}
+	c_avl_destroy(stations);
 
 	fclose(f_in);
 	fclose(f_out);
@@ -1049,13 +1053,15 @@ int main(int argc, char *argv[])
 	/* write some statistics */
 
 	erase_line(2);
-	printf("Total number of packets read      %8lu\n"
+	printf("Total number of stations seen     %8lu\n"
+		   "Total number of packets read      %8lu\n"
 		   "Total number of WEP data packets  %8lu\n"
 		   "Total number of WPA data packets  %8lu\n"
 		   "Number of plaintext data packets  %8lu\n"
 		   "Number of decrypted WEP  packets  %8lu\n"
 		   "Number of corrupted WEP  packets  %8lu\n"
 		   "Number of decrypted WPA  packets  %8lu\n",
+		   stats.nb_stations,
 		   stats.nb_read,
 		   stats.nb_wep,
 		   stats.nb_wpa,
