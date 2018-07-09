@@ -816,8 +816,8 @@ int main(int argc, char *argv[])
 
 			memcpy(st_cur->stmac, stmac, 6);
 			memcpy(st_cur->bssid, bssid, 6);
-            c_avl_insert(stations, stmac, st_cur);
-		}
+            c_avl_insert(stations, st_cur->stmac, st_cur);
+        }
 
 		/* check if we haven't already processed this packet */
 
