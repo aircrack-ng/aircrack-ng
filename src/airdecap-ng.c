@@ -40,6 +40,7 @@
 #include <time.h>
 #include <getopt.h>
 
+#include "avl_tree.h"
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
@@ -198,6 +199,11 @@ write_packet(FILE *f_out, struct pcap_pkthdr *pkh, unsigned char *h80211)
 	return (0);
 }
 
+static int station_compare(const void* a, const void* b)
+{
+    return memcmp(a, b, 6);
+}
+
 int main(int argc, char *argv[])
 {
 	time_t tt;
@@ -210,9 +216,8 @@ int main(int argc, char *argv[])
 	unsigned char *h80211;
 	unsigned char bssid[6], stmac[6];
 
-	struct WPA_ST_info *st_1st;
+    c_avl_tree_t* stations = c_avl_create(station_compare);
 	struct WPA_ST_info *st_cur;
-	struct WPA_ST_info *st_prv;
 	struct pcap_file_header pfh;
 	struct pcap_pkthdr pkh;
 
@@ -644,7 +649,6 @@ int main(int argc, char *argv[])
 
 	memset(&stats, 0, sizeof(stats));
 	tt = time(NULL);
-	st_1st = NULL;
 
 	while (1)
 	{
@@ -795,20 +799,11 @@ int main(int argc, char *argv[])
 				continue;
 		}
 
-		st_prv = NULL;
-		st_cur = st_1st;
-
-		while (st_cur != NULL)
-		{
-			if (!memcmp(st_cur->stmac, stmac, 6)) break;
-
-			st_prv = st_cur;
-			st_cur = st_cur->next;
-		}
+		int not_found = c_avl_get(stations, stmac, &st_cur);
 
 		/* if it's a new station, add it */
 
-		if (st_cur == NULL)
+		if (not_found)
 		{
 			if (!(st_cur = (struct WPA_ST_info *) malloc(
 					  sizeof(struct WPA_ST_info))))
@@ -819,13 +814,9 @@ int main(int argc, char *argv[])
 
 			memset(st_cur, 0, sizeof(struct WPA_ST_info));
 
-			if (st_1st == NULL)
-				st_1st = st_cur;
-			else
-				st_prv->next = st_cur;
-
 			memcpy(st_cur->stmac, stmac, 6);
 			memcpy(st_cur->bssid, bssid, 6);
+            c_avl_insert(stations, stmac, st_cur);
 		}
 
 		/* check if we haven't already processed this packet */
@@ -1049,12 +1040,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	while (st_1st != NULL)
-	{
-		st_cur = st_1st->next;
-		free(st_1st);
-		st_1st = st_cur;
-	}
+    //TODO cleanup avl tree
 
 	fclose(f_in);
 	fclose(f_out);

@@ -76,6 +76,7 @@ SRC_AU		= airdecloak-ng.c
 SRC_TT		= tkiptun-ng.c
 SRC_WC		= wpaclean.c
 SRC_AV		= airventriloquist-ng.c
+SRC_AVL 	= avl_tree.c
 
 SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c session.c
 LIBAC	= libaclib.la
@@ -173,7 +174,7 @@ aircrack_ng_CFLAGS += -DDYNAMIC=0
 aircrack_ng_LDADD += $(LIBAIRCRACK_CRYPTO_LIBS)
 endif
 
-airdecap_ng_SOURCES = $(SRC_AD) $(LIBAIRCRACK_UTIL)
+airdecap_ng_SOURCES = $(SRC_AD) $(LIBAIRCRACK_UTIL) $(SRC_AVL)
 airdecap_ng_CFLAGS = $(COMMON_CFLAGS)
 airdecap_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
 
@@ -310,7 +311,9 @@ EXTRA_DIST = wpaclean.c \
              cowpatty.c \
              cowpatty.h \
              session.c \
-             session.h
+             session.h \
+             avl_tree.h \
+             avl_tree.c
 
 
 @CODE_COVERAGE_RULES@
