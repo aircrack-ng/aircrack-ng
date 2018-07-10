@@ -116,13 +116,53 @@ uint8_t* (*dso_ac_crypto_engine_get_ptk)(ac_crypto_engine_t *engine, int threadi
 	NULL;
 #endif
 
+#if defined(CYGWIN)
+/*
+	This is merely a hack until code refactoring can occur.
+
+	A new module is needed for handling file and path operations, because
+	this here is only a step towards correctly getting the executable
+	path for all operating systems.
+
+	It was required for Cygwin to determine the location of the
+	Crypto Engine DLLs which are in the same folder as the
+	executable.
+*/
+#include <stdarg.h>
+#include <stdio.h>
+#include <wtypes.h>
+#include <wchar.h>
+#include <sys/cygwin.h>
+
+#include <windows.h>
+#include <shlwapi.h>
+
+static char *get_executable_directory(void)
+{
+	HMODULE hModule = GetModuleHandle(NULL);
+	CHAR path[MAX_PATH];
+
+	GetModuleFileNameA(hModule, path, MAX_PATH);
+	PathRemoveFileSpecA(path);
+
+	cygwin_conv_path_t flags = CCP_WIN_A_TO_POSIX;
+	char *winpath = (char*) cygwin_create_path(flags, path);
+
+	return winpath;
+}
+#endif
+
 EXPORT int ac_crypto_engine_loader_get_available(void)
 {
 	int simd_flags = SIMD_SUPPORTS_NONE;
 	char library_path[8192];
 
+#if defined(WIN32_PORTABLE)
+	char *working_directory = get_executable_directory();
+#else
 	// are we inside of the build path?
 	char *working_directory = get_current_working_directory();
+#endif
 
 	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR)) == 0
 	    || strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR)) == 0)
@@ -132,8 +172,13 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 	}
 	else
 	{
+#if defined(WIN32_PORTABLE)
+		// use the current directory
+		snprintf(library_path, sizeof(library_path) - 1, working_directory);
+#else
 		// use installation paths
 		snprintf(library_path, sizeof(library_path) - 1, "%s", LIBDIR);
+#endif
 	}
 	free(working_directory);
 
@@ -226,8 +271,13 @@ EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 	}
 	free(working_directory);
 
-	snprintf(module_filename, sizeof(module_filename) - 1, "%s/%s%s%s",
+	snprintf(module_filename, sizeof(module_filename) - 1,
+#if defined(WIN32_PORTABLE)
+		"%s%s%s",
+#else
+		"%s/%s%s%s",
 		library_path,
+#endif
 #if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
 #if defined(MSYS2)
 		"msys-",
