@@ -5667,7 +5667,8 @@ static void load_aircrack_crypto_dso(int simd_features)
 		simd_features = simd_get_supported_features();
 	}
 
-	ac_crypto_engine_loader_load(simd_features);
+	if (ac_crypto_engine_loader_load(simd_features) != 0)
+        exit(1);
 
 	simd_destroy();
 }
