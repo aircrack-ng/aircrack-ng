@@ -88,6 +88,8 @@ struct decap_stats
 	unsigned long nb_plain; /* # of plaintext packets  */
 	unsigned long nb_unwep; /* # of decrypted WEP pkt  */
 	unsigned long nb_unwpa; /* # of decrypted WPA pkt  */
+	unsigned long nb_failed_tkip; /* # of failed WPA TKIP pkt decryptions */
+	unsigned long nb_failed_ccmp; /* # of failed WPA CCMP pkt decryptions */
 } stats;
 
 struct options
@@ -898,18 +900,29 @@ int main(int argc, char *argv[])
 				if (st_cur->keyver == 1)
 				{
 					if (decrypt_tkip(h80211, pkh.caplen, st_cur->ptk + 32) == 0)
+					{
+						stats.nb_failed_tkip++;
 						continue;
+					}
 
 					pkh.len -= 20;
 					pkh.caplen -= 20;
 				}
-				else
+				else if (st_cur->keyver == 2)
 				{
 					if (decrypt_ccmp(h80211, pkh.caplen, st_cur->ptk + 32) == 0)
+					{
+						stats.nb_failed_ccmp++;
 						continue;
+					}
 
 					pkh.len -= 16;
 					pkh.caplen -= 16;
+				}
+				else
+				{
+					fprintf(stderr, "unkown keyver: %d\n", st_cur->keyver);
+					continue;
 				}
 
 				/* WPA data packet was successfully decrypted, *
@@ -1060,7 +1073,9 @@ int main(int argc, char *argv[])
 		   "Number of plaintext data packets  %8lu\n"
 		   "Number of decrypted WEP  packets  %8lu\n"
 		   "Number of corrupted WEP  packets  %8lu\n"
-		   "Number of decrypted WPA  packets  %8lu\n",
+		   "Number of decrypted WPA  packets  %8lu\n"
+		   "Number of bad tkip WPA   packets  %8lu\n"
+		   "Number of bad ccmp WPA   packets  %8lu\n",
 		   stats.nb_stations,
 		   stats.nb_read,
 		   stats.nb_wep,
@@ -1068,7 +1083,9 @@ int main(int argc, char *argv[])
 		   stats.nb_plain,
 		   stats.nb_unwep,
 		   stats.nb_bad,
-		   stats.nb_unwpa);
+		   stats.nb_unwpa,
+		   stats.nb_failed_tkip,
+		   stats.nb_failed_ccmp);
 
 	return (0);
 }
