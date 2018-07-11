@@ -41,6 +41,13 @@ AC_DEFUN([AIRCRACK_NG_WINDOWS],[
 AX_REQUIRE_DEFINED([AC_CHECK_HEADER])[]dnl
 AX_REQUIRE_DEFINED([AX_COMPILER_VENDOR])dnl
 
+AC_ARG_ENABLE(win32-portable,
+    AS_HELP_STRING([--enable-win32-portable],
+        [Enable portable WIN32 edition]),
+    [
+        AC_DEFINE([WIN32_PORTABLE], [1], [Define if portable WIN32 is supported])
+    ], [])
+
 case "$host_os" in
     CYGWIN*|MSYS*|cygwin*|msys*)
         AC_CHECK_FILE(/usr/include/w32api/windows.h, [ CPPFLAGS="$CPPFLAGS -I/usr/include/w32api" ], [])

@@ -237,6 +237,7 @@ char usage[] = "\n"
 			   "      -D         : WEP decloak, skips broken keystreams\n"
 			   "      -P <num>   : PTW debug:  1: disable Klein, 2: PTW\n"
 			   "      -1         : run only 1 try to crack key with PTW\n"
+			   "      -V         : run in visual inspection mode\n"
 			   "\n"
 			   "  WEP and WPA-PSK cracking options:\n"
 			   "\n"
@@ -5667,7 +5668,8 @@ static void load_aircrack_crypto_dso(int simd_features)
 		simd_features = simd_get_supported_features();
 	}
 
-	ac_crypto_engine_loader_load(simd_features);
+	if (ac_crypto_engine_loader_load(simd_features) != 0)
+        exit(1);
 
 	simd_destroy();
 }

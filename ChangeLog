@@ -1,4 +1,4 @@
-Version 1.3 beta 1 (changes from aircrack-ng 1.2) - Released XX XXX XXXX:
+Version 1.3 (changes from aircrack-ng 1.2) - Released 10 Jul 2018:
 * Aircrack-ng: Allow using Hashcat HCCAPX files as input files.
 * Aircrack-ng: Fixed floating point exception due to division by 0 when displaying stats.
 * Aircrack-ng: Updated manpage regarding hex wordlist usage.

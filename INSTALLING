@@ -32,7 +32,29 @@
 Below are instructions for installing the basic requirements to build
 `aircrack-ng` for a number of operating systems.
 
-==== Cygwin (Windows) ====
+==== Linux ====
+
+===== Debian/Ubuntu =====
+
+    `sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev libsqlite3-dev libpcre3-dev ethtool shtool rfkill zlib1g-dev libpcap-dev`
+
+===== Fedora/CentOS/RHEL =====
+
+    `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool`
+
+==== FreeBSD ====
+
+    `pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 openssl gmake`
+
+==== OSX ====
+
+XCode, Xcode command line tools and HomeBrew are required.
+
+    `brew install autoconf automake libtool openssl shtool pkg-config`
+
+==== Windows ====
+
+===== Cygwin =====
 
 Cygwin requires the full path to the `setup.exe` utility, in order to
 automate the installation of the necessary packages. In addition, it
@@ -44,27 +66,10 @@ is as follows:
 
     `c:\cygwin\setup-x86.exe -qnNdO -R C:/cygwin -s http://cygwin.mirror.constant.com -l C:/cygwin/var/cache/setup -P autoconf -P automake -P bison -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P pkg-config -P git -P wget -P curl -P libpcre-devel -P openssl-devel -P libsqlite3-devel`
 
-==== Debian/Ubuntu ====
 
-    `sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev libsqlite3-dev libpcre3-dev ethtool shtool rfkill zlib1g-dev libpcap-dev`
-
-==== Fedora/CentOS/RHEL ====
-
-    `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool`
-
-==== FreeBSD using PKG ====
-
-    `pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 openssl gmake`
-
-==== MSYS2 (Windows) ====
+===== MSYS2 =====
 
     `pacman -Sy autoconf automake-wrapper libtool msys2-w32api-headers msys2-w32api-runtime gcc pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel gcc binutils make pcre-devel libsqlite-devel`
-
-==== OSX ====
-
-XCode, Xcode command line tools and HomeBrew are required.
-
-    `brew install autoconf automake libtool openssl shtool pkg-config`
 
 === Compiling ===
 
@@ -116,7 +121,7 @@ to your choosing:
                 Replace DIR above with the absolute location to the root of the
                 extracted source code from the Airpcap CD or downloaded SDK available
                 online. Required on Windows to build besside-ng, besside-ng-crawler, 
-                easside-ng, tkiptun-ng and wesside-ng when building experimental tools
+                easside-ng, tkiptun-ng and wesside-ng when building experimental tools.
                 The developer pack (Compatible with version 4.1.1 and 4.1.3) can be downloaded at
                 https://support.riverbed.com/content/support/software/steelcentral-npm/airpcap.html
 
@@ -138,8 +143,6 @@ to your choosing:
 * with-duma:	Compile with DUMA support. DUMA is a library to detect buffer overruns and under-runs.
             	Dependencies (debian): duma
 
-* with-xcode:    Set this flag to true to compile on OS X with Xcode 7+.
-
 * disable-libnl:  Set-up the project to be compiled without libnl (1 or 3). Linux option only.
 
 * without-opt:  Do not enable stack protector (on GCC 4.9 and above).
@@ -148,7 +151,8 @@ to your choosing:
 
 * disable-shared: When combined with enable-static, it will statically compile Aircrack-ng.
 
-* with-avx512:  On x86, add support for AVX512 instructions in aircrack-ng.
+* with-avx512:  On x86, add support for AVX512 instructions in aircrack-ng. Only use it when
+                the current CPU supports AVX512.
 
 ===== Examples =====
 
@@ -237,11 +241,6 @@ not having the suite auto-detect a number of optimizations. To do this, add
 the additional flag `--without-opt` to the `./configure` line:
 
 `./configure --without-opt`
-
-AVX512 compilation is disabled by default, very few CPUs support this instruction
-set. To enable it, run configure with --with-avx512:
-
-`./configure --with-avx512`
 
 == Run-time location of SIMD binaries ==
 

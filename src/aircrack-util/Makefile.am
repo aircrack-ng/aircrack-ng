@@ -67,6 +67,9 @@ libaircrack_util_la_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_P
                              "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
                              "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
                              "-DLIBDIR=\"$(libdir)\""
+if CYGWIN
+libaircrack_util_la_LIBADD = -lshlwapi
+endif
 
 if STATIC_BUILD
 libaircrack_util_la_CFLAGS += -DSTATIC_BUILD
