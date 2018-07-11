@@ -802,7 +802,7 @@ int main(int argc, char *argv[])
 				continue;
 		}
 
-		int not_found = c_avl_get(stations, stmac, &st_cur);
+		int not_found = c_avl_get(stations, stmac, (void **) &st_cur);
 
 		/* if it's a new station, add it */
 
@@ -1053,7 +1053,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* cleanup avl tree */
-	while (c_avl_pick(stations, &stmac, &st_cur) == 0)
+	while (c_avl_pick(stations, (void **) &stmac, (void **) &st_cur) == 0)
 	{
 		free(st_cur);
 	}
