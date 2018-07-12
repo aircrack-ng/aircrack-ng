@@ -135,7 +135,7 @@ build_script:
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
-      .\build\package-win32.ps1
+      .\build\package-win32.ps1 2>&1 | %{ "$_" }
     }
     
 artifacts:
