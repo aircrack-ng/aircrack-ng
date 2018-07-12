@@ -57,7 +57,7 @@ install:
     }
 
 - ps: |
-    if ($env:TARGET -eq "cygwin") {
+    if ($env:TARGET -eq "cygwin" -or $env:TARGET -eq "pkg") {
       New-Item -Force -Type Directory $env:CYG_CACHE
 
       downloadIfOlderThanDays "https://cygwin.com/setup-x86.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86.exe" 7
@@ -66,7 +66,7 @@ install:
     }
 
 - ps: |
-    if ($env:TARGET -eq "cygwin64") {
+    if ($env:TARGET -eq "cygwin64" -or $env:TARGET -eq "pkg") {
       New-Item -Force -Type Directory $env:CYG_CACHE
 
       downloadIfOlderThanDays "https://cygwin.com/setup-x86_64.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86_64.exe" 7
