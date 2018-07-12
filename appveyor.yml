@@ -13,6 +13,7 @@ clone_depth: 10
 
 environment:
   global:
+    APPVEYOR_SAVE_CACHE_ON_ERROR: true
     AIRCRACK_CI_CACHE: C:\aircrack_ci_cache
     CYG_CACHE: '%AIRCRACK_CI_CACHE%\cygwin'
     MSYS2_CACHE: '%AIRCRACK_CI_CACHE%\msys2'
