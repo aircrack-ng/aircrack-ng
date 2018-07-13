@@ -242,27 +242,6 @@ the additional flag `--without-opt` to the `./configure` line:
 
 `./configure --without-opt`
 
-== Run-time location of SIMD binaries ==
-
-Typically, the full path that is compiled in to the `aircrack-ng` binary is
-`/usr/libexec/aircrack-ng`. However, during development and/or packaging, it
-may be of use to specify a path that is dynamic in nature.
-
-The environment variable `AIRCRACK_LIBEXEC_PATH` may be used to specify the
-location of the SIMD-optimized binaries. An example of such use is as
-follows:
-
-`env AIRCRACK_LIBEXEC_PATH=/home/user/dev/aircrack-ng/src ./src/aircrack-ng`
-
-The look up path can be set at compilation time. Append `pkglibexecdir`
-parameter to `make` (or `gmake`). The following will set it to the
-same/current directory:
-
-`pkglibexecdir=.`
-
-It is particularly useful for Windows, when all binaries are in
-the same directory.
-
 == Using precompiled binaries ==
 
 === Linux/BSD ===

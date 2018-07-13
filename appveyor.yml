@@ -13,6 +13,7 @@ clone_depth: 10
 
 environment:
   global:
+    APPVEYOR_SAVE_CACHE_ON_ERROR: true
     AIRCRACK_CI_CACHE: C:\aircrack_ci_cache
     CYG_CACHE: '%AIRCRACK_CI_CACHE%\cygwin'
     MSYS2_CACHE: '%AIRCRACK_CI_CACHE%\msys2'
@@ -23,6 +24,7 @@ environment:
   - TARGET: cygwin
   - TARGET: cygwin64
   - TARGET: msys64
+  - TARGET: pkg
 
 cache:
 - '%AIRCRACK_CI_CACHE% -> appveyor.yml'
@@ -50,13 +52,13 @@ install:
 - ps: |
     function updateCygwin($cygwinexe, $installFolder, $cacheFolder) {
       Write-Host "Update Cygwin: $cygwinexe"
-      Exec-External {& cmd /c $cygwinexe -gqnNdO -R $installFolder -s http://mirrors.kernel.org/sourceware/cygwin/ -l $cacheFolder -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka}
+      Exec-External {& cmd /c $cygwinexe -gqnNdO -R $installFolder -s http://mirrors.kernel.org/sourceware/cygwin/ -l $cacheFolder -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka -P unzip -P zip -P rsync}
       Write-Host "Update Cygwin: $cygwinexe " -NoNewLine
       Write-Host "[ OK ]" -ForegroundColor Green
     }
 
 - ps: |
-    if ($env:TARGET -eq "cygwin") {
+    if ($env:TARGET -eq "cygwin" -or $env:TARGET -eq "pkg") {
       New-Item -Force -Type Directory $env:CYG_CACHE
 
       downloadIfOlderThanDays "https://cygwin.com/setup-x86.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86.exe" 7
@@ -65,7 +67,7 @@ install:
     }
 
 - ps: |
-    if ($env:TARGET -eq "cygwin64") {
+    if ($env:TARGET -eq "cygwin64" -or $env:TARGET -eq "pkg") {
       New-Item -Force -Type Directory $env:CYG_CACHE
 
       downloadIfOlderThanDays "https://cygwin.com/setup-x86_64.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86_64.exe" 7
@@ -127,3 +129,16 @@ build_script:
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/c/projects/aircrack-ng"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
     }
+- ps: |
+    if ($env:TARGET -eq "pkg") {
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
+      Exec-External {& C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"}
+      .\build\package-win32.ps1 2>&1 | %{ "$_" }
+    }
+    
+artifacts:
+  - path: 'aircrack-ng-*.zip'
