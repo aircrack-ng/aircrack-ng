@@ -40,11 +40,11 @@
 #include <time.h>
 #include <getopt.h>
 
-#include "avl_tree.h"
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
 #include "aircrack-osdep/byteorder.h"
+#include "aircrack-util/avl_tree.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 
@@ -921,7 +921,7 @@ int main(int argc, char *argv[])
 				}
 				else
 				{
-					fprintf(stderr, "unkown keyver: %d\n", st_cur->keyver);
+					fprintf(stderr, "unsupported keyver: %d\n", st_cur->keyver);
 					continue;
 				}
 
