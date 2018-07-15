@@ -1074,8 +1074,8 @@ int main(int argc, char *argv[])
 		   "Number of decrypted WEP  packets  %8lu\n"
 		   "Number of corrupted WEP  packets  %8lu\n"
 		   "Number of decrypted WPA  packets  %8lu\n"
-		   "Number of bad tkip WPA   packets  %8lu\n"
-		   "Number of bad ccmp WPA   packets  %8lu\n",
+		   "Number of bad TKIP (WPA) packets  %8lu\n"
+		   "Number of bad CCMP (WPA) packets  %8lu\n",
 		   stats.nb_stations,
 		   stats.nb_read,
 		   stats.nb_wep,
