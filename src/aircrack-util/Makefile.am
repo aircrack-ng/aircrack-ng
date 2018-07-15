@@ -62,7 +62,7 @@ endif
 endif
 endif
 
-libaircrack_util_la_SOURCES = common.c console.c crypto_engine_loader.c mcs_index_rates.c simd_cpuid.c $(TRAMPOLINE) verifyssid.c
+libaircrack_util_la_SOURCES = common.c console.c crypto_engine_loader.c mcs_index_rates.c simd_cpuid.c $(TRAMPOLINE) verifyssid.c avl_tree.c
 libaircrack_util_la_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
                              "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
                              "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
@@ -94,7 +94,9 @@ EXTRA_DIST = common.c \
              trampoline_ppc.c \
              trampoline_stubs.c \
              verifyssid.c \
-             verifyssid.h
+             verifyssid.h \
+			 avl_tree.c \
+			 avl_tree.h
 
 
 @CODE_COVERAGE_RULES@

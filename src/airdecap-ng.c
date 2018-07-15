@@ -44,6 +44,7 @@
 #include "crypto.h"
 #include "pcap.h"
 #include "aircrack-osdep/byteorder.h"
+#include "aircrack-util/avl_tree.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 
@@ -79,6 +80,7 @@ char usage[] =
 
 struct decap_stats
 {
+	unsigned long nb_stations; /* # of stations seen */
 	unsigned long nb_read; /* # of packets read       */
 	unsigned long nb_wep; /* # of WEP data packets   */
 	unsigned long nb_bad; /* # of bad data packets   */
@@ -86,6 +88,8 @@ struct decap_stats
 	unsigned long nb_plain; /* # of plaintext packets  */
 	unsigned long nb_unwep; /* # of decrypted WEP pkt  */
 	unsigned long nb_unwpa; /* # of decrypted WPA pkt  */
+	unsigned long nb_failed_tkip; /* # of failed WPA TKIP pkt decryptions */
+	unsigned long nb_failed_ccmp; /* # of failed WPA CCMP pkt decryptions */
 } stats;
 
 struct options
@@ -198,6 +202,11 @@ write_packet(FILE *f_out, struct pcap_pkthdr *pkh, unsigned char *h80211)
 	return (0);
 }
 
+static int station_compare(const void *a, const void *b)
+{
+	return memcmp(a, b, 6);
+}
+
 int main(int argc, char *argv[])
 {
 	time_t tt;
@@ -210,9 +219,8 @@ int main(int argc, char *argv[])
 	unsigned char *h80211;
 	unsigned char bssid[6], stmac[6];
 
-	struct WPA_ST_info *st_1st;
+	c_avl_tree_t *stations = c_avl_create(station_compare);
 	struct WPA_ST_info *st_cur;
-	struct WPA_ST_info *st_prv;
 	struct pcap_file_header pfh;
 	struct pcap_pkthdr pkh;
 
@@ -644,7 +652,6 @@ int main(int argc, char *argv[])
 
 	memset(&stats, 0, sizeof(stats));
 	tt = time(NULL);
-	st_1st = NULL;
 
 	while (1)
 	{
@@ -795,20 +802,11 @@ int main(int argc, char *argv[])
 				continue;
 		}
 
-		st_prv = NULL;
-		st_cur = st_1st;
-
-		while (st_cur != NULL)
-		{
-			if (!memcmp(st_cur->stmac, stmac, 6)) break;
-
-			st_prv = st_cur;
-			st_cur = st_cur->next;
-		}
+		int not_found = c_avl_get(stations, stmac, (void **) &st_cur);
 
 		/* if it's a new station, add it */
 
-		if (st_cur == NULL)
+		if (not_found)
 		{
 			if (!(st_cur = (struct WPA_ST_info *) malloc(
 					  sizeof(struct WPA_ST_info))))
@@ -819,13 +817,10 @@ int main(int argc, char *argv[])
 
 			memset(st_cur, 0, sizeof(struct WPA_ST_info));
 
-			if (st_1st == NULL)
-				st_1st = st_cur;
-			else
-				st_prv->next = st_cur;
-
 			memcpy(st_cur->stmac, stmac, 6);
 			memcpy(st_cur->bssid, bssid, 6);
+			c_avl_insert(stations, st_cur->stmac, st_cur);
+			stats.nb_stations++;
 		}
 
 		/* check if we haven't already processed this packet */
@@ -905,18 +900,29 @@ int main(int argc, char *argv[])
 				if (st_cur->keyver == 1)
 				{
 					if (decrypt_tkip(h80211, pkh.caplen, st_cur->ptk + 32) == 0)
+					{
+						stats.nb_failed_tkip++;
 						continue;
+					}
 
 					pkh.len -= 20;
 					pkh.caplen -= 20;
 				}
-				else
+				else if (st_cur->keyver == 2)
 				{
 					if (decrypt_ccmp(h80211, pkh.caplen, st_cur->ptk + 32) == 0)
+					{
+						stats.nb_failed_ccmp++;
 						continue;
+					}
 
 					pkh.len -= 16;
 					pkh.caplen -= 16;
+				}
+				else
+				{
+					fprintf(stderr, "unsupported keyver: %d\n", st_cur->keyver);
+					continue;
 				}
 
 				/* WPA data packet was successfully decrypted, *
@@ -969,8 +975,7 @@ int main(int argc, char *argv[])
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) == 0)
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
 			{
 				/* set authenticator nonce */
 
@@ -980,8 +985,7 @@ int main(int argc, char *argv[])
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) == 0
-				&& (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -1014,8 +1018,7 @@ int main(int argc, char *argv[])
 			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -1049,12 +1052,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	while (st_1st != NULL)
+	/* cleanup avl tree */
+	while (c_avl_pick(stations, (void **) &stmac, (void **) &st_cur) == 0)
 	{
-		st_cur = st_1st->next;
-		free(st_1st);
-		st_1st = st_cur;
+		free(st_cur);
 	}
+	c_avl_destroy(stations);
 
 	fclose(f_in);
 	fclose(f_out);
@@ -1063,20 +1066,26 @@ int main(int argc, char *argv[])
 	/* write some statistics */
 
 	erase_line(2);
-	printf("Total number of packets read      %8lu\n"
+	printf("Total number of stations seen     %8lu\n"
+		   "Total number of packets read      %8lu\n"
 		   "Total number of WEP data packets  %8lu\n"
 		   "Total number of WPA data packets  %8lu\n"
 		   "Number of plaintext data packets  %8lu\n"
 		   "Number of decrypted WEP  packets  %8lu\n"
 		   "Number of corrupted WEP  packets  %8lu\n"
-		   "Number of decrypted WPA  packets  %8lu\n",
+		   "Number of decrypted WPA  packets  %8lu\n"
+		   "Number of bad tkip WPA   packets  %8lu\n"
+		   "Number of bad ccmp WPA   packets  %8lu\n",
+		   stats.nb_stations,
 		   stats.nb_read,
 		   stats.nb_wep,
 		   stats.nb_wpa,
 		   stats.nb_plain,
 		   stats.nb_unwep,
 		   stats.nb_bad,
-		   stats.nb_unwpa);
+		   stats.nb_unwpa,
+		   stats.nb_failed_tkip,
+		   stats.nb_failed_ccmp);
 
 	return (0);
 }
