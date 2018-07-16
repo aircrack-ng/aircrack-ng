@@ -82,6 +82,8 @@
 #define KEY_n 0x6E
 #define KEY_r 0x72
 #define KEY_s 0x73
+#define KEY_o 0x6F	//color on
+#define KEY_p 0x70	//color off
 
 /// Changes the styling, foreground, and background
 /// character color, as shown in the user's terminal

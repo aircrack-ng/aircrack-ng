@@ -172,6 +172,15 @@ static void input_thread(void *arg)
 
 		keycode = mygetch();
 
+		if(keycode == KEY_o) {
+			color_on();
+			snprintf(G.message, sizeof(G.message), "][ color on");
+		}
+		if(keycode == KEY_p) {
+			color_off();
+			snprintf(G.message, sizeof(G.message), "][ color off");
+		}
+
 		if (keycode == KEY_s)
 		{
 			G.sort_by++;
@@ -6940,6 +6949,77 @@ static int rearrange_frequencies(void)
 	free(freqs);
 
 	return 0;
+}
+
+void color_off() {
+    struct AP_info *ap_cur;
+    ap_cur = G.ap_1st;
+    while( ap_cur != NULL ) {
+        ap_cur->marked = 0;
+        ap_cur->marked_color = 0;
+        ap_cur = ap_cur->next;
+    }
+}
+
+void color_on() {
+    struct AP_info *ap_cur;
+    struct ST_info *st_cur;
+    int color = 1;
+    color_off();
+
+    ap_cur = G.ap_end;
+
+    while( ap_cur != NULL )
+    {
+        if( ap_cur->nb_pkt < 2 ||
+            time( NULL ) - ap_cur->tlast > G.berlin )
+        {
+            ap_cur = ap_cur->prev;
+            continue;
+        }
+
+        if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
+        {
+            ap_cur = ap_cur->prev;
+            continue;
+        }
+
+        // Don't filter unassociated clients by ESSID
+        if(memcmp(ap_cur->bssid, BROADCAST, 6) && is_filtered_essid(ap_cur->essid))
+        {
+            ap_cur = ap_cur->prev;
+            continue;
+        }
+
+        st_cur = G.st_end;
+
+        while( st_cur != NULL )
+        {
+            if( st_cur->base != ap_cur ||
+                time( NULL ) - st_cur->tlast > G.berlin )
+            {
+                st_cur = st_cur->prev;
+                continue;
+            }
+
+            if( ! memcmp( ap_cur->bssid, BROADCAST, 6 ) && G.asso_client )
+            {
+                st_cur = st_cur->prev;
+                continue;
+            }
+
+            if ( ! ap_cur->marked ) {
+                ap_cur->marked = 1;
+                if( ! memcmp( ap_cur->bssid, BROADCAST, 6 ) )
+                    ap_cur->marked_color = 0;
+                else
+                    ap_cur->marked_color = color++;
+            }
+            st_cur = st_cur->prev;
+        }
+
+        ap_cur = ap_cur->prev;
+    }
 }
 
 int main(int argc, char *argv[])
