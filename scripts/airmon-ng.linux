@@ -456,15 +456,13 @@ startMac80211Iface() {
 			printf "\nPlease run \"airmon-ng check kill\" and/or kill your network manager."
 		fi
 	else
-		iw ${1} del
+		isRPiWireless
+		[ $? -eq 0 ] && iw ${1} del
 		printf "\t\t(mac80211 station mode vif disabled for [${PHYDEV}]${1})\n"
 	fi
 }
 
-NEXMON_FIRMWARE_DIR=/opt
-NEXMON_DRIVER_DIR=/opt
-
-hasRPiWireless() {
+isRPiWireless() {
 	local HW_REV=$(grep Revision /proc/cpuinfo | awk '{print $3}')
 	[ -z "${HW_REV}" ] && return 0
 	# http://www.raspberrypi-spy.co.uk/2012/09/checking-your-raspberry-pi-board-version/
@@ -473,29 +471,6 @@ hasRPiWireless() {
 	[ "${HW_REV}" = '9000c1' ] && return 1
 	[ "${HW_REV}" = 'a020d3' ] && return 1
 	return 0
-}
-
-isNexutilPresent() {
-	type nexutil >/dev/null 2>/dev/null
-	if [ $? -eq 0 ]; then
-		return 1
-	fi
-	return 0
-}
-
-startNexmonIface() {
-	[ -z $1 ] && return
-
-	if [ -n "$(iwconfig $1 | grep 'Mode:Monitor')" ] && [ -n "$(nexutil -m | grep 'monitor: 2')" ]; then
-		printf "\n\tInterface $1 is already in monitor mode\n"
-	else
-		ifconfig $1 up 2>/dev/null
-		iwconfig $1 mode monitor 2>/dev/null
-		[ "$1" = "wlan0" ] && nexutil -m2
-		[ "$1" = "wlan0" ] || nexutil -m2 -I $1
-		iwconfig $1 channel ${CH}
-		printf "\n\t\t(monitor mode enabled for [${PHYDEV}]${1})\n"
-	fi
 }
 
 startwlIface() {
@@ -663,18 +638,6 @@ stopMac80211Iface() {
 			fi
 		fi
 	fi
-}
-
-stopNexmonIface() {
-	[ -z $1 ] && return
-	ifconfig $1 down
-	# Running nexutil is not necessary, it gets reset when putting interface down
-	[ "$1" = "wlan0" ] && nexutil -m0
-	[ "$1" = "wlan0" ] || nexutil -m0 -I $1
-	ifconfig $1 down
-	ifconfig $1 up 2> /dev/null
-	iwconfig $1 mode managed 2> /dev/null
-	printf "\n\t\t(monitor mode disabled for [${PHYDEV}]${1})\n"
 }
 
 stopwlIface() {
@@ -1492,23 +1455,6 @@ for iface in $(printf "${iface_list}"); do
 		fi
 		if [ "$1" = "stop" ] && [ "$2" = "$iface" ]; then
 			stopwlIface $iface
-		fi
-	elif [ "${CHIPSET}" = 'Broadcom 43430' ] || [ "${CHIPSET}" = 'Broadcom 43455' ]; then
-		hasRPiWireless
-		if [ $? -eq 0 ]; then
-			printf "\n\tNot a Raspberry Pi 3, 3B+ or Zero Wireless, cannot put in monitor mode.\n"
-		else
-			isNexutilPresent
-			if [ $? -eq 0 ]; then
-				printf "\n\tMissing nexutil, cannot switch to monitor mode.\n"
-			else
-				if [ "$1" = "start" ] && [ "$2" = "$iface" ]; then
-					startNexmonIface $iface
-				fi
-				if [ "$1" = "stop" ] && [ "$2" = "$iface" ]; then
-					stopNexmonIface $iface
-				fi
-			fi
 		fi
 	elif [ "$MAC80211" = "1" ]; then
 		if [ "$1" = "start" ] && [ "$2" = "$iface" ]; then
