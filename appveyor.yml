@@ -26,6 +26,9 @@ environment:
   - TARGET: msys64
   - TARGET: pkg
 
+matrix:
+  fast_finish: true
+
 cache:
 - '%AIRCRACK_CI_CACHE%'
 
