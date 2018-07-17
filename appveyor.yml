@@ -27,7 +27,7 @@ environment:
   - TARGET: pkg
 
 cache:
-- '%AIRCRACK_CI_CACHE% -> appveyor.yml'
+- '%AIRCRACK_CI_CACHE%'
 
 install:
 - ps: |
