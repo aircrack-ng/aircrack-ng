@@ -22,12 +22,23 @@ environment:
 
   matrix:
   - TARGET: cygwin
+    COMPILER: gcc
   - TARGET: cygwin64
+    COMPILER: gcc
+  - TARGET: cygwin
+    COMPILER: clang
+  - TARGET: cygwin64
+    COMPILER: clang
   - TARGET: msys64
   - TARGET: pkg
 
 matrix:
   fast_finish: true
+  allow_failures:
+    - TARGET: cygwin
+      COMPILER: clang
+    - TARGET: cygwin64
+      COMPILER: clang
 
 cache:
 - '%AIRCRACK_CI_CACHE%'
@@ -107,9 +118,12 @@ build_script:
       Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"}
       Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util"}
       Exec-External {& C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"}
-      Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
-      Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
-      Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+      if ($env:COMPILER -eq "gcc") {
+        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+      } else {
+        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+      }
     }
 - ps: |
     if ($env:TARGET -eq "cygwin64") {
@@ -118,9 +132,12 @@ build_script:
       Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"}
       Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"}
       Exec-External {& C:\cygwin64\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
-      Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
-      Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
-      Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+      if ($env:COMPILER -eq "gcc") {
+        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+      } else {
+        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+      }
     }
 - ps: |
     if ($env:TARGET -eq "msys64") {
