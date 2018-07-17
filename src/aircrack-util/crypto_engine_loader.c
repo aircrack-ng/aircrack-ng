@@ -289,7 +289,7 @@ EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 #endif
 		buffer,
 #if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
-		"-0.dll"
+		"-1-3-0.dll"
 #elif defined(__APPLE__)
 		".dylib"
 #else
