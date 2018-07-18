@@ -54,6 +54,7 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <err.h>
+#include <limits.h>
 
 #include "aircrack-osdep/osdep.h"
 #include "pcap.h"
