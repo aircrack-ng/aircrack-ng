@@ -40,8 +40,9 @@ namespace Aircrack_ng
         private StreamWriter debugStream = null;
 
         private string Changelog =
-
-                  "v1.0.0.8\n"
+                  "v1.0.0.9\n"
+                + "    - Removed WZCook\n"
+                + "v1.0.0.8\n"
                 + "    - Fixed using Aircrack-ng trampoline binary\n"
                 + "    - Fixed adding dictionaries with space characters\n"
                 + "      in filename\n"
@@ -263,23 +264,6 @@ namespace Aircrack_ng
             else
             {
                 this.tbEssid.Visible = this.cbEssid.Checked;
-            }
-        }
-
-        /// <summary>
-        /// Called when clicking on Laucnh WZCook
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void btLaunchWzcook_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                Process.Start(this.currentDir + @"\wzcook.exe");
-            }
-            catch
-            {
-                MessageBox.Show("Failed to start WZCook", this.Text);
             }
         }
 

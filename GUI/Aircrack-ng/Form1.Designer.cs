@@ -86,8 +86,6 @@ namespace Aircrack_ng
             this.btLoadDecapFile = new System.Windows.Forms.Button();
             this.tbDecapFile = new System.Windows.Forms.TextBox();
             this.label7 = new System.Windows.Forms.Label();
-            this.tWZCook = new System.Windows.Forms.TabPage();
-            this.btLaunchWzcook = new System.Windows.Forms.Button();
             this.tAboutBox = new System.Windows.Forms.TabPage();
             this.rtbChangelog = new System.Windows.Forms.RichTextBox();
             this.lblCopyright = new System.Windows.Forms.Label();
@@ -105,7 +103,6 @@ namespace Aircrack_ng
             this.groupBox1.SuspendLayout();
             this.tAirodumpng.SuspendLayout();
             this.tAirdecapng.SuspendLayout();
-            this.tWZCook.SuspendLayout();
             this.tAboutBox.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -114,7 +111,6 @@ namespace Aircrack_ng
             this.tabControl1.Controls.Add(this.tAircrackng);
             this.tabControl1.Controls.Add(this.tAirodumpng);
             this.tabControl1.Controls.Add(this.tAirdecapng);
-            this.tabControl1.Controls.Add(this.tWZCook);
             this.tabControl1.Controls.Add(this.tAboutBox);
             this.tabControl1.Location = new System.Drawing.Point(5, 5);
             this.tabControl1.Name = "tabControl1";
@@ -757,26 +753,6 @@ namespace Aircrack_ng
             this.label7.TabIndex = 0;
             this.label7.Text = "Filename";
             // 
-            // tWZCook
-            // 
-            this.tWZCook.Controls.Add(this.btLaunchWzcook);
-            this.tWZCook.Location = new System.Drawing.Point(4, 22);
-            this.tWZCook.Name = "tWZCook";
-            this.tWZCook.Size = new System.Drawing.Size(597, 396);
-            this.tWZCook.TabIndex = 3;
-            this.tWZCook.Text = "WZCook";
-            this.tWZCook.UseVisualStyleBackColor = true;
-            // 
-            // btLaunchWzcook
-            // 
-            this.btLaunchWzcook.Location = new System.Drawing.Point(244, 169);
-            this.btLaunchWzcook.Name = "btLaunchWzcook";
-            this.btLaunchWzcook.Size = new System.Drawing.Size(120, 60);
-            this.btLaunchWzcook.TabIndex = 0;
-            this.btLaunchWzcook.Text = "Launch";
-            this.btLaunchWzcook.UseVisualStyleBackColor = true;
-            this.btLaunchWzcook.Click += new System.EventHandler(this.btLaunchWzcook_Click);
-            // 
             // tAboutBox
             // 
             this.tAboutBox.Controls.Add(this.rtbChangelog);
@@ -856,7 +832,6 @@ namespace Aircrack_ng
             this.tAirodumpng.ResumeLayout(false);
             this.tAirdecapng.ResumeLayout(false);
             this.tAirdecapng.PerformLayout();
-            this.tWZCook.ResumeLayout(false);
             this.tAboutBox.ResumeLayout(false);
             this.tAboutBox.PerformLayout();
             this.ResumeLayout(false);
@@ -872,13 +847,11 @@ namespace Aircrack_ng
         private System.Windows.Forms.TextBox tbFilenames;
         private System.Windows.Forms.TabPage tAirodumpng;
         private System.Windows.Forms.TabPage tAirdecapng;
-        private System.Windows.Forms.TabPage tWZCook;
         private System.Windows.Forms.Button btOpenCapFiles;
         private System.Windows.Forms.TextBox tbEssid;
         private System.Windows.Forms.CheckBox cbBssid;
         private System.Windows.Forms.CheckBox cbEssid;
         private System.Windows.Forms.TextBox tbBssid;
-        private System.Windows.Forms.Button btLaunchWzcook;
         private System.Windows.Forms.Panel pAdvancedOptions;
         private System.Windows.Forms.CheckBox cbAdvancedOptions;
         private System.Windows.Forms.Button btLaunchAirodump;
