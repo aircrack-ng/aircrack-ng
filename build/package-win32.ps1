@@ -158,6 +158,20 @@ for FILE in `$FILES; do
     cp -p "/cygdrive/c/cygwin64/bin/`$FILE" "$env:DIST/bin/64bit" || :
 done
 
+"$env:DIST/bin/32bit/aircrack-ng" -u
+rc=`$("$env:DIST/bin/32bit/aircrack-ng" --simd-list | wc -c)
+if [ `$rc -ne 22 ]; then
+	echo "The expected number of SIMD engines are NOT present in 32-bit binary."
+	exit 1
+fi
+
+"$env:DIST/bin/64bit/aircrack-ng" -u
+rc=`$("$env:DIST/bin/64bit/aircrack-ng" --simd-list | wc -c)
+if [ `$rc -ne 22 ]; then
+	echo "The expected number of SIMD engines are NOT present in 64-bit binary."
+	exit 1
+fi
+
 zip -o -v -9 -r "$env:DIST.zip" "$env:DIST"
 ( cat README; echo; echo . ) | zip -z "$env:DIST.zip"
 exit 0
