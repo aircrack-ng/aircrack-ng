@@ -1041,7 +1041,7 @@ int main(int argc, char *argv[])
 
 				memcpy(st_cur->keymic, &h80211[z + 81], sizeof(st_cur->keymic));
 				memcpy(st_cur->eapol, &h80211[z], st_cur->eapol_size);
-				memset(st_cur->eapol + 81, 0, sizeof(st_cur->eapol));
+				memset(st_cur->eapol + 81, 0, 16); // where does this size come from? eapol is char[256]
 
 				/* copy the key descriptor version */
 
