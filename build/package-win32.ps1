@@ -63,7 +63,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host -ForegroundColor Blue "Running autoreconf"
-c:\cygwin\bin\bash.exe -e -l -c "/bin/env PATH=`$PATH:/bin /bin/autoreconf -vi" | Out-Null
+c:\cygwin\bin\bash.exe -e -l -c "/bin/autoreconf -vi" | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host -ForegroundColor Red "Failed to run autoreconf!"
     Break
@@ -73,7 +73,6 @@ Write-Host -ForegroundColor Blue "Building 32-bit binaries"
 $b32 = @"
 #!/bin/bash
 set -eufx
-export PATH="`$PATH:/bin"
 [ -d 32bit ] && rm -fr 32bit
 mkdir 32bit
 cd 32bit
@@ -91,7 +90,6 @@ Write-Host -ForegroundColor Blue "Building 64-bit binaries"
 $b64 = @"
 #!/bin/bash
 set -eufx
-export PATH="`$PATH:/bin"
 [ -d 64bit ] && rm -fr 64bit
 mkdir 64bit
 cd 64bit
@@ -134,8 +132,6 @@ if ((Test-Path -Path "$env:DIST.zip")) {
 $pkg = @"
 #!/bin/bash
 set -eufx
-
-export PATH="`$PATH:/bin"
 
 mkdir "$env:DIST/bin"
 mkdir "$env:DIST/bin/32bit"
