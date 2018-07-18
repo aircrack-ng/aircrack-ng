@@ -130,26 +130,26 @@ write_packet(FILE *f_out, struct pcap_pkthdr *pkh, unsigned char *h80211)
 		{
 			case 0: /* To DS = 0, From DS = 0: DA, SA, BSSID */
 
-				memcpy(arphdr + 0, h80211 + 4, 6);
-				memcpy(arphdr + 6, h80211 + 10, 6);
+				memcpy(arphdr + 0, h80211 + 4, sizeof(arphdr) / 2);
+				memcpy(arphdr + 6, h80211 + 10, sizeof(arphdr) / 2);
 				break;
 
 			case 1: /* To DS = 1, From DS = 0: BSSID, SA, DA */
 
-				memcpy(arphdr + 0, h80211 + 16, 6);
-				memcpy(arphdr + 6, h80211 + 10, 6);
+				memcpy(arphdr + 0, h80211 + 16, sizeof(arphdr) / 2);
+				memcpy(arphdr + 6, h80211 + 10, sizeof(arphdr) / 2);
 				break;
 
 			case 2: /* To DS = 0, From DS = 1: DA, BSSID, SA */
 
-				memcpy(arphdr + 0, h80211 + 4, 6);
-				memcpy(arphdr + 6, h80211 + 16, 6);
+				memcpy(arphdr + 0, h80211 + 4, sizeof(arphdr) / 2);
+				memcpy(arphdr + 6, h80211 + 16, sizeof(arphdr) / 2);
 				break;
 
 			default: /* To DS = 1, From DS = 1: RA, TA, DA, SA */
 
-				memcpy(arphdr + 0, h80211 + 16, 6);
-				memcpy(arphdr + 6, h80211 + 24, 6);
+				memcpy(arphdr + 0, h80211 + 16, sizeof(arphdr) / 2);
+				memcpy(arphdr + 6, h80211 + 24, sizeof(arphdr) / 2);
 				break;
 		}
 
@@ -769,16 +769,16 @@ int main(int argc, char *argv[])
 		switch (h80211[1] & 3)
 		{
 			case 0:
-				memcpy(bssid, h80211 + 16, 6);
+				memcpy(bssid, h80211 + 16, sizeof(bssid));
 				break; //Adhoc
 			case 1:
-				memcpy(bssid, h80211 + 4, 6);
+				memcpy(bssid, h80211 + 4, sizeof(bssid));
 				break; //ToDS
 			case 2:
-				memcpy(bssid, h80211 + 10, 6);
+				memcpy(bssid, h80211 + 10, sizeof(bssid));
 				break; //FromDS
 			case 3:
-				memcpy(bssid, h80211 + 10, 6);
+				memcpy(bssid, h80211 + 10, sizeof(bssid));
 				break; //WDS -> Transmitter taken as BSSID
 		}
 
@@ -790,13 +790,13 @@ int main(int argc, char *argv[])
 		switch (h80211[1] & 3)
 		{
 			case 1:
-				memcpy(stmac, h80211 + 10, 6);
+				memcpy(stmac, h80211 + 10, sizeof(stmac));
 				break;
 			case 2:
-				memcpy(stmac, h80211 + 4, 6);
+				memcpy(stmac, h80211 + 4, sizeof(stmac));
 				break;
 			case 3:
-				memcpy(stmac, h80211 + 10, 6);
+				memcpy(stmac, h80211 + 10, sizeof(stmac));
 				break;
 			default:
 				continue;
@@ -817,8 +817,8 @@ int main(int argc, char *argv[])
 
 			memset(st_cur, 0, sizeof(struct WPA_ST_info));
 
-			memcpy(st_cur->stmac, stmac, 6);
-			memcpy(st_cur->bssid, bssid, 6);
+			memcpy(st_cur->stmac, stmac, sizeof(st_cur->stmac));
+			memcpy(st_cur->bssid, bssid, sizeof(st_cur->bssid));
 			c_avl_insert(stations, st_cur->stmac, st_cur);
 			stats.nb_stations++;
 		}
@@ -1039,9 +1039,9 @@ int main(int argc, char *argv[])
 					continue;
 				}
 
-				memcpy(st_cur->keymic, &h80211[z + 81], 16);
+				memcpy(st_cur->keymic, &h80211[z + 81], sizeof(st_cur->keymic));
 				memcpy(st_cur->eapol, &h80211[z], st_cur->eapol_size);
-				memset(st_cur->eapol + 81, 0, 16);
+				memset(st_cur->eapol + 81, 0, 16); // where does this size come from? eapol is char[256]
 
 				/* copy the key descriptor version */
 
@@ -1053,9 +1053,10 @@ int main(int argc, char *argv[])
 	}
 
 	/* cleanup avl tree */
-	while (c_avl_pick(stations, (void **) &stmac, (void **) &st_cur) == 0)
+	void *key, *value;
+	while (c_avl_pick(stations, &key, &value) == 0)
 	{
-		free(st_cur);
+		free(value);
 	}
 	c_avl_destroy(stations);
 
