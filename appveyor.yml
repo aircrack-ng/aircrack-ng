@@ -9,7 +9,7 @@ configuration: Release
 
 platform: x64
 
-clone_depth: 10
+clone_depth: 100
 
 environment:
   global:
