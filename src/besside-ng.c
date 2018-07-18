@@ -51,6 +51,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <limits.h>
 
 #ifdef HAVE_PCRE
 #include <pcre.h>
