@@ -33,6 +33,7 @@
  *  files in the program, then also delete it here.
  */
 
+#define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -6056,7 +6057,7 @@ static void sighandler(int signum)
 			return;
 		}
 
-		if (card < 0 || card >= ArrayCount(G.frequency))
+		if (card < 0 || (size_t) card >= ArrayCount(G.frequency))
 		{
 			// invalid received data
 			fprintf(stderr,
