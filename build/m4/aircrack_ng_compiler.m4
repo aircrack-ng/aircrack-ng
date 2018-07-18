@@ -90,6 +90,10 @@ AC_LANG_CASE([C], [
         AX_APPEND_FLAG(-std=gnu99, [opt_[]_AC_LANG_ABBREV[]flags])
     ])
 
+    AX_CHECK_COMPILE_FLAG([-Wpointer-arth], [
+        AX_APPEND_FLAG(-Wpointer-arth, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
     case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
         gnu|clang|intel)
             AX_APPEND_FLAG(-Wstrict-prototypes, [opt_[]_AC_LANG_ABBREV[]flags])
