@@ -4764,7 +4764,7 @@ static int dump_write_kismet_netxml_client_info(struct ST_info *client, int clie
 	int client_max_rate, average_power, i, nb_probes_written, is_unassociated;
 	char *essid = NULL;
 
-	if (client == NULL || client_no < 1)
+	if (client == NULL || (client_no <= 0 || client_no >= INT_MAX))
 	{
 		return 1;
 	}

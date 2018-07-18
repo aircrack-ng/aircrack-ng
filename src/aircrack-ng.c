@@ -6278,7 +6278,7 @@ int main(int argc, char *argv[])
 			case 'C':
 				nbMergeBSSID = checkbssids(optarg);
 
-				if (nbMergeBSSID < 1)
+				if (nbMergeBSSID < 1 || nbMergeBSSID >= INT_MAX)
 				{
 					printf("Invalid bssids (-C).\n\"%s --help\" for help.\n",
 						   argv[0]);

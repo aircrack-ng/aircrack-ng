@@ -925,6 +925,8 @@ static int xor_keystream(unsigned char *ph80211, unsigned char *keystream, int l
 {
 	int i = 0;
 
+	if (len <= 0 || len >= INT_MAX) return 0;
+
 	for (i = 0; i < len; i++)
 	{
 		ph80211[i] = ph80211[i] ^ keystream[i];

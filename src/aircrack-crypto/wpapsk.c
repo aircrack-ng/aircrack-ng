@@ -408,7 +408,7 @@ void init_atoi()
 	char *pos;
 
 	memset(atoi64, 0x7F, sizeof(atoi64));
-	for (pos = itoa64; pos <= &itoa64[63]; pos++)
+	for (pos = itoa64; pos != &itoa64[63]; pos++)
 		atoi64[ARCH_INDEX(*pos)] = pos - itoa64;
 }
 

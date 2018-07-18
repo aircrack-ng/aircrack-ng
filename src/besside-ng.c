@@ -1288,7 +1288,7 @@ static void attack_watchdog(void *arg)
 
 	next = watchdog_next(n);
 
-	if (next == 0)
+	if (next <= 0 || next >= INT_MAX)
 	{
 		time_printf(V_VERBOSE, "Giving up on %s for now\n", n->n_ssid);
 		attack_next();
@@ -1674,7 +1674,7 @@ static int parse_rsn(struct network *n, unsigned char *p, int l, int rsn)
 	unsigned char *start = p;
 	int psk = 0;
 
-	if (l < 2) return 0;
+	if (l < 2 || l >= INT_MAX) return 0;
 
 	if (memcmp(p, "\x01\x00", 2) != 0) return 0;
 
@@ -1700,9 +1700,9 @@ static int parse_rsn(struct network *n, unsigned char *p, int l, int rsn)
 
 	while (c--)
 	{
-		if (rsn && memcmp(p, "\x00\x0f\xac\x02", 4) == 0) psk++;
+		if (rsn && memcmp(p, "\x00\x0f\xac\x02", 4) == 0) psk = 1;
 
-		if (!rsn && memcmp(p, "\x00\x50\xf2\x02", 4) == 0) psk++;
+		if (!rsn && memcmp(p, "\x00\x50\xf2\x02", 4) == 0) psk = 1;
 
 		p += 4;
 	}
