@@ -298,9 +298,9 @@ static int parse_rsn(const unsigned char *p, const int l, const int rsn)
 
 	while (c--)
 	{
-		if (rsn && memcmp(p, "\x00\x0f\xac\x02", 4) == 0) psk++;
+		if (rsn && memcmp(p, "\x00\x0f\xac\x02", 4) == 0) psk = 1;
 
-		if (!rsn && memcmp(p, "\x00\x50\xf2\x02", 4) == 0) psk++;
+		if (!rsn && memcmp(p, "\x00\x50\xf2\x02", 4) == 0) psk = 1;
 
 		p += 4;
 	}
