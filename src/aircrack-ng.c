@@ -974,21 +974,21 @@ static int atomic_read(read_buf *rb, int fd, int len, void *buf)
 	{
 		rb->off2 -= rb->off1;
 
-		memcpy(rb->buf2, rb->buf1 + rb->off1, rb->off2);
-		memcpy(rb->buf1, rb->buf2, rb->off2);
+		memcpy(rb->buf2, (char*) rb->buf1 + rb->off1, rb->off2);
+		memcpy(rb->buf1, (char*) rb->buf2, rb->off2);
 
 		rb->off1 = 0;
 	}
 
 	if (rb->off2 - rb->off1 >= len)
 	{
-		memcpy(buf, rb->buf1 + rb->off1, len);
+		memcpy(buf, (char*) rb->buf1 + rb->off1, len);
 		rb->off1 += len;
 		return (1);
 	}
 	else
 	{
-		n = read(fd, rb->buf1 + rb->off2, 65536 - rb->off2);
+		n = read(fd, (char*) rb->buf1 + rb->off2, 65536 - rb->off2);
 
 		if (n <= 0) return (0);
 
@@ -996,7 +996,7 @@ static int atomic_read(read_buf *rb, int fd, int len, void *buf)
 
 		if (rb->off2 - rb->off1 >= len)
 		{
-			memcpy(buf, rb->buf1 + rb->off1, len);
+			memcpy(buf, (char*) rb->buf1 + rb->off1, len);
 			rb->off1 += len;
 			return (1);
 		}

@@ -90,8 +90,8 @@ AC_LANG_CASE([C], [
         AX_APPEND_FLAG(-std=gnu99, [opt_[]_AC_LANG_ABBREV[]flags])
     ])
 
-    AX_CHECK_COMPILE_FLAG([-Wpointer-arth], [
-        AX_APPEND_FLAG(-Wpointer-arth, [opt_[]_AC_LANG_ABBREV[]flags])
+    AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [
+        AX_APPEND_FLAG(-Wpointer-arith, [opt_[]_AC_LANG_ABBREV[]flags])
     ])
 
     AX_CHECK_COMPILE_FLAG([-Wstrict-overflow=2], [
