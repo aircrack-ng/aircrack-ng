@@ -1053,9 +1053,10 @@ int main(int argc, char *argv[])
 	}
 
 	/* cleanup avl tree */
-	while (c_avl_pick(stations, (void **) &stmac, (void **) &st_cur) == 0)
+	void *key, *value;
+	while (c_avl_pick(stations, &key, &value) == 0)
 	{
-		free(st_cur);
+		free(value);
 	}
 	c_avl_destroy(stations);
 
