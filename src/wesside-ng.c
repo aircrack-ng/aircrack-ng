@@ -1462,7 +1462,7 @@ send_fragment(struct wstate *ws, struct frag_state *fs, struct prga_info *pi)
 	pcrc = (unsigned int *) (body + fragsize);
 	*pcrc = htole32(crc);
 
-	for (i = 0; i < (fragsize + 4); i++) body[i] ^= pi->pi_prga[i];
+	for (i = 0; fragsize < (INT_MAX - 4) && i < (fragsize + 4); i++) body[i] ^= pi->pi_prga[i];
 
 	seq = (unsigned short *) &wh->i_seq;
 	sn = (le16toh(*seq) & IEEE80211_SEQ_SEQ_MASK) >> IEEE80211_SEQ_SEQ_SHIFT;

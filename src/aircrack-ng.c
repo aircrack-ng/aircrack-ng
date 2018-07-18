@@ -3760,7 +3760,9 @@ get_ivs:
 
 	/* try the most likely n votes, where n is the fudge threshold */
 
-	for (wep.depth[B] = 0; wep.depth[B] < wep.fudge[B]; (wep.depth[B])++)
+	for (wep.depth[B] = 0;
+		 wep.fudge[B] > 0 && wep.fudge[B] < 256 && wep.depth[B] < wep.fudge[B];
+		 wep.depth[B]++)
 	{
 		switch (update_ivbuf())
 		{

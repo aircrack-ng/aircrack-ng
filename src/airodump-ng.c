@@ -7793,7 +7793,7 @@ int main(int argc, char *argv[])
 		/* initialize cards */
 		G.num_cards = init_cards(G.s_iface, iface, wi);
 
-		if (G.num_cards <= 0)
+		if (G.num_cards <= 0 || G.num_cards >= MAX_CARDS)
 		{
 			printf("Failed initializing wireless card(s): %s\n", G.s_iface);
 			return EXIT_FAILURE;
