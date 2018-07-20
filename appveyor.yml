@@ -110,6 +110,14 @@ install:
 build_script:
 - cmd: |
     C:\cygwin\bin\bash -e -l -c "curl -RLO https://dl.aircrack-ng.org/AirPcap_Devpack_4_1_1_1838.zip"
+- ps: |
+    $hashFromFile = Get-FileHash -Path "AirPcap_Devpack_4_1_1_1838.zip" -Algorithm SHA256
+    if ($hashFromFile.Hash -ne "86dcde46603cd1229245263499ef9cb4e43ee66cd7219605d30095562888da14") {
+      Write-Host "AirPcap failed digest check." -ForegroundColor Red
+      $hashFromFile | Format-List
+      Break
+    }
+- cmd: |
     C:\cygwin\bin\bash -e -l -c "7z -y x AirPcap_Devpack_4_1_1_1838.zip"
 - ps: |
     if ($env:TARGET -eq "cygwin") {
