@@ -166,6 +166,12 @@ case $with_static_simd in
     x86-sse2|x86-avx|x86-avx2|x86-avx512|ppc-altivec|ppc-power8|arm-neon|arm-asimd)
         SIMD_SUFFIX=_$(echo $with_static_simd | tr '[a-z]' '[A-Z]' | tr '-' '_')
         AC_SUBST([SIMD_SUFFIX])
+
+        case "$enable_static,$enable_shared" in
+            "yes,yes" | "no,yes" | "no,no" )
+                AC_MSG_ERROR([The --with-static-simd option is only valid with static builds.])
+                ;;
+        esac
         ;;
     *)
         AC_MSG_ERROR([Invalid SIMD given to --with-static-simd option.])
