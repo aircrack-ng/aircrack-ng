@@ -61,7 +61,7 @@
 #define ENC_GCMP 0x4000
 
 #define ENC_FIELD                                                              \
-	(ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP40 | ENC_WEP104)
+	(ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP40 | ENC_WEP104 | ENC_GCMP)
 
 #define AUTH_OPN 0x0200
 #define AUTH_PSK 0x0400

@@ -33,6 +33,7 @@
  *  files in the program, then also delete it here.
  */
 
+#define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -6056,7 +6057,7 @@ static void sighandler(int signum)
 			return;
 		}
 
-		if (card < 0 || card >= ArrayCount(G.frequency))
+		if (card < 0 || (size_t) card >= ArrayCount(G.frequency))
 		{
 			// invalid received data
 			fprintf(stderr,
@@ -7793,7 +7794,7 @@ int main(int argc, char *argv[])
 		/* initialize cards */
 		G.num_cards = init_cards(G.s_iface, iface, wi);
 
-		if (G.num_cards <= 0)
+		if (G.num_cards <= 0 || G.num_cards >= MAX_CARDS)
 		{
 			printf("Failed initializing wireless card(s): %s\n", G.s_iface);
 			return EXIT_FAILURE;

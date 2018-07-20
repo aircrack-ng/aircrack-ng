@@ -39,6 +39,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <limits.h>
 #include <getopt.h>
 #include "version.h"
 #include "pcap.h"
@@ -372,7 +373,7 @@ static int capture_ask_packet(int *caplen)
 							   : h80211[i - 15 + j]);
 			}
 
-			if (i > 0 && ((i + 1) & 15) == 0)
+			if (i > 0 && i < INT_MAX && ((i + 1) & 15) == 0)
 			{
 				printf(" ");
 

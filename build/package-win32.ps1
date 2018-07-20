@@ -138,7 +138,6 @@ mkdir "$env:DIST/bin/32bit"
 mkdir "$env:DIST/bin/64bit"
 
 cp -pr "gui/GUI/Aircrack-ng/bin/Release/Aircrack-ng GUI.exe" $env:DIST/bin
-cp -pr "gui/GUI/Aircrack-ng/bin/Release/Aircrack-ng GUI.exe.config" $env:DIST/bin
 
 find 32bit -path "*/.libs" -print0 | xargs -0I [] -n 1 find [] \( -name "*.exe" -o -name "*.dll" \) -exec cp -p {} "$env:DIST/bin/32bit" ';'
 find 64bit -path "*/.libs" -print0 | xargs -0I [] -n 1 find [] \( -name "*.exe" -o -name "*.dll" \) -exec cp -p {} "$env:DIST/bin/64bit" ';'
