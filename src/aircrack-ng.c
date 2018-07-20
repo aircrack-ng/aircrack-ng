@@ -125,6 +125,7 @@ static struct options opt;
 static struct WEP_data wep __attribute__((aligned(64)));
 unsigned char *buffer = NULL; /* from read_thread */
 c_avl_tree_t *access_points = NULL;
+c_avl_tree_t *targets = NULL;
 pthread_mutex_t mx_apl; /* lock write access to ap LL   */
 pthread_mutex_t mx_eof; /* lock write access to nb_eof  */
 pthread_mutex_t mx_ivb; /* lock access to ivbuf array   */
@@ -370,6 +371,7 @@ static void ac_aplist_free(void)
 		}
 
 	}
+    c_avl_iterator_destroy(it);
 
 	while (c_avl_pick(access_points, &key, &ap_cur) == 0)
 	{
@@ -1223,7 +1225,7 @@ static void read_thread(void *arg)
 				pkh.caplen -= n;
 			}
 
-			if (pfh.linktype == LINKTYPE_RADIOTAP_HDR)
+            else if (pfh.linktype == LINKTYPE_RADIOTAP_HDR)
 			{
 				/* remove the radiotap header */
 
@@ -1235,7 +1237,7 @@ static void read_thread(void *arg)
 				pkh.caplen -= n;
 			}
 
-			if (pfh.linktype == LINKTYPE_PPI_HDR)
+            else if (pfh.linktype == LINKTYPE_PPI_HDR)
 			{
 				/* Remove the PPI header */
 
@@ -1252,7 +1254,11 @@ static void read_thread(void *arg)
 
 				h80211 += n;
 				pkh.caplen -= n;
-			}
+			} else
+            {
+                fprintf(stderr, "unsupported linktype %d\n", pfh);
+                continue;
+            }
 		}
 
 		/* prevent concurrent access on the linked list */
@@ -4801,13 +4807,6 @@ static int do_make_wkp(struct AP_info *ap_cur)
 {
 	size_t elt_written;
 
-	while (ap_cur != NULL)
-	{
-		if (ap_cur->target && ap_cur->wpa.state == 7) break;
-		//ap_cur = ap_cur->next;
-	}
-    // TODO search fo targets
-
 	printf("\n\nBuilding WKP file...\n\n");
 	if (display_wpa_hash_information(ap_cur) == 0)
 	{
@@ -4936,13 +4935,6 @@ static int do_make_hccap(struct AP_info *ap_cur)
 {
 	size_t elt_written;
 
-	while (ap_cur != NULL)
-	{
-		if (ap_cur->target && ap_cur->wpa.state == 7) break;
-		//ap_cur = ap_cur->next;
-	}
-    // TODO search for targets
-
 	printf("\n\nBuilding Hashcat file...\n\n");
 	if (display_wpa_hash_information(ap_cur) == 0)
 	{
@@ -5038,13 +5030,6 @@ static hccapx_t ap_to_hccapx(struct AP_info *ap)
 static int do_make_hccapx(struct AP_info *ap_cur)
 {
 	size_t elt_written;
-
-	while (ap_cur != NULL)
-	{
-		if (ap_cur->target && ap_cur->wpa.state == 7) break;
-		//ap_cur = ap_cur->next;
-	}
-    // TODO search for targets
 
 	printf("\n\nBuilding Hashcat (3.60+) file...\n\n");
 	if (display_wpa_hash_information(ap_cur) == 0)
@@ -5631,6 +5616,7 @@ int main(int argc, char *argv[])
 	int restore_session = 0;
 	int nbarg = argc;
     access_points = c_avl_create(station_compare);
+    targets = c_avl_create(station_compare);
 
 #ifdef HAVE_SQLITE
 	int rc;
@@ -6272,6 +6258,7 @@ int main(int argc, char *argv[])
 		ap_cur->target = 1;
 		ap_cur->wpa.state = 7;
 		strcpy(ap_cur->essid, "sorbo");
+        c_avl_insert(targets, &ap_cur->bssid, &ap_cur);
 
 		goto __start;
 	}
@@ -6475,8 +6462,9 @@ int main(int argc, char *argv[])
 			i = 1;
 
 			//ap_cur = ap_1st;
-
-			while (ap_cur != NULL)
+            void* key;
+            c_avl_iterator_t *it = c_avl_get_iterator(access_points);
+			while (c_avl_iterator_next(it, &key, &ap_cur) == 0)
 			{
 				memset(essid, 0, sizeof(essid));
 				memcpy(essid, ap_cur->essid, 32);
@@ -6534,7 +6522,6 @@ int main(int argc, char *argv[])
 			{
 				do
 				{
-                    // TODO
 					printf("Index number of target network ? ");
 					fflush(stdout);
 					ret1 = 0;
@@ -6543,18 +6530,23 @@ int main(int argc, char *argv[])
 					if ((z = atoi(buf)) < 1) continue;
 
 					i = 1;
-					//ap_cur = ap_1st;
-					while (ap_cur != NULL && i < z)
+                    c_avl_iterator_t *it = c_avl_get_iterator(access_points);
+                    while (c_avl_iterator_next(it, &key, &ap_cur) == 0 && i < z)
 					{
 						i++;
-						//ap_cur = ap_cur->next;
 					}
+                    if(i == z) {
+                        ap_cur->target = 1;
+                        c_avl_insert(targets, &ap_cur->bssid, &ap_cur);
+                    }
+
 				} while (z < 0 || ap_cur == NULL);
 			}
 			else
 			{
 				printf("Choosing first network as target.\n");
 				//ap_cur = ap_1st;
+                // TODO
 			}
 
 			printf("\n");
@@ -6629,28 +6621,24 @@ int main(int argc, char *argv[])
 	// 	#endif
 
 	/* mark the targeted access point(s) */
-/*
-	ap_cur = ap_1st;
+    void *key;
+    c_avl_iterator_t *it = c_avl_get_iterator(access_points);
+    while(c_avl_iterator_next(it, &key, &ap_cur) == 0)
+    {
+        if (memcmp(opt.maddr, BROADCAST, 6) == 0
+                || (opt.bssid_set && !memcmp(opt.bssid, ap_cur->bssid, 6))
+                || (opt.essid_set && !strcmp(opt.essid, ap_cur->essid)))
+        {
+            ap_cur->target = 1;
+        }
 
-	while (ap_cur != NULL)
-	{
-		if (memcmp(opt.maddr, BROADCAST, 6) == 0
-			|| (opt.bssid_set && !memcmp(opt.bssid, ap_cur->bssid, 6))
-			|| (opt.essid_set && !strcmp(opt.essid, ap_cur->essid)))
-			ap_cur->target = 1;
+        if(ap_cur->target)
+        {
+            c_avl_insert(targets, &ap_cur->bssid, &ap_cur);
+        }
+    }
+    c_avl_iterator_destroy(it);
 
-		ap_cur = ap_cur->next;
-	}
-
-	ap_cur = ap_1st;
-
-	while (ap_cur != NULL)
-	{
-		if (ap_cur->target) break;
-
-		ap_cur = ap_cur->next;
-	}
-    */
     //TODO ESSID
     int not_found = c_avl_get(access_points, opt.bssid, &ap_cur);
 
