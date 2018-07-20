@@ -157,6 +157,21 @@ then
     ])
 fi
 
+AC_ARG_WITH(static-simd,
+    [AS_HELP_STRING([--with-static-simd[[=x86-sse2|x86-avx|x86-avx2|x86-avx512|ppc-altivec|ppc-power8|arm-neon|arm-asimd]], [use specific SIMD implementation at static link, [default=none]]])])
+
+case $with_static_simd in
+    no | "")
+        ;;
+    x86-sse2|x86-avx|x86-avx2|x86-avx512|ppc-altivec|ppc-power8|arm-neon|arm-asimd)
+        SIMD_SUFFIX=_$(echo $with_static_simd | tr '[a-z]' '[A-Z]' | tr '-' '_')
+        AC_SUBST([SIMD_SUFFIX])
+        ;;
+    *)
+        AC_MSG_ERROR([Invalid SIMD given to --with-static-simd option.])
+        ;;
+esac
+
 AC_ARG_WITH(avx512,
     [AS_HELP_STRING([--with-avx512[[=yes|no]]], [use AVX-512F instruction set, [default=no]])])
 
