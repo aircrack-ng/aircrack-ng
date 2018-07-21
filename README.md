@@ -2,12 +2,12 @@
 
 [![Linux/Mac Build Status](https://travis-ci.org/aircrack-ng/aircrack-ng.svg?branch=master)](https://travis-ci.org/aircrack-ng/aircrack-ng)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/aircrack-ng/aircrack-ng?branch=master&svg=true)](https://ci.appveyor.com/project/aircrack-ng/aircrack-ng)
-[![Intel Compiler Build Status](https://buildbot.benden.us/badges/aircrack-ng.png?left_text=Intel%20Compiler%20Build)](https://buildbot.benden.us/)
-[![Alpine Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-alpine.png?left_text=Alpine%20Linux%20Build)](https://buildbot.benden.us/)
-[![Kali Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-kali.png?left_text=Kali%20Linux%20Build)](https://buildbot.benden.us/)
-[![Armel Kali Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-armel.png?left_text=Armel%20Kali%20Linux%20Build)](https://buildbot.benden.us/)
-[![Armhf Kali Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-armhf.png?left_text=Armhf%20Kali%20Linux%20Build)](https://buildbot.benden.us/)
-[![FreeBSD Build Status](https://buildbot.benden.us/badges/aircrack-ng-bsd.png?left_text=FreeBSD%20Build)](https://buildbot.benden.us/)
+[![Intel Compiler Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng.png?left_text=Intel%20Compiler%20Build)](https://buildbot.aircrack-ng.org/)
+[![Alpine Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-alpine.png?left_text=Alpine%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
+[![Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-kali.png?left_text=Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
+[![Armel Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-armel.png?left_text=Armel%20Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
+[![Armhf Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-armhf.png?left_text=Armhf%20Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
+[![FreeBSD Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-bsd.png?left_text=FreeBSD%20Build)](https://buildbot.aircrack-ng.org/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/aircrack-ng/badge.svg)](https://scan.coverity.com/projects/aircrack-ng)
 [![Coveralls Coverage Status](https://coveralls.io/repos/github/aircrack-ng/aircrack-ng/badge.svg?branch=master)](https://coveralls.io/github/aircrack-ng/aircrack-ng?branch=master)
 
