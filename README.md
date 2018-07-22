@@ -2,12 +2,12 @@
 
 [![Linux/Mac Build Status](https://travis-ci.org/aircrack-ng/aircrack-ng.svg?branch=master)](https://travis-ci.org/aircrack-ng/aircrack-ng)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/aircrack-ng/aircrack-ng?branch=master&svg=true)](https://ci.appveyor.com/project/aircrack-ng/aircrack-ng)
-[![Intel Compiler Build Status](https://buildbot.benden.us/badges/aircrack-ng.png?left_text=Intel%20Compiler%20Build)](https://buildbot.benden.us/)
-[![Alpine Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-alpine.png?left_text=Alpine%20Linux%20Build)](https://buildbot.benden.us/)
-[![Kali Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-kali.png?left_text=Kali%20Linux%20Build)](https://buildbot.benden.us/)
-[![Armel Kali Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-armel.png?left_text=Armel%20Kali%20Linux%20Build)](https://buildbot.benden.us/)
-[![Armhf Kali Linux Build Status](https://buildbot.benden.us/badges/aircrack-ng-armhf.png?left_text=Armhf%20Kali%20Linux%20Build)](https://buildbot.benden.us/)
-[![FreeBSD Build Status](https://buildbot.benden.us/badges/aircrack-ng-bsd.png?left_text=FreeBSD%20Build)](https://buildbot.benden.us/)
+[![Intel Compiler Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng.png?left_text=Intel%20Compiler%20Build)](https://buildbot.aircrack-ng.org/)
+[![Alpine Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-alpine.png?left_text=Alpine%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
+[![Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-kali.png?left_text=Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
+[![Armel Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-armel.png?left_text=Armel%20Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
+[![Armhf Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-armhf.png?left_text=Armhf%20Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
+[![FreeBSD Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-bsd.png?left_text=FreeBSD%20Build)](https://buildbot.aircrack-ng.org/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/aircrack-ng/badge.svg)](https://scan.coverity.com/projects/aircrack-ng)
 [![Coveralls Coverage Status](https://coveralls.io/repos/github/aircrack-ng/aircrack-ng/badge.svg?branch=master)](https://coveralls.io/github/aircrack-ng/aircrack-ng?branch=master)
 
@@ -175,6 +175,13 @@ to your choosing:
 
 * **with-avx512**:  On x86, add support for AVX512 instructions in aircrack-ng. Only use it when
                     the current CPU supports AVX512.
+
+* **with-static-simd=<SIMD>**: Compile a single optimization in aircrack-ng binary. Useful when compiling
+                    statically and/or for space-constrained devices. Valid SIMD options: x86-sse2,
+                    x86-avx, x86-avx2, x86-avx512, ppc-altivec, ppc-power8, arm-neon, arm-asimd
+                    Must be used with --enable-static --disable-shared. When using those 2 options, the default
+                    is to compile the generic optimization in the binary. --with-static-simd merely allows
+                    to choose another one.
 
 #### Examples:
 

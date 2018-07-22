@@ -233,6 +233,9 @@ char *cpuid_featureflags(void)
 
 		if (ebx & (1 << 5)) // AVX2
 			sprintcat((char *) &flags, "AVX2", sizeof(flags));
+
+		if (ebx & (1 << 16)) // AVX512F
+			sprintcat((char *) &flags, "AVX512F", sizeof(flags));
 	}
 #elif defined(__arm__) && defined(HAS_AUXV)
 	long hwcaps = getauxval(AT_HWCAP);

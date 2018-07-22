@@ -98,6 +98,7 @@ AIRCRACK_NG_LIBNL
 AIRCRACK_NG_AIRPCAP
 AIRCRACK_NG_EXPERIMENTAL
 AIRCRACK_NG_EXT_SCRIPTS
+AIRCRACK_NG_HWLOC
 AIRCRACK_NG_PCAP
 AIRCRACK_NG_PCRE
 AIRCRACK_NG_RFKILL
@@ -249,6 +250,7 @@ ${PACKAGE} ${VERSION}
     Airpcap:                     ${AIRPCAP}
     Cmocka:                      ${CMOCKA_FOUND}
     DUMA:                        ${DUMA}
+    Hwloc:                       ${HAVE_HWLOC}
     Jemalloc:                    ${JEMALLOC}
     Pcap:                        ${PCAP_FOUND}
     Pcre:                        ${HAVE_PCRE}

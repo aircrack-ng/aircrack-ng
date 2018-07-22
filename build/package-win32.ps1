@@ -142,6 +142,10 @@ cp -pr "gui/GUI/Aircrack-ng/bin/Release/Aircrack-ng GUI.exe" $env:DIST/bin
 find 32bit -path "*/.libs" -print0 | xargs -0I [] -n 1 find [] \( -name "*.exe" -o -name "*.dll" \) -exec cp -p {} "$env:DIST/bin/32bit" ';'
 find 64bit -path "*/.libs" -print0 | xargs -0I [] -n 1 find [] \( -name "*.exe" -o -name "*.dll" \) -exec cp -p {} "$env:DIST/bin/64bit" ';'
 
+# AirPcap DLLs
+cp -p "Airpcap_Devpack/bin/x86/airpcap.dll" "$env:DIST/bin/32bit"
+cp -p "Airpcap_Devpack/bin/x64/airpcap.dll" "$env:DIST/bin/64bit"
+
 # Cygwin License
 cp /usr/share/doc/Cygwin/CYGWIN_LICENSE "$env:DIST/LICENSE.Cygwin"
 
