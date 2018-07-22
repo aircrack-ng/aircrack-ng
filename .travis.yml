@@ -26,6 +26,7 @@ addons:
       - lcov
       - libcmocka0
       - libcmocka-dev
+      - libhwloc-dev
 
 compiler:
   - gcc
