@@ -76,8 +76,14 @@ void ac_cpuset_distribute(ac_cpuset_t *cpuset, size_t count)
 	if (!cpuset->hwloc_cpusets) return;
 
 	hwloc_obj_t root = hwloc_get_root_obj(cpuset->topology);
+
+#if defined(HWLOC_API_VERSION) && HWLOC_API_VERSION > 0x00010800
 	hwloc_distrib(
 		cpuset->topology, &root, 1u, cpuset->hwloc_cpusets, count, INT_MAX, 0u);
+#else
+	hwloc_distributev(
+		cpuset->topology, &root, 1u, cpuset->hwloc_cpusets, count, INT_MAX);
+#endif
 }
 
 void ac_cpuset_bind_thread_at(ac_cpuset_t *cpuset, pthread_t tid, size_t idx)
