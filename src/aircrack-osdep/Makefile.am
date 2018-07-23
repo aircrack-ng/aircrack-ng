@@ -55,7 +55,7 @@ SRCS_FBSD	= $(SRCS) freebsd.c freebsd_tap.c common.c
 SRCS_LINUX	= $(SRCS) linux.c linux_tap.c common.c
 SRCS_DUMMY	= $(SRCS) dummy.c dummy_tap.c common.c
 SRCS_CYGWIN	= $(SRCS) cygwin.c cygwin_tap.c common.c
-SRCS_DARWIN = $(SRCS) darwin.c darwin_tap.c common.c
+SRCS_DARWIN     = $(SRCS) darwin.m darwin_tap.c common.c
 
 LIBRADIOTAP_LIBS = radiotap/libradiotap.la
 
@@ -74,7 +74,11 @@ endif
 endif
 
 if DARWIN
+FRAMEWORKS = -framework Foundation -framework CoreWLAN
 libaircrack_osdep_la_SOURCES = $(SRCS_DARWIN)
+libaircrack_osdep_la_LIBADD = $(LIBRADIOTAP_LIBS) -lpcap
+else
+FRAMEWORKS = 
 endif
 
 if DUMMY
@@ -106,10 +110,11 @@ endif
 endif
 
 lib_LTLIBRARIES = libaircrack-osdep.la
-libaircrack_osdep_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_osdep_la_LDFLAGS = $(FRAMEWORKS) -release 1.3.0 -no-undefined
+
 
 EXTRA_DIST = openbsd.c \
-             darwin.c \
+             darwin.m \
              crctable_osdep.h \
              common.c \
              darwin_tap.c \
