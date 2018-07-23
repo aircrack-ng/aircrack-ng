@@ -19,20 +19,9 @@
   *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
   */
 
-#include <errno.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <sys/socket.h>
 #include <net/if.h>
-#include <net/if_dl.h>
-#include <net/bpf.h>
-#include <sys/ioctl.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <ifaddrs.h>
-#include <pcap.h>
+#include <pcap/pcap.h>
 #import <Foundation/Foundation.h>
 #import <CoreWLAN/CoreWLAN.h>
 #include "osdep.h"
@@ -41,7 +30,8 @@
 
 struct priv_darwin
 {
-	struct pcap_t *pp;
+	int fd;
+	pcap_t *pp;
 	CWInterface *interface;
 	NSSet *channels;
 };
@@ -52,11 +42,12 @@ static void do_free(struct wif *wi)
 	{
 		if (wi->wi_priv)
 		{
-			struct priv_darwin *pn = (struct priv_darwin *) wi->wi_priv;
+			struct priv_darwin *pn = wi_priv(wi);
 			// XXX: Do we need to free interface ?
 			//if (pn->interface) {
 			//	[pn->interface release];
 			//}
+			if (pn->pp) pcap_close(pn->pp);
 			free(wi->wi_priv);
 			wi->wi_priv = 0;
 		}
@@ -149,6 +140,7 @@ static int do_darwin_open(struct wif *wi, char *iface)
 
 	CWInterface *found = NULL;
 
+	// Find interface
 	for (i = 0; i < [cw_interfaces count]; ++i)
 	{
 		if (strcmp([[cw_interfaces[i] interfaceName] UTF8String], iface) == 0)
@@ -158,9 +150,13 @@ static int do_darwin_open(struct wif *wi, char *iface)
 		}
 	}
 
+	// Init struct
+	struct priv_darwin *pn = wi_priv(wi);
+	pn->fd = -1;
+	pn->pp = NULL;
+
 	if (found)
 	{
-		struct priv_darwin *pn = wi_priv(wi);
 		pn->interface = found;
 
 		// Disassociate
@@ -169,10 +165,15 @@ static int do_darwin_open(struct wif *wi, char *iface)
 		// Get channel list
 		pn->channels = [found supportedWLANChannels];
 
-		return 0;
+		// Open it
+		char pcap_errstr[PCAP_ERRBUF_SIZE] = "";
+		pn->pp = pcap_create(iface, pcap_errstr);
+
+		// Get file descriptor
+		pn->fd = pcap_get_selectable_fd(pn->pp);
 	}
 
-	return -1;
+	return pn->fd;
 }
 
 static struct wif *darwin_open(char *iface)
@@ -180,6 +181,8 @@ static struct wif *darwin_open(char *iface)
 	struct wif *wi;
 	struct priv_darwin *pn;
 	int fd;
+
+	if (iface == NULL || *iface == 0 || strlen(iface) >= IFNAMSIZ) return NULL;
 
 	/* setup wi struct */
 	wi = wi_alloc(sizeof(*pn));
