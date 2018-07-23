@@ -335,6 +335,7 @@ static struct AP_info *get_first_target()
 
 static void ac_aplist_free(void)
 {
+	pthread_mutex_lock(&mx_apl);
 	struct AP_info *ap_cur = NULL;
 	struct ST_info *st_tmp = NULL;
 	void *key;
@@ -389,6 +390,7 @@ static void ac_aplist_free(void)
 	}
 	// Huh?
 	//c_avl_destroy(access_points);
+	pthread_mutex_unlock(&mx_apl);
 }
 
 static void clean_exit(int ret)
