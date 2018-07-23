@@ -333,59 +333,58 @@ static struct AP_info *get_first_target(void)
 	return target;
 }
 
+static void destroy_ap(struct AP_info *ap)
+{
+	struct ST_info *st_tmp = NULL;
+	if (ap->ivbuf != NULL)
+	{
+		free(ap->ivbuf);
+		ap->ivbuf = NULL;
+	}
+
+	while (ap->st_1st != NULL)
+	{
+		st_tmp = ap->st_1st;
+		ap->st_1st = ap->st_1st->next;
+		free(st_tmp);
+		st_tmp = NULL;
+	}
+
+	uniqueiv_wipe(ap->uiv_root);
+	ap->uiv_root = NULL;
+
+	if (ap->ptw_clean != NULL)
+	{
+		if (ap->ptw_clean->allsessions != NULL)
+		{
+			free(ap->ptw_clean->allsessions);
+			ap->ptw_clean->allsessions = NULL;
+		}
+		free(ap->ptw_clean);
+		ap->ptw_clean = NULL;
+	}
+
+	if (ap->ptw_vague != NULL)
+	{
+		if (ap->ptw_vague->allsessions != NULL)
+		{
+			free(ap->ptw_vague->allsessions);
+			ap->ptw_vague->allsessions = NULL;
+		}
+		free(ap->ptw_vague);
+		ap->ptw_vague = NULL;
+	}
+}
+
 static void ac_aplist_free(void)
 {
 	pthread_mutex_lock(&mx_apl);
 	struct AP_info *ap_cur = NULL;
-	struct ST_info *st_tmp = NULL;
 	void *key;
-	c_avl_iterator_t *it = c_avl_get_iterator(access_points);
-
-	while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0)
-	{
-		if (ap_cur->ivbuf != NULL)
-		{
-			free(ap_cur->ivbuf);
-			ap_cur->ivbuf = NULL;
-		}
-
-		while (ap_cur->st_1st != NULL)
-		{
-			st_tmp = ap_cur->st_1st;
-			ap_cur->st_1st = ap_cur->st_1st->next;
-			free(st_tmp);
-			st_tmp = NULL;
-		}
-
-		uniqueiv_wipe(ap_cur->uiv_root);
-		ap_cur->uiv_root = NULL;
-
-		if (ap_cur->ptw_clean != NULL)
-		{
-			if (ap_cur->ptw_clean->allsessions != NULL)
-			{
-				free(ap_cur->ptw_clean->allsessions);
-				ap_cur->ptw_clean->allsessions = NULL;
-			}
-			free(ap_cur->ptw_clean);
-			ap_cur->ptw_clean = NULL;
-		}
-
-		if (ap_cur->ptw_vague != NULL)
-		{
-			if (ap_cur->ptw_vague->allsessions != NULL)
-			{
-				free(ap_cur->ptw_vague->allsessions);
-				ap_cur->ptw_vague->allsessions = NULL;
-			}
-			free(ap_cur->ptw_vague);
-			ap_cur->ptw_vague = NULL;
-		}
-	}
-	c_avl_iterator_destroy(it);
 
 	while (c_avl_pick(access_points, &key, (void **) &ap_cur) == 0)
 	{
+		destroy_ap(ap_cur);
 		free(ap_cur);
 	}
 	pthread_mutex_unlock(&mx_apl);
@@ -2608,7 +2607,7 @@ static void check_thread(void *arg)
 		if (st_cur == NULL)
 		{
 			pthread_mutex_unlock(&mx_apl);
-			ac_aplist_free();
+			destroy_ap(ap_cur);
 			ap_cur = NULL;
 			continue;
 		}
@@ -6558,10 +6557,18 @@ int main(int argc, char *argv[])
 				} while (z < 0 || ap_cur == NULL);
 				c_avl_iterator_destroy(it);
 			}
-			else
+			else if (c_avl_size(access_points) == 1)
 			{
 				printf("Choosing first network as target.\n");
-				ap_cur = get_first_target();
+				c_avl_iterator_t *it = c_avl_get_iterator(access_points);
+				c_avl_iterator_next(it, &key, (void **) &ap_cur);
+				c_avl_iterator_destroy(it);
+				ap_cur->target = 1;
+				c_avl_insert(targets, ap_cur->bssid, ap_cur);
+			}
+			else
+			{
+				// no access points
 			}
 
 			printf("\n");
