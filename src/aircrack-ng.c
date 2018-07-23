@@ -328,7 +328,7 @@ static struct AP_info *get_first_target()
 	struct AP_info *target = NULL;
 	void *key;
 	c_avl_iterator_t *it = c_avl_get_iterator(targets);
-	c_avl_iterator_next(it, &key, &target);
+	c_avl_iterator_next(it, &key, (void **) &target);
 	c_avl_iterator_destroy(it);
 	return target;
 }
@@ -340,7 +340,7 @@ static void ac_aplist_free(void)
 	void *key;
 	c_avl_iterator_t *it = c_avl_get_iterator(access_points);
 
-	while (c_avl_iterator_next(it, &key, &ap_cur) == 0)
+	while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0)
 	{
 		if (ap_cur->ivbuf != NULL)
 		{
@@ -383,7 +383,7 @@ static void ac_aplist_free(void)
 	}
 	c_avl_iterator_destroy(it);
 
-	while (c_avl_pick(access_points, &key, &ap_cur) == 0)
+	while (c_avl_pick(access_points, &key, (void **) &ap_cur) == 0)
 	{
 		//free(ap_cur);
 	}
@@ -1355,7 +1355,7 @@ static void read_thread(void *arg)
 
 		/* search for the station */
 
-		int not_found = c_avl_get(access_points, bssid, &ap_cur);
+		int not_found = c_avl_get(access_points, bssid, (void **) &ap_cur);
 
 		/* if it's a new access point, add it */
 
@@ -2286,7 +2286,7 @@ static void check_thread(void *arg)
 
 		/* search for the ap */
 
-		int not_found = c_avl_get(access_points, bssid, &ap_cur);
+		int not_found = c_avl_get(access_points, bssid, (void **) &ap_cur);
 
 		/* if it's a new access point, add it */
 		if (not_found)
@@ -3543,7 +3543,7 @@ static int update_ivbuf(void)
 	//ap_cur = ap_1st;
 	c_avl_iterator_t *it = c_avl_get_iterator(access_points);
 
-	while (c_avl_iterator_next(it, &key, &ap_cur) == 0)
+	while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0)
 	{
 		if (ap_cur->crypt == 2 && ap_cur->target)
 		{
@@ -3572,7 +3572,7 @@ static int update_ivbuf(void)
 		wep.nb_ivs = 0;
 
 		it = c_avl_get_iterator(access_points);
-		while (c_avl_iterator_next(it, &key, &ap_cur) == 0)
+		while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0)
 		{
 			if (ap_cur->crypt == 2 && ap_cur->target)
 			{
@@ -6434,8 +6434,7 @@ int main(int argc, char *argv[])
 		if (cracking_session && restore_session)
 		{
 			// If cracking session present (and it is a restore), auto-load it
-			void *key;
-			int not_found = c_avl_get(cracking_session->bssid, &key, &ap_cur);
+			int not_found = c_avl_get(access_points, cracking_session->bssid, (void **) &ap_cur);
 
 			if (not_found)
 			{
@@ -6477,7 +6476,7 @@ int main(int argc, char *argv[])
 
 			void *key;
 			c_avl_iterator_t *it = c_avl_get_iterator(access_points);
-			while (c_avl_iterator_next(it, &key, &ap_cur) == 0)
+			while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0)
 			{
 				memset(essid, 0, sizeof(essid));
 				memcpy(essid, ap_cur->essid, 32);
@@ -6544,7 +6543,7 @@ int main(int argc, char *argv[])
 
 					i = 1;
 					c_avl_iterator_t *it = c_avl_get_iterator(access_points);
-					while (c_avl_iterator_next(it, &key, &ap_cur) == 0 && i < z)
+					while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0 && i < z)
 					{
 						i++;
 					}
@@ -6637,7 +6636,7 @@ int main(int argc, char *argv[])
 	/* mark the targeted access point(s) */
 	void *key;
 	c_avl_iterator_t *it = c_avl_get_iterator(access_points);
-	while (c_avl_iterator_next(it, &key, &ap_cur) == 0)
+	while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0)
 	{
 		if (memcmp(opt.maddr, BROADCAST, 6) == 0
 			|| (opt.bssid_set && !memcmp(opt.bssid, ap_cur->bssid, 6))
