@@ -386,10 +386,8 @@ static void ac_aplist_free(void)
 
 	while (c_avl_pick(access_points, &key, (void **) &ap_cur) == 0)
 	{
-		//free(ap_cur);
+		free(ap_cur);
 	}
-	// Huh?
-	//c_avl_destroy(access_points);
 	pthread_mutex_unlock(&mx_apl);
 }
 
@@ -7132,6 +7130,8 @@ exit_main:
 		ac_cpuset_destroy(cpuset);
 		ac_cpuset_free(cpuset);
 	}
+	c_avl_destroy(access_points);
+	c_avl_destroy(targets);
 
 	ac_crypto_engine_loader_unload();
 
