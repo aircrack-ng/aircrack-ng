@@ -6434,7 +6434,8 @@ int main(int argc, char *argv[])
 		if (cracking_session && restore_session)
 		{
 			// If cracking session present (and it is a restore), auto-load it
-			int not_found = c_avl_get(access_points, cracking_session->bssid, (void **) &ap_cur);
+			int not_found = c_avl_get(
+				access_points, cracking_session->bssid, (void **) &ap_cur);
 
 			if (not_found)
 			{
@@ -6543,7 +6544,8 @@ int main(int argc, char *argv[])
 
 					i = 1;
 					c_avl_iterator_t *it = c_avl_get_iterator(access_points);
-					while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0 && i < z)
+					while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0
+						   && i < z)
 					{
 						i++;
 					}
@@ -6647,7 +6649,7 @@ int main(int argc, char *argv[])
 
 		if (ap_cur->target)
 		{
-            c_avl_insert(targets, ap_cur->bssid, ap_cur);
+			c_avl_insert(targets, ap_cur->bssid, ap_cur);
 		}
 	}
 	c_avl_iterator_destroy(it);
