@@ -323,7 +323,7 @@ static int load_hccapx_file(int fd)
 	return nb_pkt;
 }
 
-static struct AP_info *get_first_target()
+static struct AP_info *get_first_target(void)
 {
 	struct AP_info *target = NULL;
 	void *key;
