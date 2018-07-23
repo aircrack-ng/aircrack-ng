@@ -38,9 +38,17 @@ dnl If you delete this exception statement from all source files in the
 dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_HWLOC], [
-PKG_CHECK_MODULES(HWLOC, hwloc, HAVE_HWLOC=yes, HAVE_HWLOC=no)
-AS_IF([test "x$HAVE_HWLOC" = "xyes"], [
-    AC_DEFINE([HAVE_HWLOC], [1], [Define if you have hwloc library.])
+AC_ARG_ENABLE([hwloc],[AC_HELP_STRING([--enable-hwloc], [include hwloc library, [default=yes]])])
+
+HAVE_HWLOC=no
+
+AS_IF([test "x$enable_hwloc" != "xno"], [
+	dnl Do the stuff needed for enabling the feature
+	PKG_CHECK_MODULES(HWLOC, hwloc, HAVE_HWLOC=yes, HAVE_HWLOC=no)
+
+	AS_IF([test "x$HAVE_HWLOC" = "xyes"], [
+		AC_DEFINE([HAVE_HWLOC], [1], [Define if you have hwloc library.])
+	])
 ])
 
 AM_CONDITIONAL([HAVE_HWLOC], [test "$HAVE_HWLOC" = yes])

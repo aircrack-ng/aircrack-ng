@@ -62,7 +62,14 @@ endif
 endif
 endif
 
-libaircrack_util_la_SOURCES = common.c console.c crypto_engine_loader.c mcs_index_rates.c simd_cpuid.c $(TRAMPOLINE) verifyssid.c avl_tree.c
+if HAVE_HWLOC
+CPUSET = cpuset_hwloc.c
+endif
+if !HAVE_HWLOC
+CPUSET = cpuset_pthread.c
+endif
+
+libaircrack_util_la_SOURCES = common.c console.c crypto_engine_loader.c mcs_index_rates.c simd_cpuid.c $(TRAMPOLINE) verifyssid.c avl_tree.c $(CPUSET)
 libaircrack_util_la_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
                              "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
                              "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
@@ -75,12 +82,25 @@ if STATIC_BUILD
 libaircrack_util_la_CFLAGS += -DSTATIC_BUILD
 endif
 
+if HAVE_HWLOC
+libaircrack_util_la_CFLAGS += $(HWLOC_CFLAGS)
+if !CYGWIN
+libaircrack_util_la_LIBADD = $(HWLOC_LIBS)
+endif
+if CYGWIN
+libaircrack_util_la_LIBADD += $(HWLOC_LIBS)
+endif
+endif
+
 noinst_LTLIBRARIES = libaircrack-util.la
 
 EXTRA_DIST = common.c \
              common.h \
              console.c \
              console.h \
+			 cpuset.h \
+			 cpuset_hwloc.c \
+			 cpuset_pthread.c \
              crypto_engine_loader.c \
              crypto_engine_loader.h \
              mcs_index_rates.c \

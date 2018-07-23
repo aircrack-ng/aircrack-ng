@@ -71,6 +71,7 @@
 #include "aircrack-util/avl_tree.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
+#include "aircrack-util/cpuset.h"
 #include "aircrack-util/crypto_engine_loader.h"
 #include "aircrack-util/simd_cpuid.h"
 #include "aircrack-util/trampoline.h"
@@ -5630,6 +5631,7 @@ int main(int argc, char *argv[])
 	int nbarg = argc;
 	access_points = c_avl_create(station_compare);
 	targets = c_avl_create(station_compare);
+	ac_cpuset_t *cpuset = NULL;
 
 #ifdef HAVE_SQLITE
 	int rc;
@@ -6914,6 +6916,10 @@ __start:
 	crack_wpa:
 		dso_ac_crypto_engine_init(&engine);
 
+		cpuset = ac_cpuset_new();
+		ac_cpuset_init(cpuset);
+		ac_cpuset_distribute(cpuset, opt.nbcpu);
+
 		if (opt.dict == NULL && db == NULL)
 		{
 			goto nodict;
@@ -6981,13 +6987,7 @@ __start:
 					goto exit_main;
 				}
 
-#if defined(HAVE_PTHREAD_AFFINITY_NP) && HAVE_PTHREAD_AFFINITY_NP
-				// set affinity to one processor
-				cpu_set_t cpuset;
-				CPU_ZERO(&cpuset);
-				CPU_SET(i, &cpuset);
-				pthread_setaffinity_np(tid[id], sizeof(cpu_set_t), &cpuset);
-#endif
+				ac_cpuset_bind_thread_at(cpuset, tid[id], i);
 
 				id++;
 			}
@@ -7123,6 +7123,12 @@ exit_main:
 	// 	if( ret == SUCCESS ) kill( 0, SIGQUIT );
 	// 	if( ret == FAILURE ) kill( 0, SIGTERM );
 	clean_exit(ret);
+
+	if (cpuset != NULL)
+	{
+		ac_cpuset_destroy(cpuset);
+		ac_cpuset_free(cpuset);
+	}
 
 	ac_crypto_engine_loader_unload();
 
