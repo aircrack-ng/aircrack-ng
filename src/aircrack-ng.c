@@ -1269,9 +1269,13 @@ static void read_thread(void *arg)
 				h80211 += n;
 				pkh.caplen -= n;
 			}
+			else if (pfh.linktype == LINKTYPE_IEEE802_11)
+			{
+				/* nothing to do */
+			}
 			else
 			{
-				//fprintf(stderr, "unsupported linktype %d\n", pfh);
+				fprintf(stderr, "unsupported linktype %d\n", pfh.linktype);
 				continue;
 			}
 		}
@@ -1369,7 +1373,6 @@ static void read_thread(void *arg)
 			memset(ap_cur, 0, sizeof(struct AP_info));
 			memcpy(ap_cur->bssid, bssid, 6);
 			ap_cur->crypt = -1;
-			append_ap(ap_cur);
 
 			// Shortcut to set encryption:
 			// - WEP is 2 for 'crypt' and 1 for 'amode'.
@@ -1384,6 +1387,28 @@ static void read_thread(void *arg)
 					perror("PTW_newattackstate()");
 					break;
 				}
+				ap_cur->ptw_vague = PTW_newattackstate();
+				if (!ap_cur->ptw_vague)
+				{
+					perror("PTW_newattackstate()");
+					break;
+				}
+			}
+			append_ap(ap_cur);
+		}
+		else
+		{
+			if (ap_cur->ptw_clean == NULL)
+			{
+				ap_cur->ptw_clean = PTW_newattackstate();
+				if (!ap_cur->ptw_clean)
+				{
+					perror("PTW_newattackstate()");
+					break;
+				}
+			}
+			if (ap_cur->ptw_vague == NULL)
+			{
 				ap_cur->ptw_vague = PTW_newattackstate();
 				if (!ap_cur->ptw_vague)
 				{
@@ -6589,8 +6614,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		//ac_aplist_free(ap_1st);
-		//ap_1st = NULL;
+		//ac_aplist_free();
 		optind = old;
 		id = 0;
 	}
