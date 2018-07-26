@@ -80,10 +80,10 @@ void ac_cpuset_distribute(ac_cpuset_t *cpuset, size_t count)
 
 #if defined(HWLOC_API_VERSION) && HWLOC_API_VERSION > 0x00010800
 	hwloc_distrib(
-		cpuset->topology, &root, 1u, cpuset->hwloc_cpusets, count, INT_MAX, 0u);
+		cpuset->topology, &root, 1u, cpuset->hwloc_cpusets, (unsigned int) count, INT_MAX, 0u);
 #else
 	hwloc_distributev(
-		cpuset->topology, &root, 1u, cpuset->hwloc_cpusets, count, INT_MAX);
+		cpuset->topology, &root, 1u, cpuset->hwloc_cpusets, (unsigned int) count, INT_MAX);
 #endif
 }
 
