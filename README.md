@@ -50,31 +50,34 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc7
  * rfkill
  * For best performance on SMP machines, ensure the hwloc library and headers are installed.
+ * CMocka for unit testing
 
-## Resolving the basic requirements
+## Installing required and optional dependencies
 
 Below are instructions for installing the basic requirements to build
 `aircrack-ng` for a number of operating systems.
+
+**Note**: CMocka should not be a dependency when packaging Aircrack-ng.
 
 ### Linux
 
 #### Debian/Ubuntu
 
-    sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev libsqlite3-dev libpcre3-dev ethtool shtool rfkill zlib1g-dev libpcap-dev
+    sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev libcmocka-dev
 
 #### Fedora/CentOS/RHEL
 
-    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool
+    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel
 
 ### FreeBSD
 
-    pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 openssl gmake
+    pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 openssl gmake hwloc cmocka
 
 ### OSX
 
 XCode, Xcode command line tools and HomeBrew are required.
 
-    brew install autoconf automake libtool openssl shtool pkg-config
+    brew install autoconf automake libtool openssl shtool pkg-config hwloc pcre sqlite3 libpcap cmocka
 
 ### Windows
 
