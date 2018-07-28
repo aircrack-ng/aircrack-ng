@@ -78,8 +78,6 @@ FRAMEWORKS = -framework Foundation -framework CoreWLAN
 libaircrack_osdep_la_SOURCES = $(SRCS_DARWIN)
 libaircrack_osdep_la_LIBADD = $(LIBRADIOTAP_LIBS) -lpcap
 libaircrack_osdep_la_LIBTOOLFLAGS = --tag CC
-else
-FRAMEWORKS = 
 endif
 
 if DUMMY

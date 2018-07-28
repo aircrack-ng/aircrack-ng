@@ -66,13 +66,30 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 #
 # Find tooling
 #
-AC_PROG_OBJC
 AIRCRACK_NG_PROG_CC
 AIRCRACK_NG_PROG_CXX
+
+## Conditional inclusion of Obj-C compiler
+m4_cond([m4_eval(m4_index([$host_os], [darwin]) >= 0)], [1], [AC_PROG_OBJC],
+	[
+		OBJCLD=""
+		AC_SUBST([OBJCLD])
+		OBJC=
+		AC_SUBST([OBJC])
+		AM_CONDITIONAL([am__fastdepOBJC], [:])
+	])
+
 AC_PROG_INSTALL
 AM_PROG_AS
 
 LT_INIT([win32-dll disable-static shared])
+
+## Conditional inclusion of Obj-C compiler
+m4_cond([m4_eval(m4_index([$host_os], [darwin]) >= 0)], [0],
+	[
+		OBJCLD="$CC"
+		AC_SUBST([OBJCLD])
+	])
 
 #
 # Operating Systems
