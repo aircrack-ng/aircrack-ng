@@ -148,6 +148,7 @@ struct WPA_data wpa_data[MAX_THREADS];
 int wpa_wordlists_done = 0;
 static pthread_mutex_t mx_nb = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mx_wpastats = PTHREAD_MUTEX_INITIALIZER;
+ac_cpuset_t *cpuset = NULL;
 
 #define GOT_IV 0x00000001
 #define USE_IV 0x00000002
@@ -431,6 +432,13 @@ static void clean_exit(int ret)
 		}
 
 	dso_ac_crypto_engine_destroy(&engine);
+	ac_crypto_engine_loader_unload();
+
+	if (cpuset != NULL)
+	{
+		ac_cpuset_destroy(cpuset);
+		ac_cpuset_free(cpuset);
+	}
 
 	if (opt.totaldicts)
 	{
@@ -457,6 +465,16 @@ static void clean_exit(int ret)
 	}
 
 	ac_aplist_free();
+	if (access_points != NULL)
+	{
+		c_avl_destroy(access_points);
+		access_points = NULL;
+	}
+	if (targets != NULL)
+	{
+		c_avl_destroy(targets);
+		targets = NULL;
+	}
 
 	// 	attack = A_s5_1;
 	// 	printf("Please wait for evaluation...\n");
@@ -5655,7 +5673,6 @@ int main(int argc, char *argv[])
 	int nbarg = argc;
 	access_points = c_avl_create(station_compare);
 	targets = c_avl_create(station_compare);
-	ac_cpuset_t *cpuset = NULL;
 
 #ifdef HAVE_SQLITE
 	int rc;
@@ -6552,6 +6569,7 @@ int main(int argc, char *argv[])
 
 				i++;
 			}
+			c_avl_iterator_destroy(it);
 
 			printf("\n");
 
@@ -7155,16 +7173,7 @@ exit_main:
 	// 	if( ret == SUCCESS ) kill( 0, SIGQUIT );
 	// 	if( ret == FAILURE ) kill( 0, SIGTERM );
 	clean_exit(ret);
-
-	if (cpuset != NULL)
-	{
-		ac_cpuset_destroy(cpuset);
-		ac_cpuset_free(cpuset);
-	}
-	c_avl_destroy(access_points);
-	c_avl_destroy(targets);
-
-	ac_crypto_engine_loader_unload();
+	/* not reached */
 
 	_exit(ret);
 }
