@@ -76,3 +76,4 @@ coverage*.info
 /test/unit/test-calc-one-pmk
 /test/unit/test-string-has-suffix
 /test/unit/test-wpapsk
+/test/unit/test-wpapsk-cmac
