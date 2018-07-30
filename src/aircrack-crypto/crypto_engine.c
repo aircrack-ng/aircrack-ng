@@ -463,6 +463,7 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
 			     NULL);
 		}
 	}
+#if HAVE_OPENSSL_CMAC_H
 	else
 	{
 		uint8_t data[64 + 12];
@@ -476,6 +477,7 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
 
 		sha256_prf_bits((unsigned char*)(pmk[vectorIdx].v), 32, "Pairwise key expansion", data, 76, ptk, 48 * 8);
 	}
+#endif
 }
 
 EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
