@@ -94,6 +94,14 @@ void (*dso_ac_crypto_engine_calc_pmk)(
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	int nparallel,
 	int threadid) = &ac_crypto_engine_calc_pmk;
+void (*dso_ac_crypto_engine_calc_mic)(
+	ac_crypto_engine_t *engine,
+	const uint8_t eapol[256],
+	const uint32_t eapol_size,
+	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
+	const uint8_t keyver,
+	const int vectorIdx,
+	const int threadid) = &dso_ac_crypto_engine_calc_mic;
 #else
 int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine) = NULL;
 void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine) = NULL;
@@ -134,6 +142,14 @@ void (*dso_ac_crypto_engine_calc_pmk)(
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	int nparallel,
 	int threadid) = NULL;
+void (*dso_ac_crypto_engine_calc_mic)(
+	ac_crypto_engine_t *engine,
+	const uint8_t eapol[256],
+	const uint32_t eapol_size,
+	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
+	const uint8_t keyver,
+	const int vectorIdx,
+	const int threadid) = NULL;
 #endif
 
 #if defined(CYGWIN)
@@ -399,6 +415,7 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 		{ "ac_crypto_engine_get_ptk", (void*)&dso_ac_crypto_engine_get_ptk },
 		{ "ac_crypto_engine_calc_one_pmk", (void*)&dso_ac_crypto_engine_calc_one_pmk },
 		{ "ac_crypto_engine_calc_pmk", (void*)&dso_ac_crypto_engine_calc_pmk },
+		{ "ac_crypto_engine_calc_mic", (void*)&dso_ac_crypto_engine_calc_mic },
 
 		{ NULL, NULL }
 	};

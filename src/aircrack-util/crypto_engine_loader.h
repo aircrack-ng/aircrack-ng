@@ -152,6 +152,14 @@ extern void (*dso_ac_crypto_engine_calc_pmk)(
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	int nparallel,
 	int threadid);
+extern void (*dso_ac_crypto_engine_calc_mic)(
+	ac_crypto_engine_t *engine,
+	const uint8_t eapol[256],
+	const uint32_t eapol_size,
+	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
+	const uint8_t keyver,
+	const int vectorIdx,
+	const int threadid);
 
 // End symbols defined by the loader.
 
