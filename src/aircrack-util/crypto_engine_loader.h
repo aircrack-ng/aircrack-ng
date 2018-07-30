@@ -143,7 +143,15 @@ extern void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
 extern int (*dso_ac_crypto_engine_supported_features)(void);
 extern uint8_t* (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t *engine, int threadid, int index);
 extern uint8_t* (*dso_ac_crypto_engine_get_ptk)(ac_crypto_engine_t *engine, int threadid, int index);
-
+extern void (*dso_ac_crypto_engine_calc_one_pmk)(const uint8_t *key,
+												 const uint8_t *essid,
+												 uint32_t essid_length,
+												 uint8_t pmk[40]);
+extern void (*dso_ac_crypto_engine_calc_pmk)(
+	ac_crypto_engine_t *engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	int nparallel,
+	int threadid);
 
 // End symbols defined by the loader.
 
