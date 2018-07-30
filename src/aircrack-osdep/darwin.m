@@ -34,6 +34,8 @@ struct priv_darwin
 	pcap_t *pp;
 	CWInterface *interface;
 	NSSet *channels;
+
+	CWChannel * current_channel;
 };
 
 static void do_free(struct wif *wi)
@@ -64,7 +66,30 @@ static int darwin_set_channel(struct wif *wi, int chan)
 
 	struct priv_darwin *pn = wi_priv(wi);
 
-	return 0;
+	// Find largest channel
+	// TODO: Handle HT channels like on Linux
+	//       https://developer.apple.com/documentation/corewlan/cwchannelwidth
+	int highest_width = -1;
+	CWChannel * channel = NULL;
+	for (CWChannel * channelObj in pn->channels) {
+		if ([channelObj channelNumber] == chan && [channelObj channelWidth] > highest_width) {
+			highest_width = [channelObj channelWidth];
+			channel = channelObj;
+		}
+	}
+
+	// Failure to find channel
+	if (channel == NULL) {
+		return 1;
+	}
+
+	NSError * swc_err;
+	BOOL ret = [ pn->interface setWLANChannel:channel error:&swc_err];
+	if (ret) {
+		pn->current_channel = channel;
+	}
+
+	return !ret;
 }
 
 static int
@@ -88,6 +113,7 @@ static void darwin_close(struct wif *wi)
 	do_free(wi);
 }
 
+// TODO: Use mutex/spinlock/futex -> benchmark
 static int darwin_get_channel(struct wif *wi) { return 0; }
 
 static int
@@ -154,6 +180,8 @@ static int do_darwin_open(struct wif *wi, char *iface)
 	struct priv_darwin *pn = wi_priv(wi);
 	pn->fd = -1;
 	pn->pp = NULL;
+	pn->current_channel = NULL;
+	pn->channels = NULL;
 
 	if (found)
 	{
@@ -164,6 +192,9 @@ static int do_darwin_open(struct wif *wi, char *iface)
 
 		// Get channel list
 		pn->channels = [found supportedWLANChannels];
+		if (pn->channels == NULL) {
+			return -1;
+		}
 
 		// Open it
 		char pcap_errstr[PCAP_ERRBUF_SIZE] = "";
