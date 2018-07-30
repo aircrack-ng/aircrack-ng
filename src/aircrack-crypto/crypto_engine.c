@@ -43,6 +43,9 @@
 // We don't use EVP. Bite me
 #include <openssl/rc4.h>
 #include <openssl/aes.h>
+#if HAVE_OPENSSL_CMAC_H
+#include <openssl/cmac.h>
+#endif
 #endif
 
 #include "aircrack-util/trampoline.h"
@@ -50,9 +53,6 @@
 #include "crypto_engine.h"
 
 // #define XDEBUG
-
-#define HAVE_OPENSSL_CMAC_H 1
-#include <openssl/cmac.h>
 
 #if HAVE_OPENSSL_CMAC_H
 

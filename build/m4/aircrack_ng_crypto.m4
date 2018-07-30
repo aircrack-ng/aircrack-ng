@@ -79,6 +79,10 @@ else
     AC_MSG_ERROR([one of OpenSSL or Gcrypt was not found])
 fi
 
+AC_CHECK_HEADERS([openssl/cmac.h], [
+    AC_DEFINE([HAVE_OPENSSL_CMAC_H], [1], [Define if you have openssl/cmac.h header present.])
+])
+
 AC_SUBST(CRYPTO_CFLAGS)
 AC_SUBST(CRYPTO_INCLUDES)
 AC_SUBST(CRYPTO_LIBS)
