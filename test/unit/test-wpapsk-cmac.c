@@ -83,26 +83,6 @@ void perform_unit_testing(void **state)
 						"\xf3\xcf\xb5\x92\xa8\xf2\xe8\xbf\x53\xe8",
 						32);
 
-	// MIC: Ensure parallel calculator functions
-	dso_ac_crypto_engine_calc_mic(&engine,
-								  eapol,
-								  eapol_size,
-								  mic,
-								  3 /*keyver*/,
-								  0 /*vectorIdx*/,
-								  1 /*threadid*/);
-	// PTK: Ensure the PTK calculation is correct
-	assert_memory_equal(dso_ac_crypto_engine_get_ptk(&engine, 1, 0),
-	                    "\x2c\x76\xdc\x59\x2c\x3b\x67\x1b\xac\x23\x0f"
-	                    "\x6c\x9e\x38\xa0\x62\xa0\xdd\xc9\x8f\x4a\xb4"
-	                    "\xd6\x12\x90\x22\xfc\x7f\x45\xfe\x92\x64",
-	                    32);
-	// MIC: Ensure the MIC calculation is correct
-	assert_memory_equal(expected_mic,
-		mic[0],
-		16);
-
-#if 0
 	for (int i = 0; i < nparallel; ++i)
 	{
 		int rc = -1;
@@ -110,7 +90,7 @@ void perform_unit_testing(void **state)
 		memset(key, 0, sizeof(key));
 
 		strcpy((char*) (key[i].v), "bo$$password");
-		key[i].length = 8;
+		key[i].length = 12;
 
 		if ((rc = dso_ac_crypto_engine_wpa_crack(&engine,
 		                                         key,
@@ -141,13 +121,6 @@ void perform_unit_testing(void **state)
 								32);
 		}
 	}
-#else
-	(void) nparallel;
-	(void) eapol;
-	(void) eapol_size;
-	(void) mic;
-	(void) expected_mic;
-#endif
 
 	dso_ac_crypto_engine_thread_destroy(&engine, 1);
 	dso_ac_crypto_engine_destroy(&engine);

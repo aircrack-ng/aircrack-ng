@@ -185,6 +185,7 @@ ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 						  int threadid);
 
 IMPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
+                                      const uint8_t keyver,
 									  int vectorIdx,
 									  int threadid);
 
