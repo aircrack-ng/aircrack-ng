@@ -208,7 +208,7 @@ char usage[] = "\n"
 			   "\n"
 			   "  Common options:\n"
 			   "\n"
-			   "      -a <amode> : force attack mode (1/WEP, 2/WPA-PSK)\n"
+			   "      -a <amode> : force attack mode (1/WEP, 2/WPA-PSK, 3/802.11W)\n"
 			   "      -e <essid> : target selection: network identifier\n"
 			   "      -b <bssid> : target selection: access point's MAC\n"
 			   "      -p <nbcpu> : # of CPU to use  (default: all CPUs)\n"
@@ -5147,7 +5147,6 @@ static int do_wpa_crack(void)
 
 	i = 0;
 	res = 0;
-	opt.amode = 2;
 	num_cpus = opt.nbcpu;
 
 	if (!opt.is_quiet && !_speed_test)
@@ -5939,9 +5938,12 @@ int main(int argc, char *argv[])
 				else if (strcasecmp(optarg, "wpa") == 0)
 					opt.amode = 2;
 
-				if (ret1 != 1 || (opt.amode != 1 && opt.amode != 2))
+				else if (strcasecmp(optarg, "80211w") == 0)
+					opt.amode = 3;
+
+				if (ret1 != 1 || (opt.amode != 1 && opt.amode != 2 && opt.amode != 3))
 				{
-					printf("Invalid attack mode. [1,2] or [wep,wpa]\n");
+					printf("Invalid attack mode. [1,2,3] or [wep,wpa,80211w]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (FAILURE);
 				}
@@ -6377,7 +6379,7 @@ int main(int argc, char *argv[])
 		clean_exit(ret);
 	}
 
-	if (opt.amode == 2 && opt.dict == NULL)
+	if (opt.amode >= 2 && opt.dict == NULL)
 	{
 	nodict:
 		if (opt.wkp == NULL && opt.hccap == NULL && opt.hccapx == NULL)
@@ -6785,7 +6787,7 @@ __start:
 
 	if (opt.amode == 1) goto crack_wep;
 
-	if (opt.amode == 2) goto crack_wpa;
+	if (opt.amode >= 2) goto crack_wpa;
 
 	if (ap_cur->crypt == 2)
 	{
@@ -6968,7 +6970,7 @@ __start:
 		}
 	}
 
-	if (ap_cur->crypt == 3)
+	if (ap_cur->crypt >= 3)
 	{
 	crack_wpa:
 		dso_ac_crypto_engine_init(&engine);
