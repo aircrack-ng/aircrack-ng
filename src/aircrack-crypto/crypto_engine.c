@@ -514,6 +514,12 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 		CMAC_Final(ctx, mic[vectorIdx], &miclen);
 		CMAC_CTX_free(ctx);
 	}
+#else
+	else if (keyver == 3)
+	{
+		fprintf(stderr, "Key version %d is only supported when OpenSSL (or similar) supports CMAC.\n", keyver);
+		abort();
+	}
 #endif /* HAVE_OPENSSL_CMAC_H */
 	else
 	{
