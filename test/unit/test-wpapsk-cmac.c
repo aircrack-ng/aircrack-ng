@@ -199,7 +199,9 @@ int group_setup(void **state)
 
 int main(int argc, char *argv[])
 {
-	const struct CMUnitTest tests[] = {
+#if HAVE_OPENSSL_CMAC_H
+
+const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_crypto_engine_generic),
 #if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86)
 		cmocka_unit_test(test_crypto_engine_x86_avx2),
@@ -215,4 +217,9 @@ int main(int argc, char *argv[])
 #endif
 	};
 	return cmocka_run_group_tests(tests, group_setup, NULL);
+
+#else
+	fprintf(stderr, "SKIP: Missing CMAC algorithm.\n");
+	return 0;
+#endif
 }
