@@ -119,6 +119,8 @@ void perform_unit_testing(void **state)
 								"\x6c\x9e\x38\xa0\x62\xa0\xdd\xc9\x8f\x4a\xb4"
 								"\xd6\x12\x90\x22\xfc\x7f\x45\xfe\x92\x64",
 								32);
+
+			fail_msg("While PMK and PTK computed correctly, MIC, etc. failed.");
 		}
 	}
 
