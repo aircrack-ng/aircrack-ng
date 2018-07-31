@@ -201,7 +201,7 @@ int group_setup(void **state)
 
 int main(int argc, char *argv[])
 {
-#if HAVE_OPENSSL_CMAC_H
+#if defined(HAVE_OPENSSL_CMAC_H) || defined(GCRYPT_WITH_CMAC_AES)
 
 const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_crypto_engine_generic),

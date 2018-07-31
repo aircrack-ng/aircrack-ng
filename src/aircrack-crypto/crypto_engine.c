@@ -54,7 +54,7 @@
 
 // #define XDEBUG
 
-#if HAVE_OPENSSL_CMAC_H
+#if defined(HAVE_OPENSSL_CMAC_H) || defined(GCRYPT_WITH_CMAC_AES)
 
 /* Code borrowed from https://w1.fi/wpa_supplicant/ starts */
 
@@ -174,7 +174,7 @@ static void sha256_prf_bits(const u8 *key, size_t key_len, const char *label,
 		buf[pos - 1] &= mask;
 	}
 }
-#endif /* HAVE_OPENSSL_CMAC_H */
+#endif /* HAVE_OPENSSL_CMAC_H || GCRYPT_WITH_CMAC_AES */
 
 EXPORT int ac_crypto_engine_supported_features(void)
 {
@@ -463,7 +463,7 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
 			     NULL);
 		}
 	}
-#if HAVE_OPENSSL_CMAC_H
+#if defined(HAVE_OPENSSL_CMAC_H) || defined(GCRYPT_WITH_CMAC_AES)
 	else
 	{
 		uint8_t data[64 + 12];
@@ -506,7 +506,7 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 			 eapol_size,
 			 mic[vectorIdx],
 			 NULL);
-#if HAVE_OPENSSL_CMAC_H
+#if defined(HAVE_OPENSSL_CMAC_H) || defined(GCRYPT_WITH_CMAC_AES)
 	else if (keyver == 3)
 	{
 		size_t miclen;
