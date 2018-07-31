@@ -110,6 +110,19 @@
 			gcry_md_get_algo_dlen(gcry_md_get_algo(*(gcry_md_hd_t *) ctx)));   \
 		gcry_md_close(*(gcry_md_hd_t *) ctx);                                  \
 	} while (0)
+// SHA256
+#define SHA256_CTX gcry_md_hd_t
+#define SHA256_Init(ctx) gcry_md_open(ctx, GCRY_MD_SHA256, 0)
+#define SHA256_Update(ctx, data, len) gcry_md_write(*ctx, data, len)
+#define SHA256_Final(md, ctx)                                                  \
+	do                                                                         \
+	{                                                                          \
+		memcpy(                                                                \
+			md,                                                                \
+			gcry_md_read(*(gcry_md_hd_t *) ctx, GCRY_MD_SHA256),               \
+			gcry_md_get_algo_dlen(gcry_md_get_algo(*(gcry_md_hd_t *) ctx)));   \
+		gcry_md_close(*(gcry_md_hd_t *) ctx);                                  \
+	} while (0)
 
 // http://tumblr.spantz.org/post/214737529/the-use-of-do-while-0-in-c-macros
 #endif // _GCRYPT_OPENSSL_WRAPPER_H
