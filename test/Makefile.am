@@ -112,6 +112,8 @@ EXTRA_DIST = test-hex_string_to_array.sh \
              verify_inject.py \
              replay.py \
              password.lst \
+             password-2.lst \
+             n-02.cap \
              wep.shared.key.authentication.cap \
              wep_64_ptw.cap \
              pingreply.c \
