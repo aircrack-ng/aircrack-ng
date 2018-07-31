@@ -6320,7 +6320,11 @@ int main(int argc, char *argv[])
 
 	if (_speed_test)
 	{
-		opt.amode = 2;
+		if (opt.forced_amode != 1)
+		{
+			// default to WPA-PSK (2)
+			opt.amode = 2;
+		}
 		opt.dict = stdin;
 		opt.bssid_set = 1;
 
@@ -6331,6 +6335,7 @@ int main(int argc, char *argv[])
 
 		ap_cur->target = 1;
 		ap_cur->wpa.state = 7;
+		ap_cur->wpa.keyver = (uint8_t) (opt.amode & 0xFF);
 		strcpy(ap_cur->essid, "sorbo");
 
 		goto __start;
