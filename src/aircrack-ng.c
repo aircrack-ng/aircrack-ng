@@ -2229,7 +2229,7 @@ static void check_thread(void *arg)
 
 				if (n <= 0 || n >= (int) pkh.caplen) continue;
 
-				/* for a whole Kismet logged broken PPI headers */
+				/* for a while Kismet logged broken PPI headers */
 				if (n == 24
 					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 					n = 32;
