@@ -101,8 +101,10 @@ int ok = GCRY_MAC_CMAC_AES;
       ]])],[
         AC_MSG_RESULT([yes])
         AC_DEFINE([GCRYPT_WITH_CMAC_AES],[1],[Algorithm CMAC_AES in gcrypt library])
+        HAVE_CMAC=yes
       ], [
         AC_MSG_RESULT([no])
+        HAVE_CMAC=no
       ])
       # conclusion
       GCRYPT_CFLAGS=`$LIBGCRYPT_CONFIG --cflags`

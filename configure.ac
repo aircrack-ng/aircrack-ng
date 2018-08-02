@@ -259,6 +259,7 @@ ${PACKAGE} ${VERSION}
     Zlib:                        ${HAVE_ZLIB}
 
   Features:
+    CMAC Support:                ${HAVE_CMAC}
     Experimental Extra Scripts:  ${EXT_SCRIPTS}
     Experimental Features:       ${EXPERIMENTAL}
 
