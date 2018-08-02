@@ -5948,6 +5948,15 @@ int main(int argc, char *argv[])
 					return (FAILURE);
 				}
 
+#if !defined(HAVE_OPENSSL_CMAC_H) && !defined(GCRYPT_WITH_CMAC_AES)
+				if (opt.amode == 3)
+				{
+					fprintf(stderr, "Key version 3 is only supported when OpenSSL (or similar) supports CMAC.\n");
+
+					return (FAILURE);
+				}
+#endif /* !HAVE_OPENSSL_CMAC_H && !GCRYPT_WITH_CMAC_AES */
+
 				opt.forced_amode = 1;
 
 				break;
