@@ -510,7 +510,7 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 	else if (keyver == 3)
 	{
 		size_t miclen = 16;
-		CMAC_CTX *ctx;
+		CMAC_CTX *ctx = NULL;
 
 		// Compute MIC
 		ctx = CMAC_CTX_new();
