@@ -64,7 +64,12 @@
 #define EVP_aes_128_cbc() GCRY_MAC_CMAC_AES
 #define CMAC_CTX gcry_mac_hd_t
 #define CMAC_CTX_new() calloc(1, sizeof(gcry_mac_hd_t))
-#define CMAC_CTX_free(ctx) gcry_mac_close(*ctx)
+#define CMAC_CTX_free(ctx)                                                     \
+	do                                                                         \
+	{                                                                          \
+		gcry_mac_close(*ctx);                                                  \
+		free(ctx);                                                             \
+	} while (0)
 #define CMAC_Init(ctx, key, len, mac, flag)                                    \
 	do                                                                         \
 	{                                                                          \
