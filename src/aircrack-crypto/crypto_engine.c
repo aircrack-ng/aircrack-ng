@@ -58,6 +58,7 @@
 
 /* Code borrowed from https://w1.fi/wpa_supplicant/ starts */
 
+#define CMAC_AES_128_MAC_LEN 16
 #define SHA256_MAC_LEN 32
 typedef uint16_t u16;
 typedef uint8_t u8;
@@ -509,7 +510,7 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 #if defined(HAVE_OPENSSL_CMAC_H) || defined(GCRYPT_WITH_CMAC_AES)
 	else if (keyver == 3)
 	{
-		size_t miclen = 16;
+		size_t miclen = CMAC_AES_128_MAC_LEN;
 		CMAC_CTX *ctx = NULL;
 
 		// Compute MIC
