@@ -162,7 +162,6 @@ to your choosing:
 * **with-gcrypt**:   Use libgcrypt crypto library instead of the default OpenSSL.
                 And also use internal fast sha1 implementation (borrowed from GIT)
                 Dependency (Debian): libgcrypt20-dev
-                (NOTE: Using `libgcrypt` and CMAC may show sporadic unit-test failures.)
 
 * **with-duma**:	Compile with DUMA support. DUMA is a library to detect buffer overruns and under-runs.
             	Dependencies (debian): duma
