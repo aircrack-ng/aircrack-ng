@@ -509,7 +509,7 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 #if defined(HAVE_OPENSSL_CMAC_H) || defined(GCRYPT_WITH_CMAC_AES)
 	else if (keyver == 3)
 	{
-		size_t miclen;
+		size_t miclen = 16;
 		CMAC_CTX *ctx;
 
 		// Compute MIC
