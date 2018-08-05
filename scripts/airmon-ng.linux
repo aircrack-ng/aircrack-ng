@@ -106,7 +106,14 @@ else
 fi
 
 if [ -d /sys/bus/pci ] || [ -d /sys/bus/pci_express ] || [ -d /proc/bus/pci ]; then
-	if [ ! -x "$(command -v lspci 2>&1)" ]; then
+	PCI_DEVICES=0
+	[ -d /sys/bus/pci/ ] && [ "$(ls -1 /sys/bus/pci/devices 2>/dev/null | wc -l)" != '0' ] && PCI_DEVICES=1
+	[ -d /sys/bus/pci_express ] && [ "$(ls -1 /sys/bus/pci/pci_express 2>/dev/null | wc -l)" != '0' ] && PCI_DEVICES=1
+	[ -d /proc/bus/pci ] && [ -n "$(cat /proc/bus/pci/devices 2>/dev/null)" ] && PCI_DEVICES=1
+
+	if [ ${PCI_DEVICES} -eq 0 ]; then
+		LSPCI=0
+	elif [ ! -x "$(command -v lspci 2>&1)" ]; then
 		printf "Please install lspci from your distro's package manager.\n"
 		exit 1
 	else

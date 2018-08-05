@@ -1380,6 +1380,7 @@ static void read_thread(void *arg)
 			if (!(ap_cur = (struct AP_info *) malloc(sizeof(struct AP_info))))
 			{
 				perror("malloc failed");
+				pthread_mutex_unlock(&mx_apl);
 				break;
 			}
 
@@ -1643,6 +1644,7 @@ static void read_thread(void *arg)
 			if (!(st_cur = (struct ST_info *) malloc(sizeof(struct ST_info))))
 			{
 				perror("malloc failed");
+				pthread_mutex_unlock(&mx_apl);
 				break;
 			}
 
@@ -2229,7 +2231,7 @@ static void check_thread(void *arg)
 
 				if (n <= 0 || n >= (int) pkh.caplen) continue;
 
-				/* for a whole Kismet logged broken PPI headers */
+				/* for a while Kismet logged broken PPI headers */
 				if (n == 24
 					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 					n = 32;

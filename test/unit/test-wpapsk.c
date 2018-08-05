@@ -164,6 +164,9 @@ int main(int argc, char *argv[])
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_crypto_engine_generic),
 #if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86)
+#if defined(__AVX512F__)
+		cmocka_unit_test(test_crypto_engine_x86_avx512f),
+#endif
 		cmocka_unit_test(test_crypto_engine_x86_avx2),
 		cmocka_unit_test(test_crypto_engine_x86_avx),
 		cmocka_unit_test(test_crypto_engine_x86_sse2),
