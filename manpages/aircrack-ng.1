@@ -7,10 +7,10 @@ aircrack-ng - a 802.11 WEP / WPA-PSK key cracker
 [options] <input file(s)>
 .SH DESCRIPTION
 .BI aircrack-ng
-is an 802.11 WEP and WPA/WPA2-PSK key cracking program.
-.br
+is an 802.11 WEP, 802.11i WPA/WPA2, and 802.11w WPA2 key cracking program.
+.PP
 It can recover the WEP key once enough encrypted packets have been captured with airodump-ng. This part of the aircrack-ng suite determines the WEP key using two fundamental methods. The first method is via the PTW approach (Pyshkin, Tews, Weinmann). The main advantage of the PTW approach is that very few data packets are required to crack the WEP key. The second method is the FMS/KoreK method. The FMS/KoreK method incorporates various statistical attacks to discover the WEP key and uses these in combination with brute forcing. 
-.br
+.PP
 Additionally, the program offers a dictionary method for determining the WEP key. For cracking WPA/WPA2 pre-shared keys, a wordlist (file or stdin) or an airolib-ng has to be used.
 .SH INPUT FILES
 .TP
@@ -20,7 +20,7 @@ Capture files (.cap, .pcap), IVS (.ivs) or Hascat HCCAPX files (.hccapx)
 .B Common options:
 .TP
 .I -a <amode>
-Force the attack mode, 1 or wep for WEP, 2 or wpa for WPA-PSK, and 3 or 80211w for AES-128-CMAC 802.11w.
+Force the attack mode: 1 or wep for WEP (802.11) and 2 or wpa for WPA/WPA2 PSK (802.11i and 802.11w).
 .TP
 .I -e <essid>
 Select the target network based on the ESSID. This option is also required for WPA cracking if the SSID is cloaked. For SSID containing special characters, see https://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc_in_ap_names
