@@ -317,6 +317,7 @@ struct ST_info
 	/* probed ESSIDs ring buffer */
 	int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
 	int power; /* last signal power         */
+	int best_power; /* best signal power    */
 	int rate_to; /* last bitrate to station   */
 	int rate_from; /* last bitrate from station */
 	struct timeval ftimer; /* time of restart           */
@@ -326,6 +327,9 @@ struct ST_info
 	int qos_to_ds; /* does it use 802.11e to ds */
 	int qos_fr_ds; /* does it receive 802.11e   */
 	int channel; /* Channel station is seen   */
+	float gps_loc_min[5]; /* min gps coordinates      */
+	float gps_loc_max[5]; /* max gps coordinates      */
+	float gps_loc_best[5]; /* best gps coordinates     */
 	/*  Not used yet		  */
 };
 
