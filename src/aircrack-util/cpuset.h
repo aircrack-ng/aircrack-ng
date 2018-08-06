@@ -33,6 +33,8 @@
 #ifndef AIRCRACK_UTIL_CPUSET_H
 #define AIRCRACK_UTIL_CPUSET_H
 
+#include <sys/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
