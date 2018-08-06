@@ -1398,24 +1398,10 @@ static void read_thread(void *arg)
 			// - WPA is 3 for 'crypt' and 2 for 'amode'.
 			if (opt.forced_amode) ap_cur->crypt = opt.amode + 1;
 
-			if (opt.do_ptw == 1)
-			{
-				ap_cur->ptw_clean = PTW_newattackstate();
-				if (!ap_cur->ptw_clean)
-				{
-					perror("PTW_newattackstate()");
-					break;
-				}
-				ap_cur->ptw_vague = PTW_newattackstate();
-				if (!ap_cur->ptw_vague)
-				{
-					perror("PTW_newattackstate()");
-					break;
-				}
-			}
 			append_ap(ap_cur);
 		}
-		else
+		/* Make sure it is properly initialized */
+		if (opt.do_ptw == 1)
 		{
 			if (ap_cur->ptw_clean == NULL)
 			{
