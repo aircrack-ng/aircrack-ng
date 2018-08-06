@@ -1416,7 +1416,7 @@ static void read_thread(void *arg)
 			append_ap(ap_cur);
 		}
 		else
-		{
+		{ /* Make sure our node is properly initialized */
 			if (ap_cur->ptw_clean == NULL)
 			{
 				ap_cur->ptw_clean = PTW_newattackstate();
