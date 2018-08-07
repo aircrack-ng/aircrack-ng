@@ -1682,6 +1682,7 @@ static int dump_add_packet(unsigned char *h80211,
 		st_cur->tlast = time(NULL);
 
 		st_cur->power = -1;
+		st_cur->best_power = -1;
 		st_cur->rate_to = -1;
 		st_cur->rate_from = -1;
 
@@ -1693,6 +1694,10 @@ static int dump_add_packet(unsigned char *h80211,
 		st_cur->channel = 0;
 
 		gettimeofday(&(st_cur->ftimer), NULL);
+
+		memcpy(st_cur->gps_loc_min, G.gps_loc, sizeof(st_cur->gps_loc_min));
+		memcpy(st_cur->gps_loc_max, G.gps_loc, sizeof(st_cur->gps_loc_max));
+		memcpy(st_cur->gps_loc_best, G.gps_loc, sizeof(st_cur->gps_loc_best));
 
 		for (i = 0; i < NB_PRB; i++)
 		{
@@ -1721,11 +1726,31 @@ static int dump_add_packet(unsigned char *h80211,
 		|| ((h80211[1] & 3) == 1))
 	{
 		st_cur->power = ri->ri_power;
+		if (ri->ri_power > st_cur->best_power)
+		{
+		    st_cur->best_power = ri->ri_power;
+		    memcpy(ap_cur->gps_loc_best, G.gps_loc, sizeof(st_cur->gps_loc_best));
+		}
+
 		st_cur->rate_from = ri->ri_rate;
 		if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
 			st_cur->channel = ri->ri_channel;
 		else
 			st_cur->channel = G.channel[cardnum];
+
+		if (G.gps_loc[0] > st_cur->gps_loc_max[0])
+			st_cur->gps_loc_max[0] = G.gps_loc[0];
+		if (G.gps_loc[1] > st_cur->gps_loc_max[1])
+			st_cur->gps_loc_max[1] = G.gps_loc[1];
+		if (G.gps_loc[2] > st_cur->gps_loc_max[2])
+			st_cur->gps_loc_max[2] = G.gps_loc[2];
+
+		if (G.gps_loc[0] < st_cur->gps_loc_min[0])
+			st_cur->gps_loc_min[0] = G.gps_loc[0];
+		if (G.gps_loc[1] < st_cur->gps_loc_min[1])
+			st_cur->gps_loc_min[1] = G.gps_loc[1];
+		if (G.gps_loc[2] < st_cur->gps_loc_min[2])
+			st_cur->gps_loc_min[2] = G.gps_loc[2];
 
 		if (st_cur->lastseq != 0)
 		{
@@ -4763,7 +4788,7 @@ static int dump_write_kismet_netxml_client_info(struct ST_info *client, int clie
 	char first_time[TIME_STR_LENGTH];
 	char last_time[TIME_STR_LENGTH];
 	char *manuf;
-	int client_max_rate, average_power, i, nb_probes_written, is_unassociated;
+	int client_max_rate, average_power, max_power, i, nb_probes_written, is_unassociated;
 	char *essid = NULL;
 
 	if (client == NULL || (client_no <= 0 || client_no >= INT_MAX))
@@ -4883,6 +4908,8 @@ static int dump_write_kismet_netxml_client_info(struct ST_info *client, int clie
 
 	/* SNR information */
 	average_power = (client->power == -1) ? 0 : client->power;
+	max_power = (client->best_power == -1) ? average_power : client->best_power;
+
 	fprintf(G.f_kis_xml,
 			"\t\t\t<snr-info>\n"
 			"\t\t\t\t<last_signal_dbm>%d</last_signal_dbm>\n"
@@ -4901,11 +4928,11 @@ static int dump_write_kismet_netxml_client_info(struct ST_info *client, int clie
 			average_power,
 			average_power,
 			average_power,
-			average_power,
-			average_power);
+			max_power,
+			max_power);
 
-	/* GPS Coordinates
-	   XXX: We don't have GPS coordinates for clients */
+	/* GPS Coordinates for clients */
+
 	if (G.usegpsd)
 	{
 		fprintf(G.f_kis_xml,
@@ -4925,20 +4952,21 @@ static int dump_write_kismet_netxml_client_info(struct ST_info *client, int clie
 				"\t\t\t\t<avg-lon>%.6f</avg-lon>\n"
 				"\t\t\t\t<avg-alt>%.6f</avg-alt>\n"
 				"\t\t\t</gps-info>\n",
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0);
+				client->gps_loc_min[0],
+				client->gps_loc_min[1],
+				client->gps_loc_min[2],
+				client->gps_loc_min[3],
+				client->gps_loc_max[0],
+				client->gps_loc_max[1],
+				client->gps_loc_max[2],
+				client->gps_loc_max[3],
+				client->gps_loc_best[0],
+				client->gps_loc_best[1],
+				client->gps_loc_best[2],
+				/* Can the "best" be considered as average??? */
+				client->gps_loc_best[0],
+				client->gps_loc_best[1],
+				client->gps_loc_best[2]);
 	}
 	fprintf(G.f_kis_xml, "\t\t</wireless-client>\n");
 
@@ -5320,6 +5348,9 @@ static int dump_write_kismet_netxml(void)
 
 			/* SNR information */
 			average_power = (st_cur->power == -1) ? 0 : st_cur->power;
+			max_power =
+			    (st_cur->best_power == -1) ? average_power : st_cur->best_power;
+
 			fprintf(G.f_kis_xml,
 					"\t\t<snr-info>\n"
 					"\t\t\t<last_signal_dbm>%d</last_signal_dbm>\n"
@@ -5338,11 +5369,11 @@ static int dump_write_kismet_netxml(void)
 					average_power,
 					average_power,
 					average_power,
-					average_power,
-					average_power);
+					max_power,
+					max_power);
 
-			/* GPS Coordinates
-			   XXX: We don't have GPS coordinates for clients */
+			/* GPS Coordinates for clients */
+
 			if (G.usegpsd)
 			{
 				fprintf(G.f_kis_xml,
@@ -5362,20 +5393,21 @@ static int dump_write_kismet_netxml(void)
 						"\t\t\t<avg-lon>%.6f</avg-lon>\n"
 						"\t\t\t<avg-alt>%.6f</avg-alt>\n"
 						"\t\t</gps-info>\n",
-						0.0,
-						0.0,
-						0.0,
-						0.0,
-						0.0,
-						0.0,
-						0.0,
-						0.0,
-						0.0,
-						0.0,
-						0.0,
-						0.0,
-						0.0,
-						0.0);
+						st_cur->gps_loc_min[0],
+						st_cur->gps_loc_min[1],
+						st_cur->gps_loc_min[2],
+						st_cur->gps_loc_min[3],
+						st_cur->gps_loc_max[0],
+						st_cur->gps_loc_max[1],
+						st_cur->gps_loc_max[2],
+						st_cur->gps_loc_max[3],
+						st_cur->gps_loc_best[0],
+						st_cur->gps_loc_best[1],
+						st_cur->gps_loc_best[2],
+						/* Can the "best" be considered as average??? */
+						st_cur->gps_loc_best[0],
+						st_cur->gps_loc_best[1],
+						st_cur->gps_loc_best[2]);
 			}
 
 			fprintf(G.f_kis_xml, "\t\t<bsstimestamp>0</bsstimestamp>\n");
