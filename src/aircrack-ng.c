@@ -1417,6 +1417,7 @@ static void read_thread(void *arg)
 		}
 		else
 		{ /* Make sure our node is properly initialized */
+			// See https://github.com/aircrack-ng/aircrack-ng/pull/1934#issuecomment-407197877
 			if (ap_cur->ptw_clean == NULL)
 			{
 				ap_cur->ptw_clean = PTW_newattackstate();
