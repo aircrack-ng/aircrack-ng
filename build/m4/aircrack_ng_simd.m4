@@ -157,6 +157,17 @@ then
     ])
 fi
 
+AC_ARG_WITH(cacheline-size,
+    [AS_HELP_STRING([--with-cacheline-size=[width]], [use specific CPU L1 cache-line size, in bytes. [default=64]])])
+
+case $with_cacheline_size in
+    no | "") CACHELINE_SIZE=64;;
+    *)       CACHELINE_SIZE=$with_cacheline_size;;
+esac
+AC_SUBST([CACHELINE_SIZE])
+
+AC_DEFINE_UNQUOTED([CACHELINE_SIZE], [$CACHELINE_SIZE], [Define to set the specific CPU L1 cache-line size, in bytes.])
+
 AC_ARG_WITH(static-simd,
     [AS_HELP_STRING([--with-static-simd[[=x86-sse2|x86-avx|x86-avx2|x86-avx512|ppc-altivec|ppc-power8|arm-neon|arm-asimd]], [use specific SIMD implementation at static link, [default=none]]])])
 
