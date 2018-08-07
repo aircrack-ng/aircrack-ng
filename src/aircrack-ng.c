@@ -1011,6 +1011,11 @@ static int atomic_read(read_buf *rb, int fd, int len, void *buf)
 	return (0);
 }
 
+/* Very similar to check_thread but this one is used when loading
+ * files for cracking, when all the parameters are set.
+ *
+ * TODO: Merge both read_thread and check_thread
+ */
 static void read_thread(void *arg)
 {
 	/* we don't care if the buffers allocated here are not freed
@@ -2006,6 +2011,13 @@ read_fail:
 	_exit(FAILURE);
 }
 
+/* Very similar to read_thread but this one is used when the
+ * BSSID hasn't been set and may requires an input from the user.
+ * For the latter, it would present the list of networks to
+ * choose from to the user.
+ *
+ * TODO: Merge both read_thread and check_thread
+ */
 static void check_thread(void *arg)
 {
 	/* in case you see valgrind warnings, read the comment on top
