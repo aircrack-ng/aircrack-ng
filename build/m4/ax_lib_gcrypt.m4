@@ -93,6 +93,19 @@ AC_DEFUN([AX_LIB_GCRYPT],[
       AX_CHECK_GCRYPT_ALGO([DSA])
       AX_CHECK_GCRYPT_ALGO([ELGAMAL])
       AX_CHECK_GCRYPT_ALGO([RSA])
+      # CMAC support
+      AC_MSG_CHECKING([for CMAC_AES in gcrypt])
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <gcrypt.h>]], [[
+int ok = GCRY_MAC_CMAC_AES;
+(void)ok;
+      ]])],[
+        AC_MSG_RESULT([yes])
+        AC_DEFINE([GCRYPT_WITH_CMAC_AES],[1],[Algorithm CMAC_AES in gcrypt library])
+        HAVE_CMAC=yes
+      ], [
+        AC_MSG_RESULT([no])
+        HAVE_CMAC=no
+      ])
       # conclusion
       GCRYPT_CFLAGS=`$LIBGCRYPT_CONFIG --cflags`
       GCRYPT_LIBS=`$LIBGCRYPT_CONFIG --libs`

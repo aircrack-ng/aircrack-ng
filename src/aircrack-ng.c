@@ -5149,7 +5149,6 @@ static int do_wpa_crack(void)
 
 	i = 0;
 	res = 0;
-	opt.amode = 2;
 	num_cpus = opt.nbcpu;
 
 	if (!opt.is_quiet && !_speed_test)
@@ -5941,12 +5940,24 @@ int main(int argc, char *argv[])
 				else if (strcasecmp(optarg, "wpa") == 0)
 					opt.amode = 2;
 
-				if (ret1 != 1 || (opt.amode != 1 && opt.amode != 2))
+				else if (strcasecmp(optarg, "80211w") == 0)
+					opt.amode = 3;
+
+				if (ret1 != 1 || (opt.amode != 1 && opt.amode != 2 && opt.amode != 3))
 				{
-					printf("Invalid attack mode. [1,2] or [wep,wpa]\n");
+					printf("Invalid attack mode. [1,2,3] or [wep,wpa,80211w]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (FAILURE);
 				}
+
+#if !defined(HAVE_OPENSSL_CMAC_H) && !defined(GCRYPT_WITH_CMAC_AES)
+				if (opt.amode == 3)
+				{
+					fprintf(stderr, "Key version 3 is only supported when OpenSSL (or similar) supports CMAC.\n");
+
+					return (FAILURE);
+				}
+#endif /* !HAVE_OPENSSL_CMAC_H && !GCRYPT_WITH_CMAC_AES */
 
 				opt.forced_amode = 1;
 
@@ -6320,7 +6331,11 @@ int main(int argc, char *argv[])
 
 	if (_speed_test)
 	{
-		opt.amode = 2;
+		if (opt.forced_amode != 1)
+		{
+			// default to WPA-PSK (2)
+			opt.amode = 2;
+		}
 		opt.dict = stdin;
 		opt.bssid_set = 1;
 
@@ -6331,6 +6346,7 @@ int main(int argc, char *argv[])
 
 		ap_cur->target = 1;
 		ap_cur->wpa.state = 7;
+		ap_cur->wpa.keyver = (uint8_t) (opt.amode & 0xFF);
 		strcpy(ap_cur->essid, "sorbo");
 
 		goto __start;
@@ -6379,7 +6395,7 @@ int main(int argc, char *argv[])
 		clean_exit(ret);
 	}
 
-	if (opt.amode == 2 && opt.dict == NULL)
+	if (opt.amode >= 2 && opt.dict == NULL)
 	{
 	nodict:
 		if (opt.wkp == NULL && opt.hccap == NULL && opt.hccapx == NULL)
@@ -6787,7 +6803,7 @@ __start:
 
 	if (opt.amode == 1) goto crack_wep;
 
-	if (opt.amode == 2) goto crack_wpa;
+	if (opt.amode >= 2) goto crack_wpa;
 
 	if (ap_cur->crypt == 2)
 	{
@@ -6970,7 +6986,7 @@ __start:
 		}
 	}
 
-	if (ap_cur->crypt == 3)
+	if (ap_cur->crypt >= 3)
 	{
 	crack_wpa:
 		dso_ac_crypto_engine_init(&engine);

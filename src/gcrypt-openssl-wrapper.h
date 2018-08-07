@@ -60,6 +60,35 @@
 		gcry_cipher_open(ctx, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0);       \
 		gcry_cipher_setkey(*ctx, key, len / 8);                                \
 	} while (0)
+// CMAC_*
+#define EVP_aes_128_cbc() GCRY_MAC_CMAC_AES
+#define CMAC_CTX gcry_mac_hd_t
+#define CMAC_CTX_new() calloc(1, sizeof(gcry_mac_hd_t))
+#define CMAC_CTX_free(ctx)                                                     \
+	do                                                                         \
+	{                                                                          \
+		gcry_mac_close(*ctx);                                                  \
+		free(ctx);                                                             \
+	} while (0)
+#define CMAC_Init(ctx, key, len, mac, flag)                                    \
+	do                                                                         \
+	{                                                                          \
+		if ((len == 0) || (key == NULL) || (mac == 0))                         \
+		{                                                                      \
+			gcry_mac_reset(*ctx);                                              \
+		}                                                                      \
+		else                                                                   \
+		{                                                                      \
+			gcry_mac_open(ctx, mac, 0, NULL);                                  \
+			gcry_mac_setkey(*ctx, key, len);                                   \
+		}                                                                      \
+	} while (0)
+#define CMAC_Update(ctx, data, len) gcry_mac_write(*ctx, data, len)
+#define CMAC_Final(ctx, mac, len)                                              \
+	do                                                                         \
+	{                                                                          \
+		gcry_mac_read(*ctx, mac, len);                                         \
+	} while (0)
 // HMAC_*
 #define HMAC_CTX gcry_md_hd_t
 #define HMAC_CTX_cleanup(ctx) gcry_md_close(*ctx)
@@ -107,6 +136,19 @@
 		memcpy(                                                                \
 			md,                                                                \
 			gcry_md_read(*(gcry_md_hd_t *) ctx, GCRY_MD_MD5),                  \
+			gcry_md_get_algo_dlen(gcry_md_get_algo(*(gcry_md_hd_t *) ctx)));   \
+		gcry_md_close(*(gcry_md_hd_t *) ctx);                                  \
+	} while (0)
+// SHA256
+#define SHA256_CTX gcry_md_hd_t
+#define SHA256_Init(ctx) gcry_md_open(ctx, GCRY_MD_SHA256, 0)
+#define SHA256_Update(ctx, data, len) gcry_md_write(*ctx, data, len)
+#define SHA256_Final(md, ctx)                                                  \
+	do                                                                         \
+	{                                                                          \
+		memcpy(                                                                \
+			md,                                                                \
+			gcry_md_read(*(gcry_md_hd_t *) ctx, GCRY_MD_SHA256),               \
 			gcry_md_get_algo_dlen(gcry_md_get_algo(*(gcry_md_hd_t *) ctx)));   \
 		gcry_md_close(*(gcry_md_hd_t *) ctx);                                  \
 	} while (0)
