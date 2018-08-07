@@ -6331,7 +6331,8 @@ int main(int argc, char *argv[])
 		ap_cur->wpa.state = 7;
 		ap_cur->wpa.keyver = (uint8_t) (opt.amode & 0xFF);
 		strcpy(ap_cur->essid, "sorbo");
-		append_ap(ap_cur);
+		strcpy((char *) ap_cur->bssid, "deadb");
+		c_avl_insert(targets, ap_cur->bssid, ap_cur);
 
 		goto __start;
 	}
