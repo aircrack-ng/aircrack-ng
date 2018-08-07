@@ -354,21 +354,21 @@ ifaceIsUp() {
 #	fi
 #}
 
-#startDeprecatedIface() {
-#	iwconfig ${1} mode monitor > /dev/null 2>&1
-#	if [ -n "${2}" ]; then
-#		if [ ${2} -lt 1000 ]; then
-#			iwconfig ${1} channel ${2} > /dev/null 2>&1
-#		else
-#			iwconfig ${1} freq ${2}000000 > /dev/null 2>&1
-#		fi
-#	else
-#		iwconfig ${1} channel ${CH} > /dev/null 2>&1
-#	fi
-#	iwconfig ${1} key off > /dev/null 2>&1
-#	setLink ${1} up
-#	printf " (monitor mode enabled)"
-#}
+startDeprecatedIface() {
+	iwconfig ${1} mode monitor > /dev/null 2>&1
+	if [ -n "${2}" ]; then
+		if [ ${2} -lt 1000 ]; then
+			iwconfig ${1} channel ${2} > /dev/null 2>&1
+		else
+			iwconfig ${1} freq ${2}000000 > /dev/null 2>&1
+		fi
+	else
+		iwconfig ${1} channel ${CH} > /dev/null 2>&1
+	fi
+	iwconfig ${1} key off > /dev/null 2>&1
+	setLink ${1} up
+	printf " (monitor mode enabled)"
+}
 
 yesorno() {
 	read input
@@ -426,7 +426,7 @@ startMac80211Iface() {
 		done
 	fi
 	#we didn't bail means we need a monitor interface
-        if [ ${#1} -gt 12 ]; then
+	if [ ${#1} -gt 12 ]; then
 		printf "Interface ${1}mon is too long for linux so it will be renamed to the old style (wlan#) name.\n"
 		findFreeInterface monitor
 	else
@@ -438,10 +438,16 @@ startMac80211Iface() {
 		fi
 		#we didn't bail means our target interface is available
 		setLink ${1} down
+		if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "rtl8812au" ]; then
+			#grumble grumble, seriously crap vendor driver
+			startDeprecatedIface ${1}
+			setChannelMac80211 ${1}
+			return
+		fi
 		IW_ERROR="$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1)"
 		if [ -z "${IW_ERROR}" ]; then
 			sleep 1
-			if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type)" = "803" ]; then
+			if [ -r "/sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type" ] && [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type)" = "803" ]; then
 				setChannelMac80211 ${1}mon
 			else
 				printf "\nNewly created monitor mode interface ${1}mon is *NOT* in monitor mode.\n"
@@ -569,12 +575,12 @@ setChannelMac80211() {
 	fi
 }
 
-#stopDeprecatedIface() {
-#	setLink $1 down
-#	iwconfig $1 mode Managed > /dev/null 2>&1
-#	setLink $1 up
-#	printf " (monitor mode disabled)"
-#}
+stopDeprecatedIface() {
+	setLink $1 down
+	iwconfig $1 mode Managed > /dev/null 2>&1
+	setLink $1 up
+	printf " (monitor mode disabled)"
+}
 
 stopMac80211Iface() {
 	if [ -f /sys/class/net/${1}/type ]; then
@@ -587,6 +593,11 @@ stopMac80211Iface() {
 			printf "please report it.\n"
 			exit 1
 		else
+			if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "rtl8812au" ]; then
+				#grumble grumble, seriously crap vendor driver
+				stopDeprecatedIface ${1}
+				return
+			fi
 			if [ "${ELITE}" = "0" ]; then
 				local need_sta=1
 				if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
@@ -1316,8 +1327,10 @@ if [ "$DEBUG" = "1" ]; then
 	fi
 fi
 if [ "$VERBOSE" = "1" ]; then
-	lsb_release -a
-	printf "\n"
+	if [ -n "$(command -v lsb_release 2> /dev/null)" ]; then
+		lsb_release -a
+		printf "\n"
+	fi
 	uname -a
 
 	checkvm
