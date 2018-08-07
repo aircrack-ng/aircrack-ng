@@ -451,7 +451,7 @@ int is_dhcp_discover(void *wh, size_t len)
 
 int is_arp(void *wh, size_t len)
 {
-	int arpsize = 8 + 8 + 10 * 2;
+	size_t arpsize = 8 + 8 + 10 * 2;
 
 	if (wh)
 	{
@@ -466,7 +466,7 @@ int is_arp(void *wh, size_t len)
 
 int is_wlccp(void *wh, size_t len)
 {
-	int wlccpsize = 58;
+	size_t wlccpsize = 58;
 
 	if (wh)
 	{

@@ -903,7 +903,7 @@ static int write_cap_packet(unsigned char *packet, const int length)
 static int read_prga(unsigned char **dest, const char *file)
 {
 	FILE *f;
-	size_t size;
+	int size;
 	struct ivs2_filehdr fivs2;
 
 	if (file == NULL) return (1);
@@ -944,7 +944,7 @@ static int read_prga(unsigned char **dest, const char *file)
 
 	if (memcmp((*dest), IVS2_MAGIC, 4) == 0)
 	{
-		if (size < sizeof(struct ivs2_filehdr) + 4)
+		if ((size_t) size < sizeof(struct ivs2_filehdr) + 4)
 		{
 			fprintf(stderr, "No valid %s file.", IVS2_EXTENSION);
 			fclose(f);

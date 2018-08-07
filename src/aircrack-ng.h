@@ -207,7 +207,6 @@ struct WEP_data
 
 struct AP_info
 {
-	struct AP_info *next; /* next AP in linked list       */
 	unsigned char bssid[6]; /* access point MAC address     */
 	char essid[33]; /* access point identifier      */
 	unsigned char lanip[4]; /* IP address if unencrypted    */
