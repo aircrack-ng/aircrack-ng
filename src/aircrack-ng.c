@@ -1070,7 +1070,10 @@ static void read_thread(void *arg)
 	{
 		if ((fd = open((char *) arg, O_RDONLY | O_BINARY)) < 0)
 		{
-			perror("open failed");
+			fprintf(stderr, "Failed to open '%s' (%d): %s\n",
+			        (char *) arg,
+			        errno,
+			        strerror(errno));
 			goto read_fail;
 		}
 	}
@@ -2061,7 +2064,10 @@ static void check_thread(void *arg)
 	{
 		if ((fd = open((char *) arg, O_RDONLY | O_BINARY)) < 0)
 		{
-			perror("open failed");
+			fprintf(stderr, "Failed to open '%s' (%d): %s\n",
+			        (char *) arg,
+			        errno,
+			        strerror(errno));
 			goto read_fail;
 		}
 	}
