@@ -16,7 +16,6 @@ set -ef
 	"${abs_srcdir}/wpa.cap" \
 	"${abs_srcdir}/wpa-psk-linksys.cap" \
 	"${abs_srcdir}/Chinese-SSID-Name.pcap" \
-	"${abs_srcdir}/eapol1.pcap" \
 	"${abs_srcdir}/wpaclean_crash.pcap" \
 	"${abs_srcdir}/wps2.0.pcap" | \
         grep 'KEY FOUND! \[ biscotte \]'
