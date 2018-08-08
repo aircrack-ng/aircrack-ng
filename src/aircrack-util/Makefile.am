@@ -69,11 +69,19 @@ if !HAVE_HWLOC
 CPUSET = cpuset_pthread.c
 endif
 
-libaircrack_util_la_SOURCES = common.c console.c crypto_engine_loader.c mcs_index_rates.c simd_cpuid.c $(TRAMPOLINE) verifyssid.c avl_tree.c $(CPUSET)
-libaircrack_util_la_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
-                             "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
-                             "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
-                             "-DLIBDIR=\"$(libdir)\""
+libaircrack_util_la_SOURCES = common.c \
+							  console.c \
+							  crypto_engine_loader.c \
+							  mcs_index_rates.c \
+							  simd_cpuid.c \
+							  $(TRAMPOLINE) \
+							  verifyssid.c \
+							  avl_tree.c \
+							  $(CPUSET)
+libaircrack_util_la_CFLAGS  = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
+                              "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
+                              "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
+                              "-DLIBDIR=\"$(libdir)\""
 if CYGWIN
 libaircrack_util_la_LIBADD = -lshlwapi
 endif
@@ -85,10 +93,14 @@ endif
 if HAVE_HWLOC
 libaircrack_util_la_CFLAGS += $(HWLOC_CFLAGS)
 if !CYGWIN
+if !STATIC_HWLOC
 libaircrack_util_la_LIBADD = $(HWLOC_LIBS)
 endif
+endif
 if CYGWIN
+if !STATIC_HWLOC
 libaircrack_util_la_LIBADD += $(HWLOC_LIBS)
+endif
 endif
 endif
 

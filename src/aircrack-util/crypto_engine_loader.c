@@ -101,7 +101,7 @@ void (*dso_ac_crypto_engine_calc_mic)(
 	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
 	const uint8_t keyver,
 	const int vectorIdx,
-	const int threadid) = &dso_ac_crypto_engine_calc_mic;
+	const int threadid) = &ac_crypto_engine_calc_mic;
 #else
 int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine) = NULL;
 void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine) = NULL;

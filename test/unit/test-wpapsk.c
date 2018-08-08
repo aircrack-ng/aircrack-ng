@@ -8,10 +8,36 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#ifdef USE_GCRYPT
+#include "gcrypt-openssl-wrapper.h"
+#include "sha1-git.h"
+#else
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+#endif
+
 #include "aircrack-util/common.h"
 #include "aircrack-util/trampoline.h"
 #include "aircrack-crypto/crypto_engine.h"
 #include "aircrack-util/crypto_engine_loader.h"
+
+/*
+ * We must force linking to one of the support crypto libraries; however,
+ * because they are linked with our binary and not the crypto engine
+ * DSOs, at run-time we fail to run due to missing symbols.
+ *
+ * The "proper" way to handle this situation is to use --no-as-needed
+ * linker flag, specifying the libraries to always link against.
+ *
+ * Then there is Autoconf... It does not support the above flag.
+ *
+ * So, we force a bit of hacks to ensure we do link against it.
+ */
+#ifdef USE_GCRYPT
+void *keep_libgcrypt_ = &gcry_md_open;
+#else
+void *keep_libcrypto_ = &HMAC;
+#endif
 
 void perform_unit_testing(void **state)
 {

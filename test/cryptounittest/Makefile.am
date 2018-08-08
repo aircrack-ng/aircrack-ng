@@ -59,28 +59,61 @@ SRCS_TEST_DCMP  = test-decrypt-ccmp.c
 SRCS_TEST_ECMP  = test-encrypt-ccmp.c
 
 test_encrypt_wep_SOURCES = $(SRCS_TEST_EWEP)
-test_encrypt_wep_CFLAGS = $(AM_CPPFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
-test_encrypt_wep_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS)
+test_encrypt_wep_CFLAGS  = $(AM_CPPFLAGS) \
+						   $(PTHREAD_CFLAGS) \
+						   $(CRYPTO_CFLAGS)
+test_encrypt_wep_LDADD   = $(LIBAC_LIBS) \
+						   $(PTHREAD_LIBS) \
+						   $(CRYPTO_LIBS) \
+						   $(ZLIB_LIBS)
 
-test_calc_pmk_SOURCES = $(SRCS_TEST_CPMK) $(LIBAIRCRACK_UTIL) $(LIBAIRCRACK_CRYPTO)
-test_calc_pmk_CFLAGS = $(AM_CPPFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
-test_calc_pmk_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(LIBAIRCRACK_CRYPTO_LIBS)
+test_calc_pmk_SOURCES = $(SRCS_TEST_CPMK) \
+						$(LIBAIRCRACK_UTIL) \
+						$(LIBAIRCRACK_CRYPTO)
+test_calc_pmk_CFLAGS  = $(AM_CPPFLAGS) \
+						$(PTHREAD_CFLAGS) \
+						$(CRYPTO_CFLAGS)
+test_calc_pmk_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) \
+						$(LIBAIRCRACK_CRYPTO_LIBS) \
+						$(LIBAC_LIBS) \
+						$(PTHREAD_LIBS) \
+						$(CRYPTO_LIBS) \
+						$(ZLIB_LIBS)
 
 test_calc_mic_SOURCES = $(SRCS_TEST_CMIC)
-test_calc_mic_CFLAGS = $(AM_CPPFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
-test_calc_mic_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS)
+test_calc_mic_CFLAGS  = $(AM_CPPFLAGS) \
+						$(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
+test_calc_mic_LDADD   = $(LIBAC_LIBS) \
+						$(PTHREAD_LIBS) \
+						$(CRYPTO_LIBS) \
+						$(ZLIB_LIBS)
 
 test_calc_ptk_SOURCES = $(SRCS_TEST_CPTK)
-test_calc_ptk_CFLAGS = $(AM_CPPFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
-test_calc_ptk_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS)
+test_calc_ptk_CFLAGS  = $(AM_CPPFLAGS) \
+						$(PTHREAD_CFLAGS) \
+						$(CRYPTO_CFLAGS)
+test_calc_ptk_LDADD   = $(LIBAC_LIBS) \
+						$(PTHREAD_LIBS) \
+						$(CRYPTO_LIBS) \
+						$(ZLIB_LIBS)
 
 test_encrypt_ccmp_SOURCES = $(SRCS_TEST_ECMP)
-test_encrypt_ccmp_CFLAGS = $(AM_CPPFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
-test_encrypt_ccmp_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS)
+test_encrypt_ccmp_CFLAGS  = $(AM_CPPFLAGS) \
+							$(PTHREAD_CFLAGS) \
+							$(CRYPTO_CFLAGS)
+test_encrypt_ccmp_LDADD   = $(LIBAC_LIBS) \
+							$(PTHREAD_LIBS) \
+							$(CRYPTO_LIBS) \
+							$(ZLIB_LIBS)
 
 test_decrypt_ccmp_SOURCES = $(SRCS_TEST_DCMP)
-test_decrypt_ccmp_CFLAGS = $(AM_CPPFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
-test_decrypt_ccmp_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(LIBAC_LIBS)
+test_decrypt_ccmp_CFLAGS  = $(AM_CPPFLAGS) \
+							$(PTHREAD_CFLAGS) \
+							$(CRYPTO_CFLAGS)
+test_decrypt_ccmp_LDADD   = $(LIBAC_LIBS) \
+							$(PTHREAD_LIBS) \
+							$(CRYPTO_LIBS) \
+							$(ZLIB_LIBS)
 
 
 TESTS           = test-encrypt-wep \

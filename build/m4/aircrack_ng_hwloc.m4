@@ -40,16 +40,31 @@ dnl program, then also delete it here.
 AC_DEFUN([AIRCRACK_NG_HWLOC], [
 AC_ARG_ENABLE([hwloc],[AC_HELP_STRING([--enable-hwloc], [include hwloc library, [default=yes]])])
 
-HAVE_HWLOC=no
+AC_ARG_ENABLE(static-hwloc,
+    AS_HELP_STRING([--enable-static-hwloc],
+		[Enable statically linked OpenMPI libhwloc.]),
+    [static_hwloc=$enableval], [static_hwloc=no])
+
+if test "x$static_hwloc" != "xno"; then
+	enable_hwloc=yes
+fi
 
 AS_IF([test "x$enable_hwloc" != "xno"], [
-	dnl Do the stuff needed for enabling the feature
-	PKG_CHECK_MODULES(HWLOC, hwloc, HAVE_HWLOC=yes, HAVE_HWLOC=no)
+	if test "x$static_hwloc" != "xno"; then
+		AX_EXT_HAVE_STATIC_LIB(HWLOC, DEFAULT_STATIC_LIB_SEARCH_PATHS, hwloc libhwloc, hwloc_bitmap_alloc, -lnuma -lltdl)
+		AX_EXT_HAVE_STATIC_LIB(NUMA, DEFAULT_STATIC_LIB_SEARCH_PATHS, numa libnuma, numa_bitmask_setbit, -lltdl)
+		AX_EXT_HAVE_STATIC_LIB(LTDL, DEFAULT_STATIC_LIB_SEARCH_PATHS, ltdl libltdl, lt_dlopen, -ldl)
+		HWLOC_LIBS="$HWLOC_LIBS $NUMA_LIBS $LTDL_LIBS"
+		AC_SUBST([HWLOC_LIBS])
+	else
+		PKG_CHECK_MODULES(HWLOC, hwloc, HWLOC_FOUND=yes, HWLOC_FOUND=no)
+	fi
 
-	AS_IF([test "x$HAVE_HWLOC" = "xyes"], [
+	AS_IF([test "x$HWLOC_FOUND" = "xyes"], [
 		AC_DEFINE([HAVE_HWLOC], [1], [Define if you have hwloc library.])
 	])
 ])
 
-AM_CONDITIONAL([HAVE_HWLOC], [test "$HAVE_HWLOC" = yes])
+AM_CONDITIONAL([HAVE_HWLOC], [test "$HWLOC_FOUND" = yes])
+AM_CONDITIONAL([STATIC_HWLOC], [test "$static_hwloc" != no])
 ])

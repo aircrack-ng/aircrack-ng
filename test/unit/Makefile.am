@@ -58,21 +58,50 @@ LIBAIRCRACK_CRYPTO_LIBS = -L../../src/aircrack-crypto -laircrack-crypto
 LIBAIRCRACK_UTIL	= ../../src/aircrack-util/libaircrack-util.la
 LIBAIRCRACK_UTIL_LIBS = -L../../src/aircrack-util -laircrack-util
 
-test_calc_one_pmk_SOURCES = test-calc-one-pmk.c $(LIBAIRCRACK_CRYPTO)
-test_calc_one_pmk_CFLAGS = $(CMOCKA_CFLAGS)
-test_calc_one_pmk_LDADD = $(CMOCKA_LIBS) $(LIBAIRCRACK_CRYPTO_LIBS)
+COMMON_CFLAGS = $(PTHREAD_CFLAGS) \
+				$(CRYPTO_CFLAGS) \
+				$(ZLIB_CFLAGS) \
+				$(CMOCKA_CFLAGS)
+COMMON_LDADD  = $(PTHREAD_LIBS) \
+			    $(CRYPTO_LIBS) \
+			    $(ZLIB_LIBS) \
+			    $(CMOCKA_LIBS)
 
-test_string_has_suffix_SOURCES = test-string-has-suffix.c $(LIBAIRCRACK_UTIL)
-test_string_has_suffix_CFLAGS = $(CMOCKA_CFLAGS)
-test_string_has_suffix_LDADD = $(CMOCKA_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
+test_calc_one_pmk_SOURCES = test-calc-one-pmk.c \
+							$(LIBAIRCRACK_CRYPTO)
+test_calc_one_pmk_CFLAGS  = $(COMMON_CFLAGS)
+test_calc_one_pmk_LDFLAGS = -rdynamic
+test_calc_one_pmk_LDADD   = $(LIBAIRCRACK_CRYPTO_LIBS) \
+						    $(COMMON_LDADD)
 
-test_wpapsk_SOURCES = test-wpapsk.c $(LIBAIRCRACK_UTIL)
-test_wpapsk_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" "-DLIBDIR=\"$(libdir)\"" $(CMOCKA_CFLAGS)
-test_wpapsk_LDADD = $(CMOCKA_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
+test_string_has_suffix_SOURCES = test-string-has-suffix.c \
+								 $(LIBAIRCRACK_UTIL)
+test_string_has_suffix_CFLAGS  = $(COMMON_CFLAGS)
+test_string_has_suffix_LDFLAGS = -rdynamic
+test_string_has_suffix_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(COMMON_LDADD)
 
-test_wpapsk_cmac_SOURCES = test-wpapsk-cmac.c $(LIBAIRCRACK_UTIL)
-test_wpapsk_cmac_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" "-DLIBDIR=\"$(libdir)\"" $(CMOCKA_CFLAGS)
-test_wpapsk_cmac_LDADD = $(CMOCKA_LIBS) $(LIBAIRCRACK_UTIL_LIBS)
+test_wpapsk_SOURCES = test-wpapsk.c \
+					  $(LIBAIRCRACK_UTIL)
+test_wpapsk_CFLAGS  = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
+					  "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
+					  "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
+					  "-DLIBDIR=\"$(libdir)\"" \
+					  $(COMMON_CFLAGS)
+test_wpapsk_LDFLAGS = -rdynamic
+test_wpapsk_LDADD   = $(LIBAIRCRACK_CRYPTO_LIBS) \
+					  $(LIBAIRCRACK_UTIL_LIBS) \
+					  $(COMMON_LDADD)
+
+test_wpapsk_cmac_SOURCES = test-wpapsk-cmac.c \
+						   $(LIBAIRCRACK_UTIL)
+test_wpapsk_cmac_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
+						  "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
+						  "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
+						  "-DLIBDIR=\"$(libdir)\"" \
+						  $(COMMON_CFLAGS)
+test_wpapsk_cmac_LDFLAGS = -rdynamic
+test_wpapsk_cmac_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) \
+						   $(COMMON_LDADD)
 
 TESTS = test-calc-one-pmk test-string-has-suffix
 

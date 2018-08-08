@@ -39,21 +39,31 @@ dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_CRYPTO],[
 
-AC_CHECK_LIB([crypto], [OPENSSL_init], [
-    OPENSSL_LIBS="-lcrypto"
-    OPENSSL_LDFLAGS=""
+AC_ARG_ENABLE(static-crypto,
+    AS_HELP_STRING([--enable-static-crypto],
+		[Enable statically linked OpenSSL libcrypto.]),
+    [static_crypto=$enableval], [static_crypto=no])
 
-    AC_CHECK_HEADERS([openssl/crypto.h], [
-        OPENSSL_FOUND=yes
-        OPENSSL_INCLUDES=""
-    ], [
-        AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
-    ])
-], [
-    AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
-])
+if test "x$static_crypto" != "xno"; then
+	AX_EXT_HAVE_STATIC_LIB(ZLIB, DEFAULT_STATIC_LIB_SEARCH_PATHS, z libz, compress)
+	AX_EXT_HAVE_STATIC_LIB(OPENSSL, DEFAULT_STATIC_LIB_SEARCH_PATHS, crypto libcrypto, HMAC, -lz -ldl)
+else
+	AC_CHECK_LIB([crypto], [OPENSSL_init], [
+		OPENSSL_LIBS="-lcrypto"
+		OPENSSL_LDFLAGS=""
 
-AX_LIB_GCRYPT
+		AC_CHECK_HEADERS([openssl/crypto.h], [
+			OPENSSL_FOUND=yes
+			OPENSSL_INCLUDES=""
+		], [
+			AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
+		])
+	], [
+		AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
+	])
+
+	AX_LIB_GCRYPT
+fi
 
 CRYPTO_CFLAGS=
 CRYPTO_INCLUDES=
@@ -90,4 +100,5 @@ AC_SUBST(CRYPTO_LIBS)
 AC_SUBST(CRYPTO_LDFLAGS)
 
 AM_CONDITIONAL([LIBGCRYPT], [test "$CRYPTO_TYPE" = libgcrypt])
+AM_CONDITIONAL([STATIC_CRYPTO], [test "$static_crypto" != no])
 ])

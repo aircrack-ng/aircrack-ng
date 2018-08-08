@@ -38,7 +38,20 @@ dnl If you delete this exception statement from all source files in the
 dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_SQLITE],[
-AX_LIB_SQLITE3
+
+AC_ARG_ENABLE(static-sqlite3,
+    AS_HELP_STRING([--enable-static-sqlite3],
+		[Enable statically linked SQLite3 libsqlite3.]),
+    [static_sqlite3=$enableval], [static_sqlite3=no])
+
+if test "x$static_sqlite3" != "xno"; then
+	AX_EXT_HAVE_STATIC_LIB(SQLITE3, DEFAULT_STATIC_LIB_SEARCH_PATHS, sqlite3 libsqlite3, sqlite3_open)
+	if test "x$SQLITE3_FOUND" = xyes; then
+		HAVE_SQLITE3=yes
+	fi
+else
+	AX_LIB_SQLITE3
+fi
 
 if test x"$HAVE_SQLITE3" = xyes; then
     AC_DEFINE([HAVE_SQLITE], [1], [Define if you have sqlite3])
