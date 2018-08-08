@@ -331,6 +331,7 @@ static struct AP_info *get_first_target(void)
 	c_avl_iterator_t *it = c_avl_get_iterator(targets);
 	c_avl_iterator_next(it, &key, (void **) &target);
 	c_avl_iterator_destroy(it);
+	it = NULL;
 	return target;
 }
 
@@ -3615,6 +3616,7 @@ static int update_ivbuf(void)
 		}
 	}
 	c_avl_iterator_destroy(it);
+	it = NULL;
 
 	/* 2nd pass: create the main IVs buffer if necessary */
 
@@ -3656,6 +3658,7 @@ static int update_ivbuf(void)
 			}
 		}
 		c_avl_iterator_destroy(it);
+		it = NULL;
 
 		pthread_mutex_unlock(&mx_ivb);
 
@@ -6612,6 +6615,7 @@ int main(int argc, char *argv[])
 				i++;
 			}
 			c_avl_iterator_destroy(it);
+			it = NULL;
 
 			printf("\n");
 
@@ -6641,6 +6645,7 @@ int main(int argc, char *argv[])
 
 				} while (z < 0 || ap_cur == NULL);
 				c_avl_iterator_destroy(it);
+				it = NULL;
 			}
 			else if (c_avl_size(access_points) == 1)
 			{
@@ -6648,6 +6653,7 @@ int main(int argc, char *argv[])
 				c_avl_iterator_t *it = c_avl_get_iterator(access_points);
 				c_avl_iterator_next(it, &key, (void **) &ap_cur);
 				c_avl_iterator_destroy(it);
+				it = NULL;
 				ap_cur->target = 1;
 				c_avl_insert(targets, ap_cur->bssid, ap_cur);
 			}
@@ -6744,6 +6750,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	c_avl_iterator_destroy(it);
+	it = NULL;
 
 	printf("%d potential targets\n\n", c_avl_size(targets));
 	ap_cur = get_first_target();
