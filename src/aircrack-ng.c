@@ -4316,7 +4316,11 @@ static void show_wpa_stats(char *key,
 		{
 			calc = ((float) nb_tried / (float) opt.wordcount) * 100;
 			remain = (opt.wordcount - nb_tried);
-			eta = (remain / (long long int) ksec);
+
+			if (ksec != 0)
+				eta = (remain / (long long int) ksec);
+			else
+				eta = remain;
 
 			calctime(eta, calc);
 		}
