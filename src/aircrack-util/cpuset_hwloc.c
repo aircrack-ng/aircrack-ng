@@ -64,6 +64,12 @@ void ac_cpuset_destroy(ac_cpuset_t *cpuset)
 {
 	assert(cpuset != NULL);
 
+	if (cpuset->hwloc_cpusets != NULL)
+	{
+		free(cpuset->hwloc_cpusets);
+		cpuset->hwloc_cpusets = NULL;
+	}
+
 	hwloc_topology_destroy(cpuset->topology);
 }
 
