@@ -1400,6 +1400,7 @@ static void read_thread(void *arg)
 
 			memset(ap_cur, 0, sizeof(struct AP_info));
 			memcpy(ap_cur->bssid, bssid, 6);
+			append_ap(ap_cur);
 			ap_cur->crypt = -1;
 
 			// Shortcut to set encryption:
@@ -1867,6 +1868,8 @@ static void read_thread(void *arg)
 		if (st_cur == NULL)
 		{
 			pthread_mutex_unlock(&mx_apl);
+			destroy_ap(ap_cur);
+			ap_cur = NULL;
 			continue;
 		}
 
@@ -2624,6 +2627,8 @@ static void check_thread(void *arg)
 					body += 6;
 					dlen -= 6;
 				}
+
+				memset(clear, 0, sizeof(clear));
 
 				/* calculate keystream */
 				k = known_clear(clear, &clearsize, weight, h80211, dlen);
