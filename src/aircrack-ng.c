@@ -4315,15 +4315,11 @@ static void show_wpa_stats(char *key,
 
 		moveto(7, 6);
 		printf("Time left: ");
-		if (opt.wordcount != 0 && ksec != 0)
+		if (opt.wordcount != 0 && ksec > FLT_EPSILON)
 		{
 			calc = ((float) nb_tried / (float) opt.wordcount) * 100;
 			remain = (opt.wordcount - nb_tried);
-
-			if (ksec != 0)
-				eta = (remain / (long long int) ksec);
-			else
-				eta = remain;
+			eta = (remain / (long long int) ksec);
 
 			calctime(eta, calc);
 		}
