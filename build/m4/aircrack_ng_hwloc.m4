@@ -40,6 +40,8 @@ dnl program, then also delete it here.
 AC_DEFUN([AIRCRACK_NG_HWLOC], [
 AC_ARG_ENABLE([hwloc],[AC_HELP_STRING([--enable-hwloc], [include hwloc library, [default=yes]])])
 
+HAVE_HWLOC=no
+
 AC_ARG_ENABLE(static-hwloc,
     AS_HELP_STRING([--enable-static-hwloc],
 		[Enable statically linked OpenMPI libhwloc.]),
@@ -56,12 +58,14 @@ AS_IF([test "x$enable_hwloc" != "xno"], [
 		AX_EXT_HAVE_STATIC_LIB(LTDL, DEFAULT_STATIC_LIB_SEARCH_PATHS, ltdl libltdl, lt_dlopen, -ldl)
 		HWLOC_LIBS="$HWLOC_LIBS $NUMA_LIBS $LTDL_LIBS"
 		AC_SUBST([HWLOC_LIBS])
+        HAVE_HWLOC=yes
 	else
 		PKG_CHECK_MODULES(HWLOC, hwloc, HWLOC_FOUND=yes, HWLOC_FOUND=no)
 	fi
 
 	AS_IF([test "x$HWLOC_FOUND" = "xyes"], [
 		AC_DEFINE([HAVE_HWLOC], [1], [Define if you have hwloc library.])
+        HAVE_HWLOC=yes
 	])
 ])
 
