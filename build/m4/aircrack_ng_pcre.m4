@@ -38,7 +38,22 @@ dnl If you delete this exception statement from all source files in the
 dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_PCRE], [
-PKG_CHECK_MODULES(PCRE, libpcre, HAVE_PCRE=yes, HAVE_PCRE=no)
+AC_ARG_ENABLE(static-pcre,
+    AS_HELP_STRING([--enable-static-pcre],
+		[Enable statically linked PCRE libpcre.]),
+    [static_pcre=$enableval], [static_pcre=no])
+
+if test "x$static_pcre" != "xno"; then
+	AX_EXT_HAVE_STATIC_LIB(PCRE, DEFAULT_STATIC_LIB_SEARCH_PATHS, pcre libpcre, pcre_version)
+	if test "x$PCRE_FOUND" = xyes; then
+		HAVE_PCRE=yes
+	else
+		HAVE_PCRE=no
+	fi
+else
+	PKG_CHECK_MODULES(PCRE, libpcre, HAVE_PCRE=yes, HAVE_PCRE=no)
+fi
+
 AS_IF([test "x$HAVE_PCRE" = "xyes"], [
     AC_DEFINE([HAVE_PCRE], [1])
 ])
