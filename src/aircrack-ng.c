@@ -1053,6 +1053,8 @@ static void read_thread(void *arg)
 	memset(&pkh, 0, sizeof(struct pcap_pkthdr));
 	memset(&pfh, 0, sizeof(struct pcap_file_header));
 
+	const uint8_t *orig_buffer = NULL;
+
 	if ((buffer = (unsigned char *) malloc(65536)) == NULL)
 	{
 		/* there is no buffer */
@@ -1060,6 +1062,8 @@ static void read_thread(void *arg)
 		perror("malloc failed");
 		goto read_fail;
 	}
+
+	orig_buffer = buffer;
 
 	h80211 = buffer;
 
@@ -1217,6 +1221,8 @@ static void read_thread(void *arg)
 
 			load_hccapx_file(fd);
 			eof_wait(&eof_notified);
+			free(buffer);
+			buffer = NULL;
 			return;
 		}
 		else
@@ -1987,7 +1993,17 @@ static void read_thread(void *arg)
 				|| (ap_cur->nb_ivs_vague >= opt.max_ivs))
 			{
 				eof_wait(&eof_notified);
-				free(buffer);
+
+#ifdef XDEBUG
+				if (buffer != orig_buffer)
+				{
+					fprintf(stderr, "Memory corruption occurred. %p vs %p\n", buffer, orig_buffer);
+					abort();
+				}
+#endif
+
+				free((void *) orig_buffer);
+				buffer = NULL;
 				return;
 			}
 		}
@@ -2005,9 +2021,16 @@ read_fail:
 		free(rb.buf2);
 		rb.buf2 = NULL;
 	}
-	if (buffer != NULL)
+#ifdef XDEBUG
+	if (buffer != orig_buffer)
 	{
-		free(buffer);
+		fprintf(stderr, "Memory corruption occurred: %p vs %p\n", buffer, orig_buffer);
+		abort();
+	}
+#endif
+	if (orig_buffer != NULL)
+	{
+		free((void *) orig_buffer);
 		buffer = NULL;
 	}
 
