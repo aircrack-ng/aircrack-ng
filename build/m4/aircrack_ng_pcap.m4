@@ -93,17 +93,29 @@ AC_CHECK_HEADERS([pcap.h], [
 ])
 CFLAGS="$saved_cflags"
 
+AC_ARG_ENABLE(static-pcap,
+    AS_HELP_STRING([--enable-static-pcap],
+		[Enable statically linked PCAP libpcap.]),
+    [static_pcap=$enableval], [static_pcap=no])
+
 dnl
 dnl Locate the library
 dnl
 AS_IF([test "$PCAP_FOUND" = yes], [
-	AC_CHECK_LIB([pcap], [pcap_open_live], [
-	    PCAP_LIBS=-lpcap
-	    AC_DEFINE([HAVE_PCAP], [1])
-	    AC_SUBST(PCAP_LIBS)
+	if test "x$static_pcap" != "xno"; then
+		AX_EXT_HAVE_STATIC_LIB(PCAP, DEFAULT_STATIC_LIB_SEARCH_PATHS, pcap libpcap, pcap_open_live)
+		if test "x$PCAP_FOUND" = xyes; then
+			AC_DEFINE([HAVE_PCAP], [1])
+		fi
+	else
+		AC_CHECK_LIB([pcap], [pcap_open_live], [
+			PCAP_LIBS=-lpcap
+			AC_DEFINE([HAVE_PCAP], [1])
+			AC_SUBST(PCAP_LIBS)
 
-	    PCAP_FOUND=yes
-	],[ PCAP_FOUND=no ])
+			PCAP_FOUND=yes
+		],[ PCAP_FOUND=no ])
+	fi
 ])
 
 AM_CONDITIONAL([HAVE_PCAP], [test "$PCAP_FOUND" = yes])
