@@ -28,7 +28,7 @@
    * do not wish to do so, delete this exception statement from your
    * version.  If you delete this exception statement from all source
    * files in the program, then also delete it here.
-   *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+   *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
    */
 #ifdef HAVE_AIRPCAP
 
