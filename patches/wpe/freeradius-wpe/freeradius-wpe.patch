@@ -90,7 +90,7 @@ diff -Nurp freeradius-server-3.0.12/src/main/log.c freeradius-server-3.0.12-wpe/
  log_lvl_t	rad_debug_lvl = 0;		//!< Global debugging level
  static bool	rate_limit = true;		//!< Whether repeated log entries should be rate limited
  
-@@ -226,6 +230,79 @@ static int stdout_fd = -1;	//!< The orig
+@@ -226,6 +230,73 @@ static int stdout_fd = -1;	//!< The orig
  
  static char const spaces[] = "                                                                                                                        ";
  
@@ -112,16 +112,10 @@ diff -Nurp freeradius-server-3.0.12/src/main/log.c freeradius-server-3.0.12-wpe/
 +	} else {
 +		logfd = fopen(logfilename, "a");
 +		if (logfd == NULL) {
-+			fr_strerror_printf("  rlm_mschap: FAILED: Unable to open output log file %s: %s", logfilename, strerror(errno));
++			fr_strerror_printf("  log: FAILED: Unable to open output log file %s: %s", logfilename, strerror(errno));
 +			logfd = stderr;
 +		}
 +	}
-+	logfd = fopen("/var/log/freeradius-server-wpe.log", "a");
-+	if (logfd == NULL) {
-+		fr_strerror_printf("  log: FAILED: Unable to open output log file /var/log/freeradius-server-wpe.log: %s", strerror(errno));
-+		logfd = stderr;
-+	}
-+
 +
 +	nowtime = time(NULL);
 +	fprintf(logfd, "%s: %s\n", authtype, ctime(&nowtime));
