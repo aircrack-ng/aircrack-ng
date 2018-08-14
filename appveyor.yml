@@ -170,3 +170,15 @@ build_script:
     
 artifacts:
   - path: 'aircrack-ng-*.zip'
+
+deploy:
+  - provider: FTP
+    host: secure.thrallingpenguin.com
+    protocol: ftps
+    username: appveyor
+    password:
+      secure: TMwjjDnIFGZclF9TbbgBprDa1kRweHrh6Gw4vnDW/QegdmR4CT/LUiDf9L+OdNVZ
+    folder: artifacts/aircrack-ng/development/$(APPVEYOR_REPO_COMMIT)/win
+    artifact: aircrack-ng-*.zip
+    on:
+      branch: master
