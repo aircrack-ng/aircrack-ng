@@ -1,0 +1,185 @@
+model:
+  artifacts: artifacts/aircrack-ng
+  www: "{% if env.ARTIFACT_WWW_ROOT %}{{ env.ARTIFACT_WWW_ROOT }}{% else %}/tmp/www{% endif %}"
+  description: |
+    Aircrack-ng is a complete suite of tools to assess WiFi network
+    security.
+
+    It focuses on different areas of WiFi security:
+
+      Monitoring: Packet capture and export of data to text files
+    	for further processing by third party tools.
+
+      Attacking: Replay attacks, deauthentication, fake access points
+    	and others via packet injection.
+
+      Testing: Checking WiFi cards and driver capabilities (capture
+    	and injection).
+
+      Cracking: WEP and WPA PSK (WPA 1 and 2).
+
+    All tools are command line which allows for heavy scripting. A lot
+    of GUIs have taken advantage of this feature. It works primarily with
+    Linux but also Windows, OS X, FreeBSD, OpenBSD, NetBSD, as well as
+    Solaris and even the eComStation 2.
+
+  fpm: |
+    [ -e "{{ item.pkg }}" ] && rm -f "{{ item.pkg }}"
+    fpm -s dir \
+        -t "{{ item.pkg_type }}" \
+        -n "{{ item.pkg_name }}" \
+        -v "{{ item.pkg_version }}" \
+        -C "{{ variables.destdir }}" \
+        --license GPLv2 \
+        --vendor 'The Aircrack-ng Project' \
+        --url 'http://www.aircrack-ng.org/' \
+        --description "{{ model.description }}" \
+        -p "{{ item.pkg_template }}" \
+        -x *.la \
+        {{ item.pkg_deps }} \
+        {{ item.pkg_content }}
+    [ "{{ item.pkg_type}}" = deb ] && dpkg-deb -c "{{ item.pkg }}" || :
+    [ "{{ item.pkg_type}}" = deb ] && dpkg-deb -I "{{ item.pkg }}" || :
+    [ "{{ item.pkg_type}}" = rpm ] && rpm -qp "{{ item.pkg }}" --info || :
+
+  pkg:
+    - pkg: "aircrack-ng_{{ variables.pkg_deb_revision }}_amd64.deb"
+      pkg_name: aircrack-ng
+      pkg_type: deb
+      pkg_template: "aircrack-ng_VERSION_ARCH.deb"
+      pkg_deps: "--category net --deb-priority optional -d libc6 -d libgcc1 -d libltdl7 -d libnl-3-200 -d libnl-genl-3-200 -d libpcap0.8 -d libpcre3 -d libstdc++6"
+      pkg_content: "opt/bin opt/lib opt/sbin"
+      pkg_version: "{{ variables.pkg_deb_revision }}"
+    - pkg: "aircrack-ng-doc_{{ variables.pkg_deb_revision }}_amd64.deb"
+      pkg_name: aircrack-ng-doc
+      pkg_type: deb
+      pkg_template: "aircrack-ng-doc_VERSION_ARCH.deb"
+      pkg_deps: "--category net --deb-priority optional"
+      pkg_content: "opt/share/man"
+      pkg_version: "{{ variables.pkg_deb_revision }}"
+    - pkg: "aircrack-ng-{{ variables.pkg_rpm_revision }}.x86_64.rpm"
+      pkg_name: aircrack-ng
+      pkg_type: rpm
+      pkg_template: "aircrack-ng-VERSION.ARCH.rpm"
+      pkg_deps: "-d glibc -d libgcc -d libtool-ltdl -d libnl3 -d libstdc++"
+      pkg_content: "opt/bin opt/lib opt/sbin opt/share/man"
+      pkg_version: "{{ variables.pkg_rpm_revision }}"
+
+pipeline:
+  - stage(Preparation):
+    - tasks(ordered):
+      - shell:
+          script: mktemp -d
+          variable: destdir
+      - shell:
+          script: ./evalrev | sed -e 's/_rev//g'
+          variable: revision
+          retries: 3
+      - shell:
+          script: git rev-parse HEAD
+          variable: commit_id
+      - shell:
+          script: git describe --abbrev=0 --tags 2>/dev/null || echo unknown
+          variable: closest_tag
+      - shell:
+          script: git describe --abbrev=0 --tags --exact-match 2>/dev/null || echo
+          variable: exact_tag
+      - shell:
+          script: date -u +'%Y%m%d%H%M%S'
+          variable: pkg_date
+          title: Get the current date and time
+      - shell:
+          script: echo "{{ variables.closest_tag }}+git{{ variables.pkg_date }}-1"
+          variable: pkg_deb_revision
+          title: Calculate Debian package version
+      - shell:
+          script: echo "{{ variables.closest_tag }}.{% print variables.pkg_date[:8] %}git$(git rev-parse --short HEAD)"
+          variable: pkg_rpm_revision
+          title: Calculate RPM package version
+
+  - stage(Compilation):
+    - tasks(ordered):
+      - shell:
+          script: |
+            echo "commit: {{ variables.commit_id }}"
+            echo "on tag: {{ variables.closest_tag }}"
+            echo "exact : {{ variables.exact_tag }}"
+
+      - shell:
+          script: |
+            make clean || :
+          title: Clean previous build objects
+
+      - shell:
+          script: |
+            ./autogen.sh --prefix=/opt \
+                         --with-experimental \
+                         --enable-static-crypto \
+                         --enable-static-hwloc \
+                         --enable-static-sqlite3 \
+                         --enable-static-pcre \
+                         --enable-static-pcap ||
+            { cat config.log; exit 1; }
+
+      - shell:
+          script: make V=1
+
+  - stage(Unit-Testing):
+    - tasks(ordered):
+      - shell:
+          script: |
+            make check || \
+              { find test -name 'test-suite.log' -exec cat {} ';' && exit 1;}
+
+  - stage(Staging):
+    - tasks(ordered):
+      - shell:
+          script: "make install-strip DESTDIR={{ variables.destdir }}"
+
+  - stage(Packaging):
+    - tasks(ordered):
+      - shell:
+          script: "{{ model.fpm }}"
+          with: "{{ model.pkg }}"
+
+  - stage(Deploy to WWW):
+    - tasks(ordered):
+      - shell:
+          script: |
+            {% set path = "{{ model.www }}/{{ model.artifacts }}/development/{{ variables.commit_id }}/{{ item.pkg_type }}" %}
+            mkdir -p {{ path }}
+            cp -p {{ item.pkg }} {{ path }}
+          with: "{{ model.pkg }}"
+
+      - shell:
+          script: |
+            mkdir -p {{ model.www }}/{{ model.artifacts }}
+            cat > {{ model.www }}/{{ model.artifacts }}/development.json <<-EOF
+            {
+              "build": "development",
+              "commit": "{{ variables.commit_id }}",
+              "tag": "{{ variables.closest_tag }}",
+              "date": "$(date -u)",
+              "url": "https://packages.aircrack-ng.org/artifacts/aircrack-ng/development/{{ variables.commit_id }}"
+            }
+            EOF
+
+      - shell:
+          script: |
+            {% set prefix = "{{ model.www }}/{{ model.artifacts }}" %}
+            mkdir -p {{ prefix }}/stable
+            ln -sfd {{ prefix }}/development/{{ variables.commit_id }} {{ prefix }}/stable/{{ variables.exact_tag }}
+          when: "not '{{ variables.exact_tag }}' == ''"
+
+      - shell:
+          script: |
+            cat > {{ model.www }}/{{ model.artifacts }}/stable.json <<-EOF
+            {
+              "build": "stable",
+              "commit": "{{ variables.commit_id }}",
+              "tag": "{{ variables.exact_tag }}",
+              "date": "$(date -u)",
+              "url": "https://packages.aircrack-ng.org/artifacts/aircrack-ng/stable/{{ variables.exact_tag }}"
+            }
+            EOF
+          when: "not '{{ variables.exact_tag }}' == ''"
