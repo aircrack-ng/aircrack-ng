@@ -47,7 +47,7 @@ model:
       pkg_name: aircrack-ng
       pkg_type: deb
       pkg_template: "aircrack-ng_VERSION_ARCH.deb"
-      pkg_deps: "--category net --deb-priority optional -d libc6 -d libgcc1 -d libltdl7 -d libnl-3-200 -d libnl-genl-3-200 -d libpcap0.8 -d libpcre3 -d libstdc++6"
+      pkg_deps: "--category net --deb-priority optional -d libc6 -d libgcc1 -d libltdl7 -d libnl-3-200 -d libnl-genl-3-200 -d libstdc++6"
       pkg_content: "opt/bin opt/lib opt/sbin"
       pkg_version: "{{ variables.pkg_deb_revision }}"
     - pkg: "aircrack-ng-doc_{{ variables.pkg_deb_revision }}_amd64.deb"
