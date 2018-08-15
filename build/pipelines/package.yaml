@@ -148,7 +148,9 @@ pipeline:
           script: |
             {% set path = "{{ model.www }}/{{ model.artifacts }}/development/{{ variables.commit_id }}/{{ item.pkg_type }}" %}
             mkdir -p {{ path }}
+            chmod 777 {{ path }}
             cp -p {{ item.pkg }} {{ path }}
+            chmod 664 {{ path }}/{{ item.pkg }}
           with: "{{ model.pkg }}"
 
       - shell:
@@ -168,6 +170,7 @@ pipeline:
           script: |
             {% set prefix = "{{ model.www }}/{{ model.artifacts }}" %}
             mkdir -p {{ prefix }}/stable
+            chmod 777 {{ prefix }}/stable
             ln -sfd {{ prefix }}/development/{{ variables.commit_id }} {{ prefix }}/stable/{{ variables.exact_tag }}
           when: "not '{{ variables.exact_tag }}' == ''"
 
