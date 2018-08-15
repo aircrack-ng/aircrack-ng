@@ -179,6 +179,6 @@ deploy:
     password:
       secure: TMwjjDnIFGZclF9TbbgBprDa1kRweHrh6Gw4vnDW/QegdmR4CT/LUiDf9L+OdNVZ
     folder: artifacts/aircrack-ng/development/$(APPVEYOR_REPO_COMMIT)/win
-    artifact: aircrack-ng-*.zip
+    artifact: /aircrack-ng-.*\.zip/
     on:
       branch: master
