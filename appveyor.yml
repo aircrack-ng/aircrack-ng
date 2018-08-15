@@ -173,7 +173,7 @@ artifacts:
 
 deploy:
   - provider: FTP
-    host: secure.thrallingpenguin.com:990
+    host: secure.thrallingpenguin.com
     protocol: ftps
     username: appveyor
     password:
