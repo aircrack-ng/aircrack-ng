@@ -148,6 +148,8 @@ pipeline:
           script: |
             {% set path = "{{ model.www }}/{{ model.artifacts }}/development/{{ variables.commit_id }}/{{ item.pkg_type }}" %}
             mkdir -p {{ path }}
+            chmod 777 "{{ model.www }}/{{ model.artifacts }}/development"
+            chmod 777 "{{ model.www }}/{{ model.artifacts }}/development/{{ variables.commit_id }}"
             chmod 777 {{ path }}
             cp -p {{ item.pkg }} {{ path }}
             chmod 664 {{ path }}/{{ item.pkg }}
