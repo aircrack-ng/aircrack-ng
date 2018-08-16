@@ -152,7 +152,6 @@ pipeline:
             {% set path = "{{ model.www }}/{{ model.artifacts }}/development/{{ variables.commit_id }}/{{ item.pkg_type }}" %}
             {% set prefix = "{{ model.www }}/{{ model.artifacts }}" %}
             mkdir -p {{ path }}
-            chmod 777 "{{ model.www }}/{{ model.artifacts }}/development"
             chmod 777 "{{ model.www }}/{{ model.artifacts }}/development/{{ variables.commit_id }}"
             chmod 777 {{ path }}
             ln -sfd {{ prefix }}/development/{{ variables.commit_id }} {{ prefix }}/development/{{ variables.branch }}
