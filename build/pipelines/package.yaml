@@ -79,6 +79,9 @@ pipeline:
           script: git rev-parse HEAD
           variable: commit_id
       - shell:
+          script: git rev-parse --abbrev-ref HEAD
+          variable: branch
+      - shell:
           script: git describe --abbrev=0 --tags 2>/dev/null || echo unknown
           variable: closest_tag
       - shell:
@@ -147,10 +150,12 @@ pipeline:
       - shell:
           script: |
             {% set path = "{{ model.www }}/{{ model.artifacts }}/development/{{ variables.commit_id }}/{{ item.pkg_type }}" %}
+            {% set prefix = "{{ model.www }}/{{ model.artifacts }}" %}
             mkdir -p {{ path }}
             chmod 777 "{{ model.www }}/{{ model.artifacts }}/development"
             chmod 777 "{{ model.www }}/{{ model.artifacts }}/development/{{ variables.commit_id }}"
             chmod 777 {{ path }}
+            ln -sfd {{ prefix }}/development/{{ variables.commit_id }} {{ prefix }}/development/{{ variables.branch }}
             cp -p {{ item.pkg }} {{ path }}
             chmod 664 {{ path }}/{{ item.pkg }}
           with: "{{ model.pkg }}"
