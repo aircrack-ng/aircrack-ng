@@ -154,7 +154,7 @@ pipeline:
             mkdir -p {{ path }}
             chmod 777 "{{ model.www }}/{{ model.artifacts }}/development/{{ variables.commit_id }}"
             chmod 777 {{ path }}
-            ( cd {{ prefix }}/development && ln -sfd {{ variables.commit_id }} {{ variables.branch }} )
+            ( cd {{ prefix }}/development && ln -sfnd {{ variables.commit_id }} {{ variables.branch }} )
             cp -p {{ item.pkg }} {{ path }}
             chmod 664 {{ path }}/{{ item.pkg }}
           with: "{{ model.pkg }}"
@@ -177,7 +177,7 @@ pipeline:
             {% set prefix = "{{ model.www }}/{{ model.artifacts }}" %}
             mkdir -p {{ prefix }}/stable
             chmod 777 {{ prefix }}/stable
-            ln -sfd {{ prefix }}/development/{{ variables.commit_id }} {{ prefix }}/stable/{{ variables.exact_tag }}
+            ln -sfnd {{ prefix }}/development/{{ variables.commit_id }} {{ prefix }}/stable/{{ variables.exact_tag }}
           when: "not '{{ variables.exact_tag }}' == ''"
 
       - shell:
