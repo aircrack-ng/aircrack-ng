@@ -132,11 +132,13 @@ then
     AX_CHECK_COMPILE_FLAG([-maltivec], [
         AX_APPEND_FLAG(-maltivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+        ALTIVEC_FOUND=1
     ])
 
     AX_CHECK_COMPILE_FLAG([-mabi=altivec], [
         AX_APPEND_FLAG(-mabi=altivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+        ALTIVEC_FOUND=1
     ])
 
     AX_CHECK_COMPILE_FLAG([-mvsx], [
@@ -147,6 +149,7 @@ then
     AX_CHECK_COMPILE_FLAG([-mpower8-vector], [
         AX_APPEND_FLAG(-mpower8-vector, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+        POWER8_FOUND=1
     ])
 fi
 
@@ -258,6 +261,8 @@ AM_CONDITIONAL([ARM], [test "$IS_ARM" = 1])
 AM_CONDITIONAL([PPC], [test "$IS_PPC" = 1])
 AM_CONDITIONAL([NEON], [test "$NEON_FOUND" = 1])
 AM_CONDITIONAL([AVX512F], [test "$AVX512F_FOUND" = 1])
+AM_CONDITIONAL([ALTIVEC], [test "$ALTIVEC_FOUND" = 1])
+AM_CONDITIONAL([POWER8], [test "$POWER8_FOUND" = 1])
 ])
 
 AC_DEFUN([AIRCRACK_NG_SIMD_C], [

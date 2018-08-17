@@ -131,7 +131,12 @@ lib_LTLIBRARIES += libaircrack-crypto-arm-neon.la
 endif
 endif
 if PPC
-lib_LTLIBRARIES += libaircrack-crypto-ppc-altivec.la libaircrack-crypto-ppc-power8.la
+if ALTIVEC
+lib_LTLIBRARIES += libaircrack-crypto-ppc-altivec.la
+endif
+if POWER8
+lib_LTLIBRARIES += libaircrack-crypto-ppc-power8.la
+endif
 endif
 if X86
 if AVX512F
