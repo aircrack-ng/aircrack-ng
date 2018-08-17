@@ -192,3 +192,18 @@ pipeline:
             }
             EOF
           when: "not '{{ variables.exact_tag }}' == ''"
+
+  - stage(Deploy to PackageCloud.io):
+    - tasks(ordered):
+      - shell:
+          script: |
+            [ "{{ item.pkg_type }}" = deb ] && package_cloud push aircrack-ng/aircrack-ng/ubuntu/xenial {{ item.pkg }} || :
+            [ "{{ item.pkg_type }}" = deb ] && package_cloud push aircrack-ng/aircrack-ng/ubuntu/bionic {{ item.pkg }} || :
+            [ "{{ item.pkg_type }}" = deb ] && package_cloud push aircrack-ng/aircrack-ng/debian/jessie {{ item.pkg }} || :
+            [ "{{ item.pkg_type }}" = deb ] && package_cloud push aircrack-ng/aircrack-ng/debian/stretch {{ item.pkg }} || :
+            [ "{{ item.pkg_type }}" = deb ] && package_cloud push aircrack-ng/aircrack-ng/debian/buster {{ item.pkg }} || :
+            [ "{{ item.pkg_type }}" = deb ] && package_cloud push aircrack-ng/aircrack-ng/elementaryos/loki {{ item.pkg }} || :
+            [ "{{ item.pkg_type }}" = rpm ] && package_cloud push aircrack-ng/aircrack-ng/el/7 {{ item.pkg }} || :
+
+          with: "{{ model.pkg }}"
+          retries: 3
