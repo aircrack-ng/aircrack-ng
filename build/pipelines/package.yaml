@@ -29,6 +29,7 @@ model:
         -t "{{ item.pkg_type }}" \
         -n "{{ item.pkg_name }}" \
         -v "{{ item.pkg_version }}" \
+        --epoch 1 \
         -C "{{ variables.destdir }}" \
         --license GPLv2 \
         --vendor 'The Aircrack-ng Project' \
