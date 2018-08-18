@@ -62,7 +62,7 @@ model:
       pkg_name: aircrack-ng
       pkg_type: rpm
       pkg_template: "aircrack-ng-VERSION.ARCH.rpm"
-      pkg_deps: "-d glibc -d libgcc -d libtool-ltdl -d libnl3 -d libstdc++"
+      pkg_deps: "-d iw -d wireless-tools -d ethtool -d usbutils -d rfkill -d glibc -d libgcc -d libtool-ltdl -d libnl3 -d libstdc++"
       pkg_content: "opt/bin opt/lib opt/sbin opt/share/man"
       pkg_version: "{{ variables.pkg_rpm_revision }}"
 
