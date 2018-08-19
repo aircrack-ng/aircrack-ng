@@ -34,7 +34,7 @@ model:
         --license GPLv2 \
         -m "info@aircrack-ng.org" \
         --vendor 'The Aircrack-ng Project' \
-        --url 'http://www.aircrack-ng.org/' \
+        --url 'https://aircrack-ng.org/' \
         --description "{{ model.description }}" \
         -p "{{ item.pkg_template }}" \
         -x *.la \
