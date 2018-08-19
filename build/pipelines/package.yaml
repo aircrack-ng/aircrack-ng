@@ -204,6 +204,9 @@ pipeline:
             [ "{{ item.pkg_type }}" = deb ] && package_cloud push aircrack-ng/aircrack-ng/elementaryos/loki {{ item.pkg }} || :
             [ "{{ item.pkg_type }}" = deb ] && package_cloud push aircrack-ng/aircrack-ng/raspbian/buster {{ item.pkg }} || :
             [ "{{ item.pkg_type }}" = rpm ] && package_cloud push aircrack-ng/aircrack-ng/el/7 {{ item.pkg }} || :
+            [ "{{ item.pkg_type }}" = rpm ] && package_cloud push aircrack-ng/aircrack-ng/opensuse/42.1 {{ item.pkg }} || :
+            [ "{{ item.pkg_type }}" = rpm ] && package_cloud push aircrack-ng/aircrack-ng/opensuse/42.2 {{ item.pkg }} || :
+            [ "{{ item.pkg_type }}" = rpm ] && package_cloud push aircrack-ng/aircrack-ng/opensuse/42.3 {{ item.pkg }} || :
             [ "{{ item.pkg_type }}" = rpm ] && package_cloud push aircrack-ng/aircrack-ng/sles/12.0 {{ item.pkg }} || :
             [ "{{ item.pkg_type }}" = rpm ] && package_cloud push aircrack-ng/aircrack-ng/sles/12.1 {{ item.pkg }} || :
             [ "{{ item.pkg_type }}" = rpm ] && package_cloud push aircrack-ng/aircrack-ng/sles/12.2 {{ item.pkg }} || :
