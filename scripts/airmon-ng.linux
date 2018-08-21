@@ -776,6 +776,8 @@ getFrom() {
 				FROM="V"
 			elif [ "$DRIVER" = "rt5390sta" ]; then
 				FROM="V"
+			elif [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "rtl8812au" ] || [ "${DRIVER}" = "rtl88xxau" ]; then
+				FROM="V"
 			fi
 		elif modinfo -F filename $DRIVER 2>&1 | grep -q 'updates/drivers'
 		then
