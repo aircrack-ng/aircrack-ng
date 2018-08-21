@@ -736,12 +736,12 @@ getDriver() {
 	if [ "$DRIVER" = "rtl8187" ] && [ "$STACK" = "ieee80211" ]; then
 		DRIVER="r8187"
 	fi
-  if [ "$DRIVER" = "rtl88xxau" ]; then
-    DRIVER="88XXau"
-  fi
-  if [ "$DRIVER" = "rtl8812au" ]; then
-    DRIVER="8812au"
-  fi
+	if [ "$DRIVER" = "rtl88xxau" ]; then
+		DRIVER="88XXau"
+	fi
+	if [ "$DRIVER" = "rtl8812au" ]; then
+		DRIVER="8812au"
+	fi
 
 	#Here we will catch the broken lying drivers not caught above
 	#currently this only functions for pci devices and not usb since lsusb has no -k option
