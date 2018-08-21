@@ -438,7 +438,7 @@ startMac80211Iface() {
 		fi
 		#we didn't bail means our target interface is available
 		setLink ${1} down
-		if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "rtl8812au" ] || [ "${DRIVER}" = "rtl88xxau" ]; then
+		if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ]; then
 			#grumble grumble, seriously crap vendor driver
 			startDeprecatedIface ${1}
 			setChannelMac80211 ${1}
@@ -593,7 +593,7 @@ stopMac80211Iface() {
 			printf "please report it.\n"
 			exit 1
 		else
-			if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "rtl8812au" ] || [ "${DRIVER}" = "rtl88xxau" ]; then
+			if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ]; then
 				#grumble grumble, seriously crap vendor driver
 				stopDeprecatedIface ${1}
 				return
@@ -732,6 +732,12 @@ getDriver() {
 	if [ "$DRIVER" = "rtl8187" ] && [ "$STACK" = "ieee80211" ]; then
 		DRIVER="r8187"
 	fi
+  if [ "$DRIVER" = "rtl88xxau" ]; then
+    DRIVER="88XXau"
+  fi
+  if [ "$DRIVER" = "rtl8812au" ]; then
+    DRIVER="8812au"
+  fi
 
 	#Here we will catch the broken lying drivers not caught above
 	#currently this only functions for pci devices and not usb since lsusb has no -k option
@@ -776,7 +782,7 @@ getFrom() {
 				FROM="V"
 			elif [ "$DRIVER" = "rt5390sta" ]; then
 				FROM="V"
-			elif [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "rtl8812au" ] || [ "${DRIVER}" = "rtl88xxau" ]; then
+			elif [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ]; then
 				FROM="V"
 			fi
 		elif modinfo -F filename $DRIVER 2>&1 | grep -q 'updates/drivers'
