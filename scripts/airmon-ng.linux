@@ -107,9 +107,13 @@ fi
 
 if [ -d /sys/bus/pci ] || [ -d /sys/bus/pci_express ] || [ -d /proc/bus/pci ]; then
 	PCI_DEVICES=0
-	[ -d /sys/bus/pci/ ] && [ "$(ls -1 /sys/bus/pci/devices 2>/dev/null | wc -l)" != '0' ] && PCI_DEVICES=1
-	[ -d /sys/bus/pci_express ] && [ "$(ls -1 /sys/bus/pci/pci_express 2>/dev/null | wc -l)" != '0' ] && PCI_DEVICES=1
-	[ -d /proc/bus/pci ] && [ -n "$(cat /proc/bus/pci/devices 2>/dev/null)" ] && PCI_DEVICES=1
+	if [ -d /sys/bus/pci/devices ] && [ "$(ls -1 /sys/bus/pci/devices 2>/dev/null | wc -l)" != '0' ]; then
+		PCI_DEVICES=1
+	elif [ -r /proc/bus/pci/devices ] && [ -n "$(cat /proc/bus/pci/devices 2>/dev/null)" ]; then
+		PCI_DEVICES=1
+	elif [ -d /sys/bus/pci_express/devices ] && [ -n "$(ls -1 /sys/bus/pci_express/devices 2>/dev/null | wc -l)" != '0' ]; then
+		PCI_DEVICES=1
+	fi
 
 	if [ ${PCI_DEVICES} -eq 0 ]; then
 		LSPCI=0
