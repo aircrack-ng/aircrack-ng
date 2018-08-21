@@ -473,8 +473,7 @@ startMac80211Iface() {
 			printf "\nPlease run \"airmon-ng check kill\" and/or kill your network manager."
 		fi
 	else
-		isRPiWireless
-		[ $? -eq 0 ] && iw ${1} del
+		isRPiWireless && iw ${1} del
 		printf "\t\t(mac80211 station mode vif disabled for [${PHYDEV}]${1})\n"
 	fi
 }
