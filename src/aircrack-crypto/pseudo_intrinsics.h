@@ -658,15 +658,6 @@ _inline __m128i _mm_set1_epi64(long long a)
 	(vtype)(vtype64) { x0, x1 }
 #endif
 
-/******************************** MMX *********************************/
-
-#elif __MMX__
-#include <mmintrin.h>
-
-typedef __m64i vtype;
-
-#error MMX intrinsics not implemented (contributions are welcome!)
-
 #endif /* __SIMD__ elif __SIMD__ elif __SIMD__ */
 
 /************************* COMMON STUFF BELOW *************************/

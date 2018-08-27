@@ -357,9 +357,6 @@
 #elif __SSE2__
 #define SIMD_COEF_32 4
 #define SIMD_COEF_64 2
-#elif __MMX__
-#define SIMD_COEF_32 2
-#define SIMD_COEF_64 1
 #endif
 
 /*
