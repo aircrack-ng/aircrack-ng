@@ -138,7 +138,6 @@ then
     AX_CHECK_COMPILE_FLAG([-mabi=altivec], [
         AX_APPEND_FLAG(-mabi=altivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
-        ALTIVEC_FOUND=1
     ])
 
     AX_CHECK_COMPILE_FLAG([-mvsx], [
