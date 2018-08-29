@@ -72,7 +72,6 @@ static void print_radiotap_namespace(struct ieee80211_radiotap_iterator *iter)
 	case IEEE80211_RADIOTAP_RTS_RETRIES:
 	case IEEE80211_RADIOTAP_DATA_RETRIES:
 		break;
-		break;
 	default:
 		printf("\tBOGUS DATA\n");
 		break;
