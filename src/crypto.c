@@ -32,6 +32,17 @@
 
  */
 
+
+#ifdef USE_GCRYPT
+#include "gcrypt-openssl-wrapper.h"
+#include "sha1-git.h"
+#else
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+// We don't use EVP. Bite me
+#include <openssl/rc4.h>
+#include <openssl/aes.h>
+#endif
 #include <string.h>
 #include <arpa/inet.h>
 #include <assert.h>
