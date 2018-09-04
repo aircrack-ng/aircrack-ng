@@ -442,7 +442,7 @@ startMac80211Iface() {
 		fi
 		#we didn't bail means our target interface is available
 		setLink ${1} down
-		if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ]; then
+		if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "88XXau" ]; then
 			#grumble grumble, seriously crap vendor driver
 			startDeprecatedIface ${1}
 			setChannelMac80211 ${1}
@@ -596,7 +596,7 @@ stopMac80211Iface() {
 			printf "please report it.\n"
 			exit 1
 		else
-			if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ]; then
+			if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "88XXau" ]; then
 				#grumble grumble, seriously crap vendor driver
 				stopDeprecatedIface ${1}
 				return
