@@ -278,7 +278,7 @@ rfkill_check() {
 	fi
 	#first we have to find the rfkill index
 	#this is available as /sys/class/net/wlan0/phy80211/rfkill## but that's a bit difficult to parse
-	index="$(rfkill list | grep ${1} | awk -F: '{print $1}')"
+	index="$(rfkill list | grep "${1}:" | awk -F: '{print $1}')"
 	if [ -z "$index" ]; then
 		return 187
 	fi
@@ -1038,6 +1038,24 @@ getExtendedInfo() {
 			EXTENDED="\t\tUpgrade to kernel 2.6.29 or install compat-wireless stable"
 		fi
 	fi
+	#okay, now I take overload to a new level
+	#if there is nothing else here to complain about, show mode
+	if [ -z "${EXTENDED}" ]; then
+		if [ -r "/sys/class/net/${1}/type" ]; then
+			NET_TYPE="$(cat /sys/class/net/${1}/type)"
+		elif [ -r "/sys/class/ieee80211/${PHYDEV}/device/net/${1}/type" ]; then
+			NET_TYPE="$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${1}/type)"
+		fi
+		if [ -n "${NET_TYPE}" ]; then
+			if [ "${NET_TYPE}" = "803" ]; then
+				EXTENDED="mode monitor"
+			elif [ "${NET_TYPE}" = "1" ]; then
+				EXTENDED="mode managed"
+			else
+				EXTENDED="mode ${NET_TYPE} unknown"
+			fi
+		fi
+	fi
 }
 
 scanProcesses() {
@@ -1407,7 +1425,7 @@ fi
 #end random block of code that needs to die
 
 for iface in $(printf "${iface_list}"); do
-	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED PHYDEV ifacet DRIVERt FIELD1 FIELD1t FIELD2 FIELD2t CHIPSETt
+	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED NET_TYPE PHYDEV ifacet DRIVERt FIELD1 FIELD1t FIELD2 FIELD2t CHIPSETt
 	#add a RUNNING check here and up the device if it isn't already
 	ethtool_output="$(ethtool -i $iface 2>&1)"
 	if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]; then
@@ -1443,7 +1461,6 @@ for iface in $(printf "${iface_list}"); do
 			FIELD2t="\t\t"
 		fi
 		if [ -n "${EXTENDED}" ]; then
-			CHIPSETt="\t\t\t\t\t\t\t\t\t\t"
 			if [ ${#CHIPSET} -gt 70 ]; then
 				CHIPSETt="\t"
 			elif [ ${#CHIPSET} -gt 63 ]; then
@@ -1456,12 +1473,17 @@ for iface in $(printf "${iface_list}"); do
 				CHIPSETt="\t\t\t\t\t"
 			elif [ ${#CHIPSET} -gt 35 ]; then
 				CHIPSETt="\t\t\t\t\t\t"
+			# XXX YUP, 28 and 21 are now that same. mostly because this is all hardcoded and sucks
 			elif [ ${#CHIPSET} -gt 28 ]; then
 				CHIPSETt="\t\t\t\t\t\t\t"
 			elif [ ${#CHIPSET} -gt 21 ]; then
-				CHIPSETt="\t\t\t\t\t\t\t\t"
+				CHIPSETt="\t\t\t\t\t\t\t"
 			elif [ ${#CHIPSET} -gt 14 ]; then
+				CHIPSETt="\t\t\t\t\t\t\t\t"
+			elif [ ${#CHIPSET} -gt 7 ]; then
 				CHIPSETt="\t\t\t\t\t\t\t\t\t"
+			else
+				CHIPSETt="\t\t\t\t\t\t\t\t\t\t"
 			fi
 		fi
 		printf "${FROM}[${PHYDEV}]${iface}${FIELD1t}${DRIVER}[${STACK}]-${FIRMWARE}${FIELD2t}${CHIPSET}${CHIPSETt}${EXTENDED}\n"
