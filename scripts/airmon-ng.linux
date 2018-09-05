@@ -803,6 +803,7 @@ getFrom() {
 	else
 		FROM="K"
 	fi
+  #maybe add an 'intree' check?
 	if [ "$DEBUG" = "1" ]; then
 		printf "getFrom() $FROM\n"
 	fi
