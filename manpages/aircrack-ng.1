@@ -150,7 +150,7 @@ Path to the airolib-ng database. Cannot be used with \(aq-w\(aq.
 Aircrack-ng automatically loads and uses the fastest optimization based on instructions available for your CPU. This options allows to force another optimization. Choices depend on the CPU and the following are all the possibilities that may be compiled regardless of the CPU type: generic, sse2, avx, avx2, avx512, neon, asimd, altivec, power8.
 .TP
 .I --simd-list
-Shows a list of the available SIMD architectures, for this machine, separated by a space character.
+Shows a list of the available SIMD architectures, separated by a space character. Aircrack-ng automatically selects the fastest optimization and thus it is rarely needed to use this option. Use case would be for testing purposes or when a "lower" optimization, such as "generic", is faster than the automatically selected one. Before forcing a SIMD architecture, verify that the instruction is supported by your CPU, using \-u.
 .PP
 .TP
 .B Other options:
