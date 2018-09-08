@@ -1094,8 +1094,9 @@ scanProcesses() {
 	fi
 	if [ ${match} -gt 0 ] && [ "${1}" != "kill" ]; then
 		printf "Found $match processes that could cause trouble.\n"
-		printf "If airodump-ng, aireplay-ng or airtun-ng stops working after\n"
-		printf "a short period of time, you may want to run 'airmon-ng check kill'\n\n"
+		printf "Kill them using 'airmon-ng check kill' before putting\n"
+		printf "the card in monitor mode, they will interfere by changing channels\n"
+		printf "and sometimes putting the interface back in managed mode\n\n"
 	else
 		if [ "${1}" != "kill" ] && [ -n "${1}" ]; then
 			printf "No interfering processes found\n"
