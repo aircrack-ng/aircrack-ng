@@ -201,7 +201,7 @@
                   mkdir -p {{ prefix }}/stable
                   chmod 777 {{ prefix }}/stable
                   ln -sfnd {{ prefix }}/development/{{ commit_id }} {{ prefix }}/stable/{{ exact_tag }}
-              when: "{{ exact_tag }} != ''"
+              when: "exact_tag != ''"
 
             - name: Deploying stable package manifest
               tags:
@@ -217,7 +217,7 @@
                     "url": "https://packages.aircrack-ng.org/artifacts/aircrack-ng/stable/{{ exact_tag }}"
                   }
                   EOF
-              when: "{{ exact_tag }} != ''"
+              when: "exact_tag != ''"
 
       - name: Deploying development packages to PackageCloud.io
         tags:
@@ -228,7 +228,7 @@
             - rpm
           tasks:
             - name: Deploy Debian Packages
-              when: "{{ matrix_tag == 'deb' }}"
+              when: "matrix_tag == 'deb'"
               matrix:
                 tags:
                   - debian/jessie
@@ -246,12 +246,12 @@
                     attempts: 3
 
                   - command: "package_cloud push aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
-                    when: "{{ exact_tag }} != ''"
+                    when: "exact_tag != ''"
                     with_items: "{{ pkg }}"
                     attempts: 3
 
             - name: Deploy RPM Packages
-              when: "{{ matrix_tag == 'rpm' }}"
+              when: "matrix_tag == 'rpm'"
               matrix:
                 tags:
                   - el/7
@@ -270,7 +270,7 @@
                     attempts: 3
 
                   - command: "package_cloud push aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
-                    when: "{{ exact_tag }} != ''"
+                    when: "exact_tag != ''"
                     with_items: "{{ pkg }}"
                     attempts: 3
 
