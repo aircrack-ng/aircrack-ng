@@ -120,6 +120,9 @@
             find . -name '.libs' -a -type d -exec rm -fr {} ';' 2>/dev/null || :
           silent: true
 
+      - name: Ensure configure is present
+        command: autoreconf -vi
+
       - name: Configure
         command: >
           ./configure --prefix=/usr
