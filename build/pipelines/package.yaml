@@ -201,7 +201,7 @@
                   mkdir -p {{ prefix }}/stable
                   chmod 777 {{ prefix }}/stable
                   ln -sfnd {{ prefix }}/development/{{ commit_id }} {{ prefix }}/stable/{{ exact_tag }}
-              when: "exact_tag != ''"
+              when: "exact_tag | trim | count > 0"
 
             - name: Deploying stable package manifest
               tags:
@@ -217,7 +217,7 @@
                     "url": "https://packages.aircrack-ng.org/artifacts/aircrack-ng/stable/{{ exact_tag }}"
                   }
                   EOF
-              when: "exact_tag != ''"
+              when: "exact_tag | trim | count > 0"
 
       - name: Deploying development packages to PackageCloud.io
         tags:
@@ -245,7 +245,7 @@
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'deb') | list }}"
 
                   - command: "package_cloud push aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
-                    when: "exact_tag != ''"
+                    when: "exact_tag | trim | count > 0"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'deb') | list }}"
 
             - name: Deploy RPM Packages
@@ -267,6 +267,6 @@
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'rpm') | list }}"
 
                   - command: "package_cloud push aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
-                    when: "exact_tag != ''"
+                    when: "exact_tag | trim | count > 0"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'rpm') | list }}"
 
