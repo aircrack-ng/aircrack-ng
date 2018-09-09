@@ -243,12 +243,10 @@
                 tasks:
                   - command: "package_cloud push aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'deb') | list }}"
-                    attempts: 3
 
                   - command: "package_cloud push aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
                     when: "exact_tag != ''"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'deb') | list }}"
-                    attempts: 3
 
             - name: Deploy RPM Packages
               when: "matrix_tag == 'rpm'"
@@ -267,10 +265,8 @@
                 tasks:
                   - command: "package_cloud push aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'rpm') | list }}"
-                    attempts: 3
 
                   - command: "package_cloud push aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
                     when: "exact_tag != ''"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'rpm') | list }}"
-                    attempts: 3
 
