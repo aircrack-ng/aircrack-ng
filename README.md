@@ -49,7 +49,7 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
    libpcap development package is required (on Cygwin, use the Aircap SDK instead; see above)
  * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc7
  * rfkill
- * For best performance on SMP machines, ensure the hwloc library and headers are installed.
+ * For best performance on SMP machines, ensure the hwloc library and headers are installed. It is strongly recommended on high core count systems
  * CMocka for unit testing
 
 ## Installing required and optional dependencies
