@@ -57,7 +57,7 @@ class macOUI_lookup:
             # default
             aircrackOUI=self.OUI_PATH[1]
         #a poor fix where if we have no file it trys to download it
-        self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
+        self.ouiTxtUrl   = "http://standards-oui.ieee.org/oui.txt"
         self.ouiUnPath   = install_dir#path to oui.txt if module is installed
         self.ouiInPath   = install_dir + '/support/'         #path to oui.txt if module is not installed
         self.ouiTxt = aircrackOUI

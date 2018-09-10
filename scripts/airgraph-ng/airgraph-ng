@@ -47,7 +47,7 @@ class dotCreate:
         self.dotFile = ['digraph G{\n\tsize ="144,144";\n\toverlap=false;\n']
         self.ouiCheck = libOuiParse.macOUI_lookup(path + 'oui.txt')
         if self.ouiCheck is False:
-            print("Missing the oui.txt file from http://standards.ieee.org/develop/regauth/oui/oui.txt, place it in the support directory")
+            print("Missing the oui.txt file from http://standards-oui.ieee.org/oui.txt, place it in the support directory")
             sys.exit(-1)
         self.ouiCheck.identDeviceDict(path + 'ouiDevice.txt')
 

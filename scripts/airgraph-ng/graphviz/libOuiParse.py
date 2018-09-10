@@ -47,7 +47,7 @@ class macOUI_lookup:
         generate the two dictionaries and return them
         """
         #a poor fix where if we have no file it trys to download it
-        self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
+        self.ouiTxtUrl   = "http://standards-oui.ieee.org/oui.txt"
 
         self.ouiTxt = oui
         if not oui or not os.path.isfile(self.ouiTxt):
