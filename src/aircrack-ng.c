@@ -6680,15 +6680,14 @@ int main(int argc, char *argv[])
 					{
 						i++;
 					}
+					c_avl_iterator_destroy(it);
+					it = NULL;
 					if (i == z)
 					{
 						ap_cur->target = 1;
 						c_avl_insert(targets, ap_cur->bssid, ap_cur);
 					}
-
 				} while (z < 0 || ap_cur == NULL);
-				c_avl_iterator_destroy(it);
-				it = NULL;
 			}
 			else if (c_avl_size(access_points) == 1)
 			{
