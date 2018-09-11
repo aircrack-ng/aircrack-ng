@@ -410,13 +410,14 @@ static void clean_exit(int ret)
 
 	for (i = 0; i < opt.nbcpu; i++)
 	{
-#ifdef CYGWIN
-		close(mc_pipe[i][1]);
-		close(bf_pipe[i][1]);
-#else
+// is this required? doesn't seem so.
+#if 0
 		safe_write(mc_pipe[i][1], (void *) "EXIT\r", 5);
 		safe_write(bf_pipe[i][1], (void *) tmpbuf, 64);
 #endif
+		close(mc_pipe[i][1]);
+		close(cm_pipe[i][1]);
+		close(bf_pipe[i][1]);
 	}
 
 	// Stop cracking session thread
@@ -1044,7 +1045,7 @@ static void read_thread(void *arg)
 
 	read_buf rb = {0};
 
-	int fd, n, fmt;
+	int fd = -1, n, fmt;
 	unsigned z;
 	int eof_notified = 0;
 	// 	int ret=0;
@@ -2051,6 +2052,8 @@ read_fail:
 		buffer = NULL;
 	}
 
+	if (fd != -1) close(fd);
+
 	if (close_aircrack) return;
 
 	//everything is going down
@@ -2071,7 +2074,7 @@ static void check_thread(void *arg)
 	 * of read_thread() */
 	read_buf crb = {0};
 
-	int fd, n, fmt;
+	int fd = -1, n, fmt;
 	unsigned z;
 	// 	int ret=0;
 
@@ -2850,6 +2853,8 @@ read_fail:
 		free(buffer);
 		buffer = NULL;
 	}
+
+	if (fd != -1) close(fd);
 
 	return;
 }
@@ -6827,11 +6832,15 @@ int main(int argc, char *argv[])
 	for (i = 0; i < opt.nbcpu; i++)
 	{
 		unused = pipe(mc_pipe[i]);
+		close(mc_pipe[i][0]);
+
 		unused = pipe(cm_pipe[i]);
+		close(cm_pipe[i][0]);
 
 		if (opt.amode <= 1 && opt.nbcpu > 1 && opt.do_brute && opt.do_mt_brute)
 		{
 			unused = pipe(bf_pipe[i]);
+			close(bf_pipe[i][0]);
 			bf_nkeys[i] = 0;
 		}
 	}
