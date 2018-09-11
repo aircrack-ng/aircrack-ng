@@ -432,6 +432,17 @@ static void clean_exit(int ret)
 			tid[i] = 0;
 		}
 
+    for (i = 0; i < opt.nbcpu; i++)
+    {
+        if (wpa_data[i].key_buffer != NULL)
+        {
+            free(wpa_data[i].key_buffer);
+            wpa_data[i].key_buffer = NULL;
+        }
+        pthread_cond_destroy(&wpa_data[i].cond);
+        pthread_mutex_destroy(&wpa_data[i].mutex);
+    }
+
 	dso_ac_crypto_engine_destroy(&engine);
 	ac_crypto_engine_loader_unload();
 
