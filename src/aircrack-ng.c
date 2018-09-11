@@ -4309,6 +4309,8 @@ static void show_wpa_stats(char *key,
 
 	ksec = (float) cur_nb_kprev / delta;
 
+    if (ksec < 1.0f) goto __out;
+
 	moveto(0, 0);
 	erase_display(0);
 
