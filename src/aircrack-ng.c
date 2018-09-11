@@ -476,6 +476,12 @@ static void clean_exit(int ret)
 		wep.ivbuf = NULL;
 	}
 
+	if (opt.logKeyToFile != NULL)
+	{
+		free(opt.logKeyToFile);
+		opt.logKeyToFile = NULL;
+	}
+
 	ac_aplist_free();
 	if (access_points != NULL)
 	{
