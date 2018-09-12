@@ -416,6 +416,7 @@ static void clean_exit(int ret)
 		safe_write(bf_pipe[i][1], (void *) tmpbuf, 64);
 #endif
 		close(mc_pipe[i][1]);
+		close(cm_pipe[i][0]);
 		close(cm_pipe[i][1]);
 		close(bf_pipe[i][1]);
 	}
@@ -6835,7 +6836,6 @@ int main(int argc, char *argv[])
 		close(mc_pipe[i][0]);
 
 		unused = pipe(cm_pipe[i]);
-		close(cm_pipe[i][0]);
 
 		if (opt.amode <= 1 && opt.nbcpu > 1 && opt.do_brute && opt.do_mt_brute)
 		{
