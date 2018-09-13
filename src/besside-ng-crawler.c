@@ -409,6 +409,11 @@ int main(int argc, char *argv[])
 	dumphandle = pcap_open_dead(DLT_IEEE802_11, BUFSIZ);
 	dumper = pcap_dump_open(dumphandle, argv[2]);
 
+	if (dumper == NULL) {
+		pcap_perror(dumphandle, "ERROR");
+		pcap_close(dumphandle);
+	}
+
 	process_directory(argv[1], begin);
 
 	pcap_dump_close(dumper);
