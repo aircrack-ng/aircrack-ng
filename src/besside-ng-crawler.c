@@ -401,8 +401,6 @@ int main(int argc, char *argv[])
 		printf("Filters out a single beacon and all EAPOL frames from the WPA "
 			   "networks in there\n");
 		printf("And saves them to CapFileOut.\n\n");
-		printf("This tool is supposed to crawl capfiles for upload to sorbo's "
-			   "WPA statistic server!\n");
 		exit(0);
 	}
 
