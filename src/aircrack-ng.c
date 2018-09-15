@@ -392,6 +392,179 @@ static void ac_aplist_free(void)
 	pthread_mutex_unlock(&mx_apl);
 }
 
+static int add_wep_iv(struct AP_info *ap, unsigned char *buffer)
+{
+	/* check for uniqueness first */
+	if (ap->nb_ivs == 0) ap->uiv_root = uniqueiv_init();
+
+	if (uniqueiv_check(ap->uiv_root, buffer) == 0)
+	{
+		/* add the IV & first two encrypted bytes */
+
+		int n = ap->nb_ivs * 5;
+
+		if (n + 5 > ap->ivbuf_size)
+		{
+			/* enlarge the IVs buffer */
+
+			ap->ivbuf_size += 131072;
+			ap->ivbuf = (unsigned char *) realloc(ap->ivbuf, ap->ivbuf_size);
+
+			if (ap->ivbuf == NULL)
+			{
+				perror("realloc failed");
+				return -1;
+			}
+		}
+
+		memcpy(ap->ivbuf + n, buffer, 5);
+		uniqueiv_mark(ap->uiv_root, buffer);
+		ap->nb_ivs++;
+	}
+	return 0;
+}
+
+static int parse_ivs2(struct AP_info *ap_cur, struct ivs2_pkthdr *pivs2)
+{
+	int weight[16];
+	struct ivs2_pkthdr ivs2 = *pivs2;
+	int n = 0;
+	if (ivs2.flags & IVS2_ESSID)
+	{
+		memcpy(ap_cur->essid, buffer, ivs2.len);
+	}
+	else if (ivs2.flags & IVS2_XOR)
+	{
+		ap_cur->crypt = 2;
+
+		if (opt.do_ptw)
+		{
+			int clearsize;
+
+			clearsize = ivs2.len;
+
+			if (clearsize < opt.keylen + 3) return -2;
+
+			if (PTW_addsession(ap_cur->ptw_clean,
+							   buffer,
+							   buffer + 4,
+							   PTW_DEFAULTWEIGHT,
+							   1))
+				ap_cur->nb_ivs_clean++;
+
+			if (PTW_addsession(ap_cur->ptw_vague,
+							   buffer,
+							   buffer + 4,
+							   PTW_DEFAULTWEIGHT,
+							   1))
+				ap_cur->nb_ivs_vague++;
+
+			return -2;
+		}
+
+		buffer[3] = buffer[4];
+		buffer[4] = buffer[5];
+		buffer[3] ^= 0xAA;
+		buffer[4] ^= 0xAA;
+		/* check for uniqueness first */
+
+		if (ap_cur->nb_ivs == 0) ap_cur->uiv_root = uniqueiv_init();
+
+		if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
+		{
+			/* add the IV & first two encrypted bytes */
+
+			n = ap_cur->nb_ivs * 5;
+
+			if (n + 5 > ap_cur->ivbuf_size)
+			{
+				/* enlarge the IVs buffer */
+
+				ap_cur->ivbuf_size += 131072;
+				ap_cur->ivbuf = (unsigned char *) realloc(ap_cur->ivbuf,
+														  ap_cur->ivbuf_size);
+
+				if (ap_cur->ivbuf == NULL)
+				{
+					perror("realloc failed");
+					return -1;
+				}
+			}
+
+			memcpy(ap_cur->ivbuf + n, buffer, 5);
+			uniqueiv_mark(ap_cur->uiv_root, buffer);
+			ap_cur->nb_ivs++;
+			// 					all_ivs[256*256*buffer[0] + 256*buffer[1] + buffer[2]].used |= GOT_IV;
+		}
+	}
+	else if (ivs2.flags & IVS2_PTW)
+	{
+		ap_cur->crypt = 2;
+
+		if (opt.do_ptw)
+		{
+			int clearsize;
+
+			clearsize = ivs2.len;
+
+			if (buffer[5] < opt.keylen) return -4;
+			if (clearsize < (6 + buffer[4] * 32 + 16 * (signed) sizeof(int)))
+				return -5;
+
+			memcpy(weight,
+				   buffer + clearsize - 15 * sizeof(int),
+				   16 * sizeof(int));
+			// 					printf("weight 1: %d, weight 2: %d\n", weight[0], weight[1]);
+
+			if (PTW_addsession(
+					ap_cur->ptw_vague, buffer, buffer + 6, weight, buffer[4]))
+				ap_cur->nb_ivs_vague++;
+
+			return -6;
+		}
+
+		buffer[3] = buffer[6];
+		buffer[4] = buffer[7];
+		buffer[3] ^= 0xAA;
+		buffer[4] ^= 0xAA;
+		/* check for uniqueness first */
+
+		if (ap_cur->nb_ivs == 0) ap_cur->uiv_root = uniqueiv_init();
+
+		if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
+		{
+			/* add the IV & first two encrypted bytes */
+
+			n = ap_cur->nb_ivs * 5;
+
+			if (n + 5 > ap_cur->ivbuf_size)
+			{
+				/* enlarge the IVs buffer */
+
+				ap_cur->ivbuf_size += 131072;
+				ap_cur->ivbuf = (unsigned char *) realloc(ap_cur->ivbuf,
+														  ap_cur->ivbuf_size);
+
+				if (ap_cur->ivbuf == NULL)
+				{
+					perror("realloc failed");
+					return -1;
+				}
+			}
+
+			memcpy(ap_cur->ivbuf + n, buffer, 5);
+			uniqueiv_mark(ap_cur->uiv_root, buffer);
+			ap_cur->nb_ivs++;
+		}
+	}
+	else if (ivs2.flags & IVS2_WPA)
+	{
+		ap_cur->crypt = 3;
+		memcpy(&ap_cur->wpa, buffer, sizeof(struct WPA_hdsk));
+	}
+	return 0;
+}
+
 static void clean_exit(int ret)
 {
 	int i = 0;
@@ -434,16 +607,16 @@ static void clean_exit(int ret)
 			tid[i] = 0;
 		}
 
-    for (i = 0; i < opt.nbcpu; i++)
-    {
-        if (wpa_data[i].key_buffer != NULL)
-        {
-            free(wpa_data[i].key_buffer);
-            wpa_data[i].key_buffer = NULL;
-        }
-        pthread_cond_destroy(&wpa_data[i].cond);
-        pthread_mutex_destroy(&wpa_data[i].mutex);
-    }
+	for (i = 0; i < opt.nbcpu; i++)
+	{
+		if (wpa_data[i].key_buffer != NULL)
+		{
+			free(wpa_data[i].key_buffer);
+			wpa_data[i].key_buffer = NULL;
+		}
+		pthread_cond_destroy(&wpa_data[i].cond);
+		pthread_mutex_destroy(&wpa_data[i].mutex);
+	}
 
 	dso_ac_crypto_engine_destroy(&engine);
 	ac_crypto_engine_loader_unload();
@@ -1056,7 +1229,6 @@ static void read_thread(void *arg)
 	unsigned char stmac[6];
 	unsigned char *h80211;
 	unsigned char *p;
-	int weight[16];
 
 	struct ivs2_pkthdr ivs2;
 	struct ivs2_filehdr fivs2;
@@ -1094,10 +1266,11 @@ static void read_thread(void *arg)
 	{
 		if ((fd = open((char *) arg, O_RDONLY | O_BINARY)) < 0)
 		{
-			fprintf(stderr, "Failed to open '%s' (%d): %s\n",
-			        (char *) arg,
-			        errno,
-			        strerror(errno));
+			fprintf(stderr,
+					"Failed to open '%s' (%d): %s\n",
+					(char *) arg,
+					errno,
+					strerror(errno));
 			goto read_fail;
 		}
 	}
@@ -1450,206 +1623,19 @@ static void read_thread(void *arg)
 			}
 			append_ap(ap_cur);
 		}
-		else
-		{ /* Make sure our node is properly initialized */
-			// See https://github.com/aircrack-ng/aircrack-ng/pull/1934#issuecomment-407197877
-			if (ap_cur->ptw_clean == NULL)
-			{
-				ap_cur->ptw_clean = PTW_newattackstate();
-				if (!ap_cur->ptw_clean)
-				{
-					perror("PTW_newattackstate()");
-					break;
-				}
-			}
-			if (ap_cur->ptw_vague == NULL)
-			{
-				ap_cur->ptw_vague = PTW_newattackstate();
-				if (!ap_cur->ptw_vague)
-				{
-					perror("PTW_newattackstate()");
-					break;
-				}
-			}
-		}
 
 		if (fmt == FORMAT_IVS)
 		{
 			ap_cur->crypt = 2;
 
 		add_wep_iv:
-			/* check for uniqueness first */
-
-			if (ap_cur->nb_ivs == 0) ap_cur->uiv_root = uniqueiv_init();
-
-			if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
-			{
-				/* add the IV & first two encrypted bytes */
-
-				n = ap_cur->nb_ivs * 5;
-
-				if (n + 5 > ap_cur->ivbuf_size)
-				{
-					/* enlarge the IVs buffer */
-
-					ap_cur->ivbuf_size += 131072;
-					ap_cur->ivbuf = (unsigned char *) realloc(
-						ap_cur->ivbuf, ap_cur->ivbuf_size);
-
-					if (ap_cur->ivbuf == NULL)
-					{
-						perror("realloc failed");
-						break;
-					}
-				}
-
-				memcpy(ap_cur->ivbuf + n, buffer, 5);
-				uniqueiv_mark(ap_cur->uiv_root, buffer);
-				ap_cur->nb_ivs++;
-			}
-
+			add_wep_iv(ap_cur, buffer);
 			goto unlock_mx_apl;
 		}
 
-		if (fmt == FORMAT_IVS2)
+		else if (fmt == FORMAT_IVS2)
 		{
-			if (ivs2.flags & IVS2_ESSID)
-			{
-				memcpy(ap_cur->essid, buffer, ivs2.len);
-			}
-			else if (ivs2.flags & IVS2_XOR)
-			{
-				ap_cur->crypt = 2;
-
-				if (opt.do_ptw)
-				{
-					int clearsize;
-
-					clearsize = ivs2.len;
-
-					if (clearsize < opt.keylen + 3) goto unlock_mx_apl;
-
-					if (PTW_addsession(ap_cur->ptw_clean,
-									   buffer,
-									   buffer + 4,
-									   PTW_DEFAULTWEIGHT,
-									   1))
-						ap_cur->nb_ivs_clean++;
-
-					if (PTW_addsession(ap_cur->ptw_vague,
-									   buffer,
-									   buffer + 4,
-									   PTW_DEFAULTWEIGHT,
-									   1))
-						ap_cur->nb_ivs_vague++;
-
-					goto unlock_mx_apl;
-				}
-
-				buffer[3] = buffer[4];
-				buffer[4] = buffer[5];
-				buffer[3] ^= 0xAA;
-				buffer[4] ^= 0xAA;
-				/* check for uniqueness first */
-
-				if (ap_cur->nb_ivs == 0) ap_cur->uiv_root = uniqueiv_init();
-
-				if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
-				{
-					/* add the IV & first two encrypted bytes */
-
-					n = ap_cur->nb_ivs * 5;
-
-					if (n + 5 > ap_cur->ivbuf_size)
-					{
-						/* enlarge the IVs buffer */
-
-						ap_cur->ivbuf_size += 131072;
-						ap_cur->ivbuf = (unsigned char *) realloc(
-							ap_cur->ivbuf, ap_cur->ivbuf_size);
-
-						if (ap_cur->ivbuf == NULL)
-						{
-							perror("realloc failed");
-							break;
-						}
-					}
-
-					memcpy(ap_cur->ivbuf + n, buffer, 5);
-					uniqueiv_mark(ap_cur->uiv_root, buffer);
-					ap_cur->nb_ivs++;
-					// 					all_ivs[256*256*buffer[0] + 256*buffer[1] + buffer[2]].used |= GOT_IV;
-				}
-			}
-			else if (ivs2.flags & IVS2_PTW)
-			{
-				ap_cur->crypt = 2;
-
-				if (opt.do_ptw)
-				{
-					int clearsize;
-
-					clearsize = ivs2.len;
-
-					if (buffer[5] < opt.keylen) goto unlock_mx_apl;
-					if (clearsize
-						< (6 + buffer[4] * 32 + 16 * (signed) sizeof(int)))
-						goto unlock_mx_apl;
-
-					memcpy(weight,
-						   buffer + clearsize - 15 * sizeof(int),
-						   16 * sizeof(int));
-					// 					printf("weight 1: %d, weight 2: %d\n", weight[0], weight[1]);
-
-					if (PTW_addsession(ap_cur->ptw_vague,
-									   buffer,
-									   buffer + 6,
-									   weight,
-									   buffer[4]))
-						ap_cur->nb_ivs_vague++;
-
-					goto unlock_mx_apl;
-				}
-
-				buffer[3] = buffer[6];
-				buffer[4] = buffer[7];
-				buffer[3] ^= 0xAA;
-				buffer[4] ^= 0xAA;
-				/* check for uniqueness first */
-
-				if (ap_cur->nb_ivs == 0) ap_cur->uiv_root = uniqueiv_init();
-
-				if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
-				{
-					/* add the IV & first two encrypted bytes */
-
-					n = ap_cur->nb_ivs * 5;
-
-					if (n + 5 > ap_cur->ivbuf_size)
-					{
-						/* enlarge the IVs buffer */
-
-						ap_cur->ivbuf_size += 131072;
-						ap_cur->ivbuf = (unsigned char *) realloc(
-							ap_cur->ivbuf, ap_cur->ivbuf_size);
-
-						if (ap_cur->ivbuf == NULL)
-						{
-							perror("realloc failed");
-							break;
-						}
-					}
-
-					memcpy(ap_cur->ivbuf + n, buffer, 5);
-					uniqueiv_mark(ap_cur->uiv_root, buffer);
-					ap_cur->nb_ivs++;
-				}
-			}
-			else if (ivs2.flags & IVS2_WPA)
-			{
-				ap_cur->crypt = 3;
-				memcpy(&ap_cur->wpa, buffer, sizeof(struct WPA_hdsk));
-			}
+			parse_ivs2(ap_cur, &ivs2);
 			goto unlock_mx_apl;
 		}
 
@@ -2016,7 +2002,10 @@ static void read_thread(void *arg)
 #ifdef XDEBUG
 				if (buffer != orig_buffer)
 				{
-					fprintf(stderr, "Memory corruption occurred. %p vs %p\n", buffer, orig_buffer);
+					fprintf(stderr,
+							"Memory corruption occurred. %p vs %p\n",
+							buffer,
+							orig_buffer);
 					abort();
 				}
 #endif
@@ -2043,7 +2032,10 @@ read_fail:
 #ifdef XDEBUG
 	if (buffer != orig_buffer)
 	{
-		fprintf(stderr, "Memory corruption occurred: %p vs %p\n", buffer, orig_buffer);
+		fprintf(stderr,
+				"Memory corruption occurred: %p vs %p\n",
+				buffer,
+				orig_buffer);
 		abort();
 	}
 #endif
@@ -2112,10 +2104,11 @@ static void check_thread(void *arg)
 	{
 		if ((fd = open((char *) arg, O_RDONLY | O_BINARY)) < 0)
 		{
-			fprintf(stderr, "Failed to open '%s' (%d): %s\n",
-			        (char *) arg,
-			        errno,
-			        strerror(errno));
+			fprintf(stderr,
+					"Failed to open '%s' (%d): %s\n",
+					(char *) arg,
+					errno,
+					strerror(errno));
 			goto read_fail;
 		}
 	}
@@ -2289,7 +2282,7 @@ static void check_thread(void *arg)
 				pkh.caplen -= n;
 			}
 
-			if (pfh.linktype == LINKTYPE_RADIOTAP_HDR)
+			else if (pfh.linktype == LINKTYPE_RADIOTAP_HDR)
 			{
 				/* remove the radiotap header */
 
@@ -2301,7 +2294,7 @@ static void check_thread(void *arg)
 				pkh.caplen -= n;
 			}
 
-			if (pfh.linktype == LINKTYPE_PPI_HDR)
+			else if (pfh.linktype == LINKTYPE_PPI_HDR)
 			{
 				/* Remove the PPI header */
 
@@ -2419,6 +2412,22 @@ static void check_thread(void *arg)
 			// - WEP is 2 for 'crypt' and 1 for 'amode'.
 			// - WPA is 3 for 'crypt' and 2 for 'amode'.
 			if (opt.forced_amode) ap_cur->crypt = opt.amode + 1;
+
+			if (opt.do_ptw == 1)
+			{
+				ap_cur->ptw_clean = PTW_newattackstate();
+				if (!ap_cur->ptw_clean)
+				{
+					perror("PTW_newattackstate()");
+					break;
+				}
+				ap_cur->ptw_vague = PTW_newattackstate();
+				if (!ap_cur->ptw_vague)
+				{
+					perror("PTW_newattackstate()");
+					break;
+				}
+			}
 		}
 
 		if (fmt == FORMAT_IVS)
@@ -2426,82 +2435,13 @@ static void check_thread(void *arg)
 			ap_cur->crypt = 2;
 
 		add_wep_iv:
-			/* check for uniqueness first */
-
-			if (ap_cur->nb_ivs == 0) ap_cur->uiv_root = uniqueiv_init();
-
-			if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
-			{
-				uniqueiv_mark(ap_cur->uiv_root, buffer);
-				ap_cur->nb_ivs++;
-			}
-
+			add_wep_iv(ap_cur, buffer);
 			goto unlock_mx_apl;
 		}
 
-		if (fmt == FORMAT_IVS2)
+		else if (fmt == FORMAT_IVS2)
 		{
-			if (ivs2.flags & IVS2_ESSID)
-			{
-				if (ivs2.len > 32)
-				{ // Max length of the ESSID (and length -1 of that field)
-					fprintf(stderr, "Invalid SSID length, it must be <= 32\n");
-					exit(1);
-				}
-				memcpy(ap_cur->essid, buffer, ivs2.len);
-				if (opt.essid_set && !strcmp(opt.essid, ap_cur->essid))
-					memcpy(opt.bssid, ap_cur->bssid, 6);
-			}
-			else if (ivs2.flags & IVS2_XOR)
-			{
-				ap_cur->crypt = 2;
-
-				if (opt.do_ptw)
-				{
-					int clearsize;
-
-					clearsize = ivs2.len;
-
-					if (clearsize < opt.keylen + 3) goto unlock_mx_apl;
-				}
-
-				if (ap_cur->nb_ivs == 0) ap_cur->uiv_root = uniqueiv_init();
-
-				if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
-				{
-					uniqueiv_mark(ap_cur->uiv_root, buffer);
-					ap_cur->nb_ivs++;
-				}
-			}
-			else if (ivs2.flags & IVS2_PTW)
-			{
-				ap_cur->crypt = 2;
-
-				if (opt.do_ptw)
-				{
-					int clearsize;
-
-					clearsize = ivs2.len;
-
-					if (buffer[5] < opt.keylen) goto unlock_mx_apl;
-					if (clearsize
-						< (6 + buffer[4] * 32 + 16 * (signed) sizeof(int)))
-						goto unlock_mx_apl;
-				}
-
-				if (ap_cur->nb_ivs == 0) ap_cur->uiv_root = uniqueiv_init();
-
-				if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
-				{
-					uniqueiv_mark(ap_cur->uiv_root, buffer);
-					ap_cur->nb_ivs++;
-				}
-			}
-			else if (ivs2.flags & IVS2_WPA)
-			{
-				ap_cur->crypt = 3;
-				memcpy(&ap_cur->wpa, buffer, sizeof(struct WPA_hdsk));
-			}
+			parse_ivs2(ap_cur, &ivs2);
 			goto unlock_mx_apl;
 		}
 
@@ -4332,7 +4272,7 @@ static void show_wpa_stats(char *key,
 
 	ksec = (float) cur_nb_kprev / delta;
 
-    if (ksec < 1.0f) goto __out;
+	if (ksec < 1.0f) goto __out;
 
 	moveto(0, 0);
 	erase_display(0);
@@ -5570,6 +5510,26 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 	int i, j, len = 0;
 
 	opt.ap = ap_cur;
+	/*
+    if (ap_cur->ptw_clean == NULL)
+    {
+        ap_cur->ptw_clean = PTW_newattackstate();
+        if (!ap_cur->ptw_clean)
+        {
+            perror("PTW_newattackstate()");
+            return FAILURE;
+        }
+    }
+    if (ap_cur->ptw_vague == NULL)
+    {
+        ap_cur->ptw_vague = PTW_newattackstate();
+        if (!ap_cur->ptw_vague)
+        {
+            perror("PTW_newattackstate()");
+            return FAILURE;
+        }
+    }
+    */
 
 	all = malloc(32 * sizeof(int[256]));
 	if (all == NULL)
@@ -6004,9 +5964,11 @@ int main(int argc, char *argv[])
 				else if (strcasecmp(optarg, "80211w") == 0)
 					opt.amode = 3;
 
-				if (ret1 != 1 || (opt.amode != 1 && opt.amode != 2 && opt.amode != 3))
+				if (ret1 != 1
+					|| (opt.amode != 1 && opt.amode != 2 && opt.amode != 3))
 				{
-					printf("Invalid attack mode. [1,2,3] or [wep,wpa,80211w]\n");
+					printf(
+						"Invalid attack mode. [1,2,3] or [wep,wpa,80211w]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (FAILURE);
 				}
@@ -6014,7 +5976,9 @@ int main(int argc, char *argv[])
 #if !defined(HAVE_OPENSSL_CMAC_H) && !defined(GCRYPT_WITH_CMAC_AES)
 				if (opt.amode == 3)
 				{
-					fprintf(stderr, "Key version 3 is only supported when OpenSSL (or similar) supports CMAC.\n");
+					fprintf(stderr,
+							"Key version 3 is only supported when OpenSSL (or "
+							"similar) supports CMAC.\n");
 
 					return (FAILURE);
 				}
@@ -6404,7 +6368,7 @@ int main(int argc, char *argv[])
 
 		ap_cur->target = 1;
 		ap_cur->wpa.state = 7;
-		ap_cur->wpa.keyver = (uint8_t) (opt.amode & 0xFF);
+		ap_cur->wpa.keyver = (uint8_t)(opt.amode & 0xFF);
 		strcpy(ap_cur->essid, "sorbo");
 		strcpy((char *) ap_cur->bssid, "deadb");
 		c_avl_insert(targets, ap_cur->bssid, ap_cur);
@@ -6466,17 +6430,14 @@ int main(int argc, char *argv[])
 		{
 			if (opt.wkp)
 			{
-				//ap_cur = ap_1st;
 				ret = do_make_wkp(ap_cur);
 			}
 			if (opt.hccap)
 			{
-				//ap_cur = ap_1st;
 				ret = do_make_hccap(ap_cur);
 			}
 			if (opt.hccapx)
 			{
-				//ap_cur = ap_1st;
 				ret = do_make_hccapx(ap_cur);
 			}
 		}
@@ -6732,54 +6693,57 @@ int main(int argc, char *argv[])
 		optind = old;
 		id = 0;
 	}
-
-	nb_eof = 0;
-	signal(SIGINT, sighandler);
-
-	do
+	else
 	{
-		char *optind_arg =
-			(restore_session) ? cracking_session->argv[optind] : argv[optind];
-		if (strcmp(optind_arg, "-") == 0) opt.no_stdin = 1;
 
-		if (pthread_create(
-				&(tid[id]), NULL, (void *) read_thread, (void *) optind_arg)
-			!= 0)
+		nb_eof = 0;
+		signal(SIGINT, sighandler);
+
+		do
 		{
-			perror("pthread_create failed");
-			goto exit_main;
+			char *optind_arg = (restore_session)
+								   ? cracking_session->argv[optind]
+								   : argv[optind];
+			if (strcmp(optind_arg, "-") == 0) opt.no_stdin = 1;
+
+			if (pthread_create(
+					&(tid[id]), NULL, (void *) read_thread, (void *) optind_arg)
+				!= 0)
+			{
+				perror("pthread_create failed");
+				goto exit_main;
+			}
+
+			id++;
+			usleep(131071);
+			if (id >= MAX_THREADS) break;
+		} while (++optind < nbarg);
+
+		nb_pkt = 0;
+
+		/* wait until each thread reaches EOF */
+
+		intr_read = 0;
+		pthread_mutex_lock(&mx_eof);
+
+		if (!opt.is_quiet)
+		{
+			printf("Reading packets, please wait...\r");
+			fflush(stdout);
 		}
 
-		id++;
-		usleep(131071);
-		if (id >= MAX_THREADS) break;
-	} while (++optind < nbarg);
+		while (nb_eof < n && !intr_read) pthread_cond_wait(&cv_eof, &mx_eof);
 
-	nb_pkt = 0;
+		pthread_mutex_unlock(&mx_eof);
 
-	/* wait until each thread reaches EOF */
+		intr_read = 1;
+		// 	if( ! opt.is_quiet && ! opt.no_stdin )
+		// 		printf( "\33[KRead %ld packets.\n\n", nb_pkt );
 
-	intr_read = 0;
-	pthread_mutex_lock(&mx_eof);
-
-	if (!opt.is_quiet)
-	{
-		printf("Reading packets, please wait...\r");
-		fflush(stdout);
+		// 	#ifndef DO_PGO_DUMP
+		// 	signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
+		// 	#endif
 	}
-
-	while (nb_eof < n && !intr_read) pthread_cond_wait(&cv_eof, &mx_eof);
-
-	pthread_mutex_unlock(&mx_eof);
-
-	intr_read = 1;
-	// 	if( ! opt.is_quiet && ! opt.no_stdin )
-	// 		printf( "\33[KRead %ld packets.\n\n", nb_pkt );
-
-	// 	#ifndef DO_PGO_DUMP
-	// 	signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
-	// 	#endif
-
 	/* mark the targeted access point(s) */
 	void *key;
 	c_avl_iterator_t *it = c_avl_get_iterator(access_points);
@@ -6958,6 +6922,7 @@ __start:
 				if (ret) usleep(10000);
 			} while (ret != 0);
 		}
+
 		else if (opt.dict != NULL)
 		{
 			ret = crack_wep_dict();
