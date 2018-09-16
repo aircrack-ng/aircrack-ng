@@ -1898,7 +1898,6 @@ static void read_thread(void *arg)
 		if (st_cur == NULL)
 		{
 			pthread_mutex_unlock(&mx_apl);
-			destroy_ap(ap_cur);
 			ap_cur = NULL;
 			continue;
 		}
@@ -2659,7 +2658,6 @@ static void check_thread(void *arg)
 		if (st_cur == NULL)
 		{
 			pthread_mutex_unlock(&mx_apl);
-			destroy_ap(ap_cur);
 			ap_cur = NULL;
 			continue;
 		}
