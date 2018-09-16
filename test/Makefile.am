@@ -112,6 +112,7 @@ EXTRA_DIST = test-hex_string_to_array.sh \
              wpa2-psk-linksys.cap \
              test-hex_string_to_array.c \
              wpa.cap \
+             test.ivs \
              wpa-psk-linksys.cap \
              wpa2.eapol.cap \
              wps2.0.pcap \
