@@ -124,7 +124,6 @@ static ac_crypto_engine_t engine; /* crypto engine */
 
 static struct options opt;
 static struct WEP_data wep __attribute__((aligned(64)));
-unsigned char *buffer = NULL; /* from read_thread */
 c_avl_tree_t *access_points = NULL;
 c_avl_tree_t *targets = NULL;
 pthread_mutex_t mx_apl; /* lock write access to ap LL   */
@@ -403,7 +402,7 @@ static int add_wep_iv(struct AP_info *ap, unsigned char *buffer)
 
 		int n = ap->nb_ivs * 5;
 
-		if (n + 5 > ap->ivbuf_size)
+		if (n + 5 > ap->ivbuf_size || ap->ivbuf == NULL)
 		{
 			/* enlarge the IVs buffer */
 
@@ -424,7 +423,9 @@ static int add_wep_iv(struct AP_info *ap, unsigned char *buffer)
 	return 0;
 }
 
-static int parse_ivs2(struct AP_info *ap_cur, struct ivs2_pkthdr *pivs2)
+static int parse_ivs2(struct AP_info *ap_cur,
+					  struct ivs2_pkthdr *pivs2,
+					  unsigned char *buffer)
 {
 	int weight[16];
 	struct ivs2_pkthdr ivs2 = *pivs2;
@@ -637,12 +638,6 @@ static void clean_exit(int ret)
 				opt.dicts[i] = NULL;
 			}
 		}
-	}
-
-	if (buffer != NULL)
-	{
-		free(buffer);
-		buffer = NULL;
 	}
 
 	if (wep.ivbuf != NULL)
@@ -1227,8 +1222,28 @@ static int calculate_wep_keystream(unsigned char *body,
 
 	if (k == 1)
 	{
+		if (ap_cur->ptw_clean == NULL)
+		{
+			ap_cur->ptw_clean = PTW_newattackstate();
+			if (!ap_cur->ptw_clean)
+			{
+				perror("PTW_newattackstate()");
+				return -1;
+			}
+		}
+
 		if (PTW_addsession(ap_cur->ptw_clean, body, clear, weight, k))
 			ap_cur->nb_ivs_clean++;
+	}
+
+	if (ap_cur->ptw_vague == NULL)
+	{
+		ap_cur->ptw_vague = PTW_newattackstate();
+		if (!ap_cur->ptw_vague)
+		{
+			perror("PTW_newattackstate()");
+			return -2;
+		}
 	}
 
 	if (PTW_addsession(ap_cur->ptw_vague, body, clear, weight, k))
@@ -1249,6 +1264,7 @@ static void read_thread(void *arg)
 	 * there's no point in trying to mute valgrind but breaking
 	 * the multithreaded code at the same time. */
 
+	unsigned char *buffer = NULL;
 	read_buf rb = {0};
 
 	int fd = -1, n, fmt;
@@ -1276,8 +1292,6 @@ static void read_thread(void *arg)
 	memset(&pkh, 0, sizeof(struct pcap_pkthdr));
 	memset(&pfh, 0, sizeof(struct pcap_file_header));
 
-	const uint8_t *orig_buffer = NULL;
-
 	if ((buffer = (unsigned char *) malloc(65536)) == NULL)
 	{
 		/* there is no buffer */
@@ -1285,8 +1299,6 @@ static void read_thread(void *arg)
 		perror("malloc failed");
 		goto read_fail;
 	}
-
-	orig_buffer = buffer;
 
 	h80211 = buffer;
 
@@ -1667,7 +1679,7 @@ static void read_thread(void *arg)
 
 		else if (fmt == FORMAT_IVS2)
 		{
-			parse_ivs2(ap_cur, &ivs2);
+			parse_ivs2(ap_cur, &ivs2, buffer);
 			goto unlock_mx_apl;
 		}
 
@@ -2005,19 +2017,7 @@ static void read_thread(void *arg)
 				|| (ap_cur->nb_ivs_vague >= opt.max_ivs))
 			{
 				eof_wait(&eof_notified);
-
-#ifdef XDEBUG
-				if (buffer != orig_buffer)
-				{
-					fprintf(stderr,
-							"Memory corruption occurred. %p vs %p\n",
-							buffer,
-							orig_buffer);
-					abort();
-				}
-#endif
-
-				free((void *) orig_buffer);
+				free((void *) buffer);
 				buffer = NULL;
 				return;
 			}
@@ -2025,6 +2025,8 @@ static void read_thread(void *arg)
 	}
 
 read_fail:
+	free(buffer);
+    buffer = NULL;
 
 	if (rb.buf1 != NULL)
 	{
@@ -2035,21 +2037,6 @@ read_fail:
 	{
 		free(rb.buf2);
 		rb.buf2 = NULL;
-	}
-#ifdef XDEBUG
-	if (buffer != orig_buffer)
-	{
-		fprintf(stderr,
-				"Memory corruption occurred: %p vs %p\n",
-				buffer,
-				orig_buffer);
-		abort();
-	}
-#endif
-	if (orig_buffer != NULL)
-	{
-		free((void *) orig_buffer);
-		buffer = NULL;
 	}
 
 	if (fd != -1) close(fd);
@@ -2447,7 +2434,7 @@ static void check_thread(void *arg)
 
 		else if (fmt == FORMAT_IVS2)
 		{
-			parse_ivs2(ap_cur, &ivs2);
+			parse_ivs2(ap_cur, &ivs2, buffer);
 			goto unlock_mx_apl;
 		}
 
@@ -2623,6 +2610,16 @@ static void check_thread(void *arg)
 			/* save the IV & first two output bytes */
 
 			memcpy(buffer, h80211 + z, 3);
+			memcpy(buffer + 3, h80211 + z + 4, 2);
+
+			/* Special handling for spanning-tree packets */
+			if (memcmp(h80211 + 4, SPANTREE, 6) == 0
+				|| memcmp(h80211 + 16, SPANTREE, 6) == 0)
+			{
+				buffer[3] = (buffer[3] ^ 0x42) ^ 0xAA;
+				buffer[4] = (buffer[4] ^ 0x42) ^ 0xAA;
+			}
+
 			goto add_wep_iv;
 		}
 
