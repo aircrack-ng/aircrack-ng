@@ -2026,7 +2026,7 @@ static void read_thread(void *arg)
 
 read_fail:
 	free(buffer);
-    buffer = NULL;
+	buffer = NULL;
 
 	if (rb.buf1 != NULL)
 	{
