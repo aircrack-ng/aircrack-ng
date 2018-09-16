@@ -1204,6 +1204,38 @@ static int atomic_read(read_buf *rb, int fd, int len, void *buf)
 	return (0);
 }
 
+static int calculate_wep_keystream(unsigned char *body,
+								   int dlen,
+								   struct AP_info *ap_cur,
+								   unsigned char *h80211)
+{
+	unsigned char clear[2048];
+	int clearsize, i, j, k;
+	int weight[16];
+
+	memset(weight, 0, sizeof(weight));
+	memset(clear, 0, sizeof(clear));
+
+	/* calculate keystream */
+	k = known_clear(clear, &clearsize, weight, h80211, dlen);
+	if (clearsize < (opt.keylen + 3)) return 0;
+
+	for (j = 0; j < k; j++)
+	{
+		for (i = 0; i < clearsize; i++) clear[i + (32 * j)] ^= body[4 + i];
+	}
+
+	if (k == 1)
+	{
+		if (PTW_addsession(ap_cur->ptw_clean, body, clear, weight, k))
+			ap_cur->nb_ivs_clean++;
+	}
+
+	if (PTW_addsession(ap_cur->ptw_vague, body, clear, weight, k))
+		ap_cur->nb_ivs_vague++;
+	return 0;
+}
+
 /* Very similar to check_thread but this one is used when loading
  * files for cracking, when all the parameters are set.
  *
@@ -1791,38 +1823,13 @@ static void read_thread(void *arg)
 			{
 				unsigned char *body = h80211 + z;
 				int dlen = pkh.caplen - (body - h80211) - 4 - 4;
-				unsigned char clear[2048];
-				int clearsize, i, j, k;
-				int weight[16];
-
 				if ((h80211[1] & 0x03) == 0x03) //30byte header
 				{
 					body += 6;
 					dlen -= 6;
 				}
 
-				memset(weight, 0, sizeof(weight));
-				memset(clear, 0, sizeof(clear));
-
-				/* calculate keystream */
-				k = known_clear(clear, &clearsize, weight, h80211, dlen);
-				if (clearsize < (opt.keylen + 3)) goto unlock_mx_apl;
-
-				for (j = 0; j < k; j++)
-				{
-					for (i = 0; i < clearsize; i++)
-						clear[i + (32 * j)] ^= body[4 + i];
-				}
-
-				if (k == 1)
-				{
-					if (PTW_addsession(
-							ap_cur->ptw_clean, body, clear, weight, k))
-						ap_cur->nb_ivs_clean++;
-				}
-
-				if (PTW_addsession(ap_cur->ptw_vague, body, clear, weight, k))
-					ap_cur->nb_ivs_vague++;
+				calculate_wep_keystream(body, dlen, ap_cur, h80211);
 
 				goto unlock_mx_apl;
 			}
@@ -2077,7 +2084,6 @@ static void check_thread(void *arg)
 	unsigned char *buffer;
 	unsigned char *h80211;
 	unsigned char *p;
-	int weight[16];
 
 	struct ivs2_pkthdr ivs2;
 	struct ivs2_filehdr fivs2;
@@ -2603,20 +2609,15 @@ static void check_thread(void *arg)
 			{
 				unsigned char *body = h80211 + z;
 				int dlen = pkh.caplen - (body - h80211) - 4 - 4;
-				unsigned char clear[2048];
-				int clearsize, k;
-
 				if ((h80211[1] & 0x03) == 0x03) //30byte header
 				{
 					body += 6;
 					dlen -= 6;
 				}
 
-				memset(clear, 0, sizeof(clear));
+				calculate_wep_keystream(body, dlen, ap_cur, h80211);
 
-				/* calculate keystream */
-				k = known_clear(clear, &clearsize, weight, h80211, dlen);
-				if (clearsize < (opt.keylen + 3)) goto unlock_mx_apl;
+				goto unlock_mx_apl;
 			}
 
 			/* save the IV & first two output bytes */
@@ -5510,26 +5511,6 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 	int i, j, len = 0;
 
 	opt.ap = ap_cur;
-	/*
-    if (ap_cur->ptw_clean == NULL)
-    {
-        ap_cur->ptw_clean = PTW_newattackstate();
-        if (!ap_cur->ptw_clean)
-        {
-            perror("PTW_newattackstate()");
-            return FAILURE;
-        }
-    }
-    if (ap_cur->ptw_vague == NULL)
-    {
-        ap_cur->ptw_vague = PTW_newattackstate();
-        if (!ap_cur->ptw_vague)
-        {
-            perror("PTW_newattackstate()");
-            return FAILURE;
-        }
-    }
-    */
 
 	all = malloc(32 * sizeof(int[256]));
 	if (all == NULL)
@@ -5538,13 +5519,7 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 	}
 
 	//initial setup (complete keyspace)
-	for (i = 0; i < 32; i++)
-	{
-		for (j = 0; j < 256; j++)
-		{
-			all[i][j] = 1;
-		}
-	}
+	memset(all, 1, 32 * sizeof(int[256]));
 
 	//setting restricted keyspace
 	for (i = 0; i < 32; i++)
