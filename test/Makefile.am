@@ -79,6 +79,8 @@ TESTS = test-hex_string_to_array.sh \
 		test-aircrack-ng-0008.sh \
 		test-aircrack-ng-0009.sh \
 		test-aircrack-ng-0010.sh \
+		test-aircrack-ng-0011.sh \
+		test-aircrack-ng-0012.sh \
 		test-airdecap-ng-0001.sh \
 		test-airdecap-ng-0002.sh \
 		test-airdecap-ng-0003.sh \
@@ -101,6 +103,8 @@ EXTRA_DIST = test-hex_string_to_array.sh \
 			 test-aircrack-ng-0008.sh \
 			 test-aircrack-ng-0009.sh \
 			 test-aircrack-ng-0010.sh \
+			 test-aircrack-ng-0011.sh \
+			 test-aircrack-ng-0012.sh \
 			 test-airdecap-ng-0001.sh \
 			 test-airdecap-ng-0002.sh \
 			 test-airdecap-ng-0003.sh \
