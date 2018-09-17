@@ -397,23 +397,22 @@ static int add_wep_iv(struct AP_info *ap, unsigned char *buffer)
 	{
 		/* add the IV & first two encrypted bytes */
 
-		int n = ap->nb_ivs * 5;
+		long n = ap->nb_ivs * 5;
 
-		if (n + 5 > ap->ivbuf_size || ap->ivbuf == NULL)
-		{
+		if (n + 5 > ap->ivbuf_size || ap->ivbuf == NULL) {
 			/* enlarge the IVs buffer */
 
 			ap->ivbuf_size += 131072;
-			ap->ivbuf = (unsigned char *) realloc(ap->ivbuf, ap->ivbuf_size);
+			ap->ivbuf = (unsigned char *) realloc(ap->ivbuf, (size_t)ap->ivbuf_size);
 
-			if (ap->ivbuf == NULL)
-			{
+			if (ap->ivbuf == NULL) {
 				perror("realloc failed");
 				return -1;
 			}
 		}
 
 		memcpy(ap->ivbuf + n, buffer, 5);
+
 		uniqueiv_mark(ap->uiv_root, buffer);
 		ap->nb_ivs++;
 	}
@@ -426,7 +425,8 @@ static int parse_ivs2(struct AP_info *ap_cur,
 {
 	int weight[16];
 	struct ivs2_pkthdr ivs2 = *pivs2;
-	int n = 0;
+	long n = 0;
+
 	if (ivs2.flags & IVS2_ESSID)
 	{
 		memcpy(ap_cur->essid, buffer, ivs2.len);
@@ -480,7 +480,7 @@ static int parse_ivs2(struct AP_info *ap_cur,
 
 				ap_cur->ivbuf_size += 131072;
 				ap_cur->ivbuf = (unsigned char *) realloc(ap_cur->ivbuf,
-														  ap_cur->ivbuf_size);
+				                                          (size_t)ap_cur->ivbuf_size);
 
 				if (ap_cur->ivbuf == NULL)
 				{
@@ -541,7 +541,7 @@ static int parse_ivs2(struct AP_info *ap_cur,
 
 				ap_cur->ivbuf_size += 131072;
 				ap_cur->ivbuf = (unsigned char *) realloc(ap_cur->ivbuf,
-														  ap_cur->ivbuf_size);
+				                                          (size_t)ap_cur->ivbuf_size);
 
 				if (ap_cur->ivbuf == NULL)
 				{
