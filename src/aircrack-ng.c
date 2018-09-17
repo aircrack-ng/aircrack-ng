@@ -1786,7 +1786,8 @@ static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uin
  *
  * **NOTE**: This thread is joinable, and MUST be joined after use.
  *
- * @param arg
+ * @param arg A heap allocated, filled in \a packet_reader_t structure.
+ *            We handle releasing the memory upon function exit.
  */
 static void packet_reader_thread(void *arg)
 {
