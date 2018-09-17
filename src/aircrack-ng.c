@@ -1253,6 +1253,12 @@ static int calculate_wep_keystream(unsigned char *body,
  */
 static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh)
 {
+	assert(ap_cur != NULL);
+	assert(buffer != NULL);
+	assert(h80211 != NULL);
+	assert(ivs2 != NULL);
+	assert(pkh != NULL);
+
 	struct ST_info *st_prv;
 	struct ST_info *st_cur;
 	unsigned char stmac[6];
@@ -1603,6 +1609,15 @@ skip_station:
  */
 static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uint8_t *dest, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh, struct AP_info **ap_cur)
 {
+	assert(me != NULL);
+	assert(bssid != NULL);
+	assert(dest != NULL);
+	assert(buffer != NULL);
+	assert(h80211 != NULL);
+	assert(ivs2 != NULL);
+	assert(pkh != NULL);
+	assert(ap_cur != NULL);
+
 	*ap_cur = NULL;
 
 	nb_pkt++;
