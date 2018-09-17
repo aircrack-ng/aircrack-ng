@@ -2626,6 +2626,8 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 	int i, n;
 	int nb_ascii = 0;
 
+	if (opt.probability < 1) return;
+
 	for (i = 0; i < keylen; i++)
 		if (wepkey[i] == 0 || (wepkey[i] >= 32 && wepkey[i] < 127)) nb_ascii++;
 
