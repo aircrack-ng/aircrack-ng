@@ -299,12 +299,9 @@ int intr_read = 0;
 static int safe_write(int fd, void *buf, size_t len);
 struct AP_info *hccapx_to_ap(struct hccapx *hx);
 
-static int append_ap(struct AP_info *new_ap)
+static inline int append_ap(struct AP_info *new_ap)
 {
-	//pthread_mutex_lock(&mx_apl);
-	int ret = c_avl_insert(access_points, new_ap->bssid, new_ap);
-	//pthread_mutex_unlock(&mx_apl);
-	return ret;
+	return c_avl_insert(access_points, new_ap->bssid, new_ap);
 }
 
 static int load_hccapx_file(int fd)
