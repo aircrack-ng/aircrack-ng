@@ -169,6 +169,14 @@ ac_cpuset_t *cpuset = NULL;
 #define K16_IV 0x00080000
 #define K17_IV 0x00100000
 
+typedef struct {
+	uint8_t mode;
+	char *filename;
+} packet_reader_t;
+
+#define PACKET_READER_CHECK_MODE 0
+#define PACKET_READER_READ_MODE  1
+
 typedef struct
 {
 	int off1;
@@ -754,23 +762,6 @@ static void sighandler(int signum)
 	if (signum == SIGWINCH) erase_display(2);
 }
 
-static void eof_wait(int *eof_notified)
-{
-	if (*eof_notified == 0)
-	{
-		*eof_notified = 1;
-
-		/* tell the master thread we reached EOF */
-
-		pthread_mutex_lock(&mx_eof);
-		nb_eof++;
-		pthread_mutex_unlock(&mx_eof);
-		pthread_cond_broadcast(&cv_eof);
-	}
-
-	usleep(100000);
-}
-
 int wpa_send_passphrase(char *key, struct WPA_data *data, int lock);
 
 inline int wpa_send_passphrase(char *key, struct WPA_data *data, int lock)
@@ -1249,68 +1240,560 @@ static int calculate_wep_keystream(unsigned char *body,
 	return 0;
 }
 
-/* Very similar to check_thread but this one is used when loading
- * files for cracking, when all the parameters are set.
- *
- * TODO: Merge both read_thread and check_thread
- */
-static void read_thread(void *arg)
+static int packet_reader__update_ap_info(packet_reader_t *me, struct AP_info *ap_cur, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh)
 {
-	/* we don't care if the buffers allocated here are not freed
-	 * since those threads are only created once, and the memory
-	 * is released to the OS automatically when the program exits.
-	 * there's no point in trying to mute valgrind but breaking
-	 * the multithreaded code at the same time. */
+	struct ST_info *st_prv;
+	struct ST_info *st_cur;
+	unsigned char stmac[6];
+	unsigned char *p;
 
+	if (fmt == FORMAT_IVS)
+	{
+		ap_cur->crypt = 2;
+		add_wep_iv(ap_cur, buffer);
+		return 0;
+	}
+
+	else if (fmt == FORMAT_IVS2)
+	{
+		parse_ivs2(ap_cur, ivs2, buffer);
+		return 0;
+	}
+
+	/* locate the station MAC in the 802.11 header */
+
+	st_cur = NULL;
+
+	switch (h80211[1] & 3)
+	{
+		case 0:
+			memcpy(stmac, h80211 + 10, 6);
+			break;
+
+		case 1:
+			memcpy(stmac, h80211 + 10, 6);
+			break;
+
+		case 2:
+
+			/* reject broadcast MACs */
+
+			if ((h80211[4] % 2) != 0) goto skip_station;
+			memcpy(stmac, h80211 + 4, 6);
+			break;
+
+		default:
+			goto skip_station;
+	}
+
+	st_prv = NULL;
+	st_cur = ap_cur->st_1st;
+
+	while (st_cur != NULL)
+	{
+		if (!memcmp(st_cur->stmac, stmac, 6)) break;
+
+		st_prv = st_cur;
+		st_cur = st_cur->next;
+	}
+
+	/* if it's a new supplicant, add it */
+
+	if (st_cur == NULL)
+	{
+		if (!(st_cur = (struct ST_info *) malloc(sizeof(struct ST_info))))
+		{
+			perror("malloc failed");
+			return -1;
+		}
+
+		memset(st_cur, 0, sizeof(struct ST_info));
+
+		if (ap_cur->st_1st == NULL)
+			ap_cur->st_1st = st_cur;
+		else
+			st_prv->next = st_cur;
+
+		memcpy(st_cur->stmac, stmac, 6);
+	}
+
+skip_station:
+
+	/* packet parsing: Beacon or Probe Response */
+
+	if (h80211[0] == 0x80 || h80211[0] == 0x50)
+	{
+		if (ap_cur->crypt < 0) ap_cur->crypt = (h80211[34] & 0x10) >> 4;
+
+		p = h80211 + 36;
+
+		while (p < h80211 + pkh->caplen)
+		{
+			if (p + 2 + p[1] > h80211 + pkh->caplen) break;
+
+			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0')
+			{
+				/* found a non-cloaked ESSID */
+
+				int n = (p[1] > 32) ? 32 : p[1];
+
+				memset(ap_cur->essid, 0, 33);
+				memcpy(ap_cur->essid, p + 2, n);
+			}
+
+			p += 2 + p[1];
+		}
+	}
+
+	/* packet parsing: Association Request */
+
+	if (h80211[0] == 0x00)
+	{
+		p = h80211 + 28;
+
+		while (p < h80211 + pkh->caplen)
+		{
+			if (p + 2 + p[1] > h80211 + pkh->caplen) break;
+
+			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0')
+			{
+				int n = (p[1] > 32) ? 32 : p[1];
+
+				memset(ap_cur->essid, 0, 33);
+				memcpy(ap_cur->essid, p + 2, n);
+			}
+
+			p += 2 + p[1];
+		}
+	}
+
+	/* packet parsing: Association Response */
+
+	if (h80211[0] == 0x10)
+	{
+		/* reset the WPA handshake state */
+
+		if (st_cur != NULL) st_cur->wpa.state = 0;
+	}
+
+	/* check if data */
+
+	if ((h80211[0] & 0x0C) != 0x08) return 0;
+
+	/* check minimum size */
+
+	unsigned z = ((h80211[1] & 3) != 3) ? 24 : 30;
+	if ((h80211[0] & 0x80) == 0x80) z += 2; /* 802.11e QoS */
+
+	if (z + 16 > pkh->caplen) return 0;
+
+	/* check the SNAP header to see if data is encrypted */
+
+	if (h80211[z] != h80211[z + 1] || h80211[z + 2] != 0x03)
+	{
+		if (!opt.forced_amode)
+		{
+			ap_cur->crypt = 2; /* encryption = WEP */
+
+			/* check the extended IV flag */
+			if ((h80211[z + 3] & 0x20) != 0)
+			{
+				/* encryption = WPA */
+				ap_cur->crypt = 3;
+			}
+		}
+
+		/* check the WEP key index */
+
+		if (opt.index != 0 && (h80211[z + 3] >> 6) != opt.index - 1)
+			return 0;
+
+		if (opt.do_ptw)
+		{
+			unsigned char *body = h80211 + z;
+			int data_len = (int) (pkh->caplen - (body - h80211) - 4 - 4);
+
+			if ((h80211[1] & 0x03) == 0x03) //30byte header
+			{
+				body += 6;
+				data_len -= 6;
+			}
+
+			calculate_wep_keystream(body, data_len, ap_cur, h80211);
+			return 0;
+		}
+
+		/* save the IV & first two output bytes */
+
+		memcpy(buffer, h80211 + z, 3);
+		memcpy(buffer + 3, h80211 + z + 4, 2);
+
+		/* Special handling for spanning-tree packets */
+		if (memcmp(h80211 + 4, SPANTREE, 6) == 0
+		    || memcmp(h80211 + 16, SPANTREE, 6) == 0)
+		{
+			buffer[3] = (uint8_t) ((buffer[3] ^ 0x42) ^ 0xAA);
+			buffer[4] = (uint8_t) ((buffer[4] ^ 0x42) ^ 0xAA);
+		}
+
+		add_wep_iv(ap_cur, buffer);
+		return 0;
+	}
+
+	if (ap_cur->crypt < 0) ap_cur->crypt = 0; /* no encryption */
+
+	/* if ethertype == IPv4, find the LAN address */
+
+	z += 6;
+
+	if (z + 20 < pkh->caplen)
+	{
+		if (h80211[z] == 0x08 && h80211[z + 1] == 0x00
+		    && (h80211[1] & 3) == 0x01)
+			memcpy(ap_cur->lanip, &h80211[z + 14], 4);
+
+		if (h80211[z] == 0x08 && h80211[z + 1] == 0x06)
+			memcpy(ap_cur->lanip, &h80211[z + 16], 4);
+	}
+
+	/* check ethertype == EAPOL */
+
+	if (h80211[z] != 0x88 || h80211[z + 1] != 0x8E) return 0;
+
+	z += 2;
+
+	ap_cur->eapol = 1;
+
+	/* type == 3 (key), desc. == 254 (WPA) or 2 (RSN) */
+
+	if (h80211[z + 1] != 0x03
+	    || (h80211[z + 4] != 0xFE && h80211[z + 4] != 0x02))
+		return 0;
+
+	ap_cur->eapol = 0;
+	if (!opt.forced_amode) ap_cur->crypt = 3; /* set WPA */
+
+	if (st_cur == NULL)
+	{
+		// NOTE: no station present; so we want to SKIP this AP.
+		return 1;
+	}
+
+	/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
+
+	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
+	    && (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
+	{
+		memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
+
+		/* authenticator nonce set */
+		st_cur->wpa.state = 1;
+	}
+
+	/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
+
+	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
+	    && (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
+	{
+		if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
+		{
+			memcpy(st_cur->wpa.snonce, &h80211[z + 17], 32);
+
+			/* supplicant nonce set */
+			st_cur->wpa.state |= 2;
+		}
+
+		if ((st_cur->wpa.state & 4) != 4)
+		{
+			/* copy the MIC & eapol frame */
+
+			st_cur->wpa.eapol_size =
+				(uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
+
+			if (st_cur->wpa.eapol_size == 0
+			    || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
+			    || pkh->len - z < st_cur->wpa.eapol_size)
+			{
+				// Ignore the packet trying to crash us.
+				st_cur->wpa.eapol_size = 0;
+				return 0;
+			}
+
+			memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
+			memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
+			memset(st_cur->wpa.eapol + 81, 0, 16);
+
+			/* eapol frame & keymic set */
+			st_cur->wpa.state |= 4;
+
+			/* copy the key descriptor version */
+
+			st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+		}
+	}
+
+	/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
+
+	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
+	    && (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
+	{
+		if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
+		{
+			memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
+
+			/* authenticator nonce set */
+			st_cur->wpa.state |= 1;
+		}
+
+		if ((st_cur->wpa.state & 4) != 4)
+		{
+			/* copy the MIC & eapol frame */
+
+			st_cur->wpa.eapol_size =
+				(uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
+
+			if (st_cur->wpa.eapol_size == 0
+			    || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
+			    || pkh->len - z < st_cur->wpa.eapol_size)
+			{
+				// Ignore the packet trying to crash us.
+				st_cur->wpa.eapol_size = 0;
+				return 0;
+			}
+
+			memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
+			memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
+			memset(st_cur->wpa.eapol + 81, 0, 16);
+
+			/* eapol frame & keymic set */
+			st_cur->wpa.state |= 4;
+
+			/* copy the key descriptor version */
+
+			st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+		}
+	}
+
+	if (st_cur->wpa.state == 7)
+	{
+		/* got one valid handshake */
+
+		memcpy(st_cur->wpa.stmac, stmac, 6);
+		memcpy(&ap_cur->wpa, &st_cur->wpa, sizeof(struct WPA_hdsk));
+	}
+
+	return 0;
+}
+
+
+
+static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uint8_t *dest, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh, struct AP_info **ap_cur)
+{
+	*ap_cur = NULL;
+
+	nb_pkt++;
+
+	if (fmt == FORMAT_CAP)
+	{
+		/* skip packets smaller than a 802.11 header */
+
+		if (pkh->caplen < 24) return 0;
+
+		/* skip (uninteresting) control frames */
+
+		if ((h80211[0] & 0x0C) == 0x04) return 0;
+
+		/* locate the access point's MAC address */
+
+		switch (h80211[1] & 3)
+		{
+			case 0:
+				memcpy(bssid, h80211 + 16, 6);
+				break; //Adhoc
+			case 1:
+				memcpy(bssid, h80211 + 4, 6);
+				break; //ToDS
+			case 2:
+				memcpy(bssid, h80211 + 10, 6);
+				break; //FromDS
+			case 3:
+				memcpy(bssid, h80211 + 10, 6);
+				break; //WDS -> Transmitter taken as BSSID
+			default:
+				fprintf(stderr, "Expected a value between 0 and 3, got %d.\n", h80211[1] & 3);
+				break;
+		}
+
+		switch (h80211[1] & 3)
+		{
+			case 0:
+				memcpy(dest, h80211 + 4, 6);
+				break; //Adhoc
+			case 1:
+				memcpy(dest, h80211 + 16, 6);
+				break; //ToDS
+			case 2:
+				memcpy(dest, h80211 + 4, 6);
+				break; //FromDS
+			case 3:
+				memcpy(dest, h80211 + 16, 6);
+				break; //WDS -> Transmitter taken as BSSID
+			default:
+				fprintf(stderr, "Expected a value between 0 and 3, got %d.\n", h80211[1] & 3);
+				break;
+		}
+
+		//skip corrupted keystreams in wep decloak mode
+		if (opt.wep_decloak)
+		{
+			if (dest[0] == 0x01) return 0;
+		}
+	}
+
+	if (opt.bssidmerge) mergebssids(opt.bssidmerge, bssid);
+
+	if (memcmp(bssid, BROADCAST, 6) == 0)
+		/* probe request or such - skip the packet */
+		return 0;
+
+	if (me->mode == PACKET_READER_READ_MODE)
+	{
+		if (memcmp(bssid, opt.bssid, 6) != 0) return 0;
+	}
+
+	if (memcmp(opt.maddr, ZERO, 6) != 0
+	    && memcmp(opt.maddr, BROADCAST, 6) != 0)
+	{
+		/* apply the MAC filter */
+
+		if (memcmp(opt.maddr, h80211 + 4, 6) != 0
+		    && memcmp(opt.maddr, h80211 + 10, 6) != 0
+		    && memcmp(opt.maddr, h80211 + 16, 6) != 0)
+			return 0;
+	}
+
+	/* search for the station */
+
+	int not_found = c_avl_get(access_points, bssid, (void **) ap_cur);
+
+	/* if it's a new access point, add it */
+
+	if (not_found)
+	{
+		if (!(*ap_cur = (struct AP_info *) malloc(sizeof(struct AP_info))))
+		{
+			perror("malloc failed");
+			return -1;
+		}
+
+		memset((*ap_cur), 0, sizeof(struct AP_info));
+		memcpy((*ap_cur)->bssid, bssid, 6);
+
+		(*ap_cur)->crypt = -1;
+
+		// Shortcut to set encryption:
+		// - WEP is 2 for 'crypt' and 1 for 'amode'.
+		// - WPA is 3 for 'crypt' and 2 for 'amode'.
+		if (opt.forced_amode) (*ap_cur)->crypt = opt.amode + 1;
+
+		if (me->mode == PACKET_READER_READ_MODE && opt.do_ptw == 1)
+		{
+			(*ap_cur)->ptw_clean = PTW_newattackstate();
+			if (!(*ap_cur)->ptw_clean)
+			{
+				perror("PTW_newattackstate()");
+				free(*ap_cur);
+				*ap_cur = NULL;
+				return -1;
+			}
+			(*ap_cur)->ptw_vague = PTW_newattackstate();
+			if (!(*ap_cur)->ptw_vague)
+			{
+				perror("PTW_newattackstate()");
+				free(*ap_cur);
+				*ap_cur = NULL;
+				return -1;
+			}
+		}
+
+		append_ap(*ap_cur);
+	}
+
+	int rv = packet_reader__update_ap_info(me, *ap_cur, fmt, buffer, h80211, ivs2, pkh);
+	if (rv != 0)
+	{
+		if (rv > 0)
+		{
+			// NOTE: signals we must restart, due to missing stations on the AP base station.
+			*ap_cur = NULL;
+			return 1;
+		}
+		else
+		{
+			// NOTE: an error occurred, so we must exit out.
+			return rv;
+		}
+	}
+
+	return 0;
+}
+
+
+
+// Thread MUST be joinable.
+
+// Iff BSSID doesn't exist, we are CHECK_THREAD. This reads ALL packets, keeping them.
+//   TODO: In the future, release memory of all APs we don't care; directly after user selects one to process....
+// Iff BSSID exists, we are READ_THREAD. This reads packets for the BSSID only.
+static void packet_reader_thread(void *arg)
+{
+	packet_reader_t *request = (packet_reader_t*)arg;
 	unsigned char *buffer = NULL;
 	read_buf rb = {0};
 
-	int fd = -1, n, fmt;
-	unsigned z;
-	int eof_notified = 0;
-	// 	int ret=0;
+	int fd = -1;
+	int n;
+	int fmt;
 
-	unsigned char bssid[6];
-	unsigned char dest[6];
-	unsigned char stmac[6];
-	unsigned char *h80211;
-	unsigned char *p;
+	unsigned char bssid[6] = {0};
+	unsigned char dest[6] = {0};
+	unsigned char *h80211 = NULL;
 
-	struct ivs2_pkthdr ivs2;
-	struct ivs2_filehdr fivs2;
-	struct pcap_pkthdr pkh;
-	struct pcap_file_header pfh;
-	struct AP_info *ap_cur;
-	struct ST_info *st_prv, *st_cur;
+	struct ivs2_pkthdr ivs2 = {0};
+	struct ivs2_filehdr fivs2 = {0};
+	struct pcap_pkthdr pkh = {0};
+	struct pcap_file_header pfh = {0};
+	struct AP_info *ap_cur = NULL;
+
+	assert(request != NULL);
+	assert(request->filename != NULL);
+	assert((request->mode == PACKET_READER_CHECK_MODE) || (request->mode == PACKET_READER_READ_MODE));
 
 	signal(SIGINT, sighandler);
 
-	ap_cur = NULL;
-
-	memset(&pkh, 0, sizeof(struct pcap_pkthdr));
-	memset(&pfh, 0, sizeof(struct pcap_file_header));
+//	memset(&pkh, 0, sizeof(struct pcap_pkthdr));
+//	memset(&pfh, 0, sizeof(struct pcap_file_header));
 
 	if ((buffer = (unsigned char *) malloc(65536)) == NULL)
 	{
 		/* there is no buffer */
-
 		perror("malloc failed");
 		goto read_fail;
 	}
 
 	h80211 = buffer;
 
-	if (!opt.is_quiet) printf("Opening %s\n", (char *) arg);
+	if (!opt.is_quiet) printf("Opening %s\n", request->filename);
 
-	if (strcmp(arg, "-") == 0)
+	if (strcmp(request->filename, "-") == 0)
 		fd = 0;
 	else
 	{
-		if ((fd = open((char *) arg, O_RDONLY | O_BINARY)) < 0)
+		if ((fd = open((char *) request->filename, O_RDONLY | O_BINARY)) < 0)
 		{
 			fprintf(stderr,
 					"Failed to open '%s' (%d): %s\n",
-					(char *) arg,
+					request->filename,
 					errno,
 					strerror(errno));
 			goto read_fail;
@@ -1375,6 +1858,11 @@ static void read_thread(void *arg)
 		{
 			fmt = FORMAT_IVS2;
 
+			// atomic_read return codes:
+			//   1 if read, read the whole buffer length.
+			//   0 if read could not, or EOF.
+			//   CLOSE_IT if close_aircrack is set.
+
 			if (!atomic_read(&rb,
 							 fd,
 							 sizeof(struct ivs2_filehdr),
@@ -1414,7 +1902,8 @@ static void read_thread(void *arg)
 		{
 			/* read one IV */
 
-			while (!atomic_read(&rb, fd, 1, buffer)) eof_wait(&eof_notified);
+			while (!atomic_read(&rb, fd, 1, buffer))
+				goto done_reading;
 
 			if (close_aircrack) break;
 
@@ -1425,45 +1914,38 @@ static void read_thread(void *arg)
 				bssid[0] = buffer[0];
 
 				while (!atomic_read(&rb, fd, 5, bssid + 1))
-					eof_wait(&eof_notified);
-				if (close_aircrack) break;
+					goto done_reading;
 			}
 
-			while (!atomic_read(&rb, fd, 5, buffer)) eof_wait(&eof_notified);
-			if (close_aircrack) break;
+			while (!atomic_read(&rb, fd, 5, buffer))
+				goto done_reading;
+
 		}
 		else if (fmt == FORMAT_IVS2)
 		{
 			while (!atomic_read(&rb, fd, sizeof(struct ivs2_pkthdr), &ivs2))
-				eof_wait(&eof_notified);
-			if (close_aircrack) break;
+				goto done_reading;
 
 			if (ivs2.flags & IVS2_BSSID)
 			{
-				while (!atomic_read(&rb, fd, 6, bssid)) eof_wait(&eof_notified);
-				if (close_aircrack) break;
+				while (!atomic_read(&rb, fd, 6, bssid))
+					goto done_reading;
+
 				ivs2.len -= 6;
 			}
 
 			while (!atomic_read(&rb, fd, ivs2.len, buffer))
-				eof_wait(&eof_notified);
-			if (close_aircrack) break;
+				goto done_reading;
 		}
 		else if (fmt == FORMAT_HCCAPX)
 		{
-			if (close_aircrack) break;
-
 			load_hccapx_file(fd);
-			eof_wait(&eof_notified);
-			free(buffer);
-			buffer = NULL;
-			return;
+			goto done_reading;
 		}
 		else
 		{
 			while (!atomic_read(&rb, fd, sizeof(pkh), &pkh))
-				eof_wait(&eof_notified);
-			if (close_aircrack) break;
+				goto done_reading;
 
 			if (pfh.magic == TCPDUMP_CIGAM)
 			{
@@ -1477,13 +1959,11 @@ static void read_thread(void *arg)
 						"\nInvalid packet capture length %lu - "
 						"corrupted file?\n",
 						(unsigned long) pkh.caplen);
-				eof_wait(&eof_notified);
-				_exit(FAILURE);
+				goto done_reading;
 			}
 
 			while (!atomic_read(&rb, fd, pkh.caplen, buffer))
-				eof_wait(&eof_notified);
-			if (close_aircrack) break;
+				goto done_reading;
 
 			h80211 = buffer;
 
@@ -1551,461 +2031,15 @@ static void read_thread(void *arg)
 
 		pthread_mutex_lock(&mx_apl);
 
-		nb_pkt++;
-
-		if (fmt == FORMAT_CAP)
-		{
-			/* skip packets smaller than a 802.11 header */
-
-			if (pkh.caplen < 24) goto unlock_mx_apl;
-
-			/* skip (uninteresting) control frames */
-
-			if ((h80211[0] & 0x0C) == 0x04) goto unlock_mx_apl;
-
-			/* locate the access point's MAC address */
-
-			switch (h80211[1] & 3)
-			{
-				case 0:
-					memcpy(bssid, h80211 + 16, 6);
-					break; //Adhoc
-				case 1:
-					memcpy(bssid, h80211 + 4, 6);
-					break; //ToDS
-				case 2:
-					memcpy(bssid, h80211 + 10, 6);
-					break; //FromDS
-				case 3:
-					memcpy(bssid, h80211 + 10, 6);
-					break; //WDS -> Transmitter taken as BSSID
-			}
-
-			switch (h80211[1] & 3)
-			{
-				case 0:
-					memcpy(dest, h80211 + 4, 6);
-					break; //Adhoc
-				case 1:
-					memcpy(dest, h80211 + 16, 6);
-					break; //ToDS
-				case 2:
-					memcpy(dest, h80211 + 4, 6);
-					break; //FromDS
-				case 3:
-					memcpy(dest, h80211 + 16, 6);
-					break; //WDS -> Transmitter taken as BSSID
-			}
-
-			//skip corrupted keystreams in wep decloak mode
-			if (opt.wep_decloak)
-			{
-				if (dest[0] == 0x01) goto unlock_mx_apl;
-			}
-		}
-
-		if (opt.bssidmerge) mergebssids(opt.bssidmerge, bssid);
-
-		if (memcmp(bssid, BROADCAST, 6) == 0)
-			/* probe request or such - skip the packet */
-			goto unlock_mx_apl;
-
-		if (memcmp(bssid, opt.bssid, 6) != 0) goto unlock_mx_apl;
-
-		if (memcmp(opt.maddr, ZERO, 6) != 0
-			&& memcmp(opt.maddr, BROADCAST, 6) != 0)
-		{
-			/* apply the MAC filter */
-
-			if (memcmp(opt.maddr, h80211 + 4, 6) != 0
-				&& memcmp(opt.maddr, h80211 + 10, 6) != 0
-				&& memcmp(opt.maddr, h80211 + 16, 6) != 0)
-				goto unlock_mx_apl;
-		}
-
-		/* search for the station */
-
-		int not_found = c_avl_get(access_points, bssid, (void **) &ap_cur);
-
-		/* if it's a new access point, add it */
-
-		if (not_found)
-		{
-			if (!(ap_cur = (struct AP_info *) malloc(sizeof(struct AP_info))))
-			{
-				perror("malloc failed");
-				pthread_mutex_unlock(&mx_apl);
-				break;
-			}
-
-			memset(ap_cur, 0, sizeof(struct AP_info));
-			memcpy(ap_cur->bssid, bssid, 6);
-			append_ap(ap_cur);
-			ap_cur->crypt = -1;
-
-			// Shortcut to set encryption:
-			// - WEP is 2 for 'crypt' and 1 for 'amode'.
-			// - WPA is 3 for 'crypt' and 2 for 'amode'.
-			if (opt.forced_amode) ap_cur->crypt = opt.amode + 1;
-
-			if (opt.do_ptw == 1)
-			{
-				ap_cur->ptw_clean = PTW_newattackstate();
-				if (!ap_cur->ptw_clean)
-				{
-					perror("PTW_newattackstate()");
-					break;
-				}
-				ap_cur->ptw_vague = PTW_newattackstate();
-				if (!ap_cur->ptw_vague)
-				{
-					perror("PTW_newattackstate()");
-					break;
-				}
-			}
-			append_ap(ap_cur);
-		}
-
-		if (fmt == FORMAT_IVS)
-		{
-			ap_cur->crypt = 2;
-
-		add_wep_iv:
-			add_wep_iv(ap_cur, buffer);
-			goto unlock_mx_apl;
-		}
-
-		else if (fmt == FORMAT_IVS2)
-		{
-			parse_ivs2(ap_cur, &ivs2, buffer);
-			goto unlock_mx_apl;
-		}
-
-		/* locate the station MAC in the 802.11 header */
-
-		st_cur = NULL;
-
-		switch (h80211[1] & 3)
-		{
-			case 0:
-				memcpy(stmac, h80211 + 10, 6);
-				break;
-			case 1:
-				memcpy(stmac, h80211 + 10, 6);
-				break;
-			case 2:
-
-				/* reject broadcast MACs */
-
-				if ((h80211[4] % 2) != 0) goto skip_station;
-				memcpy(stmac, h80211 + 4, 6);
-				break;
-
-			default:
-				goto skip_station;
-				break;
-		}
-
-		st_prv = NULL;
-		st_cur = ap_cur->st_1st;
-
-		while (st_cur != NULL)
-		{
-			if (!memcmp(st_cur->stmac, stmac, 6)) break;
-
-			st_prv = st_cur;
-			st_cur = st_cur->next;
-		}
-
-		/* if it's a new supplicant, add it */
-
-		if (st_cur == NULL)
-		{
-			if (!(st_cur = (struct ST_info *) malloc(sizeof(struct ST_info))))
-			{
-				perror("malloc failed");
-				pthread_mutex_unlock(&mx_apl);
-				break;
-			}
-
-			memset(st_cur, 0, sizeof(struct ST_info));
-
-			if (ap_cur->st_1st == NULL)
-				ap_cur->st_1st = st_cur;
-			else
-				st_prv->next = st_cur;
-
-			memcpy(st_cur->stmac, stmac, 6);
-		}
-
-	skip_station:
-
-		/* packet parsing: Beacon or Probe Response */
-
-		if (h80211[0] == 0x80 || h80211[0] == 0x50)
-		{
-			if (ap_cur->crypt < 0) ap_cur->crypt = (h80211[34] & 0x10) >> 4;
-
-			p = h80211 + 36;
-
-			while (p < h80211 + pkh.caplen)
-			{
-				if (p + 2 + p[1] > h80211 + pkh.caplen) break;
-
-				if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0')
-				{
-					/* found a non-cloaked ESSID */
-
-					n = (p[1] > 32) ? 32 : p[1];
-
-					memset(ap_cur->essid, 0, 33);
-					memcpy(ap_cur->essid, p + 2, n);
-				}
-
-				p += 2 + p[1];
-			}
-		}
-
-		/* packet parsing: Association Request */
-
-		if (h80211[0] == 0x00)
-		{
-			p = h80211 + 28;
-
-			while (p < h80211 + pkh.caplen)
-			{
-				if (p + 2 + p[1] > h80211 + pkh.caplen) break;
-
-				if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0')
-				{
-					n = (p[1] > 32) ? 32 : p[1];
-
-					memset(ap_cur->essid, 0, 33);
-					memcpy(ap_cur->essid, p + 2, n);
-				}
-
-				p += 2 + p[1];
-			}
-		}
-
-		/* packet parsing: Association Response */
-
-		if (h80211[0] == 0x10)
-		{
-			/* reset the WPA handshake state */
-
-			if (st_cur != NULL) st_cur->wpa.state = 0;
-		}
-
-		/* check if data */
-
-		if ((h80211[0] & 0x0C) != 0x08) goto unlock_mx_apl;
-
-		/* check minimum size */
-
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
-		if ((h80211[0] & 0x80) == 0x80) z += 2; /* 802.11e QoS */
-
-		if (z + 16 > pkh.caplen) goto unlock_mx_apl;
-
-		/* check the SNAP header to see if data is encrypted */
-
-		if (h80211[z] != h80211[z + 1] || h80211[z + 2] != 0x03)
-		{
-			if (!opt.forced_amode)
-			{
-				ap_cur->crypt = 2; /* encryption = WEP */
-
-				/* check the extended IV flag */
-				if ((h80211[z + 3] & 0x20) != 0)
-				{
-					/* encryption = WPA */
-					ap_cur->crypt = 3;
-				}
-			}
-
-			/* check the WEP key index */
-
-			if (opt.index != 0 && (h80211[z + 3] >> 6) != opt.index - 1)
-				goto unlock_mx_apl;
-
-			if (opt.do_ptw)
-			{
-				unsigned char *body = h80211 + z;
-				int dlen = pkh.caplen - (body - h80211) - 4 - 4;
-				if ((h80211[1] & 0x03) == 0x03) //30byte header
-				{
-					body += 6;
-					dlen -= 6;
-				}
-
-				calculate_wep_keystream(body, dlen, ap_cur, h80211);
-
-				goto unlock_mx_apl;
-			}
-
-			/* save the IV & first two output bytes */
-
-			memcpy(buffer, h80211 + z, 3);
-			memcpy(buffer + 3, h80211 + z + 4, 2);
-
-			/* Special handling for spanning-tree packets */
-			if (memcmp(h80211 + 4, SPANTREE, 6) == 0
-				|| memcmp(h80211 + 16, SPANTREE, 6) == 0)
-			{
-				buffer[3] = (buffer[3] ^ 0x42) ^ 0xAA;
-				buffer[4] = (buffer[4] ^ 0x42) ^ 0xAA;
-			}
-
-			goto add_wep_iv;
-		}
-
-		if (ap_cur->crypt < 0) ap_cur->crypt = 0; /* no encryption */
-
-		/* if ethertype == IPv4, find the LAN address */
-
-		z += 6;
-
-		if (z + 20 < pkh.caplen)
-		{
-			if (h80211[z] == 0x08 && h80211[z + 1] == 0x00
-				&& (h80211[1] & 3) == 0x01)
-				memcpy(ap_cur->lanip, &h80211[z + 14], 4);
-
-			if (h80211[z] == 0x08 && h80211[z + 1] == 0x06)
-				memcpy(ap_cur->lanip, &h80211[z + 16], 4);
-		}
-
-		/* check ethertype == EAPOL */
-
-		if (h80211[z] != 0x88 || h80211[z + 1] != 0x8E) goto unlock_mx_apl;
-
-		z += 2;
-
-		ap_cur->eapol = 1;
-
-		/* type == 3 (key), desc. == 254 (WPA) or 2 (RSN) */
-
-		if (h80211[z + 1] != 0x03
-			|| (h80211[z + 4] != 0xFE && h80211[z + 4] != 0x02))
-			goto unlock_mx_apl;
-
-		ap_cur->eapol = 0;
-		if (!opt.forced_amode) ap_cur->crypt = 3; /* set WPA */
-
-		if (st_cur == NULL)
-		{
-			pthread_mutex_unlock(&mx_apl);
-			ap_cur = NULL;
-			continue;
-		}
-
-		/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
-
-		if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-			&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
-		{
-			memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
-
-			/* authenticator nonce set */
-			st_cur->wpa.state = 1;
-		}
-
-		/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
-
-		if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-			&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
-		{
-			if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
-			{
-				memcpy(st_cur->wpa.snonce, &h80211[z + 17], 32);
-
-				/* supplicant nonce set */
-				st_cur->wpa.state |= 2;
-			}
-
-			if ((st_cur->wpa.state & 4) != 4)
-			{
-				/* copy the MIC & eapol frame */
-
-				st_cur->wpa.eapol_size =
-					(h80211[z + 2] << 8) + h80211[z + 3] + 4;
-
-				if (st_cur->wpa.eapol_size == 0
-					|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
-					|| pkh.len - z < st_cur->wpa.eapol_size)
-				{
-					// Ignore the packet trying to crash us.
-					st_cur->wpa.eapol_size = 0;
-					goto unlock_mx_apl;
-				}
-
-				memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
-				memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
-				memset(st_cur->wpa.eapol + 81, 0, 16);
-
-				/* eapol frame & keymic set */
-				st_cur->wpa.state |= 4;
-
-				/* copy the key descriptor version */
-
-				st_cur->wpa.keyver = h80211[z + 6] & 7;
-			}
-		}
-
-		/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
-
-		if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-			&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
-		{
-			if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
-			{
-				memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
-
-				/* authenticator nonce set */
-				st_cur->wpa.state |= 1;
-			}
-
-			if ((st_cur->wpa.state & 4) != 4)
-			{
-				/* copy the MIC & eapol frame */
-
-				st_cur->wpa.eapol_size =
-					(h80211[z + 2] << 8) + h80211[z + 3] + 4;
-
-				if (st_cur->wpa.eapol_size == 0
-					|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
-					|| pkh.len - z < st_cur->wpa.eapol_size)
-				{
-					// Ignore the packet trying to crash us.
-					st_cur->wpa.eapol_size = 0;
-					goto unlock_mx_apl;
-				}
-
-				memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
-				memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
-				memset(st_cur->wpa.eapol + 81, 0, 16);
-
-				/* eapol frame & keymic set */
-				st_cur->wpa.state |= 4;
-
-				/* copy the key descriptor version */
-
-				st_cur->wpa.keyver = h80211[z + 6] & 7;
-			}
-		}
-
-		if (st_cur->wpa.state == 7)
-		{
-			/* got one valid handshake */
-
-			memcpy(st_cur->wpa.stmac, stmac, 6);
-			memcpy(&ap_cur->wpa, &st_cur->wpa, sizeof(struct WPA_hdsk));
-		}
-
-	unlock_mx_apl:
+		int rv = packet_reader_process_packet(request, bssid, dest, fmt, buffer, h80211, &ivs2, &pkh, &ap_cur);
 
 		pthread_mutex_unlock(&mx_apl);
+
+		if (rv < 0)
+		{
+			// NOTE: An error occurred during processing, bail!
+			goto read_fail;
+		}
 
 		if (ap_cur != NULL)
 		{
@@ -2013,23 +2047,27 @@ static void read_thread(void *arg)
 				|| (ap_cur->nb_ivs_clean >= opt.max_ivs)
 				|| (ap_cur->nb_ivs_vague >= opt.max_ivs))
 			{
-				eof_wait(&eof_notified);
-				free((void *) buffer);
-				buffer = NULL;
-				return;
+				goto done_reading;
 			}
 		}
 	}
 
+done_reading:
+	++nb_eof;
+
 read_fail:
-	free(buffer);
-	buffer = NULL;
+	if (buffer != NULL)
+	{
+		free(buffer);
+		buffer = NULL;
+	}
 
 	if (rb.buf1 != NULL)
 	{
 		free(rb.buf1);
 		rb.buf1 = NULL;
 	}
+
 	if (rb.buf2 != NULL)
 	{
 		free(rb.buf2);
@@ -2038,760 +2076,7 @@ read_fail:
 
 	if (fd != -1) close(fd);
 
-	if (close_aircrack) return;
-
-	//everything is going down
-	kill(0, SIGTERM);
-	_exit(FAILURE);
-}
-
-/* Very similar to read_thread but this one is used when the
- * BSSID hasn't been set and may requires an input from the user.
- * For the latter, it would present the list of networks to
- * choose from to the user.
- *
- * TODO: Merge both read_thread and check_thread
- */
-static void check_thread(void *arg)
-{
-	/* in case you see valgrind warnings, read the comment on top
-	 * of read_thread() */
-	read_buf crb = {0};
-
-	int fd = -1, n, fmt;
-	unsigned z;
-	// 	int ret=0;
-
-	unsigned char bssid[6];
-	unsigned char dest[6];
-	unsigned char stmac[6];
-	unsigned char *buffer;
-	unsigned char *h80211;
-	unsigned char *p;
-
-	struct ivs2_pkthdr ivs2;
-	struct ivs2_filehdr fivs2;
-	struct pcap_pkthdr pkh;
-	struct pcap_file_header pfh;
-	struct AP_info *ap_cur = NULL;
-	struct ST_info *st_prv, *st_cur = NULL;
-
-	if ((buffer = (unsigned char *) malloc(65536)) == NULL)
-	{
-		/* there is no buffer */
-
-		perror("malloc failed");
-		goto read_fail;
-	}
-
-	h80211 = buffer;
-
-	if (!opt.is_quiet) printf("Opening %s\n", (char *) arg);
-
-	if (strcmp(arg, "-") == 0)
-		fd = 0;
-	else
-	{
-		if ((fd = open((char *) arg, O_RDONLY | O_BINARY)) < 0)
-		{
-			fprintf(stderr,
-					"Failed to open '%s' (%d): %s\n",
-					(char *) arg,
-					errno,
-					strerror(errno));
-			goto read_fail;
-		}
-	}
-
-	if (!atomic_read(&crb, fd, 4, &pfh))
-	{
-		perror("read(file header) failed");
-		goto read_fail;
-	}
-
-	fmt = FORMAT_IVS;
-	if (memcmp(&pfh, HCCAPX_MAGIC, 4) == 0)
-	{
-		fmt = FORMAT_HCCAPX;
-	}
-	else if (memcmp(&pfh, IVSONLY_MAGIC, 4) != 0
-			 && memcmp(&pfh, IVS2_MAGIC, 4) != 0)
-	{
-		fmt = FORMAT_CAP;
-
-		if (pfh.magic != TCPDUMP_MAGIC && pfh.magic != TCPDUMP_CIGAM)
-		{
-			fprintf(stderr,
-					"Unsupported file format "
-					"(not a pcap or IVs file).\n");
-			goto read_fail;
-		}
-
-		/* read the rest of the pcap file header */
-
-		if (!atomic_read(&crb, fd, 20, (unsigned char *) &pfh + 4))
-		{
-			perror("read(file header) failed");
-			goto read_fail;
-		}
-
-		/* take care of endian issues and check the link type */
-
-		if (pfh.magic == TCPDUMP_CIGAM) SWAP32(pfh.linktype);
-
-		if (pfh.linktype != LINKTYPE_IEEE802_11
-			&& pfh.linktype != LINKTYPE_PRISM_HEADER
-			&& pfh.linktype != LINKTYPE_RADIOTAP_HDR
-			&& pfh.linktype != LINKTYPE_PPI_HDR)
-		{
-			fprintf(stderr,
-					"This file is not a regular "
-					"802.11 (wireless) capture.\n");
-			goto read_fail;
-		}
-	}
-	else
-	{
-		if (opt.wep_decloak)
-		{
-			errx(1, "Can't use decloak wep mode with ivs\n"); /* XXX */
-		}
-		if (memcmp(&pfh, IVS2_MAGIC, 4) == 0)
-		{
-			fmt = FORMAT_IVS2;
-
-			if (!atomic_read(&crb,
-							 fd,
-							 sizeof(struct ivs2_filehdr),
-							 (unsigned char *) &fivs2))
-			{
-				perror("read(file header) failed");
-				goto read_fail;
-			}
-			if (fivs2.version > IVS2_VERSION)
-			{
-				printf("Error, wrong %s version: %d. Supported up to version "
-					   "%d.\n",
-					   IVS2_EXTENSION,
-					   fivs2.version,
-					   IVS2_VERSION);
-				goto read_fail;
-			}
-		}
-		else if (opt.do_ptw)
-			errx(1,
-				 "Can't do PTW with old IVS files, recapture without --ivs "
-				 "or use airodump-ng >= 1.0\n"); /* XXX */
-	}
-	/* avoid blocking on reading the file */
-
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-	{
-		perror("fcntl(O_NONBLOCK) failed");
-		goto read_fail;
-	}
-
-	while (1)
-	{
-		if (close_aircrack) break;
-
-		if (fmt == FORMAT_HCCAPX)
-		{
-			load_hccapx_file(fd);
-			goto read_fail; // not really, but we want to clean up our memory and get out of here
-		}
-		else if (fmt == FORMAT_IVS)
-		{
-			/* read one IV */
-
-			while (!atomic_read(&crb, fd, 1, buffer)) goto read_fail;
-
-			if (buffer[0] != 0xFF)
-			{
-				/* new access point MAC */
-
-				bssid[0] = buffer[0];
-
-				while (!atomic_read(&crb, fd, 5, bssid + 1)) goto read_fail;
-			}
-
-			while (!atomic_read(&crb, fd, 5, buffer)) goto read_fail;
-		}
-		else if (fmt == FORMAT_IVS2)
-		{
-			while (!atomic_read(&crb, fd, sizeof(struct ivs2_pkthdr), &ivs2))
-				goto read_fail;
-
-			if (ivs2.flags & IVS2_BSSID)
-			{
-				while (!atomic_read(&crb, fd, 6, bssid)) goto read_fail;
-				ivs2.len -= 6;
-			}
-
-			while (!atomic_read(&crb, fd, ivs2.len, buffer)) goto read_fail;
-		}
-		else
-		{
-			while (!atomic_read(&crb, fd, sizeof(pkh), &pkh)) goto read_fail;
-
-			if (pfh.magic == TCPDUMP_CIGAM)
-			{
-				SWAP32(pkh.caplen);
-				SWAP32(pkh.len);
-			}
-
-			if (pkh.caplen <= 0 || pkh.caplen > 65535)
-			{
-				fprintf(stderr,
-						"\nInvalid packet capture length %lu - "
-						"corrupted file?\n",
-						(unsigned long) pkh.caplen);
-				goto read_fail;
-			}
-
-			while (!atomic_read(&crb, fd, pkh.caplen, buffer)) goto read_fail;
-
-			h80211 = buffer;
-
-			if (pfh.linktype == LINKTYPE_PRISM_HEADER)
-			{
-				/* remove the prism header */
-
-				if (h80211[7] == 0x40)
-					n = 64;
-				else
-				{
-					n = *(int *) (h80211 + 4);
-
-					if (pfh.magic == TCPDUMP_CIGAM) SWAP32(n);
-				}
-
-				if (n < 8 || n >= (int) pkh.caplen) continue;
-
-				h80211 += n;
-				pkh.caplen -= n;
-			}
-
-			else if (pfh.linktype == LINKTYPE_RADIOTAP_HDR)
-			{
-				/* remove the radiotap header */
-
-				n = *(unsigned short *) (h80211 + 2);
-
-				if (n <= 0 || n >= (int) pkh.caplen) continue;
-
-				h80211 += n;
-				pkh.caplen -= n;
-			}
-
-			else if (pfh.linktype == LINKTYPE_PPI_HDR)
-			{
-				/* Remove the PPI header */
-
-				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
-
-				if (n <= 0 || n >= (int) pkh.caplen) continue;
-
-				/* for a while Kismet logged broken PPI headers */
-				if (n == 24
-					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
-					n = 32;
-
-				if (n <= 0 || n >= (int) pkh.caplen) continue;
-
-				h80211 += n;
-				pkh.caplen -= n;
-			}
-		}
-
-		/* prevent concurrent access on the linked list */
-
-		pthread_mutex_lock(&mx_apl);
-
-		nb_pkt++;
-
-		if (fmt == FORMAT_CAP)
-		{
-			/* skip packets smaller than a 802.11 header */
-
-			if (pkh.caplen < 24) goto unlock_mx_apl;
-
-			/* skip (uninteresting) control frames */
-
-			if ((h80211[0] & 0x0C) == 0x04) goto unlock_mx_apl;
-
-			/* locate the access point's MAC address */
-
-			switch (h80211[1] & 3)
-			{
-				case 0:
-					memcpy(bssid, h80211 + 16, 6);
-					break; //Adhoc
-				case 1:
-					memcpy(bssid, h80211 + 4, 6);
-					break; //ToDS
-				case 2:
-					memcpy(bssid, h80211 + 10, 6);
-					break; //FromDS
-				case 3:
-					memcpy(bssid, h80211 + 10, 6);
-					break; //WDS -> Transmitter taken as BSSID
-			}
-
-			switch (h80211[1] & 3)
-			{
-				case 0:
-					memcpy(dest, h80211 + 4, 6);
-					break; //Adhoc
-				case 1:
-					memcpy(dest, h80211 + 16, 6);
-					break; //ToDS
-				case 2:
-					memcpy(dest, h80211 + 4, 6);
-					break; //FromDS
-				case 3:
-					memcpy(dest, h80211 + 16, 6);
-					break; //WDS -> Transmitter taken as BSSID
-			}
-
-			//skip corrupted keystreams in wep decloak mode
-			if (opt.wep_decloak)
-			{
-				if (dest[0] == 0x01) goto unlock_mx_apl;
-			}
-		}
-
-		if (opt.bssidmerge) mergebssids(opt.bssidmerge, bssid);
-
-		if (memcmp(bssid, BROADCAST, 6) == 0)
-			/* probe request or such - skip the packet */
-			goto unlock_mx_apl;
-
-		if (memcmp(opt.maddr, ZERO, 6) != 0
-			&& memcmp(opt.maddr, BROADCAST, 6) != 0)
-		{
-			/* apply the MAC filter */
-
-			if (memcmp(opt.maddr, h80211 + 4, 6) != 0
-				&& memcmp(opt.maddr, h80211 + 10, 6) != 0
-				&& memcmp(opt.maddr, h80211 + 16, 6) != 0)
-				goto unlock_mx_apl;
-		}
-
-		/* search for the ap */
-
-		int not_found = c_avl_get(access_points, bssid, (void **) &ap_cur);
-
-		/* if it's a new access point, add it */
-		if (not_found)
-		{
-			if (!(ap_cur = (struct AP_info *) malloc(sizeof(struct AP_info))))
-			{
-				perror("malloc failed");
-				pthread_mutex_unlock(&mx_apl);
-				break;
-			}
-
-			memset(ap_cur, 0, sizeof(struct AP_info));
-			memcpy(ap_cur->bssid, bssid, 6);
-			append_ap(ap_cur);
-
-			ap_cur->crypt = -1;
-
-			// Shortcut to set encryption:
-			// - WEP is 2 for 'crypt' and 1 for 'amode'.
-			// - WPA is 3 for 'crypt' and 2 for 'amode'.
-			if (opt.forced_amode) ap_cur->crypt = opt.amode + 1;
-
-			if (opt.do_ptw == 1)
-			{
-				ap_cur->ptw_clean = PTW_newattackstate();
-				if (!ap_cur->ptw_clean)
-				{
-					perror("PTW_newattackstate()");
-					break;
-				}
-				ap_cur->ptw_vague = PTW_newattackstate();
-				if (!ap_cur->ptw_vague)
-				{
-					perror("PTW_newattackstate()");
-					break;
-				}
-			}
-		}
-
-		if (fmt == FORMAT_IVS)
-		{
-			ap_cur->crypt = 2;
-
-		add_wep_iv:
-			add_wep_iv(ap_cur, buffer);
-			goto unlock_mx_apl;
-		}
-
-		else if (fmt == FORMAT_IVS2)
-		{
-			parse_ivs2(ap_cur, &ivs2, buffer);
-			goto unlock_mx_apl;
-		}
-
-		/* locate the station MAC in the 802.11 header */
-
-		st_cur = NULL;
-
-		switch (h80211[1] & 3)
-		{
-			case 0:
-				memcpy(stmac, h80211 + 10, 6);
-				break;
-			case 1:
-				memcpy(stmac, h80211 + 10, 6);
-				break;
-			case 2:
-
-				/* reject broadcast MACs */
-
-				if ((h80211[4] % 2) != 0) goto skip_station;
-				memcpy(stmac, h80211 + 4, 6);
-				break;
-
-			default:
-				goto skip_station;
-				break;
-		}
-
-		st_prv = NULL;
-		st_cur = ap_cur->st_1st;
-
-		while (st_cur != NULL)
-		{
-			if (!memcmp(st_cur->stmac, stmac, 6)) break;
-
-			st_prv = st_cur;
-			st_cur = st_cur->next;
-		}
-
-		/* if it's a new supplicant, add it */
-
-		if (st_cur == NULL)
-		{
-			if (!(st_cur = (struct ST_info *) malloc(sizeof(struct ST_info))))
-			{
-				perror("malloc failed");
-				pthread_mutex_unlock(&mx_apl);
-				break;
-			}
-
-			memset(st_cur, 0, sizeof(struct ST_info));
-
-			if (ap_cur->st_1st == NULL)
-				ap_cur->st_1st = st_cur;
-			else
-				st_prv->next = st_cur;
-
-			memcpy(st_cur->stmac, stmac, 6);
-		}
-
-	skip_station:
-
-		/* packet parsing: Beacon or Probe Response */
-
-		if (h80211[0] == 0x80 || h80211[0] == 0x50)
-		{
-			if (ap_cur->crypt < 0) ap_cur->crypt = (h80211[34] & 0x10) >> 4;
-
-			p = h80211 + 36;
-
-			while (p < h80211 + pkh.caplen)
-			{
-				if (p + 2 + p[1] > h80211 + pkh.caplen) break;
-
-				if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0')
-				{
-					/* found a non-cloaked ESSID */
-
-					n = (p[1] > 32) ? 32 : p[1];
-
-					memset(ap_cur->essid, 0, 33);
-					memcpy(ap_cur->essid, p + 2, n);
-					if (opt.essid_set && !strcmp(opt.essid, ap_cur->essid))
-						memcpy(opt.bssid, ap_cur->bssid, 6);
-				}
-
-				p += 2 + p[1];
-			}
-		}
-
-		/* packet parsing: Association Request */
-
-		if (h80211[0] == 0x00)
-		{
-			p = h80211 + 28;
-
-			while (p < h80211 + pkh.caplen)
-			{
-				if (p + 2 + p[1] > h80211 + pkh.caplen) break;
-
-				if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0')
-				{
-					n = (p[1] > 32) ? 32 : p[1];
-
-					memset(ap_cur->essid, 0, 33);
-					memcpy(ap_cur->essid, p + 2, n);
-					if (opt.essid_set && !strcmp(opt.essid, ap_cur->essid))
-						memcpy(opt.bssid, ap_cur->bssid, 6);
-				}
-
-				p += 2 + p[1];
-			}
-
-			/* reset the WPA handshake state */
-
-			if (st_cur != NULL) st_cur->wpa.state = 0;
-		}
-
-		/* packet parsing: Association Response */
-
-		if (h80211[0] == 0x10)
-		{
-			/* reset the WPA handshake state */
-
-			if (st_cur != NULL) st_cur->wpa.state = 0;
-		}
-
-		/* check if data */
-
-		if ((h80211[0] & 0x0C) != 0x08) goto unlock_mx_apl;
-
-		/* check minimum size */
-
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
-		if ((h80211[0] & 0x80) == 0x80) z += 2; /* 802.11e QoS */
-
-		if (z + 16 > pkh.caplen) goto unlock_mx_apl;
-
-		/* check the SNAP header to see if data is encrypted */
-
-		if (h80211[z] != h80211[z + 1] || h80211[z + 2] != 0x03)
-		{
-			if (!opt.forced_amode) ap_cur->crypt = 2; /* encryption = WEP */
-
-			/* check the extended IV flag */
-
-			if ((h80211[z + 3] & 0x20) != 0 && !opt.forced_amode)
-			{
-				/* encryption = WPA */
-				ap_cur->crypt = 3;
-			}
-
-			/* check the WEP key index */
-
-			if (opt.index != 0 && (h80211[z + 3] >> 6) != opt.index - 1)
-				goto unlock_mx_apl;
-
-			if (opt.do_ptw)
-			{
-				unsigned char *body = h80211 + z;
-				int dlen = pkh.caplen - (body - h80211) - 4 - 4;
-				if ((h80211[1] & 0x03) == 0x03) //30byte header
-				{
-					body += 6;
-					dlen -= 6;
-				}
-
-				calculate_wep_keystream(body, dlen, ap_cur, h80211);
-
-				goto unlock_mx_apl;
-			}
-
-			/* save the IV & first two output bytes */
-
-			memcpy(buffer, h80211 + z, 3);
-			memcpy(buffer + 3, h80211 + z + 4, 2);
-
-			/* Special handling for spanning-tree packets */
-			if (memcmp(h80211 + 4, SPANTREE, 6) == 0
-				|| memcmp(h80211 + 16, SPANTREE, 6) == 0)
-			{
-				buffer[3] = (buffer[3] ^ 0x42) ^ 0xAA;
-				buffer[4] = (buffer[4] ^ 0x42) ^ 0xAA;
-			}
-
-			goto add_wep_iv;
-		}
-
-		if (ap_cur->crypt < 0) ap_cur->crypt = 0; /* no encryption */
-
-		/* if ethertype == IPv4, find the LAN address */
-
-		z += 6;
-
-		if (z + 20 < pkh.caplen)
-		{
-			if (h80211[z] == 0x08 && h80211[z + 1] == 0x00
-				&& (h80211[1] & 3) == 0x01)
-				memcpy(ap_cur->lanip, &h80211[z + 14], 4);
-
-			if (h80211[z] == 0x08 && h80211[z + 1] == 0x06)
-				memcpy(ap_cur->lanip, &h80211[z + 16], 4);
-		}
-
-		/* check ethertype == EAPOL */
-
-		if (h80211[z] != 0x88 || h80211[z + 1] != 0x8E) goto unlock_mx_apl;
-
-		z += 2;
-
-		ap_cur->eapol = 1;
-
-		/* type == 3 (key), desc. == 254 (WPA) or 2 (RSN) */
-
-		if (h80211[z + 1] != 0x03
-			|| (h80211[z + 4] != 0xFE && h80211[z + 4] != 0x02))
-			goto unlock_mx_apl;
-
-		ap_cur->eapol = 0;
-		ap_cur->crypt = 3; /* set WPA */
-
-		if (st_cur == NULL)
-		{
-			pthread_mutex_unlock(&mx_apl);
-			ap_cur = NULL;
-			continue;
-		}
-
-		/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
-
-		if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-			&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
-		{
-			memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
-
-			/* authenticator nonce set */
-			st_cur->wpa.state = 1;
-		}
-
-		/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
-
-		if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-			&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
-		{
-			if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
-			{
-				memcpy(st_cur->wpa.snonce, &h80211[z + 17], 32);
-
-				/* supplicant nonce set */
-				st_cur->wpa.state |= 2;
-			}
-
-			if ((st_cur->wpa.state & 4) != 4)
-			{
-				/* copy the MIC & eapol frame */
-
-				st_cur->wpa.eapol_size =
-					(h80211[z + 2] << 8) + h80211[z + 3] + 4;
-
-				if (st_cur->wpa.eapol_size == 0
-					|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
-					|| pkh.len - z < st_cur->wpa.eapol_size)
-				{
-					// Ignore the packet trying to crash us.
-					st_cur->wpa.eapol_size = 0;
-					goto unlock_mx_apl;
-				}
-
-				memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
-				memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
-				memset(st_cur->wpa.eapol + 81, 0, 16);
-
-				/* eapol frame & keymic set */
-				st_cur->wpa.state |= 4;
-
-				/* copy the key descriptor version */
-
-				st_cur->wpa.keyver = h80211[z + 6] & 7;
-			}
-		}
-
-		/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
-
-		if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-			&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
-		{
-			if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
-			{
-				memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
-
-				/* authenticator nonce set */
-				st_cur->wpa.state |= 1;
-			}
-
-			if ((st_cur->wpa.state & 4) != 4)
-			{
-				/* copy the MIC & eapol frame */
-
-				st_cur->wpa.eapol_size =
-					(h80211[z + 2] << 8) + h80211[z + 3] + 4;
-
-				if (st_cur->wpa.eapol_size == 0
-					|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
-					|| pkh.len - z < st_cur->wpa.eapol_size)
-				{
-					// Ignore the packet trying to crash us.
-					st_cur->wpa.eapol_size = 0;
-					goto unlock_mx_apl;
-				}
-
-				memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
-				memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
-				memset(st_cur->wpa.eapol + 81, 0, 16);
-
-				/* eapol frame & keymic set */
-				st_cur->wpa.state |= 4;
-
-				/* copy the key descriptor version */
-
-				st_cur->wpa.keyver = h80211[z + 6] & 7;
-			}
-		}
-
-		if (st_cur->wpa.state == 7)
-		{
-			/* got one valid handshake */
-
-			memcpy(st_cur->wpa.stmac, stmac, 6);
-			memcpy(&ap_cur->wpa, &st_cur->wpa, sizeof(struct WPA_hdsk));
-		}
-
-	unlock_mx_apl:
-
-		pthread_mutex_unlock(&mx_apl);
-
-		if (ap_cur != NULL)
-			if (ap_cur->nb_ivs >= opt.max_ivs) break;
-	}
-
-read_fail:
-
-	if (crb.buf1 != NULL)
-	{
-		free(crb.buf1);
-		crb.buf1 = NULL;
-	}
-	if (crb.buf2 != NULL)
-	{
-		free(crb.buf2);
-		crb.buf2 = NULL;
-	}
-	if (buffer != NULL)
-	{
-		free(buffer);
-		buffer = NULL;
-	}
-
-	if (fd != -1) close(fd);
-
-	return;
+	free(arg);
 }
 
 /* timing routine */
@@ -6437,6 +5722,12 @@ int main(int argc, char *argv[])
 
 	if (!opt.bssid_set)
 	{
+		if (!opt.is_quiet)
+		{
+			printf("Reading packets, please wait...\r");
+			fflush(stdout);
+		}
+
 		do
 		{
 			char *optind_arg = (restore_session)
@@ -6444,10 +5735,16 @@ int main(int argc, char *argv[])
 								   : argv[optind];
 			if (strcmp(optind_arg, "-") == 0) opt.no_stdin = 1;
 
+			packet_reader_t *request = (packet_reader_t *)calloc(1, sizeof(packet_reader_t));
+			if (NULL == request) perror("malloc");
+
+			request->mode = PACKET_READER_CHECK_MODE;
+			request->filename = optind_arg;
+
 			if (pthread_create(&(tid[id]),
 							   NULL,
-							   (void *) check_thread,
-							   (void *) optind_arg)
+							   (void *) packet_reader_thread,
+							   request)
 				!= 0)
 			{
 				perror("pthread_create failed");
@@ -6468,20 +5765,17 @@ int main(int argc, char *argv[])
 
 		/* wait until each thread reaches EOF */
 
-		if (!opt.is_quiet)
-		{
-			printf("Reading packets, please wait...\r");
-			fflush(stdout);
-		}
-
 		// 		#ifndef DO_PGO_DUMP
 		// 		signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
 		// 		#endif
+
 		intr_read = 1;
-
-		for (i = 0; i < id; i++) pthread_join(tid[i], NULL);
-
-		id = 0;
+		for (i = 0; i < id; i++)
+		{
+			pthread_join(tid[i], NULL);
+			tid[i] = 0;
+		}
+		intr_read = 0;
 
 		if (!opt.is_quiet && !opt.no_stdin)
 		{
@@ -6663,9 +5957,17 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-
+		id = 0;
+		nb_pkt = 0;
 		nb_eof = 0;
+
 		signal(SIGINT, sighandler);
+
+		if (!opt.is_quiet)
+		{
+			printf("Reading packets, please wait...\r");
+			fflush(stdout);
+		}
 
 		do
 		{
@@ -6674,8 +5976,14 @@ int main(int argc, char *argv[])
 								   : argv[optind];
 			if (strcmp(optind_arg, "-") == 0) opt.no_stdin = 1;
 
+			packet_reader_t *request = (packet_reader_t *)calloc(1, sizeof(packet_reader_t));
+			if (NULL == request) perror("malloc");
+
+			request->mode = PACKET_READER_READ_MODE;
+			request->filename = optind_arg;
+
 			if (pthread_create(
-					&(tid[id]), NULL, (void *) read_thread, (void *) optind_arg)
+					&(tid[id]), NULL, (void *) packet_reader_thread, request)
 				!= 0)
 			{
 				perror("pthread_create failed");
@@ -6683,30 +5991,24 @@ int main(int argc, char *argv[])
 			}
 
 			id++;
-			usleep(131071);
 			if (id >= MAX_THREADS) break;
 		} while (++optind < nbarg);
-
-		nb_pkt = 0;
 
 		/* wait until each thread reaches EOF */
 
 		intr_read = 0;
-		pthread_mutex_lock(&mx_eof);
-
-		if (!opt.is_quiet)
+		for (i = 0; i < id; i++)
 		{
-			printf("Reading packets, please wait...\r");
-			fflush(stdout);
+			pthread_join(tid[i], NULL);
+			tid[i] = 0;
 		}
-
-		while (nb_eof < n && !intr_read) pthread_cond_wait(&cv_eof, &mx_eof);
-
-		pthread_mutex_unlock(&mx_eof);
-
 		intr_read = 1;
-		// 	if( ! opt.is_quiet && ! opt.no_stdin )
-		// 		printf( "\33[KRead %ld packets.\n\n", nb_pkt );
+
+		if (!opt.is_quiet && !opt.no_stdin)
+		{
+			erase_line(0);
+			printf("Read %ld packets.\n\n", nb_pkt);
+		}
 
 		// 	#ifndef DO_PGO_DUMP
 		// 	signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
