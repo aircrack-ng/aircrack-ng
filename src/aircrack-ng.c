@@ -1240,7 +1240,18 @@ static int calculate_wep_keystream(unsigned char *body,
 	return 0;
 }
 
-static int packet_reader__update_ap_info(packet_reader_t *me, struct AP_info *ap_cur, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh)
+/**
+ * Updates the current AP with additional information, such as stations.
+ *
+ * @param ap_cur The AP we are updating.
+ * @param fmt The incoming \a buffer binary format.
+ * @param buffer The incoming packet data.
+ * @param h80211 A reference within \a buffer for the 802.11 frame.
+ * @param ivs2 A reference to an IVS2 packet structure.
+ * @param pkh A reference to the packet's header content.
+ * @return Returns zero on success. Returns non-zero for an error (> zero) or exception (< zero).
+ */
+static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh)
 {
 	struct ST_info *st_prv;
 	struct ST_info *st_cur;
@@ -1275,9 +1286,7 @@ static int packet_reader__update_ap_info(packet_reader_t *me, struct AP_info *ap
 			break;
 
 		case 2:
-
 			/* reject broadcast MACs */
-
 			if ((h80211[4] % 2) != 0) goto skip_station;
 			memcpy(stmac, h80211 + 4, 6);
 			break;
@@ -1334,7 +1343,6 @@ skip_station:
 			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0')
 			{
 				/* found a non-cloaked ESSID */
-
 				int n = (p[1] > 32) ? 32 : p[1];
 
 				memset(ap_cur->essid, 0, 33);
@@ -1372,7 +1380,6 @@ skip_station:
 	if (h80211[0] == 0x10)
 	{
 		/* reset the WPA handshake state */
-
 		if (st_cur != NULL) st_cur->wpa.state = 0;
 	}
 
@@ -1506,7 +1513,6 @@ skip_station:
 		if ((st_cur->wpa.state & 4) != 4)
 		{
 			/* copy the MIC & eapol frame */
-
 			st_cur->wpa.eapol_size =
 				(uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
 
@@ -1527,7 +1533,6 @@ skip_station:
 			st_cur->wpa.state |= 4;
 
 			/* copy the key descriptor version */
-
 			st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
 		}
 	}
@@ -1548,7 +1553,6 @@ skip_station:
 		if ((st_cur->wpa.state & 4) != 4)
 		{
 			/* copy the MIC & eapol frame */
-
 			st_cur->wpa.eapol_size =
 				(uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
 
@@ -1569,7 +1573,6 @@ skip_station:
 			st_cur->wpa.state |= 4;
 
 			/* copy the key descriptor version */
-
 			st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
 		}
 	}
@@ -1577,7 +1580,6 @@ skip_station:
 	if (st_cur->wpa.state == 7)
 	{
 		/* got one valid handshake */
-
 		memcpy(st_cur->wpa.stmac, stmac, 6);
 		memcpy(&ap_cur->wpa, &st_cur->wpa, sizeof(struct WPA_hdsk));
 	}
@@ -1585,8 +1587,20 @@ skip_station:
 	return 0;
 }
 
-
-
+/**
+ * Process a single packet, to extract useful access point data.
+ *
+ * @param me A reference to our own (this ptr) data.
+ * @param bssid The base station MAC address.
+ * @param dest An extra base station MAC address. ?
+ * @param fmt The incoming packet \a buffer binary format.
+ * @param buffer The incoming packet data.
+ * @param h80211 A reference within \a buffer for the 802.11 frame.
+ * @param ivs2 A reference to an IVS2 packet structure.
+ * @param pkh A reference to the packet's header content.
+ * @param ap_cur An output parameter to hold a found, or updated, AP base station.
+ * @return Returns zero on success. Returns non-zero for an error (> zero) or exception (< zero).
+ */
 static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uint8_t *dest, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh, struct AP_info **ap_cur)
 {
 	*ap_cur = NULL;
@@ -1643,7 +1657,7 @@ static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uin
 				break;
 		}
 
-		//skip corrupted keystreams in wep decloak mode
+		// skip corrupted keystreams in wep decloak mode
 		if (opt.wep_decloak)
 		{
 			if (dest[0] == 0x01) return 0;
@@ -1665,7 +1679,6 @@ static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uin
 	    && memcmp(opt.maddr, BROADCAST, 6) != 0)
 	{
 		/* apply the MAC filter */
-
 		if (memcmp(opt.maddr, h80211 + 4, 6) != 0
 		    && memcmp(opt.maddr, h80211 + 10, 6) != 0
 		    && memcmp(opt.maddr, h80211 + 16, 6) != 0)
@@ -1677,7 +1690,6 @@ static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uin
 	int not_found = c_avl_get(access_points, bssid, (void **) ap_cur);
 
 	/* if it's a new access point, add it */
-
 	if (not_found)
 	{
 		if (!(*ap_cur = (struct AP_info *) malloc(sizeof(struct AP_info))))
@@ -1719,18 +1731,18 @@ static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uin
 		append_ap(*ap_cur);
 	}
 
-	int rv = packet_reader__update_ap_info(me, *ap_cur, fmt, buffer, h80211, ivs2, pkh);
+	int rv = packet_reader__update_ap_info(*ap_cur, fmt, buffer, h80211, ivs2, pkh);
 	if (rv != 0)
 	{
 		if (rv > 0)
 		{
-			// NOTE: signals we must restart, due to missing stations on the AP base station.
+			// NOTE: skipping this AP base station.
 			*ap_cur = NULL;
 			return 1;
 		}
 		else
 		{
-			// NOTE: an error occurred, so we must exit out.
+			// NOTE: an error occurred.
 			return rv;
 		}
 	}
@@ -1738,13 +1750,29 @@ static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uin
 	return 0;
 }
 
-
-
-// Thread MUST be joinable.
-
-// Iff BSSID doesn't exist, we are CHECK_THREAD. This reads ALL packets, keeping them.
-//   TODO: In the future, release memory of all APs we don't care; directly after user selects one to process....
-// Iff BSSID exists, we are READ_THREAD. This reads packets for the BSSID only.
+/**
+ * Thread controlling the processing of packet data from a file or stream.
+ *
+ * This thread is called in one of two possible ways:
+ *
+ * a. With a BSSID specified from the command-line parameters.
+ *
+ * b. Without a BSSID specified in the command-line parameters.
+ *
+ * The goal of both is, to read one or more AP base-stations from the packet
+ * capture files given (passed inside of \a arg); producing our needed
+ * structures for later cracking.
+ *
+ * When a BSSID is specified, we ONLY read data relating to that BSSID. This
+ * mode is called PACKET_READER_READ_MODE.
+ *
+ * Otherwise, the entire file is loaded in to RAM. This mode is called
+ * PACKET_READER_CHECK_MODE.
+ *
+ * **NOTE**: This thread is joinable, and MUST be joined after use.
+ *
+ * @param arg
+ */
 static void packet_reader_thread(void *arg)
 {
 	packet_reader_t *request = (packet_reader_t*)arg;
@@ -1771,9 +1799,6 @@ static void packet_reader_thread(void *arg)
 
 	signal(SIGINT, sighandler);
 
-//	memset(&pkh, 0, sizeof(struct pcap_pkthdr));
-//	memset(&pfh, 0, sizeof(struct pcap_file_header));
-
 	if ((buffer = (unsigned char *) malloc(65536)) == NULL)
 	{
 		/* there is no buffer */
@@ -1789,7 +1814,7 @@ static void packet_reader_thread(void *arg)
 		fd = 0;
 	else
 	{
-		if ((fd = open((char *) request->filename, O_RDONLY | O_BINARY)) < 0)
+		if ((fd = open(request->filename, O_RDONLY | O_BINARY)) < 0)
 		{
 			fprintf(stderr,
 					"Failed to open '%s' (%d): %s\n",
@@ -1858,11 +1883,6 @@ static void packet_reader_thread(void *arg)
 		{
 			fmt = FORMAT_IVS2;
 
-			// atomic_read return codes:
-			//   1 if read, read the whole buffer length.
-			//   0 if read could not, or EOF.
-			//   CLOSE_IT if close_aircrack is set.
-
 			if (!atomic_read(&rb,
 							 fd,
 							 sizeof(struct ivs2_filehdr),
@@ -1871,6 +1891,7 @@ static void packet_reader_thread(void *arg)
 				perror("read(file header) failed");
 				goto read_fail;
 			}
+
 			if (fivs2.version > IVS2_VERSION)
 			{
 				printf("Error, wrong %s version: %d. Supported up to version "
@@ -1886,8 +1907,8 @@ static void packet_reader_thread(void *arg)
 				 "Can't do PTW with old IVS files, recapture without --ivs "
 				 "or use airodump-ng >= 1.0\n"); /* XXX */
 	}
-	/* avoid blocking on reading the file */
 
+	/* avoid blocking on reading the file */
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
 	{
 		perror("fcntl(O_NONBLOCK) failed");
@@ -1901,8 +1922,7 @@ static void packet_reader_thread(void *arg)
 		if (fmt == FORMAT_IVS)
 		{
 			/* read one IV */
-
-			while (!atomic_read(&rb, fd, 1, buffer))
+			if (!atomic_read(&rb, fd, 1, buffer))
 				goto done_reading;
 
 			if (close_aircrack) break;
@@ -1910,31 +1930,29 @@ static void packet_reader_thread(void *arg)
 			if (buffer[0] != 0xFF)
 			{
 				/* new access point MAC */
-
 				bssid[0] = buffer[0];
 
-				while (!atomic_read(&rb, fd, 5, bssid + 1))
+				if (!atomic_read(&rb, fd, 5, bssid + 1))
 					goto done_reading;
 			}
 
-			while (!atomic_read(&rb, fd, 5, buffer))
+			if (!atomic_read(&rb, fd, 5, buffer))
 				goto done_reading;
-
 		}
 		else if (fmt == FORMAT_IVS2)
 		{
-			while (!atomic_read(&rb, fd, sizeof(struct ivs2_pkthdr), &ivs2))
+			if (!atomic_read(&rb, fd, sizeof(struct ivs2_pkthdr), &ivs2))
 				goto done_reading;
 
 			if (ivs2.flags & IVS2_BSSID)
 			{
-				while (!atomic_read(&rb, fd, 6, bssid))
+				if (!atomic_read(&rb, fd, 6, bssid))
 					goto done_reading;
 
 				ivs2.len -= 6;
 			}
 
-			while (!atomic_read(&rb, fd, ivs2.len, buffer))
+			if (!atomic_read(&rb, fd, ivs2.len, buffer))
 				goto done_reading;
 		}
 		else if (fmt == FORMAT_HCCAPX)
@@ -1944,7 +1962,7 @@ static void packet_reader_thread(void *arg)
 		}
 		else
 		{
-			while (!atomic_read(&rb, fd, sizeof(pkh), &pkh))
+			if (!atomic_read(&rb, fd, sizeof(pkh), &pkh))
 				goto done_reading;
 
 			if (pfh.magic == TCPDUMP_CIGAM)
@@ -1962,7 +1980,7 @@ static void packet_reader_thread(void *arg)
 				goto done_reading;
 			}
 
-			while (!atomic_read(&rb, fd, pkh.caplen, buffer))
+			if (!atomic_read(&rb, fd, pkh.caplen, buffer))
 				goto done_reading;
 
 			h80211 = buffer;
@@ -1970,7 +1988,6 @@ static void packet_reader_thread(void *arg)
 			if (pfh.linktype == LINKTYPE_PRISM_HEADER)
 			{
 				/* remove the prism header */
-
 				if (h80211[7] == 0x40)
 					n = 64;
 				else
@@ -1989,7 +2006,6 @@ static void packet_reader_thread(void *arg)
 			else if (pfh.linktype == LINKTYPE_RADIOTAP_HDR)
 			{
 				/* remove the radiotap header */
-
 				n = *(unsigned short *) (h80211 + 2);
 
 				if (n <= 0 || n >= (int) pkh.caplen) continue;
@@ -2001,7 +2017,6 @@ static void packet_reader_thread(void *arg)
 			else if (pfh.linktype == LINKTYPE_PPI_HDR)
 			{
 				/* Remove the PPI header */
-
 				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
 
 				if (n <= 0 || n >= (int) pkh.caplen) continue;
@@ -2026,8 +2041,6 @@ static void packet_reader_thread(void *arg)
 				continue;
 			}
 		}
-
-		/* prevent concurrent access on the linked list */
 
 		pthread_mutex_lock(&mx_apl);
 
@@ -5753,7 +5766,6 @@ int main(int argc, char *argv[])
 				goto exit_main;
 			}
 
-			usleep(131071);
 			id++;
 			if (id >= MAX_THREADS)
 			{
@@ -5936,6 +5948,8 @@ int main(int argc, char *argv[])
 			}
 
 			printf("\n");
+
+			// TODO: In the future, release memory of all APs we don't care; directly after user selects one to process.
 
 			memcpy(opt.bssid, ap_cur->bssid, 6);
 			opt.bssid_set = 1;
