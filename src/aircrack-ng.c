@@ -396,6 +396,12 @@ static void ac_aplist_free(void)
 	pthread_mutex_unlock(&mx_apl);
 }
 
+/**
+ * Release all unused AP base-stations stored in \a access_points, keeping
+ * only the specified \a ap_cur AP base-station.
+ *
+ * @param ap_cur The AP base-station to keep.
+ */
 static void ap_avl_release_unused(struct AP_info *ap_cur)
 {
 	c_avl_tree_t *tmp_access_points = c_avl_create(station_compare);
