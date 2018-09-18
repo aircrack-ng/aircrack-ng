@@ -396,6 +396,30 @@ static void ac_aplist_free(void)
 	pthread_mutex_unlock(&mx_apl);
 }
 
+static void ap_avl_release_unused(struct AP_info *ap_cur)
+{
+	c_avl_tree_t *tmp_access_points = c_avl_create(station_compare);
+	c_avl_insert(tmp_access_points, ap_cur->bssid, ap_cur);
+
+	pthread_mutex_lock(&mx_apl);
+
+	void *key = NULL;
+	struct AP_info *ap_tmp = NULL;
+	while (c_avl_pick(access_points, &key, (void **) &ap_tmp) == 0)
+	{
+		if (ap_tmp != ap_cur)
+		{
+			destroy_ap(ap_tmp);
+			free(ap_tmp);
+		}
+	}
+
+	c_avl_destroy(access_points);
+	access_points = tmp_access_points;
+
+	pthread_mutex_unlock(&mx_apl);
+}
+
 static int add_wep_iv(struct AP_info *ap, unsigned char *buffer)
 {
 	/* check for uniqueness first */
@@ -5965,7 +5989,8 @@ int main(int argc, char *argv[])
 
 			printf("\n");
 
-			// TODO: In the future, release memory of all APs we don't care; directly after user selects one to process.
+			// Release memory of all APs we don't care about currently.
+			ap_avl_release_unused(ap_cur);
 
 			memcpy(opt.bssid, ap_cur->bssid, 6);
 			opt.bssid_set = 1;
