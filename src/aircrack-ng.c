@@ -1922,7 +1922,8 @@ static void packet_reader_thread(void *arg)
 	{
 		if (opt.wep_decloak)
 		{
-			errx(1, "Can't use decloak wep mode with ivs\n"); /* XXX */
+			fprintf(stderr, "Can't use decloak wep mode with ivs\n");
+			goto read_fail;
 		}
 
 		if (memcmp(&pfh, IVS2_MAGIC, 4) == 0)
@@ -1940,18 +1941,22 @@ static void packet_reader_thread(void *arg)
 
 			if (fivs2.version > IVS2_VERSION)
 			{
-				printf("Error, wrong %s version: %d. Supported up to version "
-					   "%d.\n",
-					   IVS2_EXTENSION,
-					   fivs2.version,
-					   IVS2_VERSION);
+				fprintf(stderr,
+				        "Error, wrong %s version: %d. Supported up to version "
+			            "%d.\n",
+				        IVS2_EXTENSION,
+				        fivs2.version,
+				        IVS2_VERSION);
 				goto read_fail;
 			}
 		}
 		else if (opt.do_ptw)
-			errx(1,
-				 "Can't do PTW with old IVS files, recapture without --ivs "
-				 "or use airodump-ng >= 1.0\n"); /* XXX */
+		{
+			fprintf(stderr,
+			        "Can't do PTW with old IVS files, recapture without --ivs "
+			        "or use airodump-ng >= 1.0\n");
+			goto read_fail;
+		}
 	}
 
 	/* avoid blocking on reading the file */
