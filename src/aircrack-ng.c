@@ -1168,7 +1168,7 @@ static int mergebssids(const char *bssidlist, unsigned char *bssid)
 
 static int atomic_read(read_buf *rb, int fd, int len, void *buf)
 {
-	int n;
+	ssize_t n;
 
 	if (close_aircrack) return (CLOSE_IT);
 
@@ -1187,21 +1187,21 @@ static int atomic_read(read_buf *rb, int fd, int len, void *buf)
 	{
 		rb->off2 -= rb->off1;
 
-		memcpy(rb->buf2, (char *) rb->buf1 + rb->off1, rb->off2);
-		memcpy(rb->buf1, (char *) rb->buf2, rb->off2);
+		memcpy(rb->buf2, (char *) rb->buf1 + rb->off1, (size_t)rb->off2);
+		memcpy(rb->buf1, (char *) rb->buf2, (size_t)rb->off2);
 
 		rb->off1 = 0;
 	}
 
 	if (rb->off2 - rb->off1 >= len)
 	{
-		memcpy(buf, (char *) rb->buf1 + rb->off1, len);
+		memcpy(buf, (char *) rb->buf1 + rb->off1, (size_t)len);
 		rb->off1 += len;
 		return (1);
 	}
 	else
 	{
-		n = read(fd, (char *) rb->buf1 + rb->off2, 65536 - rb->off2);
+		n = read(fd, (char *) rb->buf1 + rb->off2, (size_t)(65536 - rb->off2));
 
 		if (n <= 0) return (0);
 
@@ -1209,7 +1209,7 @@ static int atomic_read(read_buf *rb, int fd, int len, void *buf)
 
 		if (rb->off2 - rb->off1 >= len)
 		{
-			memcpy(buf, (char *) rb->buf1 + rb->off1, len);
+			memcpy(buf, (char *) rb->buf1 + rb->off1, (size_t)len);
 			rb->off1 += len;
 			return (1);
 		}
@@ -1231,7 +1231,7 @@ static int calculate_wep_keystream(unsigned char *body,
 	memset(clear, 0, sizeof(clear));
 
 	/* calculate keystream */
-	k = known_clear(clear, &clearsize, weight, h80211, dlen);
+	k = known_clear(clear, &clearsize, weight, h80211, (size_t)dlen);
 	if (clearsize < (opt.keylen + 3)) return 0;
 
 	for (j = 0; j < k; j++)
@@ -1267,6 +1267,7 @@ static int calculate_wep_keystream(unsigned char *body,
 
 	if (PTW_addsession(ap_cur->ptw_vague, body, clear, weight, k))
 		ap_cur->nb_ivs_vague++;
+
 	return 0;
 }
 
