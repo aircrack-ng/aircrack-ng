@@ -331,7 +331,7 @@ EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 #else
 		".so"
 #endif
-	);
+	) < 0 ? abort() : (void)0;
 
 	return strdup(module_filename);
 }
@@ -366,16 +366,16 @@ EXPORT char *ac_crypto_engine_loader_flags_to_string(int flags)
 {
 	char buffer[8192] = {0};
 
-	if (flags & SIMD_SUPPORTS_AVX512F) strncat(buffer, "avx512 ", 7);
-	if (flags & SIMD_SUPPORTS_AVX2) strncat(buffer, "avx2 ", 5);
-	if (flags & SIMD_SUPPORTS_AVX) strncat(buffer, "avx ", 4);
-	if (flags & SIMD_SUPPORTS_SSE2) strncat(buffer, "sse2 ", 5);
-	if (flags & SIMD_SUPPORTS_NEON) strncat(buffer, "neon ", 5);
-	if (flags & SIMD_SUPPORTS_ASIMD) strncat(buffer, "asimd ", 6);
-	if (flags & SIMD_SUPPORTS_ALTIVEC) strncat(buffer, "altivec ", 8);
-	if (flags & SIMD_SUPPORTS_POWER8) strncat(buffer, "power8 ", 7);
+	if (flags & SIMD_SUPPORTS_AVX512F) strncat(buffer, "avx512 ", 8);
+	if (flags & SIMD_SUPPORTS_AVX2) strncat(buffer, "avx2 ", 6);
+	if (flags & SIMD_SUPPORTS_AVX) strncat(buffer, "avx ", 5);
+	if (flags & SIMD_SUPPORTS_SSE2) strncat(buffer, "sse2 ", 6);
+	if (flags & SIMD_SUPPORTS_NEON) strncat(buffer, "neon ", 6);
+	if (flags & SIMD_SUPPORTS_ASIMD) strncat(buffer, "asimd ", 7);
+	if (flags & SIMD_SUPPORTS_ALTIVEC) strncat(buffer, "altivec ", 9);
+	if (flags & SIMD_SUPPORTS_POWER8) strncat(buffer, "power8 ", 8);
 
-	strncat(buffer, "generic", 7);
+	strncat(buffer, "generic", 8);
 
 	return strdup(buffer);
 }

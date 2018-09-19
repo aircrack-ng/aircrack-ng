@@ -1154,7 +1154,7 @@ static void got_ip(struct wstate *ws)
 	assert(ptr);
 	ptr = strchr(ptr + 1, '.');
 	assert(ptr);
-	strncpy(ptr + 1, "123", 3);
+	strncpy(ptr + 1, "123", 4);
 
 	time_print("My IP=(%s)\n", ws->ws_myip);
 
@@ -1700,7 +1700,7 @@ static void save_key(unsigned char *key, int len)
 	{
 		snprintf(tmp, 3, "%.2X", *key++);
 		strncat(k, tmp, 2);
-		if (len) strncat(k, ":", 1);
+		if (len) strncat(k, ":", 2);
 	}
 
 	fd = open(

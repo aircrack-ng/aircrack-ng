@@ -4197,7 +4197,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					}
 
 					memset(strbuf, 0, sizeof(strbuf));
-					snprintf(strbuf, sizeof(strbuf) - 1, "%-256s", ssid_list);
+					snprintf(strbuf, sizeof(strbuf) - 1, "%-256s", ssid_list) < 0 ? abort() : (void)0;
 					strbuf[ws_col - (columns_sta - 6)] = '\0';
 					fprintf(stderr, " %s", strbuf);
 				}
@@ -8065,7 +8065,7 @@ int main(int argc, char *argv[])
 		perror("Error allocating memory");
 		return 1;
 	}
-	strncpy(G.elapsed_time, "0 s", 4 - 1);
+	strncpy(G.elapsed_time, "0 s", 4);
 	G.elapsed_time[strlen(G.elapsed_time)] = 0;
 
 	/* Create start time string for kismet netxml file */
