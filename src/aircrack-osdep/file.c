@@ -42,6 +42,7 @@ struct priv_file
 	int pf_chan;
 	int pf_rate;
 	int pf_dtl;
+	uint32_t pf_magic;
 	unsigned char pf_mac[6];
 };
 
@@ -58,6 +59,12 @@ file_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 
 	rc = read(pf->pf_fd, &pkh, sizeof(pkh));
 	if (rc != sizeof(pkh)) return -1;
+
+	if (pf->pf_magic == TCPDUMP_CIGAM)
+	{
+		pkh.caplen = ___my_swab32(pkh.caplen);
+		pkh.len = ___my_swab32(pkh.len);
+	}
 
 	if (pkh.caplen > sizeof(buf))
 	{
@@ -254,13 +261,21 @@ struct wif *file_open(char *iface)
 
 	if ((rc = read(fd, &pfh, sizeof(pfh))) != sizeof(pfh)) goto __err;
 
-	if (pfh.magic != TCPDUMP_MAGIC) goto __err;
+	if (pfh.magic != TCPDUMP_MAGIC && pfh.magic != TCPDUMP_CIGAM) goto __err;
+
+	if (pfh.magic == TCPDUMP_CIGAM)
+	{
+		pfh.version_major = ___my_swab16(pfh.version_major);
+		pfh.version_minor = ___my_swab16(pfh.version_minor);
+		pfh.linktype = ___my_swab32(pfh.linktype);
+	}
 
 	if (pfh.version_major != PCAP_VERSION_MAJOR
 		|| pfh.version_minor != PCAP_VERSION_MINOR)
 		goto __err;
 
 	pf->pf_dtl = pfh.linktype;
+	pf->pf_magic = pfh.magic;
 
 	return wi;
 
