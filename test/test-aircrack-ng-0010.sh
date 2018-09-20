@@ -3,6 +3,8 @@
 set -ef
 #./aircrack-ng -X  -K ./test.ivs
 
+if test ! -z "${CI}"; then exit 77; fi
+
 "${top_builddir}/src/aircrack-ng${EXEEXT}" \
     ${AIRCRACK_NG_ARGS} \
     -X -K \
