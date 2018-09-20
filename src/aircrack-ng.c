@@ -1291,7 +1291,8 @@ static int calculate_wep_keystream(unsigned char *body,
  * @param h80211 A reference within \a buffer for the 802.11 frame.
  * @param ivs2 A reference to an IVS2 packet structure.
  * @param pkh A reference to the packet's header content.
- * @return Returns zero on success. Returns non-zero for an error (> zero) or exception (< zero).
+ * @return Returns zero on success. Returns non-zero for an error (> zero)
+ *         or exception (< zero).
  */
 static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh)
 {
@@ -1646,8 +1647,10 @@ skip_station:
  * @param h80211 A reference within \a buffer for the 802.11 frame.
  * @param ivs2 A reference to an IVS2 packet structure.
  * @param pkh A reference to the packet's header content.
- * @param ap_cur An output parameter to hold a found, or updated, AP base station.
- * @return Returns zero on success. Returns non-zero for an error (> zero) or exception (< zero).
+ * @param ap_cur An output parameter to hold a found, or updated, AP base
+ *               station.
+ * @return Returns zero on success. Returns non-zero for an error (> zero)
+ *         or exception (< zero).
  */
 static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uint8_t *dest, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh, struct AP_info **ap_cur)
 {
