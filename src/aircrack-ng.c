@@ -1218,6 +1218,17 @@ static int atomic_read(read_buf *rb, int fd, int len, void *buf)
 	return (0);
 }
 
+/**
+ * Calculate the WEP session's keystream, for PTW based attacks.
+ *
+ * @param body The packet data contained within an 802.11 frame.
+ * @param dlen The length of the \a body parameter.
+ * @param ap_cur A reference to the AP base-station.
+ * @param h80211 A reference to the entire 802.11 frame data, for
+ *               which \a body is located inside.
+ * @return Returns zero on success. Returns non-zero for an error (> zero)
+ *         or exception (< zero).
+ */
 static int calculate_wep_keystream(unsigned char *body,
 								   int dlen,
 								   struct AP_info *ap_cur,
