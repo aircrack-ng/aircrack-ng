@@ -91,7 +91,7 @@ AS_IF([test $OPENBSD -eq 0], [
 
 if test $IS_ARM -eq 1
 then
-    AX_CHECK_COMPILE_FLAG([-mfpu=neon], [
+    AX_CHECK_COMPILE_FLAG([-Werror -mfpu=neon], [
         AX_APPEND_FLAG(-mfpu=neon, [arm_neon_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(arm_neon_[]_AC_LANG_ABBREV[]flags)
     ])
