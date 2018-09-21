@@ -1294,7 +1294,7 @@ static int calculate_wep_keystream(unsigned char *body,
  * @return Returns zero on success. Returns non-zero for an error (> zero)
  *         or exception (< zero).
  */
-static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh)
+static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsigned char *buffer, unsigned char *h80211, struct ivs2_pkthdr *ivs2, struct pcap_pkthdr *pkh, packet_reader_t *me)
 {
 	assert(ap_cur != NULL);
 	assert(buffer != NULL);
@@ -1310,19 +1310,18 @@ static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsign
 	if (fmt == FORMAT_IVS)
 	{
 		ap_cur->crypt = 2;
-		add_wep_iv(ap_cur, buffer);
+		if(me->mode == PACKET_READER_READ_MODE)
+			add_wep_iv(ap_cur, buffer);
 		return 0;
 	}
-
 	else if (fmt == FORMAT_IVS2)
 	{
-		parse_ivs2(ap_cur, ivs2, buffer);
+		if(me->mode == PACKET_READER_READ_MODE)
+			parse_ivs2(ap_cur, ivs2, buffer);
 		return 0;
 	}
 
 	/* locate the station MAC in the 802.11 header */
-
-	st_cur = NULL;
 
 	switch (h80211[1] & 3)
 	{
@@ -1475,7 +1474,8 @@ skip_station:
 				data_len -= 6;
 			}
 
-			calculate_wep_keystream(body, data_len, ap_cur, h80211);
+			if(me->mode == PACKET_READER_READ_MODE)
+				calculate_wep_keystream(body, data_len, ap_cur, h80211);
 			return 0;
 		}
 
@@ -1492,7 +1492,8 @@ skip_station:
 			buffer[4] = (uint8_t) ((buffer[4] ^ 0x42) ^ 0xAA);
 		}
 
-		add_wep_iv(ap_cur, buffer);
+		if(me->mode == PACKET_READER_READ_MODE)
+			add_wep_iv(ap_cur, buffer);
 		return 0;
 	}
 
@@ -1791,7 +1792,7 @@ static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uin
 		append_ap(*ap_cur);
 	}
 
-	int rv = packet_reader__update_ap_info(*ap_cur, fmt, buffer, h80211, ivs2, pkh);
+	int rv = packet_reader__update_ap_info(*ap_cur, fmt, buffer, h80211, ivs2, pkh, me);
 	if (rv != 0)
 	{
 		if (rv > 0)
@@ -6038,7 +6039,7 @@ int main(int argc, char *argv[])
 		optind = old;
 		id = 0;
 	}
-	else
+//else
 	{
 		id = 0;
 		nb_pkt = 0;
