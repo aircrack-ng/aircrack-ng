@@ -1302,10 +1302,10 @@ static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsign
 	assert(ivs2 != NULL);
 	assert(pkh != NULL);
 
-	struct ST_info *st_prv;
-	struct ST_info *st_cur;
+	struct ST_info *st_prv = NULL;
+	struct ST_info *st_cur = NULL;
 	unsigned char stmac[6];
-	unsigned char *p;
+	unsigned char *p = NULL;
 
 	if (fmt == FORMAT_IVS)
 	{
@@ -1343,7 +1343,6 @@ static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsign
 			goto skip_station;
 	}
 
-	st_prv = NULL;
 	st_cur = ap_cur->st_1st;
 
 	while (st_cur != NULL)
@@ -6039,65 +6038,64 @@ int main(int argc, char *argv[])
 		optind = old;
 		id = 0;
 	}
-//else
-	{
-		id = 0;
-		nb_pkt = 0;
-		nb_eof = 0;
 
-		signal(SIGINT, sighandler);
+    id = 0;
+    nb_pkt = 0;
+    nb_eof = 0;
 
-		if (!opt.is_quiet)
-		{
-			printf("Reading packets, please wait...\r");
-			fflush(stdout);
-		}
+    signal(SIGINT, sighandler);
 
-		do
-		{
-			char *optind_arg = (restore_session)
-								   ? cracking_session->argv[optind]
-								   : argv[optind];
-			if (strcmp(optind_arg, "-") == 0) opt.no_stdin = 1;
+    if (!opt.is_quiet)
+    {
+        printf("Reading packets, please wait...\r");
+        fflush(stdout);
+    }
 
-			packet_reader_t *request = (packet_reader_t *)calloc(1, sizeof(packet_reader_t));
-			if (NULL == request) perror("malloc");
+    do
+    {
+        char *optind_arg = (restore_session)
+                               ? cracking_session->argv[optind]
+                               : argv[optind];
+        if (strcmp(optind_arg, "-") == 0) opt.no_stdin = 1;
 
-			request->mode = PACKET_READER_READ_MODE;
-			request->filename = optind_arg;
+        packet_reader_t *request = (packet_reader_t *)calloc(1, sizeof(packet_reader_t));
+        if (NULL == request) perror("malloc");
 
-			if (pthread_create(
-					&(tid[id]), NULL, (void *) packet_reader_thread, request)
-				!= 0)
-			{
-				perror("pthread_create failed");
-				goto exit_main;
-			}
+        request->mode = PACKET_READER_READ_MODE;
+        request->filename = optind_arg;
 
-			id++;
-			if (id >= MAX_THREADS) break;
-		} while (++optind < nbarg);
+        if (pthread_create(
+                &(tid[id]), NULL, (void *) packet_reader_thread, request)
+            != 0)
+        {
+            perror("pthread_create failed");
+            goto exit_main;
+        }
 
-		/* wait until each thread reaches EOF */
+        id++;
+        if (id >= MAX_THREADS) break;
+    } while (++optind < nbarg);
 
-		intr_read = 0;
-		for (i = 0; i < id; i++)
-		{
-			pthread_join(tid[i], NULL);
-			tid[i] = 0;
-		}
-		intr_read = 1;
+    /* wait until each thread reaches EOF */
 
-		if (!opt.is_quiet && !opt.no_stdin)
-		{
-			erase_line(0);
-			printf("Read %ld packets.\n\n", nb_pkt);
-		}
+    intr_read = 0;
+    for (i = 0; i < id; i++)
+    {
+        pthread_join(tid[i], NULL);
+        tid[i] = 0;
+    }
+    intr_read = 1;
 
-		// 	#ifndef DO_PGO_DUMP
-		// 	signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
-		// 	#endif
-	}
+    if (!opt.is_quiet && !opt.no_stdin)
+    {
+        erase_line(0);
+        printf("Read %ld packets.\n\n", nb_pkt);
+    }
+
+    // 	#ifndef DO_PGO_DUMP
+    // 	signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo data */
+    // 	#endif
+
 	/* mark the targeted access point(s) */
 	void *key;
 	c_avl_iterator_t *it = c_avl_get_iterator(access_points);
