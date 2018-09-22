@@ -258,6 +258,7 @@ the additional flag `--without-opt` to the `./configure` line:
 
 * Use your package manager to download aircrack-ng
 * In most cases, they have an old version.
+* Packages (DEB and RPM) built from current git master are available on PackageCloud: https://packagecloud.io/aircrack-ng/git
 
 === Windows ===
 
@@ -265,6 +266,24 @@ the additional flag `--without-opt` to the `./configure` line:
  * aircrack-ng suite is command line tools. So, you have to open a commandline
    `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
+
+== Continous integration ==
+
+Travis (Linux/Mac): https://travis-ci.org/aircrack-ng/aircrack-ng
+AppVeyor: https://ci.appveyor.com/project/aircrack-ng/aircrack-ng
+Coverity Scan: https://scan.coverity.com/projects/aircrack-ng
+
+=== Buildbots ===
+
+URL: https://buildbot.aircrack-ng.org/
+
+Current buildbots:
+- Intel Compiler
+- Alpine Linux
+- Kali Linux
+- Armel Kali Linux
+- Armhf Kali Linux
+- FreeBSD
 
 == Documentation ==
 
