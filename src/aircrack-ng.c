@@ -5970,7 +5970,7 @@ int main(int argc, char *argv[])
 	{
 		if (!opt.is_quiet)
 		{
-			printf("Reading packets, please wait...\r");
+			printf("Generating summary for target selection, please wait...\n");
 			fflush(stdout);
 		}
 
@@ -6179,8 +6179,16 @@ int main(int argc, char *argv[])
 			{
 				// no access points
 			}
-
-			printf("\n");
+			if (!opt.is_quiet)
+			{
+				printf("Use %s -e %s or %s -b %02X:%02X:%02X:%02X:%02X:%02X to load this target faster\n", argv[0], ap_cur->essid, argv[0],
+						ap_cur->bssid[0],
+						ap_cur->bssid[1],
+						ap_cur->bssid[2],
+						ap_cur->bssid[3],
+						ap_cur->bssid[4],
+						ap_cur->bssid[5]);
+			}
 
 			// Release memory of all APs we don't care about currently.
 			ap_avl_release_unused(ap_cur);
