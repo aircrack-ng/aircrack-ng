@@ -221,7 +221,7 @@ struct AP_info
 	int eapol; /* set if EAPOL is present      */
 	int target; /* flag set if AP is a target   */
 	struct ST_info *st_1st; /* DEPRECATED: linked list of stations */
-    c_avl_tree_t *stations; /* AVL tree of stations keyed on MAC*/
+	c_avl_tree_t *stations; /* AVL tree of stations keyed on MAC*/
 	struct WPA_hdsk wpa; /* valid WPA handshake data     */
 	PTW_attackstate *ptw_clean;
 	PTW_attackstate *ptw_vague;

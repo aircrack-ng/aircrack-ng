@@ -348,22 +348,12 @@ static void destroy_ap(struct AP_info *ap)
 		ap->ivbuf = NULL;
 	}
 
-    void *key = NULL;
+	void *key = NULL;
 	while (c_avl_pick(ap->stations, &key, (void **) &st_tmp) == 0)
 	{
 		free(st_tmp);
 	}
-    c_avl_destroy(ap->stations);
-
-    /*
-	while (ap->st_1st != NULL)
-	{
-		st_tmp = ap->st_1st;
-		ap->st_1st = ap->st_1st->next;
-		free(st_tmp);
-		st_tmp = NULL;
-	}
-    */
+	c_avl_destroy(ap->stations);
 
 	uniqueiv_wipe(ap->uiv_root);
 	ap->uiv_root = NULL;
@@ -1365,7 +1355,7 @@ static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsign
 		memset(st_cur, 0, sizeof(struct ST_info));
 
 		memcpy(st_cur->stmac, stmac, sizeof(st_cur->stmac));
-        c_avl_insert(ap_cur->stations, st_cur->stmac, st_cur);
+		c_avl_insert(ap_cur->stations, st_cur->stmac, st_cur);
 	}
 
 skip_station:
