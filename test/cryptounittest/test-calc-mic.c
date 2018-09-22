@@ -101,6 +101,7 @@ int main(int argc, char **argv)
     unsigned char essid[33] = "Harkonen";
 
     struct WPA_hdsk wpa;             /* valid WPA handshake data     */
+    memset(&wpa, 0, sizeof(wpa));
     memcpy(&wpa.stmac,&stmac,6);
     memcpy(&wpa.snonce,&snonce,32);
     memcpy(&wpa.anonce,&anonce,32);
