@@ -6179,9 +6179,11 @@ int main(int argc, char *argv[])
 			{
 				// no access points
 			}
+			// Release memory of all APs we don't care about currently.
+			ap_avl_release_unused(ap_cur);
 			if (!opt.is_quiet)
 			{
-				printf("Use %s -e %s or %s -b %02X:%02X:%02X:%02X:%02X:%02X to load this target faster\n", argv[0], ap_cur->essid, argv[0],
+				printf("Use %s -b %02X:%02X:%02X:%02X:%02X:%02X to load this target faster\n", argv[0],
 						ap_cur->bssid[0],
 						ap_cur->bssid[1],
 						ap_cur->bssid[2],
@@ -6189,9 +6191,6 @@ int main(int argc, char *argv[])
 						ap_cur->bssid[4],
 						ap_cur->bssid[5]);
 			}
-
-			// Release memory of all APs we don't care about currently.
-			ap_avl_release_unused(ap_cur);
 
 			memcpy(opt.bssid, ap_cur->bssid, 6);
 			opt.bssid_set = 1;
@@ -6291,7 +6290,6 @@ int main(int argc, char *argv[])
 	c_avl_iterator_destroy(it);
 	it = NULL;
 
-	printf("%d potential targets\n\n", c_avl_size(targets));
 	ap_cur = get_first_target();
 
 	if (ap_cur == NULL)
@@ -6300,6 +6298,18 @@ int main(int argc, char *argv[])
 			   (opt.essid_set) ? "essid" : "bssid");
 
 		goto exit_main;
+	}
+
+	if (!opt.is_quiet)
+	{
+		printf("%d potential targets\n\n", c_avl_size(targets));
+		printf("essid: \"%s\" bssid: \"%02X:%02X:%02X:%02X:%02X:%02X\"\n", ap_cur->essid,
+				ap_cur->bssid[0],
+				ap_cur->bssid[1],
+				ap_cur->bssid[2],
+				ap_cur->bssid[3],
+				ap_cur->bssid[4],
+				ap_cur->bssid[5]);
 	}
 
 	if (ap_cur->crypt < 2)
