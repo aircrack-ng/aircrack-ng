@@ -566,3 +566,45 @@ ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
 
 	return -1;
 }
+
+EXPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t *engine,
+                                            const uint8_t bssid[6],
+                                            const uint8_t stmac[6],
+		                                    int threadid)
+{
+	uint8_t *pke = engine->thread_data[threadid]->pke;
+
+	assert(pke != NULL);
+
+	/* pre-compute the PMKID salt buffer */
+	memcpy(pke, "PMK Name", 8);
+	memcpy(pke + 8, bssid, 6);
+	memcpy(pke + 14, stmac, 6);
+}
+
+EXPORT int
+ac_crypto_engine_wpa_pmkid_crack(ac_crypto_engine_t *engine,
+                                 const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+                                 const uint8_t pmkid[32],
+                                 const int nparallel,
+                                 const int threadid)
+{
+	ac_crypto_engine_calc_pmk(engine, key, nparallel, threadid);
+
+	uint8_t *pke = engine->thread_data[threadid]->pke;
+	wpapsk_hash *pmk = engine->thread_data[threadid]->pmk;
+	uint8_t l_pmkid[32];
+
+	for (int j = 0; j < nparallel; ++j)
+	{
+		HMAC(EVP_sha1(), &pmk[j], 32, pke, 20, l_pmkid, NULL);
+
+		/* did we successfully crack it? */
+		if (memcmp(l_pmkid, pmkid, 16) == 0)
+		{
+			return j;
+		}
+	}
+
+	return -1;
+}

@@ -1544,6 +1544,23 @@ skip_station:
 
 		/* authenticator nonce set */
 		st_cur->wpa.state = 1;
+
+		if (h80211[z + 99] == 0xdd) // RSN
+		{
+			if (h80211[z + 101] == 0x00
+				&& h80211[z + 102] == 0x0f
+				&& h80211[z + 103] == 0xac) // OUI: IEEE8021
+			{
+				if (h80211[z + 104] == 0x04) // OUI SUBTYPE
+				{
+					// Got a PMKID value?!
+					memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
+
+					/* copy the key descriptor version */
+					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+				}
+			}
+		}
 	}
 
 	/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
@@ -1626,7 +1643,8 @@ skip_station:
 		}
 	}
 
-	if (st_cur->wpa.state == 7)
+	// The new PMKID attack permits any state greater than 0, with a PMKID present.
+	if (st_cur->wpa.state == 7 || (st_cur->wpa.state > 0 && st_cur->wpa.pmkid[0] != 0x00))
 	{
 		/* got one valid handshake */
 		memcpy(st_cur->wpa.stmac, stmac, 6);
@@ -3762,10 +3780,105 @@ __out:
 	pthread_mutex_unlock(&mx_wpastats);
 }
 
+/**
+ * Called in response to successfully cracking a WPA key.
+ *
+ * @param data A structure containing the WPA data.
+ * @param keys An array of passphrases.
+ * @param mic An array of calculated MIC codes.
+ * @param nparallel The number of used slots in each array.
+ * @param threadid The current thread ID number.
+ * @param j The winning index, containing the successful data.
+ */
+static void crack_wpa_successfully_cracked(struct WPA_data *data, wpapsk_password keys[MAX_KEYS_PER_CRYPT_SUPPORTED], uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20], int nparallel, int threadid, int j)
+{
+	// pre-conditions
+	assert(data != NULL);
+	assert(keys != NULL);
+	assert(mic != NULL);
+	assert(nparallel > 0 && nparallel <= MAX_KEYS_PER_CRYPT_SUPPORTED);
+	assert(threadid >= 0 && threadid < MAX_THREADS);
+	assert(j >= 0 && j < nparallel);
+
+	FILE *keyFile = NULL;
+	int i;
+
+	// to stop do_wpa_crack, we close the dictionary
+	pthread_mutex_lock(&mx_dic);
+	if (opt.dict != NULL)
+	{
+		if (!opt.stdin_dict) fclose(opt.dict);
+		opt.dict = NULL;
+	}
+	pthread_mutex_unlock(&mx_dic);
+
+	for (i = 0; i < opt.nbcpu; i++)
+	{
+		// we make sure do_wpa_crack doesn't block before exiting,
+		// now that we're not consuming passphrases here any longer
+		pthread_cond_broadcast(&wpa_data[i].cond);
+	}
+
+	memset(data->key, 0, sizeof(data->key));
+	memcpy(data->key, keys[j].v, sizeof(keys[0].v));
+
+	// Write the key to a file
+	if (opt.logKeyToFile != NULL)
+	{
+		keyFile = fopen(opt.logKeyToFile, "w");
+		if (keyFile != NULL)
+		{
+			fprintf(keyFile, "%s", keys[j].v);
+			fclose(keyFile);
+		}
+	}
+
+	if (opt.is_quiet)
+	{
+		return;
+	}
+
+	pthread_mutex_lock(&mx_nb);
+
+	for (i = 0; i < nparallel; i++)
+		if (keys[i].length > 0)
+		{
+			nb_tried++;
+			nb_kprev++;
+		}
+
+	pthread_mutex_unlock(&mx_nb);
+
+	int len = keys[j].length;
+	if (len > 64) len = 64;
+	if (len < 8) len = 8;
+	show_wpa_stats((char *) keys[j].v,
+	               len,
+	               dso_ac_crypto_engine_get_pmk(&engine, threadid, j),
+	               dso_ac_crypto_engine_get_ptk(&engine, threadid, j),
+	               mic[j],
+	               1);
+
+	if (opt.l33t)
+	{
+		textstyle(TEXT_BRIGHT);
+		textcolor_fg(TEXT_RED);
+	}
+
+	moveto((80 - 15 - (int) len) / 2, 8);
+	erase_line(2);
+	printf("KEY FOUND! [ %s ]\n", keys[j].v);
+	move(CURSOR_DOWN, 11);
+
+	if (opt.l33t)
+	{
+		textcolor_normal();
+		textcolor_fg(TEXT_GREEN);
+	}
+}
+
 static int crack_wpa_thread(void *arg)
 {
-	FILE *keyFile;
-
 	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20] __attribute__((aligned(32)));
 	wpapsk_password keys[MAX_KEYS_PER_CRYPT_SUPPORTED]
 		__attribute__((aligned(64)));
@@ -3783,6 +3896,9 @@ static int crack_wpa_thread(void *arg)
 	ap = data->ap;
 	threadid = data->threadid;
 	strncpy(essid, ap->essid, ESSID_LENGTH);
+
+	// The attack below requires a full handshake.
+	assert(ap->wpa.state == 7);
 
 	dso_ac_crypto_engine_thread_init(&engine, threadid);
 
@@ -3859,80 +3975,7 @@ static int crack_wpa_thread(void *arg)
 				   j,
 				   keys[j].v);
 #endif
-
-			// to stop do_wpa_crack, we close the dictionary
-			pthread_mutex_lock(&mx_dic);
-			if (opt.dict != NULL)
-			{
-				if (!opt.stdin_dict) fclose(opt.dict);
-				opt.dict = NULL;
-			}
-			pthread_mutex_unlock(&mx_dic);
-
-			for (i = 0; i < opt.nbcpu; i++)
-			{
-				// we make sure do_wpa_crack doesn't block before exiting,
-				// now that we're not consuming passphrases here any longer
-				pthread_cond_broadcast(&wpa_data[i].cond);
-			}
-
-			memset(data->key, 0, sizeof(data->key));
-			memcpy(data->key, keys[j].v, sizeof(keys[0].v));
-
-			// Write the key to a file
-			if (opt.logKeyToFile != NULL)
-			{
-				keyFile = fopen(opt.logKeyToFile, "w");
-				if (keyFile != NULL)
-				{
-					fprintf(keyFile, "%s", keys[j].v);
-					fclose(keyFile);
-				}
-			}
-
-			if (opt.is_quiet)
-			{
-				ret = SUCCESS;
-				goto crack_wpa_cleanup;
-			}
-
-			pthread_mutex_lock(&mx_nb);
-
-			for (i = 0; i < nparallel; i++)
-				if (keys[i].length > 0)
-				{
-					nb_tried++;
-					nb_kprev++;
-				}
-
-			pthread_mutex_unlock(&mx_nb);
-
-			len = keys[j].length;
-			if (len > 64) len = 64;
-			if (len < 8) len = 8;
-			show_wpa_stats((char *) keys[j].v,
-						   len,
-						   dso_ac_crypto_engine_get_pmk(&engine, threadid, j),
-						   dso_ac_crypto_engine_get_ptk(&engine, threadid, j),
-						   mic[j],
-						   1);
-
-			if (opt.l33t)
-			{
-				textstyle(TEXT_BRIGHT);
-				textcolor_fg(TEXT_RED);
-			}
-
-			moveto((80 - 15 - (int) len) / 2, 8);
-			erase_line(2);
-			printf("KEY FOUND! [ %s ]\n", keys[j].v);
-			move(CURSOR_DOWN, 11);
-
-			if (opt.l33t)
-			{
-				textcolor_normal();
-				textcolor_fg(TEXT_GREEN);
-			}
+			crack_wpa_successfully_cracked(data, keys, mic, nparallel, threadid, j);
 
 			ret = SUCCESS;
 			goto crack_wpa_cleanup;
@@ -3964,6 +4007,128 @@ static int crack_wpa_thread(void *arg)
 						   dso_ac_crypto_engine_get_ptk(&engine, threadid, 0),
 						   mic[0],
 						   0);
+		}
+	}
+
+crack_wpa_cleanup:
+	dso_ac_crypto_engine_thread_destroy(&engine, threadid);
+
+	return ret;
+}
+
+static int crack_wpa_pmkid_thread(void *arg)
+{
+	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20] __attribute__((aligned(32)));
+	wpapsk_password keys[MAX_KEYS_PER_CRYPT_SUPPORTED]
+		__attribute__((aligned(64)));
+	char essid[128] __attribute__((aligned(16)));
+
+	struct WPA_data *data;
+	struct AP_info *ap;
+	int threadid = 0;
+	int ret = 0;
+	int i;
+	int j;
+	int len;
+	int nparallel = dso_ac_crypto_engine_simd_width();
+
+	data = (struct WPA_data *) arg;
+	ap = data->ap;
+	threadid = data->threadid;
+	strncpy(essid, ap->essid, ESSID_LENGTH);
+
+	// Check some pre-conditions.
+	assert(ap->wpa.state > 0 && ap->wpa.state < 7);
+	assert(ap->wpa.pmkid[0] != 0x00);
+
+	dso_ac_crypto_engine_thread_init(&engine, threadid);
+
+	dso_ac_crypto_engine_set_pmkid_salt(&engine, ap->bssid, ap->wpa.stmac, threadid);
+
+#ifdef XDEBUG
+	printf("Thread # %d starting...\n", threadid);
+#endif
+
+	while (!close_aircrack)
+	{
+		/* receive passphrases */
+		memset(keys, 0, sizeof(keys));
+
+		for (j = 0; j < nparallel; ++j)
+		{
+			uint8_t *our_key = keys[j].v;
+
+			while (wpa_receive_passphrase((char *) our_key, data) == 0)
+			{
+				if (wpa_wordlists_done
+				    == 1) // if no more words will arrive and...
+				{
+					if (j == 0)
+					{
+						dso_ac_crypto_engine_thread_destroy(&engine, threadid);
+						return SUCCESS;
+					}
+					else // ...we have some key pending in this loop: keep working
+						break;
+				}
+
+				sched_yield(); // yield the processor until there are keys available
+				// this only happens when the queue is empty (when beginning and ending the wordlist)
+			}
+
+			keys[j].length = (uint32_t) strlen((const char *) keys[j].v);
+#ifdef XDEBUG
+			printf("%lu: GOT %p: %s\n", pthread_self(), our_key, our_key);
+#endif
+		}
+
+		if ((int) unlikely(
+			(j = dso_ac_crypto_engine_wpa_pmkid_crack(&engine,
+				                                      keys,
+			                                          ap->wpa.pmkid,
+			                                          nparallel,
+			                                          threadid))
+			>= 0))
+		{
+#ifdef XDEBUG
+			printf("%d - %lu FOUND IT AT %d %p !\n",
+				   threadid,
+				   pthread_self(),
+				   j,
+				   keys[j].v);
+#endif
+			crack_wpa_successfully_cracked(data, keys, mic, nparallel, threadid, j);
+
+			ret = SUCCESS;
+			goto crack_wpa_cleanup;
+		}
+
+		int nbkeys = 0;
+		for (i = 0; i < nparallel; i++)
+			if (keys[i].length > 0)
+			{
+				++nbkeys;
+			}
+
+		pthread_mutex_lock(&mx_nb);
+
+		nb_tried += nbkeys;
+		nb_kprev += nbkeys;
+
+		pthread_mutex_unlock(&mx_nb);
+
+		if (threadid <= 1 && !opt.is_quiet)
+		{
+			len = keys[0].length;
+			if (len > 64) len = 64;
+			if (len < 8) len = 8;
+
+			show_wpa_stats((char *) keys[0].v,
+			               len,
+			               dso_ac_crypto_engine_get_pmk(&engine, threadid, 0),
+			               dso_ac_crypto_engine_get_ptk(&engine, threadid, 0),
+			               mic[0],
+			               0);
 		}
 	}
 
@@ -5956,7 +6121,9 @@ int main(int argc, char *argv[])
 						break;
 
 					case 3:
-						printf("WPA (%d handshake)\n", ap_cur->wpa.state == 7);
+						printf("WPA (%d handshake%s)\n",
+							   ap_cur->wpa.state == 7,
+						       (ap_cur->wpa.pmkid[0] != 0x00 ? ", with PMKID" : ""));
 						break;
 
 					default:
@@ -6428,6 +6595,9 @@ __start:
 				ap_cur->uiv_root = NULL;
 				ap_cur->nb_ivs = 0;
 
+				// assumption: an eapol exists.
+				assert(ap_cur->wpa.state > 0);
+
 				/* start one thread per cpu */
 				wpa_data[i].ap = ap_cur;
 				wpa_data[i].thread = i;
@@ -6443,7 +6613,7 @@ __start:
 
 				if (pthread_create(&(tid[id]),
 								   NULL,
-								   (void *) crack_wpa_thread,
+								   (void *) (ap_cur->wpa.state == 7 ? crack_wpa_thread : crack_wpa_pmkid_thread),
 								   (void *) &(wpa_data[i]))
 					!= 0)
 				{

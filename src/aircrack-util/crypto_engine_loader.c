@@ -78,6 +78,16 @@ void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
 									  const uint8_t anonce[32],
 									  const uint8_t snonce[32],
 									  int threadid) = &ac_crypto_engine_calc_pke;
+int (*dso_ac_crypto_engine_wpa_pmkid_crack)(
+	ac_crypto_engine_t *engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	const uint8_t pmkid[32],
+	int nparallel,
+	int threadid) = &ac_crypto_engine_wpa_pmkid_crack;
+void (*dso_ac_crypto_engine_set_pmkid_salt)(ac_crypto_engine_t *engine,
+											const uint8_t bssid[6],
+									        const uint8_t stmac[6],
+									        int threadid) = &ac_crypto_engine_set_pmkid_salt;
 int (*dso_ac_crypto_engine_supported_features)(void) =
 	&ac_crypto_engine_supported_features;
 uint8_t* (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t *engine, int threadid, int index) =
@@ -128,6 +138,16 @@ void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
                                       const uint8_t anonce[32],
                                       const uint8_t snonce[32],
                                       int threadid) = NULL;
+int (*dso_ac_crypto_engine_wpa_pmkid_crack)(
+	ac_crypto_engine_t *engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	const uint8_t pmkid[32],
+	int nparallel,
+	int threadid) = NULL;
+void (*dso_ac_crypto_engine_set_pmkid_salt)(ac_crypto_engine_t *engine,
+                                            const uint8_t bssid[6],
+                                            const uint8_t stmac[6],
+                                            int threadid) = NULL;
 int (*dso_ac_crypto_engine_supported_features)(void) = NULL;
 uint8_t* (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t *engine, int threadid, int index) =
 	NULL;
@@ -409,7 +429,9 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 		{ "ac_crypto_engine_set_essid", (void *)&dso_ac_crypto_engine_set_essid },
 		{ "ac_crypto_engine_simd_width", (void *)&dso_ac_crypto_engine_simd_width },
 		{ "ac_crypto_engine_wpa_crack", (void *)&dso_ac_crypto_engine_wpa_crack },
+		{ "ac_crypto_engine_wpa_pmkid_crack", (void *)&dso_ac_crypto_engine_wpa_pmkid_crack },
 		{ "ac_crypto_engine_calc_pke", (void *)&dso_ac_crypto_engine_calc_pke },
+		{ "ac_crypto_engine_set_pmkid_salt", (void *)&dso_ac_crypto_engine_set_pmkid_salt },
 		{ "ac_crypto_engine_supported_features", (void*)&dso_ac_crypto_engine_supported_features },
 		{ "ac_crypto_engine_get_pmk", (void*)&dso_ac_crypto_engine_get_pmk },
 		{ "ac_crypto_engine_get_ptk", (void*)&dso_ac_crypto_engine_get_ptk },

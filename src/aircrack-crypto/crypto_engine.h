@@ -181,6 +181,12 @@ IMPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
 									  const uint8_t snonce[32],
 									  int threadid);
 
+IMPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t *engine,
+                                            const uint8_t bssid[6],
+                                            const uint8_t stmac[6],
+                                            int threadid);
+
+
 /// per-thread-in-use init. separate to allow (possible) NUMA-local allocation.
 IMPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
 										int threadid);
@@ -219,6 +225,13 @@ ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
 						   const uint8_t cmpmic[20],
 						   int nparallel,
 						   int threadid);
+
+IMPORT int
+ac_crypto_engine_wpa_pmkid_crack(ac_crypto_engine_t *engine,
+                                 const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+                                 const uint8_t pmkid[32],
+                                 int nparallel,
+                                 int threadid);
 
 // Quick Utilities.
 

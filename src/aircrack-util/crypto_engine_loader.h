@@ -134,6 +134,16 @@ extern int (*dso_ac_crypto_engine_wpa_crack)(
 	const uint8_t cmpmic[20],
 	int nparallel,
 	int threadid);
+extern int (*dso_ac_crypto_engine_wpa_pmkid_crack)(
+	ac_crypto_engine_t *engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	const uint8_t pmkid[32],
+	int nparallel,
+	int threadid);
+extern void (*dso_ac_crypto_engine_set_pmkid_salt)(ac_crypto_engine_t *engine,
+	                                               const uint8_t bssid[6],
+                                                   const uint8_t stmac[6],
+                                                   int threadid);
 extern void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
                                              const uint8_t bssid[6],
                                              const uint8_t stmac[6],
