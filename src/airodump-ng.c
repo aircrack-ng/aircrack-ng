@@ -495,7 +495,7 @@ static struct oui *load_oui_file(void)
 			}
 			else
 			{
-				snprintf(oui_ptr->manuf, sizeof(oui_ptr->manuf), "Unknown");
+				snprintf(oui_ptr->manuf, sizeof(oui_ptr->manuf), "/unknown/");
 			}
 			if (oui_head == NULL) oui_head = oui_ptr;
 			oui_ptr->next = NULL;
@@ -1455,6 +1455,7 @@ static int dump_add_packet(unsigned char *h80211,
 		ap_cur->power_index = -1;
 
 		for (i = 0; i < NB_PWR; i++) ap_cur->power_lvl[i] = -1;
+		for (i = 0; i < MAX_CARDS; i++) ap_cur->powers[i] = -1;
 
 		ap_cur->channel = -1;
 		ap_cur->max_speed = -1;
@@ -1525,6 +1526,7 @@ static int dump_add_packet(unsigned char *h80211,
 	/* update the last time seen */
 
 	ap_cur->tlast = time(NULL);
+	ap_cur->powers[cardnum] = ri->ri_power;
 
 	/* only update power if packets comes from
      * the AP: either type == mgmt and SA == BSSID,
@@ -1704,6 +1706,9 @@ static int dump_add_packet(unsigned char *h80211,
 			memset(st_cur->probes[i], 0, sizeof(st_cur->probes[i]));
 			st_cur->ssid_length[i] = 0;
 		}
+		for (i=0;i<MAX_CARDS;i++) {
+			st_cur->powers[i] = -1;
+		}
 
 		G.st_end = st_cur;
 	}
@@ -1717,6 +1722,7 @@ static int dump_add_packet(unsigned char *h80211,
 	/* update the last time seen */
 
 	st_cur->tlast = time(NULL);
+	st_cur->powers[cardnum] = ri->ri_power;
 
 	/* only update power if packets comes from the
      * client: either type == Mgmt and SA != BSSID,
@@ -3003,9 +3009,20 @@ write_packet:
 
 					na_cur->prev = na_prv;
 
+				
+					if (na_cur->manuf == NULL)
+					{
+						na_cur->manuf = get_manufacturer(
+						na_cur->namac[0], na_cur->namac[1], na_cur->namac[2]);
+					}
+
 					gettimeofday(&(na_cur->tv), NULL);
 					na_cur->tinit = time(NULL);
 					na_cur->tlast = time(NULL);
+
+					for (i=0;i<MAX_CARDS;i++) {
+						na_cur->powers[i] = -1;
+					}
 
 					na_cur->power = -1;
 					na_cur->channel = -1;
@@ -3021,6 +3038,7 @@ write_packet:
 
 				na_cur->tlast = time(NULL);
 				na_cur->power = ri->ri_power;
+				na_cur->powers[cardnum] = ri->ri_power;
 				na_cur->channel = ri->ri_channel;
 
 				switch (h80211[0] & 0xF0)
@@ -4149,7 +4167,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				if (ws_row != 0 && nlines >= ws_row) return;
 
 				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
-					fprintf(stderr, " (not associated) ");
+					fprintf(stderr, " /not assoc/ ");
 				else
 					fprintf(stderr,
 							" %02X:%02X:%02X:%02X:%02X:%02X",
@@ -4352,9 +4370,10 @@ static char *format_text_for_csv(const unsigned char *input, int len)
 static int dump_write_csv(void)
 {
 	int i, n, probes_written;
-	struct tm *ltime;
+	/*struct tm *ltime;*/
 	struct AP_info *ap_cur;
 	struct ST_info *st_cur;
+	struct NA_info *na_cur;
 	char *temp;
 
 	if (!G.record_data || !G.output_format_csv) return 0;
@@ -4362,9 +4381,9 @@ static int dump_write_csv(void)
 	fseek(G.f_txt, 0, SEEK_SET);
 
 	fprintf(G.f_txt,
-			"\r\nBSSID, First time seen, Last time seen, channel, Speed, "
+			"\r\nIF, BSSID, Manuf, First time seen, Last time seen, channel, Speed, "
 			"Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, "
-			"ID-length, ESSID, Key\r\n");
+			"ID-length, ESSID, Key, Powers\r\n");
 
 	ap_cur = G.ap_1st;
 
@@ -4398,6 +4417,12 @@ static int dump_write_csv(void)
 				ap_cur->bssid[4],
 				ap_cur->bssid[5]);
 
+		fprintf(G.f_txt,
+				"%s, ",
+				ap_cur->manuf);
+
+		fprintf(G.f_txt, "%ld, ", ap_cur->tinit);
+/*
 		ltime = localtime(&ap_cur->tinit);
 
 		fprintf(G.f_txt,
@@ -4408,7 +4433,11 @@ static int dump_write_csv(void)
 				ltime->tm_hour,
 				ltime->tm_min,
 				ltime->tm_sec);
+*/
 
+
+	fprintf(G.f_txt, "%ld, ", ap_cur->tlast);
+/*
 		ltime = localtime(&ap_cur->tlast);
 
 		fprintf(G.f_txt,
@@ -4419,7 +4448,7 @@ static int dump_write_csv(void)
 				ltime->tm_hour,
 				ltime->tm_min,
 				ltime->tm_sec);
-
+*/
 		fprintf(G.f_txt, "%2d, %3d,", ap_cur->channel, ap_cur->max_speed);
 
 		if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) == 0)
@@ -4474,7 +4503,7 @@ static int dump_write_csv(void)
 				ap_cur->nb_data);
 
 		fprintf(G.f_txt,
-				"%3d.%3d.%3d.%3d, ",
+				"%d.%d.%d.%d, ",
 				ap_cur->lanip[0],
 				ap_cur->lanip[1],
 				ap_cur->lanip[2],
@@ -4499,15 +4528,26 @@ static int dump_write_csv(void)
 				if (i < (int) (strlen(ap_cur->key) - 1)) fprintf(G.f_txt, ":");
 			}
 		}
+		
+		fprintf(G.f_txt, ",");
+		for (i=0;i<G.num_cards;i++) {
+			if (ap_cur->powers[i] != -1) {
+				fprintf(G.f_txt, "%s=%d ", G.ifnames[i] , ap_cur->powers[i]);
+			}
+		}
+
 
 		fprintf(G.f_txt, "\r\n");
 
 		ap_cur = ap_cur->next;
 	}
 
+
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	fprintf(G.f_txt,
-			"\r\nStation MAC, First time seen, Last time seen, "
-			"Power, # packets, BSSID, Probed ESSIDs\r\n");
+			"\r\nStation MAC, Manuf, First time seen, Last time seen, channel,"
+			"Power, # packets, BSSID, Probed ESSIDs, missed, lastseq, bestpower, rate_to, rate_from, Powers\r\n");
 
 	st_cur = G.st_1st;
 
@@ -4530,6 +4570,12 @@ static int dump_write_csv(void)
 				st_cur->stmac[4],
 				st_cur->stmac[5]);
 
+		fprintf(G.f_txt,
+				"%s, ",
+				st_cur->manuf);
+
+		fprintf(G.f_txt, "%ld, ", st_cur->tinit);
+/*
 		ltime = localtime(&st_cur->tinit);
 
 		fprintf(G.f_txt,
@@ -4540,7 +4586,10 @@ static int dump_write_csv(void)
 				ltime->tm_hour,
 				ltime->tm_min,
 				ltime->tm_sec);
+*/
+		fprintf(G.f_txt, "%ld, ", st_cur->tlast);
 
+/*
 		ltime = localtime(&st_cur->tlast);
 
 		fprintf(G.f_txt,
@@ -4552,10 +4601,10 @@ static int dump_write_csv(void)
 				ltime->tm_min,
 				ltime->tm_sec);
 
-		fprintf(G.f_txt, "%3d, %8lu, ", st_cur->power, st_cur->nb_pkt);
-
+		fprintf(G.f_txt, "%d, %3d, %8lu, ", st_cur->channel, st_cur->power, st_cur->nb_pkt);
+*/
 		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
-			fprintf(G.f_txt, "(not associated) ,");
+			fprintf(G.f_txt, "/notassoc/ ,");
 		else
 			fprintf(G.f_txt,
 					"%02X:%02X:%02X:%02X:%02X:%02X,",
@@ -4596,12 +4645,92 @@ static int dump_write_csv(void)
 			free(temp);
 		}
 
+ 		//missed lastseq bestpower rate_to rate_from
+		fprintf(G.f_txt,
+				"%d, %u, %d, %d, %d, ",
+				st_cur->missed, st_cur->lastseq, st_cur->best_power, st_cur->rate_to, st_cur->rate_from);
+
+		for (i=0;i<G.num_cards;i++) {
+			if (st_cur->powers[i] != -1) {
+				fprintf(G.f_txt, "%s=%d ", G.ifnames[i] , st_cur->powers[i]);
+			}
+		}
+
 		fprintf(G.f_txt, "\r\n");
 
 		st_cur = st_cur->next;
 	}
 
 	fprintf(G.f_txt, "\r\n");
+
+
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	fprintf(G.f_txt,
+			"\r\nStation MAC, Manuf, First time seen, Last time seen, Channel, "
+			"Power, ACK-Pkts, ACKps-Pkts, CTS-Pkts, RTSRX-Pkts, RTSTX-Pkts, other Pkts, Powers\r\n");
+
+	na_cur = G.na_1st;
+
+	while (na_cur != NULL)
+	{
+		fprintf(G.f_txt,
+				"%02X:%02X:%02X:%02X:%02X:%02X, ",
+				na_cur->namac[0],
+				na_cur->namac[1],
+				na_cur->namac[2],
+				na_cur->namac[3],
+				na_cur->namac[4],
+				na_cur->namac[5]);
+
+		fprintf(G.f_txt,
+				"%s, ",
+				na_cur->manuf);
+
+		fprintf(G.f_txt, "%ld, ", na_cur->tinit);
+/*
+		ltime = localtime(&na_cur->tinit);
+
+		fprintf(G.f_txt,
+				"%04d-%02d-%02d %02d:%02d:%02d, ",
+				1900 + ltime->tm_year,
+				1 + ltime->tm_mon,
+				ltime->tm_mday,
+				ltime->tm_hour,
+				ltime->tm_min,
+				ltime->tm_sec);
+*/
+		fprintf(G.f_txt, "%ld, ", na_cur->tlast);
+/*
+		ltime = localtime(&na_cur->tlast);
+
+		fprintf(G.f_txt,
+				"%04d-%02d-%02d %02d:%02d:%02d, ",
+				1900 + ltime->tm_year,
+				1 + ltime->tm_mon,
+				ltime->tm_mday,
+				ltime->tm_hour,
+				ltime->tm_min,
+				ltime->tm_sec);
+*/
+		fprintf(G.f_txt, "%d, %3d, %d, %d, %d, %d, %d, %d, ", na_cur->channel, na_cur->power, na_cur->ack, na_cur->ackps, na_cur->cts, na_cur->rts_r, na_cur->rts_t, na_cur->other);
+
+		for (i=0;i<G.num_cards;i++) {
+			if (na_cur->powers[i] != -1) {
+				fprintf(G.f_txt, "%s=%d ", G.ifnames[i] , na_cur->powers[i]);
+			}
+		}
+
+		fprintf(G.f_txt, "\r\n");
+
+		na_cur = na_cur->next;
+	}
+
+	fprintf(G.f_txt, "\r\n");
+	fflush(G.f_txt);
+
+ //////////////////////////////////////////////////////////////////////////
+
 	fflush(G.f_txt);
 	return 0;
 }
@@ -4761,7 +4890,7 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 	// Not found, use "Unknown".
 	if (!found || *manuf == '\0')
 	{
-		memcpy(manuf, "Unknown", 7);
+		memcpy(manuf, "/unknown/", 9);
 		manuf[strlen(manuf)] = '\0';
 	}
 
@@ -4828,7 +4957,7 @@ static int dump_write_kismet_netxml_client_info(struct ST_info *client, int clie
 		sanitize_xml((unsigned char *) client->manuf, strlen(client->manuf));
 	fprintf(G.f_kis_xml,
 			"\t\t\t<client-manuf>%s</client-manuf>\n",
-			(manuf != NULL) ? manuf : "Unknown");
+			(manuf != NULL) ? manuf : "/unknown/");
 	free(manuf);
 
 	/* SSID item, aka Probes */
@@ -5119,7 +5248,7 @@ static int dump_write_kismet_netxml(void)
 							 strlen(ap_cur->manuf));
 		fprintf(G.f_kis_xml,
 				"\t\t<manuf>%s</manuf>\n",
-				(manuf != NULL) ? manuf : "Unknown");
+				(manuf != NULL) ? manuf : "/unknown/");
 		free(manuf);
 
 		/* Channel
@@ -5300,7 +5429,7 @@ static int dump_write_kismet_netxml(void)
 								 strlen(st_cur->manuf));
 			fprintf(G.f_kis_xml,
 					"\t\t<manuf>%s</manuf>\n",
-					(manuf != NULL) ? manuf : "Unknown");
+					(manuf != NULL) ? manuf : "/unknown/");
 			free(manuf);
 
 			/* Channel
@@ -6757,6 +6886,7 @@ static int init_cards(const char *cardstr, char *iface[], struct wif **wi)
 			free(buf);
 			return -1;
 		}
+		G.ifnames[if_count] = strdup(iface[if_count]);
 		if_count++;
 	}
 
@@ -8416,6 +8546,9 @@ int main(int argc, char *argv[])
 #endif
 
 	for (i = 0; i < G.num_cards; i++) wi_close(wi[i]);
+	for (i = 0; i < G.num_cards; i++)
+		if (G.ifnames[i])
+			free(G.ifnames[i]);
 
 	if (G.record_data)
 	{
@@ -8486,6 +8619,7 @@ int main(int argc, char *argv[])
 	while (na_cur != NULL)
 	{
 		na_next = na_cur->next;
+		if (G.manufList) free(na_cur->manuf);
 		free(na_cur);
 		na_cur = na_next;
 	}

@@ -37,13 +37,13 @@
 /* some constants */
 
 #define REFRESH_RATE 100000 /* default delay in us between updates */
-#define DEFAULT_HOPFREQ 250 /* default delay in ms between channel hopping */
+#define DEFAULT_HOPFREQ 500 /* default delay in ms between channel hopping */
 #define DEFAULT_CWIDTH 20 /* 20 MHz channels by default */
 
-#define NB_PWR 5 /* size of signal power ring buffer */
-#define NB_PRB 10 /* size of probed ESSID ring buffer */
+#define NB_PWR 20 /* size of signal power ring buffer */
+#define NB_PRB 100 /* size of probed ESSID ring buffer */
 
-#define MAX_CARDS 8 /* maximum number of cards to capture from */
+#define MAX_CARDS 12 /* maximum number of cards to capture from */
 
 #define STD_OPN 0x0001
 #define STD_WEP 0x0002
@@ -244,6 +244,8 @@ struct AP_info
 	int best_power; /* best signal power    */
 	int power_index; /* index in power ring buf. */
 	int power_lvl[NB_PWR]; /* signal power ring buffer */
+	int powers[MAX_CARDS]; /* power per card */
+
 	int preamble; /* 0 = long, 1 = short      */
 	int security; /* ENC_*, AUTH_*, STD_*     */
 	int beacon_logged; /* We need 1 beacon per AP  */
@@ -318,6 +320,8 @@ struct ST_info
 	int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
 	int power; /* last signal power         */
 	int best_power; /* best signal power    */
+	int powers[MAX_CARDS]; /* power per card */
+
 	int rate_to; /* last bitrate to station   */
 	int rate_from; /* last bitrate from station */
 	struct timeval ftimer; /* time of restart           */
@@ -341,7 +345,10 @@ struct NA_info
 	struct NA_info *next; /* the next client in list   */
 	time_t tinit, tlast; /* first and last time seen  */
 	unsigned char namac[6]; /* the stations MAC address  */
+	char *manuf; /* the client's manufacturer */
 	int power; /* last signal power         */
+	int powers[MAX_CARDS]; /* power per card */
+
 	int channel; /* captured on channel       */
 	int ack; /* number of ACK frames      */
 	int ack_old; /* old number of ACK frames  */
@@ -381,6 +388,8 @@ struct globals
 	FILE *f_cap; /* output cap file      */
 	FILE *f_ivs; /* output ivs file      */
 	FILE *f_xor; /* output prga file     */
+
+    char *ifnames[MAX_CARDS];
 
 	char *batt; /* Battery string       */
 	int channel[MAX_CARDS]; /* current channel #    */
