@@ -3010,11 +3010,8 @@ write_packet:
 					na_cur->prev = na_prv;
 
 				
-					if (na_cur->manuf == NULL)
-					{
-						na_cur->manuf = get_manufacturer(
+					na_cur->manuf = get_manufacturer(
 						na_cur->namac[0], na_cur->namac[1], na_cur->namac[2]);
-					}
 
 					gettimeofday(&(na_cur->tv), NULL);
 					na_cur->tinit = time(NULL);
@@ -3024,6 +3021,7 @@ write_packet:
 						na_cur->powers[i] = -1;
 					}
 
+					na_cur->nb_pkt = 0;
 					na_cur->power = -1;
 					na_cur->channel = -1;
 					na_cur->ack = 0;
@@ -3040,6 +3038,7 @@ write_packet:
 				na_cur->power = ri->ri_power;
 				na_cur->powers[cardnum] = ri->ri_power;
 				na_cur->channel = ri->ri_channel;
+				na_cur->nb_pkt++;
 
 				switch (h80211[0] & 0xF0)
 				{
@@ -4395,6 +4394,13 @@ static int dump_write_csv(void)
 			continue;
 		}
 
+		if (G.is_berlin && time(NULL) - ap_cur->tlast > G.berlin)
+		{
+			ap_cur = ap_cur->prev;
+			continue;
+		}
+
+
 		if (ap_cur->security != 0 && G.f_encrypt != 0
 			&& ((ap_cur->security & G.f_encrypt) == 0))
 		{
@@ -4561,6 +4567,12 @@ static int dump_write_csv(void)
 			continue;
 		}
 
+		if (G.is_berlin && time(NULL) - st_cur->tlast > G.berlin)
+		{
+			st_cur = st_cur->prev;
+			continue;
+		}
+
 		fprintf(G.f_txt,
 				"%02X:%02X:%02X:%02X:%02X:%02X, ",
 				st_cur->stmac[0],
@@ -4674,6 +4686,17 @@ static int dump_write_csv(void)
 
 	while (na_cur != NULL)
 	{
+		if (na_cur->nb_pkt < 2) {
+			na_cur = na_cur->next;
+			continue;		
+		}
+
+		if (G.is_berlin && time(NULL) - na_cur->tlast > G.berlin)
+		{
+			na_cur = na_cur->prev;
+			continue;
+		}
+
 		fprintf(G.f_txt,
 				"%02X:%02X:%02X:%02X:%02X:%02X, ",
 				na_cur->namac[0],

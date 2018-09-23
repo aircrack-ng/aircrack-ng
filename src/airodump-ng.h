@@ -346,6 +346,8 @@ struct NA_info
 	time_t tinit, tlast; /* first and last time seen  */
 	unsigned char namac[6]; /* the stations MAC address  */
 	char *manuf; /* the client's manufacturer */
+	unsigned long nb_pkt; /* total number of packets   */
+
 	int power; /* last signal power         */
 	int powers[MAX_CARDS]; /* power per card */
 
