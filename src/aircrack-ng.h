@@ -47,6 +47,7 @@
 #include "aircrack-crypto/crypto_engine.h"
 
 #include <pthread.h>
+#include "aircrack-util/avl_tree.h"
 
 #define SUCCESS 0
 #define FAILURE 1
@@ -219,7 +220,8 @@ struct AP_info
 	int crypt; /* encryption algorithm         */
 	int eapol; /* set if EAPOL is present      */
 	int target; /* flag set if AP is a target   */
-	struct ST_info *st_1st; /* linked list of stations      */
+	struct ST_info *st_1st; /* DEPRECATED: linked list of stations */
+	c_avl_tree_t *stations; /* AVL tree of stations keyed on MAC*/
 	struct WPA_hdsk wpa; /* valid WPA handshake data     */
 	PTW_attackstate *ptw_clean;
 	PTW_attackstate *ptw_vague;
@@ -228,9 +230,9 @@ struct AP_info
 struct ST_info
 {
 	struct AP_info *ap; /* parent AP                    */
-	struct ST_info *next; /* next supplicant              */
-	struct WPA_hdsk wpa; /* WPA handshake data           */
-	unsigned char stmac[6]; /* client MAC address           */
+	struct ST_info *next; /* DEPRECATED: next supplicant*/
+	struct WPA_hdsk wpa; /* WPA handshake data          */
+	unsigned char stmac[6]; /* client MAC address       */
 };
 
 struct mergeBSSID

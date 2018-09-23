@@ -348,13 +348,12 @@ static void destroy_ap(struct AP_info *ap)
 		ap->ivbuf = NULL;
 	}
 
-	while (ap->st_1st != NULL)
+	void *key = NULL;
+	while (c_avl_pick(ap->stations, &key, (void **) &st_tmp) == 0)
 	{
-		st_tmp = ap->st_1st;
-		ap->st_1st = ap->st_1st->next;
 		free(st_tmp);
-		st_tmp = NULL;
 	}
+	c_avl_destroy(ap->stations);
 
 	uniqueiv_wipe(ap->uiv_root);
 	ap->uiv_root = NULL;
@@ -1302,7 +1301,6 @@ static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsign
 	assert(ivs2 != NULL);
 	assert(pkh != NULL);
 
-	struct ST_info *st_prv = NULL;
 	struct ST_info *st_cur = NULL;
 	unsigned char stmac[6];
 	unsigned char *p = NULL;
@@ -1343,34 +1341,21 @@ static int packet_reader__update_ap_info(struct AP_info *ap_cur, int fmt, unsign
 			goto skip_station;
 	}
 
-	st_cur = ap_cur->st_1st;
-
-	while (st_cur != NULL)
-	{
-		if (!memcmp(st_cur->stmac, stmac, 6)) break;
-
-		st_prv = st_cur;
-		st_cur = st_cur->next;
-	}
+	int not_found = c_avl_get(ap_cur->stations, stmac, (void **) &st_cur);
 
 	/* if it's a new supplicant, add it */
-
-	if (st_cur == NULL)
+	if (not_found)
 	{
-		if (!(st_cur = (struct ST_info *) malloc(sizeof(struct ST_info))))
+        st_cur = (struct ST_info *) malloc(sizeof(struct ST_info));
+		if (st_cur == NULL)
 		{
 			perror("malloc failed");
 			return -1;
 		}
-
 		memset(st_cur, 0, sizeof(struct ST_info));
 
-		if (ap_cur->st_1st == NULL)
-			ap_cur->st_1st = st_cur;
-		else
-			st_prv->next = st_cur;
-
-		memcpy(st_cur->stmac, stmac, 6);
+		memcpy(st_cur->stmac, stmac, sizeof(st_cur->stmac));
+		c_avl_insert(ap_cur->stations, st_cur->stmac, st_cur);
 	}
 
 skip_station:
@@ -1805,7 +1790,7 @@ static int packet_reader_process_packet(packet_reader_t *me, uint8_t *bssid, uin
 				return -1;
 			}
 		}
-
+        (*ap_cur)->stations = c_avl_create(station_compare);
 		append_ap(*ap_cur);
 	}
 
