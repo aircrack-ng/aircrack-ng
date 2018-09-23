@@ -348,12 +348,16 @@ static void destroy_ap(struct AP_info *ap)
 		ap->ivbuf = NULL;
 	}
 
-	void *key = NULL;
-	while (c_avl_pick(ap->stations, &key, (void **) &st_tmp) == 0)
+	if (ap->stations !=NULL)
 	{
-		free(st_tmp);
+		void *key = NULL;
+		while (c_avl_pick(ap->stations, &key, (void **) &st_tmp) == 0)
+		{
+			free(st_tmp);
+		}
+		c_avl_destroy(ap->stations);
+		ap->stations = NULL;
 	}
-	c_avl_destroy(ap->stations);
 
 	uniqueiv_wipe(ap->uiv_root);
 	ap->uiv_root = NULL;
