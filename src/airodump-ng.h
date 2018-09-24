@@ -106,14 +106,16 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
 #define KISMET_NETXML_EXT "kismet.netxml"
 #define AIRODUMP_NG_GPS_EXT "gps"
 #define AIRODUMP_NG_CAP_EXT "cap"
+#define AIRODUMP_NG_JSON_EXT "json"
 
-#define NB_EXTENSIONS 6
+#define NB_EXTENSIONS 7
 
 const unsigned char llcnull[4] = {0, 0, 0, 0};
 char *f_ext[NB_EXTENSIONS] = {AIRODUMP_NG_CSV_EXT,
 							  AIRODUMP_NG_GPS_EXT,
 							  AIRODUMP_NG_CAP_EXT,
 							  IVS2_EXTENSION,
+							  AIRODUMP_NG_JSON_EXT
 							  KISMET_CSV_EXT,
 							  KISMET_NETXML_EXT};
 
@@ -387,6 +389,7 @@ struct globals
 	FILE *f_kis; /* output kismet csv file      */
 	FILE *f_kis_xml; /* output kismet netxml file */
 	FILE *f_gps; /* output gps file      */
+	FILE *f_json; /* output json file      */
 	FILE *f_cap; /* output cap file      */
 	FILE *f_ivs; /* output ivs file      */
 	FILE *f_xor; /* output prga file     */
@@ -485,6 +488,7 @@ struct globals
 	int output_format_csv;
 	int output_format_kismet_csv;
 	int output_format_kismet_netxml;
+	int output_format_json;	
 	pthread_t input_tid;
 	int sort_by;
 	int sort_inv;

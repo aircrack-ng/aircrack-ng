@@ -1026,6 +1026,25 @@ static int dump_initialize(char *prefix, int ivs_only)
 		}
 	}
 
+	/* create the output json file */
+
+	if (G.output_format_json)
+	{
+		memset(ofn, 0, ofn_len);
+		snprintf(
+			ofn, ofn_len, "%s-%02d.%s", prefix, G.f_index, AIRODUMP_NG_JSON_EXT);
+
+		if ((G.f_json = fopen(ofn, "wb+")) == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+			return (1);
+		}
+	}
+
+
+
 	/* create the output packet capture file */
 	if (G.output_format_pcap)
 	{
@@ -4369,10 +4388,9 @@ static char *format_text_for_csv(const unsigned char *input, int len)
 static int dump_write_csv(void)
 {
 	int i, n, probes_written;
-	/*struct tm *ltime;*/
+	struct tm *ltime;
 	struct AP_info *ap_cur;
 	struct ST_info *st_cur;
-	struct NA_info *na_cur;
 	char *temp;
 
 	if (!G.record_data || !G.output_format_csv) return 0;
@@ -4380,9 +4398,9 @@ static int dump_write_csv(void)
 	fseek(G.f_txt, 0, SEEK_SET);
 
 	fprintf(G.f_txt,
-			"\r\nIF, BSSID, Manuf, First time seen, Last time seen, channel, Speed, "
+			"\r\nBSSID, First time seen, Last time seen, channel, Speed, "
 			"Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, "
-			"ID-length, ESSID, Key, Powers\r\n");
+			"ID-length, ESSID, Key\r\n");
 
 	ap_cur = G.ap_1st;
 
@@ -4393,13 +4411,6 @@ static int dump_write_csv(void)
 			ap_cur = ap_cur->next;
 			continue;
 		}
-
-		if (G.is_berlin && time(NULL) - ap_cur->tlast > G.berlin)
-		{
-			ap_cur = ap_cur->prev;
-			continue;
-		}
-
 
 		if (ap_cur->security != 0 && G.f_encrypt != 0
 			&& ((ap_cur->security & G.f_encrypt) == 0))
@@ -4423,12 +4434,6 @@ static int dump_write_csv(void)
 				ap_cur->bssid[4],
 				ap_cur->bssid[5]);
 
-		fprintf(G.f_txt,
-				"%s, ",
-				ap_cur->manuf);
-
-		fprintf(G.f_txt, "%ld, ", ap_cur->tinit);
-/*
 		ltime = localtime(&ap_cur->tinit);
 
 		fprintf(G.f_txt,
@@ -4439,11 +4444,7 @@ static int dump_write_csv(void)
 				ltime->tm_hour,
 				ltime->tm_min,
 				ltime->tm_sec);
-*/
 
-
-	fprintf(G.f_txt, "%ld, ", ap_cur->tlast);
-/*
 		ltime = localtime(&ap_cur->tlast);
 
 		fprintf(G.f_txt,
@@ -4454,7 +4455,7 @@ static int dump_write_csv(void)
 				ltime->tm_hour,
 				ltime->tm_min,
 				ltime->tm_sec);
-*/
+
 		fprintf(G.f_txt, "%2d, %3d,", ap_cur->channel, ap_cur->max_speed);
 
 		if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) == 0)
@@ -4509,7 +4510,7 @@ static int dump_write_csv(void)
 				ap_cur->nb_data);
 
 		fprintf(G.f_txt,
-				"%d.%d.%d.%d, ",
+				"%3d.%3d.%3d.%3d, ",
 				ap_cur->lanip[0],
 				ap_cur->lanip[1],
 				ap_cur->lanip[2],
@@ -4534,26 +4535,15 @@ static int dump_write_csv(void)
 				if (i < (int) (strlen(ap_cur->key) - 1)) fprintf(G.f_txt, ":");
 			}
 		}
-		
-		fprintf(G.f_txt, ",");
-		for (i=0;i<G.num_cards;i++) {
-			if (ap_cur->powers[i] != -1) {
-				fprintf(G.f_txt, "%s=%d ", G.ifnames[i] , ap_cur->powers[i]);
-			}
-		}
-
 
 		fprintf(G.f_txt, "\r\n");
 
 		ap_cur = ap_cur->next;
 	}
 
-
-   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 	fprintf(G.f_txt,
-			"\r\nStation MAC, Manuf, First time seen, Last time seen, channel,"
-			"Power, # packets, BSSID, Probed ESSIDs, missed, lastseq, bestpower, rate_to, rate_from, Powers\r\n");
+			"\r\nStation MAC, First time seen, Last time seen, "
+			"Power, # packets, BSSID, Probed ESSIDs\r\n");
 
 	st_cur = G.st_1st;
 
@@ -4567,12 +4557,6 @@ static int dump_write_csv(void)
 			continue;
 		}
 
-		if (G.is_berlin && time(NULL) - st_cur->tlast > G.berlin)
-		{
-			st_cur = st_cur->prev;
-			continue;
-		}
-
 		fprintf(G.f_txt,
 				"%02X:%02X:%02X:%02X:%02X:%02X, ",
 				st_cur->stmac[0],
@@ -4582,12 +4566,6 @@ static int dump_write_csv(void)
 				st_cur->stmac[4],
 				st_cur->stmac[5]);
 
-		fprintf(G.f_txt,
-				"%s, ",
-				st_cur->manuf);
-
-		fprintf(G.f_txt, "%ld, ", st_cur->tinit);
-/*
 		ltime = localtime(&st_cur->tinit);
 
 		fprintf(G.f_txt,
@@ -4598,10 +4576,7 @@ static int dump_write_csv(void)
 				ltime->tm_hour,
 				ltime->tm_min,
 				ltime->tm_sec);
-*/
-		fprintf(G.f_txt, "%ld, ", st_cur->tlast);
 
-/*
 		ltime = localtime(&st_cur->tlast);
 
 		fprintf(G.f_txt,
@@ -4613,10 +4588,10 @@ static int dump_write_csv(void)
 				ltime->tm_min,
 				ltime->tm_sec);
 
-		fprintf(G.f_txt, "%d, %3d, %8lu, ", st_cur->channel, st_cur->power, st_cur->nb_pkt);
-*/
+		fprintf(G.f_txt, "%3d, %8lu, ", st_cur->power, st_cur->nb_pkt);
+
 		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
-			fprintf(G.f_txt, "/notassoc/ ,");
+			fprintf(G.f_txt, "(not associated) ,");
 		else
 			fprintf(G.f_txt,
 					"%02X:%02X:%02X:%02X:%02X:%02X,",
@@ -4657,32 +4632,300 @@ static int dump_write_csv(void)
 			free(temp);
 		}
 
- 		//missed lastseq bestpower rate_to rate_from
-		fprintf(G.f_txt,
-				"%d, %u, %d, %d, %d, ",
-				st_cur->missed, st_cur->lastseq, st_cur->best_power, st_cur->rate_to, st_cur->rate_from);
-
-		for (i=0;i<G.num_cards;i++) {
-			if (st_cur->powers[i] != -1) {
-				fprintf(G.f_txt, "%s=%d ", G.ifnames[i] , st_cur->powers[i]);
-			}
-		}
-
 		fprintf(G.f_txt, "\r\n");
 
 		st_cur = st_cur->next;
 	}
 
 	fprintf(G.f_txt, "\r\n");
+	fflush(G.f_txt);
+	return 0;
+}
+
+
+static int dump_write_json(void)
+{
+	int i, n, probes_written;
+	unsigned int powers_count=0;	
+	/*struct tm *ltime;*/
+	struct AP_info *ap_cur;
+	struct ST_info *st_cur;
+	struct NA_info *na_cur;
+	char *temp;
+
+	if (!G.record_data || !G.output_format_json) return 0;
+
+	fseek(G.f_json, 0, SEEK_SET);
+
+	fprintf(G.f_json, "{\"ap\":[");
+
+	ap_cur = G.ap_1st;
+	unsigned int ap_count = 0;
+
+	while (ap_cur != NULL)
+	{
+		if (memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+		if (G.is_berlin && time(NULL) - ap_cur->tlast > G.berlin)
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+
+		if (ap_cur->security != 0 && G.f_encrypt != 0
+			&& ((ap_cur->security & G.f_encrypt) == 0))
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+		if (is_filtered_essid(ap_cur->essid))
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+		if (ap_count++>0) 
+			fprintf(G.f_json,",");
+
+		fprintf(G.f_json,
+				"{\"mac\":\"%02X:%02X:%02X:%02X:%02X:%02X\", ",
+				ap_cur->bssid[0],
+				ap_cur->bssid[1],
+				ap_cur->bssid[2],
+				ap_cur->bssid[3],
+				ap_cur->bssid[4],
+				ap_cur->bssid[5]);
+
+		fprintf(G.f_json,
+				"\"manu\":\"%s\", ",
+				ap_cur->manuf);
+
+		fprintf(G.f_json, "\"firstseen\":%ld, ", ap_cur->tinit);
+		fprintf(G.f_json, "\"lastseen\":%ld, ", ap_cur->tlast);
+
+		fprintf(G.f_json, "\"channel\":%2d, \"max_speed\":%3d,", ap_cur->channel, ap_cur->max_speed);
+
+		fprintf(G.f_json, "\"privacy\":\"");
+		if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) != 0)
+		{
+			if (ap_cur->security & STD_WPA2) fprintf(G.f_json, " WPA2");
+			if (ap_cur->security & STD_WPA) fprintf(G.f_json, " WPA");
+			if (ap_cur->security & STD_WEP) fprintf(G.f_json, " WEP");
+			if (ap_cur->security & STD_OPN) fprintf(G.f_json, " OPN");
+		}
+
+		fprintf(G.f_json, "\",\"cipher\":\"");
+
+		if ((ap_cur->security
+			 & (ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP104
+				| ENC_WEP40 | ENC_GCMP))
+			!= 0)
+		{
+			if (ap_cur->security & ENC_CCMP) fprintf(G.f_json, " CCMP");
+			if (ap_cur->security & ENC_WRAP) fprintf(G.f_json, " WRAP");
+			if (ap_cur->security & ENC_TKIP) fprintf(G.f_json, " TKIP");
+			if (ap_cur->security & ENC_WEP104) fprintf(G.f_json, " WEP104");
+			if (ap_cur->security & ENC_WEP40) fprintf(G.f_json, " WEP40");
+			if (ap_cur->security & ENC_WEP) fprintf(G.f_json, " WEP");
+			if (ap_cur->security & ENC_WEP) fprintf(G.f_json, " GCMP");
+		}
+
+		fprintf(G.f_json, "\",\"auth\":\"");
+
+		if ((ap_cur->security & (AUTH_OPN | AUTH_PSK | AUTH_MGT)) != 0)
+		{
+			if (ap_cur->security & AUTH_MGT) fprintf(G.f_json, " MGT");
+			if (ap_cur->security & AUTH_PSK)
+			{
+				if (ap_cur->security & STD_WEP)
+					fprintf(G.f_json, " SKA");
+				else
+					fprintf(G.f_json, " PSK");
+			}
+			if (ap_cur->security & AUTH_OPN) fprintf(G.f_json, " OPN");
+		}
+		fprintf(G.f_json, "\",");
+
+		fprintf(G.f_json,
+				"\"avg_power\":%3d, \"no_beacons\":%8lu, \"no_data\":%8lu, ",
+				ap_cur->avg_power,
+				ap_cur->nb_bcn,
+				ap_cur->nb_data);
+
+		fprintf(G.f_json,
+				"\"ip\":\"%d.%d.%d.%d\", ",
+				ap_cur->lanip[0],
+				ap_cur->lanip[1],
+				ap_cur->lanip[2],
+				ap_cur->lanip[3]);
+
+		fprintf(G.f_json, "\"ssid-len\":%3d, ", ap_cur->ssid_length);
+
+		if (verifyssid(ap_cur->essid))
+			fprintf(G.f_json, "\"essid\":\"%s\", ", ap_cur->essid);
+		else
+		{
+			temp = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
+			fprintf(G.f_json, "\"essid\":\"%s\", ", temp);
+			free(temp);
+		}
+
+		
+		fprintf(G.f_json, "\"key\":\"");
+		if (ap_cur->key != NULL)
+		{
+			for (i = 0; i < (int) strlen(ap_cur->key); i++)
+			{
+				fprintf(G.f_json, "%02X", ap_cur->key[i]);
+				if (i < (int) (strlen(ap_cur->key) - 1)) fprintf(G.f_json, ":");
+			}
+		}
+		
+		fprintf(G.f_json, "\", \"no_pkt\":%lu,", ap_cur->nb_pkt);
+
+
+		fprintf(G.f_json, " \"powers\":{");
+		powers_count = 0;
+		for (i=0;i<G.num_cards;i++) {
+			if (ap_cur->powers[i] != -1) {
+				if (powers_count++>0) fprintf(G.f_json,",");
+				fprintf(G.f_json, "\"%s\":%d", G.ifnames[i] , ap_cur->powers[i]);
+			}
+		}
+		fprintf(G.f_json, "}");
+
+
+		fprintf(G.f_json, "}");
+
+		ap_cur = ap_cur->next;
+	}
+	fprintf(G.f_json, "],\r\n");
 
 
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	fprintf(G.f_txt,
-			"\r\nStation MAC, Manuf, First time seen, Last time seen, Channel, "
-			"Power, ACK-Pkts, ACKps-Pkts, CTS-Pkts, RTSRX-Pkts, RTSTX-Pkts, other Pkts, Powers\r\n");
+	fprintf(G.f_json,
+			"\"st\":[");
+
+	st_cur = G.st_1st;
+	unsigned int st_count = 0;
+
+	while (st_cur != NULL)
+	{
+		ap_cur = st_cur->base;
+
+		if (ap_cur->nb_pkt < 2)
+		{
+			st_cur = st_cur->next;
+			continue;
+		}
+
+		if (G.is_berlin && time(NULL) - st_cur->tlast > G.berlin)
+		{
+			st_cur = st_cur->next;
+			continue;
+		}
+
+		if (st_count++>0)
+			fprintf(G.f_json,",");
+
+		fprintf(G.f_json,
+				"{\"mac\":\"%02X:%02X:%02X:%02X:%02X:%02X\", ",
+				st_cur->stmac[0],
+				st_cur->stmac[1],
+				st_cur->stmac[2],
+				st_cur->stmac[3],
+				st_cur->stmac[4],
+				st_cur->stmac[5]);
+
+		fprintf(G.f_json,
+				"\"manu\":\"%s\", ",
+				st_cur->manuf);
+
+		fprintf(G.f_json, "\"first\":%ld, ", st_cur->tinit);
+		fprintf(G.f_json, "\"last\":%ld, ", st_cur->tlast);
+
+		fprintf(G.f_json, "\"bssid\":\"");
+		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
+			fprintf(G.f_json, "/notassoc/ ,");
+		else
+			fprintf(G.f_json,
+					"%02X:%02X:%02X:%02X:%02X:%02X,",
+					ap_cur->bssid[0],
+					ap_cur->bssid[1],
+					ap_cur->bssid[2],
+					ap_cur->bssid[3],
+					ap_cur->bssid[4],
+					ap_cur->bssid[5]);
+		fprintf(G.f_json,"\",\"probes\":\"");
+
+		probes_written = 0;
+		for (i = 0, n = 0; i < NB_PRB; i++)
+		{
+			if (st_cur->ssid_length[i] == 0) continue;
+
+			if (verifyssid((const unsigned char *) st_cur->probes[i]))
+			{
+				temp = (char *) calloc(
+					1, (st_cur->ssid_length[i] + 1) * sizeof(char));
+				memcpy(temp, st_cur->probes[i], st_cur->ssid_length[i] + 1);
+			}
+			else
+			{
+				temp = format_text_for_csv((unsigned char *) st_cur->probes[i],
+										   st_cur->ssid_length[i]);
+			}
+
+			if (probes_written == 0)
+			{
+				fprintf(G.f_json, "%s", temp);
+				probes_written = 1;
+			}
+			else
+			{
+				fprintf(G.f_json, ",%s", temp);
+			}
+
+			free(temp);
+		}
+		fprintf(G.f_json, "\",");
+
+ 		//missed lastseq bestpower rate_to rate_from no_pkts
+		fprintf(G.f_json,
+				"\"missed\":%d, \"lastseq\":%u, \"best_power\":%d, \"rate_to\":%d, \"rate_from\":%d, \"no_packets\":%lu, ",
+				st_cur->missed, st_cur->lastseq, st_cur->best_power, st_cur->rate_to, st_cur->rate_from, st_cur->nb_pkt);
+
+		fprintf(G.f_json, "\"powers\":{");
+		powers_count=0;
+		for (i=0;i<G.num_cards;i++) {
+			if (st_cur->powers[i] != -1) {
+				if (powers_count++>0)
+					fprintf(G.f_json, ",");
+				fprintf(G.f_json, "\"%s\":%d", G.ifnames[i] , st_cur->powers[i]);
+			}
+		}
+		fprintf(G.f_json, "}");
+
+		fprintf(G.f_json, "}");
+
+		st_cur = st_cur->next;
+	}
+
+	fprintf(G.f_json, "],\r\n");
+
+
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	fprintf(G.f_json, "\"na\":[");
 
 	na_cur = G.na_1st;
+	unsigned int na_count = 0;
 
 	while (na_cur != NULL)
 	{
@@ -4693,12 +4936,15 @@ static int dump_write_csv(void)
 
 		if (G.is_berlin && time(NULL) - na_cur->tlast > G.berlin)
 		{
-			na_cur = na_cur->prev;
+			na_cur = na_cur->next;
 			continue;
 		}
 
-		fprintf(G.f_txt,
-				"%02X:%02X:%02X:%02X:%02X:%02X, ",
+		if (na_count++>0)
+			fprintf(G.f_json, ",");
+
+		fprintf(G.f_json,
+				"{\"mac\":\"%02X:%02X:%02X:%02X:%02X:%02X\", ",
 				na_cur->namac[0],
 				na_cur->namac[1],
 				na_cur->namac[2],
@@ -4706,57 +4952,53 @@ static int dump_write_csv(void)
 				na_cur->namac[4],
 				na_cur->namac[5]);
 
-		fprintf(G.f_txt,
-				"%s, ",
+		fprintf(G.f_json,
+				"\"manu\":\"%s\", ",
 				na_cur->manuf);
 
-		fprintf(G.f_txt, "%ld, ", na_cur->tinit);
-/*
-		ltime = localtime(&na_cur->tinit);
+		fprintf(G.f_json, "\"first\":%ld, ", na_cur->tinit);
 
-		fprintf(G.f_txt,
-				"%04d-%02d-%02d %02d:%02d:%02d, ",
-				1900 + ltime->tm_year,
-				1 + ltime->tm_mon,
-				ltime->tm_mday,
-				ltime->tm_hour,
-				ltime->tm_min,
-				ltime->tm_sec);
-*/
-		fprintf(G.f_txt, "%ld, ", na_cur->tlast);
-/*
-		ltime = localtime(&na_cur->tlast);
+		fprintf(G.f_json, "\"last\":%ld, ", na_cur->tlast);
 
-		fprintf(G.f_txt,
-				"%04d-%02d-%02d %02d:%02d:%02d, ",
-				1900 + ltime->tm_year,
-				1 + ltime->tm_mon,
-				ltime->tm_mday,
-				ltime->tm_hour,
-				ltime->tm_min,
-				ltime->tm_sec);
-*/
-		fprintf(G.f_txt, "%d, %3d, %d, %d, %d, %d, %d, %d, ", na_cur->channel, na_cur->power, na_cur->ack, na_cur->ackps, na_cur->cts, na_cur->rts_r, na_cur->rts_t, na_cur->other);
+		fprintf(G.f_json, "\"channel\":%3d, \"power\":%3d, \"no_ack\":%d, \"no_ackps\":%d, \"no_cts\":%d, \"no_rts_r\":%d, \"no_rts_t\":%d, \"no_other\":%d, \"no_packets\":%lu, ", 
+			na_cur->channel, 
+			na_cur->power, 
+			na_cur->ack, 
+			na_cur->ackps, 
+			na_cur->cts, 
+			na_cur->rts_r, 
+			na_cur->rts_t, 
+			na_cur->other, 
+			na_cur->nb_pkt);
 
+		fprintf(G.f_json, "\"powers\":{"); 
+		 powers_count=0;
 		for (i=0;i<G.num_cards;i++) {
 			if (na_cur->powers[i] != -1) {
-				fprintf(G.f_txt, "%s=%d ", G.ifnames[i] , na_cur->powers[i]);
+				if (powers_count++>0) 
+					fprintf(G.f_json, ",");
+				fprintf(G.f_json, "\"%s\":%d", G.ifnames[i] , na_cur->powers[i]);
 			}
 		}
+		fprintf(G.f_json, "}");
 
-		fprintf(G.f_txt, "\r\n");
-
+		fprintf(G.f_json, "}");
 		na_cur = na_cur->next;
 	}
 
-	fprintf(G.f_txt, "\r\n");
-	fflush(G.f_txt);
+	fprintf(G.f_json, "]}");
 
  //////////////////////////////////////////////////////////////////////////
 
-	fflush(G.f_txt);
+	fflush(G.f_json);
 	return 0;
 }
+
+
+
+
+
+
 
 static char *sanitize_xml(unsigned char *text, int length)
 {
@@ -7292,6 +7534,7 @@ int main(int argc, char *argv[])
 
 	G.output_format_pcap = 1;
 	G.output_format_csv = 1;
+	G.output_format_json = 1;
 	G.output_format_kismet_csv = 1;
 	G.output_format_kismet_netxml = 1;
 	G.file_write_interval = 5; // Write file every 5 seconds by default
@@ -7586,6 +7829,7 @@ int main(int argc, char *argv[])
 
 					G.output_format_pcap = 0;
 					G.output_format_csv = 0;
+					G.output_format_json = 0;
 					G.output_format_kismet_csv = 0;
 					G.output_format_kismet_netxml = 0;
 				}
@@ -7780,6 +8024,10 @@ int main(int argc, char *argv[])
 						{
 							G.output_format_csv = 1;
 						}
+						else if (strncasecmp(output_format_string, "json", 3) == 0)
+						{
+							G.output_format_json = 1;
+						}
 						else if (strncasecmp(output_format_string, "pcap", 4)
 									 == 0
 								 || strncasecmp(output_format_string, "cap", 3)
@@ -7867,6 +8115,7 @@ int main(int argc, char *argv[])
 						{
 							G.output_format_pcap = 0;
 							G.output_format_csv = 0;
+							G.output_format_json = 0;
 							G.output_format_kismet_csv = 0;
 							G.output_format_kismet_netxml = 0;
 
@@ -8174,7 +8423,7 @@ int main(int argc, char *argv[])
 	signal(SIGSEGV, sighandler);
 	signal(SIGTERM, sighandler);
 	signal(SIGWINCH, sighandler);
-
+	
 	sighandler(SIGWINCH);
 
 	/* fill oui struct if ram is greater than 32 MB */
@@ -8253,6 +8502,7 @@ int main(int argc, char *argv[])
 			/* update the text output files */
 
 			tt1 = time(NULL);
+			if (G.output_format_json) dump_write_json();
 			if (G.output_format_csv) dump_write_csv();
 			if (G.output_format_kismet_csv) dump_write_kismet_csv();
 			if (G.output_format_kismet_netxml) dump_write_kismet_netxml();
@@ -8576,10 +8826,12 @@ int main(int argc, char *argv[])
 	if (G.record_data)
 	{
 		if (G.output_format_csv) dump_write_csv();
+		if (G.output_format_json) dump_write_json();
 		if (G.output_format_kismet_csv) dump_write_kismet_csv();
 		if (G.output_format_kismet_netxml) dump_write_kismet_netxml();
 
 		if (G.output_format_csv || G.f_txt != NULL) fclose(G.f_txt);
+		if (G.output_format_json || G.f_json != NULL) fclose(G.f_json);
 		if (G.output_format_kismet_csv || G.f_kis != NULL) fclose(G.f_kis);
 		if (G.output_format_kismet_netxml || G.f_kis_xml != NULL)
 		{
