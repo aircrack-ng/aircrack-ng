@@ -729,7 +729,8 @@ char usage[] =
 	"      --wps                 : Display WPS information (if any)\n"
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
-	"                              pcap, ivs, csv, gps, kismet, netxml\n"
+	"                              pcap, ivs, csv, gps, kismet,\n"
+	"                              netxml, json"
 	"      --ignore-negative-one : Removes the message that says\n"
 	"                              fixed channel <interface>: -1\n"
 	"      --write-interval\n"
@@ -4808,7 +4809,7 @@ static int dump_write_json(void)
 	fprintf(G.f_json, "],\r\n");
 
 
-   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /* ouput stations */
 
 	fprintf(G.f_json,
 			"\"st\":[");
@@ -4920,7 +4921,7 @@ static int dump_write_json(void)
 	fprintf(G.f_json, "],\r\n");
 
 
-   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /* output not associated */
 
 	fprintf(G.f_json, "\"na\":[");
 
@@ -4988,7 +4989,7 @@ static int dump_write_json(void)
 
 	fprintf(G.f_json, "]}");
 
- //////////////////////////////////////////////////////////////////////////
+ 	/* all done */
 
 	fflush(G.f_json);
 	return 0;
