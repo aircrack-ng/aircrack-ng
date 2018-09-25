@@ -1,8 +1,9 @@
 ---
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: 'false'
+AlignConsecutiveDeclarations: 'false'
 AlignOperands: 'true'
-AlignTrailingComments: 'false'
+AlignTrailingComments: 'true'
 AllowShortCaseLabelsOnASingleLine: 'false'
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: 'true'
@@ -10,13 +11,17 @@ AllowShortLoopsOnASingleLine: 'true'
 AlwaysBreakBeforeMultilineStrings: 'false'
 BinPackArguments: 'false'
 BinPackParameters: 'false'
-BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBinaryOperators: 'All'
 BreakBeforeBraces: Allman
+BreakBeforeTernaryOperators: 'true'
+ColumnLimit: 80
 ContinuationIndentWidth: '4'
 IndentCaseLabels: 'true'
 IndentWidth: '4'
-PointerAlignment: Right
-ReflowComments: 'false'
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: 'None'
+PointerAlignment: 'Middle'
+ReflowComments: 'true'
 SortIncludes: 'false'
 SpaceAfterCStyleCast: 'true'
 SpaceBeforeAssignmentOperators: 'true'
