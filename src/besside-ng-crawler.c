@@ -159,7 +159,7 @@ static struct bsslist * get_eapol_bssids(pcap_t * handle)
 			}
 			else
 			{ // fromDS - I skip adhoc and wds since its unlikely to have eapol
-			  // in there (?)
+				// in there (?)
 				bssid = pkt + 10 + o;
 			}
 

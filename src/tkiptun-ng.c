@@ -2836,7 +2836,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			/* check length (153)!? */
 			if (z + 127 != n)
 				continue; //(153[26+127] bytes for eapol mic failure in tkip qos
-						  //frames from client to AP)
+						  // frames from client to AP)
 
 			//             printf("yeah!\n");
 

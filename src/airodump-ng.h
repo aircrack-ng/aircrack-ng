@@ -166,10 +166,9 @@ struct pkt_buf
 /* oui struct for list management */
 struct oui
 {
-	char
-		id[9]; /* TODO: Don't use ASCII chars to compare, use unsigned char[3]
-				  (later) with the value (hex ascii will have to be converted)
-				  */
+	char id[9]; /* TODO: Don't use ASCII chars to compare, use unsigned char[3]
+				   (later) with the value (hex ascii will have to be converted)
+				   */
 	char
 		manuf[128]; /* TODO: Switch to a char * later to improve memory usage */
 	struct oui * next;

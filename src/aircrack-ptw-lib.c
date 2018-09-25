@@ -236,11 +236,11 @@ rc4test_amd64_sse2(uint8_t * key, int keylen, uint8_t * iv, uint8_t * keystream)
 		"movzbl  %b2, %k8             \n\t" /* scratch2        = j */
 		"movl (" state
 		",%q8,4), %k7    \n\t" /* s2              = state[scratch2] */
-		"movl    %k7, (%q1)           \n\t" /* state[i]        = s2 */
-		"addq     $4, %q1             \n\t" /* i++ */
+		"movl    %k7, (%q1)           \n\t"   /* state[i]        = s2 */
+		"addq     $4, %q1             \n\t"   /* i++ */
 		"movl    %k5, (" state ",%q8,4) \n\t" /* state[scratch2] = s1 */
-		"cmpq    %q1, %q3             \n\t" /* state          == &state[0x100]
-											   */
+		"cmpq    %q1, %q3             \n\t"   /* state          == &state[0x100]
+												 */
 		"jne .init_loop               \n\t"
 
 		// restore keystream variable

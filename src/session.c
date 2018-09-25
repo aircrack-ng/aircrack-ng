@@ -323,10 +323,10 @@ struct session * ac_session_load(const char * filename)
 			case AC_SESSION_WL_SETTINGS_LINE: // Wordlist ID, position in
 											  // wordlist and amount of keys
 											  // tried
-			{
-				temp = ac_session_set_wordlist_settings(ret, line);
-				break;
-			}
+				{
+					temp = ac_session_set_wordlist_settings(ret, line);
+					break;
+				}
 			case AC_SESSION_ARGC_LINE: // Number of arguments
 			{
 				temp = ac_session_set_amount_arguments(ret, line);

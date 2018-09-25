@@ -1521,7 +1521,7 @@ static void usage(void)
 		"cloaked.\n"
 		"     --disable-base_filter : Do not apply base filter.\n"
 		//"     --disable-retry       : Disable retry check, don't care about
-		//retry bit.\n"
+		// retry bit.\n"
 		"     --drop-frag           : Drop fragmented packets\n"
 		"\n"
 		"     --help                : Displays this usage screen\n"

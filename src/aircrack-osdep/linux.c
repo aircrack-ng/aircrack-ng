@@ -1843,8 +1843,9 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 	if (!iwpriv)
 	{
-		fprintf(stderr, "Required wireless tools when compiled without libnl "
-						"could not be found, exiting.\n");
+		fprintf(stderr,
+				"Required wireless tools when compiled without libnl "
+				"could not be found, exiting.\n");
 		goto close_in;
 	}
 #endif

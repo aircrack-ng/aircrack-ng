@@ -537,7 +537,8 @@ static int parse_ivs2(struct AP_info * ap_cur,
 			memcpy(ap_cur->ivbuf + n, buffer, 5);
 			uniqueiv_mark(ap_cur->uiv_root, buffer);
 			ap_cur->nb_ivs++;
-			// 					all_ivs[256*256*buffer[0] + 256*buffer[1] + buffer[2]].used
+			// 					all_ivs[256*256*buffer[0] + 256*buffer[1] +
+			// buffer[2]].used
 			// |= GOT_IV;
 		}
 	}
@@ -558,7 +559,8 @@ static int parse_ivs2(struct AP_info * ap_cur,
 			memcpy(weight,
 				   buffer + clearsize - 15 * sizeof(int),
 				   16 * sizeof(int));
-			// 					printf("weight 1: %d, weight 2: %d\n", weight[0],
+			// 					printf("weight 1: %d, weight 2: %d\n",
+			// weight[0],
 			// weight[1]);
 
 			if (PTW_addsession(
@@ -2312,10 +2314,12 @@ static int crack_wep_thread(void * arg)
 
 			for (i = j = 0; i < q; i++)
 			{
-				//				i can never be 3+opt.keylen or exceed it, as i runs
-				//from 0 to q and q is defined as 3+B (with B the keybyte to
-				//attack)
-				// 				jj[i] = j = ( j + S[i] + K[i % (3 + opt.keylen)] ) &
+				//				i can never be 3+opt.keylen or exceed it, as i
+				//runs
+				// from 0 to q and q is defined as 3+B (with B the keybyte to
+				// attack)
+				// 				jj[i] = j = ( j + S[i] + K[i % (3 + opt.keylen)] )
+				// &
 				// 0xFF;
 				jj[i] = j = (j + S[i] + K[i]) & 0xFF;
 				SWAP(S[i], S[j]);
@@ -2356,19 +2360,23 @@ static int crack_wep_thread(void * arg)
 					Kq = 2 - dq;
 					votes[A_neg][Kq]++;
 					// to signal general usage
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+					// |=
 					// USE_IV;
 					// to know which attack used this iv
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+					// <<
 					// (4+A_neg);
 				}
 				else if (o2 == 0)
 				{
 					Kq = 2 - dq;
 					votes[A_neg][Kq]++;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+					// |=
 					// USE_IV;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+					// <<
 					// (4+A_neg);
 				}
 			}
@@ -2378,9 +2386,11 @@ static int crack_wep_thread(void * arg)
 				{
 					Kq = 2 - dq;
 					votes[A_u15][Kq]++;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+					// |=
 					// USE_IV;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+					// <<
 					// (4+A_u15);
 				}
 			}
@@ -2393,7 +2403,8 @@ static int crack_wep_thread(void * arg)
 				votes[A_neg][Kq]++;
 				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
 				// USE_IV;
-				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+				// <<
 				// (4+A_neg);
 			}
 
@@ -2405,7 +2416,8 @@ static int crack_wep_thread(void * arg)
 				votes[A_neg][Kq]++;
 				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
 				// USE_IV;
-				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+				// <<
 				// (4+A_neg);
 			}
 
@@ -2415,18 +2427,22 @@ static int crack_wep_thread(void * arg)
 				{
 					Kq = Si[0] - dq;
 					votes[A_s13][Kq]++;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+					// |=
 					// USE_IV;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+					// <<
 					// (4+A_s13);
 				}
 				else if (((1 - q - o1) & 0xFF) == 0)
 				{
 					Kq = io1 - dq;
 					votes[A_u13_1][Kq]++;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+					// |=
 					// USE_IV;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+					// <<
 					// (4+A_u13_1);
 				}
 				else if (io1 < q)
@@ -2437,9 +2453,11 @@ static int crack_wep_thread(void * arg)
 					{
 						Kq = jq - dq;
 						votes[A_u5_1][Kq]++;
-						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+						// |=
 						// USE_IV;
-						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+						// |=
 						// 1 << (4+A_u5_1);
 					}
 				}
@@ -2451,7 +2469,8 @@ static int crack_wep_thread(void * arg)
 				votes[A_u5_2][Kq]++;
 				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
 				// USE_IV;
-				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+				// <<
 				// (4+A_u5_2);
 			}
 
@@ -2461,18 +2480,22 @@ static int crack_wep_thread(void * arg)
 				{
 					Kq = 1 - dq;
 					votes[A_u13_2][Kq]++;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+					// |=
 					// USE_IV;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+					// <<
 					// (4+A_u13_2);
 				}
 				else if ((((1 - q - S1) & 0xFF) == 0) && (o1 == S1))
 				{
 					Kq = 1 - dq;
 					votes[A_u13_3][Kq]++;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+					// |=
 					// USE_IV;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+					// <<
 					// (4+A_u13_3);
 				}
 				else if ((S1 >= ((-q) & 0xFF))
@@ -2480,9 +2503,11 @@ static int crack_wep_thread(void * arg)
 				{
 					Kq = 1 - dq;
 					votes[A_u5_3][Kq]++;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+					// |=
 					// USE_IV;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+					// <<
 					// (4+A_u5_3);
 				}
 			}
@@ -2494,7 +2519,8 @@ static int crack_wep_thread(void * arg)
 				votes[A_s5_1][Kq]++;
 				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
 				// USE_IV;
-				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+				// 				all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+				// <<
 				// (4+A_s5_1);
 			}
 
@@ -2508,9 +2534,11 @@ static int crack_wep_thread(void * arg)
 					{
 						Kq = jq - dq;
 						votes[A_s5_2][Kq]++;
-						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+						// |=
 						// USE_IV;
-						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+						// |=
 						// 1 << (4+A_s5_2);
 					}
 				}
@@ -2522,9 +2550,11 @@ static int crack_wep_thread(void * arg)
 					{
 						Kq = jq - dq;
 						votes[A_s5_3][Kq]++;
-						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+						// |=
 						// USE_IV;
-						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+						// |=
 						// 1 << (4+A_s5_3);
 					}
 				}
@@ -2542,9 +2572,11 @@ static int crack_wep_thread(void * arg)
 					{
 						Kq = io2 - dq;
 						votes[A_s3][Kq]++;
-						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+						// |=
 						// USE_IV;
-						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+						// |=
 						// 1 << (4+A_s3);
 					}
 				}
@@ -2558,9 +2590,11 @@ static int crack_wep_thread(void * arg)
 					{
 						Kq = Si[0] - dq;
 						votes[A_4_s13][Kq]++;
-						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+						// |=
 						// USE_IV;
-						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+						// 						all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+						// |=
 						// 1 << (4+A_4_s13);
 					}
 					else
@@ -2569,18 +2603,22 @@ static int crack_wep_thread(void * arg)
 						{
 							Kq = Si[254] - dq;
 							votes[A_4_u5_1][Kq]++;
-							// 							all_ivs[256*256*K[0] + 256*K[1] +
+							// 							all_ivs[256*256*K[0] + 256*K[1]
+							// +
 							// K[2]].used |= USE_IV;
-							// 							all_ivs[256*256*K[0] + 256*K[1] +
+							// 							all_ivs[256*256*K[0] + 256*K[1]
+							// +
 							// K[2]].used |= 1 << (4+A_4_u5_1);
 						}
 						if ((jj[1] == 2) && (io2 == 2))
 						{
 							Kq = Si[255] - dq;
 							votes[A_4_u5_2][Kq]++;
-							// 							all_ivs[256*256*K[0] + 256*K[1] +
+							// 							all_ivs[256*256*K[0] + 256*K[1]
+							// +
 							// K[2]].used |= USE_IV;
-							// 							all_ivs[256*256*K[0] + 256*K[1] +
+							// 							all_ivs[256*256*K[0] + 256*K[1]
+							// +
 							// K[2]].used |= 1 << (4+A_4_u5_2);
 						}
 					}
@@ -2590,9 +2628,11 @@ static int crack_wep_thread(void * arg)
 				{
 					Kq = io2 - dq;
 					votes[A_u5_4][Kq]++;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |=
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used
+					// |=
 					// USE_IV;
-					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1 <<
+					// 					all_ivs[256*256*K[0] + 256*K[1] + K[2]].used |= 1
+					// <<
 					// (4+A_u5_4);
 				}
 			}
@@ -4887,8 +4927,9 @@ static int next_key(char ** key, int keysize)
 					textcolor_fg(TEXT_GREEN);
 				}
 
-				//				printf( "\nPassphrase not in dictionary \"%s\" \n",
-				//opt.dicts[opt.nbdict] );
+				//				printf( "\nPassphrase not in dictionary \"%s\"
+				//\n",
+				// opt.dicts[opt.nbdict] );
 				if (next_dict(opt.nbdict + 1) != 0)
 				{
 					free(tmpref);
@@ -4947,8 +4988,9 @@ static int next_key(char ** key, int keysize)
 					textcolor_fg(TEXT_GREEN);
 				}
 
-				//				printf( "\nPassphrase not in dictionary \"%s\" \n",
-				//opt.dicts[opt.nbdict] );
+				//				printf( "\nPassphrase not in dictionary \"%s\"
+				//\n",
+				// opt.dicts[opt.nbdict] );
 				if (next_dict(opt.nbdict + 1) != 0)
 				{
 					free(tmpref);
@@ -6104,7 +6146,8 @@ int main(int argc, char * argv[])
 		/* wait until each thread reaches EOF */
 
 		// 		#ifndef DO_PGO_DUMP
-		// 		signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump pgo
+		// 		signal( SIGINT, SIG_DFL );	 /* we want sigint to stop and dump
+		// pgo
 		// data */
 		// 		#endif
 

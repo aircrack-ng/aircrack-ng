@@ -174,7 +174,7 @@ char usage[]
 	  "      -q               : quiet (do not print statistics)\n"
 	  "      -v               : verbose (print more messages)\n"
 	  //"      -M               : M-I-T-M between [specified] clients and
-	  //bssids\n"
+	  // bssids\n"
 	  "      -A               : Ad-Hoc Mode (allows other clients to peer)\n"
 	  "      -Y in|out|both   : external packet processing\n"
 	  "      -c channel       : sets the channel the AP is running on\n"

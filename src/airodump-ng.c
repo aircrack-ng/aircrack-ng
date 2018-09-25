@@ -1799,7 +1799,8 @@ skip_station:
 
 				st_cur->probe_index = (st_cur->probe_index + 1) % NB_PRB;
 				memset(st_cur->probes[st_cur->probe_index], 0, 256);
-				memcpy(st_cur->probes[st_cur->probe_index], p + 2, n); // twice?!
+				memcpy(
+					st_cur->probes[st_cur->probe_index], p + 2, n); // twice?!
 				st_cur->ssid_length[st_cur->probe_index] = n;
 
 				if (verifyssid((const unsigned char *)
@@ -2919,7 +2920,7 @@ write_packet:
 	{
 		/* RTS || CTS || ACK || CF-END || CF-END&CF-ACK*/
 		//(h80211[0] == 0xB4 || h80211[0] == 0xC4 || h80211[0] == 0xD4 ||
-		//h80211[0] == 0xE4 || h80211[0] == 0xF4)
+		// h80211[0] == 0xE4 || h80211[0] == 0xF4)
 
 		/* use general control frame detection, as the structure is always the
 		 * same: mac(s) starting at [4] */
