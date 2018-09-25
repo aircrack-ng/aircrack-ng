@@ -3,7 +3,7 @@ AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: 'false'
 AlignConsecutiveDeclarations: 'false'
 AlignOperands: 'true'
-AlignTrailingComments: 'true'
+AlignTrailingComments: 'false'
 AllowShortCaseLabelsOnASingleLine: 'false'
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: 'true'
@@ -21,7 +21,7 @@ IndentWidth: '4'
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: 'None'
 PointerAlignment: 'Middle'
-ReflowComments: 'true'
+ReflowComments: 'false'
 SortIncludes: 'false'
 SpaceAfterCStyleCast: 'true'
 SpaceBeforeAssignmentOperators: 'true'
