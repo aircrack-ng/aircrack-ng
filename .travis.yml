@@ -4,7 +4,7 @@ os:
 
 language: c
 
-sudo: false
+sudo: true
 
 before_install:
     - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install cmocka openssl libgcrypt sqlite3 libpcap pcre || echo -e "\e[1;31m Skipping Homebrew... \e[0m"); fi
