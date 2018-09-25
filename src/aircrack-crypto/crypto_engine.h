@@ -75,7 +75,7 @@
 extern "C" {
 #endif
 
-#define ESSID_LENGTH 32		/* The spec. says 32 maximum. */
+#define ESSID_LENGTH 32 /* The spec. says 32 maximum. */
 #define PLAINTEXT_LENGTH 63 /* We can do 64 but spec. says 63 */
 
 #define MIN_KEYS_PER_CRYPT 1

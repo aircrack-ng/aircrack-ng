@@ -237,9 +237,9 @@ struct options
 	int nodetect;
 
 	unsigned char oldkeystream[4096]; /* user-defined old keystream */
-	int oldkeystreamlen;			  /* user-defined old keystream length */
+	int oldkeystreamlen; /* user-defined old keystream length */
 	char wpa_essid[256]; /* essid used for calculating the pmk out of the psk */
-	char psk[128];		 /* shared passphrase among the clients */
+	char psk[128]; /* shared passphrase among the clients */
 	unsigned char pmk[128]; /* pmk derived from the essid and psk */
 	unsigned char
 		ptk[80]; /* ptk calculated from all pieces captured in the handshake */
@@ -253,22 +253,22 @@ struct options
 	int got_ip_ap;
 	int got_ip_client;
 
-	struct WPA_hdsk wpa;		/* valid WPA handshake data     */
+	struct WPA_hdsk wpa; /* valid WPA handshake data     */
 	struct WPA_ST_info wpa_sta; /* used to calculate the pmk */
-	time_t wpa_time;			/* time when the wpa handshake arrived */
+	time_t wpa_time; /* time when the wpa handshake arrived */
 
 	unsigned char *
-		chopped_from_plain;			  /* chopped plaintext packet from the AP */
+		chopped_from_plain; /* chopped plaintext packet from the AP */
 	unsigned char * chopped_to_plain; /* chopped plaintext packet to the AP */
 	unsigned char * chopped_from_prga; /* chopped keystream from the AP */
-	unsigned char * chopped_to_prga;   /* chopped keystream to the AP */
+	unsigned char * chopped_to_prga; /* chopped keystream to the AP */
 	int chopped_from_plain_len;
 	int chopped_to_plain_len;
 	int chopped_from_prga_len;
 	int chopped_to_prga_len;
 
 	struct timeval last_mic_failure; /* timestamp of last mic failure */
-	int mic_failure_interval;		 /* time between allowed mic failures */
+	int mic_failure_interval; /* time between allowed mic failures */
 } opt;
 
 struct devices
@@ -751,7 +751,7 @@ wait_for_beacon(unsigned char * bssid, unsigned char * capa, char * essid)
 		if (!memcmp(pkt_sniff, "\x80", 1))
 		{
 			pos = 0;
-			taglen = 22;  // initial value to get the fixed tags parsing started
+			taglen = 22; // initial value to get the fixed tags parsing started
 			taglen += 12; // skip fixed tags in frames
 			do
 			{
@@ -1412,7 +1412,7 @@ static int set_clear_arp(unsigned char * buf,
 
 	memcpy(buf, S_LLC_SNAP_ARP, 8);
 	buf[8] = 0x00;
-	buf[9] = 0x01;  // ethernet
+	buf[9] = 0x01; // ethernet
 	buf[10] = 0x08; // IP
 	buf[11] = 0x00;
 	buf[12] = 0x06; // hardware size
@@ -2836,7 +2836,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			/* check length (153)!? */
 			if (z + 127 != n)
 				continue; //(153[26+127] bytes for eapol mic failure in tkip qos
-						  // frames from client to AP)
+			// frames from client to AP)
 
 			//             printf("yeah!\n");
 

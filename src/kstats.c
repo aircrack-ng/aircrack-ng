@@ -30,23 +30,23 @@
 
 enum KoreK_attacks
 {
-	A_u15,	/* semi-stable  15%             */
-	A_s13,	/* stable       13%             */
-	A_u13_1,  /* unstable     13%             */
-	A_u13_2,  /* unstable ?   13%             */
-	A_u13_3,  /* unstable ?   13%             */
-	A_s5_1,   /* standard      5% (~FMS)      */
-	A_s5_2,   /* other stable  5%             */
-	A_s5_3,   /* other stable  5%             */
-	A_u5_1,   /* unstable      5% no good ?   */
-	A_u5_2,   /* unstable      5%             */
-	A_u5_3,   /* unstable      5% no good     */
-	A_u5_4,   /* unstable      5%             */
-	A_s3,	 /* stable        3%             */
-	A_4_s13,  /* stable       13% on q = 4    */
+	A_u15, /* semi-stable  15%             */
+	A_s13, /* stable       13%             */
+	A_u13_1, /* unstable     13%             */
+	A_u13_2, /* unstable ?   13%             */
+	A_u13_3, /* unstable ?   13%             */
+	A_s5_1, /* standard      5% (~FMS)      */
+	A_s5_2, /* other stable  5%             */
+	A_s5_3, /* other stable  5%             */
+	A_u5_1, /* unstable      5% no good ?   */
+	A_u5_2, /* unstable      5%             */
+	A_u5_3, /* unstable      5% no good     */
+	A_u5_4, /* unstable      5%             */
+	A_s3, /* stable        3%             */
+	A_4_s13, /* stable       13% on q = 4    */
 	A_4_u5_1, /* unstable      5% on q = 4    */
 	A_4_u5_2, /* unstable      5% on q = 4    */
-	A_neg	 /* helps reject false positives */
+	A_neg /* helps reject false positives */
 };
 
 int K_COEFF[N_ATTACKS]

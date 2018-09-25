@@ -321,8 +321,8 @@ struct session * ac_session_load(const char * filename)
 				break;
 			}
 			case AC_SESSION_WL_SETTINGS_LINE: // Wordlist ID, position in
-											  // wordlist and amount of keys
-											  // tried
+				// wordlist and amount of keys
+				// tried
 				{
 					temp = ac_session_set_wordlist_settings(ret, line);
 					break;

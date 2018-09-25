@@ -585,11 +585,11 @@ static struct wif * fbsd_open(char * iface)
 	pf->pf_txparams.ibp_vers = IEEE80211_BPF_VERSION;
 	pf->pf_txparams.ibp_len = sizeof(struct ieee80211_bpf_params) - 6;
 	pf->pf_txparams.ibp_rate0 = 2; /* 1 MB/s XXX */
-	pf->pf_txparams.ibp_try0 = 1;  /* no retransmits */
+	pf->pf_txparams.ibp_try0 = 1; /* no retransmits */
 	pf->pf_txparams.ibp_rate1 = 2; /* 1 MB/s XXX */
-	pf->pf_txparams.ibp_try1 = 1;  /* no retransmits */
+	pf->pf_txparams.ibp_try1 = 1; /* no retransmits */
 	pf->pf_txparams.ibp_flags = IEEE80211_BPF_NOACK;
-	pf->pf_txparams.ibp_power = 100;	 /* nominal max */
+	pf->pf_txparams.ibp_power = 100; /* nominal max */
 	pf->pf_txparams.ibp_pri = WME_AC_VO; /* high priority */
 
 	return wi;

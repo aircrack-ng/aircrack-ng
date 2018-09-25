@@ -112,12 +112,12 @@ static int station_compare(const void * a, const void * b)
 
 static int _speed_test;
 static long _speed_test_length = 15;
-struct timeval t_begin;			  /* time at start of attack      */
-struct timeval t_stats;			  /* time since last update       */
-struct timeval t_kprev;			  /* time at start of window      */
-struct timeval t_dictup;		  /* next dictionary total read   */
-long long int nb_kprev;			  /* last  # of keys tried        */
-long long int nb_tried;			  /* total # of keys tried        */
+struct timeval t_begin; /* time at start of attack      */
+struct timeval t_stats; /* time since last update       */
+struct timeval t_kprev; /* time at start of window      */
+struct timeval t_dictup; /* next dictionary total read   */
+long long int nb_kprev; /* last  # of keys tried        */
+long long int nb_tried; /* total # of keys tried        */
 static ac_crypto_engine_t engine; /* crypto engine */
 
 /* IPC global data */
@@ -130,12 +130,12 @@ pthread_mutex_t mx_apl; /* lock write access to ap LL   */
 pthread_mutex_t mx_eof; /* lock write access to nb_eof  */
 pthread_mutex_t mx_ivb; /* lock access to ivbuf array   */
 pthread_mutex_t mx_dic; /* lock access to opt.dict      */
-pthread_cond_t cv_eof;  /* read EOF condition variable  */
-int nb_eof = 0;			/* # of threads who reached eof */
-long nb_pkt = 0;		/* # of packets read so far     */
-int mc_pipe[256][2];	/* master->child control pipe   */
-int cm_pipe[256][2];	/* child->master results pipe   */
-int bf_pipe[256][2];	/* bruteforcer 'queue' pipe	 */
+pthread_cond_t cv_eof; /* read EOF condition variable  */
+int nb_eof = 0; /* # of threads who reached eof */
+long nb_pkt = 0; /* # of packets read so far     */
+int mc_pipe[256][2]; /* master->child control pipe   */
+int cm_pipe[256][2]; /* child->master results pipe   */
+int bf_pipe[256][2]; /* bruteforcer 'queue' pipe	 */
 int bf_nkeys[256];
 unsigned char bf_wepkey[64];
 int wepkey_crack_success = 0;
@@ -4055,12 +4055,12 @@ static int crack_wpa_thread(void * arg)
 						return SUCCESS;
 					}
 					else // ...we have some key pending in this loop: keep
-						 // working
+						// working
 						break;
 				}
 
 				sched_yield(); // yield the processor until there are keys
-							   // available
+				// available
 				// this only happens when the queue is empty (when beginning and
 				// ending the wordlist)
 			}
@@ -4186,12 +4186,12 @@ static int crack_wpa_pmkid_thread(void * arg)
 						return SUCCESS;
 					}
 					else // ...we have some key pending in this loop: keep
-						 // working
+						// working
 						break;
 				}
 
 				sched_yield(); // yield the processor until there are keys
-							   // available
+				// available
 				// this only happens when the queue is empty (when beginning and
 				// ending the wordlist)
 			}
@@ -6767,10 +6767,10 @@ __start:
 				id++;
 			}
 
-			ret = do_wpa_crack();   // we feed keys to the cracking threads
+			ret = do_wpa_crack(); // we feed keys to the cracking threads
 			wpa_wordlists_done = 1; // we tell the threads that they shouldn't
-									// expect more words (don't wait for
-									// parallel crack)
+			// expect more words (don't wait for
+			// parallel crack)
 
 			// we wait for the cracking threads to end
 			for (i = starting_thread_id; i < opt.nbcpu + starting_thread_id;

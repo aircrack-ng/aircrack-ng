@@ -189,7 +189,7 @@ char * strtokm(char * s1, const char * delimit);
 #define __has_feature(x) 0
 #endif
 
-#if									 /* is ASAN enabled? */                    \
+#if /* is ASAN enabled? */                                                     \
 	__has_feature(address_sanitizer) /* Clang */                               \
 	|| defined(__SANITIZE_ADDRESS__) /* GCC 4.8.x */
 #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS                                   \

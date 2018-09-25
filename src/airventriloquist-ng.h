@@ -116,13 +116,13 @@ struct icmp_ra_addr
 
 struct icmp
 {
-	u_int8_t icmp_type;   /* type of message, see below */
-	u_int8_t icmp_code;   /* type sub code */
+	u_int8_t icmp_type; /* type of message, see below */
+	u_int8_t icmp_code; /* type sub code */
 	u_int16_t icmp_cksum; /* ones complement checksum of struct */
 	union {
-		u_char ih_pptr;			  /* ICMP_PARAMPROB */
+		u_char ih_pptr; /* ICMP_PARAMPROB */
 		struct in_addr ih_gwaddr; /* gateway address */
-		struct ih_idseq			  /* echo datagram */
+		struct ih_idseq /* echo datagram */
 		{
 			u_int16_t icd_id;
 			u_int16_t icd_seq;
@@ -184,7 +184,7 @@ struct dns_query
 	u_int16_t tid;
 	u_int16_t flags;
 	u_int16_t questions;
-	u_int16_t rrs;  // answer RRs
+	u_int16_t rrs; // answer RRs
 	u_int16_t arrs; // authority RRs
 	u_int16_t xrrs; // additional RRs
 	u_int8_t qdata;

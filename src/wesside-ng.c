@@ -744,7 +744,7 @@ static void send_ack(struct wstate * ws)
 	if (ws)
 	{
 	} /* XXX unused */
-	  /* firmware acks */
+	/* firmware acks */
 }
 
 static void do_llc(unsigned char * buf, unsigned short type)

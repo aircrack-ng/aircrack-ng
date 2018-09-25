@@ -38,9 +38,9 @@
 
 #define REFRESH_RATE 100000 /* default delay in us between updates */
 #define DEFAULT_HOPFREQ 250 /* default delay in ms between channel hopping */
-#define DEFAULT_CWIDTH 20   /* 20 MHz channels by default */
+#define DEFAULT_CWIDTH 20 /* 20 MHz channels by default */
 
-#define NB_PWR 5  /* size of signal power ring buffer */
+#define NB_PWR 5 /* size of signal power ring buffer */
 #define NB_PRB 10 /* size of probed ESSID ring buffer */
 
 #define MAX_CARDS 8 /* maximum number of cards to capture from */
@@ -157,10 +157,10 @@ int * frequencies;
 /* linked list of received packets for the last few seconds */
 struct pkt_buf
 {
-	struct pkt_buf * next;  /* next packet in list */
+	struct pkt_buf * next; /* next packet in list */
 	unsigned char * packet; /* packet */
-	unsigned short length;  /* packet length */
-	struct timeval ctime;   /* capture time */
+	unsigned short length; /* packet length */
+	struct timeval ctime; /* capture time */
 };
 
 /* oui struct for list management */
@@ -177,10 +177,10 @@ struct oui
 /* WPS_info struct */
 struct WPS_info
 {
-	unsigned char version;		   /* WPS Version */
-	unsigned char state;		   /* Current WPS state */
+	unsigned char version; /* WPS Version */
+	unsigned char state; /* Current WPS state */
 	unsigned char ap_setup_locked; /* AP setup locked */
-	unsigned int meth;			   /* WPS Config Methods */
+	unsigned int meth; /* WPS Config Methods */
 };
 
 #define MAX_AC_MCS_INDEX 8
@@ -188,10 +188,10 @@ struct WPS_info
 /* 802.11n channel information */
 struct n_channel_info
 {
-	char mcs_index;				  /* Maximum MCS TX index     */
-	char sec_channel;			  /* 802.11n secondary channel*/
-	unsigned char short_gi_20;	/* Short GI for 20MHz       */
-	unsigned char short_gi_40;	/* Short GI for 40MHz       */
+	char mcs_index; /* Maximum MCS TX index     */
+	char sec_channel; /* 802.11n secondary channel*/
+	unsigned char short_gi_20; /* Short GI for 20MHz       */
+	unsigned char short_gi_40; /* Short GI for 40MHz       */
 	unsigned char any_chan_width; /* Support for 20 or 40MHz
 									as opposed to only 20 or
 									only 40MHz               */
@@ -202,12 +202,12 @@ struct ac_channel_info
 {
 	unsigned char center_sgmt[2];
 	/* 802.11ac Center segment 0*/
-	unsigned char mu_mimo;		/* MU-MIMO support          */
-	unsigned char short_gi_80;  /* Short GI for 80MHz       */
+	unsigned char mu_mimo; /* MU-MIMO support          */
+	unsigned char short_gi_80; /* Short GI for 80MHz       */
 	unsigned char short_gi_160; /* Short GI for 160MHz      */
-	unsigned char split_chan;   /* 80+80MHz Channel support */
+	unsigned char split_chan; /* 80+80MHz Channel support */
 	unsigned char mhz_160_chan; /* 160 MHz channel support  */
-	unsigned char wave_2;		/* Wave 2                   */
+	unsigned char wave_2; /* Wave 2                   */
 	unsigned char mcs_index[MAX_AC_MCS_INDEX];
 	/* Maximum TX rate          */
 };
@@ -236,34 +236,34 @@ struct AP_info
 
 	time_t tinit, tlast; /* first and last time seen */
 
-	int channel;						   /* AP radio channel         */
+	int channel; /* AP radio channel         */
 	enum channel_width_enum channel_width; /* Channel width            */
-	char standard[3];					   /* 802.11 standard: n or ac */
-	struct n_channel_info n_channel;	   /* 802.11n channel info     */
-	struct ac_channel_info ac_channel;	 /* 802.11ac channel info    */
-	int max_speed;						   /* AP maximum speed in Mb/s */
-	int avg_power;						   /* averaged signal power    */
-	int best_power;						   /* best signal power    */
-	int power_index;					   /* index in power ring buf. */
-	int power_lvl[NB_PWR];				   /* signal power ring buffer */
-	int preamble;						   /* 0 = long, 1 = short      */
-	int security;						   /* ENC_*, AUTH_*, STD_*     */
-	int beacon_logged;					   /* We need 1 beacon per AP  */
-	int dict_started;					   /* 1 if dict attack started */
-	int ssid_length;					   /* length of ssid           */
-	float gps_loc_min[5];				   /* min gps coordinates      */
-	float gps_loc_max[5];				   /* max gps coordinates      */
-	float gps_loc_best[5];				   /* best gps coordinates     */
+	char standard[3]; /* 802.11 standard: n or ac */
+	struct n_channel_info n_channel; /* 802.11n channel info     */
+	struct ac_channel_info ac_channel; /* 802.11ac channel info    */
+	int max_speed; /* AP maximum speed in Mb/s */
+	int avg_power; /* averaged signal power    */
+	int best_power; /* best signal power    */
+	int power_index; /* index in power ring buf. */
+	int power_lvl[NB_PWR]; /* signal power ring buffer */
+	int preamble; /* 0 = long, 1 = short      */
+	int security; /* ENC_*, AUTH_*, STD_*     */
+	int beacon_logged; /* We need 1 beacon per AP  */
+	int dict_started; /* 1 if dict attack started */
+	int ssid_length; /* length of ssid           */
+	float gps_loc_min[5]; /* min gps coordinates      */
+	float gps_loc_max[5]; /* max gps coordinates      */
+	float gps_loc_best[5]; /* best gps coordinates     */
 
-	unsigned long nb_bcn;	  /* total number of beacons  */
-	unsigned long nb_pkt;	  /* total number of packets  */
-	unsigned long nb_data;	 /* number of  data packets  */
+	unsigned long nb_bcn; /* total number of beacons  */
+	unsigned long nb_pkt; /* total number of packets  */
+	unsigned long nb_data; /* number of  data packets  */
 	unsigned long nb_data_old; /* number of data packets/sec*/
-	int nb_dataps;			   /* number of data packets/sec*/
-	struct timeval tv;		   /* time for data per second */
+	int nb_dataps; /* number of data packets/sec*/
+	struct timeval tv; /* time for data per second */
 
 	unsigned char bssid[6]; /* the access point's MAC   */
-	char * manuf;			/* the access point's manufacturer */
+	char * manuf; /* the access point's manufacturer */
 	unsigned char essid[MAX_IE_ELEMENT_SIZE];
 	/* ascii network identifier */
 	unsigned long long timestamp;
@@ -275,20 +275,20 @@ struct AP_info
 	unsigned char ** uiv_root; /* unique iv root structure */
 	/* if wep-encrypted network */
 
-	int rx_quality;		   /* percent of captured beacons */
-	int fcapt;			   /* amount of captured frames   */
-	int fmiss;			   /* amount of missed frames     */
+	int rx_quality; /* percent of captured beacons */
+	int fcapt; /* amount of captured frames   */
+	int fmiss; /* amount of missed frames     */
 	unsigned int last_seq; /* last sequence number        */
 	struct timeval ftimef; /* time of first frame         */
 	struct timeval ftimel; /* time of last frame          */
 	struct timeval ftimer; /* time of restart             */
 
-	char * key;		  /* if wep-key found by dict */
+	char * key; /* if wep-key found by dict */
 	int essid_stored; /* essid stored in ivs file? */
 
-	char decloak_detect;	  /* run decloak detection? */
+	char decloak_detect; /* run decloak detection? */
 	struct pkt_buf * packets; /* list of captured packets (last few seconds) */
-	char is_decloak;		  /* detected decloak */
+	char is_decloak; /* detected decloak */
 
 	// This feature eats 48Mb per AP
 	int EAP_detected;
@@ -307,52 +307,52 @@ struct AP_info
 
 struct ST_info
 {
-	struct ST_info * prev;  /* the prev client in list   */
-	struct ST_info * next;  /* the next client in list   */
-	struct AP_info * base;  /* AP this client belongs to */
-	time_t tinit, tlast;	/* first and last time seen  */
-	unsigned long nb_pkt;   /* total number of packets   */
+	struct ST_info * prev; /* the prev client in list   */
+	struct ST_info * next; /* the next client in list   */
+	struct AP_info * base; /* AP this client belongs to */
+	time_t tinit, tlast; /* first and last time seen  */
+	unsigned long nb_pkt; /* total number of packets   */
 	unsigned char stmac[6]; /* the client's MAC address  */
-	char * manuf;			/* the client's manufacturer */
-	int probe_index;		/* probed ESSIDs ring index  */
+	char * manuf; /* the client's manufacturer */
+	int probe_index; /* probed ESSIDs ring index  */
 	char probes[NB_PRB][MAX_IE_ELEMENT_SIZE];
 	/* probed ESSIDs ring buffer */
 	int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
-	int power;				 /* last signal power         */
-	int best_power;			 /* best signal power    */
-	int rate_to;			 /* last bitrate to station   */
-	int rate_from;			 /* last bitrate from station */
-	struct timeval ftimer;   /* time of restart           */
-	int missed;				 /* number of missed packets  */
-	unsigned int lastseq;	/* last seen sequence number */
-	struct WPA_hdsk wpa;	 /* WPA handshake data        */
-	int qos_to_ds;			 /* does it use 802.11e to ds */
-	int qos_fr_ds;			 /* does it receive 802.11e   */
-	int channel;			 /* Channel station is seen   */
-	float gps_loc_min[5];	/* min gps coordinates      */
-	float gps_loc_max[5];	/* max gps coordinates      */
-	float gps_loc_best[5];   /* best gps coordinates     */
-							 /*  Not used yet		  */
+	int power; /* last signal power         */
+	int best_power; /* best signal power    */
+	int rate_to; /* last bitrate to station   */
+	int rate_from; /* last bitrate from station */
+	struct timeval ftimer; /* time of restart           */
+	int missed; /* number of missed packets  */
+	unsigned int lastseq; /* last seen sequence number */
+	struct WPA_hdsk wpa; /* WPA handshake data        */
+	int qos_to_ds; /* does it use 802.11e to ds */
+	int qos_fr_ds; /* does it receive 802.11e   */
+	int channel; /* Channel station is seen   */
+	float gps_loc_min[5]; /* min gps coordinates      */
+	float gps_loc_max[5]; /* max gps coordinates      */
+	float gps_loc_best[5]; /* best gps coordinates     */
+	/*  Not used yet		  */
 };
 
 /* linked list of detected macs through ack, cts or rts frames */
 
 struct NA_info
 {
-	struct NA_info * prev;  /* the prev client in list   */
-	struct NA_info * next;  /* the next client in list   */
-	time_t tinit, tlast;	/* first and last time seen  */
+	struct NA_info * prev; /* the prev client in list   */
+	struct NA_info * next; /* the next client in list   */
+	time_t tinit, tlast; /* first and last time seen  */
 	unsigned char namac[6]; /* the stations MAC address  */
-	int power;				/* last signal power         */
-	int channel;			/* captured on channel       */
-	int ack;				/* number of ACK frames      */
-	int ack_old;			/* old number of ACK frames  */
-	int ackps;				/* number of ACK frames/s    */
-	int cts;				/* number of CTS frames      */
-	int rts_r;				/* number of RTS frames (rx) */
-	int rts_t;				/* number of RTS frames (tx) */
-	int other;				/* number of other frames    */
-	struct timeval tv;		/* time for ack per second   */
+	int power; /* last signal power         */
+	int channel; /* captured on channel       */
+	int ack; /* number of ACK frames      */
+	int ack_old; /* old number of ACK frames  */
+	int ackps; /* number of ACK frames/s    */
+	int cts; /* number of CTS frames      */
+	int rts_r; /* number of RTS frames (rx) */
+	int rts_t; /* number of RTS frames (tx) */
+	int other; /* number of other frames    */
+	struct timeval tv; /* time for ack per second   */
 };
 /* bunch of global stuff */
 
@@ -375,38 +375,38 @@ struct globals
 	char * keyout;
 	char * f_cap_name;
 
-	int f_index;	  /* outfiles index       */
-	FILE * f_txt;	 /* output csv file      */
-	FILE * f_kis;	 /* output kismet csv file      */
+	int f_index; /* outfiles index       */
+	FILE * f_txt; /* output csv file      */
+	FILE * f_kis; /* output kismet csv file      */
 	FILE * f_kis_xml; /* output kismet netxml file */
-	FILE * f_gps;	 /* output gps file      */
-	FILE * f_cap;	 /* output cap file      */
-	FILE * f_ivs;	 /* output ivs file      */
-	FILE * f_xor;	 /* output prga file     */
+	FILE * f_gps; /* output gps file      */
+	FILE * f_cap; /* output cap file      */
+	FILE * f_ivs; /* output ivs file      */
+	FILE * f_xor; /* output prga file     */
 
-	char * batt;			  /* Battery string       */
-	int channel[MAX_CARDS];   /* current channel #    */
+	char * batt; /* Battery string       */
+	int channel[MAX_CARDS]; /* current channel #    */
 	int frequency[MAX_CARDS]; /* current frequency #    */
-	int ch_pipe[2];			  /* current channel pipe */
-	int cd_pipe[2];			  /* current card pipe    */
-	int gc_pipe[2];			  /* gps coordinates pipe */
-	float gps_loc[5];		  /* gps coordinates      */
-	int save_gps;			  /* keep gps file flag   */
-	int usegpsd;			  /* do we use GPSd?      */
+	int ch_pipe[2]; /* current channel pipe */
+	int cd_pipe[2]; /* current card pipe    */
+	int gc_pipe[2]; /* gps coordinates pipe */
+	float gps_loc[5]; /* gps coordinates      */
+	int save_gps; /* keep gps file flag   */
+	int usegpsd; /* do we use GPSd?      */
 	int * channels;
 	//     int *frequencies;
 	int singlechan; /* channel hopping set 1*/
 	int singlefreq; /* frequency hopping: 1 */
-	int chswitch;   /* switching method     */
-	int f_encrypt;  /* encryption filter    */
-	int update_s;   /* update delay in sec  */
+	int chswitch; /* switching method     */
+	int f_encrypt; /* encryption filter    */
+	int update_s; /* update delay in sec  */
 
-	int is_wlanng[MAX_CARDS];	/* set if wlan-ng       */
-	int is_orinoco[MAX_CARDS];   /* set if orinoco       */
+	int is_wlanng[MAX_CARDS]; /* set if wlan-ng       */
+	int is_orinoco[MAX_CARDS]; /* set if orinoco       */
 	int is_madwifing[MAX_CARDS]; /* set if madwifi-ng    */
-	int is_zd1211rw[MAX_CARDS];  /* set if zd1211rw    */
-	volatile int do_exit;		 /* interrupt flag       */
-	struct winsize ws;			 /* console window size  */
+	int is_zd1211rw[MAX_CARDS]; /* set if zd1211rw    */
+	volatile int do_exit; /* interrupt flag       */
+	struct winsize ws; /* console window size  */
 
 	char * elapsed_time; /* capture time			*/
 
@@ -419,7 +419,7 @@ struct globals
 	int sk_len;
 	int sk_len2;
 
-	int * own_channels;	/* custom channel list  */
+	int * own_channels; /* custom channel list  */
 	int * own_frequencies; /* custom frequency list  */
 
 	int record_data; /* do we record data?   */
@@ -435,9 +435,9 @@ struct globals
 	char decloak;
 
 	char is_berlin; /* is the switch --berlin set? */
-	int numaps;		/* number of APs on the current list */
-	int maxnumaps;  /* maximum nubers of APs on the list */
-	int maxaps;		/* number of all APs found */
+	int numaps; /* number of APs on the current list */
+	int maxnumaps; /* maximum nubers of APs on the list */
+	int maxaps; /* number of all APs found */
 	int berlin; /* number of seconds it takes in berlin to fill the whole screen
 				   with APs*/
 	/*
@@ -468,7 +468,7 @@ struct globals
 
 	int hopfreq;
 
-	char * s_file;  /* source file to read packets */
+	char * s_file; /* source file to read packets */
 	char * s_iface; /* source interface to read from */
 	FILE * f_cap_in;
 	struct pcap_file_header pfh_in;
@@ -502,7 +502,7 @@ struct globals
 	int do_sort_always;
 
 	pthread_mutex_t mx_print; /* lock write access to ap LL   */
-	pthread_mutex_t mx_sort;  /* lock write access to ap LL   */
+	pthread_mutex_t mx_sort; /* lock write access to ap LL   */
 
 	unsigned char selected_bssid[6]; /* bssid that is selected */
 

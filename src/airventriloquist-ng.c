@@ -443,7 +443,7 @@ static int wait_for_beacon(uint8_t * bssid, uint8_t * capa, char * essid)
 		if (!memcmp(pkt_sniff, "\x80", 1))
 		{
 			pos = 0;
-			taglen = 22;  // initial value to get the fixed tags parsing started
+			taglen = 22; // initial value to get the fixed tags parsing started
 			taglen += 12; // skip fixed tags in frames
 			do
 			{
@@ -1027,15 +1027,15 @@ static u_int16_t calcsum(u_int16_t * buffer, u_int32_t length)
 
 	// initialize sum to zero and loop until length (in words) is 0
 	for (sum = 0; length > 1; length -= 2) // sizeof() returns number of bytes,
-										   // we're interested in number of
-										   // words
+		// we're interested in number of
+		// words
 		sum += *buffer++; // add 1 word of buffer to sum and proceed to the next
 
 	// we may have an extra byte
 	if (length == 1) sum += (u_int8_t) *buffer;
 
 	sum = (sum >> 16) + (sum & 0xFFFF); // add high 16 to low 16
-	sum += (sum >> 16);					// add carry
+	sum += (sum >> 16); // add carry
 	return ~sum;
 }
 // This needs to be cleaned up so that we can do UDP/TCP in one function. Don't
@@ -1567,7 +1567,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 							= (struct ip_frame *) (pkt + offset_ip);
 						u_int32_t res_length
 							= packet_start_length; // This only initially until
-												   // we replace content
+						// we replace content
 
 						//-----------------------------------------------------------------------------
 						// Do some magic here... to create a frame to close the
@@ -1823,7 +1823,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						  - (size_80211hdr + sizeof(struct llc_frame)
 							 + sizeof(struct ip_frame))
 						  - extra_enc_length; // Don't forget extra MIC at the
-											  // end of the frame
+					// end of the frame
 
 					if (opt.st_cur->keyver == 1)
 					{

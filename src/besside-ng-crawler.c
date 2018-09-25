@@ -392,8 +392,8 @@ static void process_directory(const char * dir, time_t begin)
 int main(int argc, char * argv[])
 {
 	time_t begin = time(NULL); // Every file newer than when crawler started is
-							   // skipped (it may be the file the crawler
-							   // created!)
+	// skipped (it may be the file the crawler
+	// created!)
 
 	if (argc != 3)
 	{

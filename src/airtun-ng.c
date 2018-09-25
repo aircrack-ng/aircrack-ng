@@ -805,7 +805,7 @@ static int packet_xmit(unsigned char * packet, int length)
 		h80211[1] |= 0x01;
 		memcpy(h80211 + 4, opt.r_bssid, 6); // BSSID
 		memcpy(h80211 + 10, packet + 6, 6); // SRC_MAC
-		memcpy(h80211 + 16, packet, 6);		// DST_MAC
+		memcpy(h80211 + 16, packet, 6); // DST_MAC
 	}
 	else if (opt.tods == 2)
 	{
@@ -815,17 +815,17 @@ static int packet_xmit(unsigned char * packet, int length)
 		memcpy(buf, h80211 + 24, length - 24);
 		memcpy(h80211 + 30, buf, length - 24);
 
-		memcpy(h80211 + 24, packet + 6, 6);  // SRC_MAC
+		memcpy(h80211 + 24, packet + 6, 6); // SRC_MAC
 		memcpy(h80211 + 10, opt.r_trans, 6); // TRANSMITTER
-		memcpy(h80211 + 16, packet, 6);		 // DST_MAC
-		memcpy(h80211 + 4, opt.r_bssid, 6);  // RECEIVER
+		memcpy(h80211 + 16, packet, 6); // DST_MAC
+		memcpy(h80211 + 4, opt.r_bssid, 6); // RECEIVER
 	}
 	else
 	{
 		h80211[1] |= 0x02;
 		memcpy(h80211 + 10, opt.r_bssid, 6); // BSSID
-		memcpy(h80211 + 16, packet + 6, 6);  // SRC_MAC
-		memcpy(h80211 + 4, packet, 6);		 // DST_MAC
+		memcpy(h80211 + 16, packet + 6, 6); // SRC_MAC
+		memcpy(h80211 + 4, packet, 6); // DST_MAC
 	}
 
 	if (opt.crypt == CRYPT_WEP)
@@ -901,7 +901,7 @@ static int packet_xmit(unsigned char * packet, int length)
 	if ((opt.tods == 2) && opt.bidir)
 	{
 		dest_net = get_entry(packet); // Search the list to determine in which
-									  // network part to send the packet.
+		// network part to send the packet.
 		if (dest_net == 0)
 		{
 			send_packet(h80211, length);
@@ -1272,15 +1272,15 @@ static int packet_recv(unsigned char * packet, int length)
 		switch (packet[1] & 3)
 		{
 			case 1:
-				memcpy(h80211, packet + 16, 6);		// DST_MAC
+				memcpy(h80211, packet + 16, 6); // DST_MAC
 				memcpy(h80211 + 6, packet + 10, 6); // SRC_MAC
 				break;
 			case 2:
-				memcpy(h80211, packet + 4, 6);		// DST_MAC
+				memcpy(h80211, packet + 4, 6); // DST_MAC
 				memcpy(h80211 + 6, packet + 16, 6); // SRC_MAC
 				break;
 			case 3:
-				memcpy(h80211, packet + 16, 6);		// DST_MAC
+				memcpy(h80211, packet + 16, 6); // DST_MAC
 				memcpy(h80211 + 6, packet + 24, 6); // SRC_MAC
 				break;
 			default:
@@ -2021,7 +2021,7 @@ int main(int argc, char * argv[])
 				}
 			}
 		} // if( ret_val > 0 )
-	}	 // for( ; ; )
+	} // for( ; ; )
 
 	ti_close(dev.dv_ti);
 

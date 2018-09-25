@@ -102,8 +102,8 @@ static char * get_manufacturer_from_string(char * buffer)
 		if (buffer_manuf != NULL)
 		{
 			buffer_manuf += 6; // skip '(hex)' and one more character (there's
-							   // at least one 'space' character after that
-							   // string)
+			// at least one 'space' character after that
+			// string)
 			while (*buffer_manuf == '\t' || *buffer_manuf == ' ')
 			{
 				++buffer_manuf;
@@ -851,20 +851,20 @@ static void update_rx_quality(void)
 				capt_time
 					= (1000000UL * (ap_cur->ftimel.tv_sec
 									- ap_cur->ftimef.tv_sec) // time between
-															 // first and last
-															 // captured frame
+					   // first and last
+					   // captured frame
 					   + (ap_cur->ftimel.tv_usec - ap_cur->ftimef.tv_usec));
 
 				miss_time
 					= (1000000UL * (ap_cur->ftimef.tv_sec
 									- ap_cur->ftimer.tv_sec) // time between
-															 // timer reset and
-															 // first frame
+					   // timer reset and
+					   // first frame
 					   + (ap_cur->ftimef.tv_usec - ap_cur->ftimer.tv_usec))
 					  + (1000000UL * (cur_time.tv_sec
 									  - ap_cur->ftimel.tv_sec) // time between
-															   // last frame and
-															   // this moment
+						 // last frame and
+						 // this moment
 						 + (cur_time.tv_usec - ap_cur->ftimel.tv_usec));
 
 				// number of frames missed at the time where no frames were
@@ -1265,8 +1265,8 @@ list_check_decloak(struct pkt_buf ** list, int length, unsigned char * packet)
 			correct = 1;
 			// check for 4 bytes added after the end
 			for (i = 28; i < length - 28; i++) // check everything (in the old
-											   // packet) after the IV
-											   // (including crc32 at the end)
+			// packet) after the IV
+			// (including crc32 at the end)
 			{
 				if (next->packet[i] != packet[i])
 				{
@@ -1279,9 +1279,9 @@ list_check_decloak(struct pkt_buf ** list, int length, unsigned char * packet)
 				correct = 1;
 				// check for 4 bytes added at the beginning
 				for (i = 28; i < length - 28; i++) // check everything (in the
-												   // old packet) after the IV
-												   // (including crc32 at the
-												   // end)
+				// old packet) after the IV
+				// (including crc32 at the
+				// end)
 				{
 					if (next->packet[i] != packet[4 + i])
 					{
@@ -3531,7 +3531,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	int num_ap;
 	int num_sta;
 
-	if (!G.singlechan) columns_ap -= 4;  // no RXQ in scan mode
+	if (!G.singlechan) columns_ap -= 4; // no RXQ in scan mode
 	if (G.show_uptime) columns_ap += 15; // show uptime needs more space
 
 	nlines = 2;
@@ -3981,15 +3981,15 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			strncat(tbuf, (name), (64 - strlen(tbuf)));                        \
 		}                                                                      \
 	} while (0)
-								T(0, "USB");	 // USB method
-								T(1, "ETHER");   // Ethernet
-								T(2, "LAB");	 // Label
-								T(3, "DISP");	// Display
-								T(4, "EXTNFC");  // Ext. NFC Token
-								T(5, "INTNFC");  // Int. NFC Token
+								T(0, "USB"); // USB method
+								T(1, "ETHER"); // Ethernet
+								T(2, "LAB"); // Label
+								T(3, "DISP"); // Display
+								T(4, "EXTNFC"); // Ext. NFC Token
+								T(5, "INTNFC"); // Int. NFC Token
 								T(6, "NFCINTF"); // NFC Interface
-								T(7, "PBC");	 // Push Button
-								T(8, "KPAD");	// Keypad
+								T(7, "PBC"); // Push Button
+								T(8, "KPAD"); // Keypad
 								snprintf(strbuf + strlen(strbuf),
 										 sizeof(strbuf) - strlen(strbuf),
 										 " %s",
@@ -5091,7 +5091,7 @@ static int dump_write_kismet_netxml(void)
 						NETXML_ENCRYPTION_TAG,
 						"\t\t\t",
 						"WPA+MGT"); // Not a valid value: NetXML does not have a
-									// value for WPA Enterprise
+			// value for WPA Enterprise
 			if (ap_cur->security & AUTH_PSK)
 				fprintf(
 					G.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+PSK");
@@ -6738,8 +6738,8 @@ static int getfrequencies(const char * optarg)
 	free(tmp_frequencies);
 	free(optc);
 	if (i == 1) return G.own_frequencies[0]; // exactly 1 frequency given
-	if (i == 0) return -1;					 // error occurred
-	return 0;								 // frequency hopping
+	if (i == 0) return -1; // error occurred
+	return 0; // frequency hopping
 }
 
 static int setup_card(char * iface, struct wif ** wis)

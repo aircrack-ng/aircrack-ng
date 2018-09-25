@@ -62,13 +62,13 @@ struct AP_info
 
 	int ssid_length; /* length of ssid           */
 
-	unsigned char bssid[6];   /* the access point's MAC   */
+	unsigned char bssid[6]; /* the access point's MAC   */
 	unsigned char essid[256]; /* ascii network identifier */
 
 	unsigned char ** uiv_root; /* unique iv root structure */
 	/* if wep-encrypted network */
 
-	int wpa_stored;   /* wpa stored in ivs file?   */
+	int wpa_stored; /* wpa stored in ivs file?   */
 	int essid_stored; /* essid stored in ivs file? */
 };
 
@@ -76,11 +76,11 @@ struct AP_info
 
 struct ST_info
 {
-	struct ST_info * prev;  /* the prev client in list   */
-	struct ST_info * next;  /* the next client in list   */
-	struct AP_info * base;  /* AP this client belongs to */
+	struct ST_info * prev; /* the prev client in list   */
+	struct ST_info * next; /* the next client in list   */
+	struct AP_info * base; /* AP this client belongs to */
 	unsigned char stmac[6]; /* the client's MAC address  */
-	struct WPA_hdsk wpa;	/* WPA handshake data        */
+	struct WPA_hdsk wpa; /* WPA handshake data        */
 };
 
 /* bunch of global stuff */

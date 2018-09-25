@@ -43,15 +43,15 @@ struct session
 	char * filename; // Session filename
 
 	// Session file content
-	char * working_dir;		   // Line 1: Current working directory
-	unsigned char bssid[6];	// Line 2: BSSID
+	char * working_dir; // Line 1: Current working directory
+	unsigned char bssid[6]; // Line 2: BSSID
 	unsigned char wordlist_id; // Line 3: Wordlist # (there can be multiple
-							   // wordlist loaded using -w
-	int64_t pos;			   // Line 3: Position in the wordlist ID.
+	// wordlist loaded using -w
+	int64_t pos; // Line 3: Position in the wordlist ID.
 	long long int
 		nb_keys_tried; // Line 3: Amount of keys already tried, purely for stats
-	int argc;		   // Line 4: amount of arguments
-	char ** argv;	  // Line 5 and further: Arguments (1 per line)
+	int argc; // Line 4: amount of arguments
+	char ** argv; // Line 5 and further: Arguments (1 per line)
 	pthread_mutex_t
 		mutex; // Locking for when updating wordlist settings and saving file
 };

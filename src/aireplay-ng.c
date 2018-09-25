@@ -693,7 +693,7 @@ wait_for_beacon(unsigned char * bssid, unsigned char * capa, char * essid)
 		if (!memcmp(pkt_sniff, "\x80", 1))
 		{
 			pos = 0;
-			taglen = 22;  // initial value to get the fixed tags parsing started
+			taglen = 22; // initial value to get the fixed tags parsing started
 			taglen += 12; // skip fixed tags in frames
 			do
 			{
@@ -1689,7 +1689,7 @@ static int do_attack_fake_auth(void)
 					memcpy(opt.f_bssid,
 						   opt.r_bssid,
 						   6); // make the filter bssid the same, that is used
-							   // for auth'ing
+					// for auth'ing
 					if (opt.prga == NULL)
 					{
 						while (keystreamlen < 16)
@@ -3999,7 +3999,7 @@ static int set_clear_arp(unsigned char * buf,
 
 	memcpy(buf, S_LLC_SNAP_ARP, 8);
 	buf[8] = 0x00;
-	buf[9] = 0x01;  // ethernet
+	buf[9] = 0x01; // ethernet
 	buf[10] = 0x08; // IP
 	buf[11] = 0x00;
 	buf[12] = 0x06; // hardware size
@@ -4025,9 +4025,9 @@ static int set_final_arp(unsigned char * buf, unsigned char * mymac)
 	buf[2] = 0x06; // hardware size
 	buf[3] = 0x04; // protocol size
 	buf[4] = 0x00;
-	buf[5] = 0x01;			   // request
+	buf[5] = 0x01; // request
 	memcpy(buf + 6, mymac, 6); // sender mac
-	buf[12] = 0xA9;			   // sender IP 169.254.87.197
+	buf[12] = 0xA9; // sender IP 169.254.87.197
 	buf[13] = 0xFE;
 	buf[14] = 0x57;
 	buf[15] = 0xC5; // end sender IP
@@ -4056,9 +4056,9 @@ static int set_final_ip(unsigned char * buf, unsigned char * mymac)
 	buf[0] = 0x06; // hardware size
 	buf[1] = 0x04; // protocol size
 	buf[2] = 0x00;
-	buf[3] = 0x01;			   // request
+	buf[3] = 0x01; // request
 	memcpy(buf + 4, mymac, 6); // sender mac
-	buf[10] = 0xA9;			   // sender IP from 169.254.XXX.XXX
+	buf[10] = 0xA9; // sender IP from 169.254.XXX.XXX
 	buf[11] = 0xFE;
 
 	return 0;
@@ -4178,7 +4178,7 @@ read_packets:
 
 		// need to shift by 10 bytes; (add 1 frag in front)
 		memcpy(frag1, h80211, z + 4); // copy 80211 header and IV
-		frag1[1] |= 0x04;			  // more frags
+		frag1[1] |= 0x04; // more frags
 		memcpy(frag1 + z + 4, S_LLC_SNAP_ARP, 8);
 		frag1[z + 4 + 8] = 0x00;
 		frag1[z + 4 + 9] = 0x01; // ethernet
@@ -4242,9 +4242,9 @@ read_packets:
 		memcpy(frag1, h80211, z + 4); // copy 80211 header and IV
 		memcpy(frag2, h80211, z + 4); // copy 80211 header and IV
 		memcpy(frag3, h80211, z + 4); // copy 80211 header and IV
-		frag1[1] |= 0x04;			  // more frags
-		frag2[1] |= 0x04;			  // more frags
-		frag3[1] |= 0x04;			  // more frags
+		frag1[1] |= 0x04; // more frags
+		frag2[1] |= 0x04; // more frags
+		frag3[1] |= 0x04; // more frags
 
 		memcpy(frag1 + z + 4, S_LLC_SNAP_ARP, 4);
 		add_crc32(frag1 + z + 4, 4);
@@ -5309,7 +5309,7 @@ static int do_attack_fragment(void)
 					PCT;
 					printf("Got a deauthentication packet!\n");
 					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
-											 // frames in this period
+					// frames in this period
 				}
 
 				/* check if we got an disassociation packet */
@@ -5319,7 +5319,7 @@ static int do_attack_fragment(void)
 					PCT;
 					printf("Got a disassociation packet!\n");
 					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
-											 // frames in this period
+					// frames in this period
 				}
 
 				gettimeofday(&tv2, NULL);
@@ -5485,7 +5485,7 @@ static int do_attack_fragment(void)
 					PCT;
 					printf("Got a deauthentication packet!\n");
 					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
-											 // frames in this period
+					// frames in this period
 				}
 
 				/* check if we got an disassociation packet */
@@ -5495,7 +5495,7 @@ static int do_attack_fragment(void)
 					PCT;
 					printf("Got a disassociation packet!\n");
 					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
-											 // frames in this period
+					// frames in this period
 				}
 
 				gettimeofday(&tv2, NULL);
@@ -5637,7 +5637,7 @@ static int do_attack_fragment(void)
 					PCT;
 					printf("Got a deauthentication packet!\n");
 					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
-											 // frames in this period
+					// frames in this period
 				}
 
 				/* check if we got an disassociation packet */
@@ -5647,7 +5647,7 @@ static int do_attack_fragment(void)
 					PCT;
 					printf("Got a disassociation packet!\n");
 					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
-											 // frames in this period
+					// frames in this period
 				}
 
 				gettimeofday(&tv2, NULL);
@@ -5755,7 +5755,7 @@ static int grab_essid(unsigned char * packet, int len)
 	unsigned char bssid[6];
 
 	memcpy(bssid, packet + 16, 6);
-	taglen = 22;  // initial value to get the fixed tags parsing started
+	taglen = 22; // initial value to get the fixed tags parsing started
 	taglen += 12; // skip fixed tags in frames
 	do
 	{
@@ -5772,7 +5772,7 @@ static int grab_essid(unsigned char * packet, int len)
 
 	pos = 0;
 
-	taglen = 22;  // initial value to get the fixed tags parsing started
+	taglen = 22; // initial value to get the fixed tags parsing started
 	taglen += 12; // skip fixed tags in frames
 	do
 	{
@@ -6112,7 +6112,7 @@ static int do_attack_test(void)
 	float avg2;
 	struct rx_info ri;
 	unsigned long atime = 200; // time in ms to wait for answer packet (needs to
-							   // be higher for airserv)
+	// be higher for airserv)
 	unsigned char nulldata[1024];
 
 	if (opt.port_out > 0)
@@ -6331,7 +6331,7 @@ static int do_attack_test(void)
 
 		len = 24;
 
-		h80211[24] = 0x00;		// ESSID Tag Number
+		h80211[24] = 0x00; // ESSID Tag Number
 		h80211[25] = ap[i].len; // ESSID Tag Length
 		memcpy(h80211 + len + 2, ap[i].essid, ap[i].len);
 
@@ -6592,7 +6592,7 @@ static int do_attack_test(void)
 
 			len = 24;
 
-			h80211[24] = 0x00;		// ESSID Tag Number
+			h80211[24] = 0x00; // ESSID Tag Number
 			h80211[25] = ap[i].len; // ESSID Tag Length
 			memcpy(h80211 + len + 2, ap[i].essid, ap[i].len);
 
@@ -6640,7 +6640,7 @@ static int do_attack_test(void)
 						if (packet[0] == 0x50) // Is probe response
 						{
 							if (!memcmp(opt.r_smac, packet + 4, 6)) // To our
-																	// MAC
+							// MAC
 							{
 								if (!memcmp(ap[i].bssid,
 											packet + 16,

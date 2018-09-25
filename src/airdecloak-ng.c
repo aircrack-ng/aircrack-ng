@@ -250,7 +250,7 @@ static BOOLEAN add_node_if_not_complete()
 
 		// Last will be set at the end of the while when everything went ok
 	} // No free of the *packet pointer because it is only set when everything
-	  // is ok => if a packet is not ok, it will never have *packet malloced
+	// is ok => if a packet is not ok, it will never have *packet malloced
 	// Always reset is_cloaked field and dropped field
 	_packet_elt_head->current->is_cloaked
 		= UKNOWN_FRAME_CLOAKING_STATUS; // Unknown state of this packet
@@ -1048,7 +1048,7 @@ static int CFC_filter_signal(void)
 	{
 
 		reset_current_packet_pointer_to_ap_packet(); // Will be successful
-													 // because signal > 0
+		// because signal > 0
 
 		do
 		{

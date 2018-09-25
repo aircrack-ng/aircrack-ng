@@ -1372,21 +1372,21 @@ int encrypt_ccmp(unsigned char * h80211,
 	data_len = caplen - z;
 
 	// B_0 := B0
-	B0[0] = 0x59;					// Flags
-	B0[1] = 0;						// Nonce := CCM Nonce: - Nonce flags
+	B0[0] = 0x59; // Flags
+	B0[1] = 0; // Nonce := CCM Nonce: - Nonce flags
 	memcpy(B0 + 2, h80211 + 10, 6); //                     - A2
-	memcpy(B0 + 8, PN, 6);			//                     - PN
+	memcpy(B0 + 8, PN, 6); //                     - PN
 	B0[14] = (uint8_t)((data_len >> 8) & 0xFF); // l(m)
-	B0[15] = (uint8_t)(data_len & 0xFF);		// l(m)
+	B0[15] = (uint8_t)(data_len & 0xFF); // l(m)
 
 	// B_1 := AAD[ 0..15]
 	// B_2 := AAD[16..31]
 	//        AAD[ 0.. 1] = l(a)
 	//        AAD[ 2..31] = a
 	memset(AAD, 0, sizeof(AAD));
-	AAD[2] = (uint8_t)(h80211[0] & 0x8F);   // AAD[2..3]  = FC
-	AAD[3] = (uint8_t)(h80211[1] & 0xC7);   //
-	memcpy(AAD + 4, h80211 + 4, 3 * 6);		// AAD[4..21] = [A1,A2,A3]
+	AAD[2] = (uint8_t)(h80211[0] & 0x8F); // AAD[2..3]  = FC
+	AAD[3] = (uint8_t)(h80211[1] & 0xC7); //
+	memcpy(AAD + 4, h80211 + 4, 3 * 6); // AAD[4..21] = [A1,A2,A3]
 	AAD[22] = (uint8_t)(h80211[22] & 0x0F); // AAD[22]    = SC
 
 	if (is_a4)
@@ -1396,15 +1396,15 @@ int encrypt_ccmp(unsigned char * h80211,
 		if (is_qos)
 		{
 			AAD[30] = (uint8_t)(h80211[z - 2] & 0x0F); // AAD[30..31] = QC
-			AAD[31] = 0;							   //
-			B0[1] = AAD[30];	 //  B0[     1] = CCM Nonce flags
+			AAD[31] = 0; //
+			B0[1] = AAD[30]; //  B0[     1] = CCM Nonce flags
 			AAD[1] = 22 + 2 + 6; // AAD[ 0.. 1] = l(a)
 		}
 		else
 		{
 			memset(&AAD[30], 0, 2); // AAD[30..31] = QC
-			B0[1] = 0;				//  B0[     1] = CCM Nonce flags
-			AAD[1] = 22 + 6;		// AAD[ 0.. 1] = l(a)
+			B0[1] = 0; //  B0[     1] = CCM Nonce flags
+			AAD[1] = 22 + 6; // AAD[ 0.. 1] = l(a)
 		}
 	}
 	else
@@ -1412,23 +1412,23 @@ int encrypt_ccmp(unsigned char * h80211,
 		if (is_qos)
 		{
 			AAD[24] = (uint8_t)(h80211[z - 2] & 0x0F); // AAD[24..25] = QC
-			AAD[25] = 0;							   //
+			AAD[25] = 0; //
 			B0[1] = AAD[24]; //  B0[     1] = CCM Nonce flags
 			AAD[1] = 22 + 2; // AAD[ 0.. 1] = l(a)
 		}
 		else
 		{
 			memset(&AAD[24], 0, 2); // AAD[24..25] = QC
-			B0[1] = 0;				//  B0[     1] = CCM Nonce flags
-			AAD[1] = 22;			// AAD[ 0.. 1] = l(a)
+			B0[1] = 0; //  B0[     1] = CCM Nonce flags
+			AAD[1] = 22; // AAD[ 0.. 1] = l(a)
 		}
 	}
 
 	AES_set_encrypt_key(TK1, 128, &aes_ctx);
-	AES_encrypt(B0, MIC, &aes_ctx);  // X_1 := E( K, B_0 )
-	XOR(MIC, AAD, 16);				 // X_2 := E( K, X_1 XOR B_1 )
+	AES_encrypt(B0, MIC, &aes_ctx); // X_1 := E( K, B_0 )
+	XOR(MIC, AAD, 16); // X_2 := E( K, X_1 XOR B_1 )
 	AES_encrypt(MIC, MIC, &aes_ctx); //
-	XOR(MIC, AAD + 16, 16);			 // X_3 := E( K, X_2 XOR B_2 )
+	XOR(MIC, AAD + 16, 16); // X_3 := E( K, X_2 XOR B_2 )
 	AES_encrypt(MIC, MIC, &aes_ctx); //
 
 	// A_i := B0
@@ -1450,15 +1450,15 @@ int encrypt_ccmp(unsigned char * h80211,
 	{
 		int n = (last > 0 && i == blocks) ? last : 16;
 
-		XOR(MIC, h80211 + offset, n);	// X_i+3 := E( K, X_i+2 XOR B_i+2 )
+		XOR(MIC, h80211 + offset, n); // X_i+3 := E( K, X_i+2 XOR B_i+2 )
 		AES_encrypt(MIC, MIC, &aes_ctx); //
 		//    (X_i+2 ^^^)(^^^ X_i+3)
 
 		// The message is encrypted by XORing the octets of message m with the
 		// first l(m) octets of the concatenation of S_1, S_2, S_3, ... .
 		B0[14] = (uint8_t)((i >> 8) & 0xFF); // A_i[14..15] = i
-		B0[15] = (uint8_t)(i & 0xFF);		 //
-		AES_encrypt(B0, B, &aes_ctx);		 // S_i := E( K, A_i )
+		B0[15] = (uint8_t)(i & 0xFF); //
+		AES_encrypt(B0, B, &aes_ctx); // S_i := E( K, A_i )
 		XOR(h80211 + offset, B, n);
 		// [B_3, ..., B_n] := m
 
@@ -1499,21 +1499,21 @@ int decrypt_ccmp(unsigned char * h80211, int caplen, unsigned char TK1[16])
 	data_len = caplen - z - 8 - 8;
 
 	// B_0 := B0
-	B0[0] = 0x59;					// Flags
-	B0[1] = 0;						// Nonce := CCM Nonce: - Nonce flags
+	B0[0] = 0x59; // Flags
+	B0[1] = 0; // Nonce := CCM Nonce: - Nonce flags
 	memcpy(B0 + 2, h80211 + 10, 6); //                     - A2
-	memcpy(B0 + 8, PN, 6);			//                     - PN
+	memcpy(B0 + 8, PN, 6); //                     - PN
 	B0[14] = (uint8_t)((data_len >> 8) & 0xFF); // l(m)
-	B0[15] = (uint8_t)(data_len & 0xFF);		// l(m)
+	B0[15] = (uint8_t)(data_len & 0xFF); // l(m)
 
 	// B_1 := AAD[ 0..15]
 	// B_2 := AAD[16..31]
 	//        AAD[ 0.. 1] = l(a)
 	//        AAD[ 2..31] = a
 	memset(AAD, 0, sizeof(AAD));
-	AAD[2] = (uint8_t)(h80211[0] & 0x8F);   // AAD[2..3]  = FC
-	AAD[3] = (uint8_t)(h80211[1] & 0xC7);   //
-	memcpy(AAD + 4, h80211 + 4, 3 * 6);		// AAD[4..21] = [A1,A2,A3]
+	AAD[2] = (uint8_t)(h80211[0] & 0x8F); // AAD[2..3]  = FC
+	AAD[3] = (uint8_t)(h80211[1] & 0xC7); //
+	memcpy(AAD + 4, h80211 + 4, 3 * 6); // AAD[4..21] = [A1,A2,A3]
 	AAD[22] = (uint8_t)(h80211[22] & 0x0F); // AAD[22]    = SC
 
 	if (is_a4)
@@ -1523,15 +1523,15 @@ int decrypt_ccmp(unsigned char * h80211, int caplen, unsigned char TK1[16])
 		if (is_qos)
 		{
 			AAD[30] = (uint8_t)(h80211[z - 2] & 0x0F); // AAD[30..31] = QC
-			AAD[31] = 0;							   //
-			B0[1] = AAD[30];	 //  B0[     1] = CCM Nonce flags
+			AAD[31] = 0; //
+			B0[1] = AAD[30]; //  B0[     1] = CCM Nonce flags
 			AAD[1] = 22 + 2 + 6; // AAD[ 0.. 1] = l(a)
 		}
 		else
 		{
 			memset(&AAD[30], 0, 2); // AAD[30..31] = QC
-			B0[1] = 0;				//  B0[     1] = CCM Nonce flags
-			AAD[1] = 22 + 6;		// AAD[ 0.. 1] = l(a)
+			B0[1] = 0; //  B0[     1] = CCM Nonce flags
+			AAD[1] = 22 + 6; // AAD[ 0.. 1] = l(a)
 		}
 	}
 	else
@@ -1539,23 +1539,23 @@ int decrypt_ccmp(unsigned char * h80211, int caplen, unsigned char TK1[16])
 		if (is_qos)
 		{
 			AAD[24] = (uint8_t)(h80211[z - 2] & 0x0F); // AAD[24..25] = QC
-			AAD[25] = 0;							   //
+			AAD[25] = 0; //
 			B0[1] = AAD[24]; //  B0[     1] = CCM Nonce flags
 			AAD[1] = 22 + 2; // AAD[ 0.. 1] = l(a)
 		}
 		else
 		{
 			memset(&AAD[24], 0, 2); // AAD[24..25] = QC
-			B0[1] = 0;				//  B0[     1] = CCM Nonce flags
-			AAD[1] = 22;			// AAD[ 0.. 1] = l(a)
+			B0[1] = 0; //  B0[     1] = CCM Nonce flags
+			AAD[1] = 22; // AAD[ 0.. 1] = l(a)
 		}
 	}
 
 	AES_set_encrypt_key(TK1, 128, &aes_ctx);
-	AES_encrypt(B0, MIC, &aes_ctx);  // X_1 := E( K, B_0 )
-	XOR(MIC, AAD, 16);				 // X_2 := E( K, X_1 XOR B_1 )
+	AES_encrypt(B0, MIC, &aes_ctx); // X_1 := E( K, B_0 )
+	XOR(MIC, AAD, 16); // X_2 := E( K, X_1 XOR B_1 )
 	AES_encrypt(MIC, MIC, &aes_ctx); //
-	XOR(MIC, AAD + 16, 16);			 // X_3 := E( K, X_2 XOR B_2 )
+	XOR(MIC, AAD + 16, 16); // X_3 := E( K, X_2 XOR B_2 )
 	AES_encrypt(MIC, MIC, &aes_ctx); //
 
 	// A_i := B0
@@ -1564,7 +1564,7 @@ int decrypt_ccmp(unsigned char * h80211, int caplen, unsigned char TK1[16])
 	//        B0[14..15] = i
 	B0[0] &= 0x07;
 	B0[14] = B0[15] = 0;
-	AES_encrypt(B0, B, &aes_ctx);   // S_0 := E( K, A_i )
+	AES_encrypt(B0, B, &aes_ctx); // S_0 := E( K, A_i )
 	XOR(h80211 + caplen - 8, B, 8); // T   := U XOR S_0[0..7]
 	//   ^^^^^^^^^^^^^^^      ^
 	//     U:=MIC -> T       S_0
@@ -1578,14 +1578,14 @@ int decrypt_ccmp(unsigned char * h80211, int caplen, unsigned char TK1[16])
 		int n = (last > 0 && i == blocks) ? last : 16;
 
 		B0[14] = (uint8_t)((i >> 8) & 0xFF); // A_i[14..15] = i
-		B0[15] = (uint8_t)(i & 0xFF);		 //
+		B0[15] = (uint8_t)(i & 0xFF); //
 
 		AES_encrypt(B0, B, &aes_ctx); // S_i := E( K, A_i )
 		// The message is encrypted by XORing the octets of message m with the
 		// first l(m) octets of the concatenation of S_1, S_2, S_3, ... .
 		XOR(h80211 + offset, B, n);
 		// [B_3, ..., B_n] := m
-		XOR(MIC, h80211 + offset, n);	// X_i+3 := E( K, X_i+2 XOR B_i+2 )
+		XOR(MIC, h80211 + offset, n); // X_i+3 := E( K, X_i+2 XOR B_i+2 )
 		AES_encrypt(MIC, MIC, &aes_ctx); //
 		//    (X_i+2 ^^^)(^^^ X_i+3)
 

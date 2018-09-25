@@ -80,14 +80,14 @@ char usage[] =
 
 struct decap_stats
 {
-	unsigned long nb_stations;	/* # of stations seen */
-	unsigned long nb_read;		  /* # of packets read       */
-	unsigned long nb_wep;		  /* # of WEP data packets   */
-	unsigned long nb_bad;		  /* # of bad data packets   */
-	unsigned long nb_wpa;		  /* # of WPA data packets   */
-	unsigned long nb_plain;		  /* # of plaintext packets  */
-	unsigned long nb_unwep;		  /* # of decrypted WEP pkt  */
-	unsigned long nb_unwpa;		  /* # of decrypted WPA pkt  */
+	unsigned long nb_stations; /* # of stations seen */
+	unsigned long nb_read; /* # of packets read       */
+	unsigned long nb_wep; /* # of WEP data packets   */
+	unsigned long nb_bad; /* # of bad data packets   */
+	unsigned long nb_wpa; /* # of WPA data packets   */
+	unsigned long nb_plain; /* # of plaintext packets  */
+	unsigned long nb_unwep; /* # of decrypted WEP pkt  */
+	unsigned long nb_unwpa; /* # of decrypted WPA pkt  */
 	unsigned long nb_failed_tkip; /* # of failed WPA TKIP pkt decryptions */
 	unsigned long nb_failed_ccmp; /* # of failed WPA CCMP pkt decryptions */
 } stats;

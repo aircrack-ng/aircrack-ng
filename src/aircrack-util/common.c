@@ -183,7 +183,7 @@ int get_ram_size(void)
 
 	if (!sysctl(mib, 2, &physmem, &len, NULL, 0))
 		ret = (physmem / 1024); // Linux returns memory size in kB, so we want
-								// to as well.
+// to as well.
 #elif defined(_WIN32) || defined(_WIN64)
 	MEMORYSTATUSEX statex;
 	statex.dwLength = sizeof(statex);

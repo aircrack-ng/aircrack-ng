@@ -237,9 +237,9 @@ struct options
 	char * f_cap_name;
 	char * prefix;
 
-	int f_index;					  /* outfiles index       */
-	FILE * f_cap;					  /* output cap file      */
-	FILE * f_xor;					  /* output prga file     */
+	int f_index; /* outfiles index       */
+	FILE * f_cap; /* output cap file      */
+	FILE * f_xor; /* output prga file     */
 	unsigned char sharedkey[3][4096]; /* array for 3 packets with a size of \
 							   up to 4096Byte */
 	time_t sk_start;
@@ -280,7 +280,7 @@ struct options
 	int cf_attack;
 	int record_data;
 
-	int ti_mtu;  // MTU of tun/tap interface
+	int ti_mtu; // MTU of tun/tap interface
 	int wif_mtu; // MTU of wireless interface
 
 	// Fixed nonce
@@ -357,42 +357,42 @@ struct Fragment_list
 
 struct ST_info
 {
-	struct ST_info * prev;	/* the prev client in list   */
-	struct ST_info * next;	/* the next client in list   */
-	struct AP_info * base;	/* AP this client belongs to */
-	time_t tinit, tlast;	  /* first and last time seen  */
-	unsigned long nb_pkt;	 /* total number of packets   */
-	unsigned char stmac[6];   /* the client's MAC address  */
-	char essid[256];		  /* last associated essid     */
-	int essid_length;		  /* essid length of last asso */
-	int probe_index;		  /* probed ESSIDs ring index  */
+	struct ST_info * prev; /* the prev client in list   */
+	struct ST_info * next; /* the next client in list   */
+	struct AP_info * base; /* AP this client belongs to */
+	time_t tinit, tlast; /* first and last time seen  */
+	unsigned long nb_pkt; /* total number of packets   */
+	unsigned char stmac[6]; /* the client's MAC address  */
+	char essid[256]; /* last associated essid     */
+	int essid_length; /* essid length of last asso */
+	int probe_index; /* probed ESSIDs ring index  */
 	char probes[NB_PRB][256]; /* probed ESSIDs ring buffer */
-	int ssid_length[NB_PRB];  /* ssid lengths ring buffer  */
-	int power;				  /* last signal power         */
-	int rate_to;			  /* last bitrate to station   */
-	int rate_from;			  /* last bitrate from station */
-	struct timeval ftimer;	/* time of restart           */
-	int missed;				  /* number of missed packets  */
-	unsigned int lastseq;	 /* last seen sequnce number  */
-	struct WPA_hdsk wpa;	  /* WPA handshake data        */
-	int wpatype;			  /* 1=wpa1 2=wpa2             */
-	int wpahash;			  /* 1=md5(tkip) 2=sha1(ccmp)  */
-	int wep;				  /* capability encryption bit */
+	int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
+	int power; /* last signal power         */
+	int rate_to; /* last bitrate to station   */
+	int rate_from; /* last bitrate from station */
+	struct timeval ftimer; /* time of restart           */
+	int missed; /* number of missed packets  */
+	unsigned int lastseq; /* last seen sequnce number  */
+	struct WPA_hdsk wpa; /* WPA handshake data        */
+	int wpatype; /* 1=wpa1 2=wpa2             */
+	int wpahash; /* 1=md5(tkip) 2=sha1(ccmp)  */
+	int wep; /* capability encryption bit */
 };
 
 typedef struct CF_packet * pCF_t;
 struct CF_packet
 {
 	unsigned char frags[3][128]; /* first fragments to fill a gap */
-	unsigned char final[4096];   /* final frame derived from orig */
-	int fraglen[3];				 /* fragmentation frame lengths   */
-	int finallen;				 /* length of frame in final[]    */
-	int xmitcount;				 /* how often was this frame sent */
-	unsigned char fragnum;		 /* number of fragments to send   */
-	pCF_t next;					 /* next set of fragments to send */
+	unsigned char final[4096]; /* final frame derived from orig */
+	int fraglen[3]; /* fragmentation frame lengths   */
+	int finallen; /* length of frame in final[]    */
+	int xmitcount; /* how often was this frame sent */
+	unsigned char fragnum; /* number of fragments to send   */
+	pCF_t next; /* next set of fragments to send */
 };
 
-pthread_mutex_t mx_cf;  /* lock write access to rCF */
+pthread_mutex_t mx_cf; /* lock write access to rCF */
 pthread_mutex_t mx_cap; /* lock write access to rCF */
 
 unsigned long nb_pkt_sent;
@@ -1585,13 +1585,13 @@ static int packet_xmit(unsigned char * packet, int length)
 
 		h80211[1] |= 0x02;
 		memcpy(h80211 + 10, opt.r_bssid, 6); // BSSID
-		memcpy(h80211 + 16, packet + 6, 6);  // SRC_MAC
-		memcpy(h80211 + 4, packet, 6);		 // DST_MAC
+		memcpy(h80211 + 16, packet + 6, 6); // SRC_MAC
+		memcpy(h80211 + 4, packet, 6); // DST_MAC
 
 		//    frag = frame[22] & 0x0F;
 		//    seq = (frame[22] >> 4) | (frame[23] << 4);
 		h80211[22] |= i & 0x0F; // set fragment
-		h80211[1] |= 0x04;		// more frags
+		h80211[1] |= 0x04; // more frags
 
 		if (i == (fragments - 1))
 		{
@@ -1813,7 +1813,7 @@ static int set_clear_arp(unsigned char * buf,
 
 	memcpy(buf, S_LLC_SNAP_ARP, 8);
 	buf[8] = 0x00;
-	buf[9] = 0x01;  // ethernet
+	buf[9] = 0x01; // ethernet
 	buf[10] = 0x08; // IP
 	buf[11] = 0x00;
 	buf[12] = 0x06; // hardware size
@@ -1839,9 +1839,9 @@ static int set_final_arp(unsigned char * buf, unsigned char * mymac)
 	buf[2] = 0x06; // hardware size
 	buf[3] = 0x04; // protocol size
 	buf[4] = 0x00;
-	buf[5] = 0x01;			   // request
+	buf[5] = 0x01; // request
 	memcpy(buf + 6, mymac, 6); // sender mac
-	buf[12] = 0xA9;			   // sender IP 169.254.87.197
+	buf[12] = 0xA9; // sender IP 169.254.87.197
 	buf[13] = 0xFE;
 	buf[14] = 0x57;
 	buf[15] = 0xC5; // end sender IP
@@ -1870,9 +1870,9 @@ static int set_final_ip(unsigned char * buf, unsigned char * mymac)
 	buf[0] = 0x06; // hardware size
 	buf[1] = 0x04; // protocol size
 	buf[2] = 0x00;
-	buf[3] = 0x01;			   // request
+	buf[3] = 0x01; // request
 	memcpy(buf + 4, mymac, 6); // sender mac
-	buf[10] = 0xA9;			   // sender IP from 169.254.XXX.XXX
+	buf[10] = 0xA9; // sender IP from 169.254.XXX.XXX
 	buf[11] = 0xFE;
 	buf[12] = 0x57;
 	buf[13] = 0xC5; // end sender IP
@@ -1978,7 +1978,7 @@ static int addCF(unsigned char * packet, int length)
 		for (i = 0; i < 14; i++) keystream[i] = (packet + z + 4)[i] ^ clear[i];
 
 		// correct 80211 header
-		packet[0] = 0x08;			 // data
+		packet[0] = 0x08; // data
 		if ((packet[1] & 3) == 0x00) // ad-hoc
 		{
 			packet[1] = 0x40; // wep
@@ -1998,7 +1998,7 @@ static int addCF(unsigned char * packet, int length)
 
 		// need to shift by 10 bytes; (add 1 frag in front)
 		memcpy(frag1, packet, z + 4); // copy 80211 header and IV
-		frag1[1] |= 0x04;			  // more frags
+		frag1[1] |= 0x04; // more frags
 		memcpy(frag1 + z + 4, S_LLC_SNAP_ARP, 8);
 		frag1[z + 4 + 8] = 0x00;
 		frag1[z + 4 + 9] = 0x01; // ethernet
@@ -2026,7 +2026,7 @@ static int addCF(unsigned char * packet, int length)
 		for (i = 0; i < 8; i++) keystream[i] = (packet + z + 4)[i] ^ clear[i];
 
 		// correct 80211 header
-		packet[0] = 0x08;			 // data
+		packet[0] = 0x08; // data
 		if ((packet[1] & 3) == 0x00) // ad-hoc
 		{
 			packet[1] = 0x40; // wep
@@ -2048,9 +2048,9 @@ static int addCF(unsigned char * packet, int length)
 		memcpy(frag1, packet, z + 4); // copy 80211 header and IV
 		memcpy(frag2, packet, z + 4); // copy 80211 header and IV
 		memcpy(frag3, packet, z + 4); // copy 80211 header and IV
-		frag1[1] |= 0x04;			  // more frags
-		frag2[1] |= 0x04;			  // more frags
-		frag3[1] |= 0x04;			  // more frags
+		frag1[1] |= 0x04; // more frags
+		frag2[1] |= 0x04; // more frags
+		frag3[1] |= 0x04; // more frags
 
 		memcpy(frag1 + z + 4, S_LLC_SNAP_ARP, 4);
 		add_crc32(frag1 + z + 4, 4);
@@ -2167,8 +2167,8 @@ static int addarp(unsigned char * packet, int length)
 	if (memcmp(bssid, opt.r_bssid, 6) != 0) return -1;
 
 	packet[21] ^= ((rand() % 255) + 1); // Sohail:flip sender MAC address since
-										// few clients do not honor ARP from its
-										// own MAC
+	// few clients do not honor ARP from its
+	// own MAC
 
 	if (opt.nb_arp >= opt.ringbuffer) return -1;
 
@@ -2625,17 +2625,17 @@ static int packet_recv(unsigned char * packet,
 
 					// eapol
 					memset(h80211 + len, 0, 99);
-					h80211[len] = 0x01;		// version
+					h80211[len] = 0x01; // version
 					h80211[len + 1] = 0x03; // type
 					h80211[len + 2] = 0x00;
-					h80211[len + 3] = 0x5F;					  // len
+					h80211[len + 3] = 0x5F; // len
 					if (opt.wpa1type) h80211[len + 4] = 0xFE; // WPA1
 
 					if (opt.wpa2type) h80211[len + 4] = 0x02; // WPA2
 
 					if (!opt.wpa1type && !opt.wpa2type)
 					{
-						if (st_cur->wpatype == 1)   // WPA1
+						if (st_cur->wpatype == 1) // WPA1
 							h80211[len + 4] = 0xFE; // WPA1
 						else if (st_cur->wpatype == 2)
 							h80211[len + 4] = 0x02; // WPA2
@@ -2810,7 +2810,7 @@ static int packet_recv(unsigned char * packet,
 			}
 		}
 
-		memcpy(h80211, dmac, 6);	 // DST_MAC
+		memcpy(h80211, dmac, 6); // DST_MAC
 		memcpy(h80211 + 6, smac, 6); // SRC_MAC
 
 		memcpy(h80211 + 12, packet + z + 6, 2); // copy ether type
@@ -2900,7 +2900,7 @@ static int packet_recv(unsigned char * packet,
 
 					memcpy(packet + z,
 						   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
-						   12);								// fixed information
+						   12); // fixed information
 					packet[z + 8] = (apc->interval) & 0xFF; // beacon interval
 					packet[z + 9] = (apc->interval >> 8) & 0xFF;
 					memcpy(packet + z + 10, apc->capa, 2); // capability
@@ -3023,7 +3023,7 @@ static int packet_recv(unsigned char * packet,
 
 					memcpy(packet + z,
 						   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
-						   12);								// fixed information
+						   12); // fixed information
 					packet[z + 8] = (apc->interval) & 0xFF; // beacon interval
 					packet[z + 9] = (apc->interval >> 8) & 0xFF;
 					memcpy(packet + z + 10, apc->capa, 2); // capability
@@ -3404,17 +3404,17 @@ static int packet_recv(unsigned char * packet,
 
 				// eapol
 				memset(h80211 + len, 0, 99);
-				h80211[len] = 0x01;		// version
+				h80211[len] = 0x01; // version
 				h80211[len + 1] = 0x03; // type
 				h80211[len + 2] = 0x00;
-				h80211[len + 3] = 0x5F;					  // len
+				h80211[len + 3] = 0x5F; // len
 				if (opt.wpa1type) h80211[len + 4] = 0xFE; // WPA1
 
 				if (opt.wpa2type) h80211[len + 4] = 0x02; // WPA2
 
 				if (!opt.wpa1type && !opt.wpa2type)
 				{
-					if (st_cur->wpatype == 1)   // WPA1
+					if (st_cur->wpatype == 1) // WPA1
 						h80211[len + 4] = 0xFE; // WPA1
 					else
 						h80211[len + 4] = 0x02; // WPA2
@@ -3570,7 +3570,7 @@ static void beacon_thread(void * arg)
 			memcpy(beacon + beacon_len + 10, apc.capa, 2); // capability
 			beacon_len += 12;
 
-			beacon[beacon_len] = 0x00;			// essid tag
+			beacon[beacon_len] = 0x00; // essid tag
 			beacon[beacon_len + 1] = essid_len; // essid tag
 			beacon_len += 2;
 			memcpy(beacon + beacon_len, essid, essid_len); // actual essid
@@ -5031,7 +5031,7 @@ int main(int argc, char * argv[])
 				}
 			}
 		} // if( ret_val > 0 )
-	}	 // for( ; ; )
+	} // for( ; ; )
 
 	ti_close(dev.dv_ti);
 

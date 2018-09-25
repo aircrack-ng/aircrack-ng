@@ -101,7 +101,7 @@ struct packet_elt_header
 struct packet_elt
 {
 	struct pcap_pkthdr header; /* packet header */
-	unsigned char * packet;	/* packet */
+	unsigned char * packet; /* packet */
 	unsigned short
 		length; /* packet length, just to know how much to write to the file */
 
@@ -109,8 +109,8 @@ struct packet_elt
 	int fromDS;
 	int toDS;
 
-	int frame_type;						/* MGMT, CTRL, DATA */
-	int frame_subtype;					// Not yet filled but will do
+	int frame_type; /* MGMT, CTRL, DATA */
+	int frame_subtype; // Not yet filled but will do
 	unsigned char version_type_subtype; // First byte
 
 	unsigned char source[6];
@@ -140,12 +140,12 @@ struct packet_elt
 // Not already used (partially maybe)
 struct decloak_stats
 {
-	unsigned long nb_read;		/* # of packets read       */
-	unsigned long nb_wep;		/* # of WEP data packets   */
-	unsigned long nb_bad;		/* # of bad data packets   */
-	unsigned long nb_wpa;		/* # of WPA data packets   */
-	unsigned long nb_plain;		/* # of plaintext packets  */
-	unsigned long nb_filt_wep;  /* # of filtered WEP pkt  */
+	unsigned long nb_read; /* # of packets read       */
+	unsigned long nb_wep; /* # of WEP data packets   */
+	unsigned long nb_bad; /* # of bad data packets   */
+	unsigned long nb_wpa; /* # of WPA data packets   */
+	unsigned long nb_plain; /* # of plaintext packets  */
+	unsigned long nb_filt_wep; /* # of filtered WEP pkt  */
 	unsigned long nb_cloak_wep; /* # of cloaked WEP pkt  */
 };
 

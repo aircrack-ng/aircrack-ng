@@ -72,16 +72,16 @@
 struct WPA_ST_info
 {
 	struct WPA_ST_info * next; /* next supplicant              */
-	unsigned char stmac[6];	/* supplicant MAC               */
-	unsigned char bssid[6];	/* authenticator MAC            */
-	unsigned char snonce[32];  /* supplicant nonce             */
-	unsigned char anonce[32];  /* authenticator nonce          */
-	unsigned char keymic[20];  /* eapol frame MIC              */
-	unsigned char eapol[256];  /* eapol frame contents         */
-	unsigned char ptk[80];	 /* pairwise transcient key      */
-	unsigned eapol_size;	   /* eapol frame size             */
-	unsigned long t_crc;	   /* last ToDS   frame CRC        */
-	unsigned long f_crc;	   /* last FromDS frame CRC        */
+	unsigned char stmac[6]; /* supplicant MAC               */
+	unsigned char bssid[6]; /* authenticator MAC            */
+	unsigned char snonce[32]; /* supplicant nonce             */
+	unsigned char anonce[32]; /* authenticator nonce          */
+	unsigned char keymic[20]; /* eapol frame MIC              */
+	unsigned char eapol[256]; /* eapol frame contents         */
+	unsigned char ptk[80]; /* pairwise transcient key      */
+	unsigned eapol_size; /* eapol frame size             */
+	unsigned long t_crc; /* last ToDS   frame CRC        */
+	unsigned long f_crc; /* last FromDS frame CRC        */
 	int keyver, valid_ptk;
 	unsigned char pn[6]; /* Packet Number (WPA-CCMP) */
 };

@@ -236,10 +236,10 @@ rc4test_amd64_sse2(uint8_t * key, int keylen, uint8_t * iv, uint8_t * keystream)
 		"movzbl  %b2, %k8             \n\t" /* scratch2        = j */
 		"movl (" state
 		",%q8,4), %k7    \n\t" /* s2              = state[scratch2] */
-		"movl    %k7, (%q1)           \n\t"   /* state[i]        = s2 */
-		"addq     $4, %q1             \n\t"   /* i++ */
+		"movl    %k7, (%q1)           \n\t" /* state[i]        = s2 */
+		"addq     $4, %q1             \n\t" /* i++ */
 		"movl    %k5, (" state ",%q8,4) \n\t" /* state[scratch2] = s1 */
-		"cmpq    %q1, %q3             \n\t"   /* state          == &state[0x100]
+		"cmpq    %q1, %q3             \n\t" /* state          == &state[0x100]
 												 */
 		"jne .init_loop               \n\t"
 
@@ -252,14 +252,14 @@ rc4test_amd64_sse2(uint8_t * key, int keylen, uint8_t * iv, uint8_t * keystream)
 
 #define RC4TEST_LOOP(offset)                                                   \
 	"movl 4*" offset "(" state "), %k5\n\t" /* s1 = state[i]         */        \
-	"leal (%q5,%q2,1), %k4        \n\t"		/*                       */        \
-	"movzbl %b4, %k2              \n\t"		/* j += s1               */        \
-	"movl (" state ",%q2,4), %k1    \n\t"   /* s2 = state[j]         */        \
+	"leal (%q5,%q2,1), %k4        \n\t" /*                       */            \
+	"movzbl %b4, %k2              \n\t" /* j += s1               */            \
+	"movl (" state ",%q2,4), %k1    \n\t" /* s2 = state[j]         */          \
 	"movl %k1, 4*" offset "(" state ")\n\t" /* state[i] = s2         */        \
-	"movl %k5, (" state ",%q2,4)    \n\t"   /* state[j] = s1         */        \
-	"addb %b1, %b5                \n\t"		/* s1 += s2;             */        \
-	"movb (" state ",%q5,4), %b3    \n\t"   /* ret = state[s1]       */        \
-	"cmpb %b3, " offset "-1(%q6)    \n\t"   /* ret == keystream[i-1] */        \
+	"movl %k5, (" state ",%q2,4)    \n\t" /* state[j] = s1         */          \
+	"addb %b1, %b5                \n\t" /* s1 += s2;             */            \
+	"movb (" state ",%q5,4), %b3    \n\t" /* ret = state[s1]       */          \
+	"cmpb %b3, " offset "-1(%q6)    \n\t" /* ret == keystream[i-1] */          \
 	"jne .ret                     \n\t"
 
 		RC4TEST_LOOP("1") RC4TEST_LOOP("2") RC4TEST_LOOP("3") RC4TEST_LOOP("4")

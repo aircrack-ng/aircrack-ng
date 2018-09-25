@@ -355,7 +355,7 @@ static int _remove(c_avl_tree_t * t, c_avl_node_t * n)
 
 	if ((n->left != NULL) && (n->right != NULL))
 	{
-		c_avl_node_t * r;   /* replacement node */
+		c_avl_node_t * r; /* replacement node */
 		if (BALANCE(n) > 0) /* left subtree is higher */
 		{
 			assert(n->left != NULL);
