@@ -157,6 +157,16 @@ n-02.cap:
     This is a test file with 802.11X-2004 AES-128-CMAC handshake.
     Useful for testing with aircrack-ng. The password is 'bo$$password'.
 
+test-pmkid.pcap:
+    This is a test file with PMKID. Passphrase for 'WLAN-771698' is 'SP-91862D361'
+
+test1.pcap:
+    This is another test file with PMKID. Passphrase for the network
+    'ogogo' is '15211521'
+
+StayAlfred.hccapx:
+    Hashcat HCCAPx file with WPA handshake.
+    Passphrase for 'StayAlfred' ESSID is 'staytogether'
 
 More sample pcap are available from Wireshark: 
     https://wiki.wireshark.org/SampleCaptures#Wifi_.2F_Wireless_LAN_captures_.2F_802.11
