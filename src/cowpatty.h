@@ -51,20 +51,20 @@ struct hashdb_head
 struct hashdb_rec
 {
 	uint8_t rec_size;
-	char *word;
+	char * word;
 	uint8_t pmk[32];
 } __attribute__((packed));
 
 struct cowpatty_file
 {
 	char ssid[33];
-	FILE *fp;
+	FILE * fp;
 	char error[256 - sizeof(FILE *) - 33];
 };
 
-void close_free_cowpatty_hashdb(struct cowpatty_file *cf);
-struct cowpatty_file *open_cowpatty_hashdb(const char *filename,
-										   const char *mode);
-struct hashdb_rec *read_next_cowpatty_record(struct cowpatty_file *cf);
+void close_free_cowpatty_hashdb(struct cowpatty_file * cf);
+struct cowpatty_file * open_cowpatty_hashdb(const char * filename,
+											const char * mode);
+struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf);
 
 #endif // _COWPATTY_H_

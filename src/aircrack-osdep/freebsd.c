@@ -58,7 +58,7 @@ struct priv_fbsd
 
 	/* tx */
 	unsigned char pf_buf[4096];
-	unsigned char *pf_next;
+	unsigned char * pf_next;
 	int pf_totlen;
 	struct ieee80211_bpf_params pf_txparams;
 
@@ -110,15 +110,15 @@ static u_int ieee80211_mhz2ieee(u_int freq, u_int flags)
 }
 /* end of ifconfig */
 
-static void get_radiotap_info(struct priv_fbsd *pf,
-							  struct ieee80211_radiotap_header *rth,
-							  int *plen,
-							  struct rx_info *ri)
+static void get_radiotap_info(struct priv_fbsd * pf,
+							  struct ieee80211_radiotap_header * rth,
+							  int * plen,
+							  struct rx_info * ri)
 {
 	uint32_t present;
 	uint8_t rflags = 0;
 	int i;
-	unsigned char *body = (unsigned char *) (rth + 1);
+	unsigned char * body = (unsigned char *) (rth + 1);
 	int dbm_power = 0, db_power = 0;
 
 	/* reset control info */
@@ -146,7 +146,7 @@ static void get_radiotap_info(struct priv_fbsd *pf,
 			case IEEE80211_RADIOTAP_CHANNEL:
 				if (ri)
 				{
-					uint16_t *p = (uint16_t *) body;
+					uint16_t * p = (uint16_t *) body;
 					int c = ieee80211_mhz2ieee(*p, *(p + 1));
 
 					ri->ri_channel = c;
@@ -199,13 +199,13 @@ static void get_radiotap_info(struct priv_fbsd *pf,
 }
 
 static unsigned char *
-get_80211(struct priv_fbsd *pf, int *plen, struct rx_info *ri)
+get_80211(struct priv_fbsd * pf, int * plen, struct rx_info * ri)
 {
-	struct bpf_hdr *bpfh;
-	struct ieee80211_radiotap_header *rth;
-	void *ptr;
-	unsigned char **data;
-	int *totlen;
+	struct bpf_hdr * bpfh;
+	struct ieee80211_radiotap_header * rth;
+	void * ptr;
+	unsigned char ** data;
+	int * totlen;
 
 	data = &pf->pf_next;
 	totlen = &pf->pf_totlen;
@@ -233,8 +233,8 @@ get_80211(struct priv_fbsd *pf, int *plen, struct rx_info *ri)
 	assert(*totlen >= 0);
 
 	/* radiotap */
-	rth =
-		(struct ieee80211_radiotap_header *) ((char *) bpfh + bpfh->bh_hdrlen);
+	rth = (struct ieee80211_radiotap_header *) ((char *) bpfh
+												+ bpfh->bh_hdrlen);
 	get_radiotap_info(pf, rth, plen, ri);
 	*plen -= rth->it_len;
 	assert(*plen > 0);
@@ -245,9 +245,9 @@ get_80211(struct priv_fbsd *pf, int *plen, struct rx_info *ri)
 	return ptr;
 }
 
-static int fbsd_get_channel(struct wif *wi)
+static int fbsd_get_channel(struct wif * wi)
 {
-	struct priv_fbsd *pf = wi_priv(wi);
+	struct priv_fbsd * pf = wi_priv(wi);
 
 	if (ioctl(pf->pf_s, SIOCG80211, &pf->pf_ireq) != 0) return -1;
 
@@ -255,10 +255,10 @@ static int fbsd_get_channel(struct wif *wi)
 }
 
 static int
-fbsd_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
+fbsd_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 {
-	struct priv_fbsd *pf = wi_priv(wi);
-	unsigned char *wh;
+	struct priv_fbsd * pf = wi_priv(wi);
+	unsigned char * wh;
 	int plen;
 
 	assert(len > 0);
@@ -286,11 +286,13 @@ fbsd_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 	return plen;
 }
 
-static int
-fbsd_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
+static int fbsd_write(struct wif * wi,
+					  unsigned char * h80211,
+					  int len,
+					  struct tx_info * ti)
 {
 	struct iovec iov[2];
-	struct priv_fbsd *pf = wi_priv(wi);
+	struct priv_fbsd * pf = wi_priv(wi);
 	int rc;
 
 	/* XXX make use of ti */
@@ -311,9 +313,9 @@ fbsd_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
 	return rc - iov[0].iov_len;
 }
 
-static int fbsd_set_channel(struct wif *wi, int chan)
+static int fbsd_set_channel(struct wif * wi, int chan)
 {
-	struct priv_fbsd *pf = wi_priv(wi);
+	struct priv_fbsd * pf = wi_priv(wi);
 
 	pf->pf_ireq.i_val = chan;
 	if (ioctl(pf->pf_s, SIOCS80211, &pf->pf_ireq) != 0) return -1;
@@ -322,7 +324,7 @@ static int fbsd_set_channel(struct wif *wi, int chan)
 	return 0;
 }
 
-static void do_free(struct wif *wi)
+static void do_free(struct wif * wi)
 {
 	assert(wi->wi_priv);
 	free(wi->wi_priv);
@@ -330,16 +332,16 @@ static void do_free(struct wif *wi)
 	free(wi);
 }
 
-static void fbsd_close(struct wif *wi)
+static void fbsd_close(struct wif * wi)
 {
-	struct priv_fbsd *pf = wi_priv(wi);
+	struct priv_fbsd * pf = wi_priv(wi);
 
 	close(pf->pf_fd);
 	close(pf->pf_s);
 	do_free(wi);
 }
 
-static int do_fbsd_open(struct wif *wi, char *iface)
+static int do_fbsd_open(struct wif * wi, char * iface)
 {
 	int i;
 	char buf[64];
@@ -349,8 +351,8 @@ static int do_fbsd_open(struct wif *wi, char *iface)
 	int s;
 	unsigned int flags;
 	struct ifmediareq ifmr;
-	int *mwords;
-	struct priv_fbsd *pf = wi_priv(wi);
+	int * mwords;
+	struct priv_fbsd * pf = wi_priv(wi);
 
 	/* basic sanity check */
 	if (strlen(iface) >= sizeof(ifr.ifr_name)) return -1;
@@ -438,19 +440,19 @@ close_bpf:
 	goto close_sock;
 }
 
-static int fbsd_fd(struct wif *wi)
+static int fbsd_fd(struct wif * wi)
 {
-	struct priv_fbsd *pf = wi_priv(wi);
+	struct priv_fbsd * pf = wi_priv(wi);
 
 	return pf->pf_fd;
 }
 
-static int fbsd_get_mac(struct wif *wi, unsigned char *mac)
+static int fbsd_get_mac(struct wif * wi, unsigned char * mac)
 {
 	struct ifaddrs *ifa, *p;
-	char *name = wi_get_ifname(wi);
+	char * name = wi_get_ifname(wi);
 	int rc = -1;
-	struct sockaddr_dl *sdp;
+	struct sockaddr_dl * sdp;
 
 	if (getifaddrs(&ifa) == -1) return -1;
 
@@ -473,7 +475,7 @@ static int fbsd_get_mac(struct wif *wi, unsigned char *mac)
 	return rc;
 }
 
-static int fbsd_get_monitor(struct wif *wi)
+static int fbsd_get_monitor(struct wif * wi)
 {
 	if (wi)
 	{
@@ -483,7 +485,7 @@ static int fbsd_get_monitor(struct wif *wi)
 	return 0;
 }
 
-static int fbsd_get_rate(struct wif *wi)
+static int fbsd_get_rate(struct wif * wi)
 {
 	if (wi)
 	{
@@ -493,7 +495,7 @@ static int fbsd_get_rate(struct wif *wi)
 	return 1000000;
 }
 
-static int fbsd_set_rate(struct wif *wi, int rate)
+static int fbsd_set_rate(struct wif * wi, int rate)
 {
 	if (wi || rate)
 	{
@@ -503,10 +505,10 @@ static int fbsd_set_rate(struct wif *wi, int rate)
 	return 0;
 }
 
-static int fbsd_set_mac(struct wif *wi, unsigned char *mac)
+static int fbsd_set_mac(struct wif * wi, unsigned char * mac)
 {
-	struct priv_fbsd *priv = wi_priv(wi);
-	struct ifreq *ifr = &priv->pf_ifr;
+	struct priv_fbsd * priv = wi_priv(wi);
+	struct ifreq * ifr = &priv->pf_ifr;
 
 	ifr->ifr_addr.sa_family = AF_LINK;
 	ifr->ifr_addr.sa_len = 6;
@@ -515,10 +517,10 @@ static int fbsd_set_mac(struct wif *wi, unsigned char *mac)
 	return ioctl(priv->pf_s, SIOCSIFLLADDR, ifr);
 }
 
-static int fbsd_set_mtu(struct wif *wi, int mtu)
+static int fbsd_set_mtu(struct wif * wi, int mtu)
 {
-	struct priv_fbsd *priv = wi_priv(wi);
-	struct ifreq *ifr = &priv->pf_ifr;
+	struct priv_fbsd * priv = wi_priv(wi);
+	struct ifreq * ifr = &priv->pf_ifr;
 
 	memset(ifr, 0, sizeof(struct ifreq));
 
@@ -530,9 +532,9 @@ static int fbsd_set_mtu(struct wif *wi, int mtu)
 	return 0;
 }
 
-static int fbsd_get_mtu(struct wif *wi)
+static int fbsd_get_mtu(struct wif * wi)
 {
-	struct priv_fbsd *priv = wi_priv(wi);
+	struct priv_fbsd * priv = wi_priv(wi);
 	struct ifreq ifr;
 
 	memset(&ifr, 0, sizeof(struct ifreq));
@@ -546,10 +548,10 @@ static int fbsd_get_mtu(struct wif *wi)
 	return ifr.ifr_mtu;
 }
 
-static struct wif *fbsd_open(char *iface)
+static struct wif * fbsd_open(char * iface)
 {
-	struct wif *wi;
-	struct priv_fbsd *pf;
+	struct wif * wi;
+	struct priv_fbsd * pf;
 	int fd;
 
 	/* setup wi struct */
@@ -583,17 +585,17 @@ static struct wif *fbsd_open(char *iface)
 	pf->pf_txparams.ibp_vers = IEEE80211_BPF_VERSION;
 	pf->pf_txparams.ibp_len = sizeof(struct ieee80211_bpf_params) - 6;
 	pf->pf_txparams.ibp_rate0 = 2; /* 1 MB/s XXX */
-	pf->pf_txparams.ibp_try0 = 1; /* no retransmits */
+	pf->pf_txparams.ibp_try0 = 1;  /* no retransmits */
 	pf->pf_txparams.ibp_rate1 = 2; /* 1 MB/s XXX */
-	pf->pf_txparams.ibp_try1 = 1; /* no retransmits */
+	pf->pf_txparams.ibp_try1 = 1;  /* no retransmits */
 	pf->pf_txparams.ibp_flags = IEEE80211_BPF_NOACK;
-	pf->pf_txparams.ibp_power = 100; /* nominal max */
+	pf->pf_txparams.ibp_power = 100;	 /* nominal max */
 	pf->pf_txparams.ibp_pri = WME_AC_VO; /* high priority */
 
 	return wi;
 }
 
-struct wif *wi_open_osdep(char *iface) { return fbsd_open(iface); }
+struct wif * wi_open_osdep(char * iface) { return fbsd_open(iface); }
 
 EXPORT int get_battery_state(void)
 {

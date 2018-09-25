@@ -54,26 +54,28 @@
 #pragma warning Unknown dynamic link import / export semantics.
 #endif
 
-#define STATIC_ASSERT(COND,MSG) typedef char static_assertion_##MSG[(!!(COND))*2-1]
+#define STATIC_ASSERT(COND, MSG)                                               \
+	typedef char static_assertion_##MSG[(!!(COND)) * 2 - 1]
 // token pasting madness:
-#define COMPILE_TIME_ASSERT3(X,L) STATIC_ASSERT(X,static_assertion_at_line_##L)
-#define COMPILE_TIME_ASSERT2(X,L) COMPILE_TIME_ASSERT3(X,L)
-#define COMPILE_TIME_ASSERT(X)    COMPILE_TIME_ASSERT2(X,__LINE__)
+#define COMPILE_TIME_ASSERT3(X, L)                                             \
+	STATIC_ASSERT(X, static_assertion_at_line_##L)
+#define COMPILE_TIME_ASSERT2(X, L) COMPILE_TIME_ASSERT3(X, L)
+#define COMPILE_TIME_ASSERT(X) COMPILE_TIME_ASSERT2(X, __LINE__)
 
-#if defined(__GNUC__) || defined(__llvm__) || defined(__clang__)             \
+#if defined(__GNUC__) || defined(__llvm__) || defined(__clang__)               \
 	|| defined(__INTEL_COMPILER)
-#define likely(x)      __builtin_expect(!!(x), 1)
-#define unlikely(x)    __builtin_expect(!!(x), 0)
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 #else
-#define likely(x)      (x)
-#define unlikely(x)    (x)
+#define likely(x) (x)
+#define unlikely(x) (x)
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define ESSID_LENGTH 32 /* The spec. says 32 maximum. */
+#define ESSID_LENGTH 32		/* The spec. says 32 maximum. */
 #define PLAINTEXT_LENGTH 63 /* We can do 64 but spec. says 63 */
 
 #define MIN_KEYS_PER_CRYPT 1
@@ -117,45 +119,79 @@ typedef struct
 #define CACHELINE_SIZE 64 // CPU L1 cache-line size, in bytes.
 #endif
 
-#define CACHELINE_PADDED_FIELD(T, name, length, cacheline_size)           \
-	T name [(length)];                                                      \
-	uint8_t name ## _padding [(cacheline_size) - ((length * sizeof(T)) % (cacheline_size))]
+#define CACHELINE_PADDED_FIELD(T, name, length, cacheline_size)                \
+	T name[(length)];                                                          \
+	uint8_t name##_padding[(cacheline_size)                                    \
+						   - ((length * sizeof(T)) % (cacheline_size))]
 
 #pragma pack(push, 1)
 /// Per-thread data needed by the crypto cracking engine.
-struct ac_crypto_engine_perthread {
-  /// Holds the pair-wise master key.
-  CACHELINE_PADDED_FIELD(wpapsk_hash, pmk,                MAX_KEYS_PER_CRYPT_SUPPORTED, CACHELINE_SIZE);
+struct ac_crypto_engine_perthread
+{
+	/// Holds the pair-wise master key.
+	CACHELINE_PADDED_FIELD(wpapsk_hash,
+						   pmk,
+						   MAX_KEYS_PER_CRYPT_SUPPORTED,
+						   CACHELINE_SIZE);
 
-  /// Holds a 64-byte buffer for HMAC SHA1 ipad/opad, plus an extra 20-byte buffer for a SHA1 digest.
-  CACHELINE_PADDED_FIELD(uint8_t,     hash1,  (64 + 20) * MAX_KEYS_PER_CRYPT_SUPPORTED, CACHELINE_SIZE);
+	/// Holds a 64-byte buffer for HMAC SHA1 ipad/opad, plus an extra 20-byte
+	/// buffer for a SHA1 digest.
+	CACHELINE_PADDED_FIELD(uint8_t,
+						   hash1,
+						   (64 + 20) * MAX_KEYS_PER_CRYPT_SUPPORTED,
+						   CACHELINE_SIZE);
 
-  /// Holds a 20-byte buffer for a SHA1 digest. Half cache-line size is to compact with the next.
-  CACHELINE_PADDED_FIELD(uint8_t,     crypt1, 20        * MAX_KEYS_PER_CRYPT_SUPPORTED, CACHELINE_SIZE / 2);
+	/// Holds a 20-byte buffer for a SHA1 digest. Half cache-line size is to
+	/// compact with the next.
+	CACHELINE_PADDED_FIELD(uint8_t,
+						   crypt1,
+						   20 * MAX_KEYS_PER_CRYPT_SUPPORTED,
+						   CACHELINE_SIZE / 2);
 
-  /// Holds a 20-byte buffer for a SHA1 digest. Half cache-line size is to compact with the previous.
-  CACHELINE_PADDED_FIELD(uint8_t,     crypt2, 20        * MAX_KEYS_PER_CRYPT_SUPPORTED, CACHELINE_SIZE / 2);
+	/// Holds a 20-byte buffer for a SHA1 digest. Half cache-line size is to
+	/// compact with the previous.
+	CACHELINE_PADDED_FIELD(uint8_t,
+						   crypt2,
+						   20 * MAX_KEYS_PER_CRYPT_SUPPORTED,
+						   CACHELINE_SIZE / 2);
 
-  /// Holds a 20-byte buffer for a SHA1 digest. Double cache-line size is to space the next field futher out.
-  CACHELINE_PADDED_FIELD(uint8_t,     ptk,    20        * MAX_KEYS_PER_CRYPT_SUPPORTED, CACHELINE_SIZE * 2);
+	/// Holds a 20-byte buffer for a SHA1 digest. Double cache-line size is to
+	/// space the next field futher out.
+	CACHELINE_PADDED_FIELD(uint8_t,
+						   ptk,
+						   20 * MAX_KEYS_PER_CRYPT_SUPPORTED,
+						   CACHELINE_SIZE * 2);
 
-  /// Holds a 100-byte buffer for pair-wise key expansion.
-  CACHELINE_PADDED_FIELD(uint8_t,     pke,    100       * MAX_KEYS_PER_CRYPT_SUPPORTED, CACHELINE_SIZE);
+	/// Holds a 100-byte buffer for pair-wise key expansion.
+	CACHELINE_PADDED_FIELD(uint8_t,
+						   pke,
+						   100 * MAX_KEYS_PER_CRYPT_SUPPORTED,
+						   CACHELINE_SIZE);
 };
 #pragma pack(pop)
 COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, pmk)) == 0);
-COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, hash1) % CACHELINE_SIZE) == 0);
-COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, crypt1) % CACHELINE_SIZE) == 0);
-COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, crypt2) % (CACHELINE_SIZE / 2)) == 0);
-COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, ptk) % CACHELINE_SIZE) == 0);
-COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, pke) % CACHELINE_SIZE) == 0);
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, hash1)
+					 % CACHELINE_SIZE)
+					== 0);
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, crypt1)
+					 % CACHELINE_SIZE)
+					== 0);
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, crypt2)
+					 % (CACHELINE_SIZE / 2))
+					== 0);
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, ptk)
+					 % CACHELINE_SIZE)
+					== 0);
+COMPILE_TIME_ASSERT((offsetof(struct ac_crypto_engine_perthread, pke)
+					 % CACHELINE_SIZE)
+					== 0);
 
 struct ac_crypto_engine
 {
-	uint8_t **essid;
+	uint8_t ** essid;
 	uint32_t essid_length;
 
-	struct ac_crypto_engine_perthread *thread_data[MAX_THREADS];
+	struct ac_crypto_engine_perthread * thread_data[MAX_THREADS];
 };
 
 typedef struct ac_crypto_engine ac_crypto_engine_t;
@@ -164,80 +200,82 @@ typedef struct ac_crypto_engine ac_crypto_engine_t;
 IMPORT int ac_crypto_engine_supported_features(void);
 
 /// global init. this could initialize threadid 1, but...
-IMPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine);
-IMPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine);
+IMPORT int ac_crypto_engine_init(ac_crypto_engine_t * engine);
+IMPORT void ac_crypto_engine_destroy(ac_crypto_engine_t * engine);
 
-IMPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
-									   const uint8_t *essid);
+IMPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t * engine,
+									   const uint8_t * essid);
 
-IMPORT uint8_t* ac_crypto_engine_get_pmk(ac_crypto_engine_t *engine, int threadid, int index);
+IMPORT uint8_t *
+ac_crypto_engine_get_pmk(ac_crypto_engine_t * engine, int threadid, int index);
 
-IMPORT uint8_t* ac_crypto_engine_get_ptk(ac_crypto_engine_t *engine, int threadid, int index);
+IMPORT uint8_t *
+ac_crypto_engine_get_ptk(ac_crypto_engine_t * engine, int threadid, int index);
 
-IMPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
+IMPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t * engine,
 									  const uint8_t bssid[6],
 									  const uint8_t stmac[6],
 									  const uint8_t anonce[32],
 									  const uint8_t snonce[32],
 									  int threadid);
 
-IMPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t *engine,
-                                            const uint8_t bssid[6],
-                                            const uint8_t stmac[6],
-                                            int threadid);
-
+IMPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t * engine,
+											const uint8_t bssid[6],
+											const uint8_t stmac[6],
+											int threadid);
 
 /// per-thread-in-use init. separate to allow (possible) NUMA-local allocation.
-IMPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
+IMPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t * engine,
 										int threadid);
-IMPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
+IMPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t * engine,
 											int threadid);
 
 /// acquire the width of simd we're compiled for.
 IMPORT int ac_crypto_engine_simd_width(void);
 
-IMPORT void
-ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
-						  const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
-						  int nparallel,
-						  int threadid);
+IMPORT void ac_crypto_engine_calc_pmk(
+	ac_crypto_engine_t * engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	int nparallel,
+	int threadid);
 
-IMPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
-                                      const uint8_t keyver,
+IMPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t * engine,
+									  const uint8_t keyver,
 									  int vectorIdx,
 									  int threadid);
 
-IMPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
-                                      const uint8_t eapol[256],
+IMPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t * engine,
+									  const uint8_t eapol[256],
 									  uint32_t eapol_size,
-									  uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
+									  uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED]
+												 [20],
 									  uint8_t keyver,
 									  int vectorIdx,
 									  int threadid);
 
-IMPORT int
-ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
-						   const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
-						   const uint8_t eapol[256],
-						   uint32_t eapol_size,
-						   uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
-						   uint8_t keyver,
-						   const uint8_t cmpmic[20],
-						   int nparallel,
-						   int threadid);
+IMPORT int ac_crypto_engine_wpa_crack(
+	ac_crypto_engine_t * engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	const uint8_t eapol[256],
+	uint32_t eapol_size,
+	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
+	uint8_t keyver,
+	const uint8_t cmpmic[20],
+	int nparallel,
+	int threadid);
 
-IMPORT int
-ac_crypto_engine_wpa_pmkid_crack(ac_crypto_engine_t *engine,
-                                 const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
-                                 const uint8_t pmkid[32],
-                                 int nparallel,
-                                 int threadid);
+IMPORT int ac_crypto_engine_wpa_pmkid_crack(
+	ac_crypto_engine_t * engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	const uint8_t pmkid[32],
+	int nparallel,
+	int threadid);
 
 // Quick Utilities.
 
 /// Calculate one pairwise master key, from the \a essid and \a key.
-IMPORT void ac_crypto_engine_calc_one_pmk(const uint8_t *key,
-										  const uint8_t *essid,
+IMPORT void ac_crypto_engine_calc_one_pmk(const uint8_t * key,
+										  const uint8_t * essid,
 										  uint32_t essid_length,
 										  uint8_t pmk[40]);
 
@@ -245,4 +283,4 @@ IMPORT void ac_crypto_engine_calc_one_pmk(const uint8_t *key,
 }
 #endif
 
-#endif //AIRCRACK_NG_CRYPTO_ENGINE_H
+#endif // AIRCRACK_NG_CRYPTO_ENGINE_H

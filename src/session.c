@@ -45,7 +45,7 @@
 
 #include "aircrack-util/common.h"
 
-int ac_session_destroy(struct session *s)
+int ac_session_destroy(struct session * s)
 {
 	if (s == NULL || s->filename == NULL)
 	{
@@ -53,7 +53,7 @@ int ac_session_destroy(struct session *s)
 	}
 
 	pthread_mutex_lock(&(s->mutex));
-	FILE *f = fopen(s->filename, "r");
+	FILE * f = fopen(s->filename, "r");
 	if (!f)
 	{
 		pthread_mutex_unlock(&(s->mutex));
@@ -67,7 +67,7 @@ int ac_session_destroy(struct session *s)
 	return ret == 0;
 }
 
-void ac_session_free(struct session **s)
+void ac_session_free(struct session ** s)
 {
 	if (s == NULL || *s == NULL)
 	{
@@ -103,12 +103,12 @@ void ac_session_free(struct session **s)
 	*s = NULL;
 }
 
-struct session *ac_session_new(void)
+struct session * ac_session_new(void)
 {
 	return (struct session *) calloc(1, sizeof(struct session));
 }
 
-int ac_session_init(struct session *s)
+int ac_session_init(struct session * s)
 {
 	if (s == NULL)
 	{
@@ -121,7 +121,7 @@ int ac_session_init(struct session *s)
 	return EXIT_SUCCESS;
 }
 
-int ac_session_set_working_directory(struct session *session, const char *str)
+int ac_session_set_working_directory(struct session * session, const char * str)
 {
 	if (session == NULL || str == NULL || str[0] == 0 || chdir(str) == -1)
 	{
@@ -133,7 +133,7 @@ int ac_session_set_working_directory(struct session *session, const char *str)
 	return (session->working_dir) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-int ac_session_set_bssid(struct session *session, const char *str)
+int ac_session_set_bssid(struct session * session, const char * str)
 {
 	if (session == NULL || str == NULL || strlen(str) != 17)
 	{
@@ -166,7 +166,7 @@ int ac_session_set_bssid(struct session *session, const char *str)
 	return EXIT_SUCCESS;
 }
 
-int ac_session_set_wordlist_settings(struct session *session, const char *str)
+int ac_session_set_wordlist_settings(struct session * session, const char * str)
 {
 	if (session == NULL || str == NULL)
 	{
@@ -188,7 +188,7 @@ int ac_session_set_wordlist_settings(struct session *session, const char *str)
 }
 
 #define SESSION_MIN_NBARG 4
-int ac_session_set_amount_arguments(struct session *session, const char *str)
+int ac_session_set_amount_arguments(struct session * session, const char * str)
 {
 	if (session == NULL || str == NULL)
 	{
@@ -213,14 +213,14 @@ int ac_session_set_amount_arguments(struct session *session, const char *str)
 	return (session->argv) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-static char *ac_session_getline(FILE *f)
+static char * ac_session_getline(FILE * f)
 {
 	if (f == NULL)
 	{
 		return NULL;
 	}
 
-	char *ret = NULL;
+	char * ret = NULL;
 	size_t n = 0;
 	ssize_t line_len = getline(&ret, &n, f);
 
@@ -233,17 +233,17 @@ static char *ac_session_getline(FILE *f)
 }
 
 /*
- * MT-Unsafe: Caller must not permit multiple threads to call 
+ * MT-Unsafe: Caller must not permit multiple threads to call
  * the function with the same filename.
- * 
+ *
  * File format:
  * Line 1: Working directory
  * Line 2: BSSID
- * Line 3: Wordlist ID followed by a space then 
+ * Line 3: Wordlist ID followed by a space then
  *          position in file followed by a space then
  *          amount of keys tried
  * Line 4: Amount of arguments (indicates how many lines will follow this one)
- * 
+ *
  * Notes:
  * - Any line starting with # is ignored
  * - First 4 lines CANNOT be empty
@@ -255,7 +255,7 @@ static char *ac_session_getline(FILE *f)
 #define AC_SESSION_BSSID_LINE 1
 #define AC_SESSION_WL_SETTINGS_LINE 2
 #define AC_SESSION_ARGC_LINE 3
-struct session *ac_session_load(const char *filename)
+struct session * ac_session_load(const char * filename)
 {
 	int temp;
 
@@ -264,7 +264,7 @@ struct session *ac_session_load(const char *filename)
 	{
 		return NULL;
 	}
-	FILE *f = fopen(filename, "r");
+	FILE * f = fopen(filename, "r");
 	if (f == NULL)
 	{
 		return NULL;
@@ -285,7 +285,7 @@ struct session *ac_session_load(const char *filename)
 	rewind(f);
 
 	// Prepare structure
-	struct session *ret = ac_session_new();
+	struct session * ret = ac_session_new();
 	if (ret == NULL)
 	{
 		fclose(f);
@@ -296,7 +296,7 @@ struct session *ac_session_load(const char *filename)
 	ac_session_init(ret);
 	ret->filename = strdup(filename);
 
-	char *line;
+	char * line;
 	int line_nr = 0;
 	while (1)
 	{
@@ -320,7 +320,9 @@ struct session *ac_session_load(const char *filename)
 				temp = ac_session_set_bssid(ret, line);
 				break;
 			}
-			case AC_SESSION_WL_SETTINGS_LINE: // Wordlist ID, position in wordlist and amount of keys tried
+			case AC_SESSION_WL_SETTINGS_LINE: // Wordlist ID, position in
+											  // wordlist and amount of keys
+											  // tried
 			{
 				temp = ac_session_set_wordlist_settings(ret, line);
 				break;
@@ -368,7 +370,7 @@ struct session *ac_session_load(const char *filename)
 // Two arguments will be ignored: Session creation parameter and its argument
 #define AMOUNT_ARGUMENTS_IGNORE 2
 struct session *
-ac_session_from_argv(const int argc, char **argv, const char *filename)
+ac_session_from_argv(const int argc, char ** argv, const char * filename)
 {
 	if (filename == NULL || filename[0] == 0 || argc <= 3 || argv == NULL)
 	{
@@ -391,7 +393,7 @@ ac_session_from_argv(const int argc, char **argv, const char *filename)
 	}
 
 	// Initialize structure
-	struct session *ret = ac_session_new();
+	struct session * ret = ac_session_new();
 	if (ret == NULL)
 	{
 		return NULL;
@@ -405,8 +407,8 @@ ac_session_from_argv(const int argc, char **argv, const char *filename)
 	ret->filename = strdup(filename);
 
 	// Copy argc and argv, except the 2 specifying session filename location
-	ret->argv =
-		(char **) calloc(argc - AMOUNT_ARGUMENTS_IGNORE, sizeof(char *));
+	ret->argv
+		= (char **) calloc(argc - AMOUNT_ARGUMENTS_IGNORE, sizeof(char *));
 
 	// Check values are properly set
 	if (ret->filename == NULL || ret->working_dir == NULL || ret->argv == NULL)
@@ -420,7 +422,8 @@ ac_session_from_argv(const int argc, char **argv, const char *filename)
 	{
 		if (strcmp(argv[i], filename) == 0)
 		{
-			// Found the session filename, now remove the previously copied argument
+			// Found the session filename, now remove the previously copied
+			// argument
 			ret->argc--;
 			free(ret->argv[ret->argc]);
 			ret->argv[ret->argc] = NULL;
@@ -442,7 +445,7 @@ ac_session_from_argv(const int argc, char **argv, const char *filename)
 	return ret;
 }
 
-int ac_session_save(struct session *s,
+int ac_session_save(struct session * s,
 					uint64_t pos,
 					long long int nb_keys_tried)
 {
@@ -458,7 +461,7 @@ int ac_session_save(struct session *s,
 
 	// Open file for writing
 	pthread_mutex_lock(&(s->mutex));
-	FILE *f = fopen(s->filename, "w");
+	FILE * f = fopen(s->filename, "w");
 	if (f == NULL)
 	{
 		pthread_mutex_unlock(&(s->mutex));

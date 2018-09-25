@@ -1,5 +1,5 @@
 /*
-  *  Copyright (c) 2009, Kyle Fuller <inbox@kylefuller.co.uk>, based upon 
+  *  Copyright (c) 2009, Kyle Fuller <inbox@kylefuller.co.uk>, based upon
   *  freebsd.c by Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  OS dependent API for Darwin.
@@ -24,7 +24,7 @@
 
 #include "osdep.h"
 
-struct wif *wi_open_osdep(char *iface)
+struct wif * wi_open_osdep(char * iface)
 {
 	if (iface)
 	{

@@ -46,24 +46,26 @@
 #include "trampoline.h"
 
 #ifndef STATIC_BUILD
-static void *module = NULL;
+static void * module = NULL;
 #endif
 
 #ifdef STATIC_BUILD
-int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine) =
-	&ac_crypto_engine_init;
-void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine) =
-	&ac_crypto_engine_destroy;
-void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine,
-									   const uint8_t *essid) =
-	&ac_crypto_engine_set_essid;
-int (*dso_ac_crypto_engine_thread_init)(
-	ac_crypto_engine_t *engine, int threadid) = &ac_crypto_engine_thread_init;
-void (*dso_ac_crypto_engine_thread_destroy)(
-	ac_crypto_engine_t *engine, int threadid) = &ac_crypto_engine_thread_destroy;
+int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t * engine)
+	= &ac_crypto_engine_init;
+void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t * engine)
+	= &ac_crypto_engine_destroy;
+void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t * engine,
+									   const uint8_t * essid)
+	= &ac_crypto_engine_set_essid;
+int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t * engine,
+										int threadid)
+	= &ac_crypto_engine_thread_init;
+void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t * engine,
+											int threadid)
+	= &ac_crypto_engine_thread_destroy;
 int (*dso_ac_crypto_engine_simd_width)(void) = &ac_crypto_engine_simd_width;
 int (*dso_ac_crypto_engine_wpa_crack)(
-	ac_crypto_engine_t *engine,
+	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	const uint8_t eapol[256],
 	uint32_t eapol_size,
@@ -71,59 +73,72 @@ int (*dso_ac_crypto_engine_wpa_crack)(
 	uint8_t keyver,
 	const uint8_t cmpmic[20],
 	int nparallel,
-	int threadid) = &ac_crypto_engine_wpa_crack;
-void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
+	int threadid)
+	= &ac_crypto_engine_wpa_crack;
+void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t * engine,
 									  const uint8_t bssid[6],
 									  const uint8_t stmac[6],
 									  const uint8_t anonce[32],
 									  const uint8_t snonce[32],
-									  int threadid) = &ac_crypto_engine_calc_pke;
+									  int threadid)
+	= &ac_crypto_engine_calc_pke;
 int (*dso_ac_crypto_engine_wpa_pmkid_crack)(
-	ac_crypto_engine_t *engine,
+	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	const uint8_t pmkid[32],
 	int nparallel,
-	int threadid) = &ac_crypto_engine_wpa_pmkid_crack;
-void (*dso_ac_crypto_engine_set_pmkid_salt)(ac_crypto_engine_t *engine,
+	int threadid)
+	= &ac_crypto_engine_wpa_pmkid_crack;
+void (*dso_ac_crypto_engine_set_pmkid_salt)(ac_crypto_engine_t * engine,
 											const uint8_t bssid[6],
-									        const uint8_t stmac[6],
-									        int threadid) = &ac_crypto_engine_set_pmkid_salt;
-int (*dso_ac_crypto_engine_supported_features)(void) =
-	&ac_crypto_engine_supported_features;
-uint8_t* (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t *engine, int threadid, int index) =
-	&ac_crypto_engine_get_pmk;
-uint8_t* (*dso_ac_crypto_engine_get_ptk)(ac_crypto_engine_t *engine, int threadid, int index) =
-	&ac_crypto_engine_get_ptk;
-void (*dso_ac_crypto_engine_calc_one_pmk)(const uint8_t *key,
-										  const uint8_t *essid,
+											const uint8_t stmac[6],
+											int threadid)
+	= &ac_crypto_engine_set_pmkid_salt;
+int (*dso_ac_crypto_engine_supported_features)(void)
+	= &ac_crypto_engine_supported_features;
+uint8_t * (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t * engine,
+										  int threadid,
+										  int index)
+	= &ac_crypto_engine_get_pmk;
+uint8_t * (*dso_ac_crypto_engine_get_ptk)(ac_crypto_engine_t * engine,
+										  int threadid,
+										  int index)
+	= &ac_crypto_engine_get_ptk;
+void (*dso_ac_crypto_engine_calc_one_pmk)(const uint8_t * key,
+										  const uint8_t * essid,
 										  uint32_t essid_length,
-										  uint8_t pmk[40]) =
-	&ac_crypto_engine_calc_one_pmk;
+										  uint8_t pmk[40])
+	= &ac_crypto_engine_calc_one_pmk;
 void (*dso_ac_crypto_engine_calc_pmk)(
-	ac_crypto_engine_t *engine,
+	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	int nparallel,
-	int threadid) = &ac_crypto_engine_calc_pmk;
-void (*dso_ac_crypto_engine_calc_mic)(
-	ac_crypto_engine_t *engine,
-	const uint8_t eapol[256],
-	const uint32_t eapol_size,
-	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
-	const uint8_t keyver,
-	const int vectorIdx,
-	const int threadid) = &ac_crypto_engine_calc_mic;
+	int threadid)
+	= &ac_crypto_engine_calc_pmk;
+void (*dso_ac_crypto_engine_calc_mic)(ac_crypto_engine_t * engine,
+									  const uint8_t eapol[256],
+									  const uint32_t eapol_size,
+									  uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED]
+												 [20],
+									  const uint8_t keyver,
+									  const int vectorIdx,
+									  const int threadid)
+	= &ac_crypto_engine_calc_mic;
 #else
-int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t *engine) = NULL;
-void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t *engine) = NULL;
-void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t *engine,
-                                       const uint8_t *essid) = NULL;
-int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t *engine,
-                                        int threadid) = NULL;
-void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t *engine,
-                                            int threadid) = NULL;
+int (*dso_ac_crypto_engine_init)(ac_crypto_engine_t * engine) = NULL;
+void (*dso_ac_crypto_engine_destroy)(ac_crypto_engine_t * engine) = NULL;
+void (*dso_ac_crypto_engine_set_essid)(ac_crypto_engine_t * engine,
+									   const uint8_t * essid)
+	= NULL;
+int (*dso_ac_crypto_engine_thread_init)(ac_crypto_engine_t * engine,
+										int threadid)
+	= NULL;
+void (*dso_ac_crypto_engine_thread_destroy)(ac_crypto_engine_t * engine,
+											int threadid)
+	= NULL;
 int (*dso_ac_crypto_engine_simd_width)(void) = NULL;
 int (*dso_ac_crypto_engine_wpa_crack)(
-	ac_crypto_engine_t *engine,
+	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	const uint8_t eapol[256],
 	uint32_t eapol_size,
@@ -131,45 +146,56 @@ int (*dso_ac_crypto_engine_wpa_crack)(
 	uint8_t keyver,
 	const uint8_t cmpmic[20],
 	int nparallel,
-	int threadid) = NULL;
-void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t *engine,
-                                      const uint8_t bssid[6],
-                                      const uint8_t stmac[6],
-                                      const uint8_t anonce[32],
-                                      const uint8_t snonce[32],
-                                      int threadid) = NULL;
+	int threadid)
+	= NULL;
+void (*dso_ac_crypto_engine_calc_pke)(ac_crypto_engine_t * engine,
+									  const uint8_t bssid[6],
+									  const uint8_t stmac[6],
+									  const uint8_t anonce[32],
+									  const uint8_t snonce[32],
+									  int threadid)
+	= NULL;
 int (*dso_ac_crypto_engine_wpa_pmkid_crack)(
-	ac_crypto_engine_t *engine,
+	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	const uint8_t pmkid[32],
 	int nparallel,
-	int threadid) = NULL;
-void (*dso_ac_crypto_engine_set_pmkid_salt)(ac_crypto_engine_t *engine,
-                                            const uint8_t bssid[6],
-                                            const uint8_t stmac[6],
-                                            int threadid) = NULL;
+	int threadid)
+	= NULL;
+void (*dso_ac_crypto_engine_set_pmkid_salt)(ac_crypto_engine_t * engine,
+											const uint8_t bssid[6],
+											const uint8_t stmac[6],
+											int threadid)
+	= NULL;
 int (*dso_ac_crypto_engine_supported_features)(void) = NULL;
-uint8_t* (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t *engine, int threadid, int index) =
-	NULL;
-uint8_t* (*dso_ac_crypto_engine_get_ptk)(ac_crypto_engine_t *engine, int threadid, int index) =
-	NULL;
-void (*dso_ac_crypto_engine_calc_one_pmk)(const uint8_t *key,
-										  const uint8_t *essid,
+uint8_t * (*dso_ac_crypto_engine_get_pmk)(ac_crypto_engine_t * engine,
+										  int threadid,
+										  int index)
+	= NULL;
+uint8_t * (*dso_ac_crypto_engine_get_ptk)(ac_crypto_engine_t * engine,
+										  int threadid,
+										  int index)
+	= NULL;
+void (*dso_ac_crypto_engine_calc_one_pmk)(const uint8_t * key,
+										  const uint8_t * essid,
 										  uint32_t essid_length,
-										  uint8_t pmk[40]) = NULL;
+										  uint8_t pmk[40])
+	= NULL;
 void (*dso_ac_crypto_engine_calc_pmk)(
-	ac_crypto_engine_t *engine,
+	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	int nparallel,
-	int threadid) = NULL;
-void (*dso_ac_crypto_engine_calc_mic)(
-	ac_crypto_engine_t *engine,
-	const uint8_t eapol[256],
-	const uint32_t eapol_size,
-	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
-	const uint8_t keyver,
-	const int vectorIdx,
-	const int threadid) = NULL;
+	int threadid)
+	= NULL;
+void (*dso_ac_crypto_engine_calc_mic)(ac_crypto_engine_t * engine,
+									  const uint8_t eapol[256],
+									  const uint32_t eapol_size,
+									  uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED]
+												 [20],
+									  const uint8_t keyver,
+									  const int vectorIdx,
+									  const int threadid)
+	= NULL;
 #endif
 
 #if defined(CYGWIN)
@@ -193,7 +219,7 @@ void (*dso_ac_crypto_engine_calc_mic)(
 #include <windows.h>
 #include <shlwapi.h>
 
-static char *get_executable_directory(void)
+static char * get_executable_directory(void)
 {
 	HMODULE hModule = GetModuleHandle(NULL);
 	CHAR path[MAX_PATH];
@@ -202,7 +228,7 @@ static char *get_executable_directory(void)
 	PathRemoveFileSpecA(path);
 
 	cygwin_conv_path_t flags = CCP_WIN_A_TO_POSIX;
-	char *winpath = (char*) cygwin_create_path(flags, path);
+	char * winpath = (char *) cygwin_create_path(flags, path);
 
 	return winpath;
 }
@@ -214,17 +240,23 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 	char library_path[8192];
 
 #if defined(WIN32_PORTABLE)
-	char *working_directory = get_executable_directory();
+	char * working_directory = get_executable_directory();
 #else
 	// are we inside of the build path?
-	char *working_directory = get_current_working_directory();
+	char * working_directory = get_current_working_directory();
 #endif
 
-	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR)) == 0
-	    || strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR)) == 0)
+	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR))
+			== 0
+		|| strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR))
+			   == 0)
 	{
 		// use development paths
-		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+		snprintf(library_path,
+				 sizeof(library_path) - 1,
+				 "%s%s",
+				 LIBAIRCRACK_CRYPTO_PATH,
+				 LT_OBJDIR);
 	}
 	else
 	{
@@ -238,29 +270,31 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 	}
 	free(working_directory);
 
-	// enumerate all DSOs in folder, opening, searching symbols, and testing them.
-	DIR *dsos = opendir(library_path);
+	// enumerate all DSOs in folder, opening, searching symbols, and testing
+	// them.
+	DIR * dsos = opendir(library_path);
 	if (!dsos) goto out;
 
-	struct dirent *entry = NULL;
+	struct dirent * entry = NULL;
 	while ((entry = readdir(dsos)) != NULL)
 	{
 #if defined(__APPLE__)
-		if (string_has_suffix((char*) entry->d_name, ".dylib"))
+		if (string_has_suffix((char *) entry->d_name, ".dylib"))
 #elif defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
-		if (string_has_suffix((char*) entry->d_name, ".dll"))
+		if (string_has_suffix((char *) entry->d_name, ".dll"))
 #else
-		if (string_has_suffix((char*) entry->d_name, ".so"))
+		if (string_has_suffix((char *) entry->d_name, ".so"))
 #endif
 		{
-			char *search = strstr(entry->d_name, "aircrack-crypto-");
+			char * search = strstr(entry->d_name, "aircrack-crypto-");
 
 			if (search)
 			{
 				search += 16;
 
 				int flag;
-				if ((flag = ac_crypto_engine_loader_string_to_flag(search)) != -1)
+				if ((flag = ac_crypto_engine_loader_string_to_flag(search))
+					!= -1)
 					simd_flags |= flag;
 			}
 		}
@@ -272,7 +306,7 @@ out:
 	return simd_flags;
 }
 
-EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
+EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
 {
 	char buffer[8192] = {"aircrack-crypto"};
 	char library_path[8192];
@@ -312,13 +346,22 @@ EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 		strncat(buffer, "-ppc-altivec", buffer_remaining);
 	}
 
-	char *working_directory = get_current_working_directory(); // or the binary's path?
+	char * working_directory
+		= get_current_working_directory(); // or the binary's path?
 
-	if (strncmp(working_directory, ABS_TOP_BUILDDIR, sizeof(ABS_TOP_BUILDDIR) - 1) == 0
-	    || strncmp(working_directory, ABS_TOP_SRCDIR, sizeof(ABS_TOP_SRCDIR) - 1) == 0)
+	if (strncmp(
+			working_directory, ABS_TOP_BUILDDIR, sizeof(ABS_TOP_BUILDDIR) - 1)
+			== 0
+		|| strncmp(
+			   working_directory, ABS_TOP_SRCDIR, sizeof(ABS_TOP_SRCDIR) - 1)
+			   == 0)
 	{
 		// use development paths
-		snprintf(library_path, sizeof(library_path) - 1, "%s%s", LIBAIRCRACK_CRYPTO_PATH, LT_OBJDIR);
+		snprintf(library_path,
+				 sizeof(library_path) - 1,
+				 "%s%s",
+				 LIBAIRCRACK_CRYPTO_PATH,
+				 LT_OBJDIR);
 	}
 	else
 	{
@@ -327,36 +370,40 @@ EXPORT char *ac_crypto_engine_loader_best_library_for(int simd_features)
 	}
 	free(working_directory);
 
-	snprintf(module_filename, sizeof(module_filename) - 1,
+	snprintf(module_filename,
+			 sizeof(module_filename) - 1,
 #if defined(WIN32_PORTABLE)
-		"%s%s%s",
+			 "%s%s%s",
 #else
-		"%s/%s%s%s",
-		library_path,
+			 "%s/%s%s%s",
+			 library_path,
 #endif
 #if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
 #if defined(MSYS2)
-		"msys-",
+			 "msys-",
 #else
-		"cyg",
+			 "cyg",
 #endif
 #else
-		"lib",
+			 "lib",
 #endif
-		buffer,
+			 buffer,
 #if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
-		"-1-3-0.dll"
+			 "-1-3-0.dll"
 #elif defined(__APPLE__)
-		".dylib"
+			 ".dylib"
 #else
-		".so"
+			 ".so"
 #endif
-	) < 0 ? abort() : (void)0;
+			 )
+			< 0
+		? abort()
+		: (void) 0;
 
 	return strdup(module_filename);
 }
 
-EXPORT int ac_crypto_engine_loader_string_to_flag(const char *const str)
+EXPORT int ac_crypto_engine_loader_string_to_flag(const char * const str)
 {
 	int simd_features = -1;
 
@@ -372,9 +419,11 @@ EXPORT int ac_crypto_engine_loader_string_to_flag(const char *const str)
 		simd_features = SIMD_SUPPORTS_NEON;
 	else if (strncmp(str, "asimd", 5) == 0 || strncmp(str, "arm-asimd", 9) == 0)
 		simd_features = SIMD_SUPPORTS_ASIMD;
-	else if (strncmp(str, "altivec", 7) == 0 || strncmp(str, "ppc-altivec", 11) == 0)
+	else if (strncmp(str, "altivec", 7) == 0
+			 || strncmp(str, "ppc-altivec", 11) == 0)
 		simd_features = SIMD_SUPPORTS_ALTIVEC;
-	else if (strncmp(str, "power8", 6) == 0 || strncmp(str, "ppc-power8", 10) == 0)
+	else if (strncmp(str, "power8", 6) == 0
+			 || strncmp(str, "ppc-power8", 10) == 0)
 		simd_features = SIMD_SUPPORTS_POWER8;
 	else if (strncmp(str, "generic", 7) == 0)
 		simd_features = SIMD_SUPPORTS_NONE;
@@ -382,7 +431,7 @@ EXPORT int ac_crypto_engine_loader_string_to_flag(const char *const str)
 	return simd_features;
 }
 
-EXPORT char *ac_crypto_engine_loader_flags_to_string(int flags)
+EXPORT char * ac_crypto_engine_loader_flags_to_string(int flags)
 {
 	char buffer[8192] = {0};
 
@@ -403,15 +452,15 @@ EXPORT char *ac_crypto_engine_loader_flags_to_string(int flags)
 EXPORT int ac_crypto_engine_loader_load(int flags)
 {
 #ifndef STATIC_BUILD
-	if (flags == -1)
-		flags = ac_crypto_engine_loader_get_available();
+	if (flags == -1) flags = ac_crypto_engine_loader_get_available();
 
-	char *module_filename = ac_crypto_engine_loader_best_library_for(flags);
+	char * module_filename = ac_crypto_engine_loader_best_library_for(flags);
 
-	module = dlopen (module_filename, RTLD_LAZY);
+	module = dlopen(module_filename, RTLD_LAZY);
 	if (!module)
 	{
-		fprintf(stderr, "Could not open '%s': %s\n", module_filename, dlerror());
+		fprintf(
+			stderr, "Could not open '%s': %s\n", module_filename, dlerror());
 		free(module_filename);
 		return 1;
 	}
@@ -419,36 +468,47 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 	// resolve symbols needed
 	struct _dso_symbols
 	{
-		char const *sym;
-		void *addr;
+		char const * sym;
+		void * addr;
 	} dso_symbols[] = {
-		{ "ac_crypto_engine_init", (void *)&dso_ac_crypto_engine_init },
-		{ "ac_crypto_engine_destroy", (void *)&dso_ac_crypto_engine_destroy },
-		{ "ac_crypto_engine_thread_init", (void *)&dso_ac_crypto_engine_thread_init },
-		{ "ac_crypto_engine_thread_destroy", (void *)&dso_ac_crypto_engine_thread_destroy },
-		{ "ac_crypto_engine_set_essid", (void *)&dso_ac_crypto_engine_set_essid },
-		{ "ac_crypto_engine_simd_width", (void *)&dso_ac_crypto_engine_simd_width },
-		{ "ac_crypto_engine_wpa_crack", (void *)&dso_ac_crypto_engine_wpa_crack },
-		{ "ac_crypto_engine_wpa_pmkid_crack", (void *)&dso_ac_crypto_engine_wpa_pmkid_crack },
-		{ "ac_crypto_engine_calc_pke", (void *)&dso_ac_crypto_engine_calc_pke },
-		{ "ac_crypto_engine_set_pmkid_salt", (void *)&dso_ac_crypto_engine_set_pmkid_salt },
-		{ "ac_crypto_engine_supported_features", (void*)&dso_ac_crypto_engine_supported_features },
-		{ "ac_crypto_engine_get_pmk", (void*)&dso_ac_crypto_engine_get_pmk },
-		{ "ac_crypto_engine_get_ptk", (void*)&dso_ac_crypto_engine_get_ptk },
-		{ "ac_crypto_engine_calc_one_pmk", (void*)&dso_ac_crypto_engine_calc_one_pmk },
-		{ "ac_crypto_engine_calc_pmk", (void*)&dso_ac_crypto_engine_calc_pmk },
-		{ "ac_crypto_engine_calc_mic", (void*)&dso_ac_crypto_engine_calc_mic },
+		{"ac_crypto_engine_init", (void *) &dso_ac_crypto_engine_init},
+		{"ac_crypto_engine_destroy", (void *) &dso_ac_crypto_engine_destroy},
+		{"ac_crypto_engine_thread_init",
+		 (void *) &dso_ac_crypto_engine_thread_init},
+		{"ac_crypto_engine_thread_destroy",
+		 (void *) &dso_ac_crypto_engine_thread_destroy},
+		{"ac_crypto_engine_set_essid",
+		 (void *) &dso_ac_crypto_engine_set_essid},
+		{"ac_crypto_engine_simd_width",
+		 (void *) &dso_ac_crypto_engine_simd_width},
+		{"ac_crypto_engine_wpa_crack",
+		 (void *) &dso_ac_crypto_engine_wpa_crack},
+		{"ac_crypto_engine_wpa_pmkid_crack",
+		 (void *) &dso_ac_crypto_engine_wpa_pmkid_crack},
+		{"ac_crypto_engine_calc_pke", (void *) &dso_ac_crypto_engine_calc_pke},
+		{"ac_crypto_engine_set_pmkid_salt",
+		 (void *) &dso_ac_crypto_engine_set_pmkid_salt},
+		{"ac_crypto_engine_supported_features",
+		 (void *) &dso_ac_crypto_engine_supported_features},
+		{"ac_crypto_engine_get_pmk", (void *) &dso_ac_crypto_engine_get_pmk},
+		{"ac_crypto_engine_get_ptk", (void *) &dso_ac_crypto_engine_get_ptk},
+		{"ac_crypto_engine_calc_one_pmk",
+		 (void *) &dso_ac_crypto_engine_calc_one_pmk},
+		{"ac_crypto_engine_calc_pmk", (void *) &dso_ac_crypto_engine_calc_pmk},
+		{"ac_crypto_engine_calc_mic", (void *) &dso_ac_crypto_engine_calc_mic},
 
-		{ NULL, NULL }
-	};
+		{NULL, NULL}};
 
-	struct _dso_symbols *cur = &dso_symbols[0];
+	struct _dso_symbols * cur = &dso_symbols[0];
 
 	for (; cur->addr != NULL; ++cur)
 	{
-		if (!(*((void**)cur->addr) = dlsym(module, cur->sym)))
+		if (!(*((void **) cur->addr) = dlsym(module, cur->sym)))
 		{
-			fprintf(stderr, "Could not find symbol %s in %s.\n", cur->sym, module_filename);
+			fprintf(stderr,
+					"Could not find symbol %s in %s.\n",
+					cur->sym,
+					module_filename);
 			dlclose(module);
 			free(module_filename);
 			return 1;

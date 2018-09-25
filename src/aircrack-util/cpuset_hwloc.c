@@ -42,14 +42,14 @@ struct ac_cpuset
 	size_t nbThreads;
 
 	hwloc_topology_t topology;
-	hwloc_cpuset_t *hwloc_cpusets;
+	hwloc_cpuset_t * hwloc_cpusets;
 };
 
-ac_cpuset_t *ac_cpuset_new(void) { return malloc(sizeof(struct ac_cpuset)); }
+ac_cpuset_t * ac_cpuset_new(void) { return malloc(sizeof(struct ac_cpuset)); }
 
-void ac_cpuset_free(ac_cpuset_t *cpuset) { free(cpuset); }
+void ac_cpuset_free(ac_cpuset_t * cpuset) { free(cpuset); }
 
-void ac_cpuset_init(ac_cpuset_t *cpuset)
+void ac_cpuset_init(ac_cpuset_t * cpuset)
 {
 	assert(cpuset != NULL);
 
@@ -60,7 +60,7 @@ void ac_cpuset_init(ac_cpuset_t *cpuset)
 	hwloc_topology_load(cpuset->topology);
 }
 
-void ac_cpuset_destroy(ac_cpuset_t *cpuset)
+void ac_cpuset_destroy(ac_cpuset_t * cpuset)
 {
 	assert(cpuset != NULL);
 
@@ -73,7 +73,7 @@ void ac_cpuset_destroy(ac_cpuset_t *cpuset)
 	hwloc_topology_destroy(cpuset->topology);
 }
 
-void ac_cpuset_distribute(ac_cpuset_t *cpuset, size_t count)
+void ac_cpuset_distribute(ac_cpuset_t * cpuset, size_t count)
 {
 	assert(cpuset != NULL);
 
@@ -85,15 +85,24 @@ void ac_cpuset_distribute(ac_cpuset_t *cpuset, size_t count)
 	hwloc_obj_t root = hwloc_get_root_obj(cpuset->topology);
 
 #if defined(HWLOC_API_VERSION) && HWLOC_API_VERSION > 0x00010800
-	hwloc_distrib(
-		cpuset->topology, &root, 1u, cpuset->hwloc_cpusets, (unsigned int) count, INT_MAX, 0u);
+	hwloc_distrib(cpuset->topology,
+				  &root,
+				  1u,
+				  cpuset->hwloc_cpusets,
+				  (unsigned int) count,
+				  INT_MAX,
+				  0u);
 #else
-	hwloc_distributev(
-		cpuset->topology, &root, 1u, cpuset->hwloc_cpusets, (unsigned int) count, INT_MAX);
+	hwloc_distributev(cpuset->topology,
+					  &root,
+					  1u,
+					  cpuset->hwloc_cpusets,
+					  (unsigned int) count,
+					  INT_MAX);
 #endif
 }
 
-void ac_cpuset_bind_thread_at(ac_cpuset_t *cpuset, pthread_t tid, size_t idx)
+void ac_cpuset_bind_thread_at(ac_cpuset_t * cpuset, pthread_t tid, size_t idx)
 {
 	assert(cpuset != NULL);
 
@@ -106,7 +115,7 @@ void ac_cpuset_bind_thread_at(ac_cpuset_t *cpuset, pthread_t tid, size_t idx)
 								 cpuset->hwloc_cpusets[idx],
 								 HWLOC_CPUBIND_THREAD))
 	{
-		char *str;
+		char * str;
 		int error = errno;
 		hwloc_bitmap_asprintf(&str, cpuset->hwloc_cpusets[idx]);
 		fprintf(stderr,

@@ -61,7 +61,7 @@ struct client
 	int c_wpa;
 	int c_wpa_got;
 	struct packet c_handshake[4];
-	struct client *c_next;
+	struct client * c_next;
 };
 
 struct network
@@ -71,14 +71,14 @@ struct network
 	int n_beaconlen;
 	char n_ssid[256];
 	struct client n_clients;
-	struct client *n_handshake;
-	struct network *n_next;
+	struct client * n_handshake;
+	struct network * n_next;
 } _networks;
 
-static char *_outfilename;
+static char * _outfilename;
 static int _outfd;
 
-static int open_pcap(const char *fname)
+static int open_pcap(const char * fname)
 {
 	int fd;
 	struct pcap_file_header pfh;
@@ -102,7 +102,7 @@ static int open_pcap(const char *fname)
 	return fd;
 }
 
-static void write_pcap(int fd, const void *p, const int len)
+static void write_pcap(int fd, const void * p, const int len)
 {
 	struct pcap_pkthdr pkh;
 
@@ -117,12 +117,12 @@ static void write_pcap(int fd, const void *p, const int len)
 	if (write(fd, p, len) != len) err(1, "write()");
 }
 
-static void packet_write_pcap(int fd, const struct packet *p)
+static void packet_write_pcap(int fd, const struct packet * p)
 {
 	write_pcap(fd, p->p_data, p->p_len);
 }
 
-static void print_network(const struct network *n)
+static void print_network(const struct network * n)
 {
 	printf("Net %.2x:%.2x:%.2x:%.2x:%.2x:%.2x %s\n",
 		   n->n_bssid[0],
@@ -134,7 +134,7 @@ static void print_network(const struct network *n)
 		   n->n_ssid);
 }
 
-static void save_network(const struct network *n)
+static void save_network(const struct network * n)
 {
 	int i;
 
@@ -143,15 +143,15 @@ static void save_network(const struct network *n)
 
 	for (i = 0; i < 4; i++)
 	{
-		struct packet *p = &n->n_handshake->c_handshake[i];
+		struct packet * p = &n->n_handshake->c_handshake[i];
 
 		if (p->p_len) packet_write_pcap(_outfd, p);
 	}
 }
 
-static void fix_beacon(struct network *n)
+static void fix_beacon(struct network * n)
 {
-	unsigned char *p;
+	unsigned char * p;
 	int ssidlen;
 	int origlen;
 
@@ -178,7 +178,7 @@ static void fix_beacon(struct network *n)
 	n->n_beaconlen += ssidlen - origlen;
 }
 
-static void check_network(struct network *n)
+static void check_network(struct network * n)
 {
 	if (!n->n_beaconlen || !n->n_handshake || !n->n_ssid[0]) return;
 
@@ -189,9 +189,9 @@ static void check_network(struct network *n)
 	save_network(n);
 }
 
-static struct network *find_net(const unsigned char *b)
+static struct network * find_net(const unsigned char * b)
 {
-	struct network *n = _networks.n_next;
+	struct network * n = _networks.n_next;
 
 	while (n)
 	{
@@ -203,9 +203,9 @@ static struct network *find_net(const unsigned char *b)
 	return NULL;
 }
 
-static struct network *net_add(const unsigned char *bssid)
+static struct network * net_add(const unsigned char * bssid)
 {
-	struct network *n = malloc(sizeof(*n));
+	struct network * n = malloc(sizeof(*n));
 
 	if (!n) err(1, "malloc()");
 
@@ -219,9 +219,9 @@ static struct network *net_add(const unsigned char *bssid)
 	return n;
 }
 
-static struct network *find_add_net(const unsigned char *bssid)
+static struct network * find_add_net(const unsigned char * bssid)
 {
-	struct network *n;
+	struct network * n;
 
 	n = find_net(bssid);
 	if (n) return n;
@@ -229,10 +229,10 @@ static struct network *find_add_net(const unsigned char *bssid)
 	return net_add(bssid);
 }
 
-static struct client *find_client(const struct network *n,
-								  const unsigned char *mac)
+static struct client * find_client(const struct network * n,
+								   const unsigned char * mac)
 {
-	struct client *c = n->n_clients.c_next;
+	struct client * c = n->n_clients.c_next;
 
 	while (c)
 	{
@@ -244,10 +244,10 @@ static struct client *find_client(const struct network *n,
 	return NULL;
 }
 
-static struct client *find_add_client(struct network *n,
-									  const unsigned char *mac)
+static struct client * find_add_client(struct network * n,
+									   const unsigned char * mac)
 {
-	struct client *c;
+	struct client * c;
 
 	c = find_client(n, mac);
 	if (c) return c;
@@ -265,10 +265,10 @@ static struct client *find_add_client(struct network *n,
 	return c;
 }
 
-static int parse_rsn(const unsigned char *p, const int l, const int rsn)
+static int parse_rsn(const unsigned char * p, const int l, const int rsn)
 {
 	int c;
-	const unsigned char *start = p;
+	const unsigned char * start = p;
 	int psk = 0;
 	int wpa = 0;
 
@@ -312,9 +312,9 @@ static int parse_rsn(const unsigned char *p, const int l, const int rsn)
 	return wpa;
 }
 
-static int parse_elem_vendor(const unsigned char *e, const int l)
+static int parse_elem_vendor(const unsigned char * e, const int l)
 {
-	const struct ieee80211_ie_wpa *wpa = (const struct ieee80211_ie_wpa *) e;
+	const struct ieee80211_ie_wpa * wpa = (const struct ieee80211_ie_wpa *) e;
 
 	if (l < 5) return 0;
 
@@ -327,9 +327,9 @@ static int parse_elem_vendor(const unsigned char *e, const int l)
 	return parse_rsn((unsigned char *) &wpa->wpa_version, l - 6, 0);
 }
 
-static void process_beacon(struct ieee80211_frame *wh, int totlen)
+static void process_beacon(struct ieee80211_frame * wh, int totlen)
 {
-	unsigned char *p = (unsigned char *) (wh + 1);
+	unsigned char * p = (unsigned char *) (wh + 1);
 	int bhlen = 8 + 2 + 2;
 	int len = totlen;
 	char ssid[256];
@@ -337,7 +337,7 @@ static void process_beacon(struct ieee80211_frame *wh, int totlen)
 	int rc;
 	int ssids = 0;
 	int hidden = 0;
-	struct network *n;
+	struct network * n;
 
 	totlen -= sizeof(*wh);
 
@@ -417,7 +417,7 @@ __bad:
 	printf("bad beacon\n");
 }
 
-static int eapol_handshake_step(const unsigned char *eapol, const int len)
+static int eapol_handshake_step(const unsigned char * eapol, const int len)
 {
 	int eapol_size = 4 + 1 + 2 + 2 + 8 + 32 + 16 + 8 + 8 + 16 + 2;
 
@@ -437,7 +437,7 @@ static int eapol_handshake_step(const unsigned char *eapol, const int len)
 	return 2;
 }
 
-static void packet_copy(struct packet *p, const void *d, const int len)
+static void packet_copy(struct packet * p, const void * d, const int len)
 {
 	assert(len <= (int) sizeof(p->p_data));
 
@@ -445,11 +445,11 @@ static void packet_copy(struct packet *p, const void *d, const int len)
 	memcpy(p->p_data, d, len);
 }
 
-static void process_eapol(struct network *n,
-						  struct client *c,
-						  const unsigned char *p,
+static void process_eapol(struct network * n,
+						  struct client * c,
+						  const unsigned char * p,
 						  const int len,
-						  struct ieee80211_frame *wh,
+						  struct ieee80211_frame * wh,
 						  const int totlen)
 {
 	int num, i;
@@ -499,17 +499,17 @@ static void process_eapol(struct network *n,
 	if (c->c_wpa_got == 7) n->n_handshake = c;
 }
 
-static void process_data(struct ieee80211_frame *wh, int len)
+static void process_data(struct ieee80211_frame * wh, int len)
 {
-	unsigned char *p = (unsigned char *) (wh + 1);
-	struct llc *llc;
+	unsigned char * p = (unsigned char *) (wh + 1);
+	struct llc * llc;
 	int wep = wh->i_fc[1] & IEEE80211_FC1_WEP;
 	int eapol = 0;
-	struct client *c;
+	struct client * c;
 	int stype = wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK;
 	int orig = len;
 	unsigned char *bssid, *clientaddr;
-	struct network *n;
+	struct network * n;
 
 	len -= sizeof(*wh);
 
@@ -561,13 +561,13 @@ static void process_data(struct ieee80211_frame *wh, int len)
 	if (n->n_handshake) check_network(n);
 }
 
-static void grab_hidden_ssid(const unsigned char *bssid,
-							 struct ieee80211_frame *wh,
+static void grab_hidden_ssid(const unsigned char * bssid,
+							 struct ieee80211_frame * wh,
 							 int len,
 							 const int off)
 {
-	struct network *n;
-	unsigned char *p = ((unsigned char *) (wh + 1)) + off;
+	struct network * n;
+	unsigned char * p = ((unsigned char *) (wh + 1)) + off;
 	int l;
 
 	n = find_net(bssid);
@@ -597,9 +597,9 @@ __bad:
 	return;
 }
 
-static void process_packet(void *packet, const int len)
+static void process_packet(void * packet, const int len)
 {
-	struct ieee80211_frame *wh = (struct ieee80211_frame *) packet;
+	struct ieee80211_frame * wh = (struct ieee80211_frame *) packet;
 
 #if 0
 	printf("GOT %d\n", len);
@@ -637,9 +637,9 @@ static void process_packet(void *packet, const int len)
 	}
 }
 
-static void pwn(const char *fname)
+static void pwn(const char * fname)
 {
-	struct wif *wi;
+	struct wif * wi;
 	char crap[2048];
 	int rc;
 
@@ -667,20 +667,20 @@ static void pwn(const char *fname)
 
 static void free_data(void)
 {
-	struct network *nets = _networks.n_next;
+	struct network * nets = _networks.n_next;
 	while (nets)
 	{
 		// Free clients
-		struct client *clients = nets->n_handshake;
+		struct client * clients = nets->n_handshake;
 		while (clients)
 		{
-			struct client *client_prev = clients;
+			struct client * client_prev = clients;
 			clients = clients->c_next;
 			free(client_prev);
 		}
 
 		// Free net
-		struct network *net_prev = nets;
+		struct network * net_prev = nets;
 		nets = nets->n_next;
 		free(net_prev);
 	}
@@ -688,7 +688,7 @@ static void free_data(void)
 	free(_outfilename);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
 	if (argc < 3)
 	{
@@ -705,7 +705,7 @@ int main(int argc, char *argv[])
 
 	for (int i = 2; i < argc; i++)
 	{
-		const char *in = argv[i];
+		const char * in = argv[i];
 		int prog = (int) (((double) (i - 1)) / ((double) (argc - 2))
 #if defined(__x86_64__) && defined(__CYGWIN__)
 						  * (0.0f + 100));

@@ -93,16 +93,16 @@
 struct frag_state
 {
 	struct ieee80211_frame fs_wh;
-	unsigned char *fs_data;
+	unsigned char * fs_data;
 	int fs_len;
-	unsigned char *fs_ptr;
+	unsigned char * fs_ptr;
 	int fs_waiting_relay;
 	struct timeval fs_last;
 };
 
 struct prga_info
 {
-	unsigned char *pi_prga;
+	unsigned char * pi_prga;
 	int pi_len;
 	unsigned char pi_iv[3];
 };
@@ -111,15 +111,15 @@ struct wstate
 {
 	int ws_state;
 	struct timeval ws_arpsend;
-	char *ws_netip;
+	char * ws_netip;
 	int ws_netip_arg;
 	int ws_max_chan;
-	unsigned char *ws_rtrmac;
+	unsigned char * ws_rtrmac;
 	unsigned char ws_mymac[6];
 	int ws_have_mac;
 	char ws_myip[16];
-	unsigned char *ws_victim_mac;
-	PTW_attackstate *ws_ptw;
+	unsigned char * ws_victim_mac;
+	PTW_attackstate * ws_ptw;
 	unsigned int ws_ack_timeout;
 	int ws_min_prga;
 	int ws_thresh_incr;
@@ -130,7 +130,7 @@ struct wstate
 	struct timeval ws_real_start;
 	struct timeval ws_lasthop;
 	struct timeval ws_last_wcount;
-	struct wif *ws_wi;
+	struct wif * ws_wi;
 	unsigned int ws_last_wep_count;
 	int ws_ignore_ack;
 
@@ -144,7 +144,7 @@ struct wstate
 	int ws_chan;
 
 	/* victim_info */
-	char *ws_ssid;
+	char * ws_ssid;
 	int ws_apchan;
 	unsigned char ws_bss[6];
 
@@ -152,7 +152,7 @@ struct wstate
 	struct prga_info ws_pi;
 
 	/* decrypt_state */
-	unsigned char *ws_cipher;
+	unsigned char * ws_cipher;
 	int ws_clen;
 	struct prga_info ws_dpi;
 	struct frag_state ws_dfs;
@@ -167,9 +167,9 @@ struct wstate
 #define KEYHSBYTES PTW_KEYHSBYTES
 
 int PTW_DEFAULTWEIGHT[1] = {256};
-int PTW_DEFAULTBF[PTW_KEYHSBYTES] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-									 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-									 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int PTW_DEFAULTBF[PTW_KEYHSBYTES]
+	= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 struct timeval t_begin; /* time at start of attack      */
 struct timeval t_stats; /* time since last update       */
@@ -216,72 +216,72 @@ void show_wep_stats(int B,
 
 	return;
 	/*
-    if( ioctl( 0, TIOCGWINSZ, &ws ) < 0 )
-    {
-        ws.ws_row = 25;
-        ws.ws_col = 80;
-    }
+	if( ioctl( 0, TIOCGWINSZ, &ws ) < 0 )
+	{
+		ws.ws_row = 25;
+		ws.ws_col = 80;
+	}
 
-    if( (chrono( &t_stats, 0 ) < 1.51) && force == 0 )
-        return;
+	if( (chrono( &t_stats, 0 ) < 1.51) && force == 0 )
+		return;
 
-    chrono( &t_stats, 1 );
+	chrono( &t_stats, 1 );
 
-    delta = chrono( &t_begin, 0 );
+	delta = chrono( &t_begin, 0 );
 
-    et_h =   delta / 3600;
-    et_m = ( delta - et_h * 3600 ) / 60;
-    et_s =   delta - et_h * 3600 - et_m * 60;
+	et_h =   delta / 3600;
+	et_m = ( delta - et_h * 3600 ) / 60;
+	et_s =   delta - et_h * 3600 - et_m * 60;
 
-    if( is_cleared == 0 )
-    {
-        is_cleared++;
+	if( is_cleared == 0 )
+	{
+		is_cleared++;
 
-        printf( "\33[2J" );
-    }
+		printf( "\33[2J" );
+	}
 
-    if(table)
-        printf( "\33[5;%dH[%02d:%02d:%02d] Tested %d/%d keys\33[K",
-                (ws.ws_col - 44) / 2, et_h, et_m, et_s, prod, keylimit );
+	if(table)
+		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %d/%d keys\33[K",
+				(ws.ws_col - 44) / 2, et_h, et_m, et_s, prod, keylimit );
 
-    printf( "\33[7;4HKB    depth   byte(vote)\n" );
+	printf( "\33[7;4HKB    depth   byte(vote)\n" );
 
-    for( i = 0; i <= B; i++ )
-    {
-        int j, k = ( ws.ws_col - 20 ) / 9;
+	for( i = 0; i <= B; i++ )
+	{
+		int j, k = ( ws.ws_col - 20 ) / 9;
 
-        if(table)
-            printf( "   %2d  %3d/%3d   ",
-                    i, depth[i], choices[i] );
+		if(table)
+			printf( "   %2d  %3d/%3d   ",
+					i, depth[i], choices[i] );
 
-        if(table)
-        {
-            for( j = depth[i]; j < k + depth[i]; j++ )
-            {
-                if( j >= 256 ) break;
+		if(table)
+		{
+			for( j = depth[i]; j < k + depth[i]; j++ )
+			{
+				if( j >= 256 ) break;
 
-                printf( "%02X(%4d) ",  table[i][j].b,
-                        table[i][j].votes );
-            }
-        }
-        printf( "\n" );
-    }
+				printf( "%02X(%4d) ",  table[i][j].b,
+						table[i][j].votes );
+			}
+		}
+		printf( "\n" );
+	}
 
 //    if( B < opt.keylen - 1 )
 //        printf( "\33[J" );
 
-    printf( "\n" );
-    */
+	printf( "\n" );
+	*/
 }
 
-static struct wstate *get_ws(void) { return &_wstate; }
+static struct wstate * get_ws(void) { return &_wstate; }
 
-static void time_print(char *fmt, ...)
+static void time_print(char * fmt, ...)
 {
 	va_list ap;
 	char lame[1024];
 	time_t tt;
-	struct tm *t;
+	struct tm * t;
 
 	va_start(ap, fmt);
 	vsnprintf(lame, sizeof(lame), fmt, ap);
@@ -305,7 +305,7 @@ static void time_print(char *fmt, ...)
 	printf("[%.2d:%.2d:%.2d] %s", t->tm_hour, t->tm_min, t->tm_sec, lame);
 }
 
-static void check_key(struct wstate *ws)
+static void check_key(struct wstate * ws)
 {
 	char buf[1024];
 	int fd;
@@ -346,7 +346,7 @@ static void check_key(struct wstate *ws)
 	exit(0);
 }
 
-static void kill_crack(struct wstate *ws)
+static void kill_crack(struct wstate * ws)
 {
 	if (ws->ws_crack_pid == 0) return;
 
@@ -370,7 +370,7 @@ static void kill_crack(struct wstate *ws)
 
 static void cleanup(int x)
 {
-	struct wstate *ws = get_ws();
+	struct wstate * ws = get_ws();
 
 	printf("\n");
 	time_print("Dying...\n");
@@ -390,7 +390,7 @@ static void cleanup(int x)
 	exit(0);
 }
 
-static void set_chan(struct wstate *ws, int c)
+static void set_chan(struct wstate * ws, int c)
 {
 	if (c == ws->ws_chan) return;
 
@@ -399,7 +399,7 @@ static void set_chan(struct wstate *ws, int c)
 	ws->ws_chan = c;
 }
 
-static void hexdump(unsigned char *ptr, int len)
+static void hexdump(unsigned char * ptr, int len)
 {
 	while (len > 0)
 	{
@@ -410,7 +410,7 @@ static void hexdump(unsigned char *ptr, int len)
 	printf("\n");
 }
 
-static char *mac2str(unsigned char *mac)
+static char * mac2str(unsigned char * mac)
 {
 	static char ret[6 * 3];
 
@@ -427,7 +427,7 @@ static char *mac2str(unsigned char *mac)
 	return ret;
 }
 
-static void inject(struct wif *wi, void *buf, int len)
+static void inject(struct wif * wi, void * buf, int len)
 {
 	int rc;
 
@@ -448,9 +448,9 @@ static void inject(struct wif *wi, void *buf, int len)
 	}
 }
 
-static void send_frame(struct wstate *ws, unsigned char *buf, int len)
+static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 {
-	static unsigned char *lame = 0;
+	static unsigned char * lame = 0;
 	static int lamelen = 0;
 	static int lastlen = 0;
 
@@ -536,9 +536,9 @@ static unsigned short fnseq(unsigned short fn, unsigned short seq)
 	return htole16(r);
 }
 
-static void fill_basic(struct wstate *ws, struct ieee80211_frame *wh)
+static void fill_basic(struct wstate * ws, struct ieee80211_frame * wh)
 {
-	unsigned short *sp;
+	unsigned short * sp;
 
 	memcpy(wh->i_addr1, ws->ws_bss, 6);
 	memcpy(wh->i_addr2, ws->ws_mymac, 6);
@@ -551,11 +551,11 @@ static void fill_basic(struct wstate *ws, struct ieee80211_frame *wh)
 	*sp = htole16(32767);
 }
 
-static void send_assoc(struct wstate *ws)
+static void send_assoc(struct wstate * ws)
 {
 	unsigned char buf[128];
-	struct ieee80211_frame *wh = (struct ieee80211_frame *) buf;
-	unsigned char *body;
+	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
+	unsigned char * body;
 	int ssidlen;
 
 	memset(buf, 0, sizeof(buf));
@@ -597,10 +597,10 @@ static void send_assoc(struct wstate *ws)
 	send_frame(ws, buf, (unsigned long) body - (unsigned long) buf);
 }
 
-static void wepify(struct wstate *ws, unsigned char *body, int dlen)
+static void wepify(struct wstate * ws, unsigned char * body, int dlen)
 {
 	uLong crc;
-	unsigned int *pcrc;
+	unsigned int * pcrc;
 	int i;
 
 	assert(dlen + 4 <= ws->ws_pi.pi_len);
@@ -619,11 +619,11 @@ static void wepify(struct wstate *ws, unsigned char *body, int dlen)
 	for (i = 0; i < dlen + 4; i++) *body++ ^= ws->ws_pi.pi_prga[i];
 }
 
-static void send_auth(struct wstate *ws)
+static void send_auth(struct wstate * ws)
 {
 	unsigned char buf[128];
-	struct ieee80211_frame *wh = (struct ieee80211_frame *) buf;
-	unsigned short *n;
+	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
+	unsigned short * n;
 
 	memset(buf, 0, sizeof(buf));
 	fill_basic(ws, wh);
@@ -637,9 +637,9 @@ static void send_auth(struct wstate *ws)
 }
 
 static int
-get_victim_ssid(struct wstate *ws, struct ieee80211_frame *wh, int len)
+get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 {
-	unsigned char *ptr;
+	unsigned char * ptr;
 	int x;
 	int gots = 0, gotc = 0;
 
@@ -739,17 +739,17 @@ get_victim_ssid(struct wstate *ws, struct ieee80211_frame *wh, int len)
 	return 0;
 }
 
-static void send_ack(struct wstate *ws)
+static void send_ack(struct wstate * ws)
 {
 	if (ws)
 	{
 	} /* XXX unused */
-	/* firmware acks */
+	  /* firmware acks */
 }
 
-static void do_llc(unsigned char *buf, unsigned short type)
+static void do_llc(unsigned char * buf, unsigned short type)
 {
-	struct llc *h = (struct llc *) buf;
+	struct llc * h = (struct llc *) buf;
 
 	memset(h, 0, sizeof(*h));
 	h->llc_dsap = LLC_SNAP_LSAP;
@@ -758,10 +758,10 @@ static void do_llc(unsigned char *buf, unsigned short type)
 	h->llc_un.type_snap.ether_type = htons(type);
 }
 
-static void set_prga(struct wstate *ws,
-					 unsigned char *iv,
-					 unsigned char *cipher,
-					 unsigned char *clear,
+static void set_prga(struct wstate * ws,
+					 unsigned char * iv,
+					 unsigned char * cipher,
+					 unsigned char * clear,
 					 int len)
 {
 	int i;
@@ -829,7 +829,7 @@ static void set_prga(struct wstate *ws,
 	close(fd);
 }
 
-static void proc_ctl(struct wstate *ws, int stype)
+static void proc_ctl(struct wstate * ws, int stype)
 {
 	if (stype == IEEE80211_FC0_SUBTYPE_ACK)
 	{
@@ -848,10 +848,10 @@ static void proc_ctl(struct wstate *ws, int stype)
 	time_print("got CTL=%x\n", stype);
 }
 
-static void proc_mgt(struct wstate *ws, int stype, unsigned char *body)
+static void proc_mgt(struct wstate * ws, int stype, unsigned char * body)
 {
-	unsigned short *rc;
-	unsigned short *sc;
+	unsigned short * rc;
+	unsigned short * sc;
 	unsigned int aid;
 
 	if (stype == IEEE80211_FC0_SUBTYPE_DEAUTH)
@@ -942,7 +942,7 @@ static void proc_mgt(struct wstate *ws, int stype, unsigned char *body)
 	exit(1);
 }
 
-static void proc_data(struct wstate *ws, struct ieee80211_frame *wh, int len)
+static void proc_data(struct wstate * ws, struct ieee80211_frame * wh, int len)
 {
 	int dlen;
 	dlen = len - sizeof(*wh) - 4 - 4;
@@ -976,10 +976,11 @@ static void proc_data(struct wstate *ws, struct ieee80211_frame *wh, int len)
 	}
 }
 
-static void stuff_for_us(struct wstate *ws, struct ieee80211_frame *wh, int len)
+static void
+stuff_for_us(struct wstate * ws, struct ieee80211_frame * wh, int len)
 {
 	int type, stype;
-	unsigned char *body = (unsigned char *) (wh + 1);
+	unsigned char * body = (unsigned char *) (wh + 1);
 
 	type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
 	stype = wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK;
@@ -1012,13 +1013,13 @@ static void stuff_for_us(struct wstate *ws, struct ieee80211_frame *wh, int len)
 }
 
 static void
-decrypt_arpreq(struct wstate *ws, struct ieee80211_frame *wh, int rd)
+decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 {
-	unsigned char *body;
+	unsigned char * body;
 	int bodylen;
 	unsigned char clear[36];
-	unsigned char *ptr;
-	struct arphdr *h;
+	unsigned char * ptr;
+	struct arphdr * h;
 	int i;
 
 	body = (unsigned char *) wh + sizeof(*wh);
@@ -1066,12 +1067,12 @@ decrypt_arpreq(struct wstate *ws, struct ieee80211_frame *wh, int rd)
 	time_print("Got ARP request from (%s)\n", mac2str(wh->i_addr3));
 }
 
-static void log_wep(struct wstate *ws, struct ieee80211_frame *wh, int len)
+static void log_wep(struct wstate * ws, struct ieee80211_frame * wh, int len)
 {
 	int rd;
 	struct pcap_pkthdr pkh;
 	struct timeval tv;
-	unsigned char *body = (unsigned char *) (wh + 1);
+	unsigned char * body = (unsigned char *) (wh + 1);
 
 	memset(&pkh, 0, sizeof(pkh));
 	pkh.caplen = pkh.len = len;
@@ -1104,12 +1105,13 @@ static void log_wep(struct wstate *ws, struct ieee80211_frame *wh, int len)
 	ws->ws_packets++;
 }
 
-static void add_keystream(struct wstate *ws, struct ieee80211_frame *wh, int rd)
+static void
+add_keystream(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 {
 	unsigned char clear[1024];
 	int dlen = rd - sizeof(struct ieee80211_frame) - 4 - 4;
 	int clearsize;
-	unsigned char *body = (unsigned char *) (wh + 1);
+	unsigned char * body = (unsigned char *) (wh + 1);
 	int i, weight[16], k, j;
 
 	k = known_clear(clear, &clearsize, weight, (void *) wh, dlen);
@@ -1122,16 +1124,16 @@ static void add_keystream(struct wstate *ws, struct ieee80211_frame *wh, int rd)
 	PTW_addsession(ws->ws_ptw, body, clear, weight, k);
 }
 
-static void got_ip(struct wstate *ws)
+static void got_ip(struct wstate * ws)
 {
 	unsigned char ip[4];
 	int i;
-	struct in_addr *in = (struct in_addr *) ip;
-	char *ptr;
+	struct in_addr * in = (struct in_addr *) ip;
+	char * ptr;
 
 	for (i = 0; i < 4; i++)
-		ip[i] =
-			ws->ws_cipher[8 + 8 + 6 + i] ^ ws->ws_dpi.pi_prga[8 + 8 + 6 + i];
+		ip[i]
+			= ws->ws_cipher[8 + 8 + 6 + i] ^ ws->ws_dpi.pi_prga[8 + 8 + 6 + i];
 
 	assert(!ws->ws_netip);
 	ws->ws_netip = malloc(16);
@@ -1167,9 +1169,9 @@ static void got_ip(struct wstate *ws)
 	memset(&ws->ws_dfs, 0, sizeof(ws->ws_dfs));
 }
 
-static void check_relay(struct wstate *ws,
-						struct ieee80211_frame *wh,
-						unsigned char *body,
+static void check_relay(struct wstate * ws,
+						struct ieee80211_frame * wh,
+						unsigned char * body,
 						int dlen)
 {
 	// looks like it...
@@ -1211,13 +1213,13 @@ static void check_relay(struct wstate *ws,
 	}
 }
 
-static void got_wep(struct wstate *ws, struct ieee80211_frame *wh, int rd)
+static void got_wep(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 {
 	int bodylen;
 	int dlen;
 	unsigned char clear[1024];
 	int clearsize;
-	unsigned char *body;
+	unsigned char * body;
 
 	bodylen = rd - sizeof(struct ieee80211_frame);
 
@@ -1263,7 +1265,8 @@ static void got_wep(struct wstate *ws, struct ieee80211_frame *wh, int rd)
 	set_prga(ws, body, &body[4], clear, clearsize);
 }
 
-static void stuff_for_net(struct wstate *ws, struct ieee80211_frame *wh, int rd)
+static void
+stuff_for_net(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 {
 	int type, stype;
 
@@ -1304,13 +1307,13 @@ static void stuff_for_net(struct wstate *ws, struct ieee80211_frame *wh, int rd)
 	}
 }
 
-static void anal(struct wstate *ws, unsigned char *buf, int rd) // yze
+static void anal(struct wstate * ws, unsigned char * buf, int rd) // yze
 {
-	struct ieee80211_frame *wh = (struct ieee80211_frame *) buf;
+	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	int type, stype;
 	static int lastseq = -1;
 	int seq;
-	unsigned short *seqptr;
+	unsigned short * seqptr;
 	int for_us = 0;
 
 	if (rd < 1)
@@ -1335,8 +1338,8 @@ static void anal(struct wstate *ws, unsigned char *buf, int rd) // yze
 
 	// XXX i know it aint great...
 	seqptr = (unsigned short *) wh->i_seq;
-	seq =
-		(le16toh(*seqptr) & IEEE80211_SEQ_SEQ_MASK) >> IEEE80211_SEQ_SEQ_SHIFT;
+	seq = (le16toh(*seqptr) & IEEE80211_SEQ_SEQ_MASK)
+		  >> IEEE80211_SEQ_SEQ_SHIFT;
 	if (seq == lastseq && (wh->i_fc[1] & IEEE80211_FC1_RETRY)
 		&& type != IEEE80211_FC0_TYPE_CTL)
 	{
@@ -1383,17 +1386,17 @@ static void anal(struct wstate *ws, unsigned char *buf, int rd) // yze
 	}
 }
 
-static void do_arp(unsigned char *buf,
+static void do_arp(unsigned char * buf,
 				   unsigned short op,
-				   unsigned char *m1,
-				   char *i1,
-				   unsigned char *m2,
-				   char *i2)
+				   unsigned char * m1,
+				   char * i1,
+				   unsigned char * m2,
+				   char * i2)
 {
 	struct in_addr sip;
 	struct in_addr dip;
-	struct arphdr *h;
-	unsigned char *data;
+	struct arphdr * h;
+	unsigned char * data;
 
 	inet_aton(i1, &sip);
 	inet_aton(i2, &dip);
@@ -1421,16 +1424,16 @@ static void do_arp(unsigned char *buf,
 }
 
 static void
-send_fragment(struct wstate *ws, struct frag_state *fs, struct prga_info *pi)
+send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 {
 	unsigned char buf[4096];
-	struct ieee80211_frame *wh;
-	unsigned char *body;
+	struct ieee80211_frame * wh;
+	unsigned char * body;
 	int fragsize;
 	uLong crc;
-	unsigned int *pcrc;
+	unsigned int * pcrc;
 	int i;
-	unsigned short *seq;
+	unsigned short * seq;
 	unsigned short sn, fn;
 
 	wh = (struct ieee80211_frame *) buf;
@@ -1463,7 +1466,8 @@ send_fragment(struct wstate *ws, struct frag_state *fs, struct prga_info *pi)
 	pcrc = (unsigned int *) (body + fragsize);
 	*pcrc = htole32(crc);
 
-	for (i = 0; fragsize < (INT_MAX - 4) && i < (fragsize + 4); i++) body[i] ^= pi->pi_prga[i];
+	for (i = 0; fragsize < (INT_MAX - 4) && i < (fragsize + 4); i++)
+		body[i] ^= pi->pi_prga[i];
 
 	seq = (unsigned short *) &wh->i_seq;
 	sn = (le16toh(*seq) & IEEE80211_SEQ_SEQ_MASK) >> IEEE80211_SEQ_SEQ_SHIFT;
@@ -1483,7 +1487,8 @@ send_fragment(struct wstate *ws, struct frag_state *fs, struct prga_info *pi)
 	}
 }
 
-static void prepare_fragstate(struct wstate *ws, struct frag_state *fs, int pad)
+static void
+prepare_fragstate(struct wstate * ws, struct frag_state * fs, int pad)
 {
 	fs->fs_waiting_relay = 0;
 	fs->fs_len = 8 + 8 + 20 + pad;
@@ -1510,13 +1515,13 @@ static void prepare_fragstate(struct wstate *ws, struct frag_state *fs, int pad)
 
 	memset(fs->fs_wh.i_addr3, 0xff, 6);
 	fs->fs_wh.i_fc[0] |= IEEE80211_FC0_TYPE_DATA;
-	fs->fs_wh.i_fc[1] |=
-		IEEE80211_FC1_DIR_TODS | IEEE80211_FC1_MORE_FRAG | IEEE80211_FC1_WEP;
+	fs->fs_wh.i_fc[1]
+		|= IEEE80211_FC1_DIR_TODS | IEEE80211_FC1_MORE_FRAG | IEEE80211_FC1_WEP;
 
 	memset(&fs->fs_data[8 + 8 + 20], 0, pad);
 }
 
-static void discover_prga(struct wstate *ws)
+static void discover_prga(struct wstate * ws)
 {
 	// create packet...
 	if (!ws->ws_fs.fs_data)
@@ -1539,7 +1544,7 @@ static void discover_prga(struct wstate *ws)
 	}
 }
 
-static void decrypt(struct wstate *ws)
+static void decrypt(struct wstate * ws)
 {
 	// gotta initiate
 	if (!ws->ws_dfs.fs_data)
@@ -1567,24 +1572,24 @@ static void decrypt(struct wstate *ws)
 		seq = fnseq(0, ws->ws_psent);
 		ws->ws_dfs.fs_wh.i_seq[0] = (u_int8_t)(seq >> 8);
 		ws->ws_dfs.fs_wh.i_seq[1] = (u_int8_t)(seq % 256);
-		//seq = (unsigned short*) &ws->ws_dfs.fs_wh.i_seq;
+		// seq = (unsigned short*) &ws->ws_dfs.fs_wh.i_seq;
 		//*seq = fnseq(0, ws->ws_psent);
 	}
 
 	send_fragment(ws, &ws->ws_dfs, &ws->ws_dpi);
 }
 
-static void send_arp(struct wstate *ws,
+static void send_arp(struct wstate * ws,
 					 unsigned short op,
-					 char *srcip,
-					 unsigned char *srcmac,
-					 char *dstip,
-					 unsigned char *dstmac)
+					 char * srcip,
+					 unsigned char * srcmac,
+					 char * dstip,
+					 unsigned char * dstmac)
 {
 	static unsigned char arp_pkt[128];
-	unsigned char *body;
-	unsigned char *ptr;
-	struct ieee80211_frame *wh;
+	unsigned char * body;
+	unsigned char * ptr;
+	struct ieee80211_frame * wh;
 	int arp_len;
 
 	memset(arp_pkt, 0, sizeof(arp_pkt));
@@ -1612,7 +1617,7 @@ static void send_arp(struct wstate *ws,
 	send_frame(ws, arp_pkt, arp_len);
 }
 
-static int find_mac(struct wstate *ws)
+static int find_mac(struct wstate * ws)
 {
 	if (!(ws->ws_netip && !ws->ws_rtrmac)) return 0;
 
@@ -1632,7 +1637,7 @@ static int find_mac(struct wstate *ws)
 	return 1;
 }
 
-static int flood(struct wstate *ws)
+static int flood(struct wstate * ws)
 {
 	if (!(ws->ws_rtrmac > (unsigned char *) 1 && ws->ws_netip)) return 0;
 
@@ -1647,7 +1652,7 @@ static int flood(struct wstate *ws)
 	return 1;
 }
 
-static void can_write(struct wstate *ws)
+static void can_write(struct wstate * ws)
 {
 	switch (ws->ws_state)
 	{
@@ -1686,7 +1691,7 @@ static void can_write(struct wstate *ws)
 	}
 }
 
-static void save_key(unsigned char *key, int len)
+static void save_key(unsigned char * key, int len)
 {
 	char tmp[16];
 	char k[64];
@@ -1714,7 +1719,7 @@ static void save_key(unsigned char *key, int len)
 	close(fd);
 }
 
-static int do_crack(struct wstate *ws)
+static int do_crack(struct wstate * ws)
 {
 	unsigned char key[PTW_KEYHSBYTES];
 	int(*all)[256];
@@ -1726,7 +1731,7 @@ static int do_crack(struct wstate *ws)
 		return 1;
 	}
 
-	//initial setup (complete keyspace)
+	// initial setup (complete keyspace)
 	for (i = 0; i < 32; i++)
 	{
 		for (j = 0; j < 256; j++)
@@ -1756,7 +1761,7 @@ static int do_crack(struct wstate *ws)
 
 static void sigchild(int x)
 {
-	struct wstate *ws;
+	struct wstate * ws;
 
 	if (x)
 	{
@@ -1766,7 +1771,7 @@ static void sigchild(int x)
 	ws->ws_crack_pid = 0; /* crack done */
 }
 
-static void try_crack(struct wstate *ws)
+static void try_crack(struct wstate * ws)
 {
 	if (ws->ws_crack_pid)
 	{
@@ -1803,7 +1808,7 @@ static void try_crack(struct wstate *ws)
 	ws->ws_wep_thresh += ws->ws_thresh_incr;
 }
 
-static int elapsedd(struct timeval *past, struct timeval *now)
+static int elapsedd(struct timeval * past, struct timeval * now)
 {
 	int el;
 	int inf = 666 * 1000 * 1000;
@@ -1826,12 +1831,12 @@ static int elapsedd(struct timeval *past, struct timeval *now)
 	return el;
 }
 
-static int read_packet(struct wstate *ws, unsigned char *dst, int len)
+static int read_packet(struct wstate * ws, unsigned char * dst, int len)
 {
 	return wi_read(ws->ws_wi, dst, len, NULL);
 }
 
-static void open_wepfile(struct wstate *ws)
+static void open_wepfile(struct wstate * ws)
 {
 	ws->ws_fd = open(WEP_FILE, O_WRONLY | O_APPEND);
 	if (ws->ws_fd == -1)
@@ -1864,7 +1869,7 @@ static void open_wepfile(struct wstate *ws)
 	if (ws->ws_fd == -1) err(1, "open()");
 }
 
-static void load_prga(struct wstate *ws)
+static void load_prga(struct wstate * ws)
 {
 	int fd, rd;
 	unsigned char buf[4096];
@@ -1888,7 +1893,7 @@ static void load_prga(struct wstate *ws)
 	}
 }
 
-static void check_relay_timeout(struct wstate *ws, struct timeval *now)
+static void check_relay_timeout(struct wstate * ws, struct timeval * now)
 {
 	int el;
 
@@ -1904,7 +1909,7 @@ static void check_relay_timeout(struct wstate *ws, struct timeval *now)
 	}
 }
 
-static void check_arp_timeout(struct wstate *ws, struct timeval *now)
+static void check_arp_timeout(struct wstate * ws, struct timeval * now)
 {
 	int el;
 	if (ws->ws_rtrmac != (unsigned char *) 1) return;
@@ -1916,10 +1921,10 @@ static void check_arp_timeout(struct wstate *ws, struct timeval *now)
 	}
 }
 
-static void display_status_bar(struct wstate *ws,
-							   struct timeval *now,
-							   struct timeval *last_status,
-							   char *pbarp)
+static void display_status_bar(struct wstate * ws,
+							   struct timeval * now,
+							   struct timeval * last_status,
+							   char * pbarp)
 {
 	int el;
 
@@ -1966,7 +1971,7 @@ static void display_status_bar(struct wstate *ws,
 	memcpy(last_status, now, sizeof(*last_status));
 }
 
-static void check_tx(struct wstate *ws, struct timeval *now)
+static void check_tx(struct wstate * ws, struct timeval * now)
 {
 	int elapsed;
 
@@ -1976,7 +1981,7 @@ static void check_tx(struct wstate *ws, struct timeval *now)
 	if (elapsed >= (int) ws->ws_ack_timeout) send_frame(ws, NULL, -1);
 }
 
-static void check_hop(struct wstate *ws, struct timeval *now)
+static void check_hop(struct wstate * ws, struct timeval * now)
 {
 	int elapsed;
 	int chan = ws->ws_chan;
@@ -1992,7 +1997,7 @@ static void check_hop(struct wstate *ws, struct timeval *now)
 	memcpy(&ws->ws_lasthop, now, sizeof(ws->ws_lasthop));
 }
 
-static void post_input(struct wstate *ws, struct timeval *now)
+static void post_input(struct wstate * ws, struct timeval * now)
 {
 	int el;
 
@@ -2021,7 +2026,7 @@ static void post_input(struct wstate *ws, struct timeval *now)
 		try_crack(ws);
 }
 
-static void do_input(struct wstate *ws)
+static void do_input(struct wstate * ws)
 {
 	unsigned char buf[4096];
 	int rd;
@@ -2038,13 +2043,13 @@ static void do_input(struct wstate *ws)
 	anal(ws, buf, rd);
 }
 
-static void own(struct wstate *ws)
+static void own(struct wstate * ws)
 {
 	int rd;
 	fd_set rfd;
 	struct timeval tv;
-	char *pbar = "/-\\|";
-	char *pbarp = &pbar[0];
+	char * pbar = "/-\\|";
+	char * pbarp = &pbar[0];
 	struct timeval now;
 	struct timeval last_status;
 	int largest;
@@ -2145,9 +2150,9 @@ static void own(struct wstate *ws)
 	}
 }
 
-static void start(struct wstate *ws, char *dev)
+static void start(struct wstate * ws, char * dev)
 {
-	struct wif *wi;
+	struct wif * wi;
 
 	ws->ws_wi = wi = wi_open(dev);
 	if (!wi) err(1, "wi_open(%s)", dev);
@@ -2170,13 +2175,13 @@ static void start(struct wstate *ws, char *dev)
 	wi_close(wi);
 }
 
-static void usage(char *pname)
+static void usage(char * pname)
 {
 	if (pname)
 	{
 	}
-	char *version_info =
-		getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+	char * version_info
+		= getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		   "  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
 		   "  https://www.aircrack-ng.org\n"
@@ -2202,7 +2207,7 @@ static void usage(char *pname)
 	exit(0);
 }
 
-static void str2mac(unsigned char *dst, char *mac)
+static void str2mac(unsigned char * dst, char * mac)
 {
 	unsigned int macf[6];
 	int i;
@@ -2225,7 +2230,7 @@ static void str2mac(unsigned char *dst, char *mac)
 	for (i = 0; i < 6; i++) *dst++ = (unsigned char) macf[i];
 }
 
-static void init_defaults(struct wstate *ws)
+static void init_defaults(struct wstate * ws)
 {
 	memset(ws, 0, sizeof(*ws));
 
@@ -2240,12 +2245,12 @@ static void init_defaults(struct wstate *ws)
 	ws->ws_crack_dur = 60;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
-	struct wstate *ws = get_ws();
+	struct wstate * ws = get_ws();
 	int ch;
 	unsigned char vic[6];
-	char *dev = "IdidNotSpecifyAnInterface";
+	char * dev = "IdidNotSpecifyAnInterface";
 
 	assert(ws);
 	init_defaults(ws);

@@ -49,19 +49,19 @@ struct priv_cygwin
 	int pc_pipe[2]; /* reader -> parent */
 	int pc_channel;
 	int pc_frequency;
-	struct wif *pc_wi;
+	struct wif * pc_wi;
 	int pc_did_init;
 
 	int isAirpcap;
 	int useDll;
 
-	int (*pc_init)(char *param);
+	int (*pc_init)(char * param);
 	int (*pc_set_chan)(int chan);
 	int (*pc_set_freq)(int freq);
-	int (*pc_inject)(void *buf, int len, struct tx_info *ti);
-	int (*pc_sniff)(void *buf, int len, struct rx_info *ri);
-	int (*pc_get_mac)(void *mac);
-	int (*pc_set_mac)(void *mac);
+	int (*pc_inject)(void * buf, int len, struct tx_info * ti);
+	int (*pc_sniff)(void * buf, int len, struct rx_info * ri);
+	int (*pc_get_mac)(void * mac);
+	int (*pc_set_mac)(void * mac);
 	void (*pc_close)(void);
 };
 
@@ -69,9 +69,10 @@ struct priv_cygwin
  * strstr() function case insensitive
  * @param String C string to be scanned
  * @param Pattern C string containing the sequence of characters to match
- * @return Pointer to the first occurrence of Pattern in String, or a null pointer if there Pattern is not part of String.
+ * @return Pointer to the first occurrence of Pattern in String, or a null
+ * pointer if there Pattern is not part of String.
  */
-char *stristr(const char *String, const char *Pattern)
+char * stristr(const char * String, const char * Pattern)
 {
 	char *pptr, *sptr, *start;
 	unsigned slen, plen;
@@ -122,12 +123,12 @@ char *stristr(const char *String, const char *Pattern)
  * - injecting packets
  * @param iface The interface name
  */
-static int do_cygwin_open(struct wif *wi, char *iface)
+static int do_cygwin_open(struct wif * wi, char * iface)
 {
-	struct priv_cygwin *priv = wi_priv(wi);
-	void *lib;
-	char *file;
-	char *parm;
+	struct priv_cygwin * priv = wi_priv(wi);
+	void * lib;
+	char * file;
+	char * parm;
 	int rc = -1;
 
 	if (!iface) return -1;
@@ -223,9 +224,9 @@ static int do_cygwin_open(struct wif *wi, char *iface)
  * @param chan Channel
  * @return 0 if successful, -1 if it failed
  */
-static int cygwin_set_channel(struct wif *wi, int chan)
+static int cygwin_set_channel(struct wif * wi, int chan)
 {
-	struct priv_cygwin *priv = wi_priv(wi);
+	struct priv_cygwin * priv = wi_priv(wi);
 
 	if (priv->pc_set_chan(chan) == -1) return -1;
 
@@ -238,9 +239,9 @@ static int cygwin_set_channel(struct wif *wi, int chan)
  * @param freq Frequency
  * @return 0 if successful, -1 if it failed
  */
-static int cygwin_set_freq(struct wif *wi, int freq)
+static int cygwin_set_freq(struct wif * wi, int freq)
 {
-	struct priv_cygwin *priv = wi_priv(wi);
+	struct priv_cygwin * priv = wi_priv(wi);
 
 	if (!priv->pc_set_freq || priv->pc_set_freq(freq) == -1) return -1;
 
@@ -255,10 +256,10 @@ static int cygwin_set_freq(struct wif *wi, int freq)
  * @param ri Receive information structure
  * @return -1 in case of failure or the number of bytes received
  */
-static int cygwin_read_packet(struct priv_cygwin *priv,
-							  void *buf,
+static int cygwin_read_packet(struct priv_cygwin * priv,
+							  void * buf,
 							  int len,
-							  struct rx_info *ri)
+							  struct rx_info * ri)
 {
 	int rd;
 
@@ -279,10 +280,12 @@ static int cygwin_read_packet(struct priv_cygwin *priv,
  * @param ti Transmit information
  * @return -1 if failure or the number of bytes sent
  */
-static int
-cygwin_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
+static int cygwin_write(struct wif * wi,
+						unsigned char * h80211,
+						int len,
+						struct tx_info * ti)
 {
-	struct priv_cygwin *priv = wi_priv(wi);
+	struct priv_cygwin * priv = wi_priv(wi);
 	int rc;
 
 	if ((rc = priv->pc_inject(h80211, len, ti)) == -1) return -1;
@@ -294,21 +297,21 @@ cygwin_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
  * Get device channel
  * @return channel
  */
-static int cygwin_get_channel(struct wif *wi)
+static int cygwin_get_channel(struct wif * wi)
 {
-	struct priv_cygwin *pc = wi_priv(wi);
+	struct priv_cygwin * pc = wi_priv(wi);
 
 	return pc->pc_channel;
 }
 
-static int cygwin_get_freq(struct wif *wi)
+static int cygwin_get_freq(struct wif * wi)
 {
-	struct priv_cygwin *pc = wi_priv(wi);
+	struct priv_cygwin * pc = wi_priv(wi);
 
 	return pc->pc_frequency;
 }
 
-int cygwin_read_reader(int fd, int plen, void *dst, int len)
+int cygwin_read_reader(int fd, int plen, void * dst, int len)
 {
 	/* packet */
 	if (len > plen) len = plen;
@@ -333,10 +336,12 @@ int cygwin_read_reader(int fd, int plen, void *dst, int len)
 	return len;
 }
 
-static int
-cygwin_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
+static int cygwin_read(struct wif * wi,
+					   unsigned char * h80211,
+					   int len,
+					   struct rx_info * ri)
 {
-	struct priv_cygwin *pc = wi_priv(wi);
+	struct priv_cygwin * pc = wi_priv(wi);
 	struct rx_info tmp;
 	int plen;
 
@@ -358,9 +363,9 @@ cygwin_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 /**
  * Free allocated data
  */
-static void do_free(struct wif *wi)
+static void do_free(struct wif * wi)
 {
-	struct priv_cygwin *pc = wi_priv(wi);
+	struct priv_cygwin * pc = wi_priv(wi);
 	int tries = 3;
 
 	/* wait for reader */
@@ -389,14 +394,14 @@ static void do_free(struct wif *wi)
 /**
  * Close the device and free data
  */
-static void cygwin_close(struct wif *wi) { do_free(wi); }
+static void cygwin_close(struct wif * wi) { do_free(wi); }
 
 /**
  * Get the file descriptor for the device
  */
-static int cygwin_fd(struct wif *wi)
+static int cygwin_fd(struct wif * wi)
 {
-	struct priv_cygwin *pc = wi_priv(wi);
+	struct priv_cygwin * pc = wi_priv(wi);
 
 	if (pc->pc_running == -1) return -1;
 
@@ -408,9 +413,9 @@ static int cygwin_fd(struct wif *wi)
  * @param mac It will contain the mac address
  * @return 0 if successful
  */
-static int cygwin_get_mac(struct wif *wi, unsigned char *mac)
+static int cygwin_get_mac(struct wif * wi, unsigned char * mac)
 {
-	struct priv_cygwin *pc = wi_priv(wi);
+	struct priv_cygwin * pc = wi_priv(wi);
 
 	return pc->pc_get_mac(mac);
 }
@@ -419,14 +424,14 @@ static int cygwin_get_mac(struct wif *wi, unsigned char *mac)
  * @param mac MAC Address
  * @return 0 if successful
  */
-static int cygwin_set_mac(struct wif *wi, unsigned char *mac)
+static int cygwin_set_mac(struct wif * wi, unsigned char * mac)
 {
-	struct priv_cygwin *pc = wi_priv(wi);
+	struct priv_cygwin * pc = wi_priv(wi);
 
 	return pc->pc_set_mac(mac);
 }
 
-static int cygwin_get_monitor(struct wif *wi)
+static int cygwin_get_monitor(struct wif * wi)
 {
 	if (wi)
 	{
@@ -435,7 +440,7 @@ static int cygwin_get_monitor(struct wif *wi)
 	return 0;
 }
 
-static int cygwin_get_rate(struct wif *wi)
+static int cygwin_get_rate(struct wif * wi)
 {
 	if (wi)
 	{
@@ -449,7 +454,7 @@ static int cygwin_get_rate(struct wif *wi)
  * @param rate Rate to be used
  * @return 0 (successful)
  */
-static int cygwin_set_rate(struct wif *wi, int rate)
+static int cygwin_set_rate(struct wif * wi, int rate)
 {
 	if (wi || rate)
 	{
@@ -458,9 +463,9 @@ static int cygwin_set_rate(struct wif *wi, int rate)
 	return 0;
 }
 
-static void *cygwin_reader(void *arg)
+static void * cygwin_reader(void * arg)
 {
-	struct priv_cygwin *priv = arg;
+	struct priv_cygwin * priv = arg;
 	unsigned char buf[2048];
 	int len;
 	struct rx_info ri;
@@ -492,10 +497,10 @@ static void *cygwin_reader(void *arg)
 	return NULL;
 }
 
-static struct wif *cygwin_open(char *iface)
+static struct wif * cygwin_open(char * iface)
 {
-	struct wif *wi;
-	struct priv_cygwin *priv;
+	struct wif * wi;
+	struct priv_cygwin * priv;
 
 	/* setup wi struct */
 	wi = wi_alloc(sizeof(*priv));
@@ -534,7 +539,7 @@ err:
 	return NULL;
 }
 
-struct wif *wi_open_osdep(char *iface) { return cygwin_open(iface); }
+struct wif * wi_open_osdep(char * iface) { return cygwin_open(iface); }
 
 /**
  * Return remaining battery time in seconds.

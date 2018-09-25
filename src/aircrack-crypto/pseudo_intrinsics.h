@@ -371,14 +371,14 @@ typedef __m512i vtype;
 #if __MIC__
 #define _mm512_set1_epi8(x) _mm512_set1_epi32(x | x << 8 | x << 16 | x << 24)
 
-static inline __m512i _mm512_loadu_si512(void const *addr)
+static inline __m512i _mm512_loadu_si512(void const * addr)
 {
 	__m512i indices = _mm512_set_epi64(7, 6, 5, 4, 3, 2, 1, 0);
 	return is_aligned(addr, 64) ? _mm512_load_si512(addr)
 								: _mm512_i64gather_epi64(indices, addr, 8);
 }
 
-static inline void _mm512_storeu_si512(void *addr, vtype d)
+static inline void _mm512_storeu_si512(void * addr, vtype d)
 {
 	__m512i indices = _mm512_set_epi64(7, 6, 5, 4, 3, 2, 1, 0);
 
@@ -671,7 +671,7 @@ _inline __m128i _mm_set1_epi64(long long a)
 #endif
 
 #if VLOADU_EMULATED
-static INLINE vtype vloadu_emu(const void *addr)
+static INLINE vtype vloadu_emu(const void * addr)
 {
 	if (is_aligned(addr, MEM_ALIGN_SIMD))
 		return vload(addr);
@@ -685,7 +685,7 @@ static INLINE vtype vloadu_emu(const void *addr)
 #endif
 
 #if VSTOREU_EMULATED
-static INLINE void vstoreu_emu(void *addr, vtype v)
+static INLINE void vstoreu_emu(void * addr, vtype v)
 {
 	if (is_aligned(addr, MEM_ALIGN_SIMD))
 		vstore(addr, v);

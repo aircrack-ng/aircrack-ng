@@ -64,30 +64,36 @@
 typedef uint16_t u16;
 typedef uint8_t u8;
 
-static inline void WPA_PUT_LE16(u8 *a, u16 val)
+static inline void WPA_PUT_LE16(u8 * a, u16 val)
 {
-	a[1] = (u8) (val >> 8u);
-	a[0] = (u8) (val & 0xff);
+	a[1] = (u8)(val >> 8u);
+	a[0] = (u8)(val & 0xff);
 }
 
-static void sha256_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
+static void
+sha256_vector(size_t num_elem, const u8 * addr[], const size_t * len, u8 * mac)
 {
 	SHA256_CTX ctx;
 	size_t i;
 
 	SHA256_Init(&ctx);
-	for (i = 0; i < num_elem; i++) {
+	for (i = 0; i < num_elem; i++)
+	{
 		SHA256_Update(&ctx, addr[i], len[i]);
 	}
 
 	SHA256_Final(mac, &ctx);
 }
 
-static void hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
-                               const u8 *addr[], const size_t *len, u8 *mac)
+static void hmac_sha256_vector(const u8 * key,
+							   size_t key_len,
+							   size_t num_elem,
+							   const u8 * addr[],
+							   const size_t * len,
+							   u8 * mac)
 {
 	unsigned char k_pad[64]; /* padding - key XORd with ipad/opad */
-	const u8 *_addr[6];
+	const u8 * _addr[6];
 	size_t _len[6], i;
 
 	/* the HMAC_SHA256 transform looks like:
@@ -103,13 +109,13 @@ static void hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
 	memset(k_pad, 0, sizeof(k_pad));
 	memcpy(k_pad, key, key_len);
 	/* XOR key with ipad values */
-	for (i = 0; i < 64; i++)
-		k_pad[i] ^= 0x36;
+	for (i = 0; i < 64; i++) k_pad[i] ^= 0x36;
 
 	/* perform inner SHA256 */
 	_addr[0] = k_pad;
 	_len[0] = 64;
-	for (i = 0; i < num_elem; i++) {
+	for (i = 0; i < num_elem; i++)
+	{
 		_addr[i + 1] = addr[i];
 		_len[i + 1] = len[i];
 	}
@@ -118,8 +124,7 @@ static void hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
 	memset(k_pad, 0, sizeof(k_pad));
 	memcpy(k_pad, key, key_len);
 	/* XOR key with opad values */
-	for (i = 0; i < 64; i++)
-		k_pad[i] ^= 0x5c;
+	for (i = 0; i < 64; i++) k_pad[i] ^= 0x5c;
 
 	/* perform outer SHA256 */
 	_addr[0] = k_pad;
@@ -129,13 +134,18 @@ static void hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
 	sha256_vector(2, _addr, _len, mac);
 }
 
-static void sha256_prf_bits(const u8 *key, size_t key_len, const char *label,
-                            const u8 *data, size_t data_len, u8 *buf, size_t buf_len_bits)
+static void sha256_prf_bits(const u8 * key,
+							size_t key_len,
+							const char * label,
+							const u8 * data,
+							size_t data_len,
+							u8 * buf,
+							size_t buf_len_bits)
 {
 	u16 counter = 1;
 	size_t pos, plen;
 	u8 hash[SHA256_MAC_LEN];
-	const u8 *addr[4];
+	const u8 * addr[4];
 	size_t len[4];
 	u8 counter_le[2], length_le[2];
 	size_t buf_len = (buf_len_bits + 7) / 8;
@@ -152,13 +162,17 @@ static void sha256_prf_bits(const u8 *key, size_t key_len, const char *label,
 	WPA_PUT_LE16(length_le, (u16) buf_len_bits);
 	pos = 0;
 
-	while (pos < buf_len) {
+	while (pos < buf_len)
+	{
 		plen = buf_len - pos;
 		WPA_PUT_LE16(counter_le, counter);
-		if (plen >= SHA256_MAC_LEN) {
+		if (plen >= SHA256_MAC_LEN)
+		{
 			hmac_sha256_vector(key, key_len, 4, addr, len, &buf[pos]);
 			pos += SHA256_MAC_LEN;
-		} else {
+		}
+		else
+		{
 			hmac_sha256_vector(key, key_len, 4, addr, len, hash);
 			memcpy(&buf[pos], hash, plen);
 			pos += plen;
@@ -171,8 +185,9 @@ static void sha256_prf_bits(const u8 *key, size_t key_len, const char *label,
 	 * Mask out unused bits in the last octet if it does not use all the
 	 * bits.
 	 */
-	if (buf_len_bits % 8) {
-		u8 mask = (u8) (0xff << (8u - buf_len_bits % 8));
+	if (buf_len_bits % 8)
+	{
+		u8 mask = (u8)(0xff << (8u - buf_len_bits % 8));
 		buf[pos - 1] &= mask;
 	}
 }
@@ -210,7 +225,7 @@ EXPORT int ac_crypto_engine_simd_width()
 #endif
 }
 
-EXPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine)
+EXPORT int ac_crypto_engine_init(ac_crypto_engine_t * engine)
 {
 	assert(engine != NULL);
 #ifdef XDEBUG
@@ -219,18 +234,16 @@ EXPORT int ac_crypto_engine_init(ac_crypto_engine_t *engine)
 
 	init_atoi();
 
-	engine->essid =
-		mem_calloc_align(1, ESSID_LENGTH + 1, MEM_ALIGN_SIMD);
+	engine->essid = mem_calloc_align(1, ESSID_LENGTH + 1, MEM_ALIGN_SIMD);
 
 	engine->essid_length = 0;
 
-	for (int i = 0; i < MAX_THREADS; ++i)
-		engine->thread_data[i] = NULL;
+	for (int i = 0; i < MAX_THREADS; ++i) engine->thread_data[i] = NULL;
 
 	return 0;
 }
 
-EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine)
+EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t * engine)
 {
 	assert(engine != NULL);
 #ifdef XDEBUG
@@ -241,18 +254,18 @@ EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t *engine)
 	engine->essid = NULL;
 }
 
-EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t *engine,
-									   const uint8_t *essid)
+EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t * engine,
+									   const uint8_t * essid)
 {
 	assert(engine != NULL);
 #ifdef XDEBUG
 	fprintf(stderr, "ac_crypto_engine_set_essid(%p, %s)\n", engine, essid);
 #endif
 	memccpy(engine->essid, essid, 0, ESSID_LENGTH);
-	engine->essid_length = (uint32_t) strlen((char*) essid);
+	engine->essid_length = (uint32_t) strlen((char *) essid);
 }
 
-EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
+EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t * engine,
 										int threadid)
 {
 	assert(engine != NULL);
@@ -261,12 +274,13 @@ EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t *engine,
 #endif
 
 	// allocate per-thread data.
-	engine->thread_data[threadid] = mem_calloc_align(1, sizeof(struct ac_crypto_engine_perthread), MEM_ALIGN_SIMD);
+	engine->thread_data[threadid] = mem_calloc_align(
+		1, sizeof(struct ac_crypto_engine_perthread), MEM_ALIGN_SIMD);
 
 	return 0;
 }
 
-EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
+EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t * engine,
 											int threadid)
 {
 	assert(engine != NULL);
@@ -282,24 +296,27 @@ EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t *engine,
 	}
 }
 
-EXPORT uint8_t* ac_crypto_engine_get_pmk(ac_crypto_engine_t *engine, int threadid, int index)
+EXPORT uint8_t *
+ac_crypto_engine_get_pmk(ac_crypto_engine_t * engine, int threadid, int index)
 {
-	return (uint8_t*) engine->thread_data[threadid]->pmk + (sizeof(wpapsk_hash) * index);
+	return (uint8_t *) engine->thread_data[threadid]->pmk
+		   + (sizeof(wpapsk_hash) * index);
 }
 
-EXPORT uint8_t* ac_crypto_engine_get_ptk(ac_crypto_engine_t *engine, int threadid, int index)
+EXPORT uint8_t *
+ac_crypto_engine_get_ptk(ac_crypto_engine_t * engine, int threadid, int index)
 {
-	return (uint8_t*) engine->thread_data[threadid]->ptk + (20 * index);
+	return (uint8_t *) engine->thread_data[threadid]->ptk + (20 * index);
 }
 
-EXPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
+EXPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t * engine,
 									  const uint8_t bssid[6],
 									  const uint8_t stmac[6],
 									  const uint8_t anonce[32],
 									  const uint8_t snonce[32],
 									  int threadid)
 {
-	uint8_t *pke = engine->thread_data[threadid]->pke;
+	uint8_t * pke = engine->thread_data[threadid]->pke;
 
 	assert(pke != NULL);
 
@@ -328,8 +345,8 @@ EXPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t *engine,
 }
 
 /* derive the PMK from the passphrase and the essid */
-EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t *key,
-										  const uint8_t *essid_pre,
+EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t * key,
+										  const uint8_t * essid_pre,
 										  uint32_t essid_pre_len,
 										  uint8_t pmk[40])
 {
@@ -354,7 +371,7 @@ EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t *key,
 	/* setup the inner and outer contexts */
 
 	memset(buffer, 0, sizeof(buffer));
-	strncpy((char *) buffer, (char*) key, sizeof(buffer) - 1);
+	strncpy((char *) buffer, (char *) key, sizeof(buffer) - 1);
 
 	for (i = 0; i < 64; i++) buffer[i] ^= 0x36;
 
@@ -371,7 +388,7 @@ EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t *key,
 	essid[slen - 1] = '\1';
 	HMAC(EVP_sha1(),
 		 key,
-		 (int) strlen((char*) key),
+		 (int) strlen((char *) key),
 		 (unsigned char *) essid,
 		 (size_t) slen,
 		 pmk,
@@ -394,7 +411,7 @@ EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t *key,
 	essid[slen - 1] = '\2';
 	HMAC(EVP_sha1(),
 		 (unsigned char *) key,
-		 (int) strlen((char*) key),
+		 (int) strlen((char *) key),
 		 (unsigned char *) essid,
 		 (size_t) slen,
 		 pmk + 20,
@@ -415,15 +432,15 @@ EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t *key,
 	}
 }
 
-EXPORT void
-ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
-						  const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
-						  const int nparallel,
-						  const int threadid)
+EXPORT void ac_crypto_engine_calc_pmk(
+	ac_crypto_engine_t * engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	const int nparallel,
+	const int threadid)
 {
-	wpapsk_hash *pmk = engine->thread_data[threadid]->pmk;
+	wpapsk_hash * pmk = engine->thread_data[threadid]->pmk;
 
-	// PMK calculation
+// PMK calculation
 #ifdef SIMD_CORE
 	if (nparallel >= 4)
 	{
@@ -436,33 +453,34 @@ ac_crypto_engine_calc_pmk(ac_crypto_engine_t *engine,
 #ifdef XDEBUG
 			printf("%lu: Trying: %s\n", pthread_self(), (char *) key[j].v);
 #endif
-			ac_crypto_engine_calc_one_pmk(
-				key[j].v,
-				(uint8_t*) engine->essid,
-				engine->essid_length,
-				(uint8_t*) (&pmk[j]));
+			ac_crypto_engine_calc_one_pmk(key[j].v,
+										  (uint8_t *) engine->essid,
+										  engine->essid_length,
+										  (uint8_t *) (&pmk[j]));
 		}
 }
 
-EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
-                                      const uint8_t keyver,
+EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t * engine,
+									  const uint8_t keyver,
 									  int vectorIdx,
 									  int threadid)
 {
-	uint8_t *ptk = engine->thread_data[threadid]->ptk;
-	wpapsk_hash *pmk = engine->thread_data[threadid]->pmk;
+	uint8_t * ptk = engine->thread_data[threadid]->ptk;
+	wpapsk_hash * pmk = engine->thread_data[threadid]->pmk;
 
-	if (keyver < 3) {
-		for (int i = 0; i < 4; i++) {
+	if (keyver < 3)
+	{
+		for (int i = 0; i < 4; i++)
+		{
 			*(engine->thread_data[threadid]->pke + 99) = (unsigned char) i;
 
 			HMAC(EVP_sha1(),
-			     (&pmk[vectorIdx]),
-			     32,
-			     engine->thread_data[threadid]->pke,
-			     100,
-			     &ptk[vectorIdx] + i * 20,
-			     NULL);
+				 (&pmk[vectorIdx]),
+				 32,
+				 engine->thread_data[threadid]->pke,
+				 100,
+				 &ptk[vectorIdx] + i * 20,
+				 NULL);
 		}
 	}
 #if defined(HAVE_OPENSSL_CMAC_H) || defined(GCRYPT_WITH_CMAC_AES)
@@ -470,27 +488,34 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t *engine,
 	{
 		uint8_t data[64 + 12];
 
-		uint8_t *pke = &engine->thread_data[threadid]->pke[23];
+		uint8_t * pke = &engine->thread_data[threadid]->pke[23];
 
 		memset(data, 0, sizeof(data));
 		memcpy(data, pke, 6);
 		memcpy(data + 6, pke + 6, 6);
 		memcpy(data + 12, pke + 35 - 23, 64);
 
-		sha256_prf_bits((unsigned char*)(pmk[vectorIdx].v), 32, "Pairwise key expansion", data, 76, ptk, 48 * 8);
+		sha256_prf_bits((unsigned char *) (pmk[vectorIdx].v),
+						32,
+						"Pairwise key expansion",
+						data,
+						76,
+						ptk,
+						48 * 8);
 	}
 #endif
 }
 
-EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
+EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t * engine,
 									  const uint8_t eapol[256],
 									  const uint32_t eapol_size,
-									  uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
+									  uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED]
+												 [20],
 									  const uint8_t keyver,
 									  const int vectorIdx,
 									  const int threadid)
 {
-	uint8_t *ptk = engine->thread_data[threadid]->ptk;
+	uint8_t * ptk = engine->thread_data[threadid]->ptk;
 
 	if (keyver == 1)
 		HMAC(EVP_md5(),
@@ -512,7 +537,7 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 	else if (keyver == 3)
 	{
 		size_t miclen = CMAC_AES_128_MAC_LEN;
-		CMAC_CTX *ctx = NULL;
+		CMAC_CTX * ctx = NULL;
 
 		// Compute MIC
 		ctx = CMAC_CTX_new();
@@ -524,7 +549,10 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 #else
 	else if (keyver == 3)
 	{
-		fprintf(stderr, "Key version %d is only supported when OpenSSL (or similar) supports CMAC.\n", keyver);
+		fprintf(stderr,
+				"Key version %d is only supported when OpenSSL (or similar) "
+				"supports CMAC.\n",
+				keyver);
 		abort();
 	}
 #endif /* HAVE_OPENSSL_CMAC_H */
@@ -535,16 +563,16 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t *engine,
 	}
 }
 
-EXPORT int
-ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
-						   const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
-						   const uint8_t eapol[256],
-						   const uint32_t eapol_size,
-						   uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
-						   const uint8_t keyver,
-						   const uint8_t cmpmic[20],
-						   const int nparallel,
-						   const int threadid)
+EXPORT int ac_crypto_engine_wpa_crack(
+	ac_crypto_engine_t * engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	const uint8_t eapol[256],
+	const uint32_t eapol_size,
+	uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED][20],
+	const uint8_t keyver,
+	const uint8_t cmpmic[20],
+	const int nparallel,
+	const int threadid)
 {
 	ac_crypto_engine_calc_pmk(engine, key, nparallel, threadid);
 
@@ -567,12 +595,12 @@ ac_crypto_engine_wpa_crack(ac_crypto_engine_t *engine,
 	return -1;
 }
 
-EXPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t *engine,
-                                            const uint8_t bssid[6],
-                                            const uint8_t stmac[6],
-		                                    int threadid)
+EXPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t * engine,
+											const uint8_t bssid[6],
+											const uint8_t stmac[6],
+											int threadid)
 {
-	uint8_t *pke = engine->thread_data[threadid]->pke;
+	uint8_t * pke = engine->thread_data[threadid]->pke;
 
 	assert(pke != NULL);
 
@@ -582,17 +610,17 @@ EXPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t *engine,
 	memcpy(pke + 14, stmac, 6);
 }
 
-EXPORT int
-ac_crypto_engine_wpa_pmkid_crack(ac_crypto_engine_t *engine,
-                                 const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
-                                 const uint8_t pmkid[32],
-                                 const int nparallel,
-                                 const int threadid)
+EXPORT int ac_crypto_engine_wpa_pmkid_crack(
+	ac_crypto_engine_t * engine,
+	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+	const uint8_t pmkid[32],
+	const int nparallel,
+	const int threadid)
 {
 	ac_crypto_engine_calc_pmk(engine, key, nparallel, threadid);
 
-	uint8_t *pke = engine->thread_data[threadid]->pke;
-	wpapsk_hash *pmk = engine->thread_data[threadid]->pmk;
+	uint8_t * pke = engine->thread_data[threadid]->pke;
+	wpapsk_hash * pmk = engine->thread_data[threadid]->pmk;
 	uint8_t l_pmkid[32];
 
 	for (int j = 0; j < nparallel; ++j)

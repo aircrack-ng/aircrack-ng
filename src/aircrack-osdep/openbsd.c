@@ -74,7 +74,7 @@ struct priv_obsd
 
 	/* tx */
 	unsigned char po_buf[4096];
-	unsigned char *po_next;
+	unsigned char * po_next;
 	int po_totlen;
 
 	/* setchan */
@@ -84,15 +84,15 @@ struct priv_obsd
 	int po_chan;
 };
 
-static void get_radiotap_info(struct priv_obsd *po,
-							  struct ieee80211_radiotap_header *rth,
-							  int *plen,
-							  struct rx_info *ri)
+static void get_radiotap_info(struct priv_obsd * po,
+							  struct ieee80211_radiotap_header * rth,
+							  int * plen,
+							  struct rx_info * ri)
 {
 	uint32_t present;
 	uint8_t rflags = 0;
 	int i;
-	unsigned char *body = (unsigned char *) (rth + 1);
+	unsigned char * body = (unsigned char *) (rth + 1);
 	int dbm_power = 0, db_power = 0;
 
 	/* reset control info */
@@ -170,13 +170,13 @@ static void get_radiotap_info(struct priv_obsd *po,
 }
 
 static unsigned char *
-get_80211(struct priv_obsd *po, int *plen, struct rx_info *ri)
+get_80211(struct priv_obsd * po, int * plen, struct rx_info * ri)
 {
-	struct bpf_hdr *bpfh;
-	struct ieee80211_radiotap_header *rth;
-	void *ptr;
-	unsigned char **data;
-	int *totlen;
+	struct bpf_hdr * bpfh;
+	struct ieee80211_radiotap_header * rth;
+	void * ptr;
+	unsigned char ** data;
+	int * totlen;
 
 	data = &po->po_next;
 	totlen = &po->po_totlen;
@@ -204,8 +204,8 @@ get_80211(struct priv_obsd *po, int *plen, struct rx_info *ri)
 	assert(*totlen >= 0);
 
 	/* radiotap */
-	rth =
-		(struct ieee80211_radiotap_header *) ((char *) bpfh + bpfh->bh_hdrlen);
+	rth = (struct ieee80211_radiotap_header *) ((char *) bpfh
+												+ bpfh->bh_hdrlen);
 	get_radiotap_info(po, rth, plen, ri);
 	*plen -= rth->it_len;
 	assert(*plen > 0);
@@ -216,9 +216,9 @@ get_80211(struct priv_obsd *po, int *plen, struct rx_info *ri)
 	return ptr;
 }
 
-static int obsd_get_channel(struct wif *wi)
+static int obsd_get_channel(struct wif * wi)
 {
-	struct priv_obsd *po = wi_priv(wi);
+	struct priv_obsd * po = wi_priv(wi);
 	struct ieee80211chanreq channel;
 
 	memset(&channel, 0, sizeof(channel));
@@ -229,9 +229,9 @@ static int obsd_get_channel(struct wif *wi)
 	return channel.i_channel;
 }
 
-static int obsd_set_channel(struct wif *wi, int chan)
+static int obsd_set_channel(struct wif * wi, int chan)
 {
-	struct priv_obsd *po = wi_priv(wi);
+	struct priv_obsd * po = wi_priv(wi);
 	struct ieee80211chanreq channel;
 
 	memset(&channel, 0, sizeof(channel));
@@ -244,10 +244,10 @@ static int obsd_set_channel(struct wif *wi, int chan)
 }
 
 static int
-obsd_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
+obsd_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 {
-	struct priv_obsd *po = wi_priv(wi);
-	unsigned char *wh;
+	struct priv_obsd * po = wi_priv(wi);
+	unsigned char * wh;
 	int plen;
 
 	assert(len > 0);
@@ -275,10 +275,12 @@ obsd_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 	return plen;
 }
 
-static int
-obsd_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
+static int obsd_write(struct wif * wi,
+					  unsigned char * h80211,
+					  int len,
+					  struct tx_info * ti)
 {
-	struct priv_obsd *po = wi_priv(wi);
+	struct priv_obsd * po = wi_priv(wi);
 	int rc;
 
 	/* XXX make use of ti */
@@ -292,7 +294,7 @@ obsd_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
 	return 0;
 }
 
-static void do_free(struct wif *wi)
+static void do_free(struct wif * wi)
 {
 	assert(wi->wi_priv);
 	free(wi->wi_priv);
@@ -300,16 +302,16 @@ static void do_free(struct wif *wi)
 	free(wi);
 }
 
-static void obsd_close(struct wif *wi)
+static void obsd_close(struct wif * wi)
 {
-	struct priv_obsd *po = wi_priv(wi);
+	struct priv_obsd * po = wi_priv(wi);
 
 	close(po->po_fd);
 	close(po->po_s);
 	do_free(wi);
 }
 
-static int do_obsd_open(struct wif *wi, char *iface)
+static int do_obsd_open(struct wif * wi, char * iface)
 {
 	int i;
 	char buf[64];
@@ -319,8 +321,8 @@ static int do_obsd_open(struct wif *wi, char *iface)
 	int s;
 	unsigned int flags;
 	struct ifmediareq ifmr;
-	int *mwords;
-	struct priv_obsd *po = wi_priv(wi);
+	int * mwords;
+	struct priv_obsd * po = wi_priv(wi);
 	unsigned int size = sizeof(po->po_buf);
 
 	/* basic sanity check */
@@ -411,19 +413,19 @@ close_bpf:
 	goto close_sock;
 }
 
-static int obsd_fd(struct wif *wi)
+static int obsd_fd(struct wif * wi)
 {
-	struct priv_obsd *po = wi_priv(wi);
+	struct priv_obsd * po = wi_priv(wi);
 
 	return po->po_fd;
 }
 
-static int obsd_get_mac(struct wif *wi, unsigned char *mac)
+static int obsd_get_mac(struct wif * wi, unsigned char * mac)
 {
 	struct ifaddrs *ifa, *p;
-	char *name = wi_get_ifname(wi);
+	char * name = wi_get_ifname(wi);
 	int rc = -1;
-	struct sockaddr_dl *sdp;
+	struct sockaddr_dl * sdp;
 
 	if (getifaddrs(&ifa) == -1) return -1;
 
@@ -446,7 +448,7 @@ static int obsd_get_mac(struct wif *wi, unsigned char *mac)
 	return rc;
 }
 
-static int obsd_get_monitor(struct wif *wi)
+static int obsd_get_monitor(struct wif * wi)
 {
 	if (wi)
 	{
@@ -456,7 +458,7 @@ static int obsd_get_monitor(struct wif *wi)
 	return 0;
 }
 
-static int obsd_get_rate(struct wif *wi)
+static int obsd_get_rate(struct wif * wi)
 {
 	if (wi)
 	{
@@ -466,7 +468,7 @@ static int obsd_get_rate(struct wif *wi)
 	return 1000000;
 }
 
-static int obsd_set_rate(struct wif *wi, int rate)
+static int obsd_set_rate(struct wif * wi, int rate)
 {
 	if (wi || rate)
 	{
@@ -476,10 +478,10 @@ static int obsd_set_rate(struct wif *wi, int rate)
 	return 0;
 }
 
-static int obsd_set_mac(struct wif *wi, unsigned char *mac)
+static int obsd_set_mac(struct wif * wi, unsigned char * mac)
 {
-	struct priv_obsd *po = wi_priv(wi);
-	struct ifreq *ifr = &po->po_ifr;
+	struct priv_obsd * po = wi_priv(wi);
+	struct ifreq * ifr = &po->po_ifr;
 
 	ifr->ifr_addr.sa_family = AF_LINK;
 	ifr->ifr_addr.sa_len = 6;
@@ -488,10 +490,10 @@ static int obsd_set_mac(struct wif *wi, unsigned char *mac)
 	return ioctl(po->po_s, SIOCSIFLLADDR, ifr);
 }
 
-static struct wif *obsd_open(char *iface)
+static struct wif * obsd_open(char * iface)
 {
-	struct wif *wi;
-	struct priv_obsd *po;
+	struct wif * wi;
+	struct priv_obsd * po;
 	int fd;
 
 	/* setup wi struct */
@@ -524,7 +526,7 @@ static struct wif *obsd_open(char *iface)
 	return wi;
 }
 
-struct wif *wi_open_osdep(char *iface) { return obsd_open(iface); }
+struct wif * wi_open_osdep(char * iface) { return obsd_open(iface); }
 
 EXPORT int get_battery_state(void)
 {

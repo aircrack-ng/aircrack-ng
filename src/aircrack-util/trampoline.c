@@ -62,7 +62,7 @@
 #define TRAMPOLINE_TARGET "aircrack-ng"
 #endif
 
-static void simd_select_best_binary(char *buffer,
+static void simd_select_best_binary(char * buffer,
 									size_t buffer_remaining,
 									int simd_features)
 {
@@ -84,7 +84,7 @@ static void simd_select_best_binary(char *buffer,
 	/*
   else if (simd_features & SIMD_SUPPORTS_MMX)
   {
-    strncat (buffer, TRAMPOLINE_TARGET "--mmx" EXEEXT, buffer_remaining);
+	strncat (buffer, TRAMPOLINE_TARGET "--mmx" EXEEXT, buffer_remaining);
   }
   */
 	else if (simd_features & SIMD_SUPPORTS_ASIMD)
@@ -109,7 +109,7 @@ static void simd_select_best_binary(char *buffer,
 	}
 }
 
-static void determine_path_envvar(char *binary_path)
+static void determine_path_envvar(char * binary_path)
 {
 	assert(binary_path != NULL);
 
@@ -128,7 +128,7 @@ static void determine_path_envvar(char *binary_path)
 	}
 }
 
-static void initialize_full_path(char *binary_path)
+static void initialize_full_path(char * binary_path)
 {
 	assert(binary_path != NULL);
 
@@ -159,14 +159,14 @@ static int perform_simd_detection(void)
 	return (result);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
 	int rc = 0;
 	int simd_features;
 	char binary_path[MAX_PATH + 1];
 	char path_env[MAX_PATH + 1];
-	char **args = NULL;
-	char **environment = NULL;
+	char ** args = NULL;
+	char ** environment = NULL;
 
 	memset(binary_path, 0, MAX_PATH + 1);
 	memset(path_env, 0, MAX_PATH + 1);
@@ -253,7 +253,8 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	rc = execve(binary_path, (char *const *) args, (char *const *) environment);
+	rc = execve(
+		binary_path, (char * const *) args, (char * const *) environment);
 	if (rc == -1)
 	{
 		(void) fprintf(

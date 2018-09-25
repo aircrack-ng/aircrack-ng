@@ -98,26 +98,32 @@
  * MemDbg_Display() would be called at program exit. That will dump a list
  * of any memory that was not released.  The MemDbg_Validate() can be called
  * pretty much any time.  That function will walk the memory allocation linked
- * lists, and sqwack if there are problems, such as overwrites, freed memory that
+ * lists, and sqwack if there are problems, such as overwrites, freed memory
+ * that
  * has been written to, etc.  It would likely be good to call MemDbg_Validate()
  * within benchmarking, after every format is tested.
  *
- *  TODO:  Add a handle that can be passed to the MemDbg_Used() and MemDbg_Display()
+ *  TODO:  Add a handle that can be passed to the MemDbg_Used() and
+ * MemDbg_Display()
  *  and a function to get the 'current' state of memory as a handle.  Thus, a
- *  format self test could get a handle BEFORE starting, and then check after, and
- *  ONLY show leaked memory from the time the handle was obtained, which was at the
+ *  format self test could get a handle BEFORE starting, and then check after,
+ * and
+ *  ONLY show leaked memory from the time the handle was obtained, which was at
+ * the
  *  start of the self test. Thus it would only show leaks from that format test.
  *
- *  These functions are NOT thread safe. Do not call them within OMP blocks of code.
- *  Normally, these would be called at program exit, or within things like format
+ *  These functions are NOT thread safe. Do not call them within OMP blocks of
+ * code.
+ *  Normally, these would be called at program exit, or within things like
+ * format
  *  self test code, etc, and not within OMP.  But this warning is here, so that
  *  it is known NOT to call within OMP.
  */
 extern size_t MemDbg_Used(int show_freed);
 extern void MemDbg_Display(FILE *);
 extern void MemDbg_Validate(int level);
-extern void MemDbg_Validate_msg(int level, const char *pMsg);
-extern void MemDbg_Validate_msg2(int level, const char *pMsg, int bShowExData);
+extern void MemDbg_Validate_msg(int level, const char * pMsg);
+extern void MemDbg_Validate_msg2(int level, const char * pMsg, int bShowExData);
 
 /* these functions should almost NEVER be called by any client code. They
  * are listed here, because the macros need to know their names. Client code
@@ -125,16 +131,20 @@ extern void MemDbg_Validate_msg2(int level, const char *pMsg, int bShowExData);
  * If MEMDBG_alloc() was called, and MEMDBG_ON was not defined, then this
  * function would not be declared here, AND at link time, the function would
  * not be found.
- * NOTE, these functions should be thread safe in OMP builds (using #pragma omp atomic)
- * also note, memory allocation within OMP blocks SHOULD be avoided if possible. It is
- * very slow, and the thread safety required makes it even slow. This is not only talking
- * about these functions here, BUT malloc/free in general in OMP blocks. AVOID doing that
+ * NOTE, these functions should be thread safe in OMP builds (using #pragma omp
+ * atomic)
+ * also note, memory allocation within OMP blocks SHOULD be avoided if possible.
+ * It is
+ * very slow, and the thread safety required makes it even slow. This is not
+ * only talking
+ * about these functions here, BUT malloc/free in general in OMP blocks. AVOID
+ * doing that
  * at almost all costs, and performance will usually go up.
  */
-extern void *MEMDBG_alloc(size_t, char *, int);
-extern void *MEMDBG_realloc(const void *, size_t, char *, int);
+extern void * MEMDBG_alloc(size_t, char *, int);
+extern void * MEMDBG_realloc(const void *, size_t, char *, int);
 extern void MEMDBG_free(const void *, char *, int);
-extern char *MEMDBG_strdup(const char *, char *, int);
+extern char * MEMDBG_strdup(const char *, char *, int);
 
 #if !defined(__MEMDBG__)
 /* we get here on every file compiled EXCEPT memdbg.c */
@@ -156,7 +166,8 @@ extern char *MEMDBG_strdup(const char *, char *, int);
 #define malloc(a) MEMDBG_alloc((a), __FILE__, __LINE__)
 #define calloc(a) MEMDBG_calloc((a), __FILE__, __LINE__)
 #define realloc(a, b) MEMDBG_realloc((a), (b), __FILE__, __LINE__)
-/* this code mimics JtR's FREE_MEM(a) but does it for any MEMDBG_free(a,F,L) call (a hooked free(a) call) */
+/* this code mimics JtR's FREE_MEM(a) but does it for any MEMDBG_free(a,F,L)
+ * call (a hooked free(a) call) */
 #define free(a)                                                                \
 	do                                                                         \
 	{                                                                          \
@@ -183,24 +194,33 @@ typedef struct MEMDBG_HANDLE_t
 } MEMDBG_HANDLE;
 
 /*
- * these functions allow taking a memory snapshot, calling some code, then validating that memory
- * is the same after the code.  This will help catch memory leaks and other such problems, within
- * formats and such.  Simply get the snapshot, run self tests (or other), when it exits, check
+ * these functions allow taking a memory snapshot, calling some code, then
+ * validating that memory
+ * is the same after the code.  This will help catch memory leaks and other such
+ * problems, within
+ * formats and such.  Simply get the snapshot, run self tests (or other), when
+ * it exits, check
  * the snapshot to make sure nothing leaked.
  */
 
-/* returning a struct (or passing as params it not super efficient but this is done so infrequently that this is not an issue. */
+/* returning a struct (or passing as params it not super efficient but this is
+ * done so infrequently that this is not an issue. */
 MEMDBG_HANDLE MEMDBG_getSnapshot(int id);
 /* will not exit on leaks.  Does exit, on memory overwrite corruption. */
 void MEMDBG_checkSnapshot(MEMDBG_HANDLE);
-/* same as MEMDBG_checkSnapshot() but if exit_on_any_leaks is true, will also exit if leaks found. */
+/* same as MEMDBG_checkSnapshot() but if exit_on_any_leaks is true, will also
+ * exit if leaks found. */
 void MEMDBG_checkSnapshot_possible_exit_on_error(MEMDBG_HANDLE,
 												 int exit_on_any_leaks);
 /*
- * the allocations from mem_alloc_tiny() must call this function to flag the memory they allocate
- * so it is not flagged as a leak, by these HANDLE snapshot functions. 'tiny' memory is expected
- * to leak, until program exit.  At that time, any that was not freed, will be shown as leaked.
- * THIS function is also thread safe. The other checkSnapshot functions are NOT thread safe.
+ * the allocations from mem_alloc_tiny() must call this function to flag the
+ * memory they allocate
+ * so it is not flagged as a leak, by these HANDLE snapshot functions. 'tiny'
+ * memory is expected
+ * to leak, until program exit.  At that time, any that was not freed, will be
+ * shown as leaked.
+ * THIS function is also thread safe. The other checkSnapshot functions are NOT
+ * thread safe.
  */
 
 void MEMDBG_tag_mem_from_alloc_tiny(void *);
@@ -229,7 +249,7 @@ void MEMDBG_tag_mem_from_alloc_tiny(void *);
 
 #if !defined(__MEMDBG__)
 /* this code mimics JtR's FREE_MEM(a) but does it for any normal free(a) call */
-//extern void MEMDBG_off_free(void *a);
+// extern void MEMDBG_off_free(void *a);
 //#define free(a)   do { if(a) MEMDBG_off_free(a); a=0; } while(0)
 #endif
 #define MemDbg_Used(a) 0
@@ -250,7 +270,7 @@ void MEMDBG_tag_mem_from_alloc_tiny(void *);
 #endif /* MEMDBG_ON */
 
 extern void MEMDBG_libc_free(void *);
-extern void *MEMDBG_libc_alloc(size_t size);
-extern void *MEMDBG_libc_calloc(size_t size);
+extern void * MEMDBG_libc_alloc(size_t size);
+extern void * MEMDBG_libc_calloc(size_t size);
 
 #endif /* __MEMDBG_H_ */

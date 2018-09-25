@@ -138,15 +138,15 @@
 
 #define INIT_A 0x67452301
 
-void md5_reverse(uint32_t *hash) { hash[0] -= INIT_A; }
+void md5_reverse(uint32_t * hash) { hash[0] -= INIT_A; }
 
-void md5_unreverse(uint32_t *hash) { hash[0] += INIT_A; }
+void md5_unreverse(uint32_t * hash) { hash[0] += INIT_A; }
 
 #undef INIT_A
 
-void SIMDmd5body(vtype *_data,
-				 unsigned int *out,
-				 ARCH_WORD_32 *reload_state,
+void SIMDmd5body(vtype * _data,
+				 unsigned int * out,
+				 ARCH_WORD_32 * reload_state,
 				 unsigned SSEi_flags)
 {
 	vtype w[16 * SIMD_PARA_MD5];
@@ -159,7 +159,7 @@ void SIMDmd5body(vtype *_data,
 	vtype tmp2[SIMD_PARA_MD5];
 #endif
 	unsigned int i;
-	vtype *data;
+	vtype * data;
 
 #if !__AVX512F__ && !__ARM_NEON__
 	vtype mask;
@@ -171,8 +171,8 @@ void SIMDmd5body(vtype *_data,
 // Move _data to __data, mixing it SIMD_COEF_32 wise.
 #if __SSE4_1__ || __MIC__
 		unsigned k;
-		vtype *W = w;
-		ARCH_WORD_32 *saved_key = (ARCH_WORD_32 *) _data;
+		vtype * W = w;
+		ARCH_WORD_32 * saved_key = (ARCH_WORD_32 *) _data;
 		MD5_PARA_DO(k)
 		{
 			if (SSEi_flags & SSEi_4BUF_INPUT)
@@ -203,9 +203,9 @@ void SIMDmd5body(vtype *_data,
 		}
 #else
 		unsigned j, k;
-		ARCH_WORD_32 *p = (ARCH_WORD_32 *) w;
-		vtype *W = w;
-		ARCH_WORD_32 *saved_key = (ARCH_WORD_32 *) _data;
+		ARCH_WORD_32 * p = (ARCH_WORD_32 *) w;
+		vtype * W = w;
+		ARCH_WORD_32 * saved_key = (ARCH_WORD_32 *) _data;
 		MD5_PARA_DO(k)
 		{
 			if (SSEi_flags & SSEi_4BUF_INPUT)
@@ -413,7 +413,7 @@ void SIMDmd5body(vtype *_data,
 	{
 		MD5_PARA_DO(i)
 		{
-			uint32_t *o = (uint32_t *) &out[i * 4 * VS32];
+			uint32_t * o = (uint32_t *) &out[i * 4 * VS32];
 #if __AVX512F__ || __MIC__
 			vtype idxs = vset_epi32(15 * 4,
 									14 * 4,
@@ -494,14 +494,14 @@ void SIMDmd5body(vtype *_data,
 #define GETPOS(i, index)                                                       \
 	((index & (VS32 - 1)) * 4 + (i & (0xffffffff - 3)) * VS32 + ((i) &3))
 
-static MAYBE_INLINE void mmxput(void *buf,
+static MAYBE_INLINE void mmxput(void * buf,
 								unsigned int index,
 								unsigned int bid,
 								unsigned int offset,
-								unsigned char *src,
+								unsigned char * src,
 								unsigned int len)
 {
-	unsigned char *nbuf;
+	unsigned char * nbuf;
 	unsigned int i;
 
 	nbuf = ((unsigned char *) buf) + index / VS32 * 64 * VS32
@@ -509,9 +509,9 @@ static MAYBE_INLINE void mmxput(void *buf,
 	for (i = 0; i < len; i++) nbuf[GETPOS((offset + i), index)] = src[i];
 }
 
-static MAYBE_INLINE void mmxput2(void *buf, unsigned int bid, void *src)
+static MAYBE_INLINE void mmxput2(void * buf, unsigned int bid, void * src)
 {
-	unsigned char *nbuf;
+	unsigned char * nbuf;
 	unsigned int i;
 
 	nbuf = ((unsigned char *) buf) + bid * 64 * MD5_SSE_NUM_KEYS;
@@ -527,12 +527,12 @@ static MAYBE_INLINE void mmxput2(void *buf, unsigned int bid, void *src)
 #define BITALIGN(hi, lo, s) (((hi) << (32 - (s))) | ((lo) >> (s)))
 #endif
 
-static MAYBE_INLINE void mmxput3(void *buf,
+static MAYBE_INLINE void mmxput3(void * buf,
 								 unsigned int bid,
-								 unsigned int *offset,
+								 unsigned int * offset,
 								 unsigned int mult,
 								 unsigned int saltlen,
-								 void *src)
+								 void * src)
 {
 	unsigned int j;
 
@@ -540,13 +540,13 @@ static MAYBE_INLINE void mmxput3(void *buf,
 	{
 		unsigned int i;
 		unsigned int jm = j * VS32 * 4;
-		unsigned char *nbuf =
-			((unsigned char *) buf) + bid * (64 * MD5_SSE_NUM_KEYS) + jm * 16;
-		unsigned int *s = (unsigned int *) src + jm;
+		unsigned char * nbuf
+			= ((unsigned char *) buf) + bid * (64 * MD5_SSE_NUM_KEYS) + jm * 16;
+		unsigned int * s = (unsigned int *) src + jm;
 		for (i = 0; i < VS32; i++, s++)
 		{
 			unsigned int n = offset[i + jm / 4] * mult + saltlen;
-			unsigned int *d = (unsigned int *) (nbuf + (n & ~3U) * VS32) + i;
+			unsigned int * d = (unsigned int *) (nbuf + (n & ~3U) * VS32) + i;
 
 			switch (n &= 3)
 			{
@@ -573,24 +573,24 @@ static MAYBE_INLINE void mmxput3(void *buf,
 					d[1 * VS32] = BITALIGN(s[1 * VS32], s[0], 24);
 					d[2 * VS32] = BITALIGN(s[2 * VS32], s[1 * VS32], 24);
 					d[3 * VS32] = BITALIGN(s[3 * VS32], s[2 * VS32], 24);
-					d[4 * VS32] =
-						(d[4 * VS32] & 0xffffff00U) | (s[3 * VS32] >> 24);
+					d[4 * VS32]
+						= (d[4 * VS32] & 0xffffff00U) | (s[3 * VS32] >> 24);
 					break;
 				case 2:
 					d[0] = (d[0] & 0xffffU) | (s[0] << 16);
 					d[1 * VS32] = BITALIGN(s[1 * VS32], s[0], 16);
 					d[2 * VS32] = BITALIGN(s[2 * VS32], s[1 * VS32], 16);
 					d[3 * VS32] = BITALIGN(s[3 * VS32], s[2 * VS32], 16);
-					d[4 * VS32] =
-						(d[4 * VS32] & 0xffff0000U) | (s[3 * VS32] >> 16);
+					d[4 * VS32]
+						= (d[4 * VS32] & 0xffff0000U) | (s[3 * VS32] >> 16);
 					break;
 				case 3:
 					d[0] = (d[0] & 0xffffffU) | (s[0] << 24);
 					d[1 * VS32] = BITALIGN(s[1 * VS32], s[0], 8);
 					d[2 * VS32] = BITALIGN(s[2 * VS32], s[1 * VS32], 8);
 					d[3 * VS32] = BITALIGN(s[3 * VS32], s[2 * VS32], 8);
-					d[4 * VS32] =
-						(d[4 * VS32] & 0xff000000U) | (s[3 * VS32] >> 8);
+					d[4 * VS32]
+						= (d[4 * VS32] & 0xff000000U) | (s[3 * VS32] >> 8);
 #endif
 			}
 		}
@@ -681,8 +681,8 @@ static MAYBE_INLINE void dispatch(unsigned char buffers[8]
 }
 
 void md5cryptsse(unsigned char pwd[MD5_SSE_NUM_KEYS][16],
-				 unsigned char *salt,
-				 char *out,
+				 unsigned char * salt,
+				 char * out,
 				 unsigned int md5_type)
 {
 	unsigned int length[MD5_SSE_NUM_KEYS];
@@ -698,7 +698,7 @@ void md5cryptsse(unsigned char pwd[MD5_SSE_NUM_KEYS][16],
 	for (i = 0; i < MD5_SSE_NUM_KEYS; i++)
 	{
 		unsigned int length_i = strlen((char *) pwd[i]);
-		unsigned int *bt;
+		unsigned int * bt;
 		unsigned int tf[4];
 
 		/* cas 0 fs */
@@ -755,29 +755,29 @@ void md5cryptsse(unsigned char pwd[MD5_SSE_NUM_KEYS][16],
 			   1);
 
 		bt = (unsigned int *) &buffers[0];
-		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32] =
-			(length_i + 16) << 3;
+		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32]
+			= (length_i + 16) << 3;
 		bt = (unsigned int *) &buffers[1];
-		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32] =
-			(length_i + 16) << 3;
+		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32]
+			= (length_i + 16) << 3;
 		bt = (unsigned int *) &buffers[2];
-		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32] =
-			(length_i * 2 + 16) << 3;
+		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32]
+			= (length_i * 2 + 16) << 3;
 		bt = (unsigned int *) &buffers[3];
-		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32] =
-			(length_i * 2 + 16) << 3;
+		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32]
+			= (length_i * 2 + 16) << 3;
 		bt = (unsigned int *) &buffers[4];
-		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32] =
-			(length_i + saltlen + 16) << 3;
+		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32]
+			= (length_i + saltlen + 16) << 3;
 		bt = (unsigned int *) &buffers[5];
-		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32] =
-			(length_i + saltlen + 16) << 3;
+		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32]
+			= (length_i + saltlen + 16) << 3;
 		bt = (unsigned int *) &buffers[6];
-		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32] =
-			(length_i * 2 + saltlen + 16) << 3;
+		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32]
+			= (length_i * 2 + saltlen + 16) << 3;
 		bt = (unsigned int *) &buffers[7];
-		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32] =
-			(length_i * 2 + saltlen + 16) << 3;
+		bt[14 * VS32 + (i & (VS32 - 1)) + i / VS32 * 16 * VS32]
+			= (length_i * 2 + saltlen + 16) << 3;
 
 		MD5_Init(&ctx);
 		MD5_Update(&ctx, pwd[i], length_i);
@@ -872,7 +872,7 @@ void md5cryptsse(unsigned char pwd[MD5_SSE_NUM_KEYS][16],
 #define INIT_D 0x10325476
 #define SQRT_3 0x6ed9eba1
 
-void md4_reverse(uint32_t *hash)
+void md4_reverse(uint32_t * hash)
 {
 	hash[0] -= INIT_A;
 	hash[1] -= INIT_B;
@@ -884,7 +884,7 @@ void md4_reverse(uint32_t *hash)
 	hash[1] -= SQRT_3;
 }
 
-void md4_unreverse(uint32_t *hash)
+void md4_unreverse(uint32_t * hash)
 {
 	hash[1] += SQRT_3;
 	hash[1] = (hash[1] >> 17) | (hash[1] << 15);
@@ -902,9 +902,9 @@ void md4_unreverse(uint32_t *hash)
 #undef INIT_B
 #undef INIT_A
 
-void SIMDmd4body(vtype *_data,
-				 unsigned int *out,
-				 ARCH_WORD_32 *reload_state,
+void SIMDmd4body(vtype * _data,
+				 unsigned int * out,
+				 ARCH_WORD_32 * reload_state,
 				 unsigned SSEi_flags)
 {
 	vtype w[16 * SIMD_PARA_MD4];
@@ -918,15 +918,15 @@ void SIMDmd4body(vtype *_data,
 #endif
 	vtype cst;
 	unsigned int i;
-	vtype *data;
+	vtype * data;
 
 	if (SSEi_flags & SSEi_FLAT_IN)
 	{
 // Move _data to __data, mixing it SIMD_COEF_32 wise.
 #if __SSE4_1__ || __MIC__
 		unsigned k;
-		vtype *W = w;
-		ARCH_WORD_32 *saved_key = (ARCH_WORD_32 *) _data;
+		vtype * W = w;
+		ARCH_WORD_32 * saved_key = (ARCH_WORD_32 *) _data;
 		MD4_PARA_DO(k)
 		{
 			if (SSEi_flags & SSEi_4BUF_INPUT)
@@ -957,9 +957,9 @@ void SIMDmd4body(vtype *_data,
 		}
 #else
 		unsigned j, k;
-		ARCH_WORD_32 *p = (ARCH_WORD_32 *) w;
-		vtype *W = w;
-		ARCH_WORD_32 *saved_key = (ARCH_WORD_32 *) _data;
+		ARCH_WORD_32 * p = (ARCH_WORD_32 *) w;
+		vtype * W = w;
+		ARCH_WORD_32 * saved_key = (ARCH_WORD_32 *) _data;
 		MD4_PARA_DO(k)
 		{
 			if (SSEi_flags & SSEi_4BUF_INPUT)
@@ -1152,7 +1152,7 @@ void SIMDmd4body(vtype *_data,
 	{
 		MD4_PARA_DO(i)
 		{
-			uint32_t *o = (uint32_t *) &out[i * 4 * VS32];
+			uint32_t * o = (uint32_t *) &out[i * 4 * VS32];
 #if __AVX512F__ || __MIC__
 			vtype idxs = vset_epi32(15 * 4,
 									14 * 4,
@@ -1369,13 +1369,13 @@ void SIMDmd4body(vtype *_data,
 
 #define INIT_E 0xC3D2E1F0
 
-void sha1_reverse(uint32_t *hash)
+void sha1_reverse(uint32_t * hash)
 {
 	hash[4] -= INIT_E;
 	hash[4] = (hash[4] << 2) | (hash[4] >> 30);
 }
 
-void sha1_unreverse(uint32_t *hash)
+void sha1_unreverse(uint32_t * hash)
 {
 	hash[4] = (hash[4] << 30) | (hash[4] >> 2);
 	hash[4] += INIT_E;
@@ -1383,9 +1383,9 @@ void sha1_unreverse(uint32_t *hash)
 
 #undef INIT_E
 
-void SIMDSHA1body(vtype *_data,
-				  ARCH_WORD_32 *out,
-				  ARCH_WORD_32 *reload_state,
+void SIMDSHA1body(vtype * _data,
+				  ARCH_WORD_32 * out,
+				  ARCH_WORD_32 * reload_state,
 				  unsigned SSEi_flags)
 {
 	vtype w[16 * SIMD_PARA_SHA1];
@@ -1397,15 +1397,15 @@ void SIMDSHA1body(vtype *_data,
 	vtype tmp[SIMD_PARA_SHA1];
 	vtype cst;
 	unsigned int i;
-	vtype *data;
+	vtype * data;
 
 	if (SSEi_flags & SSEi_FLAT_IN)
 	{
 // Move _data to __data, mixing it SIMD_COEF_32 wise.
 #if __SSE4_1__ || __MIC__
 		unsigned k;
-		vtype *W = w;
-		ARCH_WORD_32 *saved_key = (ARCH_WORD_32 *) _data;
+		vtype * W = w;
+		ARCH_WORD_32 * saved_key = (ARCH_WORD_32 *) _data;
 		SHA1_PARA_DO(k)
 		{
 			if (SSEi_flags & SSEi_4BUF_INPUT)
@@ -1455,9 +1455,9 @@ void SIMDSHA1body(vtype *_data,
 		}
 #else
 		unsigned j, k;
-		ARCH_WORD_32 *p = (ARCH_WORD_32 *) w;
-		vtype *W = w;
-		ARCH_WORD_32 *saved_key = (ARCH_WORD_32 *) _data;
+		ARCH_WORD_32 * p = (ARCH_WORD_32 *) w;
+		vtype * W = w;
+		ARCH_WORD_32 * saved_key = (ARCH_WORD_32 *) _data;
 		SHA1_PARA_DO(k)
 		{
 			if (SSEi_flags & SSEi_4BUF_INPUT)
@@ -1695,7 +1695,7 @@ void SIMDSHA1body(vtype *_data,
 	{
 		SHA1_PARA_DO(i)
 		{
-			uint32_t *o = (uint32_t *) &out[i * 5 * VS32];
+			uint32_t * o = (uint32_t *) &out[i * 5 * VS32];
 #if __AVX512F__ || __MIC__
 			vtype idxs = vset_epi32(15 * 5,
 									14 * 5,
@@ -1851,7 +1851,7 @@ void SIMDSHA1body(vtype *_data,
 
 #define ror(x, n) ((x >> n) | (x << (32 - n)))
 
-void sha256_reverse(uint32_t *hash)
+void sha256_reverse(uint32_t * hash)
 {
 	uint32_t a, b, c, d, e, f, g, h, s0, maj, tmp;
 
@@ -1919,15 +1919,15 @@ void sha256_unreverse(void)
 
 #define INIT_D 0xf70e5939
 
-void sha224_reverse(uint32_t *hash) { hash[3] -= INIT_D; }
+void sha224_reverse(uint32_t * hash) { hash[3] -= INIT_D; }
 
-void sha224_unreverse(uint32_t *hash) { hash[3] += INIT_D; }
+void sha224_unreverse(uint32_t * hash) { hash[3] += INIT_D; }
 
 #undef INIT_D
 
-void SIMDSHA256body(vtype *data,
-					ARCH_WORD_32 *out,
-					ARCH_WORD_32 *reload_state,
+void SIMDSHA256body(vtype * data,
+					ARCH_WORD_32 * out,
+					ARCH_WORD_32 * reload_state,
 					unsigned SSEi_flags)
 {
 	vtype a[SIMD_PARA_SHA256], b[SIMD_PARA_SHA256], c[SIMD_PARA_SHA256],
@@ -1938,7 +1938,7 @@ void SIMDSHA256body(vtype *data,
 		ARCH_WORD_32 p[16 * sizeof(vtype) / sizeof(ARCH_WORD_32)];
 	} _w[SIMD_PARA_SHA256];
 	vtype tmp1[SIMD_PARA_SHA256], tmp2[SIMD_PARA_SHA256], *w = NULL;
-	ARCH_WORD_32 *saved_key = 0;
+	ARCH_WORD_32 * saved_key = 0;
 
 	unsigned int i, k;
 	if (SSEi_flags & SSEi_FLAT_IN)
@@ -1998,7 +1998,7 @@ void SIMDSHA256body(vtype *data,
 		saved_key = (ARCH_WORD_32 *) data;
 		SHA256_PARA_DO(k)
 		{
-			ARCH_WORD_32 *p = _w[k].p;
+			ARCH_WORD_32 * p = _w[k].p;
 			w = _w[k].w;
 			if (SSEi_flags & SSEi_4BUF_INPUT)
 			{
@@ -2291,7 +2291,7 @@ void SIMDSHA256body(vtype *data,
 	{
 		SHA256_PARA_DO(i)
 		{
-			uint32_t *o = (uint32_t *) &out[i * 8 * VS32];
+			uint32_t * o = (uint32_t *) &out[i * 8 * VS32];
 #if __AVX512F__ || __MIC__
 			vtype idxs = vset_epi32(15 << 3,
 									14 << 3,
@@ -2470,7 +2470,7 @@ void SIMDSHA256body(vtype *data,
 
 #define ror(x, n) ((x >> n) | (x << (64 - n)))
 
-void sha512_reverse(uint64_t *hash)
+void sha512_reverse(uint64_t * hash)
 {
 	uint64_t a, b, c, d, e, f, g, h, s0, maj, tmp;
 
@@ -2538,15 +2538,15 @@ void sha512_unreverse(void)
 
 #define INIT_D 0x152fecd8f70e5939ULL
 
-void sha384_reverse(ARCH_WORD_64 *hash) { hash[3] -= INIT_D; }
+void sha384_reverse(ARCH_WORD_64 * hash) { hash[3] -= INIT_D; }
 
-void sha384_unreverse(ARCH_WORD_64 *hash) { hash[3] += INIT_D; }
+void sha384_unreverse(ARCH_WORD_64 * hash) { hash[3] += INIT_D; }
 
 #undef INIT_D
 
-void SIMDSHA512body(vtype *data,
-					ARCH_WORD_64 *out,
-					ARCH_WORD_64 *reload_state,
+void SIMDSHA512body(vtype * data,
+					ARCH_WORD_64 * out,
+					ARCH_WORD_64 * reload_state,
 					unsigned SSEi_flags)
 {
 	unsigned int i, k;
@@ -2559,7 +2559,7 @@ void SIMDSHA512body(vtype *data,
 
 	if (SSEi_flags & SSEi_FLAT_IN)
 	{
-		ARCH_WORD_64 *_data = (ARCH_WORD_64 *) data;
+		ARCH_WORD_64 * _data = (ARCH_WORD_64 *) data;
 		SHA512_PARA_DO(k)
 		{
 			if (SSEi_flags & SSEi_2BUF_INPUT)
@@ -2609,7 +2609,7 @@ void SIMDSHA512body(vtype *data,
 	else
 		memcpy(w, data, 16 * sizeof(vtype) * SIMD_PARA_SHA512);
 
-	//dump_stuff_shammx64_msg("\nindex 2", w, 128, 2);
+	// dump_stuff_shammx64_msg("\nindex 2", w, 128, 2);
 
 	if (SSEi_flags & SSEi_RELOAD)
 	{
@@ -2882,7 +2882,7 @@ void SIMDSHA512body(vtype *data,
 	{
 		SHA512_PARA_DO(i)
 		{
-			uint64_t *o = (uint64_t *) &out[i * 8 * VS64];
+			uint64_t * o = (uint64_t *) &out[i * 8 * VS64];
 #if __AVX512F__ || __MIC__
 			vtype idxs = vset_epi64(
 				7 << 3, 6 << 3, 5 << 3, 4 << 3, 3 << 3, 2 << 3, 1 << 3, 0 << 3);

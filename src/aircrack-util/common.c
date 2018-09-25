@@ -69,7 +69,7 @@ without
  * modifications, are permitted.
 */
 #if defined(__CYGWIN32__) && !defined(__CYGWIN64__)
-int fseeko64(FILE *fp, int64_t offset, int whence)
+int fseeko64(FILE * fp, int64_t offset, int whence)
 {
 	fpos_t pos;
 
@@ -102,7 +102,7 @@ int fseeko64(FILE *fp, int64_t offset, int whence)
 	return fsetpos(fp, &pos);
 }
 
-int64_t ftello64(FILE *fp)
+int64_t ftello64(FILE * fp)
 {
 	fpos_t pos;
 
@@ -147,7 +147,7 @@ void calctime(time_t t, float perc)
 	printf("%*s %s\n", (int) (47 - (printed + strlen(buf) % 5)), " ", buf);
 }
 
-int is_string_number(const char *str)
+int is_string_number(const char * str)
 {
 	int i;
 	if (str == NULL)
@@ -182,9 +182,8 @@ int get_ram_size(void)
 	len = sizeof(physmem);
 
 	if (!sysctl(mib, 2, &physmem, &len, NULL, 0))
-		ret =
-			(physmem
-			 / 1024); // Linux returns memory size in kB, so we want to as well.
+		ret = (physmem / 1024); // Linux returns memory size in kB, so we want
+								// to as well.
 #elif defined(_WIN32) || defined(_WIN64)
 	MEMORYSTATUSEX statex;
 	statex.dwLength = sizeof(statex);
@@ -194,7 +193,7 @@ int get_ram_size(void)
 		ret = (int) (statex.ullTotalPhys / 1024);
 	}
 #else
-	FILE *fp;
+	FILE * fp;
 	char str[100 + 1];
 	int val = 0;
 
@@ -219,13 +218,13 @@ int get_ram_size(void)
 }
 
 /* Return the version number */
-char *getVersion(const char *progname,
-				 const unsigned int maj,
-				 const unsigned int min,
-				 const unsigned int submin,
-				 const char *rev,
-				 const unsigned int beta,
-				 const unsigned int rc)
+char * getVersion(const char * progname,
+				  const unsigned int maj,
+				  const unsigned int min,
+				  const unsigned int submin,
+				  const char * rev,
+				  const unsigned int beta,
+				  const unsigned int rc)
 {
 	if (progname == NULL || progname[0] == 0)
 	{
@@ -244,7 +243,7 @@ char *getVersion(const char *progname,
 	{
 		len += strlen(rev);
 	}
-	char *ret = (char *) calloc(1, len);
+	char * ret = (char *) calloc(1, len);
 	if (ret == NULL)
 	{
 		perror("calloc()");
@@ -273,9 +272,9 @@ char *getVersion(const char *progname,
 	// Add revision if it comes from subversion or git
 	if (rev)
 	{
-		char *tmp = strdup(rev);
+		char * tmp = strdup(rev);
 
-		char *sep = strstr(tmp, "_");
+		char * sep = strstr(tmp, "_");
 		if (sep)
 		{
 			++sep;
@@ -285,7 +284,7 @@ char *getVersion(const char *progname,
 			sep = "";
 		}
 
-		char *search = strstr(sep, "rev-");
+		char * search = strstr(sep, "rev-");
 		if (search)
 		{
 			search[3] = ' ';
@@ -297,7 +296,7 @@ char *getVersion(const char *progname,
 	}
 
 	// Shorten buffer if possible
-	char *r_ret = realloc(ret, strlen(ret) + 1);
+	char * r_ret = realloc(ret, strlen(ret) + 1);
 	return (r_ret) ? r_ret : ret;
 }
 
@@ -314,7 +313,7 @@ int get_nb_cpus(void)
 	number = sysinfo.dwNumberOfProcessors;
 #elif defined(__linux__)
 	char *s, *pos;
-	FILE *f;
+	FILE * f;
 	// Reading /proc/cpuinfo is more reliable on current CPUs,
 	// so put it first and try the old method if this one fails
 	f = fopen("/proc/cpuinfo", "r");
@@ -348,7 +347,8 @@ int get_nb_cpus(void)
 		fclose(f);
 	}
 #elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
-	// Not sure about defined(__DragonFly__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
+	// Not sure about defined(__DragonFly__) || defined(__NetBSD__) ||
+	// defined(__OpenBSD__) || defined(__APPLE__)
 	int mib[] = {CTL_HW, HW_NCPU};
 	size_t len;
 	unsigned long nbcpu;
@@ -377,8 +377,8 @@ int get_nb_cpus(void)
 	return number;
 }
 
-//compares two MACs
-int maccmp(unsigned char *mac1, unsigned char *mac2)
+// compares two MACs
+int maccmp(unsigned char * mac1, unsigned char * mac2)
 {
 	int i = 0;
 
@@ -392,9 +392,9 @@ int maccmp(unsigned char *mac1, unsigned char *mac2)
 }
 
 // Converts a mac address in a human-readable format
-char *mac2string(unsigned char *mac_address)
+char * mac2string(unsigned char * mac_address)
 {
-	char *mac_string = (char *) malloc(sizeof(char) * 18);
+	char * mac_string = (char *) malloc(sizeof(char) * 18);
 	snprintf(mac_string,
 			 18,
 			 "%02X:%02X:%02X:%02X:%02X:%02X",
@@ -407,7 +407,8 @@ char *mac2string(unsigned char *mac_address)
 	return mac_string;
 }
 
-/* Return -1 if it's not an hex value and return its value when it's a hex value */
+/* Return -1 if it's not an hex value and return its value when it's a hex value
+ */
 int hexCharToInt(unsigned char c)
 {
 	static int table_created = 0;
@@ -498,16 +499,16 @@ int hexCharToInt(unsigned char c)
 // out: output string (needs to be already allocated).
 // out_length: length of the array
 // returns amount of bytes saved to 'out' or -1 if an error happened
-int hexStringToArray(char *in,
+int hexStringToArray(char * in,
 					 int in_length,
-					 unsigned char *out,
+					 unsigned char * out,
 					 int out_length)
 {
 	int i, out_pos;
 	int chars[2];
 
-	char *input = in;
-	unsigned char *output = out;
+	char * input = in;
+	unsigned char * output = out;
 
 	if (in_length < 2 || out_length < (in_length / 3) + 1 || input == NULL
 		|| output == NULL)
@@ -528,19 +529,21 @@ int hexStringToArray(char *in,
 			return -1;
 		}
 		chars[0] = hexCharToInt(input[i]);
-		// If first char is invalid (or '\0'), don't bother continuing (and you really shouldn't).
+		// If first char is invalid (or '\0'), don't bother continuing (and you
+		// really shouldn't).
 		if (chars[0] < 0 || chars[0] > 15) return -1;
 
 		chars[1] = hexCharToInt(input[++i]);
-		// It should always be a multiple of 2 hex characters with or without separator
+		// It should always be a multiple of 2 hex characters with or without
+		// separator
 		if (chars[1] < 0 || chars[1] > 15) return -1;
 		output[out_pos++] = ((chars[0] << 4) + chars[1]) & 0xFF;
 	}
 	return out_pos;
 }
 
-//Return the mac address bytes (or null if it's not a mac address)
-int getmac(const char *macAddress, const int strict, unsigned char *mac)
+// Return the mac address bytes (or null if it's not a mac address)
+int getmac(const char * macAddress, const int strict, unsigned char * mac)
 {
 	char byte[3];
 	int i, nbElem, n;
@@ -637,7 +640,7 @@ int hexToInt(char s[], int len)
 	return value;
 }
 
-void rtrim(char *line)
+void rtrim(char * line)
 {
 	if (line && strlen(line) > 0)
 	{
@@ -646,16 +649,16 @@ void rtrim(char *line)
 	}
 }
 
-char *get_current_working_directory(void)
+char * get_current_working_directory(void)
 {
-	char *ret = NULL;
-	char *wd_realloc = NULL;
+	char * ret = NULL;
+	char * wd_realloc = NULL;
 	size_t wd_size = 0;
 
 	do
 	{
 		wd_size += PATH_MAX;
-		char *wd_realloc = (char *) realloc(ret, wd_size);
+		char * wd_realloc = (char *) realloc(ret, wd_size);
 		if (wd_realloc == NULL)
 		{
 			if (ret) free(ret);
@@ -673,14 +676,15 @@ char *get_current_working_directory(void)
 	return ret;
 }
 
-int string_has_suffix(const char *str, const char *suf)
+int string_has_suffix(const char * str, const char * suf)
 {
 	assert(str && suf);
 
-	const char *a = str + strlen(str);
-	const char *b = suf + strlen(suf);
+	const char * a = str + strlen(str);
+	const char * b = suf + strlen(suf);
 
-	while (a != str && b != suf) {
+	while (a != str && b != suf)
+	{
 		if (*--a != *--b) break;
 	}
 	return b == suf && *a == *b;

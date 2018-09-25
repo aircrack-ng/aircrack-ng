@@ -47,8 +47,8 @@ extern DWORD WINAPI AddIPAddress(IPAddr Address,
 								 PULONG NTEInstance);
 extern DWORD WINAPI DeleteIPAddress(ULONG NTEContext);
 
-extern int cygwin_read_reader(int fd, int plen, void *dst, int len);
-static void *ti_reader(void *arg);
+extern int cygwin_read_reader(int fd, int plen, void * dst, int len);
+static void * ti_reader(void * arg);
 
 struct tip_cygwin
 {
@@ -66,7 +66,7 @@ struct tip_cygwin
  * Stop the reader thread (if it is running)
  * @return 0 if stopped or -1 if it failed to stop it
  */
-static int stop_reader(struct tip_cygwin *priv)
+static int stop_reader(struct tip_cygwin * priv)
 {
 	if (priv->tc_running == 1)
 	{
@@ -85,7 +85,7 @@ static int stop_reader(struct tip_cygwin *priv)
  * Start reader thread
  * @return -1 if failed to start thread or 0 if it is successful
  */
-static int start_reader(struct tip_cygwin *priv)
+static int start_reader(struct tip_cygwin * priv)
 {
 	priv->tc_running = 2;
 	if (pthread_create(&priv->tc_reader, NULL, ti_reader, priv)) return -1;
@@ -98,7 +98,7 @@ static int start_reader(struct tip_cygwin *priv)
 /**
  * Change status (enable/disable) of the device
  */
-static int ti_media_status(struct tip_cygwin *priv, int on)
+static int ti_media_status(struct tip_cygwin * priv, int on)
 {
 	ULONG s = on;
 	DWORD len;
@@ -119,7 +119,7 @@ static int ti_media_status(struct tip_cygwin *priv, int on)
 /**
  * Try opening device
  */
-static int ti_try_open(struct tip_cygwin *priv, char *guid)
+static int ti_try_open(struct tip_cygwin * priv, char * guid)
 {
 	int any = priv->tc_guid[0] == 0;
 	char device[256];
@@ -164,7 +164,8 @@ static int ti_try_open(struct tip_cygwin *priv, char *guid)
  * @param key Registry key
  * @return 0 if successful, -1 if it failed
  */
-static int ti_read_reg(struct tip_cygwin *priv, char *key, char *res, int len)
+static int
+ti_read_reg(struct tip_cygwin * priv, char * key, char * res, int len)
 {
 	DWORD dt, l = len;
 
@@ -179,7 +180,7 @@ static int ti_read_reg(struct tip_cygwin *priv, char *key, char *res, int len)
 	return 0;
 }
 
-static int ti_get_devs_component(struct tip_cygwin *priv, char *name)
+static int ti_get_devs_component(struct tip_cygwin * priv, char * name)
 {
 	char key[256];
 	int rc = 0;
@@ -210,7 +211,7 @@ out:
 	return rc;
 }
 
-static int ti_do_open_cygwin(struct tip_cygwin *priv)
+static int ti_do_open_cygwin(struct tip_cygwin * priv)
 {
 	int rc = -1;
 	HKEY ak47;
@@ -243,9 +244,9 @@ static int ti_do_open_cygwin(struct tip_cygwin *priv)
 	return rc;
 }
 
-static void ti_do_free(struct tif *ti)
+static void ti_do_free(struct tif * ti)
 {
-	struct tip_cygwin *priv = ti_priv(ti);
+	struct tip_cygwin * priv = ti_priv(ti);
 
 	/* stop reader */
 	stop_reader(priv);
@@ -269,18 +270,18 @@ static void ti_do_free(struct tif *ti)
 	free(ti);
 }
 
-static void ti_close_cygwin(struct tif *ti) { ti_do_free(ti); }
+static void ti_close_cygwin(struct tif * ti) { ti_do_free(ti); }
 
-static char *ti_name_cygwin(struct tif *ti)
+static char * ti_name_cygwin(struct tif * ti)
 {
-	struct tip_cygwin *priv = ti_priv(ti);
+	struct tip_cygwin * priv = ti_priv(ti);
 
 	return priv->tc_name;
 }
 
 /* XXX */
 static int
-ti_is_us(struct tip_cygwin *priv, HDEVINFO *hdi, SP_DEVINFO_DATA *did)
+ti_is_us(struct tip_cygwin * priv, HDEVINFO * hdi, SP_DEVINFO_DATA * did)
 {
 	char buf[256];
 	DWORD len = sizeof(buf), dt;
@@ -298,7 +299,7 @@ ti_is_us(struct tip_cygwin *priv, HDEVINFO *hdi, SP_DEVINFO_DATA *did)
 	return strstr(buf, "TAP-Win32") != NULL;
 }
 
-static int ti_reset_state(HDEVINFO *hdi, SP_DEVINFO_DATA *did, DWORD state)
+static int ti_reset_state(HDEVINFO * hdi, SP_DEVINFO_DATA * did, DWORD state)
 {
 	SP_PROPCHANGE_PARAMS parm;
 
@@ -320,7 +321,7 @@ static int ti_reset_state(HDEVINFO *hdi, SP_DEVINFO_DATA *did, DWORD state)
  * Reset the device
  * @return 0 if successful, -1 if it failed
  */
-static int ti_do_reset(HDEVINFO *hdi, SP_DEVINFO_DATA *did)
+static int ti_do_reset(HDEVINFO * hdi, SP_DEVINFO_DATA * did)
 {
 	int rc;
 
@@ -330,7 +331,7 @@ static int ti_do_reset(HDEVINFO *hdi, SP_DEVINFO_DATA *did)
 	return ti_reset_state(hdi, did, DICS_ENABLE);
 }
 
-static int ti_restart(struct tip_cygwin *priv)
+static int ti_restart(struct tip_cygwin * priv)
 {
 	/* kill handle to if */
 	if (priv->tc_h) CloseHandle(priv->tc_h);
@@ -344,7 +345,7 @@ static int ti_restart(struct tip_cygwin *priv)
 	return start_reader(priv);
 }
 
-static int ti_reset(struct tip_cygwin *priv)
+static int ti_reset(struct tip_cygwin * priv)
 {
 	HDEVINFO hdi;
 	SP_DEVINFO_DATA did;
@@ -374,12 +375,12 @@ static int ti_reset(struct tip_cygwin *priv)
 	return rc;
 }
 
-static int ti_set_mtu_cygwin(struct tif *ti, int mtu)
+static int ti_set_mtu_cygwin(struct tif * ti, int mtu)
 {
-	struct tip_cygwin *priv = ti_priv(ti);
+	struct tip_cygwin * priv = ti_priv(ti);
 	char m[16];
 	char mold[sizeof(m)];
-	char *key = "MTU";
+	char * key = "MTU";
 
 	/* check if reg remains unchanged to avoid reset */
 	snprintf(m, sizeof(m) - 1, "%d", mtu);
@@ -404,13 +405,13 @@ static int ti_set_mtu_cygwin(struct tif *ti, int mtu)
  * @param mac New MAC address
  * @return -1 if it failed, 0 on success
  */
-static int ti_set_mac_cygwin(struct tif *ti, unsigned char *mac)
+static int ti_set_mac_cygwin(struct tif * ti, unsigned char * mac)
 {
-	struct tip_cygwin *priv = ti_priv(ti);
+	struct tip_cygwin * priv = ti_priv(ti);
 	char str[2 * 6 + 1];
 	char strold[sizeof(str)];
 	int i;
-	char *key = "MAC";
+	char * key = "MAC";
 
 	/* convert */
 	str[0] = 0;
@@ -448,9 +449,9 @@ static int ti_set_mac_cygwin(struct tif *ti, unsigned char *mac)
  * @param ip New IP address
  * @return -1 if it failed, 0 on success
  */
-static int ti_set_ip_cygwin(struct tif *ti, struct in_addr *ip)
+static int ti_set_ip_cygwin(struct tif * ti, struct in_addr * ip)
 {
-	struct tip_cygwin *priv = ti_priv(ti);
+	struct tip_cygwin * priv = ti_priv(ti);
 	ULONG ctx, inst;
 	IP_ADAPTER_INFO ai[16];
 	DWORD len = sizeof(ai);
@@ -487,16 +488,16 @@ static int ti_set_ip_cygwin(struct tif *ti, struct in_addr *ip)
 	return 0;
 }
 
-static int ti_fd_cygwin(struct tif *ti)
+static int ti_fd_cygwin(struct tif * ti)
 {
-	struct tip_cygwin *priv = ti_priv(ti);
+	struct tip_cygwin * priv = ti_priv(ti);
 
 	return priv->tc_pipe[0];
 }
 
-static int ti_read_cygwin(struct tif *ti, void *buf, int len)
+static int ti_read_cygwin(struct tif * ti, void * buf, int len)
 {
-	struct tip_cygwin *priv = ti_priv(ti);
+	struct tip_cygwin * priv = ti_priv(ti);
 	int plen;
 
 	if (priv->tc_running != 1) return -1;
@@ -507,7 +508,7 @@ static int ti_read_cygwin(struct tif *ti, void *buf, int len)
 	return cygwin_read_reader(priv->tc_pipe[0], plen, buf, len);
 }
 
-static int ti_wait_complete(struct tip_cygwin *priv, OVERLAPPED *o)
+static int ti_wait_complete(struct tip_cygwin * priv, OVERLAPPED * o)
 {
 	DWORD sz;
 
@@ -517,7 +518,7 @@ static int ti_wait_complete(struct tip_cygwin *priv, OVERLAPPED *o)
 }
 
 static int
-ti_do_io(struct tip_cygwin *priv, void *buf, int len, OVERLAPPED *o, int wr)
+ti_do_io(struct tip_cygwin * priv, void * buf, int len, OVERLAPPED * o, int wr)
 {
 	BOOL rc;
 	DWORD sz;
@@ -541,7 +542,7 @@ ti_do_io(struct tip_cygwin *priv, void *buf, int len, OVERLAPPED *o, int wr)
 }
 
 static int ti_do_io_lock(
-	struct tip_cygwin *priv, void *buf, int len, OVERLAPPED *o, int wr)
+	struct tip_cygwin * priv, void * buf, int len, OVERLAPPED * o, int wr)
 {
 	int rc;
 
@@ -557,15 +558,15 @@ static int ti_do_io_lock(
 	return ti_wait_complete(priv, o);
 }
 
-static int ti_write_cygwin(struct tif *ti, void *buf, int len)
+static int ti_write_cygwin(struct tif * ti, void * buf, int len)
 {
-	struct tip_cygwin *priv = ti_priv(ti);
+	struct tip_cygwin * priv = ti_priv(ti);
 	OVERLAPPED o;
 
 	return ti_do_io_lock(priv, buf, len, &o, 1);
 }
 
-static int ti_read_packet(struct tip_cygwin *priv, void *buf, int len)
+static int ti_read_packet(struct tip_cygwin * priv, void * buf, int len)
 {
 	OVERLAPPED o;
 	int rc;
@@ -579,9 +580,9 @@ static int ti_read_packet(struct tip_cygwin *priv, void *buf, int len)
 	return -1;
 }
 
-static void *ti_reader(void *arg)
+static void * ti_reader(void * arg)
 {
-	struct tip_cygwin *priv = arg;
+	struct tip_cygwin * priv = arg;
 	unsigned char buf[2048];
 	int len;
 
@@ -604,10 +605,10 @@ static void *ti_reader(void *arg)
 	return NULL;
 }
 
-static struct tif *ti_open_cygwin(char *iface)
+static struct tif * ti_open_cygwin(char * iface)
 {
-	struct tif *ti;
-	struct tip_cygwin *priv;
+	struct tif * ti;
+	struct tip_cygwin * priv;
 
 	/* setup ti struct */
 	ti = ti_alloc(sizeof(*priv));
@@ -641,4 +642,4 @@ err:
 	return NULL;
 }
 
-EXPORT struct tif *ti_open(char *iface) { return ti_open_cygwin(iface); }
+EXPORT struct tif * ti_open(char * iface) { return ti_open_cygwin(iface); }

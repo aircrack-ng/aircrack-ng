@@ -46,14 +46,14 @@
 
 unsigned char buffer[65536];
 
-char *_essid;
+char * _essid;
 
-char *_filename_output_invalid;
-char *_filename_output_cloaked;
-char *_filename_output_filtered;
-FILE *_output_cloaked_packets_file;
-FILE *_output_clean_capture_file;
-FILE *_input_file;
+char * _filename_output_invalid;
+char * _filename_output_cloaked;
+char * _filename_output_filtered;
+FILE * _output_cloaked_packets_file;
+FILE * _output_clean_capture_file;
+FILE * _input_file;
 struct pcap_file_header _pfh_in;
 struct pcap_file_header _pfh_out;
 
@@ -92,9 +92,9 @@ static int getBits(unsigned char b, int from, int nb_bits)
 	return value;
 }
 
-static FILE *openfile(const char *filename, const char *mode, int fatal)
+static FILE * openfile(const char * filename, const char * mode, int fatal)
 {
-	FILE *f;
+	FILE * f;
 
 	if ((f = fopen(filename, mode)) == NULL)
 	{
@@ -111,9 +111,10 @@ static FILE *openfile(const char *filename, const char *mode, int fatal)
 }
 
 // Return 1 on success, 0 on failure
-static BOOLEAN write_packet(FILE *file, struct packet_elt *packet)
+static BOOLEAN write_packet(FILE * file, struct packet_elt * packet)
 {
-	// TODO: Do not forget to swap what has to be swapped if needed (caplen, ...)
+	// TODO: Do not forget to swap what has to be swapped if needed (caplen,
+	// ...)
 	int result;
 	unsigned int caplen = packet->header.caplen;
 
@@ -140,9 +141,9 @@ static BOOLEAN write_packet(FILE *file, struct packet_elt *packet)
 	return true;
 }
 
-static FILE *init_new_pcap(const char *filename)
+static FILE * init_new_pcap(const char * filename)
 {
-	FILE *f;
+	FILE * f;
 
 	f = openfile(filename, "wb", 1);
 
@@ -158,9 +159,9 @@ static FILE *init_new_pcap(const char *filename)
 	return f;
 }
 
-static FILE *open_existing_pcap(const char *filename)
+static FILE * open_existing_pcap(const char * filename)
 {
-	FILE *f;
+	FILE * f;
 	size_t temp_sizet;
 
 	f = fopen(filename, "rb");
@@ -221,10 +222,10 @@ static FILE *open_existing_pcap(const char *filename)
 
 static BOOLEAN initialize_linked_list()
 {
-	_packet_elt_head =
-		(struct packet_elt_header *) malloc(sizeof(struct packet_elt_header));
-	_packet_elt_head->first =
-		(struct packet_elt *) malloc(sizeof(struct packet_elt));
+	_packet_elt_head
+		= (struct packet_elt_header *) malloc(sizeof(struct packet_elt_header));
+	_packet_elt_head->first
+		= (struct packet_elt *) malloc(sizeof(struct packet_elt));
 	_packet_elt_head->last = _packet_elt_head->first;
 	_packet_elt_head->current = _packet_elt_head->first;
 	_packet_elt_head->current->complete = 0;
@@ -239,8 +240,8 @@ static BOOLEAN add_node_if_not_complete()
 	if (_packet_elt_head->current->complete == 1)
 	{
 		// Allocate new packet
-		_packet_elt_head->current->next =
-			(struct packet_elt *) malloc(sizeof(struct packet_elt));
+		_packet_elt_head->current->next
+			= (struct packet_elt *) malloc(sizeof(struct packet_elt));
 		_packet_elt_head->current->next->prev = _packet_elt_head->current;
 		_packet_elt_head->current = _packet_elt_head->current->next;
 
@@ -248,10 +249,11 @@ static BOOLEAN add_node_if_not_complete()
 		_packet_elt_head->nb_packets += 1;
 
 		// Last will be set at the end of the while when everything went ok
-	} // No free of the *packet pointer because it is only set when everything is ok => if a packet is not ok, it will never have *packet malloced
+	} // No free of the *packet pointer because it is only set when everything
+	  // is ok => if a packet is not ok, it will never have *packet malloced
 	// Always reset is_cloaked field and dropped field
-	_packet_elt_head->current->is_cloaked =
-		UKNOWN_FRAME_CLOAKING_STATUS; // Unknown state of this packet
+	_packet_elt_head->current->is_cloaked
+		= UKNOWN_FRAME_CLOAKING_STATUS; // Unknown state of this packet
 	_packet_elt_head->current->is_dropped = 0;
 	return true;
 }
@@ -264,7 +266,7 @@ static void set_node_complete(void)
 
 static void remove_last_uncomplete_node(void)
 {
-	struct packet_elt *packet;
+	struct packet_elt * packet;
 	if (_packet_elt_head->current->complete == 0)
 	{
 		packet = _packet_elt_head->current;
@@ -280,7 +282,7 @@ static void remove_last_uncomplete_node(void)
 static int get_rtap_signal(int caplen)
 {
 	struct ieee80211_radiotap_iterator iterator;
-	struct ieee80211_radiotap_header *rthdr;
+	struct ieee80211_radiotap_header * rthdr;
 
 	rthdr = (struct ieee80211_radiotap_header *) buffer;
 
@@ -304,7 +306,7 @@ static BOOLEAN read_packets(void)
 {
 	int i, start;
 	time_t tt;
-	unsigned char *h80211;
+	unsigned char * h80211;
 	size_t bytes_read;
 
 	i = 0;
@@ -375,7 +377,7 @@ static BOOLEAN read_packets(void)
 		// Only malloc if complete
 		add_node_if_not_complete();
 
-		//puts("Reading packet header");
+		// puts("Reading packet header");
 		bytes_read = fread(&(_packet_elt_head->current->header),
 						   1,
 						   PACKET_HEADER_SIZE,
@@ -389,7 +391,7 @@ static BOOLEAN read_packets(void)
 			else
 			{
 				// Normal, reached EOF.
-				//printf("Reached EOF.\n");
+				// printf("Reached EOF.\n");
 			}
 			break;
 		}
@@ -425,8 +427,10 @@ static BOOLEAN read_packets(void)
 
 		// Put all stuff in the packet header and
 
-		// ---------------------------- Don't remove anything ----------------------
-		// ---------------------------- Just know where the packet start -----------
+		// ---------------------------- Don't remove anything
+		// ----------------------
+		// ---------------------------- Just know where the packet start
+		// -----------
 
 		h80211 = buffer + start;
 
@@ -451,29 +455,31 @@ static BOOLEAN read_packets(void)
 			if (_packet_elt_head->current->frame_type != FRAME_TYPE_CONTROL)
 			{
 				// Unknown frame type, log it
-				//printf("Unknown frame type: %d\n", packet->frame_type);
-				// ------------- May be interesting to put all those packets in a separate file
+				// printf("Unknown frame type: %d\n", packet->frame_type);
+				// ------------- May be interesting to put all those packets in
+				// a separate file
 			}
 			continue;
 		}
 
 		if (_packet_elt_head->current->frame_type == FRAME_TYPE_MANAGEMENT)
 		{
-			// Assumption: Management packets are not cloaked (may change in the future)
+			// Assumption: Management packets are not cloaked (may change in the
+			// future)
 			_packet_elt_head->current->is_cloaked = VALID_FRAME_UNCLOAKED;
 		}
 		else if (_packet_elt_head->current->frame_type == FRAME_TYPE_DATA)
 		{
-			_packet_elt_head->current->is_cloaked =
-				UKNOWN_FRAME_CLOAKING_STATUS;
+			_packet_elt_head->current->is_cloaked
+				= UKNOWN_FRAME_CLOAKING_STATUS;
 		}
 
 		// Retry bit
 		_packet_elt_head->current->retry_bit = getBit(*(h80211 + 1), 3);
 
 		// More fragments bit
-		_packet_elt_head->current->more_fragments_bit =
-			getBit(*(h80211 + 1), 2);
+		_packet_elt_head->current->more_fragments_bit
+			= getBit(*(h80211 + 1), 2);
 		if (_packet_elt_head->current->more_fragments_bit
 			&& _options_drop_fragments)
 		{
@@ -490,9 +496,11 @@ static BOOLEAN read_packets(void)
 		printf("More fragments bit: %d\n",
 			   _packet_elt_head->current->more_fragments_bit);
 #endif
-		/*------------------------------- drop if control frame (does not contains SN) ----------------------*/
+		/*------------------------------- drop if control frame (does not
+		 * contains SN) ----------------------*/
 		// TODO: We should care about control frames since they are not cloaked
-		//       and they can be useful for signal filtering (have a better average).
+		//       and they can be useful for signal filtering (have a better
+		//       average).
 
 		/* check the BSSID */
 		switch (h80211[1] & 3)
@@ -565,15 +573,15 @@ static BOOLEAN read_packets(void)
 		if (memcmp(_packet_elt_head->current->bssid, _bssid, 6))
 		{
 			// Not the BSSID we are looking for
-			//printf("It's not the BSSID we are looking for.\n");
+			// printf("It's not the BSSID we are looking for.\n");
 			continue;
 		}
 
 		// Grab sequence number and fragment number
-		_packet_elt_head->current->sequence_number =
-			((h80211[22] >> 4) + (h80211[23] << 4)); // 12 bits
-		_packet_elt_head->current->fragment_number =
-			getBits(h80211[23], 4, 4); // 4 bits
+		_packet_elt_head->current->sequence_number
+			= ((h80211[22] >> 4) + (h80211[23] << 4)); // 12 bits
+		_packet_elt_head->current->fragment_number
+			= getBits(h80211[23], 4, 4); // 4 bits
 
 		// drop frag option
 		if (_options_drop_fragments
@@ -643,22 +651,21 @@ static BOOLEAN read_packets(void)
 		}
 		else
 		{ // Management packet (control packets were filtered out.
-			_packet_elt_head->current->iv[0] =
-				_packet_elt_head->current->iv[1] =
-					_packet_elt_head->current->iv[2] = 0;
+			_packet_elt_head->current->iv[0] = _packet_elt_head->current->iv[1]
+				= _packet_elt_head->current->iv[2] = 0;
 			_packet_elt_head->current->key_index = 0;
-			_packet_elt_head->current->icv[0] =
-				_packet_elt_head->current->icv[1] =
-					_packet_elt_head->current->icv[2] =
-						_packet_elt_head->current->icv[3] = 0;
+			_packet_elt_head->current->icv[0]
+				= _packet_elt_head->current->icv[1]
+				= _packet_elt_head->current->icv[2]
+				= _packet_elt_head->current->icv[3] = 0;
 #ifdef DEBUG
 			printf("Not a data packet thus no IV, no key index, no ICV\n");
 #endif
 		}
 
 		// Copy the packet itself
-		_packet_elt_head->current->packet =
-			(unsigned char *) malloc(_packet_elt_head->current->header.caplen);
+		_packet_elt_head->current->packet = (unsigned char *) malloc(
+			_packet_elt_head->current->header.caplen);
 		memcpy(_packet_elt_head->current->packet,
 			   buffer,
 			   _packet_elt_head->current->header.caplen);
@@ -672,8 +679,8 @@ static BOOLEAN read_packets(void)
 		}
 		else if (_pfh_in.linktype == LINKTYPE_RADIOTAP_HDR)
 		{
-			_packet_elt_head->current->signal_quality =
-				get_rtap_signal(_packet_elt_head->current->header.caplen);
+			_packet_elt_head->current->signal_quality
+				= get_rtap_signal(_packet_elt_head->current->header.caplen);
 		}
 #ifdef DEBUG
 		printf("Signal quality: %d\n",
@@ -764,7 +771,7 @@ static BOOLEAN next_packet_pointer(void)
 	return success;
 }
 
-static int compare_SN_to_current_packet(struct packet_elt *packet)
+static int compare_SN_to_current_packet(struct packet_elt * packet)
 {
 	if (_packet_elt_head->current->sequence_number > packet->sequence_number)
 	{
@@ -783,7 +790,7 @@ static int compare_SN_to_current_packet(struct packet_elt *packet)
 }
 
 static BOOLEAN
-current_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet)
+current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet)
 {
 	BOOLEAN success = false;
 
@@ -807,7 +814,8 @@ current_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet)
 	}
 	else if (packet->fromDS == 0 && packet->toDS == 0)
 	{
-		// Beacons (and some other packets) coming from the AP (both from and toDS are 0).
+		// Beacons (and some other packets) coming from the AP (both from and
+		// toDS are 0).
 		if (_packet_elt_head->current->fromDS == 1
 			&& _packet_elt_head->current->toDS == 0)
 		{
@@ -819,7 +827,7 @@ current_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet)
 }
 
 static BOOLEAN
-next_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet)
+next_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet)
 {
 	BOOLEAN success = false;
 
@@ -841,8 +849,9 @@ static BOOLEAN next_packet_pointer_same_fromToDS_and_source_as_current(void)
 static int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked(void)
 {
 	// This filtered 1148 packets on a 300-350K capture (~150K were cloaked)
-	// Filtering was done correctly, all packets marked as cloaked were really cloaked).
-	struct packet_elt *current_packet;
+	// Filtering was done correctly, all packets marked as cloaked were really
+	// cloaked).
+	struct packet_elt * current_packet;
 	int how_far, nb_marked;
 
 	puts("Cloaking - Marking all duplicate SN cloaked if frame is valid or "
@@ -854,7 +863,8 @@ static int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked(void)
 	nb_marked = 0;
 	do
 	{
-		// We should first check for each VALID_FRAME_UNCLOAKED or CLOAKED_FRAME packet
+		// We should first check for each VALID_FRAME_UNCLOAKED or CLOAKED_FRAME
+		// packet
 		// PACKET_CHECKING_LENGTH packets later (ONLY NEXT PACKETS)
 		// and if one of the packet has an identical SN, mark it as CLOAKED
 		if (_packet_elt_head->current->is_cloaked != VALID_FRAME_UNCLOAKED
@@ -866,9 +876,11 @@ static int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked(void)
 
 		current_packet = _packet_elt_head->current;
 
-		//printf("Trying current packet: %d,%d (SN: %d)\n", current_packet->fromDS, current_packet->toDS, current_packet->sequence_number);
+		// printf("Trying current packet: %d,%d (SN: %d)\n",
+		// current_packet->fromDS, current_packet->toDS,
+		// current_packet->sequence_number);
 
-		//print_packet(_packet_elt_head->current);
+		// print_packet(_packet_elt_head->current);
 
 		how_far = 0;
 		while (++how_far <= PACKET_CHECKING_LENGTH
@@ -882,11 +894,15 @@ static int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked(void)
 					// Status known, so go to next frame
 					break;
 				case POTENTIALLY_CLOAKED_FRAME:
-					//puts("CFC_with_valid_packets_mark_others_cloaked() - Invalid frame status found: POTENTIALLY_CLOAKED_FRAME");
+					// puts("CFC_with_valid_packets_mark_others_cloaked() -
+					// Invalid frame status found: POTENTIALLY_CLOAKED_FRAME");
 					break; // Should never happen here
 				case UKNOWN_FRAME_CLOAKING_STATUS:
-					//printf("Found unknown cloaking status frame, checking it - tested: %d,%d (SN: %d)\n",
-					//		_packet_elt_head->current->fromDS, _packet_elt_head->current->toDS, _packet_elt_head->current->sequence_number);
+					// printf("Found unknown cloaking status frame, checking it
+					// - tested: %d,%d (SN: %d)\n",
+					//		_packet_elt_head->current->fromDS,
+					//_packet_elt_head->current->toDS,
+					//_packet_elt_head->current->sequence_number);
 					if (compare_SN_to_current_packet(current_packet) == 0)
 					{
 						_packet_elt_head->current->is_cloaked = CLOAKED_FRAME;
@@ -954,7 +970,8 @@ static int get_average_signal_ap(void)
 		if (reset_current_packet_pointer_to_ap_packet() == true)
 		{
 
-			// Calculate signal for all beacons and probe response (and count number of packets).
+			// Calculate signal for all beacons and probe response (and count
+			// number of packets).
 			do
 			{
 				if (_packet_elt_head->current->version_type_subtype
@@ -1002,8 +1019,10 @@ static int get_average_signal_ap(void)
  * Filter packets based on signal.
  *
  * Use signal from all beacons, make an average
- * This will allow to find out what packet are legitimate (coming from the AP) and thus removing cloaked packets
- * By being able to remove cloaked packets, we'll find out the signal of the sensor(s)
+ * This will allow to find out what packet are legitimate (coming from the AP)
+ * and thus removing cloaked packets
+ * By being able to remove cloaked packets, we'll find out the signal of the
+ * sensor(s)
  * //and we'll be able to filter out the cloaked packets of clients.
  *
  * Enh: use signal from packets marked uncloaked instead of beacons.
@@ -1013,7 +1032,8 @@ static int get_average_signal_ap(void)
 static int CFC_filter_signal(void)
 {
 
-// Maximum variation of the signal for unknown status frame and potentially cloaked frames (up & down)
+// Maximum variation of the signal for unknown status frame and potentially
+// cloaked frames (up & down)
 #define MAX_SIGNAL_VARIATION 3
 #define MAX_SIGNAL_VARIATION_POTENTIALLY_CLOAKED 2
 
@@ -1027,14 +1047,16 @@ static int CFC_filter_signal(void)
 	if (average_signal > 0)
 	{
 
-		reset_current_packet_pointer_to_ap_packet(); // Will be successful because signal > 0
+		reset_current_packet_pointer_to_ap_packet(); // Will be successful
+													 // because signal > 0
 
 		do
 		{
 			switch (_packet_elt_head->current->is_cloaked)
 			{
 				case POTENTIALLY_CLOAKED_FRAME:
-					// Max allowed variation for potentially cloaked packet is a bit lower
+					// Max allowed variation for potentially cloaked packet is a
+					// bit lower
 					// than the normal variation
 					if (abs(_packet_elt_head->current->signal_quality
 							- average_signal)
@@ -1048,7 +1070,8 @@ static int CFC_filter_signal(void)
 					__attribute__((fallthrough));
 #endif
 				case UKNOWN_FRAME_CLOAKING_STATUS:
-					// If variation is > max allowed variation, it's a cloaked packet
+					// If variation is > max allowed variation, it's a cloaked
+					// packet
 					if (abs(_packet_elt_head->current->signal_quality
 							- average_signal)
 						> MAX_SIGNAL_VARIATION)
@@ -1059,11 +1082,14 @@ static int CFC_filter_signal(void)
 					}
 					// If the signal quality is the same as the average signal,
 					// we're sure it's not a cloaked packet.
-					// Regarding any other signal difference compared to the average signal
-					// We could play with POTENTIALLY_CLOAKED frame depending on the variation
-					// but currently, it's unloacked if inferior to the max allowed signal
-					_packet_elt_head->current->is_cloaked =
-						VALID_FRAME_UNCLOAKED;
+					// Regarding any other signal difference compared to the
+					// average signal
+					// We could play with POTENTIALLY_CLOAKED frame depending on
+					// the variation
+					// but currently, it's unloacked if inferior to the max
+					// allowed signal
+					_packet_elt_head->current->is_cloaked
+						= VALID_FRAME_UNCLOAKED;
 					break;
 				case VALID_FRAME_UNCLOAKED:
 					break;
@@ -1076,9 +1102,12 @@ static int CFC_filter_signal(void)
 				 == true);
 	}
 
-	// TODO: Do it also for clients: Calculate the average for know cloaked frames
-	//       (each frame marked cloaked here) and then filter out wep cloaked frames.
-	//        or implement it as another filter (since clients may have the same signal
+	// TODO: Do it also for clients: Calculate the average for know cloaked
+	// frames
+	//       (each frame marked cloaked here) and then filter out wep cloaked
+	//       frames.
+	//        or implement it as another filter (since clients may have the same
+	//        signal
 	//        as the sensor).
 
 	// Return
@@ -1090,8 +1119,8 @@ static int CFC_filter_consecutive_sn(void)
 	int nb_packets = 0;
 	puts("Cloaking - Consecutive SN filtering");
 
-	nb_packets =
-		CFC_filter_consecutive_sn_ap() + CFC_filter_consecutive_sn_client();
+	nb_packets
+		= CFC_filter_consecutive_sn_ap() + CFC_filter_consecutive_sn_client();
 
 	return nb_packets;
 }
@@ -1102,10 +1131,12 @@ static int CFC_filter_consecutive_sn_ap(void)
 	BOOLEAN next_packet_result = false;
 	puts("Cloaking - Consecutive SN filtering (AP)");
 
-	// Filtering for the client is not easy at all, maybe we can base on the fact that wep cloaking clone everything in the packet
+	// Filtering for the client is not easy at all, maybe we can base on the
+	// fact that wep cloaking clone everything in the packet
 	// except the data (and ofc the SN).
 
-	// So, atm filtering for the AP only (hoping the client is not uploading data ;))
+	// So, atm filtering for the AP only (hoping the client is not uploading
+	// data ;))
 
 	reset_current_packet_pointer_to_ap_packet();
 
@@ -1115,8 +1146,8 @@ static int CFC_filter_consecutive_sn_ap(void)
 		  || _packet_elt_head->current->version_type_subtype == PROBE_RESPONSE))
 	{
 
-		next_packet_result =
-			next_packet_pointer_same_fromToDS_and_source_as_current();
+		next_packet_result
+			= next_packet_pointer_same_fromToDS_and_source_as_current();
 		// Check if we didn't reach end of capture.
 		if (next_packet_result == false)
 		{
@@ -1141,7 +1172,8 @@ static int CFC_filter_consecutive_sn_client(void)
 
 	puts("Cloaking - Consecutive SN filtering (Client)");
 
-	// For consecutive SN of the client, if packets are cloaked, we can rely on null frames or probe request/association request.
+	// For consecutive SN of the client, if packets are cloaked, we can rely on
+	// null frames or probe request/association request.
 
 	reset_current_packet_pointer_to_client_packet();
 
@@ -1154,7 +1186,7 @@ static int CFC_filter_consecutive_sn_client(void)
 
 static int CFC_filter_duplicate_iv(void)
 {
-	unsigned char *ivs_table;
+	unsigned char * ivs_table;
 	int nb_packets = 0;
 	puts("Cloaking - Duplicate IV filtering");
 
@@ -1171,8 +1203,10 @@ static int CFC_filter_duplicate_iv(void)
 	{
 		if (_packet_elt_head->current->frame_type == FRAME_TYPE_DATA)
 		{
-			// In the array, there's as much elements as the number of possible IVs
-			// For each IV, increase by 1 the value of the IV position so that we can
+			// In the array, there's as much elements as the number of possible
+			// IVs
+			// For each IV, increase by 1 the value of the IV position so that
+			// we can
 			// know if it was used AND the number of occurrences.
 			*(ivs_table + get_iv(_packet_elt_head->current)) += 1;
 		}
@@ -1201,8 +1235,8 @@ static int CFC_filter_duplicate_iv(void)
 					// If unknown status, mark it as potentially cloaked
 					if (*(ivs_table + get_iv(_packet_elt_head->current)) > 1)
 					{
-						_packet_elt_head->current->is_cloaked =
-							POTENTIALLY_CLOAKED_FRAME;
+						_packet_elt_head->current->is_cloaked
+							= POTENTIALLY_CLOAKED_FRAME;
 					}
 					break;
 				case VALID_FRAME_UNCLOAKED:
@@ -1220,11 +1254,11 @@ static int CFC_filter_duplicate_iv(void)
 	return nb_packets;
 }
 
-static char *status_format(int status)
+static char * status_format(int status)
 {
 	size_t len = 19;
-	char *ret = (char *) calloc(1, (len + 1) * sizeof(char));
-	char *rret;
+	char * ret = (char *) calloc(1, (len + 1) * sizeof(char));
+	char * rret;
 
 	switch (status)
 	{
@@ -1302,11 +1336,13 @@ static BOOLEAN check_for_cloaking(void)
 
 	puts("Cloaking - Start check");
 
-	// Parse all packets, then for each packet marked valid (or cloaked), check forward if any packet has
-	// an unknown status and same SN. If it's the case, mark the current packet CLOAKED
+	// Parse all packets, then for each packet marked valid (or cloaked), check
+	// forward if any packet has
+	// an unknown status and same SN. If it's the case, mark the current packet
+	// CLOAKED
 	if (_options_disable_base_filter == 0)
 	{
-		//CFC_with_valid_packets_mark_others_with_identical_sn_cloaked();
+		// CFC_with_valid_packets_mark_others_with_identical_sn_cloaked();
 		CFC_base_filter();
 	}
 
@@ -1363,7 +1399,7 @@ static BOOLEAN check_for_cloaking(void)
 static BOOLEAN write_packets(void)
 {
 	// Open files ...
-	FILE *invalid_status_file;
+	FILE * invalid_status_file;
 
 	if (_filename_output_invalid != NULL)
 		invalid_status_file = init_new_pcap(_filename_output_invalid);
@@ -1434,7 +1470,7 @@ static BOOLEAN print_statistics(void) { return true; }
 
 static void usage(void)
 {
-	char *version_info = getVersion(
+	char * version_info = getVersion(
 		"Airdecloak-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf(
 		"\n"
@@ -1484,7 +1520,8 @@ static void usage(void)
 		"     --null-packets        : Assume that null packets can be "
 		"cloaked.\n"
 		"     --disable-base_filter : Do not apply base filter.\n"
-		//"     --disable-retry       : Disable retry check, don't care about retry bit.\n"
+		//"     --disable-retry       : Disable retry check, don't care about
+		//retry bit.\n"
 		"     --drop-frag           : Drop fragmented packets\n"
 		"\n"
 		"     --help                : Displays this usage screen\n"
@@ -1493,14 +1530,14 @@ static void usage(void)
 	free(version_info);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
 	int temp = 0, option;
 	int manual_cloaked_fname = 0, manual_filtered_fname = 0;
 	BOOLEAN tempBool;
-	char *input_filename;
-	char *input_bssid;
-	char *filter_name;
+	char * input_filename;
+	char * input_bssid;
+	char * filter_name;
 
 	// Initialize
 	input_bssid = NULL;
@@ -1520,27 +1557,27 @@ int main(int argc, char *argv[])
 
 		int option_index = 0;
 
-		static struct option long_options[] = {
-			{"essid", 1, 0, 'e'},
-			{"ssid", 1, 0, 'e'},
-			{"bssid", 1, 0, 'b'},
-			{"help", 0, 0, 'h'},
-			{"filter", 1, 0, 'f'},
-			{"filters", 1, 0, 'f'},
-			{"null-packets", 0, 0, 'n'},
-			{"null-packet", 0, 0, 'n'},
-			{"null_packets", 0, 0, 'n'},
-			{"null_packet", 0, 0, 'n'},
-			{"no-base-filter", 0, 0, 'a'},
-			{"disable-base-filter", 0, 0, 'a'},
-			//{"disable-retry",		0, 0, 'r'},
-			{"drop-frag", 0, 0, 'd'},
-			{"input", 1, 0, 'i'},
-			{"cloaked", 1, 0, 'c'},
-			{"filtered", 1, 0, 'f'},
-			{0, 0, 0, 0}};
+		static struct option long_options[]
+			= {{"essid", 1, 0, 'e'},
+			   {"ssid", 1, 0, 'e'},
+			   {"bssid", 1, 0, 'b'},
+			   {"help", 0, 0, 'h'},
+			   {"filter", 1, 0, 'f'},
+			   {"filters", 1, 0, 'f'},
+			   {"null-packets", 0, 0, 'n'},
+			   {"null-packet", 0, 0, 'n'},
+			   {"null_packets", 0, 0, 'n'},
+			   {"null_packet", 0, 0, 'n'},
+			   {"no-base-filter", 0, 0, 'a'},
+			   {"disable-base-filter", 0, 0, 'a'},
+			   //{"disable-retry",		0, 0, 'r'},
+			   {"drop-frag", 0, 0, 'd'},
+			   {"input", 1, 0, 'i'},
+			   {"cloaked", 1, 0, 'c'},
+			   {"filtered", 1, 0, 'f'},
+			   {0, 0, 0, 0}};
 
-		//option = getopt_long( argc, argv, "e:b:hf:nbrdi:",
+		// option = getopt_long( argc, argv, "e:b:hf:nbrdi:",
 		option = getopt_long(
 			argc, argv, "e:b:hf:nbdi:c:o:u:", long_options, &option_index);
 
@@ -1614,8 +1651,8 @@ int main(int argc, char *argv[])
 					else if (strcmp(filter_name, "duplicate_sn_client") == 0
 							 || atoi(filter_name) == FILTER_DUPLICATE_SN_CLIENT)
 					{
-						_filters =
-							_filters + (FILTER_DUPLICATE_SN_CLIENT * temp);
+						_filters
+							= _filters + (FILTER_DUPLICATE_SN_CLIENT * temp);
 					}
 					else if (strcmp(filter_name, "consecutive_sn") == 0
 							 || atoi(filter_name) == FILTER_CONSECUTIVE_SN)
@@ -1682,16 +1719,23 @@ int main(int argc, char *argv[])
 			--ssid ESSID (or --essid or --ssid) or -b BSSID (or --bssid or --ap)
 
 		Optional:
-			-o <file>             : Output packets (valid) file (default: <src>-filtered.pcap)
-			-c <file>             : Output packets (cloaked) file (default: <src>-cloaked.pcap)
-			-u <file>             : Output packets (unknown/ignored) file (default: invalid_status.pcap)
+			-o <file>             : Output packets (valid) file (default:
+	   <src>-filtered.pcap)
+			-c <file>             : Output packets (cloaked) file (default:
+	   <src>-cloaked.pcap)
+			-u <file>             : Output packets (unknown/ignored) file
+	   (default: invalid_status.pcap)
 			-f (--filters/--filter)
 				Available filters:
-					* signal: Tries to filter based on the signal (AP never/is not supposed to moves thus ...)
+					* signal: Tries to filter based on the signal (AP never/is
+	   not supposed to moves thus ...)
 					* duplicate_sn: remove all duplicate SN
-					* duplicate_sn_ap/duplicate_sn_client: remove all duplicate SN from the AP/Client
-					* consecutive_sn: filter based on the fact that IV should be consecutive (only for AP).
-				Several filters can be used and you can choose the order of application of these filters
+					* duplicate_sn_ap/duplicate_sn_client: remove all duplicate
+	   SN from the AP/Client
+					* consecutive_sn: filter based on the fact that IV should be
+	   consecutive (only for AP).
+				Several filters can be used and you can choose the order of
+	   application of these filters
 					(that will impact the results).
 			--null-packets: Do not assume that null packets are not cloaked.
 			--no-base_filter: do not apply base filter.

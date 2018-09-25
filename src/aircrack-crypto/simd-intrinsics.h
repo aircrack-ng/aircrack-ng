@@ -39,10 +39,13 @@
  *
  * http://www.openwall.com/john/doc/LICENSE.shtml
  *
- * This software is Copyright (c) 2010 bartavelle, <bartavelle at bandecon.com>, and it is hereby released to the general public under the following terms:
- * Redistribution and use in source and binary forms, with or without modification, are permitted.
+ * This software is Copyright (c) 2010 bartavelle, <bartavelle at bandecon.com>,
+ * and it is hereby released to the general public under the following terms:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted.
  *
- * Some modifications, Jim Fougeron, 2013.  Licensing rights listed in accompanying simd-intrinsics.c file.
+ * Some modifications, Jim Fougeron, 2013.  Licensing rights listed in
+ * accompanying simd-intrinsics.c file.
  */
 
 #if !defined(__JTR_SSE_INTRINSICS_H__)
@@ -113,70 +116,71 @@
 #endif
 
 #ifdef SIMD_PARA_MD5
-void md5cryptsse(unsigned char *buf,
-				 unsigned char *salt,
-				 char *out,
+void md5cryptsse(unsigned char * buf,
+				 unsigned char * salt,
+				 char * out,
 				 unsigned int md5_type);
-void SIMDmd5body(vtype *data,
-				 ARCH_WORD_32 *out,
-				 ARCH_WORD_32 *reload_state,
+void SIMDmd5body(vtype * data,
+				 ARCH_WORD_32 * out,
+				 ARCH_WORD_32 * reload_state,
 				 unsigned SSEi_flags);
-void md5_reverse(uint32_t *hash);
-void md5_unreverse(uint32_t *hash);
+void md5_reverse(uint32_t * hash);
+void md5_unreverse(uint32_t * hash);
 #define MD5_ALGORITHM_NAME BITS " " SIMD_TYPE " " MD5_N_STR
 #else
 #define MD5_ALGORITHM_NAME "32/" ARCH_BITS_STR
 #endif
 
 #ifdef SIMD_PARA_MD4
-//void SIMDmd4body(__m128i* data, unsigned int *out, int init);
-void SIMDmd4body(vtype *data,
-				 ARCH_WORD_32 *out,
-				 ARCH_WORD_32 *reload_state,
+// void SIMDmd4body(__m128i* data, unsigned int *out, int init);
+void SIMDmd4body(vtype * data,
+				 ARCH_WORD_32 * out,
+				 ARCH_WORD_32 * reload_state,
 				 unsigned SSEi_flags);
-void md4_reverse(uint32_t *hash);
-void md4_unreverse(uint32_t *hash);
+void md4_reverse(uint32_t * hash);
+void md4_unreverse(uint32_t * hash);
 #define MD4_ALGORITHM_NAME BITS " " SIMD_TYPE " " MD4_N_STR
 #else
 #define MD4_ALGORITHM_NAME "32/" ARCH_BITS_STR
 #endif
 
 #ifdef SIMD_PARA_SHA1
-void SIMDSHA1body(vtype *data,
-				  ARCH_WORD_32 *out,
-				  ARCH_WORD_32 *reload_state,
+void SIMDSHA1body(vtype * data,
+				  ARCH_WORD_32 * out,
+				  ARCH_WORD_32 * reload_state,
 				  unsigned SSEi_flags);
-void sha1_reverse(uint32_t *hash);
-void sha1_unreverse(uint32_t *hash);
+void sha1_reverse(uint32_t * hash);
+void sha1_unreverse(uint32_t * hash);
 #define SHA1_ALGORITHM_NAME BITS " " SIMD_TYPE " " SHA1_N_STR
 #else
 #define SHA1_ALGORITHM_NAME "32/" ARCH_BITS_STR
 #endif
 
-// we use the 'outter' SIMD_COEF_32 wrapper, as the flag for SHA256/SHA512.  FIX_ME!!
+// we use the 'outter' SIMD_COEF_32 wrapper, as the flag for SHA256/SHA512.
+// FIX_ME!!
 #if SIMD_COEF_32 > 1
 
 #ifdef SIMD_COEF_32
 #define SHA256_ALGORITHM_NAME BITS " " SIMD_TYPE " " SHA256_N_STR
-void SIMDSHA256body(vtype *data,
-					ARCH_WORD_32 *out,
-					ARCH_WORD_32 *reload_state,
+void SIMDSHA256body(vtype * data,
+					ARCH_WORD_32 * out,
+					ARCH_WORD_32 * reload_state,
 					unsigned SSEi_flags);
-void sha224_reverse(uint32_t *hash);
-void sha224_unreverse(uint32_t *hash);
-void sha256_reverse(uint32_t *hash);
+void sha224_reverse(uint32_t * hash);
+void sha224_unreverse(uint32_t * hash);
+void sha256_reverse(uint32_t * hash);
 void sha256_unreverse(void);
 #endif
 
 #ifdef SIMD_COEF_64
 #define SHA512_ALGORITHM_NAME BITS " " SIMD_TYPE " " SHA512_N_STR
-void SIMDSHA512body(vtype *data,
-					ARCH_WORD_64 *out,
-					ARCH_WORD_64 *reload_state,
+void SIMDSHA512body(vtype * data,
+					ARCH_WORD_64 * out,
+					ARCH_WORD_64 * reload_state,
 					unsigned SSEi_flags);
-void sha384_reverse(ARCH_WORD_64 *hash);
-void sha384_unreverse(ARCH_WORD_64 *hash);
-void sha512_reverse(ARCH_WORD_64 *hash);
+void sha384_reverse(ARCH_WORD_64 * hash);
+void sha384_unreverse(ARCH_WORD_64 * hash);
+void sha512_reverse(ARCH_WORD_64 * hash);
 void sha512_unreverse(void);
 #endif
 

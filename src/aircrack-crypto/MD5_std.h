@@ -136,7 +136,7 @@ typedef struct
 	MD5_block _block[MD5_N];
 	MD5_pattern _order[21][MD5_N];
 	MD5_pool _pool[MD5_N];
-	char *prefix;
+	char * prefix;
 	int prelen;
 } MD5_std_combined;
 
@@ -144,7 +144,7 @@ typedef struct
 #define MD5_std_mt 1
 #define MD5_std_cpt 128
 #define MD5_std_mt_max (MD5_std_cpt * 576)
-extern MD5_std_combined *MD5_std_all_p;
+extern MD5_std_combined * MD5_std_all_p;
 extern int MD5_std_min_kpc, MD5_std_max_kpc;
 extern int MD5_std_nt;
 #define MD5_std_all_align 64
@@ -191,18 +191,18 @@ extern MD5_std_combined MD5_std_all;
  * Initializes the internal structures.
  */
 struct fmt_main;
-extern void MD5_std_init(struct fmt_main *self);
+extern void MD5_std_init(struct fmt_main * self);
 
 /*
  * Sets a salt for MD5_std_crypt().
  */
-extern void MD5_std_set_salt(char *salt);
+extern void MD5_std_set_salt(char * salt);
 
 /*
  * Sets a key for MD5_std_crypt().
  * Currently only supports keys up to 15 characters long.
  */
-extern void MD5_std_set_key(char *key, int index);
+extern void MD5_std_set_key(char * key, int index);
 
 /*
  * Main hashing routine, sets MD5_out.
@@ -212,11 +212,11 @@ extern void MD5_std_crypt(int count);
 /*
  * Returns the salt for MD5_std_set_salt().
  */
-extern char *MD5_std_get_salt(char *ciphertext);
+extern char * MD5_std_get_salt(char * ciphertext);
 
 /*
  * Converts an ASCII ciphertext to binary.
  */
-extern MD5_word *MD5_std_get_binary(char *ciphertext);
+extern MD5_word * MD5_std_get_binary(char * ciphertext);
 
 #endif

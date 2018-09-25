@@ -1,5 +1,6 @@
 /*
- *  High speed wordcounting functions for ETA calculations by Len White <lwhite at nrw.ca>
+ *  High speed wordcounting functions for ETA calculations by Len White <lwhite
+ * at nrw.ca>
  *
  *  Copyright (C) 2015 Len White <lwhite at nrw.ca>
  *
@@ -64,16 +65,16 @@
 
 using namespace std;
 
-unsigned int FileRead(istream &is, vector<char> &buff)
+unsigned int FileRead(istream & is, vector<char> & buff)
 {
 	is.read(&buff[0], buff.size());
 	return is.gcount();
 }
 
-unsigned int countBuffer(const vector<char> &buff, int bufsize)
+unsigned int countBuffer(const vector<char> & buff, int bufsize)
 {
 	int lines = 0, i = 4;
-	const char *p = &buff[0];
+	const char * p = &buff[0];
 	unsigned short charct = 0;
 
 	bufsize--;
@@ -95,7 +96,7 @@ unsigned int countBuffer(const vector<char> &buff, int bufsize)
 	return lines;
 }
 
-unsigned int linecount(const char *file, off_t offset, size_t offsetmax)
+unsigned int linecount(const char * file, off_t offset, size_t offsetmax)
 {
 	const int SZ = READBUF_BLKSIZE;
 	std::vector<char> buff(SZ);
@@ -106,8 +107,10 @@ unsigned int linecount(const char *file, off_t offset, size_t offsetmax)
 
 	if (offset) ifs.seekg(offset, ifs.beg);
 
-	// I know doing a redundant loop looks dirty but it's so we don't get a performance penalty
-	// inside the loop if we're not using offsetmax, since some files could be 20+ GB this is important.
+	// I know doing a redundant loop looks dirty but it's so we don't get a
+	// performance penalty
+	// inside the loop if we're not using offsetmax, since some files could be
+	// 20+ GB this is important.
 	if (offsetmax)
 	{
 		while ((cc = FileRead(ifs, buff)))

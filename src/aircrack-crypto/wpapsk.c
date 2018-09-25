@@ -114,8 +114,8 @@
 #define SIMDSHA1body SSESHA1body
 #endif
 
-char itoa64[64] =
-	"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+char itoa64[64]
+	= "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 char atoi64[0x100];
 
 /* for endianity conversion */
@@ -133,19 +133,19 @@ char atoi64[0x100];
 #endif
 
 #ifdef SIMD_CORE
-static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
+static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 									int threadid,
 									int count,
-									const wpapsk_password *in)
+									const wpapsk_password * in)
 {
 	int t; // thread count
 	int salt_length = engine->essid_length;
 	int slen = salt_length + 4;
 	int loops = (count + NBKEYS - 1) / NBKEYS;
 
-	unsigned char *sse_hash1 = NULL;
-	unsigned char *sse_crypt1 = NULL;
-	unsigned char *sse_crypt2 = NULL;
+	unsigned char * sse_hash1 = NULL;
+	unsigned char * sse_crypt1 = NULL;
+	unsigned char * sse_crypt2 = NULL;
 	unsigned char essid[ESSID_LENGTH + 4];
 
 	sse_hash1 = engine->thread_data[threadid]->hash1;
@@ -153,7 +153,9 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 	sse_crypt2 = engine->thread_data[threadid]->crypt2;
 
 	memset(essid, 0, sizeof(essid));
-	strncpy((char*)essid, (const char*) engine->essid, (size_t) engine->essid_length);
+	strncpy((char *) essid,
+			(const char *) engine->essid,
+			(size_t) engine->essid_length);
 
 	for (t = 0; t < loops; t++)
 	{
@@ -173,7 +175,8 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 		unsigned int *i1, *i2, *o1;
 		unsigned char *t_sse_crypt1, *t_sse_crypt2, *t_sse_hash1;
 
-		// All pointers get their offset for this thread here. No further offsetting below.
+		// All pointers get their offset for this thread here. No further
+		// offsetting below.
 		t_sse_crypt1 = &sse_crypt1[t * NBKEYS * 20];
 		t_sse_crypt2 = &sse_crypt2[t * NBKEYS * 20];
 		t_sse_hash1 = &sse_hash1[t * NBKEYS * SHA_BUF_SIZ * 4];
@@ -197,52 +200,68 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 			for (i = 0; i < 16; i++) buffer[j].i[i] ^= 0x6a6a6a6a;
 			SHA1_Update(&ctx_opad[j], buffer[j].c, 64);
 
-			// we memcopy from flat into MMX_COEF output buffer's (our 'temp' ctx buffer).
-			// This data will NOT need to be BE swapped (it already IS BE swapped).
+// we memcopy from flat into MMX_COEF output buffer's (our 'temp' ctx buffer).
+// This data will NOT need to be BE swapped (it already IS BE swapped).
 #ifdef SIMD_CORE
 			i1[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
-			   + 0 * SIMD_COEF_32] = ctx_ipad[j].h0;
+			   + 0 * SIMD_COEF_32]
+				= ctx_ipad[j].h0;
 			i1[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
-			   + 1 * SIMD_COEF_32] = ctx_ipad[j].h1;
+			   + 1 * SIMD_COEF_32]
+				= ctx_ipad[j].h1;
 			i1[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
-			   + 2 * SIMD_COEF_32] = ctx_ipad[j].h2;
+			   + 2 * SIMD_COEF_32]
+				= ctx_ipad[j].h2;
 			i1[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
-			   + 3 * SIMD_COEF_32] = ctx_ipad[j].h3;
+			   + 3 * SIMD_COEF_32]
+				= ctx_ipad[j].h3;
 			i1[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
-			   + 4 * SIMD_COEF_32] = ctx_ipad[j].h4;
+			   + 4 * SIMD_COEF_32]
+				= ctx_ipad[j].h4;
 
 			i2[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
-			   + 0 * SIMD_COEF_32] = ctx_opad[j].h0;
+			   + 0 * SIMD_COEF_32]
+				= ctx_opad[j].h0;
 			i2[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
-			   + 1 * SIMD_COEF_32] = ctx_opad[j].h1;
+			   + 1 * SIMD_COEF_32]
+				= ctx_opad[j].h1;
 			i2[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
-			   + 2 * SIMD_COEF_32] = ctx_opad[j].h2;
+			   + 2 * SIMD_COEF_32]
+				= ctx_opad[j].h2;
 			i2[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
-			   + 3 * SIMD_COEF_32] = ctx_opad[j].h3;
+			   + 3 * SIMD_COEF_32]
+				= ctx_opad[j].h3;
 			i2[(j / SIMD_COEF_32) * SIMD_COEF_32 * 5 + (j & (SIMD_COEF_32 - 1))
-			   + 4 * SIMD_COEF_32] = ctx_opad[j].h4;
+			   + 4 * SIMD_COEF_32]
+				= ctx_opad[j].h4;
 #else
-			i1[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))] =
-				ctx_ipad[j].h0;
+			i1[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))]
+				= ctx_ipad[j].h0;
+			i1[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1)) + MMX_COEF]
+				= ctx_ipad[j].h1;
 			i1[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))
-			   + MMX_COEF] = ctx_ipad[j].h1;
+			   + (MMX_COEF << 1)]
+				= ctx_ipad[j].h2;
 			i1[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))
-			   + (MMX_COEF << 1)] = ctx_ipad[j].h2;
+			   + MMX_COEF * 3]
+				= ctx_ipad[j].h3;
 			i1[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))
-			   + MMX_COEF * 3] = ctx_ipad[j].h3;
-			i1[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))
-			   + (MMX_COEF << 2)] = ctx_ipad[j].h4;
+			   + (MMX_COEF << 2)]
+				= ctx_ipad[j].h4;
 
-			i2[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))] =
-				ctx_opad[j].h0;
+			i2[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))]
+				= ctx_opad[j].h0;
+			i2[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1)) + MMX_COEF]
+				= ctx_opad[j].h1;
 			i2[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))
-			   + MMX_COEF] = ctx_opad[j].h1;
+			   + (MMX_COEF << 1)]
+				= ctx_opad[j].h2;
 			i2[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))
-			   + (MMX_COEF << 1)] = ctx_opad[j].h2;
+			   + MMX_COEF * 3]
+				= ctx_opad[j].h3;
 			i2[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))
-			   + MMX_COEF * 3] = ctx_opad[j].h3;
-			i2[(j / MMX_COEF) * MMX_COEF * 5 + (j & (MMX_COEF - 1))
-			   + (MMX_COEF << 2)] = ctx_opad[j].h4;
+			   + (MMX_COEF << 2)]
+				= ctx_opad[j].h4;
 #endif
 
 			essid[slen - 1] = 1;
@@ -255,36 +274,47 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 			SHA1_Update(&sha1_ctx, outbuf[j].c, SHA_DIGEST_LENGTH);
 			SHA1_Final(outbuf[j].c, &sha1_ctx);
 
-			// now convert this from flat into MMX_COEF buffers.   (same as the memcpy() commented out in the last line)
-			// Also, perform the 'first' ^= into the crypt buffer.  We are doing that in BE format
-			// so we will need to 'undo' that in the end.
+// now convert this from flat into MMX_COEF buffers.   (same as the memcpy()
+// commented out in the last line)
+// Also, perform the 'first' ^= into the crypt buffer.  We are doing that in BE
+// format
+// so we will need to 'undo' that in the end.
 #ifdef SIMD_CORE
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
-			   + 0 * SIMD_COEF_32] = outbuf[j].i[0] = sha1_ctx.h0;
+			   + 0 * SIMD_COEF_32]
+				= outbuf[j].i[0] = sha1_ctx.h0;
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
-			   + 1 * SIMD_COEF_32] = outbuf[j].i[1] = sha1_ctx.h1;
+			   + 1 * SIMD_COEF_32]
+				= outbuf[j].i[1] = sha1_ctx.h1;
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
-			   + 2 * SIMD_COEF_32] = outbuf[j].i[2] = sha1_ctx.h2;
+			   + 2 * SIMD_COEF_32]
+				= outbuf[j].i[2] = sha1_ctx.h2;
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
-			   + 3 * SIMD_COEF_32] = outbuf[j].i[3] = sha1_ctx.h3;
+			   + 3 * SIMD_COEF_32]
+				= outbuf[j].i[3] = sha1_ctx.h3;
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
-			   + 4 * SIMD_COEF_32] = outbuf[j].i[4] = sha1_ctx.h4;
+			   + 4 * SIMD_COEF_32]
+				= outbuf[j].i[4] = sha1_ctx.h4;
 #else
-			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))] =
-				outbuf[j].i[0] = sha1_ctx.h0;
+			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))]
+				= outbuf[j].i[0] = sha1_ctx.h0;
 			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))
-			   + MMX_COEF] = outbuf[j].i[1] = sha1_ctx.h1;
+			   + MMX_COEF]
+				= outbuf[j].i[1] = sha1_ctx.h1;
 			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))
-			   + (MMX_COEF << 1)] = outbuf[j].i[2] = sha1_ctx.h2;
+			   + (MMX_COEF << 1)]
+				= outbuf[j].i[2] = sha1_ctx.h2;
 			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))
-			   + MMX_COEF * 3] = outbuf[j].i[3] = sha1_ctx.h3;
+			   + MMX_COEF * 3]
+				= outbuf[j].i[3] = sha1_ctx.h3;
 			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))
-			   + (MMX_COEF << 2)] = outbuf[j].i[4] = sha1_ctx.h4;
+			   + (MMX_COEF << 2)]
+				= outbuf[j].i[4] = sha1_ctx.h4;
 #endif
 		}
 
@@ -302,14 +332,14 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 			for (j = 0; j < NBKEYS; j++)
 			{
 #ifdef SIMD_CORE
-				unsigned *p =
-					&((unsigned int *)
-						  t_sse_hash1)[(((j / SIMD_COEF_32) * SHA_BUF_SIZ)
-										* SIMD_COEF_32)
-									   + (j & (SIMD_COEF_32 - 1))];
+				unsigned * p
+					= &((unsigned int *)
+							t_sse_hash1)[(((j / SIMD_COEF_32) * SHA_BUF_SIZ)
+										  * SIMD_COEF_32)
+										 + (j & (SIMD_COEF_32 - 1))];
 				for (k = 0; k < 5; k++) outbuf[j].i[k] ^= p[(k * SIMD_COEF_32)];
 #else
-				unsigned *p = &((
+				unsigned * p = &((
 					unsigned int *) t_sse_hash1)[(((j >> 2) * SHA_BUF_SIZ) << 2)
 												 + (j & (MMX_COEF - 1))];
 				for (k = 0; k < 5; k++)
@@ -330,36 +360,48 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 			SHA1_Update(&sha1_ctx, &outbuf[j].c[20], 20);
 			SHA1_Final(&outbuf[j].c[20], &sha1_ctx);
 
-			// now convert this from flat into MMX_COEF buffers.  (same as the memcpy() commented out in the last line)
-			// Also, perform the 'first' ^= into the crypt buffer.  We are doing that in BE format
-			// so we will need to 'undo' that in the end. (only 3 dwords of the 2nd block outbuf are worked with).
+// now convert this from flat into MMX_COEF buffers.  (same as the memcpy()
+// commented out in the last line)
+// Also, perform the 'first' ^= into the crypt buffer.  We are doing that in BE
+// format
+// so we will need to 'undo' that in the end. (only 3 dwords of the 2nd block
+// outbuf are worked with).
 #ifdef SIMD_CORE
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
-			   + 0 * SIMD_COEF_32] = outbuf[j].i[5] = sha1_ctx.h0;
+			   + 0 * SIMD_COEF_32]
+				= outbuf[j].i[5] = sha1_ctx.h0;
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
-			   + 1 * SIMD_COEF_32] = outbuf[j].i[6] = sha1_ctx.h1;
+			   + 1 * SIMD_COEF_32]
+				= outbuf[j].i[6] = sha1_ctx.h1;
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
-			   + 2 * SIMD_COEF_32] = outbuf[j].i[7] = sha1_ctx.h2;
+			   + 2 * SIMD_COEF_32]
+				= outbuf[j].i[7] = sha1_ctx.h2;
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
-			   + 3 * SIMD_COEF_32] = sha1_ctx.h3;
+			   + 3 * SIMD_COEF_32]
+				= sha1_ctx.h3;
 			o1[(j / SIMD_COEF_32) * SIMD_COEF_32 * SHA_BUF_SIZ
 			   + (j & (SIMD_COEF_32 - 1))
-			   + 4 * SIMD_COEF_32] = sha1_ctx.h4;
+			   + 4 * SIMD_COEF_32]
+				= sha1_ctx.h4;
 #else
-			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))] =
-				outbuf[j].i[5] = sha1_ctx.h0;
+			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))]
+				= outbuf[j].i[5] = sha1_ctx.h0;
 			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))
-			   + MMX_COEF] = outbuf[j].i[6] = sha1_ctx.h1;
+			   + MMX_COEF]
+				= outbuf[j].i[6] = sha1_ctx.h1;
 			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))
-			   + (MMX_COEF << 1)] = outbuf[j].i[7] = sha1_ctx.h2;
+			   + (MMX_COEF << 1)]
+				= outbuf[j].i[7] = sha1_ctx.h2;
 			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))
-			   + MMX_COEF * 3] = sha1_ctx.h3;
+			   + MMX_COEF * 3]
+				= sha1_ctx.h3;
 			o1[(j / MMX_COEF) * MMX_COEF * SHA_BUF_SIZ + (j & (MMX_COEF - 1))
-			   + (MMX_COEF << 2)] = sha1_ctx.h4;
+			   + (MMX_COEF << 2)]
+				= sha1_ctx.h4;
 #endif
 		}
 		for (i = 1; i < 4096; i++)
@@ -375,15 +417,15 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 			for (j = 0; j < NBKEYS; j++)
 			{
 #ifdef SIMD_CORE
-				unsigned *p =
-					&((unsigned int *)
-						  t_sse_hash1)[(((j / SIMD_COEF_32) * SHA_BUF_SIZ)
-										* SIMD_COEF_32)
-									   + (j & (SIMD_COEF_32 - 1))];
+				unsigned * p
+					= &((unsigned int *)
+							t_sse_hash1)[(((j / SIMD_COEF_32) * SHA_BUF_SIZ)
+										  * SIMD_COEF_32)
+										 + (j & (SIMD_COEF_32 - 1))];
 				for (k = 5; k < 8; k++)
 					outbuf[j].i[k] ^= p[((k - 5) * SIMD_COEF_32)];
 #else
-				unsigned *p = &((
+				unsigned * p = &((
 					unsigned int *) t_sse_hash1)[(((j >> 2) * SHA_BUF_SIZ) << 2)
 												 + (j & (MMX_COEF - 1))];
 				for (k = 5; k < 8; k++)
@@ -405,7 +447,7 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t *engine,
 
 void init_atoi()
 {
-	char *pos;
+	char * pos;
 
 	memset(atoi64, 0x7F, sizeof(atoi64));
 	for (pos = itoa64; pos != &itoa64[63]; pos++)
@@ -415,7 +457,7 @@ void init_atoi()
 #ifdef SIMD_CORE
 //#define XDEBUG 1
 //#define ODEBUG 1
-int init_wpapsk(ac_crypto_engine_t *engine,
+int init_wpapsk(ac_crypto_engine_t * engine,
 				const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 				int nparallel,
 				int threadid)
@@ -424,29 +466,32 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 	int count = 0;
 
 	// clear entire output table
-	memset(engine->thread_data[threadid]->pmk, 0, (sizeof(wpapsk_hash) * (nparallel)));
+	memset(engine->thread_data[threadid]->pmk,
+		   0,
+		   (sizeof(wpapsk_hash) * (nparallel)));
 
 	{
-		unsigned char *sse_hash1 = engine->thread_data[threadid]->hash1;
+		unsigned char * sse_hash1 = engine->thread_data[threadid]->hash1;
 
 		int index;
 		for (index = 0; index < nparallel; ++index)
 		{
-			// set the length of all hash1 SSE buffer to 64+20 * 8 bits. The 64 is for the ipad/opad,
-			// the 20 is for the length of the SHA1 buffer that also gets into each crypt.
-			// Works for SSE2i and SSE2
+// set the length of all hash1 SSE buffer to 64+20 * 8 bits. The 64 is for the
+// ipad/opad,
+// the 20 is for the length of the SHA1 buffer that also gets into each crypt.
+// Works for SSE2i and SSE2
 #ifdef SIMD_CORE
 			((unsigned int *)
 				 sse_hash1)[15 * SIMD_COEF_32 + (index & (SIMD_COEF_32 - 1))
 							+ (unsigned int) index / SIMD_COEF_32 * SHA_BUF_SIZ
-								  * SIMD_COEF_32] =
-				(84 << 3); // all encrypts are 64+20 bytes.
+								  * SIMD_COEF_32]
+				= (84 << 3); // all encrypts are 64+20 bytes.
 #else
 			((unsigned int *)
 				 sse_hash1)[15 * MMX_COEF + (index & (MMX_COEF - 1))
 							+ (index >> (MMX_COEF >> 1)) * SHA_BUF_SIZ
-								  * MMX_COEF] =
-				(84 << 3); // all encrypts are 64+20 bytes.
+								  * MMX_COEF]
+				= (84 << 3); // all encrypts are 64+20 bytes.
 #endif
 			sse_hash1[GETPOS(20, index)] = 0x80;
 		}
@@ -454,13 +499,14 @@ int init_wpapsk(ac_crypto_engine_t *engine,
 
 	for (i = 0; i < nparallel; ++i)
 	{
-		char * tkey = (char*) key[i].v;
+		char * tkey = (char *) key[i].v;
 
 		if (*tkey != 0)
 		{
 //			set_key(tkey, i, inbuffer);
 #ifdef XDEBUG
-			printf("key%d (inbuffer) = (%p) %s  VALID\n", i + 1, tkey, key[i].v);
+			printf(
+				"key%d (inbuffer) = (%p) %s  VALID\n", i + 1, tkey, key[i].v);
 #endif
 			count = i + 1;
 		}

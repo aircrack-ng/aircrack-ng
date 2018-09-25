@@ -67,7 +67,7 @@ struct priv_nbsd
 
 	/* tx */
 	unsigned char pn_buf[4096];
-	unsigned char *pn_next;
+	unsigned char * pn_next;
 	int pn_totlen;
 
 	/* setchan */
@@ -77,15 +77,15 @@ struct priv_nbsd
 	int pn_chan;
 };
 
-static void get_radiotap_info(struct priv_nbsd *pn,
-							  struct ieee80211_radiotap_header *rth,
-							  int *plen,
-							  struct rx_info *ri)
+static void get_radiotap_info(struct priv_nbsd * pn,
+							  struct ieee80211_radiotap_header * rth,
+							  int * plen,
+							  struct rx_info * ri)
 {
 	uint32_t present;
 	uint8_t rflags = 0;
 	int i;
-	unsigned char *body = (unsigned char *) (rth + 1);
+	unsigned char * body = (unsigned char *) (rth + 1);
 	int dbm_power = 0, db_power = 0;
 
 	/* reset control info */
@@ -163,13 +163,13 @@ static void get_radiotap_info(struct priv_nbsd *pn,
 }
 
 static unsigned char *
-get_80211(struct priv_nbsd *pn, int *plen, struct rx_info *ri)
+get_80211(struct priv_nbsd * pn, int * plen, struct rx_info * ri)
 {
-	struct bpf_hdr *bpfh;
-	struct ieee80211_radiotap_header *rth;
-	void *ptr;
-	unsigned char **data;
-	int *totlen;
+	struct bpf_hdr * bpfh;
+	struct ieee80211_radiotap_header * rth;
+	void * ptr;
+	unsigned char ** data;
+	int * totlen;
 
 	data = &pn->pn_next;
 	totlen = &pn->pn_totlen;
@@ -197,8 +197,8 @@ get_80211(struct priv_nbsd *pn, int *plen, struct rx_info *ri)
 	assert(*totlen >= 0);
 
 	/* radiotap */
-	rth =
-		(struct ieee80211_radiotap_header *) ((char *) bpfh + bpfh->bh_hdrlen);
+	rth = (struct ieee80211_radiotap_header *) ((char *) bpfh
+												+ bpfh->bh_hdrlen);
 	get_radiotap_info(pn, rth, plen, ri);
 	*plen -= rth->it_len;
 	assert(*plen > 0);
@@ -209,9 +209,9 @@ get_80211(struct priv_nbsd *pn, int *plen, struct rx_info *ri)
 	return ptr;
 }
 
-static int nbsd_get_channel(struct wif *wi)
+static int nbsd_get_channel(struct wif * wi)
 {
-	struct priv_nbsd *pn = wi_priv(wi);
+	struct priv_nbsd * pn = wi_priv(wi);
 	struct ieee80211chanreq channel;
 
 	memset(&channel, 0, sizeof(channel));
@@ -222,9 +222,9 @@ static int nbsd_get_channel(struct wif *wi)
 	return channel.i_channel;
 }
 
-static int nbsd_set_channel(struct wif *wi, int chan)
+static int nbsd_set_channel(struct wif * wi, int chan)
 {
-	struct priv_nbsd *pn = wi_priv(wi);
+	struct priv_nbsd * pn = wi_priv(wi);
 	struct ieee80211chanreq channel;
 
 	memset(&channel, 0, sizeof(channel));
@@ -237,10 +237,10 @@ static int nbsd_set_channel(struct wif *wi, int chan)
 }
 
 static int
-nbsd_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
+nbsd_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 {
-	struct priv_nbsd *pn = wi_priv(wi);
-	unsigned char *wh;
+	struct priv_nbsd * pn = wi_priv(wi);
+	unsigned char * wh;
 	int plen;
 
 	assert(len > 0);
@@ -268,10 +268,12 @@ nbsd_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 	return plen;
 }
 
-static int
-nbsd_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
+static int nbsd_write(struct wif * wi,
+					  unsigned char * h80211,
+					  int len,
+					  struct tx_info * ti)
 {
-	struct priv_nbsd *pn = wi_priv(wi);
+	struct priv_nbsd * pn = wi_priv(wi);
 	int rc;
 
 	/* XXX make use of ti */
@@ -285,7 +287,7 @@ nbsd_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
 	return 0;
 }
 
-static void do_free(struct wif *wi)
+static void do_free(struct wif * wi)
 {
 	assert(wi->wi_priv);
 	free(wi->wi_priv);
@@ -293,16 +295,16 @@ static void do_free(struct wif *wi)
 	free(wi);
 }
 
-static void nbsd_close(struct wif *wi)
+static void nbsd_close(struct wif * wi)
 {
-	struct priv_nbsd *pn = wi_priv(wi);
+	struct priv_nbsd * pn = wi_priv(wi);
 
 	close(pn->pn_fd);
 	close(pn->pn_s);
 	do_free(wi);
 }
 
-static int do_nbsd_open(struct wif *wi, char *iface)
+static int do_nbsd_open(struct wif * wi, char * iface)
 {
 	int i;
 	char buf[64];
@@ -312,8 +314,8 @@ static int do_nbsd_open(struct wif *wi, char *iface)
 	int s;
 	unsigned int flags;
 	struct ifmediareq ifmr;
-	int *mwords;
-	struct priv_nbsd *pn = wi_priv(wi);
+	int * mwords;
+	struct priv_nbsd * pn = wi_priv(wi);
 	unsigned int size = sizeof(pn->pn_buf);
 
 	/* basic sanity check */
@@ -404,19 +406,19 @@ close_bpf:
 	goto close_sock;
 }
 
-static int nbsd_fd(struct wif *wi)
+static int nbsd_fd(struct wif * wi)
 {
-	struct priv_nbsd *pn = wi_priv(wi);
+	struct priv_nbsd * pn = wi_priv(wi);
 
 	return pn->pn_fd;
 }
 
-static int nbsd_get_mac(struct wif *wi, unsigned char *mac)
+static int nbsd_get_mac(struct wif * wi, unsigned char * mac)
 {
 	struct ifaddrs *ifa, *p;
-	char *name = wi_get_ifname(wi);
+	char * name = wi_get_ifname(wi);
 	int rc = -1;
-	struct sockaddr_dl *sdp;
+	struct sockaddr_dl * sdp;
 
 	if (getifaddrs(&ifa) == -1) return -1;
 
@@ -439,7 +441,7 @@ static int nbsd_get_mac(struct wif *wi, unsigned char *mac)
 	return rc;
 }
 
-static int nbsd_get_monitor(struct wif *wi)
+static int nbsd_get_monitor(struct wif * wi)
 {
 	if (wi)
 	{
@@ -449,7 +451,7 @@ static int nbsd_get_monitor(struct wif *wi)
 	return 0;
 }
 
-static int nbsd_get_rate(struct wif *wi)
+static int nbsd_get_rate(struct wif * wi)
 {
 	if (wi)
 	{
@@ -459,7 +461,7 @@ static int nbsd_get_rate(struct wif *wi)
 	return 1000000;
 }
 
-static int nbsd_set_rate(struct wif *wi, int rate)
+static int nbsd_set_rate(struct wif * wi, int rate)
 {
 	if (wi || rate)
 	{
@@ -469,10 +471,10 @@ static int nbsd_set_rate(struct wif *wi, int rate)
 	return 0;
 }
 
-static int nbsd_set_mac(struct wif *wi, unsigned char *mac)
+static int nbsd_set_mac(struct wif * wi, unsigned char * mac)
 {
-	struct priv_nbsd *pn = wi_priv(wi);
-	struct ifreq *ifr = &pn->pn_ifr;
+	struct priv_nbsd * pn = wi_priv(wi);
+	struct ifreq * ifr = &pn->pn_ifr;
 
 	ifr->ifr_addr.sa_family = AF_LINK;
 	ifr->ifr_addr.sa_len = 6;
@@ -481,10 +483,10 @@ static int nbsd_set_mac(struct wif *wi, unsigned char *mac)
 	return ioctl(pn->pn_s, SIOCSIFADDR, ifr);
 }
 
-static struct wif *nbsd_open(char *iface)
+static struct wif * nbsd_open(char * iface)
 {
-	struct wif *wi;
-	struct priv_nbsd *pn;
+	struct wif * wi;
+	struct priv_nbsd * pn;
 	int fd;
 
 	/* setup wi struct */
@@ -517,7 +519,7 @@ static struct wif *nbsd_open(char *iface)
 	return wi;
 }
 
-struct wif *wi_open_osdep(char *iface) { return nbsd_open(iface); }
+struct wif * wi_open_osdep(char * iface) { return nbsd_open(iface); }
 
 EXPORT int get_battery_state(void)
 {

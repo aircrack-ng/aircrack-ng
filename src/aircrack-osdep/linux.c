@@ -50,18 +50,18 @@
 #include <netlink/msg.h>
 #include <netlink/attr.h>
 #include <linux/genetlink.h>
-#endif //CONFIG_LIBNL
+#endif // CONFIG_LIBNL
 
 #include "radiotap/radiotap.h"
 #include "radiotap/radiotap_iter.h"
 /* radiotap-parser defines types like u8 that
-         * ieee80211_radiotap.h needs
-         *
-         * we use our local copy of ieee80211_radiotap.h
-         *
-         * - since we can't support extensions we don't understand
-         * - since linux does not include it in userspace headers
-         */
+		 * ieee80211_radiotap.h needs
+		 *
+		 * we use our local copy of ieee80211_radiotap.h
+		 *
+		 * - since we can't support extensions we don't understand
+		 * - since linux does not include it in userspace headers
+		 */
 #include "osdep.h"
 #include "pcap.h"
 #include "crctable_osdep.h"
@@ -72,11 +72,11 @@
 #ifdef CONFIG_LIBNL
 struct nl80211_state state;
 static int chan;
-#endif //CONFIG_LIBNL
+#endif // CONFIG_LIBNL
 
 /* if_nametoindex is defined in net/if.h but that conflicts with linux/if.h */
-extern unsigned int if_nametoindex(const char *__ifname);
-extern char *if_indextoname(unsigned int __ifindex, char *__ifname);
+extern unsigned int if_nametoindex(const char * __ifname);
+extern char * if_indextoname(unsigned int __ifindex, char * __ifname);
 
 typedef enum {
 	DT_NULL = 0,
@@ -107,7 +107,7 @@ struct priv_linux
 
 	DRIVER_TYPE drivertype; /* inited to DT_UNKNOWN on allocation by wi_alloc */
 
-	FILE *f_cap_in;
+	FILE * f_cap_in;
 
 	struct pcap_file_header pfh_in;
 
@@ -116,12 +116,12 @@ struct priv_linux
 	int freq;
 	int rate;
 	int tx_power;
-	char *wlanctlng; /* XXX never set */
-	char *iwpriv;
-	char *iwconfig;
-	char *ifconfig;
-	char *wl;
-	char *main_if;
+	char * wlanctlng; /* XXX never set */
+	char * iwpriv;
+	char * iwconfig;
+	char * ifconfig;
+	char * wl;
+	char * main_if;
 	unsigned char pl_mac[6];
 	int inject_wlanng;
 };
@@ -139,7 +139,7 @@ struct priv_linux
 #define NULL_MAC "\x00\x00\x00\x00\x00\x00"
 #endif
 
-unsigned long calc_crc_osdep(unsigned char *buf, int len)
+unsigned long calc_crc_osdep(unsigned char * buf, int len)
 {
 	unsigned long crc = 0xFFFFFFFF;
 
@@ -151,7 +151,7 @@ unsigned long calc_crc_osdep(unsigned char *buf, int len)
 
 /* CRC checksum verification routine */
 
-int check_crc_buf_osdep(unsigned char *buf, int len)
+int check_crc_buf_osdep(unsigned char * buf, int len)
 {
 	unsigned long crc;
 
@@ -164,8 +164,8 @@ int check_crc_buf_osdep(unsigned char *buf, int len)
 			&& ((crc >> 24) & 0xFF) == buf[3]);
 }
 
-//Check if the driver is ndiswrapper */
-static int is_ndiswrapper(const char *iface, const char *path)
+// Check if the driver is ndiswrapper */
+static int is_ndiswrapper(const char * iface, const char * path)
 {
 	int n, pid, unused;
 	if (!path || !iface || strlen(iface) >= IFNAMSIZ)
@@ -187,14 +187,14 @@ static int is_ndiswrapper(const char *iface, const char *path)
 }
 
 /* Search a file recursively */
-static char *searchInside(const char *dir, const char *filename)
+static char * searchInside(const char * dir, const char * filename)
 {
-	char *ret;
-	char *curfile;
+	char * ret;
+	char * curfile;
 	struct stat sb;
 	int len, lentot;
-	DIR *dp;
-	struct dirent *ep;
+	DIR * dp;
+	struct dirent * ep;
 
 	dp = opendir(dir);
 	if (dp == NULL)
@@ -212,21 +212,21 @@ static char *searchInside(const char *dir, const char *filename)
 		memset(curfile, 0, lentot);
 		sprintf(curfile, "%s/%s", dir, ep->d_name);
 
-		//Checking if it's the good file
+		// Checking if it's the good file
 		if ((int) strlen(ep->d_name) == len && !strcmp(ep->d_name, filename))
 		{
 			(void) closedir(dp);
 			return curfile;
 		}
 
-		//If it's a directory and not a link, try to go inside to search
+		// If it's a directory and not a link, try to go inside to search
 		if (lstat(curfile, &sb) == 0 && S_ISDIR(sb.st_mode)
 			&& !S_ISLNK(sb.st_mode))
 		{
-			//Check if the directory isn't "." or ".."
+			// Check if the directory isn't "." or ".."
 			if (strcmp(".", ep->d_name) && strcmp("..", ep->d_name))
 			{
-				//Recursive call
+				// Recursive call
 				ret = searchInside(curfile, filename);
 				if (ret != NULL)
 				{
@@ -243,17 +243,17 @@ static char *searchInside(const char *dir, const char *filename)
 }
 
 /* Search a wireless tool and return its path */
-static char *wiToolsPath(const char *tool)
+static char * wiToolsPath(const char * tool)
 {
-	char *path /*, *found, *env */;
+	char * path /*, *found, *env */;
 	int i, nbelems;
-	static const char *paths[] = {"/sbin",
-								  "/usr/sbin",
-								  "/usr/local/sbin",
-								  "/bin",
-								  "/usr/bin",
-								  "/usr/local/bin",
-								  "/tmp"};
+	static const char * paths[] = {"/sbin",
+								   "/usr/sbin",
+								   "/usr/local/sbin",
+								   "/bin",
+								   "/usr/bin",
+								   "/usr/local/bin",
+								   "/tmp"};
 
 	// Also search in other known location just in case we haven't found it yet
 	nbelems = sizeof(paths) / sizeof(char *);
@@ -271,26 +271,29 @@ static char *wiToolsPath(const char *tool)
 struct nl80211_state
 {
 #if !defined(CONFIG_LIBNL30) && !defined(CONFIG_LIBNL20)
-	struct nl_handle *nl_sock;
+	struct nl_handle * nl_sock;
 #else
-	struct nl_sock *nl_sock;
+	struct nl_sock * nl_sock;
 #endif
-	struct nl_cache *nl_cache;
-	struct genl_family *nl80211;
+	struct nl_cache * nl_cache;
+	struct genl_family * nl80211;
 };
 
 #if !defined(CONFIG_LIBNL30) && !defined(CONFIG_LIBNL20)
-static inline struct nl_handle *nl_socket_alloc(void)
+static inline struct nl_handle * nl_socket_alloc(void)
 {
 	return nl_handle_alloc();
 }
 
-static inline void nl_socket_free(struct nl_handle *h) { nl_handle_destroy(h); }
-
-static inline int __genl_ctrl_alloc_cache(struct nl_handle *h,
-										  struct nl_cache **cache)
+static inline void nl_socket_free(struct nl_handle * h)
 {
-	struct nl_cache *tmp = genl_ctrl_alloc_cache(h);
+	nl_handle_destroy(h);
+}
+
+static inline int __genl_ctrl_alloc_cache(struct nl_handle * h,
+										  struct nl_cache ** cache)
+{
+	struct nl_cache * tmp = genl_ctrl_alloc_cache(h);
 	if (!tmp) return -ENOMEM;
 	*cache = tmp;
 	return 0;
@@ -298,7 +301,7 @@ static inline int __genl_ctrl_alloc_cache(struct nl_handle *h,
 #define genl_ctrl_alloc_cache __genl_ctrl_alloc_cache
 #endif
 
-static int linux_nl80211_init(struct nl80211_state *state)
+static int linux_nl80211_init(struct nl80211_state * state)
 {
 	int err;
 
@@ -341,7 +344,7 @@ out_handle_destroy:
 	return err;
 }
 
-static void nl80211_cleanup(struct nl80211_state *state)
+static void nl80211_cleanup(struct nl80211_state * state)
 {
 	genl_family_put(state->nl80211);
 	nl_cache_free(state->nl_cache);
@@ -352,7 +355,7 @@ static void nl80211_cleanup(struct nl80211_state *state)
 
 /*
 static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
-                     void *arg)
+					 void *arg)
 {
 	if (nla) { }
 	printf("\n\n\nERROR");
@@ -370,9 +373,9 @@ static void test_callback(struct nl_msg *msg, void *arg)
 */
 #endif /* End nl80211 */
 
-static int linux_get_channel(struct wif *wi)
+static int linux_get_channel(struct wif * wi)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	struct iwreq wrq;
 	int fd, frequency;
 	int chan = 0;
@@ -404,9 +407,9 @@ static int linux_get_channel(struct wif *wi)
 	return chan;
 }
 
-static int linux_get_freq(struct wif *wi)
+static int linux_get_freq(struct wif * wi)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	struct iwreq wrq;
 	int fd, frequency;
 
@@ -429,15 +432,15 @@ static int linux_get_freq(struct wif *wi)
 	else if (frequency > 1000000)
 		frequency /= 1000;
 
-	if (frequency < 500) //it's not a freq, but the actual channel
+	if (frequency < 500) // it's not a freq, but the actual channel
 		frequency = getFrequencyFromChannel(frequency);
 
 	return frequency;
 }
 
-static int linux_set_rate(struct wif *wi, int rate)
+static int linux_set_rate(struct wif * wi, int rate)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	struct ifreq ifr;
 	struct iwreq wrq;
 	char s[32];
@@ -494,9 +497,10 @@ static int linux_set_rate(struct wif *wi, int rate)
 		case DT_MAC80211_RT:
 
 			dev->rate = (rate / 500000);
-			//return 0;
-			//Newer mac80211 stacks (2.6.31 and up)
-			//don't care about Radiotap header anymore, so ioctl below must also be done!
+			// return 0;
+			// Newer mac80211 stacks (2.6.31 and up)
+			// don't care about Radiotap header anymore, so ioctl below must
+			// also be done!
 			//[see Documentation/networking/mac80211-injection.txt]
 			break;
 
@@ -524,9 +528,9 @@ static int linux_set_rate(struct wif *wi, int rate)
 	return 0;
 }
 
-static int linux_get_rate(struct wif *wi)
+static int linux_get_rate(struct wif * wi)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	struct iwreq wrq;
 
 	memset(&wrq, 0, sizeof(struct iwreq));
@@ -547,9 +551,9 @@ static int linux_get_rate(struct wif *wi)
 	return wrq.u.bitrate.value;
 }
 
-static int linux_set_mtu(struct wif *wi, int mtu)
+static int linux_set_mtu(struct wif * wi, int mtu)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	struct ifreq ifr;
 
 	memset(&ifr, 0, sizeof(struct ifreq));
@@ -568,9 +572,9 @@ static int linux_set_mtu(struct wif *wi, int mtu)
 	return 0;
 }
 
-static int linux_get_mtu(struct wif *wi)
+static int linux_get_mtu(struct wif * wi)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	struct ifreq ifr;
 
 	memset(&ifr, 0, sizeof(struct ifreq));
@@ -589,9 +593,9 @@ static int linux_get_mtu(struct wif *wi)
 }
 
 static int
-linux_read(struct wif *wi, unsigned char *buf, int count, struct rx_info *ri)
+linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	unsigned char tmpbuf[4096];
 
 	int caplen, n, got_signal, got_noise, got_channel, fcs_removed;
@@ -670,7 +674,7 @@ linux_read(struct wif *wi, unsigned char *buf, int count, struct rx_info *ri)
 	if (dev->arptype_in == ARPHRD_IEEE80211_FULL)
 	{
 		struct ieee80211_radiotap_iterator iterator;
-		struct ieee80211_radiotap_header *rthdr;
+		struct ieee80211_radiotap_header * rthdr;
 
 		rthdr = (struct ieee80211_radiotap_header *) tmpbuf;
 
@@ -679,8 +683,8 @@ linux_read(struct wif *wi, unsigned char *buf, int count, struct rx_info *ri)
 			return (0);
 
 		/* go through the radiotap arguments we have been given
-         * by the driver
-         */
+		 * by the driver
+		 */
 
 		while (ri && (ieee80211_radiotap_iterator_next(&iterator) >= 0))
 		{
@@ -689,8 +693,8 @@ linux_read(struct wif *wi, unsigned char *buf, int count, struct rx_info *ri)
 			{
 
 				case IEEE80211_RADIOTAP_TSFT:
-					ri->ri_mactime =
-						le64_to_cpu(*((uint64_t *) iterator.this_arg));
+					ri->ri_mactime
+						= le64_to_cpu(*((uint64_t *) iterator.this_arg));
 					break;
 
 				case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
@@ -757,8 +761,8 @@ linux_read(struct wif *wi, unsigned char *buf, int count, struct rx_info *ri)
 
 				case IEEE80211_RADIOTAP_FLAGS:
 					/* is the CRC visible at the end?
-                 * remove
-                 */
+				 * remove
+				 */
 					if (*iterator.this_arg & IEEE80211_RADIOTAP_F_FCS)
 					{
 						fcs_removed = 1;
@@ -779,7 +783,7 @@ linux_read(struct wif *wi, unsigned char *buf, int count, struct rx_info *ri)
 
 	caplen -= n;
 
-	//detect fcs at the end, even if the flag wasn't set and remove it
+	// detect fcs at the end, even if the flag wasn't set and remove it
 	if (fcs_removed == 0 && check_crc_buf_osdep(tmpbuf + n, caplen - 4) == 1)
 	{
 		caplen -= 4;
@@ -792,15 +796,17 @@ linux_read(struct wif *wi, unsigned char *buf, int count, struct rx_info *ri)
 	return (caplen);
 }
 
-static int
-linux_write(struct wif *wi, unsigned char *buf, int count, struct tx_info *ti)
+static int linux_write(struct wif * wi,
+					   unsigned char * buf,
+					   int count,
+					   struct tx_info * ti)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	unsigned char maddr[6];
 	int ret, usedrtap = 0;
 	unsigned char tmpbuf[4096];
 	unsigned char rate;
-	unsigned short int *p_rtlen;
+	unsigned short int * p_rtlen;
 
 	unsigned char u8aRadiotap[] = {
 		0x00,
@@ -943,14 +949,14 @@ static int ieee80211_channel_to_frequency(int chan)
 }
 
 static int
-linux_set_ht_channel_nl80211(struct wif *wi, int channel, unsigned int htval)
+linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
 	int pid, status, unused;
 
 	unsigned int devid;
-	struct nl_msg *msg;
+	struct nl_msg * msg;
 	unsigned int freq;
 
 	memset(s, 0, sizeof(s));
@@ -1008,7 +1014,7 @@ linux_set_ht_channel_nl80211(struct wif *wi, int channel, unsigned int htval)
 			waitpid(pid, &status, 0);
 			dev->channel = channel;
 			return 0;
-			break; //yeah ;)
+			break; // yeah ;)
 
 		case DT_ZD1211RW:
 			snprintf(s, sizeof(s) - 1, "%d", channel);
@@ -1032,7 +1038,7 @@ linux_set_ht_channel_nl80211(struct wif *wi, int channel, unsigned int htval)
 			dev->channel = channel;
 			chan = channel;
 			return 0;
-			break; //yeah ;)
+			break; // yeah ;)
 
 		default:
 			break;
@@ -1087,15 +1093,15 @@ nla_put_failure:
 	return -ENOBUFS;
 }
 
-static int linux_set_channel_nl80211(struct wif *wi, int channel)
+static int linux_set_channel_nl80211(struct wif * wi, int channel)
 {
 	return linux_set_ht_channel_nl80211(wi, channel, CHANNEL_NO_HT);
 }
-#else //CONFIG_LIBNL
+#else // CONFIG_LIBNL
 
-static int linux_set_channel(struct wif *wi, int channel)
+static int linux_set_channel(struct wif * wi, int channel)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
 	int pid, status, unused;
 	struct iwreq wrq;
@@ -1155,7 +1161,7 @@ static int linux_set_channel(struct wif *wi, int channel)
 			waitpid(pid, &status, 0);
 			dev->channel = channel;
 			return 0;
-			break; //yeah ;)
+			break; // yeah ;)
 
 		case DT_ZD1211RW:
 			snprintf(s, sizeof(s) - 1, "%d", channel);
@@ -1178,7 +1184,7 @@ static int linux_set_channel(struct wif *wi, int channel)
 			waitpid(pid, &status, 0);
 			dev->channel = channel;
 			return 0;
-			break; //yeah ;)
+			break; // yeah ;)
 
 		default:
 			break;
@@ -1208,9 +1214,9 @@ static int linux_set_channel(struct wif *wi, int channel)
 }
 #endif
 
-static int linux_set_freq(struct wif *wi, int freq)
+static int linux_set_freq(struct wif * wi, int freq)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
 	int pid, status, unused;
 	struct iwreq wrq;
@@ -1242,7 +1248,7 @@ static int linux_set_freq(struct wif *wi, int freq)
 			waitpid(pid, &status, 0);
 			dev->freq = freq;
 			return 0;
-			break; //yeah ;)
+			break; // yeah ;)
 
 		default:
 			break;
@@ -1271,7 +1277,7 @@ static int linux_set_freq(struct wif *wi, int freq)
 	return (0);
 }
 
-static int opensysfs(struct priv_linux *dev, char *iface, int fd)
+static int opensysfs(struct priv_linux * dev, char * iface, int fd)
 {
 	int fd2;
 	char buf[256];
@@ -1301,9 +1307,9 @@ static int opensysfs(struct priv_linux *dev, char *iface, int fd)
 	return 0;
 }
 
-int linux_get_monitor(struct wif *wi)
+int linux_get_monitor(struct wif * wi)
 {
-	struct priv_linux *dev = wi_priv(wi);
+	struct priv_linux * dev = wi_priv(wi);
 	struct ifreq ifr;
 	struct iwreq wrq;
 
@@ -1338,7 +1344,7 @@ int linux_get_monitor(struct wif *wi)
 	if (ioctl(wi_fd(wi), SIOCGIWMODE, &wrq) < 0)
 	{
 		/* most probably not supported (ie for rtap ipw interface) *
-         * so just assume its correctly set...                     */
+		 * so just assume its correctly set...                     */
 		wrq.u.mode = IW_MODE_MONITOR;
 	}
 
@@ -1353,7 +1359,7 @@ int linux_get_monitor(struct wif *wi)
 	return (0);
 }
 
-char *get_linux_driver(const char *iface)
+char * get_linux_driver(const char * iface)
 {
 	char path[PATH_MAX];
 	char link[PATH_MAX];
@@ -1375,7 +1381,7 @@ char *get_linux_driver(const char *iface)
 	memset(link + len, 0, sizeof(link) - len);
 
 	// Get driver name
-	const char *drv_idx = strrchr(link, '/');
+	const char * drv_idx = strrchr(link, '/');
 	if (drv_idx == NULL)
 	{
 		return NULL;
@@ -1387,7 +1393,7 @@ char *get_linux_driver(const char *iface)
 	{
 		return NULL;
 	}
-	char *ret = (char *) calloc(1, drv_len); // includes /
+	char * ret = (char *) calloc(1, drv_len); // includes /
 	if (ret == NULL)
 	{
 		return NULL;
@@ -1396,7 +1402,7 @@ char *get_linux_driver(const char *iface)
 	return ret;
 }
 
-int set_monitor(struct priv_linux *dev, char *iface, int fd)
+int set_monitor(struct priv_linux * dev, char * iface, int fd)
 {
 	int pid, status, unused;
 	struct iwreq wrq;
@@ -1564,11 +1570,11 @@ int set_monitor(struct priv_linux *dev, char *iface, int fd)
 	return (0);
 }
 
-static int openraw(struct priv_linux *dev,
-				   char *iface,
+static int openraw(struct priv_linux * dev,
+				   char * iface,
 				   int fd,
-				   int *arptype,
-				   unsigned char *mac)
+				   int * arptype,
+				   unsigned char * mac)
 {
 	struct ifreq ifr;
 	struct ifreq ifr2;
@@ -1681,7 +1687,7 @@ static int openraw(struct priv_linux *dev,
 	if (ioctl(fd, SIOCGIWMODE, &wrq) < 0)
 	{
 		/* most probably not supported (ie for rtap ipw interface) *
-         * so just assume its correctly set...                     */
+		 * so just assume its correctly set...                     */
 		wrq.u.mode = IW_MODE_MONITOR;
 	}
 
@@ -1782,24 +1788,24 @@ static int openraw(struct priv_linux *dev,
  * Open the interface and set mode monitor
  * Return 1 on failure and 0 on success
  */
-static int do_linux_open(struct wif *wi, char *iface)
+static int do_linux_open(struct wif * wi, char * iface)
 {
 	int kver, unused;
 	struct utsname checklinuxversion;
-	struct priv_linux *dev = wi_priv(wi);
-	char *iwpriv = NULL;
+	struct priv_linux * dev = wi_priv(wi);
+	char * iwpriv = NULL;
 	char strbuf[512];
-	FILE *f;
+	FILE * f;
 	char athXraw[] = "athXraw";
 	pid_t pid;
 	int n;
-	DIR *net_ifaces;
-	struct dirent *this_iface;
-	FILE *acpi;
+	DIR * net_ifaces;
+	struct dirent * this_iface;
+	FILE * acpi;
 	char buf[128];
-	char *r_file = NULL;
+	char * r_file = NULL;
 	struct ifreq ifr;
-	char *unused_str;
+	char * unused_str;
 	int iface_malloced = 0;
 
 	if (iface == NULL || strlen(iface) >= IFNAMSIZ)
@@ -1837,7 +1843,8 @@ static int do_linux_open(struct wif *wi, char *iface)
 
 	if (!iwpriv)
 	{
-		fprintf(stderr, "Required wireless tools when compiled without libnl could not be found, exiting.\n");
+		fprintf(stderr, "Required wireless tools when compiled without libnl "
+						"could not be found, exiting.\n");
 		goto close_in;
 	}
 #endif
@@ -1858,13 +1865,13 @@ static int do_linux_open(struct wif *wi, char *iface)
 	/* figure out device type */
 
 	/* mac80211 radiotap injection
-     * detected based on interface called mon...
-     * since mac80211 allows multiple virtual interfaces
-     *
-     * note though that the virtual interfaces are ultimately using a
-     * single physical radio: that means for example they must all
-     * operate on the same channel
-     */
+	 * detected based on interface called mon...
+	 * since mac80211 allows multiple virtual interfaces
+	 *
+	 * note though that the virtual interfaces are ultimately using a
+	 * single physical radio: that means for example they must all
+	 * operate on the same channel
+	 */
 
 	/* mac80211 stack detection */
 	memset(strbuf, 0, sizeof(strbuf));
@@ -2083,21 +2090,21 @@ static int do_linux_open(struct wif *wi, char *iface)
 		memset(buf, 0, 128);
 		unused_str = fgets(buf, 128, acpi);
 		buf[127] = '\x00';
-		//rtap iface doesn't exist
+		// rtap iface doesn't exist
 		if (strncmp(buf, "-1", 2) == 0)
 		{
-			//repoen for writing
+			// repoen for writing
 			fclose(acpi);
 			if ((acpi = fopen(r_file, "w")) == NULL) goto close_out;
 			fputs("1", acpi);
-			//reopen for reading
+			// reopen for reading
 			fclose(acpi);
 			if ((acpi = fopen(r_file, "r")) == NULL) goto close_out;
 			unused_str = fgets(buf, 128, acpi);
 		}
 		fclose(acpi);
 
-		//use name in buf as new iface and set original iface as main iface
+		// use name in buf as new iface and set original iface as main iface
 		dev->main_if = (char *) malloc(strlen(iface) + 1);
 		memset(dev->main_if, 0, strlen(iface) + 1);
 		strncpy(dev->main_if, iface, strlen(iface));
@@ -2118,7 +2125,7 @@ static int do_linux_open(struct wif *wi, char *iface)
 
 		if (ioctl(dev->fd_out, SIOCGIFINDEX, &ifr) < 0)
 		{
-			//create rtap interface
+			// create rtap interface
 			n = 1;
 		}
 
@@ -2130,7 +2137,7 @@ static int do_linux_open(struct wif *wi, char *iface)
 			{
 				if (this_iface->d_name[0] == '.') continue;
 
-				char *new_r_file = (char *) realloc(
+				char * new_r_file = (char *) realloc(
 					r_file,
 					(33 + strlen(this_iface->d_name) + 1) * sizeof(char));
 				if (!new_r_file)
@@ -2150,7 +2157,7 @@ static int do_linux_open(struct wif *wi, char *iface)
 
 					memset(buf, 0, 128);
 					unused_str = fgets(buf, 128, acpi);
-					if (n == 0) //interface exists
+					if (n == 0) // interface exists
 					{
 						if (strncmp(buf, iface, 5) == 0)
 						{
@@ -2160,21 +2167,21 @@ static int do_linux_open(struct wif *wi, char *iface)
 								closedir(net_ifaces);
 								net_ifaces = NULL;
 							}
-							dev->main_if =
-								(char *) malloc(strlen(this_iface->d_name) + 1);
+							dev->main_if = (char *) malloc(
+								strlen(this_iface->d_name) + 1);
 							strcpy(dev->main_if, this_iface->d_name);
 							break;
 						}
 					}
-					else //need to create interface
+					else // need to create interface
 					{
 						if (strncmp(buf, "-1", 2) == 0)
 						{
-							//repoen for writing
+							// repoen for writing
 							fclose(acpi);
 							if ((acpi = fopen(r_file, "w")) == NULL) continue;
 							fputs("1", acpi);
-							//reopen for reading
+							// reopen for reading
 							fclose(acpi);
 							if ((acpi = fopen(r_file, "r")) == NULL) continue;
 							unused_str = fgets(buf, 128, acpi);
@@ -2206,8 +2213,8 @@ static int do_linux_open(struct wif *wi, char *iface)
 	}
 
 	/* don't use the same file descriptor for in and out on bcm43xx,
-       as you read from the interface, but write into a file in /sys/...
-     */
+	   as you read from the interface, but write into a file in /sys/...
+	 */
 	if (!(dev->drivertype == DT_BCM43XX) && !(dev->drivertype == DT_IPW2200))
 	{
 		close(dev->fd_in);
@@ -2242,9 +2249,9 @@ close_in:
 	return 1;
 }
 
-static void do_free(struct wif *wi)
+static void do_free(struct wif * wi)
 {
-	struct priv_linux *pl = wi_priv(wi);
+	struct priv_linux * pl = wi_priv(wi);
 
 	if (pl->wlanctlng) free(pl->wlanctlng);
 
@@ -2263,9 +2270,9 @@ static void do_free(struct wif *wi)
 }
 
 #ifndef CONFIG_LIBNL
-static void linux_close(struct wif *wi)
+static void linux_close(struct wif * wi)
 {
-	struct priv_linux *pl = wi_priv(wi);
+	struct priv_linux * pl = wi_priv(wi);
 
 	if (pl->fd_in && pl->fd_out && pl->fd_in == pl->fd_out)
 	{
@@ -2284,9 +2291,9 @@ static void linux_close(struct wif *wi)
 
 #else
 
-static void linux_close_nl80211(struct wif *wi)
+static void linux_close_nl80211(struct wif * wi)
 {
-	struct priv_linux *pl = wi_priv(wi);
+	struct priv_linux * pl = wi_priv(wi);
 	nl80211_cleanup(&state);
 
 	if (pl->fd_in) close(pl->fd_in);
@@ -2296,16 +2303,16 @@ static void linux_close_nl80211(struct wif *wi)
 }
 #endif
 
-static int linux_fd(struct wif *wi)
+static int linux_fd(struct wif * wi)
 {
-	struct priv_linux *pl = wi_priv(wi);
+	struct priv_linux * pl = wi_priv(wi);
 
 	return pl->fd_in;
 }
 
-static int linux_get_mac(struct wif *wi, unsigned char *mac)
+static int linux_get_mac(struct wif * wi, unsigned char * mac)
 {
-	struct priv_linux *pl = wi_priv(wi);
+	struct priv_linux * pl = wi_priv(wi);
 	struct ifreq ifr;
 	int fd;
 
@@ -2343,9 +2350,9 @@ static int linux_get_mac(struct wif *wi, unsigned char *mac)
 	return 0;
 }
 
-static int linux_set_mac(struct wif *wi, unsigned char *mac)
+static int linux_set_mac(struct wif * wi, unsigned char * mac)
 {
-	struct priv_linux *pl = wi_priv(wi);
+	struct priv_linux * pl = wi_priv(wi);
 	struct ifreq ifr;
 	int fd, ret;
 
@@ -2375,10 +2382,10 @@ static int linux_set_mac(struct wif *wi, unsigned char *mac)
 	memcpy(ifr.ifr_hwaddr.sa_data, mac, 6);
 	memcpy(pl->pl_mac, mac, 6);
 
-	//set mac
+	// set mac
 	ret = ioctl(fd, SIOCSIFHWADDR, &ifr);
 
-	//if up
+	// if up
 	ifr.ifr_flags |= IFF_UP | IFF_BROADCAST | IFF_RUNNING;
 
 	if (ioctl(fd, SIOCSIFFLAGS, &ifr) < 0)
@@ -2390,10 +2397,10 @@ static int linux_set_mac(struct wif *wi, unsigned char *mac)
 	return ret;
 }
 
-static struct wif *linux_open(char *iface)
+static struct wif * linux_open(char * iface)
 {
-	struct wif *wi;
-	struct priv_linux *pl;
+	struct wif * wi;
+	struct priv_linux * pl;
 
 	if (iface == NULL || strlen(iface) >= IFNAMSIZ)
 	{
@@ -2410,7 +2417,7 @@ static struct wif *linux_open(char *iface)
 	wi->wi_set_channel = linux_set_channel_nl80211;
 #else
 	wi->wi_set_channel = linux_set_channel;
-#endif //CONFIG_LIBNL
+#endif // CONFIG_LIBNL
 	wi->wi_get_channel = linux_get_channel;
 	wi->wi_set_freq = linux_set_freq;
 	wi->wi_get_freq = linux_get_freq;
@@ -2437,13 +2444,13 @@ static struct wif *linux_open(char *iface)
 	return wi;
 }
 
-struct wif *wi_open_osdep(char *iface) { return linux_open(iface); }
+struct wif * wi_open_osdep(char * iface) { return linux_open(iface); }
 
 EXPORT int get_battery_state(void)
 {
 	char buf[128];
 	int batteryTime = 0;
-	FILE *apm;
+	FILE * apm;
 	int flag;
 	char units[32];
 	int ret;
@@ -2452,7 +2459,7 @@ EXPORT int get_battery_state(void)
 
 	if (linux_apm == 1)
 	{
-		char *battery_data = NULL;
+		char * battery_data = NULL;
 
 		if ((apm = fopen("/proc/apm", "r")) != NULL)
 		{

@@ -34,7 +34,8 @@
 	} while (0)
 // we need to release the handle to avoid memory leaks.
 // And in the actual code there are not repeat calls to RC4() without calling
-// RC4_set_key() first, so we can encapsulate the call to gcry_cipher_close() inside RC4()
+// RC4_set_key() first, so we can encapsulate the call to gcry_cipher_close()
+// inside RC4()
 // This should be changed if you call RC4() without calling RC4_set_key before
 #define RC4(h, l, s, d)                                                        \
 	do                                                                         \

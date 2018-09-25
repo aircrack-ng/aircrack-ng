@@ -67,11 +67,11 @@
 #if defined(_MSC_VER) && !defined(MEMDBG_ON)
 #define malloc(a) _aligned_malloc(a, 16)
 #define realloc(a, b) _aligned_realloc(a, b, 16)
-#define calloc(a, b) memset(_aligned_malloc(a *b, 16), 0, a *b)
+#define calloc(a, b) memset(_aligned_malloc(a * b, 16), 0, a * b)
 #define free(a) _aligned_free(a)
-char *strdup_MSVC(const char *str)
+char * strdup_MSVC(const char * str)
 {
-	char *s;
+	char * s;
 	s = (char *) mem_alloc_func(strlen(str) + 1);
 	if (s != NULL) strcpy(s, str);
 	return s;
@@ -84,19 +84,20 @@ unsigned int mem_saving_level = 0;
 // allows us to check for mem leaks easier.
 struct rm_list
 {
-	void *mem;
-	struct rm_list *next;
+	void * mem;
+	struct rm_list * next;
 };
-static struct rm_list *mem_alloc_tiny_memory;
+static struct rm_list * mem_alloc_tiny_memory;
 
-static void add_memory_link(void *v)
+static void add_memory_link(void * v)
 {
-	struct rm_list *p = (struct rm_list *) mem_alloc(sizeof(struct rm_list));
+	struct rm_list * p = (struct rm_list *) mem_alloc(sizeof(struct rm_list));
 	p->next = mem_alloc_tiny_memory;
 	p->mem = v;
 	mem_alloc_tiny_memory = p;
 	// mark these as 'tiny' memory, so that memory snapshot checking does not
-	// flag these as leaks.  At program exit, this memory will still get checked,
+	// flag these as leaks.  At program exit, this memory will still get
+	// checked,
 	// but it should be freed, so will still be globally checked for leaks.
 	MEMDBG_tag_mem_from_alloc_tiny(v);
 	MEMDBG_tag_mem_from_alloc_tiny((void *) p);
@@ -115,15 +116,15 @@ void cleanup_tiny_memory(void)
 	}
 }
 
-void *mem_alloc_func(size_t size
+void * mem_alloc_func(size_t size
 #if defined(MEMDBG_ON)
-					 ,
-					 char *file,
-					 int line
+					  ,
+					  char * file,
+					  int line
 #endif
-					 )
+					  )
 {
-	void *res;
+	void * res;
 
 	if (!size) return NULL;
 #if defined(MEMDBG_ON)
@@ -144,16 +145,16 @@ void *mem_alloc_func(size_t size
 	return res;
 }
 
-void *mem_calloc_func(size_t count,
-					  size_t size
+void * mem_calloc_func(size_t count,
+					   size_t size
 #if defined(MEMDBG_ON)
-					  ,
-					  char *file,
-					  int line
+					   ,
+					   char * file,
+					   int line
 #endif
-					  )
+					   )
 {
-	void *res;
+	void * res;
 
 	if (!count || !size) return NULL;
 #if defined(MEMDBG_ON)
@@ -187,19 +188,19 @@ void *mem_calloc_func(size_t count,
 #undef MEM_ALLOC_SIZE
 #define MEM_ALLOC_SIZE 0
 #endif
-void *mem_alloc_tiny_func(size_t size,
-						  size_t align
+void * mem_alloc_tiny_func(size_t size,
+						   size_t align
 #if defined(MEMDBG_ON)
-						  ,
-						  char *file,
-						  int line
+						   ,
+						   char * file,
+						   int line
 #endif
-						  )
+						   )
 {
-	static char *buffer = NULL;
+	static char * buffer = NULL;
 	static size_t bufree = 0;
 	size_t mask;
-	char *p;
+	char * p;
 
 #if defined(DEBUG) || defined(MEMDBG)
 	size += align;
@@ -268,33 +269,33 @@ void *mem_alloc_tiny_func(size_t size,
 	return p;
 }
 
-void *mem_calloc_tiny_func(size_t size,
-						   size_t align
+void * mem_calloc_tiny_func(size_t size,
+							size_t align
 #if defined(MEMDBG_ON)
-						   ,
-						   char *file,
-						   int line
+							,
+							char * file,
+							int line
 #endif
-						   )
+							)
 {
 #if defined(MEMDBG_ON)
-	char *cp = (char *) mem_alloc_tiny_func(size, align, file, line);
+	char * cp = (char *) mem_alloc_tiny_func(size, align, file, line);
 #else
-	char *cp = (char *) mem_alloc_tiny(size, align);
+	char * cp = (char *) mem_alloc_tiny(size, align);
 #endif
 	memset(cp, 0, size);
 	return cp;
 }
 
-void *mem_alloc_copy_func(void *src,
-						  size_t size,
-						  size_t align
+void * mem_alloc_copy_func(void * src,
+						   size_t size,
+						   size_t align
 #if defined(MEMDBG_ON)
-						  ,
-						  char *file,
-						  int line
+						   ,
+						   char * file,
+						   int line
 #endif
-						  )
+						   )
 {
 #if defined(MEMDBG_ON)
 	return memcpy(mem_alloc_tiny_func(size, align, file, line), src, size);
@@ -303,16 +304,16 @@ void *mem_alloc_copy_func(void *src,
 #endif
 }
 
-void *mem_alloc_align_func(size_t size,
-						   size_t align
+void * mem_alloc_align_func(size_t size,
+							size_t align
 #if defined(MEMDBG_ON)
-						   ,
-						   char *file,
-						   int line
+							,
+							char * file,
+							int line
 #endif
-						   )
+							)
 {
-	void *ptr = NULL;
+	void * ptr = NULL;
 #if defined(MEMDBG_ON)
 	ptr = (char *) MEMDBG_alloc_align(size, align, file, line);
 #elif HAVE_POSIX_MEMALIGN
@@ -351,33 +352,33 @@ void *mem_alloc_align_func(size_t size,
 	return ptr;
 }
 
-void *mem_calloc_align_func(size_t count,
-							size_t size,
-							size_t align
+void * mem_calloc_align_func(size_t count,
+							 size_t size,
+							 size_t align
 #if defined(MEMDBG_ON)
-							,
-							char *file,
-							int line
+							 ,
+							 char * file,
+							 int line
 #endif
-							)
+							 )
 {
 #if defined(MEMDBG_ON)
-	void *ptr = mem_alloc_align_func(size * count, align, file, line);
+	void * ptr = mem_alloc_align_func(size * count, align, file, line);
 #else
-	void *ptr = mem_alloc_align_func(size * count, align);
+	void * ptr = mem_alloc_align_func(size * count, align);
 #endif
 
 	memset(ptr, 0, size * count);
 	return ptr;
 }
 
-char *str_alloc_copy_func(char *src
+char * str_alloc_copy_func(char * src
 #if defined(MEMDBG_ON)
-						  ,
-						  char *file,
-						  int line
+						   ,
+						   char * file,
+						   int line
 #endif
-						  )
+						   )
 {
 	size_t size;
 
@@ -393,9 +394,9 @@ char *str_alloc_copy_func(char *src
 #endif
 }
 
-void dump_text(void *in, int len)
+void dump_text(void * in, int len)
 {
-	unsigned char *p = (unsigned char *) in;
+	unsigned char * p = (unsigned char *) in;
 
 	while (len--)
 	{
@@ -405,7 +406,7 @@ void dump_text(void *in, int len)
 	fputc('\n', stdout);
 }
 
-void dump_stuff_noeol(void *x, unsigned int size)
+void dump_stuff_noeol(void * x, unsigned int size)
 {
 	unsigned int i;
 	for (i = 0; i < size; i++)
@@ -414,23 +415,23 @@ void dump_stuff_noeol(void *x, unsigned int size)
 		if ((i % 4) == 3) printf(" ");
 	}
 }
-void dump_stuff(void *x, unsigned int size)
+void dump_stuff(void * x, unsigned int size)
 {
 	dump_stuff_noeol(x, size);
 	printf("\n");
 }
-void dump_stuff_msg(const void *msg, void *x, unsigned int size)
+void dump_stuff_msg(const void * msg, void * x, unsigned int size)
 {
 	printf("%s : ", (char *) msg);
 	dump_stuff(x, size);
 }
-void dump_stuff_msg_sepline(const void *msg, void *x, unsigned int size)
+void dump_stuff_msg_sepline(const void * msg, void * x, unsigned int size)
 {
 	printf("%s :\n", (char *) msg);
 	dump_stuff(x, size);
 }
 
-void dump_stuff_be_noeol(void *x, unsigned int size)
+void dump_stuff_be_noeol(void * x, unsigned int size)
 {
 	unsigned int i;
 	for (i = 0; i < size; i++)
@@ -439,25 +440,25 @@ void dump_stuff_be_noeol(void *x, unsigned int size)
 		if ((i % 4) == 3) printf(" ");
 	}
 }
-void dump_stuff_be(void *x, unsigned int size)
+void dump_stuff_be(void * x, unsigned int size)
 {
 	dump_stuff_be_noeol(x, size);
 	printf("\n");
 }
-void dump_stuff_be_msg(const void *msg, void *x, unsigned int size)
+void dump_stuff_be_msg(const void * msg, void * x, unsigned int size)
 {
 	printf("%s : ", (char *) msg);
 	dump_stuff_be(x, size);
 }
-void dump_stuff_be_msg_sepline(const void *msg, void *x, unsigned int size)
+void dump_stuff_be_msg_sepline(const void * msg, void * x, unsigned int size)
 {
 	printf("%s :\n", (char *) msg);
 	dump_stuff_be(x, size);
 }
 
-void alter_endianity(void *_x, unsigned int size)
+void alter_endianity(void * _x, unsigned int size)
 {
-	ARCH_WORD_32 *x = (ARCH_WORD_32 *) _x;
+	ARCH_WORD_32 * x = (ARCH_WORD_32 *) _x;
 
 	// size is in octets
 	size >>= 2;
@@ -504,19 +505,21 @@ void alter_endianity(void *_x, unsigned int size)
 #define SIMD_COEF_32 4
 #endif
 
-// These work for standard SIMD_COEF_32 buffers, AND for SSEi MMX_PARA multiple SIMD_COEF_32 blocks, where index will be mod(X * SIMD_COEF_32) and not simply mod(SIMD_COEF_32)
+// These work for standard SIMD_COEF_32 buffers, AND for SSEi MMX_PARA multiple
+// SIMD_COEF_32 blocks, where index will be mod(X * SIMD_COEF_32) and not simply
+// mod(SIMD_COEF_32)
 #define SHAGETPOS(i, index)                                                    \
 	((index & (SIMD_COEF_32 - 1)) * 4                                          \
 	 + ((i) & (0xffffffff - 3)) * SIMD_COEF_32                                 \
 	 + (3 - ((i) &3))                                                          \
 	 + (unsigned int) index / SIMD_COEF_32 * SHA_BUF_SIZ * 4                   \
-		   * SIMD_COEF_32) //for endianity conversion
+		   * SIMD_COEF_32) // for endianity conversion
 #define SHAGETOUTPOS(i, index)                                                 \
 	((index & (SIMD_COEF_32 - 1)) * 4                                          \
 	 + ((i) & (0xffffffff - 3)) * SIMD_COEF_32                                 \
 	 + (3 - ((i) &3))                                                          \
 	 + (unsigned int) index / SIMD_COEF_32 * 20                                \
-		   * SIMD_COEF_32) //for endianity conversion
+		   * SIMD_COEF_32) // for endianity conversion
 // for MD4/MD5 or any 64 byte LE SSE interleaved hash
 #define GETPOS(i, index)                                                       \
 	((index & (SIMD_COEF_32 - 1)) * 4                                          \
@@ -540,14 +543,15 @@ void alter_endianity(void *_x, unsigned int size)
 	 + (7 - ((i) &7))                                                          \
 	 + (unsigned int) index / SIMD_COEF_64 * 64 * SIMD_COEF_64)
 
-// for SHA384/SHA512 128 byte FLAT interleaved hash (arrays of 16 8 byte ints), but we do not BE interleave.
+// for SHA384/SHA512 128 byte FLAT interleaved hash (arrays of 16 8 byte ints),
+// but we do not BE interleave.
 #define SHA64GETPOSne(i, index)                                                \
 	((index & (SIMD_COEF_64 - 1)) * 8                                          \
 	 + ((i) & (0xffffffff - 7)) * SIMD_COEF_64                                 \
 	 + ((i) &7)                                                                \
 	 + (unsigned int) index / SIMD_COEF_64 * SHA_BUF_SIZ * 8 * SIMD_COEF_64)
 
-void dump_stuff_mmx_noeol(void *buf, unsigned int size, unsigned int index)
+void dump_stuff_mmx_noeol(void * buf, unsigned int size, unsigned int index)
 {
 	unsigned int i;
 	for (i = 0; i < size; i++)
@@ -556,28 +560,28 @@ void dump_stuff_mmx_noeol(void *buf, unsigned int size, unsigned int index)
 		if ((i % 4) == 3) printf(" ");
 	}
 }
-void dump_stuff_mmx(void *buf, unsigned int size, unsigned int index)
+void dump_stuff_mmx(void * buf, unsigned int size, unsigned int index)
 {
 	dump_stuff_mmx_noeol(buf, size, index);
 	printf("\n");
 }
-void dump_stuff_mmx_msg(const void *msg,
-						void *buf,
+void dump_stuff_mmx_msg(const void * msg,
+						void * buf,
 						unsigned int size,
 						unsigned int index)
 {
 	printf("%s : ", (char *) msg);
 	dump_stuff_mmx(buf, size, index);
 }
-void dump_stuff_mmx_msg_sepline(const void *msg,
-								void *buf,
+void dump_stuff_mmx_msg_sepline(const void * msg,
+								void * buf,
 								unsigned int size,
 								unsigned int index)
 {
 	printf("%s :\n", (char *) msg);
 	dump_stuff_mmx(buf, size, index);
 }
-void dump_out_mmx_noeol(void *buf, unsigned int size, unsigned int index)
+void dump_out_mmx_noeol(void * buf, unsigned int size, unsigned int index)
 {
 	unsigned int i;
 	for (i = 0; i < size; i++)
@@ -586,21 +590,21 @@ void dump_out_mmx_noeol(void *buf, unsigned int size, unsigned int index)
 		if ((i % 4) == 3) printf(" ");
 	}
 }
-void dump_out_mmx(void *buf, unsigned int size, unsigned int index)
+void dump_out_mmx(void * buf, unsigned int size, unsigned int index)
 {
 	dump_out_mmx_noeol(buf, size, index);
 	printf("\n");
 }
-void dump_out_mmx_msg(const void *msg,
-					  void *buf,
+void dump_out_mmx_msg(const void * msg,
+					  void * buf,
 					  unsigned int size,
 					  unsigned int index)
 {
 	printf("%s : ", (char *) msg);
 	dump_out_mmx(buf, size, index);
 }
-void dump_out_mmx_msg_sepline(const void *msg,
-							  void *buf,
+void dump_out_mmx_msg_sepline(const void * msg,
+							  void * buf,
 							  unsigned int size,
 							  unsigned int index)
 {
@@ -616,7 +620,7 @@ void dump_out_mmx_msg_sepline(const void *msg,
 	 + ((i) &3)                                                                \
 	 + (unsigned int) index / SIMD_COEF_32 * 64 * SIMD_COEF_32)
 // multiple para blocks
-void dump_stuff_mpara_mmx_noeol(void *buf,
+void dump_stuff_mpara_mmx_noeol(void * buf,
 								unsigned int size,
 								unsigned int index)
 {
@@ -627,14 +631,15 @@ void dump_stuff_mpara_mmx_noeol(void *buf,
 		if ((i % 4) == 3) printf(" ");
 	}
 }
-void dump_stuff_mpara_mmx(void *buf, unsigned int size, unsigned int index)
+void dump_stuff_mpara_mmx(void * buf, unsigned int size, unsigned int index)
 {
 	dump_stuff_mpara_mmx_noeol(buf, size, index);
 	printf("\n");
 }
-// obuf has to be at lease size long.  This function will unwind the SSE-para buffers into a flat.
-void getbuf_stuff_mpara_mmx(unsigned char *oBuf,
-							void *buf,
+// obuf has to be at lease size long.  This function will unwind the SSE-para
+// buffers into a flat.
+void getbuf_stuff_mpara_mmx(unsigned char * oBuf,
+							void * buf,
 							unsigned int size,
 							unsigned int index)
 {
@@ -642,16 +647,16 @@ void getbuf_stuff_mpara_mmx(unsigned char *oBuf,
 	for (i = 0; i < size; i++)
 		*oBuf++ = ((unsigned char *) buf)[GETPOSMPARA(i, index)];
 }
-void dump_stuff_mpara_mmx_msg(const void *msg,
-							  void *buf,
+void dump_stuff_mpara_mmx_msg(const void * msg,
+							  void * buf,
 							  unsigned int size,
 							  unsigned int index)
 {
 	printf("%s : ", (char *) msg);
 	dump_stuff_mpara_mmx(buf, size, index);
 }
-void dump_stuff_mpara_mmx_msg_sepline(const void *msg,
-									  void *buf,
+void dump_stuff_mpara_mmx_msg_sepline(const void * msg,
+									  void * buf,
 									  unsigned int size,
 									  unsigned int index)
 {
@@ -660,7 +665,7 @@ void dump_stuff_mpara_mmx_msg_sepline(const void *msg,
 }
 #endif
 
-void dump_stuff_shammx(void *buf, unsigned int size, unsigned int index)
+void dump_stuff_shammx(void * buf, unsigned int size, unsigned int index)
 {
 	unsigned int i;
 	for (i = 0; i < size; i++)
@@ -670,15 +675,15 @@ void dump_stuff_shammx(void *buf, unsigned int size, unsigned int index)
 	}
 	printf("\n");
 }
-void dump_stuff_shammx_msg(const void *msg,
-						   void *buf,
+void dump_stuff_shammx_msg(const void * msg,
+						   void * buf,
 						   unsigned int size,
 						   unsigned int index)
 {
 	printf("%s : ", (char *) msg);
 	dump_stuff_shammx(buf, size, index);
 }
-void dump_out_shammx(void *buf, unsigned int size, unsigned int index)
+void dump_out_shammx(void * buf, unsigned int size, unsigned int index)
 {
 	unsigned int i;
 	for (i = 0; i < size; i++)
@@ -688,8 +693,8 @@ void dump_out_shammx(void *buf, unsigned int size, unsigned int index)
 	}
 	printf("\n");
 }
-void dump_out_shammx_msg(const void *msg,
-						 void *buf,
+void dump_out_shammx_msg(const void * msg,
+						 void * buf,
 						 unsigned int size,
 						 unsigned int index)
 {
@@ -697,7 +702,7 @@ void dump_out_shammx_msg(const void *msg,
 	dump_out_shammx(buf, size, index);
 }
 
-void dump_stuff_shammx64(void *buf, unsigned int size, unsigned int index)
+void dump_stuff_shammx64(void * buf, unsigned int size, unsigned int index)
 {
 	unsigned int i;
 	for (i = 0; i < size; i++)
@@ -707,15 +712,15 @@ void dump_stuff_shammx64(void *buf, unsigned int size, unsigned int index)
 	}
 	printf("\n");
 }
-void dump_stuff_shammx64_msg(const void *msg,
-							 void *buf,
+void dump_stuff_shammx64_msg(const void * msg,
+							 void * buf,
 							 unsigned int size,
 							 unsigned int index)
 {
 	printf("%s : ", (char *) msg);
 	dump_stuff_shammx64(buf, size, index);
 }
-void dump_stuff_mmx64(void *buf, unsigned int size, unsigned int index)
+void dump_stuff_mmx64(void * buf, unsigned int size, unsigned int index)
 {
 	unsigned int i;
 	for (i = 0; i < size; i++)
@@ -725,8 +730,8 @@ void dump_stuff_mmx64(void *buf, unsigned int size, unsigned int index)
 	}
 	printf("\n");
 }
-void dump_stuff_mmx64_msg(const void *msg,
-						  void *buf,
+void dump_stuff_mmx64_msg(const void * msg,
+						  void * buf,
 						  unsigned int size,
 						  unsigned int index)
 {
@@ -734,7 +739,7 @@ void dump_stuff_mmx64_msg(const void *msg,
 	dump_stuff_mmx64(buf, size, index);
 }
 
-void dump_out_shammx64(void *buf, unsigned int size, unsigned int index)
+void dump_out_shammx64(void * buf, unsigned int size, unsigned int index)
 {
 	unsigned int i;
 	for (i = 0; i < size; i++)
@@ -744,8 +749,8 @@ void dump_out_shammx64(void *buf, unsigned int size, unsigned int index)
 	}
 	printf("\n");
 }
-void dump_out_shammx64_msg(const void *msg,
-						   void *buf,
+void dump_out_shammx64_msg(const void * msg,
+						   void * buf,
 						   unsigned int size,
 						   unsigned int index)
 {
@@ -754,10 +759,10 @@ void dump_out_shammx64_msg(const void *msg,
 }
 #endif
 
-void alter_endianity_w(void *_x, unsigned int count)
+void alter_endianity_w(void * _x, unsigned int count)
 {
 	int i = -1;
-	ARCH_WORD_32 *x = (ARCH_WORD_32 *) _x;
+	ARCH_WORD_32 * x = (ARCH_WORD_32 *) _x;
 #if ARCH_ALLOWS_UNALIGNED
 	while (++i < (int) count)
 	{
@@ -789,10 +794,10 @@ void alter_endianity_w(void *_x, unsigned int count)
 #endif
 }
 
-void alter_endianity_w64(void *_x, unsigned int count)
+void alter_endianity_w64(void * _x, unsigned int count)
 {
 	int i = -1;
-	ARCH_WORD_64 *x = (ARCH_WORD_64 *) _x;
+	ARCH_WORD_64 * x = (ARCH_WORD_64 *) _x;
 #if ARCH_ALLOWS_UNALIGNED
 	while (++i < (int) count)
 	{

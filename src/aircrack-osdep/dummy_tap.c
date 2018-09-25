@@ -23,7 +23,7 @@
 
 #include "osdep.h"
 
-static struct tif *ti_open_dummy(char *iface)
+static struct tif * ti_open_dummy(char * iface)
 {
 	if (iface)
 	{
@@ -32,4 +32,4 @@ static struct tif *ti_open_dummy(char *iface)
 	return NULL;
 }
 
-EXPORT struct tif *ti_open(char *iface) { return ti_open_dummy(iface); }
+EXPORT struct tif * ti_open(char * iface) { return ti_open_dummy(iface); }

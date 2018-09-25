@@ -40,8 +40,8 @@ struct netqueue
 	unsigned char q_buf[2048];
 	int q_len;
 
-	struct netqueue *q_next;
-	struct netqueue *q_prev;
+	struct netqueue * q_next;
+	struct netqueue * q_prev;
 };
 
 struct priv_net
@@ -52,10 +52,10 @@ struct priv_net
 	int pn_queue_len;
 };
 
-EXPORT int net_send(int s, int command, void *arg, int len)
+EXPORT int net_send(int s, int command, void * arg, int len)
 {
-	struct net_hdr *pnh;
-	char *pktbuf;
+	struct net_hdr * pnh;
+	char * pktbuf;
 	size_t pktlen;
 
 	// Validate command value
@@ -102,11 +102,11 @@ net_send_error:
 	return -1;
 }
 
-EXPORT int net_read_exact(int s, void *arg, int len)
+EXPORT int net_read_exact(int s, void * arg, int len)
 {
 	ssize_t rc;
 	int rlen = 0;
-	char *buf = (char *) arg;
+	char * buf = (char *) arg;
 	while (rlen < len)
 	{
 		rc = recv(s, buf, (len - rlen), 0);
@@ -129,7 +129,7 @@ EXPORT int net_read_exact(int s, void *arg, int len)
 	return 0;
 }
 
-EXPORT int net_get(int s, void *arg, int *len)
+EXPORT int net_get(int s, void * arg, int * len)
 {
 	struct net_hdr nh;
 	int plen;
@@ -151,15 +151,15 @@ EXPORT int net_get(int s, void *arg, int *len)
 	return nh.nh_type;
 }
 
-static void queue_del(struct netqueue *q)
+static void queue_del(struct netqueue * q)
 {
 	q->q_prev->q_next = q->q_next;
 	q->q_next->q_prev = q->q_prev;
 }
 
-static void queue_add(struct netqueue *head, struct netqueue *q)
+static void queue_add(struct netqueue * head, struct netqueue * q)
 {
-	struct netqueue *pos = head->q_prev;
+	struct netqueue * pos = head->q_prev;
 
 	q->q_prev = pos;
 	q->q_next = pos->q_next;
@@ -182,9 +182,9 @@ static int queue_len(struct netqueue *head)
 }
 #endif
 
-static struct netqueue *queue_get_slot(struct priv_net *pn)
+static struct netqueue * queue_get_slot(struct priv_net * pn)
 {
-	struct netqueue *q = pn->pn_queue_free.q_next;
+	struct netqueue * q = pn->pn_queue_free.q_next;
 
 	if (q != &pn->pn_queue_free)
 	{
@@ -197,9 +197,9 @@ static struct netqueue *queue_get_slot(struct priv_net *pn)
 	return malloc(sizeof(*q));
 }
 
-static void net_enque(struct priv_net *pn, void *buf, int len)
+static void net_enque(struct priv_net * pn, void * buf, int len)
 {
-	struct netqueue *q;
+	struct netqueue * q;
 
 	q = queue_get_slot(pn);
 	if (!q) return;
@@ -210,7 +210,7 @@ static void net_enque(struct priv_net *pn, void *buf, int len)
 	queue_add(&pn->pn_queue, q);
 }
 
-static int net_get_nopacket(struct priv_net *pn, void *arg, int *len)
+static int net_get_nopacket(struct priv_net * pn, void * arg, int * len)
 {
 	unsigned char buf[2048];
 	int l = sizeof(buf);
@@ -234,7 +234,7 @@ static int net_get_nopacket(struct priv_net *pn, void *arg, int *len)
 	return c;
 }
 
-static int net_cmd(struct priv_net *pn, int command, void *arg, int alen)
+static int net_cmd(struct priv_net * pn, int command, void * arg, int alen)
 {
 	uint32_t rc;
 	int len;
@@ -257,10 +257,10 @@ static int net_cmd(struct priv_net *pn, int command, void *arg, int alen)
 	return ntohl(rc);
 }
 
-static int queue_get(struct priv_net *pn, void *buf, int len)
+static int queue_get(struct priv_net * pn, void * buf, int len)
 {
-	struct netqueue *head = &pn->pn_queue;
-	struct netqueue *q = head->q_next;
+	struct netqueue * head = &pn->pn_queue;
+	struct netqueue * q = head->q_next;
 
 	if (q == head) return 0;
 
@@ -274,11 +274,11 @@ static int queue_get(struct priv_net *pn, void *buf, int len)
 }
 
 static int
-net_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
+net_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 {
-	struct priv_net *pn = wi_priv(wi);
+	struct priv_net * pn = wi_priv(wi);
 	uint32_t buf[512]; // 512 * 4 = 2048
-	unsigned char *bufc = (unsigned char *) buf;
+	unsigned char * bufc = (unsigned char *) buf;
 	int cmd;
 	int sz = sizeof(*ri);
 	int l;
@@ -321,9 +321,9 @@ net_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 	return l;
 }
 
-static int net_get_mac(struct wif *wi, unsigned char *mac)
+static int net_get_mac(struct wif * wi, unsigned char * mac)
 {
-	struct priv_net *pn = wi_priv(wi);
+	struct priv_net * pn = wi_priv(wi);
 	uint32_t buf[2]; // only need 6 bytes, this provides 8
 	int cmd;
 	int sz = 6;
@@ -342,12 +342,12 @@ static int net_get_mac(struct wif *wi, unsigned char *mac)
 }
 
 static int
-net_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
+net_write(struct wif * wi, unsigned char * h80211, int len, struct tx_info * ti)
 {
-	struct priv_net *pn = wi_priv(wi);
+	struct priv_net * pn = wi_priv(wi);
 	int sz = sizeof(*ti);
 	unsigned char buf[2048];
-	unsigned char *ptr = buf;
+	unsigned char * ptr = buf;
 
 	/* XXX */
 	if (ti)
@@ -362,40 +362,40 @@ net_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
 	return net_cmd(pn, NET_WRITE, buf, sz);
 }
 
-static int net_set_channel(struct wif *wi, int chan)
+static int net_set_channel(struct wif * wi, int chan)
 {
 	uint32_t c = htonl(chan);
 
 	return net_cmd(wi_priv(wi), NET_SET_CHAN, &c, sizeof(c));
 }
 
-static int net_get_channel(struct wif *wi)
+static int net_get_channel(struct wif * wi)
 {
-	struct priv_net *pn = wi_priv(wi);
+	struct priv_net * pn = wi_priv(wi);
 
 	return net_cmd(pn, NET_GET_CHAN, NULL, 0);
 }
 
-static int net_set_rate(struct wif *wi, int rate)
+static int net_set_rate(struct wif * wi, int rate)
 {
 	uint32_t c = htonl(rate);
 
 	return net_cmd(wi_priv(wi), NET_SET_RATE, &c, sizeof(c));
 }
 
-static int net_get_rate(struct wif *wi)
+static int net_get_rate(struct wif * wi)
 {
-	struct priv_net *pn = wi_priv(wi);
+	struct priv_net * pn = wi_priv(wi);
 
 	return net_cmd(pn, NET_GET_RATE, NULL, 0);
 }
 
-static int net_get_monitor(struct wif *wi)
+static int net_get_monitor(struct wif * wi)
 {
 	return net_cmd(wi_priv(wi), NET_GET_MONITOR, NULL, 0);
 }
 
-static void do_net_free(struct wif *wi)
+static void do_net_free(struct wif * wi)
 {
 	assert(wi->wi_priv);
 	free(wi->wi_priv);
@@ -403,18 +403,18 @@ static void do_net_free(struct wif *wi)
 	free(wi);
 }
 
-static void net_close(struct wif *wi)
+static void net_close(struct wif * wi)
 {
-	struct priv_net *pn = wi_priv(wi);
+	struct priv_net * pn = wi_priv(wi);
 
 	close(pn->pn_s);
 	do_net_free(wi);
 }
 
-static int get_ip_port(char *iface, char *ip, const int ipsize)
+static int get_ip_port(char * iface, char * ip, const int ipsize)
 {
-	char *host;
-	char *ptr;
+	char * host;
+	char * ptr;
 	int port = -1;
 	struct in_addr addr;
 
@@ -446,7 +446,7 @@ static int handshake(int s)
 	return 0;
 }
 
-static int do_net_open(char *iface)
+static int do_net_open(char * iface)
 {
 	int s, port;
 	char ip[16];
@@ -488,17 +488,17 @@ static int do_net_open(char *iface)
 	return s;
 }
 
-static int net_fd(struct wif *wi)
+static int net_fd(struct wif * wi)
 {
-	struct priv_net *pn = wi_priv(wi);
+	struct priv_net * pn = wi_priv(wi);
 
 	return pn->pn_s;
 }
 
-EXPORT struct wif *net_open(char *iface)
+EXPORT struct wif * net_open(char * iface)
 {
-	struct wif *wi;
-	struct priv_net *pn;
+	struct wif * wi;
+	struct priv_net * pn;
 	int s;
 
 	/* setup wi struct */

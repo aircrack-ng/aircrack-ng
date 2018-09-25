@@ -137,7 +137,8 @@ void show_cursor(void);
 /// Reset the terminal console display back to a known working state.
 void reset_term(void);
 
-/// Wrapper around \a getch to avoid displaying the character on the terminal console.
+/// Wrapper around \a getch to avoid displaying the character on the terminal
+/// console.
 int mygetch(void);
 
-#endif //AIRCRACK_NG_CONSOLE_H
+#endif // AIRCRACK_NG_CONSOLE_H

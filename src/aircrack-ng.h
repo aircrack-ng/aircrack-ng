@@ -75,7 +75,7 @@
 
 #define CLOSE_IT 100000
 
-extern float chrono(struct timeval *start, int reset);
+extern float chrono(struct timeval * start, int reset);
 
 #define S_LLC_SNAP "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP (S_LLC_SNAP "\x08\x06")
@@ -87,89 +87,89 @@ extern float chrono(struct timeval *start, int reset);
 
 enum KoreK_attacks
 {
-	A_u15, /* semi-stable  15%             */
-	A_s13, /* stable       13%             */
-	A_u13_1, /* unstable     13%             */
-	A_u13_2, /* unstable ?   13%             */
-	A_u13_3, /* unstable ?   13%             */
-	A_s5_1, /* standard      5% (~FMS)      */
-	A_s5_2, /* other stable  5%             */
-	A_s5_3, /* other stable  5%             */
-	A_u5_1, /* unstable      5% no good ?   */
-	A_u5_2, /* unstable      5%             */
-	A_u5_3, /* unstable      5% no good     */
-	A_u5_4, /* unstable      5%             */
-	A_s3, /* stable        3%             */
-	A_4_s13, /* stable       13% on q = 4    */
+	A_u15,	/* semi-stable  15%             */
+	A_s13,	/* stable       13%             */
+	A_u13_1,  /* unstable     13%             */
+	A_u13_2,  /* unstable ?   13%             */
+	A_u13_3,  /* unstable ?   13%             */
+	A_s5_1,   /* standard      5% (~FMS)      */
+	A_s5_2,   /* other stable  5%             */
+	A_s5_3,   /* other stable  5%             */
+	A_u5_1,   /* unstable      5% no good ?   */
+	A_u5_2,   /* unstable      5%             */
+	A_u5_3,   /* unstable      5% no good     */
+	A_u5_4,   /* unstable      5%             */
+	A_s3,	 /* stable        3%             */
+	A_4_s13,  /* stable       13% on q = 4    */
 	A_4_u5_1, /* unstable      5% on q = 4    */
 	A_4_u5_2, /* unstable      5% on q = 4    */
-	A_neg /* helps reject false positives */
+	A_neg	 /* helps reject false positives */
 };
 
 struct dictfiles
 {
-	off_t dictsize; /* Total file size */
-	off_t dictpos; /* Current position of dictionary */
+	off_t dictsize;  /* Total file size */
+	off_t dictpos;   /* Current position of dictionary */
 	off_t wordcount; /* Total amount of words in dict file */
-	int loaded; /* Have finished processing? */
+	int loaded;		 /* Have finished processing? */
 };
 
 struct options
 {
-	int amode; /* attack mode          */
-	int essid_set; /* essid set flag       */
-	int bssid_set; /* bssid set flag       */
-	char essid[33]; /* target ESSID         */
+	int amode;				/* attack mode          */
+	int essid_set;			/* essid set flag       */
+	int bssid_set;			/* bssid set flag       */
+	char essid[33];			/* target ESSID         */
 	unsigned char bssid[6]; /* target BSSID         */
-	int nbcpu; /* # of cracker threads
-									(= # of CPU)         */
-	int is_quiet; /* quiet mode flag      */
+	int nbcpu;				/* # of cracker threads
+												 (= # of CPU)         */
+	int is_quiet;			/* quiet mode flag      */
 
 	unsigned char debug[64]; /* user-defined WEP key */
-	int debug_row[64]; /* user-defined Row WEP key */
-	unsigned char maddr[6]; /* MAC address filter   */
-	int keylen; /* WEP key length       */
-	int index; /* WEP key index        */
-	float ffact; /* bruteforce factor    */
-	int korek; /* attack strategy      */
+	int debug_row[64];		 /* user-defined Row WEP key */
+	unsigned char maddr[6];  /* MAC address filter   */
+	int keylen;				 /* WEP key length       */
+	int index;				 /* WEP key index        */
+	float ffact;			 /* bruteforce factor    */
+	int korek;				 /* attack strategy      */
 
-	int is_fritz; /* use numeric keyspace */
-	int is_alnum; /* alphanum keyspace    */
+	int is_fritz;   /* use numeric keyspace */
+	int is_alnum;   /* alphanum keyspace    */
 	int is_bcdonly; /* binary coded decimal */
 
-	int do_brute; /* bruteforce last 2 KB */
+	int do_brute;	/* bruteforce last 2 KB */
 	int do_mt_brute; /* bruteforce last 2 KB
 									multithreaded for SMP*/
-	int do_testy; /* experimental attack  */
-	int do_ptw; /* PTW WEP attack */
+	int do_testy;	/* experimental attack  */
+	int do_ptw;		 /* PTW WEP attack */
 
-	char *dicts[MAX_DICTS]; /* dictionary files     */
-	FILE *dict; /* dictionary file      */
-	int nbdict; /* current dict number  */
-	int no_stdin; /* if dict == stdin     */
-	int hexdict[MAX_DICTS]; /* if dict in hex       */
-	long long int wordcount; /* Total wordcount for all dicts*/
+	char * dicts[MAX_DICTS];			 /* dictionary files     */
+	FILE * dict;						 /* dictionary file      */
+	int nbdict;							 /* current dict number  */
+	int no_stdin;						 /* if dict == stdin     */
+	int hexdict[MAX_DICTS];				 /* if dict in hex       */
+	long long int wordcount;			 /* Total wordcount for all dicts*/
 	struct dictfiles dictidx[MAX_DICTS]; /* Dictionary structure		*/
-	int totaldicts; /* total loaded dictionaries	*/
-	int dictfinish; /* finished processing all dicts*/
-	int showASCII; /* Show ASCII version of*/
+	int totaldicts;						 /* total loaded dictionaries	*/
+	int dictfinish;						 /* finished processing all dicts*/
+	int showASCII;						 /* Show ASCII version of*/
 	/* the wepkey           */
 
 	int l33t; /* no comment           */
 	int stdin_dict;
 
-	int probability; /* %of correct answers */
+	int probability;	  /* %of correct answers */
 	int votes[N_ATTACKS]; /* votes for korek attacks */
-	int brutebytes[64]; /* bytes to bruteforce */
+	int brutebytes[64];   /* bytes to bruteforce */
 	int next_ptw_try;
 
 	int max_ivs;
 
-	char *bssidmerge;
-	unsigned char *firstbssid;
-	struct mergeBSSID *bssid_list_1st;
+	char * bssidmerge;
+	unsigned char * firstbssid;
+	struct mergeBSSID * bssid_list_1st;
 
-	struct AP_info *ap;
+	struct AP_info * ap;
 
 	int wep_decloak;
 	int ptw_attack;
@@ -180,13 +180,14 @@ struct options
 
 	int oneshot; /* Do PTW once */
 
-	char *logKeyToFile;
+	char * logKeyToFile;
 
-	int forced_amode; /* signals disregarding automatic detection of encryption type */
+	int forced_amode; /* signals disregarding automatic detection of encryption
+						 type */
 
-	char *wkp; /* EWSA Project file */
-	char *hccap; /* Hashcat capture file */
-	char *hccapx; /* Hashcat X (3.6+) capture file */
+	char * wkp;	/* EWSA Project file */
+	char * hccap;  /* Hashcat capture file */
+	char * hccapx; /* Hashcat X (3.6+) capture file */
 };
 
 typedef struct
@@ -197,51 +198,51 @@ typedef struct
 struct WEP_data
 {
 	unsigned char key[64]; /* the current chosen WEP key   */
-	unsigned char *ivbuf; /* buffer holding all the IVs   */
-	int nb_aps; /* number of targeted APs       */
-	long nb_ivs; /* # of unique IVs in buffer    */
-	long nb_ivs_now; /* # of unique IVs available    */
-	int fudge[64]; /* bruteforce level (1 to 256)  */
-	int depth[64]; /* how deep we are in the fudge */
-	vote poll[64][256]; /* KoreK cryptanalysis results  */
+	unsigned char * ivbuf; /* buffer holding all the IVs   */
+	int nb_aps;			   /* number of targeted APs       */
+	long nb_ivs;		   /* # of unique IVs in buffer    */
+	long nb_ivs_now;	   /* # of unique IVs available    */
+	int fudge[64];		   /* bruteforce level (1 to 256)  */
+	int depth[64];		   /* how deep we are in the fudge */
+	vote poll[64][256];	/* KoreK cryptanalysis results  */
 };
 
 struct AP_info
 {
-	unsigned char bssid[6]; /* access point MAC address     */
-	char essid[33]; /* access point identifier      */
-	unsigned char lanip[4]; /* IP address if unencrypted    */
-	unsigned char *ivbuf; /* table holding WEP IV data    */
-	unsigned char **uiv_root; /* IV uniqueness root struct    */
-	long ivbuf_size; /* IV buffer allocated size     */
-	long nb_ivs; /* total number of unique IVs   */
-	long nb_ivs_clean; /* total number of unique IVs   */
-	long nb_ivs_vague; /* total number of unique IVs   */
-	int crypt; /* encryption algorithm         */
-	int eapol; /* set if EAPOL is present      */
-	int target; /* flag set if AP is a target   */
-	struct ST_info *st_1st; /* DEPRECATED: linked list of stations */
-	c_avl_tree_t *stations; /* AVL tree of stations keyed on MAC*/
-	struct WPA_hdsk wpa; /* valid WPA handshake data     */
-	PTW_attackstate *ptw_clean;
-	PTW_attackstate *ptw_vague;
+	unsigned char bssid[6];	/* access point MAC address     */
+	char essid[33];			   /* access point identifier      */
+	unsigned char lanip[4];	/* IP address if unencrypted    */
+	unsigned char * ivbuf;	 /* table holding WEP IV data    */
+	unsigned char ** uiv_root; /* IV uniqueness root struct    */
+	long ivbuf_size;		   /* IV buffer allocated size     */
+	long nb_ivs;			   /* total number of unique IVs   */
+	long nb_ivs_clean;		   /* total number of unique IVs   */
+	long nb_ivs_vague;		   /* total number of unique IVs   */
+	int crypt;				   /* encryption algorithm         */
+	int eapol;				   /* set if EAPOL is present      */
+	int target;				   /* flag set if AP is a target   */
+	struct ST_info * st_1st;   /* DEPRECATED: linked list of stations */
+	c_avl_tree_t * stations;   /* AVL tree of stations keyed on MAC*/
+	struct WPA_hdsk wpa;	   /* valid WPA handshake data     */
+	PTW_attackstate * ptw_clean;
+	PTW_attackstate * ptw_vague;
 };
 
 struct ST_info
 {
-	struct AP_info *ap; /* parent AP                    */
-	struct ST_info *next; /* DEPRECATED: next supplicant*/
-	struct WPA_hdsk wpa; /* WPA handshake data          */
+	struct AP_info * ap;	/* parent AP                    */
+	struct ST_info * next;  /* DEPRECATED: next supplicant*/
+	struct WPA_hdsk wpa;	/* WPA handshake data          */
 	unsigned char stmac[6]; /* client MAC address       */
 };
 
 struct mergeBSSID
 {
 	unsigned char bssid[6]; /* BSSID */
-	char unused[2]; /* Alignment */
-	int convert; /* Does this BSSID has to       */
+	char unused[2];			/* Alignment */
+	int convert;			/* Does this BSSID has to       */
 	/* be converted                 */
-	struct mergeBSSID *next;
+	struct mergeBSSID * next;
 };
 
 #define WPA_DATA_KEY_BUFFER_LENGTH 128
@@ -249,17 +250,18 @@ struct mergeBSSID
 struct WPA_data
 {
 	ac_crypto_engine_t engine;
-	struct AP_info *ap; /* AP information */
-	int thread; /* number of this thread */
-	int threadid; /* id of this thread */
-	int nkeys; /* buffer capacity */
-	char *
-		key_buffer; /* queue as a circular buffer for feeding and consuming keys */
-	int front; /* front marker for the circular buffers */
-	int back; /* back marker for the circular buffers */
+	struct AP_info * ap; /* AP information */
+	int thread;			 /* number of this thread */
+	int threadid;		 /* id of this thread */
+	int nkeys;			 /* buffer capacity */
+	char * key_buffer;   /* queue as a circular buffer for feeding and consuming
+							keys */
+	int front;			 /* front marker for the circular buffers */
+	int back;			 /* back marker for the circular buffers */
 	char key[WPA_DATA_KEY_BUFFER_LENGTH]; /* cracked key (0 while not found) */
 	pthread_cond_t
-		cond; /* condition for waiting when buffer is full until keys are tried and new keys can be written */
+		cond; /* condition for waiting when buffer is full until keys are tried
+				 and new keys can be written */
 	pthread_mutex_t mutex;
 };
 

@@ -52,27 +52,27 @@ struct client
 	int c_s;
 	char c_ip[16];
 
-	struct client *c_next;
-	struct client *c_prev;
+	struct client * c_next;
+	struct client * c_prev;
 };
 
 static struct sstate
 {
 	int ss_s;
-	struct wif *ss_wi;
+	struct wif * ss_wi;
 	struct client ss_clients;
 	int ss_level;
 } _ss;
 
-static struct sstate *get_ss(void) { return &_ss; }
+static struct sstate * get_ss(void) { return &_ss; }
 
-static void usage(char *p)
+static void usage(char * p)
 {
 	if (p)
 	{
 	}
-	char *version_info =
-		getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+	char * version_info
+		= getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		   "  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
 		   "  https://www.aircrack-ng.org\n"
@@ -92,7 +92,7 @@ static void usage(char *p)
 	exit(1);
 }
 
-static void debug(struct sstate *ss, struct client *c, int l, char *fmt, ...)
+static void debug(struct sstate * ss, struct client * c, int l, char * fmt, ...)
 {
 	va_list ap;
 
@@ -104,9 +104,9 @@ static void debug(struct sstate *ss, struct client *c, int l, char *fmt, ...)
 	va_end(ap);
 }
 
-static void client_add(struct sstate *ss, int s, struct sockaddr_in *s_in)
+static void client_add(struct sstate * ss, int s, struct sockaddr_in * s_in)
 {
-	struct client *c;
+	struct client * c;
 
 	if (!(c = calloc(sizeof(struct client), 1))) err(1, "calloc()");
 
@@ -120,7 +120,7 @@ static void client_add(struct sstate *ss, int s, struct sockaddr_in *s_in)
 	ss->ss_clients.c_next = c;
 }
 
-static void client_kill(struct client *c)
+static void client_kill(struct client * c)
 {
 	c->c_prev->c_next = c->c_next;
 	c->c_next->c_prev = c->c_prev;
@@ -129,37 +129,38 @@ static void client_kill(struct client *c)
 	c = NULL;
 }
 
-static void card_open(struct sstate *ss, char *dev)
+static void card_open(struct sstate * ss, char * dev)
 {
-	struct wif *wi = wi_open(dev);
+	struct wif * wi = wi_open(dev);
 
 	if (!wi) err(1, "wi_open()");
 	ss->ss_wi = wi;
 }
 
-static int card_set_chan(struct sstate *ss, int chan)
+static int card_set_chan(struct sstate * ss, int chan)
 {
 	return wi_set_channel(ss->ss_wi, chan);
 }
 
-static int card_get_chan(struct sstate *ss)
+static int card_get_chan(struct sstate * ss)
 {
 	return wi_get_channel(ss->ss_wi);
 }
 
-static int card_set_rate(struct sstate *ss, int rate)
+static int card_set_rate(struct sstate * ss, int rate)
 {
 	return wi_set_rate(ss->ss_wi, rate);
 }
 
-static int card_get_rate(struct sstate *ss) { return wi_get_rate(ss->ss_wi); }
+static int card_get_rate(struct sstate * ss) { return wi_get_rate(ss->ss_wi); }
 
-static int card_get_monitor(struct sstate *ss)
+static int card_get_monitor(struct sstate * ss)
 {
 	return wi_get_monitor(ss->ss_wi);
 }
 
-static int card_read(struct sstate *ss, void *buf, int len, struct rx_info *ri)
+static int
+card_read(struct sstate * ss, void * buf, int len, struct rx_info * ri)
 {
 	int rc;
 
@@ -168,17 +169,18 @@ static int card_read(struct sstate *ss, void *buf, int len, struct rx_info *ri)
 	return rc;
 }
 
-static int card_write(struct sstate *ss, void *buf, int len, struct tx_info *ti)
+static int
+card_write(struct sstate * ss, void * buf, int len, struct tx_info * ti)
 {
 	return wi_write(ss->ss_wi, buf, len, ti);
 }
 
-static int card_get_mac(struct sstate *ss, unsigned char *mac)
+static int card_get_mac(struct sstate * ss, unsigned char * mac)
 {
 	return wi_get_mac(ss->ss_wi, mac);
 }
 
-static void open_sock(struct sstate *ss, int port)
+static void open_sock(struct sstate * ss, int port)
 {
 	int s;
 	struct sockaddr_in s_in;
@@ -203,7 +205,8 @@ static void open_sock(struct sstate *ss, int port)
 	ss->ss_s = s;
 }
 
-static void open_card_and_sock(struct sstate *ss, char *dev, int port, int chan)
+static void
+open_card_and_sock(struct sstate * ss, char * dev, int port, int chan)
 {
 	printf("Opening card %s\n", dev);
 	card_open(ss, dev);
@@ -216,14 +219,14 @@ static void open_card_and_sock(struct sstate *ss, char *dev, int port, int chan)
 	printf("Serving %s chan %d on port %d\n", dev, chan, port);
 }
 
-static void net_send_kill(struct client *c, int cmd, void *data, int len)
+static void net_send_kill(struct client * c, int cmd, void * data, int len)
 {
 	if (net_send(c->c_s, cmd, data, len) == -1) client_kill(c);
 }
 
-static void handle_set_chan(struct sstate *ss,
-							struct client *c,
-							unsigned char *buf,
+static void handle_set_chan(struct sstate * ss,
+							struct client * c,
+							unsigned char * buf,
 							int len)
 {
 	uint32_t chan;
@@ -245,9 +248,9 @@ static void handle_set_chan(struct sstate *ss,
 	net_send_kill(c, NET_RC, &rc, sizeof(rc));
 }
 
-static void handle_set_rate(struct sstate *ss,
-							struct client *c,
-							unsigned char *buf,
+static void handle_set_rate(struct sstate * ss,
+							struct client * c,
+							unsigned char * buf,
 							int len)
 {
 	uint32_t rate;
@@ -269,7 +272,7 @@ static void handle_set_rate(struct sstate *ss,
 	net_send_kill(c, NET_RC, &rc, sizeof(rc));
 }
 
-static void handle_get_mac(struct sstate *ss, struct client *c)
+static void handle_get_mac(struct sstate * ss, struct client * c)
 {
 	unsigned char mac[6];
 	int rc;
@@ -285,7 +288,7 @@ static void handle_get_mac(struct sstate *ss, struct client *c)
 		net_send_kill(c, NET_MAC, mac, 6);
 }
 
-static void handle_get_chan(struct sstate *ss, struct client *c)
+static void handle_get_chan(struct sstate * ss, struct client * c)
 {
 	int rc = card_get_chan(ss);
 	uint32_t chan;
@@ -295,7 +298,7 @@ static void handle_get_chan(struct sstate *ss, struct client *c)
 	net_send_kill(c, NET_RC, &chan, sizeof(chan));
 }
 
-static void handle_get_rate(struct sstate *ss, struct client *c)
+static void handle_get_rate(struct sstate * ss, struct client * c)
 {
 	int rc = card_get_rate(ss);
 	uint32_t rate;
@@ -305,7 +308,7 @@ static void handle_get_rate(struct sstate *ss, struct client *c)
 	net_send_kill(c, NET_RC, &rate, sizeof(rate));
 }
 
-static void handle_get_monitor(struct sstate *ss, struct client *c)
+static void handle_get_monitor(struct sstate * ss, struct client * c)
 {
 	int rc = card_get_monitor(ss);
 	uint32_t x;
@@ -316,10 +319,10 @@ static void handle_get_monitor(struct sstate *ss, struct client *c)
 }
 
 static void
-handle_write(struct sstate *ss, struct client *c, void *buf, int len)
+handle_write(struct sstate * ss, struct client * c, void * buf, int len)
 {
-	struct tx_info *ti = buf;
-	void *hdr = (ti + 1);
+	struct tx_info * ti = buf;
+	void * hdr = (ti + 1);
 	int rc;
 	uint32_t x;
 
@@ -332,7 +335,7 @@ handle_write(struct sstate *ss, struct client *c, void *buf, int len)
 	net_send_kill(c, NET_RC, &x, sizeof(x));
 }
 
-static void handle_client(struct sstate *ss, struct client *c)
+static void handle_client(struct sstate * ss, struct client * c)
 {
 	unsigned char buf[2048];
 	int len = sizeof(buf);
@@ -384,7 +387,7 @@ static void handle_client(struct sstate *ss, struct client *c)
 	}
 }
 
-static void handle_server(struct sstate *ss)
+static void handle_server(struct sstate * ss)
 {
 	int dude;
 	struct sockaddr_in s_in;
@@ -397,9 +400,9 @@ static void handle_server(struct sstate *ss)
 	client_add(ss, dude, &s_in);
 }
 
-static void client_send_packet(struct sstate *ss,
-							   struct client *c,
-							   unsigned char *buf,
+static void client_send_packet(struct sstate * ss,
+							   struct client * c,
+							   unsigned char * buf,
 							   int rd)
 {
 	/* XXX check if TX will block */
@@ -418,13 +421,13 @@ static void client_send_packet(struct sstate *ss,
 	}
 }
 
-static void handle_card(struct sstate *ss)
+static void handle_card(struct sstate * ss)
 {
 	unsigned char buf[2048];
 	int rd;
-	struct rx_info *ri = (struct rx_info *) buf;
-	struct client *c;
-	struct client *next_c;
+	struct rx_info * ri = (struct rx_info *) buf;
+	struct client * c;
+	struct client * next_c;
 
 	rd = card_read(ss, ri + 1, sizeof(buf) - sizeof(*ri), ri);
 	if (rd >= 0) rd += sizeof(*ri);
@@ -446,12 +449,12 @@ static void handle_card(struct sstate *ss)
 	}
 }
 
-static void serv(struct sstate *ss, char *dev, int port, int chan)
+static void serv(struct sstate * ss, char * dev, int port, int chan)
 {
 	int max;
 	fd_set fds;
-	struct client *c;
-	struct client *next;
+	struct client * c;
+	struct client * next;
 	int card_fd;
 
 	open_card_and_sock(ss, dev, port, chan);
@@ -497,13 +500,13 @@ static void serv(struct sstate *ss, char *dev, int port, int chan)
 	}
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
-	char *device = NULL;
+	char * device = NULL;
 	int port = 666;
 	int ch;
 	int chan = 1;
-	struct sstate *ss = get_ss();
+	struct sstate * ss = get_ss();
 
 	memset(ss, 0, sizeof(*ss));
 	ss->ss_clients.c_next = ss->ss_clients.c_prev = &ss->ss_clients;

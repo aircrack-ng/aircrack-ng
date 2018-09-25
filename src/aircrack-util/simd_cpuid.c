@@ -52,8 +52,8 @@
 #define CPUFREQ_CPU0C "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
 #define CPUFREQ_CPU0M "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"
 #define CORETEMP_PATH "/sys/devices/platform/coretemp.0/"
-int cpuid_readsysfs(const char *file);
-int cpuid_findcpusensorpath(const char *path);
+int cpuid_readsysfs(const char * file);
+int cpuid_findcpusensorpath(const char * path);
 #endif
 
 struct _cpuinfo cpuinfo = {0, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0.0, NULL};
@@ -71,14 +71,14 @@ getRegister(const unsigned int val, const char from, const char to)
 	return (val & mask) >> from;
 }
 
-void sprintcat(char *dest, const char *src, size_t len)
+void sprintcat(char * dest, const char * src, size_t len)
 {
 	if (strlen(dest)) (void) strncat(dest, ",", len);
 
 	(void) strncat(dest, src, len);
 }
 
-int is_dir(const char *dir)
+int is_dir(const char * dir)
 {
 	struct stat sb;
 
@@ -142,7 +142,7 @@ int cpuid_simdsize(int viewmax)
 }
 
 #ifdef _X86
-char *cpuid_vendor(void)
+char * cpuid_vendor(void)
 {
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 
@@ -188,7 +188,7 @@ char *cpuid_vendor(void)
 }
 #endif
 
-char *cpuid_featureflags(void)
+char * cpuid_featureflags(void)
 {
 	char flags[64] = {0};
 #ifdef _X86
@@ -281,8 +281,8 @@ float cpuid_getcoretemp(void)
 #elif __linux__
 	if (cpuinfo.cputemppath != NULL)
 	{
-		cpuinfo.coretemp =
-			cpuid_readsysfs((const char *) cpuinfo.cputemppath) / 1000;
+		cpuinfo.coretemp
+			= cpuid_readsysfs((const char *) cpuinfo.cputemppath) / 1000;
 	}
 #else
 	return 0;
@@ -294,10 +294,10 @@ float cpuid_getcoretemp(void)
 //
 // Locate the primary temp input on the coretemp sysfs
 //
-int cpuid_findcpusensorpath(const char *path)
+int cpuid_findcpusensorpath(const char * path)
 {
-	DIR *dirp;
-	struct dirent *dp;
+	DIR * dirp;
+	struct dirent * dp;
 	char tbuf[16][32] = {{0}};
 	int cnt = 0, i = 0, sensorx = 0;
 	char sensor[8] = {0};
@@ -329,7 +329,8 @@ int cpuid_findcpusensorpath(const char *path)
 
 	(void) closedir(dirp);
 
-	// Hopefully we found the ID on the first pass, but Linux is its infinite wisdom
+	// Hopefully we found the ID on the first pass, but Linux is its infinite
+	// wisdom
 	// sometimes starts the sensors at 2-6+
 	for (sensorx = 1; sensorx < 8; sensorx++)
 		for (i = 0; i < cnt; i++)
@@ -353,7 +354,7 @@ int cpuid_findcpusensorpath(const char *path)
 	return -1;
 }
 
-int cpuid_readsysfs(const char *file)
+int cpuid_readsysfs(const char * file)
 {
 	int fd, ival = 0;
 	struct stat sf;
@@ -400,14 +401,14 @@ int cpuid_getfreq(int type)
 }
 #endif
 
-char *cpuid_modelinfo(void)
+char * cpuid_modelinfo(void)
 {
 #ifdef _X86
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 	int bi = 2, broff = 0;
-	char *tmpmodel = calloc(1, (sizeof(unsigned) * 4) * 5);
+	char * tmpmodel = calloc(1, (sizeof(unsigned) * 4) * 5);
 #elif __linux__
-	FILE *cfd;
+	FILE * cfd;
 	char *line = NULL, *token = NULL;
 	size_t linecap = 0;
 	ssize_t linelen;
@@ -477,7 +478,8 @@ char *cpuid_modelinfo(void)
 	pm = modelbuf;
 #endif
 
-	// Clean up the empty spaces in the model name on some intel's because they let their engineers fall asleep on the space bar
+	// Clean up the empty spaces in the model name on some intel's because they
+	// let their engineers fall asleep on the space bar
 	while (*pm == ' ')
 	{
 		pm++;
@@ -519,7 +521,8 @@ int cpuid_getinfo()
 	{
 		__cpuid_count(11, topologyLevel, eax, ebx, ecx, edx);
 
-		// if EBX ==0 then this subleaf is not valid, and the processor doesn't support this.
+		// if EBX ==0 then this subleaf is not valid, and the processor doesn't
+		// support this.
 		if (ebx == 0) break;
 
 		topologyType = getRegister(ecx, 8, 15);
@@ -578,7 +581,8 @@ int cpuid_getinfo()
 
 	if ((cpuinfo.cores == 0) && (cpuinfo.coreperid != 0))
 	{
-		// On lower topology processors we have to calculate the cores from max cores per id (pkg/socket) by max addressable
+		// On lower topology processors we have to calculate the cores from max
+		// cores per id (pkg/socket) by max addressable
 		cpuinfo.cores = (cpuinfo.maxlogic / cpuinfo.coreperid);
 	}
 #endif
@@ -597,7 +601,8 @@ int cpuid_getinfo()
 	// this shouldn't happen but prepare for the worst.
 	if (cpuinfo.cores == 0) cpuinfo.cores = cpu_count;
 
-	// If our max logic matches our cores, we don't have HT even if the proc says otherwise.
+	// If our max logic matches our cores, we don't have HT even if the proc
+	// says otherwise.
 	if (cpuinfo.cores == cpuinfo.maxlogic) cpuinfo.htt = 0;
 
 #ifdef _X86

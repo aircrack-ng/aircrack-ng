@@ -1,4 +1,4 @@
-/* 
+/*
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
@@ -31,8 +31,8 @@
 #define _COMMON_H_
 
 #if defined(__CYGWIN32__) && !defined(__CYGWIN64__)
-int fseeko64(FILE *fp, int64_t offset, int whence);
-int64_t ftello64(FILE *fp);
+int fseeko64(FILE * fp, int64_t offset, int whence);
+int64_t ftello64(FILE * fp);
 #undef fseek
 #define fseek fseeko64
 #undef ftello
@@ -62,7 +62,7 @@ int64_t ftello64(FILE *fp);
 
 #define PCT                                                                    \
 	{                                                                          \
-		struct tm *lt;                                                         \
+		struct tm * lt;                                                        \
 		time_t tc = time(NULL);                                                \
 		lt = localtime(&tc);                                                   \
 		printf("%02d:%02d:%02d  ", lt->tm_hour, lt->tm_min, lt->tm_sec);       \
@@ -89,46 +89,47 @@ extern const unsigned char ZERO[33];
 extern void calctime(time_t t, float calc);
 
 /// Retrieves the working directory.
-extern char *get_current_working_directory(void);
+extern char * get_current_working_directory(void);
 
 /// Trim excess whitespace from the right-most of \a line.
-extern void rtrim(char *line);
+extern void rtrim(char * line);
 
-extern int is_string_number(const char *str);
+extern int is_string_number(const char * str);
 
 extern int get_ram_size(void);
 
-extern char *getVersion(const char *progname,
-						const unsigned int maj,
-						const unsigned int min,
-						const unsigned int submin,
-						const char *rev,
-						const unsigned int beta,
-						const unsigned int rc);
+extern char * getVersion(const char * progname,
+						 const unsigned int maj,
+						 const unsigned int min,
+						 const unsigned int submin,
+						 const char * rev,
+						 const unsigned int beta,
+						 const unsigned int rc);
 
 /// Returns the number of CPU/cores available and online.
 extern int get_nb_cpus(void);
 
-extern int maccmp(unsigned char *mac1, unsigned char *mac2);
+extern int maccmp(unsigned char * mac1, unsigned char * mac2);
 
-extern char *mac2string(unsigned char *mac_address);
+extern char * mac2string(unsigned char * mac_address);
 
 extern int hexCharToInt(unsigned char c);
 
 extern int
-hexStringToArray(char *in, int in_length, unsigned char *out, int out_length);
+hexStringToArray(char * in, int in_length, unsigned char * out, int out_length);
 
 /// Return the mac address bytes (or null if it's not a mac address)
-extern int getmac(const char *macAddress, const int strict, unsigned char *mac);
+extern int
+getmac(const char * macAddress, const int strict, unsigned char * mac);
 
 /// Read a line of characters inputted by the user
 extern int readLine(char line[], int maxlength);
 
 extern int hexToInt(char s[], int len);
 
-extern void rtrim(char *line);
+extern void rtrim(char * line);
 
-extern int string_has_suffix(const char *str, const char *suf);
+extern int string_has_suffix(const char * str, const char * suf);
 
 // Returns 1 if the current process is running in the background, 0 otherwise
 extern int is_background(void);

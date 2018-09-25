@@ -82,9 +82,9 @@ PAirpcapHandle airpcap_handle;
  * @param iface Interface name
  * @return 1 if it is an Airpcap device, 0 if not
  */
-int isAirpcapDevice(const char *iface)
+int isAirpcapDevice(const char * iface)
 {
-	char *pos;
+	char * pos;
 	int len;
 
 	pos = strstr(iface, DEVICE_COMMON_PART);
@@ -116,7 +116,7 @@ int isAirpcapDevice(const char *iface)
  * @param power pointer that will contains the power of the packet
  * @return 0 if successful decoding, 1 if it failed to decode
  */
-int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
+int ppi_decode(const u_char * p, int caplen, int * hdrlen, int * power)
 {
 	PPPI_PACKET_HEADER pPpiPacketHeader;
 	PPPI_FIELD_HEADER pFieldHeader;
@@ -172,8 +172,8 @@ int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 				}
 				else
 				{
-					PPPI_FIELD_802_11_COMMON pField =
-						(PPPI_FIELD_802_11_COMMON)(p + position);
+					PPPI_FIELD_802_11_COMMON pField
+						= (PPPI_FIELD_802_11_COMMON)(p + position);
 
 					if (pField->DbmAntSignal != -128)
 					{
@@ -187,7 +187,8 @@ int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
 				break;
 
 			default:
-				// we do not know this field. Just print type and length and skip
+				// we do not know this field. Just print type and length and
+				// skip
 				break;
 		}
 
@@ -202,7 +203,7 @@ int ppi_decode(const u_char *p, int caplen, int *hdrlen, int *power)
  * @param mac MAC Address
  * @return 0 (successful)
  */
-int airpcap_set_mac(void *mac)
+int airpcap_set_mac(void * mac)
 {
 	if (mac)
 	{
@@ -230,7 +231,7 @@ void airpcap_close(void)
  * @param mac It will contain the mac address
  * @return 0 (successful)
  */
-int airpcap_get_mac(void *mac)
+int airpcap_get_mac(void * mac)
 {
 	// Don't use the function from Airpcap
 	if (mac)
@@ -247,7 +248,7 @@ int airpcap_get_mac(void *mac)
  * @param ri Receive information
  * @return -1 if failure or the number of bytes received
  */
-int airpcap_sniff(void *buf, int len, struct rx_info *ri)
+int airpcap_sniff(void * buf, int len, struct rx_info * ri)
 {
 	// Use PPI headers to obtain the different information for ri
 	// Use AirpcapConvertFrequencyToChannel() to get channel
@@ -275,7 +276,7 @@ int airpcap_sniff(void *buf, int len, struct rx_info *ri)
  * @param ti Transmit information
  * @return -1 if failure or the number of bytes sent
  */
-int airpcap_inject(void *buf, int len, struct tx_info *ti)
+int airpcap_inject(void * buf, int len, struct tx_info * ti)
 {
 	if (ti)
 	{
@@ -287,11 +288,12 @@ int airpcap_inject(void *buf, int len, struct tx_info *ti)
 
 /**
  * Print the error message
- * @param err Contains the error message and a %s in order to show the Airpcap error
+ * @param err Contains the error message and a %s in order to show the Airpcap
+ * error
  * @param retValue Value returned by the function
  * @return retValue
  */
-int printErrorCloseAndReturn(const char *err, int retValue)
+int printErrorCloseAndReturn(const char * err, int retValue)
 {
 	if (err && airpcap_handle)
 	{
@@ -314,11 +316,11 @@ int printErrorCloseAndReturn(const char *err, int retValue)
  * @param param Parameters for the initialization
  * @return 0 if successful, -1 in case of failure
  */
-int airpcap_init(char *param)
+int airpcap_init(char * param)
 {
 	// Later: if several interfaces are given, aggregate them.
 
-	char *iface;
+	char * iface;
 	char errbuf[AIRPCAP_ERRBUF_SIZE];
 
 	iface = (char *) calloc(1, strlen(param) + 100);
@@ -349,11 +351,12 @@ int airpcap_init(char *param)
 	{
 		fprintf(stderr,
 				"This adapter doesn't have wireless extensions. Quitting\n");
-		//pcap_close( winpcap_adapter );
+		// pcap_close( winpcap_adapter );
 		return (-1);
 	}
 
-	/* Tell the adapter that the packets we'll send and receive don't include the FCS */
+	/* Tell the adapter that the packets we'll send and receive don't include
+	 * the FCS */
 	if (!AirpcapSetFcsPresence(airpcap_handle, FALSE))
 		return printErrorCloseAndReturn("Error setting FCS presence: %s\n", -1);
 

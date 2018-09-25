@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include "cowpatty.h"
 
-void close_free_cowpatty_hashdb(struct cowpatty_file *cf)
+void close_free_cowpatty_hashdb(struct cowpatty_file * cf)
 {
 	if (cf != NULL)
 	{
@@ -49,14 +49,14 @@ void close_free_cowpatty_hashdb(struct cowpatty_file *cf)
 	}
 }
 
-struct cowpatty_file *open_cowpatty_hashdb(const char *filename,
-										   const char *mode)
+struct cowpatty_file * open_cowpatty_hashdb(const char * filename,
+											const char * mode)
 {
 	struct hashdb_head filehead;
 
 	// Initialize structure
-	struct cowpatty_file *ret =
-		(struct cowpatty_file *) malloc(sizeof(struct cowpatty_file));
+	struct cowpatty_file * ret
+		= (struct cowpatty_file *) malloc(sizeof(struct cowpatty_file));
 	memset(ret->ssid, 0, sizeof(ret->ssid));
 	memset(ret->error, 0, sizeof(ret->error));
 	ret->fp = NULL;
@@ -131,10 +131,10 @@ struct cowpatty_file *open_cowpatty_hashdb(const char *filename,
 	return ret;
 }
 
-struct hashdb_rec *read_next_cowpatty_record(struct cowpatty_file *cf)
+struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf)
 {
 	int rc, wordlength;
-	struct hashdb_rec *ret = NULL;
+	struct hashdb_rec * ret = NULL;
 
 	if (cf == NULL || cf->error[0])
 	{

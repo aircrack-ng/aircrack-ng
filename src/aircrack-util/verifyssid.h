@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-extern int verifyssid(const unsigned char *s);
+extern int verifyssid(const unsigned char * s);
 
 #ifdef __cplusplus
 };

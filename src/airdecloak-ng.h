@@ -89,18 +89,19 @@ const int PACKET_HEADER_SIZE = sizeof(struct pcap_pkthdr);
 
 struct packet_elt_header
 {
-	struct packet_elt *first;
-	struct packet_elt *current;
-	struct packet_elt *last;
+	struct packet_elt * first;
+	struct packet_elt * current;
+	struct packet_elt * last;
 	int nb_packets;
 	int average_signal; // Calculate the average signal (for later)
-	// Currently do it on management frames (or control frames); may change in the future.
+	// Currently do it on management frames (or control frames); may change in
+	// the future.
 } * _packet_elt_head;
 
 struct packet_elt
 {
 	struct pcap_pkthdr header; /* packet header */
-	unsigned char *packet; /* packet */
+	unsigned char * packet;	/* packet */
 	unsigned short
 		length; /* packet length, just to know how much to write to the file */
 
@@ -108,8 +109,8 @@ struct packet_elt
 	int fromDS;
 	int toDS;
 
-	int frame_type; /* MGMT, CTRL, DATA */
-	int frame_subtype; // Not yet filled but will do
+	int frame_type;						/* MGMT, CTRL, DATA */
+	int frame_subtype;					// Not yet filled but will do
 	unsigned char version_type_subtype; // First byte
 
 	unsigned char source[6];
@@ -125,62 +126,63 @@ struct packet_elt
 	int retry_bit;
 	int more_fragments_bit;
 
-	//int packet_number;			/* packet number */
+	// int packet_number;			/* packet number */
 
 	int is_cloaked;
 	int is_dropped; // Do we have to drop this frame?
 
 	int complete; // 0: no, 1: yes
 
-	struct packet_elt *next;
-	struct packet_elt *prev;
+	struct packet_elt * next;
+	struct packet_elt * prev;
 };
 
 // Not already used (partially maybe)
 struct decloak_stats
 {
-	unsigned long nb_read; /* # of packets read       */
-	unsigned long nb_wep; /* # of WEP data packets   */
-	unsigned long nb_bad; /* # of bad data packets   */
-	unsigned long nb_wpa; /* # of WPA data packets   */
-	unsigned long nb_plain; /* # of plaintext packets  */
-	unsigned long nb_filt_wep; /* # of filtered WEP pkt  */
+	unsigned long nb_read;		/* # of packets read       */
+	unsigned long nb_wep;		/* # of WEP data packets   */
+	unsigned long nb_bad;		/* # of bad data packets   */
+	unsigned long nb_wpa;		/* # of WPA data packets   */
+	unsigned long nb_plain;		/* # of plaintext packets  */
+	unsigned long nb_filt_wep;  /* # of filtered WEP pkt  */
 	unsigned long nb_cloak_wep; /* # of cloaked WEP pkt  */
 };
 
 static void usage(void);
 static int getBits(unsigned char b, int from, int length);
-static FILE *openfile(const char *filename, const char *mode, int fatal);
-static BOOLEAN write_packet(FILE *file, struct packet_elt *packet);
-static FILE *init_new_pcap(const char *filename);
-static FILE *open_existing_pcap(const char *filename);
+static FILE * openfile(const char * filename, const char * mode, int fatal);
+static BOOLEAN write_packet(FILE * file, struct packet_elt * packet);
+static FILE * init_new_pcap(const char * filename);
+static FILE * open_existing_pcap(const char * filename);
 static BOOLEAN read_packets(void);
 static BOOLEAN initialize_linked_list(void);
 static BOOLEAN add_node_if_not_complete(void);
 static void set_node_complete(void);
 static void remove_last_uncomplete_node(void);
-//static struct packet_elt * getPacketNr(int position);
-//static char * iv2string(unsigned char * iv);
-//static char * icv2string(unsigned char * icv);
-//static void print_packet(struct packet_elt * packet);
+// static struct packet_elt * getPacketNr(int position);
+// static char * iv2string(unsigned char * iv);
+// static char * icv2string(unsigned char * icv);
+// static void print_packet(struct packet_elt * packet);
 static void reset_current_packet_pointer(void);
 static BOOLEAN reset_current_packet_pointer_to_ap_packet(void);
 static BOOLEAN reset_current_packet_pointer_to_client_packet(void);
 static BOOLEAN next_packet_pointer(void);
 static BOOLEAN next_packet_pointer_from_ap(void);
 static BOOLEAN next_packet_pointer_from_client(void);
-//static BOOLEAN prev_packet_pointer(void);
-static int compare_SN_to_current_packet(struct packet_elt *packet);
+// static BOOLEAN prev_packet_pointer(void);
+static int compare_SN_to_current_packet(struct packet_elt * packet);
 static BOOLEAN
-current_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet);
-//static BOOLEAN prev_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
+current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
+// static BOOLEAN prev_packet_pointer_same_fromToDS_and_source(struct packet_elt
+// * packet);
 static BOOLEAN
-next_packet_pointer_same_fromToDS_and_source(struct packet_elt *packet);
-//static BOOLEAN prev_packet_pointer_same_fromToDS_and_source_as_current(void);
+next_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
+// static BOOLEAN prev_packet_pointer_same_fromToDS_and_source_as_current(void);
 static BOOLEAN next_packet_pointer_same_fromToDS_and_source_as_current(void);
 static BOOLEAN write_packets(void);
 static BOOLEAN print_statistics(void);
-static char *status_format(int status);
+static char * status_format(int status);
 static int get_average_signal_ap(void);
 
 // Check for cloaking functions

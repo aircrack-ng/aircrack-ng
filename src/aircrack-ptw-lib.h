@@ -1,5 +1,6 @@
 /*
- *  Copyright (c) 2007-2009 Erik Tews, Andrei Pychkine and Ralf-Philipp Weinmann.
+ *  Copyright (c) 2007-2009 Erik Tews, Andrei Pychkine and Ralf-Philipp
+ * Weinmann.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,7 +44,8 @@
 // Its now the number of sessions for selecting 10 at a random position
 #define PTW_CONTROLSESSIONS 10000
 
-// The maximum possible length of the main key, 13 is the maximum for a 104 bit key
+// The maximum possible length of the main key, 13 is the maximum for a 104 bit
+// key
 #define PTW_KEYHSBYTES 29
 
 // How long the IV is, 3 is the default value for WEP
@@ -79,10 +81,10 @@ typedef struct
 	int weight;
 } PTW_session;
 
-typedef int (*rc4test_func)(uint8_t *key,
+typedef int (*rc4test_func)(uint8_t * key,
 							int keylen,
-							uint8_t *iv,
-							uint8_t *keystream);
+							uint8_t * iv,
+							uint8_t * keystream);
 
 // The state of an attack
 // You should usually never modify these values manually
@@ -99,13 +101,13 @@ typedef struct
 	// The table with votes for the keybytesums
 	PTW_tableentry table[PTW_KEYHSBYTES][PTW_n];
 	// Sessions for the original klein attack
-	PTW_session *allsessions;
+	PTW_session * allsessions;
 	int allsessions_size;
 	// rc4test function, optimized if available
 	rc4test_func rc4test;
 } PTW_attackstate;
 
-PTW_attackstate *PTW_newattackstate(void);
+PTW_attackstate * PTW_newattackstate(void);
 void PTW_freeattackstate(PTW_attackstate *);
 int PTW_addsession(PTW_attackstate *, uint8_t *, uint8_t *, int *, int);
 int PTW_computeKey(

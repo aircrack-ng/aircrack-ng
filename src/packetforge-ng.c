@@ -118,10 +118,10 @@ struct options
 	unsigned char dip[4];
 	unsigned char sip[4];
 	unsigned char fctrl[2];
-	unsigned char *prga;
+	unsigned char * prga;
 
-	char *cap_out;
-	char *raw_file;
+	char * cap_out;
+	char * raw_file;
 
 	int mode;
 	int pktlen;
@@ -136,7 +136,7 @@ struct options
 	char fromds;
 	char encrypt;
 
-	FILE *ivs2;
+	FILE * ivs2;
 	unsigned char prev_bssid[6];
 	int first_packet;
 
@@ -149,7 +149,7 @@ struct devices
 	int fd_out, arptype_out;
 	int fd_rtc;
 
-	FILE *f_cap_in;
+	FILE * f_cap_in;
 
 	struct pcap_file_header pfh_in;
 } dev;
@@ -157,7 +157,7 @@ struct devices
 unsigned char h80211[2048];
 unsigned char tmpbuf[2048];
 
-static int capture_ask_packet(int *caplen)
+static int capture_ask_packet(int * caplen)
 {
 	time_t tr;
 	struct timeval tv;
@@ -398,7 +398,7 @@ static int capture_ask_packet(int *caplen)
 }
 
 /* IP address parsing routine */
-static int getip(char *s, unsigned char *ip, unsigned short *port)
+static int getip(char * s, unsigned char * ip, unsigned short * port)
 {
 	int i = 0, n;
 
@@ -429,7 +429,7 @@ static int getip(char *s, unsigned char *ip, unsigned short *port)
 	return (i != 4);
 }
 
-static unsigned short ip_chksum(unsigned short *addr, int count)
+static unsigned short ip_chksum(unsigned short * addr, int count)
 {
 	unsigned short checksum;
 	/* Compute Internet Checksum for "count" bytes
@@ -457,7 +457,7 @@ static unsigned short ip_chksum(unsigned short *addr, int count)
 	return checksum;
 }
 
-static int set_tofromds(unsigned char *packet)
+static int set_tofromds(unsigned char * packet)
 {
 	if (packet == NULL) return 1;
 
@@ -485,7 +485,7 @@ static int set_tofromds(unsigned char *packet)
 	return 0;
 }
 
-static int set_bssid(unsigned char *packet)
+static int set_bssid(unsigned char * packet)
 {
 	int mi_b;
 
@@ -519,7 +519,7 @@ static int set_bssid(unsigned char *packet)
 	return 0;
 }
 
-static int set_dmac(unsigned char *packet)
+static int set_dmac(unsigned char * packet)
 {
 	int mi_d;
 
@@ -553,7 +553,7 @@ static int set_dmac(unsigned char *packet)
 	return 0;
 }
 
-static int set_smac(unsigned char *packet)
+static int set_smac(unsigned char * packet)
 {
 	int mi_s;
 
@@ -588,7 +588,7 @@ static int set_smac(unsigned char *packet)
 }
 
 /* offset for ip&&udp = 48, for arp = 56 */
-static int set_dip(unsigned char *packet, const int offset)
+static int set_dip(unsigned char * packet, const int offset)
 {
 	if (packet == NULL) return 1;
 	if (offset < 0 || offset > 2046) return 1;
@@ -606,7 +606,7 @@ static int set_dip(unsigned char *packet, const int offset)
 }
 
 /* offset for ip&&udp = 44, for arp = 46 */
-static int set_sip(unsigned char *packet, const int offset)
+static int set_sip(unsigned char * packet, const int offset)
 {
 	if (packet == NULL) return 1;
 	if (offset < 0 || offset > 2046) return 1;
@@ -623,7 +623,7 @@ static int set_sip(unsigned char *packet, const int offset)
 	return 0;
 }
 
-static int set_ipid(unsigned char *packet, const int offset)
+static int set_ipid(unsigned char * packet, const int offset)
 {
 	unsigned short id;
 
@@ -637,7 +637,7 @@ static int set_ipid(unsigned char *packet, const int offset)
 	return 0;
 }
 
-static int set_ip_ttl(unsigned char *packet)
+static int set_ip_ttl(unsigned char * packet)
 {
 	unsigned char ttl;
 
@@ -649,7 +649,7 @@ static int set_ip_ttl(unsigned char *packet)
 	return 0;
 }
 
-static int set_IVidx(unsigned char *packet)
+static int set_IVidx(unsigned char * packet)
 {
 	if (packet == NULL) return 1;
 
@@ -665,13 +665,13 @@ static int set_IVidx(unsigned char *packet)
 	return 0;
 }
 
-static int next_keystream(unsigned char *dest,
+static int next_keystream(unsigned char * dest,
 						  const int size,
-						  unsigned char *bssid,
+						  unsigned char * bssid,
 						  const int minlen)
 {
 	struct ivs2_pkthdr ivs2;
-	char *buffer;
+	char * buffer;
 	int gotit = 0;
 
 	if (opt.ivs2 == NULL) return -1;
@@ -735,7 +735,7 @@ static int next_keystream(unsigned char *dest,
 }
 
 static int
-encrypt_data(unsigned char *dest, const unsigned char *data, const int length)
+encrypt_data(unsigned char * dest, const unsigned char * data, const int length)
 {
 	unsigned char cipher[2048];
 	int n;
@@ -791,7 +791,7 @@ encrypt_data(unsigned char *dest, const unsigned char *data, const int length)
 	return 0;
 }
 
-static int create_wep_packet(unsigned char *packet, int *length)
+static int create_wep_packet(unsigned char * packet, int * length)
 {
 	if (packet == NULL) return 1;
 
@@ -813,9 +813,9 @@ static int create_wep_packet(unsigned char *packet, int *length)
 	return 0;
 }
 
-static int write_cap_packet(unsigned char *packet, const int length)
+static int write_cap_packet(unsigned char * packet, const int length)
 {
-	FILE *f;
+	FILE * f;
 	struct pcap_file_header pfh;
 	struct pcap_pkthdr pkh;
 	struct timeval tv;
@@ -900,9 +900,9 @@ static int write_cap_packet(unsigned char *packet, const int length)
 	return 0;
 }
 
-static int read_prga(unsigned char **dest, const char *file)
+static int read_prga(unsigned char ** dest, const char * file)
 {
-	FILE *f;
+	FILE * f;
 	int size;
 	struct ivs2_filehdr fivs2;
 
@@ -965,7 +965,7 @@ static int read_prga(unsigned char **dest, const char *file)
 	}
 	else
 	{
-		//assuming old xor file
+		// assuming old xor file
 		if ((*dest)[3] > 0x03)
 		{
 			printf("Are you really sure that this is a valid keystream? "
@@ -1107,13 +1107,13 @@ static int forge_custom(void)
 
 static void print_usage(void)
 {
-	char *version_info = getVersion(
+	char * version_info = getVersion(
 		"Packetforge-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf(usage, version_info);
 	free(version_info);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
 	int arg;
 	int option_index;

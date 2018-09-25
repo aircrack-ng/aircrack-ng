@@ -1,5 +1,5 @@
 /*
-  *  Copyright (c) 2009, Kyle Fuller <inbox@kylefuller.co.uk>, based upon 
+  *  Copyright (c) 2009, Kyle Fuller <inbox@kylefuller.co.uk>, based upon
   *  freebsd_tap.c by Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  OS dependent API for Darwin. TAP routines
@@ -44,15 +44,15 @@ struct tip_darwin
 	int tf_destroy;
 };
 
-static int ti_do_open_darwin(struct tif *ti, char *name)
+static int ti_do_open_darwin(struct tif * ti, char * name)
 {
 	int fd = -1;
 	char iface[12];
 	struct stat st;
-	struct tip_darwin *priv = ti_priv(ti);
+	struct tip_darwin * priv = ti_priv(ti);
 	int s;
 	unsigned int flags;
-	struct ifreq *ifr;
+	struct ifreq * ifr;
 	int i;
 
 	/* open tap */
@@ -116,22 +116,22 @@ err2:
 	goto err;
 }
 
-static void ti_do_free(struct tif *ti)
+static void ti_do_free(struct tif * ti)
 {
-	struct tip_darwin *priv = ti_priv(ti);
+	struct tip_darwin * priv = ti_priv(ti);
 
 	free(priv);
 	free(ti);
 }
 
-static void ti_destroy(struct tip_darwin *priv)
+static void ti_destroy(struct tip_darwin * priv)
 {
 	ioctl(priv->tf_ioctls, SIOCIFDESTROY, &priv->tf_ifr);
 }
 
-static void ti_close_darwin(struct tif *ti)
+static void ti_close_darwin(struct tif * ti)
 {
-	struct tip_darwin *priv = ti_priv(ti);
+	struct tip_darwin * priv = ti_priv(ti);
 
 	if (priv->tf_destroy) ti_destroy(priv);
 
@@ -140,26 +140,26 @@ static void ti_close_darwin(struct tif *ti)
 	ti_do_free(ti);
 }
 
-static char *ti_name_darwin(struct tif *ti)
+static char * ti_name_darwin(struct tif * ti)
 {
-	struct tip_darwin *priv = ti_priv(ti);
+	struct tip_darwin * priv = ti_priv(ti);
 
 	return priv->tf_name;
 }
 
-static int ti_set_mtu_darwin(struct tif *ti, int mtu)
+static int ti_set_mtu_darwin(struct tif * ti, int mtu)
 {
-	struct tip_darwin *priv = ti_priv(ti);
+	struct tip_darwin * priv = ti_priv(ti);
 
 	priv->tf_ifr.ifr_mtu = mtu;
 
 	return ioctl(priv->tf_ioctls, SIOCSIFMTU, &priv->tf_ifr);
 }
 
-static int ti_set_mac_darwin(struct tif *ti, unsigned char *mac)
+static int ti_set_mac_darwin(struct tif * ti, unsigned char * mac)
 {
-	struct tip_darwin *priv = ti_priv(ti);
-	struct ifreq *ifr = &priv->tf_ifr;
+	struct tip_darwin * priv = ti_priv(ti);
+	struct ifreq * ifr = &priv->tf_ifr;
 
 	ifr->ifr_addr.sa_family = AF_LINK;
 	ifr->ifr_addr.sa_len = 6;
@@ -168,11 +168,11 @@ static int ti_set_mac_darwin(struct tif *ti, unsigned char *mac)
 	return ioctl(priv->tf_ioctls, SIOCSIFLLADDR, ifr);
 }
 
-static int ti_set_ip_darwin(struct tif *ti, struct in_addr *ip)
+static int ti_set_ip_darwin(struct tif * ti, struct in_addr * ip)
 {
-	struct tip_darwin *priv = ti_priv(ti);
+	struct tip_darwin * priv = ti_priv(ti);
 	struct ifaliasreq ifra;
-	struct sockaddr_in *s_in;
+	struct sockaddr_in * s_in;
 
 	/* assume same size */
 	memset(&ifra, 0, sizeof(ifra));
@@ -186,27 +186,27 @@ static int ti_set_ip_darwin(struct tif *ti, struct in_addr *ip)
 	return ioctl(priv->tf_ioctls, SIOCAIFADDR, &ifra);
 }
 
-static int ti_fd_darwin(struct tif *ti)
+static int ti_fd_darwin(struct tif * ti)
 {
-	struct tip_darwin *priv = ti_priv(ti);
+	struct tip_darwin * priv = ti_priv(ti);
 
 	return priv->tf_fd;
 }
 
-static int ti_read_darwin(struct tif *ti, void *buf, int len)
+static int ti_read_darwin(struct tif * ti, void * buf, int len)
 {
 	return read(ti_fd(ti), buf, len);
 }
 
-static int ti_write_darwin(struct tif *ti, void *buf, int len)
+static int ti_write_darwin(struct tif * ti, void * buf, int len)
 {
 	return write(ti_fd(ti), buf, len);
 }
 
-static struct tif *ti_open_darwin(char *iface)
+static struct tif * ti_open_darwin(char * iface)
 {
-	struct tif *ti;
-	struct tip_darwin *priv;
+	struct tif * ti;
+	struct tip_darwin * priv;
 	int fd;
 
 	/* setup ti struct */
@@ -236,4 +236,4 @@ static struct tif *ti_open_darwin(char *iface)
 	return ti;
 }
 
-EXPORT struct tif *ti_open(char *iface) { return ti_open_darwin(iface); }
+EXPORT struct tif * ti_open(char * iface) { return ti_open_darwin(iface); }

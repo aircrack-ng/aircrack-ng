@@ -57,18 +57,18 @@
 
 struct AP_info
 {
-	struct AP_info *prev; /* prev. AP in list         */
-	struct AP_info *next; /* next  AP in list         */
+	struct AP_info * prev; /* prev. AP in list         */
+	struct AP_info * next; /* next  AP in list         */
 
 	int ssid_length; /* length of ssid           */
 
-	unsigned char bssid[6]; /* the access point's MAC   */
+	unsigned char bssid[6];   /* the access point's MAC   */
 	unsigned char essid[256]; /* ascii network identifier */
 
-	unsigned char **uiv_root; /* unique iv root structure */
+	unsigned char ** uiv_root; /* unique iv root structure */
 	/* if wep-encrypted network */
 
-	int wpa_stored; /* wpa stored in ivs file?   */
+	int wpa_stored;   /* wpa stored in ivs file?   */
 	int essid_stored; /* essid stored in ivs file? */
 };
 
@@ -76,11 +76,11 @@ struct AP_info
 
 struct ST_info
 {
-	struct ST_info *prev; /* the prev client in list   */
-	struct ST_info *next; /* the next client in list   */
-	struct AP_info *base; /* AP this client belongs to */
+	struct ST_info * prev;  /* the prev client in list   */
+	struct ST_info * next;  /* the next client in list   */
+	struct AP_info * base;  /* AP this client belongs to */
 	unsigned char stmac[6]; /* the client's MAC address  */
-	struct WPA_hdsk wpa; /* WPA handshake data        */
+	struct WPA_hdsk wpa;	/* WPA handshake data        */
 };
 
 /* bunch of global stuff */
@@ -91,13 +91,13 @@ struct globals
 	struct ST_info *st_1st, *st_end;
 
 	unsigned char prev_bssid[6];
-	FILE *f_ivs; /* output ivs file      */
+	FILE * f_ivs; /* output ivs file      */
 } G;
 
 static void usage(int what)
 {
-	char *version_info =
-		getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+	char * version_info
+		= getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
 		   "  https://www.aircrack-ng.org\n"
 		   "\n   usage: ",
@@ -112,7 +112,7 @@ static void usage(int what)
 			   "        Merge ivs files\n");
 }
 
-static int merge(int argc, char *argv[])
+static int merge(int argc, char * argv[])
 {
 	int i, n, unused;
 	unsigned long nbw;
@@ -224,22 +224,22 @@ static int merge(int argc, char *argv[])
 	return (0);
 }
 
-static int dump_add_packet(unsigned char *h80211, unsigned caplen)
+static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 {
 	int i, n, seq, dlen, clen;
 	unsigned z;
 	struct ivs2_pkthdr ivs2;
-	unsigned char *p;
+	unsigned char * p;
 	unsigned char bssid[6];
 	unsigned char stmac[6];
 	unsigned char clear[2048];
 	int weight[16];
 	int num_xor, o;
 
-	struct AP_info *ap_cur = NULL;
-	struct ST_info *st_cur = NULL;
-	struct AP_info *ap_prv = NULL;
-	struct ST_info *st_prv = NULL;
+	struct AP_info * ap_cur = NULL;
+	struct ST_info * st_cur = NULL;
+	struct AP_info * ap_prv = NULL;
+	struct ST_info * st_prv = NULL;
 
 	/* skip packets smaller than a 802.11 header */
 
@@ -557,7 +557,7 @@ skip_station:
 
 		if (z + 10 > caplen) return FAILURE;
 
-		//check if WEP bit set and extended iv
+		// check if WEP bit set and extended iv
 		if ((h80211[1] & 0x40) != 0 && (h80211[z + 3] & 0x20) == 0)
 		{
 			/* WEP: check if we've already seen this IV */
@@ -572,9 +572,9 @@ skip_station:
 					ivs2.flags = 0;
 					ivs2.len = 0;
 
-					dlen = caplen - 24 - 4 - 4; //original data len
+					dlen = caplen - 24 - 4 - 4; // original data len
 					if (dlen > 2048) dlen = 2048;
-					//get cleartext + len + 4(iv+idx)
+					// get cleartext + len + 4(iv+idx)
 					num_xor = known_clear(clear, &clen, weight, h80211, dlen);
 					if (num_xor == 1)
 					{
@@ -585,15 +585,16 @@ skip_station:
 						{
 							clear[n] = (clear[n] ^ h80211[z + 4 + n]) & 0xFF;
 						}
-						//clear is now the keystream
+						// clear is now the keystream
 					}
 					else
 					{
-						//do it again to get it 2 bytes higher
-						num_xor =
-							known_clear(clear + 2, &clen, weight, h80211, dlen);
+						// do it again to get it 2 bytes higher
+						num_xor = known_clear(
+							clear + 2, &clen, weight, h80211, dlen);
 						ivs2.flags |= IVS2_PTW;
-						//len = 4(iv+idx) + 1(num of keystreams) + 1(len per keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
+						// len = 4(iv+idx) + 1(num of keystreams) + 1(len per
+						// keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
 						ivs2.len += 4 + 1 + 1 + 32 * num_xor + 16 * sizeof(int);
 						clear[0] = num_xor;
 						clear[1] = clen;
@@ -602,15 +603,15 @@ skip_station:
 						{
 							for (n = 0; n < (ivs2.len - 4); n++)
 							{
-								clear[2 + n + o * 32] =
-									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
-									& 0xFF;
+								clear[2 + n + o * 32] = (clear[2 + n + o * 32]
+														 ^ h80211[z + 4 + n])
+														& 0xFF;
 							}
 						}
 						memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
 							   weight,
 							   16 * sizeof(int));
-						//clear is now the keystream
+						// clear is now the keystream
 					}
 
 					if (memcmp(G.prev_bssid, ap_cur->bssid, 6) != 0)
@@ -661,13 +662,13 @@ skip_station:
 
 		if (z + 26 > caplen) return FAILURE;
 
-		z += 6; //skip LLC header
+		z += 6; // skip LLC header
 
 		/* check ethertype == EAPOL */
 		if (h80211[z] == 0x88 && h80211[z + 1] == 0x8E
 			&& (h80211[1] & 0x40) != 0x40)
 		{
-			z += 2; //skip ethertype
+			z += 2; // skip ethertype
 
 			if (st_cur == NULL) return FAILURE;
 
@@ -702,8 +703,8 @@ skip_station:
 				&& (h80211[z + 6] & 0x80) != 0
 				&& (h80211[z + 5] & 0x01) != 0)
 			{
-				st_cur->wpa.eapol_size =
-					(h80211[z + 2] << 8) + h80211[z + 3] + 4;
+				st_cur->wpa.eapol_size
+					= (h80211[z + 2] << 8) + h80211[z + 3] + 4;
 
 				if (st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol_size)
 					|| caplen - z < st_cur->wpa.eapol_size)
@@ -783,14 +784,14 @@ skip_station:
 	return (0);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
 	time_t tt;
 	int n, unused, ret;
-	FILE *f_in;
+	FILE * f_in;
 	unsigned long nbr;
 	unsigned long nbivs;
-	unsigned char *h80211;
+	unsigned char * h80211;
 	unsigned char bssid_cur[6];
 	unsigned char bssid_prv[6];
 	unsigned char buffer[65536];

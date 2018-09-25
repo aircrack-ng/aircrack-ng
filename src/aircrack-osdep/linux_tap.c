@@ -45,11 +45,11 @@ struct tip_linux
 	char tl_name[MAX_IFACE_NAME];
 };
 
-static int ti_do_open_linux(struct tif *ti, char *name)
+static int ti_do_open_linux(struct tif * ti, char * name)
 {
 	int fd_tap;
 	struct ifreq if_request;
-	struct tip_linux *priv = ti_priv(ti);
+	struct tip_linux * priv = ti_priv(ti);
 
 	fd_tap = open(name ? name : "/dev/net/tun", O_RDWR);
 	if (fd_tap < 0)
@@ -84,43 +84,43 @@ static int ti_do_open_linux(struct tif *ti, char *name)
 	return fd_tap;
 }
 
-static void ti_do_free(struct tif *ti)
+static void ti_do_free(struct tif * ti)
 {
-	struct tip_fbsd *priv = ti_priv(ti);
+	struct tip_fbsd * priv = ti_priv(ti);
 
 	free(priv);
 	free(ti);
 }
 
-static void ti_close_linux(struct tif *ti)
+static void ti_close_linux(struct tif * ti)
 {
-	struct tip_linux *priv = ti_priv(ti);
+	struct tip_linux * priv = ti_priv(ti);
 
 	close(priv->tl_fd);
 	close(priv->tl_ioctls);
 	ti_do_free(ti);
 }
 
-static char *ti_name_linux(struct tif *ti)
+static char * ti_name_linux(struct tif * ti)
 {
-	struct tip_linux *priv = ti_priv(ti);
+	struct tip_linux * priv = ti_priv(ti);
 
 	return priv->tl_name;
 }
 
-static int ti_set_mtu_linux(struct tif *ti, int mtu)
+static int ti_set_mtu_linux(struct tif * ti, int mtu)
 {
-	struct tip_linux *priv = ti_priv(ti);
+	struct tip_linux * priv = ti_priv(ti);
 
 	priv->tl_ifr.ifr_mtu = mtu;
 
 	return ioctl(priv->tl_ioctls, SIOCSIFMTU, &priv->tl_ifr);
 }
 
-static int ti_get_mtu_linux(struct tif *ti)
+static int ti_get_mtu_linux(struct tif * ti)
 {
 	int mtu;
-	struct tip_linux *priv = ti_priv(ti);
+	struct tip_linux * priv = ti_priv(ti);
 
 	if (ioctl(priv->tl_ioctls, SIOCSIFMTU, &priv->tl_ifr) != -1)
 	{
@@ -134,9 +134,9 @@ static int ti_get_mtu_linux(struct tif *ti)
 	return mtu;
 }
 
-static int ti_set_mac_linux(struct tif *ti, unsigned char *mac)
+static int ti_set_mac_linux(struct tif * ti, unsigned char * mac)
 {
-	struct tip_linux *priv = ti_priv(ti);
+	struct tip_linux * priv = ti_priv(ti);
 
 	memcpy(priv->tl_ifr.ifr_hwaddr.sa_data, mac, 6);
 	priv->tl_ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
@@ -144,10 +144,10 @@ static int ti_set_mac_linux(struct tif *ti, unsigned char *mac)
 	return ioctl(priv->tl_ioctls, SIOCSIFHWADDR, &priv->tl_ifr);
 }
 
-static int ti_set_ip_linux(struct tif *ti, struct in_addr *ip)
+static int ti_set_ip_linux(struct tif * ti, struct in_addr * ip)
 {
-	struct tip_linux *priv = ti_priv(ti);
-	struct sockaddr_in *s_in;
+	struct tip_linux * priv = ti_priv(ti);
+	struct sockaddr_in * s_in;
 
 	s_in = (struct sockaddr_in *) &priv->tl_ifr.ifr_addr;
 	s_in->sin_family = AF_INET;
@@ -156,27 +156,27 @@ static int ti_set_ip_linux(struct tif *ti, struct in_addr *ip)
 	return ioctl(priv->tl_ioctls, SIOCSIFADDR, &priv->tl_ifr);
 }
 
-static int ti_fd_linux(struct tif *ti)
+static int ti_fd_linux(struct tif * ti)
 {
-	struct tip_linux *priv = ti_priv(ti);
+	struct tip_linux * priv = ti_priv(ti);
 
 	return priv->tl_fd;
 }
 
-static int ti_read_linux(struct tif *ti, void *buf, int len)
+static int ti_read_linux(struct tif * ti, void * buf, int len)
 {
 	return read(ti_fd(ti), buf, len);
 }
 
-static int ti_write_linux(struct tif *ti, void *buf, int len)
+static int ti_write_linux(struct tif * ti, void * buf, int len)
 {
 	return write(ti_fd(ti), buf, len);
 }
 
-static struct tif *ti_open_linux(char *iface)
+static struct tif * ti_open_linux(char * iface)
 {
-	struct tif *ti;
-	struct tip_linux *priv;
+	struct tif * ti;
+	struct tip_linux * priv;
 	int fd;
 
 	/* setup ti struct */
@@ -207,4 +207,4 @@ static struct tif *ti_open_linux(char *iface)
 	return ti;
 }
 
-EXPORT struct tif *ti_open(char *iface) { return ti_open_linux(iface); }
+EXPORT struct tif * ti_open(char * iface) { return ti_open_linux(iface); }

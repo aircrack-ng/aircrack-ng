@@ -39,12 +39,15 @@
  *
  * http://www.openwall.com/john/doc/LICENSE.shtml
  *
- * This software is Copyright (c) 2012 Lukas Odzioba <lukas dot odzioba at gmail dot com>
+ * This software is Copyright (c) 2012 Lukas Odzioba <lukas dot odzioba at gmail
+ * dot com>
  * and Copyright (c) 2012-2014 magnum
  * and it is hereby released to the general public under the following terms:
- * Redistribution and use in source and binary forms, with or without modification, are permitted.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted.
  *
- * hccap format was introduced by oclHashcat-plus, and it is described here: http://hashcat.net/wiki/hccap
+ * hccap format was introduced by oclHashcat-plus, and it is described here:
+ * http://hashcat.net/wiki/hccap
  * Code is based on  Aircrack-ng source
  */
 #ifndef _WPAPSK_H
@@ -69,8 +72,8 @@ extern "C" {
 #endif
 
 void init_atoi(void);
-int init_wpapsk(ac_crypto_engine_t *engine,
-                const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
+int init_wpapsk(ac_crypto_engine_t * engine,
+				const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 				int nparallel,
 				int threadid);
 

@@ -23,7 +23,7 @@
 
 #include "osdep.h"
 
-struct wif *wi_open_osdep(char *iface)
+struct wif * wi_open_osdep(char * iface)
 {
 	if (iface)
 	{

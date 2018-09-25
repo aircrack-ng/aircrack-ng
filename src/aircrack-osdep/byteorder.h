@@ -240,7 +240,8 @@ typedef uint8_t u_int8_t;
 
 // XXX: Is there anything to include on OpenBSD/NetBSD/DragonFlyBSD/...?
 
-// XXX: Mac: Check http://www.opensource.apple.com/source/CF/CF-476.18/CFByteOrder.h
+// XXX: Mac: Check
+// http://www.opensource.apple.com/source/CF/CF-476.18/CFByteOrder.h
 //           http://developer.apple.com/DOCUMENTATION/CoreFoundation/Reference/CFByteOrderUtils/Reference/reference.html
 //           Write to apple to ask what should be used.
 

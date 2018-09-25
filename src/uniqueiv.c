@@ -44,14 +44,14 @@
 
 /* allocate root structure */
 
-unsigned char **uniqueiv_init(void)
+unsigned char ** uniqueiv_init(void)
 {
 	int i;
 
 	/* allocate root bucket (level 0) as vector of pointers */
 
-	unsigned char **uiv_root =
-		(unsigned char **) malloc(256 * sizeof(unsigned char *));
+	unsigned char ** uiv_root
+		= (unsigned char **) malloc(256 * sizeof(unsigned char *));
 
 	if (uiv_root == NULL) return (NULL);
 
@@ -64,10 +64,10 @@ unsigned char **uniqueiv_init(void)
 
 /* update records with new IV */
 
-int uniqueiv_mark(unsigned char **uiv_root, unsigned char IV[3])
+int uniqueiv_mark(unsigned char ** uiv_root, unsigned char IV[3])
 {
-	unsigned char **uiv_lvl1;
-	unsigned char *uiv_lvl2;
+	unsigned char ** uiv_lvl1;
+	unsigned char * uiv_lvl2;
 	short i;
 
 	if (uiv_root == NULL) return (0);
@@ -127,10 +127,10 @@ int uniqueiv_mark(unsigned char **uiv_root, unsigned char IV[3])
 
 /* check if already seen IV */
 
-int uniqueiv_check(unsigned char **uiv_root, unsigned char IV[3])
+int uniqueiv_check(unsigned char ** uiv_root, unsigned char IV[3])
 {
-	unsigned char **uiv_lvl1;
-	unsigned char *uiv_lvl2;
+	unsigned char ** uiv_lvl1;
+	unsigned char * uiv_lvl2;
 
 	if (uiv_root == NULL) return (IV_NOTHERE);
 
@@ -160,11 +160,11 @@ int uniqueiv_check(unsigned char **uiv_root, unsigned char IV[3])
 
 /* unallocate everything */
 
-void uniqueiv_wipe(unsigned char **uiv_root)
+void uniqueiv_wipe(unsigned char ** uiv_root)
 {
 	int i, j;
-	unsigned char **uiv_lvl1;
-	unsigned char *uiv_lvl2;
+	unsigned char ** uiv_lvl1;
+	unsigned char * uiv_lvl2;
 
 	if (uiv_root == NULL) return;
 
@@ -198,21 +198,23 @@ void uniqueiv_wipe(unsigned char **uiv_root)
 	return;
 }
 
-unsigned char *data_init(void)
+unsigned char * data_init(void)
 {
 	// It could eat up to (256*256*256) * 3 bytes = 48Mb :/
-	unsigned char *IVs =
-		(unsigned char *) calloc(256 * 256 * 256 * 3, sizeof(unsigned char));
+	unsigned char * IVs
+		= (unsigned char *) calloc(256 * 256 * 256 * 3, sizeof(unsigned char));
 	return IVs;
 }
 
 /* Checking WEP packet:
- * The 2 first bytes of 2 different data packets having the same IV (for the same AP)
- * should be exactly the same due to the fact that unencrypted, they are always the same:
+ * The 2 first bytes of 2 different data packets having the same IV (for the
+ * same AP)
+ * should be exactly the same due to the fact that unencrypted, they are always
+ * the same:
  * AA AA
  */
 
-int data_check(unsigned char *data_root,
+int data_check(unsigned char * data_root,
 			   unsigned char IV[3],
 			   unsigned char data[2])
 {
@@ -253,7 +255,7 @@ int data_check(unsigned char *data_root,
 	return cloaking;
 }
 
-void data_wipe(unsigned char *data)
+void data_wipe(unsigned char * data)
 {
 	if (data) free(data);
 }

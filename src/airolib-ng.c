@@ -62,10 +62,10 @@
 
 int exit_airolib;
 
-static void print_help(const char *msg)
+static void print_help(const char * msg)
 {
-	char *version_info =
-		getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+	char * version_info
+		= getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		   "  %s - (C) 2007, 2008, 2009 ebfe\n"
 		   "  https://www.aircrack-ng.org\n"
@@ -130,13 +130,13 @@ static void sighandler(int signum)
 	if (signum == SIGINT) exit_airolib = 1;
 }
 
-static void sql_error(sqlite3 *db)
+static void sql_error(sqlite3 * db)
 {
 	fprintf(stderr, "Database error: %s\n", sqlite3_errmsg(db));
 }
 
 static int
-sql_exec_cb(sqlite3 *db, const char *sql, void *callback, void *cb_arg)
+sql_exec_cb(sqlite3 * db, const char * sql, void * callback, void * cb_arg)
 {
 #ifdef SQL_DEBUG
 	printf(sql);
@@ -144,7 +144,7 @@ sql_exec_cb(sqlite3 *db, const char *sql, void *callback, void *cb_arg)
 	fflush(stdout);
 #endif
 	int rc;
-	char *zErrMsg = 0;
+	char * zErrMsg = 0;
 	char looper[4] = {'|', '/', '-', '\\'};
 	int looperc = 0;
 	int waited = 0;
@@ -174,13 +174,14 @@ sql_exec_cb(sqlite3 *db, const char *sql, void *callback, void *cb_arg)
 }
 
 // execute sql fast and hard.
-static int sql_exec(sqlite3 *db, const char *sql)
+static int sql_exec(sqlite3 * db, const char * sql)
 {
 	return sql_exec_cb(db, sql, 0, 0);
 }
 
-// wrapper for sqlite3_step which retries executing statements if the db returns SQLITE_BUSY or SQLITE_LOCKED
-static int sql_step(sqlite3_stmt *stmt, int wait)
+// wrapper for sqlite3_step which retries executing statements if the db returns
+// SQLITE_BUSY or SQLITE_LOCKED
+static int sql_step(sqlite3_stmt * stmt, int wait)
 {
 	int rc;
 	char looper[4] = {'|', '/', '-', '\\'};
@@ -204,8 +205,9 @@ static int sql_step(sqlite3_stmt *stmt, int wait)
 			}
 			else
 			{
-				fprintf(stderr, "Database was locked or busy while getting "
-								"results. I've given up.\n");
+				fprintf(stderr,
+						"Database was locked or busy while getting "
+						"results. I've given up.\n");
 				return rc;
 			}
 		}
@@ -217,9 +219,10 @@ static int sql_step(sqlite3_stmt *stmt, int wait)
 	}
 }
 
-// wrapper for sqlite3_prepare_v2 which retries creating statements if the db returns SQLITE_BUSY or SQLITE_LOCKED
+// wrapper for sqlite3_prepare_v2 which retries creating statements if the db
+// returns SQLITE_BUSY or SQLITE_LOCKED
 static int
-sql_prepare(sqlite3 *db, const char *sql, sqlite3_stmt **ppStmt, int wait)
+sql_prepare(sqlite3 * db, const char * sql, sqlite3_stmt ** ppStmt, int wait)
 {
 #ifdef SQL_DEBUG
 	printf(sql);
@@ -248,8 +251,9 @@ sql_prepare(sqlite3 *db, const char *sql, sqlite3_stmt **ppStmt, int wait)
 			}
 			else
 			{
-				fprintf(stderr, "Database was locked or busy while creating "
-								"statement. I've given up.\n");
+				fprintf(stderr,
+						"Database was locked or busy while creating "
+						"statement. I've given up.\n");
 				return rc;
 			}
 		}
@@ -262,7 +266,7 @@ sql_prepare(sqlite3 *db, const char *sql, sqlite3_stmt **ppStmt, int wait)
 }
 
 // generic function to dump a resultset including column names to stdout
-static int stmt_stdout(sqlite3_stmt *stmt, int *rowcount)
+static int stmt_stdout(sqlite3_stmt * stmt, int * rowcount)
 {
 	int ccount;
 	int rcount = 0;
@@ -299,10 +303,10 @@ static int stmt_stdout(sqlite3_stmt *stmt, int *rowcount)
 
 // generic function to dump the output of a sql statement to stdout.
 // will return sqlite error codes but also handle (read: ignore) them itself
-static int sql_stdout(sqlite3 *db, const char *sql, int *rowcount)
+static int sql_stdout(sqlite3 * db, const char * sql, int * rowcount)
 {
 	int rc;
-	sqlite3_stmt *stmt;
+	sqlite3_stmt * stmt;
 
 	rc = sql_prepare(db, sql, &stmt, -1);
 	if (rc != SQLITE_OK)
@@ -330,10 +334,11 @@ static int sql_stdout(sqlite3 *db, const char *sql, int *rowcount)
 }
 
 // retrieve a single int value using a sql query.
-// returns 0 if something goes wrong. beware! create your own statement if you need error handling.
-static int query_int(sqlite3 *db, const char *sql)
+// returns 0 if something goes wrong. beware! create your own statement if you
+// need error handling.
+static int query_int(sqlite3 * db, const char * sql)
 {
-	sqlite3_stmt *stmt;
+	sqlite3_stmt * stmt;
 	int rc;
 	int ret;
 
@@ -366,7 +371,7 @@ static int query_int(sqlite3 *db, const char *sql)
 
 // throw some statistics about the db to stdout.
 // if precise!=0 the stats will be queried nail by nail which can be slow
-static void show_stats(sqlite3 *db, int precise)
+static void show_stats(sqlite3 * db, int precise)
 {
 
 	sql_exec(db, "BEGIN;");
@@ -377,9 +382,10 @@ static void show_stats(sqlite3 *db, int precise)
 	if (precise != 0)
 	{
 		printf("Determining precise statistics may be slow...\n");
-		done = query_int(db, "SELECT COUNT(*) FROM essid,passwd INNER JOIN pmk "
-							 "ON pmk.essid_id = essid.essid_id AND "
-							 "pmk.passwd_id = passwd.passwd_id");
+		done = query_int(db,
+						 "SELECT COUNT(*) FROM essid,passwd INNER JOIN pmk "
+						 "ON pmk.essid_id = essid.essid_id AND "
+						 "pmk.passwd_id = passwd.passwd_id");
 	}
 	else
 	{
@@ -419,11 +425,14 @@ static void show_stats(sqlite3 *db, int precise)
 }
 
 /*
-batch-process all combinations of ESSIDs and PASSWDs. this function may be called
-only once per db at the same time, yet multiple processes can batch-process a single db.
-don't modify this function's layout or it's queries without carefully considering speed, efficiency and concurrency.
+batch-process all combinations of ESSIDs and PASSWDs. this function may be
+called
+only once per db at the same time, yet multiple processes can batch-process a
+single db.
+don't modify this function's layout or it's queries without carefully
+considering speed, efficiency and concurrency.
 */
-static void batch_process(sqlite3 *db)
+static void batch_process(sqlite3 * db)
 {
 	int rc;
 	int cur_essid = 0;
@@ -431,11 +440,12 @@ static void batch_process(sqlite3 *db)
 	struct timeval curtime;
 	gettimeofday(&starttime, NULL);
 	int rowcount = 0;
-	char *sql;
+	char * sql;
 
-	if (sql_exec(db, "CREATE TEMPORARY TABLE temp.buffer (wb_id integer, "
-					 "essid_id integer, passwd_id integer, essid text, passwd "
-					 "text, pmk blob);")
+	if (sql_exec(db,
+				 "CREATE TEMPORARY TABLE temp.buffer (wb_id integer, "
+				 "essid_id integer, passwd_id integer, essid text, passwd "
+				 "text, pmk blob);")
 		!= SQLITE_OK)
 	{
 		fprintf(stderr, "Failed to create buffer for batch processing.\n");
@@ -449,27 +459,30 @@ static void batch_process(sqlite3 *db)
 
 	while (!exit_airolib)
 	{
-		//loop over everything
+		// loop over everything
 		do
 		{
-			//loop over ESSID
+			// loop over ESSID
 			do
 			{
-				//loop over workbench
+				// loop over workbench
 				sql_exec(db, "DELETE FROM temp.buffer;");
 				// select some work from the workbench into our own buffer
-				// move lockid ahead so other clients won't get those rows any time soon
+				// move lockid ahead so other clients won't get those rows any
+				// time soon
 				sql_exec(db, "BEGIN EXCLUSIVE;");
-				sql_exec(db, "INSERT INTO temp.buffer "
-							 "(wb_id,essid_id,passwd_id,essid,passwd) SELECT "
-							 "wb_id, "
-							 "essid.essid_id,passwd.passwd_id,essid,passwd "
-							 "FROM workbench CROSS JOIN essid ON "
-							 "essid.essid_id = workbench.essid_id CROSS JOIN "
-							 "passwd ON passwd.passwd_id = workbench.passwd_id "
-							 "ORDER BY lockid LIMIT 5000;");
-				sql_exec(db, "UPDATE workbench SET lockid=lockid+1 WHERE wb_id "
-							 "IN (SELECT wb_id FROM buffer);");
+				sql_exec(db,
+						 "INSERT INTO temp.buffer "
+						 "(wb_id,essid_id,passwd_id,essid,passwd) SELECT "
+						 "wb_id, "
+						 "essid.essid_id,passwd.passwd_id,essid,passwd "
+						 "FROM workbench CROSS JOIN essid ON "
+						 "essid.essid_id = workbench.essid_id CROSS JOIN "
+						 "passwd ON passwd.passwd_id = workbench.passwd_id "
+						 "ORDER BY lockid LIMIT 5000;");
+				sql_exec(db,
+						 "UPDATE workbench SET lockid=lockid+1 WHERE wb_id "
+						 "IN (SELECT wb_id FROM buffer);");
 				sql_exec(db, "COMMIT;");
 
 				rc = query_int(db, "SELECT COUNT(*) FROM buffer;");
@@ -482,11 +495,13 @@ static void batch_process(sqlite3 *db)
 
 					// commit work and delete package from workbench
 					sql_exec(db, "BEGIN EXCLUSIVE;");
-					sql_exec(db, "INSERT OR IGNORE INTO pmk "
-								 "(essid_id,passwd_id,pmk) SELECT "
-								 "essid_id,passwd_id,pmk FROM temp.buffer");
-					sql_exec(db, "DELETE FROM workbench WHERE wb_id IN (SELECT "
-								 "wb_id FROM buffer);");
+					sql_exec(db,
+							 "INSERT OR IGNORE INTO pmk "
+							 "(essid_id,passwd_id,pmk) SELECT "
+							 "essid_id,passwd_id,pmk FROM temp.buffer");
+					sql_exec(db,
+							 "DELETE FROM workbench WHERE wb_id IN (SELECT "
+							 "wb_id FROM buffer);");
 					sql_exec(db, "COMMIT;");
 
 					rowcount += rc;
@@ -512,52 +527,59 @@ static void batch_process(sqlite3 *db)
 			sql_exec(db, sql);
 			sqlite3_free(sql);
 		} while (!exit_airolib
-				 && query_int(db, "SELECT COUNT(*) FROM workbench INNER JOIN "
-								  "essid ON essid.essid_id = "
-								  "workbench.essid_id INNER JOIN passwd ON "
-								  "passwd.passwd_id = workbench.passwd_id;")
+				 && query_int(db,
+							  "SELECT COUNT(*) FROM workbench INNER JOIN "
+							  "essid ON essid.essid_id = "
+							  "workbench.essid_id INNER JOIN passwd ON "
+							  "passwd.passwd_id = workbench.passwd_id;")
 						> 0);
 
 		cur_essid = query_int(
-			db, "SELECT essid.essid_id FROM essid LEFT JOIN pmk USING "
-				"(essid_id) WHERE VERIFY_ESSID(essid.essid) == 0 GROUP BY "
-				"essid.essid_id HAVING COUNT(pmk.essid_id) < (SELECT COUNT(*) "
-				"FROM passwd) ORDER BY essid.prio,COUNT(pmk.essid_id),RANDOM() "
-				"LIMIT 1;");
+			db,
+			"SELECT essid.essid_id FROM essid LEFT JOIN pmk USING "
+			"(essid_id) WHERE VERIFY_ESSID(essid.essid) == 0 GROUP BY "
+			"essid.essid_id HAVING COUNT(pmk.essid_id) < (SELECT COUNT(*) "
+			"FROM passwd) ORDER BY essid.prio,COUNT(pmk.essid_id),RANDOM() "
+			"LIMIT 1;");
 		if (cur_essid == 0)
 		{
 			printf("All ESSID processed.\n\n");
 			sqlite3_close(db);
 			exit(0);
 			/*
-			printf("No free ESSID found. Will try determining new ESSID in 5 minutes...\n");
+			printf("No free ESSID found. Will try determining new ESSID in 5
+			minutes...\n");
 			sleep(60*5);
-			// slower, yet certain. should never be any better than the above, unless users fumble with the db.
-			cur_essid = query_int(db,"SELECT essid.essid_id FROM essid,passwd LEFT JOIN pmk ON pmk.essid_id = essid.essid_id AND pmk.passwd_id = passwd.passwd_id WHERE pmk.essid_id IS NULL LIMIT 1;");
+			// slower, yet certain. should never be any better than the above,
+			unless users fumble with the db.
+			cur_essid = query_int(db,"SELECT essid.essid_id FROM essid,passwd
+			LEFT JOIN pmk ON pmk.essid_id = essid.essid_id AND pmk.passwd_id =
+			passwd.passwd_id WHERE pmk.essid_id IS NULL LIMIT 1;");
 			if (cur_essid == 0) {
-				printf("No free ESSID found. Sleeping 25 additional minutes...\n");
+				printf("No free ESSID found. Sleeping 25 additional
+			minutes...\n");
 				sleep(60*25);
 			}
 			*/
 		}
 	}
 
-	//never reached
+	// never reached
 	sql_exec(db, "DROP TABLE temp.buffer;");
 }
 
 // Verify an ESSID. Returns 1 if ESSID is invalid.
-//TODO More things to verify? Invalid chars?
-static int verify_essid(char *essid)
+// TODO More things to verify? Invalid chars?
+static int verify_essid(char * essid)
 {
 	return essid == NULL || strlen(essid) < 1 || strlen(essid) > 32;
 }
 
 // sql function which checks a given ESSID
 static void
-sql_verify_essid(sqlite3_context *context, int argc, sqlite3_value **values)
+sql_verify_essid(sqlite3_context * context, int argc, sqlite3_value ** values)
 {
-	char *essid = (char *) sqlite3_value_text(values[0]);
+	char * essid = (char *) sqlite3_value_text(values[0]);
 	if (argc != 1 || essid == 0)
 	{
 		fprintf(stderr,
@@ -567,15 +589,15 @@ sql_verify_essid(sqlite3_context *context, int argc, sqlite3_value **values)
 	sqlite3_result_int(context, verify_essid(essid));
 }
 
-static int verify_passwd(char *passwd)
+static int verify_passwd(char * passwd)
 {
 	return passwd == NULL || strlen(passwd) < 8 || strlen(passwd) > 63;
 }
 
 static void
-sql_verify_passwd(sqlite3_context *context, int argc, sqlite3_value **values)
+sql_verify_passwd(sqlite3_context * context, int argc, sqlite3_value ** values)
 {
-	char *passwd = (char *) sqlite3_value_text(values[0]);
+	char * passwd = (char *) sqlite3_value_text(values[0]);
 	if (argc != 1 || passwd == 0)
 	{
 		fprintf(stderr,
@@ -586,7 +608,7 @@ sql_verify_passwd(sqlite3_context *context, int argc, sqlite3_value **values)
 }
 
 // clean the db, analyze, maybe vacuum and check
-static void vacuum(sqlite3 *db, int deep)
+static void vacuum(sqlite3 * db, int deep)
 {
 	printf("Deleting invalid ESSIDs and passwords...\n");
 	sql_exec(db, "DELETE FROM essid WHERE VERIFY_ESSID(essid) != 0;");
@@ -595,8 +617,9 @@ static void vacuum(sqlite3 *db, int deep)
 	sql_exec(
 		db,
 		"DELETE FROM pmk WHERE essid_id NOT IN (SELECT essid_id FROM essid)");
-	sql_exec(db, "DELETE FROM pmk WHERE passwd_id NOT IN (SELECT passwd_id "
-				 "FROM passwd)");
+	sql_exec(db,
+			 "DELETE FROM pmk WHERE passwd_id NOT IN (SELECT passwd_id "
+			 "FROM passwd)");
 
 	printf("Analysing index structure...\n");
 	sql_exec(db, "ANALYZE;");
@@ -612,12 +635,13 @@ static void vacuum(sqlite3 *db, int deep)
 
 // verify PMKs. If complete==1 we check all PMKs
 // returns 0 if ok, !=0 otherwise
-static void verify(sqlite3 *db, int complete)
+static void verify(sqlite3 * db, int complete)
 {
 	if (complete != 1)
 	{
 		printf("Checking ~10 000 randomly chosen PMKs...\n");
-		// this is faster than 'order by random()'. we need the subquery to trick the optimizer...
+		// this is faster than 'order by random()'. we need the subquery to
+		// trick the optimizer...
 		sql_stdout(db,
 				   "select s.essid AS ESSID, COUNT(*) AS CHECKED, CASE WHEN "
 				   "MIN(s.pmk == PMK(essid,passwd)) == 0 THEN 'FAILED' ELSE "
@@ -641,11 +665,12 @@ static void verify(sqlite3 *db, int complete)
 	}
 }
 
-// callback for export_cowpatty. takes the passwd and pmk from the query and writes another fileentry.
+// callback for export_cowpatty. takes the passwd and pmk from the query and
+// writes another fileentry.
 static int
-sql_exportcow(void *arg, int ccount, char **values, char **columnnames)
+sql_exportcow(void * arg, int ccount, char ** values, char ** columnnames)
 {
-	FILE *f = (FILE *) arg;
+	FILE * f = (FILE *) arg;
 	struct hashdb_rec rec;
 	if (ccount != 2 || values[0] == NULL || values[1] == NULL
 		|| fileno(f) == -1)
@@ -655,9 +680,9 @@ sql_exportcow(void *arg, int ccount, char **values, char **columnnames)
 	}
 	if (columnnames)
 	{
-	} //XXX
+	} // XXX
 
-	char *passwd = (char *) values[0];
+	char * passwd = (char *) values[0];
 
 	memcpy(rec.pmk, values[1], sizeof(rec.pmk));
 	rec.rec_size = strlen(passwd) + sizeof(rec.pmk) + sizeof(rec.rec_size);
@@ -675,11 +700,11 @@ sql_exportcow(void *arg, int ccount, char **values, char **columnnames)
 }
 
 // export to a cowpatty file
-static void export_cowpatty(sqlite3 *db, char *essid, char *filename)
+static void export_cowpatty(sqlite3 * db, char * essid, char * filename)
 {
 	struct hashdb_head filehead;
 	memset(&filehead, 0, sizeof(filehead));
-	FILE *f = NULL;
+	FILE * f = NULL;
 	size_t essid_len;
 	int fd;
 
@@ -702,8 +727,9 @@ static void export_cowpatty(sqlite3 *db, char *essid, char *filename)
 		return;
 	}
 
-	// ensure that the essid is found in the db and has at least one entry in the pmk table.
-	char *sql = sqlite3_mprintf(
+	// ensure that the essid is found in the db and has at least one entry in
+	// the pmk table.
+	char * sql = sqlite3_mprintf(
 		"SELECT COUNT(*) FROM (SELECT passwd, pmk FROM essid,passwd INNER JOIN "
 		"pmk ON pmk.passwd_id = passwd.passwd_id AND pmk.essid_id = "
 		"essid.essid_id WHERE essid.essid = '%q' LIMIT 1);",
@@ -743,12 +769,14 @@ static void export_cowpatty(sqlite3 *db, char *essid, char *filename)
 		return;
 	}
 
-	// as we have an open filehandle, we now query the db to return passwds and associated PMKs for that essid. we pass the filehandle to a callback function which will write the rows to the file.
-	sql =
-		sqlite3_mprintf("SELECT passwd, pmk FROM essid,passwd INNER JOIN pmk "
-						"ON pmk.passwd_id = passwd.passwd_id AND pmk.essid_id "
-						"= essid.essid_id WHERE essid.essid = '%q'",
-						essid);
+	// as we have an open filehandle, we now query the db to return passwds and
+	// associated PMKs for that essid. we pass the filehandle to a callback
+	// function which will write the rows to the file.
+	sql = sqlite3_mprintf(
+		"SELECT passwd, pmk FROM essid,passwd INNER JOIN pmk "
+		"ON pmk.passwd_id = passwd.passwd_id AND pmk.essid_id "
+		"= essid.essid_id WHERE essid.essid = '%q'",
+		essid);
 	printf("Exporting...\n");
 	rc = sql_exec_cb(db, sql, &sql_exportcow, f);
 	sqlite3_free(sql);
@@ -762,12 +790,12 @@ static void export_cowpatty(sqlite3 *db, char *essid, char *filename)
 }
 
 // import a cowpatty file
-static int import_cowpatty(sqlite3 *db, char *filename)
+static int import_cowpatty(sqlite3 * db, char * filename)
 {
-	struct hashdb_rec *rec = NULL;
-	struct cowpatty_file *hashdb;
-	sqlite3_stmt *stmt;
-	char *sql;
+	struct hashdb_rec * rec = NULL;
+	struct cowpatty_file * hashdb;
+	sqlite3_stmt * stmt;
+	char * sql;
 	int essid_id;
 
 	hashdb = open_cowpatty_hashdb(filename, "r");
@@ -783,7 +811,8 @@ static int import_cowpatty(sqlite3 *db, char *filename)
 		return 0;
 	}
 
-	//We need protection so concurrent transactions can't smash the ID-references
+	// We need protection so concurrent transactions can't smash the
+	// ID-references
 	sql_exec(db, "BEGIN;");
 
 	sql = sqlite3_mprintf("INSERT OR IGNORE INTO essid (essid) VALUES ('%q');",
@@ -791,7 +820,7 @@ static int import_cowpatty(sqlite3 *db, char *filename)
 	sql_exec(db, sql);
 	sqlite3_free(sql);
 
-	//since there is only one essid per file, we can determine it's ID now
+	// since there is only one essid per file, we can determine it's ID now
 	sql = sqlite3_mprintf("SELECT essid_id FROM essid WHERE essid = '%q'",
 						  hashdb->ssid);
 	essid_id = query_int(db, sql);
@@ -866,7 +895,8 @@ static int import_cowpatty(sqlite3 *db, char *filename)
 	sql_exec(
 		db, "INSERT OR IGNORE INTO passwd (passwd) SELECT passwd FROM import;");
 
-	//TODO Give the user a choice to either INSERT OR UPDATE or INSERT OR IGNORE
+	// TODO Give the user a choice to either INSERT OR UPDATE or INSERT OR
+	// IGNORE
 	printf("Writing...\n");
 	sql = sqlite3_mprintf("INSERT OR IGNORE INTO pmk (essid_id,passwd_id,pmk) "
 						  "SELECT %i,passwd.passwd_id,import.pmk FROM import "
@@ -880,10 +910,10 @@ static int import_cowpatty(sqlite3 *db, char *filename)
 	return 1;
 }
 
-static int import_ascii(sqlite3 *db, const char *mode, const char *filename)
+static int import_ascii(sqlite3 * db, const char * mode, const char * filename)
 {
-	FILE *f = NULL;
-	sqlite3_stmt *stmt;
+	FILE * f = NULL;
+	sqlite3_stmt * stmt;
 	char buffer[63 + 1];
 	int imported = 0;
 	int ignored = 0;
@@ -917,7 +947,7 @@ static int import_ascii(sqlite3 *db, const char *mode, const char *filename)
 		return 0;
 	}
 
-	char *sql = sqlite3_mprintf(
+	char * sql = sqlite3_mprintf(
 		"INSERT OR IGNORE INTO %q (%q) VALUES (@v);", mode, mode);
 	sql_prepare(db, sql, &stmt, -1);
 	sqlite3_free(sql);
@@ -981,11 +1011,11 @@ static int import_ascii(sqlite3 *db, const char *mode, const char *filename)
 
 // sql function. takes ESSID and PASSWD, gives PMK
 static void
-sql_calcpmk(sqlite3_context *context, int argc, sqlite3_value **values)
+sql_calcpmk(sqlite3_context * context, int argc, sqlite3_value ** values)
 {
 	unsigned char pmk[40];
-	char *passwd = (char *) sqlite3_value_blob(values[1]);
-	char *essid = (char *) sqlite3_value_blob(values[0]);
+	char * passwd = (char *) sqlite3_value_blob(values[1]);
+	char * essid = (char *) sqlite3_value_blob(values[0]);
 	if (argc < 2 || passwd == 0 || essid == 0)
 	{
 		sqlite3_result_error(
@@ -998,12 +1028,12 @@ sql_calcpmk(sqlite3_context *context, int argc, sqlite3_value **values)
 
 #ifdef HAVE_REGEXP
 static void
-sqlite_regexp(sqlite3_context *context, int argc, sqlite3_value **values)
+sqlite_regexp(sqlite3_context * context, int argc, sqlite3_value ** values)
 {
 	int ret;
 	regex_t regex;
-	char *reg = (char *) sqlite3_value_text(values[0]);
-	char *text = (char *) sqlite3_value_text(values[1]);
+	char * reg = (char *) sqlite3_value_text(values[0]);
+	char * text = (char *) sqlite3_value_text(values[1]);
 
 	if (argc != 2 || reg == 0 || text == 0)
 	{
@@ -1028,9 +1058,10 @@ sqlite_regexp(sqlite3_context *context, int argc, sqlite3_value **values)
 }
 #endif
 
-static int initDataBase(const char *filename, sqlite3 **db)
+static int initDataBase(const char * filename, sqlite3 ** db)
 {
-	//int rc = sqlite3_open_v2(filename, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+	// int rc = sqlite3_open_v2(filename, &db, SQLITE_OPEN_READWRITE |
+	// SQLITE_OPEN_CREATE, NULL);
 	int rc = sqlite3_open(filename, &(*db));
 
 	if (rc != SQLITE_OK)
@@ -1042,15 +1073,19 @@ static int initDataBase(const char *filename, sqlite3 **db)
 		return rc;
 	}
 
-	sql_exec(*db, "create table essid (essid_id integer primary key "
-				  "autoincrement, essid text, prio integer default 64);");
-	sql_exec(*db, "create table passwd (passwd_id integer primary key "
-				  "autoincrement, passwd text);");
-	sql_exec(*db, "create table pmk (pmk_id integer primary key autoincrement, "
-				  "passwd_id int, essid_id int, pmk blob);");
-	sql_exec(*db, "create table workbench (wb_id integer primary key "
-				  "autoincrement, essid_id integer, passwd_id integer, lockid "
-				  "integer default 0);");
+	sql_exec(*db,
+			 "create table essid (essid_id integer primary key "
+			 "autoincrement, essid text, prio integer default 64);");
+	sql_exec(*db,
+			 "create table passwd (passwd_id integer primary key "
+			 "autoincrement, passwd text);");
+	sql_exec(*db,
+			 "create table pmk (pmk_id integer primary key autoincrement, "
+			 "passwd_id int, essid_id int, pmk blob);");
+	sql_exec(*db,
+			 "create table workbench (wb_id integer primary key "
+			 "autoincrement, essid_id integer, passwd_id integer, lockid "
+			 "integer default 0);");
 	sql_exec(*db, "create index lock_lockid on workbench (lockid);");
 	sql_exec(*db, "create index pmk_pw on pmk (passwd_id);");
 	sql_exec(*db, "create unique index essid_u on essid (essid);");
@@ -1058,25 +1093,31 @@ static int initDataBase(const char *filename, sqlite3 **db)
 	sql_exec(*db, "create unique index ep_u on pmk (essid_id,passwd_id);");
 	sql_exec(*db,
 			 "create unique index wb_u on workbench (essid_id,passwd_id);");
-	sql_exec(*db, "CREATE TRIGGER delete_essid DELETE ON essid BEGIN DELETE "
-				  "FROM pmk WHERE pmk.essid_id = OLD.essid_id; DELETE FROM "
-				  "workbench WHERE workbench.essid_id = OLD.essid_id; END;");
-	sql_exec(*db, "CREATE TRIGGER delete_passwd DELETE ON passwd BEGIN DELETE "
-				  "FROM pmk WHERE pmk.passwd_id = OLD.passwd_id; DELETE FROM "
-				  "workbench WHERE workbench.passwd_id = OLD.passwd_id; END;");
+	sql_exec(*db,
+			 "CREATE TRIGGER delete_essid DELETE ON essid BEGIN DELETE "
+			 "FROM pmk WHERE pmk.essid_id = OLD.essid_id; DELETE FROM "
+			 "workbench WHERE workbench.essid_id = OLD.essid_id; END;");
+	sql_exec(*db,
+			 "CREATE TRIGGER delete_passwd DELETE ON passwd BEGIN DELETE "
+			 "FROM pmk WHERE pmk.passwd_id = OLD.passwd_id; DELETE FROM "
+			 "workbench WHERE workbench.passwd_id = OLD.passwd_id; END;");
 
 #ifdef SQL_DEBUG
 	sql_exec(*db, "begin;");
 	sql_exec(*db, "insert into essid (essid,prio) values ('e',random())");
 	sql_exec(*db, "insert into passwd (passwd) values ('p')");
-	sql_exec(*db, "insert into essid (essid,prio) select essid||'a',random() "
-				  "from essid;");
-	sql_exec(*db, "insert into essid (essid,prio) select essid||'b',random() "
-				  "from essid;");
-	sql_exec(*db, "insert into essid (essid,prio) select essid||'c',random() "
-				  "from essid;");
-	sql_exec(*db, "insert into essid (essid,prio) select essid||'d',random() "
-				  "from essid;");
+	sql_exec(*db,
+			 "insert into essid (essid,prio) select essid||'a',random() "
+			 "from essid;");
+	sql_exec(*db,
+			 "insert into essid (essid,prio) select essid||'b',random() "
+			 "from essid;");
+	sql_exec(*db,
+			 "insert into essid (essid,prio) select essid||'c',random() "
+			 "from essid;");
+	sql_exec(*db,
+			 "insert into essid (essid,prio) select essid||'d',random() "
+			 "from essid;");
 	sql_exec(*db,
 			 "insert into passwd (passwd) select passwd||'a' from passwd;");
 	sql_exec(*db,
@@ -1087,8 +1128,9 @@ static int initDataBase(const char *filename, sqlite3 **db)
 			 "insert into passwd (passwd) select passwd||'d' from passwd;");
 	sql_exec(*db,
 			 "insert into passwd (passwd) select passwd||'e' from passwd;");
-	sql_exec(*db, "insert into pmk (essid_id,passwd_id) select "
-				  "essid_id,passwd_id from essid,passwd limit 1000000;");
+	sql_exec(*db,
+			 "insert into pmk (essid_id,passwd_id) select "
+			 "essid_id,passwd_id from essid,passwd limit 1000000;");
 	sql_exec(*db, "commit;");
 #endif
 
@@ -1098,7 +1140,7 @@ static int initDataBase(const char *filename, sqlite3 **db)
 }
 
 static int
-check_for_db(sqlite3 **db, const char *filename, int can_create, int readonly)
+check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
 {
 	struct stat dbfile;
 	int rc;
@@ -1196,9 +1238,9 @@ check_for_db(sqlite3 **db, const char *filename, int can_create, int readonly)
 	return 0;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
-	sqlite3 *db;
+	sqlite3 * db;
 	int option_index, option;
 	exit_airolib = 0;
 
@@ -1212,22 +1254,22 @@ int main(int argc, char **argv)
 
 	option_index = 0;
 
-	static struct option long_options[] = {
-		{"batch", 0, 0, 'b'},
-		{"clean", 2, 0, 'c'},
-		{"export", 2, 0, 'e'},
-		{"h", 0, 0, 'h'},
-		{"help", 0, 0, 'h'},
-		{"import", 2, 0, 'i'},
-		{"sql", 1, 0, 's'},
-		{"stats", 2, 0, 't'},
-		{"statistics", 2, 0, 't'},
-		{"verify", 2, 0, 'v'},
-		{"vacuum", 2, 0, 'c'},
-		// TODO: implement options like '-e essid' to limit
-		//       operations to a certain essid where possible
-		{"essid", 1, 0, 'd'},
-		{0, 0, 0, 0}};
+	static struct option long_options[]
+		= {{"batch", 0, 0, 'b'},
+		   {"clean", 2, 0, 'c'},
+		   {"export", 2, 0, 'e'},
+		   {"h", 0, 0, 'h'},
+		   {"help", 0, 0, 'h'},
+		   {"import", 2, 0, 'i'},
+		   {"sql", 1, 0, 's'},
+		   {"stats", 2, 0, 't'},
+		   {"statistics", 2, 0, 't'},
+		   {"verify", 2, 0, 'v'},
+		   {"vacuum", 2, 0, 'c'},
+		   // TODO: implement options like '-e essid' to limit
+		   //       operations to a certain essid where possible
+		   {"essid", 1, 0, 'd'},
+		   {0, 0, 0, 0}};
 
 #ifdef USE_GCRYPT
 	// Disable secure memory.

@@ -28,7 +28,7 @@
  * do not wish to do so, delete this exception statement from your
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
- 
+
  */
 #ifndef _AIRCRACK_NG_PCAP_H_
 #define _AIRCRACK_NG_PCAP_H_
@@ -58,24 +58,25 @@
 #define LINKTYPE_RADIOTAP_HDR 127
 #define LINKTYPE_PPI_HDR 192
 
-//BSSID const. length of 6 bytes; can be together with all the other types
+// BSSID const. length of 6 bytes; can be together with all the other types
 #define IVS2_BSSID 0x0001
 
-//ESSID var. length; alone, or with BSSID
+// ESSID var. length; alone, or with BSSID
 #define IVS2_ESSID 0x0002
 
-//wpa structure, const. length; alone, or with BSSID
+// wpa structure, const. length; alone, or with BSSID
 #define IVS2_WPA 0x0004
 
-//IV+IDX+KEYSTREAM, var. length; alone or with BSSID
+// IV+IDX+KEYSTREAM, var. length; alone or with BSSID
 #define IVS2_XOR 0x0008
 
-/* [IV+IDX][i][l][XOR_1]..[XOR_i][weight]                                                        *
- * holds i possible keystreams for the same IV with a length of l for each keystream (l max 32)  *
- * and an array "int weight[16]" at the end                                                      */
+/* [IV+IDX][i][l][XOR_1]..[XOR_i][weight] *
+ * holds i possible keystreams for the same IV with a length of l for each
+ * keystream (l max 32)  *
+ * and an array "int weight[16]" at the end */
 #define IVS2_PTW 0x0010
 
-//unencrypted packet
+// unencrypted packet
 #define IVS2_CLR 0x0020
 
 // Maximum length of an Information Element

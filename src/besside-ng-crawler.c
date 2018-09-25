@@ -53,17 +53,17 @@ uint32_t stats_eapols = 0;
 uint32_t stats_networks = 0;
 
 // Global Dumpfile
-pcap_t *dumphandle;
-pcap_dumper_t *dumper;
+pcap_t * dumphandle;
+pcap_dumper_t * dumper;
 
 struct bsslist
 {
-	u_char *bssid;
+	u_char * bssid;
 	u_char beacon_saved;
-	struct bsslist *next;
+	struct bsslist * next;
 };
 
-static struct bsslist *is_in_list(struct bsslist *bsl, const u_char *bssid)
+static struct bsslist * is_in_list(struct bsslist * bsl, const u_char * bssid)
 {
 
 	while (bsl != NULL)
@@ -75,9 +75,9 @@ static struct bsslist *is_in_list(struct bsslist *bsl, const u_char *bssid)
 	return NULL;
 }
 
-static struct bsslist *add_to_list(struct bsslist *bsl, const u_char *bssid)
+static struct bsslist * add_to_list(struct bsslist * bsl, const u_char * bssid)
 {
-	struct bsslist *new, *search;
+	struct bsslist * new, *search;
 
 	new = malloc(sizeof(struct bsslist));
 	new->bssid = malloc(6);
@@ -99,7 +99,7 @@ static struct bsslist *add_to_list(struct bsslist *bsl, const u_char *bssid)
 	}
 }
 
-static void free_bsslist(struct bsslist *bsl)
+static void free_bsslist(struct bsslist * bsl)
 {
 	if (!bsl) return;
 
@@ -109,11 +109,11 @@ static void free_bsslist(struct bsslist *bsl)
 	free(bsl);
 }
 
-static struct bsslist *get_eapol_bssids(pcap_t *handle)
+static struct bsslist * get_eapol_bssids(pcap_t * handle)
 {
 	struct pcap_pkthdr header;
 	const u_char *pkt, *llc, *bssid, *offset = NULL;
-	struct bsslist *bsl = NULL;
+	struct bsslist * bsl = NULL;
 	int o = 0;
 
 	pkt = pcap_next(handle, &header);
@@ -126,7 +126,7 @@ static struct bsslist *get_eapol_bssids(pcap_t *handle)
 			return NULL;
 		}
 		if (pkt[7] == 0x40)
-		{ //prism54 format
+		{ // prism54 format
 			offset = pkt + 7;
 		}
 		else
@@ -142,10 +142,10 @@ static struct bsslist *get_eapol_bssids(pcap_t *handle)
 		if (offset) o = (*offset);
 
 		if ((pkt[0 + o] == 0x08) || (pkt[0 + o] == 0x88))
-		{ //Data or QoS Data
+		{ // Data or QoS Data
 
 			if (pkt[0 + o] == 0x88)
-			{ //Qos Data has 2 bytes extra in header
+			{ // Qos Data has 2 bytes extra in header
 				llc = pkt + 26 + o;
 			}
 			else
@@ -154,11 +154,12 @@ static struct bsslist *get_eapol_bssids(pcap_t *handle)
 			}
 
 			if ((pkt[1 + o] & 0x03) == 0x01)
-			{ //toDS
+			{ // toDS
 				bssid = pkt + 4 + o;
 			}
 			else
-			{ //fromDS - I skip adhoc and wds since its unlikely to have eapol in there (?)
+			{ // fromDS - I skip adhoc and wds since its unlikely to have eapol
+			  // in there (?)
 				bssid = pkt + 10 + o;
 			}
 
@@ -188,11 +189,11 @@ static struct bsslist *get_eapol_bssids(pcap_t *handle)
 	return bsl;
 }
 
-static void process_eapol_networks(pcap_t *handle, struct bsslist *bsl)
+static void process_eapol_networks(pcap_t * handle, struct bsslist * bsl)
 {
 	struct pcap_pkthdr header;
 	const u_char *pkt, *llc, *bssid, *offset = 0;
-	struct bsslist *known;
+	struct bsslist * known;
 	int o = 0;
 
 	pkt = pcap_next(handle, &header);
@@ -200,7 +201,7 @@ static void process_eapol_networks(pcap_t *handle, struct bsslist *bsl)
 	if (pcap_datalink(handle) == DLT_PRISM_HEADER)
 	{
 		if (pkt[7] == 0x40)
-		{ //prism54 format
+		{ // prism54 format
 			offset = pkt + 7;
 		}
 		else
@@ -220,20 +221,20 @@ static void process_eapol_networks(pcap_t *handle, struct bsslist *bsl)
 		{
 
 			if ((pkt[1 + o] & 0x03) == 0x01)
-			{ //toDS
+			{ // toDS
 				bssid = pkt + 4 + o;
 			}
 			else if ((pkt[1 + o] & 0x03) == 0x00)
-			{ //beacon
+			{ // beacon
 				bssid = pkt + 16 + o;
 			}
 			else
-			{ //fromDS
+			{ // fromDS
 				bssid = pkt + 10 + o;
 			}
 
 			if (pkt[0 + o] == 0x80)
-			{ //beacon
+			{ // beacon
 				known = is_in_list(bsl, bssid);
 				if (!known || known->beacon_saved)
 				{
@@ -241,14 +242,14 @@ static void process_eapol_networks(pcap_t *handle, struct bsslist *bsl)
 					continue;
 				}
 
-				//Saving ONE beacon per WPA network
+				// Saving ONE beacon per WPA network
 				pcap_dump((u_char *) dumper, &header, pkt + o);
 				known->beacon_saved = 0x01;
 			}
 
 			if (pkt[0 + o] == 0x88)
 			{
-				//printf("QoS Data\n");
+				// printf("QoS Data\n");
 				llc = pkt + 26 + o;
 			}
 			else
@@ -270,11 +271,11 @@ static void process_eapol_networks(pcap_t *handle, struct bsslist *bsl)
 	}
 }
 
-static void process_file(const char *file)
+static void process_file(const char * file)
 {
-	pcap_t *handle;
+	pcap_t * handle;
 	char errbuf[PCAP_ERRBUF_SIZE];
-	struct bsslist *eapol_networks = NULL;
+	struct bsslist * eapol_networks = NULL;
 
 	stats_files++;
 
@@ -290,7 +291,7 @@ static void process_file(const char *file)
 	if ((pcap_datalink(handle) != DLT_IEEE802_11)
 		&& (pcap_datalink(handle) != DLT_PRISM_HEADER))
 	{
-		//TODO: Add support for RADIOTAP!!!!
+		// TODO: Add support for RADIOTAP!!!!
 		printf("Dumpfile %s is not an IEEE 802.11 capture: %s\n",
 			   file,
 			   pcap_datalink_val_to_name(pcap_datalink(handle)));
@@ -302,7 +303,7 @@ static void process_file(const char *file)
 	eapol_networks = get_eapol_bssids(handle);
 
 	pcap_close(handle);
-	if (!eapol_networks) return; //No WPA networks found, skipping to next file
+	if (!eapol_networks) return; // No WPA networks found, skipping to next file
 
 	handle = pcap_open_offline(file, errbuf);
 
@@ -312,12 +313,12 @@ static void process_file(const char *file)
 	free_bsslist(eapol_networks);
 }
 
-static void process_directory(const char *dir, time_t begin)
+static void process_directory(const char * dir, time_t begin)
 {
-	DIR *curdir;
-	struct dirent *curent;
+	DIR * curdir;
+	struct dirent * curent;
 	struct stat curstat;
-	char *fullname;
+	char * fullname;
 	size_t fullname_size;
 
 	stats_dirs++;
@@ -388,10 +389,11 @@ static void process_directory(const char *dir, time_t begin)
 	return;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
-	time_t begin = time(
-		NULL); //Every file newer than when crawler started is skipped (it may be the file the crawler created!)
+	time_t begin = time(NULL); // Every file newer than when crawler started is
+							   // skipped (it may be the file the crawler
+							   // created!)
 
 	if (argc != 3)
 	{
@@ -407,7 +409,8 @@ int main(int argc, char *argv[])
 	dumphandle = pcap_open_dead(DLT_IEEE802_11, BUFSIZ);
 	dumper = pcap_dump_open(dumphandle, argv[2]);
 
-	if (dumper == NULL) {
+	if (dumper == NULL)
+	{
 		pcap_perror(dumphandle, "ERROR");
 		pcap_close(dumphandle);
 	}

@@ -30,31 +30,31 @@
 
 enum KoreK_attacks
 {
-	A_u15, /* semi-stable  15%             */
-	A_s13, /* stable       13%             */
-	A_u13_1, /* unstable     13%             */
-	A_u13_2, /* unstable ?   13%             */
-	A_u13_3, /* unstable ?   13%             */
-	A_s5_1, /* standard      5% (~FMS)      */
-	A_s5_2, /* other stable  5%             */
-	A_s5_3, /* other stable  5%             */
-	A_u5_1, /* unstable      5% no good ?   */
-	A_u5_2, /* unstable      5%             */
-	A_u5_3, /* unstable      5% no good     */
-	A_u5_4, /* unstable      5%             */
-	A_s3, /* stable        3%             */
-	A_4_s13, /* stable       13% on q = 4    */
+	A_u15,	/* semi-stable  15%             */
+	A_s13,	/* stable       13%             */
+	A_u13_1,  /* unstable     13%             */
+	A_u13_2,  /* unstable ?   13%             */
+	A_u13_3,  /* unstable ?   13%             */
+	A_s5_1,   /* standard      5% (~FMS)      */
+	A_s5_2,   /* other stable  5%             */
+	A_s5_3,   /* other stable  5%             */
+	A_u5_1,   /* unstable      5% no good ?   */
+	A_u5_2,   /* unstable      5%             */
+	A_u5_3,   /* unstable      5% no good     */
+	A_u5_4,   /* unstable      5%             */
+	A_s3,	 /* stable        3%             */
+	A_4_s13,  /* stable       13% on q = 4    */
 	A_4_u5_1, /* unstable      5% on q = 4    */
 	A_4_u5_2, /* unstable      5% on q = 4    */
-	A_neg /* helps reject false positives */
+	A_neg	 /* helps reject false positives */
 };
 
-int K_COEFF[N_ATTACKS] = {
-	15, 13, 12, 12, 12, 5, 5, 5, 3, 4, 3, 4, 3, 13, 4, 4, -20};
+int K_COEFF[N_ATTACKS]
+	= {15, 13, 12, 12, 12, 5, 5, 5, 3, 4, 3, 4, 3, 13, 4, 4, -20};
 
-static void calc_votes(unsigned char *ivbuf,
+static void calc_votes(unsigned char * ivbuf,
 					   long nb_ivs,
-					   unsigned char *key,
+					   unsigned char * key,
 					   int B,
 					   int votes[N_ATTACKS][256])
 {
@@ -276,7 +276,7 @@ typedef struct
 	int idx, val;
 } vote;
 
-static int cmp_votes(const void *bs1, const void *bs2)
+static int cmp_votes(const void * bs1, const void * bs2)
 {
 	if (((vote *) bs1)->val < ((vote *) bs2)->val) return (1);
 
@@ -285,9 +285,9 @@ static int cmp_votes(const void *bs1, const void *bs2)
 	return (0);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
-	FILE *f;
+	FILE * f;
 	long nb_ivs;
 	int i, n, B, *vi;
 	int votes[N_ATTACKS][256];

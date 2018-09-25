@@ -47,14 +47,14 @@ struct priv_file
 };
 
 static int
-file_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
+file_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 {
-	struct priv_file *pf = wi_priv(wi);
+	struct priv_file * pf = wi_priv(wi);
 	struct pcap_pkthdr pkh;
 	int rc;
 	unsigned char buf[4096];
 	int off = 0;
-	struct ieee80211_radiotap_header *rh;
+	struct ieee80211_radiotap_header * rh;
 	struct ieee80211_radiotap_iterator iter;
 
 	rc = read(pf->pf_fd, &pkh, sizeof(pkh));
@@ -142,19 +142,21 @@ file_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
 	return rc;
 }
 
-static int file_get_mac(struct wif *wi, unsigned char *mac)
+static int file_get_mac(struct wif * wi, unsigned char * mac)
 {
-	struct priv_file *pn = wi_priv(wi);
+	struct priv_file * pn = wi_priv(wi);
 
 	memcpy(mac, pn->pf_mac, sizeof(pn->pf_mac));
 
 	return 0;
 }
 
-static int
-file_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
+static int file_write(struct wif * wi,
+					  unsigned char * h80211,
+					  int len,
+					  struct tx_info * ti)
 {
-	struct priv_file *pn = wi_priv(wi);
+	struct priv_file * pn = wi_priv(wi);
 
 	if (h80211 && ti && pn)
 	{
@@ -163,39 +165,39 @@ file_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
 	return len;
 }
 
-static int file_set_channel(struct wif *wi, int chan)
+static int file_set_channel(struct wif * wi, int chan)
 {
-	struct priv_file *pf = wi_priv(wi);
+	struct priv_file * pf = wi_priv(wi);
 
 	pf->pf_chan = chan;
 
 	return 0;
 }
 
-static int file_get_channel(struct wif *wi)
+static int file_get_channel(struct wif * wi)
 {
-	struct priv_file *pf = wi_priv(wi);
+	struct priv_file * pf = wi_priv(wi);
 
 	return pf->pf_chan;
 }
 
-static int file_set_rate(struct wif *wi, int rate)
+static int file_set_rate(struct wif * wi, int rate)
 {
-	struct priv_file *pf = wi_priv(wi);
+	struct priv_file * pf = wi_priv(wi);
 
 	pf->pf_rate = rate;
 
 	return 0;
 }
 
-static int file_get_rate(struct wif *wi)
+static int file_get_rate(struct wif * wi)
 {
-	struct priv_file *pf = wi_priv(wi);
+	struct priv_file * pf = wi_priv(wi);
 
 	return pf->pf_rate;
 }
 
-static int file_get_monitor(struct wif *wi)
+static int file_get_monitor(struct wif * wi)
 {
 	if (wi)
 	{
@@ -204,9 +206,9 @@ static int file_get_monitor(struct wif *wi)
 	return 1;
 }
 
-static void file_close(struct wif *wi)
+static void file_close(struct wif * wi)
 {
-	struct priv_file *pn = wi_priv(wi);
+	struct priv_file * pn = wi_priv(wi);
 
 	if (pn)
 	{
@@ -220,17 +222,17 @@ static void file_close(struct wif *wi)
 	free(wi);
 }
 
-static int file_fd(struct wif *wi)
+static int file_fd(struct wif * wi)
 {
-	struct priv_file *pf = wi_priv(wi);
+	struct priv_file * pf = wi_priv(wi);
 
 	return pf->pf_fd;
 }
 
-struct wif *file_open(char *iface)
+struct wif * file_open(char * iface)
 {
-	struct wif *wi;
-	struct priv_file *pf;
+	struct wif * wi;
+	struct priv_file * pf;
 	int fd;
 	struct pcap_file_header pfh;
 	int rc;

@@ -126,25 +126,25 @@ extern unsigned int mem_saving_level;
  * Allocates size bytes and returns a pointer to the allocated memory.
  * If an error occurs, the function does not return.
  */
-extern void *mem_alloc_func(size_t size
+extern void * mem_alloc_func(size_t size
 #if defined(MEMDBG_ON)
-							,
-							char *file,
-							int line
+							 ,
+							 char * file,
+							 int line
 #endif
-							);
+							 );
 /*
  * this version same as mem_alloc, but initialized the memory
  * to NULL bytes, like CALLOC(3) function does
  */
-extern void *mem_calloc_func(size_t count,
-							 size_t size
+extern void * mem_calloc_func(size_t count,
+							  size_t size
 #if defined(MEMDBG_ON)
-							 ,
-							 char *file,
-							 int line
+							  ,
+							  char * file,
+							  int line
 #endif
-							 );
+							  );
 
 #if defined(MEMDBG_ON)
 #define mem_alloc(a) mem_alloc_func(a, __FILE__, __LINE__)
@@ -168,24 +168,24 @@ extern void *mem_calloc_func(size_t count,
 #endif
 
 /* These allow alignment and are wrappers to system-specific functions */
-void *mem_alloc_align_func(size_t size,
-						   size_t align
-#if defined(MEMDBG_ON)
-						   ,
-						   char *file,
-						   int line
-#endif
-						   );
-
-void *mem_calloc_align_func(size_t count,
-							size_t size,
+void * mem_alloc_align_func(size_t size,
 							size_t align
 #if defined(MEMDBG_ON)
 							,
-							char *file,
+							char * file,
 							int line
 #endif
 							);
+
+void * mem_calloc_align_func(size_t count,
+							 size_t size,
+							 size_t align
+#if defined(MEMDBG_ON)
+							 ,
+							 char * file,
+							 int line
+#endif
+							 );
 
 /*
  * Frees memory allocated with mem_alloc() and sets the pointer to NULL.
@@ -196,7 +196,7 @@ void *mem_calloc_align_func(size_t count,
 #ifdef _MSC_VER
 #if !defined(MEMDBG_ON)
 #define strdup(a) strdup_MSVC(a)
-char *strdup_MSVC(const char *str);
+char * strdup_MSVC(const char * str);
 #define MEM_FREE(ptr)                                                          \
 	{                                                                          \
 		if ((ptr))                                                             \
@@ -231,51 +231,51 @@ char *strdup_MSVC(const char *str);
  * Similar to the above function, except the memory can't be freed.
  * This one is used to reduce the overhead.
  */
-extern void *mem_alloc_tiny_func(size_t size,
-								 size_t align
-#if defined(MEMDBG_ON)
-								 ,
-								 char *file,
-								 int line
-#endif
-								 );
-
-/*
- * this version same as mem_alloc_tiny, but initialized the memory
- * to NULL bytes, like CALLOC(3) function does
- */
-extern void *mem_calloc_tiny_func(size_t size,
+extern void * mem_alloc_tiny_func(size_t size,
 								  size_t align
 #if defined(MEMDBG_ON)
 								  ,
-								  char *file,
+								  char * file,
 								  int line
 #endif
 								  );
 
 /*
+ * this version same as mem_alloc_tiny, but initialized the memory
+ * to NULL bytes, like CALLOC(3) function does
+ */
+extern void * mem_calloc_tiny_func(size_t size,
+								   size_t align
+#if defined(MEMDBG_ON)
+								   ,
+								   char * file,
+								   int line
+#endif
+								   );
+
+/*
  * Uses mem_alloc_tiny() to allocate the memory, and copies src in there.
  */
-extern void *mem_alloc_copy_func(void *src,
-								 size_t size,
-								 size_t align
+extern void * mem_alloc_copy_func(void * src,
+								  size_t size,
+								  size_t align
 #if defined(MEMDBG_ON)
-								 ,
-								 char *file,
-								 int line
+								  ,
+								  char * file,
+								  int line
 #endif
-								 );
+								  );
 
 /*
  * Similar to the above function, but for ASCIIZ strings.
  */
-extern char *str_alloc_copy_func(char *src
+extern char * str_alloc_copy_func(char * src
 #if defined(MEMDBG_ON)
-								 ,
-								 char *file,
-								 int line
+								  ,
+								  char * file,
+								  int line
 #endif
-								 );
+								  );
 
 /*
  * This will 'cleanup' the memory allocated by mem_alloc_tiny().  All
@@ -284,89 +284,95 @@ extern char *str_alloc_copy_func(char *src
  */
 extern void cleanup_tiny_memory(void);
 
-void dump_text(void *in, int len);
-void dump_stuff(void *x, unsigned int size);
-void dump_stuff_msg(const void *msg, void *x, unsigned int size);
-void dump_stuff_noeol(void *x, unsigned int size);
-void dump_stuff_msg_sepline(const void *msg, void *x, unsigned int size);
-void dump_stuff_be(void *x, unsigned int size);
-void dump_stuff_be_msg(const void *msg, void *x, unsigned int size);
-void dump_stuff_be_noeol(void *x, unsigned int size);
-void dump_stuff_be_msg_sepline(const void *msg, void *x, unsigned int size);
+void dump_text(void * in, int len);
+void dump_stuff(void * x, unsigned int size);
+void dump_stuff_msg(const void * msg, void * x, unsigned int size);
+void dump_stuff_noeol(void * x, unsigned int size);
+void dump_stuff_msg_sepline(const void * msg, void * x, unsigned int size);
+void dump_stuff_be(void * x, unsigned int size);
+void dump_stuff_be_msg(const void * msg, void * x, unsigned int size);
+void dump_stuff_be_noeol(void * x, unsigned int size);
+void dump_stuff_be_msg_sepline(const void * msg, void * x, unsigned int size);
 
 #if defined(SIMD_COEF_32) || defined(NT_X86_64) || defined(SIMD_PARA_MD5)      \
 	|| defined(SIMD_PARA_MD4) || defined(SIMD_PARA_SHA1)
-void dump_stuff_mmx(void *x, unsigned int size, unsigned int index);
-void dump_stuff_mmx_noeol(void *x, unsigned int size, unsigned int index);
-void dump_stuff_mmx_msg(const void *msg,
-						void *buf,
+void dump_stuff_mmx(void * x, unsigned int size, unsigned int index);
+void dump_stuff_mmx_noeol(void * x, unsigned int size, unsigned int index);
+void dump_stuff_mmx_msg(const void * msg,
+						void * buf,
 						unsigned int size,
 						unsigned int index);
-void dump_stuff_mmx_msg_sepline(const void *msg,
-								void *buf,
+void dump_stuff_mmx_msg_sepline(const void * msg,
+								void * buf,
 								unsigned int size,
 								unsigned int index);
 // for flat input, we do want to see SHA512 without byte swapping.
-void dump_stuff_mmx64(void *buf, unsigned int size, unsigned int index);
-void dump_stuff_mmx64_msg(const void *msg,
-						  void *buf,
+void dump_stuff_mmx64(void * buf, unsigned int size, unsigned int index);
+void dump_stuff_mmx64_msg(const void * msg,
+						  void * buf,
 						  unsigned int size,
 						  unsigned int index);
-void dump_out_mmx(void *x, unsigned int size, unsigned int index);
-void dump_out_mmx_noeol(void *x, unsigned int size, unsigned int index);
-void dump_out_mmx_msg(const void *msg,
-					  void *buf,
+void dump_out_mmx(void * x, unsigned int size, unsigned int index);
+void dump_out_mmx_noeol(void * x, unsigned int size, unsigned int index);
+void dump_out_mmx_msg(const void * msg,
+					  void * buf,
 					  unsigned int size,
 					  unsigned int index);
-void dump_out_mmx_msg_sepline(const void *msg,
-							  void *buf,
+void dump_out_mmx_msg_sepline(const void * msg,
+							  void * buf,
 							  unsigned int size,
 							  unsigned int index);
-void dump_stuff_shammx(void *x, unsigned int size, unsigned int index);
-void dump_stuff_shammx_msg(const void *msg,
-						   void *buf,
+void dump_stuff_shammx(void * x, unsigned int size, unsigned int index);
+void dump_stuff_shammx_msg(const void * msg,
+						   void * buf,
 						   unsigned int size,
 						   unsigned int index);
-void dump_out_shammx(void *x, unsigned int size, unsigned int index);
-void dump_out_shammx_msg(const void *msg,
-						 void *buf,
+void dump_out_shammx(void * x, unsigned int size, unsigned int index);
+void dump_out_shammx_msg(const void * msg,
+						 void * buf,
 						 unsigned int size,
 						 unsigned int index);
-void dump_stuff_shammx64(void *x, unsigned int size, unsigned int index);
-void dump_stuff_shammx64_msg(const void *msg,
-							 void *buf,
+void dump_stuff_shammx64(void * x, unsigned int size, unsigned int index);
+void dump_stuff_shammx64_msg(const void * msg,
+							 void * buf,
 							 unsigned int size,
 							 unsigned int index);
-void dump_out_shammx64(void *x, unsigned int size, unsigned int index);
-void dump_out_shammx64_msg(const void *msg,
-						   void *buf,
+void dump_out_shammx64(void * x, unsigned int size, unsigned int index);
+void dump_out_shammx64_msg(const void * msg,
+						   void * buf,
 						   unsigned int size,
 						   unsigned int index);
 #endif
 
 #if defined(SIMD_PARA_MD5)
-// these functions help debug arrays of contiguous MD5 prepared PARA buffers. Seen in sunmd5 at the current time.
-void dump_stuff_mpara_mmx(void *x, unsigned int size, unsigned int index);
-void dump_stuff_mpara_mmx_noeol(void *x, unsigned int size, unsigned int index);
-void dump_stuff_mpara_mmx_msg(const void *msg,
-							  void *buf,
+// these functions help debug arrays of contiguous MD5 prepared PARA buffers.
+// Seen in sunmd5 at the current time.
+void dump_stuff_mpara_mmx(void * x, unsigned int size, unsigned int index);
+void dump_stuff_mpara_mmx_noeol(void * x,
+								unsigned int size,
+								unsigned int index);
+void dump_stuff_mpara_mmx_msg(const void * msg,
+							  void * buf,
 							  unsigned int size,
 							  unsigned int index);
-void dump_stuff_mpara_mmx_msg_sepline(const void *msg,
-									  void *buf,
+void dump_stuff_mpara_mmx_msg_sepline(const void * msg,
+									  void * buf,
 									  unsigned int size,
 									  unsigned int index);
 // a 'getter' to help debugging.  Returns a flat buffer, vs printing it out.
-void getbuf_stuff_mpara_mmx(unsigned char *oBuf,
-							void *buf,
+void getbuf_stuff_mpara_mmx(unsigned char * oBuf,
+							void * buf,
 							unsigned int size,
 							unsigned int index);
 #endif
 
 /*
- * here, a stack buffer that is at least align-1 bytes LARGER than required, can be
- * properly aligned to 'align' bytes. So:   char tmpbuf[256+15], *aligned_buf=mem_align(tmpbuf,16);
- * will give you a stack buffer, aligned to 16 bytes.  There are bugs in some compilers which cause
+ * here, a stack buffer that is at least align-1 bytes LARGER than required, can
+ * be
+ * properly aligned to 'align' bytes. So:   char tmpbuf[256+15],
+ * *aligned_buf=mem_align(tmpbuf,16);
+ * will give you a stack buffer, aligned to 16 bytes.  There are bugs in some
+ * compilers which cause
  * JTR_ALIGN(x) to fail properly (such as a bug in bitcoin OMP mode for linux32)
  * Switched to a define macro for performance.
  */
@@ -378,17 +384,18 @@ void getbuf_stuff_mpara_mmx(unsigned char *oBuf,
  * 32-bit endian-swap a memory buffer in place. Size is in octets (so should
  * be a multiple of 4). From now on, this function may be used on any arch.
  */
-void alter_endianity(void *x, unsigned int size);
+void alter_endianity(void * x, unsigned int size);
 
 /* 32-bit endian-swap a memory buffer in place. Count is in 32-bit words */
-void alter_endianity_w(void *x, unsigned int count);
+void alter_endianity_w(void * x, unsigned int count);
 
 /* 64-bit endian-swap a memory buffer in place. Count is in 64-bit words */
-void alter_endianity_w64(void *x, unsigned int count);
+void alter_endianity_w64(void * x, unsigned int count);
 
 #if ARCH_ALLOWS_UNALIGNED
 // we can inline these, to always use JOHNSWAP/JOHNSWAP64
-// NOTE, more portable to use #defines to inline, than the MAYBE_INLINE within header files.
+// NOTE, more portable to use #defines to inline, than the MAYBE_INLINE within
+// header files.
 #if (ARCH_LITTLE_ENDIAN == 0)
 #define alter_endianity_to_BE(a, b)
 #define alter_endianity_to_BE64(a, b)

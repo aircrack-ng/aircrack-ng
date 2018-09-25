@@ -56,18 +56,19 @@ static int is_dup(unsigned short id)
 	return 0;
 }
 
-static int handle(int s, unsigned char *data, int len, struct sockaddr_in *s_in)
+static int
+handle(int s, unsigned char * data, int len, struct sockaddr_in * s_in)
 {
 	char buf[2048];
-	unsigned short *cmd = (unsigned short *) buf;
+	unsigned short * cmd = (unsigned short *) buf;
 	int plen;
-	struct in_addr *addr = &s_in->sin_addr;
-	unsigned short *pid = (unsigned short *) data;
+	struct in_addr * addr = &s_in->sin_addr;
+	unsigned short * pid = (unsigned short *) data;
 
 	/* inet check */
 	if (len == S_HELLO_LEN && memcmp(data, "sorbo", 5) == 0)
 	{
-		unsigned short *id = (unsigned short *) (data + 5);
+		unsigned short * id = (unsigned short *) (data + 5);
 		int x = 2 + 4 + 2;
 
 		*cmd = htons(S_CMD_INET_CHECK);
@@ -164,8 +165,8 @@ static void handle_dude(int dude, int udp)
 		if (!FD_ISSET(udp, &rfds)) continue;
 
 		len = sizeof(s_in);
-		rc =
-			recvfrom(udp, buf, sizeof(buf), 0, (struct sockaddr *) &s_in, &len);
+		rc = recvfrom(
+			udp, buf, sizeof(buf), 0, (struct sockaddr *) &s_in, &len);
 		if (rc == -1) err(1, "read()");
 
 		if (handle(dude, buf, rc, &s_in)) break;
@@ -186,8 +187,8 @@ static void drop_privs(void)
 
 static void usage(void)
 {
-	char *version_info =
-		getVersion("Buddy-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+	char * version_info
+		= getVersion("Buddy-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		   "  %s - (C) 2007,2008 Andrea Bittau\n"
 		   "  https://www.aircrack-ng.org\n"
@@ -205,7 +206,7 @@ static void usage(void)
 	exit(1);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
 	struct utsname utsName;
 	struct sockaddr_in s_in;

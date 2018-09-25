@@ -25,76 +25,76 @@
 #include "osdep.h"
 #include "network.h"
 
-extern struct wif *file_open(char *iface);
+extern struct wif * file_open(char * iface);
 
 EXPORT int
-wi_read(struct wif *wi, unsigned char *h80211, int len, struct rx_info *ri)
+wi_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 {
 	assert(wi->wi_read);
 	return wi->wi_read(wi, h80211, len, ri);
 }
 
 EXPORT int
-wi_write(struct wif *wi, unsigned char *h80211, int len, struct tx_info *ti)
+wi_write(struct wif * wi, unsigned char * h80211, int len, struct tx_info * ti)
 {
 	assert(wi->wi_write);
 	return wi->wi_write(wi, h80211, len, ti);
 }
 
-EXPORT int wi_set_ht_channel(struct wif *wi, int chan, unsigned int htval)
+EXPORT int wi_set_ht_channel(struct wif * wi, int chan, unsigned int htval)
 {
 	assert(wi->wi_set_ht_channel);
 	return wi->wi_set_ht_channel(wi, chan, htval);
 }
 
-EXPORT int wi_set_channel(struct wif *wi, int chan)
+EXPORT int wi_set_channel(struct wif * wi, int chan)
 {
 	assert(wi->wi_set_channel);
 	return wi->wi_set_channel(wi, chan);
 }
 
-EXPORT int wi_get_channel(struct wif *wi)
+EXPORT int wi_get_channel(struct wif * wi)
 {
 	assert(wi->wi_get_channel);
 	return wi->wi_get_channel(wi);
 }
 
-EXPORT int wi_set_freq(struct wif *wi, int freq)
+EXPORT int wi_set_freq(struct wif * wi, int freq)
 {
 	assert(wi->wi_set_freq);
 	return wi->wi_set_freq(wi, freq);
 }
 
-EXPORT int wi_get_freq(struct wif *wi)
+EXPORT int wi_get_freq(struct wif * wi)
 {
 	assert(wi->wi_get_freq);
 	return wi->wi_get_freq(wi);
 }
 
-EXPORT int wi_get_monitor(struct wif *wi)
+EXPORT int wi_get_monitor(struct wif * wi)
 {
 	assert(wi->wi_get_monitor);
 	return wi->wi_get_monitor(wi);
 }
 
-EXPORT char *wi_get_ifname(struct wif *wi) { return wi->wi_interface; }
+EXPORT char * wi_get_ifname(struct wif * wi) { return wi->wi_interface; }
 
-EXPORT void wi_close(struct wif *wi)
+EXPORT void wi_close(struct wif * wi)
 {
 	assert(wi->wi_close);
 	wi->wi_close(wi);
 }
 
-EXPORT int wi_fd(struct wif *wi)
+EXPORT int wi_fd(struct wif * wi)
 {
 	assert(wi->wi_fd);
 	return wi->wi_fd(wi);
 }
 
-struct wif *wi_alloc(int sz)
+struct wif * wi_alloc(int sz)
 {
-	struct wif *wi;
-	void *priv;
+	struct wif * wi;
+	void * priv;
 
 	/* Allocate wif & private state */
 	wi = malloc(sizeof(*wi));
@@ -113,47 +113,47 @@ struct wif *wi_alloc(int sz)
 	return wi;
 }
 
-void *wi_priv(struct wif *wi) { return wi->wi_priv; }
+void * wi_priv(struct wif * wi) { return wi->wi_priv; }
 
-EXPORT int wi_get_mac(struct wif *wi, unsigned char *mac)
+EXPORT int wi_get_mac(struct wif * wi, unsigned char * mac)
 {
 	assert(wi->wi_get_mac);
 	return wi->wi_get_mac(wi, mac);
 }
 
-EXPORT int wi_set_mac(struct wif *wi, unsigned char *mac)
+EXPORT int wi_set_mac(struct wif * wi, unsigned char * mac)
 {
 	assert(wi->wi_set_mac);
 	return wi->wi_set_mac(wi, mac);
 }
 
-EXPORT int wi_get_rate(struct wif *wi)
+EXPORT int wi_get_rate(struct wif * wi)
 {
 	assert(wi->wi_get_rate);
 	return wi->wi_get_rate(wi);
 }
 
-EXPORT int wi_set_rate(struct wif *wi, int rate)
+EXPORT int wi_set_rate(struct wif * wi, int rate)
 {
 	assert(wi->wi_set_rate);
 	return wi->wi_set_rate(wi, rate);
 }
 
-EXPORT int wi_get_mtu(struct wif *wi)
+EXPORT int wi_get_mtu(struct wif * wi)
 {
 	assert(wi->wi_get_mtu);
 	return wi->wi_get_mtu(wi);
 }
 
-EXPORT int wi_set_mtu(struct wif *wi, int mtu)
+EXPORT int wi_set_mtu(struct wif * wi, int mtu)
 {
 	assert(wi->wi_set_mtu);
 	return wi->wi_set_mtu(wi, mtu);
 }
 
-EXPORT struct wif *wi_open(char *iface)
+EXPORT struct wif * wi_open(char * iface)
 {
-	struct wif *wi;
+	struct wif * wi;
 
 	if (iface == NULL || iface[0] == 0)
 	{
@@ -173,64 +173,64 @@ EXPORT struct wif *wi_open(char *iface)
 }
 
 /* tap stuff */
-EXPORT char *ti_name(struct tif *ti)
+EXPORT char * ti_name(struct tif * ti)
 {
 	assert(ti->ti_name);
 	return ti->ti_name(ti);
 }
 
-EXPORT int ti_set_mtu(struct tif *ti, int mtu)
+EXPORT int ti_set_mtu(struct tif * ti, int mtu)
 {
 	assert(ti->ti_set_mtu);
 	return ti->ti_set_mtu(ti, mtu);
 }
 
-EXPORT int ti_get_mtu(struct tif *ti)
+EXPORT int ti_get_mtu(struct tif * ti)
 {
 	assert(ti->ti_get_mtu);
 	return ti->ti_get_mtu(ti);
 }
 
-EXPORT void ti_close(struct tif *ti)
+EXPORT void ti_close(struct tif * ti)
 {
 	assert(ti->ti_close);
 	ti->ti_close(ti);
 }
 
-EXPORT int ti_fd(struct tif *ti)
+EXPORT int ti_fd(struct tif * ti)
 {
 	assert(ti->ti_fd);
 	return ti->ti_fd(ti);
 }
 
-EXPORT int ti_read(struct tif *ti, void *buf, int len)
+EXPORT int ti_read(struct tif * ti, void * buf, int len)
 {
 	assert(ti->ti_read);
 	return ti->ti_read(ti, buf, len);
 }
 
-EXPORT int ti_write(struct tif *ti, void *buf, int len)
+EXPORT int ti_write(struct tif * ti, void * buf, int len)
 {
 	assert(ti->ti_write);
 	return ti->ti_write(ti, buf, len);
 }
 
-EXPORT int ti_set_mac(struct tif *ti, unsigned char *mac)
+EXPORT int ti_set_mac(struct tif * ti, unsigned char * mac)
 {
 	assert(ti->ti_set_mac);
 	return ti->ti_set_mac(ti, mac);
 }
 
-EXPORT int ti_set_ip(struct tif *ti, struct in_addr *ip)
+EXPORT int ti_set_ip(struct tif * ti, struct in_addr * ip)
 {
 	assert(ti->ti_set_ip);
 	return ti->ti_set_ip(ti, ip);
 }
 
-struct tif *ti_alloc(int sz)
+struct tif * ti_alloc(int sz)
 {
-	struct tif *ti;
-	void *priv;
+	struct tif * ti;
+	void * priv;
 
 	/* Allocate tif & private state */
 	ti = malloc(sizeof(*ti));
@@ -249,4 +249,4 @@ struct tif *ti_alloc(int sz)
 	return ti;
 }
 
-void *ti_priv(struct tif *ti) { return ti->ti_priv; }
+void * ti_priv(struct tif * ti) { return ti->ti_priv; }

@@ -56,11 +56,11 @@ char usage[] =
 	"      --help     : Displays this usage screen\n"
 	"\n";
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
 	int i, j, k, pre_n, n, count = 100000, length = 16;
 	int paramUsed = 0, keylen = 0, zero = 0, startiv = 0, iv = 0;
-	FILE *f_ivs_out;
+	FILE * f_ivs_out;
 	unsigned char K[32];
 	unsigned char S[256];
 	//     unsigned char buffer[64];
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	int seed = time(NULL), z;
 	int maxivs = 0x1000000;
 	unsigned char byte;
-	unsigned char **uiv_root;
+	unsigned char ** uiv_root;
 
 	static struct option long_options[] = {{"key", 1, 0, 'k'},
 										   {"write", 1, 0, 'w'},
@@ -406,7 +406,7 @@ int main(int argc, char *argv[])
 		return (1);
 	}
 
-	if (length == 0) length = 16; //default 16 keystreambytes
+	if (length == 0) length = 16; // default 16 keystreambytes
 
 	if (crypt < 1)
 	{
@@ -435,13 +435,13 @@ int main(int argc, char *argv[])
 
 	printf("Creating %d IVs with %d bytes of keystream each.\n", count, length);
 	printf("Estimated filesize: ");
-	if (size > 1024 * 1024 * 1024) //over 1 GB
+	if (size > 1024 * 1024 * 1024) // over 1 GB
 		printf("%.2f GB\n", ((double) size / (1024.0 * 1024.0 * 1024.0)));
-	else if (size > 1024 * 1024) //over 1 MB
+	else if (size > 1024 * 1024) // over 1 MB
 		printf("%.2f MB\n", ((double) size / (1024.0 * 1024.0)));
-	else if (size > 1024) //over 1 KB
+	else if (size > 1024) // over 1 KB
 		printf("%.2f KB\n", ((double) size / 1024.0));
-	else //under 1 KB
+	else // under 1 KB
 		printf("%.2f Byte\n", (double) size);
 
 	if ((f_ivs_out = fopen(filename, "wb+")) == NULL)

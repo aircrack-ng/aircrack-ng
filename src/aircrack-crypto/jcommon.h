@@ -66,8 +66,10 @@ typedef unsigned int ARCH_WORD_32;
 typedef unsigned long long ARCH_WORD_64;
 #endif
 
-/* ONLY use this to check alignments of even power of 2 (2, 4, 8, 16, etc) byte counts (CNT).
-   The cast to void* MUST be done, due to C spec. http://stackoverflow.com/a/1898487 */
+/* ONLY use this to check alignments of even power of 2 (2, 4, 8, 16, etc) byte
+   counts (CNT).
+   The cast to void* MUST be done, due to C spec.
+   http://stackoverflow.com/a/1898487 */
 #define is_aligned(PTR, CNT)                                                   \
 	((((ARCH_WORD)(const void *) (PTR)) & (CNT - 1)) == 0)
 
@@ -105,7 +107,7 @@ typedef unsigned long long ARCH_WORD_64;
 /*
  * ASCII <-> binary conversion tables.
  */
-//extern const char itoa64[64]; /* crypt(3) base64 - not MIME Base64! */
+// extern const char itoa64[64]; /* crypt(3) base64 - not MIME Base64! */
 extern char atoi64[0x100];
 extern const char itoa16[16];
 extern char atoi16[0x100];

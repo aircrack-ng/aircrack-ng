@@ -80,14 +80,14 @@ char usage[] =
 
 struct decap_stats
 {
-	unsigned long nb_stations; /* # of stations seen */
-	unsigned long nb_read; /* # of packets read       */
-	unsigned long nb_wep; /* # of WEP data packets   */
-	unsigned long nb_bad; /* # of bad data packets   */
-	unsigned long nb_wpa; /* # of WPA data packets   */
-	unsigned long nb_plain; /* # of plaintext packets  */
-	unsigned long nb_unwep; /* # of decrypted WEP pkt  */
-	unsigned long nb_unwpa; /* # of decrypted WPA pkt  */
+	unsigned long nb_stations;	/* # of stations seen */
+	unsigned long nb_read;		  /* # of packets read       */
+	unsigned long nb_wep;		  /* # of WEP data packets   */
+	unsigned long nb_bad;		  /* # of bad data packets   */
+	unsigned long nb_wpa;		  /* # of WPA data packets   */
+	unsigned long nb_plain;		  /* # of plaintext packets  */
+	unsigned long nb_unwep;		  /* # of decrypted WEP pkt  */
+	unsigned long nb_unwpa;		  /* # of decrypted WPA pkt  */
 	unsigned long nb_failed_tkip; /* # of failed WPA TKIP pkt decryptions */
 	unsigned long nb_failed_ccmp; /* # of failed WPA CCMP pkt decryptions */
 } stats;
@@ -112,7 +112,7 @@ unsigned char buffer2[65536];
 /* this routine handles to 802.11 to Ethernet translation */
 
 static int
-write_packet(FILE *f_out, struct pcap_pkthdr *pkh, unsigned char *h80211)
+write_packet(FILE * f_out, struct pcap_pkthdr * pkh, unsigned char * h80211)
 {
 	int n;
 	unsigned char arphdr[12];
@@ -202,12 +202,12 @@ write_packet(FILE *f_out, struct pcap_pkthdr *pkh, unsigned char *h80211)
 	return (0);
 }
 
-static int station_compare(const void *a, const void *b)
+static int station_compare(const void * a, const void * b)
 {
 	return memcmp(a, b, 6);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
 	time_t tt;
 	unsigned magic;
@@ -216,11 +216,11 @@ int main(int argc, char *argv[])
 	unsigned long crc;
 	int i = 0, n, linktype;
 	unsigned z;
-	unsigned char *h80211;
+	unsigned char * h80211;
 	unsigned char bssid[6], stmac[6];
 
-	c_avl_tree_t *stations = c_avl_create(station_compare);
-	struct WPA_ST_info *st_cur;
+	c_avl_tree_t * stations = c_avl_create(station_compare);
+	struct WPA_ST_info * st_cur;
 	struct pcap_file_header pfh;
 	struct pcap_pkthdr pkh;
 
@@ -770,16 +770,16 @@ int main(int argc, char *argv[])
 		{
 			case 0:
 				memcpy(bssid, h80211 + 16, sizeof(bssid));
-				break; //Adhoc
+				break; // Adhoc
 			case 1:
 				memcpy(bssid, h80211 + 4, sizeof(bssid));
-				break; //ToDS
+				break; // ToDS
 			case 2:
 				memcpy(bssid, h80211 + 10, sizeof(bssid));
-				break; //FromDS
+				break; // FromDS
 			case 3:
 				memcpy(bssid, h80211 + 10, sizeof(bssid));
-				break; //WDS -> Transmitter taken as BSSID
+				break; // WDS -> Transmitter taken as BSSID
 		}
 
 		if (memcmp(opt.bssid, ZERO, 6) != 0)
@@ -808,8 +808,8 @@ int main(int argc, char *argv[])
 
 		if (not_found)
 		{
-			if (!(st_cur = (struct WPA_ST_info *) malloc(
-					  sizeof(struct WPA_ST_info))))
+			if (!(st_cur
+				  = (struct WPA_ST_info *) malloc(sizeof(struct WPA_ST_info))))
 			{
 				perror("malloc failed");
 				break;
@@ -841,7 +841,7 @@ int main(int argc, char *argv[])
 		}
 
 		/* check the SNAP header to see if data is encrypted *
-         * as unencrypted data begins with AA AA 03 00 00 00 */
+		 * as unencrypted data begins with AA AA 03 00 00 00 */
 
 		if (h80211[z] != h80211[z + 1] || h80211[z + 2] != 0x03)
 		{
@@ -874,7 +874,7 @@ int main(int argc, char *argv[])
 				}
 
 				/* WEP data packet was successfully decrypted, *
-                 * remove the WEP IV & ICV and write the data  */
+				 * remove the WEP IV & ICV and write the data  */
 
 				pkh.len -= 8;
 				pkh.caplen -= 8;
@@ -926,7 +926,7 @@ int main(int argc, char *argv[])
 				}
 
 				/* WPA data packet was successfully decrypted, *
-                 * remove the WPA Ext.IV & MIC, write the data */
+				 * remove the WPA Ext.IV & MIC, write the data */
 
 				if (pkh.caplen > z)
 				{
@@ -975,7 +975,8 @@ int main(int argc, char *argv[])
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
+				&& (h80211[z + 6] & 0x80) != 0
+				&& (h80211[z + 5] & 0x01) == 0)
 			{
 				/* set authenticator nonce */
 
@@ -985,7 +986,8 @@ int main(int argc, char *argv[])
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) == 0
+				&& (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -1018,7 +1020,8 @@ int main(int argc, char *argv[])
 			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) != 0
+				&& (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -1041,7 +1044,10 @@ int main(int argc, char *argv[])
 
 				memcpy(st_cur->keymic, &h80211[z + 81], sizeof(st_cur->keymic));
 				memcpy(st_cur->eapol, &h80211[z], st_cur->eapol_size);
-				memset(st_cur->eapol + 81, 0, 16); // where does this size come from? eapol is char[256]
+				memset(
+					st_cur->eapol + 81,
+					0,
+					16); // where does this size come from? eapol is char[256]
 
 				/* copy the key descriptor version */
 

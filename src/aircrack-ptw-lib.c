@@ -1,5 +1,6 @@
 /*
- *  Copyright (c) 2007-2009 Erik Tews, Andrei Pychkine and Ralf-Philipp Weinmann.
+ *  Copyright (c) 2007-2009 Erik Tews, Andrei Pychkine and Ralf-Philipp
+ * Weinmann.
  *                2013 Ramiro Polla
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -125,18 +126,18 @@ PTW_tableentry keytable[KEYHSBYTES][n];
 #endif
 
 // For sorting
-static int compare(const void *ina, const void *inb)
+static int compare(const void * ina, const void * inb)
 {
-	PTW_tableentry *a = (PTW_tableentry *) ina;
-	PTW_tableentry *b = (PTW_tableentry *) inb;
+	PTW_tableentry * a = (PTW_tableentry *) ina;
+	PTW_tableentry * b = (PTW_tableentry *) inb;
 	return b->votes - a->votes;
 }
 
 // For sorting
-static int comparedoublesorthelper(const void *ina, const void *inb)
+static int comparedoublesorthelper(const void * ina, const void * inb)
 {
-	doublesorthelper *a = (doublesorthelper *) ina;
-	doublesorthelper *b = (doublesorthelper *) inb;
+	doublesorthelper * a = (doublesorthelper *) ina;
+	doublesorthelper * b = (doublesorthelper *) inb;
 	if (a->difference > b->difference)
 	{
 		return 1;
@@ -153,11 +154,13 @@ static int comparedoublesorthelper(const void *ina, const void *inb)
 
 #ifdef USE_AMD64_RC4_OPTIMIZED
 static const uint32_t __attribute__((used)) __attribute__((aligned(16)))
-x0123[4] = {0, 1, 2, 3};
+x0123[4]
+	= {0, 1, 2, 3};
 static const uint32_t __attribute__((used)) __attribute__((aligned(16)))
-x4444[4] = {4, 4, 4, 4};
+x4444[4]
+	= {4, 4, 4, 4};
 static int
-rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream)
+rc4test_amd64_sse2(uint8_t * key, int keylen, uint8_t * iv, uint8_t * keystream)
 {
 	int idx, i, j;
 	int scratch1, scratch2;
@@ -222,21 +225,22 @@ rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream)
 		// init array with key
 		".p2align 4                   \n\t"
 		".init_loop:                  \n\t"
-		"movl    %k0, %k8             \n\t" /* scratch2        = idx             */
-		"movl   (%q1), %k5            \n\t" /* s1              = state[i]        */
-		"leal  1(%q0,1), %k0          \n\t" /* idx++                             */
-		"movzbl (%q3,%q8,1), %k6      \n\t" /* key_n           = key[scratch2]   */
-		"leal   (%q5,%q6,1), %k8      \n\t" /* scratch2        = s1 + key_n      */
-		"addl    %k8, %k2             \n\t" /* j              += scratch2        */
-		"andl    %k4, %k0             \n\t" /* idx            &= mask            */
-		"movzbl  %b2, %k8             \n\t" /* scratch2        = j               */
+		"movl    %k0, %k8             \n\t" /* scratch2        = idx */
+		"movl   (%q1), %k5            \n\t" /* s1              = state[i] */
+		"leal  1(%q0,1), %k0          \n\t" /* idx++ */
+		"movzbl (%q3,%q8,1), %k6      \n\t" /* key_n           = key[scratch2]
+											   */
+		"leal   (%q5,%q6,1), %k8      \n\t" /* scratch2        = s1 + key_n */
+		"addl    %k8, %k2             \n\t" /* j              += scratch2 */
+		"andl    %k4, %k0             \n\t" /* idx            &= mask */
+		"movzbl  %b2, %k8             \n\t" /* scratch2        = j */
 		"movl (" state
 		",%q8,4), %k7    \n\t" /* s2              = state[scratch2] */
-		"movl    %k7, (%q1)           \n\t" /* state[i]        = s2              */
-		"addq     $4, %q1             \n\t" /* i++                               */
-		"movl    %k5, (" state
-		",%q8,4) \n\t" /* state[scratch2] = s1              */
-		"cmpq    %q1, %q3             \n\t" /* state          == &state[0x100]   */
+		"movl    %k7, (%q1)           \n\t" /* state[i]        = s2 */
+		"addq     $4, %q1             \n\t" /* i++ */
+		"movl    %k5, (" state ",%q8,4) \n\t" /* state[scratch2] = s1 */
+		"cmpq    %q1, %q3             \n\t" /* state          == &state[0x100]
+											   */
 		"jne .init_loop               \n\t"
 
 		// restore keystream variable
@@ -248,14 +252,14 @@ rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream)
 
 #define RC4TEST_LOOP(offset)                                                   \
 	"movl 4*" offset "(" state "), %k5\n\t" /* s1 = state[i]         */        \
-	"leal (%q5,%q2,1), %k4        \n\t" /*                       */            \
-	"movzbl %b4, %k2              \n\t" /* j += s1               */            \
-	"movl (" state ",%q2,4), %k1    \n\t" /* s2 = state[j]         */          \
+	"leal (%q5,%q2,1), %k4        \n\t"		/*                       */        \
+	"movzbl %b4, %k2              \n\t"		/* j += s1               */        \
+	"movl (" state ",%q2,4), %k1    \n\t"   /* s2 = state[j]         */        \
 	"movl %k1, 4*" offset "(" state ")\n\t" /* state[i] = s2         */        \
-	"movl %k5, (" state ",%q2,4)    \n\t" /* state[j] = s1         */          \
-	"addb %b1, %b5                \n\t" /* s1 += s2;             */            \
-	"movb (" state ",%q5,4), %b3    \n\t" /* ret = state[s1]       */          \
-	"cmpb %b3, " offset "-1(%q6)    \n\t" /* ret == keystream[i-1] */          \
+	"movl %k5, (" state ",%q2,4)    \n\t"   /* state[j] = s1         */        \
+	"addb %b1, %b5                \n\t"		/* s1 += s2;             */        \
+	"movb (" state ",%q5,4), %b3    \n\t"   /* ret = state[s1]       */        \
+	"cmpb %b3, " offset "-1(%q6)    \n\t"   /* ret == keystream[i-1] */        \
 	"jne .ret                     \n\t"
 
 		RC4TEST_LOOP("1") RC4TEST_LOOP("2") RC4TEST_LOOP("3") RC4TEST_LOOP("4")
@@ -289,7 +293,7 @@ rc4test_amd64_sse2(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream)
 #endif
 
 // RC4 key setup
-static void rc4init(uint8_t *key, int keylen, rc4state *state)
+static void rc4init(uint8_t * key, int keylen, rc4state * state)
 {
 	int i;
 	unsigned char j;
@@ -300,9 +304,9 @@ static void rc4init(uint8_t *key, int keylen, rc4state *state)
 	for (i = 0; i < n; i++)
 	{
 		/*  this should be:
-		    j = (j + state->s[i] + key[i % keylen]) % n;
-		    but as "j" is declared as unsigned char and n equals 256,
-		    we can "optimize" it
+			j = (j + state->s[i] + key[i % keylen]) % n;
+			but as "j" is declared as unsigned char and n equals 256,
+			we can "optimize" it
 		*/
 		j = (j + state->s[i] + key[idx]);
 		if (++idx == keylen) idx = 0;
@@ -315,7 +319,7 @@ static void rc4init(uint8_t *key, int keylen, rc4state *state)
 }
 
 // RC4 key stream generation
-static uint8_t rc4update(rc4state *state)
+static uint8_t rc4update(rc4state * state)
 {
 	uint8_t tmp;
 	uint8_t k;
@@ -329,7 +333,7 @@ static uint8_t rc4update(rc4state *state)
 	return state->s[k];
 }
 
-static int rc4test(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream)
+static int rc4test(uint8_t * key, int keylen, uint8_t * iv, uint8_t * keystream)
 {
 	uint8_t keybuf[PTW_KSBYTES];
 	rc4state rc4state;
@@ -348,10 +352,10 @@ static int rc4test(uint8_t *key, int keylen, uint8_t *iv, uint8_t *keystream)
 }
 
 // For sorting
-static int comparesorthelper(const void *ina, const void *inb)
+static int comparesorthelper(const void * ina, const void * inb)
 {
-	sorthelper *a = (sorthelper *) ina;
-	sorthelper *b = (sorthelper *) inb;
+	sorthelper * a = (sorthelper *) ina;
+	sorthelper * b = (sorthelper *) inb;
 	return a->distance - b->distance;
 }
 
@@ -364,7 +368,7 @@ static int comparesorthelper(const void *ina, const void *inb)
  * kb - how many keybytes should be guessed
  */
 static void guesskeybytes(
-	int ivlen, uint8_t *iv, uint8_t *keystream, uint8_t *result, int kb)
+	int ivlen, uint8_t * iv, uint8_t * keystream, uint8_t * result, int kb)
 {
 	uint32_t state[n];
 	uint8_t j = 0;
@@ -400,7 +404,7 @@ static void guesskeybytes(
 /*
  * Is a guessed key correct?
  */
-static int correct(PTW_attackstate *state, uint8_t *key, int keylen)
+static int correct(PTW_attackstate * state, uint8_t * key, int keylen)
 {
 	int i;
 	int k;
@@ -430,8 +434,8 @@ static int correct(PTW_attackstate *state, uint8_t *key, int keylen)
  */
 static void getdrv(PTW_tableentry orgtable[][n],
 				   int keylen,
-				   double *normal,
-				   double *ausreiser)
+				   double * normal,
+				   double * ausreiser)
 {
 	int i, j;
 	int numvotes = 0;
@@ -488,13 +492,13 @@ static int doRound(PTW_tableentry sortedtable[][n],
 				   int keybyte,
 				   int fixat,
 				   uint8_t fixvalue,
-				   int *searchborders,
-				   uint8_t *key,
+				   int * searchborders,
+				   uint8_t * key,
 				   int keylen,
-				   PTW_attackstate *state,
+				   PTW_attackstate * state,
 				   uint8_t sum,
-				   int *strongbytes,
-				   int *bf,
+				   int * strongbytes,
+				   int * bf,
 				   int validchars[][n])
 {
 	int i;
@@ -613,14 +617,14 @@ static int doRound(PTW_tableentry sortedtable[][n],
 /*
  * Do the actual computation of the key
  */
-static int doComputation(PTW_attackstate *state,
-						 uint8_t *key,
+static int doComputation(PTW_attackstate * state,
+						 uint8_t * key,
 						 int keylen,
 						 PTW_tableentry table[][n],
-						 sorthelper *sh2,
-						 int *strongbytes,
+						 sorthelper * sh2,
+						 int * strongbytes,
 						 int keylimit,
-						 int *bf,
+						 int * bf,
 						 int validchars[][n])
 {
 	int i, j;
@@ -681,7 +685,8 @@ static int doComputation(PTW_attackstate *state,
 		}
 		choices[sh2[i].keybyte]++;
 		fixat = sh2[i].keybyte;
-		// printf("choices[%d] is now %d\n", sh2[i].keybyte, choices[sh2[i].keybyte]);
+		// printf("choices[%d] is now %d\n", sh2[i].keybyte,
+		// choices[sh2[i].keybyte]);
 		fixvalue = sh2[i].value;
 		prod = 1;
 		for (j = 0; j < keylen; j++)
@@ -711,11 +716,11 @@ static int doComputation(PTW_attackstate *state,
 /*
  * Guess which key bytes could be strong and start actual computation of the key
  */
-int PTW_computeKey(PTW_attackstate *state,
-				   uint8_t *keybuf,
+int PTW_computeKey(PTW_attackstate * state,
+				   uint8_t * keybuf,
 				   int keylen,
 				   int testlimit,
-				   int *bf,
+				   int * bf,
 				   int validchars[][n],
 				   int attacks)
 {
@@ -731,7 +736,7 @@ int PTW_computeKey(PTW_attackstate *state,
 	 * aligned at 3 bytes.
 	 */
 	uint8_t fullkeybuf_unaligned[PTW_KSBYTES + 13] __attribute__((aligned(16)));
-	uint8_t *fullkeybuf = &fullkeybuf_unaligned[13];
+	uint8_t * fullkeybuf = &fullkeybuf_unaligned[13];
 #else
 	uint8_t fullkeybuf[PTW_KSBYTES];
 #endif
@@ -904,10 +909,10 @@ int PTW_computeKey(PTW_attackstate *state,
  * iv - IV used in the session
  * keystream - recovered keystream from the session
  */
-int PTW_addsession(PTW_attackstate *state,
-				   uint8_t *iv,
-				   uint8_t *keystream,
-				   int *weight,
+int PTW_addsession(PTW_attackstate * state,
+				   uint8_t * iv,
+				   uint8_t * keystream,
+				   int * weight,
 				   int total)
 {
 	int i, j;
@@ -933,9 +938,9 @@ int PTW_addsession(PTW_attackstate *state,
 			if (state->allsessions_size < state->packets_collected)
 			{
 				state->allsessions_size = state->allsessions_size << 1;
-				state->allsessions =
-					realloc(state->allsessions,
-							state->allsessions_size * sizeof(PTW_session));
+				state->allsessions
+					= realloc(state->allsessions,
+							  state->allsessions_size * sizeof(PTW_session));
 				if (state->allsessions == NULL)
 				{
 					printf("could not allocate memory\n");
@@ -970,10 +975,10 @@ int PTW_addsession(PTW_attackstate *state,
 /*
  * Allocate a new attackstate
  */
-PTW_attackstate *PTW_newattackstate()
+PTW_attackstate * PTW_newattackstate()
 {
 	int i, k;
-	PTW_attackstate *state = NULL;
+	PTW_attackstate * state = NULL;
 	state = malloc(sizeof(PTW_attackstate));
 	if (state == NULL)
 	{
@@ -1001,7 +1006,7 @@ PTW_attackstate *PTW_newattackstate()
 /*
  * Free an allocated attackstate
  */
-void PTW_freeattackstate(PTW_attackstate *state)
+void PTW_freeattackstate(PTW_attackstate * state)
 {
 	free(state->allsessions);
 	free(state);

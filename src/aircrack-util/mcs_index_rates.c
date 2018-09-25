@@ -1,8 +1,8 @@
-/* 
+/*
  * Functions and macros to obtain 802.11n or ac rates based on MCS index
- * 
+ *
  * Copyright (C) 2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
@@ -43,7 +43,7 @@
 // MCS index
 const float MCS_index_rates[4][2][8][10] = {
 	// 20MHz
-	{// Long GI
+	{ // Long GI
 	 {// Spatial streams
 	  {6.5, 13.0, 19.5, 26, 39, 52, 58.5, 65, 78, 0},
 	  {13, 26, 39, 52, 78, 104, 117, 130, 156, 0},

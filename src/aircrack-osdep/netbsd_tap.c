@@ -41,15 +41,15 @@ struct tip_nbsd
 	int tn_destroy;
 };
 
-static int ti_do_open_nbsd(struct tif *ti, char *name)
+static int ti_do_open_nbsd(struct tif * ti, char * name)
 {
 	int fd;
-	char *iface = "/dev/tap";
+	char * iface = "/dev/tap";
 	struct stat st;
-	struct tip_nbsd *priv = ti_priv(ti);
+	struct tip_nbsd * priv = ti_priv(ti);
 	int s;
 	unsigned int flags;
-	struct ifreq *ifr;
+	struct ifreq * ifr;
 
 	/* open tap */
 	if (name)
@@ -94,22 +94,22 @@ err2:
 	goto err;
 }
 
-static void ti_do_free(struct tif *ti)
+static void ti_do_free(struct tif * ti)
 {
-	struct tip_nbsd *priv = ti_priv(ti);
+	struct tip_nbsd * priv = ti_priv(ti);
 
 	free(priv);
 	free(ti);
 }
 
-static void ti_destroy(struct tip_nbsd *priv)
+static void ti_destroy(struct tip_nbsd * priv)
 {
 	ioctl(priv->tn_ioctls, SIOCIFDESTROY, &priv->tn_ifr);
 }
 
-static void ti_close_nbsd(struct tif *ti)
+static void ti_close_nbsd(struct tif * ti)
 {
-	struct tip_nbsd *priv = ti_priv(ti);
+	struct tip_nbsd * priv = ti_priv(ti);
 
 	if (priv->tn_destroy) ti_destroy(priv);
 
@@ -118,26 +118,26 @@ static void ti_close_nbsd(struct tif *ti)
 	ti_do_free(ti);
 }
 
-static char *ti_name_nbsd(struct tif *ti)
+static char * ti_name_nbsd(struct tif * ti)
 {
-	struct tip_nbsd *priv = ti_priv(ti);
+	struct tip_nbsd * priv = ti_priv(ti);
 
 	return priv->tn_name;
 }
 
-static int ti_set_mtu_nbsd(struct tif *ti, int mtu)
+static int ti_set_mtu_nbsd(struct tif * ti, int mtu)
 {
-	struct tip_nbsd *priv = ti_priv(ti);
+	struct tip_nbsd * priv = ti_priv(ti);
 
 	priv->tn_ifr.ifr_mtu = mtu;
 
 	return ioctl(priv->tn_ioctls, SIOCSIFMTU, &priv->tn_ifr);
 }
 
-static int ti_set_mac_nbsd(struct tif *ti, unsigned char *mac)
+static int ti_set_mac_nbsd(struct tif * ti, unsigned char * mac)
 {
-	struct tip_nbsd *priv = ti_priv(ti);
-	struct ifreq *ifr = &priv->tn_ifr;
+	struct tip_nbsd * priv = ti_priv(ti);
+	struct ifreq * ifr = &priv->tn_ifr;
 
 	ifr->ifr_addr.sa_family = AF_LINK;
 	ifr->ifr_addr.sa_len = 6;
@@ -146,11 +146,11 @@ static int ti_set_mac_nbsd(struct tif *ti, unsigned char *mac)
 	return ioctl(priv->tn_ioctls, SIOCSIFADDR, ifr);
 }
 
-static int ti_set_ip_nbsd(struct tif *ti, struct in_addr *ip)
+static int ti_set_ip_nbsd(struct tif * ti, struct in_addr * ip)
 {
-	struct tip_nbsd *priv = ti_priv(ti);
+	struct tip_nbsd * priv = ti_priv(ti);
 	struct ifaliasreq ifra;
-	struct sockaddr_in *s_in;
+	struct sockaddr_in * s_in;
 
 	/* assume same size */
 	memset(&ifra, 0, sizeof(ifra));
@@ -164,27 +164,27 @@ static int ti_set_ip_nbsd(struct tif *ti, struct in_addr *ip)
 	return ioctl(priv->tn_ioctls, SIOCAIFADDR, &ifra);
 }
 
-static int ti_fd_nbsd(struct tif *ti)
+static int ti_fd_nbsd(struct tif * ti)
 {
-	struct tip_nbsd *priv = ti_priv(ti);
+	struct tip_nbsd * priv = ti_priv(ti);
 
 	return priv->tn_fd;
 }
 
-static int ti_read_nbsd(struct tif *ti, void *buf, int len)
+static int ti_read_nbsd(struct tif * ti, void * buf, int len)
 {
 	return read(ti_fd(ti), buf, len);
 }
 
-static int ti_write_nbsd(struct tif *ti, void *buf, int len)
+static int ti_write_nbsd(struct tif * ti, void * buf, int len)
 {
 	return write(ti_fd(ti), buf, len);
 }
 
-static struct tif *ti_open_nbsd(char *iface)
+static struct tif * ti_open_nbsd(char * iface)
 {
-	struct tif *ti;
-	struct tip_nbsd *priv;
+	struct tif * ti;
+	struct tip_nbsd * priv;
 	int fd;
 
 	/* setup ti struct */
@@ -214,4 +214,4 @@ static struct tif *ti_open_nbsd(char *iface)
 	return ti;
 }
 
-EXPORT struct tif *ti_open(char *iface) { return ti_open_nbsd(iface); }
+EXPORT struct tif * ti_open(char * iface) { return ti_open_nbsd(iface); }

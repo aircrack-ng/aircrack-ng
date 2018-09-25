@@ -76,9 +76,9 @@
 #define UNUSED(x) x
 #endif
 
-int PTW_DEFAULTBF[PTW_KEYHSBYTES] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-									 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-									 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int PTW_DEFAULTBF[PTW_KEYHSBYTES]
+	= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 enum
 {
@@ -128,37 +128,37 @@ struct cracker;
 struct network;
 
 typedef void (*timer_cb)(void *);
-typedef void (*cracker_cb)(struct cracker *, struct network *n);
-typedef int (*check_cb)(struct network *n);
+typedef void (*cracker_cb)(struct cracker *, struct network * n);
+typedef int (*check_cb)(struct network * n);
 
 struct channel
 {
 	int c_num;
-	struct channel *c_next;
+	struct channel * c_next;
 };
 
 struct conf
 {
-	char *cf_ifname;
+	char * cf_ifname;
 	struct channel cf_channels;
 	int cf_hopfreq;
 	int cf_deauthfreq;
-	unsigned char *cf_bssid;
+	unsigned char * cf_bssid;
 	int cf_attackwait;
 	int cf_floodwait;
-	char *cf_wordlist;
+	char * cf_wordlist;
 	int cf_verb;
 	int cf_to;
 	int cf_floodfreq;
 	int cf_crack_int;
-	char *cf_wpa;
-	char *cf_wep;
-	char *cf_log;
+	char * cf_wpa;
+	char * cf_wep;
+	char * cf_log;
 	int cf_do_wep;
 	int cf_do_wpa;
-	char *cf_wpa_server;
+	char * cf_wpa_server;
 #ifdef HAVE_PCRE
-	pcre *cf_essid_regex;
+	pcre * cf_essid_regex;
 #endif
 } _conf;
 
@@ -166,8 +166,8 @@ struct timer
 {
 	struct timeval t_tv;
 	timer_cb t_cb;
-	void *t_arg;
-	struct timer *t_next;
+	void * t_arg;
+	struct timer * t_next;
 };
 
 struct packet
@@ -183,7 +183,7 @@ struct client
 	int c_wpa_got;
 	int c_dbm;
 	struct packet c_handshake[4];
-	struct client *c_next;
+	struct client * c_next;
 };
 
 struct speed
@@ -205,7 +205,7 @@ struct network
 	unsigned char n_bssid[6];
 	int n_crypto;
 	int n_chan;
-	struct network *n_next;
+	struct network * n_next;
 	struct timeval n_start;
 	int n_have_beacon;
 	struct client n_clients;
@@ -226,38 +226,38 @@ struct network
 	struct speed n_flood_out;
 	int n_data_count;
 	int n_crack_next;
-	PTW_attackstate *n_ptw;
+	PTW_attackstate * n_ptw;
 	struct cracker n_cracker_wep[2];
 	unsigned char n_key[64];
 	int n_key_len;
 	struct packet n_beacon;
 	int n_beacon_wrote;
-	struct client *n_client_handshake;
+	struct client * n_client_handshake;
 	int n_mac_filter;
-	struct client *n_client_mac;
+	struct client * n_client_mac;
 	int n_got_mac;
 };
 
 struct state
 {
-	struct wif *s_wi;
+	struct wif * s_wi;
 	int s_state;
 	struct timeval s_now;
 	struct timeval s_start;
 	struct network s_networks;
-	struct network *s_curnet;
-	struct channel *s_hopchan;
+	struct network * s_curnet;
+	struct channel * s_hopchan;
 	unsigned int s_hopcycles;
 	int s_chan;
 	unsigned char s_mac[6];
 	struct timer s_timers;
-	struct rx_info *s_ri;
+	struct rx_info * s_ri;
 	int s_wpafd;
 	int s_wepfd;
 } _state;
 
-static void attack_continue(struct network *n);
-static void attack(struct network *n);
+static void attack_continue(struct network * n);
+static void attack(struct network * n);
 
 void show_wep_stats(int UNUSED(B),
 					int UNUSED(force),
@@ -268,10 +268,10 @@ void show_wep_stats(int UNUSED(B),
 {
 }
 
-static void time_printf(int verb, char *fmt, ...)
+static void time_printf(int verb, char * fmt, ...)
 {
 	time_t now = _state.s_now.tv_sec;
-	struct tm *t;
+	struct tm * t;
 	va_list ap;
 
 	if (verb > _conf.cf_verb) return;
@@ -287,7 +287,7 @@ static void time_printf(int verb, char *fmt, ...)
 	va_end(ap);
 }
 
-static void cracker_kill(struct cracker *c)
+static void cracker_kill(struct cracker * c)
 {
 	if (c->cr_pid)
 	{
@@ -299,7 +299,7 @@ static void cracker_kill(struct cracker *c)
 	memset(c, 0, sizeof(*c));
 }
 
-static char *mac2str(unsigned char *mac)
+static char * mac2str(unsigned char * mac)
 {
 	static char out[18];
 
@@ -316,7 +316,7 @@ static char *mac2str(unsigned char *mac)
 	return out;
 }
 
-static void save_network(FILE *f, struct network *n)
+static void save_network(FILE * f, struct network * n)
 {
 	int len;
 
@@ -370,8 +370,8 @@ static void save_network(FILE *f, struct network *n)
 
 static void save_log(void)
 {
-	FILE *f;
-	struct network *n = _state.s_networks.n_next;
+	FILE * f;
+	struct network * n = _state.s_networks.n_next;
 
 	f = fopen(_conf.cf_log, "w");
 	if (!f) err(1, "fopen()");
@@ -391,16 +391,16 @@ static void save_log(void)
 
 static void do_wait(int UNUSED(x)) { wait(NULL); }
 
-static void *xmalloc(size_t sz)
+static void * xmalloc(size_t sz)
 {
-	void *p = malloc(sz);
+	void * p = malloc(sz);
 
 	if (!p) err(1, "malloc()");
 
 	return p;
 }
 
-static int time_diff(struct timeval *past, struct timeval *now)
+static int time_diff(struct timeval * past, struct timeval * now)
 {
 	int p = 0, n = 0;
 
@@ -415,9 +415,9 @@ static int time_diff(struct timeval *past, struct timeval *now)
 	return n - p;
 }
 
-static void timer_next(struct timeval *tv)
+static void timer_next(struct timeval * tv)
 {
-	struct timer *t = _state.s_timers.t_next;
+	struct timer * t = _state.s_timers.t_next;
 	int diff;
 
 	if (!t)
@@ -439,10 +439,10 @@ static void timer_next(struct timeval *tv)
 	tv->tv_usec = diff - (tv->tv_sec * 1000 * 1000);
 }
 
-static void timer_in(int us, timer_cb cb, void *arg)
+static void timer_in(int us, timer_cb cb, void * arg)
 {
-	struct timer *t = xmalloc(sizeof(*t));
-	struct timer *p = &_state.s_timers;
+	struct timer * t = xmalloc(sizeof(*t));
+	struct timer * p = &_state.s_timers;
 	int s;
 
 	memset(t, 0, sizeof(*t));
@@ -476,7 +476,7 @@ static void timer_check(void)
 
 	while (_state.s_timers.t_next)
 	{
-		struct timer *t = _state.s_timers.t_next;
+		struct timer * t = _state.s_timers.t_next;
 
 		if (time_diff(&t->t_tv, &_state.s_now) < 0) break;
 
@@ -488,10 +488,10 @@ static void timer_check(void)
 	}
 }
 
-static unsigned char *get_bssid(struct ieee80211_frame *wh)
+static unsigned char * get_bssid(struct ieee80211_frame * wh)
 {
 	int type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
-	uint16_t *p = (uint16_t *) (wh + 1);
+	uint16_t * p = (uint16_t *) (wh + 1);
 
 	if (type == IEEE80211_FC0_TYPE_CTL) return NULL;
 
@@ -537,10 +537,10 @@ static unsigned char *get_bssid(struct ieee80211_frame *wh)
 	}
 }
 
-static struct network *network_get(struct ieee80211_frame *wh)
+static struct network * network_get(struct ieee80211_frame * wh)
 {
-	struct network *n = _state.s_networks.n_next;
-	unsigned char *bssid = get_bssid(wh);
+	struct network * n = _state.s_networks.n_next;
+	unsigned char * bssid = get_bssid(wh);
 
 	if (!bssid) return NULL;
 
@@ -554,9 +554,9 @@ static struct network *network_get(struct ieee80211_frame *wh)
 	return NULL;
 }
 
-static struct network *network_new(void)
+static struct network * network_new(void)
 {
-	struct network *n = xmalloc(sizeof(*n));
+	struct network * n = xmalloc(sizeof(*n));
 
 	memset(n, 0, sizeof(*n));
 	n->n_crack_next = _conf.cf_crack_int;
@@ -564,19 +564,19 @@ static struct network *network_new(void)
 	return n;
 }
 
-static void do_network_add(struct network *n)
+static void do_network_add(struct network * n)
 {
-	struct network *p = &_state.s_networks;
+	struct network * p = &_state.s_networks;
 
 	while (p->n_next) p = p->n_next;
 
 	p->n_next = n;
 }
 
-static struct network *network_add(struct ieee80211_frame *wh)
+static struct network * network_add(struct ieee80211_frame * wh)
 {
-	struct network *n;
-	unsigned char *bssid = get_bssid(wh);
+	struct network * n;
+	unsigned char * bssid = get_bssid(wh);
 
 	if (!bssid) return NULL;
 
@@ -589,9 +589,9 @@ static struct network *network_add(struct ieee80211_frame *wh)
 	return n;
 }
 
-static inline void print_hex(void *p, int len)
+static inline void print_hex(void * p, int len)
 {
-	unsigned char *x = p;
+	unsigned char * x = p;
 
 	while (len--)
 	{
@@ -600,9 +600,9 @@ static inline void print_hex(void *p, int len)
 	}
 }
 
-static void network_print(struct network *n)
+static void network_print(struct network * n)
 {
-	const char *crypto = "dunno";
+	const char * crypto = "dunno";
 
 	switch (n->n_crypto)
 	{
@@ -652,9 +652,9 @@ static unsigned short fnseq(unsigned short fn, unsigned short seq)
 	return htole16(r);
 }
 
-static void fill_basic(struct network *n, struct ieee80211_frame *wh)
+static void fill_basic(struct network * n, struct ieee80211_frame * wh)
 {
-	uint16_t *p;
+	uint16_t * p;
 
 	memset(wh, 0, sizeof(*wh));
 
@@ -665,7 +665,7 @@ static void fill_basic(struct network *n, struct ieee80211_frame *wh)
 	*p = fnseq(0, n->n_seq++);
 }
 
-static void wifi_send(void *p, int len)
+static void wifi_send(void * p, int len)
 {
 	int rc;
 	struct tx_info tx;
@@ -676,11 +676,11 @@ static void wifi_send(void *p, int len)
 	if (rc == -1) err(1, "wi_write()");
 }
 
-static void deauth_send(struct network *n, unsigned char *mac)
+static void deauth_send(struct network * n, unsigned char * mac)
 {
 	unsigned char buf[2048];
-	struct ieee80211_frame *wh = (struct ieee80211_frame *) buf;
-	uint16_t *rc = (uint16_t *) (wh + 1);
+	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
+	uint16_t * rc = (uint16_t *) (wh + 1);
 
 	fill_basic(n, wh);
 	memcpy(wh->i_addr1, mac, sizeof(wh->i_addr1));
@@ -696,10 +696,10 @@ static void deauth_send(struct network *n, unsigned char *mac)
 	wifi_send(wh, (unsigned long) rc - (unsigned long) wh);
 }
 
-static void deauth(void *arg)
+static void deauth(void * arg)
 {
-	struct network *n = arg;
-	struct client *c = n->n_clients.c_next;
+	struct network * n = arg;
+	struct client * c = n->n_clients.c_next;
 
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n
 		|| n->n_astate != ASTATE_DEAUTH)
@@ -716,7 +716,7 @@ static void deauth(void *arg)
 	timer_in(_conf.cf_deauthfreq * 1000, deauth, n);
 }
 
-static int open_pcap(char *fname)
+static int open_pcap(char * fname)
 {
 	int fd;
 	struct pcap_file_header pfh;
@@ -745,7 +745,7 @@ static int open_pcap(char *fname)
 	return fd;
 }
 
-static void write_pcap(int fd, void *p, int len)
+static void write_pcap(int fd, void * p, int len)
 {
 	struct pcap_pkthdr pkh;
 
@@ -760,7 +760,7 @@ static void write_pcap(int fd, void *p, int len)
 	if (write(fd, p, len) != len) err(1, "write()");
 }
 
-static void packet_write_pcap(int fd, struct packet *p)
+static void packet_write_pcap(int fd, struct packet * p)
 {
 	write_pcap(fd, p->p_data, p->p_len);
 }
@@ -785,7 +785,7 @@ static void wpa_upload(void)
 
 	if (inet_aton(_conf.cf_wpa_server, &s_in.sin_addr) == 0)
 	{
-		struct hostent *he;
+		struct hostent * he;
 
 		he = gethostbyname(_conf.cf_wpa_server);
 		if (!he) goto __no_resolve;
@@ -876,7 +876,7 @@ static void wpa_upload(void)
 
 	while ((tot = read(s, buf, sizeof(buf) - 1)) > 0)
 	{
-		char *p;
+		char * p;
 
 		buf[tot] = 0;
 
@@ -904,7 +904,7 @@ __fail:
 	time_printf(V_NORMAL, "WPA handshake upload failed\n");
 }
 
-static void wpa_crack(struct network *n)
+static void wpa_crack(struct network * n)
 {
 	int i;
 
@@ -912,7 +912,7 @@ static void wpa_crack(struct network *n)
 
 	for (i = 0; i < 4; i++)
 	{
-		struct packet *p = &n->n_client_handshake->c_handshake[i];
+		struct packet * p = &n->n_client_handshake->c_handshake[i];
 
 		if (p->p_len) packet_write_pcap(_state.s_wpafd, p);
 	}
@@ -932,7 +932,7 @@ static void wpa_crack(struct network *n)
 	attack_continue(n);
 }
 
-static void attack_wpa(struct network *n)
+static void attack_wpa(struct network * n)
 {
 	switch (n->n_astate)
 	{
@@ -949,7 +949,7 @@ static void attack_wpa(struct network *n)
 	}
 }
 
-static void hop(void *arg)
+static void hop(void * arg)
 {
 	int old = _state.s_chan;
 
@@ -957,7 +957,7 @@ static void hop(void *arg)
 
 	while (1)
 	{
-		struct channel *c = _state.s_hopchan->c_next;
+		struct channel * c = _state.s_hopchan->c_next;
 
 		if (c->c_num == old) break;
 
@@ -988,11 +988,11 @@ static void scan_start(void)
 	hop(NULL); /* XXX check other hopper */
 }
 
-static void send_auth(struct network *n)
+static void send_auth(struct network * n)
 {
 	unsigned char buf[2048];
-	struct ieee80211_frame *wh = (struct ieee80211_frame *) buf;
-	uint16_t *rc = (uint16_t *) (wh + 1);
+	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
+	uint16_t * rc = (uint16_t *) (wh + 1);
 
 	fill_basic(n, wh);
 	memcpy(wh->i_addr1, n->n_bssid, sizeof(wh->i_addr1));
@@ -1008,7 +1008,7 @@ static void send_auth(struct network *n)
 	wifi_send(wh, (unsigned long) rc - (unsigned long) wh);
 }
 
-static void ping_send(struct network *n)
+static void ping_send(struct network * n)
 {
 	send_auth(n);
 
@@ -1017,9 +1017,9 @@ static void ping_send(struct network *n)
 	n->n_ping_sent++;
 }
 
-static void ping_reply(struct network *n, struct ieee80211_frame *wh)
+static void ping_reply(struct network * n, struct ieee80211_frame * wh)
 {
-	uint16_t *p = (uint16_t *) (wh + 1);
+	uint16_t * p = (uint16_t *) (wh + 1);
 
 	if (le16toh(p[1]) == 2)
 	{
@@ -1028,7 +1028,7 @@ static void ping_reply(struct network *n, struct ieee80211_frame *wh)
 	}
 }
 
-static void set_mac(void *mac)
+static void set_mac(void * mac)
 {
 	if (memcmp(mac, _state.s_mac, 6) == 0) return;
 #if 0
@@ -1043,7 +1043,7 @@ static void set_mac(void *mac)
 	memcpy(_state.s_mac, mac, 6);
 }
 
-static int have_mac(struct network *n)
+static int have_mac(struct network * n)
 {
 	if (!n->n_mac_filter) return 1;
 
@@ -1057,9 +1057,9 @@ static int have_mac(struct network *n)
 	return 1;
 }
 
-static void attack_ping(void *a)
+static void attack_ping(void * a)
 {
-	struct network *n = a;
+	struct network * n = a;
 
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n) return;
 
@@ -1104,7 +1104,7 @@ static void attack_ping(void *a)
 }
 
 #ifdef HAVE_PCRE
-static int is_filtered_essid(char *essid)
+static int is_filtered_essid(char * essid)
 {
 	int ret = 0;
 
@@ -1126,7 +1126,7 @@ static int is_filtered_essid(char *essid)
 #endif
 
 // this should always return true -sorbo
-static int should_attack(struct network *n)
+static int should_attack(struct network * n)
 {
 	if (_conf.cf_bssid && memcmp(_conf.cf_bssid, n->n_bssid, 6) != 0) return 0;
 
@@ -1154,9 +1154,9 @@ static int should_attack(struct network *n)
 	return 1;
 }
 
-static int check_ownable(struct network *n) { return should_attack(n); }
+static int check_ownable(struct network * n) { return should_attack(n); }
 
-static int check_owned(struct network *n)
+static int check_owned(struct network * n)
 {
 	/* resumed network */
 	if (n->n_beacon.p_len == 0) return 0;
@@ -1164,14 +1164,14 @@ static int check_owned(struct network *n)
 	return n->n_astate == ASTATE_DONE;
 }
 
-static int check_unreach(struct network *n)
+static int check_unreach(struct network * n)
 {
 	return n->n_astate == ASTATE_UNREACH;
 }
 
-static void print_list(char *label, check_cb cb)
+static void print_list(char * label, check_cb cb)
 {
-	struct network *n = _state.s_networks.n_next;
+	struct network * n = _state.s_networks.n_next;
 	int first = 1;
 
 	printf("%s [", label);
@@ -1207,7 +1207,7 @@ static void print_work(void)
 	save_log();
 }
 
-static void pwned(struct network *n)
+static void pwned(struct network * n)
 {
 	int s = (_state.s_now.tv_sec - n->n_start.tv_sec);
 	int m = s / 60;
@@ -1222,7 +1222,7 @@ static void pwned(struct network *n)
 	print_work();
 }
 
-static struct network *attack_get(void)
+static struct network * attack_get(void)
 {
 	struct network *n = _state.s_networks.n_next, *start;
 
@@ -1250,7 +1250,7 @@ static struct network *attack_get(void)
 
 static void attack_next(void)
 {
-	struct network *n;
+	struct network * n;
 
 	if ((n = attack_get()))
 	{
@@ -1264,7 +1264,7 @@ static void attack_next(void)
 	if (_state.s_state == STATE_ATTACK) scan_start();
 }
 
-static int watchdog_next(struct network *n)
+static int watchdog_next(struct network * n)
 {
 	if (n->n_crypto == CRYPTO_WEP && n->n_astate == ASTATE_WEP_FLOOD
 		&& n->n_replay_got)
@@ -1280,9 +1280,9 @@ static int watchdog_next(struct network *n)
 	return 0;
 }
 
-static void attack_watchdog(void *arg)
+static void attack_watchdog(void * arg)
 {
-	struct network *n = arg;
+	struct network * n = arg;
 	int next;
 
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n) return;
@@ -1298,9 +1298,9 @@ static void attack_watchdog(void *arg)
 		timer_in(next, attack_watchdog, n);
 }
 
-static void network_auth(void *a)
+static void network_auth(void * a)
 {
-	struct network *n = a;
+	struct network * n = a;
 
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n
 		|| n->n_wstate != WSTATE_NONE)
@@ -1315,12 +1315,12 @@ static void network_auth(void *a)
 	timer_in(_conf.cf_to * 1000, network_auth, n);
 }
 
-static void do_assoc(struct network *n, int stype)
+static void do_assoc(struct network * n, int stype)
 {
 	unsigned char buf[2048];
-	struct ieee80211_frame *wh = (struct ieee80211_frame *) buf;
-	uint16_t *rc = (uint16_t *) (wh + 1);
-	unsigned char *p;
+	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
+	uint16_t * rc = (uint16_t *) (wh + 1);
+	unsigned char * p;
 
 	fill_basic(n, wh);
 	memcpy(wh->i_addr1, n->n_bssid, sizeof(wh->i_addr1));
@@ -1369,9 +1369,9 @@ static void do_assoc(struct network *n, int stype)
 	wifi_send(wh, (unsigned long) p - (unsigned long) wh);
 }
 
-static void network_assoc(void *a)
+static void network_assoc(void * a)
 {
-	struct network *n = a;
+	struct network * n = a;
 
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n
 		|| n->n_wstate != WSTATE_AUTH)
@@ -1384,7 +1384,7 @@ static void network_assoc(void *a)
 	timer_in(_conf.cf_to * 1000, network_assoc, n);
 }
 
-static int need_connect(struct network *n)
+static int need_connect(struct network * n)
 {
 	if (n->n_crypto == CRYPTO_WPA) return 0;
 
@@ -1400,7 +1400,7 @@ static int need_connect(struct network *n)
 	}
 }
 
-static int network_connect(struct network *n)
+static int network_connect(struct network * n)
 {
 	switch (n->n_wstate)
 	{
@@ -1419,7 +1419,7 @@ static int network_connect(struct network *n)
 	return 0;
 }
 
-static void prga_get(struct network *n)
+static void prga_get(struct network * n)
 {
 	if (n->n_replay_len)
 	{
@@ -1429,7 +1429,7 @@ static void prga_get(struct network *n)
 	}
 }
 
-static void speed_add(struct speed *s)
+static void speed_add(struct speed * s)
 {
 	if (s->s_start.tv_sec == 0)
 		memcpy(&s->s_start, &_state.s_now, sizeof(s->s_start));
@@ -1437,7 +1437,7 @@ static void speed_add(struct speed *s)
 	s->s_num++;
 }
 
-static void speed_calculate(struct speed *s)
+static void speed_calculate(struct speed * s)
 {
 	int diff = time_diff(&s->s_start, &_state.s_now);
 
@@ -1449,9 +1449,9 @@ static void speed_calculate(struct speed *s)
 	s->s_num = 0;
 }
 
-static void do_flood(struct network *n)
+static void do_flood(struct network * n)
 {
-	struct ieee80211_frame *wh = (struct ieee80211_frame *) n->n_replay;
+	struct ieee80211_frame * wh = (struct ieee80211_frame *) n->n_replay;
 
 	if (!network_connect(n)) return;
 
@@ -1461,9 +1461,9 @@ static void do_flood(struct network *n)
 	speed_add(&n->n_flood_out);
 }
 
-static void wep_flood(void *a)
+static void wep_flood(void * a)
 {
-	struct network *n = a;
+	struct network * n = a;
 
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n
 		|| n->n_astate != ASTATE_WEP_FLOOD)
@@ -1474,9 +1474,9 @@ static void wep_flood(void *a)
 	timer_in(_conf.cf_floodfreq, wep_flood, n);
 }
 
-static void replay_check(void *a)
+static void replay_check(void * a)
 {
-	struct network *n = a;
+	struct network * n = a;
 
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n
 		|| n->n_astate != ASTATE_WEP_FLOOD)
@@ -1488,7 +1488,7 @@ static void replay_check(void *a)
 	n->n_astate = ASTATE_WEP_PRGA_GET;
 }
 
-static void start_flood(struct network *n)
+static void start_flood(struct network * n)
 {
 	n->n_replay_got = 0; /* refresh replay packet if it sucks */
 
@@ -1496,7 +1496,7 @@ static void start_flood(struct network *n)
 	wep_flood(n);
 }
 
-static void attack_wep(struct network *n)
+static void attack_wep(struct network * n)
 {
 	if (!n->n_ssid[0])
 	{
@@ -1522,7 +1522,7 @@ static void attack_wep(struct network *n)
 	}
 }
 
-static void attack_continue(struct network *n)
+static void attack_continue(struct network * n)
 {
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n) return;
 
@@ -1559,7 +1559,7 @@ static void attack_continue(struct network *n)
 	}
 }
 
-static void attack(struct network *n)
+static void attack(struct network * n)
 {
 	_state.s_curnet = n;
 	_state.s_state = STATE_ATTACK;
@@ -1579,7 +1579,7 @@ static void attack(struct network *n)
 	attack_continue(n);
 }
 
-static void found_new_client(struct network *n, struct client *c)
+static void found_new_client(struct network * n, struct client * c)
 {
 	time_printf(V_VERBOSE,
 				"Found client for network [%s] %s\n",
@@ -1589,9 +1589,9 @@ static void found_new_client(struct network *n, struct client *c)
 	if (n->n_mac_filter && !n->n_client_mac) attack_continue(n);
 }
 
-static void found_new_network(struct network *n)
+static void found_new_network(struct network * n)
 {
-	struct client *c = n->n_clients.c_next;
+	struct client * c = n->n_clients.c_next;
 
 	network_print(n);
 
@@ -1616,7 +1616,7 @@ static void found_new_network(struct network *n)
 	}
 }
 
-static void packet_copy(struct packet *p, void *d, int len)
+static void packet_copy(struct packet * p, void * d, int len)
 {
 	assert(len <= (int) sizeof(p->p_data));
 
@@ -1624,11 +1624,11 @@ static void packet_copy(struct packet *p, void *d, int len)
 	memcpy(p->p_data, d, len);
 }
 
-static void packet_write_pcap(int fd, struct packet *p);
+static void packet_write_pcap(int fd, struct packet * p);
 
-static void found_ssid(struct network *n)
+static void found_ssid(struct network * n)
 {
-	unsigned char *p;
+	unsigned char * p;
 	int ssidlen;
 	int origlen;
 
@@ -1669,10 +1669,10 @@ static void found_ssid(struct network *n)
 	}
 }
 
-static int parse_rsn(struct network *n, unsigned char *p, int l, int rsn)
+static int parse_rsn(struct network * n, unsigned char * p, int l, int rsn)
 {
 	int c;
-	unsigned char *start = p;
+	unsigned char * start = p;
 	int psk = 0;
 
 	if (l < 2 || l >= INT_MAX) return 0;
@@ -1715,9 +1715,9 @@ static int parse_rsn(struct network *n, unsigned char *p, int l, int rsn)
 	return 0;
 }
 
-static int parse_elem_vendor(struct network *n, unsigned char *e, int l)
+static int parse_elem_vendor(struct network * n, unsigned char * e, int l)
 {
-	struct ieee80211_ie_wpa *wpa = (struct ieee80211_ie_wpa *) e;
+	struct ieee80211_ie_wpa * wpa = (struct ieee80211_ie_wpa *) e;
 
 	if (l < 5) return 0;
 
@@ -1731,9 +1731,9 @@ static int parse_elem_vendor(struct network *n, unsigned char *e, int l)
 }
 
 static void
-wifi_beacon(struct network *n, struct ieee80211_frame *wh, int totlen)
+wifi_beacon(struct network * n, struct ieee80211_frame * wh, int totlen)
 {
-	unsigned char *p = (unsigned char *) (wh + 1);
+	unsigned char * p = (unsigned char *) (wh + 1);
 	int bhlen = 8 + 2 + 2;
 	int new = 0;
 	int len = totlen;
@@ -1821,20 +1821,20 @@ __bad:
 	printf("\nBad beacon\n");
 }
 
-static int for_us(struct ieee80211_frame *wh)
+static int for_us(struct ieee80211_frame * wh)
 {
 	return memcmp(wh->i_addr1, _state.s_mac, sizeof(wh->i_addr1)) == 0;
 }
 
-static void has_mac_filter(struct network *n)
+static void has_mac_filter(struct network * n)
 {
 	time_printf(V_VERBOSE, "MAC address filter on %s\n", n->n_ssid);
 	n->n_mac_filter = 1;
 }
 
-static void wifi_auth(struct network *n, struct ieee80211_frame *wh, int len)
+static void wifi_auth(struct network * n, struct ieee80211_frame * wh, int len)
 {
-	uint16_t *p = (uint16_t *) (wh + 1);
+	uint16_t * p = (uint16_t *) (wh + 1);
 	int rc;
 
 	if (len < (int) (sizeof(*wh) + 2 + 2 + 2)) goto __bad;
@@ -1869,7 +1869,7 @@ __bad:
 	printf("Bad auth\n");
 }
 
-static void found_mac(struct network *n)
+static void found_mac(struct network * n)
 {
 	if (!n->n_mac_filter || n->n_got_mac) return;
 
@@ -1884,9 +1884,9 @@ static void found_mac(struct network *n)
 }
 
 static void
-wifi_assoc_resp(struct network *n, struct ieee80211_frame *wh, int len)
+wifi_assoc_resp(struct network * n, struct ieee80211_frame * wh, int len)
 {
-	uint16_t *p = (uint16_t *) (wh + 1);
+	uint16_t * p = (uint16_t *) (wh + 1);
 
 	if (len < (int) (sizeof(*wh) + 2 + 2 + 2)) goto __bad;
 
@@ -1913,12 +1913,12 @@ __bad:
 	printf("Bad assoc resp\n");
 }
 
-static void grab_hidden_ssid(struct network *n,
-							 struct ieee80211_frame *wh,
+static void grab_hidden_ssid(struct network * n,
+							 struct ieee80211_frame * wh,
 							 int len,
 							 int off)
 {
-	unsigned char *p = ((unsigned char *) (wh + 1)) + off;
+	unsigned char * p = ((unsigned char *) (wh + 1)) + off;
 	int l;
 
 	if (n->n_ssid[0]) return;
@@ -1946,7 +1946,7 @@ __bad:
 	return;
 }
 
-static void wifi_mgt(struct network *n, struct ieee80211_frame *wh, int len)
+static void wifi_mgt(struct network * n, struct ieee80211_frame * wh, int len)
 {
 	switch (wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK)
 	{
@@ -1994,7 +1994,7 @@ static void wifi_mgt(struct network *n, struct ieee80211_frame *wh, int len)
 	}
 }
 
-static void wifi_ctl(struct ieee80211_frame *wh, int len)
+static void wifi_ctl(struct ieee80211_frame * wh, int len)
 {
 	//	printf("ctl\n");
 
@@ -2003,9 +2003,9 @@ static void wifi_ctl(struct ieee80211_frame *wh, int len)
 	}
 }
 
-static unsigned char *get_client_mac(struct ieee80211_frame *wh)
+static unsigned char * get_client_mac(struct ieee80211_frame * wh)
 {
-	unsigned char *bssid = get_bssid(wh);
+	unsigned char * bssid = get_bssid(wh);
 	int type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
 
 	if (type == IEEE80211_FC0_TYPE_CTL) return NULL;
@@ -2018,10 +2018,11 @@ static unsigned char *get_client_mac(struct ieee80211_frame *wh)
 		return wh->i_addr1;
 }
 
-static struct client *client_get(struct network *n, struct ieee80211_frame *wh)
+static struct client * client_get(struct network * n,
+								  struct ieee80211_frame * wh)
 {
-	struct client *c = n->n_clients.c_next;
-	unsigned char *cmac = get_client_mac(wh);
+	struct client * c = n->n_clients.c_next;
+	unsigned char * cmac = get_client_mac(wh);
 
 	if (!cmac) return NULL;
 
@@ -2035,11 +2036,11 @@ static struct client *client_get(struct network *n, struct ieee80211_frame *wh)
 	return NULL;
 }
 
-static struct client *client_update(struct network *n,
-									struct ieee80211_frame *wh)
+static struct client * client_update(struct network * n,
+									 struct ieee80211_frame * wh)
 {
-	unsigned char *cmac = get_client_mac(wh);
-	struct client *c;
+	unsigned char * cmac = get_client_mac(wh);
+	struct client * c;
 	int type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
 
 	if (!cmac) return NULL;
@@ -2097,7 +2098,7 @@ static struct client *client_update(struct network *n,
 	return c;
 }
 
-static int eapol_handshake_step(unsigned char *eapol, int len)
+static int eapol_handshake_step(unsigned char * eapol, int len)
 {
 	int eapol_size = 4 + 1 + 2 + 2 + 8 + 32 + 16 + 8 + 8 + 16 + 2;
 
@@ -2117,11 +2118,11 @@ static int eapol_handshake_step(unsigned char *eapol, int len)
 	return 2;
 }
 
-static void process_eapol(struct network *n,
-						  struct client *c,
-						  unsigned char *p,
+static void process_eapol(struct network * n,
+						  struct client * c,
+						  unsigned char * p,
 						  int len,
-						  struct ieee80211_frame *wh,
+						  struct ieee80211_frame * wh,
 						  int totlen)
 {
 	int num, i;
@@ -2194,7 +2195,7 @@ static void process_eapol(struct network *n,
 	}
 }
 
-static int is_replayable(struct ieee80211_frame *wh, int len)
+static int is_replayable(struct ieee80211_frame * wh, int len)
 {
 	unsigned char clear[2048];
 	int dlen = len - 4 - 4;
@@ -2207,9 +2208,9 @@ static int is_replayable(struct ieee80211_frame *wh, int len)
 	return 1;
 }
 
-static void get_replayable(struct network *n,
-						   struct ieee80211_frame *wh,
-						   unsigned char *body,
+static void get_replayable(struct network * n,
+						   struct ieee80211_frame * wh,
+						   unsigned char * body,
 						   int len)
 {
 	if (!is_replayable(wh, len)) return;
@@ -2242,7 +2243,8 @@ static void get_replayable(struct network *n,
 		attack_continue(n);
 }
 
-static void check_replay(struct network *n, struct ieee80211_frame *wh, int len)
+static void
+check_replay(struct network * n, struct ieee80211_frame * wh, int len)
 {
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n
 		|| n->n_astate != ASTATE_WEP_FLOOD)
@@ -2262,7 +2264,7 @@ static void check_replay(struct network *n, struct ieee80211_frame *wh, int len)
 }
 
 static void
-do_wep_crack(struct cracker *c, struct network *n, int len, int limit)
+do_wep_crack(struct cracker * c, struct network * n, int len, int limit)
 {
 	ssize_t unused;
 
@@ -2272,7 +2274,7 @@ do_wep_crack(struct cracker *c, struct network *n, int len, int limit)
 
 	all = xmalloc(256 * 32 * sizeof(int));
 
-	//initial setup (complete keyspace)
+	// initial setup (complete keyspace)
 	for (i = 0; i < 32; i++)
 	{
 		for (j = 0; j < 256; j++) all[i][j] = 1;
@@ -2284,17 +2286,17 @@ do_wep_crack(struct cracker *c, struct network *n, int len, int limit)
 	unused = write(c->cr_pipe[1], key, len);
 }
 
-static void crack_wep64(struct cracker *c, struct network *n)
+static void crack_wep64(struct cracker * c, struct network * n)
 {
 	do_wep_crack(c, n, 5, KEYLIMIT / 10);
 }
 
-static void crack_wep128(struct cracker *c, struct network *n)
+static void crack_wep128(struct cracker * c, struct network * n)
 {
 	do_wep_crack(c, n, 13, KEYLIMIT);
 }
 
-static void cracker_start(struct cracker *c, cracker_cb cb, struct network *n)
+static void cracker_start(struct cracker * c, cracker_cb cb, struct network * n)
 {
 	if (pipe(c->cr_pipe) == -1) err(1, "pipe()");
 
@@ -2315,7 +2317,7 @@ static void cracker_start(struct cracker *c, cracker_cb cb, struct network *n)
 	}
 }
 
-static void wep_crack_start(struct network *n)
+static void wep_crack_start(struct network * n)
 {
 	cracker_kill(&n->n_cracker_wep[0]);
 	cracker_kill(&n->n_cracker_wep[1]);
@@ -2324,7 +2326,7 @@ static void wep_crack_start(struct network *n)
 	cracker_start(&n->n_cracker_wep[1], crack_wep128, n);
 }
 
-static void wep_crack(struct network *n)
+static void wep_crack(struct network * n)
 {
 	if (_state.s_state != STATE_ATTACK || _state.s_curnet != n
 		|| n->n_astate != ASTATE_WEP_FLOOD)
@@ -2338,9 +2340,9 @@ static void wep_crack(struct network *n)
 	n->n_crack_next += _conf.cf_crack_int;
 }
 
-static int ptw_add(struct network *n,
-				   struct ieee80211_frame *wh,
-				   unsigned char *body,
+static int ptw_add(struct network * n,
+				   struct ieee80211_frame * wh,
+				   unsigned char * body,
 				   int len)
 {
 	unsigned char clear[2048];
@@ -2375,7 +2377,7 @@ static int ptw_add(struct network *n,
 	return rc;
 }
 
-static void ptw_free(struct network *n)
+static void ptw_free(struct network * n)
 {
 	if (n->n_ptw)
 	{
@@ -2384,13 +2386,13 @@ static void ptw_free(struct network *n)
 	}
 }
 
-static void wifi_data(struct network *n, struct ieee80211_frame *wh, int len)
+static void wifi_data(struct network * n, struct ieee80211_frame * wh, int len)
 {
-	unsigned char *p = (unsigned char *) (wh + 1);
-	struct llc *llc;
+	unsigned char * p = (unsigned char *) (wh + 1);
+	struct llc * llc;
 	int wep = wh->i_fc[1] & IEEE80211_FC1_WEP;
 	int eapol = 0;
-	struct client *c;
+	struct client * c;
 	int stype = wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK;
 	int orig = len;
 
@@ -2461,11 +2463,11 @@ static void wifi_data(struct network *n, struct ieee80211_frame *wh, int len)
 	}
 }
 
-static struct network *network_update(struct ieee80211_frame *wh)
+static struct network * network_update(struct ieee80211_frame * wh)
 {
-	struct network *n;
-	struct client *c = NULL;
-	unsigned char *bssid;
+	struct network * n;
+	struct client * c = NULL;
+	unsigned char * bssid;
 	int fromnet;
 
 	bssid = get_bssid(wh);
@@ -2487,12 +2489,12 @@ static struct network *network_update(struct ieee80211_frame *wh)
 
 static void wifi_read(void)
 {
-	struct state *s = &_state;
+	struct state * s = &_state;
 	unsigned char buf[2048];
 	int rd;
 	struct rx_info ri;
-	struct ieee80211_frame *wh = (struct ieee80211_frame *) buf;
-	struct network *n;
+	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
+	struct network * n;
 
 	memset(buf, 0, sizeof(buf));
 
@@ -2527,18 +2529,18 @@ static void wifi_read(void)
 	}
 }
 
-static const char *astate2str(int astate)
+static const char * astate2str(int astate)
 {
 	static char num[16];
-	static char *states[] = {"NONE",
-							 "PING",
-							 "READY",
-							 "DEAUTH",
-							 "WPA_CRACK",
-							 "GET REPLAY",
-							 "FLOOD",
-							 "NONE",
-							 "DONE"};
+	static char * states[] = {"NONE",
+							  "PING",
+							  "READY",
+							  "DEAUTH",
+							  "WPA_CRACK",
+							  "GET REPLAY",
+							  "FLOOD",
+							  "NONE",
+							  "DONE"};
 
 	if (astate >= (int) (sizeof(states) / sizeof(*states)))
 	{
@@ -2549,10 +2551,10 @@ static const char *astate2str(int astate)
 	return states[astate];
 }
 
-static const char *wstate2str(int astate)
+static const char * wstate2str(int astate)
 {
 	static char num[16];
-	static char *states[] = {"NONE", "AUTH", "ASSOC"};
+	static char * states[] = {"NONE", "AUTH", "ASSOC"};
 
 	if (astate >= (int) (sizeof(states) / sizeof(*states)))
 	{
@@ -2566,9 +2568,9 @@ static const char *wstate2str(int astate)
 static void print_status(int advance)
 {
 	static char status[] = "|/-|/-\\";
-	static char *statusp = status;
-	struct network *n = _state.s_curnet;
-	struct client *c;
+	static char * statusp = status;
+	struct network * n = _state.s_curnet;
+	struct client * c;
 	int ccount = 0;
 
 	time_printf(V_NORMAL, "%c", *statusp);
@@ -2642,7 +2644,7 @@ static void make_progress(void)
 	}
 }
 
-static void cracker_check(struct network *n, struct cracker *c)
+static void cracker_check(struct network * n, struct cracker * c)
 {
 	unsigned char buf[1024];
 	int rc;
@@ -2671,9 +2673,9 @@ static void cracker_check(struct network *n, struct cracker *c)
 	attack_continue(n);
 }
 
-static int add_cracker_fds(fd_set *fds, int max)
+static int add_cracker_fds(fd_set * fds, int max)
 {
-	struct network *n;
+	struct network * n;
 	int i;
 
 	if (_state.s_state != STATE_ATTACK) return max;
@@ -2682,7 +2684,7 @@ static int add_cracker_fds(fd_set *fds, int max)
 
 	for (i = 0; i < 2; i++)
 	{
-		struct cracker *c = &n->n_cracker_wep[i];
+		struct cracker * c = &n->n_cracker_wep[i];
 
 		if (c->cr_pipe[0])
 		{
@@ -2695,10 +2697,10 @@ static int add_cracker_fds(fd_set *fds, int max)
 	return max;
 }
 
-static void check_cracker_fds(fd_set *fds)
+static void check_cracker_fds(fd_set * fds)
 {
-	struct network *n;
-	struct cracker *c;
+	struct network * n;
+	struct cracker * c;
 	int i;
 
 	if (_state.s_state != STATE_ATTACK) return;
@@ -2713,9 +2715,9 @@ static void check_cracker_fds(fd_set *fds)
 	}
 }
 
-static char *strip_spaces(char *p)
+static char * strip_spaces(char * p)
 {
-	char *x;
+	char * x;
 
 	while (*p == ' ') p++;
 
@@ -2725,13 +2727,13 @@ static char *strip_spaces(char *p)
 	return p;
 }
 
-static int parse_hex(unsigned char *out, char *in, int l)
+static int parse_hex(unsigned char * out, char * in, int l)
 {
 	int len = 0;
 
 	while (in)
 	{
-		char *p = strchr(in, ':');
+		char * p = strchr(in, ':');
 		int x;
 
 		if (--l < 0) err(1, "parse_hex len");
@@ -2749,11 +2751,11 @@ static int parse_hex(unsigned char *out, char *in, int l)
 	return len;
 }
 
-static void resume_network(char *buf)
+static void resume_network(char * buf)
 {
 	char *p = buf, *p2;
 	int state = 0;
-	struct network *n;
+	struct network * n;
 
 	if (buf[0] == '#') return;
 
@@ -2810,7 +2812,7 @@ static void resume_network(char *buf)
 			case 3:
 				if (*p)
 				{
-					struct client *c = xmalloc(sizeof(*c));
+					struct client * c = xmalloc(sizeof(*c));
 
 					memset(c, 0, sizeof(*c));
 
@@ -2839,7 +2841,7 @@ static void resume_network(char *buf)
 
 static void resume(void)
 {
-	FILE *f;
+	FILE * f;
 	char buf[4096];
 
 	f = fopen(_conf.cf_log, "r");
@@ -2854,8 +2856,8 @@ static void resume(void)
 
 static void cleanup(int UNUSED(x))
 {
-	struct state *s = &_state;
-	struct network *n;
+	struct state * s = &_state;
+	struct network * n;
 
 	printf("\nDying...\n");
 
@@ -2880,7 +2882,7 @@ static void cleanup(int UNUSED(x))
 
 static void pwn(void)
 {
-	struct state *s = &_state;
+	struct state * s = &_state;
 	struct timeval tv;
 	fd_set fds;
 	int wifd, max, rc;
@@ -2944,8 +2946,8 @@ static void pwn(void)
 
 static void channel_add(int num)
 {
-	struct channel *c = xmalloc(sizeof(*c));
-	struct channel *pos = _conf.cf_channels.c_next;
+	struct channel * c = xmalloc(sizeof(*c));
+	struct channel * pos = _conf.cf_channels.c_next;
 
 	while (pos->c_next != _conf.cf_channels.c_next) pos = pos->c_next;
 
@@ -2981,7 +2983,7 @@ static void init_conf(void)
 	_conf.cf_do_wpa = 1;
 }
 
-static const char *timer_cb2str(timer_cb cb)
+static const char * timer_cb2str(timer_cb cb)
 {
 	if (cb == hop)
 		return "hop";
@@ -2993,9 +2995,9 @@ static const char *timer_cb2str(timer_cb cb)
 		return "UNKNOWN";
 }
 
-static void print_state_network(struct network *n)
+static void print_state_network(struct network * n)
 {
-	struct client *c = n->n_clients.c_next;
+	struct client * c = n->n_clients.c_next;
 
 	printf("Network: [%s] chan %d bssid %s astate %d dbm %d"
 		   " have_beacon %d crypto %d",
@@ -3029,11 +3031,11 @@ static void print_state_network(struct network *n)
 
 static void print_state(int UNUSED(x))
 {
-	struct state *s = &_state;
-	struct network *n = s->s_curnet;
-	struct channel *c = s->s_hopchan;
-	struct channel *c2 = c;
-	struct timer *t = s->s_timers.t_next;
+	struct state * s = &_state;
+	struct network * n = s->s_curnet;
+	struct channel * c = s->s_hopchan;
+	struct channel * c2 = c;
+	struct timer * t = s->s_timers.t_next;
 
 	printf("\n=============== Internal state ============\n");
 	printf("State:\t%d\n", s->s_state);
@@ -3095,10 +3097,10 @@ static void print_state(int UNUSED(x))
 	printf("===========================================\n");
 }
 
-static void usage(char *prog)
+static void usage(char * prog)
 {
-	char *version_info =
-		getVersion("Besside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+	char * version_info
+		= getVersion("Besside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		   "  %s - (C) 2010 Andrea Bittau\n"
 		   "  https://www.aircrack-ng.org\n"
@@ -3124,11 +3126,11 @@ static void usage(char *prog)
 	exit(1);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
 	int ch, temp;
 #ifdef HAVE_PCRE
-	const char *pcreerror;
+	const char * pcreerror;
 	int pcreerroffset;
 #endif
 
@@ -3153,8 +3155,8 @@ int main(int argc, char *argv[])
 					printf("Invalid flood rate value, must be > 0");
 					exit(1);
 				}
-				_conf.cf_floodfreq =
-					(int) (1.0 / (double) temp * 1000.0 * 1000.0);
+				_conf.cf_floodfreq
+					= (int) (1.0 / (double) temp * 1000.0 * 1000.0);
 				break;
 
 			case 'c':
@@ -3188,8 +3190,8 @@ int main(int argc, char *argv[])
 					exit(1);
 				}
 
-				_conf.cf_essid_regex =
-					pcre_compile(optarg, 0, &pcreerror, &pcreerroffset, NULL);
+				_conf.cf_essid_regex
+					= pcre_compile(optarg, 0, &pcreerror, &pcreerroffset, NULL);
 
 				if (_conf.cf_essid_regex == NULL)
 				{

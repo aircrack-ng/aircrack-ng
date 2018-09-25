@@ -51,7 +51,7 @@ typedef struct c_avl_iterator_s c_avl_iterator_t;
  * RETURN VALUE
  *   A c_avl_tree_t-pointer upon success or NULL upon failure.
  */
-c_avl_tree_t *c_avl_create(int (*compare)(const void *, const void *));
+c_avl_tree_t * c_avl_create(int (*compare)(const void *, const void *));
 
 /*
  * NAME
@@ -61,7 +61,7 @@ c_avl_tree_t *c_avl_create(int (*compare)(const void *, const void *));
  *   Deallocates an AVL-tree. Stored value- and key-pointer are lost, but of
  *   course not freed.
  */
-void c_avl_destroy(c_avl_tree_t *t);
+void c_avl_destroy(c_avl_tree_t * t);
 
 /*
  * NAME
@@ -83,7 +83,7 @@ void c_avl_destroy(c_avl_tree_t *t);
  *   Zero upon success, non-zero otherwise. It's less than zero if an error
  *   occurred or greater than zero if the key is already stored in the tree.
  */
-int c_avl_insert(c_avl_tree_t *t, void *key, void *value);
+int c_avl_insert(c_avl_tree_t * t, void * key, void * value);
 
 /*
  * NAME
@@ -106,7 +106,10 @@ int c_avl_insert(c_avl_tree_t *t, void *key, void *value);
  * RETURN VALUE
  *   Zero upon success or non-zero if the key isn't found in the tree.
  */
-int c_avl_remove(c_avl_tree_t *t, const void *key, void **rkey, void **rvalue);
+int c_avl_remove(c_avl_tree_t * t,
+				 const void * key,
+				 void ** rkey,
+				 void ** rvalue);
 
 /*
  * NAME
@@ -123,7 +126,7 @@ int c_avl_remove(c_avl_tree_t *t, const void *key, void **rkey, void **rvalue);
  * RETURN VALUE
  *   Zero upon success or non-zero if the key isn't found in the tree.
  */
-int c_avl_get(c_avl_tree_t *t, const void *key, void **value);
+int c_avl_get(c_avl_tree_t * t, const void * key, void ** value);
 
 /*
  * NAME
@@ -144,12 +147,12 @@ int c_avl_get(c_avl_tree_t *t, const void *key, void **value);
  *   Zero upon success or non-zero if the tree is empty or key or value is
  *   NULL.
  */
-int c_avl_pick(c_avl_tree_t *t, void **key, void **value);
+int c_avl_pick(c_avl_tree_t * t, void ** key, void ** value);
 
-c_avl_iterator_t *c_avl_get_iterator(c_avl_tree_t *t);
-int c_avl_iterator_next(c_avl_iterator_t *iter, void **key, void **value);
-int c_avl_iterator_prev(c_avl_iterator_t *iter, void **key, void **value);
-void c_avl_iterator_destroy(c_avl_iterator_t *iter);
+c_avl_iterator_t * c_avl_get_iterator(c_avl_tree_t * t);
+int c_avl_iterator_next(c_avl_iterator_t * iter, void ** key, void ** value);
+int c_avl_iterator_prev(c_avl_iterator_t * iter, void ** key, void ** value);
+void c_avl_iterator_destroy(c_avl_iterator_t * iter);
 
 /*
  * NAME
@@ -164,6 +167,6 @@ void c_avl_iterator_destroy(c_avl_iterator_t *iter);
  * RETURN VALUE
  *   Number of nodes in the tree, 0 if the tree is empty or NULL.
  */
-int c_avl_size(c_avl_tree_t *t);
+int c_avl_size(c_avl_tree_t * t);
 
 #endif /* UTILS_AVLTREE_H */
