@@ -730,7 +730,7 @@ char usage[] =
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
 	"                              pcap, ivs, csv, gps, kismet,\n"
-	"                              netxml, json"
+	"                              netxml, json\n"
 	"      --ignore-negative-one : Removes the message that says\n"
 	"                              fixed channel <interface>: -1\n"
 	"      --write-interval\n"
@@ -4754,7 +4754,7 @@ static int dump_write_json(void)
 		fprintf(G.f_json, "\",");
 
 		fprintf(G.f_json,
-				"\"avg_power\":%3d, \"no_beacons\":%8lu, \"no_data\":%8lu, ",
+				"\"avg_power\":%d, \"no_beacons\":%lu, \"no_data\":%lu, ",
 				ap_cur->avg_power,
 				ap_cur->nb_bcn,
 				ap_cur->nb_data);
@@ -4766,7 +4766,7 @@ static int dump_write_json(void)
 				ap_cur->lanip[2],
 				ap_cur->lanip[3]);
 
-		fprintf(G.f_json, "\"ssid-len\":%3d, ", ap_cur->ssid_length);
+		fprintf(G.f_json, "\"ssid-len\":%d, ", ap_cur->ssid_length);
 
 		if (verifyssid(ap_cur->essid))
 			fprintf(G.f_json, "\"essid\":\"%s\", ", ap_cur->essid);
@@ -4783,23 +4783,24 @@ static int dump_write_json(void)
 		{
 			for (i = 0; i < (int) strlen(ap_cur->key); i++)
 			{
-				fprintf(G.f_json, "%02X", ap_cur->key[i]);
+				fprintf(G.f_json, "%X", ap_cur->key[i]);
 				if (i < (int) (strlen(ap_cur->key) - 1)) fprintf(G.f_json, ":");
 			}
 		}
 		
 		fprintf(G.f_json, "\", \"no_pkt\":%lu,", ap_cur->nb_pkt);
 
-
-		fprintf(G.f_json, " \"powers\":{");
-		powers_count = 0;
-		for (i=0;i<G.num_cards;i++) {
-			if (ap_cur->powers[i] != -1) {
-				if (powers_count++>0) fprintf(G.f_json,",");
-				fprintf(G.f_json, "\"%s\":%d", G.ifnames[i] , ap_cur->powers[i]);
+		if (G.num_cards > 1) {
+			fprintf(G.f_json, " \"powers\":{");
+			powers_count = 0;
+			for (i=0;i<G.num_cards;i++) {
+				if (ap_cur->powers[i] != -1) {
+					if (powers_count++>0) fprintf(G.f_json,",");
+					fprintf(G.f_json, "\"%s\":%d", G.ifnames[i] , ap_cur->powers[i]);
+				}
 			}
+			fprintf(G.f_json, "}");
 		}
-		fprintf(G.f_json, "}");
 
 
 		fprintf(G.f_json, "}");
@@ -4902,16 +4903,18 @@ static int dump_write_json(void)
 				"\"missed\":%d, \"lastseq\":%u, \"best_power\":%d, \"rate_to\":%d, \"rate_from\":%d, \"no_packets\":%lu, ",
 				st_cur->missed, st_cur->lastseq, st_cur->best_power, st_cur->rate_to, st_cur->rate_from, st_cur->nb_pkt);
 
-		fprintf(G.f_json, "\"powers\":{");
-		powers_count=0;
-		for (i=0;i<G.num_cards;i++) {
-			if (st_cur->powers[i] != -1) {
-				if (powers_count++>0)
-					fprintf(G.f_json, ",");
-				fprintf(G.f_json, "\"%s\":%d", G.ifnames[i] , st_cur->powers[i]);
+		if (G.num_cards > 1) {
+			fprintf(G.f_json, "\"powers\":{");
+			powers_count=0;
+			for (i=0;i<G.num_cards;i++) {
+				if (st_cur->powers[i] != -1) {
+					if (powers_count++>0)
+						fprintf(G.f_json, ",");
+					fprintf(G.f_json, "\"%s\":%d", G.ifnames[i] , st_cur->powers[i]);
+				}
 			}
+			fprintf(G.f_json, "}");
 		}
-		fprintf(G.f_json, "}");
 
 		fprintf(G.f_json, "}");
 
@@ -4961,7 +4964,7 @@ static int dump_write_json(void)
 
 		fprintf(G.f_json, "\"last\":%ld, ", na_cur->tlast);
 
-		fprintf(G.f_json, "\"channel\":%3d, \"power\":%3d, \"no_ack\":%d, \"no_ackps\":%d, \"no_cts\":%d, \"no_rts_r\":%d, \"no_rts_t\":%d, \"no_other\":%d, \"no_packets\":%lu, ", 
+		fprintf(G.f_json, "\"channel\":%d, \"power\":%d, \"no_ack\":%d, \"no_ackps\":%d, \"no_cts\":%d, \"no_rts_r\":%d, \"no_rts_t\":%d, \"no_other\":%d, \"no_packets\":%lu, ", 
 			na_cur->channel, 
 			na_cur->power, 
 			na_cur->ack, 
@@ -4972,16 +4975,18 @@ static int dump_write_json(void)
 			na_cur->other, 
 			na_cur->nb_pkt);
 
-		fprintf(G.f_json, "\"powers\":{"); 
-		 powers_count=0;
-		for (i=0;i<G.num_cards;i++) {
-			if (na_cur->powers[i] != -1) {
-				if (powers_count++>0) 
-					fprintf(G.f_json, ",");
-				fprintf(G.f_json, "\"%s\":%d", G.ifnames[i] , na_cur->powers[i]);
-			}
+		if (G.num_cards > 1) {
+				fprintf(G.f_json, "\"powers\":{"); 
+				powers_count=0;
+				for (i=0;i<G.num_cards;i++) {
+					if (na_cur->powers[i] != -1) {
+						if (powers_count++>0) 
+							fprintf(G.f_json, ",");
+						fprintf(G.f_json, "\"%s\":%d", G.ifnames[i] , na_cur->powers[i]);
+					}
+				}
+				fprintf(G.f_json, "}");
 		}
-		fprintf(G.f_json, "}");
 
 		fprintf(G.f_json, "}");
 		na_cur = na_cur->next;
@@ -8025,7 +8030,7 @@ int main(int argc, char *argv[])
 						{
 							G.output_format_csv = 1;
 						}
-						else if (strncasecmp(output_format_string, "json", 3) == 0)
+						else if (strncasecmp(output_format_string, "json", 4) == 0)
 						{
 							G.output_format_json = 1;
 						}
