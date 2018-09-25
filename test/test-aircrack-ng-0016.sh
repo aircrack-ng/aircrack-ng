@@ -1,9 +1,6 @@
 #!/bin/sh
 
 set -ef
-#./src/aircrack-ng -j test ./test/wpa2-psk-linksys.cap
-#./src/aircrack-ng ./test.hccap -e linksys -w -
-
 
 # Turn our pcap into a hccapx
 "${top_builddir}/src/aircrack-ng${EXEEXT}" \
