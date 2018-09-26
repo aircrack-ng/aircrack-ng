@@ -1,3 +1,32 @@
+Version 1.4 (changes from aircrack-ng 1.3) - Released XX XXX 2018:
+* Aircrack-ng: Added PMKID cracking
+* Aircrack-ng: Serious speed up and memory usage decrease when loading large files (multiple Gb) using AVL trees
+* Aircrack-ng: Added hwloc (Hardware Locality) to improve performance
+* Aircrack-ng: Support cracking PCAP with Protected Management Frames (802.11w)
+* Aircrack-ng: Merged check_thread() and read_thread()
+* Aircrack-ng: Allow static linking with chosen SIMD
+* Aircrack-ng: Display AVX512F when present
+* Airodump-ng: Added clients GPS coordinates in NetXML file
+* Airdecap-ng: Improve decrypting/parsing speed
+* Airmon-ng: Updated/fixed using with nexmon
+* Airmon-ng: Better check for lspci requirement on systems that don't have PCI/PCIe devices
+* Airmon-ng: Added support for rtl8812au/8814au/rtl88xxau driver
+* Build: Fixed building with a few different architectures
+* Build: Switch to new CI/CD tool, PyDeployer
+* Build: Improved building on Windows (and building/testing with AppVeyor)
+* Build: Improved and tweaked CI systems (buildbots, Travis, AppVeyor)
+* Build: Support for statically linking libraries/binaries
+* Build: Automatic development packages build for multiple Linux distro and upload to PackageCloud.io
+* Tests: Added new tests for Aircrack-ng
+* Tests: Added new capture files
+* Freeradius-WPE: Fixed opening log file twice
+* General: Fixed loading PCAP on system with a different endianness
+* General: Fixed memory leaks and issues reported by static analysis tools
+* General: Fixed "error while loading shared libraries"
+* General: Various other small improvements in the tools, build system, tests and documentation
+* General: Update FSF address
+* General: Code formatting
+
 Version 1.3 (changes from aircrack-ng 1.2) - Released 10 Jul 2018:
 * Aircrack-ng: Allow using Hashcat HCCAPX files as input files.
 * Aircrack-ng: Fixed floating point exception due to division by 0 when displaying stats.
