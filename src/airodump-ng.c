@@ -4802,6 +4802,33 @@ static int dump_write_json(void)
 			fprintf(G.f_json, "}");
 		}
 
+		if (G.usegpsd)
+		{
+			fprintf(G.f_json,
+					",{\"gps-info\":"
+					"\"min-lat\":\"%.6f\","
+					"\"min-lon\":\"%.6f\","
+					"\"min-alt\":\"%.6f\","
+					"\"min-spd\":\"%.6f\","
+					"\"max-lat\":\"%.6f\","
+					"\"max-lon\":\"%.6f\","
+					"\"max-alt\":\"%.6f\","
+					"\"max-spd\":\"%.6f\","
+					"\"best-lat\":\"%.6f\","
+					"\"best-lon\":\"%.6f\","
+					"\"best-alt\":\"%.6f\",",
+					ap_cur->gps_loc_min[0],
+					ap_cur->gps_loc_min[1],
+					ap_cur->gps_loc_min[2],
+					ap_cur->gps_loc_min[3],
+					ap_cur->gps_loc_max[0],
+					ap_cur->gps_loc_max[1],
+					ap_cur->gps_loc_max[2],
+					ap_cur->gps_loc_max[3],
+					ap_cur->gps_loc_best[0],
+					ap_cur->gps_loc_best[1],
+					ap_cur->gps_loc_best[2]);
+		}
 
 		fprintf(G.f_json, "}");
 
@@ -4898,10 +4925,14 @@ static int dump_write_json(void)
 		}
 		fprintf(G.f_json, "\",");
 
- 		//missed lastseq bestpower rate_to rate_from no_pkts
 		fprintf(G.f_json,
 				"\"missed\":%d, \"lastseq\":%u, \"best_power\":%d, \"rate_to\":%d, \"rate_from\":%d, \"no_packets\":%lu, ",
-				st_cur->missed, st_cur->lastseq, st_cur->best_power, st_cur->rate_to, st_cur->rate_from, st_cur->nb_pkt);
+				st_cur->missed, 
+				st_cur->lastseq, 
+				st_cur->best_power, 
+				st_cur->rate_to, 
+				st_cur->rate_from, 
+				st_cur->nb_pkt);
 
 		if (G.num_cards > 1) {
 			fprintf(G.f_json, "\"powers\":{");
@@ -4915,6 +4946,35 @@ static int dump_write_json(void)
 			}
 			fprintf(G.f_json, "}");
 		}
+
+
+		if (G.usegpsd)
+		{
+			fprintf(G.f_json,
+					",{\"gps-info\":"
+					"\"min-lat\":\"%.6f\","
+					"\"min-lon\":\"%.6f\","
+					"\"min-alt\":\"%.6f\","
+					"\"min-spd\":\"%.6f\","
+					"\"max-lat\":\"%.6f\","
+					"\"max-lon\":\"%.6f\","
+					"\"max-alt\":\"%.6f\","
+					"\"max-spd\":\"%.6f\","
+					"\"best-lat\":\"%.6f\","
+					"\"best-lon\":\"%.6f\","
+					"\"best-alt\":\"%.6f\",",
+					st_cur->gps_loc_min[0],
+					st_cur->gps_loc_min[1],
+					st_cur->gps_loc_min[2],
+					st_cur->gps_loc_min[3],
+					st_cur->gps_loc_max[0],
+					st_cur->gps_loc_max[1],
+					st_cur->gps_loc_max[2],
+					st_cur->gps_loc_max[3],
+					st_cur->gps_loc_best[0],
+					st_cur->gps_loc_best[1],
+					st_cur->gps_loc_best[2]);
+		}		
 
 		fprintf(G.f_json, "}");
 
