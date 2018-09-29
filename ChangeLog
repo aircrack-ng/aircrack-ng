@@ -1,4 +1,4 @@
-Version 1.4 (changes from aircrack-ng 1.3) - Released XX XXX 2018:
+Version 1.4 (changes from aircrack-ng 1.3) - Released 29 Sep 2018:
 * Aircrack-ng: Added PMKID cracking
 * Aircrack-ng: Serious speed up and memory usage decrease when loading large files (multiple Gb) using AVL trees
 * Aircrack-ng: Added hwloc (Hardware Locality) to improve performance
