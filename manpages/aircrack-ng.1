@@ -117,7 +117,7 @@ Path to a dictionary file for wpa cracking. Separate filenames with comma when u
 In order to use a dictionary with hexadecimal values, prefix the dictionary with "h:". Each byte in each key must be separated by ':'. When using with WEP, key length should be specified using -n.
 .TP
 .I -N <file> or --new-session <file>
-Create a new cracking session. It allows to interrupt cracking session and restart at a later time (using -R or --restore-session). Status files are saved every 5 minutes. It does not overwrite existing session file.
+Create a new cracking session. It allows one to interrupt cracking session and restart at a later time (using -R or --restore-session). Status files are saved every 5 minutes. It does not overwrite existing session file.
 .TP
 .I -R <file> or --restore-session <file>
 Restore and continue a previously saved cracking session. This parameter is to be used alone, no other parameter should be specified when starting aircrack-ng (all the required information is in the session file).
@@ -147,7 +147,7 @@ Path to the airolib-ng database. Cannot be used with \(aq-w\(aq.
 .B SIMD selection:
 .TP
 .I --simd=<option>
-Aircrack-ng automatically loads and uses the fastest optimization based on instructions available for your CPU. This options allows to force another optimization. Choices depend on the CPU and the following are all the possibilities that may be compiled regardless of the CPU type: generic, sse2, avx, avx2, avx512, neon, asimd, altivec, power8.
+Aircrack-ng automatically loads and uses the fastest optimization based on instructions available for your CPU. This options allows one to force another optimization. Choices depend on the CPU and the following are all the possibilities that may be compiled regardless of the CPU type: generic, sse2, avx, avx2, avx512, neon, asimd, altivec, power8.
 .TP
 .I --simd-list
 Shows a list of the available SIMD architectures, separated by a space character. Aircrack-ng automatically selects the fastest optimization and thus it is rarely needed to use this option. Use case would be for testing purposes or when a "lower" optimization, such as "generic", is faster than the automatically selected one. Before forcing a SIMD architecture, verify that the instruction is supported by your CPU, using \-u.
