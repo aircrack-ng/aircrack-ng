@@ -30,6 +30,17 @@ The following must be taken to the forum first:
 - Defect - Incorrect value displayed/received/stored
 - Defect - Unexpected behavior (obvious or confirmed in the forum)
 
+# System information
+
+- OS:
+- CPU:
+- Wireless card and chipset (if relevant):
+
+# Aircrack-ng version
+
+- Version:
+- Commit Revision hash:
+
 # Defect
 ## How to reproduce the issue
 
