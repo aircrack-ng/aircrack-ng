@@ -1929,7 +1929,7 @@ static void packet_reader_thread(void * arg)
 	}
 
 	fmt = FORMAT_IVS;
-	if (memcmp(&pfh, HCCAPX_MAGIC, 4) == 0)
+	if (memcmp(&pfh, HCCAPX_MAGIC, 4) == 0 || memcmp(&pfh, HCCAPX_CIGAM, 4) == 0)
 	{
 		fmt = FORMAT_HCCAPX;
 	}
@@ -1956,7 +1956,13 @@ static void packet_reader_thread(void * arg)
 
 		/* take care of endian issues and check the link type */
 
-		if (pfh.magic == TCPDUMP_CIGAM) SWAP32(pfh.linktype);
+		if (pfh.magic == TCPDUMP_CIGAM)
+		{
+			pfh.version_major = ___my_swab16(pfh.version_major);
+			pfh.version_minor = ___my_swab16(pfh.version_minor);
+			pfh.snaplen = ___my_swab32(pfh.snaplen);
+			pfh.linktype = ___my_swab32(pfh.linktype);
+		}
 
 		if (pfh.linktype != LINKTYPE_IEEE802_11
 			&& pfh.linktype != LINKTYPE_PRISM_HEADER
@@ -2063,8 +2069,8 @@ static void packet_reader_thread(void * arg)
 
 			if (pfh.magic == TCPDUMP_CIGAM)
 			{
-				SWAP32(pkh.caplen);
-				SWAP32(pkh.len);
+				pkh.caplen = ___my_swab32(pkh.caplen);
+				pkh.len = ___my_swab32(pkh.len);
 			}
 
 			if (pkh.caplen <= 0 || pkh.caplen > 65535)
@@ -2087,9 +2093,7 @@ static void packet_reader_thread(void * arg)
 					n = 64;
 				else
 				{
-					n = *(int *) (h80211 + 4);
-
-					if (pfh.magic == TCPDUMP_CIGAM) SWAP32(n);
+					n = le32_to_cpu(*(int *) (h80211 + 4));
 				}
 
 				if (n < 8 || n >= (int) pkh.caplen) continue;
@@ -2101,7 +2105,7 @@ static void packet_reader_thread(void * arg)
 			else if (pfh.linktype == LINKTYPE_RADIOTAP_HDR)
 			{
 				/* remove the radiotap header */
-				n = *(unsigned short *) (h80211 + 2);
+				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
 
 				if (n <= 0 || n >= (int) pkh.caplen) continue;
 
@@ -4709,9 +4713,11 @@ struct AP_info * hccapx_to_ap(struct hccapx * hx)
 	memcpy(&ap->wpa.snonce, &hx->nonce_sta, sizeof(hx->nonce_sta));
 	memcpy(&ap->wpa.anonce, &hx->nonce_ap, sizeof(hx->nonce_ap));
 	memcpy(&ap->wpa.eapol, &hx->eapol, sizeof(hx->eapol));
-	memcpy(&ap->wpa.eapol_size, &hx->eapol_len, sizeof(hx->eapol_len));
 	memcpy(&ap->wpa.keyver, &hx->keyver, sizeof(hx->keyver));
 	memcpy(&ap->wpa.keymic, &hx->keymic, sizeof(hx->keymic));
+
+	assert(sizeof(hx->eapol_len) == 2);
+	ap->wpa.eapol_size = le16_to_cpu(hx->eapol_len);
 
 	return ap;
 }
@@ -4724,9 +4730,9 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 
 	memset(&hx, 0, sizeof(hx));
 
-	temp = HCCAPX_SIGNATURE;
+	temp = cpu_to_le32(HCCAPX_SIGNATURE);
 	memcpy(&hx.signature, &temp, sizeof(temp));
-	temp = HCCAPX_CURRENT_VERSION;
+	temp = cpu_to_le32(HCCAPX_CURRENT_VERSION);
 	memcpy(&hx.version, &temp, sizeof(temp));
 	hx.message_pair = 0; // Temporary (see docs)
 
@@ -4740,7 +4746,7 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 	memcpy(&hx.keymic, &ap->wpa.keymic, sizeof(ap->wpa.keymic));
 	memcpy(&hx.nonce_sta, &ap->wpa.snonce, sizeof(ap->wpa.snonce));
 	memcpy(&hx.nonce_ap, &ap->wpa.anonce, sizeof(ap->wpa.anonce));
-	memcpy(&hx.eapol_len, &ap->wpa.eapol_size, sizeof(ap->wpa.eapol_size));
+	hx.eapol_len = cpu_to_le16(ap->wpa.eapol_size);
 	memcpy(&hx.eapol, &ap->wpa.eapol, sizeof(ap->wpa.eapol));
 	return hx;
 }
