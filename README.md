@@ -71,9 +71,15 @@ Below are instructions for installing the basic requirements to build
 
     sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel
 
-### FreeBSD
+### BSD
+
+#### FreeBSD
 
     pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 openssl gmake hwloc cmocka
+
+#### DragonflyBSD
+
+    pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 libgcrypt gmake cmocka
 
 ### OSX
 
@@ -281,6 +287,14 @@ to your choosing:
     ./configure --with-experimental --with-airpcap=$(pwd)
     make
     ```
+
+ * Compiling on DragonflyBSD with gcrypt using GCC 7
+
+   ```
+   autoreconf -i
+   env CC=gcc7 CXX=g++7 ./configure --with-experimental --with-gcrypt
+   gmake
+   ```
 
 # Packaging
 
