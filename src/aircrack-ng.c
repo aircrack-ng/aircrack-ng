@@ -88,9 +88,9 @@
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
 
-sqlite3 * db;
+sqlite3 * db = NULL;
 #else
-char * db;
+char * db = NULL;
 #endif
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
@@ -1929,7 +1929,8 @@ static void packet_reader_thread(void * arg)
 	}
 
 	fmt = FORMAT_IVS;
-	if (memcmp(&pfh, HCCAPX_MAGIC, 4) == 0 || memcmp(&pfh, HCCAPX_CIGAM, 4) == 0)
+	if (memcmp(&pfh, HCCAPX_MAGIC, 4) == 0
+		|| memcmp(&pfh, HCCAPX_CIGAM, 4) == 0)
 	{
 		fmt = FORMAT_HCCAPX;
 	}
