@@ -190,7 +190,7 @@ to your choosing:
 
 * **with-static-simd=<SIMD>**: Compile a single optimization in aircrack-ng binary. Useful when compiling
                     statically and/or for space-constrained devices. Valid SIMD options: x86-sse2,
-                    x86-avx, x86-avx2, x86-avx512, ppc-altivec, ppc-power8, arm-neon, arm-asimd
+                    x86-avx, x86-avx2, x86-avx512, ppc-altivec, ppc-power8, arm-neon, arm-asimd.
                     Must be used with --enable-static --disable-shared. When using those 2 options, the default
                     is to compile the generic optimization in the binary. --with-static-simd merely allows
                     to choose another one.
