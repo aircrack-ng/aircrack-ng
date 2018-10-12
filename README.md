@@ -271,7 +271,7 @@ to your choosing:
   * Compiling on FreeBSD with better performance
 
     ```
-    env CC=gcc7 CXX=g++7 ./configure
+    env CC=gcc7 CXX=g++7 MAKE=gmake ./configure
     gmake
     ```
 
@@ -292,7 +292,7 @@ to your choosing:
 
    ```
    autoreconf -i
-   env CC=gcc7 CXX=g++7 ./configure --with-experimental --with-gcrypt
+   env CC=gcc7 CXX=g++7 MAKE=gmake ./configure --with-experimental --with-gcrypt
    gmake
    ```
 
