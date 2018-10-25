@@ -16,7 +16,8 @@
 #
 #   Example:
 #
-#     AX_EXT_HAVE_STATIC_LIB(ZLIB, DEFAULT_STATIC_LIB_SEARCH_PATHS,
+#     AX_EXT_HAVE_STATIC_LIB_DETECT
+#     AX_EXT_HAVE_STATIC_LIB(ZLIB, [${DEFAULT_STATIC_LIB_SEARCH_PATHS}],
 #                            z libz, compress)
 #
 # LICENSE
@@ -51,15 +52,49 @@
 
 #serial 1
 
-m4_define([DUMPMACHINE], m4_esyscmd([gcc -dumpmachine 2>/dev/null || echo]))
-m4_define([DEFAULT_STATIC_LIB_SEARCH_PATHS], [
-	/opt/lib/DUMPMACHINE
-	/opt/lib
-	/usr/local/lib/DUMPMACHINE
-	/usr/local/lib
-	/usr/lib/DUMPMACHINE
-	/usr/lib
-	/lib
+AC_DEFUN([AX_EXT_HAVE_STATIC_LIB_DETECT],
+[
+AC_REQUIRE([AC_CANONICAL_HOST])
+AC_ARG_VAR([STATIC_HOST_ALIAS], [The alias name for host, default @<:@HOST@:>@.])dnl
+AC_ARG_VAR([STATIC_LIBDIR_NAME], [The libdir name for host, default @<:@lib@:>@.])dnl
+
+AC_CACHE_VAL([ext_cv_static_libdir_name], [
+	ext_cv_static_libdir_name="${STATIC_LIBDIR_NAME:-lib}"
+])
+
+AC_CACHE_VAL([ext_cv_default_static_lib_search_paths], [
+	AC_MSG_CHECKING([Default static library search path])
+
+	static_extpath=""
+	if test -n "${STATIC_HOST_ALIAS}"
+	then
+		static_host="${STATIC_HOST_ALIAS}"
+	else
+		if test "${GCC}" = "yes"
+		then
+			static_host=`${CC} -dumpmachine 2>/dev/null`
+			static_extpath=`${CC} -print-search-dirs 2> /dev/null | grep '^libraries' | sed -e 's/@<:@^=@:>@*=//' -e 's/:/ /g'`
+		else
+			static_host="${host}"
+		fi
+	fi
+
+	ext_cv_default_static_lib_search_paths=" \
+		${static_extpath} \
+		/opt/${ext_cv_static_libdir_name}/${static_host} \
+		/opt/${ext_cv_static_libdir_name} \
+		/usr/local/${ext_cv_static_libdir_name}/${static_host} \
+		/usr/local/${ext_cv_static_libdir_name} \
+		/usr/${ext_cv_static_libdir_name}/${static_host} \
+		/usr/${ext_cv_static_libdir_name} \
+		/${ext_cv_static_libdir_name} \
+		/opt/lib/${static_host} \
+		/opt/lib \
+	"
+	AC_MSG_RESULT([${ext_cv_default_static_lib_search_paths}])
+])
+DEFAULT_STATIC_LIB_SEARCH_PATHS="${ext_cv_default_static_lib_search_paths}"
+STATIC_LIBDIR_NAME="${ext_cv_static_libdir_name}"
 ])
 
 AC_DEFUN([AX_EXT_HAVE_STATIC_LIB],
