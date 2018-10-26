@@ -255,7 +255,7 @@
                   - raspbian/buster
                   - ubuntu/xenial
                   - ubuntu/bionic
-                  - ubuntu/cosmic
+                  #- ubuntu/cosmic
                 tasks:
                   - command: "package_cloud push --yes aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'deb') | list }}"
