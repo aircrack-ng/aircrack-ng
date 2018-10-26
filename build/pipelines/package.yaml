@@ -257,10 +257,10 @@
                   - ubuntu/bionic
                   - ubuntu/cosmic
                 tasks:
-                  - command: "package_cloud push aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
+                  - command: "package_cloud push --yes aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'deb') | list }}"
 
-                  - command: "package_cloud push aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
+                  - command: "package_cloud push --yes aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
                     when: "exact_tag | trim | count > 0"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'deb') | list }}"
 
@@ -279,10 +279,10 @@
                   - sles/12.2
                   - sles/12.3
                 tasks:
-                  - command: "package_cloud push aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
+                  - command: "package_cloud push --yes aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'rpm') | list }}"
 
-                  - command: "package_cloud push aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
+                  - command: "package_cloud push --yes aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
                     when: "exact_tag | trim | count > 0"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'rpm') | list }}"
 
