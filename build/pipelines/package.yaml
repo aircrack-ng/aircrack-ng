@@ -88,13 +88,28 @@
         register: exact_tag
       - command: date -u +%Y%m%d%H%M%S
         register: pkg_date
+
+      # Development package naming
       - name: Calculating the Debian package version
         command: echo {{ closest_tag }}+git{{ pkg_date }}-1
         register: pkg_deb_revision
+        when: "exact_tag | trim | count == 0"
       - name: Calculating the RPM package version
         shell:
           script: echo {{ closest_tag }}.{% print pkg_date.stdout[:8] %}git$(git rev-parse --short HEAD)
         register: pkg_rpm_revision
+        when: "exact_tag | trim | count == 0"
+
+      # Stable package naming
+      - name: Calculating the Debian package version
+        command: echo {{ exact_tag }}-1
+        register: pkg_deb_revision
+        when: "exact_tag | trim | count > 0"
+      - name: Calculating the RPM package version
+        shell:
+          script: echo {{ exact_tag }}
+        register: pkg_rpm_revision
+        when: "exact_tag | trim | count > 0"
 
       - name: Metadata Evaluation
         echo: |
