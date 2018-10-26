@@ -765,6 +765,14 @@ char usage[] =
 	"      --help                : Displays this usage screen\n"
 	"\n";
 
+static void airodump_usage(void)
+{
+	char * const l_usage = getVersion(
+		"Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+	printf(usage, l_usage);
+	free(l_usage);
+}
+
 static int is_filtered_netmask(unsigned char * bssid)
 {
 	unsigned char mac1[6];
@@ -7384,7 +7392,11 @@ int main(int argc, char * argv[])
 
 				G.channel[0] = getchannels(optarg);
 
-				if (G.channel[0] < 0) goto usage;
+				if (G.channel[0] < 0)
+				{
+					airodump_usage();
+					return (1);
+				}
 
 				G.chanoption = 1;
 
@@ -7471,14 +7483,7 @@ int main(int argc, char * argv[])
 
 				if (G.output_format_pcap)
 				{
-					printf(usage,
-						   getVersion("Airodump-ng",
-									  _MAJ,
-									  _MIN,
-									  _SUB_MIN,
-									  _REVISION,
-									  _BETA,
-									  _RC));
+					airodump_usage();
 					fprintf(stderr,
 							"Invalid output format: IVS and PCAP "
 							"format cannot be used together.\n");
@@ -7527,7 +7532,8 @@ int main(int argc, char * argv[])
 
 				if (atoi(optarg) > 2)
 				{
-					goto usage;
+					airodump_usage();
+					return (1);
 				}
 				if (G.chswitch != 0)
 				{
@@ -7668,14 +7674,7 @@ int main(int argc, char * argv[])
 						{
 							if (ivs_only)
 							{
-								printf(usage,
-									   getVersion("Airodump-ng",
-												  _MAJ,
-												  _MIN,
-												  _SUB_MIN,
-												  _REVISION,
-												  _BETA,
-												  _RC));
+								airodump_usage();
 								fprintf(stderr,
 										"Invalid output format: IVS "
 										"and PCAP format cannot be "
@@ -7689,14 +7688,7 @@ int main(int argc, char * argv[])
 						{
 							if (G.output_format_pcap)
 							{
-								printf(usage,
-									   getVersion("Airodump-ng",
-												  _MAJ,
-												  _MIN,
-												  _SUB_MIN,
-												  _REVISION,
-												  _BETA,
-												  _RC));
+								airodump_usage();
 								fprintf(stderr,
 										"Invalid output format: IVS "
 										"and PCAP format cannot be "
@@ -7771,15 +7763,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'H':
-
-				printf(usage,
-					   getVersion("Airodump-ng",
-								  _MAJ,
-								  _MIN,
-								  _SUB_MIN,
-								  _REVISION,
-								  _BETA,
-								  _RC));
+				airodump_usage();
 				return (1);
 
 			case 'x':
@@ -7815,7 +7799,8 @@ int main(int argc, char * argv[])
 				break;
 
 			default:
-				goto usage;
+				airodump_usage();
+				return (1);
 		}
 	} while (1);
 
@@ -7823,15 +7808,7 @@ int main(int argc, char * argv[])
 	{
 		if (argc == 1)
 		{
-		usage:
-			printf(usage,
-				   getVersion("Airodump-ng",
-							  _MAJ,
-							  _MIN,
-							  _SUB_MIN,
-							  _REVISION,
-							  _BETA,
-							  _RC));
+			airodump_usage();
 		}
 		if (argc - optind == 0)
 		{
