@@ -241,6 +241,7 @@ ${PACKAGE} ${VERSION}
     CPU L1 cache-line size:      ${CACHELINE_SIZE}
 
   Crypto Libraries:
+    Crypto Engine:               ${CRYPTO_TYPE}
     Gcrypt:                      ${GCRYPT_LIBS}
     OpenSSL:                     ${OPENSSL_LIBS}
 
