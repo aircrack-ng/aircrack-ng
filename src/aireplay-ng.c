@@ -2142,7 +2142,7 @@ static int do_attack_fake_auth(void)
 		{
 			if (memcmp(h80211 + 4, opt.r_smac, 6) == 0)
 			{
-				gotack++;
+				if (gotack < INT_MAX - 1) gotack++;
 				if (gotack == 1)
 				{
 					printf(" [ACK]");
