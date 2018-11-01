@@ -321,5 +321,46 @@ EXTRA_DIST = wpaclean.c \
              session.c \
              session.h
 
+lint_files = $(aircrack_ng_SOURCES) \
+			  $(airdecap_ng_SOURCES) \
+			  $(packetforge_ng_SOURCES) \
+			  $(aireplay_ng_SOURCES) \
+			  $(airodump_ng_SOURCES) \
+			  $(airserv_ng_SOURCES) \
+			  $(airtun_ng_SOURCES) \
+			  $(ivstools_SOURCES) \
+			  $(kstats_SOURCES) \
+			  $(wesside_ng_SOURCES) \
+			  $(easside_ng_SOURCES) \
+			  $(buddy_ng_SOURCES) \
+			  $(besside_ng_SOURCES) \
+			  $(besside_ng_crawler_SOURCES) \
+			  $(makeivs_ng_SOURCES) \
+			  $(airolib_ng_SOURCES) \
+			  $(airbase_ng_SOURCES) \
+			  $(airdecloak_ng_SOURCES) \
+			  $(tkiptun_ng_SOURCES) \
+			  $(wpaclean_SOURCES) \
+			  $(airventriloquist_ng_SOURCES) \
+			  $(libaclib_la_SOURCES) \
+			  $(libcow_la_SOURCES) \
+			  $(libptw_la_SOURCES)
+
+# Make this OK to fail, tee our lint to the file as well.
+LINTER_FLAGS ?= -- -I. $(AM_CPPFLAGS) $(DEFS)
+%.c.lint: %.c
+	- $(LINTER) $? $(LINTER_FLAGS) | tee $@
+
+# Select only C files
+# We have to abuse the auto rule above so that -j works
+lint: $(subst .c,.c.lint, $(filter %.c,$(lint_files)))
+
+.PHONY: lint
+
+check-local: lint
+
+clean-local:
+	rm -f *.lint
+
 
 @CODE_COVERAGE_RULES@

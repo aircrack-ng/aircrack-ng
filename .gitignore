@@ -71,6 +71,7 @@ Makefile
 /cccc.opt
 /.scannerwork
 benchmark*.csv
+*.lint
 /bw-output
 compile_commands.json
 coverage*.info

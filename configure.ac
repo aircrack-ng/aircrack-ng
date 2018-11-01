@@ -122,6 +122,13 @@ AC_CHECK_LIB([dl], [dlopen], [ LIBS="$LIBS -ldl" ], [:])
 AC_CHECK_LIB([m], [sin], [ LIBS="$LIBS -lm" ], [:])
 
 #
+# Linter, optional
+#
+AC_PATH_PROG([LINTER], [clang-tidy], [true])
+AS_IF([test "x$LINTER" = xtrue],
+    [AC_MSG_WARN([We recommend clang-tidy for developing this package.])])
+
+#
 # Code Coverage Support
 #
 AIRCRACK_NG_CODE_COVERAGE
