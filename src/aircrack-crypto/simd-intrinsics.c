@@ -1714,11 +1714,11 @@ void SIMDSHA1body(vtype * _data,
 									1 * 5,
 									0 * 5);
 
-			vscatter_epi32(o + 0, idxs, vswap32(a[i]), 4);
-			vscatter_epi32(o + 1, idxs, vswap32(b[i]), 4);
-			vscatter_epi32(o + 2, idxs, vswap32(c[i]), 4);
-			vscatter_epi32(o + 3, idxs, vswap32(d[i]), 4);
-			vscatter_epi32(o + 4, idxs, vswap32(e[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 0), idxs, vswap32(a[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 1), idxs, vswap32(b[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 2), idxs, vswap32(c[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 3), idxs, vswap32(d[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 4), idxs, vswap32(e[i]), 4);
 #else
 			uint32_t j, k;
 			union {
@@ -2310,14 +2310,14 @@ void SIMDSHA256body(vtype * data,
 									1 << 3,
 									0 << 3);
 
-			vscatter_epi32(o + 0, idxs, vswap32(a[i]), 4);
-			vscatter_epi32(o + 1, idxs, vswap32(b[i]), 4);
-			vscatter_epi32(o + 2, idxs, vswap32(c[i]), 4);
-			vscatter_epi32(o + 3, idxs, vswap32(d[i]), 4);
-			vscatter_epi32(o + 4, idxs, vswap32(e[i]), 4);
-			vscatter_epi32(o + 5, idxs, vswap32(f[i]), 4);
-			vscatter_epi32(o + 6, idxs, vswap32(g[i]), 4);
-			vscatter_epi32(o + 7, idxs, vswap32(h[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 0), idxs, vswap32(a[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 1), idxs, vswap32(b[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 2), idxs, vswap32(c[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 3), idxs, vswap32(d[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 4), idxs, vswap32(e[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 5), idxs, vswap32(f[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 6), idxs, vswap32(g[i]), 4);
+			vscatter_epi32((((uint32_t *) o) + 7), idxs, vswap32(h[i]), 4);
 #else
 			uint32_t j, k;
 			union {
@@ -2887,14 +2887,14 @@ void SIMDSHA512body(vtype * data,
 			vtype idxs = vset_epi64(
 				7 << 3, 6 << 3, 5 << 3, 4 << 3, 3 << 3, 2 << 3, 1 << 3, 0 << 3);
 
-			vscatter_epi64(o + 0, idxs, vswap64(a[i]), 8);
-			vscatter_epi64(o + 1, idxs, vswap64(b[i]), 8);
-			vscatter_epi64(o + 2, idxs, vswap64(c[i]), 8);
-			vscatter_epi64(o + 3, idxs, vswap64(d[i]), 8);
-			vscatter_epi64(o + 4, idxs, vswap64(e[i]), 8);
-			vscatter_epi64(o + 5, idxs, vswap64(f[i]), 8);
-			vscatter_epi64(o + 6, idxs, vswap64(g[i]), 8);
-			vscatter_epi64(o + 7, idxs, vswap64(h[i]), 8);
+			vscatter_epi64((((uint64_t *) o) + 0), idxs, vswap64(a[i]), 8);
+			vscatter_epi64((((uint64_t *) o) + 1), idxs, vswap64(b[i]), 8);
+			vscatter_epi64((((uint64_t *) o) + 2), idxs, vswap64(c[i]), 8);
+			vscatter_epi64((((uint64_t *) o) + 3), idxs, vswap64(d[i]), 8);
+			vscatter_epi64((((uint64_t *) o) + 4), idxs, vswap64(e[i]), 8);
+			vscatter_epi64((((uint64_t *) o) + 5), idxs, vswap64(f[i]), 8);
+			vscatter_epi64((((uint64_t *) o) + 6), idxs, vswap64(g[i]), 8);
+			vscatter_epi64((((uint64_t *) o) + 7), idxs, vswap64(h[i]), 8);
 #else
 			uint64_t j, k;
 			union {

@@ -5323,6 +5323,7 @@ static void load_aircrack_crypto_dso(int simd_features)
 	if (simd_features == -1)
 	{
 		simd_features = simd_get_supported_features();
+		simd_features &= ac_crypto_engine_loader_get_available();
 	}
 
 	if (ac_crypto_engine_loader_load(simd_features) != 0) exit(1);

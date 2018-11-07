@@ -700,10 +700,10 @@ static INLINE void vstoreu_emu(void * addr, vtype v)
 #endif
 
 #define vswap32_emu(x)                                                         \
-	x = vxor(vsrli_epi32(x, 24),                                               \
-			 vxor(vslli_epi32(vsrli_epi32(vslli_epi32(x, 8), 24), 8),          \
-				  vxor(vsrli_epi32(vslli_epi32(vsrli_epi32(x, 8), 24), 8),     \
-					   vslli_epi32(x, 24))))
+	(x = vxor(vsrli_epi32(x, 24),                                              \
+			  vxor(vslli_epi32(vsrli_epi32(vslli_epi32(x, 8), 24), 8),         \
+				   vxor(vsrli_epi32(vslli_epi32(vsrli_epi32(x, 8), 24), 8),    \
+						vslli_epi32(x, 24)))))
 #define vswap64_emu(x)                                                         \
 	(x = vxor(vsrli_epi64(x, 32), vslli_epi64(x, 32)), vswap32_emu(x))
 
