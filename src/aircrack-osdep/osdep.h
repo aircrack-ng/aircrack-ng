@@ -78,7 +78,7 @@
 
 struct tx_info
 {
-	unsigned int ti_rate;
+	uint32_t ti_rate;
 };
 
 struct rx_info
