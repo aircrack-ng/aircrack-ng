@@ -563,6 +563,8 @@ static int parse_ivs2(struct AP_info * ap_cur,
 			// weight[0],
 			// weight[1]);
 
+			assert(ap_cur->ptw_vague != NULL);
+
 			if (PTW_addsession(
 					ap_cur->ptw_vague, buffer, buffer + 6, weight, buffer[4]))
 				ap_cur->nb_ivs_vague++;
@@ -1802,7 +1804,7 @@ static int packet_reader_process_packet(packet_reader_t * me,
 		// - WPA is 3 for 'crypt' and 2 for 'amode'.
 		if (opt.forced_amode) (*ap_cur)->crypt = opt.amode + 1;
 
-		if (me->mode == PACKET_READER_READ_MODE && opt.do_ptw == 1)
+		if (opt.do_ptw == 1)
 		{
 			(*ap_cur)->ptw_clean = PTW_newattackstate();
 			if (!(*ap_cur)->ptw_clean)
