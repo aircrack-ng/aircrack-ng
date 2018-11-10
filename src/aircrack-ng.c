@@ -6743,7 +6743,13 @@ __start:
 				ap_cur->nb_ivs = 0;
 
 				// assumption: an eapol exists.
-				assert(ap_cur->wpa.state > 0);
+				if (ap_cur->wpa.state <= 0)
+				{
+					fprintf(stderr,
+							"Packets contained no EAPOL data; unable "
+							"to process this AP.\n");
+					goto exit_main;
+				}
 
 				/* start one thread per cpu */
 				wpa_data[i].ap = ap_cur;
