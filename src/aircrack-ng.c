@@ -3765,7 +3765,7 @@ static void show_wpa_stats(char * key,
 
 	if (ksec < 1.0f) goto __out;
 
-	moveto(0, 0);
+	moveto(0, 3);
 	erase_display(0);
 
 	if (opt.l33t)
@@ -4807,7 +4807,7 @@ static int do_wpa_crack(void)
 	{
 		if (opt.l33t) textcolor(TEXT_RESET, TEXT_WHITE, TEXT_BLACK);
 
-		erase_line(2);
+		erase_display(2);
 
 		if (opt.l33t)
 		{
@@ -4815,7 +4815,7 @@ static int do_wpa_crack(void)
 			textcolor_fg(TEXT_BLUE);
 		}
 
-		moveto(34, 2);
+		moveto((80 - strlen(progname)) / 2, 2);
 		printf("%s", progname);
 	}
 
@@ -6835,8 +6835,17 @@ __start:
 			}
 			else
 			{
-				printf("%sPassphrase not in dictionary\n",
-					   (opt.is_quiet ? "" : "\n"));
+				if (!opt.is_quiet)
+				{
+					moveto((80 - 28) / 2, 8);
+					erase_line(2);
+				}
+				else
+				{
+					printf("\n");
+				}
+
+				printf("Passphrase not in dictionary\n");
 
 				if (opt.is_quiet) clean_exit(FAILURE);
 
@@ -6854,11 +6863,9 @@ __start:
 					calctime(0,
 							 ((float) nb_tried / (float) opt.wordcount) * 100);
 				}
-
-				moveto(1, 32);
 			}
 
-			printf("\n");
+			printf("\n\n");
 		}
 #ifdef HAVE_SQLITE
 		else
@@ -6868,7 +6875,7 @@ __start:
 				if (opt.l33t) textcolor(TEXT_RESET, TEXT_WHITE, TEXT_BLACK);
 				erase_line(2);
 				if (opt.l33t) textcolor(TEXT_BRIGHT, TEXT_BLUE, TEXT_BLACK);
-				moveto(34, 2);
+				moveto((80 - strlen(progname)) / 2, 2);
 				printf("%s", progname);
 			}
 			sql = sqlite3_mprintf(sqlformat, ap_cur->essid);
