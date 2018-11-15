@@ -482,10 +482,14 @@ isRPiWireless() {
 	local HW_REV=$(grep Revision /proc/cpuinfo | awk '{print $3}')
 	[ -z "${HW_REV}" ] && return 0
 	# http://www.raspberrypi-spy.co.uk/2012/09/checking-your-raspberry-pi-board-version/
+	# https://www.raspberrypi.org/documentation/hardware/raspberrypi/revision-codes/README.md
 	[ "${HW_REV}" = 'a22082' ] && return 1
+	[ "${HW_REV}" = 'a32082' ] && return 1
+	[ "${HW_REV}" = 'a52082' ] && return 1
 	[ "${HW_REV}" = 'a02082' ] && return 1
 	[ "${HW_REV}" = '9000c1' ] && return 1
 	[ "${HW_REV}" = 'a020d3' ] && return 1
+	[ "${HW_REV}" = '9020e0' ] && return 1
 	return 0
 }
 
