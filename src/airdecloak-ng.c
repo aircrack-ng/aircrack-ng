@@ -1066,7 +1066,7 @@ static int CFC_filter_signal(void)
 						++nb_packets;
 						break;
 					}
-#if __GNUC__ == 7
+#if __GNUC__ >= 7
 					__attribute__((fallthrough));
 #endif
 				case UKNOWN_FRAME_CLOAKING_STATUS:
@@ -1228,7 +1228,7 @@ static int CFC_filter_duplicate_iv(void)
 						_packet_elt_head->current->is_cloaked = CLOAKED_FRAME;
 						++nb_packets;
 					}
-#if __GNUC__ == 7
+#if __GNUC__ >= 7
 					__attribute__((fallthrough));
 #endif
 				case UKNOWN_FRAME_CLOAKING_STATUS:
