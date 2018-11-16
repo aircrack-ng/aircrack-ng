@@ -2501,7 +2501,7 @@ static void wifi_read(void)
 	rd = wi_read(s->s_wi, buf, sizeof(buf), &ri);
 	if (rd < 0) err(1, "wi_read()");
 
-	if (rd < sizeof(struct ieee80211_frame))
+	if (rd < (int) sizeof(struct ieee80211_frame))
 	{
 		return;
 	}

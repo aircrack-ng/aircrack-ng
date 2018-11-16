@@ -5118,7 +5118,7 @@ static void save_prga(char * filename,
 	xorfile = fopen(filename, "wb");
 	if (xorfile)
 	{
-		if (fwrite(iv, 1, 4, xorfile) != -1)
+		if (fwrite(iv, 1, 4, xorfile) > 0)
 		{
 			unused = fwrite(prga, 1, prgalen, xorfile);
 		}
@@ -6105,9 +6105,9 @@ static int do_attack_test(void)
 	unsigned char packet[4096];
 	struct timeval tv, tv2, tv3;
 	int len = 0, j = 0, k = 0;
-	int gotit = 0, answers = 0, found = 0;
+	int gotit = 0, answers = 0;
 	int caplen = 0, essidlen = 0;
-	unsigned int min, avg, max, i = 0;
+	unsigned int min, avg, max, i = 0, found = 0;
 	int ret = 0;
 	float avg2;
 	struct rx_info ri;
