@@ -32,7 +32,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <termios.h>
-#ifndef TIOCGWINSZ
+#if !defined(TIOCGWINSZ) && !defined(linux)
 #include <sys/termios.h>
 #endif
 #include <unistd.h>
