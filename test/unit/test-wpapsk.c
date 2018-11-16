@@ -34,41 +34,43 @@
  * So, we force a bit of hacks to ensure we do link against it.
  */
 #ifdef USE_GCRYPT
-void *keep_libgcrypt_ = &gcry_md_open;
+void * keep_libgcrypt_ = &gcry_md_open;
 #else
-void *keep_libcrypto_ = &HMAC;
+void * keep_libcrypto_ = &HMAC;
 #endif
 
-void perform_unit_testing(void **state)
+void perform_unit_testing(void ** state)
 {
+	(void) state;
+
 	wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED];
 	uint8_t mic[8][20];
-	uint8_t expected_mic[20] =
-		"\xd5\x35\x53\x82\xb8\xa9\xb8\x06\xdc\xaf\x99\xcd\xaf\x56\x4e\xb6";
+	uint8_t expected_mic[20]
+		= "\xd5\x35\x53\x82\xb8\xa9\xb8\x06\xdc\xaf\x99\xcd\xaf\x56\x4e\xb6";
 	uint8_t stmac[6] = "\x00\x13\x46\xfe\x32\x0c";
-	uint8_t snonce[32] =
-		"\x59\x16\x8b\xc3\xa5\xdf\x18\xd7\x1e\xfb\x64\x23\xf3\x40\x08\x8d"
-		"\xab\x9e\x1b\xa2\xbb\xc5\x86\x59\xe0\x7b\x37\x64\xb0\xde\x85\x70";
-	uint8_t anonce[32] =
-		"\x22\x58\x54\xb0\x44\x4d\xe3\xaf\x06\xd1\x49\x2b\x85\x29\x84\xf0"
-		"\x4c\xf6\x27\x4c\x0e\x32\x18\xb8\x68\x17\x56\x86\x4d\xb7\xa0\x55";
-	uint8_t eapol[256] =
-		"\x01\x03\x00\x75\x02\x01\x0a\x00\x10\x00\x00\x00\x00\x00\x00\x00"
-		"\x01\x59\x16\x8b\xc3\xa5\xdf\x18\xd7\x1e\xfb\x64\x23\xf3\x40\x08"
-		"\x8d\xab\x9e\x1b\xa2\xbb\xc5\x86\x59\xe0\x7b\x37\x64\xb0\xde\x85"
-		"\x70\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x16\x30\x14\x01\x00\x00\x0f\xac\x04\x01\x00\x00\x0f\xac"
-		"\x04\x01\x00\x00\x0f\xac\x02\x01\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+	uint8_t snonce[32]
+		= "\x59\x16\x8b\xc3\xa5\xdf\x18\xd7\x1e\xfb\x64\x23\xf3\x40\x08\x8d"
+		  "\xab\x9e\x1b\xa2\xbb\xc5\x86\x59\xe0\x7b\x37\x64\xb0\xde\x85\x70";
+	uint8_t anonce[32]
+		= "\x22\x58\x54\xb0\x44\x4d\xe3\xaf\x06\xd1\x49\x2b\x85\x29\x84\xf0"
+		  "\x4c\xf6\x27\x4c\x0e\x32\x18\xb8\x68\x17\x56\x86\x4d\xb7\xa0\x55";
+	uint8_t eapol[256]
+		= "\x01\x03\x00\x75\x02\x01\x0a\x00\x10\x00\x00\x00\x00\x00\x00\x00"
+		  "\x01\x59\x16\x8b\xc3\xa5\xdf\x18\xd7\x1e\xfb\x64\x23\xf3\x40\x08"
+		  "\x8d\xab\x9e\x1b\xa2\xbb\xc5\x86\x59\xe0\x7b\x37\x64\xb0\xde\x85"
+		  "\x70\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x16\x30\x14\x01\x00\x00\x0f\xac\x04\x01\x00\x00\x0f\xac"
+		  "\x04\x01\x00\x00\x0f\xac\x02\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 	uint32_t eapol_size = 121;
 	ac_crypto_engine_t engine;
 	uint8_t bssid[6] = "\x00\x14\x6c\x7e\x40\x80";
@@ -87,19 +89,19 @@ void perform_unit_testing(void **state)
 
 		memset(key, 0, sizeof(key));
 
-		strcpy((char*) (key[i].v), "12345678");
+		strcpy((char *) (key[i].v), "12345678");
 		key[i].length = 8;
 
 		if ((rc = dso_ac_crypto_engine_wpa_crack(&engine,
-		                                         key,
-		                                         eapol,
-		                                         eapol_size,
-		                                         mic,
-		                                         2,
-		                                         expected_mic,
-		                                         nparallel,
-		                                         1))
-		    >= 0)
+												 key,
+												 eapol,
+												 eapol_size,
+												 mic,
+												 2,
+												 expected_mic,
+												 nparallel,
+												 1))
+			>= 0)
 		{
 			// does the returned SIMD lane equal where we placed the key?
 			assert_int_equal(rc, i);
@@ -114,7 +116,7 @@ void perform_unit_testing(void **state)
 	dso_ac_crypto_engine_destroy(&engine);
 }
 
-void perform_unit_testing_for(void **state, int simd_flag)
+void perform_unit_testing_for(void ** state, int simd_flag)
 {
 	int simd_features = (int) ((uintptr_t) *state);
 
@@ -138,72 +140,75 @@ void perform_unit_testing_for(void **state, int simd_flag)
 #endif
 }
 
-void test_crypto_engine_x86_avx512f(void **state)
+void test_crypto_engine_x86_avx512f(void ** state)
 {
 	perform_unit_testing_for(state, SIMD_SUPPORTS_AVX512F);
 }
 
-void test_crypto_engine_x86_avx2(void **state)
+void test_crypto_engine_x86_avx2(void ** state)
 {
 	perform_unit_testing_for(state, SIMD_SUPPORTS_AVX2);
 }
 
-void test_crypto_engine_x86_avx(void **state)
+void test_crypto_engine_x86_avx(void ** state)
 {
 	perform_unit_testing_for(state, SIMD_SUPPORTS_AVX);
 }
 
-void test_crypto_engine_x86_sse2(void **state)
+void test_crypto_engine_x86_sse2(void ** state)
 {
 	perform_unit_testing_for(state, SIMD_SUPPORTS_SSE2);
 }
 
-void test_crypto_engine_arm_neon(void **state)
+void test_crypto_engine_arm_neon(void ** state)
 {
 	perform_unit_testing_for(state, SIMD_SUPPORTS_NEON);
 }
 
-void test_crypto_engine_ppc_altivec(void **state)
+void test_crypto_engine_ppc_altivec(void ** state)
 {
 	perform_unit_testing_for(state, SIMD_SUPPORTS_ALTIVEC);
 }
 
-void test_crypto_engine_ppc_power8(void **state)
+void test_crypto_engine_ppc_power8(void ** state)
 {
 	perform_unit_testing_for(state, SIMD_SUPPORTS_POWER8);
 }
 
-void test_crypto_engine_generic(void **state)
+void test_crypto_engine_generic(void ** state)
 {
 	perform_unit_testing_for(state, SIMD_SUPPORTS_NONE);
 }
 
-int group_setup(void **state)
+int group_setup(void ** state)
 {
-	*state = (void*) ((uintptr_t) simd_get_supported_features());
+	*state = (void *) ((uintptr_t) simd_get_supported_features());
 
 	return 0;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
-	const struct CMUnitTest tests[] = {
-		cmocka_unit_test(test_crypto_engine_generic),
+	(void) argc;
+	(void) argv;
+
+	const struct CMUnitTest tests[]
+		= { cmocka_unit_test(test_crypto_engine_generic),
 #if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86)
 #if defined(__AVX512F__)
-		cmocka_unit_test(test_crypto_engine_x86_avx512f),
+			cmocka_unit_test(test_crypto_engine_x86_avx512f),
 #endif
-		cmocka_unit_test(test_crypto_engine_x86_avx2),
-		cmocka_unit_test(test_crypto_engine_x86_avx),
-		cmocka_unit_test(test_crypto_engine_x86_sse2),
+			cmocka_unit_test(test_crypto_engine_x86_avx2),
+			cmocka_unit_test(test_crypto_engine_x86_avx),
+			cmocka_unit_test(test_crypto_engine_x86_sse2),
 #elif defined(__arm) || defined(__aarch64) || defined(__aarch64__)
-		cmocka_unit_test(test_crypto_engine_arm_neon),
+			cmocka_unit_test(test_crypto_engine_arm_neon),
 #elif defined(__PPC__) || defined(__PPC64__)
-		cmocka_unit_test(test_crypto_engine_ppc_altivec),
-		cmocka_unit_test(test_crypto_engine_ppc_power8),
+			cmocka_unit_test(test_crypto_engine_ppc_altivec),
+			cmocka_unit_test(test_crypto_engine_ppc_power8),
 #else
 #warning "SIMD not available."
 #endif
-	};
+		  };
 	return cmocka_run_group_tests(tests, group_setup, NULL);
 }
