@@ -748,7 +748,7 @@ char usage[] =
 #endif
 	"      -a                    : Filter unassociated clients\n"
 	"\n"
-	"  By default, airodump-ng hop on 2.4GHz channels.\n"
+	"  By default, airodump-ng hops on 2.4GHz channels.\n"
 	"  You can make it capture on other/specific channel(s) by using:\n"
 	"      --ht20                : Set channel to HT20 (802.11n)\n"
 	"      --ht40-               : Set channel to HT40- (802.11n)\n"
