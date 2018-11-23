@@ -297,7 +297,7 @@ char usage[] = "\n"
 			   "\n"
 			   "  Other options:\n"
 			   "\n"
-			   "      -u         : Displays # of CPUs & MMX/SSE support\n"
+			   "      -u         : Displays # of CPUs & SIMD support\n"
 			   "      --help     : Displays this usage screen\n"
 			   "\n";
 
