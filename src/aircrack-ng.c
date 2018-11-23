@@ -6041,6 +6041,10 @@ int main(int argc, char * argv[])
 		if (nbarg == 1)
 		{
 		usage:
+			if (progname == NULL)
+				progname = getVersion(
+					"Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+
 			printf(usage,
 				   progname,
 				   (cpu_count > 1 || cpu_count == -1) ? "\n      -X         : "
