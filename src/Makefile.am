@@ -319,7 +319,8 @@ EXTRA_DIST = wpaclean.c \
              cowpatty.c \
              cowpatty.h \
              session.c \
-             session.h
+             session.h \
+			 defs.h
 
 
 @CODE_COVERAGE_RULES@
