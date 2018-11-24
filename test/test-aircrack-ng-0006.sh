@@ -23,7 +23,6 @@ rm -f ${abs_srcdir}/1word
 
 if [ -f ${abs_srcdir}/session ]; then
 	rm ${abs_srcdir}/session
-	exit 1
 fi
 
 exit 0

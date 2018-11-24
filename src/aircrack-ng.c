@@ -110,6 +110,7 @@ static int station_compare(const void * a, const void * b)
 
 /* stats global data */
 
+static volatile int wpa_cracked = 0;
 static int _speed_test;
 static long _speed_test_length = 15;
 struct timeval t_begin; /* time at start of attack      */
@@ -623,12 +624,20 @@ static void clean_exit(int ret)
 	char tmpbuf[128];
 	memset(tmpbuf, 0, 128);
 
+	close_aircrack = 1;
 	if (ret && !opt.is_quiet)
 	{
 		printf("\nQuitting aircrack-ng...\n");
 		fflush(stdout);
+
+		// Clear all circular queues for faster shutdown.
+		for (int i = 0; i < opt.nbcpu; ++i)
+		{
+			circular_queue_reset(wpa_data[i].cqueue);
+		}
+
+		return;
 	}
-	close_aircrack = 1;
 
 	for (i = 0; i < opt.nbcpu; i++)
 	{
@@ -659,13 +668,17 @@ static void clean_exit(int ret)
 
 	for (i = 0; i < opt.nbcpu; i++)
 	{
+		if (wpa_data[i].cqueue)
+		{
+			circular_queue_free(wpa_data[i].cqueue);
+			wpa_data[i].cqueue = NULL;
+		}
 		if (wpa_data[i].key_buffer != NULL)
 		{
 			free(wpa_data[i].key_buffer);
 			wpa_data[i].key_buffer = NULL;
 		}
-		pthread_cond_destroy(&wpa_data[i].cond);
-		pthread_mutex_destroy(&wpa_data[i].mutex);
+		pthread_mutex_destroy(&(wpa_data[i].mutex));
 	}
 
 	dso_ac_crypto_engine_destroy(&engine);
@@ -806,32 +819,58 @@ static void sighandler(int signum)
 	if (signum == SIGWINCH) erase_display(2);
 }
 
-int wpa_send_passphrase(char * key, struct WPA_data * data, int lock);
-
-inline int wpa_send_passphrase(char * key, struct WPA_data * data, int lock)
+/// Update keys/sec counters with current round of keys.
+static inline void
+increment_passphrase_counts(wpapsk_password keys[MAX_KEYS_PER_CRYPT_SUPPORTED],
+							int nparallel)
 {
-	int delta = 0, i = 0, fincnt = 0;
-	off_t tmpword = 0;
+	int nbkeys = 0;
 
-	pthread_mutex_lock(&data->mutex);
-
-	if (!opt.dictfinish)
+	for (int i = 0; i < nparallel; i++)
 	{
-		delta = chrono(&t_dictup, 0);
-
-		if ((int) delta >= 2)
+		if (keys[i].length > 0)
 		{
-			for (; i < opt.totaldicts; i++)
-			{
-				if (opt.dictidx[i].loaded)
-				{
-					fincnt++;
-					continue;
-				}
+			++nbkeys;
+		}
+	}
 
-				if (opt.dictidx[i].dictsize > READBUF_BLKSIZE)
+	pthread_mutex_lock(&mx_nb);
+
+	nb_tried += nbkeys;
+	nb_kprev += nbkeys;
+
+	pthread_mutex_unlock(&mx_nb);
+}
+
+/// Load next wordlist chunk, and count the number of passphrases present.
+static inline void wl_count_next_block(struct WPA_data * data)
+{
+	REQUIRE(data != NULL);
+
+	if (data->thread > 1) return;
+	if (opt.dictfinish) return;
+
+	float delta = chrono(&t_dictup, 0);
+	if (delta - 2.f >= FLT_EPSILON)
+	{
+		int i;
+		int fincnt = 0;
+		off_t tmpword = 0;
+
+		for (i = 0; i < opt.totaldicts; i++)
+		{
+			if (opt.dictidx[i].loaded)
+			{
+				fincnt++;
+				continue;
+			}
+
+			if (opt.dictidx[i].dictsize > READBUF_BLKSIZE)
+			{
+				if (pthread_mutex_trylock(&mx_dic) >= 0)
 				{
-					tmpword = (long double) linecount(
+
+					tmpword = (off_t) linecount(
 						opt.dicts[i], opt.dictidx[i].dictpos, 32);
 					opt.dictidx[i].wordcount += tmpword;
 					opt.wordcount += tmpword;
@@ -840,39 +879,39 @@ inline int wpa_send_passphrase(char * key, struct WPA_data * data, int lock)
 					if (opt.dictidx[i].dictpos >= opt.dictidx[i].dictsize)
 						opt.dictidx[i].loaded = 1;
 
-					// Only process a chunk then come back later for more.
-					break;
+					pthread_mutex_unlock(&mx_dic);
 				}
+
+				// Only process a chunk then come back later for more.
+				break;
 			}
-
-			if (fincnt == opt.totaldicts)
-				opt.dictfinish = 1;
-			else
-				delta = chrono(&t_dictup, 1);
 		}
-	}
 
-	if ((data->back + 1) % data->nkeys == data->front)
-	{
-		if (lock != 0)
-		{
-			// wait until there's room in the queue
-			pthread_cond_wait(&data->cond, &data->mutex);
-		}
+		if (fincnt == opt.totaldicts)
+			opt.dictfinish = 1;
 		else
-		{
-			pthread_mutex_unlock(&data->mutex);
-			return 0; // full queue!
-		}
+			(void) chrono(&t_dictup, 1);
 	}
+}
 
-	// put one key in the buffer:
-	memcpy(data->key_buffer + data->back * WPA_DATA_KEY_BUFFER_LENGTH,
-		   key,
-		   MAX_PASSPHRASE_LENGTH + 1);
-	data->back = (data->back + 1) % data->nkeys;
+int wpa_send_passphrase(char * key, struct WPA_data * data, int lock);
 
-	pthread_mutex_unlock(&data->mutex);
+inline int wpa_send_passphrase(char * key, struct WPA_data * data, int lock)
+{
+	REQUIRE(key);
+	REQUIRE(data);
+
+	if (lock)
+	{
+		circular_queue_push(data->cqueue, key, MAX_PASSPHRASE_LENGTH + 1);
+	}
+	else
+	{
+		if (circular_queue_try_push(
+				data->cqueue, key, MAX_PASSPHRASE_LENGTH + 1)
+			!= 0)
+			return 0;
+	}
 
 	return 1;
 }
@@ -881,28 +920,11 @@ int wpa_receive_passphrase(char * key, struct WPA_data * data);
 
 inline int wpa_receive_passphrase(char * key, struct WPA_data * data)
 {
-	pthread_mutex_lock(&data->mutex);
+	REQUIRE(key);
+	REQUIRE(data);
 
-	if (data->front == data->back)
-	{
-		pthread_mutex_unlock(&data->mutex);
-		return 0; // empty queue!
-	}
-
-// get one key from the buffer:
-#ifdef XDEBUG
-	printf("%lu: Sending: %s\n",
-		   pthread_self(),
-		   (data->key_buffer + data->front * 128));
-#endif
-	memcpy(key,
-		   data->key_buffer + data->front * WPA_DATA_KEY_BUFFER_LENGTH,
-		   MAX_PASSPHRASE_LENGTH + 1);
-	data->front = (data->front + 1) % data->nkeys;
-
-	// signal that there's now room in the queue for more keys
-	pthread_mutex_unlock(&data->mutex);
-	pthread_cond_signal(&data->cond);
+	circular_queue_pop(
+		data->cqueue, (void * const *) &key, MAX_PASSPHRASE_LENGTH + 1);
 
 	return 1;
 }
@@ -3700,10 +3722,17 @@ static void show_wpa_stats(char * key,
 						   unsigned char mic[16],
 						   int force)
 {
-	float delta, calc, ksec;
-	int i, et_h, et_m, et_s;
+	float calc;
+	float ksec;
+	float delta;
+	int et_h;
+	int et_m;
+	int et_s;
+	int i;
 	char tmpbuf[28];
-	long long int remain, eta, cur_nb_kprev;
+	long long int remain;
+	long long int eta;
+	long long int cur_nb_kprev;
 
 	if (chrono(&t_stats, 0) < 0.15 && force == 0) return;
 
@@ -3717,22 +3746,24 @@ static void show_wpa_stats(char * key,
 
 	delta = chrono(&t_begin, 0);
 
-	et_h = delta / 3600;
-	et_m = (delta - et_h * 3600) / 60;
-	et_s = delta - et_h * 3600 - et_m * 60;
+	et_h = (int) (delta / 3600.f);
+	et_m = (int) ((delta - (et_h * 3600.f)) / 60.f);
+	et_s = (int) ((delta - (et_h * 3600.f)) - (et_m * 60.f));
 
-	if ((delta = chrono(&t_kprev, 0)) >= 6)
+	float orig_delta = delta;
+
+	if ((delta = chrono(&t_kprev, 0)) >= 6.f)
 	{
-		int delta0;
+		float delta0;
 		delta0 = delta;
 
-		t_kprev.tv_sec += 3;
+		t_kprev.tv_sec += 6;
 		delta = chrono(&t_kprev, 0);
 
 		if (delta0 <= FLT_EPSILON) goto __out;
 
 		pthread_mutex_lock(&mx_nb);
-		nb_kprev *= delta / delta0;
+		nb_kprev *= (delta / delta0);
 		cur_nb_kprev = nb_kprev;
 		pthread_mutex_unlock(&mx_nb);
 	}
@@ -3747,12 +3778,12 @@ static void show_wpa_stats(char * key,
 
 	if (_speed_test)
 	{
-		int ks = (int) ((float) cur_nb_kprev / delta);
+		float ks = ((float) cur_nb_kprev / delta);
 
-		printf("%d k/s\r", ks);
+		printf("%0.3f k/s   \r", ks);
 		fflush(stdout);
 
-		if (_speed_test_length > 0 && et_s >= _speed_test_length)
+		if (_speed_test_length > 0 && orig_delta >= (float) _speed_test_length)
 		{
 			printf("\n");
 			exit(0);
@@ -3763,7 +3794,7 @@ static void show_wpa_stats(char * key,
 
 	ksec = (float) cur_nb_kprev / delta;
 
-	if (ksec < 1.0f) goto __out;
+	if (ksec <= FLT_EPSILON) goto __out;
 
 	moveto(0, 3);
 	erase_display(0);
@@ -3810,7 +3841,7 @@ static void show_wpa_stats(char * key,
 	}
 
 	memset(tmpbuf, ' ', sizeof(tmpbuf));
-	memcpy(tmpbuf, key, keylen > 27 ? 27 : keylen);
+	memcpy(tmpbuf, key, keylen > 27u ? 27u : keylen);
 	tmpbuf[27] = '\0';
 
 	if (opt.l33t)
@@ -3912,17 +3943,16 @@ static void crack_wpa_successfully_cracked(
 	int j)
 {
 	// pre-conditions
-	assert(data != NULL);
-	assert(keys != NULL);
-	assert(mic != NULL);
-	assert(nparallel > 0 && nparallel <= MAX_KEYS_PER_CRYPT_SUPPORTED);
-	assert(threadid >= 0 && threadid < MAX_THREADS);
-	assert(j >= 0 && j < nparallel);
+	REQUIRE(data != NULL);
+	REQUIRE(keys != NULL);
+	REQUIRE(mic != NULL);
+	REQUIRE(nparallel > 0 && nparallel <= MAX_KEYS_PER_CRYPT_SUPPORTED);
+	REQUIRE(threadid >= 0 && threadid < MAX_THREADS);
+	REQUIRE(j >= 0 && j < nparallel);
 
 	FILE * keyFile = NULL;
-	int i;
 
-	// to stop do_wpa_crack, we close the dictionary
+	// close the dictionary
 	pthread_mutex_lock(&mx_dic);
 	if (opt.dict != NULL)
 	{
@@ -3931,13 +3961,7 @@ static void crack_wpa_successfully_cracked(
 	}
 	pthread_mutex_unlock(&mx_dic);
 
-	for (i = 0; i < opt.nbcpu; i++)
-	{
-		// we make sure do_wpa_crack doesn't block before exiting,
-		// now that we're not consuming passphrases here any longer
-		pthread_cond_broadcast(&wpa_data[i].cond);
-	}
-
+	// copy working passphrase to output buffer
 	memset(data->key, 0, sizeof(data->key));
 	memcpy(data->key, keys[j].v, sizeof(keys[0].v));
 
@@ -3952,27 +3976,17 @@ static void crack_wpa_successfully_cracked(
 		}
 	}
 
+	wpa_cracked = 1; // Inform producer we're done.
+
 	if (opt.is_quiet)
 	{
 		return;
 	}
 
-	pthread_mutex_lock(&mx_nb);
+	increment_passphrase_counts(keys, nparallel);
 
-	for (i = 0; i < nparallel; i++)
-		if (keys[i].length > 0)
-		{
-			nb_tried++;
-			nb_kprev++;
-		}
-
-	pthread_mutex_unlock(&mx_nb);
-
-	int len = keys[j].length;
-	if (len > 64) len = 64;
-	if (len < 8) len = 8;
 	show_wpa_stats((char *) keys[j].v,
-				   len,
+				   keys[j].length,
 				   dso_ac_crypto_engine_get_pmk(&engine, threadid, j),
 				   dso_ac_crypto_engine_get_ptk(&engine, threadid, j),
 				   mic[j],
@@ -3984,7 +3998,7 @@ static void crack_wpa_successfully_cracked(
 		textcolor_fg(TEXT_RED);
 	}
 
-	moveto((80 - 15 - (int) len) / 2, 8);
+	moveto((80 - 15 - (int) keys[j].length) / 2, 8);
 	erase_line(2);
 	printf("KEY FOUND! [ %s ]\n", keys[j].v);
 	move(CURSOR_DOWN, 11);
@@ -3994,6 +4008,34 @@ static void crack_wpa_successfully_cracked(
 		textcolor_normal();
 		textcolor_fg(TEXT_GREEN);
 	}
+}
+
+// Given a tainted passphrase, this calculate the
+// number of leading, validate bytes for \a key.
+static inline int calculate_passphrase_length(uint8_t * key)
+{
+	REQUIRE(key != NULL);
+
+	int i = (int) strnlen((const char *) key, 64 + 2);
+
+	// ensure NULL termination, after strnlen.
+	key[i] = '\0';
+
+	// trim newlines
+	while (i > 0 && (key[i - 1] == '\r' || key[i - 1] == '\n')) i--;
+
+	// truncate long passphrases
+	if (i > 64) i = 64;
+
+	// ensure NULL termination, after above checks
+	key[i] = '\0';
+
+	// ensure only valid characters in byte sequence.
+	for (int j = 0; j < i; j++)
+		if (!isascii(key[j]) || key[j] < 32) i = 0;
+
+	// returns the length of the valid passphrase sequence
+	return (i);
 }
 
 static int crack_wpa_thread(void * arg)
@@ -4007,17 +4049,19 @@ static int crack_wpa_thread(void * arg)
 	struct AP_info * ap;
 	int threadid = 0;
 	int ret = 0;
-	int i, j, len;
+	int i;
+	int j;
 
 	int nparallel = dso_ac_crypto_engine_simd_width();
 
+	REQUIRE(arg);
 	data = (struct WPA_data *) arg;
 	ap = data->ap;
 	threadid = data->threadid;
 	strncpy(essid, ap->essid, ESSID_LENGTH);
 
 	// The attack below requires a full handshake.
-	assert(ap->wpa.state == 7);
+	REQUIRE(ap->wpa.state == 7);
 
 	dso_ac_crypto_engine_thread_init(&engine, threadid);
 
@@ -4042,53 +4086,48 @@ static int crack_wpa_thread(void * arg)
 	printf("Thread # %d starting...\n", threadid);
 #endif
 
-	while (!close_aircrack)
+	bool done = false;
+	while (!done) // Continue until HAZARD value seen.
 	{
-		/* receive passphrases */
 		memset(keys, 0, sizeof(keys));
 
-		for (j = 0; j < nparallel; ++j)
+		for (j = 0; !done && j < nparallel; ++j)
 		{
 			uint8_t * our_key = keys[j].v;
+			i = 0;
 
-			while (wpa_receive_passphrase((char *) our_key, data) == 0)
+			do
 			{
-				if (wpa_wordlists_done
-					== 1) // if no more words will arrive and...
+				wpa_receive_passphrase((char *) our_key, data);
+
+				// Do we see our HAZARD value?
+				if (our_key[0] == 0xff && our_key[1] == 0xff
+					&& our_key[2] == 0xff
+					&& our_key[3] == 0xff)
 				{
-					if (j == 0)
-					{
-						dso_ac_crypto_engine_thread_destroy(&engine, threadid);
-						return SUCCESS;
-					}
-					else // ...we have some key pending in this loop: keep
-						// working
-						break;
+					done = true; // Yes!
+					break; // Exit for loop; process remaining.
 				}
 
-				sched_yield(); // yield the processor until there are keys
-				// available
-				// this only happens when the queue is empty (when beginning and
-				// ending the wordlist)
-			}
+				i = calculate_passphrase_length(keys[j].v);
+			} while (i < 8);
 
-			keys[j].length = (uint32_t) strlen((const char *) keys[j].v);
+			keys[j].length = (uint32_t) i;
 #ifdef XDEBUG
 			printf("%lu: GOT %p: %s\n", pthread_self(), our_key, our_key);
 #endif
 		}
 
-		if ((int) unlikely(
-				(j = dso_ac_crypto_engine_wpa_crack(&engine,
-													keys,
-													ap->wpa.eapol,
-													ap->wpa.eapol_size,
-													mic,
-													ap->wpa.keyver,
-													ap->wpa.keymic,
-													nparallel,
-													threadid))
-				>= 0))
+		if (unlikely((j = dso_ac_crypto_engine_wpa_crack(&engine,
+														 keys,
+														 ap->wpa.eapol,
+														 ap->wpa.eapol_size,
+														 mic,
+														 ap->wpa.keyver,
+														 ap->wpa.keymic,
+														 nparallel,
+														 threadid))
+					 >= 0))
 		{
 #ifdef XDEBUG
 			printf("%d - %lu FOUND IT AT %d %p !\n",
@@ -4099,33 +4138,14 @@ static int crack_wpa_thread(void * arg)
 #endif
 			crack_wpa_successfully_cracked(
 				data, keys, mic, nparallel, threadid, j);
-
-			ret = SUCCESS;
-			goto crack_wpa_cleanup;
 		}
 
-		int nbkeys = 0;
-		for (i = 0; i < nparallel; i++)
-			if (keys[i].length > 0)
-			{
-				++nbkeys;
-			}
-
-		pthread_mutex_lock(&mx_nb);
-
-		nb_tried += nbkeys;
-		nb_kprev += nbkeys;
-
-		pthread_mutex_unlock(&mx_nb);
+		increment_passphrase_counts(keys, nparallel);
 
 		if (threadid <= 1 && !opt.is_quiet)
 		{
-			len = keys[0].length;
-			if (len > 64) len = 64;
-			if (len < 8) len = 8;
-
 			show_wpa_stats((char *) keys[0].v,
-						   len,
+						   keys[0].length,
 						   dso_ac_crypto_engine_get_pmk(&engine, threadid, 0),
 						   dso_ac_crypto_engine_get_ptk(&engine, threadid, 0),
 						   mic[0],
@@ -4133,7 +4153,10 @@ static int crack_wpa_thread(void * arg)
 		}
 	}
 
-crack_wpa_cleanup:
+	pthread_mutex_lock(&(data->mutex));
+	data->active = 0; // We are no longer an active consumer.
+	pthread_mutex_unlock(&(data->mutex));
+
 	dso_ac_crypto_engine_thread_destroy(&engine, threadid);
 
 	return ret;
@@ -4152,17 +4175,17 @@ static int crack_wpa_pmkid_thread(void * arg)
 	int ret = 0;
 	int i;
 	int j;
-	int len;
 	int nparallel = dso_ac_crypto_engine_simd_width();
 
+	REQUIRE(arg);
 	data = (struct WPA_data *) arg;
 	ap = data->ap;
 	threadid = data->threadid;
 	strncpy(essid, ap->essid, ESSID_LENGTH);
 
 	// Check some pre-conditions.
-	assert(ap->wpa.state > 0 && ap->wpa.state < 7);
-	assert(ap->wpa.pmkid[0] != 0x00);
+	REQUIRE(ap->wpa.state > 0 && ap->wpa.state < 7);
+	REQUIRE(ap->wpa.pmkid[0] != 0x00);
 
 	dso_ac_crypto_engine_thread_init(&engine, threadid);
 
@@ -4173,37 +4196,33 @@ static int crack_wpa_pmkid_thread(void * arg)
 	printf("Thread # %d starting...\n", threadid);
 #endif
 
-	while (!close_aircrack)
+	bool done = false;
+	while (!done) // Loop until our HAZARD value is seen.
 	{
-		/* receive passphrases */
 		memset(keys, 0, sizeof(keys));
 
-		for (j = 0; j < nparallel; ++j)
+		for (j = 0; !done && j < nparallel; ++j)
 		{
 			uint8_t * our_key = keys[j].v;
+			i = 0;
 
-			while (wpa_receive_passphrase((char *) our_key, data) == 0)
+			do
 			{
-				if (wpa_wordlists_done
-					== 1) // if no more words will arrive and...
+				wpa_receive_passphrase((char *) our_key, data);
+
+				// Do we see our HAZARD value?
+				if (our_key[0] == 0xff && our_key[1] == 0xff
+					&& our_key[2] == 0xff
+					&& our_key[3] == 0xff)
 				{
-					if (j == 0)
-					{
-						dso_ac_crypto_engine_thread_destroy(&engine, threadid);
-						return SUCCESS;
-					}
-					else // ...we have some key pending in this loop: keep
-						// working
-						break;
+					done = true; // Yes!
+					break; // Exit for loop; process remaining.
 				}
 
-				sched_yield(); // yield the processor until there are keys
-				// available
-				// this only happens when the queue is empty (when beginning and
-				// ending the wordlist)
-			}
+				i = calculate_passphrase_length(keys[j].v);
+			} while (i < 8);
 
-			keys[j].length = (uint32_t) strlen((const char *) keys[j].v);
+			keys[j].length = (uint32_t) i;
 #ifdef XDEBUG
 			printf("%lu: GOT %p: %s\n", pthread_self(), our_key, our_key);
 #endif
@@ -4223,33 +4242,14 @@ static int crack_wpa_pmkid_thread(void * arg)
 #endif
 			crack_wpa_successfully_cracked(
 				data, keys, mic, nparallel, threadid, j);
-
-			ret = SUCCESS;
-			goto crack_wpa_cleanup;
 		}
 
-		int nbkeys = 0;
-		for (i = 0; i < nparallel; i++)
-			if (keys[i].length > 0)
-			{
-				++nbkeys;
-			}
-
-		pthread_mutex_lock(&mx_nb);
-
-		nb_tried += nbkeys;
-		nb_kprev += nbkeys;
-
-		pthread_mutex_unlock(&mx_nb);
+		increment_passphrase_counts(keys, nparallel);
 
 		if (threadid <= 1 && !opt.is_quiet)
 		{
-			len = keys[0].length;
-			if (len > 64) len = 64;
-			if (len < 8) len = 8;
-
 			show_wpa_stats((char *) keys[0].v,
-						   len,
+						   keys[0].length,
 						   dso_ac_crypto_engine_get_pmk(&engine, threadid, 0),
 						   dso_ac_crypto_engine_get_ptk(&engine, threadid, 0),
 						   mic[0],
@@ -4257,7 +4257,10 @@ static int crack_wpa_pmkid_thread(void * arg)
 		}
 	}
 
-crack_wpa_cleanup:
+	pthread_mutex_lock(&(data->mutex));
+	data->active = 0; // We are no longer an ACTIVE consumer.
+	pthread_mutex_unlock(&(data->mutex));
+
 	dso_ac_crypto_engine_thread_destroy(&engine, threadid);
 
 	return ret;
@@ -4335,7 +4338,7 @@ static int next_dict(int nb)
 					|| (opt.dictidx[opt.nbdict].dictpos
 						> opt.dictidx[opt.nbdict].dictsize))
 				{
-					tmpword = (long double) linecount(
+					tmpword = (off_t) linecount(
 						opt.dicts[opt.nbdict],
 						(opt.dictidx[opt.nbdict].dictpos
 							 ? opt.dictidx[opt.nbdict].dictpos
@@ -4363,7 +4366,7 @@ static int next_dict(int nb)
 		pthread_mutex_lock(&(cracking_session->mutex));
 
 		cracking_session->pos = 0;
-		cracking_session->wordlist_id = opt.nbdict;
+		cracking_session->wordlist_id = (uint8_t) opt.nbdict;
 
 		pthread_mutex_unlock(&(cracking_session->mutex));
 	}
@@ -4410,7 +4413,7 @@ sql_wpacallback(void * arg, int ccount, char ** values, char ** columnnames)
 		}
 
 		show_wpa_stats(values[1],
-					   strlen(values[1]),
+					   (int) strlen(values[1]),
 					   (unsigned char *) (values[0]),
 					   ptk,
 					   mic,
@@ -4444,7 +4447,7 @@ sql_wpacallback(void * arg, int ccount, char ** values, char ** columnnames)
 
 	if (!opt.is_quiet)
 		show_wpa_stats(values[1],
-					   strlen(values[1]),
+					   (int) strlen(values[1]),
 					   (unsigned char *) (values[0]),
 					   ptk,
 					   mic,
@@ -4534,7 +4537,7 @@ static int do_make_wkp(struct AP_info * ap_cur)
 	printf("\n\nBuilding WKP file...\n\n");
 	if (display_wpa_hash_information(ap_cur) == 0)
 	{
-		return (0);
+		return (FAILURE);
 	}
 	printf("\n");
 
@@ -4558,7 +4561,7 @@ static int do_make_wkp(struct AP_info * ap_cur)
 	if (fp_wkp == NULL)
 	{
 		printf("\nFailed to create EWSA project file\n");
-		return 0;
+		return (FAILURE);
 	}
 
 	// ESSID
@@ -4576,13 +4579,13 @@ static int do_make_wkp(struct AP_info * ap_cur)
 	memcpy(&frametmp[0x520], ap_cur->essid, sizeof(ap_cur->essid));
 
 	// ESSID length
-	frametmp[0x540] = strlen(ap_cur->essid);
+	frametmp[0x540] = (uint8_t) strlen(ap_cur->essid);
 
 	// WPA Key version
 	frametmp[0x544] = ap_cur->wpa.keyver;
 
 	// Size of EAPOL
-	frametmp[0x548] = ap_cur->wpa.eapol_size;
+	frametmp[0x548] = (uint8_t) ap_cur->wpa.eapol_size;
 
 	// anonce
 	ptmp = (char *) ap_cur->wpa.anonce;
@@ -4606,13 +4609,13 @@ static int do_make_wkp(struct AP_info * ap_cur)
 	if ((int) elt_written == WKP_FRAME_LENGTH)
 	{
 		printf("\nSuccessfully written to %s\n", opt.wkp);
+		return (SUCCESS);
 	}
 	else
 	{
 		printf("\nFailed to write to %s\n !", opt.wkp);
+		return (FAILURE);
 	}
-
-	return (1);
 }
 
 // return by value because it is the simplest interface and we call this
@@ -4663,7 +4666,7 @@ static int do_make_hccap(struct AP_info * ap_cur)
 	printf("\n\nBuilding Hashcat file...\n\n");
 	if (display_wpa_hash_information(ap_cur) == 0)
 	{
-		return (0);
+		return (FAILURE);
 	}
 	printf("\n");
 
@@ -4676,7 +4679,7 @@ static int do_make_hccap(struct AP_info * ap_cur)
 	if (fp_hccap == NULL)
 	{
 		printf("\nFailed to create Hashcat capture file\n");
-		return 0;
+		return (FAILURE);
 	}
 
 	hccap_t hccap = ap_to_hccap(ap_cur);
@@ -4687,13 +4690,13 @@ static int do_make_hccap(struct AP_info * ap_cur)
 	if ((int) elt_written == 1)
 	{
 		printf("\nSuccessfully written to %s\n", opt.hccap);
+		return (SUCCESS);
 	}
 	else
 	{
 		printf("\nFailed to write to %s\n !", opt.hccap);
+		return (FAILURE);
 	}
-
-	return (1);
 }
 
 // Caller must free
@@ -4749,7 +4752,7 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 	memcpy(&hx.keymic, &ap->wpa.keymic, sizeof(ap->wpa.keymic));
 	memcpy(&hx.nonce_sta, &ap->wpa.snonce, sizeof(ap->wpa.snonce));
 	memcpy(&hx.nonce_ap, &ap->wpa.anonce, sizeof(ap->wpa.anonce));
-	hx.eapol_len = cpu_to_le16(ap->wpa.eapol_size);
+	hx.eapol_len = cpu_to_le16((uint16_t) ap->wpa.eapol_size);
 	memcpy(&hx.eapol, &ap->wpa.eapol, sizeof(ap->wpa.eapol));
 	return hx;
 }
@@ -4761,7 +4764,7 @@ static int do_make_hccapx(struct AP_info * ap_cur)
 	printf("\n\nBuilding Hashcat (3.60+) file...\n\n");
 	if (display_wpa_hash_information(ap_cur) == 0)
 	{
-		return (0);
+		return (FAILURE);
 	}
 	printf("\n");
 
@@ -4774,7 +4777,7 @@ static int do_make_hccapx(struct AP_info * ap_cur)
 	if (fp_hccapx == NULL)
 	{
 		printf("\nFailed to create Hashcat X capture file\n");
-		return 0;
+		return (FAILURE);
 	}
 
 	struct hccapx hx = ap_to_hccapx(ap_cur);
@@ -4785,24 +4788,21 @@ static int do_make_hccapx(struct AP_info * ap_cur)
 	if ((int) elt_written == 1)
 	{
 		printf("\nSuccessfully written to %s\n", opt.hccapx);
+		return (SUCCESS);
 	}
 	else
 	{
 		printf("\nFailed to write to %s\n !", opt.hccapx);
+		return (FAILURE);
 	}
-
-	return (1);
 }
 
 static int do_wpa_crack(void)
 {
-	int i, j, cid, num_cpus, res;
+	int cid, res;
 	char key1[128];
 
-	i = 0;
-	res = 0;
-	num_cpus = opt.nbcpu;
-
+	// display program banner
 	if (!opt.is_quiet && !_speed_test)
 	{
 		if (opt.l33t) textcolor(TEXT_RESET, TEXT_WHITE, TEXT_BLACK);
@@ -4815,88 +4815,58 @@ static int do_wpa_crack(void)
 			textcolor_fg(TEXT_BLUE);
 		}
 
-		moveto((80 - strlen(progname)) / 2, 2);
+		moveto((80 - (int) strlen(progname)) / 2, 2);
 		printf("%s", progname);
 	}
 
+	// Initial thread to communicate with.
 	cid = 0;
-	while (num_cpus > 0)
+
+	// Loop until no passphrases or one is found.
+	while (!wpa_cracked && !close_aircrack)
 	{
-		/* read a couple of keys (skip those < 8 chars) */
-
-		pthread_mutex_lock(&mx_dic);
-
-		if (opt.dict == NULL)
-		{
-			pthread_mutex_unlock(&mx_dic);
-			return (FAILURE);
-		}
+		// clear passphrase buffer.
+		memset(key1, 0, sizeof(key1));
+		if (_speed_test)
+			strcpy(key1, "sorbosorbo");
 		else
-			pthread_mutex_unlock(&mx_dic);
-		do
 		{
-			memset(key1, 0, sizeof(key1));
-			if (_speed_test)
-				strcpy(key1, "sorbosorbo");
-			else
+			pthread_mutex_lock(&mx_dic);
+			if (opt.dict == NULL || fgets(key1, sizeof(key1), opt.dict) == NULL)
 			{
-				pthread_mutex_lock(&mx_dic);
-				if (fgets(key1, sizeof(key1), opt.dict) == NULL)
-				{
-					pthread_mutex_unlock(&mx_dic);
+				pthread_mutex_unlock(&mx_dic);
 
-					if (opt.l33t)
-					{
-						textcolor_normal();
-						textcolor_fg(TEXT_GREEN);
-					}
-					/* printf( "\nPassphrase not in dictionary %s \n",
-					 * opt.dicts[opt.nbdict] );*/
-					if (next_dict(opt.nbdict + 1) != 0)
-					{
-						/* no more words, but we still have to wait for the
-						 * cracking threads */
-						num_cpus = cid;
-						// goto collect_and_test;
-						return (FAILURE);
-					}
-					else
-						continue;
+				if (opt.l33t)
+				{
+					textcolor_normal();
+					textcolor_fg(TEXT_GREEN);
+				}
+				if (next_dict(opt.nbdict + 1) != 0)
+				{
+					return (FAILURE);
 				}
 				else
-					pthread_mutex_unlock(&mx_dic);
+					continue;
 			}
-			i = strlen(key1);
-			if (i < 8) continue;
-			if (i > 64) i = 64;
-
-			while (i > 0 && (key1[i - 1] == '\r' || key1[i - 1] == '\n')) i--;
-			if (i <= 0) continue;
-			key1[i] = '\0';
-
-			for (j = 0; j < i; j++)
-				if (!isascii(key1[j]) || key1[j] < 32) i = 0;
-
-		} while (i < 8);
-
-		/* send the keys */
-
-		for (i = 0; i < opt.nbcpu; ++i)
-		{
-			res = wpa_send_passphrase(
-				key1, &(wpa_data[cid]), 0 /*don't block*/);
-			if (res != 0) break;
-			cid = (cid + 1) % opt.nbcpu;
+			else
+				pthread_mutex_unlock(&mx_dic);
 		}
 
-		if (res == 0) // if all queues are full, we block until there's room
+		/* count number of lines in next wordlist chunk */
+		wl_count_next_block(&(wpa_data[cid]));
+
+		/* send the passphrase */
+		bool sent = false;
+		do
 		{
-			wpa_send_passphrase(key1, &(wpa_data[cid]), 1 /*block*/);
 			cid = (cid + 1) % opt.nbcpu;
-		}
+
+			res = wpa_send_passphrase(key1, &(wpa_data[cid]), 0);
+			if (res != 0) sent = true;
+			if (wpa_cracked || close_aircrack) break; // prevent inf recursion
+		} while (!sent);
 	}
 
-	// printf( "\nPassphrase not in dictionary \n" );
 	return (FAILURE);
 }
 
@@ -4936,9 +4906,6 @@ static int next_key(char ** key, int keysize)
 					textcolor_fg(TEXT_GREEN);
 				}
 
-				//				printf( "\nPassphrase not in dictionary \"%s\"
-				//\n",
-				// opt.dicts[opt.nbdict] );
 				if (next_dict(opt.nbdict + 1) != 0)
 				{
 					free(tmpref);
@@ -4951,7 +4918,7 @@ static int next_key(char ** key, int keysize)
 			else
 				pthread_mutex_unlock(&mx_dic);
 
-			i = strlen(tmp);
+			i = (int) strlen(tmp);
 
 			if (i <= 2) continue;
 
@@ -4976,7 +4943,7 @@ static int next_key(char ** key, int keysize)
 					break;
 				}
 
-				(*key)[i] = dec;
+				(*key)[i] = (uint8_t) dec;
 				hex = strsep(&tmp, ":");
 				i++;
 			}
@@ -4997,9 +4964,6 @@ static int next_key(char ** key, int keysize)
 					textcolor_fg(TEXT_GREEN);
 				}
 
-				//				printf( "\nPassphrase not in dictionary \"%s\"
-				//\n",
-				// opt.dicts[opt.nbdict] );
 				if (next_dict(opt.nbdict + 1) != 0)
 				{
 					free(tmpref);
@@ -5012,7 +4976,7 @@ static int next_key(char ** key, int keysize)
 			else
 				pthread_mutex_unlock(&mx_dic);
 
-			i = strlen(*key);
+			i = (int) strlen(*key);
 
 			if (i <= 2) continue;
 
@@ -5121,7 +5085,7 @@ static int crack_wep_dict(void)
 			return (FAILURE);
 		}
 
-		i = strlen(key);
+		i = (int) strlen(key);
 
 		origlen = i;
 
@@ -5212,7 +5176,7 @@ static int crack_wep_ptw(struct AP_info * ap_cur)
 			if (PTW_computeKey(ap_cur->ptw_clean,
 							   wep.key,
 							   opt.keylen,
-							   (KEYLIMIT * opt.ffact),
+							   (int) (KEYLIMIT * opt.ffact),
 							   PTW_DEFAULTBF,
 							   all,
 							   opt.ptw_attack)
@@ -5235,7 +5199,7 @@ static int crack_wep_ptw(struct AP_info * ap_cur)
 			else if (PTW_computeKey(ap_cur->ptw_clean,
 									wep.key,
 									13,
-									(KEYLIMIT * opt.ffact),
+									(int) (KEYLIMIT * opt.ffact),
 									PTW_DEFAULTBF,
 									all,
 									opt.ptw_attack)
@@ -5244,7 +5208,7 @@ static int crack_wep_ptw(struct AP_info * ap_cur)
 			else if (PTW_computeKey(ap_cur->ptw_clean,
 									wep.key,
 									5,
-									(KEYLIMIT * opt.ffact) / 3,
+									(int) (KEYLIMIT * opt.ffact) / 3,
 									PTW_DEFAULTBF,
 									all,
 									opt.ptw_attack)
@@ -5266,7 +5230,7 @@ static int crack_wep_ptw(struct AP_info * ap_cur)
 			if (PTW_computeKey(ap_cur->ptw_vague,
 							   wep.key,
 							   opt.keylen,
-							   (KEYLIMIT * opt.ffact),
+							   (int) (KEYLIMIT * opt.ffact),
 							   PTW_DEFAULTBF,
 							   all,
 							   opt.ptw_attack)
@@ -5289,7 +5253,7 @@ static int crack_wep_ptw(struct AP_info * ap_cur)
 			else if (PTW_computeKey(ap_cur->ptw_vague,
 									wep.key,
 									13,
-									(KEYLIMIT * opt.ffact),
+									(int) (KEYLIMIT * opt.ffact),
 									PTW_DEFAULTBF,
 									all,
 									opt.ptw_attack)
@@ -5298,7 +5262,7 @@ static int crack_wep_ptw(struct AP_info * ap_cur)
 			else if (PTW_computeKey(ap_cur->ptw_vague,
 									wep.key,
 									5,
-									(KEYLIMIT * opt.ffact) / 10,
+									(int) (KEYLIMIT * opt.ffact) / 10,
 									PTW_DEFAULTBF,
 									all,
 									opt.ptw_attack)
@@ -6700,14 +6664,14 @@ __start:
 	crack_wpa:
 		dso_ac_crypto_engine_init(&engine);
 
-		cpuset = ac_cpuset_new();
-		ac_cpuset_init(cpuset);
-		ac_cpuset_distribute(cpuset, opt.nbcpu);
-
 		if (opt.dict == NULL && db == NULL)
 		{
 			goto nodict;
 		}
+
+		cpuset = ac_cpuset_new();
+		ac_cpuset_init(cpuset);
+		ac_cpuset_distribute(cpuset, opt.nbcpu);
 
 		ap_cur = get_first_target();
 
@@ -6757,17 +6721,27 @@ __start:
 					goto exit_main;
 				}
 
+				const size_t key_size = MAX_PASSPHRASE_LENGTH + 1;
+				const size_t kb_size = WL_CIRCULAR_QUEUE_SIZE * key_size;
+
 				/* start one thread per cpu */
+				wpa_data[i].active = 1;
 				wpa_data[i].ap = ap_cur;
 				wpa_data[i].thread = i;
 				wpa_data[i].threadid = id;
-				wpa_data[i].nkeys = 17;
-				wpa_data[i].key_buffer
-					= (char *) malloc(wpa_data[i].nkeys * 128);
-				wpa_data[i].front = 0;
-				wpa_data[i].back = 0;
+#if HAVE_POSIX_MEMALIGN
+				if (posix_memalign((void **) &(wpa_data[i].key_buffer),
+								   CACHELINE_SIZE,
+								   kb_size))
+					perror("posix_memalign");
+#else
+				wpa_data[i].key_buffer = calloc(1, kb_size);
+#endif
+				assert(wpa_data[i].key_buffer);
+				wpa_data[i].cqueue = circular_queue_init(
+					wpa_data[i].key_buffer, kb_size, key_size);
+				assert(wpa_data[i].cqueue);
 				memset(wpa_data[i].key, 0, sizeof(wpa_data[i].key));
-				pthread_cond_init(&wpa_data[i].cond, NULL);
 				pthread_mutex_init(&wpa_data[i].mutex, NULL);
 
 				if (pthread_create(&(tid[id]),
@@ -6782,15 +6756,37 @@ __start:
 					goto exit_main;
 				}
 
-				ac_cpuset_bind_thread_at(cpuset, tid[id], i);
+				ac_cpuset_bind_thread_at(cpuset, tid[id], (size_t) i);
 
 				id++;
 			}
 
 			ret = do_wpa_crack(); // we feed keys to the cracking threads
-			wpa_wordlists_done = 1; // we tell the threads that they shouldn't
-			// expect more words (don't wait for
-			// parallel crack)
+
+			// Shutdown the circular queue.
+			bool shutdown = true;
+			do
+			{
+				shutdown = true;
+
+				for (i = 0; i < opt.nbcpu; ++i)
+				{
+					int active;
+
+					pthread_mutex_lock(&(wpa_data[i].mutex));
+					active = wpa_data[i].active;
+					pthread_mutex_unlock(&(wpa_data[i].mutex));
+
+					if (active)
+					{
+						bool result
+							= circular_queue_try_push(
+								  wpa_data[i].cqueue, "\xff\xff\xff\xff", 4)
+							  == 0;
+						if (!result) shutdown = false;
+					}
+				}
+			} while (!shutdown);
 
 			// we wait for the cracking threads to end
 			for (i = starting_thread_id; i < opt.nbcpu + starting_thread_id;
@@ -6837,7 +6833,7 @@ __start:
 
 				clean_exit(SUCCESS);
 			}
-			else
+			else if (!close_aircrack)
 			{
 				if (!opt.is_quiet)
 				{

@@ -37,6 +37,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "defs.h"
+
 #define MAX_THREADS 256
 
 #if defined(_MSC_VER)
@@ -52,23 +54,6 @@
 #define EXPORT
 #define IMPORT
 #pragma warning Unknown dynamic link import / export semantics.
-#endif
-
-#define STATIC_ASSERT(COND, MSG)                                               \
-	typedef char static_assertion_##MSG[(!!(COND)) * 2 - 1]
-// token pasting madness:
-#define COMPILE_TIME_ASSERT3(X, L)                                             \
-	STATIC_ASSERT(X, static_assertion_at_line_##L)
-#define COMPILE_TIME_ASSERT2(X, L) COMPILE_TIME_ASSERT3(X, L)
-#define COMPILE_TIME_ASSERT(X) COMPILE_TIME_ASSERT2(X, __LINE__)
-
-#if defined(__GNUC__) || defined(__llvm__) || defined(__clang__)               \
-	|| defined(__INTEL_COMPILER)
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
-#else
-#define likely(x) (x)
-#define unlikely(x) (x)
 #endif
 
 #ifdef __cplusplus

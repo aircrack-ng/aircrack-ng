@@ -120,6 +120,10 @@ AIRCRACK_NG_PTHREAD
 AX_LIB_SOCKET_NSL
 AC_CHECK_LIB([dl], [dlopen], [ LIBS="$LIBS -ldl" ], [:])
 AC_CHECK_LIB([m], [sin], [ LIBS="$LIBS -lm" ], [:])
+saved_cflags="$CFLAGS"
+CFLAGS=""
+AC_CHECK_FUNCS([posix_memalign aligned_alloc memalign __mingw_aligned_malloc _aligned_malloc], break)
+CFLAGS="$saved_cflags"
 
 #
 # Code Coverage Support

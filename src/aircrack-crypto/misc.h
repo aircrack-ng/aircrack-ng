@@ -132,7 +132,7 @@ extern void real_pexit(char * file, int line, char * format, ...)
 #define pexit(...)                                                             \
 	{                                                                          \
 		perror(__VA_ARGS__);                                                   \
-		clean_exit(FAILURE);                                                   \
+		exit(1);                                                               \
 	}
 
 /*
