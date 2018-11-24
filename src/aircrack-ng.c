@@ -3841,7 +3841,7 @@ static void show_wpa_stats(char * key,
 	}
 
 	memset(tmpbuf, ' ', sizeof(tmpbuf));
-	memcpy(tmpbuf, key, keylen > 27u ? 27u : keylen);
+	memcpy(tmpbuf, key, (size_t) keylen > 27u ? 27u : (size_t) keylen);
 	tmpbuf[27] = '\0';
 
 	if (opt.l33t)
