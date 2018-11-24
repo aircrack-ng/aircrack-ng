@@ -69,7 +69,9 @@ if !HAVE_HWLOC
 CPUSET = cpuset_pthread.c
 endif
 
-libaircrack_util_la_SOURCES = common.c \
+libaircrack_util_la_SOURCES = circular_buffer.c \
+							  circular_queue.c \
+							  common.c \
 							  console.c \
 							  crypto_engine_loader.c \
 							  mcs_index_rates.c \
@@ -106,7 +108,11 @@ endif
 
 noinst_LTLIBRARIES = libaircrack-util.la
 
-EXTRA_DIST = common.c \
+EXTRA_DIST = circular_buffer.c \
+			 circular_buffer.h \
+			 circular_queue.c \
+			 circular_queue.h \
+			 common.c \
              common.h \
              console.c \
              console.h \

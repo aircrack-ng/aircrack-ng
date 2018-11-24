@@ -35,6 +35,8 @@
 #ifndef _AIRCRACK_NG_H
 #define _AIRCRACK_NG_H
 
+#include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
@@ -48,6 +50,7 @@
 
 #include <pthread.h>
 #include "aircrack-util/avl_tree.h"
+#include "aircrack-util/circular_queue.h"
 
 #define SUCCESS 0
 #define FAILURE 1
@@ -72,6 +75,10 @@
 #define KEYHSBYTES PTW_KEYHSBYTES
 
 #define MAX_THREADS 256
+
+#ifndef WL_CIRCULAR_QUEUE_SIZE
+#define WL_CIRCULAR_QUEUE_SIZE (10 * 10 * 1024)
+#endif
 
 #define CLOSE_IT 100000
 
@@ -249,19 +256,14 @@ struct mergeBSSID
 
 struct WPA_data
 {
+	int active;
 	ac_crypto_engine_t engine;
 	struct AP_info * ap; /* AP information */
 	int thread; /* number of this thread */
 	int threadid; /* id of this thread */
-	int nkeys; /* buffer capacity */
-	char * key_buffer; /* queue as a circular buffer for feeding and consuming
-							keys */
-	int front; /* front marker for the circular buffers */
-	int back; /* back marker for the circular buffers */
 	char key[WPA_DATA_KEY_BUFFER_LENGTH]; /* cracked key (0 while not found) */
-	pthread_cond_t
-		cond; /* condition for waiting when buffer is full until keys are tried
-				 and new keys can be written */
+	uint8_t * key_buffer;
+	cqueue_handle_t cqueue;
 	pthread_mutex_t mutex;
 };
 

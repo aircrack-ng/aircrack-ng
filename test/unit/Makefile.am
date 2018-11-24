@@ -74,6 +74,18 @@ test_calc_one_pmk_LDFLAGS = -rdynamic
 test_calc_one_pmk_LDADD   = $(LIBAIRCRACK_CRYPTO_LIBS) \
 						    $(COMMON_LDADD)
 
+test_circular_buffer_SOURCES = test-circular-buffer.c \
+							   $(LIBAIRCRACK_UTIL)
+test_circular_buffer_CFLAGS  = $(COMMON_CFLAGS)
+test_circular_buffer_LDFLAGS = -rdynamic
+test_circular_buffer_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(COMMON_LDADD)
+
+test_circular_queue_SOURCES = test-circular-queue.c \
+							   $(LIBAIRCRACK_UTIL)
+test_circular_queue_CFLAGS  = $(COMMON_CFLAGS)
+test_circular_queue_LDFLAGS = -rdynamic
+test_circular_queue_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(COMMON_LDADD)
+
 test_string_has_suffix_SOURCES = test-string-has-suffix.c \
 								 $(LIBAIRCRACK_UTIL)
 test_string_has_suffix_CFLAGS  = $(COMMON_CFLAGS)
@@ -103,14 +115,14 @@ test_wpapsk_cmac_LDFLAGS = -rdynamic
 test_wpapsk_cmac_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) \
 						   $(COMMON_LDADD)
 
-TESTS = test-calc-one-pmk test-string-has-suffix
+TESTS = test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
 
 if !STATIC_BUILD
 TESTS += test-wpapsk
 TESTS += test-wpapsk-cmac
 endif
 
-check_PROGRAMS = test-calc-one-pmk test-string-has-suffix
+check_PROGRAMS = test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
 
 if !STATIC_BUILD
 check_PROGRAMS += test-wpapsk

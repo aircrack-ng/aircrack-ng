@@ -79,3 +79,5 @@ coverage*.info
 /test/unit/test-string-has-suffix
 /test/unit/test-wpapsk
 /test/unit/test-wpapsk-cmac
+/test/unit/test-circular-buffer
+/test/unit/test-circular-queue
