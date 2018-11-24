@@ -3745,6 +3745,7 @@ static void show_wpa_stats(char * key,
 	chrono(&t_stats, 1);
 
 	delta = chrono(&t_begin, 0);
+	if (delta <= FLT_EPSILON) goto __out;
 
 	et_h = (int) (delta / 3600.f);
 	et_m = (int) ((delta - (et_h * 3600.f)) / 60.f);
@@ -3760,6 +3761,7 @@ static void show_wpa_stats(char * key,
 		t_kprev.tv_sec += 6;
 		delta = chrono(&t_kprev, 0);
 
+		if (delta <= FLT_EPSILON) goto __out;
 		if (delta0 <= FLT_EPSILON) goto __out;
 
 		pthread_mutex_lock(&mx_nb);
