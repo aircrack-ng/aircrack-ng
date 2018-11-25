@@ -4803,7 +4803,7 @@ static int do_make_hccapx(struct AP_info * ap_cur)
 
 static int do_wpa_crack(void)
 {
-	int cid, res;
+	int cid;
 	char key1[128];
 
 	// display program banner
@@ -4860,15 +4860,9 @@ static int do_wpa_crack(void)
 		wl_count_next_block(&(wpa_data[cid]));
 
 		/* send the passphrase */
-		bool sent = false;
-		do
-		{
-			cid = (cid + 1) % opt.nbcpu;
+		cid = (cid + 1) % opt.nbcpu;
 
-			res = wpa_send_passphrase(key1, &(wpa_data[cid]), 0);
-			if (res != 0) sent = true;
-			if (wpa_cracked || close_aircrack) break; // prevent inf recursion
-		} while (!sent);
+		(void) wpa_send_passphrase(key1, &(wpa_data[cid]), 1);
 	}
 
 	return (FAILURE);
