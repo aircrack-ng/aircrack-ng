@@ -120,6 +120,7 @@ struct timeval t_dictup; /* next dictionary total read   */
 long long int nb_kprev; /* last  # of keys tried        */
 long long int nb_tried; /* total # of keys tried        */
 static ac_crypto_engine_t engine; /* crypto engine */
+static int first_wpa_threadid = 0;
 
 /* IPC global data */
 
@@ -4147,7 +4148,7 @@ static int crack_wpa_thread(void * arg)
 
 		increment_passphrase_counts(keys, nparallel);
 
-		if (threadid <= 1 && !opt.is_quiet)
+		if (threadid == first_wpa_threadid && !opt.is_quiet)
 		{
 			show_wpa_stats((char *) keys[0].v,
 						   keys[0].length,
@@ -4250,7 +4251,7 @@ static int crack_wpa_pmkid_thread(void * arg)
 
 		increment_passphrase_counts(keys, nparallel);
 
-		if (threadid <= 1 && !opt.is_quiet)
+		if (first_wpa_threadid == threadid && !opt.is_quiet)
 		{
 			show_wpa_stats((char *) keys[0].v,
 						   keys[0].length,
@@ -6696,6 +6697,7 @@ __start:
 		if (db == NULL)
 		{
 			int starting_thread_id = id;
+			first_wpa_threadid = id;
 
 			for (i = 0; i < opt.nbcpu; i++)
 			{
