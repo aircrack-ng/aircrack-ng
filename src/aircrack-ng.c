@@ -4233,10 +4233,9 @@ static int crack_wpa_pmkid_thread(void * arg)
 #endif
 		}
 
-		if ((int) unlikely(
-				(j = dso_ac_crypto_engine_wpa_pmkid_crack(
-					 &engine, keys, ap->wpa.pmkid, nparallel, threadid))
-				>= 0))
+		if (unlikely((j = dso_ac_crypto_engine_wpa_pmkid_crack(
+						  &engine, keys, ap->wpa.pmkid, nparallel, threadid))
+					 >= 0))
 		{
 #ifdef XDEBUG
 			printf("%d - %lu FOUND IT AT %d %p !\n",
