@@ -633,7 +633,10 @@ static void clean_exit(int ret)
 		// Clear all circular queues for faster shutdown.
 		for (int i = 0; i < opt.nbcpu; ++i)
 		{
-			circular_queue_reset(wpa_data[i].cqueue);
+			if (wpa_data[i].cqueue != NULL)
+			{
+				circular_queue_reset(wpa_data[i].cqueue);
+			}
 		}
 
 		return;
