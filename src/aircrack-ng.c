@@ -630,7 +630,10 @@ static void clean_exit(int ret)
 	{
 		printf("\nQuitting aircrack-ng...\n");
 		fflush(stdout);
+	}
 
+	if (ret)
+	{
 		// Clear all circular queues for faster shutdown.
 		for (int i = 0; i < opt.nbcpu; ++i)
 		{
@@ -838,12 +841,12 @@ increment_passphrase_counts(wpapsk_password keys[MAX_KEYS_PER_CRYPT_SUPPORTED],
 		}
 	}
 
-	pthread_mutex_lock(&mx_nb);
+	ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
 
 	nb_tried += nbkeys;
 	nb_kprev += nbkeys;
 
-	pthread_mutex_unlock(&mx_nb);
+	ALLEGE(pthread_mutex_unlock(&mx_nb) == 0);
 }
 
 /// Load next wordlist chunk, and count the number of passphrases present.
@@ -883,7 +886,7 @@ static inline void wl_count_next_block(struct WPA_data * data)
 					if (opt.dictidx[i].dictpos >= opt.dictidx[i].dictsize)
 						opt.dictidx[i].loaded = 1;
 
-					pthread_mutex_unlock(&mx_dic);
+					ALLEGE(pthread_mutex_unlock(&mx_dic) == 0);
 				}
 
 				// Only process a chunk then come back later for more.
@@ -4159,9 +4162,9 @@ static int crack_wpa_thread(void * arg)
 		}
 	}
 
-	pthread_mutex_lock(&(data->mutex));
+	ALLEGE(pthread_mutex_lock(&(data->mutex)) == 0);
 	data->active = 0; // We are no longer an active consumer.
-	pthread_mutex_unlock(&(data->mutex));
+	ALLEGE(pthread_mutex_unlock(&(data->mutex)) == 0);
 
 	dso_ac_crypto_engine_thread_destroy(&engine, threadid);
 
@@ -4262,9 +4265,9 @@ static int crack_wpa_pmkid_thread(void * arg)
 		}
 	}
 
-	pthread_mutex_lock(&(data->mutex));
+	ALLEGE(pthread_mutex_lock(&(data->mutex)) == 0);
 	data->active = 0; // We are no longer an ACTIVE consumer.
-	pthread_mutex_unlock(&(data->mutex));
+	ALLEGE(pthread_mutex_unlock(&(data->mutex)) == 0);
 
 	dso_ac_crypto_engine_thread_destroy(&engine, threadid);
 
@@ -4836,10 +4839,10 @@ static int do_wpa_crack(void)
 			strcpy(key1, "sorbosorbo");
 		else
 		{
-			pthread_mutex_lock(&mx_dic);
+			ALLEGE(pthread_mutex_lock(&mx_dic) == 0);
 			if (opt.dict == NULL || fgets(key1, sizeof(key1), opt.dict) == NULL)
 			{
-				pthread_mutex_unlock(&mx_dic);
+				ALLEGE(pthread_mutex_unlock(&mx_dic) == 0);
 
 				if (opt.l33t)
 				{
@@ -4854,7 +4857,7 @@ static int do_wpa_crack(void)
 					continue;
 			}
 			else
-				pthread_mutex_unlock(&mx_dic);
+				ALLEGE(pthread_mutex_unlock(&mx_dic) == 0);
 		}
 
 		/* count number of lines in next wordlist chunk */
@@ -6669,6 +6672,7 @@ __start:
 		}
 
 		cpuset = ac_cpuset_new();
+		ALLEGE(cpuset);
 		ac_cpuset_init(cpuset);
 		ac_cpuset_distribute(cpuset, opt.nbcpu);
 
@@ -6737,12 +6741,12 @@ __start:
 #else
 				wpa_data[i].key_buffer = calloc(1, kb_size);
 #endif
-				assert(wpa_data[i].key_buffer);
+				ALLEGE(wpa_data[i].key_buffer);
 				wpa_data[i].cqueue = circular_queue_init(
 					wpa_data[i].key_buffer, kb_size, key_size);
-				assert(wpa_data[i].cqueue);
+				ALLEGE(wpa_data[i].cqueue);
 				memset(wpa_data[i].key, 0, sizeof(wpa_data[i].key));
-				pthread_mutex_init(&wpa_data[i].mutex, NULL);
+				ALLEGE(pthread_mutex_init(&wpa_data[i].mutex, NULL) == 0);
 
 				if (pthread_create(&(tid[id]),
 								   NULL,
@@ -6773,9 +6777,9 @@ __start:
 				{
 					int active;
 
-					pthread_mutex_lock(&(wpa_data[i].mutex));
+					ALLEGE(pthread_mutex_lock(&(wpa_data[i].mutex)) == 0);
 					active = wpa_data[i].active;
-					pthread_mutex_unlock(&(wpa_data[i].mutex));
+					ALLEGE(pthread_mutex_unlock(&(wpa_data[i].mutex)) == 0);
 
 					if (active)
 					{
