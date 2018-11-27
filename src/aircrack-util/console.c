@@ -43,7 +43,7 @@
 
 void textcolor(int attr, int fg, int bg)
 {
-	char command[13];
+	char command[64];
 
 	/* Command is the control command to the terminal */
 	snprintf(
@@ -54,7 +54,7 @@ void textcolor(int attr, int fg, int bg)
 
 void textcolor_fg(int fg)
 {
-	char command[13];
+	char command[64];
 
 	/* Command is the control command to the terminal */
 	snprintf(command, sizeof(command), "\033[%dm", fg + 30);
@@ -64,7 +64,7 @@ void textcolor_fg(int fg)
 
 void textcolor_bg(int bg)
 {
-	char command[13];
+	char command[64];
 
 	/* Command is the control command to the terminal */
 	snprintf(command, sizeof(command), "\033[%dm", bg + 40);
@@ -94,7 +94,7 @@ void reset_term()
 
 void moveto(int x, int y)
 {
-	char command[13];
+	char command[64];
 
 	// clamp the X coordinate.
 	if (x < 0)
