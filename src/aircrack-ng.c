@@ -5283,6 +5283,480 @@ static int crack_wep_ptw(struct AP_info * ap_cur)
 	return SUCCESS;
 }
 
+static int missing_wordlist_dictionary(struct AP_info * ap_cur)
+{
+	if (opt.wkp == NULL && opt.hccap == NULL && opt.hccapx == NULL)
+	{
+		printf("Please specify a dictionary (option -w).\n");
+	}
+	else
+	{
+		if (opt.wkp)
+		{
+			return do_make_wkp(ap_cur);
+		}
+		if (opt.hccap)
+		{
+			return do_make_hccap(ap_cur);
+		}
+		if (opt.hccapx)
+		{
+			return do_make_hccapx(ap_cur);
+		}
+	}
+
+	return (SUCCESS);
+}
+
+static int perform_wep_crack(struct AP_info * ap_cur)
+{
+	int ret = FAILURE;
+	int j = 0;
+
+	/* Default key length: 128 bits */
+	if (opt.keylen == 0) opt.keylen = 13;
+
+	if (j + opt.do_brute > 4)
+	{
+		printf("Bruteforcing more than 4 bytes will take too long, aborting!");
+		return (FAILURE);
+	}
+
+	for (int i = 0; i < opt.do_brute; i++)
+	{
+		opt.brutebytes[j + i] = opt.keylen - 1 - i;
+	}
+
+	opt.do_brute += j;
+
+	if (opt.ffact == 0)
+	{
+		if (opt.do_ptw)
+			opt.ffact = 2;
+		else
+		{
+			if (!opt.do_testy)
+			{
+				if (opt.keylen == 5)
+					opt.ffact = 5;
+				else
+					opt.ffact = 2;
+			}
+			else
+				opt.ffact = 30;
+		}
+	}
+
+	memset(&wep, 0, sizeof(wep));
+
+	if (opt.do_ptw)
+	{
+		if (!opt.is_quiet)
+			printf("Attack will be restarted every %d captured ivs.\n",
+				   PTW_TRY_STEP);
+		opt.next_ptw_try = (int) (ap_cur->nb_ivs_vague
+								  - (ap_cur->nb_ivs_vague % PTW_TRY_STEP));
+		do
+		{
+			if (ap_cur->nb_ivs_vague >= opt.next_ptw_try)
+			{
+				if (!opt.is_quiet)
+					printf("Starting PTW attack with %ld ivs.\n",
+						   ap_cur->nb_ivs_vague);
+				ret = crack_wep_ptw(ap_cur);
+
+				if (opt.oneshot == 1 && ret == FAILURE)
+				{
+					printf("   Attack failed. Possible reasons:\n\n"
+						   "     * Out of luck: you must capture more IVs. "
+						   "Usually, 104-bit WEP\n"
+						   "       can be cracked with about 80 000 IVs, "
+						   "sometimes more.\n\n"
+						   "     * Try to raise the fudge factor (-f).\n");
+					ret = 0;
+				}
+
+				if (ret)
+				{
+					opt.next_ptw_try += PTW_TRY_STEP;
+					printf("Failed. Next try with %d IVs.\n", opt.next_ptw_try);
+				}
+			}
+			if (ret) usleep(10000);
+		} while (ret != 0);
+	}
+
+	else if (opt.dict != NULL)
+	{
+		ret = crack_wep_dict();
+	}
+	else
+	{
+		for (int i = 0; i < opt.nbcpu; i++)
+		{
+			/* start one thread per cpu */
+
+			if (opt.amode <= 1 && opt.nbcpu > 1 && opt.do_brute
+				&& opt.do_mt_brute)
+			{
+				if (pthread_create(&(tid[id]),
+								   NULL,
+								   (void *) inner_bruteforcer_thread,
+								   (void *) (long) i)
+					!= 0)
+				{
+					perror("pthread_create failed");
+					return (FAILURE);
+				}
+				id++;
+			}
+
+			if (pthread_create(&(tid[id]),
+							   NULL,
+							   (void *) crack_wep_thread,
+							   (void *) (long) i)
+				!= 0)
+			{
+				perror("pthread_create failed");
+				return (FAILURE);
+			}
+			id++;
+		}
+
+		if (!opt.do_testy)
+		{
+			do
+			{
+				ret = do_wep_crack1(0);
+			} while (ret == RESTART);
+
+			if (ret == FAILURE)
+			{
+				printf("   Attack failed. Possible reasons:\n\n"
+					   "     * Out of luck: you must capture more IVs. "
+					   "Usually, 104-bit WEP\n"
+					   "       can be cracked with about one million IVs, "
+					   "sometimes more.\n\n"
+					   "     * If all votes seem equal, or if there are "
+					   "many negative votes,\n"
+					   "       then the capture file is corrupted, or the "
+					   "key is not static.\n\n"
+					   "     * A false positive prevented the key from "
+					   "being found.  Try to\n"
+					   "       disable each korek attack (-k 1 .. 17), "
+					   "raise the fudge factor\n"
+					   "       (-f)");
+				if (opt.do_testy)
+					printf("and try the experimental bruteforce attacks "
+						   "(-y).");
+				printf("\n");
+			}
+		}
+		else
+		{
+			for (int i = opt.keylen - 3; i < opt.keylen - 2; i++)
+			{
+				do
+				{
+					ret = do_wep_crack2(i);
+				} while (ret == RESTART);
+
+				if (ret == SUCCESS) break;
+			}
+
+			if (ret == FAILURE)
+			{
+				printf("   Attack failed. Possible reasons:\n\n"
+					   "     * Out of luck: you must capture more IVs. "
+					   "Usually, 104-bit WEP\n"
+					   "       can be cracked with about one million IVs, "
+					   "sometimes more.\n\n"
+					   "     * If all votes seem equal, or if there are "
+					   "many negative votes,\n"
+					   "       then the capture file is corrupted, or the "
+					   "key is not static.\n\n"
+					   "     * A false positive prevented the key from "
+					   "being found.  Try to\n"
+					   "       disable each korek attack (-k 1 .. 17), "
+					   "raise the fudge factor\n"
+					   "       (-f)");
+				if (opt.do_testy)
+					printf("or try the standard attack mode instead (no -y "
+						   "option).");
+				printf("\n");
+			}
+		}
+	}
+
+	return (ret);
+}
+
+static int perform_wpa_crack(struct AP_info * ap_cur)
+{
+#ifdef HAVE_SQLITE
+	int rc;
+	char * zErrMsg = 0;
+	char looper[4] = {'|', '/', '-', '\\'};
+	int looperc = 0;
+	int waited = 0;
+	char * sqlformat = "SELECT pmk.PMK, passwd.passwd FROM pmk INNER JOIN "
+					   "passwd ON passwd.passwd_id = pmk.passwd_id INNER JOIN "
+					   "essid ON essid.essid_id = pmk.essid_id WHERE "
+					   "essid.essid = '%q'";
+	char * sql;
+#endif
+
+	dso_ac_crypto_engine_init(&engine);
+
+	if (opt.dict == NULL && db == NULL)
+	{
+		return missing_wordlist_dictionary(ap_cur);
+	}
+
+	cpuset = ac_cpuset_new();
+	ALLEGE(cpuset);
+	ac_cpuset_init(cpuset);
+	ac_cpuset_distribute(cpuset, (size_t) opt.nbcpu);
+
+	ap_cur = get_first_target();
+
+	if (ap_cur == NULL)
+	{
+		printf("No valid WPA handshakes found.\n");
+		return (FAILURE);
+	}
+
+	if (memcmp(ap_cur->essid, ZERO, 32) == 0 && !opt.essid_set)
+	{
+		printf("An ESSID is required. Try option -e.\n");
+		return (FAILURE);
+	}
+
+	if (opt.essid_set && ap_cur->essid[0] == '\0')
+	{
+		memset(ap_cur->essid, 0, sizeof(ap_cur->essid));
+		strncpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid) - 1);
+	}
+
+	dso_ac_crypto_engine_set_essid(&engine, (uint8_t *) ap_cur->essid);
+
+	if (db == NULL)
+	{
+		int starting_thread_id = id;
+		first_wpa_threadid = id;
+
+		for (int i = 0; i < opt.nbcpu; i++)
+		{
+			if (ap_cur->ivbuf_size)
+			{
+				free(ap_cur->ivbuf);
+				ap_cur->ivbuf = NULL;
+				ap_cur->ivbuf_size = 0;
+			}
+
+			uniqueiv_wipe(ap_cur->uiv_root);
+			ap_cur->uiv_root = NULL;
+			ap_cur->nb_ivs = 0;
+
+			// assumption: an eapol exists.
+			if (ap_cur->wpa.state <= 0)
+			{
+				fprintf(stderr,
+						"Packets contained no EAPOL data; unable "
+						"to process this AP.\n");
+				return (FAILURE);
+			}
+
+			const size_t key_size = MAX_PASSPHRASE_LENGTH + 1;
+			const size_t kb_size = WL_CIRCULAR_QUEUE_SIZE * key_size;
+
+			/* start one thread per cpu */
+			wpa_data[i].active = 1;
+			wpa_data[i].ap = ap_cur;
+			wpa_data[i].thread = i;
+			wpa_data[i].threadid = id;
+#if HAVE_POSIX_MEMALIGN
+			if (posix_memalign((void **) &(wpa_data[i].key_buffer),
+							   CACHELINE_SIZE,
+							   kb_size))
+				perror("posix_memalign");
+#else
+			wpa_data[i].key_buffer = calloc(1, kb_size);
+#endif
+			ALLEGE(wpa_data[i].key_buffer);
+			wpa_data[i].cqueue = circular_queue_init(
+				wpa_data[i].key_buffer, kb_size, key_size);
+			ALLEGE(wpa_data[i].cqueue);
+			memset(wpa_data[i].key, 0, sizeof(wpa_data[i].key));
+			ALLEGE(pthread_mutex_init(&wpa_data[i].mutex, NULL) == 0);
+
+			if (pthread_create(&(tid[id]),
+							   NULL,
+							   (void *) (ap_cur->wpa.state == 7
+											 ? crack_wpa_thread
+											 : crack_wpa_pmkid_thread),
+							   (void *) &(wpa_data[i]))
+				!= 0)
+			{
+				perror("pthread_create failed");
+				return (FAILURE);
+			}
+
+			ac_cpuset_bind_thread_at(cpuset, tid[id], (size_t) i);
+
+			id++;
+		}
+
+		int ret = do_wpa_crack(); // we feed keys to the cracking threads
+
+		// Shutdown the circular queue.
+		bool shutdown = true;
+		do
+		{
+			shutdown = true;
+
+			for (int i = 0; i < opt.nbcpu; ++i)
+			{
+				int active;
+
+				ALLEGE(pthread_mutex_lock(&(wpa_data[i].mutex)) == 0);
+				active = wpa_data[i].active;
+				ALLEGE(pthread_mutex_unlock(&(wpa_data[i].mutex)) == 0);
+
+				if (active)
+				{
+					bool result = circular_queue_try_push(
+									  wpa_data[i].cqueue, "\xff\xff\xff\xff", 4)
+								  == 0;
+					if (!result) shutdown = false;
+				}
+			}
+		} while (!shutdown);
+
+		// we wait for the cracking threads to end
+		for (int i = starting_thread_id; i < opt.nbcpu + starting_thread_id;
+			 i++)
+			if (tid[i] != 0)
+			{
+				if (pthread_join(tid[i], NULL) != 0) perror("pthread_join");
+				tid[i] = 0;
+			}
+
+		// find the matching passphrase
+		int i;
+		for (i = 0; i < opt.nbcpu; i++)
+		{
+			if (wpa_data[i].key[0] != 0)
+			{
+				ret = SUCCESS;
+				break;
+			}
+		}
+
+		if (ret == SUCCESS)
+		{
+			if (opt.is_quiet)
+			{
+				printf("KEY FOUND! [ %s ]\n", wpa_data[i].key);
+				clean_exit(SUCCESS);
+			}
+
+			if (opt.l33t)
+			{
+				textstyle(TEXT_BRIGHT);
+				textcolor_fg(TEXT_RED);
+			}
+
+			moveto((80 - 15 - (int) strlen(wpa_data[i].key)) / 2, 8);
+			erase_line(2);
+			printf("KEY FOUND! [ %s ]\n", wpa_data[i].key);
+			move(CURSOR_DOWN, 11);
+
+			if (opt.l33t)
+			{
+				textcolor_normal();
+				textcolor_fg(TEXT_GREEN);
+			}
+
+			clean_exit(SUCCESS);
+		}
+		else if (!close_aircrack)
+		{
+			if (!opt.is_quiet)
+			{
+				moveto((80 - 28) / 2, 8);
+				erase_line(2);
+			}
+			else
+			{
+				printf("\n");
+			}
+
+			printf("Passphrase not in dictionary\n");
+
+			if (opt.is_quiet) clean_exit(FAILURE);
+
+			if (opt.stdin_dict)
+			{
+				moveto(30, 5);
+				printf(" %lld", nb_tried);
+			}
+			else
+			{
+				moveto(18, 4);
+				printf("%lld/%lld keys tested ", nb_tried, opt.wordcount);
+				moveto(7, 6);
+				printf("Time left: ");
+				calctime(0, ((float) nb_tried / (float) opt.wordcount) * 100);
+			}
+		}
+
+		printf("\n\n");
+	}
+#ifdef HAVE_SQLITE
+	else
+	{
+		if (!opt.is_quiet && !_speed_test)
+		{
+			if (opt.l33t) textcolor(TEXT_RESET, TEXT_WHITE, TEXT_BLACK);
+			erase_line(2);
+			if (opt.l33t) textcolor(TEXT_BRIGHT, TEXT_BLUE, TEXT_BLACK);
+			moveto((80 - (int) strlen(progname)) / 2, 2);
+			printf("%s", progname);
+		}
+		sql = sqlite3_mprintf(sqlformat, ap_cur->essid);
+		while (1)
+		{
+			rc = sqlite3_exec(db, sql, sql_wpacallback, ap_cur, &zErrMsg);
+			if (rc == SQLITE_LOCKED || rc == SQLITE_BUSY)
+			{
+				fprintf(stdout,
+						"Database is locked or busy. Waiting %is ... %1c    \r",
+						++waited,
+						looper[looperc]);
+				fflush(stdout);
+				looperc = (looperc + 1) % sizeof(looper);
+				sleep(1);
+			}
+			else
+			{
+				if (rc != SQLITE_OK && rc != SQLITE_ABORT)
+				{
+					fprintf(stderr, "SQL error: %s\n", zErrMsg);
+					sqlite3_free(zErrMsg);
+				}
+				if (waited != 0) printf("\n\n");
+				wpa_wordlists_done = 1;
+				break;
+			}
+		}
+		sqlite3_free(sql);
+	}
+#endif
+
+	return (SUCCESS);
+}
+
 #if DYNAMIC
 static void load_aircrack_crypto_dso(int simd_features)
 {
@@ -5312,19 +5786,6 @@ int main(int argc, char * argv[])
 	int nbarg = argc;
 	access_points = c_avl_create(station_compare);
 	targets = c_avl_create(station_compare);
-
-#ifdef HAVE_SQLITE
-	int rc;
-	char * zErrMsg = 0;
-	char looper[4] = {'|', '/', '-', '\\'};
-	int looperc = 0;
-	int waited = 0;
-	char * sqlformat = "SELECT pmk.PMK, passwd.passwd FROM pmk INNER JOIN "
-					   "passwd ON passwd.passwd_id = pmk.passwd_id INNER JOIN "
-					   "essid ON essid.essid_id = pmk.essid_id WHERE "
-					   "essid.essid = '%q'";
-	char * sql;
-#endif
 
 #ifdef USE_GCRYPT
 // Register callback functions to ensure proper locking in the sensitive parts
@@ -6036,26 +6497,7 @@ int main(int argc, char * argv[])
 
 	if (opt.amode >= 2 && opt.dict == NULL)
 	{
-	nodict:
-		if (opt.wkp == NULL && opt.hccap == NULL && opt.hccapx == NULL)
-		{
-			printf("Please specify a dictionary (option -w).\n");
-		}
-		else
-		{
-			if (opt.wkp)
-			{
-				ret = do_make_wkp(ap_cur);
-			}
-			if (opt.hccap)
-			{
-				ret = do_make_hccap(ap_cur);
-			}
-			if (opt.hccapx)
-			{
-				ret = do_make_hccapx(ap_cur);
-			}
-		}
+		ret = missing_wordlist_dictionary(ap_cur);
 		goto exit_main;
 	}
 
@@ -6482,436 +6924,13 @@ __start:
 	if (ap_cur->crypt == 2)
 	{
 	crack_wep:
-
-		/* Default key length: 128 bits */
-		if (opt.keylen == 0) opt.keylen = 13;
-
-		if (j + opt.do_brute > 4)
-		{
-			printf(
-				"Bruteforcing more than 4 bytes will take too long, aborting!");
-			goto exit_main;
-		}
-
-		for (i = 0; i < opt.do_brute; i++)
-		{
-			opt.brutebytes[j + i] = opt.keylen - 1 - i;
-		}
-
-		opt.do_brute += j;
-
-		if (opt.ffact == 0)
-		{
-			if (opt.do_ptw)
-				opt.ffact = 2;
-			else
-			{
-				if (!opt.do_testy)
-				{
-					if (opt.keylen == 5)
-						opt.ffact = 5;
-					else
-						opt.ffact = 2;
-				}
-				else
-					opt.ffact = 30;
-			}
-		}
-
-		memset(&wep, 0, sizeof(wep));
-
-		if (opt.do_ptw)
-		{
-			if (!opt.is_quiet)
-				printf("Attack will be restarted every %d captured ivs.\n",
-					   PTW_TRY_STEP);
-			opt.next_ptw_try
-				= ap_cur->nb_ivs_vague - (ap_cur->nb_ivs_vague % PTW_TRY_STEP);
-			do
-			{
-				if (ap_cur->nb_ivs_vague >= opt.next_ptw_try)
-				{
-					if (!opt.is_quiet)
-						printf("Starting PTW attack with %ld ivs.\n",
-							   ap_cur->nb_ivs_vague);
-					ret = crack_wep_ptw(ap_cur);
-
-					if (opt.oneshot == 1 && ret == FAILURE)
-					{
-						printf("   Attack failed. Possible reasons:\n\n"
-							   "     * Out of luck: you must capture more IVs. "
-							   "Usually, 104-bit WEP\n"
-							   "       can be cracked with about 80 000 IVs, "
-							   "sometimes more.\n\n"
-							   "     * Try to raise the fudge factor (-f).\n");
-						ret = 0;
-					}
-
-					if (ret)
-					{
-						opt.next_ptw_try += PTW_TRY_STEP;
-						printf("Failed. Next try with %d IVs.\n",
-							   opt.next_ptw_try);
-					}
-				}
-				if (ret) usleep(10000);
-			} while (ret != 0);
-		}
-
-		else if (opt.dict != NULL)
-		{
-			ret = crack_wep_dict();
-		}
-		else
-		{
-			for (i = 0; i < opt.nbcpu; i++)
-			{
-				/* start one thread per cpu */
-
-				if (opt.amode <= 1 && opt.nbcpu > 1 && opt.do_brute
-					&& opt.do_mt_brute)
-				{
-					if (pthread_create(&(tid[id]),
-									   NULL,
-									   (void *) inner_bruteforcer_thread,
-									   (void *) (long) i)
-						!= 0)
-					{
-						perror("pthread_create failed");
-						goto exit_main;
-					}
-					id++;
-				}
-
-				if (pthread_create(&(tid[id]),
-								   NULL,
-								   (void *) crack_wep_thread,
-								   (void *) (long) i)
-					!= 0)
-				{
-					perror("pthread_create failed");
-					goto exit_main;
-				}
-				id++;
-			}
-
-			if (!opt.do_testy)
-			{
-				do
-				{
-					ret = do_wep_crack1(0);
-				} while (ret == RESTART);
-
-				if (ret == FAILURE)
-				{
-					printf("   Attack failed. Possible reasons:\n\n"
-						   "     * Out of luck: you must capture more IVs. "
-						   "Usually, 104-bit WEP\n"
-						   "       can be cracked with about one million IVs, "
-						   "sometimes more.\n\n"
-						   "     * If all votes seem equal, or if there are "
-						   "many negative votes,\n"
-						   "       then the capture file is corrupted, or the "
-						   "key is not static.\n\n"
-						   "     * A false positive prevented the key from "
-						   "being found.  Try to\n"
-						   "       disable each korek attack (-k 1 .. 17), "
-						   "raise the fudge factor\n"
-						   "       (-f)");
-					if (opt.do_testy)
-						printf("and try the experimental bruteforce attacks "
-							   "(-y).");
-					printf("\n");
-				}
-			}
-			else
-			{
-				for (i = opt.keylen - 3; i < opt.keylen - 2; i++)
-				{
-					do
-					{
-						ret = do_wep_crack2(i);
-					} while (ret == RESTART);
-
-					if (ret == SUCCESS) break;
-				}
-
-				if (ret == FAILURE)
-				{
-					printf("   Attack failed. Possible reasons:\n\n"
-						   "     * Out of luck: you must capture more IVs. "
-						   "Usually, 104-bit WEP\n"
-						   "       can be cracked with about one million IVs, "
-						   "sometimes more.\n\n"
-						   "     * If all votes seem equal, or if there are "
-						   "many negative votes,\n"
-						   "       then the capture file is corrupted, or the "
-						   "key is not static.\n\n"
-						   "     * A false positive prevented the key from "
-						   "being found.  Try to\n"
-						   "       disable each korek attack (-k 1 .. 17), "
-						   "raise the fudge factor\n"
-						   "       (-f)");
-					if (opt.do_testy)
-						printf("or try the standard attack mode instead (no -y "
-							   "option).");
-					printf("\n");
-				}
-			}
-		}
+		ret = perform_wep_crack(ap_cur);
 	}
 
 	if (ap_cur->crypt >= 3)
 	{
 	crack_wpa:
-		dso_ac_crypto_engine_init(&engine);
-
-		if (opt.dict == NULL && db == NULL)
-		{
-			goto nodict;
-		}
-
-		cpuset = ac_cpuset_new();
-		ALLEGE(cpuset);
-		ac_cpuset_init(cpuset);
-		ac_cpuset_distribute(cpuset, opt.nbcpu);
-
-		ap_cur = get_first_target();
-
-		if (ap_cur == NULL)
-		{
-			printf("No valid WPA handshakes found.\n");
-			goto exit_main;
-		}
-
-		if (memcmp(ap_cur->essid, ZERO, 32) == 0 && !opt.essid_set)
-		{
-			printf("An ESSID is required. Try option -e.\n");
-			goto exit_main;
-		}
-
-		if (opt.essid_set && ap_cur->essid[0] == '\0')
-		{
-			memset(ap_cur->essid, 0, sizeof(ap_cur->essid));
-			strncpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid) - 1);
-		}
-
-		dso_ac_crypto_engine_set_essid(&engine, (uint8_t *) ap_cur->essid);
-
-		if (db == NULL)
-		{
-			int starting_thread_id = id;
-			first_wpa_threadid = id;
-
-			for (i = 0; i < opt.nbcpu; i++)
-			{
-				if (ap_cur->ivbuf_size)
-				{
-					free(ap_cur->ivbuf);
-					ap_cur->ivbuf = NULL;
-					ap_cur->ivbuf_size = 0;
-				}
-
-				uniqueiv_wipe(ap_cur->uiv_root);
-				ap_cur->uiv_root = NULL;
-				ap_cur->nb_ivs = 0;
-
-				// assumption: an eapol exists.
-				if (ap_cur->wpa.state <= 0)
-				{
-					fprintf(stderr,
-							"Packets contained no EAPOL data; unable "
-							"to process this AP.\n");
-					goto exit_main;
-				}
-
-				const size_t key_size = MAX_PASSPHRASE_LENGTH + 1;
-				const size_t kb_size = WL_CIRCULAR_QUEUE_SIZE * key_size;
-
-				/* start one thread per cpu */
-				wpa_data[i].active = 1;
-				wpa_data[i].ap = ap_cur;
-				wpa_data[i].thread = i;
-				wpa_data[i].threadid = id;
-#if HAVE_POSIX_MEMALIGN
-				if (posix_memalign((void **) &(wpa_data[i].key_buffer),
-								   CACHELINE_SIZE,
-								   kb_size))
-					perror("posix_memalign");
-#else
-				wpa_data[i].key_buffer = calloc(1, kb_size);
-#endif
-				ALLEGE(wpa_data[i].key_buffer);
-				wpa_data[i].cqueue = circular_queue_init(
-					wpa_data[i].key_buffer, kb_size, key_size);
-				ALLEGE(wpa_data[i].cqueue);
-				memset(wpa_data[i].key, 0, sizeof(wpa_data[i].key));
-				ALLEGE(pthread_mutex_init(&wpa_data[i].mutex, NULL) == 0);
-
-				if (pthread_create(&(tid[id]),
-								   NULL,
-								   (void *) (ap_cur->wpa.state == 7
-												 ? crack_wpa_thread
-												 : crack_wpa_pmkid_thread),
-								   (void *) &(wpa_data[i]))
-					!= 0)
-				{
-					perror("pthread_create failed");
-					goto exit_main;
-				}
-
-				ac_cpuset_bind_thread_at(cpuset, tid[id], (size_t) i);
-
-				id++;
-			}
-
-			ret = do_wpa_crack(); // we feed keys to the cracking threads
-
-			// Shutdown the circular queue.
-			bool shutdown = true;
-			do
-			{
-				shutdown = true;
-
-				for (i = 0; i < opt.nbcpu; ++i)
-				{
-					int active;
-
-					ALLEGE(pthread_mutex_lock(&(wpa_data[i].mutex)) == 0);
-					active = wpa_data[i].active;
-					ALLEGE(pthread_mutex_unlock(&(wpa_data[i].mutex)) == 0);
-
-					if (active)
-					{
-						bool result
-							= circular_queue_try_push(
-								  wpa_data[i].cqueue, "\xff\xff\xff\xff", 4)
-							  == 0;
-						if (!result) shutdown = false;
-					}
-				}
-			} while (!shutdown);
-
-			// we wait for the cracking threads to end
-			for (i = starting_thread_id; i < opt.nbcpu + starting_thread_id;
-				 i++)
-				if (tid[i] != 0)
-				{
-					if (pthread_join(tid[i], NULL) != 0) perror("pthread_join");
-					tid[i] = 0;
-				}
-
-			for (i = 0; i < opt.nbcpu; i++)
-			{
-				if (wpa_data[i].key[0] != 0)
-				{
-					ret = SUCCESS;
-					break;
-				}
-			}
-
-			if (ret == SUCCESS)
-			{
-				if (opt.is_quiet)
-				{
-					printf("KEY FOUND! [ %s ]\n", wpa_data[i].key);
-					clean_exit(SUCCESS);
-				}
-
-				if (opt.l33t)
-				{
-					textstyle(TEXT_BRIGHT);
-					textcolor_fg(TEXT_RED);
-				}
-
-				moveto((80 - 15 - (int) strlen(wpa_data[i].key)) / 2, 8);
-				erase_line(2);
-				printf("KEY FOUND! [ %s ]\n", wpa_data[i].key);
-				move(CURSOR_DOWN, 11);
-
-				if (opt.l33t)
-				{
-					textcolor_normal();
-					textcolor_fg(TEXT_GREEN);
-				}
-
-				clean_exit(SUCCESS);
-			}
-			else if (!close_aircrack)
-			{
-				if (!opt.is_quiet)
-				{
-					moveto((80 - 28) / 2, 8);
-					erase_line(2);
-				}
-				else
-				{
-					printf("\n");
-				}
-
-				printf("Passphrase not in dictionary\n");
-
-				if (opt.is_quiet) clean_exit(FAILURE);
-
-				if (opt.stdin_dict)
-				{
-					moveto(30, 5);
-					printf(" %lld", nb_tried);
-				}
-				else
-				{
-					moveto(18, 4);
-					printf("%lld/%lld keys tested ", nb_tried, opt.wordcount);
-					moveto(7, 6);
-					printf("Time left: ");
-					calctime(0,
-							 ((float) nb_tried / (float) opt.wordcount) * 100);
-				}
-			}
-
-			printf("\n\n");
-		}
-#ifdef HAVE_SQLITE
-		else
-		{
-			if (!opt.is_quiet && !_speed_test)
-			{
-				if (opt.l33t) textcolor(TEXT_RESET, TEXT_WHITE, TEXT_BLACK);
-				erase_line(2);
-				if (opt.l33t) textcolor(TEXT_BRIGHT, TEXT_BLUE, TEXT_BLACK);
-				moveto((80 - strlen(progname)) / 2, 2);
-				printf("%s", progname);
-			}
-			sql = sqlite3_mprintf(sqlformat, ap_cur->essid);
-			while (1)
-			{
-				rc = sqlite3_exec(db, sql, sql_wpacallback, ap_cur, &zErrMsg);
-				if (rc == SQLITE_LOCKED || rc == SQLITE_BUSY)
-				{
-					fprintf(
-						stdout,
-						"Database is locked or busy. Waiting %is ... %1c    \r",
-						++waited,
-						looper[looperc]);
-					fflush(stdout);
-					looperc = (looperc + 1) % sizeof(looper);
-					sleep(1);
-				}
-				else
-				{
-					if (rc != SQLITE_OK && rc != SQLITE_ABORT)
-					{
-						fprintf(stderr, "SQL error: %s\n", zErrMsg);
-						sqlite3_free(zErrMsg);
-					}
-					if (waited != 0) printf("\n\n");
-					wpa_wordlists_done = 1;
-					break;
-				}
-			}
-			sqlite3_free(sql);
-		}
-#endif
+		ret = perform_wpa_crack(ap_cur);
 	}
 
 exit_main:
