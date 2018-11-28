@@ -10,7 +10,7 @@ set -ef
     -w "${abs_srcdir}/password-3.lst" \
     -a 2 \
     "${abs_srcdir}/test1.pcap" \
-    -l /dev/null | \
+    -l /dev/null -q | \
         grep "KEY FOUND" | grep "15211521"
 
 exit 0
