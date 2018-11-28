@@ -6917,19 +6917,13 @@ __start:
 
 	signal(SIGWINCH, sighandler);
 
-	if (opt.amode == 1) goto crack_wep;
-
-	if (opt.amode >= 2) goto crack_wpa;
-
-	if (ap_cur->crypt == 2)
+	if (opt.amode == 1 || ap_cur->crypt == 2)
 	{
-	crack_wep:
 		ret = perform_wep_crack(ap_cur);
 	}
 
-	if (ap_cur->crypt >= 3)
+	if (opt.amode >= 2 || ap_cur->crypt >= 3)
 	{
-	crack_wpa:
 		ret = perform_wpa_crack(ap_cur);
 	}
 
