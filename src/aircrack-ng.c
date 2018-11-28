@@ -646,6 +646,12 @@ static void clean_exit(int ret)
 		return;
 	}
 
+	if (opt.dict)
+	{
+		ALLEGE(fclose(opt.dict) == 0);
+		opt.dict = NULL;
+	}
+
 	for (i = 0; i < opt.nbcpu; i++)
 	{
 #ifndef CYGWIN
