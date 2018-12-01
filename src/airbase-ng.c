@@ -2335,7 +2335,7 @@ static int packet_recv(unsigned char * packet,
 	unsigned char dmac[6];
 	int trailer = 0;
 	unsigned char * tag = NULL;
-	int len, i, c;
+	int len = 0, i = 0, c = 0;
 	unsigned char * buffer;
 	char essid[256];
 	struct timeval tv1;
