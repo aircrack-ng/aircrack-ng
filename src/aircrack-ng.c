@@ -907,9 +907,8 @@ static inline void wl_count_next_block(struct WPA_data * data)
 	}
 }
 
-int wpa_send_passphrase(char * key, struct WPA_data * data, int lock);
-
-inline int wpa_send_passphrase(char * key, struct WPA_data * data, int lock)
+static inline int
+wpa_send_passphrase(char * key, struct WPA_data * data, int lock)
 {
 	REQUIRE(key);
 	REQUIRE(data);
@@ -929,9 +928,7 @@ inline int wpa_send_passphrase(char * key, struct WPA_data * data, int lock)
 	return 1;
 }
 
-int wpa_receive_passphrase(char * key, struct WPA_data * data);
-
-inline int wpa_receive_passphrase(char * key, struct WPA_data * data)
+static inline int wpa_receive_passphrase(char * key, struct WPA_data * data)
 {
 	REQUIRE(key);
 	REQUIRE(data);
