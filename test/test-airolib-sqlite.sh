@@ -3,7 +3,7 @@
 # Carlos Alberto Lopez Perez <clopez@igalia.com>
 #
 TESTDIR="$(dirname $0)"
-if test -f /etc/alpine-release; then
+if test -f /etc/alpine-release -o "$(uname -s)" = "OpenBSD"; then
     tmpfile="$(mktemp -u -t acng.XXXXXX)"
 else
     tmpfile="$(mktemp -u -t acng.XXXX)"
