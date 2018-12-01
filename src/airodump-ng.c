@@ -730,7 +730,8 @@ char usage[] =
 	"      --wps                 : Display WPS information (if any)\n"
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
-	"                              pcap, ivs, csv, gps, kismet, netxml\n"
+	"                              pcap, ivs, csv, gps, kismet, netxml, "
+	"logcsv\n"
 	"      --ignore-negative-one : Removes the message that says\n"
 	"                              fixed channel <interface>: -1\n"
 	"      --write-interval\n"
@@ -988,6 +989,31 @@ static int dump_initialize(char * prefix, int ivs_only)
 		}
 	}
 
+	/* create the output for a rolling log CSV file */
+	if (G.output_format_log_csv)
+	{
+		memset(ofn, 0, ofn_len);
+		snprintf(ofn,
+				 ofn_len,
+				 "%s-%02d.%s",
+				 prefix,
+				 G.f_index,
+				 AIRODUMP_NG_LOG_CSV_EXT);
+
+		if ((G.f_logcsv = fopen(ofn, "wb+")) == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+			return (1);
+		}
+
+		fprintf(G.f_logcsv,
+				"LocalTime, GPSTime, ESSID, BSSID, Power, "
+				"Security, Latitude, Longitude, Latitude Error, "
+				"Longitude Error\r\n");
+	}
+
 	/* create the output Kismet CSV file */
 	if (G.output_format_kismet_csv)
 	{
@@ -1004,7 +1030,6 @@ static int dump_initialize(char * prefix, int ivs_only)
 	}
 
 	/* create the output GPS file */
-
 	if (G.usegpsd)
 	{
 		memset(ofn, 0, ofn_len);
@@ -1369,6 +1394,8 @@ static int dump_add_packet(unsigned char * h80211,
 	struct ST_info * st_prv = NULL;
 	struct NA_info * na_prv = NULL;
 
+	struct tm * ltime;
+
 	/* skip all non probe response frames in active scanning simulation mode */
 	if (G.active_scan_sim > 0 && h80211[0] != 0x50) return (0);
 
@@ -1597,6 +1624,71 @@ static int dump_add_packet(unsigned char * h80211,
 		ap_cur->last_seq = seq;
 		ap_cur->fcapt++;
 		gettimeofday(&(ap_cur->ftimel), NULL);
+
+		/* if we are writing to a file and want to make a continuous rolling log save the data here */
+		if (G.record_data && G.output_format_log_csv)
+		{
+			/* Write out our rolling log every time we see data from an AP */
+
+			// Local computer time
+			ltime = localtime(&ap_cur->tlast);
+			fprintf(G.f_logcsv,
+					"%04d-%02d-%02d %02d:%02d:%02d,",
+					1900 + ltime->tm_year,
+					1 + ltime->tm_mon,
+					ltime->tm_mday,
+					ltime->tm_hour,
+					ltime->tm_min,
+					ltime->tm_sec);
+
+			// Gps time
+			struct tm * tm_gpstime = &G.gps_time;
+			fprintf(G.f_logcsv,
+					"%04d-%02d-%02d %02d:%02d:%02d,",
+					1900 + tm_gpstime->tm_year,
+					1 + tm_gpstime->tm_mon,
+					tm_gpstime->tm_mday,
+					tm_gpstime->tm_hour,
+					tm_gpstime->tm_min,
+					tm_gpstime->tm_sec);
+
+			// ESSID
+			fprintf(G.f_logcsv, "%s,", ap_cur->essid);
+
+			// BSSID
+			fprintf(G.f_logcsv,
+					"%02X:%02X:%02X:%02X:%02X:%02X,",
+					ap_cur->bssid[0],
+					ap_cur->bssid[1],
+					ap_cur->bssid[2],
+					ap_cur->bssid[3],
+					ap_cur->bssid[4],
+					ap_cur->bssid[5]);
+
+			// RSSI
+			fprintf(G.f_logcsv, "%d,", ri->ri_power);
+
+			// Network Security
+			if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2))
+				== 0)
+				fputs(",", G.f_logcsv);
+			else if (ap_cur->security & STD_WPA2)
+				fputs("WPA2,", G.f_logcsv);
+			else if (ap_cur->security & STD_WPA)
+				fputs("WPA,", G.f_logcsv);
+			else if (ap_cur->security & STD_WEP)
+				fputs("WEP,", G.f_logcsv);
+			else if (ap_cur->security & STD_OPN)
+				fputs("OPN,", G.f_logcsv);
+
+			// Lat, Lon, Lat Error, Lon Error
+			fprintf(G.f_logcsv,
+					"%.6f,%.6f,%.3f,%.3f\r\n",
+					G.gps_loc[0],
+					G.gps_loc[1],
+					G.gps_loc[5],
+					G.gps_loc[6]);
+		}
 
 		//         if(ap_cur->fcapt >= QLT_COUNT) update_rx_quality();
 	}
@@ -3611,23 +3703,44 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	}
 	memset(buffer, '\0', sizeof(buffer));
 
-	if (G.gps_loc[0])
+	if (G.gps_loc[0] || (G.usegpsd))
 	{
-		snprintf(buffer,
-				 sizeof(buffer) - 1,
-				 " %s[ GPS %8.3f %8.3f %8.3f %6.2f "
-				 "][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				 G.batt,
-				 G.gps_loc[0],
-				 G.gps_loc[1],
-				 G.gps_loc[2],
-				 G.gps_loc[3],
-				 G.elapsed_time,
-				 1900 + lt->tm_year,
-				 1 + lt->tm_mon,
-				 lt->tm_mday,
-				 lt->tm_hour,
-				 lt->tm_min);
+		// If using GPS then check if we have a valid fix or not and report accordingly
+		if (G.gps_loc[0] != 0)
+		{
+			struct tm * gtime = &G.gps_time;
+			snprintf(buffer,
+					 sizeof(buffer) - 1,
+					 " %s[ GPS %3.6f,%3.6f %02d:%02d:%02d ][ Elapsed: %s ][ "
+					 "%04d-%02d-%02d %02d:%02d ",
+					 G.batt,
+					 G.gps_loc[0],
+					 G.gps_loc[1],
+					 gtime->tm_hour,
+					 gtime->tm_min,
+					 gtime->tm_sec,
+					 G.elapsed_time,
+					 1900 + lt->tm_year,
+					 1 + lt->tm_mon,
+					 lt->tm_mday,
+					 lt->tm_hour,
+					 lt->tm_min);
+		}
+		else
+		{
+			snprintf(
+				buffer,
+				sizeof(buffer) - 1,
+				" %s[ GPS %-29s ][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
+				G.batt,
+				" *** No Fix! ***",
+				G.elapsed_time,
+				1900 + lt->tm_year,
+				1 + lt->tm_mon,
+				lt->tm_mday,
+				lt->tm_hour,
+				lt->tm_min);
+		}
 	}
 	else
 	{
@@ -5887,222 +6000,296 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 	return ret;
 }
 
-static void gps_tracker(pid_t parent)
+void * gps_tracker_thread(void * arg)
 {
-	ssize_t unused;
 	int gpsd_sock;
 	char line[1537], buffer[1537], data[1537];
 	char * temp;
 	struct sockaddr_in gpsd_addr;
 	int ret, is_json, pos;
 	int mode;
+	int gpsd_tried_connection = 0;
 	fd_set read_fd;
 	struct timeval timeout;
-	memset(line, 0, 1537);
-	memset(buffer, 0, 1537);
-	memset(data, 0, 1537);
 
-	/* attempt to connect to localhost, port 2947 */
+	(void) arg;
 
-	pos = 0;
-	gpsd_sock = socket(AF_INET, SOCK_STREAM, 0);
+	int * return_success = malloc(sizeof(int));
+	int * return_error = malloc(sizeof(int));
 
-	if (gpsd_sock < 0)
-	{
-		return;
-	}
+	*return_success = 0;
+	*return_error = -1;
 
-	memset(&gpsd_addr, 0, sizeof(struct sockaddr_in));
-	gpsd_addr.sin_family = AF_INET;
-	gpsd_addr.sin_port = htons(2947);
-	gpsd_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-	if (connect(gpsd_sock, (struct sockaddr *) &gpsd_addr, sizeof(gpsd_addr))
-		< 0)
-	{
-		close(gpsd_sock);
-		return;
-	}
-
-	// Check if it's GPSd < 2.92 or the new one
-	// 2.92+ immediately sends version information
-	// < 2.92 requires to send PVTAD command
-	FD_ZERO(&read_fd);
-	FD_SET(gpsd_sock, &read_fd);
-	timeout.tv_sec = 1;
-	timeout.tv_usec = 0;
-	is_json = select(gpsd_sock + 1, &read_fd, NULL, NULL, &timeout);
-
-	if (is_json > 0)
-	{
-		/* Probably JSON.  Read the first line and verify it's a version of the
-		 * protocol we speak. */
-
-		if ((pos = read_line(gpsd_sock, buffer, 0, sizeof(buffer))) <= 0)
-			return;
-
-		pos = get_line_from_buffer(buffer, pos, line);
-
-		is_json = (json_get_value_for_name(line, "class", data)
-				   && strncmp(data, "VERSION", 7) == 0);
-
-		if (is_json)
-		{
-			/* Verify it's a version of the protocol we speak */
-			if (json_get_value_for_name(line, "proto_major", data)
-				&& data[0] != '3')
-			{
-				/* It's an unknown version of the protocol.  Bail out. */
-				return;
-			}
-
-			// Send ?WATCH={"json":true};
-			memset(line, 0, sizeof(line));
-			strcpy(line, "?WATCH={\"json\":true};\n");
-			if (send(gpsd_sock, line, 22, 0) != 22)
-			{
-				return;
-			}
-			// Device check removed -- if there isn't a device, just
-			// read and discard lines until the user plugs one in, at
-			// which point GPSD will start emitting coordinates.
-		}
-	}
-	else if (is_json < 0)
-	{
-		/* An error occurred while we were waiting for data */
-		return;
-	}
-	/* Else select() returned zero (timeout expired) and we assume we're
-	 * connected to an old-style gpsd. */
-
-	/* loop reading the GPS coordinates */
+	// Incase we GPSd goes down or we lose connection or a fix, we keep trying to connect inside the while loop
 	while (G.do_exit == 0)
 	{
-		usleep(500000);
-		memset(G.gps_loc, 0, sizeof(float) * 5);
-
-		/* read position, speed, heading, altitude */
-		if (is_json)
+		// If our socket connection to GPSD has been attempted and failed wait before trying again - used to prevent locking the CPU on socket retries
+		if (gpsd_tried_connection)
 		{
-			// Format definition: http://catb.org/gpsd/gpsd_json.html
+			sleep(2);
+		}
+		gpsd_tried_connection = 1;
 
-			if ((pos = read_line(gpsd_sock, buffer, pos, sizeof(buffer))) <= 0)
-			{
-				return;
-			}
+		time_t updateTime = time(NULL);
+		memset(line, 0, 1537);
+		memset(buffer, 0, 1537);
+		memset(data, 0, 1537);
+
+		/* attempt to connect to localhost, port 2947 */
+		pos = 0;
+		gpsd_sock = socket(AF_INET, SOCK_STREAM, 0);
+		if (gpsd_sock < 0) continue;
+
+		memset(&gpsd_addr, 0, sizeof(struct sockaddr_in));
+		gpsd_addr.sin_family = AF_INET;
+		gpsd_addr.sin_port = htons(2947);
+		gpsd_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+		if (connect(
+				gpsd_sock, (struct sockaddr *) &gpsd_addr, sizeof(gpsd_addr))
+			< 0)
+			continue;
+
+		// Check if it's GPSd < 2.92 or the new one
+		// 2.92+ immediately sends version information
+		// < 2.92 requires to send PVTAD command
+		FD_ZERO(&read_fd);
+		FD_SET(gpsd_sock, &read_fd);
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
+		is_json = select(gpsd_sock + 1, &read_fd, NULL, NULL, &timeout);
+
+		if (is_json > 0)
+		{
+			/* Probably JSON.  Read the first line and verify it's a version of the
+			* protocol we speak. */
+			if ((pos = read_line(gpsd_sock, buffer, 0, sizeof(buffer))) <= 0)
+				continue;
+
 			pos = get_line_from_buffer(buffer, pos, line);
+			is_json = (json_get_value_for_name(line, "class", data)
+					   && strncmp(data, "VERSION", 7) == 0);
 
-			// See if we got a TPV report
-			if (!json_get_value_for_name(line, "class", data)
-				|| strncmp(data, "TPV", 3) != 0)
+			if (is_json)
 			{
-				/* Not a TPV report.  Get another line. */
+				/* Verify it's a version of the protocol we speak */
+				if (json_get_value_for_name(line, "proto_major", data)
+					&& data[0] != '3')
+				{
+					/* It's an unknown version of the protocol.  Bail out. */
+					continue;
+				}
 
-				continue;
-			}
-
-			/* See what sort of GPS fix we got.  Possibilities are:
-		* 0: No data
-		* 1: No fix
-		* 2: Lat/Lon, but no alt
-		* 3: Lat/Lon/Alt
-		* Either 2 or 3 may also have speed and heading data.
-		*/
-			if (!json_get_value_for_name(line, "mode", data)
-				|| (mode = atoi(data)) < 2)
-			{
-				/* No GPS fix, so there are no coordinates to extract. */
-				continue;
-			}
-
-			/* Extract the available data from the TPV report.  If we're
-		* in mode 2, latitude and longitude are mandatory, altitude
-		* is set to 0, and speed and heading are optional.
-		* In mode 3, latitude, longitude, and altitude are mandatory,
-		* while speed and heading are optional.
-		* If we can't get a mandatory value, the line is discarded
-		* as fragmentary or malformed.  If we can't get an optional
-		* value, we default it to 0.
-		*/
-
-			// Latitude
-			if (!json_get_value_for_name(line, "lat", data)) continue;
-			if (1 != sscanf(data, "%f", &G.gps_loc[0])) continue;
-
-			// Longitude
-			if (!json_get_value_for_name(line, "lon", data)) continue;
-			if (1 != sscanf(data, "%f", &G.gps_loc[1])) continue;
-
-			// Altitude
-			if (3 == mode)
-			{
-				if (!json_get_value_for_name(line, "alt", data)) continue;
-				if (1 != sscanf(data, "%f", &G.gps_loc[4])) continue;
-			}
-			else
-			{
-				G.gps_loc[4] = 0;
-			}
-
-			// Speed
-			if (!json_get_value_for_name(line, "speed", data))
-			{
-				G.gps_loc[2] = 0;
-			}
-			else
-			{
-				if (1 != sscanf(data, "%f", &G.gps_loc[2])) G.gps_loc[2] = 0;
-			}
-
-			// Heading
-			if (!json_get_value_for_name(line, "track", data))
-			{
-				G.gps_loc[3] = 0;
-			}
-			else
-			{
-				if (1 != sscanf(data, "%f", &G.gps_loc[3])) G.gps_loc[3] = 0;
+				// Send ?WATCH={"json":true};
+				memset(line, 0, sizeof(line));
+				strcpy(line, "?WATCH={\"json\":true};\n");
+				if (send(gpsd_sock, line, 22, 0) != 22) continue;
 			}
 		}
-		else
+		else if (is_json < 0)
 		{
-			memset(line, 0, sizeof(line));
+			/* An error occurred while we were waiting for data */
+			continue;
+		}
+		/* Else select() returned zero (timeout expired) and we assume we're
+		* connected to an old-style gpsd. */
 
-			snprintf(line, sizeof(line) - 1, "PVTAD\r\n");
-			if (send(gpsd_sock, line, 7, 0) != 7) return;
+		// Initialisation of all GPS data to 0
+		memset(G.gps_loc, 0, sizeof(G.gps_loc));
 
-			memset(line, 0, sizeof(line));
-			if (recv(gpsd_sock, line, sizeof(line) - 1, 0) <= 0) return;
+		/* Inside loop for reading the GPS coordinates/data */
+		while (G.do_exit == 0)
+		{
+			gpsd_tried_connection = 0; // reset socket connection test
+			usleep(500000);
 
-			if (memcmp(line, "GPSD,P=", 7) != 0) continue;
+			// Reset all GPS data before each read so that if we lose GPS signal
+			// or drop to a 2D fix, the loss of data is accurately reflected
+			// gps_loc data structure:
+			// 0 = lat, 1 = lon, 2 = speed, 3 = heading, 4 = alt, 5 = lat error, 6 = lon error, 7 = vertical error
 
-			/* make sure the coordinates are present */
+			// Check if we need to reset/invalidate our GPS data if the data has become 'stale' based on a timeout/interval
+			if (time(NULL) - updateTime > G.gps_valid_interval)
+			{
+				memset(G.gps_loc, 0, sizeof(G.gps_loc));
+			}
 
-			if (line[7] == '?') continue;
+			// Record ALL GPS data from GPSD
+			if (G.record_data)
+			{
+				fputs(line, G.f_gps);
+			}
 
-			ret = sscanf(line + 7, "%f %f", &G.gps_loc[0], &G.gps_loc[1]);
+			/* read position, speed, heading, altitude */
+			if (is_json)
+			{
+				// Format definition: http://catb.org/gpsd/gpsd_json.html
 
-			if ((temp = strstr(line, "V=")) == NULL) continue;
-			ret = sscanf(temp + 2, "%f", &G.gps_loc[2]); /* speed */
+				if ((pos = read_line(gpsd_sock, buffer, pos, sizeof(buffer)))
+					<= 0)
+					break;
+				pos = get_line_from_buffer(buffer, pos, line);
 
-			if ((temp = strstr(line, "T=")) == NULL) continue;
-			ret = sscanf(temp + 2, "%f", &G.gps_loc[3]); /* heading */
+				// See if we got a TPV report - aka actual GPS data if not send default 0 values
+				if (!json_get_value_for_name(line, "class", data)
+					|| strncmp(data, "TPV", 3) != 0)
+				{
+					/* Not a TPV report.  Get another line. */
 
-			if ((temp = strstr(line, "A=")) == NULL) continue;
-			ret = sscanf(temp + 2, "%f", &G.gps_loc[4]); /* altitude */
+					continue;
+				}
+
+				/* See what sort of GPS fix we got.  Possibilities are:
+				* 0: No data
+				* 1: No fix
+				* 2: Lat/Lon, but no alt
+				* 3: Lat/Lon/Alt
+				* Either 2 or 3 may also have speed and heading data.
+				*/
+				if (!json_get_value_for_name(line, "mode", data)
+					|| (mode = atoi(data)) < 2)
+				{
+					/* No GPS fix, so there are no coordinates to extract. */
+					continue;
+				}
+
+				/* Extract the available data from the TPV report.  If we're
+				* in mode 2, latitude and longitude are mandatory, altitude
+				* is set to 0, and speed and heading are optional.
+				* In mode 3, latitude, longitude, and altitude are mandatory,
+				* while speed and heading are optional.
+				* If we can't get a mandatory value, the line is discarded
+				* as fragmentary or malformed.  If we can't get an optional
+				* value, we default it to 0.
+				*/
+
+				// GPS Time
+				if (json_get_value_for_name(line, "time", data))
+				{
+					if (!(strptime(data, "%Y-%m-%dT%H:%M:%S", &G.gps_time)
+						  == NULL))
+					{
+						updateTime = time(NULL);
+					}
+				}
+
+				// Latitude
+				if (json_get_value_for_name(line, "lat", data))
+				{
+					if (1 != sscanf(data, "%f", &G.gps_loc[0]))
+					{
+						G.gps_loc[0] = 0;
+					}
+				}
+
+				// Longitude
+				if (json_get_value_for_name(line, "lon", data))
+				{
+					if (1 != sscanf(data, "%f", &G.gps_loc[1]))
+					{
+						G.gps_loc[1] = 0;
+					}
+				}
+
+				// Longitude Error
+				if (json_get_value_for_name(line, "epx", data))
+				{
+					if (1 != sscanf(data, "%f", &G.gps_loc[6]))
+					{
+						G.gps_loc[6] = 0;
+					}
+				}
+
+				// Latitude Error
+				if (json_get_value_for_name(line, "epy", data))
+				{
+					if (1 != sscanf(data, "%f", &G.gps_loc[5]))
+					{
+						G.gps_loc[5] = 0;
+					}
+				}
+
+				// Vertical Error
+				if (json_get_value_for_name(line, "epv", data))
+				{
+					if (1 != sscanf(data, "%f", &G.gps_loc[7]))
+					{
+						G.gps_loc[7] = 0;
+					}
+				}
+
+				// Altitude
+				if (json_get_value_for_name(line, "alt", data))
+				{
+					if (1 != sscanf(data, "%f", &G.gps_loc[4]))
+					{
+						G.gps_loc[4] = 0;
+					}
+				}
+
+				// Speed
+				if (json_get_value_for_name(line, "speed", data))
+				{
+					if (1 != sscanf(data, "%f", &G.gps_loc[2]))
+					{
+						G.gps_loc[2] = 0;
+					}
+				}
+
+				// Heading
+				if (json_get_value_for_name(line, "track", data))
+				{
+					if (1 != sscanf(data, "%f", &G.gps_loc[3]))
+					{
+						G.gps_loc[3] = 0;
+					}
+				}
+			}
+			else
+			{
+				// Else read a NON JSON format
+
+				memset(line, 0, sizeof(line));
+
+				snprintf(line, sizeof(line) - 1, "PVTAD\r\n");
+				if (send(gpsd_sock, line, 7, 0) != 7) return return_error;
+
+				memset(line, 0, sizeof(line));
+				if (recv(gpsd_sock, line, sizeof(line) - 1, 0) <= 0)
+					return return_error;
+
+				if (memcmp(line, "GPSD,P=", 7) != 0) continue;
+
+				/* make sure the coordinates are present */
+
+				if (line[7] == '?') continue;
+
+				updateTime = time(NULL);
+				ret = sscanf(line + 7,
+							 "%f %f",
+							 &G.gps_loc[0],
+							 &G.gps_loc[1]); /* lat lon */
+
+				if ((temp = strstr(line, "V=")) == NULL) continue;
+				ret = sscanf(temp + 2, "%f", &G.gps_loc[2]); /* speed */
+
+				if ((temp = strstr(line, "T=")) == NULL) continue;
+				ret = sscanf(temp + 2, "%f", &G.gps_loc[3]); /* heading */
+
+				if ((temp = strstr(line, "A=")) == NULL) continue;
+				ret = sscanf(temp + 2, "%f", &G.gps_loc[4]); /* altitude */
+			}
+
+			G.save_gps = 1;
 		}
 
-		if (G.record_data) fputs(line, G.f_gps);
-
-		G.save_gps = 1;
-
+		// If we are still wanting to read GPS but encountered an error - reset data and try again
 		if (G.do_exit == 0)
 		{
-			unused = write(G.gc_pipe[1], G.gps_loc, sizeof(float) * 5);
-			kill(parent, SIGUSR2);
+			memset(G.gps_loc, 0, sizeof(G.gps_loc));
+			sleep(1);
 		}
 	}
+	return return_success;
 }
 
 static void sighandler(int signum)
@@ -6143,7 +6330,7 @@ static void sighandler(int signum)
 	}
 
 	if (signum == SIGUSR2)
-		unused = read(G.gc_pipe[0], &G.gps_loc, sizeof(float) * 5);
+		unused = read(G.gc_pipe[0], &G.gps_loc, sizeof(G.gps_loc));
 
 	if (signum == SIGINT || signum == SIGTERM)
 	{
@@ -7144,6 +7331,7 @@ int main(int argc, char * argv[])
 	G.f_kis = NULL;
 	G.f_kis_xml = NULL;
 	G.f_gps = NULL;
+	G.f_logcsv = NULL;
 	G.keyout = NULL;
 	G.f_xor = NULL;
 	G.sk_len = 0;
@@ -7180,10 +7368,14 @@ int main(int argc, char * argv[])
 	G.output_format_csv = 1;
 	G.output_format_kismet_csv = 1;
 	G.output_format_kismet_netxml = 1;
+	G.output_format_log_csv = 1;
+	G.gps_valid_interval
+		= 5; // If we dont get a new GPS update in 5 seconds - invalidate it
 	G.file_write_interval = 5; // Write file every 5 seconds by default
 	G.maxsize_wps_seen = 6;
 	G.show_wps = 0;
 	G.background_mode = -1;
+	G.do_exit = 0;
 #ifdef CONFIG_LIBNL
 	G.htval = CHANNEL_NO_HT;
 #endif
@@ -7479,6 +7671,7 @@ int main(int argc, char * argv[])
 					G.output_format_csv = 0;
 					G.output_format_kismet_csv = 0;
 					G.output_format_kismet_netxml = 0;
+					G.output_format_log_csv = 0;
 				}
 
 				if (G.output_format_pcap)
@@ -7654,6 +7847,7 @@ int main(int argc, char * argv[])
 					G.output_format_csv = 0;
 					G.output_format_kismet_csv = 0;
 					G.output_format_kismet_netxml = 0;
+					G.output_format_log_csv = 0;
 				}
 
 				// Parse the value
@@ -7729,6 +7923,11 @@ int main(int argc, char * argv[])
 						{
 							G.output_format_kismet_netxml = 1;
 						}
+						else if (strncasecmp(output_format_string, "logcsv", 6)
+								 == 0)
+						{
+							G.output_format_log_csv = 1;
+						}
 						else if (strncasecmp(output_format_string, "default", 6)
 								 == 0)
 						{
@@ -7744,7 +7943,7 @@ int main(int argc, char * argv[])
 							G.output_format_csv = 0;
 							G.output_format_kismet_csv = 0;
 							G.output_format_kismet_netxml = 0;
-
+							G.output_format_log_csv = 0;
 							G.usegpsd = 0;
 							ivs_only = 0;
 						}
@@ -8049,13 +8248,10 @@ int main(int argc, char * argv[])
 
 	if (G.usegpsd)
 	{
-		unused = pipe(G.gc_pipe);
-		signal(SIGUSR2, sighandler);
-
-		if (!fork())
+		if (pthread_create(&G.gps_tid, NULL, &gps_tracker_thread, NULL) != 0)
 		{
-			gps_tracker(main_pid);
-			exit(1);
+			perror("Could not create GPS thread");
+			return 1;
 		}
 
 		usleep(50000);
@@ -8449,6 +8645,7 @@ int main(int argc, char * argv[])
 		if (G.f_gps != NULL) fclose(G.f_gps);
 		if (G.output_format_pcap || G.f_cap != NULL) fclose(G.f_cap);
 		if (G.f_ivs != NULL) fclose(G.f_ivs);
+		if (G.f_logcsv != NULL) fclose(G.f_logcsv);
 	}
 
 	if (!G.save_gps)
