@@ -5548,6 +5548,8 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 		int starting_thread_id = id;
 		first_wpa_threadid = id;
 
+		ALLEGE(opt.nbcpu >= 1);
+
 		for (int i = 0; i < opt.nbcpu; i++)
 		{
 			if (ap_cur->ivbuf_size)
@@ -6544,7 +6546,7 @@ int main(int argc, char * argv[])
 
 			packet_reader_t * request
 				= (packet_reader_t *) calloc(1, sizeof(packet_reader_t));
-			if (NULL == request) perror("malloc");
+			ALLEGE(request);
 
 			request->mode = PACKET_READER_CHECK_MODE;
 			request->filename = optind_arg;
@@ -6789,7 +6791,7 @@ int main(int argc, char * argv[])
 
 		packet_reader_t * request
 			= (packet_reader_t *) calloc(1, sizeof(packet_reader_t));
-		if (NULL == request) perror("malloc");
+		ALLEGE(request);
 
 		request->mode = PACKET_READER_READ_MODE;
 		request->filename = optind_arg;
