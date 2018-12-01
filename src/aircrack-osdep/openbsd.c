@@ -31,6 +31,7 @@
 #include <net/if_dl.h>
 #include <sys/queue.h>
 #include <net/if_var.h>
+#include <sys/mbuf.h>
 #define _KERNEL
 #include <net80211/ieee80211.h>
 #include <net80211/ieee80211_crypto.h>
