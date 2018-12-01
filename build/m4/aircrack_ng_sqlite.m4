@@ -45,7 +45,8 @@ AC_ARG_ENABLE(static-sqlite3,
     [static_sqlite3=$enableval], [static_sqlite3=no])
 
 if test "x$static_sqlite3" != "xno"; then
-	AX_EXT_HAVE_STATIC_LIB(SQLITE3, DEFAULT_STATIC_LIB_SEARCH_PATHS, sqlite3 libsqlite3, sqlite3_open, -lpthread -ldl)
+	AC_REQUIRE([AX_EXT_HAVE_STATIC_LIB_DETECT])
+	AX_EXT_HAVE_STATIC_LIB(SQLITE3, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, sqlite3 libsqlite3, sqlite3_open, -lpthread -ldl)
 	if test "x$SQLITE3_FOUND" = xyes; then
 		HAVE_SQLITE3=yes
 	fi

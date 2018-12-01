@@ -53,9 +53,10 @@ fi
 
 AS_IF([test "x$enable_hwloc" != "xno"], [
 	if test "x$static_hwloc" != "xno"; then
-		AX_EXT_HAVE_STATIC_LIB(HWLOC, DEFAULT_STATIC_LIB_SEARCH_PATHS, hwloc libhwloc, hwloc_bitmap_alloc, -lnuma -lltdl)
-		AX_EXT_HAVE_STATIC_LIB(NUMA, DEFAULT_STATIC_LIB_SEARCH_PATHS, numa libnuma, numa_bitmask_setbit, -lltdl)
-		AX_EXT_HAVE_STATIC_LIB(LTDL, DEFAULT_STATIC_LIB_SEARCH_PATHS, ltdl libltdl, lt_dlopen, -ldl)
+		AC_REQUIRE([AX_EXT_HAVE_STATIC_LIB_DETECT])
+		AX_EXT_HAVE_STATIC_LIB(HWLOC, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, hwloc libhwloc, hwloc_bitmap_alloc, -lnuma -lltdl)
+		AX_EXT_HAVE_STATIC_LIB(NUMA, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, numa libnuma, numa_bitmask_setbit, -lltdl)
+		AX_EXT_HAVE_STATIC_LIB(LTDL, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, ltdl libltdl, lt_dlopen, -ldl)
 		HWLOC_LIBS="$HWLOC_LIBS $NUMA_LIBS $LTDL_LIBS"
 		AC_SUBST([HWLOC_LIBS])
         HAVE_HWLOC=yes

@@ -40,6 +40,7 @@
 
 AC_DEFUN([AX_LIB_SQLITE3],
 [
+    AC_REQUIRE([AX_EXT_HAVE_STATIC_LIB_DETECT])
     AC_ARG_WITH([sqlite3],
         AS_HELP_STRING(
             [--with-sqlite3=@<:@ARG@:>@],
@@ -83,7 +84,7 @@ AC_DEFUN([AX_LIB_SQLITE3],
         AC_MSG_CHECKING([for SQLite3 header])
 
         if test "$ac_sqlite3_path" != ""; then
-            ac_sqlite3_ldflags="-L$ac_sqlite3_path/lib"
+            ac_sqlite3_ldflags="-L$ac_sqlite3_path/${STATIC_LIBDIR_NAME}"
             ac_sqlite3_cppflags="-I$ac_sqlite3_path/include"
             AC_MSG_RESULT([explicitly set; $ac_sqlite3_path])
         else
@@ -92,7 +93,7 @@ AC_DEFUN([AX_LIB_SQLITE3],
                     && test -r "$ac_sqlite3_path_tmp/include/$ac_sqlite3_header"; then
                     ac_sqlite3_path=$ac_sqlite3_path_tmp
                     ac_sqlite3_cppflags="-I$ac_sqlite3_path_tmp/include"
-                    ac_sqlite3_ldflags="-L$ac_sqlite3_path_tmp/lib"
+                    ac_sqlite3_ldflags="-L$ac_sqlite3_path_tmp/${STATIC_LIBDIR_NAME}"
                     AC_MSG_RESULT([found; $ac_sqlite3_path_tmp/include/$ac_sqlite3_header])
                     break;
                 fi
