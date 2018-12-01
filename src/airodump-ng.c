@@ -3491,16 +3491,16 @@ static char * parse_timestamp(unsigned long long timestamp)
 
 	return s;
 }
-int IsAp2BeSkipped(struct AP_info *ap_cur)
+int IsAp2BeSkipped(struct AP_info * ap_cur)
 {
-	if (ap_cur->nb_pkt < 2 || time( NULL) - ap_cur->tlast > G.berlin
+	if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > G.berlin
 		|| memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
 	{
 		return 1;
 	}
 
 	if (ap_cur->security != 0 && G.f_encrypt != 0
-			&& ((ap_cur->security & G.f_encrypt) == 0))
+		&& ((ap_cur->security & G.f_encrypt) == 0))
 	{
 		return 1;
 	}
@@ -3760,43 +3760,50 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		{
 			/* skip APs with only one packet, or those older than 2 min.
 		* always skip if bssid == broadcast */
-			if(IsAp2BeSkipped(ap_cur))
+			if (IsAp2BeSkipped(ap_cur))
 			{
-				if(G.p_selected_ap == ap_cur)
-				{//the selected AP is skipped (will not be printed), we have to go to the next printable AP
-					struct AP_info *ap_tmp;
-					if(selection_direction_up == G.en_selection_direction)//UP arrow was last pressed
+				if (G.p_selected_ap == ap_cur)
+				{ //the selected AP is skipped (will not be printed), we have to go to the next printable AP
+					struct AP_info * ap_tmp;
+					if (selection_direction_up
+						== G.en_selection_direction) //UP arrow was last pressed
 					{
 						ap_tmp = ap_cur->next;
-						if(ap_tmp)
+						if (ap_tmp)
 						{
-							while( (0 != (G.p_selected_ap = ap_tmp)) && IsAp2BeSkipped(ap_tmp) )
+							while ((0 != (G.p_selected_ap = ap_tmp))
+								   && IsAp2BeSkipped(ap_tmp))
 								ap_tmp = ap_tmp->next;
 						}
-						if(!ap_tmp)//we have reached the first element in the list, so go in another direction
-						{//upon we have an AP that is not skipped
+						if (!ap_tmp) //we have reached the first element in the list, so go in another direction
+						{ //upon we have an AP that is not skipped
 							ap_tmp = ap_cur->prev;
-							if(ap_tmp)
+							if (ap_tmp)
 							{
-								while( (0 != (G.p_selected_ap = ap_tmp)) && IsAp2BeSkipped(ap_tmp) )
+								while ((0 != (G.p_selected_ap = ap_tmp))
+									   && IsAp2BeSkipped(ap_tmp))
 									ap_tmp = ap_tmp->prev;
 							}
 						}
 					}
-					else if(selection_direction_down == G.en_selection_direction)//DOWN arrow was last pressed
+					else if (
+						selection_direction_down
+						== G.en_selection_direction) //DOWN arrow was last pressed
 					{
 						ap_tmp = ap_cur->prev;
-						if(ap_tmp)
+						if (ap_tmp)
 						{
-							while( (0 != (G.p_selected_ap = ap_tmp)) && IsAp2BeSkipped(ap_tmp) )
+							while ((0 != (G.p_selected_ap = ap_tmp))
+								   && IsAp2BeSkipped(ap_tmp))
 								ap_tmp = ap_tmp->prev;
 						}
-						if(!ap_tmp)//we have reached the last element in the list, so go in another direction
-						{//upon we have an AP that is not skipped
+						if (!ap_tmp) //we have reached the last element in the list, so go in another direction
+						{ //upon we have an AP that is not skipped
 							ap_tmp = ap_cur->next;
-							if(ap_tmp)
+							if (ap_tmp)
 							{
-								while( (0 != (G.p_selected_ap = ap_tmp)) && IsAp2BeSkipped(ap_tmp) )
+								while ((0 != (G.p_selected_ap = ap_tmp))
+									   && IsAp2BeSkipped(ap_tmp))
 									ap_tmp = ap_tmp->next;
 							}
 						}
