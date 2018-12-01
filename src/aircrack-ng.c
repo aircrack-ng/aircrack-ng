@@ -3401,9 +3401,13 @@ static int do_wep_crack2(int B)
 	}
 
 	for (wep.fudge[B] = 1; wep.fudge[B] < 256; wep.fudge[B]++)
+	{
+		ALLEGE(0 <= wep.fudge[B] && wep.fudge[B] <= INT_MAX);
+
 		if ((float) wep.poll[B][wep.fudge[B]].val
 			< (float) wep.poll[B][0].val / opt.ffact)
 			break;
+	}
 
 	for (wep.depth[B] = 0; wep.depth[B] < wep.fudge[B]; wep.depth[B]++)
 	{
@@ -5325,6 +5329,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 		}
 	}
 
+	ALLEGE(ret >= 0 && ret <= RESTART);
 	if (opt.is_quiet != 1 && ret == FAILURE)
 	{
 		struct winsize ws;
