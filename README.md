@@ -81,6 +81,10 @@ Below are instructions for installing the basic requirements to build
 
     pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 libgcrypt gmake cmocka
 
+#### OpenBSD
+
+    pkg_add pkgconf shtool libtool gcc automake autoconf pcre sqlite3 openssl gmake cmocka
+
 ### OSX
 
 XCode, Xcode command line tools and HomeBrew are required.
@@ -293,6 +297,16 @@ to your choosing:
    ```
    autoreconf -i
    env CC=gcc7 CXX=g++7 MAKE=gmake ./configure --with-experimental --with-gcrypt
+   gmake
+   ```
+
+ * Compiling on OpenBSD (with autoconf 2.69 and automake 1.16)
+
+   ```
+   export AUTOCONF_VERSION=2.69
+   export AUTOMAKE_VERSION=1.16
+   autoreconf -i
+   env MAKE=gmake ./configure
    gmake
    ```
 

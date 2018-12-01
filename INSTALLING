@@ -55,6 +55,10 @@ Note: CMocka should not be a dependency when packaging Aircrack-ng.
 
     `pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 libgcrypt gmake cmocka`
 
+===== OpenBSD =====
+
+    `pkg_add pkgconf shtool libtool gcc automake autoconf pcre sqlite3 openssl gmake cmocka`
+
 ==== OSX ====
 
 XCode, Xcode command line tools and HomeBrew are required.
@@ -255,6 +259,15 @@ to your choosing:
     gmake
     ```
 
+  * Compiling on OpenBSD (with autoconf 2.69 and automake 1.16)
+
+    ```
+    export AUTOCONF_VERSION=2.69
+    export AUTOMAKE_VERSION=1.16
+    autoreconf -i
+    env MAKE=gmake ./configure
+    gmake
+   ```
 
 == Packaging ==
 
