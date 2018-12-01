@@ -151,9 +151,9 @@ static void resetSelection(void)
 
 	G.start_print_ap = 1;
 	G.start_print_sta = 1;
-	G.selected_ap = 1;
+	G.p_selected_ap = NULL;
 	G.selected_sta = 1;
-	G.selection_ap = 0;
+	G.en_selection_direction = selection_direction_no;
 	G.selection_sta = 0;
 	G.mark_cur_ap = 0;
 	G.skip_columns = 0;
@@ -178,7 +178,6 @@ static void input_thread(void * arg)
 		if (keycode == KEY_s)
 		{
 			G.sort_by++;
-			G.selection_ap = 0;
 			G.selection_sta = 0;
 
 			if (G.sort_by > MAX_SORT) G.sort_by = 0;
@@ -287,27 +286,19 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_ARROW_DOWN)
 		{
-			if (G.selection_ap == 1)
+			if (G.p_selected_ap && G.p_selected_ap->prev)
 			{
-				G.selected_ap++;
-			}
-			if (G.selection_sta == 1)
-			{
-				G.selected_sta++;
+				G.p_selected_ap = G.p_selected_ap->prev;
+				G.en_selection_direction = selection_direction_down;
 			}
 		}
 
 		if (keycode == KEY_ARROW_UP)
 		{
-			if (G.selection_ap == 1)
+			if (G.p_selected_ap && G.p_selected_ap->next)
 			{
-				G.selected_ap--;
-				if (G.selected_ap < 1) G.selected_ap = 1;
-			}
-			if (G.selection_sta == 1)
-			{
-				G.selected_sta--;
-				if (G.selected_sta < 1) G.selected_sta = 1;
+				G.p_selected_ap = G.p_selected_ap->next;
+				G.en_selection_direction = selection_direction_up;
 			}
 		}
 
@@ -324,17 +315,18 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_TAB)
 		{
-			if (G.selection_ap == 0)
+			if (G.p_selected_ap == NULL)
 			{
-				G.selection_ap = 1;
-				G.selected_ap = 1;
+				G.p_selected_ap = G.ap_end;
+				G.en_selection_direction = selection_direction_down;
 				snprintf(
 					G.message, sizeof(G.message), "][ enabled AP selection");
 				G.sort_by = SORT_BY_NOTHING;
 			}
-			else if (G.selection_ap == 1)
+			else
 			{
-				G.selection_ap = 0;
+				G.en_selection_direction = selection_direction_no;
+				G.p_selected_ap = NULL;
 				G.sort_by = SORT_BY_NOTHING;
 				snprintf(G.message, sizeof(G.message), "][ disabled selection");
 			}
@@ -3469,118 +3461,6 @@ static char * getBatteryString(void)
 	return ret;
 }
 
-static int get_ap_list_count(void)
-{
-	time_t tt;
-	struct tm * lt;
-	struct AP_info * ap_cur;
-
-	int num_ap;
-
-	tt = time(NULL);
-	lt = localtime(&tt);
-
-	ap_cur = G.ap_end;
-
-	num_ap = 0;
-
-	while (ap_cur != NULL)
-	{
-		/* skip APs with only one packet, or those older than 2 min.
-		 * always skip if bssid == broadcast */
-
-		if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > G.berlin
-			|| memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
-		{
-			ap_cur = ap_cur->prev;
-			continue;
-		}
-
-		if (ap_cur->security != 0 && G.f_encrypt != 0
-			&& ((ap_cur->security & G.f_encrypt) == 0))
-		{
-			ap_cur = ap_cur->prev;
-			continue;
-		}
-
-		if (is_filtered_essid(ap_cur->essid))
-		{
-			ap_cur = ap_cur->prev;
-			continue;
-		}
-
-		num_ap++;
-		ap_cur = ap_cur->prev;
-	}
-
-	return num_ap;
-}
-
-static int get_sta_list_count(void)
-{
-	time_t tt;
-	struct tm * lt;
-	struct AP_info * ap_cur;
-	struct ST_info * st_cur;
-
-	int num_sta;
-
-	tt = time(NULL);
-	lt = localtime(&tt);
-
-	ap_cur = G.ap_end;
-
-	num_sta = 0;
-
-	while (ap_cur != NULL)
-	{
-		if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > G.berlin)
-		{
-			ap_cur = ap_cur->prev;
-			continue;
-		}
-
-		if (ap_cur->security != 0 && G.f_encrypt != 0
-			&& ((ap_cur->security & G.f_encrypt) == 0))
-		{
-			ap_cur = ap_cur->prev;
-			continue;
-		}
-
-		// Don't filter unassociated clients by ESSID
-		if (memcmp(ap_cur->bssid, BROADCAST, 6)
-			&& is_filtered_essid(ap_cur->essid))
-		{
-			ap_cur = ap_cur->prev;
-			continue;
-		}
-
-		st_cur = G.st_end;
-
-		while (st_cur != NULL)
-		{
-			if (st_cur->base != ap_cur || time(NULL) - st_cur->tlast > G.berlin)
-			{
-				st_cur = st_cur->prev;
-				continue;
-			}
-
-			if (!memcmp(ap_cur->bssid, BROADCAST, 6) && G.asso_client)
-			{
-				st_cur = st_cur->prev;
-				continue;
-			}
-
-			num_sta++;
-
-			st_cur = st_cur->prev;
-		}
-
-		ap_cur = ap_cur->prev;
-	}
-	return num_sta;
-}
-
 #define TSTP_SEC                                                               \
 	1000000ULL /* It's a 1 MHz clock, so a million ticks per second! */
 #define TSTP_MIN (TSTP_SEC * 60ULL)
@@ -3610,6 +3490,26 @@ static char * parse_timestamp(unsigned long long timestamp)
 #undef TSTP_LEN
 
 	return s;
+}
+int IsAp2BeSkipped(struct AP_info * ap_cur)
+{
+	if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > G.berlin
+		|| memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+	{
+		return 1;
+	}
+
+	if (ap_cur->security != 0 && G.f_encrypt != 0
+		&& ((ap_cur->security & G.f_encrypt) == 0))
+	{
+		return 1;
+	}
+
+	if (is_filtered_essid(ap_cur->essid))
+	{
+		return 1;
+	}
+	return 0;
 }
 
 static void dump_print(int ws_row, int ws_col, int if_num)
@@ -3854,48 +3754,61 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		ap_cur = G.ap_end;
 
-		if (G.selection_ap)
-		{
-			num_ap = get_ap_list_count();
-			if (G.selected_ap > num_ap) G.selected_ap = num_ap;
-		}
-
-		if (G.selection_sta)
-		{
-			num_sta = get_sta_list_count();
-			if (G.selected_sta > num_sta) G.selected_sta = num_sta;
-		}
-
 		num_ap = 0;
-
-		if (G.selection_ap)
-		{
-			G.start_print_ap = G.selected_ap - ((ws_row - 1) - nlines) + 1;
-			if (G.start_print_ap < 1) G.start_print_ap = 1;
-			//	printf("%i\n", G.start_print_ap);
-		}
 
 		while (ap_cur != NULL)
 		{
 			/* skip APs with only one packet, or those older than 2 min.
 		* always skip if bssid == broadcast */
-
-			if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > G.berlin
-				|| memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+			if (IsAp2BeSkipped(ap_cur))
 			{
-				ap_cur = ap_cur->prev;
-				continue;
-			}
-
-			if (ap_cur->security != 0 && G.f_encrypt != 0
-				&& ((ap_cur->security & G.f_encrypt) == 0))
-			{
-				ap_cur = ap_cur->prev;
-				continue;
-			}
-
-			if (is_filtered_essid(ap_cur->essid))
-			{
+				if (G.p_selected_ap == ap_cur)
+				{ //the selected AP is skipped (will not be printed), we have to go to the next printable AP
+					struct AP_info * ap_tmp;
+					if (selection_direction_up
+						== G.en_selection_direction) //UP arrow was last pressed
+					{
+						ap_tmp = ap_cur->next;
+						if (ap_tmp)
+						{
+							while ((0 != (G.p_selected_ap = ap_tmp))
+								   && IsAp2BeSkipped(ap_tmp))
+								ap_tmp = ap_tmp->next;
+						}
+						if (!ap_tmp) //we have reached the first element in the list, so go in another direction
+						{ //upon we have an AP that is not skipped
+							ap_tmp = ap_cur->prev;
+							if (ap_tmp)
+							{
+								while ((0 != (G.p_selected_ap = ap_tmp))
+									   && IsAp2BeSkipped(ap_tmp))
+									ap_tmp = ap_tmp->prev;
+							}
+						}
+					}
+					else if (
+						selection_direction_down
+						== G.en_selection_direction) //DOWN arrow was last pressed
+					{
+						ap_tmp = ap_cur->prev;
+						if (ap_tmp)
+						{
+							while ((0 != (G.p_selected_ap = ap_tmp))
+								   && IsAp2BeSkipped(ap_tmp))
+								ap_tmp = ap_tmp->prev;
+						}
+						if (!ap_tmp) //we have reached the last element in the list, so go in another direction
+						{ //upon we have an AP that is not skipped
+							ap_tmp = ap_cur->next;
+							if (ap_tmp)
+							{
+								while ((0 != (G.p_selected_ap = ap_tmp))
+									   && IsAp2BeSkipped(ap_tmp))
+									ap_tmp = ap_tmp->next;
+							}
+						}
+					}
+				}
 				ap_cur = ap_cur->prev;
 				continue;
 			}
@@ -4041,7 +3954,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			strbuf[ws_col - 1] = '\0';
 
-			if (G.selection_ap && ((num_ap) == G.selected_ap))
+			if (G.p_selected_ap && (G.p_selected_ap == ap_cur))
 			{
 				if (G.mark_cur_ap)
 				{
@@ -4191,7 +4104,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			fprintf(stderr, "\n");
 
-			if ((G.selection_ap && ((num_ap) == G.selected_ap))
+			if ((G.p_selected_ap && (G.p_selected_ap == ap_cur))
 				|| (ap_cur->marked))
 			{
 				textstyle(TEXT_RESET);
@@ -4255,7 +4168,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			st_cur = G.st_end;
 
-			if (G.selection_ap
+			if (G.p_selected_ap
 				&& (memcmp(G.selected_bssid, ap_cur->bssid, 6) == 0))
 			{
 				textstyle(TEXT_REVERSE);
@@ -4351,7 +4264,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				st_cur = st_cur->prev;
 			}
 
-			if ((G.selection_ap
+			if ((G.p_selected_ap
 				 && (memcmp(G.selected_bssid, ap_cur->bssid, 6) == 0))
 				|| (ap_cur->marked))
 			{
