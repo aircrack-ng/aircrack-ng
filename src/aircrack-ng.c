@@ -5197,6 +5197,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 					printf("Starting PTW attack with %ld ivs.\n",
 						   ap_cur->nb_ivs_vague);
 				ret = crack_wep_ptw(ap_cur);
+				ALLEGE(ret >= 0 && ret <= RESTART);
 
 				if (opt.oneshot == 1 && ret == FAILURE)
 				{
@@ -5222,6 +5223,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 	else if (opt.dict != NULL)
 	{
 		ret = crack_wep_dict();
+		ALLEGE(ret >= 0 && ret <= RESTART);
 	}
 	else
 	{
@@ -5261,6 +5263,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 			do
 			{
 				ret = do_wep_crack1(0);
+				ALLEGE(ret >= 0 && ret <= RESTART);
 			} while (ret == RESTART);
 
 			if (ret == FAILURE)
@@ -5292,6 +5295,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 				do
 				{
 					ret = do_wep_crack2(i);
+					ALLEGE(ret >= 0 && ret <= RESTART);
 				} while (ret == RESTART);
 
 				if (ret == SUCCESS) break;
@@ -5321,9 +5325,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 		}
 	}
 
-	if (!opt.is_quiet) return (ret);
-
-	if (ret == FAILURE)
+	if (opt.is_quiet != 1 && ret == FAILURE)
 	{
 		struct winsize ws;
 
