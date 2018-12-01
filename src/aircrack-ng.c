@@ -4493,8 +4493,8 @@ struct AP_info * hccap_to_ap(hccap_t * hccap)
 	struct AP_info * ap = malloc(sizeof(struct AP_info));
 	memset(&ap, 0, sizeof(ap));
 
-	memcpy(&ap->essid, &hccap->essid, sizeof(hccap->essid));
-	memcpy(&ap->bssid, &hccap->mac1, sizeof(hccap->mac1));
+	memcpy(&ap->essid, &hccap->essid, sizeof(ap->essid));
+	memcpy(&ap->bssid, &hccap->mac1, sizeof(ap->bssid));
 	memcpy(&ap->wpa.stmac, &hccap->mac2, sizeof(hccap->mac2));
 	memcpy(&ap->wpa.snonce, &hccap->nonce1, sizeof(hccap->nonce1));
 	memcpy(&ap->wpa.anonce, &hccap->nonce2, sizeof(hccap->nonce2));
