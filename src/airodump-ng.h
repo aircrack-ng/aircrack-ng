@@ -498,9 +498,14 @@ struct globals
 	int sort_inv;
 	int start_print_ap;
 	int start_print_sta;
-	int selected_ap;
+	struct AP_info* p_selected_ap;
+	enum
+	{
+		selection_direction_down,
+		selection_direction_up,
+		selection_direction_no
+	}en_selection_direction;
 	int selected_sta;
-	int selection_ap;
 	int selection_sta;
 	int mark_cur_ap;
 	int num_cards;
