@@ -5343,6 +5343,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 		moveto((ws.ws_col - 13) / 2, 5);
 		erase_line(2);
 		printf("KEY NOT FOUND\n");
+		moveto(0, 24);
 	}
 
 	return (ret);
