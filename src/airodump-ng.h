@@ -107,8 +107,9 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
 #define KISMET_NETXML_EXT "kismet.netxml"
 #define AIRODUMP_NG_GPS_EXT "gps"
 #define AIRODUMP_NG_CAP_EXT "cap"
+#define AIRODUMP_NG_LOG_CSV_EXT "log.csv"
 
-#define NB_EXTENSIONS 6
+#define NB_EXTENSIONS 7
 
 const unsigned char llcnull[4] = {0, 0, 0, 0};
 char * f_ext[NB_EXTENSIONS] = {AIRODUMP_NG_CSV_EXT,
@@ -116,7 +117,8 @@ char * f_ext[NB_EXTENSIONS] = {AIRODUMP_NG_CSV_EXT,
 							   AIRODUMP_NG_CAP_EXT,
 							   IVS2_EXTENSION,
 							   KISMET_CSV_EXT,
-							   KISMET_NETXML_EXT};
+							   KISMET_NETXML_EXT,
+							   AIRODUMP_NG_LOG_CSV_EXT};
 
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
@@ -383,6 +385,7 @@ struct globals
 	FILE * f_cap; /* output cap file      */
 	FILE * f_ivs; /* output ivs file      */
 	FILE * f_xor; /* output prga file     */
+	FILE * f_logcsv; /* output rolling AP/GPS csv log */
 
 	char * batt; /* Battery string       */
 	int channel[MAX_CARDS]; /* current channel #    */
@@ -390,9 +393,11 @@ struct globals
 	int ch_pipe[2]; /* current channel pipe */
 	int cd_pipe[2]; /* current card pipe    */
 	int gc_pipe[2]; /* gps coordinates pipe */
-	float gps_loc[5]; /* gps coordinates      */
+	float gps_loc[8]; /* gps coordinates      */
 	int save_gps; /* keep gps file flag   */
 	int usegpsd; /* do we use GPSd?      */
+	int gps_valid_interval; /* how many seconds until we consider the GPS data invalid if we dont get new data */
+
 	int * channels;
 	//     int *frequencies;
 	int singlechan; /* channel hopping set 1*/
@@ -486,7 +491,9 @@ struct globals
 	int output_format_csv;
 	int output_format_kismet_csv;
 	int output_format_kismet_netxml;
+	int output_format_log_csv;
 	pthread_t input_tid;
+	pthread_t gps_tid;
 	int sort_by;
 	int sort_inv;
 	int start_print_ap;
@@ -513,6 +520,7 @@ struct globals
 	int file_write_interval;
 	u_int maxsize_wps_seen;
 	int show_wps;
+	struct tm gps_time; /* the timestamp from the gps data */
 #ifdef CONFIG_LIBNL
 	int htval;
 #endif
