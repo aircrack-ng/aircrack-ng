@@ -5491,6 +5491,21 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 		}
 	}
 
+	if (!opt.is_quiet && ret == FAILURE)
+	{
+		struct winsize ws;
+
+		if (ioctl(0, TIOCGWINSZ, &ws) < 0)
+		{
+			ws.ws_row = 25;
+			ws.ws_col = 80;
+		}
+
+		moveto((ws.ws_col - 13) / 2, 5);
+		erase_line(2);
+		printf("KEY NOT FOUND\n");
+	}
+
 	return (ret);
 }
 
@@ -5689,7 +5704,7 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 		{
 			if (!opt.is_quiet)
 			{
-				moveto((80 - 28) / 2, 8);
+				moveto((80 - 13) / 2, 8);
 				erase_line(2);
 			}
 			else
@@ -5697,7 +5712,7 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 				printf("\n");
 			}
 
-			printf("Passphrase not in dictionary\n");
+			printf("KEY NOT FOUND\n");
 
 			if (opt.is_quiet) clean_exit(FAILURE);
 
