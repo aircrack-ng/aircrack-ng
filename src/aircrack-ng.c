@@ -5321,7 +5321,9 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 		}
 	}
 
-	if (opt.is_quiet != 1 && ret == FAILURE)
+	if (!opt.is_quiet) return (ret);
+
+	if (ret == FAILURE)
 	{
 		struct winsize ws;
 
