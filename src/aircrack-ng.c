@@ -2733,7 +2733,7 @@ void show_wep_stats(int B,
 
 	if (opt.l33t) textcolor(TEXT_BRIGHT, TEXT_BLUE, TEXT_BLACK);
 
-	moveto((ws.ws_col - 12) / 2, 2);
+	moveto((ws.ws_col - (int) strlen(progname)) / 2, 2);
 	printf("%s\n\n", progname);
 
 	if (opt.l33t) textcolor(TEXT_BRIGHT, TEXT_YELLOW, TEXT_BLACK);
