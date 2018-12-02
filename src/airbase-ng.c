@@ -683,13 +683,10 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 			&& (wep == cur->wep))
 		{
 			// entry already exists, update
-			//             printf("got seq %d, added fragment %d \n", seq,
-			//             frag);
 			if (cur->fragment[frag] != NULL) return 0;
 
 			if ((frame[1] & 0x04) == 0)
 			{
-				//                 printf("max fragnum is %d\n", frag);
 				cur->fragnum = frag; // no higher frag number possible
 			}
 			cur->fragment[frag] = (unsigned char *) malloc(len - z);
@@ -701,7 +698,6 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 		}
 	}
 
-	//     printf("new seq %d, added fragment %d \n", seq, frag);
 	// new entry, first fragment received
 	// alloc mem
 	cur->next = (pFrag_t) malloc(sizeof(struct Fragment_list));
@@ -715,7 +711,6 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 
 	if ((frame[1] & 0x04) == 0)
 	{
-		//         printf("max fragnum is %d\n", frag);
 		cur->fragnum = frag; // no higher frag number possible
 	}
 	else
@@ -830,8 +825,6 @@ getCompleteFrag(unsigned char * smac, int sequence, int * packetlen)
 			}
 
 			if (len > 2000) return NULL;
-
-			//             printf("got a complete frame -> build it\n");
 
 			if (old->wep)
 			{
@@ -1490,9 +1483,6 @@ static int create_wep_packet(unsigned char * packet, int * length, int hdrlen)
 	/* encrypt data+crc32 and keep a 4byte hole */
 	if (encrypt_data(packet + hdrlen, *length - hdrlen + 4) != 0) return 1;
 
-	//     /* write IV+IDX right in front of the encrypted data */
-	//     if( set_IVidx(packet) != 0 )                              return 1;
-
 	/* set WEP bit */
 	packet[1] = packet[1] | 0x40;
 
@@ -1580,7 +1570,6 @@ static int packet_xmit(unsigned char * packet, int length)
 		{
 			memcpy(h80211, IEEE80211_LLC_SNAP, 24);
 			memcpy(h80211 + 24, packet + 14 + usedlen, newlen);
-			//             memcpy(h80211+30, packet+12, 2);
 		}
 
 		h80211[1] |= 0x02;
@@ -1588,8 +1577,6 @@ static int packet_xmit(unsigned char * packet, int length)
 		memcpy(h80211 + 16, packet + 6, 6); // SRC_MAC
 		memcpy(h80211 + 4, packet, 6); // DST_MAC
 
-		//    frag = frame[22] & 0x0F;
-		//    seq = (frame[22] >> 4) | (frame[23] << 4);
 		h80211[22] |= i & 0x0F; // set fragment
 		h80211[1] |= 0x04; // more frags
 
@@ -1598,8 +1585,6 @@ static int packet_xmit(unsigned char * packet, int length)
 			h80211[1] &= 0xFB; // no more frags
 		}
 
-		//         length = length+32-14; //32=IEEE80211+LLC/SNAP;
-		//         14=SRC_MAC+DST_MAC+TYPE
 		length2 = newlen + 32;
 
 		if ((opt.external & EXT_OUT))
@@ -1610,7 +1595,6 @@ static int packet_xmit(unsigned char * packet, int length)
 			buf[12] = 0xFF;
 			buf[13] = 0xFF;
 			ti_write(dev.dv_ti2, buf, length2 + 14);
-			//             return 0;
 		}
 		else
 		{
@@ -1693,10 +1677,7 @@ static int remove_tag(unsigned char * flags, unsigned char type, int * length)
 	{
 		cur_type = pos[0];
 		cur_len = pos[1];
-		//         printf("tag %d with len %d found, looking for tag %d\n",
-		//         cur_type, cur_len, type);
-		//         printf("gone through %d bytes from %d max\n", len+2+cur_len,
-		//         *length);
+
 		if (len + 2 + cur_len > *length) return 1;
 
 		if (cur_type == type)
@@ -2490,12 +2471,9 @@ static int packet_recv(unsigned char * packet,
 	if (memcmp(bssid, opt.r_bssid, 6) == 0 && (packet[0] & 0x08) == 0x08
 		&& (packet[1] & 0x03) == 0x01)
 	{
-		//         printf("to me with len: %d\n", length);
 		fragnum = packet[22] & 0x0F;
 		seqnum = (packet[22] >> 4) | (packet[23] << 4);
 		morefrag = packet[1] & 0x04;
-
-		//         printf("frag: %d, morefrag: %d\n", fragnum, morefrag);
 
 		/* Fragment? */
 		if (fragnum > 0 || morefrag)
@@ -2507,7 +2485,6 @@ static int packet_recv(unsigned char * packet,
 			/* we got frag, no compelete packet avail -> do nothing */
 			if (buffer == NULL) return 1;
 
-			//             printf("got all frags!!!\n");
 			memcpy(packet, buffer, len);
 			length = len;
 			free(buffer);
@@ -2541,8 +2518,6 @@ static int packet_recv(unsigned char * packet,
 							packet + z + 4, length - z - 4, K, 3 + opt.weplen)
 						== 0)
 					{
-						//                         printf("ICV check
-						//                         failed!\n");
 						return 1;
 					}
 
@@ -2749,7 +2724,6 @@ static int packet_recv(unsigned char * packet,
 				memcpy(packet + 10, smac, 6);
 				memcpy(packet + 16, bssid, 6);
 			}
-			//             printf("sent packet length: %d\n", length);
 			/* Is encrypted */
 			if ((packet[z] != packet[z + 1] || packet[z + 2] != 0x03)
 				&& (packet[1] & 0x40) == 0x40)
@@ -2767,8 +2741,6 @@ static int packet_recv(unsigned char * packet,
 							packet + z + 4, length - z - 4, K, 3 + opt.weplen)
 						== 0)
 					{
-						//                         printf("ICV check
-						//                         failed!\n");
 						return 1;
 					}
 
@@ -2990,10 +2962,6 @@ static int packet_recv(unsigned char * packet,
 					}
 
 					send_packet(packet, length);
-
-					// send_packet(packet, length);
-
-					// send_packet(packet, length);
 					return 0;
 				}
 			}
@@ -3278,7 +3246,6 @@ static int packet_recv(unsigned char * packet,
 				packet + z + fixed, 0xDD, length - z - fixed, &len);
 			while (tag != NULL)
 			{
-				//                 printf("Found WPA TAG\n");
 				wpa_client(st_cur, tag - 2, len + 2);
 				tag += (tag - 2)[1] + 2;
 				tag = parse_tags(
@@ -3289,7 +3256,6 @@ static int packet_recv(unsigned char * packet,
 				packet + z + fixed, 0x30, length - z - fixed, &len);
 			while (tag != NULL)
 			{
-				//                 printf("Found WPA2 TAG\n");
 				wpa_client(st_cur, tag - 2, len + 2);
 				tag += (tag - 2)[1] + 2;
 				tag = parse_tags(
@@ -4537,14 +4503,6 @@ int main(int argc, char * argv[])
 		printf("\"%s --help\" for help.\n", argv[0]);
 		return (1);
 	}
-
-	//     if( opt.sendeapol && !opt.wpa1type && !opt.wpa2type )
-	//     {
-	//         printf("Notice: You need to specify which WPA method to use"
-	//                " together with EAPOL. WPA (-z) or WPA2 (-Z)\n");
-	//         printf("\"%s --help\" for help.\n", argv[0]);
-	//         return( 1 );
-	//     }
 
 	if (opt.allwpa && (opt.wpa1type || opt.wpa2type))
 	{

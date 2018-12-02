@@ -540,13 +540,6 @@ static int check_received(unsigned char * packet, unsigned length)
 static int send_packet(void * buf, size_t count)
 {
 	struct wif * wi = _wi_out; /* XXX globals suck */
-	// 	unsigned char *pkt = (unsigned char*) buf;
-
-	// 	if( (count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0x0F) == 0)
-	// 	{
-	// 		pkt[22] += (nb_pkt_sent & 0x0000000F) << 4;
-	// 		pkt[23] += (nb_pkt_sent & 0x00000FF0) >> 4;
-	// 	}
 
 	if (wi_write(wi, buf, count, NULL) == -1)
 	{
@@ -661,11 +654,6 @@ static int filter_packet(unsigned char * h80211, int caplen)
 
 	if ((h80211[1] & 0x40) != (opt.f_iswep << 6) && opt.f_iswep >= 0)
 		return (1);
-
-	/* check the extended IV (TKIP) flag */
-
-	//     if( opt.f_type == 2 && opt.f_iswep == 1 &&
-	//         ( h80211[z + 3] & 0x20 ) != 0 ) return( 1 );
 
 	/* MAC address checking */
 
@@ -1531,14 +1519,6 @@ static int check_guess(unsigned char * srcbuf,
 	if ((srcbuf[0] & 0x80) == 0x80) /* QoS */
 		z += 2;
 
-	//     if(arp[22] == 192 && arp[23] == 168 && arp[24] == 178 && arp[25] ==
-	//     1)
-	//     {
-	//         printf("Source: %i.%i.%i.%i; Dest: %i.%i.%i.%i\n",
-	//                 arp[22], arp[23], arp[24], arp[25], arp[32], arp[33],
-	//                 arp[34], arp[35] );
-	//     }
-
 	pos = caplen - z - 8 - clearlen;
 	for (i = 0; i < clearlen; i++)
 	{
@@ -2252,7 +2232,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 		memcpy(srcbuf + 10, bssid, 6);
 		memcpy(srcbuf + 4, dmac, 6);
 		memcpy(srcbuf + 16, smac, 6);
-		//         memcpy(h80211+16, BROADCAST, 6);
 	}
 
 	z = ((h80211[1] & 3) != 3) ? 24 : 30;
@@ -2263,27 +2242,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	if ((unsigned) caplen > sizeof(srcbuf)
 		|| (unsigned) caplen > sizeof(h80211))
 		return (1);
-
-	//     if( opt.r_smac_set == 1 )
-	//     {
-	//         //handle picky APs (send one valid packet before all the invalid
-	//         ones)
-	//         memset(packet, 0, sizeof(packet));
-	//
-	//         memcpy( packet, NULL_DATA, 24 );
-	//         memcpy( packet +  4, "\xFF\xFF\xFF\xFF\xFF\xFF", 6 );
-	//         memcpy( packet + 10, opt.r_smac,  6 );
-	//         memcpy( packet + 16, opt.f_bssid, 6 );
-	//
-	//         packet[0] = 0x08; //make it a data packet
-	//         packet[1] = 0x41; //set encryption and ToDS=1
-	//
-	//         memcpy( packet+24, h80211+z, caplen-z);
-	//
-	//         if( send_packet( packet, caplen-z+24 ) != 0 )
-	//             return( 1 );
-	//         //done sending a correct packet
-	//     }
 
 	/* Special handling for spanning-tree packets */
 	if (memcmp(h80211 + 4, SPANTREE, 6) == 0
@@ -2332,7 +2290,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			   packet[z + 8 + keystream_len - 1]
 				   ^ srcbuf[z + 8 + keystream_len - 1]);
 
-		//         opt.oldkeystreamlen = keystream_len-(47-z-8);
 		opt.oldkeystreamlen = keystream_len - 37;
 		for (i = 0; i < opt.oldkeystreamlen; i++)
 			opt.oldkeystream[i] = keystream[keystream_len - 1 - i];
@@ -2380,37 +2337,8 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	srclen = data_end = n;
 	srcdiff = z - 24;
 
-	//     chopped[0] = 0x88;  /* QoS data frame */
-	//     chopped[1] = 0x41;  /* WEP = 1, ToDS = 1 */
-
 	chopped[24] ^= 0x01;
 	chopped[25] = 0x00;
-
-	//     for(i=0; i<4; i++)
-	//     {
-	//         chopped[24] = 0x01;
-	//         if( send_packet( chopped, n ) != 0 )
-	//                 return( 1 );
-	//         usleep(10000);
-	//     }
-
-	/* copy the duration */
-
-	//     memcpy( chopped + 2, h80211 + 2, 2 );
-
-	/* copy the BSSID */
-
-	//     switch( h80211[1] & 3 )
-	//     {
-	//         case  0: memcpy( chopped + 4, h80211 + 16, 6 ); break;
-	//         case  1: memcpy( chopped + 4, h80211 +  4, 6 ); break;
-	//         case  2: memcpy( chopped + 4, h80211 + 10, 6 ); break;
-	//         default: memcpy( chopped + 4, h80211 + 10, 6 ); break;
-	//     }
-
-	/* copy the WEP IV */
-
-	//     memcpy( chopped + 24, h80211 + z, 4 );
 
 	/* setup the xor mask to hide the original data */
 
@@ -2451,17 +2379,10 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	crc_mask >>= 8;
 
 	for (i = data_start; i < data_end; i++) chopped[i] ^= srcbuf[i];
-	//         chopped[i] ^= srcbuf[i+srcdiff];
 
 	data_start += 6; /* skip the SNAP header */
 
 	is_deauth_mode = 0;
-
-	//     opt.r_dmac[0] = 0xFF;
-	//     opt.r_dmac[1] = rand() & 0xFE;
-	//     opt.r_dmac[2] = rand() & 0xFF;
-	//     opt.r_dmac[3] = rand() & 0xFF;
-	//     opt.r_dmac[4] = rand() & 0xFF;
 
 	/* chop down old/known keystreambytes */
 	for (i = 0; i < opt.oldkeystreamlen; i++)
@@ -2495,10 +2416,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	guess = 256;
 
 	tt = time(NULL);
-
-	//     alarm( 30 );
-	//
-	//     signal( SIGALRM, sighandler );
 
 	if (opt.port_in <= 0)
 	{
@@ -2602,8 +2519,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			erase_line(0);
 		}
 
-		/*        if( data_end < 47 && ticks[3] > 8 * ( ticks[0] - ticks[3] ) /
-								(int) ( caplen - ( data_end - 1 ) ) )*/
 		if (data_end < 47 && tries > 512)
 		{
 		header_rec:
@@ -2705,9 +2620,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 				opt.r_dmac[5] = guess & 0xFF;
 			}
 
-			//             memcpy( h80211 + 10, opt.r_smac,  6 );
-			//             memcpy( h80211 + 16, opt.r_dmac,  6 );
-
 			if (guess < 256)
 			{
 				h80211[data_end - 2] ^= crc_chop_tbl[guess][3];
@@ -2802,11 +2714,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			if (h80211[7] != opt.r_smac[3]) continue;
 			if (h80211[8] != opt.r_smac[4]) continue;
 
-			//             if( ( h80211[5]     & 0xFE ) !=
-			//                 ( opt.r_smac[1] & 0xFE ) ) continue;
-
-			/*            if( ! ( h80211[5] & 1 ) )
-			{*/
 			if (data_end < 41) goto header_rec;
 
 			printf("\n\nFailure: the access point does not properly "
@@ -2814,7 +2721,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 				   "aireplay-ng in authenticated mode (-h) instead.\n\n");
 			free(chopped);
 			return (1);
-			//             }
 		}
 		else
 		{
@@ -2837,8 +2743,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			if (z + 127 != n)
 				continue; //(153[26+127] bytes for eapol mic failure in tkip qos
 			// frames from client to AP)
-
-			//             printf("yeah!\n");
 
 			// direction must be inverted.
 			if (((h80211[1] & 3) ^ (srcbuf[1] & 3)) != 0x03) continue;
@@ -2863,29 +2767,11 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 					break;
 			}
 
-			/*            if( h80211[4] != opt.r_dmac[0] ) continue;
-			if( h80211[6] != opt.r_dmac[2] ) continue;
-			if( h80211[7] != opt.r_dmac[3] ) continue;
-			if( h80211[8] != opt.r_dmac[4] ) continue;
-
-			if( ( h80211[5]     & 0xFE ) !=
-				( opt.r_dmac[1] & 0xFE ) ) continue;
-
-			if( ! ( h80211[5] & 1 ) )
-			{
-				if( data_end < 41 ) goto header_rec;
-
-				printf( "\n\nFailure: the access point does not properly "
-						"discard frames with an\ninvalid ICV - try running "
-						"aireplay-ng in non-authenticated mode instead.\n\n" );
-				return( 1 );
-			}*/
 			if (nb_pkt_sent < 1) continue;
 		}
 
 		/* we have a winner */
 
-		//         guess = h80211[9];
 		tries = 0;
 		settle = 0;
 		guess = (guess - 1) % 256;
@@ -3203,8 +3089,6 @@ static int getHDSK(void)
 
 	n = 0;
 
-	//         usleep( 180000 );
-
 	/* deauthenticate the target */
 
 	memcpy(h80211, DEAUTH_REQ, 26);
@@ -3339,22 +3223,6 @@ int main(int argc, char * argv[])
 	opt.npackets = 1;
 	opt.nodetect = 0;
 	opt.mic_failure_interval = DEFAULT_MIC_FAILURE_INTERVAL;
-
-/* XXX */
-#if 0
-#if defined(__FreeBSD__)
-    /*
-        check what is our FreeBSD version. injection works
-        only on 7-CURRENT so abort if it's a lower version.
-    */
-    if( __FreeBSD_version < 700000 )
-    {
-        fprintf( stderr, "Aireplay-ng does not work on this "
-            "release of FreeBSD.\n" );
-        exit( 1 );
-    }
-#endif
-#endif
 
 	while (1)
 	{
@@ -3857,9 +3725,6 @@ int main(int argc, char * argv[])
 	if (maccmp(opt.r_smac, dev.mac_out) != 0
 		&& maccmp(opt.r_smac, NULL_MAC) != 0)
 	{
-		//        if( dev.is_madwifi && opt.a_mode == 5 ) printf("For --fragment
-		//        to work on madwifi[-ng], set the interface MAC according to
-		//        (-h)!\n");
 		fprintf(stderr,
 				"The interface MAC (%02X:%02X:%02X:%02X:%02X:%02X)"
 				" doesn't match the specified MAC (-h).\n"

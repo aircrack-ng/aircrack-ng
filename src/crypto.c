@@ -125,29 +125,6 @@ void rc4_crypt(struct rc4_state * s, unsigned char * data, int length)
 	s->y = y;
 }
 
-/* WEP (barebone RC4) en-/decryption routines */
-/*
-int encrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen )
-{
-	struct rc4_state S;
-
-	rc4_setup( &S, key, keylen );
-	rc4_crypt( &S, data, len );
-
-	return( 0 );
-}
-
-int decrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen )
-{
-	struct rc4_state S;
-
-	rc4_setup( &S, key, keylen );
-	rc4_crypt( &S, data, len );
-
-	return( check_crc_buf( data, len - 4 ) );
-}
-*/
-
 /* derive the PMK from the passphrase and the essid */
 
 void calc_pmk(char * key, char * essid_pre, unsigned char pmk[40])
@@ -234,49 +211,6 @@ void calc_pmk(char * key, char * essid_pre, unsigned char pmk[40])
 	}
 }
 
-// void calc_ptk (struct WPA_hdsk *wpa, unsigned char bssid[6], unsigned char
-// pmk[32], unsigned char ptk[80]) {
-// 	int i;
-// 	unsigned char pke[100];
-// 	HMAC_CTX ctx;
-//
-// 	memcpy( pke, "Pairwise key expansion", 23 );
-//
-// 	if( memcmp( wpa->stmac, bssid, 6 ) < 0 )
-// 	{
-// 		memcpy( pke + 23, wpa->stmac, 6 );
-// 		memcpy( pke + 29, bssid, 6 );
-// 	}
-// 	else
-// 	{
-// 		memcpy( pke + 23, bssid, 6 );
-// 		memcpy( pke + 29, wpa->stmac, 6 );
-// 	}
-//
-// 	if( memcmp( wpa->snonce, wpa->anonce, 32 ) < 0 )
-// 	{
-// 		memcpy( pke + 35, wpa->snonce, 32 );
-// 		memcpy( pke + 67, wpa->anonce, 32 );
-// 	}
-// 	else
-// 	{
-// 		memcpy( pke + 35, wpa->anonce, 32 );
-// 		memcpy( pke + 67, wpa->snonce, 32 );
-// 	}
-//
-// 	HMAC_CTX_init(&ctx);
-// 	HMAC_Init_ex(&ctx, pmk, 32, EVP_sha1(), NULL);
-// 	for(i = 0; i < 4; i++ )
-// 	{
-// 		pke[99] = i;
-// 		//HMAC(EVP_sha1(), values[0], 32, pke, 100, ptk + i * 20, NULL);
-// 		HMAC_Init_ex(&ctx, 0, 0, 0, 0);
-// 		HMAC_Update(&ctx, pke, 100);
-// 		HMAC_Final(&ctx, ptk + i*20, NULL);
-// 	}
-// 	HMAC_CTX_cleanup(&ctx);
-// }
-
 void calc_mic(struct AP_info * ap,
 			  unsigned char pmk[32],
 			  unsigned char ptk[80],
@@ -325,7 +259,6 @@ void calc_mic(struct AP_info * ap,
 	for (i = 0; i < 4; i++)
 	{
 		pke[99] = (uint8_t) i;
-		// HMAC(EVP_sha1(), values[0], 32, pke, 100, ptk + i * 20, NULL);
 		HMAC_Init_ex(&ctx, 0, 0, 0, 0);
 		HMAC_Update(&ctx, pke, 100);
 		HMAC_Final(&ctx, ptk + i * 20, NULL);
@@ -337,7 +270,6 @@ void calc_mic(struct AP_info * ap,
 	for (i = 0; i < 4; i++)
 	{
 		pke[99] = i;
-		// HMAC(EVP_sha1(), values[0], 32, pke, 100, ptk + i * 20, NULL);
 		HMAC_Init_ex(ctx, 0, 0, 0, 0);
 		HMAC_Update(ctx, pke, 100);
 		HMAC_Final(ctx, ptk + i * 20, NULL);
@@ -1602,107 +1534,3 @@ int decrypt_ccmp(unsigned char * h80211, int caplen, unsigned char TK1[16])
 	//       that was sent with the message.
 	return (memcmp(h80211 + offset, MIC, 8) == 0);
 }
-
-/*
-**********************************************************************
-* Routine: Phase 1 -- generate P1K, given TA, TK, IV32
-*
-* Inputs:
-*        TK[]             = Temporal Key                   [128 bits]
-*        TA[]             = transmitter's MAC address      [ 48 bits]
-*        IV32             = upper 32 bits of IV            [ 32 bits]
-* Output:
-*        P1K[]            = Phase 1 key                    [ 80 bits]
-*
-* Note:
-*        This function only needs to be called every 2**16 frames,
-*        although in theory it could be called every frame.
-*
-**********************************************************************
-*/
-// void Phase1(u16b *P1K,const byte *TK,const byte *TA,u32b IV32)
-//         {
-//         int  i;
-//         /* Initialize the 80 bits of P1K[] from IV32 and TA[0..5] */
-//         P1K[0]      = Lo16(IV32);
-//         P1K[1]      = Hi16(IV32);
-//         P1K[2]      = Mk16(TA[1],TA[0]); /* use TA[] as little-endian */
-//         P1K[3]      = Mk16(TA[3],TA[2]);
-//         P1K[4]      = Mk16(TA[5],TA[4]);
-//         /* Now compute an unbalanced Feistel cipher with 80-bit block */
-//         /* size on the 80-bit block P1K[], using the 128-bit key TK[] */
-//         for (i=0; i < PHASE1_LOOP_CNT ;i++)
-//             {                 /* Each add operation here is mod 2**16 */
-//             P1K[0] += _S_(P1K[4] ^ TK16((i&1)+0));
-//             P1K[1] += _S_(P1K[0] ^ TK16((i&1)+2));
-//             P1K[2] += _S_(P1K[1] ^ TK16((i&1)+4));
-//             P1K[3] += _S_(P1K[2] ^ TK16((i&1)+6));
-//             P1K[4] += _S_(P1K[3] ^ TK16((i&1)+0));
-//             P1K[4] += i;                     /* avoid "slide attacks" */
-//             }
-//         }
-/*
-	**********************************************************************
-	* Routine: Phase 2 -- generate RC4KEY, given TK, P1K, IV16
-	*
-	* Inputs:
-	*       TK[]      = Temporal Key                              [128 bits]
-	*       P1K[]     = Phase 1 output key                        [ 80 bits]
-	*       IV16      = low 16 bits of IV counter                 [ 16 bits]
-	* Output:
-	*       RC4KEY[] = the key used to encrypt the frame          [128 bits]
-	*
-	* Note:
-	*       The value {TA,IV32,IV16} for Phase1/Phase2 must be unique
-	*       across all frames using the same key TK value. Then, for a
-	*       given value of TK[], this TKIP48 construction guarantees that
-	*       the final RC4KEY value is unique across all frames.
-	*
-	* Suggested implementation optimization: if PPK[] is "overlaid"
-	*       appropriately on RC4KEY[], there is no need for the final
-	*       for loop below that copies the PPK[] result into RC4KEY[].
-	*
-	**********************************************************************
-	*/
-//     void Phase2(byte *RC4KEY,const byte *TK,const u16b *P1K,u16b IV16)
-//         {
-//         int i;
-//         u16b PPK[6];                        /* temporary key for mixing */
-//         /* all adds in the PPK[] equations below are mod 2**16 */
-//         for (i=0;i<5;i++) PPK[i]=P1K[i];    /* first, copy P1K to PPK */
-//         PPK[5] = P1K[4] + IV16;             /* next, add in IV16 */
-//         /* Bijective non-linear mixing of the 96 bits of PPK[0..5] */
-//         PPK[0] +=    _S_(PPK[5] ^ TK16(0)); /* Mix key in each "round" */
-//         PPK[1] +=    _S_(PPK[0] ^ TK16(1));
-//         PPK[2] +=    _S_(PPK[1] ^ TK16(2));
-//         PPK[3] +=            _S_(PPK[2] ^ TK16(3));
-//         PPK[4] +=            _S_(PPK[3] ^ TK16(4));
-//         PPK[5] +=            _S_(PPK[4] ^ TK16(5)); /* Total # S-box lookups
-//         == 6        */
-//         /* Final sweep: bijective, linear. Rotates kill LSB correlations */
-//         PPK[0] += RotR1(PPK[5] ^ TK16(6));
-//         PPK[1] += RotR1(PPK[0] ^ TK16(7)); /* Use all of TK[] in Phase2 */
-//         PPK[2] += RotR1(PPK[1]);
-//         PPK[3] += RotR1(PPK[2]);
-//         PPK[4] += RotR1(PPK[3]);
-//         PPK[5] += RotR1(PPK[4]);
-//         /* At this point, for a given key TK[0..15], the 96-bit output */
-//         /*        value PPK[0..5] is guaranteed to be unique, as a function
-//         */
-//         /*        of the 96-bit "input" value         {TA,IV32,IV16}. That
-//         is, P1K       */
-//         /*        is now a keyed permutation of {TA,IV32,IV16}. */
-//         /* Set RC4KEY[0..3], which includes cleartext portion of RC4 key */
-//         RC4KEY[0] = Hi8(IV16);                      /* RC4KEY[0..2] is the
-//         WEP IV        */
-//         RC4KEY[1] =(Hi8(IV16) | 0x20) & 0x7F; /* Help avoid FMS weak keys */
-//         RC4KEY[2] = Lo8(IV16);
-//         RC4KEY[3] = Lo8((PPK[5] ^ TK16(0)) >> 1);
-//         /* Copy 96 bits of PPK[0..5] to RC4KEY[4..15]
-//         (little-endian)            */
-//         for (i=0;i<6;i++)
-//             {
-//             RC4KEY[4+2*i] = Lo8(PPK[i]);
-//             RC4KEY[5+2*i] = Hi8(PPK[i]);
-//             }
-//         }
