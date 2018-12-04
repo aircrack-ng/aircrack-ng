@@ -45,6 +45,13 @@ then
 	if test $PYTHON = no; then
 		AC_MSG_FAILURE(failed to find Python)
 	fi
+
+    if test "x$PYTHON" != "x"; then
+        pc_cv_python_site_dir=`$PYTHON -c 'import site; print(site.getsitepackages()[[-1]])'`
+        dnl AC_SUBST([pythondir], [\${prefix}/$pc_cv_python_site_dir])
+        AC_SUBST([pythondir], [$pc_cv_python_site_dir])
+        AC_SUBST([pkgpythondir], [\${pythondir}/$PACKAGE_NAME])
+    fi
 fi
 
 AC_CHECK_PROGS([READLINK], [greadlink readlink])
