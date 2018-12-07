@@ -1,3 +1,20 @@
+Version 1.5 (changes from aircrack-ng 1.3) - Released XX Dec 2018:
+* Airodump-ng: Fixed AP selection slip in interactive mode
+* Airodump-ng: Revamped GPS logging functionality and added new logging format (logcsv)
+* Aircrack-ng: Only load the maximum supported and available crypto engine
+* Aircrack-ng: Reworked wordlist producer/consumer queue
+* Airserv-ng: Fixed communication between platforms with different size int
+* Airmon-ng: Improved detection of Raspberry Pis
+* General: Signed and unsigned comparison fixes
+* Package: Added package for Ubuntu 18.10 (Cosmic)
+* General: Code cleanups
+* General: Added more tests
+* General: Compilation improvements/fixes in autotools
+* General: Big endian fixes
+* General: Fixed building on FreeBSD and OpenBSD
+* General: Added instructions to compile on DragonflyBSD and OpenBSD
+* General: Fixed spelling errors
+
 Version 1.4 (changes from aircrack-ng 1.3) - Released 29 Sep 2018:
 * Aircrack-ng: Added PMKID cracking
 * Aircrack-ng: Serious speed up and memory usage decrease when loading large files (multiple Gb) using AVL trees
