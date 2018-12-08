@@ -215,7 +215,7 @@
                   {% set prefix = "{{ www }}/{{ artifacts }}" %}
                   mkdir -p {{ prefix }}/stable
                   chmod 777 {{ prefix }}/stable
-                  ln -sfnd {{ prefix }}/development/{{ commit_id }} {{ prefix }}/stable/{{ exact_tag }}
+                  ( cd {{ prefix }}/stable && ln -sfnd ../development/{{ commit_id }} {{ branch }} )
               when: "exact_tag | trim | count > 0"
 
             - name: Deploying stable package manifest
