@@ -1,4 +1,4 @@
-Version 1.5 (changes from aircrack-ng 1.3) - Released XX Dec 2018:
+Version 1.5 (changes from aircrack-ng 1.3) - Released 08 Dec 2018:
 * Airodump-ng: Fixed AP selection slip in interactive mode
 * Airodump-ng: Revamped GPS logging functionality and added new logging format (logcsv)
 * Aircrack-ng: Only load the maximum supported and available crypto engine
