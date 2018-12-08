@@ -4488,7 +4488,8 @@ static hccap_t ap_to_hccap(struct AP_info * ap)
 }
 
 // Caller must free
-struct AP_info * hccap_to_ap(hccap_t * hccap)
+__attribute__((unused))
+static struct AP_info * hccap_to_ap(hccap_t * hccap)
 {
 	struct AP_info * ap = malloc(sizeof(struct AP_info));
 	memset(&ap, 0, sizeof(ap));
