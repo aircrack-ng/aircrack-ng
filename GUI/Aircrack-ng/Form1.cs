@@ -42,8 +42,9 @@ namespace Aircrack_ng
         private string Changelog =
                   "v1.0.0.9\n"
                 + "    - Removed WZCook\n"
-                + "    - Fixed failure to start Aircrack-ng when dictionary"
-                + "      and ESSID/BSSID is specified"
+                + "    - Fixed failure to start Aircrack-ng when dictionary\n"
+                + "      and ESSID/BSSID is specified\n"
+                + "\n"
                 + "v1.0.0.8\n"
                 + "    - Fixed using Aircrack-ng trampoline binary\n"
                 + "    - Fixed adding dictionaries with space characters\n"
