@@ -5727,6 +5727,13 @@ int main(int argc, char * argv[])
 
 	forceptw = 0;
 
+	// When no params, no point checking/parsing arguments
+	if (nbarg == 1)
+	{
+		showhelp = 1;
+		goto usage;
+	}
+
 	// Check if we are restoring from a session
 	if (nbarg == 3 && (strcmp(argv[1], "--restore-session") == 0
 					   || strcmp(argv[1], "-R") == 0))
