@@ -3491,7 +3491,7 @@ static char * parse_timestamp(unsigned long long timestamp)
 
 	return s;
 }
-int IsAp2BeSkipped(struct AP_info * ap_cur)
+static int IsAp2BeSkipped(struct AP_info * ap_cur)
 {
 	if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > G.berlin
 		|| memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
@@ -5913,7 +5913,7 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 	return ret;
 }
 
-void * gps_tracker_thread(void * arg)
+static void * gps_tracker_thread(void * arg)
 {
 	int gpsd_sock;
 	char line[1537], buffer[1537], data[1537];

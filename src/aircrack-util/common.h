@@ -86,19 +86,19 @@ extern "C" {
 
 extern const unsigned char ZERO[33];
 
-extern void calctime(time_t t, float calc);
+void calctime(time_t t, float calc);
 
 /// Retrieves the working directory.
-extern char * get_current_working_directory(void);
+char * get_current_working_directory(void);
 
 /// Trim excess whitespace from the right-most of \a line.
-extern void rtrim(char * line);
+void rtrim(char * line);
 
-extern int is_string_number(const char * str);
+int is_string_number(const char * str);
 
-extern int get_ram_size(void);
+int get_ram_size(void);
 
-extern char * getVersion(const char * progname,
+char * getVersion(const char * progname,
 						 const unsigned int maj,
 						 const unsigned int min,
 						 const unsigned int submin,
@@ -107,32 +107,30 @@ extern char * getVersion(const char * progname,
 						 const unsigned int rc);
 
 /// Returns the number of CPU/cores available and online.
-extern int get_nb_cpus(void);
+int get_nb_cpus(void);
 
-extern int maccmp(unsigned char * mac1, unsigned char * mac2);
+int maccmp(unsigned char * mac1, unsigned char * mac2);
 
-extern char * mac2string(unsigned char * mac_address);
+char * mac2string(unsigned char * mac_address);
 
-extern int hexCharToInt(unsigned char c);
+int hexCharToInt(unsigned char c);
 
-extern int
-hexStringToArray(char * in, int in_length, unsigned char * out, int out_length);
+int hexStringToArray(char * in, int in_length, unsigned char * out, int out_length);
 
 /// Return the mac address bytes (or null if it's not a mac address)
-extern int
-getmac(const char * macAddress, const int strict, unsigned char * mac);
+int getmac(const char * macAddress, const int strict, unsigned char * mac);
 
 /// Read a line of characters inputted by the user
-extern int readLine(char line[], int maxlength);
+int readLine(char line[], int maxlength);
 
-extern int hexToInt(char s[], int len);
+int hexToInt(char s[], int len);
 
-extern void rtrim(char * line);
+void rtrim(char * line);
 
-extern int string_has_suffix(const char * str, const char * suf);
+int string_has_suffix(const char * str, const char * suf);
 
 // Returns 1 if the current process is running in the background, 0 otherwise
-extern int is_background(void);
+int is_background(void);
 
 #ifdef __cplusplus
 };

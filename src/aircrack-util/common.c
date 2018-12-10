@@ -45,6 +45,8 @@
 #include <errno.h>
 #include <assert.h>
 
+#include <common.h>
+
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
 #include <sys/sysctl.h>
 #include <sys/user.h>

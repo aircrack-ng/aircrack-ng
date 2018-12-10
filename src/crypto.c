@@ -74,7 +74,8 @@ int decrypt_wep(unsigned char * data, int len, unsigned char * key, int keylen)
 	return (check_crc_buf(data, len - 4));
 }
 
-/* An implementation of the ARC4 algorithm */
+
+/* An implementation of the ARC4 algorithm
 
 void rc4_setup(struct rc4_state * s, const unsigned char * key, int length)
 {
@@ -123,7 +124,7 @@ void rc4_crypt(struct rc4_state * s, unsigned char * data, int length)
 
 	s->x = x;
 	s->y = y;
-}
+} */
 
 /* derive the PMK from the passphrase and the essid */
 
@@ -288,7 +289,7 @@ void calc_mic(struct AP_info * ap,
 	}
 }
 
-unsigned long calc_crc(unsigned char * buf, int len)
+static unsigned long calc_crc(unsigned char * buf, int len)
 {
 	unsigned long crc = 0xFFFFFFFF;
 
@@ -299,7 +300,7 @@ unsigned long calc_crc(unsigned char * buf, int len)
 }
 
 // without inversion, must be used for bit flipping attacks
-unsigned long calc_crc_plain(unsigned char * buf, int len)
+static unsigned long calc_crc_plain(unsigned char * buf, int len)
 {
 	unsigned long crc = 0x00000000;
 
@@ -357,7 +358,7 @@ int calc_crc_buf(unsigned char * buf, int len)
 	return (int) (calc_crc(buf, len));
 }
 
-void * get_da(unsigned char * wh)
+static void * get_da(unsigned char * wh)
 {
 	if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
 		return wh + 4;
@@ -365,7 +366,7 @@ void * get_da(unsigned char * wh)
 		return wh + 4 + 6 * 2;
 }
 
-void * get_sa(unsigned char * wh)
+static void * get_sa(unsigned char * wh)
 {
 	if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
 		return wh + 4 + 6 * 2;
@@ -392,7 +393,7 @@ int is_dhcp_discover(void * wh, size_t len)
 	return 0;
 }
 
-int is_arp(void * wh, size_t len)
+static int is_arp(void * wh, size_t len)
 {
 	size_t arpsize = 8 + 8 + 10 * 2;
 
@@ -407,7 +408,7 @@ int is_arp(void * wh, size_t len)
 	return 0;
 }
 
-int is_wlccp(void * wh, size_t len)
+static int is_wlccp(void * wh, size_t len)
 {
 	size_t wlccpsize = 58;
 
@@ -441,7 +442,7 @@ int is_qos_arp_tkip(void * wh, int len)
 	return 0;
 }
 
-int is_spantree(void * wh)
+static int is_spantree(void * wh)
 {
 	if (wh != NULL && (memcmp((char *) wh + 4, SPANTREE, 6) == 0
 					   || memcmp((char *) wh + 16, SPANTREE, 6) == 0))
@@ -450,7 +451,7 @@ int is_spantree(void * wh)
 	return 0;
 }
 
-int is_cdp_vtp(void * wh)
+static int is_cdp_vtp(void * wh)
 {
 	if (memcmp((char *) wh + 4, CDP_VTP, 6) == 0
 		|| memcmp((char *) wh + 16, CDP_VTP, 6) == 0)
@@ -643,7 +644,7 @@ int calc_ptk(struct WPA_ST_info * wpa, unsigned char pmk[32])
 	return (memcmp(mic, wpa->keymic, 16) == 0);
 }
 
-int init_michael(struct Michael * mic, const unsigned char key[8])
+static int init_michael(struct Michael * mic, const unsigned char key[8])
 {
 	mic->key0 = UBTOUL(key[0]) << 0UL | UBTOUL(key[1]) << 8UL
 				| UBTOUL(key[2]) << 16UL | UBTOUL(key[3] << 24UL);
@@ -657,7 +658,7 @@ int init_michael(struct Michael * mic, const unsigned char key[8])
 	return 0;
 }
 
-int michael_append_byte(struct Michael * mic, unsigned char byte)
+static int michael_append_byte(struct Michael * mic, unsigned char byte)
 {
 	mic->message |= (UBTOUL(byte) << (8UL * mic->nBytesInM));
 	mic->nBytesInM++;
@@ -681,7 +682,7 @@ int michael_append_byte(struct Michael * mic, unsigned char byte)
 	return 0;
 }
 
-int michael_remove_byte(struct Michael * mic, const unsigned char bytes[4])
+static int michael_remove_byte(struct Michael * mic, const unsigned char bytes[4])
 {
 	if (mic->nBytesInM == 0)
 	{
@@ -706,7 +707,7 @@ int michael_remove_byte(struct Michael * mic, const unsigned char bytes[4])
 	return 0;
 }
 
-int michael_append(struct Michael * mic, unsigned char * bytes, int length)
+static int michael_append(struct Michael * mic, unsigned char * bytes, int length)
 {
 	while (length > 0)
 	{
@@ -716,7 +717,7 @@ int michael_append(struct Michael * mic, unsigned char * bytes, int length)
 	return 0;
 }
 
-int michael_remove(struct Michael * mic, unsigned char * bytes, int length)
+static int michael_remove(struct Michael * mic, unsigned char * bytes, int length)
 {
 	while (length >= 4)
 	{
@@ -726,7 +727,7 @@ int michael_remove(struct Michael * mic, unsigned char * bytes, int length)
 	return 0;
 }
 
-int michael_finalize(struct Michael * mic)
+static int michael_finalize(struct Michael * mic)
 {
 	// Append the minimum padding
 	michael_append_byte(mic, 0x5a);
@@ -752,7 +753,7 @@ int michael_finalize(struct Michael * mic)
 	return 0;
 }
 
-int michael_finalize_zero(struct Michael * mic)
+static int michael_finalize_zero(struct Michael * mic)
 {
 	// Append the minimum padding
 	michael_append_byte(mic, 0);
@@ -1126,7 +1127,7 @@ int calc_tkip_ppk(unsigned char * h80211,
 	return 0;
 }
 
-int calc_tkip_mic_skip_eiv(unsigned char * packet,
+static int calc_tkip_mic_skip_eiv(unsigned char * packet,
 						   int length,
 						   unsigned char ptk[80],
 						   unsigned char value[8])
