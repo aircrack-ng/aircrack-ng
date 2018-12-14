@@ -1002,7 +1002,7 @@ static int dump_initialize(char * prefix, int ivs_only)
 
 		fprintf(G.f_logcsv,
 				"LocalTime, GPSTime, ESSID, BSSID, Power, "
-				"Security, Latitude, Longitude, Latitude Error, "
+				"Security, type, Latitude, Longitude, Latitude Error, "
 				"Longitude Error\r\n");
 	}
 
@@ -1673,6 +1673,9 @@ static int dump_add_packet(unsigned char * h80211,
 			else if (ap_cur->security & STD_OPN)
 				fputs("OPN,", G.f_logcsv);
 
+			//type
+			fprintf(G.f_logcsv, "AP,");
+
 			// Lat, Lon, Lat Error, Lon Error
 			fprintf(G.f_logcsv,
 					"%.6f,%.6f,%.3f,%.3f\r\n",
@@ -1857,6 +1860,65 @@ static int dump_add_packet(unsigned char * h80211,
 			if (msd > 0 && msd < 1000) st_cur->missed += msd;
 		}
 		st_cur->lastseq = seq;
+
+		/* if we are writing to a file and want to make a continuous rolling log save the data here */
+		if (G.record_data && G.output_format_log_csv)
+		{
+			/* Write out our rolling log every time we see data from an AP */
+
+			// Local computer time
+			ltime = localtime(&ap_cur->tlast);
+			fprintf(G.f_logcsv,
+					"%04d-%02d-%02d %02d:%02d:%02d,",
+					1900 + ltime->tm_year,
+					1 + ltime->tm_mon,
+					ltime->tm_mday,
+					ltime->tm_hour,
+					ltime->tm_min,
+					ltime->tm_sec);
+
+			// Gps time
+			struct tm * tm_gpstime = &G.gps_time;
+			fprintf(G.f_logcsv,
+					"%04d-%02d-%02d %02d:%02d:%02d,",
+					1900 + tm_gpstime->tm_year,
+					1 + tm_gpstime->tm_mon,
+					tm_gpstime->tm_mday,
+					tm_gpstime->tm_hour,
+					tm_gpstime->tm_min,
+					tm_gpstime->tm_sec);
+
+			// ESSID
+			fprintf(G.f_logcsv, ",");
+
+			// BSSID
+			fprintf(G.f_logcsv,
+					"%02X:%02X:%02X:%02X:%02X:%02X,",
+					st_cur->stmac[0],
+					st_cur->stmac[1],
+					st_cur->stmac[2],
+					st_cur->stmac[3],
+					st_cur->stmac[4],
+					st_cur->stmac[5]);
+
+			// RSSI
+			fprintf(G.f_logcsv, "%d,", ri->ri_power);
+
+			// Network Security (none) 
+			fprintf(G.f_logcsv, ",");
+
+			//type
+			fprintf(G.f_logcsv, ",Client,");
+
+
+			// Lat, Lon, Lat Error, Lon Errorst_cur->power
+			fprintf(G.f_logcsv,
+					"%.6f,%.6f,%.3f,%.3f\r\n",
+					G.gps_loc[0],
+					G.gps_loc[1],
+					G.gps_loc[5],
+					G.gps_loc[6]);
+		}
 	}
 
 	st_cur->nb_pkt++;
