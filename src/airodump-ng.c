@@ -1002,8 +1002,8 @@ static int dump_initialize(char * prefix, int ivs_only)
 
 		fprintf(G.f_logcsv,
 				"LocalTime, GPSTime, ESSID, BSSID, Power, "
-				"Security, type, Latitude, Longitude, Latitude Error, "
-				"Longitude Error\r\n");
+				"Security, Latitude, Longitude, Latitude Error, "
+				"Longitude Error, Type\r\n");
 	}
 
 	/* create the output Kismet CSV file */
@@ -1673,16 +1673,16 @@ static int dump_add_packet(unsigned char * h80211,
 			else if (ap_cur->security & STD_OPN)
 				fputs("OPN,", G.f_logcsv);
 
-			//type
-			fprintf(G.f_logcsv, "AP,");
-
 			// Lat, Lon, Lat Error, Lon Error
 			fprintf(G.f_logcsv,
-					"%.6f,%.6f,%.3f,%.3f\r\n",
+					"%.6f,%.6f,%.3f,%.3f,",
 					G.gps_loc[0],
 					G.gps_loc[1],
 					G.gps_loc[5],
 					G.gps_loc[6]);
+
+			//type
+			fprintf(G.f_logcsv, "AP\r\n");
 		}
 
 		//         if(ap_cur->fcapt >= QLT_COUNT) update_rx_quality();
@@ -1907,17 +1907,16 @@ static int dump_add_packet(unsigned char * h80211,
 			// Network Security (none) 
 			fprintf(G.f_logcsv, ",");
 
-			//type
-			fprintf(G.f_logcsv, ",Client,");
-
 
 			// Lat, Lon, Lat Error, Lon Errorst_cur->power
 			fprintf(G.f_logcsv,
-					"%.6f,%.6f,%.3f,%.3f\r\n",
+					"%.6f,%.6f,%.3f,%.3f,",
 					G.gps_loc[0],
 					G.gps_loc[1],
 					G.gps_loc[5],
 					G.gps_loc[6]);
+			//type
+			fprintf(G.f_logcsv, "Client\r\n");
 		}
 	}
 
