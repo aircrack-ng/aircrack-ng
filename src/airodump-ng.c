@@ -67,6 +67,7 @@
 #include <pcre.h>
 #endif
 
+#include "defs.h"
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.h"
@@ -94,54 +95,57 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #define AIRODUMP_NG_GPS_EXT "gps"
 #define AIRODUMP_NG_CAP_EXT "cap"
 #define AIRODUMP_NG_LOG_CSV_EXT "log.csv"
- 
+
 #define NB_EXTENSIONS 7
- 
-char * f_ext[NB_EXTENSIONS] = {	AIRODUMP_NG_CSV_EXT,
-								AIRODUMP_NG_GPS_EXT,
-								AIRODUMP_NG_CAP_EXT,
-								IVS2_EXTENSION,
-								KISMET_CSV_EXT,
-								KISMET_NETXML_EXT,
-								AIRODUMP_NG_LOG_CSV_EXT };
 
-const unsigned char llcnull[4] = {0, 0, 0, 0};
+static const char * f_ext[NB_EXTENSIONS] = {AIRODUMP_NG_CSV_EXT,
+											AIRODUMP_NG_GPS_EXT,
+											AIRODUMP_NG_CAP_EXT,
+											IVS2_EXTENSION,
+											KISMET_CSV_EXT,
+											KISMET_NETXML_EXT,
+											AIRODUMP_NG_LOG_CSV_EXT};
 
-const char * OUI_PATHS[] = {"./airodump-ng-oui.txt",
-							"/etc/aircrack-ng/airodump-ng-oui.txt",
-							"/usr/local/etc/aircrack-ng/airodump-ng-oui.txt",
-							"/usr/share/aircrack-ng/airodump-ng-oui.txt",
-							"/var/lib/misc/oui.txt",
-							"/usr/share/misc/oui.txt",
-							"/var/lib/ieee-data/oui.txt",
-							"/usr/share/ieee-data/oui.txt",
-							"/etc/manuf/oui.txt",
-							"/usr/share/wireshark/wireshark/manuf/oui.txt",
-							"/usr/share/wireshark/manuf/oui.txt",
-							NULL};
+static const unsigned char llcnull[4] = {0, 0, 0, 0};
 
-int read_pkts = 0;
+static const char * OUI_PATHS[]
+	= {"./airodump-ng-oui.txt",
+	   "/etc/aircrack-ng/airodump-ng-oui.txt",
+	   "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt",
+	   "/usr/share/aircrack-ng/airodump-ng-oui.txt",
+	   "/var/lib/misc/oui.txt",
+	   "/usr/share/misc/oui.txt",
+	   "/var/lib/ieee-data/oui.txt",
+	   "/usr/share/ieee-data/oui.txt",
+	   "/etc/manuf/oui.txt",
+	   "/usr/share/wireshark/wireshark/manuf/oui.txt",
+	   "/usr/share/wireshark/manuf/oui.txt",
+	   NULL};
 
-int abg_chans[]
+static int read_pkts = 0;
+
+static const int abg_chans[]
 	= {1,   7,   13,  2,   8,   3,   14,  9,   4,   10,  5,   11,  6,
 	   12,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
 	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
 	   120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 144, 149,
 	   151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
 
-int bg_chans[] = {1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, 0};
+static const int bg_chans[]
+	= {1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, 0};
 
-int a_chans[] = {36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
-				 60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
-				 118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
-				 144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
+static const int a_chans[]
+	= {36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
+	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
+	   118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
+	   144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
 
-int * frequencies;
-
-#define ArrayCount(a) (sizeof((a)) / sizeof((a)[0]))
+static int * frequencies;
 
 static void dump_sort(void);
 static void dump_print(int ws_row, int ws_col, int if_num);
+static char *
+get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
 
 static void resetSelection(void)
 {
@@ -163,10 +167,7 @@ static void resetSelection(void)
 
 static void input_thread(void * arg)
 {
-
-	if (!arg)
-	{
-	}
+	UNUSED_PARAM(arg);
 
 	while (G.do_exit == 0)
 	{
@@ -242,9 +243,9 @@ static void input_thread(void * arg)
 				default:
 					break;
 			}
-			pthread_mutex_lock(&(G.mx_sort));
+			ALLEGE(pthread_mutex_lock(&(G.mx_sort)) == 0);
 			dump_sort();
-			pthread_mutex_unlock(&(G.mx_sort));
+			ALLEGE(pthread_mutex_unlock(&(G.mx_sort)) == 0);
 		}
 
 		if (keycode == KEY_SPACE)
@@ -253,13 +254,13 @@ static void input_thread(void * arg)
 			if (G.do_pause)
 			{
 				snprintf(G.message, sizeof(G.message), "][ paused output");
-				pthread_mutex_lock(&(G.mx_print));
+				ALLEGE(pthread_mutex_lock(&(G.mx_print)) == 0);
 
 				moveto(1, 1);
 				dump_print(G.ws.ws_row, G.ws.ws_col, G.num_cards);
 				erase_display(0);
 
-				pthread_mutex_unlock(&(G.mx_print));
+				ALLEGE(pthread_mutex_unlock(&(G.mx_print)) == 0);
 			}
 			else
 				snprintf(G.message, sizeof(G.message), "][ resumed output");
@@ -372,19 +373,21 @@ static void input_thread(void * arg)
 
 		if (G.do_exit == 0 && !G.do_pause)
 		{
-			pthread_mutex_lock(&(G.mx_print));
+			ALLEGE(pthread_mutex_lock(&(G.mx_print)) == 0);
 
 			moveto(1, 1);
 			dump_print(G.ws.ws_row, G.ws.ws_col, G.num_cards);
 			erase_display(0);
 
-			pthread_mutex_unlock(&(G.mx_print));
+			ALLEGE(pthread_mutex_unlock(&(G.mx_print)) == 0);
 		}
 	}
 }
 
 static void trim(char * str)
 {
+	REQUIRE(str != NULL);
+
 	int i;
 	int begin = 0;
 	int end = strlen(str) - 1;
@@ -410,7 +413,7 @@ static FILE * open_oui_file(void)
 		}
 	}
 
-	return fp;
+	return (fp);
 }
 
 static struct oui * load_oui_file(void)
@@ -426,7 +429,7 @@ static struct oui * load_oui_file(void)
 	fp = open_oui_file();
 	if (!fp)
 	{
-		return NULL;
+		return (NULL);
 	}
 
 	memset(buffer, 0x00, sizeof(buffer));
@@ -447,7 +450,7 @@ static struct oui * load_oui_file(void)
 				{
 					fclose(fp);
 					perror("malloc failed");
-					return NULL;
+					return (NULL);
 				}
 			}
 			else
@@ -464,7 +467,7 @@ static struct oui * load_oui_file(void)
 						free(oui_head);
 						oui_head = oui_ptr;
 					}
-					return NULL;
+					return (NULL);
 				}
 				oui_ptr = oui_ptr->next;
 			}
@@ -495,11 +498,14 @@ static struct oui * load_oui_file(void)
 	}
 
 	fclose(fp);
-	return oui_head;
+	return (oui_head);
 }
 
 static int check_shared_key(unsigned char * h80211, int caplen)
 {
+	REQUIRE(h80211 != NULL);
+	REQUIRE(caplen > 0 && caplen < (int) sizeof(G.sharedkey[0]));
+
 	int m_bmac, m_smac, m_dmac, n, textlen, maybe_broken;
 	char ofn[1024];
 	char text[4096];
@@ -539,7 +545,7 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 			}
 		}
 		else
-			return 1;
+			return (1);
 	}
 	else
 	{
@@ -555,28 +561,28 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 		|| (memcmp(G.sharedkey[2] + m_bmac, NULL_MAC, 6)
 			== 0)) /* some bssids == zero */
 	{
-		return 1;
+		return (1);
 	}
 
 	if ((memcmp(G.sharedkey[0] + m_bmac, G.sharedkey[1] + m_bmac, 6) != 0)
 		|| (memcmp(G.sharedkey[0] + m_bmac, G.sharedkey[2] + m_bmac, 6)
 			!= 0)) /* all bssids aren't equal */
 	{
-		return 1;
+		return (1);
 	}
 
 	if ((memcmp(G.sharedkey[0] + m_smac, G.sharedkey[2] + m_smac, 6) != 0)
 		|| (memcmp(G.sharedkey[0] + m_smac, G.sharedkey[1] + m_dmac, 6)
 			!= 0)) /* SA in 2&4 != DA in 3 */
 	{
-		return 1;
+		return (1);
 	}
 
 	if ((memcmp(G.sharedkey[0] + m_dmac, G.sharedkey[2] + m_dmac, 6) != 0)
 		|| (memcmp(G.sharedkey[0] + m_dmac, G.sharedkey[1] + m_smac, 6)
 			!= 0)) /* DA in 2&4 != SA in 3 */
 	{
-		return 1;
+		return (1);
 	}
 
 	textlen = G.sk_len;
@@ -605,7 +611,7 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 		maybe_broken = 1;
 	}
 
-	if ((unsigned) textlen > sizeof(text) - 4) return 1;
+	if ((unsigned) textlen > sizeof(text) - 4) return (1);
 
 	memcpy(text, G.sharedkey[0] + 24, textlen);
 
@@ -661,11 +667,11 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 		/* do not overwrite existing .xor file with maybe broken one */
 		fclose(G.f_xor);
 		G.f_xor = NULL;
-		return 1;
+		return (1);
 	}
 
 	G.f_xor = fopen(ofn, "w");
-	if (G.f_xor == NULL) return 1;
+	if (G.f_xor == NULL) return (1);
 
 	for (n = 0; n < textlen + 8; n++) fputc((prga[n] & 0xFF), G.f_xor);
 
@@ -690,10 +696,10 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 
 	memset(G.sharedkey, '\x00', sizeof(G.sharedkey));
 	/* ok, keystream saved */
-	return 0;
+	return (0);
 }
 
-char usage[] =
+static const char usage[] =
 
 	"\n"
 	"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
@@ -767,6 +773,8 @@ static void airodump_usage(void)
 
 static int is_filtered_netmask(unsigned char * bssid)
 {
+	REQUIRE(bssid != NULL);
+
 	unsigned char mac1[6];
 	unsigned char mac2[6];
 	int i;
@@ -782,11 +790,13 @@ static int is_filtered_netmask(unsigned char * bssid)
 		return (1);
 	}
 
-	return 0;
+	return (0);
 }
 
 int is_filtered_essid(unsigned char * essid)
 {
+	REQUIRE(essid != NULL);
+
 	int ret = 0;
 	int i;
 
@@ -796,7 +806,7 @@ int is_filtered_essid(unsigned char * essid)
 		{
 			if (strncmp((char *) essid, G.f_essid[i], MAX_IE_ELEMENT_SIZE) == 0)
 			{
-				return 0;
+				return (0);
 			}
 		}
 
@@ -818,7 +828,7 @@ int is_filtered_essid(unsigned char * essid)
 	}
 #endif
 
-	return ret;
+	return (ret);
 }
 
 static void update_rx_quality(void)
@@ -922,21 +932,20 @@ static void update_rx_quality(void)
 
 static int dump_initialize(char * prefix, int ivs_only)
 {
+	REQUIRE(prefix != NULL);
+	REQUIRE(strlen(prefix) > 0);
+
 	int i, ofn_len;
 	FILE * f;
 	char * ofn = NULL;
 
 	/* If you only want to see what happening, send all data to /dev/null */
 
-	if (prefix == NULL || strlen(prefix) == 0)
-	{
-		return (0);
-	}
-
 	/* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
 	   + longest extension ("kismet.netxml") + terminating 0. */
 	ofn_len = strlen(prefix) + 1 + 2 + 1 + 13 + 1;
 	ofn = (char *) calloc(1, ofn_len);
+	ALLEGE(ofn != NULL);
 
 	G.f_index = 1;
 
@@ -961,6 +970,7 @@ static int dump_initialize(char * prefix, int ivs_only)
 	while (i < NB_EXTENSIONS);
 
 	G.prefix = (char *) malloc(strlen(prefix) + 1);
+	ALLEGE(G.prefix != NULL);
 	memcpy(G.prefix, prefix, strlen(prefix) + 1);
 
 	/* create the output CSV file */
@@ -1071,6 +1081,7 @@ static int dump_initialize(char * prefix, int ivs_only)
 		}
 
 		G.f_cap_name = (char *) malloc(strlen(ofn) + 1);
+		ALLEGE(G.f_cap_name != NULL);
 		memcpy(G.f_cap_name, ofn, strlen(ofn) + 1);
 		free(ofn);
 
@@ -1213,7 +1224,7 @@ static int list_tail_free(struct pkt_buf ** list)
 
 	*list = NULL;
 
-	return 0;
+	return (0);
 }
 
 static int
@@ -1237,7 +1248,7 @@ list_add_packet(struct pkt_buf ** list, int length, unsigned char * packet)
 	(*list)->length = length;
 	gettimeofday(&((*list)->ctime), NULL);
 
-	return 0;
+	return (0);
 }
 
 /*
@@ -1319,7 +1330,7 @@ list_check_decloak(struct pkt_buf ** list, int length, unsigned char * packet)
 		next = next->next;
 	}
 
-	return 1; // didn't find decloak
+	return (1); // didn't find decloak
 }
 
 static int remove_namac(unsigned char * mac)
@@ -1364,6 +1375,9 @@ static int dump_add_packet(unsigned char * h80211,
 						   struct rx_info * ri,
 						   int cardnum)
 {
+	REQUIRE(h80211 != NULL);
+	REQUIRE(caplen >= 24);
+
 	int i, n, seq, msd, dlen, offset, clen, o;
 	unsigned z;
 	int type, length, numuni = 0, numauth = 0;
@@ -1797,12 +1811,13 @@ static int dump_add_packet(unsigned char * h80211,
 			if (msd > 0 && msd < 1000) st_cur->missed += msd;
 		}
 		st_cur->lastseq = seq;
-		
+
 		/* if we are writing to a file and want to make a continuous rolling log save the data here */
 		if (G.record_data && G.output_format_log_csv)
 		{
 			/* Write out our rolling log every time we see data from a client */
-			dump_write_airodump_ng_logcsv_add_client(ap_cur, st_cur, ri->ri_power);
+			dump_write_airodump_ng_logcsv_add_client(
+				ap_cur, st_cur, ri->ri_power);
 		}
 	}
 
@@ -3346,12 +3361,15 @@ static char * getStringTimeFromSec(double seconds)
 	char * HourTime;
 	char * MinTime;
 
-	if (seconds < 0) return NULL;
+	if (seconds < 0) return (NULL);
 
 	ret = (char *) calloc(1, 256);
+	ALLEGE(ret != NULL);
 
 	HourTime = (char *) calloc(1, 128);
+	ALLEGE(HourTime != NULL);
 	MinTime = (char *) calloc(1, 128);
+	ALLEGE(MinTime != NULL);
 
 	hour[0] = (int) (seconds);
 	hour[1] = hour[0] / 60;
@@ -3379,7 +3397,7 @@ static char * getStringTimeFromSec(double seconds)
 	free(MinTime);
 	free(HourTime);
 
-	return ret;
+	return (ret);
 }
 
 static char * getBatteryString(void)
@@ -3393,19 +3411,21 @@ static char * getBatteryString(void)
 	if (batt_time <= 60)
 	{
 		ret = (char *) calloc(1, 2);
+		ALLEGE(ret != NULL);
 		ret[0] = ']';
-		return ret;
+		return (ret);
 	}
 
 	batt_string = getStringTimeFromSec((double) batt_time);
 
 	ret = (char *) calloc(1, 256);
+	ALLEGE(ret != NULL);
 
 	snprintf(ret, 256, "][ BAT: %s ]", batt_string);
 
 	free(batt_string);
 
-	return ret;
+	return (ret);
 }
 
 #define TSTP_SEC                                                               \
@@ -3436,27 +3456,31 @@ static char * parse_timestamp(unsigned long long timestamp)
 	snprintf(s, TSTP_LEN, "%3ud %02u:%02u:%02u", days, hours, mins, secs);
 #undef TSTP_LEN
 
-	return s;
+	return (s);
 }
+
 static int IsAp2BeSkipped(struct AP_info * ap_cur)
 {
+	REQUIRE(ap_cur != NULL);
+
 	if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > G.berlin
 		|| memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
 	{
-		return 1;
+		return (1);
 	}
 
 	if (ap_cur->security != 0 && G.f_encrypt != 0
 		&& ((ap_cur->security & G.f_encrypt) == 0))
 	{
-		return 1;
+		return (1);
 	}
 
 	if (is_filtered_essid(ap_cur->essid))
 	{
-		return 1;
+		return (1);
 	}
-	return 0;
+
+	return (0);
 }
 
 static void dump_print(int ws_row, int ws_col, int if_num)
@@ -3487,9 +3511,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (G.do_sort_always)
 	{
-		pthread_mutex_lock(&(G.mx_sort));
+		ALLEGE(pthread_mutex_lock(&(G.mx_sort)) == 0);
 		dump_sort();
-		pthread_mutex_unlock(&(G.mx_sort));
+		ALLEGE(pthread_mutex_unlock(&(G.mx_sort)) == 0);
 	}
 
 	tt = time(NULL);
@@ -3515,8 +3539,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		}
 
 		if (G.numaps > G.maxnumaps) G.maxnumaps = G.numaps;
-
-		//        G.maxaps--;
 	}
 
 	/*
@@ -4288,7 +4310,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 #define OUI_STR_SIZE 8
 #define MANUF_SIZE 128
-char *
+static char *
 get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 {
 	char oui[OUI_STR_SIZE + 1];
@@ -4307,7 +4329,7 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 	if ((manuf = (char *) calloc(1, MANUF_SIZE * sizeof(char))) == NULL)
 	{
 		perror("calloc failed");
-		return NULL;
+		return (NULL);
 	}
 
 	snprintf(oui, sizeof(oui), "%02X:%02X:%02X", mac0, mac1, mac2);
@@ -4387,8 +4409,9 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 
 	// Going in a smaller buffer
 	rmanuf = (char *) realloc(manuf, (strlen(manuf) + 1) * sizeof(char));
+	ALLEGE(rmanuf != NULL);
 
-	return (rmanuf) ? rmanuf : manuf;
+	return (rmanuf) ? (rmanuf) : (manuf);
 }
 #undef OUI_STR_SIZE
 #undef MANUF_SIZE
@@ -4401,20 +4424,22 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
  * Breaks the str* naming convention to avoid a name collision if we're
  * compiling on a system that has strnchr()
  */
-static char * strchr_n(char * str, int c, size_t n)
+static inline char * strchr_n(char * str, int c, size_t n)
 {
 	size_t count = 0;
+
 	if (str == NULL || n == 0)
 	{
-		return NULL;
+		return (NULL);
 	}
+
 	while (*str != c && *str != '\0' && count < n)
 	{
 		str++;
 		count++;
 	}
 
-	return (*str == c) ? str : NULL;
+	return (*str == c) ? (str) : (NULL);
 }
 
 /* Read at least one full line from the network.
@@ -4426,13 +4451,14 @@ static char * strchr_n(char * str, int c, size_t n)
  * character.  If the return value is <= 0, the contents of the buffer
  * are undefined.
  */
-static int read_line(int sock, char * buffer, int pos, int size)
+static inline int read_line(int sock, char * buffer, int pos, int size)
 {
 	int status = 1;
 	if (pos < 0 || size < 1 || pos >= size || buffer == NULL || sock < 0)
 	{
-		return -1;
+		return (-1);
 	}
+
 	while (strchr_n(buffer, 0x0A, pos) == NULL && status > 0 && pos < size)
 	{
 		status = recv(sock, buffer + pos, size - pos, 0);
@@ -4444,14 +4470,14 @@ static int read_line(int sock, char * buffer, int pos, int size)
 
 	if (status <= 0)
 	{
-		return status;
+		return (status);
 	}
 	else if (pos == size && strchr_n(buffer, 0x0A, pos) == NULL)
 	{
-		return -1;
+		return (-1);
 	}
 
-	return pos;
+	return (pos);
 }
 
 /* Remove a newline-terminated block of data from a buffer, replacing
@@ -4460,7 +4486,7 @@ static int read_line(int sock, char * buffer, int pos, int size)
  * Returns the number of characters left in the buffer, or -1 if the
  * buffer did not contain a newline.
  */
-static int get_line_from_buffer(char * buffer, int size, char * line)
+static inline int get_line_from_buffer(char * buffer, int size, char * line)
 {
 	char * cursor = strchr_n(buffer, 0x0A, size);
 	if (NULL != cursor)
@@ -4469,10 +4495,10 @@ static int get_line_from_buffer(char * buffer, int size, char * line)
 		cursor++;
 		strcpy(line, buffer);
 		memmove(buffer, cursor, size - (strlen(line) + 1));
-		return size - (strlen(line) + 1);
+		return (size - (strlen(line) + 1));
 	}
 
-	return -1;
+	return (-1);
 }
 
 /* Extract a name:value pair from a null-terminated line of JSON.
@@ -4495,11 +4521,12 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 		|| strlen(name) == 0
 		|| value == NULL)
 	{
-		return 0;
+		return (0);
 	}
 
 	to_find_len = strlen(name) + 3;
 	to_find = (char *) malloc(to_find_len);
+	ALLEGE(to_find != NULL);
 	snprintf(to_find, to_find_len, "\"%s\"", name);
 	cursor = strstr(buffer, to_find);
 	free(to_find);
@@ -4520,7 +4547,7 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 		}
 		if ('\0' == *cursor)
 		{
-			return 0;
+			return (0);
 		}
 
 		if ('"' == *cursor)
@@ -4579,7 +4606,7 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 		}
 	}
 
-	return ret;
+	return (ret);
 }
 
 static void * gps_tracker_thread(void * arg)
@@ -4597,7 +4624,9 @@ static void * gps_tracker_thread(void * arg)
 	(void) arg;
 
 	int * return_success = malloc(sizeof(int));
+	ALLEGE(return_success != NULL);
 	int * return_error = malloc(sizeof(int));
+	ALLEGE(return_error != NULL);
 
 	*return_success = 0;
 	*return_error = -1;
@@ -4871,18 +4900,18 @@ static void * gps_tracker_thread(void * arg)
 			sleep(1);
 		}
 	}
-	return return_success;
+
+	return (return_success);
 }
 
 static void sighandler(int signum)
 {
-	ssize_t unused;
 	int card = 0;
 	signal(signum, sighandler);
 
 	if (signum == SIGUSR1)
 	{
-		unused = read(G.cd_pipe[0], &card, sizeof(int));
+		int unused = read(G.cd_pipe[0], &card, sizeof(int));
 		if (unused < 0)
 		{
 			// error occurred
@@ -4906,13 +4935,13 @@ static void sighandler(int signum)
 		}
 
 		if (G.freqoption)
-			unused = read(G.ch_pipe[0], &(G.frequency[card]), sizeof(int));
+			(void) read(G.ch_pipe[0], &(G.frequency[card]), sizeof(int));
 		else
-			unused = read(G.ch_pipe[0], &(G.channel[card]), sizeof(int));
+			(void) read(G.ch_pipe[0], &(G.channel[card]), sizeof(int));
 	}
 
 	if (signum == SIGUSR2)
-		unused = read(G.gc_pipe[0], &G.gps_loc, sizeof(G.gps_loc));
+		(void) read(G.gc_pipe[0], &G.gps_loc, sizeof(G.gps_loc));
 
 	if (signum == SIGINT || signum == SIGTERM)
 	{
@@ -4961,6 +4990,8 @@ static void sighandler(int signum)
 
 static int send_probe_request(struct wif * wi)
 {
+	REQUIRE(wi != NULL);
+
 	int len;
 	unsigned char p[4096], r_smac[6];
 
@@ -4993,24 +5024,28 @@ static int send_probe_request(struct wif * wi)
 			case EAGAIN:
 			case ENOBUFS:
 				usleep(10000);
-				return 0; /* XXX not sure I like this... -sorbo */
+				return (0); /* XXX not sure I like this... -sorbo */
 		}
 
 		perror("wi_write()");
-		return -1;
+		return (-1);
 	}
 
-	return 0;
+	return (0);
 }
 
 static int send_probe_requests(struct wif * wi[], int cards)
 {
+	REQUIRE(wi != NULL);
+	REQUIRE(cards > 0);
+
 	int i = 0;
 	for (i = 0; i < cards; i++)
 	{
 		send_probe_request(wi[i]);
 	}
-	return 0;
+
+	return (0);
 }
 
 static int getchancount(int valid)
@@ -5023,8 +5058,8 @@ static int getchancount(int valid)
 		if (G.channels[i] != -1) chan_count++;
 	}
 
-	if (valid) return chan_count;
-	return i;
+	if (valid) return (chan_count);
+	return (i);
 }
 
 static int getfreqcount(int valid)
@@ -5037,14 +5072,13 @@ static int getfreqcount(int valid)
 		if (G.own_frequencies[i] != -1) freq_count++;
 	}
 
-	if (valid) return freq_count;
-	return i;
+	if (valid) return (freq_count);
+	return (i);
 }
 
 static void
 channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 {
-	ssize_t unused;
 	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
 			again = 1;
 	int dropped = 0;
@@ -5094,8 +5128,8 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				{
 					ch = wi_get_channel(wi[card]);
 					G.channel[card] = ch;
-					unused = write(G.cd_pipe[1], &card, sizeof(int));
-					unused = write(G.ch_pipe[1], &ch, sizeof(int));
+					(void) write(G.cd_pipe[1], &card, sizeof(int));
+					(void) write(G.ch_pipe[1], &ch, sizeof(int));
 					kill(parent, SIGUSR1);
 					usleep(1000);
 				}
@@ -5113,8 +5147,8 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 #endif
 			{
 				G.channel[card] = ch;
-				unused = write(G.cd_pipe[1], &card, sizeof(int));
-				unused = write(G.ch_pipe[1], &ch, sizeof(int));
+				(void) write(G.cd_pipe[1], &card, sizeof(int));
+				(void) write(G.ch_pipe[1], &ch, sizeof(int));
 				if (G.active_scan_sim > 0) send_probe_request(wi[card]);
 				kill(parent, SIGUSR1);
 				usleep(1000);
@@ -5147,7 +5181,6 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 static void
 frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 {
-	ssize_t unused;
 	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
 			again = 1;
 	int dropped = 0;
@@ -5197,8 +5230,8 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				{
 					ch = wi_get_freq(wi[card]);
 					G.frequency[card] = ch;
-					unused = write(G.cd_pipe[1], &card, sizeof(int));
-					unused = write(G.ch_pipe[1], &ch, sizeof(int));
+					(void) write(G.cd_pipe[1], &card, sizeof(int));
+					(void) write(G.ch_pipe[1], &ch, sizeof(int));
 					kill(parent, SIGUSR1);
 					usleep(1000);
 				}
@@ -5212,8 +5245,8 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			if (wi_set_freq(wi[card], ch) == 0)
 			{
 				G.frequency[card] = ch;
-				unused = write(G.cd_pipe[1], &card, sizeof(int));
-				unused = write(G.ch_pipe[1], &ch, sizeof(int));
+				(void) write(G.cd_pipe[1], &card, sizeof(int));
+				(void) write(G.ch_pipe[1], &ch, sizeof(int));
 				kill(parent, SIGUSR1);
 				usleep(1000);
 			}
@@ -5242,26 +5275,26 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 	exit(0);
 }
 
-static int invalid_channel(int chan)
+static inline int invalid_channel(int chan)
 {
 	int i = 0;
 
 	do
 	{
-		if (chan == abg_chans[i] && chan != 0) return 0;
+		if (chan == abg_chans[i] && chan != 0) return (0);
 	} while (abg_chans[++i]);
-	return 1;
+	return (1);
 }
 
-static int invalid_frequency(int freq)
+static inline int invalid_frequency(int freq)
 {
 	int i = 0;
 
 	do
 	{
-		if (freq == frequencies[i] && freq != 0) return 0;
+		if (freq == frequencies[i] && freq != 0) return (0);
 	} while (frequencies[++i]);
-	return 1;
+	return (1);
 }
 
 /* parse a string, for example "1,2,3-7,11" */
@@ -5275,16 +5308,18 @@ static int getchannels(const char * optarg)
 	int * tmp_channels;
 
 	// got a NULL pointer?
-	if (optarg == NULL) return -1;
+	if (optarg == NULL) return (-1);
 
 	chan_remain = chan_max;
 
 	// create a writable string
 	optc = optchan = (char *) malloc(strlen(optarg) + 1);
+	ALLEGE(optc != NULL);
 	strncpy(optchan, optarg, strlen(optarg));
 	optchan[strlen(optarg)] = '\0';
 
 	tmp_channels = (int *) malloc(sizeof(int) * (chan_max + 1));
+	ALLEGE(tmp_channels != NULL);
 
 	// split string in tokens, separated by ','
 	while ((token = strsep(&optchan, ",")) != NULL)
@@ -5303,7 +5338,7 @@ static int getchannels(const char * optarg)
 					{
 						free(tmp_channels);
 						free(optc);
-						return -1;
+						return (-1);
 					}
 				}
 
@@ -5313,7 +5348,7 @@ static int getchannels(const char * optarg)
 					{
 						free(tmp_channels);
 						free(optc);
-						return -1;
+						return (-1);
 					}
 					for (i = chan_first; i <= chan_last; i++)
 					{
@@ -5328,14 +5363,14 @@ static int getchannels(const char * optarg)
 				{
 					free(tmp_channels);
 					free(optc);
-					return -1;
+					return (-1);
 				}
 			}
 			else
 			{
 				free(tmp_channels);
 				free(optc);
-				return -1;
+				return (-1);
 			}
 		}
 		else
@@ -5347,7 +5382,7 @@ static int getchannels(const char * optarg)
 				{
 					free(tmp_channels);
 					free(optc);
-					return -1;
+					return (-1);
 				}
 			}
 
@@ -5363,12 +5398,14 @@ static int getchannels(const char * optarg)
 			{
 				free(tmp_channels);
 				free(optc);
-				return -1;
+				return (-1);
 			}
 		}
 	}
 
 	G.own_channels = (int *) malloc(sizeof(int) * (chan_max - chan_remain + 1));
+	ALLEGE(G.own_channels != NULL);
+	ALLEGE(G.own_channels != NULL);
 
 	for (i = 0; i < (chan_max - chan_remain); i++)
 	{
@@ -5379,9 +5416,9 @@ static int getchannels(const char * optarg)
 
 	free(tmp_channels);
 	free(optc);
-	if (i == 1) return G.own_channels[0];
-	if (i == 0) return -1;
-	return 0;
+	if (i == 1) return (G.own_channels[0]);
+	if (i == 0) return (-1);
+	return (0);
 }
 
 /* parse a string, for example "1,2,3-7,11" */
@@ -5401,10 +5438,12 @@ static int getfrequencies(const char * optarg)
 
 	// create a writable string
 	optc = optfreq = (char *) malloc(strlen(optarg) + 1);
+	ALLEGE(optc != NULL);
 	strncpy(optfreq, optarg, strlen(optarg));
 	optfreq[strlen(optarg)] = '\0';
 
 	tmp_frequencies = (int *) malloc(sizeof(int) * (freq_max + 1));
+	ALLEGE(tmp_frequencies != NULL);
 
 	// split string in tokens, separated by ','
 	while ((token = strsep(&optfreq, ",")) != NULL)
@@ -5422,7 +5461,7 @@ static int getfrequencies(const char * optarg)
 					{
 						free(tmp_frequencies);
 						free(optc);
-						return -1;
+						return (-1);
 					}
 				}
 
@@ -5432,7 +5471,7 @@ static int getfrequencies(const char * optarg)
 					{
 						free(tmp_frequencies);
 						free(optc);
-						return -1;
+						return (-1);
 					}
 					for (i = freq_first; i <= freq_last; i++)
 					{
@@ -5447,14 +5486,14 @@ static int getfrequencies(const char * optarg)
 				{
 					free(tmp_frequencies);
 					free(optc);
-					return -1;
+					return (-1);
 				}
 			}
 			else
 			{
 				free(tmp_frequencies);
 				free(optc);
-				return -1;
+				return (-1);
 			}
 		}
 		else
@@ -5466,7 +5505,7 @@ static int getfrequencies(const char * optarg)
 				{
 					free(tmp_frequencies);
 					free(optc);
-					return -1;
+					return (-1);
 				}
 			}
 
@@ -5497,13 +5536,14 @@ static int getfrequencies(const char * optarg)
 			{
 				free(tmp_frequencies);
 				free(optc);
-				return -1;
+				return (-1);
 			}
 		}
 	}
 
 	G.own_frequencies
 		= (int *) malloc(sizeof(int) * (freq_max - freq_remain + 1));
+	ALLEGE(G.own_frequencies != NULL);
 
 	for (i = 0; i < (freq_max - freq_remain); i++)
 	{
@@ -5514,20 +5554,23 @@ static int getfrequencies(const char * optarg)
 
 	free(tmp_frequencies);
 	free(optc);
-	if (i == 1) return G.own_frequencies[0]; // exactly 1 frequency given
-	if (i == 0) return -1; // error occurred
-	return 0; // frequency hopping
+	if (i == 1) return (G.own_frequencies[0]); // exactly 1 frequency given
+	if (i == 0) return (-1); // error occurred
+	return (0); // frequency hopping
 }
 
 static int setup_card(char * iface, struct wif ** wis)
 {
+	REQUIRE(iface != NULL);
+	REQUIRE(wis != NULL);
+
 	struct wif * wi;
 
 	wi = wi_open(iface);
-	if (!wi) return -1;
+	if (!wi) return (-1);
 	*wis = wi;
 
-	return 0;
+	return (0);
 }
 
 static int init_cards(const char * cardstr, char * iface[], struct wif ** wi)
@@ -5540,13 +5583,13 @@ static int init_cards(const char * cardstr, char * iface[], struct wif ** wi)
 	// Check card string is valid
 	if (cardstr == NULL || cardstr[0] == 0)
 	{
-		return -1;
+		return (-1);
 	}
 
 	buf = buffer = strdup(cardstr);
 	if (buf == NULL)
 	{
-		return -1;
+		return (-1);
 	}
 
 	while (((iface[if_count] = strsep(&buffer, ",")) != NULL)
@@ -5561,20 +5604,20 @@ static int init_cards(const char * cardstr, char * iface[], struct wif ** wi)
 		if (setup_card(iface[if_count], &(wi[if_count])) != 0)
 		{
 			free(buf);
-			return -1;
+			return (-1);
 		}
 		if_count++;
 	}
 
 	free(buf);
-	return if_count;
+	return (if_count);
 }
 
 static int set_encryption_filter(const char * input)
 {
-	if (input == NULL) return 1;
+	if (input == NULL) return (1);
 
-	if (strlen(input) < 3) return 1;
+	if (strlen(input) < 3) return (1);
 
 	if (strcasecmp(input, "opn") == 0) G.f_encrypt |= STD_OPN;
 
@@ -5590,7 +5633,7 @@ static int set_encryption_filter(const char * input)
 
 	if (strcasecmp(input, "wpa2") == 0) G.f_encrypt |= STD_WPA2;
 
-	return 0;
+	return (0);
 }
 
 static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
@@ -5625,7 +5668,7 @@ static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
 			if (fd_raw[i] > *fdh) *fdh = fd_raw[i];
 		}
 	}
-	return 0;
+	return (0);
 }
 
 static int check_channel(struct wif * wi[], int cards)
@@ -5634,7 +5677,7 @@ static int check_channel(struct wif * wi[], int cards)
 	for (i = 0; i < cards; i++)
 	{
 		chan = wi_get_channel(wi[i]);
-		if (G.ignore_negative_one == 1 && chan == -1) return 0;
+		if (G.ignore_negative_one == 1 && chan == -1) return (0);
 		if (G.channel[i] != chan)
 		{
 			memset(G.message, '\x00', sizeof(G.message));
@@ -5650,7 +5693,7 @@ static int check_channel(struct wif * wi[], int cards)
 #endif
 		}
 	}
-	return 0;
+	return (0);
 }
 
 static int check_frequency(struct wif * wi[], int cards)
@@ -5671,11 +5714,13 @@ static int check_frequency(struct wif * wi[], int cards)
 			wi_set_freq(wi[i], G.frequency[i]);
 		}
 	}
-	return 0;
+	return (0);
 }
 
 static int detect_frequencies(struct wif * wi)
 {
+	REQUIRE(wi != NULL);
+
 	int start_freq = 2192;
 	int end_freq = 2732;
 	int max_freq_num = 2048; // should be enough to keep all available channels
@@ -5685,6 +5730,7 @@ static int detect_frequencies(struct wif * wi)
 
 	frequencies = (int *) malloc(
 		(max_freq_num + 1) * sizeof(int)); // field for frequencies supported
+	ALLEGE(frequencies != NULL);
 	memset(frequencies, 0, (max_freq_num + 1) * sizeof(int));
 	for (freq = start_freq; freq <= end_freq; freq += 5)
 	{
@@ -5719,16 +5765,19 @@ static int detect_frequencies(struct wif * wi)
 	}
 
 	printf("Done.\n");
-	return 0;
+	return (0);
 }
 
 static int array_contains(int * array, int length, int value)
 {
+	REQUIRE(array != NULL);
+	REQUIRE(length >= 0 && length < INT_MAX);
+
 	int i;
 	for (i = 0; i < length; i++)
-		if (array[i] == value) return 1;
+		if (array[i] == value) return (1);
 
-	return 0;
+	return (0);
 }
 
 static int rearrange_frequencies(void)
@@ -5737,7 +5786,6 @@ static int rearrange_frequencies(void)
 	int count, left, pos;
 	int width, last_used = 0;
 	int cur_freq, last_freq, round_done;
-	//     int i;
 
 	width = DEFAULT_CWIDTH;
 	cur_freq = 0;
@@ -5747,27 +5795,26 @@ static int rearrange_frequencies(void)
 	pos = 0;
 
 	freqs = malloc(sizeof(int) * (count + 1));
+	ALLEGE(freqs != NULL);
 	memset(freqs, 0, sizeof(int) * (count + 1));
 	round_done = 0;
 
 	while (left > 0)
 	{
-		//         printf("pos: %d\n", pos);
 		last_freq = cur_freq;
 		cur_freq = G.own_frequencies[pos % count];
+
 		if (cur_freq == last_used) round_done = 1;
-		//         printf("count: %d, left: %d, last_used: %d, cur_freq: %d,
-		//         width: %d\n", count, left, last_used, cur_freq, width);
+
 		if (((count - left) > 0) && !round_done
 			&& (ABS(last_used - cur_freq) < width))
 		{
-			//             printf("skip it!\n");
 			pos++;
 			continue;
 		}
+
 		if (!array_contains(freqs, count, cur_freq))
 		{
-			//             printf("not in there yet: %d\n", cur_freq);
 			freqs[count - left] = cur_freq;
 			last_used = cur_freq;
 			left--;
@@ -5780,14 +5827,14 @@ static int rearrange_frequencies(void)
 	memcpy(G.own_frequencies, freqs, count * sizeof(int));
 	free(freqs);
 
-	return 0;
+	return (0);
 }
 
 int main(int argc, char * argv[])
 {
 	long time_slept, cycle_time, cycle_time2;
 	char * output_format_string;
-	int caplen = 0, i, j, fdh, fd_is_set, chan_count, freq_count, unused;
+	int caplen = 0, i, j, fdh, fd_is_set, chan_count, freq_count;
 	int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
 	int ivs_only, found;
 	int valid_channel;
@@ -5833,7 +5880,7 @@ int main(int argc, char * argv[])
 
 	fd_set rfds;
 
-	static struct option long_options[]
+	static const struct option long_options[]
 		= {{"ht20", 0, 0, '2'},
 		   {"ht40-", 0, 0, '3'},
 		   {"ht40+", 0, 0, '5'},
@@ -5878,8 +5925,8 @@ int main(int argc, char * argv[])
 	// Tell Libgcrypt that initialization has completed.
 	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-	pthread_mutex_init(&(G.mx_print), NULL);
-	pthread_mutex_init(&(G.mx_sort), NULL);
+	ALLEGE(pthread_mutex_init(&(G.mx_print), NULL) == 0);
+	ALLEGE(pthread_mutex_init(&(G.mx_sort), NULL) == 0);
 
 	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
@@ -5901,7 +5948,7 @@ int main(int argc, char * argv[])
 	G.chswitch = 0;
 	valid_channel = 0;
 	G.usegpsd = 0;
-	G.channels = bg_chans;
+	G.channels = (int *) bg_chans;
 	G.one_beacon = 1;
 	G.singlechan = 0;
 	G.singlefreq = 0;
@@ -5977,6 +6024,7 @@ int main(int argc, char * argv[])
 	lt = localtime((time_t *) &tv0.tv_sec);
 
 	G.keyout = (char *) malloc(512);
+	ALLEGE(G.keyout != NULL);
 	memset(G.keyout, 0, 512);
 	snprintf(G.keyout,
 			 511,
@@ -6070,12 +6118,12 @@ int main(int argc, char * argv[])
 			case ':':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 
 			case 'K':
 			{
@@ -6085,7 +6133,7 @@ int main(int argc, char * argv[])
 					|| !(bg_mode == 0 || bg_mode == 1))
 				{
 					printf("Invalid background mode. Must be '0' or '1'\n");
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 				G.background_mode = (char) bg_mode;
 				break;
@@ -6096,7 +6144,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Error: Write interval is not a number (>0). "
 						   "Aborting.\n");
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 
 				G.file_write_interval = atoi(optarg);
@@ -6105,7 +6153,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Error: Write interval must be greater than 0. "
 						   "Aborting.\n");
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 				break;
 
@@ -6169,7 +6217,7 @@ int main(int argc, char * argv[])
 				if (G.channel[0] < 0)
 				{
 					airodump_usage();
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				G.chanoption = 1;
@@ -6179,7 +6227,7 @@ int main(int argc, char * argv[])
 					G.channels = G.own_channels;
 					break;
 				}
-				G.channels = bg_chans;
+				G.channels = (int *) bg_chans;
 				break;
 
 			case 'C':
@@ -6225,18 +6273,18 @@ int main(int argc, char * argv[])
 					{
 						printf("Error: invalid band (%c)\n", optarg[i]);
 						printf("\"%s --help\" for help.\n", argv[0]);
-						exit(1);
+						exit(EXIT_FAILURE);
 					}
 				}
 
 				if (freq[1] + freq[0] == 2)
-					G.channels = abg_chans;
+					G.channels = (int *) abg_chans;
 				else
 				{
 					if (freq[1] == 1)
-						G.channels = a_chans;
+						G.channels = (int *) a_chans;
 					else
-						G.channels = bg_chans;
+						G.channels = (int *) bg_chans;
 				}
 
 				break;
@@ -6262,7 +6310,7 @@ int main(int argc, char * argv[])
 					fprintf(stderr,
 							"Invalid output format: IVS and PCAP "
 							"format cannot be used together.\n");
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				ivs_only = 1;
@@ -6271,13 +6319,6 @@ int main(int argc, char * argv[])
 			case 'g':
 
 				G.usegpsd = 1;
-				/*
-				if (inet_aton(optarg, &provis_addr.sin_addr) == 0 )
-				{
-					printf("Invalid IP address.\n");
-					return (1);
-				}
-				*/
 				break;
 
 			case 'w':
@@ -6298,7 +6339,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Packet source already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				G.s_file = optarg;
 				break;
@@ -6308,7 +6349,7 @@ int main(int argc, char * argv[])
 				if (atoi(optarg) > 2)
 				{
 					airodump_usage();
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				if (G.chswitch != 0)
 				{
@@ -6356,7 +6397,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Notice: invalid netmask\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 
@@ -6372,7 +6413,7 @@ int main(int argc, char * argv[])
 					printf("Notice: invalid bssid\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 
@@ -6381,6 +6422,7 @@ int main(int argc, char * argv[])
 				G.f_essid_count++;
 				G.f_essid = (char **) realloc(G.f_essid,
 											  G.f_essid_count * sizeof(char *));
+				ALLEGE(G.f_essid != NULL);
 				G.f_essid[G.f_essid_count - 1] = optarg;
 				break;
 
@@ -6391,7 +6433,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Error: ESSID regular expression already given. "
 						   "Aborting\n");
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 
 				G.f_essid_regex
@@ -6403,7 +6445,7 @@ int main(int argc, char * argv[])
 						   "offset %d: %s; aborting\n",
 						   pcreerroffset,
 						   pcreerror);
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 #else
 				printf("Error: Airodump-ng wasn't compiled with pcre support; "
@@ -6455,7 +6497,7 @@ int main(int argc, char * argv[])
 										"Invalid output format: IVS "
 										"and PCAP format cannot be "
 										"used together.\n");
-								return (1);
+								return (EXIT_FAILURE);
 							}
 							G.output_format_pcap = 1;
 						}
@@ -6469,7 +6511,7 @@ int main(int argc, char * argv[])
 										"Invalid output format: IVS "
 										"and PCAP format cannot be "
 										"used together.\n");
-								return (1);
+								return (EXIT_FAILURE);
 							}
 							ivs_only = 1;
 						}
@@ -6535,7 +6577,7 @@ int main(int argc, char * argv[])
 							fprintf(stderr,
 									"Invalid output format: <%s>\n",
 									output_format_string);
-							exit(1);
+							exit(EXIT_FAILURE);
 						}
 					}
 					output_format_string = strtok(NULL, ",");
@@ -6545,7 +6587,7 @@ int main(int argc, char * argv[])
 
 			case 'H':
 				airodump_usage();
-				return (1);
+				return (EXIT_FAILURE);
 
 			case 'x':
 
@@ -6557,7 +6599,7 @@ int main(int argc, char * argv[])
 			case '2':
 #ifndef CONFIG_LIBNL
 				printf("HT Channel unsupported\n");
-				return EXIT_FAILURE;
+				return (EXIT_FAILURE);
 #else
 				G.htval = CHANNEL_HT20;
 #endif
@@ -6565,7 +6607,7 @@ int main(int argc, char * argv[])
 			case '3':
 #ifndef CONFIG_LIBNL
 				printf("HT Channel unsupported\n");
-				return EXIT_FAILURE;
+				return (EXIT_FAILURE);
 #else
 				G.htval = CHANNEL_HT40_MINUS;
 #endif
@@ -6573,7 +6615,7 @@ int main(int argc, char * argv[])
 			case '5':
 #ifndef CONFIG_LIBNL
 				printf("HT Channel unsupported\n");
-				return EXIT_FAILURE;
+				return (EXIT_FAILURE);
 #else
 				G.htval = CHANNEL_HT40_PLUS;
 #endif
@@ -6581,7 +6623,7 @@ int main(int argc, char * argv[])
 
 			default:
 				airodump_usage();
-				return (1);
+				return (EXIT_FAILURE);
 		}
 	} while (1);
 
@@ -6599,7 +6641,7 @@ int main(int argc, char * argv[])
 		{
 			printf("\"%s --help\" for help.\n", argv[0]);
 		}
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (argc - optind == 1) G.s_iface = argv[argc - 1];
@@ -6609,7 +6651,7 @@ int main(int argc, char * argv[])
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (G.show_wps && G.show_manufacturer)
@@ -6623,7 +6665,7 @@ int main(int argc, char * argv[])
 		if (G.num_cards <= 0 || G.num_cards >= MAX_CARDS)
 		{
 			printf("Failed initializing wireless card(s): %s\n", G.s_iface);
-			return EXIT_FAILURE;
+			return (EXIT_FAILURE);
 		}
 
 		for (i = 0; i < G.num_cards; i++)
@@ -6639,12 +6681,10 @@ int main(int argc, char * argv[])
 			if (G.frequency[0] == -1)
 			{
 				printf("No valid frequency given.\n");
-				return (1);
+				return (EXIT_FAILURE);
 			}
 
-			//             printf("gonna rearrange\n");
 			rearrange_frequencies();
-			//             printf("finished rearranging\n");
 
 			freq_count = getfreqcount(0);
 
@@ -6653,8 +6693,8 @@ int main(int argc, char * argv[])
 
 			if (G.frequency[0] == 0)
 			{
-				unused = pipe(G.ch_pipe);
-				unused = pipe(G.cd_pipe);
+				(void) pipe(G.ch_pipe);
+				(void) pipe(G.cd_pipe);
 
 				signal(SIGUSR1, sighandler);
 
@@ -6675,7 +6715,7 @@ int main(int argc, char * argv[])
 						if (!wi[i])
 						{
 							printf("Can't reopen %s\n", ifnam);
-							exit(1);
+							exit(EXIT_FAILURE);
 						}
 					}
 
@@ -6686,7 +6726,7 @@ int main(int argc, char * argv[])
 					}
 
 					frequency_hopper(wi, G.num_cards, freq_count, main_pid);
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 			}
 			else
@@ -6708,8 +6748,8 @@ int main(int argc, char * argv[])
 
 			if (G.channel[0] == 0)
 			{
-				unused = pipe(G.ch_pipe);
-				unused = pipe(G.cd_pipe);
+				(void) pipe(G.ch_pipe);
+				(void) pipe(G.cd_pipe);
 
 				signal(SIGUSR1, sighandler);
 
@@ -6730,7 +6770,7 @@ int main(int argc, char * argv[])
 						if (!wi[i])
 						{
 							printf("Can't reopen %s\n", ifnam);
-							exit(1);
+							exit(EXIT_FAILURE);
 						}
 					}
 
@@ -6741,7 +6781,7 @@ int main(int argc, char * argv[])
 					}
 
 					channel_hopper(wi, G.num_cards, chan_count, main_pid);
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 			}
 			else
@@ -6772,7 +6812,7 @@ int main(int argc, char * argv[])
 		if (!(G.f_cap_in = fopen(G.s_file, "rb")))
 		{
 			perror("open failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		n = sizeof(struct pcap_file_header);
@@ -6780,7 +6820,7 @@ int main(int argc, char * argv[])
 		if (fread(&G.pfh_in, 1, n, G.f_cap_in) != (size_t) n)
 		{
 			perror("fread(pcap file header) failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (G.pfh_in.magic != TCPDUMP_MAGIC && G.pfh_in.magic != TCPDUMP_CIGAM)
@@ -6789,7 +6829,7 @@ int main(int argc, char * argv[])
 					"\"%s\" isn't a pcap file (expected "
 					"TCPDUMP_MAGIC).\n",
 					G.s_file);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (G.pfh_in.magic == TCPDUMP_CIGAM) SWAP32(G.pfh_in.linktype);
@@ -6804,14 +6844,14 @@ int main(int argc, char * argv[])
 					"(expected LINKTYPE_IEEE802_11) -\n"
 					"this doesn't look like a regular 802.11 "
 					"capture.\n");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 	}
 
 	/* open or create the output files */
 
 	if (G.record_data)
-		if (dump_initialize(G.dump_prefix, ivs_only)) return (1);
+		if (dump_initialize(G.dump_prefix, ivs_only)) return (EXIT_FAILURE);
 
 	signal(SIGINT, sighandler);
 	signal(SIGSEGV, sighandler);
@@ -6833,7 +6873,7 @@ int main(int argc, char * argv[])
 		if (pthread_create(&G.gps_tid, NULL, &gps_tracker_thread, NULL) != 0)
 		{
 			perror("Could not create GPS thread");
-			return 1;
+			return (EXIT_FAILURE);
 		}
 
 		usleep(50000);
@@ -6856,19 +6896,21 @@ int main(int argc, char * argv[])
 	if (G.elapsed_time == NULL)
 	{
 		perror("Error allocating memory");
-		return 1;
+		return (EXIT_FAILURE);
 	}
 	strncpy(G.elapsed_time, "0 s", 4);
 	G.elapsed_time[strlen(G.elapsed_time)] = 0;
 
 	/* Create start time string for kismet netxml file */
 	G.airodump_start_time = (char *) calloc(1, 1000 * sizeof(char));
+	ALLEGE(G.airodump_start_time != NULL);
 	strncpy(G.airodump_start_time, ctime(&start_time), 1000 - 1);
 	G.airodump_start_time[strlen(G.airodump_start_time) - 1]
 		= 0; // remove new line
 	G.airodump_start_time
 		= (char *) realloc(G.airodump_start_time,
 						   sizeof(char) * (strlen(G.airodump_start_time) + 1));
+	ALLEGE(G.airodump_start_time != NULL);
 
 	// Do not start the interactive mode input thread if running in the
 	// background
@@ -6879,7 +6921,7 @@ int main(int argc, char * argv[])
 			   != 0)
 	{
 		perror("pthread_create failed");
-		return 1;
+		return (EXIT_FAILURE);
 	}
 
 	while (1)
@@ -6904,9 +6946,9 @@ int main(int argc, char * argv[])
 			if (G.sort_by != SORT_BY_NOTHING)
 			{
 				/* sort the APs by power */
-				pthread_mutex_lock(&(G.mx_sort));
+				ALLEGE(pthread_mutex_lock(&(G.mx_sort)) == 0);
 				dump_sort();
-				pthread_mutex_unlock(&(G.mx_sort));
+				ALLEGE(pthread_mutex_unlock(&(G.mx_sort)) == 0);
 			}
 
 			/* update the battery state */
@@ -7085,7 +7127,7 @@ int main(int argc, char * argv[])
 				/* Restore terminal */
 				show_cursor();
 
-				return (1);
+				return (EXIT_FAILURE);
 			}
 		}
 		else
@@ -7117,13 +7159,13 @@ int main(int argc, char * argv[])
 
 			if (!G.do_pause && !G.background_mode)
 			{
-				pthread_mutex_lock(&(G.mx_print));
+				ALLEGE(pthread_mutex_lock(&(G.mx_print)) == 0);
 
 				moveto(1, 1);
 				dump_print(G.ws.ws_row, G.ws.ws_col, G.num_cards);
 				erase_display(0);
 
-				pthread_mutex_unlock(&(G.mx_print));
+				ALLEGE(pthread_mutex_unlock(&(G.mx_print)) == 0);
 			}
 			continue;
 		}
@@ -7168,14 +7210,13 @@ int main(int argc, char * argv[])
 							/* Restore terminal */
 							show_cursor();
 
-							exit(1);
+							exit(EXIT_FAILURE);
 						}
 
 						fd_raw[i] = wi_fd(wi[i]);
 						if (fd_raw[i] > fdh) fdh = fd_raw[i];
 
 						break;
-						//                         return 1;
 					}
 
 					read_pkts++;
@@ -7298,5 +7339,5 @@ int main(int argc, char * argv[])
 
 	show_cursor();
 
-	return (0);
+	return (EXIT_SUCCESS);
 }

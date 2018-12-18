@@ -37,16 +37,6 @@
 
 typedef enum { false, true } BOOLEAN;
 
-/*
-typedef enum {
-	CLOAKING_NOT_YET_CHECKED,
-	VALID_FRAME_UNCLOAKED,
-	CLOAKED_FRAME,
-	CLOAKING_STATUS_TBD, // Identical SN
-	DROPPED_FRAME,
-	WEIRD_FRAME_TYPE
-} CLOAKING_STATUS;
-*/
 // How far should we check for cloaked packets (backward and forward)
 #define PACKET_CHECKING_LENGTH 10
 
@@ -126,8 +116,6 @@ struct packet_elt
 	int retry_bit;
 	int more_fragments_bit;
 
-	// int packet_number;			/* packet number */
-
 	int is_cloaked;
 	int is_dropped; // Do we have to drop this frame?
 
@@ -160,25 +148,17 @@ static BOOLEAN initialize_linked_list(void);
 static BOOLEAN add_node_if_not_complete(void);
 static void set_node_complete(void);
 static void remove_last_uncomplete_node(void);
-// static struct packet_elt * getPacketNr(int position);
-// static char * iv2string(unsigned char * iv);
-// static char * icv2string(unsigned char * icv);
-// static void print_packet(struct packet_elt * packet);
 static void reset_current_packet_pointer(void);
 static BOOLEAN reset_current_packet_pointer_to_ap_packet(void);
 static BOOLEAN reset_current_packet_pointer_to_client_packet(void);
 static BOOLEAN next_packet_pointer(void);
 static BOOLEAN next_packet_pointer_from_ap(void);
 static BOOLEAN next_packet_pointer_from_client(void);
-// static BOOLEAN prev_packet_pointer(void);
 static int compare_SN_to_current_packet(struct packet_elt * packet);
 static BOOLEAN
 current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
-// static BOOLEAN prev_packet_pointer_same_fromToDS_and_source(struct packet_elt
-// * packet);
 static BOOLEAN
 next_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet);
-// static BOOLEAN prev_packet_pointer_same_fromToDS_and_source_as_current(void);
 static BOOLEAN next_packet_pointer_same_fromToDS_and_source_as_current(void);
 static BOOLEAN write_packets(void);
 static BOOLEAN print_statistics(void);
@@ -201,15 +181,5 @@ static int CFC_filter_consecutive_sn_ap(void);
 static int CFC_filter_consecutive_sn_client(void);
 static int CFC_filter_duplicate_iv(void);
 static int CFC_filter_signal_duplicate_and_consecutive_sn(void);
-
-/*
-const char usage[] =
-"\n"
-"  %s - (C) 2008 Thomas d\'Otreppe\n"
-"  https://www.aircrack-ng.org\n"
-"\n"
-"  usage: airundefense-ng <filename> <BSSID>\n"
-"\n";
-*/
 
 #endif

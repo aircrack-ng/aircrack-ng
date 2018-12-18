@@ -167,7 +167,7 @@ static int check_crc_buf_osdep(unsigned char * buf, int len)
 // Check if the driver is ndiswrapper */
 static int is_ndiswrapper(const char * iface, const char * path)
 {
-	int n, pid, unused;
+	int n, pid;
 	if (!path || !iface || strlen(iface) >= IFNAMSIZ)
 	{
 		return 0;
@@ -177,7 +177,7 @@ static int is_ndiswrapper(const char * iface, const char * path)
 		close(0);
 		close(1);
 		close(2);
-		unused = chdir("/");
+		(void) chdir("/");
 		execl(path, "iwpriv", iface, "ndis_reset", NULL);
 		exit(1);
 	}
@@ -444,7 +444,7 @@ static int linux_set_rate(struct wif * wi, int rate)
 	struct ifreq ifr;
 	struct iwreq wrq;
 	char s[32];
-	int pid, status, unused;
+	int pid, status;
 
 	memset(s, 0, sizeof(s));
 
@@ -479,7 +479,7 @@ static int linux_set_rate(struct wif * wi, int rate)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -953,7 +953,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
-	int pid, status, unused;
+	int pid, status;
 
 	unsigned int devid;
 	struct nl_msg * msg;
@@ -971,7 +971,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execl(dev->wlanctlng,
 					  "wlanctl-ng",
 					  wi_get_ifname(wi),
@@ -1000,7 +1000,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwpriv,
 					   "iwpriv",
 					   wi_get_ifname(wi),
@@ -1024,7 +1024,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -1103,7 +1103,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
-	int pid, status, unused;
+	int pid, status;
 	struct iwreq wrq;
 
 	memset(s, 0, sizeof(s));
@@ -1118,7 +1118,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execl(dev->wlanctlng,
 					  "wlanctl-ng",
 					  wi_get_ifname(wi),
@@ -1147,7 +1147,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwpriv,
 					   "iwpriv",
 					   wi_get_ifname(wi),
@@ -1171,7 +1171,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -1218,7 +1218,7 @@ static int linux_set_freq(struct wif * wi, int freq)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
-	int pid, status, unused;
+	int pid, status;
 	struct iwreq wrq;
 
 	memset(s, 0, sizeof(s));
@@ -1235,7 +1235,7 @@ static int linux_set_freq(struct wif * wi, int freq)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -1359,8 +1359,7 @@ static int linux_get_monitor(struct wif * wi)
 	return (0);
 }
 
-__attribute__((unused))
-static char * get_linux_driver(const char * iface)
+__attribute__((unused)) static char * get_linux_driver(const char * iface)
 {
 	char path[PATH_MAX];
 	char link[PATH_MAX];
@@ -1405,7 +1404,7 @@ static char * get_linux_driver(const char * iface)
 
 static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 {
-	int pid, status, unused;
+	int pid, status;
 	struct iwreq wrq;
 
 	if (iface == NULL || strlen(iface) >= IFNAMSIZ)
@@ -1421,7 +1420,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 			close(0);
 			close(1);
 			close(2);
-			unused = chdir("/");
+			(void) chdir("/");
 			execl(dev->wl, "wl", "monitor", "1", NULL);
 			exit(1);
 		}
@@ -1443,7 +1442,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 					close(0);
 					close(1);
 					close(2);
-					unused = chdir("/");
+					(void) chdir("/");
 					execl(dev->wlanctlng,
 						  "wlanctl-ng",
 						  iface,
@@ -1470,7 +1469,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 					close(0);
 					close(1);
 					close(2);
-					unused = chdir("/");
+					(void) chdir("/");
 					execlp(dev->iwpriv,
 						   "iwpriv",
 						   iface,
@@ -1494,7 +1493,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 					close(0);
 					close(1);
 					close(2);
-					unused = chdir("/");
+					(void) chdir("/");
 					execlp(dev->iwpriv,
 						   "iwpriv",
 						   iface,
@@ -1540,7 +1539,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 		close(0);
 		close(1);
 		close(2);
-		unused = chdir("/");
+		(void) chdir("/");
 		execlp("iwpriv", "iwpriv", iface, "monitor_type", "1", NULL);
 		exit(1);
 	}
@@ -1551,7 +1550,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 		close(0);
 		close(1);
 		close(2);
-		unused = chdir("/");
+		(void) chdir("/");
 		execlp("iwpriv", "iwpriv", iface, "prismhdr", "1", NULL);
 		exit(1);
 	}
@@ -1562,7 +1561,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 		close(0);
 		close(1);
 		close(2);
-		unused = chdir("/");
+		(void) chdir("/");
 		execlp("iwpriv", "iwpriv", iface, "set_prismhdr", "1", NULL);
 		exit(1);
 	}
@@ -1791,7 +1790,7 @@ static int openraw(struct priv_linux * dev,
  */
 static int do_linux_open(struct wif * wi, char * iface)
 {
-	int kver, unused;
+	int kver;
 	struct utsname checklinuxversion;
 	struct priv_linux * dev = wi_priv(wi);
 	char * iwpriv = NULL;
@@ -1806,7 +1805,6 @@ static int do_linux_open(struct wif * wi, char * iface)
 	char buf[128];
 	char * r_file = NULL;
 	struct ifreq ifr;
-	char * unused_str;
 	int iface_malloced = 0;
 
 	if (iface == NULL || strlen(iface) >= IFNAMSIZ)
@@ -1964,7 +1962,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 				 sizeof(strbuf) - 1,
 				 "iwpriv %s rfmontx 1 >/dev/null 2>/dev/null",
 				 iface);
-		unused = system(strbuf);
+		(void) system(strbuf);
 	}
 
 	/* check if newer athXraw interface available */
@@ -2014,14 +2012,14 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 				memset(strbuf, 0, sizeof(strbuf));
 				snprintf(strbuf, sizeof(strbuf) - 1, "ifconfig %s up", athXraw);
-				unused = system(strbuf);
+				(void) system(strbuf);
 
 #if 0 /* some people reported problems when prismheader is enabled */
                 memset( strbuf, 0, sizeof( strbuf ) );
                 snprintf( strbuf,  sizeof( strbuf ) - 1,
                          "sysctl -w dev.%s.rawdev_type=1 >/dev/null 2>/dev/null",
                          iface );
-                unused = system( strbuf );
+                (void) system( strbuf );
 #endif
 
 				iface = athXraw;
@@ -2038,7 +2036,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 			close(0);
 			close(1);
 			close(2);
-			unused = chdir("/");
+			(void) chdir("/");
 			execlp("iwpriv", "iwpriv", iface, "get_port3", NULL);
 			exit(1);
 		}
@@ -2066,7 +2064,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 			close(0);
 			close(1);
 			close(2);
-			unused = chdir("/");
+			(void) chdir("/");
 			execlp("iwpriv", "iwpriv", iface, "get_regdomain", NULL);
 			exit(1);
 		}
@@ -2090,7 +2088,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 		if ((acpi = fopen(r_file, "r")) == NULL) goto close_out;
 		memset(buf, 0, 128);
-		unused_str = fgets(buf, 128, acpi);
+		(void) fgets(buf, 128, acpi);
 		buf[127] = '\x00';
 		// rtap iface doesn't exist
 		if (strncmp(buf, "-1", 2) == 0)
@@ -2102,7 +2100,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 			// reopen for reading
 			fclose(acpi);
 			if ((acpi = fopen(r_file, "r")) == NULL) goto close_out;
-			unused_str = fgets(buf, 128, acpi);
+			(void) fgets(buf, 128, acpi);
 		}
 		fclose(acpi);
 
@@ -2158,7 +2156,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 					dev->drivertype = DT_IPW2200;
 
 					memset(buf, 0, 128);
-					unused_str = fgets(buf, 128, acpi);
+					(void) fgets(buf, 128, acpi);
 					if (n == 0) // interface exists
 					{
 						if (strncmp(buf, iface, 5) == 0)
@@ -2186,7 +2184,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 							// reopen for reading
 							fclose(acpi);
 							if ((acpi = fopen(r_file, "r")) == NULL) continue;
-							unused_str = fgets(buf, 128, acpi);
+							(void) fgets(buf, 128, acpi);
 							if (strncmp(buf, iface, 5) == 0)
 							{
 								if (net_ifaces != NULL)

@@ -102,8 +102,13 @@
 #define BUFFER_TIME 3000
 
 extern int get_ram_size(void);
-char *
-get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
+
+#define AIRODUMP_NG_CSV_EXT "csv"
+#define KISMET_CSV_EXT "kismet.csv"
+#define KISMET_NETXML_EXT "kismet.netxml"
+#define AIRODUMP_NG_GPS_EXT "gps"
+#define AIRODUMP_NG_CAP_EXT "cap"
+#define AIRODUMP_NG_LOG_CSV_EXT "log.csv"
 
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
@@ -312,7 +317,7 @@ struct NA_info
 };
 /* bunch of global stuff */
 
-struct globals
+static struct globals
 {
 	struct AP_info *ap_1st, *ap_end;
 	struct ST_info *st_1st, *st_end;

@@ -67,6 +67,7 @@
 #include <fnmatch.h>
 #include <stdbool.h>
 
+#include "defs.h"
 #include "version.h"
 #include "pcap.h"
 #include "aircrack-osdep/osdep.h"
@@ -129,22 +130,22 @@
 #define RATE_48M 48000000
 #define RATE_54M 54000000
 
-int bitrates[RATE_NUM] = {RATE_1M,
-						  RATE_2M,
-						  RATE_5_5M,
-						  RATE_6M,
-						  RATE_9M,
-						  RATE_11M,
-						  RATE_12M,
-						  RATE_18M,
-						  RATE_24M,
-						  RATE_36M,
-						  RATE_48M,
-						  RATE_54M};
+static const int bitrates[RATE_NUM] = {RATE_1M,
+									   RATE_2M,
+									   RATE_5_5M,
+									   RATE_6M,
+									   RATE_9M,
+									   RATE_11M,
+									   RATE_12M,
+									   RATE_18M,
+									   RATE_24M,
+									   RATE_36M,
+									   RATE_48M,
+									   RATE_54M};
 
-char * progname = NULL;
+static char * progname = NULL;
 
-char usage[]
+static const char usage[]
 	= "\n"
 	  "  %s - (C) 2015 Tim de Waal\n"
 	  "  https://www.aircrack-ng.org\n"
@@ -279,32 +280,21 @@ struct APt
 	int pwr[REQUESTS];
 };
 
-struct APt ap[MAX_APS];
-
-unsigned long nb_pkt_sent;
-u_int8_t h80211[4096];
-u_int8_t tmpbuf[4096];
-u_int8_t srcbuf[4096];
-char strbuf[512];
-
-int ctrl_c, alarmed;
-
-char * iwpriv;
+static unsigned long nb_pkt_sent;
+static u_int8_t h80211[4096];
+static u_int8_t tmpbuf[4096];
 
 static int set_bitrate(struct wif * wi, int rate)
 {
 	int i, newrate;
 
-	if (wi_set_rate(wi, rate)) return 1;
-
-	//    if( reset_ifaces() )
-	//        return 1;
+	if (wi_set_rate(wi, rate)) return (1);
 
 	// Workaround for buggy drivers (rt73) that do not accept 5.5M, but 5M
 	// instead
 	if (rate == 5500000 && wi_get_rate(wi) != 5500000)
 	{
-		if (wi_set_rate(wi, 5000000)) return 1;
+		if (wi_set_rate(wi, 5000000)) return (1);
 	}
 
 	newrate = wi_get_rate(wi);
@@ -325,7 +315,7 @@ static int set_bitrate(struct wif * wi, int rate)
 						"Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
 						(rate / 1000000.0),
 						(wi_get_rate(wi) / 1000000.0));
-					return 1;
+					return (1);
 				}
 			}
 			if (i < RATE_NUM - 1)
@@ -336,17 +326,17 @@ static int set_bitrate(struct wif * wi, int rate)
 						"Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
 						(rate / 1000000.0),
 						(wi_get_rate(wi) / 1000000.0));
-					return 1;
+					return (1);
 				}
 			}
-			return 0;
+			return (0);
 		}
 		printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
 			   (rate / 1000000.0),
 			   (wi_get_rate(wi) / 1000000.0));
-		return 1;
+		return (1);
 	}
-	return 0;
+	return (0);
 }
 
 static int send_packet(void * buf, u_int32_t count)
@@ -358,13 +348,6 @@ static int send_packet(void * buf, u_int32_t count)
 	// One main reason for this is because IF this is an encrypted frame
 	// then the sequence number is used in the encryption, so changing it here
 	// will break it. It won't be able to be decrypted...
-	/*
-	if( (count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0x0F) == 0)
-	{
-		pkt[22] = (nb_pkt_sent & 0x0000000F) << 4;
-		pkt[23] = (nb_pkt_sent & 0x00000FF0) >> 4;
-	}
-	*/
 
 	if ((count > 24))
 	{
@@ -384,19 +367,21 @@ static int send_packet(void * buf, u_int32_t count)
 			case ENOBUFS:
 				printf("Hey, ENOBUFS happened\n");
 				usleep(10000);
-				return 0; /* XXX not sure I like this... -sorbo */
+				return (0); /* XXX not sure I like this... -sorbo */
 		}
 
 		perror("wi_write()");
-		return -1;
+		return (-1);
 	}
 
 	nb_pkt_sent++;
-	return 0;
+	return (0);
 }
 
 static int read_packet(void * buf, u_int32_t count, struct rx_info * ri)
 {
+	REQUIRE(buf != NULL);
+
 	struct wif * wi = _wi_in; /* XXX */
 	int rc;
 
@@ -406,14 +391,14 @@ static int read_packet(void * buf, u_int32_t count, struct rx_info * ri)
 		switch (errno)
 		{
 			case EAGAIN:
-				return 0;
+				return (0);
 		}
 
 		perror("wi_read()");
-		return -1;
+		return (-1);
 	}
 
-	return rc;
+	return (rc);
 }
 
 static int wait_for_beacon(uint8_t * bssid, uint8_t * capa, char * essid)
@@ -436,7 +421,7 @@ static int wait_for_beacon(uint8_t * bssid, uint8_t * capa, char * essid)
 					+ (tv2.tv_usec - tv.tv_usec)
 				> 10000 * 1000) // wait 10sec for beacon frame
 			{
-				return -1;
+				return (-1);
 			}
 			if (len <= 0) usleep(1);
 		}
@@ -555,7 +540,7 @@ static int wait_for_beacon(uint8_t * bssid, uint8_t * capa, char * essid)
 
 	if (capa) memcpy(capa, pkt_sniff + 34, 2);
 
-	return chan;
+	return (chan);
 }
 
 /**
@@ -575,7 +560,7 @@ attack_check(uint8_t * bssid, char * essid, uint8_t * capa, struct wif * wi)
 			   "force the operation with --ignore-negative-one or apply a "
 			   "kernel patch\n",
 			   wi_get_ifname(wi));
-		return -1;
+		return (-1);
 	}
 
 	if (bssid != NULL)
@@ -585,7 +570,7 @@ attack_check(uint8_t * bssid, char * essid, uint8_t * capa, struct wif * wi)
 		{
 			PCT;
 			printf("No such BSSID available.\n");
-			return -1;
+			return (-1);
 		}
 		if ((ap_chan != iface_chan)
 			&& (iface_chan != -1 || !opt.ignore_negative_one))
@@ -595,11 +580,11 @@ attack_check(uint8_t * bssid, char * essid, uint8_t * capa, struct wif * wi)
 				   wi_get_ifname(wi),
 				   iface_chan,
 				   ap_chan);
-			return -1;
+			return (-1);
 		}
 	}
 
-	return 0;
+	return (0);
 }
 
 static int getnet(uint8_t * capa, int filter, int force)
@@ -645,7 +630,7 @@ static int getnet(uint8_t * capa, int filter, int force)
 		return (1);
 	}
 	else
-		return 0;
+		return (0);
 
 	if (attack_check(bssid, opt.r_essid, capa, _wi_in) != 0)
 	{
@@ -667,7 +652,7 @@ static int getnet(uint8_t * capa, int filter, int force)
 		return (1);
 	}
 
-	return 0;
+	return (0);
 }
 
 static int get_ip_port(char * iface, char * ip, const int ip_size)
@@ -678,7 +663,7 @@ static int get_ip_port(char * iface, char * ip, const int ip_size)
 	struct in_addr addr;
 
 	host = strdup(iface);
-	if (!host) return -1;
+	if (!host) return (-1);
 
 	ptr = strchr(host, ':');
 	if (!ptr) goto out;
@@ -699,7 +684,7 @@ static int get_ip_port(char * iface, char * ip, const int ip_size)
 
 out:
 	free(host);
-	return port;
+	return (port);
 }
 
 static int tcp_test(const char * ip_str, const short port)
@@ -720,10 +705,10 @@ static int tcp_test(const char * ip_str, const short port)
 	memset(&s_in, 0, sizeof(struct sockaddr_in));
 	s_in.sin_family = PF_INET;
 	s_in.sin_port = htons(port);
-	if (!inet_aton(ip_str, &s_in.sin_addr)) return -1;
+	if (!inet_aton(ip_str, &s_in.sin_addr)) return (-1);
 
 	if ((sock = socket(s_in.sin_family, SOCK_STREAM, IPPROTO_TCP)) == -1)
-		return -1;
+		return (-1);
 
 	/* avoid blocking on reading the socket */
 	if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0)
@@ -746,7 +731,7 @@ static int tcp_test(const char * ip_str, const short port)
 
 				printf("Failed to connect\n");
 
-				return -1;
+				return (-1);
 			}
 		}
 		else
@@ -781,7 +766,7 @@ static int tcp_test(const char * ip_str, const short port)
 	{
 		perror("send");
 		close(sock);
-		return -1;
+		return (-1);
 	}
 
 	gettimeofday(&tv, NULL);
@@ -797,7 +782,7 @@ static int tcp_test(const char * ip_str, const short port)
 			{
 				perror("read");
 				close(sock);
-				return -1;
+				return (-1);
 			}
 		}
 
@@ -851,7 +836,7 @@ static int tcp_test(const char * ip_str, const short port)
 	for (i = 0; i < REQUESTS; i++)
 	{
 		if ((sock = socket(s_in.sin_family, SOCK_STREAM, IPPROTO_TCP)) == -1)
-			return -1;
+			return (-1);
 
 		/* avoid blocking on reading the socket */
 		if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0)
@@ -876,7 +861,7 @@ static int tcp_test(const char * ip_str, const short port)
 
 					printf("Failed to connect\n");
 
-					return -1;
+					return (-1);
 				}
 			}
 			else
@@ -923,13 +908,15 @@ static int tcp_test(const char * ip_str, const short port)
 		   avg / 1000.0,
 		   max / 1000.0);
 
-	return 0;
+	return (0);
 }
 
 // TODO: this function is hacked together, It should be cleaned up
 // Need to use wfrm (ieee80211_frame struct instead of just a buffer)
 static int deauth_station(struct WPA_ST_info * st_cur)
 {
+	REQUIRE(st_cur != NULL);
+
 	if (memcmp(st_cur->stmac, NULL_MAC, 6) != 0)
 	{
 		/* deauthenticate the target */
@@ -955,8 +942,6 @@ static int deauth_station(struct WPA_ST_info * st_cur)
 
 			if (send_packet(h80211, 26) < 0) return (1);
 
-			// usleep(2000);
-
 			// Send deauth to the AP...
 			memcpy(h80211 + 4, st_cur->bssid, 6);
 			memcpy(h80211 + 10, st_cur->stmac, 6);
@@ -966,6 +951,7 @@ static int deauth_station(struct WPA_ST_info * st_cur)
 			// get back
 			// to capturing packets to get the EAPOL 4 way handshake
 		}
+
 		return (0);
 	}
 
@@ -1015,7 +1001,6 @@ static void hexDump(char * desc, void * addr, int len)
 
 	// And print the final ASCII bit.
 	printf("  %s\n", buff);
-	return;
 }
 
 /* calcsum - used to calculate IP and ICMP header checksums using
@@ -1036,7 +1021,7 @@ static u_int16_t calcsum(u_int16_t * buffer, u_int32_t length)
 
 	sum = (sum >> 16) + (sum & 0xFFFF); // add high 16 to low 16
 	sum += (sum >> 16); // add carry
-	return ~sum;
+	return (~sum);
 }
 // This needs to be cleaned up so that we can do UDP/TCP in one function. Don't
 // want to do that now and risk
@@ -1121,42 +1106,48 @@ static u_int16_t calcsum_udp(u_int16_t * buf,
 
 static inline u_int8_t * packet_get_sta_80211(u_int8_t * pkt)
 {
+	REQUIRE(pkt != NULL);
+
 	struct ieee80211_frame * p_res802 = (struct ieee80211_frame *) pkt;
 
 	// IF TODS
 	if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_TODS)
 	{
-		return (u_int8_t *) &p_res802->i_addr2;
+		return ((u_int8_t *) &p_res802->i_addr2);
 	}
 	// IF FROMDS
 	else if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 	{
-		return (u_int8_t *) &p_res802->i_addr1;
+		return ((u_int8_t *) &p_res802->i_addr1);
 	}
 
-	return NULL;
+	return (NULL);
 }
 
 static inline u_int8_t * packet_get_bssid_80211(u_int8_t * pkt)
 {
+	REQUIRE(pkt != NULL);
+
 	struct ieee80211_frame * p_res802 = (struct ieee80211_frame *) pkt;
 
 	// IF TODS
 	if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_TODS)
 	{
-		return (u_int8_t *) &p_res802->i_addr1;
+		return ((u_int8_t *) &p_res802->i_addr1);
 	}
 	// IF FROMDS
 	else if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 	{
-		return (u_int8_t *) &p_res802->i_addr2;
+		return ((u_int8_t *) &p_res802->i_addr2);
 	}
 
-	return NULL;
+	return (NULL);
 }
 
 static void packet_turnaround_80211(u_int8_t * pkt)
 {
+	REQUIRE(pkt != NULL);
+
 	struct ieee80211_frame * p_res802 = (struct ieee80211_frame *) pkt;
 	u_int8_t tmp_mac[IEEE80211_ADDR_LEN] = {0};
 
@@ -1176,12 +1167,12 @@ static void packet_turnaround_80211(u_int8_t * pkt)
 	memcpy(tmp_mac, p_res802->i_addr1, IEEE80211_ADDR_LEN);
 	memcpy(p_res802->i_addr1, p_res802->i_addr2, IEEE80211_ADDR_LEN);
 	memcpy(p_res802->i_addr2, tmp_mac, IEEE80211_ADDR_LEN);
-
-	return;
 }
 
 static void packet_turnaround_ip(struct ip_frame * p_resip)
 {
+	REQUIRE(p_resip != NULL);
+
 	// Switch the IP source and destination addresses
 	u_int32_t tmp_addr = p_resip->saddr;
 	p_resip->saddr = p_resip->daddr;
@@ -1191,6 +1182,8 @@ static void packet_turnaround_ip(struct ip_frame * p_resip)
 
 static void packet_turnaround_ip_udp(struct udp_hdr * p_resudp)
 {
+	REQUIRE(p_resudp != NULL);
+
 	// Switch the UDP source and destination Ports
 	u_int16_t tmp_port = p_resudp->sport;
 	p_resudp->sport = p_resudp->dport;
@@ -1200,6 +1193,8 @@ static void packet_turnaround_ip_udp(struct udp_hdr * p_resudp)
 static void packet_turnaround_ip_tcp(struct tcp_hdr * p_restcp,
 									 u_int32_t next_seq_hint)
 {
+	REQUIRE(p_restcp != NULL);
+
 	// Switch the TCP source and destination Ports
 	u_int16_t tmp_port = p_restcp->sport;
 	p_restcp->sport = p_restcp->dport;
@@ -1217,6 +1212,8 @@ static void packet_turnaround_ip_tcp(struct tcp_hdr * p_restcp,
 
 static u_int16_t dns_name_end(u_int8_t * buff, u_int16_t maxlen)
 {
+	REQUIRE(buff != NULL);
+
 	u_int8_t * ptr = buff;
 	u_int8_t count = 0;
 	u_int16_t offset = 0;
@@ -1230,11 +1227,13 @@ static u_int16_t dns_name_end(u_int8_t * buff, u_int16_t maxlen)
 		if (count == 1) break;
 	};
 
-	return offset;
+	return (offset);
 }
 
 static int strip_ccmp_header(u_int8_t * h80211, int caplen, unsigned char PN[6])
 {
+	REQUIRE(h80211 != NULL);
+
 	int is_a4, z, is_qos;
 
 	is_a4 = (h80211[1] & 3) == 3;
@@ -1243,7 +1242,6 @@ static int strip_ccmp_header(u_int8_t * h80211, int caplen, unsigned char PN[6])
 	z += 2 * is_qos;
 
 	// Insert CCMP header
-	// memmove( h80211+z+8, h80211+z, caplen-z );
 	PN[5] = h80211[z + 0];
 	PN[4] = h80211[z + 1];
 	PN[3] = h80211[z + 4];
@@ -1255,7 +1253,7 @@ static int strip_ccmp_header(u_int8_t * h80211, int caplen, unsigned char PN[6])
 	// return new length, encrypt_ccmp() expects on encryption artifacts in
 	// frame,
 	// and states frame is encrypted in place resulting in extra 16 bytes?
-	return caplen - 16;
+	return (caplen - 16);
 }
 
 static void
@@ -1270,13 +1268,10 @@ encrypt_data_packet(u_int8_t * packet, int length, struct WPA_ST_info * sta_cur)
 		// if the PTK is valid, try to decrypt
 		if (sta_cur->keyver == 1)
 		{
-			// printf("TKIP packet length = %d\n", length );
-			// hexDump("full before encrypt", packet, length);
 			encrypt_tkip(packet, length, sta_cur->ptk);
 		}
 		else
 		{
-			// printf("CCMP Packet\n");
 			// This will take the current packet that already
 			// has a ccmp header and strip it and return the PN
 			// This is required so that we comply with the
@@ -1289,7 +1284,7 @@ encrypt_data_packet(u_int8_t * packet, int length, struct WPA_ST_info * sta_cur)
 }
 
 // Global packet buffer for use in building response packets
-uint8_t pkt[2048] = {0};
+static uint8_t pkt[2048] = {0};
 
 static void process_unencrypted_data_packet(u_int8_t * packet,
 											u_int32_t length,
@@ -1300,7 +1295,6 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 	u_int8_t * packet_start = packet;
 	int packet_start_length = length;
 	char extra_enc_length = 0;
-	// char flag_reencypt
 
 	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 
@@ -1322,7 +1316,6 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 	uint16_t * p_seq = (uint16_t *) &wfrm->i_seq;
 	uint16_t pkt_sent = (*p_seq) >> 4;
 	pkt_sent += 1;
-	// printf("seq = %d\n", pkt_sent);
 	packet[22] = (pkt_sent & 0x0000000F) << 4;
 	packet[23] = (pkt_sent & 0x00000FF0) >> 4;
 
@@ -1470,7 +1463,6 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 
 			memset(opt.st_cur->ptk, 0, 80);
 
-			// opt.st_cur->valid_ptk = calc_ptk( opt.st_cur, opt.st_cur->pmk );
 			opt.st_cur->valid_ptk = calc_ptk(opt.st_cur, opt.pmk);
 			if (1 == opt.st_cur->valid_ptk)
 			{
@@ -1590,9 +1582,6 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 									  sizeof(struct ip_frame));
 
 						// We could try some stuff with tcp reset
-						// p_restcp_ack->fin = 1;
-						// p_restcp_ack->ack = 0;
-						// p_restcp_ack->psh = 0;
 						p_restcp_ack->rst = 1;
 
 						// Lets calculate the TCP checksum
@@ -1606,8 +1595,6 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						int tmpbuf_len = res_length;
 						// Going to send the packet later, after we send the
 						// redirect...
-						// if( send_packet( tmpbuf, res_length ) != 0 )
-						//    printf("ERROR: couldn't send Ack\n");
 						//-----------------------------------------------------------------------------
 						// The silly extra TCP options were messing with me,
 						// Packets with TCP options
@@ -1729,12 +1716,6 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					struct sockaddr_in s_in;
 					inet_pton(AF_INET, "127.0.0.1", &s_in); // Website will work
 					memcpy(p_resdns + dns_resplen - 5, &s_in, 4);
-					// int ret = inet_aton("192.168.1.102", &s_in);
-					// int ret = inet_aton("50.89.71.10", &s_in);
-
-					// Copy over our own specified IP address
-					// memcpy(p_resdns + dns_resplen - 5, &opt.p_dnsspoof_ip,
-					// 4);
 
 					// copy the Transaction ID
 					p_resdns[0] = p_dns[0];
@@ -1770,7 +1751,6 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						packet_start_length += extra_enc_length;
 						encrypt_data_packet(
 							pkt, packet_start_length, opt.st_cur);
-						// hexDump("Full encrypted", pkt,packet_start_length);
 					}
 
 					if (send_packet(pkt, packet_start_length) != 0)
@@ -1784,11 +1764,6 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					 && (short) PROTO_ICMP == p_ip->protocol)
 			{
 				struct icmp * p_icmp = (struct icmp *) packet;
-				if (p_icmp->icmp_type == 0)
-				{
-					// printf("ICMP Reply, %d, %d\n", p_icmp->icmp_id,
-					// p_icmp->icmp_seq);
-				}
 				if (p_icmp->icmp_type == 8)
 				{
 					printf("ICMP Request Caught, %d, %d\n",
@@ -1856,11 +1831,11 @@ static bool is_adhoc_frame(u_int8_t * packet)
 
 	if (NULL == p_stmac)
 	{
-		return TRUE;
+		return (TRUE);
 	}
 	else
 	{
-		return FALSE;
+		return (FALSE);
 	}
 }
 
@@ -1879,10 +1854,10 @@ static bool find_station_in_db(u_int8_t * p_stmac)
 
 	if (NULL == opt.st_cur)
 		// If not fount, opt.st_cur == NULL
-		return FALSE;
+		return (FALSE);
 	else
 		// If found, opt.st_cur == p_stmac
-		return TRUE;
+		return (TRUE);
 }
 
 static bool alloc_new_station_in_db(void)
@@ -1892,15 +1867,17 @@ static bool alloc_new_station_in_db(void)
 	if (NULL == opt.st_cur)
 	{
 		perror("station malloc failed");
-		return FALSE;
+		return (FALSE);
 	}
 	// Zero out memory of newly allocated structure
 	memset(opt.st_cur, 0, sizeof(struct WPA_ST_info));
-	return TRUE;
+	return (TRUE);
 }
 
 static inline bool is_wfrm_encrypted(struct ieee80211_frame * wfrm)
 {
+	REQUIRE(wfrm != NULL);
+
 	return (wfrm->i_fc[1] & IEEE80211_FC1_WEP);
 }
 
@@ -1911,9 +1888,9 @@ static inline bool is_length_lt_wfrm(int length)
 
 static inline bool mac_is_multi_broadcast(unsigned char stmac[6])
 {
-	if ((0xFF == stmac[0]) && (0xFF == stmac[1])) return TRUE;
-	if ((0x33 == stmac[0]) && (0x33 == stmac[1])) return TRUE;
-	return FALSE;
+	if ((0xFF == stmac[0]) && (0xFF == stmac[1])) return (TRUE);
+	if ((0x33 == stmac[0]) && (0x33 == stmac[1])) return (TRUE);
+	return (FALSE);
 }
 
 static void process_station_data(u_int8_t * packet, int length)
@@ -1967,16 +1944,22 @@ static void process_station_data(u_int8_t * packet, int length)
 
 static inline bool wfrm_is_tods(struct ieee80211_frame * wfrm)
 {
+	REQUIRE(wfrm != NULL);
+
 	return (wfrm->i_fc[1] & IEEE80211_FC1_DIR_TODS);
 }
 
 static inline bool wfrm_is_fromds(struct ieee80211_frame * wfrm)
 {
+	REQUIRE(wfrm != NULL);
+
 	return (wfrm->i_fc[1] & IEEE80211_FC1_DIR_FROMDS);
 }
 
 static inline bool is_wfrm_qos(struct ieee80211_frame * wfrm)
 {
+	REQUIRE(wfrm != NULL);
+
 	return (IEEE80211_FC0_SUBTYPE_QOS & wfrm->i_fc[0]);
 }
 
@@ -1993,7 +1976,7 @@ static bool is_wfrm_already_processed(u_int8_t * packet, int length)
 	{
 		if (crc == opt.st_cur->t_crc)
 		{
-			return TRUE;
+			return (TRUE);
 		}
 		opt.st_cur->t_crc = crc;
 	}
@@ -2002,17 +1985,17 @@ static bool is_wfrm_already_processed(u_int8_t * packet, int length)
 	{
 		if (crc == opt.st_cur->f_crc)
 		{
-			return TRUE;
+			return (TRUE);
 		}
 		opt.st_cur->f_crc = crc;
 	}
 	// this frame hasn't been processed yet
-	return FALSE;
+	return (FALSE);
 }
 
 static struct llc_frame * find_llc_frm_ptr(u_int8_t * packet, int length)
 {
-	if (is_length_lt_wfrm(length)) return NULL;
+	if (is_length_lt_wfrm(length)) return (NULL);
 
 	int size_80211hdr = sizeof(struct ieee80211_frame);
 	if (is_wfrm_qos((struct ieee80211_frame *) packet))
@@ -2021,7 +2004,7 @@ static struct llc_frame * find_llc_frm_ptr(u_int8_t * packet, int length)
 	}
 
 	struct llc_frame * p_llc = (struct llc_frame *) (packet + size_80211hdr);
-	return p_llc;
+	return (p_llc);
 }
 
 static void process_wireless_data_packet(u_int8_t * packet, int length)
@@ -2035,10 +2018,6 @@ static void process_wireless_data_packet(u_int8_t * packet, int length)
 	{
 		return;
 	}
-	// u_int8_t *p_stmac = packet_get_sta_80211(packet);
-
-	// TEMP DEBUG CAESURUS
-	// if(p_stmac[5] != 0x07) return;
 
 	// process station,
 	// if it exists, opt.st_cur will point to it
@@ -2098,8 +2077,6 @@ static void process_wireless_data_packet(u_int8_t * packet, int length)
 						printf("TKIP decryption on this packet failed :( \n");
 						return;
 					}
-					// length -= 20;
-					// packet_start_length -= 20;
 				}
 				else
 				{
@@ -2112,11 +2089,8 @@ static void process_wireless_data_packet(u_int8_t * packet, int length)
 						hexDump("failed to decrypt",
 								packet_start,
 								packet_start_length);
-						// printf("\n");
 						return;
 					}
-					// length -= 16;
-					// packet_start_length -= 16;
 				}
 
 				process_unencrypted_data_packet(
@@ -2129,11 +2103,12 @@ static void process_wireless_data_packet(u_int8_t * packet, int length)
 	{
 		process_unencrypted_data_packet(packet_start, packet_start_length, 0);
 	}
-	return;
 }
 
 static void process_wireless_packet(u_int8_t * packet, int length)
 {
+	REQUIRE(packet != NULL);
+
 	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 	short fc = *wfrm->i_fc;
 
@@ -2141,7 +2116,6 @@ static void process_wireless_packet(u_int8_t * packet, int length)
 	{
 		process_wireless_data_packet(packet, length);
 	}
-	return;
 }
 
 static int do_active_injection(void)
@@ -2167,7 +2141,7 @@ static int do_active_injection(void)
 
 		/* open the replay interface */
 		_wi_out = wi_open(opt.iface_out);
-		if (!_wi_out) return 1;
+		if (!_wi_out) return (1);
 		printf("\n");
 		dev.fd_out = wi_fd(_wi_out);
 		wi_get_mac(_wi_out, dev.mac_out);
@@ -2196,7 +2170,7 @@ static int do_active_injection(void)
 
 		/* open the packet source */
 		_wi_in = wi_open(opt.s_face);
-		if (!_wi_in) return 1;
+		if (!_wi_in) return (1);
 		dev.fd_in = wi_fd(_wi_in);
 		wi_get_mac(_wi_in, dev.mac_in);
 		printf("\n");
@@ -2205,13 +2179,13 @@ static int do_active_injection(void)
 	{
 		/* open the replay interface */
 		_wi_out = wi_open(opt.iface_out);
-		if (!_wi_out) return 1;
+		if (!_wi_out) return (1);
 		printf("\n");
 		dev.fd_out = wi_fd(_wi_out);
 		wi_get_mac(_wi_out, dev.mac_out);
 
 		_wi_in = wi_open(opt.s_face);
-		if (!_wi_in) return 1;
+		if (!_wi_in) return (1);
 		dev.fd_in = wi_fd(_wi_in);
 		wi_get_mac(_wi_in, dev.mac_in);
 		printf("s_face, port_in\n");
@@ -2227,7 +2201,7 @@ static int do_active_injection(void)
 		}
 	}
 
-	if (getnet(NULL, 0, 0) != 0) return 1;
+	if (getnet(NULL, 0, 0) != 0) return (1);
 
 	srand(time(NULL));
 	// Set our bitrate to the loudest/most likely to reach the station/AP...
@@ -2305,17 +2279,17 @@ int main(int argc, char * argv[])
 	{
 
 		option_index = 0;
-		static struct option long_options[] = {{"redirect", 1, 0, 'r'},
-											   {"interface", 1, 0, 'i'},
-											   {"hijack", 1, 0, 's'},
-											   {"passphrase", 1, 0, 'p'},
-											   {"essid", 1, 0, 'e'},
-											   {"deauth", 0, 0, 'd'},
-											   {"icmp", 0, 0, 'c'},
-											   {"dns", 1, 0, 'n'},
-											   {"verbose", 0, 0, 'v'},
-											   {"help", 0, 0, 'h'},
-											   {0, 0, 0, 0}};
+		static const struct option long_options[] = {{"redirect", 1, 0, 'r'},
+													 {"interface", 1, 0, 'i'},
+													 {"hijack", 1, 0, 's'},
+													 {"passphrase", 1, 0, 'p'},
+													 {"essid", 1, 0, 'e'},
+													 {"deauth", 0, 0, 'd'},
+													 {"icmp", 0, 0, 'c'},
+													 {"dns", 1, 0, 'n'},
+													 {"verbose", 0, 0, 'v'},
+													 {"help", 0, 0, 'h'},
+													 {0, 0, 0, 0}};
 
 		option = getopt_long(
 			argc, argv, "i:n:r:s:p:e:dcv", long_options, &option_index);
@@ -2365,7 +2339,7 @@ int main(int argc, char * argv[])
 						   "valid IP, because apparently %s is not\n",
 						   optarg);
 					free(progname);
-					return EXIT_FAILURE;
+					return (EXIT_FAILURE);
 				}
 				opt.flag_dnsspoof = 1;
 				break;
@@ -2382,7 +2356,7 @@ int main(int argc, char * argv[])
 					printf("ESSID already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					free(progname);
-					return EXIT_FAILURE;
+					return (EXIT_FAILURE);
 				}
 
 				memset(opt.essid, 0, sizeof(opt.essid));
@@ -2395,7 +2369,7 @@ int main(int argc, char * argv[])
 					printf("Encryption key already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					free(progname);
-					return EXIT_FAILURE;
+					return (EXIT_FAILURE);
 				}
 
 				opt.crypt = CRYPT_WPA;
@@ -2407,7 +2381,7 @@ int main(int argc, char * argv[])
 			case 'h':
 				printf(usage, progname);
 				free(progname);
-				return EXIT_SUCCESS;
+				return (EXIT_SUCCESS);
 
 			default:
 			// intentional fall through
@@ -2427,7 +2401,7 @@ int main(int argc, char * argv[])
 				printf("You must also specify the ESSID (-e). This is the "
 					   "broadcast SSID name\n");
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 			}
 
 			calc_pmk(opt.passphrase, opt.essid, opt.pmk);
@@ -2480,7 +2454,7 @@ int main(int argc, char * argv[])
 			{
 				printf("ERROR: wasn't able to allocate the memory needed to do "
 					   "redirect... \n");
-				exit(1);
+				exit(EXIT_FAILURE);
 			}
 		}
 		else
@@ -2498,7 +2472,7 @@ int main(int argc, char * argv[])
 		printf(usage, progname);
 		free(progname);
 		printf(COL_RED "Error, a interface must be specified\n\n" COL_REST);
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 	/* drop privileges */
@@ -2576,6 +2550,4 @@ int main(int argc, char * argv[])
 	}
 
 	return (do_active_injection());
-
-	// return 1;
 }

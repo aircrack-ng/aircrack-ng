@@ -38,6 +38,7 @@
 #include <sys/select.h>
 #endif
 
+#include "defs.h"
 #include "aircrack-osdep/osdep.h"
 #include "aircrack-osdep/network.h"
 #include "version.h"
@@ -68,9 +69,8 @@ static struct sstate * get_ss(void) { return &_ss; }
 
 static void usage(char * p)
 {
-	if (p)
-	{
-	}
+	UNUSED_PARAM(p);
+
 	char * version_info
 		= getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
@@ -89,11 +89,14 @@ static void usage(char * p)
 		   "\n",
 		   version_info);
 	free(version_info);
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 static void debug(struct sstate * ss, struct client * c, int l, char * fmt, ...)
 {
+	REQUIRE(ss != NULL);
+	REQUIRE(c != NULL);
+
 	va_list ap;
 
 	if (ss->ss_level < l) return;
@@ -106,6 +109,9 @@ static void debug(struct sstate * ss, struct client * c, int l, char * fmt, ...)
 
 static void client_add(struct sstate * ss, int s, struct sockaddr_in * s_in)
 {
+	REQUIRE(ss != NULL);
+	REQUIRE(s_in != NULL);
+
 	struct client * c;
 
 	if (!(c = calloc(sizeof(struct client), 1))) err(1, "calloc()");
@@ -122,6 +128,8 @@ static void client_add(struct sstate * ss, int s, struct sockaddr_in * s_in)
 
 static void client_kill(struct client * c)
 {
+	REQUIRE(c != NULL);
+
 	c->c_prev->c_next = c->c_next;
 	c->c_next->c_prev = c->c_prev;
 	printf("Death from %s\n", c->c_ip);
@@ -131,6 +139,8 @@ static void client_kill(struct client * c)
 
 static void card_open(struct sstate * ss, char * dev)
 {
+	REQUIRE(ss != NULL);
+
 	struct wif * wi = wi_open(dev);
 
 	if (!wi) err(1, "wi_open()");
@@ -139,24 +149,27 @@ static void card_open(struct sstate * ss, char * dev)
 
 static int card_set_chan(struct sstate * ss, int chan)
 {
-	return wi_set_channel(ss->ss_wi, chan);
+	return (wi_set_channel(ss->ss_wi, chan));
 }
 
 static int card_get_chan(struct sstate * ss)
 {
-	return wi_get_channel(ss->ss_wi);
+	return (wi_get_channel(ss->ss_wi));
 }
 
 static int card_set_rate(struct sstate * ss, int rate)
 {
-	return wi_set_rate(ss->ss_wi, rate);
+	return (wi_set_rate(ss->ss_wi, rate));
 }
 
-static int card_get_rate(struct sstate * ss) { return wi_get_rate(ss->ss_wi); }
+static int card_get_rate(struct sstate * ss)
+{
+	return (wi_get_rate(ss->ss_wi));
+}
 
 static int card_get_monitor(struct sstate * ss)
 {
-	return wi_get_monitor(ss->ss_wi);
+	return (wi_get_monitor(ss->ss_wi));
 }
 
 static int
@@ -166,22 +179,24 @@ card_read(struct sstate * ss, void * buf, int len, struct rx_info * ri)
 
 	if ((rc = wi_read(ss->ss_wi, buf, len, ri)) == -1) err(1, "wi_read()");
 
-	return rc;
+	return (rc);
 }
 
 static int
 card_write(struct sstate * ss, void * buf, int len, struct tx_info * ti)
 {
-	return wi_write(ss->ss_wi, buf, len, ti);
+	return (wi_write(ss->ss_wi, buf, len, ti));
 }
 
 static int card_get_mac(struct sstate * ss, unsigned char * mac)
 {
-	return wi_get_mac(ss->ss_wi, mac);
+	return (wi_get_mac(ss->ss_wi, mac));
 }
 
 static void open_sock(struct sstate * ss, int port)
 {
+	REQUIRE(ss != NULL);
+
 	int s;
 	struct sockaddr_in s_in;
 	int one = 1;
@@ -544,5 +559,5 @@ int main(int argc, char * argv[])
 
 	serv(ss, device, port, chan);
 
-	exit(0);
+	exit(EXIT_SUCCESS);
 }

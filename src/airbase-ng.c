@@ -67,6 +67,7 @@
 #include "aircrack-util/common.h"
 #include "eapol.h"
 
+#include "defs.h"
 #include "aircrack-osdep/osdep.h"
 #include "aircrack-util/common.h"
 
@@ -150,7 +151,7 @@ static struct wif *_wi_in, *_wi_out;
 	"\xf2\x01\x00\x50\xf2\x02\x00\x50\xf2\x03\x00\x50\xf2\x04\x00\x50"         \
 	"\xf2\x05\x02\x00\x00\x50\xf2\x01\x00\x50\xf2\x02"
 
-char usage[]
+const char usage[]
 	= "\n"
 	  "  %s - (C) 2008-2018 Thomas d'Otreppe\n"
 	  "  Original work: Martin Beck\n"
@@ -392,31 +393,27 @@ struct CF_packet
 	pCF_t next; /* next set of fragments to send */
 };
 
-pthread_mutex_t mx_cf; /* lock write access to rCF */
-pthread_mutex_t mx_cap; /* lock write access to rCF */
+static pthread_mutex_t mx_cf; /* lock write access to rCF */
+static pthread_mutex_t mx_cap; /* lock write access to rCF */
 
-unsigned long nb_pkt_sent;
-unsigned char h80211[4096];
-unsigned char tmpbuf[4096];
-unsigned char srcbuf[4096];
-char strbuf[512];
+static unsigned long nb_pkt_sent;
+static unsigned char h80211[4096];
+static unsigned char tmpbuf[4096];
 
-int ctrl_c, alarmed, invalid_channel_displayed;
+static int invalid_channel_displayed;
 
-char * iwpriv;
+static struct ARP_req * arp;
 
-struct ARP_req * arp;
+static pthread_t beaconpid;
+static pthread_t caffelattepid;
+static pthread_t cfragpid;
 
-pthread_t beaconpid;
-pthread_t caffelattepid;
-pthread_t cfragpid;
-
-pESSID_t rESSID;
-pthread_mutex_t rESSIDmutex;
-pMAC_t rBSSID;
-pMAC_t rClient;
-pFrag_t rFragment;
-pCF_t rCF;
+static pESSID_t rESSID;
+static pthread_mutex_t rESSIDmutex;
+static pMAC_t rBSSID;
+static pMAC_t rClient;
+static pFrag_t rFragment;
+static pCF_t rCF;
 
 // Threads
 static void beacon_thread(void * arg);
@@ -432,12 +429,12 @@ static int addESSID(char * essid, int len, int expiration)
 
 	if (len <= 0 || len > 255) return -1;
 
-	pthread_mutex_lock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
 	cur = rESSID;
 
 	if (rESSID == NULL)
 	{
-		pthread_mutex_unlock(&rESSIDmutex);
+		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 		return -1;
 	}
 
@@ -451,7 +448,7 @@ static int addESSID(char * essid, int len, int expiration)
 				time(&now);
 				cur->expire = now + expiration;
 			}
-			pthread_mutex_unlock(&rESSIDmutex);
+			ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 			return 0;
 		}
 		cur = cur->next;
@@ -459,6 +456,7 @@ static int addESSID(char * essid, int len, int expiration)
 
 	// alloc mem
 	tmp = (pESSID_t) malloc(sizeof(struct ESSID_list));
+	ALLEGE(tmp != NULL);
 
 	// set essid
 	tmp->essid = (char *) malloc(len + 1);
@@ -480,12 +478,15 @@ static int addESSID(char * essid, int len, int expiration)
 	tmp->next = NULL;
 	cur->next = tmp;
 
-	pthread_mutex_unlock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 	return 0;
 }
 
 static int capture_packet(unsigned char * packet, int length)
 {
+	REQUIRE(packet != NULL);
+	REQUIRE(length > 0);
+
 	struct pcap_pkthdr pkh;
 	struct timeval tv;
 	int n;
@@ -569,6 +570,7 @@ static int dump_initialize(char * prefix)
 
 	ofn_len = strlen(prefix) + ADDED_LENGTH + 1;
 	ofn = (char *) calloc(1, ofn_len);
+	ALLEGE(ofn != NULL);
 
 	/* Get the index for the filename so we don't overwrite an existing file */
 	opt.f_index = 1;
@@ -614,6 +616,7 @@ static int dump_initialize(char * prefix)
 	if (fwrite(&pfh, 1, sizeof(pfh), opt.f_cap) != (size_t) sizeof(pfh))
 	{
 		perror("fwrite(pcap file header) failed");
+		free(ofn);
 		return (1);
 	}
 
@@ -622,6 +625,8 @@ static int dump_initialize(char * prefix)
 		PCT;
 		printf("Created capture file \"%s\".\n", ofn);
 	}
+
+	free(ofn);
 
 	return (0);
 }
@@ -701,6 +706,7 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 	// new entry, first fragment received
 	// alloc mem
 	cur->next = (pFrag_t) malloc(sizeof(struct Fragment_list));
+	ALLEGE(cur->next != NULL);
 	cur = cur->next;
 
 	for (i = 0; i < 16; i++)
@@ -725,9 +731,11 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 	memcpy(cur->source, smac, 6);
 	cur->sequence = seq;
 	cur->header = (unsigned char *) malloc(z);
+	ALLEGE(cur->header != NULL);
 	memcpy(cur->header, frame, z);
 	cur->headerlen = z;
 	cur->fragment[frag] = (unsigned char *) malloc(len - z);
+	ALLEGE(cur->fragment[frag] != NULL);
 	memcpy(cur->fragment[frag], frame + z, len - z);
 	cur->fragmentlen[frag] = len - z;
 	cur->wep = wep;
@@ -831,6 +839,7 @@ getCompleteFrag(unsigned char * smac, int sequence, int * packetlen)
 				if (opt.crypt == CRYPT_WEP)
 				{
 					packet = (unsigned char *) malloc(len + old->headerlen + 8);
+					ALLEGE(packet != NULL);
 					K[0] = rand() & 0xFF;
 					K[1] = rand() & 0xFF;
 					K[2] = rand() & 0xFF;
@@ -876,6 +885,7 @@ getCompleteFrag(unsigned char * smac, int sequence, int * packetlen)
 			else
 			{
 				packet = (unsigned char *) malloc(len + old->headerlen);
+				ALLEGE(packet != NULL);
 				memcpy(packet, old->header, old->headerlen);
 				len = old->headerlen;
 				for (i = 0; i <= old->fragnum; i++)
@@ -906,6 +916,7 @@ static int addMAC(pMAC_t pMAC, unsigned char * mac)
 
 	// alloc mem
 	cur->next = (pMAC_t) malloc(sizeof(struct MAC_list));
+	ALLEGE(cur->next != NULL);
 	cur = cur->next;
 
 	// set mac
@@ -922,12 +933,12 @@ static void flushESSID(void)
 	pESSID_t cur;
 	time_t now;
 
-	pthread_mutex_lock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
 	cur = rESSID;
 
 	if (rESSID == NULL)
 	{
-		pthread_mutex_unlock(&rESSIDmutex);
+		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 		return;
 	}
 
@@ -947,13 +958,13 @@ static void flushESSID(void)
 				old->next = NULL;
 				old->len = 0;
 				free(old);
-				pthread_mutex_unlock(&rESSIDmutex);
+				ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 				return;
 			}
 		}
 		cur = cur->next;
 	}
-	pthread_mutex_unlock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 }
 
 static int gotESSID(char * essid, int len)
@@ -964,12 +975,12 @@ static int gotESSID(char * essid, int len)
 
 	if (len <= 0 || len > 255) return -1;
 
-	pthread_mutex_lock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
 	cur = rESSID;
 
 	if (rESSID == NULL)
 	{
-		pthread_mutex_unlock(&rESSIDmutex);
+		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 		return -1;
 	}
 
@@ -980,14 +991,14 @@ static int gotESSID(char * essid, int len)
 		{
 			if (memcmp(old->essid, essid, len) == 0)
 			{
-				pthread_mutex_unlock(&rESSIDmutex);
+				ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 				return 1;
 			}
 		}
 		cur = cur->next;
 	}
 
-	pthread_mutex_unlock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 	return 0;
 }
 
@@ -1015,17 +1026,17 @@ static int gotMAC(pMAC_t pMAC, unsigned char * mac)
 static int getESSID(char * essid)
 {
 	int len;
-	pthread_mutex_lock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
 
 	if (rESSID == NULL || rESSID->next == NULL)
 	{
-		pthread_mutex_unlock(&rESSIDmutex);
+		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 		return 0;
 	}
 
 	memcpy(essid, rESSID->next->essid, rESSID->next->len + 1);
 	len = rESSID->next->len;
-	pthread_mutex_unlock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 
 	return len;
 }
@@ -1035,11 +1046,11 @@ static int getNextESSID(char * essid)
 	int len;
 	pESSID_t cur;
 
-	pthread_mutex_lock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
 
 	if (rESSID == NULL || rESSID->next == NULL)
 	{
-		pthread_mutex_unlock(&rESSIDmutex);
+		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 		return 0;
 	}
 
@@ -1070,7 +1081,7 @@ static int getNextESSID(char * essid)
 		memcpy(essid, cur->essid, cur->len + 1);
 		len = cur->len;
 	}
-	pthread_mutex_unlock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 
 	return len;
 }
@@ -1080,12 +1091,12 @@ static int getESSIDcount(void)
 	pESSID_t cur;
 	int count = 0;
 
-	pthread_mutex_lock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
 	cur = rESSID;
 
 	if (rESSID == NULL)
 	{
-		pthread_mutex_unlock(&rESSIDmutex);
+		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 		return -1;
 	}
 
@@ -1095,7 +1106,7 @@ static int getESSIDcount(void)
 		count++;
 	}
 
-	pthread_mutex_unlock(&rESSIDmutex);
+	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 	return count;
 }
 
@@ -1174,9 +1185,9 @@ static int send_packet(void * buf, size_t count)
 		return -1;
 	}
 
-	pthread_mutex_lock(&mx_cap);
+	ALLEGE(pthread_mutex_lock(&mx_cap) == 0);
 	if (opt.record_data) capture_packet(buf, count);
-	pthread_mutex_unlock(&mx_cap);
+	ALLEGE(pthread_mutex_unlock(&mx_cap) == 0);
 
 	nb_pkt_sent++;
 	return 0;
@@ -2062,9 +2073,10 @@ static int addCF(unsigned char * packet, int length)
 	}
 	while (curCF->next != NULL) curCF = curCF->next;
 
-	pthread_mutex_lock(&mx_cf);
+	ALLEGE(pthread_mutex_lock(&mx_cf) == 0);
 
 	curCF->next = (pCF_t) malloc(sizeof(struct CF_packet));
+	ALLEGE(curCF->next != NULL);
 	curCF = curCF->next;
 	curCF->xmitcount = 0;
 	curCF->next = NULL;
@@ -2092,7 +2104,7 @@ static int addCF(unsigned char * packet, int length)
 
 	opt.cf_count++;
 
-	pthread_mutex_unlock(&mx_cf);
+	ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 
 	if (opt.cf_count == 1 && !opt.quiet)
 	{
@@ -2164,6 +2176,7 @@ static int addarp(unsigned char * packet, int length)
 	for (i = 0; i < length - z - 4; i++) (packet + z + 4)[i] ^= flip[i];
 
 	arp[opt.nb_arp].buf = (unsigned char *) malloc(length);
+	ALLEGE(arp[opt.nb_arp].buf != NULL);
 	arp[opt.nb_arp].len = length;
 	memcpy(arp[opt.nb_arp].buf, packet, length);
 	opt.nb_arp++;
@@ -2310,6 +2323,8 @@ static int packet_recv(unsigned char * packet,
 					   struct AP_conf * apc,
 					   int external)
 {
+	REQUIRE(packet != NULL);
+
 	unsigned char K[64];
 	unsigned char bssid[6];
 	unsigned char smac[6];
@@ -2335,9 +2350,9 @@ static int packet_recv(unsigned char * packet,
 	fixed = 0;
 	memset(essid, 0, 256);
 
-	pthread_mutex_lock(&mx_cap);
+	ALLEGE(pthread_mutex_lock(&mx_cap) == 0);
 	if (opt.record_data) capture_packet(packet, length);
-	pthread_mutex_unlock(&mx_cap);
+	ALLEGE(pthread_mutex_unlock(&mx_cap) == 0);
 
 	z = ((packet[1] & 3) != 3) ? 24 : 30;
 
@@ -2868,6 +2883,7 @@ static int packet_recv(unsigned char * packet,
 
 					// store the tagged parameters and insert the fixed ones
 					buffer = (unsigned char *) malloc(length - z);
+					ALLEGE(buffer != NULL);
 					memcpy(buffer, packet + z, length - z);
 
 					memcpy(packet + z,
@@ -2987,6 +3003,7 @@ static int packet_recv(unsigned char * packet,
 
 					// store the tagged parameters and insert the fixed ones
 					buffer = (unsigned char *) malloc(length - z);
+					ALLEGE(buffer != NULL);
 					memcpy(buffer, packet + z, length - z);
 
 					memcpy(packet + z,
@@ -3272,6 +3289,7 @@ static int packet_recv(unsigned char * packet,
 
 			// store the tagged parameters and insert the fixed ones
 			buffer = (unsigned char *) malloc(length - z - fixed);
+			ALLEGE(buffer != NULL);
 			memcpy(buffer, packet + z + fixed, length - z - fixed);
 
 			packet[z + 2] = 0x00;
@@ -3435,6 +3453,8 @@ static int packet_recv(unsigned char * packet,
 
 static void beacon_thread(void * arg)
 {
+	REQUIRE(arg != NULL);
+
 	struct AP_conf apc;
 	struct timeval tv, tv1, tv2;
 	u_int64_t timestamp;
@@ -3798,7 +3818,7 @@ static void cfrag_thread(void)
 			/* threshold reach, send one frame */
 			//            ticks[2] = 0;
 
-			pthread_mutex_lock(&mx_cf);
+			ALLEGE(pthread_mutex_lock(&mx_cf) == 0);
 
 			if (opt.cf_count > 0)
 			{
@@ -3807,7 +3827,7 @@ static void cfrag_thread(void)
 				if (curCF->next == NULL)
 				{
 					opt.cf_count = 0;
-					pthread_mutex_unlock(&mx_cf);
+					ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 					continue;
 				}
 
@@ -3820,7 +3840,7 @@ static void cfrag_thread(void)
 				if (curCF->next == NULL)
 				{
 					opt.cf_count = 0;
-					pthread_mutex_unlock(&mx_cf);
+					ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 					continue;
 				}
 
@@ -3838,7 +3858,7 @@ static void cfrag_thread(void)
 						buffer, curCF->fragnum, i, curCF->fraglen[i], rnd);
 					if (send_packet(buffer, curCF->fraglen[i]) < 0)
 					{
-						pthread_mutex_unlock(&mx_cf);
+						ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 						return;
 					}
 				}
@@ -3850,7 +3870,7 @@ static void cfrag_thread(void)
 						   rnd);
 				if (send_packet(buffer, curCF->finallen) < 0)
 				{
-					pthread_mutex_unlock(&mx_cf);
+					ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 					return;
 				}
 
@@ -3870,7 +3890,7 @@ static void cfrag_thread(void)
 							buffer, curCF->fragnum, i, curCF->fraglen[i], rnd);
 						if (send_packet(buffer, curCF->fraglen[i]) < 0)
 						{
-							pthread_mutex_unlock(&mx_cf);
+							ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 							return;
 						}
 					}
@@ -3882,7 +3902,7 @@ static void cfrag_thread(void)
 							   rnd);
 					if (send_packet(buffer, curCF->finallen) < 0)
 					{
-						pthread_mutex_unlock(&mx_cf);
+						ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 						return;
 					}
 
@@ -3890,7 +3910,7 @@ static void cfrag_thread(void)
 					nb_pkt_sent_1++;
 				}
 			}
-			pthread_mutex_unlock(&mx_cf);
+			ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 		}
 	}
 }
@@ -3912,7 +3932,7 @@ int main(int argc, char * argv[])
 	memset(&dev, 0, sizeof(dev));
 	memset(&apc, 0, sizeof(struct AP_conf));
 
-	pthread_mutex_init(&rESSIDmutex, NULL);
+	ALLEGE(pthread_mutex_init(&rESSIDmutex, NULL) == 0);
 	rESSID = (pESSID_t) malloc(sizeof(struct ESSID_list));
 	memset(rESSID, 0, sizeof(struct ESSID_list));
 
@@ -3939,8 +3959,8 @@ int main(int argc, char * argv[])
 	// Tell Libgcrypt that initialization has completed.
 	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-	pthread_mutex_init(&mx_cf, NULL);
-	pthread_mutex_init(&mx_cap, NULL);
+	ALLEGE(pthread_mutex_init(&mx_cf, NULL) == 0);
+	ALLEGE(pthread_mutex_init(&mx_cap, NULL) == 0);
 
 	opt.r_nbpps = 100;
 	opt.tods = 0;
@@ -3964,24 +3984,25 @@ int main(int argc, char * argv[])
 	{
 		int option_index = 0;
 
-		static struct option long_options[] = {{"beacon-cache", 1, 0, 'C'},
-											   {"bssid", 1, 0, 'b'},
-											   {"bssids", 1, 0, 'B'},
-											   {"channel", 1, 0, 'c'},
-											   {"client", 1, 0, 'd'},
-											   {"clients", 1, 0, 'D'},
-											   {"essid", 1, 0, 'e'},
-											   {"essids", 1, 0, 'E'},
-											   {"promiscuous", 0, 0, 'P'},
-											   {"interval", 1, 0, 'I'},
-											   {"mitm", 0, 0, 'M'},
-											   {"hidden", 0, 0, 'X'},
-											   {"caffe-latte", 0, 0, 'L'},
-											   {"cfrag", 0, 0, 'N'},
-											   {"verbose", 0, 0, 'v'},
-											   {"ad-hoc", 0, 0, 'A'},
-											   {"help", 0, 0, 'H'},
-											   {0, 0, 0, 0}};
+		static const struct option long_options[]
+			= {{"beacon-cache", 1, 0, 'C'},
+			   {"bssid", 1, 0, 'b'},
+			   {"bssids", 1, 0, 'B'},
+			   {"channel", 1, 0, 'c'},
+			   {"client", 1, 0, 'd'},
+			   {"clients", 1, 0, 'D'},
+			   {"essid", 1, 0, 'e'},
+			   {"essids", 1, 0, 'E'},
+			   {"promiscuous", 0, 0, 'P'},
+			   {"interval", 1, 0, 'I'},
+			   {"mitm", 0, 0, 'M'},
+			   {"hidden", 0, 0, 'X'},
+			   {"caffe-latte", 0, 0, 'L'},
+			   {"cfrag", 0, 0, 'N'},
+			   {"verbose", 0, 0, 'v'},
+			   {"ad-hoc", 0, 0, 'A'},
+			   {"help", 0, 0, 'H'},
+			   {0, 0, 0, 0}};
 
 		int option = getopt_long(
 			argc,
@@ -4001,12 +4022,12 @@ int main(int argc, char * argv[])
 			case ':':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 
 			case 'n':
 
@@ -4018,7 +4039,7 @@ int main(int argc, char * argv[])
 					printf("Invalid fixed nonce. It must be 64 hexadecimal "
 						   "chars.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				opt.use_fixed_nonce = 1;
 				break;
@@ -4029,7 +4050,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid AP MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 
@@ -4041,7 +4062,7 @@ int main(int argc, char * argv[])
 					printf("Invalid channel value <%d>. It must be between 1 "
 						   "and 255.\n",
 						   opt.channel);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
@@ -4054,7 +4075,7 @@ int main(int argc, char * argv[])
 					printf("EAPOL value can only be 1[MD5], 2[SHA1] or "
 						   "3[auto].\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
@@ -4066,7 +4087,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Don't specify -v and -q at the same time.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
@@ -4078,7 +4099,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid WPA1 type [1-5]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				if (opt.setWEP == -1)
@@ -4095,7 +4116,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid WPA2 type [1-5]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				if (opt.setWEP == -1)
@@ -4111,7 +4132,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid ESSID, too long\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.f_essid = 1;
@@ -4205,7 +4226,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid macfilter mode. [allow|disallow]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
@@ -4216,7 +4237,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid challenge length. [16-1480]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.skalen = atoi(optarg);
@@ -4229,7 +4250,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid source MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 
@@ -4239,7 +4260,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Packet source already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				opt.s_face = optarg;
 				break;
@@ -4251,7 +4272,7 @@ int main(int argc, char * argv[])
 					printf("Invalid argument for (-W). Only \"0\" and \"1\" "
 						   "allowed.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.setWEP = atoi(optarg);
@@ -4295,7 +4316,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid processing mode. [in|out|both]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
@@ -4307,7 +4328,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Don't specify -v and -q at the same time.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
@@ -4318,13 +4339,13 @@ int main(int argc, char * argv[])
 				{
 					printf("PRGA file already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				if (opt.crypt != CRYPT_NONE)
 				{
 					printf("Encryption key already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.crypt = CRYPT_WEP;
@@ -4342,7 +4363,7 @@ int main(int argc, char * argv[])
 					{
 						printf("Invalid WEP key.\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					opt.wepkey[i++] = n;
@@ -4363,7 +4384,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid WEP key length.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.weplen = i;
@@ -4392,7 +4413,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid source MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				if (opt.filter == -1) opt.filter = ALLOW_MACS;
@@ -4401,7 +4422,7 @@ int main(int argc, char * argv[])
 
 			case 'D':
 
-				if (addMACfile(rClient, optarg) != 0) return (1);
+				if (addMACfile(rClient, optarg) != 0) return (EXIT_FAILURE);
 
 				if (opt.filter == -1) opt.filter = ALLOW_MACS;
 
@@ -4417,7 +4438,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid BSSID address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				if (opt.filter == -1) opt.filter = ALLOW_MACS;
@@ -4426,7 +4447,7 @@ int main(int argc, char * argv[])
 
 			case 'B':
 
-				if (addMACfile(rBSSID, optarg) != 0) return (1);
+				if (addMACfile(rBSSID, optarg) != 0) return (EXIT_FAILURE);
 
 				if (opt.filter == -1) opt.filter = ALLOW_MACS;
 
@@ -4438,7 +4459,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Packet source already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				opt.s_file = optarg;
 				break;
@@ -4453,7 +4474,7 @@ int main(int argc, char * argv[])
 								  _REVISION,
 								  _BETA,
 								  _RC));
-				return (1);
+				return (EXIT_FAILURE);
 
 			default:
 				goto usage;
@@ -4478,7 +4499,7 @@ int main(int argc, char * argv[])
 		{
 			printf("\"%s --help\" for help.\n", argv[0]);
 		}
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if ((memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
@@ -4486,7 +4507,7 @@ int main(int argc, char * argv[])
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (opt.mitm && (getMACcount(rBSSID) != 1 || getMACcount(rClient) < 1))
@@ -4494,14 +4515,14 @@ int main(int argc, char * argv[])
 		printf("Notice: You need to specify exactly one BSSID (-b)"
 			   " and at least one client MAC (-d)\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (opt.wpa1type && opt.wpa2type)
 	{
 		printf("Notice: You can only set one method: WPA (-z) or WPA2 (-Z)\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (opt.allwpa && (opt.wpa1type || opt.wpa2type))
@@ -4509,7 +4530,7 @@ int main(int argc, char * argv[])
 		printf("Notice: You cannot use all WPA tags (-0)"
 			   " together with WPA (-z) or WPA2 (-Z)\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	dev.fd_rtc = -1;
@@ -4566,18 +4587,18 @@ int main(int argc, char * argv[])
 	tempstr = strdup(argv[optind]);
 	if (!tempstr)
 	{
-		return 1;
+		return (EXIT_FAILURE);
 	}
 	_wi_out = wi_open(tempstr);
 	free(tempstr);
-	if (!_wi_out) return 1;
+	if (!_wi_out) return (EXIT_FAILURE);
 	dev.fd_out = wi_fd(_wi_out);
 
 	/* open the packet source */
 	if (opt.s_face != NULL)
 	{
 		_wi_in = wi_open(opt.s_face);
-		if (!_wi_in) return 1;
+		if (!_wi_in) return (EXIT_FAILURE);
 		dev.fd_in = wi_fd(_wi_in);
 	}
 	else
@@ -4602,14 +4623,14 @@ int main(int argc, char * argv[])
 	}
 
 	if (opt.record_data)
-		if (dump_initialize(opt.dump_prefix)) return (1);
+		if (dump_initialize(opt.dump_prefix)) return (EXIT_FAILURE);
 
 	if (opt.s_file != NULL)
 	{
 		if (!(dev.f_cap_in = fopen(opt.s_file, "rb")))
 		{
 			perror("open failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		n = sizeof(struct pcap_file_header);
@@ -4617,7 +4638,7 @@ int main(int argc, char * argv[])
 		if (fread(&dev.pfh_in, 1, n, dev.f_cap_in) != (size_t) n)
 		{
 			perror("fread(pcap file header) failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (dev.pfh_in.magic != TCPDUMP_MAGIC
@@ -4627,7 +4648,7 @@ int main(int argc, char * argv[])
 					"\"%s\" isn't a pcap file (expected "
 					"TCPDUMP_MAGIC).\n",
 					opt.s_file);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (dev.pfh_in.magic == TCPDUMP_CIGAM) SWAP32(dev.pfh_in.linktype);
@@ -4642,7 +4663,7 @@ int main(int argc, char * argv[])
 					"(expected LINKTYPE_IEEE802_11) -\n"
 					"this doesn't look like a regular 802.11 "
 					"capture.\n");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 	}
 
@@ -4650,7 +4671,7 @@ int main(int argc, char * argv[])
 	if (!dev.dv_ti)
 	{
 		printf("error opening tap device: %s\n", strerror(errno));
-		return -1;
+		return (EXIT_FAILURE);
 	}
 
 	if (!opt.quiet)
@@ -4710,7 +4731,7 @@ int main(int argc, char * argv[])
 		if (!dev.dv_ti2)
 		{
 			printf("error opening tap device: %s\n", strerror(errno));
-			return -1;
+			return (EXIT_FAILURE);
 		}
 		if (!opt.quiet)
 		{
@@ -4749,8 +4770,10 @@ int main(int argc, char * argv[])
 	if (getESSIDcount() == 1 && opt.hidden != 1)
 	{
 		apc.essid = (char *) malloc(MAX_IE_ELEMENT_SIZE + 1);
+		ALLEGE(apc.essid != NULL);
 		apc.essid_len = getESSID(apc.essid);
 		apc.essid = (char *) realloc((void *) apc.essid, apc.essid_len + 1);
+		ALLEGE(apc.essid != NULL);
 		apc.essid[apc.essid_len] = 0x00;
 	}
 	else
@@ -4798,20 +4821,21 @@ int main(int argc, char * argv[])
 		!= 0)
 	{
 		perror("Beacons pthread_create");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (opt.caffelatte)
 	{
 		arp = (struct ARP_req *) malloc(opt.ringbuffer
 										* sizeof(struct ARP_req));
+		ALLEGE(arp != NULL);
 
 		if (pthread_create(
 				&(caffelattepid), NULL, (void *) caffelatte_thread, NULL)
 			!= 0)
 		{
 			perror("Caffe-Latte pthread_create");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 	}
 
@@ -4820,7 +4844,7 @@ int main(int argc, char * argv[])
 		if (pthread_create(&(cfragpid), NULL, (void *) cfrag_thread, NULL) != 0)
 		{
 			perror("cfrag pthread_create");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 	}
 
@@ -4995,5 +5019,5 @@ int main(int argc, char * argv[])
 
 	/* that's all, folks */
 
-	return (0);
+	return (EXIT_SUCCESS);
 }

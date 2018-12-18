@@ -43,6 +43,8 @@
 #ifdef HAVE_PCRE
 #include <pcre.h>
 #endif
+
+#include "defs.h"
 #include "airodump-ng.h"
 #include "dump_write.h"
 #include "crypto.h"
@@ -61,14 +63,15 @@ static char * format_text_for_csv(const unsigned char * input, int len)
 
 	if (len < 0)
 	{
-		return NULL;
+		return (NULL);
 	}
 
 	if (len == 0 || input == NULL)
 	{
 		ret = (char *) malloc(1);
+		ALLEGE(ret != NULL);
 		ret[0] = 0;
-		return ret;
+		return (ret);
 	}
 
 	pos = 0;
@@ -76,6 +79,7 @@ static char * format_text_for_csv(const unsigned char * input, int len)
 
 	// Make sure to have enough memory for all that stuff
 	ret = (char *) malloc((len * 4) + 1 + 2);
+	ALLEGE(ret != NULL);
 
 	if (contains_space_end)
 	{
@@ -115,8 +119,9 @@ static char * format_text_for_csv(const unsigned char * input, int len)
 	ret[pos++] = '\0';
 
 	rret = realloc(ret, pos);
+	ALLEGE(rret != NULL);
 
-	return (rret) ? rret : ret;
+	return (rret) ? (rret) : (ret);
 }
 
 int dump_write_csv(void)
@@ -127,7 +132,7 @@ int dump_write_csv(void)
 	struct ST_info * st_cur;
 	char * temp;
 
-	if (!G.record_data || !G.output_format_csv) return 0;
+	if (!G.record_data || !G.output_format_csv) return (0);
 
 	fseek(G.f_txt, 0, SEEK_SET);
 
@@ -346,6 +351,7 @@ int dump_write_csv(void)
 			{
 				temp = (char *) calloc(
 					1, (st_cur->ssid_length[i] + 1) * sizeof(char));
+				ALLEGE(temp != NULL);
 				memcpy(temp, st_cur->probes[i], st_cur->ssid_length[i] + 1);
 			}
 			else
@@ -374,18 +380,19 @@ int dump_write_csv(void)
 
 	fprintf(G.f_txt, "\r\n");
 	fflush(G.f_txt);
-	return 0;
+	return (0);
 }
 
-int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur, const int32_t ri_power)
+int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
+										 const int32_t ri_power)
 {
-	if (ap_cur == NULL || !G.output_format_log_csv || !G.f_logcsv) 
+	if (ap_cur == NULL || !G.output_format_log_csv || !G.f_logcsv)
 	{
-		return 0;
+		return (0);
 	}
 
 	// Local computer time
-	struct tm *ltime = localtime(&ap_cur->tlast);
+	struct tm * ltime = localtime(&ap_cur->tlast);
 	fprintf(G.f_logcsv,
 			"%04d-%02d-%02d %02d:%02d:%02d,",
 			1900 + ltime->tm_year,
@@ -423,8 +430,7 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur, const in
 	fprintf(G.f_logcsv, "%d,", ri_power);
 
 	// Network Security
-	if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2))
-		== 0)
+	if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) == 0)
 		fputs(",", G.f_logcsv);
 	else if (ap_cur->security & STD_WPA2)
 		fputs("WPA2,", G.f_logcsv);
@@ -443,14 +449,16 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur, const in
 			G.gps_loc[5],
 			G.gps_loc[6]);
 
-	return 0;
+	return (0);
 }
 
-int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur, const struct ST_info * st_cur, const int32_t ri_power)
+int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
+											 const struct ST_info * st_cur,
+											 const int32_t ri_power)
 {
-	if (st_cur == NULL || !G.output_format_log_csv || !G.f_logcsv) 
+	if (st_cur == NULL || !G.output_format_log_csv || !G.f_logcsv)
 	{
-		return 0;
+		return (0);
 	}
 
 	// Local computer time
@@ -491,7 +499,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur, cons
 	// RSSI
 	fprintf(G.f_logcsv, "%d,", ri_power);
 
-	// Client => Network Security: none 
+	// Client => Network Security: none
 	fprintf(G.f_logcsv, ",");
 
 	// Lat, Lon, Lat Error, Lon Errorst_cur->power
@@ -505,7 +513,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur, cons
 	// Type
 	fprintf(G.f_logcsv, "Client\r\n");
 
-	return 0;
+	return (0);
 }
 
 static char * sanitize_xml(unsigned char * text, int length)
@@ -519,6 +527,7 @@ static char * sanitize_xml(unsigned char * text, int length)
 		len = 8 * length;
 		newtext = (char *) calloc(
 			1, (len + 1) * sizeof(char)); // Make sure we have enough space
+		ALLEGE(newtext != NULL);
 		pos = text;
 		for (i = 0; i < length; ++i, ++pos)
 		{
@@ -564,9 +573,10 @@ static char * sanitize_xml(unsigned char * text, int length)
 			}
 		}
 		newtext = (char *) realloc(newtext, strlen(newtext) + 1);
+		ALLEGE(newtext != NULL);
 	}
 
-	return newtext;
+	return (newtext);
 }
 
 char * get_manufacturer_from_string(char * buffer)
@@ -609,7 +619,7 @@ char * get_manufacturer_from_string(char * buffer)
 						== NULL)
 					{
 						perror("malloc failed");
-						return NULL;
+						return (NULL);
 					}
 					snprintf(
 						manuf, strlen(buffer_manuf) + 1, "%s", buffer_manuf);
@@ -618,7 +628,7 @@ char * get_manufacturer_from_string(char * buffer)
 		}
 	}
 
-	return manuf;
+	return (manuf);
 }
 
 #define KISMET_NETXML_HEADER_BEGIN                                             \
@@ -643,7 +653,7 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 
 	if (client == NULL || (client_no <= 0 || client_no >= INT_MAX))
 	{
-		return 1;
+		return (1);
 	}
 
 	is_unassociated = (client->base == NULL
@@ -820,14 +830,14 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 	}
 	fprintf(G.f_kis_xml, "\t\t</wireless-client>\n");
 
-	return 0;
+	return (0);
 }
 
 #define NETXML_ENCRYPTION_TAG "%s<encryption>%s</encryption>\n"
 int dump_write_kismet_netxml(void)
 {
 	int network_number, average_power, client_max_rate, max_power, client_nbr,
-		fp, fpos, unused;
+		fp, fpos;
 	struct AP_info * ap_cur;
 	struct ST_info * st_cur;
 	char first_time[TIME_STR_LENGTH];
@@ -835,11 +845,11 @@ int dump_write_kismet_netxml(void)
 	char * manuf;
 	char * essid = NULL;
 
-	if (!G.record_data || !G.output_format_kismet_netxml) return 0;
+	if (!G.record_data || !G.output_format_kismet_netxml) return (0);
 
 	if (fseek(G.f_kis_xml, 0, SEEK_SET) == -1)
 	{
-		return 0;
+		return (0);
 	}
 
 	/* Header and airodump-ng start time */
@@ -1287,11 +1297,11 @@ int dump_write_kismet_netxml(void)
 	fpos = ftell(G.f_kis_xml);
 	if (fp == -1 || fpos == -1)
 	{
-		return 0;
+		return (0);
 	}
-	unused = ftruncate(fp, fpos);
+	(void) ftruncate(fp, fpos);
 
-	return 0;
+	return (0);
 }
 #undef TIME_STR_LENGTH
 
@@ -1305,15 +1315,13 @@ int dump_write_kismet_netxml(void)
 int dump_write_kismet_csv(void)
 {
 	int i, k;
-	//     struct tm *ltime;
-	/*    char ssid_list[512];*/
 	struct AP_info * ap_cur;
 
-	if (!G.record_data || !G.output_format_kismet_csv) return 0;
+	if (!G.record_data || !G.output_format_kismet_csv) return (0);
 
 	if (fseek(G.f_kis, 0, SEEK_SET) == -1)
 	{
-		return 0;
+		return (0);
 	}
 
 	fprintf(G.f_kis, KISMET_HEADER);
@@ -1510,5 +1518,5 @@ int dump_write_kismet_csv(void)
 	}
 
 	fflush(G.f_kis);
-	return 0;
+	return (0);
 }

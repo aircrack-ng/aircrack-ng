@@ -43,28 +43,29 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include "defs.h"
 #include "aircrack-util/common.h"
 
 int ac_session_destroy(struct session * s)
 {
 	if (s == NULL || s->filename == NULL)
 	{
-		return 0;
+		return (0);
 	}
 
-	pthread_mutex_lock(&(s->mutex));
+	ALLEGE(pthread_mutex_lock(&(s->mutex)) == 0);
 	FILE * f = fopen(s->filename, "r");
 	if (!f)
 	{
-		pthread_mutex_unlock(&(s->mutex));
-		return 0;
+		ALLEGE(pthread_mutex_unlock(&(s->mutex)) == 0);
+		return (0);
 	}
 
 	fclose(f);
 	int ret = remove(s->filename);
-	pthread_mutex_unlock(&(s->mutex));
+	ALLEGE(pthread_mutex_unlock(&(s->mutex)) == 0);
 
-	return ret == 0;
+	return (ret == 0);
 }
 
 void ac_session_free(struct session ** s)
@@ -76,14 +77,13 @@ void ac_session_free(struct session ** s)
 
 	if ((*s)->filename)
 	{
-
 		// Delete 0 byte file
 		struct stat scs;
 		memset(&scs, 0, sizeof(struct stat));
-		pthread_mutex_lock(&((*s)->mutex));
+		ALLEGE(pthread_mutex_lock(&((*s)->mutex)) == 0);
 		if (stat((*s)->filename, &scs) == 0 && scs.st_size == 0)
 		{
-			pthread_mutex_unlock(&((*s)->mutex));
+			ALLEGE(pthread_mutex_unlock(&((*s)->mutex)) == 0);
 			ac_session_destroy(*s);
 		}
 
@@ -112,32 +112,32 @@ int ac_session_init(struct session * s)
 {
 	if (s == NULL)
 	{
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 	memset(s, 0, sizeof(struct session));
-	pthread_mutex_init(&(s->mutex), NULL);
+	ALLEGE(pthread_mutex_init(&(s->mutex), NULL) == 0);
 
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
 int ac_session_set_working_directory(struct session * session, const char * str)
 {
 	if (session == NULL || str == NULL || str[0] == 0 || chdir(str) == -1)
 	{
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 	session->working_dir = strdup(str);
 
-	return (session->working_dir) ? EXIT_SUCCESS : EXIT_FAILURE;
+	return ((session->working_dir) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 int ac_session_set_bssid(struct session * session, const char * str)
 {
 	if (session == NULL || str == NULL || strlen(str) != 17)
 	{
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 	// Parse BSSID
@@ -154,7 +154,7 @@ int ac_session_set_bssid(struct session * session, const char * str)
 	// Verify all parsed correctly
 	if (count < 6)
 	{
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 	// Copy it back to the structure
@@ -163,14 +163,14 @@ int ac_session_set_bssid(struct session * session, const char * str)
 		session->bssid[i] = (uint8_t) bssid[i];
 	}
 
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
 int ac_session_set_wordlist_settings(struct session * session, const char * str)
 {
 	if (session == NULL || str == NULL)
 	{
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 	int nb_input_scanned = sscanf(str,
@@ -181,10 +181,10 @@ int ac_session_set_wordlist_settings(struct session * session, const char * str)
 
 	if (nb_input_scanned != 3 || session->pos < 0 || session->nb_keys_tried < 0)
 	{
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
 #define SESSION_MIN_NBARG 4
@@ -192,7 +192,7 @@ int ac_session_set_amount_arguments(struct session * session, const char * str)
 {
 	if (session == NULL || str == NULL)
 	{
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 	// Parse amount of arguments
@@ -204,20 +204,21 @@ int ac_session_set_amount_arguments(struct session * session, const char * str)
 		// - -w
 		// - Wordlist
 		// - capture file
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 	// Allocate memory for all the arguments
 	session->argv = (char **) calloc(session->argc, sizeof(char *));
+	ALLEGE(session->argv != NULL);
 
-	return (session->argv) ? EXIT_SUCCESS : EXIT_FAILURE;
+	return ((session->argv) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 static char * ac_session_getline(FILE * f)
 {
 	if (f == NULL)
 	{
-		return NULL;
+		return (NULL);
 	}
 
 	char * ret = NULL;
@@ -226,10 +227,10 @@ static char * ac_session_getline(FILE * f)
 
 	if (line_len == -1)
 	{
-		return NULL;
+		return (NULL);
 	}
 
-	return ret;
+	return (ret);
 }
 
 /*
@@ -262,25 +263,25 @@ struct session * ac_session_load(const char * filename)
 	// Check if file exists
 	if (filename == NULL || filename[0] == 0)
 	{
-		return NULL;
+		return (NULL);
 	}
 	FILE * f = fopen(filename, "r");
 	if (f == NULL)
 	{
-		return NULL;
+		return (NULL);
 	}
 
 	// Check size isn't 0
 	if (fseeko(f, 0, SEEK_END))
 	{
 		fclose(f);
-		return NULL;
+		return (NULL);
 	}
 	uint64_t fsize = ftello(f);
 	if (fsize == 0)
 	{
 		fclose(f);
-		return NULL;
+		return (NULL);
 	}
 	rewind(f);
 
@@ -289,12 +290,13 @@ struct session * ac_session_load(const char * filename)
 	if (ret == NULL)
 	{
 		fclose(f);
-		return NULL;
+		return (NULL);
 	}
 
 	// Initialize
 	ac_session_init(ret);
 	ret->filename = strdup(filename);
+	ALLEGE(ret->filename != NULL);
 
 	char * line;
 	int line_nr = 0;
@@ -351,7 +353,7 @@ struct session * ac_session_load(const char * filename)
 		{
 			fclose(f);
 			ac_session_free(&ret);
-			return NULL;
+			return (NULL);
 		}
 
 		++line_nr;
@@ -361,10 +363,10 @@ struct session * ac_session_load(const char * filename)
 	if (line_nr < SESSION_ARGUMENTS_LINE + 1)
 	{
 		ac_session_free(&ret);
-		return NULL;
+		return (NULL);
 	}
 
-	return ret;
+	return (ret);
 }
 
 // Two arguments will be ignored: Session creation parameter and its argument
@@ -375,7 +377,7 @@ ac_session_from_argv(const int argc, char ** argv, const char * filename)
 	if (filename == NULL || filename[0] == 0 || argc <= 3 || argv == NULL)
 	{
 		// If it only has this parameter, then there is something wrong
-		return NULL;
+		return (NULL);
 	}
 
 	// Check if the file exists and create it if it doesn't
@@ -389,14 +391,14 @@ ac_session_from_argv(const int argc, char ** argv, const char * filename)
 	{
 		// Not overwriting
 		fprintf(stderr, "Session file already exists: %s\n", filename);
-		return NULL;
+		return (NULL);
 	}
 
 	// Initialize structure
 	struct session * ret = ac_session_new();
 	if (ret == NULL)
 	{
-		return NULL;
+		return (NULL);
 	}
 	ac_session_init(ret);
 
@@ -405,16 +407,18 @@ ac_session_from_argv(const int argc, char ** argv, const char * filename)
 
 	// Copy filename
 	ret->filename = strdup(filename);
+	ALLEGE(ret->filename != NULL);
 
 	// Copy argc and argv, except the 2 specifying session filename location
 	ret->argv
 		= (char **) calloc(argc - AMOUNT_ARGUMENTS_IGNORE, sizeof(char *));
+	ALLEGE(ret->argv != NULL);
 
 	// Check values are properly set
 	if (ret->filename == NULL || ret->working_dir == NULL || ret->argv == NULL)
 	{
 		ac_session_free(&ret);
-		return NULL;
+		return (NULL);
 	}
 
 	// Copy all the arguments
@@ -435,14 +439,14 @@ ac_session_from_argv(const int argc, char ** argv, const char * filename)
 		if (ret->argv[ret->argc] == NULL)
 		{
 			ac_session_free(&ret);
-			return NULL;
+			return (NULL);
 		}
 
 		// Increment count
 		ret->argc++;
 	}
 
-	return ret;
+	return (ret);
 }
 
 int ac_session_save(struct session * s,
@@ -453,19 +457,19 @@ int ac_session_save(struct session * s,
 		|| s->argc == 0
 		|| s->argv == NULL)
 	{
-		return -1;
+		return (-1);
 	}
 
 	// Update amount of keys tried in structure
 	s->nb_keys_tried = nb_keys_tried;
 
 	// Open file for writing
-	pthread_mutex_lock(&(s->mutex));
+	ALLEGE(pthread_mutex_lock(&(s->mutex)) == 0);
 	FILE * f = fopen(s->filename, "w");
 	if (f == NULL)
 	{
-		pthread_mutex_unlock(&(s->mutex));
-		return -1;
+		ALLEGE(pthread_mutex_unlock(&(s->mutex)) == 0);
+		return (-1);
 	}
 
 	// Update position in wordlist
@@ -489,7 +493,7 @@ int ac_session_save(struct session * s,
 		fprintf(f, "%s\n", s->argv[i]);
 	}
 	fclose(f);
-	pthread_mutex_unlock(&(s->mutex));
+	ALLEGE(pthread_mutex_unlock(&(s->mutex)) == 0);
 
-	return 0;
+	return (0);
 }

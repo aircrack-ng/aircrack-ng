@@ -56,6 +56,7 @@
 #include <err.h>
 #include <limits.h>
 
+#include "defs.h"
 #include "aircrack-osdep/osdep.h"
 #include "pcap.h"
 #include "aircrack-ptw-lib.h"
@@ -107,7 +108,7 @@ struct prga_info
 	unsigned char pi_iv[3];
 };
 
-struct wstate
+static struct wstate
 {
 	int ws_state;
 	struct timeval ws_arpsend;
@@ -166,13 +167,9 @@ struct wstate
 
 #define KEYHSBYTES PTW_KEYHSBYTES
 
-int PTW_DEFAULTWEIGHT[1] = {256};
-int PTW_DEFAULTBF[PTW_KEYHSBYTES]
+static int PTW_DEFAULTBF[PTW_KEYHSBYTES]
 	= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-struct timeval t_begin; /* time at start of attack      */
-struct timeval t_stats; /* time since last update       */
 
 static void cleanup(int x);
 void show_wep_stats(int B,
@@ -193,91 +190,21 @@ void show_wep_stats(int B,
 					int prod,
 					int keylimit)
 {
-	float delta;
-	struct winsize ws;
-	int i, et_h, et_m, et_s;
-	static int is_cleared = 0;
-
-	(void) B;
-	(void) force;
-	(void) table;
-	(void) choices;
-	(void) depth;
-	(void) prod;
-	(void) keylimit;
-
-	(void) delta;
-	(void) ws;
-	(void) i;
-	(void) et_h;
-	(void) et_m;
-	(void) et_s;
-	(void) is_cleared;
-
-	return;
-	/*
-	if( ioctl( 0, TIOCGWINSZ, &ws ) < 0 )
-	{
-		ws.ws_row = 25;
-		ws.ws_col = 80;
-	}
-
-	if( (chrono( &t_stats, 0 ) < 1.51) && force == 0 )
-		return;
-
-	chrono( &t_stats, 1 );
-
-	delta = chrono( &t_begin, 0 );
-
-	et_h =   delta / 3600;
-	et_m = ( delta - et_h * 3600 ) / 60;
-	et_s =   delta - et_h * 3600 - et_m * 60;
-
-	if( is_cleared == 0 )
-	{
-		is_cleared++;
-
-		printf( "\33[2J" );
-	}
-
-	if(table)
-		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %d/%d keys\33[K",
-				(ws.ws_col - 44) / 2, et_h, et_m, et_s, prod, keylimit );
-
-	printf( "\33[7;4HKB    depth   byte(vote)\n" );
-
-	for( i = 0; i <= B; i++ )
-	{
-		int j, k = ( ws.ws_col - 20 ) / 9;
-
-		if(table)
-			printf( "   %2d  %3d/%3d   ",
-					i, depth[i], choices[i] );
-
-		if(table)
-		{
-			for( j = depth[i]; j < k + depth[i]; j++ )
-			{
-				if( j >= 256 ) break;
-
-				printf( "%02X(%4d) ",  table[i][j].b,
-						table[i][j].votes );
-			}
-		}
-		printf( "\n" );
-	}
-
-//    if( B < opt.keylen - 1 )
-//        printf( "\33[J" );
-
-	printf( "\n" );
-	*/
+	UNUSED_PARAM(B);
+	UNUSED_PARAM(force);
+	UNUSED_PARAM(table);
+	UNUSED_PARAM(choices);
+	UNUSED_PARAM(depth);
+	UNUSED_PARAM(prod);
+	UNUSED_PARAM(keylimit);
 }
 
-static struct wstate * get_ws(void) { return &_wstate; }
+static inline struct wstate * get_ws(void) { return &_wstate; }
 
 static void time_print(char * fmt, ...)
 {
+	REQUIRE(fmt != NULL);
+
 	va_list ap;
 	char lame[1024];
 	time_t tt;
@@ -292,14 +219,14 @@ static void time_print(char * fmt, ...)
 	if (tt == (time_t) -1)
 	{
 		perror("time()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	t = localtime(&tt);
 	if (!t)
 	{
 		perror("localtime()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	printf("[%.2d:%.2d:%.2d] %s", t->tm_hour, t->tm_min, t->tm_sec, lame);
@@ -307,6 +234,8 @@ static void time_print(char * fmt, ...)
 
 static void check_key(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	char buf[1024];
 	int fd;
 	int rd;
@@ -323,7 +252,7 @@ static void check_key(struct wstate * ws)
 	if (rd == -1)
 	{
 		perror("read()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	buf[rd] = 0;
@@ -336,18 +265,20 @@ static void check_key(struct wstate * ws)
 	if (gettimeofday(&now, NULL) == -1)
 	{
 		perror("gettimeofday()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	printf("Owned in %.02f minutes\n",
 		   ((double) now.tv_sec - ws->ws_real_start.tv_sec) / 60.0);
 
 	cleanup(0);
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
 static void kill_crack(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	if (ws->ws_crack_pid == 0) return;
 
 	printf("\n");
@@ -370,14 +301,14 @@ static void kill_crack(struct wstate * ws)
 
 static void cleanup(int x)
 {
+	UNUSED_PARAM(x);
+
 	struct wstate * ws = get_ws();
+
+	ALLEGE(ws != NULL);
 
 	printf("\n");
 	time_print("Dying...\n");
-
-	if (x)
-	{
-	} /* XXX unused */
 
 	if (ws->ws_fd) close(ws->ws_fd);
 
@@ -387,11 +318,13 @@ static void cleanup(int x)
 
 	if (ws->ws_ssid) free(ws->ws_ssid);
 
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
 static void set_chan(struct wstate * ws, int c)
 {
+	REQUIRE(ws != NULL);
+
 	if (c == ws->ws_chan) return;
 
 	if (wi_set_channel(ws->ws_wi, c)) err(1, "wi_set_channel()");
@@ -401,6 +334,9 @@ static void set_chan(struct wstate * ws, int c)
 
 static void hexdump(unsigned char * ptr, int len)
 {
+	REQUIRE(ptr != NULL);
+	REQUIRE(len >= 0);
+
 	while (len > 0)
 	{
 		printf("%.2X ", *ptr);
@@ -412,6 +348,8 @@ static void hexdump(unsigned char * ptr, int len)
 
 static char * mac2str(unsigned char * mac)
 {
+	REQUIRE(mac != NULL);
+
 	static char ret[6 * 3];
 
 	snprintf(ret,
@@ -424,19 +362,17 @@ static char * mac2str(unsigned char * mac)
 			 mac[4],
 			 mac[5]);
 
-	return ret;
+	return (ret);
 }
 
 static void inject(struct wif * wi, void * buf, int len)
 {
-	int rc;
-
-	rc = wi_write(wi, buf, len, NULL);
+	int rc = wi_write(wi, buf, len, NULL);
 
 	if (rc == -1)
 	{
 		perror("writev()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	if (rc != len)
 	{
@@ -444,12 +380,14 @@ static void inject(struct wif * wi, void * buf, int len)
 				   "instead of %d).\n",
 				   rc,
 				   len);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 }
 
 static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 {
+	REQUIRE(ws != NULL);
+
 	static unsigned char * lame = 0;
 	static int lamelen = 0;
 	static int lastlen = 0;
@@ -469,18 +407,13 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 		{
 			time_print("ERROR Max retransmists for (%d bytes):\n", lastlen);
 			hexdump(&lame[0], lastlen);
-#if 0
-			txstate.waiting_ack = 0;
-			return;
-#endif
 		}
 		len = lastlen;
-		//		printf("Warning doing a retransmit...\n");
 	}
 	// normal tx
 	else
 	{
-		assert(!ws->ws_waiting_ack);
+		ALLEGE(ws->ws_waiting_ack == 0);
 
 		if (len > lamelen)
 		{
@@ -490,7 +423,7 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 			if (!lame)
 			{
 				perror("malloc()");
-				exit(1);
+				exit(EXIT_FAILURE);
 			}
 
 			lamelen = len;
@@ -509,13 +442,8 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 	if (gettimeofday(&ws->ws_tsent, NULL) == -1)
 	{
 		perror("gettimeofday()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
-
-#if 0
-	printf("Wrote frame at %lu.%lu\n",
-	       txstate.tsent.tv_sec, txstate.tsent.tv_usec);
-#endif
 }
 
 /* Expects host-endian arguments, but returns little-endian seq. */
@@ -526,18 +454,21 @@ static unsigned short fnseq(unsigned short fn, unsigned short seq)
 	if (fn > 15)
 	{
 		time_print("too many fragments (%d)\n", fn);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	r = fn;
 
 	r |= ((seq % 4096) << IEEE80211_SEQ_SEQ_SHIFT);
 
-	return htole16(r);
+	return (htole16(r));
 }
 
 static void fill_basic(struct wstate * ws, struct ieee80211_frame * wh)
 {
+	REQUIRE(ws != NULL);
+	REQUIRE(wh != NULL);
+
 	unsigned short * sp;
 
 	memcpy(wh->i_addr1, ws->ws_bss, 6);
@@ -553,6 +484,8 @@ static void fill_basic(struct wstate * ws, struct ieee80211_frame * wh)
 
 static void send_assoc(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	unsigned char buf[128];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * body;
@@ -599,11 +532,13 @@ static void send_assoc(struct wstate * ws)
 
 static void wepify(struct wstate * ws, unsigned char * body, int dlen)
 {
+	REQUIRE(ws != NULL);
+	REQUIRE(dlen + 4 <= ws->ws_pi.pi_len);
+	REQUIRE(body != NULL);
+
 	uLong crc;
 	unsigned int * pcrc;
 	int i;
-
-	assert(dlen + 4 <= ws->ws_pi.pi_len);
 
 	// iv
 	memcpy(body, ws->ws_pi.pi_iv, 3);
@@ -639,6 +574,8 @@ static void send_auth(struct wstate * ws)
 static int
 get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(wh != NULL);
+
 	unsigned char * ptr;
 	int x;
 	int gots = 0, gotc = 0;
@@ -646,7 +583,7 @@ get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 	if (len <= (int) sizeof(*wh))
 	{
 		time_print("Warning: short packet in get_victim_ssid()\n");
-		return 0;
+		return (0);
 	}
 
 	ptr = (unsigned char *) wh + sizeof(*wh);
@@ -655,13 +592,15 @@ get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 	// only wep baby
 	if (!(IEEE80211_BEACON_CAPABILITY(ptr) & IEEE80211_CAPINFO_PRIVACY))
 	{
-		return 0;
+		return (0);
 	}
+
+	REQUIRE(ws != NULL);
 
 	// we want a specific victim
 	if (ws->ws_victim_mac)
 	{
-		if (memcmp(wh->i_addr3, ws->ws_victim_mac, 6) != 0) return 0;
+		if (memcmp(wh->i_addr3, ws->ws_victim_mac, 6) != 0) return (0);
 	}
 
 	// beacon header
@@ -669,7 +608,7 @@ get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 	if (len <= x)
 	{
 		time_print("Warning short.\n");
-		return 0;
+		return (0);
 	}
 
 	ptr += x;
@@ -689,7 +628,7 @@ get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 		if (len < elen)
 		{
 			time_print("Warning short....\n");
-			return 0;
+			return (0);
 		}
 
 		// ssid
@@ -701,7 +640,7 @@ get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 			if (!ws->ws_ssid)
 			{
 				perror("malloc()");
-				exit(1);
+				exit(EXIT_FAILURE);
 			}
 
 			memcpy(ws->ws_ssid, ptr, elen);
@@ -714,7 +653,7 @@ get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 			if (elen != 1)
 			{
 				time_print("Warning len of chan not 1\n");
-				return 0;
+				return (0);
 			}
 
 			ws->ws_apchan = *ptr;
@@ -734,21 +673,22 @@ get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 				   ws->ws_ssid,
 				   mac2str(ws->ws_bss),
 				   ws->ws_apchan);
-		return 1;
+		return (1);
 	}
-	return 0;
+
+	return (0);
 }
 
 static void send_ack(struct wstate * ws)
 {
-	if (ws)
-	{
-	} /* XXX unused */
+	UNUSED_PARAM(ws);
 	/* firmware acks */
 }
 
 static void do_llc(unsigned char * buf, unsigned short type)
 {
+	REQUIRE(buf != NULL);
+
 	struct llc * h = (struct llc *) buf;
 
 	memset(h, 0, sizeof(*h));
@@ -764,6 +704,8 @@ static void set_prga(struct wstate * ws,
 					 unsigned char * clear,
 					 int len)
 {
+	REQUIRE(ws != NULL);
+
 	int i;
 	int fd;
 
@@ -773,7 +715,7 @@ static void set_prga(struct wstate * ws,
 	if (!ws->ws_pi.pi_prga)
 	{
 		perror("malloc()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	ws->ws_pi.pi_len = len;
@@ -799,31 +741,31 @@ static void set_prga(struct wstate * ws,
 	if (fd == -1)
 	{
 		perror("open()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	i = write(fd, ws->ws_pi.pi_iv, 3);
 	if (i == -1)
 	{
 		perror("write()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	if (i != 3)
 	{
 		printf("Wrote %d out of %d\n", i, 3);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	i = write(fd, ws->ws_pi.pi_prga, ws->ws_pi.pi_len);
 	if (i == -1)
 	{
 		perror("write()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	if (i != ws->ws_pi.pi_len)
 	{
 		printf("Wrote %d out of %d\n", i, ws->ws_pi.pi_len);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	close(fd);
@@ -833,6 +775,8 @@ static void proc_ctl(struct wstate * ws, int stype)
 {
 	if (stype == IEEE80211_FC0_SUBTYPE_ACK)
 	{
+		REQUIRE(ws != NULL);
+
 		ws->ws_waiting_ack = 0;
 		return;
 	}
@@ -856,6 +800,9 @@ static void proc_mgt(struct wstate * ws, int stype, unsigned char * body)
 
 	if (stype == IEEE80211_FC0_SUBTYPE_DEAUTH)
 	{
+		REQUIRE(ws != NULL);
+		REQUIRE(body != NULL);
+
 		rc = (unsigned short *) body;
 
 		printf("\n");
@@ -865,6 +812,9 @@ static void proc_mgt(struct wstate * ws, int stype, unsigned char * body)
 	}
 	else if (stype == IEEE80211_FC0_SUBTYPE_AUTH)
 	{
+		REQUIRE(ws != NULL);
+		REQUIRE(body != NULL);
+
 		sc = (unsigned short *) body;
 
 		if (ws->ws_state != SENDING_AUTH) /* We didn't ask for it. */
@@ -873,7 +823,7 @@ static void proc_mgt(struct wstate * ws, int stype, unsigned char * body)
 		if (le16toh(*sc) != 0)
 		{
 			time_print("Warning got auth algo=%x\n", le16toh(*sc));
-			exit(1);
+			exit(EXIT_FAILURE);
 			return;
 		}
 		sc++;
@@ -901,11 +851,14 @@ static void proc_mgt(struct wstate * ws, int stype, unsigned char * body)
 		else
 		{
 			time_print("Got auth %x\n", *sc);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 	else if (stype == IEEE80211_FC0_SUBTYPE_ASSOC_RESP)
 	{
+		REQUIRE(ws != NULL);
+		REQUIRE(body != NULL);
+
 		sc = (unsigned short *) body;
 		sc++; // cap
 
@@ -930,7 +883,7 @@ static void proc_mgt(struct wstate * ws, int stype, unsigned char * body)
 		else
 		{
 			time_print("got assoc %d\n", le16toh(*sc));
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 	else if (stype == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
@@ -939,11 +892,13 @@ static void proc_mgt(struct wstate * ws, int stype, unsigned char * body)
 	}
 
 	time_print("\nGOT MAN=%x\n", stype);
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 static void proc_data(struct wstate * ws, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(wh != NULL);
+
 	int dlen;
 	dlen = len - sizeof(*wh) - 4 - 4;
 
@@ -955,7 +910,8 @@ static void proc_data(struct wstate * ws, struct ieee80211_frame * wh, int len)
 		return;
 	}
 
-	assert(wh->i_fc[1] & IEEE80211_FC1_WEP);
+	ALLEGE(wh->i_fc[1] & IEEE80211_FC1_WEP);
+	ALLEGE(ws != NULL);
 
 	if ((dlen == 36 || dlen == PADDED_ARPLEN)
 		&& ws->ws_rtrmac == (unsigned char *) 1)
@@ -964,21 +920,21 @@ static void proc_data(struct wstate * ws, struct ieee80211_frame * wh, int len)
 		if (!ws->ws_rtrmac)
 		{
 			perror("malloc()");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 
-		assert(ws->ws_rtrmac > (unsigned char *) 1);
+		ALLEGE(ws->ws_rtrmac > (unsigned char *) 1);
 
 		memcpy(ws->ws_rtrmac, wh->i_addr3, 6);
 		time_print("Got arp reply from (%s)\n", mac2str(ws->ws_rtrmac));
-
-		return;
 	}
 }
 
 static void
 stuff_for_us(struct wstate * ws, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(wh != NULL);
+
 	int type, stype;
 	unsigned char * body = (unsigned char *) (wh + 1);
 
@@ -1005,16 +961,13 @@ stuff_for_us(struct wstate * ws, struct ieee80211_frame * wh, int len)
 		proc_data(ws, wh, len);
 		return;
 	}
-
-#if 0
-	printf ("Got frame for us (type=%x stype=%x) from=(%s) len=%d\n",
-		type, stype, mac2str(wh->i_addr2), len);
-#endif
 }
 
 static void
 decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 {
+	REQUIRE(wh != NULL);
+
 	unsigned char * body;
 	int bodylen;
 	unsigned char clear[36];
@@ -1039,19 +992,21 @@ decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 
 	memcpy(ptr, wh->i_addr3, 6);
 
+	REQUIRE(ws != NULL);
+
 	bodylen = rd - sizeof(*wh) - 4 - 4;
 	ws->ws_clen = bodylen;
 	ws->ws_cipher = (unsigned char *) malloc(ws->ws_clen);
 	if (!ws->ws_cipher)
 	{
 		perror("malloc()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	ws->ws_dpi.pi_prga = (unsigned char *) malloc(ws->ws_clen);
 	if (!ws->ws_dpi.pi_prga)
 	{
 		perror("malloc()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	memcpy(ws->ws_cipher, &body[4], ws->ws_clen);
@@ -1069,6 +1024,8 @@ decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 
 static void log_wep(struct wstate * ws, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(wh != NULL);
+
 	int rd;
 	struct pcap_pkthdr pkh;
 	struct timeval tv;
@@ -1086,20 +1043,15 @@ static void log_wep(struct wstate * ws, struct ieee80211_frame * wh, int len)
 	if (rd == -1)
 	{
 		perror("write()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	if (rd != len)
 	{
 		time_print("short write %d out of %d\n", rd, len);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
-#if 0
-	if (fsync(ws->ws_fd) == -1) {
-		perror("fsync()");
-		exit(1);
-	}
-#endif
+	REQUIRE(ws != NULL);
 
 	memcpy(ws->ws_iv, body, 3);
 	ws->ws_packets++;
@@ -1108,6 +1060,8 @@ static void log_wep(struct wstate * ws, struct ieee80211_frame * wh, int len)
 static void
 add_keystream(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 {
+	REQUIRE(wh != NULL);
+
 	unsigned char clear[1024];
 	int dlen = rd - sizeof(struct ieee80211_frame) - 4 - 4;
 	int clearsize;
@@ -1121,11 +1075,16 @@ add_keystream(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 	{
 		for (i = 0; i < clearsize; i++) clear[i + (32 * j)] ^= body[4 + i];
 	}
+
+	REQUIRE(ws != NULL);
+
 	PTW_addsession(ws->ws_ptw, body, clear, weight, k);
 }
 
 static void got_ip(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	unsigned char ip[4];
 	int i;
 	struct in_addr * in = (struct in_addr *) ip;
@@ -1135,12 +1094,12 @@ static void got_ip(struct wstate * ws)
 		ip[i]
 			= ws->ws_cipher[8 + 8 + 6 + i] ^ ws->ws_dpi.pi_prga[8 + 8 + 6 + i];
 
-	assert(!ws->ws_netip);
+	INVARIANT(ws->ws_netip == NULL);
 	ws->ws_netip = malloc(16);
 	if (!ws->ws_netip)
 	{
 		perror("malloc()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	memset(ws->ws_netip, 0, 16);
@@ -1151,11 +1110,11 @@ static void got_ip(struct wstate * ws)
 	strncpy(ws->ws_myip, ws->ws_netip, sizeof(ws->ws_myip) - 1);
 
 	ptr = strchr(ws->ws_myip, '.');
-	assert(ptr);
+	ALLEGE(ptr);
 	ptr = strchr(ptr + 1, '.');
-	assert(ptr);
+	ALLEGE(ptr);
 	ptr = strchr(ptr + 1, '.');
-	assert(ptr);
+	ALLEGE(ptr);
 	strncpy(ptr + 1, "123", 4);
 
 	time_print("My IP=(%s)\n", ws->ws_myip);
@@ -1174,14 +1133,17 @@ static void check_relay(struct wstate * ws,
 						unsigned char * body,
 						int dlen)
 {
+	REQUIRE(ws != NULL);
+	REQUIRE(wh != NULL);
+
 	// looks like it...
 	if ((wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 		&& (memcmp(wh->i_addr3, ws->ws_mymac, 6) == 0)
 		&& (memcmp(wh->i_addr1, "\xff\xff\xff\xff\xff\xff", 6) == 0)
 		&& dlen == ws->ws_fs.fs_len)
 	{
+		REQUIRE(body != NULL);
 
-		//		printf("I fink AP relayed it...\n");
 		set_prga(ws, body, &body[4], ws->ws_fs.fs_data, dlen);
 		free(ws->ws_fs.fs_data);
 		ws->ws_fs.fs_data = 0;
@@ -1194,6 +1156,7 @@ static void check_relay(struct wstate * ws,
 		&& (memcmp(wh->i_addr1, MCAST_PREF, 5) == 0)
 		&& dlen == 36)
 	{
+		REQUIRE(ws->ws_cipher != NULL);
 
 		unsigned char pr = wh->i_addr1[5];
 
@@ -1215,6 +1178,9 @@ static void check_relay(struct wstate * ws,
 
 static void got_wep(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 {
+	REQUIRE(ws != NULL);
+	REQUIRE(wh != NULL);
+
 	int bodylen;
 	int dlen;
 	unsigned char clear[1024];
@@ -1235,7 +1201,7 @@ static void got_wep(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 		if (body[3] != 0)
 		{
 			time_print("Key index=%x!!\n", body[3]);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		log_wep(ws, wh, rd);
 		add_keystream(ws, wh, rd);
@@ -1268,6 +1234,8 @@ static void got_wep(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 static void
 stuff_for_net(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 {
+	REQUIRE(wh != NULL);
+
 	int type, stype;
 
 	type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
@@ -1275,6 +1243,8 @@ stuff_for_net(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 
 	if (type == IEEE80211_FC0_TYPE_DATA && stype == IEEE80211_FC0_SUBTYPE_DATA)
 	{
+		REQUIRE(ws != NULL);
+
 		int dlen = rd - sizeof(struct ieee80211_frame);
 
 		if (ws->ws_state == SPOOF_MAC)
@@ -1289,7 +1259,7 @@ stuff_for_net(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 				memcpy(mac, wh->i_addr1, 6);
 			}
 			else
-				assert(0);
+				abort();
 
 			if (mac[0] == 0xff || mac[0] == 0x1) return;
 
@@ -1309,6 +1279,9 @@ stuff_for_net(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 
 static void anal(struct wstate * ws, unsigned char * buf, int rd) // yze
 {
+	REQUIRE(ws != NULL);
+	REQUIRE(buf != NULL);
+
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	int type, stype;
 	static int lastseq = -1;
@@ -1319,7 +1292,7 @@ static void anal(struct wstate * ws, unsigned char * buf, int rd) // yze
 	if (rd < 1)
 	{
 		time_print("rd=%d\n", rd);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
@@ -1393,6 +1366,12 @@ static void do_arp(unsigned char * buf,
 				   unsigned char * m2,
 				   char * i2)
 {
+	REQUIRE(buf != NULL);
+	REQUIRE(m1 != NULL);
+	REQUIRE(m2 != NULL);
+	REQUIRE(i1 != NULL);
+	REQUIRE(i2 != NULL);
+
 	struct in_addr sip;
 	struct in_addr dip;
 	struct arphdr * h;
@@ -1420,12 +1399,18 @@ static void do_arp(unsigned char * buf,
 	memcpy(data, m2, 6);
 	data += 6;
 	memcpy(data, &dip, 4);
+#if 0
 	data += 4;
+#endif
 }
 
 static void
 send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 {
+	REQUIRE(ws != NULL);
+	REQUIRE(fs != NULL);
+	REQUIRE(pi != NULL);
+
 	unsigned char buf[4096];
 	struct ieee80211_frame * wh;
 	unsigned char * body;
@@ -1446,7 +1431,7 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 
 	fragsize = fs->fs_data + fs->fs_len - fs->fs_ptr;
 
-	assert(fragsize > 0);
+	ALLEGE(fragsize > 0);
 
 	if ((fragsize + 4) > pi->pi_len)
 	{
@@ -1490,6 +1475,8 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 static void
 prepare_fragstate(struct wstate * ws, struct frag_state * fs, int pad)
 {
+	REQUIRE(fs != NULL);
+
 	fs->fs_waiting_relay = 0;
 	fs->fs_len = 8 + 8 + 20 + pad;
 	fs->fs_data = (unsigned char *) malloc(fs->fs_len);
@@ -1497,8 +1484,10 @@ prepare_fragstate(struct wstate * ws, struct frag_state * fs, int pad)
 	if (!fs->fs_data)
 	{
 		perror("malloc()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
+
+	REQUIRE(ws != NULL);
 
 	fs->fs_ptr = fs->fs_data;
 
@@ -1523,6 +1512,8 @@ prepare_fragstate(struct wstate * ws, struct frag_state * fs, int pad)
 
 static void discover_prga(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	// create packet...
 	if (!ws->ws_fs.fs_data)
 	{
@@ -1546,6 +1537,8 @@ static void discover_prga(struct wstate * ws)
 
 static void decrypt(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	// gotta initiate
 	if (!ws->ws_dfs.fs_data)
 	{
@@ -1572,8 +1565,6 @@ static void decrypt(struct wstate * ws)
 		seq = fnseq(0, ws->ws_psent);
 		ws->ws_dfs.fs_wh.i_seq[0] = (u_int8_t)(seq >> 8);
 		ws->ws_dfs.fs_wh.i_seq[1] = (u_int8_t)(seq % 256);
-		// seq = (unsigned short*) &ws->ws_dfs.fs_wh.i_seq;
-		//*seq = fnseq(0, ws->ws_psent);
 	}
 
 	send_fragment(ws, &ws->ws_dfs, &ws->ws_dpi);
@@ -1619,7 +1610,9 @@ static void send_arp(struct wstate * ws,
 
 static int find_mac(struct wstate * ws)
 {
-	if (!(ws->ws_netip && !ws->ws_rtrmac)) return 0;
+	REQUIRE(ws != NULL);
+
+	if (!(ws->ws_netip && !ws->ws_rtrmac)) return (0);
 
 	if (gettimeofday(&ws->ws_arpsend, NULL) == -1) err(1, "gettimeofday()");
 
@@ -1634,12 +1627,14 @@ static int find_mac(struct wstate * ws)
 	// XXX lame
 	ws->ws_rtrmac = (unsigned char *) 1;
 
-	return 1;
+	return (1);
 }
 
 static int flood(struct wstate * ws)
 {
-	if (!(ws->ws_rtrmac > (unsigned char *) 1 && ws->ws_netip)) return 0;
+	REQUIRE(ws != NULL);
+
+	if (!(ws->ws_rtrmac > (unsigned char *) 1 && ws->ws_netip)) return (0);
 
 	// could ping broadcast....
 	send_arp(ws,
@@ -1649,11 +1644,13 @@ static int flood(struct wstate * ws)
 			 ws->ws_netip,
 			 (unsigned char *) "\x00\x00\x00\x00\x00\x00");
 
-	return 1;
+	return (1);
 }
 
 static void can_write(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	switch (ws->ws_state)
 	{
 		case FOUND_VICTIM:
@@ -1693,12 +1690,14 @@ static void can_write(struct wstate * ws)
 
 static void save_key(unsigned char * key, int len)
 {
+	REQUIRE(key != NULL);
+
 	char tmp[16];
 	char k[64];
 	int fd;
 	int rd;
 
-	assert(len * 3 < (int) sizeof(k));
+	REQUIRE(len * 3 < (int) sizeof(k));
 
 	k[0] = 0;
 	while (len--)
@@ -1728,7 +1727,7 @@ static int do_crack(struct wstate * ws)
 	all = malloc(32 * sizeof(int[256]));
 	if (all == NULL)
 	{
-		return 1;
+		return (1);
 	}
 
 	// initial setup (complete keyspace)
@@ -1740,39 +1739,44 @@ static int do_crack(struct wstate * ws)
 		}
 	}
 
+	REQUIRE(ws != NULL);
+
 	if (PTW_computeKey(ws->ws_ptw, key, 13, KEYLIMIT, PTW_DEFAULTBF, all, 0)
 		== 1)
 	{
 		save_key(key, 13);
 		free(all);
-		return 1;
+		return (1);
 	}
 	if (PTW_computeKey(ws->ws_ptw, key, 5, KEYLIMIT / 10, PTW_DEFAULTBF, all, 0)
 		== 1)
 	{
 		save_key(key, 5);
 		free(all);
-		return 1;
+		return (1);
 	}
 
 	free(all);
-	return 0;
+	return (0);
 }
 
 static void sigchild(int x)
 {
+	UNUSED_PARAM(x);
+
 	struct wstate * ws;
 
-	if (x)
-	{
-	} /* XXX unused */
-
 	ws = get_ws();
+
+	ALLEGE(ws != NULL);
+
 	ws->ws_crack_pid = 0; /* crack done */
 }
 
 static void try_crack(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	if (ws->ws_crack_pid)
 	{
 		printf("\n");
@@ -1797,7 +1801,7 @@ static void try_crack(struct wstate * ws)
 			printf("\n");
 			time_print("Crack unsuccessful\n");
 		}
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	// parent
@@ -1808,10 +1812,13 @@ static void try_crack(struct wstate * ws)
 	ws->ws_wep_thresh += ws->ws_thresh_incr;
 }
 
-static int elapsedd(struct timeval * past, struct timeval * now)
+static inline int elapsedd(struct timeval * past, struct timeval * now)
 {
+	REQUIRE(past != NULL);
+	REQUIRE(now != NULL);
+
 	int el;
-	int inf = 666 * 1000 * 1000;
+	const int inf = 666 * 1000 * 1000;
 
 	el = now->tv_sec - past->tv_sec;
 
@@ -1826,18 +1833,22 @@ static int elapsedd(struct timeval * past, struct timeval * now)
 		el += now->tv_usec;
 	}
 
-	if (el < 0) return inf;
+	if (el < 0) return (inf);
 
-	return el;
+	return (el);
 }
 
-static int read_packet(struct wstate * ws, unsigned char * dst, int len)
+static inline int read_packet(struct wstate * ws, unsigned char * dst, int len)
 {
+	REQUIRE(ws != NULL);
+
 	return wi_read(ws->ws_wi, dst, len, NULL);
 }
 
 static void open_wepfile(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	ws->ws_fd = open(WEP_FILE, O_WRONLY | O_APPEND);
 	if (ws->ws_fd == -1)
 	{
@@ -1882,7 +1893,7 @@ static void load_prga(struct wstate * ws)
 		if (rd == -1)
 		{
 			perror("read()");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		if (rd >= 8)
 		{
@@ -1895,15 +1906,14 @@ static void load_prga(struct wstate * ws)
 
 static void check_relay_timeout(struct wstate * ws, struct timeval * now)
 {
-	int el;
+	REQUIRE(ws != NULL);
 
 	if (!ws->ws_fs.fs_waiting_relay) return;
 
-	el = elapsedd(&ws->ws_fs.fs_last, now);
+	int el = elapsedd(&ws->ws_fs.fs_last, now);
 
 	if (el > (1500 * 1000))
 	{
-		//		printf("\nLAMER timeout\n\n");
 		free(ws->ws_fs.fs_data);
 		ws->ws_fs.fs_data = 0;
 	}
@@ -1911,10 +1921,11 @@ static void check_relay_timeout(struct wstate * ws, struct timeval * now)
 
 static void check_arp_timeout(struct wstate * ws, struct timeval * now)
 {
-	int el;
+	REQUIRE(ws != NULL);
+
 	if (ws->ws_rtrmac != (unsigned char *) 1) return;
 
-	el = elapsedd(&ws->ws_arpsend, now);
+	int el = elapsedd(&ws->ws_arpsend, now);
 	if (el >= (1500 * 1000))
 	{
 		ws->ws_rtrmac = 0;
@@ -1956,7 +1967,7 @@ static void display_status_bar(struct wstate * ws,
 			int pos = ws->ws_dpi.pi_len - 1;
 			unsigned char prga = ws->ws_dpi.pi_prga[pos];
 
-			assert(pos);
+			ALLEGE(pos != 0);
 
 			time_print("Guessing PRGA %.2x (IP byte=%d)    \r",
 					   prga,
@@ -1973,16 +1984,18 @@ static void display_status_bar(struct wstate * ws,
 
 static void check_tx(struct wstate * ws, struct timeval * now)
 {
-	int elapsed;
+	REQUIRE(ws != NULL);
 
 	if (!ws->ws_waiting_ack) return;
 
-	elapsed = elapsedd(&ws->ws_tsent, now);
+	int elapsed = elapsedd(&ws->ws_tsent, now);
 	if (elapsed >= (int) ws->ws_ack_timeout) send_frame(ws, NULL, -1);
 }
 
 static void check_hop(struct wstate * ws, struct timeval * now)
 {
+	REQUIRE(ws != NULL);
+
 	int elapsed;
 	int chan = ws->ws_chan;
 
@@ -1999,6 +2012,8 @@ static void check_hop(struct wstate * ws, struct timeval * now)
 
 static void post_input(struct wstate * ws, struct timeval * now)
 {
+	REQUIRE(ws != NULL);
+
 	int el;
 
 	// check state and what we do next.
@@ -2036,7 +2051,7 @@ static void do_input(struct wstate * ws)
 	if (rd == -1)
 	{
 		perror("read()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	// input
@@ -2045,6 +2060,8 @@ static void do_input(struct wstate * ws)
 
 static void own(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	int rd;
 	fd_set rfd;
 	struct timeval tv;
@@ -2065,17 +2082,17 @@ static void own(struct wstate * ws)
 	if (signal(SIGINT, &cleanup) == SIG_ERR)
 	{
 		perror("signal()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	if (signal(SIGTERM, &cleanup) == SIG_ERR)
 	{
 		perror("signal()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	if (signal(SIGCHLD, &sigchild) == SIG_ERR)
 	{
 		perror("signal()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	time_print("Looking for a victim...\n");
@@ -2083,7 +2100,7 @@ static void own(struct wstate * ws)
 	if (gettimeofday(&ws->ws_lasthop, NULL) == -1)
 	{
 		perror("gettimeofday()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	memcpy(&ws->ws_last_wcount, &ws->ws_lasthop, sizeof(ws->ws_last_wcount));
 	memcpy(&last_status, &ws->ws_lasthop, sizeof(last_status));
@@ -2093,7 +2110,7 @@ static void own(struct wstate * ws)
 		if (gettimeofday(&now, NULL) == -1)
 		{
 			perror("gettimeofday()");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 
 		/* check for relay timeout */
@@ -2131,7 +2148,7 @@ static void own(struct wstate * ws)
 					break;
 				default:
 					perror("select()");
-					exit(1);
+					exit(EXIT_FAILURE);
 					break;
 			}
 		}
@@ -2152,6 +2169,8 @@ static void own(struct wstate * ws)
 
 static void start(struct wstate * ws, char * dev)
 {
+	REQUIRE(ws != NULL);
+
 	struct wif * wi;
 
 	ws->ws_wi = wi = wi_open(dev);
@@ -2177,9 +2196,8 @@ static void start(struct wstate * ws, char * dev)
 
 static void usage(char * pname)
 {
-	if (pname)
-	{
-	}
+	UNUSED_PARAM(pname);
+
 	char * version_info
 		= getVersion("Wesside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
@@ -2204,11 +2222,14 @@ static void usage(char * pname)
 		   "\n",
 		   version_info);
 	free(version_info);
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
-static void str2mac(unsigned char * dst, char * mac)
+static inline void str2mac(unsigned char * dst, char * mac)
 {
+	REQUIRE(dst != NULL);
+	REQUIRE(mac != NULL);
+
 	unsigned int macf[6];
 	int i;
 
@@ -2224,7 +2245,7 @@ static void str2mac(unsigned char * dst, char * mac)
 	{
 
 		printf("can't parse mac %s\n", mac);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	for (i = 0; i < 6; i++) *dst++ = (unsigned char) macf[i];
@@ -2232,6 +2253,8 @@ static void str2mac(unsigned char * dst, char * mac)
 
 static void init_defaults(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	memset(ws, 0, sizeof(*ws));
 
 	ws->ws_state = FIND_VICTIM;
@@ -2252,13 +2275,13 @@ int main(int argc, char * argv[])
 	unsigned char vic[6];
 	char * dev = "IdidNotSpecifyAnInterface";
 
-	assert(ws);
+	ALLEGE(ws != NULL);
 	init_defaults(ws);
 
 	if (gettimeofday(&ws->ws_real_start, NULL) == -1)
 	{
 		perror("gettimeofday()");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	while ((ch = getopt(argc, argv, "hi:m:a:n:cp:v:t:f:k:")) != -1)
@@ -2320,5 +2343,5 @@ int main(int argc, char * argv[])
 		usage(argv[0]);
 
 	cleanup(0);
-	exit(0);
+	exit(EXIT_SUCCESS);
 }

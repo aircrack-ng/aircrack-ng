@@ -78,6 +78,7 @@ EXPORT int net_send(int s, int command, void * arg, int len)
 	pnh->nh_type = command;
 	pnh->nh_len = htonl(len);
 
+	assert(arg != NULL);
 	memcpy(pktbuf + sizeof(struct net_hdr), arg, len);
 
 	for (;;)
@@ -305,7 +306,7 @@ net_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 	if (ri)
 	{
 		// re-assemble 64-bit integer
-		ri->ri_mactime = __be64_to_cpu(((uint64_t) buf[0] << 32 || buf[1]));
+		ri->ri_mactime = __be64_to_cpu(((uint64_t) buf[0] << 32u | buf[1]));
 		ri->ri_power = __be32_to_cpu(buf[2]);
 		ri->ri_noise = __be32_to_cpu(buf[3]);
 		ri->ri_channel = __be32_to_cpu(buf[4]);

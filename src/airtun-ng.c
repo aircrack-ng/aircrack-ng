@@ -58,6 +58,7 @@
 
 #include <fcntl.h>
 
+#include "defs.h"
 #include "version.h"
 #include "pcap.h"
 #include "crypto.h"
@@ -75,7 +76,7 @@ static struct wif *_wi_in, *_wi_out;
 // received, they will be removed
 #define FRAG_TIMEOUT (1000000 * 60)
 
-char usage[]
+static const char usage[]
 	= "\n"
 	  "  %s - (C) 2006-2018 Thomas d'Otreppe\n"
 	  "  Original work: Martin Beck\n"
@@ -187,36 +188,30 @@ struct net_entry
 	struct net_entry * next;
 };
 
-unsigned long nb_pkt_sent;
-unsigned char h80211[4096];
-unsigned char tmpbuf[4096];
-unsigned char srcbuf[4096];
-char strbuf[512];
-struct net_entry * nets = NULL;
-struct WPA_ST_info * st_1st = NULL;
+static unsigned long nb_pkt_sent;
+static unsigned char h80211[4096];
+static unsigned char tmpbuf[4096];
+static struct net_entry * nets = NULL;
+static struct WPA_ST_info * st_1st = NULL;
 
-int ctrl_c, alarmed;
-
-char * iwpriv;
-
-pFrag_t rFragment;
+static pFrag_t rFragment;
 
 static struct net_entry * find_entry(unsigned char * adress)
 {
 	struct net_entry * cur = nets;
 
-	if (cur == NULL) return NULL;
+	if (cur == NULL) return (NULL);
 
 	do
 	{
 		if (!memcmp(cur->addr, adress, 6))
 		{
-			return cur;
+			return (cur);
 		}
 		cur = cur->next;
 	} while (cur != nets);
 
-	return NULL;
+	return (NULL);
 }
 
 static void set_entry(unsigned char * adress, unsigned char network)
@@ -226,7 +221,9 @@ static void set_entry(unsigned char * adress, unsigned char network)
 	if (nets == NULL)
 	{
 		nets = malloc(sizeof(struct net_entry));
+		ALLEGE(nets != NULL);
 		nets->addr = malloc(6 * sizeof(unsigned char));
+		ALLEGE(nets->addr != NULL);
 		nets->next = nets;
 		cur = nets;
 	}
@@ -236,7 +233,9 @@ static void set_entry(unsigned char * adress, unsigned char network)
 		if (cur == NULL)
 		{
 			cur = malloc(sizeof(struct net_entry));
+			ALLEGE(cur != NULL);
 			cur->addr = malloc(6 * sizeof(unsigned char));
+			ALLEGE(cur->addr != NULL);
 			cur->next = nets->next;
 			nets->next = cur;
 		}
@@ -252,16 +251,18 @@ static int get_entry(unsigned char * adress)
 
 	if (cur == NULL)
 	{
-		return -1;
+		return (-1);
 	}
 	else
 	{
-		return cur->net;
+		return (cur->net);
 	}
 }
 
 static void swap_ra_ta(unsigned char * h80211)
 {
+	REQUIRE(h80211 != NULL);
+
 	unsigned char mbuf[6];
 
 	memcpy(mbuf, h80211 + 4, 6);
@@ -276,13 +277,13 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 	unsigned char frame[4096];
 	unsigned char K[128];
 
-	if (packet == NULL) return -1;
+	if (packet == NULL) return (-1);
 
-	if (smac == NULL) return -1;
+	if (smac == NULL) return (-1);
 
-	if (len <= 32 || len > 2000) return -1;
+	if (len <= 32 || len > 2000) return (-1);
 
-	if (rFragment == NULL) return -1;
+	if (rFragment == NULL) return (-1);
 
 	memset(frame, 0, 4096);
 	memcpy(frame, packet, len);
@@ -292,9 +293,9 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 	seq = (frame[22] >> 4) | (frame[23] << 4);
 	wep = (frame[1] & 0x40) >> 6;
 
-	if (frag < 0 || frag > 15) return -1;
+	if (frag < 0 || frag > 15) return (-1);
 
-	if (wep && opt.crypt != CRYPT_WEP) return -1;
+	if (wep && opt.crypt != CRYPT_WEP) return (-1);
 
 	if (wep)
 	{
@@ -306,7 +307,7 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 			&& (len - z - 4 > 8))
 		{
 			printf("error decrypting... len: %d\n", len - z - 4);
-			return -1;
+			return (-1);
 		}
 
 		/* WEP data packet was successfully decrypted, *
@@ -326,28 +327,26 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 			&& (wep == cur->wep))
 		{
 			// entry already exists, update
-			//             printf("got seq %d, added fragment %d \n", seq,
-			//             frag);
-			if (cur->fragment[frag] != NULL) return 0;
+			if (cur->fragment[frag] != NULL) return (0);
 
 			if ((frame[1] & 0x04) == 0)
 			{
-				//                 printf("max fragnum is %d\n", frag);
 				cur->fragnum = frag; // no higher frag number possible
 			}
 			cur->fragment[frag] = (unsigned char *) malloc(len - z);
+			ALLEGE(cur->fragment[frag] != NULL);
 			memcpy(cur->fragment[frag], frame + z, len - z);
 			cur->fragmentlen[frag] = len - z;
 			gettimeofday(&cur->access, NULL);
 
-			return 0;
+			return (0);
 		}
 	}
 
-	//     printf("new seq %d, added fragment %d \n", seq, frag);
 	// new entry, first fragment received
 	// alloc mem
 	cur->next = (pFrag_t) malloc(sizeof(struct Fragment_list));
+	ALLEGE(cur->next != NULL);
 	cur = cur->next;
 
 	for (i = 0; i < 16; i++)
@@ -358,7 +357,6 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 
 	if ((frame[1] & 0x04) == 0)
 	{
-		//         printf("max fragnum is %d\n", frag);
 		cur->fragnum = frag; // no higher frag number possible
 	}
 	else
@@ -373,9 +371,11 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 	memcpy(cur->source, smac, 6);
 	cur->sequence = seq;
 	cur->header = (unsigned char *) malloc(z);
+	ALLEGE(cur->header != NULL);
 	memcpy(cur->header, frame, z);
 	cur->headerlen = z;
 	cur->fragment[frag] = (unsigned char *) malloc(len - z);
+	ALLEGE(cur->fragment[frag] != NULL);
 	memcpy(cur->fragment[frag], frame + z, len - z);
 	cur->fragmentlen[frag] = len - z;
 	cur->wep = wep;
@@ -383,7 +383,7 @@ static int addFrag(unsigned char * packet, unsigned char * smac, int len)
 
 	cur->next = NULL;
 
-	return 0;
+	return (0);
 }
 
 static int timeoutFrag(void)
@@ -393,7 +393,7 @@ static int timeoutFrag(void)
 	int64_t timediff;
 	int i;
 
-	if (rFragment == NULL) return -1;
+	if (rFragment == NULL) return (-1);
 
 	gettimeofday(&tv, NULL);
 
@@ -414,7 +414,7 @@ static int timeoutFrag(void)
 		}
 		cur = cur->next;
 	}
-	return 0;
+	return (0);
 }
 
 static int delFrag(unsigned char * smac, int sequence)
@@ -422,11 +422,11 @@ static int delFrag(unsigned char * smac, int sequence)
 	pFrag_t old, cur = rFragment;
 	int i;
 
-	if (rFragment == NULL) return -1;
+	if (rFragment == NULL) return (-1);
 
-	if (smac == NULL) return -1;
+	if (smac == NULL) return (-1);
 
-	if (sequence < 0) return -1;
+	if (sequence < 0) return (-1);
 
 	while (cur->next != NULL)
 	{
@@ -440,11 +440,11 @@ static int delFrag(unsigned char * smac, int sequence)
 
 			cur->next = old->next;
 			free(old);
-			return 0;
+			return (0);
 		}
 		cur = cur->next;
 	}
-	return 0;
+	return (0);
 }
 
 static unsigned char *
@@ -455,9 +455,9 @@ getCompleteFrag(unsigned char * smac, int sequence, int * packetlen)
 	unsigned char * packet = NULL;
 	unsigned char K[128];
 
-	if (rFragment == NULL) return NULL;
+	if (rFragment == NULL) return (NULL);
 
-	if (smac == NULL) return NULL;
+	if (smac == NULL) return (NULL);
 
 	while (cur->next != NULL)
 	{
@@ -465,22 +465,21 @@ getCompleteFrag(unsigned char * smac, int sequence, int * packetlen)
 		if (memcmp(smac, old->source, 6) == 0 && old->sequence == sequence)
 		{
 			// check if all frags available
-			if (old->fragnum == 0) return NULL;
+			if (old->fragnum == 0) return (NULL);
 			for (i = 0; i <= old->fragnum; i++)
 			{
-				if (old->fragment[i] == NULL) return NULL;
+				if (old->fragment[i] == NULL) return (NULL);
 				len += old->fragmentlen[i];
 			}
 
-			if (len > 2000) return NULL;
-
-			//             printf("got a complete frame -> build it\n");
+			if (len > 2000) return (NULL);
 
 			if (old->wep)
 			{
 				if (opt.crypt == CRYPT_WEP)
 				{
 					packet = (unsigned char *) malloc(len + old->headerlen + 8);
+					ALLEGE(packet != NULL);
 					K[0] = rand() & 0xFF;
 					K[1] = rand() & 0xFF;
 					K[2] = rand() & 0xFF;
@@ -502,7 +501,7 @@ getCompleteFrag(unsigned char * smac, int sequence, int * packetlen)
 					if (add_crc32(packet + old->headerlen + 4,
 								  len - old->headerlen - 4)
 						!= 0)
-						return NULL;
+						return (NULL);
 
 					len += 4; // icv
 
@@ -518,14 +517,15 @@ getCompleteFrag(unsigned char * smac, int sequence, int * packetlen)
 					// delete captured fragments
 					delFrag(smac, sequence);
 					*packetlen = len;
-					return packet;
+					return (packet);
 				}
 				else
-					return NULL;
+					return (NULL);
 			}
 			else
 			{
 				packet = (unsigned char *) malloc(len + old->headerlen);
+				ALLEGE(packet != NULL);
 				memcpy(packet, old->header, old->headerlen);
 				len = old->headerlen;
 				for (i = 0; i <= old->fragnum; i++)
@@ -536,16 +536,18 @@ getCompleteFrag(unsigned char * smac, int sequence, int * packetlen)
 				// delete captured fragments
 				delFrag(smac, sequence);
 				*packetlen = len;
-				return packet;
+				return (packet);
 			}
 		}
 		cur = cur->next;
 	}
-	return packet;
+	return (packet);
 }
 
 static int is_filtered_netmask(unsigned char * bssid)
 {
+	REQUIRE(bssid != NULL);
+
 	unsigned char mac1[6];
 	unsigned char mac2[6];
 	int i;
@@ -561,7 +563,7 @@ static int is_filtered_netmask(unsigned char * bssid)
 		return (1);
 	}
 
-	return 0;
+	return (0);
 }
 
 static int send_packet(void * buf, size_t count)
@@ -570,11 +572,11 @@ static int send_packet(void * buf, size_t count)
 	if (wi_write(wi, buf, count, NULL) == -1)
 	{
 		perror("wi_write()");
-		return -1;
+		return (-1);
 	}
 
 	nb_pkt_sent++;
-	return 0;
+	return (0);
 }
 
 static int read_packet(void * buf, size_t count)
@@ -586,10 +588,10 @@ static int read_packet(void * buf, size_t count)
 	if (rc == -1)
 	{
 		perror("wi_read()");
-		return -1;
+		return (-1);
 	}
 
-	return rc;
+	return (rc);
 }
 
 static int msleep(int msec)
@@ -642,7 +644,7 @@ static int msleep(int msec)
 		break;
 	}
 
-	return 0;
+	return (0);
 }
 
 static int read_prga(unsigned char ** dest, char * file)
@@ -651,7 +653,11 @@ static int read_prga(unsigned char ** dest, char * file)
 	int size;
 
 	if (file == NULL) return (1);
-	if (*dest == NULL) *dest = (unsigned char *) malloc(1501);
+	if (*dest == NULL)
+	{
+		*dest = (unsigned char *) malloc(1501);
+		ALLEGE(*dest != NULL);
+	}
 
 	if (memcmp(file + (strlen(file) - 4), ".xor", 4) != 0)
 	{
@@ -698,18 +704,18 @@ static int read_prga(unsigned char ** dest, char * file)
 
 static int set_IVidx(unsigned char * packet, int data_begin)
 {
-	if (packet == NULL) return 1;
+	if (packet == NULL) return (1);
 
 	if (opt.prga == NULL)
 	{
 		printf("Please specify a PRGA file (-y).\n");
-		return 1;
+		return (1);
 	}
 
 	/* insert IV+index */
 	memcpy(packet + data_begin, opt.prga, 4);
 
-	return 0;
+	return (0);
 }
 
 static int encrypt_data(unsigned char * dest, unsigned char * data, int length)
@@ -717,14 +723,14 @@ static int encrypt_data(unsigned char * dest, unsigned char * data, int length)
 	unsigned char cipher[2048];
 	int n;
 
-	if (dest == NULL) return 1;
-	if (data == NULL) return 1;
-	if (length < 1 || length > 2044) return 1;
+	if (dest == NULL) return (1);
+	if (data == NULL) return (1);
+	if (length < 1 || length > 2044) return (1);
 
 	if (opt.prga == NULL)
 	{
 		printf("Please specify a PRGA file (-y).\n");
-		return 1;
+		return (1);
 	}
 
 	if (opt.prgalen - 4 < length)
@@ -732,7 +738,7 @@ static int encrypt_data(unsigned char * dest, unsigned char * data, int length)
 		printf(
 			"Please specify a longer PRGA file (-y) with at least %i bytes.\n",
 			(length + 4));
-		return 1;
+		return (1);
 	}
 
 	/* encrypt data */
@@ -743,26 +749,26 @@ static int encrypt_data(unsigned char * dest, unsigned char * data, int length)
 
 	memcpy(dest, cipher, length);
 
-	return 0;
+	return (0);
 }
 
 static int
 create_wep_packet(unsigned char * packet, int * length, int data_begin)
 {
-	if (packet == NULL) return 1;
+	if (packet == NULL) return (1);
 
 	/* write crc32 value behind data */
-	if (add_crc32(packet + data_begin, *length - data_begin) != 0) return 1;
+	if (add_crc32(packet + data_begin, *length - data_begin) != 0) return (1);
 
 	/* encrypt data+crc32 and keep a 4byte hole */
 	if (encrypt_data(packet + data_begin + 4,
 					 packet + data_begin,
 					 *length - (data_begin - 4))
 		!= 0)
-		return 1;
+		return (1);
 
 	/* write IV+IDX right in front of the encrypted data */
-	if (set_IVidx(packet, data_begin) != 0) return 1;
+	if (set_IVidx(packet, data_begin) != 0) return (1);
 
 	/* set WEP bit */
 	packet[1] = packet[1] | 0x40;
@@ -770,11 +776,13 @@ create_wep_packet(unsigned char * packet, int * length, int data_begin)
 	*length += 8;
 	/* now you got yourself a shiny, brand new encrypted wep packet ;) */
 
-	return 0;
+	return (0);
 }
 
 static int packet_xmit(unsigned char * packet, int length)
 {
+	REQUIRE(packet != NULL);
+
 	unsigned char K[64];
 	unsigned char buf[4096];
 	struct WPA_ST_info * st_cur;
@@ -787,7 +795,6 @@ static int packet_xmit(unsigned char * packet, int length)
 			   IEEE80211_LLC_SNAP,
 			   24); // shorter LLC/SNAP - only copy IEEE80211 HEADER
 		memcpy(h80211 + 24, packet + 14, length - 14);
-		//         memcpy(h80211+30, packet+12, 2);
 		length = length + 24
 				 - 14; // 32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
 	}
@@ -836,7 +843,8 @@ static int packet_xmit(unsigned char * packet, int length)
 		K[3] = 0x00;
 
 		/* write crc32 value behind data */
-		if (add_crc32(h80211 + data_begin, length - data_begin) != 0) return 1;
+		if (add_crc32(h80211 + data_begin, length - data_begin) != 0)
+			return (1);
 
 		length += 4; // icv
 		memcpy(buf, h80211 + data_begin, length - data_begin);
@@ -856,15 +864,6 @@ static int packet_xmit(unsigned char * packet, int length)
 	}
 	else if (opt.crypt == CRYPT_WPA)
 	{
-		/* Add QoS */
-		/*   Doesn't seem to be needed -> commented out */
-		// memmove( h80211 + data_begin + 2, h80211 + data_begin, length -
-		// data_begin );
-		// memset( h80211 + data_begin, 0, 2 );
-		// data_begin += 2;
-		// length += 2;
-		// h80211[0] |= 0x80; // Set QoS
-
 		/* Find station */
 		st_cur = st_1st;
 		while (st_cur != NULL)
@@ -881,7 +880,7 @@ static int packet_xmit(unsigned char * packet, int length)
 		if (st_cur == NULL)
 		{
 			printf("Cannot inject: handshake not captured yet.\n");
-			return 1;
+			return (1);
 		}
 
 		// Todo: overflow to higher bits (pn is 6 bytes wide)
@@ -895,7 +894,7 @@ static int packet_xmit(unsigned char * packet, int length)
 	}
 	else if (opt.prgalen > 0)
 	{
-		if (create_wep_packet(h80211, &length, data_begin) != 0) return 1;
+		if (create_wep_packet(h80211, &length, data_begin) != 0) return (1);
 	}
 
 	if ((opt.tods == 2) && opt.bidir)
@@ -923,11 +922,13 @@ static int packet_xmit(unsigned char * packet, int length)
 		send_packet(h80211, length);
 	}
 
-	return 0;
+	return (0);
 }
 
 static int packet_recv(unsigned char * packet, int length)
 {
+	REQUIRE(packet != NULL);
+
 	unsigned char K[64];
 	unsigned char bssid[6], smac[6], dmac[6], stmac[6];
 	unsigned char * buffer;
@@ -947,7 +948,7 @@ static int packet_recv(unsigned char * packet, int length)
 
 	if (length < z + 8)
 	{
-		return 1;
+		return (1);
 	}
 
 	// FromDS/ToDS fields
@@ -991,7 +992,7 @@ static int packet_recv(unsigned char * packet, int length)
 		timeoutFrag();
 
 		/* we got frag, no compelete packet avail -> do nothing */
-		if (buffer == NULL) return 1;
+		if (buffer == NULL) return (1);
 
 		//             printf("got all frags!!!\n");
 		memcpy(packet, buffer, len);
@@ -1038,7 +1039,7 @@ static int packet_recv(unsigned char * packet, int length)
 				  = (struct WPA_ST_info *) malloc(sizeof(struct WPA_ST_info))))
 			{
 				perror("malloc failed");
-				return 1;
+				return (1);
 			}
 
 			memset(st_cur, 0, sizeof(struct WPA_ST_info));
@@ -1060,7 +1061,7 @@ static int packet_recv(unsigned char * packet, int length)
 		{
 			if (st_cur->t_crc == crc)
 			{
-				return 1;
+				return (1);
 			}
 
 			st_cur->t_crc = crc;
@@ -1069,7 +1070,7 @@ static int packet_recv(unsigned char * packet, int length)
 		{
 			if (st_cur->f_crc == crc)
 			{
-				return 1;
+				return (1);
 			}
 
 			st_cur->f_crc = crc;
@@ -1084,7 +1085,7 @@ static int packet_recv(unsigned char * packet, int length)
 
 			if ((packet[z + 3] & 0x20) == 0)
 			{
-				if (opt.crypt != CRYPT_WEP) return 1;
+				if (opt.crypt != CRYPT_WEP) return (1);
 
 				memcpy(K, packet + z, 3);
 				memcpy(K + 3, opt.wepkey, opt.weplen);
@@ -1094,7 +1095,7 @@ static int packet_recv(unsigned char * packet, int length)
 					== 0)
 				{
 					printf("ICV check failed!\n");
-					return 1;
+					return (1);
 				}
 
 				/* WEP data packet was successfully decrypted, *
@@ -1109,18 +1110,18 @@ static int packet_recv(unsigned char * packet, int length)
 			}
 			else
 			{
-				if (opt.crypt != CRYPT_WPA) return 1;
+				if (opt.crypt != CRYPT_WPA) return (1);
 
 				/* if the PTK is valid, try to decrypt */
 
-				if (st_cur == NULL || !st_cur->valid_ptk) return 1;
+				if (st_cur == NULL || !st_cur->valid_ptk) return (1);
 
 				if (st_cur->keyver == 1)
 				{
 					if (decrypt_tkip(packet, length, st_cur->ptk + 32) == 0)
 					{
 						printf("ICV check failed (WPA-TKIP)!\n");
-						return 1;
+						return (1);
 					}
 
 					length -= 20;
@@ -1140,7 +1141,7 @@ static int packet_recv(unsigned char * packet, int length)
 					if (decrypt_ccmp(packet, length, st_cur->ptk + 32) == 0)
 					{
 						printf("ICV check failed (WPA-CCMP)!\n");
-						return 1;
+						return (1);
 					}
 
 					length -= 16;
@@ -1163,7 +1164,7 @@ static int packet_recv(unsigned char * packet, int length)
 
 			if (packet[z] != 0x88 || packet[z + 1] != 0x8E)
 			{
-				return 1;
+				return (1);
 			}
 
 			z += 2;
@@ -1172,7 +1173,7 @@ static int packet_recv(unsigned char * packet, int length)
 
 			if (packet[z + 1] != 0x03
 				|| (packet[z + 4] != 0xFE && packet[z + 4] != 0x02))
-				return 1;
+				return (1);
 
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
@@ -1208,7 +1209,7 @@ static int packet_recv(unsigned char * packet, int length)
 				{
 					// Ignore the packet trying to crash us.
 					st_cur->eapol_size = 0;
-					return 1;
+					return (1);
 				}
 
 				memcpy(st_cur->keymic, &packet[z + 81], 16);
@@ -1243,7 +1244,7 @@ static int packet_recv(unsigned char * packet, int length)
 				{
 					// Ignore the packet trying to crash us.
 					st_cur->eapol_size = 0;
-					return 1; // continue;
+					return (1); // continue;
 				}
 
 				memcpy(st_cur->keymic, &packet[z + 81], 16);
@@ -1303,7 +1304,7 @@ static int packet_recv(unsigned char * packet, int length)
 
 		if (memcmp(dmac, SPANTREE, 6) == 0)
 		{
-			if (length <= z + 8) return 1;
+			if (length <= z + 8) return (1);
 
 			memcpy(h80211 + 14, packet + z, length - z);
 
@@ -1316,7 +1317,7 @@ static int packet_recv(unsigned char * packet, int length)
 		{
 			memcpy(h80211 + 12, packet + z + 6, 2); // copy ether type
 
-			if (length <= z + 8) return 1;
+			if (length <= z + 8) return (1);
 
 			memcpy(h80211 + 14, packet + z + 8, length - z - 8);
 			length = length - z - 8 + 14;
@@ -1326,10 +1327,10 @@ static int packet_recv(unsigned char * packet, int length)
 	}
 	else
 	{
-		return 1;
+		return (1);
 	}
 
-	return 0;
+	return (0);
 }
 
 int main(int argc, char * argv[])
@@ -1355,6 +1356,7 @@ int main(int argc, char * argv[])
 	memset(&dev, 0, sizeof(dev));
 
 	rFragment = (pFrag_t) malloc(sizeof(struct Fragment_list));
+	ALLEGE(rFragment != NULL);
 	memset(rFragment, 0, sizeof(struct Fragment_list));
 
 	opt.r_nbpps = 100;
@@ -1366,17 +1368,17 @@ int main(int argc, char * argv[])
 	{
 		int option_index = 0;
 
-		static struct option long_options[] = {{"netmask", 1, 0, 'm'},
-											   {"bssid", 1, 0, 'd'},
-											   {"repeat", 0, 0, 'f'},
-											   {"help", 0, 0, 'H'},
-											   {0, 0, 0, 0}};
+		static const struct option long_options[] = {{"netmask", 1, 0, 'm'},
+													 {"bssid", 1, 0, 'd'},
+													 {"repeat", 0, 0, 'f'},
+													 {"help", 0, 0, 'H'},
+													 {0, 0, 0, 0}};
 
-		int option = getopt_long(argc,
-								 argv,
-								 "x:a:h:i:r:y:t:s:bw:p:e:m:d:fH",
-								 long_options,
-								 &option_index);
+		const int option = getopt_long(argc,
+									   argv,
+									   "x:a:h:i:r:y:t:s:bw:p:e:m:d:fH",
+									   long_options,
+									   &option_index);
 
 		if (option < 0) break;
 
@@ -1389,12 +1391,12 @@ int main(int argc, char * argv[])
 			case ':':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 
 			case 'x':
 
@@ -1403,7 +1405,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid number of packets per second. [1-1024]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 
@@ -1413,7 +1415,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid AP MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 
@@ -1423,7 +1425,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid source MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 
@@ -1433,18 +1435,18 @@ int main(int argc, char * argv[])
 				{
 					printf("PRGA file already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				if (opt.crypt != CRYPT_NONE)
 				{
 					printf("Encryption key already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				if (read_prga(&(opt.prga), optarg) != 0)
 				{
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 
@@ -1454,7 +1456,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Packet source already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				opt.s_face = optarg;
 				break;
@@ -1475,7 +1477,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid Transmitter MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 
@@ -1490,13 +1492,13 @@ int main(int argc, char * argv[])
 				{
 					printf("PRGA file already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				if (opt.crypt != CRYPT_NONE)
 				{
 					printf("Encryption key already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.crypt = CRYPT_WEP;
@@ -1514,7 +1516,7 @@ int main(int argc, char * argv[])
 					{
 						printf("Invalid WEP key.\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					opt.wepkey[i++] = n;
@@ -1535,7 +1537,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid WEP key length.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.weplen = i;
@@ -1548,7 +1550,7 @@ int main(int argc, char * argv[])
 				{
 					printf("ESSID already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.crypt = CRYPT_WPA;
@@ -1563,13 +1565,13 @@ int main(int argc, char * argv[])
 				{
 					printf("PRGA file already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				if (opt.crypt != CRYPT_NONE)
 				{
 					printf("Encryption key already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.crypt = CRYPT_WPA;
@@ -1591,7 +1593,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Notice: invalid netmask\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 			case 'd':
@@ -1605,7 +1607,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Notice: invalid bssid\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 			case 'f':
@@ -1617,7 +1619,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Packet source already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				opt.s_file = optarg;
 				break;
@@ -1632,7 +1634,7 @@ int main(int argc, char * argv[])
 								  _REVISION,
 								  _BETA,
 								  _RC));
-				return (1);
+				return (EXIT_FAILURE);
 
 			default:
 				goto usage;
@@ -1657,7 +1659,7 @@ int main(int argc, char * argv[])
 		{
 			printf("\"%s --help\" for help.\n", argv[0]);
 		}
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if ((memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
@@ -1665,21 +1667,21 @@ int main(int argc, char * argv[])
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (memcmp(opt.r_bssid, NULL_MAC, 6) == 0)
 	{
 		printf("Please specify a BSSID (-a).\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
-		return 1;
+		return (EXIT_FAILURE);
 	}
 
 	if ((memcmp(opt.r_trans, NULL_MAC, 6) == 0) && opt.tods == 2)
 	{
 		printf("Please specify a Transmitter (-s).\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
-		return 1;
+		return (EXIT_FAILURE);
 	}
 
 	if (opt.crypt == CRYPT_WPA)
@@ -1692,7 +1694,7 @@ int main(int argc, char * argv[])
 			{
 				printf("You must also specify the ESSID (-e).\n");
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 			}
 
 			calc_pmk(opt.passphrase, opt.essid, opt.pmk);
@@ -1751,14 +1753,14 @@ int main(int argc, char * argv[])
 
 	/* open the replay interface */
 	_wi_out = wi_open(argv[optind]);
-	if (!_wi_out) return 1;
+	if (!_wi_out) return (EXIT_FAILURE);
 	dev.fd_out = wi_fd(_wi_out);
 
 	/* open the packet source */
 	if (opt.s_face != NULL)
 	{
 		_wi_in = wi_open(opt.s_face);
-		if (!_wi_in) return 1;
+		if (!_wi_in) return (EXIT_FAILURE);
 		dev.fd_in = wi_fd(_wi_in);
 	}
 	else
@@ -1787,7 +1789,7 @@ int main(int argc, char * argv[])
 		if (!(dev.f_cap_in = fopen(opt.s_file, "rb")))
 		{
 			perror("open failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		n = sizeof(struct pcap_file_header);
@@ -1795,7 +1797,7 @@ int main(int argc, char * argv[])
 		if (fread(&dev.pfh_in, 1, n, dev.f_cap_in) != (size_t) n)
 		{
 			perror("fread(pcap file header) failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (dev.pfh_in.magic != TCPDUMP_MAGIC
@@ -1805,7 +1807,7 @@ int main(int argc, char * argv[])
 					"\"%s\" isn't a pcap file (expected "
 					"TCPDUMP_MAGIC).\n",
 					opt.s_file);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (dev.pfh_in.magic == TCPDUMP_CIGAM) SWAP32(dev.pfh_in.linktype);
@@ -1820,7 +1822,7 @@ int main(int argc, char * argv[])
 					"(expected LINKTYPE_IEEE802_11) -\n"
 					"this doesn't look like a regular 802.11 "
 					"capture.\n");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 	}
 
@@ -1828,7 +1830,7 @@ int main(int argc, char * argv[])
 	if (!dev.dv_ti)
 	{
 		printf("error opening tap device: %s\n", strerror(errno));
-		return -1;
+		return (EXIT_FAILURE);
 	}
 	printf("created tap interface %s\n", ti_name(dev.dv_ti));
 
@@ -2027,5 +2029,5 @@ int main(int argc, char * argv[])
 
 	/* that's all, folks */
 
-	return (0);
+	return (EXIT_SUCCESS);
 }

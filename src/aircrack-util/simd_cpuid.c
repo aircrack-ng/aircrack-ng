@@ -64,7 +64,7 @@ struct _cpuinfo cpuinfo = {0, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0.0, NULL};
 unsigned long
 getRegister(const unsigned int val, const char from, const char to)
 {
-	unsigned long mask = (1 << (to + 1)) - 1;
+	unsigned long mask = (1ul << (to + 1ul)) - 1ul;
 
 	if (to == 31) return val >> from;
 
@@ -73,9 +73,9 @@ getRegister(const unsigned int val, const char from, const char to)
 
 void sprintcat(char * dest, const char * src, size_t len)
 {
-	if (strlen(dest)) (void) strncat(dest, ",", len);
+	if (strlen(dest) > 0) (void) strncat(dest, ",", len - strlen(dest) - 1);
 
-	(void) strncat(dest, src, len);
+	(void) strncat(dest, src, len - strlen(dest) - 1);
 }
 
 int is_dir(const char * dir)
@@ -406,7 +406,7 @@ char * cpuid_modelinfo(void)
 #ifdef _X86
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 	int bi = 2, broff = 0;
-	char * tmpmodel = calloc(1, (sizeof(unsigned) * 4) * 5);
+	char * tmpmodel = calloc(1, (size_t)((sizeof(unsigned) * 4ul) * 5ul));
 #elif __linux__
 	FILE * cfd;
 	char *line = NULL, *token = NULL;

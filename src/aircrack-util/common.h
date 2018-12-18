@@ -99,12 +99,12 @@ int is_string_number(const char * str);
 int get_ram_size(void);
 
 char * getVersion(const char * progname,
-						 const unsigned int maj,
-						 const unsigned int min,
-						 const unsigned int submin,
-						 const char * rev,
-						 const unsigned int beta,
-						 const unsigned int rc);
+				  const unsigned int maj,
+				  const unsigned int min,
+				  const unsigned int submin,
+				  const char * rev,
+				  const unsigned int beta,
+				  const unsigned int rc);
 
 /// Returns the number of CPU/cores available and online.
 int get_nb_cpus(void);
@@ -115,7 +115,10 @@ char * mac2string(unsigned char * mac_address);
 
 int hexCharToInt(unsigned char c);
 
-int hexStringToArray(char * in, int in_length, unsigned char * out, int out_length);
+int hexStringToArray(char * in,
+					 int in_length,
+					 unsigned char * out,
+					 int out_length);
 
 /// Return the mac address bytes (or null if it's not a mac address)
 int getmac(const char * macAddress, const int strict, unsigned char * mac);

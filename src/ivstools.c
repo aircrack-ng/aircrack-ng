@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "defs.h"
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
@@ -85,7 +86,7 @@ struct ST_info
 
 /* bunch of global stuff */
 
-struct globals
+static struct globals
 {
 	struct AP_info *ap_1st, *ap_end;
 	struct ST_info *st_1st, *st_end;
@@ -114,7 +115,7 @@ static void usage(int what)
 
 static int merge(int argc, char * argv[])
 {
-	int i, n, unused;
+	int i, n;
 	unsigned long nbw;
 	unsigned char buffer[1024];
 	FILE *f_in, *f_out;
@@ -123,7 +124,7 @@ static int merge(int argc, char * argv[])
 	if (argc < 5)
 	{
 		usage(2);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	// Check filenames are not empty
@@ -132,7 +133,7 @@ static int merge(int argc, char * argv[])
 		if (argv[i][0] == 0)
 		{
 			printf("Filename #%d is empty, aborting\n", i - 1);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 	}
 
@@ -141,7 +142,7 @@ static int merge(int argc, char * argv[])
 	if ((f_out = fopen(argv[argc - 1], "wb+")) == NULL)
 	{
 		perror("fopen failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	nbw = 0;
@@ -154,7 +155,7 @@ static int merge(int argc, char * argv[])
 		{
 			fclose(f_out);
 			perror("fopen failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (fread(buffer, 1, 4, f_in) != 4)
@@ -162,7 +163,7 @@ static int merge(int argc, char * argv[])
 			fclose(f_out);
 			fclose(f_in);
 			perror("fread file header failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (memcmp(buffer, IVSONLY_MAGIC, 4) == 0)
@@ -170,7 +171,7 @@ static int merge(int argc, char * argv[])
 			fclose(f_out);
 			fclose(f_in);
 			printf("%s is an old .ivs file\n", argv[i]);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (memcmp(buffer, IVS2_MAGIC, 4) != 0)
@@ -178,7 +179,7 @@ static int merge(int argc, char * argv[])
 			fclose(f_out);
 			fclose(f_in);
 			printf("%s is not an .%s file\n", argv[i], IVS2_EXTENSION);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (fread(&fivs2, 1, sizeof(struct ivs2_filehdr), f_in)
@@ -187,7 +188,7 @@ static int merge(int argc, char * argv[])
 			fclose(f_out);
 			fclose(f_in);
 			perror("fread file header failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (fivs2.version > IVS2_VERSION)
@@ -198,19 +199,19 @@ static int merge(int argc, char * argv[])
 				   IVS2_EXTENSION,
 				   fivs2.version,
 				   IVS2_VERSION);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (i == 2)
 		{
-			unused = fwrite(buffer, 1, 4, f_out);
-			unused = fwrite(&fivs2, 1, sizeof(struct ivs2_filehdr), f_out);
+			(void) fwrite(buffer, 1, 4, f_out);
+			(void) fwrite(&fivs2, 1, sizeof(struct ivs2_filehdr), f_out);
 		}
 
 		while ((n = fread(buffer, 1, 1024, f_in)) > 0)
 		{
 			nbw += n;
-			unused = fwrite(buffer, 1, n, f_out);
+			(void) fwrite(buffer, 1, n, f_out);
 			printf("%lu bytes written\r", nbw);
 		}
 
@@ -221,11 +222,13 @@ static int merge(int argc, char * argv[])
 
 	fclose(f_out);
 
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 {
+	REQUIRE(h80211 != NULL);
+
 	int i, n, seq, dlen, clen;
 	unsigned z;
 	struct ivs2_pkthdr ivs2;
@@ -243,11 +246,11 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	/* skip packets smaller than a 802.11 header */
 
-	if (caplen < 24) return FAILURE;
+	if (caplen < 24) return (FAILURE);
 
 	/* skip (uninteresting) control frames */
 
-	if ((h80211[0] & 0x0C) == 0x04) return FAILURE;
+	if ((h80211[0] & 0x0C) == 0x04) return (FAILURE);
 
 	/* grab the sequence number */
 	seq = ((h80211[22] >> 4) + (h80211[23] << 4));
@@ -290,7 +293,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 		if (!(ap_cur = (struct AP_info *) malloc(sizeof(struct AP_info))))
 		{
 			perror("malloc failed");
-			return FAILURE;
+			return (FAILURE);
 		}
 
 		memset(ap_cur, 0, sizeof(struct AP_info));
@@ -319,7 +322,6 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 		/* reset the WPA handshake state */
 
 		if (st_cur != NULL && st_cur->wpa.state != 0xFF) st_cur->wpa.state = 0;
-		//        printf("initial auth %d\n", ap_cur->wpa_state);
 	}
 
 	/* locate the station MAC in the 802.11 header */
@@ -374,7 +376,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 		if (!(st_cur = (struct ST_info *) malloc(sizeof(struct ST_info))))
 		{
 			perror("malloc failed");
-			return FAILURE;
+			return (EXIT_FAILURE);
 		}
 
 		memset(st_cur, 0, sizeof(struct ST_info));
@@ -413,7 +415,6 @@ skip_station:
 			{
 				/* found a non-cloaked ESSID */
 
-				//                n = ( p[1] > 32 ) ? 32 : p[1];
 				n = p[1];
 
 				memset(ap_cur->essid, 0, 256);
@@ -437,7 +438,7 @@ skip_station:
 						!= (size_t) sizeof(struct ivs2_pkthdr))
 					{
 						perror("fwrite(IV header) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					/* write BSSID */
@@ -446,7 +447,7 @@ skip_station:
 						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (1);
+							return (EXIT_FAILURE);
 						}
 					}
 
@@ -459,7 +460,7 @@ skip_station:
 					}
 
 					ap_cur->essid_stored = 1;
-					return ESSID;
+					return (ESSID);
 				}
 
 				for (i = 0; i < n; i++)
@@ -510,7 +511,7 @@ skip_station:
 						!= (size_t) sizeof(struct ivs2_pkthdr))
 					{
 						perror("fwrite(IV header) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					/* write BSSID */
@@ -519,7 +520,7 @@ skip_station:
 						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (1);
+							return (EXIT_FAILURE);
 						}
 					}
 
@@ -528,11 +529,11 @@ skip_station:
 						!= (size_t) ap_cur->ssid_length)
 					{
 						perror("fwrite(IV essid) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					ap_cur->essid_stored = 1;
-					return ESSID;
+					return (ESSID);
 				}
 
 				for (i = 0; i < n; i++)
@@ -553,9 +554,9 @@ skip_station:
 
 		z = ((h80211[1] & 3) != 3) ? 24 : 30;
 
-		if (z + 26 > caplen) return FAILURE;
+		if (z + 26 > caplen) return (FAILURE);
 
-		if (z + 10 > caplen) return FAILURE;
+		if (z + 10 > caplen) return (FAILURE);
 
 		// check if WEP bit set and extended iv
 		if ((h80211[1] & 0x40) != 0 && (h80211[z + 3] & 0x20) == 0)
@@ -625,7 +626,7 @@ skip_station:
 						!= (size_t) sizeof(struct ivs2_pkthdr))
 					{
 						perror("fwrite(IV header) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					if (ivs2.flags & IVS2_BSSID)
@@ -633,7 +634,7 @@ skip_station:
 						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (1);
+							return (EXIT_FAILURE);
 						}
 						ivs2.len -= 6;
 					}
@@ -641,7 +642,7 @@ skip_station:
 					if (fwrite(h80211 + z, 1, 4, G.f_ivs) != (size_t) 4)
 					{
 						perror("fwrite(IV iv+idx) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 					ivs2.len -= 4;
 
@@ -649,18 +650,18 @@ skip_station:
 						!= (size_t) ivs2.len)
 					{
 						perror("fwrite(IV keystream) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 				}
 
 				uniqueiv_mark(ap_cur->uiv_root, &h80211[z]);
-				return IVS;
+				return (IVS);
 			}
 		}
 
 		z = ((h80211[1] & 3) != 3) ? 24 : 30;
 
-		if (z + 26 > caplen) return FAILURE;
+		if (z + 26 > caplen) return (FAILURE);
 
 		z += 6; // skip LLC header
 
@@ -670,7 +671,7 @@ skip_station:
 		{
 			z += 2; // skip ethertype
 
-			if (st_cur == NULL) return FAILURE;
+			if (st_cur == NULL) return (FAILURE);
 
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
@@ -684,7 +685,7 @@ skip_station:
 
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
-			if (z + 17 + 32 > caplen) return FAILURE;
+			if (z + 17 + 32 > caplen) return (FAILURE);
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
 				&& (h80211[z + 6] & 0x80) == 0
@@ -711,7 +712,7 @@ skip_station:
 				{
 					// ignore packet trying to crash us
 					st_cur->wpa.eapol_size = 0;
-					return 0;
+					return (EXIT_SUCCESS);
 				}
 
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
@@ -751,7 +752,7 @@ skip_station:
 							!= (size_t) sizeof(struct ivs2_pkthdr))
 						{
 							perror("fwrite(IV header) failed");
-							return (1);
+							return (EXIT_FAILURE);
 						}
 
 						if (ivs2.flags & IVS2_BSSID)
@@ -760,7 +761,7 @@ skip_station:
 								!= (size_t) 6)
 							{
 								perror("fwrite(IV bssid) failed");
-								return (1);
+								return (EXIT_FAILURE);
 							}
 							ivs2.len -= 6;
 						}
@@ -772,9 +773,9 @@ skip_station:
 							!= (size_t) sizeof(struct WPA_hdsk))
 						{
 							perror("fwrite(IV wpa_hdsk) failed");
-							return (1);
+							return (EXIT_FAILURE);
 						}
-						return WPA;
+						return (WPA);
 					}
 				}
 			}
@@ -787,7 +788,7 @@ skip_station:
 int main(int argc, char * argv[])
 {
 	time_t tt;
-	int n, unused, ret;
+	int n, ret;
 	FILE * f_in;
 	unsigned long nbr;
 	unsigned long nbivs;
@@ -801,31 +802,31 @@ int main(int argc, char * argv[])
 
 	if (argc < 4)
 	{
-		usage(0);
-		return (1);
+		usage(EXIT_SUCCESS);
+		return (EXIT_FAILURE);
 	}
 
 	if (strcmp(argv[1], "--merge") == 0)
 	{
-		return merge(argc, argv);
+		return (merge(argc, argv));
 	}
 	if (strcmp(argv[1], "--convert"))
 	{
-		usage(1);
-		return (1);
+		usage(EXIT_FAILURE);
+		return (EXIT_FAILURE);
 	}
 
 	// Check filenames are not empty
 	if (argv[2][0] == 0)
 	{
 		printf("Invalid pcap file\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (argv[3][0] == 0)
 	{
 		printf("Invalid output file\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	memset(bssid_cur, 0, 6);
@@ -838,7 +839,7 @@ int main(int argc, char * argv[])
 	if ((f_in = fopen(argv[2], "rb")) == NULL)
 	{
 		perror("fopen failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	n = sizeof(pfh);
@@ -847,7 +848,7 @@ int main(int argc, char * argv[])
 	{
 		perror("fread(pcap file header) failed");
 		fclose(f_in);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (pfh.magic != TCPDUMP_MAGIC && pfh.magic != TCPDUMP_CIGAM)
@@ -856,7 +857,7 @@ int main(int argc, char * argv[])
 			   "TCPDUMP_MAGIC).\n",
 			   argv[2]);
 		fclose(f_in);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (pfh.magic == TCPDUMP_CIGAM) SWAP32(pfh.linktype);
@@ -870,7 +871,7 @@ int main(int argc, char * argv[])
 			   "(wireless) capture.\n",
 			   argv[2]);
 		fclose(f_in);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	/* create the output ivs file */
@@ -881,13 +882,13 @@ int main(int argc, char * argv[])
 	{
 		perror("fopen failed");
 		fclose(f_in);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	fivs2.version = IVS2_VERSION;
 
-	unused = fwrite(IVS2_MAGIC, 4, 1, G.f_ivs);
-	unused = fwrite(&fivs2, sizeof(struct ivs2_filehdr), 1, G.f_ivs);
+	(void) fwrite(IVS2_MAGIC, 4, 1, G.f_ivs);
+	(void) fwrite(&fivs2, sizeof(struct ivs2_filehdr), 1, G.f_ivs);
 
 	nbr = 0;
 	tt = time(NULL) - 1;
@@ -921,7 +922,7 @@ int main(int argc, char * argv[])
 		if (n <= 0 || n > 65535)
 		{
 			printf("Corrupted file? Invalid packet length: %d.\n", n);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (fread(buffer, 1, n, f_in) != (size_t) n) break;
@@ -995,5 +996,5 @@ int main(int argc, char * argv[])
 		puts("No IVs written");
 	}
 
-	return (0);
+	return (EXIT_SUCCESS);
 }

@@ -43,18 +43,20 @@
 
 #include <pcap/pcap.h>
 
+#include "defs.h"
+
 // Statistics
-uint32_t stats_files = 0;
-uint32_t stats_dirs = 0;
-uint32_t stats_caps = 0;
-uint32_t stats_noncaps = 0;
-uint32_t stats_packets = 0;
-uint32_t stats_eapols = 0;
-uint32_t stats_networks = 0;
+static uint32_t stats_files = 0;
+static uint32_t stats_dirs = 0;
+static uint32_t stats_caps = 0;
+static uint32_t stats_noncaps = 0;
+static uint32_t stats_packets = 0;
+static uint32_t stats_eapols = 0;
+static uint32_t stats_networks = 0;
 
 // Global Dumpfile
-pcap_t * dumphandle;
-pcap_dumper_t * dumper;
+static pcap_t * dumphandle = NULL;
+static pcap_dumper_t * dumper = NULL;
 
 struct bsslist
 {
@@ -65,14 +67,13 @@ struct bsslist
 
 static struct bsslist * is_in_list(struct bsslist * bsl, const u_char * bssid)
 {
-
 	while (bsl != NULL)
 	{
-		if (!memcmp(bsl->bssid, bssid, 6)) return bsl;
+		if (!memcmp(bsl->bssid, bssid, 6)) return (bsl);
 		bsl = bsl->next;
 	}
 
-	return NULL;
+	return (NULL);
 }
 
 static struct bsslist * add_to_list(struct bsslist * bsl, const u_char * bssid)
@@ -80,7 +81,9 @@ static struct bsslist * add_to_list(struct bsslist * bsl, const u_char * bssid)
 	struct bsslist * new, *search;
 
 	new = malloc(sizeof(struct bsslist));
+	ALLEGE(new != NULL);
 	new->bssid = malloc(6);
+	ALLEGE(new->bssid != NULL);
 
 	memcpy(new->bssid, bssid, 6);
 	new->next = NULL;
@@ -88,14 +91,14 @@ static struct bsslist * add_to_list(struct bsslist * bsl, const u_char * bssid)
 
 	if (bsl == NULL)
 	{
-		return new;
+		return (new);
 	}
 	else
 	{
 		search = bsl;
 		while (search->next) search = search->next;
 		search->next = new;
-		return bsl;
+		return (bsl);
 	}
 }
 
@@ -123,7 +126,7 @@ static struct bsslist * get_eapol_bssids(pcap_t * handle)
 		if (pkt[5] || pkt[6])
 		{
 			printf("Unsupported PRISM_HEADER format!\n");
-			return NULL;
+			return (NULL);
 		}
 		if (pkt[7] == 0x40)
 		{ // prism54 format
@@ -186,7 +189,7 @@ static struct bsslist * get_eapol_bssids(pcap_t * handle)
 		pkt = pcap_next(handle, &header);
 	}
 
-	return bsl;
+	return (bsl);
 }
 
 static void process_eapol_networks(pcap_t * handle, struct bsslist * bsl)
@@ -249,7 +252,6 @@ static void process_eapol_networks(pcap_t * handle, struct bsslist * bsl)
 
 			if (pkt[0 + o] == 0x88)
 			{
-				// printf("QoS Data\n");
 				llc = pkt + 26 + o;
 			}
 			else
@@ -273,6 +275,8 @@ static void process_eapol_networks(pcap_t * handle, struct bsslist * bsl)
 
 static void process_file(const char * file)
 {
+	REQUIRE(file != NULL);
+
 	pcap_t * handle;
 	char errbuf[PCAP_ERRBUF_SIZE];
 	struct bsslist * eapol_networks = NULL;
@@ -315,6 +319,8 @@ static void process_file(const char * file)
 
 static void process_directory(const char * dir, time_t begin)
 {
+	REQUIRE(dir != NULL);
+
 	DIR * curdir;
 	struct dirent * curent;
 	struct stat curstat;
@@ -344,6 +350,7 @@ static void process_directory(const char * dir, time_t begin)
 
 		fullname_size = strlen(dir) + strlen(curent->d_name) + 2;
 		fullname = malloc(fullname_size);
+		ALLEGE(fullname != NULL);
 		memcpy(fullname, dir, strlen(dir) + 1);
 		strncat(fullname, "/", fullname_size - 1);
 		strncat(fullname, curent->d_name, fullname_size - 1);
@@ -386,7 +393,6 @@ static void process_directory(const char * dir, time_t begin)
 	if (errno) perror("Reading directory failed");
 
 	closedir(curdir);
-	return;
 }
 
 int main(int argc, char * argv[])
@@ -403,7 +409,7 @@ int main(int argc, char * argv[])
 		printf("Filters out a single beacon and all EAPOL frames from the WPA "
 			   "networks in there\n");
 		printf("And saves them to CapFileOut.\n\n");
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 
 	dumphandle = pcap_open_dead(DLT_IEEE802_11, BUFSIZ);
@@ -429,5 +435,5 @@ int main(int argc, char * argv[])
 	printf("EAPOL packets:      %12d\n", stats_eapols);
 	printf("WPA Network count:  %12d\n", stats_networks);
 
-	return 0;
+	return (EXIT_SUCCESS);
 }

@@ -36,31 +36,31 @@
 #define _AIRCRACK_NG_BYTEORDER_H_
 
 #define ___my_swab16(x)                                                        \
-	((u_int16_t)((((u_int16_t)(x) & (u_int16_t) 0x00ffU) << 8)                 \
-				 | (((u_int16_t)(x) & (u_int16_t) 0xff00U) >> 8)))
+	((u_int16_t)((((u_int16_t)(x) & (u_int16_t) 0x00ffU) << 8u)                \
+				 | (((u_int16_t)(x) & (u_int16_t) 0xff00U) >> 8u)))
 #define ___my_swab32(x)                                                        \
-	((u_int32_t)((((u_int32_t)(x) & (u_int32_t) 0x000000ffUL) << 24)           \
-				 | (((u_int32_t)(x) & (u_int32_t) 0x0000ff00UL) << 8)          \
-				 | (((u_int32_t)(x) & (u_int32_t) 0x00ff0000UL) >> 8)          \
-				 | (((u_int32_t)(x) & (u_int32_t) 0xff000000UL) >> 24)))
+	((u_int32_t)((((u_int32_t)(x) & (u_int32_t) 0x000000ffUL) << 24u)          \
+				 | (((u_int32_t)(x) & (u_int32_t) 0x0000ff00UL) << 8u)         \
+				 | (((u_int32_t)(x) & (u_int32_t) 0x00ff0000UL) >> 8u)         \
+				 | (((u_int32_t)(x) & (u_int32_t) 0xff000000UL) >> 24u)))
 #define ___my_swab64(x)                                                        \
 	((u_int64_t)(                                                              \
 		(u_int64_t)(((u_int64_t)(x) & (u_int64_t) 0x00000000000000ffULL)       \
-					<< 56)                                                     \
+					<< 56u)                                                    \
 		| (u_int64_t)(((u_int64_t)(x) & (u_int64_t) 0x000000000000ff00ULL)     \
-					  << 40)                                                   \
+					  << 40u)                                                  \
 		| (u_int64_t)(((u_int64_t)(x) & (u_int64_t) 0x0000000000ff0000ULL)     \
-					  << 24)                                                   \
+					  << 24u)                                                  \
 		| (u_int64_t)(((u_int64_t)(x) & (u_int64_t) 0x00000000ff000000ULL)     \
-					  << 8)                                                    \
+					  << 8u)                                                   \
 		| (u_int64_t)(((u_int64_t)(x) & (u_int64_t) 0x000000ff00000000ULL)     \
-					  >> 8)                                                    \
+					  >> 8u)                                                   \
 		| (u_int64_t)(((u_int64_t)(x) & (u_int64_t) 0x0000ff0000000000ULL)     \
-					  >> 24)                                                   \
+					  >> 24u)                                                  \
 		| (u_int64_t)(((u_int64_t)(x) & (u_int64_t) 0x00ff000000000000ULL)     \
-					  >> 40)                                                   \
+					  >> 40u)                                                  \
 		| (u_int64_t)(((u_int64_t)(x) & (u_int64_t) 0xff00000000000000ULL)     \
-					  >> 56)))
+					  >> 56u)))
 
 /*
 	 * Linux

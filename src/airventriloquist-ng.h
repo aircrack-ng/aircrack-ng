@@ -305,7 +305,7 @@ struct radius_hdr
 
 #define REDIRECT_PLACEHOLDER "https://www.google.com/?gws_rd=ssl"
 
-char * packet302_redirect = "HTTP/1.1 302 Found\r\n\
+static char * packet302_redirect = "HTTP/1.1 302 Found\r\n\
 Location: https://www.google.com/?gws_rd=ssl\r\n\
 Cache-Control: private\r\n\
 Content-Type: text/html; charset=UTF-8\r\n\
