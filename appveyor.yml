@@ -173,7 +173,7 @@ artifacts:
 
 deploy:
   - provider: FTP
-    host: secure.thrallingpenguin.com
+    host: packages.aircrack-ng.org:15021
     protocol: ftps
     username: appveyor
     password:
