@@ -91,6 +91,7 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 static void dump_sort(void);
 static void dump_print(int ws_row, int ws_col, int if_num);
+static int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur, const int32_t ri_power);
 
 static char * get_manufacturer_from_string(char * buffer)
 {
@@ -1386,8 +1387,6 @@ static int dump_add_packet(unsigned char * h80211,
 	struct ST_info * st_prv = NULL;
 	struct NA_info * na_prv = NULL;
 
-	struct tm * ltime;
-
 	/* skip all non probe response frames in active scanning simulation mode */
 	if (G.active_scan_sim > 0 && h80211[0] != 0x50) return (0);
 
@@ -1622,64 +1621,7 @@ static int dump_add_packet(unsigned char * h80211,
 		{
 			/* Write out our rolling log every time we see data from an AP */
 
-			// Local computer time
-			ltime = localtime(&ap_cur->tlast);
-			fprintf(G.f_logcsv,
-					"%04d-%02d-%02d %02d:%02d:%02d,",
-					1900 + ltime->tm_year,
-					1 + ltime->tm_mon,
-					ltime->tm_mday,
-					ltime->tm_hour,
-					ltime->tm_min,
-					ltime->tm_sec);
-
-			// Gps time
-			struct tm * tm_gpstime = &G.gps_time;
-			fprintf(G.f_logcsv,
-					"%04d-%02d-%02d %02d:%02d:%02d,",
-					1900 + tm_gpstime->tm_year,
-					1 + tm_gpstime->tm_mon,
-					tm_gpstime->tm_mday,
-					tm_gpstime->tm_hour,
-					tm_gpstime->tm_min,
-					tm_gpstime->tm_sec);
-
-			// ESSID
-			fprintf(G.f_logcsv, "%s,", ap_cur->essid);
-
-			// BSSID
-			fprintf(G.f_logcsv,
-					"%02X:%02X:%02X:%02X:%02X:%02X,",
-					ap_cur->bssid[0],
-					ap_cur->bssid[1],
-					ap_cur->bssid[2],
-					ap_cur->bssid[3],
-					ap_cur->bssid[4],
-					ap_cur->bssid[5]);
-
-			// RSSI
-			fprintf(G.f_logcsv, "%d,", ri->ri_power);
-
-			// Network Security
-			if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2))
-				== 0)
-				fputs(",", G.f_logcsv);
-			else if (ap_cur->security & STD_WPA2)
-				fputs("WPA2,", G.f_logcsv);
-			else if (ap_cur->security & STD_WPA)
-				fputs("WPA,", G.f_logcsv);
-			else if (ap_cur->security & STD_WEP)
-				fputs("WEP,", G.f_logcsv);
-			else if (ap_cur->security & STD_OPN)
-				fputs("OPN,", G.f_logcsv);
-
-			// Lat, Lon, Lat Error, Lon Error
-			fprintf(G.f_logcsv,
-					"%.6f,%.6f,%.3f,%.3f\r\n",
-					G.gps_loc[0],
-					G.gps_loc[1],
-					G.gps_loc[5],
-					G.gps_loc[6]);
+			dump_write_airodump_ng_logcsv_add_ap(ap_cur, ri->ri_power);
 		}
 
 		//         if(ap_cur->fcapt >= QLT_COUNT) update_rx_quality();
@@ -4661,6 +4603,75 @@ static int dump_write_csv(void)
 
 	fprintf(G.f_txt, "\r\n");
 	fflush(G.f_txt);
+	return 0;
+}
+
+static int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur, int32_t ri_power)
+{
+	if (ap_cur == NULL || !G.output_format_log_csv || !G.f_logcsv) 
+	{
+		return 0;
+	}
+
+	// Local computer time
+	struct tm *ltime = localtime(&ap_cur->tlast);
+	fprintf(G.f_logcsv,
+			"%04d-%02d-%02d %02d:%02d:%02d,",
+			1900 + ltime->tm_year,
+			1 + ltime->tm_mon,
+			ltime->tm_mday,
+			ltime->tm_hour,
+			ltime->tm_min,
+			ltime->tm_sec);
+
+	// Gps time
+	struct tm * tm_gpstime = &G.gps_time;
+	fprintf(G.f_logcsv,
+			"%04d-%02d-%02d %02d:%02d:%02d,",
+			1900 + tm_gpstime->tm_year,
+			1 + tm_gpstime->tm_mon,
+			tm_gpstime->tm_mday,
+			tm_gpstime->tm_hour,
+			tm_gpstime->tm_min,
+			tm_gpstime->tm_sec);
+
+	// ESSID
+	fprintf(G.f_logcsv, "%s,", ap_cur->essid);
+
+	// BSSID
+	fprintf(G.f_logcsv,
+			"%02X:%02X:%02X:%02X:%02X:%02X,",
+			ap_cur->bssid[0],
+			ap_cur->bssid[1],
+			ap_cur->bssid[2],
+			ap_cur->bssid[3],
+			ap_cur->bssid[4],
+			ap_cur->bssid[5]);
+
+	// RSSI
+	fprintf(G.f_logcsv, "%d,", ri_power);
+
+	// Network Security
+	if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2))
+		== 0)
+		fputs(",", G.f_logcsv);
+	else if (ap_cur->security & STD_WPA2)
+		fputs("WPA2,", G.f_logcsv);
+	else if (ap_cur->security & STD_WPA)
+		fputs("WPA,", G.f_logcsv);
+	else if (ap_cur->security & STD_WEP)
+		fputs("WEP,", G.f_logcsv);
+	else if (ap_cur->security & STD_OPN)
+		fputs("OPN,", G.f_logcsv);
+
+	// Lat, Lon, Lat Error, Lon Error
+	fprintf(G.f_logcsv,
+			"%.6f,%.6f,%.3f,%.3f\r\n",
+			G.gps_loc[0],
+			G.gps_loc[1],
+			G.gps_loc[5],
+			G.gps_loc[6]);
+
 	return 0;
 }
 
