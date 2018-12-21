@@ -92,6 +92,7 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 static void dump_sort(void);
 static void dump_print(int ws_row, int ws_col, int if_num);
 static int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur, const int32_t ri_power);
+static int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur, const struct ST_info * st_cur, const int32_t ri_power);
 
 static char * get_manufacturer_from_string(char * buffer)
 {
@@ -1004,7 +1005,7 @@ static int dump_initialize(char * prefix, int ivs_only)
 		fprintf(G.f_logcsv,
 				"LocalTime, GPSTime, ESSID, BSSID, Power, "
 				"Security, Latitude, Longitude, Latitude Error, "
-				"Longitude Error\r\n");
+				"Longitude Error, Type\r\n");
 	}
 
 	/* create the output Kismet CSV file */
@@ -1799,6 +1800,13 @@ static int dump_add_packet(unsigned char * h80211,
 			if (msd > 0 && msd < 1000) st_cur->missed += msd;
 		}
 		st_cur->lastseq = seq;
+		
+		/* if we are writing to a file and want to make a continuous rolling log save the data here */
+		if (G.record_data && G.output_format_log_csv)
+		{
+			/* Write out our rolling log every time we see data from a client */
+			dump_write_airodump_ng_logcsv_add_client(ap_cur, st_cur, ri->ri_power);
+		}
 	}
 
 	st_cur->nb_pkt++;
@@ -4666,11 +4674,73 @@ static int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur, i
 
 	// Lat, Lon, Lat Error, Lon Error
 	fprintf(G.f_logcsv,
-			"%.6f,%.6f,%.3f,%.3f\r\n",
+			"%.6f,%.6f,%.3f,%.3f,AP\r\n",
 			G.gps_loc[0],
 			G.gps_loc[1],
 			G.gps_loc[5],
 			G.gps_loc[6]);
+
+	return 0;
+}
+
+static int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur, const struct ST_info * st_cur, const int32_t ri_power)
+{
+	if (st_cur == NULL || !G.output_format_log_csv || !G.f_logcsv) 
+	{
+		return 0;
+	}
+
+	// Local computer time
+	struct tm * ltime = localtime(&ap_cur->tlast);
+	fprintf(G.f_logcsv,
+			"%04d-%02d-%02d %02d:%02d:%02d,",
+			1900 + ltime->tm_year,
+			1 + ltime->tm_mon,
+			ltime->tm_mday,
+			ltime->tm_hour,
+			ltime->tm_min,
+			ltime->tm_sec);
+
+	// GPS time
+	struct tm * tm_gpstime = &G.gps_time;
+	fprintf(G.f_logcsv,
+			"%04d-%02d-%02d %02d:%02d:%02d,",
+			1900 + tm_gpstime->tm_year,
+			1 + tm_gpstime->tm_mon,
+			tm_gpstime->tm_mday,
+			tm_gpstime->tm_hour,
+			tm_gpstime->tm_min,
+			tm_gpstime->tm_sec);
+
+	// Client => No ESSID
+	fprintf(G.f_logcsv, ",");
+
+	// BSSID
+	fprintf(G.f_logcsv,
+			"%02X:%02X:%02X:%02X:%02X:%02X,",
+			st_cur->stmac[0],
+			st_cur->stmac[1],
+			st_cur->stmac[2],
+			st_cur->stmac[3],
+			st_cur->stmac[4],
+			st_cur->stmac[5]);
+
+	// RSSI
+	fprintf(G.f_logcsv, "%d,", ri_power);
+
+	// Client => Network Security: none 
+	fprintf(G.f_logcsv, ",");
+
+	// Lat, Lon, Lat Error, Lon Errorst_cur->power
+	fprintf(G.f_logcsv,
+			"%.6f,%.6f,%.3f,%.3f,",
+			G.gps_loc[0],
+			G.gps_loc[1],
+			G.gps_loc[5],
+			G.gps_loc[6]);
+
+	// Type
+	fprintf(G.f_logcsv, "Client\r\n");
 
 	return 0;
 }
