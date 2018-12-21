@@ -174,7 +174,7 @@ artifacts:
 deploy:
   - provider: FTP
     host: packages.aircrack-ng.org:15021
-    protocol: ftps
+    protocol: ftp
     username: appveyor
     password:
       secure: TMwjjDnIFGZclF9TbbgBprDa1kRweHrh6Gw4vnDW/QegdmR4CT/LUiDf9L+OdNVZ
