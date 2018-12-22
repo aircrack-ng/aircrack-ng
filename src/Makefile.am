@@ -55,7 +55,7 @@ SRC_AC_ALL  = aircrack-ng.c
 SRC_AD		= airdecap-ng.c
 SRC_PF		= packetforge-ng.c
 SRC_AR		= aireplay-ng.c
-SRC_ADU		= airodump-ng.c
+SRC_ADU		= airodump-ng.c dump_write.c
 
 SRC_AT		= airtun-ng.c
 SRC_IV		= ivstools.c
@@ -320,7 +320,9 @@ EXTRA_DIST = wpaclean.c \
              cowpatty.h \
              session.c \
              session.h \
-			 defs.h
+			 defs.h \
+			 dump_write.h \
+			 dump_write.c
 
 
 @CODE_COVERAGE_RULES@

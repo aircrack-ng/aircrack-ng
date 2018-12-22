@@ -33,6 +33,9 @@
 #define _AIRODUMP_NG_H_
 
 #include "eapol.h"
+#include "pcap.h"
+#include <sys/ioctl.h>
+//#include <termios.h>
 
 /* some constants */
 
@@ -102,59 +105,10 @@ extern int get_ram_size(void);
 char *
 get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
 
-#define AIRODUMP_NG_CSV_EXT "csv"
-#define KISMET_CSV_EXT "kismet.csv"
-#define KISMET_NETXML_EXT "kismet.netxml"
-#define AIRODUMP_NG_GPS_EXT "gps"
-#define AIRODUMP_NG_CAP_EXT "cap"
-#define AIRODUMP_NG_LOG_CSV_EXT "log.csv"
-
-#define NB_EXTENSIONS 7
-
-const unsigned char llcnull[4] = {0, 0, 0, 0};
-char * f_ext[NB_EXTENSIONS] = {AIRODUMP_NG_CSV_EXT,
-							   AIRODUMP_NG_GPS_EXT,
-							   AIRODUMP_NG_CAP_EXT,
-							   IVS2_EXTENSION,
-							   KISMET_CSV_EXT,
-							   KISMET_NETXML_EXT,
-							   AIRODUMP_NG_LOG_CSV_EXT};
-
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
 
-const char * OUI_PATHS[] = {"./airodump-ng-oui.txt",
-							"/etc/aircrack-ng/airodump-ng-oui.txt",
-							"/usr/local/etc/aircrack-ng/airodump-ng-oui.txt",
-							"/usr/share/aircrack-ng/airodump-ng-oui.txt",
-							"/var/lib/misc/oui.txt",
-							"/usr/share/misc/oui.txt",
-							"/var/lib/ieee-data/oui.txt",
-							"/usr/share/ieee-data/oui.txt",
-							"/etc/manuf/oui.txt",
-							"/usr/share/wireshark/wireshark/manuf/oui.txt",
-							"/usr/share/wireshark/manuf/oui.txt",
-							NULL};
-
 #define MIN_RAM_SIZE_LOAD_OUI_RAM 32768
-
-int read_pkts = 0;
-
-int abg_chans[]
-	= {1,   7,   13,  2,   8,   3,   14,  9,   4,   10,  5,   11,  6,
-	   12,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
-	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
-	   120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 144, 149,
-	   151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
-
-int bg_chans[] = {1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, 0};
-
-int a_chans[] = {36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
-				 60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
-				 118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
-				 144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
-
-int * frequencies;
 
 /* linked list of received packets for the last few seconds */
 struct pkt_buf
