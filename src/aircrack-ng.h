@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2007-2012 Martin Beck <hirte@aircrack-ng.org>
+ *  Copyright (C) 2007-2012 Martin Beck <martin.beck2@gmx.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
