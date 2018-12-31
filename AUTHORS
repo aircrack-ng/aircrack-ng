@@ -1,1 +1,195 @@
+Original Author
+===============
+
 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+
+Contributors
+============
+
+* Zero Chaos
+	- Airmon-ng maintainer
+	- Occational driver patch fixer
+	- Driver tester
+
+* Joseph Benden <joe@aircrack-ng.org>
+
+	- Instituted the project's coding style & formatting guidelines
+	- Performed conversion from Subversion and Trac to GitHub
+	- Continuous Integration: Buildbot system as well as AppVeyor setup and tuning TravisCI
+	- Converted project from Makefiles to an Autotools-based build
+	- Forged the WPA cracking engine; capable of linearly scaling up to at least 96 cores
+	- Dynamically utilize the best SIMD instructions, at run-time, instead of build-time
+	- Improved compilation on non-x86 platforms
+	- Fixed many issues relating to SIMD on non-x86 architectures
+
+* Levert
+
+	- Initial Subversion, trac and buildbot set-up
+
+* Andrea Bittau
+
+	- osdep: OS-dependant capture/injection layer conditionally (OS) compiled
+
+* hirte (Martin Beck) <martin.beck2@gmx.de>
+
+	- Aircrack-ng: implementation of PTW, KoreK attack speedup
+	- Aireplay-ng: Fragmentation attack, Shared Key Authentication attack, 
+		injection test, hirte attack, Caffe Latte, Client Fragmentation,
+		using two wireless interfaces in aireplay-ng (one for capture, one for injection)
+	- Airodump-ng: Screen formatting and layout improvements
+	- ieee80211 and mac80211 driver patches and driver-related changes/fixes in the tools
+	- osdep improvements (mac80211 among other things) and fixes
+	- New tools: airtun-ng, tkiptun-ng, airserv-ng, airdriver-ng, airbase-ng
+	- IVS file format
+	- airmon-ng improvements
+	- Partial handshake cracking and detection
+
+* Carlos Lopez <clopez@igalia.com>
+
+	- Added support for gcrypt instead of openssl
+	- Crypto unit tests and tests for other tools
+	- Manpage reorganization and improvements
+	- Makefile fixes and improvements
+	- Travis CI set-up
+	- Airodump-ng: --manufacturer, --wps options
+
+* DarkAudax
+
+	- Wiki: Documentation and tutorials
+	- Added unit tests
+
+* ASPj (Pedro Larbig)
+
+	- Driver-related fixes
+	- New tools: Airtun-ng
+	- ieee80211 driver patches (ipw3945, rt73, rt2570, prism2)
+	- MDK3
+	- WDS support in different tools
+	- besside-ng-crawler
+
+* Leandro Meiners <lmeiners@coresecurity.com/gmail.com> 
+   and Diego Sor <dsor@coresecurity.com/diegos@gmail.com>
+
+	- WPA Migration mode attack and documentation
+
+* nathanh2011
+
+	- Revamped GPS logging functionality and added logcsv format
+
+* XayOn
+
+	- Airoscript-ng
+	- Airgraph-ng and airdrop-ng improvements
+
+* Daouid
+
+	- Airoscript
+
+* Chris Lundquist
+
+	- Aircrack-ng: Crack HCCAPx files
+	- Aircrack-ng: Improve loading speed of large capture files
+	- Aircrack-ng: Improve processing speed of large capture files
+
+* kimocoder (Christian B.) <kimocoder@aircrack-ng.org>
+
+	- rtl8812au driver
+
+* dzk|kuro <dzk.kuro@gmail.com>
+
+	- Initial capture/injection on BSD
+
+* Erik Tews <e_tews@cdc.informatik.tu-darmstadt.de>
+
+	- Author of PTW attack
+
+* Loris Degioanni
+
+	- Airpcap support
+
+* NetRoller3D
+
+	- mac80211 driver patches and related fixes/improvements in osdep
+	- Airmon-ng fixes
+	- Radiotap support (and PPI detection) in various tools
+	- Airdriver-ng improvements
+
+* Moshe Kaplan
+
+	- Coverity Scan set-up
+	- Memory leak and other fixes
+	- AppArmor profiles
+
+* TheX1le (Ben Smith)
+
+	- airgraph-ng
+	- versuck-ng
+	- airdrop-ng
+
+* nx5 (Alvaro Salmador) <naplam33@msn.com>
+
+	- Aircrack-ng: WPA SSE2 implementation
+
+* Len White
+
+	- Aircrack-ng: WPA AVX/AVX2 code porting from JTR
+
+Thanks to
+=========
+
+Alon Bar-Lev <alon.barlev@gmail.com>
+Almantsas
+Jano
+yh0- <yysjryysjr@gmail.com>
+Darko Sancanin <darko.sancanin@gmail.com>
+Fabrice Fontaine
+Julian Tyler
+LatinSud aka SuD
+layoyo
+Marohiver
+Michael Buesch <mb@bu3sch.de>
+myst404
+Ryan Schmidt
+neheb (Rosen Penev)
+San Foxman
+Samuel Henrique
+tjt263
+ZhaoChunsheng
+Kyle Fuller <inbox@kylefuller.co.uk>
+SemiSkimmedSteve
+mnt
+XBM5
+Raúl Calvo Laorden
+Lars Engels
+darkfires
+Marks
+Mathy Vanhoef
+Wojciech Waga
+Gustavo Zacarias
+steev
+rmh
+Arnaud Fontaine
+beini
+yadox
+Ramiro Polla
+matrix.use.linux
+m4tr1x
+dan
+Christoph J. Thompson
+stsp
+Edgan
+Wiz
+Wouter van Kesteren
+buzzsaw
+slyfox
+Sergei Trofimovich
+mrpisto
+Paul Fertser
+impulse32
+jeroenimo
+iceblox
+Ludovic Drolez
+Christian Mock
+Weedy
+
+... and to anybody else who contributed, who, sometimes wishes to remain anonymous.
