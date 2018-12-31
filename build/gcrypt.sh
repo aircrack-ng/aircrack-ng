@@ -5,7 +5,7 @@ set -e
 EXTRA=
 case "${CC:=}" in
     clang*|llvm*) export CXX=clang++;;
-    *) export CFLAGS=-Werror; export CXXFLAGS=-Werror;;
+    *) export CFLAGS="-Werror -Wno-unused-result"; export CXXFLAGS="-Werror -Wno-unused-result";;
 esac
 
 ./autogen.sh --with-experimental --with-gcrypt ${EXTRA} || { cat config.log; exit 1; }
