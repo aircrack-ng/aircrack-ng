@@ -717,7 +717,10 @@ static void clean_exit(int ret)
 			free(wpa_data[i].key_buffer);
 			wpa_data[i].key_buffer = NULL;
 		}
-		ALLEGE(pthread_mutex_destroy(&(wpa_data[i].mutex)) == 0);
+		if (wpa_data[i].thread == i)
+		{
+			/* ALLEGE(*/ pthread_mutex_destroy(&(wpa_data[i].mutex)) /* == 0)*/;
+		}
 	}
 
 	dso_ac_crypto_engine_destroy(&engine);
