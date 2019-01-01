@@ -5815,6 +5815,17 @@ int main(int argc, char * argv[])
 
 	forceptw = 0;
 
+	ALLEGE(signal(SIGINT, sighandler) != SIG_ERR);
+	ALLEGE(signal(SIGQUIT, sighandler) != SIG_ERR);
+	ALLEGE(signal(SIGTERM, sighandler) != SIG_ERR);
+	ALLEGE(signal(SIGALRM, SIG_IGN) != SIG_ERR);
+
+	ALLEGE(pthread_mutex_init(&mx_apl, NULL) == 0);
+	ALLEGE(pthread_mutex_init(&mx_ivb, NULL) == 0);
+	ALLEGE(pthread_mutex_init(&mx_eof, NULL) == 0);
+	ALLEGE(pthread_mutex_init(&mx_dic, NULL) == 0);
+	ALLEGE(pthread_cond_init(&cv_eof, NULL) == 0);
+
 	// When no params, no point checking/parsing arguments
 	if (nbarg == 1)
 	{
@@ -6459,17 +6470,6 @@ int main(int argc, char * argv[])
 	}
 
 	/* start one thread per input file */
-
-	ALLEGE(signal(SIGINT, sighandler) != SIG_ERR);
-	ALLEGE(signal(SIGQUIT, sighandler) != SIG_ERR);
-	ALLEGE(signal(SIGTERM, sighandler) != SIG_ERR);
-	ALLEGE(signal(SIGALRM, SIG_IGN) != SIG_ERR);
-
-	ALLEGE(pthread_mutex_init(&mx_apl, NULL) == 0);
-	ALLEGE(pthread_mutex_init(&mx_ivb, NULL) == 0);
-	ALLEGE(pthread_mutex_init(&mx_eof, NULL) == 0);
-	ALLEGE(pthread_mutex_init(&mx_dic, NULL) == 0);
-	ALLEGE(pthread_cond_init(&cv_eof, NULL) == 0);
 
 	old = optind;
 	n = nbarg - optind;
