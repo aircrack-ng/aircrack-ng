@@ -38,7 +38,7 @@
 	{                                                                          \
 		if (!(c))                                                              \
 		{                                                                      \
-			fprintf(stderr, "FAILED: %s\n", #c);                               \
+			fprintf(stderr, "FAILED:%s:%d: %s\n", __FILE__, __LINE__, #c);     \
 			abort();                                                           \
 		}                                                                      \
 	} while (0)
