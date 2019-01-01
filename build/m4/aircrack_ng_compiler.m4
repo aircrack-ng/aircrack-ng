@@ -107,6 +107,13 @@ AC_LANG_CASE([C], [
     esac
 
     case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        intel)
+			dnl warning 2218 is: result of call is not used
+            AX_APPEND_FLAG(-diag-disable 2218, [opt_[]_AC_LANG_ABBREV[]flags])
+            ;;
+    esac
+
+    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
         gnu|clang|intel)
             AX_APPEND_FLAG(-Wstrict-prototypes, [opt_[]_AC_LANG_ABBREV[]flags])
             ;;
