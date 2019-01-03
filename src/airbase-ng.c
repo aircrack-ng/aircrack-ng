@@ -151,7 +151,7 @@ static struct wif *_wi_in, *_wi_out;
 	"\xf2\x01\x00\x50\xf2\x02\x00\x50\xf2\x03\x00\x50\xf2\x04\x00\x50"         \
 	"\xf2\x05\x02\x00\x00\x50\xf2\x01\x00\x50\xf2\x02"
 
-const char usage[]
+static const char usage[]
 	= "\n"
 	  "  %s - (C) 2008-2018 Thomas d'Otreppe\n"
 	  "  Original work: Martin Beck\n"
@@ -460,6 +460,7 @@ static int addESSID(char * essid, int len, int expiration)
 
 	// set essid
 	tmp->essid = (char *) malloc(len + 1);
+	ALLEGE(tmp->essid != NULL);
 	memcpy(tmp->essid, essid, len);
 	tmp->essid[len] = 0x00;
 	tmp->len = len;
@@ -971,9 +972,9 @@ static int gotESSID(char * essid, int len)
 {
 	pESSID_t old, cur;
 
-	if (essid == NULL) return -1;
+	if (essid == NULL) return (-1);
 
-	if (len <= 0 || len > 255) return -1;
+	if (len <= 0 || len > 255) return (-1);
 
 	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
 	cur = rESSID;
@@ -981,7 +982,7 @@ static int gotESSID(char * essid, int len)
 	if (rESSID == NULL)
 	{
 		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
-		return -1;
+		return (-1);
 	}
 
 	while (cur->next != NULL)
@@ -992,23 +993,23 @@ static int gotESSID(char * essid, int len)
 			if (memcmp(old->essid, essid, len) == 0)
 			{
 				ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
-				return 1;
+				return (1);
 			}
 		}
 		cur = cur->next;
 	}
 
 	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
-	return 0;
+	return (0);
 }
 
 static int gotMAC(pMAC_t pMAC, unsigned char * mac)
 {
 	pMAC_t cur = pMAC;
 
-	if (mac == NULL) return -1;
+	if (mac == NULL) return (-1);
 
-	if (pMAC == NULL) return -1;
+	if (pMAC == NULL) return (-1);
 
 	while (cur->next != NULL)
 	{
@@ -1016,29 +1017,30 @@ static int gotMAC(pMAC_t pMAC, unsigned char * mac)
 		if (memcmp(cur->mac, mac, 6) == 0)
 		{
 			// got it
-			return 1;
+			return (1);
 		}
 	}
 
-	return 0;
+	return (0);
 }
 
 static int getESSID(char * essid)
 {
 	int len;
+
 	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
 
 	if (rESSID == NULL || rESSID->next == NULL)
 	{
 		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
-		return 0;
+		return (0);
 	}
 
 	memcpy(essid, rESSID->next->essid, rESSID->next->len + 1);
 	len = rESSID->next->len;
 	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 
-	return len;
+	return (len);
 }
 
 static int getNextESSID(char * essid)
@@ -1051,7 +1053,7 @@ static int getNextESSID(char * essid)
 	if (rESSID == NULL || rESSID->next == NULL)
 	{
 		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
-		return 0;
+		return (0);
 	}
 
 	len = strlen(essid);
@@ -1083,7 +1085,7 @@ static int getNextESSID(char * essid)
 	}
 	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
 
-	return len;
+	return (len);
 }
 
 static int getESSIDcount(void)
@@ -1097,7 +1099,7 @@ static int getESSIDcount(void)
 	if (rESSID == NULL)
 	{
 		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
-		return -1;
+		return (-1);
 	}
 
 	while (cur->next != NULL)
@@ -1107,7 +1109,7 @@ static int getESSIDcount(void)
 	}
 
 	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
-	return count;
+	return (count);
 }
 
 static int getMACcount(pMAC_t pMAC)
@@ -1115,7 +1117,7 @@ static int getMACcount(pMAC_t pMAC)
 	pMAC_t cur = pMAC;
 	int count = 0;
 
-	if (pMAC == NULL) return -1;
+	if (pMAC == NULL) return (-1);
 
 	while (cur->next != NULL)
 	{
@@ -1123,11 +1125,13 @@ static int getMACcount(pMAC_t pMAC)
 		count++;
 	}
 
-	return count;
+	return (count);
 }
 
 static int addESSIDfile(char * filename)
 {
+	REQUIRE(filename != NULL);
+
 	FILE * list;
 	char essid[256];
 	int x;
@@ -1136,7 +1140,7 @@ static int addESSIDfile(char * filename)
 	if (list == NULL)
 	{
 		perror("Unable to open ESSID list");
-		return -1;
+		return (-1);
 	}
 
 	while (fgets(essid, 256, list) != NULL)
@@ -1150,11 +1154,13 @@ static int addESSIDfile(char * filename)
 
 	fclose(list);
 
-	return 0;
+	return (0);
 }
 
 static int addMACfile(pMAC_t pMAC, char * filename)
 {
+	REQUIRE(filename != NULL);
+
 	FILE * list;
 	unsigned char mac[6];
 	char buffer[256];
@@ -1163,7 +1169,7 @@ static int addMACfile(pMAC_t pMAC, char * filename)
 	if (list == NULL)
 	{
 		perror("Unable to open MAC list");
-		return -1;
+		return (-1);
 	}
 
 	while (fgets(buffer, 256, list) != NULL)
@@ -1173,16 +1179,17 @@ static int addMACfile(pMAC_t pMAC, char * filename)
 
 	fclose(list);
 
-	return 0;
+	return (0);
 }
 
 static int send_packet(void * buf, size_t count)
 {
 	struct wif * wi = _wi_out; /* XXX globals suck */
+
 	if (wi_write(wi, buf, count, NULL) == -1)
 	{
 		perror("wi_write()");
-		return -1;
+		return (-1);
 	}
 
 	ALLEGE(pthread_mutex_lock(&mx_cap) == 0);
@@ -1190,7 +1197,7 @@ static int send_packet(void * buf, size_t count)
 	ALLEGE(pthread_mutex_unlock(&mx_cap) == 0);
 
 	nb_pkt_sent++;
-	return 0;
+	return (0);
 }
 
 static int read_packet(void * buf, size_t count)
@@ -1202,10 +1209,10 @@ static int read_packet(void * buf, size_t count)
 	if (rc == -1)
 	{
 		perror("wi_read()");
-		return -1;
+		return (-1);
 	}
 
-	return rc;
+	return (rc);
 }
 
 static int msleep(int msec)
@@ -1252,7 +1259,7 @@ static int msleep(int msec)
 		break;
 	}
 
-	return 0;
+	return (0);
 }
 
 static int check_shared_key(unsigned char * h80211, int caplen)
@@ -1263,7 +1270,7 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 	unsigned char prga[4096];
 	unsigned int long crc;
 
-	if ((unsigned) caplen > sizeof(opt.sharedkey[0])) return 1;
+	if ((unsigned) caplen > sizeof(opt.sharedkey[0])) return (1);
 
 	m_bmac = 16;
 	m_smac = 10;
@@ -1296,7 +1303,7 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 			}
 		}
 		else
-			return 1;
+			return (1);
 	}
 	else
 	{
@@ -1312,28 +1319,28 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 		|| (memcmp(opt.sharedkey[2] + m_bmac, NULL_MAC, 6)
 			== 0)) /* some bssids == zero */
 	{
-		return 1;
+		return (1);
 	}
 
 	if ((memcmp(opt.sharedkey[0] + m_bmac, opt.sharedkey[1] + m_bmac, 6) != 0)
 		|| (memcmp(opt.sharedkey[0] + m_bmac, opt.sharedkey[2] + m_bmac, 6)
 			!= 0)) /* all bssids aren't equal */
 	{
-		return 1;
+		return (1);
 	}
 
 	if ((memcmp(opt.sharedkey[0] + m_smac, opt.sharedkey[2] + m_smac, 6) != 0)
 		|| (memcmp(opt.sharedkey[0] + m_smac, opt.sharedkey[1] + m_dmac, 6)
 			!= 0)) /* SA in 2&4 != DA in 3 */
 	{
-		return 1;
+		return (1);
 	}
 
 	if ((memcmp(opt.sharedkey[0] + m_dmac, opt.sharedkey[2] + m_dmac, 6) != 0)
 		|| (memcmp(opt.sharedkey[0] + m_dmac, opt.sharedkey[1] + m_smac, 6)
 			!= 0)) /* DA in 2&4 != SA in 3 */
 	{
-		return 1;
+		return (1);
 	}
 
 	textlen = opt.sk_len;
@@ -1354,10 +1361,10 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 				   textlen + 4,
 				   opt.sk_len2);
 		}
-		return 1;
+		return (1);
 	}
 
-	if ((unsigned) textlen > sizeof(text) - 4) return 1;
+	if ((unsigned) textlen > sizeof(text) - 4) return (1);
 
 	memcpy(text, opt.sharedkey[0] + 24, textlen);
 
@@ -1410,7 +1417,7 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 	opt.f_index++;
 
 	opt.f_xor = fopen(ofn, "w");
-	if (opt.f_xor == NULL) return 1;
+	if (opt.f_xor == NULL) return (1);
 
 	for (n = 0; n < textlen + 8; n++) fputc((prga[n] & 0xFF), opt.f_xor);
 
@@ -1436,8 +1443,9 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 	}
 
 	memset(opt.sharedkey, '\x00', 512 * 3);
+
 	/* ok, keystream saved */
-	return 0;
+	return (0);
 }
 
 #define IEEE80211_LLC_SNAP                                                     \
@@ -1449,13 +1457,13 @@ static int encrypt_data(unsigned char * data, int length)
 	unsigned char cipher[4096];
 	unsigned char K[128];
 
-	if (data == NULL) return 1;
-	if (length < 1 || length > 2044) return 1;
+	if (data == NULL) return (1);
+	if (length < 1 || length > 2044) return (1);
 
 	if (opt.prga == NULL && opt.crypt != CRYPT_WEP)
 	{
 		printf("Please specify a WEP key (-w).\n");
-		return 1;
+		return (1);
 	}
 
 	if (opt.prgalen - 4 < length && opt.crypt != CRYPT_WEP)
@@ -1463,7 +1471,7 @@ static int encrypt_data(unsigned char * data, int length)
 		printf(
 			"Please specify a longer PRGA file (-y) with at least %i bytes.\n",
 			(length + 4));
-		return 1;
+		return (1);
 	}
 
 	/* encrypt data */
@@ -1481,18 +1489,18 @@ static int encrypt_data(unsigned char * data, int length)
 		data[3] = 0x00;
 	}
 
-	return 0;
+	return (0);
 }
 
 static int create_wep_packet(unsigned char * packet, int * length, int hdrlen)
 {
-	if (packet == NULL) return 1;
+	if (packet == NULL) return (1);
 
 	/* write crc32 value behind data */
-	if (add_crc32(packet + hdrlen, *length - hdrlen) != 0) return 1;
+	if (add_crc32(packet + hdrlen, *length - hdrlen) != 0) return (1);
 
 	/* encrypt data+crc32 and keep a 4byte hole */
-	if (encrypt_data(packet + hdrlen, *length - hdrlen + 4) != 0) return 1;
+	if (encrypt_data(packet + hdrlen, *length - hdrlen + 4) != 0) return (1);
 
 	/* set WEP bit */
 	packet[1] = packet[1] | 0x40;
@@ -1500,11 +1508,14 @@ static int create_wep_packet(unsigned char * packet, int * length, int hdrlen)
 	*length += 8;
 	/* now you got yourself a shiny, brand new encrypted wep packet ;) */
 
-	return 0;
+	return (0);
 }
 
 static int intercept(unsigned char * packet, int length)
 {
+	REQUIRE(packet != NULL);
+	REQUIRE(length > 0);
+
 	unsigned char buf[4096];
 	unsigned char K[128];
 	int z = 0;
@@ -1521,7 +1532,7 @@ static int intercept(unsigned char * packet, int length)
 		if (decrypt_wep(packet + z + 4, length - z - 4, K, 3 + opt.weplen) == 0)
 		{
 			// ICV check failed!
-			return 1;
+			return (1);
 		}
 
 		/* WEP data packet was successfully decrypted, *
@@ -1540,7 +1551,7 @@ static int intercept(unsigned char * packet, int length)
 	length += 14;
 
 	ti_write(dev.dv_ti2, buf, length);
-	return 0;
+	return (0);
 }
 
 static int packet_xmit(unsigned char * packet, int length)
@@ -1549,16 +1560,16 @@ static int packet_xmit(unsigned char * packet, int length)
 	int fragments = 1, i;
 	int newlen = 0, usedlen = 0, length2;
 
-	if (packet == NULL) return 1;
+	if (packet == NULL) return (1);
 
-	if (length < 38) return 1;
+	if (length < 38) return (1);
 
-	if (length - 14 > 16 * opt.wif_mtu - MAX_FRAME_EXTENSION) return 1;
+	if (length - 14 > 16 * opt.wif_mtu - MAX_FRAME_EXTENSION) return (1);
 
 	if (length + MAX_FRAME_EXTENSION > opt.wif_mtu)
 		fragments = ((length - 14 + MAX_FRAME_EXTENSION) / opt.wif_mtu) + 1;
 
-	if (fragments > 16) return 1;
+	if (fragments > 16) return (1);
 
 	if (fragments > 1)
 		newlen = (length - 14 + MAX_FRAME_EXTENSION) / fragments;
@@ -1611,7 +1622,7 @@ static int packet_xmit(unsigned char * packet, int length)
 		{
 			if (opt.crypt == CRYPT_WEP || opt.prgalen > 0)
 			{
-				if (create_wep_packet(h80211, &length2, 24) != 0) return 1;
+				if (create_wep_packet(h80211, &length2, 24) != 0) return (1);
 			}
 
 			send_packet(h80211, length2);
@@ -1621,7 +1632,7 @@ static int packet_xmit(unsigned char * packet, int length)
 
 		if ((i + 1) < fragments) usleep(3000);
 	}
-	return 0;
+	return (0);
 }
 
 static int packet_recv(unsigned char * packet,
@@ -1635,15 +1646,15 @@ packet_xmit_external(unsigned char * packet, int length, struct AP_conf * apc)
 	unsigned char buf[4096];
 	int z = 0;
 
-	if (packet == NULL) return 1;
+	if (packet == NULL) return (1);
 
-	if (length < 40 || length > 3000) return 1;
+	if (length < 40 || length > 3000) return (1);
 
 	memset(buf, 0, 4096);
 	if (memcmp(packet, buf, 11) != 0)
 	{
 		// Wrong header
-		return 1;
+		return (1);
 	}
 
 	/* cut ethernet header */
@@ -1655,7 +1666,7 @@ packet_xmit_external(unsigned char * packet, int length, struct AP_conf * apc)
 
 	if (opt.crypt == CRYPT_WEP || opt.prgalen > 0)
 	{
-		if (create_wep_packet(packet, &length, z) != 0) return 1;
+		if (create_wep_packet(packet, &length, z) != 0) return (1);
 	}
 
 	if (memcmp(buf + 12, (unsigned char *) "\x00\x00", 2)
@@ -1669,18 +1680,20 @@ packet_xmit_external(unsigned char * packet, int length, struct AP_conf * apc)
 		send_packet(packet, length);
 	}
 
-	return 0;
+	return (0);
 }
 
 static int remove_tag(unsigned char * flags, unsigned char type, int * length)
 {
+	REQUIRE(length != NULL);
+
 	int cur_type = 0, cur_len = 0, len = 0;
 	unsigned char * pos;
 	unsigned char buffer[4096];
 
-	if (*length < 2) return 1;
+	if (*length < 2) return (1);
 
-	if (flags == NULL) return 1;
+	if (flags == NULL) return (1);
 
 	pos = flags;
 
@@ -1689,7 +1702,7 @@ static int remove_tag(unsigned char * flags, unsigned char type, int * length)
 		cur_type = pos[0];
 		cur_len = pos[1];
 
-		if (len + 2 + cur_len > *length) return 1;
+		if (len + 2 + cur_len > *length) return (1);
 
 		if (cur_type == type)
 		{
@@ -1700,16 +1713,16 @@ static int remove_tag(unsigned char * flags, unsigned char type, int * length)
 					   *length - ((pos + 2 + cur_len) - flags));
 				memcpy(pos, buffer, *length - ((pos + 2 + cur_len) - flags));
 				*length = *length - 2 - cur_len;
-				return 0;
+				return (0);
 			}
 			else
-				return 1;
+				return (1);
 		}
 		pos += cur_len + 2;
 		len += cur_len + 2;
 	} while (len + 2 <= *length);
 
-	return 0;
+	return (0);
 }
 
 static unsigned char *
@@ -1749,16 +1762,16 @@ parse_tags(unsigned char * flags, unsigned char type, int length, int * taglen)
 
 static int wpa_client(struct ST_info * st_cur, unsigned char * tag, int length)
 {
-	if (tag == NULL) return 1;
+	if (tag == NULL) return (1);
 
-	if (st_cur == NULL) return 1;
+	if (st_cur == NULL) return (1);
 
 	if (tag[0] != 0xDD && tag[0] != 0x30) // wpa1 or wpa2
-		return 1;
+		return (1);
 
 	if (tag[0] == 0xDD)
 	{
-		if (length < 24) return 1;
+		if (length < 24) return (1);
 
 		switch (tag[17])
 		{
@@ -1769,7 +1782,7 @@ static int wpa_client(struct ST_info * st_cur, unsigned char * tag, int length)
 				st_cur->wpahash = 2; // sha1|ccmp
 				break;
 			default:
-				return 1;
+				return (1);
 		}
 
 		st_cur->wpatype = 1; // wpa1
@@ -1777,7 +1790,7 @@ static int wpa_client(struct ST_info * st_cur, unsigned char * tag, int length)
 
 	if (tag[0] == 0x30 && st_cur->wpatype == 0)
 	{
-		if (length < 22) return 1;
+		if (length < 22) return (1);
 
 		switch (tag[13])
 		{
@@ -1788,20 +1801,20 @@ static int wpa_client(struct ST_info * st_cur, unsigned char * tag, int length)
 				st_cur->wpahash = 2; // sha1|ccmp
 				break;
 			default:
-				return 1;
+				return (1);
 		}
 
 		st_cur->wpatype = 2; // wpa2
 	}
 
-	return 0;
+	return (0);
 }
 
 static int set_clear_arp(unsigned char * buf,
 						 unsigned char * smac,
 						 unsigned char * dmac) // set first 22 bytes
 {
-	if (buf == NULL) return -1;
+	if (buf == NULL) return (-1);
 
 	memcpy(buf, S_LLC_SNAP_ARP, 8);
 	buf[8] = 0x00;
@@ -1817,12 +1830,12 @@ static int set_clear_arp(unsigned char * buf,
 		buf[15] = 0x02; // reply
 	memcpy(buf + 16, smac, 6);
 
-	return 0;
+	return (0);
 }
 
 static int set_final_arp(unsigned char * buf, unsigned char * mymac)
 {
-	if (buf == NULL) return -1;
+	if (buf == NULL) return (-1);
 
 	// shifted by 10bytes to set source IP as target IP :)
 
@@ -1838,24 +1851,24 @@ static int set_final_arp(unsigned char * buf, unsigned char * mymac)
 	buf[14] = 0x57;
 	buf[15] = 0xC5; // end sender IP
 
-	return 0;
+	return (0);
 }
 
 static int set_clear_ip(unsigned char * buf, int ip_len) // set first 9 bytes
 {
-	if (buf == NULL) return -1;
+	if (buf == NULL) return (-1);
 
 	memcpy(buf, S_LLC_SNAP_IP, 8);
 	buf[8] = 0x45;
 	buf[10] = (ip_len >> 8) & 0xFF;
 	buf[11] = ip_len & 0xFF;
 
-	return 0;
+	return (0);
 }
 
 static int set_final_ip(unsigned char * buf, unsigned char * mymac)
 {
-	if (buf == NULL) return -1;
+	if (buf == NULL) return (-1);
 
 	// shifted by 10bytes to set source IP as target IP :)
 
@@ -1869,7 +1882,7 @@ static int set_final_ip(unsigned char * buf, unsigned char * mymac)
 	buf[12] = 0x57;
 	buf[13] = 0xC5; // end sender IP
 
-	return 0;
+	return (0);
 }
 
 // add packet for client fragmentation attack
@@ -1885,20 +1898,20 @@ static int addCF(unsigned char * packet, int length)
 	int isarp;
 	int z, i;
 
-	if (curCF == NULL) return 1;
+	if (curCF == NULL) return (1);
 
-	if (packet == NULL) return 1;
+	if (packet == NULL) return (1);
 
 	z = ((packet[1] & 3) != 3) ? 24 : 30;
 
-	if (length < z + 8) return 1;
+	if (length < z + 8) return (1);
 
 	if (length > 3800)
 	{
-		return 1;
+		return (1);
 	}
 
-	if (opt.cf_count >= 100) return 1;
+	if (opt.cf_count >= 100) return (1);
 
 	memset(clear, 0, 4096);
 	memset(final, 0, 4096);
@@ -1940,7 +1953,7 @@ static int addCF(unsigned char * packet, int length)
 			printf("Ignored IPv6 packet.\n");
 		}
 
-		return 1;
+		return (1);
 	}
 
 	if (is_dhcp_discover(packet, length - z - 4 - 4))
@@ -1951,7 +1964,7 @@ static int addCF(unsigned char * packet, int length)
 			printf("Ignored DHCP Discover packet.\n");
 		}
 
-		return 1;
+		return (1);
 	}
 
 	/* check if it's a potential ARP request */
@@ -2126,7 +2139,7 @@ static int addCF(unsigned char * packet, int length)
 		printf("Added %s packet to cfrag buffer.\n", isarp ? "ARP" : "IP");
 	}
 
-	return 0;
+	return (0);
 }
 
 // add packet for caffe latte attack
@@ -2136,9 +2149,9 @@ static int addarp(unsigned char * packet, int length)
 	unsigned char flip[4096];
 	int z = 0, i = 0;
 
-	if (packet == NULL) return -1;
+	if (packet == NULL) return (-1);
 
-	if (length != 68 && length != 86) return -1;
+	if (length != 68 && length != 86) return (-1);
 
 	z = ((packet[1] & 3) != 3) ? 24 : 30;
 
@@ -2155,15 +2168,15 @@ static int addarp(unsigned char * packet, int length)
 		memcpy(smac, packet + 16, 6);
 	}
 
-	if (memcmp(dmac, BROADCAST, 6) != 0) return -1;
+	if (memcmp(dmac, BROADCAST, 6) != 0) return (-1);
 
-	if (memcmp(bssid, opt.r_bssid, 6) != 0) return -1;
+	if (memcmp(bssid, opt.r_bssid, 6) != 0) return (-1);
 
 	packet[21] ^= ((rand() % 255) + 1); // Sohail:flip sender MAC address since
 	// few clients do not honor ARP from its
 	// own MAC
 
-	if (opt.nb_arp >= opt.ringbuffer) return -1;
+	if (opt.nb_arp >= opt.ringbuffer) return (-1);
 
 	memset(flip, 0, 4096);
 
@@ -2203,7 +2216,7 @@ static int addarp(unsigned char * packet, int length)
 			   opt.ringbuffer);
 	}
 
-	return 0;
+	return (0);
 }
 
 static int store_wpa_handshake(struct ST_info * st_cur)
@@ -2213,7 +2226,7 @@ static int store_wpa_handshake(struct ST_info * st_cur)
 	char ofn[1024];
 	struct ivs2_pkthdr ivs2;
 
-	if (st_cur == NULL) return 1;
+	if (st_cur == NULL) return (1);
 
 	fivs2.version = IVS2_VERSION;
 
@@ -2315,7 +2328,7 @@ static int store_wpa_handshake(struct ST_info * st_cur)
 
 	fclose(f_ivs);
 
-	return 0;
+	return (0);
 }
 
 static int packet_recv(unsigned char * packet,
@@ -2360,12 +2373,12 @@ static int packet_recv(unsigned char * packet,
 
 	if ((unsigned) length < z)
 	{
-		return 1;
+		return (1);
 	}
 
 	if (length > 3800)
 	{
-		return 1;
+		return (1);
 	}
 
 	switch (packet[1] & 3)
@@ -2395,7 +2408,7 @@ static int packet_recv(unsigned char * packet,
 	if ((packet[1] & 3) == 0x03)
 	{
 		/* no wds support yet */
-		return 1;
+		return (1);
 	}
 
 	/* MAC Filter */
@@ -2408,7 +2421,7 @@ static int packet_recv(unsigned char * packet,
 
 			if ((gotsource && opt.filter == BLOCK_MACS)
 				|| (!gotsource && opt.filter == ALLOW_MACS))
-				return 0;
+				return (0);
 		}
 		if (getMACcount(rBSSID) > 0)
 		{
@@ -2417,7 +2430,7 @@ static int packet_recv(unsigned char * packet,
 
 			if ((gotbssid && opt.filter == BLOCK_MACS)
 				|| (!gotbssid && opt.filter == ALLOW_MACS))
-				return 0;
+				return (0);
 		}
 	}
 
@@ -2498,7 +2511,7 @@ static int packet_recv(unsigned char * packet,
 			timeoutFrag();
 
 			/* we got frag, no compelete packet avail -> do nothing */
-			if (buffer == NULL) return 1;
+			if (buffer == NULL) return (1);
 
 			memcpy(packet, buffer, len);
 			length = len;
@@ -2510,7 +2523,7 @@ static int packet_recv(unsigned char * packet,
 		if (external)
 		{
 			intercept(packet, length);
-			return 0;
+			return (0);
 		}
 
 		/* To our mac? */
@@ -2533,7 +2546,7 @@ static int packet_recv(unsigned char * packet,
 							packet + z + 4, length - z - 4, K, 3 + opt.weplen)
 						== 0)
 					{
-						return 1;
+						return (1);
 					}
 
 					/* WEP data packet was successfully decrypted, *
@@ -2550,12 +2563,12 @@ static int packet_recv(unsigned char * packet,
 					if (opt.cf_attack)
 					{
 						addCF(packet, length);
-						return 0;
+						return (0);
 					}
 
 					/* it's a packet for us, but we either don't have the key or
 					 * its WPA -> throw it away */
-					return 0;
+					return (0);
 				}
 			}
 			else
@@ -2667,7 +2680,7 @@ static int packet_recv(unsigned char * packet,
 					len += 99;
 
 					send_packet(h80211, len);
-					return 0;
+					return (0);
 				}
 
 				if (opt.sendeapol
@@ -2685,7 +2698,7 @@ static int packet_recv(unsigned char * packet,
 					{
 						// Ignore the packet trying to crash us.
 						st_cur->wpa.eapol_size = 0;
-						return 1;
+						return (1);
 					}
 
 					/* got eapol frame num 2 */
@@ -2716,7 +2729,7 @@ static int packet_recv(unsigned char * packet,
 							   smac[5]);
 					}
 
-					return 0;
+					return (0);
 				}
 			}
 		}
@@ -2756,7 +2769,7 @@ static int packet_recv(unsigned char * packet,
 							packet + z + 4, length - z - 4, K, 3 + opt.weplen)
 						== 0)
 					{
-						return 1;
+						return (1);
 					}
 
 					/* WEP data packet was successfully decrypted, *
@@ -2771,7 +2784,7 @@ static int packet_recv(unsigned char * packet,
 					/* reencrypt it to send it with a new IV */
 					memcpy(h80211, packet, length);
 
-					if (create_wep_packet(h80211, &length, z) != 0) return 1;
+					if (create_wep_packet(h80211, &length, z) != 0) return (1);
 
 					if (!opt.adhoc) send_packet(h80211, length);
 				}
@@ -2787,7 +2800,7 @@ static int packet_recv(unsigned char * packet,
 					}
 					/* it's a packet we can't decrypt -> just replay it through
 					 * the wireless interface */
-					return 0;
+					return (0);
 				}
 			}
 			else
@@ -2802,7 +2815,7 @@ static int packet_recv(unsigned char * packet,
 
 		memcpy(h80211 + 12, packet + z + 6, 2); // copy ether type
 
-		if ((unsigned) length <= z + 8) return 1;
+		if ((unsigned) length <= z + 8) return (1);
 
 		memcpy(h80211 + 14, packet + z + 8, length - z - 8);
 		length = length - z - 8 + 14;
@@ -2978,7 +2991,7 @@ static int packet_recv(unsigned char * packet,
 					}
 
 					send_packet(packet, length);
-					return 0;
+					return (0);
 				}
 			}
 			else // broadcast probe
@@ -3118,7 +3131,7 @@ static int packet_recv(unsigned char * packet,
 					send_packet(packet, length);
 
 					send_packet(packet, length);
-					return 0;
+					return (0);
 				}
 			}
 		}
@@ -3154,7 +3167,7 @@ static int packet_recv(unsigned char * packet,
 					}
 
 					send_packet(packet, length);
-					return 0;
+					return (0);
 				}
 			}
 			else // shared key auth
@@ -3198,7 +3211,7 @@ static int packet_recv(unsigned char * packet,
 					}
 					send_packet(packet, length);
 					check_shared_key(packet, length);
-					return 0;
+					return (0);
 				}
 
 				// second response
@@ -3253,7 +3266,7 @@ static int packet_recv(unsigned char * packet,
 			{
 				memcpy(essid, tag, len);
 				essid[len] = 0x00;
-				if (opt.f_essid && !gotESSID(essid, len)) return 0;
+				if (opt.f_essid && !gotESSID(essid, len)) return (0);
 			}
 
 			st_cur->wpatype = 0;
@@ -3442,13 +3455,13 @@ static int packet_recv(unsigned char * packet,
 				send_packet(h80211, len);
 			}
 
-			return 0;
+			return (0);
 		}
 
-		return 0;
+		return (0);
 	}
 
-	return 0;
+	return (0);
 }
 
 static void beacon_thread(void * arg)
@@ -3714,16 +3727,16 @@ static int del_next_CF(pCF_t curCF)
 {
 	pCF_t tmp;
 
-	if (curCF == NULL) return 1;
+	if (curCF == NULL) return (1);
 
-	if (curCF->next == NULL) return 1;
+	if (curCF->next == NULL) return (1);
 
 	tmp = curCF->next;
 	curCF->next = tmp->next;
 
 	free(tmp);
 
-	return 0;
+	return (0);
 }
 
 static int cfrag_fuzz(unsigned char * packet,
@@ -3736,15 +3749,15 @@ static int cfrag_fuzz(unsigned char * packet,
 	unsigned char overlay[4096];
 	unsigned char * smac = NULL;
 
-	if (packet == NULL) return 1;
+	if (packet == NULL) return (1);
 
 	z = ((packet[1] & 3) != 3) ? 24 : 30;
 
-	if (length <= z + 8) return 1;
+	if (length <= z + 8) return (1);
 
-	if (frags < 1) return 1;
+	if (frags < 1) return (1);
 
-	if (frag_num < 0 || frag_num > frags) return 1;
+	if (frag_num < 0 || frag_num > frags) return (1);
 
 	if ((packet[1] & 3) <= 1)
 		smac = packet + 10;
@@ -3780,7 +3793,7 @@ static int cfrag_fuzz(unsigned char * packet,
 		packet[i] ^= overlay[i];
 	}
 
-	return 0;
+	return (0);
 }
 
 static void cfrag_thread(void)
@@ -3934,18 +3947,23 @@ int main(int argc, char * argv[])
 
 	ALLEGE(pthread_mutex_init(&rESSIDmutex, NULL) == 0);
 	rESSID = (pESSID_t) malloc(sizeof(struct ESSID_list));
+	ALLEGE(rESSID != NULL);
 	memset(rESSID, 0, sizeof(struct ESSID_list));
 
 	rFragment = (pFrag_t) malloc(sizeof(struct Fragment_list));
+	ALLEGE(rFragment != NULL);
 	memset(rFragment, 0, sizeof(struct Fragment_list));
 
 	rClient = (pMAC_t) malloc(sizeof(struct MAC_list));
+	ALLEGE(rClient != NULL);
 	memset(rClient, 0, sizeof(struct MAC_list));
 
 	rBSSID = (pMAC_t) malloc(sizeof(struct MAC_list));
+	ALLEGE(rBSSID != NULL);
 	memset(rBSSID, 0, sizeof(struct MAC_list));
 
 	rCF = (pCF_t) malloc(sizeof(struct CF_packet));
+	ALLEGE(rCF != NULL);
 	memset(rCF, 0, sizeof(struct CF_packet));
 
 #ifdef USE_GCRYPT
@@ -4141,7 +4159,7 @@ int main(int argc, char * argv[])
 
 			case 'E':
 
-				if (addESSIDfile(optarg) != 0) return (1);
+				if (addESSIDfile(optarg) != 0) return (EXIT_FAILURE);
 
 				opt.f_essid = 1;
 
@@ -4197,7 +4215,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid speed. [1-1000]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
