@@ -3473,7 +3473,9 @@ static int do_wep_crack2(int B)
 			break;
 	}
 
-	for (wep.depth[B] = 0; wep.depth[B] < wep.fudge[B]; wep.depth[B]++)
+	for (wep.depth[B] = 0;
+		 wep.depth[B] < wep.fudge[B] && wep.fudge[B] < INT_MAX;
+		 wep.depth[B]++)
 	{
 		switch (update_ivbuf())
 		{
