@@ -283,7 +283,7 @@ int main(int argc, char * argv[])
 
 				while (sscanf(s, "%x", &n) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (n > 255)
 					{
 						printf("Invalid BSSID (not a MAC).\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
@@ -328,7 +328,7 @@ int main(int argc, char * argv[])
 
 				while (sscanf(buf, "%x", &n) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (n > 255)
 					{
 						printf("Invalid WPA PMK.\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
@@ -435,7 +435,7 @@ int main(int argc, char * argv[])
 
 				while (sscanf(buf, "%x", &n) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (n > 255)
 					{
 						printf("Invalid WEP key.\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
@@ -714,7 +714,7 @@ int main(int argc, char * argv[])
 				if (magic == TCPDUMP_CIGAM) SWAP32(n);
 			}
 
-			if (n < 8 || n >= (int) pkh.caplen) continue;
+			if (n < 8 || n >= (unsigned) pkh.caplen) continue;
 
 			h80211 += n;
 			pkh.caplen -= n;
@@ -726,7 +726,7 @@ int main(int argc, char * argv[])
 
 			n = *(unsigned short *) (h80211 + 2);
 
-			if (n <= 0 || n >= (int) pkh.caplen) continue;
+			if (n <= 0 || n >= (unsigned) pkh.caplen) continue;
 
 			h80211 += n;
 			pkh.caplen -= n;
@@ -738,13 +738,13 @@ int main(int argc, char * argv[])
 
 			n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
 
-			if (n <= 0 || n >= (int) pkh.caplen) continue;
+			if (n <= 0 || n >= (unsigned) pkh.caplen) continue;
 
 			/* for a while Kismet logged broken PPI headers */
 			if (n == 24 && le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 				n = 32;
 
-			if (n <= 0 || n >= (int) pkh.caplen) continue;
+			if (n <= 0 || n >= (unsigned) pkh.caplen) continue;
 
 			h80211 += n;
 			pkh.caplen -= n;
