@@ -359,7 +359,7 @@ static int rc4test(uint8_t * key, int keylen, uint8_t * iv, uint8_t * keystream)
 	rc4state rc4state;
 	int j;
 	memcpy(&keybuf[IVBYTES], key, keylen);
-	memcpy(keybuf, iv, IVBYTES);
+	memcpy(keybuf, iv, IVBYTES); //-V512
 	rc4init(keybuf, keylen + IVBYTES, &rc4state);
 	for (j = 0; j < TESTBYTES; j++)
 	{
@@ -479,7 +479,7 @@ static void getdrv(PTW_tableentry orgtable[][n],
 	{
 		numvotes += orgtable[0][i].votes;
 	}
-	e = numvotes / n;
+	e = (double) (numvotes) / n;
 	for (i = 0; i < keylen; i++)
 	{
 		emax = eval[i] * numvotes;
@@ -969,10 +969,11 @@ int PTW_addsession(PTW_attackstate * state,
 			if (state->allsessions_size < state->packets_collected)
 			{
 				state->allsessions_size = state->allsessions_size << 1;
-				state->allsessions
+				PTW_session * tmp_allsessions
 					= realloc(state->allsessions,
 							  state->allsessions_size * sizeof(PTW_session));
-				ALLEGE(state->allsessions != NULL);
+				ALLEGE(tmp_allsessions != NULL);
+				state->allsessions = tmp_allsessions;
 			}
 			memcpy(state->allsessions[state->packets_collected - 1].iv,
 				   iv,

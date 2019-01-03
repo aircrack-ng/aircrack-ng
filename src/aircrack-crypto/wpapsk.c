@@ -165,8 +165,8 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 			uint32_t i[16];
 		} buffer[NBKEYS];
 		union {
-			unsigned char c[40];
-			uint32_t i[10];
+			unsigned char c[40]; // only 40 are used
+			uint32_t i[10]; // only 8 are used
 		} outbuf[NBKEYS];
 		SHA_CTX ctx_ipad[NBKEYS];
 		SHA_CTX ctx_opad[NBKEYS];
@@ -436,7 +436,9 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 
 		for (j = 0; j < NBKEYS; ++j)
 		{
-			memcpy(&engine->thread_data[threadid]->pmk[j], outbuf[j].c, 32);
+			memcpy(&engine->thread_data[threadid]->pmk[j], //-V512
+				   outbuf[j].c,
+				   32);
 			alter_endianity_to_BE((&engine->thread_data[threadid]->pmk[j]), 8);
 		}
 	}

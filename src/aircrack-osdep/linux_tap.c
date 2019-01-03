@@ -138,7 +138,7 @@ static int ti_set_mac_linux(struct tif * ti, unsigned char * mac)
 {
 	struct tip_linux * priv = ti_priv(ti);
 
-	memcpy(priv->tl_ifr.ifr_hwaddr.sa_data, mac, 6);
+	memcpy(priv->tl_ifr.ifr_hwaddr.sa_data, mac, 6); //-V512
 	priv->tl_ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 
 	return ioctl(priv->tl_ioctls, SIOCSIFHWADDR, &priv->tl_ifr);

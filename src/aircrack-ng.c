@@ -89,9 +89,9 @@
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
 
-static sqlite3 * db = NULL;
+static sqlite3 * db = NULL; //-V707
 #else
-static char * db = NULL;
+static char * db = NULL; ///-V707
 #endif
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
@@ -145,9 +145,9 @@ static int cm_pipe[256][2]; /* child->master results pipe   */
 static int bf_pipe[256][2]; /* bruteforcer 'queue' pipe	 */
 static int bf_nkeys[256];
 static unsigned char bf_wepkey[64];
-static int wepkey_crack_success = 0;
+static volatile int wepkey_crack_success = 0;
 static volatile int close_aircrack = 0;
-static int id = 0;
+static int id = 0; //-V707
 static pthread_t tid[MAX_THREADS] = {0};
 static pthread_t cracking_session_tid;
 static struct WPA_data wpa_data[MAX_THREADS];
@@ -475,14 +475,13 @@ static int add_wep_iv(struct AP_info * ap, unsigned char * buffer)
 			/* enlarge the IVs buffer */
 
 			ap->ivbuf_size += 131072;
-			ap->ivbuf
-				= (unsigned char *) realloc(ap->ivbuf, (size_t) ap->ivbuf_size);
-
-			if (ap->ivbuf == NULL)
+			uint8_t * tmp_ivbuf = realloc(ap->ivbuf, (size_t) ap->ivbuf_size);
+			if (tmp_ivbuf == NULL)
 			{
 				perror("realloc failed");
 				return (-1);
 			}
+			ap->ivbuf = tmp_ivbuf;
 		}
 
 		memcpy(ap->ivbuf + n, buffer, 5);
@@ -558,14 +557,14 @@ static int parse_ivs2(struct AP_info * ap_cur,
 				/* enlarge the IVs buffer */
 
 				ap_cur->ivbuf_size += 131072;
-				ap_cur->ivbuf = (unsigned char *) realloc(
-					ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
-
-				if (ap_cur->ivbuf == NULL)
+				uint8_t * tmp_ivbuf
+					= realloc(ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
+				if (tmp_ivbuf == NULL)
 				{
 					perror("realloc failed");
 					return (-1);
 				}
+				ap_cur->ivbuf = tmp_ivbuf;
 			}
 
 			memcpy(ap_cur->ivbuf + n, buffer, 5);
@@ -619,14 +618,14 @@ static int parse_ivs2(struct AP_info * ap_cur,
 				/* enlarge the IVs buffer */
 
 				ap_cur->ivbuf_size += 131072;
-				ap_cur->ivbuf = (unsigned char *) realloc(
-					ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
-
-				if (ap_cur->ivbuf == NULL)
+				uint8_t * tmp_ivbuf
+					= realloc(ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
+				if (tmp_ivbuf == NULL)
 				{
 					perror("realloc failed");
 					return (-1);
 				}
+				ap_cur->ivbuf = tmp_ivbuf;
 			}
 
 			memcpy(ap_cur->ivbuf + n, buffer, 5);
@@ -1188,8 +1187,8 @@ static int mergebssids(const char * bssidlist, unsigned char * bssid)
 	} while (list);
 
 	// Free memory
-	if (mac != NULL) free(mac);
-	if (tmp2 != NULL) free(tmp2);
+	free(mac);
+	free(tmp2);
 
 	// Add the result to the list
 	list_cur = (struct mergeBSSID *) malloc(sizeof(struct mergeBSSID));
@@ -1943,7 +1942,6 @@ static void packet_reader_thread(void * arg)
 	struct pcap_file_header pfh = {0};
 	struct AP_info * ap_cur = NULL;
 
-	REQUIRE(request != NULL);
 	REQUIRE(request->filename != NULL);
 	REQUIRE((request->mode == PACKET_READER_CHECK_MODE)
 			|| (request->mode == PACKET_READER_READ_MODE));
@@ -2180,8 +2178,6 @@ static void packet_reader_thread(void * arg)
 					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 					n = 32;
 
-				if (n <= 0 || n >= (int) pkh.caplen) continue;
-
 				h80211 += n;
 				pkh.caplen -= n;
 			}
@@ -2376,7 +2372,7 @@ static int crack_wep_thread(void * arg)
 
 			ALLEGE(pthread_mutex_lock(&mx_ivb) == 0);
 
-			memcpy(K, &wep.ivbuf[xv], 3);
+			memcpy(K, &wep.ivbuf[xv], 3); //-V512
 
 			for (i = j = 0; i < q; i++)
 			{
@@ -2864,7 +2860,7 @@ static int check_wep_key(unsigned char * wepkey, int B, int keylen)
 
 		ALLEGE(pthread_mutex_lock(&mx_ivb) == 0);
 
-		memcpy(K, &wep.ivbuf[xv], 3);
+		memcpy(K, &wep.ivbuf[xv], 3); //-V512
 		memcpy(S, R, 256);
 
 		for (i = j = 0; i < 256; i++)
@@ -3046,14 +3042,15 @@ static int update_ivbuf(void)
 			{
 				n = ap_cur->nb_ivs;
 
-				if ((wep.ivbuf = realloc(wep.ivbuf, (wep.nb_ivs + n) * 5))
-					== NULL)
+				uint8_t * tmp_ivbuf = realloc(wep.ivbuf, (wep.nb_ivs + n) * 5);
+				if (tmp_ivbuf == NULL)
 				{
 					ALLEGE(pthread_mutex_unlock(&mx_ivb) == 0);
 					perror("realloc failed");
 					kill(0, SIGTERM);
 					_exit(EXIT_FAILURE);
 				}
+				wep.ivbuf = tmp_ivbuf;
 
 				memcpy(wep.ivbuf + wep.nb_ivs * 5, ap_cur->ivbuf, 5 * n);
 
@@ -3469,7 +3466,7 @@ static int do_wep_crack2(int B)
 
 	for (wep.fudge[B] = 1; wep.fudge[B] < 256; wep.fudge[B]++)
 	{
-		ALLEGE(0 <= wep.fudge[B] && wep.fudge[B] <= INT_MAX);
+		ALLEGE(0 <= wep.fudge[B] && wep.fudge[B] < INT_MAX); //-V560
 
 		if ((float) wep.poll[B][wep.fudge[B]].val
 			< (float) wep.poll[B][0].val / opt.ffact)
@@ -3621,7 +3618,7 @@ inner_bruteforcer_thread_start:
 		}
 	}
 
-	if (reduce) bf_nkeys[nthread]--;
+	bf_nkeys[nthread]--;
 
 	goto inner_bruteforcer_thread_start;
 }
@@ -4578,7 +4575,7 @@ __attribute__((unused)) static struct AP_info * hccap_to_ap(hccap_t * hccap)
 	memcpy(&ap->wpa.anonce, &hccap->nonce2, sizeof(hccap->nonce2));
 	memcpy(&ap->wpa.eapol, &hccap->eapol, sizeof(hccap->eapol));
 	memcpy(&ap->wpa.eapol_size, &hccap->eapol_size, sizeof(hccap->eapol_size));
-	memcpy(&ap->wpa.keyver, &hccap->keyver, sizeof(hccap->keyver));
+	memcpy(&ap->wpa.keyver, &hccap->keyver, sizeof(ap->wpa.keyver));
 	memcpy(&ap->wpa.keymic, &hccap->keymic, sizeof(hccap->keymic));
 
 	return (ap);
@@ -4637,8 +4634,10 @@ struct AP_info * hccapx_to_ap(struct hccapx * hx)
 	ap->wpa.state = 7;
 	ap->crypt = 3;
 
-	memcpy(
-		&ap->essid, &hx->essid, MIN(sizeof(hx->essid), sizeof(ap->essid)) - 1);
+	ALLEGE((MIN(sizeof(hx->essid), sizeof(ap->essid))) <= 32); //-V547
+	memcpy(&ap->essid, //-V512
+		   &hx->essid,
+		   MIN(sizeof(hx->essid), sizeof(ap->essid)));
 	memcpy(&ap->bssid, &hx->mac_ap, sizeof(hx->mac_ap));
 	memcpy(&ap->wpa.stmac, &hx->mac_sta, sizeof(hx->mac_sta));
 	memcpy(&ap->wpa.snonce, &hx->nonce_sta, sizeof(hx->nonce_sta));
@@ -4806,6 +4805,7 @@ static int next_key(char ** key, int keysize)
 
 	tmpref = tmp = (char *) malloc(1024);
 	ALLEGE(tmpref != NULL);
+	ALLEGE(tmp != NULL);
 
 	while (1)
 	{
@@ -4851,7 +4851,6 @@ static int next_key(char ** key, int keysize)
 
 			if (tmp[i - 1] == '\n') tmp[--i] = '\0';
 			if (tmp[i - 1] == '\r') tmp[--i] = '\0';
-			if (i <= 0) continue;
 
 			i = 0;
 
@@ -5294,7 +5293,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 					printf("Starting PTW attack with %ld ivs.\n",
 						   ap_cur->nb_ivs_vague);
 				ret = crack_wep_ptw(ap_cur);
-				ALLEGE(ret >= 0 && ret <= RESTART);
+				ALLEGE(ret >= 0 && ret <= RESTART); //-V560
 
 				if (opt.oneshot == 1 && ret == FAILURE)
 				{
@@ -5320,7 +5319,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 	else if (opt.dict != NULL)
 	{
 		ret = crack_wep_dict();
-		ALLEGE(ret >= 0 && ret <= RESTART);
+		ALLEGE(ret >= 0 && ret <= RESTART); //-V560
 	}
 	else
 	{
@@ -5360,7 +5359,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 			do
 			{
 				ret = do_wep_crack1(0);
-				ALLEGE(ret >= 0 && ret <= RESTART);
+				ALLEGE(ret >= 0 && ret <= RESTART); //-V560
 			} while (ret == RESTART);
 
 			if (ret == FAILURE)
@@ -5392,7 +5391,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 				do
 				{
 					ret = do_wep_crack2(i);
-					ALLEGE(ret >= 0 && ret <= RESTART);
+					ALLEGE(ret >= 0 && ret <= RESTART); //-V560
 				} while (ret == RESTART);
 
 				if (ret == SUCCESS) break;
@@ -6101,7 +6100,7 @@ int main(int argc, char * argv[])
 				buf[2] = '\0';
 				i = 0;
 				j = 0;
-				while ((sscanf(buf, "%x", &n) == 1)
+				while ((sscanf(buf, "%d", &n) == 1)
 					   || (buf[0] == 'X' && buf[1] == 'X')
 					   || (buf[0] == 'Y' && buf[1] == 'Y'))
 				{

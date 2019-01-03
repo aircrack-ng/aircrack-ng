@@ -52,7 +52,7 @@ file_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 	struct priv_file * pf = wi_priv(wi);
 	struct pcap_pkthdr pkh;
 	int rc;
-	unsigned char buf[4096];
+	unsigned char buf[4096] __attribute__((aligned(8)));
 	int off = 0;
 	struct ieee80211_radiotap_header * rh;
 	struct ieee80211_radiotap_iterator iter;
@@ -107,7 +107,7 @@ file_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 			if (buf[7] == 0x40)
 				off = 0x40;
 			else
-				off = le32_to_cpu(*(unsigned int *) (buf + 4));
+				off = le32_to_cpu(*(unsigned int *) (buf + 4)); //-V1032
 
 			rc -= 4;
 			break;

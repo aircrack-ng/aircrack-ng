@@ -211,7 +211,7 @@ int ac_session_set_amount_arguments(struct session * session, const char * str)
 	session->argv = (char **) calloc(session->argc, sizeof(char *));
 	ALLEGE(session->argv != NULL);
 
-	return ((session->argv) ? EXIT_SUCCESS : EXIT_FAILURE);
+	return (EXIT_SUCCESS);
 }
 
 static char * ac_session_getline(FILE * f)
@@ -415,7 +415,7 @@ ac_session_from_argv(const int argc, char ** argv, const char * filename)
 	ALLEGE(ret->argv != NULL);
 
 	// Check values are properly set
-	if (ret->filename == NULL || ret->working_dir == NULL || ret->argv == NULL)
+	if (ret->working_dir == NULL)
 	{
 		ac_session_free(&ret);
 		return (NULL);

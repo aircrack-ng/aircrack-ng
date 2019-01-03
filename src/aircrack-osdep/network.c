@@ -59,7 +59,7 @@ EXPORT int net_send(int s, int command, void * arg, int len)
 	size_t pktlen;
 
 	// Validate command value
-	assert(command >= NET_RC || command <= HIGHEST_NET_COMMAND);
+	assert(command >= NET_RC && command <= HIGHEST_NET_COMMAND);
 	if (command < NET_RC || command > HIGHEST_NET_COMMAND)
 	{
 		return -1;
@@ -306,7 +306,7 @@ net_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 	if (ri)
 	{
 		// re-assemble 64-bit integer
-		ri->ri_mactime = __be64_to_cpu(((uint64_t) buf[0] << 32u | buf[1]));
+		ri->ri_mactime = __be64_to_cpu((uint64_t) buf[0] << 32u | buf[1]);
 		ri->ri_power = __be32_to_cpu(buf[2]);
 		ri->ri_noise = __be32_to_cpu(buf[3]);
 		ri->ri_channel = __be32_to_cpu(buf[4]);
@@ -337,7 +337,7 @@ static int net_get_mac(struct wif * wi, unsigned char * mac)
 	assert(cmd == NET_MAC);
 	assert(sz == 6);
 
-	memcpy(mac, buf, 6);
+	memcpy(mac, buf, 6); //-V512
 
 	return 0;
 }
@@ -352,9 +352,9 @@ net_write(struct wif * wi, unsigned char * h80211, int len, struct tx_info * ti)
 
 	/* XXX */
 	if (ti)
-		memcpy(ptr, ti, sz);
+		memcpy(ptr, ti, sz); //-V512
 	else
-		memset(ptr, 0, sizeof(*ti));
+		memset(ptr, 0, sizeof(*ti)); //-V512
 
 	ptr += sz;
 	memcpy(ptr, h80211, len);

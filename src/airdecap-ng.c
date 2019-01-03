@@ -222,7 +222,8 @@ int main(int argc, char * argv[])
 	char *s, buf[128];
 	FILE *f_in, *f_out, *f_bad = NULL;
 	unsigned long crc;
-	int i = 0, n, linktype;
+	int i = 0, linktype;
+	unsigned n;
 	unsigned z;
 	unsigned char * h80211;
 	unsigned char bssid[6], stmac[6];

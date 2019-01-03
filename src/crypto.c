@@ -94,8 +94,7 @@ void calc_pmk(char * key, char * essid_pre, unsigned char pmk[40])
 	SHA_CTX sha1_ctx;
 	size_t essid_pre_len;
 
-	if (essid_pre == NULL || essid_pre[0] == 0
-		|| (essid_pre_len = strlen(essid_pre)) > 32)
+	if (essid_pre[0] == 0 || (essid_pre_len = strlen(essid_pre)) > 32)
 	{
 		return;
 	}
@@ -129,7 +128,7 @@ void calc_pmk(char * key, char * essid_pre, unsigned char pmk[40])
 		 (size_t) slen,
 		 pmk,
 		 NULL);
-	memcpy(buffer, pmk, 20);
+	memcpy(buffer, pmk, 20); //-V512
 
 	for (i = 1; i < 4096; i++)
 	{
@@ -424,8 +423,8 @@ static int is_spantree(void * wh)
 {
 	REQUIRE(wh != NULL);
 
-	if (wh != NULL && (memcmp((char *) wh + 4, SPANTREE, 6) == 0
-					   || memcmp((char *) wh + 16, SPANTREE, 6) == 0))
+	if (memcmp((char *) wh + 4, SPANTREE, 6) == 0
+		|| memcmp((char *) wh + 16, SPANTREE, 6) == 0)
 		return (1);
 
 	return (0);
@@ -450,7 +449,6 @@ int known_clear(
 {
 	REQUIRE(clear != NULL);
 	REQUIRE(clen != NULL);
-	REQUIRE(weight != NULL);
 	REQUIRE(wh != NULL);
 
 	unsigned char * ptr = clear;
@@ -626,7 +624,7 @@ int calc_ptk(struct WPA_ST_info * wpa, unsigned char pmk[32])
 	else
 		HMAC(EVP_sha1(), wpa->ptk, 16, wpa->eapol, wpa->eapol_size, mic, NULL);
 
-	return (memcmp(mic, wpa->keymic, 16) == 0);
+	return (memcmp(mic, wpa->keymic, 16) == 0); //-V512
 }
 
 static int init_michael(struct Michael * mic, const unsigned char key[8])
@@ -698,7 +696,7 @@ static int michael_remove_byte(struct Michael * mic,
 		mic->left ^= mic->message;
 	}
 	mic->nBytesInM--;
-	mic->message &= ~(0xFF << (8UL * mic->nBytesInM));
+	mic->message &= ~(0xFFUL << (8UL * mic->nBytesInM));
 
 	return (0);
 }
@@ -1383,7 +1381,7 @@ int encrypt_ccmp(unsigned char * h80211,
 	B0[0] &= 0x07;
 	B0[14] = B0[15] = 0;
 	AES_encrypt(B0, B, &aes_ctx); // S_0 := E( K, A_i )
-	memcpy(h80211 + z + 8 + data_len, B, 8);
+	memcpy(h80211 + z + 8 + data_len, B, 8); //-V512
 	//      ^^^^^^^^^^^^^^^^^^^  ^
 	//      S_0[0..7]/future U   S_0
 
@@ -1548,5 +1546,5 @@ int decrypt_ccmp(unsigned char * h80211, int caplen, unsigned char TK1[16])
 	// T := X_n[ 0.. 7]
 	// Note: Decryption is successful if calculated T is the same as the one
 	//       that was sent with the message.
-	return (memcmp(h80211 + offset, MIC, 8) == 0);
+	return (memcmp(h80211 + offset, MIC, 8) == 0); //-V512
 }

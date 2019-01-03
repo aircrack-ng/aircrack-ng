@@ -205,6 +205,7 @@ static char * searchInside(const char * dir, const char * filename)
 	len = strlen(filename);
 	lentot = strlen(dir) + 256 + 2;
 	curfile = (char *) calloc(1, lentot);
+	if (curfile == NULL) return (NULL);
 
 	while ((ep = readdir(dp)) != NULL)
 	{
@@ -596,7 +597,7 @@ static int
 linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 {
 	struct priv_linux * dev = wi_priv(wi);
-	unsigned char tmpbuf[4096];
+	unsigned char tmpbuf[4096] __attribute__((aligned(8)));
 
 	int caplen, n, got_signal, got_noise, got_channel, fcs_removed;
 
@@ -635,7 +636,7 @@ linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 			if (ri)
 			{
 				ri->ri_power = tmpbuf[0x33];
-				ri->ri_noise = *(unsigned int *) (tmpbuf + 0x33 + 12);
+				ri->ri_noise = *(unsigned int *) (tmpbuf + 0x33 + 12); //-V1032
 				ri->ri_rate = (*(unsigned int *) (tmpbuf + 0x33 + 24)) * 500000;
 
 				got_signal = 1;
@@ -808,7 +809,7 @@ static int linux_write(struct wif * wi,
 	unsigned char rate;
 	unsigned short int * p_rtlen;
 
-	unsigned char u8aRadiotap[] = {
+	unsigned char u8aRadiotap[] __attribute__((aligned(8))) = {
 		0x00,
 		0x00, // <-- radiotap version
 		0x0c,
@@ -824,7 +825,7 @@ static int linux_write(struct wif * wi,
 	};
 
 	/* Pointer to the radiotap header length field for later use. */
-	p_rtlen = (unsigned short int *) (u8aRadiotap + 2);
+	p_rtlen = (unsigned short int *) (u8aRadiotap + 2); //-V1032
 
 	if ((unsigned) count > sizeof(tmpbuf) - 22) return -1;
 
@@ -1650,7 +1651,8 @@ static int openraw(struct priv_linux * dev,
 			sll2.sll_ifindex = ifr2.ifr_ifindex;
 			sll2.sll_protocol = htons(ETH_P_ALL);
 
-			if (bind(dev->fd_main, (struct sockaddr *) &sll2, sizeof(sll2)) < 0)
+			if (bind(dev->fd_main, (struct sockaddr *) &sll2, sizeof(sll2))
+				< 0) //-V641
 			{
 				printf("Interface %s: \n", dev->main_if);
 				perror("bind(ETH_P_ALL) failed");
@@ -1728,7 +1730,7 @@ static int openraw(struct priv_linux * dev,
 	}
 	/* bind the raw socket to the interface */
 
-	if (bind(fd, (struct sockaddr *) &sll, sizeof(sll)) < 0)
+	if (bind(fd, (struct sockaddr *) &sll, sizeof(sll)) < 0) //-V641
 	{
 		printf("Interface %s: \n", iface);
 		perror("bind(ETH_P_ALL) failed");
@@ -1744,7 +1746,7 @@ static int openraw(struct priv_linux * dev,
 		return (1);
 	}
 
-	memcpy(mac, (unsigned char *) ifr.ifr_hwaddr.sa_data, 6);
+	memcpy(mac, (unsigned char *) ifr.ifr_hwaddr.sa_data, 6); //-V512
 
 	*arptype = ifr.ifr_hwaddr.sa_family;
 
@@ -1967,7 +1969,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 	/* check if newer athXraw interface available */
 
-	if ((strlen(iface) >= 4 || strlen(iface) <= 6)
+	if ((strlen(iface) >= 4 && strlen(iface) <= 6)
 		&& memcmp(iface, "ath", 3) == 0)
 	{
 		dev->drivertype = DT_MADWIFI;
@@ -2106,10 +2108,12 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 		// use name in buf as new iface and set original iface as main iface
 		dev->main_if = (char *) malloc(strlen(iface) + 1);
+		if (dev->main_if == NULL) goto close_out;
 		memset(dev->main_if, 0, strlen(iface) + 1);
 		strncpy(dev->main_if, iface, strlen(iface));
 
 		iface = (char *) malloc(strlen(buf) + 1);
+		if (iface == NULL) goto close_out;
 		iface_malloced = 1;
 		memset(iface, 0, strlen(buf) + 1);
 		strncpy(iface, buf, strlen(buf));
@@ -2132,8 +2136,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 		net_ifaces = opendir("/sys/class/net");
 		if (net_ifaces != NULL)
 		{
-			while (net_ifaces != NULL
-				   && ((this_iface = readdir(net_ifaces)) != NULL))
+			while ((this_iface = readdir(net_ifaces)) != NULL)
 			{
 				if (this_iface->d_name[0] == '.') continue;
 
@@ -2151,57 +2154,50 @@ static int do_linux_open(struct wif * wi, char * iface)
 						 this_iface->d_name);
 
 				if ((acpi = fopen(r_file, "r")) == NULL) continue;
-				if (acpi != NULL)
-				{
-					dev->drivertype = DT_IPW2200;
+				dev->drivertype = DT_IPW2200;
 
-					memset(buf, 0, 128);
-					(void) fgets(buf, 128, acpi);
-					if (n == 0) // interface exists
+				memset(buf, 0, 128);
+				(void) fgets(buf, 128, acpi);
+				if (n == 0) // interface exists
+				{
+					if (strncmp(buf, iface, 5) == 0)
 					{
+						fclose(acpi);
+						closedir(net_ifaces);
+						net_ifaces = NULL;
+						dev->main_if
+							= (char *) malloc(strlen(this_iface->d_name) + 1);
+						if (dev->main_if == NULL) continue;
+						strcpy(dev->main_if, this_iface->d_name);
+						break;
+					}
+				}
+				else // need to create interface
+				{
+					if (strncmp(buf, "-1", 2) == 0)
+					{
+						// repoen for writing
+						fclose(acpi);
+						if ((acpi = fopen(r_file, "w")) == NULL) continue;
+						fputs("1", acpi);
+						// reopen for reading
+						fclose(acpi);
+						if ((acpi = fopen(r_file, "r")) == NULL) continue;
+						(void) fgets(buf, 128, acpi);
 						if (strncmp(buf, iface, 5) == 0)
 						{
-							fclose(acpi);
-							if (net_ifaces != NULL)
-							{
-								closedir(net_ifaces);
-								net_ifaces = NULL;
-							}
+							closedir(net_ifaces);
+							net_ifaces = NULL;
 							dev->main_if = (char *) malloc(
 								strlen(this_iface->d_name) + 1);
+							if (dev->main_if == NULL) continue;
 							strcpy(dev->main_if, this_iface->d_name);
+							fclose(acpi);
 							break;
 						}
 					}
-					else // need to create interface
-					{
-						if (strncmp(buf, "-1", 2) == 0)
-						{
-							// repoen for writing
-							fclose(acpi);
-							if ((acpi = fopen(r_file, "w")) == NULL) continue;
-							fputs("1", acpi);
-							// reopen for reading
-							fclose(acpi);
-							if ((acpi = fopen(r_file, "r")) == NULL) continue;
-							(void) fgets(buf, 128, acpi);
-							if (strncmp(buf, iface, 5) == 0)
-							{
-								if (net_ifaces != NULL)
-								{
-									closedir(net_ifaces);
-									net_ifaces = NULL;
-								}
-								dev->main_if = (char *) malloc(
-									strlen(this_iface->d_name) + 1);
-								strcpy(dev->main_if, this_iface->d_name);
-								fclose(acpi);
-								break;
-							}
-						}
-					}
-					fclose(acpi);
 				}
+				fclose(acpi);
 			}
 			if (net_ifaces != NULL) closedir(net_ifaces);
 		}
@@ -2379,7 +2375,7 @@ static int linux_set_mac(struct wif * wi, unsigned char * mac)
 	}
 
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	memcpy(ifr.ifr_hwaddr.sa_data, mac, 6);
+	memcpy(ifr.ifr_hwaddr.sa_data, mac, 6); //-V512
 	memcpy(pl->pl_mac, mac, 6);
 
 	// set mac
@@ -2451,7 +2447,7 @@ EXPORT int get_battery_state(void)
 	char buf[128];
 	int batteryTime = 0;
 	FILE * apm;
-	int flag;
+	unsigned flag;
 	char units[32];
 	int ret;
 	static int linux_apm = 1;
@@ -2469,7 +2465,7 @@ EXPORT int get_battery_state(void)
 
 		if (battery_data != NULL)
 		{
-			int charging, ac;
+			unsigned charging, ac;
 
 			ret = sscanf(battery_data,
 						 "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n",
@@ -2481,9 +2477,9 @@ EXPORT int get_battery_state(void)
 			if (!ret) return 0;
 
 			if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1
-				&& batteryTime != -1)
+				&& batteryTime == -1)
 			{
-				if (!strncmp(units, "min", 32)) batteryTime *= 60;
+				if (!strncmp(units, "min", 3)) batteryTime *= 60;
 			}
 			else
 				return 0;
@@ -2509,8 +2505,7 @@ EXPORT int get_battery_state(void)
 		ac_adapters = opendir("/proc/acpi/ac_adapter");
 		if (ac_adapters == NULL) return 0;
 
-		while (ac_adapters != NULL
-			   && ((this_adapter = readdir(ac_adapters)) != NULL))
+		while ((this_adapter = readdir(ac_adapters)) != NULL)
 		{
 			if (this_adapter->d_name[0] == '.')
 			{
@@ -2525,24 +2520,18 @@ EXPORT int get_battery_state(void)
 			{
 				continue;
 			}
-			if (acpi != NULL)
+			while (fgets(buf, 128, acpi))
 			{
-				while (fgets(buf, 128, acpi))
+				if (strstr(buf, "on-line") != NULL)
 				{
-					if (strstr(buf, "on-line") != NULL)
-					{
-						fclose(acpi);
-						if (ac_adapters != NULL) closedir(ac_adapters);
-						return 0;
-					}
+					fclose(acpi);
+					closedir(ac_adapters);
+					return 0;
 				}
-				fclose(acpi);
 			}
+			fclose(acpi);
 		}
-		if (ac_adapters != NULL)
-		{
-			closedir(ac_adapters);
-		}
+		closedir(ac_adapters);
 
 		batteries = opendir("/proc/acpi/battery");
 		if (batteries == NULL)
@@ -2550,8 +2539,7 @@ EXPORT int get_battery_state(void)
 			return 0;
 		}
 
-		while (batteries != NULL
-			   && ((this_battery = readdir(batteries)) != NULL))
+		while ((this_battery = readdir(batteries)) != NULL)
 		{
 			if (this_battery->d_name[0] == '.') continue;
 
@@ -2611,7 +2599,7 @@ EXPORT int get_battery_state(void)
 		}
 		info_timer++;
 
-		if (batteries != NULL) closedir(batteries);
+		closedir(batteries);
 	}
 	return batteryTime;
 }

@@ -355,7 +355,7 @@ static int capture_ask_packet(int * caplen)
 				printf("\n        0x%04x:  ", i);
 			}
 
-			printf("%02x", h80211[i]);
+			printf("%02x", h80211[i]); //-V781
 
 			if ((i & 1) != 0) printf(" ");
 
@@ -391,7 +391,7 @@ static int capture_ask_packet(int * caplen)
 		printf("\n\nUse this packet ? ");
 		fflush(stdout);
 		ret = 0;
-		while (!ret) ret = scanf("%1s", tmpbuf);
+		while (!ret) ret = scanf("%1s", tmpbuf); //-V576
 		printf("\n");
 
 		if (tmpbuf[0] == 'y' || tmpbuf[0] == 'Y') break;
@@ -424,7 +424,7 @@ static int getip(char * s, unsigned char * ip, unsigned short * port)
 
 	if (i != 4) return (1);
 
-	if ((s = strchr(s, ':')) && i == 4)
+	if ((s = strchr(s, ':')) != NULL)
 	{
 		s++;
 		if (sscanf(s, "%d", &n) == 1)
@@ -995,7 +995,7 @@ static int forge_arp(void)
 {
 	/* use arp request */
 	opt.pktlen = 60;
-	memcpy(h80211, ARP_REQ, opt.pktlen);
+	memcpy(h80211, ARP_REQ, opt.pktlen); //-V512
 
 	memcpy(opt.dmac, "\xFF\xFF\xFF\xFF\xFF\xFF", 6);
 
@@ -1036,7 +1036,7 @@ static int forge_udp(void)
 
 	/* generate + set ip checksum */
 	chksum = ip_chksum((unsigned short *) (h80211 + 32), 20);
-	memcpy(h80211 + 42, &chksum, 2);
+	memcpy(h80211 + 42, &chksum, 2); //-V512
 
 	return (0);
 }
@@ -1126,6 +1126,7 @@ static void print_usage(void)
 int main(int argc, char * argv[])
 {
 	int arg;
+	unsigned uarg;
 	int option_index;
 	int ret;
 	int n;
@@ -1201,15 +1202,15 @@ int main(int argc, char * argv[])
 
 			case 'p':
 
-				ret = sscanf(optarg, "%x", &arg);
-				if (arg < 0 || arg > 65535 || ret != 1)
+				ret = sscanf(optarg, "%x", &uarg);
+				if (uarg > 65535 || ret != 1)
 				{
 					printf("Invalid frame control word. [0-65535]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.fctrl[0] = ((arg >> 8) & 0xFF);
-				opt.fctrl[1] = (arg & 0xFF);
+				opt.fctrl[0] = ((uarg >> 8) & 0xFF);
+				opt.fctrl[1] = (uarg & 0xFF);
 				break;
 
 			case 't':

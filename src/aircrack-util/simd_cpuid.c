@@ -277,12 +277,13 @@ float cpuid_getcoretemp(void)
 	if (sysctlbyname("dev.cpu.0.temperature", &tempval, &len, NULL, 0) == -1)
 		return 0;
 
-	cpuinfo.coretemp = (tempval - 2732) / 10;
+	cpuinfo.coretemp = (tempval - 2732) / 10.0f;
 #elif __linux__
 	if (cpuinfo.cputemppath != NULL)
 	{
 		cpuinfo.coretemp
-			= cpuid_readsysfs((const char *) cpuinfo.cputemppath) / 1000;
+			= (float) cpuid_readsysfs((const char *) cpuinfo.cputemppath)
+			  / 1000.0f;
 	}
 #else
 	return 0;
@@ -296,9 +297,10 @@ float cpuid_getcoretemp(void)
 //
 int cpuid_findcpusensorpath(const char * path)
 {
+#define MAX_SENSOR_PATHS 16
 	DIR * dirp;
 	struct dirent * dp;
-	char tbuf[16][32] = {{0}};
+	char tbuf[MAX_SENSOR_PATHS][32] = {{0}};
 	int cnt = 0, i = 0, sensorx = 0;
 	char sensor[8] = {0};
 
@@ -308,7 +310,7 @@ int cpuid_findcpusensorpath(const char * path)
 
 	snprintf(sensor, sizeof(sensor), "temp%d", sensorx);
 
-	while ((dp = readdir(dirp)) != NULL)
+	while (cnt < MAX_SENSOR_PATHS && (dp = readdir(dirp)) != NULL)
 	{
 		if (!strncmp(dp->d_name, sensor, 5))
 		{
@@ -324,7 +326,7 @@ int cpuid_findcpusensorpath(const char * path)
 			return sensorx;
 		}
 		else if (!strncmp(dp->d_name, "temp", 4))
-			sprintf(tbuf[cnt++], "%s", dp->d_name);
+			sprintf(tbuf[cnt++], "%*s", 31, dp->d_name);
 	}
 
 	(void) closedir(dirp);

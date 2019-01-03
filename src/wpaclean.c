@@ -154,7 +154,7 @@ static void save_network(const struct network * n)
 	{
 		struct packet * p = &n->n_handshake->c_handshake[i];
 
-		ALLEGE(p != NULL);
+		ALLEGE(p != NULL); //-V547
 
 		if (p->p_len) packet_write_pcap(_outfd, p);
 	}

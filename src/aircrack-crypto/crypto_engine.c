@@ -393,7 +393,7 @@ EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t * key,
 		 (size_t) slen,
 		 pmk,
 		 NULL);
-	memcpy(buffer, pmk, 20);
+	memcpy(buffer, pmk, 20); //-V512
 
 	for (i = 1; i < 4096; i++)
 	{
@@ -493,7 +493,7 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t * engine,
 		memset(data, 0, sizeof(data));
 		memcpy(data, pke, 6);
 		memcpy(data + 6, pke + 6, 6);
-		memcpy(data + 12, pke + 35 - 23, 64);
+		memcpy(data + 12, pke + 35 - 23, 64); //-V512
 
 		sha256_prf_bits((unsigned char *) (pmk[vectorIdx].v),
 						32,
@@ -586,7 +586,7 @@ EXPORT int ac_crypto_engine_wpa_crack(
 			engine, eapol, eapol_size, mic, keyver, j, threadid);
 
 		/* did we successfully crack it? */
-		if (memcmp(mic[j], cmpmic, 16) == 0)
+		if (memcmp(mic[j], cmpmic, 16) == 0) //-V512
 		{
 			return j;
 		}
@@ -628,7 +628,7 @@ EXPORT int ac_crypto_engine_wpa_pmkid_crack(
 		HMAC(EVP_sha1(), &pmk[j], 32, pke, 20, l_pmkid, NULL);
 
 		/* did we successfully crack it? */
-		if (memcmp(l_pmkid, pmkid, 16) == 0)
+		if (memcmp(l_pmkid, pmkid, 16) == 0) //-V512
 		{
 			return j;
 		}

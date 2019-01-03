@@ -305,7 +305,7 @@ static void cleanup(int x)
 
 	struct wstate * ws = get_ws();
 
-	ALLEGE(ws != NULL);
+	ALLEGE(ws != NULL); //-V547
 
 	printf("\n");
 	time_print("Dying...\n");
@@ -556,7 +556,7 @@ static void wepify(struct wstate * ws, unsigned char * body, int dlen)
 
 static void send_auth(struct wstate * ws)
 {
-	unsigned char buf[128];
+	unsigned char buf[128] __attribute__((aligned(8)));
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * n;
 
@@ -564,7 +564,7 @@ static void send_auth(struct wstate * ws)
 	fill_basic(ws, wh);
 	wh->i_fc[0] |= IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_AUTH;
 
-	n = (unsigned short *) ((unsigned char *) wh + sizeof(*wh));
+	n = (unsigned short *) ((unsigned char *) wh + sizeof(*wh)); //-V1032
 	n++;
 	*n = htole16(1);
 
@@ -923,8 +923,6 @@ static void proc_data(struct wstate * ws, struct ieee80211_frame * wh, int len)
 			exit(EXIT_FAILURE);
 		}
 
-		ALLEGE(ws->ws_rtrmac > (unsigned char *) 1);
-
 		memcpy(ws->ws_rtrmac, wh->i_addr3, 6);
 		time_print("Got arp reply from (%s)\n", mac2str(ws->ws_rtrmac));
 	}
@@ -982,7 +980,7 @@ decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 	memcpy(ptr, S_LLC_SNAP_ARP, sizeof(S_LLC_SNAP_ARP) - 1);
 	ptr += sizeof(S_LLC_SNAP_ARP) - 1;
 
-	h = (struct arphdr *) ptr;
+	h = (struct arphdr *) ptr; //-V1032
 	h->ar_hrd = htons(ARPHRD_ETHER);
 	h->ar_pro = htons(ETHERTYPE_IP);
 	h->ar_hln = 6;
@@ -1085,9 +1083,9 @@ static void got_ip(struct wstate * ws)
 {
 	REQUIRE(ws != NULL);
 
-	unsigned char ip[4];
+	unsigned char ip[4] __attribute__((aligned(8)));
 	int i;
-	struct in_addr * in = (struct in_addr *) ip;
+	struct in_addr * in = (struct in_addr *) ip; //-V1032
 	char * ptr;
 
 	for (i = 0; i < 4; i++)
@@ -1411,7 +1409,7 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 	REQUIRE(fs != NULL);
 	REQUIRE(pi != NULL);
 
-	unsigned char buf[4096];
+	unsigned char buf[4096] __attribute__((aligned(8)));
 	struct ieee80211_frame * wh;
 	unsigned char * body;
 	int fragsize;
@@ -1448,7 +1446,7 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 
 	crc = crc32(0L, Z_NULL, 0);
 	crc = crc32(crc, body, fragsize);
-	pcrc = (unsigned int *) (body + fragsize);
+	pcrc = (unsigned int *) (body + fragsize); //-V1032
 	*pcrc = htole32(crc);
 
 	for (i = 0; fragsize < (INT_MAX - 4) && i < (fragsize + 4); i++)
@@ -1768,7 +1766,7 @@ static void sigchild(int x)
 
 	ws = get_ws();
 
-	ALLEGE(ws != NULL);
+	ALLEGE(ws != NULL); //-V547
 
 	ws->ws_crack_pid = 0; /* crack done */
 }
@@ -2275,7 +2273,7 @@ int main(int argc, char * argv[])
 	unsigned char vic[6];
 	char * dev = "IdidNotSpecifyAnInterface";
 
-	ALLEGE(ws != NULL);
+	ALLEGE(ws != NULL); //-V547
 	init_defaults(ws);
 
 	if (gettimeofday(&ws->ws_real_start, NULL) == -1)
@@ -2312,7 +2310,7 @@ int main(int argc, char * argv[])
 
 			case 'v':
 				str2mac(vic, optarg);
-				ws->ws_victim_mac = vic;
+				ws->ws_victim_mac = vic; //-V507
 				break;
 
 			case 'c':
