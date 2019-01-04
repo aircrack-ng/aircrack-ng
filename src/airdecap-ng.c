@@ -49,10 +49,6 @@
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 
-#define CRYPT_NONE 0
-#define CRYPT_WEP 1
-#define CRYPT_WPA 2
-
 static const char usage[] =
 
 	"\n"
